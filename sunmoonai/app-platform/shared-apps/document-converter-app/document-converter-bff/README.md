@@ -55,8 +55,8 @@ Document Converter 是一个基于 LibreOffice 的轻量级文档转换服务，
 ### 1. 构建 Docker 镜像
 
 ```bash
-cd /home/zym/k8s/sunmoonai/app-platform/shared-apps/document-converter-app/document-converter-bff/service
-docker build -t document-converter:latest .
+cd /home/zym/k8s/sunmoonai/app-platform/shared-apps/document-converter-app/document-converter-bff/resources/source
+docker build -f build/Dockerfile -t document-converter:latest .
 ```
 
 ### 2. 推送镜像到 Harbor
@@ -467,11 +467,14 @@ python batch_convert_and_store.py \
 document-converter/
 ├── docs/                          # 文档
 │   └── README.md
-├── service/                       # 服务代码
-│   ├── app.py                    # FastAPI 应用
-│   ├── requirements.txt          # Python 依赖
-│   ├── Dockerfile               # Docker 镜像构建
-│   └── .dockerignore            # Docker 忽略文件
+├── resources/                     # Kubernetes 资源
+│   ├── source/                   # 源代码和 Dockerfile
+│   │   ├── app.py               # FastAPI 应用
+│   │   ├── requirements.txt     # Python 依赖
+│   │   └── build/               # 构建相关
+│   │       └── Dockerfile       # Docker 镜像构建
+│   ├── deployment.yaml           # Deployment 配置
+│   └── service.yaml             # Service 配置
 ├── client/                       # 客户端工具
 │   ├── batch_convert_and_store.py      # 文档转换和存储脚本
 │   ├── requirements-batch.txt    # 依赖文件
@@ -619,8 +622,8 @@ kubectl get ingressroute -n app-platform-dev document-converter-route
 
 ```bash
 # 1. 构建新镜像
-cd service
-docker build -t document-converter:v1.1.0 .
+cd resources/source
+docker build -f build/Dockerfile -t document-converter:v1.1.0 .
 
 # 2. 推送镜像
 docker tag document-converter:v1.1.0 harbor.sunmoonai.com:30443/k8s-images/document-converter:v1.1.0

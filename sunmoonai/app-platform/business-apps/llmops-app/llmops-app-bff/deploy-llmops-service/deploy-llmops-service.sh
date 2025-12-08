@@ -330,7 +330,7 @@ main() {
             echo "  ./build-image.sh build-push"
             echo ""
             echo "  # 2. 部署服务"
-            echo "  cd ../../k8s/sunmoonai/app-platform/business-apps/llmops-app/deploy-llmops-service"
+            echo "  cd ../../k8s/sunmoonai/app-platform/business-apps/llmops-app/llmops-app-bff/deploy-llmops-service"
             echo "  ./deploy-llmops-service.sh deploy dev"
             exit 1
             ;;

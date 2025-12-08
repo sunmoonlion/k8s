@@ -121,7 +121,7 @@ get_sub_components() {
     # 检查 LLMOps Service (业务应用)
     if [[ "${llmops_service_enabled:-false}" == "true" ]]; then
         local priority="${llmops_service_priority:-700}"
-        components+=("$priority:llmops-service:$PROJECT_ROOT/business-apps/llmops-app/deploy-llmops-service/deploy-llmops-service.sh")
+        components+=("$priority:llmops-service:$PROJECT_ROOT/business-apps/llmops-app/llmops-app-bff/deploy-llmops-service/deploy-llmops-service.sh")
     fi
     
     # 检查 Celery Worker (共享服务)

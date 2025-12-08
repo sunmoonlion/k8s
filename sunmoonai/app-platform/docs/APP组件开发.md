@@ -151,7 +151,7 @@ llmops-service/
 
 ```bash
 # 首次或更新时，复制源代码
-cp -r /path/to/sunmoonai-llmops-service/app/* k8s/sunmoonai/app-platform/business-apps/llmops-app/resources/source/
+cp -r /path/to/sunmoonai-llmops-service/app/* k8s/sunmoonai/app-platform/business-apps/llmops-app/llmops-app-bff/resources/source/
 ```
 
 #### 2. 构建过程
@@ -454,7 +454,7 @@ secrets/
 
 1. **准备源代码**
    ```bash
-   cd k8s/sunmoonai/app-platform/business-apps/llmops-app
+   cd k8s/sunmoonai/app-platform/business-apps/llmops-app/llmops-app-bff
    cp -r /path/to/sunmoonai-llmops-service/app/* resources/source/
    ```
 
