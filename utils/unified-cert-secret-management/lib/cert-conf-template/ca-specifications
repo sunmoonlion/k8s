@@ -1,0 +1,62 @@
+# ===========================================
+# CA证书生成配置模板
+# 用途：生成根CA证书和私钥
+# 文件名：ca-conf-template
+# ===========================================
+
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_ca
+prompt = no
+# 密钥长度：CA证书建议使用4096位
+default_bits = 4096
+# 哈希算法：使用SHA-256
+default_md = sha256
+
+[req_distinguished_name]
+# 国家代码：ISO 3166-1 alpha-2 标准
+C = CN
+# 省份/州
+ST = Beijing
+# 城市
+L = Beijing
+# 组织名称
+O = SunMoonAI
+# 组织单位
+OU = IT
+# 通用名称：CA证书的标识名
+CN = SunMoonAI Root CA
+
+[v3_ca]
+# CA证书的基本约束：critical表示必须验证，CA:TRUE表示这是CA证书
+basicConstraints = critical,CA:TRUE
+# CA证书的密钥用途：
+# - keyCertSign: 可以签名其他证书
+# - cRLSign: 可以签名证书撤销列表
+# - digitalSignature: 数字签名
+keyUsage = critical,keyCertSign,cRLSign,digitalSignature
+# 证书有效期相关配置
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer
+# CA证书的扩展用途（通常不设置extendedKeyUsage）
+# 设置证书有效期（可选，单位：天）
+# validityPeriod = 3650
+
+# =============================================================================
+# 个性化配置项 - 需要根据实际需求修改
+# =============================================================================
+
+# 证书有效期（天）
+DAYS = 3650
+
+# 密钥长度（位）
+KEY_SIZE = 4096
+
+# ===========================================
+# 配置说明：
+# 1. 修改 [req_distinguished_name] 部分的信息以匹配您的组织
+# 2. CN字段是CA证书的标识，建议使用"组织名 Root CA"格式
+# 3. 密钥长度4096位提供更高的安全性
+# 4. basicConstraints = CA:TRUE 表示这是CA证书
+# 5. keyUsage 必须包含 keyCertSign 和 cRLSign
+# ===========================================

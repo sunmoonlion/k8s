@@ -1,0 +1,2 @@
+bitnami/postgresql:17.6.0-debian-12-r4
+bitnami/postgresql-exporter:0.17.1-debian-12-r16

@@ -1,0 +1,19 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: neo4j-policy
+  namespace: data-platform-dev
+  labels:
+    app: data-platform-ingress
+    component: neo4j-policy
+    project: sunmoonai
+spec:
+  rateLimit:
+    average: 50
+    burst: 100
+  headers:
+    customRequestHeaders:
+      X-Neo4j-Version: "5.15"
+    customResponseHeaders:
+      X-Neo4j-Status: "active"
+

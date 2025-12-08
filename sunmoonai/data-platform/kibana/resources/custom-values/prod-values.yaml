@@ -1,0 +1,104 @@
+# Kibana 生产环境配置
+# 基于官方 values.yaml 进行生产环境优化
+
+# 全局配置
+global:
+  imageRegistry: ""
+  defaultStorageClass: "nfs-storage"
+
+# 副本数配置（生产环境：2副本高可用）
+replicaCount: 2
+
+# 镜像配置
+image:
+  registry: docker.io
+  repository: bitnami/kibana
+  tag: 9.1.2-debian-12-r0
+  pullPolicy: IfNotPresent
+
+# 资源限制
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: 1
+    memory: 2Gi
+
+# Elasticsearch 连接配置
+elasticsearch:
+  hosts:
+    - elasticsearch-sunmoonai
+  port: 9200
+  security:
+    auth:
+      enabled: true
+      kibanaPassword: "changeme"
+
+# 服务配置
+service:
+  type: ClusterIP
+  ports:
+    http: 5601
+
+# 持久化存储（生产环境：启用）
+persistence:
+  enabled: true
+  size: 8Gi
+  storageClass: "nfs-storage"
+
+# 安全配置（生产环境：启用）
+auth:
+  enabled: true
+  kibanaPassword: "changeme"
+
+# 网络策略（生产环境：启用）
+networkPolicy:
+  enabled: true
+
+# 健康检查配置
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 120
+  periodSeconds: 20
+  timeoutSeconds: 10
+  failureThreshold: 6
+  successThreshold: 1
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+
+# Kibana 配置
+kibanaConfig:
+  server:
+    name: "kibana-prod"
+    host: "0.0.0.0"
+    port: 5601
+  elasticsearch:
+    hosts:
+      - "http://elasticsearch-sunmoonai:9200"
+    username: "kibana_system"
+    password: "changeme"
+
+# Pod 反亲和性配置
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: kibana
+        topologyKey: kubernetes.io/hostname
+
+# 更新策略
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 1

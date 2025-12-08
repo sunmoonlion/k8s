@@ -1,0 +1,219 @@
+#!/usr/bin/env bash
+
+# =============================================================================
+# Ingress 平台总部署脚本
+# - 管理 Ingress 平台组件的部署
+# - 支持优先级控制和依赖管理
+# - 支持多集群配置
+# =============================================================================
+
+# 脚本目录配置
+THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$THIS_DIR")"
+
+# 颜色输出函数
+red() { echo -e "\033[31m$*\033[0m"; }
+green() { echo -e "\033[32m$*\033[0m"; }
+yellow() { echo -e "\033[33m$*\033[0m"; }
+blue() { echo -e "\033[34m$*\033[0m"; }
+bold() { echo -e "\033[1m$*\033[0m"; }
+
+# 日志函数
+log_info() { echo "ℹ️  $*"; }
+log_success() { green "✅ $*"; }
+log_warn() { yellow "⚠️  $*"; }
+log_error() { red "❌ $*"; }
+
+# 解析命令行参数（优先于配置文件加载，确保命令行参数优先级最高）
+parse_cluster_arg() {
+    local args=("$@")
+    PARSED_ARGS=()
+    local cluster_value=""
+    local i=0
+    
+    while [[ $i -lt ${#args[@]} ]]; do
+        # 启用大小写不敏感匹配
+        shopt -s nocasematch
+        case "${args[$i]}" in
+            --[cC][lL][uU][sS][tT][eE][rR]=*)
+                # 支持等号形式：--cluster=C1 或 --CLUSTER=C1（大小写不敏感）
+                cluster_value="${args[$i]#*=}"
+                cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
+                export CLUSTER="$cluster_value"
+                log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
+                ;;
+            --[cC][lL][uU][sS][tT][eE][rR]|-c|-C)
+                # 支持空格形式：--cluster C1 或 -c C1（大小写不敏感）
+                if [[ $((i+1)) -lt ${#args[@]} ]]; then
+                    cluster_value="${args[$((i+1))]}"
+                    cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
+                    export CLUSTER="$cluster_value"
+                    log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
+                    i=$((i+1))
+                else
+                    log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
+                    exit 1
+                fi
+                ;;
+            *)
+                PARSED_ARGS+=("${args[$i]}")
+                ;;
+        esac
+        # 恢复大小写敏感匹配
+        shopt -u nocasematch
+        i=$((i+1))
+    done
+    
+    if [[ -n "$cluster_value" ]]; then
+        if [[ -f "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh" ]]; then
+            source "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh"
+            apply_cluster_config_mapping "$cluster_value"
+        fi
+    fi
+}
+
+# 先解析命令行参数（如果提供）
+# 保存原始参数，以便在 main 函数中使用
+ORIGINAL_ARGS=("$@")
+if [[ $# -gt 0 ]]; then
+    parse_cluster_arg "$@"
+    ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
+fi
+
+INGRESS_PLATFORM_CONFIG_FILE="$THIS_DIR/deploy-ingress-platform-all.conf"
+if [[ -f "$INGRESS_PLATFORM_CONFIG_FILE" ]]; then
+    source "$INGRESS_PLATFORM_CONFIG_FILE"
+    
+    # 加载集群配置映射函数（使用 utils 中的通用函数）
+    if [[ -f "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh" ]]; then
+        source "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh"
+        # 应用集群配置映射（使用 CLUSTER 环境变量，支持 C1_* 和 C2_* 前缀配置）
+        apply_cluster_config_mapping
+    fi
+    
+    log_info "已加载 Ingress 平台配置文件: $INGRESS_PLATFORM_CONFIG_FILE"
+else
+    log_error "缺少 Ingress 平台配置文件: $INGRESS_PLATFORM_CONFIG_FILE"
+    exit 1
+fi
+
+# 默认配置
+DEFAULT_PROJECT_ID="sunmoonai"
+DEFAULT_NAMESPACE="ingress-platform-dev"
+DEFAULT_ENVIRONMENT="development"
+
+# 调用子级脚本并传递集群参数
+call_subscript() {
+    local script_path="$1"
+    shift
+    local args=("$@")
+    
+    # 如果设置了 CLUSTER 环境变量，添加 --cluster 参数
+    if [[ -n "${CLUSTER:-}" ]]; then
+        "$script_path" --cluster "$CLUSTER" "${args[@]}"
+    else
+        "$script_path" "${args[@]}"
+    fi
+}
+
+# 部署子级组件（按优先级）
+deploy_sub_components_by_priority() {
+    local project_id="$1"
+    local namespace="$2"
+    local environment="$3"
+    local dry_run="$4"
+    
+    log_info "开始部署子级组件..."
+    
+    # 获取所有启用的组件及其优先级
+    local components=()
+    
+    # 检查 Traefik
+    if [[ "${traefik_enabled:-false}" == "true" ]]; then
+        local priority="${traefik_priority:-1000}"
+        components+=("$priority:traefik:$PROJECT_ROOT/traefik/deploy-traefik/deploy-traefik.sh")
+    fi
+    
+    # 按优先级排序（数值大的先部署）
+    IFS=$'\n' sorted_components=($(sort -nr <<<"${components[*]}"))
+    unset IFS
+    
+    if [[ ${#sorted_components[@]} -eq 0 ]]; then
+        log_warn "⚠️  没有启用的子级组件"
+        return 0
+    fi
+    
+    log_info "📋 子级组件部署顺序："
+    for component_info in "${sorted_components[@]}"; do
+        local priority="${component_info%%:*}"
+        local component=$(echo "$component_info" | cut -d: -f2)
+        log_info "  🚀 $component (优先级: $priority)"
+    done
+    
+    # 部署子级组件
+    for component_info in "${sorted_components[@]}"; do
+        local priority="${component_info%%:*}"
+        local component=$(echo "$component_info" | cut -d: -f2)
+        local script_path=$(echo "$component_info" | cut -d: -f3)
+        
+        log_info "🚀 部署 $component..."
+        
+        if [[ -f "$script_path" ]]; then
+            if call_subscript "$script_path" deploy "$project_id" "$namespace" "$environment" "$dry_run"; then
+                log_success "✅ $component 部署成功"
+            else
+                log_error "❌ $component 部署失败"
+                return 1
+            fi
+        else
+            log_warn "⚠️  $component 部署脚本不存在: $script_path"
+        fi
+    done
+    
+    log_success "✅ 所有子级组件部署完成！"
+}
+
+# 主部署函数
+deploy_ingress_platform() {
+    local project_id="${1:-$DEFAULT_PROJECT_ID}"
+    local namespace="${2:-$DEFAULT_NAMESPACE}"
+    local environment="${3:-$DEFAULT_ENVIRONMENT}"
+    local dry_run="${4:-false}"
+    
+    log_info "开始部署 Ingress 平台..."
+    log_info "项目: $project_id, 命名空间: $namespace, 环境: $environment"
+    
+    # 部署子级组件（按优先级）
+    deploy_sub_components_by_priority "$project_id" "$namespace" "$environment" "$dry_run"
+    
+    log_success "✅ Ingress 平台部署完成！"
+}
+
+# 主函数
+main() {
+    # 使用解析后的参数（已移除 --cluster 参数）
+    set -- "${ORIGINAL_ARGS[@]}"
+    
+    if [[ -n "${CLUSTER:-}" ]]; then
+        log_info "🎯 当前集群配置: ${CLUSTER}"
+    fi
+    
+    # 处理参数：如果第一个参数是 action（如 deploy），则跳过
+    local action="${1:-deploy}"
+    if [[ "$action" == "deploy" || "$action" == "uninstall" || "$action" == "status" ]]; then
+        shift
+    fi
+    
+    local project_id="${1:-${INGRESS_PLATFORM_PROJECT_ID:-$DEFAULT_PROJECT_ID}}"
+    local namespace="${2:-${INGRESS_PLATFORM_NAMESPACE:-$DEFAULT_NAMESPACE}}"
+    local environment="${3:-${ENVIRONMENT:-$DEFAULT_ENVIRONMENT}}"
+    local dry_run="${4:-false}"
+    
+    # 执行部署
+    deploy_ingress_platform "$project_id" "$namespace" "$environment" "$dry_run"
+}
+
+# 主程序入口
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

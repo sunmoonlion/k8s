@@ -1,0 +1,168 @@
+# Flower 生产环境配置 - 直接写具体值，不做模板替换
+# 基于 Flower Chart 结构
+
+# ============================================================================
+# 全局配置
+# ============================================================================
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# ============================================================================
+# 通用配置
+# ============================================================================
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Pod 标签
+# 注意：app.kubernetes.io/name 和 app.kubernetes.io/instance 由 Chart 自动设置（在 flower.labels 中），不应在 podLabels 中重复
+# 这些标签用于 Deployment selector，必须与 template labels 匹配
+podLabels:
+  app.kubernetes.io/component: "flower"
+  app.kubernetes.io/environment: "production"
+  app.kubernetes.io/part-of: platform
+
+podAnnotations: {}
+
+# ============================================================================
+# 镜像配置
+# ============================================================================
+image:
+  registry: ""
+  repository: k8s-images/flower
+  tag: "2.0.1"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+# ============================================================================
+# Service Account 配置
+# ============================================================================
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+# ============================================================================
+# Pod 安全上下文
+# ============================================================================
+podSecurityContext: {}
+securityContext: {}
+
+# ============================================================================
+# Service 配置
+# ============================================================================
+service:
+  type: ClusterIP
+  port: 5555
+
+# ============================================================================
+# Ingress 配置
+# ============================================================================
+ingress:
+  enabled: true
+  className: ""
+  annotations:
+    # Traefik ingress annotations
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+  hosts:
+    - host: "{{FLOWER_UNIFIED_HOST}}"
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# ============================================================================
+# 资源限制（生产环境）
+# ============================================================================
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# ============================================================================
+# 探针配置（生产环境，更保守的设置）
+# ============================================================================
+# 注意：由于使用了 url_prefix=/flower，probe 路径需要包含前缀
+# Flower 的 --url_prefix=/flower 实际路径是 /flower/（带尾随斜杠）
+livenessProbe:
+  httpGet:
+    path: /flower/
+    port: 5555
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 10
+  failureThreshold: 5
+  successThreshold: 1
+
+readinessProbe:
+  httpGet:
+    path: /flower/
+    port: 5555
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 5
+  successThreshold: 1
+
+# ============================================================================
+# Celery Broker 配置
+# ============================================================================
+existingSecret: "flower-secrets"
+secretKeys:
+  # Broker 配置（可选，如果 Secret 中没有这些键，设为空字符串）
+  brokerUrl: ""
+  brokerApiUrl: ""
+  basicAuthUser: "basic-auth-user"
+  basicAuthPassword: "flower-password"
+
+# ============================================================================
+# Flower 命令行参数
+# ============================================================================
+# url_prefix 让应用自己处理 baseurl，不需要 stripPrefix 中间件（参考 redisinsight 和 mongo-express）
+# 注意：Flower 使用 --url_prefix 参数，功能类似其他应用的 --base-path 或 siteBaseUrl
+args:
+  - "--url_prefix=/flower"
+
+# ============================================================================
+# 环境变量
+# ============================================================================
+env: []
+
+# ============================================================================
+# Basic Auth 配置（Flower Web UI 登录）
+# ============================================================================
+basicAuth:
+  enabled: false
+  username: ""
+  password: ""
+
+# ============================================================================
+# 其他配置
+# ============================================================================
+# 节点选择器
+nodeSelector: {}
+
+# 容忍度
+tolerations: []
+
+# 亲和性
+affinity: {}
+
+# 卷
+volumes: []
+volumeMounts: []
+
+# 自动扩缩容（生产环境）
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+

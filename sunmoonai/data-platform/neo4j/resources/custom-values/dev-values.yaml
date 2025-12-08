@@ -1,0 +1,137 @@
+# Neo4j 开发环境配置 - 直接写具体值，不做模板替换
+
+# 全局配置（对齐统一镜像与存储）
+# 关于镜像来源（说明）：
+# - 部分 Bitnami 历史版本已从官方仓库迁移到 bitnamilegacy 命名空间，
+#   因此我们基于 bitnamilegacy/neo4j:5.26.11-debian-12-r0 在节点上 retag 为
+#   www.sunmoonai.com:30443/k8s-images/neo4j:5.26.11-debian-12-r0 并推送到 Harbor。
+# - 这里通过 image.registry/repository/tag 指向 Harbor 镜像，功能不受影响。
+# - 需配合：
+#   1) global.security.allowInsecureImages=true（绕过 Bitnami 源校验）
+#   2) 命名空间内存在 harbor-registry-secret（镜像拉取凭据）
+global:
+  imageRegistry: "www.sunmoonai.com:30443"
+  imagePullSecrets:
+    - name: harbor-registry-secret
+  security:
+    allowInsecureImages: true
+  storageClass: "nfs-2"
+
+# 镜像配置（走 Harbor 仓库）
+image:
+  registry: www.sunmoonai.com:30443
+  repository: k8s-images/neo4j
+  tag: "5.26.11-debian-12-r0"
+  pullPolicy: IfNotPresent
+
+# 认证配置（改为引用统一密管 Secret）
+auth:
+  enabled: true
+  existingSecret: "neo4j-secrets"
+  secretKeys:
+    password: "neo4j-password"
+  database: "sunmoonai_dev"
+
+# 主服务配置
+primary:
+  persistence:
+    enabled: true  
+    storageClass: "nfs-2"
+    size: "20Gi"
+    accessModes:
+      - "ReadWriteOnce"
+  nodeSelector:
+    kubernetes.io/hostname: hsy-local-2
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+    - key: "dedicated"
+      operator: "Equal"
+      value: "nfs-storage"
+      effect: "NoSchedule"
+  
+  service:
+    type: "ClusterIP"  # 改为 ClusterIP，只在内网访问
+    ports:
+      http: 7474
+      https: 6477
+      bolt: 7687
+  
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "512Mi"
+    limits:
+      cpu: "300m"
+      memory: "768Mi"
+  
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+    successThreshold: 1
+  
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 5
+    successThreshold: 1
+
+# Neo4j 配置
+neo4j:
+  # 内存配置
+  memory:
+    heap:
+      initial: "512m"
+      max: "512m"
+    pagecache: "512m"
+  
+  # 插件配置
+  plugins:
+    - "graph-data-science"
+    - "apoc"
+  
+  # 安全配置
+  security:
+    procedures:
+      allowlist: "gds.*, apoc.*"
+      unrestricted: "gds.*, apoc.*"
+  
+  # 服务器配置
+  server:
+    config:
+      strict_validation: false
+      default_listen_address: "0.0.0.0"
+      connector:
+        bolt:
+          listen_address: "0.0.0.0:7687"
+        http:
+          listen_address: ":7474"
+          advertised_address: ":7474"
+        https:
+          listen_address: ":6477"
+          advertised_address: ":6477"
+  
+  # 模式配置
+  mode: "SINGLE"
+  
+  # JVM 配置
+  jvm:
+    additional: "-XX:+ExitOnOutOfMemoryError"
+
+# 监控配置 - 开发环境禁用
+metrics:
+  enabled: false
+
+# Ingress 配置 - 通过 ingress-platform 统一管理
+ingress:
+  enabled: false  # 禁用 Helm Chart 的 Ingress，使用 ingress-platform 管理
+
+# 网络策略
+networkPolicy:
+  enabled: false

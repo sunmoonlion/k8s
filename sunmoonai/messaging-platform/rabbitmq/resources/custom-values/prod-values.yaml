@@ -1,0 +1,110 @@
+# RabbitMQ 生产环境配置 - 直接写具体值，不做模板替换
+
+# 全局配置
+global:
+  imageRegistry: "harbor.sunmoonai.com:30443"
+  imagePullSecrets:
+    - name: harbor-registry-secret
+  security:
+    allowInsecureImages: true
+  storageClass: "fast-ssd"
+
+# 镜像配置（通过 Harbor 拉取）
+image:
+  registry: "harbor.sunmoonai.com:30443"
+  repository: k8s-images/rabbitmq
+  tag: "4.1.3-debian-12-r1"
+  pullPolicy: "IfNotPresent"
+  pullSecrets: []
+
+# 认证配置
+auth:
+  username: "admin"
+  password: "RabbitMQ_Production_2024!"
+  erlangCookie: "rabbitmq-production-cookie"
+
+# 主服务配置
+primary:
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: "50Gi"
+    accessModes:
+      - "ReadWriteOnce"
+  
+  service:
+    type: "ClusterIP"  # 改为 ClusterIP，通过 ingress-platform 管理访问
+    ports:
+      amqp: 5672
+      management: 15672
+  
+  resources:
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+  
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 5
+    successThreshold: 1
+  
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+    successThreshold: 1
+
+# 管理界面配置
+management:
+  enabled: true
+  port: 15672
+
+# 监控配置
+metrics:
+  enabled: true
+  # RabbitMQ Chart 使用内置的 Prometheus 插件，无需独立的 exporter 镜像
+  # image:
+  #   registry: ""
+  #   repository: bitnami/rabbitmq-exporter
+  #   tag: "1.0.0-debian-12-r0"
+  #   pullPolicy: "IfNotPresent"
+  
+  serviceMonitor:
+    enabled: true
+    interval: "15s"
+    scrapeTimeout: "10s"
+
+# 网络策略
+networkPolicy:
+  enabled: true
+
+# 自动扩缩容
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 70
+
+# Ingress 配置 - 通过 ingress-platform 统一管理
+ingress:
+  enabled: false  # 禁用 Helm Chart 的 Ingress，使用 ingress-platform 管理
+
+# 集群配置 - 生产环境启用集群
+clustering:
+  enabled: true
+  replicaCount: 3
+
+# 备份配置
+backup:
+  enabled: true
+  schedule: "0 3 * * *"
+  retention: "30d"

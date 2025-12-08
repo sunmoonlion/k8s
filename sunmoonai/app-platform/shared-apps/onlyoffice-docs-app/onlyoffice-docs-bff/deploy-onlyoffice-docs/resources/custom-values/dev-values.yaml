@@ -1,0 +1,107 @@
+# ONLYOFFICE Docs 开发环境配置
+
+# 全局配置
+global:
+  imageRegistry: "harbor.sunmoonai.com:30443"
+  imagePullSecrets:
+    - name: harbor-registry-secret
+  security:
+    allowInsecureImages: true
+
+# 禁用 pre-upgrade hook（首次部署时服务不存在，会导致 hook 失败）
+upgrade:
+  job:
+    enabled: false
+
+# 连接配置（跨集群访问）
+# 注意：
+# - PostgreSQL、Redis 在集群1（C1），通过 Traefik 暴露外部访问
+# - RabbitMQ 在集群2（C2），与 ONLYOFFICE Docs 同集群，使用 Service DNS
+connections:
+  dbType: postgres
+  dbHost: 101.126.151.0  # 集群1的节点IP地址（非TLS TCP连接使用IP）
+  dbPort: "30444"         # PostgreSQL 外部端口（Traefik TCP 路由）
+  dbName: onlyoffice_docs
+  dbUser: onlyoffice_docs
+  dbExistingSecret: onlyoffice-postgresql-secret
+  dbSecretKeyName: postgres-password
+  
+  redisHost: 101.126.151.0  # 集群1的节点IP地址（非TLS TCP连接使用IP）
+  redisPort: "30446"         # Redis 外部端口（Traefik TCP 路由）
+  redisExistingSecret: onlyoffice-redis-secret
+  redisSecretKeyName: redis-password
+  redisNoPass: false
+  
+  amqpType: rabbitmq
+  amqpHost: rabbitmq-sunmoonai.messaging-platform-dev.svc.cluster.local  # 集群2的 Service DNS（同集群）
+  amqpPort: "5672"                 # RabbitMQ AMQP 端口（同集群直接访问）
+  amqpVhost: "/"
+  amqpUser: onlyoffice_docs
+  amqpExistingSecret: onlyoffice-rabbitmq-secret
+  amqpSecretKeyName: rabbitmq-password
+
+# JWT 配置（用于 API 认证，可选）
+# 如果不需要 API 认证，可以设置为 enabled: false，则不需要 JWT Secret
+jwt:
+  enabled: false  # 设置为 false 可免密访问 API（开发环境推荐）
+  # enabled: true  # 生产环境建议启用 JWT 认证
+  existingSecret: onlyoffice-jwt-secret
+  secretKey: jwt-secret
+  header: "Authorization"
+  inBody: false
+
+# Info 页面认证配置（可选）
+# 如果不设置 infoAllowedUser，Info 页面可以免密访问
+# 如果需要认证，可以直接在配置中设置密码
+proxy:
+  infoAllowedUser: ""  # 留空则免密访问 Info 页面
+  # infoAllowedUser: "admin"  # 如果设置用户名，需要配置密码
+  # infoAllowedPassword: "your_password"  # Info 页面密码（直接在配置中设置）
+
+# 服务配置
+service:
+  type: ClusterIP
+  port: 8888
+
+# 副本数配置
+docservice:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+
+converter:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+
+proxy:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# 持久化存储（开发环境：使用 nfs-2）
+persistence:
+  storageClass: "nfs-2"  # 使用集群中存在的 StorageClass
+  size: 8Gi  # 存储大小
+  runtimeConfig:
+    enabled: true  # 启用运行时配置的持久化存储
+    size: 1Gi  # 运行时配置存储大小
+
+# 节点选择器（可选，根据实际节点调整）
+# nodeSelector:
+#   kubernetes.io/hostname: hsy-local-2
+

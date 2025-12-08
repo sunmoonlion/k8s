@@ -1,0 +1,2 @@
+bitnami/logstash:9.1.2-debian-12-r0
+bitnami/os-shell:12-debian-12-r51

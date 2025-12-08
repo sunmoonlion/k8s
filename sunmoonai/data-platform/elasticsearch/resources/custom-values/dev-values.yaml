@@ -1,0 +1,161 @@
+# Elasticsearch 开发环境配置
+# 基于官方 values.yaml 进行开发环境优化
+
+# 全局配置
+global:
+  # 禁用 Kibana 子图表，单独部署
+  kibanaEnabled: false
+  # 设置默认存储类
+  defaultStorageClass: "nfs-2"
+  # 镜像拉取凭据
+  imagePullSecrets:
+    - name: "harbor-registry-secret"
+  # 允许使用非官方镜像（用于私有 Harbor 镜像）
+  security:
+    allowInsecureImages: true
+  # 全局镜像仓库
+  imageRegistry: "harbor.sunmoonai.com:30443"
+
+# 集群配置
+clusterName: elasticsearch-dev
+
+# 主镜像改为 Harbor 源
+image:
+  registry: harbor.sunmoonai.com:30443
+  repository: k8s-images/elasticsearch
+  tag: 9.1.2-debian-12-r0
+  pullPolicy: IfNotPresent
+
+# 各角色显式指定镜像，避免子 chart/模板覆盖
+master:
+  image:
+    registry: harbor.sunmoonai.com:30443
+    repository: k8s-images/elasticsearch
+    tag: 9.1.2-debian-12-r0
+    pullPolicy: IfNotPresent
+
+# Master 节点配置（开发环境：单节点）
+master:
+  masterOnly: false
+  extraRoles:
+    - data
+    - ingest
+  replicaCount: 1
+  nodeSelector:
+    kubernetes.io/hostname: hsy-local-2
+  resourcesPreset: "small"
+  resources:
+    requests:
+      cpu: 300m
+      memory: 512Mi
+    limits:
+      cpu: 800m
+      memory: 1Gi
+  heapSize: 512m
+  persistence:
+    enabled: true
+    size: 8Gi
+    storageClass: "nfs-2"
+
+# Data 节点配置（开发环境：单节点）
+data:
+  image:
+    registry: harbor.sunmoonai.com:30443
+    repository: k8s-images/elasticsearch
+    tag: 9.1.2-debian-12-r0
+    pullPolicy: IfNotPresent
+  replicaCount: 0
+  nodeSelector:
+    kubernetes.io/hostname: hsy-local-2
+  resourcesPreset: "small"
+  resources:
+    requests:
+      cpu: 300m
+      memory: 512Mi
+    limits:
+      cpu: 800m
+      memory: 1Gi
+  heapSize: 512m
+  persistence:
+    enabled: false
+    size: 20Gi
+    storageClass: "nfs-2"
+
+# Coordinating 节点配置（开发环境：单节点）
+coordinating:
+  image:
+    registry: harbor.sunmoonai.com:30443
+    repository: k8s-images/elasticsearch
+    tag: 9.1.2-debian-12-r0
+    pullPolicy: IfNotPresent
+  replicaCount: 0
+  nodeSelector:
+    kubernetes.io/hostname: hsy-local-2
+  resourcesPreset: "small"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 300m
+      memory: 1Gi
+  heapSize: 512m
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 120
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 6
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 120
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 12
+
+# Ingest 节点配置（开发环境：禁用）
+ingest:
+  replicaCount: 0
+
+# 持久化存储配置已合并到各节点配置中
+
+# 服务配置
+service:
+  type: ClusterIP
+  ports:
+    restAPI: 9200
+    transport: 9300
+
+# 安全配置（开发环境：禁用安全）
+auth:
+  enabled: false
+
+# 监控配置（开发环境：禁用）
+metrics:
+  enabled: false
+
+# 系统配置
+sysctlImage:
+  enabled: true
+  registry: harbor.sunmoonai.com:30443
+  repository: k8s-images/os-shell
+  tag: 12-debian-12-r51
+
+# ===================== 未来启用安全/密钥（预置占位，默认注释）====================
+# 使用说明：
+# 1) 由统一密管创建下列 Secret（示例名：elasticsearch-secrets），包含：
+#    - elasticsearch-password（如启用内置用户密码）
+#    - elasticsearch-certificates（如启用 TLS：ca.crt、tls.crt、tls.key 等）
+# 2) 将下方配置取消注释，并对齐 Secret 名称/键名。
+# 3) 同步更新 Kibana/Logstash 的连接配置，使用相同凭据与 CA。
+
+# auth:
+#   enabled: true
+#   existingSecret: elasticsearch-secrets
+#   # 若 Chart 支持自定义用户名/密码键名，按需设置；否则默认读取内置键
+
+# security:
+#   tls:
+#     enabled: true
+#     existingSecret: elasticsearch-certificates   # 包含 ca.crt / tls.crt / tls.key
+#     # 若仅开启 HTTP 或 Transport 的 TLS，可分别设置 http / transport 的 existingSecret

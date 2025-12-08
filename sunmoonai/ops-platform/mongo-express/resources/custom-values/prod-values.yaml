@@ -1,0 +1,207 @@
+# Mongo Express 生产环境配置 - 直接写具体值，不做模板替换
+# 基于 Cowboysysop mongo-express Chart 结构
+
+# ============================================================================
+# 全局配置
+# ============================================================================
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# ============================================================================
+# 通用配置
+# ============================================================================
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+
+# 通用标签
+commonLabels:
+  app.kubernetes.io/name: "mongo-express"
+  app.kubernetes.io/instance: "sunmoonai"
+  app.kubernetes.io/component: "mongo-express"
+  app.kubernetes.io/environment: "production"
+  app.kubernetes.io/part-of: platform
+  app.kubernetes.io/managed-by: helm
+
+commonAnnotations: {}
+
+# ============================================================================
+# 镜像配置
+# ============================================================================
+image:
+  registry: docker.io
+  repository: mongo-express
+  tag: "1.0.2"
+  digest: ""
+  pullPolicy: IfNotPresent
+
+# ============================================================================
+# Service Account 配置
+# ============================================================================
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# ============================================================================
+# Pod 配置
+# ============================================================================
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+
+# ============================================================================
+# 端口配置
+# ============================================================================
+containerPorts:
+  http: 8081
+
+# ============================================================================
+# 探针配置（生产环境，更保守的设置）
+# ============================================================================
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 5
+  successThreshold: 1
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 5
+  successThreshold: 1
+
+startupProbe:
+  enabled: false
+
+# ============================================================================
+# Service 配置
+# ============================================================================
+service:
+  type: ClusterIP
+  ports:
+    http: 8081
+  nodePorts:
+    http: ""
+  annotations: {}
+
+# ============================================================================
+# Ingress 配置
+# ============================================================================
+ingress:
+  enabled: true
+  ingressClassName: ""
+  pathType: ImplementationSpecific
+  annotations:
+    # Traefik ingress annotations
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+  hosts:
+    - host: "{{MONGO_EXPRESS_UNIFIED_HOST}}"
+      paths:
+        - /
+  tls: []
+
+# ============================================================================
+# 资源限制（生产环境）
+# ============================================================================
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# ============================================================================
+# MongoDB 连接配置
+# ============================================================================
+# MongoDB 服务器配置（连接 data-platform 中的 MongoDB）
+mongodbServer: llmops.sunmoonai.com
+mongodbPort: 30093
+mongodbEnableAdmin: true
+mongodbAdminUsername: root
+# mongodbAdminPassword 通过 existingSecret 配置
+
+# ============================================================================
+# Secret 配置
+# ============================================================================
+existingSecret: "mongo-express-secrets"
+existingSecretKeyMongodbAdminPassword: "mongo-express-password"
+existingSecretKeyMongodbAuthPassword: "mongodb-auth-password"
+existingSecretKeySiteCookieSecret: "site-cookie-secret"
+existingSecretKeySiteSessionSecret: "site-session-secret"
+existingSecretKeyBasicAuthPassword: "basic-auth-password"
+
+# ============================================================================
+# Basic Auth 配置（Mongo Express Web 登录）
+# ============================================================================
+basicAuthUsername: admin
+# basicAuthPassword 通过 existingSecret 配置
+
+# ============================================================================
+# 其他配置
+# ============================================================================
+# MongoDB Chart（禁用，使用独立的 MongoDB）
+mongodb:
+  enabled: false
+
+# Pod Disruption Budget（生产环境启用）
+pdb:
+  create: true
+  minAvailable: 1
+
+# 节点选择器
+nodeSelector: {}
+
+# 容忍度
+tolerations: []
+
+# 亲和性
+affinity: {}
+
+# 优先级类名
+priorityClassName: ""
+
+# 额外环境变量
+extraEnvVars: []
+extraEnvVarsCM: ""
+extraEnvVarsSecret: ""
+
+# 额外卷
+extraVolumes: []
+extraVolumeMounts: []
+
+# 额外参数
+extraArgs: {}
+
+enableServiceLinks: false
+hostAliases: []
+
+# 自动扩缩容（生产环境）
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+  # targetMemoryUtilizationPercentage: 80
+

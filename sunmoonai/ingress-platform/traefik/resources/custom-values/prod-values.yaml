@@ -1,0 +1,149 @@
+# Traefik 生产环境配置
+
+# 全局配置
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# 镜像配置
+image:
+  repository: traefik
+  tag: "v3.5.2"
+  pullPolicy: IfNotPresent
+
+# 部署配置
+deployment:
+  replicas: 3  # 生产环境高可用
+  kind: Deployment  # 或使用 DaemonSet 在每个节点运行
+
+# 服务配置
+service:
+  type: ClusterIP  # 使用 hostNetwork 时，Service 类型可以是 ClusterIP
+  # 注意：使用 hostNetwork 时，Traefik 直接绑定节点的 80/443 端口
+  # 不需要 NodePort
+
+# Dashboard 配置
+dashboard:
+  enabled: true
+  ingressRoute: true
+  # 访问地址：traefik.sunmoonai.local
+
+# 监控配置
+metrics:
+  prometheus:
+    enabled: false
+    serviceMonitor:
+      enabled: false
+
+# 日志配置
+logs:
+  access:
+    enabled: true
+    format: json
+  general:
+    level: INFO
+
+# 持久化存储
+persistence:
+  enabled: true
+  storageClass: "nfs-storage"
+  size: "2Gi"
+  accessMode: ReadWriteOnce
+
+# 资源限制
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# RBAC 配置
+rbac:
+  enabled: true
+  namespaced: false
+
+# 网络策略
+networkPolicy:
+  enabled: true
+
+# 入口点配置
+# 使用 hostNetwork 时，Traefik 直接绑定节点的 80/443 端口
+ports:
+  web:
+    port: 80
+    # 使用 hostNetwork 时不需要 nodePort
+  websecure:
+    port: 443
+    # 使用 hostNetwork 时不需要 nodePort
+
+# 提供者配置
+providers:
+  kubernetesIngress:
+    enabled: true
+  kubernetesCRD:
+    enabled: true
+
+# 证书解析器配置（生产环境使用 Let's Encrypt）
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: admin@sunmoonai.local
+      storage: /data/acme.json
+      httpChallenge:
+        entryPoint: web
+
+# 实验性功能
+experimental:
+  plugins: {}
+  localPlugins: {}
+
+# 安全配置
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  fsGroup: 65532
+  # 添加 CAP_NET_BIND_SERVICE 能力，允许非 root 用户绑定 80/443 端口
+  capabilities:
+    add:
+      - NET_BIND_SERVICE
+    drop:
+      - ALL
+
+# Pod 安全上下文
+# 方案1：使用 root 用户（简单但不推荐）
+# podSecurityContext:
+#   runAsNonRoot: false
+#   runAsUser: 0
+#   fsGroup: 0
+
+# 方案2：使用非 root 用户 + setcap（推荐，更安全）
+# 需要在容器启动时设置 CAP_NET_BIND_SERVICE 能力
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  fsGroup: 65532
+
+# 在容器启动命令中添加 setcap（需要在 initContainer 或使用特权容器设置）
+# 或者使用 Traefik 的官方镜像，它已经支持 setcap
+
+# 网络配置
+# 使用 hostNetwork 让 Traefik 直接使用节点的网络命名空间
+# 这样可以直接绑定节点的 80/443 端口
+hostNetwork: true
+
+# Pod 反亲和性配置
+# 使用 hostNetwork 时，建议设置反亲和性避免多个 Pod 调度到同一节点导致端口冲突
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - traefik
+          topologyKey: kubernetes.io/hostname

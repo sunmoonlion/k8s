@@ -1,0 +1,17 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: postgresql-policy
+  namespace: data-platform-dev
+  labels:
+    app: data-platform-ingress
+    component: postgresql-policy
+    project: sunmoonai
+spec:
+  # 注意：TCP 路由对 middleware 的支持有限
+  # rateLimit 可能在某些场景下有效（取决于 Traefik 版本和配置）
+  # headers 在 TCP 路由中通常无效
+  rateLimit:
+    average: 100
+    burst: 200
+

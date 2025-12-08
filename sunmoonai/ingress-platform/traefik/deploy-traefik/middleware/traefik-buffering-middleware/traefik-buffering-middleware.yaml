@@ -1,0 +1,24 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: traefik-buffering-${PROJECT_ID}
+  namespace: ${NAMESPACE}
+  labels:
+    app.kubernetes.io/name: traefik-buffering-middleware
+    app.kubernetes.io/instance: traefik-buffering-${PROJECT_ID}
+    app.kubernetes.io/component: middleware
+    app.kubernetes.io/part-of: traefik
+    app.kubernetes.io/managed-by: deploy-traefik-buffering-middleware
+spec:
+  buffering:
+    # 配置大文件上传支持
+    # maxRequestBodyBytes: 最大请求体大小（字节），默认 2GB (2147483648)，0 表示无限制
+    # memRequestBodyBytes: 内存中缓冲的请求体大小（字节），默认 20MB (20971520)，超过会写入磁盘
+    # maxResponseBodyBytes: 最大响应体大小（字节），默认 2GB (2147483648)，0 表示无限制
+    # memResponseBodyBytes: 内存中缓冲的响应体大小（字节），默认 20MB (20971520)，超过会写入磁盘
+    maxRequestBodyBytes: ${MAX_REQUEST_BODY_BYTES:-2147483648}
+    memRequestBodyBytes: ${MEM_REQUEST_BODY_BYTES:-20971520}
+    maxResponseBodyBytes: ${MAX_RESPONSE_BODY_BYTES:-2147483648}
+    memResponseBodyBytes: ${MEM_RESPONSE_BODY_BYTES:-20971520}
+    retryExpression: ${RETRY_EXPRESSION:-IsNetworkError() && Attempts() <= 2}
+

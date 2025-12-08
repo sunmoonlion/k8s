@@ -1,0 +1,162 @@
+# Redis 开发环境配置 - 直接写具体值，不做模板替换
+
+# 全局配置
+global:
+  imageRegistry: ""
+  imagePullSecrets:
+    - name: "harbor-registry-secret"
+  storageClass: "nfs-2"
+
+# 镜像配置
+image:
+  registry: ""
+  repository: bitnami/redis
+  tag: "8.2.1-debian-12-r0"
+  pullPolicy: "IfNotPresent"
+  pullSecrets: []
+
+# 认证配置 - 使用Secret提高安全性
+auth:
+  enabled: true
+  # 密码由密管创建的 Secret 提供，Chart 仅消费
+  existingSecret: "redis-auth-secret"
+  existingSecretPasswordKey: "redis-password"
+
+# 主服务配置
+master:
+  persistence:
+    enabled: true
+    storageClass: "nfs-2"
+    size: "5Gi"
+    accessModes:
+      - "ReadWriteOnce"
+  
+  service:
+    type: "ClusterIP"  # 改为 ClusterIP，只在内网访问
+    port: 6379
+  
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+  
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+    successThreshold: 1
+  
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 5
+    successThreshold: 1
+
+# 副本配置
+replica:
+  replicaCount: 0
+  enabled: false
+
+# Sentinel 配置
+sentinel:
+  enabled: false
+  image:
+    registry: ""
+    repository: bitnami/redis-sentinel
+    tag: "8.2.1-debian-12-r0"
+    pullPolicy: "IfNotPresent"
+  
+  persistence:
+    enabled: false
+    storageClass: "nfs-2"
+    size: "5Gi"
+    accessModes:
+      - "ReadWriteOnce"
+  
+  resources:
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+
+# 监控配置
+metrics:
+  enabled: false
+  image:
+    registry: ""
+    repository: bitnami/redis-exporter
+    tag: "1.76.0-debian-12-r0"
+    pullPolicy: "IfNotPresent"
+  
+  serviceMonitor:
+    enabled: false
+    interval: "30s"
+    scrapeTimeout: "10s"
+    honorLabels: true
+
+# 网络策略配置
+networkPolicy:
+  enabled: false
+  allowExternal: true
+
+# 自动扩缩容配置
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+# Redis 特定配置
+redis:
+  # 性能配置
+  maxMemory: "512MB"
+  maxMemoryPolicy: "allkeys-lru"
+  save: "900 1 300 10 60 10000"
+  timeout: "300"
+  tcpKeepalive: "300"
+  tcpBacklog: "511"
+  
+  # 安全配置
+  disableCommands: "FLUSHDB,FLUSHALL"
+  enableTLS: false
+  
+  # 日志配置
+  logLevel: "notice"
+  syslogEnabled: false
+  
+  # 持久化配置
+  appendOnly: "yes"
+  appendfsync: "everysec"
+
+# Ingress 配置 - 通过 Traefik 统一管理
+ingress:
+  enabled: false  # 禁用 Helm Chart 的 Ingress，使用独立的 Ingress 资源
+
+# 标签和注解
+commonLabels:
+  app.kubernetes.io/part-of: "data-platform"
+  app.kubernetes.io/managed-by: "helm"
+
+commonAnnotations:
+  app.kubernetes.io/created-by: "unified-deployment-template"
+
+# 安全上下文
+securityContext:
+  enabled: false
+  runAsUser: 1001
+  fsGroup: 1001
+
+podSecurityContext:
+  enabled: false
+  runAsUser: 1001
+  fsGroup: 1001

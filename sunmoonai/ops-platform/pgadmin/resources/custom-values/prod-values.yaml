@@ -1,0 +1,194 @@
+# pgAdmin 生产环境配置 - 直接写具体值，不做模板替换
+# 基于 Runix pgAdmin4 Chart 结构
+
+# ============================================================================
+# 全局配置
+# ============================================================================
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# ============================================================================
+# 通用配置
+# ============================================================================
+replicaCount: 1
+
+# 通用标签
+# 注意：app.kubernetes.io/name 和 app.kubernetes.io/instance 由 Chart 自动设置，不应在 commonLabels 中覆盖
+# 这些标签用于 Deployment selector，必须与 template labels 匹配
+commonLabels:
+  app.kubernetes.io/component: "pgadmin"
+  app.kubernetes.io/environment: "production"
+  app.kubernetes.io/part-of: platform
+  app.kubernetes.io/managed-by: helm
+
+# ============================================================================
+# 镜像配置
+# ============================================================================
+image:
+  registry: "{{PGADMIN_IMAGE_REGISTRY}}"
+  repository: "{{PGADMIN_IMAGE_PROJECT}}/pgadmin4"
+  tag: "{{PGADMIN_IMAGE_VERSION}}"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+# ============================================================================
+# 服务配置
+# ============================================================================
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+  portName: http
+  annotations: {}
+
+# ============================================================================
+# Ingress 配置
+# ============================================================================
+ingress:
+  enabled: true
+  ingressClassName: ""
+  annotations:
+    # Traefik ingress annotations
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+  labels: {}
+  hosts:
+    - host: pgadmin.sunmoonai.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# ============================================================================
+# Secret 配置
+# ============================================================================
+existingSecret: "pgadmin-secrets"
+secretKeys:
+  pgadminPasswordKey: "pgadmin-password"
+
+# ============================================================================
+# 环境变量配置
+# ============================================================================
+env:
+  # Email for pgAdmin login (required)
+  email: admin@sunmoonai.local
+  # Password - will be ignored if existingSecret is set
+  password: ""
+  
+  # 设置 contextPath，让 pgAdmin 知道它在子路径下运行
+  # 这样重定向时会包含正确的路径前缀（/pgadmin）
+  contextPath: "/pgadmin"
+  
+  # Server mode configuration
+  variables: []
+    # - name: PGADMIN_CONFIG_SERVER_MODE
+    #   value: "True"
+    # - name: PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED
+    #   value: "False"
+
+# ============================================================================
+# 持久化存储配置（生产环境）
+# ============================================================================
+persistentVolume:
+  enabled: true
+  annotations: {}
+  accessModes:
+    - ReadWriteOnce
+  size: 50Gi
+  storageClass: "nfs-2"  # 使用 NFS StorageClass（与 PostgreSQL 保持一致）
+  subPath: ""
+
+# ============================================================================
+# 资源限制（生产环境）
+# ============================================================================
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# ============================================================================
+# 探针配置（生产环境，更保守的设置）
+# ============================================================================
+livenessProbe:
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 10
+  failureThreshold: 5
+
+readinessProbe:
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 5
+
+startupProbe:
+  failureThreshold: 40
+  periodSeconds: 5
+
+# ============================================================================
+# 安全配置
+# ============================================================================
+securityContext:
+  runAsUser: 5050
+  runAsGroup: 5050
+  fsGroup: 5050
+
+containerSecurityContext:
+  enabled: true
+  allowPrivilegeEscalation: false
+
+# ============================================================================
+# 网络策略
+# ============================================================================
+networkPolicy:
+  enabled: true
+
+# ============================================================================
+# 自动扩缩容（生产环境）
+# ============================================================================
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+  # targetMemoryUtilizationPercentage: 80
+
+# ============================================================================
+# 其他配置
+# ============================================================================
+# 禁用服务器定义预加载（生产环境）
+serverDefinitions:
+  enabled: false
+  resourceType: ConfigMap
+  existingConfigmap: ""
+  existingSecret: ""
+  servers: {}
+
+# 禁用用户偏好预加载（生产环境）
+preferences:
+  enabled: false
+  existingConfigMap: ""
+  data: {}
+
+# Pod 注释和标签
+podAnnotations: {}
+podLabels: {}
+
+# 节点选择器和容忍度
+nodeSelector: {}
+tolerations: []
+
+# 亲和性配置
+affinity: {}
+
+# 优先级类名（如有需要）
+priorityClassName: ""
+
+# DNS 策略
+dnsPolicy: ""
+dnsConfig: {}
+

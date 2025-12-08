@@ -1,0 +1,121 @@
+# Redis TCP 路由配置
+# 通过 Traefik 暴露 Redis 数据库的 TCP 端口
+#
+# 当前功能：
+# - Redis 数据库端口：6379 -> 30446（外部访问端口）
+# - 支持应用程序通过 TCP 连接访问 Redis 数据库
+#
+# 使用方式（统一域名）：
+# 注意：Redis 已启用密码认证，连接时必须提供密码
+# 
+# 方案1: 使用 IP 地址（无需 DNS 配置）
+# redis-cli -h <节点IP> -p 30446 -a <password>
+# 或者在交互式连接后使用 AUTH 命令：
+# redis-cli -h <节点IP> -p 30446
+# > AUTH <password>
+# 
+# 方案2: 使用统一域名（只需在 /etc/hosts 中添加一个条目）
+# redis-cli -h www.sunmoonai.com -p 30446 -a <password>
+# 或者在应用程序连接字符串中使用：
+# redis://:<password>@www.sunmoonai.com:30446/0
+#
+# 注意：只需在 /etc/hosts 中添加一条记录即可访问所有服务
+# 示例：101.126.151.0  llmops.sunmoonai.com
+#
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: redis-tcp
+  namespace: {{NAMESPACE}}
+  labels:
+    app: data-platform-ingress
+    component: redis-tcp
+spec:
+  entryPoints:
+    - redis
+  routes:
+    # =============================================================================
+    # HostSNI 路由匹配规则说明
+    # =============================================================================
+    # HostSNI (Server Name Indication) 是 Traefik 用于 TCP 路由的匹配规则
+    # 
+    # 问题背景：
+    # - 对于 TLS TCP 连接：客户端在 TLS 握手时会发送 SNI 扩展，包含目标域名
+    #   Traefik 可以读取 SNI 信息并匹配 HostSNI(`llmops.sunmoonai.com`)
+    # - 对于非 TLS TCP 连接：客户端直接建立 TCP 连接，没有 TLS 握手，没有 SNI 信息
+    #   TCP 协议本身不包含域名信息，只有 IP 和端口
+    #   Traefik 无法获取域名信息，只能看到 IP 地址
+    #
+    # DNS 解析和 TCP 连接的关系：
+    # 1. 客户端使用域名连接: redis-cli -h llmops.sunmoonai.com -p 30446
+    # 2. DNS 解析: llmops.sunmoonai.com → 101.126.151.0（发生在应用层）
+    # 3. TCP 连接: 客户端使用解析后的 IP 地址建立连接（TCP 层只能看到 IP 和端口）
+    # 4. Traefik 接收: 源 IP、目标 IP、目标端口，但没有域名信息（非 TLS 连接无 SNI）
+    #
+    # 解决方案：为什么需要两个匹配规则？
+    # 
+    # Traefik 的路由匹配是按顺序进行的，第一个匹配成功的规则会被使用。
+    # 
+    # 规则1: HostSNI(`llmops.sunmoonai.com`)
+    #   - 作用：匹配 TLS 连接，且 TLS 握手中的 SNI 值为 www.sunmoonai.com
+    #   - 为什么需要：如果客户端使用 TLS 连接，Traefik 可以从 SNI 中读取域名并精确匹配
+    # 
+    # 规则2: HostSNI(`*`)
+    #   - 作用：匹配所有其他情况（通配符匹配）
+    #   - 为什么需要：
+    #     * 非 TLS 连接：没有 SNI 信息，规则1无法匹配，需要规则2兜底
+    #     * 通过 IP 访问：没有域名，规则1无法匹配，需要规则2兜底
+    #     * 其他域名：SNI 不是 www.sunmoonai.com，规则1不匹配，需要规则2兜底
+    #   - 为什么不能用 IP 地址匹配（如 HostSNI(`101.126.151.0`)）？
+    #     * HostSNI 只能匹配 SNI 中的域名，不能匹配 IP 地址
+    #     * SNI（Server Name Indication）是 TLS 扩展，只包含域名，不包含 IP
+    #     * 非 TLS 连接根本没有 SNI，Traefik 无法获取任何域名或 IP 信息
+    #     * 即使客户端通过 IP 地址连接，Traefik 也无法从 SNI 中读取 IP
+    #     * 因此必须使用通配符 `*` 来匹配所有没有 SNI 或 SNI 不匹配的情况
+    # 
+    # 注意：由于两个规则都转发到同一个服务，实际上规则1是冗余的。
+    # 如果所有连接都转发到同一服务，可以简化为只使用规则2（通配符）。
+    #
+    # 工作流程示例：
+    # 场景1 - 客户端使用域名连接（非 TLS）:
+    #   1. redis-cli -h llmops.sunmoonai.com -p 30446
+    #   2. DNS 解析: llmops.sunmoonai.com → 101.126.151.0
+    #   3. TCP 连接: 客户端 → 101.126.151.0:30446（无 SNI）
+    #   4. Traefik: 无 SNI 信息 → HostSNI(`llmops.sunmoonai.com`) 不匹配 → HostSNI(`*`) 匹配 ✅
+    #   5. 转发: Traefik → redis-sunmoonai-master:6379
+    #
+    # 场景2 - 客户端使用 IP 地址连接:
+    #   1. redis-cli -h 101.126.151.0 -p 30446
+    #   2. TCP 连接: 客户端 → 101.126.151.0:30446（无域名，无 SNI）
+    #   3. Traefik: 无 SNI 信息 → HostSNI(`www.sunmoonai.com`) 不匹配 → HostSNI(`*`) 匹配 ✅
+    #   4. 转发: Traefik → redis-sunmoonai-master:6379
+    #
+    # 场景3 - 客户端使用 TLS 连接（有 SNI）:
+    #   1. redis-cli --tls -h www.sunmoonai.com -p 30446
+    #   2. DNS 解析: llmops.sunmoonai.com → 101.126.151.0
+    #   3. TLS 握手: 客户端发送 SNI = "www.sunmoonai.com"
+    #   4. Traefik: 读取 SNI = "llmops.sunmoonai.com" → HostSNI(`llmops.sunmoonai.com`) 匹配 ✅
+    #   5. 转发: Traefik → redis-sunmoonai-master:6379
+    # =============================================================================
+    
+    # 显式匹配域名（TLS 连接且有 SNI）
+    # 注意：如果启用此规则而不使用通配符规则，则只有使用 TLS 连接且 SNI 匹配的域名才能连接
+    # - 非 TLS 连接会被拒绝（没有 SNI，无法匹配）
+    # - 通过 IP 地址连接会被拒绝（没有 SNI，无法匹配）
+    # - 其他域名的 TLS 连接会被拒绝（SNI 不匹配）
+    # - match: HostSNI(`{{REDIS_EXTERNAL_HOST}}`)
+    #   services:
+    #     # 注意：SERVICE_NAME 和 SERVICE_PORT 不是配置项，而是从 Kubernetes Service 中动态获取
+    #     # - SERVICE_NAME: 从主配置文件的 REDIS_PROJECT_ID 构建（格式：redis-{project_id}）
+    #     # - SERVICE_PORT: 从 Kubernetes Service 的 spec.ports[0].port 字段动态获取
+    #     - name: {{SERVICE_NAME}}
+    #       port: {{SERVICE_PORT}}
+    
+    # 通配符匹配所有连接（非 TLS 连接、通过 IP 访问、所有域名等）
+    - match: HostSNI(`*`)
+      services:
+        # 注意：SERVICE_NAME 和 SERVICE_PORT 不是配置项，而是从 Kubernetes Service 中动态获取
+        # - SERVICE_NAME: 从主配置文件的 REDIS_PROJECT_ID 构建（格式：redis-{project_id}）
+        # - SERVICE_PORT: 从 Kubernetes Service 的 spec.ports[0].port 字段动态获取
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}

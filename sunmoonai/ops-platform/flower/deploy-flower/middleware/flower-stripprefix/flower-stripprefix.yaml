@@ -1,0 +1,14 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: flower-stripprefix
+  namespace: ops-platform-dev
+  labels:
+    app: ops-platform-ingress
+    component: flower-stripprefix
+    project: sunmoonai
+spec:
+  stripPrefix:
+    prefixes:
+      - "/flower"
+

@@ -1,0 +1,136 @@
+# Elasticsearch 生产环境配置
+# 基于官方 values.yaml 进行生产环境优化
+
+# 全局配置
+global:
+  # 禁用 Kibana 子图表，单独部署
+  kibanaEnabled: false
+  # 设置默认存储类
+  defaultStorageClass: "nfs-storage"
+
+# 集群配置
+clusterName: elasticsearch-prod
+
+# Master 节点配置（生产环境：3节点高可用）
+master:
+  replicaCount: 3
+  resourcesPreset: "medium"
+  resources:
+    requests:
+      cpu: 1
+      memory: 2Gi
+    limits:
+      cpu: 2
+      memory: 4Gi
+  heapSize: 1g
+
+# Data 节点配置（生产环境：3节点）
+data:
+  replicaCount: 3
+  resourcesPreset: "large"
+  resources:
+    requests:
+      cpu: 2
+      memory: 4Gi
+    limits:
+      cpu: 4
+      memory: 8Gi
+  heapSize: 2g
+
+# Coordinating 节点配置（生产环境：2节点）
+coordinating:
+  replicaCount: 2
+  resourcesPreset: "medium"
+  resources:
+    requests:
+      cpu: 1
+      memory: 2Gi
+    limits:
+      cpu: 2
+      memory: 4Gi
+  heapSize: 1g
+
+# Ingest 节点配置（生产环境：2节点）
+ingest:
+  replicaCount: 2
+  resourcesPreset: "medium"
+  resources:
+    requests:
+      cpu: 1
+      memory: 2Gi
+    limits:
+      cpu: 2
+      memory: 4Gi
+  heapSize: 1g
+
+# 持久化存储配置
+master:
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: "nfs-storage"
+
+data:
+  persistence:
+    enabled: true
+    size: 100Gi
+    storageClass: "nfs-storage"
+
+# 服务配置
+service:
+  type: ClusterIP
+  ports:
+    restAPI: 9200
+    transport: 9300
+
+# 安全配置（生产环境：启用安全）
+auth:
+  enabled: true
+  elasticPassword: "changeme"
+  kibanaPassword: "changeme"
+
+# 监控配置（生产环境：启用）
+metrics:
+  enabled: true
+  resourcesPreset: "small"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# 系统配置
+sysctlImage:
+  enabled: true
+  resourcesPreset: "nano"
+
+# 网络策略
+networkPolicy:
+  enabled: true
+
+# Pod 反亲和性配置
+master:
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: elasticsearch
+              app.kubernetes.io/component: master
+          topologyKey: kubernetes.io/hostname
+
+data:
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: elasticsearch
+              app.kubernetes.io/component: data
+          topologyKey: kubernetes.io/hostname

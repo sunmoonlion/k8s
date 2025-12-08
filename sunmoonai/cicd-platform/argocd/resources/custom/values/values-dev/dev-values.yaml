@@ -1,0 +1,249 @@
+# ArgoCD 开发环境配置
+# 基于 Bitnami ArgoCD 3.1.1
+
+# ========================================
+# 镜像配置
+# ========================================
+image:
+  pullPolicy: IfNotPresent
+  tag: "3.1.1-debian-12-r0"
+
+# ========================================
+# 认证配置
+# ========================================
+auth:
+  enabled: true
+  adminUsername: "admin"
+  adminPassword: "sunmoonai_argocd_2025!"
+  dex:
+    enabled: false
+    image:
+      tag: "2.43.1-debian-12-r8"
+  tls:
+    enabled: false
+
+# ========================================
+# 持久化配置
+# ========================================
+persistence:
+  enabled: true
+  storageClass: "standard"
+  accessMode: ReadWriteOnce
+  size: "5Gi"
+  mountPath: "/opt/bitnami/argocd"
+
+# ========================================
+# 资源配置
+# ========================================
+resources:
+  limits:
+    cpu: "500m"
+    memory: "1Gi"
+  requests:
+    cpu: "250m"
+    memory: "512Mi"
+
+# ========================================
+# 探针配置
+# ========================================
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  timeoutSeconds: 10
+  failureThreshold: 3
+  successThreshold: 1
+  path: "/healthz"
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+  path: "/healthz"
+
+# ========================================
+# 监控配置
+# ========================================
+metrics:
+  enabled: false
+  serviceMonitor:
+    enabled: false
+    interval: "30s"
+    scrapeTimeout: "10s"
+
+# ========================================
+# 网络策略配置
+# ========================================
+networkPolicy:
+  enabled: false
+
+# ========================================
+# 自动扩缩容配置
+# ========================================
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+# ========================================
+# 备份配置
+# ========================================
+backup:
+  enabled: false
+  schedule: "0 2 * * *"
+  retention: "7d"
+
+# ========================================
+# ArgoCD 特定配置
+# ========================================
+argocd:
+  # 服务器配置
+  server:
+    host: "0.0.0.0"
+    port: 8080
+    name: "sunmoonai-dev-argocd"
+    basePath: ""
+    rewriteBasePath: false
+    insecure: true
+    extraArgs: "--insecure"
+  
+  # 仓库服务器配置
+  repoServer:
+    parallelismLimit: 5
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "1Gi"
+      requests:
+        cpu: "250m"
+        memory: "512Mi"
+  
+  # 应用控制器配置
+  applicationController:
+    parallelismLimit: 5
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "1Gi"
+      requests:
+        cpu: "250m"
+        memory: "512Mi"
+  
+  # 日志配置
+  logging:
+    verbose: true
+    level: "debug"
+  
+  # 高可用配置
+  ha:
+    enabled: false
+    replicas: 1
+  
+  # Redis 配置
+  redis:
+    enabled: true
+    image:
+      tag: "8.2.1-debian-12-r0"
+    auth:
+      enabled: false
+      password: ""
+
+# ========================================
+# 服务配置
+# ========================================
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+  httpsPort: 443
+  annotations: {}
+  labels:
+    environment: "development"
+    app: "argocd"
+
+# ========================================
+# Ingress 配置
+# ========================================
+ingress:
+  enabled: false
+
+# ========================================
+# 安全上下文配置
+# ========================================
+securityContext:
+  enabled: false
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
+  runAsNonRoot: true
+
+podSecurityContext:
+  enabled: false
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
+  runAsNonRoot: true
+
+# ========================================
+# 节点选择器和容忍度
+# ========================================
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# ========================================
+# 标签和注解
+# ========================================
+labels:
+  environment: "development"
+  app: "argocd"
+  version: "3.1.1"
+
+annotations:
+  environment: "development"
+  deployment-type: "helm"
+
+# ========================================
+# 环境变量
+# ========================================
+extraEnvVars:
+  - name: ARGOCD_SERVER_INSECURE
+    value: "true"
+  - name: ARGOCD_LOGGING_VERBOSE
+    value: "true"
+  - name: ARGOCD_LOGGING_LEVEL
+    value: "debug"
+
+extraEnvVarsCM: ""
+extraEnvVarsSecret: ""
+
+# ========================================
+# 卷挂载
+# ========================================
+extraVolumes: []
+extraVolumeMounts: []
+
+# ========================================
+# 初始化容器
+# ========================================
+initContainers: []
+
+# ========================================
+# 侧边容器
+# ========================================
+sidecars: []
+
+# ========================================
+# 生命周期钩子
+# ========================================
+lifecycleHooks: {}
+
+# ========================================
+# 终止宽限期
+# ========================================
+terminationGracePeriodSeconds: 30

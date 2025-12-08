@@ -1,0 +1,321 @@
+# Traefik 开发环境配置
+# 基于官方 Traefik Helm Chart 结构
+
+# ============================================================================
+# 全局配置
+# ============================================================================
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# ============================================================================
+# 镜像配置
+# ============================================================================
+image:
+  registry: docker.io
+  repository: traefik
+  tag: "v3.5.2"
+  pullPolicy: IfNotPresent
+
+# ============================================================================
+# 通用标签
+# ============================================================================
+commonLabels: {}
+
+# ============================================================================
+# 部署配置
+# ============================================================================
+deployment:
+  enabled: true
+  kind: Deployment
+  replicas: 1  # 开发环境单副本
+  terminationGracePeriodSeconds: 60
+  minReadySeconds: 0
+  # 不使用 sidecar 容器，Traefik 主容器直接使用 CAP_NET_BIND_SERVICE 能力绑定 80/443 端口
+  # 注意：在某些容器运行时（如 containerd）或内核配置中，CAP_NET_BIND_SERVICE 可能无法正常工作
+  # 如果遇到权限问题，可能需要检查容器运行时和内核配置
+  initContainers: []
+  additionalContainers: []
+
+
+# ============================================================================
+# 服务配置
+# ============================================================================
+service:
+  type: NodePort  # 使用 NodePort 模式，HTTP/HTTPS 通过 NodePort 暴露
+  # HTTP/HTTPS 通过 NodePort（30080/30443）暴露，可通过 iptables 转发标准端口
+
+# ============================================================================
+# 入口点配置
+# ============================================================================
+ports:
+  # Traefik Dashboard 端口
+  traefik:
+    port: 8080  # Dashboard 端口，与 web entryPoint 不同，避免冲突
+    expose:
+      default: false
+    exposedPort: 8080
+    protocol: TCP
+
+  # Prometheus Metrics 端口
+  metrics:
+    port: 9100
+    expose:
+      default: false
+    exposedPort: 9100
+    protocol: TCP
+
+  # HTTP 入口点
+  # 注意：容器内端口（port）可以是任意端口，无权限问题
+  # 问题在于节点上的端口绑定：NodePort 不能设置为 80（Kubernetes 限制在 30000-32767）
+  # 如果要使用 hostPort 在节点上绑定 80，需要 root 权限或 CAP_NET_BIND_SERVICE
+  # 因此使用 NodePort 30080，然后通过 iptables 转发 80 -> 30080（可选）
+  # 使用 8081 而不是 8080，避免与 Dashboard 端口冲突
+  # 注意：protocol 必须是 TCP（Kubernetes 限制），Traefik 会根据 entryPoint 名称（web）自动识别为 HTTP entryPoint
+  web:
+    port: 8081  # Traefik 容器内监听端口（可以是任意端口，无权限问题，避免与 Dashboard 8080 冲突）
+    expose:
+      default: true
+    exposedPort: 80  # Service 端口（集群内访问）
+    nodePort: 30080  # NodePort 端口（外部访问，不能设置为 80）
+    protocol: TCP  # Kubernetes 容器端口协议必须是 TCP/UDP/SCTP，Traefik 会根据 entryPoint 名称自动识别为 HTTP
+
+  # HTTPS 入口点
+  # 注意：容器内端口（port）可以是任意端口，无权限问题
+  # 问题在于节点上的端口绑定：NodePort 不能设置为 443（Kubernetes 限制在 30000-32767）
+  # 如果要使用 hostPort 在节点上绑定 443，需要 root 权限或 CAP_NET_BIND_SERVICE
+  # 因此使用 NodePort 30443，然后通过 iptables 转发 443 -> 30443（可选）
+  # 注意：protocol 必须是 TCP（Kubernetes 限制），Traefik 会根据 entryPoint 名称（websecure）自动识别为 HTTPS entryPoint
+  websecure:
+    port: 8443  # Traefik 容器内监听端口（可以是任意端口，无权限问题）
+    expose:
+      default: true
+    exposedPort: 443  # Service 端口（集群内访问）
+    nodePort: 30443  # NodePort 端口（外部访问，不能设置为 443）
+    protocol: TCP  # Kubernetes 容器端口协议必须是 TCP/UDP/SCTP，Traefik 会根据 entryPoint 名称自动识别为 HTTPS
+
+  # PostgreSQL TCP 代理端口
+  # 使用 NodePort 模式，通过 NodePort 暴露
+  # 访问示例: postgresql://101.126.151.0:30444/your_database_name
+  # 或使用 psql: psql -h 101.126.151.0 -p 30444 -U username -d database_name
+  postgresql:
+    port: 5432  # Traefik 内部端口（PostgreSQL 默认端口）
+    expose:
+      default: true
+    exposedPort: 30444  # 外部访问端口（NodePort）
+    nodePort: 30444  # NodePort
+    protocol: TCP
+
+  # MongoDB TCP 代理端口
+  # 使用 NodePort 模式，通过 NodePort 暴露
+  # 访问示例: mongodb://101.126.151.0:30445/your_database_name
+  # 或使用 mongosh: mongosh mongodb://101.126.151.0:30445/your_database_name
+  mongodb:
+    port: 27017  # Traefik 内部端口（MongoDB 默认端口）
+    expose:
+      default: true
+    exposedPort: 30445  # 外部访问端口（NodePort）
+    nodePort: 30445  # NodePort
+    protocol: TCP
+
+  # Redis TCP 代理端口
+  # 使用 NodePort 模式，通过 NodePort 暴露
+  # 访问示例: redis://101.126.151.0:30446/0
+  # 或使用 redis-cli: redis-cli -h 101.126.151.0 -p 30446
+  redis:
+    port: 6379  # Traefik 内部端口（Redis 默认端口）
+    expose:
+      default: true
+    exposedPort: 30446  # 外部访问端口（NodePort）
+    nodePort: 30446  # NodePort
+    protocol: TCP
+
+
+# ============================================================================
+# 提供者配置
+# ============================================================================
+providers:
+  kubernetesCRD:
+    enabled: true
+    allowCrossNamespace: false
+    allowExternalNameServices: false
+    allowEmptyServices: true
+    ingressClass: ""
+    namespaces: []
+    nativeLBByDefault: false
+
+  kubernetesIngress:
+    enabled: true
+    allowExternalNameServices: false
+    allowEmptyServices: true
+    ingressClass: ""
+    namespaces: []
+
+# ============================================================================
+# Dashboard 配置
+# ============================================================================
+ingressRoute:
+  dashboard:
+    enabled: true
+    annotations: {}
+    labels: {}
+    matchRule: PathPrefix(`/dashboard`) || PathPrefix(`/api`)
+    services:
+      - name: api@internal
+        kind: TraefikService
+    entryPoints: ["traefik"]
+    middlewares: []
+    tls: {}
+
+# ============================================================================
+# 监控配置
+# ============================================================================
+metrics:
+  addInternals: false
+  prometheus:
+    entryPoint: metrics
+    addEntryPointsLabels: true
+    addRoutersLabels: false
+    addServicesLabels: true
+    buckets: "0.1,0.3,1.2,5.0"
+# ============================================================================
+# 日志配置
+# ============================================================================
+logs:
+  general:
+    format: "json"
+    level: "INFO"
+    filePath: ""
+    noColor: false
+  access:
+    enabled: true
+    format: "json"
+    bufferingSize: 100
+    timezone: ""
+
+# ============================================================================
+# 持久化存储
+# ============================================================================
+persistence:
+  enabled: true
+  storageClass: "nfs-1"
+  size: "1Gi"
+  accessMode: ReadWriteOnce
+
+# ============================================================================
+# 资源限制
+# ============================================================================
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# =========================================================================
+# 调度约束：将 Traefik 固定到 node-size=small（节点3）
+# =========================================================================
+# nodeSelector:
+#   node-size: small
+
+tolerations:
+  - key: size
+    operator: Equal
+    value: small
+    effect: PreferNoSchedule
+
+# ============================================================================
+# RBAC 配置
+# ============================================================================
+rbac:
+  enabled: true
+  namespaced: false
+
+# ============================================================================
+# 网络策略
+# ============================================================================
+networkPolicy:
+  enabled: true
+
+# ============================================================================
+# 证书解析器配置（开发环境使用自签名）
+# ============================================================================
+certificatesResolvers: {}
+  # 开发环境暂时不使用 Let's Encrypt
+  # letsencrypt:
+  #   acme:
+  #     email: admin@sunmoonai.local
+  #     storage: /data/acme.json
+  #     httpChallenge:
+  #       entryPoint: web
+
+# ============================================================================
+# 实验性功能
+# ============================================================================
+experimental:
+  plugins: {}
+  localPlugins: {}
+
+# ============================================================================
+# 超时配置
+# ============================================================================
+# 全局超时配置（替代 timeout 中间件）
+# 为支持大文件上传（如大型Docker镜像），需要增加读写超时时间
+additionalArguments:
+  # 超时配置
+  # entryPoint 端口使用标准端口 80/443，通过 CAP_NET_BIND_SERVICE 能力绑定
+  - "--entrypoints.web.transport.respondingTimeouts.readTimeout=3600s"
+  - "--entrypoints.web.transport.respondingTimeouts.writeTimeout=3600s"
+  - "--entrypoints.web.transport.respondingTimeouts.idleTimeout=3600s"
+  - "--entrypoints.websecure.transport.respondingTimeouts.readTimeout=3600s"
+  - "--entrypoints.websecure.transport.respondingTimeouts.writeTimeout=3600s"
+  - "--entrypoints.websecure.transport.respondingTimeouts.idleTimeout=3600s"
+  - "--entrypoints.harbor.transport.respondingTimeouts.readTimeout=3600s"
+  - "--entrypoints.harbor.transport.respondingTimeouts.writeTimeout=3600s"
+  - "--entrypoints.harbor.transport.respondingTimeouts.idleTimeout=3600s"
+
+# 通过 tlsStore 使用 Kubernetes Secret 作为默认证书（无需挂载文件）
+tlsStore:
+  default:
+    defaultCertificate:
+      secretName: traefik-tls-secret
+  # 仅通过 TLSStore 使用 Secret 作为默认证书（不挂载文件）
+
+# ============================================================================
+# 其他配置
+# ============================================================================
+# 健康检查配置
+healthchecksPort: 8080
+healthchecksHost: ""
+healthchecksScheme: HTTP
+
+# 安全上下文
+# 使用非 root 用户（65532），通过 CAP_NET_BIND_SERVICE 能力绑定特权端口（80/443）
+# 这是 Linux 标准做法：非 root 用户可以通过 capabilities 绑定特权端口
+# 参考：https://github.com/traefik/traefik-helm-chart/blob/master/traefik/values.yaml
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]  # 删除所有能力，最小权限原则
+    add:
+      - NET_BIND_SERVICE  # 允许非 root 用户绑定特权端口（80/443）
+  readOnlyRootFilesystem: false  # 需要可写文件系统以支持某些功能
+
+# Pod 安全上下文
+# 使用非 root 用户（65532），通过 CAP_NET_BIND_SERVICE 能力绑定特权端口
+# 符合 Traefik 官方安全实践和 Linux capabilities 机制
+# 参考：https://github.com/traefik/traefik-helm-chart/blob/master/traefik/values.yaml
+podSecurityContext:
+  runAsUser: 65532  # 非 root 用户
+  runAsGroup: 65532  # 非 root 组
+  runAsNonRoot: true  # 强制非 root 用户（符合安全最佳实践）
+  fsGroup: 65532  # 文件系统组
+  fsGroupChangePolicy: "OnRootMismatch"  # 仅在根不匹配时更改权限
+
+# 网络配置
+# 注意：在 containerd + hostNetwork 模式下，CAP_NET_BIND_SERVICE 可能无法正常工作
+# 因此改为使用 NodePort 模式，Traefik 监听非特权端口（8080/8443）
+# 外部通过 NodePort（30080/30443）访问，或通过 iptables 转发标准端口（80/443）到 NodePort
+# TCP 服务（PostgreSQL/MongoDB/Redis）仍通过 NodePort 访问
+hostNetwork: false  # 改为 false，使用 NodePort 模式

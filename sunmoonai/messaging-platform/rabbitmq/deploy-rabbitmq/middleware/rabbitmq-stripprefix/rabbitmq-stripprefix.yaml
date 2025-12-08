@@ -1,0 +1,14 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: rabbitmq-stripprefix
+  namespace: messaging-platform-dev
+  labels:
+    app: messaging-platform-ingress
+    component: rabbitmq-stripprefix
+    project: sunmoonai
+spec:
+  stripPrefix:
+    prefixes:
+      - "/rabbitmq"
+

@@ -1,0 +1,140 @@
+# Default values for flower
+# This is a YAML-formatted file.
+
+# Global image registry and pull secrets
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# Number of replicas
+replicaCount: 1
+
+# Name override
+nameOverride: ""
+fullnameOverride: ""
+
+# Pod labels
+podLabels: {}
+
+# Pod annotations
+podAnnotations: {}
+
+# Image configuration
+image:
+  repository: mher/flower
+  pullPolicy: IfNotPresent
+  tag: "2.0.1"
+
+# Image pull secrets
+imagePullSecrets: []
+
+# Service account
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+# Pod security context
+podSecurityContext: {}
+
+# Container security context
+securityContext: {}
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 5555
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+# Resources
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# Liveness probe
+livenessProbe:
+  httpGet:
+    path: /
+    port: 5555
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+# Readiness probe
+readinessProbe:
+  httpGet:
+    path: /
+    port: 5555
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+  successThreshold: 1
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Volumes
+volumes: []
+
+# Volume mounts
+volumeMounts: []
+
+# Environment variables
+env: []
+  # - name: FLOWER_BROKER_URL
+  #   value: "amqp://user:password@rabbitmq:5672//"
+  # - name: FLOWER_BROKER_API
+  #   value: "http://user:password@rabbitmq:15672/api/"
+
+# Command arguments
+args: []
+  # - "--broker=amqp://user:password@rabbitmq:5672//"
+  # - "--port=5555"
+  # - "--broker_api=http://user:password@rabbitmq:15672/api/"
+
+# Existing secret for broker credentials
+existingSecret: ""
+secretKeys:
+  brokerUrl: "broker-url"
+  brokerApiUrl: "broker-api-url"
+  basicAuthUser: "basic-auth-user"
+  basicAuthPassword: "basic-auth-password"
+
+# Basic auth (Flower web UI authentication)
+basicAuth:
+  enabled: false
+  username: ""
+  password: ""
+
+# Autoscaling
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+

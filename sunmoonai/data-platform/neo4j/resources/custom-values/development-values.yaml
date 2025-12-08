@@ -1,0 +1,101 @@
+# Neo4j development values (internal access)
+# Copy from dev-values with advertisedHost for internal DNS
+
+global:
+  imageRegistry: "www.sunmoonai.com:30443"
+  imagePullSecrets:
+    - name: harbor-registry-secret
+  security:
+    allowInsecureImages: true
+  storageClass: "nfs-2"
+
+image:
+  registry: www.sunmoonai.com:30443
+  repository: k8s-images/neo4j
+  tag: "5.26.11-debian-12-r0"
+  pullPolicy: IfNotPresent
+# 关于镜像来源（说明）：
+# - 部分 Bitnami 历史版本已从官方仓库迁移到 bitnamilegacy 命名空间，
+#   将 bitnamilegacy/neo4j:5.26.11-debian-12-r0 retag 推送到 Harbor 后统一引用。
+# - 需配合 allowInsecureImages 与 harbor-registry-secret，以保证 Chart 校验与拉取。
+
+# Bitnami chart expects this root key
+advertisedHost: neo4j-sunmoonai.data-platform-dev.svc.cluster.local
+
+auth:
+  enabled: true
+  existingSecret: "neo4j-secrets"
+  secretKeys:
+    password: "neo4j-password"
+  database: "sunmoonai_dev"
+
+primary:
+  persistence:
+    enabled: true
+    storageClass: "nfs-2"
+    size: "20Gi"
+    accessModes:
+      - "ReadWriteOnce"
+  service:
+    type: "ClusterIP"
+    ports:
+      http: 7474
+      https: 6477
+      bolt: 7687
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+    successThreshold: 1
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 5
+    successThreshold: 1
+
+neo4j:
+  memory:
+    heap:
+      initial: "512m"
+      max: "512m"
+    pagecache: "512m"
+  plugins:
+    - "graph-data-science"
+    - "apoc"
+  security:
+    procedures:
+      allowlist: "gds.*, apoc.*"
+      unrestricted: "gds.*, apoc.*"
+  server:
+    config:
+      strict_validation: false
+      default_listen_address: "0.0.0.0"
+      connector:
+        bolt:
+          listen_address: "0.0.0.0:7687"
+        http:
+          listen_address: ":7474"
+          advertised_address: ":7474"
+        https:
+          listen_address: ":6477"
+          advertised_address: ":6477"
+
+metrics:
+  enabled: false
+
+ingress:
+  enabled: false
+
+networkPolicy:
+  enabled: false

@@ -1,0 +1,19 @@
+apiVersion: v2
+appVersion: "2.0.1"
+description: Flower is a web based tool for monitoring and administrating Celery clusters
+home: https://github.com/mher/flower
+icon: https://raw.githubusercontent.com/mher/flower/master/flower/static/img/favicon.ico
+keywords:
+- celery
+- flower
+- monitoring
+- task-queue
+maintainers:
+- email: flower@example.com
+  name: Flower Maintainers
+name: flower
+sources:
+- https://github.com/mher/flower
+type: application
+version: 1.0.0
+

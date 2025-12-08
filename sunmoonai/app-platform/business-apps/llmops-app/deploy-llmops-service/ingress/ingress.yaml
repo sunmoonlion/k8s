@@ -1,0 +1,53 @@
+# Web Backend API 路由配置
+# 通过 Traefik 暴露 Web Backend API
+#
+# 当前功能：
+# - 路径重写：/api/v1 → /
+# - 统一入口管理：通过 Traefik 统一管理所有 Web 界面
+# - 基础负载均衡：支持多副本负载均衡
+#
+# 未来扩展功能（预留接口）：
+# - 认证授权：OAuth2、JWT 认证
+# - 连接限流：防止连接数过多
+# - 监控统计：请求数、响应时间监控
+# - TLS 加密：HTTPS 访问
+#
+# 使用方式：
+# - https://{{NODE_IP}}:30443/api/v1
+# - 或 https://{{UNIFIED_HOST}}/api/v1 (如果配置了 DNS)
+#
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: llmops-service-ingress
+  namespace: {{NAMESPACE}}
+  labels:
+    app: app-platform-ingress
+    component: llmops-service
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    # HTTPS 路由 (端口 30443)
+    # 主路由：处理所有 /api/v1 开头的路径
+    - match: Host(`{{NODE_IP}}`) && PathPrefix(`/api/v1`)
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+      middlewares:
+        - name: llmops-service-stripprefix
+    # 统一域名路由
+    - match: Host(`{{UNIFIED_HOST}}`) && PathPrefix(`/api/v1`)
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+      middlewares:
+        - name: llmops-service-stripprefix
+  # TLS 配置
+  # 注意：Traefik 的 TLSStore 配置了 defaultCertificate，会自动使用 ingress-platform-dev/traefik-tls-secret
+  # 如果需要显式指定，可以使用跨命名空间引用：ingress-platform-dev/traefik-tls-secret
+  # 但通常不需要，因为 TLSStore 的 defaultCertificate 会自动处理
+  # tls:
+  #   secretName: ingress-platform-dev/traefik-tls-secret

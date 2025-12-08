@@ -1,0 +1,157 @@
+# RedisInsight 开发环境配置
+# 基于 RedisInsight Chart 结构
+# 这些变量通过部署脚本从 deploy-redisinsight.conf 文件中读取并替换
+
+# ============================================================================
+# 通用配置
+# ============================================================================
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+# 通用标签
+# 注意：不要覆盖 app.kubernetes.io/name 和 app.kubernetes.io/instance，这些由 Chart 的 selectorLabels 自动生成
+podLabels:
+  app.kubernetes.io/component: "redisinsight"
+  app.kubernetes.io/environment: "{{ENVIRONMENT}}"
+  app.kubernetes.io/part-of: platform
+  app.kubernetes.io/managed-by: helm
+
+# ============================================================================
+# 镜像配置
+# ============================================================================
+image:
+  repository: redis/redisinsight
+  pullPolicy: IfNotPresent
+  tag: "{{REDISINSIGHT_IMAGE_VERSION}}"
+
+imagePullSecrets: []
+  # - name: "{{REDISINSIGHT_IMAGE_PULL_SECRET_NAME}}"
+
+# ============================================================================
+# Service Account 配置
+# ============================================================================
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+# ============================================================================
+# Pod 配置
+# ============================================================================
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+
+# ============================================================================
+# 启动参数配置
+# ============================================================================
+# RedisInsight 官方支持通过 --base-path 参数指定子路径
+# 这是唯一官方支持的方式，可以避免静态资源和 API 路径问题
+args:
+  - --base-path=/redisinsight
+
+# ============================================================================
+# 环境变量配置
+# ============================================================================
+# RedisInsight 支持在反向代理后运行，需要设置以下环境变量：
+# - RIPROXYENABLE: 启用代理支持
+# - RITRUSTEDORIGINS: 信任的源地址（可选）
+env:
+  - name: RIPROXYENABLE
+    value: "true"
+  - name: RI_PROXY_PATH
+    value: "/redisinsight"
+  - name: RITRUSTEDORIGINS
+    value: "https://www.sunmoonai.com,https://115.190.153.150"
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# ============================================================================
+# Service 配置
+# ============================================================================
+service:
+  type: ClusterIP
+  port: 5540
+
+# ============================================================================
+# Ingress 配置
+# ============================================================================
+ingress:
+  enabled: true
+  className: ""
+  annotations:
+    # Traefik ingress annotations
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+  hosts:
+    - host: "{{REDISINSIGHT_UNIFIED_HOST}}"
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+    # TLS termination is handled by Traefik
+    # 如需配置 TLS，取消下面的注释
+    # - secretName: redisinsight-tls
+    #   hosts:
+    #     - "{{REDISINSIGHT_UNIFIED_HOST}}"
+
+# ============================================================================
+# 资源限制（开发环境）
+# ============================================================================
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# ============================================================================
+# 探针配置
+# ============================================================================
+livenessProbe:
+  httpGet:
+    path: /redisinsight
+    port: http
+
+readinessProbe:
+  httpGet:
+    path: /redisinsight
+    port: http
+
+# ============================================================================
+# 自动扩缩容（开发环境禁用）
+# ============================================================================
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+# ============================================================================
+# 其他配置
+# ============================================================================
+# 额外卷
+volumes: []
+
+# 额外卷挂载
+volumeMounts: []
+
+# 节点选择器
+nodeSelector: {}
+
+# 容忍度
+tolerations: []
+
+# 亲和性
+affinity: {}
+

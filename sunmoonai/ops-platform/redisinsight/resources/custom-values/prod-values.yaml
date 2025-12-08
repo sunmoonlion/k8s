@@ -1,0 +1,129 @@
+# RedisInsight 生产环境配置 - 直接写具体值，不做模板替换
+# 基于 RedisInsight Chart 结构
+
+# ============================================================================
+# 通用配置
+# ============================================================================
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+# 通用标签
+# 注意：不要覆盖 app.kubernetes.io/name 和 app.kubernetes.io/instance，这些由 Chart 的 selectorLabels 自动生成
+podLabels:
+  app.kubernetes.io/component: "redisinsight"
+  app.kubernetes.io/environment: "production"
+  app.kubernetes.io/part-of: platform
+  app.kubernetes.io/managed-by: helm
+
+# ============================================================================
+# 镜像配置
+# ============================================================================
+image:
+  repository: redis/redisinsight
+  pullPolicy: IfNotPresent
+  tag: "2.70"
+
+imagePullSecrets: []
+
+# ============================================================================
+# Service Account 配置
+# ============================================================================
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+# ============================================================================
+# Pod 配置
+# ============================================================================
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# ============================================================================
+# Service 配置
+# ============================================================================
+service:
+  type: ClusterIP
+  port: 5540
+
+# ============================================================================
+# Ingress 配置
+# ============================================================================
+ingress:
+  enabled: true
+  className: ""
+  annotations:
+    # Traefik ingress annotations
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+  hosts:
+    - host: "{{REDISINSIGHT_UNIFIED_HOST}}"
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+# ============================================================================
+# 资源限制（生产环境）
+# ============================================================================
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# ============================================================================
+# 探针配置（生产环境，更保守的设置）
+# ============================================================================
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+
+# ============================================================================
+# 自动扩缩容（生产环境）
+# ============================================================================
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+  # targetMemoryUtilizationPercentage: 80
+
+# ============================================================================
+# 其他配置
+# ============================================================================
+# 额外卷
+volumes: []
+
+# 额外卷挂载
+volumeMounts: []
+
+# 节点选择器
+nodeSelector: {}
+
+# 容忍度
+tolerations: []
+
+# 亲和性
+affinity: {}
+

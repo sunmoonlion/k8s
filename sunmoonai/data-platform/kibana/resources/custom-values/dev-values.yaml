@@ -1,0 +1,134 @@
+# Kibana 开发环境配置
+# 基于官方 values.yaml 进行开发环境优化
+
+# 全局配置
+global:
+  imageRegistry: "harbor.sunmoonai.com:30443"
+  imagePullSecrets:
+    - name: harbor-registry-secret
+  security:
+    allowInsecureImages: true
+
+# 副本数配置
+replicaCount: 1
+
+# 节点选择器（强制部署到节点1）
+nodeSelector:
+  kubernetes.io/hostname: hsy-local-2
+
+# 镜像配置
+image:
+  registry: harbor.sunmoonai.com:30443
+  repository: k8s-images/kibana
+  tag: 9.1.2-debian-12-r0
+  pullPolicy: IfNotPresent
+
+# 资源限制
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 300m
+    memory: 1Gi
+
+# Elasticsearch 连接配置
+elasticsearch:
+  hosts:
+    - elasticsearch-sunmoonai
+  port: 9200
+  security:
+    auth:
+      enabled: false
+
+# 服务配置
+service:
+  type: ClusterIP
+  ports:
+    http: 5601
+
+# 持久化存储（开发环境：禁用）
+persistence:
+  enabled: false
+
+# 安全配置（开发环境：禁用）
+auth:
+  enabled: false
+
+# 网络策略（开发环境：禁用）
+networkPolicy:
+  enabled: false
+
+# 健康检查配置
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 120
+  periodSeconds: 20
+  timeoutSeconds: 10
+  failureThreshold: 6
+  successThreshold: 1
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 90
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+
+# Kibana 配置
+# 注意：官方 Chart 使用 configuration 来配置 Kibana，不是 kibanaConfig
+# 参考官方 values.yaml 中的 configuration 结构
+configuration:
+  server:
+    # 服务器绑定地址（官方默认值：0.0.0.0）
+    host: "0.0.0.0"
+    # 路径前缀配置（用于通过统一域名访问）
+    # 当使用路径前缀路由（如 /kibana）时，需要配置此选项
+    # Kibana 会自己处理 /kibana 路径前缀，不需要 Traefik 的 stripPrefix
+    basePath: "/kibana"
+    # 是否重写 basePath（当使用反向代理时，通常设置为 true）
+    rewriteBasePath: true
+    # 公共基础 URL（可选，如果不设置，Chart 会根据 ingress 配置自动生成）
+    # publicBaseUrl: ""
+
+# ===================== 未来启用安全/密钥（预置占位，默认注释）====================
+# 使用说明：
+# 1) 由统一密管创建下列 Secret（示例名：kibana-secrets），并写入强随机值：
+#    - xpack.security.encryptionKey
+#    - xpack.encryptedSavedObjects.encryptionKey
+#    - xpack.reporting.encryptionKey（如需要）
+# 2) 取消注释本节，并替换 Secret 名称/键名为实际值；升级部署后生效。
+# 3) 若 ES 端启用了安全（用户名/密码或 TLS），请同时在 Kibana 的 elasticsearch 配置块中开启相应项（见下方注释）。
+
+# xpack:
+#   security:
+#     enabled: true
+#     encryptionKey:
+#       # 建议从 Secret 挂载为环境变量或文件，本 Chart 直接支持值注入；为安全请从 Secret 注入：
+#       valueFromSecret: kibana-secrets
+#       key: xpack.security.encryptionKey
+#   encryptedSavedObjects:
+#     encryptionKey:
+#       valueFromSecret: kibana-secrets
+#       key: xpack.encryptedSavedObjects.encryptionKey
+#   reporting:
+#     encryptionKey:
+#       valueFromSecret: kibana-secrets
+#       key: xpack.reporting.encryptionKey
+
+# 若 ES 启用基本认证：
+# elasticsearch:
+#   hosts:
+#     - "https://elasticsearch-sunmoonai:9200"
+#   username:
+#     valueFromSecret: kibana-elasticsearch-auth
+#     key: username
+#   password:
+#     valueFromSecret: kibana-elasticsearch-auth
+#     key: password
+#   ssl:
+#     verificationMode: full
+#     # 引用 ES CA（Secret 中存放 ca.crt）
+#     certificateAuthoritiesSecret: elasticsearch-ca-secret
+#     certificateAuthoritiesSecretKey: ca.crt

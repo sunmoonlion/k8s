@@ -1,0 +1,2 @@
+bitnami/jenkins:2.516.2-debian-12-r0
+bitnami/jenkins-agent:0.3327.0-debian-12-r1

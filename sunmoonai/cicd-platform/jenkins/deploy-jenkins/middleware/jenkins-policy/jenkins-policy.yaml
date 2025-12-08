@@ -1,0 +1,19 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: jenkins-policy
+  namespace: cicd-platform-dev
+  labels:
+    app: cicd-platform-ingress
+    component: jenkins-policy
+    project: sunmoonai
+spec:
+  rateLimit:
+    average: 30
+    burst: 60
+  headers:
+    customRequestHeaders:
+      X-Jenkins-Version: "2.426"
+    customResponseHeaders:
+      X-Jenkins-Status: "active"
+

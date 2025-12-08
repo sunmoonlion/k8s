@@ -1,0 +1,188 @@
+# Jenkins 生产环境配置
+# 基于官方 values.yaml 进行生产环境优化
+
+# 全局配置
+global:
+  imageRegistry: ""
+  defaultStorageClass: "nfs-storage"
+
+# 副本数配置（生产环境：1副本，Jenkins 通常单实例）
+replicaCount: 1
+
+# 镜像配置
+image:
+  registry: docker.io
+  repository: bitnami/jenkins
+  tag: 2.516.2-debian-12-r0
+  pullPolicy: IfNotPresent
+
+# 资源限制
+resources:
+  requests:
+    cpu: "1"
+    memory: "2Gi"
+  limits:
+    cpu: "2"
+    memory: "4Gi"
+
+# 服务配置
+service:
+  type: ClusterIP
+  ports:
+    http: 8080
+    https: 8443
+
+# 持久化存储配置
+persistence:
+  enabled: true
+  size: 50Gi
+  storageClass: "nfs-storage"
+
+# 网络策略（生产环境：启用）
+networkPolicy:
+  enabled: true
+
+# 健康检查配置
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 120
+  periodSeconds: 20
+  timeoutSeconds: 10
+  failureThreshold: 6
+  successThreshold: 1
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+
+# Jenkins 配置
+jenkinsConfig:
+  jenkins:
+    systemMessage: "Jenkins Production Environment"
+    numExecutors: 4
+    scmCheckoutRetryCount: 3
+    mode: NORMAL
+    useSecurity: true
+    remotingSecurity:
+      enabled: true
+
+# 安全配置（生产环境：完整配置）
+auth:
+  enabled: true
+  jenkinsPassword: "changeme"
+
+# 插件配置（生产环境：完整插件集）
+plugins:
+  - workflow-aggregator
+  - git
+  - blueocean
+  - kubernetes
+  - docker-workflow
+  - pipeline-stage-view
+  - build-timeout
+  - credentials-binding
+  - timestamper
+  - ws-cleanup
+  - ant
+  - gradle
+  - workflow-multibranch
+  - pipeline-github-lib
+  - pipeline-stage-view
+  - gitlab-plugin
+  - sonar
+  - junit
+  - test-results-analyzer
+  - htmlpublisher
+  - email-ext
+  - mailer
+  - slack
+  - matrix-auth
+  - pam-auth
+  - ldap
+  - email-ext
+  - build-timeout
+  - credentials-binding
+  - plain-credentials
+  - ssh-credentials
+  - ssh-slaves
+  - matrix-auth
+  - pam-auth
+  - ldap
+  - email-ext
+  - build-timeout
+  - credentials-binding
+  - plain-credentials
+  - ssh-credentials
+  - ssh-slaves
+
+# Agent 配置（生产环境：启用 Kubernetes Agent）
+agent:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: bitnami/jenkins-agent
+    tag: 0.3327.0-debian-12-r1
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+# 配置即代码（生产环境：启用）
+configAsCode:
+  enabled: true
+  defaultConfig: |
+    jenkins:
+      systemMessage: "Jenkins Production Environment - Configuration as Code"
+      numExecutors: 4
+      scmCheckoutRetryCount: 3
+      mode: NORMAL
+      useSecurity: true
+      remotingSecurity:
+        enabled: true
+      securityRealm:
+        local:
+          allowsSignup: false
+          users:
+            - id: "admin"
+              password: "changeme"
+      authorizationStrategy:
+        loggedInUsersCanDoAnything:
+          allowAnonymousRead: false
+
+# 卷权限配置
+volumePermissions:
+  enabled: true
+  resourcesPreset: "nano"
+  resources: {}
+
+# 系统配置
+sysctlImage:
+  enabled: true
+  resourcesPreset: "nano"
+  resources: {}
+
+# Pod 反亲和性配置（生产环境：确保高可用）
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: jenkins
+        topologyKey: kubernetes.io/hostname
+
+# 更新策略
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 1

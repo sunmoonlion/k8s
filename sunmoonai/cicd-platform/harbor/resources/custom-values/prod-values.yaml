@@ -1,0 +1,156 @@
+# 生产环境 Values
+
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+commonLabels:
+  app.kubernetes.io/name: "harbor"
+  app.kubernetes.io/instance: "{{PROJECT_ID}}"
+  app.kubernetes.io/component: "harbor"
+  app.kubernetes.io/environment: "production"
+  app.kubernetes.io/part-of: platform
+  app.kubernetes.io/managed-by: helm
+
+harbor:
+  # 管理员密码
+  adminPassword: "{{ADMIN_PASSWORD}}"
+
+  # 持久化存储
+  persistence:
+    enabled: true
+    persistentVolumeClaim:
+      storageClass: "fast-ssd"
+      size: "100Gi"
+      accessMode: "ReadWriteMany"
+
+  # 服务配置
+  service:
+    type: "LoadBalancer"
+    port: 80
+    httpsPort: 443
+
+  # 资源配置
+  resources:
+    limits:
+      cpu: "4000m"
+      memory: "8Gi"
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+
+  # 副本数配置
+  replicaCount: 3
+
+  # 网络策略
+  networkPolicy:
+    enabled: true
+
+  # 监控配置
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      interval: "15s"
+
+  # 自动扩缩容
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 70
+
+  # TLS 与 Ingress
+  tls:
+    enabled: {{HARBOR_TLS_ENABLED}}
+    secretName: "{{PROJECT_ID}}-harbor-tls"
+
+  ingress:
+    enabled: true
+    className: "nginx"
+    hosts:
+      - host: "{{HARBOR_EXTERNAL_HOST}}"
+        paths:
+          - path: /
+            pathType: Prefix
+
+  # 组件配置
+  trivy:
+    enabled: true
+    replicas: 2
+    resources:
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+
+  notary:
+    enabled: true
+    replicas: 2
+
+  # 外部数据库（按需调整）
+  database:
+    type: external
+    external:
+      host: "{{PROJECT_ID}}-postgresql.{{NAMESPACE}}.svc.cluster.local"
+      port: 5432
+      username: "{{PROJECT_ID}}_harbor"
+      password: "{{PROJECT_ID}}_harbor_$(date +%Y)!"
+      database: "{{PROJECT_ID}}_harbor"
+      sslMode: require
+
+  # 外部 Redis（按需调整）
+  redis:
+    type: external
+    external:
+      host: "{{PROJECT_ID}}-redis.{{NAMESPACE}}.svc.cluster.local"
+      port: 6379
+      password: "{{PROJECT_ID}}_redis_$(date +%Y)!"
+      ssl: false
+
+  # 缓存
+  cache:
+    enabled: true
+    type: redis
+    redis:
+      host: "{{PROJECT_ID}}-redis.{{NAMESPACE}}.svc.cluster.local"
+      port: 6379
+      password: "{{PROJECT_ID}}_redis_$(date +%Y)!"
+      database: 1
+      ssl: false
+
+  # 镜像仓库
+  registry:
+    replicas: 3
+    storage:
+      type: filesystem
+      filesystem:
+        maxthreads: 100
+
+  # 核心/作业/门户/导出器
+  core:
+    replicas: 3
+    secret: "{{PROJECT_ID}}-harbor-core-secret"
+
+  jobservice:
+    replicas: 3
+    maxJobWorkers: 20
+
+  portal:
+    replicas: 3
+
+  exporter:
+    enabled: true
+    replicas: 2
+
+  # 审计
+  audit:
+    enabled: true
+    level: metadata
+    logPath: /var/log/harbor/audit.log
+    maxAge: 30
+    maxBackup: 10
+    maxSize: 100

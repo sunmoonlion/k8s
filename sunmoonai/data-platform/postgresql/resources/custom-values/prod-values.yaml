@@ -1,0 +1,140 @@
+# PostgreSQL 生产环境配置 - 直接写具体值，不做模板替换
+
+# 全局配置
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: "fast-ssd"
+
+# 镜像配置
+image:
+  registry: ""
+  repository: bitnami/postgresql
+  tag: "17.6.0-debian-12-r4"
+  pullPolicy: "IfNotPresent"
+  pullSecrets: []
+
+# 认证配置
+auth:
+  enabled: true
+  postgresPassword: "SunMoonAI_PostgreSQL_2024!"
+  database: "sunmoonai_main"
+  username: "sunmoonai_app"
+  password: "sunmoonai_app_2024!"
+  existingSecret: ""
+  existingSecretPasswordKey: ""
+
+# 主服务配置
+primary:
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: "100Gi"
+    accessModes:
+      - "ReadWriteOnce"
+  
+  service:
+    type: "NodePort"  # 改为 NodePort 以支持对外访问
+    ports:
+      postgresql: 5432
+    nodePorts:
+      postgresql: 30433   # 生产环境使用不同端口，避免与开发环境冲突
+  
+  resources:
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+  
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 5
+    successThreshold: 1
+  
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+    successThreshold: 1
+
+# 副本配置
+readReplicas:
+  replicaCount: 2
+  enabled: true
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: "100Gi"
+    accessModes:
+      - "ReadWriteOnce"
+  
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+
+# 监控配置
+metrics:
+  enabled: true
+  image:
+    registry: ""
+    repository: bitnami/postgresql-exporter
+    tag: "0.17.1-debian-12-r16"
+    pullPolicy: "IfNotPresent"
+  
+  serviceMonitor:
+    enabled: true
+    interval: "15s"
+    scrapeTimeout: "10s"
+
+# 网络策略
+networkPolicy:
+  enabled: true
+
+# 自动扩缩容
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 70
+
+# Ingress 配置 - 通过域名访问
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/backend-protocol: "TCP"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+  hosts:
+    - host: postgresql.sunmoonai.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# 备份配置
+backup:
+  enabled: true
+  schedule: "0 1 * * *"
+  retention: "30d"
+
+# 数据库配置
+postgresqlConfiguration:
+  maxConnections: 200
+  sharedBuffers: "1GB"
+  effectiveCacheSize: "4GB"
+  maintenanceWorkMem: "256MB"

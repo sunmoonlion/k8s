@@ -1,0 +1,33 @@
+# Neo4j TCP 路由配置
+# 通过 Traefik TCP 路由暴露 Neo4j Bolt 协议服务
+#
+# 使用统一域名 + 端口区分，避免需要在 /etc/hosts 中配置多个域名
+# 访问方式（统一域名）：
+# - bolt://www.sunmoonai.com:30099
+# - neo4j://www.sunmoonai.com:30099
+# 或者在应用程序连接字符串中使用：
+# neo4j://www.sunmoonai.com:30099
+#
+# 注意：只需在 /etc/hosts 中添加一条记录即可访问所有服务
+# 示例：101.126.151.0  www.sunmoonai.com
+
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: neo4j-tcp
+  namespace: data-platform-dev
+  labels:
+    app: data-platform-ingress
+    component: neo4j-tcp
+spec:
+  entryPoints:
+    - neo4j
+  routes:
+    # Neo4j Bolt 协议端口 (7687 -> 30099)
+    # 使用 HostSNI(`*`) 支持任何 hostname（包括 www.sunmoonai.com）
+    - match: HostSNI(`*`)
+      services:
+        - name: neo4j-sunmoonai
+          port: 7687
+  tls:
+    passthrough: true

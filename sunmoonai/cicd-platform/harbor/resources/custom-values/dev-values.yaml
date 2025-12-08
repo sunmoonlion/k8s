@@ -1,0 +1,219 @@
+# 开发环境 Harbor Values 配置
+# 基于 Bitnami Harbor Chart 官方结构整理
+
+# ============================================================================
+# 从配置文件读取的变量
+# ============================================================================
+# 这些变量通过部署脚本从 deploy-harbor.conf 文件中读取并替换
+# 部署脚本会自动替换 {{HARBOR_EXTERNAL_HOST}} 等模板变量
+
+# ============================================================================
+# 全局配置
+# ============================================================================
+global:
+  imageRegistry: ""
+  defaultStorageClass: "nfs-3"  # 使用节点3的专用存储
+
+# ============================================================================
+# 通用配置
+# ============================================================================
+nameOverride: ""
+fullnameOverride: ""
+
+# 通用标签
+commonLabels:
+  app.kubernetes.io/name: "harbor"
+  app.kubernetes.io/instance: "{{HARBOR_PROJECT_ID}}"
+  app.kubernetes.io/component: "harbor"
+  app.kubernetes.io/environment: "development"
+  app.kubernetes.io/part-of: platform
+  app.kubernetes.io/managed-by: helm
+
+
+# ============================================================================
+# Harbor 核心配置
+# ============================================================================
+
+# 管理员密码 - 使用现有Secret提高安全性
+# adminPassword: "Harbor@12345"  # ❌ 已删除明文密码配置
+existingSecret: "{{HARBOR_AUTH_SECRET_NAME}}"
+existingSecretAdminPasswordKey: "{{HARBOR_AUTH_SECRET_PASSWORD_KEY}}"
+
+# 外部访问URL - 使用模板变量，从deploy-harbor.conf读取
+# 访问地址: https://www.sunmoonai.com:30443（使用 websecure entryPoint）
+externalURL: https://{{HARBOR_EXTERNAL_HOST}}:{{HARBOR_EXTERNAL_PORT}}
+
+
+# 暴露类型 
+# exposureType: "ingress" - 使用Ingress Controller作为代理
+# exposureType: "proxy" - 使用Harbor自带的NGINX代理
+# exposureType: "none" - 使用自定义的ingress
+# exposureType: "ingress"
+
+exposureType: "ingress"
+
+# ============================================================================
+# 服务配置
+# ============================================================================
+# 当使用 exposureType: "ingress" 时，Service 配置由 Helm 模板自动生成
+# 不需要手动指定端口，避免与模板冲突
+service:
+  type: "ClusterIP"
+  # ports 配置已移除，由 Helm 模板自动处理
+# 启用内置 Ingress（由 Traefik 作为 Ingress Controller 接管）
+ingress:
+  enabled: true
+  core:
+    # 使用默认的IngressClass（自动检测集群默认的IngressClass）
+    ingressClassName: ""
+    # Harbor访问域名 - 使用模板变量
+    hostname: "{{HARBOR_EXTERNAL_HOST}}"
+    # 路径匹配类型
+    pathType: "Prefix"
+    # Annotations 配置（必须配置在 ingress.core.annotations 下）
+    # 根据 Harbor Helm chart 模板，annotations 应该配置在 ingress.core.annotations 下
+    annotations:
+      # 使用 websecure entryPoint（端口 30443）
+      traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+      # 使用 buffering 中间件支持大文件上传
+      traefik.ingress.kubernetes.io/router.middlewares: "ingress-platform-dev-traefik-buffering-sunmoonai@kubernetescrd"
+      # 其他 Harbor 需要的 annotations
+      ingress.kubernetes.io/proxy-body-size: "0"
+      ingress.kubernetes.io/ssl-redirect: "true"
+    # TLS 配置
+    # 注意：TLS 终止在 Traefik，Traefik 到 Harbor 的流量是 HTTP（不加密）    
+    tls: false
+    # 上面的的证书可以通过三种方式获取，如果下面为true，则通过helm自动生成
+    selfSigned: false
+    # 显式指定 TLS secret（Traefik 的证书 secret）    
+# ============================================================================
+# 持久化存储配置
+# ============================================================================
+persistence:
+  persistentVolumeClaim:
+    trivy:
+      storageClass: "nfs-3"  # 使用节点3的专用存储
+      size: "5Gi"
+      accessModes:
+        - ReadWriteOnce
+
+# ============================================================================
+# 内置数据库配置（PostgreSQL）
+# ============================================================================
+# 启用内置 PostgreSQL
+postgresql:
+  enabled: true
+  # 优化PostgreSQL内存配置
+  primary:
+    resources:
+      limits:
+        memory: "512Mi"  # 限制最大内存使用
+      requests:
+        memory: "256Mi"  # 请求最小内存
+    # 可以在这里自定义PostgreSQL镜像
+    # image:
+    #   registry: docker.io
+    #   repository: bitnami/postgresql
+    #   tag: 16.7.0-debian-12-r0
+
+# 禁用外部数据库配置，使用内置数据库
+# externalDatabase:
+#   host: "postgresql-{{HARBOR_PROJECT_ID}}.data-platform-dev.svc.cluster.local"
+#   port: 5432
+#   user: "{{HARBOR_PROJECT_ID}}_harbor"
+#   # password: "SunMoonAI_PostgreSQL_2024!"  # ❌ 已删除明文密码
+#   existingSecret: "postgresql-secrets"  # 直接使用PostgreSQL的Secret
+#   existingSecretPasswordKey: "harbor-password"  # 使用PostgreSQL Secret中的harbor-password
+#   sslmode: "disable"
+#   coreDatabase: "{{HARBOR_PROJECT_ID}}_harbor"  # 使用PostgreSQL中已创建的Harbor数据库
+
+# ============================================================================
+# PostgreSQL 配置说明
+# ============================================================================
+# 使用现有的PostgreSQL组件：sunmoonai/data-platform/postgresql
+# 
+# 已配置的Harbor用户和数据库：
+# - 用户: sunmoonai_harbor
+# - 数据库: sunmoonai_harbor  
+# - 密码: Harbor_Secure_2024! (来自postgresql-secrets的harbor-password键)
+# - 主机: postgresql-sunmoonai.data-platform-dev.svc.cluster.local
+# - 端口: 5432
+#
+# PostgreSQL组件已通过initdbScripts自动创建了Harbor所需的用户和数据库
+
+# ============================================================================
+# 内置缓存配置（Redis）
+# ============================================================================
+# 启用内置 Redis
+redis:
+  enabled: true
+  # 优化Redis内存配置
+  master:
+    resources:
+      limits:
+        memory: "256Mi"  # 限制最大内存使用
+      requests:
+        memory: "128Mi"  # 请求最小内存
+
+# 禁用外部 Redis 配置，使用内置 Redis
+# externalRedis:
+#   host: "redis-sunmoonai-master.data-platform-dev.svc.cluster.local"
+#   port: 6379
+#   password: "SunMoonAI_Redis_2024!"
+#  #existingSecret: "redis-secrets"      # 使用密钥对于bitnami chart有bug
+#   coreDatabaseIndex: "0"
+#   jobserviceDatabaseIndex: "1"
+#   registryDatabaseIndex: "2"
+#   trivyAdapterDatabaseIndex: "5"
+
+# ============================================================================
+# Harbor 组件配置
+# ============================================================================
+
+# Portal（Web UI）
+portal:
+  replicaCount: 1
+
+# Core（核心服务）
+core:
+  replicaCount: 1
+
+# JobService（作业服务）
+jobservice:
+  replicaCount: 1
+  maxJobWorkers: 10
+
+# Registry（镜像仓库）
+registry:
+  replicaCount: 1
+  storage:
+    type: "filesystem"
+
+# Trivy（镜像扫描）
+trivy:
+  enabled: true
+  replicaCount: 1
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+
+# Notary（镜像签名，可选）
+notary:
+  enabled: false
+
+# ============================================================================
+# 其他配置
+# ============================================================================
+
+# RBAC
+rbac:
+  create: true
+
+# ServiceAccount
+serviceAccount:
+  create: true
+  name: ""

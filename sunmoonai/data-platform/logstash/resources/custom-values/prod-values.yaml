@@ -1,0 +1,162 @@
+# Logstash 生产环境配置
+# 基于官方 values.yaml 进行生产环境优化
+
+# 全局配置
+global:
+  imageRegistry: ""
+  defaultStorageClass: "nfs-storage"
+
+# 副本数配置（生产环境：2副本高可用）
+replicaCount: 2
+
+# 镜像配置
+image:
+  registry: docker.io
+  repository: bitnami/logstash
+  tag: 9.1.2-debian-12-r0
+  pullPolicy: IfNotPresent
+
+# 资源限制
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: 1
+    memory: 2Gi
+
+# 服务配置
+service:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+    - name: beats
+      port: 5044
+      targetPort: beats
+    - name: tcp
+      port: 5000
+      targetPort: tcp
+
+# 持久化存储（生产环境：启用）
+persistence:
+  enabled: true
+  size: 20Gi
+  storageClass: "nfs-storage"
+
+# 网络策略（生产环境：启用）
+networkPolicy:
+  enabled: true
+
+# 健康检查配置
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 120
+  periodSeconds: 20
+  timeoutSeconds: 10
+  failureThreshold: 6
+  successThreshold: 1
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+
+# Logstash 配置
+input: |-
+  # HTTP 输入（用于接收应用程序日志）
+  http {
+    port => 8080
+  }
+  
+  # Beats 输入（用于接收 Filebeat、Metricbeat 等）
+  beats {
+    port => 5044
+  }
+  
+  # TCP 输入（用于接收 syslog）
+  tcp {
+    port => 5000
+    type => "syslog"
+  }
+  
+  # UDP 输入（用于接收 syslog）
+  udp {
+    port => 1514
+    type => "syslog"
+  }
+
+# 过滤器配置
+filter: |-
+  # 时间戳处理
+  if [timestamp] {
+    date {
+      match => [ "timestamp", "ISO8601" ]
+    }
+  }
+  
+  # 添加环境标签
+  mutate {
+    add_field => { "environment" => "production" }
+  }
+  
+  # Grok 解析（用于解析结构化日志）
+  if [message] =~ /^\[/ {
+    grok {
+      match => { "message" => "^\[%{TIMESTAMP_ISO8601:timestamp}\] %{LOGLEVEL:level} %{GREEDYDATA:message}" }
+    }
+  }
+  
+  # 移除敏感信息
+  mutate {
+    remove_field => [ "password", "token", "secret" ]
+  }
+
+# 输出配置
+output: |-
+  # 输出到 Elasticsearch
+  elasticsearch {
+    hosts => ["elasticsearch-sunmoonai:9200"]
+    index => "logstash-%{+YYYY.MM.dd}"
+    template_name => "logstash"
+    template_pattern => "logstash-*"
+  }
+  
+  # 错误日志单独输出
+  if [level] == "ERROR" {
+    elasticsearch {
+      hosts => ["elasticsearch-sunmoonai:9200"]
+      index => "logstash-errors-%{+YYYY.MM.dd}"
+    }
+  }
+
+# 环境变量
+env:
+  - name: ELASTICSEARCH_HOST
+    value: "elasticsearch-sunmoonai"
+  - name: ELASTICSEARCH_PORT
+    value: "9200"
+  - name: LS_JAVA_OPTS
+    value: "-Xmx1g -Xms1g"
+
+# Pod 反亲和性配置
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: logstash
+        topologyKey: kubernetes.io/hostname
+
+# 更新策略
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 1

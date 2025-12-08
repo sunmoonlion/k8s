@@ -1,0 +1,187 @@
+# Flower 开发环境配置
+# 基于 Flower Chart 结构
+# 这些变量通过部署脚本从 deploy-flower.conf 文件中读取并替换
+
+# ============================================================================
+# 全局配置
+# ============================================================================
+global:
+  imageRegistry: "{{FLOWER_IMAGE_REGISTRY}}"
+  # imagePullSecrets 在下面的 imagePullSecrets 中配置，避免重复
+  imagePullSecrets: []
+
+# ============================================================================
+# 通用配置
+# ============================================================================
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Pod 标签
+# 注意：app.kubernetes.io/name 和 app.kubernetes.io/instance 由 Chart 自动设置（在 flower.labels 中），不应在 podLabels 中重复
+# 这些标签用于 Deployment selector，必须与 template labels 匹配
+podLabels:
+  app.kubernetes.io/component: "flower"
+  app.kubernetes.io/environment: "{{ENVIRONMENT}}"
+  app.kubernetes.io/part-of: platform
+
+podAnnotations: {}
+
+# ============================================================================
+# 镜像配置
+# ============================================================================
+image:
+  registry: "{{FLOWER_IMAGE_REGISTRY}}"
+  repository: "{{FLOWER_IMAGE_PROJECT}}/flower"
+  tag: "{{FLOWER_IMAGE_VERSION}}"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: "{{FLOWER_IMAGE_PULL_SECRET_NAME}}"
+
+# ============================================================================
+# Service Account 配置
+# ============================================================================
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+# ============================================================================
+# Pod 安全上下文
+# ============================================================================
+podSecurityContext: {}
+securityContext: {}
+
+# ============================================================================
+# Service 配置
+# ============================================================================
+service:
+  type: ClusterIP
+  port: 5555
+
+# ============================================================================
+# Ingress 配置
+# ============================================================================
+ingress:
+  enabled: true
+  className: ""
+  annotations:
+    # Traefik ingress annotations
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+  hosts:
+    - host: "{{FLOWER_UNIFIED_HOST}}"
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+    # TLS termination is handled by Traefik
+    # 如需配置 TLS，取消下面的注释
+    # - secretName: flower-tls
+    #   hosts:
+    #     - "{{FLOWER_UNIFIED_HOST}}"
+
+# ============================================================================
+# 资源限制（开发环境）
+# ============================================================================
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# ============================================================================
+# 探针配置
+# ============================================================================
+# 注意：由于使用了 url_prefix=/flower，probe 路径需要包含前缀
+# Flower 的 --url_prefix=/flower 实际路径是 /flower/（带尾随斜杠）
+livenessProbe:
+  httpGet:
+    path: /flower/
+    port: 5555
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+readinessProbe:
+  httpGet:
+    path: /flower/
+    port: 5555
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+  successThreshold: 1
+
+# ============================================================================
+# Celery Broker 配置
+# ============================================================================
+# 使用现有 Secret，避免在 values 文件中存储明文密码
+existingSecret: "{{FLOWER_AUTH_SECRET_NAME}}"
+secretKeys:
+  # Broker 配置（可选，如果需要从 Secret 读取 broker 配置，在 deploy-flower.conf 中配置 FLOWER_BROKER_URL_KEY 和 FLOWER_BROKER_API_URL_KEY）
+  # 如果不需要，这些值会保持为空字符串，不会尝试从 Secret 读取
+  brokerUrl: "{{FLOWER_BROKER_URL_KEY}}"
+  brokerApiUrl: "{{FLOWER_BROKER_API_URL_KEY}}"
+  basicAuthUser: "{{FLOWER_BASIC_AUTH_USER_KEY}}"
+  basicAuthPassword: "{{FLOWER_AUTH_SECRET_PASSWORD_KEY}}"
+
+# ============================================================================
+# Flower 命令行参数
+# ============================================================================
+# 注意：如果使用 existingSecret，可以从 Secret 中读取 broker URL
+# 如果直接配置，可以使用 args 或 env
+# url_prefix 让应用自己处理 baseurl，不需要 stripPrefix 中间件（参考 redisinsight 和 mongo-express）
+# 注意：Flower 使用 --url_prefix 参数，功能类似其他应用的 --base-path 或 siteBaseUrl
+args:
+  - "--url_prefix={{FLOWER_URL_PREFIX}}"
+  # - "--broker=amqp://admin:admin123@rabbitmq-service.messaging-platform:5672//"
+  # - "--port=5555"
+  # - "--broker_api=http://admin:admin123@rabbitmq-service.messaging-platform:15672/api/"
+
+# ============================================================================
+# 环境变量
+# ============================================================================
+env: []
+  # 如果使用 existingSecret，broker URL 和 API URL 会自动从 Secret 中读取
+  # 否则可以通过 env 配置：
+  # - name: FLOWER_BROKER_URL
+  #   value: "amqp://admin:admin123@rabbitmq-service.messaging-platform:5672//"
+  # - name: FLOWER_BROKER_API
+  #   value: "http://admin:admin123@rabbitmq-service.messaging-platform:15672/api/"
+
+# ============================================================================
+# Basic Auth 配置（Flower Web UI 登录）
+# ============================================================================
+basicAuth:
+  enabled: false
+  username: ""
+  password: ""
+  # 如果使用 existingSecret，basic auth 信息会自动从 Secret 中读取
+
+# ============================================================================
+# 其他配置
+# ============================================================================
+# 节点选择器
+nodeSelector: {}
+
+# 容忍度
+tolerations: []
+
+# 亲和性
+affinity: {}
+
+# 卷
+volumes: []
+volumeMounts: []
+
+# 自动扩缩容（开发环境禁用）
+autoscaling:
+  enabled: false
+

@@ -1,0 +1,140 @@
+# Neo4j 生产环境配置 - 直接写具体值，不做模板替换
+
+# 全局配置
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: "fast-ssd"
+
+# 镜像配置
+image:
+  registry: ""
+  repository: bitnami/neo4j
+  tag: "5.2.0-debian-12-r4"
+  pullPolicy: "IfNotPresent"
+  pullSecrets: []
+
+# 认证配置
+auth:
+  enabled: true
+  neo4j:
+    password: "Neo4j_Production_2024!"
+  database: "sunmoonai_main"
+
+# 主服务配置
+primary:
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: "100Gi"
+    accessModes:
+      - "ReadWriteOnce"
+  
+  service:
+    type: "ClusterIP"  # 改为 ClusterIP，通过 ingress-platform 管理访问
+    ports:
+      http: 7474
+      https: 6477
+      bolt: 7687
+  
+  resources:
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+  
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 5
+    successThreshold: 1
+  
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+    successThreshold: 1
+
+# Neo4j 配置
+neo4j:
+  # 内存配置
+  memory:
+    heap:
+      initial: "2g"
+      max: "2g"
+    pagecache: "2g"
+  
+  # 插件配置
+  plugins:
+    - "graph-data-science"
+    - "apoc"
+  
+  # 安全配置
+  security:
+    procedures:
+      allowlist: "gds.*, apoc.*"
+      unrestricted: "gds.*, apoc.*"
+  
+  # 服务器配置
+  server:
+    config:
+      strict_validation: false
+      default_listen_address: "0.0.0.0"
+      connector:
+        bolt:
+          listen_address: "0.0.0.0:7687"
+        http:
+          listen_address: ":7474"
+          advertised_address: ":7474"
+        https:
+          listen_address: ":6477"
+          advertised_address: ":6477"
+  
+  # 模式配置
+  mode: "SINGLE"
+  
+  # JVM 配置
+  jvm:
+    additional: "-XX:+ExitOnOutOfMemoryError"
+
+# 监控配置
+metrics:
+  enabled: true
+  image:
+    registry: ""
+    repository: bitnami/neo4j-exporter
+    tag: "1.0.0-debian-12-r4"
+    pullPolicy: "IfNotPresent"
+  
+  serviceMonitor:
+    enabled: true
+    interval: "15s"
+    scrapeTimeout: "10s"
+
+# 网络策略
+networkPolicy:
+  enabled: true
+
+# 自动扩缩容
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 70
+
+# Ingress 配置 - 通过 ingress-platform 统一管理
+ingress:
+  enabled: false  # 禁用 Helm Chart 的 Ingress，使用 ingress-platform 管理
+
+# 备份配置
+backup:
+  enabled: true
+  schedule: "0 2 * * *"
+  retention: "30d"

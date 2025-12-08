@@ -1,0 +1,47 @@
+# pgAdmin Web 路由配置
+# 通过 Traefik HTTP 路由暴露 pgAdmin Web 服务
+#
+# 使用路径前缀路由，避免需要在 /etc/hosts 中配置多个域名
+# 访问方式：
+# - https://<节点IP>:30443/pgadmin
+# - 或 https://www.sunmoonai.com/pgadmin (如果配置了 DNS)
+#
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: pgadmin-web-route
+  namespace: {{NAMESPACE}}
+  labels:
+    app: ops-platform-ingress
+    component: pgadmin-web
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    # 使用路径前缀路由，支持 IP 或统一域名
+    # 方案1: 使用 IP 地址（无需 DNS 配置）
+    # 访问: https://<节点IP>:30443/pgadmin
+    # 方案2: 使用统一域名（只需在 /etc/hosts 中添加一个条目）
+    # 访问: https://www.sunmoonai.com/pgadmin
+    - match: Host(`{{NODE_IP}}`) && PathPrefix(`/pgadmin`)
+      kind: Rule
+      services:
+        # 注意：SERVICE_NAME 和 SERVICE_PORT 不是配置项，而是从 Kubernetes Service 中动态获取
+        # - SERVICE_NAME: 从主配置文件的 PGADMIN_PROJECT_ID 构建（格式：pgadmin-{project_id}）
+        # - SERVICE_PORT: 从 Kubernetes Service 的 spec.ports[0].port 字段动态获取
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+      middlewares:
+        # 注意：移除了 pgadmin-stripprefix，因为 pgAdmin 通过 SCRIPT_NAME 环境变量自己处理路径前缀
+        - name: pgadmin-policy
+    - match: Host(`{{UNIFIED_HOST}}`) && PathPrefix(`/pgadmin`)
+      kind: Rule
+      services:
+        # 注意：SERVICE_NAME 和 SERVICE_PORT 不是配置项，而是从 Kubernetes Service 中动态获取
+        # - SERVICE_NAME: 从主配置文件的 PGADMIN_PROJECT_ID 构建（格式：pgadmin-{project_id}）
+        # - SERVICE_PORT: 从 Kubernetes Service 的 spec.ports[0].port 字段动态获取
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+      middlewares:
+        # 注意：移除了 pgadmin-stripprefix，因为 pgAdmin 通过 SCRIPT_NAME 环境变量自己处理路径前缀
+        - name: pgadmin-policy

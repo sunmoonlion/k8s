@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: document-converter
+  namespace: {{NAMESPACE}}
+  labels:
+    app: document-converter
+    component: document-converter
+    project: sunmoonai
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: {{SERVICE_PORT}}
+    targetPort: 8000
+    protocol: TCP
+  selector:
+    app: document-converter
+

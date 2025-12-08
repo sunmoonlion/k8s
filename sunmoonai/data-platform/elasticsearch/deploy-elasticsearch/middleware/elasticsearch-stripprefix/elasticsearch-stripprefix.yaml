@@ -1,0 +1,14 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: elasticsearch-stripprefix
+  namespace: data-platform-dev
+  labels:
+    app: data-platform-ingress
+    component: elasticsearch-stripprefix
+    project: sunmoonai
+spec:
+  stripPrefix:
+    prefixes:
+      - "/elasticsearch"
+

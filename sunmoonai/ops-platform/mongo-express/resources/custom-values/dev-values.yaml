@@ -1,0 +1,208 @@
+# Mongo Express 开发环境配置
+# 这些变量通过部署脚本从 deploy-mongo-express.conf 文件中读取并替换
+
+# ============================================================================
+# 全局配置
+# ============================================================================
+global:
+  imageRegistry: "{{MONGO_EXPRESS_IMAGE_REGISTRY}}"
+  imagePullSecrets: "{{MONGO_EXPRESS_IMAGE_PULL_SECRETS}}"
+
+# ============================================================================
+# 通用配置
+# ============================================================================
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+
+# 通用标签
+commonLabels:
+  app.kubernetes.io/component: "mongo-express"
+  app.kubernetes.io/environment: "{{ENVIRONMENT}}"
+  app.kubernetes.io/part-of: platform
+  app.kubernetes.io/managed-by: helm
+
+commonAnnotations: {}
+
+# ============================================================================
+# 镜像配置
+# ============================================================================
+image:
+  registry: docker.io
+  repository: mongo-express
+  tag: "{{MONGO_EXPRESS_IMAGE_VERSION}}"
+  digest: ""
+  pullPolicy: IfNotPresent
+
+# ============================================================================
+# Service Account 配置
+# ============================================================================
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# ============================================================================
+# Pod 配置
+# ============================================================================
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+
+# ============================================================================
+# 端口配置
+# ============================================================================
+containerPorts:
+  http: 8081
+
+# ============================================================================
+# 探针配置
+# ============================================================================
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 0
+  periodSeconds: 10
+  timeoutSeconds: 1
+  failureThreshold: 3
+  successThreshold: 1
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 0
+  periodSeconds: 10
+  timeoutSeconds: 1
+  failureThreshold: 3
+  successThreshold: 1
+
+startupProbe:
+  enabled: false
+
+# ============================================================================
+# Service 配置
+# ============================================================================
+service:
+  type: ClusterIP
+  ports:
+    http: 8081
+  nodePorts:
+    http: ""
+  annotations: {}
+
+# ============================================================================
+# Ingress 配置
+# ============================================================================
+ingress:
+  enabled: true
+  ingressClassName: ""
+  pathType: ImplementationSpecific
+  annotations:
+    # Traefik ingress annotations
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+  hosts:
+    - host: "{{MONGO_EXPRESS_UNIFIED_HOST}}"
+      paths:
+        - /
+  tls: []
+
+# ============================================================================
+# 资源限制（开发环境）
+# ============================================================================
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# ============================================================================
+# MongoDB 连接配置
+# ============================================================================
+mongodbServer: "{{MONGODB_EXTERNAL_HOST}}"
+mongodbPort: "{{MONGODB_EXTERNAL_PORT}}"
+
+# 管理员模式配置（已禁用）
+mongodbEnableAdmin: false
+
+# 非管理员模式配置（当前使用）
+# 注意：用户名和数据库名必须与 MongoDB 部署配置一致
+mongodbAuthUsername: "sunmoonai_dev"
+mongodbAuthDatabase: "mydb"
+mongodbAuthPassword: "placeholder"                  # 占位符值（实际密码从 existingSecret 读取）
+
+# ============================================================================
+# Secret 配置
+# ============================================================================
+existingSecret: "{{MONGO_EXPRESS_AUTH_SECRET_NAME}}"
+existingSecretKeyMongodbAuthPassword: "{{MONGO_EXPRESS_MONGODB_AUTH_PASSWORD_KEY}}"
+existingSecretKeySiteCookieSecret: "{{MONGO_EXPRESS_SITE_COOKIE_SECRET_KEY}}"
+existingSecretKeySiteSessionSecret: "{{MONGO_EXPRESS_SITE_SESSION_SECRET_KEY}}"
+existingSecretKeyBasicAuthPassword: "{{MONGO_EXPRESS_BASIC_AUTH_PASSWORD_KEY}}"
+
+# ============================================================================
+# Basic Auth 配置
+# ============================================================================
+basicAuthUsername: admin
+
+# ============================================================================
+# Base URL 配置
+# ============================================================================
+# 参考 RedisInsight 配置方式：不使用 stripPrefix 中间件
+siteBaseUrl: "/mongo-express"
+
+# ============================================================================
+# 其他配置
+# ============================================================================
+mongodb:
+  enabled: false
+
+# Pod Disruption Budget
+pdb:
+  create: false
+
+# 节点选择器
+nodeSelector: {}
+
+# 容忍度
+tolerations: []
+
+# 亲和性
+affinity: {}
+
+# 优先级类名
+priorityClassName: ""
+
+# 额外环境变量
+extraEnvVars: []
+extraEnvVarsCM: ""
+extraEnvVarsSecret: ""
+
+# 额外卷
+extraVolumes: []
+extraVolumeMounts: []
+
+# 额外参数
+extraArgs: {}
+
+enableServiceLinks: false
+hostAliases: []
+
+# 自动扩缩容（开发环境禁用）
+autoscaling:
+  enabled: false
+

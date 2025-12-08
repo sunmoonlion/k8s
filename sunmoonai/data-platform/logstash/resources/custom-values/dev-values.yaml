@@ -1,0 +1,155 @@
+# Logstash 开发环境配置
+# 基于官方 values.yaml 进行开发环境优化
+
+# 全局配置
+global:
+  imageRegistry: "harbor.sunmoonai.com:30443"
+  imagePullSecrets:
+    - name: harbor-registry-secret
+  security:
+    allowInsecureImages: true
+
+# 副本数配置
+replicaCount: 1
+
+# 节点选择器（强制部署到节点1）
+nodeSelector:
+  kubernetes.io/hostname: hsy-local-2
+
+# 镜像配置
+image:
+  registry: harbor.sunmoonai.com:30443
+  repository: k8s-images/logstash
+  tag: 9.1.2-debian-12-r0
+  pullPolicy: IfNotPresent
+
+# 资源限制
+resources:
+  requests:
+    cpu: 100m
+    memory: 384Mi
+  limits:
+    cpu: 400m
+    memory: 768Mi
+
+# 服务配置
+service:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+    - name: beats
+      port: 5044
+      targetPort: beats
+    - name: tcp
+      port: 5000
+      targetPort: tcp
+
+# 持久化存储（开发环境：禁用）
+persistence:
+  enabled: false
+
+# 网络策略（开发环境：禁用）
+networkPolicy:
+  enabled: false
+
+# 健康检查配置
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 120
+  periodSeconds: 20
+  timeoutSeconds: 10
+  failureThreshold: 6
+  successThreshold: 1
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+
+# Logstash 配置
+input: |-
+  # HTTP 输入（用于测试）
+  http {
+    port => 8080
+  }
+  
+  # Beats 输入（用于接收 Filebeat 等）
+  beats {
+    port => 5044
+  }
+  
+  # TCP 输入（用于接收 syslog 等）
+  tcp {
+    port => 5000
+    type => "syslog"
+  }
+
+# 过滤器配置
+filter: |-
+  # 基本的时间戳处理
+  if [timestamp] {
+    date {
+      match => [ "timestamp", "ISO8601" ]
+    }
+  }
+  
+  # 添加环境标签
+  mutate {
+    add_field => { "environment" => "development" }
+  }
+
+# 输出配置
+output: |-
+  # 输出到 Elasticsearch
+  elasticsearch {
+    hosts => ["elasticsearch-sunmoonai:9200"]
+    index => "logstash-%{+YYYY.MM.dd}"
+  }
+  
+  # 同时输出到控制台（开发环境便于调试）
+  stdout {
+    codec => rubydebug
+  }
+
+# 环境变量
+env:
+  - name: ELASTICSEARCH_HOST
+    value: "elasticsearch-sunmoonai"
+  - name: ELASTICSEARCH_PORT
+    value: "9200"
+
+# ===================== 未来启用安全/密钥（预置占位，默认注释）====================
+# 使用说明：
+# 1) 由统一密管创建下列 Secret（示例名：logstash-elasticsearch-auth）：
+#    - username
+#    - password
+#    （如 ES 启用 TLS，再创建 Secret：elasticsearch-ca-secret，包含 ca.crt）
+# 2) 取消注释 env 与 output 中的相应配置，引用 Secret 并启用 SSL 校验。
+
+# env:
+#   - name: ELASTICSEARCH_USERNAME
+#     valueFrom:
+#       secretKeyRef:
+#         name: logstash-elasticsearch-auth
+#         key: username
+#   - name: ELASTICSEARCH_PASSWORD
+#     valueFrom:
+#       secretKeyRef:
+#         name: logstash-elasticsearch-auth
+#         key: password
+
+# output: |-
+#   elasticsearch {
+#     hosts => ["https://elasticsearch-sunmoonai:9200"]
+#     user => "${ELASTICSEARCH_USERNAME}"
+#     password => "${ELASTICSEARCH_PASSWORD}"
+#     ssl => true
+#     cacert => "/usr/share/logstash/config/certs/ca.crt"  # 通过 Secret 挂载
+#     index => "logstash-%{+YYYY.MM.dd}"
+#   }
+

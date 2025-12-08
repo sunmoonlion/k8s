@@ -1,0 +1,85 @@
+# RabbitMQ Web 路由配置
+# 通过 Traefik HTTP 路由暴露 RabbitMQ 管理界面
+#
+# 当前功能：
+# - HTTP 路由：http://101.126.151.0/rabbitmq → rabbitmq-sunmoonai:15672
+# - 统一入口管理：通过 Traefik 统一管理所有 Web 服务
+# - 基础负载均衡：支持多副本负载均衡
+#
+# 未来扩展功能（预留接口）：
+# - 认证授权：Basic Auth、OAuth、JWT
+# - 访问控制：IP 白名单、用户权限
+# - 监控统计：访问量、响应时间监控
+# - 故障转移：健康检查和自动故障转移
+# - TLS 加密：HTTPS 加密传输
+# - 缓存优化：静态资源缓存
+#
+# 使用方式：
+# https://101.126.151.0:30443/rabbitmq
+# 或 https://www.sunmoonai.com:30443/rabbitmq
+
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: rabbitmq-web-route
+  namespace: {{NAMESPACE}}
+  labels:
+    app: messaging-platform-ingress
+    component: rabbitmq
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    # HTTPS 路由 (端口 15672)
+    # 使用路径前缀路由，支持 IP 或统一域名
+    # 方案1: 使用 IP 地址（无需 DNS 配置）
+    # 访问: https://<节点IP>:30443/rabbitmq
+    # 方案2: 使用统一域名（只需在 /etc/hosts 中添加一个条目）
+    # 访问: https://www.sunmoonai.com/rabbitmq
+    #
+    # 注意：RabbitMQ 管理界面的静态资源（JS、CSS）使用绝对路径（如 /js/main.js）
+    # 浏览器会直接请求 /js/main.js，而不是 /rabbitmq/js/main.js
+    # 需要添加路由规则来捕获这些绝对路径的静态资源请求
+    # 路由顺序很重要：先匹配静态资源，再匹配主路径
+    - match: Host(`{{NODE_IP}}`) && (PathPrefix(`/js/`) || PathPrefix(`/css/`) || PathPrefix(`/img/`) || PathPrefix(`/api/`))
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+      middlewares:
+        - name: rabbitmq-policy
+    - match: Host(`{{NODE_IP}}`) && PathPrefix(`/rabbitmq`)
+      kind: Rule
+      services:
+        # 注意：SERVICE_NAME 和 SERVICE_PORT 不是配置项，而是从 Kubernetes Service 中动态获取
+        # - SERVICE_NAME: 从主配置文件的 RABBITMQ_PROJECT_ID 构建（格式：rabbitmq-{project_id}）
+        # - SERVICE_PORT: 从 Kubernetes Service 的 spec.ports[0].port 字段动态获取
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+      middlewares:
+        - name: rabbitmq-stripprefix
+        - name: rabbitmq-policy
+    - match: Host(`{{UNIFIED_HOST}}`) && (PathPrefix(`/js/`) || PathPrefix(`/css/`) || PathPrefix(`/img/`) || PathPrefix(`/api/`))
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+      middlewares:
+        - name: rabbitmq-policy
+    - match: Host(`{{UNIFIED_HOST}}`) && PathPrefix(`/rabbitmq`)
+      kind: Rule
+      services:
+        # 注意：SERVICE_NAME 和 SERVICE_PORT 不是配置项，而是从 Kubernetes Service 中动态获取
+        # - SERVICE_NAME: 从主配置文件的 RABBITMQ_PROJECT_ID 构建（格式：rabbitmq-{project_id}）
+        # - SERVICE_PORT: 从 Kubernetes Service 的 spec.ports[0].port 字段动态获取
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+      middlewares:
+        - name: rabbitmq-stripprefix
+        - name: rabbitmq-policy
+  # TLS 配置
+  # 注意：Traefik 的 TLSStore 配置了 defaultCertificate，会自动使用 ingress-platform-dev/traefik-tls-secret
+  # 如果需要显式指定，可以使用跨命名空间引用：ingress-platform-dev/traefik-tls-secret
+  # 但通常不需要，因为 TLSStore 的 defaultCertificate 会自动处理
+  # tls:
+  #   secretName: traefik-tls-secret

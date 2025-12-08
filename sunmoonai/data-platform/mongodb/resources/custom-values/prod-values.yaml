@@ -1,0 +1,153 @@
+# MongoDB 生产环境配置 - 直接写具体值，不做模板替换
+
+# 全局配置
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: "fast-ssd"
+
+# 镜像配置
+image:
+  registry: ""
+  repository: bitnami/mongodb
+  tag: "8.0.13-debian-12-r0"
+  pullPolicy: "IfNotPresent"
+  pullSecrets: []
+
+# 认证配置
+auth:
+  enabled: true
+  rootPassword: "SunMoonAI_MongoDB_2024!"
+  database: "sunmoonai_main"
+  username: "sunmoonai_app"
+  password: "sunmoonai_app_2024!"
+  existingSecret: ""
+  existingSecretPasswordKey: ""
+
+# 持久化配置
+# 注意：MongoDB Chart 需要在根级别配置 persistence，不支持 primary.persistence 结构
+# 在 replicaset 模式下，每个节点都会自动创建独立的 PVC
+persistence:
+  enabled: true
+  storageClass: "fast-ssd"
+  size: "8Gi"
+  accessModes:
+    - "ReadWriteOnce"
+
+# 服务配置
+# 注意：MongoDB Chart 需要在根级别配置 service，不支持 primary.service 结构
+service:
+  type: "NodePort"  # 改为 NodePort 以支持对外访问
+  ports:
+    mongodb: 27017
+  nodePorts:
+    mongodb: 30435   # 生产环境使用不同端口，避免与开发环境冲突
+
+# 资源配置
+# 注意：MongoDB Chart 需要在根级别配置 resources，不支持 primary.resources 结构
+resources:
+  limits:
+    cpu: "2000m"
+    memory: "4Gi"
+  requests:
+    cpu: "1000m"
+    memory: "2Gi"
+
+# 健康检查配置
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 10
+  failureThreshold: 5
+  successThreshold: 1
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 5
+  successThreshold: 1
+
+# 架构配置 - 生产环境使用副本集
+architecture: replicaset
+replicaCount: 3
+replicaSetName: rs0
+
+# 监控配置
+metrics:
+  enabled: true
+  image:
+    registry: ""
+    repository: bitnami/mongodb-exporter
+    tag: "0.47.0-debian-12-r1"
+    pullPolicy: "IfNotPresent"
+  
+  serviceMonitor:
+    enabled: true
+    interval: "15s"
+    scrapeTimeout: "10s"
+
+# 网络策略
+networkPolicy:
+  enabled: true
+
+# 自动扩缩容
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 70
+
+# 备份配置
+backup:
+  enabled: true
+  schedule: "0 1 * * *"
+  retention: "30d"
+
+# Ingress 配置 - 通过域名访问
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/backend-protocol: "TCP"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+  hosts:
+    - host: mongodb.sunmoonai.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# 数据库配置
+mongodbConfiguration: |
+  # 生产环境配置
+  storage:
+    dbPath: /bitnami/mongodb
+    journal:
+      enabled: true
+    wiredTiger:
+      engineConfig:
+        cacheSizeGB: 2
+        journalCompressor: snappy
+      collectionConfig:
+        blockCompressor: snappy
+      indexConfig:
+        prefixCompression: true
+  systemLog:
+    destination: file
+    logAppend: true
+    path: /opt/bitnami/mongodb/logs/mongodb.log
+    verbosity: 0
+  net:
+    port: 27017
+    bindIp: 0.0.0.0
+    maxIncomingConnections: 1000
+  operationProfiling:
+    mode: slowOp
+    slowOpThresholdMs: 100
