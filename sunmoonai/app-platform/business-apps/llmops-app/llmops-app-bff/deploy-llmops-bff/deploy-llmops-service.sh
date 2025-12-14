@@ -1,51 +1,102 @@
 #!/bin/bash
 
 # LLMOps Service 部署脚本
-# 用法: ./deploy-llmops-service.sh [deploy|undeploy|status] [env] [namespace]
+# 用法: ./deploy-llmops-service.sh <action> [project_id] [namespace] [environment] [-c|--cluster CLUSTER]
 # 注意: 镜像构建请使用 build/build-image.sh 脚本
 
 set -e
 
 # 脚本目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# 默认参数
-ACTION="${1:-deploy}"
-ENV="${2:-dev}"  # 环境：dev 或 prod
-NAMESPACE="${3:-app-platform-${ENV}}"  # 根据环境自动设置命名空间
+# 保存 LLMOps Service 脚本的目录路径（统一部署模板会重新定义 SCRIPT_DIR）
+LLMOPS_SERVICE_SCRIPT_DIR="$SCRIPT_DIR"
 
-# 颜色定义（需要在日志函数之前定义）
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# 导入统一部署模板
+# 注意：从 llmops-app-bff 到 k8s 需要 5 级（llmops-app-bff -> llmops-app -> business-apps -> app-platform -> sunmoonai -> k8s）
+source "$PROJECT_ROOT/../../../../../utils/unified-deployment-template.sh"
 
-# 日志函数（需要在加载配置文件之前定义，以便在配置加载时使用）
-log_info() {
-    echo -e "${BLUE}[INFO]${NC} $(date '+%Y-%m-%d %H:%M:%S') $1"
+# 恢复 LLMOps Service 脚本的目录路径
+SCRIPT_DIR="$LLMOPS_SERVICE_SCRIPT_DIR"
+
+# 解析命令行参数（优先于配置文件加载，确保命令行参数优先级最高）
+parse_cluster_arg() {
+    local args=("$@")
+    PARSED_ARGS=()
+    local cluster_value=""
+    local i=0
+    
+    while [[ $i -lt ${#args[@]} ]]; do
+        # 启用大小写不敏感匹配
+        shopt -s nocasematch
+        case "${args[$i]}" in
+            --[cC][lL][uU][sS][tT][eE][rR]=*)
+                # 支持等号形式：--cluster=C1 或 --CLUSTER=C1（大小写不敏感）
+                cluster_value="${args[$i]#*=}"
+                cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
+                export CLUSTER="$cluster_value"
+                log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
+                ;;
+            --[cC][lL][uU][sS][tT][eE][rR]|-c|-C)
+                # 支持空格形式：--cluster C1 或 -c C1（大小写不敏感）
+                if [[ $((i+1)) -lt ${#args[@]} ]]; then
+                    cluster_value="${args[$((i+1))]}"
+                    cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
+                    export CLUSTER="$cluster_value"
+                    log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
+                    i=$((i+1))
+                else
+                    log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
+                    exit 1
+                fi
+                ;;
+            *)
+                PARSED_ARGS+=("${args[$i]}")
+                ;;
+        esac
+        # 恢复大小写敏感匹配
+        shopt -u nocasematch
+        i=$((i+1))
+    done
+    
+    if [[ -n "$cluster_value" ]]; then
+        if [[ -f "$PROJECT_ROOT/../../../../../utils/cluster-config-mapping.sh" ]]; then
+            source "$PROJECT_ROOT/../../../../../utils/cluster-config-mapping.sh"
+            apply_cluster_config_mapping "$cluster_value"
+        fi
+    fi
 }
 
-log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $(date '+%Y-%m-%d %H:%M:%S') $1"
-}
-
-log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $(date '+%Y-%m-%d %H:%M:%S') $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $(date '+%Y-%m-%d %H:%M:%S') $1"
-}
+# 先解析命令行参数（如果提供）
+# 保存原始参数，以便在 main 函数中使用
+ORIGINAL_ARGS=("$@")
+if [[ $# -gt 0 ]]; then
+    parse_cluster_arg "$@"
+    ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
+fi
 
 # 加载部署配置文件
 LLMOPS_SERVICE_CONFIG_FILE="$SCRIPT_DIR/deploy-llmops-service.conf"
 if [[ -f "$LLMOPS_SERVICE_CONFIG_FILE" ]]; then
     source "$LLMOPS_SERVICE_CONFIG_FILE"
+    
+    # 加载集群配置映射函数（使用 utils 中的通用函数）
+    if [[ -f "$PROJECT_ROOT/../../../../../utils/cluster-config-mapping.sh" ]]; then
+        source "$PROJECT_ROOT/../../../../../utils/cluster-config-mapping.sh"
+        # 应用集群配置映射（使用 CLUSTER 环境变量，支持 C1_* 和 C2_* 前缀配置）
+        apply_cluster_config_mapping
+    fi
+    
     log_info "已加载 LLMOps Service 配置文件: $LLMOPS_SERVICE_CONFIG_FILE"
 else
     log_warn "未找到 LLMOps Service 配置文件: $LLMOPS_SERVICE_CONFIG_FILE，使用默认配置"
 fi
+
+# 默认配置（对齐 PostgreSQL 部署脚本，使用硬编码默认值）
+DEFAULT_PROJECT_ID="sunmoonai"
+DEFAULT_NAMESPACE="app-platform-dev"
+DEFAULT_ENVIRONMENT="development"
 
 # 镜像配置（从部署配置文件读取，用于部署时指定镜像）
 # 镜像名称和标签应该与 build/build.conf 中的配置保持一致
@@ -59,7 +110,7 @@ PROJECT_ID="${LLMOPS_SERVICE_PROJECT_ID:-${PROJECT_ID:-sunmoonai}}"
 RESOURCES_DIR="../resources"
 LLMOPS_SERVICE_YAML="${RESOURCES_DIR}/llmops-service.yaml"
 
-# Secrets 和 ConfigMaps 路径（对齐项目架构，放在 deploy-llmops-service/secrets/ 下）
+# Secrets 和 ConfigMaps 路径（对齐项目架构，放在 deploy-llmops-bff/secrets/ 下）
 SECRETS_DIR="./secrets"
 LLMOPS_SERVICE_CONFIGMAP="${SECRETS_DIR}/llmops-service-config/llmops-service-config.yaml"
 LLMOPS_SERVICE_SECRET="${SECRETS_DIR}/llmops-service-secret/llmops-service-secret.yaml"
@@ -75,20 +126,41 @@ check_kubectl() {
 
 # 检查命名空间是否存在
 check_namespace() {
-    if kubectl get namespace "$NAMESPACE" &> /dev/null; then
-        log_success "命名空间 $NAMESPACE 已存在"
+    local namespace="$1"
+    
+    # 检查是否已有可用的Kubernetes连接
+    if ! kubectl get nodes >/dev/null 2>&1; then
+        # 确保 Kubernetes 连接已建立
+        if ! setup_kubectl_environment; then
+            log_error "❌ 无法建立 Kubernetes 连接"
+            echo ""
+            log_info "如果已手动设置 KUBECONFIG，请检查："
+            echo "  export KUBECONFIG=/path/to/your/kubeconfig"
+            echo "  kubectl get nodes"
+            echo ""
+            log_info "如果需要自动连接，请检查："
+            echo "  1. SSH 连接配置是否正确"
+            echo "  2. 端口是否被占用（当前错误显示端口可能已被占用）"
+            echo "  3. 远程服务器上的 kubeconfig 文件权限"
+            echo ""
+            return 1
+        fi
+    fi
+    
+    if kubectl get namespace "$namespace" >/dev/null 2>&1; then
+        log_success "✅ 命名空间 $namespace 已存在"
         return 0
     else
-        log_error "命名空间 $NAMESPACE 不存在！"
+        log_error "❌ 命名空间 $namespace 不存在！"
         echo ""
         log_info "请先使用 namespace-platform 部署所需的命名空间："
         echo "  cd ../../namespace-platform"
         echo "  ./scripts/deploy.sh --env dev"
         echo ""
         log_info "或者手动创建命名空间："
-        echo "  kubectl create namespace $NAMESPACE"
+        echo "  kubectl create namespace $namespace"
         echo ""
-        exit 1
+        return 1
     fi
 }
 
@@ -277,29 +349,82 @@ show_status() {
 
 # 主函数
 main() {
-    log_info "LLMOps Service 部署脚本启动"
-    log_info "操作: $ACTION, 环境: $ENV, 命名空间: $NAMESPACE"
+    # 使用解析后的参数（已移除 --cluster 参数）
+    set -- "${ORIGINAL_ARGS[@]}"
+    set -- "${PARSED_ARGS[@]}"
     
-    # 验证环境参数
-    if [[ "$ENV" != "dev" && "$ENV" != "prod" ]]; then
-        log_error "无效的环境参数: $ENV"
-        log_info "环境必须是 'dev' 或 'prod'"
-        exit 1
+    if [[ -n "${CLUSTER:-}" ]]; then
+        log_info "🎯 当前集群配置: ${CLUSTER}"
     fi
+    
+    local action="${1:-deploy}"
+    local project_id="${2:-$DEFAULT_PROJECT_ID}"
+    local namespace="${3:-$DEFAULT_NAMESPACE}"
+    local environment="${4:-$DEFAULT_ENVIRONMENT}"
+    
+    # 将 environment 转换为 ENV（用于兼容性）
+    case "$environment" in
+        "development"|"dev")
+            ENV="dev"
+            ;;
+        "production"|"prod")
+            ENV="prod"
+            ;;
+        *)
+            ENV="dev"  # 默认值
+            ;;
+    esac
+    
+    # 更新全局变量
+    ACTION="$action"
+    PROJECT_ID="$project_id"
+    NAMESPACE="$namespace"
+    ENVIRONMENT="$environment"
+    
+    log_info "LLMOps Service 部署脚本启动"
+    log_info "操作: $ACTION, 项目: $PROJECT_ID, 命名空间: $NAMESPACE, 环境: $ENVIRONMENT"
     
     check_kubectl
     
     case "$ACTION" in
         "deploy")
-            # deploy 命令：部署到 Kubernetes（假设镜像已构建并推送到 Harbor）
-            log_info "deploy 命令将执行：从 Harbor 拉取镜像 → 部署到 Kubernetes"
-            log_info "提示: 如需构建镜像，请先运行: cd ../../../../../sunmoonai-llmops-service/build && ./build-image.sh build-push"
+            log_info "开始部署 LLMOps Service..."
             
-            check_namespace
+            # 读取 Kubernetes 配置文件
+            if ! read_k8s_config; then
+                log_error "无法读取 Kubernetes 配置文件"
+                exit 1
+            fi
+            
+            # 检查是否已有可用的Kubernetes连接
+            if kubectl get nodes >/dev/null 2>&1; then
+                log_info "使用现有 Kubernetes 连接"
+            else
+                # 设置 Kubernetes 环境（建立远程连接）
+                if ! setup_kubectl_environment; then
+                    log_error "无法建立 Kubernetes 连接"
+                    exit 1
+                fi
+                
+                # 验证连接是否可用
+                if ! kubectl get nodes >/dev/null 2>&1; then
+                    log_error "Kubernetes 连接不可用，请检查连接状态"
+                    exit 1
+                fi
+            fi
+            
+            if ! check_namespace "$namespace"; then
+                log_error "❌ 命名空间检查失败"
+                exit 1
+            fi
             deploy_web_api
             show_status
             ;;
         "undeploy")
+            if ! check_namespace "$namespace"; then
+                log_error "❌ 命名空间检查失败"
+                exit 1
+            fi
             undeploy_web_api
             ;;
         "status")
@@ -307,11 +432,18 @@ main() {
             ;;
         *)
             log_error "无效的操作: $ACTION"
-            echo "用法: $0 [deploy|undeploy|status] [env] [namespace]"
+            echo "用法: $0 <action> [project_id] [namespace] [environment] [-c|--cluster CLUSTER]"
+            echo ""
+            echo "操作:"
+            echo "  deploy     部署 LLMOps Service"
+            echo "  undeploy   卸载 LLMOps Service"
+            echo "  status     查看 LLMOps Service 状态"
             echo ""
             echo "参数说明:"
-            echo "  env         - 环境 (dev|prod)，默认: dev"
-            echo "  namespace   - Kubernetes 命名空间，默认: app-platform-\${env}"
+            echo "  project_id   项目标识符（默认: $DEFAULT_PROJECT_ID）"
+            echo "  namespace    命名空间（默认: $DEFAULT_NAMESPACE）"
+            echo "  environment  环境（默认: $DEFAULT_ENVIRONMENT）"
+            echo "  -c, --cluster 集群配置（如 C1, C2）"
             echo ""
             echo "操作说明:"
             echo "  deploy       - 部署到 Kubernetes（从 Harbor 拉取镜像）"
@@ -321,8 +453,9 @@ main() {
             echo "  status       - 查看 LLMOps Service 状态"
             echo ""
             echo "示例:"
-            echo "  $0 deploy dev                    # 部署到 dev 环境"
-            echo "  $0 deploy prod app-platform-prod # 部署到 prod 环境"
+            echo "  $0 deploy sunmoonai app-platform-dev development"
+            echo "  $0 deploy sunmoonai app-platform-prod production -c C1"
+            echo "  $0 deploy sunmoonai                              # 使用默认命名空间和环境"
             echo ""
             echo "完整流程示例:"
             echo "  # 1. 构建并推送镜像"
@@ -330,8 +463,8 @@ main() {
             echo "  ./build-image.sh build-push"
             echo ""
             echo "  # 2. 部署服务"
-            echo "  cd ../../k8s/sunmoonai/app-platform/business-apps/llmops-app/llmops-app-bff/deploy-llmops-service"
-            echo "  ./deploy-llmops-service.sh deploy dev"
+            echo "  cd ../../k8s/sunmoonai/app-platform/business-apps/llmops-app/llmops-app-bff/deploy-llmops-bff"
+            echo "  ./deploy-llmops-service.sh deploy sunmoonai app-platform-dev development"
             exit 1
             ;;
     esac

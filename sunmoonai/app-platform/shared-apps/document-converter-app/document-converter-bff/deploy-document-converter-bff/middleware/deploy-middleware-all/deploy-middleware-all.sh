@@ -19,7 +19,7 @@ SCRIPT_DIR="$CONVERTER_MIDDLEWARE_SCRIPT_DIR"
 
 # 加载主配置文件
 load_config() {
-    local config_file="$PROJECT_ROOT/sunmoonai/app-platform/shared-apps/document-converter-app/document-converter-bff/deploy-document-converter/deploy-document-converter.conf"
+    local config_file="$PROJECT_ROOT/sunmoonai/app-platform/shared-apps/document-converter-app/document-converter-bff/deploy-document-converter-bff/deploy-document-converter.conf"
     
     if [[ -f "$config_file" ]]; then
         source "$config_file"
@@ -38,7 +38,7 @@ NAMESPACE="${DOCUMENT_CONVERTER_NAMESPACE:-app-platform-dev}"
 deploy_middleware() {
     log_info "部署 Document Converter StripPrefix Middleware..."
     
-    local middleware_file="$PROJECT_ROOT/sunmoonai/app-platform/shared-apps/document-converter-app/document-converter-bff/deploy-document-converter/middleware/document-converter-stripprefix.yaml"
+    local middleware_file="$PROJECT_ROOT/sunmoonai/app-platform/shared-apps/document-converter-app/document-converter-bff/deploy-document-converter-bff/middleware/document-converter-stripprefix.yaml"
     
     if [[ ! -f "$middleware_file" ]]; then
         log_error "Middleware 配置文件不存在: $middleware_file"

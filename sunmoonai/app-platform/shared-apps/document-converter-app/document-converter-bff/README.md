@@ -75,7 +75,7 @@ docker push harbor.sunmoonai.com:30443/k8s-images/document-converter:latest
 ### 3. 部署到 Kubernetes
 
 ```bash
-cd /home/zym/k8s/sunmoonai/app-platform/shared-apps/document-converter-app/document-converter-bff/deploy-document-converter
+cd /home/zym/k8s/sunmoonai/app-platform/shared-apps/document-converter-app/document-converter-bff/deploy-document-converter-bff
 ./deploy-document-converter.sh --cluster C2
 ```
 
@@ -83,7 +83,7 @@ cd /home/zym/k8s/sunmoonai/app-platform/shared-apps/document-converter-app/docum
 
 ### 主配置文件
 
-`deploy-document-converter/deploy-document-converter.conf`
+`deploy-document-converter-bff/deploy-document-converter.conf`
 
 主要配置项：
 - `DOCUMENT_CONVERTER_NAMESPACE`: 命名空间（默认：app-platform-dev）
@@ -250,7 +250,7 @@ curl https://www.sunmoonai.com/document-converter/api/v1/formats
 ```
 
 **配置方式**：
-在 `deploy-document-converter.conf` 中设置：
+在 `deploy-document-converter-bff/deploy-document-converter.conf` 中设置：
 ```bash
 ingress_enabled="true"  # 启用 Ingress
 DOCUMENT_CONVERTER_UNIFIED_HOST="www.sunmoonai.com"  # 统一域名
@@ -482,7 +482,7 @@ document-converter/
 │   ├── README.md                 # 客户端使用说明
 │   ├── BATCH_USAGE.md           # 详细使用文档
 │   └── example_batch.sh         # 使用示例脚本
-├── deploy-document-converter/    # 部署配置
+├── deploy-document-converter-bff/    # 部署配置
 │   ├── deploy-document-converter.sh
 │   ├── deploy-document-converter.conf
 │   └── resources/
@@ -630,7 +630,7 @@ docker tag document-converter:v1.1.0 harbor.sunmoonai.com:30443/k8s-images/docum
 docker push harbor.sunmoonai.com:30443/k8s-images/document-converter:v1.1.0
 
 # 3. 更新配置
-vim deploy-document-converter/deploy-document-converter.conf
+vim deploy-document-converter-bff/deploy-document-converter.conf
 # 修改 DOCUMENT_CONVERTER_IMAGE_TAG="v1.1.0"
 
 # 4. 重新部署

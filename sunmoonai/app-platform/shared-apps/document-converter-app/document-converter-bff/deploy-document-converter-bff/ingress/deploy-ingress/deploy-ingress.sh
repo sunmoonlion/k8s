@@ -19,7 +19,7 @@ SCRIPT_DIR="$CONVERTER_INGRESS_SCRIPT_DIR"
 
 # 加载主配置文件
 load_config() {
-    local config_file="$PROJECT_ROOT/sunmoonai/app-platform/shared-apps/document-converter-app/document-converter-bff/deploy-document-converter/deploy-document-converter.conf"
+    local config_file="$PROJECT_ROOT/sunmoonai/app-platform/shared-apps/document-converter-app/document-converter-bff/deploy-document-converter-bff/deploy-document-converter.conf"
     
     if [[ -f "$config_file" ]]; then
         source "$config_file"
@@ -42,7 +42,7 @@ UNIFIED_HOST="${DOCUMENT_CONVERTER_UNIFIED_HOST:-www.sunmoonai.com}"
 deploy_ingress() {
     log_info "部署 Document Converter IngressRoute..."
     
-    local ingress_file="$PROJECT_ROOT/sunmoonai/app-platform/shared-apps/document-converter-app/document-converter-bff/deploy-document-converter/ingress/ingress.yaml"
+    local ingress_file="$PROJECT_ROOT/sunmoonai/app-platform/shared-apps/document-converter-app/document-converter-bff/deploy-document-converter-bff/ingress/ingress.yaml"
     
     if [[ ! -f "$ingress_file" ]]; then
         log_error "IngressRoute 配置文件不存在: $ingress_file"

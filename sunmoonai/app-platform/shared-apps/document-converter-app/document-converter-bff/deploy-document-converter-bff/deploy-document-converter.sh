@@ -13,7 +13,8 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 DOCUMENT_CONVERTER_SCRIPT_DIR="$SCRIPT_DIR"
 
 # 导入统一部署模板
-source "$PROJECT_ROOT/../../../utils/unified-deployment-template.sh"
+# 注意：从 document-converter-bff 到 k8s 需要 5 级（document-converter-bff -> document-converter-app -> shared-apps -> app-platform -> sunmoonai -> k8s）
+source "$PROJECT_ROOT/../../../../../utils/unified-deployment-template.sh"
 
 # 恢复 Document Converter 脚本的目录路径
 SCRIPT_DIR="$DOCUMENT_CONVERTER_SCRIPT_DIR"
@@ -55,8 +56,8 @@ parse_cluster_arg() {
     done
     
     if [[ -n "$cluster_value" ]]; then
-        if [[ -f "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh" ]]; then
-            source "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh"
+        if [[ -f "$PROJECT_ROOT/../../../../../utils/cluster-config-mapping.sh" ]]; then
+            source "$PROJECT_ROOT/../../../../../utils/cluster-config-mapping.sh"
             apply_cluster_config_mapping "$cluster_value"
         fi
     fi
@@ -74,8 +75,8 @@ if [[ -f "$CONVERTER_CONFIG_FILE" ]]; then
     source "$CONVERTER_CONFIG_FILE"
     
     # 加载集群配置映射函数
-    if [[ -f "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh" ]]; then
-        source "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh"
+    if [[ -f "$PROJECT_ROOT/../../../../../utils/cluster-config-mapping.sh" ]]; then
+        source "$PROJECT_ROOT/../../../../../utils/cluster-config-mapping.sh"
         apply_cluster_config_mapping
     fi
     

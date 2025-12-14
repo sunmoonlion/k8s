@@ -12,7 +12,7 @@ llmops-service/
 │   ├── Dockerfile              # Backend 镜像构建文件
 │   ├── .gitignore              # 忽略复制的源代码
 │   └── README.md               # 构建说明
-├── deploy-llmops-service/
+├── deploy-llmops-bff/
 │   └── deploy-llmops-service.sh  # 部署脚本（包含构建逻辑）
 └── resources/
     └── web-api.yaml            # Kubernetes 部署配置
@@ -34,7 +34,7 @@ llmops-service/
 ### 构建镜像
 
 ```bash
-cd deploy-llmops-service
+cd deploy-llmops-bff
 ./deploy-llmops-service.sh build
 ```
 
