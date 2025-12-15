@@ -1,0 +1,26 @@
+/* 默认内容（适用于桌面设备） */
+body.desktop .mobile-content {
+  display: none;  /* 桌面设备隐藏 mobile-content */
+}
+
+body.mobile .desktop-content {
+  display: none;  /* 移动设备隐藏 desktop-content */
+}
+
+/* 移动设备显示 mobile-content */
+body.mobile .mobile-content {
+  display: block;  /* 移动设备显示 mobile-content */
+}
+
+/* 桌面设备显示 desktop-content */
+body.desktop .desktop-content {
+  display: block;  /* 桌面设备显示 desktop-content */
+}
+
+
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+

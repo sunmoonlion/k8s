@@ -1,0 +1,12 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: llmops-app-ssr-placeholder
+  namespace: {{NAMESPACE}}
+  labels:
+    app: app-platform-ingress
+    component: llmops-app-ssr
+spec:
+  headers:
+    customRequestHeaders:
+      X-LLMOPS-SSR: "true"
