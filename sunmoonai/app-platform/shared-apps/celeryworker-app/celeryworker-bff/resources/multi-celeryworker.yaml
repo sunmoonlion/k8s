@@ -17,7 +17,7 @@ spec:
     spec:
       # 多个 Init Container: 从不同后端镜像提取任务定义代码
       initContainers:
-      # Init Container 1: 从 llmops-service 提取代码
+      # Init Container 1: 从 llmops-app-bff 提取代码
       - name: extract-llmops-code
         image: ${LLMOPS_IMAGE_REGISTRY}/${LLMOPS_IMAGE_PROJECT}/${LLMOPS_IMAGE}:${LLMOPS_TAG}
         imagePullPolicy: ${IMAGE_PULL_POLICY:-IfNotPresent}
@@ -30,56 +30,58 @@ spec:
           value: "${LLMOPS_CODE_EXTRACT_DIRS:-worker core services db models schemas crud}"
         - name: CODE_EXTRACT_FILES
           value: "${LLMOPS_CODE_EXTRACT_FILES:-__init__.py celeryworker_pre_start.py}"
-        command: ['sh', '-c', |
-          echo "=========================================="
-          echo "从 ${LLMOPS_IMAGE} 镜像提取任务定义代码"
-          echo "=========================================="
-          echo "源代码路径: ${CODE_EXTRACT_SOURCE_DIR}"
-          echo "目标路径: ${CODE_EXTRACT_TARGET_DIR}"
-          echo "提取目录: ${CODE_EXTRACT_DIRS}"
-          echo "提取文件: ${CODE_EXTRACT_FILES}"
-          echo "=========================================="
-          
-          SOURCE_DIR="${CODE_EXTRACT_SOURCE_DIR}"
-          TARGET_DIR="${CODE_EXTRACT_TARGET_DIR}"
-          
-          mkdir -p "$TARGET_DIR"
-          
-          # 复制目录（从环境变量读取目录列表）
-          if [ -n "${CODE_EXTRACT_DIRS}" ]; then
+        command:
+          - sh
+          - -c
+          - |
+            echo "=========================================="
+            echo "从 ${LLMOPS_IMAGE} 镜像提取任务定义代码"
+            echo "=========================================="
+            echo "源代码路径: ${CODE_EXTRACT_SOURCE_DIR}"
+            echo "目标路径: ${CODE_EXTRACT_TARGET_DIR}"
+            echo "提取目录: ${CODE_EXTRACT_DIRS}"
+            echo "提取文件: ${CODE_EXTRACT_FILES}"
+            echo "=========================================="
+            
+            SOURCE_DIR="${CODE_EXTRACT_SOURCE_DIR}"
+            TARGET_DIR="${CODE_EXTRACT_TARGET_DIR}"
+            
+            mkdir -p "$TARGET_DIR"
+            
+            # 复制目录（从环境变量读取目录列表）
+            if [ -n "${CODE_EXTRACT_DIRS}" ]; then
+              echo ""
+              echo "开始复制目录..."
+              for dir in ${CODE_EXTRACT_DIRS}; do
+                if [ -d "$SOURCE_DIR/$dir" ]; then
+                  echo "  ✓ 复制 $dir/..."
+                  cp -r "$SOURCE_DIR/$dir" "$TARGET_DIR/"
+                else
+                  echo "  ⚠ 跳过 $dir/（目录不存在）"
+                fi
+              done
+            fi
+            
+            # 复制文件（从环境变量读取文件列表）
+            if [ -n "${CODE_EXTRACT_FILES}" ]; then
+              echo ""
+              echo "开始复制文件..."
+              for file in ${CODE_EXTRACT_FILES}; do
+                if [ -f "$SOURCE_DIR/$file" ]; then
+                  echo "  ✓ 复制 $file"
+                  cp "$SOURCE_DIR/$file" "$TARGET_DIR/"
+                else
+                  echo "  ⚠ 跳过 $file（文件不存在）"
+                fi
+              done
+            fi
+            
             echo ""
-            echo "开始复制目录..."
-            for dir in ${CODE_EXTRACT_DIRS}; do
-              if [ -d "$SOURCE_DIR/$dir" ]; then
-                echo "  ✓ 复制 $dir/..."
-                cp -r "$SOURCE_DIR/$dir" "$TARGET_DIR/"
-              else
-                echo "  ⚠ 跳过 $dir/（目录不存在）"
-              fi
-            done
-          fi
-          
-          # 复制文件（从环境变量读取文件列表）
-          if [ -n "${CODE_EXTRACT_FILES}" ]; then
+            echo "=========================================="
+            echo "代码提取完成，目标目录内容:"
+            echo "=========================================="
+            ls -la "$TARGET_DIR" || true
             echo ""
-            echo "开始复制文件..."
-            for file in ${CODE_EXTRACT_FILES}; do
-              if [ -f "$SOURCE_DIR/$file" ]; then
-                echo "  ✓ 复制 $file"
-                cp "$SOURCE_DIR/$file" "$TARGET_DIR/"
-              else
-                echo "  ⚠ 跳过 $file（文件不存在）"
-              fi
-            done
-          fi
-          
-          echo ""
-          echo "=========================================="
-          echo "代码提取完成，目标目录内容:"
-          echo "=========================================="
-          ls -la "$TARGET_DIR" || true
-          echo ""
-        ]
         volumeMounts:
         - name: worker-code
           mountPath: /shared
@@ -97,56 +99,58 @@ spec:
           value: "${INCUBATOR_CODE_EXTRACT_DIRS:-worker core services db models}"
         - name: CODE_EXTRACT_FILES
           value: "${INCUBATOR_CODE_EXTRACT_FILES:-__init__.py}"
-        command: ['sh', '-c', |
-          echo "=========================================="
-          echo "从 ${INCUBATOR_IMAGE} 镜像提取任务定义代码"
-          echo "=========================================="
-          echo "源代码路径: ${CODE_EXTRACT_SOURCE_DIR}"
-          echo "目标路径: ${CODE_EXTRACT_TARGET_DIR}"
-          echo "提取目录: ${CODE_EXTRACT_DIRS}"
-          echo "提取文件: ${CODE_EXTRACT_FILES}"
-          echo "=========================================="
-          
-          SOURCE_DIR="${CODE_EXTRACT_SOURCE_DIR}"
-          TARGET_DIR="${CODE_EXTRACT_TARGET_DIR}"
-          
-          mkdir -p "$TARGET_DIR"
-          
-          # 复制目录（从环境变量读取目录列表）
-          if [ -n "${CODE_EXTRACT_DIRS}" ]; then
+        command:
+          - sh
+          - -c
+          - |
+            echo "=========================================="
+            echo "从 ${INCUBATOR_IMAGE} 镜像提取任务定义代码"
+            echo "=========================================="
+            echo "源代码路径: ${CODE_EXTRACT_SOURCE_DIR}"
+            echo "目标路径: ${CODE_EXTRACT_TARGET_DIR}"
+            echo "提取目录: ${CODE_EXTRACT_DIRS}"
+            echo "提取文件: ${CODE_EXTRACT_FILES}"
+            echo "=========================================="
+            
+            SOURCE_DIR="${CODE_EXTRACT_SOURCE_DIR}"
+            TARGET_DIR="${CODE_EXTRACT_TARGET_DIR}"
+            
+            mkdir -p "$TARGET_DIR"
+            
+            # 复制目录（从环境变量读取目录列表）
+            if [ -n "${CODE_EXTRACT_DIRS}" ]; then
+              echo ""
+              echo "开始复制目录..."
+              for dir in ${CODE_EXTRACT_DIRS}; do
+                if [ -d "$SOURCE_DIR/$dir" ]; then
+                  echo "  ✓ 复制 $dir/..."
+                  cp -r "$SOURCE_DIR/$dir" "$TARGET_DIR/"
+                else
+                  echo "  ⚠ 跳过 $dir/（目录不存在）"
+                fi
+              done
+            fi
+            
+            # 复制文件（从环境变量读取文件列表）
+            if [ -n "${CODE_EXTRACT_FILES}" ]; then
+              echo ""
+              echo "开始复制文件..."
+              for file in ${CODE_EXTRACT_FILES}; do
+                if [ -f "$SOURCE_DIR/$file" ]; then
+                  echo "  ✓ 复制 $file"
+                  cp "$SOURCE_DIR/$file" "$TARGET_DIR/"
+                else
+                  echo "  ⚠ 跳过 $file（文件不存在）"
+                fi
+              done
+            fi
+            
             echo ""
-            echo "开始复制目录..."
-            for dir in ${CODE_EXTRACT_DIRS}; do
-              if [ -d "$SOURCE_DIR/$dir" ]; then
-                echo "  ✓ 复制 $dir/..."
-                cp -r "$SOURCE_DIR/$dir" "$TARGET_DIR/"
-              else
-                echo "  ⚠ 跳过 $dir/（目录不存在）"
-              fi
-            done
-          fi
-          
-          # 复制文件（从环境变量读取文件列表）
-          if [ -n "${CODE_EXTRACT_FILES}" ]; then
+            echo "=========================================="
+            echo "代码提取完成，目标目录内容:"
+            echo "=========================================="
+            ls -la "$TARGET_DIR" || true
             echo ""
-            echo "开始复制文件..."
-            for file in ${CODE_EXTRACT_FILES}; do
-              if [ -f "$SOURCE_DIR/$file" ]; then
-                echo "  ✓ 复制 $file"
-                cp "$SOURCE_DIR/$file" "$TARGET_DIR/"
-              else
-                echo "  ⚠ 跳过 $file（文件不存在）"
-              fi
-            done
-          fi
-          
-          echo ""
-          echo "=========================================="
-          echo "代码提取完成，目标目录内容:"
-          echo "=========================================="
-          ls -la "$TARGET_DIR" || true
-          echo ""
-        ]
         volumeMounts:
         - name: worker-code
           mountPath: /shared
@@ -157,88 +161,90 @@ spec:
         volumeMounts:
         - name: worker-code
           mountPath: /shared
-        command: ['sh', '-c', |
-          echo "=========================================="
-          echo "合并多个后端的代码"
-          echo "=========================================="
-          
-          MERGED_DIR="/shared/app"
-          mkdir -p "$MERGED_DIR"
-          
-          # 合并 worker 目录（任务定义）- 合并所有后端的任务
-          echo ""
-          echo "合并 worker 目录（任务定义）..."
-          mkdir -p "$MERGED_DIR/worker"
-          for backend in llmops incubator; do
-            if [ -d "/shared/app/$backend/worker" ]; then
-              echo "  从 $backend/worker 合并任务..."
-              # 复制所有任务文件（包括子目录）
-              find "/shared/app/$backend/worker" -type f -exec sh -c '
-                target_file="$MERGED_DIR/worker/$(basename "$1")"
-                # 如果文件已存在，添加后端前缀避免冲突
-                if [ -f "$target_file" ]; then
-                  backend_name=$(echo "$1" | sed "s|/shared/app/||" | cut -d/ -f1)
-                  target_file="$MERGED_DIR/worker/${backend_name}_$(basename "$1")"
-                fi
-                cp "$1" "$target_file"
-              ' _ {} \;
+        command:
+          - sh
+          - -c
+          - |
+            echo "=========================================="
+            echo "合并多个后端的代码"
+            echo "=========================================="
+            
+            MERGED_DIR="/shared/app"
+            mkdir -p "$MERGED_DIR"
+            
+            # 合并 worker 目录（任务定义）- 合并所有后端的任务
+            echo ""
+            echo "合并 worker 目录（任务定义）..."
+            mkdir -p "$MERGED_DIR/worker"
+            for backend in llmops incubator; do
+              if [ -d "/shared/app/$backend/worker" ]; then
+                echo "  从 $backend/worker 合并任务..."
+                # 复制所有任务文件（包括子目录）
+                find "/shared/app/$backend/worker" -type f -exec sh -c '
+                  target_file="$MERGED_DIR/worker/$(basename "$1")"
+                  # 如果文件已存在，添加后端前缀避免冲突
+                  if [ -f "$target_file" ]; then
+                    backend_name=$(echo "$1" | sed "s|/shared/app/||" | cut -d/ -f1)
+                    target_file="$MERGED_DIR/worker/${backend_name}_$(basename "$1")"
+                  fi
+                  cp "$1" "$target_file"
+                ' _ {} \;
+              fi
+            done
+            
+            # 合并 core 目录（Celery配置）- 优先使用 llmops 的配置
+            echo ""
+            echo "合并 core 目录（Celery配置）..."
+            mkdir -p "$MERGED_DIR/core"
+            if [ -d "/shared/app/llmops/core" ]; then
+              echo "  使用 llmops/core 配置..."
+              cp -r /shared/app/llmops/core/* "$MERGED_DIR/core/" 2>/dev/null || true
+            elif [ -d "/shared/app/incubator/core" ]; then
+              echo "  使用 incubator/core 配置..."
+              cp -r /shared/app/incubator/core/* "$MERGED_DIR/core/" 2>/dev/null || true
             fi
-          done
-          
-          # 合并 core 目录（Celery配置）- 优先使用 llmops 的配置
-          echo ""
-          echo "合并 core 目录（Celery配置）..."
-          mkdir -p "$MERGED_DIR/core"
-          if [ -d "/shared/app/llmops/core" ]; then
-            echo "  使用 llmops/core 配置..."
-            cp -r /shared/app/llmops/core/* "$MERGED_DIR/core/" 2>/dev/null || true
-          elif [ -d "/shared/app/incubator/core" ]; then
-            echo "  使用 incubator/core 配置..."
-            cp -r /shared/app/incubator/core/* "$MERGED_DIR/core/" 2>/dev/null || true
-          fi
-          
-          # 合并其他共享目录（按优先级：llmops > incubator）
-          echo ""
-          echo "合并其他共享目录..."
-          for dir in services db models schemas crud; do
-            if [ -d "/shared/app/llmops/$dir" ]; then
-              echo "  复制 llmops/$dir..."
-              cp -r "/shared/app/llmops/$dir" "$MERGED_DIR/" 2>/dev/null || true
-            elif [ -d "/shared/app/incubator/$dir" ]; then
-              echo "  复制 incubator/$dir..."
-              cp -r "/shared/app/incubator/$dir" "$MERGED_DIR/" 2>/dev/null || true
+            
+            # 合并其他共享目录（按优先级：llmops > incubator）
+            echo ""
+            echo "合并其他共享目录..."
+            for dir in services db models schemas crud; do
+              if [ -d "/shared/app/llmops/$dir" ]; then
+                echo "  复制 llmops/$dir..."
+                cp -r "/shared/app/llmops/$dir" "$MERGED_DIR/" 2>/dev/null || true
+              elif [ -d "/shared/app/incubator/$dir" ]; then
+                echo "  复制 incubator/$dir..."
+                cp -r "/shared/app/incubator/$dir" "$MERGED_DIR/" 2>/dev/null || true
+              fi
+            done
+            
+            # 复制 __init__.py（优先使用 llmops）
+            echo ""
+            echo "复制 __init__.py..."
+            if [ -f "/shared/app/llmops/__init__.py" ]; then
+              cp /shared/app/llmops/__init__.py "$MERGED_DIR/" 2>/dev/null || true
+              echo "  ✓ 使用 llmops/__init__.py"
+            elif [ -f "/shared/app/incubator/__init__.py" ]; then
+              cp /shared/app/incubator/__init__.py "$MERGED_DIR/" 2>/dev/null || true
+              echo "  ✓ 使用 incubator/__init__.py"
             fi
-          done
-          
-          # 复制 __init__.py（优先使用 llmops）
-          echo ""
-          echo "复制 __init__.py..."
-          if [ -f "/shared/app/llmops/__init__.py" ]; then
-            cp /shared/app/llmops/__init__.py "$MERGED_DIR/" 2>/dev/null || true
-            echo "  ✓ 使用 llmops/__init__.py"
-          elif [ -f "/shared/app/incubator/__init__.py" ]; then
-            cp /shared/app/incubator/__init__.py "$MERGED_DIR/" 2>/dev/null || true
-            echo "  ✓ 使用 incubator/__init__.py"
-          fi
-          
-          # 复制 celeryworker_pre_start.py（如果存在）
-          if [ -f "/shared/app/llmops/celeryworker_pre_start.py" ]; then
-            cp /shared/app/llmops/celeryworker_pre_start.py "$MERGED_DIR/" 2>/dev/null || true
-            echo "  ✓ 复制 celeryworker_pre_start.py"
-          fi
-          
-          echo ""
-          echo "=========================================="
-          echo "代码合并完成，合并后目录内容:"
-          echo "=========================================="
-          ls -la "$MERGED_DIR" || true
-          echo ""
-          if [ -d "$MERGED_DIR/worker" ]; then
-            echo "合并后的任务文件:"
-            ls -la "$MERGED_DIR/worker" || true
-          fi
-          echo ""
-        ]
+            
+            # 复制 celeryworker_pre_start.py（如果存在）
+            if [ -f "/shared/app/llmops/celeryworker_pre_start.py" ]; then
+              cp /shared/app/llmops/celeryworker_pre_start.py "$MERGED_DIR/" 2>/dev/null || true
+              echo "  ✓ 复制 celeryworker_pre_start.py"
+            fi
+            
+            echo ""
+            echo "=========================================="
+            echo "代码合并完成，合并后目录内容:"
+            echo "=========================================="
+            ls -la "$MERGED_DIR" || true
+            echo ""
+            if [ -d "$MERGED_DIR/worker" ]; then
+              echo "合并后的任务文件:"
+              ls -la "$MERGED_DIR/worker" || true
+            fi
+            echo ""
       
       containers:
       - name: celeryworker

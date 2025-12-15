@@ -201,10 +201,10 @@ deploy_celeryworker() {
     export IMAGE_PULL_POLICY="${IMAGE_PULL_POLICY:-IfNotPresent}"
     
     # 多后端配置（统一格式，支持动态配置）
-    # 后端1: llmops-service
+    # 后端1: llmops-app-bff
     export LLMOPS_IMAGE_REGISTRY="${BACKEND_llmops_IMAGE_REGISTRY:-${DEFAULT_BACKEND_IMAGE_REGISTRY:-harbor.sunmoonai.com:30443}}"
     export LLMOPS_IMAGE_PROJECT="${BACKEND_llmops_IMAGE_PROJECT:-${DEFAULT_BACKEND_IMAGE_PROJECT:-k8s-images}}"
-    export LLMOPS_IMAGE="${BACKEND_llmops_IMAGE:-llmops-service}"
+    export LLMOPS_IMAGE="${BACKEND_llmops_IMAGE:-llmops-app-bff}"
     export LLMOPS_TAG="${BACKEND_llmops_TAG:-1.0.0}"
     export LLMOPS_CODE_EXTRACT_SOURCE_DIR="${BACKEND_llmops_CODE_EXTRACT_SOURCE_DIR:-${DEFAULT_CODE_EXTRACT_SOURCE_DIR:-/app/app}}"
     export LLMOPS_CODE_EXTRACT_DIRS="${BACKEND_llmops_CODE_EXTRACT_DIRS:-${DEFAULT_CODE_EXTRACT_DIRS:-worker core services db models schemas crud}}"
