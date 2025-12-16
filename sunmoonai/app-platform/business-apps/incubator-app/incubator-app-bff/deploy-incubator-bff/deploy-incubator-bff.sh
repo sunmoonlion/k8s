@@ -43,7 +43,7 @@ check_kubectl() {
   if ! command -v kubectl &>/dev/null; then
     log_error "kubectl 未安装或不在 PATH 中"
     exit 1
-  }
+  fi
 }
 
 check_namespace() {
@@ -53,7 +53,7 @@ check_namespace() {
   else
     log_error "命名空间不存在: $namespace"
     exit 1
-  }
+  fi
 }
 
 check_env_config() {
@@ -68,7 +68,7 @@ check_env_config() {
   if ! command -v envsubst &>/dev/null; then
     log_error "envsubst 未安装，请安装 gettext-base"
     exit 1
-  }
+  fi
 }
 
 deploy_secrets_config() {
