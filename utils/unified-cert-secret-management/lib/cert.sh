@@ -784,7 +784,26 @@ distribute_ca_certificate_to_client() {
     # Docker 客户端需要重启 Docker 服务才能加载新的 CA 证书
     # containerd 和 nerdctl 会在每次拉取镜像时动态读取证书，不需要重启
     if [[ "$client_env" == "D" ]]; then
-        log_info "Docker 客户端需要重启 Docker 服务以加载新的 CA 证书..."
+        log_info "Docker 客户端需要导入系统 CA 并重启 Docker 服务以加载新的 CA 证书..."
+        
+        # 从 client_cert_path 提取 Harbor 域名（例如：/etc/docker/certs.d/harbor.sunmoonai.com:30443 -> harbor.sunmoonai.com:30443）
+        # 提取 certs.d/ 后面的部分（包含端口）
+        local harbor_registry=$(echo "$client_cert_path" | sed 's|.*certs\.d/\([^/]*\).*|\1|')
+        # 将域名中的特殊字符替换为连字符，生成安全的文件名
+        local system_ca_name="harbor-${harbor_registry//[^a-zA-Z0-9]/-}-ca.crt"
+        local system_ca_path="/usr/local/share/ca-certificates/${system_ca_name}"
+        
+        # 1. 导入 CA 证书到系统 CA 存储
+        log_info "导入 CA 证书到系统 CA 存储: $system_ca_path"
+        local import_system_ca_cmd="sudo cp $client_ca_path $system_ca_path && sudo chmod 644 $system_ca_path && sudo update-ca-certificates"
+        if ! execute_ssh_command_with_retry "$client_host" "$client_port" "$client_username" "$client_ssh_key" "$import_system_ca_cmd"; then
+            log_warn "导入系统 CA 失败，但继续尝试重启 Docker"
+        else
+            log_success "系统 CA 导入成功"
+        fi
+        
+        # 2. 重启 Docker 服务
+        log_info "重启 Docker 服务..."
         local restart_docker_cmd="sudo systemctl restart docker"
         if execute_ssh_command_with_retry "$client_host" "$client_port" "$client_username" "$client_ssh_key" "$restart_docker_cmd"; then
             log_success "Docker 服务重启成功"
