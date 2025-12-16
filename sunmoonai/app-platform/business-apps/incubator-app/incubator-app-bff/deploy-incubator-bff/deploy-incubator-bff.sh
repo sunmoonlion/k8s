@@ -59,8 +59,11 @@ check_namespace() {
 check_env_config() {
   [[ -f "$INCUBATOR_BFF_YAML" ]] || { log_error "缺少资源文件: $INCUBATOR_BFF_YAML"; exit 1; }
   if [[ "${secrets_enabled:-true}" == "true" ]]; then
-    [[ -f "$INCUBATOR_BFF_CONFIGMAP" ]] || { log_error "缺少 ConfigMap 模板: $INCUBATOR_BFF_CONFIGMAP"; exit 1; }
-    [[ -f "$INCUBATOR_BFF_SECRET" ]] || { log_error "缺少 Secret 模板: $INCUBATOR_BFF_SECRET"; exit 1; }
+    # 检查 ConfigMap 和 Secret 的部署脚本
+    local config_script="$SECRETS_DIR/incubator-app-bff-config/deploy-incubator-app-bff-config/deploy-incubator-app-bff-config.sh"
+    local secret_script="$SECRETS_DIR/incubator-app-bff-secret/deploy-incubator-app-bff-secret/deploy-incubator-app-bff-secret.sh"
+    [[ -f "$config_script" ]] || { log_error "缺少 ConfigMap 部署脚本: $config_script"; exit 1; }
+    [[ -f "$secret_script" ]] || { log_error "缺少 Secret 部署脚本: $secret_script"; exit 1; }
   fi
   if ! command -v envsubst &>/dev/null; then
     log_error "envsubst 未安装，请安装 gettext-base"
@@ -71,14 +74,26 @@ check_env_config() {
 deploy_secrets_config() {
   [[ "${secrets_enabled:-true}" == "true" ]] || { log_info "跳过 Secrets/ConfigMap 部署"; return; }
   log_info "部署 ConfigMap 和 Secret..."
-  export NAMESPACE ENV
-  tmp_cm=$(mktemp)
-  tmp_sec=$(mktemp)
-  envsubst < "$INCUBATOR_BFF_CONFIGMAP" > "$tmp_cm"
-  envsubst < "$INCUBATOR_BFF_SECRET" > "$tmp_sec"
-  kubectl apply -f "$tmp_cm" -n "$NAMESPACE"
-  kubectl apply -f "$tmp_sec" -n "$NAMESPACE"
-  rm -f "$tmp_cm" "$tmp_sec"
+  
+  # 使用子脚本生成并部署 ConfigMap
+  local config_script="$SECRETS_DIR/incubator-app-bff-config/deploy-incubator-app-bff-config/deploy-incubator-app-bff-config.sh"
+  if [[ -f "$config_script" ]]; then
+    log_info "生成并部署 ConfigMap..."
+    bash "$config_script" deploy "$PROJECT_ID" "$NAMESPACE" "$ENVIRONMENT"
+  else
+    log_error "ConfigMap 部署脚本不存在: $config_script"
+    exit 1
+  fi
+  
+  # 使用子脚本生成并部署 Secret
+  local secret_script="$SECRETS_DIR/incubator-app-bff-secret/deploy-incubator-app-bff-secret/deploy-incubator-app-bff-secret.sh"
+  if [[ -f "$secret_script" ]]; then
+    log_info "生成并部署 Secret..."
+    bash "$secret_script" deploy "$PROJECT_ID" "$NAMESPACE" "$ENVIRONMENT"
+  else
+    log_error "Secret 部署脚本不存在: $secret_script"
+    exit 1
+  fi
 }
 
 deploy_app() {
@@ -101,13 +116,15 @@ undeploy_app() {
   kubectl delete -f "$tmp_yaml" -n "$NAMESPACE" --ignore-not-found
   rm -f "$tmp_yaml"
   if [[ "${secrets_enabled:-true}" == "true" ]]; then
-    tmp_cm=$(mktemp)
-    tmp_sec=$(mktemp)
-    envsubst < "$INCUBATOR_BFF_CONFIGMAP" > "$tmp_cm"
-    envsubst < "$INCUBATOR_BFF_SECRET" > "$tmp_sec"
-    kubectl delete -f "$tmp_cm" -n "$NAMESPACE" --ignore-not-found
-    kubectl delete -f "$tmp_sec" -n "$NAMESPACE" --ignore-not-found
-    rm -f "$tmp_cm" "$tmp_sec"
+    # 使用子脚本卸载 ConfigMap 和 Secret
+    local config_script="$SECRETS_DIR/incubator-app-bff-config/deploy-incubator-app-bff-config/deploy-incubator-app-bff-config.sh"
+    local secret_script="$SECRETS_DIR/incubator-app-bff-secret/deploy-incubator-app-bff-secret/deploy-incubator-app-bff-secret.sh"
+    if [[ -f "$config_script" ]]; then
+      bash "$config_script" undeploy "$PROJECT_ID" "$NAMESPACE" "$ENVIRONMENT"
+    fi
+    if [[ -f "$secret_script" ]]; then
+      bash "$secret_script" undeploy "$PROJECT_ID" "$NAMESPACE" "$ENVIRONMENT"
+    fi
   fi
   log_success "卸载完成"
 }
