@@ -1,31 +1,34 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: llmops-service
+  name: llmops-app-bff
   namespace: ${NAMESPACE:-app-platform-dev}
   labels:
-    app: llmops-service
+    app: llmops-app-bff
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: llmops-service
+      app: llmops-app-bff
   template:
     metadata:
       labels:
-        app: llmops-service
+        app: llmops-app-bff
     spec:
       containers:
-      - name: llmops-service
-        image: ${LLMOPS_SERVICE_FULL_IMAGE_NAME:-${LLMOPS_SERVICE_IMAGE_REGISTRY}/${LLMOPS_SERVICE_IMAGE_PROJECT}/${LLMOPS_SERVICE_IMAGE}:${LLMOPS_SERVICE_TAG}}  # Harbor 镜像路径：仓库/项目/镜像名:标签
-        imagePullPolicy: ${IMAGE_PULL_POLICY:-IfNotPresent}  # IfNotPresent: 如果本地有镜像则使用本地，否则从 Harbor 拉取
+      - name: llmops-app-bff
+        # Harbor 镜像路径：仓库/项目/镜像名:标签
+        # 由 deploy-llmops-bff.sh 计算并导出 LLMOPS_BFF_FULL_IMAGE_NAME
+        image: ${LLMOPS_BFF_FULL_IMAGE_NAME}
+        # IfNotPresent: 如果本地有镜像则使用本地，否则从 Harbor 拉取
+        imagePullPolicy: ${IMAGE_PULL_POLICY:-IfNotPresent}
         ports:
         - containerPort: 80
         envFrom:
         - configMapRef:
-            name: llmops-service-config
+            name: llmops-app-bff-config
         - secretRef:
-            name: llmops-service-secret
+            name: llmops-app-bff-secret
         resources:
           requests:
             memory: "512Mi"
@@ -49,15 +52,17 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: llmops-service
+  name: llmops-app-bff
   namespace: ${NAMESPACE:-app-platform-dev}
   labels:
-    app: llmops-service
+    app: llmops-app-bff
 spec:
   selector:
-    app: llmops-service
+    app: llmops-app-bff
   ports:
   - port: 80
     targetPort: 80
     protocol: TCP
   type: ClusterIP
+
+

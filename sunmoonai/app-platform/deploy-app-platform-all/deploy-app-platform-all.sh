@@ -118,7 +118,7 @@ declare -A COMPONENT_PATHS=(
     # 业务应用 (business-apps)
     ["incubator_bff"]="business-apps/incubator-app/incubator-app-bff/deploy-incubator-bff/deploy-incubator-bff.sh"
     ["incubator_ssr"]="business-apps/incubator-app/incubator-app-ssr/deploy-incubator-ssr/deploy-incubator-ssr.sh"
-    ["llmops_bff"]="business-apps/llmops-app/llmops-app-bff/deploy-llmops-bff/deploy-llmops-service.sh"
+    ["llmops_bff"]="business-apps/llmops-app/llmops-app-bff/deploy-llmops-bff/deploy-llmops-bff.sh"
     ["llmops_ssr"]="business-apps/llmops-app/llmops-app-ssr/deploy-llmops-ssr/deploy-llmops-ssr.sh"
 )
 

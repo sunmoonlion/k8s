@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# LLMOps Service HTTPS 路由部署脚本
+# LLMOps App BFF HTTP 路由部署脚本
 
 set -e
 
@@ -8,81 +8,11 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # 计算项目根目录（k8s目录）
-# 从 deploy-ingress/ -> ingress/ -> deploy-llmops-service/ -> llmops-service/ -> app-platform/ -> sunmoonai/ -> k8s/
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../.." && pwd)"
+# 从 deploy-ingress/ -> ingress/ -> deploy-llmops-bff/ -> llmops-app-bff/ -> llmops-app/ -> business-apps/ -> app-platform/ -> sunmoonai/ -> k8s/
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
 
 # 导入统一部署模板（建立远程 k8s 连接）
 source "$PROJECT_ROOT/utils/unified-deployment-template.sh"
-
-# 脚本目录
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INGRESS_FILE="$(dirname "$SCRIPT_DIR")/ingress.yaml"
-MIDDLEWARE_FILE="$(dirname "$SCRIPT_DIR")/middleware.yaml"
-
-# 颜色定义
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# 日志函数
-log_info() {
-    echo -e "${BLUE}[INFO]${NC} $(date '+%Y-%m-%d %H:%M:%S') $1"
-}
-
-log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $(date '+%Y-%m-%d %H:%M:%S') $1"
-}
-
-log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $(date '+%Y-%m-%d %H:%M:%S') $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $(date '+%Y-%m-%d %H:%M:%S') $1"
-}
-
-# 加载配置
-load_config() {
-    # 尝试加载主配置文件（如果存在），以获取 LLMOPS_SERVICE_EXTERNAL_HOST、LLMOPS_SERVICE_EXTERNAL_PORT 等环境变量
-    # 主配置文件路径：../../deploy-llmops-service.conf（相对于当前脚本目录）
-    local main_config_file="$(cd "$SCRIPT_DIR/../.." && pwd)/deploy-llmops-service.conf"
-    if [[ -f "$main_config_file" ]]; then
-        # 临时禁用错误退出，因为主配置文件可能包含一些在当前上下文中不适用的配置
-        set +e
-        source "$main_config_file" 2>/dev/null
-        set -e
-        log_info "已加载主配置文件: $main_config_file"
-    fi
-    
-    # 从主配置文件构建配置
-    SERVICE_NAME="llmops-service"
-    NAMESPACE="${LLMOPS_SERVICE_NAMESPACE:-app-platform-dev}"
-    
-    # 外部访问配置
-    LLMOPS_SERVICE_UNIFIED_HOST="${LLMOPS_SERVICE_UNIFIED_HOST:-llmops.sunmoonai.com}"
-    LLMOPS_SERVICE_NODE_IP="${LLMOPS_SERVICE_NODE_IP:-101.126.151.0}"
-    LLMOPS_SERVICE_EXTERNAL_PORT="${LLMOPS_SERVICE_EXTERNAL_PORT:-30443}"
-    
-    # 从 Service 中获取端口（如果 Service 存在）
-    if type get_service_port >/dev/null 2>&1; then
-        local service_port
-        service_port=$(get_service_port "$SERVICE_NAME" "$NAMESPACE")
-        if [[ -n "$service_port" ]]; then
-            SERVICE_PORT="$service_port"
-            log_info "从 Service 获取 LLMOps Service 端口: $SERVICE_PORT"
-        else
-            log_warn "⚠️  无法从 Service 获取端口，使用默认端口 80"
-            SERVICE_PORT="80"
-        fi
-    else
-        log_warn "⚠️  get_service_port 函数不可用，使用默认端口 80"
-        SERVICE_PORT="80"
-    fi
-    
-    log_success "✅ 配置加载成功"
-}
 
 # 检查命名空间是否存在
 check_namespace() {
@@ -105,174 +35,223 @@ check_namespace() {
     fi
 }
 
-# 验证 LLMOps Service 是否存在（警告模式，不阻止部署）
-verify_llmops_service() {
+# Ingress 配置文件
+INGRESS_FILE="$(dirname "$SCRIPT_DIR")/ingress.yaml"
+
+# 验证 LLMOps App BFF 是否存在（警告模式，不阻止部署）
+verify_service() {
     local namespace="$1"
-    local warn_only="${2:-false}"  # 如果为 true，服务不存在时只警告，不失败
+    local service_name="$2"
+    local warn_only="${3:-false}"  # 如果为 true，服务不存在时只警告，不失败
     
-    if kubectl get service -n "$namespace" "$SERVICE_NAME" >/dev/null 2>&1; then
-        log_success "✅ LLMOps Service 存在: $SERVICE_NAME"
+    if kubectl get service -n "$namespace" "$service_name" >/dev/null 2>&1; then
+        log_success "✅ LLMOps App BFF 存在: $service_name"
         return 0
     else
         if [[ "$warn_only" == "true" ]]; then
-            log_warning "⚠️ LLMOps Service 不存在: $SERVICE_NAME（将在服务部署后自动生效）"
+            log_warning "⚠️ LLMOps App BFF 不存在: $service_name（将在服务部署后自动生效）"
             return 0  # 返回成功，允许继续部署
         else
-            log_error "❌ LLMOps Service 不存在: $SERVICE_NAME"
+            log_error "❌ LLMOps App BFF 不存在: $service_name"
             return 1
         fi
     fi
 }
 
-# 部署 LLMOps Service HTTPS 路由
+# 加载配置
+load_config() {
+    # 尝试加载主配置文件（如果存在），以获取 LLMOPS_BFF_NAMESPACE、LLMOPS_BFF_UNIFIED_HOST 等环境变量
+    # 主配置文件路径：../../deploy-llmops-bff.conf（相对于当前脚本目录）
+    local main_config_file="$(cd "$SCRIPT_DIR/../.." && pwd)/deploy-llmops-bff.conf"
+    if [[ -f "$main_config_file" ]]; then
+        # 临时禁用错误退出，因为主配置文件可能包含一些在当前上下文中不适用的配置
+        set +e
+        source "$main_config_file" 2>/dev/null
+        set -e
+        log_info "已加载主配置文件: $main_config_file"
+    fi
+    
+    # 从主配置文件构建配置
+    SERVICE_NAME="llmops-app-bff"
+    NAMESPACE="${LLMOPS_BFF_NAMESPACE:-app-platform-dev}"
+    UNIFIED_HOST="${LLMOPS_BFF_UNIFIED_HOST:-llmops.sunmoonai.com}"
+    NODE_IP="${LLMOPS_BFF_NODE_IP:-101.126.151.0}"
+    EXTERNAL_PORT="${LLMOPS_BFF_EXTERNAL_PORT:-30443}"
+    
+    # 从 Service 中获取端口（如果 Service 存在）
+    if type get_service_port >/dev/null 2>&1; then
+        local service_port
+        service_port=$(get_service_port "$SERVICE_NAME" "$NAMESPACE")
+        if [[ -n "$service_port" ]]; then
+            SERVICE_PORT="$service_port"
+            log_info "从 Service 获取端口: $SERVICE_PORT"
+        else
+            log_warn "⚠️  无法从 Service 获取端口，使用默认端口 80"
+            SERVICE_PORT="80"
+        fi
+    else
+        log_warn "⚠️  get_service_port 函数不可用，使用默认端口 80"
+        SERVICE_PORT="80"
+    fi
+    
+    log_success "✅ 配置加载成功"
+}
+
+# 部署 HTTP 路由
 deploy_http_route() {
     local namespace="${1:-app-platform-dev}"
     
-    log_info "部署 LLMOps Service HTTPS 路由..."
+    log_info "部署 LLMOps App BFF HTTP 路由..."
     log_info "命名空间: $namespace"
-    
-    # 加载配置（确保 SERVICE_PORT 等变量被正确设置）
-    load_config
     
     # 检查命名空间是否存在
     check_namespace "$namespace"
     
-    # 验证 LLMOps Service 是否存在（警告模式：服务不存在时只警告，不阻止部署）
-    # 注意：在递归部署架构中，Ingress 可能在服务部署之前部署，这是正常的
-    # Ingress 会在服务创建后自动生效
-    verify_llmops_service "$namespace" "true" || {
-        log_warning "⚠️ LLMOps Service 尚未创建，Ingress 将在服务部署后自动生效"
-    }
+    # 从主配置文件构建配置
+    SERVICE_NAME="llmops-app-bff"
+    NAMESPACE="${LLMOPS_BFF_NAMESPACE:-app-platform-dev}"
+    UNIFIED_HOST="${LLMOPS_BFF_UNIFIED_HOST:-llmops.sunmoonai.com}"
+    NODE_IP="${LLMOPS_BFF_NODE_IP:-101.126.151.0}"
+    
+    # 从 Service 中获取端口（如果 Service 存在）
+    if type get_service_port >/dev/null 2>&1; then
+        local service_port
+        service_port=$(get_service_port "$SERVICE_NAME" "$namespace")
+        if [[ -n "$service_port" ]]; then
+            SERVICE_PORT="$service_port"
+            log_info "从 Service 获取端口: $SERVICE_PORT"
+        else
+            log_warn "⚠️  无法从 Service 获取端口，使用默认端口 80"
+            SERVICE_PORT="80"
+        fi
+    else
+        log_warn "⚠️  get_service_port 函数不可用，使用默认端口 80"
+        SERVICE_PORT="80"
+    fi
     
     if [[ ! -f "$INGRESS_FILE" ]]; then
         log_error "Ingress 配置文件不存在: $INGRESS_FILE"
         return 1
     fi
     
-    if [[ ! -f "$MIDDLEWARE_FILE" ]]; then
-        log_error "Middleware 配置文件不存在: $MIDDLEWARE_FILE"
-        return 1
-    fi
+    # 验证服务是否存在（警告模式：服务不存在时只警告，不阻止部署）
+    # 注意：在递归部署架构中，Ingress 可能在服务部署之前部署，这是正常的
+    # Ingress 会在服务创建后自动生效
+    verify_service "$namespace" "$SERVICE_NAME" "true" || {
+        log_warning "⚠️ LLMOps App BFF 尚未创建，Ingress 将在服务部署后自动生效"
+    }
     
     log_info "使用服务名称: $SERVICE_NAME"
-    log_info "外部访问地址: $LLMOPS_SERVICE_UNIFIED_HOST:$LLMOPS_SERVICE_EXTERNAL_PORT"
+    log_info "服务端口: $SERVICE_PORT"
+    log_info "统一域名: $UNIFIED_HOST"
+    log_info "节点 IP: $NODE_IP"
     
-    # 先部署 Middleware
-    log_info "部署 Middleware..."
-    local temp_middleware_file
-    temp_middleware_file=$(mktemp)
-    cp "$MIDDLEWARE_FILE" "$temp_middleware_file"
+    # 创建临时文件并替换变量
+    local temp_file
+    temp_file=$(mktemp)
+    cp "$INGRESS_FILE" "$temp_file"
     
     # 使用 sed 替换模板变量
-    sed -i "s/{{NAMESPACE}}/$namespace/g" "$temp_middleware_file"
+    sed -i "s/{{NAMESPACE}}/$NAMESPACE/g" "$temp_file"
+    sed -i "s/{{SERVICE_NAME}}/$SERVICE_NAME/g" "$temp_file"
+    sed -i "s/{{SERVICE_PORT}}/$SERVICE_PORT/g" "$temp_file"
+    sed -i "s/{{UNIFIED_HOST}}/$UNIFIED_HOST/g" "$temp_file"
+    sed -i "s/{{NODE_IP}}/$NODE_IP/g" "$temp_file"
     
-    if kubectl apply -f "$temp_middleware_file"; then
-        log_success "✅ Middleware 配置应用成功"
-        rm -f "$temp_middleware_file"
+    # 应用 Ingress 配置（包括 Middleware 和 IngressRoute）
+    log_info "应用 LLMOps App BFF HTTP 路由配置..."
+    if kubectl apply -f "$temp_file"; then
+        log_success "✅ LLMOps App BFF HTTP 路由配置应用成功"
+        rm -f "$temp_file"
     else
-        log_error "❌ Middleware 配置应用失败"
-        rm -f "$temp_middleware_file"
-        return 1
-    fi
-    
-    # 部署 IngressRoute
-    log_info "部署 IngressRoute..."
-    local temp_ingress_file
-    temp_ingress_file=$(mktemp)
-    cp "$INGRESS_FILE" "$temp_ingress_file"
-    
-    # 使用 sed 替换模板变量（与 redisinsight 对齐）
-    sed -i "s/{{NAMESPACE}}/$namespace/g" "$temp_ingress_file"
-    sed -i "s/{{SERVICE_NAME}}/$SERVICE_NAME/g" "$temp_ingress_file"
-    sed -i "s/{{SERVICE_PORT}}/$SERVICE_PORT/g" "$temp_ingress_file"
-    sed -i "s/{{UNIFIED_HOST}}/$LLMOPS_SERVICE_UNIFIED_HOST/g" "$temp_ingress_file"
-    sed -i "s/{{NODE_IP}}/$LLMOPS_SERVICE_NODE_IP/g" "$temp_ingress_file"
-    
-    if kubectl apply -f "$temp_ingress_file"; then
-        log_success "✅ IngressRoute 配置应用成功"
-        rm -f "$temp_ingress_file"
-    else
-        log_error "❌ IngressRoute 配置应用失败"
-        rm -f "$temp_ingress_file"
+        log_error "❌ LLMOps App BFF HTTP 路由配置应用失败"
+        rm -f "$temp_file"
         return 1
     fi
     
     # 检查路由状态
-    log_info "检查 LLMOps Service HTTPS 路由状态..."
-    kubectl get ingressroute -n "$namespace" llmops-service-ingress || true
+    log_info "检查 LLMOps App BFF HTTP 路由状态..."
+    kubectl get ingressroute -n "$namespace" llmops-app-bff-ingress 2>/dev/null || log_warn "IngressRoute 尚未创建"
+    kubectl get middleware -n "$namespace" llmops-app-bff-stripprefix 2>/dev/null || log_warn "Middleware 尚未创建"
     
-    log_success "✅ LLMOps Service HTTPS 路由部署完成！"
+    log_success "✅ LLMOps App BFF HTTP 路由部署完成！"
     return 0
 }
 
 # 检查部署状态
 check_deployment_status() {
-    log_info "检查 LLMOps Service HTTPS 路由部署状态..."
+    log_info "检查 LLMOps App BFF HTTP 路由部署状态..."
     
     echo ""
-    echo "=== LLMOps Service IngressRoute 状态 ==="
-    kubectl get ingressroute -n "$NAMESPACE" -l component=llmops-service 2>/dev/null || echo "IngressRoute 不存在"
+    echo "=== LLMOps App BFF HTTP 路由状态 ==="
+    kubectl get ingressroute -n "$NAMESPACE" -l component=llmops-app-bff 2>/dev/null || echo "IngressRoute 不存在"
     
     echo ""
-    echo "=== LLMOps Service Middleware 状态 ==="
-    kubectl get middleware -n "$NAMESPACE" -l component=llmops-service 2>/dev/null || echo "Middleware 不存在"
+    echo "=== Middleware 状态 ==="
+    kubectl get middleware -n "$NAMESPACE" -l component=llmops-app-bff 2>/dev/null || echo "Middleware 不存在"
     
     echo ""
-    echo "=== LLMOps Service 状态 ==="
-    kubectl get svc "$SERVICE_NAME" -n "$NAMESPACE" 2>/dev/null || echo "LLMOps Service 不存在"
+    echo "=== LLMOps App BFF 服务状态 ==="
+    kubectl get svc "$SERVICE_NAME" -n "$NAMESPACE" 2>/dev/null || echo "LLMOps App BFF 服务不存在"
     
     echo ""
     echo "=== 访问信息 ==="
-    echo "LLMOps Service API 地址: https://$LLMOPS_SERVICE_UNIFIED_HOST/api/v1"
+    echo "统一域名访问: https://${UNIFIED_HOST}/api/v1"
+    echo "节点 IP 访问: https://${NODE_IP}:${EXTERNAL_PORT}/api/v1"
     echo ""
     echo "=== 使用说明 ==="
-    echo "1. 通过统一域名访问:"
-    echo "   https://$LLMOPS_SERVICE_UNIFIED_HOST/api/v1"
+    echo "1. 通过 curl 访问:"
+    echo "   curl -k https://${UNIFIED_HOST}/api/v1/health"
+    echo "   curl -k https://${NODE_IP}:${EXTERNAL_PORT}/api/v1/health"
     echo ""
-    echo "2. 或使用 IP 地址访问:"
-    echo "   https://$LLMOPS_SERVICE_NODE_IP:30443/api/v1"
-    echo ""
-    echo "3. 或使用外部访问域名:"
-    echo "   https://$LLMOPS_SERVICE_UNIFIED_HOST/api/v1"
+    echo "2. 注意：需要在 /etc/hosts 中添加域名映射："
+    echo "   ${NODE_IP}  ${UNIFIED_HOST}"
 }
 
-# 删除 LLMOps Service HTTPS 路由
+# 删除 HTTP 路由
 delete_http_route() {
     local namespace="${1:-app-platform-dev}"
     
-    log_info "删除 LLMOps Service HTTPS 路由..."
+    log_info "删除 LLMOps App BFF HTTP 路由..."
     log_info "命名空间: $namespace"
     
-    # 删除 IngressRoute
-    if kubectl delete ingressroute -n "$namespace" llmops-service-ingress 2>/dev/null; then
-        log_success "✅ IngressRoute 删除成功"
-    else
-        log_warn "⚠️ IngressRoute 不存在或删除失败"
+    if [[ ! -f "$INGRESS_FILE" ]]; then
+        log_warn "Ingress 配置文件不存在: $INGRESS_FILE"
+        return 0
     fi
     
-    # 删除 Middleware（注意：如果其他 IngressRoute 也在使用这些 Middleware，删除可能会影响它们）
-    # 这里只删除 llmops-service 相关的 Middleware
-    for middleware_name in llmops-service-stripprefix llmops-service-auth llmops-service-rate-limit llmops-service-monitoring; do
-        if kubectl delete middleware -n "$namespace" "$middleware_name" 2>/dev/null; then
-            log_success "✅ Middleware $middleware_name 删除成功"
-        else
-            log_warn "⚠️ Middleware $middleware_name 不存在或删除失败"
-        fi
-    done
+    # 创建临时文件并替换变量（用于删除）
+    local temp_file
+    temp_file=$(mktemp)
+    cp "$INGRESS_FILE" "$temp_file"
     
-    log_success "✅ LLMOps Service HTTPS 路由删除完成！"
+    # 使用 sed 替换模板变量
+    sed -i "s/{{NAMESPACE}}/$namespace/g" "$temp_file"
+    sed -i "s/{{SERVICE_NAME}}/llmops-app-bff/g" "$temp_file"
+    sed -i "s/{{SERVICE_PORT}}/80/g" "$temp_file"
+    sed -i "s/{{UNIFIED_HOST}}/llmops.sunmoonai.com/g" "$temp_file"
+    sed -i "s/{{NODE_IP}}/101.126.151.0/g" "$temp_file"
+    
+    if kubectl delete -f "$temp_file" 2>/dev/null; then
+        log_success "✅ LLMOps App BFF HTTP 路由配置删除成功"
+    else
+        log_warn "⚠️ LLMOps App BFF HTTP 路由配置不存在或删除失败"
+    fi
+    
+    rm -f "$temp_file"
+    log_success "✅ LLMOps App BFF HTTP 路由删除完成！"
     return 0
 }
 
 # 显示帮助信息
 show_help() {
-    echo "LLMOps Service HTTPS 路由部署脚本"
+    echo "LLMOps App BFF HTTP 路由部署脚本"
     echo ""
     echo "用法: $0 [命令] [项目ID] [命名空间] [环境]"
     echo ""
     echo "命令:"
-    echo "  deploy <project_id> [namespace] [environment]    部署 LLMOps Service HTTPS 路由"
-    echo "  uninstall <project_id> [namespace] [environment] 卸载 LLMOps Service HTTPS 路由"
+    echo "  deploy <project_id> [namespace] [environment]    部署 LLMOps App BFF HTTP 路由"
+    echo "  uninstall <project_id> [namespace] [environment] 卸载 LLMOps App BFF HTTP 路由"
     echo "  status    检查部署状态"
     echo "  help      显示帮助信息"
     echo ""
@@ -282,8 +261,8 @@ show_help() {
     echo "  environment  环境 (默认: development)"
     echo ""
     echo "示例:"
-    echo "  $0 deploy sunmoonai app-platform-dev development  # 部署 LLMOps Service HTTPS 路由"
-    echo "  $0 uninstall sunmoonai app-platform-dev development  # 卸载 LLMOps Service HTTPS 路由"
+    echo "  $0 deploy sunmoonai app-platform-dev development  # 部署 HTTP 路由"
+    echo "  $0 uninstall sunmoonai app-platform-dev development  # 卸载 HTTP 路由"
     echo "  $0 status    # 检查状态"
 }
 
@@ -306,7 +285,7 @@ main() {
                 exit 1
             fi
             
-            log_info "开始部署 LLMOps Service HTTPS 路由..."
+            log_info "开始部署 LLMOps App BFF HTTP 路由..."
             log_info "项目: $project_id"
             log_info "命名空间: $namespace"
             log_info "环境: $environment"
@@ -315,7 +294,7 @@ main() {
             check_namespace "$NAMESPACE"
             # 注意：不在这里检查服务，因为 deploy_http_route 中已经使用警告模式检查
             # 在递归部署架构中，Ingress 可能在服务部署之前部署，这是正常的
-            deploy_http_route "$namespace"
+            deploy_http_route
             check_deployment_status
             ;;
         uninstall)
@@ -326,13 +305,13 @@ main() {
                 exit 1
             fi
             
-            log_info "开始删除 LLMOps Service HTTPS 路由..."
+            log_info "开始删除 LLMOps App BFF HTTP 路由..."
             log_info "项目: $project_id"
             log_info "命名空间: $namespace"
             log_info "环境: $environment"
             
             load_config
-            delete_http_route "$namespace"
+            delete_http_route
             ;;
         status)
             load_config
@@ -351,4 +330,3 @@ main() {
 
 # 执行主函数
 main "$@"
-
