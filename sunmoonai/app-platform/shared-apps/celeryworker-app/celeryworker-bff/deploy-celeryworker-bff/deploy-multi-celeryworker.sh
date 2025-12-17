@@ -271,7 +271,8 @@ deploy_celeryworker() {
     export LLMOPS_TAG="${BACKEND_llmops_TAG:-1.0.0}"
     export LLMOPS_CODE_EXTRACT_SOURCE_DIR="${BACKEND_llmops_CODE_EXTRACT_SOURCE_DIR:-${DEFAULT_CODE_EXTRACT_SOURCE_DIR:-/app/app}}"
     export LLMOPS_CODE_EXTRACT_DIRS="${BACKEND_llmops_CODE_EXTRACT_DIRS:-${DEFAULT_CODE_EXTRACT_DIRS:-worker core services db models schemas crud}}"
-    export LLMOPS_CODE_EXTRACT_FILES="${BACKEND_llmops_CODE_EXTRACT_FILES:-${DEFAULT_CODE_EXTRACT_FILES:-__init__.py celeryworker_pre_start.py}}"
+    # 说明：celeryworker_pre_start.py 现在随 celeryworker 镜像提供，不再从后端镜像提取
+    export LLMOPS_CODE_EXTRACT_FILES="${BACKEND_llmops_CODE_EXTRACT_FILES:-${DEFAULT_CODE_EXTRACT_FILES:-__init__.py}}"
     
     # 后端2: incubator-service
     export INCUBATOR_IMAGE_REGISTRY="${BACKEND_incubator_IMAGE_REGISTRY:-${DEFAULT_BACKEND_IMAGE_REGISTRY:-harbor.sunmoonai.com:30443}}"
