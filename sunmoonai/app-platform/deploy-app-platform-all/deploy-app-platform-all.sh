@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# ============================================================================
+# App Platform 统一部署脚本
+# 用途: 统一部署 App Platform 下的所有应用组件
+# 说明: 支持 shared-apps 和 business-apps 下的多个组件
+# ============================================================================
+
 # 脚本目录配置
 THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$THIS_DIR")"
@@ -102,39 +108,19 @@ call_subscript() {
     fi
 }
 
-# 获取子级组件列表（按优先级）
-get_sub_components() {
-    local components=()
+# 定义组件路径映射（硬编码，确保准确）
+declare -A COMPONENT_PATHS=(
+    # 共享应用 (shared-apps)
+    ["celeryworker_bff"]="shared-apps/celeryworker-app/celeryworker-bff/deploy-celeryworker-bff/deploy-multi-celeryworker.sh"
+    ["document_converter_bff"]="shared-apps/document-converter-app/document-converter-bff/deploy-document-converter-bff/deploy-document-converter.sh"
+    ["onlyoffice_docs_bff"]="shared-apps/onlyoffice-docs-app/onlyoffice-docs-bff/deploy-onlyoffice-docs/deploy-onlyoffice-docs.sh"
     
-    # 检查 Document Converter (共享服务)
-    if [[ "${document_converter_enabled:-false}" == "true" ]]; then
-        local priority="${document_converter_priority:-900}"
-        components+=("$priority:document-converter:$PROJECT_ROOT/shared-apps/document-converter-app/document-converter-bff/deploy-document-converter/deploy-document-converter.sh")
-    fi
-    
-    # 检查 ONLYOFFICE Docs (共享服务)
-    if [[ "${onlyoffice_docs_enabled:-false}" == "true" ]]; then
-        local priority="${onlyoffice_docs_priority:-800}"
-        components+=("$priority:onlyoffice-docs:$PROJECT_ROOT/shared-apps/onlyoffice-docs-app/onlyoffice-docs-bff/deploy-onlyoffice-docs/deploy-onlyoffice-docs.sh")
-    fi
-    
-    # 检查 LLMOps Service (业务应用)
-    if [[ "${llmops_service_enabled:-false}" == "true" ]]; then
-        local priority="${llmops_service_priority:-700}"
-        components+=("$priority:llmops-service:$PROJECT_ROOT/business-apps/llmops-app/llmops-app-bff/deploy-llmops-service/deploy-llmops-service.sh")
-    fi
-    
-    # 检查 Celery Worker (共享服务)
-    if [[ "${celeryworker_enabled:-false}" == "true" ]]; then
-        local priority="${celeryworker_priority:-600}"
-        components+=("$priority:celeryworker:$PROJECT_ROOT/shared-apps/celeryworker-app/celeryworker-bff/deploy-celeryworker/deploy-celeryworker.sh")
-    fi
-    
-    IFS=$'\n' sorted_components=($(sort -nr <<<"${components[*]}"))
-    unset IFS
-    
-    echo "${sorted_components[@]}"
-}
+    # 业务应用 (business-apps)
+    ["incubator_bff"]="business-apps/incubator-app/incubator-app-bff/deploy-incubator-bff/deploy-incubator-bff.sh"
+    ["incubator_ssr"]="business-apps/incubator-app/incubator-app-ssr/deploy-incubator-ssr/deploy-incubator-ssr.sh"
+    ["llmops_bff"]="business-apps/llmops-app/llmops-app-bff/deploy-llmops-bff/deploy-llmops-service.sh"
+    ["llmops_ssr"]="business-apps/llmops-app/llmops-app-ssr/deploy-llmops-ssr/deploy-llmops-ssr.sh"
+)
 
 # 部署子级组件（按优先级）
 deploy_sub_components_by_priority() {
@@ -145,21 +131,37 @@ deploy_sub_components_by_priority() {
     
     log_info "开始部署子级组件..."
     
-    local components=($(get_sub_components))
+    local components=()
     
-    if [[ ${#components[@]} -eq 0 ]]; then
+    # 遍历所有组件路径映射，检查是否启用
+    for component_id in "${!COMPONENT_PATHS[@]}"; do
+        enabled_var="${component_id}_enabled"
+        priority_var="${component_id}_priority"
+        
+        if [[ "${!enabled_var:-false}" == "true" ]]; then
+            script_path="$PROJECT_ROOT/${COMPONENT_PATHS[$component_id]}"
+            priority="${!priority_var:-500}"
+            components+=("$priority:$component_id:$script_path")
+        fi
+    done
+    
+    # 按优先级排序（数值越大越先部署）
+    IFS=$'\n' sorted_components=($(sort -nr <<<"${components[*]}"))
+    unset IFS
+    
+    if [[ ${#sorted_components[@]} -eq 0 ]]; then
         log_warn "⚠️  没有启用的子级组件"
         return 0
     fi
     
     log_info "📋 子级组件部署顺序："
-    for component_info in "${components[@]}"; do
+    for component_info in "${sorted_components[@]}"; do
         local priority="${component_info%%:*}"
         local component=$(echo "$component_info" | cut -d: -f2)
         log_info "  🚀 $component (优先级: $priority)"
     done
     
-    for component_info in "${components[@]}"; do
+    for component_info in "${sorted_components[@]}"; do
         local priority="${component_info%%:*}"
         local component=$(echo "$component_info" | cut -d: -f2)
         local script_path=$(echo "$component_info" | cut -d: -f3)
@@ -167,8 +169,7 @@ deploy_sub_components_by_priority() {
         log_info "🚀 部署 $component..."
         
         if [[ -f "$script_path" ]]; then
-            # 调用子级脚本（不传递额外参数，让子脚本从配置文件读取）
-            if call_subscript "$script_path"; then
+            if call_subscript "$script_path" deploy "$project_id" "$namespace" "$environment" "$dry_run"; then
                 log_success "✅ $component 部署成功"
             else
                 log_error "❌ $component 部署失败"
@@ -191,23 +192,39 @@ uninstall_sub_components_by_priority() {
     
     log_info "开始卸载子级组件..."
     
-    local components=($(get_sub_components))
+    local components=()
     
-    if [[ ${#components[@]} -eq 0 ]]; then
+    # 遍历所有组件路径映射，检查是否启用
+    for component_id in "${!COMPONENT_PATHS[@]}"; do
+        enabled_var="${component_id}_enabled"
+        priority_var="${component_id}_priority"
+        
+        if [[ "${!enabled_var:-false}" == "true" ]]; then
+            script_path="$PROJECT_ROOT/${COMPONENT_PATHS[$component_id]}"
+            priority="${!priority_var:-500}"
+            components+=("$priority:$component_id:$script_path")
+        fi
+    done
+    
+    # 按优先级排序（数值越大越先部署）
+    IFS=$'\n' sorted_components=($(sort -nr <<<"${components[*]}"))
+    unset IFS
+    
+    if [[ ${#sorted_components[@]} -eq 0 ]]; then
         log_warn "⚠️  没有启用的子级组件"
         return 0
     fi
     
     log_info "📋 子级组件卸载顺序（逆序）："
-    for component_info in "${components[@]}"; do
+    for component_info in "${sorted_components[@]}"; do
         local priority="${component_info%%:*}"
         local component=$(echo "$component_info" | cut -d: -f2)
         log_info "  🗑️  $component (优先级: $priority)"
     done
     
     # 逆序卸载（从低优先级到高优先级）
-    for ((idx=${#components[@]}-1; idx>=0; idx--)); do
-        local component_info="${components[$idx]}"
+    for ((idx=${#sorted_components[@]}-1; idx>=0; idx--)); do
+        local component_info="${sorted_components[$idx]}"
         local priority="${component_info%%:*}"
         local component=$(echo "$component_info" | cut -d: -f2)
         local script_path=$(echo "$component_info" | cut -d: -f3)

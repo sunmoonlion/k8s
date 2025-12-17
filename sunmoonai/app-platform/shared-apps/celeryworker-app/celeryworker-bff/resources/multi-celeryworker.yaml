@@ -29,7 +29,7 @@ spec:
         - name: CODE_EXTRACT_DIRS
           value: "${LLMOPS_CODE_EXTRACT_DIRS:-worker core services db models schemas crud}"
         - name: CODE_EXTRACT_FILES
-          value: "${LLMOPS_CODE_EXTRACT_FILES:-__init__.py celeryworker_pre_start.py}"
+          value: "${LLMOPS_CODE_EXTRACT_FILES:-__init__.py}"
         command:
           - sh
           - -c
@@ -228,11 +228,7 @@ spec:
               echo "  ✓ 使用 incubator/__init__.py"
             fi
             
-            # 复制 celeryworker_pre_start.py（如果存在）
-            if [ -f "/shared/app/llmops/celeryworker_pre_start.py" ]; then
-              cp /shared/app/llmops/celeryworker_pre_start.py "$MERGED_DIR/" 2>/dev/null || true
-              echo "  ✓ 复制 celeryworker_pre_start.py"
-            fi
+            # 注意：celeryworker_pre_start.py 现在在 celeryworker 镜像中，不需要从后端镜像提取
             
             echo ""
             echo "=========================================="
@@ -253,27 +249,17 @@ spec:
         volumeMounts:
         - name: worker-code
           mountPath: /app/app  # 挂载合并后的代码
+        envFrom:
+        # 从 ConfigMap 读取 Celery Worker 配置
+        - configMapRef:
+            name: celeryworker-config
         env:
-        - name: PYTHONPATH
-          value: "/app"
-        - name: CELERY_BROKER_URL
-          value: "${CELERY_BROKER_URL:-amqp://admin:admin123@rabbitmq-sunmoonai.messaging-platform-dev:5672//}"
-        - name: CELERY_RESULT_BACKEND
-          value: "${CELERY_RESULT_BACKEND:-redis://redis-service.data-platform:6379/0}"
-        # 监听多个队列（用逗号分隔，Celery 会自动监听这些队列）
-        - name: CELERY_QUEUES
-          value: "${CELERY_QUEUES:-llmops-queue,incubator-queue}"
-        - name: CELERY_CONCURRENCY
-          value: "${CELERY_CONCURRENCY:-2}"  # 多后端建议增加并发数
-        # 数据库连接（任务执行需要）
+        # 数据库连接（任务执行需要，从 Secret 读取）
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
               name: postgresql-llmopsservice-db-secret
               key: DB_URL
-        # Redis 连接（如果需要，从 Secret 读取或使用环境变量）
-        - name: REDIS_URL
-          value: "${REDIS_URL:-redis://redis-service.data-platform:6379}"
         resources:
           requests:
             memory: "512Mi"

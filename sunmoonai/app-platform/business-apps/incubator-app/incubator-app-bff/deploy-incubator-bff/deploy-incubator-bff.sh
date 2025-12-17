@@ -98,6 +98,65 @@ DEFAULT_PROJECT_ID="sunmoonai"
 DEFAULT_NAMESPACE="app-platform-dev"
 DEFAULT_ENVIRONMENT="development"
 
+# 递归部署子组件
+deploy_sub_components() {
+    local project_id="$1"
+    local namespace="$2"
+    local environment="$3"
+    local dry_run="$4"
+    
+    log_info "开始部署 Incubator App BFF 子组件..."
+    
+    # 定义子组件部署顺序（按优先级排序）
+    # Secrets 现在由组件自己的 secrets/deploy-secrets-all 管理
+    local sub_components=(
+        "incubator_bff_secrets:${secrets_enabled:-true}:${secrets_priority:-2000}:Incubator App BFF Secrets:$SCRIPT_DIR/secrets/deploy-secrets-all/deploy-secrets-all.sh"
+        "incubator_bff_middleware:${middleware_enabled:-false}:${middleware_priority:-1000}:Incubator App BFF 中间件:$SCRIPT_DIR/middleware/deploy-middleware-all/deploy-middleware-all.sh"
+        "incubator_bff_ingress:${ingress_enabled:-false}:${ingress_priority:-100}:Incubator App BFF HTTP 路由:$SCRIPT_DIR/ingress/deploy-ingress/deploy-ingress.sh"
+    )
+    
+    # 按优先级排序
+    IFS=$'\n' sub_components=($(sort -t: -k3 -nr <<<"${sub_components[*]}"))
+    unset IFS
+    
+    # 部署子组件
+    for component_info in "${sub_components[@]}"; do
+        IFS=':' read -r name enabled priority description script_path <<< "$component_info"
+        
+        if [[ "$enabled" == "true" ]]; then
+            log_info "部署 $description (优先级: $priority)..."
+            
+            if [[ -f "$script_path" ]]; then
+                # Ingress 脚本不接受 dry_run 参数，只传递 deploy/project_id/namespace/environment
+                if [[ "$name" == "incubator_bff_ingress" ]]; then
+                    if bash "$script_path" deploy "$project_id" "$namespace" "$environment"; then
+                        log_success "✅ $description 部署成功"
+                    else
+                        log_error "❌ $description 部署失败"
+                        return 1
+                    fi
+                else
+                    # 其他子组件可以传递 dry_run 参数
+                    if bash "$script_path" deploy "$project_id" "$namespace" "$environment" "$dry_run"; then
+                        log_success "✅ $description 部署成功"
+                    else
+                        log_error "❌ $description 部署失败"
+                        return 1
+                    fi
+                fi
+            else
+                log_error "❌ $description 脚本不存在: $script_path"
+                return 1
+            fi
+        else
+            log_info "跳过 $description (已禁用)"
+        fi
+    done
+    
+    log_success "✅ Incubator App BFF 子组件部署完成"
+    return 0
+}
+
 # 镜像配置（从部署配置文件读取，用于部署时指定镜像）
 # 镜像名称和标签应该与 build/build.conf 中的配置保持一致
 INCUBATOR_BFF_IMAGE="${INCUBATOR_BFF_IMAGE:-incubator-app-bff}"
@@ -183,30 +242,9 @@ check_env_config() {
     fi
 }
 
-deploy_secrets_config() {
-  [[ "${secrets_enabled:-true}" == "true" ]] || { log_info "跳过 Secrets/ConfigMap 部署"; return; }
-  log_info "部署 ConfigMap 和 Secret..."
-  
-  # 使用子脚本生成并部署 ConfigMap
-  local config_script="$SECRETS_DIR/incubator-app-bff-config/deploy-incubator-app-bff-config/deploy-incubator-app-bff-config.sh"
-  if [[ -f "$config_script" ]]; then
-    log_info "生成并部署 ConfigMap..."
-    bash "$config_script" deploy "$PROJECT_ID" "$NAMESPACE" "$ENVIRONMENT"
-  else
-    log_error "ConfigMap 部署脚本不存在: $config_script"
-    exit 1
-  fi
-  
-  # 使用子脚本生成并部署 Secret
-  local secret_script="$SECRETS_DIR/incubator-app-bff-secret/deploy-incubator-app-bff-secret/deploy-incubator-app-bff-secret.sh"
-  if [[ -f "$secret_script" ]]; then
-    log_info "生成并部署 Secret..."
-    bash "$secret_script" deploy "$PROJECT_ID" "$NAMESPACE" "$ENVIRONMENT"
-  else
-    log_error "Secret 部署脚本不存在: $secret_script"
-    exit 1
-  fi
-}
+# deploy_secrets_config 函数已移除
+# Secrets 和 ConfigMaps 现在通过 deploy_sub_components 统一管理
+# 使用 secrets/deploy-secrets-all/deploy-secrets-all.sh 统一部署
 
 # 部署 Incubator App BFF
 deploy_app() {
@@ -237,7 +275,20 @@ deploy_app() {
     export IMAGE_PULL_POLICY="${IMAGE_PULL_POLICY:-IfNotPresent}"
     export INCUBATOR_BFF_IMAGE_PULL_SECRET_NAME="${INCUBATOR_BFF_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}"
     
-    # 部署 Incubator App BFF（动态替换镜像名称和命名空间）
+    # ============================================================
+    # 阶段1：部署子级组件（按优先级，先部署依赖项）
+    # ============================================================
+    log_info "🚀 阶段1：部署 Incubator App BFF 子级组件..."
+    if ! deploy_sub_components "$PROJECT_ID" "$NAMESPACE" "$ENVIRONMENT" false; then
+        log_error "❌ Incubator App BFF 子级组件部署失败！"
+        return 1
+    fi
+    log_success "✅ Incubator App BFF 子级组件部署完成"
+    
+    # ============================================================
+    # 阶段2：部署本级核心服务（Deployment 和 Service）
+    # ============================================================
+    log_info "🚀 阶段2：部署 Incubator App BFF 核心服务..."
     log_info "部署 Incubator App BFF (环境: $ENVIRONMENT, 镜像: $INCUBATOR_BFF_FULL_IMAGE_NAME, 拉取策略: ${IMAGE_PULL_POLICY:-IfNotPresent}, 命名空间: $NAMESPACE)..."
     # 创建临时文件并替换环境变量（包括镜像名称、拉取策略和命名空间）
     TEMP_YAML=$(mktemp)
@@ -269,6 +320,10 @@ undeploy_app() {
     
     check_env_config
     
+    # ============================================================
+    # 阶段1：卸载本级核心服务（Deployment 和 Service）
+    # ============================================================
+    log_info "🚀 阶段1：卸载 Incubator App BFF 核心服务..."
     # 卸载时使用原始 YAML（删除时不需要替换镜像，但需要替换命名空间）
     TEMP_YAML=$(mktemp)
     export NAMESPACE="$NAMESPACE"
@@ -277,20 +332,71 @@ undeploy_app() {
     envsubst < "$INCUBATOR_BFF_YAML" > "$TEMP_YAML"
     kubectl delete -f "$TEMP_YAML" -n "$NAMESPACE" --ignore-not-found=true
     rm -f "$TEMP_YAML"
+    log_success "✅ Incubator App BFF 核心服务卸载完成"
     
-    if [[ "${secrets_enabled:-true}" == "true" ]]; then
-        # 使用子脚本卸载 ConfigMap 和 Secret
-        local config_script="$SECRETS_DIR/incubator-app-bff-config/deploy-incubator-app-bff-config/deploy-incubator-app-bff-config.sh"
-        local secret_script="$SECRETS_DIR/incubator-app-bff-secret/deploy-incubator-app-bff-secret/deploy-incubator-app-bff-secret.sh"
-        if [[ -f "$config_script" ]]; then
-            bash "$config_script" undeploy "$PROJECT_ID" "$NAMESPACE" "$ENVIRONMENT"
-        fi
-        if [[ -f "$secret_script" ]]; then
-            bash "$secret_script" undeploy "$PROJECT_ID" "$NAMESPACE" "$ENVIRONMENT"
-        fi
+    # ============================================================
+    # 阶段2：卸载子级组件（按优先级，逆序卸载）
+    # ============================================================
+    log_info "🚀 阶段2：卸载 Incubator App BFF 子级组件..."
+    if ! uninstall_sub_components "$PROJECT_ID" "$NAMESPACE" "$ENVIRONMENT" false; then
+        log_warn "⚠️ Incubator App BFF 子级组件卸载部分失败，继续..."
     fi
+    log_success "✅ Incubator App BFF 子级组件卸载完成"
     
     log_success "Incubator App BFF 卸载完成！"
+}
+
+# 卸载子组件（按优先级，逆序）
+uninstall_sub_components() {
+    local project_id="$1"
+    local namespace="$2"
+    local environment="$3"
+    local dry_run="$4"
+    
+    log_info "开始卸载 Incubator App BFF 子组件..."
+    
+    # 定义子组件卸载顺序（按优先级排序，逆序卸载）
+    local sub_components=(
+        "incubator_bff_middleware:${middleware_enabled:-false}:${middleware_priority:-1000}:Incubator App BFF 中间件:$SCRIPT_DIR/middleware/deploy-middleware-all/deploy-middleware-all.sh"
+        "incubator_bff_ingress:${ingress_enabled:-false}:${ingress_priority:-100}:Incubator App BFF HTTP 路由:$SCRIPT_DIR/ingress/deploy-ingress/deploy-ingress.sh"
+    )
+    
+    # 按优先级排序（卸载时反向顺序）
+    IFS=$'\n' sub_components=($(sort -t: -k3 -n <<<"${sub_components[*]}"))
+    unset IFS
+    
+    # 卸载子组件
+    for component_info in "${sub_components[@]}"; do
+        IFS=':' read -r name enabled priority description script_path <<< "$component_info"
+        
+        if [[ "$enabled" == "true" ]]; then
+            log_info "卸载 $description (优先级: $priority)..."
+            
+            if [[ -f "$script_path" ]]; then
+                # 禁用子脚本的自动清理，保持连接以便后续操作
+                # Ingress 脚本使用 uninstall 命令
+                if [[ "$name" == "incubator_bff_ingress" ]]; then
+                    if DISABLE_AUTO_CLEANUP=true bash "$script_path" uninstall "$project_id" "$namespace" "$environment"; then
+                        log_success "✅ $description 卸载成功"
+                    else
+                        log_error "❌ $description 卸载失败"
+                    fi
+                else
+                    # 其他子组件可能使用不同的卸载方式
+                    if DISABLE_AUTO_CLEANUP=true bash "$script_path" uninstall "$project_id" "$namespace" "$environment"; then
+                        log_success "✅ $description 卸载成功"
+                    else
+                        log_error "❌ $description 卸载失败"
+                    fi
+                fi
+            else
+                log_warn "⚠️ $description 脚本不存在: $script_path"
+            fi
+        fi
+    done
+    
+    log_success "✅ Incubator App BFF 子组件卸载完成"
+    return 0
 }
 
 # 显示状态
@@ -384,7 +490,6 @@ main() {
                 exit 1
             fi
             
-            deploy_secrets_config
             deploy_app
             show_status
             ;;

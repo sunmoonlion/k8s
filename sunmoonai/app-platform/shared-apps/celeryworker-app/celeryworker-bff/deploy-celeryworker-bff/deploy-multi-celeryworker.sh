@@ -98,6 +98,65 @@ DEFAULT_PROJECT_ID="sunmoonai"
 DEFAULT_NAMESPACE="app-platform-dev"
 DEFAULT_ENVIRONMENT="development"
 
+# 递归部署子组件
+deploy_sub_components() {
+    local project_id="$1"
+    local namespace="$2"
+    local environment="$3"
+    local dry_run="$4"
+    
+    log_info "开始部署 Celery Worker 子组件..."
+    
+    # 定义子组件部署顺序（按优先级排序）
+    # Secrets 现在由组件自己的 secrets/deploy-secrets-all 管理
+    local sub_components=(
+        "celeryworker_secrets:${secrets_enabled:-true}:${secrets_priority:-2000}:Celery Worker Secrets:$SCRIPT_DIR/secrets/deploy-secrets-all/deploy-secrets-all.sh"
+        "celeryworker_middleware:${middleware_enabled:-false}:${middleware_priority:-1000}:Celery Worker 中间件:$SCRIPT_DIR/middleware/deploy-middleware-all/deploy-middleware-all.sh"
+        "celeryworker_ingress:${ingress_enabled:-false}:${ingress_priority:-100}:Celery Worker API 接口路由:$SCRIPT_DIR/ingress/deploy-ingress/deploy-ingress.sh"
+    )
+    
+    # 按优先级排序
+    IFS=$'\n' sub_components=($(sort -t: -k3 -nr <<<"${sub_components[*]}"))
+    unset IFS
+    
+    # 部署子组件
+    for component_info in "${sub_components[@]}"; do
+        IFS=':' read -r name enabled priority description script_path <<< "$component_info"
+        
+        if [[ "$enabled" == "true" ]]; then
+            log_info "部署 $description (优先级: $priority)..."
+            
+            if [[ -f "$script_path" ]]; then
+                # Ingress 脚本不接受 dry_run 参数，只传递 deploy/project_id/namespace/environment
+                if [[ "$name" == "celeryworker_ingress" ]]; then
+                    if bash "$script_path" deploy "$project_id" "$namespace" "$environment"; then
+                        log_success "✅ $description 部署成功"
+                    else
+                        log_error "❌ $description 部署失败"
+                        return 1
+                    fi
+                else
+                    # 其他子组件可以传递 dry_run 参数
+                    if bash "$script_path" deploy "$project_id" "$namespace" "$environment" "$dry_run"; then
+                        log_success "✅ $description 部署成功"
+                    else
+                        log_error "❌ $description 部署失败"
+                        return 1
+                    fi
+                fi
+            else
+                log_error "❌ $description 脚本不存在: $script_path"
+                return 1
+            fi
+        else
+            log_info "跳过 $description (已禁用)"
+        fi
+    done
+    
+    log_success "✅ Celery Worker 子组件部署完成"
+    return 0
+}
+
 # 镜像配置（从部署配置文件读取，用于部署时指定镜像）
 # 镜像名称和标签应该与 build/build.conf 中的配置保持一致
 CELERY_WORKER_IMAGE="${CELERY_WORKER_IMAGE:-celeryworker}"
@@ -106,6 +165,10 @@ CELERY_WORKER_TAG="${CELERY_WORKER_TAG:-1.0.0}"
 # 资源文件路径（对齐项目结构，统一使用 multi-celeryworker.yaml）
 RESOURCES_DIR="../resources"
 CELERYWORKER_YAML="${RESOURCES_DIR}/multi-celeryworker.yaml"
+
+# Secrets 和 ConfigMap 统一部署脚本（按照 PostgreSQL 模式）
+SECRETS_DIR="${SCRIPT_DIR}/secrets"
+DEPLOY_SECRETS_ALL_SCRIPT="${SECRETS_DIR}/deploy-secrets-all/deploy-secrets-all.sh"
 
 # 检查 kubectl 是否可用
 check_kubectl() {
@@ -229,10 +292,26 @@ deploy_celeryworker() {
     export CELERY_CONCURRENCY="${CELERY_CONCURRENCY:-2}"
     export REDIS_URL="${REDIS_URL:-redis://redis-service.data-platform:6379}"
     
-    # 部署 Celery Worker（动态替换镜像名称和命名空间）
+    # ============================================================
+    # 阶段1：部署子级组件（按优先级，先部署依赖项）
+    # ============================================================
+    log_info "🚀 阶段1：部署 Celery Worker 子级组件..."
+    if ! deploy_sub_components "$PROJECT_ID" "$NAMESPACE" "$ENVIRONMENT" false; then
+        log_error "❌ Celery Worker 子级组件部署失败！"
+        return 1
+    fi
+    log_success "✅ Celery Worker 子级组件部署完成"
+    
+    # ============================================================
+    # 阶段2：部署本级核心服务（Deployment 和 Service）
+    # ============================================================
+    log_info "🚀 阶段2：部署 Celery Worker 核心服务..."
     log_info "部署 Celery Worker（多后端）(环境: $ENVIRONMENT, 镜像: $CELERY_WORKER_FULL_IMAGE_NAME, 拉取策略: ${IMAGE_PULL_POLICY:-IfNotPresent}, 命名空间: $NAMESPACE)..."
+    
     # 创建临时文件并替换环境变量（包括镜像名称、拉取策略和命名空间）
     TEMP_YAML=$(mktemp)
+    
+    # 部署 Deployment 和 Service
     envsubst < "$CELERYWORKER_YAML" > "$TEMP_YAML"
     kubectl apply -f "$TEMP_YAML" -n "$NAMESPACE"
     rm -f "$TEMP_YAML"
@@ -260,6 +339,10 @@ undeploy_celeryworker() {
     
     check_env_config
     
+    # ============================================================
+    # 阶段1：卸载本级核心服务（Deployment 和 Service）
+    # ============================================================
+    log_info "🚀 阶段1：卸载 Celery Worker 核心服务..."
     # 卸载时使用原始 YAML（删除时不需要替换镜像，但需要替换命名空间）
     TEMP_YAML=$(mktemp)
     export NAMESPACE="$NAMESPACE"
@@ -268,8 +351,71 @@ undeploy_celeryworker() {
     envsubst < "$CELERYWORKER_YAML" > "$TEMP_YAML"
     kubectl delete -f "$TEMP_YAML" -n "$NAMESPACE" --ignore-not-found=true
     rm -f "$TEMP_YAML"
+    log_success "✅ Celery Worker 核心服务卸载完成"
+    
+    # ============================================================
+    # 阶段2：卸载子级组件（按优先级，逆序卸载）
+    # ============================================================
+    log_info "🚀 阶段2：卸载 Celery Worker 子级组件..."
+    if ! uninstall_sub_components "$PROJECT_ID" "$NAMESPACE" "$ENVIRONMENT" false; then
+        log_warn "⚠️ Celery Worker 子级组件卸载部分失败，继续..."
+    fi
+    log_success "✅ Celery Worker 子级组件卸载完成"
     
     log_success "Celery Worker（多后端）卸载完成！"
+}
+
+# 卸载子组件（按优先级，逆序）
+uninstall_sub_components() {
+    local project_id="$1"
+    local namespace="$2"
+    local environment="$3"
+    local dry_run="$4"
+    
+    log_info "开始卸载 Celery Worker 子组件..."
+    
+    # 定义子组件卸载顺序（按优先级排序，逆序卸载）
+    local sub_components=(
+        "celeryworker_middleware:${middleware_enabled:-false}:${middleware_priority:-1000}:Celery Worker 中间件:$SCRIPT_DIR/middleware/deploy-middleware-all/deploy-middleware-all.sh"
+        "celeryworker_ingress:${ingress_enabled:-false}:${ingress_priority:-100}:Celery Worker API 接口路由:$SCRIPT_DIR/ingress/deploy-ingress/deploy-ingress.sh"
+    )
+    
+    # 按优先级排序（卸载时反向顺序）
+    IFS=$'\n' sub_components=($(sort -t: -k3 -n <<<"${sub_components[*]}"))
+    unset IFS
+    
+    # 卸载子组件
+    for component_info in "${sub_components[@]}"; do
+        IFS=':' read -r name enabled priority description script_path <<< "$component_info"
+        
+        if [[ "$enabled" == "true" ]]; then
+            log_info "卸载 $description (优先级: $priority)..."
+            
+            if [[ -f "$script_path" ]]; then
+                # 禁用子脚本的自动清理，保持连接以便后续操作
+                # Ingress 脚本使用 uninstall 命令
+                if [[ "$name" == "celeryworker_ingress" ]]; then
+                    if DISABLE_AUTO_CLEANUP=true bash "$script_path" uninstall "$project_id" "$namespace" "$environment"; then
+                        log_success "✅ $description 卸载成功"
+                    else
+                        log_error "❌ $description 卸载失败"
+                    fi
+                else
+                    # 其他子组件可能使用不同的卸载方式
+                    if DISABLE_AUTO_CLEANUP=true bash "$script_path" uninstall "$project_id" "$namespace" "$environment"; then
+                        log_success "✅ $description 卸载成功"
+                    else
+                        log_error "❌ $description 卸载失败"
+                    fi
+                fi
+            else
+                log_warn "⚠️ $description 脚本不存在: $script_path"
+            fi
+        fi
+    done
+    
+    log_success "✅ Celery Worker 子组件卸载完成"
+    return 0
 }
 
 # 显示状态
