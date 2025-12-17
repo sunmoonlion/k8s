@@ -68,10 +68,42 @@ load_config_file(){
   # 恢复环境变量的优先级（如果之前设置了 CLUSTER，恢复它）
   if [[ -n "$saved_cluster" ]]; then
     export CLUSTER="$saved_cluster"
+  else
+    # 如果之前未设置 CLUSTER，但配置文件中可能有 CLUSTER="${CLUSTER:-}" 将其设置为空字符串
+    # 需要清空它，以便后续逻辑能正确读取默认值
+    if [[ "${CLUSTER:-}" == "" ]]; then
+      unset CLUSTER
+    fi
   fi
   
-  # 集群选择逻辑（使用 CLUSTER，从环境变量或配置文件）
-  local cluster_selected="${CLUSTER:-C1}"
+  # 集群选择逻辑（优先级：环境变量 CLUSTER > 全局配置文件 default_cluster > C1）
+  # 如果 CLUSTER 未设置，尝试从全局配置文件读取默认集群
+  local cluster_selected="${CLUSTER:-}"
+  if [[ -z "$cluster_selected" ]]; then
+    # 尝试加载 cluster-config-mapping.sh 以获取全局默认集群
+    # 尝试多个可能的路径
+    local mapping_script=""
+    for path in "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh" \
+                "$HOME/k8s/utils/cluster-config-mapping.sh" \
+                "$PROJECT_ROOT/../utils/cluster-config-mapping.sh"; do
+      if [[ -f "$path" ]]; then
+        mapping_script="$path"
+        break
+      fi
+    done
+    
+    if [[ -n "$mapping_script" ]]; then
+      # shellcheck disable=SC1090
+      source "$mapping_script"
+      cluster_selected=$(get_global_default_cluster)
+    else
+      # 如果无法加载，回退到 C1（与原来行为一致）
+      cluster_selected="C1"
+    fi
+  fi
+  
+  # 设置 CLUSTER 环境变量，以便后续使用
+  export CLUSTER="$cluster_selected"
   
   # 验证集群值格式：必须是 C{数字} 格式（如 C1, C2, C3, C10 等）
   # 支持不连续的集群编号（如只有 C1 和 C3，没有 C2）

@@ -235,6 +235,7 @@ deploy_app() {
     export INCUBATOR_BFF_TAG="${INCUBATOR_BFF_TAG}"
     export INCUBATOR_BFF_FULL_IMAGE_NAME="$INCUBATOR_BFF_FULL_IMAGE_NAME"
     export IMAGE_PULL_POLICY="${IMAGE_PULL_POLICY:-IfNotPresent}"
+    export INCUBATOR_BFF_IMAGE_PULL_SECRET_NAME="${INCUBATOR_BFF_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}"
     
     # 部署 Incubator App BFF（动态替换镜像名称和命名空间）
     log_info "部署 Incubator App BFF (环境: $ENVIRONMENT, 镜像: $INCUBATOR_BFF_FULL_IMAGE_NAME, 拉取策略: ${IMAGE_PULL_POLICY:-IfNotPresent}, 命名空间: $NAMESPACE)..."
