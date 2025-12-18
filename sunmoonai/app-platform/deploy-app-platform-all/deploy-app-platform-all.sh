@@ -111,7 +111,7 @@ call_subscript() {
 # 定义组件路径映射（硬编码，确保准确）
 declare -A COMPONENT_PATHS=(
     # 共享应用 (shared-apps)
-    ["celeryworker_bff"]="shared-apps/celeryworker-app/celeryworker-bff/deploy-celeryworker-bff/deploy-multi-celeryworker.sh"
+    # 注意：celeryworker_bff 已拆分为独立的 Worker（celeryworker-incubator 和 celeryworker-llmops）
     ["document_converter_bff"]="shared-apps/document-converter-app/document-converter-bff/deploy-document-converter-bff/deploy-document-converter.sh"
     ["onlyoffice_docs_bff"]="shared-apps/onlyoffice-docs-app/onlyoffice-docs-bff/deploy-onlyoffice-docs/deploy-onlyoffice-docs.sh"
     

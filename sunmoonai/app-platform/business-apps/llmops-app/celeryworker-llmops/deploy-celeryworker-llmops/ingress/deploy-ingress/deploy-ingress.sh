@@ -8,7 +8,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # 计算项目根目录（k8s目录）
-# 从 deploy-ingress/ -> ingress/ -> deploy-celeryworker-incubator/ -> celeryworker-incubator/ -> incubator-app/ -> business-apps/ -> app-platform/ -> sunmoonai/ -> k8s/
+# 从 deploy-ingress/ -> ingress/ -> deploy-celeryworker-llmops/ -> celeryworker-llmops/ -> llmops-app/ -> business-apps/ -> app-platform/ -> sunmoonai/ -> k8s/
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
 
 # 导入统一部署模板（建立远程 k8s 连接）
@@ -61,8 +61,8 @@ verify_service() {
 # 加载配置
 load_config() {
     # 尝试加载主配置文件（如果存在），以获取 CELERY_WORKER_NAMESPACE、CELERY_WORKER_UNIFIED_HOST 等环境变量
-    # 主配置文件路径：../../deploy-celeryworker-incubator.conf（相对于当前脚本目录）
-    local main_config_file="$(cd "$SCRIPT_DIR/../.." && pwd)/deploy-celeryworker-incubator.conf"
+    # 主配置文件路径：../../deploy-celeryworker-llmops.conf（相对于当前脚本目录）
+    local main_config_file="$(cd "$SCRIPT_DIR/../.." && pwd)/deploy-celeryworker-llmops.conf"
     if [[ -f "$main_config_file" ]]; then
         # 临时禁用错误退出，因为主配置文件可能包含一些在当前上下文中不适用的配置
         set +e
@@ -72,9 +72,9 @@ load_config() {
     fi
     
     # 从主配置文件构建配置
-    SERVICE_NAME="celeryworker-incubator-service"
+    SERVICE_NAME="celeryworker-llmops-service"
     NAMESPACE="${CELERY_WORKER_NAMESPACE:-app-platform-dev}"
-    UNIFIED_HOST="${CELERY_WORKER_UNIFIED_HOST:-celeryworker-incubator.sunmoonai.com}"
+    UNIFIED_HOST="${CELERY_WORKER_UNIFIED_HOST:-celeryworker-llmops.sunmoonai.com}"
     NODE_IP="${CELERY_WORKER_NODE_IP:-101.126.151.0}"
     EXTERNAL_PORT="${CELERY_WORKER_EXTERNAL_PORT:-30443}"
     
@@ -108,9 +108,9 @@ deploy_http_route() {
     check_namespace "$namespace"
     
     # 从主配置文件构建配置
-    SERVICE_NAME="celeryworker-incubator-service"
+    SERVICE_NAME="celeryworker-llmops-service"
     NAMESPACE="${CELERY_WORKER_NAMESPACE:-app-platform-dev}"
-    UNIFIED_HOST="${CELERY_WORKER_UNIFIED_HOST:-celeryworker-incubator.sunmoonai.com}"
+    UNIFIED_HOST="${CELERY_WORKER_UNIFIED_HOST:-celeryworker-llmops.sunmoonai.com}"
     NODE_IP="${CELERY_WORKER_NODE_IP:-101.126.151.0}"
     
     # 从 Service 中获取端口（如果 Service 存在）
@@ -171,8 +171,8 @@ deploy_http_route() {
     
     # 检查路由状态
     log_info "检查 Celery Worker API 接口 HTTP 路由状态..."
-    kubectl get ingressroute -n "$namespace" celeryworker-incubator-ingress 2>/dev/null || log_warn "IngressRoute 尚未创建"
-    kubectl get middleware -n "$namespace" celeryworker-incubator-stripprefix 2>/dev/null || log_warn "Middleware 尚未创建"
+    kubectl get ingressroute -n "$namespace" celeryworker-llmops-ingress 2>/dev/null || log_warn "IngressRoute 尚未创建"
+    kubectl get middleware -n "$namespace" celeryworker-llmops-stripprefix 2>/dev/null || log_warn "Middleware 尚未创建"
     
     log_success "✅ Celery Worker API 接口 HTTP 路由部署完成！"
     return 0
@@ -184,11 +184,11 @@ check_deployment_status() {
     
     echo ""
     echo "=== Celery Worker API 接口 HTTP 路由状态 ==="
-    kubectl get ingressroute -n "$NAMESPACE" -l component=celeryworker-incubator 2>/dev/null || echo "IngressRoute 不存在"
+    kubectl get ingressroute -n "$NAMESPACE" -l component=celeryworker-llmops 2>/dev/null || echo "IngressRoute 不存在"
     
     echo ""
     echo "=== Middleware 状态 ==="
-    kubectl get middleware -n "$NAMESPACE" -l component=celeryworker-incubator 2>/dev/null || echo "Middleware 不存在"
+    kubectl get middleware -n "$NAMESPACE" -l component=celeryworker-llmops 2>/dev/null || echo "Middleware 不存在"
     
     echo ""
     echo "=== Celery Worker 服务状态 ==="
@@ -196,13 +196,13 @@ check_deployment_status() {
     
     echo ""
     echo "=== 访问信息 ==="
-    echo "统一域名访问: https://${UNIFIED_HOST}/api/v1/celeryworker-incubator"
-    echo "节点 IP 访问: https://${NODE_IP}:${EXTERNAL_PORT}/api/v1/celeryworker-incubator"
+    echo "统一域名访问: https://${UNIFIED_HOST}/api/v1/celeryworker-llmops"
+    echo "节点 IP 访问: https://${NODE_IP}:${EXTERNAL_PORT}/api/v1/celeryworker-llmops"
     echo ""
     echo "=== 使用说明 ==="
     echo "1. 通过 curl 访问 Celery Worker API 接口:"
-    echo "   curl -k https://${UNIFIED_HOST}/api/v1/celeryworker-incubator/health"
-    echo "   curl -k https://${NODE_IP}:${EXTERNAL_PORT}/api/v1/celeryworker-incubator/health"
+    echo "   curl -k https://${UNIFIED_HOST}/api/v1/celeryworker-llmops/health"
+    echo "   curl -k https://${NODE_IP}:${EXTERNAL_PORT}/api/v1/celeryworker-llmops/health"
     echo ""
     echo "2. 注意：需要在 /etc/hosts 中添加域名映射："
     echo "   ${NODE_IP}  ${UNIFIED_HOST}"
@@ -227,9 +227,9 @@ delete_http_route() {
     
     # 使用 sed 替换模板变量
     sed -i "s/{{NAMESPACE}}/$namespace/g" "$temp_file"
-    sed -i "s/{{SERVICE_NAME}}/celeryworker-incubator-service/g" "$temp_file"
+    sed -i "s/{{SERVICE_NAME}}/celeryworker-llmops-service/g" "$temp_file"
     sed -i "s/{{SERVICE_PORT}}/5555/g" "$temp_file"
-    sed -i "s/{{UNIFIED_HOST}}/celeryworker-incubator.sunmoonai.com/g" "$temp_file"
+    sed -i "s/{{UNIFIED_HOST}}/celeryworker-llmops.sunmoonai.com/g" "$temp_file"
     sed -i "s/{{NODE_IP}}/101.126.151.0/g" "$temp_file"
     
     if kubectl delete -f "$temp_file" 2>/dev/null; then

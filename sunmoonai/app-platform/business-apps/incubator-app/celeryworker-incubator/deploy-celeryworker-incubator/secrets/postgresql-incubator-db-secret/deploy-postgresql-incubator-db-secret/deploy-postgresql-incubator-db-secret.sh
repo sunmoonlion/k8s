@@ -1,22 +1,21 @@
 #!/bin/bash
 
 # =============================================================================
-# Harbor Registry Secret 部署脚本
-# 文件名: deploy-harbor-registry-secret.sh
-# 用途: 生成并部署Harbor镜像拉取Secret到Kubernetes集群
+# PostgreSQL Incubator DB Secret 部署脚本
+# 文件名: deploy-postgresql-incubator-db-secret.sh
+# 用途: 生成并部署PostgreSQL数据库连接信息Secret到Kubernetes集群
 # =============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SECRET_DIR="$(dirname "$SCRIPT_DIR")"  # harbor-registry-secret 目录
+SECRET_DIR="$(dirname "$SCRIPT_DIR")"  # postgresql-incubator-db-secret 目录
 # 计算项目根目录（k8s目录）
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
+# 从 deploy-postgresql-incubator-db-secret/ -> postgresql-incubator-db-secret/ -> secrets/ -> deploy-celeryworker-incubator/ -> celeryworker-incubator/ -> incubator-app/ -> business-apps/ -> app-platform/ -> sunmoonai/ -> k8s/
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../../../.." && pwd)"
 
 # 加载Secret生成核心函数
 source "$PROJECT_ROOT/utils/secret-management/lib/secret-core.sh"
-# 加载Secret数据准备函数（包含 prepare_docker_auth_secret_data）
-source "$PROJECT_ROOT/utils/secret-management/lib/secret-data.sh"
 
 # 解析命令行参数（优先于配置文件加载，确保命令行参数优先级最高）
 declare -a PARSED_ARGS
@@ -81,19 +80,8 @@ DEFAULT_PROJECT_ID="sunmoonai"
 DEFAULT_NAMESPACE="app-platform-dev"
 DEFAULT_ENVIRONMENT="development"
 
-# 尝试加载主配置文件（如果存在），以获取 CELERY_WORKER_IMAGE_REGISTRY 等环境变量
-# 主配置文件路径：../../deploy-celeryworker-incubator.conf（相对于当前脚本目录）
-MAIN_CONFIG_FILE="$(cd "$SCRIPT_DIR/../../.." && pwd)/deploy-celeryworker-incubator.conf"
-if [[ -f "$MAIN_CONFIG_FILE" ]]; then
-    # 临时禁用错误退出，因为主配置文件可能包含一些在当前上下文中不适用的配置
-    set +e
-    source "$MAIN_CONFIG_FILE" 2>/dev/null
-    set -e
-    log_info "已加载主配置文件: $MAIN_CONFIG_FILE"
-fi
-
-# 加载配置文件（现在可以使用已设置的 CLUSTER 值和主配置文件中的环境变量）
-CONFIG_FILE="$SCRIPT_DIR/deploy-harbor-registry-secret.conf"
+# 加载配置文件（现在可以使用已设置的 CLUSTER 值）
+CONFIG_FILE="$SCRIPT_DIR/deploy-postgresql-incubator-db-secret.conf"
 if [[ -f "$CONFIG_FILE" ]]; then
     source "$CONFIG_FILE"
     
@@ -124,11 +112,11 @@ main() {
     fi
     
     local project_id="${1:-${PROJECT_ID:-$DEFAULT_PROJECT_ID}}"
-    local namespace="${2:-${NAMESPACE:-$DEFAULT_NAMESPACE}}"
+    local namespace="${2:-${NAMESPACE:-${SECRET_NAMESPACE:-$DEFAULT_NAMESPACE}}}"
     local environment="${3:-${ENVIRONMENT:-$DEFAULT_ENVIRONMENT}}"
     local dry_run="${4:-false}"
     
-    log_info "部署 Harbor Registry Secret..."
+    log_info "部署 PostgreSQL Incubator DB Secret..."
     log_info "部署参数："
     log_info "  - 项目ID: $project_id"
     log_info "  - 命名空间: $namespace"
@@ -136,51 +124,90 @@ main() {
     log_info "  - 试运行: $dry_run"
     echo ""
     
-    # 1. 准备Docker认证Secret数据
-    log_info "准备Docker认证Secret数据..."
+    # 1. 准备Opaque Secret数据
+    log_info "准备Opaque Secret数据..."
     
-    local prepare_args=(
-        --server "${DOCKER_SERVER:-harbor.sunmoonai.local}"
-        --username "$DOCKER_USERNAME"
-        --password "$DOCKER_PASSWORD"
-    )
-    
-    if [[ -n "${DOCKER_EMAIL:-}" ]]; then
-        prepare_args+=(--email "$DOCKER_EMAIL")
-    fi
-    
-    local temp_data_dir=$(prepare_docker_auth_secret_data "${prepare_args[@]}")
-    if [[ $? -ne 0 ]] || [[ -z "$temp_data_dir" ]]; then
-        log_error "Docker认证Secret数据准备失败"
-        exit 1
-    fi
-    
+    # 创建临时数据目录
+    local temp_data_dir=$(mktemp -d)
     trap "rm -rf $temp_data_dir" EXIT
     
-    # 2. 生成Docker Secret YAML
-    local secret_yaml="$SECRET_DIR/harbor-registry-secret.yaml"
-    
-    log_info "生成Docker Secret YAML..."
-    
-    # 直接使用 Docker 配置参数生成 Secret YAML
-    local generate_args=(
-        --name "$SECRET_NAME"
-        --namespace "$namespace"
-        --docker-server "${DOCKER_SERVER:-harbor.sunmoonai.local}"
-        --docker-username "$DOCKER_USERNAME"
-        --docker-password "$DOCKER_PASSWORD"
-        --output "$secret_yaml"
-    )
-    
-    if [[ -n "${DOCKER_EMAIL:-}" ]]; then
-        generate_args+=(--docker-email "$DOCKER_EMAIL")
+    # 从配置中提取数据键
+    if [[ -n "${DB_HOST:-}" ]]; then
+        echo -n "${DB_HOST}" > "$temp_data_dir/DB_HOST"
+        log_info "添加数据键: DB_HOST"
     fi
     
-    generate_docker_secret_yaml "${generate_args[@]}"
+    if [[ -n "${DB_PORT:-}" ]]; then
+        echo -n "${DB_PORT}" > "$temp_data_dir/DB_PORT"
+        log_info "添加数据键: DB_PORT"
+    fi
     
-    log_success "Docker Secret YAML生成完成: $secret_yaml"
+    if [[ -n "${DB_NAME:-}" ]]; then
+        echo -n "${DB_NAME}" > "$temp_data_dir/DB_NAME"
+        log_info "添加数据键: DB_NAME"
+    fi
     
-    # 2. 部署Secret到Kubernetes
+    if [[ -n "${DB_USER:-}" ]]; then
+        echo -n "${DB_USER}" > "$temp_data_dir/DB_USER"
+        log_info "添加数据键: DB_USER"
+    fi
+    
+    if [[ -n "${DB_PASSWORD:-}" ]]; then
+        echo -n "${DB_PASSWORD}" > "$temp_data_dir/DB_PASSWORD"
+        log_info "添加数据键: DB_PASSWORD"
+    fi
+    
+    if [[ -n "${DB_SSLMODE:-}" ]]; then
+        echo -n "${DB_SSLMODE}" > "$temp_data_dir/DB_SSLMODE"
+        log_info "添加数据键: DB_SSLMODE"
+    fi
+    
+    # 生成 DB_URL（完整连接字符串）
+    if [[ -n "${DB_USER:-}" && -n "${DB_PASSWORD:-}" && -n "${DB_HOST:-}" && -n "${DB_PORT:-}" && -n "${DB_NAME:-}" ]]; then
+        DB_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+        echo -n "$DB_URL" > "$temp_data_dir/DB_URL"
+        log_info "添加数据键: DB_URL"
+    fi
+    
+    # 添加应用代码期望的 POSTGRES_* 格式字段
+    if [[ -n "${POSTGRES_SERVER:-}" ]]; then
+        echo -n "${POSTGRES_SERVER}" > "$temp_data_dir/POSTGRES_SERVER"
+        log_info "添加数据键: POSTGRES_SERVER"
+    fi
+    
+    if [[ -n "${POSTGRES_PORT:-}" ]]; then
+        echo -n "${POSTGRES_PORT}" > "$temp_data_dir/POSTGRES_PORT"
+        log_info "添加数据键: POSTGRES_PORT"
+    fi
+    
+    if [[ -n "${POSTGRES_DB:-}" ]]; then
+        echo -n "${POSTGRES_DB}" > "$temp_data_dir/POSTGRES_DB"
+        log_info "添加数据键: POSTGRES_DB"
+    fi
+    
+    if [[ -n "${POSTGRES_USER:-}" ]]; then
+        echo -n "${POSTGRES_USER}" > "$temp_data_dir/POSTGRES_USER"
+        log_info "添加数据键: POSTGRES_USER"
+    fi
+    
+    if [[ -n "${POSTGRES_PASSWORD:-}" ]]; then
+        echo -n "${POSTGRES_PASSWORD}" > "$temp_data_dir/POSTGRES_PASSWORD"
+        log_info "添加数据键: POSTGRES_PASSWORD"
+    fi
+    
+    # 2. 生成Opaque Secret YAML
+    local secret_yaml="$SECRET_DIR/postgresql-incubator-db-secret.yaml"
+    
+    log_info "生成Opaque Secret YAML..."
+    generate_opaque_secret_yaml \
+        --name "$SECRET_NAME" \
+        --namespace "$namespace" \
+        --data-dir "$temp_data_dir" \
+        --output "$secret_yaml"
+    
+    log_success "Opaque Secret YAML生成完成: $secret_yaml"
+    
+    # 3. 部署Secret到Kubernetes
     if [[ "$dry_run" != "true" ]]; then
         log_info "部署Secret到Kubernetes集群..."
         
@@ -199,7 +226,7 @@ main() {
             exit 1
         fi
         
-        # 3. 可选：重启相关组件（如果配置了）
+        # 4. 可选：重启相关组件（如果配置了）
         if [[ "${RESTART_COMPONENTS:-false}" == "true" && -n "${RESTART_COMPONENTS_LIST:-}" ]]; then
             log_info "重启使用该Secret的组件..."
             IFS=',' read -ra COMPONENTS <<< "${RESTART_COMPONENTS_LIST}"
@@ -219,7 +246,7 @@ main() {
     fi
     
     echo ""
-    log_success "Harbor Registry Secret 部署完成！"
+    log_success "PostgreSQL Incubator DB Secret 部署完成！"
     log_info "部署信息："
     log_info "  - Secret名称: $SECRET_NAME"
     log_info "  - 命名空间: $namespace"
@@ -228,7 +255,7 @@ main() {
 
 # 显示帮助信息
 show_help() {
-    echo "Harbor Registry Secret 部署脚本"
+    echo "PostgreSQL Incubator DB Secret 部署脚本"
     echo ""
     echo "用法:"
     echo "  $0 [项目ID] [命名空间] [环境] [试运行]"
@@ -241,10 +268,10 @@ show_help() {
     echo ""
     echo "示例:"
     echo "  $0                                    # 使用默认参数"
-    echo "  $0 sunmoonai app-platform-dev dev    # 指定参数"
+    echo "  $0 sunmoonai app-platform-dev dev     # 指定参数"
     echo "  $0 sunmoonai app-platform-dev dev true # 试运行模式"
     echo ""
-    echo "配置文件: $SCRIPT_DIR/deploy-harbor-registry-secret.conf"
+    echo "配置文件: $SCRIPT_DIR/deploy-postgresql-incubator-db-secret.conf"
 }
 
 # 主程序入口
@@ -255,4 +282,3 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     fi
     main "$@"
 fi
-

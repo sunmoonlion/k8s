@@ -129,8 +129,8 @@ deploy_sub_components_by_priority() {
     # 定义组件部署信息（组件名:启用标志:优先级:描述:脚本路径）
     local components=(
         "harbor_registry_secret:${harbor_registry_secret_enabled:-true}:${harbor_registry_secret_priority:-1000}:Harbor 镜像拉取密钥:$SCRIPT_DIR/../harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh"
-        "postgresql_incubator_db_secret:${postgresql_incubator_db_secret_enabled:-true}:${postgresql_incubator_db_secret_priority:-900}:PostgreSQL Incubator 数据库 Secret:$SCRIPT_DIR/../postgresql-incubator-db-secret/deploy-postgresql-incubator-db-secret/deploy-postgresql-incubator-db-secret.sh"
-        "neo4j_incubator_db_secret:${neo4j_incubator_db_secret_enabled:-true}:${neo4j_incubator_db_secret_priority:-850}:Neo4j Incubator 图数据库 Secret:$SCRIPT_DIR/../neo4j-incubator-db-secret/deploy-neo4j-incubator-db-secret/deploy-neo4j-incubator-db-secret.sh"
+        "postgresql_llmops_db_secret:${postgresql_llmops_db_secret_enabled:-true}:${postgresql_llmops_db_secret_priority:-900}:PostgreSQL LLMOps 数据库 Secret:$SCRIPT_DIR/../postgresql-llmops-db-secret/deploy-postgresql-llmops-db-secret/deploy-postgresql-llmops-db-secret.sh"
+        "neo4j_llmops_db_secret:${neo4j_llmops_db_secret_enabled:-true}:${neo4j_llmops_db_secret_priority:-850}:Neo4j LLMOps 图数据库 Secret:$SCRIPT_DIR/../neo4j-llmops-db-secret/deploy-neo4j-llmops-db-secret/deploy-neo4j-llmops-db-secret.sh"
         "celeryworker_config:${celeryworker_config_enabled:-true}:${celeryworker_config_priority:-800}:Celery Worker ConfigMap:$SCRIPT_DIR/../celeryworker-config/deploy-celeryworker-config/deploy-celeryworker-config.sh"
     )
     
@@ -263,21 +263,21 @@ deploy_current_level_components() {
         fi
     fi
     
-    # 检查 postgresql-incubator-db-secret
-    if [[ "${postgresql_incubator_db_secret_enabled:-true}" == "true" ]]; then
-        if kubectl get secret postgresql-incubator-db-secret -n "$namespace" >/dev/null 2>&1; then
-            log_success "✅ postgresql-incubator-db-secret 已存在"
+    # 检查 postgresql-llmops-db-secret
+    if [[ "${postgresql_llmops_db_secret_enabled:-true}" == "true" ]]; then
+        if kubectl get secret postgresql-llmops-db-secret -n "$namespace" >/dev/null 2>&1; then
+            log_success "✅ postgresql-llmops-db-secret 已存在"
         else
-            log_warn "⚠️  postgresql-incubator-db-secret 不存在"
+            log_warn "⚠️  postgresql-llmops-db-secret 不存在"
         fi
     fi
     
-    # 检查 neo4j-incubator-db-secret
-    if [[ "${neo4j_incubator_db_secret_enabled:-true}" == "true" ]]; then
-        if kubectl get secret neo4j-incubator-db-secret -n "$namespace" >/dev/null 2>&1; then
-            log_success "✅ neo4j-incubator-db-secret 已存在"
+    # 检查 neo4j-llmops-db-secret
+    if [[ "${neo4j_llmops_db_secret_enabled:-true}" == "true" ]]; then
+        if kubectl get secret neo4j-llmops-db-secret -n "$namespace" >/dev/null 2>&1; then
+            log_success "✅ neo4j-llmops-db-secret 已存在"
         else
-            log_warn "⚠️  neo4j-incubator-db-secret 不存在"
+            log_warn "⚠️  neo4j-llmops-db-secret 不存在"
         fi
     fi
     

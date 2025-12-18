@@ -143,8 +143,8 @@ main() {
     # 导出环境变量供 envsubst 使用
     export NAMESPACE="$namespace"
     export CELERY_BROKER_URL="${CELERY_BROKER_URL:-amqp://admin:admin123@rabbitmq-sunmoonai.messaging-platform-dev:5672//}"
-    export CELERY_RESULT_BACKEND="${CELERY_RESULT_BACKEND:-redis://redis-service.data-platform:6379/10}"
-    export CELERY_QUEUE="${CELERY_QUEUE:-incubator-queue}"
+    export CELERY_RESULT_BACKEND="${CELERY_RESULT_BACKEND:-redis://redis-service.data-platform:6379/0}"
+    export CELERY_QUEUE="${CELERY_QUEUE:-llmops-queue}"
     export CELERY_CONCURRENCY="${CELERY_CONCURRENCY:-2}"
     export REDIS_URL="${REDIS_URL:-redis://redis-service.data-platform:6379}"
     

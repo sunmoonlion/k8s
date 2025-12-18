@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Celery Worker (Incubator) 部署脚本
-# 用法: ./deploy-celeryworker-incubator.sh <action> [project_id] [namespace] [environment]
+# Celery Worker (LLMOps) 部署脚本
+# 用法: ./deploy-celeryworker-llmops.sh <action> [project_id] [namespace] [environment]
 # 注意: 镜像构建请使用 build/build-image.sh 脚本
 
 set -e
@@ -14,7 +14,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 CELERY_WORKER_SCRIPT_DIR="$SCRIPT_DIR"
 
 # 导入统一部署模板
-# 注意：从 celeryworker-incubator 到 k8s 需要 5 级（celeryworker-incubator -> incubator-app -> business-apps -> app-platform -> sunmoonai -> k8s）
+# 注意：从 celeryworker-llmops 到 k8s 需要 5 级（celeryworker-llmops -> llmops-app -> business-apps -> app-platform -> sunmoonai -> k8s）
 source "$PROJECT_ROOT/../../../../../utils/unified-deployment-template.sh"
 
 # 恢复 Celery Worker 脚本的目录路径
@@ -77,7 +77,7 @@ if [[ $# -gt 0 ]]; then
 fi
 
 # 加载部署配置文件
-CELERY_WORKER_CONFIG_FILE="$SCRIPT_DIR/deploy-celeryworker-incubator.conf"
+CELERY_WORKER_CONFIG_FILE="$SCRIPT_DIR/deploy-celeryworker-llmops.conf"
 if [[ -f "$CELERY_WORKER_CONFIG_FILE" ]]; then
     source "$CELERY_WORKER_CONFIG_FILE"
     
@@ -88,9 +88,9 @@ if [[ -f "$CELERY_WORKER_CONFIG_FILE" ]]; then
         apply_cluster_config_mapping
     fi
     
-    log_info "已加载 Celery Worker (Incubator) 配置文件: $CELERY_WORKER_CONFIG_FILE"
+    log_info "已加载 Celery Worker (LLMOps) 配置文件: $CELERY_WORKER_CONFIG_FILE"
 else
-    log_warn "未找到 Celery Worker (Incubator) 配置文件: $CELERY_WORKER_CONFIG_FILE，使用默认配置"
+    log_warn "未找到 Celery Worker (LLMOps) 配置文件: $CELERY_WORKER_CONFIG_FILE，使用默认配置"
 fi
 
 # 默认配置（对齐 PostgreSQL 部署脚本，使用硬编码默认值）
@@ -162,12 +162,12 @@ deploy_sub_components() {
 CELERY_WORKER_IMAGE="${CELERY_WORKER_IMAGE:-celeryworker}"
 CELERY_WORKER_TAG="${CELERY_WORKER_TAG:-1.0.0}"
 
-# 资源文件路径（对齐项目结构，统一使用 celeryworker-incubator.yaml）
+# 资源文件路径（对齐项目结构，统一使用 celeryworker-llmops.yaml）
 RESOURCES_DIR="../resources"
-CELERYWORKER_YAML="${RESOURCES_DIR}/celeryworker-incubator.yaml"
+CELERYWORKER_YAML="${RESOURCES_DIR}/celeryworker-llmops.yaml"
 # 生成的 YAML 文件路径（可选，用于调试和审计）
 # 通过环境变量 SAVE_GENERATED_YAML=true 启用保存
-GENERATED_YAML="${RESOURCES_DIR}/celeryworker-incubator-generated.yaml"
+GENERATED_YAML="${RESOURCES_DIR}/celeryworker-llmops-generated.yaml"
 
 # Secrets 和 ConfigMap 统一部署脚本（按照 PostgreSQL 模式）
 SECRETS_DIR="${SCRIPT_DIR}/secrets"
@@ -234,23 +234,23 @@ generate_template_yaml() {
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: celeryworker-incubator
+  name: celeryworker-llmops
   namespace: ${NAMESPACE:-app-platform-dev}
   labels:
-    app: celeryworker-incubator
+    app: celeryworker-llmops
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: celeryworker-incubator
+      app: celeryworker-llmops
   template:
     metadata:
       labels:
-        app: celeryworker-incubator
+        app: celeryworker-llmops
     spec:
-      # Init Container: 从 incubator-app-bff 镜像提取任务定义代码
+      # Init Container: 从 llmops-app-bff 镜像提取任务定义代码
       initContainers:
-      - name: extract-incubator-code
+      - name: extract-llmops-code
         image: ${BACKEND_IMAGE_REGISTRY}/${BACKEND_IMAGE_PROJECT}/${BACKEND_IMAGE}:${BACKEND_TAG}
         imagePullPolicy: ${IMAGE_PULL_POLICY:-IfNotPresent}
         env:
@@ -326,12 +326,12 @@ spec:
         # 从 ConfigMap 读取 Celery Worker 配置
         - configMapRef:
             name: celeryworker-config
-        # 从独立的 PostgreSQL Incubator 数据库 Secret 读取所有数据库连接信息
+        # 从独立的 PostgreSQL LLMOps 数据库 Secret 读取所有数据库连接信息
         - secretRef:
-            name: postgresql-incubator-db-secret
-        # 从独立的 Neo4j Incubator 图数据库 Secret 读取所有图数据库连接信息
+            name: postgresql-llmops-db-secret
+        # 从独立的 Neo4j LLMOps 图数据库 Secret 读取所有图数据库连接信息
         - secretRef:
-            name: neo4j-incubator-db-secret
+            name: neo4j-llmops-db-secret
         env:
         # 注意：应用代码会从以下环境变量构建数据库连接：
         # - PostgreSQL: POSTGRES_SERVER, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_PORT, POSTGRES_DB
@@ -373,13 +373,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: celeryworker-incubator-service
+  name: celeryworker-llmops-service
   namespace: ${NAMESPACE:-app-platform-dev}
   labels:
-    app: celeryworker-incubator
+    app: celeryworker-llmops
 spec:
   selector:
-    app: celeryworker-incubator
+    app: celeryworker-llmops
   ports:
   - port: 5555
     targetPort: 5555
@@ -397,7 +397,7 @@ check_env_config() {
     
     if [ ! -f "$CELERYWORKER_YAML" ]; then
         log_error "配置文件不存在: $CELERYWORKER_YAML"
-        log_info "请确保资源文件存在: $RESOURCES_DIR/celeryworker-incubator.yaml"
+        log_info "请确保资源文件存在: $RESOURCES_DIR/celeryworker-llmops.yaml"
         exit 1
     fi
     
@@ -416,7 +416,7 @@ check_env_config() {
 
 # 部署 Celery Worker
 deploy_celeryworker() {
-    log_info "开始部署 Celery Worker (Incubator)..."
+    log_info "开始部署 Celery Worker (LLMOps)..."
     log_info "环境: $ENVIRONMENT, 命名空间: $NAMESPACE"
     
     # 检查环境配置
@@ -456,8 +456,8 @@ deploy_celeryworker() {
     
     # 从配置文件读取环境变量
     export CELERY_BROKER_URL="${CELERY_BROKER_URL:-amqp://admin:admin123@rabbitmq-sunmoonai.messaging-platform-dev:5672//}"
-    export CELERY_RESULT_BACKEND="${CELERY_RESULT_BACKEND:-redis://redis-service.data-platform:6379/10}"
-    export CELERY_QUEUE="${CELERY_QUEUE:-incubator-queue}"  # 单队列
+    export CELERY_RESULT_BACKEND="${CELERY_RESULT_BACKEND:-redis://redis-service.data-platform:6379/0}"
+    export CELERY_QUEUE="${CELERY_QUEUE:-llmops-queue}"  # 单队列
     export CELERY_CONCURRENCY="${CELERY_CONCURRENCY:-2}"
     export REDIS_URL="${REDIS_URL:-redis://redis-service.data-platform:6379}"
     
@@ -475,7 +475,7 @@ deploy_celeryworker() {
     # 阶段2：部署本级核心服务（Deployment 和 Service）
     # ============================================================
     log_info "🚀 阶段2：部署 Celery Worker 核心服务..."
-    log_info "部署 Celery Worker (Incubator) (环境: $ENVIRONMENT, 镜像: $CELERY_WORKER_FULL_IMAGE_NAME, 拉取策略: ${IMAGE_PULL_POLICY:-IfNotPresent}, 命名空间: $NAMESPACE)..."
+    log_info "部署 Celery Worker (LLMOps) (环境: $ENVIRONMENT, 镜像: $CELERY_WORKER_FULL_IMAGE_NAME, 拉取策略: ${IMAGE_PULL_POLICY:-IfNotPresent}, 命名空间: $NAMESPACE)..."
     
     # 创建临时文件并替换环境变量（单后端，无需动态生成）
     TEMP_YAML=$(mktemp)
@@ -495,24 +495,24 @@ deploy_celeryworker() {
     rm -f "$TEMP_YAML"
     
     if [ $? -eq 0 ]; then
-        log_success "Celery Worker (Incubator) 部署完成！"
+        log_success "Celery Worker (LLMOps) 部署完成！"
         log_info "监听队列: ${CELERY_QUEUE}"
         echo ""
         log_info "检查部署状态:"
-        echo "  kubectl get pods -n $NAMESPACE -l app=celeryworker-incubator"
-        echo "  kubectl get svc -n $NAMESPACE -l app=celeryworker-incubator"
+        echo "  kubectl get pods -n $NAMESPACE -l app=celeryworker-llmops"
+        echo "  kubectl get svc -n $NAMESPACE -l app=celeryworker-llmops"
         echo ""
         log_info "查看 Pod 日志:"
-        echo "  kubectl logs -n $NAMESPACE -l app=celeryworker-incubator -f"
+        echo "  kubectl logs -n $NAMESPACE -l app=celeryworker-llmops -f"
     else
-        log_error "Celery Worker (Incubator) 部署失败"
+        log_error "Celery Worker (LLMOps) 部署失败"
         exit 1
     fi
 }
 
 # 卸载 Celery Worker
 undeploy_celeryworker() {
-    log_info "开始卸载 Celery Worker (Incubator)..."
+    log_info "开始卸载 Celery Worker (LLMOps)..."
     log_info "环境: $ENVIRONMENT, 命名空间: $NAMESPACE"
     
     check_env_config
@@ -540,7 +540,7 @@ undeploy_celeryworker() {
     fi
     log_success "✅ Celery Worker 子级组件卸载完成"
     
-    log_success "Celery Worker (Incubator) 卸载完成！"
+    log_success "Celery Worker (LLMOps) 卸载完成！"
 }
 
 # 卸载子组件（按优先级，逆序）
@@ -598,24 +598,24 @@ uninstall_sub_components() {
 
 # 显示状态
 show_status() {
-    log_info "Celery Worker (Incubator) 状态:"
+    log_info "Celery Worker (LLMOps) 状态:"
     echo ""
     echo "📦 Pods:"
-    kubectl get pods -n "$NAMESPACE" -l app=celeryworker-incubator 2>/dev/null || echo "  无 Pod 运行"
+    kubectl get pods -n "$NAMESPACE" -l app=celeryworker-llmops 2>/dev/null || echo "  无 Pod 运行"
     echo ""
     echo "🌐 Services:"
-    kubectl get svc -n "$NAMESPACE" -l app=celeryworker-incubator 2>/dev/null || echo "  无 Service"
+    kubectl get svc -n "$NAMESPACE" -l app=celeryworker-llmops 2>/dev/null || echo "  无 Service"
     echo ""
     echo "📋 Deployments:"
-    kubectl get deployment -n "$NAMESPACE" -l app=celeryworker-incubator 2>/dev/null || echo "  无 Deployment"
+    kubectl get deployment -n "$NAMESPACE" -l app=celeryworker-llmops 2>/dev/null || echo "  无 Deployment"
     echo ""
     log_info "Init Container 日志（最近一个 Pod）:"
-    POD_NAME=$(kubectl get pods -n "$NAMESPACE" -l app=celeryworker-incubator -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+    POD_NAME=$(kubectl get pods -n "$NAMESPACE" -l app=celeryworker-llmops -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
     if [ -n "$POD_NAME" ]; then
         log_info "Pod: $POD_NAME"
         echo ""
-        log_info "Init Container: extract-incubator-code"
-        kubectl logs -n "$NAMESPACE" "$POD_NAME" -c extract-incubator-code --tail=20 2>/dev/null || log_warn "无法获取日志"
+        log_info "Init Container: extract-llmops-code"
+        kubectl logs -n "$NAMESPACE" "$POD_NAME" -c extract-llmops-code --tail=20 2>/dev/null || log_warn "无法获取日志"
     else
         log_warn "未找到运行中的 Pod"
     fi
@@ -655,14 +655,14 @@ main() {
     NAMESPACE="$namespace"
     ENVIRONMENT="$environment"
     
-    log_info "Celery Worker (Incubator) 部署脚本启动"
+    log_info "Celery Worker (LLMOps) 部署脚本启动"
     log_info "操作: $ACTION, 项目: $PROJECT_ID, 命名空间: $NAMESPACE, 环境: $ENVIRONMENT"
     
     check_kubectl
     
     case "$ACTION" in
         "deploy")
-            log_info "开始部署 Celery Worker (Incubator)..."
+            log_info "开始部署 Celery Worker (LLMOps)..."
             
             # 读取 Kubernetes 配置文件
             if ! read_k8s_config; then
@@ -709,9 +709,9 @@ main() {
             echo "用法: $0 <action> [project_id] [namespace] [environment]"
             echo ""
             echo "操作:"
-            echo "  deploy     部署 Celery Worker (Incubator)"
-            echo "  undeploy   卸载 Celery Worker (Incubator)"
-            echo "  status     查看 Celery Worker (Incubator) 状态"
+            echo "  deploy     部署 Celery Worker (LLMOps)"
+            echo "  undeploy   卸载 Celery Worker (LLMOps)"
+            echo "  status     查看 Celery Worker (LLMOps) 状态"
             echo ""
             echo "参数说明:"
             echo "  project_id   项目标识符（默认: $DEFAULT_PROJECT_ID）"
@@ -722,8 +722,8 @@ main() {
             echo "  deploy       - 部署到 Kubernetes（从 Harbor 拉取镜像）"
             echo "                注意: 部署前请确保镜像已构建并推送到 Harbor"
             echo "                构建镜像: cd ../build && ./build-image.sh build-push"
-            echo "  undeploy     - 卸载 Celery Worker (Incubator)"
-            echo "  status       - 查看 Celery Worker (Incubator) 状态"
+            echo "  undeploy     - 卸载 Celery Worker (LLMOps)"
+            echo "  status       - 查看 Celery Worker (LLMOps) 状态"
             echo ""
             echo "示例:"
             echo "  $0 deploy sunmoonai app-platform-dev development"
@@ -740,8 +740,8 @@ main() {
             echo "  ./build-image.sh build-push"
             echo ""
             echo "  # 2. 部署服务"
-            echo "  cd ../deploy-celeryworker-incubator"
-            echo "  ./deploy-celeryworker-incubator.sh deploy sunmoonai app-platform-dev development"
+            echo "  cd ../deploy-celeryworker-llmops"
+            echo "  ./deploy-celeryworker-llmops.sh deploy sunmoonai app-platform-dev development"
             exit 1
             ;;
     esac

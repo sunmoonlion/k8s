@@ -9,7 +9,7 @@ set -e
 CELERY_WORKER_MIDDLEWARE_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # 计算项目根目录（k8s目录）
-# 从 deploy-middleware-all/ -> middleware/ -> deploy-celeryworker-incubator/ -> celeryworker-incubator/ -> incubator-app/ -> business-apps/ -> app-platform/ -> sunmoonai/ -> k8s/
+# 从 deploy-middleware-all/ -> middleware/ -> deploy-celeryworker-llmops/ -> celeryworker-llmops/ -> llmops-app/ -> business-apps/ -> app-platform/ -> sunmoonai/ -> k8s/
 PROJECT_ROOT="$(cd "$CELERY_WORKER_MIDDLEWARE_SCRIPT_DIR/../../../../../../.." && pwd)"
 
 # 导入统一部署模板（可能会覆盖 SCRIPT_DIR，所以我们已经保存了）

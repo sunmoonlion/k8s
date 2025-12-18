@@ -52,7 +52,7 @@ bash deploy-app-platform-all.sh deploy --cluster C2
 
 ```bash
 # 启用/禁用组件
-celeryworker_bff_enabled="true"
+# celeryworker_bff_enabled="true"  # 已废弃：celeryworker_bff 已拆分为独立的 Worker
 incubator_bff_enabled="false"  # 禁用该组件
 ```
 
@@ -62,7 +62,7 @@ incubator_bff_enabled="false"  # 禁用该组件
 
 ```bash
 # 共享应用优先（基础设施）
-celeryworker_bff_priority=1000
+# celeryworker_bff_priority=1000  # 已废弃：celeryworker_bff 已拆分为独立的 Worker
 document_converter_bff_priority=900
 onlyoffice_docs_bff_priority=800
 
@@ -79,12 +79,12 @@ llmops_ssr_priority=400
 
 ```bash
 # C1 集群配置
-C1_celeryworker_bff_enabled="true"
-C1_celeryworker_bff_priority=1000
+# C1_celeryworker_bff_enabled="true"  # 已废弃：celeryworker_bff 已拆分为独立的 Worker
+# C1_celeryworker_bff_priority=1000
 
 # C2 集群配置
-C2_celeryworker_bff_enabled="false"
-C2_celeryworker_bff_priority=500
+# C2_celeryworker_bff_enabled="false"  # 已废弃：celeryworker_bff 已拆分为独立的 Worker
+# C2_celeryworker_bff_priority=500
 ```
 
 ## 组件列表
@@ -93,7 +93,10 @@ C2_celeryworker_bff_priority=500
 
 | 组件ID | 路径 | 默认优先级 |
 |--------|------|-----------|
-| `celeryworker_bff` | `shared-apps/celeryworker-app/celeryworker-bff/deploy-celeryworker-bff/deploy-multi-celeryworker.sh` | 1000 |
+| ~~`celeryworker_bff`~~ | ~~`shared-apps/celeryworker-app/celeryworker-bff/deploy-celeryworker-bff/deploy-multi-celeryworker.sh`~~ | ~~1000~~ |
+| | **注意**：`celeryworker_bff` 已拆分为独立的 Worker，请使用以下独立部署脚本： | |
+| | - `business-apps/incubator-app/celeryworker-incubator/deploy-celeryworker-incubator/deploy-celeryworker-incubator.sh` | |
+| | - `business-apps/llmops-app/celeryworker-llmops/deploy-celeryworker-llmops/deploy-celeryworker-llmops.sh` | |
 | `document_converter_bff` | `shared-apps/document-converter-app/document-converter-bff/deploy-document-converter-bff/deploy-document-converter.sh` | 900 |
 | `onlyoffice_docs_bff` | `shared-apps/onlyoffice-docs-app/onlyoffice-docs-bff/deploy-onlyoffice-docs/deploy-onlyoffice-docs.sh` | 800 |
 

@@ -82,8 +82,8 @@ DEFAULT_NAMESPACE="app-platform-dev"
 DEFAULT_ENVIRONMENT="development"
 
 # 尝试加载主配置文件（如果存在），以获取 CELERY_WORKER_IMAGE_REGISTRY 等环境变量
-# 主配置文件路径：../../deploy-celeryworker-incubator.conf（相对于当前脚本目录）
-MAIN_CONFIG_FILE="$(cd "$SCRIPT_DIR/../../.." && pwd)/deploy-celeryworker-incubator.conf"
+# 主配置文件路径：../../deploy-celeryworker-llmops.conf（相对于当前脚本目录）
+MAIN_CONFIG_FILE="$(cd "$SCRIPT_DIR/../../.." && pwd)/deploy-celeryworker-llmops.conf"
 if [[ -f "$MAIN_CONFIG_FILE" ]]; then
     # 临时禁用错误退出，因为主配置文件可能包含一些在当前上下文中不适用的配置
     set +e

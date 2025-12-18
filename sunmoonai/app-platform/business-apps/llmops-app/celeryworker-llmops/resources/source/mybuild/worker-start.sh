@@ -11,11 +11,11 @@ set -e
 # ============================================================================
 
 echo "=========================================="
-echo "启动 Celery Worker (Incubator)"
+echo "启动 Celery Worker (LLMOps)"
 echo "=========================================="
 
 # 检查必要的环境变量
-# 注意：这些环境变量应该在 Kubernetes 部署时通过 celeryworker-incubator.yaml 设置
+# 注意：这些环境变量应该在 Kubernetes 部署时通过 celeryworker-llmops.yaml 设置
 if [ -z "$CELERY_BROKER_URL" ]; then
     echo "⚠️  警告: CELERY_BROKER_URL 未设置"
     echo "   请在 Kubernetes Deployment 中设置 CELERY_BROKER_URL 环境变量"
@@ -41,9 +41,9 @@ else
 fi
 
 # 从环境变量读取队列名称（单队列）
-# 注意：这些环境变量应该在 Kubernetes 部署时通过 celeryworker-incubator.yaml 设置
+# 注意：这些环境变量应该在 Kubernetes 部署时通过 celeryworker-llmops.yaml 设置
 # 如果没有设置，使用合理的默认值（可以根据实际需求调整）
-QUEUE="${CELERY_QUEUE:-incubator-queue}"
+QUEUE="${CELERY_QUEUE:-llmops-queue}"
 CONCURRENCY="${CELERY_CONCURRENCY:-2}"
 
 # 验证队列配置
