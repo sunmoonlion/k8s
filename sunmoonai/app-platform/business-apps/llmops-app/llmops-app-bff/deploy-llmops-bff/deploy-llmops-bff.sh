@@ -165,14 +165,18 @@ LLMOPS_BFF_TAG="${LLMOPS_BFF_TAG:-1.0.0}"
 # 项目ID（从配置文件读取，如果未设置则使用默认值）
 PROJECT_ID="${LLMOPS_BFF_PROJECT_ID:-${PROJECT_ID:-sunmoonai}}"
 
-# 资源文件路径（对齐 PostgreSQL 结构，统一使用 llmops-app-bff.yaml）
+# 资源文件路径（对齐项目结构）
 RESOURCES_DIR="../resources"
-LLMOPS_BFF_YAML="${RESOURCES_DIR}/llmops-app-bff.yaml"
+# 使用生成的 YAML 文件（由 resources/custom-values/generate.sh 生成）
+CUSTOM_VALUES_DIR="${RESOURCES_DIR}/custom-values"
+LLMOPS_BFF_YAML="${CUSTOM_VALUES_DIR}/llmops-app-bff-generated.yaml"
 
-# Secrets 和 ConfigMaps 路径（对齐项目架构，放在 deploy-llmops-bff/secrets/ 下）
+# 模板文件路径（已移动到 resources/custom-values/templates/）
+TEMPLATES_DIR="${CUSTOM_VALUES_DIR}/templates"
+LLMOPS_BFF_CONFIGMAP="${TEMPLATES_DIR}/configmap/llmops-service-config.yaml"
+LLMOPS_BFF_SECRET="${TEMPLATES_DIR}/secret/llmops-service-secret.yaml"
+# Secrets 部署脚本路径
 SECRETS_DIR="./secrets"
-LLMOPS_BFF_CONFIGMAP="${SECRETS_DIR}/llmops-app-bff-config/llmops-app-bff-config.yaml"
-LLMOPS_BFF_SECRET="${SECRETS_DIR}/llmops-app-bff-secret/llmops-app-bff-secret.yaml"
 DEPLOY_SECRETS_ALL="${SECRETS_DIR}/deploy-secrets-all/deploy-secrets-all.sh"
 
 # 检查 kubectl 是否可用
@@ -223,21 +227,41 @@ check_namespace() {
     fi
 }
 
+# 自动生成 YAML 文件的辅助函数
+auto_generate_yaml() {
+    local yaml_file="$1"
+    local custom_values_dir="$2"
+    
+    if [ ! -f "$yaml_file" ]; then
+        log_warn "生成的 YAML 文件不存在，自动运行生成脚本..."
+        if [ -f "$custom_values_dir/generate.sh" ]; then
+            if bash "$custom_values_dir/generate.sh"; then
+                log_success "YAML 文件生成成功"
+            else
+                log_error "YAML 文件生成失败"
+                return 1
+            fi
+        else
+            log_error "生成脚本不存在: $custom_values_dir/generate.sh"
+            return 1
+        fi
+    fi
+    return 0
+}
+
 # 检查环境配置
 check_env_config() {
-    if [ ! -f "$LLMOPS_BFF_YAML" ]; then
-        log_error "配置文件不存在: $LLMOPS_BFF_YAML"
-        log_info "请确保资源文件存在: $RESOURCES_DIR/llmops-app-bff.yaml"
+    # 自动生成 YAML 文件（如果不存在）
+    if ! auto_generate_yaml "$LLMOPS_BFF_YAML" "$CUSTOM_VALUES_DIR"; then
         exit 1
     fi
+    # 检查模板文件（已移动到 templates/ 目录）
     if [ ! -f "$LLMOPS_BFF_CONFIGMAP" ]; then
-        log_error "ConfigMap 文件不存在: $LLMOPS_BFF_CONFIGMAP"
-        log_info "请确保 secrets 目录存在: $SECRETS_DIR"
+        log_error "ConfigMap 模板文件不存在: $LLMOPS_BFF_CONFIGMAP"
         exit 1
     fi
     if [ ! -f "$LLMOPS_BFF_SECRET" ]; then
-        log_error "Secret 文件不存在: $LLMOPS_BFF_SECRET"
-        log_info "请确保 secrets 目录存在: $SECRETS_DIR"
+        log_error "Secret 模板文件不存在: $LLMOPS_BFF_SECRET"
         exit 1
     fi
     
@@ -307,14 +331,16 @@ deploy_web_api() {
     # 阶段2：部署本级核心服务（Deployment 和 Service）
     # ============================================================
     log_info "🚀 阶段2：部署 LLMOps App BFF 核心服务..."
-    # 部署 LLMOps App BFF（动态替换镜像名称和命名空间）
+    # 部署 LLMOps App BFF
     log_info "部署 LLMOps App BFF (环境: $ENV, 镜像: $LLMOPS_BFF_FULL_IMAGE_NAME, 拉取策略: ${IMAGE_PULL_POLICY:-IfNotPresent}, 命名空间: $NAMESPACE)..."
-    # 创建临时文件并替换环境变量（包括镜像名称、拉取策略和命名空间）
-    TEMP_YAML=$(mktemp)
-    export NAMESPACE ENV LLMOPS_BFF_IMAGE LLMOPS_BFF_TAG LLMOPS_BFF_IMAGE_REGISTRY LLMOPS_BFF_IMAGE_PROJECT LLMOPS_BFF_FULL_IMAGE_NAME IMAGE_PULL_POLICY
-    envsubst < "$LLMOPS_BFF_YAML" > "$TEMP_YAML"
-    kubectl apply -f "$TEMP_YAML" -n "$NAMESPACE"
-    rm -f "$TEMP_YAML"
+    
+    # 自动生成 YAML 文件（如果不存在）
+    if ! auto_generate_yaml "$LLMOPS_BFF_YAML" "$CUSTOM_VALUES_DIR"; then
+        return 1
+    fi
+    
+    # 部署 Deployment 和 Service（直接使用生成的 YAML）
+    kubectl apply -f "$LLMOPS_BFF_YAML" -n "$NAMESPACE"
     
     log_success "LLMOps App BFF 部署完成！"
     
@@ -347,11 +373,14 @@ undeploy_web_api() {
     # ============================================================
     log_info "🚀 阶段1：卸载 LLMOps App BFF 核心服务..."
     # 卸载时使用原始 YAML（删除时不需要替换镜像，但需要替换命名空间）
-    TEMP_YAML=$(mktemp)
-    export NAMESPACE ENV
-    envsubst < "$LLMOPS_BFF_YAML" > "$TEMP_YAML"
-    kubectl delete -f "$TEMP_YAML" -n "$NAMESPACE" --ignore-not-found=true
-    rm -f "$TEMP_YAML"
+    # 检查生成的 YAML 文件是否存在
+    if [ ! -f "$LLMOPS_BFF_YAML" ]; then
+        log_warn "生成的 YAML 文件不存在: $LLMOPS_BFF_YAML，尝试直接删除资源"
+        kubectl delete deployment llmops-app-bff -n "$NAMESPACE" --ignore-not-found=true
+        kubectl delete service llmops-app-bff-service -n "$NAMESPACE" --ignore-not-found=true
+    else
+        kubectl delete -f "$LLMOPS_BFF_YAML" -n "$NAMESPACE" --ignore-not-found=true
+    fi
     log_success "✅ LLMOps App BFF 核心服务卸载完成"
     
     # ============================================================

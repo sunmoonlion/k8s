@@ -93,6 +93,10 @@ DEFAULT_ENVIRONMENT="${ENVIRONMENT:-development}"
 
 # 资源目录（新的结构：resources/ 在项目根目录下）
 CONVERTER_RESOURCE_DIR="$PROJECT_ROOT/resources"
+# 使用生成的 YAML 文件（由 resources/custom-values/generate.sh 生成）
+CUSTOM_VALUES_DIR="$CONVERTER_RESOURCE_DIR/custom-values"
+DEPLOYMENT_YAML="$CUSTOM_VALUES_DIR/document-converter-deployment-generated.yaml"
+SERVICE_YAML="$CUSTOM_VALUES_DIR/document-converter-service-generated.yaml"
 
 # 检查命名空间
 check_namespace() {
@@ -164,41 +168,31 @@ execute_converter_deployment() {
     
     log_info "镜像地址: $full_image"
     
-    # 处理 Deployment YAML（新结构：直接在 resources/ 目录下）
-    local deployment_file="$CONVERTER_RESOURCE_DIR/deployment.yaml"
-    if [[ ! -f "$deployment_file" ]]; then
-        log_error "Deployment 文件不存在: $deployment_file"
-        log_error "请确保文件存在于: $CONVERTER_RESOURCE_DIR/deployment.yaml"
-        exit 1
+    # 检查生成的 YAML 文件是否存在，如果不存在则自动生成
+    if [ ! -f "$DEPLOYMENT_YAML" ]; then
+        log_warn "生成的 YAML 文件不存在，自动运行生成脚本..."
+        if [ -f "$CUSTOM_VALUES_DIR/generate.sh" ]; then
+            if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
+                log_success "YAML 文件生成成功"
+            else
+                log_error "YAML 文件生成失败"
+                exit 1
+            fi
+        else
+            log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
+            log_error "请确保生成脚本存在于: $CUSTOM_VALUES_DIR"
+            exit 1
+        fi
     fi
     
-    # 替换模板变量
-    local temp_deployment=$(mktemp)
-    sed -e "s|{{NAMESPACE}}|$namespace|g" \
-        -e "s|{{IMAGE}}|$full_image|g" \
-        -e "s|{{REPLICAS}}|${DOCUMENT_CONVERTER_REPLICAS:-2}|g" \
-        -e "s|{{CPU_REQUEST}}|${DOCUMENT_CONVERTER_CPU_REQUEST:-500m}|g" \
-        -e "s|{{CPU_LIMIT}}|${DOCUMENT_CONVERTER_CPU_LIMIT:-1000m}|g" \
-        -e "s|{{MEMORY_REQUEST}}|${DOCUMENT_CONVERTER_MEMORY_REQUEST:-512Mi}|g" \
-        -e "s|{{MEMORY_LIMIT}}|${DOCUMENT_CONVERTER_MEMORY_LIMIT:-1Gi}|g" \
-        "$deployment_file" > "$temp_deployment"
-    
-    # 应用 Deployment
+    # 应用 Deployment（直接使用生成的 YAML）
     log_info "应用 Deployment..."
-    kubectl apply -f "$temp_deployment"
-    rm -f "$temp_deployment"
+    kubectl apply -f "$DEPLOYMENT_YAML" -n "$namespace"
     
-    # 处理 Service YAML（新结构：直接在 resources/ 目录下）
-    local service_file="$CONVERTER_RESOURCE_DIR/service.yaml"
-    if [[ -f "$service_file" ]]; then
-        local temp_service=$(mktemp)
-        sed -e "s|{{NAMESPACE}}|$namespace|g" \
-            -e "s|{{SERVICE_PORT}}|${DOCUMENT_CONVERTER_SERVICE_PORT:-8000}|g" \
-            "$service_file" > "$temp_service"
-        
+    # 应用 Service（如果存在）
+    if [ -f "$SERVICE_YAML" ]; then
         log_info "应用 Service..."
-        kubectl apply -f "$temp_service"
-        rm -f "$temp_service"
+        kubectl apply -f "$SERVICE_YAML" -n "$namespace"
     fi
     
     log_success "✅ Document Converter 部署完成"
@@ -293,8 +287,18 @@ uninstall_document_converter() {
     
     # 卸载 Deployment 和 Service
     log_info "卸载 Deployment 和 Service..."
-    kubectl delete deployment document-converter -n "$namespace" --ignore-not-found=true || true
-    kubectl delete service document-converter -n "$namespace" --ignore-not-found=true || true
+    if [ -f "$DEPLOYMENT_YAML" ]; then
+        kubectl delete -f "$DEPLOYMENT_YAML" -n "$namespace" --ignore-not-found=true || true
+    else
+        log_warn "生成的 Deployment YAML 文件不存在，尝试直接删除资源"
+        kubectl delete deployment document-converter -n "$namespace" --ignore-not-found=true || true
+    fi
+    
+    if [ -f "$SERVICE_YAML" ]; then
+        kubectl delete -f "$SERVICE_YAML" -n "$namespace" --ignore-not-found=true || true
+    else
+        kubectl delete service document-converter -n "$namespace" --ignore-not-found=true || true
+    fi
     
     # 可选：卸载 Secrets（如果需要）
     # kubectl delete secret harbor-registry-secret -n "$namespace" --ignore-not-found=true || true

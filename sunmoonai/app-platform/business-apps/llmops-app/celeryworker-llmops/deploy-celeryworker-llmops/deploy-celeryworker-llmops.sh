@@ -162,12 +162,11 @@ deploy_sub_components() {
 CELERY_WORKER_IMAGE="${CELERY_WORKER_IMAGE:-celeryworker}"
 CELERY_WORKER_TAG="${CELERY_WORKER_TAG:-1.0.0}"
 
-# 资源文件路径（对齐项目结构，统一使用 celeryworker-llmops.yaml）
+# 资源文件路径（对齐项目结构）
 RESOURCES_DIR="../resources"
-CELERYWORKER_YAML="${RESOURCES_DIR}/celeryworker-llmops.yaml"
-# 生成的 YAML 文件路径（可选，用于调试和审计）
-# 通过环境变量 SAVE_GENERATED_YAML=true 启用保存
-GENERATED_YAML="${RESOURCES_DIR}/celeryworker-llmops-generated.yaml"
+# 使用生成的 YAML 文件（由 resources/custom-values/generate.sh 生成）
+CUSTOM_VALUES_DIR="${RESOURCES_DIR}/custom-values"
+CELERYWORKER_YAML="${CUSTOM_VALUES_DIR}/celeryworker-llmops-generated.yaml"
 
 # Secrets 和 ConfigMap 统一部署脚本（按照 PostgreSQL 模式）
 SECRETS_DIR="${SCRIPT_DIR}/secrets"
@@ -390,14 +389,32 @@ TEMPLATE_EOF
     log_success "✅ 模板文件已生成: $CELERYWORKER_YAML"
 }
 
+# 自动生成 YAML 文件的辅助函数
+auto_generate_yaml() {
+    local yaml_file="$1"
+    local custom_values_dir="$2"
+    
+    if [ ! -f "$yaml_file" ]; then
+        log_warn "生成的 YAML 文件不存在，自动运行生成脚本..."
+        if [ -f "$custom_values_dir/generate.sh" ]; then
+            if bash "$custom_values_dir/generate.sh"; then
+                log_success "YAML 文件生成成功"
+            else
+                log_error "YAML 文件生成失败"
+                return 1
+            fi
+        else
+            log_error "生成脚本不存在: $custom_values_dir/generate.sh"
+            return 1
+        fi
+    fi
+    return 0
+}
+
 # 检查环境配置
 check_env_config() {
-    # 如果模板文件不存在，自动生成
-    generate_template_yaml
-    
-    if [ ! -f "$CELERYWORKER_YAML" ]; then
-        log_error "配置文件不存在: $CELERYWORKER_YAML"
-        log_info "请确保资源文件存在: $RESOURCES_DIR/celeryworker-llmops.yaml"
+    # 自动生成 YAML 文件（如果不存在）
+    if ! auto_generate_yaml "$CELERYWORKER_YAML" "$CUSTOM_VALUES_DIR"; then
         exit 1
     fi
     
@@ -477,22 +494,24 @@ deploy_celeryworker() {
     log_info "🚀 阶段2：部署 Celery Worker 核心服务..."
     log_info "部署 Celery Worker (LLMOps) (环境: $ENVIRONMENT, 镜像: $CELERY_WORKER_FULL_IMAGE_NAME, 拉取策略: ${IMAGE_PULL_POLICY:-IfNotPresent}, 命名空间: $NAMESPACE)..."
     
-    # 创建临时文件并替换环境变量（单后端，无需动态生成）
-    TEMP_YAML=$(mktemp)
-    
-    # 替换环境变量（envsubst）
-    envsubst < "$CELERYWORKER_YAML" > "$TEMP_YAML"
-    
-    # 可选：保存生成的 YAML 到 resources 目录（用于调试和审计）
-    # 通过环境变量 SAVE_GENERATED_YAML=true 启用
-    if [ "${SAVE_GENERATED_YAML:-false}" = "true" ]; then
-        cp "$TEMP_YAML" "$GENERATED_YAML"
-        log_info "💾 已保存生成的 YAML 到: $GENERATED_YAML"
+    # 检查生成的 YAML 文件是否存在，如果不存在则自动生成
+    if [ ! -f "$CELERYWORKER_YAML" ]; then
+        log_warn "生成的 YAML 文件不存在，自动运行生成脚本..."
+        if [ -f "$CUSTOM_VALUES_DIR/generate.sh" ]; then
+            if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
+                log_success "YAML 文件生成成功"
+            else
+                log_error "YAML 文件生成失败"
+                return 1
+            fi
+        else
+            log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
+            return 1
+        fi
     fi
     
-    # 部署 Deployment 和 Service
-    kubectl apply -f "$TEMP_YAML" -n "$NAMESPACE"
-    rm -f "$TEMP_YAML"
+    # 部署 Deployment 和 Service（直接使用生成的 YAML）
+    kubectl apply -f "$CELERYWORKER_YAML" -n "$NAMESPACE"
     
     if [ $? -eq 0 ]; then
         log_success "Celery Worker (LLMOps) 部署完成！"
@@ -522,13 +541,14 @@ undeploy_celeryworker() {
     # ============================================================
     log_info "🚀 阶段1：卸载 Celery Worker 核心服务..."
     # 卸载时使用原始 YAML（删除时不需要替换镜像，但需要替换命名空间）
-    TEMP_YAML=$(mktemp)
-    export NAMESPACE="$NAMESPACE"
-    export ENV="$ENV"  # 保留 ENV 用于兼容性（YAML 中可能使用）
-    export ENVIRONMENT="$ENVIRONMENT"
-    envsubst < "$CELERYWORKER_YAML" > "$TEMP_YAML"
-    kubectl delete -f "$TEMP_YAML" -n "$NAMESPACE" --ignore-not-found=true
-    rm -f "$TEMP_YAML"
+    # 检查生成的 YAML 文件是否存在
+    if [ ! -f "$CELERYWORKER_YAML" ]; then
+        log_warn "生成的 YAML 文件不存在: $CELERYWORKER_YAML，尝试直接删除资源"
+        kubectl delete deployment celeryworker-llmops -n "$NAMESPACE" --ignore-not-found=true
+        kubectl delete service celeryworker-llmops-service -n "$NAMESPACE" --ignore-not-found=true
+    else
+        kubectl delete -f "$CELERYWORKER_YAML" -n "$NAMESPACE" --ignore-not-found=true
+    fi
     log_success "✅ Celery Worker 核心服务卸载完成"
     
     # ============================================================

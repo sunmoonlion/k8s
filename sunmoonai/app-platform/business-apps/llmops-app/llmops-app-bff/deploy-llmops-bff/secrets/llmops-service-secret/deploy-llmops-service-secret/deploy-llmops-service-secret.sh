@@ -9,7 +9,11 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SECRET_DIR="$(dirname "$SCRIPT_DIR")"  # llmops-service-secret 目录
+# 模板文件已移动到 resources/custom-values/templates/
+# 计算应用根目录（从 deploy-xxx/ 到应用根目录）
+APP_ROOT="$(dirname "$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")")"  # 从 deploy-xxx/ 到应用根目录
+TEMPLATES_DIR="$APP_ROOT/resources/custom-values/templates"
+SECRET_DIR="$(dirname "$SCRIPT_DIR")"  # llmops-service-secret 目录（用于其他用途）
 # 计算项目根目录（k8s目录）
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
 
@@ -70,7 +74,7 @@ main() {
     fi
     
     # Secret YAML 文件路径
-    local secret_yaml="$SECRET_DIR/${SECRET_NAME}.yaml"
+    local secret_yaml="$TEMPLATES_DIR/secret/${SECRET_NAME}.yaml"
     
     if [[ ! -f "$secret_yaml" ]]; then
         log_error "Secret YAML 文件不存在: $secret_yaml"

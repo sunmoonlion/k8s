@@ -22,8 +22,43 @@ log_error(){ echo -e "\033[0;31m[ERROR]\033[0m $(date '+%Y-%m-%d %H:%M:%S') $*" 
 check_kubectl(){ command -v kubectl >/dev/null 2>&1 || { log_error "kubectl 未安装"; exit 1; }; }
 check_namespace(){ kubectl get namespace "$1" >/dev/null 2>&1 || { log_error "命名空间不存在: $1"; exit 1; }; }
 
+# 资源文件路径（对齐项目结构）
+RESOURCES_DIR="../resources"
+# 使用生成的 YAML 文件（由 resources/custom-values/generate.sh 生成）
+CUSTOM_VALUES_DIR="${RESOURCES_DIR}/custom-values"
+LLMOPS_SSR_YAML="${CUSTOM_VALUES_DIR}/llmops-app-ssr-generated.yaml"
+# 模板文件路径（已移动到 resources/custom-values/templates/）
+TEMPLATES_DIR="${CUSTOM_VALUES_DIR}/templates"
+LLMOPS_SSR_CONFIGMAP="${TEMPLATES_DIR}/configmap/llmops-app-ssr-config.yaml"
+LLMOPS_SSR_SECRET="${TEMPLATES_DIR}/secret/llmops-app-ssr-secret.yaml"
+
+# 自动生成 YAML 文件的辅助函数
+auto_generate_yaml() {
+  local yaml_file="$1"
+  local custom_values_dir="$2"
+  
+  if [ ! -f "$yaml_file" ]; then
+    log_warn "生成的 YAML 文件不存在，自动运行生成脚本..."
+    if [ -f "$custom_values_dir/generate.sh" ]; then
+      if bash "$custom_values_dir/generate.sh"; then
+        log_success "YAML 文件生成成功"
+      else
+        log_error "YAML 文件生成失败"
+        return 1
+      fi
+    else
+      log_error "生成脚本不存在: $custom_values_dir/generate.sh"
+      return 1
+    fi
+  fi
+  return 0
+}
+
 check_env_config(){
-  [[ -f "$LLMOPS_SSR_YAML" ]] || { log_error "缺少资源文件: $LLMOPS_SSR_YAML"; exit 1; }
+  # 自动生成 YAML 文件（如果不存在）
+  if ! auto_generate_yaml "$LLMOPS_SSR_YAML" "$CUSTOM_VALUES_DIR"; then
+    exit 1
+  fi
   if [[ "${secrets_enabled:-true}" == "true" ]]; then
     [[ -f "$LLMOPS_SSR_CONFIGMAP" ]] || { log_error "缺少 ConfigMap 模板: $LLMOPS_SSR_CONFIGMAP"; exit 1; }
     [[ -f "$LLMOPS_SSR_SECRET" ]] || { log_error "缺少 Secret 模板: $LLMOPS_SSR_SECRET"; exit 1; }
@@ -46,22 +81,29 @@ deploy_secrets_config(){
 deploy_app(){
   check_env_config
   log_info "部署 LLMOps App SSR..."
-  export NAMESPACE ENV LLMOPS_SSR_FULL_IMAGE_NAME LLMOPS_SSR_IMAGE_REGISTRY LLMOPS_SSR_IMAGE_PROJECT LLMOPS_SSR_IMAGE LLMOPS_SSR_TAG IMAGE_PULL_POLICY
-  tmp_yaml=$(mktemp)
-  envsubst < "$LLMOPS_SSR_YAML" > "$tmp_yaml"
-  kubectl apply -f "$tmp_yaml" -n "$NAMESPACE"
-  rm -f "$tmp_yaml"
+  
+  # 自动生成 YAML 文件（如果不存在）
+  if ! auto_generate_yaml "$LLMOPS_SSR_YAML" "$CUSTOM_VALUES_DIR"; then
+    exit 1
+  fi
+  
+  # 部署 Deployment 和 Service（直接使用生成的 YAML）
+  kubectl apply -f "$LLMOPS_SSR_YAML" -n "$NAMESPACE"
   log_success "应用部署完成"
 }
 
 undeploy_app(){
   check_env_config
   log_info "卸载 LLMOps App SSR..."
-  export NAMESPACE ENV
-  tmp_yaml=$(mktemp)
-  envsubst < "$LLMOPS_SSR_YAML" > "$tmp_yaml"
-  kubectl delete -f "$tmp_yaml" -n "$NAMESPACE" --ignore-not-found
-  rm -f "$tmp_yaml"
+  
+  # 检查生成的 YAML 文件是否存在
+  if [ ! -f "$LLMOPS_SSR_YAML" ]; then
+    log_warn "生成的 YAML 文件不存在: $LLMOPS_SSR_YAML，尝试直接删除资源"
+    kubectl delete deployment llmops-app-ssr -n "$NAMESPACE" --ignore-not-found=true
+    kubectl delete service llmops-app-ssr-service -n "$NAMESPACE" --ignore-not-found=true
+  else
+    kubectl delete -f "$LLMOPS_SSR_YAML" -n "$NAMESPACE" --ignore-not-found=true
+  fi
   if [[ "${secrets_enabled:-true}" == "true" ]]; then
     tmp_cm=$(mktemp); tmp_sec=$(mktemp)
     envsubst < "$LLMOPS_SSR_CONFIGMAP" > "$tmp_cm"

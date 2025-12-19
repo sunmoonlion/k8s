@@ -3,9 +3,12 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="$SCRIPT_DIR/deploy-incubator-app-bff-secret.conf"
-SECRETS_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"  # secrets 目录
-YAML_TEMPLATE="$SECRETS_DIR/incubator-app-bff-secret/incubator-app-bff-secret.yaml.template"
+# 模板文件已移动到 resources/custom-values/templates/
+PROJECT_ROOT="$(dirname "$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")")"  # 从 deploy-xxx/ 到应用根目录
+TEMPLATES_DIR="$PROJECT_ROOT/resources/custom-values/templates"
+YAML_TEMPLATE="$TEMPLATES_DIR/secret/incubator-app-bff-secret.yaml"
 YAML_OUTPUT="$SECRETS_DIR/incubator-app-bff-secret/incubator-app-bff-secret.yaml"
+SECRETS_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"  # secrets 目录（用于输出）
 
 log_info() { echo -e "[INFO] $*"; }
 log_success() { echo -e "\033[32m[SUCCESS]\033[0m $*"; }

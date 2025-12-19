@@ -162,12 +162,11 @@ deploy_sub_components() {
 CELERY_WORKER_IMAGE="${CELERY_WORKER_IMAGE:-celeryworker}"
 CELERY_WORKER_TAG="${CELERY_WORKER_TAG:-1.0.0}"
 
-# 资源文件路径（对齐项目结构，统一使用 celeryworker-incubator.yaml）
+# 资源文件路径（对齐项目结构）
 RESOURCES_DIR="../resources"
-CELERYWORKER_YAML="${RESOURCES_DIR}/celeryworker-incubator.yaml"
-# 生成的 YAML 文件路径（可选，用于调试和审计）
-# 通过环境变量 SAVE_GENERATED_YAML=true 启用保存
-GENERATED_YAML="${RESOURCES_DIR}/celeryworker-incubator-generated.yaml"
+# 使用生成的 YAML 文件（由 resources/custom-values/generate.sh 生成）
+CUSTOM_VALUES_DIR="${RESOURCES_DIR}/custom-values"
+CELERYWORKER_YAML="${CUSTOM_VALUES_DIR}/celeryworker-incubator-generated.yaml"
 
 # Secrets 和 ConfigMap 统一部署脚本（按照 PostgreSQL 模式）
 SECRETS_DIR="${SCRIPT_DIR}/secrets"
@@ -221,192 +220,24 @@ check_namespace() {
     fi
 }
 
-# 生成模板 YAML 文件（如果不存在）
-generate_template_yaml() {
-    if [ -f "$CELERYWORKER_YAML" ]; then
-        return 0  # 文件已存在，不需要生成
-    fi
-    
-    log_info "模板文件不存在，自动生成: $CELERYWORKER_YAML"
-    mkdir -p "$RESOURCES_DIR"
-    
-    cat > "$CELERYWORKER_YAML" <<'TEMPLATE_EOF'
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: celeryworker-incubator
-  namespace: ${NAMESPACE:-app-platform-dev}
-  labels:
-    app: celeryworker-incubator
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: celeryworker-incubator
-  template:
-    metadata:
-      labels:
-        app: celeryworker-incubator
-    spec:
-      # Init Container: 从 incubator-app-bff 镜像提取任务定义代码
-      initContainers:
-      - name: extract-incubator-code
-        image: ${BACKEND_IMAGE_REGISTRY}/${BACKEND_IMAGE_PROJECT}/${BACKEND_IMAGE}:${BACKEND_TAG}
-        imagePullPolicy: ${IMAGE_PULL_POLICY:-IfNotPresent}
-        env:
-        - name: CODE_EXTRACT_SOURCE_DIR
-          value: "${CODE_EXTRACT_SOURCE_DIR:-/app/app}"
-        - name: CODE_EXTRACT_TARGET_DIR
-          value: "/shared/app"
-        - name: CODE_EXTRACT_DIRS
-          value: "${CODE_EXTRACT_DIRS:-worker core services db models gdb}"
-        - name: CODE_EXTRACT_FILES
-          value: "${CODE_EXTRACT_FILES:-__init__.py}"
-        command:
-          - sh
-          - -c
-          - |
-            echo "=========================================="
-            echo "从 ${BACKEND_IMAGE} 镜像提取任务定义代码"
-            echo "=========================================="
-            echo "源代码路径: ${CODE_EXTRACT_SOURCE_DIR}"
-            echo "目标路径: ${CODE_EXTRACT_TARGET_DIR}"
-            echo "提取目录: ${CODE_EXTRACT_DIRS}"
-            echo "提取文件: ${CODE_EXTRACT_FILES}"
-            echo "=========================================="
-            
-            SOURCE_DIR="${CODE_EXTRACT_SOURCE_DIR}"
-            TARGET_DIR="${CODE_EXTRACT_TARGET_DIR}"
-            
-            mkdir -p "$TARGET_DIR"
-            
-            # 复制目录（从环境变量读取目录列表）
-            if [ -n "${CODE_EXTRACT_DIRS}" ]; then
-              echo ""
-              echo "开始复制目录..."
-              for dir in ${CODE_EXTRACT_DIRS}; do
-                if [ -d "$SOURCE_DIR/$dir" ]; then
-                  echo "  ✓ 复制 $dir/..."
-                  cp -r "$SOURCE_DIR/$dir" "$TARGET_DIR/"
-                else
-                  echo "  ⚠ 跳过 $dir/（目录不存在）"
-                fi
-              done
-            fi
-            
-            # 复制文件（从环境变量读取文件列表）
-            if [ -n "${CODE_EXTRACT_FILES}" ]; then
-              echo ""
-              echo "开始复制文件..."
-              for file in ${CODE_EXTRACT_FILES}; do
-                if [ -f "$SOURCE_DIR/$file" ]; then
-                  echo "  ✓ 复制 $file"
-                  cp "$SOURCE_DIR/$file" "$TARGET_DIR/"
-                else
-                  echo "  ⚠ 跳过 $file（文件不存在）"
-                fi
-              done
-            fi
-            
-            echo ""
-            echo "=========================================="
-            echo "代码提取完成，目标目录内容:"
-            echo "=========================================="
-            ls -la "$TARGET_DIR" || true
-            echo ""
-      
-      containers:
-      - name: celeryworker
-        image: ${CELERY_WORKER_IMAGE_REGISTRY}/${CELERY_WORKER_IMAGE_PROJECT}/${CELERY_WORKER_IMAGE}:${CELERY_WORKER_TAG}
-        imagePullPolicy: ${IMAGE_PULL_POLICY:-IfNotPresent}
-        volumeMounts:
-        - name: worker-code
-          mountPath: /app/app  # 挂载提取的代码
-        envFrom:
-        # 从 ConfigMap 读取 Celery Worker 配置
-        - configMapRef:
-            name: celeryworker-config
-        # 从独立的 PostgreSQL Incubator 数据库 Secret 读取所有数据库连接信息
-        - secretRef:
-            name: postgresql-incubator-db-secret
-        # 从独立的 Neo4j Incubator 图数据库 Secret 读取所有图数据库连接信息
-        - secretRef:
-            name: neo4j-incubator-db-secret
-        env:
-        # 注意：应用代码会从以下环境变量构建数据库连接：
-        # - PostgreSQL: POSTGRES_SERVER, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_PORT, POSTGRES_DB
-        # - Neo4j: NEO4J_SERVER, NEO4J_PORT, NEO4J_USERNAME, NEO4J_PASSWORD, NEO4J_BOLT, NEO4J_AUTH
-        # 这些环境变量已通过 envFrom 从对应的 Secret 加载
-        # 或者可以直接使用 DB_URL 或 NEO4J_BOLT_URL 环境变量（如果应用代码支持）
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "200m"
-          limits:
-            memory: "1Gi"
-            cpu: "500m"
-        livenessProbe:
-          exec:
-            command:
-            - celery
-            - -A
-            - app.worker
-            - inspect
-            - ping
-          initialDelaySeconds: 30
-          periodSeconds: 30
-        readinessProbe:
-          exec:
-            command:
-            - celery
-            - -A
-            - app.worker
-            - inspect
-            - ping
-          initialDelaySeconds: 5
-          periodSeconds: 10
-      
-      volumes:
-      - name: worker-code
-        emptyDir: {}  # 临时存储，Pod 重启时清空并重新提取
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: celeryworker-incubator-service
-  namespace: ${NAMESPACE:-app-platform-dev}
-  labels:
-    app: celeryworker-incubator
-spec:
-  selector:
-    app: celeryworker-incubator
-  ports:
-  - port: 5555
-    targetPort: 5555
-    protocol: TCP
-  type: ClusterIP
-TEMPLATE_EOF
-    
-    log_success "✅ 模板文件已生成: $CELERYWORKER_YAML"
-}
 
 # 检查环境配置
 check_env_config() {
-    # 如果模板文件不存在，自动生成
-    generate_template_yaml
-    
+    # 检查生成的 YAML 文件是否存在，如果不存在则自动生成
     if [ ! -f "$CELERYWORKER_YAML" ]; then
-        log_error "配置文件不存在: $CELERYWORKER_YAML"
-        log_info "请确保资源文件存在: $RESOURCES_DIR/celeryworker-incubator.yaml"
-        exit 1
-    fi
-    
-    # 检查 envsubst 是否可用
-    if ! command -v envsubst &> /dev/null; then
-        log_error "envsubst 命令未找到，请安装 gettext 包"
-        log_info "Ubuntu/Debian: sudo apt-get install gettext-base"
-        log_info "CentOS/RHEL: sudo yum install gettext"
-        exit 1
+        log_warn "生成的 YAML 文件不存在，自动运行生成脚本..."
+        if [ -f "$CUSTOM_VALUES_DIR/generate.sh" ]; then
+            if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
+                log_success "YAML 文件生成成功"
+            else
+                log_error "YAML 文件生成失败"
+                exit 1
+            fi
+        else
+            log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
+            log_error "请确保生成脚本存在于: $CUSTOM_VALUES_DIR"
+            exit 1
+        fi
     fi
 }
 
@@ -477,22 +308,24 @@ deploy_celeryworker() {
     log_info "🚀 阶段2：部署 Celery Worker 核心服务..."
     log_info "部署 Celery Worker (Incubator) (环境: $ENVIRONMENT, 镜像: $CELERY_WORKER_FULL_IMAGE_NAME, 拉取策略: ${IMAGE_PULL_POLICY:-IfNotPresent}, 命名空间: $NAMESPACE)..."
     
-    # 创建临时文件并替换环境变量（单后端，无需动态生成）
-    TEMP_YAML=$(mktemp)
-    
-    # 替换环境变量（envsubst）
-    envsubst < "$CELERYWORKER_YAML" > "$TEMP_YAML"
-    
-    # 可选：保存生成的 YAML 到 resources 目录（用于调试和审计）
-    # 通过环境变量 SAVE_GENERATED_YAML=true 启用
-    if [ "${SAVE_GENERATED_YAML:-false}" = "true" ]; then
-        cp "$TEMP_YAML" "$GENERATED_YAML"
-        log_info "💾 已保存生成的 YAML 到: $GENERATED_YAML"
+    # 检查生成的 YAML 文件是否存在，如果不存在则自动生成
+    if [ ! -f "$CELERYWORKER_YAML" ]; then
+        log_warn "生成的 YAML 文件不存在，自动运行生成脚本..."
+        if [ -f "$CUSTOM_VALUES_DIR/generate.sh" ]; then
+            if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
+                log_success "YAML 文件生成成功"
+            else
+                log_error "YAML 文件生成失败"
+                return 1
+            fi
+        else
+            log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
+            return 1
+        fi
     fi
     
-    # 部署 Deployment 和 Service
-    kubectl apply -f "$TEMP_YAML" -n "$NAMESPACE"
-    rm -f "$TEMP_YAML"
+    # 部署 Deployment 和 Service（直接使用生成的 YAML）
+    kubectl apply -f "$CELERYWORKER_YAML" -n "$NAMESPACE"
     
     if [ $? -eq 0 ]; then
         log_success "Celery Worker (Incubator) 部署完成！"
@@ -521,14 +354,14 @@ undeploy_celeryworker() {
     # 阶段1：卸载本级核心服务（Deployment 和 Service）
     # ============================================================
     log_info "🚀 阶段1：卸载 Celery Worker 核心服务..."
-    # 卸载时使用原始 YAML（删除时不需要替换镜像，但需要替换命名空间）
-    TEMP_YAML=$(mktemp)
-    export NAMESPACE="$NAMESPACE"
-    export ENV="$ENV"  # 保留 ENV 用于兼容性（YAML 中可能使用）
-    export ENVIRONMENT="$ENVIRONMENT"
-    envsubst < "$CELERYWORKER_YAML" > "$TEMP_YAML"
-    kubectl delete -f "$TEMP_YAML" -n "$NAMESPACE" --ignore-not-found=true
-    rm -f "$TEMP_YAML"
+    # 检查生成的 YAML 文件是否存在
+    if [ ! -f "$CELERYWORKER_YAML" ]; then
+        log_warn "生成的 YAML 文件不存在: $CELERYWORKER_YAML，尝试直接删除资源"
+        kubectl delete deployment celeryworker-incubator -n "$NAMESPACE" --ignore-not-found=true
+        kubectl delete service celeryworker-incubator-service -n "$NAMESPACE" --ignore-not-found=true
+    else
+        kubectl delete -f "$CELERYWORKER_YAML" -n "$NAMESPACE" --ignore-not-found=true
+    fi
     log_success "✅ Celery Worker 核心服务卸载完成"
     
     # ============================================================

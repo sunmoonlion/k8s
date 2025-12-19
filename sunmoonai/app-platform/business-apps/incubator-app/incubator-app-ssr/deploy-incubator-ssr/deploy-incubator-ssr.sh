@@ -2,7 +2,7 @@
 
 # Incubator App SSR 部署脚本
 # 用法: ./deploy-incubator-ssr.sh <deploy|undeploy|status> [project_id] [namespace] [environment]
-# 注意：资源 YAML 位置由 RESOURCES_DIR/INCUBATOR_SSR_YAML 指定，resource 目录不改动
+# 注意：资源 YAML 位置由 RESOURCES_DIR/INCUBATOR_SSR_YAML 指定，resources 目录不改动
 
 set -e
 
@@ -163,11 +163,14 @@ INCUBATOR_SSR_IMAGE="${INCUBATOR_SSR_IMAGE:-incubator-app-ssr}"
 INCUBATOR_SSR_TAG="${INCUBATOR_SSR_TAG:-1.0.0}"
 
 # 资源文件路径（对齐项目结构）
-RESOURCES_DIR="../resource"
-INCUBATOR_SSR_YAML="${RESOURCES_DIR}/incubator-app-ssr.yaml"
-SECRETS_DIR="$SCRIPT_DIR/secrets"
-INCUBATOR_SSR_CONFIGMAP="${SECRETS_DIR}/incubator-app-ssr-config/incubator-app-ssr-config.yaml"
-INCUBATOR_SSR_SECRET="${SECRETS_DIR}/incubator-app-ssr-secret/incubator-app-ssr-secret.yaml"
+RESOURCES_DIR="../resources"
+# 使用生成的 YAML 文件（由 resources/custom-values/generate.sh 生成）
+CUSTOM_VALUES_DIR="${RESOURCES_DIR}/custom-values"
+INCUBATOR_SSR_YAML="${CUSTOM_VALUES_DIR}/incubator-app-ssr-generated.yaml"
+# 模板文件路径（已移动到 resources/custom-values/templates/）
+TEMPLATES_DIR="${CUSTOM_VALUES_DIR}/templates"
+INCUBATOR_SSR_CONFIGMAP="${TEMPLATES_DIR}/configmap/incubator-app-ssr-config.yaml"
+INCUBATOR_SSR_SECRET="${TEMPLATES_DIR}/secret/incubator-app-ssr-secret.yaml"
 
 # 检查 kubectl 是否可用
 check_kubectl() {
@@ -217,15 +220,37 @@ check_namespace() {
     fi
 }
 
+# 自动生成 YAML 文件的辅助函数
+auto_generate_yaml() {
+    local yaml_file="$1"
+    local custom_values_dir="$2"
+    
+    if [ ! -f "$yaml_file" ]; then
+        log_warn "生成的 YAML 文件不存在，自动运行生成脚本..."
+        if [ -f "$custom_values_dir/generate.sh" ]; then
+            if bash "$custom_values_dir/generate.sh"; then
+                log_success "YAML 文件生成成功"
+            else
+                log_error "YAML 文件生成失败"
+                return 1
+            fi
+        else
+            log_error "生成脚本不存在: $custom_values_dir/generate.sh"
+            return 1
+        fi
+    fi
+    return 0
+}
+
 # 检查环境配置
 check_env_config() {
-    if [ ! -f "$INCUBATOR_SSR_YAML" ]; then
-        log_error "配置文件不存在: $INCUBATOR_SSR_YAML"
-        log_info "请确保资源文件存在: $RESOURCES_DIR/incubator-app-ssr.yaml"
+    # 自动生成 YAML 文件（如果不存在）
+    if ! auto_generate_yaml "$INCUBATOR_SSR_YAML" "$CUSTOM_VALUES_DIR"; then
         exit 1
     fi
     
     if [[ "${secrets_enabled:-true}" == "true" ]]; then
+        # 检查 ConfigMap 和 Secret 模板文件（已移动到 templates/ 目录）
         [[ -f "$INCUBATOR_SSR_CONFIGMAP" ]] || { log_error "缺少 ConfigMap 模板: $INCUBATOR_SSR_CONFIGMAP"; exit 1; }
         [[ -f "$INCUBATOR_SSR_SECRET" ]] || { log_error "缺少 Secret 模板: $INCUBATOR_SSR_SECRET"; exit 1; }
     fi
@@ -296,13 +321,14 @@ deploy_app() {
     # ============================================================
     log_info "🚀 阶段2：部署 Incubator App SSR 核心服务..."
     log_info "部署 Incubator App SSR (环境: $ENVIRONMENT, 镜像: $INCUBATOR_SSR_FULL_IMAGE_NAME, 拉取策略: ${IMAGE_PULL_POLICY:-IfNotPresent}, 命名空间: $NAMESPACE)..."
-    # 创建临时文件并替换环境变量（包括镜像名称、拉取策略和命名空间）
-    TEMP_YAML=$(mktemp)
-    # 先使用 sed 处理 ${VAR:-default} 语法，将其转换为 ${VAR}（因为 envsubst 不支持默认值语法）
-    # 然后使用 envsubst 替换变量
-    sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$INCUBATOR_SSR_YAML" | envsubst > "$TEMP_YAML"
-    kubectl apply -f "$TEMP_YAML" -n "$NAMESPACE"
-    rm -f "$TEMP_YAML"
+    
+    # 自动生成 YAML 文件（如果不存在）
+    if ! auto_generate_yaml "$INCUBATOR_SSR_YAML" "$CUSTOM_VALUES_DIR"; then
+        return 1
+    fi
+    
+    # 部署 Deployment 和 Service（直接使用生成的 YAML）
+    kubectl apply -f "$INCUBATOR_SSR_YAML" -n "$NAMESPACE"
     
     if [ $? -eq 0 ]; then
         log_success "Incubator App SSR 部署完成！"
@@ -330,14 +356,14 @@ undeploy_app() {
     # 阶段1：卸载本级核心服务（Deployment 和 Service）
     # ============================================================
     log_info "🚀 阶段1：卸载 Incubator App SSR 核心服务..."
-    # 卸载时使用原始 YAML（删除时不需要替换镜像，但需要替换命名空间）
-    TEMP_YAML=$(mktemp)
-    export NAMESPACE="$NAMESPACE"
-    export ENV="$ENV"  # 保留 ENV 用于兼容性（YAML 中可能使用）
-    export ENVIRONMENT="$ENVIRONMENT"
-    sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$INCUBATOR_SSR_YAML" | envsubst > "$TEMP_YAML"
-    kubectl delete -f "$TEMP_YAML" -n "$NAMESPACE" --ignore-not-found=true
-    rm -f "$TEMP_YAML"
+    # 检查生成的 YAML 文件是否存在
+    if [ ! -f "$INCUBATOR_SSR_YAML" ]; then
+        log_warn "生成的 YAML 文件不存在: $INCUBATOR_SSR_YAML，尝试直接删除资源"
+        kubectl delete deployment incubator-app-ssr -n "$NAMESPACE" --ignore-not-found=true
+        kubectl delete service incubator-app-ssr-service -n "$NAMESPACE" --ignore-not-found=true
+    else
+        kubectl delete -f "$INCUBATOR_SSR_YAML" -n "$NAMESPACE" --ignore-not-found=true
+    fi
     log_success "✅ Incubator App SSR 核心服务卸载完成"
     
     # ============================================================

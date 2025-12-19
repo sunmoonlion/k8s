@@ -3,7 +3,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="$SCRIPT_DIR/../deploy-incubator-app-ssr-secret.conf"
-YAML_FILE="$SCRIPT_DIR/../../incubator-app-ssr-secret.yaml"
+# 模板文件已移动到 resources/custom-values/templates/
+PROJECT_ROOT="$(dirname "$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")")"  # 从 deploy-xxx/ 到应用根目录
+TEMPLATES_DIR="$PROJECT_ROOT/resources/custom-values/templates"
+YAML_FILE="$TEMPLATES_DIR/secret/incubator-app-ssr-secret.yaml"
 
 log_info() { echo -e "[INFO] $*"; }
 log_success() { echo -e "\033[32m[SUCCESS]\033[0m $*"; }

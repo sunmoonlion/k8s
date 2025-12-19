@@ -9,7 +9,11 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_DIR="$(dirname "$SCRIPT_DIR")"  # llmops-service-config 目录
+# 模板文件已移动到 resources/custom-values/templates/
+# 计算应用根目录（从 deploy-xxx/ 到应用根目录）
+APP_ROOT="$(dirname "$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")")"  # 从 deploy-xxx/ 到应用根目录
+TEMPLATES_DIR="$APP_ROOT/resources/custom-values/templates"
+CONFIG_DIR="$(dirname "$SCRIPT_DIR")"  # llmops-service-config 目录（用于其他用途）
 # 计算项目根目录（k8s目录）
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
 
@@ -70,7 +74,7 @@ main() {
     fi
     
     # ConfigMap YAML 文件路径
-    local configmap_yaml="$CONFIG_DIR/${CONFIGMAP_NAME}.yaml"
+    local configmap_yaml="$TEMPLATES_DIR/configmap/${CONFIGMAP_NAME}.yaml"
     
     if [[ ! -f "$configmap_yaml" ]]; then
         log_error "ConfigMap YAML 文件不存在: $configmap_yaml"
