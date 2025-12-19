@@ -85,9 +85,26 @@ main() {
         "deploy")
             log_info "部署 Secret: $SECRET_NAME 到命名空间: $namespace"
             
+            # 加载配置文件中的 Secret 值
+            if [[ -f "$SCRIPT_DIR/deploy-llmops-service-secret.conf" ]]; then
+                source "$SCRIPT_DIR/deploy-llmops-service-secret.conf"
+            fi
+            
+            # 导出所有 Secret 值作为环境变量（用于 envsubst）
+            export NAMESPACE="$namespace" \
+                   ENV="$environment" \
+                   SECRET_KEY="${SECRET_KEY:-changeme}" \
+                   TOTP_SECRET_KEY="${TOTP_SECRET_KEY:-changeme}" \
+                   POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-changeme}" \
+                   NEO4J_PASSWORD="${NEO4J_PASSWORD:-changeme}" \
+                   FIRST_SUPERUSER="${FIRST_SUPERUSER:-admin@example.com}" \
+                   FIRST_SUPERUSER_PASSWORD="${FIRST_SUPERUSER_PASSWORD:-changeme}" \
+                   SMTP_USER="${SMTP_USER:-}" \
+                   SMTP_PASSWORD="${SMTP_PASSWORD:-}" \
+                   SENTRY_DSN="${SENTRY_DSN:-}"
+            
             # 使用 envsubst 替换环境变量
             TEMP_YAML=$(mktemp)
-            export NAMESPACE="$namespace" ENV="$environment"
             envsubst < "$secret_yaml" > "$TEMP_YAML"
             
             kubectl apply -f "$TEMP_YAML" -n "$namespace"
@@ -98,8 +115,25 @@ main() {
         "uninstall")
             log_info "卸载 Secret: $SECRET_NAME 从命名空间: $namespace"
             
+            # 加载配置文件中的 Secret 值（卸载时也需要替换命名空间）
+            if [[ -f "$SCRIPT_DIR/deploy-llmops-service-secret.conf" ]]; then
+                source "$SCRIPT_DIR/deploy-llmops-service-secret.conf"
+            fi
+            
+            # 导出命名空间和环境变量（用于 envsubst）
+            export NAMESPACE="$namespace" \
+                   ENV="$environment" \
+                   SECRET_KEY="${SECRET_KEY:-changeme}" \
+                   TOTP_SECRET_KEY="${TOTP_SECRET_KEY:-changeme}" \
+                   POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-changeme}" \
+                   NEO4J_PASSWORD="${NEO4J_PASSWORD:-changeme}" \
+                   FIRST_SUPERUSER="${FIRST_SUPERUSER:-admin@example.com}" \
+                   FIRST_SUPERUSER_PASSWORD="${FIRST_SUPERUSER_PASSWORD:-changeme}" \
+                   SMTP_USER="${SMTP_USER:-}" \
+                   SMTP_PASSWORD="${SMTP_PASSWORD:-}" \
+                   SENTRY_DSN="${SENTRY_DSN:-}"
+            
             TEMP_YAML=$(mktemp)
-            export NAMESPACE="$namespace" ENV="$environment"
             envsubst < "$secret_yaml" > "$TEMP_YAML"
             
             kubectl delete -f "$TEMP_YAML" -n "$namespace" --ignore-not-found=true

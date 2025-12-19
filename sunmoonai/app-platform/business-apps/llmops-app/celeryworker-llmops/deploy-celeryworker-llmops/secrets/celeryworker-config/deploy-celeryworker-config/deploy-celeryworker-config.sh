@@ -153,7 +153,9 @@ main() {
     trap "rm -f $temp_yaml" EXIT
     
     log_info "生成 ConfigMap YAML（替换环境变量）..."
-    envsubst < "$configmap_yaml" > "$temp_yaml"
+    # 将 ${VAR:-default} 转换为 ${VAR}，然后使用 envsubst 替换
+    # 因为 envsubst 不支持默认值语法
+    sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$configmap_yaml" | envsubst > "$temp_yaml"
     
     if [[ "$dry_run" == "true" ]]; then
         log_info "试运行模式，生成的 ConfigMap YAML:"

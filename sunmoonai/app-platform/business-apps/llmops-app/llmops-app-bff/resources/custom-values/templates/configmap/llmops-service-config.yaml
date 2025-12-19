@@ -2,11 +2,11 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: llmops-service-config
-  namespace: ${NAMESPACE:-app-platform-dev}
+  namespace: ${NAMESPACE}
   labels:
     app: llmops-service
     component: config
-    environment: ${ENV:-dev}
+    environment: ${ENV}
 data:
   # 应用核心配置
   PROJECT_NAME: "sunmoonai"

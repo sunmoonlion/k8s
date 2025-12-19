@@ -86,9 +86,11 @@ main() {
             log_info "部署 ConfigMap: $CONFIGMAP_NAME 到命名空间: $namespace"
             
             # 使用 envsubst 替换环境变量
+            # 注意：需要先处理 ${VAR:-default} 语法，因为 envsubst 不支持默认值
             TEMP_YAML=$(mktemp)
             export NAMESPACE="$namespace" ENV="$environment"
-            envsubst < "$configmap_yaml" > "$TEMP_YAML"
+            # 将 ${VAR:-default} 转换为 ${VAR}，然后使用 envsubst 替换
+            sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$configmap_yaml" | envsubst > "$TEMP_YAML"
             
             kubectl apply -f "$TEMP_YAML" -n "$namespace"
             rm -f "$TEMP_YAML"
@@ -100,7 +102,8 @@ main() {
             
             TEMP_YAML=$(mktemp)
             export NAMESPACE="$namespace" ENV="$environment"
-            envsubst < "$configmap_yaml" > "$TEMP_YAML"
+            # 将 ${VAR:-default} 转换为 ${VAR}，然后使用 envsubst 替换
+            sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$configmap_yaml" | envsubst > "$TEMP_YAML"
             
             kubectl delete -f "$TEMP_YAML" -n "$namespace" --ignore-not-found=true
             rm -f "$TEMP_YAML"
