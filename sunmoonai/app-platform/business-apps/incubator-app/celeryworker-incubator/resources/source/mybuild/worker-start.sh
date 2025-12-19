@@ -31,9 +31,10 @@ fi
 # 执行启动前脚本
 # 注意：celeryworker_pre_start.py 在镜像中（/app/celeryworker_pre_start.py）
 # 它会导入 app.db.session（从挂载的应用代码 /app/app 中）
+# 使用 venv 中的 Python（PATH 已包含 /app/.venv/bin）
 echo ""
 echo "执行 celeryworker_pre_start.py..."
-if hatch run python /app/celeryworker_pre_start.py; then
+if python /app/celeryworker_pre_start.py; then
     echo "✅ celeryworker_pre_start.py 执行成功"
 else
     echo "❌ celeryworker_pre_start.py 执行失败"
@@ -86,11 +87,12 @@ if [ ! -f "/app/app/worker/__init__.py" ] && [ ! -f "/app/app/worker.py" ]; then
 fi
 
 # 启动 Celery Worker，监听单个队列
+# 使用 venv 中的 celery 命令（PATH 已包含 /app/.venv/bin）
 echo "启动 Celery Worker..."
-echo "命令: hatch run celery -A app.worker worker -l info -Q $QUEUE -c $CONCURRENCY"
+echo "命令: celery -A app.worker worker -l info -Q $QUEUE -c $CONCURRENCY"
 echo ""
 
-exec hatch run celery -A app.worker worker \
+exec celery -A app.worker worker \
     -l info \
     -Q "$QUEUE" \
     -c "$CONCURRENCY"
