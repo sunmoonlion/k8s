@@ -8,12 +8,9 @@ metadata:
     component: jenkins-policy
     project: sunmoonai
 spec:
+  # 注意：Traefik 不支持在同一个 Middleware 中同时使用 rateLimit 和 headers
+  # 只保留 rateLimit，headers 功能可以通过其他方式实现或单独创建 middleware
   rateLimit:
     average: 30
     burst: 60
-  headers:
-    customRequestHeaders:
-      X-Jenkins-Version: "2.426"
-    customResponseHeaders:
-      X-Jenkins-Status: "active"
 

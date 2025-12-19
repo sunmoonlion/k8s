@@ -133,21 +133,38 @@ deploy_jenkins_secrets() {
     
     log_info "生成 Jenkins 密钥（仅包含密码）..."
     
+    # 获取 Helm Release 名称（必须与 deploy-jenkins.sh 中的 Helm Release 名称一致）
+    # 默认使用 jenkins-{project_id} 格式，与 Chart 的 Secret 命名规则一致
+    local helm_release_name="${HELM_RELEASE_NAME:-jenkins-sunmoonai}"
+    
     # 创建或更新密钥（只包含密码，不包含用户名）
+    # 重要：添加 Helm 管理的标签和注解，让 Helm 认为它管理这个 Secret
+    # 这样 Helm Chart 安装时就不会报错说 Secret 已存在但缺少 Helm 元数据
     if [[ "$secret_exists" == "true" ]]; then
-        # Secret 已存在，更新它
-        log_info "更新现有 Secret..."
-        kubectl create secret generic "$JENKINS_SECRET_NAME" \
-            --namespace="$namespace" \
-            --from-literal="$JENKINS_AUTH_SECRET_PASSWORD_KEY"="$jenkins_password" \
-            --dry-run=client -o yaml | kubectl apply -f -
-    else
-        # Secret 不存在，创建它
-        log_info "创建新 Secret..."
-        kubectl create secret generic "$JENKINS_SECRET_NAME" \
-            --namespace="$namespace" \
-            --from-literal="$JENKINS_AUTH_SECRET_PASSWORD_KEY"="$jenkins_password"
+        # Secret 已存在，先删除再重新创建（确保标签和注解正确）
+        log_info "更新现有 Secret（添加 Helm 管理标签和注解）..."
+        kubectl delete secret "$JENKINS_SECRET_NAME" -n "$namespace" 2>/dev/null || true
     fi
+    
+    # 创建 Secret（使用 YAML 模板方式，确保标签和注解正确）
+    log_info "创建 Secret（带 Helm 管理标签和注解，Release: $helm_release_name）..."
+    local secret_yaml=$(cat <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: $JENKINS_SECRET_NAME
+  namespace: $namespace
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: $helm_release_name
+    meta.helm.sh/release-namespace: $namespace
+type: Opaque
+data:
+  $JENKINS_AUTH_SECRET_PASSWORD_KEY: $(echo -n "$jenkins_password" | base64 -w 0)
+EOF
+)
+    echo "$secret_yaml" | kubectl apply -f -
     
     if [[ $? -eq 0 ]]; then
         log_success "✅ Jenkins 密钥${secret_exists:+更新}${secret_exists:-创建}成功: $JENKINS_SECRET_NAME"

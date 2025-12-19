@@ -39,8 +39,7 @@ spec:
         - name: {{SERVICE_NAME}}
           port: {{SERVICE_PORT}}
       middlewares:
-        - name: jenkins-policy-headers
-        - name: jenkins-policy-ratelimit
+        - name: jenkins-policy
     # 统一域名路由
     # 只匹配 /jenkins 前缀路径，不使用 stripPrefix，让 Jenkins 自己处理子路径
     - match: Host(`{{UNIFIED_HOST}}`) && PathPrefix(`/jenkins`)
@@ -49,8 +48,7 @@ spec:
         - name: {{SERVICE_NAME}}
           port: {{SERVICE_PORT}}
       middlewares:
-        - name: jenkins-policy-headers
-        - name: jenkins-policy-ratelimit
+        - name: jenkins-policy
   # TLS 配置
   # 注意：Traefik 的 TLSStore 配置了 defaultCertificate，会自动使用 ingress-platform-dev/traefik-tls-secret
   # 如果需要显式指定，可以使用跨命名空间引用：ingress-platform-dev/traefik-tls-secret

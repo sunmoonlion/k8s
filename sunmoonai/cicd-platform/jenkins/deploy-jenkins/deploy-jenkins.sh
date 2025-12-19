@@ -379,8 +379,8 @@ deploy_sub_components() {
                         ;;
                     "jenkins_secrets")
                         # Secrets 总控脚本使用: <project_id> <namespace> <environment> <dry_run>
-                        # deploy-secrets-all.sh 会统一部署所有 Secrets（包括 kaniko-registry-secret、harbor-registry-secret、jenkins-secrets）
-                        DISABLE_AUTO_CLEANUP=true bash "$script_path" "$project_id" "$namespace" "$environment" "$dry_run" || return 1
+                        # 注意：Secret 已在主部署流程中提前部署（在 Helm Chart 之前），这里跳过避免重复部署
+                        log_info "跳过 Secret 部署（已在主部署流程中提前部署）"
                         ;;
                     *)
                         # 其他子组件（例如中间件总控），保持完整参数签名
@@ -542,6 +542,21 @@ main() {
         "deploy")
             log_info "开始部署 Jenkins..."
             check_namespace "$namespace"
+            # 重要：必须先部署 Secret，再部署 Helm Chart
+            # Bitnami Chart 只在首次启动时使用密码，如果 Secret 不存在，Chart 会生成随机密码
+            if [[ "${secrets_enabled:-true}" == "true" ]]; then
+                log_info "先部署 Jenkins Secret（必须在 Helm Chart 部署之前）..."
+                if [[ -f "$SCRIPT_DIR/secrets/deploy-secrets-all/deploy-secrets-all.sh" ]]; then
+                    DISABLE_AUTO_CLEANUP=true bash "$SCRIPT_DIR/secrets/deploy-secrets-all/deploy-secrets-all.sh" "$project_id" "$namespace" "$environment" "$dry_run" || {
+                        log_error "❌ Jenkins Secret 部署失败"
+                        return 1
+                    }
+                else
+                    log_warn "⚠️ Secret 部署脚本不存在，跳过 Secret 部署"
+                fi
+            else
+                log_info "跳过 Secret 部署（secrets_enabled=false）"
+            fi
             create_jenkins_secrets_if_needed "$namespace"
             # 按需将组件镜像推送至 Harbor（仅控制平面）
             # 检查是否启用部署前镜像推送
@@ -555,7 +570,7 @@ main() {
                 log_info "跳过 Jenkins 镜像推送（PUSH_IMAGES_BEFORE_DEPLOY=false）"
             fi
             execute_jenkins_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            # 部署子组件（中间件 / Web Ingress）
+            # 部署子组件（中间件 / Web Ingress，Secret 已部署，跳过）
             if deploy_sub_components "$project_id" "$namespace" "$environment" "$dry_run"; then
                 check_jenkins_status "$namespace"
                 show_jenkins_connection_info "$namespace"
