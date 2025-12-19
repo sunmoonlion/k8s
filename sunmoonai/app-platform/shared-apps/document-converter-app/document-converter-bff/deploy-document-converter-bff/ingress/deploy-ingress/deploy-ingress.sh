@@ -4,18 +4,25 @@
 
 set -e
 
-# 脚本目录
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# 脚本目录（保存原始值，因为 unified-deployment-template.sh 会覆盖 SCRIPT_DIR）
+ORIGINAL_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$ORIGINAL_SCRIPT_DIR"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
 
-# 保存脚本目录
-CONVERTER_INGRESS_SCRIPT_DIR="$SCRIPT_DIR"
+# 计算应用根目录和资源路径（在 source 之前计算，避免 SCRIPT_DIR 被覆盖）
+# 从 deploy-ingress/ -> ingress/ -> deploy-document-converter-bff/ -> document-converter-bff/
+APP_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+RESOURCES_DIR="${APP_ROOT}/resources"
+CUSTOM_VALUES_DIR="${RESOURCES_DIR}/custom-values"
 
 # 导入统一部署模板
-source "$PROJECT_ROOT/utils/unified-deployment-template.sh"
+source "$PROJECT_ROOT/../utils/unified-deployment-template.sh"
 
-# 恢复脚本目录
-SCRIPT_DIR="$CONVERTER_INGRESS_SCRIPT_DIR"
+# 恢复原始的 SCRIPT_DIR
+SCRIPT_DIR="$ORIGINAL_SCRIPT_DIR"
+
+# Ingress 配置文件（使用生成的 YAML 文件）
+INGRESS_FILE="${CUSTOM_VALUES_DIR}/document-converter-ingress-generated.yaml"
 
 # 加载主配置文件
 load_config() {
@@ -42,23 +49,31 @@ UNIFIED_HOST="${DOCUMENT_CONVERTER_UNIFIED_HOST:-www.sunmoonai.com}"
 deploy_ingress() {
     log_info "部署 Document Converter IngressRoute..."
     
-    local ingress_file="$PROJECT_ROOT/sunmoonai/app-platform/shared-apps/document-converter-app/document-converter-bff/deploy-document-converter-bff/ingress/ingress.yaml"
+    # 自动生成 YAML 文件（如果不存在）
+    if [[ ! -f "$INGRESS_FILE" ]]; then
+        log_warn "生成的 Ingress YAML 文件不存在，自动运行生成脚本..."
+        if [[ -f "$CUSTOM_VALUES_DIR/generate.sh" ]]; then
+            if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
+                log_success "YAML 文件生成成功"
+            else
+                log_error "YAML 文件生成失败"
+                exit 1
+            fi
+        else
+            log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
+            exit 1
+        fi
+    fi
     
-    if [[ ! -f "$ingress_file" ]]; then
-        log_error "IngressRoute 配置文件不存在: $ingress_file"
+    if [[ ! -f "$INGRESS_FILE" ]]; then
+        log_error "IngressRoute 配置文件不存在: $INGRESS_FILE"
         exit 1
     fi
     
-    # 替换模板变量
-    local temp_file=$(mktemp)
-    sed -e "s|{{NAMESPACE}}|$NAMESPACE|g" \
-        -e "s|{{SERVICE_NAME}}|$SERVICE_NAME|g" \
-        -e "s|{{SERVICE_PORT}}|$SERVICE_PORT|g" \
-        -e "s|{{UNIFIED_HOST}}|$UNIFIED_HOST|g" \
-        "$ingress_file" > "$temp_file"
+    log_info "使用生成的 Ingress YAML: $INGRESS_FILE"
     
-    kubectl apply -f "$temp_file"
-    rm -f "$temp_file"
+    # 直接使用生成的 YAML 文件（已经包含所有变量替换）
+    kubectl apply -f "$INGRESS_FILE" -n "$NAMESPACE"
     
     log_success "✅ Document Converter IngressRoute 部署完成"
 }

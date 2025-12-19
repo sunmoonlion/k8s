@@ -48,6 +48,12 @@ export LLMOPS_BFF_UNIFIED_HOST="${LLMOPS_BFF_UNIFIED_HOST:-llmops.sunmoonai.com}
 export LLMOPS_BFF_NODE_IP="${LLMOPS_BFF_NODE_IP:-101.126.151.0}"
 export LLMOPS_BFF_TLS_ENABLED="${LLMOPS_BFF_TLS_ENABLED:-true}"
 
+# Ingress 相关变量（用于模板替换）
+export SERVICE_NAME="${SERVICE_NAME:-llmops-app-bff}"
+export SERVICE_PORT="${SERVICE_PORT:-80}"
+export UNIFIED_HOST="${UNIFIED_HOST:-${LLMOPS_BFF_UNIFIED_HOST}}"
+export NODE_IP="${NODE_IP:-${LLMOPS_BFF_NODE_IP}}"
+
 # 验证 YAML 文件
 validate_yaml() {
     local yaml_file="$1"

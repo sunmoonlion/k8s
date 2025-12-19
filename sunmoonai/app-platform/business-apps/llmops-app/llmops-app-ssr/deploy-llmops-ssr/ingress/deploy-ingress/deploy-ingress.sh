@@ -2,9 +2,18 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INGRESS_FILE="$(dirname "$SCRIPT_DIR")/ingress.yaml"
-MIDDLEWARE_FILE="$(dirname "$SCRIPT_DIR")/middleware.yaml"
 MAIN_CONFIG_FILE="$(cd "$SCRIPT_DIR/../.." && pwd)/deploy-llmops-ssr.conf"
+
+# 计算应用根目录和资源路径
+# 从 deploy-ingress/ -> ingress/ -> deploy-llmops-ssr/ -> llmops-app-ssr/
+APP_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+RESOURCES_DIR="${APP_ROOT}/resources"
+CUSTOM_VALUES_DIR="${RESOURCES_DIR}/custom-values"
+
+# 使用生成的 YAML 文件
+INGRESS_FILE="${CUSTOM_VALUES_DIR}/llmops-app-ssr-ingress-generated.yaml"
+# 注意：middleware 可能也在生成的 YAML 中，或者需要单独处理
+MIDDLEWARE_FILE="$(dirname "$SCRIPT_DIR")/middleware.yaml"
 
 log_info(){ echo -e "\033[0;34m[INFO]\033[0m $(date '+%Y-%m-%d %H:%M:%S') $*"; }
 log_success(){ echo -e "\033[0;32m[SUCCESS]\033[0m $(date '+%Y-%m-%d %H:%M:%S') $*"; }
@@ -24,36 +33,88 @@ load_config(){
 check_namespace(){ kubectl get namespace "$NAMESPACE" >/dev/null 2>&1 || { log_error "命名空间不存在: $NAMESPACE"; exit 1; }; }
 
 apply_file(){
-  local tpl="$1"; local tmp=$(mktemp)
-  cp "$tpl" "$tmp"
-  sed -i "s/{{NAMESPACE}}/$NAMESPACE/g" "$tmp"
-  sed -i "s/{{SERVICE_NAME}}/$SERVICE_NAME/g" "$tmp"
-  sed -i "s/{{SERVICE_PORT}}/$SERVICE_PORT/g" "$tmp"
-  sed -i "s/{{UNIFIED_HOST}}/$UNIFIED_HOST/g" "$tmp"
-  sed -i "s/{{NODE_IP}}/$NODE_IP/g" "$tmp"
-  kubectl apply -f "$tmp"
-  rm -f "$tmp"
+  local yaml_file="$1"
+  
+  # 如果是生成的 YAML 文件，直接使用（无需变量替换）
+  if [[ "$yaml_file" == *"-generated.yaml" ]]; then
+    # 自动生成 YAML 文件（如果不存在）
+    if [[ ! -f "$yaml_file" ]]; then
+      log_warn "生成的 YAML 文件不存在，自动运行生成脚本..."
+      if [[ -f "$CUSTOM_VALUES_DIR/generate.sh" ]]; then
+        if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
+          log_success "YAML 文件生成成功"
+        else
+          log_error "YAML 文件生成失败"
+          return 1
+        fi
+      else
+        log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
+        return 1
+      fi
+    fi
+    kubectl apply -f "$yaml_file" -n "$NAMESPACE"
+  else
+    # 旧模板文件，使用变量替换
+    local tmp=$(mktemp)
+    cp "$yaml_file" "$tmp"
+    sed -i "s/{{NAMESPACE}}/$NAMESPACE/g" "$tmp"
+    sed -i "s/{{SERVICE_NAME}}/$SERVICE_NAME/g" "$tmp"
+    sed -i "s/{{SERVICE_PORT}}/$SERVICE_PORT/g" "$tmp"
+    sed -i "s/{{UNIFIED_HOST}}/$UNIFIED_HOST/g" "$tmp"
+    sed -i "s/{{NODE_IP}}/$NODE_IP/g" "$tmp"
+    kubectl apply -f "$tmp" -n "$NAMESPACE"
+    rm -f "$tmp"
+  fi
 }
 
 delete_file(){
-  local tpl="$1"; local tmp=$(mktemp)
-  cp "$tpl" "$tmp"
-  sed -i "s/{{NAMESPACE}}/$NAMESPACE/g" "$tmp"
-  sed -i "s/{{SERVICE_NAME}}/$SERVICE_NAME/g" "$tmp"
-  sed -i "s/{{SERVICE_PORT}}/$SERVICE_PORT/g" "$tmp"
-  sed -i "s/{{UNIFIED_HOST}}/$UNIFIED_HOST/g" "$tmp"
-  sed -i "s/{{NODE_IP}}/$NODE_IP/g" "$tmp"
-  kubectl delete -f "$tmp" --ignore-not-found
-  rm -f "$tmp"
+  local yaml_file="$1"
+  
+  # 如果是生成的 YAML 文件，直接使用（无需变量替换）
+  if [[ "$yaml_file" == *"-generated.yaml" ]]; then
+    kubectl delete -f "$yaml_file" -n "$NAMESPACE" --ignore-not-found
+  else
+    # 旧模板文件，使用变量替换
+    local tmp=$(mktemp)
+    cp "$yaml_file" "$tmp"
+    sed -i "s/{{NAMESPACE}}/$NAMESPACE/g" "$tmp"
+    sed -i "s/{{SERVICE_NAME}}/$SERVICE_NAME/g" "$tmp"
+    sed -i "s/{{SERVICE_PORT}}/$SERVICE_PORT/g" "$tmp"
+    sed -i "s/{{UNIFIED_HOST}}/$UNIFIED_HOST/g" "$tmp"
+    sed -i "s/{{NODE_IP}}/$NODE_IP/g" "$tmp"
+    kubectl delete -f "$tmp" -n "$NAMESPACE" --ignore-not-found
+    rm -f "$tmp"
+  fi
 }
 
 deploy(){
   load_config
   check_namespace
-  [[ -f "$INGRESS_FILE" ]] || { log_error "缺少 ingress.yaml"; exit 1; }
-  [[ -f "$MIDDLEWARE_FILE" ]] || { log_error "缺少 middleware.yaml"; exit 1; }
-  log_info "部署 Middleware..."
-  apply_file "$MIDDLEWARE_FILE"
+  
+  # 自动生成 YAML 文件（如果不存在）
+  if [[ ! -f "$INGRESS_FILE" ]]; then
+    log_warn "生成的 Ingress YAML 文件不存在，自动运行生成脚本..."
+    if [[ -f "$CUSTOM_VALUES_DIR/generate.sh" ]]; then
+      if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
+        log_success "YAML 文件生成成功"
+      else
+        log_error "YAML 文件生成失败"
+        exit 1
+      fi
+    else
+      log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
+      exit 1
+    fi
+  fi
+  
+  [[ -f "$INGRESS_FILE" ]] || { log_error "缺少 ingress YAML 文件: $INGRESS_FILE"; exit 1; }
+  
+  # Middleware 可能也在生成的 YAML 中，或者需要单独处理
+  if [[ -f "$MIDDLEWARE_FILE" ]]; then
+    log_info "部署 Middleware..."
+    apply_file "$MIDDLEWARE_FILE"
+  fi
+  
   log_info "部署 IngressRoute..."
   apply_file "$INGRESS_FILE"
   log_success "Ingress 部署完成"

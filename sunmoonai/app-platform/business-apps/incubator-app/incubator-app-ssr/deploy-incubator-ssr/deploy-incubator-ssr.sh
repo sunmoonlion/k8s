@@ -127,9 +127,10 @@ deploy_sub_components() {
             log_info "部署 $description (优先级: $priority)..."
             
             if [[ -f "$script_path" ]]; then
+                # 禁用子脚本的自动清理，保持连接以便后续操作（阶段2部署主应用）
                 # Ingress 脚本不接受 dry_run 参数，只传递 deploy/project_id/namespace/environment
                 if [[ "$name" == "incubator_ssr_ingress" ]]; then
-                    if bash "$script_path" deploy "$project_id" "$namespace" "$environment"; then
+                    if DISABLE_AUTO_CLEANUP=true bash "$script_path" deploy "$project_id" "$namespace" "$environment"; then
                         log_success "✅ $description 部署成功"
                     else
                         log_error "❌ $description 部署失败"
@@ -137,7 +138,7 @@ deploy_sub_components() {
                     fi
                 else
                     # 其他子组件可以传递 dry_run 参数
-                    if bash "$script_path" deploy "$project_id" "$namespace" "$environment" "$dry_run"; then
+                    if DISABLE_AUTO_CLEANUP=true bash "$script_path" deploy "$project_id" "$namespace" "$environment" "$dry_run"; then
                         log_success "✅ $description 部署成功"
                     else
                         log_error "❌ $description 部署失败"
@@ -321,6 +322,21 @@ deploy_app() {
     # ============================================================
     log_info "🚀 阶段2：部署 Incubator App SSR 核心服务..."
     log_info "部署 Incubator App SSR (环境: $ENVIRONMENT, 镜像: $INCUBATOR_SSR_FULL_IMAGE_NAME, 拉取策略: ${IMAGE_PULL_POLICY:-IfNotPresent}, 命名空间: $NAMESPACE)..."
+    
+    # 确保 Kubernetes 连接仍然可用（子组件脚本可能已清理连接）
+    if ! kubectl get nodes >/dev/null 2>&1; then
+        log_warn "⚠️ Kubernetes 连接已断开，正在重新建立连接..."
+        if ! setup_kubectl_environment; then
+            log_error "❌ 无法重新建立 Kubernetes 连接"
+            return 1
+        fi
+        # 验证连接是否可用
+        if ! kubectl get nodes >/dev/null 2>&1; then
+            log_error "❌ Kubernetes 连接不可用，请检查连接状态"
+            return 1
+        fi
+        log_success "✅ Kubernetes 连接已重新建立"
+    fi
     
     # 自动生成 YAML 文件（如果不存在）
     if ! auto_generate_yaml "$INCUBATOR_SSR_YAML" "$CUSTOM_VALUES_DIR"; then

@@ -46,6 +46,12 @@ export INCUBATOR_SSR_UNIFIED_HOST="${INCUBATOR_SSR_UNIFIED_HOST:-incubator-ssr.s
 export INCUBATOR_SSR_NODE_IP="${INCUBATOR_SSR_NODE_IP:-101.126.151.0}"
 export INCUBATOR_SSR_EXTERNAL_PORT="${INCUBATOR_SSR_EXTERNAL_PORT:-30443}"
 
+# Ingress 相关变量（用于模板替换）
+export SERVICE_NAME="${SERVICE_NAME:-incubator-app-ssr}"
+export SERVICE_PORT="${SERVICE_PORT:-3000}"
+export UNIFIED_HOST="${UNIFIED_HOST:-${INCUBATOR_SSR_UNIFIED_HOST}}"
+export NODE_IP="${NODE_IP:-${INCUBATOR_SSR_NODE_IP}}"
+
 # 验证 YAML 文件
 validate_yaml() {
     local yaml_file="$1"

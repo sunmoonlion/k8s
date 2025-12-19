@@ -4,9 +4,9 @@
 
 set -e
 
-# 脚本目录（保存为变量，防止被统一部署模板覆盖）
-ONLYOFFICE_INGRESS_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# 脚本目录（保存原始值，因为 unified-deployment-template.sh 会覆盖 SCRIPT_DIR）
+ORIGINAL_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$ORIGINAL_SCRIPT_DIR"
 
 # 计算项目根目录（k8s目录）
 # 从 deploy-ingress/ -> ingress/ -> onlyoffice-docs/ -> app-platform/ -> sunmoonai/ -> k8s/
@@ -14,12 +14,21 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # 需要回到：/home/zym/k8s
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
 
-# 导入统一部署模板（建立远程 k8s 连接）
-source "$PROJECT_ROOT/utils/unified-deployment-template.sh"
+# 计算应用根目录和资源路径（在 source 之前计算，避免 SCRIPT_DIR 被覆盖）
+# 从 deploy-ingress/ -> ingress/ -> onlyoffice-docs-bff/
+APP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+RESOURCES_DIR="${APP_ROOT}/resources"
+CUSTOM_VALUES_DIR="${RESOURCES_DIR}/custom-values"
 
-# 恢复原始的脚本目录（unified-deployment-template.sh 会重新定义 SCRIPT_DIR）
-SCRIPT_DIR="$ONLYOFFICE_INGRESS_SCRIPT_DIR"
-ONLYOFFICE_INGRESS_FILE="$(dirname "$SCRIPT_DIR")/ingress.yaml"
+# 导入统一部署模板（建立远程 k8s 连接）
+source "$PROJECT_ROOT/../utils/unified-deployment-template.sh"
+
+# 恢复原始的 SCRIPT_DIR
+SCRIPT_DIR="$ORIGINAL_SCRIPT_DIR"
+
+# Ingress 配置文件（使用生成的 YAML 文件）
+ONLYOFFICE_INGRESS_FILE="${CUSTOM_VALUES_DIR}/onlyoffice-docs-ingress-generated.yaml"
+
 # 主配置文件路径（相对于脚本目录）
 # 从 deploy-ingress/ -> ingress/ -> onlyoffice-docs/ -> deploy-onlyoffice-docs/ (向上2级)
 ONLYOFFICE_MAIN_CONFIG_FILE="$(dirname "$(dirname "$SCRIPT_DIR")")/deploy-onlyoffice-docs/deploy-onlyoffice-docs.conf"
@@ -62,12 +71,30 @@ verify_svc() { kubectl get svc -n "$1" "$SERVICE_NAME" >/dev/null 2>&1 || { log_
 deploy_web() {
   local ns="${1:-$NAMESPACE}"
   check_ns "$ns" || return 1
+  
+  # 自动生成 YAML 文件（如果不存在）
+  if [[ ! -f "$ONLYOFFICE_INGRESS_FILE" ]]; then
+    log_warn "生成的 Ingress YAML 文件不存在，自动运行生成脚本..."
+    if [[ -f "$CUSTOM_VALUES_DIR/generate.sh" ]]; then
+      if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
+        log_success "YAML 文件生成成功"
+      else
+        log_error "YAML 文件生成失败"
+        return 1
+      fi
+    else
+      log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
+      return 1
+    fi
+  fi
+  
   [[ -f "$ONLYOFFICE_INGRESS_FILE" ]] || { log_error "Ingress 不存在: $ONLYOFFICE_INGRESS_FILE"; return 1; }
   verify_svc "$ns" || return 1
-  local tmp=$(mktemp); cp "$ONLYOFFICE_INGRESS_FILE" "$tmp"
-  sed -i "s|{{NAMESPACE}}|$ns|g; s|{{SERVICE_NAME}}|$SERVICE_NAME|g; s|{{SERVICE_PORT}}|$SERVICE_PORT|g; s|{{UNIFIED_HOST}}|$UNIFIED_HOST|g" "$tmp"
-  kubectl apply -f "$tmp" && log_success "✅ ONLYOFFICE Docs Ingress 部署成功" || { log_error "❌ ONLYOFFICE Docs Ingress 部署失败"; rm -f "$tmp"; return 1; }
-  rm -f "$tmp"
+  
+  log_info "使用生成的 Ingress YAML: $ONLYOFFICE_INGRESS_FILE"
+  
+  # 直接使用生成的 YAML 文件（已经包含所有变量替换）
+  kubectl apply -f "$ONLYOFFICE_INGRESS_FILE" -n "$ns" && log_success "✅ ONLYOFFICE Docs Ingress 部署成功" || { log_error "❌ ONLYOFFICE Docs Ingress 部署失败"; return 1; }
 }
 
 # 主函数

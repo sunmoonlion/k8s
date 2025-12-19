@@ -19,7 +19,10 @@ spec:
       - name: ${INCUBATOR_BFF_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}
       containers:
       - name: incubator-app-bff
+        # Harbor 镜像路径：仓库/项目/镜像名:标签
+        # 由 deploy-incubator-bff.sh 计算并导出 INCUBATOR_BFF_FULL_IMAGE_NAME
         image: ${INCUBATOR_BFF_FULL_IMAGE_NAME}
+        # IfNotPresent: 如果本地有镜像则使用本地，否则从 Harbor 拉取
         imagePullPolicy: ${IMAGE_PULL_POLICY:-IfNotPresent}
         ports:
         - containerPort: 80
@@ -67,4 +70,3 @@ spec:
     targetPort: 80
     protocol: TCP
   type: ClusterIP
-

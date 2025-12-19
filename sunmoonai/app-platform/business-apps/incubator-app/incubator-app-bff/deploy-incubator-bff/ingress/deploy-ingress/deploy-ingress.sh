@@ -4,15 +4,30 @@
 
 set -e
 
-# 脚本目录
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# 脚本目录（保存原始值，因为 unified-deployment-template.sh 会覆盖 SCRIPT_DIR）
+ORIGINAL_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$ORIGINAL_SCRIPT_DIR"
 
 # 计算项目根目录（k8s目录）
 # 从 deploy-ingress/ -> ingress/ -> deploy-incubator-bff/ -> incubator-app-bff/ -> incubator-app/ -> business-apps/ -> app-platform/ -> sunmoonai/ -> k8s/
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
 
+# 计算应用根目录和资源路径（在 source 之前计算，避免 SCRIPT_DIR 被覆盖）
+# 从 deploy-ingress/ -> ingress/ -> deploy-incubator-bff/ -> incubator-app-bff/
+APP_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+RESOURCES_DIR="${APP_ROOT}/resources"
+CUSTOM_VALUES_DIR="${RESOURCES_DIR}/custom-values"
+
 # 导入统一部署模板（建立远程 k8s 连接）
-source "$PROJECT_ROOT/utils/unified-deployment-template.sh"
+# 注意：utils 目录在 k8s/ 下，不在 sunmoonai/ 下
+# 注意：unified-deployment-template.sh 会覆盖 SCRIPT_DIR，所以我们在 source 之前已经计算好路径
+source "$PROJECT_ROOT/../utils/unified-deployment-template.sh"
+
+# 恢复原始的 SCRIPT_DIR（如果需要的话）
+SCRIPT_DIR="$ORIGINAL_SCRIPT_DIR"
+
+# Ingress 配置文件（使用生成的 YAML 文件）
+INGRESS_FILE="${CUSTOM_VALUES_DIR}/incubator-app-bff-ingress-generated.yaml"
 
 # 检查命名空间是否存在
 check_namespace() {
@@ -34,9 +49,6 @@ check_namespace() {
         return 1
     fi
 }
-
-# Ingress 配置文件
-INGRESS_FILE="$(dirname "$SCRIPT_DIR")/ingress.yaml"
 
 # 验证 Incubator App BFF 服务是否存在（警告模式，不阻止部署）
 verify_service() {
@@ -129,6 +141,22 @@ deploy_http_route() {
         SERVICE_PORT="80"
     fi
     
+    # 自动生成 YAML 文件（如果不存在）
+    if [[ ! -f "$INGRESS_FILE" ]]; then
+        log_warn "生成的 Ingress YAML 文件不存在，自动运行生成脚本..."
+        if [[ -f "$CUSTOM_VALUES_DIR/generate.sh" ]]; then
+            if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
+                log_success "YAML 文件生成成功"
+            else
+                log_error "YAML 文件生成失败"
+                return 1
+            fi
+        else
+            log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
+            return 1
+        fi
+    fi
+    
     if [[ ! -f "$INGRESS_FILE" ]]; then
         log_error "Ingress 配置文件不存在: $INGRESS_FILE"
         return 1
@@ -145,27 +173,14 @@ deploy_http_route() {
     log_info "服务端口: $SERVICE_PORT"
     log_info "统一域名: $UNIFIED_HOST"
     log_info "节点 IP: $NODE_IP"
+    log_info "使用生成的 Ingress YAML: $INGRESS_FILE"
     
-    # 创建临时文件并替换变量
-    local temp_file
-    temp_file=$(mktemp)
-    cp "$INGRESS_FILE" "$temp_file"
-    
-    # 使用 sed 替换模板变量
-    sed -i "s/{{NAMESPACE}}/$NAMESPACE/g" "$temp_file"
-    sed -i "s/{{SERVICE_NAME}}/$SERVICE_NAME/g" "$temp_file"
-    sed -i "s/{{SERVICE_PORT}}/$SERVICE_PORT/g" "$temp_file"
-    sed -i "s/{{UNIFIED_HOST}}/$UNIFIED_HOST/g" "$temp_file"
-    sed -i "s/{{NODE_IP}}/$NODE_IP/g" "$temp_file"
-    
-    # 应用 Ingress 配置（包括 Middleware 和 IngressRoute）
+    # 直接使用生成的 YAML 文件（已经包含所有变量替换）
     log_info "应用 Incubator App BFF HTTP 路由配置..."
-    if kubectl apply -f "$temp_file"; then
+    if kubectl apply -f "$INGRESS_FILE" -n "$namespace"; then
         log_success "✅ Incubator App BFF HTTP 路由配置应用成功"
-        rm -f "$temp_file"
     else
         log_error "❌ Incubator App BFF HTTP 路由配置应用失败"
-        rm -f "$temp_file"
         return 1
     fi
     
@@ -220,25 +235,12 @@ delete_http_route() {
         return 0
     fi
     
-    # 创建临时文件并替换变量（用于删除）
-    local temp_file
-    temp_file=$(mktemp)
-    cp "$INGRESS_FILE" "$temp_file"
-    
-    # 使用 sed 替换模板变量
-    sed -i "s/{{NAMESPACE}}/$namespace/g" "$temp_file"
-    sed -i "s/{{SERVICE_NAME}}/incubator-app-bff/g" "$temp_file"
-    sed -i "s/{{SERVICE_PORT}}/80/g" "$temp_file"
-    sed -i "s/{{UNIFIED_HOST}}/incubator.sunmoonai.com/g" "$temp_file"
-    sed -i "s/{{NODE_IP}}/101.126.151.0/g" "$temp_file"
-    
-    if kubectl delete -f "$temp_file" 2>/dev/null; then
+    # 直接使用生成的 YAML 文件删除
+    if kubectl delete -f "$INGRESS_FILE" -n "$namespace" 2>/dev/null; then
         log_success "✅ Incubator App BFF HTTP 路由配置删除成功"
     else
         log_warn "⚠️ Incubator App BFF HTTP 路由配置不存在或删除失败"
     fi
-    
-    rm -f "$temp_file"
     log_success "✅ Incubator App BFF HTTP 路由删除完成！"
     return 0
 }

@@ -12,7 +12,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
 CONVERTER_MIDDLEWARE_SCRIPT_DIR="$SCRIPT_DIR"
 
 # 导入统一部署模板
-source "$PROJECT_ROOT/utils/unified-deployment-template.sh"
+source "$PROJECT_ROOT/../utils/unified-deployment-template.sh"
 
 # 恢复脚本目录
 SCRIPT_DIR="$CONVERTER_MIDDLEWARE_SCRIPT_DIR"

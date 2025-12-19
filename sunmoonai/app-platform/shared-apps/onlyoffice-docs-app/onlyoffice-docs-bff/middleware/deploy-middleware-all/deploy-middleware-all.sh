@@ -13,7 +13,7 @@ ONLYOFFICE_MIDDLEWARE_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$ONLYOFFICE_MIDDLEWARE_SCRIPT_DIR/../../../../.." && pwd)"
 
 # 导入统一部署模板（可能会覆盖 SCRIPT_DIR，所以我们已经保存了）
-source "$PROJECT_ROOT/utils/unified-deployment-template.sh"
+source "$PROJECT_ROOT/../utils/unified-deployment-template.sh"
 
 # 使用保存的脚本目录
 ONLYOFFICE_MIDDLEWARE_CONFIG_FILE="$ONLYOFFICE_MIDDLEWARE_SCRIPT_DIR/deploy-middleware-all.conf"

@@ -139,19 +139,6 @@ spec:
       volumes:
       - name: worker-code
         emptyDir: {}  # 临时存储，Pod 重启时清空并重新提取
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: celeryworker-incubator-service
-  namespace: ${NAMESPACE:-app-platform-dev}
-  labels:
-    app: celeryworker-incubator
-spec:
-  selector:
-    app: celeryworker-incubator
-  ports:
-  - port: 5555
-    targetPort: 5555
-    protocol: TCP
-  type: ClusterIP
+# 注意：Celery Worker 是纯后台任务处理，不需要 Service 和 Ingress
+# 监控通过 Flower 服务统一管理（通过 Celery broker 连接）
+# 如果需要直接访问 Worker，可以通过 kubectl port-forward 或 Flower 监控界面

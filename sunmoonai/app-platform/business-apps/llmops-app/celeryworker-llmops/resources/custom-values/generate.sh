@@ -54,6 +54,12 @@ export CODE_EXTRACT_TARGET_DIR="${CODE_EXTRACT_TARGET_DIR:-/shared/app}"
 export CODE_EXTRACT_DIRS="${CODE_EXTRACT_DIRS:-worker core services db models gdb}"
 export CODE_EXTRACT_FILES="${CODE_EXTRACT_FILES:-__init__.py}"
 
+# Ingress 相关变量（用于模板替换）
+export SERVICE_NAME="${SERVICE_NAME:-celeryworker-llmops-service}"
+export SERVICE_PORT="${SERVICE_PORT:-5555}"
+export UNIFIED_HOST="${UNIFIED_HOST:-celeryworker-llmops.sunmoonai.com}"
+export NODE_IP="${NODE_IP:-101.126.151.0}"
+
 # 验证 YAML 文件
 validate_yaml() {
     local yaml_file="$1"
