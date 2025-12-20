@@ -55,6 +55,15 @@ export SERVICE_PORT="${SERVICE_PORT:-80}"
 export UNIFIED_HOST="${UNIFIED_HOST:-${INCUBATOR_BFF_UNIFIED_HOST}}"
 export NODE_IP="${NODE_IP:-${INCUBATOR_BFF_NODE_IP}}"
 
+# PVC 相关变量（用于模板替换，从部署配置文件中读取）
+# 注意：这些变量的默认值在 deploy-incubator-bff.conf 中配置
+export PVC_NAME="${PVC_NAME:-incubator-app-bff-pvc}"
+export PVC_MOUNT_PATH="${PVC_MOUNT_PATH:-/app/data}"
+export PVC_SUB_PATH="${PVC_SUB_PATH:-}"
+export PVC_STORAGE_CLASS="${PVC_STORAGE_CLASS:-}"
+export PVC_ACCESS_MODE="${PVC_ACCESS_MODE:-ReadWriteOnce}"
+export PVC_STORAGE_SIZE="${PVC_STORAGE_SIZE:-10Gi}"
+
 # Harbor Docker 认证配置（用于 harbor-registry-secret）
 HARBOR_DOCKER_SERVER="${HARBOR_DOCKER_SERVER:-${INCUBATOR_BFF_IMAGE_REGISTRY:-harbor.sunmoonai.com:30443}}"
 HARBOR_DOCKER_USERNAME="${HARBOR_DOCKER_USERNAME:-admin}"

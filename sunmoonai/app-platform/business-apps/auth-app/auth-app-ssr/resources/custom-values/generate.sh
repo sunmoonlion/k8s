@@ -46,6 +46,15 @@ export AUTH_APP_SSR_UNIFIED_HOST="${AUTH_APP_SSR_UNIFIED_HOST:-auth-ssr.sunmoona
 export AUTH_APP_SSR_NODE_IP="${AUTH_APP_SSR_NODE_IP:-101.126.151.0}"
 export AUTH_APP_SSR_EXTERNAL_PORT="${AUTH_APP_SSR_EXTERNAL_PORT:-30443}"
 
+# PVC 相关变量（用于模板替换，从部署配置文件中读取）
+# 注意：这些变量的默认值在 deploy-auth-app-ssr.conf 中配置
+export PVC_NAME="${PVC_NAME:-auth-app-ssr-pvc}"
+export PVC_MOUNT_PATH="${PVC_MOUNT_PATH:-/app/data}"
+export PVC_SUB_PATH="${PVC_SUB_PATH:-}"
+export PVC_STORAGE_CLASS="${PVC_STORAGE_CLASS:-}"
+export PVC_ACCESS_MODE="${PVC_ACCESS_MODE:-ReadWriteOnce}"
+export PVC_STORAGE_SIZE="${PVC_STORAGE_SIZE:-10Gi}"
+
 # 验证 YAML 文件
 validate_yaml() {
     local yaml_file="$1"
