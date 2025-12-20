@@ -28,7 +28,7 @@ main(){
   envsubst < "$YAML_FILE" > "$tmp"
   case "$action" in
     deploy) kubectl apply -f "$tmp" -n "$NAMESPACE"; log_success "ConfigMap 部署完成";;
-    undeploy) kubectl delete -f "$tmp" -n "$NAMESPACE" --ignore-not-found; log_success "ConfigMap 卸载完成";;
+    uninstall) kubectl delete -f "$tmp" -n "$NAMESPACE" --ignore-not-found; log_success "ConfigMap 卸载完成";;
     *) log_error "无效操作: $action"; exit 1;;
   esac
   rm -f "$tmp"

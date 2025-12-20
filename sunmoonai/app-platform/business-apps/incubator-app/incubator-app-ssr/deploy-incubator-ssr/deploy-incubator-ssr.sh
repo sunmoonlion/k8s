@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Incubator App SSR 部署脚本
-# 用法: ./deploy-incubator-ssr.sh <deploy|undeploy|status> [project_id] [namespace] [environment]
+# 用法: ./deploy-incubator-ssr.sh <deploy|uninstall|status> [project_id] [namespace] [environment]
 # 注意：资源 YAML 位置由 RESOURCES_DIR/INCUBATOR_SSR_YAML 指定，resources 目录不改动
 
 set -e
@@ -362,7 +362,7 @@ deploy_app() {
 }
 
 # 卸载 Incubator App SSR
-undeploy_app() {
+uninstall_app() {
     log_info "开始卸载 Incubator App SSR..."
     log_info "环境: $ENVIRONMENT, 命名空间: $NAMESPACE"
     
@@ -542,12 +542,12 @@ main() {
             deploy_app
             show_status
             ;;
-        "undeploy")
+        "uninstall")
             if ! check_namespace "$namespace"; then
                 log_error "❌ 命名空间检查失败"
                 exit 1
             fi
-            undeploy_app
+            uninstall_app
             ;;
         "status")
             show_status
@@ -558,7 +558,7 @@ main() {
             echo ""
             echo "操作:"
             echo "  deploy     部署 Incubator App SSR"
-            echo "  undeploy   卸载 Incubator App SSR"
+            echo "  uninstall  卸载 Incubator App SSR"
             echo "  status     查看 Incubator App SSR 状态"
             echo ""
             echo "参数说明:"
@@ -570,7 +570,7 @@ main() {
             echo "  deploy       - 部署到 Kubernetes（从 Harbor 拉取镜像）"
             echo "                注意: 部署前请确保镜像已构建并推送到 Harbor"
             echo "                构建镜像: cd ../mybuild && ./build-image.sh build-push"
-            echo "  undeploy     - 卸载 Incubator App SSR"
+            echo "  uninstall    - 卸载 Incubator App SSR"
             echo "  status       - 查看 Incubator App SSR 状态"
             echo ""
             echo "示例:"

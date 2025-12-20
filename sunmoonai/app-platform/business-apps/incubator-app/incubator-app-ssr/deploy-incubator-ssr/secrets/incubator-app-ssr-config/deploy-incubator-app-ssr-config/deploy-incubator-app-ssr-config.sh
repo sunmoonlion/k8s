@@ -36,7 +36,7 @@ main() {
       kubectl apply -f "$tmp" -n "$NAMESPACE"
       log_success "ConfigMap 部署完成"
       ;;
-    undeploy)
+    uninstall)
       kubectl delete -f "$tmp" -n "$NAMESPACE" --ignore-not-found
       log_success "ConfigMap 卸载完成"
       ;;

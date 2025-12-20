@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Incubator App BFF 部署脚本
-# 用法: ./deploy-incubator-bff.sh <deploy|undeploy|status> [project_id] [namespace] [environment]
+# 用法: ./deploy-incubator-bff.sh <deploy|uninstall|status> [project_id] [namespace] [environment]
 # 镜像构建请在源码仓库执行 mybuild/build-image.sh（可选推送）
 
 set -e
@@ -354,7 +354,7 @@ deploy_app() {
 }
 
 # 卸载 Incubator App BFF
-undeploy_app() {
+uninstall_app() {
     log_info "开始卸载 Incubator App BFF..."
     log_info "环境: $ENVIRONMENT, 命名空间: $NAMESPACE"
     
@@ -534,12 +534,12 @@ main() {
             deploy_app
             show_status
             ;;
-        "undeploy")
+        "uninstall")
             if ! check_namespace "$namespace"; then
                 log_error "❌ 命名空间检查失败"
                 exit 1
             fi
-            undeploy_app
+            uninstall_app
             ;;
         "status")
             show_status
@@ -550,7 +550,7 @@ main() {
             echo ""
             echo "操作:"
             echo "  deploy     部署 Incubator App BFF"
-            echo "  undeploy   卸载 Incubator App BFF"
+            echo "  uninstall  卸载 Incubator App BFF"
             echo "  status     查看 Incubator App BFF 状态"
             echo ""
             echo "参数说明:"
@@ -562,7 +562,7 @@ main() {
             echo "  deploy       - 部署到 Kubernetes（从 Harbor 拉取镜像）"
             echo "                注意: 部署前请确保镜像已构建并推送到 Harbor"
             echo "                构建镜像: cd ../mybuild && ./build-image.sh build-push"
-            echo "  undeploy     - 卸载 Incubator App BFF"
+            echo "  uninstall    - 卸载 Incubator App BFF"
             echo "  status       - 查看 Incubator App BFF 状态"
             echo ""
             echo "示例:"

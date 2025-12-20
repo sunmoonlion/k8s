@@ -69,7 +69,7 @@ main() {
       kubectl apply -f "$YAML_OUTPUT" -n "$NAMESPACE"
       log_success "ConfigMap 部署完成"
       ;;
-    undeploy)
+    uninstall)
       kubectl delete -f "$YAML_OUTPUT" -n "$NAMESPACE" --ignore-not-found
       log_success "ConfigMap 卸载完成"
       ;;
@@ -78,7 +78,7 @@ main() {
       ;;
     *)
       log_error "无效操作: $action"
-      echo "用法: $0 <deploy|undeploy|generate> [project_id] [namespace] [environment]"
+      echo "用法: $0 <deploy|uninstall|generate> [project_id] [namespace] [environment]"
       exit 1
       ;;
   esac

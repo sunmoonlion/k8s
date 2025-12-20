@@ -530,7 +530,7 @@ deploy_celeryworker() {
 }
 
 # 卸载 Celery Worker
-undeploy_celeryworker() {
+uninstall_celeryworker() {
     log_info "开始卸载 Celery Worker (LLMOps)..."
     log_info "环境: $ENVIRONMENT, 命名空间: $NAMESPACE"
     
@@ -714,12 +714,12 @@ main() {
             deploy_celeryworker
             show_status
             ;;
-        "undeploy")
+        "uninstall")
             if ! check_namespace "$namespace"; then
                 log_error "❌ 命名空间检查失败"
                 exit 1
             fi
-            undeploy_celeryworker
+            uninstall_celeryworker
             ;;
         "status")
             show_status
@@ -730,7 +730,7 @@ main() {
             echo ""
             echo "操作:"
             echo "  deploy     部署 Celery Worker (LLMOps)"
-            echo "  undeploy   卸载 Celery Worker (LLMOps)"
+            echo "  uninstall  卸载 Celery Worker (LLMOps)"
             echo "  status     查看 Celery Worker (LLMOps) 状态"
             echo ""
             echo "参数说明:"
@@ -742,7 +742,7 @@ main() {
             echo "  deploy       - 部署到 Kubernetes（从 Harbor 拉取镜像）"
             echo "                注意: 部署前请确保镜像已构建并推送到 Harbor"
             echo "                构建镜像: cd ../build && ./build-image.sh build-push"
-            echo "  undeploy     - 卸载 Celery Worker (LLMOps)"
+            echo "  uninstall    - 卸载 Celery Worker (LLMOps)"
             echo "  status       - 查看 Celery Worker (LLMOps) 状态"
             echo ""
             echo "示例:"

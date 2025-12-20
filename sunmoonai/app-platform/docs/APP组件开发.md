@@ -242,7 +242,7 @@ ENV APP_MODULE=app.main:app \
 | 命令 | 功能 | 说明 |
 |------|------|------|
 | `deploy` | 部署服务 | 部署到 Kubernetes（需要先构建并推送镜像到 Harbor） |
-| `undeploy` | 卸载服务 | 删除 Deployment、Service、Secrets、ConfigMaps、Ingress |
+| `uninstall` | 卸载服务 | 删除 Deployment、Service、Secrets、ConfigMaps、Ingress |
 | `status` | 查看状态 | 显示 Pods、Services、ConfigMaps、Secrets 状态 |
 
 **注意**：镜像构建在源代码项目中执行，不在部署脚本中。部署前需要确保镜像已构建并推送到 Harbor。
@@ -547,7 +547,7 @@ resources/custom-values/templates/
 
 **卸载服务**
 ```bash
-./deploy-llmops-bff.sh undeploy dev app-platform-dev
+./deploy-llmops-bff.sh uninstall dev app-platform-dev
 ```
 
 **更新代码并重新部署**
