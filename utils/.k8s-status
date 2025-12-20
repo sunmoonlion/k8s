@@ -1,3 +1,3 @@
 CURRENT_MODE=direct
 CURRENT_KUBECONFIG=/home/zym/.kube/cluster-c2-admin.conf
-TUNNEL_PID=1062247
+TUNNEL_PID=1070166
