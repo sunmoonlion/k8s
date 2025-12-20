@@ -49,6 +49,14 @@ spec:
             port: 8000
           initialDelaySeconds: 5
           periodSeconds: 5
+        volumeMounts:
+        - name: data-storage
+          mountPath: ${PVC_MOUNT_PATH:-/app/data}
+          subPath: ${PVC_SUB_PATH:-}
+      volumes:
+      - name: data-storage
+        persistentVolumeClaim:
+          claimName: ${PVC_NAME:-llmops-app-bff-pvc}
 ---
 apiVersion: v1
 kind: Service

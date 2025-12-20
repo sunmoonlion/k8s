@@ -92,6 +92,9 @@ spec:
         volumeMounts:
         - name: worker-code
           mountPath: /app/app  # 挂载提取的代码
+        - name: data-storage
+          mountPath: ${PVC_MOUNT_PATH:-/app/data}
+          subPath: ${PVC_SUB_PATH:-}
         envFrom:
         # 从 ConfigMap 读取 Celery Worker 配置
         - configMapRef:
@@ -139,6 +142,9 @@ spec:
       volumes:
       - name: worker-code
         emptyDir: {}  # 临时存储，Pod 重启时清空并重新提取
+      - name: data-storage
+        persistentVolumeClaim:
+          claimName: ${PVC_NAME:-celeryworker-llmops-pvc}
 # 注意：Celery Worker 是纯后台任务处理，不需要 Service 和 Ingress
 # 监控通过 Flower 服务统一管理（通过 Celery broker 连接）
 # 如果需要直接访问 Worker，可以通过 kubectl port-forward 或 Flower 监控界面

@@ -108,6 +108,7 @@ RESOURCES_DIR="../resources"
 # 使用生成的 YAML 文件（由 resources/custom-values/generate.sh 生成）
 CUSTOM_VALUES_DIR="${RESOURCES_DIR}/custom-values"
 LLMOPS_SSR_YAML="${CUSTOM_VALUES_DIR}/llmops-app-ssr-generated.yaml"
+LLMOPS_SSR_PVC_YAML="${CUSTOM_VALUES_DIR}/llmops-app-ssr-pvc-generated.yaml"
 # 模板文件路径（已移动到 resources/custom-values/templates/）
 TEMPLATES_DIR="${CUSTOM_VALUES_DIR}/templates"
 LLMOPS_SSR_CONFIGMAP="${TEMPLATES_DIR}/configmap/llmops-app-ssr-config.yaml"
@@ -245,6 +246,18 @@ deploy_app() {
     # 自动生成 YAML 文件（如果不存在）
     if ! auto_generate_yaml "$LLMOPS_SSR_YAML" "$CUSTOM_VALUES_DIR"; then
         return 1
+    fi
+    
+    # 部署 PVC（如果存在）
+    if [ -f "$LLMOPS_SSR_PVC_YAML" ]; then
+        log_info "部署 PVC..."
+        kubectl apply -f "$LLMOPS_SSR_PVC_YAML" -n "$NAMESPACE"
+        if [ $? -eq 0 ]; then
+            log_success "PVC 部署完成"
+        else
+            log_error "PVC 部署失败"
+            return 1
+        fi
     fi
     
     # 部署 Deployment 和 Service（直接使用生成的 YAML）

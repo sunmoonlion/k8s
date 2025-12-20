@@ -109,9 +109,9 @@ generate_resource() {
             # 主应用 YAML：需要处理 ${VAR:-default} 语法
             sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$full_template_path" | envsubst > "$full_output_path"
             ;;
-        configmap|secret)
-            # ConfigMap 和 Secret：直接使用 envsubst
-            envsubst < "$full_template_path" > "$full_output_path"
+        configmap|secret|pvc)
+            # ConfigMap、Secret 和 PVC：先处理 ${VAR:-default}，然后使用 envsubst
+            sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$full_template_path" | envsubst > "$full_output_path"
             ;;
         ingress|middleware)
             # Ingress 和 Middleware：处理可能的 {{VAR}} 和 ${VAR} 两种格式

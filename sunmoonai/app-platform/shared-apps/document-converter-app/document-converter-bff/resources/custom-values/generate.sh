@@ -111,9 +111,13 @@ generate_resource() {
                 -e "s|{{SERVICE_PORT}}|${DOCUMENT_CONVERTER_SERVICE_PORT}|g" \
                 "$full_template_path" > "$full_output_path"
             ;;
-        configmap|secret)
-            # ConfigMap 和 Secret：直接使用 envsubst
-            envsubst < "$full_template_path" > "$full_output_path"
+        configmap|secret|pvc)
+            # ConfigMap、Secret 和 PVC：处理 {{VAR}} 模板语法
+            sed -e "s|{{NAMESPACE}}|${NAMESPACE}|g" \
+                -e "s|{{PVC_ACCESS_MODE:-ReadWriteOnce}}|${PVC_ACCESS_MODE:-ReadWriteOnce}|g" \
+                -e "s|{{PVC_STORAGE_CLASS:-}}|${PVC_STORAGE_CLASS:-}|g" \
+                -e "s|{{PVC_STORAGE_SIZE:-10Gi}}|${PVC_STORAGE_SIZE:-10Gi}|g" \
+                "$full_template_path" > "$full_output_path"
             ;;
         ingress|middleware)
             # Ingress 和 Middleware：处理 {{VAR}} 模板语法

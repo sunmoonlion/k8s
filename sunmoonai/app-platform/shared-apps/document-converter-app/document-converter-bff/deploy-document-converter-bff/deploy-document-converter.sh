@@ -97,6 +97,7 @@ CONVERTER_RESOURCE_DIR="$PROJECT_ROOT/resources"
 CUSTOM_VALUES_DIR="$CONVERTER_RESOURCE_DIR/custom-values"
 DEPLOYMENT_YAML="$CUSTOM_VALUES_DIR/document-converter-deployment-generated.yaml"
 SERVICE_YAML="$CUSTOM_VALUES_DIR/document-converter-service-generated.yaml"
+PVC_YAML="$CUSTOM_VALUES_DIR/document-converter-pvc-generated.yaml"
 
 # 检查命名空间
 check_namespace() {
@@ -181,6 +182,18 @@ execute_converter_deployment() {
         else
             log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
             log_error "请确保生成脚本存在于: $CUSTOM_VALUES_DIR"
+            exit 1
+        fi
+    fi
+    
+    # 应用 PVC（如果存在）
+    if [ -f "$PVC_YAML" ]; then
+        log_info "应用 PVC..."
+        kubectl apply -f "$PVC_YAML" -n "$namespace"
+        if [ $? -eq 0 ]; then
+            log_success "PVC 部署完成"
+        else
+            log_error "PVC 部署失败"
             exit 1
         fi
     fi

@@ -57,9 +57,15 @@ spec:
           mountPath: /tmp/uploads
         - name: tmp-outputs
           mountPath: /tmp/outputs
+        - name: data-storage
+          mountPath: {{PVC_MOUNT_PATH:-/app/data}}
+          subPath: {{PVC_SUB_PATH:-}}
       volumes:
       - name: tmp-uploads
         emptyDir: {}
       - name: tmp-outputs
         emptyDir: {}
+      - name: data-storage
+        persistentVolumeClaim:
+          claimName: {{PVC_NAME:-document-converter-pvc}}
 

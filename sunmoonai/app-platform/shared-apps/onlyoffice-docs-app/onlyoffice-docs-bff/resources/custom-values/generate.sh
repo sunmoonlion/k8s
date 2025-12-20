@@ -118,8 +118,8 @@ generate_resource() {
                 -e "s|{{UNIFIED_HOST}}|${ONLYOFFICE_UNIFIED_HOST}|g" \
                 "$full_template_path" > "$full_output_path"
             ;;
-        configmap|secret)
-            # ConfigMap 和 Secret：先处理 ${VAR:-default}，然后使用 envsubst
+        configmap|secret|pvc)
+            # ConfigMap、Secret 和 PVC：先处理 ${VAR:-default}，然后使用 envsubst
             sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$full_template_path" | envsubst > "$full_output_path"
             ;;
         ingress|middleware)

@@ -167,6 +167,7 @@ RESOURCES_DIR="../resources"
 # 使用生成的 YAML 文件（由 resources/custom-values/generate.sh 生成）
 CUSTOM_VALUES_DIR="${RESOURCES_DIR}/custom-values"
 CELERYWORKER_YAML="${CUSTOM_VALUES_DIR}/celeryworker-llmops-generated.yaml"
+CELERYWORKER_PVC_YAML="${CUSTOM_VALUES_DIR}/celeryworker-llmops-pvc-generated.yaml"
 
 # Secrets 和 ConfigMap 统一部署脚本（按照 PostgreSQL 模式）
 SECRETS_DIR="${SCRIPT_DIR}/secrets"
@@ -506,6 +507,18 @@ deploy_celeryworker() {
             fi
         else
             log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
+            return 1
+        fi
+    fi
+    
+    # 部署 PVC（如果存在）
+    if [ -f "$CELERYWORKER_PVC_YAML" ]; then
+        log_info "部署 PVC..."
+        kubectl apply -f "$CELERYWORKER_PVC_YAML" -n "$NAMESPACE"
+        if [ $? -eq 0 ]; then
+            log_success "PVC 部署完成"
+        else
+            log_error "PVC 部署失败"
             return 1
         fi
     fi
