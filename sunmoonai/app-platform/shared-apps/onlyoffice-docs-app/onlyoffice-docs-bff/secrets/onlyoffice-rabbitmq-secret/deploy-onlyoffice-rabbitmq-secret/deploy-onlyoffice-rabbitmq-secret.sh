@@ -3,21 +3,30 @@
 # =============================================================================
 # ONLYOFFICE RabbitMQ Secret 部署脚本
 # 文件名: deploy-onlyoffice-rabbitmq-secret.sh
-# 用途: 从 RabbitMQ Secret 获取密码并创建 ONLYOFFICE Docs 的 RabbitMQ 连接 Secret
+# 用途: 部署 ONLYOFFICE Docs 连接 RabbitMQ 的认证 Secret
+# 注意: 使用 resources/custom-values/generate.sh 生成的 YAML 文件
 # =============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SECRET_DIR="$(dirname "$SCRIPT_DIR")"
-# 计算项目根目录（k8s目录）
-# 从 deploy-onlyoffice-rabbitmq-secret/ 向上6级到达 k8s/
-# deploy-onlyoffice-rabbitmq-secret/ -> onlyoffice-rabbitmq-secret/ -> secrets/ -> onlyoffice-docs/ -> app-platform/ -> sunmoonai/ -> k8s/
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../" && pwd)"
+# 计算项目根目录（应用根目录）
+# 从 deploy-onlyoffice-rabbitmq-secret/ 向上 3 级到达应用根目录
+# deploy-onlyoffice-rabbitmq-secret/ -> onlyoffice-rabbitmq-secret/ -> secrets/ -> onlyoffice-docs-bff/
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
-source "$PROJECT_ROOT/utils/secret-management/lib/secret-core.sh"
+# 使用生成的 YAML 文件（由 resources/custom-values/generate.sh 生成）
+CUSTOM_VALUES_DIR="$PROJECT_ROOT/resources/custom-values"
+SECRET_YAML="$CUSTOM_VALUES_DIR/onlyoffice-rabbitmq-secret-generated.yaml"
 
-# 解析命令行参数
+# 日志函数
+log_info() { echo -e "[INFO] $*"; }
+log_success() { echo -e "\033[32m[SUCCESS]\033[0m $*"; }
+log_error() { echo -e "\033[31m[ERROR]\033[0m $*" 1>&2; }
+log_warn() { echo -e "\033[33m[WARN]\033[0m $*"; }
+
+# 解析命令行参数（优先于配置文件加载，确保命令行参数优先级最高）
 declare -a PARSED_ARGS
 
 parse_cluster_arg() {
@@ -97,91 +106,120 @@ DEFAULT_PROJECT_ID="sunmoonai"
 DEFAULT_NAMESPACE="app-platform-dev"
 DEFAULT_ENVIRONMENT="development"
 
+# 自动生成 YAML 文件的辅助函数（与主部署脚本保持一致）
+auto_generate_yaml() {
+    local yaml_file="$1"
+    local custom_values_dir="$2"
+    
+    if [ ! -f "$yaml_file" ]; then
+        log_warn "生成的 YAML 文件不存在: $yaml_file，自动运行生成脚本..."
+        if [ -f "$custom_values_dir/generate.sh" ]; then
+            # 检查必需的密码是否已设置
+            if [[ -z "${RABBITMQ_PASSWORD:-}" ]]; then
+                log_error "RabbitMQ 密码未配置！"
+                log_error "请在配置文件中设置 RABBITMQ_PASSWORD"
+                log_error "配置文件: $CONFIG_FILE"
+                return 1
+            fi
+            if bash "$custom_values_dir/generate.sh"; then
+                log_success "YAML 文件生成成功"
+            else
+                log_error "YAML 文件生成失败"
+                return 1
+            fi
+        else
+            log_error "生成脚本不存在: $custom_values_dir/generate.sh"
+            return 1
+        fi
+    fi
+    return 0
+}
+
 main() {
     set -- "${ORIGINAL_ARGS[@]}"
-    set -- "${PARSED_ARGS[@]}"
     
     if [[ -n "${CLUSTER:-}" ]]; then
         log_info "🎯 当前集群配置: ${CLUSTER}"
     fi
     
-    local project_id="${1:-$DEFAULT_PROJECT_ID}"
-    local namespace="${2:-$DEFAULT_NAMESPACE}"
-    local environment="${3:-$DEFAULT_ENVIRONMENT}"
-    local dry_run="${4:-false}"
+    # 参数格式：<action> <project_id> <namespace> <environment>
+    # 与 deploy-secrets-all.sh 和其他 secret 脚本保持一致
+    local action="${1:-deploy}"
+    local project_id="${2:-$DEFAULT_PROJECT_ID}"
+    local namespace="${3:-$DEFAULT_NAMESPACE}"
+    local environment="${4:-$DEFAULT_ENVIRONMENT}"
     
     log_info "部署 ONLYOFFICE RabbitMQ Secret..."
     log_info "部署参数："
+    log_info "  - 操作: $action"
     log_info "  - 项目ID: $project_id"
     log_info "  - 命名空间: $namespace"
     log_info "  - 环境: $environment"
-    log_info "  - 试运行: $dry_run"
     echo ""
     
-    # 1. 从配置文件获取密码
-    log_info "从配置文件获取 RabbitMQ 密码..."
+    export PROJECT_ID="$project_id" NAMESPACE="$namespace" ENVIRONMENT="$environment"
     
+    # 检查必需的密码是否已设置
     if [[ -z "${RABBITMQ_PASSWORD:-}" ]]; then
         log_error "RabbitMQ 密码未配置！"
         log_error "请在配置文件中设置 RABBITMQ_PASSWORD"
         log_error "配置文件: $CONFIG_FILE"
-        log_error ""
-        log_error "示例："
-        log_error "  RABBITMQ_PASSWORD=\"your_rabbitmq_password\""
         exit 1
     fi
     
-    local password="$RABBITMQ_PASSWORD"
-    log_success "已从配置文件获取 RabbitMQ 密码"
-    log_warn "⚠️  请确保此密码与 RabbitMQ 部署时使用的密码保持一致！"
-    
-    # 2. 生成 Secret YAML
-    local temp_data_dir=$(mktemp -d)
-    trap "rm -rf $temp_data_dir" EXIT
-    
-    echo -n "$password" > "$temp_data_dir/${TARGET_SECRET_KEY}"
-    
-    local secret_yaml="$SECRET_DIR/onlyoffice-rabbitmq-secret.yaml"
-    
-    log_info "生成 Secret YAML..."
-    
-    generate_opaque_secret_yaml \
-        --name "$SECRET_NAME" \
-        --namespace "$namespace" \
-        --data-dir "$temp_data_dir" \
-        --output "$secret_yaml"
-    
-    log_success "Secret YAML生成完成: $secret_yaml"
-    
-    # 3. 部署 Secret 到 Kubernetes（集群2）
-    if [[ "$dry_run" != "true" ]]; then
-        log_info "部署 Secret 到 Kubernetes 集群..."
-        
-        if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
-            log_error "命名空间不存在: $namespace"
-            exit 1
-        fi
-        
-        if kubectl apply -f "$secret_yaml"; then
-            log_success "Secret已部署: $SECRET_NAME (命名空间: $namespace)"
-        else
-            log_error "Secret部署失败"
-            exit 1
-        fi
-    else
-        log_info "[试运行] 将部署Secret: $SECRET_NAME"
-        log_info "[试运行] YAML文件: $secret_yaml"
+    # 1. 自动生成 YAML 文件（如果不存在）
+    if ! auto_generate_yaml "$SECRET_YAML" "$CUSTOM_VALUES_DIR"; then
+        log_error "无法生成或找到 Secret YAML 文件"
+        exit 1
     fi
     
+    # 2. 根据操作类型执行相应动作
+    case "$action" in
+        deploy)
+            # 检查命名空间是否存在
+            if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
+                log_error "命名空间不存在: $namespace"
+                exit 1
+            fi
+            
+            log_info "部署 Secret 到 Kubernetes 集群..."
+            if kubectl apply -f "$SECRET_YAML" -n "$namespace"; then
+                log_success "Secret 已部署: ${SECRET_NAME:-onlyoffice-rabbitmq-secret} (命名空间: $namespace)"
+            else
+                log_error "Secret 部署失败"
+                exit 1
+            fi
+            ;;
+        uninstall)
+            log_info "卸载 Secret..."
+            kubectl delete -f "$SECRET_YAML" -n "$namespace" --ignore-not-found
+            log_success "Secret 卸载完成"
+            ;;
+        status)
+            log_info "检查 Secret 状态..."
+            local secret_name="${SECRET_NAME:-onlyoffice-rabbitmq-secret}"
+            kubectl get secret "$secret_name" -n "$namespace" 2>/dev/null || log_warn "Secret 不存在: $secret_name"
+            ;;
+        generate)
+            log_success "YAML 文件已生成: $SECRET_YAML"
+            ;;
+        *)
+            log_error "无效操作: $action"
+            echo "用法: $0 <deploy|uninstall|status|generate> [project_id] [namespace] [environment]"
+            exit 1
+            ;;
+    esac
+    
     echo ""
-    log_success "ONLYOFFICE RabbitMQ Secret 部署完成！"
-    log_info "部署信息："
-    log_info "  - Secret名称: $SECRET_NAME"
+    log_success "ONLYOFFICE RabbitMQ Secret 操作完成！"
+    log_info "操作信息："
+    log_info "  - 操作: $action"
+    log_info "  - Secret 名称: ${SECRET_NAME:-onlyoffice-rabbitmq-secret}"
     log_info "  - 命名空间: $namespace"
-    log_info "  - 部署时间: $(date '+%Y-%m-%d %H:%M:%S')"
+    log_info "  - YAML 文件: $SECRET_YAML"
+    log_info "  - 完成时间: $(date '+%Y-%m-%d %H:%M:%S')"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     main "$@"
 fi
-

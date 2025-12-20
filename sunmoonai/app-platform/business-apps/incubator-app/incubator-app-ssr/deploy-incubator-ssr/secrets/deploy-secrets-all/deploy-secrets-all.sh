@@ -29,6 +29,7 @@ check_namespace() {
 deploy_components() {
   local action="$1" project_id="$2" namespace="$3" environment="$4"
   local components=(
+    "harbor_registry_secret:${harbor_registry_secret_enabled:-true}:${harbor_registry_secret_priority:-700}:Harbor Registry Secret:$SCRIPT_DIR/../harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh"
     "incubator_ssr_secret:${incubator_ssr_secret_enabled:-true}:${incubator_ssr_secret_priority:-600}:SSR Secret:$SCRIPT_DIR/../incubator-app-ssr-secret/deploy-incubator-app-ssr-secret/deploy-incubator-app-ssr-secret.sh"
     "incubator_ssr_config:${incubator_ssr_config_enabled:-true}:${incubator_ssr_config_priority:-500}:SSR ConfigMap:$SCRIPT_DIR/../incubator-app-ssr-config/deploy-incubator-app-ssr-config/deploy-incubator-app-ssr-config.sh"
   )

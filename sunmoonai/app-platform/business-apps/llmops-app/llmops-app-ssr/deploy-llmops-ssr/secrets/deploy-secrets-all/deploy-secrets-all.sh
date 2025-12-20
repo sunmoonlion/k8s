@@ -21,6 +21,7 @@ check_namespace(){ kubectl get namespace "$1" >/dev/null 2>&1 || { log_error "�
 deploy_components(){
   local action="$1" project_id="$2" namespace="$3" environment="$4"
   local components=(
+    "harbor_registry_secret:${harbor_registry_secret_enabled:-true}:${harbor_registry_secret_priority:-700}:Harbor Registry Secret:$SCRIPT_DIR/../harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh"
     "llmops_ssr_secret:${llmops_ssr_secret_enabled:-true}:${llmops_ssr_secret_priority:-600}:SSR Secret:$SCRIPT_DIR/../llmops-app-ssr-secret/deploy-llmops-app-ssr-secret/deploy-llmops-app-ssr-secret.sh"
     "llmops_ssr_config:${llmops_ssr_config_enabled:-true}:${llmops_ssr_config_priority:-500}:SSR ConfigMap:$SCRIPT_DIR/../llmops-app-ssr-config/deploy-llmops-app-ssr-config/deploy-llmops-app-ssr-config.sh"
   )
@@ -47,11 +48,27 @@ main(){
   local namespace="${3:-${NAMESPACE:-$DEFAULT_NAMESPACE}}"
   local environment="${4:-${ENVIRONMENT:-$DEFAULT_ENVIRONMENT}}"
 
-  if [[ "$action" != "status" ]]; then
+  log_info "🚀 开始部署 LLMOps App SSR Secrets..."
+  log_info "📋 部署参数："
+  log_info "  - 项目ID: $project_id"
+  log_info "  - 命名空间: $namespace"
+  log_info "  - 环境: $environment"
+  log_info "  - 操作: $action"
+  echo ""
+
+  if [[ "$action" != "status" && "$action" != "generate" ]]; then
     check_namespace "$namespace" || exit 1
   fi
 
   deploy_components "$action" "$project_id" "$namespace" "$environment"
+  
+  echo ""
+  log_success "🎉 LLMOps App SSR Secrets 部署完成！"
+  log_info "📋 部署信息："
+  log_info "  - 项目ID: $project_id"
+  log_info "  - 命名空间: $namespace"
+  log_info "  - 环境: $environment"
+  log_info "  - 部署时间: $(date '+%Y-%m-%d %H:%M:%S')"
 }
 
 main "$@"

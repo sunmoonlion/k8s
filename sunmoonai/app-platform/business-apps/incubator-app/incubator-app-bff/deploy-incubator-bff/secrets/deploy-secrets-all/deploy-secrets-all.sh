@@ -35,6 +35,7 @@ deploy_components() {
 
   # 定义组件部署信息（组件名:启用标志:优先级:描述:脚本路径）
   local components=(
+    "harbor_registry_secret:${harbor_registry_secret_enabled:-true}:${harbor_registry_secret_priority:-700}:Harbor Registry Secret:$SCRIPT_DIR/../harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh"
     "incubator_bff_secret:${incubator_bff_secret_enabled:-true}:${incubator_bff_secret_priority:-600}:BFF Secret:$SCRIPT_DIR/../incubator-app-bff-secret/deploy-incubator-app-bff-secret/deploy-incubator-app-bff-secret.sh"
     "incubator_bff_config:${incubator_bff_config_enabled:-true}:${incubator_bff_config_priority:-500}:BFF ConfigMap:$SCRIPT_DIR/../incubator-app-bff-config/deploy-incubator-app-bff-config/deploy-incubator-app-bff-config.sh"
   )

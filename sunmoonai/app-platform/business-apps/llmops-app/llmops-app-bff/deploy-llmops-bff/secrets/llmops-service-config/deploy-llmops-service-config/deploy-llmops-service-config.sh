@@ -9,13 +9,15 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# 模板文件已移动到 resources/custom-values/templates/
-# 计算应用根目录（从 deploy-xxx/ 到应用根目录）
-APP_ROOT="$(dirname "$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")")"  # 从 deploy-xxx/ 到应用根目录
-TEMPLATES_DIR="$APP_ROOT/resources/custom-values/templates"
-CONFIG_DIR="$(dirname "$SCRIPT_DIR")"  # llmops-service-config 目录（用于其他用途）
-# 计算项目根目录（k8s目录）
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
+CONFIG_FILE="$SCRIPT_DIR/deploy-llmops-service-config.conf"
+# 计算项目根目录（应用根目录）
+# 从 deploy-llmops-service-config/ 向上 3 级到达应用根目录
+# deploy-llmops-service-config/ -> llmops-service-config/ -> secrets/ -> deploy-llmops-bff/ -> llmops-app-bff/
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+
+# 使用生成的 YAML 文件（由 resources/custom-values/generate.sh 生成）
+CUSTOM_VALUES_DIR="$PROJECT_ROOT/resources/custom-values"
+CONFIGMAP_YAML="$CUSTOM_VALUES_DIR/llmops-service-config-generated.yaml"
 
 # 日志函数
 log_info() { echo -e "[INFO] $*"; }
@@ -28,98 +30,74 @@ DEFAULT_PROJECT_ID="sunmoonai"
 DEFAULT_NAMESPACE="app-platform-dev"
 DEFAULT_ENVIRONMENT="development"
 
-# 加载配置文件
-CONFIG_FILE="$SCRIPT_DIR/deploy-llmops-service-config.conf"
+# 加载配置
 if [[ -f "$CONFIG_FILE" ]]; then
-    source "$CONFIG_FILE"
+  source "$CONFIG_FILE"
+  log_info "已加载配置: $CONFIG_FILE"
 else
-    log_error "配置文件不存在: $CONFIG_FILE"
-    exit 1
+  log_warn "未找到配置文件: $CONFIG_FILE，使用默认配置"
 fi
 
-# 检查命名空间
-check_namespace() {
-    local namespace="$1"
+# 自动生成 YAML 文件的辅助函数（与主部署脚本保持一致）
+auto_generate_yaml() {
+    local yaml_file="$1"
+    local custom_values_dir="$2"
     
-    if kubectl get namespace "$namespace" >/dev/null 2>&1; then
-        log_success "✅ 命名空间 $namespace 已存在"
-        return 0
-    else
-        log_error "❌ 命名空间 $namespace 不存在！"
-        echo ""
-        log_info "请先创建命名空间："
-        echo "  kubectl create namespace $namespace"
-        echo ""
-        return 1
+    if [ ! -f "$yaml_file" ]; then
+        log_warn "生成的 YAML 文件不存在: $yaml_file，自动运行生成脚本..."
+        if [ -f "$custom_values_dir/generate.sh" ]; then
+            if bash "$custom_values_dir/generate.sh"; then
+                log_success "YAML 文件生成成功"
+            else
+                log_error "YAML 文件生成失败"
+                return 1
+            fi
+        else
+            log_error "生成脚本不存在: $custom_values_dir/generate.sh"
+            return 1
+        fi
     fi
+    return 0
 }
 
 main() {
-    local action="${1:-deploy}"
-    local project_id="${2:-${PROJECT_ID:-$DEFAULT_PROJECT_ID}}"
-    local namespace="${3:-${CONFIGMAP_NAMESPACE:-$DEFAULT_NAMESPACE}}"
-    local environment="${4:-${ENVIRONMENT:-$DEFAULT_ENVIRONMENT}}"
-    
-    log_info "部署 LLMOps Service ConfigMap..."
-    log_info "部署参数："
-    log_info "  - 操作: $action"
-    log_info "  - 项目ID: $project_id"
-    log_info "  - 命名空间: $namespace"
-    log_info "  - 环境: $environment"
-    echo ""
-    
-    # 检查命名空间
-    if ! check_namespace "$namespace"; then
-        exit 1
-    fi
-    
-    # ConfigMap YAML 文件路径
-    local configmap_yaml="$TEMPLATES_DIR/configmap/${CONFIGMAP_NAME}.yaml"
-    
-    if [[ ! -f "$configmap_yaml" ]]; then
-        log_error "ConfigMap YAML 文件不存在: $configmap_yaml"
-        exit 1
-    fi
-    
-    case "$action" in
-        "deploy")
-            log_info "部署 ConfigMap: $CONFIGMAP_NAME 到命名空间: $namespace"
-            
-            # 使用 envsubst 替换环境变量
-            # 注意：需要先处理 ${VAR:-default} 语法，因为 envsubst 不支持默认值
-            TEMP_YAML=$(mktemp)
-            export NAMESPACE="$namespace" ENV="$environment"
-            # 将 ${VAR:-default} 转换为 ${VAR}，然后使用 envsubst 替换
-            sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$configmap_yaml" | envsubst > "$TEMP_YAML"
-            
-            kubectl apply -f "$TEMP_YAML" -n "$namespace"
-            rm -f "$TEMP_YAML"
-            
-            log_success "ConfigMap 部署完成: $CONFIGMAP_NAME"
-            ;;
-        "uninstall")
-            log_info "卸载 ConfigMap: $CONFIGMAP_NAME 从命名空间: $namespace"
-            
-            TEMP_YAML=$(mktemp)
-            export NAMESPACE="$namespace" ENV="$environment"
-            # 将 ${VAR:-default} 转换为 ${VAR}，然后使用 envsubst 替换
-            sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$configmap_yaml" | envsubst > "$TEMP_YAML"
-            
-            kubectl delete -f "$TEMP_YAML" -n "$namespace" --ignore-not-found=true
-            rm -f "$TEMP_YAML"
-            
-            log_success "ConfigMap 卸载完成: $CONFIGMAP_NAME"
-            ;;
-        "status")
-            log_info "检查 ConfigMap 状态: $CONFIGMAP_NAME 在命名空间: $namespace"
-            kubectl get configmap "$CONFIGMAP_NAME" -n "$namespace" 2>/dev/null || log_warn "ConfigMap 不存在"
-            ;;
-        *)
-            log_error "无效的操作: $action"
-            echo "用法: $0 [deploy|uninstall|status] [project_id] [namespace] [environment]"
-            exit 1
-            ;;
-    esac
+  local action="${1:-deploy}"
+  local project_id="${2:-${PROJECT_ID:-$DEFAULT_PROJECT_ID}}"
+  local namespace="${3:-${NAMESPACE:-$DEFAULT_NAMESPACE}}"
+  local environment="${4:-${ENVIRONMENT:-$DEFAULT_ENVIRONMENT}}"
+
+  export PROJECT_ID="$project_id" NAMESPACE="$namespace" ENVIRONMENT="$environment"
+
+  # 1. 自动生成 YAML 文件（如果不存在）
+  if ! auto_generate_yaml "$CONFIGMAP_YAML" "$CUSTOM_VALUES_DIR"; then
+    log_error "无法生成或找到 ConfigMap YAML 文件"
+    exit 1
+  fi
+
+  # 2. 部署或卸载
+  case "$action" in
+    deploy)
+      kubectl apply -f "$CONFIGMAP_YAML" -n "$NAMESPACE"
+      log_success "ConfigMap 部署完成"
+      ;;
+    uninstall)
+      kubectl delete -f "$CONFIGMAP_YAML" -n "$NAMESPACE" --ignore-not-found
+      log_success "ConfigMap 卸载完成"
+      ;;
+    status)
+      log_info "检查 ConfigMap 状态..."
+      local configmap_name="${LLMOPS_SERVICE_CONFIGMAP_NAME:-llmops-service-config}"
+      kubectl get configmap "$configmap_name" -n "$NAMESPACE" 2>/dev/null || log_warn "ConfigMap 不存在: $configmap_name"
+      ;;
+    generate)
+      log_success "仅生成 YAML 文件，未部署"
+      ;;
+    *)
+      log_error "无效操作: $action"
+      echo "用法: $0 <deploy|uninstall|status|generate> [project_id] [namespace] [environment]"
+      exit 1
+      ;;
+  esac
 }
 
 main "$@"

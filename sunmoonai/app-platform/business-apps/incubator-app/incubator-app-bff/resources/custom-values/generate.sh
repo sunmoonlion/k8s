@@ -55,6 +55,15 @@ export SERVICE_PORT="${SERVICE_PORT:-80}"
 export UNIFIED_HOST="${UNIFIED_HOST:-${INCUBATOR_BFF_UNIFIED_HOST}}"
 export NODE_IP="${NODE_IP:-${INCUBATOR_BFF_NODE_IP}}"
 
+# Harbor Docker 认证配置（用于 harbor-registry-secret）
+HARBOR_DOCKER_SERVER="${HARBOR_DOCKER_SERVER:-${INCUBATOR_BFF_IMAGE_REGISTRY:-harbor.sunmoonai.com:30443}}"
+HARBOR_DOCKER_USERNAME="${HARBOR_DOCKER_USERNAME:-admin}"
+HARBOR_DOCKER_PASSWORD="${HARBOR_DOCKER_PASSWORD:-Harbor@12345}"
+# 生成 base64 编码的 Docker config JSON
+HARBOR_AUTH_STRING=$(echo -n "${HARBOR_DOCKER_USERNAME}:${HARBOR_DOCKER_PASSWORD}" | base64 -w 0)
+HARBOR_DOCKER_CONFIG_JSON=$(echo -n "{\"auths\":{\"${HARBOR_DOCKER_SERVER}\":{\"username\":\"${HARBOR_DOCKER_USERNAME}\",\"password\":\"${HARBOR_DOCKER_PASSWORD}\",\"auth\":\"${HARBOR_AUTH_STRING}\"}}}" | base64 -w 0)
+export HARBOR_DOCKER_CONFIG_JSON
+
 # 验证 YAML 文件
 validate_yaml() {
     local yaml_file="$1"
@@ -111,8 +120,8 @@ generate_resource() {
             sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$full_template_path" | envsubst > "$full_output_path"
             ;;
         configmap|secret)
-            # ConfigMap 和 Secret：直接使用 envsubst
-            envsubst < "$full_template_path" > "$full_output_path"
+            # ConfigMap 和 Secret：先处理 ${VAR:-default}，然后使用 envsubst
+            sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$full_template_path" | envsubst > "$full_output_path"
             ;;
         ingress|middleware)
             # Ingress 和 Middleware：处理可能的 {{VAR}} 和 ${VAR} 两种格式

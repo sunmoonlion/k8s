@@ -119,10 +119,10 @@ check_namespace() {
 
 # 部署子级组件（按优先级）
 deploy_sub_components_by_priority() {
-    local project_id="$1"
-    local namespace="$2"
-    local environment="$3"
-    local dry_run="$4"
+    local action="$1"
+    local project_id="$2"
+    local namespace="$3"
+    local environment="$4"
     
     log_info "🔧 开始部署子级组件..."
     
@@ -192,7 +192,7 @@ deploy_sub_components_by_priority() {
             local original_dir="$(pwd)"
             cd "$(dirname "$script_path")"
             
-            if ./"$(basename "$script_path")" "$project_id" "$namespace" "$environment" "$dry_run"; then
+            if ./"$(basename "$script_path")" "$action" "$project_id" "$namespace" "$environment"; then
                 log_success "✅ $description 部署成功"
             else
                 log_error "❌ $description 部署失败"
@@ -211,10 +211,10 @@ deploy_sub_components_by_priority() {
 
 # 部署 Secrets 核心服务
 deploy_secrets_core() {
-    local project_id="$1"
-    local namespace="$2"
-    local environment="$3"
-    local dry_run="$4"
+    local action="$1"
+    local project_id="$2"
+    local namespace="$3"
+    local environment="$4"
     
     log_info "🚀 阶段2：部署 Secrets 核心服务"
     
@@ -239,10 +239,10 @@ deploy_secrets_core() {
 
 # 部署本级专属组件
 deploy_current_level_components() {
-    local project_id="$1"
-    local namespace="$2"
-    local environment="$3"
-    local dry_run="$4"
+    local action="$1"
+    local project_id="$2"
+    local namespace="$3"
+    local environment="$4"
     
     log_info "🚀 阶段3：部署本级专属组件"
     
@@ -295,32 +295,36 @@ deploy_current_level_components() {
 
 # 主部署函数
 deploy_secrets() {
-    local project_id="${1:-$DEFAULT_PROJECT_ID}"
-    local namespace="${2:-$DEFAULT_NAMESPACE}"
-    local environment="${3:-$DEFAULT_ENVIRONMENT}"
-    local dry_run="${4:-false}"
+    local action="$1"
+    local project_id="$2"
+    local namespace="$3"
+    local environment="$4"
     
-    log_info "🚀 开始部署 Celery Worker Secrets 和 ConfigMaps..."
+    log_info "🚀 开始部署 Celery Worker LLMOps Secrets 和 ConfigMaps..."
     log_info "📋 部署参数："
+    log_info "  - 操作: $action"
     log_info "  - 项目ID: $project_id"
     log_info "  - 命名空间: $namespace"
     log_info "  - 环境: $environment"
-    log_info "  - 试运行: $dry_run"
     echo ""
     
-    # 检查命名空间
-    if ! check_namespace "$namespace"; then
-        return 1
+    # 检查命名空间（仅在 deploy 操作时）
+    if [[ "$action" != "status" && "$action" != "generate" ]]; then
+        if ! check_namespace "$namespace"; then
+            return 1
+        fi
     fi
     
     # 阶段1：部署子级组件（按优先级）
-    deploy_sub_components_by_priority "$project_id" "$namespace" "$environment" "$dry_run"
+    deploy_sub_components_by_priority "$action" "$project_id" "$namespace" "$environment"
     
     # 阶段2：部署 Secrets 核心服务
-    deploy_secrets_core "$project_id" "$namespace" "$environment" "$dry_run"
+    deploy_secrets_core "$action" "$project_id" "$namespace" "$environment"
     
-    # 阶段3：部署本级专属组件
-    deploy_current_level_components "$project_id" "$namespace" "$environment" "$dry_run"
+    # 阶段3：部署本级专属组件（仅在 deploy 操作时）
+    if [[ "$action" == "deploy" ]]; then
+        deploy_current_level_components "$action" "$project_id" "$namespace" "$environment"
+    fi
     
     log_success "🎉 Secrets 和 ConfigMaps 递归部署完成！"
     echo ""
@@ -335,23 +339,28 @@ deploy_secrets() {
 
 # 显示帮助信息
 show_help() {
-    echo "Secrets All 递归部署脚本"
+    echo "Celery Worker LLMOps Secrets All 部署脚本"
     echo ""
     echo "用法:"
-    echo "  $0 [项目ID] [命名空间] [环境] [试运行]"
+    echo "  $0 <deploy|uninstall|status|generate> [项目ID] [命名空间] [环境]"
+    echo ""
+    echo "操作:"
+    echo "  deploy     部署所有 Secrets 和 ConfigMaps"
+    echo "  uninstall  卸载所有 Secrets 和 ConfigMaps"
+    echo "  status     查看所有 Secrets 和 ConfigMaps 状态"
+    echo "  generate   仅生成 YAML 文件，不部署"
     echo ""
     echo "参数:"
     echo "  项目ID     项目标识符 (默认: $DEFAULT_PROJECT_ID)"
     echo "  命名空间   Kubernetes 命名空间 (默认: $DEFAULT_NAMESPACE)"
     echo "  环境       部署环境 (默认: $DEFAULT_ENVIRONMENT)"
-    echo "  试运行     是否试运行 (默认: false)"
     echo ""
     echo "示例:"
-    echo "  $0                                    # 使用默认参数"
-    echo "  $0 sunmoonai app-platform-dev dev    # 指定参数"
-    echo "  $0 sunmoonai app-platform-dev dev true # 试运行模式"
+    echo "  $0 deploy                                          # 使用默认参数部署"
+    echo "  $0 deploy sunmoonai app-platform-dev dev          # 指定参数部署"
+    echo "  $0 status app-platform-dev                        # 查看状态"
     echo ""
-    echo "配置文件: $SECRETS_CONFIG_FILE"
+    echo "配置文件: $CONFIG_FILE"
 }
 
 # 主函数
@@ -363,31 +372,33 @@ main() {
         log_info "🎯 当前集群配置: ${CLUSTER}"
     fi
     
-    # 处理参数：如果第一个参数是 action（如 deploy），则跳过
+    # 参数格式：<action> <project_id> <namespace> <environment>
+    # 与 incubator-app-bff 的 deploy-secrets-all.sh 保持一致
     local action="${1:-deploy}"
-    if [[ "$action" == "deploy" || "$action" == "uninstall" || "$action" == "status" ]]; then
-        # 第一个参数是 action，跳过它
-        shift
-    fi
+    local project_id="${2:-${PROJECT_ID:-$DEFAULT_PROJECT_ID}}"
+    local namespace="${3:-${NAMESPACE:-$DEFAULT_NAMESPACE}}"
+    local environment="${4:-${ENVIRONMENT:-$DEFAULT_ENVIRONMENT}}"
     
-    local project_id="${1:-${PROJECT_ID:-$DEFAULT_PROJECT_ID}}"
-    local namespace="${2:-${NAMESPACE:-$DEFAULT_NAMESPACE}}"
-    local environment="${3:-${ENVIRONMENT:-$DEFAULT_ENVIRONMENT}}"
-    local dry_run="${4:-false}"
-    
-    log_info "🚀 开始部署 Celery Worker Secrets 和 ConfigMaps..."
-    log_info "  项目ID: $project_id"
-    log_info "  命名空间: $namespace"
-    log_info "  环境: $environment"
-    log_info "  试运行: $dry_run"
+    log_info "🚀 开始部署 Celery Worker LLMOps Secrets..."
+    log_info "📋 部署参数："
+    log_info "  - 项目ID: $project_id"
+    log_info "  - 命名空间: $namespace"
+    log_info "  - 环境: $environment"
+    log_info "  - 操作: $action"
     echo ""
     
     # 部署 Secrets
-    if deploy_secrets "$project_id" "$namespace" "$environment" "$dry_run"; then
-        log_success "✅ Celery Worker Secrets 和 ConfigMaps 部署完成！"
+    if deploy_secrets "$action" "$project_id" "$namespace" "$environment"; then
+        log_success "✅ Celery Worker LLMOps Secrets 部署完成！"
+        echo ""
+        log_info "📋 部署信息："
+        log_info "  - 项目ID: $project_id"
+        log_info "  - 命名空间: $namespace"
+        log_info "  - 环境: $environment"
+        log_info "  - 部署时间: $(date '+%Y-%m-%d %H:%M:%S')"
         return 0
     else
-        log_error "❌ Celery Worker Secrets 和 ConfigMaps 部署失败"
+        log_error "❌ Celery Worker LLMOps Secrets 部署失败"
         return 1
     fi
 }

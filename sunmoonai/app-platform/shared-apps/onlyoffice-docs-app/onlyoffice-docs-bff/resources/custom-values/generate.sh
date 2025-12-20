@@ -39,6 +39,28 @@ export ENV="${ENV:-dev}"
 export ONLYOFFICE_UNIFIED_HOST="${ONLYOFFICE_UNIFIED_HOST:-www.sunmoonai.com}"
 export ONLYOFFICE_SERVICE_PORT="${ONLYOFFICE_SERVICE_PORT:-8888}"
 
+# Harbor Docker 认证配置（用于 harbor-registry-secret）
+HARBOR_DOCKER_SERVER="${HARBOR_DOCKER_SERVER:-${ONLYOFFICE_IMAGE_REGISTRY:-harbor.sunmoonai.com:30443}}"
+HARBOR_DOCKER_USERNAME="${HARBOR_DOCKER_USERNAME:-admin}"
+HARBOR_DOCKER_PASSWORD="${HARBOR_DOCKER_PASSWORD:-Harbor@12345}"
+# 生成 base64 编码的 Docker config JSON
+HARBOR_AUTH_STRING=$(echo -n "${HARBOR_DOCKER_USERNAME}:${HARBOR_DOCKER_PASSWORD}" | base64 -w 0)
+HARBOR_DOCKER_CONFIG_JSON=$(echo -n "{\"auths\":{\"${HARBOR_DOCKER_SERVER}\":{\"username\":\"${HARBOR_DOCKER_USERNAME}\",\"password\":\"${HARBOR_DOCKER_PASSWORD}\",\"auth\":\"${HARBOR_AUTH_STRING}\"}}}" | base64 -w 0)
+export HARBOR_DOCKER_CONFIG_JSON
+
+# ONLYOFFICE Secrets 环境变量（如果未设置，使用默认值或从配置文件加载）
+# JWT Secret：如果未设置，自动生成一个随机值（32 字节，base64 编码）
+if [[ -z "${JWT_SECRET_VALUE:-}" ]]; then
+    JWT_SECRET_VALUE=$(openssl rand -base64 32 | tr -d '\n' 2>/dev/null || echo "")
+    if [[ -n "$JWT_SECRET_VALUE" ]]; then
+        log_warn "⚠️  JWT_SECRET_VALUE 未设置，已自动生成随机值（请妥善保管）"
+    fi
+fi
+export JWT_SECRET_VALUE="${JWT_SECRET_VALUE:-}"
+export POSTGRESQL_PASSWORD="${POSTGRESQL_PASSWORD:-}"
+export RABBITMQ_PASSWORD="${RABBITMQ_PASSWORD:-}"
+export REDIS_PASSWORD="${REDIS_PASSWORD:-}"
+
 # 验证 YAML 文件
 validate_yaml() {
     local yaml_file="$1"
@@ -97,8 +119,8 @@ generate_resource() {
                 "$full_template_path" > "$full_output_path"
             ;;
         configmap|secret)
-            # ConfigMap 和 Secret：直接使用 envsubst
-            envsubst < "$full_template_path" > "$full_output_path"
+            # ConfigMap 和 Secret：先处理 ${VAR:-default}，然后使用 envsubst
+            sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$full_template_path" | envsubst > "$full_output_path"
             ;;
         ingress|middleware)
             # Ingress 和 Middleware：处理 {{VAR}} 模板语法

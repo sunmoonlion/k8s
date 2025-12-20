@@ -3,19 +3,28 @@
 # =============================================================================
 # Neo4j Incubator DB Secret 部署脚本
 # 文件名: deploy-neo4j-incubator-db-secret.sh
-# 用途: 生成并部署Neo4j图数据库连接信息Secret到Kubernetes集群
+# 用途: 部署 Neo4j 图数据库连接信息 Secret 到 Kubernetes 集群
+# 注意: 使用 resources/custom-values/generate.sh 生成的 YAML 文件
 # =============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SECRET_DIR="$(dirname "$SCRIPT_DIR")"  # neo4j-incubator-db-secret 目录
-# 计算项目根目录（k8s目录）
-# 从 deploy-neo4j-incubator-db-secret/ -> neo4j-incubator-db-secret/ -> secrets/ -> deploy-celeryworker-incubator/ -> celeryworker-incubator/ -> incubator-app/ -> business-apps/ -> app-platform/ -> sunmoonai/ -> k8s/
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../../../.." && pwd)"
+# 计算项目根目录（应用根目录）
+# 从 deploy-neo4j-incubator-db-secret/ 向上 3 级到达应用根目录
+# deploy-neo4j-incubator-db-secret/ -> neo4j-incubator-db-secret/ -> secrets/ -> deploy-celeryworker-incubator/ -> celeryworker-incubator/
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
-# 加载Secret生成核心函数
-source "$PROJECT_ROOT/utils/secret-management/lib/secret-core.sh"
+# 使用生成的 YAML 文件（由 resources/custom-values/generate.sh 生成）
+CUSTOM_VALUES_DIR="$PROJECT_ROOT/resources/custom-values"
+SECRET_YAML="$CUSTOM_VALUES_DIR/neo4j-incubator-db-secret-generated.yaml"
+
+# 日志函数
+log_info() { echo -e "[INFO] $*"; }
+log_success() { echo -e "\033[32m[SUCCESS]\033[0m $*"; }
+log_error() { echo -e "\033[31m[ERROR]\033[0m $*" 1>&2; }
+log_warn() { echo -e "\033[33m[WARN]\033[0m $*"; }
 
 # 解析命令行参数（优先于配置文件加载，确保命令行参数优先级最高）
 declare -a PARSED_ARGS
@@ -84,6 +93,7 @@ DEFAULT_ENVIRONMENT="development"
 CONFIG_FILE="$SCRIPT_DIR/deploy-neo4j-incubator-db-secret.conf"
 if [[ -f "$CONFIG_FILE" ]]; then
     source "$CONFIG_FILE"
+    log_info "已加载配置: $CONFIG_FILE"
     
     # 加载集群配置映射函数（使用 utils 中的通用函数）
     if [[ -f "$PROJECT_ROOT/utils/cluster-config-mapping.sh" ]]; then
@@ -96,6 +106,28 @@ else
     exit 1
 fi
 
+# 自动生成 YAML 文件的辅助函数（与主部署脚本保持一致）
+auto_generate_yaml() {
+    local yaml_file="$1"
+    local custom_values_dir="$2"
+    
+    if [ ! -f "$yaml_file" ]; then
+        log_warn "生成的 YAML 文件不存在: $yaml_file，自动运行生成脚本..."
+        if [ -f "$custom_values_dir/generate.sh" ]; then
+            if bash "$custom_values_dir/generate.sh"; then
+                log_success "YAML 文件生成成功"
+            else
+                log_error "YAML 文件生成失败"
+                return 1
+            fi
+        else
+            log_error "生成脚本不存在: $custom_values_dir/generate.sh"
+            return 1
+        fi
+    fi
+    return 0
+}
+
 main() {
     # 使用解析后的参数（已移除 --cluster 参数）
     set -- "${ORIGINAL_ARGS[@]}"
@@ -104,143 +136,75 @@ main() {
         log_info "🎯 当前集群配置: ${CLUSTER}"
     fi
     
-    # 处理参数：如果第一个参数是 action（如 deploy），则跳过
+    # 参数格式：<action> <project_id> <namespace> <environment>
+    # 与 deploy-secrets-all.sh 和其他 secret 脚本保持一致
     local action="${1:-deploy}"
-    if [[ "$action" == "deploy" || "$action" == "uninstall" || "$action" == "status" ]]; then
-        # 第一个参数是 action，跳过它
-        shift
-    fi
-    
-    local project_id="${1:-${PROJECT_ID:-$DEFAULT_PROJECT_ID}}"
-    local namespace="${2:-${NAMESPACE:-${SECRET_NAMESPACE:-$DEFAULT_NAMESPACE}}}"
-    local environment="${3:-${ENVIRONMENT:-$DEFAULT_ENVIRONMENT}}"
-    local dry_run="${4:-false}"
+    local project_id="${2:-${PROJECT_ID:-$DEFAULT_PROJECT_ID}}"
+    local namespace="${3:-${NAMESPACE:-$DEFAULT_NAMESPACE}}"
+    local environment="${4:-${ENVIRONMENT:-$DEFAULT_ENVIRONMENT}}"
     
     log_info "部署 Neo4j Incubator DB Secret..."
     log_info "部署参数："
+    log_info "  - 操作: $action"
     log_info "  - 项目ID: $project_id"
     log_info "  - 命名空间: $namespace"
     log_info "  - 环境: $environment"
-    log_info "  - 试运行: $dry_run"
     echo ""
     
-    # 1. 准备Opaque Secret数据
-    log_info "准备Opaque Secret数据..."
+    export PROJECT_ID="$project_id" NAMESPACE="$namespace" ENVIRONMENT="$environment"
     
-    # 创建临时数据目录
-    local temp_data_dir=$(mktemp -d)
-    trap "rm -rf $temp_data_dir" EXIT
-    
-    # 从配置中提取数据键（Neo4j 相关字段）
-    if [[ -n "${NEO4J_SERVER:-}" ]]; then
-        echo -n "${NEO4J_SERVER}" > "$temp_data_dir/NEO4J_SERVER"
-        log_info "添加数据键: NEO4J_SERVER"
+    # 1. 自动生成 YAML 文件（如果不存在）
+    if ! auto_generate_yaml "$SECRET_YAML" "$CUSTOM_VALUES_DIR"; then
+        log_error "无法生成或找到 Secret YAML 文件"
+        exit 1
     fi
     
-    if [[ -n "${NEO4J_PORT:-}" ]]; then
-        echo -n "${NEO4J_PORT}" > "$temp_data_dir/NEO4J_PORT"
-        log_info "添加数据键: NEO4J_PORT"
-    fi
-    
-    if [[ -n "${NEO4J_USERNAME:-}" ]]; then
-        echo -n "${NEO4J_USERNAME}" > "$temp_data_dir/NEO4J_USERNAME"
-        log_info "添加数据键: NEO4J_USERNAME"
-    fi
-    
-    if [[ -n "${NEO4J_PASSWORD:-}" ]]; then
-        echo -n "${NEO4J_PASSWORD}" > "$temp_data_dir/NEO4J_PASSWORD"
-        log_info "添加数据键: NEO4J_PASSWORD"
-    fi
-    
-    if [[ -n "${NEO4J_BOLT:-}" ]]; then
-        echo -n "${NEO4J_BOLT}" > "$temp_data_dir/NEO4J_BOLT"
-        log_info "添加数据键: NEO4J_BOLT"
-    fi
-    
-    if [[ -n "${NEO4J_AUTH:-}" ]]; then
-        echo -n "${NEO4J_AUTH}" > "$temp_data_dir/NEO4J_AUTH"
-        log_info "添加数据键: NEO4J_AUTH"
-    fi
-    
-    # 生成 NEO4J_BOLT_URL（完整连接字符串）
-    if [[ -n "${NEO4J_USERNAME:-}" && -n "${NEO4J_PASSWORD:-}" && -n "${NEO4J_SERVER:-}" && -n "${NEO4J_PORT:-}" ]]; then
-        NEO4J_BOLT_URL="bolt://${NEO4J_USERNAME}:${NEO4J_PASSWORD}@${NEO4J_SERVER}:${NEO4J_PORT}"
-        echo -n "$NEO4J_BOLT_URL" > "$temp_data_dir/NEO4J_BOLT_URL"
-        log_info "添加数据键: NEO4J_BOLT_URL"
-    fi
-    
-    # 添加 Neo4j 其他配置字段
-    if [[ -n "${NEO4J_FORCE_TIMEZONE:-}" ]]; then
-        echo -n "${NEO4J_FORCE_TIMEZONE}" > "$temp_data_dir/NEO4J_FORCE_TIMEZONE"
-        log_info "添加数据键: NEO4J_FORCE_TIMEZONE"
-    fi
-    
-    if [[ -n "${NEO4J_AUTO_INSTALL_LABELS:-}" ]]; then
-        echo -n "${NEO4J_AUTO_INSTALL_LABELS}" > "$temp_data_dir/NEO4J_AUTO_INSTALL_LABELS"
-        log_info "添加数据键: NEO4J_AUTO_INSTALL_LABELS"
-    fi
-    
-    if [[ -n "${NEO4J_MAX_CONNECTION_POOL_SIZE:-}" ]]; then
-        echo -n "${NEO4J_MAX_CONNECTION_POOL_SIZE}" > "$temp_data_dir/NEO4J_MAX_CONNECTION_POOL_SIZE"
-        log_info "添加数据键: NEO4J_MAX_CONNECTION_POOL_SIZE"
-    fi
-    
-    # 2. 生成Opaque Secret YAML
-    local secret_yaml="$SECRET_DIR/neo4j-incubator-db-secret.yaml"
-    
-    log_info "生成Opaque Secret YAML..."
-    generate_opaque_secret_yaml \
-        --name "$SECRET_NAME" \
-        --namespace "$namespace" \
-        --data-dir "$temp_data_dir" \
-        --output "$secret_yaml"
-    
-    log_success "Opaque Secret YAML生成完成: $secret_yaml"
-    
-    # 3. 部署Secret到Kubernetes
-    if [[ "$dry_run" != "true" ]]; then
-        log_info "部署Secret到Kubernetes集群..."
-        
-        # 检查命名空间是否存在
-        if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
-            log_error "命名空间不存在: $namespace"
-            log_error "请先创建命名空间: kubectl create namespace $namespace"
+    # 2. 根据操作类型执行相应动作
+    case "$action" in
+        deploy)
+            # 检查命名空间是否存在
+            if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
+                log_error "命名空间不存在: $namespace"
+                log_error "请先创建命名空间: kubectl create namespace $namespace"
+                exit 1
+            fi
+            
+            log_info "部署 Secret 到 Kubernetes 集群..."
+            if kubectl apply -f "$SECRET_YAML" -n "$namespace"; then
+                log_success "Secret 已部署: ${SECRET_NAME:-neo4j-incubator-db-secret} (命名空间: $namespace)"
+            else
+                log_error "Secret 部署失败"
+                exit 1
+            fi
+            ;;
+        uninstall)
+            log_info "卸载 Secret..."
+            kubectl delete -f "$SECRET_YAML" -n "$namespace" --ignore-not-found
+            log_success "Secret 卸载完成"
+            ;;
+        status)
+            log_info "检查 Secret 状态..."
+            local secret_name="${SECRET_NAME:-neo4j-incubator-db-secret}"
+            kubectl get secret "$secret_name" -n "$namespace" 2>/dev/null || log_warn "Secret 不存在: $secret_name"
+            ;;
+        generate)
+            log_success "YAML 文件已生成: $SECRET_YAML"
+            ;;
+        *)
+            log_error "无效操作: $action"
+            echo "用法: $0 <deploy|uninstall|status|generate> [project_id] [namespace] [environment]"
             exit 1
-        fi
-        
-        # 部署Secret
-        if kubectl apply -f "$secret_yaml"; then
-            log_success "Secret已部署: $SECRET_NAME (命名空间: $namespace)"
-        else
-            log_error "Secret部署失败"
-            exit 1
-        fi
-        
-        # 4. 可选：重启相关组件（如果配置了）
-        if [[ "${RESTART_COMPONENTS:-false}" == "true" && -n "${RESTART_COMPONENTS_LIST:-}" ]]; then
-            log_info "重启使用该Secret的组件..."
-            IFS=',' read -ra COMPONENTS <<< "${RESTART_COMPONENTS_LIST}"
-            for component in "${COMPONENTS[@]}"; do
-                component=$(echo "$component" | xargs)
-                if [[ -n "$component" ]]; then
-                    log_info "重启组件: $component"
-                    kubectl rollout restart deployment/"$component" -n "$namespace" 2>/dev/null || \
-                    kubectl rollout restart statefulset/"$component" -n "$namespace" 2>/dev/null || \
-                    log_warn "组件 $component 不存在或重启失败"
-                fi
-            done
-        fi
-    else
-        log_info "[试运行] 将部署Secret: $SECRET_NAME"
-        log_info "[试运行] YAML文件: $secret_yaml"
-    fi
+            ;;
+    esac
     
     echo ""
-    log_success "Neo4j Incubator DB Secret 部署完成！"
-    log_info "部署信息："
-    log_info "  - Secret名称: $SECRET_NAME"
+    log_success "Neo4j Incubator DB Secret 操作完成！"
+    log_info "操作信息："
+    log_info "  - 操作: $action"
+    log_info "  - Secret 名称: ${SECRET_NAME:-neo4j-incubator-db-secret}"
     log_info "  - 命名空间: $namespace"
-    log_info "  - 部署时间: $(date '+%Y-%m-%d %H:%M:%S')"
+    log_info "  - YAML 文件: $SECRET_YAML"
+    log_info "  - 完成时间: $(date '+%Y-%m-%d %H:%M:%S')"
 }
 
 # 显示帮助信息
@@ -248,25 +212,30 @@ show_help() {
     echo "Neo4j Incubator DB Secret 部署脚本"
     echo ""
     echo "用法:"
-    echo "  $0 [项目ID] [命名空间] [环境] [试运行]"
+    echo "  $0 <deploy|uninstall|status|generate> [项目ID] [命名空间] [环境]"
+    echo ""
+    echo "操作:"
+    echo "  deploy     部署 Secret 到 Kubernetes"
+    echo "  uninstall  卸载 Secret"
+    echo "  status     查看 Secret 状态"
+    echo "  generate   仅生成 YAML 文件，不部署"
     echo ""
     echo "参数:"
     echo "  项目ID     项目标识符 (默认: $DEFAULT_PROJECT_ID)"
     echo "  命名空间   Kubernetes 命名空间 (默认: $DEFAULT_NAMESPACE)"
     echo "  环境       部署环境 (默认: $DEFAULT_ENVIRONMENT)"
-    echo "  试运行     是否试运行 (默认: false)"
     echo ""
     echo "示例:"
-    echo "  $0                                    # 使用默认参数"
-    echo "  $0 sunmoonai app-platform-dev dev     # 指定参数"
-    echo "  $0 sunmoonai app-platform-dev dev true # 试运行模式"
+    echo "  $0 deploy                                          # 使用默认参数部署"
+    echo "  $0 deploy sunmoonai app-platform-dev dev          # 指定参数部署"
+    echo "  $0 status app-platform-dev                        # 查看状态"
     echo ""
     echo "配置文件: $SCRIPT_DIR/deploy-neo4j-incubator-db-secret.conf"
 }
 
 # 主程序入口
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
         show_help
         exit 0
     fi

@@ -3,20 +3,33 @@
 # =============================================================================
 # Harbor Registry Secret 部署脚本（Incubator BFF）
 # 文件名: deploy-harbor-registry-secret.sh
-# 用途: 生成并部署 Harbor 镜像拉取 Secret 到 Kubernetes 集群
+# 用途: 部署 Harbor 镜像拉取 Secret 到 Kubernetes 集群
+# 注意: 使用 resources/custom-values/generate.sh 生成的 YAML 文件
 # =============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SECRET_DIR="$(dirname "$SCRIPT_DIR")"  # harbor-registry-secret 目录
-# 计算项目根目录（k8s 目录）
-# 从 deploy-harbor-registry-secret/ 向上 9 级到达 k8s/
-# deploy-harbor-registry-secret/ -> harbor-registry-secret/ -> secrets/ -> deploy-incubator-bff/ -> incubator-app-bff/ -> incubator-app/ -> business-apps/ -> app-platform/ -> sunmoonai/ -> k8s/
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../../../.." && pwd)"
+# 计算项目根目录（应用根目录）
+# 从 deploy-harbor-registry-secret/ 向上 3 级到达应用根目录
+# deploy-harbor-registry-secret/ -> harbor-registry-secret/ -> secrets/ -> deploy-incubator-bff/ -> incubator-app-bff/
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
-# 加载 Secret 生成核心函数
-source "$PROJECT_ROOT/utils/secret-management/lib/secret-core.sh"
+# 使用生成的 YAML 文件（由 resources/custom-values/generate.sh 生成）
+CUSTOM_VALUES_DIR="$PROJECT_ROOT/resources/custom-values"
+HARBOR_SECRET_YAML="$CUSTOM_VALUES_DIR/harbor-registry-secret-generated.yaml"
+
+# 调试：输出路径信息（如果需要）
+# log_info "PROJECT_ROOT: $PROJECT_ROOT"
+# log_info "CUSTOM_VALUES_DIR: $CUSTOM_VALUES_DIR"
+# log_info "HARBOR_SECRET_YAML: $HARBOR_SECRET_YAML"
+
+# 日志函数（如果未定义）
+log_info() { echo -e "[INFO] $*"; }
+log_success() { echo -e "\033[32m[SUCCESS]\033[0m $*"; }
+log_error() { echo -e "\033[31m[ERROR]\033[0m $*" >&2; }
+log_warn() { echo -e "\033[33m[WARN]\033[0m $*"; }
 
 # 解析命令行参数（优先于配置文件加载，确保命令行参数优先级最高）
 declare -a PARSED_ARGS
@@ -87,6 +100,11 @@ if [[ -f "$MAIN_CONFIG_FILE" ]]; then
     log_info "已加载主配置文件: $MAIN_CONFIG_FILE"
 fi
 
+# 设置默认值（在加载配置文件之前，避免未定义变量错误）
+DEFAULT_PROJECT_ID="${DEFAULT_PROJECT_ID:-sunmoonai}"
+DEFAULT_NAMESPACE="${DEFAULT_NAMESPACE:-app-platform-dev}"
+DEFAULT_ENVIRONMENT="${DEFAULT_ENVIRONMENT:-development}"
+
 # 加载配置文件（现在可以使用已设置的 CLUSTER 值和主配置文件中的环境变量）
 CONFIG_FILE="$SCRIPT_DIR/deploy-harbor-registry-secret.conf"
 if [[ -f "$CONFIG_FILE" ]]; then
@@ -103,6 +121,33 @@ else
     exit 1
 fi
 
+# 确保默认值已设置（配置文件可能覆盖，但如果没有则使用默认值）
+DEFAULT_PROJECT_ID="${DEFAULT_PROJECT_ID:-sunmoonai}"
+DEFAULT_NAMESPACE="${DEFAULT_NAMESPACE:-app-platform-dev}"
+DEFAULT_ENVIRONMENT="${DEFAULT_ENVIRONMENT:-development}"
+
+# 自动生成 YAML 文件的辅助函数（与主部署脚本保持一致）
+auto_generate_yaml() {
+    local yaml_file="$1"
+    local custom_values_dir="$2"
+    
+    if [ ! -f "$yaml_file" ]; then
+        log_warn "生成的 YAML 文件不存在: $yaml_file，自动运行生成脚本..."
+        if [ -f "$custom_values_dir/generate.sh" ]; then
+            if bash "$custom_values_dir/generate.sh"; then
+                log_success "YAML 文件生成成功"
+            else
+                log_error "YAML 文件生成失败"
+                return 1
+            fi
+        else
+            log_error "生成脚本不存在: $custom_values_dir/generate.sh"
+            return 1
+        fi
+    fi
+    return 0
+}
+
 main() {
     # 使用解析后的参数（已移除 --cluster 参数）
     set -- "${ORIGINAL_ARGS[@]}"
@@ -112,75 +157,75 @@ main() {
         log_info "🎯 当前集群配置: ${CLUSTER}"
     fi
     
-    local project_id="${1:-$DEFAULT_PROJECT_ID}"
-    local namespace="${2:-$DEFAULT_NAMESPACE}"
-    local environment="${3:-$DEFAULT_ENVIRONMENT}"
-    local dry_run="${4:-false}"
+    # 参数格式：<action> <project_id> <namespace> <environment>
+    # 与 deploy-secrets-all.sh 和其他 secret 脚本保持一致
+    local action="${1:-deploy}"
+    local project_id="${2:-$DEFAULT_PROJECT_ID}"
+    local namespace="${3:-$DEFAULT_NAMESPACE}"
+    local environment="${4:-$DEFAULT_ENVIRONMENT}"
+    local dry_run="false"
+    
+    # 对于非 deploy 操作，设置为试运行模式
+    if [[ "$action" != "deploy" ]]; then
+        dry_run="true"
+    fi
     
     log_info "部署 Harbor Registry Secret (Incubator BFF)..."
     log_info "部署参数："
+    log_info "  - 操作: $action"
     log_info "  - 项目ID: $project_id"
     log_info "  - 命名空间: $namespace"
     log_info "  - 环境: $environment"
-    log_info "  - 试运行: $dry_run"
     echo ""
     
-    # 1. 准备 Docker 认证 Secret 数据
-    log_info "准备 Docker 认证 Secret 数据..."
-    
-    local prepare_args=(
-        --server "${DOCKER_SERVER:-harbor.sunmoonai.com:30443}"
-        --username "$DOCKER_USERNAME"
-        --password "$DOCKER_PASSWORD"
-    )
-    
-    if [[ -n "${DOCKER_EMAIL:-}" ]]; then
-        prepare_args+=(--email "$DOCKER_EMAIL")
-    fi
-    
-    local temp_data_dir
-    temp_data_dir=$(prepare_docker_auth_secret_data "${prepare_args[@]}")
-    if [[ $? -ne 0 ]] || [[ -z "$temp_data_dir" ]]; then
-        log_error "Docker 认证 Secret 数据准备失败"
+    # 1. 自动生成 YAML 文件（如果不存在）
+    if ! auto_generate_yaml "$HARBOR_SECRET_YAML" "$CUSTOM_VALUES_DIR"; then
+        log_error "无法生成或找到 Harbor Registry Secret YAML 文件"
         exit 1
     fi
     
-    trap "rm -rf $temp_data_dir" EXIT
-    
-    # 2. 生成 Docker Secret YAML
-    local secret_yaml="$SECRET_DIR/harbor-registry-secret.yaml"
-    
-    log_info "生成 Docker Secret YAML..."
-    
-    # 从准备好的数据目录读取 .dockerconfigjson
-    generate_docker_secret_yaml \
-        --name "$SECRET_NAME" \
-        --namespace "$namespace" \
-        --docker-config "$temp_data_dir/.dockerconfigjson" \
-        --output "$secret_yaml"
-    
-    log_success "Docker Secret YAML 生成完成: $secret_yaml"
-    
-    # 2. 部署 Secret 到 Kubernetes
-    if [[ "$dry_run" != "true" ]]; then
-        log_info "部署 Secret 到 Kubernetes 集群..."
-        
-        # 检查命名空间是否存在
-        if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
-            log_error "命名空间不存在: $namespace"
-            log_error "请先创建命名空间: kubectl create namespace $namespace"
+    # 2. 根据操作类型执行相应动作
+    case "$action" in
+        deploy)
+            # 部署 Secret 到 Kubernetes
+            log_info "部署 Secret 到 Kubernetes 集群..."
+            
+            # 检查命名空间是否存在
+            if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
+                log_error "命名空间不存在: $namespace"
+                log_error "请先创建命名空间: kubectl create namespace $namespace"
+                exit 1
+            fi
+            
+            # 部署 Secret（使用生成的 YAML 文件）
+            if kubectl apply -f "$HARBOR_SECRET_YAML" -n "$namespace"; then
+                log_success "Secret 已部署: $SECRET_NAME (命名空间: $namespace)"
+            else
+                log_error "Secret 部署失败"
+                exit 1
+            fi
+            ;;
+        uninstall)
+            log_info "卸载 Secret..."
+            kubectl delete -f "$HARBOR_SECRET_YAML" -n "$namespace" --ignore-not-found
+            log_success "Secret 卸载完成"
+            ;;
+        status)
+            log_info "检查 Secret 状态..."
+            kubectl get secret "$SECRET_NAME" -n "$namespace" 2>/dev/null || log_warn "Secret 不存在: $SECRET_NAME"
+            ;;
+        generate)
+            log_success "YAML 文件已生成: $HARBOR_SECRET_YAML"
+            ;;
+        *)
+            log_error "无效操作: $action"
+            echo "用法: $0 <deploy|uninstall|status|generate> [project_id] [namespace] [environment]"
             exit 1
-        fi
-        
-        # 部署 Secret
-        if kubectl apply -f "$secret_yaml"; then
-            log_success "Secret 已部署: $SECRET_NAME (命名空间: $namespace)"
-        else
-            log_error "Secret 部署失败"
-            exit 1
-        fi
-        
-        # 3. 可选：重启相关组件（如果配置了）
+            ;;
+    esac
+    
+    # 3. 可选：重启相关组件（仅在 deploy 操作时）
+    if [[ "$action" == "deploy" ]]; then
         if [[ "${RESTART_COMPONENTS:-false}" == "true" && -n "${RESTART_COMPONENTS_LIST:-}" ]]; then
             log_info "重启使用该 Secret 的组件..."
             IFS=',' read -ra COMPONENTS <<< "${RESTART_COMPONENTS_LIST}"
@@ -194,17 +239,16 @@ main() {
                 fi
             done
         fi
-    else
-        log_info "[试运行] 将部署 Secret: $SECRET_NAME"
-        log_info "[试运行] YAML 文件: $secret_yaml"
     fi
     
     echo ""
-    log_success "Harbor Registry Secret (Incubator BFF) 部署完成！"
-    log_info "部署信息："
+    log_success "Harbor Registry Secret (Incubator BFF) 操作完成！"
+    log_info "操作信息："
+    log_info "  - 操作: $action"
     log_info "  - Secret 名称: $SECRET_NAME"
     log_info "  - 命名空间: $namespace"
-    log_info "  - 部署时间: $(date '+%Y-%m-%d %H:%M:%S')"
+    log_info "  - YAML 文件: $HARBOR_SECRET_YAML"
+    log_info "  - 完成时间: $(date '+%Y-%m-%d %H:%M:%S')"
 }
 
 # 显示帮助信息
@@ -212,18 +256,23 @@ show_help() {
     echo "Harbor Registry Secret 部署脚本 (Incubator BFF)"
     echo ""
     echo "用法:"
-    echo "  $0 [项目ID] [命名空间] [环境] [试运行]"
+    echo "  $0 <deploy|uninstall|status|generate> [项目ID] [命名空间] [环境]"
+    echo ""
+    echo "操作:"
+    echo "  deploy     部署 Secret 到 Kubernetes"
+    echo "  uninstall  卸载 Secret"
+    echo "  status     查看 Secret 状态"
+    echo "  generate   仅生成 YAML 文件，不部署"
     echo ""
     echo "参数:"
     echo "  项目ID     项目标识符 (默认: $DEFAULT_PROJECT_ID)"
     echo "  命名空间   Kubernetes 命名空间 (默认: $DEFAULT_NAMESPACE)"
     echo "  环境       部署环境 (默认: $DEFAULT_ENVIRONMENT)"
-    echo "  试运行     是否试运行 (默认: false)"
     echo ""
     echo "示例:"
-    echo "  $0                                          # 使用默认参数"
-    echo "  $0 sunmoonai app-platform-dev dev          # 指定参数"
-    echo "  $0 sunmoonai app-platform-dev dev true     # 试运行模式"
+    echo "  $0 deploy                                          # 使用默认参数部署"
+    echo "  $0 deploy sunmoonai app-platform-dev dev          # 指定参数部署"
+    echo "  $0 status app-platform-dev                        # 查看状态"
     echo ""
     echo "配置文件: $SCRIPT_DIR/deploy-harbor-registry-secret.conf"
 }

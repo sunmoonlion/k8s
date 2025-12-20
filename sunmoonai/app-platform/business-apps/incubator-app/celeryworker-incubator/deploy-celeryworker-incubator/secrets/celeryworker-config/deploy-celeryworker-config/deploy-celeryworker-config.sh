@@ -9,9 +9,15 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_DIR="$(dirname "$SCRIPT_DIR")"  # celeryworker-config 目录
-# 计算项目根目录（k8s目录）
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
+CONFIG_FILE="$SCRIPT_DIR/deploy-celeryworker-config.conf"
+# 计算项目根目录（应用根目录）
+# 从 deploy-celeryworker-config/ 向上 3 级到达应用根目录
+# deploy-celeryworker-config/ -> celeryworker-config/ -> secrets/ -> deploy-celeryworker-incubator/ -> celeryworker-incubator/
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+
+# 使用生成的 YAML 文件（由 resources/custom-values/generate.sh 生成）
+CUSTOM_VALUES_DIR="$PROJECT_ROOT/resources/custom-values"
+CONFIGMAP_YAML="$CUSTOM_VALUES_DIR/celeryworker-config-generated.yaml"
 
 # 日志函数
 log_info() { echo -e "[INFO] $*"; }
@@ -83,9 +89,9 @@ DEFAULT_NAMESPACE="app-platform-dev"
 DEFAULT_ENVIRONMENT="development"
 
 # 加载配置文件（现在可以使用已设置的 CLUSTER 值）
-CONFIG_FILE="$SCRIPT_DIR/deploy-celeryworker-config.conf"
 if [[ -f "$CONFIG_FILE" ]]; then
     source "$CONFIG_FILE"
+    log_info "已加载配置: $CONFIG_FILE"
     
     # 加载集群配置映射函数（使用 utils 中的通用函数）
     if [[ -f "$PROJECT_ROOT/utils/cluster-config-mapping.sh" ]]; then
@@ -97,6 +103,28 @@ else
     log_warn "配置文件不存在: $CONFIG_FILE，使用默认配置"
 fi
 
+# 自动生成 YAML 文件的辅助函数（与主部署脚本保持一致）
+auto_generate_yaml() {
+    local yaml_file="$1"
+    local custom_values_dir="$2"
+    
+    if [ ! -f "$yaml_file" ]; then
+        log_warn "生成的 YAML 文件不存在: $yaml_file，自动运行生成脚本..."
+        if [ -f "$custom_values_dir/generate.sh" ]; then
+            if bash "$custom_values_dir/generate.sh"; then
+                log_success "YAML 文件生成成功"
+            else
+                log_error "YAML 文件生成失败"
+                return 1
+            fi
+        else
+            log_error "生成脚本不存在: $custom_values_dir/generate.sh"
+            return 1
+        fi
+    fi
+    return 0
+}
+
 main() {
     # 使用解析后的参数（已移除 --cluster 参数）
     set -- "${ORIGINAL_ARGS[@]}"
@@ -105,76 +133,67 @@ main() {
         log_info "🎯 当前集群配置: ${CLUSTER}"
     fi
     
-    # 处理参数：如果第一个参数是 action（如 deploy），则跳过
+    # 参数格式：<action> <project_id> <namespace> <environment>
+    # 与 deploy-secrets-all.sh 和其他 secret 脚本保持一致
     local action="${1:-deploy}"
-    if [[ "$action" == "deploy" || "$action" == "uninstall" || "$action" == "status" ]]; then
-        # 第一个参数是 action，跳过它
-        shift
-    fi
-    
-    local project_id="${1:-${PROJECT_ID:-$DEFAULT_PROJECT_ID}}"
-    local namespace="${2:-${NAMESPACE:-${CONFIGMAP_NAMESPACE:-$DEFAULT_NAMESPACE}}}"
-    local environment="${3:-${ENVIRONMENT:-$DEFAULT_ENVIRONMENT}}"
-    local dry_run="${4:-false}"
+    local project_id="${2:-${PROJECT_ID:-$DEFAULT_PROJECT_ID}}"
+    local namespace="${3:-${NAMESPACE:-$DEFAULT_NAMESPACE}}"
+    local environment="${4:-${ENVIRONMENT:-$DEFAULT_ENVIRONMENT}}"
     
     log_info "部署 Celery Worker ConfigMap..."
     log_info "部署参数："
+    log_info "  - 操作: $action"
     log_info "  - 项目ID: $project_id"
     log_info "  - 命名空间: $namespace"
     log_info "  - 环境: $environment"
-    log_info "  - 试运行: $dry_run"
     echo ""
     
-    # 检查命名空间是否存在
-    if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
-        log_error "命名空间不存在: $namespace"
-        log_error "请先创建命名空间: kubectl create namespace $namespace"
+    export PROJECT_ID="$project_id" NAMESPACE="$namespace" ENVIRONMENT="$environment"
+    
+    # 1. 自动生成 YAML 文件（如果不存在）
+    if ! auto_generate_yaml "$CONFIGMAP_YAML" "$CUSTOM_VALUES_DIR"; then
+        log_error "无法生成或找到 ConfigMap YAML 文件"
         exit 1
     fi
     
-    # ConfigMap YAML 文件路径
-    local configmap_yaml="$CONFIG_DIR/celeryworker-config.yaml"
-    
-    if [[ ! -f "$configmap_yaml" ]]; then
-        log_error "ConfigMap YAML 文件不存在: $configmap_yaml"
-        exit 1
-    fi
-    
-    # 导出环境变量供 envsubst 使用
-    export NAMESPACE="$namespace"
-    export CELERY_BROKER_URL="${CELERY_BROKER_URL:-amqp://admin:admin123@rabbitmq-sunmoonai.messaging-platform-dev:5672//}"
-    export CELERY_RESULT_BACKEND="${CELERY_RESULT_BACKEND:-redis://redis-service.data-platform:6379/10}"
-    export CELERY_QUEUE="${CELERY_QUEUE:-incubator-queue}"
-    export CELERY_CONCURRENCY="${CELERY_CONCURRENCY:-2}"
-    export REDIS_URL="${REDIS_URL:-redis://redis-service.data-platform:6379}"
-    
-    # 创建临时文件并替换环境变量
-    local temp_yaml=$(mktemp)
-    trap "rm -f $temp_yaml" EXIT
-    
-    log_info "生成 ConfigMap YAML（替换环境变量）..."
-    # 将 ${VAR:-default} 转换为 ${VAR}，然后使用 envsubst 替换
-    # 因为 envsubst 不支持默认值语法
-    sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$configmap_yaml" | envsubst > "$temp_yaml"
-    
-    if [[ "$dry_run" == "true" ]]; then
-        log_info "试运行模式，生成的 ConfigMap YAML:"
-        echo ""
-        cat "$temp_yaml"
-        echo ""
-        log_success "ConfigMap YAML 生成完成（试运行模式）"
-    else
-        log_info "部署 ConfigMap 到 Kubernetes 集群..."
-        
-        if kubectl apply -f "$temp_yaml"; then
-            log_success "ConfigMap 已部署: $CONFIGMAP_NAME (命名空间: $namespace)"
-        else
-            log_error "ConfigMap 部署失败"
+    # 2. 部署或卸载
+    case "$action" in
+        deploy)
+            # 检查命名空间是否存在
+            if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
+                log_error "命名空间不存在: $namespace"
+                log_error "请先创建命名空间: kubectl create namespace $namespace"
+                exit 1
+            fi
+            
+            log_info "部署 ConfigMap 到 Kubernetes 集群..."
+            if kubectl apply -f "$CONFIGMAP_YAML" -n "$namespace"; then
+                log_success "ConfigMap 已部署: ${CONFIGMAP_NAME:-celeryworker-config} (命名空间: $namespace)"
+            else
+                log_error "ConfigMap 部署失败"
+                exit 1
+            fi
+            ;;
+        uninstall)
+            log_info "卸载 ConfigMap..."
+            kubectl delete -f "$CONFIGMAP_YAML" -n "$namespace" --ignore-not-found
+            log_success "ConfigMap 卸载完成"
+            ;;
+        status)
+            log_info "检查 ConfigMap 状态..."
+            local configmap_name="${CONFIGMAP_NAME:-celeryworker-config}"
+            kubectl get configmap "$configmap_name" -n "$namespace" 2>/dev/null || log_warn "ConfigMap 不存在: $configmap_name"
+            ;;
+        generate)
+            log_success "YAML 文件已生成: $CONFIGMAP_YAML"
+            ;;
+        *)
+            log_error "无效操作: $action"
+            echo "用法: $0 <deploy|uninstall|status|generate> [project_id] [namespace] [environment]"
             exit 1
-        fi
-    fi
+            ;;
+    esac
 }
 
 # 执行主函数
 main "$@"
-

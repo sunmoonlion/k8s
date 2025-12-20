@@ -95,10 +95,10 @@ DEFAULT_ENVIRONMENT="development"
 
 # 部署子级组件（按优先级）
 deploy_sub_components_by_priority() {
-    local project_id="$1"
-    local namespace="$2"
-    local environment="$3"
-    local dry_run="$4"
+    local action="$1"
+    local project_id="$2"
+    local namespace="$3"
+    local environment="$4"
     
     log_info "🔧 开始部署子级组件..."
     
@@ -169,7 +169,7 @@ deploy_sub_components_by_priority() {
             local original_dir="$(pwd)"
             cd "$(dirname "$script_path")"
             
-            if ./"$(basename "$script_path")" "$project_id" "$namespace" "$environment" "$dry_run"; then
+            if ./"$(basename "$script_path")" "$action" "$project_id" "$namespace" "$environment"; then
                 log_success "✅ $description 部署成功"
             else
                 log_error "❌ $description 部署失败"
@@ -191,29 +191,42 @@ main() {
     set -- "${ORIGINAL_ARGS[@]}"
     set -- "${PARSED_ARGS[@]}"
     
-    local project_id="${1:-$DEFAULT_PROJECT_ID}"
-    local namespace="${2:-$DEFAULT_NAMESPACE}"
-    local environment="${3:-$DEFAULT_ENVIRONMENT}"
-    local dry_run="${4:-false}"
+    # 参数格式：<action> <project_id> <namespace> <environment>
+    # 与其他组件的 deploy-secrets-all.sh 保持一致
+    local action="${1:-deploy}"
+    local project_id="${2:-$DEFAULT_PROJECT_ID}"
+    local namespace="${3:-$DEFAULT_NAMESPACE}"
+    local environment="${4:-$DEFAULT_ENVIRONMENT}"
     
-    log_info "🚀 部署 ONLYOFFICE Docs Secrets..."
-    log_info "项目: $project_id"
-    log_info "命名空间: $namespace"
-    log_info "环境: $environment"
+    log_info "🚀 开始部署 ONLYOFFICE Docs Secrets..."
+    log_info "📋 部署参数："
+    log_info "  - 项目ID: $project_id"
+    log_info "  - 命名空间: $namespace"
+    log_info "  - 环境: $environment"
+    log_info "  - 操作: $action"
+    echo ""
     
-    # 确保命名空间存在
-    if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
-        log_error "❌ 命名空间不存在: $namespace"
-        exit 1
+    # 确保命名空间存在（仅在 deploy 操作时）
+    if [[ "$action" != "status" && "$action" != "generate" ]]; then
+        if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
+            log_error "❌ 命名空间不存在: $namespace"
+            exit 1
+        fi
     fi
     
     # 阶段1：部署子级组件（Harbor Registry Secret 等）
-    if ! deploy_sub_components_by_priority "$project_id" "$namespace" "$environment" "$dry_run"; then
+    if ! deploy_sub_components_by_priority "$action" "$project_id" "$namespace" "$environment"; then
         log_error "❌ 子级组件部署失败"
         exit 1
     fi
     
-    log_success "✅ ONLYOFFICE Docs Secrets 部署完成"
+    echo ""
+    log_success "🎉 ONLYOFFICE Docs Secrets 部署完成！"
+    log_info "📋 部署信息："
+    log_info "  - 项目ID: $project_id"
+    log_info "  - 命名空间: $namespace"
+    log_info "  - 环境: $environment"
+    log_info "  - 部署时间: $(date '+%Y-%m-%d %H:%M:%S')"
 }
 
 main "$@"

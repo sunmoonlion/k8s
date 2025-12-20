@@ -47,6 +47,8 @@ APP 平台（`app-platform`）是 SunMoonAI 平台中的应用服务层，负责
 5. **部署** (`deploy-*/`)
    - 使用部署脚本应用生成的 YAML 文件
    - 部署脚本会自动检查并生成 YAML（如果缺失）
+   - **重要**：所有组件（包括 Secrets、ConfigMaps、Ingress 等）都统一使用 `resources/custom-values/` 下的生成 YAML
+   - 部署脚本不再直接生成 YAML，而是调用统一的 `generate.sh` 机制
 
 **目录结构示例**：
 ```
@@ -268,10 +270,19 @@ ENV APP_MODULE=app.main:app \
    ```bash
    deploy_web_api()
    - 检查命名空间
-   - 部署 Secrets 和 ConfigMaps（使用生成的 YAML）
-   - 部署 Deployment 和 Service（使用 Harbor 镜像，使用生成的 YAML）
-   - 部署 Ingress（如果启用，使用生成的 YAML）
+   - 部署 Secrets 和 ConfigMaps（使用 resources/custom-values/*-generated.yaml）
+   - 部署 Deployment 和 Service（使用 Harbor 镜像，使用 resources/custom-values/*-generated.yaml）
+   - 部署 Ingress（如果启用，使用 resources/custom-values/*-generated.yaml）
    ```
+   
+   **重要**：所有组件都使用 `resources/custom-values/` 下的生成 YAML：
+   - 主应用：`incubator-app-bff-generated.yaml`
+   - ConfigMap：`incubator-app-bff-config-generated.yaml`
+   - Secret：`incubator-app-bff-secret-generated.yaml`
+   - Harbor Secret：`harbor-registry-secret-generated.yaml`
+   - Ingress：`incubator-app-bff-ingress-generated.yaml`
+   
+   部署脚本不再直接生成 YAML，而是统一调用 `generate.sh` 机制。
 
 **镜像构建**：
 - 在源代码项目中执行（如 `sunmoonai-llmops-service/build/`）
@@ -443,12 +454,17 @@ spec:
 - 支持环境变量替换和占位符处理
 - 自动验证生成的 YAML 文件
 - 部署脚本可以自动生成 YAML（如果缺失）
+- **统一架构**：所有组件（主应用、Secrets、ConfigMaps、Ingress 等）都使用同一套生成机制
 
 **实现**：
 - 所有模板文件统一在 `resources/custom-values/templates/` 目录下
 - 使用 `generate.sh` 和 `generate.conf` 生成 YAML 文件
 - 生成的 YAML 文件存放在 `resources/custom-values/` 目录
 - 部署脚本自动检查并生成 YAML（如果缺失）
+- **重要**：部署脚本（如 `deploy-secrets-all.sh`、`deploy-incubator-app-bff-config.sh` 等）不再直接生成 YAML，而是：
+  1. 检查 `resources/custom-values/*-generated.yaml` 是否存在
+  2. 如果不存在，自动调用 `generate.sh` 生成
+  3. 使用生成的 YAML 文件进行部署
 
 #### 5. Secrets 和 ConfigMaps 模板管理
 
@@ -458,17 +474,30 @@ spec:
 - 所有模板文件统一位置，便于管理
 - 通过 `generate.conf` 配置生成顺序
 - 支持环境变量替换
+- **统一架构**：与其他组件（主应用、Ingress 等）使用相同的生成机制
 
 **实现**：
 ```
 resources/custom-values/templates/
 ├── configmap/
-│   └── llmops-service-config.yaml  # 模板文件名（可能使用旧名称）
+│   └── 应用名-config.yaml          # ConfigMap 模板
 └── secret/
-    └── llmops-service-secret.yaml  # 模板文件名（可能使用旧名称）
+    ├── 应用名-secret.yaml          # Secret 模板
+    └── harbor-registry-secret.yaml  # Harbor 镜像拉取认证 Secret 模板
 ```
 
-**注意**：模板文件名可能仍使用 `llmops-service-*`，但生成的资源名称（在模板中定义）应为 `llmops-app-bff-config` 和 `llmops-app-bff-secret`。
+**重要变更**：
+- **不再有独立的模板文件**：旧的 `deploy-*/secrets/*/资源名.yaml` 和 `资源名.yaml.template` 文件已删除
+- **统一使用生成机制**：所有 Secrets 和 ConfigMaps 的模板都在 `resources/custom-values/templates/` 目录下
+- **部署脚本统一**：所有 Secret/ConfigMap 部署脚本（如 `deploy-incubator-app-bff-config.sh`、`deploy-incubator-app-bff-secret.sh`、`deploy-harbor-registry-secret.sh`）都：
+  1. 使用 `resources/custom-values/*-generated.yaml` 文件
+  2. 通过 `auto_generate_yaml` 函数自动检查并生成 YAML（如果缺失）
+  3. 不再在脚本中直接使用 `envsubst` 或 `sed` 生成 YAML
+
+**示例**（以 `incubator-app-bff` 为例）：
+- 模板文件：`resources/custom-values/templates/configmap/incubator-app-bff-config.yaml`
+- 生成的 YAML：`resources/custom-values/incubator-app-bff-config-generated.yaml`
+- 部署脚本：`deploy-incubator-bff/secrets/incubator-app-bff-config/deploy-incubator-app-bff-config/deploy-incubator-app-bff-config.sh`
 
 #### 6. Ingress 配置对齐
 
@@ -607,6 +636,15 @@ cd resources/custom-values
 ./generate.sh
 ```
 
+**重要**：所有模板文件（包括 Secrets、ConfigMaps、Ingress 等）都统一在 `resources/custom-values/templates/` 目录下：
+- 主应用模板：`templates/app/应用名.yaml`
+- ConfigMap 模板：`templates/configmap/资源名.yaml`
+- Secret 模板：`templates/secret/资源名.yaml`
+- Ingress 模板：`templates/ingress/ingress.yaml`
+- Middleware 模板：`templates/middleware/资源名.yaml`
+
+**不再有独立的模板文件**：旧的 `deploy-*/secrets/*/资源名.yaml` 和 `资源名.yaml.template` 文件已删除，统一使用 `resources/custom-values/templates/` 下的模板。
+
 **修改生成配置**
 编辑 `resources/custom-values/generate.conf`，添加或修改需要生成的资源：
 ```bash
@@ -659,6 +697,7 @@ LLMOps Service 组件的开发遵循了以下原则：
 - **易于维护**：所有模板文件统一位置，便于查找和管理
 - **自动化**：部署脚本自动检查并生成 YAML（如果缺失），无需手动操作
 - **可扩展**：通过 `generate.conf` 轻松添加新的资源类型
+- **统一架构**：所有组件（主应用、Secrets、ConfigMaps、Ingress、Middleware）都使用同一套 YAML 生成机制，不再有独立的模板文件或脚本内生成逻辑
 
 该组件为 APP 平台的其他组件提供了参考模板，可以基于此模板快速开发新的应用服务。更多关于 YAML 生成机制的详细信息，请参考 [YAML生成机制说明.md](./YAML生成机制说明.md)。
 

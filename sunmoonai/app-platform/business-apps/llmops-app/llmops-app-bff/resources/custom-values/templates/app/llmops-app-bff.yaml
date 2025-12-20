@@ -20,8 +20,9 @@ spec:
         # Harbor 镜像路径：仓库/项目/镜像名:标签
         # 由 deploy-llmops-bff.sh 计算并导出 LLMOPS_BFF_FULL_IMAGE_NAME
         image: ${LLMOPS_BFF_FULL_IMAGE_NAME}
-        # IfNotPresent: 如果本地有镜像则使用本地，否则从 Harbor 拉取
-        imagePullPolicy: ${IMAGE_PULL_POLICY:-IfNotPresent}
+        # Always: 总是从 Harbor 拉取最新版本，避免使用节点本地的旧镜像
+        # 注意：如果使用 IfNotPresent，节点本地有旧镜像时不会从 Harbor 拉取，导致使用旧版本
+        imagePullPolicy: ${IMAGE_PULL_POLICY:-Always}
         ports:
         - containerPort: 80
         envFrom:

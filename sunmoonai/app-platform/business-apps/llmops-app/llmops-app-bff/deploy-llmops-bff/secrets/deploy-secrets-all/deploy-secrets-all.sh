@@ -61,6 +61,7 @@ deploy_sub_components_by_priority() {
     
     # 定义组件部署信息（组件名:启用标志:优先级:描述:脚本路径）
     local components=(
+        "harbor_registry_secret:${harbor_registry_secret_enabled:-true}:${harbor_registry_secret_priority:-700}:Harbor Registry Secret:$SCRIPT_DIR/../harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh"
         "llmops_service_secret:${llmops_service_secret_enabled:-true}:${llmops_service_secret_priority:-600}:LLMOps Service Secret:$SCRIPT_DIR/../llmops-service-secret/deploy-llmops-service-secret/deploy-llmops-service-secret.sh"
         "llmops_service_config:${llmops_service_config_enabled:-true}:${llmops_service_config_priority:-500}:LLMOps Service ConfigMap:$SCRIPT_DIR/../llmops-service-config/deploy-llmops-service-config/deploy-llmops-service-config.sh"
     )
@@ -140,25 +141,27 @@ main() {
     local namespace="${3:-${NAMESPACE:-$DEFAULT_NAMESPACE}}"
     local environment="${4:-${ENVIRONMENT:-$DEFAULT_ENVIRONMENT}}"
     
-    log_info "════════════════════════════════════════════════════════"
-    log_info "🚀 LLMOps Service Secrets All 部署"
-    log_info "════════════════════════════════════════════════════════"
-    log_info "部署参数："
-    log_info "  - 操作: $action"
+    log_info "🚀 开始部署 LLMOps App BFF Secrets..."
+    log_info "📋 部署参数："
     log_info "  - 项目ID: $project_id"
     log_info "  - 命名空间: $namespace"
     log_info "  - 环境: $environment"
+    log_info "  - 操作: $action"
     echo ""
-    
-    # 检查命名空间
-    if [[ "$action" != "status" ]]; then
-        if ! check_namespace "$namespace"; then
-            exit 1
-        fi
+
+    if [[ "$action" != "status" && "$action" != "generate" ]]; then
+      check_namespace "$namespace" || exit 1
     fi
-    
-    # 部署子级组件
+
     deploy_sub_components_by_priority "$project_id" "$namespace" "$environment" "$action"
+    
+    echo ""
+    log_success "🎉 LLMOps App BFF Secrets 部署完成！"
+    log_info "📋 部署信息："
+    log_info "  - 项目ID: $project_id"
+    log_info "  - 命名空间: $namespace"
+    log_info "  - 环境: $environment"
+    log_info "  - 部署时间: $(date '+%Y-%m-%d %H:%M:%S')"
 }
 
 main "$@"
