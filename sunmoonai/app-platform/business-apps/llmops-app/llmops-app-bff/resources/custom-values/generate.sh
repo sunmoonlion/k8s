@@ -29,6 +29,24 @@ else
     log_warn "部署配置文件不存在或未配置: ${DEPLOY_CONFIG:-未设置}"
 fi
 
+# 加载 ConfigMap 配置（用于生成 ConfigMap YAML）
+CONFIGMAP_CONFIG="../../deploy-llmops-bff/secrets/llmops-service-config/deploy-llmops-service-config/deploy-llmops-service-config.conf"
+if [ -f "$SCRIPT_DIR/$CONFIGMAP_CONFIG" ]; then
+    source "$SCRIPT_DIR/$CONFIGMAP_CONFIG"
+    log_info "已加载 ConfigMap 配置文件: $CONFIGMAP_CONFIG"
+fi
+
+# 导出 ConfigMap 相关变量（确保 envsubst 可以替换）
+export POSTGRES_SERVER="${POSTGRES_SERVER:-postgresql-service.data-platform}"
+export POSTGRES_PORT="${POSTGRES_PORT:-5432}"
+export POSTGRES_USER="${POSTGRES_USER:-sunmoonai_dev}"
+export POSTGRES_DB="${POSTGRES_DB:-app}"
+export NEO4J_SERVER="${NEO4J_SERVER:-neo4j-service.data-platform}"
+export NEO4J_PORT="${NEO4J_PORT:-7687}"
+export NEO4J_USERNAME="${NEO4J_USERNAME:-neo4j}"
+export NEO4J_AUTH="${NEO4J_AUTH:-neo4j}"
+export NEO4J_BOLT="${NEO4J_BOLT:-bolt}"
+
 # 加载 Secret 配置（用于生成 Secret YAML）
 SECRET_CONFIG="../../deploy-llmops-bff/secrets/llmops-service-secret/deploy-llmops-service-secret/deploy-llmops-service-secret.conf"
 if [ -f "$SCRIPT_DIR/$SECRET_CONFIG" ]; then
@@ -58,13 +76,22 @@ export LLMOPS_BFF_IMAGE_PROJECT="${LLMOPS_BFF_IMAGE_PROJECT:-k8s-images}"
 export LLMOPS_BFF_IMAGE="${LLMOPS_BFF_IMAGE:-llmops-app-bff}"
 export LLMOPS_BFF_TAG="${LLMOPS_BFF_TAG:-1.0.0}"
 export LLMOPS_BFF_FULL_IMAGE_NAME="${LLMOPS_BFF_IMAGE_REGISTRY}/${LLMOPS_BFF_IMAGE_PROJECT}/${LLMOPS_BFF_IMAGE}:${LLMOPS_BFF_TAG}"
-export IMAGE_PULL_POLICY="${IMAGE_PULL_POLICY:-IfNotPresent}"
+export IMAGE_PULL_POLICY="${IMAGE_PULL_POLICY:-Always}"
 export LLMOPS_BFF_IMAGE_PULL_SECRET_NAME="${LLMOPS_BFF_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}"
-export LLMOPS_BFF_SECRET_NAME="${LLMOPS_BFF_SECRET_NAME:-llmops-app-bff-secret}"
-export LLMOPS_BFF_CONFIGMAP_NAME="${LLMOPS_BFF_CONFIGMAP_NAME:-llmops-app-bff-config}"
+export LLMOPS_BFF_SECRET_NAME="${LLMOPS_BFF_SECRET_NAME:-llmops-service-secret}"
+export LLMOPS_BFF_CONFIGMAP_NAME="${LLMOPS_BFF_CONFIGMAP_NAME:-llmops-service-config}"
 export LLMOPS_BFF_UNIFIED_HOST="${LLMOPS_BFF_UNIFIED_HOST:-llmops.sunmoonai.com}"
 export LLMOPS_BFF_NODE_IP="${LLMOPS_BFF_NODE_IP:-101.126.151.0}"
 export LLMOPS_BFF_TLS_ENABLED="${LLMOPS_BFF_TLS_ENABLED:-true}"
+
+# Harbor Docker 认证配置（用于 harbor-registry-secret）
+HARBOR_DOCKER_SERVER="${HARBOR_DOCKER_SERVER:-${LLMOPS_BFF_IMAGE_REGISTRY:-harbor.sunmoonai.com:30443}}"
+HARBOR_DOCKER_USERNAME="${HARBOR_DOCKER_USERNAME:-admin}"
+HARBOR_DOCKER_PASSWORD="${HARBOR_DOCKER_PASSWORD:-Harbor@12345}"
+# 生成 base64 编码的 Docker config JSON
+HARBOR_AUTH_STRING=$(echo -n "${HARBOR_DOCKER_USERNAME}:${HARBOR_DOCKER_PASSWORD}" | base64 -w 0)
+HARBOR_DOCKER_CONFIG_JSON=$(echo -n "{\"auths\":{\"${HARBOR_DOCKER_SERVER}\":{\"username\":\"${HARBOR_DOCKER_USERNAME}\",\"password\":\"${HARBOR_DOCKER_PASSWORD}\",\"auth\":\"${HARBOR_AUTH_STRING}\"}}}" | base64 -w 0)
+export HARBOR_DOCKER_CONFIG_JSON
 
 # Ingress 相关变量（用于模板替换）
 export SERVICE_NAME="${SERVICE_NAME:-llmops-app-bff}"

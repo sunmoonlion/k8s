@@ -25,10 +25,15 @@ data:
   SERVER_BOT: "Symona"
   
   # 数据库连接 (使用 K8s 集群内 DNS)
-  POSTGRES_SERVER: "postgresql-service.data-platform"
-  POSTGRES_DB: "app"
-  NEO4J_SERVER: "neo4j-service.data-platform"
-  NEO4J_BOLT: "bolt"
+  POSTGRES_SERVER: "${POSTGRES_SERVER:-postgresql-service.data-platform}"
+  POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+  POSTGRES_USER: "${POSTGRES_USER:-sunmoonai_dev}"
+  POSTGRES_DB: "${POSTGRES_DB:-app}"
+  NEO4J_SERVER: "${NEO4J_SERVER:-neo4j-service.data-platform}"
+  NEO4J_PORT: "${NEO4J_PORT:-7687}"
+  NEO4J_USERNAME: "${NEO4J_USERNAME:-neo4j}"
+  NEO4J_AUTH: "${NEO4J_AUTH:-neo4j}"
+  NEO4J_BOLT: "${NEO4J_BOLT:-bolt}"
   
   # SMTP 配置
   SMTP_TLS: "True"
