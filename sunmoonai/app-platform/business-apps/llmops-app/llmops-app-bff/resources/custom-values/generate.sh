@@ -29,6 +29,24 @@ else
     log_warn "部署配置文件不存在或未配置: ${DEPLOY_CONFIG:-未设置}"
 fi
 
+# 加载 Secret 配置（用于生成 Secret YAML）
+SECRET_CONFIG="../../deploy-llmops-bff/secrets/llmops-service-secret/deploy-llmops-service-secret/deploy-llmops-service-secret.conf"
+if [ -f "$SCRIPT_DIR/$SECRET_CONFIG" ]; then
+    source "$SCRIPT_DIR/$SECRET_CONFIG"
+    log_info "已加载 Secret 配置文件: $SECRET_CONFIG"
+    
+    # 导出 Secret 相关变量（确保 envsubst 可以替换）
+    export SECRET_KEY="${SECRET_KEY:-changeme}"
+    export TOTP_SECRET_KEY="${TOTP_SECRET_KEY:-changeme}"
+    export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-changeme}"
+    export NEO4J_PASSWORD="${NEO4J_PASSWORD:-changeme}"
+    export FIRST_SUPERUSER="${FIRST_SUPERUSER:-admin@sunmoonai.com}"
+    export FIRST_SUPERUSER_PASSWORD="${FIRST_SUPERUSER_PASSWORD:-changeme}"
+    export SMTP_USER="${SMTP_USER:-}"
+    export SMTP_PASSWORD="${SMTP_PASSWORD:-}"
+    export SENTRY_DSN="${SENTRY_DSN:-}"
+fi
+
 # 设置默认环境变量
 export NAMESPACE="${NAMESPACE:-${LLMOPS_BFF_NAMESPACE:-app-platform-dev}}"
 export ENVIRONMENT="${ENVIRONMENT:-development}"

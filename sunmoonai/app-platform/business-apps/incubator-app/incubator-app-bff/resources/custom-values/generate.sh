@@ -29,6 +29,55 @@ else
     log_warn "部署配置文件不存在或未配置: ${DEPLOY_CONFIG:-未设置}"
 fi
 
+# 加载 ConfigMap 配置（用于生成 ConfigMap YAML）
+CONFIGMAP_CONFIG="../../deploy-incubator-bff/secrets/incubator-app-bff-config/deploy-incubator-app-bff-config/deploy-incubator-app-bff-config.conf"
+if [ -f "$SCRIPT_DIR/$CONFIGMAP_CONFIG" ]; then
+    source "$SCRIPT_DIR/$CONFIGMAP_CONFIG"
+    log_info "已加载 ConfigMap 配置文件: $CONFIGMAP_CONFIG"
+    
+    # 导出 ConfigMap 相关变量（确保 envsubst 可以替换）
+    export PROJECT_NAME="${PROJECT_NAME:-Incubator App BFF}"
+    export SERVER_NAME="${SERVER_NAME:-incubator.sunmoonai.com}"
+    export SERVER_HOST="${SERVER_HOST:-https://incubator.sunmoonai.com}"
+    export SERVER_BOT="${SERVER_BOT:-Symona}"
+    export BACKEND_CORS_ORIGINS="${BACKEND_CORS_ORIGINS:-[\"https://incubator.sunmoonai.com\",\"https://incubator.sunmoonai.com:443\"]}"
+    export POSTGRES_SERVER="${POSTGRES_SERVER:-101.126.151.0}"
+    export POSTGRES_PORT="${POSTGRES_PORT:-30444}"
+    export POSTGRES_USER="${POSTGRES_USER:-sunmoonai_dev}"
+    export POSTGRES_DB="${POSTGRES_DB:-mydb}"
+    export NEO4J_SERVER="${NEO4J_SERVER:-101.126.151.0}"
+    export NEO4J_PORT="${NEO4J_PORT:-7687}"
+    export NEO4J_USERNAME="${NEO4J_USERNAME:-neo4j}"
+    export NEO4J_AUTH="${NEO4J_AUTH:-neo4j}"
+    export NEO4J_BOLT="${NEO4J_BOLT:-bolt}"
+    export USERS_OPEN_REGISTRATION="${USERS_OPEN_REGISTRATION:-True}"
+    export NEO4J_FORCE_TIMEZONE="${NEO4J_FORCE_TIMEZONE:-True}"
+    export NEO4J_AUTO_INSTALL_LABELS="${NEO4J_AUTO_INSTALL_LABELS:-True}"
+    export NEO4J_MAX_CONNECTION_POOL_SIZE="${NEO4J_MAX_CONNECTION_POOL_SIZE:-50}"
+    export MULTI_MAX="${MULTI_MAX:-20}"
+    export EMAIL_RESET_TOKEN_EXPIRE_HOURS="${EMAIL_RESET_TOKEN_EXPIRE_HOURS:-48}"
+    export EMAIL_TEMPLATES_DIR="${EMAIL_TEMPLATES_DIR:-/app/app/email-templates/build}"
+    export EMAIL_TEST_USER="${EMAIL_TEST_USER:-test@example.com}"
+fi
+
+# 加载 Secret 配置（用于生成 Secret YAML）
+SECRET_CONFIG="../../deploy-incubator-bff/secrets/incubator-app-bff-secret/deploy-incubator-app-bff-secret/deploy-incubator-app-bff-secret.conf"
+if [ -f "$SCRIPT_DIR/$SECRET_CONFIG" ]; then
+    source "$SCRIPT_DIR/$SECRET_CONFIG"
+    log_info "已加载 Secret 配置文件: $SECRET_CONFIG"
+    
+    # 导出 Secret 相关变量（确保 envsubst 可以替换）
+    export SECRET_KEY="${SECRET_KEY:-changeme}"
+    export TOTP_SECRET_KEY="${TOTP_SECRET_KEY:-changeme}"
+    export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-zym123}"
+    export NEO4J_PASSWORD="${NEO4J_PASSWORD:-zym123}"
+    export FIRST_SUPERUSER="${FIRST_SUPERUSER:-admin@sunmoonai.com}"
+    export FIRST_SUPERUSER_PASSWORD="${FIRST_SUPERUSER_PASSWORD:-zym123}"
+    export SMTP_USER="${SMTP_USER:-}"
+    export SMTP_PASSWORD="${SMTP_PASSWORD:-}"
+    export SENTRY_DSN="${SENTRY_DSN:-}"
+fi
+
 # 设置默认环境变量
 export NAMESPACE="${NAMESPACE:-${INCUBATOR_BFF_NAMESPACE:-app-platform-dev}}"
 export ENVIRONMENT="${ENVIRONMENT:-development}"

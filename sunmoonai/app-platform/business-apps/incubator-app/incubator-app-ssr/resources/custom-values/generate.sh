@@ -29,6 +29,14 @@ else
     log_warn "部署配置文件不存在或未配置: ${DEPLOY_CONFIG:-未设置}"
 fi
 
+# 加载 Secret 配置（用于生成 Secret YAML，如果存在）
+SECRET_CONFIG="../../deploy-incubator-ssr/secrets/incubator-app-ssr-secret/deploy-incubator-app-ssr-secret/deploy-incubator-app-ssr-secret.conf"
+if [ -f "$SCRIPT_DIR/$SECRET_CONFIG" ]; then
+    source "$SCRIPT_DIR/$SECRET_CONFIG"
+    log_info "已加载 Secret 配置文件: $SECRET_CONFIG"
+    # SSR Secret 通常为空，但保留加载逻辑以保持一致性
+fi
+
 # 设置默认环境变量
 export NAMESPACE="${NAMESPACE:-${INCUBATOR_SSR_NAMESPACE:-app-platform-dev}}"
 export ENVIRONMENT="${ENVIRONMENT:-development}"

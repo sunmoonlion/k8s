@@ -29,6 +29,14 @@ else
     log_warn "部署配置文件不存在或未配置: ${DEPLOY_CONFIG:-未设置}"
 fi
 
+# 加载 Secret 配置（用于生成 Secret YAML，如果存在）
+SECRET_CONFIG="../../deploy-auth-app-ssr/secrets/auth-app-ssr-secret/deploy-auth-app-ssr-secret/deploy-auth-app-ssr-secret.conf"
+if [ -f "$SCRIPT_DIR/$SECRET_CONFIG" ]; then
+    source "$SCRIPT_DIR/$SECRET_CONFIG"
+    log_info "已加载 Secret 配置文件: $SECRET_CONFIG"
+    # 导出 Secret 相关变量（如果模板需要）
+fi
+
 # 设置默认环境变量
 export NAMESPACE="${NAMESPACE:-${AUTH_APP_SSR_NAMESPACE:-app-platform-dev}}"
 export ENVIRONMENT="${ENVIRONMENT:-development}"

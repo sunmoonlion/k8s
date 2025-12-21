@@ -181,6 +181,9 @@ execute_onlyoffice_deployment() {
         helm_cmd="$helm_cmd --set global.imagePullSecrets[0].name=harbor-registry-secret"
     fi
     
+    # 设置镜像拉取策略为 Always，确保总是拉取最新镜像
+    helm_cmd="$helm_cmd --set global.imagePullPolicy=Always"
+    
     if [[ "$dry_run" == "true" ]]; then
         helm_cmd="$helm_cmd --dry-run"
         log_info "执行 ONLYOFFICE Docs 部署（试运行模式）..."
