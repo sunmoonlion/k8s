@@ -37,10 +37,10 @@ if [ -f "$SCRIPT_DIR/$CONFIGMAP_CONFIG" ]; then
 fi
 
 # 导出 ConfigMap 相关变量（确保 envsubst 可以替换）
-export POSTGRES_SERVER="${POSTGRES_SERVER:-postgresql-service.data-platform}"
-export POSTGRES_PORT="${POSTGRES_PORT:-5432}"
+export POSTGRES_SERVER="${POSTGRES_SERVER:-101.126.151.0}"
+export POSTGRES_PORT="${POSTGRES_PORT:-30444}"
 export POSTGRES_USER="${POSTGRES_USER:-sunmoonai_dev}"
-export POSTGRES_DB="${POSTGRES_DB:-app}"
+export POSTGRES_DB="${POSTGRES_DB:-mydb}"
 export NEO4J_SERVER="${NEO4J_SERVER:-neo4j-service.data-platform}"
 export NEO4J_PORT="${NEO4J_PORT:-7687}"
 export NEO4J_USERNAME="${NEO4J_USERNAME:-neo4j}"

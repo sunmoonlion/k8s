@@ -41,14 +41,14 @@ spec:
             cpu: "500m"
         livenessProbe:
           tcpSocket:
-            port: 8000
+            port: 80
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
         readinessProbe:
           tcpSocket:
-            port: 8000
+            port: 80
           initialDelaySeconds: 10
           periodSeconds: 5
           timeoutSeconds: 3
