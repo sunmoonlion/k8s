@@ -735,7 +735,7 @@ cd /path/to/source-project
 在 k8s 配置目录中创建模板文件：
 
 ```bash
-cd k8s/sunmoonai/app-platform/business-apps/incubator-app/incubator-app-bff
+cd k8s/sunmoonai/incubator-app/incubator-app-bff
 
 # 创建主应用模板
 mkdir -p resources/k8s-resource/templates/app

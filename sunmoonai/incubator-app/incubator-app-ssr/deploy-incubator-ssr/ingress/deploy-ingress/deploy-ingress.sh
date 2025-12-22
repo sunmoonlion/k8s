@@ -8,26 +8,23 @@ set -e
 ORIGINAL_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_DIR="$ORIGINAL_SCRIPT_DIR"
 
-# 计算项目根目录（k8s目录）
-# 从 deploy-ingress/ -> ingress/ -> deploy-incubator-ssr/ -> incubator-app-ssr/ -> incubator-app/ -> business-apps/ -> app-platform/ -> sunmoonai/ -> k8s/
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
-
 # 计算应用根目录和资源路径（在 source 之前计算，避免 SCRIPT_DIR 被覆盖）
 # 从 deploy-ingress/ -> ingress/ -> deploy-incubator-ssr/ -> incubator-app-ssr/
 APP_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 RESOURCES_DIR="${APP_ROOT}/resources"
-CUSTOM_VALUES_DIR="${RESOURCES_DIR}/custom-values"
+K8S_RESOURCE_DIR="${RESOURCES_DIR}/k8s-resource"
 
 # 导入统一部署模板（建立远程 k8s 连接）
-# 注意：utils 目录在 k8s/ 下，不在 sunmoonai/ 下
+# 从应用根目录（incubator-app-ssr/）到 k8s/ 需要向上 4 级
+# incubator-app-ssr/ -> incubator-app/ -> sunmoonai/ -> k8s/
 # 注意：unified-deployment-template.sh 会覆盖 SCRIPT_DIR，所以我们在 source 之前已经计算好路径
-source "$PROJECT_ROOT/../utils/unified-deployment-template.sh"
+source "$APP_ROOT/../../../../k8s/utils/unified-deployment-template.sh"
 
 # 恢复原始的 SCRIPT_DIR（如果需要的话）
 SCRIPT_DIR="$ORIGINAL_SCRIPT_DIR"
 
-# Ingress 配置文件（使用生成的 YAML 文件）
-INGRESS_FILE="${CUSTOM_VALUES_DIR}/incubator-app-ssr-ingress-generated.yaml"
+# Ingress 配置文件（使用生成的 YAML 文件，由各组件自己的 generate-*.sh 生成）
+INGRESS_FILE="${K8S_RESOURCE_DIR}/custom-values/ingress/incubator-ssr-ingress/generate-ingress/incubator-app-ssr-ingress-generated.yaml"
 
 # 检查命名空间是否存在
 check_namespace() {
@@ -73,8 +70,8 @@ verify_service() {
 # 加载配置
 load_config() {
     # 尝试加载主配置文件（如果存在），以获取 INCUBATOR_SSR_NAMESPACE、INCUBATOR_SSR_UNIFIED_HOST 等环境变量
-    # 主配置文件路径：../../deploy-incubator-ssr.conf（相对于当前脚本目录）
-    local main_config_file="$(cd "$SCRIPT_DIR/../.." && pwd)/deploy-incubator-ssr.conf"
+    # 主配置文件路径：从 deploy-ingress/ -> ingress/ -> deploy-incubator-ssr/ -> app/deploy-app/
+    local main_config_file="$(cd "$SCRIPT_DIR/../../../app/deploy-app" && pwd)/deploy-incubator-ssr.conf"
     if [[ -f "$main_config_file" ]]; then
         # 临时禁用错误退出，因为主配置文件可能包含一些在当前上下文中不适用的配置
         set +e
@@ -291,6 +288,10 @@ main() {
             log_info "项目: $project_id"
             log_info "命名空间: $namespace"
             log_info "环境: $environment"
+            
+            # 导出命名空间和环境变量，供 load_config 使用
+            export NAMESPACE="$namespace"
+            export ENVIRONMENT="$environment"
             
             load_config
             check_namespace "$NAMESPACE"
