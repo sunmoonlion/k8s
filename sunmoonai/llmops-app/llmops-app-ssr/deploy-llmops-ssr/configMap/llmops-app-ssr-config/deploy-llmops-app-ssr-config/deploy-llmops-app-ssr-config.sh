@@ -29,22 +29,28 @@ DEFAULT_PROJECT_ID="sunmoonai"
 DEFAULT_NAMESPACE="app-platform-dev"
 DEFAULT_ENVIRONMENT="development"
 
-# 自动生成 YAML 文件的辅助函数（与主部署脚本保持一致）
+# 自动生成 YAML 文件的辅助函数
 auto_generate_yaml() {
     local yaml_file="$1"
-    local custom_values_dir="$2"
+    local k8s_resource_dir="$2"
     
     if [ ! -f "$yaml_file" ]; then
         log_warn "生成的 YAML 文件不存在: $yaml_file，自动运行生成脚本..."
-        if [ -f "$custom_values_dir/generate.sh" ]; then
-            if bash "$custom_values_dir/generate.sh"; then
+        # 导出基础配置变量，供生成脚本使用（通过环境变量继承）
+        export NAMESPACE="${NAMESPACE:-app-platform-dev}"
+        export ENVIRONMENT="${ENVIRONMENT:-development}"
+        export ENV="${ENV:-dev}"
+        
+        local generate_script="$k8s_resource_dir/custom-values/configMap/llmops-app-ssr-config/generate-llmops-app-ssr-config/generate-llmops-app-ssr-config.sh"
+        if [ -f "$generate_script" ]; then
+            if bash "$generate_script"; then
                 log_success "YAML 文件生成成功"
             else
                 log_error "YAML 文件生成失败"
                 return 1
             fi
         else
-            log_error "生成脚本不存在: $custom_values_dir/generate.sh"
+            log_error "生成脚本不存在: $generate_script"
             return 1
         fi
     fi

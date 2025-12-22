@@ -29,37 +29,54 @@ DEFAULT_PROJECT_ID="sunmoonai"
 DEFAULT_NAMESPACE="app-platform-dev"
 DEFAULT_ENVIRONMENT="development"
 
-# 检查敏感配置
+# 检查敏感配置（从生成配置文件中读取）
 check_sensitive_config() {
   local warnings=0
+  local generate_config_file="$K8S_RESOURCE_DIR/custom-values/secret/llmops-service-secret/generate-llmops-service-secret/generate-llmops-service-secret.conf"
   
-  if [[ "${SECRET_KEY:-changeme}" == "changeme" ]]; then
-    log_warn "⚠️  SECRET_KEY 仍使用默认值 'changeme'，请修改为安全的随机字符串"
-    warnings=$((warnings + 1))
-  fi
-  
-  if [[ "${TOTP_SECRET_KEY:-changeme}" == "changeme" ]]; then
-    log_warn "⚠️  TOTP_SECRET_KEY 仍使用默认值 'changeme'，请修改为安全的随机字符串"
-    warnings=$((warnings + 1))
-  fi
-  
-  if [[ "${POSTGRES_PASSWORD:-changeme}" == "changeme" ]]; then
-    log_warn "⚠️  POSTGRES_PASSWORD 仍使用默认值 'changeme'，请修改为实际密码"
-    warnings=$((warnings + 1))
-  fi
-  
-  if [[ "${NEO4J_PASSWORD:-changeme}" == "changeme" ]]; then
-    log_warn "⚠️  NEO4J_PASSWORD 仍使用默认值 'changeme'，请修改为实际密码"
-    warnings=$((warnings + 1))
-  fi
-  
-  if [[ "${FIRST_SUPERUSER_PASSWORD:-changeme}" == "changeme" ]]; then
-    log_warn "⚠️  FIRST_SUPERUSER_PASSWORD 仍使用默认值 'changeme'，请修改为实际密码"
-    warnings=$((warnings + 1))
+  # 如果生成配置文件存在，从中读取配置进行检查
+  if [[ -f "$generate_config_file" ]]; then
+    # 临时加载生成配置文件（不覆盖已存在的环境变量）
+    local _temp_secret_key _temp_totp_secret_key _temp_postgres_password _temp_neo4j_password _temp_first_superuser_password
+    
+    _temp_secret_key=$(source "$generate_config_file" 2>/dev/null && echo "${SECRET_KEY:-changeme}")
+    _temp_totp_secret_key=$(source "$generate_config_file" 2>/dev/null && echo "${TOTP_SECRET_KEY:-changeme}")
+    _temp_postgres_password=$(source "$generate_config_file" 2>/dev/null && echo "${POSTGRES_PASSWORD:-changeme}")
+    _temp_neo4j_password=$(source "$generate_config_file" 2>/dev/null && echo "${NEO4J_PASSWORD:-changeme}")
+    _temp_first_superuser_password=$(source "$generate_config_file" 2>/dev/null && echo "${FIRST_SUPERUSER_PASSWORD:-changeme}")
+    
+    if [[ "$_temp_secret_key" == "changeme" ]]; then
+      log_warn "⚠️  SECRET_KEY 仍使用默认值 'changeme'，请修改为安全的随机字符串（在生成配置文件中）"
+      warnings=$((warnings + 1))
+    fi
+    
+    if [[ "$_temp_totp_secret_key" == "changeme" ]]; then
+      log_warn "⚠️  TOTP_SECRET_KEY 仍使用默认值 'changeme'，请修改为安全的随机字符串（在生成配置文件中）"
+      warnings=$((warnings + 1))
+    fi
+    
+    if [[ "$_temp_postgres_password" == "changeme" ]]; then
+      log_warn "⚠️  POSTGRES_PASSWORD 仍使用默认值 'changeme'，请修改为实际密码（在生成配置文件中）"
+      warnings=$((warnings + 1))
+    fi
+    
+    if [[ "$_temp_neo4j_password" == "changeme" ]]; then
+      log_warn "⚠️  NEO4J_PASSWORD 仍使用默认值 'changeme'，请修改为实际密码（在生成配置文件中）"
+      warnings=$((warnings + 1))
+    fi
+    
+    if [[ "$_temp_first_superuser_password" == "changeme" ]]; then
+      log_warn "⚠️  FIRST_SUPERUSER_PASSWORD 仍使用默认值 'changeme'，请修改为实际密码（在生成配置文件中）"
+      warnings=$((warnings + 1))
+    fi
+    
+    unset _temp_secret_key _temp_totp_secret_key _temp_postgres_password _temp_neo4j_password _temp_first_superuser_password
+  else
+    log_warn "⚠️  生成配置文件不存在: $generate_config_file，跳过敏感配置检查"
   fi
   
   if [[ $warnings -gt 0 ]]; then
-    log_warn "发现 $warnings 个敏感配置仍使用默认值，建议在生产环境部署前修改"
+    log_warn "发现 $warnings 个敏感配置仍使用默认值，建议在生产环境部署前修改生成配置文件"
   fi
 }
 

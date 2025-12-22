@@ -89,17 +89,42 @@ validate_yaml() {
     local yaml_file="$1"
     
     if command -v kubectl &> /dev/null; then
-        if kubectl apply --dry-run=client -f "$yaml_file" &> /dev/null; then
+        # 尝试使用 --dry-run=client 验证（不需要连接集群）
+        if kubectl apply --dry-run=client --validate=true -f "$yaml_file" &> /dev/null; then
             log_success "YAML 验证通过: $(basename "$yaml_file")"
             return 0
         else
+            # 如果验证失败，检查是否是连接问题
+            local error_output
+            error_output=$(kubectl apply --dry-run=client --validate=true -f "$yaml_file" 2>&1)
+            if echo "$error_output" | grep -q "connection refused\|dial tcp"; then
+                log_warn "无法连接到 Kubernetes 集群进行验证，但 YAML 格式检查通过"
+                # 使用 Python 或其他工具进行基本格式验证
+                if command -v python3 &> /dev/null; then
+                    if python3 -c "import yaml; yaml.safe_load(open('$yaml_file'))" &> /dev/null; then
+                        log_success "YAML 格式验证通过: $(basename "$yaml_file")"
+                        return 0
+                    fi
+                fi
+            fi
             log_error "YAML 验证失败: $(basename "$yaml_file")"
-            kubectl apply --dry-run=client -f "$yaml_file" 2>&1 | head -20
+            echo "$error_output" | head -20
             return 1
         fi
     else
-        log_warn "kubectl 未安装，跳过 YAML 验证"
-        return 0
+        log_warn "kubectl 未安装，使用 Python 进行基本 YAML 格式验证"
+        if command -v python3 &> /dev/null; then
+            if python3 -c "import yaml; yaml.safe_load(open('$yaml_file'))" &> /dev/null; then
+                log_success "YAML 格式验证通过: $(basename "$yaml_file")"
+                return 0
+            else
+                log_error "YAML 格式验证失败: $(basename "$yaml_file")"
+                return 1
+            fi
+        else
+            log_warn "Python3 未安装，跳过 YAML 验证"
+            return 0
+        fi
     fi
 }
 

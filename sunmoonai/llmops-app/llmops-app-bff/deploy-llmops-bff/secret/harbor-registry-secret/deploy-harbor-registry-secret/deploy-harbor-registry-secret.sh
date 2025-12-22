@@ -4,7 +4,7 @@
 # Harbor Registry Secret 部署脚本（LLMOps BFF）
 # 文件名: deploy-harbor-registry-secret.sh
 # 用途: 部署 Harbor 镜像拉取 Secret 到 Kubernetes 集群
-# 注意: 使用 resources/custom-values/generate.sh 生成的 YAML 文件
+# 注意: 使用各组件自己的 generate-*.sh 生成的 YAML 文件
 # =============================================================================
 
 set -euo pipefail
@@ -16,9 +16,9 @@ SECRET_DIR="$(dirname "$SCRIPT_DIR")"  # harbor-registry-secret 目录
 # deploy-harbor-registry-secret/ -> harbor-registry-secret/ -> secrets/ -> deploy-llmops-bff/ -> llmops-app-bff/
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
-# 使用生成的 YAML 文件（由 resources/custom-values/generate.sh 生成）
-CUSTOM_VALUES_DIR="$PROJECT_ROOT/resources/custom-values"
-HARBOR_SECRET_YAML="$CUSTOM_VALUES_DIR/harbor-registry-secret-generated.yaml"
+# 使用生成的 YAML 文件（由各组件自己的 generate-*.sh 生成）
+K8S_RESOURCE_DIR="$PROJECT_ROOT/resources/k8s-resource"
+HARBOR_SECRET_YAML="$K8S_RESOURCE_DIR/custom-values/secret/harbor-registry-secret/generate-harbor-registry-secret/harbor-registry-secret-generated.yaml"
 
 # 日志函数（如果未定义）
 log_info() { echo -e "[INFO] $*"; }
@@ -121,22 +121,29 @@ DEFAULT_PROJECT_ID="${DEFAULT_PROJECT_ID:-sunmoonai}"
 DEFAULT_NAMESPACE="${DEFAULT_NAMESPACE:-app-platform-dev}"
 DEFAULT_ENVIRONMENT="${DEFAULT_ENVIRONMENT:-development}"
 
-# 自动生成 YAML 文件的辅助函数（与主部署脚本保持一致）
+# 自动生成 YAML 文件的辅助函数
 auto_generate_yaml() {
     local yaml_file="$1"
-    local custom_values_dir="$2"
+    local k8s_resource_dir="$2"
     
     if [ ! -f "$yaml_file" ]; then
         log_warn "生成的 YAML 文件不存在: $yaml_file，自动运行生成脚本..."
-        if [ -f "$custom_values_dir/generate.sh" ]; then
-            if bash "$custom_values_dir/generate.sh"; then
+        # 导出基础配置变量，供生成脚本使用（通过环境变量继承）
+        # 注意：这些变量应该从部署脚本的参数或配置中获取
+        export NAMESPACE="${SECRET_NAMESPACE:-app-platform-dev}"
+        export ENVIRONMENT="${ENVIRONMENT:-development}"
+        export ENV="${ENV:-dev}"
+        
+        local generate_script="$k8s_resource_dir/custom-values/secret/harbor-registry-secret/generate-harbor-registry-secret/generate-harbor-registry-secret.sh"
+        if [ -f "$generate_script" ]; then
+            if bash "$generate_script"; then
                 log_success "YAML 文件生成成功"
             else
                 log_error "YAML 文件生成失败"
                 return 1
             fi
         else
-            log_error "生成脚本不存在: $custom_values_dir/generate.sh"
+            log_error "生成脚本不存在: $generate_script"
             return 1
         fi
     fi
@@ -174,7 +181,7 @@ main() {
     echo ""
     
     # 1. 自动生成 YAML 文件（如果不存在）
-    if ! auto_generate_yaml "$HARBOR_SECRET_YAML" "$CUSTOM_VALUES_DIR"; then
+    if ! auto_generate_yaml "$HARBOR_SECRET_YAML" "$K8S_RESOURCE_DIR"; then
         log_error "无法生成或找到 Harbor Registry Secret YAML 文件"
         exit 1
     fi
