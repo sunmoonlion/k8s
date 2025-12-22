@@ -38,7 +38,28 @@ spec:
   entryPoints:
     - websecure
   routes:
-    # 使用节点 IP 访问
+    # 使用节点 IP 访问 - 文档路径（精确匹配，优先级高，不需要 stripPrefix）
+    - match: Host(`{{NODE_IP}}`) && Path(`/docs`)
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+    - match: Host(`{{NODE_IP}}`) && Path(`/redoc`)
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+    - match: Host(`{{NODE_IP}}`) && Path(`/openapi.json`)
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+    - match: Host(`{{NODE_IP}}`) && Path(`/`)
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+    # 使用节点 IP 访问 - API 路径（需要 stripPrefix）
     - match: Host(`{{NODE_IP}}`) && PathPrefix(`/api/v1`)
       kind: Rule
       services:
@@ -46,7 +67,28 @@ spec:
           port: {{SERVICE_PORT}}
       middlewares:
         - name: llmops-app-bff-stripprefix
-    # 使用统一域名访问
+    # 使用统一域名访问 - 文档路径（精确匹配，优先级高，不需要 stripPrefix）
+    - match: Host(`{{UNIFIED_HOST}}`) && Path(`/docs`)
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+    - match: Host(`{{UNIFIED_HOST}}`) && Path(`/redoc`)
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+    - match: Host(`{{UNIFIED_HOST}}`) && Path(`/openapi.json`)
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+    - match: Host(`{{UNIFIED_HOST}}`) && Path(`/`)
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+    # 使用统一域名访问 - API 路径（需要 stripPrefix）
     - match: Host(`{{UNIFIED_HOST}}`) && PathPrefix(`/api/v1`)
       kind: Rule
       services:

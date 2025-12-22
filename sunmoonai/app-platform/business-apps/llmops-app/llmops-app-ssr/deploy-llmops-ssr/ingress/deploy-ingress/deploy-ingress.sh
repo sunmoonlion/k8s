@@ -37,20 +37,18 @@ apply_file(){
   
   # 如果是生成的 YAML 文件，直接使用（无需变量替换）
   if [[ "$yaml_file" == *"-generated.yaml" ]]; then
-    # 自动生成 YAML 文件（如果不存在）
-    if [[ ! -f "$yaml_file" ]]; then
-      log_warn "生成的 YAML 文件不存在，自动运行生成脚本..."
-      if [[ -f "$CUSTOM_VALUES_DIR/generate.sh" ]]; then
-        if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
-          log_success "YAML 文件生成成功"
-        else
-          log_error "YAML 文件生成失败"
-          return 1
-        fi
+    # 自动生成 YAML 文件（总是重新生成，确保使用最新的模板）
+    log_info "重新生成 YAML 文件（确保使用最新的模板）..."
+    if [[ -f "$CUSTOM_VALUES_DIR/generate.sh" ]]; then
+      if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
+        log_success "YAML 文件生成成功"
       else
-        log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
+        log_error "YAML 文件生成失败"
         return 1
       fi
+    else
+      log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
+      return 1
     fi
     kubectl apply -f "$yaml_file" -n "$NAMESPACE"
   else

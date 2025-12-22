@@ -224,21 +224,19 @@ check_namespace() {
 
 # 检查环境配置
 check_env_config() {
-    # 检查生成的 YAML 文件是否存在，如果不存在则自动生成
-    if [ ! -f "$CELERYWORKER_YAML" ]; then
-        log_warn "生成的 YAML 文件不存在，自动运行生成脚本..."
-        if [ -f "$CUSTOM_VALUES_DIR/generate.sh" ]; then
-            if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
-                log_success "YAML 文件生成成功"
-            else
-                log_error "YAML 文件生成失败"
-                exit 1
-            fi
+    # 自动生成 YAML 文件（总是重新生成，确保使用最新的模板）
+    log_info "重新生成 YAML 文件（确保使用最新的模板）..."
+    if [ -f "$CUSTOM_VALUES_DIR/generate.sh" ]; then
+        if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
+            log_success "YAML 文件生成成功"
         else
-            log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
-            log_error "请确保生成脚本存在于: $CUSTOM_VALUES_DIR"
+            log_error "YAML 文件生成失败"
             exit 1
         fi
+    else
+        log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
+        log_error "请确保生成脚本存在于: $CUSTOM_VALUES_DIR"
+        exit 1
     fi
 }
 
@@ -309,20 +307,18 @@ deploy_celeryworker() {
     log_info "🚀 阶段2：部署 Celery Worker 核心服务..."
     log_info "部署 Celery Worker (Incubator) (环境: $ENVIRONMENT, 镜像: $CELERY_WORKER_FULL_IMAGE_NAME, 拉取策略: ${IMAGE_PULL_POLICY:-IfNotPresent}, 命名空间: $NAMESPACE)..."
     
-    # 检查生成的 YAML 文件是否存在，如果不存在则自动生成
-    if [ ! -f "$CELERYWORKER_YAML" ]; then
-        log_warn "生成的 YAML 文件不存在，自动运行生成脚本..."
-        if [ -f "$CUSTOM_VALUES_DIR/generate.sh" ]; then
-            if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
-                log_success "YAML 文件生成成功"
-            else
-                log_error "YAML 文件生成失败"
-                return 1
-            fi
+    # 自动生成 YAML 文件（总是重新生成，确保使用最新的模板）
+    log_info "重新生成 YAML 文件（确保使用最新的模板）..."
+    if [ -f "$CUSTOM_VALUES_DIR/generate.sh" ]; then
+        if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
+            log_success "YAML 文件生成成功"
         else
-            log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
+            log_error "YAML 文件生成失败"
             return 1
         fi
+    else
+        log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
+        return 1
     fi
     
     # 部署 PVC（如果存在）
@@ -368,6 +364,7 @@ uninstall_celeryworker() {
     # ============================================================
     log_info "🚀 阶段1：卸载 Celery Worker 核心服务..."
     # 检查生成的 YAML 文件是否存在
+    # 注意：卸载时不需要重新生成 YAML，直接删除资源即可
     if [ ! -f "$CELERYWORKER_YAML" ]; then
         log_warn "生成的 YAML 文件不存在: $CELERYWORKER_YAML，尝试直接删除资源"
         kubectl delete deployment celeryworker-incubator -n "$NAMESPACE" --ignore-not-found=true

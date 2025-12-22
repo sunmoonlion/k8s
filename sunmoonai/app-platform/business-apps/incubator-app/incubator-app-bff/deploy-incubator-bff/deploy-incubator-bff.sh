@@ -224,59 +224,22 @@ check_namespace() {
 
 # 检查环境配置
 # 自动生成 YAML 文件的辅助函数
-# 检查所有在 generate.conf 中配置的资源，如果任何一个缺失就重新生成所有资源
+# 注意：总是重新生成，确保使用最新的模板
 auto_generate_yaml() {
     local yaml_file="$1"
     local custom_values_dir="$2"
     
-    # 检查主 YAML 文件是否存在
-    local need_generate=false
-    
-    if [ ! -f "$yaml_file" ]; then
-        log_warn "主 YAML 文件不存在: $yaml_file"
-        need_generate=true
-    else
-        # 检查 generate.conf 中配置的所有资源是否都存在
-        if [ -f "$custom_values_dir/generate.conf" ]; then
-            # 读取 generate.conf 并解析 GENERATE_RESOURCES 配置
-            while IFS= read -r line; do
-                # 跳过注释和空行
-                [[ "$line" =~ ^[[:space:]]*# ]] && continue
-                [[ -z "${line// }" ]] && continue
-                
-                # 匹配 GENERATE_RESOURCES 数组中的配置行
-                # 格式: "类型:模板路径:输出文件名:是否启用"
-                if [[ "$line" =~ \"([^\"]+):([^\"]+):([^\"]+):([^\"]+)\" ]]; then
-                    local output_file="${BASH_REMATCH[3]}"
-                    local enabled="${BASH_REMATCH[4]}"
-                    
-                    # 只检查启用的资源
-                    if [[ "$enabled" == "true" ]] && [ -n "$output_file" ]; then
-                        local full_path="$custom_values_dir/$output_file"
-                        if [ ! -f "$full_path" ]; then
-                            log_warn "生成的 YAML 文件不存在: $output_file"
-                            need_generate=true
-                            break
-                        fi
-                    fi
-                fi
-            done < "$custom_values_dir/generate.conf"
-        fi
-    fi
-    
-    if [ "$need_generate" = true ]; then
-        log_warn "检测到缺失的 YAML 文件，自动运行生成脚本..."
-        if [ -f "$custom_values_dir/generate.sh" ]; then
-            if bash "$custom_values_dir/generate.sh"; then
-                log_success "YAML 文件生成成功"
-            else
-                log_error "YAML 文件生成失败"
-                return 1
-            fi
+    log_info "重新生成 YAML 文件（确保使用最新的模板）..."
+    if [ -f "$custom_values_dir/generate.sh" ]; then
+        if bash "$custom_values_dir/generate.sh"; then
+            log_success "YAML 文件生成成功"
         else
-            log_error "生成脚本不存在: $custom_values_dir/generate.sh"
+            log_error "YAML 文件生成失败"
             return 1
         fi
+    else
+        log_error "生成脚本不存在: $custom_values_dir/generate.sh"
+        return 1
     fi
     return 0
 }

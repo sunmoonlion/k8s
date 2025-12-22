@@ -169,21 +169,19 @@ execute_converter_deployment() {
     
     log_info "镜像地址: $full_image"
     
-    # 检查生成的 YAML 文件是否存在，如果不存在则自动生成
-    if [ ! -f "$DEPLOYMENT_YAML" ]; then
-        log_warn "生成的 YAML 文件不存在，自动运行生成脚本..."
-        if [ -f "$CUSTOM_VALUES_DIR/generate.sh" ]; then
-            if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
-                log_success "YAML 文件生成成功"
-            else
-                log_error "YAML 文件生成失败"
-                exit 1
-            fi
+    # 自动生成 YAML 文件（总是重新生成，确保使用最新的模板）
+    log_info "重新生成 YAML 文件（确保使用最新的模板）..."
+    if [ -f "$CUSTOM_VALUES_DIR/generate.sh" ]; then
+        if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
+            log_success "YAML 文件生成成功"
         else
-            log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
-            log_error "请确保生成脚本存在于: $CUSTOM_VALUES_DIR"
+            log_error "YAML 文件生成失败"
             exit 1
         fi
+    else
+        log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
+        log_error "请确保生成脚本存在于: $CUSTOM_VALUES_DIR"
+        exit 1
     fi
     
     # 应用 PVC（如果存在）

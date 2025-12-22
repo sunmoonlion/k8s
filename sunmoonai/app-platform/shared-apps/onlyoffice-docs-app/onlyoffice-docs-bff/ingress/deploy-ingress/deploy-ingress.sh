@@ -72,20 +72,18 @@ deploy_web() {
   local ns="${1:-$NAMESPACE}"
   check_ns "$ns" || return 1
   
-  # 自动生成 YAML 文件（如果不存在）
-  if [[ ! -f "$ONLYOFFICE_INGRESS_FILE" ]]; then
-    log_warn "生成的 Ingress YAML 文件不存在，自动运行生成脚本..."
-    if [[ -f "$CUSTOM_VALUES_DIR/generate.sh" ]]; then
-      if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
-        log_success "YAML 文件生成成功"
-      else
-        log_error "YAML 文件生成失败"
-        return 1
-      fi
+  # 自动生成 YAML 文件（总是重新生成，确保使用最新的模板）
+  log_info "重新生成 Ingress YAML 文件（确保使用最新的模板）..."
+  if [[ -f "$CUSTOM_VALUES_DIR/generate.sh" ]]; then
+    if bash "$CUSTOM_VALUES_DIR/generate.sh"; then
+      log_success "YAML 文件生成成功"
     else
-      log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
+      log_error "YAML 文件生成失败"
       return 1
     fi
+  else
+    log_error "生成脚本不存在: $CUSTOM_VALUES_DIR/generate.sh"
+    return 1
   fi
   
   [[ -f "$ONLYOFFICE_INGRESS_FILE" ]] || { log_error "Ingress 不存在: $ONLYOFFICE_INGRESS_FILE"; return 1; }
