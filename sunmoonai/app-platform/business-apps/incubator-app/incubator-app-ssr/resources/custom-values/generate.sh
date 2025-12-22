@@ -64,6 +64,7 @@ HARBOR_DOCKER_CONFIG_JSON=$(echo -n "{\"auths\":{\"${HARBOR_DOCKER_SERVER}\":{\"
 export HARBOR_DOCKER_CONFIG_JSON
 
 # Ingress 相关变量（用于模板替换）
+# 注意：SERVICE_PORT 应该是 Service 的 port，与 targetPort 保持一致（都是 3000）
 export SERVICE_NAME="${SERVICE_NAME:-incubator-app-ssr}"
 export SERVICE_PORT="${SERVICE_PORT:-3000}"
 export UNIFIED_HOST="${UNIFIED_HOST:-${INCUBATOR_SSR_UNIFIED_HOST}}"
