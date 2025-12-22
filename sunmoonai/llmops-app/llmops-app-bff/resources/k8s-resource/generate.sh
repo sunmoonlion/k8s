@@ -83,6 +83,7 @@ export LLMOPS_BFF_CONFIGMAP_NAME="${LLMOPS_BFF_CONFIGMAP_NAME:-llmops-service-co
 export LLMOPS_BFF_UNIFIED_HOST="${LLMOPS_BFF_UNIFIED_HOST:-llmops.sunmoonai.com}"
 export LLMOPS_BFF_NODE_IP="${LLMOPS_BFF_NODE_IP:-101.126.151.0}"
 export LLMOPS_BFF_TLS_ENABLED="${LLMOPS_BFF_TLS_ENABLED:-true}"
+export REPLICAS="${REPLICAS:-1}"
 
 # Harbor Docker 认证配置（用于 harbor-registry-secret）
 HARBOR_DOCKER_SERVER="${HARBOR_DOCKER_SERVER:-${LLMOPS_BFF_IMAGE_REGISTRY:-harbor.sunmoonai.com:30443}}"
