@@ -1,0 +1,23 @@
+# LLMOps App BFF 限流中间件配置 (Traefik Middleware)
+# 用途：限制每个 IP 的请求速率，防止 API 被滥用
+#
+# 配置说明：
+# - average: 平均请求速率（每秒请求数）
+# - burst: 突发请求允许的最大数量
+# - period: 时间窗口（秒）
+#
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: llmops-app-bff-rate-limit
+  namespace: ${NAMESPACE}
+  labels:
+    app: app-platform-ingress
+    component: llmops-app-bff
+    middleware-type: rate-limit
+spec:
+  rateLimit:
+    average: ${RATE_LIMIT_AVERAGE:-100}
+    burst: ${RATE_LIMIT_BURST:-200}
+    period: ${RATE_LIMIT_PERIOD:-1}
+

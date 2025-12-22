@@ -9,8 +9,8 @@ ORIGINAL_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_DIR="$ORIGINAL_SCRIPT_DIR"
 
 # 计算应用根目录和资源路径（在 source 之前计算，避免 SCRIPT_DIR 被覆盖）
-# 从 deploy-ingress/ -> ingress/ -> deploy-llmops-bff/ -> llmops-app-bff/
-APP_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+# 从 deploy-ingress/ -> llmops-bff-ingress/ -> ingress/ -> deploy-llmops-bff/ -> llmops-app-bff/
+APP_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 RESOURCES_DIR="${APP_ROOT}/resources"
 K8S_RESOURCE_DIR="${RESOURCES_DIR}/k8s-resource"
 
