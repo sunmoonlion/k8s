@@ -1,0 +1,13 @@
+# Document Converter BFF 命名空间配置
+# 用途：创建应用专用的 Kubernetes 命名空间
+#
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${NAMESPACE}
+  labels:
+    app: app-platform
+    component: document-converter-bff
+    environment: ${ENVIRONMENT}
+    managed-by: deploy-script
+

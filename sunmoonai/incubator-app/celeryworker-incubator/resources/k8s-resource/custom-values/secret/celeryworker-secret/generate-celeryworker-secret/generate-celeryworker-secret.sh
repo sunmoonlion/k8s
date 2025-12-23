@@ -1,0 +1,166 @@
+#!/bin/bash
+# Celery Worker Secret YAML 生成脚本
+# 根据配置生成 Secret 的 YAML 文件
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_FILE="$SCRIPT_DIR/generate-celeryworker-secret.conf"
+# 计算 resources/k8s-resource 目录（模板文件所在位置）
+# 从 generate-celeryworker-secret/ -> celeryworker-secret/ -> secret/ -> custom-values/ -> k8s-resource/
+K8S_RESOURCE_DIR="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+# 计算应用根目录（用于查找主应用的 deploy-*.conf）
+# 从 generate-celeryworker-secret/ -> celeryworker-secret/ -> secret/ -> custom-values/ -> k8s-resource/ -> resources/ -> celeryworker-incubator/
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
+OUTPUT_DIR="$SCRIPT_DIR"
+
+# 尝试读取主应用的 deploy-*.conf（作为基础配置的默认值源）
+# 如果存在，则从中获取基础配置；否则使用 generate-*.conf 中的默认值
+# 注意：只读取基础配置（NAMESPACE、ENVIRONMENT等），不读取部署控制参数
+MAIN_DEPLOY_CONFIG="$PROJECT_ROOT/deploy-celeryworker-incubator/app/deploy-app/deploy-celeryworker-incubator.conf"
+if [ -f "$MAIN_DEPLOY_CONFIG" ]; then
+    _temp_namespace=$(source "$MAIN_DEPLOY_CONFIG" 2>/dev/null && echo "${CELERY_WORKER_NAMESPACE:-}")
+    _temp_environment=$(source "$MAIN_DEPLOY_CONFIG" 2>/dev/null && echo "${ENVIRONMENT:-}")
+    [ -n "$_temp_namespace" ] && [ -z "${NAMESPACE:-}" ] && export NAMESPACE="$_temp_namespace"
+    [ -n "$_temp_environment" ] && [ -z "${ENVIRONMENT:-}" ] && export ENVIRONMENT="$_temp_environment"
+    unset _temp_namespace _temp_environment
+fi
+
+# 日志函数
+log_info() { echo -e "\033[0;34m[INFO]\033[0m $*"; }
+log_success() { echo -e "\033[0;32m[SUCCESS]\033[0m $*"; }
+log_error() { echo -e "\033[0;31m[ERROR]\033[0m $*" >&2; }
+log_warn() { echo -e "\033[1;33m[WARN]\033[0m $*"; }
+
+# 加载配置
+if [ ! -f "$CONFIG_FILE" ]; then
+    log_error "配置文件不存在: $CONFIG_FILE"
+    exit 1
+fi
+
+source "$CONFIG_FILE"
+
+# 检查是否启用
+if [ "${ENABLED:-true}" != "true" ]; then
+    log_info "跳过资源生成: secret (已禁用)"
+    exit 0
+fi
+
+# ============================================================================
+# 设置环境变量（用于模板替换）
+# 注意：所有配置都从 generate-celeryworker-secret.conf 读取，不在脚本中设置硬编码默认值
+# ============================================================================
+# 基础配置（从 generate-celeryworker-secret.conf 中读取，所有默认值在 conf 文件中定义）
+export NAMESPACE="${NAMESPACE:-}"
+export ENVIRONMENT="${ENVIRONMENT:-}"
+export ENV="${ENV:-}"
+
+# Secret 数据内容（从 generate-celeryworker-secret.conf 中读取，所有默认值在 conf 文件中定义）
+export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-}"
+export NEO4J_PASSWORD="${NEO4J_PASSWORD:-}"
+export SMTP_USER="${SMTP_USER:-}"
+export SMTP_PASSWORD="${SMTP_PASSWORD:-}"
+export SENTRY_DSN="${SENTRY_DSN:-}"
+export REDIS_USERNAME="${REDIS_USERNAME:-}"
+export REDIS_PASSWORD="${REDIS_PASSWORD:-}"
+
+# 尝试从 ConfigMap 配置读取非敏感信息（用于组装完整连接字符串）
+CONFIGMAP_CONFIG_FILE="$K8S_RESOURCE_DIR/custom-values/configMap/celeryworker-config/generate-celeryworker-config/generate-celeryworker-config.conf"
+if [ -f "$CONFIGMAP_CONFIG_FILE" ]; then
+    # 临时读取 ConfigMap 配置，获取非敏感信息
+    _temp_postgres_server=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${POSTGRES_SERVER:-}")
+    _temp_postgres_port=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${POSTGRES_PORT:-}")
+    _temp_postgres_user=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${POSTGRES_USER:-}")
+    _temp_postgres_db=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${POSTGRES_DB:-}")
+    _temp_neo4j_server=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${NEO4J_SERVER:-}")
+    _temp_neo4j_port=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${NEO4J_PORT:-}")
+    _temp_neo4j_username=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${NEO4J_USERNAME:-}")
+    _temp_neo4j_bolt=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${NEO4J_BOLT:-}")
+    
+    # 如果从 ConfigMap 读取到了值，且环境变量未设置，则设置默认值
+    [ -n "$_temp_postgres_server" ] && [ -z "${POSTGRES_SERVER:-}" ] && export POSTGRES_SERVER="$_temp_postgres_server"
+    [ -n "$_temp_postgres_port" ] && [ -z "${POSTGRES_PORT:-}" ] && export POSTGRES_PORT="$_temp_postgres_port"
+    [ -n "$_temp_postgres_user" ] && [ -z "${POSTGRES_USER:-}" ] && export POSTGRES_USER="$_temp_postgres_user"
+    [ -n "$_temp_postgres_db" ] && [ -z "${POSTGRES_DB:-}" ] && export POSTGRES_DB="$_temp_postgres_db"
+    [ -n "$_temp_neo4j_server" ] && [ -z "${NEO4J_SERVER:-}" ] && export NEO4J_SERVER="$_temp_neo4j_server"
+    [ -n "$_temp_neo4j_port" ] && [ -z "${NEO4J_PORT:-}" ] && export NEO4J_PORT="$_temp_neo4j_port"
+    [ -n "$_temp_neo4j_username" ] && [ -z "${NEO4J_USERNAME:-}" ] && export NEO4J_USERNAME="$_temp_neo4j_username"
+    [ -n "$_temp_neo4j_bolt" ] && [ -z "${NEO4J_BOLT:-}" ] && export NEO4J_BOLT="$_temp_neo4j_bolt"
+    
+    unset _temp_postgres_server _temp_postgres_port _temp_postgres_user _temp_postgres_db
+    unset _temp_neo4j_server _temp_neo4j_port _temp_neo4j_username _temp_neo4j_bolt
+fi
+
+# 组装完整连接字符串（如果未在配置中提供）
+if [ -z "${DB_URL:-}" ] && [ -n "${POSTGRES_USER:-}" ] && [ -n "${POSTGRES_PASSWORD:-}" ] && [ -n "${POSTGRES_SERVER:-}" ] && [ -n "${POSTGRES_PORT:-}" ] && [ -n "${POSTGRES_DB:-}" ]; then
+    export DB_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_SERVER}:${POSTGRES_PORT}/${POSTGRES_DB}"
+fi
+
+if [ -z "${NEO4J_BOLT_URL:-}" ] && [ -n "${NEO4J_BOLT:-}" ] && [ -n "${NEO4J_USERNAME:-}" ] && [ -n "${NEO4J_PASSWORD:-}" ] && [ -n "${NEO4J_SERVER:-}" ] && [ -n "${NEO4J_PORT:-}" ]; then
+    export NEO4J_BOLT_URL="${NEO4J_BOLT}://${NEO4J_USERNAME}:${NEO4J_PASSWORD}@${NEO4J_SERVER}:${NEO4J_PORT}"
+fi
+
+# DB_* 格式字段（兼容性）
+export DB_PASSWORD="${DB_PASSWORD:-${POSTGRES_PASSWORD:-}}"
+export DB_URL="${DB_URL:-}"
+export NEO4J_BOLT_URL="${NEO4J_BOLT_URL:-}"
+
+# 基础配置已经在 generate-celeryworker-secret.conf 中定义，上面已导出
+
+# 验证 YAML 文件
+validate_yaml() {
+    local yaml_file="$1"
+    
+    if command -v kubectl &> /dev/null; then
+        if kubectl apply --dry-run=client -f "$yaml_file" &> /dev/null; then
+            log_success "YAML 验证通过: $(basename "$yaml_file")"
+            return 0
+        else
+            log_error "YAML 验证失败: $(basename "$yaml_file")"
+            kubectl apply --dry-run=client -f "$yaml_file" 2>&1 | head -20
+            return 1
+        fi
+    else
+        log_warn "kubectl 未安装，跳过 YAML 验证"
+        return 0
+    fi
+}
+
+# 生成 YAML
+main() {
+    log_info "开始生成 Celery Worker Secret YAML 文件..."
+    log_info "输出目录: $OUTPUT_DIR"
+    
+    # 解析模板路径
+    local full_template_path
+    if [[ "$TEMPLATE_FILE" = /* ]]; then
+        full_template_path="$TEMPLATE_FILE"
+    else
+        full_template_path="$K8S_RESOURCE_DIR/$TEMPLATE_FILE"
+    fi
+    
+    local full_output_path="$OUTPUT_DIR/$OUTPUT_FILE"
+    
+    # 检查模板文件
+    if [ ! -f "$full_template_path" ]; then
+        log_error "模板文件不存在: $full_template_path"
+        exit 1
+    fi
+    
+    log_info "生成 secret: $OUTPUT_FILE"
+    log_info "模板文件: $full_template_path"
+    
+    # 处理 ${VAR:-default} 语法，然后使用 envsubst
+    sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$full_template_path" | envsubst > "$full_output_path"
+    
+    # 验证生成的 YAML
+    if ! validate_yaml "$full_output_path"; then
+        exit 1
+    fi
+    
+    log_success "✅ secret 生成完成: $OUTPUT_FILE"
+    return 0
+}
+
+main "$@"
+

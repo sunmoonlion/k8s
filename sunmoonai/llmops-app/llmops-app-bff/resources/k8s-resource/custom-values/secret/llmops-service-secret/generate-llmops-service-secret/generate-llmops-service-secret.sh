@@ -55,7 +55,7 @@ export NAMESPACE="${NAMESPACE:-}"
 export ENVIRONMENT="${ENVIRONMENT:-}"
 export ENV="${ENV:-}"
 
-# Secret 数据内容（从配置文件中读取）
+# Secret 数据内容（从 generate-llmops-service-secret.conf 中读取，所有默认值在 conf 文件中定义）
 export SECRET_KEY="${SECRET_KEY:-}"
 export TOTP_SECRET_KEY="${TOTP_SECRET_KEY:-}"
 export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-}"
@@ -66,8 +66,59 @@ export SMTP_USER="${SMTP_USER:-}"
 export SMTP_PASSWORD="${SMTP_PASSWORD:-}"
 export SENTRY_DSN="${SENTRY_DSN:-}"
 
-# Secret 名称
-export LLMOPS_SERVICE_SECRET_NAME="${LLMOPS_SERVICE_SECRET_NAME:-llmops-service-secret}"
+# 尝试从 ConfigMap 配置读取非敏感信息（用于组装完整连接字符串）
+CONFIGMAP_CONFIG_FILE="$K8S_RESOURCE_DIR/custom-values/configMap/llmops-service-config/generate-llmops-service-config/generate-llmops-service-config.conf"
+if [ -f "$CONFIGMAP_CONFIG_FILE" ]; then
+    # 临时读取 ConfigMap 配置，获取非敏感信息
+    _temp_postgres_server=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${POSTGRES_SERVER:-}")
+    _temp_postgres_port=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${POSTGRES_PORT:-}")
+    _temp_postgres_user=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${POSTGRES_USER:-}")
+    _temp_postgres_db=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${POSTGRES_DB:-}")
+    _temp_neo4j_server=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${NEO4J_SERVER:-}")
+    _temp_neo4j_port=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${NEO4J_PORT:-}")
+    _temp_neo4j_username=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${NEO4J_USERNAME:-}")
+    _temp_neo4j_bolt=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${NEO4J_BOLT:-}")
+    
+    # 如果从 ConfigMap 读取到了值，且环境变量未设置，则设置默认值
+    [ -n "$_temp_postgres_server" ] && [ -z "${POSTGRES_SERVER:-}" ] && export POSTGRES_SERVER="$_temp_postgres_server"
+    [ -n "$_temp_postgres_port" ] && [ -z "${POSTGRES_PORT:-}" ] && export POSTGRES_PORT="$_temp_postgres_port"
+    [ -n "$_temp_postgres_user" ] && [ -z "${POSTGRES_USER:-}" ] && export POSTGRES_USER="$_temp_postgres_user"
+    [ -n "$_temp_postgres_db" ] && [ -z "${POSTGRES_DB:-}" ] && export POSTGRES_DB="$_temp_postgres_db"
+    [ -n "$_temp_neo4j_server" ] && [ -z "${NEO4J_SERVER:-}" ] && export NEO4J_SERVER="$_temp_neo4j_server"
+    [ -n "$_temp_neo4j_port" ] && [ -z "${NEO4J_PORT:-}" ] && export NEO4J_PORT="$_temp_neo4j_port"
+    [ -n "$_temp_neo4j_username" ] && [ -z "${NEO4J_USERNAME:-}" ] && export NEO4J_USERNAME="$_temp_neo4j_username"
+    [ -n "$_temp_neo4j_bolt" ] && [ -z "${NEO4J_BOLT:-}" ] && export NEO4J_BOLT="$_temp_neo4j_bolt"
+    
+    unset _temp_postgres_server _temp_postgres_port _temp_postgres_user _temp_postgres_db
+    unset _temp_neo4j_server _temp_neo4j_port _temp_neo4j_username _temp_neo4j_bolt
+fi
+
+# 组装完整连接字符串（如果未在配置中提供）
+if [ -z "${DB_URL:-}" ] && [ -n "${POSTGRES_USER:-}" ] && [ -n "${POSTGRES_PASSWORD:-}" ] && [ -n "${POSTGRES_SERVER:-}" ] && [ -n "${POSTGRES_PORT:-}" ] && [ -n "${POSTGRES_DB:-}" ]; then
+    export DB_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_SERVER}:${POSTGRES_PORT}/${POSTGRES_DB}"
+fi
+
+if [ -z "${NEO4J_BOLT_URL:-}" ] && [ -n "${NEO4J_BOLT:-}" ] && [ -n "${NEO4J_USERNAME:-}" ] && [ -n "${NEO4J_PASSWORD:-}" ] && [ -n "${NEO4J_SERVER:-}" ] && [ -n "${NEO4J_PORT:-}" ]; then
+    export NEO4J_BOLT_URL="${NEO4J_BOLT}://${NEO4J_USERNAME}:${NEO4J_PASSWORD}@${NEO4J_SERVER}:${NEO4J_PORT}"
+fi
+
+# DB_* 格式字段（兼容性）
+export DB_PASSWORD="${DB_PASSWORD:-${POSTGRES_PASSWORD:-}}"
+export DB_URL="${DB_URL:-}"
+export NEO4J_BOLT_URL="${NEO4J_BOLT_URL:-}"
+
+# LLMOps 业务配置（从 generate-llmops-service-secret.conf 中读取，所有默认值在 conf 文件中定义）
+export REDIS_USERNAME="${REDIS_USERNAME:-}"
+export REDIS_PASSWORD="${REDIS_PASSWORD:-}"
+export WEAVIATE_API_KEY="${WEAVIATE_API_KEY:-}"
+export COS_SECRET_ID="${COS_SECRET_ID:-}"
+export COS_SECRET_KEY="${COS_SECRET_KEY:-}"
+export GITHUB_CLIENT_SECRET="${GITHUB_CLIENT_SECRET:-}"
+export MOONSHOT_API_KEY="${MOONSHOT_API_KEY:-}"
+export DEEPSEEK_API_KEY="${DEEPSEEK_API_KEY:-}"
+export GAODE_API_KEY="${GAODE_API_KEY:-}"
+
+# 基础配置已经在 generate-llmops-service-secret.conf 中定义，上面已导出
 
 # 验证 YAML 文件
 validate_yaml() {

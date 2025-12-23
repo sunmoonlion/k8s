@@ -59,8 +59,7 @@ export NAMESPACE="${NAMESPACE:-}"
 export ENVIRONMENT="${ENVIRONMENT:-}"
 export ENV="${ENV:-}"
 
-# ConfigMap 数据内容（从配置文件中读取）
-export LLMOPS_SERVICE_CONFIGMAP_NAME="${LLMOPS_SERVICE_CONFIGMAP_NAME:-llmops-service-config}"
+# ConfigMap 数据内容（从 generate-llmops-service-config.conf 中读取，所有默认值在 conf 文件中定义）
 export PROJECT_NAME="${PROJECT_NAME:-}"
 export SERVER_NAME="${SERVER_NAME:-}"
 export SERVER_HOST="${SERVER_HOST:-}"
@@ -70,11 +69,20 @@ export POSTGRES_SERVER="${POSTGRES_SERVER:-}"
 export POSTGRES_PORT="${POSTGRES_PORT:-}"
 export POSTGRES_USER="${POSTGRES_USER:-}"
 export POSTGRES_DB="${POSTGRES_DB:-}"
+export POSTGRES_URL_TEMPLATE="${POSTGRES_URL_TEMPLATE:-}"
+export DB_SSLMODE="${DB_SSLMODE:-}"
+export DB_HOST="${DB_HOST:-}"
+export DB_PORT="${DB_PORT:-}"
+export DB_NAME="${DB_NAME:-}"
+export DB_USER="${DB_USER:-}"
 export NEO4J_SERVER="${NEO4J_SERVER:-}"
 export NEO4J_PORT="${NEO4J_PORT:-}"
 export NEO4J_USERNAME="${NEO4J_USERNAME:-}"
 export NEO4J_AUTH="${NEO4J_AUTH:-}"
 export NEO4J_BOLT="${NEO4J_BOLT:-}"
+export NEO4J_BOLT_URL_TEMPLATE="${NEO4J_BOLT_URL_TEMPLATE:-}"
+export NEO4J_SUGGESTION_LIMIT="${NEO4J_SUGGESTION_LIMIT:-}"
+export NEO4J_RESULTS_LIMIT="${NEO4J_RESULTS_LIMIT:-}"
 export USERS_OPEN_REGISTRATION="${USERS_OPEN_REGISTRATION:-}"
 export NEO4J_FORCE_TIMEZONE="${NEO4J_FORCE_TIMEZONE:-}"
 export NEO4J_AUTO_INSTALL_LABELS="${NEO4J_AUTO_INSTALL_LABELS:-}"
@@ -83,6 +91,48 @@ export MULTI_MAX="${MULTI_MAX:-}"
 export EMAIL_RESET_TOKEN_EXPIRE_HOURS="${EMAIL_RESET_TOKEN_EXPIRE_HOURS:-}"
 export EMAIL_TEMPLATES_DIR="${EMAIL_TEMPLATES_DIR:-}"
 export EMAIL_TEST_USER="${EMAIL_TEST_USER:-}"
+
+# SMTP 配置（从 generate-llmops-service-config.conf 中读取，所有默认值在 conf 文件中定义）
+export SMTP_HOST="${SMTP_HOST:-}"
+export SMTP_PORT="${SMTP_PORT:-}"
+export SMTP_TLS="${SMTP_TLS:-}"
+export SMTP_SSL="${SMTP_SSL:-}"
+export SMTP_FROM="${SMTP_FROM:-}"
+export EMAILS_FROM_EMAIL="${EMAILS_FROM_EMAIL:-}"
+export EMAILS_FROM_NAME="${EMAILS_FROM_NAME:-}"
+export EMAILS_TO_EMAIL="${EMAILS_TO_EMAIL:-}"
+export SMTP_TIMEOUT="${SMTP_TIMEOUT:-}"
+
+# Sentry 监控配置（从 generate-llmops-service-config.conf 中读取，所有默认值在 conf 文件中定义）
+export SENTRY_ENVIRONMENT="${SENTRY_ENVIRONMENT:-}"
+export SENTRY_RELEASE="${SENTRY_RELEASE:-}"
+export SENTRY_TRACES_SAMPLE_RATE="${SENTRY_TRACES_SAMPLE_RATE:-}"
+export SENTRY_PROFILES_SAMPLE_RATE="${SENTRY_PROFILES_SAMPLE_RATE:-}"
+
+# LLMOps 业务配置（从 generate-llmops-service-config.conf 中读取，所有默认值在 conf 文件中定义）
+export AUTH_SERVICE_URL="${AUTH_SERVICE_URL:-}"
+
+# Redis 配置（从 generate-llmops-service-config.conf 中读取，所有默认值在 conf 文件中定义）
+export REDIS_HOST="${REDIS_HOST:-}"
+export REDIS_PORT="${REDIS_PORT:-}"
+export REDIS_DB="${REDIS_DB:-}"
+export REDIS_USE_SSL="${REDIS_USE_SSL:-}"
+
+# Weaviate 配置（从 generate-llmops-service-config.conf 中读取，所有默认值在 conf 文件中定义）
+export WEAVIATE_URL="${WEAVIATE_URL:-}"
+
+# 腾讯云 COS 配置（从 generate-llmops-service-config.conf 中读取，所有默认值在 conf 文件中定义）
+export COS_REGION="${COS_REGION:-}"
+export COS_BUCKET="${COS_BUCKET:-}"
+export COS_SCHEME="${COS_SCHEME:-}"
+export COS_DOMAIN="${COS_DOMAIN:-}"
+
+# OAuth 配置（从 generate-llmops-service-config.conf 中读取，所有默认值在 conf 文件中定义）
+export GITHUB_CLIENT_ID="${GITHUB_CLIENT_ID:-}"
+export GITHUB_REDIRECT_URI="${GITHUB_REDIRECT_URI:-}"
+
+# 语言模型 API 配置（从 generate-llmops-service-config.conf 中读取，所有默认值在 conf 文件中定义）
+export DEEPSEEK_API_BASE="${DEEPSEEK_API_BASE:-}"
 
 # 验证 YAML 文件
 validate_yaml() {
