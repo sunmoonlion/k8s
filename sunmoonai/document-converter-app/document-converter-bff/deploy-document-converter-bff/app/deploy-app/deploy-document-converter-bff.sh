@@ -542,7 +542,7 @@ deploy_app() {
     # 部署 Deployment 和 Service（直接使用生成的 YAML）
     kubectl apply -f "$DOCUMENT_CONVERTER_BFF_YAML" -n "$NAMESPACE"
     
-    if [ $? -eq 0 ]; then
+        if [ $? -eq 0 ]; then
         log_success "Document Converter BFF 部署完成！"
         echo ""
         log_info "检查部署状态:"
