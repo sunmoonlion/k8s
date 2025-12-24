@@ -109,6 +109,9 @@ export SENTRY_RELEASE="${SENTRY_RELEASE:-}"
 export SENTRY_TRACES_SAMPLE_RATE="${SENTRY_TRACES_SAMPLE_RATE:-}"
 export SENTRY_PROFILES_SAMPLE_RATE="${SENTRY_PROFILES_SAMPLE_RATE:-}"
 
+# 认证服务配置（从 generate-incubator-bff-config.conf 中读取，所有默认值在 conf 文件中定义）
+export AUTH_SERVICE_URL="${AUTH_SERVICE_URL:-}"
+
 # 基础配置已经在 generate-incubator-bff-config.conf 中定义，上面已导出
 
 # 验证 YAML 文件
