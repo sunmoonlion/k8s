@@ -26,7 +26,7 @@ spec:
         # 注意：如果使用 IfNotPresent，节点本地有旧镜像时不会从 Harbor 拉取，导致使用旧版本
         imagePullPolicy: ${IMAGE_PULL_POLICY:-Always}
         ports:
-        - containerPort: 80
+        - containerPort: 3030
         envFrom:
         - configMapRef:
             name: ${AUTH_APP_BFF_CONFIGMAP_NAME:-auth-app-bff-config}
@@ -40,15 +40,17 @@ spec:
             memory: "1Gi"
             cpu: "500m"
         livenessProbe:
-          tcpSocket:
-            port: 80
+          httpGet:
+            path: /api/v1/health
+            port: 3030
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
         readinessProbe:
-          tcpSocket:
-            port: 80
+          httpGet:
+            path: /api/v1/health
+            port: 3030
           initialDelaySeconds: 10
           periodSeconds: 5
           timeoutSeconds: 3
@@ -73,8 +75,8 @@ spec:
   selector:
     app: auth-app-bff
   ports:
-  - port: 80
-    targetPort: 80
+  - port: 3030
+    targetPort: 3030
     protocol: TCP
   type: ClusterIP
 
