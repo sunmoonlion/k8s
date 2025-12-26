@@ -28,6 +28,13 @@
 - ✅ **Access Token TTL**：15分钟（用于服务间调用）
 - ✅ **登录方式**：保留所有方式，暂时只启用 OAuth
 - ✅ **gRPC 调用**：**不受影响**（用于调用 user-service 获取用户数据，与认证方式无关）
+- ✅ **SSO（单点登录）**：通过 Cookie Domain 设置为 `.sunmoonai.com`，实现跨子域单点登录
+
+**SSO 说明：**
+- **实现方式**：Cookie Domain 设置为 `.sunmoonai.com`（注意前面的点），使 Cookie 在所有 `*.sunmoonai.com` 子域之间共享
+- **工作原理**：用户在一个子域（如 `auth.sunmoonai.com`）登录后，Cookie 会自动在所有子域（如 `llmops.sunmoonai.com`、`incubator.sunmoonai.com`）之间共享
+- **用户体验**：用户只需登录一次，即可访问所有子域应用，无需重复登录
+- **测试项**：跨子域 SSO - 在一个应用登录，访问另一个无需重登
 
 ### 1.2 gRPC 说明
 
@@ -75,7 +82,371 @@
 
 ---
 
-## 二、Session 数据结构
+## 二、Session + Cookie 系统完整说明
+
+### 2.1 Session + Cookie 架构概述
+
+**Session + Cookie 认证**是一种基于服务器端会话管理的认证方式，通过 HttpOnly Cookie 在客户端和服务器之间传递 Session ID，实现用户认证和状态管理。
+
+### 2.2 核心组件
+
+#### 2.2.1 Session（会话）
+
+**定义**：Session 是服务器端存储的用户会话信息，包含用户身份、权限、状态等数据。
+
+**存储位置**：Redis（内存数据库，高性能）
+
+**生命周期**：
+- **创建**：用户登录成功后创建
+- **有效期**：7天（可配置）
+- **续期**：滑动续期机制（用户活跃时自动延长）
+- **销毁**：用户登出或过期后删除
+
+**数据结构**：
+```typescript
+interface Session {
+  session_id: string;           // Session ID（UUID）
+  user_id: number;              // 用户ID
+  username: string;             // 用户名
+  email: string;                // 邮箱
+  full_name: string;            // 全名
+  is_active: boolean;           // 是否激活
+  is_superuser: boolean;        // 是否超级用户
+  email_validated: boolean;     // 邮箱是否验证
+  roles: Array<{ roleId: number }>;  // 角色列表
+  
+  access_token: string;         // JWT Token（用于服务间调用）
+  access_expires_at: number;   // Access Token 过期时间（15分钟）
+  
+  created_at: number;          // 创建时间
+  updated_at: number;          // 更新时间
+  expires_at: number;          // 过期时间（7天）
+  last_activity: number;      // 最后活动时间（用于滑动续期）
+  
+  client_ip?: string;         // 客户端IP（可选）
+}
+```
+
+#### 2.2.2 Cookie（HTTP Cookie）
+
+**定义**：Cookie 是存储在浏览器中的小段数据，用于在客户端和服务器之间传递 Session ID。
+
+**关键配置**：
+- **Name**：`sunmoonai_session`（可配置）
+- **Value**：Session ID（UUID格式）
+- **Domain**：`.sunmoonai.com`（跨子域共享，实现SSO）
+- **Path**：`/`（全路径有效）
+- **HttpOnly**：`true`（防止XSS攻击，前端JavaScript无法访问）
+- **Secure**：`true`（仅HTTPS传输）
+- **SameSite**：`Lax`（防止CSRF攻击，同时允许跨站导航）
+
+**安全特性**：
+- ✅ **HttpOnly**：前端JavaScript无法读取，防止XSS攻击
+- ✅ **Secure**：仅通过HTTPS传输，防止中间人攻击
+- ✅ **SameSite=Lax**：防止CSRF攻击，同时允许正常的跨站导航
+- ✅ **Domain=.sunmoonai.com**：所有子域共享，实现单点登录（SSO）
+
+### 2.3 完整认证流程
+
+#### 2.3.1 用户登录流程
+
+```
+1. 用户访问业务应用（未登录）
+   ↓
+2. 业务SSR → 业务BFF（调用API）
+   ↓
+3. 业务BFF 判断：未登录，返回401或重定向
+   ↓
+4. 浏览器重定向到 auth-app-ssr（登录页面）
+   ↓
+5. 用户输入用户名密码，提交登录表单
+   ↓
+6. auth-app-ssr → auth-app-bff（POST /api/v1/login/oauth）
+   ↓
+7. auth-app-bff 验证用户凭证：
+   - 调用 user-service（gRPC）验证用户名密码
+   - 验证通过后创建 Session
+   ↓
+8. auth-app-bff 创建 Session：
+   - 生成 Session ID（UUID）
+   - 存储用户信息到 Redis（key: auth:session:{session_id}）
+   - 设置过期时间（7天）
+   - 生成 access_token（JWT，15分钟有效期）
+   ↓
+9. auth-app-bff 设置 Cookie：
+   - 在 HTTP Response 中设置 Set-Cookie 头
+   - Cookie Name: sunmoonai_session
+   - Cookie Value: {session_id}
+   - Domain: .sunmoonai.com
+   - HttpOnly: true
+   - Secure: true
+   - SameSite: Lax
+   ↓
+10. 浏览器保存 Cookie（自动，无需前端代码）
+    ↓
+11. auth-app-ssr 重定向回业务应用
+    ↓
+12. 浏览器携带 Cookie 访问业务应用（已登录）
+```
+
+#### 2.3.2 已登录用户访问流程
+
+```
+1. 用户访问业务应用（已登录）
+   ↓
+2. 浏览器自动发送 Cookie（sunmoonai_session={session_id}）
+   ↓
+3. 业务SSR 接收请求，读取 Cookie
+   ↓
+4. 业务SSR → 业务BFF（调用API，转发 Cookie）
+   ↓
+5. 业务BFF 接收请求，读取 Cookie
+   ↓
+6. 业务BFF → auth-app-bff（调用 /api/v1/auth/me，转发 Cookie）
+   ↓
+7. auth-app-bff 验证 Session：
+   - 从 Cookie 中提取 Session ID
+   - 验证 Session ID 格式（防止注入攻击）
+   - 从 Redis 读取 Session（key: auth:session:{session_id}）
+   - 检查 Session 是否过期
+   - 如果 access_token 过期，自动刷新
+   ↓
+8. auth-app-bff 返回用户信息（+ access_token，如果带了 X-Service-Call: true）
+   ↓
+9. 业务BFF 处理业务逻辑，返回业务数据
+   ↓
+10. 业务SSR 渲染页面，返回给浏览器
+```
+
+#### 2.3.3 Session 滑动续期机制
+
+```
+1. 用户访问业务应用（已登录）
+   ↓
+2. auth-app-bff 验证 Session 时检查：
+   - 当前时间：now
+   - Session 过期时间：expires_at
+   - 剩余时间：remaining = expires_at - now
+   ↓
+3. 如果剩余时间 < 1天：
+   - 自动延长 Session 过期时间（延长到7天后）
+   - 更新 last_activity 时间
+   - 更新 Redis 中的 Session
+   ↓
+4. 用户持续活跃时，Session 自动续期
+   ↓
+5. 如果用户7天未活动，Session 过期
+```
+
+#### 2.3.4 用户登出流程
+
+```
+1. 用户点击登出按钮
+   ↓
+2. 业务SSR → auth-app-bff（POST /api/v1/auth/logout，携带 Cookie）
+   ↓
+3. auth-app-bff 处理登出：
+   - 从 Cookie 中提取 Session ID
+   - 从 Redis 删除 Session（DEL auth:session:{session_id}）
+   - 删除用户 Session 映射（DEL auth:user_sessions:{user_id}）
+   - 清除 Cookie（Set-Cookie: sunmoonai_session=; expires=Thu, 01 Jan 1970 00:00:00 GMT）
+   ↓
+4. 浏览器删除 Cookie（自动）
+   ↓
+5. 用户已登出，需要重新登录
+```
+
+### 2.4 数据流转过程
+
+#### 2.4.1 Session 存储结构
+
+**Redis Key 命名规范**：
+
+| 类型 | Key 格式 | 示例 | TTL |
+|------|----------|------|-----|
+| Session | `auth:session:{session_id}` | `auth:session:550e8400-e29b-41d4-a716-446655440000` | 7天 |
+| 用户 Session 映射 | `auth:user_sessions:{user_id}` | `auth:user_sessions:123` | 7天 |
+| 黑名单 | `auth:blacklist:{token}` | `auth:blacklist:eyJhbGc...` | Token剩余有效期 |
+
+**Session 存储示例**：
+```json
+{
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "user_id": 123,
+  "username": "john.doe",
+  "email": "john.doe@example.com",
+  "full_name": "John Doe",
+  "is_active": true,
+  "is_superuser": false,
+  "email_validated": true,
+  "roles": [{"roleId": 1}],
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "access_expires_at": 1704067200,
+  "created_at": 1704063600,
+  "updated_at": 1704067200,
+  "expires_at": 1704668400,
+  "last_activity": 1704067200
+}
+```
+
+#### 2.4.2 Cookie 传递过程
+
+**请求流程**：
+```
+1. 浏览器发送请求：
+   GET /api/v1/projects HTTP/1.1
+   Host: llmops.sunmoonai.com
+   Cookie: sunmoonai_session=550e8400-e29b-41d4-a716-446655440000
+   
+2. 业务SSR 接收请求，读取 Cookie：
+   const sessionId = req.cookies['sunmoonai_session']
+   
+3. 业务SSR 转发请求到业务BFF，携带 Cookie：
+   GET /api/v1/projects HTTP/1.1
+   Host: llmops-app-bff:3030
+   Cookie: sunmoonai_session=550e8400-e29b-41d4-a716-446655440000
+   
+4. 业务BFF 转发请求到 auth-app-bff，携带 Cookie：
+   GET /api/v1/auth/me HTTP/1.1
+   Host: auth-app-bff:3030
+   Cookie: sunmoonai_session=550e8400-e29b-41d4-a716-446655440000
+   X-Service-Call: true
+   
+5. auth-app-bff 验证 Session，返回用户信息
+```
+
+### 2.5 安全机制
+
+#### 2.5.1 防止 XSS 攻击
+
+**机制**：HttpOnly Cookie
+- Cookie 设置了 `HttpOnly: true`
+- 前端 JavaScript 无法读取 Cookie
+- 即使存在 XSS 漏洞，攻击者也无法窃取 Session ID
+
+**示例**：
+```javascript
+// 前端代码无法访问 HttpOnly Cookie
+document.cookie  // 不包含 sunmoonai_session
+```
+
+#### 2.5.2 防止 CSRF 攻击
+
+**机制**：SameSite Cookie
+- Cookie 设置了 `SameSite: Lax`
+- 防止跨站请求伪造（CSRF）攻击
+- 同时允许正常的跨站导航（如从邮件链接跳转）
+
+**工作原理**：
+- **Lax 模式**：允许 GET 请求的跨站导航，阻止 POST 请求的跨站提交
+- **Strict 模式**：完全阻止跨站请求（可能影响用户体验）
+
+#### 2.5.3 防止中间人攻击
+
+**机制**：Secure Cookie
+- Cookie 设置了 `Secure: true`
+- 仅通过 HTTPS 传输
+- 防止 HTTP 传输时被窃听
+
+#### 2.5.4 防止 Session 固定攻击
+
+**机制**：登录时重新生成 Session ID
+- 用户登录成功后，创建新的 Session ID
+- 旧的 Session ID 失效
+- 防止攻击者预先设置 Session ID
+
+#### 2.5.5 防止 Session 注入攻击
+
+**机制**：Session ID 格式验证
+- 验证 Session ID 格式（UUID格式：`^[0-9a-fA-F-]{36}$`）
+- 防止注入恶意代码
+- 无效格式直接拒绝
+
+**代码示例**：
+```typescript
+// 验证 Session ID 格式
+if (!/^[0-9a-fA-F-]{36}$/.test(sessionId)) {
+  throw new UnauthorizedException('Invalid session ID format');
+}
+```
+
+### 2.6 单点登录（SSO）实现
+
+#### 2.6.1 Cookie Domain 共享
+
+**配置**：`Domain=.sunmoonai.com`（注意前面的点）
+
+**工作原理**：
+- Cookie 在所有 `*.sunmoonai.com` 子域之间共享
+- 用户在一个子域登录后，Cookie 自动在所有子域可用
+
+**支持的子域**：
+- `auth.sunmoonai.com`（认证服务）
+- `llmops.sunmoonai.com`（LLMOps 应用）
+- `incubator.sunmoonai.com`（Incubator 应用）
+- 其他 `*.sunmoonai.com` 子域
+
+#### 2.6.2 SSO 流程
+
+```
+1. 用户在 auth.sunmoonai.com 登录
+   ↓
+2. auth-app-bff 设置 Cookie（Domain=.sunmoonai.com）
+   ↓
+3. 浏览器保存 Cookie（对所有 .sunmoonai.com 子域有效）
+   ↓
+4. 用户访问 llmops.sunmoonai.com
+   ↓
+5. 浏览器自动发送 Cookie（因为 Domain 匹配）
+   ↓
+6. llmops-app-bff 验证 Cookie，用户已登录
+   ↓
+7. 用户无需重新登录，直接访问业务功能
+```
+
+### 2.7 与 OIDC SSO 的对比
+
+| 特性 | Session + Cookie | OIDC SSO |
+|------|------------------|----------|
+| **实现复杂度** | 简单 | 复杂（需要实现标准协议） |
+| **性能** | 高（Redis 内存访问） | 中等（需要验证 JWT 签名） |
+| **标准化** | 自定义实现 | OIDC 标准协议 |
+| **适用场景** | 内部系统、单组织 | 企业级 SaaS、多租户 |
+| **第三方集成** | 不支持 | 支持（Google、Microsoft 等） |
+| **跨组织 SSO** | 不支持 | 支持 |
+| **开发成本** | 低 | 高 |
+| **维护成本** | 低 | 中等 |
+| **安全性** | 高（HttpOnly、Secure、SameSite） | 高（标准协议） |
+
+### 2.8 优势与局限性
+
+#### 2.8.1 优势
+
+1. **实现简单**：无需实现复杂的 OAuth/OIDC 协议
+2. **性能优秀**：Session 存储在 Redis，访问速度快
+3. **安全性高**：HttpOnly、Secure、SameSite 多重保护
+4. **适合内部系统**：单组织内多应用共享认证
+5. **开发成本低**：快速实现，易于维护
+
+#### 2.8.2 局限性
+
+1. **不支持第三方 IDP**：无法使用 Google、Microsoft 等第三方登录
+2. **跨组织 SSO 受限**：仅支持同域名下的子域共享
+3. **无标准化协议**：无法与其他系统标准化对接
+4. **扩展性有限**：不适合多租户 SaaS 场景
+
+### 2.9 最佳实践
+
+1. **Session 存储**：使用 Redis，设置合理的 TTL
+2. **Cookie 安全**：必须设置 HttpOnly、Secure、SameSite
+3. **Session ID 验证**：严格验证格式，防止注入攻击
+4. **滑动续期**：用户活跃时自动延长 Session
+5. **登出清理**：登出时彻底删除 Session 和 Cookie
+6. **监控告警**：监控 Session 创建速率、Redis 性能等
+
+---
+
+## 四、Session 数据结构
 
 ```typescript
 interface Session {
@@ -104,7 +475,7 @@ interface Session {
 
 ---
 
-## 三、环境变量配置
+## 五、环境变量配置
 
 ```bash
 # Session 配置
@@ -147,7 +518,7 @@ AUTH_SESSION_ENABLED=true
 
 ---
 
-## 四、实施步骤（6 个阶段）
+## 六、实施步骤（6 个阶段）
 
 ### 阶段 1：基础设施准备（1-2天）
 
@@ -189,24 +560,265 @@ AUTH_SESSION_ENABLED=true
 
 ### 阶段 3：BFF 适配（2-3天，可与阶段 4 并行）
 
-7. **llmops-app-bff 改造**
-   - 重构 `AuthClient`：Cookie 转发方式
-   - 重构 `deps.py`：从 Request 读取 Cookie
+**调用关系说明：**
+
+**重要术语说明：**
+- **业务SSR**：指 `llmops-app-ssr`、`incubator-app-ssr` 等业务前端应用
+- **业务BFF**：指 `llmops-app-bff` 和 `incubator-app-bff`，它们是业务后端服务
+- **auth-app-ssr**：认证相关的SSR应用，负责登录页面
+- **auth-app-bff**：认证服务
+
+**正确的调用流程：**
+
+```
+场景1：已登录用户访问业务应用
+浏览器/用户
+  ↓ (发送 Cookie)
+业务SSR (llmops-app-ssr / incubator-app-ssr)
+  ↓ (调用业务API)
+业务BFF (llmops-app-bff / incubator-app-bff)
+  ↓ (判断：已登录，转发 Cookie 到 auth-app-bff)
+auth-app-bff (认证服务)
+  ↓ (验证 Session, 返回用户信息)
+  ↑
+  ↓ (返回用户信息和业务数据)
+业务BFF → 业务SSR → 浏览器
+
+场景2：未登录用户访问业务应用
+浏览器/用户
+  ↓ (发送请求，无 Cookie 或 Cookie 无效)
+业务SSR (llmops-app-ssr / incubator-app-ssr)
+  ↓ (调用业务API)
+业务BFF (llmops-app-bff / incubator-app-bff)
+  ↓ (判断：未登录，返回 401 或重定向)
+  ↓ (重定向到 auth-app-ssr)
+auth-app-ssr (认证页面)
+  ↓ (用户登录，调用 auth-app-bff)
+auth-app-bff (认证服务)
+  ↓ (验证登录，设置 Cookie)
+  ↑
+  ↓ (登录成功，重定向回业务应用)
+浏览器 → 业务SSR → 业务BFF → auth-app-bff
+```
+
+**详细流程：**
+
+**场景1：已登录用户**
+1. **浏览器** → **业务SSR**：用户访问业务应用，浏览器自动发送 Cookie
+2. **业务SSR** → **业务BFF**：业务SSR 调用业务BFF 的 API（转发 Cookie）
+3. **业务BFF 判断认证状态**：
+   - 调用 `AuthClient.get_current_user(request)` 验证 Cookie
+   - 如果 Cookie 有效（已登录）：继续处理业务请求
+4. **业务BFF** → **auth-app-bff**：转发 Cookie 到 auth-app-bff 验证 Session
+5. **auth-app-bff**：验证 Session，返回用户信息
+6. **业务BFF**：处理业务逻辑，返回业务数据
+7. **业务SSR**：渲染页面，返回给浏览器
+
+**场景2：未登录用户**
+1. **浏览器** → **业务SSR**：用户访问业务应用，无 Cookie 或 Cookie 无效
+2. **业务SSR** → **业务BFF**：业务SSR 调用业务BFF 的 API
+3. **业务BFF 判断认证状态**：
+   - 调用 `AuthClient.get_current_user(request)` 验证 Cookie
+   - 如果 Cookie 无效（未登录）：返回 401 或重定向响应
+4. **业务SSR** → **浏览器**：收到 401 或重定向，重定向到 `auth-app-ssr`（登录页面）
+5. **浏览器** → **auth-app-ssr**：用户访问登录页面
+6. **auth-app-ssr** → **auth-app-bff**：用户提交登录信息，auth-app-ssr 调用 auth-app-bff 进行认证
+7. **auth-app-bff**：验证登录，创建 Session，设置 Cookie
+8. **auth-app-ssr** → **浏览器**：登录成功，重定向回业务应用
+9. **浏览器** → **业务SSR**：携带 Cookie 重新访问业务应用（回到场景1）
+
+**关键点：**
+- ✅ **业务SSR调用业务BFF**：业务前端应用调用业务后端API
+- ✅ **业务BFF判断认证状态**：业务BFF负责判断用户是否已登录
+- ✅ **未登录时重定向**：如果未登录，业务BFF返回401或重定向到auth-app-ssr
+- ✅ **auth-app-ssr负责登录**：认证页面由auth-app-ssr提供，调用auth-app-bff进行认证
+- ✅ **业务BFF调用auth-app-bff**：已登录时，业务BFF转发Cookie到auth-app-bff验证
+
+**实际代码架构验证：**
+根据实际代码和配置文件：
+- ✅ **业务BFF配置了 AUTH_SERVICE_URL**：
+  - `llmops-app-bff` 配置：`AUTH_SERVICE_URL="${AUTH_SERVICE_URL:-http://localhost:8000}"`
+  - `incubator-app-bff` 配置：`AUTH_SERVICE_URL="${AUTH_SERVICE_URL:-http://auth-app-bff:3030}"`
+  - 说明业务BFF确实会调用auth-app-bff进行认证
+- ✅ **业务SSR配置了后端API地址**：
+  - 业务SSR通过配置调用对应的业务BFF API
+  - 具体调用关系需要在业务SSR的源代码中确认
+
+**服务角色说明：**
+- **llmops-app-bff**：LLMOps 业务后端服务（业务BFF）
+- **incubator-app-bff**：Incubator 业务后端服务（业务BFF）
+- **auth-app-bff**：认证服务（虽然名字里有"bff"，但它是专门的认证服务）
+
+7. **llmops-app-bff 改造**（业务BFF服务）
+   - 重构 `AuthClient`：Cookie 转发方式（从 Request 读取 Cookie，转发到 auth-app-bff）
+   - 重构 `deps.py`：从 Request 读取 Cookie，调用 `AuthClient.get_current_user(request)`
    - 测试：认证流程、服务间调用
 
-8. **incubator-app-bff 改造**
-   - 重构 `AuthClient`：Cookie 转发方式
-   - 重构 `deps.py`：从 Request 读取 Cookie
+8. **incubator-app-bff 改造**（业务BFF服务）
+   - 重构 `AuthClient`：Cookie 转发方式（从 Request 读取 Cookie，转发到 auth-app-bff）
+   - 重构 `deps.py`：从 Request 读取 Cookie，调用 `AuthClient.get_current_user(request)`
    - 测试：认证流程、服务间调用
 
 ### 阶段 4：SSR 适配（2-3天，可与阶段 3 并行）
 
+**调用关系说明：**
+
+**重要术语说明：**
+- **业务SSR**：指 `llmops-app-ssr`、`incubator-app-ssr` 等业务前端应用
+- **auth-app-ssr**：认证相关的SSR应用（Nuxt.js），负责登录页面和认证流程
+- **业务BFF服务**：指 `llmops-app-bff` 和 `incubator-app-bff`，提供后端API服务
+- **auth-app-bff**：认证服务
+
+**auth-app-ssr 的作用（认证页面）：**
+- ✅ **登录页面**：提供用户登录界面（OAuth、用户名密码等）
+- ✅ **服务端渲染（SSR）**：在服务端渲染HTML页面，提供更好的SEO和首屏加载速度
+- ✅ **认证流程**：处理登录请求，调用 auth-app-bff 进行认证
+- ✅ **Cookie 设置**：登录成功后，auth-app-bff 设置 Cookie，auth-app-ssr 重定向回业务应用
+- ❌ **不是业务应用**：auth-app-ssr 是专门的认证页面，不是业务应用
+
+**业务SSR 的作用（业务前端应用）：**
+- ✅ **业务页面**：提供业务功能页面（如 LLMOps 项目管理、Incubator 孵化器等）
+- ✅ **服务端渲染（SSR）**：在服务端渲染HTML页面
+- ✅ **调用业务BFF**：调用业务BFF的API获取业务数据
+- ✅ **认证状态处理**：如果业务BFF返回401，重定向到auth-app-ssr登录页面
+
+**正确的调用流程：**
+
+```
+未登录用户访问业务应用：
+浏览器 → 业务SSR → 业务BFF (判断未登录) → 返回401/重定向
+  ↓
+浏览器 → auth-app-ssr (登录页面)
+  ↓
+auth-app-ssr → auth-app-bff (认证)
+  ↓
+auth-app-bff (设置Cookie) → auth-app-ssr (重定向)
+  ↓
+浏览器 → 业务SSR → 业务BFF (已登录) → auth-app-bff (验证) → 返回业务数据
+```
+
+**调用链：**
+```
+浏览器/用户
+  ↓ (发送 Cookie)
+auth-app-ssr (SSR 中间件)
+  ↓ (读取 Cookie, 调用 BFF /api/v1/auth/me, 转发 Cookie)
+llmops-app-bff / incubator-app-bff (BFF 服务)
+  ↓ (AuthClient 转发 Cookie 到 auth-app-bff)
+auth-app-bff (认证服务)
+  ↓ (验证 Session, 返回用户信息)
+  ↑
+  ↓ (返回用户信息)
+BFF
+  ↑
+  ↓ (返回用户信息)
+auth-app-ssr (注入到 event.context.auth)
+```
+
+**详细流程：**
+1. **浏览器** → **auth-app-ssr**：用户访问页面，浏览器自动发送 Cookie
+2. **auth-app-ssr SSR 中间件**：读取 Cookie，调用 BFF 的 `/api/v1/auth/me` 接口（转发 Cookie）
+3. **BFF** → **auth-app-bff**：BFF 的 `AuthClient.get_current_user(request)` 方法转发 Cookie 到 auth-app-bff
+4. **auth-app-bff**：验证 Session，返回用户信息（如果 BFF 带了 `X-Service-Call: true`，还会返回 access_token）
+5. **BFF** → **auth-app-ssr**：BFF 返回用户信息给 SSR
+6. **auth-app-ssr**：将用户信息注入到 `event.context.auth`，供页面使用
+
+**关键点：**
+- ✅ **auth-app-ssr 是前端应用**：负责SSR渲染和前端交互，不是认证服务
+- ✅ **业务BFF 是后端API**：提供业务逻辑和数据接口
+- ✅ **SSR 不直接调用 auth-app-bff**：SSR 只调用业务BFF，由业务BFF负责认证
+- ✅ **业务BFF 是认证代理**：业务BFF 接收来自 SSR 或浏览器的请求，转发 Cookie 到 auth-app-bff 进行认证
+- ✅ **统一认证入口**：所有对 auth-app-bff 的调用都通过业务BFF 的 `AuthClient` 进行
+
+**auth-app-ssr 和业务 BFF 的关系：**
+
+**架构说明：**
+
+这是标准的**前后端分离架构**，SSR 应用作为前端应用调用后端 API 服务。
+
+**关系定位：**
+- **auth-app-ssr**：前端 SSR 应用（Nuxt.js），负责页面渲染和前端交互
+- **业务 BFF**（llmops-app-bff、incubator-app-bff）：后端 API 服务，提供业务逻辑和数据接口
+- **关系**：前端-后端关系，**SSR 作为客户端调用业务 BFF 的 API**
+
+**为什么是 SSR 调用 BFF，而不是 BFF 调用 SSR？**
+
+这是标准的 Web 架构模式：
+
+1. **SSR 是前端应用**：
+   - 用户通过浏览器访问 SSR 应用（如 `https://auth.sunmoonai.com`）
+   - SSR 应用在服务端渲染 HTML 页面
+   - SSR 应用需要数据时，调用后端 API（业务 BFF）获取数据
+
+2. **业务 BFF 是后端 API**：
+   - 提供 RESTful API 接口，返回 JSON 数据
+   - 不负责页面渲染，只负责业务逻辑
+   - 接收来自 SSR 或浏览器的 HTTP 请求
+
+3. **标准流程**：
+   ```
+   浏览器 → SSR 应用（渲染页面）
+            ↓ 需要数据时
+         业务 BFF API（返回 JSON 数据）
+            ↓ 需要认证时
+         auth-app-bff（认证服务）
+   ```
+
+**如果反过来（BFF 调用 SSR）会有什么问题？**
+- ❌ BFF 是后端服务，不应该负责页面渲染
+- ❌ SSR 是前端应用，不应该被后端服务调用
+- ❌ 架构混乱：后端调用前端，不符合前后端分离原则
+
+**交互方式：**
+1. **SSR 服务端渲染时**：
+   - auth-app-ssr 的 SSR 中间件调用业务 BFF 的 `/api/v1/auth/me` 接口
+   - 获取用户信息，用于服务端渲染个性化内容
+
+2. **前端页面交互时**：
+   - 前端代码（组件、页面）通过 `$fetch` 或 `useFetch` 调用业务 BFF 的 API
+   - 获取业务数据，更新页面状态
+
+3. **认证流程**：
+   - auth-app-ssr 转发 Cookie 到业务 BFF
+   - 业务 BFF 转发 Cookie 到 auth-app-bff 进行认证
+   - 认证成功后，业务 BFF 返回用户信息和业务数据
+
+**调用接口示例：**
+```typescript
+// auth-app-ssr 调用业务 BFF 的接口
+
+// 1. 获取用户信息（SSR 中间件）
+const user = await $fetch(`${bffUrl}/api/v1/auth/me`, {
+  headers: { cookie: `...` }
+})
+
+// 2. 获取业务数据（前端组件）
+const data = await $fetch(`${bffUrl}/api/v1/llmops/projects`, {
+  credentials: 'include'  // 自动发送 Cookie
+})
+```
+
+**架构说明：**
+```
+前端层：auth-app-ssr (SSR前端应用)
+  ↓ HTTP 调用业务API（转发 Cookie）
+业务层：llmops-app-bff / incubator-app-bff (业务后端服务)
+  ↓ HTTP 调用认证服务（转发 Cookie）
+认证层：auth-app-bff (认证服务)
+```
+
+**为什么这样设计？**
+- **职责分离**：前端应用（SSR）负责展示，业务服务（BFF）负责业务逻辑，认证服务（auth-app-bff）负责认证
+- **可扩展性**：前端可以调用多个业务BFF，业务BFF可以调用统一的认证服务
+- **安全性**：认证逻辑集中在 auth-app-bff，业务BFF只负责转发认证请求
+- **前后端分离**：前端和后端独立部署、独立扩展，通过 HTTP API 通信
+
 9. **auth-app-ssr 改造**
-   - 删除 `stores/tokens.ts`
-   - 重构 `api/core.ts`：移除 Token header，使用 `credentials: 'include'`
+   - 删除 `stores/tokens.ts`（不再需要 Token 存储）
+   - 重构 `api/core.ts`：移除 Token header，使用 `credentials: 'include'`（浏览器自动发送 Cookie）
    - 重构 `stores/auth.ts`：移除 Token 相关逻辑
-   - 实现 SSR 中间件：读取 Cookie，调用 BFF
-   - 更新所有页面和组件：移除 Token 使用
+   - 实现 SSR 中间件：读取 Cookie，调用 BFF 的 `/api/v1/auth/me` 接口（转发 Cookie）
+   - 更新所有页面和组件：移除 Token 使用，改为从 `event.context.auth` 获取用户信息
 
 10. **其他 SSR 应用改造**（如果有）
     - 同样的改造流程
@@ -239,7 +851,7 @@ AUTH_SESSION_ENABLED=true
 
 ---
 
-## 五、详细代码实现
+## 七、详细代码实现
 
 ### 5.1 Redis 服务封装
 
@@ -1501,7 +2113,7 @@ export default defineEventHandler(async (event) => {
 
 ---
 
-## 六、测试清单
+## 八、测试清单
 
 ### 6.1 功能测试
 
@@ -1532,7 +2144,7 @@ export default defineEventHandler(async (event) => {
 
 ---
 
-## 七、监控指标
+## 九、监控指标
 
 ### 7.1 关键指标
 
@@ -1550,7 +2162,7 @@ export default defineEventHandler(async (event) => {
 
 ---
 
-## 八、调试和故障排查
+## 十、调试和故障排查
 
 ### 8.1 调试工具
 
@@ -1756,7 +2368,7 @@ this.logger.log(`Redis connected: ${await this.redisService.getClient().ping()}`
 
 ---
 
-## 九、部署检查清单
+## 十一、部署检查清单
 
 ### 9.1 开发环境部署
 
@@ -1803,7 +2415,7 @@ this.logger.log(`Redis connected: ${await this.redisService.getClient().ping()}`
 
 ---
 
-## 十、架构师审查要点（关键）
+## 十二、架构师审查要点（关键）
 
 ### 10.1 必须完成的配置（否则无法运行）
 
@@ -2391,7 +3003,7 @@ const session = await this.getSession(sessionId); // 从 Redis 获取（性能�
 
 ---
 
-## 九、参考文档
+## 十三、参考文档
 
 - **主提案文档**：`session-based-auth-proposal.md`（包含所有确认的决策）
 - **详细设计**：`auth-refactoring-plan-part3.md`（数据结构、接口契约）

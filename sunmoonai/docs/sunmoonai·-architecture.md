@@ -34,7 +34,7 @@
        ▼
 +-------------------+   
 | Portal SSR + BFF  | → 提供首页、导航、广告、概要信息
-| sunmoonai-portal- |   链接到子应用
+| portal-app- |   链接到子应用
 | ssr + portal-bff  |
 +-------------------+
        │
@@ -67,14 +67,14 @@
        ▼
 +-------------------+   
 | Portal SSR        |
-| sunmoonai-portal- |
+| portal-app- |
 | ssr (Node.js)     |
 +-------------------+
        │
        ▼
 +-------------------+
 | Portal BFF        |
-| sunmoonai-portal- |
+| portal-app- |
 | bff               |
 +-------------------+
        │
@@ -207,8 +207,8 @@ llmops-app-bff
 ### 1. Portal 应用
 
 **服务名称**：
-- **SSR 服务**：`sunmoonai-portal-ssr`（Nuxt 项目）
-- **BFF 服务**：`sunmoonai-portal-bff`（NestJS/FastAPI 项目）
+- **SSR 服务**：`portal-app-ssr`（Nuxt 项目）
+- **BFF 服务**：`portal-app-bff`（NestJS/FastAPI 项目）
 
 **职责**：
 - 提供门户首页和导航
@@ -221,7 +221,7 @@ llmops-app-bff
 - 构建后成为独立的服务
 
 **调用关系**：
-- `sunmoonai-portal-ssr` → `sunmoonai-portal-bff` → `auth-app-bff`
+- `portal-app-ssr` → `portal-app-bff` → `auth-app-bff`
 
 ---
 
@@ -285,7 +285,7 @@ llmops-app-bff
 ### 5. BFF 层统一说明
 
 **所有 BFF 服务**：
-- `sunmoonai-portal-bff`：为 Portal SSR 提供数据聚合
+- `portal-app-bff`：为 Portal SSR 提供数据聚合
 - `incubator-app-bff`：为孵化器应用 SSR 提供数据聚合
 - `llmops-app-bff`：为 LLMOps SSR 提供数据聚合
 - `auth-app-bff`：为 Auth SSR 提供数据聚合
@@ -327,11 +327,11 @@ llmops-app-bff
 ### 场景 1：访问门户
 
 ```
-1. 用户访问 sunmoonai-portal-ssr
+1. 用户访问 portal-app-ssr
    ↓
 2. Portal SSR 渲染首页（包含子服务链接：孵化器应用、LLMOps）
    ↓
-3. 如果需要数据，Portal SSR 调用 sunmoonai-portal-bff
+3. 如果需要数据，Portal SSR 调用 portal-app-bff
    ↓
 4. Portal BFF 调用 auth-app-bff 进行认证
    ↓
@@ -430,20 +430,20 @@ llmops-app-bff
 ## 关键点总结
 
 ✅ **应用组成**：
-- **Portal 应用**：`sunmoonai-portal-ssr` + `sunmoonai-portal-bff`
+- **Portal 应用**：`portal-app-ssr` + `portal-app-bff`
 - **孵化器应用子应用**：`incubator-app-ssr` + `incubator-app-bff`
 - **LLMOps 子应用**：`llmops-app-ssr` + `llmops-app-bff`
 - **Auth 服务**：`auth-app-ssr` + `auth-app-bff`
 
 ✅ **SSR 服务**（Nuxt 项目）：
-- `sunmoonai-portal-ssr`：门户 SSR 服务
+- `portal-app-ssr`：门户 SSR 服务
 - `incubator-app-ssr`：孵化器应用 SSR 服务
 - `llmops-app-ssr`：LLMOps SSR 服务
 - `auth-app-ssr`：认证 SSR 服务
 - 每个都是独立的 Nuxt 项目，构建后成为一个 SSR 服务
 
 ✅ **BFF 层**（NestJS/FastAPI 项目）：
-- `sunmoonai-portal-bff`：Portal BFF
+- `portal-app-bff`：Portal BFF
 - `incubator-app-bff`：孵化器应用 BFF
 - `llmops-app-bff`：LLMOps BFF
 - `auth-app-bff`：Auth BFF
@@ -504,7 +504,7 @@ llmops-app-bff
 ```
 用户浏览器
   ↓
-Portal SSR 服务（sunmoonai-portal-ssr，包含子服务链接）
+Portal SSR 服务（portal-app-ssr，包含子服务链接）
   ↓
 子应用 SSR 服务群
   ├─ 孵化器应用 SSR（incubator-app-ssr）
@@ -512,7 +512,7 @@ Portal SSR 服务（sunmoonai-portal-ssr，包含子服务链接）
   └─ Auth SSR（auth-app-ssr）
   ↓
 对应的 BFF 群
-  ├─ Portal BFF（sunmoonai-portal-bff）
+  ├─ Portal BFF（portal-app-bff）
   ├─ 孵化器应用 BFF（incubator-app-bff）
   ├─ LLMOps BFF（llmops-app-bff）
   └─ Auth BFF（auth-app-bff）
@@ -1145,7 +1145,7 @@ export default defineComponent({
 
 **实现**：
 ```typescript
-// Portal SSR 页面（sunmoonai-portal-ssr）
+// Portal SSR 页面（portal-app-ssr）
 onMounted(() => {
   // 预取子应用的关键数据
   prefetch('/research/api/initial-data')      // 预取孵化器应用数据
@@ -1697,7 +1697,7 @@ async getConfig() {
 - 其他业务领域服务（独立业务领域）
 
 ✅ 合并到 BFF：
-- Portal 配置服务（只被 sunmoonai-portal-bff 使用）
+- Portal 配置服务（只被 portal-app-bff 使用）
 - 简单的数据统计（只被一个 BFF 使用）
 ```
 
@@ -1730,7 +1730,7 @@ async getConfig() {
 
 **可以合并到 BFF**：
 1. **Portal 专用功能**
-   - 只被 `sunmoonai-portal-bff` 使用
+   - 只被 `portal-app-bff` 使用
    - 业务逻辑简单（如广告管理、概要信息）
 
 2. **子应用专用功能**

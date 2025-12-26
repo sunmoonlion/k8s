@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-app-bff-config
+  namespace: ${NAMESPACE}
+  labels:
+    app: auth-app-bff
+data:
+  # ========================================================================
+  # 服务配置（联动配置 - 必须与其他服务一致）
+  # ========================================================================
+  PORT: "${PORT:-3030}"
+  PREFIX: "${PREFIX:-/api}"
+  VERSION: "${VERSION:-v1}"
+  SESSION_COOKIE_NAME: "${SESSION_COOKIE_NAME:-sunmoonai_session}"
+
+  # ========================================================================
+  # 其他配置（业务特定配置，不影响联动）
+  # ========================================================================
+  GRPC_PORT: "${GRPC_PORT:-40001}"
+  CORS: "${CORS:-true}"
+  ERROR_FILTER: "${ERROR_FILTER:-true}"
+  NODE_ENV: "${NODE_ENV:-production}"
+
+  # Redis 配置（非敏感部分）
+  REDIS_HOST: "${REDIS_HOST:-redis}"
+  REDIS_PORT: "${REDIS_PORT:-6379}"
+

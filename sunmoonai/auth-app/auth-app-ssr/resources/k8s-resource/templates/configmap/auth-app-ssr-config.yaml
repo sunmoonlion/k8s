@@ -18,5 +18,19 @@ data:
   NUXT_TELEMETRY_DISABLED: "1"
 
   # 后端 API 地址（按需调整）
-  BACKEND_API_URL: "http://backend-bff.app-platform-dev"  # 请按实际后端服务修改
+  BACKEND_API_URL: "${BACKEND_API_URL:-http://backend-bff.app-platform-dev}"
+
+  # ========================================================================
+  # 业务 BFF 配置（联动配置 - 调用业务 BFF）
+  # ========================================================================
+  # 注意：auth-app-ssr 是认证服务的 SSR，通常不需要调用业务 BFF
+  # 如果需要调用业务 BFF，请配置以下变量
+  # VUE_APP_BFF_URL: "${VUE_APP_BFF_URL:-}"
+  # VUE_APP_API_PREFIX: "${VUE_APP_API_PREFIX:-/api}"
+  # VUE_APP_API_VERSION: "${VUE_APP_API_VERSION:-v1}"
+
+  # ========================================================================
+  # Session 配置（联动配置 - 必须与 auth-app-bff 一致）
+  # ========================================================================
+  SESSION_COOKIE_NAME: "${SESSION_COOKIE_NAME:-sunmoonai_session}"
 

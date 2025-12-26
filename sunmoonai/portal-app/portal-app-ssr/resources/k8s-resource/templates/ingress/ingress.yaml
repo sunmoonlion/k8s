@@ -1,0 +1,54 @@
+# Portal App SSR 路由配置 (Traefik IngressRoute)
+#
+# 使用方式（统一域名）：
+# 方案1: 使用 IP 地址（无需 DNS 配置）
+# https://<节点IP>:30443/
+# 方案2: 使用统一域名（只需在 /etc/hosts 中添加一个条目）
+# https://portal-ssr.sunmoonai.com/
+#
+# 注意：只需在 /etc/hosts 中添加一条记录即可访问所有服务
+# 示例：101.126.151.0  portal-ssr.sunmoonai.com
+#
+---
+# Middleware: 自定义请求头（占位符，可根据需要扩展）
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: portal-app-ssr-headers
+  namespace: {{NAMESPACE}}
+  labels:
+    app: app-platform-ingress
+    component: portal-app-ssr
+spec:
+  headers:
+    customRequestHeaders:
+      X-Portal-SSR: "true"
+---
+# IngressRoute: HTTP 路由
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: portal-app-ssr-ingress
+  namespace: {{NAMESPACE}}
+  labels:
+    app: app-platform-ingress
+    component: portal-app-ssr
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`{{NODE_IP}}`) && PathPrefix(`/`)
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+      middlewares:
+        - name: portal-app-ssr-headers
+    - match: Host(`{{UNIFIED_HOST}}`) && PathPrefix(`/`)
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+      middlewares:
+        - name: portal-app-ssr-headers
+

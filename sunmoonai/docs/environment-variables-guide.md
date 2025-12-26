@@ -9,6 +9,18 @@
 - **FastAPI BFF** - 后端 BFF 服务（Python）
 - **Vite SSR** - 前端 SSR 应用（未来）
 
+> **⚠️ 重要说明：CSR（客户端渲染）应用**
+> 
+> 本文档主要针对 **SSR（服务端渲染）应用**和 **BFF（后端服务）**，这些应用可以在运行时读取系统环境变量。
+> 
+> **CSR（客户端渲染）应用**（如纯 Vite CSR、Create React App 等）是纯前端应用，在浏览器中运行，**无法在运行时读取系统环境变量**。CSR 应用的环境变量处理方式不同：
+> - 环境变量需要在**构建时**注入到代码中（通过构建工具如 Vite、Webpack 等）
+> - 构建时，环境变量会被替换为实际值，直接嵌入到打包后的代码中
+> - 运行时无法动态修改环境变量
+> - 如果需要不同环境的配置，需要在构建时指定不同的环境变量重新构建
+> 
+> 因此，CSR 应用不适用于本文档中描述的运行时环境变量注入方式（Docker Compose、K8s ConfigMap/Secret 等）。
+
 ## 环境变量定义与传递方式总览
 
 ### 定义方式（Value Source）
@@ -18,30 +30,34 @@
 | 定义方式 | 说明 | 适用场景 |
 |---------|------|---------|
 | **1. 环境变量文件** | `.env`、`.env.local`、`.env.production` 等 | 本地开发、多环境配置 |
-| **2. 系统环境变量** | `export VAR=value` 或容器环境变量 | 生产环境、CI/CD |
+| **2. 系统环境变量** | `export VAR=value` 或容器环境变量（会被子进程继承） | 生产环境、CI/CD |
 | **3. 显式配置** | 在代码配置文件中定义（带默认值） | 默认值、开发环境 |
 | **4. 配置文件** | `config.yaml`、`config.json` 等 | 复杂配置、配置中心 |
 
+> **💡 系统环境变量 vs Shell 变量**：
+> - **系统环境变量（Environment Variables）**：使用 `export VAR=value` 设置，会被所有子进程继承，可通过 `env` 命令查看，在容器中通过环境变量传递
+> - **Shell 变量（Shell Variables）**：使用 `VAR=value` 设置（不使用 export），只在当前 shell 会话中有效，不会被子进程继承，子进程无法访问
+
 ### 传递方式（Delivery Method）
 
-环境变量如何传递到应用：
+环境变量如何传递到应用运行时环境（将值从定义方式传递到系统环境变量）：
 
 | 传递方式 | 说明 | 适用场景 |
 |---------|------|---------|
-| **1. 源码直接使用** | 代码中直接读取 `process.env` 或 `import.meta.env` | 所有场景的基础 |
-| **2. 环境变量文件** | 通过 `.env` 文件加载 | 本地开发 |
-| **3. Docker Compose** | `docker-compose.yml` 中的 `environment` 或 `env_file` | 本地容器化开发 |
-| **4. K8s ConfigMap/Secret** | 通过 `envFrom` 或 `env` 注入到容器 | 生产环境、K8s 部署 |
-| **5. 配置中心** | 从 Vault、Consul、Nacos 等读取 | 大型系统、动态配置 |
+| **1. 框架自动加载** | 框架启动时自动加载 `.env` 文件内容到系统环境变量 | 本地开发（Nuxt.js、NestJS、FastAPI、Vite 等框架支持） |
+| **2. Docker Compose** | `docker-compose.yml` 中的 `environment`（直接设置）或 `env_file`（从文件加载）注入到容器环境变量 | 本地容器化开发 |
+| **3. K8s ConfigMap/Secret** | 通过 `envFrom` 或 `env` 将配置注入到容器环境变量 | 生产环境、K8s 部署 |
+| **4. 配置中心** | 从 Vault、Consul、Nacos 等配置中心读取并设置到系统环境变量 | 大型系统、动态配置 |
+| **5. 系统环境变量直接传递** | 系统已存在的环境变量直接传递给应用（无需额外传递步骤） | 生产环境、CI/CD |
 
 ### 四种技术栈对比
 
 | 技术栈 | 定义方式 | 传递方式 | 源码访问方式 |
 |--------|---------|---------|------------|
-| **Nuxt.js SSR** | 1. `.env` 文件<br>2. 系统环境变量<br>3. `nuxt.config.ts` 显式配置 | 1. 直接读取 `process.env`<br>2. Docker Compose `env_file`<br>3. K8s ConfigMap/Secret | `useRuntimeConfig()`<br>`process.env.XXX` |
-| **NestJS BFF** | 1. `.env` 文件<br>2. 系统环境变量<br>3. `ConfigModule` 默认值 | 1. `ConfigModule.forRoot()`<br>2. Docker Compose `environment`<br>3. K8s ConfigMap/Secret | `ConfigService.get()`<br>`process.env.XXX` |
-| **FastAPI BFF** | 1. `.env` 文件<br>2. 系统环境变量<br>3. `Settings` 类默认值 | 1. `BaseSettings` 自动加载<br>2. Docker Compose `environment`<br>3. K8s ConfigMap/Secret | `settings.XXX`<br>`os.getenv()` |
-| **Vite SSR** | 1. `.env` 文件<br>2. 系统环境变量<br>3. `vite.config.ts` 配置 | 1. `import.meta.env`<br>2. Docker Compose `env_file`<br>3. K8s ConfigMap/Secret | `import.meta.env.XXX`<br>`process.env.XXX`（服务端） |
+| **Nuxt.js SSR** | 1. `.env` 文件<br>2. 系统环境变量<br>3. `nuxt.config.ts` 显式配置 | 1. 框架自动加载 `.env`<br>2. Docker Compose `env_file`<br>3. K8s ConfigMap/Secret | `useRuntimeConfig()`<br>`process.env.XXX` |
+| **NestJS BFF** | 1. `.env` 文件<br>2. 系统环境变量<br>3. `ConfigModule` 默认值 | 1. `ConfigModule.forRoot()` 加载 `.env`<br>2. Docker Compose `environment`<br>3. K8s ConfigMap/Secret | `ConfigService.get()`<br>`process.env.XXX` |
+| **FastAPI BFF** | 1. `.env` 文件<br>2. 系统环境变量<br>3. `Settings` 类默认值 | 1. `BaseSettings` 自动加载 `.env`<br>2. Docker Compose `environment`<br>3. K8s ConfigMap/Secret | `settings.XXX`<br>`os.getenv('XXX')` |
+| **Vite SSR** | 1. `.env` 文件<br>2. 系统环境变量<br>3. `vite.config.ts` 配置 | 1. 框架自动加载 `.env`<br>2. Docker Compose `env_file`<br>3. K8s ConfigMap/Secret | `import.meta.env.XXX`<br>`process.env.XXX`（服务端） |
 
 ## 文档结构
 
@@ -68,17 +84,28 @@
 
 ### 1.2 传递方式（Delivery Method）
 
-环境变量如何传递到应用运行时：
+环境变量如何从定义方式传递到应用运行时环境（最终都成为系统环境变量）：
 
 | 传递方式 | 说明 | 配置示例 | 适用场景 |
 |---------|------|---------|---------|
-| **源码直接读取** | 代码中直接读取 `process.env` 或 `import.meta.env` | `const url = process.env.API_URL` | 所有场景的基础 |
-| **环境变量文件加载** | 框架自动加载 `.env` 文件 | `.env` 文件放在项目根目录 | 本地开发 |
-| **Docker Compose** | `docker-compose.yml` 中的 `environment` 或 `env_file` | 见下方示例 | 本地容器化开发 |
-| **K8s ConfigMap/Secret** | 通过 `envFrom` 或 `env` 注入到容器 | 见下方示例 | 生产环境、K8s 部署 |
-| **配置中心** | 从 Vault、Consul、Nacos 等读取 | 通过 SDK 调用配置中心 API | 大型系统、动态配置 |
+| **框架自动加载** | 框架启动时自动加载 `.env` 文件内容到系统环境变量 | `.env` 文件放在项目根目录，框架启动时自动加载 | 本地开发（Nuxt.js、NestJS、FastAPI、Vite 等） |
+| **Docker Compose** | `docker-compose.yml` 中的 `environment`（直接设置）或 `env_file`（从文件加载）注入到容器环境变量 | 见下方示例 | 本地容器化开发 |
+| **K8s ConfigMap/Secret** | 通过 `envFrom` 或 `env` 将配置注入到容器环境变量 | 见下方示例 | 生产环境、K8s 部署 |
+| **配置中心** | 从 Vault、Consul、Nacos 等配置中心读取并设置到系统环境变量 | 通过 SDK 调用配置中心 API | 大型系统、动态配置 |
+| **系统环境变量直接传递** | 系统已存在的环境变量直接传递给应用（无需额外传递步骤） | `export VAR=value` 后直接运行应用 | 生产环境、CI/CD |
 
-### 1.3 Docker Compose 传递方式示例
+### 1.3 源码访问方式（Code Access Method）
+
+代码中如何读取系统环境变量（所有传递方式最终都会将值设置到系统环境变量）：
+
+| 技术栈 | 访问方式 | 代码示例 |
+|--------|---------|---------|
+| **Node.js** | `process.env.VAR` | `const url = process.env.API_URL` |
+| **Python** | `os.getenv('VAR')` 或 `os.environ['VAR']` | `url = os.getenv('API_URL')` |
+| **Vite（客户端）** | `import.meta.env.VAR` | `const url = import.meta.env.API_URL` |
+| **Vite（服务端）** | `process.env.VAR` | `const url = process.env.API_URL` |
+
+### 1.4 Docker Compose 传递方式示例
 
 ```yaml
 # docker-compose.yml
@@ -148,38 +175,167 @@ spec:
 
 ## 二、技术栈环境变量使用方式
 
-#### 1.1 Nuxt.js SSR
+本文档详细说明四种技术栈从环境变量定义、传递到容器、容器中使用的完整流程。
+
+---
+
+### 2.1 Nuxt.js SSR
 
 **技术栈特点：**
 - 使用 `runtimeConfig` 在 `nuxt.config.ts` 中配置如何读取环境变量
 - 通过 `useRuntimeConfig()` composable 在代码中使用
 - 区分 `private`（仅服务端）和 `public`（客户端可访问）配置
+- 框架启动时自动加载 `.env` 文件到系统环境变量
 
-**1. 环境变量文件定义（.env）**
+#### 2.1.1 环境变量定义方式
+
+**方式一：环境变量文件（.env）**
 
 在项目根目录创建 `.env` 文件定义环境变量：
 
 ```bash
 # .env
+# 客户端可访问的变量（需要在 nuxt.config.ts 的 runtimeConfig.public 中声明）
 VUE_APP_NAME=SunMoonAI Auth
 VUE_APP_ENV=production
 VUE_APP_DOMAIN_API=https://api.sunmoonai.com
 VUE_APP_BFF_URL=https://auth-bff.sunmoonai.com
 SESSION_COOKIE_NAME=sunmoonai_session
 
-# 服务端专用（不以 VUE_APP_ 开头）
+# 服务端专用（不以 VUE_APP_ 开头，服务端可直接通过 process.env 访问）
 VUE_PRIVATE_TERM=your-secret-key
+REDIS_HOST=localhost
+REDIS_PORT=6379
+DATABASE_URL=postgresql://user:pass@localhost:5432/dbname
 ```
 
-**2. 源码配置方式（nuxt.config.ts）**
+**环境特定文件：**
+- `.env.development` - 开发环境
+- `.env.production` - 生产环境
+- `.env.local` - 本地覆盖（不提交到 Git，优先级最高）
 
-Nuxt.js 支持三种方式使用环境变量：
+**方式二：系统环境变量**
 
-**方式一：显式配置（推荐用于客户端可访问的配置）**
+直接在系统中设置环境变量（通过 `export` 或容器环境变量）：
 
-在 `runtimeConfig.public` 中显式声明需要在客户端访问的环境变量：
+```bash
+# 本地开发
+export VUE_APP_NAME="SunMoonAI Auth"
+export VUE_APP_ENV="production"
+
+# 容器中（通过 Docker/K8s 注入）
+# 无需额外操作，容器启动时已设置
+```
+
+#### 2.1.2 传递到容器的方式
+
+**方式一：Docker Compose**
+
+```yaml
+# docker-compose.yml
+services:
+  auth-app-ssr:
+    image: auth-app-ssr:latest
+    # 方式1：直接定义环境变量（注入到容器环境变量）
+    environment:
+      - VUE_APP_NAME=SunMoonAI Auth
+      - VUE_APP_ENV=production
+      - VUE_APP_DOMAIN_API=https://api.sunmoonai.com
+      - SESSION_COOKIE_NAME=sunmoonai_session
+    
+    # 方式2：从 .env 文件加载（注入到容器环境变量）
+    env_file:
+      - .env
+      - .env.production
+    
+    # 方式3：混合使用（environment 优先级更高）
+    environment:
+      - VUE_APP_ENV=production  # 覆盖 .env 文件中的值
+    env_file:
+      - .env
+```
+
+**流程说明：**
+1. Docker Compose 读取 `.env` 文件或 `environment` 配置
+2. 将这些值注入到容器的系统环境变量中
+3. Nuxt.js 启动时，框架自动读取系统环境变量（包括从 `.env` 文件加载的）
+4. 代码通过 `process.env` 或 `useRuntimeConfig()` 访问
+
+**方式二：K8s ConfigMap/Secret**
+
+```yaml
+# ConfigMap（非敏感配置）
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-app-ssr-config
+data:
+  VUE_APP_NAME: "SunMoonAI Auth"
+  VUE_APP_ENV: "production"
+  VUE_APP_DOMAIN_API: "https://api.sunmoonai.com"
+  VUE_APP_BFF_URL: "https://auth-bff.sunmoonai.com"
+  SESSION_COOKIE_NAME: "sunmoonai_session"
+
+---
+# Secret（敏感配置）
+apiVersion: v1
+kind: Secret
+metadata:
+  name: auth-app-ssr-secrets
+type: Opaque
+stringData:
+  VUE_PRIVATE_TERM: "your-secret-key"
+  REDIS_PASSWORD: "redis-password"
+  DATABASE_URL: "postgresql://user:pass@host:5432/db"
+
+---
+# Deployment（注入到容器环境变量）
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: auth-app-ssr
+        # 方式1：使用 envFrom 批量注入
+        envFrom:
+        - configMapRef:
+            name: auth-app-ssr-config
+        - secretRef:
+            name: auth-app-ssr-secrets
+        
+        # 方式2：使用 env 单个注入（可设置默认值）
+        env:
+        - name: VUE_APP_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: auth-app-ssr-config
+              key: VUE_APP_ENV
+        - name: VUE_PRIVATE_TERM
+          valueFrom:
+            secretKeyRef:
+              name: auth-app-ssr-secrets
+              key: VUE_PRIVATE_TERM
+```
+
+**流程说明：**
+1. K8s 从 ConfigMap/Secret 读取配置
+2. 通过 `envFrom` 或 `env` 注入到容器的系统环境变量中
+3. Nuxt.js 启动时，框架自动读取系统环境变量
+4. 代码通过 `process.env` 或 `useRuntimeConfig()` 访问
+
+#### 2.1.3 容器中使用方式（源码配置和访问）
+
+**完整流程：**
+1. 容器启动时，环境变量已注入到系统环境变量（通过 Docker Compose 或 K8s）
+2. Nuxt.js 框架启动时，自动加载 `.env` 文件（如果存在）到系统环境变量
+3. 在 `nuxt.config.ts` 中配置 `runtimeConfig`（可选，用于类型安全和客户端访问）
+4. 代码中通过 `useRuntimeConfig()` 或 `process.env` 访问
+
+**步骤1：在 nuxt.config.ts 中配置（可选但推荐）**
 
 ```typescript
+// nuxt.config.ts
 export default defineNuxtConfig({
   runtimeConfig: {
     // Private keys - 仅服务端可用（可选，也可以直接使用 process.env）
@@ -197,64 +353,26 @@ export default defineNuxtConfig({
 })
 ```
 
-**方式二：直接使用 process.env（适合服务端，变量多时）**
-
-如果有很多环境变量，不需要全部在 `runtimeConfig` 中声明，服务端代码可以直接使用 `process.env`：
-
-```typescript
-// nuxt.config.ts - 只声明需要在客户端访问的配置
-export default defineNuxtConfig({
-  runtimeConfig: {
-    public: {
-      // 只声明客户端需要的配置
-      apiUrl: process.env.VUE_APP_DOMAIN_API,
-    }
-  }
-})
-
-// server/middleware/auth.global.ts - 服务端直接使用 process.env
-export default defineEventHandler(async (event) => {
-  // 服务端可以直接访问所有环境变量，无需在 runtimeConfig 中声明
-  const redisHost = process.env.REDIS_HOST
-  const redisPort = process.env.REDIS_PORT
-  const dbUrl = process.env.DATABASE_URL
-  const apiSecret = process.env.VUE_PRIVATE_TERM
-  // ... 其他环境变量
-})
-```
-
-**方式三：混合方式（最佳实践）**
-
-常用配置通过 `runtimeConfig` 提供类型安全，其他配置直接使用 `process.env`：
-
-```typescript
-export default defineNuxtConfig({
-  runtimeConfig: {
-    // 常用配置，提供类型安全和默认值
-    apiSecret: process.env.VUE_PRIVATE_TERM,
-    public: {
-      apiUrl: process.env.VUE_APP_DOMAIN_API,
-      sessionCookieName: process.env.SESSION_COOKIE_NAME || 'sunmoonai_session',
-    }
-  }
-})
-```
-
 **说明：**
-- ✅ **客户端访问**：必须在 `runtimeConfig.public` 中显式声明
-- ✅ **服务端访问**：可以直接使用 `process.env.XXX`，无需在 `runtimeConfig` 中声明
-- ✅ **类型安全**：通过 `runtimeConfig` 访问的配置有类型提示
-- ✅ **灵活性**：`.env` 文件中的所有变量都可以通过 `process.env` 访问（服务端）
+- `runtimeConfig.public` 中的配置会暴露到客户端，必须显式声明
+- `runtimeConfig` 中的私有配置仅服务端可用，可选
+- 服务端代码也可以直接使用 `process.env`，无需在 `runtimeConfig` 中声明
 
-**3. 源码使用方式**
+**步骤2：在代码中访问环境变量**
 
 **客户端代码（必须通过 runtimeConfig.public）：**
 ```typescript
-// api/core.ts
-export const apiCore = {
-  url(): string {
-    // 客户端只能访问 runtimeConfig.public 中的配置
-    return useRuntimeConfig().public.apiUrl
+// composables/useApi.ts
+export const useApi = () => {
+  const config = useRuntimeConfig()
+  
+  // 客户端只能访问 runtimeConfig.public 中的配置
+  const apiUrl = config.public.apiUrl
+  const appName = config.public.appName
+  
+  return {
+    apiUrl,
+    appName,
   }
 }
 ```
@@ -266,8 +384,11 @@ export const apiCore = {
 // server/middleware/auth.global.ts
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
+  
+  // 从 runtimeConfig 读取（有类型提示）
+  const apiSecret = config.apiSecret
+  const apiUrl = config.public.apiUrl
   const sessionCookieName = config.public.sessionCookieName || 'sunmoonai_session'
-  const apiSecret = config.apiSecret  // 从 runtimeConfig 读取
 })
 ```
 
@@ -275,7 +396,7 @@ export default defineEventHandler(async (event) => {
 ```typescript
 // server/middleware/auth.global.ts
 export default defineEventHandler(async (event) => {
-  // 服务端可以直接访问所有环境变量，无需在 runtimeConfig 中声明
+  // 服务端可以直接访问所有系统环境变量，无需在 runtimeConfig 中声明
   const redisHost = process.env.REDIS_HOST
   const redisPort = process.env.REDIS_PORT
   const dbUrl = process.env.DATABASE_URL
@@ -306,84 +427,56 @@ export default defineEventHandler(async (event) => {
 })
 ```
 
-**4. Docker Compose 传递方式**
+#### 2.1.4 完整流程总结
 
-```yaml
-# docker-compose.yml
-services:
-  auth-app-ssr:
-    image: auth-app-ssr:latest
-    # 方式一：直接定义环境变量
-    environment:
-      - VUE_APP_NAME=SunMoonAI Auth
-      - VUE_APP_ENV=production
-      - VUE_APP_DOMAIN_API=https://api.sunmoonai.com
-      - SESSION_COOKIE_NAME=sunmoonai_session
-    
-    # 方式二：从 .env 文件加载（推荐）
-    env_file:
-      - .env
-      - .env.production
-    
-    # 方式三：混合使用（environment 优先级更高）
-    environment:
-      - VUE_APP_ENV=production  # 覆盖 .env 文件中的值
-    env_file:
-      - .env
-```
+**本地开发流程：**
+1. 在项目根目录创建 `.env` 文件定义环境变量
+2. 运行 `npm run dev`，Nuxt.js 自动加载 `.env` 文件到系统环境变量
+3. 代码通过 `process.env` 或 `useRuntimeConfig()` 访问
 
-**5. K8s 部署配置**
+**生产环境流程（Docker Compose）：**
+1. **不推荐**在容器镜像中包含 `.env` 文件（安全考虑）
+2. 在 `docker-compose.yml` 中通过 `environment` 或 `env_file` 定义环境变量
+3. Docker Compose 启动容器时，将环境变量注入到容器的系统环境变量
+4. Nuxt.js 启动时，会：
+   - 首先读取系统环境变量（从容器环境变量注入的）
+   - 如果 `.env` 文件存在，也会加载，但**系统环境变量优先级更高**
+5. 代码通过 `process.env` 或 `useRuntimeConfig()` 访问（读取的是系统环境变量）
 
-环境变量通过 K8s ConfigMap/Secret 注入到容器，Nuxt 在运行时读取 `process.env`。
+**生产环境流程（K8s 部署）：**
+1. **不推荐**在容器镜像中包含 `.env` 文件（安全考虑）
+2. 创建 ConfigMap/Secret 定义环境变量（非敏感配置用 ConfigMap，敏感配置用 Secret）
+3. Deployment 通过 `envFrom` 或 `env` 将配置注入到容器的系统环境变量
+4. Nuxt.js 启动时，会：
+   - 首先读取系统环境变量（从 K8s ConfigMap/Secret 注入的）
+   - 如果 `.env` 文件存在，也会加载，但**系统环境变量优先级更高**
+5. 代码通过 `process.env` 或 `useRuntimeConfig()` 访问（读取的是系统环境变量）
 
-**ConfigMap 示例：**
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: auth-app-ssr-config
-data:
-  VUE_APP_NAME: "SunMoonAI Auth"
-  VUE_APP_ENV: "production"
-  VUE_APP_DOMAIN_API: "https://api.sunmoonai.com"
-  VUE_APP_BFF_URL: "https://auth-bff.sunmoonai.com"
-  SESSION_COOKIE_NAME: "sunmoonai_session"
-```
+**生产环境关键区别：**
+- ❌ **不使用 `.env` 文件**：生产环境通常不在容器镜像中包含 `.env` 文件
+- ✅ **使用容器环境变量**：通过 Docker Compose 的 `environment` 或 K8s 的 ConfigMap/Secret 注入
+- ✅ **优先级**：系统环境变量 > `.env` 文件（如果存在）
 
-**Deployment 配置：**
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-spec:
-  template:
-    spec:
-      containers:
-      - name: auth-app-ssr
-        envFrom:
-        - configMapRef:
-            name: auth-app-ssr-config
-        - secretRef:
-            name: auth-app-ssr-secrets  # 敏感配置
-```
-
-**5. 注意事项**
-
-- ✅ **客户端访问限制**：只有 `runtimeConfig.public` 中的配置才能在客户端访问
-- ✅ **服务端灵活性**：服务端可以直接使用 `process.env.XXX`，无需在 `runtimeConfig` 中声明
-- ✅ **类型安全**：通过 `runtimeConfig` 访问的配置有类型提示，直接使用 `process.env` 没有
+**关键点：**
+- ✅ **客户端访问**：必须在 `runtimeConfig.public` 中显式声明
+- ✅ **服务端访问**：可以直接使用 `process.env.XXX`，无需在 `runtimeConfig` 中声明
+- ✅ **类型安全**：通过 `runtimeConfig` 访问的配置有类型提示
 - ✅ **敏感信息**：`public` 配置会暴露到客户端，不要放敏感信息
-- ✅ **环境变量前缀**：客户端可访问的变量建议使用 `VUE_APP_` 前缀（Nuxt 3 兼容）
-- ✅ **默认值**：使用默认值避免未定义错误：`process.env.XXX || 'default'`
-- ✅ **变量多时**：如果有很多环境变量，服务端代码可以直接使用 `process.env`，无需全部在 `runtimeConfig` 中声明
-#### 1.2 NestJS BFF
+- ✅ **环境变量前缀**：客户端可访问的变量建议使用 `VUE_APP_` 前缀
+---
+
+### 2.2 NestJS BFF
 
 **技术栈特点：**
 - 使用 `@nestjs/config` 模块管理环境变量
 - 通过 `ConfigService` 注入使用
 - 支持 Joi 验证和类型转换
 - 支持多环境 `.env` 文件
+- `ConfigModule.forRoot()` 自动加载 `.env` 文件到系统环境变量
 
-**1. 环境变量文件定义（.env）**
+#### 2.2.1 环境变量定义方式
+
+**方式一：环境变量文件（.env）**
 
 在项目根目录创建 `.env` 文件定义环境变量：
 
@@ -399,11 +492,144 @@ SESSION_COOKIE_NAME=sunmoonai_session
 JWT_SECRET=your-jwt-secret
 ```
 
-**2. 源码配置方式（config.module.ts）**
+**环境特定文件：**
+- `.env.development` - 开发环境
+- `.env.production` - 生产环境
+- `.env.local` - 本地覆盖（不提交到 Git，优先级最高）
 
-在 `src/common/config/config.module.ts` 中配置如何读取环境变量：
+**方式二：系统环境变量**
+
+直接在系统中设置环境变量（通过 `export` 或容器环境变量）：
+
+```bash
+# 本地开发
+export NODE_ENV="production"
+export REDIS_HOST="redis-service"
+
+# 容器中（通过 Docker/K8s 注入）
+# 无需额外操作，容器启动时已设置
+```
+
+#### 2.2.2 传递到容器的方式
+
+**方式一：Docker Compose**
+
+```yaml
+# docker-compose.yml
+services:
+  auth-app-bff:
+    image: auth-app-bff:latest
+    # 方式1：直接定义环境变量（注入到容器环境变量）
+    environment:
+      - NODE_ENV=production
+      - REDIS_HOST=redis-service
+      - REDIS_PORT=6379
+      - SESSION_TTL_SECONDS=604800
+    
+    # 方式2：从 .env 文件加载（注入到容器环境变量）
+    env_file:
+      - .env
+      - .env.production
+    
+    # 方式3：混合使用（environment 优先级更高）
+    environment:
+      - NODE_ENV=production  # 覆盖 .env 文件中的值
+    env_file:
+      - .env
+    
+    # 方式4：使用 secrets（敏感信息）
+    secrets:
+      - redis_password
+      - jwt_secret
+
+secrets:
+  redis_password:
+    file: ./secrets/redis_password.txt
+  jwt_secret:
+    file: ./secrets/jwt_secret.txt
+```
+
+**流程说明：**
+1. Docker Compose 读取 `.env` 文件或 `environment` 配置
+2. 将这些值注入到容器的系统环境变量中
+3. NestJS 启动时，`ConfigModule.forRoot()` 自动加载 `.env` 文件（如果存在）到系统环境变量
+4. 代码通过 `ConfigService` 或 `process.env` 访问
+
+**方式二：K8s ConfigMap/Secret**
+
+```yaml
+# ConfigMap（非敏感配置）
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-app-bff-config
+data:
+  NODE_ENV: "production"
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  SESSION_TTL_SECONDS: "604800"
+  SESSION_COOKIE_NAME: "sunmoonai_session"
+
+---
+# Secret（敏感配置）
+apiVersion: v1
+kind: Secret
+metadata:
+  name: auth-app-bff-secrets
+type: Opaque
+stringData:
+  REDIS_PASSWORD: "your-redis-password"
+  JWT_SECRET: "your-jwt-secret"
+
+---
+# Deployment（注入到容器环境变量）
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: auth-app-bff
+        # 方式1：使用 envFrom 批量注入
+        envFrom:
+        - configMapRef:
+            name: auth-app-bff-config
+        - secretRef:
+            name: auth-app-bff-secrets
+        
+        # 方式2：使用 env 单个注入（可设置默认值）
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: auth-app-bff-config
+              key: NODE_ENV
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: auth-app-bff-secrets
+              key: REDIS_PASSWORD
+```
+
+**流程说明：**
+1. K8s 从 ConfigMap/Secret 读取配置
+2. 通过 `envFrom` 或 `env` 注入到容器的系统环境变量中
+3. NestJS 启动时，`ConfigModule.forRoot()` 自动加载 `.env` 文件（如果存在）到系统环境变量
+4. 代码通过 `ConfigService` 或 `process.env` 访问
+
+#### 2.2.3 容器中使用方式（源码配置和访问）
+
+**完整流程：**
+1. 容器启动时，环境变量已注入到系统环境变量（通过 Docker Compose 或 K8s）
+2. NestJS 启动时，`ConfigModule.forRoot()` 自动加载 `.env` 文件（如果存在）到系统环境变量
+3. 在 `config.module.ts` 中配置 `ConfigModule`（加载 `.env` 文件、验证等）
+4. 代码中通过 `ConfigService` 注入使用或直接使用 `process.env`
+
+**步骤1：在 config.module.ts 中配置**
 
 ```typescript
+// src/common/config/config.module.ts
 import { Module } from '@nestjs/common';
 import * as Joi from 'joi';
 import { ConfigModule as Config } from '@nestjs/config';
@@ -414,15 +640,21 @@ const schema = Joi.object({
     .default('development'),
   REDIS_HOST: Joi.string().default('localhost'),
   REDIS_PORT: Joi.number().default(6379),
+  REDIS_PASSWORD: Joi.string().required(),
+  JWT_SECRET: Joi.string().required(),
 });
 
-const envFilePath = [`.env.${process.env.NODE_ENV || 'development'}`, '.env'];
+// 支持多环境文件，按优先级加载
+const envFilePath = [
+  `.env.${process.env.NODE_ENV || 'development'}`,
+  '.env',
+];
 
 @Module({
   imports: [
     Config.forRoot({
       isGlobal: true,  // 全局可用，无需在每个模块导入
-      envFilePath,
+      envFilePath,     // 自动加载 .env 文件到系统环境变量
       validationSchema: schema,  // 可选：环境变量验证
     }),
   ],
@@ -430,10 +662,16 @@ const envFilePath = [`.env.${process.env.NODE_ENV || 'development'}`, '.env'];
 export class ConfigModule {}
 ```
 
-**3. 源码使用方式**
+**说明：**
+- `envFilePath` 指定要加载的 `.env` 文件路径
+- `isGlobal: true` 使 `ConfigService` 全局可用
+- `validationSchema` 可选，用于验证环境变量格式
 
-**在 Service 中注入使用：**
+**步骤2：在代码中访问环境变量**
+
+**方式一：通过 ConfigService（推荐，有类型转换和验证）**
 ```typescript
+// src/services/redis.service.ts
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -456,112 +694,84 @@ export class RedisService {
 // 带默认值
 const host = this.configService.get<string>('REDIS_HOST', 'localhost');
 
-// 类型转换
+// 类型转换（自动将字符串转换为数字）
 const port = this.configService.get<number>('REDIS_PORT', 6379);
 
 // 必填项（无默认值，缺失会报错）
 const password = this.configService.get<string>('REDIS_PASSWORD');
 ```
 
-**4. Docker Compose 传递方式**
+**方式二：直接使用 process.env（适合简单场景）**
+```typescript
+// src/services/redis.service.ts
+import { Injectable } from '@nestjs/common';
 
-```yaml
-# docker-compose.yml
-services:
-  auth-app-bff:
-    image: auth-app-bff:latest
-    # 方式一：直接定义环境变量
-    environment:
-      - NODE_ENV=production
-      - REDIS_HOST=redis-service
-      - REDIS_PORT=6379
-      - SESSION_TTL_SECONDS=604800
-    
-    # 方式二：从 .env 文件加载（推荐）
-    env_file:
-      - .env
-      - .env.production
-    
-    # 方式三：混合使用（environment 优先级更高）
-    environment:
-      - NODE_ENV=production  # 覆盖 .env 文件中的值
-    env_file:
-      - .env
-    # 注意：敏感信息（如密码）建议使用 secrets
-    secrets:
-      - redis_password
-      - jwt_secret
-
-secrets:
-  redis_password:
-    file: ./secrets/redis_password.txt
-  jwt_secret:
-    file: ./secrets/jwt_secret.txt
+@Injectable()
+export class RedisService {
+  async onModuleInit() {
+    const redis = new Redis({
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      password: process.env.REDIS_PASSWORD,
+    });
+  }
+}
 ```
 
-**5. K8s 部署配置**
+#### 2.2.4 完整流程总结
 
-环境变量通过 K8s ConfigMap/Secret 注入，NestJS 自动读取 `process.env`。
+**本地开发流程：**
+1. 在项目根目录创建 `.env` 文件定义环境变量
+2. 运行 `npm run start:dev`，NestJS 启动时 `ConfigModule.forRoot()` 自动加载 `.env` 文件到系统环境变量
+3. 代码通过 `ConfigService` 或 `process.env` 访问
 
-**ConfigMap 示例：**
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: auth-app-bff-config
-data:
-  NODE_ENV: "production"
-  REDIS_HOST: "redis-service"
-  REDIS_PORT: "6379"
-  REDIS_DB: "0"
-  SESSION_TTL_SECONDS: "604800"
-  SESSION_COOKIE_NAME: "sunmoonai_session"
-```
+**生产环境流程（Docker Compose）：**
+1. **不推荐**在容器镜像中包含 `.env` 文件（安全考虑）
+2. 在 `docker-compose.yml` 中通过 `environment` 或 `env_file` 定义环境变量
+3. Docker Compose 启动容器时，将环境变量注入到容器的系统环境变量
+4. NestJS 启动时，`ConfigModule.forRoot()` 会：
+   - 首先读取系统环境变量（从容器环境变量注入的）
+   - 如果 `.env` 文件存在，也会加载，但**系统环境变量优先级更高**
+5. 代码通过 `ConfigService` 或 `process.env` 访问（读取的是系统环境变量）
 
-**Secret 示例（敏感配置）：**
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: auth-app-bff-secrets
-type: Opaque
-stringData:
-  REDIS_PASSWORD: "your-redis-password"
-  JWT_SECRET: "your-jwt-secret"
-```
+**生产环境流程（K8s 部署）：**
+1. **不推荐**在容器镜像中包含 `.env` 文件（安全考虑）
+2. 创建 ConfigMap/Secret 定义环境变量（非敏感配置用 ConfigMap，敏感配置用 Secret）
+3. Deployment 通过 `envFrom` 或 `env` 将配置注入到容器的系统环境变量
+4. NestJS 启动时，`ConfigModule.forRoot()` 会：
+   - 首先读取系统环境变量（从 K8s ConfigMap/Secret 注入的）
+   - 如果 `.env` 文件存在，也会加载，但**系统环境变量优先级更高**
+5. 代码通过 `ConfigService` 或 `process.env` 访问（读取的是系统环境变量）
 
-**Deployment 配置：**
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-spec:
-  template:
-    spec:
-      containers:
-      - name: auth-app-bff
-        envFrom:
-        - configMapRef:
-            name: auth-app-bff-config
-        - secretRef:
-            name: auth-app-bff-secrets
-```
+**生产环境关键区别：**
+- ❌ **不使用 `.env` 文件**：生产环境通常不在容器镜像中包含 `.env` 文件，因为：
+  - 敏感信息不应该打包到镜像中
+  - 不同环境（开发/测试/生产）需要不同的配置
+  - 配置变更需要重新构建镜像，不够灵活
+- ✅ **使用容器环境变量**：通过 Docker Compose 的 `environment` 或 K8s 的 ConfigMap/Secret 注入
+- ✅ **优先级**：系统环境变量 > `.env` 文件（如果存在）
+- ✅ **安全性**：敏感信息（密码、密钥）使用 K8s Secret 或 Docker Compose secrets
 
-**5. 注意事项**
+**关键点：**
+- ✅ **全局可用**：使用 `isGlobal: true` 使 `ConfigService` 全局可用
+- ✅ **类型转换**：`ConfigService.get<number>()` 自动将字符串转换为数字
+- ✅ **验证**：使用 Joi schema 验证环境变量格式
+- ✅ **默认值**：`ConfigService.get('KEY', 'default')` 提供默认值
+- ✅ **多环境**：支持 `.env.development`、`.env.production` 等多环境文件
+---
 
-- ✅ 使用 `isGlobal: true` 使 ConfigModule 全局可用
-- ✅ 使用 Joi 验证确保环境变量格式正确
-- ✅ 敏感信息（密码、密钥）放在 Secret 中
-- ✅ 提供默认值避免运行时错误
-- ✅ 支持 `.env.development`、`.env.production` 等多环境文件
-#### 1.3 FastAPI BFF
+### 2.3 FastAPI BFF
 
 **技术栈特点：**
 - 使用 `pydantic-settings` 的 `BaseSettings` 管理环境变量
 - 支持类型验证和自动类型转换
 - 通过 `SettingsConfigDict` 配置加载方式
 - 全局 `settings` 对象，直接导入使用
+- `BaseSettings` 自动加载 `.env` 文件到系统环境变量
 
-**1. 环境变量文件定义（.env）**
+#### 2.3.1 环境变量定义方式
+
+**方式一：环境变量文件（.env）**
 
 在项目根目录创建 `.env` 文件定义环境变量：
 
@@ -579,20 +789,144 @@ POSTGRES_DB=app_db
 BACKEND_CORS_ORIGINS=["https://app.example.com"]
 ```
 
-**2. 源码配置方式（config.py）**
+**环境特定文件：**
+- `.env.development` - 开发环境
+- `.env.production` - 生产环境
+- `.env.local` - 本地覆盖（不提交到 Git，优先级最高）
 
-在 `app/core/config.py` 中配置如何读取环境变量：
+**方式二：系统环境变量**
+
+直接在系统中设置环境变量（通过 `export` 或容器环境变量）：
+
+```bash
+# 本地开发
+export PROJECT_NAME="My App"
+export SERVER_HOST="https://api.example.com"
+
+# 容器中（通过 Docker/K8s 注入）
+# 无需额外操作，容器启动时已设置
+```
+
+#### 2.3.2 传递到容器的方式
+
+**方式一：Docker Compose**
+
+```yaml
+# docker-compose.yml
+services:
+  incubator-app-bff:
+    image: incubator-app-bff:latest
+    # 方式1：直接定义环境变量（注入到容器环境变量）
+    environment:
+      - PROJECT_NAME=Incubator App
+      - SERVER_NAME=incubator-app-bff
+      - AUTH_SERVICE_URL=http://auth-app-bff:3030
+      - POSTGRES_SERVER=postgres-service
+      - POSTGRES_PORT=5432
+    
+    # 方式2：从 .env 文件加载（注入到容器环境变量）
+    env_file:
+      - .env
+      - .env.production
+    
+    # 方式3：混合使用（environment 优先级更高）
+    environment:
+      - PROJECT_NAME=Incubator App  # 覆盖 .env 文件中的值
+    env_file:
+      - .env
+```
+
+**流程说明：**
+1. Docker Compose 读取 `.env` 文件或 `environment` 配置
+2. 将这些值注入到容器的系统环境变量中
+3. FastAPI 启动时，`BaseSettings` 自动加载 `.env` 文件（如果存在）到系统环境变量
+4. 代码通过 `settings` 对象或 `os.getenv()` 访问
+
+**方式二：K8s ConfigMap/Secret**
+
+```yaml
+# ConfigMap（非敏感配置）
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: incubator-app-bff-config
+data:
+  PROJECT_NAME: "Incubator App"
+  SERVER_NAME: "incubator-app-bff"
+  SERVER_HOST: "https://api.example.com"
+  AUTH_SERVICE_URL: "http://auth-app-bff:3030"
+  POSTGRES_SERVER: "postgres-service"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "app_db"
+
+---
+# Secret（敏感配置）
+apiVersion: v1
+kind: Secret
+metadata:
+  name: incubator-app-bff-secrets
+type: Opaque
+stringData:
+  POSTGRES_PASSWORD: "your-db-password"
+  POSTGRES_USER: "app_user"
+
+---
+# Deployment（注入到容器环境变量）
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: incubator-app-bff
+        # 方式1：使用 envFrom 批量注入
+        envFrom:
+        - configMapRef:
+            name: incubator-app-bff-config
+        - secretRef:
+            name: incubator-app-bff-secrets
+        
+        # 方式2：使用 env 单个注入（可设置默认值）
+        env:
+        - name: PROJECT_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: incubator-app-bff-config
+              key: PROJECT_NAME
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: incubator-app-bff-secrets
+              key: POSTGRES_PASSWORD
+```
+
+**流程说明：**
+1. K8s 从 ConfigMap/Secret 读取配置
+2. 通过 `envFrom` 或 `env` 注入到容器的系统环境变量中
+3. FastAPI 启动时，`BaseSettings` 自动加载 `.env` 文件（如果存在）到系统环境变量
+4. 代码通过 `settings` 对象或 `os.getenv()` 访问
+
+#### 2.3.3 容器中使用方式（源码配置和访问）
+
+**完整流程：**
+1. 容器启动时，环境变量已注入到系统环境变量（通过 Docker Compose 或 K8s）
+2. FastAPI 启动时，`BaseSettings` 自动加载 `.env` 文件（如果存在）到系统环境变量
+3. 在 `config.py` 中定义 `Settings` 类（加载 `.env` 文件、验证等）
+4. 代码中通过 `settings` 对象导入使用或直接使用 `os.getenv()`
+
+**步骤1：在 config.py 中配置**
 
 ```python
+# app/core/config.py
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import field_validator, AnyHttpUrl
 from typing import List, Optional
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_ignore_empty=True,
-        extra="ignore"
+        env_file=".env",          # 自动加载 .env 文件到系统环境变量
+        env_ignore_empty=True,    # 忽略空值
+        extra="ignore"            # 忽略未定义的字段
     )
     
     # 基础配置
@@ -600,6 +934,120 @@ class Settings(BaseSettings):
     PROJECT_NAME: str
     SERVER_NAME: str
     SERVER_HOST: AnyHttpUrl
+    
+    # 认证服务配置
+    AUTH_SERVICE_URL: str = "http://localhost:3030"
+    
+    # 数据库配置
+    POSTGRES_SERVER: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_PORT: int = 5432
+    POSTGRES_DB: str = ""
+    
+    # CORS 配置（支持自定义验证器）
+    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+    
+    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: Any) -> list[str] | str:
+        if isinstance(v, str) and not v.startswith("["):
+            return [i.strip() for i in v.split(",")]
+        elif isinstance(v, (list, str)):
+            return v
+        raise ValueError(v)
+
+# 全局 settings 实例（启动时自动加载 .env 文件）
+settings = Settings()
+```
+
+**说明：**
+- `env_file=".env"` 指定要加载的 `.env` 文件路径
+- `BaseSettings` 会自动从系统环境变量和 `.env` 文件读取值
+- 支持类型验证和自动类型转换（如 `POSTGRES_PORT: int`）
+- 支持自定义验证器（如 `assemble_cors_origins`）
+
+**步骤2：在代码中访问环境变量**
+
+**方式一：通过 settings 对象（推荐，有类型提示和验证）**
+```python
+# app/services/auth_client.py
+from app.core.config import settings
+
+class AuthClient:
+    def __init__(self):
+        self.base_url = settings.AUTH_SERVICE_URL
+    
+    async def get_current_user(self, request: Request):
+        # 使用 settings 中的配置
+        response = await client.get(
+            f"{settings.AUTH_SERVICE_URL}/api/v1/auth/me",
+            headers=headers
+        )
+```
+
+**在依赖注入中使用：**
+```python
+# app/db/database.py
+from app.core.config import settings
+
+async def get_db():
+    # 使用 settings 中的数据库配置
+    db_url = f"postgresql://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_SERVER}/{settings.POSTGRES_DB}"
+    # ...
+```
+
+**方式二：直接使用 os.getenv()（适合简单场景）**
+```python
+# app/services/auth_client.py
+import os
+
+class AuthClient:
+    def __init__(self):
+        self.base_url = os.getenv('AUTH_SERVICE_URL', 'http://localhost:3030')
+    
+    async def get_current_user(self, request: Request):
+        # 使用 os.getenv 读取系统环境变量
+        api_url = os.getenv('AUTH_SERVICE_URL')
+        # ...
+```
+
+#### 2.3.4 完整流程总结
+
+**本地开发流程：**
+1. 在项目根目录创建 `.env` 文件定义环境变量
+2. 运行 `uvicorn app.main:app`，FastAPI 启动时 `BaseSettings` 自动加载 `.env` 文件到系统环境变量
+3. 代码通过 `settings` 对象或 `os.getenv()` 访问
+
+**生产环境流程（Docker Compose）：**
+1. **不推荐**在容器镜像中包含 `.env` 文件（安全考虑）
+2. 在 `docker-compose.yml` 中通过 `environment` 或 `env_file` 定义环境变量
+3. Docker Compose 启动容器时，将环境变量注入到容器的系统环境变量
+4. FastAPI 启动时，`BaseSettings` 会：
+   - 首先读取系统环境变量（从容器环境变量注入的）
+   - 如果 `.env` 文件存在，也会加载，但**系统环境变量优先级更高**
+5. 代码通过 `settings` 对象或 `os.getenv()` 访问（读取的是系统环境变量）
+
+**生产环境流程（K8s 部署）：**
+1. **不推荐**在容器镜像中包含 `.env` 文件（安全考虑）
+2. 创建 ConfigMap/Secret 定义环境变量（非敏感配置用 ConfigMap，敏感配置用 Secret）
+3. Deployment 通过 `envFrom` 或 `env` 将配置注入到容器的系统环境变量
+4. FastAPI 启动时，`BaseSettings` 会：
+   - 首先读取系统环境变量（从 K8s ConfigMap/Secret 注入的）
+   - 如果 `.env` 文件存在，也会加载，但**系统环境变量优先级更高**
+5. 代码通过 `settings` 对象或 `os.getenv()` 访问（读取的是系统环境变量）
+
+**生产环境关键区别：**
+- ❌ **不使用 `.env` 文件**：生产环境通常不在容器镜像中包含 `.env` 文件
+- ✅ **使用容器环境变量**：通过 Docker Compose 的 `environment` 或 K8s 的 ConfigMap/Secret 注入
+- ✅ **优先级**：系统环境变量 > `.env` 文件（如果存在）
+
+**关键点：**
+- ✅ **类型验证**：`BaseSettings` 自动进行类型验证和转换
+- ✅ **默认值**：在类中定义默认值：`POSTGRES_PORT: int = 5432`
+- ✅ **必填项**：不提供默认值的字段为必填，缺失会报错
+- ✅ **自定义验证**：使用 `@field_validator` 进行自定义验证
+- ✅ **全局对象**：`settings = Settings()` 创建全局实例，直接导入使用
     
     # 认证服务配置
     AUTH_SERVICE_URL: str = "http://localhost:3030"
@@ -751,20 +1199,38 @@ spec:
 - ✅ 提供默认值避免必填项缺失错误
 - ✅ `env_ignore_empty=True` 忽略空值环境变量
 - ✅ `extra="ignore"` 忽略未定义的额外环境变量
-#### 1.4 Vite SSR
+---
+
+### 2.4 Vite SSR
 
 **技术栈特点：**
 - 使用 `import.meta.env` 访问环境变量
 - 通过 `.env` 文件定义环境变量
 - 区分客户端和服务端环境变量
 - 使用 `VITE_` 前缀暴露给客户端
+- Vite 自动加载 `.env` 文件到系统环境变量
 
-**1. 源码定义方式**
+> **⚠️ 注意：Vite SSR vs Vite CSR**
+> 
+> 本节说明的是 **Vite SSR（服务端渲染）** 应用的环境变量处理方式。
+> 
+> **Vite CSR（客户端渲染）** 应用的环境变量处理方式不同：
+> - CSR 应用是纯前端应用，在浏览器中运行，**无法在运行时读取系统环境变量**
+> - 环境变量需要在**构建时**注入到代码中
+> - 构建时，`VITE_` 前缀的环境变量会被替换为实际值，直接嵌入到打包后的代码中
+> - 运行时无法动态修改环境变量
+> - 如果需要不同环境的配置，需要在构建时指定不同的环境变量重新构建
+> - 因此，CSR 应用不适用于本文档中描述的运行时环境变量注入方式（Docker Compose、K8s ConfigMap/Secret 等）
 
-在项目根目录创建 `.env` 文件：
+#### 2.4.1 环境变量定义方式
+
+**方式一：环境变量文件（.env）**
+
+在项目根目录创建 `.env` 文件定义环境变量：
 
 ```bash
 # .env
+# 客户端可访问的变量（必须以 VITE_ 开头）
 VITE_APP_NAME=SunMoonAI
 VITE_APP_ENV=production
 VITE_API_URL=https://api.sunmoonai.com
@@ -772,55 +1238,131 @@ VITE_BFF_URL=https://bff.sunmoonai.com
 
 # 服务端专用（不以 VITE_ 开头）
 SSR_API_SECRET=your-secret-key
-DATABASE_URL=postgresql://...
+DATABASE_URL=postgresql://user:pass@host:5432/dbname
 ```
 
 **环境特定文件：**
 - `.env.development` - 开发环境
 - `.env.production` - 生产环境
-- `.env.local` - 本地覆盖（不提交到 Git）
+- `.env.local` - 本地覆盖（不提交到 Git，优先级最高）
 
-**2. 源码使用方式**
+**方式二：系统环境变量**
 
-**客户端代码（组件、页面）：**
-```typescript
-// 使用 import.meta.env 访问环境变量
-const apiUrl = import.meta.env.VITE_API_URL
-const appName = import.meta.env.VITE_APP_NAME
+直接在系统中设置环境变量（通过 `export` 或容器环境变量）：
 
-// 在组件中使用
-export default {
-  setup() {
-    const config = {
-      apiUrl: import.meta.env.VITE_API_URL,
-      bffUrl: import.meta.env.VITE_BFF_URL || import.meta.env.VITE_API_URL,
-    }
-    return { config }
-  }
-}
+```bash
+# 本地开发
+export VITE_APP_NAME="SunMoonAI"
+export VITE_APP_ENV="production"
+
+# 容器中（通过 Docker/K8s 注入）
+# 无需额外操作，容器启动时已设置
 ```
 
-**服务端代码（SSR 中间件、API 路由）：**
-```typescript
-// 服务端可以访问所有环境变量（包括非 VITE_ 前缀）
-const apiSecret = import.meta.env.SSR_API_SECRET
-const dbUrl = import.meta.env.DATABASE_URL
+#### 2.4.2 传递到容器的方式
 
-// 在 SSR 中间件中使用
-export default defineEventHandler(async (event) => {
-  const apiUrl = import.meta.env.VITE_API_URL
-  const secret = import.meta.env.SSR_API_SECRET
-  
-  // 调用后端 API
-  const response = await $fetch(`${apiUrl}/api/v1/auth/me`, {
-    headers: {
-      'X-API-Secret': secret
-    }
-  })
-})
+**方式一：Docker Compose**
+
+```yaml
+# docker-compose.yml
+services:
+  vite-ssr-app:
+    image: vite-ssr-app:latest
+    # 方式1：直接定义环境变量（注入到容器环境变量）
+    environment:
+      - VITE_APP_NAME=My App
+      - VITE_APP_ENV=production
+      - VITE_API_URL=https://api.example.com
+    
+    # 方式2：从 .env 文件加载（注入到容器环境变量）
+    env_file:
+      - .env
+      - .env.production
+    
+    # 方式3：混合使用（environment 优先级更高）
+    environment:
+      - VITE_APP_ENV=production  # 覆盖 .env 文件中的值
+    env_file:
+      - .env
 ```
 
-**类型定义（可选）：**
+**流程说明：**
+1. Docker Compose 读取 `.env` 文件或 `environment` 配置
+2. 将这些值注入到容器的系统环境变量中
+3. Vite 启动时，自动加载 `.env` 文件（如果存在）到系统环境变量
+4. 代码通过 `import.meta.env`（客户端）或 `process.env`（服务端）访问
+
+**方式二：K8s ConfigMap/Secret**
+
+```yaml
+# ConfigMap（非敏感配置）
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vite-ssr-app-config
+data:
+  VITE_APP_NAME: "SunMoonAI"
+  VITE_APP_ENV: "production"
+  VITE_API_URL: "https://api.sunmoonai.com"
+  VITE_BFF_URL: "https://bff.sunmoonai.com"
+
+---
+# Secret（敏感配置）
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vite-ssr-app-secrets
+type: Opaque
+stringData:
+  SSR_API_SECRET: "your-secret-key"
+  DATABASE_URL: "postgresql://..."
+
+---
+# Deployment（注入到容器环境变量）
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: vite-ssr-app
+        # 方式1：使用 envFrom 批量注入
+        envFrom:
+        - configMapRef:
+            name: vite-ssr-app-config
+        - secretRef:
+            name: vite-ssr-app-secrets
+        
+        # 方式2：使用 env 单个注入（可设置默认值）
+        env:
+        - name: VITE_APP_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: vite-ssr-app-config
+              key: VITE_APP_ENV
+        - name: SSR_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: vite-ssr-app-secrets
+              key: SSR_API_SECRET
+```
+
+**流程说明：**
+1. K8s 从 ConfigMap/Secret 读取配置
+2. 通过 `envFrom` 或 `env` 注入到容器的系统环境变量中
+3. Vite 启动时，自动加载 `.env` 文件（如果存在）到系统环境变量
+4. 代码通过 `import.meta.env`（客户端）或 `process.env`（服务端）访问
+
+#### 2.4.3 容器中使用方式（源码配置和访问）
+
+**完整流程：**
+1. 容器启动时，环境变量已注入到系统环境变量（通过 Docker Compose 或 K8s）
+2. Vite 启动时，自动加载 `.env` 文件（如果存在）到系统环境变量
+3. 客户端代码通过 `import.meta.env` 访问（仅 `VITE_` 前缀的变量）
+4. 服务端代码通过 `import.meta.env` 或 `process.env` 访问（所有变量）
+
+**步骤1：类型定义（可选但推荐）**
+
 ```typescript
 // env.d.ts
 /// <reference types="vite/client" />
@@ -831,6 +1373,7 @@ interface ImportMetaEnv {
   readonly VITE_API_URL: string
   readonly VITE_BFF_URL: string
   readonly SSR_API_SECRET: string  // 服务端专用
+  readonly DATABASE_URL: string    // 服务端专用
 }
 
 interface ImportMeta {
@@ -838,78 +1381,90 @@ interface ImportMeta {
 }
 ```
 
-**3. Docker Compose 传递方式**
+**步骤2：在代码中访问环境变量**
 
-```yaml
-# docker-compose.yml
-services:
-  vite-ssr-app:
-    image: vite-ssr-app:latest
-    # 方式一：直接定义环境变量
-    environment:
-      - VITE_APP_NAME=My App
-      - VITE_APP_ENV=production
-      - VITE_API_URL=https://api.example.com
+**客户端代码（组件、页面）：**
+```typescript
+// components/AppHeader.vue
+export default {
+  setup() {
+    // 客户端只能访问 VITE_ 前缀的环境变量
+    const apiUrl = import.meta.env.VITE_API_URL
+    const appName = import.meta.env.VITE_APP_NAME
+    const bffUrl = import.meta.env.VITE_BFF_URL || import.meta.env.VITE_API_URL
     
-    # 方式二：从 .env 文件加载（推荐）
-    env_file:
-      - .env
-      - .env.production
-    
-    # 方式三：混合使用（environment 优先级更高）
-    environment:
-      - VITE_APP_ENV=production  # 覆盖 .env 文件中的值
-    env_file:
-      - .env
+    return {
+      apiUrl,
+      appName,
+      bffUrl,
+    }
+  }
+}
 ```
 
-**4. K8s 部署配置**
+**服务端代码（SSR 中间件、API 路由）：**
+```typescript
+// server/middleware/auth.ts
+// 服务端可以访问所有环境变量（包括非 VITE_ 前缀）
 
-环境变量通过 K8s ConfigMap/Secret 注入，Vite 在构建时和运行时读取。
+// 方式1：使用 import.meta.env（推荐）
+export default defineEventHandler(async (event) => {
+  const apiUrl = import.meta.env.VITE_API_URL
+  const secret = import.meta.env.SSR_API_SECRET
+  const dbUrl = import.meta.env.DATABASE_URL
+  
+  // 调用后端 API
+  const response = await $fetch(`${apiUrl}/api/v1/auth/me`, {
+    headers: {
+      'X-API-Secret': secret
+    }
+  })
+})
 
-**ConfigMap 示例：**
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: vite-ssr-app-config
-data:
-  VITE_APP_NAME: "SunMoonAI"
-  VITE_APP_ENV: "production"
-  VITE_API_URL: "https://api.sunmoonai.com"
-  VITE_BFF_URL: "https://bff.sunmoonai.com"
+// 方式2：使用 process.env（也可以）
+export default defineEventHandler(async (event) => {
+  const apiUrl = process.env.VITE_API_URL
+  const secret = process.env.SSR_API_SECRET
+  const dbUrl = process.env.DATABASE_URL
+  // ...
+})
 ```
 
-**Secret 示例（敏感配置）：**
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: vite-ssr-app-secrets
-type: Opaque
-stringData:
-  SSR_API_SECRET: "your-secret-key"
-  DATABASE_URL: "postgresql://..."
-```
+#### 2.4.4 完整流程总结
 
-**Deployment 配置：**
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-spec:
-  template:
-    spec:
-      containers:
-      - name: vite-ssr-app
-        envFrom:
-        - configMapRef:
-            name: vite-ssr-app-config
-        - secretRef:
-            name: vite-ssr-app-secrets
-```
+**本地开发流程：**
+1. 在项目根目录创建 `.env` 文件定义环境变量
+2. 运行 `npm run dev`，Vite 自动加载 `.env` 文件到系统环境变量
+3. 客户端代码通过 `import.meta.env.VITE_XXX` 访问
+4. 服务端代码通过 `import.meta.env.XXX` 或 `process.env.XXX` 访问
 
-**4. 注意事项**
+**生产环境流程（Docker Compose）：**
+1. **不推荐**在容器镜像中包含 `.env` 文件（安全考虑）
+2. 在 `docker-compose.yml` 中通过 `environment` 或 `env_file` 定义环境变量
+3. Docker Compose 启动容器时，将环境变量注入到容器的系统环境变量
+4. Vite 启动时，会：
+   - 首先读取系统环境变量（从容器环境变量注入的）
+   - 如果 `.env` 文件存在，也会加载，但**系统环境变量优先级更高**
+5. 客户端代码通过 `import.meta.env.VITE_XXX` 访问（`VITE_` 前缀的变量在构建时替换）
+6. 服务端代码通过 `import.meta.env.XXX` 或 `process.env.XXX` 访问（运行时读取）
 
+**生产环境流程（K8s 部署）：**
+1. **不推荐**在容器镜像中包含 `.env` 文件（安全考虑）
+2. 创建 ConfigMap/Secret 定义环境变量（非敏感配置用 ConfigMap，敏感配置用 Secret）
+3. Deployment 通过 `envFrom` 或 `env` 将配置注入到容器的系统环境变量
+4. Vite 启动时，会：
+   - 首先读取系统环境变量（从 K8s ConfigMap/Secret 注入的）
+   - 如果 `.env` 文件存在，也会加载，但**系统环境变量优先级更高**
+5. 客户端代码通过 `import.meta.env.VITE_XXX` 访问（`VITE_` 前缀的变量在构建时替换）
+6. 服务端代码通过 `import.meta.env.XXX` 或 `process.env.XXX` 访问（运行时读取）
+
+**生产环境关键区别：**
+- ❌ **不使用 `.env` 文件**：生产环境通常不在容器镜像中包含 `.env` 文件
+- ✅ **使用容器环境变量**：通过 Docker Compose 的 `environment` 或 K8s 的 ConfigMap/Secret 注入
+- ✅ **优先级**：系统环境变量 > `.env` 文件（如果存在）
+- ⚠️ **构建时 vs 运行时**：`VITE_` 前缀的变量在构建时替换，需要确保构建时环境变量已设置
+
+**关键点：**
 - ✅ **客户端可见性**：只有 `VITE_` 前缀的环境变量会暴露到客户端代码
 - ✅ **服务端专用**：不以 `VITE_` 开头的变量仅在服务端可用
 - ✅ **构建时 vs 运行时**：`VITE_` 变量在构建时替换，非 `VITE_` 变量在运行时读取

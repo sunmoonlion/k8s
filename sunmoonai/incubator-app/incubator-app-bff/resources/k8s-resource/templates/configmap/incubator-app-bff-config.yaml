@@ -73,5 +73,17 @@ data:
   SENTRY_TRACES_SAMPLE_RATE: "${SENTRY_TRACES_SAMPLE_RATE}"
   SENTRY_PROFILES_SAMPLE_RATE: "${SENTRY_PROFILES_SAMPLE_RATE}"
 
-  # 认证服务配置（新增）
-  AUTH_SERVICE_URL: "${AUTH_SERVICE_URL}"
+  # ========================================================================
+  # 认证服务配置（联动配置 - 调用 auth-app-bff）
+  # ========================================================================
+  AUTH_SERVICE_URL: "${AUTH_SERVICE_URL:-http://auth-app-bff:3030}"
+
+  # ========================================================================
+  # Session 配置（联动配置 - 必须与 auth-app-bff 一致）
+  # ========================================================================
+  SESSION_COOKIE_NAME: "${SESSION_COOKIE_NAME:-sunmoonai_session}"
+
+  # ========================================================================
+  # API 路径配置（联动配置）
+  # ========================================================================
+  API_V1_STR: "${API_V1_STR:-/api/v1}"
