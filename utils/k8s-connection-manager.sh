@@ -140,6 +140,16 @@ read_config(){
   # 确定使用的集群（优先级：环境变量 > 配置文件默认值）
   local cluster_name="${CLUSTER:-${GLOBAL_DEFAULT_CLUSTER:-C1}}"
   
+  # 读取集群模式
+  GLOBAL_CLUSTER_MODE=$(sed -n '/\[GLOBAL\]/,/^\[/p' "$CONFIG_FILE" | grep "^cluster_mode=" | cut -d'=' -f2 | tr -d ' ')
+  GLOBAL_CLUSTER_MODE=${GLOBAL_CLUSTER_MODE:-remote}
+  
+  # 如果是 kind 模式，直接返回
+  if [[ "$GLOBAL_CLUSTER_MODE" == "kind" ]] || [[ "$cluster_name" == "KIND" ]]; then
+    read_kind_config
+    return 0
+  fi
+  
   # 验证集群名称格式：必须是 C{数字} 格式（如 C1, C2, C3, C10 等）
   # 支持不连续的集群编号（如只有 C1 和 C3，没有 C2）
   if [[ ! "$cluster_name" =~ ^C[0-9]+$ ]]; then
@@ -270,6 +280,19 @@ read_config(){
   GLOBAL_TIMEOUT=${GLOBAL_TIMEOUT:-30}
 }
 
+# 读取 kind 配置
+read_kind_config() {
+  KIND_CLUSTER_NAME=$(sed -n '/^\[KIND\]$/,/^\[[A-Z]/p' "$CONFIG_FILE" | grep "^cluster_name=" | head -1 | cut -d'=' -f2 | tr -d ' ')
+  KIND_KUBECONFIG=$(sed -n '/^\[KIND\]$/,/^\[[A-Z]/p' "$CONFIG_FILE" | grep "^kubeconfig=" | head -1 | cut -d'=' -f2 | tr -d ' ')
+  
+  # 展开路径
+  KIND_KUBECONFIG="${KIND_KUBECONFIG/#\~/$HOME}"
+  
+  # 设置默认值
+  KIND_CLUSTER_NAME=${KIND_CLUSTER_NAME:-kind}
+  KIND_KUBECONFIG=${KIND_KUBECONFIG:-$HOME/.kube/config}
+}
+
 # 保存连接状态
 save_status(){
   cat >"$STATUS_FILE" <<EOF
@@ -299,6 +322,14 @@ clear_status(){
 
 # 选择访问方式
 select_access_mode(){
+  # 如果是 kind 模式，直接使用 kind
+  if [[ "${GLOBAL_CLUSTER_MODE:-}" == "kind" ]] || [[ "${CLUSTER:-}" == "KIND" ]]; then
+    CURRENT_MODE="kind"
+    success "✅ 使用 Kind 本地集群"
+    start_connection
+    return 0
+  fi
+  
   local available_modes=()
   
   # 检查跳板机模式配置是否完整
@@ -372,6 +403,49 @@ select_access_mode(){
 start_connection(){
   
   case "$CURRENT_MODE" in
+    "kind")
+      msg "🚀 使用 Kind 本地集群..."
+      
+      # 检查 kind 是否安装
+      if ! command -v kind >/dev/null 2>&1; then
+        err "❌ kind 未安装"
+        msg "💡 安装方法: https://kind.sigs.k8s.io/docs/user/quick-start/#installation"
+        exit 1
+      fi
+      
+      # 检查集群是否存在
+      if ! kind get clusters 2>/dev/null | grep -q "^${KIND_CLUSTER_NAME}$"; then
+        warn "⚠️  Kind 集群 $KIND_CLUSTER_NAME 不存在"
+        msg "💡 请先运行: ./kind-setup.sh create"
+        msg "💡 或手动创建: kind create cluster --name $KIND_CLUSTER_NAME"
+        exit 1
+      fi
+      
+      # 设置 kubeconfig
+      if [[ -n "$KIND_KUBECONFIG" && "$KIND_KUBECONFIG" != "$HOME/.kube/config" ]]; then
+        # 如果指定了单独的 kubeconfig 文件，导出到该文件
+        mkdir -p "$(dirname "$KIND_KUBECONFIG")"
+        kind get kubeconfig --name "$KIND_CLUSTER_NAME" > "$KIND_KUBECONFIG"
+        export KUBECONFIG="$KIND_KUBECONFIG"
+        CURRENT_KUBECONFIG="$KIND_KUBECONFIG"
+      else
+        # 使用默认的 ~/.kube/config（kind 会自动配置）
+        export KUBECONFIG="$HOME/.kube/config"
+        CURRENT_KUBECONFIG="$HOME/.kube/config"
+      fi
+      
+      msg "✅ 已设置环境变量: export KUBECONFIG=$CURRENT_KUBECONFIG"
+      msg "💡 Kind 集群已就绪，可以直接使用 kubectl 命令"
+      
+      # 验证连接
+      if kubectl cluster-info >/dev/null 2>&1; then
+        success "✅ Kind 集群连接正常"
+        kubectl cluster-info
+      else
+        warn "⚠️  无法连接到 Kind 集群，请检查集群状态"
+      fi
+      ;;
+      
     "bastion")
       msg "🚀 启动跳板机模式连接..."
       
@@ -815,6 +889,16 @@ show_status(){
   msg "  Kubeconfig: $CURRENT_KUBECONFIG"
   
   case "$CURRENT_MODE" in
+    "kind")
+      msg "  集群名称: $KIND_CLUSTER_NAME"
+      if kind get clusters 2>/dev/null | grep -q "^${KIND_CLUSTER_NAME}$"; then
+        msg "  集群状态: 运行中"
+        msg "  节点信息:"
+        kind get nodes --name "$KIND_CLUSTER_NAME" 2>/dev/null || true
+      else
+        msg "  集群状态: 不存在"
+      fi
+      ;;
     "bastion")
       if [[ -n "$TUNNEL_PID" ]] && kill -0 "$TUNNEL_PID" 2>/dev/null; then
         msg "  隧道状态: 运行中 (PID: $TUNNEL_PID)"
@@ -847,6 +931,16 @@ test_connection(){
   msg "🧪 测试连接..."
   
   case "$CURRENT_MODE" in
+    "kind")
+      if kubectl cluster-info >/dev/null 2>&1; then
+        success "✅ Kind 集群连接正常"
+        kubectl cluster-info
+        kubectl get nodes -o wide
+      else
+        err "❌ Kind 集群连接失败"
+        return 1
+      fi
+      ;;
     "bastion"|"direct")
       if [[ -n "$TUNNEL_PID" ]] && kill -0 "$TUNNEL_PID" 2>/dev/null; then
         if KUBECONFIG="$CURRENT_KUBECONFIG" kubectl get nodes >/dev/null 2>&1; then
