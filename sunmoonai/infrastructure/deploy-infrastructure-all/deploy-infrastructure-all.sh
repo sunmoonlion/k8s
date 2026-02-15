@@ -129,6 +129,22 @@ load_config(){
     fi
     local cluster_selected="${CLUSTER:-C1}"
     
+    # 基础设施部署仅用于远程集群（C1/C2…）；当前目标为 Kind 时明确提示并退出
+    local k8s_admin_conf="$PROJECT_ROOT/../../utils/k8s-admin.conf"
+    if [[ -f "$k8s_admin_conf" ]]; then
+        local global_mode="" global_default=""
+        global_mode=$(sed -n '/^\[GLOBAL\]$/,/^\[[A-Z]/p' "$k8s_admin_conf" 2>/dev/null | grep "^cluster_mode=" | head -1 | cut -d'=' -f2 | tr -d ' ')
+        global_default=$(sed -n '/^\[GLOBAL\]$/,/^\[[A-Z]/p' "$k8s_admin_conf" 2>/dev/null | grep "^default_cluster=" | head -1 | cut -d'=' -f2 | tr -d ' ')
+        local mode_lower="" default_upper=""
+        mode_lower=$(echo "$global_mode" | tr '[:upper:]' '[:lower:]')
+        default_upper=$(echo "$global_default" | tr '[:lower:]' '[:upper:]')
+        if [[ "$mode_lower" == "kind" ]] || [[ "$default_upper" == "KIND" ]]; then
+            log_warn "基础设施部署仅用于远程集群（C1/C2 等），当前目标为 Kind。"
+            log_info "请使用 kind-setup.sh 创建/管理 Kind 集群，平台层可参考《kind使用指南.md》中的「对现成集群」脚本。"
+            exit 0
+        fi
+    fi
+    
     # 验证集群值格式：必须是 C{数字} 格式（如 C1, C2, C3, C10 等）
     # 支持不连续的集群编号（如只有 C1 和 C3，没有 C2）
     if [[ ! "$cluster_selected" =~ ^C[0-9]+$ ]]; then

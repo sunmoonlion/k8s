@@ -1,0 +1,11 @@
+# Kind 集群配置：1 control-plane + 2 workers（默认）
+# Worker 数量可配置：
+#   - 环境变量：KIND_WORKER_COUNT=6 ./create-kind-cluster.sh
+#   - 脚本参数：./create-kind-cluster.sh 6
+#   - 不指定则使用本文件；指定则脚本会生成临时配置，忽略本文件
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+  - role: worker
+  - role: worker

@@ -208,10 +208,27 @@ read_k8s_config() {
     # 确定使用的集群（优先级：环境变量 > 配置文件默认值）
     local cluster_name="${CLUSTER:-${GLOBAL_DEFAULT_CLUSTER:-C1}}"
     
+    # Kind 模式：cluster_mode=kind 或 default_cluster=KIND 时，读 [KIND] 段并返回
+    local cluster_mode="${GLOBAL_CLUSTER_MODE:-}"
+    local cluster_name_upper
+    cluster_name_upper=$(echo "$cluster_name" | tr '[:lower:]' '[:upper:]')
+    if [[ "$cluster_mode" == "kind" ]] || [[ "$cluster_name_upper" == "KIND" ]]; then
+        log_info "使用 Kind 集群配置"
+        KIND_CLUSTER_NAME=$(sed -n '/^\[KIND\]$/,/^\[[A-Z]/p' "$CONFIG_FILE" | grep "^cluster_name=" | head -1 | cut -d'=' -f2 | tr -d ' ')
+        KIND_KUBECONFIG=$(sed -n '/^\[KIND\]$/,/^\[[A-Z]/p' "$CONFIG_FILE" | grep "^kubeconfig=" | head -1 | cut -d'=' -f2 | tr -d ' ')
+        KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kind}"
+        KIND_KUBECONFIG="${KIND_KUBECONFIG:-$HOME/.kube/kind-config}"
+        KIND_KUBECONFIG="${KIND_KUBECONFIG/#\~/$HOME}"
+        KIND_KUBECONFIG=$(eval echo "$KIND_KUBECONFIG")
+        K8S_TARGET_MODE=kind
+        log_info "Kind 集群名: $KIND_CLUSTER_NAME, kubeconfig: $KIND_KUBECONFIG"
+        return 0
+    fi
+    
     # 验证集群名称格式：必须是 C{数字} 格式（如 C1, C2, C3, C10 等）
     # 支持不连续的集群编号（如只有 C1 和 C3，没有 C2）
     if [[ ! "$cluster_name" =~ ^C[0-9]+$ ]]; then
-        log_error "无效的集群名称: $cluster_name (格式必须为 C{数字}，如 C1, C2, C3 等)"
+        log_error "无效的集群名称: $cluster_name (格式必须为 C{数字}，如 C1, C2, C3 等；或使用 cluster_mode=kind / default_cluster=KIND 连接 Kind)"
         return 1
     fi
     
@@ -380,7 +397,19 @@ clear_k8s_status() {
 # 检查连接状态
 check_k8s_connection_status() {
     if load_k8s_status; then
-        # 检查进程是否还在运行
+        # Kind 模式：无隧道，仅校验 kubeconfig 与 kubectl 可用
+        if [[ "$MODE" == "kind" ]]; then
+            if [[ -n "$CURRENT_KUBECONFIG" ]] && [[ -f "$CURRENT_KUBECONFIG" ]]; then
+                if KUBECONFIG="$CURRENT_KUBECONFIG" kubectl get nodes >/dev/null 2>&1; then
+                    log_info "连接状态正常 (Kind)"
+                    return 0
+                fi
+            fi
+            log_warn "Kind 连接状态异常，需要重新建立连接"
+            clear_k8s_status
+            return 1
+        fi
+        # 远程模式：检查进程是否还在运行
         if [[ -n "$PID" ]] && kill -0 "$PID" 2>/dev/null; then
             # 检查端口是否还在监听
             if netstat -tlnp 2>/dev/null | grep -q ":$LOCAL_PORT "; then
@@ -445,6 +474,12 @@ start_k8s_connection() {
         return 1
     fi
     
+    # Kind 模式：直接走 Kind 建连，不依赖 bastion/direct
+    if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
+        start_kind_connection
+        return $?
+    fi
+    
     local mode="${1:-$GLOBAL_DEFAULT_MODE}"
     
     log_info "开始建立 Kubernetes 连接，模式: $mode"
@@ -469,6 +504,41 @@ start_k8s_connection() {
             return 1
             ;;
     esac
+}
+
+# Kind 模式连接：将 kind kubeconfig 写入配置路径并设置 KUBECONFIG
+start_kind_connection() {
+    log_info "使用 Kind 模式连接..."
+    
+    if ! command -v kind &>/dev/null; then
+        log_error "未找到 kind 命令，请先安装 kind"
+        return 1
+    fi
+    
+    if ! kind get clusters 2>/dev/null | grep -q "^${KIND_CLUSTER_NAME}$"; then
+        log_error "Kind 集群 ${KIND_CLUSTER_NAME} 不存在，请先运行: kind create cluster --name ${KIND_CLUSTER_NAME}"
+        return 1
+    fi
+    
+    local kubeconfig_dir
+    kubeconfig_dir=$(dirname "$KIND_KUBECONFIG")
+    if [[ ! -d "$kubeconfig_dir" ]]; then
+        mkdir -p "$kubeconfig_dir"
+        log_info "已创建 kubeconfig 目录: $kubeconfig_dir"
+    fi
+    
+    kind get kubeconfig --name "$KIND_CLUSTER_NAME" > "$KIND_KUBECONFIG" || {
+        log_error "无法获取 Kind 集群 ${KIND_CLUSTER_NAME} 的 kubeconfig"
+        return 1
+    }
+    
+    CURRENT_KUBECONFIG="$KIND_KUBECONFIG"
+    export KUBECONFIG="$KIND_KUBECONFIG"
+    log_info "已设置环境变量: export KUBECONFIG=$KIND_KUBECONFIG"
+    
+    save_k8s_status "kind" "$(date +%s)" "" ""
+    log_success "Kind 连接建立成功"
+    return 0
 }
 
 # 跳板机模式连接
@@ -789,6 +859,9 @@ stop_k8s_connection_quiet() {
                 sudo sed -i "/# added_by_k8s_manager$/d" /etc/hosts 2>/dev/null || true
             fi
             ;;
+        "kind")
+            # Kind 无隧道，仅清理状态
+            ;;
         "local")
             # 本地模式不需要特殊处理
             ;;
@@ -820,7 +893,7 @@ setup_kubectl_environment() {
     if load_k8s_status; then
         # 设置环境变量
         case "$MODE" in
-            "bastion"|"direct")
+            "bastion"|"direct"|"kind")
                 export KUBECONFIG="$CURRENT_KUBECONFIG"
                 log_info "已设置环境变量: export KUBECONFIG=$CURRENT_KUBECONFIG"
                 ;;

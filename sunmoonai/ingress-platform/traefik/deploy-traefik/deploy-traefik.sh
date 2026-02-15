@@ -899,14 +899,14 @@ clean_traefik_pvc() {
     log_info "清理 Traefik PVC..."
     
     # 查找相关的 PVC
-    local pvcs=$(KUBECONFIG=~/.kube/cluster-admin.conf kubectl get pvc -n "$namespace" -o name | grep "traefik-$project_id" || true)
+    local pvcs=$(KUBECONFIG="${KUBECONFIG:-}" kubectl get pvc -n "$namespace" -o name | grep "traefik-$project_id" || true)
     
     if [[ -n "$pvcs" ]]; then
         log_info "发现以下 PVC 需要清理:"
         echo "$pvcs"
         
         # 删除 PVC
-        echo "$pvcs" | xargs -r KUBECONFIG=~/.kube/cluster-admin.conf kubectl delete -n "$namespace"
+        echo "$pvcs" | xargs -r env KUBECONFIG="${KUBECONFIG:-}" kubectl delete -n "$namespace"
         
         if [[ $? -eq 0 ]]; then
             log_success "✅ PVC 清理成功！"

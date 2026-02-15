@@ -281,9 +281,9 @@ execute_rabbitmq_deployment() {
                 # 强制清理可能残留的 StatefulSet
                 log_info "检查并清理可能残留的 StatefulSet..."
                 local statefulset_name="rabbitmq-$project_id"
-                if KUBECONFIG=~/.kube/cluster-admin.conf kubectl get statefulset "$statefulset_name" -n "$namespace" >/dev/null 2>&1; then
+                if KUBECONFIG="${KUBECONFIG:-}" kubectl get statefulset "$statefulset_name" -n "$namespace" >/dev/null 2>&1; then
                     log_warn "发现残留的 StatefulSet，正在强制删除..."
-                    KUBECONFIG=~/.kube/cluster-admin.conf kubectl delete statefulset "$statefulset_name" -n "$namespace" --force --grace-period=0 >/dev/null 2>&1
+                    KUBECONFIG="${KUBECONFIG:-}" kubectl delete statefulset "$statefulset_name" -n "$namespace" --force --grace-period=0 >/dev/null 2>&1
                     sleep 3
                 fi
                 
@@ -655,14 +655,14 @@ clean_rabbitmq_pvc() {
     log_info "清理 RabbitMQ PVC..."
     
     # 查找相关的 PVC
-    local pvcs=$(KUBECONFIG=~/.kube/cluster-admin.conf kubectl get pvc -n "$namespace" -o name | grep "rabbitmq-$project_id" || true)
+    local pvcs=$(KUBECONFIG="${KUBECONFIG:-}" kubectl get pvc -n "$namespace" -o name | grep "rabbitmq-$project_id" || true)
     
     if [[ -n "$pvcs" ]]; then
         log_info "发现以下 PVC 需要清理:"
         echo "$pvcs"
         
         # 删除 PVC
-        echo "$pvcs" | xargs -r KUBECONFIG=~/.kube/cluster-admin.conf kubectl delete -n "$namespace"
+        echo "$pvcs" | xargs -r env KUBECONFIG="${KUBECONFIG:-}" kubectl delete -n "$namespace"
         
         if [[ $? -eq 0 ]]; then
             log_success "✅ PVC 清理成功！"
