@@ -1,47 +1,35 @@
 # Kind / 现成集群平台初始化
 
-本目录提供 **创建 Kind 集群** 与 **对现成集群做平台初始化**（命名空间 + 本地存储）。配置与 k8s-admin.conf、deploy-infrastructure-all 同源，详见仓库根目录《现成集群平台初始化.md》。
+**要用 Kind，只需记住一条**：先 WSL 上跑一次 NFS 安装，之后每次跑 **`kind-up.sh`** 即可（创建集群 + 命名空间 + NFS）。配置与 k8s-admin.conf、deploy-infrastructure-all 同源，详见《现成集群平台初始化.md》。
 
-## 1. 创建 Kind 集群
+## 使用步骤
 
-| 文件 | 说明 |
+**1. 一次性：在 WSL 上安装 NFS 服务**
+
+```bash
+cd k8s/sunmoonai/kind-infrastructure
+./wsl-setup-nfs-server.sh
+```
+
+**2. 每次要用 Kind 时（含首次、或关机/重启后）**
+
+```bash
+cd k8s/sunmoonai/kind-infrastructure
+./kind-up.sh
+```
+
+脚本会：创建 Kind 集群（已存在则跳过）→ 设置 KUBECONFIG → 执行命名空间 + NFS 存储初始化。执行完后本终端可直接部署应用；新开终端请先运行连接管理器或 `export KUBECONFIG=~/.kube/kind-config`。
+
+---
+
+## 脚本说明（供查阅，无需单独执行）
+
+| 脚本 | 说明 |
 |------|------|
-| `create-kind-cluster.sh` | 创建 Kind 集群，集群名与 kubeconfig 路径从 `k8s/utils/k8s-admin.conf` 的 [KIND] 读取。 |
-| `kind-cluster.yaml` | Kind 集群拓扑默认：**1 control-plane + 2 workers**；worker 数量也可由脚本参数或环境变量指定。 |
+| **`kind-up.sh`** | **唯一入口**：创建集群 + 命名空间 + NFS，新手只跑这个即可。 |
+| `create-kind-cluster.sh` | 被 kind-up.sh 调用，创建 Kind 集群；也可单独跑以仅建集群。 |
+| `apply-namespaces-existing-cluster.sh` | 被 kind-up.sh 调用。对现成集群按配置创建命名空间（与 Step07 同源：deploy-infrastructure-all.conf 中的环境 × 平台，如 app-platform-dev、data-platform-dev 等），已有则跳过。 |
+| `apply-nfs-existing-cluster.sh` | 被 kind-up.sh 调用；需 WSL 上已跑过 wsl-setup-nfs-server.sh。 |
+| `wsl-setup-nfs-server.sh` | 在 WSL 中安装 nfs-kernel-server 并导出 `/data/kind-nfs`（一次性）。 |
 
-**Worker 数量配置（任选其一）：**
-
-- **环境变量**：`KIND_WORKER_COUNT=6 ./create-kind-cluster.sh`
-- **脚本参数**：`./create-kind-cluster.sh 6`
-- **不指定**：使用 `kind-cluster.yaml`（默认 2 workers）；要改默认可编辑该文件增删 `- role: worker` 行。
-
-```bash
-./create-kind-cluster.sh          # 默认 2 workers（或按 kind-cluster.yaml）
-./create-kind-cluster.sh 6        # 6 个 workers
-KIND_WORKER_COUNT=8 ./create-kind-cluster.sh   # 8 个 workers
-```
-
-创建完成后，kubeconfig 会写入 k8s-admin.conf 中配置的路径（如 `~/.kube/kind-config`）。使用：`export KUBECONFIG=~/.kube/kind-config` 或通过连接管理器连接。
-
-## 2. 平台初始化（命名空间 + 存储）
-
-| 脚本 | 作用 |
-|------|------|
-| **`setup-kind-platform.sh`** | **阶段三入口**：按顺序执行命名空间 + 存储，一键完成平台初始化。 |
-| `apply-namespaces-existing-cluster.sh` | 按 Step07 配置创建命名空间（platform-environment），使用当前 KUBECONFIG。 |
-| `apply-storage-local-existing-cluster.sh` | 按 Step09 本地存储配置安装 local-path-provisioner 并创建 StorageClass，使用当前 KUBECONFIG。 |
-
-**使用**：先创建集群并设置 KUBECONFIG，再执行（二选一）：
-
-```bash
-./setup-kind-platform.sh
-```
-
-或分步执行：
-
-```bash
-./apply-namespaces-existing-cluster.sh
-./apply-storage-local-existing-cluster.sh
-```
-
-配置从 `../infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf` 读取；无该文件时使用脚本内默认值。
+Worker 数量：默认见 `kind-cluster.yaml`（2 workers）；需自定义时可 `KIND_WORKER_COUNT=6 ./create-kind-cluster.sh` 再跑 `kind-up.sh`，或改 kind-cluster.yaml 后跑 `kind-up.sh`。
