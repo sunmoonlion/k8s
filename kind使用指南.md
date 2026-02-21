@@ -196,7 +196,7 @@ done
 1. **WSL 上**（一次性）：执行 `k8s/sunmoonai/kind-infrastructure/wsl-setup-nfs-server.sh`，安装并导出 NFS（`/data/kind-nfs`）。
 2. **每次要用 Kind 时**（含首次）：执行 **`./k8s/sunmoonai/kind-infrastructure/kind-up.sh`**。该脚本会创建集群（已存在则跳过）、设置 KUBECONFIG、执行命名空间 + NFS 初始化，完成后即可部署应用。
 
-详见 **《现成集群平台初始化.md》**。
+详见下文 **5.7 现成集群平台初始化（设计说明）**。
 
 ### 5.3 应用如何使用（Helm / PVC）
 
@@ -231,6 +231,42 @@ spec:
 ### 5.6 NFS 可选环境变量与排错
 
 **可选环境变量**：`KIND_NFS_SERVER_HOST`（默认 172.17.0.1）、`KIND_NFS_PATH`（默认 `/data/kind-nfs`）、`KIND_NFS_STORAGE_CLASS_NAME`（默认 `nfs-2`）。若 Provisioner Pod 挂载失败（如 access denied），可在 WSL 的 `/etc/exports` 中为导出加上 **insecure**，并执行 `exportfs -ra`、重启 `nfs-kernel-server`；若连接超时，可把 `KIND_NFS_SERVER_HOST` 设为 WSL 的 IP（如 `hostname -I` 或默认网关 `ip route show default | awk '{print $3}'`）后重跑 `apply-nfs-existing-cluster.sh`。
+
+### 5.7 现成集群平台初始化（设计说明）
+
+在 **Kind 或任意已有集群**上，用最少脚本复现「平台层」核心能力，并与远程部署（deploy-infrastructure-all）在名单与约定上保持一致。不修改 deploy-infrastructure-all 主流程，仅通过「对现成集群」的独立脚本完成。
+
+**目标与范围**
+
+- **目标**：为 Kind（或当前 KUBECONFIG 指向的集群）创建与远程**相同**的命名空间集合，以及可用的 NFS 存储（StorageClass **nfs-2**），使同一套应用/平台部署命令在 Kind 与远程上都能找到相同 namespace 和 StorageClass。
+- **范围**：命名空间 + NFS 存储。脚本的输入仅为「当前 KUBECONFIG」；执行前由用户或连接管理器已设好 KUBECONFIG。
+
+**与远程一致的含义**
+
+| 维度       | 一致 | 不一致（刻意简化） |
+|------------|------|--------------------|
+| **配置来源** | 与远程**同源**：读 `deploy-infrastructure-all/deploy-infrastructure-all.conf` 中 Step07、Step09 相关变量。 | 不读 SERVER_*、不依赖 SSH/节点列表。 |
+| **命名空间** | 名单（environments × platforms）、命名规则（`platform-environment`）、是否应用策略与 Step07 一致。 | 执行方式：本机 `kubectl`，不 SSH。 |
+| **存储**     | NFS：StorageClass **nfs-2**，与远程 dev 常用一致。 | 不做云 CSI；NFS 服务在 WSL 上由 `wsl-setup-nfs-server.sh` 配置。 |
+
+**脚本一：命名空间**（`sunmoonai/kind-infrastructure/apply-namespaces-existing-cluster.sh`）
+
+- **职责**：根据「环境列表 × 平台列表」创建命名空间 `platform-environment`，可选应用策略（与 Step07 的 `NAMESPACE_PLATFORM_APPLY_POLICIES` 一致）。
+- **配置**：从 **deploy-infrastructure-all.conf** 读取 `NAMESPACE_PLATFORM_ENVIRONMENTS`、`NAMESPACE_PLATFORM_PLATFORMS`、`NAMESPACE_PLATFORM_APPLY_POLICIES`；若 conf 不存在则使用脚本内默认值（与 conf 默认一致）。
+- **行为**：解析上述变量，对每个 `(platform, environment)` 若 namespace 不存在则 `kubectl create namespace`，并执行策略（当前 Step07 为占位/日志）。
+
+**脚本二：NFS 存储**（`sunmoonai/kind-infrastructure/apply-nfs-existing-cluster.sh`）
+
+- **职责**：在已存在的 Kind 集群内部署 nfs-subdir-external-provisioner，连接 WSL 宿主机 NFS（需先运行 `wsl-setup-nfs-server.sh`），创建 StorageClass **nfs-2**。
+- **前置**：WSL 已安装并 export `/data/kind-nfs`；当前 KUBECONFIG 指向目标集群。
+- **行为**：Helm 安装 provisioner，`nfs.server` 默认 `172.17.0.1`（可设 `KIND_NFS_SERVER_HOST`），`nfs.path` 默认 `/data/kind-nfs`（可设 `KIND_NFS_PATH`）。
+
+**使用方式与入口**
+
+- **唯一入口**：**`kind-up.sh`** 依次执行「创建集群 → 命名空间 → NFS」，直接调用上述两个脚本；新手只需在 WSL 跑一次 `wsl-setup-nfs-server.sh`，之后每次跑 `kind-up.sh` 即可。
+- **谁设 KUBECONFIG**：由 `kind-up.sh` 设置，或用户手动 `export KUBECONFIG=...`，或先运行连接管理器再执行脚本。
+
+**参考**：策略与切换见《策略.md》；迁移节奏见《迁移指南.md》；远程 Step07/Step09 实现见 `sunmoonai/infrastructure/steps/step07_create_namespaces.sh`、`step09_storage.sh` 及 `deploy-infrastructure-all/deploy-infrastructure-all.conf`。
 
 ---
 
@@ -343,4 +379,6 @@ docker info   # 若报错，先启动 Docker
 ## 11. 与本项目其他文档的关系
 
 - **迁移指南.md**：说明如何从“仅支持远程集群”迁移到“同时支持 Kind”，以及哪些配置与步骤在 Kind 上跳过、哪些可复用。
-- **KIND-README.md**：与本文档互补，侧重快速上手与脚本用法，可一并查阅。
+- **策略.md**：集群模式与策略切换。
+- **kind-infrastructure/README.md**：Kind 脚本目录说明与使用步骤，与本文档一致。
+- **KIND-README.md**（若存在）：与本文档互补，侧重快速上手与脚本用法，可一并查阅。

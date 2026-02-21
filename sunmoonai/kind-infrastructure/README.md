@@ -1,6 +1,6 @@
 # Kind / 现成集群平台初始化
 
-**要用 Kind，只需记住一条**：先 WSL 上跑一次 NFS 安装，之后每次跑 **`kind-up.sh`** 即可（创建集群 + 命名空间 + NFS）。配置与 k8s-admin.conf、deploy-infrastructure-all 同源，详见《现成集群平台初始化.md》。
+**要用 Kind，只需记住一条**：先 WSL 上跑一次 NFS 安装，之后每次跑 **`kind-up.sh`** 即可（创建集群 + 命名空间 + NFS）。配置与 k8s-admin.conf、deploy-infrastructure-all 同源，详见《kind使用指南.md》第 5.7 节。
 
 ## 使用步骤
 

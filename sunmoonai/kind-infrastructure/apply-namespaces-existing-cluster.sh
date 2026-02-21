@@ -2,7 +2,7 @@
 #
 # 对现成集群应用命名空间（与 Step07 配置同源）
 # 使用当前 KUBECONFIG，不 SSH；供 Kind 或任意已有集群使用。
-# 详见《现成集群平台初始化.md》
+# 详见《kind使用指南.md》第 5.7 节
 #
 set -euo pipefail
 
