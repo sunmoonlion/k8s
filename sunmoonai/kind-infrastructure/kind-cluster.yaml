@@ -1,11 +1,20 @@
 # Kind 集群配置：1 control-plane + 2 workers（默认）
-# Worker 数量可配置：
-#   - 环境变量：KIND_WORKER_COUNT=6 ./create-kind-cluster.sh
-#   - 脚本参数：./create-kind-cluster.sh 6
-#   - 不指定则使用本文件；指定则脚本会生成临时配置，忽略本文件
+# 修改本文件后执行 kind-up.sh 创建/重建集群。
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
   - role: control-plane
+    # Traefik NodePort → 宿主机（WSL），便于从本机访问 Ingress 与 TCP 代理
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 30080   # HTTP
+      - containerPort: 30443
+        hostPort: 30443   # HTTPS
+      - containerPort: 30444
+        hostPort: 30444   # PostgreSQL TCP 代理
+      - containerPort: 30445
+        hostPort: 30445   # MongoDB TCP 代理
+      - containerPort: 30446
+        hostPort: 30446   # Redis TCP 代理
   - role: worker
   - role: worker

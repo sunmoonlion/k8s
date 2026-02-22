@@ -67,9 +67,10 @@ kubeconfig=~/.kube/kind-config
 **方式一：使用项目脚本（推荐）**
 
 ```bash
-cd k8s/utils
-./kind-setup.sh create
+cd k8s/sunmoonai/kind-infrastructure
+./kind-up.sh
 ```
+（会创建集群并做命名空间、NFS 初始化；集群已存在则跳过创建。）
 
 **方式二：手动创建单节点集群**
 
@@ -101,10 +102,8 @@ kind create cluster --name kind --config kind-config.yaml
 ### 2.3 验证集群
 
 ```bash
-# 使用项目脚本
-./kind-setup.sh status
-
-# 或直接使用 kubectl（需已通过连接管理器或 KUBECONFIG 指向 Kind）
+# 查看集群与节点（需已通过连接管理器或 KUBECONFIG 指向 Kind）
+kind get clusters
 kubectl cluster-info
 kubectl get nodes
 ```
@@ -303,9 +302,9 @@ cd k8s/sunmoonai/kind-infrastructure
 
 | 操作     | 命令 |
 |----------|------|
-| 创建集群 | `./kind-setup.sh create` 或 `kind create cluster --name kind` |
-| 删除集群 | `./kind-setup.sh delete` 或 `kind delete cluster --name kind` |
-| 查看状态 | `./kind-setup.sh status` 或 `kind get clusters`、`kubectl get nodes` |
+| 创建集群并初始化 | `cd k8s/sunmoonai/kind-infrastructure && ./kind-up.sh` |
+| 删除集群 | `kind delete cluster --name kind` |
+| 查看状态 | `kind get clusters`、`kubectl get nodes` |
 | 加载镜像 | `kind load docker-image <image>:<tag> --name kind` |
 
 ---
@@ -353,7 +352,7 @@ docker info   # 若报错，先启动 Docker
 ### 9.2 集群创建失败
 
 - 检查资源：`docker system df`，必要时 `docker system prune` 释放空间。
-- 删除后重建：`kind delete cluster --name kind`，再执行 `./kind-setup.sh create` 或等价命令。
+- 删除后重建：`kind delete cluster --name kind`，再执行 `./kind-up.sh`（在 `k8s/sunmoonai/kind-infrastructure` 目录下）。
 
 ### 9.3 kubectl 无法连接
 

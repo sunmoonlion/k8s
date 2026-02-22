@@ -26,10 +26,9 @@ cd k8s/sunmoonai/kind-infrastructure
 
 | 脚本 | 说明 |
 |------|------|
-| **`kind-up.sh`** | **唯一入口**：创建集群 + 命名空间 + NFS，新手只跑这个即可。 |
-| `create-kind-cluster.sh` | 被 kind-up.sh 调用，创建 Kind 集群；也可单独跑以仅建集群。 |
+| **`kind-up.sh`** | **唯一入口**：创建集群 + 命名空间 + NFS。 |
 | `apply-namespaces-existing-cluster.sh` | 被 kind-up.sh 调用。对现成集群按配置创建命名空间（与 Step07 同源：deploy-infrastructure-all.conf 中的环境 × 平台，如 app-platform-dev、data-platform-dev 等），已有则跳过。 |
 | `apply-nfs-existing-cluster.sh` | 被 kind-up.sh 调用；需 WSL 上已跑过 wsl-setup-nfs-server.sh。 |
 | `wsl-setup-nfs-server.sh` | 在 WSL 中安装 nfs-kernel-server 并导出 `/data/kind-nfs`（一次性）。 |
 
-Worker 数量：默认见 `kind-cluster.yaml`（2 workers）；需自定义时可 `KIND_WORKER_COUNT=6 ./create-kind-cluster.sh` 再跑 `kind-up.sh`，或改 kind-cluster.yaml 后跑 `kind-up.sh`。
+Worker 数量与端口映射：见 `kind-cluster.yaml`（默认 2 workers；Traefik 等 NodePort 通过 extraPortMappings 暴露）。需自定义时改 kind-cluster.yaml 后跑 `kind-up.sh`。

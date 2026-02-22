@@ -64,11 +64,11 @@ kubeconfig=~/.kube/kind-config
 
 ### 2. 创建 Kind 集群
 
-使用提供的脚本创建集群：
+使用提供的脚本创建集群（推荐，会同时做命名空间与 NFS 初始化）：
 
 ```bash
-cd k8s/utils
-./kind-setup.sh create
+cd k8s/sunmoonai/kind-infrastructure
+./kind-up.sh
 ```
 
 或手动创建：
@@ -80,10 +80,8 @@ kind create cluster --name kind
 ### 3. 验证集群
 
 ```bash
-# 查看集群状态
-./kind-setup.sh status
-
-# 或使用 kubectl
+# 查看集群与节点
+kind get clusters
 kubectl cluster-info
 kubectl get nodes
 ```
@@ -119,22 +117,24 @@ kubectl get nodes
 
 ## 常用操作
 
-### 创建集群
+### 创建集群并初始化
 
 ```bash
-./kind-setup.sh create
+cd k8s/sunmoonai/kind-infrastructure
+./kind-up.sh
 ```
 
 ### 删除集群
 
 ```bash
-./kind-setup.sh delete
+kind delete cluster --name kind
 ```
 
 ### 查看集群状态
 
 ```bash
-./kind-setup.sh status
+kind get clusters
+kubectl get nodes
 ```
 
 ### 加载镜像到 Kind
@@ -222,9 +222,10 @@ docker system df
 # 清理未使用的资源
 docker system prune
 
-# 重新创建集群
-./kind-setup.sh delete
-./kind-setup.sh create
+# 重新创建集群（先删除再运行 kind-up.sh）
+kind delete cluster --name kind
+cd k8s/sunmoonai/kind-infrastructure
+./kind-up.sh
 ```
 
 ### 问题 3: kubectl 无法连接

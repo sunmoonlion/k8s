@@ -416,7 +416,7 @@ start_connection(){
       # 检查集群是否存在
       if ! kind get clusters 2>/dev/null | grep -q "^${KIND_CLUSTER_NAME}$"; then
         warn "⚠️  Kind 集群 $KIND_CLUSTER_NAME 不存在"
-        msg "💡 请先运行: ./kind-setup.sh create"
+        msg "💡 请先运行: cd ../sunmoonai/kind-infrastructure && ./kind-up.sh"
         msg "💡 或手动创建: kind create cluster --name $KIND_CLUSTER_NAME"
         exit 1
       fi

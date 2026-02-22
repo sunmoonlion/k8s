@@ -140,7 +140,7 @@ load_config(){
         default_upper=$(echo "$global_default" | tr '[:lower:]' '[:upper:]')
         if [[ "$mode_lower" == "kind" ]] || [[ "$default_upper" == "KIND" ]]; then
             log_warn "基础设施部署仅用于远程集群（C1/C2 等），当前目标为 Kind。"
-            log_info "请使用 kind-setup.sh 创建/管理 Kind 集群，平台层可参考《kind使用指南.md》中的「对现成集群」脚本。"
+            log_info "请使用 kind-up.sh 创建/管理 Kind 集群（见 k8s/sunmoonai/kind-infrastructure/），平台层见《kind使用指南.md》。"
             exit 0
         fi
     fi
