@@ -1,15 +1,38 @@
 # Kind 集群配置：1 control-plane + 2 workers（默认）
 # 修改本文件后执行 kind-up.sh 创建/重建集群。
+#
+# Harbor 域名解析：v1alpha4 不支持节点 extraHosts，集群内解析需建集群后通过脚本或 CoreDNS 配置；
+# 宿主机解析见 wsl-setup-harbor-hosts.sh。镜像拉取见 apply-kind-registry-config.sh。
+#
+# 镜像拉取配置（与远程 Step02 的 certs.d 等效）有两种方式，二选一即可：
+# - 方式一（推荐）：建集群后执行 apply-kind-registry-config.sh，无需改本文件、无需重建集群即可改配置。
+# - 方式二：在创建集群前于本目录生成 registry-config/<registry>/hosts.toml，并在下方每个节点取消注释
+#   extraMounts，将宿主机 registry-config 挂入节点 /etc/containerd/certs.d/；改配置需重建集群。
+# 方式二示例（需先创建 registry-config/docker.io/hosts.toml 等）：
+#   extraMounts:
+#     - hostPath: ./registry-config/docker.io
+#       containerPath: /etc/containerd/certs.d/docker.io
+#     - hostPath: ./registry-config/registry.k8s.io
+#       containerPath: /etc/containerd/certs.d/registry.k8s.io
+#     - hostPath: ./registry-config/harbor.sunmoonai.com:30443
+#       containerPath: /etc/containerd/certs.d/harbor.sunmoonai.com:30443
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
   - role: control-plane
-    # Traefik NodePort → 宿主机（WSL），便于从本机访问 Ingress 与 TCP 代理
+    # extraMounts:  # 方式二：取消注释并确保 registry-config/ 已生成后再创建集群
+    #   - hostPath: ./registry-config/docker.io
+    #     containerPath: /etc/containerd/certs.d/docker.io
+    #   - hostPath: ./registry-config/registry.k8s.io
+    #     containerPath: /etc/containerd/certs.d/registry.k8s.io
+    #   - hostPath: ./registry-config/harbor.sunmoonai.com:30443
+    #     containerPath: /etc/containerd/certs.d/harbor.sunmoonai.com:30443
+    # Traefik NodePort → 宿主机（WSL），便于从本机访问 Ingress 与 TCP 代理（宿主机可绑定特权端口，直接映射 80/443）
     extraPortMappings:
       - containerPort: 30080
-        hostPort: 30080   # HTTP
+        hostPort: 80      # HTTP
       - containerPort: 30443
-        hostPort: 30443   # HTTPS
+        hostPort: 443     # HTTPS
       - containerPort: 30444
         hostPort: 30444   # PostgreSQL TCP 代理
       - containerPort: 30445
@@ -17,4 +40,18 @@ nodes:
       - containerPort: 30446
         hostPort: 30446   # Redis TCP 代理
   - role: worker
+    # extraMounts:  # 方式二时与 control-plane 保持相同挂载
+    #   - hostPath: ./registry-config/docker.io
+    #     containerPath: /etc/containerd/certs.d/docker.io
+    #   - hostPath: ./registry-config/registry.k8s.io
+    #     containerPath: /etc/containerd/certs.d/registry.k8s.io
+    #   - hostPath: ./registry-config/harbor.sunmoonai.com:30443
+    #     containerPath: /etc/containerd/certs.d/harbor.sunmoonai.com:30443
   - role: worker
+    # extraMounts:  # 方式二时与 control-plane 保持相同挂载
+    #   - hostPath: ./registry-config/docker.io
+    #     containerPath: /etc/containerd/certs.d/docker.io
+    #   - hostPath: ./registry-config/registry.k8s.io
+    #     containerPath: /etc/containerd/certs.d/registry.k8s.io
+    #   - hostPath: ./registry-config/harbor.sunmoonai.com:30443
+    #     containerPath: /etc/containerd/certs.d/harbor.sunmoonai.com:30443

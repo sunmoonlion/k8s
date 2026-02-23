@@ -1,9 +1,11 @@
 #!/bin/bash
 
 # =============================================================================
-# Step11: 初始镜像加载
+# Step11: 初始镜像加载（仅远程集群）
 # 用途：加载基础设施必需的初始镜像到所有节点的k8s.io命名空间
-# 说明：在Harbor启动前，需要预先加载Traefik等关键组件的镜像
+# 说明：在使用 Harbor 前需先部署 Traefik 和 Harbor，故先将所需镜像从本机目录加载到各节点
+# Kind：不执行本步骤。Kind 用户在创建集群后、部署 Traefik/Harbor 前，在宿主机执行
+#       sunmoonai/kind-infrastructure/load-initial-images-kind.sh（docker pull + kind load）
 # =============================================================================
 
 set -euo pipefail

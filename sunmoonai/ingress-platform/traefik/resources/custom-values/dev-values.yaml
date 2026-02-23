@@ -198,7 +198,7 @@ logs:
 # ============================================================================
 persistence:
   enabled: true
-  storageClass: "nfs-1"
+  storageClass: "nfs-2"
   size: "1Gi"
   accessMode: ReadWriteOnce
 

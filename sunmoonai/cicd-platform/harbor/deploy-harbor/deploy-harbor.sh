@@ -1454,10 +1454,14 @@ deploy_harbor() {
     log_info "🚀 阶段3：部署本级专属组件..."
     deploy_current_level_components "$project_id" "$namespace" "$environment" "$dry_run"
     
-    # 阶段4：自动创建项目并推送镜像（如果启用）
+    # 阶段4：自动创建项目并推送镜像（如果启用；Kind 集群无需从节点 SSH 推送，跳过）
     if [[ "$dry_run" != "true" ]]; then
-        log_info "🚀 阶段4：自动创建项目并推送镜像..."
-        auto_create_project_and_push_images "$project_id" "$namespace" "$environment"
+        if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
+            log_info "Kind 集群跳过自动创建项目并推送镜像（无需从节点 SSH 推送）"
+        else
+            log_info "🚀 阶段4：自动创建项目并推送镜像..."
+            auto_create_project_and_push_images "$project_id" "$namespace" "$environment"
+        fi
     else
         log_info "干运行模式，跳过自动创建项目并推送镜像"
     fi

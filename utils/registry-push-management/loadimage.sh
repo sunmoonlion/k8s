@@ -645,6 +645,25 @@ main(){
   local cmd="${1:-help}"; shift || true
   for a in "$@"; do [[ "$a" == "--dry-run" ]] && DRY_RUN="true"; done
   
+  # Kind 模式：本脚本通过 SSH 在远程节点执行 load/push，Kind 无此类节点，跳过（避免报错）
+  if [[ "$cmd" != "help" && "$cmd" != "-h" && "$cmd" != "--help" ]]; then
+    if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
+      log "Kind 集群，跳过镜像推送（镜像由 load-initial-images-kind.sh 预加载或在线拉取）"
+      return 0
+    fi
+    local k8s_admin_conf="${SCRIPT_DIR}/../k8s-admin.conf"
+    if [[ -f "$k8s_admin_conf" ]]; then
+      local cluster_mode="" default_cluster=""
+      cluster_mode=$(sed -n '/^\[GLOBAL\]$/,/^\[[A-Z]/p' "$k8s_admin_conf" 2>/dev/null | grep "^cluster_mode=" | head -1 | cut -d'=' -f2 | tr -d ' ')
+      default_cluster=$(sed -n '/^\[GLOBAL\]$/,/^\[[A-Z]/p' "$k8s_admin_conf" 2>/dev/null | grep "^default_cluster=" | head -1 | cut -d'=' -f2 | tr -d ' ')
+      default_cluster=$(echo "$default_cluster" | tr '[:lower:]' '[:upper:]')
+      if [[ "$cluster_mode" == "kind" ]] || [[ "$default_cluster" == "KIND" ]]; then
+        log "Kind 集群，跳过镜像推送（镜像由 load-initial-images-kind.sh 预加载或在线拉取）"
+        return 0
+      fi
+    fi
+  fi
+  
   # 显示当前使用的集群配置（如果已设置）
   if [[ -n "${CLUSTER:-}" ]] && [[ "$cmd" != "help" && "$cmd" != "-h" && "$cmd" != "--help" ]]; then
     log "🎯 使用集群配置: ${CLUSTER}"

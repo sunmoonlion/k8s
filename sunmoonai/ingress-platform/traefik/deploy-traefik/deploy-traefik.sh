@@ -1013,37 +1013,41 @@ main() {
                 log_info "kubectl logs -n $namespace -l app.kubernetes.io/name=traefik"
                 log_info ""
                 
-                # 自动配置 iptables 转发（仅在非 dry-run 模式下）
+                # 自动配置 iptables 转发（仅在非 dry-run 模式下；Kind 集群无需且无法 SSH 到节点）
                 if [[ "$dry_run" != "true" ]]; then
-                    log_info "自动配置所有节点的 iptables 端口转发规则..."
-                    log_info ""
-                    
-                    # 检查是否启用自动配置（可通过环境变量控制）
-                    local auto_config_iptables="${AUTO_CONFIG_IPTABLES:-true}"
-                    if [[ "$auto_config_iptables" == "true" ]]; then
-                        if configure_nodes_iptables; then
-                            log_success "✓ 所有节点的 iptables 转发规则已配置并持久化"
-                        else
-                            log_warning "⚠️  部分节点配置失败，请检查上述错误信息并手动配置"
-                            log_info ""
-                            log_info "手动配置步骤："
-                            log_info "1. 将脚本复制到节点："
-                            log_info "   scp $PROJECT_ROOT/setup-iptables-forward.sh root@<节点IP>:/tmp/"
-                            log_info ""
-                            log_info "2. 在节点上执行（需要 root 权限）："
-                            log_info "   ssh root@<节点IP>"
-                            log_info "   sudo /tmp/setup-iptables-forward.sh add --persist"
-                            log_info ""
-                            log_info "详细说明请查看："
-                            log_info "   $PROJECT_ROOT/setup-iptables-forward.README.md"
-                            log_info ""
-                            log_info "提示：如果不想自动配置，可设置环境变量 AUTO_CONFIG_IPTABLES=false"
-                        fi
+                    if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
+                        log_info "Kind 集群无需配置节点 iptables，跳过"
                     else
-                        log_info "自动配置已禁用（AUTO_CONFIG_IPTABLES=false），跳过 iptables 配置"
+                        log_info "自动配置所有节点的 iptables 端口转发规则..."
                         log_info ""
-                        log_info "如需手动配置，请执行："
-                        log_info "  $PROJECT_ROOT/setup-iptables-forward.sh add --persist"
+                        
+                        # 检查是否启用自动配置（可通过环境变量控制）
+                        local auto_config_iptables="${AUTO_CONFIG_IPTABLES:-true}"
+                        if [[ "$auto_config_iptables" == "true" ]]; then
+                            if configure_nodes_iptables; then
+                                log_success "✓ 所有节点的 iptables 转发规则已配置并持久化"
+                            else
+                                log_warning "⚠️  部分节点配置失败，请检查上述错误信息并手动配置"
+                                log_info ""
+                                log_info "手动配置步骤："
+                                log_info "1. 将脚本复制到节点："
+                                log_info "   scp $PROJECT_ROOT/setup-iptables-forward.sh root@<节点IP>:/tmp/"
+                                log_info ""
+                                log_info "2. 在节点上执行（需要 root 权限）："
+                                log_info "   ssh root@<节点IP>"
+                                log_info "   sudo /tmp/setup-iptables-forward.sh add --persist"
+                                log_info ""
+                                log_info "详细说明请查看："
+                                log_info "   $PROJECT_ROOT/setup-iptables-forward.README.md"
+                                log_info ""
+                                log_info "提示：如果不想自动配置，可设置环境变量 AUTO_CONFIG_IPTABLES=false"
+                            fi
+                        else
+                            log_info "自动配置已禁用（AUTO_CONFIG_IPTABLES=false），跳过 iptables 配置"
+                            log_info ""
+                            log_info "如需手动配置，请执行："
+                            log_info "  $PROJECT_ROOT/setup-iptables-forward.sh add --persist"
+                        fi
                     fi
                     log_info ""
                 fi

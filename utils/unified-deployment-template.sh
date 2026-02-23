@@ -946,6 +946,12 @@ check_remote_images() {
         return 1
     fi
     
+    # Kind 模式：跳过节点镜像检查（镜像由 load-initial-images-kind.sh 预加载或在线拉取）
+    if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
+        log_info "Kind 集群，跳过安装前镜像检查"
+        return 0
+    fi
+    
     # 检查远程节点上的镜像（检查所有节点）
     local nodes=$(kubectl get nodes -o jsonpath='{.items[*].metadata.name}')
     local missing_images=()

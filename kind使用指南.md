@@ -1,6 +1,6 @@
 # Kind 使用指南
 
-本文档介绍在本项目中如何安装、创建、连接和使用 Kind（Kubernetes in Docker）本地集群，以及常见限制与故障排除。关于“从远程集群迁移到 Kind”的策略，请参阅 **《迁移指南.md》**。
+本文档介绍在本项目中如何安装、创建、连接和使用 Kind（Kubernetes in Docker）本地集群，以及常见限制与故障排除。仅改配置在远程与 Kind 间切换的说明见 **deploy-kind/deploy-kind.md** 第 2.7 节。
 
 ---
 
@@ -169,8 +169,9 @@ kind load docker-image nginx:latest --name kind
 
 ### 4.2 使用私有仓库（如 Harbor）
 
-- 在宿主机配置 Docker 登录与 `/etc/hosts`（如 `harbor.example.com`），然后 `docker pull` 再 `kind load docker-image`。
-- 或在集群内配置 imagePullSecrets，并确保 Kind 节点能访问该仓库（网络/域名解析）。
+- **初始镜像（等效远程 Step11）**：在使用 Harbor 前需先部署 Traefik 和 Harbor，因此要先把所需镜像装进集群。远程是 Step11 从本机目录加载到各节点；Kind 在宿主机执行 **`kind-infrastructure/load-initial-images-kind.sh`**（对同一份镜像列表做 docker pull + kind load），在部署 Traefik/Harbor 前执行一次即可。
+- **集群内拉取**：`kind-cluster.yaml` 中通过 extraHosts 将 `harbor.sunmoonai.com` 指向固定 IP（与远程 Step11 的 /etc/hosts 等效）。**须事先确定 Traefik 所在节点**并在 kind-cluster.yaml 中填写该节点 IP（如第一个 worker 通常 172.18.0.3），再创建/重建集群。
+- 在宿主机配置 Docker 登录与 `/etc/hosts`（如 `harbor.sunmoonai.com`），然后 `docker pull` 再 `kind load docker-image`。
 
 批量加载示例（按需替换镜像名）：
 
@@ -265,7 +266,7 @@ spec:
 - **唯一入口**：**`kind-up.sh`** 依次执行「创建集群 → 命名空间 → NFS」，直接调用上述两个脚本；新手只需在 WSL 跑一次 `wsl-setup-nfs-server.sh`，之后每次跑 `kind-up.sh` 即可。
 - **谁设 KUBECONFIG**：由 `kind-up.sh` 设置，或用户手动 `export KUBECONFIG=...`，或先运行连接管理器再执行脚本。
 
-**参考**：策略与切换见《策略.md》；迁移节奏见《迁移指南.md》；远程 Step07/Step09 实现见 `sunmoonai/infrastructure/steps/step07_create_namespaces.sh`、`step09_storage.sh` 及 `deploy-infrastructure-all/deploy-infrastructure-all.conf`。
+**参考**：切换与步骤见 `kind-infrastructure/deploy-kind/deploy-kind.md`；远程 Step07/Step09 实现见 `sunmoonai/infrastructure/steps/step07_create_namespaces.sh`、`step09_storage.sh` 及 `deploy-infrastructure-all/deploy-infrastructure-all.conf`。
 
 ---
 
@@ -377,7 +378,5 @@ docker info   # 若报错，先启动 Docker
 
 ## 11. 与本项目其他文档的关系
 
-- **迁移指南.md**：说明如何从“仅支持远程集群”迁移到“同时支持 Kind”，以及哪些配置与步骤在 Kind 上跳过、哪些可复用。
-- **策略.md**：集群模式与策略切换。
-- **kind-infrastructure/README.md**：Kind 脚本目录说明与使用步骤，与本文档一致。
+- **kind-infrastructure/deploy-kind/deploy-kind.md**：Kind 部署说明、一键部署步骤、仅改配置在远程与 Kind 间切换（2.7 节）及脚本说明。
 - **KIND-README.md**（若存在）：与本文档互补，侧重快速上手与脚本用法，可一并查阅。

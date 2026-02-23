@@ -12,7 +12,7 @@
 # ============================================================================
 global:
   imageRegistry: ""
-  defaultStorageClass: "nfs-3"  # 使用节点3的专用存储
+  defaultStorageClass: "nfs-2"  # 使用节点3的专用存储
 
 # ============================================================================
 # 通用配置
@@ -40,7 +40,7 @@ existingSecret: "{{HARBOR_AUTH_SECRET_NAME}}"
 existingSecretAdminPasswordKey: "{{HARBOR_AUTH_SECRET_PASSWORD_KEY}}"
 
 # 外部访问URL - 使用模板变量，从deploy-harbor.conf读取
-# 访问地址: https://www.sunmoonai.com:30443（使用 websecure entryPoint）
+# 访问地址: https://harbor.sunmoonai.com:30443（使用 websecure entryPoint）
 externalURL: https://{{HARBOR_EXTERNAL_HOST}}:{{HARBOR_EXTERNAL_PORT}}
 
 
@@ -60,7 +60,14 @@ exposureType: "ingress"
 service:
   type: "ClusterIP"
   # ports 配置已移除，由 Helm 模板自动处理
-# 启用内置 Ingress（由 Traefik 作为 Ingress Controller 接管）
+# ============================================================================
+# Ingress 配置（与 Traefik 配合使用）
+# ============================================================================
+# “内置 Ingress”指 Harbor Chart 会创建 Kubernetes Ingress 资源（声明路由），
+# 并非 Harbor 自己跑一个 Ingress Controller。Traefik 作为集群的 Ingress Controller
+# 会监听这些 Ingress 并按规则把流量转到 Harbor Service。
+# 因此使用 Traefik 时必须保持 ingress.enabled: true，否则 Traefik 没有 Harbor 的路由可接；
+# 若设为 false，需自行编写 Ingress 或改用 NodePort/LoadBalancer 暴露。
 ingress:
   enabled: true
   core:
@@ -92,7 +99,7 @@ ingress:
 persistence:
   persistentVolumeClaim:
     trivy:
-      storageClass: "nfs-3"  # 使用节点3的专用存储
+      storageClass: "nfs-2"  # 使用节点3的专用存储
       size: "5Gi"
       accessModes:
         - ReadWriteOnce
