@@ -26,8 +26,8 @@ image:
   pullPolicy: IfNotPresent
   tag: "{{REDISINSIGHT_IMAGE_VERSION}}"
 
-imagePullSecrets: []
-  # - name: "{{REDISINSIGHT_IMAGE_PULL_SECRET_NAME}}"
+imagePullSecrets:
+  - name: "{{REDISINSIGHT_IMAGE_PULL_SECRET_NAME}}"
 
 # ============================================================================
 # Service Account 配置

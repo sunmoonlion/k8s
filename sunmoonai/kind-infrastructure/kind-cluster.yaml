@@ -2,7 +2,7 @@
 # 修改本文件后执行 kind-up.sh 创建/重建集群。
 #
 # Harbor 域名解析：v1alpha4 不支持节点 extraHosts，集群内解析需建集群后通过脚本或 CoreDNS 配置；
-# 宿主机解析见 wsl-setup-harbor-hosts.sh。镜像拉取见 apply-kind-registry-config.sh。
+# 宿主机解析与登录见 wsl-setup-harbor-hosts-and-login.sh。镜像拉取见 apply-kind-registry-config.sh。
 #
 # 镜像拉取配置（与远程 Step02 的 certs.d 等效）有两种方式，二选一即可：
 # - 方式一（推荐）：建集群后执行 apply-kind-registry-config.sh，无需改本文件、无需重建集群即可改配置。

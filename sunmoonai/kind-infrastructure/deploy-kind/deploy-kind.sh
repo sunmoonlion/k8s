@@ -83,10 +83,10 @@ else
 fi
 
 if [[ "$RUN_HARBOR_HOSTS" == "true" ]]; then
-    log_info "步骤 6/6：WSL 宿主机 Harbor 域名解析（wsl-setup-harbor-hosts.sh）"
+    log_info "步骤 6/6：WSL 宿主机 Harbor 解析与登录（wsl-setup-harbor-hosts-and-login.sh）"
     export HARBOR_HOST="${HARBOR_HOST:-harbor.sunmoonai.com}"
     export HARBOR_IP="${HARBOR_IP:-127.0.0.1}"
-    "$KIND_ROOT/wsl-setup-harbor-hosts.sh"
+    "$KIND_ROOT/wsl-setup-harbor-hosts-and-login.sh"
 else
     log_info "步骤 6/6：跳过 Harbor hosts（--skip-harbor-hosts）"
 fi

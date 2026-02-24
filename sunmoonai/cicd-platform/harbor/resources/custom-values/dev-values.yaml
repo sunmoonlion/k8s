@@ -44,12 +44,11 @@ existingSecretAdminPasswordKey: "{{HARBOR_AUTH_SECRET_PASSWORD_KEY}}"
 externalURL: https://{{HARBOR_EXTERNAL_HOST}}:{{HARBOR_EXTERNAL_PORT}}
 
 
-# 暴露类型 
-# exposureType: "ingress" - 使用Ingress Controller作为代理
-# exposureType: "proxy" - 使用Harbor自带的NGINX代理
-# exposureType: "none" - 使用自定义的ingress
-# exposureType: "ingress"
-
+# 暴露类型（chart 仅提供三种）
+# exposureType: "ingress" - 本 chart 创建 Ingress 资源，由 Ingress Controller（如 Traefik）暴露
+# exposureType: "proxy"   - 本 chart 用 Harbor 自带 NGINX 做入口；是否对外暴露由下面 service.type 决定：
+#                             service.type: ClusterIP → 不暴露（仅集群内）；NodePort/LoadBalancer → 暴露
+# exposureType: "none"    - 本 chart 不创建 Ingress、也不创建 proxy，由用户自建 Ingress 等方式暴露
 exposureType: "ingress"
 
 # ============================================================================
@@ -88,11 +87,11 @@ ingress:
       ingress.kubernetes.io/proxy-body-size: "0"
       ingress.kubernetes.io/ssl-redirect: "true"
     # TLS 配置
-    # 注意：TLS 终止在 Traefik，Traefik 到 Harbor 的流量是 HTTP（不加密）    
+    # 注意：TLS 终止在 Traefik，Traefik 到 Harbor 的流量是 HTTP（不加密）
+    # HTTPS 证书：由 Traefik 侧生成并存放于 K8s Secret「traefik-tls-secret」（Traefik 所在命名空间，如 ingress-platform-dev）。
+    # 生成流程：ensure-kind-ca.sh 生成本地根 CA → Traefik 部署时 deploy-traefik-tls-secret 用 CA 签发服务器证书并创建该 Secret → Traefik 的 tlsStore.defaultCertificate.secretName 指向 traefik-tls-secret。
     tls: false
-    # 上面的的证书可以通过三种方式获取，如果下面为true，则通过helm自动生成
     selfSigned: false
-    # 显式指定 TLS secret（Traefik 的证书 secret）    
 # ============================================================================
 # 持久化存储配置
 # ============================================================================

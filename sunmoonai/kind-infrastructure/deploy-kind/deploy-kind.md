@@ -92,10 +92,11 @@ cd k8s/sunmoonai/kind-infrastructure
 
 ```bash
 cd k8s/sunmoonai/kind-infrastructure
-./wsl-setup-harbor-hosts.sh
+./wsl-setup-harbor-hosts-and-login.sh
 ```
 
-集群外 Harbor 时：`HARBOR_IP=该入口IP ./wsl-setup-harbor-hosts.sh`。也可在 **`deploy-kind.conf`** 中设置 `HARBOR_IP` 后执行一键部署。
+集群外 Harbor 时：`HARBOR_IP=该入口IP ./wsl-setup-harbor-hosts-and-login.sh`。也可在 **`deploy-kind.conf`** 中设置 `HARBOR_IP` 后执行一键部署。  
+Harbor 未部署时脚本仅写 hosts；部署后需在 WSL 拉取/推送镜像时，可再执行：`./wsl-setup-harbor-hosts-and-login.sh --login`（或 `HARBOR_ADMIN_PASSWORD=xxx ./wsl-setup-harbor-hosts-and-login.sh --login`）。
 
 ### 2.7 仅改配置在远程与 Kind 间切换
 
@@ -179,7 +180,7 @@ kubectl get storageclass
 | `apply-namespaces-existing-cluster.sh` | 被 kind-up.sh 调用。对现成集群按配置创建命名空间（与 Step07 同源）。 |
 | `apply-nfs-existing-cluster.sh` | 被 kind-up.sh 调用；需 WSL 上已跑过 wsl-setup-nfs-server.sh。 |
 | `wsl-setup-nfs-server.sh` | 在 WSL 中安装 nfs-kernel-server 并导出 `/data/kind-nfs`（一次性）。 |
-| `wsl-setup-harbor-hosts.sh` | 在 WSL 的 `/etc/hosts` 中添加 `harbor.sunmoonai.com` 解析（默认 127.0.0.1）。 |
+| `wsl-setup-harbor-hosts-and-login.sh` | ① 在 WSL 写 `/etc/hosts`（harbor.sunmoonai.com → 127.0.0.1）；② 加 `--login` 时配置 docker/nerdctl 登录（Harbor 未部署时可只跑一次写 hosts，部署后再加 `--login`）。 |
 
 ---
 
