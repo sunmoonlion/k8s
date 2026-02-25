@@ -29,7 +29,7 @@ usage() {
     echo "用法: $0 [选项]"
     echo "选项:"
     echo "  --skip-ca-init          跳过本地根 CA 生成（ensure-kind-ca.sh，与远程 Step12 同用途）"
-    echo "  --skip-images           跳过镜像预加载（load-initial-images-kind.sh）"
+    echo "  --skip-images           跳过镜像预加载（load-images/load-kind-images.sh）"
     echo "  --skip-registry-config  跳过 Kind 节点 containerd 镜像拉取配置（apply-kind-registry-config.sh）"
     echo "  --skip-harbor-hosts     跳过 WSL /etc/hosts 中 Harbor 域名配置"
     echo "  -h, --help           显示此帮助"
@@ -70,14 +70,32 @@ log_info "步骤 4/6：Kind 节点 Harbor 解析 + containerd 镜像拉取配置
 "$KIND_ROOT/apply-kind-node-harbor-hosts.sh"
 if [[ "$RUN_REGISTRY_CONFIG" == "true" ]]; then
     export STEP02_REGISTRY_ENABLE STEP02_REGISTRY_MIRRORS STEP02_REGISTRY_DIRECT 2>/dev/null || true
-    "$KIND_ROOT/apply-kind-registry-config.sh"
+    if "$KIND_ROOT/apply-kind-registry-config.sh"; then
+        log_info "Kind 节点 registry 配置完成（apply-kind-registry-config.sh）"
+    else
+        log_warn "Kind 节点 registry 配置执行失败，跳过后续 registry 步骤（可单独运行 apply-kind-registry-config.sh 查看原因）"
+    fi
 else
     log_info "跳过 Kind 节点 registry 配置（--skip-registry-config）"
 fi
 
 if [[ "$RUN_IMAGES" == "true" ]]; then
-    log_info "步骤 5/6：预加载 Traefik/Harbor 镜像（load-initial-images-kind.sh）"
-    "$KIND_ROOT/load-initial-images-kind.sh"
+    if [[ -z "${DEPLOY_KIND_IMAGE_FILES:-}" && -z "${DEPLOY_KIND_TAR_DIRS:-}" ]]; then
+        log_info "步骤 5/6：未配置 DEPLOY_KIND_IMAGE_FILES/DEPLOY_KIND_TAR_DIRS，跳过镜像预加载"
+    elif [[ -n "${DEPLOY_KIND_IMAGE_FILES:-}" && -n "${DEPLOY_KIND_TAR_DIRS:-}" ]]; then
+        log_error "DEPLOY_KIND_IMAGE_FILES 与 DEPLOY_KIND_TAR_DIRS 不能同时非空，请二选一配置（镜像列表文件或 tar 目录）。"
+        exit 1
+    else
+        log_info "步骤 5/6：预加载 Traefik/Harbor 镜像（load-images/load-kind-images.sh）"
+        LOAD_IMAGES_ARGS=()
+        if [[ -n "${DEPLOY_KIND_IMAGE_FILES:-}" ]]; then
+            LOAD_IMAGES_ARGS+=(--img-file "${DEPLOY_KIND_IMAGE_FILES}")
+        fi
+        if [[ -n "${DEPLOY_KIND_TAR_DIRS:-}" ]]; then
+            LOAD_IMAGES_ARGS+=(--tar-dir "${DEPLOY_KIND_TAR_DIRS}")
+        fi
+        "$KIND_ROOT/load-images/load-kind-images.sh" "${LOAD_IMAGES_ARGS[@]}"
+    fi
 else
     log_info "步骤 5/6：跳过镜像预加载（--skip-images）"
 fi

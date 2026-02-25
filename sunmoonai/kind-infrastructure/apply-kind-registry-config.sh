@@ -3,13 +3,14 @@
 # 在 Kind 各节点内写入 containerd 的镜像拉取配置（/etc/containerd/certs.d/），
 # 与远程 Step02 的 registry mirrors / direct 逻辑对齐，实现「本地 Harbor → 官方」的拉取顺序。
 # 配置来源：deploy-infrastructure-all.conf 的 STEP02_REGISTRY_*（可与 deploy-kind.conf 覆写）。
-# 应在 kind-up.sh 之后、load-initial-images-kind.sh 之前执行，以便与远程 Step02→Step11 顺序一致。
+# 应在 kind-up.sh 之后、load-images/load-kind-images.sh 之前执行，以便与远程 Step02→Step11 顺序一致。
 #
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 K8S_ADMIN_CONF="${SCRIPT_DIR}/../../utils/k8s-admin.conf"
-INFRA_CONF="${SCRIPT_DIR}/../../infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf"
+# 从 kind-infrastructure 到 sunmoonai/infrastructure，只需返回一层到 sunmoonai 再进入 infrastructure
+INFRA_CONF="${SCRIPT_DIR}/../infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf"
 
 log_info() { echo "ℹ️  $*"; }
 log_success() { echo "✅ $*"; }
@@ -43,9 +44,10 @@ load_registry_config() {
     REG_ENABLE="${REG_ENABLE//\"/}"
     REG_MIRRORS_RAW="${REG_MIRRORS_RAW//\"/}"
     REG_DIRECT_RAW="${REG_DIRECT_RAW//\"/}"
-    [[ -n "${STEP02_REGISTRY_ENABLE+set}" ]] && REG_ENABLE="${STEP02_REGISTRY_ENABLE//\"/}"
-    [[ -n "${STEP02_REGISTRY_MIRRORS+set}" ]] && REG_MIRRORS_RAW="${STEP02_REGISTRY_MIRRORS//\"/}"
-    [[ -n "${STEP02_REGISTRY_DIRECT+set}" ]] && REG_DIRECT_RAW="${STEP02_REGISTRY_DIRECT//\"/}"
+    # 下面三行在“未设置环境变量”时 [[ -n '' ]] 为假返回 1，set -e 会误杀脚本，故加 || true
+    [[ -n "${STEP02_REGISTRY_ENABLE+set}" ]] && REG_ENABLE="${STEP02_REGISTRY_ENABLE//\"/}" || true
+    [[ -n "${STEP02_REGISTRY_MIRRORS+set}" ]] && REG_MIRRORS_RAW="${STEP02_REGISTRY_MIRRORS//\"/}" || true
+    [[ -n "${STEP02_REGISTRY_DIRECT+set}" ]] && REG_DIRECT_RAW="${STEP02_REGISTRY_DIRECT//\"/}" || true
 }
 
 # 在临时目录生成与 Step02 一致的 certs.d 目录结构

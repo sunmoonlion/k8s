@@ -81,7 +81,7 @@ cd k8s/sunmoonai/kind-infrastructure
 
 ```bash
 cd k8s/sunmoonai/kind-infrastructure
-./load-initial-images-kind.sh
+./load-images/load-kind-images.sh（或兼容包装 ../load-initial-images-kind.sh）
 ```
 
 与远程 **Step11** 的镜像预加载等效；镜像列表与 `deploy-infrastructure-all.conf` 中 `STEP_IMAGE_*` 同源。
@@ -149,7 +149,7 @@ Harbor 未部署时脚本仅写 hosts；部署后需在 WSL 拉取/推送镜像�
 
 **Kind 当前**：
 
-- **本地**：通过 `load-initial-images-kind.sh` 预加载的镜像，与远程 Step11 等效。
+- **本地**：通过 `load-images/load-kind-images.sh`（或 `load-initial-images-kind.sh` 包装）预加载的镜像，与远程 Step11 等效。
 - **镜像拉取配置** 有两种方式（二选一）：
   - **方式一（推荐）**：脚本 **`apply-kind-registry-config.sh`**，在一键部署时于 kind-up 之后、load-initial-images 之前自动执行，在节点内写入 `/etc/containerd/certs.d/`（hosts.toml）；配置来自 `deploy-infrastructure-all.conf` 的 `STEP02_REGISTRY_*`（可于 `deploy-kind.conf` 覆写），改配置无需重建集群。
   - **方式二**：在 **kind-cluster.yaml** 中用 **extraMounts** 将宿主机目录（如 `registry-config/<registry>/hosts.toml`）挂入各节点的 `/etc/containerd/certs.d/`，创建集群时即生效；需在创建集群前生成好 hosts.toml，改配置需重建集群。示例与注释见 `kind-infrastructure/kind-cluster.yaml` 顶部。
@@ -176,7 +176,7 @@ kubectl get storageclass
 | **`kind-up.sh`** | 创建集群 + 命名空间 + NFS（被 deploy-kind.sh 调用或单独使用）。 |
 | **`ensure-kind-ca.sh`** | 在 WSL 本地生成本地根 CA（与远程 Step12 同用途），供 Traefik/Harbor 等后续部署签发证书；若已存在则跳过。 |
 | **`apply-kind-registry-config.sh`** | 在 Kind 各节点内写入 containerd `/etc/containerd/certs.d/`（与远程 Step02 对齐）；一键部署时在 kind-up 之后、load-initial-images 之前执行。 |
-| `load-initial-images-kind.sh` | 等效远程 Step11：在宿主机 docker pull 后 kind load，将 Traefik/Harbor 等镜像预加载到集群。 |
+| `load-images/load-kind-images.sh` | 等效远程 Step11：在宿主机 docker pull 后 kind load，将 Traefik/Harbor 等镜像预加载到集群；支持 conf 与多列表文件。 |
 | `apply-namespaces-existing-cluster.sh` | 被 kind-up.sh 调用。对现成集群按配置创建命名空间（与 Step07 同源）。 |
 | `apply-nfs-existing-cluster.sh` | 被 kind-up.sh 调用；需 WSL 上已跑过 wsl-setup-nfs-server.sh。 |
 | `wsl-setup-nfs-server.sh` | 在 WSL 中安装 nfs-kernel-server 并导出 `/data/kind-nfs`（一次性）。 |
