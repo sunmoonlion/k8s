@@ -86,7 +86,7 @@ cd k8s/sunmoonai/kind-infrastructure
 
 与远程 **Step11** 的镜像预加载等效；镜像列表与 `deploy-infrastructure-all.conf` 中 `STEP_IMAGE_*` 同源。
 
-### 2.6 可选：WSL 宿主机 Harbor 域名解析
+### 2.6 可选：WSL 宿主机 Harbor 域名解析。
 
 在 WSL 中执行（默认添加 `127.0.0.1 harbor.sunmoonai.com`）：
 
