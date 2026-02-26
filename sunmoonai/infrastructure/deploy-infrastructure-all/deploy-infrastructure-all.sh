@@ -129,7 +129,7 @@ load_config(){
     fi
     local cluster_selected="${CLUSTER:-C1}"
     
-    # 基础设施部署仅用于远程集群（C1/C2…）；当前目标为 Kind 时明确提示并退出
+    # 基础设施部署：远程集群走 Step01～Step12；当前目标为 Kind 时改为执行 Kind 一键部署（deploy-kind.sh），避免后续入口/CI 等步骤按远程逻辑跑失败
     local k8s_admin_conf="$PROJECT_ROOT/../../utils/k8s-admin.conf"
     if [[ -f "$k8s_admin_conf" ]]; then
         local global_mode="" global_default=""
@@ -139,9 +139,22 @@ load_config(){
         mode_lower=$(echo "$global_mode" | tr '[:upper:]' '[:lower:]')
         default_upper=$(echo "$global_default" | tr '[:lower:]' '[:upper:]')
         if [[ "$mode_lower" == "kind" ]] || [[ "$default_upper" == "KIND" ]]; then
-            log_warn "基础设施部署仅用于远程集群（C1/C2 等），当前目标为 Kind。"
-            log_info "请使用 kind-up.sh 创建/管理 Kind 集群（见 k8s/sunmoonai/kind-infrastructure/），平台层见《kind使用指南.md》。"
-            exit 0
+            log_info "当前为 Kind 模式，执行 Kind 一键部署（deploy-kind.sh）..."
+            local kind_deploy_sh="$PROJECT_ROOT/../kind-infrastructure/deploy-kind/deploy-kind.sh"
+            if [[ ! -f "$kind_deploy_sh" ]]; then
+                log_error "Kind 部署脚本不存在: $kind_deploy_sh"
+                return 1
+            fi
+            if [[ ! -x "$kind_deploy_sh" ]]; then
+                chmod +x "$kind_deploy_sh" 2>/dev/null || true
+            fi
+            if "$kind_deploy_sh"; then
+                log_success "Kind 一键部署完成"
+                exit 0
+            else
+                log_error "Kind 一键部署失败"
+                exit 1
+            fi
         fi
     fi
     

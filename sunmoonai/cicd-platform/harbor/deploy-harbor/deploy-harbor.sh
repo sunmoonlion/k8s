@@ -75,12 +75,14 @@ if [[ $# -gt 0 ]]; then
 fi
 
 # 处理 CLUSTER 环境变量（如果提供）
-# 支持 C1/C2 或 1/2 格式，统一转换为 C{数字} 格式
+# 支持 C1/C2 或 1/2 格式，统一转换为 C{数字}；支持 KIND 表示本地 Kind 集群
 if [[ -n "${CLUSTER:-}" ]]; then
     if [[ "$CLUSTER" =~ ^[0-9]+$ ]]; then
         export CLUSTER="C${CLUSTER}"
+    elif [[ "${CLUSTER^^}" == "KIND" ]]; then
+        export CLUSTER="KIND"
     elif [[ ! "$CLUSTER" =~ ^C[0-9]+$ ]]; then
-        log_error "无效的 CLUSTER 环境变量值: $CLUSTER (应为数字如 1 或 2，或格式如 C1 或 C2)"
+        log_error "无效的 CLUSTER 环境变量值: $CLUSTER (应为数字如 1 或 2，格式如 C1/C2，或 KIND)"
         exit 1
     fi
 fi

@@ -18,6 +18,7 @@ NFS_EXPORT_DIR="${NFS_EXPORT_DIR:-/data/kind-nfs}"
 RUN_CA_INIT="${DEPLOY_KIND_RUN_CA_INIT:-true}"
 RUN_IMAGES="${DEPLOY_KIND_RUN_IMAGES:-true}"
 RUN_REGISTRY_CONFIG="${DEPLOY_KIND_RUN_REGISTRY_CONFIG:-true}"
+RUN_NFS_PROVISIONER="${DEPLOY_KIND_RUN_NFS_PROVISIONER:-true}"
 RUN_HARBOR_HOSTS="${DEPLOY_KIND_RUN_HARBOR_HOSTS:-true}"
 
 log_info() { echo "ℹ️  $*"; }
@@ -25,12 +26,32 @@ log_success() { echo "✅ $*"; }
 log_warn() { echo "⚠️  $*"; }
 log_error() { echo "❌ $*"; }
 
+# 将相对路径（相对 deploy-kind 目录）转为绝对路径，与脚本执行目录无关
+resolve_to_absolute() {
+    local input="$1"
+    local out=""
+    local save_ifs="$IFS"
+    IFS=','
+    for item in $input; do
+        item=$(echo "$item" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        [[ -z "$item" ]] && continue
+        if [[ "$item" == /* ]]; then
+            out="${out:+$out,}$item"
+        else
+            out="${out:+$out,}${SCRIPT_DIR}/${item}"
+        fi
+    done
+    IFS="$save_ifs"
+    echo "$out"
+}
+
 usage() {
     echo "用法: $0 [选项]"
     echo "选项:"
     echo "  --skip-ca-init          跳过本地根 CA 生成（ensure-kind-ca.sh，与远程 Step12 同用途）"
     echo "  --skip-images           跳过镜像预加载（load-images/load-kind-images.sh）"
     echo "  --skip-registry-config  跳过 Kind 节点 containerd 镜像拉取配置（apply-kind-registry-config.sh）"
+    echo "  --skip-nfs-provisioner  跳过集群内 NFS Provisioner 部署（apply-nfs-existing-cluster.sh）"
     echo "  --skip-harbor-hosts     跳过 WSL /etc/hosts 中 Harbor 域名配置"
     echo "  -h, --help           显示此帮助"
     echo "配置: $SCRIPT_DIR/deploy-kind.conf"
@@ -41,13 +62,14 @@ while [[ $# -gt 0 ]]; do
         --skip-ca-init)           RUN_CA_INIT=false; shift ;;
         --skip-images)            RUN_IMAGES=false; shift ;;
         --skip-registry-config)   RUN_REGISTRY_CONFIG=false; shift ;;
+        --skip-nfs-provisioner)   RUN_NFS_PROVISIONER=false; shift ;;
         --skip-harbor-hosts)      RUN_HARBOR_HOSTS=false; shift ;;
         -h|--help)           usage; exit 0 ;;
         *)                   log_error "未知选项: $1"; usage; exit 1 ;;
     esac
 done
 
-log_info "Kind 一键部署开始（步骤 1/6：NFS）"
+log_info "Kind 一键部署开始（步骤 1/7：NFS）"
 if ! [[ -f /etc/exports ]] || ! grep -qE "^${NFS_EXPORT_DIR}[[:space:]]" /etc/exports 2>/dev/null; then
     log_info "未检测到 NFS 导出，执行 wsl-setup-nfs-server.sh ..."
     "$KIND_ROOT/wsl-setup-nfs-server.sh"
@@ -55,18 +77,18 @@ else
     log_info "NFS 已配置，跳过"
 fi
 
-log_info "步骤 2/6：创建集群与平台初始化（kind-up.sh）"
+log_info "步骤 2/7：创建集群与平台初始化（kind-up.sh）"
 "$KIND_ROOT/kind-up.sh"
 
 if [[ "$RUN_CA_INIT" == "true" ]]; then
-    log_info "步骤 3/6：生成本地根 CA（ensure-kind-ca.sh，与远程 Step12 同用途）"
+    log_info "步骤 3/7：生成本地根 CA（ensure-kind-ca.sh，与远程 Step12 同用途）"
     export TRAEFIK_CA_LOCAL_DIR="${TRAEFIK_CA_LOCAL_DIR:-}"
     "$KIND_ROOT/ensure-kind-ca.sh"
 else
-    log_info "步骤 3/6：跳过本地根 CA 生成（--skip-ca-init）"
+    log_info "步骤 3/7：跳过本地根 CA 生成（--skip-ca-init）"
 fi
 
-log_info "步骤 4/6：Kind 节点 Harbor 解析 + containerd 镜像拉取配置"
+log_info "步骤 4/7：Kind 节点 Harbor 解析 + containerd 镜像拉取配置"
 "$KIND_ROOT/apply-kind-node-harbor-hosts.sh"
 if [[ "$RUN_REGISTRY_CONFIG" == "true" ]]; then
     export STEP02_REGISTRY_ENABLE STEP02_REGISTRY_MIRRORS STEP02_REGISTRY_DIRECT 2>/dev/null || true
@@ -76,37 +98,44 @@ if [[ "$RUN_REGISTRY_CONFIG" == "true" ]]; then
         log_warn "Kind 节点 registry 配置执行失败，跳过后续 registry 步骤（可单独运行 apply-kind-registry-config.sh 查看原因）"
     fi
 else
-    log_info "跳过 Kind 节点 registry 配置（--skip-registry-config）"
+    log_info "步骤 4/7：跳过 Kind 节点 registry 配置（--skip-registry-config）"
 fi
 
 if [[ "$RUN_IMAGES" == "true" ]]; then
     if [[ -z "${DEPLOY_KIND_IMAGE_FILES:-}" && -z "${DEPLOY_KIND_TAR_DIRS:-}" ]]; then
-        log_info "步骤 5/6：未配置 DEPLOY_KIND_IMAGE_FILES/DEPLOY_KIND_TAR_DIRS，跳过镜像预加载"
+        log_info "步骤 5/7：未配置 DEPLOY_KIND_IMAGE_FILES/DEPLOY_KIND_TAR_DIRS，跳过镜像预加载"
     elif [[ -n "${DEPLOY_KIND_IMAGE_FILES:-}" && -n "${DEPLOY_KIND_TAR_DIRS:-}" ]]; then
         log_error "DEPLOY_KIND_IMAGE_FILES 与 DEPLOY_KIND_TAR_DIRS 不能同时非空，请二选一配置（镜像列表文件或 tar 目录）。"
         exit 1
     else
-        log_info "步骤 5/6：预加载 Traefik/Harbor 镜像（load-images/load-kind-images.sh）"
+        log_info "步骤 5/7：预加载 Traefik/Harbor 镜像（load-images/load-kind-images.sh）"
         LOAD_IMAGES_ARGS=()
         if [[ -n "${DEPLOY_KIND_IMAGE_FILES:-}" ]]; then
-            LOAD_IMAGES_ARGS+=(--img-file "${DEPLOY_KIND_IMAGE_FILES}")
+            LOAD_IMAGES_ARGS+=(--img-file "$(resolve_to_absolute "${DEPLOY_KIND_IMAGE_FILES}")")
         fi
         if [[ -n "${DEPLOY_KIND_TAR_DIRS:-}" ]]; then
-            LOAD_IMAGES_ARGS+=(--tar-dir "${DEPLOY_KIND_TAR_DIRS}")
+            LOAD_IMAGES_ARGS+=(--tar-dir "$(resolve_to_absolute "${DEPLOY_KIND_TAR_DIRS}")")
         fi
         "$KIND_ROOT/load-images/load-kind-images.sh" "${LOAD_IMAGES_ARGS[@]}"
     fi
 else
-    log_info "步骤 5/6：跳过镜像预加载（--skip-images）"
+    log_info "步骤 5/7：跳过镜像预加载（--skip-images）"
+fi
+
+if [[ "$RUN_NFS_PROVISIONER" == "true" ]]; then
+    log_info "步骤 6/7：集群内 NFS Provisioner 与 StorageClass（apply-nfs-existing-cluster.sh）"
+    "$KIND_ROOT/apply-nfs-existing-cluster.sh"
+else
+    log_info "步骤 6/7：跳过 NFS Provisioner（--skip-nfs-provisioner）"
 fi
 
 if [[ "$RUN_HARBOR_HOSTS" == "true" ]]; then
-    log_info "步骤 6/6：WSL 宿主机 Harbor 解析与登录（wsl-setup-harbor-hosts-and-login.sh）"
+    log_info "步骤 7/7：WSL 宿主机 Harbor 解析与登录（wsl-setup-harbor-hosts-and-login.sh）"
     export HARBOR_HOST="${HARBOR_HOST:-harbor.sunmoonai.com}"
     export HARBOR_IP="${HARBOR_IP:-127.0.0.1}"
     "$KIND_ROOT/wsl-setup-harbor-hosts-and-login.sh"
 else
-    log_info "步骤 6/6：跳过 Harbor hosts（--skip-harbor-hosts）"
+    log_info "步骤 7/7：跳过 Harbor hosts（--skip-harbor-hosts）"
 fi
 
 log_success "Kind 一键部署完成"

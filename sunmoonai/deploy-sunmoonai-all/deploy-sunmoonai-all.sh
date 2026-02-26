@@ -175,12 +175,6 @@ deploy_platform_components_by_priority() {
         components+=("$priority:data-platform")
     fi
     
-    # 检查应用平台
-    if [[ "${app_platform_enabled:-false}" == "true" ]]; then
-        local priority="${app_platform_priority:-600}"
-        components+=("$priority:app-platform")
-    fi
-    
     # 检查消息平台
     if [[ "${messaging_platform_enabled:-false}" == "true" ]]; then
         local priority="${messaging_platform_priority:-500}"
@@ -288,16 +282,6 @@ deploy_platform_components_by_priority() {
                     fi
                 else
                     log_error "❌ $component 目录不存在: $PROJECT_ROOT/data-platform/deploy-data-platform-all"
-                    return 1
-                fi
-                ;;
-            "app-platform")
-                if [[ -d "$PROJECT_ROOT/app-platform" ]]; then
-                    log_info "部署应用平台..."
-                    # 这里可以添加具体的应用平台部署逻辑
-                    log_success "✅ $component 配置完成"
-                else
-                    log_error "❌ $component 目录不存在: $PROJECT_ROOT/app-platform"
                     return 1
                 fi
                 ;;

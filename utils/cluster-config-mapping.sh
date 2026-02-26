@@ -3,7 +3,7 @@
 # =============================================================================
 # 集群配置映射函数库
 # 文件名: cluster-config-mapping.sh
-# 用途: 提供集群级别的配置映射功能，支持 C{数字}_* 前缀配置（如 C1_*, C2_*, C3_* 等）
+# 用途: 提供集群级别的配置映射功能，支持 C{数字}_* 与 KIND_* 前缀（如 C1_*, C2_*, C3_*, KIND_*）；启用哪套由 default_cluster/CLUSTER 决定并自动覆盖到无前缀变量
 # 设计: 通用工具函数，可被所有脚本调用
 # =============================================================================
 
@@ -111,15 +111,16 @@ apply_cluster_config_mapping() {
     fi
   fi
   
-  # 验证集群值格式：必须是 C{数字} 格式（如 C1, C2, C3, C10 等）
-  # 支持不连续的集群编号（如只有 C1 和 C3，没有 C2）
-  if [[ ! "$cluster_selected" =~ ^C[0-9]+$ ]]; then
-    # 不是有效的集群格式，跳过映射
+  # 统一为大写，便于前缀匹配（kind -> KIND）
+  cluster_selected=$(echo "$cluster_selected" | tr '[:lower:]' '[:upper:]')
+  export CLUSTER="$cluster_selected"
+
+  # 验证集群值格式：C{数字}（如 C1, C2, C3）或 KIND，其他格式跳过映射
+  if [[ ! "$cluster_selected" =~ ^(C[0-9]+|KIND)$ ]]; then
     return 0
   fi
-  
-  # 映射组件级别的集群配置（如 C1_STEPXX_ENABLED -> STEPXX_ENABLED）
-  # 遍历所有以 C*_ 开头的变量，查找组件配置
+
+  # 映射：当前集群前缀的变量覆盖到无前缀（C1_* / C2_* / KIND_* -> *）
   local cluster_prefix="${cluster_selected}_"
   
   # 使用 compgen -v 获取所有变量名，然后过滤

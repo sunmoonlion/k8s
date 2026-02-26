@@ -33,6 +33,74 @@ log_success() { echo "✅ $*"; }
 log_warn() { echo "⚠️  $*"; }
 log_error() { echo "❌ $*"; }
 
+# 若当前集群为 Kind，则将 NFS provisioner 镜像在宿主机 pull 后 load 进集群，避免 Pod ImagePullBackOff
+# kind load 失败时用 docker save + 各节点 ctr import 兜底（与 load-kind-images.sh 一致）
+ensure_nfs_image_in_kind() {
+    local nfs_image="$1"
+    local ctx
+    ctx=$(kubectl config current-context 2>/dev/null || true)
+    if [[ -z "$ctx" || "$ctx" != kind-* ]]; then
+        return 0
+    fi
+    local kind_name="${ctx#kind-}"
+    local platform=""
+    case "$(uname -m 2>/dev/null || echo "")" in
+        x86_64|amd64) platform="linux/amd64" ;;
+        aarch64|arm64) platform="linux/arm64" ;;
+        *) platform="" ;;
+    esac
+    if ! command -v kind &>/dev/null; then
+        log_warn "未找到 kind 命令，跳过预加载镜像，请确保集群能拉取 registry.k8s.io 或先运行 load-images/load-kind-images.sh 加载该镜像"
+        return 0
+    fi
+    if ! docker image inspect "$nfs_image" &>/dev/null; then
+        log_info "拉取 NFS 镜像: $nfs_image"
+        if [[ -n "$platform" ]]; then
+            log_info "使用平台拉取: --platform=$platform"
+        fi
+        if ! docker pull ${platform:+--platform="$platform"} "$nfs_image"; then
+            log_warn "docker pull 失败，请检查网络或代理；若已有离线 tar 可用 load-images/load-kind-images.sh --tar-dir 加载"
+            return 1
+        fi
+    fi
+    log_info "将 NFS 镜像加载到 Kind 集群: $kind_name"
+    if kind load docker-image "$nfs_image" --name "$kind_name"; then
+        log_success "NFS 镜像已加载到 Kind"
+        return 0
+    fi
+    log_warn "kind load 失败，尝试兜底：docker save + 节点 ctr import（与 load-kind-images.sh 一致）"
+    local tar_file
+    tar_file=$(mktemp -u /tmp/kind-nfs-load-XXXXXX.tar)
+    if ! docker save -o "$tar_file" "$nfs_image" 2>/dev/null; then
+        log_warn "兜底失败: docker save 失败: $nfs_image"
+        rm -f "$tar_file"
+        return 1
+    fi
+    # 与 load-kind-images.sh load_tar_to_kind_nodes 一致：-o name 再 sed 去掉 node/
+    local nodes
+    nodes=$(kind get nodes --name "$kind_name" -o name 2>/dev/null | sed 's|node/||')
+    if [[ -z "$nodes" ]]; then
+        nodes=$(kind get nodes --name "$kind_name" 2>/dev/null || true)
+    fi
+    local ok=0 total=0
+    for node in $nodes; do
+        [[ -z "$node" ]] && continue
+        ((total++)) || true
+        if cat "$tar_file" | docker exec -i "$node" ctr -n k8s.io images import --digests --snapshotter=overlayfs - 2>/dev/null; then
+            ((ok++)) || true
+        else
+            log_warn "节点 $node 导入失败（可去掉脚本内 2>/dev/null 查看 ctr 报错）"
+        fi
+    done
+    rm -f "$tar_file"
+    if [[ $ok -eq $total && $total -gt 0 ]]; then
+        log_success "NFS 镜像已通过兜底加载到 $total 个节点"
+        return 0
+    fi
+    log_warn "兜底未完全成功（$ok/$total 节点），请手动执行: kind load docker-image $nfs_image --name $kind_name"
+    return 1
+}
+
 load_config() {
     if [[ -f "$CONFIG_FILE" ]]; then
         # shellcheck disable=SC1090
@@ -93,6 +161,11 @@ main() {
             log_info "等待旧 PVC $pvc_name 删除完成..."
             sleep 1
         done
+        # Kind 集群无外网拉镜像时需在宿主机 pull 并 load 进集群，否则 Pod 会 ImagePullBackOff
+        NFS_IMAGE="registry.k8s.io/sig-storage/nfs-subdir-external-provisioner:v${NFS_PROVISIONER_VERSION}"
+        if ! ensure_nfs_image_in_kind "$NFS_IMAGE"; then
+            log_warn "NFS 镜像未预加载到 Kind，若 Pod 无法拉取请手动 pull 并 kind load 或配置集群访问 registry.k8s.io"
+        fi
         log_info "安装 NFS Provisioner（chart ${NFS_CHART_VERSION}，image v${NFS_PROVISIONER_VERSION}）"
         chart_installed=false
         # 优先使用本地 chart（网络不好时可将 tgz 放到 charts/ 或设 NFS_CHART_TGZ）
