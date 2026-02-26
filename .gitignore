@@ -183,3 +183,6 @@ build/
 # 例外：不忽略 app-platform 下各组件的 build 目录
 # 具体忽略规则由各 build/.gitignore 文件控制
 !sunmoonai/app-platform/*/build/
+
+# Kind 离线镜像 tar 包（不适合进 Git，体积大且可重新生成）
+sunmoonai/kind-infrastructure/deploy-kind/images-init-dir/
