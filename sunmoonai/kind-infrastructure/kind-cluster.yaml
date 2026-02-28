@@ -16,10 +16,13 @@
 #       containerPath: /etc/containerd/certs.d/registry.k8s.io
 #     - hostPath: ./registry-config/harbor.sunmoonai.com:30443
 #       containerPath: /etc/containerd/certs.d/harbor.sunmoonai.com:30443
+#
+# 自定义节点镜像：下方各节点已指定 image 时，创建集群将使用该镜像（由 build-kind-node-image.sh 生成，预装 Harbor/Traefik 等），重建时无需再执行 load-kind-images。
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
   - role: control-plane
+    image: kindest/node:v1.27.3-sunmoonai  # 预装 Harbor/Traefik 等，由 build-kind-node-image.sh 生成
     # extraMounts:  # 方式二：取消注释并确保 registry-config/ 已生成后再创建集群
     #   - hostPath: ./registry-config/docker.io
     #     containerPath: /etc/containerd/certs.d/docker.io
@@ -40,6 +43,7 @@ nodes:
       - containerPort: 30446
         hostPort: 30446   # Redis TCP 代理
   - role: worker
+    image: kindest/node:v1.27.3-sunmoonai
     # extraMounts:  # 方式二时与 control-plane 保持相同挂载
     #   - hostPath: ./registry-config/docker.io
     #     containerPath: /etc/containerd/certs.d/docker.io
@@ -48,6 +52,7 @@ nodes:
     #   - hostPath: ./registry-config/harbor.sunmoonai.com:30443
     #     containerPath: /etc/containerd/certs.d/harbor.sunmoonai.com:30443
   - role: worker
+    image: kindest/node:v1.27.3-sunmoonai
     # extraMounts:  # 方式二时与 control-plane 保持相同挂载
     #   - hostPath: ./registry-config/docker.io
     #     containerPath: /etc/containerd/certs.d/docker.io

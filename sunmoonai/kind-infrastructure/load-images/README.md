@@ -6,7 +6,7 @@
 
 | 文件/目录 | 说明 |
 |-----------|------|
-| `load-kind-images.sh` | 主脚本，可执行 |
+| `load-kind-images.sh` | 加载镜像到 Kind 的主脚本 |
 | `load-kind-images.conf` | 默认配置（镜像列表文件、tar 目录、可选集群名） |
 | `images-default.txt` | 默认镜像列表（一行一个镜像名，`#` 为注释） |
 | `tar-default-dir/` | **默认 tar 目录**：把需要加载的 `.tar` 文件复制到此目录即可 |
@@ -76,3 +76,5 @@ DEFAULT_TAR_DIR="tar-default-dir"
 
 - `deploy-kind.sh` 步骤 5/6 会调用本脚本（无参，即使用 conf 默认）。
 - 兼容包装：`../load-initial-images-kind.sh` 会转发到本脚本，`--file` 会转为 `--img-file`；`--tar` 已废弃，请改用 `tar-default-dir/` 或 `--tar-dir`。
+
+推送镜像到 Harbor 的脚本与 load-images 平级，位于 **`../push-to-harbor/`**，用法见该目录下 README.md。
