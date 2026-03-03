@@ -4,19 +4,25 @@
 
 ## 获取 chart
 
-脚本默认使用 **4.0.2**（与最初成功版本一致）。在能访问 GitHub 的环境（或开代理）执行：
+**方式一：用脚本下载（推荐）**
+
+在能访问 GitHub 的环境（或开代理，如 `export HTTPS_PROXY=http://172.28.32.1:7890`）执行：
 
 ```bash
-cd "$(dirname "$0")"
-# 默认版本 4.0.2
-curl -L -f -o nfs-subdir-external-provisioner-4.0.2.tgz \
-  "https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner/releases/download/nfs-subdir-external-provisioner-4.0.2/nfs-subdir-external-provisioner-4.0.2.tgz"
-# 或备用 4.0.18
-curl -L -f -o nfs-subdir-external-provisioner-4.0.18.tgz \
-  "https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner/releases/download/nfs-subdir-external-provisioner-4.0.18/nfs-subdir-external-provisioner-4.0.18.tgz"
+cd /path/to/kind-infrastructure/charts
+./download-nfs-chart.sh        # 默认下载 4.0.2
+./download-nfs-chart.sh 4.0.18 # 指定版本
 ```
 
-将下载好的 `nfs-subdir-external-provisioner-4.0.2.tgz`（或 4.0.18）放到本目录。
+**方式二：手动 curl**
+
+```bash
+cd charts
+curl -L -f -o nfs-subdir-external-provisioner-4.0.2.tgz \
+  "https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner/releases/download/nfs-subdir-external-provisioner-4.0.2/nfs-subdir-external-provisioner-4.0.2.tgz"
+```
+
+将下载好的 `nfs-subdir-external-provisioner-4.0.2.tgz` 放在本目录即可。
 
 ## 使用
 

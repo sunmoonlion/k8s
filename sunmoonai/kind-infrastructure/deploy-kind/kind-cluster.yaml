@@ -1,5 +1,5 @@
 # Kind 集群配置：1 control-plane + 2 workers（默认）
-# 修改本文件后执行 kind-up.sh 创建/重建集群。
+# 修改本文件后执行 kind-up.sh 或 deploy-kind.sh 创建/重建集群。
 #
 # Harbor 域名解析：v1alpha4 不支持节点 extraHosts，集群内解析需建集群后通过脚本或 CoreDNS 配置；
 # 宿主机解析与登录见 wsl-setup-harbor-hosts-and-login.sh。镜像拉取见 apply-kind-registry-config.sh。
@@ -17,7 +17,7 @@
 #     - hostPath: ./registry-config/harbor.sunmoonai.com:30443
 #       containerPath: /etc/containerd/certs.d/harbor.sunmoonai.com:30443
 #
-# 自定义节点镜像：下方各节点已指定 image 时，创建集群将使用该镜像（由 build-kind-node-image.sh 生成，预装 Harbor/Traefik 等），重建时无需再执行 load-kind-images。
+# 自定义节点镜像：下方各节点已指定 image 时，创建集群将使用该镜像（由 deploy-kind/build-kind-node-image/build-kind-node-image.sh 生成，预装 Harbor/Traefik 等），重建时无需再执行 load-kind-images。
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
@@ -60,3 +60,4 @@ nodes:
     #     containerPath: /etc/containerd/certs.d/registry.k8s.io
     #   - hostPath: ./registry-config/harbor.sunmoonai.com:30443
     #     containerPath: /etc/containerd/certs.d/harbor.sunmoonai.com:30443
+

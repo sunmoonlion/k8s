@@ -1,0 +1,13 @@
+# 默认镜像列表（与 Step11 一致），一行一个，# 开头为注释
+traefik:v3.5.2
+bitnami/harbor-core:2.13.2-debian-12-r3
+bitnami/harbor-portal:2.13.2-debian-12-r1
+bitnami/harbor-jobservice:2.13.2-debian-12-r3
+bitnami/harbor-registry:2.13.2-debian-12-r2
+bitnami/harbor-registryctl:2.13.2-debian-12-r3
+bitnami/harbor-adapter-trivy:2.13.2-debian-12-r2
+bitnami/harbor-exporter:2.13.2-debian-12-r2
+bitnami/nginx:1.29.1-debian-12-r0
+bitnami/redis:8.2.1-debian-12-r0
+bitnami/postgresql:17.6.0-debian-12-r4
+bitnami/os-shell:12-debian-12-r50

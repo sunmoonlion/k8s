@@ -1,2 +1,0 @@
-# 将需要加载的镜像 tar 文件复制到此目录即可，脚本会加载目录内全部 .tar 文件
-# 例如: cp /path/to/packages-to-be-installed/images/*.tar .
