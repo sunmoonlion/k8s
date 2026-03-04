@@ -227,6 +227,12 @@ cd ~/k8s/sunmoonai/deploy-sunmoonai-all
 ./deploy-sunmoonai-all.sh deploy sunmoonai development false
 ```
 
+> **重要提醒（外部 Harbor 场景）**：  
+> 在执行 `deploy-kind.sh`、`deploy-sunmoonai-all.sh` 之前，请先确保 **外部 Harbor 已经启动**：  
+> - 可以在 `~/k8s/utils/HARBOR-KIND-EXTERNAL/harbor-runtime` 目录运行 `sudo docker compose up -d`；  
+> - 或者先用 `docker compose ps` 查看 `nginx/harbor-core/registry` 等容器是否都是 `Up` 状态。  
+> 若 Harbor 未启动，集群中的 Pod 会在拉取镜像时出现 `connect refused` / `ImagePullBackOff`。
+
 此时：
 
 - Harbor 仍然是 WSL 上 docker-compose 起的那个；  
@@ -234,7 +240,7 @@ cd ~/k8s/sunmoonai/deploy-sunmoonai-all
 
 #### 7.2 推镜像
 
-推镜像有两种方式，脚本都不用改：
+推镜像有两种方式，脚本都不用改，**而且这是「按需执行」的操作——镜像只需要在首次或有更新时 push，之后无论你重建多少次 Kind 集群，都不需要重复 push**（前提是你不删 Harbor 的数据目录 `/data/harbor`）：
 
 1. 直接 Docker：
    ```bash
@@ -247,8 +253,11 @@ cd ~/k8s/sunmoonai/deploy-sunmoonai-all
    cd ~/k8s/sunmoonai/kind-infrastructure/push-to-harbor
    ./push-images-to-harbor.sh   # 按 push-images-to-harbor.conf 中的默认配置
    ```
+   **推荐用法**：
+   - 第一次搭好外部 Harbor 后，用该脚本把 `packages-to-be-installed/images` 里的 `.tar` 批量导入一次（冷启动）。
+   - 之后只有在你新增/升级镜像时，再手动执行一次该脚本或直接 `docker push`，**不是每次重跑 `deploy-kind.sh` 都要执行**。
 
-由于 Harbor 已经不在 k8s 里，**push 的速度只取决于本机 I/O 和网络，不会受到重建 Kind 的影响**。
+由于 Harbor 已经不在 k8s 里，**push 的速度只取决于本机 I/O 和网络，不会受到重建 Kind 的影响；重建 Kind 只会从已有的 Harbor 拉取镜像，不触发新的 push**。
 
 ---
 

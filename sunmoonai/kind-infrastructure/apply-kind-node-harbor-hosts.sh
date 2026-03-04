@@ -17,13 +17,23 @@ log_error() { echo "❌ $*"; }
 # 集群名与节点内 Harbor 解析 IP（任一节点均可；实测 control-plane=172.18.0.2, worker=172.18.0.3, worker2=172.18.0.4）
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kind}"
 HARBOR_HOST="${HARBOR_HOST:-harbor.sunmoonai.com}"
-HARBOR_NODE_IP="${HARBOR_NODE_IP:-172.18.0.2}"
+HARBOR_NODE_IP="${HARBOR_NODE_IP:-}"
 
 if [[ -f "$K8S_ADMIN_CONF" ]]; then
     section=$(sed -n '/^\[KIND\]$/,/^\[[A-Z]/p' "$K8S_ADMIN_CONF" 2>/dev/null || true)
     [[ -n "${section}" ]] && KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-$(echo "$section" | grep "^cluster_name=" | head -1 | cut -d'=' -f2- | tr -d ' ')}"
 fi
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kind}"
+
+# 如未在配置中显式指定 HARBOR_NODE_IP，则自动推导：
+# 默认使用 control-plane 容器的 IP，供 NodePort 暴露的「集群内 Harbor」使用。
+if [[ -z "${HARBOR_NODE_IP:-}" ]]; then
+    if docker inspect kind-control-plane &>/dev/null; then
+        HARBOR_NODE_IP="$(docker inspect -f '{{ .NetworkSettings.IPAddress }}' kind-control-plane 2>/dev/null || true)"
+    fi
+fi
+
+HARBOR_NODE_IP="${HARBOR_NODE_IP:-172.18.0.2}"
 
 if ! command -v kind &>/dev/null; then
     log_error "未找到 kind 命令"
@@ -36,12 +46,19 @@ if [[ -z "$nodes" ]]; then
     exit 1
 fi
 
-log_info "在 Kind 各节点 /etc/hosts 中添加 ${HARBOR_HOST} -> ${HARBOR_NODE_IP}（集群: $KIND_CLUSTER_NAME）"
+log_info "在 Kind 各节点 /etc/hosts 中添加/更新 ${HARBOR_HOST} -> ${HARBOR_NODE_IP}（集群: $KIND_CLUSTER_NAME）"
 count=0
 while IFS= read -r node; do
     [[ -z "$node" ]] && continue
     if docker exec "$node" sh -c "grep -q '${HARBOR_HOST}' /etc/hosts 2>/dev/null"; then
-        log_info "  节点 $node 已存在 ${HARBOR_HOST}，跳过"
+        # 若已存在但 IP 不一致，则更新
+        cur_line=$(docker exec "$node" sh -c "grep ' ${HARBOR_HOST}\$' /etc/hosts 2>/dev/null | head -1" || true)
+        if [[ -n "$cur_line" && "$cur_line" != "${HARBOR_NODE_IP} ${HARBOR_HOST}" ]]; then
+            log_info "  节点 $node: 更新 ${HARBOR_HOST} 映射为 ${HARBOR_NODE_IP}（原记录: ${cur_line}）"
+            docker exec "$node" sh -c "sed -i -E 's/^[0-9.]+[[:space:]]+${HARBOR_HOST}[[:space:]]*\$/${HARBOR_NODE_IP} ${HARBOR_HOST}/' /etc/hosts"
+        else
+            log_info "  节点 $node 已存在 ${HARBOR_HOST}，且 IP 一致，跳过"
+        fi
     else
         docker exec "$node" sh -c "echo '${HARBOR_NODE_IP} ${HARBOR_HOST}' >> /etc/hosts"
         log_info "  节点 $node: 已添加 ${HARBOR_HOST} -> ${HARBOR_NODE_IP}"

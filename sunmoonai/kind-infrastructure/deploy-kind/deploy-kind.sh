@@ -20,6 +20,29 @@ RUN_REGISTRY_CONFIG="${DEPLOY_KIND_RUN_REGISTRY_CONFIG:-true}"
 RUN_NFS_PROVISIONER="${DEPLOY_KIND_RUN_NFS_PROVISIONER:-true}"
 RUN_HARBOR_HOSTS="${DEPLOY_KIND_RUN_HARBOR_HOSTS:-true}"
 
+# 镜像来源模式归一化：根据 KIND_IMAGE_SOURCE 统筹相关开关
+KIND_IMAGE_SOURCE="${KIND_IMAGE_SOURCE:-tar}"
+case "$KIND_IMAGE_SOURCE" in
+    harbor)
+        # 使用集群内 Harbor 作为镜像源：保留 registry 配置与 Harbor hosts 步骤，关闭本地 tar 预加载
+        RUN_REGISTRY_CONFIG=true
+        DEPLOY_KIND_RUN_PRELOAD_IMAGES="false"
+        ;;
+    tar)
+        # 使用本地 tar 预加载镜像：关闭 registry/hosts 相关步骤，仅运行本地预加载
+        RUN_REGISTRY_CONFIG=false
+        RUN_HARBOR_HOSTS=false
+        DEPLOY_KIND_RUN_PRELOAD_IMAGES="true"
+        ;;
+    *)
+        echo "⚠️  未知 KIND_IMAGE_SOURCE='${KIND_IMAGE_SOURCE}'，按 tar 模式处理" >&2
+        KIND_IMAGE_SOURCE="tar"
+        RUN_REGISTRY_CONFIG=false
+        RUN_HARBOR_HOSTS=false
+        DEPLOY_KIND_RUN_PRELOAD_IMAGES="true"
+        ;;
+esac
+
 log_info() { echo "ℹ️  $*"; }
 log_success() { echo "✅ $*"; }
 log_warn() { echo "⚠️  $*"; }
@@ -177,17 +200,26 @@ else
     log_info "步骤 4/7：跳过本地根 CA 生成（--skip-ca-init）"
 fi
 
-log_info "步骤 5/7：Kind 节点 Harbor 解析 + containerd 镜像拉取配置"
-"$KIND_ROOT/apply-kind-node-harbor-hosts.sh"
-if [[ "$RUN_REGISTRY_CONFIG" == "true" ]]; then
-    export STEP02_REGISTRY_ENABLE STEP02_REGISTRY_MIRRORS STEP02_REGISTRY_DIRECT 2>/dev/null || true
-    if "$KIND_ROOT/apply-kind-registry-config.sh"; then
-        log_info "Kind 节点 registry 配置完成（apply-kind-registry-config.sh）"
+if [[ "$KIND_IMAGE_SOURCE" == "harbor" ]]; then
+    log_info "步骤 5/7：Kind 节点 Harbor 解析 + containerd 镜像拉取配置（来源: 集群内 Harbor）"
+    "$KIND_ROOT/apply-kind-node-harbor-hosts.sh"
+    if [[ "$RUN_REGISTRY_CONFIG" == "true" ]]; then
+        export STEP02_REGISTRY_ENABLE STEP02_REGISTRY_MIRRORS STEP02_REGISTRY_DIRECT 2>/dev/null || true
+        if "$KIND_ROOT/apply-kind-registry-config.sh"; then
+            log_info "Kind 节点 registry 配置完成（apply-kind-registry-config.sh）"
+        else
+            log_warn "Kind 节点 registry 配置执行失败，跳过后续 registry 步骤（可单独运行 apply-kind-registry-config.sh 查看原因）"
+        fi
     else
-        log_warn "Kind 节点 registry 配置执行失败，跳过后续 registry 步骤（可单独运行 apply-kind-registry-config.sh 查看原因）"
+        log_info "步骤 5/7：KIND_IMAGE_SOURCE!=harbor 或显式跳过，未对 Kind 节点配置 registry"
+    fi
+
+    log_info "步骤 5.x：Kind 节点 Harbor TLS 信任（自签 CA 下发 + certs.d/hosts.toml）"
+    if ! "$KIND_ROOT/apply-kind-harbor-tls.sh"; then
+        log_warn "Kind 节点 Harbor TLS 信任配置执行失败，可稍后单独运行 apply-kind-harbor-tls.sh 查看原因"
     fi
 else
-    log_info "步骤 5/7：跳过 Kind 节点 registry 配置（--skip-registry-config）"
+    log_info "步骤 5/7：KIND_IMAGE_SOURCE='tar'，跳过与 Harbor 相关的节点 hosts/registry/TLS 配置"
 fi
 
 if [[ "$RUN_NFS_PROVISIONER" == "true" ]]; then
@@ -219,6 +251,18 @@ if [[ "${DEPLOY_KIND_RUN_TRAEFIK:-false}" == "true" ]]; then
     fi
 fi
 
+# 可选：在 Kind 集群创建完成后，自动将本地 tar 镜像加载到 Kind 所有节点（B 方案）
+if [[ "${DEPLOY_KIND_RUN_PRELOAD_IMAGES:-false}" == "true" ]]; then
+    log_info "可选步骤：预加载本地 tar 镜像到 Kind 所有节点（load-images/load-kind-images.sh）"
+    PRELOAD_ARGS=()
+    if [[ -n "${DEPLOY_KIND_PRELOAD_TAR_DIRS:-}" ]]; then
+        PRELOAD_ARGS+=(--tar-dir "$(resolve_to_absolute "$DEPLOY_KIND_PRELOAD_TAR_DIRS")")
+    fi
+    if ! "$KIND_ROOT/load-images/load-kind-images.sh" "${PRELOAD_ARGS[@]}"; then
+        log_warn "预加载镜像到 Kind 失败，可稍后手动运行 load-images/load-kind-images.sh 或使用 kind load docker-image"
+    fi
+fi
+
 if [[ "${DEPLOY_KIND_RUN_HARBOR:-false}" == "true" ]]; then
     log_info "可选步骤：在 Kind 集群中部署 Harbor（cicd-platform/harbor/deploy-harbor）"
     # 使用 CLUSTER=KIND，deploy-harbor.sh 会根据 deploy-harbor.conf 选择命名空间和环境
@@ -227,11 +271,17 @@ if [[ "${DEPLOY_KIND_RUN_HARBOR:-false}" == "true" ]]; then
     fi
 fi
 
-# 可选：在一键流程中单独执行一次 WSL Harbor 登录（便于开发验证），失败仅告警不终止整体流程
+# 可选：在一键流程中单独执行一次 WSL Harbor 登录（便于开发验证），失败仅告警不终止整体流程；
+# 这里采用「尽力而为」策略：不再长时间等待 Harbor，就直接尝试一次 docker login，失败立即跳过。
 if [[ "${DEPLOY_KIND_RUN_HARBOR_LOGIN:-false}" == "true" ]]; then
-    log_info "可选步骤：WSL 宿主机 Harbor 登录（不推送镜像，仅登录验证）"
-    if ! harbor_login_or_fail; then
-        log_warn "WSL Harbor 登录失败，可稍后手动执行 docker login 或运行 wsl-setup-harbor-hosts-and-login.sh --login"
+    log_info "可选步骤：WSL 宿主机 Harbor 登录（不推送镜像，仅登录验证，若失败立即跳过）"
+    login_host="${HARBOR_HOST:-harbor.sunmoonai.com}:${HARBOR_PORT:-30443}"
+    if [[ -z "${HARBOR_ADMIN_PASSWORD:-}" ]]; then
+        log_warn "未配置 HARBOR_ADMIN_PASSWORD，跳过自动登录（可手动运行 wsl-setup-harbor-hosts-and-login.sh --login）"
+    else
+        if ! echo "${HARBOR_ADMIN_PASSWORD}" | docker login "${login_host}" -u "${HARBOR_ADMIN_USER:-admin}" --password-stdin; then
+            log_warn "WSL Harbor 登录失败（${login_host}），可稍后手动执行 docker login 或运行 wsl-setup-harbor-hosts-and-login.sh --login"
+        fi
     fi
 fi
 
