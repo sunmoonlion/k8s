@@ -210,22 +210,44 @@ deploy_platform_components_by_priority() {
         
         case "$component" in
             "infrastructure")
-                if [[ -d "$PROJECT_ROOT/infrastructure/deploy-infrastructure-all" ]]; then
-                    local script_path="$PROJECT_ROOT/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh"
-                    if [[ -f "$script_path" ]]; then
-                        if call_subscript "$script_path" deploy "$project_id" "$environment" "$dry_run"; then
-                            log_success "✅ $component 部署成功"
+                # 基础设施第一阶段：根据 CLUSTER 分流到 Kind 或远程集群
+                local cluster_selected="${CLUSTER:-}"
+                local cluster_upper
+                cluster_upper=$(echo "${cluster_selected:-}" | tr '[:lower:]' '[:upper:]')
+
+                if [[ "$cluster_upper" == "KIND" ]]; then
+                    local kind_script="$PROJECT_ROOT/kind-infrastructure/deploy-kind/deploy-kind.sh"
+                    if [[ -f "$kind_script" ]]; then
+                        log_info "使用 Kind 基础设施一键脚本: $kind_script"
+                        if "$kind_script"; then
+                            log_success "✅ KIND 基础设施部署完成"
                         else
-                            log_error "❌ $component 部署失败"
+                            log_error "❌ KIND 基础设施部署失败"
                             return 1
                         fi
                     else
-                        log_error "❌ $component 部署脚本不存在: $script_path"
+                        log_error "❌ KIND 基础设施脚本不存在: $kind_script"
                         return 1
                     fi
                 else
-                    log_error "❌ $component 目录不存在: $PROJECT_ROOT/infrastructure/deploy-infrastructure-all"
-                    return 1
+                    if [[ -d "$PROJECT_ROOT/infrastructure/deploy-infrastructure-all" ]]; then
+                        local script_path="$PROJECT_ROOT/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh"
+                        if [[ -f "$script_path" ]]; then
+                            log_info "使用远程基础设施脚本: $script_path"
+                            if call_subscript "$script_path" deploy "$project_id" "$environment" "$dry_run"; then
+                                log_success "✅ 远程基础设施部署完成"
+                            else
+                                log_error "❌ 远程基础设施部署失败"
+                                return 1
+                            fi
+                        else
+                            log_error "❌ 基础设施部署脚本不存在: $script_path"
+                            return 1
+                        fi
+                    else
+                        log_error "❌ 基础设施目录不存在: $PROJECT_ROOT/infrastructure/deploy-infrastructure-all"
+                        return 1
+                    fi
                 fi
                 ;;
             "ingress-platform")

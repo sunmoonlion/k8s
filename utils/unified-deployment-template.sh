@@ -921,6 +921,49 @@ cleanup_k8s_connection() {
 }
 
 # ========================================
+# Harbor 镜像按需推送（组件通用）
+# ========================================
+
+# 使用 registry-push-management 根据组件镜像清单文件按需推送镜像到 Harbor。
+# - component_name: 组件名称（用于定位 utils/components-images/<component_name>-images.txt）
+push_component_images_to_harbor() {
+    local component_name="$1"
+
+    local base_dir
+    base_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+    local image_list_file="$base_dir/components-images/${component_name}-images.txt"
+    local loadimage_sh="$base_dir/registry-push-management/loadimage.sh"
+
+    if [[ ! -f "$image_list_file" ]]; then
+        log_warn "[images] 找不到组件镜像清单: $image_list_file，跳过 Harbor 镜像推送"
+        return 0
+    fi
+
+    if [[ ! -f "$loadimage_sh" ]]; then
+        log_warn "[images] registry-push-management 工具不存在: $loadimage_sh，跳过 Harbor 镜像推送"
+        return 0
+    fi
+
+    log_info "[images] 使用 registry-push-management 按需推送组件镜像到 Harbor（component=${component_name}）"
+
+    local cluster_args=()
+    if [[ -n "${CLUSTER:-}" ]]; then
+        cluster_args+=(--cluster "$CLUSTER")
+    fi
+
+    # 让 loadimage.sh 自行根据 CLUSTER 和 loadimage.conf 选择远程节点与 Harbor，
+    # 并通过 EXISTENCE_CHECK_TOOL（如 skopeo）仅为 Harbor 中缺失的镜像执行 push。
+    if ! "$loadimage_sh" "${cluster_args[@]}" push-from-list "$image_list_file"; then
+        log_warn "[images] 组件 ${component_name} 镜像推送工具返回非零状态，请稍后在 utils/registry-push-management 中单独检查"
+    else
+        log_info "[images] 组件 ${component_name} 相关镜像已确保存在于 Harbor（或已按需推送）"
+    fi
+
+    return 0
+}
+
+# ========================================
 # 使用说明和帮助信息
 # ========================================
 
@@ -932,6 +975,7 @@ show_usage() {
 专注于提供基础设施服务：
 - Kubernetes 连接管理
 - 基础工具函数
+- Harbor 镜像按需推送（push_component_images_to_harbor）
 
 用法: $0 <command> [options]
 

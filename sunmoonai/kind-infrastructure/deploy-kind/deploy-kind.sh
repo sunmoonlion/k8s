@@ -16,32 +16,9 @@ export HARBOR_HOST HARBOR_NODE_IP 2>/dev/null || true
 
 NFS_EXPORT_DIR="${NFS_EXPORT_DIR:-/data/kind-nfs}"
 RUN_CA_INIT="${DEPLOY_KIND_RUN_CA_INIT:-true}"
-RUN_REGISTRY_CONFIG="${DEPLOY_KIND_RUN_REGISTRY_CONFIG:-true}"
+RUN_REGISTRY_CONFIG=true
 RUN_NFS_PROVISIONER="${DEPLOY_KIND_RUN_NFS_PROVISIONER:-true}"
-RUN_HARBOR_HOSTS="${DEPLOY_KIND_RUN_HARBOR_HOSTS:-true}"
-
-# 镜像来源模式归一化：根据 KIND_IMAGE_SOURCE 统筹相关开关
-KIND_IMAGE_SOURCE="${KIND_IMAGE_SOURCE:-tar}"
-case "$KIND_IMAGE_SOURCE" in
-    harbor)
-        # 使用集群内 Harbor 作为镜像源：保留 registry 配置与 Harbor hosts 步骤，关闭本地 tar 预加载
-        RUN_REGISTRY_CONFIG=true
-        DEPLOY_KIND_RUN_PRELOAD_IMAGES="false"
-        ;;
-    tar)
-        # 使用本地 tar 预加载镜像：关闭 registry/hosts 相关步骤，仅运行本地预加载
-        RUN_REGISTRY_CONFIG=false
-        RUN_HARBOR_HOSTS=false
-        DEPLOY_KIND_RUN_PRELOAD_IMAGES="true"
-        ;;
-    *)
-        echo "⚠️  未知 KIND_IMAGE_SOURCE='${KIND_IMAGE_SOURCE}'，按 tar 模式处理" >&2
-        KIND_IMAGE_SOURCE="tar"
-        RUN_REGISTRY_CONFIG=false
-        RUN_HARBOR_HOSTS=false
-        DEPLOY_KIND_RUN_PRELOAD_IMAGES="true"
-        ;;
-esac
+RUN_HARBOR_HOSTS=true
 
 log_info() { echo "ℹ️  $*"; }
 log_success() { echo "✅ $*"; }
@@ -200,26 +177,18 @@ else
     log_info "步骤 4/7：跳过本地根 CA 生成（--skip-ca-init）"
 fi
 
-if [[ "$KIND_IMAGE_SOURCE" == "harbor" ]]; then
-    log_info "步骤 5/7：Kind 节点 Harbor 解析 + containerd 镜像拉取配置（来源: 集群内 Harbor）"
-    "$KIND_ROOT/apply-kind-node-harbor-hosts.sh"
-    if [[ "$RUN_REGISTRY_CONFIG" == "true" ]]; then
-        export STEP02_REGISTRY_ENABLE STEP02_REGISTRY_MIRRORS STEP02_REGISTRY_DIRECT 2>/dev/null || true
-        if "$KIND_ROOT/apply-kind-registry-config.sh"; then
-            log_info "Kind 节点 registry 配置完成（apply-kind-registry-config.sh）"
-        else
-            log_warn "Kind 节点 registry 配置执行失败，跳过后续 registry 步骤（可单独运行 apply-kind-registry-config.sh 查看原因）"
-        fi
-    else
-        log_info "步骤 5/7：KIND_IMAGE_SOURCE!=harbor 或显式跳过，未对 Kind 节点配置 registry"
-    fi
-
-    log_info "步骤 5.x：Kind 节点 Harbor TLS 信任（自签 CA 下发 + certs.d/hosts.toml）"
-    if ! "$KIND_ROOT/apply-kind-harbor-tls.sh"; then
-        log_warn "Kind 节点 Harbor TLS 信任配置执行失败，可稍后单独运行 apply-kind-harbor-tls.sh 查看原因"
-    fi
+log_info "步骤 5/7：Kind 节点 Harbor 解析 + containerd 镜像拉取配置"
+"$KIND_ROOT/apply-kind-node-harbor-hosts.sh"
+export STEP02_REGISTRY_ENABLE STEP02_REGISTRY_MIRRORS STEP02_REGISTRY_DIRECT 2>/dev/null || true
+if "$KIND_ROOT/apply-kind-registry-config.sh"; then
+    log_info "Kind 节点 registry 配置完成（apply-kind-registry-config.sh）"
 else
-    log_info "步骤 5/7：KIND_IMAGE_SOURCE='tar'，跳过与 Harbor 相关的节点 hosts/registry/TLS 配置"
+    log_warn "Kind 节点 registry 配置执行失败，可稍后单独运行 apply-kind-registry-config.sh 查看原因"
+fi
+
+log_info "步骤 5.x：Kind 节点 Harbor TLS 信任（自签 CA 下发 + certs.d/hosts.toml）"
+if ! "$KIND_ROOT/apply-kind-harbor-tls.sh"; then
+    log_warn "Kind 节点 Harbor TLS 信任配置执行失败，可稍后单独运行 apply-kind-harbor-tls.sh 查看原因"
 fi
 
 if [[ "$RUN_NFS_PROVISIONER" == "true" ]]; then
@@ -243,32 +212,16 @@ else
     log_info "步骤 7/7：跳过 Harbor hosts（--skip-harbor-hosts）"
 fi
 
-if [[ "${DEPLOY_KIND_RUN_TRAEFIK:-false}" == "true" ]]; then
-    log_info "可选步骤：在 Kind 集群中部署 Traefik（ingress-platform/deploy-ingress-platform-all）"
-    # 传入 CLUSTER=KIND，使 Traefik 部署脚本识别为 Kind 并跳过节点镜像检查（与 Harbor 调用一致）
-    if ! CLUSTER=KIND "$KIND_ROOT/../ingress-platform/deploy-ingress-platform-all/deploy-ingress-platform-all.sh"; then
-        log_warn "Traefik 部署脚本执行失败，请检查 ingress-platform/deploy-ingress-platform-all 配置或单独运行该脚本查看原因"
-    fi
+log_info "步骤 8：在 Kind 集群中部署 Traefik（ingress-platform/deploy-ingress-platform-all）"
+# 传入 CLUSTER=KIND，使 Traefik 部署脚本识别为 Kind 并跳过节点镜像检查（与 Harbor 调用一致）
+if ! CLUSTER=KIND "$KIND_ROOT/../ingress-platform/deploy-ingress-platform-all/deploy-ingress-platform-all.sh"; then
+    log_warn "Traefik 部署脚本执行失败，请检查 ingress-platform/deploy-ingress-platform-all 配置或单独运行该脚本查看原因"
 fi
 
-# 可选：在 Kind 集群创建完成后，自动将本地 tar 镜像加载到 Kind 所有节点（B 方案）
-if [[ "${DEPLOY_KIND_RUN_PRELOAD_IMAGES:-false}" == "true" ]]; then
-    log_info "可选步骤：预加载本地 tar 镜像到 Kind 所有节点（load-images/load-kind-images.sh）"
-    PRELOAD_ARGS=()
-    if [[ -n "${DEPLOY_KIND_PRELOAD_TAR_DIRS:-}" ]]; then
-        PRELOAD_ARGS+=(--tar-dir "$(resolve_to_absolute "$DEPLOY_KIND_PRELOAD_TAR_DIRS")")
-    fi
-    if ! "$KIND_ROOT/load-images/load-kind-images.sh" "${PRELOAD_ARGS[@]}"; then
-        log_warn "预加载镜像到 Kind 失败，可稍后手动运行 load-images/load-kind-images.sh 或使用 kind load docker-image"
-    fi
-fi
-
-if [[ "${DEPLOY_KIND_RUN_HARBOR:-false}" == "true" ]]; then
-    log_info "可选步骤：在 Kind 集群中部署 Harbor（cicd-platform/harbor/deploy-harbor）"
-    # 使用 CLUSTER=KIND，deploy-harbor.sh 会根据 deploy-harbor.conf 选择命名空间和环境
-    if ! CLUSTER=KIND "$KIND_ROOT/../cicd-platform/harbor/deploy-harbor/deploy-harbor.sh" deploy; then
-        log_warn "Harbor 部署脚本执行失败，请检查 cicd-platform/harbor/deploy-harbor 配置或单独运行该脚本查看原因"
-    fi
+log_info "步骤 9：在 Kind 集群中部署 Harbor（cicd-platform/harbor/deploy-harbor）"
+# 使用 CLUSTER=KIND，deploy-harbor.sh 会根据 deploy-harbor.conf 选择命名空间和环境
+if ! CLUSTER=KIND "$KIND_ROOT/../cicd-platform/harbor/deploy-harbor/deploy-harbor.sh" deploy; then
+    log_warn "Harbor 部署脚本执行失败，请检查 cicd-platform/harbor/deploy-harbor 配置或单独运行该脚本查看原因"
 fi
 
 # 可选：在一键流程中单独执行一次 WSL Harbor 登录（便于开发验证），失败仅告警不终止整体流程；

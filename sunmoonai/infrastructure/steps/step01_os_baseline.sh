@@ -10,7 +10,7 @@ load_config_file || exit 1
 STEP_PREFIX=STEP01
 TARGET="${STEP01_TARGET:-all}"
 
-# 该步不依赖离线工件
+# 该步不直接声明必需离线工件（离线包预同步由 PRE_SYNC_OFFLINE_PACKAGES 控制）
 required_artifacts(){ return 0; }
 if [[ "${1:-}" == "--required-artifacts" ]]; then required_artifacts; exit 0; fi
 
@@ -22,8 +22,51 @@ SET_HOSTNAME="${STEP01_SET_HOSTNAME:-true}"
 AUTOGEN_HOSTS="${STEP01_AUTOGEN_HOSTS:-true}"
 SYNC_TIME="${STEP01_SYNC_TIME:-true}"
 
+LOCAL_PACKAGES_ROOT="${LOCAL_PACKAGES_ROOT:-$HOME/packages-to-be-installed}"
+PRE_SYNC_OFFLINE_PACKAGES="${PRE_SYNC_OFFLINE_PACKAGES:-false}"
+
 precheck(){ log_info "[Step01] 预检 OS 基线配置"; }
 ensure_resources(){ :; }
+
+_sync_offline_packages_to_node(){
+  # 仅在显式开启 PRE_SYNC_OFFLINE_PACKAGES 时执行
+  if [[ "$PRE_SYNC_OFFLINE_PACKAGES" != "true" ]]; then
+    return 0
+  fi
+
+  local idx="$1"
+  local remote_dir; remote_dir="$(get_server_var "$idx" DIR)"
+  remote_dir="$(resolve_remote_dir "$remote_dir")"
+
+  if [[ -z "$remote_dir" ]]; then
+    log_warn "[Step01] 节点 $idx 未配置 SERVER_n_DIR，跳过离线包预同步"
+    return 0
+  fi
+
+  local local_root="$LOCAL_PACKAGES_ROOT"
+  if [[ ! -d "$local_root" ]]; then
+    log_warn "[Step01] 本机离线包根目录不存在: $local_root，跳过离线包预同步"
+    return 0
+  fi
+
+  log_info "[Step01] 节点 $idx: 预同步离线包（源: $local_root → 目标: $remote_dir）"
+
+  local sub
+  for sub in debs tars images charts; do
+    local src_dir="$local_root/$sub"
+    if [[ -d "$src_dir" ]]; then
+      local dst_dir="$remote_dir/$sub"
+      log_info "[Step01] 节点 $idx: 同步子目录 $sub"
+      ssh_exec "$idx" "mkdir -p '$dst_dir'" || true
+      # 使用 rsync 同步目录内容；若 rsync 不可用则回退到 scp
+      if command -v rsync >/dev/null 2>&1; then
+        rsync -az "$src_dir"/ "$(get_server_ssh "$idx"):$dst_dir"/ || log_warn "[Step01] 节点 $idx: rsync $sub 失败，可手动同步"
+      else
+        scp -r "$src_dir"/* "$(get_server_ssh "$idx"):$dst_dir"/ 2>/dev/null || log_warn "[Step01] 节点 $idx: scp $sub 失败，可手动同步"
+      fi
+    fi
+  done
+}
 
 _apply_swap_and_sysctl(){
   local sw="$DISABLE_SWAP"; local sys="$SYSCTL_OVERRIDES_RAW"; local mods="$LOAD_MODULES_RAW"
@@ -93,6 +136,9 @@ _ensure_time_sync(){
 }
 
 execute(){
+  # 可选：在应用 OS 基线前，将本机离线包预同步到远程节点
+  _sync_offline_packages_to_node "$i" || true
+
   log_info "[Step01] 节点 $i 应用 OS 基线"
   _apply_swap_and_sysctl || true
   _configure_iptables_mode || true

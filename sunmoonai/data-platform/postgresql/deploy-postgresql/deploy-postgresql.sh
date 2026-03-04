@@ -153,11 +153,10 @@ detect_deployment_mode() {
     esac
 }
 
-# 定义 PostgreSQL 所需镜像
+# 定义 PostgreSQL 所需镜像（当前仅供兼容，第二阶段镜像推送主要使用 components-images 配置）
 define_required_images() {
     local environment="$1"
     
-    # 在线模式：返回基础镜像名（不带版本）
     if [[ "$ENABLE_OFFLINE_IMAGE_CHECK" == "false" ]]; then
         case "$environment" in
             "development"|"dev")
@@ -178,7 +177,6 @@ define_required_images() {
                 ;;
         esac
     else
-        # 离线模式：返回具体版本（原有逻辑）
         case "$environment" in
             "development"|"dev")
                 echo "bitnami/postgresql:$POSTGRESQL_IMAGE_VERSION|true"
@@ -198,6 +196,11 @@ define_required_images() {
                 ;;
         esac
     fi
+}
+
+push_postgresql_images_to_harbor() {
+    # 统一使用模板中的通用 helper，component_name 固定为 postgresql
+    push_component_images_to_harbor "postgresql"
 }
 
 # 处理 PostgreSQL 特定的 values 文件
@@ -543,8 +546,11 @@ main() {
                 fi
             fi
             
-            # 检测部署模式
+            # 检测部署模式（online/offline 仍用于日志和其他逻辑，但镜像推送始终运行）
             detect_deployment_mode
+            
+            # 部署前：始终按需推送 PostgreSQL 镜像到 Harbor（仅对 Harbor 中缺失的镜像执行 push）
+            push_postgresql_images_to_harbor || log_warn "PostgreSQL 镜像推送阶段出现警告，可稍后单独检查 Harbor 镜像状态"
             
             # ============================================================
             # 阶段1：部署子级组件（按优先级，先部署依赖项）

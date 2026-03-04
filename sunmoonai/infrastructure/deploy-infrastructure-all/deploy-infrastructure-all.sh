@@ -128,33 +128,10 @@ load_config(){
         fi
     fi
     local cluster_selected="${CLUSTER:-C1}"
-    local cluster_upper
-    cluster_upper=$(echo "$cluster_selected" | tr '[:lower:]' '[:upper:]')
-    
-    # 基础设施部署：远程集群走 Step01～Step12；当前目标为 KIND 时改为执行 Kind 一键部署（deploy-kind.sh）
-    if [[ "$cluster_upper" == "KIND" ]]; then
-        log_info "当前目标集群为 KIND，执行 Kind 一键部署（deploy-kind.sh）..."
-        local kind_deploy_sh="$PROJECT_ROOT/../kind-infrastructure/deploy-kind/deploy-kind.sh"
-        if [[ ! -f "$kind_deploy_sh" ]]; then
-            log_error "Kind 部署脚本不存在: $kind_deploy_sh"
-            return 1
-        fi
-        if [[ ! -x "$kind_deploy_sh" ]]; then
-            chmod +x "$kind_deploy_sh" 2>/dev/null || true
-        fi
-        if "$kind_deploy_sh"; then
-            log_success "Kind 一键部署完成"
-            exit 0
-        else
-            log_error "Kind 一键部署失败"
-            exit 1
-        fi
-    fi
-    
     # 验证集群值格式：必须是 C{数字} 格式（如 C1, C2, C3, C10 等）
     # 支持不连续的集群编号（如只有 C1 和 C3，没有 C2）
     if [[ ! "$cluster_selected" =~ ^C[0-9]+$ ]]; then
-        log_error "无效的集群值: $cluster_selected (格式必须为 C{数字}，如 C1, C2, C3 等；或使用 CLUSTER=KIND / default_cluster=KIND 连接 Kind)"
+        log_error "无效的集群值: $cluster_selected (格式必须为 C{数字}，如 C1, C2, C3 等)"
         return 1
     fi
     
@@ -315,6 +292,11 @@ step11_load_initial_images(){
     execute_step "step11_load-initial-images.sh" "初始镜像加载"
 }
 
+step13_ingress_and_harbor(){
+    load_config || return 1
+    execute_step "step13_ingress_and_harbor.sh" "Ingress (Traefik) 与 Harbor 部署"
+}
+
 # 完整部署流程
 deploy_all(){
     log_info "开始完整部署流程..."
@@ -338,6 +320,7 @@ deploy_all(){
         "step10_k8s_nodes_management:Kubernetes节点管理:STEP10_ENABLED"
         "step11_load-initial-images:初始镜像加载:STEP11_ENABLED"
         "step12_ca_generation:统一根 CA 证书生成/轮换:STEP12_ENABLED"
+        "step13_ingress_and_harbor:Ingress (Traefik) 与 Harbor 部署:STEP13_ENABLED"
     )
     
     # 部署前：同步离线包至各节点（如存在包准备脚本）
@@ -421,6 +404,7 @@ show_step_status(){
         "step09_storage.sh:存储配置"
         "step10_k8s_nodes_management.sh:Kubernetes节点管理"
         "step11_load-initial-images.sh:初始镜像加载"
+        "step13_ingress_and_harbor.sh:Ingress (Traefik) 与 Harbor 部署"
     )
     
     for step_info in "${steps[@]}"; do
