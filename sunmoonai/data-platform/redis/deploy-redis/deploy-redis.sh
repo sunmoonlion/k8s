@@ -231,6 +231,21 @@ execute_redis_deployment() {
     helm_cmd="$helm_cmd --set global.namespace=$namespace"
     helm_cmd="$helm_cmd --set global.environment=$environment"
     
+    # 使用 Harbor 时覆盖镜像，与其他 data-platform 组件一致
+    if [[ -n "${REDIS_IMAGE_REGISTRY:-}" ]] && [[ -n "${REDIS_IMAGE_PROJECT:-}" ]]; then
+        helm_cmd="$helm_cmd --set global.imageRegistry=$REDIS_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set image.registry=$REDIS_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set image.repository=$REDIS_IMAGE_PROJECT/redis"
+        helm_cmd="$helm_cmd --set image.tag=${REDIS_IMAGE_VERSION:-8.2.1-debian-12-r0}"
+        helm_cmd="$helm_cmd --set metrics.image.registry=$REDIS_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set metrics.image.repository=$REDIS_IMAGE_PROJECT/redis-exporter"
+        helm_cmd="$helm_cmd --set metrics.image.tag=${REDIS_METRICS_IMAGE_VERSION:-1.76.0-debian-12-r0}"
+        helm_cmd="$helm_cmd --set volumePermissions.image.registry=$REDIS_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set volumePermissions.image.repository=$REDIS_IMAGE_PROJECT/os-shell"
+        helm_cmd="$helm_cmd --set volumePermissions.image.tag=${REDIS_OS_SHELL_IMAGE_VERSION:-12-debian-12-r51}"
+        log_info "使用 Harbor 镜像: $REDIS_IMAGE_REGISTRY/$REDIS_IMAGE_PROJECT/redis:${REDIS_IMAGE_VERSION:-8.2.1-debian-12-r0}"
+    fi
+    
     if [[ -n "$values_file" ]]; then
         helm_cmd="$helm_cmd --values $values_file"
     fi

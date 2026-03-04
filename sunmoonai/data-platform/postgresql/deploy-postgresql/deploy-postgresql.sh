@@ -371,16 +371,19 @@ execute_postgresql_deployment() {
     helm_cmd="$helm_cmd --set global.namespace=$namespace"
     helm_cmd="$helm_cmd --set global.security.allowInsecureImages=true"
     
-    # 在线模式：添加镜像仓库配置
-    if [[ "$ENABLE_OFFLINE_IMAGE_CHECK" == "false" ]]; then
-        if [[ -n "${POSTGRESQL_IMAGE_REGISTRY:-}" ]]; then
-            helm_cmd="$helm_cmd --set global.imageRegistry=$POSTGRESQL_IMAGE_REGISTRY"
-            log_info "使用镜像仓库: $POSTGRESQL_IMAGE_REGISTRY"
-        fi
-        if [[ -n "${POSTGRESQL_IMAGE_PROJECT:-}" ]]; then
-            helm_cmd="$helm_cmd --set global.imageProject=$POSTGRESQL_IMAGE_PROJECT"
-            log_info "使用镜像项目: $POSTGRESQL_IMAGE_PROJECT"
-        fi
+    # 使用 Harbor 时显式覆盖镜像，避免仍从 docker.io 拉取（与 MongoDB 一致）
+    if [[ -n "${POSTGRESQL_IMAGE_REGISTRY:-}" ]] && [[ -n "${POSTGRESQL_IMAGE_PROJECT:-}" ]]; then
+        helm_cmd="$helm_cmd --set global.imageRegistry=$POSTGRESQL_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set image.registry=$POSTGRESQL_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set image.repository=$POSTGRESQL_IMAGE_PROJECT/postgresql"
+        helm_cmd="$helm_cmd --set image.tag=${POSTGRESQL_IMAGE_VERSION:-17.6.0-debian-12-r4}"
+        helm_cmd="$helm_cmd --set metrics.image.registry=$POSTGRESQL_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set metrics.image.repository=$POSTGRESQL_IMAGE_PROJECT/postgres-exporter"
+        helm_cmd="$helm_cmd --set metrics.image.tag=${POSTGRESQL_METRICS_IMAGE_VERSION:-0.17.1-debian-12-r16}"
+        helm_cmd="$helm_cmd --set volumePermissions.image.registry=$POSTGRESQL_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set volumePermissions.image.repository=$POSTGRESQL_IMAGE_PROJECT/os-shell"
+        helm_cmd="$helm_cmd --set volumePermissions.image.tag=${POSTGRESQL_OS_SHELL_IMAGE_VERSION:-12-debian-12-r51}"
+        log_info "使用 Harbor 镜像: $POSTGRESQL_IMAGE_REGISTRY/$POSTGRESQL_IMAGE_PROJECT/postgresql:${POSTGRESQL_IMAGE_VERSION:-17.6.0-debian-12-r4}"
     fi
 
     if [[ "$dry_run" == "true" ]]; then
@@ -393,10 +396,12 @@ execute_postgresql_deployment() {
     # 执行 Helm 命令
     log_info "执行命令: $helm_cmd"
     
-    # 检查KUBECONFIG环境变量
+    # 确保 KUBECONFIG 已设置（若此前仅用“现有连接”跳过 setup，可能未导出）
     if [[ -z "${KUBECONFIG:-}" ]]; then
-        log_error "KUBECONFIG 环境变量未设置"
-        return 1
+        if ! setup_kubectl_environment; then
+            log_error "KUBECONFIG 环境变量未设置且无法通过 setup_kubectl_environment 建立连接"
+            return 1
+        fi
     fi
     
     # 检查kubectl连接

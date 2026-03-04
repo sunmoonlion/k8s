@@ -12,10 +12,6 @@ global:
 # 副本数配置
 replicaCount: 1
 
-# 节点选择器（强制部署到节点1）
-nodeSelector:
-  kubernetes.io/hostname: hsy-local-2
-
 # 镜像配置
 image:
   registry: harbor.sunmoonai.com:30443

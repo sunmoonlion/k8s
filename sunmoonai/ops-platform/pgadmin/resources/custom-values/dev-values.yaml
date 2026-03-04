@@ -41,11 +41,15 @@ imagePullSecrets:
 # ============================================================================
 service:
   type: ClusterIP
-  port: 80
-  targetPort: 80
+  port: 5050
+  targetPort: 5050
   portName: http
   annotations: {}
   # nodePort: {{PGADMIN_EXTERNAL_PORT}}  # 如果使用 NodePort 类型
+
+# 容器端口（非 root 运行时避免绑定 80）
+containerPorts:
+  http: 5050
 
 # ============================================================================
 # Ingress 配置
@@ -92,7 +96,11 @@ env:
   contextPath: "/pgadmin"
   
   # Server mode configuration
-  variables: []
+  variables:
+    - name: PGADMIN_LISTEN_PORT
+      value: "5050"
+    - name: PGADMIN_LISTEN_ADDRESS
+      value: "0.0.0.0"
     # - name: PGADMIN_CONFIG_SERVER_MODE
     #   value: "True"
     # - name: PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED

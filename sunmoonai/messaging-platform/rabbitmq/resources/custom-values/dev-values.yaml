@@ -27,10 +27,6 @@ image:
 # 禁用 Chart 的 resourcesPreset，确保自定义 resources 生效
 resourcesPreset: "none"
 
-# 调度到可用工作节点，避免受污点节点与控制面节点影响
-nodeSelector:
-  kubernetes.io/hostname: hsy-local-2
-
 resources:
   requests:
     cpu: 50m

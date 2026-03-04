@@ -193,6 +193,18 @@ execute_logstash_deployment() {
     helm_cmd="$helm_cmd --set global.namespace=$namespace"
     helm_cmd="$helm_cmd --set global.environment=$environment"
     
+    # 使用 Harbor 时覆盖镜像，避免从 docker.io 拉取
+    if [[ -n "${LOGSTASH_IMAGE_REGISTRY:-}" ]] && [[ -n "${LOGSTASH_IMAGE_PROJECT:-}" ]]; then
+        helm_cmd="$helm_cmd --set global.imageRegistry=$LOGSTASH_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set image.registry=$LOGSTASH_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set image.repository=$LOGSTASH_IMAGE_PROJECT/logstash"
+        helm_cmd="$helm_cmd --set image.tag=${LOGSTASH_IMAGE_VERSION:-9.1.2-debian-12-r0}"
+        helm_cmd="$helm_cmd --set volumePermissions.image.registry=$LOGSTASH_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set volumePermissions.image.repository=$LOGSTASH_IMAGE_PROJECT/os-shell"
+        helm_cmd="$helm_cmd --set volumePermissions.image.tag=${LOGSTASH_OS_SHELL_IMAGE_VERSION:-12-debian-12-r51}"
+        log_info "使用 Harbor 镜像: $LOGSTASH_IMAGE_REGISTRY/$LOGSTASH_IMAGE_PROJECT/logstash:${LOGSTASH_IMAGE_VERSION:-9.1.2-debian-12-r0}"
+    fi
+    
     if [[ -n "$values_file" ]]; then
         helm_cmd="$helm_cmd --values $values_file"
     fi

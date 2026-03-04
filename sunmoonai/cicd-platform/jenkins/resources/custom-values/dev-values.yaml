@@ -265,10 +265,6 @@ sysctlImage:
 #   - name: docker-sock
 #     mountPath: /var/run/docker.sock
 
-# 节点调度
-nodeSelector:
-  kubernetes.io/hostname: hsy-local-2
-
 # ===================== RBAC 配置 ====================
 # 说明：RBAC 配置通过 Helm Chart 自动创建，不需要在 Jenkins 插件 UI 中配置
 # Helm Chart 会根据这些配置自动创建 Role、RoleBinding 和 ServiceAccount

@@ -203,6 +203,18 @@ execute_kibana_deployment() {
     helm_cmd="$helm_cmd --set global.namespace=$namespace"
     helm_cmd="$helm_cmd --set global.environment=$environment"
     
+    # 使用 Harbor 时覆盖镜像，避免从 docker.io 拉取
+    if [[ -n "${KIBANA_IMAGE_REGISTRY:-}" ]] && [[ -n "${KIBANA_IMAGE_PROJECT:-}" ]]; then
+        helm_cmd="$helm_cmd --set global.imageRegistry=$KIBANA_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set image.registry=$KIBANA_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set image.repository=$KIBANA_IMAGE_PROJECT/kibana"
+        helm_cmd="$helm_cmd --set image.tag=${KIBANA_IMAGE_VERSION:-9.1.2-debian-12-r0}"
+        helm_cmd="$helm_cmd --set volumePermissions.image.registry=$KIBANA_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set volumePermissions.image.repository=$KIBANA_IMAGE_PROJECT/os-shell"
+        helm_cmd="$helm_cmd --set volumePermissions.image.tag=${KIBANA_OS_SHELL_IMAGE_VERSION:-12-debian-12-r51}"
+        log_info "使用 Harbor 镜像: $KIBANA_IMAGE_REGISTRY/$KIBANA_IMAGE_PROJECT/kibana:${KIBANA_IMAGE_VERSION:-9.1.2-debian-12-r0}"
+    fi
+    
     if [[ -n "$values_file" ]]; then
         helm_cmd="$helm_cmd --values $values_file"
     fi

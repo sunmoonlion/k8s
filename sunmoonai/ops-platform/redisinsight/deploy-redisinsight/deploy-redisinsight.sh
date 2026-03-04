@@ -197,6 +197,10 @@ process_redisinsight_values() {
         sed -i "s/{{REDISINSIGHT_IMAGE_VERSION}}/${REDISINSIGHT_IMAGE_VERSION:-}/g" "$redisinsight_values_file"
         sed -i "s/{{REDISINSIGHT_IMAGE_REGISTRY}}/${REDISINSIGHT_IMAGE_REGISTRY:-}/g" "$redisinsight_values_file"
         sed -i "s/{{REDISINSIGHT_IMAGE_PULL_SECRET_NAME}}/${REDISINSIGHT_IMAGE_PULL_SECRET_NAME:-}/g" "$redisinsight_values_file"
+        # 使用 Harbor 时：将 image.repository 改为 registry/project/redisinsight，避免仍从 docker.io 拉取
+        if [[ -n "${REDISINSIGHT_IMAGE_REGISTRY:-}" ]] && [[ -n "${REDISINSIGHT_IMAGE_PROJECT:-}" ]]; then
+            sed -i "s|repository: redis/redisinsight|repository: ${REDISINSIGHT_IMAGE_REGISTRY}/${REDISINSIGHT_IMAGE_PROJECT}/redisinsight|g" "$redisinsight_values_file"
+        fi
         
         # 输出处理后的文件路径
         echo "$redisinsight_values_file"
@@ -283,11 +287,12 @@ check_redisinsight_status() {
         return 1
     fi
     
-    # 检查 Pod 状态
+    # 检查 Pod 状态（避免 grep -c 无匹配时与 || echo "0" 产生多行输出导致 [[ 语法错误）
     local pods_ready
-    pods_ready=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=redisinsight -o jsonpath='{.items[*].status.phase}' | grep -c "Running" || echo "0")
-    
-    if [[ "$pods_ready" -gt 0 ]]; then
+    pods_ready=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=redisinsight -o jsonpath='{.items[*].status.phase}' 2>/dev/null | grep -c "Running" 2>/dev/null || true)
+    pods_ready=${pods_ready:-0}
+    pods_ready=$((pods_ready + 0))
+    if [[ $pods_ready -gt 0 ]]; then
         log_success "✅ RedisInsight Pod 运行正常 ($pods_ready 个)"
     else
         log_error "❌ RedisInsight Pod 未运行"

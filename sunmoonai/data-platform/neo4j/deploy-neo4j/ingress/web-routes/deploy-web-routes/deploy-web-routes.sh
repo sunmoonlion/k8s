@@ -4,11 +4,9 @@
 
 set -e
 
-# 导入统一部署模板
-source "$(dirname "$0")/../../../../../../../utils/unified-deployment-template.sh"
-
-# 脚本目录
+# 导入统一部署模板（使用 BASH_SOURCE 确保路径相对脚本文件）
 NEO4J_INGRESS_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$NEO4J_INGRESS_SCRIPT_DIR/../../../../../../../utils/unified-deployment-template.sh"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NEO4J_WEB_FILE="$(dirname "$SCRIPT_DIR")/neo4j-web-route.yaml"
 # 主配置文件路径（相对于脚本目录）

@@ -186,6 +186,18 @@ execute_neo4j_deployment() {
     helm_cmd="$helm_cmd --set global.namespace=$namespace"
     helm_cmd="$helm_cmd --set global.environment=$environment"
     
+    # 使用 Harbor 时覆盖镜像，避免从 docker.io 拉取
+    if [[ -n "${NEO4J_IMAGE_REGISTRY:-}" ]] && [[ -n "${NEO4J_IMAGE_PROJECT:-}" ]]; then
+        helm_cmd="$helm_cmd --set global.imageRegistry=$NEO4J_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set image.registry=$NEO4J_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set image.repository=$NEO4J_IMAGE_PROJECT/neo4j"
+        helm_cmd="$helm_cmd --set image.tag=${NEO4J_IMAGE_VERSION:-5.26.11-debian-12-r0}"
+        helm_cmd="$helm_cmd --set volumePermissions.image.registry=$NEO4J_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set volumePermissions.image.repository=$NEO4J_IMAGE_PROJECT/os-shell"
+        helm_cmd="$helm_cmd --set volumePermissions.image.tag=${NEO4J_OS_SHELL_IMAGE_VERSION:-12-debian-12-r51}"
+        log_info "使用 Harbor 镜像: $NEO4J_IMAGE_REGISTRY/$NEO4J_IMAGE_PROJECT/neo4j:${NEO4J_IMAGE_VERSION:-5.26.11-debian-12-r0}"
+    fi
+    
     if [[ -n "$values_file" ]]; then
         helm_cmd="$helm_cmd --values $values_file"
     fi
@@ -231,9 +243,11 @@ check_neo4j_status() {
     if [[ -z "$pods_ready_str" ]]; then
         pods_ready=0
     else
-        pods_ready=$(echo "$pods_ready_str" | tr ' ' '\n' | grep -c '^Running$' 2>/dev/null || echo 0)
+        pods_ready=$(echo "$pods_ready_str" | tr ' ' '\n' | grep -c '^Running$' 2>/dev/null || true)
+        pods_ready=${pods_ready:-0}
+        pods_ready=$((pods_ready + 0))
     fi
-    if [ "${pods_ready}" -gt 0 ]; then
+    if [[ $pods_ready -gt 0 ]]; then
         log_success "✅ Neo4j Pod 运行正常 ($pods_ready 个)"
     else
         log_error "❌ Neo4j Pod 未运行"

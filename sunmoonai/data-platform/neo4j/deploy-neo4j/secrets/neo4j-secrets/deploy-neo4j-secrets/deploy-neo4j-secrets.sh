@@ -6,6 +6,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SECRET_DIR="$(dirname "$SCRIPT_DIR")"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
 
+DEFAULT_PROJECT_ID="${DEFAULT_PROJECT_ID:-sunmoonai}"
+DEFAULT_NAMESPACE="${DEFAULT_NAMESPACE:-data-platform-dev}"
+DEFAULT_ENVIRONMENT="${DEFAULT_ENVIRONMENT:-development}"
+
 source "$PROJECT_ROOT/utils/secret-management/lib/secret-core.sh"
 
 # 解析命令行参数（优先于配置文件加载，确保命令行参数优先级最高）

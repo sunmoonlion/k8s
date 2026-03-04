@@ -215,6 +215,24 @@ execute_mongodb_deployment() {
     helm_cmd="$helm_cmd --set global.namespace=$namespace"
     helm_cmd="$helm_cmd --set global.environment=$environment"
     
+    # 使用 Harbor 时覆盖镜像地址，避免从 docker.io 拉取（离线/网络受限环境）
+    if [[ -n "${MONGODB_IMAGE_REGISTRY:-}" ]] && [[ -n "${MONGODB_IMAGE_PROJECT:-}" ]]; then
+        helm_cmd="$helm_cmd --set global.imageRegistry=$MONGODB_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set image.registry=$MONGODB_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set image.repository=$MONGODB_IMAGE_PROJECT/mongodb"
+        helm_cmd="$helm_cmd --set image.tag=${MONGODB_IMAGE_VERSION:-8.0.13-debian-12-r0}"
+        helm_cmd="$helm_cmd --set metrics.image.registry=$MONGODB_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set metrics.image.repository=$MONGODB_IMAGE_PROJECT/mongodb-exporter"
+        helm_cmd="$helm_cmd --set metrics.image.tag=${MONGODB_METRICS_IMAGE_VERSION:-0.47.0-debian-12-r1}"
+        # Init 容器（volumePermissions 等）也走 Harbor，避免 Init:ImagePullBackOff
+        helm_cmd="$helm_cmd --set volumePermissions.image.registry=$MONGODB_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set volumePermissions.image.repository=$MONGODB_IMAGE_PROJECT/os-shell"
+        helm_cmd="$helm_cmd --set volumePermissions.image.tag=${MONGODB_OS_SHELL_IMAGE_VERSION:-12-debian-12-r51}"
+        helm_cmd="$helm_cmd --set tls.image.registry=$MONGODB_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set tls.image.repository=$MONGODB_IMAGE_PROJECT/nginx"
+        log_info "使用 Harbor 镜像: $MONGODB_IMAGE_REGISTRY/$MONGODB_IMAGE_PROJECT/mongodb:${MONGODB_IMAGE_VERSION:-8.0.13-debian-12-r0}"
+    fi
+    
     if [[ -n "$values_file" ]]; then
         helm_cmd="$helm_cmd --values $values_file"
     fi

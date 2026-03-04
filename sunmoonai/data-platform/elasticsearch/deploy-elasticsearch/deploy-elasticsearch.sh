@@ -196,6 +196,21 @@ execute_elasticsearch_deployment() {
     helm_cmd="$helm_cmd --set global.namespace=$namespace"
     helm_cmd="$helm_cmd --set global.environment=$environment"
     
+    # 使用 Harbor 时覆盖镜像，避免从 docker.io 拉取
+    if [[ -n "${ELASTICSEARCH_IMAGE_REGISTRY:-}" ]] && [[ -n "${ELASTICSEARCH_IMAGE_PROJECT:-}" ]]; then
+        helm_cmd="$helm_cmd --set global.imageRegistry=$ELASTICSEARCH_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set image.registry=$ELASTICSEARCH_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set image.repository=$ELASTICSEARCH_IMAGE_PROJECT/elasticsearch"
+        helm_cmd="$helm_cmd --set image.tag=${ELASTICSEARCH_IMAGE_VERSION:-9.1.2-debian-12-r0}"
+        helm_cmd="$helm_cmd --set metrics.image.registry=$ELASTICSEARCH_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set metrics.image.repository=$ELASTICSEARCH_IMAGE_PROJECT/elasticsearch-exporter"
+        helm_cmd="$helm_cmd --set metrics.image.tag=${ELASTICSEARCH_METRICS_IMAGE_VERSION:-1.9.0-debian-12-r16}"
+        helm_cmd="$helm_cmd --set volumePermissions.image.registry=$ELASTICSEARCH_IMAGE_REGISTRY"
+        helm_cmd="$helm_cmd --set volumePermissions.image.repository=$ELASTICSEARCH_IMAGE_PROJECT/os-shell"
+        helm_cmd="$helm_cmd --set volumePermissions.image.tag=${ELASTICSEARCH_OS_SHELL_IMAGE_VERSION:-12-debian-12-r51}"
+        log_info "使用 Harbor 镜像: $ELASTICSEARCH_IMAGE_REGISTRY/$ELASTICSEARCH_IMAGE_PROJECT/elasticsearch:${ELASTICSEARCH_IMAGE_VERSION:-9.1.2-debian-12-r0}"
+    fi
+    
     if [[ -n "$values_file" ]]; then
         helm_cmd="$helm_cmd --values $values_file"
     fi
@@ -239,15 +254,17 @@ check_elasticsearch_status() {
     local phases
     phases=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=elasticsearch -o jsonpath='{.items[*].status.phase}' 2>/dev/null || echo "")
 
-    # 统计 Running 数量
+    # 统计 Running 数量（避免 grep -c 无匹配时与 || echo 0 产生多行导致 [[ 语法错误）
     local pods_ready
     if [[ -z "$phases" ]]; then
         pods_ready=0
     else
-        pods_ready=$(echo "$phases" | tr ' ' '\n' | grep -c '^Running$' || echo 0)
+        pods_ready=$(echo "$phases" | tr ' ' '\n' | grep -c '^Running$' 2>/dev/null || true)
+        pods_ready=${pods_ready:-0}
+        pods_ready=$((pods_ready + 0))
     fi
 
-    if [[ ${pods_ready:-0} -gt 0 ]]; then
+    if [[ $pods_ready -gt 0 ]]; then
         log_success "✅ Elasticsearch Pod 运行正常 (${pods_ready} 个)"
     else
         log_error "❌ Elasticsearch Pod 未运行"

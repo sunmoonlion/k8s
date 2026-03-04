@@ -22,11 +22,13 @@ if [[ -n "$utils_path" && -f "$utils_path" ]]; then
     SCRIPT_DIR="$SAVED_SCRIPT_DIR_FOR_TEMPLATE"
 else
     echo "警告: 无法找到 unified-deployment-template.sh，日志函数可能不可用" >&2
-    # 定义基本的日志函数作为后备
+    # 定义基本的日志函数与占位函数作为后备
     log_info() { echo "[INFO] $*"; }
     log_error() { echo "[ERROR] $*" >&2; }
     log_success() { echo "[SUCCESS] $*"; }
     log_warn() { echo "[WARN] $*"; }
+    setup_kubectl_environment() { return 0; }
+    load_config() { :; }
 fi
 
 # 确保 SCRIPT_DIR 正确

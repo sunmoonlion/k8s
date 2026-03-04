@@ -41,8 +41,6 @@ master:
     - data
     - ingest
   replicaCount: 1
-  nodeSelector:
-    kubernetes.io/hostname: hsy-local-2
   resourcesPreset: "small"
   resources:
     requests:
@@ -65,8 +63,6 @@ data:
     tag: 9.1.2-debian-12-r0
     pullPolicy: IfNotPresent
   replicaCount: 0
-  nodeSelector:
-    kubernetes.io/hostname: hsy-local-2
   resourcesPreset: "small"
   resources:
     requests:
@@ -89,8 +85,6 @@ coordinating:
     tag: 9.1.2-debian-12-r0
     pullPolicy: IfNotPresent
   replicaCount: 0
-  nodeSelector:
-    kubernetes.io/hostname: hsy-local-2
   resourcesPreset: "small"
   resources:
     requests:
