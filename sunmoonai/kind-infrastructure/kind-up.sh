@@ -35,14 +35,33 @@ read_kind_config() {
 # 创建 Kind 集群（使用同目录 kind-cluster.yaml）
 create_kind_cluster() {
     read_kind_config
+    # 从 deploy-kind.conf 读取集群重建策略（env > conf > 默认 false）
+    local deploy_conf="$SCRIPT_DIR/deploy-kind/deploy-kind.conf"
+    if [[ -z "${KIND_RECREATE_IF_EXISTS:-}" ]]; then
+        if [[ -f "$deploy_conf" ]]; then
+            local recreate_conf
+            recreate_conf=$(grep -E '^RECREATE_KIND_CLUSTER_IF_EXISTS=' "$deploy_conf" | head -1 | cut -d'=' -f2- | tr -d ' \"')
+            KIND_RECREATE_IF_EXISTS="${recreate_conf:-false}"
+        else
+            KIND_RECREATE_IF_EXISTS="false"
+        fi
+    fi
     if [[ ! -f "$DEFAULT_CONFIG" ]]; then
         log_error "未找到 Kind 配置: $DEFAULT_CONFIG"
         return 1
     fi
     if kind get clusters 2>/dev/null | grep -q "^${KIND_CLUSTER_NAME}$"; then
-        log_warn "集群 $KIND_CLUSTER_NAME 已存在，跳过创建"
-        kind export kubeconfig --name "$KIND_CLUSTER_NAME" --kubeconfig "$KIND_KUBECONFIG"
-        return 0
+        if [[ "${KIND_RECREATE_IF_EXISTS:-false}" == "true" ]]; then
+            log_warn "集群 $KIND_CLUSTER_NAME 已存在，按配置先删除再重建（KIND_RECREATE_IF_EXISTS=true）"
+            if ! kind delete cluster --name "$KIND_CLUSTER_NAME"; then
+                log_error "删除 Kind 集群 $KIND_CLUSTER_NAME 失败"
+                return 1
+            fi
+        else
+            log_warn "集群 $KIND_CLUSTER_NAME 已存在，跳过创建（KIND_RECREATE_IF_EXISTS=false）"
+            kind export kubeconfig --name "$KIND_CLUSTER_NAME" --kubeconfig "$KIND_KUBECONFIG"
+            return 0
+        fi
     fi
     log_info "使用配置文件: $DEFAULT_CONFIG"
     log_info "创建 Kind 集群: $KIND_CLUSTER_NAME"

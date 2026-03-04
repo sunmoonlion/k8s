@@ -20,8 +20,6 @@ utils_path=""
 # deploy-kibana/ -> kibana/ -> data-platform/ -> sunmoonai/ -> k8s/ -> utils/
 if [[ -f "$PROJECT_ROOT/../../../../utils/unified-deployment-template.sh" ]]; then
     utils_path="$PROJECT_ROOT/../../../../utils/unified-deployment-template.sh"
-elif [[ -f "/home/zym/k8s/utils/unified-deployment-template.sh" ]]; then
-    utils_path="/home/zym/k8s/utils/unified-deployment-template.sh"
 fi
 
 if [[ -n "$utils_path" && -f "$utils_path" ]]; then

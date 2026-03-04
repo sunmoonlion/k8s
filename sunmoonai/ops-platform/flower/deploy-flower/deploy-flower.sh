@@ -485,18 +485,6 @@ main() {
                 log_info "跳过 Flower Middleware (enabled=false)"
             fi
             
-            # 按需将组件镜像推送至 Harbor（仅控制平面）
-            # 检查是否启用部署前镜像推送
-            if [[ "${PUSH_IMAGES_BEFORE_DEPLOY:-false}" == "true" ]]; then
-                if [[ -x "/home/zym/k8s/utils/registry-push-management/loadimage.sh" ]]; then
-                    log_info "按清单推送 Flower 镜像到 Registry..."
-                    "/home/zym/k8s/utils/registry-push-management/loadimage.sh" push-from-list \
-                        "/home/zym/k8s/utils/components-images/flower-images.txt" || log_warn "Flower 镜像推送失败或部分失败"
-                fi
-            else
-                log_info "跳过 Flower 镜像推送（PUSH_IMAGES_BEFORE_DEPLOY=false）"
-            fi
-            
             # 部署核心组件（Flower Helm Chart，创建 Service 和 Pod）
             if ! execute_flower_deployment "$project_id" "$namespace" "$environment" "$dry_run"; then
                 log_error "❌ Flower 核心组件部署失败"

@@ -61,7 +61,7 @@
 
 ### Q: 部署脚本找不到？
 
-**A**: 确保部署脚本路径正确：`/home/zym/k8s/sunmoonai/incubator-app/incubator-app-bff/deploy-incubator-bff/app/deploy-app/deploy-incubator-bff.sh`
+**A**: 确保部署脚本路径正确：`~/k8s/sunmoonai/incubator-app/incubator-app-bff/deploy-incubator-bff/app/deploy-app/deploy-incubator-bff.sh`
 
 ### Q: 如何跳过构建或部署？
 

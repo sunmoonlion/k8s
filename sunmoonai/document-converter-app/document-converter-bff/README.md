@@ -55,7 +55,7 @@ Document Converter 是一个基于 LibreOffice 的轻量级文档转换服务，
 ### 1. 构建 Docker 镜像
 
 ```bash
-cd /home/zym/k8s/sunmoonai/document-converter-app/document-converter-bff/resources/source
+cd ~/k8s/sunmoonai/document-converter-app/document-converter-bff/resources/source
 docker build -f build/Dockerfile -t document-converter:latest .
 ```
 
@@ -75,7 +75,7 @@ docker push harbor.sunmoonai.com:30443/k8s-images/document-converter:latest
 ### 3. 部署到 Kubernetes
 
 ```bash
-cd /home/zym/k8s/sunmoonai/document-converter-app/document-converter-bff/deploy-document-converter-bff/app/deploy-app
+cd ~/k8s/sunmoonai/document-converter-app/document-converter-bff/deploy-document-converter-bff/app/deploy-app
 ./deploy-document-converter-bff.sh --cluster C2
 ```
 

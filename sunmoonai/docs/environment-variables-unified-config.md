@@ -254,7 +254,7 @@ NODE_ENV=production
 
 ### ConfigMap（非敏感信息）
 
-已创建：`/home/zym/k8s/sunmoonai/configmaps/environment-configmap.yaml`
+已创建：`~/k8s/sunmoonai/configmaps/environment-configmap.yaml`
 
 包含：
 - 所有服务的端口、前缀、版本配置
@@ -263,7 +263,7 @@ NODE_ENV=production
 
 ### Secret（敏感信息）
 
-已创建：`/home/zym/k8s/sunmoonai/secrets/environment-secret.yaml.example`
+已创建：`~/k8s/sunmoonai/secrets/environment-secret.yaml.example`
 
 包含：
 - 所有服务的密钥（SECRET_KEY、JWT_SECRET 等）
@@ -287,7 +287,7 @@ NODE_ENV=production
    ```
 
 3. **在 Deployment 中引用**：
-   见 `/home/zym/k8s/sunmoonai/docs/environment-variables-k8s-deployment.md`
+   见 `~/k8s/sunmoonai/docs/environment-variables-k8s-deployment.md`
 
 ---
 

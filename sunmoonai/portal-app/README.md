@@ -85,6 +85,6 @@ kubectl apply -f portal-app-ssr/resources/k8s-resource/templates/app/portal-app-
 ## 参考
 
 - `incubator-app/` - 参考实现
-- `/home/zym/k8s/sunmoonai/docs/environment-variables-k8s-deployment.md` - 环境变量部署指南
-- `/home/zym/k8s/sunmoonai/configmaps/environment-configmap.yaml` - 统一 ConfigMap 配置
+- `~/k8s/sunmoonai/docs/environment-variables-k8s-deployment.md` - 环境变量部署指南
+- `~/k8s/sunmoonai/configmaps/environment-configmap.yaml` - 统一 ConfigMap 配置
 

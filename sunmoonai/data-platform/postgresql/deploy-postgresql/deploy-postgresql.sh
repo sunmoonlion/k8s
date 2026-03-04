@@ -541,20 +541,6 @@ main() {
             # 检测部署模式
             detect_deployment_mode
             
-            # 检查镜像（根据部署模式决定）
-            if [[ "$ENABLE_OFFLINE_IMAGE_CHECK" == "true" ]]; then
-                log_info "🔍 离线模式：检查镜像是否存在..."
-                local required_images=$(define_required_images "$environment")
-                if ! check_component_images "$project_id" "$namespace" "postgresql" "$environment" "$required_images"; then
-                    log_error "镜像检查失败，部署终止"
-                    generate_image_list "$project_id" "postgresql" "$required_images"
-                    return 1
-                fi
-            else
-                log_info "🌐 在线模式：Helm Chart将自动从镜像仓库拉取镜像"
-                log_info "镜像仓库: ${POSTGRESQL_IMAGE_REGISTRY:-默认仓库}"
-            fi
-            
             # ============================================================
             # 阶段1：部署子级组件（按优先级，先部署依赖项）
             # ============================================================
@@ -569,32 +555,6 @@ main() {
             # 阶段2：部署本级核心服务（Helm Chart 部署）
             # ============================================================
             log_info "🚀 阶段2：部署 PostgreSQL 核心服务..."
-            
-            # 部署前：按需将组件镜像推送至 Harbor（仅控制平面）
-            # 说明：此步骤不是必须的，如果镜像已在仓库中或通过其他方式管理，可以跳过
-            # 通过配置项 PUSH_IMAGES_BEFORE_DEPLOY 控制（默认：false，不推送）
-            if [[ "${PUSH_IMAGES_BEFORE_DEPLOY:-false}" == "true" ]]; then
-                if [[ -x "/home/zym/k8s/utils/registry-push-management/loadimage.sh" ]]; then
-                    log_info "按清单推送 PostgreSQL 镜像到 Registry..."
-                    # 组件配置文件中的 CLEANUP_REMOTE_TAR_AFTER_DEPLOY 覆盖 loadimage.conf 中的 CLEANUP_REMOTE_TAR_AFTER_PUSH
-                    # 将组件配置的值传递给 loadimage.sh（通过环境变量传递）
-                    if [[ -n "${CLEANUP_REMOTE_TAR_AFTER_DEPLOY:-}" ]]; then
-                        export CLEANUP_REMOTE_TAR_AFTER_PUSH="${CLEANUP_REMOTE_TAR_AFTER_DEPLOY}"
-                        log_info "使用组件配置的清理开关: CLEANUP_REMOTE_TAR_AFTER_DEPLOY=${CLEANUP_REMOTE_TAR_AFTER_DEPLOY}"
-                    fi
-                    if "/home/zym/k8s/utils/registry-push-management/loadimage.sh" push-from-list \
-                        "/home/zym/k8s/utils/components-images/postgresql-images.txt"; then
-                        log_success "✅ PostgreSQL 镜像推送成功"
-                    else
-                        log_warn "⚠️ PostgreSQL 镜像推送失败或部分失败，继续部署..."
-                    fi
-                else
-                    log_warn "⚠️ loadimage.sh 脚本不存在或不可执行，跳过镜像推送"
-                fi
-            else
-                log_info "⏭️  跳过镜像推送步骤（PUSH_IMAGES_BEFORE_DEPLOY=false 或未设置）"
-                log_info "   提示：如果镜像已在仓库中，可以跳过此步骤；否则请设置 PUSH_IMAGES_BEFORE_DEPLOY=true"
-            fi
             
             # 执行主部署（Helm Chart）
             if ! execute_postgresql_deployment "$project_id" "$namespace" "$environment" "$dry_run"; then

@@ -458,30 +458,11 @@ main() {
             check_namespace "$namespace"
             # 统一密管管理密钥
             log_info "跳过创建 Neo4j 密钥（由统一密管管理）"
-            # 按需将组件镜像推送至 Harbor（仅控制平面）
-            # 检查是否启用部署前镜像推送
-            if [[ "${PUSH_IMAGES_BEFORE_DEPLOY:-false}" == "true" ]]; then
-                if [[ -x "/home/zym/k8s/utils/registry-push-management/loadimage.sh" ]]; then
-                    log_info "按清单推送 Neo4j 镜像到 Registry..."
-                    "/home/zym/k8s/utils/registry-push-management/loadimage.sh" push-from-list \
-                        "/home/zym/k8s/utils/components-images/neo4j-images.txt" || log_warn "Neo4j 镜像推送失败或部分失败"
-                fi
-            else
-                log_info "跳过 Neo4j 镜像推送（PUSH_IMAGES_BEFORE_DEPLOY=false）"
-            fi
             execute_neo4j_deployment "$project_id" "$namespace" "$environment" "$dry_run"
             # 部署子组件（中间件 / Ingress-All）
             if deploy_sub_components "$project_id" "$namespace" "$environment" "$dry_run"; then
                 check_neo4j_status "$namespace"
                 show_neo4j_connection_info "$namespace"
-                # 安装后清理控制平面 tar 包
-                if [[ -x "$PROJECT_ROOT/../../cicd-platform/harbor/utils/harbor-image-management/harbor-image.sh" ]]; then
-                    if [[ "${CLEANUP_REMOTE_TAR_AFTER_DEPLOY:-true}" == "true" ]]; then
-                    : # 通用工具已在推送过程中清理，无需额外清理
-                    else
-                        log_info "跳过清理控制平面 tar（CLEANUP_REMOTE_TAR_AFTER_DEPLOY=false）"
-                    fi
-                fi
             else
                 log_error "❌ Neo4j 子组件部署失败"
                 exit 1

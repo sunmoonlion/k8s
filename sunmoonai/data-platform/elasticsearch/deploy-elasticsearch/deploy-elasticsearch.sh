@@ -506,18 +506,6 @@ main() {
                 log_error "❌ Elasticsearch Secrets 部署失败，终止主部署"
                 exit 1
             fi
-            # 按需将组件镜像推送至 Harbor（仅控制平面，避免全量分发）
-            # 检查是否启用部署前镜像推送
-            if [[ "${PUSH_IMAGES_BEFORE_DEPLOY:-false}" == "true" ]]; then
-                # 使用通用 Registry 推送工具按列表推送镜像
-                if [[ -x "/home/zym/k8s/utils/registry-push-management/loadimage.sh" ]]; then
-                    log_info "按清单推送 Elasticsearch 镜像到 Registry..."
-                    "/home/zym/k8s/utils/registry-push-management/loadimage.sh" push-from-list \
-                        "/home/zym/k8s/utils/components-images/elasticsearch-images.txt" || log_warn "Elasticsearch 镜像推送失败或部分失败"
-                fi
-            else
-                log_info "跳过 Elasticsearch 镜像推送（PUSH_IMAGES_BEFORE_DEPLOY=false）"
-            fi
             # 执行主部署
             if execute_elasticsearch_deployment "$project_id" "$namespace" "$environment" "$dry_run"; then
             
@@ -525,11 +513,6 @@ main() {
                 if deploy_sub_components "$project_id" "$namespace" "$environment" "$dry_run"; then
                     log_success "🎉 Elasticsearch 完整部署成功！"
                     check_elasticsearch_status "$namespace"
-                    show_elasticsearch_connection_info "$namespace"
-                    # 安装后清理控制平面 tar 包（通用工具已在推送过程中清理，此处保留开关仅作日志提示）
-                    if [[ "${CLEANUP_REMOTE_TAR_AFTER_DEPLOY:-true}" != "true" ]]; then
-                        log_info "跳过额外清理（由通用工具自动清理，且组件开关为 false）"
-                    fi
                 else
                     log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
                     exit 1

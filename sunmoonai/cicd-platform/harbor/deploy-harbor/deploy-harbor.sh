@@ -358,21 +358,6 @@ deploy_harbor_core() {
     # 验证 Harbor 配置
     validate_harbor_config
 
-    # 检查镜像（仅离线模式或强制开启时）
-    local force_image_check="${FORCE_IMAGE_CHECK:-false}"
-    # 使用组件级配置开关 ENABLE_OFFLINE_IMAGE_CHECK 控制预检查
-    local enable_offline_image_check="${ENABLE_OFFLINE_IMAGE_CHECK:-false}"
-    if [[ "$force_image_check" == "true" || "$enable_offline_image_check" == "true" ]]; then
-        local required_images=$(define_required_images "$environment")
-        if ! check_component_images "$project_id" "$namespace" "harbor" "$environment" "$required_images"; then
-            log_error "镜像检查失败，部署终止"
-            generate_image_list "$project_id" "harbor" "$required_images"
-            return 1
-        fi
-    else
-        log_info "在线模式，无需预检查镜像（将在线拉取镜像）"
-    fi
-
     # 处理 Harbor 特定的 values 文件
     local harbor_values_file=$(process_harbor_values "$project_id" "$namespace" "$environment")
     

@@ -717,36 +717,6 @@ main() {
                 return 1
             fi
             
-            # 检查镜像（可跳过）
-            if [[ "${SKIP_IMAGE_PRECHECK:-false}" == "true" ]]; then
-                log_warn "跳过镜像预检 (SKIP_IMAGE_PRECHECK=true)"
-            else
-                local force_image_check="${FORCE_IMAGE_CHECK:-false}"
-                local enable_offline_image_check="${ENABLE_OFFLINE_IMAGE_CHECK:-false}"
-                if [[ "$force_image_check" == "true" || "$enable_offline_image_check" == "true" ]]; then
-                    local required_images=$(define_required_images "$environment")
-                    if ! check_component_images "$project_id" "$namespace" "rabbitmq" "$environment" "$required_images"; then
-                        log_error "镜像检查失败，部署终止"
-                        generate_image_list "$project_id" "rabbitmq" "$required_images"
-                        return 1
-                    fi
-                else
-                    log_info "在线模式，无需预检查镜像（将在线拉取镜像）"
-                fi
-            fi
-            
-            # 部署前：按需将组件镜像推送至 Harbor（仅控制平面）
-            # 检查是否启用部署前镜像推送
-            if [[ "${PUSH_IMAGES_BEFORE_DEPLOY:-false}" == "true" ]]; then
-                if [[ -x "/home/zym/k8s/utils/registry-push-management/loadimage.sh" ]]; then
-                    log_info "按清单推送 RabbitMQ 镜像到 Registry..."
-                    "/home/zym/k8s/utils/registry-push-management/loadimage.sh" push-from-list \
-                        "/home/zym/k8s/utils/components-images/rabbitmq-images.txt" || log_warn "RabbitMQ 镜像推送失败或部分失败"
-                fi
-            else
-                log_info "跳过 RabbitMQ 镜像推送（PUSH_IMAGES_BEFORE_DEPLOY=false）"
-            fi
-
             # 执行部署
             if execute_rabbitmq_deployment "$project_id" "$namespace" "$environment" "$dry_run"; then
                 # 部署子组件（包括 Secrets、Middleware 和 Ingress，按优先级自动排序）
@@ -1015,7 +985,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     if ! load_rabbitmq_config; then
         exit 1
     fi
-    
+
     # 执行主函数
     main "$@"
 fi

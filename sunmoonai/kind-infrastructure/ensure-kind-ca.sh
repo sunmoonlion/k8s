@@ -11,8 +11,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 K8S_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 UNIFIED_CERT_DIR="$K8S_ROOT/utils/unified-cert-secret-management"
 DEPLOY_SCRIPT="$UNIFIED_CERT_DIR/deploy-all.sh"
-# 与 cert-secret.conf 中 TRAEFIK_KIND_KIND_LOCAL_CA_CERT_DIR 一致
+# 与 cert-secret.conf 中 TRAEFIK_KIND_KIND_LOCAL_CA_CERT_DIR / TRAEFIK_K1_K1_LOCAL_CA_CERT_DIR 一致
 CA_SOURCE_DIR="${K8S_ROOT}/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca"
+# unified-cert 在 init 模式下会先把 CA 生到 /tmp/<组合代码>-ca-certs 目录，
+# 组合 TRAEFIK_KIND_KIND 在内部使用 TRAEFIK_KI_KI 作为组合代码
+TMP_CA_DIR="/tmp/TRAEFIK_KI_KI-ca-certs"
 # Docker Desktop 在 Windows 下的 certs.d（WSL 中访问路径）；私有仓库 host:port
 DOCKER_CERTS_D_WSL="${DOCKER_DESKTOP_CERTS_D:-/mnt/c/ProgramData/docker/certs.d}"
 HARBOR_REGISTRY="${HARBOR_REGISTRY:-harbor.sunmoonai.com:30443}"
@@ -34,6 +37,21 @@ if TLS_MODE=init bash "$DEPLOY_SCRIPT" init TRAEFIK_KIND_KIND; then
 else
     log_error "unified-cert init 失败"
     exit 1
+fi
+
+# 确保当前用户路径下存在 CA：如有必要从 unified-cert 的临时目录复制一份
+if [[ ! -f "$CA_SOURCE_DIR/ca.crt" || ! -f "$CA_SOURCE_DIR/ca.key" ]]; then
+    if [[ -f "$TMP_CA_DIR/ca.crt" && -f "$TMP_CA_DIR/ca.key" ]]; then
+        log_info "在 unified-cert 临时目录下检测到 CA，准备同步到当前用户目录: $CA_SOURCE_DIR"
+        mkdir -p "$CA_SOURCE_DIR"
+        if cp "$TMP_CA_DIR/ca.crt" "$CA_SOURCE_DIR/ca.crt" && cp "$TMP_CA_DIR/ca.key" "$CA_SOURCE_DIR/ca.key"; then
+            log_success "已从 $TMP_CA_DIR 同步 CA 到 $CA_SOURCE_DIR"
+        else
+            log_warn "无法从 $TMP_CA_DIR 同步 CA 到 $CA_SOURCE_DIR，请检查权限"
+        fi
+    else
+        log_warn "未在 $CA_SOURCE_DIR 或 $TMP_CA_DIR 找到完整 CA 文件，后续 Traefik/Harbor 可能无法生成服务器证书"
+    fi
 fi
 
 # 若在 WSL 且能访问 Windows 盘，将根 CA 放入 Docker Desktop certs.d，便于 docker pull 信任私有 Harbor

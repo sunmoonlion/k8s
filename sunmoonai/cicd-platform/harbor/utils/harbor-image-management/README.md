@@ -59,7 +59,6 @@ dry-run 与示例
 - 在各组件 `deploy-*.sh` 中，Helm 安装前调用：
   `harbor-image.sh ensure-component-images <component>`
 - 安装成功后按组件开关清理控制平面 tar：
-  在 `deploy-*.conf` 中设置 `CLEANUP_REMOTE_TAR_AFTER_DEPLOY=true|false`
 
 注意
 - 仅对缺失于 Harbor 的镜像进行推送（避免重复）

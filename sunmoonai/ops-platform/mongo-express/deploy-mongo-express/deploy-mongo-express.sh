@@ -625,18 +625,6 @@ main() {
                 exit 1
             fi
             
-            # 按需将组件镜像推送至 Harbor（仅控制平面）
-            # 检查是否启用部署前镜像推送
-            if [[ "${PUSH_IMAGES_BEFORE_DEPLOY:-false}" == "true" ]]; then
-                if [[ -x "/home/zym/k8s/utils/registry-push-management/loadimage.sh" ]]; then
-                    log_info "按清单推送 Mongo Express 镜像到 Registry..."
-                    "/home/zym/k8s/utils/registry-push-management/loadimage.sh" push-from-list \
-                        "/home/zym/k8s/utils/components-images/mongo-express-images.txt" || log_warn "Mongo Express 镜像推送失败或部分失败"
-                fi
-            else
-                log_info "跳过 Mongo Express 镜像推送（PUSH_IMAGES_BEFORE_DEPLOY=false）"
-            fi
-            
             # 部署核心组件（Mongo Express Helm Chart，创建 Service 和 Pod）
             if execute_mongo_express_deployment "$project_id" "$namespace" "$environment" "$dry_run"; then
                 log_success "✅ Mongo Express 核心部署成功！"
@@ -667,13 +655,6 @@ main() {
                 
                 log_success "🎉 Mongo Express 完整部署成功！"
                 check_mongo_express_status "$namespace"
-                show_mongo_express_connection_info "$namespace"
-                # 安装后清理控制平面 tar 包（按组件开关）
-                if [[ "${CLEANUP_REMOTE_TAR_AFTER_DEPLOY:-true}" == "true" ]]; then
-                    : # 通用工具已在推送过程中清理，无需额外清理
-                else
-                    log_info "跳过清理控制平面 tar（CLEANUP_REMOTE_TAR_AFTER_DEPLOY=false）"
-                fi
             else
                 log_error "❌ Mongo Express 核心部署失败"
                 return 1

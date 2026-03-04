@@ -40,7 +40,7 @@ main() {
 ```
 
 **关键点**：
-- `${ROOT_CA_LOCAL_DIR/#\~/$HOME}` 将 `~/k8s/certs/ca/shared` 展开为 `/home/zym/k8s/certs/ca/shared`
+- `${ROOT_CA_LOCAL_DIR/#\~/$HOME}` 将 `~/k8s/certs/ca/shared` 展开为 `~/k8s/certs/ca/shared`
 - 使用 `${变量/#模式/替换}` 语法进行字符串替换
 
 #### 4. 作为命令行参数传递（generate-server-cert.sh）
@@ -58,8 +58,8 @@ main() {
 ```
 
 **实际传递的路径示例**：
-- `--ca-cert "/home/zym/k8s/certs/ca/shared/ca.crt"`
-- `--ca-key "/home/zym/k8s/certs/ca/shared/ca.key"`
+- `--ca-cert "~/k8s/certs/ca/shared/ca.crt"`
+- `--ca-key "~/k8s/certs/ca/shared/ca.key"`
 
 ### 另一种方式：deploy-traefik-tls-secret.sh（不直接调用证书生成）
 
@@ -109,7 +109,7 @@ temp_data_dir=$(prepare_tls_secret_data "${prepare_args[@]}")
 │ local ca_dir="${ROOT_CA_LOCAL_DIR/#\~/$HOME}"           │
 │ → 将 ~ 替换为 $HOME 的完整路径                          │
 │ → 例如: ~/k8s/certs/ca/shared                          │
-│      → /home/zym/k8s/certs/ca/shared                    │
+│      → ~/k8s/certs/ca/shared                    │
 └─────────────────────────────────────────────────────────┘
                         ↓
 ┌─────────────────────────────────────────────────────────┐
@@ -117,8 +117,8 @@ temp_data_dir=$(prepare_tls_secret_data "${prepare_args[@]}")
 ├─────────────────────────────────────────────────────────┤
 │ local ca_cert="$ca_dir/ca.crt"                          │
 │ local ca_key="$ca_dir/ca.key"                           │
-│ → ca_cert = "/home/zym/k8s/certs/ca/shared/ca.crt"     │
-│ → ca_key  = "/home/zym/k8s/certs/ca/shared/ca.key"     │
+│ → ca_cert = "~/k8s/certs/ca/shared/ca.crt"     │
+│ → ca_key  = "~/k8s/certs/ca/shared/ca.key"     │
 └─────────────────────────────────────────────────────────┘
                         ↓
 ┌─────────────────────────────────────────────────────────┐

@@ -9,7 +9,7 @@
 #   2. 修改配置中的路径和参数（如果需要）
 #   
 #   3. 确保脚本有执行权限：
-#      chmod +x /home/zym/k8s/sunmoonai/infrastructure/utils/image-cleanup/periodic-cleanup.sh
+#      chmod +x ~/k8s/sunmoonai/infrastructure/utils/image-cleanup/periodic-cleanup.sh
 #
 #   4. 重新加载 cron：
 #      sudo systemctl restart cron
@@ -22,11 +22,11 @@
 # =============================================================================
 
 # 每天凌晨 2:00 执行（实际执行由 periodic-cleanup.conf 中的开关控制）
-0 2 * * * zym /home/zym/k8s/sunmoonai/infrastructure/utils/image-cleanup/periodic-cleanup.sh execute >> /var/log/k8s-image-cleanup.log 2>&1
+0 2 * * * zym ~/k8s/sunmoonai/infrastructure/utils/image-cleanup/periodic-cleanup.sh execute >> /var/log/k8s-image-cleanup.log 2>&1
 
 # 每周日凌晨 3:00 强制执行（忽略开关和条件检查）
-# 0 3 * * 0 zym /home/zym/k8s/sunmoonai/infrastructure/utils/image-cleanup/periodic-cleanup.sh execute --force >> /var/log/k8s-image-cleanup.log 2>&1
+# 0 3 * * 0 zym ~/k8s/sunmoonai/infrastructure/utils/image-cleanup/periodic-cleanup.sh execute --force >> /var/log/k8s-image-cleanup.log 2>&1
 
 # 每 6 小时执行一次
-# 0 */6 * * * zym /home/zym/k8s/sunmoonai/infrastructure/utils/image-cleanup/periodic-cleanup.sh execute >> /var/log/k8s-image-cleanup.log 2>&1
+# 0 */6 * * * zym ~/k8s/sunmoonai/infrastructure/utils/image-cleanup/periodic-cleanup.sh execute >> /var/log/k8s-image-cleanup.log 2>&1
 

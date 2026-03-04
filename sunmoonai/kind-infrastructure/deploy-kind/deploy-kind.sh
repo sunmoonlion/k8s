@@ -44,6 +44,95 @@ resolve_to_absolute() {
     echo "$out"
 }
 
+# 等待 Harbor 在指定地址就绪（/v2/ 可返回 JSON 即视为可用）
+wait_for_harbor() {
+    local host="${HARBOR_HOST:-harbor.sunmoonai.com}"
+    local port="${HARBOR_PORT:-30443}"
+    local timeout="${HARBOR_WAIT_TIMEOUT:-300}" # 最长等待秒数，默认 5 分钟
+    local interval=5
+    local start
+    start=$(date +%s)
+
+    log_info "等待 Harbor 就绪 (${host}:${port}，最长 ${timeout}s)..."
+    while true; do
+        # 不带凭证访问 /v2/，能返回 JSON（401/200）即认为 Harbor 已就绪
+        if curl -sk --noproxy '*' "https://${host}:${port}/v2/" | grep -q '"errors"' ; then
+            log_info "Harbor /v2/ 已响应"
+            return 0
+        fi
+        local now
+        now=$(date +%s)
+        if (( now - start >= timeout )); then
+            log_error "Harbor 在 ${timeout}s 内未就绪"
+            return 1
+        fi
+        sleep "${interval}"
+    done
+}
+
+# 确保 Harbor 中存在项目 k8s-images（若不存在则自动创建为公开项目）
+ensure_harbor_project_k8s_images() {
+    local api_base="https://${HARBOR_HOST:-harbor.sunmoonai.com}:${HARBOR_PORT:-30443}/api/v2.0"
+    local proj="k8s-images"
+    local user="${HARBOR_ADMIN_USER:-admin}"
+    local pass="${HARBOR_ADMIN_PASSWORD:-}"
+
+    if [[ -z "$pass" ]]; then
+        log_warn "未提供 HARBOR_ADMIN_PASSWORD，跳过自动创建 Harbor 项目 ${proj}"
+        return 0
+    fi
+
+    # 查询项目是否已存在（GET /projects 无匹配时也返回 200，body 为空数组，需根据响应体判断）
+    local body
+    body=$(curl -sk --noproxy '*' -u "${user}:${pass}" "${api_base}/projects?name=${proj}" 2>/dev/null || true)
+    if echo "$body" | grep -qE '"name"\s*:\s*"'"${proj}"'"'; then
+        log_info "Harbor 项目 ${proj} 已存在"
+        return 0
+    fi
+
+    log_info "Harbor 项目 ${proj} 不存在，尝试自动创建..."
+    code=$(curl -sk --noproxy '*' -u "${user}:${pass}" -o /dev/null -w '%{http_code}' \
+        -H 'Content-Type: application/json' \
+        -X POST "${api_base}/projects" \
+        -d "{\"project_name\":\"${proj}\",\"metadata\":{\"public\":\"true\"}}" || echo "000")
+
+    if [[ "$code" == "201" || "$code" == "409" ]]; then
+        # 201: 创建成功；409: 已存在（并发等原因）
+        log_info "Harbor 项目 ${proj} 已就绪（HTTP ${code}）"
+        return 0
+    fi
+
+    log_error "自动创建 Harbor 项目 ${proj} 失败（HTTP ${code}），请手动在 Web 控制台创建该项目或调整配置"
+    return 1
+}
+
+# 封装一次 Harbor 登录流程：等待就绪 + docker login + 确保项目存在
+harbor_login_or_fail() {
+    if ! wait_for_harbor; then
+        log_error "Harbor 未就绪，终止 Harbor 登录流程"
+        return 1
+    fi
+
+    if [[ -z "${HARBOR_ADMIN_PASSWORD:-}" ]]; then
+        log_error "未配置 HARBOR_ADMIN_PASSWORD，无法自动登录 Harbor"
+        return 1
+    fi
+
+    login_host="${HARBOR_HOST:-harbor.sunmoonai.com}:${HARBOR_PORT:-30443}"
+    log_info "登录 Harbor（${login_host}）..."
+    if ! echo "${HARBOR_ADMIN_PASSWORD}" | docker login "${login_host}" -u "${HARBOR_ADMIN_USER:-admin}" --password-stdin; then
+        log_error "docker login Harbor 失败"
+        return 1
+    fi
+
+    # 在推送前确保 Harbor 中存在 k8s-images 项目（若失败则交由调用方决定是否终止）
+    if ! ensure_harbor_project_k8s_images; then
+        return 1
+    fi
+
+    return 0
+}
+
 usage() {
     echo "用法: $0 [选项]"
     echo "选项:"
@@ -111,10 +200,68 @@ fi
 if [[ "$RUN_HARBOR_HOSTS" == "true" ]]; then
     log_info "步骤 7/7：WSL 宿主机 Harbor 解析与登录（wsl-setup-harbor-hosts-and-login.sh）"
     export HARBOR_HOST="${HARBOR_HOST:-harbor.sunmoonai.com}"
-    export HARBOR_IP="${HARBOR_IP:-127.0.0.1}"
-    "$KIND_ROOT/wsl-setup-harbor-hosts-and-login.sh"
+    # 不在此处强制 HARBOR_IP，交给配置或脚本自动检测 Kind control-plane IP。
+    # 此步骤只负责 WSL /etc/hosts + CA 分发，登录逻辑交给后续「推送到 Harbor」步骤处理。
+    # 为避免脚本里的自动登录分支生效，这里显式屏蔽 HARBOR_ADMIN_PASSWORD 环境变量。
+    (
+        unset HARBOR_ADMIN_PASSWORD
+        "$KIND_ROOT/wsl-setup-harbor-hosts-and-login.sh"
+    )
 else
     log_info "步骤 7/7：跳过 Harbor hosts（--skip-harbor-hosts）"
+fi
+
+if [[ "${DEPLOY_KIND_RUN_TRAEFIK:-false}" == "true" ]]; then
+    log_info "可选步骤：在 Kind 集群中部署 Traefik（ingress-platform/deploy-ingress-platform-all）"
+    # 传入 CLUSTER=KIND，使 Traefik 部署脚本识别为 Kind 并跳过节点镜像检查（与 Harbor 调用一致）
+    if ! CLUSTER=KIND "$KIND_ROOT/../ingress-platform/deploy-ingress-platform-all/deploy-ingress-platform-all.sh"; then
+        log_warn "Traefik 部署脚本执行失败，请检查 ingress-platform/deploy-ingress-platform-all 配置或单独运行该脚本查看原因"
+    fi
+fi
+
+if [[ "${DEPLOY_KIND_RUN_HARBOR:-false}" == "true" ]]; then
+    log_info "可选步骤：在 Kind 集群中部署 Harbor（cicd-platform/harbor/deploy-harbor）"
+    # 使用 CLUSTER=KIND，deploy-harbor.sh 会根据 deploy-harbor.conf 选择命名空间和环境
+    if ! CLUSTER=KIND "$KIND_ROOT/../cicd-platform/harbor/deploy-harbor/deploy-harbor.sh" deploy; then
+        log_warn "Harbor 部署脚本执行失败，请检查 cicd-platform/harbor/deploy-harbor 配置或单独运行该脚本查看原因"
+    fi
+fi
+
+# 可选：在一键流程中单独执行一次 WSL Harbor 登录（便于开发验证），失败仅告警不终止整体流程
+if [[ "${DEPLOY_KIND_RUN_HARBOR_LOGIN:-false}" == "true" ]]; then
+    log_info "可选步骤：WSL 宿主机 Harbor 登录（不推送镜像，仅登录验证）"
+    if ! harbor_login_or_fail; then
+        log_warn "WSL Harbor 登录失败，可稍后手动执行 docker login 或运行 wsl-setup-harbor-hosts-and-login.sh --login"
+    fi
+fi
+
+PUSH_ARGS=()
+if [[ -n "${DEPLOY_KIND_PUSH_IMAGE_FILES:-}" ]]; then
+    PUSH_ARGS+=(--img-file "$(resolve_to_absolute "$DEPLOY_KIND_PUSH_IMAGE_FILES")")
+fi
+if [[ -n "${DEPLOY_KIND_PUSH_TAR_DIRS:-}" ]]; then
+    PUSH_ARGS+=(--tar-dir "$(resolve_to_absolute "$DEPLOY_KIND_PUSH_TAR_DIRS")")
+fi
+
+if [[ ${#PUSH_ARGS[@]} -gt 0 ]]; then
+    if [[ "${DEPLOY_KIND_RUN_PUSH_TO_HARBOR:-false}" == "true" ]]; then
+        log_info "可选步骤：根据 deploy-kind.conf 向 Harbor 推送镜像（push-to-harbor/push-images-to-harbor.sh）"
+
+        # 推送前强制执行一次登录（等待 Harbor + 登录 + 确保项目）
+        if ! harbor_login_or_fail; then
+            log_error "Harbor 登录流程失败，终止 Harbor 镜像推送及一键部署流程"
+            exit 1
+        fi
+
+        if ! "$KIND_ROOT/push-to-harbor/push-images-to-harbor.sh" "${PUSH_ARGS[@]}"; then
+            log_error "push-images-to-harbor.sh 执行失败，请检查配置 DEPLOY_KIND_PUSH_IMAGE_FILES/DEPLOY_KIND_PUSH_TAR_DIRS 或单独运行该脚本查看原因"
+            exit 1
+        fi
+    else
+        log_info "已配置推送源，但 DEPLOY_KIND_RUN_PUSH_TO_HARBOR 未开启，跳过 Harbor 镜像推送"
+    fi
+else
+    log_info "未配置 DEPLOY_KIND_PUSH_IMAGE_FILES/DEPLOY_KIND_PUSH_TAR_DIRS，跳过 Harbor 镜像推送"
 fi
 
 log_success "Kind 一键部署完成"

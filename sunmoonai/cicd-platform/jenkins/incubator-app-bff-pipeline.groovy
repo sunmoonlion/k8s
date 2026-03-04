@@ -19,8 +19,8 @@ pipeline {
         // 构建脚本路径（相对于代码仓库根目录）
         BUILD_SCRIPT_PATH = "mybuild/build-image.sh"
         
-        // 部署脚本路径（绝对路径）
-        DEPLOY_SCRIPT_PATH = "/home/zym/k8s/sunmoonai/incubator-app/incubator-app-bff/deploy-incubator-bff/app/deploy-app/deploy-incubator-bff.sh"
+        // 部署脚本路径（绝对路径，基于 Jenkins 节点的 $HOME）
+        DEPLOY_SCRIPT_PATH = '$HOME/k8s/sunmoonai/incubator-app/incubator-app-bff/deploy-incubator-bff/app/deploy-app/deploy-incubator-bff.sh'
         
         // 镜像构建配置（可通过 Jenkins 参数覆盖）
         // 默认使用 BUILD_NUMBER，如果有 Git 提交信息则添加

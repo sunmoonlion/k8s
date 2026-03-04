@@ -485,34 +485,9 @@ main() {
             # ============================================================
             log_info "🚀 阶段2：部署 MongoDB 核心服务..."
             
-            # 按需将组件镜像推送至 Harbor（仅控制平面）
-            # 检查是否启用部署前镜像推送
-            if [[ "${PUSH_IMAGES_BEFORE_DEPLOY:-false}" == "true" ]]; then
-                if [[ -x "/home/zym/k8s/utils/registry-push-management/loadimage.sh" ]]; then
-                    log_info "按清单推送 MongoDB 镜像到 Registry..."
-                    # 将组件配置的 CLEANUP_REMOTE_TAR_AFTER_DEPLOY 转换为 loadimage.sh 期望的 CLEANUP_REMOTE_TAR_AFTER_PUSH
-                    if [[ -n "${CLEANUP_REMOTE_TAR_AFTER_DEPLOY:-}" ]]; then
-                        export CLEANUP_REMOTE_TAR_AFTER_PUSH="$CLEANUP_REMOTE_TAR_AFTER_DEPLOY"
-                        log_info "🔧 传递清理配置: CLEANUP_REMOTE_TAR_AFTER_PUSH=$CLEANUP_REMOTE_TAR_AFTER_PUSH"
-                    fi
-                    "/home/zym/k8s/utils/registry-push-management/loadimage.sh" push-from-list \
-                        "/home/zym/k8s/utils/components-images/mongodb-images.txt" || log_warn "MongoDB 镜像推送失败或部分失败"
-                fi
-            else
-                log_info "跳过 MongoDB 镜像推送（PUSH_IMAGES_BEFORE_DEPLOY=false）"
-            fi
-            
             execute_mongodb_deployment "$project_id" "$namespace" "$environment" "$dry_run"
             check_mongodb_status "$namespace"
             show_mongodb_connection_info "$namespace"
-            # 安装后清理控制平面 tar 包
-            if [[ -x "$PROJECT_ROOT/../../cicd-platform/harbor/utils/harbor-image-management/harbor-image.sh" ]]; then
-                if [[ "${CLEANUP_REMOTE_TAR_AFTER_DEPLOY:-true}" == "true" ]]; then
-                : # 通用工具已在推送过程中清理，无需额外清理
-                else
-                    log_info "跳过清理控制平面 tar（CLEANUP_REMOTE_TAR_AFTER_DEPLOY=false）"
-                fi
-            fi
             ;;
         "upgrade")
             log_info "开始升级 MongoDB..."

@@ -2,9 +2,13 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+K8S_ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
 CONF_FILE="$SCRIPT_DIR/harbor-image.conf"
 # shellcheck source=/dev/null
 source "$CONF_FILE"
+# 覆盖 conf 中可能写死的 k8s 路径，保证与仓库位置无关
+COMPONENT_IMAGES_DIR="${COMPONENT_IMAGES_DIR:-$K8S_ROOT/utils/components-images}"
+IMAGE_TOOL="${IMAGE_TOOL:-$K8S_ROOT/utils/registry-push-management/loadimage.sh}"
 
 # 加载基础设施配置文件（包含节点配置）
 INFRA_CONFIG_FILE="$SCRIPT_DIR/../../../../infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf"
@@ -65,8 +69,7 @@ if [[ -f "$INFRA_CONFIG_FILE" ]]; then
   fi
 fi
 
-# 引入全局通用镜像管理工具
-IMAGE_TOOL="${IMAGE_TOOL:-/home/zym/k8s/utils/registry-push-management/loadimage.sh}"
+# 引入全局通用镜像管理工具（默认由上方 K8S_ROOT 推导，可被环境变量覆盖）
 
 log(){ echo -e "[harbor-image] $(date '+%Y-%m-%d %H:%M:%S') $*"; }
 ok(){ log "✅ $*"; }
@@ -178,7 +181,7 @@ push_tar_via_control_plane(){
 
 # 读取组件镜像清单
 read_component_list(){
-  local component="$1"; local list_file="$SCRIPT_DIR/../../../../utils/components-images/${component}-images.txt"
+  local component="$1"; local list_file="$COMPONENT_IMAGES_DIR/${component}-images.txt"
   if [[ ! -f "$list_file" ]]; then err "缺少清单: $list_file"; return 1; fi
   cat "$list_file" | sed '/^\s*#/d;/^\s*$/d'
 }
@@ -240,7 +243,7 @@ cleanup_component_tars(){
   local component="$1"
   validate_config || return 1
   if [[ -z "${CONTROL_PLANE_HOST:-}" || -z "${CONTROL_PLANE_USER:-}" ]]; then err "未配置控制平面主机/用户"; return 1; fi
-  local list_file="$SCRIPT_DIR/../../../../utils/components-images/${component}-images.txt"
+  local list_file="$COMPONENT_IMAGES_DIR/${component}-images.txt"
   [[ -f "$list_file" ]] || { warn "清单缺失，跳过: $list_file"; return 0; }
 
   local patterns=()

@@ -51,7 +51,7 @@ cd /home/zym/app/auth-app-ssr
 #### 1.1 准备配置文件
 
 创建或修改配置文件：
-`/home/zym/k8s/sunmoonai/auth-app/auth-app-bff/deploy-auth-app-bff/app/deploy-app/deploy-auth-app-bff.conf`
+`~/k8s/sunmoonai/auth-app/auth-app-bff/deploy-auth-app-bff/app/deploy-app/deploy-auth-app-bff.conf`
 
 ```bash
 # 项目配置
@@ -82,7 +82,7 @@ REDIS_PORT=6379
 #### 1.2 准备 Secret 配置
 
 创建 Secret 配置文件：
-`/home/zym/k8s/sunmoonai/auth-app/auth-app-bff/deploy-auth-app-bff/secret/auth-app-bff-secret/deploy-auth-app-bff-secret/deploy-auth-app-bff-secret.conf`
+`~/k8s/sunmoonai/auth-app/auth-app-bff/deploy-auth-app-bff/secret/auth-app-bff-secret/deploy-auth-app-bff-secret/deploy-auth-app-bff-secret.conf`
 
 ```bash
 # 敏感配置（必须修改）
@@ -105,7 +105,7 @@ SENTRY_DSN=your-sentry-dsn
 #### 1.3 执行部署
 
 ```bash
-cd /home/zym/k8s/sunmoonai/auth-app/auth-app-bff/deploy-auth-app-bff/app/deploy-app
+cd ~/k8s/sunmoonai/auth-app/auth-app-bff/deploy-auth-app-bff/app/deploy-app
 ./deploy-auth-app-bff.sh deploy sunmoonai app-platform-dev development
 ```
 
@@ -138,7 +138,7 @@ kubectl exec -it <auth-app-bff-pod> -n app-platform-dev -- curl http://localhost
 #### 2.1 准备配置文件
 
 创建或修改配置文件：
-`/home/zym/k8s/sunmoonai/auth-app/auth-app-ssr/deploy-auth-app-ssr/app/deploy-app/deploy-auth-app-ssr.conf`
+`~/k8s/sunmoonai/auth-app/auth-app-ssr/deploy-auth-app-ssr/app/deploy-app/deploy-auth-app-ssr.conf`
 
 ```bash
 # 项目配置
@@ -163,7 +163,7 @@ NITRO_PORT=3000
 #### 2.2 准备 Secret 配置
 
 创建 Secret 配置文件：
-`/home/zym/k8s/sunmoonai/auth-app/auth-app-ssr/deploy-auth-app-ssr/secret/auth-app-ssr-secret/deploy-auth-app-ssr-secret/deploy-auth-app-ssr-secret.conf`
+`~/k8s/sunmoonai/auth-app/auth-app-ssr/deploy-auth-app-ssr/secret/auth-app-ssr-secret/deploy-auth-app-ssr-secret/deploy-auth-app-ssr-secret.conf`
 
 ```bash
 # SSR 通常不需要敏感配置，但可以添加
@@ -173,7 +173,7 @@ NITRO_PORT=3000
 #### 2.3 执行部署
 
 ```bash
-cd /home/zym/k8s/sunmoonai/auth-app/auth-app-ssr/deploy-auth-app-ssr/app/deploy-app
+cd ~/k8s/sunmoonai/auth-app/auth-app-ssr/deploy-auth-app-ssr/app/deploy-app
 ./deploy-auth-app-ssr.sh deploy sunmoonai app-platform-dev development
 ```
 

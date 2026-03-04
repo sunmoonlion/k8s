@@ -17,7 +17,7 @@
 ### 步骤 1: 部署 auth-app-bff
 
 ```bash
-cd /home/zym/k8s/sunmoonai/auth-app/auth-app-bff/deploy-auth-app-bff/app/deploy-app
+cd ~/k8s/sunmoonai/auth-app/auth-app-bff/deploy-auth-app-bff/app/deploy-app
 
 # 部署
 ./deploy-auth-app-bff.sh deploy sunmoonai app-platform-dev development
@@ -29,7 +29,7 @@ cd /home/zym/k8s/sunmoonai/auth-app/auth-app-bff/deploy-auth-app-bff/app/deploy-
 ### 步骤 2: 部署 auth-app-ssr
 
 ```bash
-cd /home/zym/k8s/sunmoonai/auth-app/auth-app-ssr/deploy-auth-app-ssr/app/deploy-app
+cd ~/k8s/sunmoonai/auth-app/auth-app-ssr/deploy-auth-app-ssr/app/deploy-app
 
 # 部署
 ./deploy-auth-app-ssr.sh deploy sunmoonai app-platform-dev development
@@ -117,7 +117,7 @@ kubectl get configmap auth-app-bff-config -n app-platform-dev
 kubectl get secret auth-app-bff-secret -n app-platform-dev
 
 # 如果不存在，先部署 ConfigMap 和 Secret
-cd /home/zym/k8s/sunmoonai/auth-app/auth-app-bff/deploy-auth-app-bff/configMap/auth-app-bff-config/deploy-auth-app-bff-config
+cd ~/k8s/sunmoonai/auth-app/auth-app-bff/deploy-auth-app-bff/configMap/auth-app-bff-config/deploy-auth-app-bff-config
 ./deploy-auth-app-bff-config.sh deploy sunmoonai app-platform-dev development
 ```
 

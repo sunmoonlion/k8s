@@ -27,10 +27,6 @@ done
 # 如果没找到，使用默认路径（向上6级）
 if [[ -z "$PROJECT_ROOT" ]] || [[ ! -d "$PROJECT_ROOT/utils" ]]; then
     PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
-    # 如果还是不对，尝试从 /home/zym/k8s
-    if [[ ! -d "$PROJECT_ROOT/utils" ]] && [[ -d "/home/zym/k8s/utils" ]]; then
-        PROJECT_ROOT="/home/zym/k8s"
-    fi
 fi
 
 # 最终验证

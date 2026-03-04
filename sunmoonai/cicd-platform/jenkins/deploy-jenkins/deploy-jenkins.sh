@@ -558,28 +558,10 @@ main() {
                 log_info "跳过 Secret 部署（secrets_enabled=false）"
             fi
             create_jenkins_secrets_if_needed "$namespace"
-            # 按需将组件镜像推送至 Harbor（仅控制平面）
-            # 检查是否启用部署前镜像推送
-            if [[ "${PUSH_IMAGES_BEFORE_DEPLOY:-false}" == "true" ]]; then
-                if [[ -x "/home/zym/k8s/utils/registry-push-management/loadimage.sh" ]]; then
-                    log_info "按清单推送 Jenkins 镜像到 Registry..."
-                    "/home/zym/k8s/utils/registry-push-management/loadimage.sh" push-from-list \
-                        "/home/zym/k8s/utils/components-images/jenkins-images.txt" || log_warn "Jenkins 镜像推送失败或部分失败"
-                fi
-            else
-                log_info "跳过 Jenkins 镜像推送（PUSH_IMAGES_BEFORE_DEPLOY=false）"
-            fi
             execute_jenkins_deployment "$project_id" "$namespace" "$environment" "$dry_run"
             # 部署子组件（中间件 / Web Ingress，Secret 已部署，跳过）
             if deploy_sub_components "$project_id" "$namespace" "$environment" "$dry_run"; then
                 check_jenkins_status "$namespace"
-                show_jenkins_connection_info "$namespace"
-                # 安装后清理控制平面 tar 包（按组件开关）
-                if [[ "${CLEANUP_REMOTE_TAR_AFTER_DEPLOY:-true}" == "true" ]]; then
-                : # 通用工具已在推送过程中清理，无需额外清理
-                else
-                    log_info "跳过清理控制平面 tar（CLEANUP_REMOTE_TAR_AFTER_DEPLOY=false）"
-                fi
             else
                 log_error "❌ Jenkins 子组件部署失败"
                 exit 1

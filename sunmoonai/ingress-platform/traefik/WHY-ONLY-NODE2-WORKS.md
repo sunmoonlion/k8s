@@ -100,7 +100,7 @@
 
 2. 重新部署：
    ```bash
-   cd /home/zym/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik
+   cd ~/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik
    ./deploy-traefik.sh deploy sunmoonai
    ```
 
@@ -133,7 +133,7 @@
 
 3. 重新部署：
    ```bash
-   cd /home/zym/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik
+   cd ~/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik
    ./deploy-traefik.sh deploy sunmoonai
    ```
 
