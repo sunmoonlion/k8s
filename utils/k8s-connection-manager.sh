@@ -139,13 +139,12 @@ read_config(){
   
   # 确定使用的集群（优先级：环境变量 > 配置文件默认值）
   local cluster_name="${CLUSTER:-${GLOBAL_DEFAULT_CLUSTER:-C1}}"
+  local cluster_name_upper
+  cluster_name_upper=$(echo "$cluster_name" | tr '[:lower:]' '[:upper:]')
   
-  # 读取集群模式
-  GLOBAL_CLUSTER_MODE=$(sed -n '/\[GLOBAL\]/,/^\[/p' "$CONFIG_FILE" | grep "^cluster_mode=" | cut -d'=' -f2 | tr -d ' ')
-  GLOBAL_CLUSTER_MODE=${GLOBAL_CLUSTER_MODE:-remote}
-  
-  # 如果是 kind 模式，直接返回
-  if [[ "$GLOBAL_CLUSTER_MODE" == "kind" ]] || [[ "$cluster_name" == "KIND" ]]; then
+  # 如果目标是 KIND，直接返回 Kind 配置
+  if [[ "$cluster_name_upper" == "KIND" ]]; then
+    msg "🔧 使用 Kind 集群配置: $cluster_name"
     read_kind_config
     return 0
   fi
@@ -322,8 +321,11 @@ clear_status(){
 
 # 选择访问方式
 select_access_mode(){
-  # 如果是 kind 模式，直接使用 kind
-  if [[ "${GLOBAL_CLUSTER_MODE:-}" == "kind" ]] || [[ "${CLUSTER:-}" == "KIND" ]]; then
+  # 如果当前目标集群是 KIND（命令行/环境变量/default_cluster），直接使用 Kind
+  local cluster_name="${CLUSTER:-${GLOBAL_DEFAULT_CLUSTER:-C1}}"
+  local cluster_upper
+  cluster_upper=$(echo "$cluster_name" | tr '[:lower:]' '[:upper:]')
+  if [[ "$cluster_upper" == "KIND" ]]; then
     CURRENT_MODE="kind"
     success "✅ 使用 Kind 本地集群"
     start_connection
@@ -1066,6 +1068,16 @@ check_ports(){
 
 # 检查连接状态
 check_connection_status(){
+  # Kind 模式下没有隧道，只需简单验证 kubectl 是否可用
+  if [[ "${CURRENT_MODE:-}" == "kind" ]]; then
+    if KUBECONFIG="$CURRENT_KUBECONFIG" kubectl cluster-info >/dev/null 2>&1; then
+      return 0
+    else
+      return 1
+    fi
+  fi
+  
+  # 远程模式需要检查隧道 PID
   if [[ -z "${TUNNEL_PID:-}" ]] || ! kill -0 "$TUNNEL_PID" 2>/dev/null; then
     return 1  # 连接断开
   fi
@@ -1096,6 +1108,56 @@ operation_menu(){
     return 1
   fi
   
+  # Kind 模式下没有 SSH 隧道，提供简化菜单，直接基于当前 KUBECONFIG 运行 kubectl
+  if [[ "$CURRENT_MODE" == "kind" ]]; then
+    while true; do
+      echo ""
+      msg "🔧 Kubernetes 操作菜单 (当前: kind)"
+      msg "1) 查看节点"
+      msg "2) 查看 Pod"
+      msg "3) 查看服务"
+      msg "4) 查看命名空间"
+      msg "5) 查看集群信息"
+      msg "6) 查看部署"
+      msg "7) 查看配置映射"
+      msg "8) 查看密钥"
+      msg "9) 测试连接"
+      msg "10) 检查端口"
+      msg "q) 退出操作菜单"
+      
+      if ! read -rp "请选择: " choice; then
+        msg "🛑 用户中断，退出操作菜单"
+        msg "💡 提示：如需重新连接，请重新运行脚本"
+        break
+      fi
+      
+      case "${choice:-}" in
+        1) KUBECONFIG="$CURRENT_KUBECONFIG" kubectl get nodes -o wide ;;
+        2) KUBECONFIG="$CURRENT_KUBECONFIG" kubectl get pods -A ;;
+        3) KUBECONFIG="$CURRENT_KUBECONFIG" kubectl get svc -A ;;
+        4) KUBECONFIG="$CURRENT_KUBECONFIG" kubectl get ns ;;
+        5) KUBECONFIG="$CURRENT_KUBECONFIG" kubectl cluster-info ;;
+        6) KUBECONFIG="$CURRENT_KUBECONFIG" kubectl get deploy -A ;;
+        7) KUBECONFIG="$CURRENT_KUBECONFIG" kubectl get configmaps -A ;;
+        8) KUBECONFIG="$CURRENT_KUBECONFIG" kubectl get secrets -A ;;
+        9) test_connection ;;
+        10) check_ports ;;
+        q|quit|exit)
+          msg "🛑 正在退出操作菜单..."
+          msg "💡 提示：如需重新连接，请重新运行脚本"
+          break
+          ;;
+        *) warn "❌ 无效选择" ;;
+      esac
+      
+      echo ""
+      read -rp "按回车键继续..." || true
+    done
+    
+    return 0
+  fi
+  
+  # 远程模式：需要维护 SSH 隧道
   while true; do
     # 检查连接状态（更宽松的检查）
     if [[ -z "${TUNNEL_PID:-}" ]] || ! kill -0 "$TUNNEL_PID" 2>/dev/null; then
@@ -1313,7 +1375,6 @@ main(){
   
   # 选择访问方式
   select_access_mode
-  
   # 显示连接信息和使用提示
   show_connection_info
   

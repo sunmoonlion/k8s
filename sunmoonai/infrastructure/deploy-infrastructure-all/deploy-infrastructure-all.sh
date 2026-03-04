@@ -122,46 +122,39 @@ load_config(){
                 source "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh"
             fi
         fi
-        # 从全局配置读取默认集群
+        # 从全局配置读取默认集群（支持 C1/C2/.../KIND）
         if command -v get_default_cluster &>/dev/null; then
             export CLUSTER=$(get_default_cluster)
         fi
     fi
     local cluster_selected="${CLUSTER:-C1}"
+    local cluster_upper
+    cluster_upper=$(echo "$cluster_selected" | tr '[:lower:]' '[:upper:]')
     
-    # 基础设施部署：远程集群走 Step01～Step12；当前目标为 Kind 时改为执行 Kind 一键部署（deploy-kind.sh），避免后续入口/CI 等步骤按远程逻辑跑失败
-    local k8s_admin_conf="$PROJECT_ROOT/../../utils/k8s-admin.conf"
-    if [[ -f "$k8s_admin_conf" ]]; then
-        local global_mode="" global_default=""
-        global_mode=$(sed -n '/^\[GLOBAL\]$/,/^\[[A-Z]/p' "$k8s_admin_conf" 2>/dev/null | grep "^cluster_mode=" | head -1 | cut -d'=' -f2 | tr -d ' ')
-        global_default=$(sed -n '/^\[GLOBAL\]$/,/^\[[A-Z]/p' "$k8s_admin_conf" 2>/dev/null | grep "^default_cluster=" | head -1 | cut -d'=' -f2 | tr -d ' ')
-        local mode_lower="" default_upper=""
-        mode_lower=$(echo "$global_mode" | tr '[:upper:]' '[:lower:]')
-        default_upper=$(echo "$global_default" | tr '[:lower:]' '[:upper:]')
-        if [[ "$mode_lower" == "kind" ]] || [[ "$default_upper" == "KIND" ]]; then
-            log_info "当前为 Kind 模式，执行 Kind 一键部署（deploy-kind.sh）..."
-            local kind_deploy_sh="$PROJECT_ROOT/../kind-infrastructure/deploy-kind/deploy-kind.sh"
-            if [[ ! -f "$kind_deploy_sh" ]]; then
-                log_error "Kind 部署脚本不存在: $kind_deploy_sh"
-                return 1
-            fi
-            if [[ ! -x "$kind_deploy_sh" ]]; then
-                chmod +x "$kind_deploy_sh" 2>/dev/null || true
-            fi
-            if "$kind_deploy_sh"; then
-                log_success "Kind 一键部署完成"
-                exit 0
-            else
-                log_error "Kind 一键部署失败"
-                exit 1
-            fi
+    # 基础设施部署：远程集群走 Step01～Step12；当前目标为 KIND 时改为执行 Kind 一键部署（deploy-kind.sh）
+    if [[ "$cluster_upper" == "KIND" ]]; then
+        log_info "当前目标集群为 KIND，执行 Kind 一键部署（deploy-kind.sh）..."
+        local kind_deploy_sh="$PROJECT_ROOT/../kind-infrastructure/deploy-kind/deploy-kind.sh"
+        if [[ ! -f "$kind_deploy_sh" ]]; then
+            log_error "Kind 部署脚本不存在: $kind_deploy_sh"
+            return 1
+        fi
+        if [[ ! -x "$kind_deploy_sh" ]]; then
+            chmod +x "$kind_deploy_sh" 2>/dev/null || true
+        fi
+        if "$kind_deploy_sh"; then
+            log_success "Kind 一键部署完成"
+            exit 0
+        else
+            log_error "Kind 一键部署失败"
+            exit 1
         fi
     fi
     
     # 验证集群值格式：必须是 C{数字} 格式（如 C1, C2, C3, C10 等）
     # 支持不连续的集群编号（如只有 C1 和 C3，没有 C2）
     if [[ ! "$cluster_selected" =~ ^C[0-9]+$ ]]; then
-        log_error "无效的集群值: $cluster_selected (格式必须为 C{数字}，如 C1, C2, C3 等)"
+        log_error "无效的集群值: $cluster_selected (格式必须为 C{数字}，如 C1, C2, C3 等；或使用 CLUSTER=KIND / default_cluster=KIND 连接 Kind)"
         return 1
     fi
     

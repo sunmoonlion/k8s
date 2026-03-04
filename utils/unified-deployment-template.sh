@@ -202,17 +202,15 @@ read_k8s_config() {
     GLOBAL_DEFAULT_MODE=$(sed -n '/^\[GLOBAL\]$/,/^\[[A-Z]/p' "$CONFIG_FILE" | grep "^default_mode=" | head -1 | cut -d'=' -f2 | tr -d ' ')
     GLOBAL_AUTO_STOP=$(sed -n '/^\[GLOBAL\]$/,/^\[[A-Z]/p' "$CONFIG_FILE" | grep "^auto_stop=" | head -1 | cut -d'=' -f2 | tr -d ' ')
     GLOBAL_TIMEOUT=$(sed -n '/^\[GLOBAL\]$/,/^\[[A-Z]/p' "$CONFIG_FILE" | grep "^timeout=" | head -1 | cut -d'=' -f2 | tr -d ' ')
-    GLOBAL_CLUSTER_MODE=$(sed -n '/^\[GLOBAL\]$/,/^\[[A-Z]/p' "$CONFIG_FILE" | grep "^cluster_mode=" | head -1 | cut -d'=' -f2 | tr -d ' ')
     GLOBAL_DEFAULT_CLUSTER=$(sed -n '/^\[GLOBAL\]$/,/^\[[A-Z]/p' "$CONFIG_FILE" | grep "^default_cluster=" | head -1 | cut -d'=' -f2 | tr -d ' ')
     
     # 确定使用的集群（优先级：环境变量 > 配置文件默认值）
     local cluster_name="${CLUSTER:-${GLOBAL_DEFAULT_CLUSTER:-C1}}"
     
-    # Kind 模式：cluster_mode=kind 或 default_cluster=KIND 时，读 [KIND] 段并返回
-    local cluster_mode="${GLOBAL_CLUSTER_MODE:-}"
     local cluster_name_upper
     cluster_name_upper=$(echo "$cluster_name" | tr '[:lower:]' '[:upper:]')
-    if [[ "$cluster_mode" == "kind" ]] || [[ "$cluster_name_upper" == "KIND" ]]; then
+    # Kind 模式：目标集群为 KIND 时，读 [KIND] 段并返回
+    if [[ "$cluster_name_upper" == "KIND" ]]; then
         log_info "使用 Kind 集群配置"
         KIND_CLUSTER_NAME=$(sed -n '/^\[KIND\]$/,/^\[[A-Z]/p' "$CONFIG_FILE" | grep "^cluster_name=" | head -1 | cut -d'=' -f2 | tr -d ' ')
         KIND_KUBECONFIG=$(sed -n '/^\[KIND\]$/,/^\[[A-Z]/p' "$CONFIG_FILE" | grep "^kubeconfig=" | head -1 | cut -d'=' -f2 | tr -d ' ')
@@ -228,7 +226,7 @@ read_k8s_config() {
     # 验证集群名称格式：必须是 C{数字} 格式（如 C1, C2, C3, C10 等）
     # 支持不连续的集群编号（如只有 C1 和 C3，没有 C2）
     if [[ ! "$cluster_name" =~ ^C[0-9]+$ ]]; then
-        log_error "无效的集群名称: $cluster_name (格式必须为 C{数字}，如 C1, C2, C3 等；或使用 cluster_mode=kind / default_cluster=KIND 连接 Kind)"
+        log_error "无效的集群名称: $cluster_name (格式必须为 C{数字}，如 C1, C2, C3 等；或使用 CLUSTER=KIND / default_cluster=KIND 连接 Kind)"
         return 1
     fi
     
