@@ -164,7 +164,7 @@ docker compose ps
 
 #### 6.1 WSL 宿主机解析
 
-你已有脚本：`kind-infrastructure/wsl-setup-harbor-hosts-and-login.sh`，大致做了：
+你已有脚本：`kind-infrastructure/wsl-setup-harbor-hosts.sh` / `kind-infrastructure/wsl-setup-harbor-login.sh`，大致做了：
 
 - 写 `/etc/hosts`：`harbor.sunmoonai.com -> 某个 IP（control-plane 或 127.0.0.1）`
 - 安装 `SunMoonAI Root CA` 为系统 CA

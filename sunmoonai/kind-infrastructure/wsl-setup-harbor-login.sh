@@ -1,64 +1,40 @@
 #!/usr/bin/env bash
 #
-# 在 WSL 宿主机配置 Harbor：① /etc/hosts 解析 ②（可选）docker/nerdctl 登录。
-# Harbor 未部署时也可执行，仅做 hosts；部署后可用 --login 或 HARBOR_ADMIN_PASSWORD 再运行以配置拉取/推送。
+# 在 WSL 宿主机执行 Harbor 登录（docker/nerdctl），假定 /etc/hosts 中的 Harbor 解析已正确配置。
+# 该脚本同时负责分发 Harbor 根 CA 到 docker certs.d 与系统 CA（若可用），以支持自签名证书。
 #
 # 用法：
-#   ./wsl-setup-harbor-hosts-and-login.sh              # 仅 hosts（deploy-kind 默认）
-#   ./wsl-setup-harbor-hosts-and-login.sh --login      # hosts + 尝试登录（交互输密码或设 HARBOR_ADMIN_PASSWORD）
-#   HARBOR_ADMIN_PASSWORD=xxx ./wsl-setup-harbor-hosts-and-login.sh --login
+#   ./wsl-setup-harbor-login.sh
+#   HARBOR_ADMIN_PASSWORD=xxx ./wsl-setup-harbor-login.sh
 #
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONF="${SCRIPT_DIR}/deploy-kind/deploy-kind.conf"
+
 HARBOR_HOST="harbor.sunmoonai.com"
 HARBOR_IP="172.18.0.2"
 HARBOR_PORT="30443"
 HARBOR_USER="${HARBOR_ADMIN_USER:-admin}"
 # 默认根 CA 位置（Kind 场景）：与 TRAEFIK_KIND_KIND_LOCAL_CA_CERT_DIR 一致
-# 由 kind-infrastructure/ensure-kind-ca.sh 通过 unified-cert-secret-management 生成
 HARBOR_CA_DEFAULT="$HOME/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/ca.crt"
 
 if [[ -f "$CONF" ]]; then
     # shellcheck disable=SC1090
     source "$CONF" 2>/dev/null || true
 fi
+
 HARBOR_HOST="${HARBOR_HOST:-harbor.sunmoonai.com}"
 HARBOR_PORT="${HARBOR_PORT:-30443}"
-# 未显式配置 HARBOR_IP 时，从当前 kubeconfig 的 Kind control-plane 节点自动检测，集群重建后仍可用
 if [[ -z "${HARBOR_IP:-}" ]]; then
     HARBOR_IP=$(kubectl get nodes -l node-role.kubernetes.io/control-plane -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null || true)
 fi
 HARBOR_IP="${HARBOR_IP:-${HARBOR_NODE_IP:-172.18.0.2}}"
 
-# ---------- 1. /etc/hosts（始终执行，Harbor 未部署也可先写好；若已存在但 IP 与配置不符则更新）
-if grep -q "[[:space:]]${HARBOR_HOST}[[:space:]]*$" /etc/hosts 2>/dev/null || grep -q "[[:space:]]${HARBOR_HOST}$" /etc/hosts 2>/dev/null; then
-    _cur=$(grep -E "^[0-9.]+[[:space:]]+${HARBOR_HOST}[[:space:]]*$" /etc/hosts 2>/dev/null | head -1)
-    if [[ -n "${_cur}" && "${_cur}" != "${HARBOR_IP}"* ]]; then
-        echo "更新 /etc/hosts：${HARBOR_HOST} -> ${HARBOR_IP}（原 IP 与配置不符）"
-        sudo sed -i -E "s/^[0-9.]+[[:space:]]+${HARBOR_HOST}[[:space:]]*$/${HARBOR_IP} ${HARBOR_HOST}/" /etc/hosts
-    else
-        echo "已存在 ${HARBOR_HOST} 解析，跳过"
-    fi
-else
-    echo "添加 ${HARBOR_IP} ${HARBOR_HOST} 到 /etc/hosts"
-    echo "${HARBOR_IP} ${HARBOR_HOST}" | sudo tee -a /etc/hosts
-fi
+# 确保 hosts 已配置（重用新的 hosts 脚本，幂等）
+"${SCRIPT_DIR}/wsl-setup-harbor-hosts.sh"
 
-# ---------- 2. 可选：分发 CA 并 docker/nerdctl 登录（仅在使用 --login 或已设密码时执行）
-DO_LOGIN=false
-for arg in "$@"; do
-    if [[ "$arg" == "--login" ]]; then DO_LOGIN=true; break; fi
-done
-[[ -n "${HARBOR_ADMIN_PASSWORD:-}" ]] && DO_LOGIN=true
-
-if ! $DO_LOGIN; then
-    echo "未传 --login 且未设 HARBOR_ADMIN_PASSWORD，跳过登录。Harbor 部署后可执行: $0 --login"
-    exit 0
-fi
-
-# 先尝试将根 CA 分发到本机 docker 证书目录，便于 docker 信任 Harbor 自签名证书
+# 分发 CA 并尝试 docker/nerdctl 登录
 REGISTRY="${HARBOR_HOST}:${HARBOR_PORT}"
 DOCKER_CA_DIR="/etc/docker/certs.d/${REGISTRY}"
 HARBOR_CA_PATH="${HARBOR_CA_PATH:-$HARBOR_CA_DEFAULT}"
@@ -123,4 +99,5 @@ if command -v nerdctl &>/dev/null; then
     fi
 fi
 
-echo "之后可在 WSL 执行: docker pull ${REGISTRY}/<项目>/<镜像> && kind load docker-image <镜像> --name kind"
+echo "Harbor 登录流程完成，可在 WSL 执行: docker pull ${REGISTRY}/<项目>/<镜像>"
+

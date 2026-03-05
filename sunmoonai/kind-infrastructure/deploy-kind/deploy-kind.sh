@@ -199,14 +199,10 @@ else
 fi
 
 if [[ "$RUN_HARBOR_HOSTS" == "true" ]]; then
-    log_info "步骤 7/7：WSL 宿主机 Harbor 解析与登录（wsl-setup-harbor-hosts-and-login.sh --login）"
+    log_info "步骤 7/7：WSL 宿主机 Harbor 域名解析（仅 hosts，登录放在 Harbor 部署完成后执行）"
     export HARBOR_HOST="${HARBOR_HOST:-harbor.sunmoonai.com}"
-    # 不在此处强制 HARBOR_IP，交给配置或脚本自动检测 Kind control-plane IP。
-    # 此步骤负责：
-    #   - 在 WSL /etc/hosts 中写入 Harbor 解析
-    #   - 分发 Harbor 根 CA 到 docker/系统信任
-    #   - 始终尝试 docker/nerdctl 登录 Harbor（成功与否仅打印日志，不终止流程）
-    "$KIND_ROOT/wsl-setup-harbor-hosts-and-login.sh" --login
+    # 不在此处强制 HARBOR_IP，交给脚本自动检测 Kind control-plane IP。
+    "$KIND_ROOT/wsl-setup-harbor-hosts.sh"
 else
     log_info "步骤 7/7：跳过 Harbor hosts（--skip-harbor-hosts）"
 fi
@@ -221,6 +217,16 @@ log_info "步骤 9：在 Kind 集群中部署 Harbor（cicd-platform/harbor/depl
 # 使用 CLUSTER=KIND，deploy-harbor.sh 会根据 deploy-harbor.conf 选择命名空间和环境
 if ! CLUSTER=KIND "$KIND_ROOT/../cicd-platform/harbor/deploy-harbor/deploy-harbor.sh" deploy; then
     log_warn "Harbor 部署脚本执行失败，请检查 cicd-platform/harbor/deploy-harbor 配置或单独运行该脚本查看原因"
+else
+    # Harbor 部署成功后：等待 /v2/ 就绪，然后在 WSL 上执行一次登录（可选）
+    if wait_for_harbor; then
+        log_info "Harbor 已就绪，尝试在 WSL 上执行 Harbor 登录（wsl-setup-harbor-login.sh）"
+        if ! "$KIND_ROOT/wsl-setup-harbor-login.sh"; then
+            log_warn "Harbor 登录脚本执行返回非零状态，可稍后在 WSL 手动运行: $KIND_ROOT/wsl-setup-harbor-login.sh"
+        fi
+    else
+        log_warn "Harbor 在预期时间内未完全就绪，跳过自动登录；可稍后手动运行: $KIND_ROOT/wsl-setup-harbor-login.sh"
+    fi
 fi
 
 log_success "Kind 一键部署完成"

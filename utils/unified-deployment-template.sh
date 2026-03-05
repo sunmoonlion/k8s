@@ -53,6 +53,48 @@ log_error() {
 }
 
 # ========================================
+# Harbor 就绪检查（组件通用）
+# ========================================
+
+wait_for_harbor_if_needed() {
+    # 允许通过环境变量显式跳过（例如离线调试时只做本地 kind load）
+    if [[ "${SKIP_HARBOR_WAIT:-false}" == "true" ]]; then
+        return 0
+    fi
+
+    # 只在当前 shell 进程内检查一次，避免多个组件重复等待
+    if [[ -n "${HARBOR_READY_CHECKED:-}" ]]; then
+        return 0
+    fi
+
+    local host="${HARBOR_HOST:-harbor.sunmoonai.com}"
+    local port="${HARBOR_PORT:-30443}"
+    local timeout="${HARBOR_WAIT_TIMEOUT:-300}" # 最长等待秒数，默认 5 分钟
+    local interval=5
+    local start
+    start=$(date +%s)
+
+    log_info "[harbor] 等待 Harbor 就绪 (${host}:${port}，最长 ${timeout}s)..."
+
+    while true; do
+        # 不带凭证访问 /v2/，能返回 JSON（401/200）即认为 Harbor 已就绪
+        if curl -sk --noproxy '*' "https://${host}:${port}/v2/" | grep -q '"errors"' ; then
+            log_info "[harbor] Harbor /v2/ 已响应"
+            export HARBOR_READY_CHECKED="1"
+            return 0
+        fi
+        local now
+        now=$(date +%s)
+        if (( now - start >= timeout )); then
+            log_warn "[harbor] Harbor 在 ${timeout}s 内未就绪，后续镜像推送可能失败（可稍后单独重试 push）"
+            export HARBOR_READY_CHECKED="1"
+            return 1
+        fi
+        sleep "${interval}"
+    done
+}
+
+# ========================================
 # Traefik Service 端口获取函数
 # ========================================
 
@@ -929,6 +971,9 @@ cleanup_k8s_connection() {
 # - component_name: 组件名称（用于定位 utils/components-images/<component_name>-images.txt）
 push_component_images_to_harbor() {
     local component_name="$1"
+
+    # 在首次推送组件镜像前等待 Harbor 就绪（只检查一次）
+    wait_for_harbor_if_needed || true
 
     local base_dir
     base_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
