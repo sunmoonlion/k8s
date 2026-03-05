@@ -12,6 +12,7 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
 log_info(){ echo -e "[INFO] $*"; }
 log_warn(){ echo -e "\033[33m[WARN]\033[0m $*"; }
 log_error(){ echo -e "\033[31m[ERROR]\033[0m $*" 1>&2; }
+log_success(){ echo -e "\033[32m[SUCCESS]\033[0m $*"; }
 
 need(){ command -v "$1" >/dev/null 2>&1; }
 
