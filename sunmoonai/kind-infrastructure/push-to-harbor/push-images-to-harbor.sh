@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 #
 # 将镜像或 tar 推送到 Harbor。
-# - 镜像列表：从 --img-file / conf 的 DEFAULT_IMAGE_FILES 读取，docker pull 后 tag 为 Harbor 地址并 push。
-# - tar 目录：从 --tar-dir / conf 的 DEFAULT_TAR_DIR 读取，对每个 .tar docker load 后解析镜像名再 tag 并 push。
-# 与 load-kind-images、build-kind-node-image 一致：支持「镜像列表文件」与「tar 目录」两种来源，可同时使用。
+# - 镜像列表（--img-file）：对每个镜像，先到 --tar-dir 指定目录按文件名找 tar（见下），找到则 load 后 push；
+#   找不到或未指定 tar-dir 则 docker pull 后 push。tar 命名约定与 registry-push-management 一致：镜像名将 / : 换成 _，如 bitnami_postgresql_17.6.0-debian-12-r4.tar。
+# - tar 目录（--tar-dir）：除供列表查找外，也可单独使用：对该目录内所有 .tar 执行 load 后解析镜像名并 push。
+# 可同时使用 --img-file 与 --tar-dir；列表项优先从 tar-dir 查找，再 fallback 到 pull。
 #
 # 无参数时使用 conf 中 DEFAULT_IMAGE_FILES 与 DEFAULT_TAR_DIR；指定 --img-file/--tar-dir 后仅使用本次指定（可逗号分隔多个）。
 # 使用前请先登录：docker login <HARBOR_HOST>
@@ -94,6 +95,12 @@ done
 
 load_conf
 
+# 基本配置校验：确保 Harbor 项目已配置，避免推送到空项目路径
+if [[ -z "${HARBOR_PROJECT:-}" ]]; then
+    log_error "未配置 HARBOR_PROJECT：请在 push-images-to-harbor.conf 中设置 Harbor 项目名（例如 k8s-images），否则无法推送镜像。"
+    exit 1
+fi
+
 # 无参时：从 conf 读默认（镜像列表文件 + tar 目录）
 if [[ ${#IMG_FILES[@]} -eq 0 && ${#TAR_DIRS[@]} -eq 0 ]]; then
     if [[ -n "${DEFAULT_IMAGE_FILES:-}" ]]; then
@@ -151,29 +158,68 @@ push_one() {
 
 count=0
 
-# 1) 镜像列表：pull 后 tag 并 push
+# 镜像引用转成文件名（与 registry-push-management 一致：/ 和 : 换成 _）
+find_tar_for_image() {
+    local img="$1"
+    local dir="$2"
+    local safe; safe=$(echo "$img" | sed 's#[/:]#_#g')
+    for candidate in "${dir}/${img}.tar" "${dir}/${safe}.tar" "${dir}/${img}.tar.gz" "${dir}/${safe}.tar.gz"; do
+        [[ -f "$candidate" ]] && { echo "$candidate"; return 0; }
+    done
+    return 1
+}
+
+# 1) 镜像列表：先到 tar 目录找对应 tar（若有）load 后 push，否则 pull 后 push
 if [[ ${#IMAGE_LIST[@]} -gt 0 ]]; then
-    log_info "从镜像列表拉取并推送 ${#IMAGE_LIST[@]} 个镜像"
+    log_info "从镜像列表处理 ${#IMAGE_LIST[@]} 个镜像（优先本地 tar 目录，否则 pull）"
     for img in "${IMAGE_LIST[@]}"; do
-        if docker pull "$img" 2>/dev/null; then
-            push_one "$img"
-            ((count++)) || true
-        else
-            log_warn "docker pull 失败（跳过）: $img"
+        pushed=false
+        if [[ ${#TAR_DIRS[@]} -gt 0 ]]; then
+            for dir in "${TAR_DIRS[@]}"; do
+                [[ -d "$dir" ]] || continue
+                tar_path=""
+                tar_path=$(find_tar_for_image "$img" "$dir") || true
+                if [[ -n "$tar_path" && -f "$tar_path" ]]; then
+                    log_info "从本地 tar 加载: $tar_path"
+                    loaded_ref=""
+                    while IFS= read -r line; do
+                        if [[ "$line" =~ Loaded\ image:\ (.+) ]]; then
+                            loaded_ref="${BASH_REMATCH[1]}"
+                            break
+                        fi
+                    done < <(docker load -i "$tar_path" 2>&1)
+                    if [[ -n "$loaded_ref" ]]; then
+                        push_one "$loaded_ref"
+                        ((count++)) || true
+                        pushed=true
+                    fi
+                    break
+                fi
+            done
+        fi
+        if [[ "$pushed" != "true" ]]; then
+            if docker pull "$img" 2>/dev/null; then
+                push_one "$img"
+                ((count++)) || true
+            else
+                log_warn "docker pull 失败（跳过）: $img（可放对应 tar 到 --tar-dir 目录，如 ${img}.tar 或 $(echo "$img" | sed 's#[/:]#_#g').tar）"
+            fi
         fi
     done
 fi
 
-# 2) tar 目录：load 后解析镜像名并 push
-for tar_path in "${TAR_LIST[@]}"; do
-    log_info "加载并推送: $tar_path"
-    while IFS= read -r line; do
-        if [[ "$line" =~ Loaded\ image:\ (.+) ]]; then
-            push_one "${BASH_REMATCH[1]}"
-            ((count++)) || true
-        fi
-    done < <(docker load -i "$tar_path" 2>&1)
-done
+# 2) tar 目录：仅在未提供镜像列表时，遍历目录内所有 tar
+if [[ ${#IMAGE_LIST[@]} -eq 0 ]]; then
+    for tar_path in "${TAR_LIST[@]}"; do
+        log_info "加载并推送: $tar_path"
+        while IFS= read -r line; do
+            if [[ "$line" =~ Loaded\ image:\ (.+) ]]; then
+                push_one "${BASH_REMATCH[1]}"
+                ((count++)) || true
+            fi
+        done < <(docker load -i "$tar_path" 2>&1)
+    done
+fi
 
 if [[ $count -eq 0 ]]; then
     log_warn "未推送任何镜像（镜像列表拉取失败或 tar 中无镜像）"

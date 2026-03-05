@@ -199,15 +199,14 @@ else
 fi
 
 if [[ "$RUN_HARBOR_HOSTS" == "true" ]]; then
-    log_info "步骤 7/7：WSL 宿主机 Harbor 解析与登录（wsl-setup-harbor-hosts-and-login.sh）"
+    log_info "步骤 7/7：WSL 宿主机 Harbor 解析与登录（wsl-setup-harbor-hosts-and-login.sh --login）"
     export HARBOR_HOST="${HARBOR_HOST:-harbor.sunmoonai.com}"
     # 不在此处强制 HARBOR_IP，交给配置或脚本自动检测 Kind control-plane IP。
-    # 此步骤只负责 WSL /etc/hosts + CA 分发，登录逻辑交给后续「推送到 Harbor」步骤处理。
-    # 为避免脚本里的自动登录分支生效，这里显式屏蔽 HARBOR_ADMIN_PASSWORD 环境变量。
-    (
-        unset HARBOR_ADMIN_PASSWORD
-        "$KIND_ROOT/wsl-setup-harbor-hosts-and-login.sh"
-    )
+    # 此步骤负责：
+    #   - 在 WSL /etc/hosts 中写入 Harbor 解析
+    #   - 分发 Harbor 根 CA 到 docker/系统信任
+    #   - 始终尝试 docker/nerdctl 登录 Harbor（成功与否仅打印日志，不终止流程）
+    "$KIND_ROOT/wsl-setup-harbor-hosts-and-login.sh" --login
 else
     log_info "步骤 7/7：跳过 Harbor hosts（--skip-harbor-hosts）"
 fi
@@ -222,49 +221,6 @@ log_info "步骤 9：在 Kind 集群中部署 Harbor（cicd-platform/harbor/depl
 # 使用 CLUSTER=KIND，deploy-harbor.sh 会根据 deploy-harbor.conf 选择命名空间和环境
 if ! CLUSTER=KIND "$KIND_ROOT/../cicd-platform/harbor/deploy-harbor/deploy-harbor.sh" deploy; then
     log_warn "Harbor 部署脚本执行失败，请检查 cicd-platform/harbor/deploy-harbor 配置或单独运行该脚本查看原因"
-fi
-
-# 可选：在一键流程中单独执行一次 WSL Harbor 登录（便于开发验证），失败仅告警不终止整体流程；
-# 这里采用「尽力而为」策略：不再长时间等待 Harbor，就直接尝试一次 docker login，失败立即跳过。
-if [[ "${DEPLOY_KIND_RUN_HARBOR_LOGIN:-false}" == "true" ]]; then
-    log_info "可选步骤：WSL 宿主机 Harbor 登录（不推送镜像，仅登录验证，若失败立即跳过）"
-    login_host="${HARBOR_HOST:-harbor.sunmoonai.com}:${HARBOR_PORT:-30443}"
-    if [[ -z "${HARBOR_ADMIN_PASSWORD:-}" ]]; then
-        log_warn "未配置 HARBOR_ADMIN_PASSWORD，跳过自动登录（可手动运行 wsl-setup-harbor-hosts-and-login.sh --login）"
-    else
-        if ! echo "${HARBOR_ADMIN_PASSWORD}" | docker login "${login_host}" -u "${HARBOR_ADMIN_USER:-admin}" --password-stdin; then
-            log_warn "WSL Harbor 登录失败（${login_host}），可稍后手动执行 docker login 或运行 wsl-setup-harbor-hosts-and-login.sh --login"
-        fi
-    fi
-fi
-
-PUSH_ARGS=()
-if [[ -n "${DEPLOY_KIND_PUSH_IMAGE_FILES:-}" ]]; then
-    PUSH_ARGS+=(--img-file "$(resolve_to_absolute "$DEPLOY_KIND_PUSH_IMAGE_FILES")")
-fi
-if [[ -n "${DEPLOY_KIND_PUSH_TAR_DIRS:-}" ]]; then
-    PUSH_ARGS+=(--tar-dir "$(resolve_to_absolute "$DEPLOY_KIND_PUSH_TAR_DIRS")")
-fi
-
-if [[ ${#PUSH_ARGS[@]} -gt 0 ]]; then
-    if [[ "${DEPLOY_KIND_RUN_PUSH_TO_HARBOR:-false}" == "true" ]]; then
-        log_info "可选步骤：根据 deploy-kind.conf 向 Harbor 推送镜像（push-to-harbor/push-images-to-harbor.sh）"
-
-        # 推送前强制执行一次登录（等待 Harbor + 登录 + 确保项目）
-        if ! harbor_login_or_fail; then
-            log_error "Harbor 登录流程失败，终止 Harbor 镜像推送及一键部署流程"
-            exit 1
-        fi
-
-        if ! "$KIND_ROOT/push-to-harbor/push-images-to-harbor.sh" "${PUSH_ARGS[@]}"; then
-            log_error "push-images-to-harbor.sh 执行失败，请检查配置 DEPLOY_KIND_PUSH_IMAGE_FILES/DEPLOY_KIND_PUSH_TAR_DIRS 或单独运行该脚本查看原因"
-            exit 1
-        fi
-    else
-        log_info "已配置推送源，但 DEPLOY_KIND_RUN_PUSH_TO_HARBOR 未开启，跳过 Harbor 镜像推送"
-    fi
-else
-    log_info "未配置 DEPLOY_KIND_PUSH_IMAGE_FILES/DEPLOY_KIND_PUSH_TAR_DIRS，跳过 Harbor 镜像推送"
 fi
 
 log_success "Kind 一键部署完成"

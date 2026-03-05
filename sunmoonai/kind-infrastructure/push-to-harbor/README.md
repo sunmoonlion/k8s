@@ -2,8 +2,8 @@
 
 将镜像或 tar 推送到 Harbor，与 **load-kind-images**、**build-kind-node-image** 一致，支持两种来源：
 
-- **镜像列表文件**：`DEFAULT_IMAGE_FILES` 或 `--img-file`，一行一个镜像名，脚本 `docker pull` 后打 tag 并 push。
-- **tar 目录**：`DEFAULT_TAR_DIR` 或 `--tar-dir`，对每个 `.tar` 执行 `docker load`，解析出镜像名后打 tag 为 `HARBOR_HOST/HARBOR_PROJECT/<repo>:<tag>` 并 push。
+- **镜像列表文件**（`--img-file`）：一行一个镜像名。若同时指定 **`--tar-dir`**，对列表中每个镜像**先到该目录按文件名找 tar**（命名：`/`、`:` 换成 `_`，如 `bitnami_postgresql_17.6.0-debian-12-r4.tar`），找到则 `docker load` 后 push，否则 `docker pull` 后 push；未指定 `--tar-dir` 时直接 pull 后 push。
+- **tar 目录**（`--tar-dir`）：对目录内所有 `.tar` 执行 `docker load` 后 push；与 `--img-file` 同时指定时也作为列表项的本地 tar 查找目录。
 
 与 **load-images** 平级，同属 `kind-infrastructure/`。
 
@@ -18,7 +18,7 @@
 ## 行为
 
 - **无参数**：使用 conf 中 `HARBOR_HOST`、`HARBOR_PROJECT`、`DEFAULT_IMAGE_FILES`、`DEFAULT_TAR_DIR`（相对路径相对本目录）。
-- **指定 `--img-file` 或 `--tar-dir`**：仅使用本次指定的内容（可逗号分隔多个文件/目录），不再读 conf 默认。
+- **指定 `--img-file` 或 `--tar-dir`**：仅使用本次指定的内容（可逗号分隔多个文件/目录），不再读 conf 默认。**同时指定时**：列表中的镜像优先从 `--tar-dir` 下按文件名匹配 tar（如 `bitnami_postgresql_17.6.0-debian-12-r4.tar`），再 fallback 到 pull。
 
 ## 用法
 

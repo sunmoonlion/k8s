@@ -127,31 +127,33 @@ check_namespace() {
     fi
 }
 
-# 定义 Jenkins 所需镜像
+# 定义 Jenkins 所需镜像（保留给镜像检查设计使用）
 define_required_images() {
     local environment="$1"
     
     case "$environment" in
         "development"|"dev")
-            # 开发环境：主镜像 + Agent镜像（如果启用）
             echo "jenkins/jenkins:$JENKINS_IMAGE_VERSION|true"
             if [[ "${JENKINS_AGENT_ENABLED:-false}" == "true" ]]; then
                 echo "jenkins/inbound-agent:$JENKINS_AGENT_IMAGE_VERSION|true"
             fi
             ;;
         "production"|"prod")
-            # 生产环境：主镜像 + Agent镜像 + 监控镜像
             echo "jenkins/jenkins:$JENKINS_IMAGE_VERSION|true"
             echo "jenkins/inbound-agent:$JENKINS_AGENT_IMAGE_VERSION|true"
             if [[ "${JENKINS_MONITORING_ENABLED:-false}" == "true" ]]; then
-                echo "jenkins/jenkins:$JENKINS_IMAGE_VERSION|true"  # 用于监控的相同镜像
+                echo "jenkins/jenkins:$JENKINS_IMAGE_VERSION|true"
             fi
             ;;
         *)
-            # 默认：只使用主镜像
             echo "jenkins/jenkins:$JENKINS_IMAGE_VERSION|true"
             ;;
     esac
+}
+
+# 使用统一模板的通用按需推送 helper，将 Jenkins 组件镜像推送到 Harbor
+push_jenkins_images_to_harbor() {
+    push_component_images_to_harbor "jenkins"
 }
 
 # 执行 Jenkins 部署
@@ -542,6 +544,8 @@ main() {
         "deploy")
             log_info "开始部署 Jenkins..."
             check_namespace "$namespace"
+            # 在部署前按需推送 Jenkins 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
+            push_jenkins_images_to_harbor || log_warn "[images] Jenkins 镜像推送阶段出现警告，可稍后单独检查 Harbor 镜像状态"
             # 重要：必须先部署 Secret，再部署 Helm Chart
             # Bitnami Chart 只在首次启动时使用密码，如果 Secret 不存在，Chart 会生成随机密码
             if [[ "${secrets_enabled:-true}" == "true" ]]; then

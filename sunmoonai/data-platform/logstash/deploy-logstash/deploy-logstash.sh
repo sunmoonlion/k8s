@@ -127,24 +127,26 @@ check_namespace() {
     fi
 }
 
-# 定义 Logstash 所需镜像
+# 定义 Logstash 所需镜像（保留给镜像检查设计使用）
 define_required_images() {
     local environment="$1"
     
     case "$environment" in
         "development"|"dev")
-            # 开发环境：主镜像
             echo "logstash:$LOGSTASH_IMAGE_VERSION|true"
             ;;
         "production"|"prod")
-            # 生产环境：主镜像
             echo "logstash:$LOGSTASH_IMAGE_VERSION|true"
             ;;
         *)
-            # 默认：只使用主镜像
             echo "logstash:$LOGSTASH_IMAGE_VERSION|true"
             ;;
     esac
+}
+
+# 使用统一模板的通用按需推送 helper，将 Logstash 组件镜像推送到 Harbor
+push_logstash_images_to_harbor() {
+    push_component_images_to_harbor "logstash"
 }
 
 # 执行 Logstash 部署
@@ -469,6 +471,8 @@ main() {
         "deploy")
             log_info "开始部署 Logstash..."
             check_namespace "$namespace"
+            # 在部署前按需推送 Logstash 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
+            push_logstash_images_to_harbor || log_warn "[images] Logstash 镜像推送阶段出现警告，可稍后单独检查 Harbor 镜像状态"
             # 部署 Secrets（在主部署之前）
             if ! deploy_logstash_secrets "$project_id" "$namespace" "$environment" "$dry_run"; then
                 log_error "❌ Logstash Secrets 部署失败，终止主部署"

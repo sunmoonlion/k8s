@@ -150,26 +150,26 @@ load_rabbitmq_config() {
     return 0
 }
 
-# 定义 RabbitMQ 所需镜像
+# 定义 RabbitMQ 所需镜像（保留给镜像检查设计使用）
 define_required_images() {
     local environment="$1"
     
-    # RabbitMQ Chart 使用内置的 Prometheus 插件，无需独立的 exporter 镜像
-    # 所有环境都只需要主镜像（使用 bitnamilegacy 命名空间，因为历史版本已迁移）
     case "$environment" in
         "development"|"dev")
-            # 开发环境：只需要主镜像
             echo "bitnamilegacy/rabbitmq:$RABBITMQ_IMAGE_VERSION|true"
             ;;
         "production"|"prod")
-            # 生产环境：只需要主镜像（metrics 通过 RabbitMQ 内置插件提供）
             echo "bitnamilegacy/rabbitmq:$RABBITMQ_IMAGE_VERSION|true"
             ;;
         *)
-            # 默认：只使用主镜像
             echo "bitnamilegacy/rabbitmq:$RABBITMQ_IMAGE_VERSION|true"
             ;;
     esac
+}
+
+# 使用统一模板的通用按需推送 helper，将 RabbitMQ 组件镜像推送到 Harbor
+push_rabbitmq_images_to_harbor() {
+    push_component_images_to_harbor "rabbitmq"
 }
 
 # 执行 RabbitMQ 部署
@@ -716,6 +716,9 @@ main() {
                 log_error "无法建立 Kubernetes 连接"
                 return 1
             fi
+            
+            # 执行部署前，按需推送 RabbitMQ 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
+            push_rabbitmq_images_to_harbor || log_warn "[images] RabbitMQ 镜像推送阶段出现警告，可稍后单独检查 Harbor 镜像状态"
             
             # 执行部署
             if execute_rabbitmq_deployment "$project_id" "$namespace" "$environment" "$dry_run"; then

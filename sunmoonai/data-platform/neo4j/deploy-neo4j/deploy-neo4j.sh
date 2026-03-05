@@ -127,30 +127,32 @@ check_namespace() {
     fi
 }
 
-# 定义 Neo4j 所需镜像
+# 定义 Neo4j 所需镜像（保留给镜像检查设计使用）
 define_required_images() {
     local environment="$1"
     
     case "$environment" in
         "development"|"dev")
-            # 开发环境：主镜像 + 社区版镜像（如果启用）
             echo "neo4j/neo4j:$NEO4J_IMAGE_VERSION|true"
             if [[ "${NEO4J_COMMUNITY_ENABLED:-false}" == "true" ]]; then
                 echo "neo4j/neo4j:$NEO4J_COMMUNITY_IMAGE_VERSION|true"
             fi
             ;;
         "production"|"prod")
-            # 生产环境：主镜像 + 监控镜像
             echo "neo4j/neo4j:$NEO4J_IMAGE_VERSION|true"
             if [[ "${NEO4J_MONITORING_ENABLED:-false}" == "true" ]]; then
-                echo "neo4j/neo4j:$NEO4J_IMAGE_VERSION|true"  # 用于监控的相同镜像
+                echo "neo4j/neo4j:$NEO4J_IMAGE_VERSION|true"
             fi
             ;;
         *)
-            # 默认：只使用主镜像
             echo "neo4j/neo4j:$NEO4J_IMAGE_VERSION|true"
             ;;
     esac
+}
+
+# 使用统一模板的通用按需推送 helper，将 Neo4j 组件镜像推送到 Harbor
+push_neo4j_images_to_harbor() {
+    push_component_images_to_harbor "neo4j"
 }
 
 # 执行 Neo4j 部署
@@ -470,6 +472,8 @@ main() {
         "deploy")
             log_info "开始部署 Neo4j..."
             check_namespace "$namespace"
+            # 在部署前按需推送 Neo4j 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
+            push_neo4j_images_to_harbor || log_warn "[images] Neo4j 镜像推送阶段出现警告，可稍后单独检查 Harbor 镜像状态"
             # 统一密管管理密钥
             log_info "跳过创建 Neo4j 密钥（由统一密管管理）"
             execute_neo4j_deployment "$project_id" "$namespace" "$environment" "$dry_run"

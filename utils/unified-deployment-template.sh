@@ -944,15 +944,22 @@ push_component_images_to_harbor() {
     [[ "$image_list_abs" != /* ]] && image_list_abs="$(cd "$(dirname "$image_list_file")" && pwd)/$(basename "$image_list_file")"
 
     if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
-        # Kind：使用 push-to-harbor，从本机 Docker 推送到 Harbor
+        # Kind：使用 push-to-harbor；先按镜像列表 pull，若有本地 tar 目录则同时 load+push（pull 失败时仍可从 tar 推送）
         local k8s_root; k8s_root="$(cd "$base_dir/.." && pwd)"
         local kind_push_sh="$k8s_root/sunmoonai/kind-infrastructure/push-to-harbor/push-images-to-harbor.sh"
         if [[ ! -f "$kind_push_sh" ]]; then
             log_warn "[images] Kind 模式下 push-images-to-harbor.sh 不存在: $kind_push_sh，跳过 Harbor 镜像推送"
             return 0
         fi
-        log_info "[images] Kind 集群：使用 push-to-harbor 按需推送组件镜像到 Harbor（component=${component_name}）"
-        if ! "$kind_push_sh" --img-file "$image_list_abs"; then
+        local kind_push_args=(--img-file "$image_list_abs")
+        local tar_dir="${COMPONENT_IMAGE_TAR_DIR:-$HOME/packages-to-be-installed/images}"
+        if [[ -d "$tar_dir" ]]; then
+            kind_push_args+=(--tar-dir "$tar_dir")
+            log_info "[images] Kind 集群：使用 push-to-harbor 推送组件镜像（清单 + 本地 tar 目录: $tar_dir）"
+        else
+            log_info "[images] Kind 集群：使用 push-to-harbor 按需推送组件镜像到 Harbor（component=${component_name}）"
+        fi
+        if ! "$kind_push_sh" "${kind_push_args[@]}"; then
             log_warn "[images] 组件 ${component_name} 镜像推送返回非零状态，请检查 push-to-harbor 或稍后单独执行"
         else
             log_info "[images] 组件 ${component_name} 相关镜像已确保存在于 Harbor（或已按需推送）"

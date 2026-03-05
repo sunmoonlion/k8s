@@ -141,20 +141,18 @@ check_namespace() {
     fi
 }
 
-# 定义 Redis 所需镜像
+# 定义 Redis 所需镜像（保留给镜像检查设计使用）
 define_required_images() {
     local environment="$1"
     
     case "$environment" in
         "development"|"dev")
-            # 开发环境：主镜像 + 监控镜像（如果启用）
             echo "bitnami/redis:$REDIS_IMAGE_VERSION|true"
             if [[ "${REDIS_MONITORING_ENABLED:-false}" == "true" ]]; then
                 echo "bitnami/redis-exporter:$REDIS_METRICS_IMAGE_VERSION|true"
             fi
             ;;
         "production"|"prod")
-            # 生产环境：主镜像 + 监控镜像 + 哨兵镜像
             echo "bitnami/redis:$REDIS_IMAGE_VERSION|true"
             echo "bitnami/redis-exporter:$REDIS_METRICS_IMAGE_VERSION|true"
             if [[ "${REDIS_SENTINEL_ENABLED:-false}" == "true" ]]; then
@@ -162,10 +160,14 @@ define_required_images() {
             fi
             ;;
         *)
-            # 默认：只使用主镜像
             echo "bitnami/redis:$REDIS_IMAGE_VERSION|true"
             ;;
     esac
+}
+
+# 使用统一模板的通用按需推送 helper，将 Redis 组件镜像推送到 Harbor
+push_redis_images_to_harbor() {
+    push_component_images_to_harbor "redis"
 }
 
 # 执行 Redis 部署
@@ -510,6 +512,9 @@ main() {
         "deploy")
             log_info "开始部署 Redis..."
             check_namespace "$namespace"
+            
+            # 在部署前按需推送 Redis 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
+            push_redis_images_to_harbor || log_warn "[images] Redis 镜像推送阶段出现警告，可稍后单独检查 Harbor 镜像状态"
             
             # ============================================================
             # 阶段1：部署子级组件（按优先级，先部署依赖项）
