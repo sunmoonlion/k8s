@@ -2,6 +2,8 @@
 
 > 通用的容器镜像加载、打标、推送工具，**Registry 无关**（支持 Harbor、DockerHub、私有仓库等）
 
+**适用范围**：本工具**仅适用于远程集群**（通过 SSH 在远程节点执行 nerdctl load/tag/push），不适用于 Kind。在操作节点上仅使用 **nerdctl（containerd）**，不支持 Docker。
+
 ---
 
 ## 📋 目录
@@ -125,7 +127,7 @@ Registry 存储
 
 | 考虑因素 | 本地直接推送 | 远程节点推送（推荐）|
 |---------|------------|-------------------|
-| **本地环境** | ⚠️ 需要 nerdctl/Docker | ✅ 只需 SSH/SCP |
+| **本地环境** | ⚠️ 需要 nerdctl（本工具不支持 Docker） | ✅ 只需 SSH/SCP |
 | **网络要求** | ⚠️ 需直连 Registry | ✅ 只需连远程节点 |
 | **安全性** | ⚠️ Registry 需对外暴露 | ✅ Registry 可内网隔离 |
 | **兼容性** | ⚠️ 依赖本地环境 | ✅ 标准化远程环境 |
@@ -632,9 +634,11 @@ EOF
 
 ## 本地 vs 远程推送
 
-### 本地直接推送
+**说明**：本工具仅用于**远程节点**（SSH + nerdctl），不适用于 Kind 或本机直推。若需在 Kind/本机推送，请使用 `push-images-to-harbor.sh` 或按下面「使用 Docker」小节手动操作。
 
-如果你的本地机器满足以下条件，可以直接推送：
+### 本工具不支持的场景（仅作手动参考）
+
+若在**本机**或 Kind 环境需要手动推送，需已安装 **nerdctl** 或 **Docker**。Kind 建议使用 `push-to-harbor/push-images-to-harbor.sh`。
 
 1. ✅ 有容器运行时（nerdctl 或 Docker）
 2. ✅ 网络可以访问 Registry
@@ -663,7 +667,7 @@ sudo nerdctl -n k8s.io rmi docker.io/library/nginx:1.21
 sudo nerdctl -n k8s.io rmi www.sunmoonai.com:30443/k8s-images/nginx:1.21
 ```
 
-#### 使用 Docker（本地推送）
+#### 使用 Docker（手动一次性推送，本机仅 Docker 时）
 
 ```bash
 # 1. 加载

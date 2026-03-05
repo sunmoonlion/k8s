@@ -102,10 +102,10 @@ define_required_images() {
      - 对每个启用镜像进行检查（见 3.3）。
 
 3. **对缺失镜像执行“按需补齐”**
-   - `check_component_images` 内部或之后，驱动一个“按需推送”流程（结合 `registry-push-management` 工具），策略例如：
-     - 从本地 tar 目录 / 本地 Docker / 其它 registry 拉取镜像；
-     - 使用 `loadimage.sh` 等工具推送到 Harbor 对应项目；
-     - 再次验证 Harbor 中 artifact 是否存在。
+   - `check_component_images` 内部或之后，驱动“按需推送”流程，按集群模式分流：
+     - **Kind**：使用 `sunmoonai/kind-infrastructure/push-to-harbor/push-images-to-harbor.sh`（本机 Docker → Harbor）；
+     - **远程（C1/C2/...）**：使用 `utils/registry-push-management/loadimage.sh`（SSH 到节点 + nerdctl → Harbor）。
+     - 从本地 tar / 本地 Docker / 其它 registry 拉取镜像后，推送到 Harbor 对应项目，再次验证 artifact 是否存在。
 
 4. **决策与反馈**
    - 当所有必需镜像均存在于 Harbor 中：
@@ -176,14 +176,17 @@ define_required_images() {
   - `check-images`：独立执行镜像检查。
   - `cleanup`：清理连接。
 
-#### 5.2 `utils/registry-push-management/*`
+#### 5.2 镜像推送工具（按集群模式分流）
 
-- 扮演 **“按需补齐镜像”的执行工具链**：
-  - 输入：缺失镜像列表。
-  - 行为：
-    - 根据 `loadimage.conf` 和命令参数，从本地 tar / 本地 Docker / 远程 registry 拉取镜像。
-    - 推送到 Harbor 对应项目与仓库。
-    - 在 CI/CD 或人工脚本中也可直接调用同一工具实现统一行为。
+- **远程集群（C1/C2/...）**：`utils/registry-push-management/*`
+  - 通过 SSH 在远程节点执行 nerdctl load/tag/push，推送到 Harbor。
+  - 输入：组件镜像清单（如 `components-images/<component>-images.txt`）或单镜像引用。
+  - 在 CI/CD 或人工脚本中直接调用 `loadimage.sh`（如 `push-from-list`）实现按需推送。
+
+- **Kind 集群**：`sunmoonai/kind-infrastructure/push-to-harbor/*`
+  - 在本机使用 Docker load/tag/push，推送到 Harbor（Kind 节点无 SSH，不适用 registry-push-management）。
+  - 输入：镜像列表文件（`--img-file`）或 tar 目录（`--tar-dir`）。
+  - 统一模板中的 `push_component_images_to_harbor` 会根据 `K8S_TARGET_MODE` 自动选择上述二者之一。
 
 #### 5.3 检查类工具脚本
 
@@ -199,7 +202,7 @@ define_required_images() {
 
 - **1）确定最小可行版本的行为边界**
   - 第一阶段是否先只做“Harbor 维度检查 + 日志提示”，暂不自动 push。
-  - 或者在缺镜像时立刻调用 `registry-push-management` 执行自动推送。
+  - 或者在缺镜像时按集群模式调用对应工具（Kind：push-to-harbor；远程：registry-push-management）执行自动推送。
 
 - **2）选择一个组件作为 POC 样板**
   - 推荐：PostgreSQL 或 RabbitMQ（依赖清晰、影响面适中）。

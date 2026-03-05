@@ -923,8 +923,9 @@ cleanup_k8s_connection() {
 # ========================================
 # Harbor 镜像按需推送（组件通用）
 # ========================================
-
-# 使用 registry-push-management 根据组件镜像清单文件按需推送镜像到 Harbor。
+# 按集群模式分流：
+#   - Kind：使用 sunmoonai/kind-infrastructure/push-to-harbor/push-images-to-harbor.sh（--img-file 组件清单）
+#   - 远程（C1/C2/...）：使用 utils/registry-push-management/loadimage.sh push-from-list
 # - component_name: 组件名称（用于定位 utils/components-images/<component_name>-images.txt）
 push_component_images_to_harbor() {
     local component_name="$1"
@@ -933,13 +934,34 @@ push_component_images_to_harbor() {
     base_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
     local image_list_file="$base_dir/components-images/${component_name}-images.txt"
-    local loadimage_sh="$base_dir/registry-push-management/loadimage.sh"
 
     if [[ ! -f "$image_list_file" ]]; then
         log_warn "[images] 找不到组件镜像清单: $image_list_file，跳过 Harbor 镜像推送"
         return 0
     fi
 
+    local image_list_abs="$image_list_file"
+    [[ "$image_list_abs" != /* ]] && image_list_abs="$(cd "$(dirname "$image_list_file")" && pwd)/$(basename "$image_list_file")"
+
+    if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
+        # Kind：使用 push-to-harbor，从本机 Docker 推送到 Harbor
+        local k8s_root; k8s_root="$(cd "$base_dir/.." && pwd)"
+        local kind_push_sh="$k8s_root/sunmoonai/kind-infrastructure/push-to-harbor/push-images-to-harbor.sh"
+        if [[ ! -f "$kind_push_sh" ]]; then
+            log_warn "[images] Kind 模式下 push-images-to-harbor.sh 不存在: $kind_push_sh，跳过 Harbor 镜像推送"
+            return 0
+        fi
+        log_info "[images] Kind 集群：使用 push-to-harbor 按需推送组件镜像到 Harbor（component=${component_name}）"
+        if ! "$kind_push_sh" --img-file "$image_list_abs"; then
+            log_warn "[images] 组件 ${component_name} 镜像推送返回非零状态，请检查 push-to-harbor 或稍后单独执行"
+        else
+            log_info "[images] 组件 ${component_name} 相关镜像已确保存在于 Harbor（或已按需推送）"
+        fi
+        return 0
+    fi
+
+    # 远程集群：使用 registry-push-management（SSH + nerdctl）
+    local loadimage_sh="$base_dir/registry-push-management/loadimage.sh"
     if [[ ! -f "$loadimage_sh" ]]; then
         log_warn "[images] registry-push-management 工具不存在: $loadimage_sh，跳过 Harbor 镜像推送"
         return 0
@@ -952,8 +974,6 @@ push_component_images_to_harbor() {
         cluster_args+=(--cluster "$CLUSTER")
     fi
 
-    # 让 loadimage.sh 自行根据 CLUSTER 和 loadimage.conf 选择远程节点与 Harbor，
-    # 并通过 EXISTENCE_CHECK_TOOL（如 skopeo）仅为 Harbor 中缺失的镜像执行 push。
     if ! "$loadimage_sh" "${cluster_args[@]}" push-from-list "$image_list_file"; then
         log_warn "[images] 组件 ${component_name} 镜像推送工具返回非零状态，请稍后在 utils/registry-push-management 中单独检查"
     else

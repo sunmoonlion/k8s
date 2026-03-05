@@ -50,7 +50,7 @@ parse_cluster_arg() {
                     CURRENT_CLUSTER="$cluster_value"
                     i=$((i+1))
                 else
-                    err "--cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
+                    err "--cluster 参数需要指定值（格式：C1, C2, C3）"
                     exit 1
                 fi
                 ;;
@@ -1180,7 +1180,7 @@ main() {
   $0 -h|--help            # 显示帮助
 
 参数:
-  --cluster, -c           指定集群（C1, C2, C3 等）
+  --cluster, -c           指定集群（C1, C2, C3）
                           如果不指定，使用环境变量 CURRENT_CLUSTER 或全局默认值（当前：C2）
 
 功能:

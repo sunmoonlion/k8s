@@ -8,6 +8,7 @@ CONF_FILE="$SCRIPT_DIR/harbor-image.conf"
 source "$CONF_FILE"
 # 覆盖 conf 中可能写死的 k8s 路径，保证与仓库位置无关
 COMPONENT_IMAGES_DIR="${COMPONENT_IMAGES_DIR:-$K8S_ROOT/utils/components-images}"
+# 仅用于远程集群（SSH + nerdctl）；Kind 使用 sunmoonai/kind-infrastructure/push-to-harbor
 IMAGE_TOOL="${IMAGE_TOOL:-$K8S_ROOT/utils/registry-push-management/loadimage.sh}"
 
 # 加载基础设施配置文件（包含节点配置）

@@ -177,10 +177,8 @@ validate_cluster_config() {
 exec_remote(){
   local host="$1" user="${2:-root}" port="${3:-22}" cmd="$4" secret="${5:-}" pass="${6:-}"
   local base=(-o StrictHostKeyChecking=no -o LogLevel=ERROR -p "$port")
-  # 优化 SSH 选项：保持连接，禁用压缩（可能影响性能），允许 TTY（用于进度显示）
   base+=(-o ServerAliveInterval=60 -o ServerAliveCountMax=3 -o Compression=no)
   if [[ "$DRY_RUN" == "true" ]]; then log "[dry-run] ssh $user@$host:$port: $cmd"; return 0; fi
-  # 使用 bash -lc 确保远程环境变量和 ~ 正确展开
   if [[ -n "$secret" && -f "$secret" ]]; then
     ssh -i "$secret" "${base[@]}" "$user@$host" "bash -lc $(printf '%q' "$cmd")"
   elif command -v sshpass >/dev/null 2>&1 && [[ -n "$pass" ]]; then
@@ -487,7 +485,6 @@ load_image(){
   local remote_tar="$1" host="$2" user="${3:-root}" port="${4:-22}" secret="${5:-}" pass="${6:-}"
   local sudo_prefix=""; [[ "$USE_SUDO" == "true" ]] && sudo_prefix="sudo -n "
   local nb="$NERDCTL_BIN" ns="$CONTAINERD_NAMESPACE"
-  # 简单命令，交由 exec_remote 的 bash -lc 处理引号和 ~ 展开
   local cmd="$sudo_prefix$nb -n $ns load -i $remote_tar"
   local out; out=$(exec_remote "$host" "$user" "$port" "$cmd" "$secret" "$pass" 2>&1 || true)
   local ref; ref=$(parse_loaded_ref "$out")
@@ -513,24 +510,19 @@ push_image(){
     return 0
   fi
   local nb="$NERDCTL_BIN" ns="$CONTAINERD_NAMESPACE" sudo_prefix=""; [[ "$USE_SUDO" == "true" ]] && sudo_prefix="sudo -n "
-  # 构建环境变量数组，避免前导空格问题
   local env_vars=()
   [[ -n "${HTTP_PROXY:-}" ]] && env_vars+=("HTTP_PROXY=$HTTP_PROXY")
   [[ -n "${HTTPS_PROXY:-}" ]] && env_vars+=("HTTPS_PROXY=$HTTPS_PROXY")
   [[ -n "${NO_PROXY:-}" ]] && env_vars+=("NO_PROXY=$NO_PROXY")
   local tries=0 max="$PUSH_RETRY" interval="$PUSH_RETRY_INTERVAL"
   while true; do
-    # 构建命令：优先使用环境变量，stdbuf 可能影响性能，只在必要时使用
     local nerdctl_cmd="$sudo_prefix$nb -n $ns push $ref"
+    local cmd
     if [[ ${#env_vars[@]} -gt 0 ]]; then
-      # 如果有环境变量，使用 env 命令设置
-      # 不使用 stdbuf，因为它可能影响性能，而且 nerdctl 本身已经有进度显示
-      local cmd="env ${env_vars[*]} $nerdctl_cmd"
+      cmd="env ${env_vars[*]} $nerdctl_cmd"
     else
-      # 没有环境变量，直接使用命令
-      local cmd="$nerdctl_cmd"
+      cmd="$nerdctl_cmd"
     fi
-    # 添加提示信息，让用户知道推送正在进行
     log "开始推送: $ref"
     if exec_remote "$host" "$user" "$port" "$cmd" "$secret" "$pass"; then ok "推送成功: $ref"; return 0; fi
     tries=$((tries+1))  # 使用显式赋值，避免 ((tries++)) 在某些情况下导致的问题
@@ -645,25 +637,6 @@ main(){
   local cmd="${1:-help}"; shift || true
   for a in "$@"; do [[ "$a" == "--dry-run" ]] && DRY_RUN="true"; done
   
-  # Kind 模式：本脚本通过 SSH 在远程节点执行 load/push，Kind 无此类节点，跳过（避免报错）
-  if [[ "$cmd" != "help" && "$cmd" != "-h" && "$cmd" != "--help" ]]; then
-    if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
-      log "Kind 集群，跳过镜像推送（镜像由 load-initial-images-kind.sh 预加载或在线拉取）"
-      return 0
-    fi
-    local k8s_admin_conf="${SCRIPT_DIR}/../k8s-admin.conf"
-    if [[ -f "$k8s_admin_conf" ]]; then
-      local cluster_mode="" default_cluster=""
-      cluster_mode=$(sed -n '/^\[GLOBAL\]$/,/^\[[A-Z]/p' "$k8s_admin_conf" 2>/dev/null | grep "^cluster_mode=" | head -1 | cut -d'=' -f2 | tr -d ' ')
-      default_cluster=$(sed -n '/^\[GLOBAL\]$/,/^\[[A-Z]/p' "$k8s_admin_conf" 2>/dev/null | grep "^default_cluster=" | head -1 | cut -d'=' -f2 | tr -d ' ')
-      default_cluster=$(echo "$default_cluster" | tr '[:lower:]' '[:upper:]')
-      if [[ "$cluster_mode" == "kind" ]] || [[ "$default_cluster" == "KIND" ]]; then
-        log "Kind 集群，跳过镜像推送（镜像由 load-initial-images-kind.sh 预加载或在线拉取）"
-        return 0
-      fi
-    fi
-  fi
-  
   # 显示当前使用的集群配置（如果已设置）
   if [[ -n "${CLUSTER:-}" ]] && [[ "$cmd" != "help" && "$cmd" != "-h" && "$cmd" != "--help" ]]; then
     log "🎯 使用集群配置: ${CLUSTER}"
@@ -692,7 +665,6 @@ main(){
       push_image "$target_ref" "$host" "$user" "$port" "$secret" "$pass" || { err "推送镜像失败: $target_ref"; exit 1; }
       remove_image "$src_ref" "$host" "$user" "$port" "$secret" "$pass" || true
       remove_image "$target_ref" "$host" "$user" "$port" "$secret" "$pass" || true
-      # 根据配置决定是否删除远程 tar 文件
       if [[ "${CLEANUP_REMOTE_TAR_AFTER_PUSH:-true}" == "true" ]]; then
         [[ -n "${remote_tar:-}" ]] && remove_file "$remote_tar" "$host" "$user" "$port" "$secret" "$pass" || true
       else

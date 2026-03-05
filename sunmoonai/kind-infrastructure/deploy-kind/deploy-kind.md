@@ -110,7 +110,7 @@ Harbor 未部署时脚本仅写 hosts；部署后需在 WSL 拉取/推送镜像�
 
 - **deploy-infrastructure-all.sh**：当目标为 Kind 时会提示“仅用于远程集群”并退出，需用本目录 **deploy-kind.sh** 做 Kind 初始化。
 - **各组件部署**（Traefik、Harbor、业务等）：自动使用 Kind 的 kubeconfig，无需改脚本或组件配置。
-- **Kind 下自动跳过**：节点镜像检查（check_remote_images）、部署前推镜像到 Harbor（loadimage.sh）、Traefik 节点 iptables 配置、Harbor 阶段 4「自动创建项目并推送镜像」。
+- **Kind 下行为**：节点镜像检查（check_remote_images）跳过；部署前推镜像到 Harbor 使用 **push-to-harbor**（远程则使用 registry-push-management/loadimage.sh）；Traefik 节点 iptables、Harbor 阶段 4「自动创建项目并推送镜像」跳过。
 
 证书与镜像拉取：Kind 使用 **ensure-kind-ca.sh**（unified-cert combo **TRAEFIK_KIND_KIND**）与 **apply-kind-registry-config.sh**，与远程 Step12/Step02 逻辑一致，配置可来自 deploy-infrastructure-all.conf 或在 deploy-kind.conf 覆写。
 
