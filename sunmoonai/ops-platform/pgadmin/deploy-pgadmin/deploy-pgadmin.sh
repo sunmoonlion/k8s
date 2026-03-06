@@ -580,7 +580,7 @@ main() {
                 log_info "跳过 pgAdmin Ingress (enabled=false)"
             fi
             
-            check_pgadmin_status "$namespace"
+            check_pgadmin_status "$project_id" "$namespace"
             show_pgadmin_connection_info "$namespace"
             # 安装后清理控制平面 tar 包
             if [[ -x "$PROJECT_ROOT/../../cicd-platform/harbor/utils/harbor-image-management/harbor-image.sh" ]]; then
@@ -615,7 +615,7 @@ main() {
             
             check_namespace "$namespace"
             execute_pgadmin_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            check_pgadmin_status "$namespace"
+            check_pgadmin_status "$project_id" "$namespace"
             ;;
         "uninstall")
             log_info "开始卸载 pgAdmin..."
