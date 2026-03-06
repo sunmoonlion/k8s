@@ -637,7 +637,82 @@ verify() {
                     log_success "[Step11] 节点 $node: ✅ 镜像 $image"
                     node_verified=$((node_verified + 1))
                 else
-                    log_warn "[Step11] 节点 $node: ❌ 镜像 $image"
+                    # 自愈：若镜像被后期 prune 删除，则优先使用本节点 tar 补载；若本节点无 tar，则从其他节点复制一份再补载
+                    local image_file="${image//\//_}.tar"
+                    image_file="${image_file//:/_}"
+                    local image_path="$STEP11_IMAGES_DIR/$image_file"
+                    
+                    # 1) 优先使用当前节点上的 tar
+                    if ssh_exec "$node" "test -f '$image_path'"; then
+                        log_info "[Step11] 节点 $node: 镜像 $image 缺失，尝试从本节点 $image_file 补载..."
+                        if ssh_exec "$node" "sudo nerdctl -n $STEP11_CONTAINER_NAMESPACE load -i '$image_path'"; then
+                            if ssh_exec "$node" "sudo nerdctl -n $STEP11_CONTAINER_NAMESPACE images --format '{{.Repository}}:{{.Tag}}' | grep -Fx '$image'"; then
+                                log_success "[Step11] 节点 $node: ✅ 镜像 $image（本节点补载后通过）"
+                                node_verified=$((node_verified + 1))
+                                continue
+                            else
+                                log_warn "[Step11] 节点 $node: ❌ 镜像 $image（本节点补载后仍缺失）"
+                            fi
+                        else
+                            log_warn "[Step11] 节点 $node: ❌ 镜像 $image（本节点补载失败）"
+                        fi
+                    fi
+
+                    # 2) 本节点没有或补载失败时，从集群其他节点复制 tar
+                    local src_idx=""
+                    local indices_all
+                    indices_all="$(get_defined_server_indices)"
+                    for src in $indices_all; do
+                        if [[ "$src" == "$node" ]]; then
+                            continue
+                        fi
+                        if ssh_exec "$src" "test -f '$image_path'"; then
+                            src_idx="$src"
+                            break
+                        fi
+                    done
+
+                    if [[ -n "$src_idx" ]]; then
+                        # 解析目标节点连接信息（优先使用内网 IP）
+                        local target_ip
+                        target_ip="$(get_server_var "$node" LOCAL_IP)"
+                        if [[ -z "$target_ip" ]]; then
+                            target_ip="$(get_server_var "$node" PUBLIC_IP)"
+                        fi
+                        local target_user
+                        target_user="$(get_server_var "$node" USER)"
+                        local target_port
+                        target_port="$(get_server_var "$node" SSH_PORT)"; target_port="${target_port:-22}"
+
+                        if [[ -z "$target_ip" || -z "$target_user" ]]; then
+                            log_warn "[Step11] 节点 $node: ❌ 镜像 $image（找到 $image_file 源节点 $src_idx，但无法解析目标节点连接信息）"
+                        else
+                            log_info "[Step11] 节点 $node: 镜像 $image 缺失，尝试从节点 $src_idx 复制 $image_file ..."
+                            # 确保目标节点目录存在
+                            ssh_exec "$node" "mkdir -p '$STEP11_IMAGES_DIR'" || true
+                            # 在源节点上通过内网 scp 把 tar 拷贝到目标节点
+                            ssh_exec "$src_idx" "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -P $target_port '$image_path' '$target_user@$target_ip:$STEP11_IMAGES_DIR/'" || true
+
+                            # 复制完成后，再次尝试在目标节点补载
+                            if ssh_exec "$node" "test -f '$image_path'"; then
+                                log_info "[Step11] 节点 $node: 已从节点 $src_idx 获取 $image_file，尝试补载..."
+                                if ssh_exec "$node" "sudo nerdctl -n $STEP11_CONTAINER_NAMESPACE load -i '$image_path'"; then
+                                    if ssh_exec "$node" "sudo nerdctl -n $STEP11_CONTAINER_NAMESPACE images --format '{{.Repository}}:{{.Tag}}' | grep -Fx '$image'"; then
+                                        log_success "[Step11] 节点 $node: ✅ 镜像 $image（跨节点补载后通过）"
+                                        node_verified=$((node_verified + 1))
+                                    else
+                                        log_warn "[Step11] 节点 $node: ❌ 镜像 $image（跨节点补载后仍缺失）"
+                                    fi
+                                else
+                                    log_warn "[Step11] 节点 $node: ❌ 镜像 $image（跨节点补载失败）"
+                                fi
+                            else
+                                log_warn "[Step11] 节点 $node: ❌ 镜像 $image（已尝试从节点 $src_idx 复制 $image_file，但目标节点仍无该文件）"
+                            fi
+                        fi
+                    else
+                        log_warn "[Step11] 节点 $node: ❌ 镜像 $image（集群内无 $image_file，无法补载）"
+                    fi
                 fi
             done
         else

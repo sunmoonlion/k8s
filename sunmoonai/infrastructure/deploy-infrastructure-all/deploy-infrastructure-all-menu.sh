@@ -327,7 +327,7 @@ full_deploy(){
             log_warn "    - $THIS_DIR/../utils/package-preparation/package-sync.sh"
         fi
     else
-        log_info "跳过包同步步骤（已禁用：PACKAGE_SYNC_ENABLED=false）"
+        log_error "本次部署，没有把本地安装包同步到远程各节点！"
     fi
     
     # 执行所有步骤

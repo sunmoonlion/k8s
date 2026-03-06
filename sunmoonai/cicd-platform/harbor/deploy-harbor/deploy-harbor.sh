@@ -1342,7 +1342,7 @@ auto_create_project_and_push_images() {
     
     # 检查是否启用此功能
     if [[ "${AUTO_CREATE_PROJECT_AND_PUSH_IMAGES:-false}" != "true" ]]; then
-        log_info "自动创建项目并推送镜像功能已禁用"
+        log_error "本次部署，未自动创建 Harbor 项目并推送控制平面镜像到 Harbor！"
         return 0
     fi
     

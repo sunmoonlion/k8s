@@ -121,6 +121,10 @@ LOCAL_IMAGE_DIR="${LOCAL_IMAGE_DIR:-$HOME/packages-to-be-installed/images}"
 # 组件脚本可以通过设置 CLEANUP_REMOTE_TAR_AFTER_PUSH 环境变量来覆盖配置文件中的值
 CLEANUP_REMOTE_TAR_AFTER_PUSH="${CLEANUP_REMOTE_TAR_AFTER_PUSH:-true}"
 
+if [[ "${BASH_SOURCE[0]}" == "$0" ]] && [[ "${CLEANUP_REMOTE_TAR_AFTER_PUSH}" == "true" ]]; then
+  echo -e "\033[31m[reg-push] 提醒：CLEANUP_REMOTE_TAR_AFTER_PUSH=true，推送后将删除远程 tar。重新部署时，在 Step11 verify 阶段若集群其它节点也没有相关镜像 tar，可能导致部署失败！\033[0m"
+fi
+
 # =============================================================================
 # 集群相关配置（必须通过集群配置映射设置，如 C1_REGISTRY_URL -> REGISTRY_URL）
 # 这些变量没有默认值，必须从集群配置中获取
