@@ -216,6 +216,7 @@ execute_mongodb_deployment() {
     helm_cmd="$helm_cmd --set global.projectId=$project_id"
     helm_cmd="$helm_cmd --set global.namespace=$namespace"
     helm_cmd="$helm_cmd --set global.environment=$environment"
+    helm_cmd="$helm_cmd --set global.security.allowInsecureImages=true"
     
     # 使用 Harbor 时覆盖镜像地址，避免从 docker.io 拉取（离线/网络受限环境）
     if [[ -n "${MONGODB_IMAGE_REGISTRY:-}" ]] && [[ -n "${MONGODB_IMAGE_PROJECT:-}" ]]; then

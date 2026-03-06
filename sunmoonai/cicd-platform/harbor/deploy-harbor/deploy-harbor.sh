@@ -1441,7 +1441,18 @@ deploy_harbor() {
     log_info "🚀 阶段3：部署本级专属组件..."
     deploy_current_level_components "$project_id" "$namespace" "$environment" "$dry_run"
     
-    # 阶段4：自动创建项目并推送镜像（如果启用；Kind 集群无需从节点 SSH 推送，跳过）
+    # -------------------------------------------------------------------------
+    # 阶段4：自动创建项目并推送控制平面镜像到 Harbor（备忘：Kind 与远程差异）
+    # -------------------------------------------------------------------------
+    # 共用本脚本时，为何 Kind 不推镜像而远程会推？
+    # - 本阶段调用 auto_create_project_and_push_images → push_control_plane_images，
+    #   依赖「远程控制平面节点」的 SSH，在节点上用 nerdctl 把已有镜像推到 Harbor。
+    # - Kind 无远程节点与 SSH，因此当 K8S_TARGET_MODE=kind 时此处显式跳过阶段4，
+    #   避免无意义/失败；Kind 的控制平面镜像由 load-images / push-to-harbor 等别处处理。
+    # - K8S_TARGET_MODE 来自 unified-deployment-template 的 setup_kubectl_environment
+    #   （CLUSTER=KIND 时设为 kind）。各组件（Jenkins/RabbitMQ 等）的推镜像由
+    #   push_component_images_to_harbor 处理：Kind 用 push-to-harbor，远程用 loadimage.sh。
+    # -------------------------------------------------------------------------
     if [[ "$dry_run" != "true" ]]; then
         if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
             log_info "Kind 集群跳过自动创建项目并推送镜像（无需从节点 SSH 推送）"

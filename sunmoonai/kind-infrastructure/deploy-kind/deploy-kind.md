@@ -115,6 +115,15 @@ Harbor 未部署时可只跑 hosts 脚本；部署后需在 WSL 拉取/推送镜
 
 证书与镜像拉取：Kind 使用 **ensure-kind-ca.sh**（unified-cert combo **TRAEFIK_KIND_KIND**）与 **apply-kind-registry-config.sh**，与远程 Step12/Step02 逻辑一致，配置可来自 deploy-infrastructure-all.conf 或在 deploy-kind.conf 覆写。
 
+### 2.8 备忘：Kind 为何不执行 Harbor「阶段4 推镜像」
+
+Traefik 与 Harbor 共用同一套脚本（如 `deploy-harbor.sh`）。阶段4「自动创建项目并推送控制平面镜像」在脚本内根据 **K8S_TARGET_MODE** 分支：
+
+- **远程（C1/C2…）**：执行 `auto_create_project_and_push_images`，通过 SSH 在控制平面节点上用 nerdctl 把镜像推到 Harbor。
+- **Kind**：当 `K8S_TARGET_MODE=kind` 时**跳过**阶段4，因 Kind 无远程节点与 SSH，该逻辑不适用；Kind 的镜像由 `load-kind-images.sh`、`push-to-harbor` 等处理。
+
+详见 `cicd-platform/harbor/deploy-harbor/deploy-harbor.sh` 中阶段4 上方的块注释。
+
 ---
 
 ## 3. 可选配置说明

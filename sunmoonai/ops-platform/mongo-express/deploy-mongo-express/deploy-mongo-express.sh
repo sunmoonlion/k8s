@@ -236,8 +236,13 @@ process_mongo_express_values() {
         sed -i "s/{{MONGO_EXPRESS_UNIFIED_HOST}}/${MONGO_EXPRESS_UNIFIED_HOST:-llmops.sunmoonai.com}/g" "$mongo_express_values_file"
         
         # MongoDB 连接配置变量替换（从配置文件读取）
-        # 注意：这些变量在 deploy-mongo-express.conf 中定义，即使为空也要替换（使用默认值）
-        sed -i "s/{{MONGODB_EXTERNAL_HOST}}/${MONGODB_EXTERNAL_HOST:-llmops.sunmoonai.com}/g" "$mongo_express_values_file"
+        # Kind 下集群内 DNS 常报 EAI_AGAIN，改用 MongoDB Service ClusterIP 直连
+        local mongodb_host="${MONGODB_EXTERNAL_HOST:-llmops.sunmoonai.com}"
+        if mongodb_cluster_ip=$(kubectl get svc -n data-platform-dev mongodb-sunmoonai -o jsonpath='{.spec.clusterIP}' 2>/dev/null) && [[ -n "$mongodb_cluster_ip" ]]; then
+            mongodb_host="$mongodb_cluster_ip"
+            log_info "Kind/集群内: 使用 MongoDB ClusterIP $mongodb_host 替代 FQDN（避免 DNS EAI_AGAIN）" >&2
+        fi
+        sed -i "s/{{MONGODB_EXTERNAL_HOST}}/${mongodb_host}/g" "$mongo_express_values_file"
         sed -i "s/{{MONGODB_EXTERNAL_PORT}}/${MONGODB_EXTERNAL_PORT:-27017}/g" "$mongo_express_values_file"
         
         # 输出处理后的文件路径

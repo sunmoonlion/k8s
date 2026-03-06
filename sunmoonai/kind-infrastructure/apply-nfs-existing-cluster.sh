@@ -106,7 +106,7 @@ load_config() {
         # shellcheck disable=SC1090
         source "$CONFIG_FILE" 2>/dev/null || true
     fi
-    # Chart 版本：4.0.18 从 repo 拉取更稳；若需 4.0.2 可设 STEP09_NFS_CHART_VERSION=4.0.2 或放 tgz 到 charts/
+    # Chart 版本：与 charts/ 下已提交的 tgz 一致（4.0.18）；若需其他版本可设 STEP09_NFS_CHART_VERSION
     NFS_CHART_VERSION="${STEP09_NFS_CHART_VERSION:-4.0.18}"
     NFS_PROVISIONER_VERSION="${STEP09_NFS_PROVISIONER_VERSION:-4.0.2}"
     NFS_RECLAIM_POLICY="${STEP09_NFS_STORAGE_RECLAIM_POLICY:-Delete}"
@@ -127,21 +127,41 @@ main() {
 
     load_config
 
-    # 若 deploy-kind.conf 里配置了 HTTP_PROXY_WSL/HTTPS_PROXY_WSL，则在本次脚本中生效（WSL 连 GitHub 用 Windows 代理）
-    KIND_DEPLOY_CONF="${SCRIPT_DIR}/deploy-kind/deploy-kind.conf"
-    if [[ -f "$KIND_DEPLOY_CONF" ]]; then
-        # shellcheck disable=SC1090
-        source "$KIND_DEPLOY_CONF" 2>/dev/null || true
-        if [[ -n "${HTTP_PROXY_WSL:-}" ]]; then
-            export HTTP_PROXY="${HTTP_PROXY_WSL}"
-            export HTTPS_PROXY="${HTTPS_PROXY_WSL:-$HTTP_PROXY_WSL}"
-            log_info "使用代理下载 chart: HTTPS_PROXY=$HTTPS_PROXY"
+    # 优先使用 kind-infrastructure/charts/ 下本地 tgz，有则不再设代理、不拉 repo，完全离线
+    local_chart="${NFS_CHART_TGZ:-$SCRIPT_DIR/charts/nfs-subdir-external-provisioner-${NFS_CHART_VERSION}.tgz}"
+    use_local_chart=false
+    if [[ -f "$local_chart" ]]; then
+        use_local_chart=true
+        log_info "使用本地 chart（charts/），跳过代理与 helm repo: $local_chart"
+    else
+        # charts/ 下无 tgz 时，先尝试用 download-nfs-chart.sh 拉取到 charts/（走代理），之后即可用本地
+        KIND_DEPLOY_CONF="${SCRIPT_DIR}/deploy-kind/deploy-kind.conf"
+        if [[ -f "$KIND_DEPLOY_CONF" ]]; then
+            # shellcheck disable=SC1090
+            source "$KIND_DEPLOY_CONF" 2>/dev/null || true
+            if [[ -n "${HTTP_PROXY_WSL:-}" ]]; then
+                export HTTP_PROXY="${HTTP_PROXY_WSL}"
+                export HTTPS_PROXY="${HTTPS_PROXY_WSL:-$HTTP_PROXY_WSL}"
+            fi
+        fi
+        if [[ -x "$SCRIPT_DIR/charts/download-nfs-chart.sh" ]]; then
+            log_info "charts/ 下无 tgz，尝试下载到 charts/: ./download-nfs-chart.sh ${NFS_CHART_VERSION}"
+            if (cd "$SCRIPT_DIR/charts" && ./download-nfs-chart.sh "$NFS_CHART_VERSION"); then
+                if [[ -f "$local_chart" ]]; then
+                    use_local_chart=true
+                    log_info "已下载到本地，使用本地 chart，跳过 helm repo: $local_chart"
+                fi
+            fi
+        fi
+        if [[ "$use_local_chart" != "true" ]]; then
+            if [[ -n "${HTTP_PROXY_WSL:-}" ]]; then
+                log_info "无本地 chart，使用代理拉取 helm repo: HTTPS_PROXY=$HTTPS_PROXY"
+            fi
+            # 1. Helm 仓库（仅当 charts/ 仍无 tgz 时执行）
+            helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/ 2>/dev/null || true
+            helm repo update
         fi
     fi
-
-    # 1. Helm 仓库
-    helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/ 2>/dev/null || true
-    helm repo update
 
     # 2. 安装 NFS Provisioner（不自动创建 StorageClass）
     # 若 release 存在但 deployment 不存在（首次安装失败），先卸载再装
@@ -168,8 +188,7 @@ main() {
         fi
         log_info "安装 NFS Provisioner（chart ${NFS_CHART_VERSION}，image v${NFS_PROVISIONER_VERSION}）"
         chart_installed=false
-        # 优先使用本地 chart（网络不好时可将 tgz 放到 charts/ 或设 NFS_CHART_TGZ）
-        local_chart="${NFS_CHART_TGZ:-$SCRIPT_DIR/charts/nfs-subdir-external-provisioner-${NFS_CHART_VERSION}.tgz}"
+        # 优先使用本地 chart（已在上面根据 local_chart 决定是否拉 repo）
         if [[ -f "$local_chart" ]]; then
             log_info "使用本地 chart: $local_chart"
             if helm install "$PROVISIONER_NAME" "$local_chart" \
@@ -190,25 +209,26 @@ main() {
                 chart_installed=true
             fi
         fi
-        if [[ "$chart_installed" != "true" ]] && helm install "$PROVISIONER_NAME" nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
-            --namespace "$HELM_NAMESPACE" \
-            --set image.repository=registry.k8s.io/sig-storage/nfs-subdir-external-provisioner \
-            --set image.tag="v${NFS_PROVISIONER_VERSION}" \
-            --set nfs.server="${KIND_NFS_SERVER_HOST}" \
-            --set nfs.path="${KIND_NFS_PATH}" \
-            --set storageClass.create=false \
-            --set nfs.mountOptions[0]=rw \
-            --set nfs.mountOptions[1]=sync \
-            --set nfs.mountOptions[2]=hard \
-            --set nfs.mountOptions[3]=intr \
-            --set nfs.mountOptions[4]=vers=3 \
-            --set nfs.mountOptions[5]=proto=tcp \
-            --set nfs.mountOptions[6]=nolock \
-            --set nfs.reclaimPolicy="${NFS_RECLAIM_POLICY}" \
-            --version "$NFS_CHART_VERSION"; then
-            chart_installed=true
-        else
-            log_warn "从 repo 安装失败（多为网络/EOF），尝试用 curl 下载 chart 后本地安装（会走 HTTP_PROXY/HTTPS_PROXY）..."
+        if [[ "$chart_installed" != "true" ]]; then
+            if helm install "$PROVISIONER_NAME" nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
+                --namespace "$HELM_NAMESPACE" \
+                --set image.repository=registry.k8s.io/sig-storage/nfs-subdir-external-provisioner \
+                --set image.tag="v${NFS_PROVISIONER_VERSION}" \
+                --set nfs.server="${KIND_NFS_SERVER_HOST}" \
+                --set nfs.path="${KIND_NFS_PATH}" \
+                --set storageClass.create=false \
+                --set nfs.mountOptions[0]=rw \
+                --set nfs.mountOptions[1]=sync \
+                --set nfs.mountOptions[2]=hard \
+                --set nfs.mountOptions[3]=intr \
+                --set nfs.mountOptions[4]=vers=3 \
+                --set nfs.mountOptions[5]=proto=tcp \
+                --set nfs.mountOptions[6]=nolock \
+                --set nfs.reclaimPolicy="${NFS_RECLAIM_POLICY}" \
+                --version "$NFS_CHART_VERSION"; then
+                chart_installed=true
+            else
+                log_warn "从 repo 安装失败（多为网络/EOF），尝试用 curl 下载 chart 后本地安装（会走 HTTP_PROXY/HTTPS_PROXY）..."
             chart_tgz="/tmp/nfs-subdir-external-provisioner-${NFS_CHART_VERSION}.tgz"
             chart_url="https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner/releases/download/nfs-subdir-external-provisioner-${NFS_CHART_VERSION}/nfs-subdir-external-provisioner-${NFS_CHART_VERSION}.tgz"
             if curl -L -f --connect-timeout 15 --max-time 90 -o "$chart_tgz" "$chart_url"; then
@@ -231,6 +251,7 @@ main() {
                 fi
             fi
             [[ -f "$chart_tgz" ]] && rm -f "$chart_tgz"
+            fi
         fi
         if [[ "$chart_installed" != "true" ]]; then
             log_error "NFS Provisioner 安装失败，请检查网络或设置 HTTPS_PROXY 后重试"

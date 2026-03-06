@@ -85,6 +85,13 @@ enableServiceLinks: false
 ## @param hostAliases Pod host aliases
 hostAliases: []
 
+## @param waitForMongodbInit Init container to wait for MongoDB before starting (dev/Kind only)
+## useMainImage: true 时用主容器同一镜像（Node 等 TCP），不拉额外镜像
+waitForMongodbInit:
+  enabled: false
+  useMainImage: false
+  image: busybox:1.35
+
 ## @param deploymentAnnotations Additional deployment annotations
 deploymentAnnotations: {}
 

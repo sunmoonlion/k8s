@@ -71,22 +71,22 @@ containerPorts:
   http: 8081
 
 # ============================================================================
-# 探针配置
+# 探针配置（init 等 MongoDB 后再启动主容器，给足延迟即可）
 # ============================================================================
 livenessProbe:
   enabled: true
-  initialDelaySeconds: 0
+  initialDelaySeconds: 60
   periodSeconds: 10
-  timeoutSeconds: 1
+  timeoutSeconds: 5
   failureThreshold: 3
   successThreshold: 1
 
 readinessProbe:
   enabled: true
-  initialDelaySeconds: 0
+  initialDelaySeconds: 45
   periodSeconds: 10
-  timeoutSeconds: 1
-  failureThreshold: 3
+  timeoutSeconds: 5
+  failureThreshold: 6
   successThreshold: 1
 
 startupProbe:
@@ -164,6 +164,19 @@ basicAuthUsername: admin
 # ============================================================================
 # 参考 RedisInsight 配置方式：不使用 stripPrefix 中间件
 siteBaseUrl: "/mongo-express"
+
+# ============================================================================
+# 启动命令（绕过 entrypoint 中基于 /dev/tcp 的等待，Alpine 下会 Invalid argument）
+# ============================================================================
+command: ["node", "app"]
+
+# ============================================================================
+# Init 容器：用主容器同一镜像等 MongoDB 就绪，不拉额外镜像（国内友好）
+# ============================================================================
+waitForMongodbInit:
+  enabled: true
+  useMainImage: true
+  image: busybox:1.35
 
 # ============================================================================
 # 其他配置

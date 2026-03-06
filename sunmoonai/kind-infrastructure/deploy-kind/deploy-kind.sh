@@ -106,7 +106,7 @@ ensure_harbor_project_k8s_images() {
     return 1
 }
 
-# 封装一次 Harbor 登录流程：等待就绪 + docker login + 确保项目存在
+# 封装一次 Harbor 登录流程：等待就绪 + docker login（不包含创建项目，项目由一键部署流程在步骤 9 后统一调用 ensure_harbor_project_k8s_images）
 harbor_login_or_fail() {
     if ! wait_for_harbor; then
         log_error "Harbor 未就绪，终止 Harbor 登录流程"
@@ -122,11 +122,6 @@ harbor_login_or_fail() {
     log_info "登录 Harbor（${login_host}）..."
     if ! echo "${HARBOR_ADMIN_PASSWORD}" | docker login "${login_host}" -u "${HARBOR_ADMIN_USER:-admin}" --password-stdin; then
         log_error "docker login Harbor 失败"
-        return 1
-    fi
-
-    # 在推送前确保 Harbor 中存在 k8s-images 项目（若失败则交由调用方决定是否终止）
-    if ! ensure_harbor_project_k8s_images; then
         return 1
     fi
 
@@ -218,11 +213,15 @@ log_info "步骤 9：在 Kind 集群中部署 Harbor（cicd-platform/harbor/depl
 if ! CLUSTER=KIND "$KIND_ROOT/../cicd-platform/harbor/deploy-harbor/deploy-harbor.sh" deploy; then
     log_warn "Harbor 部署脚本执行失败，请检查 cicd-platform/harbor/deploy-harbor 配置或单独运行该脚本查看原因"
 else
-    # Harbor 部署成功后：等待 /v2/ 就绪，然后在 WSL 上执行一次登录（可选）
+    # Harbor 部署成功后：等待 /v2/ 就绪 → 登录 → 确保 k8s-images 项目存在（组件镜像均推到此项目）
     if wait_for_harbor; then
         log_info "Harbor 已就绪，尝试在 WSL 上执行 Harbor 登录（wsl-setup-harbor-login.sh）"
         if ! "$KIND_ROOT/wsl-setup-harbor-login.sh"; then
             log_warn "Harbor 登录脚本执行返回非零状态，可稍后在 WSL 手动运行: $KIND_ROOT/wsl-setup-harbor-login.sh"
+        fi
+        # 一键部署时必须确保 k8s-images 项目存在，否则 PostgreSQL 等组件 push/pull 会失败（ImagePullBackOff）
+        if ! ensure_harbor_project_k8s_images; then
+            log_warn "Harbor 项目 k8s-images 创建失败，请手动在 Harbor 控制台创建该项目，或配置 HARBOR_ADMIN_PASSWORD 后重试"
         fi
     else
         log_warn "Harbor 在预期时间内未完全就绪，跳过自动登录；可稍后手动运行: $KIND_ROOT/wsl-setup-harbor-login.sh"
