@@ -85,6 +85,8 @@ main() {
     local environment="${3:-$DEFAULT_ENVIRONMENT}"
     local dry_run="${4:-false}"
     
+    [[ -f "$SCRIPT_DIR/deploy-neo4j-secrets.conf" ]] && source "$SCRIPT_DIR/deploy-neo4j-secrets.conf"
+    
     log_info "部署 Neo4j Secrets..."
     
     local temp_data_dir=$(mktemp -d)

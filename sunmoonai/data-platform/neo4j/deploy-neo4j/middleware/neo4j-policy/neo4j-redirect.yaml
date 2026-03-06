@@ -1,0 +1,16 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: neo4j-redirect
+  namespace: data-platform-dev
+  labels:
+    app: data-platform-ingress
+    component: neo4j-redirect
+    project: sunmoonai
+spec:
+  redirectRegex:
+    # Traefik redirectRegex 匹配的是完整 URL（包含 scheme/host），而不是纯 path
+    regex: "^https?://([^/]+)/neo4j/?$"
+    replacement: "https://$1/browser/"
+    permanent: false
+

@@ -31,9 +31,10 @@ load_config() {
     # NAMESPACE: 从主配置获取
     NAMESPACE="${NEO4J_NAMESPACE:-data-platform-dev}"
     
-    # NEO4J_PORT: 从 Kubernetes Service 动态获取（Neo4j Browser 端口 7474）
+    # NEO4J_PORT: 从 Kubernetes Service 动态获取（Neo4j Browser HTTP 端口 7474）
     if [[ -z "${NEO4J_PORT:-}" ]]; then
-        NEO4J_PORT=$(get_service_port "$SERVICE_NAME" "$NAMESPACE")
+        # 优先取名为 http 的端口，避免误取 bolt(7687)
+        NEO4J_PORT=$(kubectl get svc "$SERVICE_NAME" -n "$NAMESPACE" -o jsonpath='{.spec.ports[?(@.name=="http")].port}' 2>/dev/null || echo "")
         if [[ -z "$NEO4J_PORT" ]]; then
             log_warn "⚠️ 无法从 Service 获取端口，使用默认值 7474"
             NEO4J_PORT="7474"

@@ -5,10 +5,11 @@
 
 set -e
 
-# 导入统一部署模板（使用 BASH_SOURCE 确保路径相对脚本文件）
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../../../../../../../utils/unified-deployment-template.sh"
-NEO4J_MIDDLEWARE_CONFIG_FILE="$SCRIPT_DIR/deploy-middleware-all.conf"
+# 导入统一部署模板（注意：模板会覆盖 SCRIPT_DIR，因此先保存本脚本目录）
+NEO4J_MIDDLEWARE_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$NEO4J_MIDDLEWARE_SCRIPT_DIR/../../../../../../utils/unified-deployment-template.sh"
+SCRIPT_DIR="$NEO4J_MIDDLEWARE_SCRIPT_DIR"
+NEO4J_MIDDLEWARE_CONFIG_FILE="$NEO4J_MIDDLEWARE_SCRIPT_DIR/deploy-middleware-all.conf"
 
 # 加载配置
 load_config() {
@@ -30,7 +31,7 @@ deploy_all_middleware() {
     
     local components=(
         "stripprefix:${neo4j_stripprefix_enabled:-true}:${neo4j_stripprefix_priority:-200}:Neo4j StripPrefix:$SCRIPT_DIR/../neo4j-stripprefix/deploy-neo4j-stripprefix/deploy-neo4j-stripprefix.sh"
-        "policy:${neo4j_policy_enabled:-true}:${neo4j_policy_priority:-100}:Neo4j Policy:$SCRIPT_DIR/../neo4j-policy/deploy-neo4j-policy/deploy-neo4j-policy.sh"
+        "policy:${neo4j_policy_enabled:-true}:${neo4j_policy_priority:-100}:Neo4j Policy(Headers+RateLimit):$SCRIPT_DIR/../neo4j-policy/deploy-neo4j-policy/deploy-neo4j-policy.sh"
     )
     
     # 过滤启用的组件并按优先级排序
@@ -75,7 +76,7 @@ delete_all_middleware() {
     
     local components=(
         "stripprefix:${neo4j_stripprefix_enabled:-true}:${neo4j_stripprefix_priority:-200}:Neo4j StripPrefix:$SCRIPT_DIR/../neo4j-stripprefix/deploy-neo4j-stripprefix/deploy-neo4j-stripprefix.sh"
-        "policy:${neo4j_policy_enabled:-true}:${neo4j_policy_priority:-100}:Neo4j Policy:$SCRIPT_DIR/../neo4j-policy/deploy-neo4j-policy/deploy-neo4j-policy.sh"
+        "policy:${neo4j_policy_enabled:-true}:${neo4j_policy_priority:-100}:Neo4j Policy(Headers+RateLimit):$SCRIPT_DIR/../neo4j-policy/deploy-neo4j-policy/deploy-neo4j-policy.sh"
     )
     
     # 过滤启用的组件并按优先级升序排序（卸载时逆序）
@@ -133,10 +134,19 @@ check_all_middleware_status() {
 # 主函数
 main() {
     local action="${1:-deploy}"
-    local project_id="${2:-sunmoonai}"      # 父级传递的项目ID（虽然不使用，但保持接口一致）
-    local namespace="${3:-data-platform-dev}"  # 父级传递的命名空间
-    local environment="${4:-development}"    # 父级传递的环境（虽然不使用，但保持接口一致）
-    local dry_run="${5:-false}"             # 父级传递的 dry_run（虽然不使用，但保持接口一致）
+    # 兼容父脚本调用：bash <script> deploy <namespace>
+    local project_id="sunmoonai"
+    local namespace="data-platform-dev"
+    local environment="development"
+    local dry_run="false"
+    if [[ $# -ge 3 ]]; then
+        project_id="${2:-sunmoonai}"
+        namespace="${3:-data-platform-dev}"
+        environment="${4:-development}"
+        dry_run="${5:-false}"
+    else
+        namespace="${2:-data-platform-dev}"
+    fi
     
     # 建立远程 k8s 连接
     setup_connection

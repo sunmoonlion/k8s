@@ -1,8 +1,24 @@
 #!/bin/bash
 
 
-# 脚本目录
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+set -e
+
+# 脚本目录（保存为变量，防止被统一部署模板覆盖）
+NEO4J_STRIPPREFIX_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# 计算项目根目录（k8s目录）
+# 从 deploy-neo4j-stripprefix/ -> neo4j-stripprefix/ -> middleware/ -> deploy-neo4j/ -> neo4j/ -> data-platform/ -> sunmoonai/ -> k8s/
+PROJECT_ROOT="$(cd "$NEO4J_STRIPPREFIX_SCRIPT_DIR/../../../../../../.." && pwd)"
+
+# 导入统一部署模板（提供日志函数和 Kubernetes 连接函数）
+source "$PROJECT_ROOT/utils/unified-deployment-template.sh"
+
+# 恢复脚本目录路径（unified-deployment-template.sh 会覆盖 SCRIPT_DIR）
+SCRIPT_DIR="$NEO4J_STRIPPREFIX_SCRIPT_DIR"
+
+# 配置文件与资源文件
+NEO4J_STRIPPREFIX_CONFIG_FILE="$NEO4J_STRIPPREFIX_SCRIPT_DIR/deploy-neo4j-stripprefix.conf"
+NEO4J_STRIPPREFIX_FILE="$(dirname "$NEO4J_STRIPPREFIX_SCRIPT_DIR")/neo4j-stripprefix.yaml"
 
 # 解析命令行参数（优先于配置文件加载，确保命令行参数优先级最高）
 parse_cluster_arg() {

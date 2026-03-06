@@ -13,16 +13,17 @@ CONFIG_FILE="${UNIFIED_CONFIG_FILE:-$SCRIPT_DIR/k8s-admin.conf}"
 STATUS_FILE="$SCRIPT_DIR/.k8s-status"
 PID_FILE="$SCRIPT_DIR/.k8s-tunnel.pid"
 
-# 清理函数
+# 清理函数（保留原始退出码，避免子脚本“失败却返回成功”）
 cleanup() {
+    local exit_code=$?
     # 检查是否禁用自动清理
     if [[ "${DISABLE_AUTO_CLEANUP:-false}" == "true" ]]; then
         log_info "跳过自动清理（由主脚本负责）"
-        return 0
+        return "$exit_code"
     fi
-    
+
     cleanup_k8s_connection
-    exit 0
+    exit "$exit_code"
 }
 
 # 设置信号处理
@@ -951,6 +952,11 @@ setup_kubectl_environment() {
     # 连接建立后，环境变量已经设置好了，不需要额外验证
     log_success "Kubernetes 环境设置成功"
     return 0
+}
+
+# 子组件脚本常用别名（与 setup_kubectl_environment 一致，避免“未找到命令”）
+setup_connection() {
+    setup_kubectl_environment
 }
 
 # 清理连接资源

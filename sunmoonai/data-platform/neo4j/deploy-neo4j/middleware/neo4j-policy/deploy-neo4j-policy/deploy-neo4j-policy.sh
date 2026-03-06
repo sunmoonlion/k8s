@@ -113,28 +113,37 @@ deploy_neo4j_policy() {
     
     log_info "部署 Neo4j 策略中间件..."
     log_info "命名空间: $namespace"
-    
-    # 使用从配置文件中加载的路径（已在 load_config 中计算）
-    local policy_file="${NEO4J_POLICY_FILE:-$NEO4J_POLICY_SCRIPT_DIR/../neo4j-policy.yaml}"
-    
-    # 检查策略 YAML 文件是否存在
-    if [[ ! -f "$policy_file" ]]; then
-        log_error "Neo4j 策略 YAML 文件不存在: $policy_file"
-        return 1
+
+    # 清理旧版不兼容资源（multi-types middleware，会导致 Traefik 报错并影响路由加载）
+    if kubectl get middleware -n "$namespace" neo4j-policy >/dev/null 2>&1; then
+        log_warn "发现旧版 neo4j-policy（不兼容），先删除以避免 Traefik 报错"
+        kubectl delete middleware -n "$namespace" neo4j-policy >/dev/null 2>&1 || true
     fi
-    
-    # 应用策略配置
-    log_info "应用 Neo4j 策略配置..."
-    if kubectl apply -f "$policy_file" -n "$namespace"; then
-        log_success "✅ Neo4j 策略配置应用成功"
-    else
-        log_error "❌ Neo4j 策略配置应用失败"
-        return 1
-    fi
+
+    # Traefik 不支持“一个 Middleware 同时包含 rateLimit + headers”，因此拆成两个资源
+    local headers_file="${NEO4J_POLICY_SCRIPT_DIR}/../neo4j-policy.yaml"
+    local ratelimit_file="${NEO4J_POLICY_SCRIPT_DIR}/../neo4j-ratelimit.yaml"
+    local redirect_file="${NEO4J_POLICY_SCRIPT_DIR}/../neo4j-redirect.yaml"
+
+    for f in "$ratelimit_file" "$headers_file" "$redirect_file"; do
+        if [[ ! -f "$f" ]]; then
+            log_error "Neo4j 中间件 YAML 文件不存在: $f"
+            return 1
+        fi
+        log_info "应用 Neo4j 中间件配置: $(basename "$f")"
+        if kubectl apply -f "$f" -n "$namespace"; then
+            log_success "✅ 已应用: $(basename "$f")"
+        else
+            log_error "❌ 应用失败: $(basename "$f")"
+            return 1
+        fi
+    done
     
     # 检查中间件状态
-    log_info "检查 Neo4j 策略中间件状态..."
-    kubectl get middleware -n "$namespace" neo4j-policy
+    log_info "检查 Neo4j 中间件状态..."
+    kubectl get middleware -n "$namespace" neo4j-ratelimit
+    kubectl get middleware -n "$namespace" neo4j-headers
+    kubectl get middleware -n "$namespace" neo4j-redirect
     
     log_success "✅ Neo4j 策略中间件部署完成！"
     return 0
@@ -167,13 +176,10 @@ check_policy_status() {
     log_info "检查 Neo4j 策略中间件状态..."
     
     # 检查中间件是否存在
-    if kubectl get middleware -n "$namespace" neo4j-policy >/dev/null 2>&1; then
-        log_success "✅ Neo4j 策略中间件存在"
-        kubectl get middleware -n "$namespace" neo4j-policy
-    else
-        log_error "❌ Neo4j 策略中间件不存在"
-        return 1
-    fi
+    kubectl get middleware -n "$namespace" neo4j-ratelimit >/dev/null 2>&1 || { log_error "❌ neo4j-ratelimit 不存在"; return 1; }
+    kubectl get middleware -n "$namespace" neo4j-headers >/dev/null 2>&1 || { log_error "❌ neo4j-headers 不存在"; return 1; }
+    kubectl get middleware -n "$namespace" neo4j-redirect >/dev/null 2>&1 || { log_error "❌ neo4j-redirect 不存在"; return 1; }
+    log_success "✅ Neo4j 中间件存在（neo4j-ratelimit + neo4j-headers + neo4j-redirect）"
 }
 
 # 解析命令行参数（支持 --cluster 或 -c）

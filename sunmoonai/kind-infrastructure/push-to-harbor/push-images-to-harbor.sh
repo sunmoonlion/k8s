@@ -151,12 +151,19 @@ push_one() {
         log_info "[dry-run] tag $img -> $dest && push"
         return 0
     fi
+    # 若 Harbor 中已存在该 tag，跳过推送（所有组件共用，减少重复部署时的推送）
+    if docker manifest inspect "$dest" >/dev/null 2>&1; then
+        log_info "已存在，跳过: $dest"
+        ((SKIPPED_COUNT++)) || true
+        return 0
+    fi
     docker tag "$img" "$dest"
     docker push "$dest"
     log_success "pushed $dest"
 }
 
 count=0
+SKIPPED_COUNT=0
 
 # 镜像引用转成文件名（与 registry-push-management 一致：/ 和 : 换成 _）
 find_tar_for_image() {
@@ -221,8 +228,12 @@ if [[ ${#IMAGE_LIST[@]} -eq 0 ]]; then
     done
 fi
 
-if [[ $count -eq 0 ]]; then
+if [[ $count -eq 0 && $SKIPPED_COUNT -eq 0 ]]; then
     log_warn "未推送任何镜像（镜像列表拉取失败或 tar 中无镜像）"
     exit 1
 fi
-log_success "共推送 $count 个镜像到 ${HARBOR_HOST}/${HARBOR_PROJECT}"
+if [[ $SKIPPED_COUNT -gt 0 ]]; then
+    log_success "共推送 $count 个镜像到 ${HARBOR_HOST}/${HARBOR_PROJECT}（已存在跳过 ${SKIPPED_COUNT} 个）"
+else
+    log_success "共推送 $count 个镜像到 ${HARBOR_HOST}/${HARBOR_PROJECT}"
+fi

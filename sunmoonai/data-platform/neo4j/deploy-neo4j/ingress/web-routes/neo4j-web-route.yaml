@@ -25,6 +25,16 @@ spec:
     # 访问: https://<节点IP>:30443/neo4j
     # 方案2: 使用统一域名（只需在 /etc/hosts 中添加一个条目）
     # 访问: https://www.sunmoonai.com/neo4j
+    # Neo4j Browser/HTTP API 会请求 /browser 与 /db 等绝对路径资源
+    # 若只匹配 /neo4j，会导致静态资源/接口走到其他后端而出现 500/404。
+    - match: Host(`115.190.153.150`) && (PathPrefix(`/browser`) || PathPrefix(`/db`))
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+      middlewares:
+        - name: neo4j-ratelimit
+        - name: neo4j-headers
     - match: Host(`115.190.153.150`) && PathPrefix(`/neo4j`)
       kind: Rule
       services:
@@ -34,8 +44,18 @@ spec:
         - name: {{SERVICE_NAME}}
           port: {{SERVICE_PORT}}
       middlewares:
+        - name: neo4j-redirect
         - name: neo4j-stripprefix
-        - name: neo4j-policy
+        - name: neo4j-ratelimit
+        - name: neo4j-headers
+    - match: Host(`{{UNIFIED_HOST}}`) && (PathPrefix(`/browser`) || PathPrefix(`/db`))
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+      middlewares:
+        - name: neo4j-ratelimit
+        - name: neo4j-headers
     - match: Host(`{{UNIFIED_HOST}}`) && PathPrefix(`/neo4j`)
       kind: Rule
       services:
@@ -45,7 +65,7 @@ spec:
         - name: {{SERVICE_NAME}}
           port: {{SERVICE_PORT}}
       middlewares:
+        - name: neo4j-redirect
         - name: neo4j-stripprefix
-        - name: neo4j-policy
-  tls:
-    secretName: traefik-tls-secret
+        - name: neo4j-ratelimit
+        - name: neo4j-headers

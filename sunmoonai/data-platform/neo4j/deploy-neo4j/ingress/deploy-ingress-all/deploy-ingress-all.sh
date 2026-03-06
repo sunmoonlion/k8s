@@ -4,10 +4,11 @@
 
 set -e
 
-# 导入统一部署模板（使用 BASH_SOURCE 确保路径相对脚本文件）
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../../../../../../../utils/unified-deployment-template.sh"
-NEO4J_INGRESS_CONFIG_FILE="$SCRIPT_DIR/deploy-ingress-all.conf"
+# 导入统一部署模板（注意：模板会覆盖 SCRIPT_DIR，因此先保存本脚本目录）
+NEO4J_INGRESS_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$NEO4J_INGRESS_SCRIPT_DIR/../../../../../../utils/unified-deployment-template.sh"
+SCRIPT_DIR="$NEO4J_INGRESS_SCRIPT_DIR"
+NEO4J_INGRESS_CONFIG_FILE="$NEO4J_INGRESS_SCRIPT_DIR/deploy-ingress-all.conf"
 
 # 加载配置
 load_config() {

@@ -310,7 +310,8 @@ deploy_sub_components() {
                 if bash "$script_path" deploy "$namespace"; then
                     log_success "✅ $description 部署成功"
                 else
-                    log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
+                    log_error "❌ $description 部署失败"
+                    return 1
                 fi
             else
                 log_error "❌ 子脚本不存在: $script_path"; return 1
@@ -421,22 +422,20 @@ backup_neo4j_data() {
     log_success "✅ Neo4j 数据备份完成: $backup_name"
 }
 
-# 创建 Neo4j 密钥（如果需要）
+# 创建 Neo4j 密钥（若不存在则先部署，避免 Pod 卡在 ContainerCreating）
 create_neo4j_secrets_if_needed() {
     local namespace="$1"
     
     log_info "检查 Neo4j 密钥..."
     
-    # 检查是否已存在密钥
     if kubectl get secret "$NEO4J_AUTH_SECRET_NAME" -n "$namespace" >/dev/null 2>&1; then
         log_success "✅ Neo4j 密钥已存在: $NEO4J_AUTH_SECRET_NAME"
         return 0
     fi
     
-    # 创建密钥
-    log_info "创建 Neo4j 密钥..."
+    log_info "创建 Neo4j 密钥（Chart 依赖 neo4j-secrets 存在）..."
     if [[ -f "$SCRIPT_DIR/secrets/neo4j-secrets/deploy-neo4j-secrets/deploy-neo4j-secrets.sh" ]]; then
-        "$SCRIPT_DIR/secrets/neo4j-secrets/deploy-neo4j-secrets/deploy-neo4j-secrets.sh" deploy
+        "$SCRIPT_DIR/secrets/neo4j-secrets/deploy-neo4j-secrets/deploy-neo4j-secrets.sh" deploy "$namespace"
     else
         log_warn "⚠️ Neo4j 密钥部署脚本不存在，跳过密钥创建"
     fi
@@ -474,8 +473,8 @@ main() {
             check_namespace "$namespace"
             # 在部署前按需推送 Neo4j 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
             push_neo4j_images_to_harbor || log_warn "[images] Neo4j 镜像推送阶段出现警告，可稍后单独检查 Harbor 镜像状态"
-            # 统一密管管理密钥
-            log_info "跳过创建 Neo4j 密钥（由统一密管管理）"
+            # 先确保 neo4j-secrets 存在，再执行 Helm，避免 Pod 卡在 ContainerCreating（MountVolume.SetUp: secret "neo4j-secrets" not found）
+            create_neo4j_secrets_if_needed "$namespace"
             execute_neo4j_deployment "$project_id" "$namespace" "$environment" "$dry_run"
             # 部署子组件（中间件 / Ingress-All）
             if deploy_sub_components "$project_id" "$namespace" "$environment" "$dry_run"; then

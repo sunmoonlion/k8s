@@ -1,32 +1,22 @@
 #!/bin/bash
 
 
+set -e
+
 # 脚本目录
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+NEO4J_TCP_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$NEO4J_TCP_SCRIPT_DIR"
 NEO4J_TCP_FILE="$(dirname "$SCRIPT_DIR")/neo4j-tcp.yaml"
 
-# 检查 yq 命令
-check_yq_command() {
-    if ! command -v yq &> /dev/null; then
-        log_error "❌ yq 命令未找到，请先安装 yq"
-        log_info "安装方法:"
-        echo "  # Ubuntu/Debian"
-        echo "  sudo apt-get install yq"
-        echo ""
-        echo "  # CentOS/RHEL"
-        echo "  sudo yum install yq"
-        echo ""
-        echo "  # 或使用 snap"
-        echo "  sudo snap install yq"
-        echo ""
-        echo "  # 或下载二进制文件"
-        echo "  wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq"
-        echo "  chmod +x /usr/local/bin/yq"
-        return 1
-    fi
-    log_success "✅ yq 命令可用"
-    return 0
-}
+# 计算项目根目录（k8s目录）
+# 从 deploy-tcp-routes/ -> tcp-routes/ -> ingress/ -> deploy-neo4j/ -> neo4j/ -> data-platform/ -> sunmoonai/ -> k8s/
+PROJECT_ROOT="$(cd "$NEO4J_TCP_SCRIPT_DIR/../../../../../../.." && pwd)"
+
+# 导入统一部署模板（提供日志函数和 Kubernetes 连接函数）
+source "$PROJECT_ROOT/utils/unified-deployment-template.sh"
+
+# 恢复脚本目录路径（unified-deployment-template.sh 会覆盖 SCRIPT_DIR）
+SCRIPT_DIR="$NEO4J_TCP_SCRIPT_DIR"
 
 # 获取服务配置
 get_service_config() {
@@ -68,11 +58,6 @@ deploy_neo4j_tcp() {
     log_info "部署 Neo4j TCP 路由..."
     log_info "命名空间: $namespace"
     
-    # 检查 yq 命令
-    if ! check_yq_command; then
-        return 1
-    fi
-    
     # 获取服务配置
     local service_config
     service_config=$(get_service_config "$namespace")
@@ -102,22 +87,23 @@ deploy_neo4j_tcp() {
     log_info "服务名称: $service_name"
     log_info "服务端口: $service_port"
     
-    # 使用 yq 替换服务名称
-    yq eval ".spec.routes[0].services[0].name = \"$service_name\"" "$NEO4J_TCP_FILE" > "$temp_file"
-    yq eval ".spec.routes[0].services[0].port = $service_port" "$temp_file" > "${temp_file}.final"
+    # 使用 sed 替换服务名称与端口（避免依赖 yq）
+    cp "$NEO4J_TCP_FILE" "$temp_file"
+    sed -i "s|^\\([[:space:]]*- name: \\).*|\\1${service_name}|g" "$temp_file"
+    sed -i "s|^\\([[:space:]]*port: \\).*|\\1${service_port}|g" "$temp_file"
     
     # 应用 TCP 路由配置
     log_info "应用 Neo4j TCP 路由配置..."
-    if kubectl apply -f "${temp_file}.final" -n "$namespace"; then
+    if kubectl apply -f "${temp_file}" -n "$namespace"; then
         log_success "✅ Neo4j TCP 路由配置应用成功"
     else
         log_error "❌ Neo4j TCP 路由配置应用失败"
-        rm -f "$temp_file" "${temp_file}.final"
+        rm -f "$temp_file"
         return 1
     fi
     
     # 清理临时文件
-    rm -f "$temp_file" "${temp_file}.final"
+    rm -f "$temp_file"
     
     # 检查路由状态
     log_info "检查 Neo4j TCP 路由状态..."
