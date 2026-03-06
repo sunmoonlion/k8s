@@ -187,6 +187,17 @@ if [[ ${#IMAGE_LIST[@]} -gt 0 ]]; then
                 tar_path=""
                 tar_path=$(find_tar_for_image "$img" "$dir") || true
                 if [[ -n "$tar_path" && -f "$tar_path" ]]; then
+                    # 先检查 Harbor 中是否已存在目标镜像，存在则连 docker load 都跳过
+                    repo_tag="${img#*/}"
+                    [[ "$repo_tag" == "$img" ]] && repo_tag="$img"
+                    dest="${HARBOR_HOST}/${HARBOR_PROJECT}/${repo_tag}"
+                    if docker manifest inspect "$dest" >/dev/null 2>&1; then
+                        log_info "已存在，跳过本地 tar 加载: $dest"
+                        ((SKIPPED_COUNT++)) || true
+                        pushed=true
+                        break
+                    fi
+
                     log_info "从本地 tar 加载: $tar_path"
                     loaded_ref=""
                     while IFS= read -r line; do

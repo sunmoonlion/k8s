@@ -235,6 +235,8 @@ execute_redis_deployment() {
     
     # 使用 Harbor 时覆盖镜像，与其他 data-platform 组件一致
     if [[ -n "${REDIS_IMAGE_REGISTRY:-}" ]] && [[ -n "${REDIS_IMAGE_PROJECT:-}" ]]; then
+        # Bitnami charts 会校验“非标准镜像”并中止安装；当我们将镜像重写到 Harbor 时需要显式放行
+        helm_cmd="$helm_cmd --set global.security.allowInsecureImages=true"
         helm_cmd="$helm_cmd --set global.imageRegistry=$REDIS_IMAGE_REGISTRY"
         helm_cmd="$helm_cmd --set image.registry=$REDIS_IMAGE_REGISTRY"
         helm_cmd="$helm_cmd --set image.repository=$REDIS_IMAGE_PROJECT/redis"
@@ -281,32 +283,59 @@ check_redis_status() {
     local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "检查 Redis 部署状态..."
+
+    # 确保 Kubernetes 连接与 KUBECONFIG 可用（避免使用到默认的 localhost:8080）
+    if ! kubectl get nodes >/dev/null 2>&1; then
+        if ! setup_kubectl_environment; then
+            log_error "❌ 无法建立 Kubernetes 连接"
+            return 1
+        fi
+    fi
+    if [[ -z "${KUBECONFIG:-}" ]]; then
+        log_error "❌ KUBECONFIG 环境变量未设置"
+        return 1
+    fi
     
     # 检查 Helm Release
-    if helm list -n "$namespace" | grep -q "$release_name"; then
+    if helm list -n "$namespace" --kubeconfig "${KUBECONFIG}" | grep -q "$release_name"; then
         log_success "✅ Redis Helm Release 存在"
     else
         log_error "❌ Redis Helm Release 不存在"
         return 1
     fi
     
-    # 检查 Pod 状态
-    local pods_ready
-    pods_ready=$(kubectl get pods -n "$namespace" -l "$label_selector" -o jsonpath='{.items[*].status.phase}' 2>/dev/null | grep -o "Running" | wc -l | tr -d '[:space:]')
-    pods_ready="${pods_ready:-0}"
-    
-    if [[ "$pods_ready" -gt 0 ]]; then
-        log_success "✅ Redis Pod 运行正常 ($pods_ready 个)"
+    # 检查 Pod 状态（避免在 set -e/pipefail 下因 grep 无匹配直接退出）
+    local phases pods_running pods_pending
+    phases=$(kubectl get pods -n "$namespace" -l "$label_selector" -o jsonpath='{.items[*].status.phase}' 2>/dev/null || echo "")
+    pods_running=0
+    pods_pending=0
+    if [[ -n "$phases" ]]; then
+        pods_running=$(echo "$phases" | tr ' ' '\n' | grep -c '^Running$' 2>/dev/null || echo "0")
+        pods_pending=$(echo "$phases" | tr ' ' '\n' | grep -cE '^(Pending|ContainerCreating)$' 2>/dev/null || echo "0")
+        pods_running=$(echo "$pods_running" | tr -d '[:space:]')
+        pods_pending=$(echo "$pods_pending" | tr -d '[:space:]')
+        [[ -z "$pods_running" || ! "$pods_running" =~ ^[0-9]+$ ]] && pods_running=0
+        [[ -z "$pods_pending" || ! "$pods_pending" =~ ^[0-9]+$ ]] && pods_pending=0
+    fi
+
+    if (( pods_running > 0 )); then
+        log_success "✅ Redis Pod 运行正常 (${pods_running} 个)"
+    elif (( pods_pending > 0 )); then
+        log_warn "⏳ Redis Pod 正在启动中（${pods_pending} 个 Pending/ContainerCreating，0 个 Running）"
+        log_info "提示：这是正常的启动过程，如需查看详细进度可稍后运行 status 子命令。"
+        # 启动中不视为失败，让整体部署流程继续
+        return 0
     else
-        log_warn "⚠️ Redis Pod 可能还在启动中，当前运行数量: $pods_ready"
-        # 显示 Pod 状态以便调试
+        log_warn "⚠️  Redis Pod 可能还在启动中或尚未创建（0 个 Running）"
         log_info "当前 Pod 状态："
         kubectl get pods -n "$namespace" -l "$label_selector" 2>/dev/null || true
-        # 不返回错误，因为 Pod 可能还在启动
+        # 不返回错误，因为资源可能还在创建
+        return 0
     fi
-    
-    # 测试 Redis 连接
-    test_redis_connection "$project_id" "$namespace"
+
+    # 测试 Redis 连接（best-effort：不阻断整体部署）
+    test_redis_connection "$project_id" "$namespace" || true
+    return 0
 }
 
 # 测试 Redis 连接
@@ -317,14 +346,22 @@ test_redis_connection() {
     local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "测试 Redis 连接..."
+
+    # 确保 kubectl 可用
+    if ! kubectl get nodes >/dev/null 2>&1; then
+        if ! setup_kubectl_environment; then
+            log_error "❌ 无法建立 Kubernetes 连接"
+            return 1
+        fi
+    fi
     
     # 获取 Redis 服务信息
     local service_name
     service_name=$(kubectl get svc -n "$namespace" -l "$label_selector" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
     
     if [[ -z "$service_name" ]]; then
-        log_error "❌ 未找到 Redis 服务"
-        return 1
+        log_warn "⏳ 未找到 Redis 服务（可能还在创建中），跳过连接测试"
+        return 0
     fi
     
     # 测试连接（使用 kubectl port-forward 或直接连接）

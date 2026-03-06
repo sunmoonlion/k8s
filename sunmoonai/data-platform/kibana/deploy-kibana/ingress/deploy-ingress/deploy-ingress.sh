@@ -9,11 +9,12 @@ SCRIPT_DIR="$KIBANA_INGRESS_SCRIPT_DIR"
 # 导入统一部署模板（提供日志函数等基础设施）
 # 在加载前保存 SCRIPT_DIR，因为 unified-deployment-template.sh 会覆盖它
 SAVED_SCRIPT_DIR_FOR_TEMPLATE="$SCRIPT_DIR"
-# 计算项目根目录
+# 计算项目根目录（deploy-kibana/）
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 utils_path=""
-if [[ -f "$PROJECT_ROOT/../../../../utils/unified-deployment-template.sh" ]]; then
-    utils_path="$PROJECT_ROOT/../../../../utils/unified-deployment-template.sh"
+# 从 deploy-kibana/ 向上 3 级到 k8s 根目录，再进入 utils
+if [[ -f "$PROJECT_ROOT/../../../utils/unified-deployment-template.sh" ]]; then
+    utils_path="$PROJECT_ROOT/../../../utils/unified-deployment-template.sh"
 fi
 
 if [[ -n "$utils_path" && -f "$utils_path" ]]; then
@@ -82,8 +83,9 @@ parse_cluster_arg() {
     if [[ -n "$cluster_value" ]]; then
         # 在加载前保存 SCRIPT_DIR
         local saved_script_dir="$SCRIPT_DIR"
-        if [[ -f "$PROJECT_ROOT/../../../../utils/cluster-config-mapping.sh" ]]; then
-            source "$PROJECT_ROOT/../../../../utils/cluster-config-mapping.sh"
+        # 从 deploy-kibana/ 向上 3 级到 k8s 根目录，再进入 utils
+        if [[ -f "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh" ]]; then
+            source "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh"
             # 恢复 SCRIPT_DIR
             SCRIPT_DIR="$saved_script_dir"
             apply_cluster_config_mapping "$cluster_value"
