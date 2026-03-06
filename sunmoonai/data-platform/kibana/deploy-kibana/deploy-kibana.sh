@@ -269,27 +269,29 @@ check_kibana_status() {
         return 1
     fi
     
-    # 检查 Pod 状态（稳健处理空输出与非数字情况）
+    # 检查 Pod 状态：区分“启动中”和“异常未运行”
     local phases
     phases=$(kubectl get pods -n "$namespace" -l "$label_selector" -o jsonpath='{.items[*].status.phase}' 2>/dev/null || echo "")
-    local pods_ready=0
+    local pods_running=0
+    local pods_pending=0
     if [[ -n "$phases" ]]; then
-        # 计算 Running 状态的 Pod 数量
-        # 使用 tr 和 grep 计算，然后去除所有空白字符
-        local count=$(echo "$phases" | tr ' ' '\n' | grep -c '^Running$' 2>/dev/null || echo "0")
-        # 去除所有空白字符和非数字字符，只保留数字
-        pods_ready=$(echo "$count" | tr -d '[:space:]' | sed 's/[^0-9]//g')
-        # 如果结果为空或不是纯数字，设置为 0
-        if [[ -z "$pods_ready" ]] || ! [[ "$pods_ready" =~ ^[0-9]+$ ]]; then
-            pods_ready=0
-        else
-            # 转换为十进制整数（去除前导零）
-            pods_ready=$((10#$pods_ready))
-        fi
+        local running_count pending_count
+        running_count=$(echo "$phases" | tr ' ' '\n' | grep -c '^Running$' 2>/dev/null || echo "0")
+        pending_count=$(echo "$phases" | tr ' ' '\n' | grep -cE '^(Pending|ContainerCreating)$' 2>/dev/null || echo "0")
+        pods_running=$(echo "$running_count" | tr -d '[:space:]' | sed 's/[^0-9]//g')
+        pods_pending=$(echo "$pending_count" | tr -d '[:space:]' | sed 's/[^0-9]//g')
+        [[ -z "$pods_running" || ! "$pods_running" =~ ^[0-9]+$ ]] && pods_running=0
+        [[ -z "$pods_pending" || ! "$pods_pending" =~ ^[0-9]+$ ]] && pods_pending=0
+        pods_running=$((10#$pods_running))
+        pods_pending=$((10#$pods_pending))
     fi
-    # 使用数值比较（确保是数字比较，不是字符串比较）
-    if (( pods_ready > 0 )); then
-        log_success "✅ Kibana Pod 运行正常 (${pods_ready} 个)"
+    if (( pods_running > 0 )); then
+        log_success "✅ Kibana Pod 运行正常 (${pods_running} 个)"
+    elif (( pods_pending > 0 )); then
+        log_warn "⏳ Kibana Pod 正在启动中（${pods_pending} 个 Pending/ContainerCreating，0 个 Running）"
+        log_info "提示：这是正常的启动过程，如需查看详细进度可稍后运行 status 子命令。"
+        # 启动中不视为失败，直接返回成功，让整体部署流程继续
+        return 0
     else
         log_error "❌ Kibana Pod 未运行"
         return 1

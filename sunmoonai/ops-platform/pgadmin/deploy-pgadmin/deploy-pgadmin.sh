@@ -357,15 +357,24 @@ check_pgadmin_status() {
         return 1
     fi
     
-    local pods_ready
-    # 使用 jsonpath 直接统计 Running 状态的 Pod 数量，避免换行符问题
-    pods_ready=$(kubectl get pods -n "$namespace" -l "$label_selector" -o jsonpath='{range .items[*]}{.status.phase}{"\n"}{end}' 2>/dev/null | grep -c "^Running$" || echo "0")
-    # 确保 pods_ready 是纯数字（去除可能的换行符和空格）
-    pods_ready=$(echo "$pods_ready" | tr -d '[:space:]')
-    pods_ready=${pods_ready:-0}
+    # 统计各状态 Pod 数量
+    local phases
+    phases=$(kubectl get pods -n "$namespace" -l "$label_selector" -o jsonpath='{range .items[*]}{.status.phase}{"\n"}{end}' 2>/dev/null || echo "")
+    local pods_running pods_pending
+    pods_running=$(echo "$phases" | grep -c "^Running$" 2>/dev/null || echo "0")
+    pods_running=$(echo "$pods_running" | tr -d '[:space:]')
+    pods_running=${pods_running:-0}
+    pods_pending=$(echo "$phases" | grep -cE "^(Pending|ContainerCreating)$" 2>/dev/null || echo "0")
+    pods_pending=$(echo "$pods_pending" | tr -d '[:space:]')
+    pods_pending=${pods_pending:-0}
     
-    if [[ "$pods_ready" =~ ^[0-9]+$ ]] && [[ "$pods_ready" -gt 0 ]]; then
-        log_success "✅ pgAdmin Pod 运行正常 ($pods_ready 个)"
+    if [[ "$pods_running" =~ ^[0-9]+$ ]] && [[ "$pods_running" -gt 0 ]]; then
+        log_success "✅ pgAdmin Pod 运行正常 ($pods_running 个)"
+    elif [[ "$pods_pending" =~ ^[0-9]+$ ]] && [[ "$pods_pending" -gt 0 ]]; then
+        log_warn "⏳ pgAdmin Pod 正在启动中（$pods_pending/$pods_count 个 Pending/ContainerCreating，0 个 Running）"
+        log_info "提示：这是正常的启动过程，如需查看详细进度可稍后运行 status 子命令。"
+        # 启动中不视为失败，直接返回成功，让整体部署流程继续
+        return 0
     else
         log_error "❌ pgAdmin Pod 未运行（找到 $pods_count 个 Pod，但无 Running 状态）"
         log_info "Pod 状态详情："

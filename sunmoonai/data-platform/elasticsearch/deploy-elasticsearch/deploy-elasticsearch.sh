@@ -255,22 +255,31 @@ check_elasticsearch_status() {
         return 1
     fi
     
-    # 检查 Pod 状态（稳健处理空输出与非数字情况）
+    # 检查 Pod 状态：区分“启动中”和“异常未运行”
     local phases
     phases=$(kubectl get pods -n "$namespace" -l "$label_selector" -o jsonpath='{.items[*].status.phase}' 2>/dev/null || echo "")
-
-    # 统计 Running 数量（避免 grep -c 无匹配时与 || echo 0 产生多行导致 [[ 语法错误）
-    local pods_ready
+    
+    local pods_running pods_pending
     if [[ -z "$phases" ]]; then
-        pods_ready=0
+        pods_running=0
+        pods_pending=0
     else
-        pods_ready=$(echo "$phases" | tr ' ' '\n' | grep -c '^Running$' 2>/dev/null || true)
-        pods_ready=${pods_ready:-0}
-        pods_ready=$((pods_ready + 0))
+        local pods_running_str pods_pending_str
+        pods_running_str=$(echo "$phases" | tr ' ' '\n' | grep -c '^Running$' 2>/dev/null || echo "0")
+        pods_pending_str=$(echo "$phases" | tr ' ' '\n' | grep -cE '^(Pending|ContainerCreating)$' 2>/dev/null || echo "0")
+        pods_running=$(echo "$pods_running_str" | tr -d '[:space:]')
+        pods_running=${pods_running:-0}
+        pods_pending=$(echo "$pods_pending_str" | tr -d '[:space:]')
+        pods_pending=${pods_pending:-0}
     fi
-
-    if [[ $pods_ready -gt 0 ]]; then
-        log_success "✅ Elasticsearch Pod 运行正常 (${pods_ready} 个)"
+    
+    if [[ "$pods_running" =~ ^[0-9]+$ ]] && [[ "$pods_running" -gt 0 ]]; then
+        log_success "✅ Elasticsearch Pod 运行正常 (${pods_running} 个)"
+    elif [[ "$pods_pending" =~ ^[0-9]+$ ]] && [[ "$pods_pending" -gt 0 ]]; then
+        log_warn "⏳ Elasticsearch Pod 正在启动中（$pods_pending 个 Pending/ContainerCreating，0 个 Running）"
+        log_info "提示：这是正常的启动过程，如需查看详细进度可稍后运行 status 子命令。"
+        # 启动中不视为失败，直接返回成功，让整体部署流程继续
+        return 0
     else
         log_error "❌ Elasticsearch Pod 未运行"
         return 1

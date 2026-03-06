@@ -305,24 +305,29 @@ check_jenkins_status() {
         return 1
     fi
     
-    # 检查 Pod 状态（稳健数值比较）
+    # 检查 Pod 状态：区分“启动中”和“异常未运行”
     local phases
     phases=$(kubectl get pods -n "$namespace" -l "$label_selector" -o jsonpath='{.items[*].status.phase}' 2>/dev/null || echo "")
-    local pods_ready
+    local pods_running pods_pending
     if [[ -z "$phases" ]]; then
-        pods_ready=0
+        pods_running=0
+        pods_pending=0
     else
-        # 统计 Running 个数，并确保为数值
-        local pods_ready_str
-        pods_ready_str=$(echo "$phases" | tr ' ' '\n' | grep -c '^Running$' 2>/dev/null || true)
-        if [[ "$pods_ready_str" =~ ^[0-9]+$ ]]; then
-            pods_ready="$pods_ready_str"
-        else
-            pods_ready=0
-        fi
+        local pods_running_str pods_pending_str
+        pods_running_str=$(echo "$phases" | tr ' ' '\n' | grep -c '^Running$' 2>/dev/null || echo "0")
+        pods_pending_str=$(echo "$phases" | tr ' ' '\n' | grep -cE '^(Pending|ContainerCreating)$' 2>/dev/null || echo "0")
+        pods_running=$(echo "$pods_running_str" | tr -d '[:space:]')
+        pods_running=${pods_running:-0}
+        pods_pending=$(echo "$pods_pending_str" | tr -d '[:space:]')
+        pods_pending=${pods_pending:-0}
     fi
-    if [ "${pods_ready}" -gt 0 ]; then
-        log_success "✅ Jenkins Pod 运行正常 (${pods_ready} 个)"
+    if [[ "$pods_running" =~ ^[0-9]+$ ]] && [[ "$pods_running" -gt 0 ]]; then
+        log_success "✅ Jenkins Pod 运行正常 (${pods_running} 个)"
+    elif [[ "$pods_pending" =~ ^[0-9]+$ ]] && [[ "$pods_pending" -gt 0 ]]; then
+        log_warn "⏳ Jenkins Pod 正在启动中（$pods_pending 个 Pending/ContainerCreating，0 个 Running）"
+        log_info "提示：这是正常的启动过程，如需查看详细进度可稍后运行 status 子命令。"
+        # 启动中不视为失败，直接返回成功，让整体部署流程继续
+        return 0
     else
         log_error "❌ Jenkins Pod 未运行"
         # 输出基本诊断信息以便快速定位
