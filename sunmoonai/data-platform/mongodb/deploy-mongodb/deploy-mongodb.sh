@@ -265,12 +265,15 @@ execute_mongodb_deployment() {
 
 # 检查 MongoDB 状态
 check_mongodb_status() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="mongodb-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "检查 MongoDB 部署状态..."
     
     # 检查 Helm Release
-    if helm list -n "$namespace" | grep -q "mongodb-$DEFAULT_PROJECT_ID\|mongodb-$project_id"; then
+    if helm list -n "$namespace" | grep -q "$release_name"; then
         log_success "✅ MongoDB Helm Release 存在"
     else
         log_error "❌ MongoDB Helm Release 不存在"
@@ -279,7 +282,7 @@ check_mongodb_status() {
     
     # 检查 Pod 状态（稳健计数）
     local phases
-    phases=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=mongodb -o jsonpath='{.items[*].status.phase}' 2>/dev/null || true)
+    phases=$(kubectl get pods -n "$namespace" -l "$label_selector" -o jsonpath='{.items[*].status.phase}' 2>/dev/null || true)
     local pods_ready
     pods_ready=$(echo "$phases" | tr ' ' '\n' | grep -c '^Running$' || true)
     # 保证数值型
@@ -291,23 +294,26 @@ check_mongodb_status() {
         log_success "✅ MongoDB Pod 运行正常 ($pods_ready 个)"
     else
         log_error "❌ MongoDB Pod 未运行"
-        kubectl get pods -n "$namespace" -l app.kubernetes.io/name=mongodb || true
+        kubectl get pods -n "$namespace" -l "$label_selector" || true
         return 1
     fi
     
     # 测试 MongoDB 连接
-    test_mongodb_connection "$namespace"
+    test_mongodb_connection "$project_id" "$namespace"
 }
 
 # 测试 MongoDB 连接
 test_mongodb_connection() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="mongodb-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "测试 MongoDB 连接..."
     
     # 获取 MongoDB 服务信息
     local service_name
-    service_name=$(kubectl get svc -n "$namespace" -l app.kubernetes.io/name=mongodb -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+    service_name=$(kubectl get svc -n "$namespace" -l "$label_selector" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
     
     if [[ -z "$service_name" ]]; then
         log_error "❌ 未找到 MongoDB 服务"
@@ -336,7 +342,7 @@ show_mongodb_connection_info() {
     echo "   mongosh mongodb://$MONGODB_EXTERNAL_HOST:$MONGODB_EXTERNAL_PORT"
     echo ""
     echo "3. 查看服务状态:"
-    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/name=mongodb"
+    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/instance=mongodb-<project_id>"
     echo ""
 }
 
@@ -510,14 +516,14 @@ main() {
             log_info "🚀 阶段2：部署 MongoDB 核心服务..."
             
             execute_mongodb_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            check_mongodb_status "$namespace"
+            check_mongodb_status "$project_id" "$namespace"
             show_mongodb_connection_info "$namespace"
             ;;
         "upgrade")
             log_info "开始升级 MongoDB..."
             check_namespace "$namespace"
             execute_mongodb_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            check_mongodb_status "$namespace"
+            check_mongodb_status "$project_id" "$namespace"
             ;;
         "uninstall")
             log_info "开始卸载 MongoDB..."
@@ -564,22 +570,22 @@ main() {
                 fi
             fi
             
-            helm uninstall mongodb-sunmoonai -n "$namespace" || true
+            helm uninstall "mongodb-$project_id" -n "$namespace" || true
             log_success "✅ MongoDB 卸载完成"
             ;;
         "clean")
             log_info "开始清理 MongoDB..."
-            helm uninstall mongodb-sunmoonai -n "$namespace" || true
-            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/name=mongodb || true
+            helm uninstall "mongodb-$project_id" -n "$namespace" || true
+            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/instance="mongodb-$project_id" || true
             log_success "✅ MongoDB 清理完成"
             ;;
         "status")
-            check_mongodb_status "$namespace"
+            check_mongodb_status "$project_id" "$namespace"
             show_mongodb_connection_info "$namespace"
             ;;
         "logs")
             log_info "显示 MongoDB 日志..."
-            kubectl logs -n "$namespace" -l app.kubernetes.io/name=mongodb --tail=100
+            kubectl logs -n "$namespace" -l app.kubernetes.io/instance="mongodb-$project_id" --tail=100
             ;;
         "backup")
             backup_mongodb_database "$namespace"

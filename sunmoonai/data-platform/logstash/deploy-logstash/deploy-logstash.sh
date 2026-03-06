@@ -189,7 +189,8 @@ execute_logstash_deployment() {
     fi
     
     # 构建 Helm 命令
-    local helm_cmd="helm upgrade --install logstash-sunmoonai $LOGSTASH_CHART_DIR"
+    local release_name="logstash-$project_id"
+    local helm_cmd="helm upgrade --install $release_name $LOGSTASH_CHART_DIR"
     helm_cmd="$helm_cmd --namespace $namespace"
     helm_cmd="$helm_cmd --set global.projectId=$project_id"
     helm_cmd="$helm_cmd --set global.namespace=$namespace"
@@ -234,7 +235,10 @@ execute_logstash_deployment() {
 
 # 检查 Logstash 状态
 check_logstash_status() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="logstash-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "检查 Logstash 部署状态..."
     
@@ -245,7 +249,7 @@ check_logstash_status() {
     fi
     
     # 检查 Helm Release
-    if helm list -n "$namespace" | grep -q "logstash-sunmoonai"; then
+    if helm list -n "$namespace" | grep -q "$release_name"; then
         log_success "✅ Logstash Helm Release 存在"
     else
         log_error "❌ Logstash Helm Release 不存在"
@@ -254,12 +258,12 @@ check_logstash_status() {
     
     # 检查 Pod 状态（稳健处理空输出与非数字情况）
     local pods_info
-    pods_info=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=logstash -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.phase}{"\n"}{end}' 2>/dev/null || echo "")
+    pods_info=$(kubectl get pods -n "$namespace" -l "$label_selector" -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.phase}{"\n"}{end}' 2>/dev/null || echo "")
     
     if [[ -z "$pods_info" ]]; then
         log_warn "⚠️  未找到 Logstash Pod（可能正在创建中）"
-        # 尝试使用 release name 查找
-        pods_info=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/instance=logstash-sunmoonai -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.phase}{"\n"}{end}' 2>/dev/null || echo "")
+        # 兼容性兜底：尝试使用 chart name 查找
+        pods_info=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=logstash -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.phase}{"\n"}{end}' 2>/dev/null || echo "")
         if [[ -z "$pods_info" ]]; then
             log_error "❌ Logstash Pod 不存在"
             return 1
@@ -289,8 +293,8 @@ check_logstash_status() {
     elif [[ $pods_total -gt 0 ]]; then
         log_warn "⚠️  Logstash Pod 存在但未运行 (${pods_total} 个 Pod，0 个运行中)"
         log_info "请等待 Pod 启动或检查 Pod 状态："
-        log_info "  kubectl get pods -n $namespace -l app.kubernetes.io/name=logstash"
-        log_info "  kubectl describe pods -n $namespace -l app.kubernetes.io/name=logstash"
+        log_info "  kubectl get pods -n $namespace -l app.kubernetes.io/instance=$release_name"
+        log_info "  kubectl describe pods -n $namespace -l app.kubernetes.io/instance=$release_name"
         # 不返回错误，因为 Pod 可能正在启动中
         return 0
     else
@@ -299,18 +303,21 @@ check_logstash_status() {
     fi
     
     # 测试 Logstash 连接
-    test_logstash_connection "$namespace"
+    test_logstash_connection "$project_id" "$namespace"
 }
 
 # 测试 Logstash 连接
 test_logstash_connection() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="logstash-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "测试 Logstash 连接..."
     
     # 获取 Logstash 服务信息
     local service_name
-    service_name=$(kubectl get svc -n "$namespace" -l app.kubernetes.io/name=logstash -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+    service_name=$(kubectl get svc -n "$namespace" -l "$label_selector" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
     
     if [[ -z "$service_name" ]]; then
         log_error "❌ 未找到 Logstash 服务"
@@ -360,11 +367,15 @@ deploy_sub_components() {
 
 # 显示 Logstash 连接信息
 show_logstash_connection_info() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
     
     # 获取配置变量（使用默认值避免未定义变量错误）
     local unified_host="${LOGSTASH_UNIFIED_HOST:-llmops.sunmoonai.com}"
-    local service_name="logstash-sunmoonai"
+    local release_name="logstash-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
+    local service_name
+    service_name=$(kubectl get svc -n "$namespace" -l "$label_selector" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "$release_name")
     
     # 尝试从 Service 获取端口信息
     local service_port
@@ -387,7 +398,7 @@ show_logstash_connection_info() {
     echo "   curl http://localhost:${service_port}"
     echo ""
     echo "3. 查看服务状态:"
-    echo "   kubectl get pods,svc,ingressroute -n $namespace -l app.kubernetes.io/name=logstash"
+    echo "   kubectl get pods,svc,ingressroute -n $namespace -l app.kubernetes.io/instance=$release_name"
     echo ""
 }
 
@@ -481,8 +492,8 @@ main() {
             execute_logstash_deployment "$project_id" "$namespace" "$environment" "$dry_run"
             # 子组件：中间件与 Web Ingress
             if deploy_sub_components "$project_id" "$namespace" "$environment" "$dry_run"; then
-                check_logstash_status "$namespace"
-                show_logstash_connection_info "$namespace"
+                check_logstash_status "$project_id" "$namespace"
+                show_logstash_connection_info "$project_id" "$namespace"
             else
                 log_error "❌ Logstash 子组件部署失败"
                 exit 1
@@ -492,7 +503,7 @@ main() {
             log_info "开始升级 Logstash..."
             check_namespace "$namespace"
             execute_logstash_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            check_logstash_status "$namespace"
+            check_logstash_status "$project_id" "$namespace"
             ;;
         "uninstall")
             log_info "开始卸载 Logstash..."
@@ -519,25 +530,25 @@ main() {
                     return 1
                 fi
             fi
-            helm uninstall logstash-sunmoonai -n "$namespace" --wait || true
+            helm uninstall "logstash-$project_id" -n "$namespace" --wait || true
             log_success "✅ Logstash 卸载完成"
             ;;
         "clean")
             log_info "开始清理 Logstash..."
-            helm uninstall logstash-sunmoonai -n "$namespace" || true
-            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/name=logstash || true
+            helm uninstall "logstash-$project_id" -n "$namespace" || true
+            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/instance="logstash-$project_id" || true
             log_success "✅ Logstash 清理完成"
             ;;
         "status")
-            check_logstash_status "$namespace"
-            show_logstash_connection_info "$namespace"
+            check_logstash_status "$project_id" "$namespace"
+            show_logstash_connection_info "$project_id" "$namespace"
             ;;
         "logs")
             log_info "显示 Logstash 日志..."
-            kubectl logs -n "$namespace" -l app.kubernetes.io/name=logstash --tail=100
+            kubectl logs -n "$namespace" -l app.kubernetes.io/instance="logstash-$project_id" --tail=100
             ;;
         "connect")
-            show_logstash_connection_info "$namespace"
+            show_logstash_connection_info "$project_id" "$namespace"
             ;;
         *)
             echo "用法: $0 <action> [project_id] [namespace] [environment] [dry_run]"

@@ -287,7 +287,10 @@ execute_pgadmin_deployment() {
 
 # 检查 pgAdmin 状态
 check_pgadmin_status() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="pgadmin-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "检查 pgAdmin 部署状态..."
     
@@ -308,7 +311,7 @@ check_pgadmin_status() {
             log_warn "⚠️  检查 Helm Release 时出错: $helm_output"
             log_warn "   跳过 Helm Release 检查"
         fi
-    elif echo "$helm_output" | grep -q "pgadmin-sunmoonai"; then
+    elif echo "$helm_output" | grep -q "$release_name"; then
         log_success "✅ pgAdmin Helm Release 存在"
     else
         # 连接成功但 Release 不存在
@@ -319,7 +322,7 @@ check_pgadmin_status() {
     # 检查 Pod 状态（同样处理连接失败）
     local pods_output
     local pods_exit_code
-    pods_output=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=pgadmin --no-headers 2>&1)
+    pods_output=$(kubectl get pods -n "$namespace" -l "$label_selector" --no-headers 2>&1)
     pods_exit_code=$?
     
     if [[ $pods_exit_code -ne 0 ]]; then
@@ -334,22 +337,29 @@ check_pgadmin_status() {
     fi
     
     local pods_count
-    pods_count=$(echo "$pods_output" | wc -l | tr -d '[:space:]')
+    # 注意：kubectl 在无匹配资源时会返回 exit_code=0 且输出为空；
+    # 不能直接对 echo "" | wc -l，否则会误判为 1。
+    if [[ -z "${pods_output//[[:space:]]/}" ]]; then
+        pods_count=0
+    else
+        pods_count=$(printf '%s\n' "$pods_output" | grep -cve '^[[:space:]]*$' || echo "0")
+        pods_count=$(echo "$pods_count" | tr -d '[:space:]')
+    fi
     pods_count=${pods_count:-0}
     
     if [[ "$pods_count" -eq 0 ]]; then
         log_error "❌ 未找到 pgAdmin Pod"
         log_info "检查 Deployment 状态："
-        kubectl get deployment -n "$namespace" -l app.kubernetes.io/name=pgadmin 2>/dev/null || true
+        kubectl get deployment -n "$namespace" -l "$label_selector" 2>/dev/null || true
         echo ""
         log_info "检查 ReplicaSet 状态："
-        kubectl get replicaset -n "$namespace" -l app.kubernetes.io/name=pgadmin 2>/dev/null || true
+        kubectl get replicaset -n "$namespace" -l "$label_selector" 2>/dev/null || true
         return 1
     fi
     
     local pods_ready
     # 使用 jsonpath 直接统计 Running 状态的 Pod 数量，避免换行符问题
-    pods_ready=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=pgadmin -o jsonpath='{range .items[*]}{.status.phase}{"\n"}{end}' 2>/dev/null | grep -c "^Running$" || echo "0")
+    pods_ready=$(kubectl get pods -n "$namespace" -l "$label_selector" -o jsonpath='{range .items[*]}{.status.phase}{"\n"}{end}' 2>/dev/null | grep -c "^Running$" || echo "0")
     # 确保 pods_ready 是纯数字（去除可能的换行符和空格）
     pods_ready=$(echo "$pods_ready" | tr -d '[:space:]')
     pods_ready=${pods_ready:-0}
@@ -359,11 +369,11 @@ check_pgadmin_status() {
     else
         log_error "❌ pgAdmin Pod 未运行（找到 $pods_count 个 Pod，但无 Running 状态）"
         log_info "Pod 状态详情："
-        kubectl get pods -n "$namespace" -l app.kubernetes.io/name=pgadmin -o wide 2>/dev/null || true
+        kubectl get pods -n "$namespace" -l "$label_selector" -o wide 2>/dev/null || true
         echo ""
         log_info "Pod 详细信息："
         local pod_name
-        pod_name=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=pgadmin -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+        pod_name=$(kubectl get pods -n "$namespace" -l "$label_selector" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
         if [[ -n "$pod_name" ]]; then
             log_info "Pod 名称: $pod_name"
             echo ""
@@ -383,7 +393,7 @@ check_pgadmin_status() {
     
     # 测试 pgAdmin 连接（如果连接可用）
     if kubectl get nodes >/dev/null 2>&1; then
-        test_pgadmin_connection "$namespace"
+        test_pgadmin_connection "$project_id" "$namespace"
     else
         log_warn "⚠️  无法连接到 Kubernetes 集群，跳过连接测试"
     fi
@@ -391,13 +401,16 @@ check_pgadmin_status() {
 
 # 测试 pgAdmin 连接
 test_pgadmin_connection() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="pgadmin-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "测试 pgAdmin 连接..."
     
     # 获取 pgAdmin 服务信息
     local service_name
-    service_name=$(kubectl get svc -n "$namespace" -l app.kubernetes.io/name=pgadmin -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+    service_name=$(kubectl get svc -n "$namespace" -l "$label_selector" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
     
     if [[ -z "$service_name" ]]; then
         log_error "❌ 未找到 pgAdmin 服务"
@@ -426,7 +439,7 @@ show_pgadmin_connection_info() {
     echo "   https://${PGADMIN_UNIFIED_HOST:-llmops.sunmoonai.com}/pgadmin"
     echo ""
     echo "3. 查看服务状态:"
-    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/name=pgadmin"
+    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/instance=pgadmin-<project_id>"
     echo ""
     echo "4. 连接 PostgreSQL:"
     echo "   需要配置 PostgreSQL 连接信息"
@@ -695,8 +708,8 @@ main() {
             # 清理可能残留的资源（ConfigMap、Secret、IngressRoute、Middleware）
             log_info "清理可能残留的资源..."
             sleep 2
-            kubectl delete configmap -n "$namespace" -l app.kubernetes.io/name=pgadmin --ignore-not-found=true || true
-            kubectl delete secret -n "$namespace" -l app.kubernetes.io/name=pgadmin --ignore-not-found=true || true
+            kubectl delete configmap -n "$namespace" -l app.kubernetes.io/instance="$release_name" --ignore-not-found=true || true
+            kubectl delete secret -n "$namespace" -l app.kubernetes.io/instance="$release_name" --ignore-not-found=true || true
             kubectl delete ingressroute -n "$namespace" -l component=pgadmin 2>/dev/null || true
             kubectl delete middleware -n "$namespace" -l component=pgadmin 2>/dev/null || true
             kubectl delete ingressroute -n "$namespace" pgadmin-web-route 2>/dev/null || true
@@ -723,11 +736,11 @@ main() {
             
             local release_name="pgadmin-$project_id"
             helm uninstall "$release_name" -n "$namespace" --wait --timeout 5m 2>/dev/null || true
-            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/name=pgadmin || true
+            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/instance="$release_name" || true
             kubectl delete ingressroute -n "$namespace" -l component=pgadmin 2>/dev/null || true
             kubectl delete middleware -n "$namespace" -l component=pgadmin 2>/dev/null || true
-            kubectl delete configmap -n "$namespace" -l app.kubernetes.io/name=pgadmin --ignore-not-found=true || true
-            kubectl delete secret -n "$namespace" -l app.kubernetes.io/name=pgadmin --ignore-not-found=true || true
+            kubectl delete configmap -n "$namespace" -l app.kubernetes.io/instance="$release_name" --ignore-not-found=true || true
+            kubectl delete secret -n "$namespace" -l app.kubernetes.io/instance="$release_name" --ignore-not-found=true || true
             log_success "✅ pgAdmin 清理完成"
             ;;
         "status")
@@ -737,7 +750,7 @@ main() {
                 return 1
             fi
             
-            check_pgadmin_status "$namespace"
+            check_pgadmin_status "$project_id" "$namespace"
             show_pgadmin_connection_info "$namespace"
             ;;
         "logs")
@@ -748,7 +761,7 @@ main() {
             fi
             
             log_info "显示 pgAdmin 日志..."
-            kubectl logs -n "$namespace" -l app.kubernetes.io/name=pgadmin --tail=100
+            kubectl logs -n "$namespace" -l app.kubernetes.io/instance="pgadmin-$project_id" --tail=100
             ;;
         "backup")
             # 设置 Kubernetes 环境

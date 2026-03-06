@@ -244,7 +244,8 @@ execute_redisinsight_deployment() {
     fi
     
     # 构建 Helm 命令
-    local helm_cmd="helm upgrade --install redisinsight-sunmoonai $REDISINSIGHT_CHART_DIR"
+    local release_name="redisinsight-$project_id"
+    local helm_cmd="helm upgrade --install $release_name $REDISINSIGHT_CHART_DIR"
     helm_cmd="$helm_cmd --namespace $namespace"
     helm_cmd="$helm_cmd --set global.projectId=$project_id"
     helm_cmd="$helm_cmd --set global.namespace=$namespace"
@@ -277,12 +278,15 @@ execute_redisinsight_deployment() {
 
 # 检查 RedisInsight 状态
 check_redisinsight_status() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="redisinsight-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "检查 RedisInsight 部署状态..."
     
     # 检查 Helm Release
-    if helm list -n "$namespace" | grep -q "redisinsight-sunmoonai"; then
+    if helm list -n "$namespace" | grep -q "$release_name"; then
         log_success "✅ RedisInsight Helm Release 存在"
     else
         log_error "❌ RedisInsight Helm Release 不存在"
@@ -291,7 +295,7 @@ check_redisinsight_status() {
     
     # 检查 Pod 状态（避免 grep -c 无匹配时与 || echo "0" 产生多行输出导致 [[ 语法错误）
     local pods_ready
-    pods_ready=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=redisinsight -o jsonpath='{.items[*].status.phase}' 2>/dev/null | grep -c "Running" 2>/dev/null || true)
+    pods_ready=$(kubectl get pods -n "$namespace" -l "$label_selector" -o jsonpath='{.items[*].status.phase}' 2>/dev/null | grep -c "Running" 2>/dev/null || true)
     pods_ready=${pods_ready:-0}
     pods_ready=$((pods_ready + 0))
     if [[ $pods_ready -gt 0 ]]; then
@@ -302,18 +306,21 @@ check_redisinsight_status() {
     fi
     
     # 测试 RedisInsight 连接
-    test_redisinsight_connection "$namespace"
+    test_redisinsight_connection "$project_id" "$namespace"
 }
 
 # 测试 RedisInsight 连接
 test_redisinsight_connection() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="redisinsight-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "测试 RedisInsight 连接..."
     
     # 获取 RedisInsight 服务信息
     local service_name
-    service_name=$(kubectl get svc -n "$namespace" -l app.kubernetes.io/name=redisinsight -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+    service_name=$(kubectl get svc -n "$namespace" -l "$label_selector" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
     
     if [[ -z "$service_name" ]]; then
         log_error "❌ 未找到 RedisInsight 服务"
@@ -342,7 +349,7 @@ show_redisinsight_connection_info() {
     echo "   https://${REDISINSIGHT_UNIFIED_HOST:-llmops.sunmoonai.com}/redisinsight"
     echo ""
     echo "3. 查看服务状态:"
-    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/name=redisinsight"
+    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/instance=redisinsight-<project_id>"
     echo ""
     echo "4. 连接 Redis:"
     echo "   需要配置 Redis 连接信息"
@@ -446,7 +453,7 @@ main() {
             if ! setup_kubectl_environment; then
                 log_error "无法建立 Kubernetes 连接，跳过状态检查"
             else
-                check_redisinsight_status "$namespace"
+                check_redisinsight_status "$project_id" "$namespace"
                 show_redisinsight_connection_info "$namespace"
             fi
             # 安装后清理控制平面 tar 包
@@ -458,7 +465,7 @@ main() {
             log_info "开始升级 RedisInsight..."
             check_namespace "$namespace"
             execute_redisinsight_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            check_redisinsight_status "$namespace"
+            check_redisinsight_status "$project_id" "$namespace"
             ;;
         "uninstall")
             log_info "开始卸载 RedisInsight..."
@@ -512,18 +519,18 @@ main() {
             
             local release_name="redisinsight-$project_id"
             helm uninstall "$release_name" -n "$namespace" --wait --timeout 5m 2>/dev/null || true
-            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/name=redisinsight || true
+            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/instance="$release_name" || true
             kubectl delete ingressroute -n "$namespace" -l component=redisinsight 2>/dev/null || true
             kubectl delete middleware -n "$namespace" -l component=redisinsight 2>/dev/null || true
             log_success "✅ RedisInsight 清理完成"
             ;;
         "status")
-            check_redisinsight_status "$namespace"
+            check_redisinsight_status "$project_id" "$namespace"
             show_redisinsight_connection_info "$namespace"
             ;;
         "logs")
             log_info "显示 RedisInsight 日志..."
-            kubectl logs -n "$namespace" -l app.kubernetes.io/name=redisinsight --tail=100
+            kubectl logs -n "$namespace" -l app.kubernetes.io/instance="redisinsight-$project_id" --tail=100
             ;;
         "backup")
             backup_redisinsight_data "$namespace"

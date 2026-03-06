@@ -182,7 +182,8 @@ execute_neo4j_deployment() {
     fi
     
     # 构建 Helm 命令
-    local helm_cmd="helm upgrade --install neo4j-sunmoonai $NEO4J_CHART_DIR"
+    local release_name="neo4j-$project_id"
+    local helm_cmd="helm upgrade --install $release_name $NEO4J_CHART_DIR"
     helm_cmd="$helm_cmd --namespace $namespace"
     helm_cmd="$helm_cmd --set global.projectId=$project_id"
     helm_cmd="$helm_cmd --set global.namespace=$namespace"
@@ -227,12 +228,15 @@ execute_neo4j_deployment() {
 
 # 检查 Neo4j 状态
 check_neo4j_status() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="neo4j-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "检查 Neo4j 部署状态..."
     
     # 检查 Helm Release
-    if helm list -n "$namespace" | grep -q "neo4j-sunmoonai"; then
+    if helm list -n "$namespace" | grep -q "$release_name"; then
         log_success "✅ Neo4j Helm Release 存在"
     else
         log_error "❌ Neo4j Helm Release 不存在"
@@ -241,7 +245,7 @@ check_neo4j_status() {
     
     # 检查 Pod 状态
     local pods_ready_str pods_ready
-    pods_ready_str=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=neo4j -o jsonpath='{.items[*].status.phase}' 2>/dev/null || echo "")
+    pods_ready_str=$(kubectl get pods -n "$namespace" -l "$label_selector" -o jsonpath='{.items[*].status.phase}' 2>/dev/null || echo "")
     if [[ -z "$pods_ready_str" ]]; then
         pods_ready=0
     else
@@ -253,25 +257,28 @@ check_neo4j_status() {
         log_success "✅ Neo4j Pod 运行正常 ($pods_ready 个)"
     else
         log_error "❌ Neo4j Pod 未运行"
-        kubectl get pods -n "$namespace" -l app.kubernetes.io/name=neo4j -owide || true
-        kubectl get pvc  -n "$namespace" -l app.kubernetes.io/name=neo4j || true
+        kubectl get pods -n "$namespace" -l "$label_selector" -owide || true
+        kubectl get pvc  -n "$namespace" -l "$label_selector" || true
         kubectl get events -n "$namespace" --sort-by=.lastTimestamp | tail -n 20 || true
         return 1
     fi
     
     # 测试 Neo4j 连接
-    test_neo4j_connection "$namespace"
+    test_neo4j_connection "$project_id" "$namespace"
 }
 
 # 测试 Neo4j 连接
 test_neo4j_connection() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="neo4j-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "测试 Neo4j 连接..."
     
     # 获取 Neo4j 服务信息
     local service_name
-    service_name=$(kubectl get svc -n "$namespace" -l app.kubernetes.io/name=neo4j -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+    service_name=$(kubectl get svc -n "$namespace" -l "$label_selector" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
     
     if [[ -z "$service_name" ]]; then
         log_error "❌ 未找到 Neo4j 服务"
@@ -360,11 +367,14 @@ uninstall_sub_components() {
 # 端口转发并输出初始密码
 forward_neo4j_access() {
     local namespace="$1"
+    local project_id="${2:-$DEFAULT_PROJECT_ID}"
+    local release_name="neo4j-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
 
     log_info "准备进行端口转发并输出初始密码..."
 
     local service_name
-    service_name=$(kubectl get svc -n "$namespace" -l app.kubernetes.io/name=neo4j -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "neo4j-sunmoonai")
+    service_name=$(kubectl get svc -n "$namespace" -l "$label_selector" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "$release_name")
 
     echo ""
     echo "=== Neo4j 初始登录信息 ==="
@@ -397,7 +407,7 @@ show_neo4j_connection_info() {
     echo "   https://${NEO4J_UNIFIED_HOST:-llmops.sunmoonai.com}/neo4j"
     echo ""
     echo "3. 查看服务状态:"
-    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/name=neo4j"
+    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/instance=neo4j-<project_id>"
     echo ""
     echo "4. 连接 Neo4j 数据库:"
     # 动态获取外部端口
@@ -478,7 +488,7 @@ main() {
             execute_neo4j_deployment "$project_id" "$namespace" "$environment" "$dry_run"
             # 部署子组件（中间件 / Ingress-All）
             if deploy_sub_components "$project_id" "$namespace" "$environment" "$dry_run"; then
-                check_neo4j_status "$namespace"
+                check_neo4j_status "$project_id" "$namespace"
                 show_neo4j_connection_info "$namespace"
             else
                 log_error "❌ Neo4j 子组件部署失败"
@@ -489,7 +499,7 @@ main() {
             log_info "开始升级 Neo4j..."
             check_namespace "$namespace"
             execute_neo4j_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            check_neo4j_status "$namespace"
+            check_neo4j_status "$project_id" "$namespace"
             ;;
         "uninstall")
             log_info "开始卸载 Neo4j..."
@@ -504,22 +514,22 @@ main() {
                 fi
             fi
             # 再卸载主部署
-            helm uninstall neo4j-sunmoonai -n "$namespace" --wait || true
+            helm uninstall "neo4j-$project_id" -n "$namespace" --wait || true
             log_success "✅ Neo4j 卸载完成"
             ;;
         "clean")
             log_info "开始清理 Neo4j..."
-            helm uninstall neo4j-sunmoonai -n "$namespace" || true
-            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/name=neo4j || true
+            helm uninstall "neo4j-$project_id" -n "$namespace" || true
+            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/instance="neo4j-$project_id" || true
             log_success "✅ Neo4j 清理完成"
             ;;
         "status")
-            check_neo4j_status "$namespace"
+            check_neo4j_status "$project_id" "$namespace"
             show_neo4j_connection_info "$namespace"
             ;;
         "logs")
             log_info "显示 Neo4j 日志..."
-            kubectl logs -n "$namespace" -l app.kubernetes.io/name=neo4j --tail=100
+            kubectl logs -n "$namespace" -l app.kubernetes.io/instance="neo4j-$project_id" --tail=100
             ;;
         "backup")
             backup_neo4j_data "$namespace"
@@ -528,8 +538,8 @@ main() {
             show_neo4j_connection_info "$namespace"
             ;;
         "forward")
-            check_neo4j_status "$namespace" || true
-            forward_neo4j_access "$namespace"
+            check_neo4j_status "$project_id" "$namespace" || true
+            forward_neo4j_access "$namespace" "$project_id"
             ;;
         *)
             echo "用法: $0 <action> [project_id] [namespace] [environment] [dry_run]"

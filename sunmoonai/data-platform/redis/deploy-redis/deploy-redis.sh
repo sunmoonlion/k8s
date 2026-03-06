@@ -275,12 +275,15 @@ execute_redis_deployment() {
 
 # 检查 Redis 状态
 check_redis_status() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="redis-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "检查 Redis 部署状态..."
     
     # 检查 Helm Release
-    if helm list -n "$namespace" | grep -q "redis-$DEFAULT_PROJECT_ID\|redis-$project_id"; then
+    if helm list -n "$namespace" | grep -q "$release_name"; then
         log_success "✅ Redis Helm Release 存在"
     else
         log_error "❌ Redis Helm Release 不存在"
@@ -289,7 +292,7 @@ check_redis_status() {
     
     # 检查 Pod 状态
     local pods_ready
-    pods_ready=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=redis -o jsonpath='{.items[*].status.phase}' 2>/dev/null | grep -o "Running" | wc -l | tr -d '[:space:]')
+    pods_ready=$(kubectl get pods -n "$namespace" -l "$label_selector" -o jsonpath='{.items[*].status.phase}' 2>/dev/null | grep -o "Running" | wc -l | tr -d '[:space:]')
     pods_ready="${pods_ready:-0}"
     
     if [[ "$pods_ready" -gt 0 ]]; then
@@ -298,23 +301,26 @@ check_redis_status() {
         log_warn "⚠️ Redis Pod 可能还在启动中，当前运行数量: $pods_ready"
         # 显示 Pod 状态以便调试
         log_info "当前 Pod 状态："
-        kubectl get pods -n "$namespace" -l app.kubernetes.io/name=redis 2>/dev/null || true
+        kubectl get pods -n "$namespace" -l "$label_selector" 2>/dev/null || true
         # 不返回错误，因为 Pod 可能还在启动
     fi
     
     # 测试 Redis 连接
-    test_redis_connection "$namespace"
+    test_redis_connection "$project_id" "$namespace"
 }
 
 # 测试 Redis 连接
 test_redis_connection() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="redis-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "测试 Redis 连接..."
     
     # 获取 Redis 服务信息
     local service_name
-    service_name=$(kubectl get svc -n "$namespace" -l app.kubernetes.io/name=redis -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+    service_name=$(kubectl get svc -n "$namespace" -l "$label_selector" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
     
     if [[ -z "$service_name" ]]; then
         log_error "❌ 未找到 Redis 服务"
@@ -343,7 +349,7 @@ show_redis_connection_info() {
     echo "   redis-cli -h $REDIS_EXTERNAL_HOST -p $REDIS_EXTERNAL_PORT"
     echo ""
     echo "3. 查看服务状态:"
-    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/name=redis"
+    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/instance=redis-<project_id>"
     echo ""
 }
 
@@ -532,14 +538,14 @@ main() {
             log_info "🚀 阶段2：部署 Redis 核心服务..."
             
             execute_redis_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            check_redis_status "$namespace"
+            check_redis_status "$project_id" "$namespace"
             show_redis_connection_info "$namespace"
             ;;
         "upgrade")
             log_info "开始升级 Redis..."
             check_namespace "$namespace"
             execute_redis_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            check_redis_status "$namespace"
+            check_redis_status "$project_id" "$namespace"
             ;;
         "uninstall")
             log_info "开始卸载 Redis..."
@@ -595,22 +601,22 @@ main() {
                 fi
             fi
             
-            helm uninstall redis-sunmoonai -n "$namespace" || true
+            helm uninstall "redis-$project_id" -n "$namespace" || true
             log_success "✅ Redis 卸载完成"
             ;;
         "clean")
             log_info "开始清理 Redis..."
-            helm uninstall redis-sunmoonai -n "$namespace" || true
-            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/name=redis || true
+            helm uninstall "redis-$project_id" -n "$namespace" || true
+            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/instance="redis-$project_id" || true
             log_success "✅ Redis 清理完成"
             ;;
         "status")
-            check_redis_status "$namespace"
+            check_redis_status "$project_id" "$namespace"
             show_redis_connection_info "$namespace"
             ;;
         "logs")
             log_info "显示 Redis 日志..."
-            kubectl logs -n "$namespace" -l app.kubernetes.io/name=redis --tail=100
+            kubectl logs -n "$namespace" -l app.kubernetes.io/instance="redis-$project_id" --tail=100
             ;;
         "backup")
             backup_redis_data "$namespace"

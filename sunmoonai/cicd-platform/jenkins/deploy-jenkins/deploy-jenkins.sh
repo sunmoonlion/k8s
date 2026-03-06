@@ -247,7 +247,8 @@ execute_jenkins_deployment() {
     fi
     
     # 构建 Helm 命令
-    local helm_cmd="helm upgrade --install jenkins-sunmoonai $JENKINS_CHART_DIR"
+    local release_name="jenkins-$project_id"
+    local helm_cmd="helm upgrade --install $release_name $JENKINS_CHART_DIR"
     helm_cmd="$helm_cmd --namespace $namespace"
     helm_cmd="$helm_cmd --set global.projectId=$project_id"
     helm_cmd="$helm_cmd --set global.namespace=$namespace"
@@ -289,12 +290,15 @@ execute_jenkins_deployment() {
 
 # 检查 Jenkins 状态
 check_jenkins_status() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="jenkins-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "检查 Jenkins 部署状态..."
     
     # 检查 Helm Release
-    if helm list -n "$namespace" | grep -q "jenkins-sunmoonai"; then
+    if helm list -n "$namespace" | grep -q "$release_name"; then
         log_success "✅ Jenkins Helm Release 存在"
     else
         log_error "❌ Jenkins Helm Release 不存在"
@@ -303,7 +307,7 @@ check_jenkins_status() {
     
     # 检查 Pod 状态（稳健数值比较）
     local phases
-    phases=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=jenkins -o jsonpath='{.items[*].status.phase}' 2>/dev/null || echo "")
+    phases=$(kubectl get pods -n "$namespace" -l "$label_selector" -o jsonpath='{.items[*].status.phase}' 2>/dev/null || echo "")
     local pods_ready
     if [[ -z "$phases" ]]; then
         pods_ready=0
@@ -322,25 +326,28 @@ check_jenkins_status() {
     else
         log_error "❌ Jenkins Pod 未运行"
         # 输出基本诊断信息以便快速定位
-        kubectl get pods -n "$namespace" -l app.kubernetes.io/name=jenkins -owide || true
-        kubectl get pvc  -n "$namespace" -l app.kubernetes.io/name=jenkins || true
+        kubectl get pods -n "$namespace" -l "$label_selector" -owide || true
+        kubectl get pvc  -n "$namespace" -l "$label_selector" || true
         kubectl get events -n "$namespace" --sort-by=.lastTimestamp | tail -n 20 || true
         return 1
     fi
     
     # 测试 Jenkins 连接
-    test_jenkins_connection "$namespace"
+    test_jenkins_connection "$project_id" "$namespace"
 }
 
 # 测试 Jenkins 连接
 test_jenkins_connection() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="jenkins-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "测试 Jenkins 连接..."
     
     # 获取 Jenkins 服务信息
     local service_name
-    service_name=$(kubectl get svc -n "$namespace" -l app.kubernetes.io/name=jenkins -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+    service_name=$(kubectl get svc -n "$namespace" -l "$label_selector" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
     
     if [[ -z "$service_name" ]]; then
         log_error "❌ 未找到 Jenkins 服务"
@@ -441,13 +448,16 @@ uninstall_sub_components() {
 # 端口转发并输出初始密码
 forward_jenkins_access() {
     local namespace="$1"
+    local project_id="${2:-$DEFAULT_PROJECT_ID}"
+    local release_name="jenkins-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
 
     log_info "准备进行端口转发并输出初始密码..."
 
     local service_name
-    service_name=$(kubectl get svc -n "$namespace" -l app.kubernetes.io/name=jenkins -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+    service_name=$(kubectl get svc -n "$namespace" -l "$label_selector" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
     if [[ -z "$service_name" ]]; then
-        service_name="jenkins-sunmoonai"
+        service_name="$release_name"
     fi
 
     # 打印初始密码
@@ -455,7 +465,7 @@ forward_jenkins_access() {
     echo "=== Jenkins 初始登录信息 ==="
     echo -n "用户名: "; echo "user"
     echo -n "密码:   "
-    kubectl get secret -n "$namespace" jenkins-sunmoonai -o jsonpath='{.data.jenkins-password}' 2>/dev/null | base64 -d || true
+    kubectl get secret -n "$namespace" "$release_name" -o jsonpath='{.data.jenkins-password}' 2>/dev/null | base64 -d || true
     echo ""
     echo ""
     echo "访问地址: http://127.0.0.1:8080/"
@@ -483,10 +493,10 @@ show_jenkins_connection_info() {
     echo "   https://${JENKINS_UNIFIED_HOST:-llmops.sunmoonai.com}/jenkins"
     echo ""
     echo "3. 查看服务状态:"
-    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/name=jenkins"
+    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/instance=jenkins-<project_id>"
     echo ""
     echo "4. 获取初始密码:"
-    echo "   kubectl exec -n $namespace -it deployment/jenkins-sunmoonai -- cat /var/jenkins_home/secrets/initialAdminPassword"
+    echo "   kubectl exec -n $namespace -it deployment/jenkins-<project_id> -- cat /var/jenkins_home/secrets/initialAdminPassword"
     echo ""
 }
 
@@ -565,7 +575,7 @@ main() {
             execute_jenkins_deployment "$project_id" "$namespace" "$environment" "$dry_run"
             # 部署子组件（中间件 / Web Ingress，Secret 已部署，跳过）
             if deploy_sub_components "$project_id" "$namespace" "$environment" "$dry_run"; then
-                check_jenkins_status "$namespace"
+                check_jenkins_status "$project_id" "$namespace"
             else
                 log_error "❌ Jenkins 子组件部署失败"
                 exit 1
@@ -575,7 +585,7 @@ main() {
             log_info "开始升级 Jenkins..."
             check_namespace "$namespace"
             execute_jenkins_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            check_jenkins_status "$namespace"
+            check_jenkins_status "$project_id" "$namespace"
             ;;
         "uninstall")
             log_info "开始卸载 Jenkins..."
@@ -590,7 +600,7 @@ main() {
                 fi
             fi
             # 卸载主部署
-            helm uninstall jenkins-sunmoonai -n "$namespace" --wait || true
+            helm uninstall "jenkins-$project_id" -n "$namespace" --wait || true
             # 注意：不删除 PVC，保留数据以便重新部署时恢复
             # 如果需要完全清理（包括数据），请使用 "clean" 操作
             log_success "✅ Jenkins 卸载完成"
@@ -611,26 +621,26 @@ main() {
                 fi
             fi
             # 卸载主部署
-            helm uninstall jenkins-sunmoonai -n "$namespace" --wait || true
+            helm uninstall "jenkins-$project_id" -n "$namespace" --wait || true
             # 删除 PVC（会删除所有数据）
             log_info "删除 PVC（会删除所有数据）..."
-            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/name=jenkins || true
+            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/instance="jenkins-$project_id" || true
             kubectl delete pvc -n "$namespace" "${project_id}-jenkins" 2>/dev/null || true
             log_success "✅ Jenkins 完全清理完成（包括数据）"
             log_info "重新部署时会使用 Secret 中的密码初始化"
             ;;
         "status")
-            check_jenkins_status "$namespace"
+            check_jenkins_status "$project_id" "$namespace"
             show_jenkins_connection_info "$namespace"
             ;;
         "logs")
             log_info "显示 Jenkins 日志..."
-            kubectl logs -n "$namespace" -l app.kubernetes.io/name=jenkins --tail=100
+            kubectl logs -n "$namespace" -l app.kubernetes.io/instance="jenkins-$project_id" --tail=100
             ;;
         "forward")
             # 确保已建立连接后，前台进行端口转发并打印初始密码
-            check_jenkins_status "$namespace" || true
-            forward_jenkins_access "$namespace"
+            check_jenkins_status "$project_id" "$namespace" || true
+            forward_jenkins_access "$namespace" "$project_id"
             ;;
         "backup")
             backup_jenkins_data "$namespace"

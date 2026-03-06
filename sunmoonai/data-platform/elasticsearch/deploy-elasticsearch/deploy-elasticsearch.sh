@@ -240,12 +240,15 @@ execute_elasticsearch_deployment() {
 
 # 检查 Elasticsearch 状态
 check_elasticsearch_status() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="elasticsearch-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "检查 Elasticsearch 部署状态..."
     
     # 检查 Helm Release
-    if helm list -n "$namespace" | grep -q "elasticsearch-sunmoonai"; then
+    if helm list -n "$namespace" | grep -q "$release_name"; then
         log_success "✅ Elasticsearch Helm Release 存在"
     else
         log_error "❌ Elasticsearch Helm Release 不存在"
@@ -254,7 +257,7 @@ check_elasticsearch_status() {
     
     # 检查 Pod 状态（稳健处理空输出与非数字情况）
     local phases
-    phases=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=elasticsearch -o jsonpath='{.items[*].status.phase}' 2>/dev/null || echo "")
+    phases=$(kubectl get pods -n "$namespace" -l "$label_selector" -o jsonpath='{.items[*].status.phase}' 2>/dev/null || echo "")
 
     # 统计 Running 数量（避免 grep -c 无匹配时与 || echo 0 产生多行导致 [[ 语法错误）
     local pods_ready
@@ -274,18 +277,21 @@ check_elasticsearch_status() {
     fi
     
     # 测试 Elasticsearch 连接
-    test_elasticsearch_connection "$namespace"
+    test_elasticsearch_connection "$project_id" "$namespace"
 }
 
 # 测试 Elasticsearch 连接
 test_elasticsearch_connection() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="elasticsearch-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "测试 Elasticsearch 连接..."
     
     # 获取 Elasticsearch 服务信息
     local service_name
-    service_name=$(kubectl get svc -n "$namespace" -l app.kubernetes.io/name=elasticsearch -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+    service_name=$(kubectl get svc -n "$namespace" -l "$label_selector" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
     
     if [[ -z "$service_name" ]]; then
         log_error "❌ 未找到 Elasticsearch 服务"
@@ -314,19 +320,22 @@ show_elasticsearch_connection_info() {
     echo "   curl http://$ELASTICSEARCH_EXTERNAL_HOST:$ELASTICSEARCH_EXTERNAL_PORT"
     echo ""
     echo "3. 查看服务状态:"
-    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/name=elasticsearch"
+    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/instance=elasticsearch-<project_id>"
     echo ""
 }
 
 # 调试：打印与 Pending 相关的关键信息
 debug_elasticsearch_pending() {
     local namespace="$1"
+    local project_id="${2:-$DEFAULT_PROJECT_ID}"
+    local release_name="elasticsearch-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     log_info "收集 Elasticsearch Pending 诊断信息..."
     echo "==== Pods (ES) ===="
-    kubectl get pods -n "$namespace" -l app.kubernetes.io/name=elasticsearch -owide || true
+    kubectl get pods -n "$namespace" -l "$label_selector" -owide || true
     for role in coordinating data master; do
         local pod
-        pod=$(kubectl get pod -n "$namespace" -l app.kubernetes.io/name=elasticsearch,role=$role -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+        pod=$(kubectl get pod -n "$namespace" -l "$label_selector,role=$role" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
         if [[ -n "$pod" ]]; then
             echo "\n==== describe pod $pod (tail) ===="
             kubectl describe pod -n "$namespace" "$pod" | tail -n 120 || true
@@ -533,7 +542,7 @@ main() {
                 # 部署子组件（中间件 / Ingress）
                 if deploy_sub_components "$project_id" "$namespace" "$environment" "$dry_run"; then
                     log_success "🎉 Elasticsearch 完整部署成功！"
-                    check_elasticsearch_status "$namespace"
+                    check_elasticsearch_status "$project_id" "$namespace"
                 else
                     log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
                     exit 1
@@ -547,7 +556,7 @@ main() {
             log_info "开始升级 Elasticsearch..."
             check_namespace "$namespace"
             execute_elasticsearch_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            check_elasticsearch_status "$namespace"
+            check_elasticsearch_status "$project_id" "$namespace"
             ;;
         "uninstall")
             log_info "开始卸载 Elasticsearch..."
@@ -589,17 +598,17 @@ main() {
             fi
             
             # 卸载主部署
-            helm uninstall elasticsearch-sunmoonai -n "$namespace" --wait || true
+            helm uninstall "elasticsearch-$project_id" -n "$namespace" --wait || true
             log_success "✅ Elasticsearch 卸载完成"
             ;;
         "clean")
             log_info "开始清理 Elasticsearch..."
-            helm uninstall elasticsearch-sunmoonai -n "$namespace" || true
-            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/name=elasticsearch || true
+            helm uninstall "elasticsearch-$project_id" -n "$namespace" || true
+            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/instance="elasticsearch-$project_id" || true
             log_success "✅ Elasticsearch 清理完成"
             ;;
         "status")
-            check_elasticsearch_status "$namespace"
+            check_elasticsearch_status "$project_id" "$namespace"
             show_elasticsearch_connection_info "$namespace"
             ;;
         "debug")
@@ -608,11 +617,11 @@ main() {
                 log_error "无法读取 Kubernetes 配置文件"; exit 1; fi
             if ! setup_kubectl_environment; then
                 log_error "无法建立 Kubernetes 连接"; exit 1; fi
-            debug_elasticsearch_pending "$namespace"
+            debug_elasticsearch_pending "$namespace" "$project_id"
             ;;
         "logs")
             log_info "显示 Elasticsearch 日志..."
-            kubectl logs -n "$namespace" -l app.kubernetes.io/name=elasticsearch --tail=100
+            kubectl logs -n "$namespace" -l app.kubernetes.io/instance="elasticsearch-$project_id" --tail=100
             ;;
         "backup")
             backup_elasticsearch_data "$namespace"

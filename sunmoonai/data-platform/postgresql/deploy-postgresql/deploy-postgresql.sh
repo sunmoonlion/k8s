@@ -694,8 +694,8 @@ main() {
             
             # 检查子组件状态
             log_info "检查子组件状态..."
-            kubectl get pods -n "$namespace" -l app.kubernetes.io/name=postgresql
-            kubectl get svc -n "$namespace" -l app.kubernetes.io/name=postgresql
+            kubectl get pods -n "$namespace" -l app.kubernetes.io/instance="postgresql-$project_id"
+            kubectl get svc -n "$namespace" -l app.kubernetes.io/instance="postgresql-$project_id"
             kubectl get ingress -n "$namespace" -l app=data-platform-ingress
             kubectl get middleware -n "$namespace" -l app=data-platform-ingress
             kubectl get secret -n "$namespace" -l app=data-platform-ingress

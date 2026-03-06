@@ -519,11 +519,15 @@ check_middleware_components_status() {
 check_traefik_status() {
     local project_id="$1"
     local namespace="$2"
+    local release_name="traefik-$project_id"
+    # 说明：该 Traefik Chart 的 app.kubernetes.io/instance 不是 Release.Name，
+    # 而是形如 "<release>-<namespace>"（例如 traefik-sunmoonai-ingress-platform-dev）。
+    local instance_label_value="${release_name}-${namespace}"
     
     log_info "检查 Traefik 状态..."
     
     # 检查 Pod 状态
-    local pods=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=traefik,app.kubernetes.io/instance="traefik-$project_id" -o jsonpath='{.items[*].status.phase}' 2>/dev/null)
+    local pods=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/instance="$instance_label_value" -o jsonpath='{.items[*].status.phase}' 2>/dev/null)
     if [[ -z "$pods" ]]; then
         log_error "未找到 Traefik Pod"
         return 1
@@ -582,10 +586,12 @@ get_traefik_logs() {
     local project_id="$1"
     local namespace="$2"
     local tail_lines="${3:-50}"
+    local release_name="traefik-$project_id"
+    local instance_label_value="${release_name}-${namespace}"
     
     log_info "获取 Traefik 日志（最近 $tail_lines 行）..."
     
-    local pods=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=traefik,app.kubernetes.io/instance="traefik-$project_id" -o jsonpath='{.items[*].metadata.name}' 2>/dev/null)
+    local pods=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/instance="$instance_label_value" -o jsonpath='{.items[*].metadata.name}' 2>/dev/null)
     if [[ -z "$pods" ]]; then
         log_error "未找到 Traefik Pod"
         return 1
@@ -993,9 +999,9 @@ main() {
                 log_info "配置文件: $actual_values_file"
                 log_info ""
                 log_info "检查部署状态:"
-                log_info "kubectl get pods -n $namespace -l app.kubernetes.io/name=traefik"
-                log_info "kubectl get svc -n $namespace -l app.kubernetes.io/name=traefik"
-                log_info "kubectl logs -n $namespace -l app.kubernetes.io/name=traefik"
+                log_info "kubectl get pods -n $namespace -l app.kubernetes.io/instance=traefik-<project_id>-<namespace>"
+                log_info "kubectl get svc -n $namespace -l app.kubernetes.io/instance=traefik-<project_id>-<namespace>"
+                log_info "kubectl logs -n $namespace -l app.kubernetes.io/instance=traefik-<project_id>-<namespace>"
                 log_info ""
                 
                 # 自动配置 iptables 转发（仅在非 dry-run 模式下；Kind 集群无需且无法 SSH 到节点）

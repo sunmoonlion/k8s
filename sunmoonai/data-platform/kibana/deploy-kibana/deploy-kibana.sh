@@ -199,7 +199,8 @@ execute_kibana_deployment() {
     fi
     
     # 构建 Helm 命令
-    local helm_cmd="helm upgrade --install kibana-sunmoonai $KIBANA_CHART_DIR"
+    local release_name="kibana-$project_id"
+    local helm_cmd="helm upgrade --install $release_name $KIBANA_CHART_DIR"
     helm_cmd="$helm_cmd --namespace $namespace"
     helm_cmd="$helm_cmd --set global.projectId=$project_id"
     helm_cmd="$helm_cmd --set global.namespace=$namespace"
@@ -244,7 +245,10 @@ execute_kibana_deployment() {
 
 # 检查 Kibana 状态
 check_kibana_status() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="kibana-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "检查 Kibana 部署状态..."
     
@@ -258,7 +262,7 @@ check_kibana_status() {
     fi
     
     # 检查 Helm Release
-    if helm list -n "$namespace" | grep -q "kibana-sunmoonai"; then
+    if helm list -n "$namespace" | grep -q "$release_name"; then
         log_success "✅ Kibana Helm Release 存在"
     else
         log_error "❌ Kibana Helm Release 不存在"
@@ -267,7 +271,7 @@ check_kibana_status() {
     
     # 检查 Pod 状态（稳健处理空输出与非数字情况）
     local phases
-    phases=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=kibana -o jsonpath='{.items[*].status.phase}' 2>/dev/null || echo "")
+    phases=$(kubectl get pods -n "$namespace" -l "$label_selector" -o jsonpath='{.items[*].status.phase}' 2>/dev/null || echo "")
     local pods_ready=0
     if [[ -n "$phases" ]]; then
         # 计算 Running 状态的 Pod 数量
@@ -292,18 +296,21 @@ check_kibana_status() {
     fi
     
     # 测试 Kibana 连接
-    test_kibana_connection "$namespace"
+    test_kibana_connection "$project_id" "$namespace"
 }
 
 # 测试 Kibana 连接
 test_kibana_connection() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="kibana-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "测试 Kibana 连接..."
     
     # 获取 Kibana 服务信息
     local service_name
-    service_name=$(kubectl get svc -n "$namespace" -l app.kubernetes.io/name=kibana -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+    service_name=$(kubectl get svc -n "$namespace" -l "$label_selector" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
     
     if [[ -z "$service_name" ]]; then
         log_error "❌ 未找到 Kibana 服务"
@@ -338,7 +345,7 @@ show_kibana_connection_info() {
     echo "   https://$external_host/kibana"
     echo ""
     echo "3. 查看服务状态:"
-    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/name=kibana"
+    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/instance=kibana-<project_id>"
     echo ""
 }
 
@@ -462,9 +469,9 @@ main() {
             if [[ "${KIBANA_ENABLED:-true}" != "true" ]]; then
                 log_warn "Kibana 已被禁用（KIBANA_ENABLED=false），跳过部署。"
                 # 若已有 release，则可选择缩容为 0，节省资源
-                if helm list -n "$namespace" | grep -q "kibana-sunmoonai"; then
+                if helm list -n "$namespace" | grep -q "kibana-$project_id"; then
                     log_info "将现有 Kibana 缩容为 0 副本以节省资源"
-                    kubectl -n "$namespace" scale deploy/kibana-sunmoonai --replicas=0 || true
+                    kubectl -n "$namespace" scale deploy/kibana-"$project_id" --replicas=0 || true
                 fi
                 exit 0
             fi
@@ -479,7 +486,7 @@ main() {
             execute_kibana_deployment "$project_id" "$namespace" "$environment" "$dry_run"
             # 子组件：中间件与 Web Ingress
             if deploy_sub_components "$project_id" "$namespace" "$environment" "$dry_run"; then
-                check_kibana_status "$namespace"
+                check_kibana_status "$project_id" "$namespace"
                 show_kibana_connection_info "$namespace"
             else
                 log_error "❌ Kibana 子组件部署失败"
@@ -490,7 +497,7 @@ main() {
             log_info "开始升级 Kibana..."
             check_namespace "$namespace"
             execute_kibana_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            check_kibana_status "$namespace"
+            check_kibana_status "$project_id" "$namespace"
             ;;
         "uninstall")
             log_info "开始卸载 Kibana..."
@@ -517,22 +524,22 @@ main() {
                     return 1
                 fi
             fi
-            helm uninstall kibana-sunmoonai -n "$namespace" --wait || true
+            helm uninstall "kibana-$project_id" -n "$namespace" --wait || true
             log_success "✅ Kibana 卸载完成"
             ;;
         "clean")
             log_info "开始清理 Kibana..."
-            helm uninstall kibana-sunmoonai -n "$namespace" || true
-            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/name=kibana || true
+            helm uninstall "kibana-$project_id" -n "$namespace" || true
+            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/instance="kibana-$project_id" || true
             log_success "✅ Kibana 清理完成"
             ;;
         "status")
-            check_kibana_status "$namespace"
+            check_kibana_status "$project_id" "$namespace"
             show_kibana_connection_info "$namespace"
             ;;
         "logs")
             log_info "显示 Kibana 日志..."
-            kubectl logs -n "$namespace" -l app.kubernetes.io/name=kibana --tail=100
+            kubectl logs -n "$namespace" -l app.kubernetes.io/instance="kibana-$project_id" --tail=100
             ;;
         "connect")
             show_kibana_connection_info "$namespace"

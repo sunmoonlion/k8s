@@ -285,7 +285,8 @@ execute_mongo_express_deployment() {
     fi
     
     # 构建 Helm 命令
-    local helm_cmd="helm upgrade --install mongo-express-sunmoonai $MONGO_EXPRESS_CHART_DIR"
+    local release_name="mongo-express-$project_id"
+    local helm_cmd="helm upgrade --install $release_name $MONGO_EXPRESS_CHART_DIR"
     helm_cmd="$helm_cmd --namespace $namespace"
     helm_cmd="$helm_cmd --set global.projectId=$project_id"
     helm_cmd="$helm_cmd --set global.namespace=$namespace"
@@ -318,12 +319,15 @@ execute_mongo_express_deployment() {
 
 # 检查 Mongo Express 状态
 check_mongo_express_status() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="mongo-express-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "检查 Mongo Express 部署状态..."
     
     # 检查 Helm Release
-    if helm list -n "$namespace" | grep -q "mongo-express-sunmoonai"; then
+    if helm list -n "$namespace" | grep -q "$release_name"; then
         log_success "✅ Mongo Express Helm Release 存在"
     else
         log_error "❌ Mongo Express Helm Release 不存在"
@@ -332,12 +336,12 @@ check_mongo_express_status() {
     
     # 检查 Pod 状态
     local pods_info
-    pods_info=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=mongo-express --no-headers 2>/dev/null)
+    pods_info=$(kubectl get pods -n "$namespace" -l "$label_selector" --no-headers 2>/dev/null)
     
     if [[ -z "$pods_info" ]]; then
         log_error "❌ 未找到 Mongo Express Pod"
         log_info "提示: Pod 可能还在创建中，请稍后使用以下命令检查:"
-        log_info "  kubectl get pods -n $namespace -l app.kubernetes.io/name=mongo-express"
+        log_info "  kubectl get pods -n $namespace -l app.kubernetes.io/instance=$release_name"
         return 1
     fi
     
@@ -367,7 +371,7 @@ check_mongo_express_status() {
     # 显示所有 Pod 的详细状态
     echo ""
     log_info "Pod 详细状态:"
-    kubectl get pods -n "$namespace" -l app.kubernetes.io/name=mongo-express 2>/dev/null || true
+    kubectl get pods -n "$namespace" -l "$label_selector" 2>/dev/null || true
     echo ""
     
     if [[ "$pods_running" -gt 0 ]]; then
@@ -375,14 +379,14 @@ check_mongo_express_status() {
     elif [[ "$pods_pending" -gt 0 ]]; then
         log_info "⏳ Mongo Express Pod 正在启动中 ($pods_pending 个启动中)"
         log_info "提示: 请稍后使用以下命令检查状态:"
-        log_info "  kubectl get pods -n $namespace -l app.kubernetes.io/name=mongo-express"
-        log_info "  kubectl describe pods -n $namespace -l app.kubernetes.io/name=mongo-express"
+        log_info "  kubectl get pods -n $namespace -l app.kubernetes.io/instance=$release_name"
+        log_info "  kubectl describe pods -n $namespace -l app.kubernetes.io/instance=$release_name"
         return 0  # 启动中不算错误
     elif [[ "$pods_failed" -gt 0 ]]; then
         log_error "❌ Mongo Express Pod 启动失败 ($pods_failed 个失败)"
         log_info "提示: 请使用以下命令查看详细错误:"
-        log_info "  kubectl describe pods -n $namespace -l app.kubernetes.io/name=mongo-express"
-        log_info "  kubectl logs -n $namespace -l app.kubernetes.io/name=mongo-express"
+        log_info "  kubectl describe pods -n $namespace -l app.kubernetes.io/instance=$release_name"
+        log_info "  kubectl logs -n $namespace -l app.kubernetes.io/instance=$release_name"
         return 1
     else
         log_error "❌ Mongo Express Pod 状态未知"
@@ -390,18 +394,21 @@ check_mongo_express_status() {
     fi
     
     # 测试 Mongo Express 连接
-    test_mongo_express_connection "$namespace"
+    test_mongo_express_connection "$project_id" "$namespace"
 }
 
 # 测试 Mongo Express 连接
 test_mongo_express_connection() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="mongo-express-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "测试 Mongo Express 连接..."
     
     # 获取 Mongo Express 服务信息
     local service_name
-    service_name=$(kubectl get svc -n "$namespace" -l app.kubernetes.io/name=mongo-express -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+    service_name=$(kubectl get svc -n "$namespace" -l "$label_selector" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
     
     if [[ -z "$service_name" ]]; then
         log_error "❌ 未找到 Mongo Express 服务"
@@ -430,7 +437,7 @@ show_mongo_express_connection_info() {
     echo "   https://${MONGO_EXPRESS_UNIFIED_HOST:-llmops.sunmoonai.com}/mongo-express"
     echo ""
     echo "3. 查看服务状态:"
-    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/name=mongo-express"
+    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/instance=mongo-express-<project_id>"
     echo ""
     echo "4. 连接 MongoDB:"
     echo "   需要配置 MongoDB 连接信息"
@@ -663,7 +670,7 @@ main() {
                 fi
                 
                 log_success "🎉 Mongo Express 完整部署成功！"
-                check_mongo_express_status "$namespace"
+                check_mongo_express_status "$project_id" "$namespace"
             else
                 log_error "❌ Mongo Express 核心部署失败"
                 return 1
@@ -673,7 +680,7 @@ main() {
             log_info "开始升级 Mongo Express..."
             check_namespace "$namespace"
             execute_mongo_express_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            check_mongo_express_status "$namespace"
+            check_mongo_express_status "$project_id" "$namespace"
             ;;
         "uninstall")
             log_info "开始卸载 Mongo Express..."
@@ -787,18 +794,18 @@ main() {
             
             local release_name="mongo-express-$project_id"
             helm uninstall "$release_name" -n "$namespace" --wait --timeout 5m 2>/dev/null || true
-            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/name=mongo-express || true
+            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/instance="$release_name" || true
             kubectl delete ingressroute -n "$namespace" -l component=mongo-express 2>/dev/null || true
             kubectl delete middleware -n "$namespace" -l component=mongo-express 2>/dev/null || true
             log_success "✅ Mongo Express 清理完成"
             ;;
         "status")
-            check_mongo_express_status "$namespace"
+            check_mongo_express_status "$project_id" "$namespace"
             show_mongo_express_connection_info "$namespace"
             ;;
         "logs")
             log_info "显示 Mongo Express 日志..."
-            kubectl logs -n "$namespace" -l app.kubernetes.io/name=mongo-express --tail=100
+            kubectl logs -n "$namespace" -l app.kubernetes.io/instance="mongo-express-$project_id" --tail=100
             ;;
         "backup")
             backup_mongo_express_data "$namespace"

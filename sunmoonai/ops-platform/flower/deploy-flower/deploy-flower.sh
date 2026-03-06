@@ -246,7 +246,8 @@ execute_flower_deployment() {
     fi
     
     # 构建 Helm 命令
-    local helm_cmd="helm upgrade --install flower-sunmoonai $FLOWER_CHART_DIR"
+    local release_name="flower-$project_id"
+    local helm_cmd="helm upgrade --install $release_name $FLOWER_CHART_DIR"
     helm_cmd="$helm_cmd --namespace $namespace"
     helm_cmd="$helm_cmd --set global.projectId=$project_id"
     helm_cmd="$helm_cmd --set global.namespace=$namespace"
@@ -279,7 +280,10 @@ execute_flower_deployment() {
 
 # 检查 Flower 状态
 check_flower_status() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="flower-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     # 建立 Kubernetes 连接（如果尚未建立）
     if ! setup_kubectl_environment; then
@@ -290,7 +294,7 @@ check_flower_status() {
     log_info "检查 Flower 部署状态..."
     
     # 检查 Helm Release
-    if helm list -n "$namespace" | grep -q "flower-sunmoonai"; then
+    if helm list -n "$namespace" | grep -q "$release_name"; then
         log_success "✅ Flower Helm Release 存在"
     else
         log_error "❌ Flower Helm Release 不存在"
@@ -300,7 +304,7 @@ check_flower_status() {
     # 检查 Pod 状态
     local pods_output
     local pods_exit_code
-    pods_output=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=flower --no-headers 2>&1)
+    pods_output=$(kubectl get pods -n "$namespace" -l "$label_selector" --no-headers 2>&1)
     pods_exit_code=$?
     
     if [[ $pods_exit_code -ne 0 ]]; then
@@ -315,7 +319,12 @@ check_flower_status() {
     fi
     
     local pods_count
-    pods_count=$(echo "$pods_output" | wc -l | tr -d '[:space:]')
+    if [[ -z "${pods_output//[[:space:]]/}" ]]; then
+        pods_count=0
+    else
+        pods_count=$(printf '%s\n' "$pods_output" | grep -cve '^[[:space:]]*$' || echo "0")
+        pods_count=$(echo "$pods_count" | tr -d '[:space:]')
+    fi
     pods_count=${pods_count:-0}
     
     if [[ "$pods_count" -eq 0 ]]; then
@@ -343,18 +352,21 @@ check_flower_status() {
     fi
     
     # 测试 Flower 连接
-    test_flower_connection "$namespace"
+    test_flower_connection "$project_id" "$namespace"
 }
 
 # 测试 Flower 连接
 test_flower_connection() {
-    local namespace="$1"
+    local project_id="$1"
+    local namespace="$2"
+    local release_name="flower-$project_id"
+    local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "测试 Flower 连接..."
     
     # 获取 Flower 服务信息
     local service_name
-    service_name=$(kubectl get svc -n "$namespace" -l app.kubernetes.io/name=flower -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+    service_name=$(kubectl get svc -n "$namespace" -l "$label_selector" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
     
     if [[ -z "$service_name" ]]; then
         log_error "❌ 未找到 Flower 服务"
@@ -383,7 +395,7 @@ show_flower_connection_info() {
     echo "   https://${FLOWER_UNIFIED_HOST:-llmops.sunmoonai.com}/flower"
     echo ""
     echo "3. 查看服务状态:"
-    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/name=flower"
+    echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/instance=flower-<project_id>"
     echo ""
     echo "4. 连接 Celery Broker:"
     echo "   需要配置 Celery Broker 连接信息"
@@ -507,7 +519,7 @@ main() {
             else
                 log_info "跳过 Flower Ingress (enabled=false)"
             fi
-            check_flower_status "$namespace"
+            check_flower_status "$project_id" "$namespace"
             show_flower_connection_info "$namespace"
             # 安装后清理控制平面 tar 包
             : # 通用工具已在推送过程中清理，无需额外清理
@@ -516,7 +528,7 @@ main() {
             log_info "开始升级 Flower..."
             check_namespace "$namespace"
             execute_flower_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            check_flower_status "$namespace"
+            check_flower_status "$project_id" "$namespace"
             ;;
         "uninstall")
             log_info "开始卸载 Flower..."
@@ -554,7 +566,7 @@ main() {
             local max_wait=30
             while [[ $wait_count -lt $max_wait ]]; do
                 local terminating_pods
-                terminating_pods=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/name=flower --no-headers 2>/dev/null | grep -E "(Terminating|Pending)" || true)
+                terminating_pods=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/instance="flower-$project_id" --no-headers 2>/dev/null | grep -E "(Terminating|Pending)" || true)
                 if [[ -z "$terminating_pods" ]]; then
                     break
                 fi
@@ -564,7 +576,7 @@ main() {
             
             if [[ $wait_count -ge $max_wait ]]; then
                 log_warn "⚠️  仍有 Pod 处于 Terminating 状态，尝试强制删除..."
-                kubectl delete pods -n "$namespace" -l app.kubernetes.io/name=flower --grace-period=0 --force 2>/dev/null || true
+                kubectl delete pods -n "$namespace" -l app.kubernetes.io/instance="flower-$project_id" --grace-period=0 --force 2>/dev/null || true
                 sleep 2
             fi
             
@@ -591,18 +603,18 @@ main() {
             
             local release_name="flower-$project_id"
             helm uninstall "$release_name" -n "$namespace" --wait --timeout 5m 2>/dev/null || true
-            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/name=flower || true
+            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/instance="$release_name" || true
             kubectl delete ingressroute -n "$namespace" -l component=flower 2>/dev/null || true
             kubectl delete middleware -n "$namespace" -l component=flower 2>/dev/null || true
             log_success "✅ Flower 清理完成"
             ;;
         "status")
-            check_flower_status "$namespace"
+            check_flower_status "$project_id" "$namespace"
             show_flower_connection_info "$namespace"
             ;;
         "logs")
             log_info "显示 Flower 日志..."
-            kubectl logs -n "$namespace" -l app.kubernetes.io/name=flower --tail=100
+            kubectl logs -n "$namespace" -l app.kubernetes.io/instance="flower-$project_id" --tail=100
             ;;
         "backup")
             backup_flower_data "$namespace"
