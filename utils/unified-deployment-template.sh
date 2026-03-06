@@ -1025,6 +1025,21 @@ push_component_images_to_harbor() {
         return 0
     fi
 
+    if [[ -z "${_REG_PUSH_CLEANUP_WARNED:-}" ]]; then
+        local cleanup_flag="${CLEANUP_REMOTE_TAR_AFTER_PUSH:-}"
+        if [[ -z "$cleanup_flag" ]]; then
+            local loadimage_conf="$base_dir/registry-push-management/loadimage.conf"
+            if [[ -f "$loadimage_conf" ]]; then
+                # shellcheck disable=SC1090
+                source "$loadimage_conf"
+                cleanup_flag="${CLEANUP_REMOTE_TAR_AFTER_PUSH:-}"
+            fi
+        fi
+        if [[ "${cleanup_flag:-true}" == "true" ]]; then
+            log_warn "[images] 提示：CLEANUP_REMOTE_TAR_AFTER_PUSH=true，推送后会删除远程 tar。上述风险仅针对 Step11 会校验的镜像（如 bitnami/redis、bitnami/postgresql）；其它组件镜像的 tar 删除后不会在 Step11 verify 中校验，故不影响 verify 结果。"
+        fi
+        _REG_PUSH_CLEANUP_WARNED=1
+    fi
     log_info "[images] 使用 registry-push-management 按需推送组件镜像到 Harbor（component=${component_name}）"
 
     local cluster_args=()
