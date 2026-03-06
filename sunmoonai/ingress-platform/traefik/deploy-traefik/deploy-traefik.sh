@@ -526,28 +526,52 @@ check_traefik_status() {
     
     log_info "检查 Traefik 状态..."
     
-    # 检查 Pod 状态
-    local pods=$(kubectl get pods -n "$namespace" -l app.kubernetes.io/instance="$instance_label_value" -o jsonpath='{.items[*].status.phase}' 2>/dev/null)
-    if [[ -z "$pods" ]]; then
+    # 检查 Pod 状态（区分“启动中”和“异常未运行”）
+    local label_selector="app.kubernetes.io/instance=$instance_label_value"
+    local phases
+    phases=$(kubectl get pods -n "$namespace" -l "$label_selector" -o jsonpath='{.items[*].status.phase}' 2>/dev/null || echo "")
+    if [[ -z "$phases" ]]; then
         log_error "未找到 Traefik Pod"
         return 1
     fi
     
-    local all_running=true
-    for pod_status in $pods; do
-        if [[ "$pod_status" != "Running" ]]; then
-            log_warn "Pod 状态异常: $pod_status"
-            all_running=false
-        fi
-    done
-    
-    if [[ "$all_running" == "true" ]]; then
-        log_success "✅ 所有 Traefik Pod 运行正常"
-        return 0
-    else
-        log_error "❌ 部分 Traefik Pod 状态异常"
+    # 辅助判断：如果出现常见失败状态，直接判定失败
+    local pods_table
+    pods_table=$(kubectl get pods -n "$namespace" -l "$label_selector" --no-headers 2>/dev/null || echo "")
+    if echo "$pods_table" | grep -qE 'CrashLoopBackOff|ImagePullBackOff|ErrImagePull|CreateContainerConfigError|RunContainerError|Error'; then
+        log_error "❌ Traefik Pod 存在失败状态（CrashLoop/ImagePull/Error 等）"
+        kubectl get pods -n "$namespace" -l "$label_selector" -owide 2>/dev/null || true
         return 1
     fi
+    
+    local pods_running pods_pending pods_failed
+    pods_running=$(echo "$phases" | tr ' ' '\n' | grep -c '^Running$' 2>/dev/null || echo "0")
+    pods_pending=$(echo "$phases" | tr ' ' '\n' | grep -c '^Pending$' 2>/dev/null || echo "0")
+    pods_failed=$(echo "$phases" | tr ' ' '\n' | grep -cE '^(Failed|Unknown)$' 2>/dev/null || echo "0")
+    pods_running=$(echo "$pods_running" | tr -d '[:space:]'); pods_running=${pods_running:-0}
+    pods_pending=$(echo "$pods_pending" | tr -d '[:space:]'); pods_pending=${pods_pending:-0}
+    pods_failed=$(echo "$pods_failed" | tr -d '[:space:]'); pods_failed=${pods_failed:-0}
+    
+    if [[ "$pods_failed" =~ ^[0-9]+$ ]] && [[ "$pods_failed" -gt 0 ]]; then
+        log_error "❌ Traefik Pod 存在 Failed/Unknown 状态"
+        kubectl get pods -n "$namespace" -l "$label_selector" -owide 2>/dev/null || true
+        return 1
+    fi
+    
+    if [[ "$pods_running" =~ ^[0-9]+$ ]] && [[ "$pods_running" -gt 0 ]] && [[ "$pods_pending" -eq 0 ]]; then
+        log_success "✅ Traefik Pod 运行正常（Running: $pods_running）"
+        return 0
+    fi
+    
+    if [[ "$pods_pending" =~ ^[0-9]+$ ]] && [[ "$pods_pending" -gt 0 ]]; then
+        log_warn "⏳ Traefik Pod 正在启动中（Pending: $pods_pending, Running: $pods_running）"
+        log_info "提示：这是正常的启动过程，如需查看详细进度可稍后运行 status 子命令。"
+        return 0
+    fi
+    
+    log_error "❌ Traefik Pod 状态异常（Running: $pods_running, Pending: $pods_pending）"
+    kubectl get pods -n "$namespace" -l "$label_selector" -owide 2>/dev/null || true
+    return 1
 }
 
 # 获取中间件子组件日志

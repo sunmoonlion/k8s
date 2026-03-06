@@ -139,6 +139,34 @@ call_subscript() {
     fi
 }
 
+# 等待命名空间内 Pod 就绪（Running/Completed），超时后不失败
+# 用法: wait_for_namespace_pods_ready <namespace> [timeout_sec]
+# 仅在 WAIT_READY=true 时由部署流程调用
+wait_for_namespace_pods_ready() {
+    local namespace="$1"
+    local timeout_sec="${2:-${WAIT_READY_TIMEOUT:-180}}"
+    local interval=10
+    local waited=0
+
+    if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
+        log_warn "⚠️  命名空间 $namespace 不存在，跳过等待"
+        return 0
+    fi
+    while [[ $waited -lt $timeout_sec ]]; do
+        local not_ready
+        not_ready=$(kubectl get pods -n "$namespace" --no-headers 2>/dev/null | grep -vE "Running|Completed|Succeeded" | grep -c . || true)
+        if [[ "${not_ready:-0}" -eq 0 ]]; then
+            log_success "✅ $namespace 内 Pod 已就绪 (${waited}s)"
+            return 0
+        fi
+        log_info "⏳ 等待 $namespace 的 Pod 就绪... (${waited}s/${timeout_sec}s, 非 Running/Completed: ${not_ready:-0})"
+        sleep "$interval"
+        waited=$((waited + interval))
+    done
+    log_warn "⚠️  等待 $namespace 就绪超时 (${timeout_sec}s)，继续执行"
+    return 0
+}
+
 # 部署平台组件（按优先级）
 deploy_platform_components_by_priority() {
     local project_id="$1"
@@ -147,7 +175,10 @@ deploy_platform_components_by_priority() {
     local dry_run="$4"
     
     log_info "开始基于优先级的平台组件部署..."
-    
+    if [[ "${WAIT_READY:-false}" == "true" ]]; then
+        log_info "⏳ 已启用等待就绪模式 (WAIT_READY=true, 单平台超时: ${WAIT_READY_TIMEOUT:-180}s)"
+    fi
+
     # 获取所有启用的平台组件及其优先级
     local components=()
     
@@ -256,6 +287,9 @@ deploy_platform_components_by_priority() {
                     if [[ -f "$script_path" ]]; then
                         if call_subscript "$script_path" deploy "$project_id" "ingress-platform-dev" "$environment" "$dry_run"; then
                             log_success "✅ $component 部署成功"
+                            if [[ "${WAIT_READY:-false}" == "true" ]]; then
+                                wait_for_namespace_pods_ready "ingress-platform-dev"
+                            fi
                         else
                             log_error "❌ $component 部署失败"
                             return 1
@@ -275,6 +309,9 @@ deploy_platform_components_by_priority() {
                     if [[ -f "$script_path" ]]; then
                         if call_subscript "$script_path" deploy "$project_id" "cicd-platform-dev" "$environment" "$dry_run"; then
                             log_success "✅ $component 部署成功"
+                            if [[ "${WAIT_READY:-false}" == "true" ]]; then
+                                wait_for_namespace_pods_ready "cicd-platform-dev"
+                            fi
                         else
                             log_error "❌ $component 部署失败"
                             return 1
@@ -294,6 +331,9 @@ deploy_platform_components_by_priority() {
                     if [[ -f "$script_path" ]]; then
                         if call_subscript "$script_path" deploy "$project_id" "data-platform-dev" "$environment" "$dry_run"; then
                             log_success "✅ $component 部署成功"
+                            if [[ "${WAIT_READY:-false}" == "true" ]]; then
+                                wait_for_namespace_pods_ready "data-platform-dev"
+                            fi
                         else
                             log_error "❌ $component 部署失败"
                             return 1
@@ -313,6 +353,9 @@ deploy_platform_components_by_priority() {
                     if [[ -f "$script_path" ]]; then
                         if call_subscript "$script_path" deploy "$project_id" "messaging-platform-dev" "$environment" "$dry_run"; then
                             log_success "✅ $component 部署成功"
+                            if [[ "${WAIT_READY:-false}" == "true" ]]; then
+                                wait_for_namespace_pods_ready "messaging-platform-dev"
+                            fi
                         else
                             log_error "❌ $component 部署失败"
                             return 1
@@ -332,6 +375,9 @@ deploy_platform_components_by_priority() {
                     if [[ -f "$script_path" ]]; then
                         if call_subscript "$script_path" deploy "$project_id" "ops-platform-dev" "$environment" "$dry_run"; then
                             log_success "✅ $component 部署成功"
+                            if [[ "${WAIT_READY:-false}" == "true" ]]; then
+                                wait_for_namespace_pods_ready "ops-platform-dev"
+                            fi
                         else
                             log_error "❌ $component 部署失败"
                             return 1
@@ -786,6 +832,10 @@ SunmoonAI 项目总部署脚本
     project_id      项目ID (默认: $DEFAULT_PROJECT_ID)
     environment     环境 (默认: $DEFAULT_ENVIRONMENT)
     dry_run         是否干运行 (true|false, 默认: false)
+
+可选配置 (deploy-sunmoonai-all.conf 或环境变量):
+    WAIT_READY      为 true 时，每个平台部署完成后轮询该命名空间 Pod 直至就绪或超时 (默认: false)
+    WAIT_READY_TIMEOUT  单平台最大等待秒数 (默认: 180，即 3 分钟)；超时后不视为失败
 
 示例:
     $0 --cluster C1 deploy sunmoonai development false

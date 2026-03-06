@@ -332,14 +332,28 @@ check_flower_status() {
         return 1
     fi
     
-    # 检查运行中的 Pod 数量
-    local pods_running
-    pods_running=$(echo "$pods_output" | grep -c "Running" || echo "0")
+    # 统计 Running / 启动中状态的 Pod 数量
+    local pods_running pods_pending
+    pods_running=$(echo "$pods_output" | grep -c "Running" 2>/dev/null || echo "0")
     pods_running=$(echo "$pods_running" | tr -d '[:space:]')
     pods_running=${pods_running:-0}
+    pods_pending=$(echo "$pods_output" | grep -cE "Pending|ContainerCreating|Init:" 2>/dev/null || echo "0")
+    pods_pending=$(echo "$pods_pending" | tr -d '[:space:]')
+    pods_pending=${pods_pending:-0}
     
     if [[ "$pods_running" -gt 0 ]]; then
         log_success "✅ Flower Pod 运行正常 ($pods_running/$pods_count 个运行中)"
+    elif [[ "$pods_pending" -gt 0 ]]; then
+        log_warn "⏳ Flower Pod 正在启动中（$pods_pending/$pods_count 个 Pending/ContainerCreating/Init，0 个 Running）"
+        log_info "Pod 状态详情:"
+        echo "$pods_output" | while read -r line; do
+            if [[ -n "$line" ]]; then
+                log_info "  $line"
+            fi
+        done
+        log_info "提示：这是正常的启动过程，如需查看详细进度可稍后运行 status 子命令。"
+        # 启动中不视为失败，直接返回成功，让整体部署流程继续
+        return 0
     else
         log_warn "⚠️  Flower Pod 存在但未运行 ($pods_count 个 Pod，0 个运行中)"
         log_info "Pod 状态详情:"
