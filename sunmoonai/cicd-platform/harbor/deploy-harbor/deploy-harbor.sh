@@ -138,6 +138,18 @@ if [[ -f "$SUNMOONAI_CONFIG_FILE" ]]; then
     fi
 fi
 
+# 加载 CI/CD 平台级配置（含 C1/C2/KIND 的 harbor_enabled），供「当前集群是否部署 Harbor」判断
+CICD_PLATFORM_CONF="$(dirname "$(dirname "$SCRIPT_DIR")")/deploy-cicd-platform-all/deploy-cicd-platform-all.conf"
+if [[ -f "$CICD_PLATFORM_CONF" ]]; then
+    saved_cluster_cicd="${CLUSTER:-}"
+    source "$CICD_PLATFORM_CONF"
+    [[ -n "$saved_cluster_cicd" ]] && export CLUSTER="$saved_cluster_cicd"
+    if [[ -f "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh" ]]; then
+        source "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh"
+        apply_cluster_config_mapping
+    fi
+fi
+
 # 默认配置
 DEFAULT_PROJECT_ID="sunmoonai"
 DEFAULT_NAMESPACE="harbor"
@@ -1418,6 +1430,12 @@ deploy_harbor() {
     local namespace="$2"
     local environment="$3"
     local dry_run="$4"
+
+    # 当前集群未启用 Harbor 时（如 C2 共用 C1 的 Harbor），跳过整个部署及阶段4
+    if [[ "${harbor_enabled:-true}" == "false" ]]; then
+        log_info "当前集群 (CLUSTER=${CLUSTER:-}) 未启用 Harbor 部署 (harbor_enabled=false)，跳过（含阶段4 自动创建项目并推送镜像）"
+        return 0
+    fi
 
     log_info "开始 Harbor 递归部署..."
     log_info "项目: $project_id"
