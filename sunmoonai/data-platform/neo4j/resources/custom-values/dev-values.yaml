@@ -1,5 +1,9 @@
 # Neo4j 开发环境配置 - 直接写具体值，不做模板替换
 
+# Bitnami chart 要求必须设置 advertisedHost，否则不创建 StatefulSet/Pod（仅创建 Service）
+# dev/kind 使用集群内 DNS，无需 LoadBalancer 外部 IP
+advertisedHost: "neo4j-sunmoonai.data-platform-dev.svc.cluster.local"
+
 # 全局配置（对齐统一镜像与存储）
 # 关于镜像来源（说明）：
 # - 基于 bitnami/neo4j:5.26.11-debian-12-r0 在节点上 retag 为

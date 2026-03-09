@@ -20,7 +20,9 @@ if [[ ! -x "$UPDATE_ONE_SCRIPT" ]]; then
 fi
 
 # 计算 SunmoonAI 项目根目录（k8s/sunmoonai）
-SUNMOONAI_ROOT="$(cd "$SCRIPT_DIR/../sunmoonai" && pwd)"
+# SCRIPT_DIR = /home/zymun/k8s/utils/重建持久化数据
+# 期望 SunmoonAI 根目录为 /home/zymun/k8s/sunmoonai
+SUNMOONAI_ROOT="$(cd "$SCRIPT_DIR/../../sunmoonai" && pwd)"
 
 log_info "SunmoonAI 根目录: $SUNMOONAI_ROOT"
 log_info "使用单组件更新脚本: $UPDATE_ONE_SCRIPT"
@@ -38,13 +40,6 @@ run_update() {
   log_info "  命名空间: $ns"
   log_info "  动态 PVC : $pvc"
   log_info "  YAML 文件: $yaml"
-
-  if [[ ! -f "$yaml" ]]; then
-    log_warn "  跳过：YAML 文件不存在: $yaml"
-    ((fail_count++)) || true
-    echo
-    return 0
-  fi
 
   if "$UPDATE_ONE_SCRIPT" "$ns" "$pvc" "$yaml"; then
     log_success "  $desc 已更新完成"
@@ -75,14 +70,14 @@ run_update \
 # 3. MongoDB（data-platform-dev）
 run_update \
   "data-platform-dev" \
-  "data-mongodb-sunmoonai-0" \
+  "mongodb-sunmoonai" \
   "$SUNMOONAI_ROOT/data-platform/mongodb/resources/custom-values/mongodb-dev-pv-pvc.yaml" \
   "MongoDB"
 
 # 4. Redis（data-platform-dev，主节点）
 run_update \
   "data-platform-dev" \
-  "data-redis-sunmoonai-master-0" \
+  "redis-data-redis-sunmoonai-master-0" \
   "$SUNMOONAI_ROOT/data-platform/redis/resources/custom-values/redis-dev-pv-pvc.yaml" \
   "Redis Master"
 

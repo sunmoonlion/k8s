@@ -1,5 +1,8 @@
 # Neo4j 开发环境配置（复用持久化数据版本）- 直接写具体值，不做模板替换
 
+# Bitnami chart 要求必须设置 advertisedHost，否则不创建 StatefulSet/Pod
+advertisedHost: "neo4j-sunmoonai.data-platform-dev.svc.cluster.local"
+
 global:
   imageRegistry: "harbor.sunmoonai.com:30443"
   imagePullSecrets:
