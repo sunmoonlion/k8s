@@ -195,3 +195,7 @@ sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/tra
 sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/
 sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/server-cert/*.crt
 sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/server-cert/*.key
+
+# Flower / Mongo Express 等运维组件 Secret：各集群/环境密码不同，不提交
+sunmoonai/ops-platform/flower/deploy-flower/secrets/flower-secrets/flower-secrets.yaml
+sunmoonai/ops-platform/mongo-express/deploy-mongo-express/secrets/mongo-express-secrets/mongo-express-secrets.yaml
