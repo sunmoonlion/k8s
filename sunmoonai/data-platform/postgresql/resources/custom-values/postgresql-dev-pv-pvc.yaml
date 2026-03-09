@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgresql-sunmoonai-dev-pv
+spec:
+  capacity:
+    storage: 8Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""  # 静态 PV，不走 nfs-2 动态存储
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    server: 172.28.46.235
+    # ⚠️ 注意：下面这个 path 需要在「初始化基线盘」后，用实际 PV 中的 path 替换 UID 部分
+    # 示例前缀来自 NFS 目录：data-platform-dev-data-postgresql-sunmoonai-0-pvc-<UID>
+    # 请在集群初始化完（kubectl get pv 查到 PostgreSQL 对应 PV）后，把 <REPLACE_WITH_UID> 改成真实 UID。
+    path: /data/kind-nfs/data-platform-dev-data-postgresql-sunmoonai-0-pvc-<REPLACE_WITH_UID>
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgresql-sunmoonai-dev-pvc
+  namespace: data-platform-dev
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 8Gi
+  storageClassName: ""
+  volumeName: postgresql-sunmoonai-dev-pv
+

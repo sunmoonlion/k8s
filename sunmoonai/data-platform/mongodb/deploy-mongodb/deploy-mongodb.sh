@@ -192,16 +192,45 @@ execute_mongodb_deployment() {
         return 1
     fi
     
-    # 构建 values 文件路径（统一映射 development→dev, production→prod）
+    # 构建 values 文件路径（统一映射 development→dev, production→prod），并根据持久化模式选择是否复用老盘
     local values_file=""
+    # 支持全局强制模式：SUNMOONAI_GLOBAL_PERSIST_MODE=init|reuse
+    local global_persist_mode="${SUNMOONAI_GLOBAL_PERSIST_MODE:-}"
+    local persist_mode
+    if [[ -n "$global_persist_mode" ]]; then
+        persist_mode="$global_persist_mode"
+        log_info "检测到全局持久化模式 SUNMOONAI_GLOBAL_PERSIST_MODE=$global_persist_mode，将覆盖组件配置 MONGODB_PERSIST_MODE=${MONGODB_PERSIST_MODE:-init}"
+    else
+        persist_mode="${MONGODB_PERSIST_MODE:-init}"
+    fi
     case "$environment" in
-        "development"|"dev") values_file="$MONGODB_CUSTOM_VALUES_DIR/dev-values.yaml" ;;
-        "production"|"prod") values_file="$MONGODB_CUSTOM_VALUES_DIR/prod-values.yaml" ;;
-        *) log_warn "未知环境: $environment，使用 dev-values.yaml"; values_file="$MONGODB_CUSTOM_VALUES_DIR/dev-values.yaml" ;;
+        "development"|"dev")
+            if [[ "$persist_mode" == "reuse" ]]; then
+                # 复用模式：先应用静态 PV/PVC，再使用 dev-values-persist.yaml
+                local pv_pvc_file="$MONGODB_CUSTOM_VALUES_DIR/mongodb-dev-pv-pvc.yaml"
+                if [[ ! -f "$pv_pvc_file" ]]; then
+                    log_error "复用模式启用，但未找到静态 PV/PVC 文件: $pv_pvc_file"
+                    return 1
+                fi
+                log_info "MONGODB_PERSIST_MODE=reuse，先应用静态 PV/PVC: $pv_pvc_file"
+                kubectl apply -f "$pv_pvc_file"
+                values_file="$MONGODB_CUSTOM_VALUES_DIR/dev-values-persist.yaml"
+            else
+                # 初始化模式：使用原始 dev-values.yaml（动态 nfs-2，新盘）
+                values_file="$MONGODB_CUSTOM_VALUES_DIR/dev-values.yaml"
+            fi
+            ;;
+        "production"|"prod")
+            values_file="$MONGODB_CUSTOM_VALUES_DIR/prod-values.yaml"
+            ;;
+        *)
+            log_warn "未知环境: $environment，使用 dev-values.yaml"
+            values_file="$MONGODB_CUSTOM_VALUES_DIR/dev-values.yaml"
+            ;;
     esac
     if [[ ! -f "$values_file" ]]; then
-        log_warn "环境配置文件不存在: $values_file，仅使用 Chart 默认值"
-        values_file=""
+        log_error "环境配置文件不存在: $values_file"
+        return 1
     fi
     
     # 注意：StorageClass 与 Secret 键名需通过 dev-values.yaml 与密管系统配置保证正确；脚本不做自修复

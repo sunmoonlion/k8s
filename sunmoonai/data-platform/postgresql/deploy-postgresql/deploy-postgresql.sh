@@ -209,29 +209,36 @@ process_postgresql_values() {
     local namespace="$2"
     local environment="$3"
     
-    # 确定环境目录
-    local env_dir=""
-    case "$environment" in
-        "production")
-            env_dir="values-prod"
-            ;;
-        "development")
-            env_dir="values-dev"
-            ;;
-        *)
-            env_dir="values-dev"  # 默认使用开发环境
-            ;;
-    esac
-    
-    # 检查环境特定的 values 文件
+    # 根据持久化模式选择 values 文件（仅对 development/dev 生效）
     local env_values_file=""
-    
+    # 支持全局强制模式：SUNMOONAI_GLOBAL_PERSIST_MODE=init|reuse
+    local global_persist_mode="${SUNMOONAI_GLOBAL_PERSIST_MODE:-}"
+    local persist_mode
+    if [[ -n "$global_persist_mode" ]]; then
+        persist_mode="$global_persist_mode"
+        log_info "检测到全局持久化模式 SUNMOONAI_GLOBAL_PERSIST_MODE=$global_persist_mode，将覆盖组件配置 POSTGRESQL_PERSIST_MODE=${POSTGRESQL_PERSIST_MODE:-init}" >&2
+    else
+        persist_mode="${POSTGRESQL_PERSIST_MODE:-init}"
+    fi
     case "$environment" in
         "production")
             env_values_file="$PROJECT_ROOT/resources/custom-values/prod-values.yaml"
             ;;
         "development")
-            env_values_file="$PROJECT_ROOT/resources/custom-values/dev-values.yaml"
+            if [[ "$persist_mode" == "reuse" ]]; then
+                # 复用模式：先应用静态 PV/PVC，再使用 dev-values-persist.yaml
+                local pv_pvc_file="$PROJECT_ROOT/resources/custom-values/postgresql-dev-pv-pvc.yaml"
+                if [[ ! -f "$pv_pvc_file" ]]; then
+                    log_error "复用模式启用，但未找到静态 PV/PVC 文件: $pv_pvc_file" >&2
+                    return 1
+                fi
+                log_info "POSTGRESQL_PERSIST_MODE=reuse，先应用静态 PV/PVC: $pv_pvc_file" >&2
+                kubectl apply -f "$pv_pvc_file" >&2
+                env_values_file="$PROJECT_ROOT/resources/custom-values/dev-values-persist.yaml"
+            else
+                # 初始化模式：使用原始 dev-values.yaml（动态 nfs-2，新盘）
+                env_values_file="$PROJECT_ROOT/resources/custom-values/dev-values.yaml"
+            fi
             ;;
         *)
             env_values_file="$PROJECT_ROOT/resources/custom-values/dev-values.yaml"

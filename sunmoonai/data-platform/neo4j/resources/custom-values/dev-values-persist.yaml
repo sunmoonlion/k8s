@@ -1,0 +1,112 @@
+# Neo4j 开发环境配置（复用持久化数据版本）- 直接写具体值，不做模板替换
+
+global:
+  imageRegistry: "harbor.sunmoonai.com:30443"
+  imagePullSecrets:
+    - name: harbor-registry-secret
+  security:
+    allowInsecureImages: true
+  storageClass: "nfs-2"
+
+image:
+  registry: harbor.sunmoonai.com:30443
+  repository: k8s-images/neo4j
+  tag: "5.26.11-debian-12-r0"
+  pullPolicy: IfNotPresent
+
+auth:
+  enabled: true
+  existingSecret: "neo4j-secrets"
+  secretKeys:
+    password: "neo4j-password"
+  database: "sunmoonai_dev"
+
+primary:
+  # 持久化：复用 Neo4j 的数据盘（静态 PVC neo4j-sunmoonai-dev-pvc）
+  persistence:
+    enabled: true
+    existingClaim: neo4j-sunmoonai-dev-pvc
+    storageClass: ""      # 使用 existingClaim，不再通过 storageClass 动态创建
+    size: "20Gi"
+    accessModes:
+      - "ReadWriteOnce"
+
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
+    - key: "dedicated"
+      operator: "Equal"
+      value: "nfs-storage"
+      effect: "NoSchedule"
+
+  service:
+    type: "ClusterIP"
+    ports:
+      http: 7474
+      https: 6477
+      bolt: 7687
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "512Mi"
+    limits:
+      cpu: "300m"
+      memory: "768Mi"
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+    successThreshold: 1
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 5
+    successThreshold: 1
+
+neo4j:
+  memory:
+    heap:
+      initial: "512m"
+      max: "512m"
+    pagecache: "512m"
+  plugins:
+    - "graph-data-science"
+    - "apoc"
+  security:
+    procedures:
+      allowlist: "gds.*, apoc.*"
+      unrestricted: "gds.*, apoc.*"
+  server:
+    config:
+      strict_validation: false
+      default_listen_address: "0.0.0.0"
+      connector:
+        bolt:
+          listen_address: "0.0.0.0:7687"
+        http:
+          listen_address: ":7474"
+          advertised_address: ":7474"
+        https:
+          listen_address: ":6477"
+          advertised_address: ":6477"
+  mode: "SINGLE"
+  jvm:
+    additional: "-XX:+ExitOnOutOfMemoryError"
+
+metrics:
+  enabled: false
+
+ingress:
+  enabled: false
+
+networkPolicy:
+  enabled: false
+

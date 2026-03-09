@@ -174,11 +174,44 @@ execute_neo4j_deployment() {
         return 1
     fi
     
-    # 构建 values 文件路径
-    local values_file="$NEO4J_CUSTOM_VALUES_DIR/${environment}-values.yaml"
+    # 构建 values 文件路径，并根据持久化模式选择是否复用老盘（仅对 development/dev 生效）
+    local values_file
+    # 支持全局强制模式：SUNMOONAI_GLOBAL_PERSIST_MODE=init|reuse
+    local global_persist_mode="${SUNMOONAI_GLOBAL_PERSIST_MODE:-}"
+    local persist_mode
+    if [[ -n "$global_persist_mode" ]]; then
+        persist_mode="$global_persist_mode"
+        log_info "检测到全局持久化模式 SUNMOONAI_GLOBAL_PERSIST_MODE=$global_persist_mode，将覆盖组件配置 NEO4J_PERSIST_MODE=${NEO4J_PERSIST_MODE:-init}"
+    else
+        persist_mode="${NEO4J_PERSIST_MODE:-init}"
+    fi
+    case "$environment" in
+        "production"|"prod")
+            values_file="$NEO4J_CUSTOM_VALUES_DIR/prod-values.yaml"
+            ;;
+        "development"|"dev")
+            if [[ "$persist_mode" == "reuse" ]]; then
+                # 复用模式：先应用静态 PV/PVC，再使用 dev-values-persist.yaml
+                local pv_pvc_file="$NEO4J_CUSTOM_VALUES_DIR/neo4j-dev-pv-pvc.yaml"
+                if [[ ! -f "$pv_pvc_file" ]]; then
+                    log_error "复用模式启用，但未找到静态 PV/PVC 文件: $pv_pvc_file"
+                    return 1
+                fi
+                log_info "NEO4J_PERSIST_MODE=reuse，先应用静态 PV/PVC: $pv_pvc_file"
+                kubectl apply -f "$pv_pvc_file"
+                values_file="$NEO4J_CUSTOM_VALUES_DIR/dev-values-persist.yaml"
+            else
+                # 初始化模式：使用原始 dev-values.yaml（动态 nfs-2，新盘）
+                values_file="$NEO4J_CUSTOM_VALUES_DIR/dev-values.yaml"
+            fi
+            ;;
+        *)
+            values_file="$NEO4J_CUSTOM_VALUES_DIR/dev-values.yaml"
+            ;;
+    esac
     if [[ ! -f "$values_file" ]]; then
-        log_warn "环境配置文件不存在: $values_file，使用默认配置"
-        values_file=""
+        log_error "环境配置文件不存在: $values_file"
+        return 1
     fi
     
     # 构建 Helm 命令
@@ -201,9 +234,7 @@ execute_neo4j_deployment() {
         log_info "使用 Harbor 镜像: $NEO4J_IMAGE_REGISTRY/$NEO4J_IMAGE_PROJECT/neo4j:${NEO4J_IMAGE_VERSION:-5.26.11-debian-12-r0}"
     fi
     
-    if [[ -n "$values_file" ]]; then
-        helm_cmd="$helm_cmd --values $values_file"
-    fi
+    helm_cmd="$helm_cmd --values $values_file"
     
     if [[ "$dry_run" == "true" ]]; then
         helm_cmd="$helm_cmd --dry-run"

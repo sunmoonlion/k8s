@@ -1,0 +1,119 @@
+# Elasticsearch 开发环境配置（复用持久化数据版本）
+
+global:
+  kibanaEnabled: false
+  defaultStorageClass: "nfs-2"
+  imagePullSecrets:
+    - name: "harbor-registry-secret"
+  security:
+    allowInsecureImages: true
+  imageRegistry: "harbor.sunmoonai.com:30443"
+
+clusterName: elasticsearch-dev
+
+image:
+  registry: harbor.sunmoonai.com:30443
+  repository: k8s-images/elasticsearch
+  tag: 9.1.2-debian-12-r0
+  pullPolicy: IfNotPresent
+
+master:
+  image:
+    registry: harbor.sunmoonai.com:30443
+    repository: k8s-images/elasticsearch
+    tag: 9.1.2-debian-12-r0
+    pullPolicy: IfNotPresent
+
+  masterOnly: false
+  extraRoles:
+    - data
+    - ingest
+  replicaCount: 1
+  resourcesPreset: "small"
+  resources:
+    requests:
+      cpu: 300m
+      memory: 512Mi
+    limits:
+      cpu: 800m
+      memory: 1Gi
+  heapSize: 512m
+
+  # 持久化：复用 master 节点的数据盘（静态 PVC elasticsearch-sunmoonai-dev-pvc）
+  persistence:
+    enabled: true
+    existingClaim: elasticsearch-sunmoonai-dev-pvc
+    storageClass: ""    # 使用 existingClaim，不再通过 storageClass 动态创建
+    size: 8Gi
+
+data:
+  image:
+    registry: harbor.sunmoonai.com:30443
+    repository: k8s-images/elasticsearch
+    tag: 9.1.2-debian-12-r0
+    pullPolicy: IfNotPresent
+  replicaCount: 0
+  resourcesPreset: "small"
+  resources:
+    requests:
+      cpu: 300m
+      memory: 512Mi
+    limits:
+      cpu: 800m
+      memory: 1Gi
+  heapSize: 512m
+  persistence:
+    enabled: false
+    size: 20Gi
+    storageClass: "nfs-2"
+
+coordinating:
+  image:
+    registry: harbor.sunmoonai.com:30443
+    repository: k8s-images/elasticsearch
+    tag: 9.1.2-debian-12-r0
+    pullPolicy: IfNotPresent
+  replicaCount: 0
+  resourcesPreset: "small"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 300m
+      memory: 1Gi
+  heapSize: 512m
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 120
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 6
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 120
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 12
+
+ingest:
+  replicaCount: 0
+
+service:
+  type: ClusterIP
+  ports:
+    restAPI: 9200
+    transport: 9300
+
+auth:
+  enabled: false
+
+metrics:
+  enabled: false
+
+sysctlImage:
+  enabled: true
+  registry: harbor.sunmoonai.com:30443
+  repository: k8s-images/os-shell
+  tag: 12-debian-12-r51
+

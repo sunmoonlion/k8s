@@ -1,0 +1,141 @@
+# Redis 开发环境配置（复用持久化数据版本）- 直接写具体值，不做模板替换
+
+global:
+  imageRegistry: ""
+  imagePullSecrets:
+    - name: "harbor-registry-secret"
+  storageClass: "nfs-2"
+
+image:
+  registry: ""
+  repository: bitnami/redis
+  tag: "8.2.1-debian-12-r0"
+  pullPolicy: "IfNotPresent"
+  pullSecrets: []
+
+auth:
+  enabled: true
+  existingSecret: "redis-auth-secret"
+  existingSecretPasswordKey: "redis-password"
+
+master:
+  # 持久化：复用 Redis master 的数据盘（静态 PVC redis-sunmoonai-dev-pvc）
+  persistence:
+    enabled: true
+    existingClaim: redis-sunmoonai-dev-pvc
+    storageClass: ""      # 使用 existingClaim，不再通过 storageClass 动态创建
+    size: "5Gi"
+    accessModes:
+      - "ReadWriteOnce"
+
+  service:
+    type: "ClusterIP"
+    port: 6379
+
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+    successThreshold: 1
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 5
+    successThreshold: 1
+
+replica:
+  replicaCount: 0
+  enabled: false
+
+sentinel:
+  enabled: false
+  image:
+    registry: ""
+    repository: bitnami/redis-sentinel
+    tag: "8.2.1-debian-12-r0"
+    pullPolicy: "IfNotPresent"
+  persistence:
+    enabled: false
+    storageClass: "nfs-2"
+    size: "5Gi"
+    accessModes:
+      - "ReadWriteOnce"
+  resources:
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+
+metrics:
+  enabled: false
+  image:
+    registry: ""
+    repository: bitnami/redis-exporter
+    tag: "1.76.0-debian-12-r0"
+    pullPolicy: "IfNotPresent"
+  serviceMonitor:
+    enabled: false
+    interval: "30s"
+    scrapeTimeout: "10s"
+    honorLabels: true
+
+networkPolicy:
+  enabled: false
+  allowExternal: true
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+redis:
+  maxMemory: "512MB"
+  maxMemoryPolicy: "allkeys-lru"
+  save: "900 1 300 10 60 10000"
+  timeout: "300"
+  tcpKeepalive: "300"
+  tcpBacklog: "511"
+  disableCommands: "FLUSHDB,FLUSHALL"
+  enableTLS: false
+  logLevel: "notice"
+  syslogEnabled: false
+  appendOnly: "yes"
+  appendfsync: "everysec"
+
+ingress:
+  enabled: false
+
+commonLabels:
+  app.kubernetes.io/part-of: "data-platform"
+  app.kubernetes.io/managed-by: "helm"
+
+commonAnnotations:
+  app.kubernetes.io/created-by: "unified-deployment-template"
+
+securityContext:
+  enabled: false
+  runAsUser: 1001
+  fsGroup: 1001
+
+podSecurityContext:
+  enabled: false
+  runAsUser: 1001
+  fsGroup: 1001
+

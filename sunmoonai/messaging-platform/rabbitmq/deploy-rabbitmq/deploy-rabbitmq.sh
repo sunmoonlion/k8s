@@ -200,11 +200,33 @@ execute_rabbitmq_deployment() {
         return 1
     fi
     
-    # 构建环境特定的 values 文件路径
+    # 构建环境特定的 values 文件路径，并根据持久化模式选择是否复用老盘
     local values_file
+    # 支持全局强制模式：SUNMOONAI_GLOBAL_PERSIST_MODE=init|reuse
+    local global_persist_mode="${SUNMOONAI_GLOBAL_PERSIST_MODE:-}"
+    local persist_mode
+    if [[ -n "$global_persist_mode" ]]; then
+        persist_mode="$global_persist_mode"
+        log_info "检测到全局持久化模式 SUNMOONAI_GLOBAL_PERSIST_MODE=$global_persist_mode，将覆盖组件配置 RABBITMQ_PERSIST_MODE=${RABBITMQ_PERSIST_MODE:-init}"
+    else
+        persist_mode="${RABBITMQ_PERSIST_MODE:-init}"
+    fi
     case "$environment" in
         "development"|"dev")
-            values_file="$RABBITMQ_CUSTOM_VALUES_DIR/dev-values.yaml"
+            if [[ "$persist_mode" == "reuse" ]]; then
+                # 复用模式：先应用静态 PV/PVC，再使用 dev-values-persist.yaml
+                local pv_pvc_file="$RABBITMQ_CUSTOM_VALUES_DIR/rabbitmq-dev-pv-pvc.yaml"
+                if [[ ! -f "$pv_pvc_file" ]]; then
+                    log_error "复用模式启用，但未找到静态 PV/PVC 文件: $pv_pvc_file"
+                    return 1
+                fi
+                log_info "RABBITMQ_PERSIST_MODE=reuse，先应用静态 PV/PVC: $pv_pvc_file"
+                kubectl apply -f "$pv_pvc_file"
+                values_file="$RABBITMQ_CUSTOM_VALUES_DIR/dev-values-persist.yaml"
+            else
+                # 初始化模式：使用原始 dev-values.yaml（动态 storageClass，新盘）
+                values_file="$RABBITMQ_CUSTOM_VALUES_DIR/dev-values.yaml"
+            fi
             ;;
         "production"|"prod")
             values_file="$RABBITMQ_CUSTOM_VALUES_DIR/prod-values.yaml"
@@ -763,19 +785,7 @@ main() {
                 log_info "服务名称: rabbitmq-$project_id"
                 log_info "Chart 目录: $RABBITMQ_CHART_DIR"
                 # 显示实际使用的配置文件
-                local actual_values_file
-                case "$environment" in
-                    "development"|"dev")
-                        actual_values_file="$RABBITMQ_CUSTOM_VALUES_DIR/dev-values.yaml"
-                        ;;
-                    "production"|"prod")
-                        actual_values_file="$RABBITMQ_CUSTOM_VALUES_DIR/prod-values.yaml"
-                        ;;
-                    *)
-                        actual_values_file="$RABBITMQ_CUSTOM_VALUES_DIR/${environment}-values.yaml"
-                        ;;
-                esac
-                log_info "配置文件: $actual_values_file"
+                log_info "配置文件: $values_file"
                 log_info ""
                 log_info "检查部署状态:"
                 log_info "kubectl get pods -n $namespace -l app.kubernetes.io/name=rabbitmq"
