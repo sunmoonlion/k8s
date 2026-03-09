@@ -1,0 +1,5 @@
+MODE=kind
+TIMESTAMP=1773070576
+LOCAL_PORT=
+PID=
+CURRENT_KUBECONFIG=/home/zymun/.kube/kind-config

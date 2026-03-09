@@ -8,14 +8,15 @@ RABBITMQ_SECRETS_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ORIGINAL_SCRIPT_DIR="$RABBITMQ_SECRETS_SCRIPT_DIR"
 SCRIPT_DIR="$RABBITMQ_SECRETS_SCRIPT_DIR"
 
-# 自动检测项目根目录（包含 utils 目录的 k8s 目录）
+# 自动检测项目根目录：
+# 从当前目录向上查找，直到找到「同时包含 utils 目录且其中有 unified-deployment-template.sh 的」k8s 根目录
 PROJECT_ROOT=""
 current_dir="$SCRIPT_DIR"
 max_levels=10
 level=0
 
 while [[ $level -lt $max_levels ]] && [[ -n "$current_dir" ]] && [[ "$current_dir" != "/" ]]; do
-    if [[ -d "$current_dir/utils" ]]; then
+    if [[ -f "$current_dir/utils/unified-deployment-template.sh" ]]; then
         PROJECT_ROOT="$current_dir"
         break
     fi
@@ -23,15 +24,14 @@ while [[ $level -lt $max_levels ]] && [[ -n "$current_dir" ]] && [[ "$current_di
     level=$((level + 1))
 done
 
-# 如果没找到，使用相对路径推导 k8s 根目录（从 deploy-secrets-all 向上 6 层）
-if [[ -z "$PROJECT_ROOT" ]] || [[ ! -d "$PROJECT_ROOT/utils" ]]; then
+# 如果没找到，则回退到向上多级后的目录（兼容旧路径），再做一次检查
+if [[ -z "$PROJECT_ROOT" ]]; then
     PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
 fi
 
-# 最终验证
-if [[ ! -d "$PROJECT_ROOT/utils" ]]; then
-    echo "错误: 无法找到项目根目录（应包含 utils 目录）" >&2
-    echo "当前计算的 PROJECT_ROOT: $PROJECT_ROOT" >&2
+if [[ ! -f "$PROJECT_ROOT/utils/unified-deployment-template.sh" ]]; then
+    echo "错误: 无法找到统一部署模板 unified-deployment-template.sh" >&2
+    echo "期望位置: $PROJECT_ROOT/utils/unified-deployment-template.sh" >&2
     echo "脚本目录: $SCRIPT_DIR" >&2
     exit 1
 fi

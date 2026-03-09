@@ -8,15 +8,15 @@ MONGODB_SECRETS_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ORIGINAL_SCRIPT_DIR="$MONGODB_SECRETS_SCRIPT_DIR"
 SCRIPT_DIR="$MONGODB_SECRETS_SCRIPT_DIR"
 
-# 自动检测项目根目录（包含 utils 目录的 k8s 目录）
-# 从当前目录向上查找，直到找到包含 utils 目录的 k8s 目录
+# 自动检测项目根目录：
+# 从当前目录向上查找，直到找到「同时包含 utils 目录且其中有 unified-deployment-template.sh 的」k8s 根目录
 PROJECT_ROOT=""
 current_dir="$SCRIPT_DIR"
 max_levels=10
 level=0
 
 while [[ $level -lt $max_levels ]] && [[ -n "$current_dir" ]] && [[ "$current_dir" != "/" ]]; do
-    if [[ -d "$current_dir/utils" ]]; then
+    if [[ -f "$current_dir/utils/unified-deployment-template.sh" ]]; then
         PROJECT_ROOT="$current_dir"
         break
     fi
@@ -24,15 +24,14 @@ while [[ $level -lt $max_levels ]] && [[ -n "$current_dir" ]] && [[ "$current_di
     level=$((level + 1))
 done
 
-# 如果没找到，使用默认路径（向上6级）
-if [[ -z "$PROJECT_ROOT" ]] || [[ ! -d "$PROJECT_ROOT/utils" ]]; then
+# 如果没找到，则回退到向上多级后的目录（兼容旧路径），再做一次检查
+if [[ -z "$PROJECT_ROOT" ]]; then
     PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
 fi
 
-# 最终验证
-if [[ ! -d "$PROJECT_ROOT/utils" ]]; then
-    echo "错误: 无法找到项目根目录（应包含 utils 目录）" >&2
-    echo "当前计算的 PROJECT_ROOT: $PROJECT_ROOT" >&2
+if [[ ! -f "$PROJECT_ROOT/utils/unified-deployment-template.sh" ]]; then
+    echo "错误: 无法找到统一部署模板 unified-deployment-template.sh" >&2
+    echo "期望位置: $PROJECT_ROOT/utils/unified-deployment-template.sh" >&2
     echo "脚本目录: $SCRIPT_DIR" >&2
     exit 1
 fi
@@ -334,35 +333,33 @@ deploy_secrets() {
     log_info ""
     
     # 确保 Kubernetes 连接已建立
-    # 检查函数是否存在（如果不存在，尝试重新加载）
+    # 这里的设计是：必须能正确加载统一部署模板，并拿到 setup_kubectl_environment，
+    # 否则直接视为配置错误，让调用方修复路径或模板，而不是静默继续。
     if ! type setup_kubectl_environment >/dev/null 2>&1; then
-        log_warn "⚠️  setup_kubectl_environment 函数不存在，尝试重新加载 unified-deployment-template.sh"
-        # 重新加载 unified-deployment-template.sh
+        log_warn "⚠️  setup_kubectl_environment 函数不存在，尝试重新加载统一部署模板: $PROJECT_ROOT/utils/unified-deployment-template.sh"
         if [[ -f "$PROJECT_ROOT/utils/unified-deployment-template.sh" ]]; then
             set +e
             source "$PROJECT_ROOT/utils/unified-deployment-template.sh" >/dev/null 2>&1
             source_exit_code=$?
             set -e
-            
+
             if [[ $source_exit_code -ne 0 ]]; then
                 log_error "❌ 无法加载统一部署模板: $PROJECT_ROOT/utils/unified-deployment-template.sh (退出码: $source_exit_code)"
                 return 1
             fi
-            
-            # 确保函数被导出
+
             export -f setup_kubectl_environment 2>/dev/null || true
         else
             log_error "❌ 统一部署模板文件不存在: $PROJECT_ROOT/utils/unified-deployment-template.sh"
             return 1
         fi
-        
-        # 再次检查
+
         if ! type setup_kubectl_environment >/dev/null 2>&1; then
-            log_error "❌ setup_kubectl_environment 函数不存在，请检查 unified-deployment-template.sh 是否已正确加载"
+            log_error "❌ setup_kubectl_environment 函数仍不存在，请检查 unified-deployment-template.sh 是否已正确加载"
             return 1
         fi
     fi
-    
+
     if ! setup_kubectl_environment; then
         log_error "❌ 无法建立 Kubernetes 连接"
         return 1
