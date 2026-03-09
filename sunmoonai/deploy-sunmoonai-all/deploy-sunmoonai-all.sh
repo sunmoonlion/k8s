@@ -747,6 +747,15 @@ deploy_sunmoonai() {
     local environment="$3"
     local dry_run="$4"
     
+    # 部署前：按配置自动从 .yaml.example 复制生成各组件 secret 的 .yaml 占位文件
+    if [[ "${PREPARE_SECRETS_FROM_EXAMPLES:-true}" == "true" ]]; then
+        local prepare_script="$PROJECT_ROOT/../utils/prepare-secrets-from-examples.sh"
+        if [[ -x "$prepare_script" ]]; then
+            log_info "自动从 .yaml.example 生成 secret 占位文件..."
+            "$prepare_script" || log_warn "prepare-secrets-from-examples 执行异常，继续部署"
+        fi
+    fi
+    
     log_info "开始部署 SunmoonAI 项目..."
     log_info "项目: $project_id"
     log_info "环境: $environment"
