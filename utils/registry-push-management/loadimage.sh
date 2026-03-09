@@ -117,9 +117,6 @@ USE_SUDO="${USE_SUDO:-true}"
 PUSH_RETRY="${PUSH_RETRY:-2}"
 PUSH_RETRY_INTERVAL="${PUSH_RETRY_INTERVAL:-3}"
 LOCAL_IMAGE_DIR="${LOCAL_IMAGE_DIR:-$HOME/packages-to-be-installed/images}"
-# 推送后清理远程 tar 文件开关（允许通过环境变量覆盖，用于组件脚本控制）
-# 组件脚本可以通过设置 CLEANUP_REMOTE_TAR_AFTER_PUSH 环境变量来覆盖配置文件中的值
-CLEANUP_REMOTE_TAR_AFTER_PUSH="${CLEANUP_REMOTE_TAR_AFTER_PUSH:-true}"
 
 # =============================================================================
 # 集群相关配置（必须通过集群配置映射设置，如 C1_REGISTRY_URL -> REGISTRY_URL）
