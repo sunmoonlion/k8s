@@ -107,7 +107,7 @@ fi
 # 部署 Elasticsearch MyApp Secret（如果启用）
 if [[ "${elasticsearch_myapp_secret_enabled:-true}" == "true" ]]; then
     echo "[INFO] 部署 Elasticsearch MyApp Secret..."
-    [[ "${APPLY_ELASTICSEARCH_MYAPP_SECRET:-false}" == "true" ]] && apply_yaml "$ROOT_DIR/elasticsearch-myapp-secret/elasticsearch-myapp-secret.sample.yaml"
+    [[ "${APPLY_ELASTICSEARCH_MYAPP_SECRET:-false}" == "true" ]] && apply_yaml "$ROOT_DIR/elasticsearch-myapp-secret/elasticsearch-myapp-secret.yaml.example"
 fi
 
 echo "[OK] Completed"
