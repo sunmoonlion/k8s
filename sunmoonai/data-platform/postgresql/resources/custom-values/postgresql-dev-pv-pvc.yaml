@@ -14,7 +14,7 @@ spec:
     # ⚠️ 注意：下面这个 path 需要在「初始化基线盘」后，用实际 PV 中的 path 替换 UID 部分
     # 示例前缀来自 NFS 目录：data-platform-dev-data-postgresql-sunmoonai-0-pvc-<UID>
     # 请在集群初始化完（kubectl get pv 查到 PostgreSQL 对应 PV）后，把 <REPLACE_WITH_UID> 改成真实 UID。
-    path: /data/kind-nfs/data-platform-dev-data-postgresql-sunmoonai-0-pvc-dfc609a3-af8a-4dab-8105-cb43adaa96be
+    path: /data/kind-nfs/data-platform-dev-data-postgresql-sunmoonai-0-pvc-34a2b9bb-fecc-4d7a-ad22-cd69e3dba844
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
