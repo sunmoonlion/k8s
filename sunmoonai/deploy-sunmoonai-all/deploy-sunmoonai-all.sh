@@ -139,6 +139,22 @@ call_subscript() {
     fi
 }
 
+# 当 CLUSTER=KIND 时，在总控进程中设置 KUBECONFIG，使后续 data/messaging/ops 等平台部署都操作同一 Kind 集群。
+# 否则 deploy-kind 在子进程里 export 的 KUBECONFIG 不会继承，导致子脚本有时用默认 kubeconfig，出现 Secret 未创建等不稳定现象。
+resolve_kind_kubeconfig() {
+    local conf="${PROJECT_ROOT}/../utils/k8s-admin.conf"
+    if [[ -f "$conf" ]]; then
+        local path
+        path=$(sed -n '/^\[KIND\]$/,/^\[/p' "$conf" | grep '^kubeconfig=' | head -1 | cut -d'=' -f2- | tr -d ' ')
+        path="${path/#\~/$HOME}"
+        if [[ -n "$path" && -f "$path" ]]; then
+            echo "$path"
+            return
+        fi
+    fi
+    echo "${HOME}/.kube/kind-config"
+}
+
 # 等待命名空间内 Pod 就绪（Running/Completed），超时后不失败
 # 用法: wait_for_namespace_pods_ready <namespace> [timeout_sec]
 # 仅在 WAIT_READY=true 时由部署流程调用
@@ -175,6 +191,16 @@ deploy_platform_components_by_priority() {
     local dry_run="$4"
     
     log_info "开始基于优先级的平台组件部署..."
+    # 当目标为 Kind 时，确保总控进程已设置 KUBECONFIG，避免子脚本继承不到而出现 Secret 未创建等不稳定
+    local cluster_upper kind_kubeconfig
+    cluster_upper=$(echo "${CLUSTER:-}" | tr '[:lower:]' '[:upper:]')
+    if [[ "$cluster_upper" == "KIND" ]]; then
+        kind_kubeconfig=$(resolve_kind_kubeconfig)
+        if [[ -f "$kind_kubeconfig" && "${KUBECONFIG:-}" != "$kind_kubeconfig" ]]; then
+            export KUBECONFIG="$kind_kubeconfig"
+            log_info "已设置 KUBECONFIG=$KUBECONFIG（Kind 集群）"
+        fi
+    fi
     if [[ "${WAIT_READY:-false}" == "true" ]]; then
         log_info "⏳ 已启用等待就绪模式 (WAIT_READY=true, 单平台超时: ${WAIT_READY_TIMEOUT:-180}s)"
     fi
@@ -252,6 +278,15 @@ deploy_platform_components_by_priority() {
                         log_info "使用 Kind 基础设施一键脚本: $kind_script"
                         if "$kind_script"; then
                             log_success "✅ KIND 基础设施部署完成"
+                            # 在总控进程中导出 KUBECONFIG，否则后续 messaging/data/ops 等子脚本不会继承 deploy-kind 子进程的 export，导致 kubectl 指向错误集群、Secret 等未创建而不稳定
+                            local kind_kubeconfig
+                            kind_kubeconfig=$(resolve_kind_kubeconfig)
+                            if [[ -f "$kind_kubeconfig" ]]; then
+                                export KUBECONFIG="$kind_kubeconfig"
+                                log_info "已设置 KUBECONFIG=$KUBECONFIG，后续平台部署将使用该 Kind 集群"
+                            else
+                                log_warn "未找到 Kind kubeconfig ($kind_kubeconfig)，请确保已 export KUBECONFIG 或后续部署可能失败"
+                            fi
                         else
                             log_error "❌ KIND 基础设施部署失败"
                             return 1

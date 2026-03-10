@@ -1305,7 +1305,7 @@ parse_cluster_arg() {
           msg "🔧 设置集群环境变量: CLUSTER=$cluster_value"
           i=$((i+1))  # 跳过下一个参数（集群值），使用显式赋值避免 set -e 问题
         else
-          err "❌ --cluster 参数需要指定值（C1 或 C2）"
+          err "❌ --cluster 参数需要指定值（如 C1、C2 或 KIND）"
           exit 1
         fi
         ;;
@@ -1314,8 +1314,8 @@ parse_cluster_arg() {
 用法: $0 [选项]
 
 选项:
-  --cluster, -c <C1|C2>    选择集群（C1 或 C2）
-                           也可以通过环境变量 CLUSTER 设置
+  --cluster, -c <C1|C2|KIND>  选择集群（远程 C1/C2/... 或本地 KIND）
+                              也可以通过环境变量 CLUSTER 设置
   --help, -h                显示此帮助信息
 
 示例:
@@ -1335,8 +1335,9 @@ EOF
   
   # 验证集群值（如果设置了）
   if [[ -n "${CLUSTER:-}" ]]; then
-    if [[ ! "${CLUSTER}" =~ ^C[0-9]+$ ]]; then
-      err "❌ 无效的集群值: ${CLUSTER} (格式必须为 C{数字}，如 C1, C2, C3 等)"
+    # 支持 C{数字}（远程集群）和 KIND（本地 Kind 集群）
+    if [[ ! "${CLUSTER}" =~ ^C[0-9]+$ && "${CLUSTER}" != "KIND" ]]; then
+      err "❌ 无效的集群值: ${CLUSTER} (格式必须为 C{数字}，如 C1, C2, C3，或 KIND)"
       exit 1
     fi
   fi

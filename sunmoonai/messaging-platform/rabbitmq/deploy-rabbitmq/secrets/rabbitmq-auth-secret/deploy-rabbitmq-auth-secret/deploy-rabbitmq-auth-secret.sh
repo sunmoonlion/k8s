@@ -128,6 +128,14 @@ main() {
             exit 1
         fi
         
+        # 仅在 Secret 原本存在且内容变化时重启组件，避免每次重新部署都触发 Pod Terminating。
+        # 注意：首次创建 Secret 时，kubectl get secret 会返回非 0，但这里放在 if 流程中不会触发 set -e 退出。
+        local secret_hash_before=""
+        local secret_data_before=""
+        if secret_data_before=$(kubectl get secret "$SECRET_NAME" -n "$namespace" -o jsonpath='{.data}' 2>/dev/null); then
+            secret_hash_before=$(printf '%s\n' "$secret_data_before" | sort | md5sum 2>/dev/null | awk '{print $1}')
+        fi
+        
         if kubectl apply -f "$secret_yaml"; then
             log_success "Secret已部署: $SECRET_NAME (命名空间: $namespace)"
         else
@@ -135,8 +143,16 @@ main() {
             exit 1
         fi
         
-        if [[ "${RESTART_COMPONENTS:-false}" == "true" && -n "${RESTART_COMPONENTS_LIST:-}" ]]; then
-            log_info "重启使用该Secret的组件..."
+        local secret_hash_after=""
+        secret_hash_after=$(kubectl get secret "$SECRET_NAME" -n "$namespace" -o jsonpath='{.data}' 2>/dev/null | sort | md5sum 2>/dev/null | awk '{print $1}')
+        # 仅当 Secret 原本已存在且内容发生变化时才重启（首次创建不重启，避免第一次部署就出现 Terminating）。
+        local need_restart="false"
+        if [[ -n "$secret_hash_before" && "$secret_hash_before" != "$secret_hash_after" ]]; then
+            need_restart="true"
+        fi
+        
+        if [[ "${RESTART_COMPONENTS:-false}" == "true" && -n "${RESTART_COMPONENTS_LIST:-}" && "$need_restart" == "true" ]]; then
+            log_info "Secret 内容已变化，重启使用该 Secret 的组件..."
             IFS=',' read -ra COMPONENTS <<< "${RESTART_COMPONENTS_LIST}"
             for component in "${COMPONENTS[@]}"; do
                 component=$(echo "$component" | xargs)
@@ -147,6 +163,8 @@ main() {
                     log_warn "组件 $component 不存在或重启失败"
                 fi
             done
+        elif [[ "${RESTART_COMPONENTS:-false}" == "true" && -n "${RESTART_COMPONENTS_LIST:-}" && "$need_restart" == "false" ]]; then
+            log_info "Secret 内容未变化，跳过重启组件（避免不必要的 Pod Terminating）"
         fi
     fi
     
