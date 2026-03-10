@@ -9,7 +9,9 @@ global:
     - name: harbor-registry-secret
   security:
     allowInsecureImages: true
-  storageClass: "nfs-2"
+  # 复用模式下不再通过全局 storageClass 为 Neo4j 创建新的 PVC，仅使用 existingClaim。
+  defaultStorageClass: ""
+  storageClass: ""
 
 image:
   registry: harbor.sunmoonai.com:30443

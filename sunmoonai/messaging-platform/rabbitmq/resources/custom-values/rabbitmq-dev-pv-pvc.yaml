@@ -11,7 +11,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   nfs:
     server: 172.28.46.235
-    path: /data/kind-nfs/messaging-platform-dev-data-rabbitmq-sunmoonai-0-pvc-f1a83be6-33a7-4227-8a90-9374eca66f66
+    path: /data/kind-nfs/messaging-platform-dev-data-rabbitmq-sunmoonai-0-pvc-7245a48e-73a1-4d6a-a1bb-cbb8600bf385
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
