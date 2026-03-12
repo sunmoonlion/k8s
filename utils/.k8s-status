@@ -1,3 +1,5 @@
-CURRENT_MODE=direct
-CURRENT_KUBECONFIG=/home/zym/.kube/cluster-c1-admin.conf
-TUNNEL_PID=57602
+MODE=direct
+TIMESTAMP=1773287295
+LOCAL_PORT=6442
+PID=76413
+CURRENT_KUBECONFIG=/home/zym/.kube/cluster-c2-admin.conf
