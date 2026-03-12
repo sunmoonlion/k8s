@@ -5,7 +5,19 @@ THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$THIS_DIR")"
 # k8s 根目录：.../k8s（用于引用 utils 下的通用脚本）
 # THIS_DIR=.../k8s/sunmoonai/messaging-platform/deploy-messaging-platform-all
-K8S_ROOT_DIR="$(cd "$THIS_DIR/../../.." && pwd)"
+K8S_ROOT_DIR=""
+search_dir="$THIS_DIR"
+while [[ "$search_dir" != "/" ]]; do
+    if [[ -f "$search_dir/utils/cluster-arg-parser.sh" ]]; then
+        K8S_ROOT_DIR="$search_dir"
+        break
+    fi
+    search_dir="$(dirname "$search_dir")"
+done
+if [[ -z "$K8S_ROOT_DIR" ]]; then
+    echo "[ERROR] 无法定位 k8s 根目录（未找到 utils/cluster-arg-parser.sh），THIS_DIR=$THIS_DIR" 1>&2
+    exit 1
+fi
 
 # 集群参数解析（轻量，无连接副作用）
 source "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh"

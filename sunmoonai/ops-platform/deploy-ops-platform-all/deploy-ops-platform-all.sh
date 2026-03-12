@@ -5,7 +5,19 @@ THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$THIS_DIR")"
 # k8s 根目录：.../k8s（用于引用 utils 下的通用脚本）
 # THIS_DIR=.../k8s/sunmoonai/ops-platform/deploy-ops-platform-all
-K8S_ROOT_DIR="$(cd "$THIS_DIR/../../.." && pwd)"
+K8S_ROOT_DIR=""
+search_dir="$THIS_DIR"
+while [[ "$search_dir" != "/" ]]; do
+    if [[ -f "$search_dir/utils/cluster-arg-parser.sh" ]]; then
+        K8S_ROOT_DIR="$search_dir"
+        break
+    fi
+    search_dir="$(dirname "$search_dir")"
+done
+if [[ -z "$K8S_ROOT_DIR" ]]; then
+    echo "[ERROR] 无法定位 k8s 根目录（未找到 utils/cluster-arg-parser.sh），THIS_DIR=$THIS_DIR" 1>&2
+    exit 1
+fi
 
 # 集群参数解析（轻量，无连接副作用）
 source "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh"
@@ -38,8 +50,8 @@ if [[ -f "$OPS_PLATFORM_CONFIG_FILE" ]]; then
   source "$OPS_PLATFORM_CONFIG_FILE"
   
   # 加载集群配置映射函数（使用 utils 中的通用函数）
-  if [[ -f "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh" ]]; then
-    source "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh"
+  if [[ -f "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh" ]]; then
+    source "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh"
     # 应用集群配置映射（使用 CLUSTER 环境变量，支持 C1_/C2_/C3_/KIND_ 前缀配置）
     apply_cluster_config_mapping
   fi

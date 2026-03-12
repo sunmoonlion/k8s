@@ -8,6 +8,19 @@ export LANG=C
 export LANGUAGE=C
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
+K8S_ROOT_DIR=""
+search_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+while [[ "$search_dir" != "/" ]]; do
+  if [[ -f "$search_dir/utils/cluster-arg-parser.sh" ]]; then
+    K8S_ROOT_DIR="$search_dir"
+    break
+  fi
+  search_dir="$(dirname "$search_dir")"
+done
+if [[ -z "$K8S_ROOT_DIR" ]]; then
+  echo "[ERROR] 无法定位 k8s 根目录（未找到 utils/cluster-arg-parser.sh），SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" 1>&2
+  exit 1
+fi
 
 log_info(){ echo -e "[INFO] $*"; }
 log_warn(){ echo -e "\033[33m[WARN]\033[0m $*"; }
@@ -81,21 +94,10 @@ load_config_file(){
   # 如果 CLUSTER 未设置，尝试从全局配置文件读取默认集群
   local cluster_selected="${CLUSTER:-}"
   if [[ -z "$cluster_selected" ]]; then
-    # 尝试加载 cluster-config-mapping.sh 以获取全局默认集群
-    # 尝试多个可能的路径
-    local mapping_script=""
-    for path in "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh" \
-                "$HOME/k8s/utils/cluster-config-mapping.sh" \
-                "$PROJECT_ROOT/../utils/cluster-config-mapping.sh"; do
-      if [[ -f "$path" ]]; then
-        mapping_script="$path"
-        break
-      fi
-    done
-    
-    if [[ -n "$mapping_script" ]]; then
+    # 通过 k8s 根目录定位 cluster-config-mapping.sh，获取全局默认集群
+    if [[ -f "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh" ]]; then
       # shellcheck disable=SC1090
-      source "$mapping_script"
+      source "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh"
       cluster_selected=$(get_global_default_cluster)
     else
       # 如果无法加载，回退到 C1（与原来行为一致）
@@ -158,8 +160,8 @@ load_config_file(){
   done
   
   # 应用集群配置映射（使用 utils 中的通用函数）
-  if [[ -f "$PROJECT_ROOT/../utils/cluster-config-mapping.sh" ]]; then
-    source "$PROJECT_ROOT/../utils/cluster-config-mapping.sh"
+  if [[ -f "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh" ]]; then
+    source "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh"
     apply_cluster_config_mapping "$cluster_selected"
   fi
   
