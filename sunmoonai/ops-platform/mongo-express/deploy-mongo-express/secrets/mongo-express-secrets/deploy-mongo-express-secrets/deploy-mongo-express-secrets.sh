@@ -39,58 +39,6 @@ fi
 # 解析命令行参数（优先于配置文件加载，确保命令行参数优先级最高）
 declare -a PARSED_ARGS
 
-parse_cluster_arg() {
-    local args=("$@")
-    PARSED_ARGS=()
-    local cluster_value=""
-    local i=0
-    
-    while [[ $i -lt ${#args[@]} ]]; do
-        # 启用大小写不敏感匹配
-        shopt -s nocasematch
-        case "${args[$i]}" in
-            --[cC][lL][uU][sS][tT][eE][rR]=*)
-                # 支持等号形式：--cluster=C1 或 --CLUSTER=C1（大小写不敏感）
-                cluster_value="${args[$i]#*=}"
-                # 检查 cluster_value 是否为空
-                if [[ -z "${cluster_value:-}" ]] || [[ "${cluster_value}" == "" ]]; then
-                    log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
-                    exit 1
-                fi
-                cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                export CLUSTER="$cluster_value"
-                log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                ;;
-            --[cC][lL][uU][sS][tT][eE][rR]|-c|-C)
-                # 支持空格形式：--cluster C1 或 -c C1（大小写不敏感）
-                if [[ $((i+1)) -lt ${#args[@]} ]]; then
-                    cluster_value="${args[$((i+1))]}"
-                    # 检查 cluster_value 是否为空（包括空字符串和只包含空白字符的情况）
-                    if [[ -z "${cluster_value:-}" ]] || [[ "${cluster_value}" == "" ]] || [[ -z "$(echo "$cluster_value" | tr -d '[:space:]')" ]]; then
-                        log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
-                        log_error "   检测到 --cluster 参数，但值为空或只包含空白字符"
-                        exit 1
-                    fi
-                    cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                    export CLUSTER="$cluster_value"
-                    log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                    i=$((i+1))
-                else
-                    log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
-                    log_error "   检测到 --cluster 参数，但后面没有参数"
-                    exit 1
-                fi
-                ;;
-            *)
-                PARSED_ARGS+=("${args[$i]}")
-                ;;
-        esac
-        # 恢复大小写敏感匹配
-        shopt -u nocasematch
-        i=$((i+1))
-    done
-}
-
 # 生成随机密码
 generate_password() {
     local length="${1:-16}"
@@ -138,7 +86,7 @@ ORIGINAL_ARGS=("$@")
 if [[ $# -gt 0 ]]; then
     log_info "原始参数数量: $#"
     log_info "原始参数: ${ORIGINAL_ARGS[@]}"
-    parse_cluster_arg "$@"
+    unified_parse_cluster_arg "$@"
     log_info "解析后参数数量: ${#PARSED_ARGS[@]}"
     log_info "解析后参数: ${PARSED_ARGS[@]}"
     # 注意：不要覆盖 ORIGINAL_ARGS，保留原始参数用于后续处理
@@ -176,58 +124,6 @@ DEFAULT_ENVIRONMENT="development"
 
 # 解析命令行参数（支持 --cluster 或 -c）
 declare -a PARSED_ARGS
-
-parse_cluster_arg() {
-    local args=("$@")
-    PARSED_ARGS=()
-    local cluster_value=""
-    local i=0
-    
-    while [[ $i -lt ${#args[@]} ]]; do
-        # 启用大小写不敏感匹配
-        shopt -s nocasematch
-        case "${args[$i]}" in
-            --[cC][lL][uU][sS][tT][eE][rR]=*)
-                # 支持等号形式：--cluster=C1 或 --CLUSTER=C1（大小写不敏感）
-                cluster_value="${args[$i]#*=}"
-                # 检查 cluster_value 是否为空
-                if [[ -z "${cluster_value:-}" ]] || [[ "${cluster_value}" == "" ]]; then
-                    log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
-                    exit 1
-                fi
-                cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                export CLUSTER="$cluster_value"
-                log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                ;;
-            --[cC][lL][uU][sS][tT][eE][rR]|-c|-C)
-                # 支持空格形式：--cluster C1 或 -c C1（大小写不敏感）
-                if [[ $((i+1)) -lt ${#args[@]} ]]; then
-                    cluster_value="${args[$((i+1))]}"
-                    # 检查 cluster_value 是否为空（包括空字符串和只包含空白字符的情况）
-                    if [[ -z "${cluster_value:-}" ]] || [[ "${cluster_value}" == "" ]] || [[ -z "$(echo "$cluster_value" | tr -d '[:space:]')" ]]; then
-                        log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
-                        log_error "   检测到 --cluster 参数，但值为空或只包含空白字符"
-                        exit 1
-                    fi
-                    cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                    export CLUSTER="$cluster_value"
-                    log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                    i=$((i+1))
-                else
-                    log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
-                    log_error "   检测到 --cluster 参数，但后面没有参数"
-                    exit 1
-                fi
-                ;;
-            *)
-                PARSED_ARGS+=("${args[$i]}")
-                ;;
-        esac
-        # 恢复大小写敏感匹配
-        shopt -u nocasematch
-        i=$((i+1))
-    done
-}
 
 # 生成随机密码
 generate_password() {

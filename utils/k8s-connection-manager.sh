@@ -1,12 +1,20 @@
 #!/bin/bash
 
+# 集群参数解析（轻量，无连接副作用）
+# 注意：本脚本位于 k8s/utils 下，不依赖 PROJECT_ROOT；用脚本路径反推 k8s 根目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+K8S_ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh"
+
+
 # Kubernetes 集群管理脚本
 # 支持跳板机模式和直接访问模式
 
 set -euo pipefail
 
 # 脚本目录
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# SCRIPT_DIR 已在上方初始化，保留此处逻辑兼容
+SCRIPT_DIR="${SCRIPT_DIR:-"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"}"
 CONFIG_FILE="$(dirname "$0")/k8s-admin.conf"
 STATUS_FILE="$SCRIPT_DIR/.k8s-status"
 PID_FILE="$SCRIPT_DIR/.k8s-tunnel.pid"
@@ -1289,66 +1297,13 @@ initialize_environment(){
 }
 
 # 解析集群参数
-parse_cluster_arg() {
-  local args=("$@")
-  local cluster_value=""
-  local i=0
-  
-  while [[ $i -lt ${#args[@]} ]]; do
-    case "${args[$i]}" in
-      --cluster|-c)
-        if [[ $((i+1)) -lt ${#args[@]} ]]; then
-          cluster_value="${args[$((i+1))]}"
-          # 转换为大写
-          cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-          export CLUSTER="$cluster_value"
-          msg "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-          i=$((i+1))  # 跳过下一个参数（集群值），使用显式赋值避免 set -e 问题
-        else
-          err "❌ --cluster 参数需要指定值（如 C1、C2 或 KIND）"
-          exit 1
-        fi
-        ;;
-      --help|-h)
-        cat << EOF
-用法: $0 [选项]
-
-选项:
-  --cluster, -c <C1|C2|KIND>  选择集群（远程 C1/C2/... 或本地 KIND）
-                              也可以通过环境变量 CLUSTER 设置
-  --help, -h                显示此帮助信息
-
-示例:
-  $0 --cluster C1          连接到集群 C1
-  $0 -c C2                 连接到集群 C2
-  CLUSTER=C1 $0            通过环境变量连接到集群 C1
-
-EOF
-        exit 0
-        ;;
-      *)
-        warn "⚠️  未知参数: ${args[$i]}，将被忽略"
-        ;;
-    esac
-    i=$((i+1))  # 使用显式赋值，避免 ((i++)) 在某些情况下导致的问题
-  done
-  
-  # 验证集群值（如果设置了）
-  if [[ -n "${CLUSTER:-}" ]]; then
-    # 支持 C{数字}（远程集群）和 KIND（本地 Kind 集群）
-    if [[ ! "${CLUSTER}" =~ ^C[0-9]+$ && "${CLUSTER}" != "KIND" ]]; then
-      err "❌ 无效的集群值: ${CLUSTER} (格式必须为 C{数字}，如 C1, C2, C3，或 KIND)"
-      exit 1
-    fi
-  fi
-}
 
 # 主函数
 main(){
   # 注意：原有的 trap cleanup EXIT INT TERM 已经设置，这里不需要重复设置
   
   # 解析集群参数（支持 --cluster 或 -c，或环境变量）
-  parse_cluster_arg "$@"
+  unified_parse_cluster_arg "$@"
   
   # 检查依赖
   if ! command -v ssh >/dev/null 2>&1; then

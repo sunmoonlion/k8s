@@ -15,6 +15,10 @@ export LANGUAGE=C
 THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$THIS_DIR")"   # k8s-deploy 根目录
 
+# 集群参数解析（轻量，无连接副作用）
+source "$PROJECT_ROOT/utils/cluster-arg-parser.sh"
+
+
 # 变量路径
 SCRIPT_DIR="$PROJECT_ROOT"
 STEPS_DIR="$SCRIPT_DIR/steps"
@@ -447,53 +451,6 @@ show_menu(){
 # 使用全局数组存储处理后的参数
 declare -a PARSED_ARGS
 
-parse_cluster_arg() {
-    local args=("$@")
-    PARSED_ARGS=()
-    local cluster_value=""
-    local i=0
-    
-    while [[ $i -lt ${#args[@]} ]]; do
-        # 启用大小写不敏感匹配
-        shopt -s nocasematch
-        case "${args[$i]}" in
-            --[cC][lL][uU][sS][tT][eE][rR]=*)
-                # 支持等号形式：--cluster=C1 或 --CLUSTER=C1（大小写不敏感）
-                cluster_value="${args[$i]#*=}"
-                cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                export CLUSTER="$cluster_value"
-                log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                ;;
-            --[cC][lL][uU][sS][tT][eE][rR]|-c|-C)
-                # 支持空格形式：--cluster C1 或 -c C1（大小写不敏感）
-                if [[ $((i+1)) -lt ${#args[@]} ]]; then
-                    cluster_value="${args[$((i+1))]}"
-                    cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                    export CLUSTER="$cluster_value"
-                    log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                    i=$((i+1))
-                else
-                    log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
-                    exit 1
-                fi
-                ;;
-            *)
-                PARSED_ARGS+=("${args[$i]}")
-                ;;
-        esac
-        # 恢复大小写敏感匹配
-        shopt -u nocasematch
-        i=$((i+1))
-    done
-    
-    if [[ -n "$cluster_value" ]]; then
-        if [[ -f "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh" ]]; then
-            source "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh"
-            apply_cluster_config_mapping "$cluster_value"
-        fi
-    fi
-}
-
 main(){
     banner
     
@@ -510,7 +467,7 @@ main(){
     fi
     
     # 解析集群参数（支持 --cluster 或 -c，或环境变量）
-    parse_cluster_arg "$@"
+    unified_parse_cluster_arg "$@"
     
     # 使用解析后的参数数组
     set -- "${PARSED_ARGS[@]}"

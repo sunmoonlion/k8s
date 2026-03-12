@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+
+# 集群参数解析（轻量，无连接副作用）
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+K8S_ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+source "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh"
+
 set -euo pipefail
 
 # =============================================================================
@@ -7,7 +13,7 @@ set -euo pipefail
 # - 在远端节点执行：upload -> load -> tag -> push -> cleanup（可选）
 # - 不绑定任何特定 Registry；目标引用可基于 REGISTRY_URL/PROJECT_NAME 构造，或直接传入完整 target_ref
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="${SCRIPT_DIR:-"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"}"
 CONF_FILE="${LOADIMAGE_CONF:-$SCRIPT_DIR/loadimage.conf}"
 
 # 加载集群配置映射函数（如果存在）
@@ -25,38 +31,6 @@ SAVED_CLEANUP_REMOTE_TAR_AFTER_PUSH="${CLEANUP_REMOTE_TAR_AFTER_PUSH:-}"
 # =============================================================================
 # 在加载配置之前解析，以便后续的 apply_cluster_config_mapping 可以使用
 # 注意：只有在脚本被直接调用时才解析参数，被 source 时跳过
-parse_cluster_arg() {
-  local args=("$@")
-  PARSED_ARGS=()
-  local cluster_value=""
-  local i=0
-  
-  while [[ $i -lt ${#args[@]} ]]; do
-    shopt -s nocasematch
-    case "${args[$i]}" in
-      --cluster=*)
-        # 支持等号形式：--cluster=C1 或 --CLUSTER=C1（大小写不敏感）
-        cluster_value="${args[$i]#*=}"
-        cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-        export CLUSTER="$cluster_value"
-        ;;
-      --cluster|-c)
-        # 支持空格形式：--cluster C1 或 -c C1（大小写不敏感）
-        if [[ $((i+1)) -lt ${#args[@]} ]]; then
-          cluster_value="${args[$((i+1))]}"
-          cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-          export CLUSTER="$cluster_value"
-          i=$((i+1))
-        fi
-        ;;
-      *)
-        PARSED_ARGS+=("${args[$i]}")
-        ;;
-    esac
-    shopt -u nocasematch
-    i=$((i+1))
-  done
-}
 
 # 保存原始参数（用于 main 函数）
 ORIGINAL_MAIN_ARGS=("$@")
@@ -69,7 +43,7 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
   ORIGINAL_MAIN_ARGS=("$@")
   # 解析集群参数（如果提供）
   if [[ $# -gt 0 ]]; then
-    parse_cluster_arg "$@"
+    unified_parse_cluster_arg "$@"
     # 保存解析后的参数（移除 --cluster 参数）
     ORIGINAL_MAIN_ARGS=("${PARSED_ARGS[@]}")
   fi

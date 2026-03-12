@@ -27,53 +27,11 @@ source "$APP_ROOT/../../../k8s/utils/unified-deployment-template.sh"
 SCRIPT_DIR="$DOCUMENT_CONVERTER_SCRIPT_DIR"
 
 # 解析命令行参数
-parse_cluster_arg() {
-    local args=("$@")
-    PARSED_ARGS=()
-    local cluster_value=""
-    local i=0
-    
-    while [[ $i -lt ${#args[@]} ]]; do
-        shopt -s nocasematch
-        case "${args[$i]}" in
-            --[cC][lL][uU][sS][tT][eE][rR]=*)
-                cluster_value="${args[$i]#*=}"
-                cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                export CLUSTER="$cluster_value"
-                log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                ;;
-            --[cC][lL][uU][sS][tT][eE][rR]|-c|-C)
-                if [[ $((i+1)) -lt ${#args[@]} ]]; then
-                    cluster_value="${args[$((i+1))]}"
-                    cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                    export CLUSTER="$cluster_value"
-                    log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                    i=$((i+1))
-                else
-                    log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
-                    exit 1
-                fi
-                ;;
-            *)
-                PARSED_ARGS+=("${args[$i]}")
-                ;;
-        esac
-        shopt -u nocasematch
-        i=$((i+1))
-    done
-    
-    if [[ -n "$cluster_value" ]]; then
-        if [[ -f "$APP_ROOT/../../../../k8s/utils/cluster-config-mapping.sh" ]]; then
-            source "$APP_ROOT/../../../../k8s/utils/cluster-config-mapping.sh"
-            apply_cluster_config_mapping "$cluster_value"
-        fi
-    fi
-}
 
 # 先解析命令行参数（如果提供）
 ORIGINAL_ARGS=("$@")
 if [[ $# -gt 0 ]]; then
-    parse_cluster_arg "$@"
+    unified_parse_cluster_arg "$@"
     ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
 fi
 

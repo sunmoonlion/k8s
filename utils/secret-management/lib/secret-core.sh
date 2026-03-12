@@ -7,6 +7,14 @@
 # 设计: 完全参数化，不依赖组合代码，组件可直接调用
 # =============================================================================
 
+# 兼容：部分部署脚本会依赖 secret-data.sh 中的 prepare_* 辅助函数
+# 这里按需加载，避免“command not found”
+_SECRET_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${_SECRET_LIB_DIR}/secret-data.sh" ]]; then
+    # shellcheck disable=SC1090
+    source "${_SECRET_LIB_DIR}/secret-data.sh"
+fi
+
 # 日志函数（如果未定义）
 # 注意：日志输出到 stderr，确保不影响函数的返回值（通过 stdout）
 log_info() { echo -e "[INFO] $*" >&2; }
@@ -116,7 +124,9 @@ generate_tls_secret_yaml() {
 # =============================================================================
 # 2. Docker Secret 生成函数
 # =============================================================================
-# 用法: generate_docker_secret_yaml --name <name> --namespace <ns> --docker-server <server> --docker-username <user> --docker-password <pass> [--docker-email <email>] --output <path>
+# 用法:
+#   - generate_docker_secret_yaml --name <name> --namespace <ns> --docker-server <server> --docker-username <user> --docker-password <pass> [--docker-email <email>] --output <path>
+#   - generate_docker_secret_yaml --name <name> --namespace <ns> --docker-config <path-to-.dockerconfigjson> --output <path>
 generate_docker_secret_yaml() {
     local secret_name=""
     local secret_namespace=""
@@ -124,6 +134,7 @@ generate_docker_secret_yaml() {
     local docker_username=""
     local docker_password=""
     local docker_email=""
+    local docker_config_path=""
     local output_path=""
     
     # 解析参数
@@ -153,6 +164,10 @@ generate_docker_secret_yaml() {
                 docker_email="$2"
                 shift 2
                 ;;
+            --docker-config)
+                docker_config_path="$2"
+                shift 2
+                ;;
             --output)
                 output_path="$2"
                 shift 2
@@ -165,23 +180,37 @@ generate_docker_secret_yaml() {
     done
     
     # 验证必需参数
-    if [[ -z "$secret_name" || -z "$secret_namespace" || -z "$docker_server" || -z "$docker_username" || -z "$docker_password" || -z "$output_path" ]]; then
+    if [[ -z "$secret_name" || -z "$secret_namespace" || -z "$output_path" ]]; then
         log_error "缺少必需参数"
         log_error "用法: generate_docker_secret_yaml --name <name> --namespace <ns> --docker-server <server> --docker-username <user> --docker-password <pass> [--docker-email <email>] --output <path>"
+        log_error "  或: generate_docker_secret_yaml --name <name> --namespace <ns> --docker-config <path> --output <path>"
         return 1
     fi
-    
-    # 生成Docker认证数据
-    local auth_data=""
-    local auth_string=$(echo -n "$docker_username:$docker_password" | base64 -w 0)
-    
-    if [[ -n "$docker_email" ]]; then
-        auth_data="{\"auths\":{\"$docker_server\":{\"username\":\"$docker_username\",\"password\":\"$docker_password\",\"email\":\"$docker_email\",\"auth\":\"$auth_string\"}}}"
+
+    # 两种模式：直接使用 dockerconfigjson 文件 或 账号密码生成
+    local b64_docker_config=""
+    if [[ -n "$docker_config_path" ]]; then
+        if [[ ! -f "$docker_config_path" ]]; then
+            log_error "docker config 文件不存在: $docker_config_path"
+            return 1
+        fi
+        b64_docker_config=$(base64 -w 0 "$docker_config_path")
     else
-        auth_data="{\"auths\":{\"$docker_server\":{\"username\":\"$docker_username\",\"password\":\"$docker_password\",\"auth\":\"$auth_string\"}}}"
+        if [[ -z "$docker_server" || -z "$docker_username" || -z "$docker_password" ]]; then
+            log_error "缺少 Docker 认证参数（需要 --docker-server/--docker-username/--docker-password 或 --docker-config）"
+            return 1
+        fi
+        # 生成Docker认证数据
+        local auth_data=""
+        local auth_string
+        auth_string=$(echo -n "$docker_username:$docker_password" | base64 -w 0)
+        if [[ -n "$docker_email" ]]; then
+            auth_data="{\"auths\":{\"$docker_server\":{\"username\":\"$docker_username\",\"password\":\"$docker_password\",\"email\":\"$docker_email\",\"auth\":\"$auth_string\"}}}"
+        else
+            auth_data="{\"auths\":{\"$docker_server\":{\"username\":\"$docker_username\",\"password\":\"$docker_password\",\"auth\":\"$auth_string\"}}}"
+        fi
+        b64_docker_config=$(echo -n "$auth_data" | base64 -w 0)
     fi
-    
-    local b64_docker_config=$(echo -n "$auth_data" | base64 -w 0)
     
     # 创建输出目录
     mkdir -p "$(dirname "$output_path")"

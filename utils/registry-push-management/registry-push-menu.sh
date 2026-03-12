@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# 集群参数解析（轻量，无连接副作用）
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+K8S_ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+source "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh"
+
+
 # =============================================================================
 # registry-push-management 菜单式管理工具
 # 文件名: registry-push-menu.sh
@@ -14,7 +20,8 @@ export LANG=C
 export LANGUAGE=C
 
 # 脚本目录
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# SCRIPT_DIR 已在上方初始化，保留此处逻辑兼容
+SCRIPT_DIR="${SCRIPT_DIR:-"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"}"
 CONF_FILE="$SCRIPT_DIR/loadimage.conf"
 LOADIMAGE_TOOL="$SCRIPT_DIR/loadimage.sh"
 
@@ -27,51 +34,11 @@ fi
 # =============================================================================
 # 解析命令行参数（支持 --cluster 或 -c 参数）
 # =============================================================================
-parse_cluster_arg() {
-    local args=("$@")
-    PARSED_ARGS=()
-    local cluster_value=""
-    local i=0
-    
-    while [[ $i -lt ${#args[@]} ]]; do
-        shopt -s nocasematch
-        case "${args[$i]}" in
-            --cluster=*)
-                # 支持等号形式：--cluster=C1 或 --CLUSTER=C1（大小写不敏感）
-                cluster_value="${args[$i]#*=}"
-                cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                CURRENT_CLUSTER="$cluster_value"
-                ;;
-            --cluster|-c)
-                # 支持空格形式：--cluster C1 或 -c C1（大小写不敏感）
-                if [[ $((i+1)) -lt ${#args[@]} ]]; then
-                    cluster_value="${args[$((i+1))]}"
-                    cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                    CURRENT_CLUSTER="$cluster_value"
-                    i=$((i+1))
-                else
-                    err "--cluster 参数需要指定值（格式：C1, C2, C3）"
-                    exit 1
-                fi
-                ;;
-            --help|-h)
-                # 显示帮助信息
-                show_usage
-                exit 0
-                ;;
-            *)
-                PARSED_ARGS+=("${args[$i]}")
-                ;;
-        esac
-        shopt -u nocasematch
-        i=$((i+1))
-    done
-}
 
 # 解析命令行参数（如果提供）
 # 注意：解析后的参数会保存到 PARSED_ARGS，用于后续的 main 函数
 if [[ $# -gt 0 ]]; then
-    parse_cluster_arg "$@"
+    unified_parse_cluster_arg "$@"
     # 如果有未识别的参数，显示错误（但 --cluster/-c 参数已经被处理，不会在这里）
     if [[ ${#PARSED_ARGS[@]} -gt 0 ]]; then
         err "未知参数: ${PARSED_ARGS[*]}"

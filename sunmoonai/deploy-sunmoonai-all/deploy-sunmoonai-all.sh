@@ -10,6 +10,12 @@
 # 脚本目录配置
 THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$THIS_DIR")"
+# k8s 根目录：.../k8s（用于引用 utils 下的通用脚本）
+K8S_ROOT_DIR="$(dirname "$PROJECT_ROOT")"
+
+# 集群参数解析（轻量，无连接副作用）
+source "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh"
+
 
 # 颜色输出函数
 red() { echo -e "\033[31m$*\033[0m"; }
@@ -30,58 +36,12 @@ SCRIPT_DIR="$PROJECT_ROOT"
 
 
 # 解析命令行参数（优先于配置文件加载，确保命令行参数优先级最高）
-parse_cluster_arg() {
-    local args=("$@")
-    PARSED_ARGS=()
-    local cluster_value=""
-    local i=0
-    
-    while [[ $i -lt ${#args[@]} ]]; do
-        # 启用大小写不敏感匹配
-        shopt -s nocasematch
-        case "${args[$i]}" in
-            --[cC][lL][uU][sS][tT][eE][rR]=*)
-                # 支持等号形式：--cluster=C1 或 --CLUSTER=C1（大小写不敏感）
-                cluster_value="${args[$i]#*=}"
-                cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                export CLUSTER="$cluster_value"
-                log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                ;;
-            --[cC][lL][uU][sS][tT][eE][rR]|-c|-C)
-                # 支持空格形式：--cluster C1 或 -c C1（大小写不敏感）
-                if [[ $((i+1)) -lt ${#args[@]} ]]; then
-                    cluster_value="${args[$((i+1))]}"
-                    cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                    export CLUSTER="$cluster_value"
-                    log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                    i=$((i+1))
-                else
-                    log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
-                    exit 1
-                fi
-                ;;
-            *)
-                PARSED_ARGS+=("${args[$i]}")
-                ;;
-        esac
-        # 恢复大小写敏感匹配
-        shopt -u nocasematch
-        i=$((i+1))
-    done
-    
-    if [[ -n "$cluster_value" ]]; then
-        if [[ -f "$PROJECT_ROOT/../utils/cluster-config-mapping.sh" ]]; then
-            source "$PROJECT_ROOT/../utils/cluster-config-mapping.sh"
-            apply_cluster_config_mapping "$cluster_value"
-        fi
-    fi
-}
 
 # 先解析命令行参数（如果提供）
 # 保存原始参数，以便在 main 函数中使用
 ORIGINAL_ARGS=("$@")
 if [[ $# -gt 0 ]]; then
-    parse_cluster_arg "$@"
+    unified_parse_cluster_arg "$@"
     ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
 fi
 
@@ -90,8 +50,8 @@ if [[ -f "$SUNMOONAI_CONFIG_FILE" ]]; then
     source "$SUNMOONAI_CONFIG_FILE"
     
     # 加载集群配置映射函数（使用 utils 中的通用函数）
-    if [[ -f "$PROJECT_ROOT/../utils/cluster-config-mapping.sh" ]]; then
-        source "$PROJECT_ROOT/../utils/cluster-config-mapping.sh"
+    if [[ -f "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh" ]]; then
+        source "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh"
         # 应用集群配置映射（使用 CLUSTER 环境变量，支持 C1_* 和 C2_* 前缀配置）
         apply_cluster_config_mapping
     fi
@@ -613,7 +573,7 @@ check_platform_components_status() {
         if [[ -d "$PROJECT_ROOT/infrastructure/deploy-infrastructure-all" ]]; then
             local script_path="$PROJECT_ROOT/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh"
             if [[ -f "$script_path" ]]; then
-                "$script_path" status "$project_id" "infrastructure-dev" "$environment"
+                call_subscript "$script_path" status "$project_id" "infrastructure-dev" "$environment"
             else
                 log_error "❌ 基础设施平台状态检查脚本不存在: $script_path"
             fi
@@ -628,7 +588,7 @@ check_platform_components_status() {
         if [[ -d "$PROJECT_ROOT/ingress-platform/deploy-ingress-platform-all" ]]; then
             local script_path="$PROJECT_ROOT/ingress-platform/deploy-ingress-platform-all/deploy-ingress-platform-all.sh"
             if [[ -f "$script_path" ]]; then
-                "$script_path" status "$project_id" "ingress-platform-dev" "$environment"
+                call_subscript "$script_path" status "$project_id" "ingress-platform-dev" "$environment"
             else
                 log_error "❌ 入口平台状态检查脚本不存在: $script_path"
             fi
@@ -643,7 +603,7 @@ check_platform_components_status() {
         if [[ -d "$PROJECT_ROOT/cicd-platform/deploy-cicd-platform-all" ]]; then
             local script_path="$PROJECT_ROOT/cicd-platform/deploy-cicd-platform-all/deploy-cicd-platform-all.sh"
             if [[ -f "$script_path" ]]; then
-                "$script_path" status "$project_id" "cicd-platform-dev" "$environment"
+                call_subscript "$script_path" status "$project_id" "cicd-platform-dev" "$environment"
             else
                 log_error "❌ CI/CD 平台状态检查脚本不存在: $script_path"
             fi
@@ -656,7 +616,7 @@ check_platform_components_status() {
     if [[ "${data_platform_enabled:-false}" == "true" ]]; then
         log_info "检查数据平台状态..."
         if [[ -f "$PROJECT_ROOT/data-platform/deploy-data-platform-all/deploy-data-platform-all.sh" ]]; then
-            "$PROJECT_ROOT/data-platform/deploy-data-platform-all/deploy-data-platform-all.sh" status "$project_id" "data-platform-dev" "$environment"
+            call_subscript "$PROJECT_ROOT/data-platform/deploy-data-platform-all/deploy-data-platform-all.sh" status "$project_id" "data-platform-dev" "$environment"
         else
             log_warn "⚠️ 数据平台总控脚本不存在"
         fi
@@ -671,7 +631,7 @@ check_platform_components_status() {
     if [[ "${messaging_platform_enabled:-false}" == "true" ]]; then
         log_info "检查消息平台状态..."
         if [[ -f "$PROJECT_ROOT/messaging-platform/deploy-messaging-platform-all/deploy-messaging-platform-all.sh" ]]; then
-            "$PROJECT_ROOT/messaging-platform/deploy-messaging-platform-all/deploy-messaging-platform-all.sh" status "$project_id" "messaging-platform-dev" "$environment"
+            call_subscript "$PROJECT_ROOT/messaging-platform/deploy-messaging-platform-all/deploy-messaging-platform-all.sh" status "$project_id" "messaging-platform-dev" "$environment"
         else
             log_warn "⚠️ 消息平台总控脚本不存在"
         fi
@@ -680,7 +640,7 @@ check_platform_components_status() {
     if [[ "${ops_platform_enabled:-false}" == "true" ]]; then
         log_info "检查运维平台状态..."
         if [[ -f "$PROJECT_ROOT/ops-platform/deploy-ops-platform-all/deploy-lps-platfrom-all.sh" ]]; then
-            "$PROJECT_ROOT/ops-platform/deploy-ops-platform-all/deploy-lps-platfrom-all.sh" status "$project_id" "ops-platform-dev" "$environment"
+            call_subscript "$PROJECT_ROOT/ops-platform/deploy-ops-platform-all/deploy-lps-platfrom-all.sh" status "$project_id" "ops-platform-dev" "$environment"
         else
             log_warn "⚠️ 运维平台总控脚本不存在"
         fi

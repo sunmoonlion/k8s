@@ -3,6 +3,13 @@
 # 脚本目录配置
 THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$THIS_DIR")"
+# k8s 根目录：.../k8s（用于引用 utils 下的通用脚本）
+# THIS_DIR=.../k8s/sunmoonai/data-platform/deploy-data-platform-all
+K8S_ROOT_DIR="$(cd "$THIS_DIR/../../.." && pwd)"
+
+# 集群参数解析（轻量，无连接副作用）
+source "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh"
+
 
 # 颜色输出函数
 red() { echo -e "\033[31m$*\033[0m"; }
@@ -18,53 +25,11 @@ log_warn() { yellow "⚠️  $*"; }
 log_error() { red "❌ $*"; }
 
 # 解析命令行参数
-parse_cluster_arg() {
-    local args=("$@")
-    PARSED_ARGS=()
-    local cluster_value=""
-    local i=0
-    
-    while [[ $i -lt ${#args[@]} ]]; do
-        shopt -s nocasematch
-        case "${args[$i]}" in
-            --[cC][lL][uU][sS][tT][eE][rR]=*)
-                cluster_value="${args[$i]#*=}"
-                cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                export CLUSTER="$cluster_value"
-                log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                ;;
-            --[cC][lL][uU][sS][tT][eE][rR]|-c|-C)
-                if [[ $((i+1)) -lt ${#args[@]} ]]; then
-                    cluster_value="${args[$((i+1))]}"
-                    cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                    export CLUSTER="$cluster_value"
-                    log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                    i=$((i+1))
-                else
-                    log_error "❌ --cluster 参数需要指定值"
-                    exit 1
-                fi
-                ;;
-            *)
-                PARSED_ARGS+=("${args[$i]}")
-                ;;
-        esac
-        shopt -u nocasematch
-        i=$((i+1))
-    done
-    
-    if [[ -n "$cluster_value" ]]; then
-        if [[ -f "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh" ]]; then
-            source "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh"
-            apply_cluster_config_mapping "$cluster_value"
-        fi
-    fi
-}
 
 # 先解析命令行参数
 ORIGINAL_ARGS=("$@")
 if [[ $# -gt 0 ]]; then
-    parse_cluster_arg "$@"
+    unified_parse_cluster_arg "$@"
     ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
 fi
 
@@ -73,8 +38,8 @@ if [[ -f "$DATA_PLATFORM_CONFIG_FILE" ]]; then
   source "$DATA_PLATFORM_CONFIG_FILE"
   
   # 加载集群配置映射函数（使用 utils 中的通用函数）
-  if [[ -f "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh" ]]; then
-    source "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh"
+  if [[ -f "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh" ]]; then
+    source "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh"
     # 应用集群配置映射（使用 CLUSTER 环境变量，支持 C1_/C2_/C3_/KIND_ 前缀配置）
     apply_cluster_config_mapping
   fi
@@ -102,14 +67,15 @@ call_subscript() {
     fi
 }
 
-# 部署子级组件（按优先级）
-deploy_sub_components_by_priority() {
-    local project_id="$1"
-    local namespace="$2"
-    local environment="$3"
-    local dry_run="$4"
+# 执行子级组件（按优先级）
+run_sub_components_by_priority() {
+    local action="$1"
+    local project_id="$2"
+    local namespace="$3"
+    local environment="$4"
+    local dry_run="$5"
     
-    log_info "开始部署子级组件..."
+    log_info "开始执行子级组件: ${action}"
     
     local components=()
     
@@ -175,13 +141,13 @@ deploy_sub_components_by_priority() {
         local component=$(echo "$component_info" | cut -d: -f2)
         local script_path=$(echo "$component_info" | cut -d: -f3)
         
-        log_info "🚀 部署 $component..."
+        log_info "🚀 ${action} $component..."
         
         if [[ -f "$script_path" ]]; then
-            if call_subscript "$script_path" deploy "$project_id" "$namespace" "$environment" "$dry_run"; then
-                log_success "✅ $component 部署成功"
+            if call_subscript "$script_path" "$action" "$project_id" "$namespace" "$environment" "$dry_run"; then
+                log_success "✅ $component ${action} 成功"
             else
-                log_error "❌ $component 部署失败"
+                log_error "❌ $component ${action} 失败"
                 return 1
             fi
         else
@@ -189,22 +155,23 @@ deploy_sub_components_by_priority() {
         fi
     done
     
-    log_success "✅ 所有子级组件部署完成！"
+    log_success "✅ 所有子级组件 ${action} 完成！"
 }
 
-# 主部署函数
-deploy_data_platform() {
-    local project_id="${1:-$DEFAULT_PROJECT_ID}"
-    local namespace="${2:-$DEFAULT_NAMESPACE}"
-    local environment="${3:-$DEFAULT_ENVIRONMENT}"
-    local dry_run="${4:-false}"
+# 主函数（按 action 执行）
+run_data_platform() {
+    local action="$1"
+    local project_id="${2:-$DEFAULT_PROJECT_ID}"
+    local namespace="${3:-$DEFAULT_NAMESPACE}"
+    local environment="${4:-$DEFAULT_ENVIRONMENT}"
+    local dry_run="${5:-false}"
     
-    log_info "开始部署 Data Platform..."
+    log_info "开始执行 Data Platform: ${action}"
     log_info "项目: $project_id, 命名空间: $namespace, 环境: $environment"
     
-    deploy_sub_components_by_priority "$project_id" "$namespace" "$environment" "$dry_run"
+    run_sub_components_by_priority "$action" "$project_id" "$namespace" "$environment" "$dry_run"
     
-    log_success "✅ Data Platform 部署完成！"
+    log_success "✅ Data Platform ${action} 完成！"
 }
 
 # 主函数
@@ -216,7 +183,7 @@ main() {
     fi
     
     local action="${1:-deploy}"
-    if [[ "$action" == "deploy" || "$action" == "uninstall" || "$action" == "status" ]]; then
+    if [[ "$action" == "deploy" || "$action" == "uninstall" || "$action" == "status" || "$action" == "logs" ]]; then
         shift
     fi
     
@@ -225,7 +192,7 @@ main() {
     local environment="${3:-${ENVIRONMENT:-$DEFAULT_ENVIRONMENT}}"
     local dry_run="${4:-false}"
     
-    deploy_data_platform "$project_id" "$namespace" "$environment" "$dry_run"
+    run_data_platform "$action" "$project_id" "$namespace" "$environment" "$dry_run"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

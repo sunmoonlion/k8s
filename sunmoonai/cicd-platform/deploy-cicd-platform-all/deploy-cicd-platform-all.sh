@@ -3,6 +3,13 @@
 # 脚本目录配置
 THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$THIS_DIR")"
+# k8s 根目录：.../k8s（用于引用 utils 下的通用脚本）
+# THIS_DIR=.../k8s/sunmoonai/cicd-platform/deploy-cicd-platform-all
+K8S_ROOT_DIR="$(cd "$THIS_DIR/../../.." && pwd)"
+
+# 集群参数解析（轻量，无连接副作用）
+source "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh"
+
 
 # 颜色输出函数
 red() { echo -e "\033[31m$*\033[0m"; }
@@ -18,53 +25,11 @@ log_warn() { yellow "⚠️  $*"; }
 log_error() { red "❌ $*"; }
 
 # 解析命令行参数
-parse_cluster_arg() {
-    local args=("$@")
-    PARSED_ARGS=()
-    local cluster_value=""
-    local i=0
-    
-    while [[ $i -lt ${#args[@]} ]]; do
-        shopt -s nocasematch
-        case "${args[$i]}" in
-            --[cC][lL][uU][sS][tT][eE][rR]=*)
-                cluster_value="${args[$i]#*=}"
-                cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                export CLUSTER="$cluster_value"
-                log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                ;;
-            --[cC][lL][uU][sS][tT][eE][rR]|-c|-C)
-                if [[ $((i+1)) -lt ${#args[@]} ]]; then
-                    cluster_value="${args[$((i+1))]}"
-                    cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                    export CLUSTER="$cluster_value"
-                    log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                    i=$((i+1))
-                else
-                    log_error "❌ --cluster 参数需要指定值"
-                    exit 1
-                fi
-                ;;
-            *)
-                PARSED_ARGS+=("${args[$i]}")
-                ;;
-        esac
-        shopt -u nocasematch
-        i=$((i+1))
-    done
-    
-    if [[ -n "$cluster_value" ]]; then
-        if [[ -f "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh" ]]; then
-            source "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh"
-            apply_cluster_config_mapping "$cluster_value"
-        fi
-    fi
-}
 
 # 先解析命令行参数
 ORIGINAL_ARGS=("$@")
 if [[ $# -gt 0 ]]; then
-    parse_cluster_arg "$@"
+    unified_parse_cluster_arg "$@"
     ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
 fi
 

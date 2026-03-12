@@ -18,60 +18,16 @@ source "$PROJECT_ROOT/../../../utils/unified-deployment-template.sh"
 # 恢复 Mongo Express 脚本的目录路径
 SCRIPT_DIR="$MONGO_EXPRESS_SCRIPT_DIR"
 
-# 解析命令行参数（优先于配置文件加载，确保命令行参数优先级最高）
-parse_cluster_arg() {
-    local args=("$@")
-    PARSED_ARGS=()
-    local cluster_value=""
-    local i=0
-    
-    while [[ $i -lt ${#args[@]} ]]; do
-        # 启用大小写不敏感匹配
-        shopt -s nocasematch
-        case "${args[$i]}" in
-            --[cC][lL][uU][sS][tT][eE][rR]=*)
-                # 支持等号形式：--cluster=C1 或 --CLUSTER=C1（大小写不敏感）
-                cluster_value="${args[$i]#*=}"
-                cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                export CLUSTER="$cluster_value"
-                log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                ;;
-            --[cC][lL][uU][sS][tT][eE][rR]|-c|-C)
-                # 支持空格形式：--cluster C1 或 -c C1（大小写不敏感）
-                if [[ $((i+1)) -lt ${#args[@]} ]]; then
-                    cluster_value="${args[$((i+1))]}"
-                    cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                    export CLUSTER="$cluster_value"
-                    log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                    i=$((i+1))
-                else
-                    log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
-                    exit 1
-                fi
-                ;;
-            *)
-                PARSED_ARGS+=("${args[$i]}")
-                ;;
-        esac
-        # 恢复大小写敏感匹配
-        shopt -u nocasematch
-        i=$((i+1))
-    done
-    
-    if [[ -n "$cluster_value" ]]; then
-        if [[ -f "$PROJECT_ROOT/utils/cluster-config-mapping.sh" ]]; then
-            source "$PROJECT_ROOT/utils/cluster-config-mapping.sh"
-            apply_cluster_config_mapping "$cluster_value"
-        fi
-    fi
-}
-
-# 先解析命令行参数（如果提供）
+# 先解析命令行参数中的集群选择（下沉到统一模板）
 # 保存原始参数，以便在 main 函数中使用
 ORIGINAL_ARGS=("$@")
 if [[ $# -gt 0 ]]; then
-    parse_cluster_arg "$@"
-    ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
+    if type unified_parse_cluster_arg >/dev/null 2>&1; then
+        unified_parse_cluster_arg "$@"
+        ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
+    else
+        log_warn "⚠️  unified_parse_cluster_arg 不存在，跳过集群参数解析（将依赖 CLUSTER/default_cluster）"
+    fi
 fi
 
 MONGO_EXPRESS_CONFIG_FILE="$SCRIPT_DIR/deploy-mongo-express.conf"
@@ -235,15 +191,60 @@ process_mongo_express_values() {
         fi
         sed -i "s/{{MONGO_EXPRESS_UNIFIED_HOST}}/${MONGO_EXPRESS_UNIFIED_HOST:-llmops.sunmoonai.com}/g" "$mongo_express_values_file"
         
-        # MongoDB 连接配置变量替换（从配置文件读取）
-        # Kind 下集群内 DNS 常报 EAI_AGAIN，改用 MongoDB Service ClusterIP 直连
-        local mongodb_host="${MONGODB_EXTERNAL_HOST:-llmops.sunmoonai.com}"
-        if mongodb_cluster_ip=$(kubectl get svc -n data-platform-dev mongodb-sunmoonai -o jsonpath='{.spec.clusterIP}' 2>/dev/null) && [[ -n "$mongodb_cluster_ip" ]]; then
-            mongodb_host="$mongodb_cluster_ip"
-            log_info "Kind/集群内: 使用 MongoDB ClusterIP $mongodb_host 替代 FQDN（避免 DNS EAI_AGAIN）" >&2
+        # MongoDB 连接配置变量替换（从配置文件读取/自动探测）
+        # 目标：避免硬编码 Service 名，且在远程集群下优先使用 Service ClusterIP（减少 DNS 抖动）
+        local mongodb_ns="${MONGODB_NAMESPACE:-data-platform-dev}"
+        local mongodb_svc="${MONGODB_SERVICE_NAME:-}"
+        local mongodb_port="${MONGODB_EXTERNAL_PORT:-27017}"
+
+        # 1) 若未显式指定 service name，尝试按 label 自动探测（name=mongodb），并优先挑选暴露 27017 端口的 Service
+        if [[ -z "$mongodb_svc" ]]; then
+            local svc_names=()
+            mapfile -t svc_names < <(kubectl get svc -n "$mongodb_ns" -l app.kubernetes.io/name=mongodb -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null || true)
+            for s in "${svc_names[@]}"; do
+                [[ -z "${s//[[:space:]]/}" ]] && continue
+                local has_port=""
+                has_port=$(kubectl get svc -n "$mongodb_ns" "$s" -o jsonpath='{.spec.ports[?(@.port==27017)].port}' 2>/dev/null || true)
+                if [[ -n "$has_port" ]]; then
+                    mongodb_svc="$s"
+                    break
+                fi
+            done
+            # 若没找到显式 27017，再退回第一个匹配的 mongodb service
+            if [[ -z "$mongodb_svc" && ${#svc_names[@]} -gt 0 ]]; then
+                mongodb_svc="${svc_names[0]}"
+            fi
         fi
+
+        # 2) 若还探测不到，才回退到配置里的 host（保持兼容）
+        local mongodb_host=""
+        local mongodb_host_source=""
+        if [[ -n "$mongodb_svc" ]]; then
+            local mongodb_cluster_ip=""
+            mongodb_cluster_ip=$(kubectl get svc -n "$mongodb_ns" "$mongodb_svc" -o jsonpath='{.spec.clusterIP}' 2>/dev/null || true)
+            if [[ -n "$mongodb_cluster_ip" ]]; then
+                mongodb_host="$mongodb_cluster_ip"
+                mongodb_host_source="clusterIP"
+                log_info "集群内: 使用 MongoDB Service ClusterIP ${mongodb_host}（svc=${mongodb_svc}.${mongodb_ns}）" >&2
+            else
+                mongodb_host="${mongodb_svc}.${mongodb_ns}.svc.cluster.local"
+                mongodb_host_source="fqdn"
+                log_info "集群内: 使用 MongoDB Service FQDN ${mongodb_host}" >&2
+            fi
+        else
+            mongodb_host="${MONGODB_EXTERNAL_HOST:-}"
+            if [[ -z "$mongodb_host" ]]; then
+                mongodb_host="mongodb.${mongodb_ns}.svc.cluster.local"
+            fi
+            mongodb_host_source="fallback"
+            log_warn "未能自动探测 MongoDB Service，回退使用配置 MONGODB_EXTERNAL_HOST=${mongodb_host}" >&2
+        fi
+
+        # 输出最终解析结果，方便定位 Init:0/1（等待 MongoDB）问题
+        log_info "MongoDB 连接目标: host=${mongodb_host} port=${mongodb_port} ns=${mongodb_ns} svc=${mongodb_svc:-<auto-none>} source=${mongodb_host_source}" >&2
+
         sed -i "s/{{MONGODB_EXTERNAL_HOST}}/${mongodb_host}/g" "$mongo_express_values_file"
-        sed -i "s/{{MONGODB_EXTERNAL_PORT}}/${MONGODB_EXTERNAL_PORT:-27017}/g" "$mongo_express_values_file"
+        sed -i "s/{{MONGODB_EXTERNAL_PORT}}/${mongodb_port}/g" "$mongo_express_values_file"
         
         # 输出处理后的文件路径
         echo "$mongo_express_values_file"
@@ -325,6 +326,11 @@ check_mongo_express_status() {
     local label_selector="app.kubernetes.io/instance=$release_name"
     
     log_info "检查 Mongo Express 部署状态..."
+
+    # 确保 kubectl/helm 可连集群（避免主流程已清理隧道后 status 误判为失败）
+    if type setup_kubectl_environment >/dev/null 2>&1; then
+        setup_kubectl_environment || true
+    fi
     
     # 检查 Helm Release
     if helm list -n "$namespace" | grep -q "$release_name"; then

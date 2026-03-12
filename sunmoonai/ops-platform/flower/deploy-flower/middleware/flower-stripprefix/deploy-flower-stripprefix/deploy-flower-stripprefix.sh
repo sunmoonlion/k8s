@@ -11,59 +11,12 @@ FLOWER_STRIPPREFIX_CONFIG_FILE="$SCRIPT_DIR/deploy-flower-stripprefix.conf"
 FLOWER_STRIPPREFIX_FILE="$(dirname "$SCRIPT_DIR")/flower-stripprefix.yaml"
 
 # 解析命令行参数（优先于配置文件加载，确保命令行参数优先级最高）
-parse_cluster_arg() {
-    local args=("$@")
-    PARSED_ARGS=()
-    local cluster_value=""
-    local i=0
-    
-    while [[ $i -lt ${#args[@]} ]]; do
-        # 启用大小写不敏感匹配
-        shopt -s nocasematch
-        case "${args[$i]}" in
-            --[cC][lL][uU][sS][tT][eE][rR]=*)
-                # 支持等号形式：--cluster=C1 或 --CLUSTER=C1（大小写不敏感）
-                cluster_value="${args[$i]#*=}"
-                cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                export CLUSTER="$cluster_value"
-                log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                ;;
-            --[cC][lL][uU][sS][tT][eE][rR]|-c|-C)
-                # 支持空格形式：--cluster C1 或 -c C1（大小写不敏感）
-                if [[ $((i+1)) -lt ${#args[@]} ]]; then
-                    cluster_value="${args[$((i+1))]}"
-                    cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                    export CLUSTER="$cluster_value"
-                    log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                    i=$((i+1))
-                else
-                    log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
-                    exit 1
-                fi
-                ;;
-            *)
-                PARSED_ARGS+=("${args[$i]}")
-                ;;
-        esac
-        # 恢复大小写敏感匹配
-        shopt -u nocasematch
-        i=$((i+1))
-    done
-    
-    if [[ -n "$cluster_value" ]]; then
-        local cluster_config_file="$(dirname "$0")/../../../../../../../utils/cluster-config-mapping.sh"
-        if [[ -f "$cluster_config_file" ]]; then
-            source "$cluster_config_file"
-            apply_cluster_config_mapping "$cluster_value"
-        fi
-    fi
-}
 
 # 先解析命令行参数（如果提供）
 # 保存原始参数，以便在 main 函数中使用
 ORIGINAL_ARGS=("$@")
 if [[ $# -gt 0 ]]; then
-    parse_cluster_arg "$@"
+    unified_parse_cluster_arg "$@"
     ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
 fi
 

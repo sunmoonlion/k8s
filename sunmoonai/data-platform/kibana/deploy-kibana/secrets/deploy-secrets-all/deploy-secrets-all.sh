@@ -16,92 +16,36 @@ else
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 fi
 
-# 计算项目根目录（从当前脚本位置向上查找）
-if [[ -z "${PROJECT_ROOT:-}" ]]; then
-    # 从 deploy-secrets-all/deploy-secrets-all.sh 向上到 kibana/deploy-kibana
-    # deploy-secrets-all.sh -> deploy-secrets-all/ -> secrets/ -> deploy-kibana/
-    # 所以是向上2级，不是3级
-    PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# 自动定位 k8s 根目录（向上查找 utils/unified-deployment-template.sh）
+PROJECT_ROOT=""
+search_dir="$SCRIPT_DIR"
+while [[ "$search_dir" != "/" ]]; do
+    if [[ -f "$search_dir/utils/unified-deployment-template.sh" ]]; then
+        PROJECT_ROOT="$search_dir"
+        break
+    fi
+    search_dir="$(dirname "$search_dir")"
+done
+if [[ -z "$PROJECT_ROOT" ]]; then
+    echo "[ERROR] 无法定位 k8s 根目录（未找到 utils/unified-deployment-template.sh），SCRIPT_DIR=$SCRIPT_DIR" >&2
+    exit 1
 fi
 
 # 导入统一部署模板（提供日志函数等基础设施）
 # 在加载前保存 SCRIPT_DIR，因为 unified-deployment-template.sh 会覆盖它
 SAVED_SCRIPT_DIR_FOR_TEMPLATE="$SCRIPT_DIR"
-# PROJECT_ROOT 是 deploy-kibana/，需要向上到 k8s/ 然后到 utils/
-utils_path=""
-if [[ -f "$PROJECT_ROOT/../../../utils/unified-deployment-template.sh" ]]; then
-    utils_path="$PROJECT_ROOT/../../../utils/unified-deployment-template.sh"
-elif [[ -f "$(dirname "$PROJECT_ROOT")/../../../utils/unified-deployment-template.sh" ]]; then
-    utils_path="$(dirname "$PROJECT_ROOT")/../../../utils/unified-deployment-template.sh"
-fi
-
-if [[ -n "$utils_path" && -f "$utils_path" ]]; then
-    source "$utils_path"
-    # 立即恢复 SCRIPT_DIR，防止被 unified-deployment-template.sh 覆盖
-    SCRIPT_DIR="$SAVED_SCRIPT_DIR_FOR_TEMPLATE"
-else
-    echo "警告: 无法找到 unified-deployment-template.sh，日志函数可能不可用" >&2
-    # 定义基本的日志函数作为后备
-    log_info() { echo "[INFO] $*"; }
-    log_error() { echo "[ERROR] $*" >&2; }
-    log_success() { echo "[SUCCESS] $*"; }
-    log_warn() { echo "[WARN] $*"; }
-fi
+source "$PROJECT_ROOT/utils/unified-deployment-template.sh"
+# 立即恢复 SCRIPT_DIR，防止被 unified-deployment-template.sh 覆盖
+SCRIPT_DIR="$SAVED_SCRIPT_DIR_FOR_TEMPLATE"
 
 # 解析命令行参数函数（支持 --cluster 或 -c）
-parse_cluster_arg() {
-    local args=("$@")
-    PARSED_ARGS=()
-    local cluster_value=""
-    local i=0
-    
-    while [[ $i -lt ${#args[@]} ]]; do
-        # 启用大小写不敏感匹配
-        shopt -s nocasematch
-        case "${args[$i]}" in
-            --[cC][lL][uU][sS][tT][eE][rR]=*)
-                # 支持等号形式：--cluster=C1 或 --CLUSTER=C1（大小写不敏感）
-                cluster_value="${args[$i]#*=}"
-                cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                export CLUSTER="$cluster_value"
-                log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                ;;
-            --[cC][lL][uU][sS][tT][eE][rR]|-c|-C)
-                # 支持空格形式：--cluster C1 或 -c C1（大小写不敏感）
-                if [[ $((i+1)) -lt ${#args[@]} ]]; then
-                    cluster_value="${args[$((i+1))]}"
-                    cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                    export CLUSTER="$cluster_value"
-                    log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                    i=$((i+1))
-                else
-                    log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
-                    exit 1
-                fi
-                ;;
-            *)
-                PARSED_ARGS+=("${args[$i]}")
-                ;;
-        esac
-        # 恢复大小写敏感匹配
-        shopt -u nocasematch
-        i=$((i+1))
-    done
-    
-    if [[ -n "$cluster_value" ]]; then
-        if [[ -f "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh" ]]; then
-            source "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh"
-            apply_cluster_config_mapping "$cluster_value"
-        fi
-    fi
-}
 
 # 解析命令行参数（优先于配置文件加载，确保命令行参数优先级最高）
 # 先解析命令行参数（如果提供）
 # 保存原始参数，以便在 main 函数中使用
 ORIGINAL_ARGS=("$@")
 if [[ $# -gt 0 ]]; then
-    parse_cluster_arg "$@"
+    unified_parse_cluster_arg "$@"
     ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
 fi
 

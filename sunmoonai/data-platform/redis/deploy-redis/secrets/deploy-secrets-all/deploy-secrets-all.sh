@@ -5,9 +5,20 @@ set -e
 # 脚本目录（保存为变量，防止被统一部署模板覆盖）
 REDIS_SECRETS_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 计算项目根目录（k8s目录）
-# 从 deploy-secrets-all/ -> secrets/ -> deploy-redis/ -> redis/ -> data-platform/ -> sunmoonai/ -> k8s/
-PROJECT_ROOT="$(cd "$REDIS_SECRETS_SCRIPT_DIR/../../../../../../" && pwd)"
+# 自动定位 k8s 根目录（向上查找 utils/unified-deployment-template.sh）
+PROJECT_ROOT=""
+search_dir="$REDIS_SECRETS_SCRIPT_DIR"
+while [[ "$search_dir" != "/" ]]; do
+    if [[ -f "$search_dir/utils/unified-deployment-template.sh" ]]; then
+        PROJECT_ROOT="$search_dir"
+        break
+    fi
+    search_dir="$(dirname "$search_dir")"
+done
+if [[ -z "$PROJECT_ROOT" ]]; then
+    echo "[ERROR] 无法定位 k8s 根目录（未找到 utils/unified-deployment-template.sh），SCRIPT_DIR=$REDIS_SECRETS_SCRIPT_DIR" 1>&2
+    exit 1
+fi
 
 # 导入统一部署模板（提供日志函数和 Kubernetes 连接函数）
 source "$PROJECT_ROOT/utils/unified-deployment-template.sh"
@@ -19,58 +30,12 @@ SCRIPT_DIR="$REDIS_SECRETS_SCRIPT_DIR"
 REDIS_SECRETS_CONFIG_FILE="$REDIS_SECRETS_SCRIPT_DIR/deploy-secrets-all.conf"
 
 # 解析命令行参数（优先于配置文件加载，确保命令行参数优先级最高）
-parse_cluster_arg() {
-    local args=("$@")
-    PARSED_ARGS=()
-    local cluster_value=""
-    local i=0
-    
-    while [[ $i -lt ${#args[@]} ]]; do
-        # 启用大小写不敏感匹配
-        shopt -s nocasematch
-        case "${args[$i]}" in
-            --[cC][lL][uU][sS][tT][eE][rR]=*)
-                # 支持等号形式：--cluster=C1 或 --CLUSTER=C1（大小写不敏感）
-                cluster_value="${args[$i]#*=}"
-                cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                export CLUSTER="$cluster_value"
-                log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                ;;
-            --[cC][lL][uU][sS][tT][eE][rR]|-c|-C)
-                # 支持空格形式：--cluster C1 或 -c C1（大小写不敏感）
-                if [[ $((i+1)) -lt ${#args[@]} ]]; then
-                    cluster_value="${args[$((i+1))]}"
-                    cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                    export CLUSTER="$cluster_value"
-                    log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                    i=$((i+1))
-                else
-                    log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
-                    exit 1
-                fi
-                ;;
-            *)
-                PARSED_ARGS+=("${args[$i]}")
-                ;;
-        esac
-        # 恢复大小写敏感匹配
-        shopt -u nocasematch
-        i=$((i+1))
-    done
-    
-    if [[ -n "$cluster_value" ]]; then
-        if [[ -f "$PROJECT_ROOT/utils/cluster-config-mapping.sh" ]]; then
-            source "$PROJECT_ROOT/utils/cluster-config-mapping.sh"
-            apply_cluster_config_mapping "$cluster_value"
-        fi
-    fi
-}
 
 # 先解析命令行参数（如果提供）
 # 保存原始参数，以便在 main 函数中使用
 ORIGINAL_ARGS=("$@")
 if [[ $# -gt 0 ]]; then
-    parse_cluster_arg "$@"
+    unified_parse_cluster_arg "$@"
     ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
 fi
 

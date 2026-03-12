@@ -249,9 +249,13 @@ read_k8s_config() {
     
     # 确定使用的集群（优先级：环境变量 > 配置文件默认值）
     local cluster_name="${CLUSTER:-${GLOBAL_DEFAULT_CLUSTER:-C1}}"
+    # 规范化：纯数字视为 C 编号，如 2 -> C2
+    if [[ "$cluster_name" =~ ^[0-9]+$ ]]; then
+        cluster_name="C${cluster_name}"
+    fi
+    cluster_name=$(echo "$cluster_name" | tr '[:lower:]' '[:upper:]')
     
-    local cluster_name_upper
-    cluster_name_upper=$(echo "$cluster_name" | tr '[:lower:]' '[:upper:]')
+    local cluster_name_upper="$cluster_name"
     # Kind 模式：目标集群为 KIND 时，读 [KIND] 段并返回
     if [[ "$cluster_name_upper" == "KIND" ]]; then
         log_info "使用 Kind 集群配置"
@@ -548,11 +552,12 @@ start_k8s_connection() {
 }
 
 # Kind 模式连接：将 kind kubeconfig 写入配置路径并设置 KUBECONFIG
+# 注意：如果目标集群为 KIND，则必须存在 kind 命令且 Kind 集群可用；不做“隐式回退”，避免破坏集群选择优先级
 start_kind_connection() {
     log_info "使用 Kind 模式连接..."
     
     if ! command -v kind &>/dev/null; then
-        log_error "未找到 kind 命令，请先安装 kind"
+        log_error "未找到 kind 命令，但当前选择的集群为 KIND。请安装 kind，或通过 --cluster/-c/CLUSTER 指定目标集群为 C1/C2 等"
         return 1
     fi
     
@@ -952,6 +957,58 @@ setup_kubectl_environment() {
     # 连接建立后，环境变量已经设置好了，不需要额外验证
     log_success "Kubernetes 环境设置成功"
     return 0
+}
+
+# ========================================
+# 集群参数解析（组件通用）
+# ========================================
+# 目标：把“集群选择”下沉到统一模板，组件脚本不再各自复制解析逻辑。
+#
+# 支持：
+#   - --cluster=C2 / --CLUSTER=c2
+#   - --cluster C2 / -c C2 / -c 2
+#   - -c2 / -C2
+# 输出：
+#   - 设置并导出 CLUSTER（统一为大写，数字自动补全为 C{数字}）
+#   - 生成 PARSED_ARGS（去掉 cluster 参数后的其余参数，供组件脚本继续解析自身参数）
+unified_parse_cluster_arg() {
+    local args=("$@")
+    PARSED_ARGS=()
+    local cluster_value=""
+    local i=0
+
+    while [[ $i -lt ${#args[@]} ]]; do
+        shopt -s nocasematch
+        case "${args[$i]}" in
+            --[cC][lL][uU][sS][tT][eE][rR]=*)
+                cluster_value="${args[$i]#*=}"
+                ;;
+            --[cC][lL][uU][sS][tT][eE][rR]|-c|-C)
+                if [[ $((i+1)) -lt ${#args[@]} ]]; then
+                    cluster_value="${args[$((i+1))]}"
+                    i=$((i+1))
+                else
+                    log_error "❌ --cluster 参数需要指定值（格式：C{数字} 或 -c2、-c 2 等）"
+                    exit 1
+                fi
+                ;;
+            -[cC][0-9]*)
+                cluster_value="${args[$i]#-[cC]}"
+                ;;
+            *)
+                PARSED_ARGS+=("${args[$i]}")
+                ;;
+        esac
+        shopt -u nocasematch
+        i=$((i+1))
+    done
+
+    if [[ -n "$cluster_value" ]]; then
+        cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
+        [[ "$cluster_value" =~ ^[0-9]+$ ]] && cluster_value="C${cluster_value}"
+        export CLUSTER="$cluster_value"
+        log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
+    fi
 }
 
 # 子组件脚本常用别名（与 setup_kubectl_environment 一致，避免“未找到命令”）

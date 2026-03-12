@@ -9,30 +9,18 @@ ORIGINAL_SCRIPT_DIR="$MONGODB_SECRETS_SCRIPT_DIR"
 SCRIPT_DIR="$MONGODB_SECRETS_SCRIPT_DIR"
 
 # 自动检测项目根目录：
-# 从当前目录向上查找，直到找到「同时包含 utils 目录且其中有 unified-deployment-template.sh 的」k8s 根目录
+# 从当前目录向上查找，直到找到 utils/unified-deployment-template.sh
 PROJECT_ROOT=""
-current_dir="$SCRIPT_DIR"
-max_levels=10
-level=0
-
-while [[ $level -lt $max_levels ]] && [[ -n "$current_dir" ]] && [[ "$current_dir" != "/" ]]; do
-    if [[ -f "$current_dir/utils/unified-deployment-template.sh" ]]; then
-        PROJECT_ROOT="$current_dir"
+search_dir="$SCRIPT_DIR"
+while [[ "$search_dir" != "/" ]]; do
+    if [[ -f "$search_dir/utils/unified-deployment-template.sh" ]]; then
+        PROJECT_ROOT="$search_dir"
         break
     fi
-    current_dir="$(dirname "$current_dir")"
-    level=$((level + 1))
+    search_dir="$(dirname "$search_dir")"
 done
-
-# 如果没找到，则回退到向上多级后的目录（兼容旧路径），再做一次检查
 if [[ -z "$PROJECT_ROOT" ]]; then
-    PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
-fi
-
-if [[ ! -f "$PROJECT_ROOT/utils/unified-deployment-template.sh" ]]; then
-    echo "错误: 无法找到统一部署模板 unified-deployment-template.sh" >&2
-    echo "期望位置: $PROJECT_ROOT/utils/unified-deployment-template.sh" >&2
-    echo "脚本目录: $SCRIPT_DIR" >&2
+    echo "[ERROR] 无法定位 k8s 根目录（未找到 utils/unified-deployment-template.sh），SCRIPT_DIR=$SCRIPT_DIR" >&2
     exit 1
 fi
 
@@ -77,58 +65,12 @@ DEFAULT_NAMESPACE="data-platform-dev"
 DEFAULT_ENVIRONMENT="development"
 
 # 解析命令行参数（优先于配置文件加载，确保命令行参数优先级最高）
-parse_cluster_arg() {
-    local args=("$@")
-    PARSED_ARGS=()
-    local cluster_value=""
-    local i=0
-    
-    while [[ $i -lt ${#args[@]} ]]; do
-        # 启用大小写不敏感匹配
-        shopt -s nocasematch
-        case "${args[$i]}" in
-            --[cC][lL][uU][sS][tT][eE][rR]=*)
-                # 支持等号形式：--cluster=C1 或 --CLUSTER=C1（大小写不敏感）
-                cluster_value="${args[$i]#*=}"
-                cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                export CLUSTER="$cluster_value"
-                log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                ;;
-            --[cC][lL][uU][sS][tT][eE][rR]|-c|-C)
-                # 支持空格形式：--cluster C1 或 -c C1（大小写不敏感）
-                if [[ $((i+1)) -lt ${#args[@]} ]]; then
-                    cluster_value="${args[$((i+1))]}"
-                    cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-                    export CLUSTER="$cluster_value"
-                    log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-                    i=$((i+1))
-                else
-                    log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
-                    exit 1
-                fi
-                ;;
-            *)
-                PARSED_ARGS+=("${args[$i]}")
-                ;;
-        esac
-        # 恢复大小写敏感匹配
-        shopt -u nocasematch
-        i=$((i+1))
-    done
-    
-    if [[ -n "$cluster_value" ]]; then
-        if [[ -f "$PROJECT_ROOT/utils/cluster-config-mapping.sh" ]]; then
-            source "$PROJECT_ROOT/utils/cluster-config-mapping.sh"
-            apply_cluster_config_mapping "$cluster_value"
-        fi
-    fi
-}
 
 # 先解析命令行参数（如果提供）
 # 保存原始参数，以便在 main 函数中使用
 ORIGINAL_ARGS=("$@")
 if [[ $# -gt 0 ]]; then
-    parse_cluster_arg "$@"
+    unified_parse_cluster_arg "$@"
     ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
 fi
 
