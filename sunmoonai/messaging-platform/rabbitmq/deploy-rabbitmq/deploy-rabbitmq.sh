@@ -211,6 +211,13 @@ execute_rabbitmq_deployment() {
     else
         persist_mode="${RABBITMQ_PERSIST_MODE:-init}"
     fi
+    # 远程集群（C1/C2 等）仅使用动态 StorageClass，不应用 Kind 静态 PV/PVC（避免 172.28.46.235）
+    if [[ -n "${CLUSTER:-}" && "$(echo "${CLUSTER}" | tr '[:upper:]' '[:lower:]')" != "kind" ]]; then
+        if [[ "$persist_mode" == "reuse" ]]; then
+            log_info "集群 ${CLUSTER} 为远程集群，强制使用动态存储 (init)，不应用 Kind 静态 PV/PVC"
+            persist_mode="init"
+        fi
+    fi
     case "$environment" in
         "development"|"dev")
             if [[ "$persist_mode" == "reuse" ]]; then
