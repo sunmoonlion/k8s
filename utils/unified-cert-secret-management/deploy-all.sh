@@ -151,8 +151,8 @@ echo "使用配置文件: $CONFIG_FILE"
 source "$CONFIG_FILE"
 
 # 加载集群配置映射函数（用于将 C1_* 或 C2_* 映射为默认配置）
-if [[ -f "$K8S_ROOT/cluster-config-mapping.sh" ]]; then
-    source "$K8S_ROOT/cluster-config-mapping.sh"
+if [[ -f "$K8S_ROOT/utils/cluster-config-mapping.sh" ]]; then
+    source "$K8S_ROOT/utils/cluster-config-mapping.sh"
     # 应用集群配置映射（使用 CLUSTER）
     if command -v apply_cluster_config_mapping &>/dev/null; then
         # 调试：检查调用前的 CLUSTER

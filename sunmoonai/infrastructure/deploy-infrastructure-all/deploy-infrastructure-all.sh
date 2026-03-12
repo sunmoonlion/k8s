@@ -78,8 +78,8 @@ load_config(){
     if [[ -z "${CLUSTER:-}" ]]; then
         # 加载集群配置映射函数（如果尚未加载）
         if [[ ! "$(type -t get_default_cluster)" == "function" ]]; then
-            if [[ -f "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh" ]]; then
-                source "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh"
+            if [[ -f "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh" ]]; then
+                source "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh"
             fi
         fi
         # 从全局配置读取默认集群（支持 C1/C2/.../KIND）
@@ -142,8 +142,8 @@ load_config(){
     done
     
     # 应用集群配置映射（使用 utils 中的通用函数）
-    if [[ -f "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh" ]]; then
-      source "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh"
+    if [[ -f "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh" ]]; then
+      source "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh"
       apply_cluster_config_mapping "$cluster_selected"
     fi
     

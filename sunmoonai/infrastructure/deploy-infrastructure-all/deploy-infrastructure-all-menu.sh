@@ -14,9 +14,12 @@ export LANGUAGE=C
 
 THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$THIS_DIR")"   # k8s-deploy 根目录
+# k8s 根目录：.../k8s（用于引用 utils 下的通用脚本）
+# THIS_DIR=.../k8s/sunmoonai/infrastructure/deploy-infrastructure-all
+K8S_ROOT_DIR="$(cd "$THIS_DIR/../../.." && pwd)"
 
 # 集群参数解析（轻量，无连接副作用）
-source "$PROJECT_ROOT/utils/cluster-arg-parser.sh"
+source "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh"
 
 
 # 变量路径
@@ -134,19 +137,9 @@ load_config(){
     done
     
     # 应用集群配置映射（使用 utils 中的通用函数）
-    local cluster_mapping_script=""
-    # 尝试多个可能的路径
-    if [[ -f "$PROJECT_ROOT/../../utils/cluster-config-mapping.sh" ]]; then
-        cluster_mapping_script="$PROJECT_ROOT/../../utils/cluster-config-mapping.sh"
-    elif [[ -f "$THIS_DIR/../../utils/cluster-config-mapping.sh" ]]; then
-        cluster_mapping_script="$THIS_DIR/../../utils/cluster-config-mapping.sh"
-    elif [[ -f "$HOME/k8s/utils/cluster-config-mapping.sh" ]]; then
-        cluster_mapping_script="$HOME/k8s/utils/cluster-config-mapping.sh"
-    fi
-    
-    if [[ -n "$cluster_mapping_script" ]]; then
+    if [[ -f "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh" ]]; then
         # shellcheck disable=SC1090
-        source "$cluster_mapping_script" || true
+        source "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh" || true
         apply_cluster_config_mapping "$cluster_selected" || true
     fi
     
