@@ -397,35 +397,44 @@ read_k8s_config() {
     return 0
 }
 
-# 保存连接状态
+# 保存连接状态（按 k8s-connection-manager.sh 的字段统一）
 save_k8s_status() {
     local mode="$1"
-    local timestamp="$2"
-    local local_port="$3"
+    local _timestamp="$2"   # 参数位占位，当前不写入文件
+    local _local_port="$3"  # 参数位占位，当前不写入文件
     local pid="$4"
-    
+
+    # 统一采用 CURRENT_* 字段，完全对齐 k8s-connection-manager.sh
+    CURRENT_MODE="$mode"
+    # CURRENT_KUBECONFIG 由上层在建立连接后设置，这里不修改
+    TUNNEL_PID="$pid"
+
     cat > "$STATUS_FILE" << EOF
-MODE=$mode
-TIMESTAMP=$timestamp
-LOCAL_PORT=$local_port
-PID=$pid
+CURRENT_MODE=$CURRENT_MODE
 CURRENT_KUBECONFIG=$CURRENT_KUBECONFIG
+TUNNEL_PID=$TUNNEL_PID
 EOF
-    log_info "连接状态已保存"
+    log_info "连接状态已保存: CURRENT_MODE=$CURRENT_MODE, TUNNEL_PID=$TUNNEL_PID"
 }
 
-# 加载连接状态
+# 加载连接状态（直接使用 CURRENT_* 字段）
 load_k8s_status() {
     # 初始化变量（只有在未定义时才初始化）
-    MODE=${MODE:-""}
-    TIMESTAMP=${TIMESTAMP:-""}
-    PID=${PID:-""}
-    LOCAL_PORT=${LOCAL_PORT:-""}
+    CURRENT_MODE=${CURRENT_MODE:-""}
     CURRENT_KUBECONFIG=${CURRENT_KUBECONFIG:-""}
+    TUNNEL_PID=${TUNNEL_PID:-""}
+    LOCAL_PORT=${LOCAL_PORT:-""}
     
     if [[ -f "$STATUS_FILE" ]]; then
         source "$STATUS_FILE"
-        log_info "连接状态已加载: MODE=$MODE, TIMESTAMP=$TIMESTAMP"
+
+        # 基本校验，防止读取到空/损坏状态而被误判为“已连接”
+        if [[ -z "$CURRENT_MODE" || -z "$CURRENT_KUBECONFIG" ]]; then
+            log_warn "连接状态文件无效（CURRENT_MODE 或 CURRENT_KUBECONFIG 为空），将忽略并重新建立连接"
+            clear_k8s_status
+            return 1
+        fi
+        log_info "连接状态已加载: CURRENT_MODE=$CURRENT_MODE, TUNNEL_PID=$TUNNEL_PID"
         return 0
     fi
     return 1
@@ -443,7 +452,7 @@ clear_k8s_status() {
 check_k8s_connection_status() {
     if load_k8s_status; then
         # Kind 模式：无隧道，仅校验 kubeconfig 与 kubectl 可用
-        if [[ "$MODE" == "kind" ]]; then
+        if [[ "$CURRENT_MODE" == "kind" ]]; then
             if [[ -n "$CURRENT_KUBECONFIG" ]] && [[ -f "$CURRENT_KUBECONFIG" ]]; then
                 if KUBECONFIG="$CURRENT_KUBECONFIG" kubectl get nodes >/dev/null 2>&1; then
                     log_info "连接状态正常 (Kind)"
@@ -455,28 +464,34 @@ check_k8s_connection_status() {
             return 1
         fi
         # 远程模式：检查进程是否还在运行
-        if [[ -n "$PID" ]] && kill -0 "$PID" 2>/dev/null; then
-            # 检查端口是否还在监听
-            if netstat -tlnp 2>/dev/null | grep -q ":$LOCAL_PORT "; then
-                # 测试 kubectl 连接（带重试）
-                local retry_count=0
-                local max_retries=3
-                
-                while [[ $retry_count -lt $max_retries ]]; do
-                    if KUBECONFIG="$CURRENT_KUBECONFIG" kubectl get nodes >/dev/null 2>&1; then
-                        log_info "连接状态正常: PID=$PID, PORT=$LOCAL_PORT"
-                        return 0  # 连接正常
-                    fi
-                    
-                    retry_count=$((retry_count+1))  # 使用显式赋值，避免 ((retry_count++)) 在某些情况下导致的问题
-                    if [[ $retry_count -lt $max_retries ]]; then
-                        sleep 1  # 等待1秒后重试
-                    fi
-                done
-                
-                log_warn "连接状态异常，kubectl 连接失败"
-                return 1
+        if [[ -n "$TUNNEL_PID" ]] && kill -0 "$TUNNEL_PID" 2>/dev/null; then
+            # 如有 LOCAL_PORT，则顺便校验端口监听；否则仅依赖 kubectl 检测
+            if [[ -n "$LOCAL_PORT" ]]; then
+                if ! netstat -tlnp 2>/dev/null | grep -q ":$LOCAL_PORT "; then
+                    log_warn "连接状态异常，端口 $LOCAL_PORT 未在监听"
+                    clear_k8s_status
+                    return 1
+                fi
             fi
+
+            # 测试 kubectl 连接（带重试）
+            local retry_count=0
+            local max_retries=3
+            
+            while [[ $retry_count -lt $max_retries ]]; do
+                if KUBECONFIG="$CURRENT_KUBECONFIG" kubectl get nodes >/dev/null 2>&1; then
+                    log_info "连接状态正常: TUNNEL_PID=$TUNNEL_PID${LOCAL_PORT:+, PORT=$LOCAL_PORT}"
+                    return 0  # 连接正常
+                fi
+                
+                retry_count=$((retry_count+1))  # 使用显式赋值，避免 ((retry_count++)) 在某些情况下导致的问题
+                if [[ $retry_count -lt $max_retries ]]; then
+                    sleep 1  # 等待1秒后重试
+                fi
+            done
+            
+            log_warn "连接状态异常，kubectl 连接失败"
+            return 1
         fi
         log_warn "连接状态异常，需要重新建立连接"
         clear_k8s_status
@@ -875,8 +890,8 @@ setup_local_connection() {
 # 静默停止连接
 stop_k8s_connection_quiet() {
     # 初始化变量
-    MODE=${MODE:-""}
-    PID=${PID:-""}
+    CURRENT_MODE=${CURRENT_MODE:-""}
+    TUNNEL_PID=${TUNNEL_PID:-""}
     
     # 静默加载状态（不显示日志）
     if [[ -f "$STATUS_FILE" ]]; then
@@ -885,16 +900,16 @@ stop_k8s_connection_quiet() {
         return 0
     fi
     
-    case "$MODE" in
+    case "$CURRENT_MODE" in
         "bastion")
-            if [[ -n "$PID" ]]; then
-                kill "$PID" 2>/dev/null || true
+            if [[ -n "$TUNNEL_PID" ]]; then
+                kill "$TUNNEL_PID" 2>/dev/null || true
             fi
             ;;
         "direct")
-            if [[ -n "$PID" ]]; then
-                log_info "停止 SSH 端口转发，PID: $PID"
-                kill "$PID" 2>/dev/null || true
+            if [[ -n "$TUNNEL_PID" ]]; then
+                log_info "停止 SSH 端口转发，PID: $TUNNEL_PID"
+                kill "$TUNNEL_PID" 2>/dev/null || true
             fi
             # 清理域名别名（只删除带标记的条目）
             if [[ "${DIRECT_BIND_ALIAS:-false}" == "true" ]] && [[ -n "${DIRECT_HOST:-}" ]]; then
@@ -935,10 +950,14 @@ setup_kubectl_environment() {
         fi
     fi
     
-    # 加载连接状态以获取 MODE 和 CURRENT_KUBECONFIG
+    # 加载连接状态以获取 CURRENT_MODE 和 CURRENT_KUBECONFIG
     if load_k8s_status; then
         # 设置环境变量
-        case "$MODE" in
+        if [[ -z "$CURRENT_MODE" ]]; then
+            log_error "连接状态无效：CURRENT_MODE 为空"
+            return 1
+        fi
+        case "$CURRENT_MODE" in
             "bastion"|"direct"|"kind")
                 export KUBECONFIG="$CURRENT_KUBECONFIG"
                 log_info "已设置环境变量: export KUBECONFIG=$CURRENT_KUBECONFIG"
@@ -947,11 +966,22 @@ setup_kubectl_environment() {
                 unset KUBECONFIG
                 log_info "已清除 KUBECONFIG 环境变量，使用本地配置"
                 ;;
+            *)
+                log_error "连接状态无效：未知 CURRENT_MODE='$CURRENT_MODE'"
+                return 1
         esac
     else
-        # 默认使用本地配置
+        # 未能加载任何有效状态：
+        # - 如果显式指定了远程集群（如 CLUSTER=C1/C2），认为是严重错误，返回非 0 让上层脚本感知
+        # - 否则才兜底到本地 kubeconfig
+        local cluster_upper="${CLUSTER:-}"
+        cluster_upper=$(echo "$cluster_upper" | tr '[:lower:]' '[:upper:]')
+        if [[ -n "$cluster_upper" && "$cluster_upper" != "KIND" && "$cluster_upper" != "LOCAL" ]]; then
+            log_error "未找到集群 $cluster_upper 的有效连接状态，且无法自动建立连接，请检查远程连接配置/脚本"
+            return 1
+        fi
         unset KUBECONFIG
-        log_info "未找到连接状态，使用本地配置"
+        log_info "未找到连接状态，回退为本地 kubeconfig"
     fi
     
     # 连接建立后，环境变量已经设置好了，不需要额外验证

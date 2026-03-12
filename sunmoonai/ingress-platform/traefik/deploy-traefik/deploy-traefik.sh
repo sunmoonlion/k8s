@@ -22,7 +22,7 @@ else
     exit 1
 fi
 
-# 检查命名空间是否存在
+# 检查命名空间是否存在（若不存在则自动创建）
 check_namespace() {
     local namespace="$1"
     local max_retries=3
@@ -46,15 +46,18 @@ check_namespace() {
         fi
     done
     
-    log_error "❌ 命名空间 $namespace 不存在！"
-    echo ""
-    log_info "请先使用 namespace-platform 部署所需的命名空间："
-    echo "  cd ../../namespace-platform"
-    echo "  ./scripts/deploy.sh --env dev"
-    echo ""
-    log_info "或者手动创建命名空间："
-    echo "  kubectl create namespace $namespace"
-    echo ""
+    # 多次检查仍不存在，则尝试自动创建命名空间
+    log_warn "⚠️  命名空间 $namespace 不存在，尝试自动创建..."
+    if ! setup_kubectl_environment; then
+        log_error "无法建立 Kubernetes 连接，无法创建命名空间 $namespace"
+        return 1
+    fi
+    if kubectl create namespace "$namespace" --dry-run=client -o yaml | kubectl apply -f -; then
+        log_success "✅ 已自动创建命名空间: $namespace"
+        return 0
+    fi
+    
+    log_error "❌ 命名空间 $namespace 不存在，且自动创建失败！"
     return 1
 }
 

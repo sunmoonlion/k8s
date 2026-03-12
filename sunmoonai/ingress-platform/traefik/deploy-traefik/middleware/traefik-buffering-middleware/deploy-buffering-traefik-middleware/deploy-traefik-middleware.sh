@@ -53,21 +53,23 @@ DEFAULT_MEM_REQUEST="20971520"
 DEFAULT_MEM_RESPONSE="20971520"
 DEFAULT_RETRY_EXPRESSION="IsNetworkError() && Attempts() <= 2"
 
-# 检查命名空间是否存在
+# 检查命名空间是否存在（若不存在则自动创建）
 check_namespace() {
     local namespace="$1"
     
     if kubectl get namespace "$namespace" >/dev/null 2>&1; then
         log_success "✅ 命名空间 $namespace 已存在"
         return 0
-    else
-        log_error "❌ 命名空间 $namespace 不存在！"
-        echo ""
-        log_info "请先创建命名空间："
-        echo "  kubectl create namespace $namespace"
-        echo ""
-        return 1
     fi
+    
+    log_warn "⚠️  命名空间 $namespace 不存在，尝试自动创建..."
+    if kubectl create namespace "$namespace" --dry-run=client -o yaml | kubectl apply -f -; then
+        log_success "✅ 已自动创建命名空间: $namespace"
+        return 0
+    fi
+    
+    log_error "❌ 命名空间 $namespace 不存在，且自动创建失败！"
+    return 1
 }
 
 # 部署缓冲中间件

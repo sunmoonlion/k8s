@@ -201,6 +201,8 @@ esac
 # 加载公共函数
 source "$PROJECT_ROOT/lib/common.sh"
 source "$PROJECT_ROOT/lib/ssh.sh"
+# 加载证书管理核心函数（包含基于 CLIENT_CONTAINERD_PATH / CLIENT_DOCKER_PATH 的新一代分发逻辑）
+source "$PROJECT_ROOT/lib/cert.sh"
 
 # 显示运行模式信息
 show_mode_info() {
@@ -389,16 +391,22 @@ deploy_client() {
     local client_env="${PARTS[2]:0:1}"     # K (从K1中提取K)
     local client_node="${PARTS[2]:1:1}"    # 1 (从K1中提取1)
     
-    # 获取客户端配置
+    # 获取客户端基础配置（Docker/nerdctl 客户端使用 CLIENT_HOST，K8s 客户端使用多节点配置）
     local client_host="${combo}_CLIENT_HOST"
     local client_port="${combo}_CLIENT_PORT"
     local client_username="${combo}_CLIENT_USERNAME"
     local client_ssh_key="${combo}_CLIENT_SSH_KEY"
     
-    if [[ -n "${!client_host:-}" ]]; then
-        echo "连接到客户端: ${!client_host}:${!client_port:-22}"
-        echo "用户名: ${!client_username:-root}"
-        echo "SSH密钥: ${!client_ssh_key:-/root/.ssh/id_rsa}"
+    # 对于 K8s 客户端（client_env=K），不强制要求 CLIENT_HOST，
+    # 由插件和配套的 CLIENT_NODES / CLIENT_NODE_HOSTS 等配置决定如何分发到各节点。
+    if [[ "$client_env" == "K" ]] || [[ -n "${!client_host:-}" ]]; then
+        if [[ "$client_env" == "K" ]]; then
+            echo "使用 K8s 多节点客户端配置，组合: $combo -> $service_type $server_env $server_node $client_env $client_node"
+        else
+            echo "连接到客户端: ${!client_host}:${!client_port:-22}"
+            echo "用户名: ${!client_username:-root}"
+            echo "SSH密钥: ${!client_ssh_key:-/root/.ssh/id_rsa}"
+        fi
         
         # 调用实际的客户端部署脚本
         echo "执行客户端部署..."
@@ -408,10 +416,12 @@ deploy_client() {
             
             # 设置环境变量供部署脚本使用
             export COMBO="$combo"
-            export CLIENT_HOST="${!client_host}"
-            export CLIENT_PORT="${!client_port:-22}"
-            export CLIENT_USERNAME="${!client_username:-root}"
-            export CLIENT_SSH_KEY="${!client_ssh_key:-/root/.ssh/id_rsa}"
+            if [[ "$client_env" != "K" ]]; then
+                export CLIENT_HOST="${!client_host}"
+                export CLIENT_PORT="${!client_port:-22}"
+                export CLIENT_USERNAME="${!client_username:-root}"
+                export CLIENT_SSH_KEY="${!client_ssh_key:-/root/.ssh/id_rsa}"
+            fi
             export TLS_MODE="${TLS_MODE:-rotate}"  # 传递运行模式到部署脚本
             # 传递 CLUSTER 环境变量到部署脚本（确保集群配置映射能正确工作）
             if [[ -n "${CLUSTER:-}" ]]; then

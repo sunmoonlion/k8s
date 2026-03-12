@@ -171,10 +171,14 @@ main() {
         log_info "🎯 当前集群配置: ${CLUSTER}"
     fi
     
-    # 处理参数：如果第一个参数是 action（如 deploy），则跳过
-    local action="${1:-deploy}"
-    if [[ "$action" == "deploy" || "$action" == "uninstall" || "$action" == "status" ]]; then
-        shift
+    # 处理参数：如果提供了 action（deploy/uninstall/status），则取第一个参数作为 action 并 shift；
+    # 若未提供任何参数，则默认 action=deploy，避免在 $#==0 时执行 shift 导致脚本直接退出。
+    local action="deploy"
+    if [[ $# -gt 0 ]]; then
+        action="$1"
+        if [[ "$action" == "deploy" || "$action" == "uninstall" || "$action" == "status" ]]; then
+            shift
+        fi
     fi
     
     local project_id="${1:-${INGRESS_PLATFORM_PROJECT_ID:-$DEFAULT_PROJECT_ID}}"

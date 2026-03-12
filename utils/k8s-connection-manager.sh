@@ -300,7 +300,7 @@ read_kind_config() {
   KIND_KUBECONFIG=${KIND_KUBECONFIG:-$HOME/.kube/config}
 }
 
-# 保存连接状态
+# 保存连接状态（k8s-connection-manager 自己的格式）
 save_status(){
   cat >"$STATUS_FILE" <<EOF
 CURRENT_MODE=${CURRENT_MODE:-}
@@ -309,7 +309,7 @@ TUNNEL_PID=${TUNNEL_PID:-}
 EOF
 }
 
-# 加载连接状态
+# 加载连接状态（k8s-connection-manager 自己的格式）
 load_status(){
   # 初始化变量（只有在未定义时才初始化）
   CURRENT_MODE=${CURRENT_MODE:-""}

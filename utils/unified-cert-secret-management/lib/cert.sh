@@ -740,6 +740,19 @@ distribute_ca_certificate_to_client() {
             fi
             
             log_success "节点 $node_name CA证书分发完成"
+
+            # 同步 CA 到系统信任库，便于 nerdctl / curl 使用系统 CA 验证 Harbor TLS
+            # 复用 Docker 客户端的命名规则：harbor-<registry>-ca.crt
+            local harbor_registry
+            harbor_registry=$(echo "$client_cert_path" | sed 's|.*certs\.d/\([^/]*\).*|\1|')
+            local system_ca_name="harbor-${harbor_registry//[^a-zA-Z0-9]/-}-ca.crt"
+            local system_ca_path="/usr/local/share/ca-certificates/$system_ca_name"
+            local import_system_ca_cmd="sudo cp $client_ca_path $system_ca_path && sudo chmod 644 $system_ca_path && sudo update-ca-certificates"
+            if ! execute_ssh_command_with_retry "$node_host" "$node_port" "$node_username" "$node_ssh_key" "$import_system_ca_cmd"; then
+                log_warn \"节点 $node_name 导入系统 CA 证书失败（不影响 containerd 使用 certs.d/ 下的 CA）\"
+            else
+                log_info \"节点 $node_name 系统 CA 已更新: $system_ca_path\"
+            fi
         done
         
         log_success "CA证书分发到所有K8s客户端节点完成"
