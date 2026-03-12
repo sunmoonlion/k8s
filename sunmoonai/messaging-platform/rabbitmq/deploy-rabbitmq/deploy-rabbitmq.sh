@@ -791,8 +791,6 @@ main() {
                 log_info "命名空间: $namespace"
                 log_info "服务名称: rabbitmq-$project_id"
                 log_info "Chart 目录: $RABBITMQ_CHART_DIR"
-                # 显示实际使用的配置文件
-                log_info "配置文件: $values_file"
                 log_info ""
                 log_info "检查部署状态:"
                 log_info "kubectl get pods -n $namespace -l app.kubernetes.io/name=rabbitmq"
