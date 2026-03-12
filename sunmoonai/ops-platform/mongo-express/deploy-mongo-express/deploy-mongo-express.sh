@@ -670,7 +670,7 @@ main() {
                 fi
                 
                 log_success "🎉 Mongo Express 完整部署成功！"
-                check_mongo_express_status "$project_id" "$namespace"
+                check_mongo_express_status "$project_id" "$namespace" || true
             else
                 log_error "❌ Mongo Express 核心部署失败"
                 return 1

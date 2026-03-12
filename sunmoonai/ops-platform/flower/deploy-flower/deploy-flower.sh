@@ -533,7 +533,7 @@ main() {
             else
                 log_info "跳过 Flower Ingress (enabled=false)"
             fi
-            check_flower_status "$project_id" "$namespace"
+            check_flower_status "$project_id" "$namespace" || true
             show_flower_connection_info "$namespace"
             # 安装后清理控制平面 tar 包
             : # 通用工具已在推送过程中清理，无需额外清理

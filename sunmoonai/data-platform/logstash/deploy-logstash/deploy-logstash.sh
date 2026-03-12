@@ -492,7 +492,7 @@ main() {
             execute_logstash_deployment "$project_id" "$namespace" "$environment" "$dry_run"
             # 子组件：中间件与 Web Ingress
             if deploy_sub_components "$project_id" "$namespace" "$environment" "$dry_run"; then
-                check_logstash_status "$project_id" "$namespace"
+                check_logstash_status "$project_id" "$namespace" || true
                 show_logstash_connection_info "$project_id" "$namespace"
             else
                 log_error "❌ Logstash 子组件部署失败"

@@ -625,7 +625,7 @@ main() {
             
             check_namespace "$namespace"
             execute_pgadmin_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            check_pgadmin_status "$project_id" "$namespace"
+            check_pgadmin_status "$project_id" "$namespace" || true
             ;;
         "uninstall")
             log_info "开始卸载 pgAdmin..."

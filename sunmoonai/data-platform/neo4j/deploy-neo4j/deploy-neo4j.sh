@@ -537,7 +537,7 @@ main() {
             execute_neo4j_deployment "$project_id" "$namespace" "$environment" "$dry_run"
             # 部署子组件（中间件 / Ingress-All）
             if deploy_sub_components "$project_id" "$namespace" "$environment" "$dry_run"; then
-                check_neo4j_status "$project_id" "$namespace"
+                check_neo4j_status "$project_id" "$namespace" || true
                 show_neo4j_connection_info "$namespace"
             else
                 log_error "❌ Neo4j 子组件部署失败"

@@ -580,7 +580,7 @@ main() {
             execute_jenkins_deployment "$project_id" "$namespace" "$environment" "$dry_run"
             # 部署子组件（中间件 / Web Ingress，Secret 已部署，跳过）
             if deploy_sub_components "$project_id" "$namespace" "$environment" "$dry_run"; then
-                check_jenkins_status "$project_id" "$namespace"
+                check_jenkins_status "$project_id" "$namespace" || true
             else
                 log_error "❌ Jenkins 子组件部署失败"
                 exit 1

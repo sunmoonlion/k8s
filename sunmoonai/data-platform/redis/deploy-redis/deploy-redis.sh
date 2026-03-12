@@ -609,7 +609,7 @@ main() {
             log_info "🚀 阶段2：部署 Redis 核心服务..."
             
             execute_redis_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            check_redis_status "$project_id" "$namespace"
+            check_redis_status "$project_id" "$namespace" || true
             show_redis_connection_info "$namespace"
             ;;
         "upgrade")

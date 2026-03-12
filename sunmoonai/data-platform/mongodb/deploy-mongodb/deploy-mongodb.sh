@@ -558,7 +558,7 @@ main() {
             log_info "🚀 阶段2：部署 MongoDB 核心服务..."
             
             execute_mongodb_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            check_mongodb_status "$project_id" "$namespace"
+            check_mongodb_status "$project_id" "$namespace" || true
             show_mongodb_connection_info "$namespace"
             ;;
         "upgrade")

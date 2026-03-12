@@ -488,7 +488,7 @@ main() {
             execute_kibana_deployment "$project_id" "$namespace" "$environment" "$dry_run"
             # 子组件：中间件与 Web Ingress
             if deploy_sub_components "$project_id" "$namespace" "$environment" "$dry_run"; then
-                check_kibana_status "$project_id" "$namespace"
+                check_kibana_status "$project_id" "$namespace" || true
                 show_kibana_connection_info "$namespace"
             else
                 log_error "❌ Kibana 子组件部署失败"

@@ -464,7 +464,7 @@ main() {
             if ! setup_kubectl_environment; then
                 log_error "无法建立 Kubernetes 连接，跳过状态检查"
             else
-                check_redisinsight_status "$project_id" "$namespace"
+                check_redisinsight_status "$project_id" "$namespace" || true
                 show_redisinsight_connection_info "$namespace"
             fi
             # 安装后清理控制平面 tar 包

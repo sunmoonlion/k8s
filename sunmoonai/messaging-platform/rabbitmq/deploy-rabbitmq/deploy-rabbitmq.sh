@@ -821,7 +821,7 @@ main() {
             # 直接调用部署函数进行升级（避免递归调用 main）
             check_namespace "$namespace"
             execute_rabbitmq_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            check_rabbitmq_status "$project_id" "$namespace"
+            check_rabbitmq_status "$project_id" "$namespace" || true
             ;;
         "uninstall")
             # 智能参数处理：

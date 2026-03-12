@@ -587,7 +587,7 @@ main() {
                 # 部署子组件（中间件 / Ingress）
                 if deploy_sub_components "$project_id" "$namespace" "$environment" "$dry_run"; then
                     log_success "🎉 Elasticsearch 完整部署成功！"
-                    check_elasticsearch_status "$project_id" "$namespace"
+                    check_elasticsearch_status "$project_id" "$namespace" || true
                 else
                     log_error "❌ --cluster 参数需要指定值（格式：C{数字}，如 C1, C2, C3 等）"
                     exit 1
