@@ -298,8 +298,36 @@ get_configured_combinations() {
             
             # 检查值是否为 "true"
             if [[ "$value" == "\"true\"" ]] || [[ "$value" == "true" ]]; then
-                # 检查是否匹配过滤器
+                # 先检查是否匹配过滤器
                 if is_combo_matched "$combo" "$SECRET_FILTERS"; then
+                    # 再根据当前 CLUSTER 过滤远程 / KIND 组合的适用性
+                    # 约定：
+                    #   - CLUSTER=KIND 时，仅处理 *KIND* 相关组合（如 TRAEFIK_KIND_KIND）
+                    #   - CLUSTER 为 C1/C2/... 时，跳过 KIND 专用组合（如 TRAEFIK_KIND_KIND）
+                    if [[ -n "${CLUSTER:-}" ]]; then
+                        local cluster_upper
+                        cluster_upper="$(echo "$CLUSTER" | tr '[:lower:]' '[:upper:]')"
+                        case "$cluster_upper" in
+                            KIND)
+                                # Kind 模式：只保留 KIND 相关组合
+                                if [[ "$combo" != *"_KIND_"* ]]; then
+                                    echo "跳过组合（当前为 KIND 模式，仅处理 KIND 组合）: $combo" >&2
+                                    continue
+                                fi
+                                ;;
+                            C[0-9]*)
+                                # 远程模式（C1/C2/...）：跳过 KIND 专用组合
+                                if [[ "$combo" == *"_KIND_"* ]]; then
+                                    echo "跳过组合（远程集群不处理 KIND 组合）: $combo" >&2
+                                    continue
+                                fi
+                                ;;
+                            *)
+                                # 其它集群标识：暂不额外过滤
+                                ;;
+                        esac
+                    fi
+
                     combinations+=("$combo")
                     echo "发现已启用的组合: $combo" >&2
                 else
@@ -318,12 +346,35 @@ deploy_server() {
     
     # 解析组合名称 (例如: HARBOR_K1_K1 -> HARBOR K 1 K 1)
     # 新格式: 服务名全称_服务端环境_服务端节点_客户端环境_客户端节点
+    # 特殊：TRAEFIK_KIND_KIND 这类 KIND 组合需要保持 KIND 语义，又要复用 K 插件
     IFS='_' read -ra PARTS <<< "$combo"
-    local service_type="${PARTS[0]}"       # HARBOR
-    local server_env="${PARTS[1]:0:1}"     # K (从K1中提取K)
-    local server_node="${PARTS[1]:1:1}"    # 1 (从K1中提取1)
-    local client_env="${PARTS[2]:0:1}"     # K (从K1中提取K)
-    local client_node="${PARTS[2]:1:1}"    # 1 (从K1中提取1)
+    local service_type="${PARTS[0]}"       # HARBOR / TRAEFIK 等
+    local server_env server_node client_env client_node
+
+    if [[ "${PARTS[1]}" == "KIND" && "${PARTS[2]}" == "KIND" ]]; then
+        # KIND 组合：保持 combo = TRAEFIK_KIND_KIND，但插件仍使用 K 环境
+        # 约定：server_env=K, server_node=IND → 重新拼接时得到 KIND
+        server_env="K"
+        server_node="IND"
+        client_env="K"
+        client_node="IND"
+    else
+        # 常规组合：如 HARBOR_K1_K1 / TRAEFIK_K1_D2
+        if [[ "${PARTS[1]}" =~ ^([A-Z])([0-9]+)$ ]]; then
+            server_env="${BASH_REMATCH[1]}"
+            server_node="${BASH_REMATCH[2]}"
+        else
+            server_env="${PARTS[1]:0:1}"
+            server_node="${PARTS[1]:1:1}"
+        fi
+        if [[ "${PARTS[2]}" =~ ^([A-Z])([0-9]+)$ ]]; then
+            client_env="${BASH_REMATCH[1]}"
+            client_node="${BASH_REMATCH[2]}"
+        else
+            client_env="${PARTS[2]:0:1}"
+            client_node="${PARTS[2]:1:1}"
+        fi
+    fi
     
     # 获取服务端配置
     local server_host="${combo}_SERVER_HOST"
@@ -384,12 +435,33 @@ deploy_client() {
     
     # 解析组合名称 (例如: HARBOR_K1_K1 -> HARBOR K 1 K 1)
     # 新格式: 服务名全称_服务端环境_服务端节点_客户端环境_客户端节点
+    # 特殊：TRAEFIK_KIND_KIND 这类 KIND 组合需要保持 KIND 语义，又要复用 K 插件
     IFS='_' read -ra PARTS <<< "$combo"
-    local service_type="${PARTS[0]}"       # HARBOR
-    local server_env="${PARTS[1]:0:1}"     # K (从K1中提取K)
-    local server_node="${PARTS[1]:1:1}"    # 1 (从K1中提取1)
-    local client_env="${PARTS[2]:0:1}"     # K (从K1中提取K)
-    local client_node="${PARTS[2]:1:1}"    # 1 (从K1中提取1)
+    local service_type="${PARTS[0]}"       # HARBOR / TRAEFIK 等
+    local server_env server_node client_env client_node
+
+    if [[ "${PARTS[1]}" == "KIND" && "${PARTS[2]}" == "KIND" ]]; then
+        # KIND 组合：保持 combo = TRAEFIK_KIND_KIND，但插件仍使用 K 环境
+        server_env="K"
+        server_node="IND"
+        client_env="K"
+        client_node="IND"
+    else
+        if [[ "${PARTS[1]}" =~ ^([A-Z])([0-9]+)$ ]]; then
+            server_env="${BASH_REMATCH[1]}"
+            server_node="${BASH_REMATCH[2]}"
+        else
+            server_env="${PARTS[1]:0:1}"
+            server_node="${PARTS[1]:1:1}"
+        fi
+        if [[ "${PARTS[2]}" =~ ^([A-Z])([0-9]+)$ ]]; then
+            client_env="${BASH_REMATCH[1]}"
+            client_node="${BASH_REMATCH[2]}"
+        else
+            client_env="${PARTS[2]:0:1}"
+            client_node="${PARTS[2]:1:1}"
+        fi
+    fi
     
     # 获取客户端基础配置（Docker/nerdctl 客户端使用 CLIENT_HOST，K8s 客户端使用多节点配置）
     local client_host="${combo}_CLIENT_HOST"
@@ -399,6 +471,16 @@ deploy_client() {
     
     # 对于 K8s 客户端（client_env=K），不强制要求 CLIENT_HOST，
     # 由插件和配套的 CLIENT_NODES / CLIENT_NODE_HOSTS 等配置决定如何分发到各节点。
+    # KIND 模式下：客户端 CA 分发由 kind-infrastructure 专用脚本负责，这里只负责 CA 生成/归档
+    if [[ -n "${CLUSTER:-}" ]]; then
+        local cluster_upper
+        cluster_upper="$(echo "$CLUSTER" | tr '[:lower:]' '[:upper:]')"
+        if [[ "$cluster_upper" == "KIND" && "$combo" == "TRAEFIK_KIND_KIND" ]]; then
+            echo "ℹ️  KIND 模式下，Traefik 客户端 CA 分发由 kind-infrastructure 处理，此处仅负责 CA 生成，跳过客户端部署: $combo"
+            return 0
+        fi
+    fi
+
     if [[ "$client_env" == "K" ]] || [[ -n "${!client_host:-}" ]]; then
         if [[ "$client_env" == "K" ]]; then
             echo "使用 K8s 多节点客户端配置，组合: $combo -> $service_type $server_env $server_node $client_env $client_node"

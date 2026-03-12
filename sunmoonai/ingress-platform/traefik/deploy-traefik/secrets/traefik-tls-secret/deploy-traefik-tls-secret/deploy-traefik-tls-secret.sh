@@ -64,6 +64,11 @@ if [[ $# -gt 0 ]]; then
     ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
 fi
 
+# 在 CLUSTER 最终确定后，再做一次集群配置映射（此时才有意义）
+if [[ -n "${CLUSTER:-}" && -f "$PROJECT_ROOT/utils/cluster-config-mapping.sh" ]]; then
+    apply_cluster_config_mapping
+fi
+
 # 主函数
 main() {
     set -- "${PARSED_ARGS[@]}"

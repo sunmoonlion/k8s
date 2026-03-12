@@ -609,13 +609,19 @@ distribute_ca_certificate_to_client() {
     local combo="$1"
     
     # 根据客户端环境类型自动选择证书路径
-    # 组合格式: SERVICE_ENV_NODE_ENV_NODE (如: TRAEFIK_K1_K1)
-    local client_env=$(echo "$combo" | sed 's/.*_\([KDN][0-9]*\)$/\1/' | sed 's/[0-9]*$//')
+    # 组合格式: SERVICE_ENV_NODE_ENV_NODE (如: TRAEFIK_K1_K1 或 TRAEFIK_KIND_KIND)
+    local client_env=""
+    if [[ "$combo" =~ _KIND$ ]]; then
+        # KIND 组合（例如 TRAEFIK_KIND_KIND）
+        client_env="KIND"
+    else
+        client_env=$(echo "$combo" | sed 's/.*_\([KDN][0-9]*\)$/\1/' | sed 's/[0-9]*$//')
+    fi
     local client_cert_path=""
     
     case "$client_env" in
-        "K")
-            # K8s环境使用containerd证书路径
+        "K"|"KIND")
+            # K8s环境使用containerd证书路径（KIND 也属于 K8s 环境）
             client_cert_path=$(get_five_layer_config "$combo" "CLIENT_CONTAINERD_PATH")
             ;;
         "D"|"N")
@@ -635,7 +641,13 @@ distribute_ca_certificate_to_client() {
     
     # 确定服务器端CA证书路径（按前三层前缀定位）
     # 例如：TRAEFIK_K1_K1、TRAEFIK_K1_D1、TRAEFIK_K1_N2 -> server_prefix=TRAEFIK_K1
-    local server_prefix=$(echo "$combo" | sed 's/_[KDN][0-9]*$//')
+    #       TRAEFIK_KIND_KIND -> server_prefix=TRAEFIK
+    local server_prefix=""
+    if [[ "$combo" =~ _KIND_KIND$ ]]; then
+        server_prefix=$(echo "$combo" | sed 's/_KIND_KIND$//')
+    else
+        server_prefix=$(echo "$combo" | sed 's/_[KDN][0-9]*$//')
+    fi
     local temp_ca_cert_path="/tmp/${server_prefix}-ca-certs/ca.crt"
     
     # 检查服务器端CA证书是否存在；若不存在，尝试自动生成（按前三层前缀定位）
