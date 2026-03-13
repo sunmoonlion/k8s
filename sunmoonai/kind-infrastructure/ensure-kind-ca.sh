@@ -32,7 +32,8 @@ fi
 
 log_info "Kind 根 CA：调用 unified-cert-secret-management init（combo TRAEFIK_KIND_KIND，与远程 Step12 共用配置）"
 cd "$UNIFIED_CERT_DIR" || { log_error "无法进入 $UNIFIED_CERT_DIR"; exit 1; }
-if TLS_MODE=init bash "$DEPLOY_SCRIPT" init TRAEFIK_KIND_KIND; then
+# 设置 CLUSTER=KIND 使 deploy-all.sh 跳过 TRAEFIK_KIND_KIND 的客户端部署（CA 分发由 apply-kind-harbor-tls.sh 负责）
+if CLUSTER=KIND TLS_MODE=init bash "$DEPLOY_SCRIPT" init TRAEFIK_KIND_KIND; then
     log_success "根 CA 已由统一证书管理生成，后续 Traefik/Harbor 等部署可据此签发服务器证书"
 else
     log_error "unified-cert init 失败"
