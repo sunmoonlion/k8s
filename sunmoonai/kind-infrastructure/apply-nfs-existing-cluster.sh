@@ -109,6 +109,8 @@ load_config() {
     # Chart 版本：与 charts/ 下已提交的 tgz 一致（4.0.18）；若需其他版本可设 STEP09_NFS_CHART_VERSION
     NFS_CHART_VERSION="${STEP09_NFS_CHART_VERSION:-4.0.18}"
     NFS_PROVISIONER_VERSION="${STEP09_NFS_PROVISIONER_VERSION:-4.0.2}"
+    # 说明：reclaimPolicy 只控制 PV 对象的回收策略（Delete/Retain），
+    # 底层 NFS 子目录是否真正删除，还取决于 nfs-subdir-external-provisioner 的 archiveOnDelete 等参数。
     NFS_RECLAIM_POLICY="${STEP09_NFS_STORAGE_RECLAIM_POLICY:-Delete}"
     NFS_VOLUME_BINDING_MODE="${STEP09_NFS_STORAGE_VOLUME_BINDING_MODE:-Immediate}"
     HELM_NAMESPACE="${STEP09_HELM_NAMESPACE:-kube-system}"
