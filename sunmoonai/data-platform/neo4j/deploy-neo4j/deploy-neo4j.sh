@@ -407,14 +407,14 @@ show_neo4j_connection_info() {
     echo ""
     echo "=== Neo4j 连接信息 ==="
     echo "命名空间: $namespace"
-    echo "外部访问: https://${NEO4J_UNIFIED_HOST:-llmops.sunmoonai.com}/neo4j"
+    echo "外部访问: https://${NEO4J_UNIFIED_HOST:-www.sunmoonai.com}/neo4j"
     echo ""
     echo "=== 使用说明 ==="
     echo "1. 配置 hosts 文件（如果需要）:"
-    echo "   echo '101.126.151.0 ${NEO4J_UNIFIED_HOST:-llmops.sunmoonai.com}' | sudo tee -a /etc/hosts"
+    echo "   echo '101.126.151.0 ${NEO4J_UNIFIED_HOST:-www.sunmoonai.com}' | sudo tee -a /etc/hosts"
     echo ""
     echo "2. 访问 Neo4j Browser:"
-    echo "   https://${NEO4J_UNIFIED_HOST:-llmops.sunmoonai.com}/neo4j"
+    echo "   https://${NEO4J_UNIFIED_HOST:-www.sunmoonai.com}/neo4j"
     echo ""
     echo "3. 查看服务状态:"
     echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/instance=neo4j-<project_id>"
@@ -423,7 +423,7 @@ show_neo4j_connection_info() {
     # 动态获取外部端口
     local external_port
     external_port=$(get_neo4j_external_port)
-    echo "   bolt://${NEO4J_UNIFIED_HOST:-llmops.sunmoonai.com}:${external_port}"
+    echo "   bolt://${NEO4J_UNIFIED_HOST:-www.sunmoonai.com}:${external_port}"
     echo "   用户名: neo4j"
     echo "   密码: 从 Secret 中获取"
     echo ""

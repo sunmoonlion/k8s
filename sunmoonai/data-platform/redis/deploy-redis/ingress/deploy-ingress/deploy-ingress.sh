@@ -114,7 +114,7 @@ load_config() {
     
     # 统一使用 REDIS_EXTERNAL_HOST（从主配置文件继承）
     if [[ -z "${HOST:-}" ]]; then
-        HOST="${REDIS_EXTERNAL_HOST:-llmops.sunmoonai.com}"
+        HOST="${REDIS_EXTERNAL_HOST:-www.sunmoonai.com}"
     fi
     
     log_success "✅ 配置加载成功"
@@ -194,7 +194,7 @@ deploy_tcp_route() {
     sed -i "s/port: {{SERVICE_PORT}}/port: $REDIS_PORT/g" "$temp_file"
     sed -i "s/namespace: {{NAMESPACE}}/namespace: $namespace/g" "$temp_file"
     # 替换域名占位符
-    local external_host="${REDIS_EXTERNAL_HOST:-llmops.sunmoonai.com}"
+    local external_host="${REDIS_EXTERNAL_HOST:-www.sunmoonai.com}"
     sed -i "s/{{REDIS_EXTERNAL_HOST}}/$external_host/g" "$temp_file"
     # 兼容旧格式（如果配置文件中没有使用模板变量）
     sed -i "/services:/,/port:/ s/name: redis-sunmoonai-master/name: $SERVICE_NAME/g" "$temp_file"
@@ -234,18 +234,18 @@ check_deployment_status() {
     
     echo ""
     echo "=== 访问信息 ==="
-    echo "Redis 数据库地址: ${HOST:-${REDIS_EXTERNAL_HOST:-llmops.sunmoonai.com}}:$REDIS_EXTERNAL_PORT"
+    echo "Redis 数据库地址: ${HOST:-${REDIS_EXTERNAL_HOST:-www.sunmoonai.com}}:$REDIS_EXTERNAL_PORT"
     echo "Redis 内部端口: $REDIS_PORT"
     echo ""
     echo "=== 使用说明 ==="
     echo "1. 通过 redis-cli 客户端连接:"
-    echo "   redis-cli -h ${HOST:-${REDIS_EXTERNAL_HOST:-llmops.sunmoonai.com}} -p $REDIS_EXTERNAL_PORT"
+    echo "   redis-cli -h ${HOST:-${REDIS_EXTERNAL_HOST:-www.sunmoonai.com}} -p $REDIS_EXTERNAL_PORT"
     echo ""
     echo "2. 在应用程序连接字符串中使用:"
-    echo "   redis://${HOST:-${REDIS_EXTERNAL_HOST:-llmops.sunmoonai.com}}:$REDIS_EXTERNAL_PORT/0"
+    echo "   redis://${HOST:-${REDIS_EXTERNAL_HOST:-www.sunmoonai.com}}:$REDIS_EXTERNAL_PORT/0"
     echo ""
     echo "3. 注意：Redis Web UI 管理界面请通过 RedisInsight 访问："
-    echo "   http://llmops.sunmoonai.com/redisinsight"
+    echo "   http://www.sunmoonai.com/redisinsight"
 }
 
 # 删除 Redis TCP 路由

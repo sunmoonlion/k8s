@@ -108,7 +108,7 @@ load_config() {
     # 如果 ingress 配置文件中定义了 HOST，优先使用 HOST（向后兼容）
     # 否则使用主配置文件中的 MONGODB_EXTERNAL_HOST
     if [[ -z "${HOST:-}" ]]; then
-        HOST="${MONGODB_EXTERNAL_HOST:-llmops.sunmoonai.com}"
+        HOST="${MONGODB_EXTERNAL_HOST:-www.sunmoonai.com}"
     fi
     
     log_success "✅ 配置加载成功"
@@ -185,7 +185,7 @@ deploy_tcp_route() {
     sed -i "s/port: {{SERVICE_PORT}}/port: $MONGODB_PORT/g" "$temp_file"
     sed -i "s/namespace: {{NAMESPACE}}/namespace: $namespace/g" "$temp_file"
     # 替换域名占位符
-    local external_host="${MONGODB_EXTERNAL_HOST:-llmops.sunmoonai.com}"
+    local external_host="${MONGODB_EXTERNAL_HOST:-www.sunmoonai.com}"
     sed -i "s/{{MONGODB_EXTERNAL_HOST}}/$external_host/g" "$temp_file"
     # 兼容旧格式（如果配置文件中没有使用模板变量）
     sed -i "/services:/,/port:/ s/name: mongodb-sunmoonai/name: $SERVICE_NAME/g" "$temp_file"
@@ -225,18 +225,18 @@ check_deployment_status() {
     
     echo ""
     echo "=== 访问信息 ==="
-    echo "MongoDB 数据库地址: ${HOST:-${MONGODB_EXTERNAL_HOST:-llmops.sunmoonai.com}}:$MONGODB_EXTERNAL_PORT"
+    echo "MongoDB 数据库地址: ${HOST:-${MONGODB_EXTERNAL_HOST:-www.sunmoonai.com}}:$MONGODB_EXTERNAL_PORT"
     echo "MongoDB 内部端口: $MONGODB_PORT"
     echo ""
     echo "=== 使用说明 ==="
     echo "1. 通过 mongosh 客户端连接:"
-    echo "   mongosh mongodb://${HOST:-${MONGODB_EXTERNAL_HOST:-llmops.sunmoonai.com}}:$MONGODB_EXTERNAL_PORT/database"
+    echo "   mongosh mongodb://${HOST:-${MONGODB_EXTERNAL_HOST:-www.sunmoonai.com}}:$MONGODB_EXTERNAL_PORT/database"
     echo ""
     echo "2. 在应用程序连接字符串中使用:"
-    echo "   mongodb://${HOST:-${MONGODB_EXTERNAL_HOST:-llmops.sunmoonai.com}}:$MONGODB_EXTERNAL_PORT/database"
+    echo "   mongodb://${HOST:-${MONGODB_EXTERNAL_HOST:-www.sunmoonai.com}}:$MONGODB_EXTERNAL_PORT/database"
     echo ""
     echo "3. 注意：MongoDB Web UI 管理界面请通过 Mongo Express 访问："
-    echo "   http://llmops.sunmoonai.com/mongo-express"
+    echo "   http://www.sunmoonai.com/mongo-express"
 }
 
 # 删除 MongoDB TCP 路由

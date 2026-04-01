@@ -370,7 +370,7 @@ show_redis_connection_info() {
     echo ""
     echo "=== 使用说明 ==="
     echo "1. 配置 hosts 文件:"
-    echo "   echo '101.126.151.0 ${REDIS_EXTERNAL_HOST:-llmops.sunmoonai.com}' | sudo tee -a /etc/hosts"
+    echo "   echo '101.126.151.0 ${REDIS_EXTERNAL_HOST:-www.sunmoonai.com}' | sudo tee -a /etc/hosts"
     echo ""
     echo "2. 连接 Redis:"
     echo "   redis-cli -h $REDIS_EXTERNAL_HOST -p $REDIS_EXTERNAL_PORT"

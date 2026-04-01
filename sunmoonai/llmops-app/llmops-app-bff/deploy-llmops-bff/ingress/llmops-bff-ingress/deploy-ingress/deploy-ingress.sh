@@ -120,7 +120,7 @@ deploy_http_route() {
     # 从主配置文件构建配置
     SERVICE_NAME="llmops-app-bff"
     NAMESPACE="${LLMOPS_BFF_NAMESPACE:-app-platform-dev}"
-    UNIFIED_HOST="${LLMOPS_BFF_UNIFIED_HOST:-llmops.sunmoonai.com}"
+    UNIFIED_HOST="${LLMOPS_BFF_UNIFIED_HOST:-www.sunmoonai.com}"
     NODE_IP="${LLMOPS_BFF_NODE_IP:-101.126.151.0}"
     
     # 从 Service 中获取端口（如果 Service 存在）

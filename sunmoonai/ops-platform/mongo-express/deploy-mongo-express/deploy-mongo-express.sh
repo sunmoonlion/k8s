@@ -189,7 +189,7 @@ process_mongo_express_values() {
         else
             sed -i 's/imagePullSecrets: "{{MONGO_EXPRESS_IMAGE_PULL_SECRETS}}"/imagePullSecrets: []/g' "$mongo_express_values_file"
         fi
-        sed -i "s/{{MONGO_EXPRESS_UNIFIED_HOST}}/${MONGO_EXPRESS_UNIFIED_HOST:-llmops.sunmoonai.com}/g" "$mongo_express_values_file"
+        sed -i "s/{{MONGO_EXPRESS_UNIFIED_HOST}}/${MONGO_EXPRESS_UNIFIED_HOST:-www.sunmoonai.com}/g" "$mongo_express_values_file"
         
         # MongoDB 连接配置变量替换（从配置文件读取/自动探测）
         # 目标：避免硬编码 Service 名，且在远程集群下优先使用 Service ClusterIP（减少 DNS 抖动）
@@ -433,14 +433,14 @@ show_mongo_express_connection_info() {
     echo ""
     echo "=== Mongo Express 连接信息 ==="
     echo "命名空间: $namespace"
-    echo "外部访问: https://${MONGO_EXPRESS_UNIFIED_HOST:-llmops.sunmoonai.com}/mongo-express"
+    echo "外部访问: https://${MONGO_EXPRESS_UNIFIED_HOST:-www.sunmoonai.com}/mongo-express"
     echo ""
     echo "=== 使用说明 ==="
     echo "1. 配置 hosts 文件（如果需要）:"
-    echo "   echo '${MONGO_EXPRESS_NODE_IP:-115.190.153.150} ${MONGO_EXPRESS_UNIFIED_HOST:-llmops.sunmoonai.com}' | sudo tee -a /etc/hosts"
+    echo "   echo '${MONGO_EXPRESS_NODE_IP:-115.190.153.150} ${MONGO_EXPRESS_UNIFIED_HOST:-www.sunmoonai.com}' | sudo tee -a /etc/hosts"
     echo ""
     echo "2. 访问 Mongo Express:"
-    echo "   https://${MONGO_EXPRESS_UNIFIED_HOST:-llmops.sunmoonai.com}/mongo-express"
+    echo "   https://${MONGO_EXPRESS_UNIFIED_HOST:-www.sunmoonai.com}/mongo-express"
     echo ""
     echo "3. 查看服务状态:"
     echo "   kubectl get pods,svc -n $namespace -l app.kubernetes.io/instance=mongo-express-<project_id>"

@@ -493,9 +493,9 @@ deploy_web_api() {
     # 显示访问信息
     echo ""
     log_info "访问信息:"
-    echo "  🌐 域名: ${LLMOPS_BFF_UNIFIED_HOST:-llmops.sunmoonai.com}"
+    echo "  🌐 域名: ${LLMOPS_BFF_UNIFIED_HOST:-www.sunmoonai.com}"
     echo "  🔗 端口: ${LLMOPS_BFF_EXTERNAL_PORT:-30443} (HTTPS)"
-    echo "  📍 完整URL: https://${LLMOPS_BFF_UNIFIED_HOST:-llmops.sunmoonai.com}:${LLMOPS_BFF_EXTERNAL_PORT:-30443}/api/v1"
+    echo "  📍 完整URL: https://${LLMOPS_BFF_UNIFIED_HOST:-www.sunmoonai.com}:${LLMOPS_BFF_EXTERNAL_PORT:-30443}/api/v1"
     echo ""
     log_info "检查部署状态:"
     echo "  kubectl get pods -n $NAMESPACE -l app=llmops-app-bff"

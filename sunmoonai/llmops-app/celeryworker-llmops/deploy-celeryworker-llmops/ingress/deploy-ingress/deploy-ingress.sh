@@ -120,7 +120,7 @@ deploy_http_route() {
     # 从主配置文件构建配置
     SERVICE_NAME="celeryworker-llmops-service"
     NAMESPACE="${CELERY_WORKER_NAMESPACE:-app-platform-dev}"
-    UNIFIED_HOST="${CELERY_WORKER_UNIFIED_HOST:-celeryworker-llmops.sunmoonai.com}"
+    UNIFIED_HOST="${CELERY_WORKER_UNIFIED_HOST:-celeryworker-www.sunmoonai.com}"
     NODE_IP="${CELERY_WORKER_NODE_IP:-101.126.151.0}"
     
     # 从 Service 中获取端口（如果 Service 存在）

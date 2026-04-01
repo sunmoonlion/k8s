@@ -94,7 +94,7 @@ load_config() {
     fi
     
     # UNIFIED_HOST: 从主配置的统一域名获取
-    UNIFIED_HOST="${PGADMIN_UNIFIED_HOST:-llmops.sunmoonai.com}"
+    UNIFIED_HOST="${PGADMIN_UNIFIED_HOST:-www.sunmoonai.com}"
     
     # NODE_IP: 从主配置的节点 IP 获取
     NODE_IP="${PGADMIN_NODE_IP:-115.190.153.150}"
@@ -205,7 +205,7 @@ check_deployment_status() {
     echo "   https://$UNIFIED_HOST/pgadmin"
     echo ""
     echo "2. 注意：pgAdmin 用于管理 PostgreSQL 数据库"
-    echo "   PostgreSQL TCP 连接地址: llmops.sunmoonai.com:30092"
+    echo "   PostgreSQL TCP 连接地址: www.sunmoonai.com:30092"
 }
 
 # 删除 pgAdmin Web 路由

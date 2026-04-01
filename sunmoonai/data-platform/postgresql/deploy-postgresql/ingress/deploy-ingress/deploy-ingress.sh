@@ -129,7 +129,7 @@ load_config() {
     
     # 统一使用 POSTGRESQL_EXTERNAL_HOST（从主配置文件继承）
     if [[ -z "${HOST:-}" ]]; then
-        HOST="${POSTGRESQL_EXTERNAL_HOST:-llmops.sunmoonai.com}"
+        HOST="${POSTGRESQL_EXTERNAL_HOST:-www.sunmoonai.com}"
     fi
     
     log_success "✅ 配置加载成功"
@@ -208,7 +208,7 @@ deploy_tcp_route() {
     sed -i "s/port: {{SERVICE_PORT}}/port: $POSTGRESQL_PORT/g" "$temp_file"
     sed -i "s/namespace: {{NAMESPACE}}/namespace: $namespace/g" "$temp_file"
     # 替换域名占位符
-    local external_host="${POSTGRESQL_EXTERNAL_HOST:-llmops.sunmoonai.com}"
+    local external_host="${POSTGRESQL_EXTERNAL_HOST:-www.sunmoonai.com}"
     sed -i "s/{{POSTGRESQL_EXTERNAL_HOST}}/$external_host/g" "$temp_file"
     # 兼容旧格式（如果配置文件中没有使用模板变量）
     sed -i "/services:/,/port:/ s/name: postgresql-sunmoonai/name: $SERVICE_NAME/g" "$temp_file"
@@ -248,18 +248,18 @@ check_deployment_status() {
     
     echo ""
     echo "=== 访问信息 ==="
-    echo "PostgreSQL 数据库地址: ${HOST:-${POSTGRESQL_EXTERNAL_HOST:-llmops.sunmoonai.com}}:$POSTGRESQL_EXTERNAL_PORT"
+    echo "PostgreSQL 数据库地址: ${HOST:-${POSTGRESQL_EXTERNAL_HOST:-www.sunmoonai.com}}:$POSTGRESQL_EXTERNAL_PORT"
     echo "PostgreSQL 内部端口: $POSTGRESQL_PORT"
     echo ""
     echo "=== 使用说明 ==="
     echo "1. 通过 psql 客户端连接:"
-    echo "   psql -h ${HOST:-${POSTGRESQL_EXTERNAL_HOST:-llmops.sunmoonai.com}} -p $POSTGRESQL_EXTERNAL_PORT -U username -d database"
+    echo "   psql -h ${HOST:-${POSTGRESQL_EXTERNAL_HOST:-www.sunmoonai.com}} -p $POSTGRESQL_EXTERNAL_PORT -U username -d database"
     echo ""
     echo "2. 在应用程序连接字符串中使用:"
-    echo "   postgresql://${HOST:-${POSTGRESQL_EXTERNAL_HOST:-llmops.sunmoonai.com}}:$POSTGRESQL_EXTERNAL_PORT/database?user=username&password=password"
+    echo "   postgresql://${HOST:-${POSTGRESQL_EXTERNAL_HOST:-www.sunmoonai.com}}:$POSTGRESQL_EXTERNAL_PORT/database?user=username&password=password"
     echo ""
     echo "3. 注意：PostgreSQL Web UI 管理界面请通过 pgAdmin 访问："
-    echo "   http://llmops.sunmoonai.com/pgadmin"
+    echo "   http://www.sunmoonai.com/pgadmin"
 }
 
 # 删除 PostgreSQL TCP 路由

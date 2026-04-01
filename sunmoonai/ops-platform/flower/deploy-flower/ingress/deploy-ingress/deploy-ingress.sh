@@ -78,7 +78,7 @@ load_config() {
     fi
     
     # UNIFIED_HOST: 从主配置的统一域名获取
-    UNIFIED_HOST="${FLOWER_UNIFIED_HOST:-llmops.sunmoonai.com}"
+    UNIFIED_HOST="${FLOWER_UNIFIED_HOST:-www.sunmoonai.com}"
     
     # NODE_IP: 从主配置的节点 IP 获取
     NODE_IP="${FLOWER_NODE_IP:-115.190.153.150}"

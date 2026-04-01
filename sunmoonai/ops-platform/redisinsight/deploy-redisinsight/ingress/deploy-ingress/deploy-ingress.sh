@@ -78,7 +78,7 @@ load_config() {
     fi
     
     # UNIFIED_HOST: 从主配置的统一域名获取
-    UNIFIED_HOST="${REDISINSIGHT_UNIFIED_HOST:-llmops.sunmoonai.com}"
+    UNIFIED_HOST="${REDISINSIGHT_UNIFIED_HOST:-www.sunmoonai.com}"
     
     # NODE_IP: 从主配置的节点 IP 获取
     NODE_IP="${REDISINSIGHT_NODE_IP:-115.190.153.150}"
@@ -189,7 +189,7 @@ check_deployment_status() {
     echo "   https://$UNIFIED_HOST/redisinsight"
     echo ""
     echo "2. 注意：RedisInsight 用于管理 Redis 数据库"
-    echo "   Redis TCP 连接地址: llmops.sunmoonai.com:30094"
+    echo "   Redis TCP 连接地址: www.sunmoonai.com:30094"
 }
 
 # 删除 RedisInsight Web 路由

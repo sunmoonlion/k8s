@@ -45,7 +45,7 @@ load(){
     fi
     
     # UNIFIED_HOST: 从主配置的统一域名获取
-    UNIFIED_HOST="${RABBITMQ_UNIFIED_HOST:-llmops.sunmoonai.com}"
+    UNIFIED_HOST="${RABBITMQ_UNIFIED_HOST:-www.sunmoonai.com}"
     
     # NODE_IP: 从主配置的节点 IP 获取（如果没有配置，使用默认值）
     NODE_IP="${RABBITMQ_NODE_IP:-115.190.153.150}"

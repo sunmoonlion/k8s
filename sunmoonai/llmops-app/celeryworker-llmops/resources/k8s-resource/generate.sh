@@ -66,7 +66,7 @@ export CODE_EXTRACT_FILES="${CODE_EXTRACT_FILES:-__init__.py}"
 # Ingress 相关变量（用于模板替换）
 export SERVICE_NAME="${SERVICE_NAME:-celeryworker-llmops-service}"
 export SERVICE_PORT="${SERVICE_PORT:-5555}"
-export UNIFIED_HOST="${UNIFIED_HOST:-celeryworker-llmops.sunmoonai.com}"
+export UNIFIED_HOST="${UNIFIED_HOST:-celeryworker-www.sunmoonai.com}"
 export NODE_IP="${NODE_IP:-101.126.151.0}"
 
 # PVC 相关变量（用于模板替换，从部署配置文件中读取）

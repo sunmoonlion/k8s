@@ -80,7 +80,7 @@ load_config() {
     fi
     
     # UNIFIED_HOST: 从主配置的统一域名获取
-    UNIFIED_HOST="${MONGO_EXPRESS_UNIFIED_HOST:-llmops.sunmoonai.com}"
+    UNIFIED_HOST="${MONGO_EXPRESS_UNIFIED_HOST:-www.sunmoonai.com}"
     
     # NODE_IP: 从主配置的节点 IP 获取
     NODE_IP="${MONGO_EXPRESS_NODE_IP:-115.190.153.150}"
@@ -191,7 +191,7 @@ check_deployment_status() {
     echo "   https://$UNIFIED_HOST/mongo-express"
     echo ""
     echo "2. 注意：Mongo Express 用于管理 MongoDB 数据库"
-    echo "   MongoDB TCP 连接地址: llmops.sunmoonai.com:30093"
+    echo "   MongoDB TCP 连接地址: www.sunmoonai.com:30093"
 }
 
 # 删除 Mongo Express Web 路由

@@ -327,7 +327,7 @@ show_logstash_connection_info() {
     local namespace="$2"
     
     # 获取配置变量（使用默认值避免未定义变量错误）
-    local unified_host="${LOGSTASH_UNIFIED_HOST:-llmops.sunmoonai.com}"
+    local unified_host="${LOGSTASH_UNIFIED_HOST:-www.sunmoonai.com}"
     local release_name="logstash-$project_id"
     local label_selector="app.kubernetes.io/instance=$release_name"
     local service_name

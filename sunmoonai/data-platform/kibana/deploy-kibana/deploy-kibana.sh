@@ -285,7 +285,7 @@ show_kibana_connection_info() {
     local namespace="$1"
     
     # 获取外部访问配置（使用默认值如果未设置）
-    local external_host="${KIBANA_UNIFIED_HOST:-llmops.sunmoonai.com}"
+    local external_host="${KIBANA_UNIFIED_HOST:-www.sunmoonai.com}"
     local external_port="${KIBANA_EXTERNAL_PORT:-30443}"
     
     echo ""

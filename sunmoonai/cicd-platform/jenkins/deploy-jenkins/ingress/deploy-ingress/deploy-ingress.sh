@@ -42,7 +42,7 @@ load(){
     fi
     
     # UNIFIED_HOST: 从主配置的统一域名获取
-    UNIFIED_HOST="${JENKINS_UNIFIED_HOST:-llmops.sunmoonai.com}"
+    UNIFIED_HOST="${JENKINS_UNIFIED_HOST:-www.sunmoonai.com}"
     
     # 固定配置（不需要动态获取）
     ENTRY_POINT="web"
