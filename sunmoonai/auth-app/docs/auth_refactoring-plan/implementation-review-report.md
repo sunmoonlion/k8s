@@ -11,8 +11,8 @@
 
 ## 审查范围
 根据 `implementation-guide.md` 文档，全面审查以下应用的实现：
-- `auth-app-bff` - 认证服务
-- `auth-app-ssr` - 认证SSR应用
+- `auth-app-backend` - 认证服务
+- `auth-app-front` - 认证SSR应用
 - `incubator-app-bff` - Incubator业务BFF
 - `incubator-app-ssr` - Incubator业务SSR
 - `llmops-app-bff` - LLMOps业务BFF
@@ -20,7 +20,7 @@
 
 ---
 
-## 一、auth-app-bff 审查结果
+## 一、auth-app-backend 审查结果
 
 ### ✅ 已实现的功能
 
@@ -57,7 +57,7 @@
 
 ---
 
-## 二、auth-app-ssr 审查结果
+## 二、auth-app-front 审查结果
 
 ### ✅ 已实现的功能
 
@@ -65,7 +65,7 @@
    - ✅ `server/middleware/auth.global.ts` - 全局认证中间件
    - ✅ Cookie 读取和验证
    - ✅ Session ID 格式验证
-   - ✅ 调用 auth-app-bff 的 `/auth/me` 接口
+   - ✅ 调用 auth-app-backend 的 `/auth/me` 接口
    - ✅ 用户信息缓存（5秒）
 
 2. **API 调用**
@@ -137,7 +137,7 @@
 
 1. **AUTH_SERVICE_URL 配置**
    - 需要确认 `AUTH_SERVICE_URL` 环境变量是否正确配置
-   - 应该指向 `auth-app-bff` 服务地址
+   - 应该指向 `auth-app-backend` 服务地址
 
 ---
 
@@ -147,17 +147,17 @@
 
 1. **SSR 中间件**
    - ✅ `app/server/middleware/auth.global.ts` - 存在认证中间件
-   - 需要检查具体实现是否与 `auth-app-ssr` 一致
+   - 需要检查具体实现是否与 `auth-app-front` 一致
 
 ### ✅ 已修复
 
 1. **中间件实现已修复**
    - ✅ `auth.global.ts` 已更新为调用业务BFF（`incubator-app-bff`）
    - ✅ Cookie 处理正确，转发到业务BFF
-   - ✅ 业务BFF 会转发 Cookie 到 `auth-app-bff` 进行认证
+   - ✅ 业务BFF 会转发 Cookie 到 `auth-app-backend` 进行认证
 
 2. **未登录重定向**
-   - ⚠️ 需要确认：当业务BFF返回401时，是否重定向到 `auth-app-ssr`
+   - ⚠️ 需要确认：当业务BFF返回401时，是否重定向到 `auth-app-front`
    - 建议：在业务SSR中添加错误处理中间件，捕获401并重定向
 
 ---
@@ -170,7 +170,7 @@
 - **影响**：无法实现文档中描述的"业务SSR调用业务BFF"的流程
 - **建议**：
   - 如果确实需要，需要创建 `llmops-app-ssr` 应用
-  - 参考 `auth-app-ssr` 和 `incubator-app-ssr` 的实现
+  - 参考 `auth-app-front` 和 `incubator-app-ssr` 的实现
   - 实现 SSR 中间件，调用 `llmops-app-bff`
 
 ---
@@ -185,7 +185,7 @@
      - `AuthClient` 已添加 `get_current_user(request)` 方法
      - `deps.py` 已支持 Cookie 优先认证
 
-2. **✅ auth-app-ssr Token Store 已移除**
+2. **✅ auth-app-front Token Store 已移除**
    - 修复时间：已完成
    - 修复内容：
      - 已删除 `stores/tokens.ts`
@@ -206,7 +206,7 @@
 
 ### ⚠️ 需要改进（建议修复）
 
-1. **auth-app-bff Session 滑动续期逻辑**
+1. **auth-app-backend Session 滑动续期逻辑**
    - 优先级：**P2（中）**
    - 修复时间：0.5天
 
@@ -221,10 +221,10 @@
 | 问题 | 优先级 | 状态 | 修复时间 |
 |------|--------|------|----------|
 | llmops-app-bff 支持 Cookie | P0 | ✅ 已完成 | 已修复 |
-| auth-app-ssr 移除 Token Store | P1 | ✅ 已完成 | 已修复 |
+| auth-app-front 移除 Token Store | P1 | ✅ 已完成 | 已修复 |
 | incubator-app-ssr 中间件修复 | P2 | ✅ 已完成 | 已修复 |
 | llmops-app-ssr 创建（如需要） | P1 | ⚠️ 待确认 | 2-3天（如需要） |
-| auth-app-bff 优化滑动续期 | P2 | ⚠️ 建议优化 | 0.5天 |
+| auth-app-backend 优化滑动续期 | P2 | ⚠️ 建议优化 | 0.5天 |
 
 **已修复时间**：所有关键问题已修复
 
@@ -284,7 +284,7 @@ class AuthClient:
                 response.raise_for_status()
                 user_info = response.json()
                 
-                # auth-app-bff 会返回 access_token（因为带了 X-Service-Call header）
+                # auth-app-backend 会返回 access_token（因为带了 X-Service-Call header）
                 return user_info
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 401:
@@ -326,7 +326,7 @@ async def get_current_user(
     """
     获取当前用户（优先从认证服务通过 Cookie，兼容本地数据库）
     """
-    # 优先使用 Cookie 认证（新方式，从 auth-app-bff 获取）
+    # 优先使用 Cookie 认证（新方式，从 auth-app-backend 获取）
     try:
         user_info = await auth_client.get_current_user(request)
         return user_info
@@ -347,7 +347,7 @@ async def get_current_user(
     )
 ```
 
-### 3. 修复 auth-app-ssr Token Store
+### 3. 修复 auth-app-front Token Store
 
 **步骤**：
 1. 删除 `stores/tokens.ts` 文件
@@ -366,14 +366,14 @@ async def get_current_user(
 ## 十、测试建议
 
 ### 1. 单元测试
-- ✅ auth-app-bff Session CRUD
-- ✅ auth-app-bff Cookie 设置
+- ✅ auth-app-backend Session CRUD
+- ✅ auth-app-backend Cookie 设置
 - ✅ incubator-app-bff AuthClient Cookie 转发
 - ❌ llmops-app-bff AuthClient（需要修复后测试）
 
 ### 2. 集成测试
-- ✅ 登录流程（auth-app-ssr → auth-app-bff）
-- ✅ 认证流程（业务SSR → 业务BFF → auth-app-bff）
+- ✅ 登录流程（auth-app-front → auth-app-backend）
+- ✅ 认证流程（业务SSR → 业务BFF → auth-app-backend）
 - ❌ llmops-app-bff Cookie 认证（需要修复后测试）
 - ⚠️ 未登录重定向（需要确认实现）
 
@@ -391,8 +391,8 @@ async def get_current_user(
 
 | 应用 | 完成度 | 状态 |
 |------|--------|------|
-| auth-app-bff | 95% | ✅ 基本完成 |
-| auth-app-ssr | 100% | ✅ 已完成修复 |
+| auth-app-backend | 95% | ✅ 基本完成 |
+| auth-app-front | 100% | ✅ 已完成修复 |
 | incubator-app-bff | 100% | ✅ 完全符合 |
 | incubator-app-ssr | 95% | ✅ 已修复中间件 |
 | llmops-app-bff | 100% | ✅ 已支持 Cookie |
@@ -408,7 +408,7 @@ async def get_current_user(
 
 1. **✅ 已完成修复**：
    - `llmops-app-bff` 已支持 Cookie 认证
-   - `auth-app-ssr` 已移除 Token Store
+   - `auth-app-front` 已移除 Token Store
    - `incubator-app-ssr` 中间件已修复
 
 2. **⚠️ 待确认**：
@@ -416,7 +416,7 @@ async def get_current_user(
    - 未登录重定向逻辑（401处理）
 
 3. **建议优化**（可选）：
-   - 优化 `auth-app-bff` 的滑动续期逻辑
+   - 优化 `auth-app-backend` 的滑动续期逻辑
    - 添加未登录重定向中间件
 
 ---

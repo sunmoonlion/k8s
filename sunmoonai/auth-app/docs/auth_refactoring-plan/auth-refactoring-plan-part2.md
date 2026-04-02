@@ -3,7 +3,7 @@
 本部分列出可直接执行的分阶段任务清单与测试要点。默认优先从 Auth 核心（Phase 1）开始，逐步推进。
 
 ---
-## Phase 1：auth-app-bff 引入 Redis Session 与 Cookie 认证（最高优先级）
+## Phase 1：auth-app-backend 引入 Redis Session 与 Cookie 认证（最高优先级）
 
 ### 1.1 基础设施与配置
 - 新增配置项：`SESSION_COOKIE_NAME`（如 `sunmoonai_session`）、`SESSION_TTL_SECONDS`、`REDIS_HOST/PORT/DB/PASSWORD`。
@@ -53,7 +53,7 @@
 ## Phase 2：BFF 适配（llmops / incubator / portal）
 
 ### 2.1 配置与客户端
-- 各 BFF ConfigMap 增加 `AUTH_SERVICE_URL`，指向 `auth-app-bff` Service。
+- 各 BFF ConfigMap 增加 `AUTH_SERVICE_URL`，指向 `auth-app-backend` Service。
 - 提供统一的 `AuthClient`（NestJS/HTTPX）：
   - 调用 `/api/v1/auth/me`（或 `/api/auth/me`，取决于版本前缀）
   - 原样转发前端 Cookie（关键），不依赖前端拼 JWT。
@@ -73,7 +73,7 @@
 - 压测：/auth/me QPS 与延迟；BFF 本地缓存命中率（若启用）。
 
 ---
-## Phase 3：SSR 适配（auth-app-ssr 起步）
+## Phase 3：SSR 适配（auth-app-front 起步）
 
 ### 3.1 前端存储策略
 - Pinia 中不再持久化 access/refresh 到浏览器存储；仅存 UI 状态或临时 claim。
@@ -119,7 +119,7 @@
 ### 5.1 文档
 - 更新 `ssr_bff_auth_flow.md`：标记“已实现”状态与差异。
 - 更新 `sunmoonai·-architecture.md`：补充“统一 Auth + Session + Redis”章节。
-- 更新/补充 `auth-app-bff/ARCHITECTURE_ADAPTATION.md`：记录接口、配置、迁移说明。
+- 更新/补充 `auth-app-backend/ARCHITECTURE_ADAPTATION.md`：记录接口、配置、迁移说明。
 
 ### 5.2 测试清单（最小回归集）
 - 登录（用户名/密码、魔法链接、TOTP）
@@ -133,7 +133,7 @@
 ## 建议的实施顺序（可执行）
 1) **Auth Phase 1**：落地 Redis、SessionStorageService、Cookie 登录与 /auth/me，保留 JWT 兼容。  
 2) **BFF Phase 2**：llmops/incubator/portal 改为用 Cookie 调 /auth/me，清理本地 JWT 校验。  
-3) **SSR Phase 3**：auth-app-ssr 起，移除前端持久化 JWT，改为依赖 Cookie+SSR→BFF→Auth。  
+3) **SSR Phase 3**：auth-app-front 起，移除前端持久化 JWT，改为依赖 Cookie+SSR→BFF→Auth。  
 4) **Infra Phase 4**：Cookie 策略在 Ingress 生效，Redis 监控与安全。  
 5) **Docs/Tests Phase 5**：同步文档与回归。
 

@@ -44,7 +44,7 @@
   - `totp-setup:{username}` → { secret, expires_at }
 
 ---
-## 2. 关键 HTTP 接口设计（auth-app-bff）
+## 2. 关键 HTTP 接口设计（auth-app-backend）
 
 以下路径假定全局前缀 `/api`，版本 `v1`，实际以现有配置为准。
 
@@ -150,7 +150,7 @@
 ```yaml
 env:
   - name: AUTH_SERVICE_URL
-    value: "http://auth-app-bff:3030"  # k8s Service
+    value: "http://auth-app-backend:3030"  # k8s Service
 ```
 
 ### 3.2 AuthClient 规范
@@ -194,10 +194,10 @@ async def protected_endpoint(
 ```
 
 ---
-## 4. SSR 使用规范（以 auth-app-ssr 为例）
+## 4. SSR 使用规范（以 auth-app-front 为例）
 
 ### 4.1 登录页行为
-- 前端提交用户名/密码到自身 BFF（或直接到 auth-app-bff）。
+- 前端提交用户名/密码到自身 BFF（或直接到 auth-app-backend）。
 - 服务端拿到 200 + Set-Cookie 后：
   - SSR 负责重定向到首页/目标页
   - 不再在 Pinia/localStorage 中长期保存 JWT。
@@ -239,7 +239,7 @@ if (!user) {
 ### 5.1 登录（用户名/密码）
 
 ```text
-Browser → SSR(auth-app-ssr) → Auth BFF(auth-app-bff)
+Browser → SSR(auth-app-front) → Auth BFF(auth-app-backend)
 
 1. Browser 提交表单 /login
 2. SSR 接收到请求，转发到 Auth BFF /login/oauth
@@ -255,7 +255,7 @@ Browser → SSR(auth-app-ssr) → Auth BFF(auth-app-bff)
 Browser (带 Cookie: sunmoonai_session)
   → SSR (llmops-app-ssr)
     → BFF (llmops-app-bff)
-      → Auth BFF (auth-app-bff /auth/me)
+      → Auth BFF (auth-app-backend /auth/me)
 
 1. Browser 访问 llmops 页面，请求头带 Cookie
 2. SSR 将 Cookie 转发给 BFF /me

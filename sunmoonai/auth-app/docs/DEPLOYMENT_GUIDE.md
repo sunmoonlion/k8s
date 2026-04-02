@@ -1,12 +1,12 @@
 # Auth App 部署指南
 
-本文档说明如何部署 auth-app-bff 和 auth-app-ssr。
+本文档说明如何部署 auth-app-backend 和 auth-app-front。
 
 ## 部署顺序
 
-**必须先部署 auth-app-bff，再部署 auth-app-ssr**，因为：
-1. auth-app-ssr 需要调用 auth-app-bff 进行认证
-2. auth-app-bff 是认证服务的核心，其他服务都依赖它
+**必须先部署 auth-app-backend，再部署 auth-app-front**，因为：
+1. auth-app-front 需要调用 auth-app-backend 进行认证
+2. auth-app-backend 是认证服务的核心，其他服务都依赖它
 
 ## 前置条件
 
@@ -23,15 +23,15 @@
 确保镜像已构建并推送到 Harbor：
 
 ```bash
-# 构建并推送 auth-app-bff 镜像
-cd /home/zym/app/auth-app-bff
+# 构建并推送 auth-app-backend 镜像
+cd /home/zym/app/auth-app-backend
 # 根据实际构建脚本执行
-# 例如：npm run build && docker build -t harbor.sunmoonai.com:30443/k8s-images/auth-app-bff:1.0.0 .
+# 例如：npm run build && docker build -t harbor.sunmoonai.com:30443/k8s-images/auth-app-backend:1.0.0 .
 
-# 构建并推送 auth-app-ssr 镜像
-cd /home/zym/app/auth-app-ssr
+# 构建并推送 auth-app-front 镜像
+cd /home/zym/app/auth-app-front
 # 根据实际构建脚本执行
-# 例如：npm run build && docker build -t harbor.sunmoonai.com:30443/k8s-images/auth-app-ssr:1.0.0 .
+# 例如：npm run build && docker build -t harbor.sunmoonai.com:30443/k8s-images/auth-app-front:1.0.0 .
 ```
 
 ### 3. 配置文件准备
@@ -46,12 +46,12 @@ cd /home/zym/app/auth-app-ssr
 
 ## 部署步骤
 
-### 步骤 1: 部署 auth-app-bff
+### 步骤 1: 部署 auth-app-backend
 
 #### 1.1 准备配置文件
 
 创建或修改配置文件：
-`~/k8s/sunmoonai/auth-app/auth-app-bff/deploy-auth-app-bff/app/deploy-app/deploy-auth-app-bff.conf`
+`~/k8s/sunmoonai/auth-app/auth-app-backend/deploy-auth-app-backend/app/deploy-app/deploy-auth-app-backend.conf`
 
 ```bash
 # 项目配置
@@ -62,7 +62,7 @@ ENVIRONMENT=development
 # 镜像配置
 AUTH_BFF_IMAGE_REGISTRY=harbor.sunmoonai.com:30443
 AUTH_BFF_IMAGE_PROJECT=k8s-images
-AUTH_BFF_IMAGE=auth-app-bff
+AUTH_BFF_IMAGE=auth-app-backend
 AUTH_BFF_TAG=1.0.0
 
 # 环境变量（联动配置）
@@ -82,7 +82,7 @@ REDIS_PORT=6379
 #### 1.2 准备 Secret 配置
 
 创建 Secret 配置文件：
-`~/k8s/sunmoonai/auth-app/auth-app-bff/deploy-auth-app-bff/secret/auth-app-bff-secret/deploy-auth-app-bff-secret/deploy-auth-app-bff-secret.conf`
+`~/k8s/sunmoonai/auth-app/auth-app-backend/deploy-auth-app-backend/secret/auth-app-backend-secret/deploy-auth-app-backend-secret/deploy-auth-app-backend-secret.conf`
 
 ```bash
 # 敏感配置（必须修改）
@@ -105,40 +105,40 @@ SENTRY_DSN=your-sentry-dsn
 #### 1.3 执行部署
 
 ```bash
-cd ~/k8s/sunmoonai/auth-app/auth-app-bff/deploy-auth-app-bff/app/deploy-app
-./deploy-auth-app-bff.sh deploy sunmoonai app-platform-dev development
+cd ~/k8s/sunmoonai/auth-app/auth-app-backend/deploy-auth-app-backend/app/deploy-app
+./deploy-auth-app-backend.sh deploy sunmoonai app-platform-dev development
 ```
 
 #### 1.4 验证部署
 
 ```bash
 # 检查 Pod 状态
-kubectl get pods -n app-platform-dev -l app=auth-app-bff
+kubectl get pods -n app-platform-dev -l app=auth-app-backend
 
 # 检查 Service
-kubectl get svc -n app-platform-dev -l app=auth-app-bff
+kubectl get svc -n app-platform-dev -l app=auth-app-backend
 
 # 检查 ConfigMap
-kubectl get configmap auth-app-bff-config -n app-platform-dev
+kubectl get configmap auth-app-backend-config -n app-platform-dev
 
 # 检查 Secret
-kubectl get secret auth-app-bff-secret -n app-platform-dev
+kubectl get secret auth-app-backend-secret -n app-platform-dev
 
 # 查看 Pod 日志
-kubectl logs -n app-platform-dev -l app=auth-app-bff -f
+kubectl logs -n app-platform-dev -l app=auth-app-backend -f
 
 # 测试接口（在 Pod 内或通过 Ingress）
-kubectl exec -it <auth-app-bff-pod> -n app-platform-dev -- curl http://localhost:3030/api/v1/health
+kubectl exec -it <auth-app-backend-pod> -n app-platform-dev -- curl http://localhost:3030/api/v1/health
 ```
 
 ---
 
-### 步骤 2: 部署 auth-app-ssr
+### 步骤 2: 部署 auth-app-front
 
 #### 2.1 准备配置文件
 
 创建或修改配置文件：
-`~/k8s/sunmoonai/auth-app/auth-app-ssr/deploy-auth-app-ssr/app/deploy-app/deploy-auth-app-ssr.conf`
+`~/k8s/sunmoonai/auth-app/auth-app-front/deploy-auth-app-front/app/deploy-app/deploy-auth-app-front.conf`
 
 ```bash
 # 项目配置
@@ -149,7 +149,7 @@ ENVIRONMENT=development
 # 镜像配置
 AUTH_SSR_IMAGE_REGISTRY=harbor.sunmoonai.com:30443
 AUTH_SSR_IMAGE_PROJECT=k8s-images
-AUTH_SSR_IMAGE=auth-app-ssr
+AUTH_SSR_IMAGE=auth-app-front
 AUTH_SSR_TAG=1.0.0
 
 # 环境变量（联动配置）
@@ -163,7 +163,7 @@ NITRO_PORT=3000
 #### 2.2 准备 Secret 配置
 
 创建 Secret 配置文件：
-`~/k8s/sunmoonai/auth-app/auth-app-ssr/deploy-auth-app-ssr/secret/auth-app-ssr-secret/deploy-auth-app-ssr-secret/deploy-auth-app-ssr-secret.conf`
+`~/k8s/sunmoonai/auth-app/auth-app-front/deploy-auth-app-front/secret/auth-app-front-secret/deploy-auth-app-front-secret/deploy-auth-app-front-secret.conf`
 
 ```bash
 # SSR 通常不需要敏感配置，但可以添加
@@ -173,27 +173,27 @@ NITRO_PORT=3000
 #### 2.3 执行部署
 
 ```bash
-cd ~/k8s/sunmoonai/auth-app/auth-app-ssr/deploy-auth-app-ssr/app/deploy-app
-./deploy-auth-app-ssr.sh deploy sunmoonai app-platform-dev development
+cd ~/k8s/sunmoonai/auth-app/auth-app-front/deploy-auth-app-front/app/deploy-app
+./deploy-auth-app-front.sh deploy sunmoonai app-platform-dev development
 ```
 
 #### 2.4 验证部署
 
 ```bash
 # 检查 Pod 状态
-kubectl get pods -n app-platform-dev -l app=auth-app-ssr
+kubectl get pods -n app-platform-dev -l app=auth-app-front
 
 # 检查 Service
-kubectl get svc -n app-platform-dev -l app=auth-app-ssr
+kubectl get svc -n app-platform-dev -l app=auth-app-front
 
 # 检查 ConfigMap
-kubectl get configmap auth-app-ssr-config -n app-platform-dev
+kubectl get configmap auth-app-front-config -n app-platform-dev
 
 # 查看 Pod 日志
-kubectl logs -n app-platform-dev -l app=auth-app-ssr -f
+kubectl logs -n app-platform-dev -l app=auth-app-front -f
 
 # 测试访问（通过 Ingress）
-curl https://auth-app-ssr.sunmoonai.com/
+curl https://auth-app-front.sunmoonai.com/
 ```
 
 ---
@@ -204,8 +204,8 @@ curl https://auth-app-ssr.sunmoonai.com/
 
 ```bash
 # 检查所有资源
-kubectl get all -n app-platform-dev -l app=auth-app-bff
-kubectl get all -n app-platform-dev -l app=auth-app-ssr
+kubectl get all -n app-platform-dev -l app=auth-app-backend
+kubectl get all -n app-platform-dev -l app=auth-app-front
 
 # 检查 Ingress
 kubectl get ingressroute -n app-platform-dev | grep auth-app
@@ -216,8 +216,8 @@ kubectl get ingressroute -n app-platform-dev | grep auth-app
 #### 2.1 测试登录
 
 ```bash
-# 通过 auth-app-ssr 登录
-curl -X POST https://auth-app-ssr.sunmoonai.com/api/v1/login \
+# 通过 auth-app-front 登录
+curl -X POST https://auth-app-front.sunmoonai.com/api/v1/login \
   -H "Content-Type: application/json" \
   -d '{"email":"user@example.com","password":"password"}' \
   -c cookies.txt
@@ -230,18 +230,18 @@ cat cookies.txt | grep sunmoonai_session
 
 ```bash
 # 使用 Cookie 访问受保护接口
-curl https://auth-app-ssr.sunmoonai.com/api/v1/auth/me \
+curl https://auth-app-front.sunmoonai.com/api/v1/auth/me \
   -b cookies.txt
 ```
 
 ### 3. 检查联动配置
 
 ```bash
-# 检查 auth-app-bff 的环境变量
-kubectl exec -it <auth-app-bff-pod> -n app-platform-dev -- env | grep -E "PORT|PREFIX|VERSION|SESSION_COOKIE_NAME"
+# 检查 auth-app-backend 的环境变量
+kubectl exec -it <auth-app-backend-pod> -n app-platform-dev -- env | grep -E "PORT|PREFIX|VERSION|SESSION_COOKIE_NAME"
 
-# 检查 auth-app-ssr 的环境变量
-kubectl exec -it <auth-app-ssr-pod> -n app-platform-dev -- env | grep -E "SESSION_COOKIE_NAME"
+# 检查 auth-app-front 的环境变量
+kubectl exec -it <auth-app-front-pod> -n app-platform-dev -- env | grep -E "SESSION_COOKIE_NAME"
 ```
 
 ---
@@ -265,7 +265,7 @@ kubectl describe pod <pod-name> -n app-platform-dev
 kubectl logs <pod-name> -n app-platform-dev
 ```
 
-### 2. 无法连接 auth-app-bff
+### 2. 无法连接 auth-app-backend
 
 **检查项：**
 - Service 是否正确创建
@@ -275,10 +275,10 @@ kubectl logs <pod-name> -n app-platform-dev
 **排查命令：**
 ```bash
 # 检查 Service
-kubectl get svc auth-app-bff -n app-platform-dev
+kubectl get svc auth-app-backend -n app-platform-dev
 
 # 测试连接（在 Pod 内）
-kubectl exec -it <auth-app-ssr-pod> -n app-platform-dev -- curl http://auth-app-bff:3030/api/v1/health
+kubectl exec -it <auth-app-front-pod> -n app-platform-dev -- curl http://auth-app-backend:3030/api/v1/health
 ```
 
 ### 3. Cookie 无法设置
@@ -291,10 +291,10 @@ kubectl exec -it <auth-app-ssr-pod> -n app-platform-dev -- curl http://auth-app-
 **排查命令：**
 ```bash
 # 检查响应头
-curl -I https://auth-app-ssr.sunmoonai.com/api/v1/login
+curl -I https://auth-app-front.sunmoonai.com/api/v1/login
 
 # 检查 Cookie 设置
-curl -v https://auth-app-ssr.sunmoonai.com/api/v1/login 2>&1 | grep -i set-cookie
+curl -v https://auth-app-front.sunmoonai.com/api/v1/login 2>&1 | grep -i set-cookie
 ```
 
 ---
@@ -321,7 +321,7 @@ curl -v https://auth-app-ssr.sunmoonai.com/api/v1/login 2>&1 | grep -i set-cooki
 
 ## 参考文档
 
-- [ConfigMap 配置清单](../auth-app-bff/CONFIG_CHECKLIST.md)
+- [ConfigMap 配置清单](../auth-app-backend/CONFIG_CHECKLIST.md)
 - [环境变量使用指南](../../docs/environment-variables-usage-guide.md)
 - [Session + Cookie 系统说明](../auth_refactoring-plan/implementation-guide.md#2-session--cookie-系统完整说明)
 

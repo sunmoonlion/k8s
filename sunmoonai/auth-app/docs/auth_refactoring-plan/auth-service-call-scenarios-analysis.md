@@ -4,10 +4,10 @@
 
 ### 1.1 场景分类
 
-从架构角度，调用 `auth-app-bff` 的场景可以分为以下几类：
+从架构角度，调用 `auth-app-backend` 的场景可以分为以下几类：
 
 #### 场景 A：浏览器直接调用（前端调用）
-- **场景**：浏览器 JavaScript 直接调用 auth-app-bff
+- **场景**：浏览器 JavaScript 直接调用 auth-app-backend
 - **示例**：登录页面提交表单、前端 API 调用
 - **特点**：
   - 有 Cookie（如果已登录）
@@ -15,7 +15,7 @@
   - 可能没有 Cookie（首次登录）
 
 #### 场景 B：SSR 服务端调用（服务间调用）
-- **场景**：SSR 服务端代码调用 auth-app-bff
+- **场景**：SSR 服务端代码调用 auth-app-backend
 - **示例**：
   - SSR 登录页面处理登录请求
   - SSR 中间件验证用户身份
@@ -26,7 +26,7 @@
   - 也可以使用 JWT Token（服务间调用）
 
 #### 场景 C：BFF 调用（服务间调用）
-- **场景**：BFF 服务调用 auth-app-bff 进行认证
+- **场景**：BFF 服务调用 auth-app-backend 进行认证
 - **示例**：
   - BFF 鉴权中间件调用 `/auth/me`
   - BFF 处理业务逻辑前验证用户身份
@@ -36,7 +36,7 @@
   - 也可以使用 JWT Token（服务间调用）
 
 #### 场景 D：其他微服务调用（服务间调用）
-- **场景**：其他微服务调用 auth-app-bff 验证用户身份
+- **场景**：其他微服务调用 auth-app-backend 验证用户身份
 - **示例**：
   - 业务服务需要验证调用者身份
   - 服务间传递用户上下文
@@ -258,7 +258,7 @@ const response = await fetch('/api/v1/auth/me', {
 **调用方式**：
 ```typescript
 // SSR 服务端（登录处理）
-const response = await fetch('http://auth-app-bff/api/v1/login/oauth', {
+const response = await fetch('http://auth-app-backend/api/v1/login/oauth', {
   method: 'POST',
   body: JSON.stringify({ username, password }),
   headers: { 'Content-Type': 'application/json' }
@@ -268,7 +268,7 @@ const response = await fetch('http://auth-app-bff/api/v1/login/oauth', {
 
 **认证方式**：无（登录接口）
 
-**说明**：登录成功后，auth-app-bff 设置 Cookie，SSR 需要转发给浏览器
+**说明**：登录成功后，auth-app-backend 设置 Cookie，SSR 需要转发给浏览器
 
 ---
 
@@ -278,7 +278,7 @@ const response = await fetch('http://auth-app-bff/api/v1/login/oauth', {
 ```typescript
 // SSR 服务端中间件
 const cookies = req.headers.cookie || '';
-const response = await fetch('http://auth-app-bff/api/v1/auth/me', {
+const response = await fetch('http://auth-app-backend/api/v1/auth/me', {
   headers: {
     'Cookie': cookies,           // 转发浏览器 Cookie
     'X-Service-Call': 'true'     // 标识服务端调用，需要返回 access_token
@@ -302,7 +302,7 @@ const userInfo = await response.json();
 const userInfo = await getCurrentUser(); // 已包含 access_token
 
 // 方式 2：调用专门接口获取 access_token
-const tokenResponse = await fetch('http://auth-app-bff/api/v1/auth/token', {
+const tokenResponse = await fetch('http://auth-app-backend/api/v1/auth/token', {
   headers: { 'Cookie': cookies }
 });
 const { access_token } = await tokenResponse.json();
@@ -319,7 +319,7 @@ const serviceResponse = await fetch('http://other-service/api/data', {
 
 ---
 
-#### 场景 C：BFF 调用 auth-app-bff
+#### 场景 C：BFF 调用 auth-app-backend
 
 **子场景 C1：BFF 鉴权中间件**
 
@@ -374,11 +374,11 @@ async def call_other_service(request: Request):
 
 ---
 
-#### 场景 D：其他微服务调用 auth-app-bff
+#### 场景 D：其他微服务调用 auth-app-backend
 
 **调用方式**：
 ```python
-# 其他微服务调用 auth-app-bff
+# 其他微服务调用 auth-app-backend
 async def verify_user(token: str):
     async with httpx.AsyncClient() as client:
         response = await client.get(

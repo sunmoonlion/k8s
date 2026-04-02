@@ -4,7 +4,7 @@
 
 **重要说明**：这是首次开发，采用全新的 Session + Cookie 方案，**不需要兼容旧的 JWT Token 机制**。
 
-本文档基于 `auth-refactoring-plan-part1.md` 至 `part4.md` 和 `ssr_bff_auth_flow.md`，针对 `auth-app-bff` 实现服务端 Session（Redis）+ HttpOnly Cookie 机制，提出需要讨论和确认的关键问题。
+本文档基于 `auth-refactoring-plan-part1.md` 至 `part4.md` 和 `ssr_bff_auth_flow.md`，针对 `auth-app-backend` 实现服务端 Session（Redis）+ HttpOnly Cookie 机制，提出需要讨论和确认的关键问题。
 
 **目标**：在开始实施前，明确所有技术决策和设计细节，避免实施过程中的返工。
 
@@ -18,7 +18,7 @@
 - ✅ 认证和权限分开解决（先认证，后权限）
 - ✅ Session 结构预留权限字段（`is_superuser`, `roles`），供后续 RBAC 系统使用
 - ✅ Phase 1：完成认证改造，保持现有简单权限判断逻辑
-- ✅ Phase 2：在 auth-app-bff 中实现完整的 RBAC 系统（不需要独立的权限管理服务）
+- ✅ Phase 2：在 auth-app-backend 中实现完整的 RBAC 系统（不需要独立的权限管理服务）
 
 ---
 
@@ -30,9 +30,9 @@
 
 **架构说明**：
 - **浏览器 → SSR/BFF**：使用 Cookie（session_id）
-- **SSR/BFF → auth-app-bff**：服务间调用，**肯定需要 JWT Token**
-  - 场景 1：SSR 登录页面调用 auth-app-bff（服务间调用，没有 Cookie）
-  - 场景 2：BFF 鉴权时调用 auth-app-bff（服务间调用，可以转发 Cookie 或使用 JWT Token）
+- **SSR/BFF → auth-app-backend**：服务间调用，**肯定需要 JWT Token**
+  - 场景 1：SSR 登录页面调用 auth-app-backend（服务间调用，没有 Cookie）
+  - 场景 2：BFF 鉴权时调用 auth-app-backend（服务间调用，可以转发 Cookie 或使用 JWT Token）
 - **BFF → 其他微服务**：服务间调用，**肯定需要 JWT Token**（用于验证用户身份）
 
 **关键点**：
@@ -74,13 +74,13 @@
 
 **说明**：
 - ✅ Session 中存储 JWT Token（`access_token`），用于服务间调用
-- ✅ SSR/BFF 调用 auth-app-bff 时，可以：
+- ✅ SSR/BFF 调用 auth-app-backend 时，可以：
   - 方式 1：转发 Cookie（推荐，更简单）
   - 方式 2：使用 Session 中的 `access_token`（如果需要）
 - ✅ BFF 调用其他微服务时，可以使用 Session 中的 `access_token`
 - ✅ Session 中存储权限字段（`is_superuser`, `roles`），为后续 RBAC 系统预留
 - ✅ Phase 1 阶段：保持现有简单权限判断逻辑（`is_superuser` 检查）
-- ✅ Phase 2 阶段：在 auth-app-bff 中实现完整的 RBAC 系统，扩展 `roles` 结构
+- ✅ Phase 2 阶段：在 auth-app-backend 中实现完整的 RBAC 系统，扩展 `roles` 结构
 
 ---
 
@@ -608,7 +608,7 @@ class RedisKeyBuilder {
 
 **什么是 BFF AuthClient？**
 
-**BFF AuthClient** 是 `llmops-app-bff` 和 `incubator-app-bff` 中用来调用 `auth-app-bff` 的客户端类。
+**BFF AuthClient** 是 `llmops-app-bff` 和 `incubator-app-bff` 中用来调用 `auth-app-backend` 的客户端类。
 
 **当前实现**（`llmops-app-bff/app/core/auth_client.py`）：
 ```python
@@ -616,7 +616,7 @@ class AuthClient:
     """认证服务客户端"""
     
     async def get_user_by_token(self, token: str) -> Dict[str, Any]:
-        """使用 Bearer Token 调用 auth-app-bff"""
+        """使用 Bearer Token 调用 auth-app-backend"""
         response = await client.get(
             f"{self.base_url}/api/v1/auth/me",
             headers={"Authorization": f"Bearer {token}"},  # ❌ 旧方式
@@ -633,7 +633,7 @@ class AuthClient:
 **改造方案**：✅ **重写 AuthClient，支持 Cookie 转发**（已确认）
 
 **架构说明**：
-- **BFF → auth-app-bff**：服务间调用
+- **BFF → auth-app-backend**：服务间调用
   - 方式 1（推荐）：转发 Cookie（从浏览器请求中获取）
   - 方式 2：使用 Session 中的 JWT Token（如果需要）
 
@@ -676,7 +676,7 @@ class AuthClient:
             response.raise_for_status()
             user_info = response.json()
             
-            # auth-app-bff 会返回 access_token（因为带了 X-Service-Call header）
+            # auth-app-backend 会返回 access_token（因为带了 X-Service-Call header）
             # BFF 可以使用这个 access_token 调用其他微服务
             return user_info
     
@@ -687,7 +687,7 @@ class AuthClient:
         说明：
         - BFF 调用其他微服务时，需要使用 JWT Token 验证用户身份
         - 可以通过 Cookie 获取 Session，然后从 Session 中获取 access_token
-        - 或者调用 auth-app-bff 的专门接口获取 access_token
+        - 或者调用 auth-app-backend 的专门接口获取 access_token
         
         Args:
             request: FastAPI Request 对象，包含 Cookie
@@ -695,8 +695,8 @@ class AuthClient:
         Returns:
             JWT Token 字符串
         """
-        # 方式 1（推荐）：通过 Cookie 调用 auth-app-bff 获取 Session，然后获取 access_token
-        # 方式 2：调用 auth-app-bff 的专门接口获取 access_token
+        # 方式 1（推荐）：通过 Cookie 调用 auth-app-backend 获取 Session，然后获取 access_token
+        # 方式 2：调用 auth-app-backend 的专门接口获取 access_token
         # 方式 3：BFF 自己生成 JWT Token（基于用户信息，但需要知道 JWT_SECRET）
         
         # 推荐实现：调用 /auth/me 获取用户信息，然后从响应中获取 access_token
@@ -755,7 +755,7 @@ async def get_current_user(
 
 **说明**：
 - ✅ 从 Request 中读取 Cookie
-- ✅ 调用 AuthClient 转发 Cookie 到 auth-app-bff
+- ✅ 调用 AuthClient 转发 Cookie 到 auth-app-backend
 - ❌ 不再从 Authorization header 读取 Token
 
 ---
@@ -899,7 +899,7 @@ export default defineEventHandler(async (event) => {
     return
   }
 
-  // 调用 BFF 的 /auth/me 接口（BFF 会转发 Cookie 到 auth-app-bff）
+  // 调用 BFF 的 /auth/me 接口（BFF 会转发 Cookie 到 auth-app-backend）
   try {
     const bffUrl = config.public.bffUrl || 'http://localhost:3030'
     const user = await $fetch(`${bffUrl}/api/v1/auth/me`, {
@@ -1092,12 +1092,12 @@ export const useApi = () => {
    - 配置连接、密码、ACL
    - 配置监控和告警
 
-2. **auth-app-bff 基础设施**
+2. **auth-app-backend 基础设施**
    - 添加 Redis 依赖（ioredis）
    - 添加 Cookie 解析依赖（cookie-parser）
    - 配置环境变量（Redis、Cookie 相关）
 
-#### 阶段 2：auth-app-bff 核心实现（3-5天）
+#### 阶段 2：auth-app-backend 核心实现（3-5天）
 3. **Session 存储层**
    - 实现 `RedisService`（基础封装）
    - 实现 `SessionStorageService`（Session CRUD）
@@ -1131,7 +1131,7 @@ export const useApi = () => {
    - 测试：认证流程、服务间调用
 
 #### 阶段 4：SSR 适配（2-3天，可与阶段 3 并行）
-9. **auth-app-ssr 改造**
+9. **auth-app-front 改造**
    - 删除 `stores/tokens.ts`
    - 重构 `api/core.ts`：移除 Token header，使用 `credentials: 'include'`
    - 重构 `stores/auth.ts`：移除 Token 相关逻辑
@@ -1166,7 +1166,7 @@ export const useApi = () => {
     - 性能测试
 
 **关键依赖关系**：
-- ✅ **阶段 2 必须先完成**（auth-app-bff 是核心）
+- ✅ **阶段 2 必须先完成**（auth-app-backend 是核心）
 - ✅ **阶段 3 和 4 可以并行**（BFF 和 SSR 互不依赖）
 - ✅ **阶段 5 在阶段 2-4 完成后进行**（基础设施配置）
 
@@ -1327,7 +1327,7 @@ export const useApi = () => {
 {
   "timestamp": "2024-01-01T12:00:00.000Z",
   "level": "INFO",
-  "service": "auth-app-bff",
+  "service": "auth-app-backend",
   "trace_id": "abc123...",  // 分布式追踪 ID
   "span_id": "def456...",   // Span ID
   "user_id": "user-123",    // 用户 ID（如果可用）
@@ -1435,7 +1435,7 @@ const logger = createLogger({
     format.json()
   ),
   defaultMeta: {
-    service: 'auth-app-bff',
+    service: 'auth-app-backend',
   },
   transports: [
     new transports.Console({
@@ -1473,7 +1473,7 @@ logger.info({
 {
   "timestamp": "2024-01-01T00:00:00Z",
   "level": "info",
-  "service": "auth-app-bff",
+  "service": "auth-app-backend",
   "operation": "login",
   "user_id": 1,
   "username": "user@example.com",
@@ -1514,12 +1514,12 @@ logger.info({
 - [x] 登录接口不返回 JWT Token 给浏览器（已确认）
 - [x] 刷新策略：Session 滑动续期 + Access Token 自动刷新（已确认）
 - [x] 服务端调用返回 `access_token`（通过 `X-Service-Call: true` header 标识）（已确认）
-- [x] 删除兼容代码（auth-app-bff 的 `/auth/signin` 和 `/auth/signup`）（已确认，在重构中一起实施）
-- [x] 重构不符合新架构的代码（auth-app-ssr、incubator-app-bff、llmops-app-bff）（已确认，在重构中一起实施）
+- [x] 删除兼容代码（auth-app-backend 的 `/auth/signin` 和 `/auth/signup`）（已确认，在重构中一起实施）
+- [x] 重构不符合新架构的代码（auth-app-front、incubator-app-bff、llmops-app-bff）（已确认，在重构中一起实施）
 - [x] 认证和权限分开解决（先认证，后权限）（已确认）
 - [x] Session 结构预留权限字段（`is_superuser`, `roles`）（已确认）
 - [x] 权限系统：完整的 RBAC 系统（已确认）
-- [x] 权限管理：集成在 auth-app-bff 中，不需要独立服务（已确认）
+- [x] 权限管理：集成在 auth-app-backend 中，不需要独立服务（已确认）
 - [x] `/auth/token` 接口：实现，作为推荐方式（已确认）
 - [x] `X-Service-Call` header 命名：保持当前命名（已确认）
 - [x] `/auth/validate` 接口：不需要（已确认）
@@ -1596,10 +1596,10 @@ logger.info({
 
 9. **BFF AuthClient 改造**：
    - ✅ 重写为 Cookie 转发方式
-   - **什么是 BFF AuthClient**：`llmops-app-bff` 和 `incubator-app-bff` 中用来调用 `auth-app-bff` 的客户端类
+   - **什么是 BFF AuthClient**：`llmops-app-bff` 和 `incubator-app-bff` 中用来调用 `auth-app-backend` 的客户端类
    - **当前问题**：使用 Bearer Token 方式（不符合新架构）
    - **改造方案**：
-     - 从 Request 中读取 Cookie 并转发到 `auth-app-bff`
+     - 从 Request 中读取 Cookie 并转发到 `auth-app-backend`
      - 添加 `X-Service-Call: true` header，获取 `access_token`
      - 方法变更：`get_user_by_token(token)` → `get_current_user(request)`
    - **改造文件**：
@@ -1626,14 +1626,14 @@ logger.info({
 
 ### 12.1 删除兼容代码
 
-**auth-app-bff**：
+**auth-app-backend**：
 - [ ] 删除 `src/auth/auth.controller.ts` 中的 `/auth/signin` 和 `/auth/signup` 接口
 - [ ] 删除 `src/auth/auth.service.ts` 中的 `signin()` 和 `signup()` 方法
 - [ ] 删除 `src/auth/dto/signin-user.dto.ts`（如果不再使用）
 
 ### 12.2 重构不符合新架构的代码
 
-**auth-app-ssr**：
+**auth-app-front**：
 - [ ] 删除 `stores/tokens.ts`（不再需要 Token Store）
 - [ ] 重构 `api/core.ts`：移除 `headers(token)` 方法，所有 API 调用使用 `credentials: 'include'`
 - [ ] 重构 `api/auth.ts`：移除所有 `headers` 参数，使用 `credentials: 'include'`

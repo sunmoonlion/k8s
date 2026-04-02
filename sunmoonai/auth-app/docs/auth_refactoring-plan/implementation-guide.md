@@ -38,11 +38,11 @@
 
 ### 1.2 gRPC 说明
 
-**重要**：`auth-app-bff` 通过 gRPC 调用 `user-service` 获取用户数据，这与 Session + Cookie 认证改造**无关**。
+**重要**：`auth-app-backend` 通过 gRPC 调用 `user-service` 获取用户数据，这与 Session + Cookie 认证改造**无关**。
 
 **架构说明**：
-- **gRPC 调用**：`auth-app-bff` → `user-service`（服务间通信，获取用户数据）
-- **Session + Cookie**：浏览器 → `auth-app-bff`（认证方式）
+- **gRPC 调用**：`auth-app-backend` → `user-service`（服务间通信，获取用户数据）
+- **Session + Cookie**：浏览器 → `auth-app-backend`（认证方式）
 
 **影响分析**：
 - ✅ **gRPC 调用不受影响**：Session + Cookie 改造只改变认证方式，不影响服务间 gRPC 调用
@@ -157,23 +157,23 @@ interface Session {
    ↓
 3. 业务BFF 判断：未登录，返回401或重定向
    ↓
-4. 浏览器重定向到 auth-app-ssr（登录页面）
+4. 浏览器重定向到 auth-app-front（登录页面）
    ↓
 5. 用户输入用户名密码，提交登录表单
    ↓
-6. auth-app-ssr → auth-app-bff（POST /api/v1/login/oauth）
+6. auth-app-front → auth-app-backend（POST /api/v1/login/oauth）
    ↓
-7. auth-app-bff 验证用户凭证：
+7. auth-app-backend 验证用户凭证：
    - 调用 user-service（gRPC）验证用户名密码
    - 验证通过后创建 Session
    ↓
-8. auth-app-bff 创建 Session：
+8. auth-app-backend 创建 Session：
    - 生成 Session ID（UUID）
    - 存储用户信息到 Redis（key: auth:session:{session_id}）
    - 设置过期时间（7天）
    - 生成 access_token（JWT，15分钟有效期）
    ↓
-9. auth-app-bff 设置 Cookie：
+9. auth-app-backend 设置 Cookie：
    - 在 HTTP Response 中设置 Set-Cookie 头
    - Cookie Name: sunmoonai_session
    - Cookie Value: {session_id}
@@ -184,7 +184,7 @@ interface Session {
    ↓
 10. 浏览器保存 Cookie（自动，无需前端代码）
     ↓
-11. auth-app-ssr 重定向回业务应用
+11. auth-app-front 重定向回业务应用
     ↓
 12. 浏览器携带 Cookie 访问业务应用（已登录）
 ```
@@ -202,16 +202,16 @@ interface Session {
    ↓
 5. 业务BFF 接收请求，读取 Cookie
    ↓
-6. 业务BFF → auth-app-bff（调用 /api/v1/auth/me，转发 Cookie）
+6. 业务BFF → auth-app-backend（调用 /api/v1/auth/me，转发 Cookie）
    ↓
-7. auth-app-bff 验证 Session：
+7. auth-app-backend 验证 Session：
    - 从 Cookie 中提取 Session ID
    - 验证 Session ID 格式（防止注入攻击）
    - 从 Redis 读取 Session（key: auth:session:{session_id}）
    - 检查 Session 是否过期
    - 如果 access_token 过期，自动刷新
    ↓
-8. auth-app-bff 返回用户信息（+ access_token，如果带了 X-Service-Call: true）
+8. auth-app-backend 返回用户信息（+ access_token，如果带了 X-Service-Call: true）
    ↓
 9. 业务BFF 处理业务逻辑，返回业务数据
    ↓
@@ -223,7 +223,7 @@ interface Session {
 ```
 1. 用户访问业务应用（已登录）
    ↓
-2. auth-app-bff 验证 Session 时检查：
+2. auth-app-backend 验证 Session 时检查：
    - 当前时间：now
    - Session 过期时间：expires_at
    - 剩余时间：remaining = expires_at - now
@@ -243,9 +243,9 @@ interface Session {
 ```
 1. 用户点击登出按钮
    ↓
-2. 业务SSR → auth-app-bff（POST /api/v1/auth/logout，携带 Cookie）
+2. 业务SSR → auth-app-backend（POST /api/v1/auth/logout，携带 Cookie）
    ↓
-3. auth-app-bff 处理登出：
+3. auth-app-backend 处理登出：
    - 从 Cookie 中提取 Session ID
    - 从 Redis 删除 Session（DEL auth:session:{session_id}）
    - 删除用户 Session 映射（DEL auth:user_sessions:{user_id}）
@@ -306,13 +306,13 @@ interface Session {
    Host: llmops-app-bff:3030
    Cookie: sunmoonai_session=550e8400-e29b-41d4-a716-446655440000
    
-4. 业务BFF 转发请求到 auth-app-bff，携带 Cookie：
+4. 业务BFF 转发请求到 auth-app-backend，携带 Cookie：
    GET /api/v1/auth/me HTTP/1.1
-   Host: auth-app-bff:3030
+   Host: auth-app-backend:3030
    Cookie: sunmoonai_session=550e8400-e29b-41d4-a716-446655440000
    X-Service-Call: true
    
-5. auth-app-bff 验证 Session，返回用户信息
+5. auth-app-backend 验证 Session，返回用户信息
 ```
 
 ### 2.5 安全机制
@@ -391,7 +391,7 @@ if (!/^[0-9a-fA-F-]{36}$/.test(sessionId)) {
 ```
 1. 用户在 auth.sunmoonai.com 登录
    ↓
-2. auth-app-bff 设置 Cookie（Domain=.sunmoonai.com）
+2. auth-app-backend 设置 Cookie（Domain=.sunmoonai.com）
    ↓
 3. 浏览器保存 Cookie（对所有 .sunmoonai.com 子域有效）
    ↓
@@ -527,14 +527,14 @@ AUTH_SESSION_ENABLED=true
    - 配置连接、密码、ACL
    - 配置监控和告警
 
-2. **auth-app-bff 基础设施**
+2. **auth-app-backend 基础设施**
    - 添加 Redis 依赖：`npm install ioredis @types/ioredis`
    - 添加 Cookie 解析依赖：`npm install cookie-parser @types/cookie-parser`
    - 配置环境变量
    - **重要**：在 `main.ts` 中配置 `cookie-parser` 中间件（见 5.13）
    - **重要**：在 `AuthModule` 中注册 `RedisService` 和 `SessionStorageService`（见 5.14）
 
-### 阶段 2：auth-app-bff 核心实现（3-5天）
+### 阶段 2：auth-app-backend 核心实现（3-5天）
 
 3. **Session 存储层**
    - 实现 `RedisService`（基础封装）
@@ -565,8 +565,8 @@ AUTH_SESSION_ENABLED=true
 **重要术语说明：**
 - **业务SSR**：指 `llmops-app-ssr`、`incubator-app-ssr` 等业务前端应用
 - **业务BFF**：指 `llmops-app-bff` 和 `incubator-app-bff`，它们是业务后端服务
-- **auth-app-ssr**：认证相关的SSR应用，负责登录页面
-- **auth-app-bff**：认证服务
+- **auth-app-front**：认证相关的SSR应用，负责登录页面
+- **auth-app-backend**：认证服务
 
 **正确的调用流程：**
 
@@ -577,8 +577,8 @@ AUTH_SESSION_ENABLED=true
 业务SSR (llmops-app-ssr / incubator-app-ssr)
   ↓ (调用业务API)
 业务BFF (llmops-app-bff / incubator-app-bff)
-  ↓ (判断：已登录，转发 Cookie 到 auth-app-bff)
-auth-app-bff (认证服务)
+  ↓ (判断：已登录，转发 Cookie 到 auth-app-backend)
+auth-app-backend (认证服务)
   ↓ (验证 Session, 返回用户信息)
   ↑
   ↓ (返回用户信息和业务数据)
@@ -591,14 +591,14 @@ auth-app-bff (认证服务)
   ↓ (调用业务API)
 业务BFF (llmops-app-bff / incubator-app-bff)
   ↓ (判断：未登录，返回 401 或重定向)
-  ↓ (重定向到 auth-app-ssr)
-auth-app-ssr (认证页面)
-  ↓ (用户登录，调用 auth-app-bff)
-auth-app-bff (认证服务)
+  ↓ (重定向到 auth-app-front)
+auth-app-front (认证页面)
+  ↓ (用户登录，调用 auth-app-backend)
+auth-app-backend (认证服务)
   ↓ (验证登录，设置 Cookie)
   ↑
   ↓ (登录成功，重定向回业务应用)
-浏览器 → 业务SSR → 业务BFF → auth-app-bff
+浏览器 → 业务SSR → 业务BFF → auth-app-backend
 ```
 
 **详细流程：**
@@ -609,8 +609,8 @@ auth-app-bff (认证服务)
 3. **业务BFF 判断认证状态**：
    - 调用 `AuthClient.get_current_user(request)` 验证 Cookie
    - 如果 Cookie 有效（已登录）：继续处理业务请求
-4. **业务BFF** → **auth-app-bff**：转发 Cookie 到 auth-app-bff 验证 Session
-5. **auth-app-bff**：验证 Session，返回用户信息
+4. **业务BFF** → **auth-app-backend**：转发 Cookie 到 auth-app-backend 验证 Session
+5. **auth-app-backend**：验证 Session，返回用户信息
 6. **业务BFF**：处理业务逻辑，返回业务数据
 7. **业务SSR**：渲染页面，返回给浏览器
 
@@ -620,26 +620,26 @@ auth-app-bff (认证服务)
 3. **业务BFF 判断认证状态**：
    - 调用 `AuthClient.get_current_user(request)` 验证 Cookie
    - 如果 Cookie 无效（未登录）：返回 401 或重定向响应
-4. **业务SSR** → **浏览器**：收到 401 或重定向，重定向到 `auth-app-ssr`（登录页面）
-5. **浏览器** → **auth-app-ssr**：用户访问登录页面
-6. **auth-app-ssr** → **auth-app-bff**：用户提交登录信息，auth-app-ssr 调用 auth-app-bff 进行认证
-7. **auth-app-bff**：验证登录，创建 Session，设置 Cookie
-8. **auth-app-ssr** → **浏览器**：登录成功，重定向回业务应用
+4. **业务SSR** → **浏览器**：收到 401 或重定向，重定向到 `auth-app-front`（登录页面）
+5. **浏览器** → **auth-app-front**：用户访问登录页面
+6. **auth-app-front** → **auth-app-backend**：用户提交登录信息，auth-app-front 调用 auth-app-backend 进行认证
+7. **auth-app-backend**：验证登录，创建 Session，设置 Cookie
+8. **auth-app-front** → **浏览器**：登录成功，重定向回业务应用
 9. **浏览器** → **业务SSR**：携带 Cookie 重新访问业务应用（回到场景1）
 
 **关键点：**
 - ✅ **业务SSR调用业务BFF**：业务前端应用调用业务后端API
 - ✅ **业务BFF判断认证状态**：业务BFF负责判断用户是否已登录
-- ✅ **未登录时重定向**：如果未登录，业务BFF返回401或重定向到auth-app-ssr
-- ✅ **auth-app-ssr负责登录**：认证页面由auth-app-ssr提供，调用auth-app-bff进行认证
-- ✅ **业务BFF调用auth-app-bff**：已登录时，业务BFF转发Cookie到auth-app-bff验证
+- ✅ **未登录时重定向**：如果未登录，业务BFF返回401或重定向到auth-app-front
+- ✅ **auth-app-front负责登录**：认证页面由auth-app-front提供，调用auth-app-backend进行认证
+- ✅ **业务BFF调用auth-app-backend**：已登录时，业务BFF转发Cookie到auth-app-backend验证
 
 **实际代码架构验证：**
 根据实际代码和配置文件：
 - ✅ **业务BFF配置了 AUTH_SERVICE_URL**：
   - `llmops-app-bff` 配置：`AUTH_SERVICE_URL="${AUTH_SERVICE_URL:-http://localhost:8000}"`
-  - `incubator-app-bff` 配置：`AUTH_SERVICE_URL="${AUTH_SERVICE_URL:-http://auth-app-bff:3030}"`
-  - 说明业务BFF确实会调用auth-app-bff进行认证
+  - `incubator-app-bff` 配置：`AUTH_SERVICE_URL="${AUTH_SERVICE_URL:-http://auth-app-backend:3030}"`
+  - 说明业务BFF确实会调用auth-app-backend进行认证
 - ✅ **业务SSR配置了后端API地址**：
   - 业务SSR通过配置调用对应的业务BFF API
   - 具体调用关系需要在业务SSR的源代码中确认
@@ -647,15 +647,15 @@ auth-app-bff (认证服务)
 **服务角色说明：**
 - **llmops-app-bff**：LLMOps 业务后端服务（业务BFF）
 - **incubator-app-bff**：Incubator 业务后端服务（业务BFF）
-- **auth-app-bff**：认证服务（虽然名字里有"bff"，但它是专门的认证服务）
+- **auth-app-backend**：认证服务（虽然名字里有"bff"，但它是专门的认证服务）
 
 7. **llmops-app-bff 改造**（业务BFF服务）
-   - 重构 `AuthClient`：Cookie 转发方式（从 Request 读取 Cookie，转发到 auth-app-bff）
+   - 重构 `AuthClient`：Cookie 转发方式（从 Request 读取 Cookie，转发到 auth-app-backend）
    - 重构 `deps.py`：从 Request 读取 Cookie，调用 `AuthClient.get_current_user(request)`
    - 测试：认证流程、服务间调用
 
 8. **incubator-app-bff 改造**（业务BFF服务）
-   - 重构 `AuthClient`：Cookie 转发方式（从 Request 读取 Cookie，转发到 auth-app-bff）
+   - 重构 `AuthClient`：Cookie 转发方式（从 Request 读取 Cookie，转发到 auth-app-backend）
    - 重构 `deps.py`：从 Request 读取 Cookie，调用 `AuthClient.get_current_user(request)`
    - 测试：认证流程、服务间调用
 
@@ -665,22 +665,22 @@ auth-app-bff (认证服务)
 
 **重要术语说明：**
 - **业务SSR**：指 `llmops-app-ssr`、`incubator-app-ssr` 等业务前端应用
-- **auth-app-ssr**：认证相关的SSR应用（Nuxt.js），负责登录页面和认证流程
+- **auth-app-front**：认证相关的SSR应用（Nuxt.js），负责登录页面和认证流程
 - **业务BFF服务**：指 `llmops-app-bff` 和 `incubator-app-bff`，提供后端API服务
-- **auth-app-bff**：认证服务
+- **auth-app-backend**：认证服务
 
-**auth-app-ssr 的作用（认证页面）：**
+**auth-app-front 的作用（认证页面）：**
 - ✅ **登录页面**：提供用户登录界面（OAuth、用户名密码等）
 - ✅ **服务端渲染（SSR）**：在服务端渲染HTML页面，提供更好的SEO和首屏加载速度
-- ✅ **认证流程**：处理登录请求，调用 auth-app-bff 进行认证
-- ✅ **Cookie 设置**：登录成功后，auth-app-bff 设置 Cookie，auth-app-ssr 重定向回业务应用
-- ❌ **不是业务应用**：auth-app-ssr 是专门的认证页面，不是业务应用
+- ✅ **认证流程**：处理登录请求，调用 auth-app-backend 进行认证
+- ✅ **Cookie 设置**：登录成功后，auth-app-backend 设置 Cookie，auth-app-front 重定向回业务应用
+- ❌ **不是业务应用**：auth-app-front 是专门的认证页面，不是业务应用
 
 **业务SSR 的作用（业务前端应用）：**
 - ✅ **业务页面**：提供业务功能页面（如 LLMOps 项目管理、Incubator 孵化器等）
 - ✅ **服务端渲染（SSR）**：在服务端渲染HTML页面
 - ✅ **调用业务BFF**：调用业务BFF的API获取业务数据
-- ✅ **认证状态处理**：如果业务BFF返回401，重定向到auth-app-ssr登录页面
+- ✅ **认证状态处理**：如果业务BFF返回401，重定向到auth-app-front登录页面
 
 **正确的调用流程：**
 
@@ -688,56 +688,56 @@ auth-app-bff (认证服务)
 未登录用户访问业务应用：
 浏览器 → 业务SSR → 业务BFF (判断未登录) → 返回401/重定向
   ↓
-浏览器 → auth-app-ssr (登录页面)
+浏览器 → auth-app-front (登录页面)
   ↓
-auth-app-ssr → auth-app-bff (认证)
+auth-app-front → auth-app-backend (认证)
   ↓
-auth-app-bff (设置Cookie) → auth-app-ssr (重定向)
+auth-app-backend (设置Cookie) → auth-app-front (重定向)
   ↓
-浏览器 → 业务SSR → 业务BFF (已登录) → auth-app-bff (验证) → 返回业务数据
+浏览器 → 业务SSR → 业务BFF (已登录) → auth-app-backend (验证) → 返回业务数据
 ```
 
 **调用链：**
 ```
 浏览器/用户
   ↓ (发送 Cookie)
-auth-app-ssr (SSR 中间件)
+auth-app-front (SSR 中间件)
   ↓ (读取 Cookie, 调用 BFF /api/v1/auth/me, 转发 Cookie)
 llmops-app-bff / incubator-app-bff (BFF 服务)
-  ↓ (AuthClient 转发 Cookie 到 auth-app-bff)
-auth-app-bff (认证服务)
+  ↓ (AuthClient 转发 Cookie 到 auth-app-backend)
+auth-app-backend (认证服务)
   ↓ (验证 Session, 返回用户信息)
   ↑
   ↓ (返回用户信息)
 BFF
   ↑
   ↓ (返回用户信息)
-auth-app-ssr (注入到 event.context.auth)
+auth-app-front (注入到 event.context.auth)
 ```
 
 **详细流程：**
-1. **浏览器** → **auth-app-ssr**：用户访问页面，浏览器自动发送 Cookie
-2. **auth-app-ssr SSR 中间件**：读取 Cookie，调用 BFF 的 `/api/v1/auth/me` 接口（转发 Cookie）
-3. **BFF** → **auth-app-bff**：BFF 的 `AuthClient.get_current_user(request)` 方法转发 Cookie 到 auth-app-bff
-4. **auth-app-bff**：验证 Session，返回用户信息（如果 BFF 带了 `X-Service-Call: true`，还会返回 access_token）
-5. **BFF** → **auth-app-ssr**：BFF 返回用户信息给 SSR
-6. **auth-app-ssr**：将用户信息注入到 `event.context.auth`，供页面使用
+1. **浏览器** → **auth-app-front**：用户访问页面，浏览器自动发送 Cookie
+2. **auth-app-front SSR 中间件**：读取 Cookie，调用 BFF 的 `/api/v1/auth/me` 接口（转发 Cookie）
+3. **BFF** → **auth-app-backend**：BFF 的 `AuthClient.get_current_user(request)` 方法转发 Cookie 到 auth-app-backend
+4. **auth-app-backend**：验证 Session，返回用户信息（如果 BFF 带了 `X-Service-Call: true`，还会返回 access_token）
+5. **BFF** → **auth-app-front**：BFF 返回用户信息给 SSR
+6. **auth-app-front**：将用户信息注入到 `event.context.auth`，供页面使用
 
 **关键点：**
-- ✅ **auth-app-ssr 是前端应用**：负责SSR渲染和前端交互，不是认证服务
+- ✅ **auth-app-front 是前端应用**：负责SSR渲染和前端交互，不是认证服务
 - ✅ **业务BFF 是后端API**：提供业务逻辑和数据接口
-- ✅ **SSR 不直接调用 auth-app-bff**：SSR 只调用业务BFF，由业务BFF负责认证
-- ✅ **业务BFF 是认证代理**：业务BFF 接收来自 SSR 或浏览器的请求，转发 Cookie 到 auth-app-bff 进行认证
-- ✅ **统一认证入口**：所有对 auth-app-bff 的调用都通过业务BFF 的 `AuthClient` 进行
+- ✅ **SSR 不直接调用 auth-app-backend**：SSR 只调用业务BFF，由业务BFF负责认证
+- ✅ **业务BFF 是认证代理**：业务BFF 接收来自 SSR 或浏览器的请求，转发 Cookie 到 auth-app-backend 进行认证
+- ✅ **统一认证入口**：所有对 auth-app-backend 的调用都通过业务BFF 的 `AuthClient` 进行
 
-**auth-app-ssr 和业务 BFF 的关系：**
+**auth-app-front 和业务 BFF 的关系：**
 
 **架构说明：**
 
 这是标准的**前后端分离架构**，SSR 应用作为前端应用调用后端 API 服务。
 
 **关系定位：**
-- **auth-app-ssr**：前端 SSR 应用（Nuxt.js），负责页面渲染和前端交互
+- **auth-app-front**：前端 SSR 应用（Nuxt.js），负责页面渲染和前端交互
 - **业务 BFF**（llmops-app-bff、incubator-app-bff）：后端 API 服务，提供业务逻辑和数据接口
 - **关系**：前端-后端关系，**SSR 作为客户端调用业务 BFF 的 API**
 
@@ -761,7 +761,7 @@ auth-app-ssr (注入到 event.context.auth)
             ↓ 需要数据时
          业务 BFF API（返回 JSON 数据）
             ↓ 需要认证时
-         auth-app-bff（认证服务）
+         auth-app-backend（认证服务）
    ```
 
 **如果反过来（BFF 调用 SSR）会有什么问题？**
@@ -771,7 +771,7 @@ auth-app-ssr (注入到 event.context.auth)
 
 **交互方式：**
 1. **SSR 服务端渲染时**：
-   - auth-app-ssr 的 SSR 中间件调用业务 BFF 的 `/api/v1/auth/me` 接口
+   - auth-app-front 的 SSR 中间件调用业务 BFF 的 `/api/v1/auth/me` 接口
    - 获取用户信息，用于服务端渲染个性化内容
 
 2. **前端页面交互时**：
@@ -779,13 +779,13 @@ auth-app-ssr (注入到 event.context.auth)
    - 获取业务数据，更新页面状态
 
 3. **认证流程**：
-   - auth-app-ssr 转发 Cookie 到业务 BFF
-   - 业务 BFF 转发 Cookie 到 auth-app-bff 进行认证
+   - auth-app-front 转发 Cookie 到业务 BFF
+   - 业务 BFF 转发 Cookie 到 auth-app-backend 进行认证
    - 认证成功后，业务 BFF 返回用户信息和业务数据
 
 **调用接口示例：**
 ```typescript
-// auth-app-ssr 调用业务 BFF 的接口
+// auth-app-front 调用业务 BFF 的接口
 
 // 1. 获取用户信息（SSR 中间件）
 const user = await $fetch(`${bffUrl}/api/v1/auth/me`, {
@@ -800,20 +800,20 @@ const data = await $fetch(`${bffUrl}/api/v1/llmops/projects`, {
 
 **架构说明：**
 ```
-前端层：auth-app-ssr (SSR前端应用)
+前端层：auth-app-front (SSR前端应用)
   ↓ HTTP 调用业务API（转发 Cookie）
 业务层：llmops-app-bff / incubator-app-bff (业务后端服务)
   ↓ HTTP 调用认证服务（转发 Cookie）
-认证层：auth-app-bff (认证服务)
+认证层：auth-app-backend (认证服务)
 ```
 
 **为什么这样设计？**
-- **职责分离**：前端应用（SSR）负责展示，业务服务（BFF）负责业务逻辑，认证服务（auth-app-bff）负责认证
+- **职责分离**：前端应用（SSR）负责展示，业务服务（BFF）负责业务逻辑，认证服务（auth-app-backend）负责认证
 - **可扩展性**：前端可以调用多个业务BFF，业务BFF可以调用统一的认证服务
-- **安全性**：认证逻辑集中在 auth-app-bff，业务BFF只负责转发认证请求
+- **安全性**：认证逻辑集中在 auth-app-backend，业务BFF只负责转发认证请求
 - **前后端分离**：前端和后端独立部署、独立扩展，通过 HTTP API 通信
 
-9. **auth-app-ssr 改造**
+9. **auth-app-front 改造**
    - 删除 `stores/tokens.ts`（不再需要 Token 存储）
    - 重构 `api/core.ts`：移除 Token header，使用 `credentials: 'include'`（浏览器自动发送 Cookie）
    - 重构 `stores/auth.ts`：移除 Token 相关逻辑
@@ -1677,7 +1677,7 @@ class AuthClient:
                 response.raise_for_status()
                 user_info = response.json()
                 
-                # auth-app-bff 会返回 access_token（因为带了 X-Service-Call header）
+                # auth-app-backend 会返回 access_token（因为带了 X-Service-Call header）
                 return user_info
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 401:
@@ -1993,7 +1993,7 @@ async getCurrentUser(@Req() req: Request): Promise<UserProfileDto | UserProfileW
 
 ### 5.18 SSR 中间件实现（完整版）
 
-**文件**：`auth-app-ssr/server/middleware/auth.global.ts`
+**文件**：`auth-app-front/server/middleware/auth.global.ts`
 
 ```typescript
 import type { EventHandler } from 'h3'
@@ -2056,7 +2056,7 @@ export default defineEventHandler(async (event) => {
     return
   }
 
-  // 调用 BFF 的 /auth/me 接口（BFF 会转发 Cookie 到 auth-app-bff）
+  // 调用 BFF 的 /auth/me 接口（BFF 会转发 Cookie 到 auth-app-backend）
   try {
     const bffUrl = config.public.bffUrl || 'http://localhost:3030'
     const user = await $fetch(`${bffUrl}/api/v1/auth/me`, {
@@ -2983,8 +2983,8 @@ await this.sessionStorageService.deleteUserSessions(userId);
 **A**: **不会影响**。gRPC 调用是用于获取用户数据的（`user-service`），与认证方式无关。
 
 **说明**：
-- **gRPC 调用**：`auth-app-bff` → `user-service`（服务间通信，获取用户数据）
-- **Session + Cookie**：浏览器 → `auth-app-bff`（认证方式）
+- **gRPC 调用**：`auth-app-backend` → `user-service`（服务间通信，获取用户数据）
+- **Session + Cookie**：浏览器 → `auth-app-backend`（认证方式）
 
 **影响分析**：
 - ✅ **gRPC 调用保持不变**：`userService.findOne()`, `userService.findById()` 等调用无需修改
@@ -3063,7 +3063,7 @@ AUTH_LOGIN_TOTP_ENABLED=false
 #### 3. 安装依赖
 
 ```bash
-cd auth-app-bff
+cd auth-app-backend
 npm install ioredis @types/ioredis cookie-parser @types/cookie-parser
 ```
 

@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-app-front
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: auth-app-front
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-app-front
+  template:
+    metadata:
+      labels:
+        app: auth-app-front
+    spec:
+      imagePullSecrets:
+      - name: ${AUTH_APP_SSR_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}
+      containers:
+      - name: auth-app-front
+        image: ${AUTH_APP_SSR_FULL_IMAGE_NAME}
+        imagePullPolicy: ${IMAGE_PULL_POLICY:-IfNotPresent}
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - configMapRef:
+            name: auth-app-front-config
+        - secretRef:
+            name: auth-app-front-secret
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: data-storage
+          mountPath: ${PVC_MOUNT_PATH:-/app/data}
+          subPath: ${PVC_SUB_PATH:-}
+      volumes:
+      - name: data-storage
+        persistentVolumeClaim:
+          claimName: ${PVC_NAME:-auth-app-front-pvc}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-app-front
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: auth-app-front
+spec:
+  selector:
+    app: auth-app-front
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+  type: ClusterIP
+

@@ -10,8 +10,8 @@
 - 需要改造为：Session + Cookie 机制
 
 **涉及范围**：
-- auth-app-bff：认证服务核心
-- auth-app-ssr：前端认证流程
+- auth-app-backend：认证服务核心
+- auth-app-front：前端认证流程
 - incubator-app-bff / llmops-app-bff：调用认证服务
 
 ### 1.2 权限（Authorization）现状
@@ -231,7 +231,7 @@
 - [x] **策略选择**：分开解决（先认证，后权限）
 - [x] **Session 结构**：预留权限字段（`is_superuser`, `roles` 等）
 - [x] **权限系统范围**：完整的 RBAC 系统
-- [x] **权限管理服务**：不需要独立的权限管理服务（权限管理集成在 auth-app-bff 中）
+- [x] **权限管理服务**：不需要独立的权限管理服务（权限管理集成在 auth-app-backend 中）
 
 ### 7.2 实施计划
 
@@ -241,7 +241,7 @@
 - 为后续 RBAC 系统预留扩展接口
 
 **Phase 2：权限系统设计（RBAC）**
-- 在 auth-app-bff 中实现完整的 RBAC 功能
+- 在 auth-app-backend 中实现完整的 RBAC 功能
 - 设计角色和权限管理
 - 统一权限判断逻辑
 - 更新 Session 结构以支持完整的权限信息

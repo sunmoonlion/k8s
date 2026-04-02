@@ -2,7 +2,7 @@
 
 ## 0. 目标与范围
 - 目标：实现符合 `ssr_bff_auth_flow.md` 的统一认证体系——浏览器仅持有 HttpOnly Cookie（session 引用），Auth 服务集中管理身份、会话与令牌，BFF 统一调用 Auth，SSR 不持有长期 JWT。
-- 覆盖范围：`auth-app-bff`（核心）、`auth-app-ssr`、`incubator-app-bff/ssr`、`llmops-app-bff/ssr`，以及 K8s/Ingress 层的 Cookie 策略与 Redis 依赖。
+- 覆盖范围：`auth-app-backend`（核心）、`auth-app-front`、`incubator-app-bff/ssr`、`llmops-app-bff/ssr`，以及 K8s/Ingress 层的 Cookie 策略与 Redis 依赖。
 
 ## 1. 核心原则
 1) 浏览器只存引用：HttpOnly + Secure + SameSite=Lax/None 的 `session_id`，不在前端持久化 access/refresh JWT。  
@@ -13,9 +13,9 @@
 6) 可观测与灰度：关键路径埋点/日志，便于分阶段灰度与回滚。
 
 ## 2. 阶段总览（执行顺序）
-- Phase 1（Auth 核心）：`auth-app-bff` 引入 Redis Session，改造登录/刷新/登出/ /auth/me，支持 Cookie+Session（兼容 JWT）。
+- Phase 1（Auth 核心）：`auth-app-backend` 引入 Redis Session，改造登录/刷新/登出/ /auth/me，支持 Cookie+Session（兼容 JWT）。
 - Phase 2（BFF 适配）：`llmops-app-bff`、`incubator-app-bff` 统一通过 `/auth/me` + Cookie 认证；清理本地 JWT 校验。
-- Phase 3（SSR 适配）：`auth-app-ssr` 起，移除前端持久化 JWT，改为依赖 HttpOnly Cookie，SSR 调 BFF，再由 BFF 调 Auth。
+- Phase 3（SSR 适配）：`auth-app-front` 起，移除前端持久化 JWT，改为依赖 HttpOnly Cookie，SSR 调 BFF，再由 BFF 调 Auth。
 - Phase 4（基础设施）：Redis 部署与配置，Ingress/Traefik Cookie 策略（Domain / SameSite / Secure / CORS），K8s ConfigMap/Secret 更新。
 - Phase 5（文档与回归）：更新文档、提供测试用例/脚本，灰度与监控。
 

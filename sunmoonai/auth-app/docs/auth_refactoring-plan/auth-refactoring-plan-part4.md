@@ -25,7 +25,7 @@
 ---
 ## 2. 配置与依赖清单
 
-### 2.1 环境变量（auth-app-bff）
+### 2.1 环境变量（auth-app-backend）
 - `SESSION_COOKIE_NAME`（默认 `sunmoonai_session`）
 - `SESSION_TTL_SECONDS`（如 604800 = 7d）
 - `AUTH_SESSION_ENABLED`（bool）
@@ -57,7 +57,7 @@
 ---
 ## 4. 实施 Checklist（按模块）
 
-### 4.1 auth-app-bff
+### 4.1 auth-app-backend
 - Infra/Config
   - [ ] 新增/暴露 Redis 与 Session 相关配置。
   - [ ] 新增 RedisService、SessionStorageService；TokenStorage 改 Redis。
@@ -79,7 +79,7 @@
 - [ ] 路由中间件依赖 AuthClient，不再本地验证 JWT（或标记为 Deprecated）。
 - [ ] 可选本地短 TTL 缓存 session_id→user。
 
-### 4.3 SSR（auth-app-ssr 起）
+### 4.3 SSR（auth-app-front 起）
 - [ ] 登录后不在 Pinia/localStorage 持久化 access/refresh，依赖 HttpOnly Cookie。
 - [ ] SSR 服务端中间件：读 Cookie→调用 BFF `/me`→渲染用户态。
 - [ ] 清理前端主动拼 Authorization header 的路径（或降级为走 BFF）。
