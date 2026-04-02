@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-app-front-config
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: auth-app-front
+data:
+  # Node 环境
+  NODE_ENV: "${NODE_ENV:-production}"
+  NITRO_HOST: "${NITRO_HOST:-0.0.0.0}"
+  NITRO_PORT: "${NITRO_PORT:-3000}"
+
+  # auth-app-backend 连接（BFF 服务端使用，不暴露给浏览器）
+  AUTH_BACKEND_URL: "${AUTH_BACKEND_URL:-http://auth-app-backend:3030/api/v1}"
+
+  # OIDC 客户端
+  AUTH_CLIENT_ID: "${AUTH_CLIENT_ID:-auth-app-bff}"
+
+  # Session Cookie 名称（与 AUTH_JWT_AUDIENCE 对应）
+  SESSION_COOKIE_NAME: "${SESSION_COOKIE_NAME:-auth_session}"
