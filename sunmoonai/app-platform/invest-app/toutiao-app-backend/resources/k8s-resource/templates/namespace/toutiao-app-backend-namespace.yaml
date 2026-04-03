@@ -1,0 +1,10 @@
+# toutiao-app-backend 命名空间配置
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${NAMESPACE}
+  labels:
+    app: invest-app
+    component: toutiao-app-backend
+    environment: ${ENVIRONMENT}
+    managed-by: deploy-script

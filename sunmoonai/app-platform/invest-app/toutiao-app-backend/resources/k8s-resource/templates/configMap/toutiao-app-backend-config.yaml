@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: toutiao-app-backend-config
+  namespace: ${NAMESPACE}
+  labels:
+    app: toutiao-app-backend
+data:
+  # ============================================================================
+  # 运行环境
+  # ============================================================================
+  FLASK_ENV: "${FLASK_ENV:-production}"
+  LOGGING_LEVEL: "${LOGGING_LEVEL:-INFO}"
+  LOGGING_FILE_DIR: "${LOGGING_FILE_DIR:-/var/log/toutiao}"
+
+  # ============================================================================
+  # MySQL（非敏感部分：地址、端口、库名；密码在 Secret 中）
+  # ============================================================================
+  MYSQL_HOST: "${MYSQL_HOST:-mysql-master}"
+  MYSQL_PORT: "${MYSQL_PORT:-3306}"
+  MYSQL_SLAVE_HOST: "${MYSQL_SLAVE_HOST:-mysql-slave}"
+  MYSQL_SLAVE_PORT: "${MYSQL_SLAVE_PORT:-3306}"
+  MYSQL_DB: "${MYSQL_DB:-toutiao}"
+
+  # ============================================================================
+  # Redis Sentinel（redis_master/redis_slave，格式: host:port,host:port）
+  # ============================================================================
+  REDIS_SENTINEL_NODES: "${REDIS_SENTINEL_NODES:-redis-sentinel:26379}"
+  REDIS_SENTINEL_SERVICE_NAME: "${REDIS_SENTINEL_SERVICE_NAME:-mymaster}"
+
+  # ============================================================================
+  # Redis Cluster（redis_cluster，格式: host:port,host:port）
+  # ============================================================================
+  REDIS_CLUSTER_NODES: "${REDIS_CLUSTER_NODES:-redis-cluster:7000}"
+
+  # ============================================================================
+  # Elasticsearch
+  # ============================================================================
+  ES_HOSTS: "${ES_HOSTS:-elasticsearch:9200}"
+
+  # ============================================================================
+  # auth-app OIDC（RS256 验签，非敏感）
+  # ============================================================================
+  AUTH_JWKS_URL: "${AUTH_JWKS_URL:-http://auth-app-backend.app-platform-dev.svc.cluster.local:3030/api/v1/jwks}"
+  AUTH_JWT_ISSUER: "${AUTH_JWT_ISSUER:-http://auth-app-backend.app-platform-dev.svc.cluster.local:3030/api/v1}"
+  AUTH_JWT_AUDIENCE: "${AUTH_JWT_AUDIENCE:-toutiao-api}"
+
+  # ============================================================================
+  # 七牛云（非敏感）
+  # ============================================================================
+  QINIU_BUCKET_NAME: "${QINIU_BUCKET_NAME:-toutiao}"
+  QINIU_DOMAIN: "${QINIU_DOMAIN:-http://toutiao-static.sunmoonai.com/}"
+
+  # ============================================================================
+  # CORS
+  # ============================================================================
+  CORS_ORIGINS: "${CORS_ORIGINS:-https://toutiao.sunmoonai.com}"
+
+  # ============================================================================
+  # Snowflake ID Worker
+  # ============================================================================
+  DATACENTER_ID: "${DATACENTER_ID:-0}"
+  WORKER_ID: "${WORKER_ID:-0}"

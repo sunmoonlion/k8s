@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: toutiao-app-backend
+  namespace: ${NAMESPACE:-invest-app-dev}
+  labels:
+    app: toutiao-app-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: toutiao-app-backend
+  template:
+    metadata:
+      labels:
+        app: toutiao-app-backend
+    spec:
+      imagePullSecrets:
+      - name: ${TOUTIAO_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}
+      containers:
+      - name: toutiao-app-backend
+        image: ${TOUTIAO_BACKEND_FULL_IMAGE_NAME}
+        imagePullPolicy: ${IMAGE_PULL_POLICY:-Always}
+        ports:
+        - containerPort: 5000
+        envFrom:
+        - configMapRef:
+            name: ${TOUTIAO_BACKEND_CONFIGMAP_NAME:-toutiao-app-backend-config}
+        - secretRef:
+            name: ${TOUTIAO_BACKEND_SECRET_NAME:-toutiao-app-backend-secret}
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          tcpSocket:
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 5000
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: data-storage
+          mountPath: ${PVC_MOUNT_PATH:-/app/data}
+          subPath: ${PVC_SUB_PATH:-}
+      volumes:
+      - name: data-storage
+        persistentVolumeClaim:
+          claimName: ${PVC_NAME:-toutiao-app-backend-pvc}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: toutiao-app-backend
+  namespace: ${NAMESPACE:-invest-app-dev}
+  labels:
+    app: toutiao-app-backend
+spec:
+  selector:
+    app: toutiao-app-backend
+  ports:
+  - port: 5000
+    targetPort: 5000
+    protocol: TCP
+  type: ClusterIP

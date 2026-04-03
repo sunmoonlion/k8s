@@ -1,0 +1,47 @@
+# toutiao-app-front 路由配置 (Traefik IngressRoute)
+# Nuxt SSR 服务，端口 3000
+#
+# 访问方式：
+# 方案1: https://<节点IP>:30443/
+# 方案2: https://toutiao.sunmoonai.com/
+#
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: toutiao-app-front-headers
+  namespace: {{NAMESPACE}}
+  labels:
+    app: invest-app-ingress
+    component: toutiao-app-front
+spec:
+  headers:
+    customRequestHeaders:
+      X-toutiao-app-front: "true"
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: toutiao-app-front-ingress
+  namespace: {{NAMESPACE}}
+  labels:
+    app: invest-app-ingress
+    component: toutiao-app-front
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`{{NODE_IP}}`) && PathPrefix(`/`)
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+      middlewares:
+        - name: toutiao-app-front-headers
+    - match: Host(`{{UNIFIED_HOST}}`) && PathPrefix(`/`)
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+      middlewares:
+        - name: toutiao-app-front-headers
