@@ -1,0 +1,150 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celeryworker-incubator
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: celeryworker-incubator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: celeryworker-incubator
+  template:
+    metadata:
+      labels:
+        app: celeryworker-incubator
+    spec:
+      # Init Container: 从 incubator-app-backend 镜像提取任务定义代码
+      initContainers:
+      - name: extract-incubator-code
+        image: ${BACKEND_IMAGE_REGISTRY}/${BACKEND_IMAGE_PROJECT}/${BACKEND_IMAGE}:${BACKEND_TAG}
+        imagePullPolicy: ${IMAGE_PULL_POLICY:-IfNotPresent}
+        env:
+        - name: CODE_EXTRACT_SOURCE_DIR
+          value: "${CODE_EXTRACT_SOURCE_DIR:-/app/app}"
+        - name: CODE_EXTRACT_TARGET_DIR
+          value: "/shared/app"
+        - name: CODE_EXTRACT_DIRS
+          value: "${CODE_EXTRACT_DIRS:-worker core services db models gdb}"
+        - name: CODE_EXTRACT_FILES
+          value: "${CODE_EXTRACT_FILES:-__init__.py}"
+        command:
+          - sh
+          - -c
+          - |
+            echo "=========================================="
+            echo "从 ${BACKEND_IMAGE} 镜像提取任务定义代码"
+            echo "=========================================="
+            echo "源代码路径: ${CODE_EXTRACT_SOURCE_DIR}"
+            echo "目标路径: ${CODE_EXTRACT_TARGET_DIR}"
+            echo "提取目录: ${CODE_EXTRACT_DIRS}"
+            echo "提取文件: ${CODE_EXTRACT_FILES}"
+            echo "=========================================="
+            
+            SOURCE_DIR="${CODE_EXTRACT_SOURCE_DIR}"
+            TARGET_DIR="${CODE_EXTRACT_TARGET_DIR}"
+            
+            mkdir -p "$TARGET_DIR"
+            
+            # 复制目录（从环境变量读取目录列表）
+            if [ -n "${CODE_EXTRACT_DIRS}" ]; then
+              echo ""
+              echo "开始复制目录..."
+              for dir in ${CODE_EXTRACT_DIRS}; do
+                if [ -d "$SOURCE_DIR/$dir" ]; then
+                  echo "  ✓ 复制 $dir/..."
+                  cp -r "$SOURCE_DIR/$dir" "$TARGET_DIR/"
+                else
+                  echo "  ⚠ 跳过 $dir/（目录不存在）"
+                fi
+              done
+            fi
+            
+            # 复制文件（从环境变量读取文件列表）
+            if [ -n "${CODE_EXTRACT_FILES}" ]; then
+              echo ""
+              echo "开始复制文件..."
+              for file in ${CODE_EXTRACT_FILES}; do
+                if [ -f "$SOURCE_DIR/$file" ]; then
+                  echo "  ✓ 复制 $file"
+                  cp "$SOURCE_DIR/$file" "$TARGET_DIR/"
+                else
+                  echo "  ⚠ 跳过 $file（文件不存在）"
+                fi
+              done
+            fi
+            
+            echo ""
+            echo "=========================================="
+            echo "代码提取完成，目标目录内容:"
+            echo "=========================================="
+            ls -la "$TARGET_DIR" || true
+            echo ""
+        volumeMounts:
+        - name: worker-code
+          mountPath: /shared
+      
+      containers:
+      - name: celeryworker
+        image: ${CELERY_WORKER_IMAGE_REGISTRY}/${CELERY_WORKER_IMAGE_PROJECT}/${CELERY_WORKER_IMAGE}:${CELERY_WORKER_TAG}
+        imagePullPolicy: ${IMAGE_PULL_POLICY:-IfNotPresent}
+        volumeMounts:
+        - name: worker-code
+          mountPath: /app/app  # 挂载提取的代码
+        - name: data-storage
+          mountPath: ${PVC_MOUNT_PATH:-/app/data}
+          subPath: ${PVC_SUB_PATH:-}
+        envFrom:
+        # 从 ConfigMap 读取 Celery Worker 配置
+        - configMapRef:
+            name: celeryworker-config
+        # 从独立的 PostgreSQL Incubator 数据库 Secret 读取所有数据库连接信息
+        - secretRef:
+            name: postgresql-incubator-db-secret
+        # 从独立的 Neo4j Incubator 图数据库 Secret 读取所有图数据库连接信息
+        - secretRef:
+            name: neo4j-incubator-db-secret
+        env:
+        # 注意：应用代码会从以下环境变量构建数据库连接：
+        # - PostgreSQL: POSTGRES_SERVER, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_PORT, POSTGRES_DB
+        # - Neo4j: NEO4J_SERVER, NEO4J_PORT, NEO4J_USERNAME, NEO4J_PASSWORD, NEO4J_BOLT, NEO4J_AUTH
+        # 这些环境变量已通过 envFrom 从对应的 Secret 加载
+        # 或者可以直接使用 DB_URL 或 NEO4J_BOLT_URL 环境变量（如果应用代码支持）
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - celery
+            - -A
+            - app.worker
+            - inspect
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - celery
+            - -A
+            - app.worker
+            - inspect
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      
+      volumes:
+      - name: worker-code
+        emptyDir: {}  # 临时存储，Pod 重启时清空并重新提取
+      - name: data-storage
+        persistentVolumeClaim:
+          claimName: ${PVC_NAME:-celeryworker-incubator-pvc}
+# 注意：Celery Worker 是纯后台任务处理，不需要 Service 和 Ingress
+# 监控通过 Flower 服务统一管理（通过 Celery broker 连接）
+# 如果需要直接访问 Worker，可以通过 kubectl port-forward 或 Flower 监控界面

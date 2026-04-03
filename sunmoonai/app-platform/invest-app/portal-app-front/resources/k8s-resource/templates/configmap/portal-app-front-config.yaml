@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: portal-app-front-config
+  namespace: ${NAMESPACE}
+  labels:
+    app: portal-app-front
+data:
+  # ========================================================================
+  # 服务器与域名
+  # ========================================================================
+  SERVER_NAME: "portal-front.sunmoonai.com"
+  SERVER_HOST: "https://portal-front.sunmoonai.com"
+
+  # ========================================================================
+  # Nuxt SSR 运行配置（非敏感）
+  # ========================================================================
+  NODE_ENV: "production"
+  APP_ENV: "production"
+  NITRO_HOST: "0.0.0.0"
+  NITRO_PORT: "3000"
+  NUXT_TELEMETRY_DISABLED: "1"
+
+  # ========================================================================
+  # 业务 BFF 配置（联动配置 - 调用 portal-app-backend）
+  # ========================================================================
+  VUE_APP_BFF_URL: "${VUE_APP_BFF_URL:-http://portal-app-backend:3000}"
+  PORTAL_BFF_URL: "${PORTAL_BFF_URL:-http://portal-app-backend:3000}"
+  VUE_APP_API_PREFIX: "${VUE_APP_API_PREFIX:-/api}"
+  VUE_APP_API_VERSION: "${VUE_APP_API_VERSION:-v1}"
+
+  # ========================================================================
+  # Session 配置（联动配置 - 必须与 auth-app-backend 一致）
+  # ========================================================================
+  SESSION_COOKIE_NAME: "${SESSION_COOKIE_NAME:-sunmoonai_session}"
+
