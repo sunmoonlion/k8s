@@ -1,0 +1,75 @@
+# Casdoor 生产环境 Helm Values
+
+replicaCount: 2
+
+image:
+  registry: harbor.sunmoonai.com:30443
+  repository: k8s-images/casdoor
+  tag: "v1.785.0"   # ⚠️ 生产环境锁定具体版本，禁用 latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: harbor-registry-secret
+
+database:
+  driver: postgres
+  user: casdoor
+  password: ""   # ⚠️ 必须通过 existingSecret 注入，禁止明文
+  host: postgresql-sunmoonai.data-platform-dev.svc.cluster.local
+  port: 5432
+  dbName: casdoor
+  ssl: prefer
+
+config:
+  runMode: "prod"
+  httpport: 8000
+  redisEndpoint: "redis-sunmoonai-master.data-platform-dev.svc.cluster.local:6379"
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: false
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+persistence:
+  enabled: true
+  storageClass: "nfs-2"
+  size: 10Gi
+  accessMode: ReadWriteOnce
+
+livenessProbe:
+  httpGet:
+    path: /api/health
+    port: 8000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: 8000
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  failureThreshold: 3
+
+nodeSelector: {}
+tolerations: []
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: casdoor
+          topologyKey: kubernetes.io/hostname

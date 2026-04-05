@@ -1,0 +1,44 @@
+# Casdoor Traefik IngressRoute
+# 访问地址：
+#   https://casdoor.sunmoonai.com         管理控制台
+#   https://casdoor.sunmoonai.com/api/*   OIDC / OAuth2 端点
+#
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: casdoor-route
+  namespace: {{NAMESPACE}}
+  labels:
+    app: app-platform-ingress
+    component: casdoor
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`{{UNIFIED_HOST}}`)
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+    - match: Host(`{{NODE_IP}}`) && PathPrefix(`/casdoor`)
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
+      middlewares:
+        - name: casdoor-stripprefix
+          namespace: {{NAMESPACE}}
+  tls: {}
+---
+# 仅在通过 IP + 路径前缀访问时需要 strip /casdoor 前缀
+# 通过独立域名（casdoor.sunmoonai.com）访问时不需要
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: casdoor-stripprefix
+  namespace: {{NAMESPACE}}
+spec:
+  stripPrefix:
+    prefixes:
+      - "/casdoor"

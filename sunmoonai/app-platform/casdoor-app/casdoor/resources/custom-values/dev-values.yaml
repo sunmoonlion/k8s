@@ -1,0 +1,86 @@
+# Casdoor 开发环境 Helm Values
+# Chart: casdoor/casdoor  https://casdoor.github.io/casdoor-helm
+
+replicaCount: 1
+
+image:
+  registry: harbor.sunmoonai.com:30443
+  repository: k8s-images/casdoor
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: harbor-registry-secret
+
+# ──────────────────────────────────────────────────────────────
+# 数据库配置（PostgreSQL，使用集群内已有实例）
+# ──────────────────────────────────────────────────────────────
+database:
+  driver: postgres
+  user: casdoor
+  password: casdoor_dev_pass   # ⚠️ 请在部署前通过 Secret 覆盖
+  host: postgresql-sunmoonai.data-platform-dev.svc.cluster.local
+  port: 5432
+  dbName: casdoor
+  ssl: false
+
+# ──────────────────────────────────────────────────────────────
+# Casdoor app.conf 额外配置
+# ──────────────────────────────────────────────────────────────
+config:
+  runMode: "dev"
+  httpport: 8000
+  # Redis（可选，用于 session 共享；多副本时建议开启）
+  # redisEndpoint: "redis-sunmoonai-master.data-platform-dev.svc.cluster.local:6379"
+
+# ──────────────────────────────────────────────────────────────
+# 服务
+# ──────────────────────────────────────────────────────────────
+service:
+  type: ClusterIP
+  port: 8000
+
+# Ingress 由 Traefik IngressRoute 管理，禁用 chart 内置 ingress
+ingress:
+  enabled: false
+
+# ──────────────────────────────────────────────────────────────
+# 资源限制（开发环境轻量配置）
+# ──────────────────────────────────────────────────────────────
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# ──────────────────────────────────────────────────────────────
+# 持久化存储（头像、上传文件等）
+# ──────────────────────────────────────────────────────────────
+persistence:
+  enabled: true
+  storageClass: "nfs-2"
+  size: 2Gi
+  accessMode: ReadWriteOnce
+
+# ──────────────────────────────────────────────────────────────
+# 健康检查
+# ──────────────────────────────────────────────────────────────
+livenessProbe:
+  httpGet:
+    path: /api/health
+    port: 8000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: 8000
+  initialDelaySeconds: 10
+  periodSeconds: 5
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
