@@ -1,0 +1,18 @@
+apiVersion: v2
+appVersion: v1.224.0
+dependencies:
+- name: common
+  repository: https://library-charts.k8s-at-home.com
+  version: ~4.3.0
+icon: https://casdoor.org/img/casbin.svg
+keywords:
+- casdoor
+kubeVersion: '>1.16.0'
+maintainers:
+- email: krzwiatrzyk@protonmail.com
+  name: Krzysztof Wiatrzyk
+name: casdoor
+sources:
+- https://hub.docker.com/r/casbin/casdoor/tags
+- https://github.com/casdoor/casdoor
+version: 1.0.0

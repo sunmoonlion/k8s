@@ -1,51 +1,40 @@
 # Casdoor 开发环境 Helm Values
-# Chart: casdoor/casdoor  https://casdoor.github.io/casdoor-helm
-
-replicaCount: 1
+# Chart: casdoor-krzw/casdoor  (community chart, appVersion v1.224.0)
 
 image:
-  registry: harbor.sunmoonai.com:30443
-  repository: k8s-images/casdoor
-  tag: "latest"
+  repository: harbor.sunmoonai.com:30443/k8s-images/casdoor
   pullPolicy: IfNotPresent
+  # tag 在 deploy-casdoor.sh 中通过 --set image.tag= 注入
 
 imagePullSecrets:
   - name: harbor-registry-secret
 
 # ──────────────────────────────────────────────────────────────
-# 数据库配置（PostgreSQL，使用集群内已有实例）
+# 数据库配置（通过环境变量注入到容器）
 # ──────────────────────────────────────────────────────────────
-database:
-  driver: postgres
-  user: casdoor
-  password: casdoor_dev_pass   # ⚠️ 请在部署前通过 Secret 覆盖
-  host: postgresql-sunmoonai.data-platform-dev.svc.cluster.local
-  port: 5432
-  dbName: casdoor
-  ssl: false
-
-# ──────────────────────────────────────────────────────────────
-# Casdoor app.conf 额外配置
-# ──────────────────────────────────────────────────────────────
-config:
-  runMode: "dev"
-  httpport: 8000
-  # Redis（可选，用于 session 共享；多副本时建议开启）
-  # redisEndpoint: "redis-sunmoonai-master.data-platform-dev.svc.cluster.local:6379"
+env:
+  RUNNING_IN_DOCKER: "true"
+  driverName: postgres
+  # ⚠️ 密码通过 K8s Secret 覆盖，这里仅作结构占位
+  dataSourceName: "user=casdoor password=casdoor_dev_pass host=postgresql-sunmoonai.data-platform-dev.svc.cluster.local port=5432 sslmode=disable dbname=casdoor"
+  dbName: ""
 
 # ──────────────────────────────────────────────────────────────
 # 服务
 # ──────────────────────────────────────────────────────────────
 service:
-  type: ClusterIP
-  port: 8000
+  main:
+    ports:
+      http:
+        port: 8000
 
-# Ingress 由 Traefik IngressRoute 管理，禁用 chart 内置 ingress
+# Ingress 由 Traefik IngressRoute 管理
 ingress:
-  enabled: false
+  main:
+    enabled: false
 
 # ──────────────────────────────────────────────────────────────
-# 资源限制（开发环境轻量配置）
+# 资源限制
 # ──────────────────────────────────────────────────────────────
 resources:
   requests:
@@ -56,31 +45,13 @@ resources:
     memory: 512Mi
 
 # ──────────────────────────────────────────────────────────────
-# 持久化存储（头像、上传文件等）
+# 持久化存储（/conf 目录）
 # ──────────────────────────────────────────────────────────────
 persistence:
-  enabled: true
-  storageClass: "nfs-2"
-  size: 2Gi
-  accessMode: ReadWriteOnce
-
-# ──────────────────────────────────────────────────────────────
-# 健康检查
-# ──────────────────────────────────────────────────────────────
-livenessProbe:
-  httpGet:
-    path: /api/health
-    port: 8000
-  initialDelaySeconds: 30
-  periodSeconds: 10
-
-readinessProbe:
-  httpGet:
-    path: /api/health
-    port: 8000
-  initialDelaySeconds: 10
-  periodSeconds: 5
-
-nodeSelector: {}
-tolerations: []
-affinity: {}
+  config:
+    enabled: true
+    accessMode: ReadWriteOnce
+    type: pvc
+    mountPath: /conf
+    size: 1Gi
+    storageClass: "nfs-2"

@@ -1,36 +1,29 @@
 # Casdoor 生产环境 Helm Values
 
-replicaCount: 2
-
 image:
-  registry: harbor.sunmoonai.com:30443
-  repository: k8s-images/casdoor
-  tag: "v1.785.0"   # ⚠️ 生产环境锁定具体版本，禁用 latest
+  repository: harbor.sunmoonai.com:30443/k8s-images/casdoor
   pullPolicy: IfNotPresent
+  # tag 通过 --set image.tag= 注入，生产环境锁定具体版本
 
 imagePullSecrets:
   - name: harbor-registry-secret
 
-database:
-  driver: postgres
-  user: casdoor
-  password: ""   # ⚠️ 必须通过 existingSecret 注入，禁止明文
-  host: postgresql-sunmoonai.data-platform-dev.svc.cluster.local
-  port: 5432
-  dbName: casdoor
-  ssl: prefer
-
-config:
-  runMode: "prod"
-  httpport: 8000
-  redisEndpoint: "redis-sunmoonai-master.data-platform-dev.svc.cluster.local:6379"
+env:
+  RUNNING_IN_DOCKER: "true"
+  driverName: postgres
+  # ⚠️ 生产环境必须通过 K8s Secret + envFrom 注入 dataSourceName，禁止明文
+  dataSourceName: ""
+  dbName: ""
 
 service:
-  type: ClusterIP
-  port: 8000
+  main:
+    ports:
+      http:
+        port: 8000
 
 ingress:
-  enabled: false
+  main:
+    enabled: false
 
 resources:
   requests:
@@ -41,35 +34,10 @@ resources:
     memory: 1Gi
 
 persistence:
-  enabled: true
-  storageClass: "nfs-2"
-  size: 10Gi
-  accessMode: ReadWriteOnce
-
-livenessProbe:
-  httpGet:
-    path: /api/health
-    port: 8000
-  initialDelaySeconds: 30
-  periodSeconds: 10
-  failureThreshold: 3
-
-readinessProbe:
-  httpGet:
-    path: /api/health
-    port: 8000
-  initialDelaySeconds: 10
-  periodSeconds: 5
-  failureThreshold: 3
-
-nodeSelector: {}
-tolerations: []
-affinity:
-  podAntiAffinity:
-    preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        podAffinityTerm:
-          labelSelector:
-            matchLabels:
-              app.kubernetes.io/name: casdoor
-          topologyKey: kubernetes.io/hostname
+  config:
+    enabled: true
+    accessMode: ReadWriteOnce
+    type: pvc
+    mountPath: /conf
+    size: 5Gi
+    storageClass: "nfs-2"
