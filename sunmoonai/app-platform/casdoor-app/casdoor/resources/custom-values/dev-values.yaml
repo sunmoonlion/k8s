@@ -47,6 +47,20 @@ resources:
 # ──────────────────────────────────────────────────────────────
 # 持久化存储（/conf 目录）
 # ──────────────────────────────────────────────────────────────
+# ⚠️ 重要：PVC 挂载覆盖了镜像内置的 /conf，导致 app.conf 丢失。
+# 首次部署后需手动写入 /conf/app.conf（beego 必须有此文件才能正常读取请求体）：
+#
+#   kubectl exec -n app-platform-dev <pod> -- sh -c 'cat > /conf/app.conf << EOF
+#   appname = casdoor
+#   httpport = 8000
+#   runmode = dev
+#   SessionOn = true
+#   copyrequestbody = true
+#   logPostOnly = true
+#   EOF'
+#   kubectl rollout restart deployment/casdoor-sunmoonai -n app-platform-dev
+#
+# 缺少 copyrequestbody=true 会导致登录时报 "unexpected end of JSON input"。
 persistence:
   config:
     enabled: true
