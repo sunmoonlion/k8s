@@ -7,8 +7,21 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SECRET_DIR="$(dirname "$SCRIPT_DIR")"
 
-# k8s 根目录（casdoor/deploy-casdoor/secrets/harbor-registry-secret/deploy-harbor-registry-secret/ → k8s/）
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
+# 动态向上查找包含 utils/cluster-arg-parser.sh 的 k8s 根目录
+find_k8s_root_dir() {
+    local search_dir="$1"
+    while [[ -n "$search_dir" && "$search_dir" != "/" ]]; do
+        if [[ -f "$search_dir/utils/cluster-arg-parser.sh" ]]; then
+            echo "$search_dir"
+            return 0
+        fi
+        search_dir="$(dirname "$search_dir")"
+    done
+    return 1
+}
+
+PROJECT_ROOT="$(find_k8s_root_dir "$SCRIPT_DIR")" || {
+    echo "[ERROR] 无法定位 k8s 根目录（未找到 utils/cluster-arg-parser.sh）" >&2; exit 1; }
 
 source "$PROJECT_ROOT/utils/cluster-arg-parser.sh"
 source "$PROJECT_ROOT/utils/secret-management/lib/secret-core.sh"
@@ -31,11 +44,6 @@ if [[ -f "$PROJECT_ROOT/utils/cluster-config-mapping.sh" ]]; then
     source "$PROJECT_ROOT/utils/cluster-config-mapping.sh"
     apply_cluster_config_mapping
 fi
-
-log_info()    { echo -e "[INFO] $*"; }
-log_success() { echo -e "\033[32m[SUCCESS]\033[0m $*"; }
-log_error()   { echo -e "\033[31m[ERROR]\033[0m $*" >&2; }
-log_warn()    { echo -e "\033[33m[WARN]\033[0m $*"; }
 
 DEFAULT_PROJECT_ID="sunmoonai"
 DEFAULT_NAMESPACE="app-platform-dev"

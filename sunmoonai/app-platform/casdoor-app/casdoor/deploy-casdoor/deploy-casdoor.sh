@@ -117,9 +117,9 @@ execute_casdoor_deployment() {
     helm_cmd="$helm_cmd --set global.environment=$environment"
 
     # 覆盖为 Harbor 镜像
+    # 注意：此 common chart 模板不支持独立的 image.registry 字段，需将 registry 合并到 repository
     if [[ -n "${CASDOOR_IMAGE_REGISTRY:-}" ]] && [[ -n "${CASDOOR_IMAGE_PROJECT:-}" ]]; then
-        helm_cmd="$helm_cmd --set image.registry=${CASDOOR_IMAGE_REGISTRY}"
-        helm_cmd="$helm_cmd --set image.repository=${CASDOOR_IMAGE_PROJECT}/casdoor"
+        helm_cmd="$helm_cmd --set image.repository=${CASDOOR_IMAGE_REGISTRY}/${CASDOOR_IMAGE_PROJECT}/casdoor"
         helm_cmd="$helm_cmd --set image.tag=${CASDOOR_IMAGE_VERSION:-latest}"
         log_info "使用 Harbor 镜像: ${CASDOOR_IMAGE_REGISTRY}/${CASDOOR_IMAGE_PROJECT}/casdoor:${CASDOOR_IMAGE_VERSION:-latest}"
     fi
