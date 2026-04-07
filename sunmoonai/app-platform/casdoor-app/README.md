@@ -126,7 +126,37 @@ Token 存在前端（localStorage 或普通 cookie），每次请求带 `Authori
 
 ---
 
-## 6. 各组件职责边界
+## 6. 如何确定 BFF 归属
+
+模板中前端（Next.js API Routes）和后端（NestJS）都备有 BFF 逻辑。具体项目**必须在初始化时选定其中一个**，之后不再变更。
+
+### 选定方式
+
+在项目根目录 `.env` 中声明：
+
+```env
+# BFF 选型：frontend（前端承担）或 backend（后端承担）
+BFF_PROVIDER=backend
+```
+
+### 判断标准
+
+**选 `frontend`（Next.js）**：前端框架有 SSR 层，且不想单独维护后端服务。
+
+**选 `backend`（NestJS/FastAPI）**：纯 SPA 前端无服务端层，或后端已存在且统一管理更方便。
+
+### 关键约束
+
+**`CASDOOR_REDIRECT_URI` 决定了 BFF 是谁**——Casdoor callback 回调到谁，谁就是 BFF，两者不能同时承担。
+
+| BFF 选型 | `CASDOOR_REDIRECT_URI` 示例 | 另一方的 auth 路由 |
+|---|---|---|
+| frontend | `http://localhost:3000/api/auth/callback` | 后端 `/auth/*` 不注册或不使用 |
+| backend | `http://localhost:8000/api/auth/callback` | 前端 `app/api/auth/` 目录删除或忽略 |
+
+---
+
+## 7. 各组件职责边界
 
 | 组件 | 职责 | 不做什么 |
 |---|---|---|
