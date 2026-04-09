@@ -3,7 +3,7 @@
 
 image:
   repository: harbor.sunmoonai.com:30443/k8s-images/casdoor
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   # tag 在 deploy-casdoor.sh 中通过 --set image.tag= 注入
 
 imagePullSecrets:
