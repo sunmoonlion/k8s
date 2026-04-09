@@ -17,6 +17,9 @@ auth:
   enabled: true
   existingSecret: "redis-auth-secret"
   existingSecretPasswordKey: "redis-password"
+  acl:
+    enabled: true
+    sentinel: false
 
 master:
   # 持久化：复用 Redis master 的数据盘（静态 PVC redis-sunmoonai-dev-pvc）

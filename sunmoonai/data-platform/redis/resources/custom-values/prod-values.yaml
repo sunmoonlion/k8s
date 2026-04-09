@@ -20,6 +20,9 @@ auth:
   password: "SunMoonAI_Redis_2024!"
   existingSecret: ""
   existingSecretPasswordKey: ""
+  acl:
+    enabled: true
+    sentinel: true
 
 # 主服务配置
 master:

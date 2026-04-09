@@ -21,6 +21,9 @@ auth:
   # 密码由密管创建的 Secret 提供，Chart 仅消费
   existingSecret: "redis-auth-secret"
   existingSecretPasswordKey: "redis-password"
+  acl:
+    enabled: true
+    sentinel: false
 
 # 主服务配置
 master:

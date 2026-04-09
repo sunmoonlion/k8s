@@ -48,7 +48,7 @@ redis_provision() {
   redis-cli -h "${DB_HOST}" -p "${DB_PORT}" --user "${REDIS_ADMIN_USER}" -a "${REDIS_ADMIN_PASSWORD}" ACL SETUSER "${APP_DB_USER}" on ">${APP_DB_PASSWORD}" "~${key_prefix}" "${category}" -@dangerous >/dev/null
   log "[redis] ACL user upserted: ${APP_DB_USER}"
 
-  APP_DB_URI="redis://:${APP_DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${REDIS_DB_INDEX}"
+  APP_DB_URI="redis://${APP_DB_USER}:${APP_DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${REDIS_DB_INDEX}"
   require_non_empty "APP_DB_URI(redis)" "${APP_DB_URI}"
 }
 
