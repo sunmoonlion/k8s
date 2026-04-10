@@ -1,5 +1,22 @@
 #!/usr/bin/env bash
 
+redis_admin_auth_args() {
+  # Newer redis-cli supports ACL login via --user. Older Windows builds (e.g. 3.x) do not.
+  if redis-cli --help 2>&1 | grep -q -- '--user'; then
+    printf -- '--user %s -a %s' "${REDIS_ADMIN_USER}" "${REDIS_ADMIN_PASSWORD}"
+    return 0
+  fi
+
+  # Compatibility fallback: old redis-cli can still authenticate default user with password only.
+  if [[ "${REDIS_ADMIN_USER}" == "default" ]]; then
+    warn "redis-cli has no --user support, fallback to password-only admin auth for default user"
+    printf -- '-a %s' "${REDIS_ADMIN_PASSWORD}"
+    return 0
+  fi
+
+  die "redis-cli does not support --user and REDIS_ADMIN_USER is not default. Please install redis-cli >= 6."
+}
+
 redis_validate() {
   require_non_empty "DB_HOST" "${DB_HOST:-}"
   require_non_empty "DB_PORT" "${DB_PORT:-}"
@@ -45,7 +62,10 @@ redis_provision() {
   wait_k8s_pods_ready
   redis_precheck
 
-  redis-cli -h "${DB_HOST}" -p "${DB_PORT}" --user "${REDIS_ADMIN_USER}" -a "${REDIS_ADMIN_PASSWORD}" ACL SETUSER "${APP_DB_USER}" on ">${APP_DB_PASSWORD}" "~${key_prefix}" "${category}" -@dangerous >/dev/null
+  local auth_args
+  auth_args="$(redis_admin_auth_args)"
+  # shellcheck disable=SC2086
+  redis-cli -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} ACL SETUSER "${APP_DB_USER}" on ">${APP_DB_PASSWORD}" "~${key_prefix}" "${category}" -@dangerous >/dev/null
   log "[redis] ACL user upserted: ${APP_DB_USER}"
 
   APP_DB_URI="redis://${APP_DB_USER}:${APP_DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${REDIS_DB_INDEX}"
@@ -69,11 +89,15 @@ redis_deprovision() {
   require_cmd "redis-cli"
   wait_k8s_pods_ready
   redis_precheck
-  redis-cli -h "${DB_HOST}" -p "${DB_PORT}" --user "${REDIS_ADMIN_USER}" -a "${REDIS_ADMIN_PASSWORD}" ACL DELUSER "${APP_DB_USER}" >/dev/null || true
+  local auth_args
+  auth_args="$(redis_admin_auth_args)"
+  # shellcheck disable=SC2086
+  redis-cli -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} ACL DELUSER "${APP_DB_USER}" >/dev/null || true
   log "[redis] dropped ACL user if exists: ${APP_DB_USER}"
   if bool_true "${DEPROVISION_DROP_DATABASE:-false}"; then
     if bool_true "${REDIS_ALLOW_FLUSH_DB:-false}"; then
-      redis-cli -h "${DB_HOST}" -p "${DB_PORT}" --user "${REDIS_ADMIN_USER}" -a "${REDIS_ADMIN_PASSWORD}" -n "${REDIS_DB_INDEX}" FLUSHDB ASYNC >/dev/null
+      # shellcheck disable=SC2086
+      redis-cli -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} -n "${REDIS_DB_INDEX}" FLUSHDB ASYNC >/dev/null
       log "[redis] flushed db index: ${REDIS_DB_INDEX}"
     else
       warn "DEPROVISION_DROP_DATABASE=true but REDIS_ALLOW_FLUSH_DB!=true, skip FLUSHDB for safety"
@@ -98,7 +122,10 @@ redis_precheck() {
       return 0
     fi
   else
-    if wait_until "${timeout}" "${interval}" redis-cli -h "${DB_HOST}" -p "${DB_PORT}" --user "${REDIS_ADMIN_USER}" -a "${REDIS_ADMIN_PASSWORD}" PING >/dev/null 2>&1; then
+    local auth_args
+    auth_args="$(redis_admin_auth_args)"
+    # shellcheck disable=SC2086
+    if wait_until "${timeout}" "${interval}" redis-cli -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} PING >/dev/null 2>&1; then
       log "Redis precheck passed"
       return 0
     fi
