@@ -1,20 +1,12 @@
 #!/usr/bin/env bash
 
 redis_admin_auth_args() {
-  # Newer redis-cli supports ACL login via --user. Older Windows builds (e.g. 3.x) do not.
   if redis-cli --help 2>&1 | grep -q -- '--user'; then
     printf -- '--user %s -a %s' "${REDIS_ADMIN_USER}" "${REDIS_ADMIN_PASSWORD}"
     return 0
   fi
 
-  # Compatibility fallback: old redis-cli can still authenticate default user with password only.
-  if [[ "${REDIS_ADMIN_USER}" == "default" ]]; then
-    warn "redis-cli has no --user support, fallback to password-only admin auth for default user"
-    printf -- '-a %s' "${REDIS_ADMIN_PASSWORD}"
-    return 0
-  fi
-
-  die "redis-cli does not support --user and REDIS_ADMIN_USER is not default. Please install redis-cli >= 6."
+  die "redis-cli does not support --user. Please install redis-cli >= 6."
 }
 
 redis_validate() {
@@ -49,10 +41,14 @@ redis_provision() {
     return 0
   fi
 
-  local key_prefix="${REDIS_KEY_PREFIX:-${SERVICE_NAME:-app}:*}"
-  local category="${REDIS_ACL_CATEGORY:-+@read +@write +@hash +@string +@list +@set +@sortedset}"
+  # 多前缀：设 REDIS_KEY_PREFIX_SEP（如 |）则在 REDIS_KEY_PREFIX 内用该字符分段；未设则按空白分段。
+  # env 里若 SEP 为 |，须写成 REDIS_KEY_PREFIX_SEP="|"，否则 bash source 会把 | 当成管道。
+  local key_spec="${REDIS_KEY_PREFIX:-${SERVICE_NAME:-app}:*}"
+  local key_sep="${REDIS_KEY_PREFIX_SEP:-}"
+  # +@connection：PING/CLIENT 等，ioredis 连接就绪检查需要；勿省略
+  local category="${REDIS_ACL_CATEGORY:-+@read +@write +@connection +@hash +@string +@list +@set +@sortedset}"
 
-  log "Provision Redis ACL user: user=${APP_DB_USER}, db=${REDIS_DB_INDEX}, keyPrefix=${key_prefix}"
+  log "Provision Redis ACL user: user=${APP_DB_USER}, db=${REDIS_DB_INDEX}, keyPrefixes=${key_spec} (sep=${key_sep:-whitespace})"
   if bool_true "${DRY_RUN:-false}"; then
     log "DRY_RUN=true, skip executing redis-cli"
     return 0
@@ -64,8 +60,24 @@ redis_provision() {
 
   local auth_args
   auth_args="$(redis_admin_auth_args)"
+  local -a key_args=()
+  local -a prefix_parts=()
+  local IFS_save="${IFS}"
+  if [[ -n "${key_sep}" ]]; then
+    IFS="${key_sep}"
+  else
+    IFS=$' \t\n'
+  fi
+  # shellcheck disable=SC2162
+  read -ra prefix_parts <<< "${key_spec}"
+  IFS="${IFS_save}"
+  local pat
+  for pat in "${prefix_parts[@]}"; do
+    [[ -z "${pat}" ]] && continue
+    key_args+=( "~${pat}" )
+  done
   # shellcheck disable=SC2086
-  redis-cli -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} ACL SETUSER "${APP_DB_USER}" on ">${APP_DB_PASSWORD}" "~${key_prefix}" "${category}" -@dangerous >/dev/null
+  redis-cli -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} ACL SETUSER "${APP_DB_USER}" on ">${APP_DB_PASSWORD}" "${key_args[@]}" ${category} -@dangerous >/dev/null
   log "[redis] ACL user upserted: ${APP_DB_USER}"
 
   APP_DB_URI="redis://${APP_DB_USER}:${APP_DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${REDIS_DB_INDEX}"

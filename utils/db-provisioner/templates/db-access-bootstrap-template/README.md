@@ -49,6 +49,6 @@ set -a && source ./.env.c1-external && set +a
 
 - **不要把生产密码写进 repo**：`config/*.env` 中出现的 `change_me`/示例密码仅用于演示。
 - **k8s 场景推荐**：通过 Secret/密管把敏感变量注入到执行环境中（例如 `PG_ADMIN_PASSWORD`、`APP_DB_PASSWORD`、`REDIS_PASSWORD`），让 `.env` 文件只保存非敏感配置。
-- **Redis 兼容性**：
+- **Redis 要求**：
   - 若业务服务不支持 Redis ACL username，请使用 `REDIS_AUTH_ONLY=true`（只做密码认证与写 Secret，不创建 ACL 用户）。
-  - 若执行机 `redis-cli` 不支持 `--user`，在 `REDIS_ADMIN_USER=default` 时可自动回退到密码认证执行 ACL 命令；否则请升级 `redis-cli` 到 >= 6。
+  - 执行机必须使用支持 `--user` 的 `redis-cli`（Redis CLI >= 6）。

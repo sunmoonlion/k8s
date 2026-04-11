@@ -132,10 +132,8 @@ REDIS_ALLOW_FLUSH_DB=true
 
 - `REDIS_ADMIN_USER`、`REDIS_ADMIN_PASSWORD`
 - `REDIS_DB_INDEX`
-- `REDIS_KEY_PREFIX`（默认 `${SERVICE_NAME}:*`）
-- `REDIS_ACL_CATEGORY`（默认常见读写分类）
-  - 建议执行机使用支持 `--user` 的 `redis-cli`（Redis CLI >= 6）。
-  - 兼容模式：若执行机是旧版 `redis-cli`（无 `--user`），当 `REDIS_ADMIN_USER=default` 时会自动回退到密码认证执行 ACL 命令。
+- `REDIS_KEY_PREFIX`（默认 `${SERVICE_NAME}:*`）：**可空格分隔多个 key 模式**，例如 `"session:* tpl:*"`，须覆盖应用实际写入的 key（Nest BFF 会话为 `session:*`，仅 `tpl:*` 会导致无法 `SET session:`）。
+- `REDIS_ACL_CATEGORY`（默认含 `+@read +@write +@connection` 等）：**须含 `+@connection`**，否则 ACL 用户无法执行 `PING`，ioredis 连接会失败；执行机必须使用支持 `--user` 的 `redis-cli`（Redis CLI >= 6）。
 
 ### k8s 输出字段
 
@@ -183,9 +181,9 @@ SunMoonAI 当前建议 selector（默认 `project_id=sunmoonai`）：
 
 - **不要把生产密码写进 repo**：示例配置中的 `change_me`/演示密码仅用于开发验证。
 - **k8s 场景推荐**：通过 Secret/密管把敏感变量注入到执行环境中（例如 `PG_ADMIN_PASSWORD`、`APP_DB_PASSWORD`、`REDIS_PASSWORD`），让配置文件只保存非敏感参数。
-- **Redis 兼容性**：
+- **Redis 要求**：
   - 业务服务不支持 Redis ACL username：使用 `REDIS_AUTH_ONLY=true`（只做密码认证/连通检查并写 Secret，不创建 ACL 用户）。
-  - 执行机 `redis-cli` 太旧（无 `--user`）：可在 `REDIS_ADMIN_USER=default` 下使用自动回退；若管理员不是 `default`，请升级 `redis-cli` 到 >= 6。
+  - 执行机 `redis-cli` 太旧（无 `--user`）：请升级 `redis-cli` 到 >= 6；不再提供旧版客户端回退逻辑。
 - **回收风险**：`deprovision` 默认只回收用户/凭据不会删库；若开启删库开关，请确保不会误删数据。
 
 ## 扩展新引擎（例如 Neo4j）
