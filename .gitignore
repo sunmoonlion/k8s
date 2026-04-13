@@ -9,11 +9,6 @@
 # If you're packaging charts with Helm, these shouldn't be in the repository
 /charts/requirements.lock
 
-# Environment variables (sensitive information like API keys and secrets)
-*.env
-.env.local
-.env.*.local
-
 # Kubernetes Secrets and certificates (they should not be in the repository)
 # Avoid tracking sensitive information like .pem, .key, .crt, and secret files
 /secrets/*
