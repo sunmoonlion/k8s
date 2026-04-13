@@ -17,10 +17,10 @@ image:
 # 认证配置
 auth:
   enabled: true
-  postgresPassword: "SunMoonAI_PostgreSQL_2024!"
+  postgresPassword: "Po!s1359admin"
   database: "sunmoonai_main"
   username: "sunmoonai_app"
-  password: "sunmoonai_app_2024!"
+  password: "Po!s1359"
   existingSecret: ""
   existingSecretPasswordKey: ""
 

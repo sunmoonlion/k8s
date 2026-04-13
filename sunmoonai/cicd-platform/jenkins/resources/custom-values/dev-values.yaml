@@ -110,7 +110,7 @@ customReadinessProbe:
 # Secret 名称：jenkins-sunmoonai（由 Chart 自动创建，名称基于 release name）
 # Secret 键名：jenkins-password
 # 注意：jenkinsUser 使用 Bitnami 默认值 "user"，不自定义用户名
-jenkinsUser: user  # 使用 Bitnami 默认用户名
+jenkinsUser: admin
 # 根据部署脚本逻辑：
 # 1. deploy-jenkins.sh 会先调用 deploy-secrets-all.sh 创建 Secret（包含密码 zym123）
 # 2. 然后 deploy-jenkins.sh 会从 Secret 读取密码，通过 --set jenkinsPassword="..." 传递给 Helm

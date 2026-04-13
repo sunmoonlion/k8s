@@ -73,7 +73,7 @@ jenkinsConfig:
 # 安全配置（生产环境：完整配置）
 auth:
   enabled: true
-  jenkinsPassword: "changeme"
+  jenkinsPassword: "Je!k1359admin"
 
 # 插件配置（生产环境：完整插件集）
 plugins:

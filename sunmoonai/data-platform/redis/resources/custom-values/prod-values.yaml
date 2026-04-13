@@ -17,7 +17,7 @@ image:
 # 认证配置
 auth:
   enabled: true
-  password: "SunMoonAI_Redis_2024!"
+  password: "Re!d1359admin"
   existingSecret: ""
   existingSecretPasswordKey: ""
   acl:

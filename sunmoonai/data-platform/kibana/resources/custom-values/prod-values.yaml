@@ -33,7 +33,7 @@ elasticsearch:
   security:
     auth:
       enabled: true
-      kibanaPassword: "changeme"
+      kibanaPassword: "Ki!b1359"
 
 # 服务配置
 service:
@@ -50,7 +50,7 @@ persistence:
 # 安全配置（生产环境：启用）
 auth:
   enabled: true
-  kibanaPassword: "changeme"
+  kibanaPassword: "Ki!b1359"
 
 # 网络策略（生产环境：启用）
 networkPolicy:
@@ -83,7 +83,7 @@ kibanaConfig:
     hosts:
       - "http://elasticsearch-sunmoonai:9200"
     username: "kibana_system"
-    password: "changeme"
+    password: "Ki!b1359"
 
 # Pod 反亲和性配置
 affinity:

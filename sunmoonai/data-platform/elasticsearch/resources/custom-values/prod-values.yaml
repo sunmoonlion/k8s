@@ -86,8 +86,8 @@ service:
 # 安全配置（生产环境：启用安全）
 auth:
   enabled: true
-  elasticPassword: "changeme"
-  kibanaPassword: "changeme"
+  elasticPassword: "El!a1359"
+  kibanaPassword: "Ki!b1359"
 
 # 监控配置（生产环境：启用）
 metrics:

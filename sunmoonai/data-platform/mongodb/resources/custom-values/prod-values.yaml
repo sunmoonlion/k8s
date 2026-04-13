@@ -17,10 +17,10 @@ image:
 # 认证配置
 auth:
   enabled: true
-  rootPassword: "SunMoonAI_MongoDB_2024!"
+  rootPassword: "Mo!g1359admin"
   database: "sunmoonai_main"
   username: "sunmoonai_app"
-  password: "sunmoonai_app_2024!"
+  password: "Mo!g1359"
   existingSecret: ""
   existingSecretPasswordKey: ""
 

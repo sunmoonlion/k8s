@@ -20,7 +20,7 @@ image:
 # 认证配置
 auth:
   username: "admin"
-  password: "RabbitMQ_Production_2024!"
+  password: "Ra!b1359admin"
   erlangCookie: "rabbitmq-production-cookie"
 
 # 主服务配置
