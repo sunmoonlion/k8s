@@ -1,33 +1,33 @@
-# Neo4j 开发环境配置 - 直接写具体值，不做模板替换
+# Neo4j 开发环境配�?- 直接写具体值，不做模板替换
 
-# Bitnami chart 要求必须设置 advertisedHost，否则不创建 StatefulSet/Pod（仅创建 Service）
-# dev/kind 使用集群内 DNS，无需 LoadBalancer 外部 IP
+# Bitnami chart 要求必须设置 advertisedHost，否则不创建 StatefulSet/Pod（仅创建 Service�?
+# dev/kind 使用集群�?DNS，无需 LoadBalancer 外部 IP
 advertisedHost: "neo4j-sunmoonai.data-platform-dev.svc.cluster.local"
 
 # 全局配置（对齐统一镜像与存储）
-# 关于镜像来源（说明）：
-# - 基于 bitnami/neo4j:5.26.11-debian-12-r0 在节点上 retag 为
-#   harbor.sunmoonai.com:30443/k8s-images/neo4j:5.26.11-debian-12-r0 并推送到 Harbor。
-# - 这里通过 image.registry/repository/tag 指向 Harbor 镜像，功能不受影响。
-# - 需配合：
-#   1) global.security.allowInsecureImages=true（绕过 Bitnami 源校验）
-#   2) 命名空间内存在 harbor-registry-secret（镜像拉取凭据）
+# 关于镜像来源（说明）�?
+# - 基于 bitnami/neo4j:5.26.11-debian-12-r0 在节点上 retag �?
+#   harbor.sunmoonai.com:30443/k8s-images/neo4j:5.26.11-debian-12-r0 并推送到 Harbor�?
+# - 这里通过 image.registry/repository/tag 指向 Harbor 镜像，功能不受影响�?
+# - 需配合�?
+#   1) global.security.allowInsecureImages=true（绕�?Bitnami 源校验）
+#   2) 命名空间内存�?harbor-registry-secret（镜像拉取凭据）
 global:
   imageRegistry: "harbor.sunmoonai.com:30443"
   imagePullSecrets:
     - name: harbor-registry-secret
   security:
     allowInsecureImages: true
-  storageClass: "nfs-2"
+  storageClass: "local-path"
 
-# 镜像配置（走 Harbor 仓库）
+# 镜像配置（走 Harbor 仓库�?
 image:
   registry: harbor.sunmoonai.com:30443
   repository: k8s-images/neo4j
   tag: "5.26.11-debian-12-r0"
   pullPolicy: IfNotPresent
 
-# 认证配置（改为引用统一密管 Secret）
+# 认证配置（改为引用统一密管 Secret�?
 auth:
   enabled: true
   existingSecret: "neo4j-secrets"
@@ -35,11 +35,11 @@ auth:
     password: "neo4j-password"
   database: "sunmoonai_dev"
 
-# 主服务配置
+# 主服务配�?
 primary:
   persistence:
     enabled: true  
-    storageClass: "nfs-2"
+    storageClass: "local-path"
     size: "20Gi"
     accessModes:
       - "ReadWriteOnce"
@@ -53,7 +53,7 @@ primary:
       effect: "NoSchedule"
   
   service:
-    type: "ClusterIP"  # 改为 ClusterIP，只在内网访问
+    type: "ClusterIP"  # 改为 ClusterIP，只在内网访�?
     ports:
       http: 7474
       https: 6477
@@ -103,7 +103,7 @@ neo4j:
       allowlist: "gds.*, apoc.*"
       unrestricted: "gds.*, apoc.*"
   
-  # 服务器配置
+  # 服务器配�?
   server:
     config:
       strict_validation: false
@@ -125,13 +125,13 @@ neo4j:
   jvm:
     additional: "-XX:+ExitOnOutOfMemoryError"
 
-# 监控配置 - 开发环境禁用
+# 监控配置 - 开发环境禁�?
 metrics:
   enabled: false
 
 # Ingress 配置 - 通过 ingress-platform 统一管理
 ingress:
-  enabled: false  # 禁用 Helm Chart 的 Ingress，使用 ingress-platform 管理
+  enabled: false  # 禁用 Helm Chart �?Ingress，使�?ingress-platform 管理
 
 # 网络策略
 networkPolicy:

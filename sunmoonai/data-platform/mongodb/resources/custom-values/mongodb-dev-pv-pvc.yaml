@@ -7,14 +7,18 @@ spec:
     storage: 8Gi
   accessModes:
     - ReadWriteOnce
-  storageClassName: ""  # 静态 PV，不走 nfs-2 动态存储
+  storageClassName: ""
   persistentVolumeReclaimPolicy: Retain
-  nfs:
-    server: 172.28.46.235
-    # ⚠️ 注意：下面这个 path 需要在「初始化基线盘」后，用实际 PV 中的 path 替换 UID 部分
-    # 示例前缀来自 NFS 目录：data-platform-dev-mongodb-sunmoonai-pvc-<UID>
-    # 请在集群初始化完（kubectl get pv 查到 MongoDB 对应 PV）后，把 <REPLACE_WITH_UID> 改成真实 UID。
-    path: /data/kind-nfs/data-platform-dev-mongodb-sunmoonai-pvc-783d0fc8-4609-46c4-8daa-342ea799d956
+  hostPath:
+    path: /data/kind-local-storage/mongodb
+    type: DirectoryOrCreate
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: [kind-control-plane]
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -29,4 +33,3 @@ spec:
       storage: 8Gi
   storageClassName: ""
   volumeName: mongodb-sunmoonai-dev-pv
-

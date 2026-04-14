@@ -4,14 +4,21 @@ metadata:
   name: rabbitmq-sunmoonai-dev-pv
 spec:
   capacity:
-    storage: 8Gi
+    storage: 10Gi
   accessModes:
     - ReadWriteOnce
-  storageClassName: ""  # 静态 PV，不走 nfs-2 动态存储
+  storageClassName: ""
   persistentVolumeReclaimPolicy: Retain
-  nfs:
-    server: 172.28.46.235
-    path: /data/kind-nfs/messaging-platform-dev-data-rabbitmq-sunmoonai-0-pvc-3a1e6c0e-b35f-4343-9efd-fc60bbaf617a
+  hostPath:
+    path: /data/kind-local-storage/rabbitmq
+    type: DirectoryOrCreate
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: [kind-control-plane]
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -23,7 +30,6 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 8Gi
+      storage: 10Gi
   storageClassName: ""
   volumeName: rabbitmq-sunmoonai-dev-pv
-

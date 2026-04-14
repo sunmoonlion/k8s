@@ -4,7 +4,7 @@ global:
   imageRegistry: ""
   imagePullSecrets:
     - name: "harbor-registry-secret"
-  storageClass: "nfs-2"
+  storageClass: "local-path"
 
 image:
   registry: ""
@@ -22,11 +22,11 @@ auth:
   databases:
     - "mydb"
 
-# 持久化配置（复用老盘：使用静态 PVC mongodb-sunmoonai-dev-pvc）
+# 持久化配置（复用老盘：使用静�?PVC mongodb-sunmoonai-dev-pvc�?
 persistence:
   enabled: true
   existingClaim: mongodb-sunmoonai-dev-pvc
-  storageClass: ""       # 使用 existingClaim，不再通过 storageClass 动态创建
+  storageClass: ""       # 使用 existingClaim，不再通过 storageClass 动态创�?
   size: "8Gi"
   accessModes:
     - "ReadWriteOnce"
@@ -89,7 +89,7 @@ initdbScripts:
           { role: 'readWrite', db: 'llmops_db' },
           { role: 'dbAdmin', db: 'llmops_db' }
         ]);
-        print('已授予 sunmoonai_dev 用户对 llmops_db 数据库的权限');
+        print('已授�?sunmoonai_dev 用户�?llmops_db 数据库的权限');
       } else {
         print('警告: sunmoonai_dev 用户不存在，跳过权限授予');
       }

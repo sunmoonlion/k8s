@@ -7,16 +7,16 @@ global:
     - name: harbor-registry-secret
   security:
     allowInsecureImages: true
-  storageClass: "nfs-2"
+  storageClass: "local-path"
 
-# 镜像配置（通过 Harbor 拉取）
+# 镜像配置（通过 Harbor 拉取�?
 image:
   registry: "harbor.sunmoonai.com:30443"
   repository: k8s-images/rabbitmq
   tag: "4.1.3-debian-12-r1"
   pullPolicy: IfNotPresent
 
-# 禁用 Chart 的 resourcesPreset，确保自定义 resources 生效
+# 禁用 Chart �?resourcesPreset，确保自定义 resources 生效
 resourcesPreset: "none"
 
 resources:
@@ -36,41 +36,41 @@ tolerations:
     value: "nfs-storage"
     effect: "NoSchedule"
 
-# 认证配置（改为引用统一密管 Secret）
-# 特别说明（和其他组件的差异）：
-# - RabbitMQ 是有状态服务，用户名/密码会写入持久卷（NFS）中的内部数据库，不是“纯配置值”
-# - Helm Chart 在 enabled updatePassword 时，会尝试根据 Secret 更新内部密码
-#   - 如果持久卷里已有旧密码，而 Secret 中是新密码，更新可能失败，导致探针/管理端都登录失败，Pod 起不来
-# - 我们当前策略是：沿用第一次初始化成功时的那套密码，不再自动旋转
-#   - 因此用 existingPasswordSecret/ existingErlangSecret 指向固定的 Secret
-#   - 同时关闭 updatePassword，避免自动修改 NFS 中已经存在的密码
+# 认证配置（改为引用统一密管 Secret�?
+# 特别说明（和其他组件的差异）�?
+# - RabbitMQ 是有状态服务，用户�?密码会写入持久卷（NFS）中的内部数据库，不是“纯配置值�?
+# - Helm Chart �?enabled updatePassword 时，会尝试根�?Secret 更新内部密码
+#   - 如果持久卷里已有旧密码，�?Secret 中是新密码，更新可能失败，导致探�?管理端都登录失败，Pod 起不�?
+# - 我们当前策略是：沿用第一次初始化成功时的那套密码，不再自动旋�?
+#   - 因此�?existingPasswordSecret/ existingErlangSecret 指向固定�?Secret
+#   - 同时关闭 updatePassword，避免自动修�?NFS 中已经存在的密码
 auth:
   username: "admin"
   existingPasswordSecret: "rabbitmq-auth-secret"
   existingSecretPasswordKey: "rabbitmq-password"
   existingErlangSecret: "rabbitmq-auth-secret"
   existingSecretErlangKey: "rabbitmq-erlang-cookie"
-  # 不启用密码自动更新：始终沿用 NFS 中已存在的密码
-  # 如果以后真的要换密码，再手工调整 Secret 和数据卷，而不是依赖自动更新
+  # 不启用密码自动更新：始终沿用 NFS 中已存在的密�?
+  # 如果以后真的要换密码，再手工调整 Secret 和数据卷，而不是依赖自动更�?
   updatePassword: false
 
-# 顶层持久化配置（使用静态 PVC，以便重建 kind 集群时复用老数据盘）
+# 顶层持久化配置（使用静�?PVC，以便重�?kind 集群时复用老数据盘�?
 persistence:
   enabled: true
   existingClaim: rabbitmq-sunmoonai-dev-pvc
-  storageClass: ""   # 使用 existingClaim，不再通过 storageClass 动态创建
+  storageClass: ""   # 使用 existingClaim，不再通过 storageClass 动态创�?
 
-# 主服务配置
+# 主服务配�?
 primary:
   persistence:
     enabled: true
-    storageClass: "nfs-2"
+    storageClass: "local-path"
     size: "10Gi"
     accessModes:
       - "ReadWriteOnce"
 
   service:
-    type: "ClusterIP"  # 改为 ClusterIP，只在内网访问
+    type: "ClusterIP"  # 改为 ClusterIP，只在内网访�?
     ports:
       amqp: 5672
       management: 15672
@@ -83,33 +83,33 @@ primary:
       cpu: "250m"
       memory: "512Mi"
 
-# 健康检查配置（移到顶层，Chart 使用 .Values.livenessProbe、.Values.readinessProbe 和 .Values.startupProbe）
-# 优化启动速度：参考其他组件（mongo-express、flower、pgadmin）的配置，大幅缩短启动时间
-# 策略：
-#   1. 启用 startupProbe：在启动期间更频繁检查（每 2 秒），避免 readinessProbe 在启动阶段失败
-#   2. readinessProbe initialDelaySeconds: 0（立即开始检查，像 mongo-express 一样）
-#   3. livenessProbe initialDelaySeconds: 30（从 120 秒大幅缩短，像 flower 一样）
+# 健康检查配置（移到顶层，Chart 使用 .Values.livenessProbe�?Values.readinessProbe �?.Values.startupProbe�?
+# 优化启动速度：参考其他组件（mongo-express、flower、pgadmin）的配置，大幅缩短启动时�?
+# 策略�?
+#   1. 启用 startupProbe：在启动期间更频繁检查（�?2 秒），避�?readinessProbe 在启动阶段失�?
+#   2. readinessProbe initialDelaySeconds: 0（立即开始检查，�?mongo-express 一样）
+#   3. livenessProbe initialDelaySeconds: 30（从 120 秒大幅缩短，�?flower 一样）
 startupProbe:
   enabled: true
-  initialDelaySeconds: 0         # 立即开始检查
-  periodSeconds: 2               # 每 2 秒检查一次（参考 pgadmin）
+  initialDelaySeconds: 0         # 立即开始检�?
+  periodSeconds: 2               # �?2 秒检查一次（参�?pgadmin�?
   timeoutSeconds: 3
-  failureThreshold: 30           # 最多等待 60 秒（30 * 2秒），足够 RabbitMQ 启动
+  failureThreshold: 30           # 最多等�?60 秒（30 * 2秒），足�?RabbitMQ 启动
   successThreshold: 1
 
 livenessProbe:
   enabled: true
-  initialDelaySeconds: 30        # 从默认 120 秒缩短到 30 秒（参考 flower）
-  periodSeconds: 10              # 从默认 30 秒缩短到 10 秒，更快发现问题
-  timeoutSeconds: 5              # 从默认 20 秒缩短到 5 秒
-  failureThreshold: 5            # 保持默认 6，允许更多失败次数
+  initialDelaySeconds: 30        # 从默�?120 秒缩短到 30 秒（参�?flower�?
+  periodSeconds: 10              # 从默�?30 秒缩短到 10 秒，更快发现问题
+  timeoutSeconds: 5              # 从默�?20 秒缩短到 5 �?
+  failureThreshold: 5            # 保持默认 6，允许更多失败次�?
   successThreshold: 1
 
 readinessProbe:
   enabled: true
-  initialDelaySeconds: 0         # 从 5 秒缩短到 0 秒（参考 mongo-express，立即开始检查）
-  periodSeconds: 5               # 从默认 30 秒缩短到 5 秒，更快响应
-  timeoutSeconds: 3              # 从默认 20 秒缩短到 3 秒
+  initialDelaySeconds: 0         # �?5 秒缩短到 0 秒（参�?mongo-express，立即开始检查）
+  periodSeconds: 5               # 从默�?30 秒缩短到 5 秒，更快响应
+  timeoutSeconds: 3              # 从默�?20 秒缩短到 3 �?
   failureThreshold: 3            # 保持默认
   successThreshold: 1
 
@@ -121,17 +121,17 @@ management:
 # ============================================================================
 # 注意：RabbitMQ 管理界面不支持路径前缀配置
 # ============================================================================
-# 与 Mongo Express、RedisInsight、Flower 不同，RabbitMQ 管理插件不支持 baseurl/base-path 配置
-# 因此必须使用 Traefik 的 stripPrefix 中间件来处理路径前缀
+# �?Mongo Express、RedisInsight、Flower 不同，RabbitMQ 管理插件不支�?baseurl/base-path 配置
+# 因此必须使用 Traefik �?stripPrefix 中间件来处理路径前缀
 # 参考：https://www.rabbitmq.com/management.html
 
-# 监控配置 - 开发环境禁用
+# 监控配置 - 开发环境禁�?
 metrics:
   enabled: false
 
 # Ingress 配置 - 通过 ingress-platform 统一管理
 ingress:
-  enabled: false  # 禁用 Helm Chart 的 Ingress，使用 ingress-platform 管理
+  enabled: false  # 禁用 Helm Chart �?Ingress，使�?ingress-platform 管理
 
 # 网络策略
 networkPolicy:

@@ -1,0 +1,7 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  extraMounts:
+  - hostPath: /data/kind-local-storage   # WSL 宿主机路径，Kind 删除后数据依然存在
+    containerPath: /data/kind-local-storage
