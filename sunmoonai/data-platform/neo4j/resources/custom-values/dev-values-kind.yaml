@@ -40,10 +40,6 @@ primary:
     - key: "node-role.kubernetes.io/control-plane"
       operator: "Exists"
       effect: "NoSchedule"
-    - key: "dedicated"
-      operator: "Equal"
-      value: "nfs-storage"
-      effect: "NoSchedule"
 
   service:
     type: "ClusterIP"

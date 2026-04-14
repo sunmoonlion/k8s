@@ -7,7 +7,7 @@ global:
     - name: harbor-registry-secret
   security:
     allowInsecureImages: true
-  storageClass: "nfs-2"
+  storageClass: "local-path"
 
 image:
   registry: www.sunmoonai.com:30443
@@ -32,7 +32,7 @@ auth:
 primary:
   persistence:
     enabled: true
-    storageClass: "nfs-2"
+    storageClass: "local-path"
     size: "20Gi"
     accessModes:
       - "ReadWriteOnce"

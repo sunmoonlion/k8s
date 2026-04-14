@@ -1,6 +1,6 @@
-# pgAdmin 开发环境配�?
+# pgAdmin 开发环境配�?
 # 基于 Runix pgAdmin4 Chart 结构
-# 这些变量通过部署脚本�?deploy-pgadmin.conf 文件中读取并替换
+# 这些变量通过部署脚本�?deploy-pgadmin.conf 文件中读取并替换
 
 # ============================================================================
 # 全局配置
@@ -16,7 +16,7 @@ global:
 replicaCount: 1
 
 # 通用标签
-# 注意：app.kubernetes.io/name �?app.kubernetes.io/instance �?Chart 自动设置，不应在 commonLabels 中覆�?
+# 注意：app.kubernetes.io/name �?app.kubernetes.io/instance �?Chart 自动设置，不应在 commonLabels 中覆�?
 # 这些标签用于 Deployment selector，必须与 template labels 匹配
 commonLabels:
   app.kubernetes.io/component: "pgadmin"
@@ -47,7 +47,7 @@ service:
   annotations: {}
   # nodePort: {{PGADMIN_EXTERNAL_PORT}}  # 如果使用 NodePort 类型
 
-# 容器端口（非 root 运行时避免绑�?80�?
+# 容器端口（非 root 运行时避免绑�?80�?
 containerPorts:
   http: 5050
 
@@ -76,7 +76,7 @@ ingress:
 # ============================================================================
 # Secret 配置
 # ============================================================================
-# 使用现有 Secret，避免在 values 文件中存储明文密�?
+# 使用现有 Secret，避免在 values 文件中存储明文密�?
 existingSecret: "{{PGADMIN_AUTH_SECRET_NAME}}"
 secretKeys:
   pgadminPasswordKey: "{{PGADMIN_AUTH_SECRET_PASSWORD_KEY}}"
@@ -91,8 +91,8 @@ env:
   password: ""
   
   # 设置 contextPath，让 pgAdmin 知道它在子路径下运行
-  # 这样重定向时会包含正确的路径前缀�?pgadmin�?
-  # 注意：需要移�?stripPrefix middleware，让 pgAdmin 自己处理路径
+  # 这样重定向时会包含正确的路径前缀�?pgadmin�?
+  # 注意：需要移�?stripPrefix middleware，让 pgAdmin 自己处理路径
   contextPath: "/pgadmin"
   
   # Server mode configuration
@@ -107,7 +107,7 @@ env:
     #   value: "False"
 
 # ============================================================================
-# 持久化存储配�?
+# 持久化存储配�?
 # ============================================================================
 persistentVolume:
   enabled: true
@@ -115,7 +115,7 @@ persistentVolume:
   accessModes:
     - ReadWriteOnce
   size: 10Gi
-  storageClass: "local-path"  # 使用 NFS StorageClass（与 PostgreSQL 保持一致）
+  storageClass: "local-path"
   subPath: ""
 
 # ============================================================================
@@ -187,14 +187,14 @@ preferences:
 autoscaling:
   enabled: false
 
-# Pod 注释和标�?
+# Pod 注释和标�?
 podAnnotations: {}
 podLabels: {}
 
-# 节点选择器和容忍�?
+# 节点选择器和容忍�?
 nodeSelector: {}
 tolerations: []
 
-# 亲和性配�?
+# 亲和性配�?
 affinity: {}
 

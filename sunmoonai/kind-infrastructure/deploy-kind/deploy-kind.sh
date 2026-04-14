@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Kind 一键部署：按顺序执行 NFS 检查/安装、创建集群与平台初始化、WSL Harbor 解析。
+# Kind 一键部署：按顺序创建集群与平台初始化、WSL Harbor 解析。
 # 均在 WSL 中执行。可选参数见下方用法。配置见同目录 deploy-kind.conf。
 #
 set -euo pipefail

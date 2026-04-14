@@ -104,12 +104,7 @@ jenkinsPassword: ""  # 留空，由 deploy-jenkins.sh 通过 --set 传递密码�
 # 重要：Bitnami 初始化逻辑说明
 # - 如果 JENKINS_HOME 为空（首次部署），Bitnami 会执行初始化脚本，创建用户并设置密码
 # - 如果 JENKINS_HOME 不为空（检测到已有数据），Bitnami 会跳过初始化，使用现有用户和密码
-# - 因此，如果要重新初始化，必须完全删除 PVC �?NFS 存储上的数据，然后重新部�?# 
-# 注意：NFS 存储问题
-# - 删除 PVC 后，NFS 存储上的数据可能仍然存在
-# - 重新创建 PVC 时，Kubernetes 可能重新挂载同一�?NFS 路径
-# - 因此，Bitnami 会检测到旧数据存在，跳过初始�?# - 解决方案：手动清�?NFS 存储上的数据，或使用不同的存储路�?
-# 插件配置（开发环境：基础插件�?# 说明�?#   - 配置的插件会�?Jenkins 首次启动时自动安�?#   - 可以通过 Jenkins Web UI (Manage Jenkins �?Manage Plugins) 手动安装其他插件
+# - 因此，如果要重新初始化，必须完全删除 PVC 中的数据（rm -rf /var/jenkins_home/*），然后重新部署
 #   - UI 安装的插件会保留在持久化存储中，重启不会丢失
 #   - 如果 Pod 已初始化，新增的插件需要设�?overridePlugins: true 才会安装
 plugins:
@@ -124,7 +119,7 @@ plugins:
 # overridePlugins: 是否覆盖已安装的插件
 #   - false (默认): 保留已安装的插件，只安装配置中新增的插件（推荐）
 #   - true: 删除所有现有插件，重新安装配置中的插件（会丢失 UI 手动安装的插件）
-# 注意：如�?Pod 已初始化，新增的插件（如 configuration-as-code-support）不会自动安�?# 需要设�?overridePlugins: true 或手动在 UI 中安�?# 注意：overridePlugins: true �?NFS 存储上可能导致文件锁定问题，建议手动安装插件
+# 注意：overridePlugins: true 可能导致文件锁定问题，建议手动安装插件
 overridePlugins: false  # 保持�?false，手动在 UI 中安�?configuration-as-code-support 插件
 
 # latestPlugins: 是否下载最新版本的插件

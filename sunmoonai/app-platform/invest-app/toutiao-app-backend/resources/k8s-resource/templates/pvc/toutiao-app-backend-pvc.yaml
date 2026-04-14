@@ -8,7 +8,7 @@ metadata:
 spec:
   accessModes:
     - ${PVC_ACCESS_MODE:-ReadWriteOnce}
-  storageClassName: ${PVC_STORAGE_CLASS:-nfs-1}
+  storageClassName: ${PVC_STORAGE_CLASS:-local-path}
   resources:
     requests:
       storage: ${PVC_STORAGE_SIZE:-10Gi}
