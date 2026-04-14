@@ -23,7 +23,10 @@ apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
   - role: control-plane
     image: kindest/node:v1.27.3-sunmoonai  # 预装 Harbor/Traefik 等，由 build-kind-node-image.sh 生成
-    # extraMounts:  # 方式二：取消注释并确保 registry-config/ 已生成后再创建集群
+    extraMounts:
+      - hostPath: /data/kind-local-storage   # WSL 宿主机持久化目录，Kind 删除后数据依然存在
+        containerPath: /data/kind-local-storage
+    # extraMounts 方式二（registry 镜像加速）：取消注释并确保 registry-config/ 已生成后再创建集群
     #   - hostPath: ./registry-config/docker.io
     #     containerPath: /etc/containerd/certs.d/docker.io
     #   - hostPath: ./registry-config/registry.k8s.io
