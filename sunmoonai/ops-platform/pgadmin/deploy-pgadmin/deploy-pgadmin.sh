@@ -125,13 +125,20 @@ process_pgadmin_values() {
             env_values_file="$PGADMIN_CUSTOM_VALUES_DIR/prod-values.yaml"
             ;;
         "development")
-            env_values_file="$PGADMIN_CUSTOM_VALUES_DIR/dev-values.yaml"
+            local cluster_lower="$(echo "${CLUSTER:-}" | tr '[:upper:]' '[:lower:]')"
+            if [[ "$cluster_lower" == "kind" ]]; then
+                local pv_pvc_file="$PGADMIN_CUSTOM_VALUES_DIR/pgadmin-kind-pv-pvc.yaml"
+                kubectl apply -f "$pv_pvc_file" >&2
+                env_values_file="$PGADMIN_CUSTOM_VALUES_DIR/dev-values-kind.yaml"
+            else
+                env_values_file="$PGADMIN_CUSTOM_VALUES_DIR/dev-values.yaml"
+            fi
             ;;
         *)
             env_values_file="$PGADMIN_CUSTOM_VALUES_DIR/dev-values.yaml"
             ;;
     esac
-    
+
     if [[ -f "$env_values_file" ]]; then
         log_info "使用环境特定配置: $env_values_file" >&2
         

@@ -1,0 +1,197 @@
+# pgAdmin 开发环境配�?
+# 基于 Runix pgAdmin4 Chart 结构
+# 这些变量通过部署脚本�?deploy-pgadmin.conf 文件中读取并替换
+
+# ============================================================================
+# 全局配置
+# ============================================================================
+global:
+  imageRegistry: "{{PGADMIN_IMAGE_REGISTRY}}"
+  # imagePullSecrets 在下面的 imagePullSecrets 中配置，避免重复
+  imagePullSecrets: []
+
+# ============================================================================
+# 通用配置
+# ============================================================================
+replicaCount: 1
+
+# 通用标签
+# 注意：app.kubernetes.io/name �?app.kubernetes.io/instance �?Chart 自动设置，不应在 commonLabels 中覆�?
+# 这些标签用于 Deployment selector，必须与 template labels 匹配
+commonLabels:
+  app.kubernetes.io/component: "pgadmin"
+  app.kubernetes.io/environment: "{{ENVIRONMENT}}"
+  app.kubernetes.io/part-of: platform
+  app.kubernetes.io/managed-by: helm
+
+# ============================================================================
+# 镜像配置
+# ============================================================================
+image:
+  registry: "{{PGADMIN_IMAGE_REGISTRY}}"
+  repository: "{{PGADMIN_IMAGE_PROJECT}}/pgadmin4"
+  tag: "{{PGADMIN_IMAGE_VERSION}}"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: "{{PGADMIN_IMAGE_PULL_SECRET_NAME}}"
+
+# ============================================================================
+# 服务配置
+# ============================================================================
+service:
+  type: ClusterIP
+  port: 5050
+  targetPort: 5050
+  portName: http
+  annotations: {}
+  # nodePort: {{PGADMIN_EXTERNAL_PORT}}  # 如果使用 NodePort 类型
+
+# 容器端口（非 root 运行时避免绑�?80�?
+containerPorts:
+  http: 5050
+
+# ============================================================================
+# Ingress 配置
+# ============================================================================
+ingress:
+  enabled: true
+  ingressClassName: ""
+  annotations:
+    # Traefik ingress annotations
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+  labels: {}
+  hosts:
+    - host: "{{PGADMIN_UNIFIED_HOST}}"
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+    # TLS termination is handled by Traefik
+    # 如需配置 TLS，取消下面的注释
+    # - secretName: pgadmin-tls
+    #   hosts:
+    #     - "{{PGADMIN_UNIFIED_HOST}}"
+
+# ============================================================================
+# Secret 配置
+# ============================================================================
+# 使用现有 Secret，避免在 values 文件中存储明文密�?
+existingSecret: "{{PGADMIN_AUTH_SECRET_NAME}}"
+secretKeys:
+  pgadminPasswordKey: "{{PGADMIN_AUTH_SECRET_PASSWORD_KEY}}"
+
+# ============================================================================
+# 环境变量配置
+# ============================================================================
+env:
+  # Email for pgAdmin login (required)
+  email: admin@sunmoonai.com
+  # Password - will be ignored if existingSecret is set
+  password: ""
+  
+  # 设置 contextPath，让 pgAdmin 知道它在子路径下运行
+  # 这样重定向时会包含正确的路径前缀�?pgadmin�?
+  # 注意：需要移�?stripPrefix middleware，让 pgAdmin 自己处理路径
+  contextPath: "/pgadmin"
+  
+  # Server mode configuration
+  variables:
+    - name: PGADMIN_LISTEN_PORT
+      value: "5050"
+    - name: PGADMIN_LISTEN_ADDRESS
+      value: "0.0.0.0"
+    # - name: PGADMIN_CONFIG_SERVER_MODE
+    #   value: "True"
+    # - name: PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED
+    #   value: "False"
+
+# ============================================================================
+# 持久化存储配�?
+# ============================================================================
+persistentVolume:
+  enabled: true
+  annotations: {}
+  existingClaim: "pgadmin-sunmoonai-dev-pvc"  # Kind 静态 PV，数据跨集群重建保留
+  subPath: ""
+
+# ============================================================================
+# 资源限制（开发环境）
+# ============================================================================
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# ============================================================================
+# 探针配置
+# ============================================================================
+livenessProbe:
+  initialDelaySeconds: 30
+  periodSeconds: 20
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+startupProbe:
+  failureThreshold: 30
+  periodSeconds: 2
+
+# ============================================================================
+# 安全配置
+# ============================================================================
+securityContext:
+  runAsUser: 5050
+  runAsGroup: 5050
+  fsGroup: 5050
+
+containerSecurityContext:
+  enabled: true
+  allowPrivilegeEscalation: false
+
+# ============================================================================
+# 网络策略
+# ============================================================================
+networkPolicy:
+  enabled: true
+
+# ============================================================================
+# 其他配置
+# ============================================================================
+# 禁用服务器定义预加载（开发环境）
+serverDefinitions:
+  enabled: false
+  resourceType: ConfigMap
+  existingConfigmap: ""
+  existingSecret: ""
+  servers: {}
+
+# 禁用用户偏好预加载（开发环境）
+preferences:
+  enabled: false
+  existingConfigMap: ""
+  data: {}
+
+# 禁用自动扩缩容（开发环境）
+autoscaling:
+  enabled: false
+
+# Pod 注释和标�?
+podAnnotations: {}
+podLabels: {}
+
+# 节点选择器和容忍�?
+nodeSelector: {}
+tolerations: []
+
+# 亲和性配�?
+affinity: {}
+

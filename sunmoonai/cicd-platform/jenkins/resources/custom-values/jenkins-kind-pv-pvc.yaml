@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: mongodb-sunmoonai-dev-pv
+  name: jenkins-sunmoonai-dev-pv
 spec:
   capacity:
     storage: 8Gi
@@ -10,7 +10,7 @@ spec:
   storageClassName: ""
   persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: /data/kind-local-storage/mongodb
+    path: /data/kind-local-storage/jenkins
     type: DirectoryOrCreate
   nodeAffinity:
     required:
@@ -18,13 +18,13 @@ spec:
       - matchExpressions:
         - key: kubernetes.io/hostname
           operator: In
-          values: [kind-control-plane]
+          values: [kind-worker]
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: mongodb-sunmoonai-dev-pvc
-  namespace: data-platform-dev
+  name: jenkins-sunmoonai-dev-pvc
+  namespace: cicd-platform-dev
 spec:
   accessModes:
     - ReadWriteOnce
@@ -32,4 +32,4 @@ spec:
     requests:
       storage: 8Gi
   storageClassName: ""
-  volumeName: mongodb-sunmoonai-dev-pv
+  volumeName: jenkins-sunmoonai-dev-pv

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: rabbitmq-sunmoonai-dev-pv
+  name: pgadmin-sunmoonai-dev-pv
 spec:
   capacity:
     storage: 10Gi
@@ -10,7 +10,7 @@ spec:
   storageClassName: ""
   persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: /data/kind-local-storage/rabbitmq
+    path: /data/kind-local-storage/pgadmin
     type: DirectoryOrCreate
   nodeAffinity:
     required:
@@ -18,13 +18,13 @@ spec:
       - matchExpressions:
         - key: kubernetes.io/hostname
           operator: In
-          values: [kind-control-plane]
+          values: [kind-worker]
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: rabbitmq-sunmoonai-dev-pvc
-  namespace: messaging-platform-dev
+  name: pgadmin-sunmoonai-dev-pvc
+  namespace: ops-platform-dev
 spec:
   accessModes:
     - ReadWriteOnce
@@ -32,4 +32,4 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: ""
-  volumeName: rabbitmq-sunmoonai-dev-pv
+  volumeName: pgadmin-sunmoonai-dev-pv

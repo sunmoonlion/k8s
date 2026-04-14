@@ -1,16 +1,16 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: redis-sunmoonai-dev-pv
+  name: elasticsearch-sunmoonai-dev-pv
 spec:
   capacity:
-    storage: 5Gi
+    storage: 8Gi
   accessModes:
     - ReadWriteOnce
   storageClassName: ""
   persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: /data/kind-local-storage/redis
+    path: /data/kind-local-storage/elasticsearch
     type: DirectoryOrCreate
   nodeAffinity:
     required:
@@ -18,18 +18,18 @@ spec:
       - matchExpressions:
         - key: kubernetes.io/hostname
           operator: In
-          values: [kind-control-plane]
+          values: [kind-worker]
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: redis-sunmoonai-dev-pvc
+  name: elasticsearch-sunmoonai-dev-pvc
   namespace: data-platform-dev
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 5Gi
+      storage: 8Gi
   storageClassName: ""
-  volumeName: redis-sunmoonai-dev-pv
+  volumeName: elasticsearch-sunmoonai-dev-pv

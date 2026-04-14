@@ -98,7 +98,15 @@ execute_casdoor_deployment() {
     local values_file
     case "$environment" in
         "development"|"dev")
-            values_file="$CASDOOR_CUSTOM_VALUES_DIR/dev-values.yaml" ;;
+            local cluster_lower="$(echo "${CLUSTER:-}" | tr '[:upper:]' '[:lower:]')"
+            if [[ "$cluster_lower" == "kind" ]]; then
+                local pv_pvc_file="$CASDOOR_CUSTOM_VALUES_DIR/casdoor-kind-pv-pvc.yaml"
+                kubectl apply -f "$pv_pvc_file" >&2
+                values_file="$CASDOOR_CUSTOM_VALUES_DIR/dev-values-kind.yaml"
+            else
+                values_file="$CASDOOR_CUSTOM_VALUES_DIR/dev-values.yaml"
+            fi
+            ;;
         "production"|"prod")
             values_file="$CASDOOR_CUSTOM_VALUES_DIR/prod-values.yaml" ;;
         *)

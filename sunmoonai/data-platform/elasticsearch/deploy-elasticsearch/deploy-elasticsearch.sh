@@ -131,38 +131,22 @@ execute_elasticsearch_deployment() {
         return 1
     fi
     
-    # 构建 values 文件路径（统一映射 development→dev, production→prod），并根据持久化模式选择是否复用老盘
     local values_file=""
-    # 支持全局强制模式：SUNMOONAI_GLOBAL_PERSIST_MODE=init|reuse
-    local global_persist_mode="${SUNMOONAI_GLOBAL_PERSIST_MODE:-}"
-    local persist_mode
-    if [[ -n "$global_persist_mode" ]]; then
-        persist_mode="$global_persist_mode"
-        log_info "检测到全局持久化模式 SUNMOONAI_GLOBAL_PERSIST_MODE=$global_persist_mode，将覆盖组件配置 ELASTICSEARCH_PERSIST_MODE=${ELASTICSEARCH_PERSIST_MODE:-init}"
-    else
-        persist_mode="${ELASTICSEARCH_PERSIST_MODE:-init}"
-    fi
-    # 远程集群（C1/C2 等）仅使用动态 StorageClass，不应用 Kind 静态 PV/PVC（避免 172.28.46.235）
-    if [[ -n "${CLUSTER:-}" && "$(echo "${CLUSTER}" | tr '[:upper:]' '[:lower:]')" != "kind" ]]; then
-        if [[ "$persist_mode" == "reuse" ]]; then
-            log_info "集群 ${CLUSTER} 为远程集群，强制使用动态存储 (init)，不应用 Kind 静态 PV/PVC"
-            persist_mode="init"
-        fi
-    fi
+    local cluster_lower="$(echo "${CLUSTER:-}" | tr '[:upper:]' '[:lower:]')"
     case "$environment" in
         "development"|"dev")
-            if [[ "$persist_mode" == "reuse" ]]; then
-                # 复用模式：先应用静态 PV/PVC，再使用 dev-values-persist.yaml
-                local pv_pvc_file="$ELASTICSEARCH_CUSTOM_VALUES_DIR/elasticsearch-dev-pv-pvc.yaml"
+            if [[ "$cluster_lower" == "kind" ]]; then
+                # Kind：静态 hostPath PV + dev-values-kind.yaml
+                local pv_pvc_file="$ELASTICSEARCH_CUSTOM_VALUES_DIR/elasticsearch-kind-pv-pvc.yaml"
                 if [[ ! -f "$pv_pvc_file" ]]; then
-                    log_error "复用模式启用，但未找到静态 PV/PVC 文件: $pv_pvc_file"
+                    log_error "未找到 Kind 静态 PV/PVC 文件: $pv_pvc_file"
                     return 1
                 fi
-                log_info "ELASTICSEARCH_PERSIST_MODE=reuse，先应用静态 PV/PVC: $pv_pvc_file"
+                log_info "Kind 集群：应用静态 PV/PVC: $pv_pvc_file"
                 kubectl apply -f "$pv_pvc_file"
-                values_file="$ELASTICSEARCH_CUSTOM_VALUES_DIR/dev-values-persist.yaml"
+                values_file="$ELASTICSEARCH_CUSTOM_VALUES_DIR/dev-values-kind.yaml"
             else
-                # 初始化模式：使用原始 dev-values.yaml（动态 nfs-2，新盘）
+                # Remote：动态 local-path
                 values_file="$ELASTICSEARCH_CUSTOM_VALUES_DIR/dev-values.yaml"
             fi
             ;;
