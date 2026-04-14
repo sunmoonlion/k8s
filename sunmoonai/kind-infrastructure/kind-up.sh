@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# 一键：创建 Kind 集群 + 平台初始化（仅命名空间）。NFS Provisioner 由 deploy-kind.sh 步骤 6 统一部署。
-# 前置：首次使用前需在 WSL 安装 NFS 服务：./wsl-setup-nfs-server.sh（仅需一次）
+# 一键：创建 Kind 集群 + 平台初始化（仅命名空间）。
+# 存储使用 Kind 内置 local-path-provisioner（SC 名：local-path），数据目录通过 extraMounts 持久化到 WSL 宿主机。
 # 使用 k8s-admin.conf 中 [KIND] 的 cluster_name、kubeconfig；集群配置固定使用 deploy-kind/kind-cluster.yaml。
 #
 set -euo pipefail

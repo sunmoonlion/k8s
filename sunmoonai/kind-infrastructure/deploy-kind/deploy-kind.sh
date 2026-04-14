@@ -14,10 +14,8 @@ if [[ -f "$SCRIPT_DIR/deploy-kind.conf" ]]; then
 fi
 export HARBOR_HOST HARBOR_NODE_IP 2>/dev/null || true
 
-NFS_EXPORT_DIR="${NFS_EXPORT_DIR:-/data/kind-nfs}"
 RUN_CA_INIT="${DEPLOY_KIND_RUN_CA_INIT:-true}"
 RUN_REGISTRY_CONFIG=true
-RUN_NFS_PROVISIONER="${DEPLOY_KIND_RUN_NFS_PROVISIONER:-true}"
 RUN_HARBOR_HOSTS=true
 
 log_info() { echo "ℹ️  $*"; }
@@ -133,7 +131,6 @@ usage() {
     echo "选项:"
     echo "  --skip-ca-init          跳过本地根 CA 生成（ensure-kind-ca.sh，与远程 Step12 同用途）"
     echo "  --skip-registry-config  跳过 Kind 节点 containerd 镜像拉取配置（apply-kind-registry-config.sh）"
-    echo "  --skip-nfs-provisioner  跳过集群内 NFS Provisioner 部署（apply-nfs-existing-cluster.sh）"
     echo "  --skip-harbor-hosts     跳过 WSL /etc/hosts 中 Harbor 域名配置"
     echo "  -h, --help           显示此帮助"
     echo "配置: $SCRIPT_DIR/deploy-kind.conf"
@@ -143,36 +140,27 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --skip-ca-init)           RUN_CA_INIT=false; shift ;;
         --skip-registry-config)   RUN_REGISTRY_CONFIG=false; shift ;;
-        --skip-nfs-provisioner)   RUN_NFS_PROVISIONER=false; shift ;;
         --skip-harbor-hosts)      RUN_HARBOR_HOSTS=false; shift ;;
         -h|--help)           usage; exit 0 ;;
         *)                   log_error "未知选项: $1"; usage; exit 1 ;;
     esac
 done
 
-log_info "Kind 一键部署开始（步骤 1/7：NFS）"
-if ! [[ -f /etc/exports ]] || ! grep -qE "^${NFS_EXPORT_DIR}[[:space:]]" /etc/exports 2>/dev/null; then
-    log_info "未检测到 NFS 导出，执行 wsl-setup-nfs-server.sh ..."
-    "$KIND_ROOT/wsl-setup-nfs-server.sh"
-else
-    log_info "NFS 已配置，跳过"
-fi
-
-log_info "步骤 2/7：确保自建节点镜像存在（build-kind-node-image.sh，有则跳过）"
+log_info "Kind 一键部署开始（步骤 1/6：确保自建节点镜像存在（build-kind-node-image.sh，有则跳过））"
 "$SCRIPT_DIR/build-kind-node-image/build-kind-node-image.sh"
 
-log_info "步骤 3/7：创建集群与平台初始化（kind-up.sh）"
+log_info "步骤 2/6：创建集群与平台初始化（kind-up.sh）"
 "$KIND_ROOT/kind-up.sh"
 
 if [[ "$RUN_CA_INIT" == "true" ]]; then
-    log_info "步骤 4/7：生成本地根 CA（ensure-kind-ca.sh，与远程 Step12 同用途）"
+    log_info "步骤 3/6：生成本地根 CA（ensure-kind-ca.sh，与远程 Step12 同用途）"
     export TRAEFIK_CA_LOCAL_DIR="${TRAEFIK_CA_LOCAL_DIR:-}"
     "$KIND_ROOT/ensure-kind-ca.sh"
 else
-    log_info "步骤 4/7：跳过本地根 CA 生成（--skip-ca-init）"
+    log_info "步骤 3/6：跳过本地根 CA 生成（--skip-ca-init）"
 fi
 
-log_info "步骤 5/7：Kind 节点 Harbor 解析 + containerd 镜像拉取配置"
+log_info "步骤 4/6：Kind 节点 Harbor 解析 + containerd 镜像拉取配置"
 "$KIND_ROOT/apply-kind-node-harbor-hosts.sh"
 export STEP02_REGISTRY_ENABLE STEP02_REGISTRY_MIRRORS STEP02_REGISTRY_DIRECT 2>/dev/null || true
 if "$KIND_ROOT/apply-kind-registry-config.sh"; then
@@ -181,34 +169,28 @@ else
     log_warn "Kind 节点 registry 配置执行失败，可稍后单独运行 apply-kind-registry-config.sh 查看原因"
 fi
 
-log_info "步骤 5.x：Kind 节点 Harbor TLS 信任（自签 CA 下发 + certs.d/hosts.toml）"
+log_info "步骤 4.x：Kind 节点 Harbor TLS 信任（自签 CA 下发 + certs.d/hosts.toml）"
 if ! "$KIND_ROOT/apply-kind-harbor-tls.sh"; then
     log_warn "Kind 节点 Harbor TLS 信任配置执行失败，可稍后单独运行 apply-kind-harbor-tls.sh 查看原因"
 fi
 
-if [[ "$RUN_NFS_PROVISIONER" == "true" ]]; then
-    log_info "步骤 6/7：集群内 NFS Provisioner 与 StorageClass（apply-nfs-existing-cluster.sh）"
-    "$KIND_ROOT/apply-nfs-existing-cluster.sh"
-else
-    log_info "步骤 6/7：跳过 NFS Provisioner（--skip-nfs-provisioner）"
-fi
-
 if [[ "$RUN_HARBOR_HOSTS" == "true" ]]; then
-    log_info "步骤 7/7：WSL 宿主机 Harbor 域名解析（仅 hosts，登录放在 Harbor 部署完成后执行）"
+    log_info "步骤 5/6：WSL 宿主机 Harbor 域名解析（仅 hosts，登录放在 Harbor 部署完成后执行）"
     export HARBOR_HOST="${HARBOR_HOST:-harbor.sunmoonai.com}"
     # 不在此处强制 HARBOR_IP，交给脚本自动检测 Kind control-plane IP。
     "$KIND_ROOT/wsl-setup-harbor-hosts.sh"
 else
-    log_info "步骤 7/7：跳过 Harbor hosts（--skip-harbor-hosts）"
+    log_info "步骤 5/6：跳过 Harbor hosts（--skip-harbor-hosts）"
 fi
 
-log_info "步骤 8：在 Kind 集群中部署 Traefik（ingress-platform/deploy-ingress-platform-all）"
+log_info "步骤 6/6：在 Kind 集群中部署 Traefik + Harbor"
+log_info "步骤 6a：Traefik（ingress-platform/deploy-ingress-platform-all）"
 # 传入 CLUSTER=KIND，使 Traefik 部署脚本识别为 Kind 并跳过节点镜像检查（与 Harbor 调用一致）
 if ! CLUSTER=KIND "$KIND_ROOT/../ingress-platform/deploy-ingress-platform-all/deploy-ingress-platform-all.sh"; then
     log_warn "Traefik 部署脚本执行失败，请检查 ingress-platform/deploy-ingress-platform-all 配置或单独运行该脚本查看原因"
 fi
 
-log_info "步骤 9：在 Kind 集群中部署 Harbor（cicd-platform/harbor/deploy-harbor）"
+log_info "步骤 6b：Harbor（cicd-platform/harbor/deploy-harbor）"
 # 使用 CLUSTER=KIND，deploy-harbor.sh 会根据 deploy-harbor.conf 选择命名空间和环境
 if ! CLUSTER=KIND "$KIND_ROOT/../cicd-platform/harbor/deploy-harbor/deploy-harbor.sh" deploy; then
     log_warn "Harbor 部署脚本执行失败，请检查 cicd-platform/harbor/deploy-harbor 配置或单独运行该脚本查看原因"
