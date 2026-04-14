@@ -1,11 +1,11 @@
-# PostgreSQL 开发环境配�?
+# PostgreSQL 开发环境配�?
 # 基于 Bitnami PostgreSQL Chart 官方结构整理
 
 # ============================================================================
 # 从配置文件读取的变量
 # ============================================================================
-# 这些变量通过部署脚本�?deploy-postgresql.conf 文件中读取并替换
-# 部署脚本会自动替�?{{POSTGRESQL_EXTERNAL_HOST}} 等模板变�?
+# 这些变量通过部署脚本�?deploy-postgresql.conf 文件中读取并替换
+# 部署脚本会自动替�?{{POSTGRESQL_EXTERNAL_HOST}} 等模板变�?
 
 # ============================================================================
 # 全局配置
@@ -53,20 +53,20 @@ tls:
   certCAFilename: "{{POSTGRESQL_TLS_CERT_CA_FILENAME}}"
 
 # ============================================================================
-# 认证配置 - 使用Secret提高安全�?
+# 认证配置 - 使用Secret提高安全�?
 # ============================================================================
 auth:
   enablePostgresUser: true
-  # postgresPassword: "SunMoonAI_PostgreSQL_2024!"  # �?已删除明文密�?
+  # postgresPassword: "SunMoonAI_PostgreSQL_2024!"  # �?已删除明文密�?
   existingSecret: "{{POSTGRESQL_AUTH_SECRET_NAME}}"
   secretKeys:
     adminPasswordKey: "{{POSTGRESQL_AUTH_SECRET_ADMIN_PASSWORD_KEY}}"  # 管理员密码键
-    userPasswordKey: "{{POSTGRESQL_AUTH_SECRET_DEV_PASSWORD_KEY}}"       # 应用用户密码�?
+    userPasswordKey: "{{POSTGRESQL_AUTH_SECRET_DEV_PASSWORD_KEY}}"       # 应用用户密码�?
   # 数据库和用户配置
   database: "mydb"
   username: "sunmoonai_dev"
 
-# 主服务配�?
+# 主服务配�?
 primary:
   persistence:
     enabled: true  
@@ -76,7 +76,7 @@ primary:
       - "ReadWriteOnce"
   
   service:
-    type: "ClusterIP"  # 改为 ClusterIP，只在内网访�?
+    type: "ClusterIP"  # 改为 ClusterIP，只在内网访�?
     ports:
       postgresql: 5432
   
@@ -105,53 +105,53 @@ primary:
     successThreshold: 1
   
   # ============================================================================
-  # 初始化脚�?- 创建多个数据�?
+  # 初始化脚�?- 创建多个数据�?
   # ============================================================================
   # 为不同的服务创建独立的数据库
-  # - mydb: 默认数据库（�?auth.database 配置创建�?
-  # - llmops_db: LLMOps 服务数据�?
-  # - auth_db: Auth 服务数据�?
+  # - mydb: 默认数据库（�?auth.database 配置创建�?
+  # - llmops_db: LLMOps 服务数据�?
+  # - auth_db: Auth 服务数据�?
   #
-  # ⚠️ 重要经验教训（避�?CrashLoopBackOff）：
-  # 1. 【必须】只使用 SQL 脚本�?sql 文件），不要使用 Shell 脚本�?sh 文件�?
-  #    - SQL 脚本�?Bitnami PostgreSQL 容器自动执行
-  #    - 使用 postgres 用户通过本地 Unix socket 连接（trust 认证，无需密码�?
-  #    - Shell 脚本需要手动调�?psql，在 initdb 阶段会遇到密码认证问�?
+  # ⚠️ 重要经验教训（避�?CrashLoopBackOff）：
+  # 1. 【必须】只使用 SQL 脚本�?sql 文件），不要使用 Shell 脚本�?sh 文件�?
+  #    - SQL 脚本�?Bitnami PostgreSQL 容器自动执行
+  #    - 使用 postgres 用户通过本地 Unix socket 连接（trust 认证，无需密码�?
+  #    - Shell 脚本需要手动调�?psql，在 initdb 阶段会遇到密码认证问�?
   #
   # 2. 【必须】避免在 initdb 阶段手动调用 psql 命令
-  #    - 即使设置�?PGPASSWORD 环境变量，在 initdb 阶段也可能不可用
-  #    - 即使使用 POSTGRES_POSTGRES_PASSWORD_FILE，也会遇到变量未定义或文件不存在的问�?
-  #    - 即使使用 -h localhost，也会走 TCP/IP 连接，需要密码（md5 认证�?
+  #    - 即使设置�?PGPASSWORD 环境变量，在 initdb 阶段也可能不可用
+  #    - 即使使用 POSTGRES_POSTGRES_PASSWORD_FILE，也会遇到变量未定义或文件不存在的问�?
+  #    - 即使使用 -h localhost，也会走 TCP/IP 连接，需要密码（md5 认证�?
   #
-  # 3. 【推荐】在 initdb 阶段只做必要的操�?
-  #    - 创建数据库：�?必须
-  #    - 授予数据库权限：�?必须
-  #    - 授予 schema 权限：❌ 可选（需要在各自的数据库中执行，可以在应用启动后通过迁移脚本授予�?
-  #    - 设置默认权限：❌ 可选（可以在应用启动后处理�?
+  # 3. 【推荐】在 initdb 阶段只做必要的操�?
+  #    - 创建数据库：�?必须
+  #    - 授予数据库权限：�?必须
+  #    - 授予 schema 权限：❌ 可选（需要在各自的数据库中执行，可以在应用启动后通过迁移脚本授予�?
+  #    - 设置默认权限：❌ 可选（可以在应用启动后处理�?
   #
-  # 4. 【最佳实践】遵�?Bitnami PostgreSQL Chart 的设�?
-  #    - 使用容器原生支持�?SQL 脚本执行方式
-  #    - 让容器自动处理连接和认证，避免手动干�?
-  #    - 复杂权限控制可以在应用启动后通过数据库迁移脚本处�?
+  # 4. 【最佳实践】遵�?Bitnami PostgreSQL Chart 的设�?
+  #    - 使用容器原生支持�?SQL 脚本执行方式
+  #    - 让容器自动处理连接和认证，避免手动干�?
+  #    - 复杂权限控制可以在应用启动后通过数据库迁移脚本处�?
   #
   # 5. 【验证】当前配置已足够
   #    - 数据库级别权限（CONNECT, CREATE, TEMPORARY）已授予
-  #    - sunmoonai_dev 用户可以正常连接、创建表、执�?DDL/DML
-  #    - Schema 权限是可选优化，不是必需�?
+  #    - sunmoonai_dev 用户可以正常连接、创建表、执�?DDL/DML
+  #    - Schema 权限是可选优化，不是必需�?
   #
-  # 参考：Bitnami PostgreSQL Chart README.md �?189-193 �?
+  # 参考：Bitnami PostgreSQL Chart README.md �?189-193 �?
   # ============================================================================
   initdb:
     scripts:
-      # 创建 LLMOps 服务数据�?
+      # 创建 LLMOps 服务数据�?
       create-llmops-db.sql: |
         CREATE DATABASE llmops_db;
       
-      # 创建 Auth 服务数据�?
+      # 创建 Auth 服务数据�?
       create-auth-db.sql: |
         CREATE DATABASE auth_db;
       
-      # 授予数据库权�?
+      # 授予数据库权�?
       # 注意：这是数据库级别的权限，包括 CONNECT, CREATE, TEMPORARY
       # 已足够让应用正常工作，schema 权限可以在应用启动后通过迁移脚本授予
       grant-db-permissions.sql: |
@@ -163,19 +163,19 @@ readReplicas:
   replicaCount: 0
   enabled: false
 
-# 监控配置 - 开发环境禁�?
+# 监控配置 - 开发环境禁�?
 metrics:
   enabled: false
 
 # Ingress 配置 - 通过 Traefik 统一管理
 ingress:
-  enabled: false  # 禁用 Helm Chart �?Ingress，使用独立的 Ingress 资源
+  enabled: false  # 禁用 Helm Chart �?Ingress，使用独立的 Ingress 资源
 
 # ============================================================================
 # PostgreSQL 配置
 # ============================================================================
 postgresqlConfiguration:
-  # SSL 配置（开发环境：禁用SSL�?
+  # SSL 配置（开发环境：禁用SSL�?
   ssl: "off"
   
   # 其他配置
@@ -185,7 +185,7 @@ postgresqlConfiguration:
   maintenanceWorkMem: "32MB"
 
 # ============================================================================
-# 客户端认证配置（开发环境：允许普通TCP连接�?
+# 客户端认证配置（开发环境：允许普通TCP连接�?
 # ============================================================================
 pgHbaConfiguration: |
   # TYPE  DATABASE        USER            ADDRESS                 METHOD

@@ -59,6 +59,17 @@ main() {
     local platforms; platforms=($(parse_list "$NAMESPACE_PLATFORM_PLATFORMS"))
     log_info "环境: ${envs[*]}  平台: ${platforms[*]}"
 
+    # Kind 默认仅有名为 standard 的 local-path StorageClass；与 values 中的 local-path 对齐
+    local sc_manifest="${SCRIPT_DIR}/manifests/storageclass-local-path.yaml"
+    if [[ -f "$sc_manifest" ]]; then
+        if kubectl get storageclass local-path &>/dev/null; then
+            log_info "StorageClass local-path 已存在，跳过创建"
+        else
+            kubectl apply -f "$sc_manifest"
+            log_success "已应用 StorageClass local-path（与 rancher.io/local-path 兼容）"
+        fi
+    fi
+
     for env in "${envs[@]}"; do
         for platform in "${platforms[@]}"; do
             local namespace="${platform}-${env}"

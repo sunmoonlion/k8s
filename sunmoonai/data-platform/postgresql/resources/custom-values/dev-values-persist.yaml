@@ -1,6 +1,6 @@
 # PostgreSQL 开发环境配置（复用持久化数据版本）
-# 基于 dev-values.yaml，调整持久化为使用静�?PVC�?
-# - 静�?PV/PVC：postgresql-sunmoonai-dev-pv / postgresql-sunmoonai-dev-pvc
+# 基于 dev-values.yaml，调整持久化为使用静�?PVC�?
+# - 静�?PV/PVC：postgresql-sunmoonai-dev-pv / postgresql-sunmoonai-dev-pvc
 # - 参见：data-platform/postgresql/deploy-postgresql/postgresql-dev-pv-pvc.yaml
 
 global:
@@ -45,11 +45,11 @@ auth:
   username: "sunmoonai_dev"
 
 primary:
-  # 持久化：改为使用静�?PVC（postgresql-sunmoonai-dev-pvc），用于重建集群时复用老数据盘
+  # 持久化：改为使用静�?PVC（postgresql-sunmoonai-dev-pvc），用于重建集群时复用老数据盘
   persistence:
     enabled: true
     existingClaim: postgresql-sunmoonai-dev-pvc
-    storageClass: ""        # 使用 existingClaim，不走动�?local-path
+    storageClass: ""        # 使用 existingClaim，不走动�?local-path
     size: "8Gi"
     accessModes:
       - "ReadWriteOnce"

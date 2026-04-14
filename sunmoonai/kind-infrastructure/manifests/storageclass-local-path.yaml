@@ -1,0 +1,10 @@
+# Kind 内置 rancher.io/local-path-provisioner 默认创建的 StorageClass 名为 standard。
+# 平台各组件 Helm values 统一使用 storageClassName: local-path，故增加同名别名，行为与 standard 一致。
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-path
+provisioner: rancher.io/local-path
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: false

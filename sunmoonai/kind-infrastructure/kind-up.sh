@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # 一键：创建 Kind 集群 + 平台初始化（仅命名空间）。
-# 存储使用 Kind 内置 local-path-provisioner（SC 名：local-path），数据目录通过 extraMounts 持久化到 WSL 宿主机。
+# 存储使用 Kind 内置 rancher.io/local-path-provisioner（默认 SC 名为 standard；kind-up 会通过 apply-namespaces 追加别名为 local-path，与平台 Helm values 一致）。数据目录可通过 extraMounts 持久化到 WSL 宿主机。
 # 使用 k8s-admin.conf 中 [KIND] 的 cluster_name、kubeconfig；集群配置固定使用 deploy-kind/kind-cluster.yaml。
 #
 set -euo pipefail
