@@ -1,3 +1,4 @@
 # Neo4j 镜像（与 deploy-neo4j.conf 中 NEO4J_IMAGE_VERSION 一致）
 # 本地 tar 命名：bitnami_neo4j_5.26.11-debian-12-r0.tar
 bitnami/neo4j:5.26.11-debian-12-r0
+bitnami/os-shell:12-debian-12-r51

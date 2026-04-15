@@ -216,6 +216,9 @@ execute_jenkins_deployment() {
     helm_cmd="$helm_cmd --set global.projectId=$project_id"
     helm_cmd="$helm_cmd --set global.namespace=$namespace"
     helm_cmd="$helm_cmd --set global.environment=$environment"
+    helm_cmd="$helm_cmd --set volumePermissions.image.registry=${JENKINS_IMAGE_REGISTRY:-harbor.sunmoonai.com:30443}"
+    helm_cmd="$helm_cmd --set volumePermissions.image.repository=${JENKINS_IMAGE_PROJECT:-k8s-images}/os-shell"
+    helm_cmd="$helm_cmd --set volumePermissions.image.tag=${JENKINS_OS_SHELL_IMAGE_VERSION:-12-debian-12-r51}"
     
     # 如果读取到密码，通过 --set 传递给 Helm（解决升级时的密码要求）
     if [[ -n "$jenkins_password" ]]; then

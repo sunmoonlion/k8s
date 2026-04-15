@@ -7,7 +7,7 @@ global:
   imageRegistry: "{{POSTGRESQL_IMAGE_REGISTRY}}"
   imagePullSecrets:
     - name: "{{POSTGRESQL_IMAGE_PULL_SECRET_NAME}}"
-  defaultStorageClass: "local-path"
+  defaultStorageClass: ""
 
 nameOverride: ""
 fullnameOverride: ""
@@ -94,6 +94,9 @@ primary:
       grant-db-permissions.sql: |
         GRANT ALL PRIVILEGES ON DATABASE llmops_db TO sunmoonai_dev;
         GRANT ALL PRIVILEGES ON DATABASE auth_db TO sunmoonai_dev;
+
+volumePermissions:
+  enabled: true
 
 readReplicas:
   replicaCount: 0

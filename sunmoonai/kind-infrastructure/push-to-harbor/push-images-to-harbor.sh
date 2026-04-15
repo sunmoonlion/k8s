@@ -38,21 +38,29 @@ usage() {
     echo "  指定 --img-file/--tar-dir 后，仅使用本次指定的内容，不再读 conf 默认。"
     echo ""
     echo "选项:"
-    echo "  --img-file FILE  镜像列表文件（一行一个镜像名，# 注释），多个文件用逗号分隔"
-    echo "  --tar-dir DIR    推送该目录内所有 .tar 中的镜像，多个目录用逗号分隔"
-    echo "  -h, --help       显示此帮助"
+    echo "  --img-file FILE       镜像列表文件（一行一个镜像名，# 注释），多个文件用逗号分隔"
+    echo "  --tar-dir DIR         推送该目录内所有 .tar 中的镜像，多个目录用逗号分隔"
+    echo "  --kind-cluster NAME   Kind 集群名称；启用时 docker push 失败后自动 kind load 兜底"
+    echo "  -h, --help            显示此帮助"
     echo ""
-    echo "环境变量: HARBOR_HOST HARBOR_PROJECT DRY_RUN(1 仅打印不推送)"
+    echo "环境变量: HARBOR_HOST HARBOR_PROJECT DRY_RUN(1 仅打印不推送) PUSH_RETRY_COUNT PUSH_RETRY_DELAY"
 }
 
 IMAGE_LIST=()
 IMG_FILES=()
 TAR_DIRS=()
 DRY_RUN="${DRY_RUN:-0}"
+KIND_CLUSTER_NAME=""
+PUSH_RETRY_COUNT="${PUSH_RETRY_COUNT:-2}"
+PUSH_RETRY_DELAY="${PUSH_RETRY_DELAY:-3}"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -h|--help) usage; exit 0 ;;
+        --kind-cluster)
+            KIND_CLUSTER_NAME="${2:-kind}"
+            shift 2
+            ;;
         --img-file)
             if [[ ${#IMG_FILES[@]} -ne 0 ]]; then
                 log_error "--img-file 只能指定一次，请用逗号分隔多个文件"
@@ -142,6 +150,27 @@ if [[ ${#IMAGE_LIST[@]} -eq 0 && ${#TAR_LIST[@]} -eq 0 ]]; then
     exit 1
 fi
 
+kind_load_fallback() {
+    local dest="$1"
+    if [[ -z "$KIND_CLUSTER_NAME" ]]; then
+        return 1
+    fi
+    local kind_bin="kind"
+    if [[ -x "$HOME/.local/bin/kind" ]]; then
+        kind_bin="$HOME/.local/bin/kind"
+    fi
+    if ! command -v "$kind_bin" &>/dev/null; then
+        return 1
+    fi
+    log_warn "docker push 失败，尝试 kind load 直接加载到节点: $dest"
+    if $kind_bin load docker-image "$dest" --name "$KIND_CLUSTER_NAME" 2>&1; then
+        log_success "kind load 成功（已绕过 Harbor 直接加载到 Kind 节点）: $dest"
+        return 0
+    fi
+    log_error "kind load 也失败: $dest"
+    return 1
+}
+
 push_one() {
     local img="$1"
     local repo_tag="${img#*/}"
@@ -151,19 +180,36 @@ push_one() {
         log_info "[dry-run] tag $img -> $dest && push"
         return 0
     fi
-    # 若 Harbor 中已存在该 tag，跳过推送（所有组件共用，减少重复部署时的推送）
+    # 若 Harbor 中已存在该 tag，跳过推送
     if docker manifest inspect "$dest" >/dev/null 2>&1; then
         log_info "已存在，跳过: $dest"
         ((SKIPPED_COUNT++)) || true
         return 0
     fi
     docker tag "$img" "$dest"
-    docker push "$dest"
-    log_success "pushed $dest"
+    # 带重试的 docker push，失败后 kind load 兜底
+    local attempt
+    for ((attempt=1; attempt<=PUSH_RETRY_COUNT; attempt++)); do
+        if docker push "$dest" 2>&1; then
+            log_success "pushed $dest"
+            return 0
+        fi
+        if ((attempt < PUSH_RETRY_COUNT)); then
+            log_warn "docker push 第 ${attempt} 次失败，${PUSH_RETRY_DELAY}s 后重试..."
+            sleep "$PUSH_RETRY_DELAY"
+        fi
+    done
+    # push 全部失败，Kind 模式下用 kind load 兜底
+    if kind_load_fallback "$dest"; then
+        return 0
+    fi
+    log_error "推送失败（已重试 ${PUSH_RETRY_COUNT} 次）: $dest"
+    return 1
 }
 
 count=0
 SKIPPED_COUNT=0
+FAILED_COUNT=0
 
 # 镜像引用转成文件名（与 registry-push-management 一致：/ 和 : 换成 _）
 find_tar_for_image() {
@@ -207,8 +253,11 @@ if [[ ${#IMAGE_LIST[@]} -gt 0 ]]; then
                         fi
                     done < <(docker load -i "$tar_path" 2>&1)
                     if [[ -n "$loaded_ref" ]]; then
-                        push_one "$loaded_ref"
-                        ((count++)) || true
+                        if push_one "$loaded_ref"; then
+                            ((count++)) || true
+                        else
+                            ((FAILED_COUNT++)) || true
+                        fi
                         pushed=true
                     fi
                     break
@@ -217,8 +266,11 @@ if [[ ${#IMAGE_LIST[@]} -gt 0 ]]; then
         fi
         if [[ "$pushed" != "true" ]]; then
             if docker pull "$img" 2>/dev/null; then
-                push_one "$img"
-                ((count++)) || true
+                if push_one "$img"; then
+                    ((count++)) || true
+                else
+                    ((FAILED_COUNT++)) || true
+                fi
             else
                 log_warn "docker pull 失败（跳过）: $img（可放对应 tar 到 --tar-dir 目录，如 ${img}.tar 或 $(echo "$img" | sed 's#[/:]#_#g').tar）"
             fi
@@ -232,8 +284,11 @@ if [[ ${#IMAGE_LIST[@]} -eq 0 ]]; then
         log_info "加载并推送: $tar_path"
         while IFS= read -r line; do
             if [[ "$line" =~ Loaded\ image:\ (.+) ]]; then
-                push_one "${BASH_REMATCH[1]}"
-                ((count++)) || true
+                if push_one "${BASH_REMATCH[1]}"; then
+                    ((count++)) || true
+                else
+                    ((FAILED_COUNT++)) || true
+                fi
             fi
         done < <(docker load -i "$tar_path" 2>&1)
     done
@@ -243,8 +298,12 @@ if [[ $count -eq 0 && $SKIPPED_COUNT -eq 0 ]]; then
     log_warn "未推送任何镜像（镜像列表拉取失败或 tar 中无镜像）"
     exit 1
 fi
-if [[ $SKIPPED_COUNT -gt 0 ]]; then
-    log_success "共推送 $count 个镜像到 ${HARBOR_HOST}/${HARBOR_PROJECT}（已存在跳过 ${SKIPPED_COUNT} 个）"
+summary="共推送 $count 个镜像到 ${HARBOR_HOST}/${HARBOR_PROJECT}"
+[[ $SKIPPED_COUNT -gt 0 ]] && summary+="（已存在跳过 ${SKIPPED_COUNT} 个）"
+[[ $FAILED_COUNT -gt 0 ]] && summary+="（失败 ${FAILED_COUNT} 个）"
+if [[ $FAILED_COUNT -gt 0 ]]; then
+    log_warn "$summary"
+    exit 1
 else
-    log_success "共推送 $count 个镜像到 ${HARBOR_HOST}/${HARBOR_PROJECT}"
+    log_success "$summary"
 fi

@@ -1090,12 +1090,15 @@ push_component_images_to_harbor() {
             return 0
         fi
         local kind_push_args=(--img-file "$image_list_abs")
+        # Kind 模式下传递集群名，启用 kind load 兜底（push 失败时直接加载到节点）
+        local kind_cluster="${KIND_CLUSTER_NAME:-kind}"
+        kind_push_args+=(--kind-cluster "$kind_cluster")
         local tar_dir="${COMPONENT_IMAGE_TAR_DIR:-$HOME/packages-to-be-installed/images}"
         if [[ -d "$tar_dir" ]]; then
             kind_push_args+=(--tar-dir "$tar_dir")
-            log_info "[images] Kind 集群：使用 push-to-harbor 推送组件镜像（清单 + 本地 tar 目录: $tar_dir）"
+            log_info "[images] Kind 集群：使用 push-to-harbor 推送组件镜像（清单 + 本地 tar 目录: $tar_dir，push 失败时 kind load 兜底）"
         else
-            log_info "[images] Kind 集群：使用 push-to-harbor 按需推送组件镜像到 Harbor（component=${component_name}）"
+            log_info "[images] Kind 集群：使用 push-to-harbor 按需推送组件镜像到 Harbor（component=${component_name}，push 失败时 kind load 兜底）"
         fi
         if ! "$kind_push_sh" "${kind_push_args[@]}"; then
             log_warn "[images] 组件 ${component_name} 镜像推送返回非零状态，请检查 push-to-harbor 或稍后单独执行"

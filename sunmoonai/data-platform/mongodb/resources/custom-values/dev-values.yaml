@@ -1,4 +1,4 @@
-# MongoDB 开发环境配�?- 直接写具体值，不做模板替换
+# MongoDB 开发环境配�?- 直接写具体值，不做模板替换
 
 # 全局配置
 global:
@@ -18,27 +18,27 @@ image:
 # 认证配置
 auth:
   enabled: true
-  # 通过统一密管�?Secret 注入（Bitnami MongoDB 期望的键�?
-  #   mongodb-root-password, mongodb-passwords, 可�?mongodb-metrics-password, mongodb-replica-set-key�?
+  # 通过统一密管�?Secret 注入（Bitnami MongoDB 期望的键�?
+  #   mongodb-root-password, mongodb-passwords, 可�?mongodb-metrics-password, mongodb-replica-set-key�?
   existingSecret: "mongodb-auth-secret"
-  # 使用数组字段（新版推荐），用户名/数据库在此声明；密码�?existingSecret 提供
+  # 使用数组字段（新版推荐），用户名/数据库在此声明；密码�?existingSecret 提供
   # - 支持创建多个用户与数据库：usernames、databases 一一对应
-  # - 密码从密�?Secret 的键 mongodb-passwords 读取，按 usernames 的顺序以英文逗号分隔
+  # - 密码从密�?Secret 的键 mongodb-passwords 读取，按 usernames 的顺序以英文逗号分隔
   #   例：usernames: ["app_a","app_b"], databases: ["db_a","db_b"],
   #       mongodb-passwords: "PassA,PassB"
   # - root 密码来自 mongodb-root-password
-  # - 对比：Bitnami PostgreSQL 只支持代�?单个" username/database；多用户需�?initdb.scripts
-  # - 注意：usernames �?databases 是一一对应的，如果只有一个用户但需要多个数据库�?
+  # - 对比：Bitnami PostgreSQL 只支持代�?单个" username/database；多用户需�?initdb.scripts
+  # - 注意：usernames �?databases 是一一对应的，如果只有一个用户但需要多个数据库�?
   #   需要在 initdbScripts 中创建额外的数据库并授予权限
   usernames:
     - "sunmoonai_dev"
   passwords: []
   databases:
-    - "mydb"  # 默认数据库（�?sunmoonai_dev 用户一一对应�?
+    - "mydb"  # 默认数据库（�?sunmoonai_dev 用户一一对应�?
 
-# 持久化配�?
-# 注意：MongoDB Chart 需要在根级别配�?persistence，不支持 primary.persistence 结构
-# �?standalone 模式下，只创建一�?PVC
+# 持久化配�?
+# 注意：MongoDB Chart 需要在根级别配�?persistence，不支持 primary.persistence 结构
+# �?standalone 模式下，只创建一�?PVC
 persistence:
   enabled: true 
   storageClass: "local-path"
@@ -47,14 +47,14 @@ persistence:
     - "ReadWriteOnce"
 
 # 服务配置
-# 注意：MongoDB Chart 需要在根级别配�?service，不支持 primary.service 结构
+# 注意：MongoDB Chart 需要在根级别配�?service，不支持 primary.service 结构
 service:
-  type: "ClusterIP"  # 改为 ClusterIP，只在内网访�?
+  type: "ClusterIP"  # 改为 ClusterIP，只在内网访�?
   ports:
     mongodb: 27017
 
 # 资源配置
-# 注意：MongoDB Chart 需要在根级别配�?resources，不支持 primary.resources 结构
+# 注意：MongoDB Chart 需要在根级别配�?resources，不支持 primary.resources 结构
 resources:
   limits:
     cpu: "500m"
@@ -63,7 +63,7 @@ resources:
     cpu: "250m"
     memory: "512Mi"
 
-# 健康检查配�?
+# 健康检查配�?
 livenessProbe:
   enabled: true
   initialDelaySeconds: 30
@@ -99,31 +99,31 @@ metrics:
 
 # Ingress 配置 - 通过 Traefik 统一管理
 ingress:
-  enabled: false  # 禁用 Helm Chart �?Ingress，使用独立的 Ingress 资源
+  enabled: false  # 禁用 Helm Chart �?Ingress，使用独立的 Ingress 资源
 
-# 初始化脚�?- 创建额外的数据库并授予用户权�?
-# 注意：MongoDB �?auth.usernames �?auth.databases 是一一对应�?
+# 初始化脚�?- 创建额外的数据库并授予用户权�?
+# 注意：MongoDB �?auth.usernames �?auth.databases 是一一对应�?
 # 如果只有一个用户但需要多个数据库，需要在 initdbScripts 中创建额外的数据库并授予权限
 initdbScripts:
   # 创建 llmops_db 数据库并授予 sunmoonai_dev 用户权限
   create-llmops-db.js: |
-    // 切换�?llmops_db 数据库（如果不存在会自动创建�?
+    // 切换�?llmops_db 数据库（如果不存在会自动创建�?
     db = db.getSiblingDB('llmops_db');
     // 创建一个临时集合以确保数据库被创建
     db.createCollection('_init');
-    // 注意：用�?sunmoonai_dev 是在 mydb 数据库中创建的，所以需要在 mydb 数据库中授予权限
-    // 切换�?mydb 数据库以授予用户权限
+    // 注意：用�?sunmoonai_dev 是在 mydb 数据库中创建的，所以需要在 mydb 数据库中授予权限
+    // 切换�?mydb 数据库以授予用户权限
     db = db.getSiblingDB('mydb');
-    // 检查用户是否存在，如果存在则授予权�?
+    // 检查用户是否存在，如果存在则授予权�?
     try {
       var user = db.getUser('sunmoonai_dev');
       if (user) {
-        // 授予 sunmoonai_dev 用户�?llmops_db 数据库的所有权�?
+        // 授予 sunmoonai_dev 用户�?llmops_db 数据库的所有权�?
         db.grantRolesToUser('sunmoonai_dev', [
           { role: 'readWrite', db: 'llmops_db' },
           { role: 'dbAdmin', db: 'llmops_db' }
         ]);
-        print('已授�?sunmoonai_dev 用户�?llmops_db 数据库的权限');
+        print('已授�?sunmoonai_dev 用户�?llmops_db 数据库的权限');
       } else {
         print('警告: sunmoonai_dev 用户不存在，跳过权限授予');
       }
@@ -132,9 +132,9 @@ initdbScripts:
       // 不抛出异常，允许脚本继续执行
     }
 
-# 数据库配�?
+# 数据库配�?
 mongodbConfiguration: |
-  # 开发环境配�?
+  # 开发环境配�?
   storage:
     dbPath: /bitnami/mongodb
     journal:

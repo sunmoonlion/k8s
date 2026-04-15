@@ -7,7 +7,7 @@ global:
     - name: harbor-registry-secret
   security:
     allowInsecureImages: true
-  storageClass: "local-path"
+  storageClass: ""
 
 # 镜像配置（通过 Harbor 拉取�?
 image:
@@ -60,7 +60,7 @@ persistence:
 primary:
   persistence:
     enabled: true
-    storageClass: "local-path"
+    storageClass: ""
     size: "10Gi"
     accessModes:
       - "ReadWriteOnce"
@@ -120,6 +120,9 @@ management:
 # �?Mongo Express、RedisInsight、Flower 不同，RabbitMQ 管理插件不支�?baseurl/base-path 配置
 # 因此必须使用 Traefik �?stripPrefix 中间件来处理路径前缀
 # 参考：https://www.rabbitmq.com/management.html
+
+volumePermissions:
+  enabled: true
 
 # 监控配置 - 开发环境禁�?
 metrics:

@@ -198,6 +198,9 @@ execute_rabbitmq_deployment() {
     # 统一镜像与安全策略
     helm_cmd="$helm_cmd --set global.imageRegistry=${RABBITMQ_IMAGE_REGISTRY:-harbor.sunmoonai.com:30443}"
     helm_cmd="$helm_cmd --set global.security.allowInsecureImages=true"
+    helm_cmd="$helm_cmd --set volumePermissions.image.registry=${RABBITMQ_IMAGE_REGISTRY:-harbor.sunmoonai.com:30443}"
+    helm_cmd="$helm_cmd --set volumePermissions.image.repository=${RABBITMQ_IMAGE_PROJECT:-k8s-images}/os-shell"
+    helm_cmd="$helm_cmd --set volumePermissions.image.tag=${RABBITMQ_OS_SHELL_IMAGE_VERSION:-12-debian-12-r51}"
     
     if [[ "$dry_run" == "true" ]]; then
         helm_cmd="$helm_cmd --dry-run"

@@ -20,6 +20,8 @@ source "$PROJECT_ROOT/utils/cluster-arg-parser.sh"
 
 # 加载Secret生成核心函数
 source "$PROJECT_ROOT/utils/secret-management/lib/secret-core.sh"
+# 加载Secret数据准备函数（包含 prepare_docker_auth_secret_data）
+source "$PROJECT_ROOT/utils/secret-management/lib/secret-data.sh"
 
 # 解析命令行参数（优先于配置文件加载，确保命令行参数优先级最高）
 declare -a PARSED_ARGS
@@ -62,15 +64,20 @@ fi
 main() {
     # 使用解析后的参数（已移除 --cluster 参数）
     set -- "${ORIGINAL_ARGS[@]}"
-    set -- "${PARSED_ARGS[@]}"
     
     if [[ -n "${CLUSTER:-}" ]]; then
         log_info "🎯 当前集群配置: ${CLUSTER}"
     fi
     
-    local project_id="${1:-$DEFAULT_PROJECT_ID}"
-    local namespace="${2:-$DEFAULT_NAMESPACE}"
-    local environment="${3:-$DEFAULT_ENVIRONMENT}"
+    # 处理参数：如果第一个参数是 action（如 deploy），则跳过
+    local action="${1:-deploy}"
+    if [[ "$action" == "deploy" || "$action" == "uninstall" || "$action" == "status" ]]; then
+        shift
+    fi
+    
+    local project_id="${1:-${PROJECT_ID:-$DEFAULT_PROJECT_ID}}"
+    local namespace="${2:-${NAMESPACE:-$DEFAULT_NAMESPACE}}"
+    local environment="${3:-${ENVIRONMENT:-$DEFAULT_ENVIRONMENT}}"
     local dry_run="${4:-false}"
     
     log_info "部署 Harbor Registry Secret (MongoDB)..."

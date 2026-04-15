@@ -4,7 +4,7 @@ global:
   imageRegistry: ""
   imagePullSecrets:
     - name: "harbor-registry-secret"
-  storageClass: "local-path"
+  storageClass: ""
 
 image:
   registry: ""
@@ -22,10 +22,12 @@ auth:
     sentinel: false
 
 master:
-  # 持久化：复用 Redis master 的数据盘（静�?PVC redis-sunmoonai-dev-pvc�?  persistence:
+  # 持久化：复用 Redis master 的数据盘（静态 PVC redis-sunmoonai-dev-pvc）
+  persistence:
     enabled: true
     existingClaim: redis-sunmoonai-dev-pvc
-    storageClass: ""      # 使用 existingClaim，不再通过 storageClass 动态创�?    size: "5Gi"
+    storageClass: ""
+    size: "5Gi"
     accessModes:
       - "ReadWriteOnce"
 
@@ -57,6 +59,9 @@ master:
     failureThreshold: 5
     successThreshold: 1
 
+volumePermissions:
+  enabled: true
+
 replica:
   replicaCount: 0
   enabled: false
@@ -70,7 +75,7 @@ sentinel:
     pullPolicy: "IfNotPresent"
   persistence:
     enabled: false
-    storageClass: "local-path"
+    storageClass: ""
     size: "5Gi"
     accessModes:
       - "ReadWriteOnce"

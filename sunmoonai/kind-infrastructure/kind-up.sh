@@ -32,6 +32,42 @@ read_kind_config() {
     KIND_KUBECONFIG="${KIND_KUBECONFIG/#\~/$HOME}"
 }
 
+PV_DATA_ROOT="/data/kind-local-storage"
+
+clean_pv_data_if_configured() {
+    local deploy_conf="${1:-}"
+    local clean_pv="false"
+    if [[ -n "${KIND_CLEAN_PV_DATA_ON_RECREATE:-}" ]]; then
+        clean_pv="$KIND_CLEAN_PV_DATA_ON_RECREATE"
+    elif [[ -f "$deploy_conf" ]]; then
+        clean_pv=$(grep -E '^CLEAN_PV_DATA_ON_RECREATE=' "$deploy_conf" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "' || true)
+        clean_pv="${clean_pv:-false}"
+    else
+        clean_pv="false"
+    fi
+    if [[ "$clean_pv" != "true" ]]; then
+        log_info "保留 PV 数据（CLEAN_PV_DATA_ON_RECREATE=false）"
+        return 0
+    fi
+    if [[ ! -d "$PV_DATA_ROOT" ]]; then
+        log_info "PV 数据目录不存在，跳过清理"
+        return 0
+    fi
+    log_warn "清理 PV 持久化数据：$PV_DATA_ROOT/*（集群重建，确保组件从零初始化）"
+    for subdir in "$PV_DATA_ROOT"/*/; do
+        [[ -d "$subdir" ]] || continue
+        local comp_name
+        comp_name=$(basename "$subdir")
+        if sudo rm -rf "${subdir:?}"/* 2>/dev/null; then
+            log_info "  已清理 $comp_name"
+        else
+            log_warn "  清理 $comp_name 失败（可忽略，权限不足时手动 sudo rm -rf $subdir/*）"
+        fi
+    done
+    sudo chmod -R 777 "$PV_DATA_ROOT" 2>/dev/null || true
+    log_success "PV 数据已清理，组件将全量初始化"
+}
+
 # 创建 Kind 集群（使用同目录 kind-cluster.yaml）
 create_kind_cluster() {
     read_kind_config
@@ -57,6 +93,7 @@ create_kind_cluster() {
                 log_error "删除 Kind 集群 $KIND_CLUSTER_NAME 失败"
                 return 1
             fi
+            clean_pv_data_if_configured "$deploy_conf"
         else
             log_warn "集群 $KIND_CLUSTER_NAME 已存在，跳过创建（KIND_RECREATE_IF_EXISTS=false）"
             kind export kubeconfig --name "$KIND_CLUSTER_NAME" --kubeconfig "$KIND_KUBECONFIG"

@@ -102,6 +102,9 @@ neo4j:
   jvm:
     additional: "-XX:+ExitOnOutOfMemoryError"
 
+volumePermissions:
+  enabled: true
+
 metrics:
   enabled: false
 

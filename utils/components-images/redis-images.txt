@@ -1,3 +1,4 @@
 bitnami/redis:8.2.1-debian-12-r0
 bitnami/redis-exporter:1.76.0-debian-12-r0
 bitnami/redis-sentinel:8.2.1-debian-12-r0
+bitnami/os-shell:12-debian-12-r51

@@ -2,7 +2,7 @@
 # 全局配置
 global:
   imageRegistry: "harbor.sunmoonai.com:30443"
-  defaultStorageClass: "local-path"
+  defaultStorageClass: ""
   imagePullSecrets:
     - name: harbor-registry-secret
   security:
@@ -197,7 +197,7 @@ configAsCode:
 # initHookScripts: {}
 
 # 卷权限配�?volumePermissions:
-  enabled: false
+  enabled: true
 
 # 系统配置
 sysctlImage:

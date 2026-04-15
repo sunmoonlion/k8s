@@ -105,8 +105,50 @@ server = \"https://${reg}\"
 EOF
 " || log_warn "节点 ${node} 写入 ${reg} hosts.toml 失败，可手动检查"
 
-        # 4) 重启 containerd/kubelet，使新配置立即生效
-        if ! docker exec "$node" bash -lc 'systemctl restart containerd; systemctl restart kubelet'; then
+        # 4) 确保 containerd 不走代理访问 Harbor（Kind 节点继承宿主机代理，域名不在 NO_PROXY 会走代理导致 EOF）
+        # 代理可能来自 3 个源：systemd override、/etc/default/containerd、或进程环境继承
+        # 必须全部覆盖，否则 containerd 仍会走代理
+        docker exec "$node" bash -lc "
+set -euo pipefail
+proxy_conf=/etc/systemd/system/containerd.service.d/http-proxy.conf
+
+# 情况 A：已有 systemd override — 追加域名到 NO_PROXY
+if [[ -f \"\$proxy_conf\" ]] && grep -q 'NO_PROXY' \"\$proxy_conf\" && ! grep -q '${host}' \"\$proxy_conf\"; then
+    sed -i 's|\\(NO_PROXY=.*\\)\"|\\1,${host}\"|' \"\$proxy_conf\" 2>/dev/null || true
+    sed -i 's|\\(no_proxy=.*\\)\"|\\1,${host}\"|' \"\$proxy_conf\" 2>/dev/null || true
+
+# 情况 B：没有 systemd override，但 containerd 进程继承了宿主机代理 — 创建 override
+elif ! [[ -f \"\$proxy_conf\" ]]; then
+    cur_http=\$(cat /proc/\$(pidof containerd)/environ 2>/dev/null | tr '\\0' '\\n' | grep '^HTTP_PROXY=' | cut -d= -f2- || true)
+    cur_https=\$(cat /proc/\$(pidof containerd)/environ 2>/dev/null | tr '\\0' '\\n' | grep '^HTTPS_PROXY=' | cut -d= -f2- || true)
+    cur_no=\$(cat /proc/\$(pidof containerd)/environ 2>/dev/null | tr '\\0' '\\n' | grep '^NO_PROXY=' | cut -d= -f2- || true)
+    if [[ -n \"\$cur_http\" || -n \"\$cur_https\" ]]; then
+        [[ \"\$cur_no\" != *${host}* ]] && cur_no=\"\${cur_no:+\$cur_no,}${host}\"
+        mkdir -p /etc/systemd/system/containerd.service.d
+        cat >\"\$proxy_conf\" <<EOFCONF
+[Service]
+Environment=\"HTTP_PROXY=\${cur_http}\"
+Environment=\"HTTPS_PROXY=\${cur_https}\"
+Environment=\"NO_PROXY=\${cur_no}\"
+EOFCONF
+    fi
+fi
+
+# /etc/default/containerd（部分发行版使用）
+if [[ -f /etc/default/containerd ]] && grep -q 'NO_PROXY' /etc/default/containerd && ! grep -q '${host}' /etc/default/containerd; then
+    sed -i 's|\\(NO_PROXY=.*\\)\"|\\1,${host}\"|' /etc/default/containerd 2>/dev/null || true
+fi
+
+# profile.d（供新 shell 继承）
+if [[ -n \"\${NO_PROXY:-}\" ]] && [[ \"\$NO_PROXY\" != *${host}* ]]; then
+    mkdir -p /etc/profile.d
+    echo 'export NO_PROXY=\"\${NO_PROXY},${host}\"' >> /etc/profile.d/harbor-no-proxy.sh
+    echo 'export no_proxy=\"\${no_proxy},${host}\"' >> /etc/profile.d/harbor-no-proxy.sh
+fi
+" 2>/dev/null || log_warn "节点 ${node} 更新 NO_PROXY 失败，可手动检查"
+
+        # 5) 重启 containerd/kubelet，使新配置立即生效
+        if ! docker exec "$node" bash -lc 'systemctl daemon-reload; systemctl restart containerd; systemctl restart kubelet'; then
             log_warn "节点 ${node} 重启 containerd/kubelet 失败，新配置可能在下次节点重启后才生效"
         fi
     done

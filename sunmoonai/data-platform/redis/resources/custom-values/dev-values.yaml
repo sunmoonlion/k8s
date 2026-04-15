@@ -1,4 +1,4 @@
-# Redis 开发环境配�?- 直接写具体值，不做模板替换
+# Redis 开发环境配�?- 直接写具体值，不做模板替换
 
 # 全局配置
 global:
@@ -15,15 +15,15 @@ image:
   pullPolicy: "IfNotPresent"
   pullSecrets: []
 
-# 认证配置 - 使用Secret提高安全�?auth:
+# 认证配置 - 使用Secret提高安全�?auth:
   enabled: true
-  # 密码由密管创建的 Secret 提供，Chart 仅消�?  existingSecret: "redis-auth-secret"
+  # 密码由密管创建的 Secret 提供，Chart 仅消�?  existingSecret: "redis-auth-secret"
   existingSecretPasswordKey: "redis-password"
   acl:
     enabled: true
     sentinel: false
 
-# 主服务配�?master:
+# 主服务配�?master:
   persistence:
     enabled: true
     storageClass: "local-path"
@@ -32,7 +32,8 @@ image:
       - "ReadWriteOnce"
   
   service:
-    type: "ClusterIP"  # 改为 ClusterIP，只在内网访�?    port: 6379
+    type: "ClusterIP"
+    port: 6379
   
   resources:
     limits:
@@ -107,7 +108,7 @@ networkPolicy:
   enabled: false
   allowExternal: true
 
-# 自动扩缩容配�?autoscaling:
+# 自动扩缩容配�?autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 2
@@ -132,21 +133,21 @@ redis:
   logLevel: "notice"
   syslogEnabled: false
   
-  # 持久化配�?  appendOnly: "yes"
+  # 持久化配�?  appendOnly: "yes"
   appendfsync: "everysec"
 
 # Ingress 配置 - 通过 Traefik 统一管理
 ingress:
-  enabled: false  # 禁用 Helm Chart �?Ingress，使用独立的 Ingress 资源
+  enabled: false  # 禁用 Helm Chart �?Ingress，使用独立的 Ingress 资源
 
-# 标签和注�?commonLabels:
+# 标签和注�?commonLabels:
   app.kubernetes.io/part-of: "data-platform"
   app.kubernetes.io/managed-by: "helm"
 
 commonAnnotations:
   app.kubernetes.io/created-by: "unified-deployment-template"
 
-# 安全上下�?securityContext:
+# 安全上下�?securityContext:
   enabled: false
   runAsUser: 1001
   fsGroup: 1001
