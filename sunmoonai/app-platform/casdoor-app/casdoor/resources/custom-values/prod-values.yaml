@@ -40,4 +40,4 @@ persistence:
     type: pvc
     mountPath: /conf
     size: 5Gi
-    storageClass: "nfs-2"
+    storageClass: "fast-ssd"

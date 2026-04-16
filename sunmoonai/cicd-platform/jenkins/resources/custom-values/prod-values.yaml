@@ -4,7 +4,7 @@
 # 全局配置
 global:
   imageRegistry: ""
-  defaultStorageClass: "nfs-storage"
+  defaultStorageClass: "fast-ssd"
 
 # 副本数配置（生产环境：1副本，Jenkins 通常单实例）
 replicaCount: 1
@@ -36,7 +36,7 @@ service:
 persistence:
   enabled: true
   size: 50Gi
-  storageClass: "nfs-storage"
+  storageClass: "fast-ssd"
 
 # 网络策略（生产环境：启用）
 networkPolicy:

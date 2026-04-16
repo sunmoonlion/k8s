@@ -6,7 +6,7 @@ global:
   # 禁用 Kibana 子图表，单独部署
   kibanaEnabled: false
   # 设置默认存储类
-  defaultStorageClass: "nfs-storage"
+  defaultStorageClass: "fast-ssd"
 
 # 集群配置
 clusterName: elasticsearch-prod
@@ -68,13 +68,13 @@ master:
   persistence:
     enabled: true
     size: 20Gi
-    storageClass: "nfs-storage"
+    storageClass: "fast-ssd"
 
 data:
   persistence:
     enabled: true
     size: 100Gi
-    storageClass: "nfs-storage"
+    storageClass: "fast-ssd"
 
 # 服务配置
 service:

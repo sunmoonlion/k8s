@@ -46,7 +46,7 @@ logs:
 # 持久化存储
 persistence:
   enabled: true
-  storageClass: "nfs-storage"
+  storageClass: "fast-ssd"
   size: "2Gi"
   accessMode: ReadWriteOnce
 

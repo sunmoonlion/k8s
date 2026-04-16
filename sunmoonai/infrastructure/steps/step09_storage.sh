@@ -1,18 +1,17 @@
 #!/usr/bin/env bash
 #
 # Step09: Storage Configuration
-# 功能：配置 Kubernetes 集群存储（本地存储、NFS存储、云存储）
-# 
+# 功能：配置 Kubernetes 集群存储（本地存储、云存储）
+#
 # ⚠️  CRITICAL SECURITY WARNING ⚠️
 # 本脚本包含清理函数，必须遵守以下安全原则：
 # 1. 绝不使用 kubectl delete --all 或通配符删除
 # 2. 只删除明确指定名称的资源
 # 3. 避免删除系统级 ClusterRole/ClusterRoleBinding (如 cluster-admin)
 # 4. 使用标签选择器而非批量删除
-# 
+#
 # 主要特性：
 # - 多节点本地存储支持
-# - 多节点NFS服务器架构
 # - 多云存储CSI驱动支持
 # - 完整的在线/离线部署模式
 # - 分层开关控制系统
@@ -35,7 +34,6 @@ ONLINE_TIMEOUT="${STEP09_ONLINE_TIMEOUT:-300}"
 
 # 版本配置
 LOCAL_PATH_VERSION="${STEP09_LOCAL_STORAGE_VERSION:-v0.0.32}"
-NFS_PROVISIONER_VERSION="${STEP09_NFS_PROVISIONER_VERSION:-4.0.2}"
 
 required_artifacts(){
     if [[ "$PACKAGES_DEPLOY_MODE_EFFECTIVE" == "offline" ]]; then
@@ -43,21 +41,6 @@ required_artifacts(){
         if [[ "${STEP09_LOCAL_STORAGE_ENABLED:-false}" == "true" ]]; then
             echo "type=images image='rancher/local-path-provisioner:${LOCAL_PATH_VERSION}'"
             # 注意：local-path-provisioner 通常直接使用YAML部署，不需要Helm Chart
-        fi
-        
-        # NFS存储资源
-        if [[ "${STEP09_NFS_STORAGE_ENABLED:-false}" == "true" ]]; then
-            # NFS Provisioner Helm Chart
-            echo "type=charts pattern='nfs-subdir-external-provisioner-${NFS_PROVISIONER_VERSION}.tgz'"
-            echo "type=images image='registry.k8s.io/sig-storage/nfs-subdir-external-provisioner:v${NFS_PROVISIONER_VERSION}'"
-            
-            # NFS服务器和客户端deb包
-            echo "type=debs pattern='nfs-common*.deb'"
-            echo "type=debs pattern='nfs-kernel-server*.deb'"
-            echo "type=debs pattern='rpcbind*.deb'"
-            # NFS依赖包
-            echo "type=debs pattern='keyutils*.deb'"
-            echo "type=debs pattern='libnfsidmap1*.deb'"
         fi
         
         # 云存储资源
@@ -107,7 +90,6 @@ precheck(){
     # 2. 检查是否有任何存储功能启用
     local has_enabled_storage=false
     [[ "${STEP09_LOCAL_STORAGE_ENABLED:-false}" == "true" ]] && has_enabled_storage=true
-    [[ "${STEP09_NFS_STORAGE_ENABLED:-false}" == "true" ]] && has_enabled_storage=true  
     [[ "${STEP09_CLOUD_STORAGE_ENABLED:-false}" == "true" ]] && has_enabled_storage=true
     
     if [[ "$has_enabled_storage" == "false" ]]; then
@@ -231,19 +213,6 @@ execute(){
             fi
         done
         
-        # 在所有节点安装NFS客户端工具（如果启用了NFS存储）
-        if [[ "${STEP09_NFS_STORAGE_ENABLED:-false}" == "true" ]]; then
-            log_info "[Step09] 在所有节点安装NFS客户端工具"
-            for node_idx in $(seq 1 10); do
-                if [[ -n "$(get_server_var "$node_idx" PUBLIC_IP)" ]]; then
-                    _install_nfs_client "$node_idx" || {
-                        log_error "[Step09] 节点 $node_idx NFS客户端工具安装失败"
-                        return 1
-                    }
-                fi
-            done
-        fi
-        
         # 配置Kubernetes层存储
         _prepare_remote_kubeconfig "$i"
         _configure_kubernetes_storage "$i"
@@ -274,29 +243,6 @@ verify(){
 
 _validate_storage_config(){
     log_info "[Step09] 验证配置参数"
-    
-    # NFS配置验证
-    if [[ "${STEP09_NFS_STORAGE_ENABLED:-false}" == "true" && "${STEP09_NFS_SERVER_ENABLED:-false}" == "true" ]]; then
-        local has_nfs_server=false
-        # 检查所有可能的NFS服务器配置
-        # 直接检查所有可能的SERVER_n配置，不依赖PUBLIC_IP
-        for idx in {1..64}; do
-            local enabled_var="STEP09_NFS_SERVER_${idx}_ENABLED"
-            if [[ "${!enabled_var:-false}" == "true" ]]; then
-                local path_var="STEP09_NFS_SERVER_${idx}_PATH"
-                if [[ -z "${!path_var:-}" ]]; then
-                    log_error "[Step09] NFS服务器 $idx 缺少路径配置: $path_var"
-                    return 1
-                fi
-                has_nfs_server=true
-            fi
-        done
-        
-        if [[ "$has_nfs_server" == "false" ]]; then
-            log_error "[Step09] NFS存储已启用但没有配置任何NFS服务器节点"
-            return 1
-        fi
-    fi
     
     # 云存储配置验证
     if [[ "${STEP09_CLOUD_STORAGE_ENABLED:-false}" == "true" ]]; then
@@ -507,15 +453,6 @@ _show_resource_preparation_guide(){
         log_info "   1. 在有网络的机器上运行以下命令下载Chart:"
         echo ""
         
-        # NFS Provisioner Chart
-        if grep -q "nfs-subdir-external-provisioner" <<< "${missing_ref[*]}"; then
-            echo "      # NFS Provisioner Chart"
-            echo "      helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/"
-            echo "      helm repo update"
-            echo "      helm pull nfs-subdir-external-provisioner/nfs-subdir-external-provisioner --version ${NFS_PROVISIONER_VERSION}"
-            echo ""
-        fi
-        
         # 阿里云CSI Chart
         if grep -q "alicloud-nas-csi-driver" <<< "${missing_ref[*]}"; then
             echo "      # 阿里云NAS CSI Driver Chart"
@@ -603,10 +540,6 @@ _configure_host_storage(){
         _prepare_local_storage_on_node "$node_idx"
     fi
     
-    # NFS服务器配置
-    if [[ "${STEP09_NFS_STORAGE_ENABLED:-false}" == "true" ]]; then
-        _configure_nfs_server_on_node "$node_idx"
-    fi
 }
 
 _prepare_local_storage_on_node(){
@@ -620,343 +553,6 @@ _prepare_local_storage_on_node(){
         log_info "[Step09] 节点 $node_idx 本地存储目录已创建: $storage_path"
     fi
 }
-
-_configure_nfs_server_on_node(){
-    local node_idx="$1"
-    local enabled_var="STEP09_NFS_SERVER_${node_idx}_ENABLED"
-    
-    if [[ "${!enabled_var:-false}" == "true" ]]; then
-        log_info "[Step09] 在节点 $node_idx 配置NFS服务器"
-        local nfs_path_var="STEP09_NFS_SERVER_${node_idx}_PATH"
-        local nfs_path="${!nfs_path_var}"
-        
-        # 安装NFS服务器
-        _install_nfs_server_on_node "$node_idx"
-        
-        # 配置NFS共享
-        _setup_nfs_share_on_node "$node_idx" "$nfs_path"
-        
-        log_info "[Step09] 节点 $node_idx NFS服务器配置完成"
-    fi
-}
-
-# 在所有节点安装NFS客户端工具
-_install_nfs_client(){
-    local node_idx="$1"
-    
-    log_info "[Step09] 在节点 $node_idx 安装NFS客户端工具"
-    
-    # 检查是否已安装nfs客户端工具
-    if ssh_exec "$node_idx" "bash -lc 'command -v mount.nfs >/dev/null 2>&1'"; then
-        log_info "[Step09] 节点 $node_idx NFS客户端工具已安装"
-        return 0
-    fi
-    
-    # 根据部署模式选择安装方式
-    if [[ "$PACKAGES_DEPLOY_MODE_EFFECTIVE" == "offline" ]]; then
-        _install_nfs_client_offline "$node_idx"
-    else
-        _install_nfs_client_online "$node_idx"
-    fi
-    
-    log_info "[Step09] 节点 $node_idx NFS客户端工具安装完成"
-}
-
-_install_nfs_client_offline(){
-    local node_idx="$1"
-    
-    log_info "[Step09] 节点 $node_idx 离线安装NFS客户端工具"
-    
-    # 检查离线包是否存在
-    local dir; dir="$(resolve_remote_dir "$(get_server_var "$node_idx" DIR)")"; dir="${dir:-$REMOTE_DIR_FALLBACK}"
-    
-    # 检查是否有NFS客户端相关的deb包
-    if ssh_exec "$node_idx" "bash -lc 'base=\"\$HOME${dir#\~}\"; ls \"\$base/debs\"/nfs-common*.deb >/dev/null 2>&1'"; then
-        log_info "[Step09] 节点 $node_idx 使用离线deb包安装NFS客户端"
-        # 按依赖顺序安装：先安装依赖包，再安装主包
-        ssh_exec_sudo "$node_idx" "bash -lc 'base=\"/home/\$SUDO_USER${dir#\~}\"; \
-            # 先安装依赖包
-            dpkg -i \"\$base/debs\"/keyutils*.deb \"\$base/debs\"/libnfsidmap1*.deb \"\$base/debs\"/rpcbind*.deb 2>/dev/null || true; \
-            # 再安装主包
-            dpkg -i \"\$base/debs\"/nfs-common*.deb || apt-get install -f -y'"
-    else
-        log_error "[Step09] 节点 $node_idx 未找到NFS客户端离线包，离线安装失败"
-        return 1
-    fi
-}
-
-_install_nfs_client_online(){
-    local node_idx="$1"
-    
-    log_info "[Step09] 节点 $node_idx 在线安装NFS客户端工具"
-    
-    # 检测操作系统并安装NFS客户端
-    if ssh_exec "$node_idx" "bash -lc 'command -v apt-get >/dev/null 2>&1'"; then
-        # Ubuntu/Debian
-        ssh_exec_sudo "$node_idx" "apt-get update && apt-get install -y nfs-common"
-    elif ssh_exec "$node_idx" "bash -lc 'command -v yum >/dev/null 2>&1'"; then
-        # CentOS/RHEL
-        ssh_exec_sudo "$node_idx" "yum install -y nfs-utils"
-    else
-        log_error "[Step09] 节点 $node_idx 不支持的操作系统"
-        return 1
-    fi
-}
-
-_install_nfs_server_on_node(){
-    local node_idx="$1"
-    
-    log_info "[Step09] 在节点 $node_idx 安装NFS服务器"
-    
-    # 检查是否已安装
-    if ssh_exec "$node_idx" "bash -lc 'systemctl is-active nfs-server >/dev/null 2>&1 || systemctl is-active nfs-kernel-server >/dev/null 2>&1'"; then
-        log_info "[Step09] 节点 $node_idx NFS服务器已运行"
-        return 0
-    fi
-    
-    # 根据部署模式选择安装方式
-    if [[ "$PACKAGES_DEPLOY_MODE_EFFECTIVE" == "offline" ]]; then
-        _install_nfs_server_offline "$node_idx"
-    else
-        _install_nfs_server_online "$node_idx"
-    fi
-    
-    log_info "[Step09] 节点 $node_idx NFS服务器安装完成"
-}
-
-_install_nfs_server_offline(){
-    local node_idx="$1"
-    
-    log_info "[Step09] 节点 $node_idx 离线安装NFS服务器"
-    
-    # 检查离线包是否存在
-    local dir; dir="$(resolve_remote_dir "$(get_server_var "$node_idx" DIR)")"; dir="${dir:-$REMOTE_DIR_FALLBACK}"
-    # 检查是否有NFS相关的deb包
-    if ssh_exec "$node_idx" "bash -lc 'base=\"\$HOME${dir#\~}\"; ls \"\$base/debs\"/nfs-kernel-server*.deb \"\$base/debs\"/rpcbind*.deb \"\$base/debs\"/keyutils*.deb \"\$base/debs\"/libnfsidmap1*.deb >/dev/null 2>&1'"; then
-        log_info "[Step09] 节点 $node_idx 使用离线deb包安装NFS服务器"
-        # 使用SUDO_USER环境变量获取实际用户主目录，避免sudo下~展开为/root的问题
-        ssh_exec_sudo "$node_idx" "bash -lc 'base=\"/home/\$SUDO_USER${dir#\~}\"; dpkg -i \"\$base/debs\"/keyutils*.deb \"\$base/debs\"/libnfsidmap1*.deb \"\$base/debs\"/nfs-common*.deb \"\$base/debs\"/rpcbind*.deb \"\$base/debs\"/nfs-kernel-server*.deb || apt-get install -f -y'"
-    else
-        log_error "[Step09] 节点 $node_idx 未找到NFS离线包，离线安装失败"
-        return 1
-    fi
-    
-    # 启动服务 - 增强错误处理和重试机制
-    ssh_exec_sudo "$node_idx" "systemctl enable nfs-kernel-server 2>/dev/null || systemctl enable nfs-server"
-    
-    # 先启动rpcbind服务（NFS依赖）
-    ssh_exec_sudo "$node_idx" "systemctl enable rpcbind"
-    if ! ssh_exec_sudo "$node_idx" "systemctl start rpcbind"; then
-        log_error "[Step09] 节点 $node_idx rpcbind服务启动失败"
-        return 1
-    fi
-    sleep 3
-    
-    # 启动NFS服务并验证
-    if ! _start_nfs_service_with_verification "$node_idx"; then
-        log_error "[Step09] 节点 $node_idx NFS服务启动失败"
-        return 1
-    fi
-}
-
-_install_nfs_server_online(){
-    local node_idx="$1"
-    
-    log_info "[Step09] 节点 $node_idx 在线安装NFS服务器"
-    
-    # 检测操作系统并安装NFS服务器
-    if ssh_exec "$node_idx" "bash -lc 'command -v apt-get >/dev/null 2>&1'"; then
-        # Ubuntu/Debian
-        ssh_exec_sudo "$node_idx" "apt-get update && apt-get install -y nfs-kernel-server nfs-common rpcbind"
-        
-        # 先启动rpcbind服务
-        ssh_exec_sudo "$node_idx" "systemctl enable rpcbind"
-        if ! ssh_exec_sudo "$node_idx" "systemctl start rpcbind"; then
-            log_error "[Step09] 节点 $node_idx rpcbind服务启动失败"
-            return 1
-        fi
-        sleep 3
-        
-        # 启动NFS服务并验证
-        ssh_exec_sudo "$node_idx" "systemctl enable nfs-kernel-server"
-        if ! _start_nfs_service_with_verification "$node_idx"; then
-            log_error "[Step09] 节点 $node_idx NFS服务启动失败"
-            return 1
-        fi
-    elif ssh_exec "$node_idx" "bash -lc 'command -v yum >/dev/null 2>&1'"; then
-        # CentOS/RHEL
-        ssh_exec_sudo "$node_idx" "yum install -y nfs-utils rpcbind"
-        
-        # 先启动rpcbind服务
-        ssh_exec_sudo "$node_idx" "systemctl enable rpcbind"
-        if ! ssh_exec_sudo "$node_idx" "systemctl start rpcbind"; then
-            log_error "[Step09] 节点 $node_idx rpcbind服务启动失败"
-            return 1
-        fi
-        sleep 3
-        
-        # 启动NFS服务并验证
-        ssh_exec_sudo "$node_idx" "systemctl enable nfs-server"
-        if ! _start_nfs_service_with_verification "$node_idx"; then
-            log_error "[Step09] 节点 $node_idx NFS服务启动失败"
-            return 1
-        fi
-    else
-        log_error "[Step09] 节点 $node_idx 不支持的操作系统"
-        return 1
-    fi
-}
-
-_setup_nfs_share_on_node(){
-    local node_idx="$1"
-    local nfs_path="$2"
-    
-    log_info "[Step09] 在节点 $node_idx 配置NFS共享: $nfs_path"
-    
-    # 创建NFS共享目录
-    ssh_exec_sudo "$node_idx" "mkdir -p '$nfs_path' && chown nobody:nogroup '$nfs_path' 2>/dev/null || chown nobody:nobody '$nfs_path'"
-    ssh_exec_sudo "$node_idx" "chmod 755 '$nfs_path'"
-    
-    # 配置exports
-    local exports_line="$nfs_path ${STEP09_NFS_SERVER_EXPORTS:-*(rw,sync,no_subtree_check)}"
-    ssh_exec_sudo "$node_idx" "bash -lc 'grep -q \"^$nfs_path\" /etc/exports 2>/dev/null || echo \"$exports_line\" >> /etc/exports'"
-    
-    # 重新加载exports
-    ssh_exec_sudo "$node_idx" "exportfs -ra"
-    
-    # 重启NFS服务 - 增强错误处理和重试机制
-    _restart_nfs_service_with_retry "$node_idx"
-    
-    log_info "[Step09] 节点 $node_idx NFS共享配置完成"
-}
-
-# 增强的NFS服务重启函数，包含重试机制
-_restart_nfs_service_with_retry(){
-    local node_idx="$1"
-    local max_retries=3
-    local retry_count=0
-    
-    while [[ $retry_count -lt $max_retries ]]; do
-        log_info "[Step09] 节点 $node_idx 重启NFS服务 (尝试 $((retry_count + 1))/$max_retries)"
-        
-        # 停止NFS服务
-        if ! ssh_exec_sudo "$node_idx" "systemctl stop nfs-kernel-server 2>/dev/null || systemctl stop nfs-server 2>/dev/null || true"; then
-            log_warn "[Step09] 节点 $node_idx NFS服务停止失败，继续尝试启动"
-        fi
-        
-        # 等待服务完全停止
-        sleep 3
-        
-        # 确保rpcbind服务运行
-        if ! ssh_exec_sudo "$node_idx" "systemctl is-active rpcbind >/dev/null 2>&1"; then
-            log_info "[Step09] 节点 $node_idx 启动rpcbind服务"
-            ssh_exec_sudo "$node_idx" "systemctl start rpcbind"
-            sleep 2
-        fi
-        
-        # 启动NFS服务
-        if ssh_exec_sudo "$node_idx" "systemctl start nfs-kernel-server 2>/dev/null || systemctl start nfs-server"; then
-            # 等待服务启动
-            sleep 5
-            
-            # 检查服务状态
-            if ssh_exec_sudo "$node_idx" "systemctl is-active nfs-kernel-server >/dev/null 2>&1 || systemctl is-active nfs-server >/dev/null 2>&1"; then
-                # 验证NFS服务是否真正可用
-                if _verify_nfs_service_ready "$node_idx"; then
-                    log_info "[Step09] 节点 $node_idx NFS服务重启成功"
-                    return 0
-                else
-                    log_warn "[Step09] 节点 $node_idx NFS服务已启动但未就绪，重试中..."
-                fi
-            else
-                log_warn "[Step09] 节点 $node_idx NFS服务启动失败，重试中..."
-            fi
-        else
-            log_warn "[Step09] 节点 $node_idx NFS服务启动命令失败，重试中..."
-        fi
-        
-        retry_count=$((retry_count + 1))
-        if [[ $retry_count -lt $max_retries ]]; then
-            log_info "[Step09] 节点 $node_idx 等待 10 秒后重试..."
-            sleep 10
-        fi
-    done
-    
-    # 所有重试都失败了
-    log_error "[Step09] 节点 $node_idx NFS服务重启失败，已重试 $max_retries 次"
-    ssh_exec_sudo "$node_idx" "systemctl status nfs-kernel-server || systemctl status nfs-server"
-    return 1
-}
-
-# 启动NFS服务并进行验证
-_start_nfs_service_with_verification(){
-    local node_idx="$1"
-    local max_retries=3
-    local retry_count=0
-    
-    while [[ $retry_count -lt $max_retries ]]; do
-        log_info "[Step09] 节点 $node_idx 启动NFS服务 (尝试 $((retry_count + 1))/$max_retries)"
-        
-        # 启动NFS服务
-        if ssh_exec_sudo "$node_idx" "systemctl start nfs-kernel-server 2>/dev/null || systemctl start nfs-server"; then
-            # 等待服务启动
-            sleep 5
-            
-            # 检查服务状态
-            if ssh_exec_sudo "$node_idx" "systemctl is-active nfs-kernel-server >/dev/null 2>&1 || systemctl is-active nfs-server >/dev/null 2>&1"; then
-                # 验证NFS服务是否真正可用
-                if _verify_nfs_service_ready "$node_idx"; then
-                    log_info "[Step09] 节点 $node_idx NFS服务启动成功"
-                    return 0
-                else
-                    log_warn "[Step09] 节点 $node_idx NFS服务已启动但未就绪，重试中..."
-                fi
-            else
-                log_warn "[Step09] 节点 $node_idx NFS服务启动失败，重试中..."
-            fi
-        else
-            log_warn "[Step09] 节点 $node_idx NFS服务启动命令失败，重试中..."
-        fi
-        
-        retry_count=$((retry_count + 1))
-        if [[ $retry_count -lt $max_retries ]]; then
-            log_info "[Step09] 节点 $node_idx 等待 5 秒后重试..."
-            sleep 5
-        fi
-    done
-    
-    # 所有重试都失败了
-    log_error "[Step09] 节点 $node_idx NFS服务启动失败，已重试 $max_retries 次"
-    ssh_exec_sudo "$node_idx" "systemctl status nfs-kernel-server || systemctl status nfs-server"
-    return 1
-}
-
-# 验证NFS服务是否真正可用
-_verify_nfs_service_ready(){
-    local node_idx="$1"
-    local max_checks=6
-    local check_count=0
-    
-    while [[ $check_count -lt $max_checks ]]; do
-        # 检查NFS服务是否在监听端口
-        if ssh_exec "$node_idx" "netstat -tlnp 2>/dev/null | grep -E ':(2049|111)' >/dev/null || ss -tlnp 2>/dev/null | grep -E ':(2049|111)' >/dev/null"; then
-            # 检查exports是否可用
-            if ssh_exec_sudo "$node_idx" "exportfs -v >/dev/null 2>&1"; then
-                log_info "[Step09] 节点 $node_idx NFS服务验证通过"
-                return 0
-            fi
-        fi
-        
-        check_count=$((check_count + 1))
-        if [[ $check_count -lt $max_checks ]]; then
-            sleep 2
-        fi
-    done
-    
-    log_warn "[Step09] 节点 $node_idx NFS服务验证失败"
-    return 1
-}
-
 # ============================================================================
 # K8s层操作函数
 # ============================================================================
@@ -968,12 +564,6 @@ _configure_kubernetes_storage(){
     if [[ "${STEP09_LOCAL_STORAGE_ENABLED:-false}" == "true" ]]; then
         _install_local_path_provisioner "$master_node_idx"
         _create_local_storage_class "$master_node_idx"
-    fi
-    
-    # NFS Provisioner
-    if [[ "${STEP09_NFS_STORAGE_ENABLED:-false}" == "true" ]]; then
-        _install_nfs_provisioners "$master_node_idx"
-        _create_nfs_storage_classes "$master_node_idx"
     fi
     
     # 云存储CSI
@@ -1146,252 +736,6 @@ EOF
     log_info "[Step09] 本地存储StorageClass创建完成"
 }
 
-_install_nfs_provisioners(){
-    local master_node_idx="$1"
-    
-    log_info "[Step09] 安装NFS Provisioner"
-    
-    # 注意：NFS客户端工具已在execute函数中安装，此处跳过重复安装
-    
-    # 获取启用的NFS服务器节点
-    local -a nfs_servers=()
-    local indices; indices="$(get_defined_server_indices)"
-    
-    for idx in $indices; do
-        local enabled_var="STEP09_NFS_SERVER_${idx}_ENABLED"
-        if [[ "${!enabled_var:-false}" == "true" ]]; then
-            nfs_servers+=("$idx")
-        fi
-    done
-    
-    if [[ ${#nfs_servers[@]} -eq 0 ]]; then
-        log_warn "[Step09] 没有启用的NFS服务器节点"
-        return 0
-    fi
-    
-    # 为每个NFS服务器安装Provisioner
-    for server_idx in "${nfs_servers[@]}"; do
-        _install_single_nfs_provisioner "$master_node_idx" "$server_idx"
-    done
-}
-
-# ✅ SAFE: This function uses specific Helm release names and label selectors
-# No wildcards or --all flags that could affect system resources
-_cleanup_failed_nfs_provisioner(){
-    local master_node_idx="$1"
-    local provisioner_name="$2"
-    
-    log_info "[Step09] 清理失败的NFS Provisioner: $provisioner_name"
-    
-    # 删除指定的Helm release（安全：只删除特定名称的release）
-    ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" helm uninstall \"$provisioner_name\" -n \"${STEP09_HELM_NAMESPACE}\" 2>/dev/null || true'"
-    
-    # 使用标签选择器清理相关Kubernetes资源（安全：只删除特定标签的资源）
-    ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl delete deployment,replicaset,pod -l app.kubernetes.io/name=nfs-subdir-external-provisioner,app.kubernetes.io/instance=\"$provisioner_name\" -n \"${STEP09_HELM_NAMESPACE}\" --ignore-not-found=true 2>/dev/null || true'"
-    
-    # 等待资源清理完成
-    sleep 3
-    
-    log_info "[Step09] NFS Provisioner $provisioner_name 清理完成"
-}
-
-_install_single_nfs_provisioner(){
-    local master_node_idx="$1"
-    local nfs_server_idx="$2"
-    
-    local provisioner_name="nfs-provisioner-${nfs_server_idx}"
-    
-    # 检查Helm release状态并处理冲突
-    local helm_status
-    helm_status=$(ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" helm status \"$provisioner_name\" -n \"${STEP09_HELM_NAMESPACE}\" >/dev/null 2>&1 && echo \"exists\" || echo \"notfound\"'")
-    
-    if [[ "$helm_status" == "exists" ]]; then
-        # 检查deployment是否正常运行
-        if ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl get deployment \"$provisioner_name\" -n \"${STEP09_HELM_NAMESPACE}\" >/dev/null 2>&1'"; then
-            local ready_replicas
-            ready_replicas=$(ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl get deployment \"$provisioner_name\" -n \"${STEP09_HELM_NAMESPACE}\" -o jsonpath=\"{.status.readyReplicas}\" 2>/dev/null || echo \"0\"'")
-            if [[ "${ready_replicas:-0}" -gt 0 ]]; then
-                log_info "[Step09] NFS Provisioner $provisioner_name 已安装并运行正常"
-                return 0
-            else
-                log_info "[Step09] NFS Provisioner $provisioner_name 存在但未就绪，重新安装"
-                _cleanup_failed_nfs_provisioner "$master_node_idx" "$provisioner_name"
-            fi
-        else
-            log_info "[Step09] Helm release $provisioner_name 存在但deployment缺失，清理后重新安装"
-            _cleanup_failed_nfs_provisioner "$master_node_idx" "$provisioner_name"
-        fi
-    fi
-    
-    # 获取NFS服务器IP
-    local nfs_server_ip
-    nfs_server_ip="$(get_server_var "$nfs_server_idx" LOCAL_IP)"
-    [[ -z "$nfs_server_ip" ]] && nfs_server_ip="$(get_server_var "$nfs_server_idx" PUBLIC_IP)"
-    
-    if [[ -z "$nfs_server_ip" ]]; then
-        log_error "[Step09] 无法获取NFS服务器 $nfs_server_idx 的IP地址"
-        return 1
-    fi
-    
-    local nfs_path_var="STEP09_NFS_SERVER_${nfs_server_idx}_PATH"
-    local nfs_path="${!nfs_path_var}"
-    
-    log_info "[Step09] 安装NFS Provisioner: $provisioner_name (${nfs_server_ip}:${nfs_path})"
-    
-    if [[ "$PACKAGES_DEPLOY_MODE_EFFECTIVE" == "offline" ]]; then
-        _install_nfs_provisioner_offline "$master_node_idx" "$provisioner_name" "$nfs_server_ip" "$nfs_path"
-    else
-        _install_nfs_provisioner_online "$master_node_idx" "$provisioner_name" "$nfs_server_ip" "$nfs_path"
-    fi
-}
-
-_install_nfs_provisioner_online(){
-    local master_node_idx="$1"
-    local provisioner_name="$2"
-    local nfs_server_ip="$3"
-    local nfs_path="$4"
-    
-    # 检查Helm是否安装
-    if ! ssh_exec "$master_node_idx" "bash -lc 'command -v helm >/dev/null 2>&1'"; then
-        log_error "[Step09] Helm未安装，请先安装Helm"
-        return 1
-    fi
-    
-    # 添加Helm仓库
-    ssh_exec "$master_node_idx" "bash -lc 'helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/ 2>/dev/null || true'"
-    ssh_exec "$master_node_idx" "bash -lc 'helm repo update'"
-    
-    # 安装
-    ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" helm install \"$provisioner_name\" nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
-        --namespace \"${STEP09_HELM_NAMESPACE}\" \
-        --set image.repository=\"registry.k8s.io/sig-storage/nfs-subdir-external-provisioner\" \
-        --set image.tag=\"v$NFS_PROVISIONER_VERSION\" \
-        --set nfs.server=\"$nfs_server_ip\" \
-        --set nfs.path=\"$nfs_path\" \
-        --set storageClass.create=false \
-        --set nfs.mountOptions[0]=\"rw\" \
-        --set nfs.mountOptions[1]=\"sync\" \
-        --set nfs.mountOptions[2]=\"hard\" \
-        --set nfs.mountOptions[3]=\"intr\" \
-        --set nfs.reclaimPolicy=\"${STEP09_NFS_STORAGE_RECLAIM_POLICY:-Delete}\" \
-        --version \"$NFS_PROVISIONER_VERSION\"'"
-    
-    log_info "[Step09] NFS Provisioner $provisioner_name 在线安装完成"
-}
-
-_install_nfs_provisioner_offline(){
-    local master_node_idx="$1"
-    local provisioner_name="$2"
-    local nfs_server_ip="$3"
-    local nfs_path="$4"
-    
-    # 检查Chart文件
-    local dir; dir="$(resolve_remote_dir "$(get_server_var "$master_node_idx" DIR)")"; 
-    dir="${dir:-$REMOTE_DIR_FALLBACK}"
-    
-    local chart_file
-    chart_file=$(ssh_exec "$master_node_idx" "bash -lc 'base=\"\$HOME${dir#\~}\"; ls \"\$base/charts\"/nfs-subdir-external-provisioner-*.tgz 2>/dev/null | head -1'")
-    
-    if [[ -z "$chart_file" ]]; then
-        log_error "[Step09] 未找到NFS Provisioner Chart文件"
-        return 1
-    fi
-    
-    # 安装
-    ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" helm install \"$provisioner_name\" \"$chart_file\" \
-        --namespace \"${STEP09_HELM_NAMESPACE}\" \
-        --set image.repository=\"registry.k8s.io/sig-storage/nfs-subdir-external-provisioner\" \
-        --set image.tag=\"v$NFS_PROVISIONER_VERSION\" \
-        --set nfs.server=\"$nfs_server_ip\" \
-        --set nfs.path=\"$nfs_path\" \
-        --set storageClass.create=false \
-        --set nfs.mountOptions[0]=\"rw\" \
-        --set nfs.mountOptions[1]=\"sync\" \
-        --set nfs.mountOptions[2]=\"hard\" \
-        --set nfs.mountOptions[3]=\"intr\" \
-        --set nfs.reclaimPolicy=\"${STEP09_NFS_STORAGE_RECLAIM_POLICY:-Delete}\"'"
-    
-    log_info "[Step09] NFS Provisioner $provisioner_name 离线安装完成"
-}
-
-_create_nfs_storage_classes(){
-    local master_node_idx="$1"
-    
-    log_info "[Step09] 创建NFS存储StorageClass"
-    
-    # 根据配置决定创建方式
-    if [[ "${STEP09_NFS_CREATE_SEPARATE_STORAGE_CLASSES:-false}" == "true" ]]; then
-        _create_separate_nfs_storage_classes "$master_node_idx"
-    else
-        _create_unified_nfs_storage_class "$master_node_idx"
-    fi
-}
-
-_create_unified_nfs_storage_class(){
-    local master_node_idx="$1"
-    
-    # 获取第一个启用的NFS服务器作为默认
-    local default_nfs_server=""
-    local indices; indices="$(get_defined_server_indices)"
-    for idx in $indices; do
-        local enabled_var="STEP09_NFS_SERVER_${idx}_ENABLED"
-        if [[ "${!enabled_var:-false}" == "true" ]]; then
-            default_nfs_server="$idx"
-            break
-        fi
-    done
-    
-    if [[ -z "$default_nfs_server" ]]; then
-        log_warn "[Step09] 没有启用的NFS服务器，跳过StorageClass创建"
-        return 0
-    fi
-    
-    local provisioner_name="nfs-provisioner-${default_nfs_server}"
-    
-    # 删除旧的StorageClass
-    ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl delete storageclass \"${STEP09_NFS_STORAGE_CLASS_NAME}\" --ignore-not-found'"
-    
-    # 创建统一的NFS StorageClass
-    ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl apply -f -'" <<EOF
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: ${STEP09_NFS_STORAGE_CLASS_NAME}
-  annotations:
-    storageclass.kubernetes.io/is-default-class: "${STEP09_NFS_STORAGE_DEFAULT_CLASS}"
-provisioner: cluster.local/${provisioner_name}-nfs-subdir-external-provisioner
-volumeBindingMode: ${STEP09_NFS_STORAGE_VOLUME_BINDING_MODE}
-reclaimPolicy: ${STEP09_NFS_STORAGE_RECLAIM_POLICY}
-EOF
-    
-    log_info "[Step09] 统一NFS存储StorageClass创建完成"
-}
-
-_create_separate_nfs_storage_classes(){
-    local master_node_idx="$1"
-    
-    # 为每个NFS服务器创建独立的StorageClass（支持Harbor专用存储）
-    local indices; indices="$(get_defined_server_indices)"
-    for idx in $indices; do
-        local enabled_var="STEP09_NFS_SERVER_${idx}_ENABLED"
-        if [[ "${!enabled_var:-false}" == "true" ]]; then
-            local sc_name="${STEP09_NFS_STORAGE_CLASS_PREFIX:-nfs}-${idx}"
-            local provisioner_name="nfs-provisioner-${idx}"
-            
-            ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl apply -f -'" <<EOF
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: ${sc_name}
-provisioner: cluster.local/${provisioner_name}-nfs-subdir-external-provisioner
-volumeBindingMode: ${STEP09_NFS_STORAGE_VOLUME_BINDING_MODE}
-reclaimPolicy: ${STEP09_NFS_STORAGE_RECLAIM_POLICY}
-EOF
-            
-            log_info "[Step09] NFS存储StorageClass创建完成: $sc_name"
-        fi
-    done
-}
 
 _install_cloud_csi_driver(){
     local master_node_idx="$1"
@@ -1630,11 +974,6 @@ _validate_storage_functionality(){
         _validate_local_storage "$master_node_idx"
     fi
     
-    # NFS存储验证
-    if [[ "${STEP09_NFS_STORAGE_ENABLED:-false}" == "true" ]]; then
-        _validate_nfs_storage "$master_node_idx"
-    fi
-    
     # 云存储验证
     if [[ "${STEP09_CLOUD_STORAGE_ENABLED:-false}" == "true" ]]; then
         _validate_cloud_storage "$master_node_idx"
@@ -1698,78 +1037,6 @@ EOF
     ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl delete pvc test-local-pvc -n \"${STEP09_VALIDATION_NAMESPACE}\" --ignore-not-found'"
 }
 
-_validate_nfs_storage(){
-    local master_node_idx="$1"
-    
-    log_info "[Step09] 验证NFS存储功能"
-    
-    # 根据配置动态选择StorageClass
-    local test_storage_class
-    if [[ "${STEP09_NFS_CREATE_SEPARATE_STORAGE_CLASSES:-false}" == "true" ]]; then
-        # 分离模式：自动检测第一个可用的NFS StorageClass
-        test_storage_class=$(ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl get storageclass -o name | grep \"^storageclass.storage.k8s.io/nfs-\" | head -1 | cut -d/ -f2'")
-        if [[ -z "$test_storage_class" ]]; then
-            log_error "[Step09] 分离模式：未找到可用的NFS StorageClass"
-            return 1
-        fi
-        log_info "[Step09] 分离模式：自动检测到StorageClass $test_storage_class 进行验证"
-    else
-        # 统一模式：使用统一的StorageClass
-        test_storage_class="${STEP09_NFS_STORAGE_CLASS_NAME:-nfs-storage}"
-        log_info "[Step09] 统一模式：使用StorageClass $test_storage_class 进行验证"
-    fi
-    
-    # 清理可能存在的旧测试资源
-    ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl delete pod test-nfs-pod -n \"${STEP09_VALIDATION_NAMESPACE}\" --ignore-not-found'"
-    ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl delete pvc test-nfs-pvc -n \"${STEP09_VALIDATION_NAMESPACE}\" --ignore-not-found'"
-    
-    # 创建测试PVC和Pod
-    ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl apply -f -'" <<EOF
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: test-nfs-pvc
-  namespace: ${STEP09_VALIDATION_NAMESPACE}
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 1Gi
-  storageClassName: $test_storage_class
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: test-nfs-pod
-  namespace: ${STEP09_VALIDATION_NAMESPACE}
-spec:
-  containers:
-  - name: test
-    image: docker.io/calico/node:v3.28.2
-    command: ["/bin/sh"]
-    args: ["-c", "sleep 3600"]
-    volumeMounts:
-    - name: test-volume
-      mountPath: /data
-  volumes:
-  - name: test-volume
-    persistentVolumeClaim:
-      claimName: test-nfs-pvc
-  restartPolicy: Never
-EOF
-    
-    # 等待Pod就绪（确保存储正常工作）
-    if ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl wait --for=condition=ready pod/test-nfs-pod -n \"${STEP09_VALIDATION_NAMESPACE}\" --timeout=\"${STEP09_VALIDATION_TIMEOUT}\"s'"; then
-        log_info "[Step09] NFS存储验证通过"
-    else
-        log_error "[Step09] NFS存储验证失败"
-    fi
-    
-    # 清理测试资源
-    ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl delete pod test-nfs-pod -n \"${STEP09_VALIDATION_NAMESPACE}\" --ignore-not-found'"
-    ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl delete pvc test-nfs-pvc -n \"${STEP09_VALIDATION_NAMESPACE}\" --ignore-not-found'"
-}
 
 _validate_cloud_storage(){
     local master_node_idx="$1"

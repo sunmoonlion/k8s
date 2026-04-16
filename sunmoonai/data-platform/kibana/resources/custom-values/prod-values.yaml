@@ -4,7 +4,7 @@
 # 全局配置
 global:
   imageRegistry: ""
-  defaultStorageClass: "nfs-storage"
+  defaultStorageClass: "fast-ssd"
 
 # 副本数配置（生产环境：2副本高可用）
 replicaCount: 2
@@ -45,7 +45,7 @@ service:
 persistence:
   enabled: true
   size: 8Gi
-  storageClass: "nfs-storage"
+  storageClass: "fast-ssd"
 
 # 安全配置（生产环境：启用）
 auth:

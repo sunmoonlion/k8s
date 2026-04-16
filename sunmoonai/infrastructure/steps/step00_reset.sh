@@ -28,7 +28,6 @@ REMOVE_RUNTIME="${STEP00_REMOVE_RUNTIME:-true}"
 REMOVE_K8S_PACKAGES="${STEP00_REMOVE_K8S_PACKAGES:-true}"
 REMOVE_K8S_IMAGES="${STEP00_REMOVE_K8S_IMAGES:-false}"
 REMOVE_HOSTS_BLOCK="${STEP00_REMOVE_HOSTS_BLOCK:-false}"
-REMOVE_NFS_DATA="${STEP00_REMOVE_NFS_DATA:-true}"
 # REMOVE_NAMESPACES="${STEP00_REMOVE_NAMESPACES:-true}"  # 已移除命名空间清理功能
 
 # 其他配置
@@ -229,32 +228,12 @@ cleanup_storage() {
     
     log_info "[Step00] 节点 $node ($node_type): 开始清理存储组件..."
     
-    # 清理 NFS 存储数据（重要：kubeadm reset 不会清理这些数据）
-    if [[ "$REMOVE_NFS_DATA" == "true" ]]; then
-        log_info "[Step00] 节点 $node: 清理 NFS 存储数据..."
-        
-        # 清理所有 NFS 存储目录中的数据
-        ssh_exec_sudo "$node" "bash -lc 'rm -rf /data/nfs-storage-*/cicd-platform-* 2>/dev/null || true'" || true
-        ssh_exec_sudo "$node" "bash -lc 'rm -rf /data/nfs-storage-*/data-platform-* 2>/dev/null || true'" || true
-        ssh_exec_sudo "$node" "bash -lc 'rm -rf /data/nfs-storage-*/ingress-platform-* 2>/dev/null || true'" || true
-        ssh_exec_sudo "$node" "bash -lc 'rm -rf /data/nfs-storage-*/archived-* 2>/dev/null || true'" || true
-        ssh_exec_sudo "$node" "bash -lc 'rm -rf /data/nfs-storage-*/pvc-* 2>/dev/null || true'" || true
-        
-        log_info "[Step00] 节点 $node: NFS 存储数据清理完成"
-    else
-        log_info "[Step00] 节点 $node: REMOVE_NFS_DATA=false，跳过 NFS 数据清理"
-    fi
-    
-    # 清理所有节点都清理本地存储目录
+    # 清理本地存储目录
     log_info "[Step00] 节点 $node: 清理本地存储目录..."
     
     # 清理 local-path-provisioner 相关目录
     ssh_exec_sudo "$node" "bash -lc 'rm -rf /opt/local-path-provisioner 2>/dev/null || true'" || true
     ssh_exec_sudo "$node" "bash -lc 'rm -rf /var/lib/local-path-provisioner 2>/dev/null || true'" || true
-    
-    # 清理 NFS 存储相关目录
-    ssh_exec_sudo "$node" "bash -lc 'rm -rf /opt/nfs-provisioner 2>/dev/null || true'" || true
-    ssh_exec_sudo "$node" "bash -lc 'rm -rf /var/lib/nfs-provisioner 2>/dev/null || true'" || true
     
     # 清理 CSI 驱动相关目录
     ssh_exec_sudo "$node" "bash -lc 'rm -rf /var/lib/kubelet/plugins 2>/dev/null || true'" || true
