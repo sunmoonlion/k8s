@@ -545,12 +545,33 @@ _configure_host_storage(){
 _prepare_local_storage_on_node(){
     local node_idx="$1"
     local enabled_var="STEP09_LOCAL_STORAGE_SERVER_${node_idx}_ENABLED"
-    
+
     if [[ "${!enabled_var:-false}" == "true" ]]; then
         log_info "[Step09] 在节点 $node_idx 准备本地存储"
         local storage_path="${STEP09_LOCAL_STORAGE_PATH:-/data/local-storage}"
         ssh_exec_sudo "$node_idx" "mkdir -p '$storage_path' && chmod 755 '$storage_path'"
         log_info "[Step09] 节点 $node_idx 本地存储目录已创建: $storage_path"
+
+        # 离线模式：预加载 helper pod 镜像到每个节点（helper pod 可能调度到任意节点）
+        if [[ "$PACKAGES_DEPLOY_MODE_EFFECTIVE" == "offline" ]]; then
+            local helper_image="${STEP09_HELPER_IMAGE:-}"
+            if [[ -n "$helper_image" ]]; then
+                local dir; dir="$(resolve_remote_dir "$(get_server_var "$node_idx" DIR)")";
+                dir="${dir:-$REMOTE_DIR_FALLBACK}"
+                local helper_tar; helper_tar="$(echo "$helper_image" | sed 's|/|_|g' | sed 's|:|_|g').tar"
+                # 检查镜像是否已加载（避免重复）
+                local image_short; image_short="${helper_image%%:*}"
+                image_short="${image_short##*/}"
+                if ! ssh_exec "$node_idx" "bash -lc 'sudo nerdctl -n k8s.io images 2>/dev/null | grep -q \"$image_short\"'"; then
+                    log_info "[Step09] 节点 $node_idx 加载 helper 镜像: $helper_image"
+                    ssh_exec "$node_idx" "bash -lc 'base=\"\$HOME${dir#\~}\"; sudo nerdctl -n k8s.io load -i \"\$base/images/$helper_tar\"'" \
+                        && log_info "[Step09] 节点 $node_idx helper 镜像加载成功" \
+                        || log_warn "[Step09] 节点 $node_idx helper 镜像加载失败（非致命，若镜像已存在可忽略）"
+                else
+                    log_info "[Step09] 节点 $node_idx helper 镜像已存在，跳过加载"
+                fi
+            fi
+        fi
     fi
 }
 # ============================================================================
@@ -692,16 +713,155 @@ _install_local_path_offline(){
         fi
     fi
     
-    # 下载并修改YAML（如果可以访问网络）
-    if ssh_exec "$master_node_idx" "timeout 10 curl -s https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml >/dev/null"; then
-        ssh_exec "$master_node_idx" "bash -lc 'curl -s https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml > /tmp/local-path-storage.yaml'"
-        ssh_exec "$master_node_idx" "sed -i \"s|rancher/local-path-provisioner:.*|$image_name|g\" /tmp/local-path-storage.yaml"
-        ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl apply -f /tmp/local-path-storage.yaml'"
-        ssh_exec "$master_node_idx" "rm -f /tmp/local-path-storage.yaml"
-    else
-        log_error "[Step09] 离线安装需要预先准备 local-path-storage.yaml 文件"
-        return 1
-    fi
+    # 离线模式：直接内联生成 YAML，无需网络
+    local storage_path="${STEP09_LOCAL_STORAGE_PATH:-/opt/local-path-provisioner}"
+    local helper_image="${STEP09_HELPER_IMAGE:-busybox}"
+    log_info "[Step09] 生成 local-path-storage.yaml（storePath=$storage_path, helperImage=$helper_image）"
+    ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl apply -f -'" <<YAML
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: local-path-storage
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: local-path-provisioner-service-account
+  namespace: local-path-storage
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: local-path-provisioner-role
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "persistentvolumeclaims", "configmaps", "pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "create", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: local-path-provisioner-bind
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: local-path-provisioner-role
+subjects:
+  - kind: ServiceAccount
+    name: local-path-provisioner-service-account
+    namespace: local-path-storage
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: local-path-provisioner-role
+  namespace: local-path-storage
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "create", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: local-path-provisioner-bind
+  namespace: local-path-storage
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: local-path-provisioner-role
+subjects:
+  - kind: ServiceAccount
+    name: local-path-provisioner-service-account
+    namespace: local-path-storage
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: local-path-provisioner
+  namespace: local-path-storage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: local-path-provisioner
+  template:
+    metadata:
+      labels:
+        app: local-path-provisioner
+    spec:
+      serviceAccountName: local-path-provisioner-service-account
+      containers:
+        - name: local-path-provisioner
+          image: ${image_name}
+          imagePullPolicy: Never
+          command:
+            - local-path-provisioner
+            - --debug
+            - start
+            - --config
+            - /etc/config/config.json
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/config/
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+      volumes:
+        - name: config-volume
+          configMap:
+            name: local-path-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: local-path-config
+  namespace: local-path-storage
+data:
+  config.json: |-
+    {
+      "nodePathMap": [
+        {
+          "node": "DEFAULT_PATH_FOR_NON_LISTED_NODES",
+          "paths": ["${storage_path}"]
+        }
+      ]
+    }
+  helperPod.yaml: |-
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: helper-pod
+    spec:
+      priorityClassName: system-node-critical
+      tolerations:
+        - key: node.kubernetes.io/disk-pressure
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: helper-pod
+          image: ${helper_image}
+          imagePullPolicy: Never
+  setup: |-
+    #!/bin/sh
+    set -eu
+    mkdir -m 0777 -p "\$VOL_DIR"
+  teardown: |-
+    #!/bin/sh
+    set -eu
+    rm -rf "\$VOL_DIR"
+YAML
     
     log_info "[Step09] local-path-provisioner 离线安装完成"
 }
