@@ -1,4 +1,4 @@
-# MongoDB �?�?�?��?�?�置�?复�?��?��?�??�?�据�??�?��?- �?��?��??�?��?�?��?不�?模板�?�换
+# MongoDB 开发环境配置（复用持久化数据版本）- 直接写具体值，不做模板替换
 
 global:
   imageRegistry: ""
@@ -22,11 +22,11 @@ auth:
   databases:
     - "mydb"
 
-# �?��?�??�?�置�?复�?��?��??�?使�?��?�?PVC mongodb-sunmoonai-dev-pvc�?
+# 持久化配置（复用老盘：使用静态PVC mongodb-sunmoonai-dev-pvc）
 persistence:
   enabled: true
   existingClaim: mongodb-sunmoonai-dev-pvc
-  storageClass: ""       # 使�?� existingClaim�?不�?��??�? storageClass �?��?��??�?
+  storageClass: ""       # 使用 existingClaim，不再通过 storageClass 动态创建
   size: "8Gi"
   accessModes:
     - "ReadWriteOnce"
@@ -92,12 +92,12 @@ initdbScripts:
           { role: 'readWrite', db: 'llmops_db' },
           { role: 'dbAdmin', db: 'llmops_db' }
         ]);
-        print('已�??�?sunmoonai_dev �?��?��?llmops_db �?�据�?�??�?�?�');
+        print('已授予sunmoonai_dev 用户对llmops_db 数据库的权限');
       } else {
-        print('警�??: sunmoonai_dev �?��?�不�?�?��?跳�?�?�?��??�?');
+        print('警告: sunmoonai_dev 用户不存在，跳过权限授予');
       }
     } catch (e) {
-      print('�??误: �?��?�??�?�?�?� - ' + e);
+      print('错误: 无法授予权限 - ' + e);
     }
 
 mongodbConfiguration: |

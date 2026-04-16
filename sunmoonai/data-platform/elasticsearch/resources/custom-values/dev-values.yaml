@@ -1,16 +1,16 @@
-# Elasticsearch 开发环境配�?
-# 基于官方 values.yaml 进行开发环境优�?
+# Elasticsearch 开发环境配）
+# 基于官方 values.yaml 进行开发环境优）
 
 # 全局配置
 global:
   # 禁用 Kibana 子图表，单独部署
   kibanaEnabled: false
-  # 设置默认存储�?
+  # 设置默认存储）
   defaultStorageClass: "local-path"
   # 镜像拉取凭据
   imagePullSecrets:
     - name: "harbor-registry-secret"
-  # 允许使用非官方镜像（用于私有 Harbor 镜像�?
+  # 允许使用非官方镜像（用于私有 Harbor 镜像）
   security:
     allowInsecureImages: true
   # 全局镜像仓库
@@ -19,14 +19,14 @@ global:
 # 集群配置
 clusterName: elasticsearch-dev
 
-# 主镜像改�?Harbor �?
+# 主镜像改）Harbor ）
 image:
   registry: harbor.sunmoonai.com:30443
   repository: k8s-images/elasticsearch
   tag: 9.1.2-debian-12-r0
   pullPolicy: IfNotPresent
 
-# 各角色显式指定镜像，避免�?chart/模板覆盖
+# 各角色显式指定镜像，避免）chart/模板覆盖
 master:
   image:
     registry: harbor.sunmoonai.com:30443
@@ -107,11 +107,11 @@ coordinating:
     timeoutSeconds: 5
     failureThreshold: 12
 
-# Ingest 节点配置（开发环境：禁用�?
+# Ingest 节点配置（开发环境：禁用）
 ingest:
   replicaCount: 0
 
-# 持久化存储配置已合并到各节点配置�?
+# 持久化存储配置已合并到各节点配置）
 
 # 服务配置
 service:
@@ -120,11 +120,11 @@ service:
     restAPI: 9200
     transport: 9300
 
-# 安全配置（开发环境：禁用安全�?
+# 安全配置（开发环境：禁用安全）
 auth:
   enabled: false
 
-# 监控配置（开发环境：禁用�?
+# 监控配置（开发环境：禁用）
 metrics:
   enabled: false
 
@@ -135,21 +135,21 @@ sysctlImage:
   repository: k8s-images/os-shell
   tag: 12-debian-12-r51
 
-# ===================== 未来启用安全/密钥（预置占位，默认注释�?===================
-# 使用说明�?
-# 1) 由统一密管创建下列 Secret（示例名：elasticsearch-secrets），包含�?
-#    - elasticsearch-password（如启用内置用户密码�?
+# ===================== 未来启用安全/密钥（预置占位，默认注释）===================
+# 使用说明）
+# 1) 由统一密管创建下列 Secret（示例名：elasticsearch-secrets），包含）
+#    - elasticsearch-password（如启用内置用户密码）
 #    - elasticsearch-certificates（如启用 TLS：ca.crt、tls.crt、tls.key 等）
-# 2) 将下方配置取消注释，并对�?Secret 名称/键名�?
-# 3) 同步更新 Kibana/Logstash 的连接配置，使用相同凭据�?CA�?
+# 2) 将下方配置取消注释，并对）Secret 名称/键名）
+# 3) 同步更新 Kibana/Logstash 的连接配置，使用相同凭据）CA）
 
 # auth:
 #   enabled: true
 #   existingSecret: elasticsearch-secrets
-#   # �?Chart 支持自定义用户名/密码键名，按需设置；否则默认读取内置键
+#   # ）Chart 支持自定义用户名/密码键名，按需设置；否则默认读取内置键
 
 # security:
 #   tls:
 #     enabled: true
 #     existingSecret: elasticsearch-certificates   # 包含 ca.crt / tls.crt / tls.key
-#     # 若仅开�?HTTP �?Transport �?TLS，可分别设置 http / transport �?existingSecret
+#     # 若仅开）HTTP ）Transport ）TLS，可分别设置 http / transport ）existingSecret

@@ -1,4 +1,4 @@
-# Jenkins 开发环境配�?# 基于官方 values.yaml 进行开发环境优�?
+# Jenkins 开发环境配）# 基于官方 values.yaml 进行开发环境优）
 # 全局配置
 global:
   imageRegistry: "harbor.sunmoonai.com:30443"
@@ -8,7 +8,7 @@ global:
   security:
     allowInsecureImages: true
 
-# 副本数配�?replicaCount: 1
+# 副本数配）replicaCount: 1
 
 # 镜像配置
 image:
@@ -33,36 +33,36 @@ service:
     http: 8080
     https: 8443
 
-# TLS配置（开发环境：禁用HTTPS�?tls:
+# TLS配置（开发环境：禁用HTTPS）tls:
   enabled: false
 
 # Jenkins配置
-# 注意：Bitnami Jenkins 默认支持子路径模式，不需要使�?stripPrefix�?# Jenkins 会自动处�?/jenkins 前缀�?#   - 访问 /jenkins �?自动 302 重定向到 /jenkins/login
-#   - 这是 Jenkins 的标准行�?# root URL 必须配置为用户访问的完整路径（包�?/jenkins 前缀�?jenkinsHost: "https://www.sunmoonai.com/jenkins"  # Jenkins root URL 必须匹配用户访问的路�?
+# 注意：Bitnami Jenkins 默认支持子路径模式，不需要使）stripPrefix）# Jenkins 会自动处）/jenkins 前缀）#   - 访问 /jenkins ）自动 302 重定向到 /jenkins/login
+#   - 这是 Jenkins 的标准行）# root URL 必须配置为用户访问的完整路径（包）/jenkins 前缀）jenkinsHost: "https://www.sunmoonai.com/jenkins"  # Jenkins root URL 必须匹配用户访问的路）
 # 环境变量配置 - 禁用HTTPS 并配置子路径
-# 注意：Jenkins 支持 --prefix 参数来配�?context path
-# 注意：密码通过 Secret 管理，Secret 名称必须�?jenkins-sunmoonai（与 Chart 创建�?Secret 名称一致）
-# 注意：密码通过 Secret 管理，Secret 名称必须�?jenkins-sunmoonai（与 Chart 创建�?Secret 名称一致）
+# 注意：Jenkins 支持 --prefix 参数来配）context path
+# 注意：密码通过 Secret 管理，Secret 名称必须）jenkins-sunmoonai（与 Chart 创建）Secret 名称一致）
+# 注意：密码通过 Secret 管理，Secret 名称必须）jenkins-sunmoonai（与 Chart 创建）Secret 名称一致）
 # 这样 Chart 会自动从 Secret 读取密码，无需通过 extraEnvVars 覆盖
-# 注意：用户名通过 jenkinsUser 配置，如�?Secret 中有 jenkins-admin-user 键，部署脚本会自动更�?jenkinsUser
+# 注意：用户名通过 jenkinsUser 配置，如）Secret 中有 jenkins-admin-user 键，部署脚本会自动更）jenkinsUser
 extraEnvVars:
   - name: JENKINS_OPTS
     value: "--httpPort=8080 --httpsPort=-1 --prefix=/jenkins"
   - name: JENKINS_ENABLE_AGENT_LISTENER
     value: "true"  # 启用 JNLP Agent Listener（Kubernetes Agent 需要）
   # Docker 客户端连接配置（已移除）
-  # 说明：Controller 不使�?Docker，所有构建任务在 Agent Pod 中执�?  # 如果使用 Agent + dind �?Agent + Kaniko，Controller 不需�?Docker 配置
-  # 注意：节点使�?containerd，也没有 Docker socket 可挂�?  # - name: DOCKER_HOST
-  #   value: "unix:///var/run/docker.sock"  # �?已移除：无效配置
+  # 说明：Controller 不使）Docker，所有构建任务在 Agent Pod 中执）  # 如果使用 Agent + dind ）Agent + Kaniko，Controller 不需）Docker 配置
+  # 注意：节点使）containerd，也没有 Docker socket 可挂）  # - name: DOCKER_HOST
+  #   value: "unix:///var/run/docker.sock"  # ）已移除：无效配置
 
-# 持久化存储配�?persistence:
+# 持久化存储配）persistence:
   enabled: true
   existingClaim: "jenkins-sunmoonai-dev-pvc"  # Kind 静态 PV，数据跨集群重建保留
 
-# 网络策略（开发环境：禁用�?networkPolicy:
+# 网络策略（开发环境：禁用）networkPolicy:
   enabled: false
 
-# 健康检查配�?livenessProbe:
+# 健康检查配）livenessProbe:
   enabled: true
   initialDelaySeconds: 120
   periodSeconds: 20
@@ -78,8 +78,8 @@ readinessProbe:
   failureThreshold: 6
   successThreshold: 1
 
-# 自定�?Readiness Probe（覆盖默认配置）
-# 注意：当 Jenkins 运行�?/jenkins 子路径时，readinessProbe 需要检�?/jenkins/login 而不�?/login
+# 自定）Readiness Probe（覆盖默认配置）
+# 注意：当 Jenkins 运行）/jenkins 子路径时，readinessProbe 需要检）/jenkins/login 而不）/login
 customReadinessProbe:
   httpGet:
     path: /jenkins/login
@@ -90,23 +90,23 @@ customReadinessProbe:
   failureThreshold: 6
   successThreshold: 1
 
-# 安全配置（开发环境：使用 Secret 管理密码�?# 根据官方文档：jenkinsPassword 留空时，Chart 会自动从 Secret 读取密码
-# Secret 名称：jenkins-sunmoonai（由 Chart 自动创建，名称基�?release name�?# Secret 键名：jenkins-password
-# 注意：jenkinsUser 使用 Bitnami 默认�?"user"，不自定义用户名
+# 安全配置（开发环境：使用 Secret 管理密码）# 根据官方文档：jenkinsPassword 留空时，Chart 会自动从 Secret 读取密码
+# Secret 名称：jenkins-sunmoonai（由 Chart 自动创建，名称基）release name）# Secret 键名：jenkins-password
+# 注意：jenkinsUser 使用 Bitnami 默认）"user"，不自定义用户名
 jenkinsUser: admin
-# 根据部署脚本逻辑�?# 1. deploy-jenkins.sh 会先调用 deploy-secrets-all.sh 创建 Secret（包含密�?zym123�?# 2. 然后 deploy-jenkins.sh 会从 Secret 读取密码，通过 --set jenkinsPassword="..." 传递给 Helm
-# 3. 因此，这里应该留空，�?deploy-jenkins.sh 通过 --set 传递密�?# 4. Chart 会使�?--set 传递的密码创建 Secret，Bitnami 初始化脚本能正确获取密码
-jenkinsPassword: ""  # 留空，由 deploy-jenkins.sh 通过 --set 传递密码（�?Secret 读取�?# usePasswordFiles: true（默认值）
-# - true: Chart �?Secret �?--set 传递的密码，写入文�?/opt/bitnami/jenkins/secrets/jenkins-password
-# - Bitnami 容器启动脚本会从文件读取密码，设�?JENKINS_PASSWORD 环境变量，替换模板中�?{{JENKINS_PASSWORD}}
+# 根据部署脚本逻辑）# 1. deploy-jenkins.sh 会先调用 deploy-secrets-all.sh 创建 Secret（包含密）zym123）# 2. 然后 deploy-jenkins.sh 会从 Secret 读取密码，通过 --set jenkinsPassword="..." 传递给 Helm
+# 3. 因此，这里应该留空，）deploy-jenkins.sh 通过 --set 传递密）# 4. Chart 会使）--set 传递的密码创建 Secret，Bitnami 初始化脚本能正确获取密码
+jenkinsPassword: ""  # 留空，由 deploy-jenkins.sh 通过 --set 传递密码（）Secret 读取）# usePasswordFiles: true（默认值）
+# - true: Chart ）Secret ）--set 传递的密码，写入文）/opt/bitnami/jenkins/secrets/jenkins-password
+# - Bitnami 容器启动脚本会从文件读取密码，设）JENKINS_PASSWORD 环境变量，替换模板中）{{JENKINS_PASSWORD}}
 #
 # 重要：Bitnami 初始化逻辑说明
 # - 如果 JENKINS_HOME 为空（首次部署），Bitnami 会执行初始化脚本，创建用户并设置密码
 # - 如果 JENKINS_HOME 不为空（检测到已有数据），Bitnami 会跳过初始化，使用现有用户和密码
 # - 因此，如果要重新初始化，必须完全删除 PVC 中的数据（Kind：rm -rf /data/kind-local-storage/jenkins/*），然后重新部署
-# 插件配置（开发环境：基础插件�?# 说明�?#   - 配置的插件会�?Jenkins 首次启动时自动安�?#   - 可以通过 Jenkins Web UI (Manage Jenkins �?Manage Plugins) 手动安装其他插件
+# 插件配置（开发环境：基础插件）# 说明）#   - 配置的插件会）Jenkins 首次启动时自动安）#   - 可以通过 Jenkins Web UI (Manage Jenkins ）Manage Plugins) 手动安装其他插件
 #   - UI 安装的插件会保留在持久化存储中，重启不会丢失
-#   - 如果 Pod 已初始化，新增的插件需要设�?overridePlugins: true 才会安装
+#   - 如果 Pod 已初始化，新增的插件需要设）overridePlugins: true 才会安装
 plugins:
   - workflow-aggregator
   - git
@@ -120,18 +120,18 @@ plugins:
 #   - false (默认): 保留已安装的插件，只安装配置中新增的插件（推荐）
 #   - true: 删除所有现有插件，重新安装配置中的插件（会丢失 UI 手动安装的插件）
 # 注意：overridePlugins: true 可能导致文件锁定问题，建议手动安装插件
-overridePlugins: false  # 保持�?false，手动在 UI 中安�?configuration-as-code-support 插件
+overridePlugins: false  # 保持）false，手动在 UI 中安）configuration-as-code-support 插件
 
 # latestPlugins: 是否下载最新版本的插件
 #   - true (默认): 自动下载最新版本（可能不稳定）
-#   - false: 使用插件指定的版本（推荐生产环境，需要指定版本号�?latestPlugins: true
+#   - false: 使用插件指定的版本（推荐生产环境，需要指定版本号）latestPlugins: true
 
 # 额外插件列表（在 plugins 基础上额外安装）
 # extraPlugins: []
 
-# Agent 配置（开发环境：启用 Kubernetes Agent 支持Docker构建�?# 说明：Agent 使用 Kaniko 模式，无需 Docker daemon，更安全高效
-# Agent 架构：Agent Pod �?jnlp 容器（连�?Jenkins）→ kaniko 容器（构建镜像）
-# 注意：根据官方文档，agent.enabled=true 时，Chart 会自动创�?Kubernetes Cloud 配置
+# Agent 配置（开发环境：启用 Kubernetes Agent 支持Docker构建）# 说明：Agent 使用 Kaniko 模式，无需 Docker daemon，更安全高效
+# Agent 架构：Agent Pod ）jnlp 容器（连）Jenkins）→ kaniko 容器（构建镜像）
+# 注意：根据官方文档，agent.enabled=true 时，Chart 会自动创）Kubernetes Cloud 配置
 agent:
   enabled: true
   image:
@@ -141,11 +141,11 @@ agent:
     pullSecrets:
       - name: harbor-registry-secret
   templateLabel: "kubernetes-agent"  # 默认模板标签
-  # 重要：禁用默认模板的资源限制，避免使用已弃用�?resourceRequestCpu 格式
-  # 资源限制�?extraTemplates 中使用新格式（requests/limits）配�?  resourcesPreset: "none"  # 禁用预设，避免生成已弃用的格�?  resources: {}  # 留空，避免默认模板使用已弃用�?resourceRequestCpu 格式
-  # 添加自定�?Kaniko Agent 模板
-  # 注意：extraTemplates 直接渲染�?CASC 配置中，必须使用 Kubernetes 插件�?CASC 格式
-  # 重要：Kubernetes 插件�?CASC 配置不支�?requests/limits 对象，只支持 resourceRequestCpu 等字�?  # 虽然这些字段被标记为 deprecated，但这是唯一可用的格�?  extraTemplates:
+  # 重要：禁用默认模板的资源限制，避免使用已弃用）resourceRequestCpu 格式
+  # 资源限制）extraTemplates 中使用新格式（requests/limits）配）  resourcesPreset: "none"  # 禁用预设，避免生成已弃用的格）  resources: {}  # 留空，避免默认模板使用已弃用）resourceRequestCpu 格式
+  # 添加自定）Kaniko Agent 模板
+  # 注意：extraTemplates 直接渲染）CASC 配置中，必须使用 Kubernetes 插件）CASC 格式
+  # 重要：Kubernetes 插件）CASC 配置不支）requests/limits 对象，只支持 resourceRequestCpu 等字）  # 虽然这些字段被标记为 deprecated，但这是唯一可用的格）  extraTemplates:
     - name: "kaniko-agent"
       label: "kaniko-agent"
       namespace: "cicd-platform-dev"
@@ -176,55 +176,55 @@ agent:
       imagePullSecrets:
         - name: "harbor-registry-secret"
 
-# 配置即代码（开发环境：启用，用于配�?Root URL �?Agent 模板�?# 注意：根据官方文档，configAsCode.enabled=true �?agent.enabled=true 时，Chart 会自动创�?Kubernetes Cloud
+# 配置即代码（开发环境：启用，用于配）Root URL ）Agent 模板）# 注意：根据官方文档，configAsCode.enabled=true ）agent.enabled=true 时，Chart 会自动创）Kubernetes Cloud
 configAsCode:
   enabled: true
-  # 注意：extraJenkins 的内容会追加�?jenkins 块下
-  # 根据错误信息，jenkins 块下不支�?unclassified
+  # 注意：extraJenkins 的内容会追加）jenkins 块下
+  # 根据错误信息，jenkins 块下不支）unclassified
   # unclassified 需要通过 configuration-as-code-support 插件支持
-  # 暂时不配�?unclassified，location �?crumbIssuer 可以通过 Jenkins UI 手动配置
-  # 或者等待安�?configuration-as-code-support 插件后再配置
+  # 暂时不配）unclassified，location ）crumbIssuer 可以通过 Jenkins UI 手动配置
+  # 或者等待安）configuration-as-code-support 插件后再配置
   # extraJenkins: {}
   # Kubernetes Cloud 额外配置
-  # 说明：根据官方文档，extraKubernetes 是一个对象，用于追加�?Kubernetes Cloud 配置
-  # 注意：只有在 agent.enabled=true 时才会生�?  # 这里用于设置 jenkinsUrl 包含子路�?  extraKubernetes:
+  # 说明：根据官方文档，extraKubernetes 是一个对象，用于追加）Kubernetes Cloud 配置
+  # 注意：只有在 agent.enabled=true 时才会生）  # 这里用于设置 jenkinsUrl 包含子路）  extraKubernetes:
     jenkinsUrl: "http://jenkins-sunmoonai.cicd-platform-dev.svc.cluster.local:8080/jenkins"
 
 # 初始化脚本（可选）
-# 说明：根据官方文档，agent.enabled=true 时，Chart 会自动创�?Kubernetes Cloud
+# 说明：根据官方文档，agent.enabled=true 时，Chart 会自动创）Kubernetes Cloud
 # extraKubernetes 中的 jenkinsUrl 应该会被正确应用
-# 如果仍有问题，可以使�?initHookScripts 进行调试
+# 如果仍有问题，可以使）initHookScripts 进行调试
 # initHookScripts: {}
 
-# 卷权限配�?volumePermissions:
+# 卷权限配）volumePermissions:
   enabled: true
 
 # 系统配置
 sysctlImage:
   enabled: false
 
-# Docker构建支持（Controller Standalone 模式�?# 说明：以下配置用于让 Controller 直接使用宿主机的 Docker daemon 执行构建任务
-# �?当前已禁用，统一改为使用 Kubernetes Agent + Kaniko 进行 Docker 构建
-# 架构（推荐）：Controller 只做调度 + UI，所�?docker build/push �?Agent Pod 内使�?Kaniko 完成
-# 如果未来需要恢�?Standalone + 宿主�?Docker，再取消注释下面�?extraVolumes / extraVolumeMounts
+# Docker构建支持（Controller Standalone 模式）# 说明：以下配置用于让 Controller 直接使用宿主机的 Docker daemon 执行构建任务
+# ）当前已禁用，统一改为使用 Kubernetes Agent + Kaniko 进行 Docker 构建
+# 架构（推荐）：Controller 只做调度 + UI，所）docker build/push ）Agent Pod 内使）Kaniko 完成
+# 如果未来需要恢）Standalone + 宿主）Docker，再取消注释下面）extraVolumes / extraVolumeMounts
 # extraVolumes:
-#   # 挂载宿主�?Docker socket �?Controller 容器
-#   # 作用：让 Controller 容器内的 Docker 客户端能够访问宿主机�?Docker daemon
+#   # 挂载宿主）Docker socket ）Controller 容器
+#   # 作用：让 Controller 容器内的 Docker 客户端能够访问宿主机）Docker daemon
 #   - name: docker-sock
 #     hostPath:
-#       path: /var/run/docker.sock  # 宿主�?Docker socket 路径
+#       path: /var/run/docker.sock  # 宿主）Docker socket 路径
 #       type: Socket
 #
 # extraVolumeMounts:
-#   # �?docker-sock volume 挂载�?Controller 容器�?/var/run/docker.sock
-#   # 配合 DOCKER_HOST 环境变量使用，使 Controller 能够执行 docker build/push 等命�?#   - name: docker-sock
+#   # ）docker-sock volume 挂载）Controller 容器）/var/run/docker.sock
+#   # 配合 DOCKER_HOST 环境变量使用，使 Controller 能够执行 docker build/push 等命）#   - name: docker-sock
 #     mountPath: /var/run/docker.sock
 
 # ===================== RBAC 配置 ====================
-# 说明：RBAC 配置通过 Helm Chart 自动创建，不需要在 Jenkins 插件 UI 中配�?# Helm Chart 会根据这些配置自动创�?Role、RoleBinding �?ServiceAccount
+# 说明：RBAC 配置通过 Helm Chart 自动创建，不需要在 Jenkins 插件 UI 中配）# Helm Chart 会根据这些配置自动创）Role、RoleBinding ）ServiceAccount
 rbac:
-  # 是否创建 RBAC 资源（Role、RoleBinding�?  create: true
-  # 自定�?RBAC 规则（可选，如果需要额外权限）
+  # 是否创建 RBAC 资源（Role、RoleBinding）  create: true
+  # 自定）RBAC 规则（可选，如果需要额外权限）
   # 默认规则已包含：pods、pods/exec、pods/log、persistentvolumeclaims、events、configmaps
   rules: []
 
@@ -232,16 +232,16 @@ rbac:
 serviceAccount:
   # 是否创建 ServiceAccount
   create: true
-  # ServiceAccount 名称（留空使用默认：jenkins-sunmoonai�?  name: ""
-  # 是否自动挂载 ServiceAccount token（必须为 true，否�?Agent 无法使用 RBAC 权限�?  automountServiceAccountToken: true
+  # ServiceAccount 名称（留空使用默认：jenkins-sunmoonai）  name: ""
+  # 是否自动挂载 ServiceAccount token（必须为 true，否）Agent 无法使用 RBAC 权限）  automountServiceAccountToken: true
 
 # ===================== Secret 配置说明 ====================
-# 当前已配置使�?Secret 管理密码�?# - Secret 名称: jenkins-sunmoonai（与 Chart 创建�?Secret 名称一致）
+# 当前已配置使）Secret 管理密码）# - Secret 名称: jenkins-sunmoonai（与 Chart 创建）Secret 名称一致）
 # - 密码键名: jenkins-password
 # - Chart 会自动从 Secret 读取密码，无需通过 extraEnvVars 覆盖
 # 
-# 部署流程�?# 1. 先部�?Secret: bash secrets/jenkins-secrets/deploy-jenkins-secrets/deploy-jenkins-secrets.sh deploy
-# 2. 再部�?Jenkins: Chart 会自动使用已存在�?Secret
+# 部署流程）# 1. 先部）Secret: bash secrets/jenkins-secrets/deploy-jenkins-secrets/deploy-jenkins-secrets.sh deploy
+# 2. 再部）Jenkins: Chart 会自动使用已存在）Secret
 # 
-# 如需修改密码�?# 1. 更新 Secret: kubectl create secret generic jenkins-sunmoonai --from-literal=jenkins-password=新密�?-n cicd-platform-dev --dry-run=client -o yaml | kubectl apply -f -
+# 如需修改密码）# 1. 更新 Secret: kubectl create secret generic jenkins-sunmoonai --from-literal=jenkins-password=新密）-n cicd-platform-dev --dry-run=client -o yaml | kubectl apply -f -
 # 2. 重启 Jenkins Pod 以应用新密码

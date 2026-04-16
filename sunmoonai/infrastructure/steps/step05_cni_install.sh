@@ -68,7 +68,7 @@ _check_calico_version_compatibility(){
   local k8s_minor="$1"
   local calico_ver="$2"
   
-  if [[ -n "$STEP05_CALICO_CHART_VERSION" ]]; then
+  if [[ -n "${STEP05_CALICO_CHART_VERSION:-}" ]]; then
     case "$k8s_minor" in
       1.28)
         if [[ "$calico_ver" != 3.26.* ]]; then
