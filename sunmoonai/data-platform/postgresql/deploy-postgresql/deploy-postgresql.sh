@@ -57,6 +57,17 @@ DEFAULT_ENVIRONMENT="development"
 POSTGRESQL_CHART_DIR="$SCRIPT_DIR/../resources/postgresql"
 POSTGRESQL_CUSTOM_VALUES_DIR="$SCRIPT_DIR/../resources/custom-values"
 
+# 检查 Helm 是否可用，避免执行阶段才出现 command not found
+ensure_helm_available() {
+    if command -v helm >/dev/null 2>&1; then
+        return 0
+    fi
+
+    log_error "未找到 helm 命令，请先安装 Helm 并确保其在 PATH 中"
+    log_info "可通过以下命令验证: which helm && helm version"
+    return 1
+}
+
 # 检查命名空间是否存在
 check_namespace() {
     local namespace="$1"
@@ -366,6 +377,10 @@ execute_postgresql_deployment() {
         log_error "kubectl 连接失败，请检查Kubernetes连接"
         return 1
     fi
+
+    if ! ensure_helm_available; then
+        return 1
+    fi
     
     local helm_result
     local helm_exit_code=0
@@ -619,6 +634,10 @@ main() {
                     return 1
                 fi
             fi
+
+            if ! ensure_helm_available; then
+                return 1
+            fi
             
             # 卸载主部署
             if helm uninstall "postgresql-$project_id" -n "$namespace" --wait; then
@@ -635,6 +654,10 @@ main() {
             # 设置 Kubernetes 环境
             if ! setup_kubectl_environment; then
                 log_error "无法建立 Kubernetes 连接"
+                return 1
+            fi
+
+            if ! ensure_helm_available; then
                 return 1
             fi
             
