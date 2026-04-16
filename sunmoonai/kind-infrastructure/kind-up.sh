@@ -15,6 +15,52 @@ log_success() { echo "✅ $*"; }
 log_warn() { echo "⚠️  $*"; }
 log_error() { echo "❌ $*"; }
 
+# 挂载守门：防止 VHD 未挂好时把数据写回 WSL 系统盘
+ensure_storage_mounts_ready() {
+    local docker_mp="/mnt/docker-ext4"
+    local pv_mp="/mnt/pv-kind-ext4"
+    local bind_mp="/data/kind-local-storage"
+
+    local docker_uuid pv_uuid
+    docker_uuid=$(awk '!/^[[:space:]]*#/ && $2=="/mnt/docker-ext4" && $1 ~ /^UUID=/{sub(/^UUID=/,"",$1); print $1; exit}' /etc/fstab 2>/dev/null || true)
+    pv_uuid=$(awk '!/^[[:space:]]*#/ && $2=="/mnt/pv-kind-ext4" && $1 ~ /^UUID=/{sub(/^UUID=/,"",$1); print $1; exit}' /etc/fstab 2>/dev/null || true)
+
+    if [[ -z "$docker_uuid" || -z "$pv_uuid" ]]; then
+        log_error "未在 /etc/fstab 找到 $docker_mp 或 $pv_mp 的 UUID 配置，拒绝继续（避免写偏到系统盘）"
+        return 1
+    fi
+
+    local docker_dev pv_dev docker_src pv_src bind_src
+    docker_dev=$(blkid -U "$docker_uuid" 2>/dev/null || true)
+    pv_dev=$(blkid -U "$pv_uuid" 2>/dev/null || true)
+
+    if [[ -z "$docker_dev" || -z "$pv_dev" ]]; then
+        log_error "未找到 fstab UUID 对应块设备（VHD 可能未 attach）"
+        log_error "请先在 Windows 管理员 PowerShell 执行两条 wsl --mount，再回 WSL 执行 mount -a"
+        return 1
+    fi
+
+    docker_src=$(findmnt -n -o SOURCE "$docker_mp" 2>/dev/null || true)
+    pv_src=$(findmnt -n -o SOURCE "$pv_mp" 2>/dev/null || true)
+    bind_src=$(findmnt -n -o SOURCE "$bind_mp" 2>/dev/null || true)
+
+    if [[ "$docker_src" != "$docker_dev" ]]; then
+        log_error "$docker_mp 挂载异常：当前=$docker_src, 期望=$docker_dev"
+        return 1
+    fi
+    if [[ "$pv_src" != "$pv_dev" ]]; then
+        log_error "$pv_mp 挂载异常：当前=$pv_src, 期望=$pv_dev"
+        return 1
+    fi
+    if [[ "$bind_src" != "$pv_dev" ]]; then
+        log_error "$bind_mp 挂载异常：当前=$bind_src, 期望=$pv_dev"
+        return 1
+    fi
+
+    log_success "挂载检查通过：Docker=$docker_src, PV=$pv_src, bind=$bind_src"
+    return 0
+}
+
 # 从 k8s-admin.conf 读取 [KIND] 段
 read_kind_config() {
     if [[ ! -f "$K8S_ADMIN_CONF" ]]; then
@@ -112,6 +158,9 @@ create_kind_cluster() {
     kind export kubeconfig --name "$KIND_CLUSTER_NAME" --kubeconfig "$KIND_KUBECONFIG"
     log_info "Kubeconfig 已写入: $KIND_KUBECONFIG"
 }
+
+log_info "0/3 挂载守门检查（避免 D/E 混写）"
+ensure_storage_mounts_ready
 
 log_info "1/3 创建 Kind 集群（已存在则跳过）"
 create_kind_cluster

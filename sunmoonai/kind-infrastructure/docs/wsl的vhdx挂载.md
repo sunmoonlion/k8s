@@ -203,7 +203,7 @@ cd ~/k8s/sunmoonai/kind-infrastructure && ./kind-up.sh
 
 ## 附：开机 `mount -a` 提示
 
-VHD 未 attach 时 **`mount -a`** 可能报错，一般 **登录后第 7 节任务**会再挂。**`nofail`** 可减轻；仍异常则核对 **`blkid` 与 `fstab` 的 UUID`**。
+VHD 未 attach 时 **`mount -a`** 可能报错，一般 **登录后第 7 节任务**会再挂。**`nofail`** 可减轻；仍异常则核对 **`blkid` 与 `fstab` 的 UUID**。
 
 ---
 
