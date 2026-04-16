@@ -1,3 +1,0 @@
-CURRENT_MODE=kind
-CURRENT_KUBECONFIG=/home/zymun/.kube/kind-config
-TUNNEL_PID=

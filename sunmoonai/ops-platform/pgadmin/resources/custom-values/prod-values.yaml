@@ -141,6 +141,10 @@ containerSecurityContext:
   enabled: true
   allowPrivilegeEscalation: false
 
+# 持久卷权限修复（避免 sessions 目录权限导致 CrashLoop）
+VolumePermissions:
+  enabled: true
+
 # ============================================================================
 # 网络策略
 # ============================================================================
