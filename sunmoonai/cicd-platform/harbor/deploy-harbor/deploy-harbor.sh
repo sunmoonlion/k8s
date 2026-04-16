@@ -123,16 +123,15 @@ check_namespace() {
         log_success "✅ 命名空间 $namespace 已存在"
         return 0
     else
-        log_error "❌ 命名空间 $namespace 不存在！"
-        echo ""
-        log_info "请先使用 namespace-platform 部署所需的命名空间："
-        echo "  cd ../../namespace-platform"
-        echo "  ./scripts/deploy.sh --env dev"
-        echo ""
-        log_info "或者手动创建命名空间："
-        echo "  kubectl create namespace $namespace"
-        echo ""
-        return 1
+        log_info "命名空间 $namespace 不存在，自动创建..."
+        if kubectl create namespace "$namespace" >/dev/null 2>&1; then
+            log_success "✅ 命名空间 $namespace 创建成功"
+            return 0
+        else
+            log_error "❌ 命名空间 $namespace 创建失败！"
+            log_info "请手动创建：kubectl create namespace $namespace"
+            return 1
+        fi
     fi
 }
 

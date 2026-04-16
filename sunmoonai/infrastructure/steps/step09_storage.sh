@@ -1149,6 +1149,13 @@ _validate_local_storage(){
     ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl delete pod test-local-pod -n \"${STEP09_VALIDATION_NAMESPACE}\" --ignore-not-found'"
     ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl delete pvc test-local-pvc -n \"${STEP09_VALIDATION_NAMESPACE}\" --ignore-not-found'"
     
+    # 验证用镜像：优先使用 helper 镜像（离线已加载），fallback 到 busybox
+    local validation_image="${STEP09_HELPER_IMAGE:-busybox}"
+    local pull_policy="Never"
+    if [[ "${PACKAGES_DEPLOY_MODE_EFFECTIVE:-online}" != "offline" ]]; then
+        pull_policy="IfNotPresent"
+    fi
+
     # 创建测试PVC和Pod（local-path需要WaitForFirstConsumer模式）
     ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl apply -f -'" <<EOF
 apiVersion: v1
@@ -1172,7 +1179,8 @@ metadata:
 spec:
   containers:
   - name: test
-    image: docker.io/calico/node:v3.28.2
+    image: ${validation_image}
+    imagePullPolicy: ${pull_policy}
     command: ["/bin/sh"]
     args: ["-c", "sleep 3600"]
     volumeMounts:
