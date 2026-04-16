@@ -15,6 +15,37 @@ log_success() { echo "✅ $*"; }
 log_warn() { echo "⚠️  $*"; }
 log_error() { echo "❌ $*"; }
 
+ensure_storage_check_hook_installed() {
+    local hook_script="$SCRIPT_DIR/deploy-kind/check-storage-mounts.sh"
+    local zshrc="$HOME/.zshrc"
+    local begin_tag="# >>> kind storage check >>>"
+    local end_tag="# <<< kind storage check <<<"
+
+    if [[ ! -x "$hook_script" ]]; then
+        log_warn "未找到可执行检查脚本: $hook_script，跳过 zsh 钩子安装"
+        return 0
+    fi
+
+    if [[ ! -f "$zshrc" ]]; then
+        touch "$zshrc"
+    fi
+
+    if grep -qF "$begin_tag" "$zshrc"; then
+        return 0
+    fi
+
+    {
+        echo ""
+        echo "$begin_tag"
+        echo "if [[ \$- == *i* ]] && [[ -x \"$hook_script\" ]]; then"
+        echo "  \"$hook_script\" || true"
+        echo "fi"
+        echo "$end_tag"
+    } >> "$zshrc"
+
+    log_info "已写入挂载检查钩子到 ~/.zshrc（新终端生效）"
+}
+
 # 挂载守门：防止 VHD 未挂好时把数据写回 WSL 系统盘
 ensure_storage_mounts_ready() {
     local docker_mp="/mnt/docker-ext4"
@@ -158,6 +189,8 @@ create_kind_cluster() {
     kind export kubeconfig --name "$KIND_CLUSTER_NAME" --kubeconfig "$KIND_KUBECONFIG"
     log_info "Kubeconfig 已写入: $KIND_KUBECONFIG"
 }
+
+ensure_storage_check_hook_installed
 
 log_info "0/3 挂载守门检查（避免 D/E 混写）"
 ensure_storage_mounts_ready
