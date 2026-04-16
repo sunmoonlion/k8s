@@ -201,3 +201,4 @@ sunmoonai/ops-platform/mongo-express/deploy-mongo-express/secrets/mongo-express-
 # 各组件 deploy 下 secrets 中的实际密钥/密码文件（各集群不同，不提交）；同目录下 .yaml.example 保留在仓库
 sunmoonai/**/deploy-*/secrets/**/*.yaml
 !sunmoonai/**/deploy-*/secrets/**/*.yaml.example
+utils/.k8s-status
