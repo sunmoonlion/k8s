@@ -180,19 +180,14 @@ sudo mount /data/kind-local-storage
 
 ### 7.4 终端出现 `[3] + done (...)`
 
-如果你在 WSL 里执行过类似后台检查：
+如果只是想做一个“等几秒再验一下”的动作，统一改为前台有限重试，不再使用后台 job：
 
 ```bash
-( sleep 3; for i in 1 2 3; do; "$check_script" >/dev/null 2>&1 && exit 0; done ) &
+for i in 1 2 3; do
+  "$check_script" >/dev/null 2>&1 && break
+  sleep 1
+done
 ```
-
-随后看到：
-
-```text
-[3] + done       ( sleep 3; for i in 1 2 3; do; "$check_script" >/dev/null 2>&1 && exit 0; done )
-```
-
-这表示后台子任务已经结束并被 shell 回收，不等于挂载失败。
 
 最终仍以这两个结果判断：
 
@@ -201,9 +196,21 @@ sudo mount /data/kind-local-storage
 
 ### 7.5 `wsl: 检测到 localhost 代理配置，但未镜像到 WSL`
 
-这是 WSL 对 Windows 代理设置的提示，常见于 NAT 模式，和 VHD 挂载流程本身不是一类问题。
+这是 WSL 对 Windows 代理设置的提示，常见于 `networkingMode=NAT`。它和 VHD 挂载流程本身不是一类问题。
 
-如果你的挂载检查通过，可以先忽略这条提示。
+这条提示的含义是：
+
+- Windows 侧存在 `localhost:<port>` 代理配置
+- 当前 WSL 仍是 NAT 模式
+- NAT 模式下，WSL 不能直接把 Windows 的 `localhost` 代理当作自己的 `localhost` 使用
+
+如果你的挂载检查通过，而且 WSL 内网络访问也正常，可以先忽略这条提示。
+
+如果你想让环境更“干净”，有两种处理方向：
+
+- 保持 NAT，不依赖 `localhost` 代理；改为在 WSL 内使用 Windows 网关地址，例如仓库里现有的 `HTTP_PROXY_WSL` / `HTTPS_PROXY_WSL` 方案
+- 改成 mirrored 网络模式后再按需调整代理策略
+
 只有当 WSL 内网络访问异常时，再单独排查代理或 `.wslconfig` 网络模式配置。
 
 ---
