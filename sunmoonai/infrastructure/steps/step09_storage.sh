@@ -40,7 +40,9 @@ required_artifacts(){
         # 本地存储资源
         if [[ "${STEP09_LOCAL_STORAGE_ENABLED:-false}" == "true" ]]; then
             echo "type=images image='rancher/local-path-provisioner:${LOCAL_PATH_VERSION}'"
-            # 注意：local-path-provisioner 通常直接使用YAML部署，不需要Helm Chart
+            if [[ -n "${STEP09_HELPER_IMAGE:-}" ]]; then
+                echo "type=images image='${STEP09_HELPER_IMAGE}'"
+            fi
         fi
         
         # 云存储资源
