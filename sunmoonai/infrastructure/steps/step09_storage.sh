@@ -552,22 +552,32 @@ _prepare_local_storage_on_node(){
         ssh_exec_sudo "$node_idx" "mkdir -p '$storage_path' && chmod 755 '$storage_path'"
         log_info "[Step09] 节点 $node_idx 本地存储目录已创建: $storage_path"
 
-        # 离线模式：预加载 helper pod 镜像到每个节点（helper pod 可能调度到任意节点）
+        # 离线模式：预加载所需镜像到每个节点（provisioner 和 helper pod 都可能调度到任意节点）
         if [[ "$PACKAGES_DEPLOY_MODE_EFFECTIVE" == "offline" ]]; then
+            local dir; dir="$(resolve_remote_dir "$(get_server_var "$node_idx" DIR)")";
+            dir="${dir:-$REMOTE_DIR_FALLBACK}"
+
+            _load_image_on_node(){
+                local node="$1" image="$2" dir="$3"
+                local tar; tar="$(echo "$image" | sed 's|/|_|g' | sed 's|:|_|g').tar"
+                if ! ssh_exec "$node" "bash -lc 'sudo nerdctl -n k8s.io images --format \"{{.Repository}}:{{.Tag}}\" 2>/dev/null | grep -Fx \"$image\"'"; then
+                    log_info "[Step09] 节点 $node 加载镜像: $image"
+                    ssh_exec "$node" "bash -lc 'base=\"\$HOME${dir#\~}\"; sudo nerdctl -n k8s.io load -i \"\$base/images/$tar\"'" \
+                        && log_info "[Step09] 节点 $node 镜像加载成功: $image" \
+                        || log_warn "[Step09] 节点 $node 镜像加载失败（非致命，若镜像已存在可忽略）: $image"
+                else
+                    log_info "[Step09] 节点 $node 镜像已存在，跳过: $image"
+                fi
+            }
+
+            # 加载 local-path-provisioner 镜像（provisioner pod 可能调度到此节点）
+            local provisioner_image="rancher/local-path-provisioner:${LOCAL_PATH_VERSION}"
+            _load_image_on_node "$node_idx" "$provisioner_image" "$dir"
+
+            # 加载 helper pod 镜像（helperPod 在 PVC 所在节点运行）
             local helper_image="${STEP09_HELPER_IMAGE:-}"
             if [[ -n "$helper_image" ]]; then
-                local dir; dir="$(resolve_remote_dir "$(get_server_var "$node_idx" DIR)")";
-                dir="${dir:-$REMOTE_DIR_FALLBACK}"
-                local helper_tar; helper_tar="$(echo "$helper_image" | sed 's|/|_|g' | sed 's|:|_|g').tar"
-                # 检查镜像是否已加载（避免重复）
-                if ! ssh_exec "$node_idx" "bash -lc 'sudo nerdctl -n k8s.io images --format \"{{.Repository}}:{{.Tag}}\" 2>/dev/null | grep -Fx \"$helper_image\"'"; then
-                    log_info "[Step09] 节点 $node_idx 加载 helper 镜像: $helper_image"
-                    ssh_exec "$node_idx" "bash -lc 'base=\"\$HOME${dir#\~}\"; sudo nerdctl -n k8s.io load -i \"\$base/images/$helper_tar\"'" \
-                        && log_info "[Step09] 节点 $node_idx helper 镜像加载成功" \
-                        || log_warn "[Step09] 节点 $node_idx helper 镜像加载失败（非致命，若镜像已存在可忽略）"
-                else
-                    log_info "[Step09] 节点 $node_idx helper 镜像已存在，跳过加载"
-                fi
+                _load_image_on_node "$node_idx" "$helper_image" "$dir"
             fi
         fi
     fi
