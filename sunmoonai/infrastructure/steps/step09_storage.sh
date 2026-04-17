@@ -560,9 +560,7 @@ _prepare_local_storage_on_node(){
                 dir="${dir:-$REMOTE_DIR_FALLBACK}"
                 local helper_tar; helper_tar="$(echo "$helper_image" | sed 's|/|_|g' | sed 's|:|_|g').tar"
                 # 检查镜像是否已加载（避免重复）
-                local image_short; image_short="${helper_image%%:*}"
-                image_short="${image_short##*/}"
-                if ! ssh_exec "$node_idx" "bash -lc 'sudo nerdctl -n k8s.io images 2>/dev/null | grep -q \"$image_short\"'"; then
+                if ! ssh_exec "$node_idx" "bash -lc 'sudo nerdctl -n k8s.io images --format \"{{.Repository}}:{{.Tag}}\" 2>/dev/null | grep -Fx \"$helper_image\"'"; then
                     log_info "[Step09] 节点 $node_idx 加载 helper 镜像: $helper_image"
                     ssh_exec "$node_idx" "bash -lc 'base=\"\$HOME${dir#\~}\"; sudo nerdctl -n k8s.io load -i \"\$base/images/$helper_tar\"'" \
                         && log_info "[Step09] 节点 $node_idx helper 镜像加载成功" \
