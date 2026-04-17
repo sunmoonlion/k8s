@@ -1,133 +1,76 @@
-# Kind PV（VHDX）与 Docker 数据盘（VHD）：安装与自动挂载参考
+﻿# WSL VHDX 挂载说明（Kind + Docker + PV）
 
-从零假设：**`docker-data.vhd`** 与 **`pv-kind-local-storage.vhdx`** 均未就绪。顺序：**目录 → `diskpart` → 挂盘与 `mkfs` → `fstab` → 自检 → 计划任务**。只重装一块盘时跳过对应建盘/格式化，**`blkid` / `fstab` 的 UUID 须一致**。
+本文档用于在 Windows + WSL2 环境下，稳定挂载两块 VHD：
 
----
-
-## 约定（路径）
-
-| 项 | 值 |
-| --- | --- |
-| Docker 数据盘（VHD） | `E:\wsl-disks\docker-data.vhd` → WSL **`/mnt/docker-ext4`** |
-| Kind PV（VHDX） | `E:\kind-local-storage\pv-kind-local-storage.vhdx` |
-| PV 上 ext4 | `/mnt/pv-kind-ext4` |
-| Kind `hostPath`（与 `deploy-kind/kind-cluster.yaml` 的 `extraMounts` 一致） | `/data/kind-local-storage` |
-
-**环境**：WSL2；Windows 侧命令需 **管理员** PowerShell / CMD；**`mkfs`** 前必须在 WSL 内 **`lsblk`** 核对设备名。
-
-**Windows 版本要求**：`wsl --mount --vhd` 需 **Windows 11** 或 **Windows 10 Build 22000+**，低于此版本命令会报错。
+- Docker 数据盘：`E:\wsl-disks\docker-data.vhd` -> `/mnt/docker-ext4`
+- Kind PV 数据盘：`E:\kind-local-storage\pv-kind-local-storage.vhdx` -> `/mnt/pv-kind-ext4`
+- Kind 持久化目录（bind）：`/data/kind-local-storage`
 
 ---
 
-## 1. 准备目录
+## 1. 目标与判定标准
 
-在资源管理器中确认 **`E:\wsl-disks`** 与 **`E:\kind-local-storage`** 均存在（没有则新建）。
+成功标准（必须同时满足）：
 
----
+1. `check-storage-mounts.sh` 返回 `0`
+2. `/mnt/pv-kind-ext4` 与 `/data/kind-local-storage` 是同一设备
+3. `/`（WSL 系统盘）不是 docker/pv/bind 的来源设备
 
-## 2. 新建 Docker 用 VHD（仅当 `docker-data.vhd` 尚不存在时）
+快速检查命令：
 
-1. **`E:\wsl-disks\dp-docker.txt`**（勿多空行）。**`maximum=`** 单位 **MB**，GiB 换算：**×1024**（150 GiB → `153600`）。不能写 **`150g`** 后缀。下为 **150 GiB** 示例，按需改。
-
-```text
-create vdisk file=E:\wsl-disks\docker-data.vhd maximum=153600 type=expandable
-attach vdisk
-create partition primary
-detach vdisk
-exit
-```
-
-1. **管理员 CMD**：
-
-```bat
-diskpart /s E:\wsl-disks\dp-docker.txt
+```bash
+/mnt/c/Users/zymun/Desktop/k8s/sunmoonai/kind-infrastructure/deploy-kind/check-storage-mounts.sh; echo $?
+findmnt /
+findmnt /mnt/docker-ext4
+findmnt /mnt/pv-kind-ext4
+findmnt /data/kind-local-storage
 ```
 
 ---
 
-## 3. 新建 PV 用 VHDX（仅当 `pv-kind-local-storage.vhdx` 尚不存在时）
+## 2. 前置要求
 
-1. 在 **`E:\kind-local-storage`** 新建 **`dp-pv.txt`**（**`maximum=`** 规则同第 2 节：仅 MB、无 `g` 后缀）。下面示例为 **约 256 GiB**（`262144` = 256×1024）：
-
-```text
-create vdisk file=E:\kind-local-storage\pv-kind-local-storage.vhdx maximum=262144 type=expandable
-attach vdisk
-create partition primary
-detach vdisk
-exit
-```
-
-1. **管理员 CMD**：
-
-```bat
-diskpart /s E:\kind-local-storage\dp-pv.txt
-```
+- Windows 11（或支持 `wsl --mount --vhd` 的版本）
+- 以管理员权限运行 PowerShell
+- WSL2 可正常使用
 
 ---
 
-## 4. 首次挂盘与格式化（分步做，避免 `lsblk` 认错盘）
+## 3. 首次准备（仅第一次）
 
-**原则**：先只挂 **Docker**，格式化并 **`blkid`**；再挂 **PV**，再格式化并 **`blkid`**。
+### 3.1 创建 VHD（可跳过）
 
-### 4.1 Docker：挂盘 → `mkfs` → `blkid`
+如果你已存在以下文件，可跳过：
 
-**管理员 PowerShell**：
+- `E:\wsl-disks\docker-data.vhd`
+- `E:\kind-local-storage\pv-kind-local-storage.vhdx`
+
+### 3.2 在 WSL 内格式化（仅首次）
+
+在管理员 PowerShell 先 attach：
 
 ```powershell
 wsl --mount --vhd "E:\wsl-disks\docker-data.vhd" --bare
-```
-
-在 **WSL** 中：
-
-```bash
-lsblk -f
-```
-
-**`lsblk -f`** 里选 **Docker 新分区**（无 **`FSTYPE`**），**`/dev/sdX1` 的 `X` 换成 `NAME` 列真实字母**，勿照抄。只做一次：
-
-```bash
-sudo mkfs.ext4 -L docker-ext4 /dev/sdX1
-sudo blkid /dev/sdX1
-```
-
-记下 **Docker 分区的 UUID**。
-
-### 4.2 PV：再挂第二块 → `mkfs` → `blkid`
-
-**管理员 PowerShell**（**不要**先卸 Docker，直接再挂 PV；两盘同时在线，`lsblk` 才能通过「有无 `FSTYPE`」区分新旧盘，避免认错设备）：
-
-```powershell
 wsl --mount --vhd "E:\kind-local-storage\pv-kind-local-storage.vhdx" --bare
 ```
 
-在 **WSL**：
+进 WSL 查设备并格式化（只对无文件系统分区执行）：
 
 ```bash
 lsblk -f
-```
-
-**`lsblk -f`** 里选 **PV 分区**（**`FSTYPE` 仍空**、且非 Docker 分区）。**`/dev/sdY1` 的 `Y` 换成真实名**，勿照抄。只做一次：
-
-```bash
+sudo mkfs.ext4 -L docker-ext4 /dev/sdX1
 sudo mkfs.ext4 -L kind-pv /dev/sdY1
+sudo blkid /dev/sdX1
 sudo blkid /dev/sdY1
 ```
 
-记下 **PV 的 UUID**。
+把拿到的 UUID 记下来。
 
 ---
 
-## 5. 写入 `/etc/fstab`（Docker 一行 + PV 两行）
+## 4. 配置 `/etc/fstab`
 
-> **目的**：`/etc/fstab` 是 Linux 的挂载配置表，`mount -a` 会按此表把所有条目挂好。这一步做三件事：
->
-> 1. 把 Docker 数据盘（`/mnt/docker-ext4`）和 PV 数据盘（`/mnt/pv-kind-ext4`）登记进去，让 `mount -a` 能按 UUID 找到并挂载；
-> 2. 把 `/mnt/pv-kind-ext4` 以 bind mount 的方式映射到 `/data/kind-local-storage`，即 Kind 集群通过 `extraMounts` 挂进容器的宿主路径；
-> 3. 配合第 7 节计划任务，实现登录后自动挂载——计划任务先 attach VHD，再调 `mount -a`，fstab 就是 `mount -a` 的依据。
-
-**`/etc/fstab` 末尾**追加三行。**`UUID=`** 分别填 **4.1、4.2 中 `blkid /dev/sdX1` 的输出**（即分区 UUID，勿用下面 **`aaaa` / `bbbb` 占位**）。重装过旧盘先备份并删掉旧 **`UUID` 行**。
-
-> **fsck pass（第 6 列）说明**：VHD 是按需附加的外置盘，设为 `0`（不参与开机 fsck），避免盘未 attach 时触发检查；`nofail` 保证挂载失败时不阻塞启动。
+确保存在这三行（UUID 替换为实际值）：
 
 ```fstab
 UUID=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa  /mnt/docker-ext4   ext4  defaults,nofail  0  0
@@ -135,81 +78,151 @@ UUID=bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb  /mnt/pv-kind-ext4  ext4  defaults,nof
 /mnt/pv-kind-ext4  /data/kind-local-storage  none  bind,nofail  0  0
 ```
 
-> **bind mount 依赖**：第三行依赖 `/mnt/pv-kind-ext4` 已挂载；若 PV 的 VHD 未 attach，bind 会静默失败（`nofail`）。登录后计划任务会补挂，再手动 `sudo mount -a` 即可。
+注意：
 
-执行：
+- bind 行不要写 `noauto`
+- 否则 `mount -a` 会跳过 bind，导致 PV 目录可能落回系统盘目录层
+
+应用并检查：
 
 ```bash
 sudo mkdir -p /mnt/docker-ext4 /mnt/pv-kind-ext4 /data/kind-local-storage
 sudo mount -a
-df -h /mnt/docker-ext4 /mnt/pv-kind-ext4 /data/kind-local-storage
-```
-
-**校验**：**`/mnt/pv-kind-ext4`** 与 **`/data/kind-local-storage`** 的 **`df`** 容量应一致；若不一致，先 **`sudo umount /data/kind-local-storage`** → **`sudo umount /mnt/pv-kind-ext4`** → 确认 **第 4 节** 两条 **`wsl --mount` 均已执行** → 再 **`sudo mount -a`**。
-
----
-
-## 6. 自检（`fstab` 生效后立刻做）
-
-```bash
-df -h /mnt/docker-ext4 /mnt/pv-kind-ext4 /data/kind-local-storage
 findmnt /mnt/docker-ext4
+findmnt /mnt/pv-kind-ext4
 findmnt /data/kind-local-storage
 ```
 
-**`df` 里 Docker 若约 1T**：`fstab` 里 Docker **UUID 错挂成根盘**；只挂 **`docker-data.vhd`**，**`blkid`** 小盘 UUID 写回 **`fstab`**，**`sudo umount -l /mnt/docker-ext4`**（busy 且 **`fuser` 有 `kernel mount /`** 时）再 **`mount -a`**。**PV 与 bind** 两行 **`df` 容量须一致**。
-
 ---
 
-## 7. 登录自动挂两盘（最后做：一条计划任务）
+## 5. 自动挂载（计划任务）
 
-**第 4～5 步与第 6 节通过后再做。**
+统一使用仓库脚本：
 
-1. **`Win + R`** → **`taskschd.msc`** → **创建任务**（不要「基本任务」）。
-1. **常规**：名称自定；勾选 **「使用最高权限运行」**。
-1. **触发器**：**登录时**。
-1. **操作** → **启动程序**
-   - **程序或脚本**：`powershell.exe`
-   - **添加参数**（整行；发行版非默认时最后一个 `wsl` 改成 **`wsl -d <名>`**，**`wsl -l -v`** 查看）：
+- `C:\Users\zymun\Desktop\k8s\sunmoonai\kind-infrastructure\deploy-kind\attach-vhds.ps1`
+
+计划任务名：`docker-pv`
+
+### 5.1 推荐触发器
+
+- `AtStartup`
+- `AtLogOn`（用户：`ZYMUN\\zymun`）
+
+### 5.2 推荐设置
+
+- `AllowStartIfOnBatteries` = True
+- `DontStopIfGoingOnBatteries` = True
+- `StartWhenAvailable` = True
+- 最高权限运行
+
+### 5.3 任务动作
+
+- 程序：`powershell.exe`
+- 参数：
 
 ```text
--NoProfile -ExecutionPolicy Bypass -Command "Start-Sleep -Seconds 15; wsl --mount --vhd 'E:\wsl-disks\docker-data.vhd' --bare 2>$null; wsl --mount --vhd 'E:\kind-local-storage\pv-kind-local-storage.vhdx' --bare 2>$null; wsl -u root -e sh -c 'mount -a'"
+-NoProfile -ExecutionPolicy Bypass -File "C:\Users\zymun\Desktop\k8s\sunmoonai\kind-infrastructure\deploy-kind\attach-vhds.ps1"
 ```
 
-   - **起始于**：`C:\Windows\System32`
-1. **确定**；**右键 → 运行** 测一次；WSL 再跑 **第 6 节**。
+---
 
-**`2>$null`**：盘已挂时忽略重复报错。**`Sleep 15`** 为推荐默认值（冷启动 WSL 较慢），机器快可改 10 秒，慢可改 20 秒。旧任务若只挂 Docker，**停用**，只留本条。
+## 6. 验证流程（推荐每次改动后执行）
 
-**仅当前会话要挂 VHD**：在 WSL 里 **`bash scripts/attach-docker-pv-vhds.sh`**（会先调 **`wsl.exe --mount`**；若报权限失败，再在 **Windows 管理员 PowerShell** 里手动执行脚本末尾打印的两行 **`wsl --mount`**）。
+```powershell
+wsl --shutdown
+Start-ScheduledTask -TaskName docker-pv
+Start-Sleep -Seconds 35
+Get-ScheduledTaskInfo -TaskName docker-pv | Select LastRunTime,LastTaskResult
+```
+
+```powershell
+wsl -u zymun -e sh -lc '/mnt/c/Users/zymun/Desktop/k8s/sunmoonai/kind-infrastructure/deploy-kind/check-storage-mounts.sh; echo $?; findmnt /; findmnt /mnt/docker-ext4; findmnt /mnt/pv-kind-ext4; findmnt /data/kind-local-storage'
+```
+
+通过标准：
+
+- `LastTaskResult = 0`
+- `check-storage-mounts.sh` 返回 `0`
+- `/` 与 docker/pv/bind 的设备来源不同
 
 ---
 
-## 8. 冷启动验证（可选）
+## 7. 常见问题
 
-**Windows**：`wsl --shutdown`，等待约 15 秒 → 重新登录 → 再开 WSL → 再跑 **第 6 节**。无需再手敲 **`wsl --mount`**（计划任务应已执行）。
+### 7.1 `WSL_E_USER_VHD_ALREADY_ATTACHED`
 
----
+表示该 VHD 已附加，通常不是故障。
+最终以 `check-storage-mounts.sh` 的返回码判断是否成功。
 
-## 9. 创建 Kind 集群（可选；挂载稳定后再执行）
+### 7.2 叠挂载（同一路径多个 SOURCE）
+
+清理后重挂：
 
 ```bash
-cd ~/k8s/sunmoonai/kind-infrastructure && ./kind-up.sh
+for p in /data/kind-local-storage /mnt/pv-kind-ext4 /mnt/docker-ext4; do
+  while findmnt -rn "$p" >/dev/null 2>&1; do
+    sudo umount "$p" 2>/dev/null || sudo umount -l "$p" 2>/dev/null || break
+  done
+done
+
+sudo mount /mnt/docker-ext4
+sudo mount /mnt/pv-kind-ext4
+sudo mount /data/kind-local-storage
 ```
 
-（仓库路径按本机修改。）
+### 7.3 `check-storage-mounts.sh` 返回 1
+
+优先检查：
+
+1. `/etc/fstab` UUID 是否与 `blkid` 一致
+2. bind 行是否误写 `noauto`
+3. `findmnt /` 是否与 docker/pv/bind 冲突
+
+### 7.4 终端出现 `[3] + done (...)`
+
+如果你在 WSL 里执行过类似后台检查：
+
+```bash
+( sleep 3; for i in 1 2 3; do; "$check_script" >/dev/null 2>&1 && exit 0; done ) &
+```
+
+随后看到：
+
+```text
+[3] + done       ( sleep 3; for i in 1 2 3; do; "$check_script" >/dev/null 2>&1 && exit 0; done )
+```
+
+这表示后台子任务已经结束并被 shell 回收，不等于挂载失败。
+
+最终仍以这两个结果判断：
+
+- `check-storage-mounts.sh` 返回 `0`
+- `findmnt /mnt/docker-ext4`、`findmnt /mnt/pv-kind-ext4`、`findmnt /data/kind-local-storage` 结果正确
+
+### 7.5 `wsl: 检测到 localhost 代理配置，但未镜像到 WSL`
+
+这是 WSL 对 Windows 代理设置的提示，常见于 NAT 模式，和 VHD 挂载流程本身不是一类问题。
+
+如果你的挂载检查通过，可以先忽略这条提示。
+只有当 WSL 内网络访问异常时，再单独排查代理或 `.wslconfig` 网络模式配置。
 
 ---
 
-## 附：开机 `mount -a` 提示
+## 8. 与 Kind 的关系
 
-VHD 未 attach 时 **`mount -a`** 可能报错，一般 **登录后第 7 节任务**会再挂。**`nofail`** 可减轻；仍异常则核对 **`blkid` 与 `fstab` 的 UUID**。
+`deploy-kind/kind-cluster.yaml` 使用：
+
+- `hostPath: /data/kind-local-storage`
+
+因此 bind 挂载错误会直接影响 Kind 的持久化写入位置。
 
 ---
 
-## 约束
+## 9. 2026-04-17 实机结论
 
-- **`mkfs`** 前必须 **`lsblk`** 确认分区。
-- fstab 的 UUID 来自 **`blkid /dev/sdX1`（分区）**，不是整盘 `/dev/sdX`。
-- bind mount（`/data/kind-local-storage`）依赖其源 `/mnt/pv-kind-ext4` 先挂好；VHD 未 attach 时两者均不可用。
-- 删 **`fstab` 行**、**`rm -rf`** 前须确认路径。
+本仓库当前已验证流程：
+
+- 计划任务 `docker-pv` 自动执行稳定
+- `attach-vhds.ps1` 已做幂等处理与最终校验
+- `check-storage-mounts.sh` 返回 `0` 可作为最终成功标准
+
