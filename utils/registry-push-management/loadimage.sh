@@ -549,6 +549,20 @@ find_local_tar_for_ref(){
   return 1
 }
 
+find_remote_tar_for_ref(){
+  local img="$1" host="$2" user="$3" port="$4" secret="$5" pass="$6"
+  local remote_dir="${REMOTE_IMAGE_DIR:-}"
+  local safe; safe=$(echo "$img" | sed 's#[/:]#_#g')
+  for fname in "${safe}.tar" "${safe}.tar.gz"; do
+    local path="$remote_dir/$fname"
+    if exec_remote "$host" "$user" "$port" "test -f '$path'" "$secret" "$pass" 2>/dev/null; then
+      echo "$path"
+      return 0
+    fi
+  done
+  return 1
+}
+
 build_target_ref(){
   local name_only="$1" tag="$2"
   if [[ -n "$REGISTRY_URL" ]]; then
@@ -572,10 +586,14 @@ registry-push-management（通用）
   $0 [--cluster C1|C2] remove-image <image_ref> <host> [user] [port] [secret] [pass]
   $0 [--cluster C1|C2] remove-file <remote_path> <host> [user] [port] [secret] [pass]
 
-  # 便捷：使用本地目录与 REGISTRY_URL/PROJECT_NAME 自动构造目标引用
+  # 便捷：从本地 tar 上传到远端并推送（tar 在本地）
   $0 [--cluster C1|C2] push-by-ref <repo:tag> [host] [remote_dir] [user] [port] [secret] [pass]
   $0 [--cluster C1|C2] push-from-list <list_file> [host] [remote_dir] [user] [port] [secret] [pass]
   $0 [--cluster C1|C2] push-from-dir [dir] [host] [remote_dir] [user] [port] [secret] [pass]
+
+  # 便捷：tar 已在远端节点，直接 load/tag/push（无需本地 tar）
+  $0 [--cluster C1|C2] remote-push-by-ref <repo:tag> [host] [remote_dir] [user] [port] [secret] [pass]
+  $0 [--cluster C1|C2] remote-push-from-list <list_file> [host] [remote_dir] [user] [port] [secret] [pass]
 
 参数说明:
   --cluster, -c    指定集群（C1, C2, C3 等），用于加载对应的集群配置
@@ -701,6 +719,61 @@ main(){
           err "  - $img"
         done
         # 如果有失败的镜像，返回非零退出码
+        exit 1
+      fi
+      ;;
+    remote-push-by-ref)
+      if [[ $# -lt 1 ]]; then usage; exit 1; fi
+      local img_ref="$1" host="${2:-$REMOTE_HOST}" remote_dir="${3:-$REMOTE_IMAGE_DIR}" user="${4:-$REMOTE_USER}" port="${5:-$REMOTE_SSH_PORT}" secret="${6:-$REMOTE_SECRET}" pass="${7:-$REMOTE_PASS}"
+      [[ -n "$host" ]] || { err "未提供 host（参数或 REMOTE_HOST）"; exit 1; }
+      local name_only="${img_ref%:*}"; name_only="${name_only##*/}"; local tag="${img_ref##*:}"
+      local target_ref; target_ref=$(build_target_ref "$name_only" "$tag") || exit 1
+      # 优先在远端找 tar；找不到则从本地上传（兜底）
+      local tar_path
+      if tar_path=$(find_remote_tar_for_ref "$img_ref" "$host" "$user" "$port" "$secret" "$pass" 2>/dev/null); then
+        log "远端已有 tar，直接使用: $tar_path"
+        if registry_has_ref "$target_ref" "$host" "$user" "$port" "$secret" "$pass"; then
+          ok "registry 中已存在，跳过: $target_ref"
+        else
+          local src_ref; src_ref=$(load_image "$tar_path" "$host" "$user" "$port" "$secret" "$pass") || { err "加载镜像失败: $tar_path"; exit 1; }
+          tag_image "$src_ref" "$target_ref" "$host" "$user" "$port" "$secret" "$pass" || { err "打标镜像失败"; exit 1; }
+          push_image "$target_ref" "$host" "$user" "$port" "$secret" "$pass" || { err "推送镜像失败"; exit 1; }
+          remove_image "$src_ref" "$host" "$user" "$port" "$secret" "$pass" || true
+          remove_image "$target_ref" "$host" "$user" "$port" "$secret" "$pass" || true
+          ok "镜像处理完成: $target_ref"
+        fi
+      else
+        log "远端未找到 tar，尝试从本地上传: $img_ref"
+        local local_tar; local_tar=$(find_local_tar_for_ref "$img_ref") || { err "本地也未找到 tar: $img_ref"; exit 1; }
+        "${BASH_SOURCE[0]}" upload-load-push "$local_tar" "$host" "$remote_dir" "$target_ref" "$user" "$port" "$secret" "$pass"
+      fi
+      ;;
+    remote-push-from-list)
+      if [[ $# -lt 1 ]]; then usage; exit 1; fi
+      local list_file="$1" host="${2:-$REMOTE_HOST}" remote_dir="${3:-$REMOTE_IMAGE_DIR}" user="${4:-$REMOTE_USER}" port="${5:-$REMOTE_SSH_PORT}" secret="${6:-$REMOTE_SECRET}" pass="${7:-$REMOTE_PASS}"
+      [[ -n "$host" ]] || { err "未提供 host（参数或 REMOTE_HOST）"; exit 1; }
+      [[ -f "$list_file" ]] || { err "清单文件不存在: $list_file"; exit 1; }
+      local success_count=0
+      local fail_count=0
+      local failed_images=()
+      while IFS= read -r img; do
+        [[ -z "$img" || "$img" =~ ^# ]] && continue
+        log "处理镜像: $img"
+        if "${BASH_SOURCE[0]}" remote-push-by-ref "$img" "$host" "$remote_dir" "$user" "$port" "$secret" "$pass"; then
+          success_count=$((success_count + 1))
+          ok "镜像推送成功: $img"
+        else
+          fail_count=$((fail_count + 1))
+          failed_images+=("$img")
+          err "镜像推送失败: $img"
+        fi
+      done < "$list_file"
+      log "镜像推送完成: 成功 $success_count 个，失败 $fail_count 个"
+      if [[ $fail_count -gt 0 ]]; then
+        err "失败的镜像列表:"
+        for img in "${failed_images[@]}"; do
+          err "  - $img"
+        done
         exit 1
       fi
       ;;

@@ -1119,7 +1119,7 @@ cleanup_k8s_connection() {
 # ========================================
 # 按集群模式分流：
 #   - Kind：使用 sunmoonai/kind-infrastructure/push-to-harbor/push-images-to-harbor.sh（--img-file 组件清单）
-#   - 远程（C1/C2/...）：使用 utils/registry-push-management/loadimage.sh push-from-list
+#   - 远程（C1/C2/...）：使用 utils/registry-push-management/loadimage.sh remote-push-from-list（tar 已在远端节点）
 # - component_name: 组件名称（用于定位 utils/components-images/<component_name>-images.txt）
 push_component_images_to_harbor() {
     local component_name="$1"
@@ -1196,7 +1196,7 @@ push_component_images_to_harbor() {
         cluster_args+=(--cluster "$CLUSTER")
     fi
 
-    if ! "$loadimage_sh" "${cluster_args[@]}" push-from-list "$image_list_file"; then
+    if ! "$loadimage_sh" "${cluster_args[@]}" remote-push-from-list "$image_list_file"; then
         log_warn "[images] 组件 ${component_name} 镜像推送工具返回非零状态，请稍后在 utils/registry-push-management 中单独检查"
     else
         log_info "[images] 组件 ${component_name} 相关镜像已确保存在于 Harbor（或已按需推送）"
