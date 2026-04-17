@@ -562,9 +562,12 @@ _prepare_local_storage_on_node(){
             _load_image_on_node(){
                 local node="$1" image="$2" dir="$3"
                 local tar; tar="$(echo "$image" | sed 's|/|_|g' | sed 's|:|_|g').tar"
-                if ! ssh_exec "$node" "bash -lc 'sudo nerdctl -n k8s.io images --format \"{{.Repository}}:{{.Tag}}\" 2>/dev/null | grep -Fx \"$image\"'"; then
+                local user; user="$(get_server_var "$node" USER)"
+                # 用 ssh_exec_sudo（带密码 sudo）而非 ssh_exec（无 TTY 时 sudo 会失败）
+                # 路径用 ~username 展开，避免 sudo 下 $HOME 指向 /root
+                if ! ssh_exec_sudo "$node" "nerdctl -n k8s.io images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null | grep -Fx '${image}'"; then
                     log_info "[Step09] 节点 $node 加载镜像: $image"
-                    ssh_exec "$node" "bash -lc 'base=\"\$HOME${dir#\~}\"; sudo nerdctl -n k8s.io load -i \"\$base/images/$tar\"'" \
+                    ssh_exec_sudo "$node" "nerdctl -n k8s.io load -i ~${user}${dir#\~}/images/$tar" \
                         && log_info "[Step09] 节点 $node 镜像加载成功: $image" \
                         || log_warn "[Step09] 节点 $node 镜像加载失败（非致命，若镜像已存在可忽略）: $image"
                 else
