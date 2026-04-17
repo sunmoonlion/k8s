@@ -36,6 +36,43 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# ── 端口工具 ──────────────────────────────────────────────────────────────────
+# 检测本地端口是否已在监听（比 netstat 更快，无外部依赖）
+_port_is_listening() {
+  (echo >/dev/tcp/127.0.0.1/"$1") 2>/dev/null
+}
+
+# 等待本地端口开始监听（替代固定 sleep）
+_wait_for_port() {
+  local port="$1" timeout="${2:-20}"
+  local i=0
+  while [[ $i -lt $timeout ]]; do
+    if _port_is_listening "$port"; then return 0; fi
+    sleep 1; i=$((i + 1))
+  done
+  return 1
+}
+
+# 释放本地端口：杀掉占用进程，等待端口真正空闲
+_release_local_port() {
+  local port="$1" max_wait="${2:-5}"
+  pkill -f "ssh.*[: ]${port}:127\.0\.0\.1:" >/dev/null 2>&1 || true
+  pkill -f "ssh.*[: ]${port}:[^:]*:[0-9]"   >/dev/null 2>&1 || true
+  pkill -f "ssh.*-L ?${port}:"               >/dev/null 2>&1 || true
+  local waited=0
+  while [[ $waited -lt $max_wait ]]; do
+    local pids=""
+    if command -v lsof >/dev/null 2>&1; then
+      pids=$(lsof -ti "TCP:${port}" 2>/dev/null || true)
+    elif command -v ss >/dev/null 2>&1; then
+      pids=$(ss -tlnp 2>/dev/null | awk -v p=":${port}" '$0~p {match($0,/pid=([0-9]+)/,a); if(a[1]) print a[1]}' || true)
+    fi
+    [[ -z "$pids" ]] && break
+    echo "$pids" | xargs kill -9 2>/dev/null || true
+    sleep 1; waited=$((waited + 1))
+  done
+}
+
 # 日志函数
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $(date '+%Y-%m-%d %H:%M:%S') $1"
@@ -454,7 +491,7 @@ check_k8s_connection_status() {
         # Kind 模式：无隧道，仅校验 kubeconfig 与 kubectl 可用
         if [[ "$CURRENT_MODE" == "kind" ]]; then
             if [[ -n "$CURRENT_KUBECONFIG" ]] && [[ -f "$CURRENT_KUBECONFIG" ]]; then
-                if KUBECONFIG="$CURRENT_KUBECONFIG" kubectl get nodes >/dev/null 2>&1; then
+                if KUBECONFIG="$CURRENT_KUBECONFIG" kubectl get nodes --request-timeout=10s >/dev/null 2>&1; then
                     log_info "连接状态正常 (Kind)"
                     return 0
                 fi
@@ -467,7 +504,7 @@ check_k8s_connection_status() {
         if [[ -n "$TUNNEL_PID" ]] && kill -0 "$TUNNEL_PID" 2>/dev/null; then
             # 如有 LOCAL_PORT，则顺便校验端口监听；否则仅依赖 kubectl 检测
             if [[ -n "$LOCAL_PORT" ]]; then
-                if ! netstat -tlnp 2>/dev/null | grep -q ":$LOCAL_PORT "; then
+                if ! _port_is_listening "$LOCAL_PORT"; then
                     log_warn "连接状态异常，端口 $LOCAL_PORT 未在监听"
                     clear_k8s_status
                     return 1
@@ -479,11 +516,11 @@ check_k8s_connection_status() {
             local max_retries=3
             
             while [[ $retry_count -lt $max_retries ]]; do
-                if KUBECONFIG="$CURRENT_KUBECONFIG" kubectl get nodes >/dev/null 2>&1; then
+                if KUBECONFIG="$CURRENT_KUBECONFIG" kubectl get nodes --request-timeout=10s >/dev/null 2>&1; then
                     log_info "连接状态正常: TUNNEL_PID=$TUNNEL_PID${LOCAL_PORT:+, PORT=$LOCAL_PORT}"
                     return 0  # 连接正常
                 fi
-                
+
                 retry_count=$((retry_count+1))  # 使用显式赋值，避免 ((retry_count++)) 在某些情况下导致的问题
                 if [[ $retry_count -lt $max_retries ]]; then
                     sleep 1  # 等待1秒后重试
@@ -502,17 +539,18 @@ check_k8s_connection_status() {
 # 自动重连
 auto_reconnect() {
     log_info "检测到连接断开，正在自动重连..."
-    
-    # 清理旧的连接
-    if [[ -n "${PID:-}" ]]; then
-        kill -9 "$PID" 2>/dev/null || true
+
+    # 清理旧的连接（杀进程并等端口释放）
+    if [[ -n "${TUNNEL_PID:-}" ]]; then
+        kill "$TUNNEL_PID" 2>/dev/null || true
+        wait "$TUNNEL_PID" 2>/dev/null || true
     fi
-    
+    if [[ -n "${LOCAL_PORT:-}" ]]; then
+        _release_local_port "$LOCAL_PORT"
+    fi
+
     # 重新启动连接
     if start_k8s_connection; then
-        # 等待一下让连接稳定
-        sleep 2
-        
         # 检查重连是否成功
         if check_k8s_connection_status; then
             log_success "自动重连成功"
@@ -677,19 +715,31 @@ start_direct_connection() {
         ssh_args="$ssh_args -o PasswordAuthentication=yes"
     fi
     
-    # 启动隧道（先清理可能残留的转发）
-    pkill -f "ssh.*$DIRECT_LOCAL_PORT:$DIRECT_REMOTE_API_HOST:$DIRECT_REMOTE_API_PORT" >/dev/null 2>&1 || true
+    # 启动隧道（先等端口完全释放，再绑定）
+    _release_local_port "$DIRECT_LOCAL_PORT"
     log_info "建立隧道: 本地:$DIRECT_LOCAL_PORT → $DIRECT_REMOTE_API_HOST:$DIRECT_REMOTE_API_PORT"
-    ssh $ssh_args -o ConnectTimeout="$GLOBAL_TIMEOUT" -L "$DIRECT_LOCAL_PORT:$DIRECT_REMOTE_API_HOST:$DIRECT_REMOTE_API_PORT" "$DIRECT_USER@$direct_host_ip" -p "$direct_host_port" -N &
+    # shellcheck disable=SC2086
+    ssh $ssh_args \
+        -o ConnectTimeout="$GLOBAL_TIMEOUT" \
+        -o ServerAliveInterval=10 \
+        -o ServerAliveCountMax=6 \
+        -o TCPKeepAlive=yes \
+        -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        -L "$DIRECT_LOCAL_PORT:$DIRECT_REMOTE_API_HOST:$DIRECT_REMOTE_API_PORT" \
+        "$DIRECT_USER@$direct_host_ip" -p "$direct_host_port" -N &
     local tunnel_pid=$!
-    
-    # 等待隧道建立
-    sleep 2
+
+    # 主动等待端口就绪（替代固定 sleep 2）
+    if ! _wait_for_port "$DIRECT_LOCAL_PORT" 20; then
+        log_error "隧道启动失败（端口 $DIRECT_LOCAL_PORT 未监听）"
+        kill "$tunnel_pid" 2>/dev/null || true
+        return 1
+    fi
     if ! kill -0 "$tunnel_pid" 2>/dev/null; then
         log_error "隧道启动失败"
         return 1
     fi
-    
+
     log_info "隧道已启动 (PID: $tunnel_pid)"
     
     # 获取 kubeconfig
@@ -808,15 +858,24 @@ start_direct_connection() {
     if [[ "${DIRECT_BIND_ALIAS:-false}" == "true" ]]; then
         # 使用域名别名保持严格 TLS
         log_info "配置域名别名并保持严格 TLS"
-        # 重启隧道指向 127.0.0.1
+        # 重启隧道指向 127.0.0.1（先等端口完全释放）
         if [[ -n "$tunnel_pid" ]] && kill -0 "$tunnel_pid" 2>/dev/null; then
             kill "$tunnel_pid" 2>/dev/null || true
             wait "$tunnel_pid" 2>/dev/null || true
         fi
-        pkill -f "ssh.*$DIRECT_LOCAL_PORT:127.0.0.1:$original_port" >/dev/null 2>&1 || true
+        _release_local_port "$DIRECT_LOCAL_PORT"
         log_info "建立隧道: 本地:$DIRECT_LOCAL_PORT → 127.0.0.1:$original_port"
-        ssh $ssh_args -o ConnectTimeout="$GLOBAL_TIMEOUT" -L "$DIRECT_LOCAL_PORT:127.0.0.1:$original_port" "$DIRECT_USER@$direct_host_ip" -p "$direct_host_port" -N &
+        # shellcheck disable=SC2086
+        ssh $ssh_args \
+            -o ConnectTimeout="$GLOBAL_TIMEOUT" \
+            -o ServerAliveInterval=10 \
+            -o ServerAliveCountMax=6 \
+            -o TCPKeepAlive=yes \
+            -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            -L "$DIRECT_LOCAL_PORT:127.0.0.1:$original_port" \
+            "$DIRECT_USER@$direct_host_ip" -p "$direct_host_port" -N &
         tunnel_pid=$!
+        _wait_for_port "$DIRECT_LOCAL_PORT" 20 || log_warn "等待精确隧道端口超时，继续..."
 
         # 动态解析证书SAN，选择有效的域名
         local cert_tmp=$(mktemp)

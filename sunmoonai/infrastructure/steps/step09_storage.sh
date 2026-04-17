@@ -853,6 +853,8 @@ data:
         - name: helper-pod
           image: ${helper_image}
           imagePullPolicy: Never
+          securityContext:
+            runAsUser: 0
   setup: |-
     #!/bin/sh
     set -eu
@@ -1198,8 +1200,21 @@ EOF
         log_info "[Step09] 本地存储验证通过"
     else
         log_error "[Step09] 本地存储验证失败"
+        log_info "[Step09] === 诊断信息 ==="
+        log_info "[Step09] Pod 状态:"
+        ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl describe pod test-local-pod -n \"${STEP09_VALIDATION_NAMESPACE}\" 2>/dev/null | tail -30'" || true
+        log_info "[Step09] PVC 状态:"
+        ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl describe pvc test-local-pvc -n \"${STEP09_VALIDATION_NAMESPACE}\" 2>/dev/null | tail -20'" || true
+        log_info "[Step09] local-path-provisioner 日志:"
+        ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl logs -n local-path-storage -l app=local-path-provisioner --tail=30 2>/dev/null'" || true
+        log_info "[Step09] ==============="
+
+        # 清理测试资源后返回失败
+        ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl delete pod test-local-pod -n \"${STEP09_VALIDATION_NAMESPACE}\" --ignore-not-found'"
+        ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl delete pvc test-local-pvc -n \"${STEP09_VALIDATION_NAMESPACE}\" --ignore-not-found'"
+        return 1
     fi
-    
+
     # 清理测试资源
     ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl delete pod test-local-pod -n \"${STEP09_VALIDATION_NAMESPACE}\" --ignore-not-found'"
     ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl delete pvc test-local-pvc -n \"${STEP09_VALIDATION_NAMESPACE}\" --ignore-not-found'"

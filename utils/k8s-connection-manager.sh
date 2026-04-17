@@ -232,7 +232,7 @@ setup_bind_alias() {
   if command -v yq >/dev/null 2>&1; then
     local cert_data
     cert_data=$(yq e '.clusters[0].cluster["certificate-authority-data"]' "$kubeconfig" 2>/dev/null || echo "")
-    [[ -n "$cert_data" ]] && echo "$cert_data" | base64 -d > "$cert_tmp" 2>/dev/null
+    if [[ -n "$cert_data" ]]; then echo "$cert_data" | base64 -d > "$cert_tmp" 2>/dev/null || true; fi
   fi
   # 兜底：直接从文件 grep base64 data
   if [[ ! -s "$cert_tmp" ]]; then
@@ -268,7 +268,7 @@ setup_bind_alias() {
 cleanup() {
   if [[ -f "$PID_FILE" ]]; then
     local saved_pid; saved_pid=$(cat "$PID_FILE" 2>/dev/null || echo "")
-    [[ -n "$saved_pid" && -e "/proc/$saved_pid" ]] && stop_connection_quiet
+    if [[ -n "$saved_pid" && -e "/proc/$saved_pid" ]]; then stop_connection_quiet; fi
   fi
   close_ssh_control_master
   unset KUBECONFIG
@@ -283,7 +283,7 @@ check_and_install_kubectl() {
   command -v kubectl >/dev/null 2>&1 && found=true
   if [[ "$found" == "false" ]]; then
     for p in /snap/bin/kubectl /usr/local/bin/kubectl /usr/bin/kubectl; do
-      [[ -x "$p" ]] && found=true && break
+      if [[ -x "$p" ]]; then found=true; break; fi
     done
   fi
 
@@ -297,7 +297,7 @@ check_and_install_kubectl() {
     rm kubectl
     success "✅ kubectl 安装完成"
   else
-    msg "ℹ️  kubectl 已安装: $(kubectl version --client 2>/dev/null | head -1 || echo '版本信息获取失败')"
+    msg "kubectl 已安装: $(kubectl version --client 2>/dev/null | head -1 || echo '版本信息获取失败')"
   fi
 }
 
@@ -309,10 +309,10 @@ read_config() {
   first_line()  { local v="${1//$'\r'/}"; printf '%s' "${v%%$'\n'*}"; }
 
   # 全局配置
-  GLOBAL_DEFAULT_MODE=$(  sed -n '/\[GLOBAL\]/,/^\[/p' "$CONFIG_FILE" | grep "^default_mode=" | cut -d= -f2 | tr -d ' ')
-  GLOBAL_AUTO_STOP=$(     sed -n '/\[GLOBAL\]/,/^\[/p' "$CONFIG_FILE" | grep "^auto_stop="    | cut -d= -f2 | tr -d ' ')
-  GLOBAL_TIMEOUT=$(       sed -n '/\[GLOBAL\]/,/^\[/p' "$CONFIG_FILE" | grep "^timeout="      | cut -d= -f2 | tr -d ' ')
-  GLOBAL_DEFAULT_CLUSTER=$(sed -n '/\[GLOBAL\]/,/^\[/p' "$CONFIG_FILE" | grep "^default_cluster=" | cut -d= -f2 | tr -d ' ')
+  GLOBAL_DEFAULT_MODE=$(  sed -n '/\[GLOBAL\]/,/^\[/p' "$CONFIG_FILE" | grep "^default_mode="    | cut -d= -f2 | tr -d ' ' || true)
+  GLOBAL_AUTO_STOP=$(     sed -n '/\[GLOBAL\]/,/^\[/p' "$CONFIG_FILE" | grep "^auto_stop="       | cut -d= -f2 | tr -d ' ' || true)
+  GLOBAL_TIMEOUT=$(       sed -n '/\[GLOBAL\]/,/^\[/p' "$CONFIG_FILE" | grep "^timeout="         | cut -d= -f2 | tr -d ' ' || true)
+  GLOBAL_DEFAULT_CLUSTER=$(sed -n '/\[GLOBAL\]/,/^\[/p' "$CONFIG_FILE" | grep "^default_cluster=" | cut -d= -f2 | tr -d ' ' || true)
 
   local cluster_name="${CLUSTER:-${GLOBAL_DEFAULT_CLUSTER:-C1}}"
   local cluster_upper; cluster_upper=$(echo "$cluster_name" | tr '[:lower:]' '[:upper:]')
@@ -333,9 +333,9 @@ read_config() {
   _read_section() {
     local section="$1" key="$2" use_def="$3" def_section="$4"
     if [[ "$use_def" == "true" ]]; then
-      sed -n "/^${def_section}$/,/^\[[A-Z]/p" "$CONFIG_FILE" | grep "^${key}=" | head -1 | cut -d= -f2- | tr -d ' '
+      sed -n "/^${def_section}$/,/^\[[A-Z]/p" "$CONFIG_FILE" | grep "^${key}=" | head -1 | cut -d= -f2- | tr -d ' ' || true
     else
-      sed -n "/^${section}$/,/^\[[A-Z]/p" "$CONFIG_FILE" | grep "^${key}=" | head -1 | cut -d= -f2- | tr -d ' '
+      sed -n "/^${section}$/,/^\[[A-Z]/p" "$CONFIG_FILE" | grep "^${key}=" | head -1 | cut -d= -f2- | tr -d ' ' || true
     fi
   }
 
@@ -407,7 +407,7 @@ load_status() {
   CURRENT_KUBECONFIG=${CURRENT_KUBECONFIG:-""}
   TUNNEL_PID=${TUNNEL_PID:-""}
   TUNNEL_API_PORT=${TUNNEL_API_PORT:-6443}
-  [[ -f "$STATUS_FILE" ]] && source "$STATUS_FILE"
+  if [[ -f "$STATUS_FILE" ]]; then source "$STATUS_FILE"; fi
 }
 
 clear_status() { rm -f "$STATUS_FILE" "$PID_FILE"; }
