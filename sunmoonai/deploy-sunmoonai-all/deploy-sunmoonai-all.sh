@@ -165,8 +165,9 @@ deploy_platform_components_by_priority() {
     elif [[ "$cluster_upper" =~ ^C[0-9]+$ ]]; then
         # 远程集群：总控进程里的 kubectl（如 WAIT_READY）需指向 C1/C2 的 admin.conf，避免继承 shell 中误留的 Kind KUBECONFIG
         local remote_kc
-        remote_kc=$(resolve_remote_cluster_kubeconfig_path) || true
-        if [[ -n "${remote_kc:-}" && -f "$remote_kc" ]]; then
+        if ! remote_kc=$(resolve_remote_cluster_kubeconfig_path); then
+            log_warn "无法从 k8s-admin.conf 解析 CLUSTER=$cluster_upper 的 kubeconfig 路径，总控进程将继续使用当前 KUBECONFIG=${KUBECONFIG:-<unset>}（可能串集群）"
+        elif [[ -n "$remote_kc" && -f "$remote_kc" ]]; then
             unset KUBECONFIG
             export KUBECONFIG="$remote_kc"
             log_info "已设置 KUBECONFIG=$KUBECONFIG（远程集群 $cluster_upper）"
@@ -274,8 +275,9 @@ deploy_platform_components_by_priority() {
                             if call_subscript "$script_path" deploy "$project_id" "$environment" "$dry_run"; then
                                 log_success "✅ 远程基础设施部署完成"
                                 local remote_kc
-                                remote_kc=$(resolve_remote_cluster_kubeconfig_path) || true
-                                if [[ -n "${remote_kc:-}" && -f "$remote_kc" ]]; then
+                                if ! remote_kc=$(resolve_remote_cluster_kubeconfig_path); then
+                                    log_warn "无法从 k8s-admin.conf 解析 CLUSTER=${cluster_upper} 的 kubeconfig 路径，基础设施后同步跳过（当前 KUBECONFIG=${KUBECONFIG:-<unset>}）"
+                                elif [[ -n "$remote_kc" && -f "$remote_kc" ]]; then
                                     unset KUBECONFIG
                                     export KUBECONFIG="$remote_kc"
                                     log_info "总控进程已同步 KUBECONFIG=$KUBECONFIG（后续平台与 kubectl 一致性）"

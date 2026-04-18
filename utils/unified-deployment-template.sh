@@ -13,6 +13,9 @@ CONFIG_FILE="${UNIFIED_CONFIG_FILE:-$SCRIPT_DIR/k8s-admin.conf}"
 STATUS_FILE="$SCRIPT_DIR/.k8s-status"
 PID_FILE="$SCRIPT_DIR/.k8s-tunnel.pid"
 
+# shellcheck source=/dev/null
+[[ -f "$SCRIPT_DIR/kubeconfig-path-for-cluster.sh" ]] && source "$SCRIPT_DIR/kubeconfig-path-for-cluster.sh"
+
 # 清理函数（保留原始退出码，避免子脚本“失败却返回成功”）
 cleanup() {
     local exit_code=$?
@@ -526,6 +529,24 @@ k8s_status_matches_desired_cluster() {
         log_warn "缓存为 Kind 连接，但当前目标集群为 ${desired}，将丢弃缓存并重新建连（避免 kubectl 误连 Kind）"
         clear_k8s_status
         return 1
+    fi
+
+    # 旧版缓存无 CURRENT_TARGET_CLUSTER、且同为远程集群（C1↔C2）时，用 kubeconfig 路径做最后一道比对
+    if [[ "$desired" =~ ^C[0-9]+$ ]] && [[ -n "${CURRENT_KUBECONFIG:-}" ]]; then
+        if command -v kubeconfig_path_from_admin_conf &>/dev/null && [[ -f "$CONFIG_FILE" ]]; then
+            local expected_kc
+            expected_kc=$(kubeconfig_path_from_admin_conf "$CONFIG_FILE" "$desired" 2>/dev/null || true)
+            if [[ -n "$expected_kc" ]]; then
+                local e_can g_can
+                e_can=$(readlink -f "$expected_kc" 2>/dev/null || echo "$expected_kc")
+                g_can=$(readlink -f "$CURRENT_KUBECONFIG" 2>/dev/null || echo "$CURRENT_KUBECONFIG")
+                if [[ "$e_can" != "$g_can" ]]; then
+                    log_warn "旧版缓存的 kubeconfig ($g_can) 与目标集群 $desired 期望路径 ($e_can) 不一致，将丢弃缓存并重新建连（防止 C1↔C2 串集群）"
+                    clear_k8s_status
+                    return 1
+                fi
+            fi
+        fi
     fi
     return 0
 }
