@@ -158,11 +158,37 @@ execute() {
     
     if bash "$deploy_script" "${script_args[@]}"; then
         log_success "[Step12] CA 证书生成和分发完成（通过 unified-cert-secret-management）"
-        return 0
     else
         log_error "[Step12] CA 证书生成和分发失败"
         return 1
     fi
+
+    # force 模式重新生成了 CA，必须同步分发到所有其他共用此 Harbor 的集群
+    # 否则这些集群的 nerdctl 将因 CA 不一致而无法验证 Harbor TLS
+    # 配置方式：在 deploy-infrastructure-all.conf 中设置
+    #   STEP12_ADDITIONAL_CLUSTERS="C2"        # 单个额外集群
+    #   STEP12_ADDITIONAL_CLUSTERS="C2,C3"     # 多个额外集群
+    if [[ "${STEP12_FORCE_REGENERATE:-false}" == "true" || "${STEP12_CA_ROTATE:-false}" == "true" ]]; then
+        local additional_clusters="${STEP12_ADDITIONAL_CLUSTERS:-}"
+        if [[ -n "$additional_clusters" ]]; then
+            IFS=',' read -ra EXTRA_CLUSTERS <<< "$additional_clusters"
+            for extra_cluster in "${EXTRA_CLUSTERS[@]}"; do
+                extra_cluster="${extra_cluster// /}"  # 去除空格
+                [[ -z "$extra_cluster" ]] && continue
+                log_info "[Step12] 将新 CA 分发到额外集群: $extra_cluster"
+                if CLUSTER="$extra_cluster" bash "$deploy_script" --cluster "$extra_cluster" init; then
+                    log_success "[Step12] CA 已同步到集群 $extra_cluster"
+                else
+                    log_error "[Step12] CA 同步到集群 $extra_cluster 失败，请手动执行: CLUSTER=$extra_cluster bash $deploy_script init"
+                    return 1
+                fi
+            done
+        else
+            log_warn "[Step12] force/rotate 模式：如有其他集群共用此 Harbor（如 C2），请配置 STEP12_ADDITIONAL_CLUSTERS 或手动执行: CLUSTER=C2 bash $deploy_script init"
+        fi
+    fi
+
+    return 0
 }
 
 # 验证函数

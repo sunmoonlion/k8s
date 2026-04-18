@@ -555,7 +555,7 @@ find_remote_tar_for_ref(){
   local safe; safe=$(echo "$img" | sed 's#[/:]#_#g')
   for fname in "${safe}.tar" "${safe}.tar.gz"; do
     local path="$remote_dir/$fname"
-    if exec_remote "$host" "$user" "$port" "test -f '$path'" "$secret" "$pass" 2>/dev/null; then
+    if exec_remote "$host" "$user" "$port" "test -f $path" "$secret" "$pass" 2>/dev/null; then
       echo "$path"
       return 0
     fi

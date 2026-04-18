@@ -239,6 +239,7 @@ generate_ca_certificate() {
     # 检查是否需要重新生成（force 模式或归档目录不存在）
     if [[ "$cert_exists" == "true" ]]; then
         if [[ "$tls_mode" == "force" ]]; then
+            log_warn "强制更新模式：CA 将被重新生成，所有共用此 Harbor 的集群（如 C2）必须重新运行 CA 分发，否则 nerdctl push/pull 将因 TLS 证书不匹配而失败"
             log_info "强制更新模式：删除已存在的CA证书并重新生成"
             rm -f "$cert_path" "$key_path"
             if [[ -n "$archived_cert_path" ]]; then
@@ -759,11 +760,14 @@ distribute_ca_certificate_to_client() {
             harbor_registry=$(echo "$client_cert_path" | sed 's|.*certs\.d/\([^/]*\).*|\1|')
             local system_ca_name="harbor-${harbor_registry//[^a-zA-Z0-9]/-}-ca.crt"
             local system_ca_path="/usr/local/share/ca-certificates/$system_ca_name"
-            local import_system_ca_cmd="sudo cp $client_ca_path $system_ca_path && sudo chmod 644 $system_ca_path && sudo update-ca-certificates"
+            # update-ca-certificates 在证书文件名不变时可能报告 "0 added"（内容替换不计入数量）
+            # 因此追加一道验证：若 CA 指纹不在系统 bundle 中，则直接追加，确保 nerdctl 可验证 Harbor TLS
+            local import_system_ca_cmd="sudo cp $client_ca_path $system_ca_path && sudo chmod 644 $system_ca_path && sudo update-ca-certificates && ( sudo openssl verify -CAfile /etc/ssl/certs/ca-certificates.crt $system_ca_path >/dev/null 2>&1 || sudo sh -c 'cat $system_ca_path >> /etc/ssl/certs/ca-certificates.crt' )"
             if ! execute_ssh_command_with_retry "$node_host" "$node_port" "$node_username" "$node_ssh_key" "$import_system_ca_cmd"; then
-                log_warn \"节点 $node_name 导入系统 CA 证书失败（不影响 containerd 使用 certs.d/ 下的 CA）\"
+                log_error "节点 $node_name 导入系统 CA 证书失败，nerdctl 将无法验证 Harbor TLS"
+                continue
             else
-                log_info \"节点 $node_name 系统 CA 已更新: $system_ca_path\"
+                log_success "节点 $node_name 系统 CA 已更新: $system_ca_path"
             fi
         done
         
@@ -820,9 +824,10 @@ distribute_ca_certificate_to_client() {
         
         # 1. 导入 CA 证书到系统 CA 存储
         log_info "导入 CA 证书到系统 CA 存储: $system_ca_path"
-        local import_system_ca_cmd="sudo cp $client_ca_path $system_ca_path && sudo chmod 644 $system_ca_path && sudo update-ca-certificates"
+        local import_system_ca_cmd="sudo cp $client_ca_path $system_ca_path && sudo chmod 644 $system_ca_path && sudo update-ca-certificates && ( sudo openssl verify -CAfile /etc/ssl/certs/ca-certificates.crt $system_ca_path >/dev/null 2>&1 || sudo sh -c 'cat $system_ca_path >> /etc/ssl/certs/ca-certificates.crt' )"
         if ! execute_ssh_command_with_retry "$client_host" "$client_port" "$client_username" "$client_ssh_key" "$import_system_ca_cmd"; then
-            log_warn "导入系统 CA 失败，但继续尝试重启 Docker"
+            log_error "导入系统 CA 失败"
+            return 1
         else
             log_success "系统 CA 导入成功"
         fi

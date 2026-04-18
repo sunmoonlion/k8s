@@ -6,6 +6,17 @@
 # 用途: 根据cert-secret.conf中已配置的组合自动部署服务端和客户端
 # 支持模式: 初始化部署、证书轮换、强制更新
 # 注意: 此脚本已合并 rotate-certs.sh 的所有功能，支持命令行参数
+#
+# ⚠️  多集群 CA 一致性警告：
+#    如需 force/rotate 模式（重新生成 CA），请勿直接调用此脚本，
+#    应通过 step12 统一入口触发，以确保新 CA 自动同步到所有共用
+#    此 Harbor 的集群（如 C2）：
+#
+#      STEP12_FORCE_REGENERATE=true CLUSTER=C1 \
+#        bash sunmoonai/infrastructure/steps/step12_ca_generation.sh
+#
+#    直接调用此脚本的 force 模式只会更新当前 CLUSTER，其他集群
+#    的 nerdctl 将因 CA 不一致而报 x509 错误。
 # =============================================================================
 
 set -euo pipefail
@@ -197,6 +208,26 @@ case "$TLS_MODE" in
         exit 1
         ;;
 esac
+
+# force/rotate 模式直接调用警告
+# rotate 也可能触发 CA 重新生成（归档不存在时），同样有多集群不一致风险
+if [[ "$TLS_MODE" == "force" || "$TLS_MODE" == "rotate" ]]; then
+    echo ""
+    echo "⚠️  ============================================================"
+    echo "⚠️  多集群 CA 一致性警告"
+    echo "⚠️  ------------------------------------------------------------"
+    echo "⚠️  force/rotate 模式可能重新生成 CA。若有其他集群共用此"
+    echo "⚠️  Harbor（如 C2），当前操作不会自动同步新 CA 到这些集群，"
+    echo "⚠️  将导致其 nerdctl push/pull 报 x509 错误。"
+    echo "⚠️"
+    echo "⚠️  推荐做法：通过 step12 统一入口触发，可自动同步所有集群："
+    echo "⚠️    STEP12_FORCE_REGENERATE=true CLUSTER=C1 \\"
+    echo "⚠️      bash sunmoonai/infrastructure/steps/step12_ca_generation.sh"
+    echo "⚠️"
+    echo "⚠️  若确认只需更新当前集群（CLUSTER=${CLUSTER:-未设置}），忽略此警告。"
+    echo "⚠️  ============================================================"
+    echo ""
+fi
 
 # 加载公共函数
 source "$PROJECT_ROOT/lib/common.sh"
