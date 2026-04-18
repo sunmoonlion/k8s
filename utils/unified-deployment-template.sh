@@ -1288,6 +1288,16 @@ push_component_images_to_harbor() {
     # 在首次推送组件镜像前等待 Harbor 就绪（只检查一次）
     wait_for_harbor_if_needed || true
 
+    # Kind 模式下确保 docker 已登录 Harbor（Harbor 刚部署完 auth 可能未完全就绪，重试 login）
+    if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
+        local harbor_host="${HARBOR_HOST:-harbor.sunmoonai.com:30443}"
+        local harbor_user="${HARBOR_ADMIN_USER:-admin}"
+        local harbor_pass="${HARBOR_ADMIN_PASSWORD:-}"
+        if [[ -n "$harbor_pass" ]]; then
+            echo "$harbor_pass" | docker login "$harbor_host" -u "$harbor_user" --password-stdin >/dev/null 2>&1 || true
+        fi
+    fi
+
     local base_dir
     base_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
