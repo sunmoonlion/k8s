@@ -642,11 +642,29 @@ main() {
             # 卸载主部署
             if helm uninstall "postgresql-$project_id" -n "$namespace" --wait; then
                 log_success "✅ PostgreSQL 卸载成功！"
+                log_info "⚠️  PVC 已保留，如需清除数据请使用: $0 clean"
                 return 0
             else
                 log_error "❌ PostgreSQL 卸载失败！"
                 return 1
             fi
+            ;;
+        "clean")
+            log_warn "⚠️  警告：此操作将删除所有 PostgreSQL 数据（包括 PVC）！"
+
+            if ! setup_kubectl_environment; then
+                log_error "无法建立 Kubernetes 连接"
+                return 1
+            fi
+
+            if ! ensure_helm_available; then
+                return 1
+            fi
+
+            helm uninstall "postgresql-$project_id" -n "$namespace" --wait || true
+            log_info "删除 PVC（会删除所有数据）..."
+            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/instance="postgresql-$project_id" || true
+            log_success "✅ PostgreSQL 清理完成（包括数据）"
             ;;
         "status")
             log_info "检查 PostgreSQL 状态..."
@@ -687,7 +705,8 @@ main() {
             echo "操作:"
             echo "  deploy     部署 PostgreSQL"
             echo "  upgrade    升级 PostgreSQL"
-            echo "  uninstall  卸载 PostgreSQL"
+            echo "  uninstall  卸载 PostgreSQL（保留 PVC 数据）"
+            echo "  clean      清理 PostgreSQL（包括数据）"
             echo "  status     检查 PostgreSQL 状态"
             echo ""
             echo "参数说明:"
@@ -700,6 +719,7 @@ main() {
             echo "  $0 deploy sunmoonai data-platform-dev development"
             echo "  $0 upgrade sunmoonai data-platform-dev production"
             echo "  $0 uninstall sunmoonai data-platform-dev"
+            echo "  $0 clean sunmoonai data-platform-dev"
             echo "  $0 status sunmoonai data-platform-dev"
             echo ""
             echo "环境:"

@@ -110,10 +110,7 @@ env:
 # 持久化存储配）
 # ============================================================================
 persistentVolume:
-  enabled: true
-  annotations: {}
-  existingClaim: "pgadmin-sunmoonai-dev-pvc"  # Kind 静态 PV，数据跨集群重建保留
-  subPath: ""
+  enabled: false  # Kind 环境不持久化，连接配置通过 Helm values 管理
 
 # ============================================================================
 # 资源限制（开发环境）

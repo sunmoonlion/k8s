@@ -50,11 +50,8 @@ auth:
   # 如果以后真的要换密码，再手工调整 Secret 和数据卷，而不是依赖自动更）
   updatePassword: false
 
-# 顶层持久化配置（使用静）PVC，以便重）kind 集群时复用老数据盘）
 persistence:
-  enabled: true
-  existingClaim: rabbitmq-sunmoonai-dev-pvc
-  storageClass: ""   # 使用 existingClaim，不再通过 storageClass 动态创）
+  enabled: false  # Kind 环境不持久化，消息数据无需跨集群保留
 
 # 主服务配）
 primary:

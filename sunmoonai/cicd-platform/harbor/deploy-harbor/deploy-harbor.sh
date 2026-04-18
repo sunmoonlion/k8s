@@ -1866,10 +1866,38 @@ main() {
             fi
             
             if uninstall_harbor "$project_id" "$namespace" "$environment" "$dry_run"; then
+                log_info "⚠️  PVC 已保留，如需清除数据请使用: $0 clean"
                 return 0
             else
                 return 1
             fi
+            ;;
+        "clean")
+            if [[ -z "$project_id" ]]; then
+                log_error "请提供项目ID"
+                echo "用法: $0 clean <project_id> [namespace] [environment] [dry_run]"
+                echo "示例: $0 clean $HARBOR_PROJECT_ID $HARBOR_NAMESPACE $ENVIRONMENT false"
+                exit 1
+            fi
+
+            log_warn "⚠️  警告：此操作将删除所有 Harbor 数据（包括 PVC）！"
+
+            if ! setup_kubectl_environment; then
+                log_error "无法建立 Kubernetes 连接"
+                return 1
+            fi
+
+            uninstall_sub_components_by_priority "$project_id" "$namespace" "$environment" "$dry_run"
+
+            local release_name="${project_id}-harbor"
+            helm uninstall "$release_name" -n "$namespace" || true
+
+            log_info "删除 PVC（会删除所有数据）..."
+            for pvc in $(kubectl get pvc -n "$namespace" -o name | grep harbor || true); do
+                kubectl patch "$pvc" -n "$namespace" -p '{"metadata":{"finalizers":null}}' --type=merge >/dev/null 2>&1 || true
+                kubectl delete "$pvc" -n "$namespace" --grace-period=0 --force >/dev/null 2>&1 || true
+            done
+            log_success "✅ Harbor 清理完成（包括数据）"
             ;;
         "status")
             if [[ -z "$project_id" ]]; then
@@ -1915,7 +1943,8 @@ main() {
             echo "操作:"
             echo "  deploy     部署 Harbor（递归部署）"
             echo "  upgrade    升级 Harbor"
-            echo "  uninstall  卸载 Harbor"
+            echo "  uninstall  卸载 Harbor（保留 PVC 数据）"
+            echo "  clean      清理 Harbor（包括数据）"
             echo "  status     检查 Harbor 状态"
             echo "  logs       获取 Harbor 日志"
             echo ""
@@ -1923,6 +1952,7 @@ main() {
             echo "  deploy:    $0 deploy <project_id> [namespace] [environment] [dry_run]"
             echo "  upgrade:   $0 upgrade <project_id> [namespace] [environment] [dry_run]"
             echo "  uninstall: $0 uninstall <project_id> [namespace] [environment] [dry_run]"
+            echo "  clean:     $0 clean <project_id> [namespace] [environment] [dry_run]"
             echo "  status:    $0 status <project_id> [namespace] [environment] [dry_run]"
             echo "  logs:      $0 logs <project_id> [namespace] [environment] [dry_run]"
             echo ""
@@ -1936,6 +1966,7 @@ main() {
             echo "  $0 deploy $HARBOR_PROJECT_ID $HARBOR_NAMESPACE $ENVIRONMENT"
             echo "  $0 upgrade $HARBOR_PROJECT_ID $HARBOR_NAMESPACE $ENVIRONMENT"
             echo "  $0 uninstall $HARBOR_PROJECT_ID $HARBOR_NAMESPACE $ENVIRONMENT"
+            echo "  $0 clean $HARBOR_PROJECT_ID $HARBOR_NAMESPACE $ENVIRONMENT"
             echo "  $0 status $HARBOR_PROJECT_ID $HARBOR_NAMESPACE $ENVIRONMENT"
             echo "  $0 logs $HARBOR_PROJECT_ID $HARBOR_NAMESPACE $ENVIRONMENT"
             echo ""

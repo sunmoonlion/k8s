@@ -39,12 +39,8 @@ master:
       memory: 1Gi
   heapSize: 512m
 
-  # 持久化：复用 master 节点的数据盘（静）PVC elasticsearch-sunmoonai-dev-pvc）
   persistence:
-    enabled: true
-    existingClaim: elasticsearch-sunmoonai-dev-pvc
-    storageClass: ""    # 使用 existingClaim，不再通过 storageClass 动态创）
-    size: 8Gi
+    enabled: false  # Kind 环境不持久化，日志数据无需跨集群保留
 
 data:
   image:

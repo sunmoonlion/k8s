@@ -5,6 +5,6 @@ kind: StorageClass
 metadata:
   name: local-path
 provisioner: rancher.io/local-path
-reclaimPolicy: Delete
+reclaimPolicy: Retain
 volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: false

@@ -28,6 +28,7 @@ REMOVE_RUNTIME="${STEP00_REMOVE_RUNTIME:-true}"
 REMOVE_K8S_PACKAGES="${STEP00_REMOVE_K8S_PACKAGES:-true}"
 REMOVE_K8S_IMAGES="${STEP00_REMOVE_K8S_IMAGES:-false}"
 REMOVE_HOSTS_BLOCK="${STEP00_REMOVE_HOSTS_BLOCK:-false}"
+REMOVE_LOCAL_STORAGE="${STEP00_REMOVE_LOCAL_STORAGE:-false}"
 # REMOVE_NAMESPACES="${STEP00_REMOVE_NAMESPACES:-true}"  # 已移除命名空间清理功能
 
 # 其他配置
@@ -220,6 +221,40 @@ cleanup_cni() {
 #     # 功能已移除
 # }
 
+# 在 kubeadm reset 前删除所有 PVC，触发 reclaim policy 清理磁盘数据
+# 仅在 master 节点执行（需要 kubectl），且 REMOVE_LOCAL_STORAGE=true 时生效
+cleanup_pvcs() {
+    local node="$1"
+    local node_type
+    node_type="$(get_server_var "$node" TYPE)"
+
+    if [[ "$REMOVE_LOCAL_STORAGE" != "true" ]]; then
+        log_info "[Step00] 节点 $node: REMOVE_LOCAL_STORAGE=false，跳过 PVC 清理"
+        return 0
+    fi
+
+    if [[ "$node_type" != "master" ]]; then
+        return 0
+    fi
+
+    log_warn "[Step00] 节点 $node: REMOVE_LOCAL_STORAGE=true，删除所有 PVC（数据将永久丢失）..."
+
+    # 检查 API Server 是否可用
+    if ! ssh_exec "$node" "bash -lc 'KUBECONFIG=$REMOTE_KUBECONFIG kubectl get nodes >/dev/null 2>&1'"; then
+        log_warn "[Step00] 节点 $node: API Server 不可用，跳过 PVC 清理"
+        return 0
+    fi
+
+    # 删除所有命名空间的 PVC
+    ssh_exec "$node" "bash -lc 'KUBECONFIG=$REMOTE_KUBECONFIG kubectl get pvc -A --no-headers 2>/dev/null | awk \"{print \\\$1, \\\$2}\" | while read ns name; do
+        KUBECONFIG=$REMOTE_KUBECONFIG kubectl patch pvc \"\$name\" -n \"\$ns\" -p \"{\\\"metadata\\\":{\\\"finalizers\\\":null}}\" --type=merge 2>/dev/null || true
+        KUBECONFIG=$REMOTE_KUBECONFIG kubectl delete pvc \"\$name\" -n \"\$ns\" --grace-period=0 --force 2>/dev/null || true
+    done'" || true
+
+    log_info "[Step00] 节点 $node: PVC 清理完成，等待 reclaim policy 触发..."
+    sleep 5
+}
+
 # 清理存储组件
 cleanup_storage() {
     local node="$1"
@@ -321,10 +356,11 @@ execute() {
     # 执行清理步骤（按依赖关系排序）
     # 先清理依赖 API Server 的资源，再停止 Kubernetes 组件
     cleanup_cni "$i"               # 1. 先清理 CNI 网络（需要 API Server 运行）
-    cleanup_kubernetes "$i"        # 2. 再执行 kubeadm reset（会停止 API Server）
-    cleanup_storage "$i"           # 3. 清理存储
-    # cleanup_namespaces "$i"      # 4. 移除命名空间清理功能（kubeadm reset 会自动清理）
-    cleanup_container_runtime "$i"  # 5. 清理容器运行时
+    cleanup_pvcs "$i"              # 2. 删除 PVC，触发 reclaim policy（REMOVE_LOCAL_STORAGE=true 时生效）
+    cleanup_kubernetes "$i"        # 3. 再执行 kubeadm reset（会停止 API Server）
+    cleanup_storage "$i"           # 4. 清理存储目录
+    # cleanup_namespaces "$i"      # 5. 移除命名空间清理功能（kubeadm reset 会自动清理）
+    cleanup_container_runtime "$i"  # 6. 清理容器运行时
     
     # 清理网络
     cleanup_network "$i"
