@@ -115,15 +115,26 @@ wait_for_harbor_if_needed() {
     local start
     start=$(date +%s)
 
-    log_info "[harbor] 等待 Harbor 就绪 (${host}:${port}，最长 ${timeout}s)..."
+    local namespace="${HARBOR_NAMESPACE:-cicd-platform-dev}"
+    local project_id="${HARBOR_PROJECT_ID:-sunmoonai}"
+
+    log_info "[harbor] 等待 Harbor 就绪 (namespace=${namespace}，最长 ${timeout}s)..."
 
     while true; do
-        # 不带凭证访问 /v2/，能返回 JSON（401/200）即认为 Harbor 已就绪
-        if curl -sk --noproxy '*' "https://${host}:${port}/v2/" | grep -q '"errors"' ; then
-            log_info "[harbor] Harbor /v2/ 已响应"
+        # 通过 kubectl 检查 Harbor 所有 pod 是否就绪（Running/Succeeded）
+        local total ready
+        total=$(kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=${project_id}" \
+            --no-headers 2>/dev/null | wc -l)
+        ready=$(kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=${project_id}" \
+            -o jsonpath='{range .items[*]}{.status.phase}{"\n"}{end}' 2>/dev/null \
+            | grep -cE '^(Running|Succeeded)$' || true)
+
+        if [[ $total -gt 0 && $ready -eq $total ]]; then
+            log_info "[harbor] Harbor 所有 Pod 已就绪 (${ready}/${total})"
             export HARBOR_READY_CHECKED="1"
             return 0
         fi
+
         local now
         now=$(date +%s)
         if (( now - start >= timeout )); then
@@ -131,6 +142,7 @@ wait_for_harbor_if_needed() {
             export HARBOR_READY_CHECKED="1"
             return 1
         fi
+        log_info "[harbor] 等待 Harbor Pod 就绪 (${ready:-0}/${total:-0})..."
         sleep "${interval}"
     done
 }
