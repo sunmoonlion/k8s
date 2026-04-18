@@ -567,9 +567,23 @@ _prepare_local_storage_on_node(){
                 # 路径用 ~username 展开，避免 sudo 下 $HOME 指向 /root
                 if ! ssh_exec_sudo "$node" "nerdctl -n k8s.io images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null | grep -Fx '${image}'"; then
                     log_info "[Step09] 节点 $node 加载镜像: $image"
-                    ssh_exec_sudo "$node" "nerdctl -n k8s.io load -i ~${user}${dir#\~}/images/$tar" \
-                        && log_info "[Step09] 节点 $node 镜像加载成功: $image" \
-                        || log_warn "[Step09] 节点 $node 镜像加载失败（非致命，若镜像已存在可忽略）: $image"
+                    # nerdctl load 耗时较长，WSL2/NAT 环境下默认 90s keepalive 不够
+                    # SSH_ALIVE_COUNT_MAX=10 → ServerAliveInterval=30 × 10 = 300s 上限
+                    local load_ok=0
+                    if SSH_ALIVE_COUNT_MAX=10 ssh_exec_sudo "$node" "nerdctl -n k8s.io load -i ~${user}${dir#\~}/images/$tar"; then
+                        load_ok=1
+                    else
+                        log_warn "[Step09] 节点 $node 镜像加载第 1 次失败: $image，重试一次..."
+                        if SSH_ALIVE_COUNT_MAX=10 ssh_exec_sudo "$node" "nerdctl -n k8s.io load -i ~${user}${dir#\~}/images/$tar"; then
+                            load_ok=1
+                        fi
+                    fi
+                    if [[ "$load_ok" -eq 1 ]]; then
+                        log_info "[Step09] 节点 $node 镜像加载成功: $image"
+                    else
+                        log_error "[Step09] 节点 $node 镜像加载失败（已重试 1 次）: $image"
+                        return 1
+                    fi
                 else
                     log_info "[Step09] 节点 $node 镜像已存在，跳过: $image"
                 fi
