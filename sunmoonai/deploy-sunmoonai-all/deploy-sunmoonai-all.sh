@@ -99,20 +99,21 @@ call_subscript() {
     fi
 }
 
+# 与 utils/kubeconfig-path-for-cluster.sh、unified-deployment-template 共用同一解析规则
+# shellcheck source=/dev/null
+source "${PROJECT_ROOT}/../utils/kubeconfig-path-for-cluster.sh"
+
 # 当 CLUSTER=KIND 时，在总控进程中设置 KUBECONFIG，使后续 data/messaging/ops 等平台部署都操作同一 Kind 集群。
 # 否则 deploy-kind 在子进程里 export 的 KUBECONFIG 不会继承，导致子脚本有时用默认 kubeconfig，出现 Secret 未创建等不稳定现象。
 resolve_kind_kubeconfig() {
-    local conf="${PROJECT_ROOT}/../utils/k8s-admin.conf"
-    if [[ -f "$conf" ]]; then
-        local path
-        path=$(sed -n '/^\[KIND\]$/,/^\[/p' "$conf" | grep '^kubeconfig=' | head -1 | cut -d'=' -f2- | tr -d ' ')
-        path="${path/#\~/$HOME}"
-        if [[ -n "$path" && -f "$path" ]]; then
-            echo "$path"
-            return
-        fi
-    fi
-    echo "${HOME}/.kube/kind-config"
+    kubeconfig_path_from_admin_conf "${PROJECT_ROOT}/../utils/k8s-admin.conf" "KIND"
+}
+
+# 从 k8s-admin.conf 读取当前 CLUSTER（C1/C2/…）对应的 kubeconfig 路径
+resolve_remote_cluster_kubeconfig_path() {
+    local cu
+    cu=$(echo "${CLUSTER:-}" | tr '[:lower:]' '[:upper:]')
+    kubeconfig_path_from_admin_conf "${PROJECT_ROOT}/../utils/k8s-admin.conf" "$cu"
 }
 
 # 等待命名空间内 Pod 就绪（Running/Completed），超时后不失败
@@ -157,8 +158,18 @@ deploy_platform_components_by_priority() {
     if [[ "$cluster_upper" == "KIND" ]]; then
         kind_kubeconfig=$(resolve_kind_kubeconfig)
         if [[ -f "$kind_kubeconfig" && "${KUBECONFIG:-}" != "$kind_kubeconfig" ]]; then
+            unset KUBECONFIG
             export KUBECONFIG="$kind_kubeconfig"
             log_info "已设置 KUBECONFIG=$KUBECONFIG（Kind 集群）"
+        fi
+    elif [[ "$cluster_upper" =~ ^C[0-9]+$ ]]; then
+        # 远程集群：总控进程里的 kubectl（如 WAIT_READY）需指向 C1/C2 的 admin.conf，避免继承 shell 中误留的 Kind KUBECONFIG
+        local remote_kc
+        remote_kc=$(resolve_remote_cluster_kubeconfig_path) || true
+        if [[ -n "${remote_kc:-}" && -f "$remote_kc" ]]; then
+            unset KUBECONFIG
+            export KUBECONFIG="$remote_kc"
+            log_info "已设置 KUBECONFIG=$KUBECONFIG（远程集群 $cluster_upper）"
         fi
     fi
     if [[ "${WAIT_READY:-false}" == "true" ]]; then
@@ -262,6 +273,13 @@ deploy_platform_components_by_priority() {
                             log_info "使用远程基础设施脚本: $script_path"
                             if call_subscript "$script_path" deploy "$project_id" "$environment" "$dry_run"; then
                                 log_success "✅ 远程基础设施部署完成"
+                                local remote_kc
+                                remote_kc=$(resolve_remote_cluster_kubeconfig_path) || true
+                                if [[ -n "${remote_kc:-}" && -f "$remote_kc" ]]; then
+                                    unset KUBECONFIG
+                                    export KUBECONFIG="$remote_kc"
+                                    log_info "总控进程已同步 KUBECONFIG=$KUBECONFIG（后续平台与 kubectl 一致性）"
+                                fi
                             else
                                 log_error "❌ 远程基础设施部署失败"
                                 return 1

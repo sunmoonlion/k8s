@@ -303,6 +303,7 @@ read_k8s_config() {
         KIND_KUBECONFIG="${KIND_KUBECONFIG/#\~/$HOME}"
         KIND_KUBECONFIG=$(eval echo "$KIND_KUBECONFIG")
         K8S_TARGET_MODE=kind
+        export CURRENT_SELECT_CLUSTER="$cluster_name"
         log_info "Kind 集群名: $KIND_CLUSTER_NAME, kubeconfig: $KIND_KUBECONFIG"
         return 0
     fi
@@ -430,6 +431,7 @@ read_k8s_config() {
     BASTION_KUBECONFIG=$(expand_path "$BASTION_KUBECONFIG")
     DIRECT_KUBECONFIG=$(expand_path "$DIRECT_KUBECONFIG")
     
+    export CURRENT_SELECT_CLUSTER="$cluster_name"
     log_info "配置文件加载成功"
     return 0
 }
@@ -450,8 +452,9 @@ save_k8s_status() {
 CURRENT_MODE=$CURRENT_MODE
 CURRENT_KUBECONFIG=$CURRENT_KUBECONFIG
 TUNNEL_PID=$TUNNEL_PID
+CURRENT_TARGET_CLUSTER=${CURRENT_SELECT_CLUSTER:-}
 EOF
-    log_info "连接状态已保存: CURRENT_MODE=$CURRENT_MODE, TUNNEL_PID=$TUNNEL_PID"
+    log_info "连接状态已保存: CURRENT_MODE=$CURRENT_MODE, CLUSTER=${CURRENT_SELECT_CLUSTER:-?}, TUNNEL_PID=$TUNNEL_PID"
 }
 
 # 加载连接状态（直接使用 CURRENT_* 字段）
@@ -485,9 +488,54 @@ clear_k8s_status() {
     fi
 }
 
+# 解析「当前期望操作的目标集群」标识（KIND / C1 / C2 / …），与 read_k8s_config 优先级一致
+resolve_desired_target_cluster_id() {
+    local dn="${CLUSTER:-}"
+    if [[ -z "$dn" ]] && [[ -f "$CONFIG_FILE" ]]; then
+        dn=$(sed -n '/^\[GLOBAL\]$/,/^\[[A-Z]/p' "$CONFIG_FILE" 2>/dev/null | grep "^default_cluster=" | head -1 | cut -d'=' -f2 | tr -d ' ')
+    fi
+    dn="${dn:-C1}"
+    if [[ "$dn" =~ ^[0-9]+$ ]]; then
+        dn="C${dn}"
+    fi
+    echo "$(echo "$dn" | tr '[:lower:]' '[:upper:]')"
+}
+
+# 检查已缓存连接是否仍适用于当前 CLUSTER（避免 Kind 缓存被 C1/C2 部署误用）
+k8s_status_matches_desired_cluster() {
+    local desired saved
+    desired="$(resolve_desired_target_cluster_id)"
+    saved="${CURRENT_TARGET_CLUSTER:-}"
+
+    if [[ -n "$saved" ]]; then
+        if [[ "$saved" != "$desired" ]]; then
+            log_warn "已缓存连接的集群标识 ($saved) 与当前目标 ($desired) 不一致，将丢弃缓存并重新建连"
+            clear_k8s_status
+            return 1
+        fi
+        return 0
+    fi
+
+    # 旧版 .k8s-status 无 CURRENT_TARGET_CLUSTER 字段时的兜底（典型：昨日 Kind 留下缓存，今日部署 C2）
+    if [[ "$desired" == "KIND" && "$CURRENT_MODE" != "kind" ]]; then
+        log_warn "缓存为远程/本地连接，但当前目标为 KIND，将丢弃缓存并重新建连"
+        clear_k8s_status
+        return 1
+    fi
+    if [[ "$desired" != "KIND" && "$CURRENT_MODE" == "kind" ]]; then
+        log_warn "缓存为 Kind 连接，但当前目标集群为 ${desired}，将丢弃缓存并重新建连（避免 kubectl 误连 Kind）"
+        clear_k8s_status
+        return 1
+    fi
+    return 0
+}
+
 # 检查连接状态
 check_k8s_connection_status() {
     if load_k8s_status; then
+        if ! k8s_status_matches_desired_cluster; then
+            return 1
+        fi
         # Kind 模式：无隧道，仅校验 kubeconfig 与 kubectl 可用
         if [[ "$CURRENT_MODE" == "kind" ]]; then
             if [[ -n "$CURRENT_KUBECONFIG" ]] && [[ -f "$CURRENT_KUBECONFIG" ]]; then
@@ -941,6 +989,7 @@ start_direct_connection() {
 setup_local_connection() {
     log_info "使用本地 Kubernetes 集群..."
     unset KUBECONFIG
+    export CURRENT_SELECT_CLUSTER="LOCAL"
     save_k8s_status "local" "$(date +%s)" "0" "0"
     log_success "本地连接设置完成"
     return 0
@@ -989,9 +1038,79 @@ stop_k8s_connection_quiet() {
     clear_k8s_status
 }
 
+# 拒绝 KUBECONFIG 多文件合并（极易串集群）
+enforce_no_merged_kubeconfig_env() {
+    if [[ -n "${KUBECONFIG:-}" ]] && [[ "$KUBECONFIG" == *:* ]]; then
+        log_error "环境变量 KUBECONFIG 包含多个文件（以 : 分隔），kubectl 会合并上下文，极易误连错误集群。请先: unset KUBECONFIG 或只保留一个 kubeconfig 路径"
+        return 1
+    fi
+    return 0
+}
+
+# 在已导出 KUBECONFIG 且指定了 CLUSTER 时，校验路径与 k8s-admin.conf 中 [KIND]/[C*_DIRECT|BASTION] 一致（最后一道闸）
+assert_kubeconfig_matches_cluster_selection() {
+    local cu
+    cu=$(echo "${CLUSTER:-}" | tr '[:lower:]' '[:upper:]')
+    [[ -n "$cu" ]] || return 0
+
+    if ! enforce_no_merged_kubeconfig_env; then
+        return 1
+    fi
+
+    if [[ "${CURRENT_MODE:-}" == "local" ]]; then
+        if [[ -z "${KUBECONFIG:-}" ]]; then
+            return 0
+        fi
+        log_error "local 连接模式下不应设置 KUBECONFIG"
+        return 1
+    fi
+
+    if ! read_k8s_config; then
+        log_error "无法读取 k8s 配置以校验 kubeconfig 路径"
+        return 1
+    fi
+
+    local exp=""
+    case "${CURRENT_MODE:-}" in
+        kind) exp="$KIND_KUBECONFIG" ;;
+        bastion) exp="$BASTION_KUBECONFIG" ;;
+        direct) exp="$DIRECT_KUBECONFIG" ;;
+        *)
+            log_error "无法校验 kubeconfig：未知 CURRENT_MODE='${CURRENT_MODE:-}'"
+            return 1
+            ;;
+    esac
+
+    exp="${exp/#\~/$HOME}"
+    exp=$(eval echo "$exp")
+    local got="${KUBECONFIG:-}"
+    got="${got/#\~/$HOME}"
+    got=$(eval echo "$got")
+
+    if [[ -z "$got" ]]; then
+        log_error "CLUSTER=$cu 已指定，但 KUBECONFIG 未设置"
+        return 1
+    fi
+
+    local e_can g_can
+    e_can=$(readlink -f "$exp" 2>/dev/null || echo "$exp")
+    g_can=$(readlink -f "$got" 2>/dev/null || echo "$got")
+
+    if [[ "$e_can" != "$g_can" ]]; then
+        log_error "kubeconfig 与 CLUSTER=$cu、连接模式 ${CURRENT_MODE} 不一致（防止串集群）：当前 $g_can ，配置期望 $e_can"
+        clear_k8s_status
+        return 1
+    fi
+    return 0
+}
+
 # 设置 kubectl 环境
 setup_kubectl_environment() {
     log_info "设置 kubectl 环境..."
+
+    if ! enforce_no_merged_kubeconfig_env; then
+        return 1
+    fi
     
     # 检查现有连接状态
     if check_k8s_connection_status; then
@@ -1010,7 +1129,9 @@ setup_kubectl_environment() {
     fi
     
     # 加载连接状态以获取 CURRENT_MODE 和 CURRENT_KUBECONFIG
+    local __k8s_loaded=0
     if load_k8s_status; then
+        __k8s_loaded=1
         # 设置环境变量
         if [[ -z "$CURRENT_MODE" ]]; then
             log_error "连接状态无效：CURRENT_MODE 为空"
@@ -1042,8 +1163,15 @@ setup_kubectl_environment() {
         unset KUBECONFIG
         log_info "未找到连接状态，回退为本地 kubeconfig"
     fi
-    
-    # 连接建立后，环境变量已经设置好了，不需要额外验证
+
+    # 仅在已成功加载连接状态时校验（避免无状态回退路径缺少 CURRENT_MODE）
+    if [[ "$__k8s_loaded" -eq 1 ]]; then
+        if ! assert_kubeconfig_matches_cluster_selection; then
+            log_error "kubectl 环境与 CLUSTER 不一致，已清理连接缓存；请重新执行部署命令"
+            return 1
+        fi
+    fi
+
     log_success "Kubernetes 环境设置成功"
     return 0
 }
