@@ -612,8 +612,10 @@ validate_harbor_deployment() {
     
     log_info "验证 Harbor 整体部署状态..."
     
-    # 检查 Harbor 服务状态
-    if kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=$project_id" | grep -q "Running"; then
+    # 检查 Harbor 服务状态（含一次性 Job 的 Succeeded/Completed，避免误报）
+    local pod_phases
+    pod_phases=$(kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=$project_id" -o jsonpath='{range .items[*]}{.status.phase}{" "}{end}' 2>/dev/null || true)
+    if echo "$pod_phases" | grep -qE 'Running|Succeeded'; then
         log_success "Harbor Pod 运行正常"
     else
         log_warn "Harbor Pod 状态异常"
@@ -878,9 +880,15 @@ wait_for_harbor_ready() {
     fi
     
     while [[ $attempt -le $max_attempts ]]; do
-        # 1. 检查所有 Harbor Pod 是否运行
-        local harbor_pods=$(kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=$project_id" --no-headers 2>/dev/null | wc -l)
-        local running_pods=$(kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=$project_id" --no-headers 2>/dev/null | grep "Running" | wc -l)
+        # 1. 检查 Harbor 相关 Pod 是否已达「可用」状态
+        # 说明：不能只数 grep Running。Helm/Chart 常带一次性 Job（迁移、初始化），其 phase 为 Succeeded，
+        # 在 kubectl 表格里显示为 Completed，若仍要求 5/5 Running 会永远等不满（其他环境若 Job 少或已清理则「碰巧正常」）。
+        local harbor_pods
+        harbor_pods=$(kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=$project_id" --no-headers 2>/dev/null | wc -l)
+        local phases
+        phases=$(kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=$project_id" -o jsonpath='{range .items[*]}{.status.phase}{"\n"}{end}' 2>/dev/null || true)
+        local ready_pods
+        ready_pods=$(echo "$phases" | grep -cE '^(Running|Succeeded)$' || true)
         
         if [[ $harbor_pods -eq 0 ]]; then
             log_info "等待 Harbor Pod 创建... ($attempt/$max_attempts)"
@@ -889,8 +897,10 @@ wait_for_harbor_ready() {
             continue
         fi
         
-        if [[ $running_pods -lt $harbor_pods ]]; then
-            log_info "等待 Harbor Pod 启动... ($running_pods/$harbor_pods Running) ($attempt/$max_attempts)"
+        if [[ $ready_pods -lt $harbor_pods ]]; then
+            local running_only
+            running_only=$(echo "$phases" | grep -cE '^Running$' || true)
+            log_info "等待 Harbor Pod 就绪... (Running=${running_only}, 已就绪含Succeeded=${ready_pods}/共${harbor_pods}) ($attempt/$max_attempts)"
             sleep 10
             attempt=$((attempt+1))
             continue
@@ -1085,7 +1095,7 @@ wait_for_harbor_ready() {
         
         log_success "✅ Harbor 服务完全就绪"
         log_info "Harbor 认证模式: $health_check"
-        log_info "运行 Pod 数: $running_pods/$harbor_pods"
+        log_info "Harbor Pod 就绪数 (Running 或 Succeeded): $ready_pods/$harbor_pods"
         return 0
     done
     
