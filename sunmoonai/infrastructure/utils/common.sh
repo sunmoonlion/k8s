@@ -294,7 +294,7 @@ ssh_exec(){
   port="$(get_server_var "$idx" SSH_PORT)"; port="${port:-22}"
   # 使用参数数组，避免 -o 选项被拼接为单个参数
   local -a ssh_opts_arr
-  ssh_opts_arr=( -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ServerAliveInterval=30 -o ServerAliveCountMax="${SSH_ALIVE_COUNT_MAX:-3}" -o BatchMode=no -o RequestTTY=no -p "$port" )
+  ssh_opts_arr=( -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o BatchMode=no -o RequestTTY=no -p "$port" )
   if [[ -n "$host" && -n "$user" ]]; then
     # 在远程命令中添加输出刷新，确保实时显示
     local cmd_with_flush="stdbuf -oL -eL $cmd"
