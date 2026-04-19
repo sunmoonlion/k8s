@@ -34,32 +34,12 @@ HARBOR_IP="${HARBOR_IP:-${HARBOR_NODE_IP:-172.18.0.2}}"
 # 确保 hosts 已配置（重用新的 hosts 脚本，幂等）
 "${SCRIPT_DIR}/wsl-setup-harbor-hosts.sh"
 
-# 分发 CA 并尝试 docker/nerdctl 登录
+# 分发 CA（与 push-to-harbor 等共用脚本，避免 Traefik 续签后 Docker 仍信任旧 CA）
 REGISTRY="${HARBOR_HOST}:${HARBOR_PORT}"
-DOCKER_CA_DIR="/etc/docker/certs.d/${REGISTRY}"
-HARBOR_CA_PATH="${HARBOR_CA_PATH:-$HARBOR_CA_DEFAULT}"
-
-if [[ -f "$HARBOR_CA_PATH" ]]; then
+export HARBOR_HOST HARBOR_PORT HARBOR_CA_PATH="${HARBOR_CA_PATH:-$HARBOR_CA_DEFAULT}"
+if [[ -f "${HARBOR_CA_PATH}" ]]; then
     echo "检测到根 CA: $HARBOR_CA_PATH"
-    # Docker 按「主机:端口」查找证书：带端口用 REGISTRY 目录，不带端口(443)用仅主机名目录
-    for _dir in "$DOCKER_CA_DIR" "/etc/docker/certs.d/${HARBOR_HOST}"; do
-        echo "准备分发到本机 docker 证书目录: ${_dir}/ca.crt"
-        sudo mkdir -p "$_dir"
-        if sudo cp "$HARBOR_CA_PATH" "${_dir}/ca.crt"; then
-            echo "✅ 已将 CA 证书复制到 ${_dir}/ca.crt"
-        else
-            echo "⚠️  无法复制 CA 证书到 ${_dir}，后续 docker login 可能出现证书相关错误"
-        fi
-    done
-    # 同时加入系统信任存储，避免 dockerd/containerd 校验证书时 EOF（Docker 29+ 拉取可能走 containerd）
-    if [[ -d /usr/local/share/ca-certificates ]]; then
-        _sys_ca="/usr/local/share/ca-certificates/sunmoonai-harbor-ca.crt"
-        if sudo cp "$HARBOR_CA_PATH" "$_sys_ca" 2>/dev/null; then
-            if command -v update-ca-certificates &>/dev/null; then
-                sudo update-ca-certificates 2>/dev/null && echo "✅ 已将根 CA 加入系统信任存储（${_sys_ca}）"
-            fi
-        fi
-    fi
+    "${SCRIPT_DIR}/sync-docker-harbor-ca.sh"
 else
     echo "⚠️  未找到根 CA 证书: $HARBOR_CA_PATH"
     echo "    如为 Kind 场景，请先在 WSL 中生成本地根 CA："

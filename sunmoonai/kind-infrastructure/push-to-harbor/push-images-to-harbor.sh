@@ -103,6 +103,20 @@ done
 
 load_conf
 
+# Kind 模式：每次推送前从磁盘刷新根 CA 到 Docker/系统信任（与 Traefik 当前 ca.crt 对齐，避免 push token 阶段 x509/RSA 错误）
+# 注意：conf 里 HARBOR_HOST 常为 host:port，sync 脚本需要拆开的 HOST 与 PORT；勿改写本脚本后续 push 使用的 HARBOR_HOST。
+if [[ -n "${KIND_CLUSTER_NAME:-}" ]]; then
+    _ca_sync="${SCRIPT_DIR}/../sync-docker-harbor-ca.sh"
+    if [[ -x "$_ca_sync" ]]; then
+        _sync_h="${HARBOR_HOST%%:*}"
+        _sync_p="${HARBOR_HOST##*:}"
+        [[ "$_sync_p" == "$_sync_h" ]] && _sync_p="30443"
+        if ! HARBOR_HOST="$_sync_h" HARBOR_PORT="$_sync_p" "$_ca_sync"; then
+            log_warn "Harbor CA 同步脚本返回非零（若无 sudo 可能失败）；若 docker push 仍报 TLS，请手动: sudo $_ca_sync"
+        fi
+    fi
+fi
+
 # 基本配置校验：确保 Harbor 项目已配置，避免推送到空项目路径
 if [[ -z "${HARBOR_PROJECT:-}" ]]; then
     log_error "未配置 HARBOR_PROJECT：请在 push-images-to-harbor.conf 中设置 Harbor 项目名（例如 k8s-images），否则无法推送镜像。"
