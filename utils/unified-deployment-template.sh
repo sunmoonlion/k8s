@@ -130,6 +130,19 @@ wait_for_harbor_if_needed() {
             --no-headers 2>/dev/null \
             | awk '{split($2,a,"/"); status=$3; if ((a[1]==a[2] && a[2]!="") || status=="Completed") count++} END{print count+0}')
 
+        # 远程集群（C1/C2 等）常见：Harbor 不在本集群该 namespace，kubectl 一直 0/0。
+        # 此时改探测外部 Registry /v2/（200/401 即服务在），避免空等超时。
+        if [[ $total -eq 0 ]]; then
+            local _rv2
+            _rv2=$(curl -sk -o /dev/null -w "%{http_code}" --connect-timeout 5 \
+                "https://${host}:${port}/v2/" 2>/dev/null || echo "000")
+            if [[ "$_rv2" == "200" || "$_rv2" == "401" ]]; then
+                log_info "[harbor] 集群内无 Harbor Pod（instance=${project_id}，0/0），Registry https://${host}:${port}/v2/ 已响应 (HTTP ${_rv2})，按外部 Harbor 视为就绪"
+                export HARBOR_READY_CHECKED="1"
+                return 0
+            fi
+        fi
+
         if [[ $total -gt 0 && $ready -eq $total ]]; then
             log_info "[harbor] Harbor 所有 Pod 已就绪 (${ready}/${total})"
             # Kind 模式下额外等待 Harbor API 可访问（pod Ready ≠ API 可写）
