@@ -73,11 +73,18 @@ check_namespace(){
     if [[ $? -ne 0 ]]; then
         if echo "$_ns_err4" | grep -qiE "not.?found|NotFound"; then
             log_error "命名空间不存在: $NAMESPACE"
+            exit 1
         else
+            log_warn "kubectl 连接失败，尝试自动重连后重试（${_ns_err4%%$'\n'*}）"
+            if command -v setup_kubectl_environment >/dev/null 2>&1 && setup_kubectl_environment >/dev/null 2>&1; then
+                if kubectl get namespace "$NAMESPACE" >/dev/null 2>&1; then
+                    log_success "✅ 重连后命名空间 $NAMESPACE 已存在"
+                    return 0
+                fi
+            fi
             log_error "kubectl 连接失败，无法验证命名空间 $NAMESPACE（${_ns_err4%%$'\n'*}）"
-            log_error "请检查 KUBECONFIG 和集群连接状态"
+            exit 1
         fi
-        exit 1
     fi
 }
 
