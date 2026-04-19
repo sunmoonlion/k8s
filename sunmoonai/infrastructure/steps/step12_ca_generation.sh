@@ -191,10 +191,60 @@ execute() {
     return 0
 }
 
-# 验证函数
+# 验证函数：校验本地归档 CA 与 K8s 部署的 CA 一致，防止 CA 分叉
 verify() {
-    log_info "[Step12] 验证：由 unified-cert-secret-management 处理"
-    # 验证由 unified-cert-secret-management 内部处理，此处无需重复验证
+    log_info "[Step12] 验证：校验本地归档 CA 与 K8s secret 一致性"
+
+    local sync_script="$K8S_ROOT/utils/unified-cert-secret-management/scripts/sync-ca-from-k8s.sh"
+    if [[ ! -f "$sync_script" ]]; then
+        log_warn "[Step12] 未找到 sync-ca-from-k8s.sh，跳过一致性校验"
+        return 0
+    fi
+
+    local ca_dir="${TRAEFIK_K1_K1_LOCAL_CA_CERT_DIR:-}"
+    ca_dir="${ca_dir/#\~/$HOME}"
+    if [[ -z "$ca_dir" || ! -f "$ca_dir/ca.crt" ]]; then
+        log_warn "[Step12] 本地归档 CA 不存在，跳过一致性校验"
+        return 0
+    fi
+
+    # 调用 sync 脚本做只读验证（不写入，只比对）
+    local secret_name="${TRAEFIK_K1_K1_CA_VALIDATE_SECRET_NAME:-traefik-tls-secret}"
+    local secret_ns="${TRAEFIK_K1_K1_CA_VALIDATE_SECRET_NAMESPACE:-ingress-platform-dev}"
+    local server_host="${TRAEFIK_K1_K1_SERVER_HOST:-}"
+    local server_port="${TRAEFIK_K1_K1_SERVER_PORT:-1022}"
+    local server_user="${TRAEFIK_K1_K1_SERVER_USERNAME:-zym}"
+    local server_key="${TRAEFIK_K1_K1_SERVER_SSH_KEY:-~/.ssh/id_rsa}"
+    server_key="${server_key/#\~/$HOME}"
+
+    if [[ -z "$server_host" ]]; then
+        log_warn "[Step12] 未配置 SERVER_HOST，跳过 K8s CA 一致性校验"
+        return 0
+    fi
+
+    local k8s_fp
+    k8s_fp=$(ssh -i "$server_key" -p "$server_port" -o ConnectTimeout=10 -o StrictHostKeyChecking=no \
+        "${server_user}@${server_host}" \
+        "kubectl get secret ${secret_name} -n ${secret_ns} -o jsonpath='{.data.ca\.crt}' 2>/dev/null | base64 -d | openssl x509 -noout -fingerprint -sha256 2>/dev/null" 2>/dev/null || echo "")
+
+    if [[ -z "$k8s_fp" ]]; then
+        log_warn "[Step12] 无法从 K8s 获取 CA 指纹（可能集群未就绪），跳过校验"
+        return 0
+    fi
+
+    local local_fp
+    local_fp=$(openssl x509 -noout -fingerprint -sha256 -in "$ca_dir/ca.crt" 2>/dev/null || echo "")
+
+    if [[ "$local_fp" != "$k8s_fp" ]]; then
+        log_error "[Step12] CA 不一致！本地归档与 K8s 部署的 CA 指纹不同："
+        log_error "  本地归档: $local_fp"
+        log_error "  K8s secret: $k8s_fp"
+        log_error "请先运行以下命令同步本地归档，再重新执行 Step12："
+        log_error "  bash $sync_script --combo TRAEFIK_K1_K1"
+        return 1
+    fi
+
+    log_info "[Step12] CA 一致性校验通过（本地归档与 K8s 指纹一致）"
     return 0
 }
 

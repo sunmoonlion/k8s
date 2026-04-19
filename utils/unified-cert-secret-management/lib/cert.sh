@@ -604,6 +604,55 @@ distribute_certificates_to_server() {
     log_success "证书分发到服务端完成"
 }
 
+# 校验本地归档 CA 与 K8s secret 中的 ca.crt 是否一致
+# 返回 0=一致或无法校验（跳过）, 1=不一致（应中止分发）
+validate_ca_vs_k8s() {
+    local combo="$1"
+    local local_ca_path="$2"
+
+    local secret_name secret_namespace secret_key
+    secret_name=$(get_five_layer_config "$combo" "CA_VALIDATE_SECRET_NAME" 2>/dev/null || echo "")
+    [[ -z "$secret_name" ]] && return 0  # 未配置校验，跳过
+
+    secret_namespace=$(get_five_layer_config "$combo" "CA_VALIDATE_SECRET_NAMESPACE" 2>/dev/null || echo "")
+    secret_key=$(get_five_layer_config "$combo" "CA_VALIDATE_SECRET_KEY" 2>/dev/null || echo "ca.crt")
+
+    local server_prefix
+    server_prefix=$(echo "$combo" | sed 's/_[KDN][0-9]*$//')
+    local server_host server_port server_username server_ssh_key
+    server_host=$(get_five_layer_config "${server_prefix}_K1" "SERVER_HOST" 2>/dev/null || get_five_layer_config "$combo" "SERVER_HOST" 2>/dev/null || echo "")
+    [[ -z "$server_host" || "$server_host" == "127.0.0.1" ]] && return 0  # KIND 等本地 combo 跳过
+
+    server_port=$(get_five_layer_config "${server_prefix}_K1" "SERVER_PORT" 2>/dev/null || echo "22")
+    server_username=$(get_five_layer_config "${server_prefix}_K1" "SERVER_USERNAME" 2>/dev/null || echo "root")
+    server_ssh_key=$(get_five_layer_config "${server_prefix}_K1" "SERVER_SSH_KEY" 2>/dev/null || echo "")
+    server_ssh_key="${server_ssh_key/#\~/$HOME}"
+
+    log_info "校验本地归档 CA 与 K8s secret ${secret_namespace}/${secret_name} 一致性..."
+
+    local k8s_ca_fp
+    k8s_ca_fp=$(ssh -i "$server_ssh_key" -p "$server_port" -o ConnectTimeout=10 -o StrictHostKeyChecking=no \
+        "${server_username}@${server_host}" \
+        "kubectl get secret ${secret_name} -n ${secret_namespace} -o jsonpath='{.data.${secret_key}}' 2>/dev/null | base64 -d | openssl x509 -noout -fingerprint -sha256 2>/dev/null" 2>/dev/null || echo "")
+
+    [[ -z "$k8s_ca_fp" ]] && { log_warn "无法从 K8s 获取 CA 指纹，跳过一致性校验"; return 0; }
+
+    local local_ca_fp
+    local_ca_fp=$(openssl x509 -noout -fingerprint -sha256 -in "$local_ca_path" 2>/dev/null || echo "")
+    [[ -z "$local_ca_fp" ]] && { log_warn "无法读取本地归档 CA，跳过一致性校验"; return 0; }
+
+    if [[ "$local_ca_fp" != "$k8s_ca_fp" ]]; then
+        log_error "CA 不一致！本地归档与 K8s secret 中的 CA 指纹不同："
+        log_error "  本地归档: $local_ca_fp"
+        log_error "  K8s secret: $k8s_ca_fp"
+        log_error "请先运行 sync-ca-from-k8s.sh 同步本地归档，再重新执行 Step12 分发"
+        return 1
+    fi
+
+    log_info "CA 一致性校验通过：本地归档与 K8s secret 指纹一致"
+    return 0
+}
+
 # 分发CA证书到客户端
 distribute_ca_certificate_to_client() {
     # 仅支持 1 参：distribute_ca_certificate_to_client <combo>
@@ -665,7 +714,12 @@ distribute_ca_certificate_to_client() {
     fi
     
     log_info "使用服务器端前缀 $server_prefix 的CA证书: $temp_ca_cert_path"
-    
+
+    # 分发前校验本地归档 CA 与 K8s 部署的 CA 一致（防止 CA 分叉导致客户端 TLS 失败）
+    if ! validate_ca_vs_k8s "$combo" "$temp_ca_cert_path"; then
+        return 1
+    fi
+
     # 检查是否是K8s多节点配置
     local client_nodes=$(get_five_layer_config "$combo" "CLIENT_NODES")
     
