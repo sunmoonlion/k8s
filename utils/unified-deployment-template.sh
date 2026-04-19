@@ -550,6 +550,17 @@ k8s_status_matches_desired_cluster() {
             clear_k8s_status
             return 1
         fi
+        # 防止半写入或历史损坏：CURRENT_TARGET_CLUSTER 与 CURRENT_MODE 必须语义一致
+        if [[ "$desired" == "KIND" && "${CURRENT_MODE:-}" != "kind" ]]; then
+            log_warn "状态文件目标为 KIND，但 CURRENT_MODE='${CURRENT_MODE:-}'，将丢弃缓存并重新建连"
+            clear_k8s_status
+            return 1
+        fi
+        if [[ "$desired" =~ ^C[0-9]+$ && "${CURRENT_MODE:-}" == "kind" ]]; then
+            log_warn "状态文件目标为 ${desired}，但 CURRENT_MODE=kind，将丢弃缓存并重新建连"
+            clear_k8s_status
+            return 1
+        fi
         return 0
     fi
 
@@ -1125,16 +1136,22 @@ assert_kubeconfig_matches_cluster_selection() {
         return 1
     fi
 
+    # 期望 kubeconfig 路径：以 CLUSTER（$cu）为准，避免「环境要求 KIND」但状态文件仍为 direct
+    # 时 read_k8s_config 未填充 DIRECT_KUBECONFIG 导致 set -u 下未绑定变量崩溃。
     local exp=""
-    case "${CURRENT_MODE:-}" in
-        kind) exp="$KIND_KUBECONFIG" ;;
-        bastion) exp="$BASTION_KUBECONFIG" ;;
-        direct) exp="$DIRECT_KUBECONFIG" ;;
-        *)
-            log_error "无法校验 kubeconfig：未知 CURRENT_MODE='${CURRENT_MODE:-}'"
-            return 1
-            ;;
-    esac
+    if [[ "$cu" == "KIND" ]]; then
+        exp="${KIND_KUBECONFIG:-}"
+    else
+        case "${CURRENT_MODE:-}" in
+            kind) exp="${KIND_KUBECONFIG:-}" ;;
+            bastion) exp="${BASTION_KUBECONFIG:-}" ;;
+            direct) exp="${DIRECT_KUBECONFIG:-}" ;;
+            *)
+                log_error "无法校验 kubeconfig：未知 CURRENT_MODE='${CURRENT_MODE:-}'"
+                return 1
+                ;;
+        esac
+    fi
 
     exp="${exp/#\~/$HOME}"
     exp=$(eval echo "$exp")
