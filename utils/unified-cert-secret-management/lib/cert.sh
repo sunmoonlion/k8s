@@ -621,7 +621,46 @@ validate_ca_vs_k8s() {
     server_prefix=$(echo "$combo" | sed 's/_[KDN][0-9]*$//')
     local server_host server_port server_username server_ssh_key
     server_host=$(get_five_layer_config "${server_prefix}_K1" "SERVER_HOST" 2>/dev/null || get_five_layer_config "$combo" "SERVER_HOST" 2>/dev/null || echo "")
-    [[ -z "$server_host" || "$server_host" == "127.0.0.1" ]] && return 0  # KIND 等本地 combo 跳过
+
+    # Kind/本地集群：用本地 kubectl + kubeconfig，不需要 SSH
+    if [[ -z "$server_host" || "$server_host" == "127.0.0.1" ]]; then
+        local kind_kubeconfig
+        kind_kubeconfig=$(get_five_layer_config "$combo" "CA_VALIDATE_KUBECONFIG" 2>/dev/null || echo "")
+        kind_kubeconfig="${kind_kubeconfig/#\~/$HOME}"
+
+        if [[ -z "$kind_kubeconfig" || ! -f "$kind_kubeconfig" ]]; then
+            log_warn "Kind 集群未配置 CA_VALIDATE_KUBECONFIG 或文件不存在，跳过一致性校验"
+            return 0
+        fi
+
+        log_info "校验本地归档 CA 与 Kind K8s secret ${secret_namespace}/${secret_name} 一致性（本地 kubectl）..."
+
+        local k8s_ca_fp
+        k8s_ca_fp=$(kubectl --kubeconfig="$kind_kubeconfig" get secret "${secret_name}" \
+            -n "${secret_namespace}" \
+            -o "jsonpath={.data.${secret_key}}" 2>/dev/null \
+            | base64 -d | openssl x509 -noout -fingerprint -sha256 2>/dev/null || echo "")
+
+        if [[ -z "$k8s_ca_fp" ]]; then
+            log_warn "无法从 Kind K8s 获取 CA 指纹（集群可能未就绪），跳过校验"
+            return 0
+        fi
+
+        local local_ca_fp
+        local_ca_fp=$(openssl x509 -noout -fingerprint -sha256 -in "$local_ca_path" 2>/dev/null || echo "")
+        [[ -z "$local_ca_fp" ]] && { log_warn "无法读取本地归档 CA，跳过一致性校验"; return 0; }
+
+        if [[ "$local_ca_fp" != "$k8s_ca_fp" ]]; then
+            log_error "CA 不一致！本地归档与 Kind K8s secret 中的 CA 指纹不同："
+            log_error "  本地归档: $local_ca_fp"
+            log_error "  Kind K8s secret: $k8s_ca_fp"
+            log_error "请先运行 sync-ca-from-k8s.sh --combo $combo 同步本地归档，再重新执行 Step12 分发"
+            return 1
+        fi
+
+        log_info "CA 一致性校验通过：本地归档与 Kind K8s secret 指纹一致"
+        return 0
+    fi
 
     server_port=$(get_five_layer_config "${server_prefix}_K1" "SERVER_PORT" 2>/dev/null || echo "22")
     server_username=$(get_five_layer_config "${server_prefix}_K1" "SERVER_USERNAME" 2>/dev/null || echo "root")

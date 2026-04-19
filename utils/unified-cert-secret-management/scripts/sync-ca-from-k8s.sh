@@ -64,11 +64,6 @@ server_username=$(get_five_layer_config "${server_prefix}_K1" "SERVER_USERNAME" 
 server_ssh_key=$(get_five_layer_config "${server_prefix}_K1" "SERVER_SSH_KEY" 2>/dev/null || echo "")
 server_ssh_key="${server_ssh_key/#\~/$HOME}"
 
-if [[ -z "$server_host" ]]; then
-    log_error "未找到服务端 SSH 配置（SERVER_HOST）"
-    exit 1
-fi
-
 # 读取本地归档目录
 local_ca_cert_dir=$(get_five_layer_config "$COMBO" "LOCAL_CA_CERT_DIR" 2>/dev/null || echo "")
 local_ca_cert_dir="${local_ca_cert_dir/#\~/$HOME}"
@@ -77,17 +72,36 @@ if [[ -z "$local_ca_cert_dir" ]]; then
     exit 1
 fi
 
-log_info "从 K8s 获取 CA: ${server_username}@${server_host}:${server_port} → ${secret_namespace}/${secret_name}[${secret_key}]"
-
-# 从 K8s secret 拉取 CA
-k8s_ca_content=$(ssh -i "$server_ssh_key" -p "$server_port" \
-    -o ConnectTimeout=10 -o StrictHostKeyChecking=no \
-    "${server_username}@${server_host}" \
-    "kubectl get secret ${secret_name} -n ${secret_namespace} -o jsonpath='{.data.${secret_key}}' 2>/dev/null | base64 -d" 2>/dev/null || echo "")
-
-if [[ -z "$k8s_ca_content" ]]; then
-    log_error "无法从 K8s 获取 CA（secret 不存在或 kubectl 不可用）"
-    exit 1
+# Kind/本地集群：用本地 kubectl，不需要 SSH
+if [[ -z "$server_host" || "$server_host" == "127.0.0.1" ]]; then
+    kind_kubeconfig=$(get_five_layer_config "$COMBO" "CA_VALIDATE_KUBECONFIG" 2>/dev/null || echo "")
+    kind_kubeconfig="${kind_kubeconfig/#\~/$HOME}"
+    if [[ -z "$kind_kubeconfig" || ! -f "$kind_kubeconfig" ]]; then
+        log_error "Kind 集群未配置 CA_VALIDATE_KUBECONFIG 或文件不存在: $kind_kubeconfig"
+        exit 1
+    fi
+    log_info "从 Kind K8s 获取 CA（本地 kubectl）: ${secret_namespace}/${secret_name}[${secret_key}]"
+    k8s_ca_content=$(kubectl --kubeconfig="$kind_kubeconfig" get secret "${secret_name}" \
+        -n "${secret_namespace}" \
+        -o "jsonpath={.data.${secret_key}}" 2>/dev/null | base64 -d || echo "")
+    if [[ -z "$k8s_ca_content" ]]; then
+        log_error "无法从 Kind K8s 获取 CA（secret 不存在或集群未就绪）"
+        exit 1
+    fi
+else
+    if [[ -z "$server_host" ]]; then
+        log_error "未找到服务端 SSH 配置（SERVER_HOST）"
+        exit 1
+    fi
+    log_info "从 K8s 获取 CA: ${server_username}@${server_host}:${server_port} → ${secret_namespace}/${secret_name}[${secret_key}]"
+    k8s_ca_content=$(ssh -i "$server_ssh_key" -p "$server_port" \
+        -o ConnectTimeout=10 -o StrictHostKeyChecking=no \
+        "${server_username}@${server_host}" \
+        "kubectl get secret ${secret_name} -n ${secret_namespace} -o jsonpath='{.data.${secret_key}}' 2>/dev/null | base64 -d" 2>/dev/null || echo "")
+    if [[ -z "$k8s_ca_content" ]]; then
+        log_error "无法从 K8s 获取 CA（secret 不存在或 kubectl 不可用）"
+        exit 1
+    fi
 fi
 
 k8s_fp=$(echo "$k8s_ca_content" | openssl x509 -noout -fingerprint -sha256 2>/dev/null || echo "")
