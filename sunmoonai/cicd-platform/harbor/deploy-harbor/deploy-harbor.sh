@@ -1443,7 +1443,45 @@ deploy_harbor() {
     # -------------------------------------------------------------------------
     if [[ "$dry_run" != "true" ]]; then
         if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
-            log_info "Kind 集群跳过自动创建项目并推送镜像（无需从节点 SSH 推送）"
+            # Kind 模式：跳过控制平面镜像推送（无远程节点），但仍需本地创建 Harbor 项目
+            log_info "Kind 集群：跳过控制平面镜像推送（无 SSH），仅本地创建 Harbor 项目..."
+            local kind_harbor_host="${HARBOR_EXTERNAL_HOST:-harbor.sunmoonai.com}"
+            local kind_harbor_port="${HARBOR_EXTERNAL_PORT:-30443}"
+            local kind_admin_user="admin"
+            local kind_admin_pass="${HARBOR_ADMIN_PASSWORD:-}"
+            if [[ -z "$kind_admin_pass" ]]; then
+                local _secret_name="${HARBOR_AUTH_SECRET_NAME:-harbor-secret}"
+                local _secret_key="${HARBOR_AUTH_SECRET_PASSWORD_KEY:-HARBOR_ADMIN_PASSWORD}"
+                kind_admin_pass=$(kubectl get secret "$_secret_name" -n "$namespace" \
+                    -o jsonpath="{.data.${_secret_key}}" 2>/dev/null | base64 -d 2>/dev/null || echo "")
+            fi
+            if [[ -z "$kind_admin_pass" ]]; then
+                log_warn "Kind 模式：无法获取 Harbor 密码，跳过项目创建（后续镜像推送可能失败）"
+            else
+                local _target_project="${HARBOR_PROJECT_NAME:-k8s-images}"
+                # 等待 Harbor API 可访问（最多 3 分钟，400 也视为就绪）
+                local _api_wait_start; _api_wait_start=$(date +%s)
+                log_info "Kind 模式：等待 Harbor API 就绪 (https://${kind_harbor_host}:${kind_harbor_port})..."
+                while true; do
+                    local _http_code
+                    _http_code=$(curl -k -s -o /dev/null -w "%{http_code}" --connect-timeout 5 \
+                        "https://${kind_harbor_host}:${kind_harbor_port}/api/v2.0/systeminfo" 2>/dev/null || echo "000")
+                    if [[ "$_http_code" == "200" || "$_http_code" == "401" || "$_http_code" == "403" ]]; then
+                        log_info "Kind 模式：Harbor API 就绪 (HTTP ${_http_code})"
+                        break
+                    fi
+                    local _now; _now=$(date +%s)
+                    if (( _now - _api_wait_start >= 180 )); then
+                        log_warn "Kind 模式：Harbor API 180s 内未就绪 (HTTP ${_http_code})，继续尝试创建项目"
+                        break
+                    fi
+                    log_info "Kind 模式：Harbor API 未就绪 (HTTP ${_http_code})，等待中..."
+                    sleep 5
+                done
+                create_harbor_project "$_target_project" "$kind_harbor_host" "$kind_harbor_port" \
+                    "$kind_admin_user" "$kind_admin_pass" || \
+                    log_warn "Kind 模式：Harbor 项目创建失败（可能已存在或 Harbor 未完全就绪），后续推送将重试"
+            fi
         else
             log_info "🚀 阶段4：自动创建项目并推送镜像..."
             auto_create_project_and_push_images "$project_id" "$namespace" "$environment"

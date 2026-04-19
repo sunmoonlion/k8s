@@ -121,16 +121,38 @@ wait_for_harbor_if_needed() {
     log_info "[harbor] 等待 Harbor 就绪 (namespace=${namespace}，最长 ${timeout}s)..."
 
     while true; do
-        # 通过 kubectl 检查 Harbor 所有 pod 是否就绪（Running/Succeeded）
+        # 通过 kubectl 检查 Harbor 所有 pod 是否就绪（Ready 列 n/n 或 Succeeded）
         local total ready
         total=$(kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=${project_id}" \
             --no-headers 2>/dev/null | wc -l)
+        # 统计 READY 列 x/x（容器全就绪）或状态 Completed/Succeeded 的 pod 数
         ready=$(kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=${project_id}" \
-            -o jsonpath='{range .items[*]}{.status.phase}{"\n"}{end}' 2>/dev/null \
-            | grep -cE '^(Running|Succeeded)$' || true)
+            --no-headers 2>/dev/null \
+            | awk '{split($2,a,"/"); status=$3; if ((a[1]==a[2] && a[2]!="") || status=="Completed") count++} END{print count+0}')
 
         if [[ $total -gt 0 && $ready -eq $total ]]; then
             log_info "[harbor] Harbor 所有 Pod 已就绪 (${ready}/${total})"
+            # Kind 模式下额外等待 Harbor API 可访问（pod Ready ≠ API 可写）
+            if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
+                local api_start; api_start=$(date +%s)
+                log_info "[harbor] Kind 模式：等待 Harbor API 可访问 (https://${host}:${port})..."
+                while true; do
+                    local _hcode
+                    _hcode=$(curl -k -s -o /dev/null -w "%{http_code}" --connect-timeout 5 \
+                        "https://${host}:${port}/api/v2.0/systeminfo" 2>/dev/null || echo "000")
+                    if [[ "$_hcode" == "200" || "$_hcode" == "401" || "$_hcode" == "403" ]]; then
+                        log_info "[harbor] Harbor API 就绪 (HTTP ${_hcode})"
+                        break
+                    fi
+                    local _anow; _anow=$(date +%s)
+                    if (( _anow - api_start >= 120 )); then
+                        log_warn "[harbor] Harbor API 120s 内未响应 (HTTP ${_hcode})，继续推送"
+                        break
+                    fi
+                    log_info "[harbor] Harbor API 未就绪 (HTTP ${_hcode})，等待中..."
+                    sleep 5
+                done
+            fi
             export HARBOR_READY_CHECKED="1"
             return 0
         fi
