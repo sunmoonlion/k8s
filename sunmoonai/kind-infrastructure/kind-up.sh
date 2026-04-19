@@ -190,10 +190,21 @@ create_kind_cluster() {
     log_info "Kubeconfig 已写入: $KIND_KUBECONFIG"
 }
 
-ensure_storage_check_hook_installed
+if grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; then
+    ensure_storage_check_hook_installed
+fi
 
 log_info "0/3 挂载守门检查（避免 D/E 混写）"
-ensure_storage_mounts_ready
+if grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; then
+    ensure_storage_mounts_ready
+else
+    log_info "非 WSL 环境，跳过 VHD 挂载守门检查"
+    # 原生 Linux：PV 目录直接建在系统盘，无 VHD 要求
+    if [[ ! -d "$PV_DATA_ROOT" ]]; then
+        sudo mkdir -p "$PV_DATA_ROOT" && sudo chmod 777 "$PV_DATA_ROOT"
+        log_info "已创建 PV 数据目录: $PV_DATA_ROOT"
+    fi
+fi
 
 log_info "1/3 创建 Kind 集群（已存在则跳过）"
 create_kind_cluster
