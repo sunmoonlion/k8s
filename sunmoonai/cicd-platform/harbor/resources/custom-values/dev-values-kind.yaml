@@ -200,6 +200,10 @@ registry:
   replicaCount: 1
   storage:
     type: "filesystem"
+  podSecurityContext:
+    enabled: true
+    fsGroup: 1001
+    runAsUser: 1001
 
 # Trivy（镜像扫描）
 trivy:
