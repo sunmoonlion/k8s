@@ -67,7 +67,19 @@ load_config(){
   SERVICE_PORT="${SERVICE_PORT:-3000}"
 }
 
-check_namespace(){ kubectl get namespace "$NAMESPACE" >/dev/null 2>&1 || { log_error "命名空间不存在: $NAMESPACE"; exit 1; }; }
+check_namespace(){
+    local _ns_err4
+    _ns_err4=$(kubectl get namespace "$NAMESPACE" 2>&1)
+    if [[ $? -ne 0 ]]; then
+        if echo "$_ns_err4" | grep -qiE "not.?found|NotFound"; then
+            log_error "命名空间不存在: $NAMESPACE"
+        else
+            log_error "kubectl 连接失败，无法验证命名空间 $NAMESPACE（${_ns_err4%%$'\n'*}）"
+            log_error "请检查 KUBECONFIG 和集群连接状态"
+        fi
+        exit 1
+    fi
+}
 
 apply_file(){
   local yaml_file="$1"

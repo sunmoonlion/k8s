@@ -167,9 +167,16 @@ main() {
             log_info "部署 Secret 到 Kubernetes 集群..."
             
             # 检查命名空间是否存在
-            if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
-                log_error "命名空间不存在: $namespace"
-                log_error "请先创建命名空间: kubectl create namespace $namespace"
+            local _ns_err3
+            _ns_err3=$(kubectl get namespace "$namespace" 2>&1)
+            if [[ $? -ne 0 ]]; then
+                if echo "$_ns_err3" | grep -qiE "not.?found|NotFound"; then
+                    log_error "命名空间不存在: $namespace"
+                    log_error "请先创建命名空间: kubectl create namespace $namespace"
+                else
+                    log_error "kubectl 连接失败，无法验证命名空间 $namespace（${_ns_err3%%$'\n'*}）"
+                    log_error "请检查 KUBECONFIG 和集群连接状态"
+                fi
                 exit 1
             fi
             

@@ -326,15 +326,21 @@ check_namespace() {
         fi
     fi
     
-    if kubectl get namespace "$namespace" >/dev/null 2>&1; then
+    local _ns_err
+    _ns_err=$(kubectl get namespace "$namespace" 2>&1)
+    if [[ $? -eq 0 ]]; then
         log_success "✅ 命名空间 $namespace 已存在"
         return 0
-    else
+    elif echo "$_ns_err" | grep -qiE "not.?found|NotFound"; then
         log_error "❌ 命名空间 $namespace 不存在！"
         echo ""
         log_info "请先创建命名空间："
         echo "  kubectl create namespace $namespace"
         echo ""
+        return 1
+    else
+        log_error "❌ kubectl 连接失败，无法验证命名空间 $namespace（${_ns_err%%$'\n'*}）"
+        log_error "请检查 KUBECONFIG 和集群连接状态"
         return 1
     fi
 }

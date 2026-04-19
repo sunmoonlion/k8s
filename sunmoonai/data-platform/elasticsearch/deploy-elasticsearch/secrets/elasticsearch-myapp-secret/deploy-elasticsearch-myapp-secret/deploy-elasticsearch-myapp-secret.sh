@@ -60,8 +60,15 @@ main() {
     log_success "Secret YAML生成完成: $secret_yaml"
     
     if [[ "$dry_run" != "true" ]]; then
-        if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
-            log_error "命名空间不存在: $namespace"
+        local _ns_err2
+        _ns_err2=$(kubectl get namespace "$namespace" 2>&1)
+        if [[ $? -ne 0 ]]; then
+            if echo "$_ns_err2" | grep -qiE "not.?found|NotFound"; then
+                log_error "命名空间不存在: $namespace"
+            else
+                log_error "kubectl 连接失败，无法验证命名空间 $namespace（${_ns_err2%%$'\n'*}）"
+                log_error "请检查 KUBECONFIG 和集群连接状态"
+            fi
             exit 1
         fi
         
