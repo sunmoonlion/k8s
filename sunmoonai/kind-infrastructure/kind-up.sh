@@ -190,16 +190,10 @@ create_kind_cluster() {
     log_info "Kubeconfig 已写入: $KIND_KUBECONFIG"
 }
 
-if grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; then
-    ensure_storage_check_hook_installed
-fi
+ensure_storage_check_hook_installed
 
 log_info "0/3 挂载守门检查（避免 D/E 混写）"
-if grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; then
-    ensure_storage_mounts_ready
-else
-    log_info "非 WSL 环境，跳过 VHD 挂载守门检查"
-fi
+ensure_storage_mounts_ready
 
 log_info "1/3 创建 Kind 集群（已存在则跳过）"
 create_kind_cluster

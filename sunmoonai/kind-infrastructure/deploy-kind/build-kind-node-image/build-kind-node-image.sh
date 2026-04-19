@@ -166,44 +166,28 @@ if ! ls -1 "$TAR_TARGET_DIR"/*.tar >/dev/null 2>&1; then
     exit 1
 fi
 
-BUILDER_NAME="kind-node-builder-$$"
+DOCKER_COPY_SUBDIR="$TMP_SUBDIR"
+DOCKERFILE_PATH="${DEPLOY_KIND_DIR}/Dockerfile.kind-node"
 
-log_info "使用 docker run --privileged 构建节点镜像（base=$BASE_IMAGE）"
-docker rm -f "$BUILDER_NAME" 2>/dev/null || true
-trap 'docker rm -f "${BUILDER_NAME}" 2>/dev/null; rm -rf "${TAR_TARGET_DIR:-}"' EXIT
-
-if ! docker run --privileged -d --name "$BUILDER_NAME" "$BASE_IMAGE" sleep infinity; then
-    log_error "docker run 失败"
-    exit 1
-fi
-
-log_info "复制 tar 到容器..."
-if ! docker cp "${TAR_TARGET_DIR}/." "${BUILDER_NAME}:/tmp/images/"; then
-    log_error "docker cp 失败"
-    exit 1
-fi
-
-log_info "在容器内导入镜像（ctr import）..."
-if ! docker exec "$BUILDER_NAME" sh -c '
-    set -e
-    ( containerd >/dev/null 2>&1 & )
-    for i in 1 2 3 4 5 6 7 8 9 10; do [ -S /run/containerd/containerd.sock ] && break; sleep 1; done
-    for f in /tmp/images/*.tar; do
-        [ -f "$f" ] && ctr -n k8s.io images import --digests --snapshotter=overlayfs "$f" || true
-    done
-    pkill -x containerd || true
+log_info "使用 Dockerfile 构建节点镜像（base=$BASE_IMAGE, 镜像数据目录=$DOCKER_COPY_SUBDIR，build context=$DEPLOY_KIND_DIR）"
+cat > "$DOCKERFILE_PATH" << DOCKERFILE_END
+# 由 build-kind-node-image.sh 生成。在构建层内 ctr import 导入镜像，供 kind-cluster.yaml 使用。
+ARG BASE_IMAGE=${BASE_IMAGE}
+FROM \${BASE_IMAGE}
+COPY ${DOCKER_COPY_SUBDIR} /tmp/images
+RUN set -e; \\
+    ( containerd >/dev/null 2>&1 & ); \\
+    for i in 1 2 3 4 5 6 7 8 9 10; do [ -S /run/containerd/containerd.sock ] && break; sleep 1; done; \\
+    for f in /tmp/images/*.tar; do [ -f "\$f" ] && ctr -n k8s.io images import --digests --snapshotter=overlayfs "\$f" || true; done; \\
+    pkill -x containerd || true; \\
     rm -rf /tmp/images
-'; then
-    log_error "容器内镜像导入失败"
-    exit 1
-fi
+DOCKERFILE_END
 
-log_info "提交为节点镜像: $CUSTOM_IMAGE"
-if ! docker commit "$BUILDER_NAME" "$CUSTOM_IMAGE"; then
-    log_error "docker commit 失败"
+log_info "执行 docker build（context=$DEPLOY_KIND_DIR）..."
+if ! docker build -f "$DOCKERFILE_PATH" -t "$CUSTOM_IMAGE" "$DEPLOY_KIND_DIR"; then
+    log_error "docker build 失败"
     exit 1
 fi
-docker rm -f "$BUILDER_NAME" 2>/dev/null || true
 log_success "已生成节点镜像: $CUSTOM_IMAGE"
 
 if sed -i "s|image: kindest/node:[^[:space:]]*|image: ${CUSTOM_IMAGE}|g" "$KIND_YAML" 2>/dev/null; then

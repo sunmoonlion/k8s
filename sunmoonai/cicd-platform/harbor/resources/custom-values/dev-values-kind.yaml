@@ -205,7 +205,7 @@ registry:
   # 用自定义 initContainer 直接 chown /storage 目录本身。
   initContainers:
     - name: fix-storage-owner
-      image: docker.io/bitnami/os-shell:12-debian-12-r51
+      image: docker.io/bitnami/os-shell:12-debian-12-r50
       command: ["/bin/sh", "-ec", "chown 1001:1001 /storage"]
       securityContext:
         runAsUser: 0
@@ -234,7 +234,7 @@ notary:
 # ============================================================================
 
 volumePermissions:
-  enabled: false
+  enabled: true
 
 # RBAC
 rbac:
