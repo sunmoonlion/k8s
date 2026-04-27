@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: investment-admin-frontend-config
+  namespace: ${NAMESPACE}
+  labels:
+    app: investment-admin-frontend
+data:
+  # ========================================================================
+  # 服务配置
+  # ========================================================================
+  PROJECT_NAME: "${PROJECT_NAME:-Investment Admin}"
+  SERVER_NAME: "${SERVER_NAME:-admin.investment.sunmoonai.com}"
+  SERVER_HOST: "${SERVER_HOST:-https://admin.investment.sunmoonai.com}"
+  BACKEND_CORS_ORIGINS: "${BACKEND_CORS_ORIGINS:-[]}"
+
+  # ========================================================================
+  # 数据库配置（非敏感部分）
+  # ========================================================================
+  POSTGRES_SERVER: "${POSTGRES_SERVER:-101.126.151.0}"
+  POSTGRES_PORT: "${POSTGRES_PORT:-30444}"
+  POSTGRES_USER: "${POSTGRES_USER:-sunmoonai_dev}"
+  POSTGRES_DB: "${POSTGRES_DB:-investment_db}"
+  DB_SSLMODE: "${DB_SSLMODE:-disable}"
+  DB_HOST: "${DB_HOST:-101.126.151.0}"
+  DB_PORT: "${DB_PORT:-30444}"
+  DB_NAME: "${DB_NAME:-investment_db}"
+  DB_USER: "${DB_USER:-sunmoonai_dev}"
+
+  # ========================================================================
+  # Redis 配置（非敏感部分）
+  # ========================================================================
+  REDIS_HOST: "${REDIS_HOST:-redis}"
+  REDIS_PORT: "${REDIS_PORT:-6379}"
+
+  # ========================================================================
+  # SMTP 配置（非敏感部分）
+  # ========================================================================
+  SMTP_HOST: "${SMTP_HOST:-smtp.example.com}"
+  SMTP_PORT: "${SMTP_PORT:-587}"
+  SMTP_TLS: "${SMTP_TLS:-true}"
+  SMTP_SSL: "${SMTP_SSL:-false}"
+  SMTP_FROM: "${SMTP_FROM:-noreply@sunmoonai.com}"
+  EMAILS_FROM_EMAIL: "${EMAILS_FROM_EMAIL:-noreply@sunmoonai.com}"
+  EMAILS_FROM_NAME: "${EMAILS_FROM_NAME:-Investment Admin}"
+  SMTP_TIMEOUT: "${SMTP_TIMEOUT:-10}"
+
+  # ========================================================================
+  # Sentry 监控配置（非敏感部分）
+  # ========================================================================
+  SENTRY_ENVIRONMENT: "${SENTRY_ENVIRONMENT:-development}"
+  SENTRY_TRACES_SAMPLE_RATE: "${SENTRY_TRACES_SAMPLE_RATE:-0.1}"
+  SENTRY_PROFILES_SAMPLE_RATE: "${SENTRY_PROFILES_SAMPLE_RATE:-0.1}"
