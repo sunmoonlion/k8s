@@ -3,7 +3,7 @@
 set -e
 
 # 导入统一部署模板
-# 路径：deploy-ingress/ → ingress/ → deploy-casdoor/ → casdoor/ → casdoor-app/ → app-platform/ → sunmoonai/ → k8s/ → utils/
+# 路径：deploy-ingress/ → ingress/ → deploy-casdoor/ → casdoor/ → auth-app/ → app-platform/ → sunmoonai/ → k8s/ → utils/
 source "$(dirname "$0")/../../../../../../../utils/unified-deployment-template.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

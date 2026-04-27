@@ -1,1 +1,1 @@
-casbin/casdoor:v1.224.0
+casbin/casdoor:3.42.0

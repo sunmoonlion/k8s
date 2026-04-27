@@ -12,7 +12,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 # 保存脚本目录（统一模板会重新定义 SCRIPT_DIR）
 CASDOOR_SCRIPT_DIR="$SCRIPT_DIR"
 
-# 导入统一部署模板（相对路径：casdoor-app/casdoor/ → app-platform/ → sunmoonai/ → k8s/ → utils/）
+# 导入统一部署模板（相对路径：auth-app/casdoor/ → app-platform/ → sunmoonai/ → k8s/ → utils/）
 source "$PROJECT_ROOT/../../../../utils/unified-deployment-template.sh"
 
 # 恢复脚本目录
@@ -162,7 +162,7 @@ check_casdoor_status() {
     local pods_running
     pods_running=$(kubectl get pods -n "$namespace" \
         -l "app.kubernetes.io/instance=$release_name" \
-        -o jsonpath='{.items[*].status.phase}' 2>/dev/null | tr ' ' '\n' | grep -c '^Running$' || echo "0")
+        -o jsonpath='{.items[*].status.phase}' 2>/dev/null | tr ' ' '\n' | { grep -c '^Running$' || true; })
 
     if [[ "$pods_running" -gt 0 ]]; then
         log_success "✅ Casdoor Pod 运行正常 (${pods_running} 个)"
@@ -170,7 +170,7 @@ check_casdoor_status() {
         local pods_pending
         pods_pending=$(kubectl get pods -n "$namespace" \
             -l "app.kubernetes.io/instance=$release_name" \
-            -o jsonpath='{.items[*].status.phase}' 2>/dev/null | tr ' ' '\n' | grep -cE '^(Pending|ContainerCreating)$' || echo "0")
+            -o jsonpath='{.items[*].status.phase}' 2>/dev/null | tr ' ' '\n' | { grep -cE '^(Pending|ContainerCreating)$' || true; })
         if [[ "$pods_pending" -gt 0 ]]; then
             log_warn "⏳ Casdoor Pod 启动中 ($pods_pending 个 Pending)"
         else
@@ -216,6 +216,24 @@ deploy_ingress() {
     fi
 }
 
+run_post_deploy_setup() {
+    local namespace="$1" dry_run="$2"
+    local setup_script="$SCRIPT_DIR/post-deploy-setup.sh"
+
+    [[ "$dry_run" == "true" ]] && { log_info "dry-run 模式，跳过 post-deploy-setup"; return 0; }
+    [[ -f "$setup_script" ]] || { log_warn "post-deploy-setup.sh 不存在，跳过"; return 0; }
+
+    log_info "等待 Casdoor Pod 就绪..."
+    kubectl rollout status deployment/"casdoor-${CASDOOR_PROJECT_ID:-sunmoonai}" \
+        -n "$namespace" --timeout=120s >/dev/null 2>&1 || true
+
+    if bash "$setup_script" "$namespace"; then
+        log_success "✅ Casdoor post-deploy-setup 完成"
+    else
+        log_error "❌ Casdoor post-deploy-setup 失败"; return 1
+    fi
+}
+
 # ─────────────────────────── 主函数 ───────────────────────────
 
 declare -a PARSED_ARGS
@@ -252,6 +270,7 @@ main() {
             deploy_secrets "$project_id" "$namespace" "$environment" "$dry_run" || exit 1
             execute_casdoor_deployment "$project_id" "$namespace" "$environment" "$dry_run" || exit 1
             deploy_ingress "$project_id" "$namespace" "$environment"
+            run_post_deploy_setup "$namespace" "$dry_run" || exit 1
             log_success "🎉 Casdoor 完整部署成功！"
             check_casdoor_status "$project_id" "$namespace" || true
             ;;

@@ -214,6 +214,24 @@ setup_applications() {
     done
 }
 
+# ─────────────────────────── 第四步：Admin 密码 ───────────────────────────
+
+setup_admin_password() {
+    local pwd="${ADMIN_PASSWORD:-}"
+    if [[ -z "$pwd" ]]; then
+        log_info "ADMIN_PASSWORD 未设置，跳过 admin 密码更新"
+        return 0
+    fi
+
+    local sql="UPDATE \"user\" SET password='$pwd' WHERE owner='built-in' AND name='admin';"
+    if run_sql "$sql"; then
+        log_ok "admin 密码已更新"
+    else
+        log_error "admin 密码更新失败"
+        return 1
+    fi
+}
+
 # ─────────────────────────── 主流程 ───────────────────────────
 
 main() {
@@ -227,18 +245,19 @@ main() {
     # Step 1: app.conf
     setup_app_conf || exit 1
 
-    # Step 2 & 3: Organizations + Applications（需要 psql）
+    # Step 2, 3, 4: Organizations + Applications + Admin 密码（需要 psql）
     if check_psql; then
         setup_organizations
         setup_applications
+        setup_admin_password
     else
-        log_warn "跳过 Organizations/Applications 初始化（psql 不可用或连接失败）"
+        log_warn "跳过 Organizations/Applications/Admin 密码初始化（psql 不可用或连接失败）"
     fi
 
     echo ""
     echo "═══════════ Casdoor 访问信息 ═══════════"
     echo "地址：https://casdoor.sunmoonai.com:30443"
-    echo "账号：admin / 123（建议立即修改密码）"
+    echo "账号：admin / ${ADMIN_PASSWORD:-(见 post-deploy-setup.conf)}"
     echo "════════════════════════════════════════"
     echo ""
 }
