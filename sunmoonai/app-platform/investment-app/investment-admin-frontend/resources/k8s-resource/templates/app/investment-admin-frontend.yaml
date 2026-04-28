@@ -44,6 +44,13 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 3
+        volumeMounts:
+        - name: data
+          mountPath: ${PVC_MOUNT_PATH:-/app/data}
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: ${PVC_NAME:-investment-admin-frontend-pvc}
 ---
 apiVersion: v1
 kind: Service

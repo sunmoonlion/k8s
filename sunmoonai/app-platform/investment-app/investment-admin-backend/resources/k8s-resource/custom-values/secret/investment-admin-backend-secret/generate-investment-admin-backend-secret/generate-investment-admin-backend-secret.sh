@@ -51,39 +51,9 @@ export NAMESPACE="${NAMESPACE:-}"
 export ENVIRONMENT="${ENVIRONMENT:-}"
 export ENV="${ENV:-}"
 
-export SECRET_KEY="${SECRET_KEY:-}"
-export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-}"
-export FIRST_SUPERUSER="${FIRST_SUPERUSER:-}"
-export FIRST_SUPERUSER_PASSWORD="${FIRST_SUPERUSER_PASSWORD:-}"
-export SMTP_USER="${SMTP_USER:-}"
-export SMTP_PASSWORD="${SMTP_PASSWORD:-}"
-export SENTRY_DSN="${SENTRY_DSN:-}"
-export JWT_SECRET="${JWT_SECRET:-}"
+export DATABASE_URL="${DATABASE_URL:-}"
 export REDIS_PASSWORD="${REDIS_PASSWORD:-}"
-
-# 尝试从 ConfigMap 配置读取非敏感信息（用于组装完整连接字符串）
-CONFIGMAP_CONFIG_FILE="$K8S_RESOURCE_DIR/custom-values/configMap/investment-admin-backend-config/generate-investment-admin-backend-config/generate-investment-admin-backend-config.conf"
-if [ -f "$CONFIGMAP_CONFIG_FILE" ]; then
-    _temp_postgres_server=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${POSTGRES_SERVER:-}")
-    _temp_postgres_port=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${POSTGRES_PORT:-}")
-    _temp_postgres_user=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${POSTGRES_USER:-}")
-    _temp_postgres_db=$(source "$CONFIGMAP_CONFIG_FILE" 2>/dev/null && echo "${POSTGRES_DB:-}")
-
-    [ -n "$_temp_postgres_server" ] && [ -z "${POSTGRES_SERVER:-}" ] && export POSTGRES_SERVER="$_temp_postgres_server"
-    [ -n "$_temp_postgres_port" ] && [ -z "${POSTGRES_PORT:-}" ] && export POSTGRES_PORT="$_temp_postgres_port"
-    [ -n "$_temp_postgres_user" ] && [ -z "${POSTGRES_USER:-}" ] && export POSTGRES_USER="$_temp_postgres_user"
-    [ -n "$_temp_postgres_db" ] && [ -z "${POSTGRES_DB:-}" ] && export POSTGRES_DB="$_temp_postgres_db"
-
-    unset _temp_postgres_server _temp_postgres_port _temp_postgres_user _temp_postgres_db
-fi
-
-# 组装完整连接字符串（如果未在配置中提供）
-if [ -z "${DB_URL:-}" ] && [ -n "${POSTGRES_USER:-}" ] && [ -n "${POSTGRES_PASSWORD:-}" ] && [ -n "${POSTGRES_SERVER:-}" ] && [ -n "${POSTGRES_PORT:-}" ] && [ -n "${POSTGRES_DB:-}" ]; then
-    export DB_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_SERVER}:${POSTGRES_PORT}/${POSTGRES_DB}"
-fi
-
-export DB_PASSWORD="${DB_PASSWORD:-${POSTGRES_PASSWORD:-}}"
-export DB_URL="${DB_URL:-}"
+export CASDOOR_CLIENT_SECRET="${CASDOOR_CLIENT_SECRET:-}"
 
 # 验证 YAML 文件
 validate_yaml() {
