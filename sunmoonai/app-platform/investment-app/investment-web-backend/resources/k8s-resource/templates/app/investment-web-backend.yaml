@@ -19,8 +19,6 @@ spec:
       - name: ${INVESTMENT_WEB_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}
       containers:
       - name: investment-web-backend
-        # Harbor 镜像路径：仓库/项目/镜像名:标签
-        # 由 deploy-investment-web-backend.sh 计算并导出 INVESTMENT_WEB_BACKEND_FULL_IMAGE_NAME
         image: ${INVESTMENT_WEB_BACKEND_FULL_IMAGE_NAME}
         imagePullPolicy: ${IMAGE_PULL_POLICY:-Always}
         ports:
@@ -32,35 +30,25 @@ spec:
             name: ${INVESTMENT_WEB_BACKEND_SECRET_NAME:-investment-web-backend-secret}
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "250m"
+            memory: "256Mi"
+            cpu: "100m"
           limits:
-            memory: "1Gi"
+            memory: "512Mi"
             cpu: "500m"
         livenessProbe:
-          httpGet:
-            path: /api/v1/health
+          tcpSocket:
             port: 8000
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
         readinessProbe:
-          httpGet:
-            path: /api/v1/health
+          tcpSocket:
             port: 8000
-          initialDelaySeconds: 10
+          initialDelaySeconds: 15
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 3
-        volumeMounts:
-        - name: data-storage
-          mountPath: ${PVC_MOUNT_PATH:-/app/data}
-          subPath: ${PVC_SUB_PATH:-}
-      volumes:
-      - name: data-storage
-        persistentVolumeClaim:
-          claimName: ${PVC_NAME:-investment-web-backend-pvc}
 ---
 apiVersion: v1
 kind: Service
