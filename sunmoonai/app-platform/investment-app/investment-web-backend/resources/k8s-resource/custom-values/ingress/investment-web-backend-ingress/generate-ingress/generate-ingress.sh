@@ -54,7 +54,6 @@ export ENV="${ENV:-}"
 export SERVICE_NAME="${SERVICE_NAME:-}"
 export SERVICE_PORT="${SERVICE_PORT:-}"
 export UNIFIED_HOST="${UNIFIED_HOST:-}"
-export NODE_IP="${NODE_IP:-}"
 
 export USE_STRIP_PREFIX="${USE_STRIP_PREFIX:-}"
 export USE_RATE_LIMIT="${USE_RATE_LIMIT:-}"

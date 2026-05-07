@@ -2,8 +2,7 @@
 # CSR SPA（Vue3 + Vite），nginx 静态服务，所有路由交给前端 Router 处理。
 #
 # 访问方式：
-# - https://<NODE_IP>:30443/
-# - https://admin.investment.sunmoonai.com/
+# - https://investment-admin.sunmoonai.com/
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -17,11 +16,6 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`{{NODE_IP}}`) && PathPrefix(`/`)
-      kind: Rule
-      services:
-        - name: {{SERVICE_NAME}}
-          port: {{SERVICE_PORT}}
     - match: Host(`{{UNIFIED_HOST}}`) && PathPrefix(`/`)
       kind: Rule
       services:

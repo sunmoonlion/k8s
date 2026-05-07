@@ -2,7 +2,6 @@
 # Next.js standalone（SSR + BFF），含 /api/auth/* 内置路由，所有请求交给 Node.js server 处理。
 #
 # 访问方式：
-# - https://<NODE_IP>:30443/
 # - https://investment.sunmoonai.com/
 ---
 apiVersion: traefik.io/v1alpha1
@@ -17,11 +16,6 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`{{NODE_IP}}`) && PathPrefix(`/`)
-      kind: Rule
-      services:
-        - name: {{SERVICE_NAME}}
-          port: {{SERVICE_PORT}}
     - match: Host(`{{UNIFIED_HOST}}`) && PathPrefix(`/`)
       kind: Rule
       services:

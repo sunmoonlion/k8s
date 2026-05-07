@@ -3,8 +3,7 @@
 # 所有业务路由在 /api/* 下，e.g. /api/auth/login
 #
 # 访问方式：
-# - https://<NODE_IP>:30443/api/...
-# - https://admin.investment.sunmoonai.com/api/...
+# - https://investment-admin-api.sunmoonai.com/api/...
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -18,11 +17,6 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`{{NODE_IP}}`) && PathPrefix(`/api`)
-      kind: Rule
-      services:
-        - name: {{SERVICE_NAME}}
-          port: {{SERVICE_PORT}}
     - match: Host(`{{UNIFIED_HOST}}`) && PathPrefix(`/api`)
       kind: Rule
       services:
