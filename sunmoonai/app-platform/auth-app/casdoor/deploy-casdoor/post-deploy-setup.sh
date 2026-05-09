@@ -6,6 +6,7 @@
 #   1. 写入 /conf/app.conf（beego 配置，含 copyrequestbody=true）
 #   2. 幂等创建 Casdoor Organizations
 #   3. 幂等创建 Casdoor Applications
+#   4. 按 ORG_* 在各业务组织下幂等创建用户 admin（密码同 ADMIN_PASSWORD）
 #
 # 用法：
 #   bash post-deploy-setup.sh [namespace] [--cluster C1|C2]
@@ -107,6 +108,11 @@ run_sql() {
         -q -c "$sql"
 }
 
+# SQL 字符串中单引号转义为 ''
+sql_escape_single() {
+    printf '%s' "${1//\'/\'\'}"
+}
+
 check_psql() {
     if ! command -v psql &>/dev/null; then
         log_error "psql 未安装，无法初始化 Organizations/Applications"
@@ -135,14 +141,18 @@ create_org() {
     now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
     local sql
+    # languages：Casdoor 登录页 Languages 区块会执行 languages.length；列为 NULL 时整页白板
+    #（TypeError: Cannot read properties of null (reading 'length')）
     sql="INSERT INTO organization (
         owner, name, created_time, updated_time,
         display_name, default_application,
-        password_type, phone_prefix, country_codes, init_score, is_profile_public
+        password_type, phone_prefix, country_codes, init_score, is_profile_public,
+        languages
     ) VALUES (
         'admin', '$name', '$now', '$now',
         '$display_name', '$default_app',
-        'plain', '86', '{\"CN\"}', 2000, false
+        'plain', '86', '{\"CN\"}', 2000, false,
+        '[\"en\",\"zh\"]'
     ) ON CONFLICT (owner, name) DO NOTHING;"
 
     if run_sql "$sql"; then
@@ -163,6 +173,15 @@ setup_organizations() {
         create_org "$val"
         ((i++))
     done
+}
+
+# 已用旧脚本写入的组织可能没有 languages，补上以免 OAuth 登录页崩溃
+patch_organization_languages() {
+    local now
+    now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    log_info "校验 Organization.languages（修补 NULL 以避免登录页白板）..."
+    run_sql "UPDATE organization SET languages = '[\"en\",\"zh\"]', updated_time = '$now' WHERE owner = 'admin' AND (languages IS NULL OR languages = '' OR btrim(languages) = 'null');" \
+        && log_ok "Organization.languages 已就绪"
 }
 
 # ─────────────────────────── 第三步：Applications ───────────────────────────
@@ -189,7 +208,7 @@ create_app() {
     ) VALUES (
         'admin', '$name', '$now', '$now',
         '$display_name', '$client_id', '$client_secret',
-        '$safe_uris', 'cert-built-in', 'code',
+        '$safe_uris', 'cert-built-in', '[\"authorization_code\"]',
         '$org', $enable_signup,
         'JWT', 168, 336
     ) ON CONFLICT (owner, name) DO NOTHING;"
@@ -214,7 +233,82 @@ setup_applications() {
     done
 }
 
-# ─────────────────────────── 第四步：Admin 密码 ───────────────────────────
+# ─────────────────────────── 第四步：各组织 admin 用户 ───────────────────────────
+
+# 业务组织 OAuth 登录需要「该组织」下的用户；built-in/admin 无法替代。
+# 对每个 ORG_<n>（name|display_name|default_application）：创建或更新 owner=<name>/admin。
+ensure_org_admin_users() {
+    local pwd="${ADMIN_PASSWORD:-}"
+    if [[ -z "$pwd" ]]; then
+        log_info "ADMIN_PASSWORD 未设置，跳过各组织 admin 用户"
+        return 0
+    fi
+
+    local safe_pwd now
+    safe_pwd="$(sql_escape_single "$pwd")"
+    now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+    log_info "幂等创建各业务组织下的 admin 用户（与 ADMIN_PASSWORD 一致）..."
+    local i=1
+    while true; do
+        local var="ORG_${i}"
+        local val="${!var:-}"
+        [[ -z "$val" ]] && break
+
+        local org_name display_name default_app
+        IFS='|' read -r org_name display_name default_app <<< "$val"
+
+        if [[ "$org_name" == "built-in" ]]; then
+            log_info "跳过 built-in（使用全局 admin 流程）"
+            ((i++))
+            continue
+        fi
+
+        local org_safe app_safe email_safe sql
+        org_safe="$(sql_escape_single "$org_name")"
+        app_safe="$(sql_escape_single "$default_app")"
+        email_safe="$(sql_escape_single "admin@${org_name}.local")"
+
+        sql="INSERT INTO \"user\" (
+            owner, name, created_time, updated_time,
+            id, type, password, password_salt,
+            display_name, avatar, email, phone,
+            score, karma, ranking,
+            is_default_avatar, is_online,
+            is_admin, is_global_admin, is_forbidden, is_deleted,
+            signup_application, properties,
+            address,
+            created_ip,
+            signin_wrong_times
+        ) VALUES (
+            '${org_safe}', 'admin', '${now}', '${now}',
+            gen_random_uuid()::text, 'normal-user', '${safe_pwd}', '',
+            'Admin', 'https://cdn.casbin.org/img/casbin.svg', '${email_safe}', '',
+            2000, 0, 1,
+            false, false,
+            true, false, false, false,
+            '${app_safe}', '{}',
+            '[]',
+            '127.0.0.1',
+            0
+        ) ON CONFLICT (owner, name) DO UPDATE SET
+            password = EXCLUDED.password,
+            updated_time = EXCLUDED.updated_time,
+            signup_application = EXCLUDED.signup_application,
+            is_admin = EXCLUDED.is_admin;"
+
+        if run_sql "$sql"; then
+            log_ok "组织用户就绪: ${org_name}/admin → signup_application=${default_app}"
+        else
+            log_error "组织用户创建失败: ${org_name}/admin"
+            return 1
+        fi
+
+        ((i++))
+    done
+}
+
+# ─────────────────────────── 第五步：全局 Admin 密码 ───────────────────────────
 
 setup_admin_password() {
     local pwd="${ADMIN_PASSWORD:-}"
@@ -223,7 +317,9 @@ setup_admin_password() {
         return 0
     fi
 
-    local sql="UPDATE \"user\" SET password='$pwd' WHERE owner='built-in' AND name='admin';"
+    local safe_pwd
+    safe_pwd="$(sql_escape_single "$pwd")"
+    local sql="UPDATE \"user\" SET password='${safe_pwd}', updated_time='$(date -u +"%Y-%m-%dT%H:%M:%SZ")' WHERE owner='built-in' AND name='admin';"
     if run_sql "$sql"; then
         log_ok "admin 密码已更新"
     else
@@ -245,19 +341,22 @@ main() {
     # Step 1: app.conf
     setup_app_conf || exit 1
 
-    # Step 2, 3, 4: Organizations + Applications + Admin 密码（需要 psql）
+    # Step 2～5：Organizations / Applications / 组织 admin / 全局 admin（需要 psql）
     if check_psql; then
         setup_organizations
+        patch_organization_languages
         setup_applications
+        ensure_org_admin_users
         setup_admin_password
     else
-        log_warn "跳过 Organizations/Applications/Admin 密码初始化（psql 不可用或连接失败）"
+        log_warn "跳过 Organizations/Applications/组织 admin/全局 admin 密码初始化（psql 不可用或连接失败）"
     fi
 
     echo ""
     echo "═══════════ Casdoor 访问信息 ═══════════"
     echo "地址：https://casdoor.sunmoonai.com:30443"
-    echo "账号：admin / ${ADMIN_PASSWORD:-(见 post-deploy-setup.conf)}"
+    echo "控制台：built-in 组织 admin / ${ADMIN_PASSWORD:-(见 post-deploy-setup.conf)}"
+    echo "Investment 应用登录：各业务组织下用户名 admin，密码同上（由 ORG_* 自动创建）"
     echo "════════════════════════════════════════"
     echo ""
 }

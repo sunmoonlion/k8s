@@ -21,14 +21,8 @@ spec:
       services:
         - name: {{SERVICE_NAME}}
           port: {{SERVICE_PORT}}
-    - match: Host(`{{NODE_IP}}`) && PathPrefix(`/casdoor`)
-      kind: Rule
-      services:
-        - name: {{SERVICE_NAME}}
-          port: {{SERVICE_PORT}}
-      middlewares:
-        - name: casdoor-stripprefix
-          namespace: {{NAMESPACE}}
+    # Node IP + path prefix 访问方式已移除（空 HostSNI 会导致 Traefik TLS 路由失败）
+    # 如需通过 IP 访问，请在应用层处理路径重写，或单独创建 IngressRoute 并填入真实 IP
   tls: {}
 ---
 # 仅在通过 IP + 路径前缀访问时需要 strip /casdoor 前缀

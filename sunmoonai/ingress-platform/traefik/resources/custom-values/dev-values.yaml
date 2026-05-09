@@ -205,19 +205,25 @@ persistence:
 # ============================================================================
 # 资源限制
 # ============================================================================
+# Traefik 是 Go 编译的轻量级反向代理，常态内存占用 50-100Mi，CPU 几乎为 0
+# 为了节省资源，在开发环境下把 limits 调小
 resources:
   limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 250m
+    cpu: 200m
     memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
 
 # =========================================================================
-# 调度约束：将 Traefik 固定到 node-size=small（节点）
+# 调度约束：固定到 hsy-local-2 (sunmoonai-2 / 101.126.151.0)
 # =========================================================================
-# nodeSelector:
-#   node-size: small
+# 原因：当前架构下，外部 :443 访问只有 Traefik pod 所在节点能正常工作
+#   - 跨节点 IPVS DNAT 后回包不经过原节点反向 NAT，连接超时
+#   - 因此把 Traefik 永远固定到一台节点，DNS / hosts 也只指向这台节点
+#   - 入口节点 = hsy-local-2 (公网 101.126.151.0)
+nodeSelector:
+  kubernetes.io/hostname: hsy-local-2
 
 tolerations:
   - key: size
