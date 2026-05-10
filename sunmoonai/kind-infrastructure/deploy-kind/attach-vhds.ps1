@@ -1,6 +1,11 @@
 $ErrorActionPreference = "SilentlyContinue"
 Start-Sleep -Seconds 20
 
+# 仅当 WSL 内 deploy-kind.conf 设置 KIND_PV_STORAGE_MODE=vhd 时需要本脚本（计划任务/开机挂载）。
+# native 模式请勿再挂载 E 盘 vhdx；可禁用本计划任务。
+$WslUser = "zymun"
+$CheckScript = "/home/zymun/k8s/sunmoonai/kind-infrastructure/deploy-kind/check-storage-mounts.sh"
+
 function Notify-Failure($code) {
   $title = "docker-pv mount failed"
   $text = "WSL storage mount check failed (exit code: $code).`nRun: check-storage-mounts.sh"
@@ -37,7 +42,7 @@ Mount-Vhd-Idempotent "E:\kind-local-storage\pv-kind-local-storage.vhdx"
 & wsl -u root -e mount /data/kind-local-storage *> $null
 
 # Final truth source: repository storage check script.
-& wsl -u zymun -e /mnt/c/Users/zymun/Desktop/k8s/sunmoonai/kind-infrastructure/deploy-kind/check-storage-mounts.sh
+& wsl -u $WslUser -e $CheckScript
 if ($LASTEXITCODE -ne 0) {
   Notify-Failure $LASTEXITCODE
   exit $LASTEXITCODE

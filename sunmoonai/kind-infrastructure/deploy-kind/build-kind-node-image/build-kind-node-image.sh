@@ -10,8 +10,9 @@
 # 若未在配置中指定 KIND_BASE_IMAGE，则从 deploy-kind/kind-cluster.yaml 中解析当前节点 image，并在末尾去掉 CUSTOM_NODE_SUFFIX 得到基础镜像。
 #
 # 镜像数据来源与 load-images 一致，有两种（均由 build-kind-node-image.conf 配置，路径相对本目录 build-kind-node-image/ 或为绝对路径）：
-#   1) BUILD_KIND_IMAGE_LIST_FILE：镜像列表文件（镜像名，每行一个），本脚本会 docker pull + docker save 成 tar。
+#   1) BUILD_KIND_IMAGE_LIST_FILE：镜像列表文件（镜像名，每行一个）；镜像须已在本机 docker 中（不执行 docker pull），脚本仅 docker save 成 tar。
 #   2) BUILD_KIND_TAR_DIR：已有 .tar 所在目录，直接 COPY 到构建镜像中再 ctr import。
+# 基础镜像 BASE_IMAGE（如 kindest/node:v1.27.3）也须已存在于本机，否则 docker build 会失败；本脚本在 build 前显式检查并报错提示先 docker pull。
 # 两者只能二选一：若两者同时非空则报错。执行后会自动更新 kind-cluster.yaml 中所有节点 image 为本镜像。
 #
 set -euo pipefail
@@ -36,6 +37,11 @@ KIND_BASE_IMAGE="${KIND_BASE_IMAGE:-}"
 CUSTOM_SUFFIX="${CUSTOM_NODE_SUFFIX:-sunmoonai}"
 FORCE_REBUILD=false
 
+log_info() { echo "ℹ️  $*"; }
+log_success() { echo "✅ $*"; }
+log_warn() { echo "⚠️  $*"; }
+log_error() { echo "❌ $*"; }
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --force)
@@ -54,11 +60,6 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
-
-log_info() { echo "ℹ️  $*"; }
-log_success() { echo "✅ $*"; }
-log_warn() { echo "⚠️  $*"; }
-log_error() { echo "❌ $*"; }
 
 KIND_YAML="${DEPLOY_KIND_DIR}/kind-cluster.yaml"
 if [[ ! -f "$KIND_YAML" ]]; then
@@ -143,15 +144,16 @@ if [[ -n "$TAR_DIR_RESOLVED" ]]; then
     # 方式 2：已有 tar 目录，直接复制到 staging 目录
     cp "${TAR_DIR_RESOLVED}/"*.tar "$TAR_TARGET_DIR"/
 else
-    # 方式 1：镜像列表文件 -> docker pull + save 成 tar
+    # 方式 1：镜像列表文件 -> 仅使用本地已有镜像 docker save（不执行 docker pull）
     while IFS= read -r line || [[ -n "$line" ]]; do
         img=$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
         [[ -z "$img" || "$img" =~ ^# ]] && continue
-        log_info "拉取并打包镜像: $img"
-        if ! docker pull "$img"; then
-            log_error "docker pull 失败: $img"
+        if ! docker image inspect "$img" >/dev/null 2>&1; then
+            log_error "本地未找到镜像: $img（本脚本不会自动 docker pull）"
+            log_error "请先执行: docker pull $img（配置好代理/镜像加速后再试），然后再运行本脚本。"
             exit 1
         fi
+        log_info "打包本地镜像为 tar: $img"
         safe_name=$(echo "$img" | sed 's/[^a-zA-Z0-9_.-]/_/g')
         tar_path="${TAR_TARGET_DIR}/${safe_name}.tar"
         if ! docker save -o "$tar_path" "$img"; then
@@ -163,6 +165,12 @@ fi
 
 if ! ls -1 "$TAR_TARGET_DIR"/*.tar >/dev/null 2>&1; then
     log_error "未在 $TAR_TARGET_DIR 中发现任何 tar，请检查 images-init.txt 或 tar-default-dir 内容"
+    exit 1
+fi
+
+if ! docker image inspect "$BASE_IMAGE" >/dev/null 2>&1; then
+    log_error "本地未找到 Docker 基础镜像: $BASE_IMAGE（docker build 不会自动从仓库拉取）"
+    log_error "请先执行: docker pull $BASE_IMAGE（配置好代理/镜像加速后再试），然后再运行 deploy-kind.sh 或本脚本。"
     exit 1
 fi
 

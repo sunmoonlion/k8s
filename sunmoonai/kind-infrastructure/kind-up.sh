@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # 一键：创建 Kind 集群 + 平台初始化（仅命名空间）。
-# 存储使用 Kind 内置 rancher.io/local-path-provisioner（默认 SC 名为 standard；kind-up 会通过 apply-namespaces 追加别名为 local-path，与平台 Helm values 一致）。数据目录可通过 extraMounts 持久化到 WSL 宿主机。
+# 存储：默认 KIND_PV_STORAGE_MODE=native，PV 数据在 WSL 发行版内 KIND_PV_HOST_PATH（见 deploy-kind.conf）；
+# 可选 vhd 模式使用独立盘挂载。数据目录通过 kind-cluster.yaml extraMounts 挂入 worker。
 # 使用 k8s-admin.conf 中 [KIND] 的 cluster_name、kubeconfig；集群配置固定使用 deploy-kind/kind-cluster.yaml。
 #
 set -euo pipefail
@@ -14,6 +15,39 @@ log_info() { echo "ℹ️  $*"; }
 log_success() { echo "✅ $*"; }
 log_warn() { echo "⚠️  $*"; }
 log_error() { echo "❌ $*"; }
+
+# shellcheck source=kind-cli.sh
+source "${SCRIPT_DIR}/kind-cli.sh"
+
+ensure_kind_cli() {
+    if prepend_kind_to_path_if_needed; then
+        return 0
+    fi
+    log_error "未找到 kind 命令（创建 Kind 集群需要安装 Kind CLI）。"
+    log_error "安装示例：mkdir -p ~/.local/bin && curl -fsSL -o ~/.local/bin/kind 'https://github.com/kubernetes-sigs/kind/releases/download/v0.27.0/kind-linux-amd64' && chmod +x ~/.local/bin/kind"
+    log_error "并确保 ~/.local/bin 在 PATH 中（可写入 ~/.zshrc：export PATH=\"\$HOME/.local/bin:\$PATH\"）。"
+    exit 1
+}
+
+# 从 deploy-kind.conf 读取 PV 存储模式（环境变量已设置时不覆盖）
+read_deploy_kind_pv_storage() {
+    local f="${SCRIPT_DIR}/deploy-kind/deploy-kind.conf"
+    if [[ ! -f "$f" ]]; then
+        KIND_PV_STORAGE_MODE="${KIND_PV_STORAGE_MODE:-native}"
+        KIND_PV_HOST_PATH="${KIND_PV_HOST_PATH:-/data/kind-local-storage}"
+        return 0
+    fi
+    if [[ ! -v KIND_PV_STORAGE_MODE ]]; then
+        local fm
+        fm=$(grep -E '^KIND_PV_STORAGE_MODE=' "$f" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "' || true)
+        KIND_PV_STORAGE_MODE="${fm:-native}"
+    fi
+    if [[ ! -v KIND_PV_HOST_PATH ]]; then
+        local fp
+        fp=$(grep -E '^KIND_PV_HOST_PATH=' "$f" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "' || true)
+        KIND_PV_HOST_PATH="${fp:-/data/kind-local-storage}"
+    fi
+}
 
 ensure_storage_check_hook_installed() {
     local hook_script="$SCRIPT_DIR/deploy-kind/check-storage-mounts.sh"
@@ -46,18 +80,36 @@ ensure_storage_check_hook_installed() {
     log_info "已写入挂载检查钩子到 ~/.zshrc（新终端生效）"
 }
 
-# 挂载守门：防止 VHD 未挂好时把数据写回 WSL 系统盘
+# 存储守门：native 仅确保目录存在；vhd 校验独立盘挂载（旧方案）
 ensure_storage_mounts_ready() {
+    read_deploy_kind_pv_storage
+
+    if [[ "${KIND_PV_STORAGE_MODE:-native}" == "native" ]]; then
+        local mp="${KIND_PV_HOST_PATH:-/data/kind-local-storage}"
+        log_info "存储模式 native：准备 PV 宿主目录 $mp（与 WSL 发行版同盘，无独立 vhdx）"
+        if ! sudo mkdir -p "$mp"; then
+            log_error "无法创建目录 $mp"
+            return 1
+        fi
+        sudo chmod 777 "$mp" 2>/dev/null || true
+        if ! sudo test -w "$mp"; then
+            log_error "目录不可写: $mp"
+            return 1
+        fi
+        log_success "native 存储就绪：$mp"
+        return 0
+    fi
+
     local docker_mp="/mnt/docker-ext4"
     local pv_mp="/mnt/pv-kind-ext4"
-    local bind_mp="/data/kind-local-storage"
+    local bind_mp="${KIND_PV_HOST_PATH:-/data/kind-local-storage}"
 
     local docker_uuid pv_uuid
     docker_uuid=$(awk '!/^[[:space:]]*#/ && $2=="/mnt/docker-ext4" && $1 ~ /^UUID=/{sub(/^UUID=/,"",$1); print $1; exit}' /etc/fstab 2>/dev/null || true)
     pv_uuid=$(awk '!/^[[:space:]]*#/ && $2=="/mnt/pv-kind-ext4" && $1 ~ /^UUID=/{sub(/^UUID=/,"",$1); print $1; exit}' /etc/fstab 2>/dev/null || true)
 
     if [[ -z "$docker_uuid" || -z "$pv_uuid" ]]; then
-        log_error "未在 /etc/fstab 找到 $docker_mp 或 $pv_mp 的 UUID 配置，拒绝继续（避免写偏到系统盘）"
+        log_error "vhd 模式：未在 /etc/fstab 找到 $docker_mp 或 $pv_mp 的 UUID（若已改 native，请在 deploy-kind.conf 设 KIND_PV_STORAGE_MODE=native）"
         return 1
     fi
 
@@ -67,7 +119,7 @@ ensure_storage_mounts_ready() {
 
     if [[ -z "$docker_dev" || -z "$pv_dev" ]]; then
         log_error "未找到 fstab UUID 对应块设备（VHD 可能未 attach）"
-        log_error "请先在 Windows 管理员 PowerShell 执行两条 wsl --mount，再回 WSL 执行 mount -a"
+        log_error "请先在 Windows 管理员 PowerShell 执行 wsl --mount，再回 WSL 执行 mount -a"
         return 1
     fi
 
@@ -88,7 +140,7 @@ ensure_storage_mounts_ready() {
         return 1
     fi
 
-    log_success "挂载检查通过：Docker=$docker_src, PV=$pv_src, bind=$bind_src"
+    log_success "vhd 挂载检查通过：Docker=$docker_src, PV=$pv_src, bind=$bind_src"
     return 0
 }
 
@@ -109,7 +161,8 @@ read_kind_config() {
     KIND_KUBECONFIG="${KIND_KUBECONFIG/#\~/$HOME}"
 }
 
-PV_DATA_ROOT="/data/kind-local-storage"
+read_deploy_kind_pv_storage
+PV_DATA_ROOT="${KIND_PV_HOST_PATH:-/data/kind-local-storage}"
 
 clean_pv_data_if_configured() {
     local deploy_conf="${1:-}"
@@ -147,6 +200,7 @@ clean_pv_data_if_configured() {
 
 # 创建 Kind 集群（使用同目录 kind-cluster.yaml）
 create_kind_cluster() {
+    ensure_kind_cli
     read_kind_config
     # 从 deploy-kind.conf 读取集群重建策略（env > conf > 默认 false）
     local deploy_conf="$SCRIPT_DIR/deploy-kind/deploy-kind.conf"
@@ -192,7 +246,7 @@ create_kind_cluster() {
 
 ensure_storage_check_hook_installed
 
-log_info "0/3 挂载守门检查（避免 D/E 混写）"
+log_info "0/3 存储检查（native：目录就绪；vhd：独立盘挂载）"
 ensure_storage_mounts_ready
 
 log_info "1/3 创建 Kind 集群（已存在则跳过）"

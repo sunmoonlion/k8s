@@ -279,25 +279,59 @@ trap 'cleanup' EXIT INT TERM
 
 # ── kubectl 检测与安装 ────────────────────────────────────────────────────────
 check_and_install_kubectl() {
-  local found=false
-  command -v kubectl >/dev/null 2>&1 && found=true
+  local found=false p
+  if command -v kubectl >/dev/null 2>&1; then found=true; fi
   if [[ "$found" == "false" ]]; then
-    for p in /snap/bin/kubectl /usr/local/bin/kubectl /usr/bin/kubectl; do
-      if [[ -x "$p" ]]; then found=true; break; fi
+    for p in /snap/bin/kubectl /usr/local/bin/kubectl /usr/bin/kubectl "$HOME/.local/bin/kubectl"; do
+      if [[ -x "$p" ]]; then
+        export PATH="$(dirname "$p"):$PATH"
+        found=true
+        break
+      fi
     done
   fi
 
-  if [[ "$found" == "false" ]]; then
-    msg "🔧 检测到 kubectl 未安装，正在自动安装..."
-    local stable_ver; stable_ver=$(curl -sL https://dl.k8s.io/release/stable.txt)
-    local arch="amd64"; [[ "$(uname -m)" == "aarch64" ]] && arch="arm64"
-    local os="linux"; [[ "$OSTYPE" == "darwin"* ]] && os="darwin"
-    curl -sLO "https://dl.k8s.io/release/${stable_ver}/bin/${os}/${arch}/kubectl"
-    sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-    rm kubectl
-    success "✅ kubectl 安装完成"
-  else
+  if [[ "$found" == "true" ]]; then
     msg "kubectl 已安装: $(kubectl version --client 2>/dev/null | head -1 || echo '版本信息获取失败')"
+    return 0
+  fi
+
+  msg "🔧 检测到 kubectl 未安装，正在自动安装..."
+  local stable_ver arch="amd64" os="linux"
+  [[ "$(uname -m)" == "aarch64" ]] && arch="arm64"
+  [[ "$OSTYPE" == "darwin"* ]] && os="darwin"
+
+  if ! stable_ver=$(curl -fsSL --connect-timeout 20 --max-time 60 --retry 3 --retry-delay 2 \
+      https://dl.k8s.io/release/stable.txt 2>/dev/null) || [[ -z "${stable_ver//[$'\r\n']/}" ]]; then
+    err "❌ 无法从 dl.k8s.io 获取版本（网络/代理问题？）。请手动安装 kubectl 后重试。"
+    err "   参考: https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/"
+    exit 1
+  fi
+  stable_ver="${stable_ver//$'\r'/}"; stable_ver="${stable_ver//$'\n'/}"
+
+  local dl_url="https://dl.k8s.io/release/${stable_ver}/bin/${os}/${arch}/kubectl"
+  local tmp_k; tmp_k=$(mktemp) || { err "❌ mktemp 失败"; exit 1; }
+  if ! curl -fSL --connect-timeout 20 --max-time 300 --retry 3 --retry-delay 2 -o "$tmp_k" "$dl_url"; then
+    rm -f "$tmp_k"
+    err "❌ 无法下载 kubectl: $dl_url"
+    exit 1
+  fi
+  chmod +x "$tmp_k"
+
+  if sudo -n install -o root -g root -m 0755 "$tmp_k" /usr/local/bin/kubectl 2>/dev/null \
+     || sudo install -o root -g root -m 0755 "$tmp_k" /usr/local/bin/kubectl 2>/dev/null; then
+    rm -f "$tmp_k"
+    success "✅ kubectl 已安装: /usr/local/bin/kubectl ($stable_ver)"
+  else
+    mkdir -p "$HOME/.local/bin"
+    mv "$tmp_k" "$HOME/.local/bin/kubectl"
+    export PATH="$HOME/.local/bin:$PATH"
+    if ! grep -qF '.local/bin' "$HOME/.zshrc" 2>/dev/null; then
+      echo '' >> "$HOME/.zshrc"
+      echo '# kubectl（k8s-connection-manager 用户级安装）' >> "$HOME/.zshrc"
+      echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"
+    fi
+    success "✅ kubectl 已安装到 ~/.local/bin（已写入 ~/.zshrc 的 PATH，请 source 或新开终端）"
   fi
 }
 

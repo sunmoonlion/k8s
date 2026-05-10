@@ -222,6 +222,8 @@ resources:
 #   - 跨节点 IPVS DNAT 后回包不经过原节点反向 NAT，连接超时
 #   - 因此把 Traefik 永远固定到一台节点，DNS / hosts 也只指向这台节点
 #   - 入口节点 = hsy-local-2 (公网 101.126.151.0)
+# Kind：节点名为 kind-worker*，此处约束会导致 Pod Pending；deploy-traefik.sh 在 K8S_TARGET_MODE=kind
+# 时用 --set-json 清空 nodeSelector/tolerations（Helm 深度合并无法单靠「空 values 文件」覆盖）。
 nodeSelector:
   kubernetes.io/hostname: hsy-local-2
 

@@ -17,18 +17,25 @@
 #     - hostPath: ./registry-config/harbor.sunmoonai.com:30443
 #       containerPath: /etc/containerd/certs.d/harbor.sunmoonai.com:30443
 #
+# -----------------------------------------------------------------------------
+# 端口约定（以仓库脚本与 Helm 为准，勿与「远程 SSH 转发」混为一谈）
+# - Traefik：web NodePort 30080、websecure NodePort 30443（ingress-platform/traefik/.../dev-values.yaml）
+# - Harbor：externalURL / HARBOR_EXTERNAL_PORT 均为 :30443（cicd-platform/harbor、deploy-harbor.conf）
+# - extraPortMappings：把「控制平面节点上」的 NodePort 映到 WSL 宿主机。HTTPS 须 hostPort=30443，
+#   与上两处一致，deploy-kind.sh / deploy-harbor.sh 里 curl 与 docker login 才能用同一端口。
+# - HTTP 映到宿主机 80 仅为本机访问方便；HTTPS 若改映到 443，须同步改所有 WSL 侧脚本或另设变量。
+# -----------------------------------------------------------------------------
 # 自定义节点镜像：下方各节点已指定 image 时，创建集群将使用该镜像（由 deploy-kind/build-kind-node-image/build-kind-node-image.sh 生成，预装 Harbor/Traefik 等），重建时无需再执行 load-kind-images。
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
   - role: control-plane
     image: kindest/node:v1.27.3-sunmoonai  # 预装 Harbor/Traefik 等，由 build-kind-node-image.sh 生成
-    # Traefik NodePort → 宿主机（WSL），便于从本机访问 Ingress 与 TCP 代理（宿主机可绑定特权端口，直接映射 80/443）
     extraPortMappings:
       - containerPort: 30080
         hostPort: 80      # HTTP
       - containerPort: 30443
-        hostPort: 443     # HTTPS
+        hostPort: 30443   # HTTPS（与 harbor.sunmoonai.com:30443 一致）
       - containerPort: 30444
         hostPort: 30444   # PostgreSQL TCP 代理
       - containerPort: 30445
@@ -38,7 +45,9 @@ nodes:
   - role: worker
     image: kindest/node:v1.27.3-sunmoonai
     extraMounts:
-      - hostPath: /data/kind-local-storage   # WSL 宿主机持久化目录，Kind 删除后数据依然存在
+      # hostPath 须与 deploy-kind.conf 中 KIND_PV_HOST_PATH 一致（默认 /data/kind-local-storage）
+      # native：WSL 发行版内普通目录；vhd：独立盘 bind 到同一路径
+      - hostPath: /data/kind-local-storage
         containerPath: /data/kind-local-storage
     # extraMounts 方式二（registry 镜像加速）：取消注释并确保 registry-config/ 已生成后再创建集群
     #   - hostPath: ./registry-config/docker.io

@@ -7,6 +7,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 KIND_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# shellcheck source=../kind-cli.sh
+source "${KIND_ROOT}/kind-cli.sh"
+prepend_kind_to_path_if_needed || true
 
 # 加载配置（可选）
 if [[ -f "$SCRIPT_DIR/deploy-kind.conf" ]]; then

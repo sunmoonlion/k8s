@@ -287,6 +287,8 @@ if [[ ${#IMAGE_LIST[@]} -gt 0 ]]; then
                 fi
             else
                 log_warn "docker pull 失败（跳过）: $img（可放对应 tar 到 --tar-dir 目录，如 ${img}.tar 或 $(echo "$img" | sed 's#[/:]#_#g').tar）"
+                # 须计入失败：否则同清单中后续镜像 push 成功仍 exit 0，Harbor 缺镜像但一键部署误以为已推送（典型：neo4j pull 失败、os-shell 成功）
+                ((FAILED_COUNT++)) || true
             fi
         fi
     done

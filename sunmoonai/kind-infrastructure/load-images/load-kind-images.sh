@@ -14,6 +14,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONF_FILE="${SCRIPT_DIR}/load-kind-images.conf"
 K8S_ADMIN_CONF="${SCRIPT_DIR}/../../../utils/k8s-admin.conf"
 INFRA_CONF="${SCRIPT_DIR}/../../infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf"
+# shellcheck source=../kind-cli.sh
+source "${SCRIPT_DIR}/../kind-cli.sh"
 
 log_info() { echo "ℹ️  $*"; }
 log_success() { echo "✅ $*"; }
@@ -181,6 +183,7 @@ done
 read_kind_config
 load_conf
 
+prepend_kind_to_path_if_needed || true
 if ! kind get clusters 2>/dev/null | grep -q "^${KIND_CLUSTER_NAME}$"; then
     log_error "Kind 集群 ${KIND_CLUSTER_NAME} 不存在，请先执行 ../kind-up.sh 创建集群"
     exit 1

@@ -343,6 +343,14 @@ execute_traefik_deployment() {
     helm_cmd="$helm_cmd --values $values_file"
     helm_cmd="$helm_cmd --set global.projectId=$project_id"
     helm_cmd="$helm_cmd --set global.namespace=$namespace"
+    # Kind：dev-values.yaml 将 Traefik 固定在远程入口机 hsy-local-2；Kind 节点名为 kind-*，不取消则
+    # Pod 永久 Pending，NodePort 30443 无就绪后端，宿主机 curl 表现为 TLS 失败 / HTTP 000。
+    # Helm 对 map 为深度合并，仅靠附加空 nodeSelector 的 values 无法清掉 hsy-local-2，须用 --set-json。
+    if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
+        helm_cmd="$helm_cmd --set-json 'nodeSelector={}'"
+        helm_cmd="$helm_cmd --set-json 'tolerations=[]'"
+        log_info "Kind 模式：已用 --set-json 清除 Traefik nodeSelector/tolerations（避免绑定 hsy-local-2）"
+    fi
     
     if [[ "$dry_run" == "true" ]]; then
         helm_cmd="$helm_cmd --dry-run"

@@ -11,9 +11,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONF="${SCRIPT_DIR}/deploy-kind/deploy-kind.conf"
 
-# 默认值，与 wsl-setup-harbor-hosts-and-login.sh 保持一致
+# 默认值（Kind + WSL 宿主机）：须与 kind extraPortMappings 发布侧一致，用 127.0.0.1，勿用节点 InternalIP。
 HARBOR_HOST="harbor.sunmoonai.com"
-HARBOR_IP="172.18.0.2"
+HARBOR_IP="127.0.0.1"
 HARBOR_PORT="30443"
 
 if [[ -f "$CONF" ]]; then
@@ -24,11 +24,11 @@ fi
 HARBOR_HOST="${HARBOR_HOST:-harbor.sunmoonai.com}"
 HARBOR_PORT="${HARBOR_PORT:-30443}"
 
-# 未显式配置 HARBOR_IP 时，从当前 kubeconfig 的 Kind control-plane 节点自动检测，集群重建后仍可用
-if [[ -z "${HARBOR_IP:-}" ]]; then
+# 仅当显式要求且 HARBOR_IP 仍为空时，才用 control-plane InternalIP（一般不适合 WSL→extraPortMappings）
+if [[ "${HARBOR_USE_NODE_INTERNAL_IP:-false}" == "true" ]] && [[ -z "${HARBOR_IP:-}" ]]; then
     HARBOR_IP=$(kubectl get nodes -l node-role.kubernetes.io/control-plane -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null || true)
 fi
-HARBOR_IP="${HARBOR_IP:-${HARBOR_NODE_IP:-172.18.0.2}}"
+HARBOR_IP="${HARBOR_IP:-127.0.0.1}"
 
 # 在 /etc/hosts 中维护 harbor.sunmoonai.com → HARBOR_IP
 if grep -q "[[:space:]]${HARBOR_HOST}[[:space:]]*$" /etc/hosts 2>/dev/null || grep -q "[[:space:]]${HARBOR_HOST}$" /etc/hosts 2>/dev/null; then

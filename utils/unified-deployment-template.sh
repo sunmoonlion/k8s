@@ -8,6 +8,9 @@ set -euo pipefail
 
 # 脚本目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=prepend-dev-cli-path.sh
+source "${SCRIPT_DIR}/prepend-dev-cli-path.sh"
+prepend_dev_cli_to_path
 # 使用绝对路径指向正确的配置文件
 CONFIG_FILE="${UNIFIED_CONFIG_FILE:-$SCRIPT_DIR/k8s-admin.conf}"
 STATUS_FILE="$SCRIPT_DIR/.k8s-status"

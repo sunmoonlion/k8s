@@ -11,6 +11,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 K8S_ADMIN_CONF="${SCRIPT_DIR}/../../utils/k8s-admin.conf"
 # 从 kind-infrastructure 到 sunmoonai/infrastructure，只需返回一层到 sunmoonai 再进入 infrastructure
 INFRA_CONF="${SCRIPT_DIR}/../infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf"
+# shellcheck source=kind-cli.sh
+source "${SCRIPT_DIR}/kind-cli.sh"
 
 log_info() { echo "ℹ️  $*"; }
 log_success() { echo "✅ $*"; }
@@ -108,6 +110,7 @@ main() {
         exit 0
     fi
 
+    prepend_kind_to_path_if_needed || true
     if ! command -v kind &>/dev/null; then
         log_warn "未找到 kind 命令，跳过 registry 配置"
         exit 0

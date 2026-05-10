@@ -1,5 +1,7 @@
 ﻿# WSL VHDX 挂载说明（Kind + Docker + PV）
 
+> **默认已不再需要本文档**：`deploy-kind.conf` 中 `KIND_PV_STORAGE_MODE=native` 时，PV 落在 WSL 发行版根分区上的普通目录，无须 E 盘独立 VHD。仅当你仍使用独立数据盘时，继续按下文配置 `KIND_PV_STORAGE_MODE=vhd` 与 `attach-vhds.ps1` / `/etc/fstab`。
+
 本文档用于在 Windows + WSL2 环境下，稳定挂载两块 VHD：
 
 - Docker 数据盘：`E:\wsl-disks\docker-data.vhd` -> `/mnt/docker-ext4`

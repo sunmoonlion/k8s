@@ -13,7 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONF="${SCRIPT_DIR}/deploy-kind/deploy-kind.conf"
 
 HARBOR_HOST="harbor.sunmoonai.com"
-HARBOR_IP="172.18.0.2"
+HARBOR_IP="127.0.0.1"
 HARBOR_PORT="30443"
 HARBOR_USER="${HARBOR_ADMIN_USER:-admin}"
 # 默认根 CA 位置（Kind 场景）：与 TRAEFIK_KIND_KIND_LOCAL_CA_CERT_DIR 一致
@@ -26,10 +26,10 @@ fi
 
 HARBOR_HOST="${HARBOR_HOST:-harbor.sunmoonai.com}"
 HARBOR_PORT="${HARBOR_PORT:-30443}"
-if [[ -z "${HARBOR_IP:-}" ]]; then
+if [[ "${HARBOR_USE_NODE_INTERNAL_IP:-false}" == "true" ]] && [[ -z "${HARBOR_IP:-}" ]]; then
     HARBOR_IP=$(kubectl get nodes -l node-role.kubernetes.io/control-plane -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null || true)
 fi
-HARBOR_IP="${HARBOR_IP:-${HARBOR_NODE_IP:-172.18.0.2}}"
+HARBOR_IP="${HARBOR_IP:-127.0.0.1}"
 
 # 确保 hosts 已配置（重用新的 hosts 脚本，幂等）
 "${SCRIPT_DIR}/wsl-setup-harbor-hosts.sh"

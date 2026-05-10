@@ -8,6 +8,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 K8S_ADMIN_CONF="${SCRIPT_DIR}/../../utils/k8s-admin.conf"
+# shellcheck source=kind-cli.sh
+source "${SCRIPT_DIR}/kind-cli.sh"
 
 log_info() { echo "ℹ️  $*"; }
 log_success() { echo "✅ $*"; }
@@ -35,8 +37,9 @@ fi
 
 HARBOR_NODE_IP="${HARBOR_NODE_IP:-172.18.0.2}"
 
+prepend_kind_to_path_if_needed || true
 if ! command -v kind &>/dev/null; then
-    log_error "未找到 kind 命令"
+    log_error "未找到 kind 命令（请安装: ~/.local/bin/kind 或加入 PATH）"
     exit 1
 fi
 

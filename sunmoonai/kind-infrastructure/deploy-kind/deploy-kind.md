@@ -135,6 +135,7 @@ Traefik 与 Harbor 共用同一套脚本（如 `deploy-harbor.sh`）。阶段4�
 - `DEPLOY_KIND_RUN_REGISTRY_CONFIG`：一键部署时是否在 Kind 节点内写入 containerd 镜像拉取配置（与远程 Step02 对齐）
 - `DEPLOY_KIND_RUN_IMAGES` / `DEPLOY_KIND_RUN_HARBOR_HOSTS`：一键部署时是否执行镜像预加载、Harbor hosts
 - `HARBOR_HOST` / `HARBOR_IP`：WSL 访问 Harbor 时使用的域名与解析 IP
+- `KIND_PV_STORAGE_MODE` / `KIND_PV_HOST_PATH`：Kind worker hostPath PV 的存储模式与路径（默认 native + `/data/kind-local-storage`）
 - 可选覆写 `STEP02_REGISTRY_ENABLE`、`STEP02_REGISTRY_MIRRORS`、`STEP02_REGISTRY_DIRECT`（默认从 infrastructure 的 deploy-infrastructure-all.conf 读取）
 
 ### 3.2 集群拓扑与 Harbor（kind-cluster.yaml）
@@ -142,9 +143,13 @@ Traefik 与 Harbor 共用同一套脚本（如 `deploy-harbor.sh`）。阶段4�
 - 默认 1 control-plane + 2 worker；Traefik NodePort 通过 control-plane 的 extraPortMappings 映射到宿主机。Worker 数量与端口映射见上级目录 **`kind-cluster.yaml`**，需自定义时修改后重新执行 `kind-up.sh`。
 - **集群内** Harbor 解析：`kind-cluster.yaml` 中通过 extraHosts 将 `harbor.sunmoonai.com` 指向固定 IP（默认 172.18.0.3，即第一个 worker）。**创建集群前须事先确定 Traefik 会跑在哪个节点**，并修改该 IP，否则集群内拉取 Harbor 镜像会失败，需改配置后重建集群。与远程 Step11 的 /etc/hosts 等效。
 
-### 3.3 存储
+### 3.3 存储（Kind 本地 PV）
 
-- 应用与组件在 values 中指定 `storageClassName: nfs-2` 即可，与远程 dev 一致
+- **`KIND_PV_STORAGE_MODE`**（`deploy-kind.conf`）  
+  - **`native`（默认）**：`KIND_PV_HOST_PATH`（默认 `/data/kind-local-storage`）为 WSL 发行版根分区上的普通目录；`kind-up.sh` 会 `sudo mkdir -p` 并放宽权限，**不需要** Windows 侧 E 盘、独立 vhdx 或 `attach-vhds.ps1`。数据随发行版磁盘（通常为 `%LOCALAPPDATA%\Packages\...\ext4.vhdx`），请自行关注磁盘空间。  
+  - **`vhd`**：沿用旧方案，要求 `wsl --mount` + WSL `/etc/fstab` 挂载 `/mnt/docker-ext4`、`/mnt/pv-kind-ext4` 与 bind 到 `KIND_PV_HOST_PATH`；详见 `docs/wsl的vhdx挂载.md` 与 `attach-vhds.ps1`。  
+- **`KIND_PV_HOST_PATH`**：须与 `kind-cluster.yaml` 里 worker 的 `extraMounts.hostPath` **保持一致**；改路径需同时改两处。  
+- 集群内动态存储：应用与组件在 values 中指定 `storageClassName: nfs-2` 即可，与远程 dev 一致（与上述 hostPath 无关）。
 
 ### 3.4 镜像拉取顺序（与远程的差异）
 
