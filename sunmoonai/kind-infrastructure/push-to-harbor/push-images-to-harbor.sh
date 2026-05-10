@@ -15,6 +15,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONF_FILE="${SCRIPT_DIR}/push-images-to-harbor.conf"
+# shellcheck source=../kind-cli.sh
+source "${SCRIPT_DIR}/../kind-cli.sh"
 
 log_info() { echo "ℹ️  $*"; }
 log_success() { echo "✅ $*"; }
@@ -40,7 +42,7 @@ usage() {
     echo "选项:"
     echo "  --img-file FILE       镜像列表文件（一行一个镜像名，# 注释），多个文件用逗号分隔"
     echo "  --tar-dir DIR         推送该目录内所有 .tar 中的镜像，多个目录用逗号分隔"
-    echo "  --kind-cluster NAME   Kind 集群名称；启用时 docker push 失败后自动 kind load 兜底"
+    echo "  --kind-cluster NAME   Kind 集群名称；docker push 失败后先 kind load，仍失败则 docker save + 各节点 ctr import（与 load-kind-images 一致）"
     echo "  -h, --help            显示此帮助"
     echo ""
     echo "环境变量: HARBOR_HOST HARBOR_PROJECT DRY_RUN(1 仅打印不推送) PUSH_RETRY_COUNT PUSH_RETRY_DELAY"
@@ -169,6 +171,7 @@ kind_load_fallback() {
     if [[ -z "$KIND_CLUSTER_NAME" ]]; then
         return 1
     fi
+    prepend_kind_to_path_if_needed || true
     local kind_bin="kind"
     if [[ -x "$HOME/.local/bin/kind" ]]; then
         kind_bin="$HOME/.local/bin/kind"
@@ -176,12 +179,18 @@ kind_load_fallback() {
     if ! command -v "$kind_bin" &>/dev/null; then
         return 1
     fi
-    log_warn "docker push 失败，尝试 kind load 直接加载到节点: $dest"
+    log_warn "docker push 失败，尝试 kind load 加载到节点: $dest"
     if $kind_bin load docker-image "$dest" --name "$KIND_CLUSTER_NAME" 2>&1; then
         log_success "kind load 成功（已绕过 Harbor 直接加载到 Kind 节点）: $dest"
         return 0
     fi
-    log_error "kind load 也失败: $dest"
+    # 与 load-kind-images 一致：kind load 对部分 OCI 镜像会报 digest not found，用 docker save + ctr import 可靠导入
+    log_warn "kind load 失败，改用 docker save + 各节点 ctr import: $dest"
+    if kind_docker_save_and_ctr_import_all_nodes "$dest" "$KIND_CLUSTER_NAME"; then
+        log_success "ctr import 成功（已加载到全部 Kind 节点）: $dest"
+        return 0
+    fi
+    log_error "Kind 节点加载失败: $dest"
     return 1
 }
 

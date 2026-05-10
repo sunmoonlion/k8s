@@ -43,70 +43,14 @@ load_conf() {
     fi
 }
 
-# 将单个 tar 导入集群所有节点
 load_tar_to_kind_nodes() {
-    local tar_path="$1"
-    if [[ ! -f "$tar_path" ]]; then
-        log_warn "tar 不存在: $tar_path"
-        return 1
-    fi
-    local nodes
-    # 兼容旧版 kind：部分版本不支持 "kind get nodes -o name"
-    nodes=$(kind get nodes --name "$KIND_CLUSTER_NAME" -o name 2>/dev/null | sed 's|node/||')
-    if [[ -z "$nodes" ]]; then
-        nodes=$(kind get nodes --name "$KIND_CLUSTER_NAME" 2>/dev/null | sed 's|node/||')
-    fi
-    if [[ -z "$nodes" ]]; then
-        log_warn "未能获取 Kind 集群 $KIND_CLUSTER_NAME 的节点列表，跳过 tar: $tar_path"
-        return 1
-    fi
-    # 为每个 tar 计算唯一 hash，用于在节点内做幂等标记
-    local tar_hash
-    tar_hash=$(sha256sum "$tar_path" 2>/dev/null | awk '{print $1}')
-    local stamp_dir="/var/lib/kind-image-stamps"
-    local ok=0
-    local total_nodes
-    total_nodes=$(echo "$nodes" | sed '/^$/d' | wc -l)
-    for node in $nodes; do
-        [[ -z "$node" ]] && continue
-        if [[ -n "$tar_hash" ]]; then
-            if docker exec "$node" test -f "${stamp_dir}/${tar_hash}" 2>/dev/null; then
-                log_info "节点 $node 已导入过该 tar（hash=$tar_hash），跳过: $tar_path"
-                ((ok++)) || true
-                continue
-            fi
-        fi
-        if cat "$tar_path" | docker exec -i "$node" ctr -n k8s.io images import --digests --snapshotter=overlayfs - 2>/dev/null; then
-            if [[ -n "$tar_hash" ]]; then
-                docker exec "$node" mkdir -p "$stamp_dir" 2>/dev/null || true
-                docker exec "$node" sh -c "touch '${stamp_dir}/${tar_hash}'" 2>/dev/null || true
-            fi
-            ((ok++)) || true
-        else
-            log_warn "节点 $node 导入失败: $tar_path"
-        fi
-    done
-    if [[ $ok -eq $total_nodes && $total_nodes -gt 0 ]]; then
-        return 0
-    fi
-    return 1
+    prepend_kind_to_path_if_needed || true
+    kind_ctr_import_tar_to_all_nodes "$1" "$KIND_CLUSTER_NAME"
 }
 
 fallback_load_image_to_kind() {
-    local img="$1"
-    local tar_file
-    tar_file=$(mktemp -u /tmp/kind-load-fallback-XXXXXX.tar)
-    if ! docker save -o "$tar_file" "$img" 2>/dev/null; then
-        log_warn "兜底失败: docker save 失败: $img"
-        rm -f "$tar_file"
-        return 1
-    fi
-    if load_tar_to_kind_nodes "$tar_file"; then
-        rm -f "$tar_file"
-        return 0
-    fi
-    rm -f "$tar_file"
-    return 1
+    prepend_kind_to_path_if_needed || true
+    kind_docker_save_and_ctr_import_all_nodes "$1" "$KIND_CLUSTER_NAME"
 }
 
 # 从文件读行到数组，跳过空行和 # 注释
