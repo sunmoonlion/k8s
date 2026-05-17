@@ -8,6 +8,7 @@ metadata:
 data:
   # 基础（NestJS）
   NODE_ENV: "${NODE_ENV}"
+  NODE_TLS_REJECT_UNAUTHORIZED: "${NODE_TLS_REJECT_UNAUTHORIZED}"
   PORT: "${PORT}"
 
   # 多租户配置
