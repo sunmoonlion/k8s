@@ -216,6 +216,12 @@ deploy_platform_components_by_priority() {
         local priority="${data_platform_priority:-700}"
         components+=("$priority:data-platform")
     fi
+
+    # 检查应用平台
+    if [[ "${app_platform_enabled:-false}" == "true" ]]; then
+        local priority="${app_platform_priority:-450}"
+        components+=("$priority:app-platform")
+    fi
     
     # 检查消息平台
     if [[ "${messaging_platform_enabled:-false}" == "true" ]]; then
@@ -375,6 +381,28 @@ deploy_platform_components_by_priority() {
                     return 1
                 fi
                 ;;
+            "app-platform")
+                if [[ -d "$PROJECT_ROOT/app-platform/deploy-app-platform-all" ]]; then
+                    local script_path="$PROJECT_ROOT/app-platform/deploy-app-platform-all/deploy-app-platform-all.sh"
+                    if [[ -f "$script_path" ]]; then
+                        if call_subscript "$script_path" deploy "$project_id" "${APP_PLATFORM_NAMESPACE:-app-platform-dev}" "${APP_PLATFORM_ENVIRONMENT:-$environment}" "$dry_run"; then
+                            log_success "✅ $component 部署成功"
+                            if [[ "${WAIT_READY:-false}" == "true" ]]; then
+                                wait_for_namespace_pods_ready "${APP_PLATFORM_NAMESPACE:-app-platform-dev}"
+                            fi
+                        else
+                            log_error "❌ $component 部署失败"
+                            return 1
+                        fi
+                    else
+                        log_error "❌ $component 部署脚本不存在: $script_path"
+                        return 1
+                    fi
+                else
+                    log_error "❌ $component 目录不存在: $PROJECT_ROOT/app-platform/deploy-app-platform-all"
+                    return 1
+                fi
+                ;;
             "messaging-platform")
                 if [[ -d "$PROJECT_ROOT/messaging-platform/deploy-messaging-platform-all" ]]; then
                     local script_path="$PROJECT_ROOT/messaging-platform/deploy-messaging-platform-all/deploy-messaging-platform-all.sh"
@@ -467,7 +495,7 @@ uninstall_platform_components_by_priority() {
     
     # 检查应用平台
     if [[ "${app_platform_enabled:-false}" == "true" ]]; then
-        local priority="${app_platform_priority:-600}"
+        local priority="${app_platform_priority:-450}"
         components+=("$priority:app-platform")
     fi
     
@@ -568,9 +596,23 @@ uninstall_platform_components_by_priority() {
                 log_success "✅ $component 清理完成"
                 ;;
             "app-platform")
-                log_info "清理应用平台..."
-                # 这里可以添加具体的应用平台清理逻辑
-                log_success "✅ $component 清理完成"
+                if [[ -d "$PROJECT_ROOT/app-platform/deploy-app-platform-all" ]]; then
+                    local script_path="$PROJECT_ROOT/app-platform/deploy-app-platform-all/deploy-app-platform-all.sh"
+                    if [[ -f "$script_path" ]]; then
+                        if call_subscript "$script_path" uninstall "$project_id" "${APP_PLATFORM_NAMESPACE:-app-platform-dev}" "${APP_PLATFORM_ENVIRONMENT:-$environment}" "$dry_run"; then
+                            log_success "✅ $component 卸载成功"
+                        else
+                            log_error "❌ $component 卸载失败"
+                            return 1
+                        fi
+                    else
+                        log_error "❌ $component 卸载脚本不存在: $script_path"
+                        return 1
+                    fi
+                else
+                    log_error "❌ $component 目录不存在: $PROJECT_ROOT/app-platform/deploy-app-platform-all"
+                    return 1
+                fi
                 ;;
             "messaging-platform")
                 log_info "清理消息平台..."
@@ -657,8 +699,11 @@ check_platform_components_status() {
     
     if [[ "${app_platform_enabled:-false}" == "true" ]]; then
         log_info "检查应用平台状态..."
-        # 这里可以添加具体的应用平台状态检查逻辑
-        log_info "应用平台状态正常"
+        if [[ -f "$PROJECT_ROOT/app-platform/deploy-app-platform-all/deploy-app-platform-all.sh" ]]; then
+            call_subscript "$PROJECT_ROOT/app-platform/deploy-app-platform-all/deploy-app-platform-all.sh" status "$project_id" "${APP_PLATFORM_NAMESPACE:-app-platform-dev}" "${APP_PLATFORM_ENVIRONMENT:-$environment}"
+        else
+            log_warn "⚠️ 应用平台总控脚本不存在"
+        fi
     fi
     
     if [[ "${messaging_platform_enabled:-false}" == "true" ]]; then
@@ -745,8 +790,11 @@ get_platform_components_logs() {
     
     if [[ "${app_platform_enabled:-false}" == "true" ]]; then
         log_info "获取应用平台日志..."
-        # 这里可以添加具体的应用平台日志获取逻辑
-        log_info "应用平台日志获取完成"
+        if [[ -f "$PROJECT_ROOT/app-platform/deploy-app-platform-all/deploy-app-platform-all.sh" ]]; then
+            call_subscript "$PROJECT_ROOT/app-platform/deploy-app-platform-all/deploy-app-platform-all.sh" logs "$project_id" "${APP_PLATFORM_NAMESPACE:-app-platform-dev}" "${APP_PLATFORM_ENVIRONMENT:-$environment}"
+        else
+            log_warn "⚠️ 应用平台总控脚本不存在"
+        fi
     fi
     
     if [[ "${messaging_platform_enabled:-false}" == "true" ]]; then
@@ -894,8 +942,8 @@ SunmoonAI 项目总部署脚本
     - Ingress Platform: 入口平台 (优先级: ${ingress_platform_priority:-900})
     - CI/CD Platform: CI/CD 平台 (优先级: ${cicd_platform_priority:-800})
     - Data Platform: 数据平台 (优先级: ${data_platform_priority:-700})
-    - App Platform: 应用平台 (优先级: ${app_platform_priority:-600})
     - Messaging Platform: 消息平台 (优先级: ${messaging_platform_priority:-500})
+    - App Platform: 应用平台 (优先级: ${app_platform_priority:-450})
     - Ops Platform: 运维平台 (优先级: ${ops_platform_priority:-400})
 EOF
 }
