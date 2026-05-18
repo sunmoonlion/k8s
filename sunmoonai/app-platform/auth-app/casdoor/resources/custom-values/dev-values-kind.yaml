@@ -1,10 +1,10 @@
-# Casdoor 开发环）Helm Values
+# Casdoor Kind 开发环境 Helm Values
 # Chart: casdoor-krzw/casdoor  (community chart, appVersion v1.224.0)
 
 image:
   repository: harbor.sunmoonai.com:30443/k8s-images/casdoor
   pullPolicy: Always
-  # tag ）deploy-casdoor.sh 中通过 --set image.tag= 注入
+  # tag 由 deploy-casdoor.sh 中通过 --set image.tag= 注入
 
 imagePullSecrets:
   - name: harbor-registry-secret
@@ -15,7 +15,7 @@ imagePullSecrets:
 env:
   RUNNING_IN_DOCKER: "true"
   driverName: postgres
-  # ⚠️ 密码通过 K8s Secret 覆盖，这里仅作结构占）  dataSourceName: "user=casdoor password=casdoor_dev_pass host=postgresql-sunmoonai.data-platform-dev.svc.cluster.local port=5432 sslmode=disable dbname=casdoor"
+  dataSourceName: "user=casdoor password=casdoor_dev_pass host=postgresql-sunmoonai.data-platform-dev.svc.cluster.local port=5432 sslmode=disable dbname=casdoor"
   dbName: ""
 
 # ──────────────────────────────────────────────────────────────
@@ -27,7 +27,7 @@ service:
       http:
         port: 8000
 
-# Ingress ）Traefik IngressRoute 管理
+# Ingress 由 Traefik IngressRoute 管理
 ingress:
   main:
     enabled: false
@@ -44,22 +44,24 @@ resources:
     memory: 512Mi
 
 # ──────────────────────────────────────────────────────────────
-# 持久化存储（/conf 目录）# ──────────────────────────────────────────────────────────────
-# ⚠️ 重要：PVC 挂载覆盖了镜像内置的 /conf，导）app.conf 丢失）# 首次部署后需手动写入 /conf/app.conf（beego 必须有此文件才能正常读取请求体））#
-#   kubectl exec -n app-platform-dev <pod> -- sh -c 'cat > /conf/app.conf << EOF
-#   appname = casdoor
-#   httpport = 8000
-#   runmode = dev
-#   SessionOn = true
-#   copyrequestbody = true
-#   logPostOnly = true
-#   EOF'
-#   kubectl rollout restart deployment/casdoor-sunmoonai -n app-platform-dev
-#
-# 缺少 copyrequestbody=true 会导致登录时）"unexpected end of JSON input"）persistence:
+# app.conf（beego 配置，通过 ConfigMap 挂载到 /conf）
+# ──────────────────────────────────────────────────────────────
+configmap:
   config:
     enabled: true
-    accessMode: ReadWriteOnce
-    type: pvc
+    data:
+      app.conf: |
+        appname = casdoor
+        httpport = 8000
+        runmode = dev
+        SessionOn = true
+        copyrequestbody = true
+        logPostOnly = true
+
+persistence:
+  config:
+    enabled: true
+    type: configMap
+    name: casdoor-sunmoonai-config
     mountPath: /conf
-    existingClaim: "casdoor-sunmoonai-dev-pvc"  # Kind 静态 PV，数据跨集群重建保留
+    readOnly: true

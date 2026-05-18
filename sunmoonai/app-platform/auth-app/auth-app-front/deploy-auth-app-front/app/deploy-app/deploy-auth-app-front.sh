@@ -284,7 +284,7 @@ deploy_sub_components() {
 # 资源文件路径（对齐项目结构）
 # 从 app/deploy-app/ 向上 3 级到达应用根目录（auth-app-front/）
 # app/deploy-app/ -> app/ -> deploy-auth-app-front/ -> auth-app-front/
-RESOURCES_DIR="../../../resources"
+RESOURCES_DIR="$APP_ROOT/resources"
 # 使用生成的 YAML 文件（由各组件自己的 generate-*.sh 生成）
 # YAML 文件现在分散在各组件的 generate-* 目录下
 K8S_RESOURCE_DIR="${RESOURCES_DIR}/k8s-resource"
@@ -797,4 +797,3 @@ main() {
 
 # 执行主函数
 main "$@"
-

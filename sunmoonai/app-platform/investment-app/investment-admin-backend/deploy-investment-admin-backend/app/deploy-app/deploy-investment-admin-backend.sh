@@ -276,7 +276,7 @@ INVESTMENT_ADMIN_BACKEND_IMAGE="${INVESTMENT_ADMIN_BACKEND_IMAGE:-}"
 INVESTMENT_ADMIN_BACKEND_TAG="${INVESTMENT_ADMIN_BACKEND_TAG:-}"
 
 # 资源文件路径
-RESOURCES_DIR="../../../resources"
+RESOURCES_DIR="$APP_ROOT/resources"
 K8S_RESOURCE_DIR="${RESOURCES_DIR}/k8s-resource"
 INVESTMENT_ADMIN_BACKEND_YAML="${K8S_RESOURCE_DIR}/custom-values/app/generate-app/investment-admin-backend-generated.yaml"
 INVESTMENT_ADMIN_BACKEND_PVC_YAML="${K8S_RESOURCE_DIR}/custom-values/pvc/investment-admin-backend-pvc/generate-investment-admin-backend-pvc/investment-admin-backend-pvc-generated.yaml"

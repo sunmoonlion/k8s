@@ -276,7 +276,7 @@ INVESTMENT_WEB_FRONTEND_IMAGE="${INVESTMENT_WEB_FRONTEND_IMAGE:-}"
 INVESTMENT_WEB_FRONTEND_TAG="${INVESTMENT_WEB_FRONTEND_TAG:-}"
 
 # 资源文件路径
-RESOURCES_DIR="../../../resources"
+RESOURCES_DIR="$APP_ROOT/resources"
 K8S_RESOURCE_DIR="${RESOURCES_DIR}/k8s-resource"
 INVESTMENT_WEB_FRONTEND_YAML="${K8S_RESOURCE_DIR}/custom-values/app/generate-app/investment-web-frontend-generated.yaml"
 INVESTMENT_WEB_FRONTEND_PVC_YAML="${K8S_RESOURCE_DIR}/custom-values/pvc/investment-web-frontend-pvc/generate-investment-web-frontend-pvc/investment-web-frontend-pvc-generated.yaml"
