@@ -190,16 +190,23 @@ create_org() {
     # languages：Casdoor 登录页 Languages 区块会执行 languages.length；列为 NULL 时整页白板
     #（TypeError: Cannot read properties of null (reading 'length')）
     sql="INSERT INTO organization (
-        owner, name, created_time, updated_time,
+        owner, name, created_time,
         display_name, default_application,
-        password_type, phone_prefix, country_codes, init_score, is_profile_public,
+        password_type, country_codes, init_score, is_profile_public,
         languages
     ) VALUES (
-        'admin', '$name', '$now', '$now',
+        'admin', '$name', '$now',
         '$display_name', '$default_app',
-        'plain', '86', '{\"CN\"}', 2000, false,
+        'plain', '[\"CN\"]', 2000, false,
         '[\"en\",\"zh\"]'
-    ) ON CONFLICT (owner, name) DO NOTHING;"
+    ) ON CONFLICT (owner, name) DO UPDATE SET
+        display_name = EXCLUDED.display_name,
+        default_application = EXCLUDED.default_application,
+        password_type = EXCLUDED.password_type,
+        country_codes = EXCLUDED.country_codes,
+        init_score = EXCLUDED.init_score,
+        is_profile_public = EXCLUDED.is_profile_public,
+        languages = EXCLUDED.languages;"
 
     if run_sql "$sql"; then
         log_ok "Organization 就绪: $name"
@@ -223,10 +230,8 @@ setup_organizations() {
 
 # 已用旧脚本写入的组织可能没有 languages，补上以免 OAuth 登录页崩溃
 patch_organization_languages() {
-    local now
-    now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     log_info "校验 Organization.languages（修补 NULL 以避免登录页白板）..."
-    run_sql "UPDATE organization SET languages = '[\"en\",\"zh\"]', updated_time = '$now' WHERE owner = 'admin' AND (languages IS NULL OR languages = '' OR btrim(languages) = 'null');" \
+    run_sql "UPDATE organization SET languages = '[\"en\",\"zh\"]' WHERE owner = 'admin' AND (languages IS NULL OR languages = '' OR btrim(languages) = 'null');" \
         && log_ok "Organization.languages 已就绪"
 }
 
@@ -246,18 +251,29 @@ create_app() {
 
     local sql
     sql="INSERT INTO application (
-        owner, name, created_time, updated_time,
+        owner, name, created_time,
         display_name, client_id, client_secret,
         redirect_uris, cert, grant_types,
         organization, enable_sign_up,
         token_format, expire_in_hours, refresh_expire_in_hours
     ) VALUES (
-        'admin', '$name', '$now', '$now',
+        'admin', '$name', '$now',
         '$display_name', '$client_id', '$client_secret',
         '$safe_uris', 'cert-built-in', '[\"authorization_code\"]',
         '$org', $enable_signup,
         'JWT', 168, 336
-    ) ON CONFLICT (owner, name) DO NOTHING;"
+    ) ON CONFLICT (owner, name) DO UPDATE SET
+        display_name = EXCLUDED.display_name,
+        client_id = EXCLUDED.client_id,
+        client_secret = EXCLUDED.client_secret,
+        redirect_uris = EXCLUDED.redirect_uris,
+        cert = EXCLUDED.cert,
+        grant_types = EXCLUDED.grant_types,
+        organization = EXCLUDED.organization,
+        enable_sign_up = EXCLUDED.enable_sign_up,
+        token_format = EXCLUDED.token_format,
+        expire_in_hours = EXCLUDED.expire_in_hours,
+        refresh_expire_in_hours = EXCLUDED.refresh_expire_in_hours;"
 
     if run_sql "$sql"; then
         log_ok "Application 就绪: $name (client_id=$client_id)"
@@ -321,7 +337,7 @@ ensure_org_admin_users() {
             display_name, avatar, email, phone,
             score, karma, ranking,
             is_default_avatar, is_online,
-            is_admin, is_global_admin, is_forbidden, is_deleted,
+            is_admin, is_forbidden, is_deleted,
             signup_application, properties,
             address,
             created_ip,
@@ -332,7 +348,7 @@ ensure_org_admin_users() {
             'Admin', 'https://cdn.casbin.org/img/casbin.svg', '${email_safe}', '',
             2000, 0, 1,
             false, false,
-            true, false, false, false,
+            true, false, false,
             '${app_safe}', '{}',
             '[]',
             '127.0.0.1',
