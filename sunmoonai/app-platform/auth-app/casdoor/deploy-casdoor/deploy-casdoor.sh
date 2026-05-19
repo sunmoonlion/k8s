@@ -79,7 +79,34 @@ check_chart() {
 }
 
 push_casdoor_images_to_harbor() {
-    push_component_images_to_harbor "casdoor" || true
+    push_component_images_to_harbor "casdoor"
+}
+
+provision_casdoor_database() {
+    local environment="$1" dry_run="$2"
+    local bootstrap_dir="$SCRIPT_DIR/../db-access-bootstrap"
+    local bootstrap_script
+
+    [[ "$dry_run" == "true" ]] && { log_info "dry-run 模式，跳过 Casdoor 数据库 provision"; return 0; }
+    [[ -d "$bootstrap_dir" ]] || { log_warn "Casdoor db-access-bootstrap 目录不存在，跳过: $bootstrap_dir"; return 0; }
+
+    local cluster_lower
+    cluster_lower="$(echo "${CLUSTER:-}" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$cluster_lower" == "kind" || "$environment" == "development" || "$environment" == "dev" ]]; then
+        bootstrap_script="$bootstrap_dir/setup-k8s-db-access.sh"
+    else
+        bootstrap_script="$bootstrap_dir/setup-external-db-access.sh"
+    fi
+
+    [[ -x "$bootstrap_script" ]] || { log_error "Casdoor 数据库 provision 脚本不可执行: $bootstrap_script"; return 1; }
+
+    log_info "开始 provision Casdoor 数据库..."
+    if bash "$bootstrap_script"; then
+        log_success "✅ Casdoor 数据库 provision 完成"
+    else
+        log_error "❌ Casdoor 数据库 provision 失败"
+        return 1
+    fi
 }
 
 # ─────────────────────────── 主部署 ───────────────────────────
@@ -267,6 +294,7 @@ main() {
             log_info "开始部署 Casdoor..."
             check_namespace "$namespace"
             push_casdoor_images_to_harbor
+            provision_casdoor_database "$environment" "$dry_run" || exit 1
             deploy_secrets "$project_id" "$namespace" "$environment" "$dry_run" || exit 1
             execute_casdoor_deployment "$project_id" "$namespace" "$environment" "$dry_run" || exit 1
             deploy_ingress "$project_id" "$namespace" "$environment"
@@ -276,6 +304,7 @@ main() {
             ;;
         "upgrade")
             log_info "升级 Casdoor..."
+            provision_casdoor_database "$environment" "$dry_run" || exit 1
             execute_casdoor_deployment "$project_id" "$namespace" "$environment" "$dry_run"
             check_casdoor_status "$project_id" "$namespace"
             ;;

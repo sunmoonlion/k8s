@@ -11,12 +11,11 @@
 # 用法：
 #   bash post-deploy-setup.sh [namespace] [--cluster C1|C2]
 #
-# 依赖：kubectl、psql（postgresql-client）
+# 依赖：kubectl；若本机没有 psql，K8s 场景会自动使用临时 PostgreSQL client Pod
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DB_ACCESS_CONFIG="$SCRIPT_DIR/../db-access-bootstrap/config/postgresql.external.env"
 SETUP_CONF="$SCRIPT_DIR/post-deploy-setup.conf"
 
 # ─────────────────────────── 日志 ───────────────────────────
@@ -36,6 +35,12 @@ for arg in "$@"; do
 done
 
 RELEASE="casdoor-sunmoonai"
+CLUSTER_LOWER="$(echo "${CLUSTER:-}" | tr '[:upper:]' '[:lower:]')"
+if [[ "$CLUSTER_LOWER" == "kind" ]]; then
+    DB_ACCESS_CONFIG="$SCRIPT_DIR/../db-access-bootstrap/config/postgresql.k8s.env"
+else
+    DB_ACCESS_CONFIG="$SCRIPT_DIR/../db-access-bootstrap/config/postgresql.external.env"
+fi
 
 # ─────────────────────────── 加载配置 ───────────────────────────
 
@@ -102,10 +107,15 @@ EOF'
 
 run_sql() {
     local sql="$1"
-    PGPASSWORD="$DB_PASSWORD" psql \
-        -h "$DB_HOST" -p "$DB_PORT" \
-        -U "$DB_USER" -d "$DB_NAME" \
-        -q -c "$sql"
+
+    if command -v psql &>/dev/null; then
+        PGPASSWORD="$DB_PASSWORD" psql \
+            -h "$DB_HOST" -p "$DB_PORT" \
+            -U "$DB_USER" -d "$DB_NAME" \
+            -q -c "$sql"
+    else
+        run_sql_with_k8s_client "$sql"
+    fi
 }
 
 # SQL 字符串中单引号转义为 ''
@@ -114,20 +124,56 @@ sql_escape_single() {
 }
 
 check_psql() {
-    if ! command -v psql &>/dev/null; then
-        log_error "psql 未安装，无法初始化 Organizations/Applications"
-        log_error "请安装：apt install postgresql-client"
-        return 1
-    fi
-    # 测试连接
-    if ! PGPASSWORD="$DB_PASSWORD" psql \
-        -h "$DB_HOST" -p "$DB_PORT" \
-        -U "$DB_USER" -d "$DB_NAME" \
-        -q -c "SELECT 1" &>/dev/null; then
-        log_error "无法连接 PostgreSQL: $DB_USER@$DB_HOST:$DB_PORT/$DB_NAME"
-        return 1
+    if command -v psql &>/dev/null; then
+        if ! PGPASSWORD="$DB_PASSWORD" psql \
+            -h "$DB_HOST" -p "$DB_PORT" \
+            -U "$DB_USER" -d "$DB_NAME" \
+            -q -c "SELECT 1" &>/dev/null; then
+            log_error "无法连接 PostgreSQL: $DB_USER@$DB_HOST:$DB_PORT/$DB_NAME"
+            return 1
+        fi
+    else
+        if ! run_sql_with_k8s_client "SELECT 1" &>/dev/null; then
+            log_error "无法通过临时 client Pod 连接 PostgreSQL: $DB_USER@$DB_HOST:$DB_PORT/$DB_NAME"
+            return 1
+        fi
     fi
     log_info "PostgreSQL 连接正常"
+}
+
+k8s_client_namespace() {
+    if [[ -n "${PG_CLIENT_NAMESPACE:-}" ]]; then
+        printf '%s\n' "$PG_CLIENT_NAMESPACE"
+    elif [[ "$DB_HOST" =~ \.([a-z0-9-]+)\.svc(\.|$) ]]; then
+        printf '%s\n' "${BASH_REMATCH[1]}"
+    else
+        printf '%s\n' "$NAMESPACE"
+    fi
+}
+
+k8s_client_image() {
+    printf '%s\n' "${PG_CLIENT_IMAGE:-harbor.sunmoonai.com:30443/k8s-images/postgresql:17.6.0-debian-12-r4}"
+}
+
+run_sql_with_k8s_client() {
+    local sql="$1"
+    local client_ns client_image pod_name
+    client_ns="$(k8s_client_namespace)"
+    client_image="$(k8s_client_image)"
+    pod_name="casdoor-postdeploy-pg-$(date +%s%N | tail -c 8)"
+
+    command -v kubectl >/dev/null 2>&1 || {
+        log_error "kubectl 不可用，且本机未安装 psql"
+        return 1
+    }
+
+    kubectl run "$pod_name" --rm -i --restart=Never -n "$client_ns" \
+        --image="$client_image" \
+        --env="PGPASSWORD=$DB_PASSWORD" \
+        --command -- psql \
+            -h "$DB_HOST" -p "$DB_PORT" \
+            -U "$DB_USER" -d "$DB_NAME" \
+            -q -c "$sql"
 }
 
 # ─────────────────────────── 第二步：Organizations ───────────────────────────
