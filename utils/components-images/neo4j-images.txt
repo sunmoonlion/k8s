@@ -1,5 +1,5 @@
 # Neo4j 镜像（与 deploy-neo4j.conf 中 NEO4J_IMAGE_VERSION 一致）
 # 本地 tar 命名：bitnami_neo4j_5.26.11-debian-12-r0.tar
-# docker load 后引用常为 bitnamilegacy/neo4j（Bitnami 迁移命名）；推送目标仍为 k8s-images/neo4j（strip 首段 registry）
-bitnamilegacy/neo4j:5.26.11-debian-12-r0
+# 推送目标为 k8s-images/neo4j（push 脚本会 strip 首段 registry）
+bitnami/neo4j:5.26.11-debian-12-r0
 bitnami/os-shell:12-debian-12-r51
