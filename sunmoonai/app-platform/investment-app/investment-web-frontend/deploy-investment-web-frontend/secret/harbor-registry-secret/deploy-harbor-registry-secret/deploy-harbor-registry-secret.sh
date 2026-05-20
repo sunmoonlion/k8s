@@ -91,6 +91,7 @@ auto_generate_yaml() {
         export NAMESPACE="${SECRET_NAMESPACE:-app-platform-dev}"
         export ENVIRONMENT="${ENVIRONMENT:-development}"
         export ENV="${ENV:-dev}"
+        export DOCKER_SERVER="${DOCKER_SERVER:-harbor.sunmoonai.com}"
 
         local generate_script="$k8s_resource_dir/custom-values/secret/harbor-registry-secret/generate-harbor-registry-secret/generate-harbor-registry-secret.sh"
         if [ -f "$generate_script" ]; then

@@ -60,6 +60,47 @@ get_default_cluster() {
 }
 
 # =============================================================================
+# Harbor 地址按集群解析
+# =============================================================================
+# 用途：统一 app 镜像仓库和 imagePullSecret 的 docker-server 默认值
+# 重要：新增 app / 新增组件时不要写死 harbor.sunmoonai.com:30443。
+#       部署入口只传 kind/c1，此函数负责按集群返回正确 Harbor 地址。
+# 规则：
+#   - KIND 使用 NodePort 暴露的 Harbor: harbor.sunmoonai.com:30443
+#   - C1/C2/C3 等远程集群使用标准域名: harbor.sunmoonai.com
+# 可通过环境变量覆盖：
+#   HARBOR_REGISTRY / REMOTE_HARBOR_REGISTRY：远程集群默认值
+#   KIND_HARBOR_REGISTRY：Kind 默认值
+get_cluster_harbor_registry() {
+  local cluster_selected="${1:-}"
+
+  if [[ -z "$cluster_selected" ]]; then
+    cluster_selected=$(get_default_cluster)
+  fi
+
+  cluster_selected=$(echo "$cluster_selected" | tr '[:lower:]' '[:upper:]')
+
+  case "$cluster_selected" in
+    KIND)
+      echo "${KIND_HARBOR_REGISTRY:-harbor.sunmoonai.com:30443}"
+      ;;
+    *)
+      echo "${REMOTE_HARBOR_REGISTRY:-${HARBOR_REGISTRY:-harbor.sunmoonai.com}}"
+      ;;
+  esac
+}
+
+apply_cluster_harbor_default() {
+  local var_name="$1"
+  local registry
+  registry="$(get_cluster_harbor_registry)"
+
+  if [[ -z "${!var_name:-}" ]]; then
+    export "$var_name=$registry"
+  fi
+}
+
+# =============================================================================
 # 集群配置映射函数
 # =============================================================================
 # 用途：将 C*_ 前缀的配置映射到默认配置变量
@@ -159,4 +200,3 @@ apply_cluster_config_mapping() {
   
   return 0
 }
-

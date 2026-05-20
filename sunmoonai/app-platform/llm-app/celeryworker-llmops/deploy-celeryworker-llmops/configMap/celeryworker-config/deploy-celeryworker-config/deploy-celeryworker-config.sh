@@ -14,9 +14,22 @@ CONFIG_FILE="$SCRIPT_DIR/deploy-celeryworker-config.conf"
 # 从 deploy-celeryworker-config/ 向上 3 级到达应用根目录
 # deploy-celeryworker-config/ -> celeryworker-config/ -> secrets/ -> deploy-celeryworker-llmops/ -> celeryworker-llmops/
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+K8S_ROOT_DIR=""
+search_dir="$PROJECT_ROOT"
+while [[ "$search_dir" != "/" ]]; do
+    if [[ -f "$search_dir/utils/cluster-arg-parser.sh" ]]; then
+        K8S_ROOT_DIR="$search_dir"
+        break
+    fi
+    search_dir="$(dirname "$search_dir")"
+done
+if [[ -z "$K8S_ROOT_DIR" ]]; then
+    echo "[ERROR] 无法定位 k8s 根目录（未找到 utils/cluster-arg-parser.sh），PROJECT_ROOT=$PROJECT_ROOT" 1>&2
+    exit 1
+fi
 
 # 集群参数解析（轻量，无连接副作用）
-source "$PROJECT_ROOT/utils/cluster-arg-parser.sh"
+source "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh"
 
 
 # 使用生成的 YAML 文件（由各组件自己的 generate-*.sh 生成）
@@ -51,8 +64,8 @@ if [[ -f "$CONFIG_FILE" ]]; then
     log_info "已加载配置: $CONFIG_FILE"
     
     # 加载集群配置映射函数（使用 utils 中的通用函数）
-    if [[ -f "$PROJECT_ROOT/utils/cluster-config-mapping.sh" ]]; then
-        source "$PROJECT_ROOT/utils/cluster-config-mapping.sh"
+    if [[ -f "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh" ]]; then
+        source "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh"
         # 应用集群配置映射（使用 CLUSTER 环境变量，支持 C1_* 和 C2_* 前缀配置）
         apply_cluster_config_mapping
     fi

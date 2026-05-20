@@ -436,7 +436,7 @@ deploy_app() {
     # 构建镜像请使用: cd ../mybuild && ./build-image.sh build-push
     # 镜像配置从生成配置中读取（通过生成脚本导出环境变量）
     # 如果生成脚本已运行，这些变量应该已经设置；否则使用默认值
-    export LLMOPS_SSR_IMAGE_REGISTRY="${LLMOPS_SSR_IMAGE_REGISTRY:-harbor.sunmoonai.com:30443}"
+    export LLMOPS_SSR_IMAGE_REGISTRY="${LLMOPS_SSR_IMAGE_REGISTRY:-$(get_cluster_harbor_registry)}"
     export LLMOPS_SSR_IMAGE_PROJECT="${LLMOPS_SSR_IMAGE_PROJECT:-k8s-images}"
     export LLMOPS_SSR_IMAGE="${LLMOPS_SSR_IMAGE:-llmops-app-front}"
     export LLMOPS_SSR_TAG="${LLMOPS_SSR_TAG:-1.0.0}"

@@ -8,6 +8,22 @@ CONFIG_FILE="$SCRIPT_DIR/deploy-harbor-registry-secret.conf"
 # deploy-harbor-registry-secret/ -> harbor-registry-secret/ -> secret/ -> deploy-document-converter-backend/ -> document-converter-backend/
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
+find_k8s_root_dir() {
+  local search_dir="$1"
+  while [[ -n "$search_dir" && "$search_dir" != "/" ]]; do
+    if [[ -f "$search_dir/utils/cluster-config-mapping.sh" ]]; then
+      echo "$search_dir"
+      return 0
+    fi
+    search_dir="$(dirname "$search_dir")"
+  done
+  return 1
+}
+K8S_ROOT_DIR="$(find_k8s_root_dir "$PROJECT_ROOT")"
+if [[ -n "${K8S_ROOT_DIR:-}" ]]; then
+  source "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh"
+fi
+
 # 使用生成的 YAML 文件（由各组件自己的 generate-*.sh 生成）
 K8S_RESOURCE_DIR="$PROJECT_ROOT/resources/k8s-resource"
 SECRET_YAML="$K8S_RESOURCE_DIR/custom-values/secret/harbor-registry-secret/generate-harbor-registry-secret/harbor-registry-secret-generated.yaml"
@@ -45,6 +61,11 @@ main() {
   export ENVIRONMENT="$environment"
   export ENV="${ENV:-dev}"
   export PROJECT_ID="$project_id"
+  if declare -F get_cluster_harbor_registry >/dev/null; then
+    export DOCKER_SERVER="${DOCKER_SERVER:-$(get_cluster_harbor_registry)}"
+  else
+    export DOCKER_SERVER="${DOCKER_SERVER:-harbor.sunmoonai.com}"
+  fi
   
   local generate_script="$PROJECT_ROOT/resources/k8s-resource/custom-values/secret/harbor-registry-secret/generate-harbor-registry-secret/generate-harbor-registry-secret.sh"
   if [ -f "$generate_script" ]; then

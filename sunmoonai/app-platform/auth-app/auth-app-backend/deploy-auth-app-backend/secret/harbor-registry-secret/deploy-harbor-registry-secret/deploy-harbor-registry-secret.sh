@@ -83,6 +83,7 @@ if [[ -f "$CONFIG_FILE" ]]; then
         source "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh"
         # 应用集群配置映射（使用 CLUSTER 环境变量，支持 C1_* 和 C2_* 前缀配置）
         apply_cluster_config_mapping
+        export DOCKER_SERVER="${DOCKER_SERVER:-$(get_cluster_harbor_registry)}"
     fi
 else
     log_error "配置文件不存在: $CONFIG_FILE"
@@ -278,5 +279,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     fi
     main "$@"
 fi
-
 

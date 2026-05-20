@@ -443,6 +443,10 @@ deploy_app() {
         return 1
     fi
 
+    if ! auto_generate_yaml "$INVESTMENT_ADMIN_FRONTEND_PVC_YAML" "$K8S_RESOURCE_DIR"; then
+        return 1
+    fi
+
     if [ -f "$INVESTMENT_ADMIN_FRONTEND_PVC_YAML" ]; then
         log_info "部署 PVC..."
         kubectl apply -f "$INVESTMENT_ADMIN_FRONTEND_PVC_YAML" -n "$NAMESPACE"

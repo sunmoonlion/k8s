@@ -18,6 +18,22 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SETUP_CONF="$SCRIPT_DIR/post-deploy-setup.conf"
 
+find_k8s_root_dir() {
+    local search_dir="$1"
+    while [[ -n "$search_dir" && "$search_dir" != "/" ]]; do
+        if [[ -f "$search_dir/utils/cluster-config-mapping.sh" ]]; then
+            echo "$search_dir"
+            return 0
+        fi
+        search_dir="$(dirname "$search_dir")"
+    done
+    return 1
+}
+K8S_ROOT_DIR="$(find_k8s_root_dir "$SCRIPT_DIR" || true)"
+if [[ -n "${K8S_ROOT_DIR:-}" ]]; then
+    source "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh"
+fi
+
 # ─────────────────────────── 日志 ───────────────────────────
 log_info()    { echo "[INFO]  $*"; }
 log_ok()      { echo "[OK]    $*"; }
@@ -152,7 +168,11 @@ k8s_client_namespace() {
 }
 
 k8s_client_image() {
-    printf '%s\n' "${PG_CLIENT_IMAGE:-harbor.sunmoonai.com:30443/k8s-images/postgresql:17.6.0-debian-12-r4}"
+    local registry="harbor.sunmoonai.com"
+    if declare -F get_cluster_harbor_registry >/dev/null; then
+        registry="$(get_cluster_harbor_registry)"
+    fi
+    printf '%s\n' "${PG_CLIENT_IMAGE:-${registry}/k8s-images/postgresql:17.6.0-debian-12-r4}"
 }
 
 run_sql_with_k8s_client() {

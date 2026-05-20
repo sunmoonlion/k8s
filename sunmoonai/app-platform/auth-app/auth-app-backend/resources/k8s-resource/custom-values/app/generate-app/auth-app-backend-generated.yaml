@@ -21,7 +21,7 @@ spec:
       - name: auth-app-backend
         # Harbor 镜像路径：仓库/项目/镜像名:标签
         # 由 deploy-auth-app-backend.sh 计算并导出 AUTH_APP_BFF_FULL_IMAGE_NAME
-        image: harbor.sunmoonai.com:30443/k8s-images/auth-app-backend:1.0.0
+        image: harbor.sunmoonai.com/k8s-images/auth-app-backend:1.0.0
         # Always: 总是从 Harbor 拉取最新版本，避免使用节点本地的旧镜像
         # 注意：如果使用 IfNotPresent，节点本地有旧镜像时不会从 Harbor 拉取，导致使用旧版本
         imagePullPolicy: Always

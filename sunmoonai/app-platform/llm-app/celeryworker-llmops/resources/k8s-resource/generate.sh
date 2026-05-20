@@ -35,7 +35,7 @@ export ENVIRONMENT="${ENVIRONMENT:-development}"
 export ENV="${ENV:-dev}"
 
 # 准备 Celery Worker 相关的环境变量
-export CELERY_WORKER_IMAGE_REGISTRY="${CELERY_WORKER_IMAGE_REGISTRY:-harbor.sunmoonai.com:30443}"
+export CELERY_WORKER_IMAGE_REGISTRY="${CELERY_WORKER_IMAGE_REGISTRY:-harbor.sunmoonai.com}"
 export CELERY_WORKER_IMAGE_PROJECT="${CELERY_WORKER_IMAGE_PROJECT:-k8s-images}"
 export CELERY_WORKER_IMAGE="${CELERY_WORKER_IMAGE:-celeryworker-llmops}"
 export CELERY_WORKER_TAG="${CELERY_WORKER_TAG:-1.0.0}"
@@ -45,11 +45,11 @@ export IMAGE_PULL_POLICY="${IMAGE_PULL_POLICY:-Always}"
 # 准备后端镜像相关的环境变量（用于 Init Container）
 export BACKEND_IMAGE="${BACKEND_IMAGE:-llmops-app-backend}"
 export BACKEND_TAG="${BACKEND_TAG:-1.0.0}"
-export BACKEND_IMAGE_REGISTRY="${BACKEND_IMAGE_REGISTRY:-harbor.sunmoonai.com:30443}"
+export BACKEND_IMAGE_REGISTRY="${BACKEND_IMAGE_REGISTRY:-harbor.sunmoonai.com}"
 export BACKEND_IMAGE_PROJECT="${BACKEND_IMAGE_PROJECT:-k8s-images}"
 
 # Harbor Docker 认证配置（用于 harbor-registry-secret）
-HARBOR_DOCKER_SERVER="${HARBOR_DOCKER_SERVER:-${CELERY_WORKER_IMAGE_REGISTRY:-harbor.sunmoonai.com:30443}}"
+HARBOR_DOCKER_SERVER="${HARBOR_DOCKER_SERVER:-${CELERY_WORKER_IMAGE_REGISTRY:-harbor.sunmoonai.com}}"
 HARBOR_DOCKER_USERNAME="${HARBOR_DOCKER_USERNAME:-admin}"
 HARBOR_DOCKER_PASSWORD="${HARBOR_DOCKER_PASSWORD:-Harbor@12345}"
 # 生成 base64 编码的 Docker config JSON
