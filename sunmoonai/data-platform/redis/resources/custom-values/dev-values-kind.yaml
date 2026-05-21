@@ -20,6 +20,44 @@ auth:
   acl:
     enabled: true
     sentinel: false
+    # 与 app-platform 各应用 Secret 中 REDIS_USER/REDIS_PASSWORD 一致；key 前缀与 investment 同模式
+    users:
+      - username: investment_admin_backend
+        password: InvestmentAdminRedisAcl_7nR4wP2vK9mL3qX8j
+        enabled: on
+        keys: "~session:* ~investment:*"
+        channels: "&*"
+        commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset -@dangerous"
+      - username: investment_web_backend
+        password: InvestmentWebRedisAcl_8k3Qm9xP2vL7nR4w
+        enabled: on
+        keys: "~session:* ~investment:*"
+        channels: "&*"
+        commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset -@dangerous"
+      - username: llm_admin_backend
+        password: LlmAdminRedisAcl_7nR4wP2vK9mL3qX8j
+        enabled: on
+        keys: "~session:* ~llm:*"
+        channels: "&*"
+        commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset -@dangerous"
+      - username: llm_web_backend
+        password: LlmWebRedisAcl_8k3Qm9xP2vL7nR4w
+        enabled: on
+        keys: "~session:* ~llm:*"
+        channels: "&*"
+        commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset -@dangerous"
+      - username: tools_admin_backend
+        password: ToolsAdminRedisAcl_7nR4wP2vK9mL3qX8j
+        enabled: on
+        keys: "~session:* ~tools:*"
+        channels: "&*"
+        commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@sortedset -@dangerous"
+      - username: tools_web_backend
+        password: ToolsWebRedisAcl_8k3Qm9xP2vL7nR4w
+        enabled: on
+        keys: "~session:* ~tools:*"
+        channels: "&*"
+        commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset -@dangerous"
 
 master:
   # 持久化：复用 Redis master 的数据盘（静态 PVC redis-sunmoonai-dev-pvc）
