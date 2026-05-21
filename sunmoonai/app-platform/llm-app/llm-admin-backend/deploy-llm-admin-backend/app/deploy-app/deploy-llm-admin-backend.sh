@@ -401,7 +401,7 @@ run_db_access_bootstrap() {
         return 0
     fi
 
-    local source_root="${LLM_ADMIN_BACKEND_SOURCE_ROOT:-/home/zymun/llm-app/llm-admin-backend}"
+    local source_root="${LLM_ADMIN_BACKEND_SOURCE_ROOT:-${HOME}/llm-app/llm-admin-backend}"
     local bootstrap_script="$source_root/db-access-bootstrap/setup-k8s-db-access.sh"
 
     if [[ ! -x "$bootstrap_script" ]]; then

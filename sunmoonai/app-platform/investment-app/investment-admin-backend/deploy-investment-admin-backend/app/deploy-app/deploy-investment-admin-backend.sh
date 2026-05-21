@@ -401,7 +401,7 @@ run_db_access_bootstrap() {
         return 0
     fi
 
-    local source_root="${INVESTMENT_ADMIN_BACKEND_SOURCE_ROOT:-/home/zymun/investment-app/investment-admin-backend}"
+    local source_root="${INVESTMENT_ADMIN_BACKEND_SOURCE_ROOT:-${HOME}/investment-app/investment-admin-backend}"
     local bootstrap_script="$source_root/db-access-bootstrap/setup-k8s-db-access.sh"
 
     if [[ ! -x "$bootstrap_script" ]]; then
