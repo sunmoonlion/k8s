@@ -38,6 +38,9 @@ fi
 
 # 导入统一部署模板
 source "$K8S_ROOT_DIR/utils/unified-deployment-template.sh"
+if [[ -f "$K8S_ROOT_DIR/utils/harbor-image-check.sh" ]]; then
+    source "$K8S_ROOT_DIR/utils/harbor-image-check.sh"
+fi
 
 # 恢复 Investment Web Backend 脚本的目录路径
 SCRIPT_DIR="$INVESTMENT_WEB_BACKEND_SCRIPT_DIR"
@@ -447,6 +450,10 @@ deploy_app() {
         return 1
     fi
     log_success "✅ Investment Web Backend 子级组件部署完成"
+
+    if ! check_harbor_image_exists "$INVESTMENT_WEB_BACKEND_FULL_IMAGE_NAME" "$NAMESPACE" "${INVESTMENT_WEB_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}"; then
+        return 1
+    fi
 
     log_info "🚀 阶段2：部署 Investment Web Backend 核心服务..."
     log_info "部署 Investment Web Backend (环境: $ENVIRONMENT, 镜像: $INVESTMENT_WEB_BACKEND_FULL_IMAGE_NAME, 拉取策略: ${IMAGE_PULL_POLICY:-Always}, 命名空间: $NAMESPACE)..."

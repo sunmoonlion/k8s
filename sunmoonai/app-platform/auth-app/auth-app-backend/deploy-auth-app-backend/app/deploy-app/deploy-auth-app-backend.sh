@@ -38,6 +38,9 @@ fi
 
 # 导入统一部署模板
 source "$K8S_ROOT_DIR/utils/unified-deployment-template.sh"
+if [[ -f "$K8S_ROOT_DIR/utils/harbor-image-check.sh" ]]; then
+    source "$K8S_ROOT_DIR/utils/harbor-image-check.sh"
+fi
 
 # 恢复 Auth App BFF 脚本的目录路径
 SCRIPT_DIR="$AUTH_APP_BFF_SCRIPT_DIR"
@@ -484,6 +487,10 @@ deploy_app() {
         return 1
     fi
     log_success "✅ Auth App BFF 子级组件部署完成"
+
+    if ! check_harbor_image_exists "$AUTH_APP_BFF_FULL_IMAGE_NAME" "$NAMESPACE" "${AUTH_APP_BFF_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}"; then
+        return 1
+    fi
     
     # ============================================================
     # 阶段2：部署本级核心服务（Deployment 和 Service）

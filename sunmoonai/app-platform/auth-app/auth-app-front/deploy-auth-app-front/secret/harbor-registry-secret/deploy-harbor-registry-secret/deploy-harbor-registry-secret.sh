@@ -59,7 +59,8 @@ fi
 
 # 尝试加载主配置文件（如果存在），以获取 AUTH_APP_SSR_IMAGE_REGISTRY 等环境变量
 # 主配置文件路径：../../deploy-auth-app-front.conf（相对于当前脚本目录）
-MAIN_CONFIG_FILE="$(cd "$SCRIPT_DIR/../../.." && pwd)/deploy-auth-app-front.conf"
+DEPLOY_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+MAIN_CONFIG_FILE="$(find "$DEPLOY_ROOT/app/deploy-app" -maxdepth 1 -name "deploy-*.conf" | head -n 1)"
 if [[ -f "$MAIN_CONFIG_FILE" ]]; then
     # 临时禁用错误退出，因为主配置文件可能包含一些在当前上下文中不适用的配置
     set +e
@@ -99,8 +100,8 @@ auto_generate_yaml() {
     local yaml_file="$1"
     local k8s_resource_dir="$2"
     
-    if [ ! -f "$yaml_file" ]; then
-        log_warn "生成的 YAML 文件不存在: $yaml_file，自动运行生成脚本..."
+    if true; then
+        log_info "重新生成 Harbor Registry Secret YAML 文件（确保使用当前集群 registry）"
         # 导出基础配置变量，供生成脚本使用（通过环境变量继承）
         export NAMESPACE="${SECRET_NAMESPACE:-app-platform-dev}"
         export ENVIRONMENT="${ENVIRONMENT:-development}"

@@ -38,6 +38,9 @@ fi
 
 # 导入统一部署模板
 source "$K8S_ROOT_DIR/utils/unified-deployment-template.sh"
+if [[ -f "$K8S_ROOT_DIR/utils/harbor-image-check.sh" ]]; then
+    source "$K8S_ROOT_DIR/utils/harbor-image-check.sh"
+fi
 
 # 恢复 Celery Worker 脚本的目录路径
 SCRIPT_DIR="$CELERY_WORKER_SCRIPT_DIR"
@@ -457,6 +460,10 @@ deploy_celeryworker() {
         return 1
     fi
     log_success "✅ Celery Worker 子级组件部署完成"
+
+    if ! check_harbor_image_exists "$CELERY_WORKER_FULL_IMAGE_NAME" "$NAMESPACE" "${CELERY_WORKER_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}"; then
+        return 1
+    fi
     
     # ============================================================
     # 阶段2：部署本级核心服务（Deployment 和 Service）

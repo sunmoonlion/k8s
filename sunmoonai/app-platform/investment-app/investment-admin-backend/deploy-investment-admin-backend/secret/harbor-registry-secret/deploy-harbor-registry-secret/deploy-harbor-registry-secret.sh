@@ -55,7 +55,8 @@ if [[ $# -gt 0 ]]; then
 fi
 
 # 尝试加载主配置文件
-MAIN_CONFIG_FILE="$(cd "$SCRIPT_DIR/../../.." && pwd)/deploy-investment-admin-backend.conf"
+DEPLOY_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+MAIN_CONFIG_FILE="$(find "$DEPLOY_ROOT/app/deploy-app" -maxdepth 1 -name "deploy-*.conf" | head -n 1)"
 if [[ -f "$MAIN_CONFIG_FILE" ]]; then
     set +e
     source "$MAIN_CONFIG_FILE" 2>/dev/null
@@ -86,8 +87,8 @@ auto_generate_yaml() {
     local yaml_file="$1"
     local k8s_resource_dir="$2"
 
-    if [ ! -f "$yaml_file" ]; then
-        log_warn "生成的 YAML 文件不存在: $yaml_file，自动运行生成脚本..."
+    if true; then
+        log_info "重新生成 Harbor Registry Secret YAML 文件（确保使用当前集群 registry）"
         export NAMESPACE="${SECRET_NAMESPACE:-app-platform-dev}"
         export ENVIRONMENT="${ENVIRONMENT:-development}"
         export ENV="${ENV:-dev}"

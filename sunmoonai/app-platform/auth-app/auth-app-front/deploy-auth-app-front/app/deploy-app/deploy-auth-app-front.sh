@@ -38,6 +38,9 @@ fi
 
 # 导入统一部署模板
 source "$K8S_ROOT_DIR/utils/unified-deployment-template.sh"
+if [[ -f "$K8S_ROOT_DIR/utils/harbor-image-check.sh" ]]; then
+    source "$K8S_ROOT_DIR/utils/harbor-image-check.sh"
+fi
 
 # 恢复 Auth App SSR 脚本的目录路径
 SCRIPT_DIR="$AUTH_APP_SSR_SCRIPT_DIR"
@@ -438,20 +441,6 @@ check_env_config() {
         exit 1
     fi
 }
-    if [[ "${secrets_enabled:-true}" == "true" ]]; then
-        # 检查 ConfigMap 和 Secret 模板文件（已移动到 templates/ 目录）
-        [[ -f "$AUTH_APP_SSR_CONFIGMAP" ]] || { log_error "缺少 ConfigMap 模板: $AUTH_APP_SSR_CONFIGMAP"; exit 1; }
-        [[ -f "$AUTH_APP_SSR_SECRET" ]] || { log_error "缺少 Secret 模板: $AUTH_APP_SSR_SECRET"; exit 1; }
-    fi
-    
-    # 检查 envsubst 是否可用
-    if ! command -v envsubst &> /dev/null; then
-        log_error "envsubst 命令未找到，请安装 gettext 包"
-        log_info "Ubuntu/Debian: sudo apt-get install gettext-base"
-        log_info "CentOS/RHEL: sudo yum install gettext"
-        exit 1
-    fi
-}
 
 deploy_secrets_config() {
     [[ "${secrets_enabled:-true}" == "true" ]] || { log_info "跳过 Secrets/ConfigMap 部署"; return; }
@@ -506,6 +495,10 @@ deploy_app() {
         return 1
     fi
     log_success "✅ Auth App SSR 子级组件部署完成"
+
+    if ! check_harbor_image_exists "$AUTH_APP_SSR_FULL_IMAGE_NAME" "$NAMESPACE" "${AUTH_APP_SSR_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}"; then
+        return 1
+    fi
     
     # ============================================================
     # 阶段2：部署本级核心服务（Deployment 和 Service）
