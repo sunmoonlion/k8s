@@ -134,8 +134,8 @@ main() {
         sed -i '/#IF_USE_RATE_LIMIT_START/,/#IF_USE_RATE_LIMIT_END/d' "$temp_template"
     fi
     
-    # 处理 ${VAR:-default} 语法，然后使用 envsubst
-    sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$temp_template" | envsubst > "$full_output_path"
+    # 兼容 {{VAR}} 与 ${VAR:-default} 两种占位符，然后使用 envsubst
+    sed -e 's/{{\([^}]*\)}}/${\1}/g' -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$temp_template" | envsubst > "$full_output_path"
     
     rm -f "$temp_template"
     

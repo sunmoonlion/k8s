@@ -95,7 +95,7 @@ main() {
         sed -i '/#IF_USE_RATE_LIMIT_START/,/#IF_USE_RATE_LIMIT_END/d' "$temp_template"
     fi
     
-    sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$temp_template" | envsubst > "$full_output_path"
+    sed -e 's/{{\([^}]*\)}}/${\1}/g' -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$temp_template" | envsubst > "$full_output_path"
     rm -f "$temp_template"
     
     if ! validate_yaml "$full_output_path"; then

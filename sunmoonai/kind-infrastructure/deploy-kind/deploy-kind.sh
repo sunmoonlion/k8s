@@ -71,40 +71,49 @@ wait_for_harbor() {
     done
 }
 
-# 确保 Harbor 中存在项目 k8s-images（若不存在则自动创建为公开项目）
-ensure_harbor_project_k8s_images() {
+# 确保 Harbor 中存在部署所需项目（若不存在则自动创建为公开项目）
+ensure_harbor_projects() {
     local api_base="https://${HARBOR_HOST:-harbor.sunmoonai.com}:${HARBOR_PORT:-30443}/api/v2.0"
-    local proj="k8s-images"
+    local projects="${HARBOR_PROJECT_NAMES:-${HARBOR_PROJECT_NAME:-k8s-images},app-images}"
     local user="${HARBOR_ADMIN_USER:-admin}"
     local pass="${HARBOR_ADMIN_PASSWORD:-}"
 
     if [[ -z "$pass" ]]; then
-        log_warn "未提供 HARBOR_ADMIN_PASSWORD，跳过自动创建 Harbor 项目 ${proj}"
+        log_warn "未提供 HARBOR_ADMIN_PASSWORD，跳过自动创建 Harbor 项目: ${projects}"
         return 0
     fi
 
-    # 查询项目是否已存在（GET /projects 无匹配时也返回 200，body 为空数组，需根据响应体判断）
-    local body
-    body=$(curl -sk --noproxy '*' -u "${user}:${pass}" "${api_base}/projects?name=${proj}" 2>/dev/null || true)
-    if echo "$body" | grep -qE '"name"\s*:\s*"'"${proj}"'"'; then
-        log_info "Harbor 项目 ${proj} 已存在"
-        return 0
-    fi
+    local save_ifs="$IFS"
+    IFS=','
+    for proj in $projects; do
+        proj=$(echo "$proj" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        [[ -z "$proj" ]] && continue
 
-    log_info "Harbor 项目 ${proj} 不存在，尝试自动创建..."
-    code=$(curl -sk --noproxy '*' -u "${user}:${pass}" -o /dev/null -w '%{http_code}' \
-        -H 'Content-Type: application/json' \
-        -X POST "${api_base}/projects" \
-        -d "{\"project_name\":\"${proj}\",\"metadata\":{\"public\":\"true\"}}" || echo "000")
+        # 查询项目是否已存在（GET /projects 无匹配时也返回 200，body 为空数组，需根据响应体判断）
+        local body
+        body=$(curl -sk --noproxy '*' -u "${user}:${pass}" "${api_base}/projects?name=${proj}" 2>/dev/null || true)
+        if echo "$body" | grep -qE '"name"\s*:\s*"'"${proj}"'"'; then
+            log_info "Harbor 项目 ${proj} 已存在"
+            continue
+        fi
 
-    if [[ "$code" == "201" || "$code" == "409" ]]; then
-        # 201: 创建成功；409: 已存在（并发等原因）
-        log_info "Harbor 项目 ${proj} 已就绪（HTTP ${code}）"
-        return 0
-    fi
+        log_info "Harbor 项目 ${proj} 不存在，尝试自动创建..."
+        code=$(curl -sk --noproxy '*' -u "${user}:${pass}" -o /dev/null -w '%{http_code}' \
+            -H 'Content-Type: application/json' \
+            -X POST "${api_base}/projects" \
+            -d "{\"project_name\":\"${proj}\",\"metadata\":{\"public\":\"true\"}}" || echo "000")
 
-    log_error "自动创建 Harbor 项目 ${proj} 失败（HTTP ${code}），请手动在 Web 控制台创建该项目或调整配置"
-    return 1
+        if [[ "$code" == "201" || "$code" == "409" ]]; then
+            # 201: 创建成功；409: 已存在（并发等原因）
+            log_info "Harbor 项目 ${proj} 已就绪（HTTP ${code}）"
+            continue
+        fi
+
+        IFS="$save_ifs"
+        log_error "自动创建 Harbor 项目 ${proj} 失败（HTTP ${code}），请手动在 Web 控制台创建该项目或调整配置"
+        return 1
+    done
+    IFS="$save_ifs"
 }
 
 # 封装一次 Harbor 登录流程：等待就绪 + docker login（不包含创建项目，项目由一键部署流程在步骤 9 后统一调用 ensure_harbor_project_k8s_images）
@@ -204,9 +213,9 @@ else
         if ! "$KIND_ROOT/wsl-setup-harbor-login.sh"; then
             log_warn "Harbor 登录脚本执行返回非零状态，可稍后在 WSL 手动运行: $KIND_ROOT/wsl-setup-harbor-login.sh"
         fi
-        # 一键部署时必须确保 k8s-images 项目存在，否则 PostgreSQL 等组件 push/pull 会失败（ImagePullBackOff）
-        if ! ensure_harbor_project_k8s_images; then
-            log_warn "Harbor 项目 k8s-images 创建失败，请手动在 Harbor 控制台创建该项目，或配置 HARBOR_ADMIN_PASSWORD 后重试"
+        # 一键部署时必须确保镜像项目存在，否则组件与业务镜像 push/pull 会失败（ImagePullBackOff）
+        if ! ensure_harbor_projects; then
+            log_warn "Harbor 项目创建失败，请手动在 Harbor 控制台创建所需项目，或配置 HARBOR_ADMIN_PASSWORD 后重试"
         fi
     else
         log_warn "Harbor 在预期时间内未完全就绪，跳过自动登录；可稍后手动运行: $KIND_ROOT/wsl-setup-harbor-login.sh"

@@ -756,6 +756,37 @@ create_harbor_project() {
     fi
 }
 
+get_harbor_project_names() {
+    local projects="${HARBOR_PROJECT_NAMES:-${HARBOR_PROJECT_NAME:-k8s-images},app-images}"
+    printf '%s\n' "$projects"
+}
+
+ensure_harbor_projects() {
+    local harbor_host="$1"
+    local harbor_port="$2"
+    local admin_user="$3"
+    local admin_password="$4"
+    local ssh_host="${5:-}"
+    local ssh_user="${6:-}"
+    local ssh_key="${7:-}"
+    local ssh_port="${8:-22}"
+    local projects
+    projects="$(get_harbor_project_names)"
+
+    local save_ifs="$IFS"
+    IFS=','
+    for project_name in $projects; do
+        project_name=$(echo "$project_name" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        [[ -z "$project_name" ]] && continue
+        if ! create_harbor_project "$project_name" "$harbor_host" "$harbor_port" \
+            "$admin_user" "$admin_password" "$ssh_host" "$ssh_user" "$ssh_key" "$ssh_port"; then
+            IFS="$save_ifs"
+            return 1
+        fi
+    done
+    IFS="$save_ifs"
+}
+
 # 获取控制平面节点的 SSH 信息（用于 Harbor API 检查）
 get_control_plane_ssh_info_for_check() {
     local ssh_port_var="$1"  # 输出变量名：SSH端口
@@ -1377,7 +1408,7 @@ auto_create_project_and_push_images() {
     fi
     
     # 创建项目（在控制平面节点上执行，与 wait_for_harbor_ready 保持一致）
-    if ! create_harbor_project "$target_project" "$harbor_host" "$harbor_port" "$admin_user" "$admin_password" "$ssh_host" "$ssh_user" "$ssh_key" "$ssh_port"; then
+    if ! ensure_harbor_projects "$harbor_host" "$harbor_port" "$admin_user" "$admin_password" "$ssh_host" "$ssh_user" "$ssh_key" "$ssh_port"; then
         log_error "项目创建失败，跳过镜像推送"
         return 1
     fi
@@ -1478,7 +1509,7 @@ deploy_harbor() {
                     log_info "Kind 模式：Harbor API 未就绪 (HTTP ${_http_code})，等待中..."
                     sleep 5
                 done
-                create_harbor_project "$_target_project" "$kind_harbor_host" "$kind_harbor_port" \
+                ensure_harbor_projects "$kind_harbor_host" "$kind_harbor_port" \
                     "$kind_admin_user" "$kind_admin_pass" || \
                     log_warn "Kind 模式：Harbor 项目创建失败（可能已存在或 Harbor 未完全就绪），后续推送将重试"
             fi

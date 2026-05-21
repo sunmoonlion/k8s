@@ -392,6 +392,26 @@ check_env_config() {
     fi
 }
 
+run_db_access_bootstrap() {
+    if [[ "${INVESTMENT_ADMIN_BACKEND_DB_BOOTSTRAP_ENABLED:-true}" != "true" ]]; then
+        log_info "⏭️  跳过 Investment Admin Backend DB bootstrap (已禁用)"
+        return 0
+    fi
+
+    local source_root="${INVESTMENT_ADMIN_BACKEND_SOURCE_ROOT:-/home/zymun/investment-app/investment-admin-backend}"
+    local bootstrap_script="$source_root/db-access-bootstrap/setup-k8s-db-access.sh"
+
+    if [[ ! -x "$bootstrap_script" ]]; then
+        log_error "❌ DB bootstrap 脚本不存在或不可执行: $bootstrap_script"
+        log_error "请设置 INVESTMENT_ADMIN_BACKEND_SOURCE_ROOT 指向 investment-admin-backend 源码目录"
+        return 1
+    fi
+
+    log_info "开始执行 Investment Admin Backend DB bootstrap..."
+    CLUSTER="${CLUSTER:-}" K8S_TARGET_MODE="${CLUSTER:-}" "$bootstrap_script"
+    log_success "✅ Investment Admin Backend DB bootstrap 完成"
+}
+
 # 部署 Investment Admin Backend
 deploy_app() {
     log_info "开始部署 Investment Admin Backend..."
@@ -415,6 +435,11 @@ deploy_app() {
     export ENV="$ENV"
     export ENVIRONMENT="$ENVIRONMENT"
     export INVESTMENT_ADMIN_BACKEND_FULL_IMAGE_NAME="$INVESTMENT_ADMIN_BACKEND_FULL_IMAGE_NAME"
+
+    if ! run_db_access_bootstrap; then
+        log_error "❌ Investment Admin Backend DB bootstrap 失败"
+        return 1
+    fi
 
     log_info "🚀 阶段1：部署 Investment Admin Backend 子级组件..."
     if ! deploy_sub_components "$PROJECT_ID" "$NAMESPACE" "$ENVIRONMENT" false; then
