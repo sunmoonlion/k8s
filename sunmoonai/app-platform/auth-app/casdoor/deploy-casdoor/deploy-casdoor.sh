@@ -92,9 +92,12 @@ provision_casdoor_database() {
 
     local cluster_lower
     cluster_lower="$(echo "${CLUSTER:-}" | tr '[:upper:]' '[:lower:]')"
-    if [[ "$cluster_lower" == "kind" || "$environment" == "development" || "$environment" == "dev" ]]; then
+    if [[ "$cluster_lower" == "kind" ]]; then
         bootstrap_script="$bootstrap_dir/setup-k8s-db-access.sh"
     else
+        # Remote clusters cannot resolve *.svc.cluster.local from the deploy host.
+        # Provision through the exposed PostgreSQL endpoint; Casdoor still uses
+        # the in-cluster service from Helm values at runtime.
         bootstrap_script="$bootstrap_dir/setup-external-db-access.sh"
     fi
 
@@ -236,7 +239,7 @@ deploy_ingress() {
     [[ "${ingress_enabled:-true}" != "true" ]] && { log_info "跳过 Ingress 部署"; return 0; }
     [[ -f "$ingress_script" ]] || { log_warn "Ingress 脚本不存在，跳过: $ingress_script"; return 0; }
 
-    if bash "$ingress_script" deploy "$project_id" "$namespace" "$environment"; then
+    if DISABLE_AUTO_CLEANUP=true bash "$ingress_script" deploy "$project_id" "$namespace" "$environment"; then
         log_success "✅ Casdoor Ingress 部署成功"
     else
         log_error "❌ Casdoor Ingress 部署失败"; return 1
@@ -250,9 +253,15 @@ run_post_deploy_setup() {
     [[ "$dry_run" == "true" ]] && { log_info "dry-run 模式，跳过 post-deploy-setup"; return 0; }
     [[ -f "$setup_script" ]] || { log_warn "post-deploy-setup.sh 不存在，跳过"; return 0; }
 
+    setup_kubectl_environment || { log_error "无法建立 Kubernetes 连接"; return 1; }
+
     log_info "等待 Casdoor Pod 就绪..."
-    kubectl rollout status deployment/"casdoor-${CASDOOR_PROJECT_ID:-sunmoonai}" \
-        -n "$namespace" --timeout=120s >/dev/null 2>&1 || true
+    if ! kubectl rollout status deployment/"casdoor-${CASDOOR_PROJECT_ID:-sunmoonai}" \
+        -n "$namespace" --timeout=120s; then
+        kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=casdoor-${CASDOOR_PROJECT_ID:-sunmoonai}" -o wide || true
+        log_error "Casdoor Pod 未就绪"
+        return 1
+    fi
 
     if bash "$setup_script" "$namespace"; then
         log_success "✅ Casdoor post-deploy-setup 完成"

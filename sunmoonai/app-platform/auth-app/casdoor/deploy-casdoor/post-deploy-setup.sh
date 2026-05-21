@@ -52,7 +52,7 @@ done
 
 RELEASE="casdoor-sunmoonai"
 CLUSTER_LOWER="$(echo "${CLUSTER:-}" | tr '[:upper:]' '[:lower:]')"
-if [[ "$CLUSTER_LOWER" == "kind" ]]; then
+if [[ "$CLUSTER_LOWER" == "kind" || "$CLUSTER_LOWER" =~ ^c[0-9]+$ ]]; then
     DB_ACCESS_CONFIG="$SCRIPT_DIR/../db-access-bootstrap/config/postgresql.k8s.env"
 else
     DB_ACCESS_CONFIG="$SCRIPT_DIR/../db-access-bootstrap/config/postgresql.external.env"
@@ -124,7 +124,7 @@ EOF'
 run_sql() {
     local sql="$1"
 
-    if command -v psql &>/dev/null; then
+    if ! use_k8s_sql_client && command -v psql &>/dev/null; then
         PGPASSWORD="$DB_PASSWORD" psql \
             -h "$DB_HOST" -p "$DB_PORT" \
             -U "$DB_USER" -d "$DB_NAME" \
@@ -140,7 +140,7 @@ sql_escape_single() {
 }
 
 check_psql() {
-    if command -v psql &>/dev/null; then
+    if ! use_k8s_sql_client && command -v psql &>/dev/null; then
         if ! PGPASSWORD="$DB_PASSWORD" psql \
             -h "$DB_HOST" -p "$DB_PORT" \
             -U "$DB_USER" -d "$DB_NAME" \
@@ -157,6 +157,11 @@ check_psql() {
     log_info "PostgreSQL 连接正常"
 }
 
+use_k8s_sql_client() {
+    [[ "${FORCE_K8S_SQL_CLIENT:-false}" == "true" ]] && return 0
+    [[ "$DB_HOST" =~ \.svc(\.|$) ]]
+}
+
 k8s_client_namespace() {
     if [[ -n "${PG_CLIENT_NAMESPACE:-}" ]]; then
         printf '%s\n' "$PG_CLIENT_NAMESPACE"
@@ -171,6 +176,9 @@ k8s_client_image() {
     local registry="harbor.sunmoonai.com"
     if declare -F get_cluster_harbor_registry >/dev/null; then
         registry="$(get_cluster_harbor_registry)"
+    fi
+    if [[ "$CLUSTER_LOWER" =~ ^c[0-9]+$ && "$registry" == "harbor.sunmoonai.com" ]]; then
+        registry="harbor.sunmoonai.com:30443"
     fi
     printf '%s\n' "${PG_CLIENT_IMAGE:-${registry}/k8s-images/postgresql:17.6.0-debian-12-r4}"
 }
