@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tools-web-backend
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: tools-web-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tools-web-backend
+  template:
+    metadata:
+      labels:
+        app: tools-web-backend
+    spec:
+      imagePullSecrets:
+      - name: ${TOOLS_WEB_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}
+      containers:
+      - name: tools-web-backend
+        image: ${TOOLS_WEB_BACKEND_FULL_IMAGE_NAME}
+        imagePullPolicy: ${IMAGE_PULL_POLICY:-Always}
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: ${TOOLS_WEB_BACKEND_CONFIGMAP_NAME:-tools-web-backend-config}
+        - secretRef:
+            name: ${TOOLS_WEB_BACKEND_SECRET_NAME:-tools-web-backend-secret}
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: data
+          mountPath: ${PVC_MOUNT_PATH:-/app/data}
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: ${PVC_NAME:-tools-web-backend-pvc}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tools-web-backend
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: tools-web-backend
+spec:
+  selector:
+    app: tools-web-backend
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+  type: ClusterIP

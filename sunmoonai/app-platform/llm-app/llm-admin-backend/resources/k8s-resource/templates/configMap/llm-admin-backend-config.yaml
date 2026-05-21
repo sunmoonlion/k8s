@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: llm-admin-backend-config
+  namespace: ${NAMESPACE}
+  labels:
+    app: llm-admin-backend
+data:
+  # 基础（pydantic-settings: env / log_level）
+  ENV: "${ENV}"
+  LOG_LEVEL: "${LOG_LEVEL}"
+
+  # Redis 非敏感部分（redis_host / redis_port / redis_db / redis_user）
+  REDIS_HOST: "${REDIS_HOST}"
+  REDIS_PORT: "${REDIS_PORT}"
+  REDIS_DB: "${REDIS_DB}"
+  REDIS_USER: "${REDIS_USER}"
+
+  # Casdoor BFF（非敏感字段）
+  CASDOOR_ENDPOINT: "${CASDOOR_ENDPOINT}"
+  CASDOOR_CLIENT_ID: "${CASDOOR_CLIENT_ID}"
+  CASDOOR_REDIRECT_URI: "${CASDOOR_REDIRECT_URI}"
+  CASDOOR_ORGANIZATION: "${CASDOOR_ORGANIZATION}"
+  CASDOOR_APPLICATION: "${CASDOOR_APPLICATION}"
+  CASDOOR_VERIFY_SSL: "${CASDOOR_VERIFY_SSL}"
+
+  # Session
+  SESSION_TTL_SECONDS: "${SESSION_TTL_SECONDS}"
+
+  # 前端跳转地址（登录完成后跳回）
+  FRONTEND_BASE_URL: "${FRONTEND_BASE_URL}"

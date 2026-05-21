@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tools-admin-backend
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: tools-admin-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tools-admin-backend
+  template:
+    metadata:
+      labels:
+        app: tools-admin-backend
+    spec:
+      imagePullSecrets:
+      - name: ${TOOLS_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}
+      containers:
+      - name: tools-admin-backend
+        image: ${TOOLS_ADMIN_BACKEND_FULL_IMAGE_NAME}
+        imagePullPolicy: ${IMAGE_PULL_POLICY:-Always}
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: ${TOOLS_ADMIN_BACKEND_CONFIGMAP_NAME:-tools-admin-backend-config}
+        - secretRef:
+            name: ${TOOLS_ADMIN_BACKEND_SECRET_NAME:-tools-admin-backend-secret}
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: data
+          mountPath: ${PVC_MOUNT_PATH:-/app/data}
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: ${PVC_NAME:-tools-admin-backend-pvc}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tools-admin-backend
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: tools-admin-backend
+spec:
+  selector:
+    app: tools-admin-backend
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+  type: ClusterIP
