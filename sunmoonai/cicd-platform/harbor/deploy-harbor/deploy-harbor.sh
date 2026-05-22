@@ -655,6 +655,24 @@ validate_harbor_deployment() {
     log_success "Harbor 部署验证完成"
 }
 
+# 在控制平面节点执行远程命令（显式 ssh，避免 $ssh_cmd 受父级 IFS 影响无法分词）
+run_ssh_on_control_plane() {
+    local ssh_host="$1"
+    local ssh_user="$2"
+    local ssh_key="$3"
+    local ssh_port="$4"
+    local remote_cmd="$5"
+    local -a ssh_args=()
+    if [[ -n "$ssh_key" && -f "$ssh_key" ]]; then
+        ssh_args+=(-i "$ssh_key")
+    fi
+    if [[ -n "$ssh_port" && "$ssh_port" != "22" ]]; then
+        ssh_args+=(-p "$ssh_port")
+    fi
+    ssh "${ssh_args[@]}" -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o BatchMode=yes \
+        "${ssh_user}@${ssh_host}" "$remote_cmd"
+}
+
 # 创建 Harbor 项目
 create_harbor_project() {
     local project_name="$1"
@@ -667,30 +685,21 @@ create_harbor_project() {
     local ssh_user="${7:-}"
     local ssh_key="${8:-}"
     local ssh_port="${9:-22}"
+    local use_ssh=false
+    if [[ -n "$ssh_host" && -n "$ssh_user" ]]; then
+        use_ssh=true
+    fi
     
     log_info "创建 Harbor 项目: $project_name"
-    
-    # 构建 SSH 命令（如果提供了 SSH 信息，在控制平面节点上执行）
-    local ssh_cmd=""
-    if [[ -n "$ssh_host" && -n "$ssh_user" ]]; then
-        local ssh_key_option=""
-        if [[ -n "$ssh_key" && -f "$ssh_key" ]]; then
-            ssh_key_option="-i $ssh_key"
-        fi
-        local ssh_port_option=""
-        if [[ -n "$ssh_port" && "$ssh_port" != "22" ]]; then
-            ssh_port_option="-p $ssh_port"
-        fi
-        ssh_cmd="ssh $ssh_key_option $ssh_port_option -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o BatchMode=yes $ssh_user@$ssh_host"
-    fi
     
     # 创建项目（如果项目已存在，API 会返回 409，我们会在下面处理）
     # 注意：Harbor 中，项目创建者（管理员）默认有所有权限，包括推送权限
     # 使用 curl -w 获取 HTTP 状态码，以便准确判断创建结果
     local create_result=""
-    if [[ -n "$ssh_cmd" ]]; then
+    if [[ "$use_ssh" == true ]]; then
         # 在控制平面节点上执行
-        create_result=$($ssh_cmd "curl -k -s -w \"\\nHTTP_CODE:%{http_code}\" -u \"$admin_user:$admin_password\" -X POST \"https://$harbor_host:$harbor_port/api/v2.0/projects\" -H \"Content-Type: application/json\" -d '{\"project_name\": \"$project_name\", \"metadata\": {\"public\": \"false\"}, \"storage_limit\": -1}'" 2>&1)
+        create_result=$(run_ssh_on_control_plane "$ssh_host" "$ssh_user" "$ssh_key" "$ssh_port" \
+            "curl -k -s -w \"\\nHTTP_CODE:%{http_code}\" -u \"$admin_user:$admin_password\" -X POST \"https://$harbor_host:$harbor_port/api/v2.0/projects\" -H \"Content-Type: application/json\" -d '{\"project_name\": \"$project_name\", \"metadata\": {\"public\": \"false\"}, \"storage_limit\": -1}'" 2>&1)
     else
         # 在本地执行（可能无法访问）
         create_result=$(curl -k -s -w "\nHTTP_CODE:%{http_code}" -u "$admin_user:$admin_password" -X POST "https://$harbor_host:$harbor_port/api/v2.0/projects" \
@@ -713,8 +722,9 @@ create_harbor_project() {
         log_success "✅ 项目 $project_name 创建成功 (HTTP 201)"
         # 验证管理员权限（管理员应该自动拥有项目所有权限）
         local project_info=""
-        if [[ -n "$ssh_cmd" ]]; then
-            project_info=$($ssh_cmd "curl -k -s -u \"$admin_user:$admin_password\" \"https://$harbor_host:$harbor_port/api/v2.0/projects/$project_name\"" 2>/dev/null)
+        if [[ "$use_ssh" == true ]]; then
+            project_info=$(run_ssh_on_control_plane "$ssh_host" "$ssh_user" "$ssh_key" "$ssh_port" \
+                "curl -k -s -u \"$admin_user:$admin_password\" \"https://$harbor_host:$harbor_port/api/v2.0/projects/$project_name\"" 2>/dev/null)
         else
             project_info=$(curl -k -s -u "$admin_user:$admin_password" "https://$harbor_host:$harbor_port/api/v2.0/projects/$project_name" 2>/dev/null)
         fi
@@ -763,8 +773,9 @@ create_harbor_project() {
         else
             # 无法确定状态，但也没有明显错误，尝试通过查询项目来验证
             local verify_result=""
-            if [[ -n "$ssh_cmd" ]]; then
-                verify_result=$($ssh_cmd "curl -k -s -u \"$admin_user:$admin_password\" \"https://$harbor_host:$harbor_port/api/v2.0/projects/$project_name\"" 2>/dev/null)
+            if [[ "$use_ssh" == true ]]; then
+                verify_result=$(run_ssh_on_control_plane "$ssh_host" "$ssh_user" "$ssh_key" "$ssh_port" \
+                    "curl -k -s -u \"$admin_user:$admin_password\" \"https://$harbor_host:$harbor_port/api/v2.0/projects/$project_name\"" 2>/dev/null)
             else
                 verify_result=$(curl -k -s -u "$admin_user:$admin_password" "https://$harbor_host:$harbor_port/api/v2.0/projects/$project_name" 2>/dev/null)
             fi
@@ -802,11 +813,13 @@ ensure_harbor_projects() {
     for project_name in $projects; do
         project_name=$(echo "$project_name" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
         [[ -z "$project_name" ]] && continue
+        # 恢复 IFS，避免 create_harbor_project 内 ssh/curl 命令分词异常
+        IFS="$save_ifs"
         if ! create_harbor_project "$project_name" "$harbor_host" "$harbor_port" \
             "$admin_user" "$admin_password" "$ssh_host" "$ssh_user" "$ssh_key" "$ssh_port"; then
-            IFS="$save_ifs"
             return 1
         fi
+        IFS=','
     done
     IFS="$save_ifs"
 }
