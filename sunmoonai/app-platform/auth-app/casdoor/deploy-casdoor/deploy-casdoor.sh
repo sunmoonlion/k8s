@@ -98,7 +98,11 @@ provision_casdoor_database() {
     [[ -x "$bootstrap_script" ]] || { log_error "Casdoor 数据库 provision 脚本不可执行: $bootstrap_script"; return 1; }
 
     log_info "开始 provision Casdoor 数据库..."
-    if bash "$bootstrap_script"; then
+    if ! setup_kubectl_environment; then
+        log_error "无法建立 Kubernetes 连接，无法 provision Casdoor 数据库"
+        return 1
+    fi
+    if DISABLE_AUTO_CLEANUP=true CLUSTER="${CLUSTER:-C1}" bash "$bootstrap_script"; then
         log_success "✅ Casdoor 数据库 provision 完成"
     else
         log_error "❌ Casdoor 数据库 provision 失败"

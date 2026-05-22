@@ -3,9 +3,27 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_DIR="${SCRIPT_DIR}/config"
+# sunmoonai/.../db-access-bootstrap → ../../../../.. = k8s（与 deploy-casdoor.sh 一致）
+K8S_ROOT="$(cd "${SCRIPT_DIR}/../../../../.." && pwd)"
 
 # shellcheck disable=SC1091
 source "${CONFIG_DIR}/common.env"
+
+# dbctl 依赖 kubectl；从 WSL 直接执行时未必已有 KUBECONFIG/隧道
+ensure_kubectl_for_dbctl() {
+  if [[ -n "${KUBECONFIG:-}" ]] && kubectl cluster-info >/dev/null 2>&1; then
+    return 0
+  fi
+  local tmpl="${K8S_ROOT}/utils/unified-deployment-template.sh"
+  [[ -f "$tmpl" ]] || die "缺少统一部署模板，无法建立集群连接: $tmpl"
+  # shellcheck disable=SC1091
+  source "$tmpl"
+  export DISABLE_AUTO_CLEANUP="${DISABLE_AUTO_CLEANUP:-true}"
+  if ! setup_kubectl_environment; then
+    die "无法建立 Kubernetes 连接（请设置 CLUSTER 并确认 k8s-admin.conf）"
+  fi
+  log "kubectl 已就绪: KUBECONFIG=${KUBECONFIG:-<unset>}"
+}
 
 PG_CONFIG="${PG_K8S_CONFIG:-${CONFIG_DIR}/postgresql.k8s.env}"
 REDIS_CONFIG="${REDIS_K8S_CONFIG:-${CONFIG_DIR}/redis.k8s.env}"
@@ -23,6 +41,7 @@ require_file() { [[ -f "$1" ]] || die "Missing file: $1"; }
 main() {
   [[ -x "${DBCTL_BIN}" ]] || die "DBCTL_BIN not executable: ${DBCTL_BIN}"
   command -v kubectl >/dev/null 2>&1 || die "Missing kubectl"
+  ensure_kubectl_for_dbctl
 
   bool_true "${ENABLE_POSTGRESQL:-false}" && require_file "${PG_CONFIG}" && "${DBCTL_BIN}" --config "${PG_CONFIG}" --target k8s --action provision
   bool_true "${ENABLE_MONGODB:-false}" && require_file "${MONGO_CONFIG}" && "${DBCTL_BIN}" --config "${MONGO_CONFIG}" --target k8s --action provision
