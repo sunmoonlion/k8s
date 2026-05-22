@@ -185,10 +185,12 @@ k8s_client_image() {
 
 run_sql_with_k8s_client() {
     local sql="$1"
-    local client_ns client_image pod_name
+    local client_ns client_image pod_name timeout pull_policy
     client_ns="$(k8s_client_namespace)"
     client_image="$(k8s_client_image)"
     pod_name="casdoor-postdeploy-pg-$(date +%s%N | tail -c 8)"
+    timeout="${PG_CLIENT_POD_RUNNING_TIMEOUT:-5m0s}"
+    pull_policy="${PG_CLIENT_IMAGE_PULL_POLICY:-IfNotPresent}"
 
     command -v kubectl >/dev/null 2>&1 || {
         log_error "kubectl 不可用，且本机未安装 psql"
@@ -197,6 +199,8 @@ run_sql_with_k8s_client() {
 
     kubectl run "$pod_name" --rm -i --restart=Never -n "$client_ns" \
         --image="$client_image" \
+        --image-pull-policy="$pull_policy" \
+        --pod-running-timeout="$timeout" \
         --env="PGPASSWORD=$DB_PASSWORD" \
         --command -- psql \
             -h "$DB_HOST" -p "$DB_PORT" \
