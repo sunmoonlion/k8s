@@ -93,30 +93,35 @@ ingress:
     tls: false
     selfSigned: false
 # ============================================================================
-# 持久化存储配）
+# 持久化存储（Bitnami Harbor Chart）
 # ============================================================================
+# Kind 静态 PV 见 harbor-kind-pv-pvc.yaml → /data/kind-local-storage/harbor/*
+#
+# 注意：仅 registry/jobservice 走 persistence.persistentVolumeClaim；
+# PostgreSQL、Redis 必须在各自子 chart 下配置 existingClaim（写 database/redis 无效）。
+# Trivy STS 当前 chart 不支持 existingClaim，扫描缓存仍用动态 PVC。
 persistence:
   persistentVolumeClaim:
     registry:
       existingClaim: "harbor-sunmoonai-registry-dev-pvc"
     jobservice:
-      jobLog:
-        existingClaim: "harbor-sunmoonai-jobservice-dev-pvc"
-    database:
-      existingClaim: "harbor-sunmoonai-database-dev-pvc"
-    redis:
-      existingClaim: "harbor-sunmoonai-redis-dev-pvc"
+      existingClaim: "harbor-sunmoonai-jobservice-dev-pvc"
     trivy:
-      existingClaim: "harbor-sunmoonai-trivy-dev-pvc"
+      storageClass: ""
+      accessModes:
+        - ReadWriteOnce
+      size: 5Gi
 
 # ============================================================================
 # 内置数据库配置（PostgreSQL）
 # ============================================================================
-# 启用内置 PostgreSQL
+# 元数据（项目/仓库/标签）落盘到 harbor-sunmoonai-database-dev-pvc
 postgresql:
   enabled: true
-  # 优化PostgreSQL内存配置
   primary:
+    persistence:
+      enabled: true
+      existingClaim: harbor-sunmoonai-database-dev-pvc
     resources:
       limits:
         memory: "512Mi"  # 限制最大内存使）
@@ -156,11 +161,14 @@ postgresql:
 # ============================================================================
 # 内置缓存配置（Redis）
 # ============================================================================
-# 启用内置 Redis
+# 启用内置 Redis（会话/缓存）
 redis:
   enabled: true
-  # 优化Redis内存配置
+  architecture: standalone
   master:
+    persistence:
+      enabled: true
+      existingClaim: harbor-sunmoonai-redis-dev-pvc
     resources:
       limits:
         memory: "256Mi"  # 限制最大内存使）

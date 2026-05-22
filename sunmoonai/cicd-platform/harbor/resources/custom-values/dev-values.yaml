@@ -12,7 +12,7 @@
 # ============================================================================
 global:
   imageRegistry: ""
-  defaultStorageClass: "local-path"  # 使用节点3的专用存储
+  defaultStorageClass: ""  # 远程使用 existingClaim 静态 PV，与 step09 /data/local-storage 一致
 
 # ============================================================================
 # 通用配置
@@ -93,24 +93,33 @@ ingress:
     tls: false
     selfSigned: false
 # ============================================================================
-# 持久化存储配置
+# 持久化存储（Bitnami Harbor Chart）
 # ============================================================================
+# 远程静态 PV 见 harbor-remote-pv-pvc.yaml → /data/local-storage/harbor/*
+# 由 deploy-harbor.conf 的 HARBOR_STORAGE_* 渲染；默认节点 hsy-local-3
+#
+# PostgreSQL、Redis 必须在子 chart 下配置 existingClaim；Trivy 仍用 chart 动态 volumeClaimTemplates。
 persistence:
   persistentVolumeClaim:
+    registry:
+      existingClaim: "harbor-sunmoonai-registry-dev-pvc"
+    jobservice:
+      existingClaim: "harbor-sunmoonai-jobservice-dev-pvc"
     trivy:
-      storageClass: "local-path"  # 使用节点3的专用存储
-      size: "5Gi"
+      storageClass: ""
       accessModes:
         - ReadWriteOnce
+      size: 5Gi
 
 # ============================================================================
 # 内置数据库配置（PostgreSQL）
 # ============================================================================
-# 启用内置 PostgreSQL
 postgresql:
   enabled: true
-  # 优化PostgreSQL内存配置
   primary:
+    persistence:
+      enabled: true
+      existingClaim: harbor-sunmoonai-database-dev-pvc
     resources:
       limits:
         memory: "512Mi"  # 限制最大内存使用
@@ -150,11 +159,13 @@ postgresql:
 # ============================================================================
 # 内置缓存配置（Redis）
 # ============================================================================
-# 启用内置 Redis
 redis:
   enabled: true
-  # 优化Redis内存配置
+  architecture: standalone
   master:
+    persistence:
+      enabled: true
+      existingClaim: harbor-sunmoonai-redis-dev-pvc
     resources:
       limits:
         memory: "256Mi"  # 限制最大内存使用
@@ -194,6 +205,15 @@ registry:
   replicaCount: 1
   storage:
     type: "filesystem"
+  initContainers:
+    - name: fix-storage-owner
+      image: docker.io/bitnami/harbor-registry:2.13.2-debian-12-r2
+      command: ["/bin/sh", "-ec", "chown 1001:1001 /storage"]
+      securityContext:
+        runAsUser: 0
+      volumeMounts:
+        - name: registry-data
+          mountPath: /storage
 
 # Trivy（镜像扫描）
 trivy:

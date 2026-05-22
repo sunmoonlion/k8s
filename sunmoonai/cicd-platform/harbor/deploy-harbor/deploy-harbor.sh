@@ -135,6 +135,30 @@ check_namespace() {
     fi
 }
 
+# 应用 Harbor 静态 PV/PVC（Kind 直接 apply；远程替换路径与节点名后 apply）
+apply_harbor_static_pv_pvc() {
+    local template_file="$1"
+    local render_remote="${2:-false}"
+
+    [[ -f "$template_file" ]] || { log_error "Harbor PV/PVC 模板不存在: $template_file"; return 1; }
+
+    if [[ "$render_remote" == "true" ]]; then
+        local storage_base="${HARBOR_STORAGE_BASE_PATH:-/data/local-storage}"
+        local storage_node="${HARBOR_STORAGE_NODE_HOSTNAME:-hsy-local-3}"
+        local rendered
+        rendered="$(mktemp)"
+        cp "$template_file" "$rendered"
+        sed -i "s|{{HARBOR_STORAGE_BASE_PATH}}|${storage_base}|g" "$rendered"
+        sed -i "s|{{HARBOR_STORAGE_NODE_HOSTNAME}}|${storage_node}|g" "$rendered"
+        log_info "应用 Harbor 静态 PV/PVC（远程: ${storage_base}/harbor/* @ ${storage_node}）" >&2
+        kubectl apply -f "$rendered" >&2
+        rm -f "$rendered"
+    else
+        log_info "应用 Harbor 静态 PV/PVC: $template_file" >&2
+        kubectl apply -f "$template_file" >&2
+    fi
+}
+
 # 处理 Harbor 特定的 values 文件
 process_harbor_values() {
     local project_id="$1"
@@ -165,10 +189,10 @@ process_harbor_values() {
         "development")
             local cluster_lower="$(echo "${CLUSTER:-}" | tr '[:upper:]' '[:lower:]')"
             if [[ "$cluster_lower" == "kind" ]]; then
-                local pv_pvc_file="$PROJECT_ROOT/resources/custom-values/harbor-kind-pv-pvc.yaml"
-                kubectl apply -f "$pv_pvc_file" >&2
+                apply_harbor_static_pv_pvc "$PROJECT_ROOT/resources/custom-values/harbor-kind-pv-pvc.yaml" false
                 env_values_file="$PROJECT_ROOT/resources/custom-values/dev-values-kind.yaml"
             else
+                apply_harbor_static_pv_pvc "$PROJECT_ROOT/resources/custom-values/harbor-remote-pv-pvc.yaml" true
                 env_values_file="$PROJECT_ROOT/resources/custom-values/dev-values.yaml"
             fi
             ;;

@@ -1,0 +1,187 @@
+# 远程集群（C1/C2/C3）Harbor 静态 PV/PVC
+# 与 infrastructure step09 一致：宿主机目录 STEP09_LOCAL_STORAGE_PATH（默认 /data/local-storage）
+# 部署前由 deploy-harbor.sh 替换：
+#   {{HARBOR_STORAGE_BASE_PATH}}  默认 /data/local-storage
+#   {{HARBOR_STORAGE_NODE_HOSTNAME}}  默认 hsy-local-3（节点3，与 dev-values 注释一致）
+#
+# PVC 名称与 Kind 共用，便于 values 中 existingClaim 一致。
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: harbor-sunmoonai-registry-dev-pv
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: {{HARBOR_STORAGE_BASE_PATH}}/harbor/registry
+    type: DirectoryOrCreate
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: ["{{HARBOR_STORAGE_NODE_HOSTNAME}}"]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: harbor-sunmoonai-registry-dev-pvc
+  namespace: cicd-platform-dev
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: ""
+  volumeName: harbor-sunmoonai-registry-dev-pv
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: harbor-sunmoonai-jobservice-dev-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: {{HARBOR_STORAGE_BASE_PATH}}/harbor/jobservice
+    type: DirectoryOrCreate
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: ["{{HARBOR_STORAGE_NODE_HOSTNAME}}"]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: harbor-sunmoonai-jobservice-dev-pvc
+  namespace: cicd-platform-dev
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: ""
+  volumeName: harbor-sunmoonai-jobservice-dev-pv
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: harbor-sunmoonai-database-dev-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: {{HARBOR_STORAGE_BASE_PATH}}/harbor/database
+    type: DirectoryOrCreate
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: ["{{HARBOR_STORAGE_NODE_HOSTNAME}}"]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: harbor-sunmoonai-database-dev-pvc
+  namespace: cicd-platform-dev
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: ""
+  volumeName: harbor-sunmoonai-database-dev-pv
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: harbor-sunmoonai-redis-dev-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: {{HARBOR_STORAGE_BASE_PATH}}/harbor/redis
+    type: DirectoryOrCreate
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: ["{{HARBOR_STORAGE_NODE_HOSTNAME}}"]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: harbor-sunmoonai-redis-dev-pvc
+  namespace: cicd-platform-dev
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: ""
+  volumeName: harbor-sunmoonai-redis-dev-pv
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: harbor-sunmoonai-trivy-dev-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: {{HARBOR_STORAGE_BASE_PATH}}/harbor/trivy
+    type: DirectoryOrCreate
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values: ["{{HARBOR_STORAGE_NODE_HOSTNAME}}"]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: harbor-sunmoonai-trivy-dev-pvc
+  namespace: cicd-platform-dev
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: ""
+  volumeName: harbor-sunmoonai-trivy-dev-pv
