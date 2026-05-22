@@ -219,6 +219,33 @@ step11_ssh_mkdir_dir() {
     fi
 }
 
+# 检查节点 k8s.io 命名空间是否已有指定镜像（兼容 docker.io/ 前缀）
+step11_image_present() {
+    local node="$1"
+    local image="$2"
+    local out
+    out=$(ssh_exec "$node" "sudo nerdctl -n ${STEP11_CONTAINER_NAMESPACE} images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null" || true)
+    echo "$out" | grep -Fxe "$image" >/dev/null 2>&1 && return 0
+    echo "$out" | grep -Fxe "docker.io/${image}" >/dev/null 2>&1 && return 0
+    return 1
+}
+
+# 加载后等待镜像出现在本地列表（应对 nerdctl 写入延迟与 SSH 瞬时失败）
+step11_wait_image_present() {
+    local node="$1"
+    local image="$2"
+    local attempt=1
+    local max_attempts=5
+    while [[ $attempt -le $max_attempts ]]; do
+        if step11_image_present "$node" "$image"; then
+            return 0
+        fi
+        sleep 2
+        attempt=$((attempt + 1))
+    done
+    return 1
+}
+
 # 从源节点通过内网 scp 把镜像文件拷到目标节点
 step11_ssh_scp_image() {
     local src_node="$1"
@@ -629,7 +656,7 @@ execute() {
                 fi
 
                 # 检查镜像是否已经加载
-                if ssh_exec "$node" "sudo nerdctl -n $STEP11_CONTAINER_NAMESPACE images --format '{{.Repository}}:{{.Tag}}' | grep -Fx '$image'"; then
+                if step11_image_present "$node" "$image"; then
                     log_info "[Step11] 节点 $node: 镜像已存在，跳过: $image"
                     loaded_count=$((loaded_count + 1))
                     continue
@@ -637,7 +664,7 @@ execute() {
 
                 # 加载镜像
                 log_info "[Step11] 节点 $node: 正在加载 $image_file..."
-                if step11_ssh_load_image "$node" "$image_file"; then
+                if step11_ssh_load_image "$node" "$image_file" && step11_wait_image_present "$node" "$image"; then
                     log_success "[Step11] 节点 $node: 镜像加载成功: $image"
                     loaded_count=$((loaded_count + 1))
                 else
@@ -702,7 +729,7 @@ verify() {
             node_expected=${#STEP11_IMAGE_LIST[@]}
             
             for image in "${STEP11_IMAGE_LIST[@]}"; do
-                if ssh_exec "$node" "sudo nerdctl -n $STEP11_CONTAINER_NAMESPACE images --format '{{.Repository}}:{{.Tag}}' | grep -Fx '$image'"; then
+                if step11_image_present "$node" "$image"; then
                     log_success "[Step11] 节点 $node: ✅ 镜像 $image"
                     node_verified=$((node_verified + 1))
                 else
@@ -713,16 +740,12 @@ verify() {
                     # 1) 优先使用当前节点上的 tar
                     if step11_ssh_test_file "$node" "$image_file"; then
                         log_info "[Step11] 节点 $node: 镜像 $image 缺失，尝试从本节点 $image_file 补载..."
-                        if step11_ssh_load_image "$node" "$image_file"; then
-                            if ssh_exec "$node" "sudo nerdctl -n $STEP11_CONTAINER_NAMESPACE images --format '{{.Repository}}:{{.Tag}}' | grep -Fx '$image'"; then
-                                log_success "[Step11] 节点 $node: ✅ 镜像 $image（本节点补载后通过）"
-                                node_verified=$((node_verified + 1))
-                                continue
-                            else
-                                log_warn "[Step11] 节点 $node: ❌ 镜像 $image（本节点补载后仍缺失）"
-                            fi
+                        if step11_ssh_load_image "$node" "$image_file" && step11_wait_image_present "$node" "$image"; then
+                            log_success "[Step11] 节点 $node: ✅ 镜像 $image（本节点补载后通过）"
+                            node_verified=$((node_verified + 1))
+                            continue
                         else
-                            log_warn "[Step11] 节点 $node: ❌ 镜像 $image（本节点补载失败）"
+                            log_warn "[Step11] 节点 $node: ❌ 镜像 $image（本节点补载失败或仍缺失）"
                         fi
                     fi
 
@@ -758,24 +781,29 @@ verify() {
                             log_info "[Step11] 节点 $node: 镜像 $image 缺失，尝试从节点 $src_idx 复制 $image_file ..."
                             # 确保目标节点目录存在
                             step11_ssh_mkdir_dir "$node" || true
-                            # 在源节点上通过内网 scp 把 tar 拷贝到目标节点
-                            step11_ssh_scp_image "$src_idx" "$image_file" "$target_user" "$target_ip" "$target_port" || true
+                            # 在源节点上通过内网 scp 把 tar 拷贝到目标节点（SSH 不稳定时重试）
+                            local scp_ok=false
+                            local scp_try=1
+                            while [[ $scp_try -le 3 ]]; do
+                                if step11_ssh_scp_image "$src_idx" "$image_file" "$target_user" "$target_ip" "$target_port"; then
+                                    scp_ok=true
+                                    break
+                                fi
+                                log_warn "[Step11] 节点 $node: scp $image_file 失败，重试 ($scp_try/3)..."
+                                sleep 3
+                                scp_try=$((scp_try + 1))
+                            done
 
                             # 复制完成后，再次尝试在目标节点补载
-                            if step11_ssh_test_file "$node" "$image_file"; then
-                                log_info "[Step11] 节点 $node: 已从节点 $src_idx 获取 $image_file，尝试补载..."
-                                if step11_ssh_load_image "$node" "$image_file"; then
-                                    if ssh_exec "$node" "sudo nerdctl -n $STEP11_CONTAINER_NAMESPACE images --format '{{.Repository}}:{{.Tag}}' | grep -Fx '$image'"; then
-                                        log_success "[Step11] 节点 $node: ✅ 镜像 $image（跨节点补载后通过）"
-                                        node_verified=$((node_verified + 1))
-                                    else
-                                        log_warn "[Step11] 节点 $node: ❌ 镜像 $image（跨节点补载后仍缺失）"
-                                    fi
-                                else
-                                    log_warn "[Step11] 节点 $node: ❌ 镜像 $image（跨节点补载失败）"
-                                fi
-                            else
+                            if [[ "$scp_ok" != true ]]; then
+                                log_warn "[Step11] 节点 $node: ❌ 镜像 $image（从节点 $src_idx 复制 $image_file 失败，已重试 3 次）"
+                            elif ! step11_ssh_test_file "$node" "$image_file"; then
                                 log_warn "[Step11] 节点 $node: ❌ 镜像 $image（已尝试从节点 $src_idx 复制 $image_file，但目标节点仍无该文件）"
+                            elif step11_ssh_load_image "$node" "$image_file" && step11_wait_image_present "$node" "$image"; then
+                                log_success "[Step11] 节点 $node: ✅ 镜像 $image（跨节点补载后通过）"
+                                node_verified=$((node_verified + 1))
+                            else
+                                log_warn "[Step11] 节点 $node: ❌ 镜像 $image（跨节点补载失败或仍缺失）"
                             fi
                         fi
                     else

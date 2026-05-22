@@ -357,6 +357,19 @@ deploy_all(){
     echo "  kubectl get pods -A"
 }
 
+# 执行单个步骤（命令名可用下划线或连字符，如 step11_load_initial_images / step11_load-initial-images）
+run_single_step(){
+    local cmd="${1//-/_}"
+    if declare -f "$cmd" >/dev/null 2>&1; then
+        "$cmd"
+        return $?
+    fi
+    log_error "未知命令: $1"
+    log_info "提示: 单步命令使用下划线，例如 step11_load_initial_images"
+    log_info "或直接执行: CLUSTER=${CLUSTER:-C1} bash $STEPS_DIR/step11_load-initial-images.sh"
+    return 1
+}
+
 # 显示步骤状态
 show_step_status(){
     log_info "检查各步骤脚本状态..."
@@ -430,6 +443,7 @@ main(){
     if [[ $# -gt 0 ]]; then
         case "$1" in
             full|deploy|all) deploy_all ;;
+            status|steps) show_step_status ;;
             help|--help|-h)
                 echo "用法: $0 [--cluster C1|C2] [命令]"
                 echo ""
@@ -437,17 +451,21 @@ main(){
                 echo "  --cluster, -c   集群选择 (格式：C{数字}，如 C1, C2, C3 等)，也可以通过环境变量 CLUSTER 设置"
                 echo ""
                 echo "命令:"
-                echo "  full, deploy, all  完整部署流程（默认）"
-                echo "  help               显示此帮助"
+                echo "  full, deploy, all     完整部署流程（默认）"
+                echo "  status, steps         检查各步骤脚本是否存在"
+                echo "  step11_load_initial_images  仅执行 Step11 初始镜像加载（连字符写法亦可）"
+                echo "  step00_reset ... step13_ingress_and_harbor  其他单步同理"
+                echo "  help                  显示此帮助"
                 echo ""
                 echo "示例:"
                 echo "  $0 --cluster C1 deploy"
-                echo "  $0 -c C2 deploy"
-                echo "  CLUSTER=C1 $0 deploy"
+                echo "  CLUSTER=C1 $0 step11_load_initial_images"
+                echo "  CLUSTER=C1 bash $STEPS_DIR/step11_load-initial-images.sh verify"
                 echo ""
                 echo "注意：重置功能通过配置文件中的 STEP00_ENABLED 参数控制"
                 ;;
-            *) log_error "未知命令: $1"; exit 1 ;;
+            step*) run_single_step "$1" || exit 1 ;;
+            *) run_single_step "$1" || exit 1 ;;
         esac
     else
         # 默认执行完整部署流程
