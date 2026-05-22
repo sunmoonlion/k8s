@@ -90,16 +90,10 @@ provision_casdoor_database() {
     [[ "$dry_run" == "true" ]] && { log_info "dry-run 模式，跳过 Casdoor 数据库 provision"; return 0; }
     [[ -d "$bootstrap_dir" ]] || { log_warn "Casdoor db-access-bootstrap 目录不存在，跳过: $bootstrap_dir"; return 0; }
 
-    local cluster_lower
-    cluster_lower="$(echo "${CLUSTER:-}" | tr '[:upper:]' '[:lower:]')"
-    if [[ "$cluster_lower" == "kind" ]]; then
-        bootstrap_script="$bootstrap_dir/setup-k8s-db-access.sh"
-    else
-        # Remote clusters cannot resolve *.svc.cluster.local from the deploy host.
-        # Provision through the exposed PostgreSQL endpoint; Casdoor still uses
-        # the in-cluster service from Helm values at runtime.
-        bootstrap_script="$bootstrap_dir/setup-external-db-access.sh"
-    fi
+    # 始终通过 K8s 临时 PostgreSQL client Pod 执行 provision。
+    # external 模式会依赖部署机本地 psql；C1/WSL 环境不保证安装该客户端。
+    # K8s 模式在集群内访问 PostgreSQL service，Kind 和远程集群都适用。
+    bootstrap_script="$bootstrap_dir/setup-k8s-db-access.sh"
 
     [[ -x "$bootstrap_script" ]] || { log_error "Casdoor 数据库 provision 脚本不可执行: $bootstrap_script"; return 1; }
 
