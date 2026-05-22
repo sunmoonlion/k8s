@@ -117,6 +117,16 @@ persistence:
 postgresql:
   enabled: true
   primary:
+    # 空 hostPath 挂载根常为 root:root，Bitnami(uid=1001) 无法初始化数据目录
+    initContainers:
+      - name: fix-storage-owner
+        image: docker.io/bitnami/postgresql:17.6.0-debian-12-r4
+        command: ["/bin/sh", "-ec", "chown 1001:1001 /bitnami/postgresql"]
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+          - name: data
+            mountPath: /bitnami/postgresql
     persistence:
       enabled: true
       existingClaim: harbor-sunmoonai-database-dev-pvc
@@ -163,6 +173,15 @@ redis:
   enabled: true
   architecture: standalone
   master:
+    initContainers:
+      - name: fix-storage-owner
+        image: docker.io/bitnami/redis:8.2.1-debian-12-r0
+        command: ["/bin/sh", "-ec", "chown 1001:1001 /bitnami/redis"]
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+          - name: redis-data
+            mountPath: /bitnami/redis
     persistence:
       enabled: true
       existingClaim: harbor-sunmoonai-redis-dev-pvc

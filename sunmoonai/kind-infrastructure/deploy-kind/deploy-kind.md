@@ -145,6 +145,7 @@ Traefik 与 Harbor 共用同一套脚本（如 `deploy-harbor.sh`）。阶段4�
 
 ### 3.3 存储（Kind 本地 PV）
 
+- **Harbor 清盘 / 权限 / 503 排查**：见 `cicd-platform/harbor/docs/HARBOR-STORAGE-RESET.md`（Kind 与远程 C1 共用说明；Kind 一键：`CLUSTER=KIND deploy-harbor.sh clean|reset-host-data`）。
 - **`KIND_PV_STORAGE_MODE`**（`deploy-kind.conf`）  
   - **`native`（默认）**：`KIND_PV_HOST_PATH`（默认 `/data/kind-local-storage`）为 WSL 发行版根分区上的普通目录；`kind-up.sh` 会 `sudo mkdir -p` 并放宽权限，**不需要** Windows 侧 E 盘、独立 vhdx 或 `attach-vhds.ps1`。数据随发行版磁盘（通常为 `%LOCALAPPDATA%\Packages\...\ext4.vhdx`），请自行关注磁盘空间。  
   - **`vhd`**：沿用旧方案，要求 `wsl --mount` + WSL `/etc/fstab` 挂载 `/mnt/docker-ext4`、`/mnt/pv-kind-ext4` 与 bind 到 `KIND_PV_HOST_PATH`；详见 `docs/wsl的vhdx挂载.md` 与 `attach-vhds.ps1`。  

@@ -184,17 +184,31 @@ clean_pv_data_if_configured() {
         return 0
     fi
     log_warn "清理 PV 持久化数据：$PV_DATA_ROOT/*（集群重建，确保组件从零初始化）"
+    # 注意：bash 的 rm "$dir"/* 不会删除以 . 开头的隐藏文件（如 .user_scripts_initialized），
+    # 会导致「日志显示已清理但数据仍在」。用 find -mindepth 1 -delete 递归清空各子目录内容。
     for subdir in "$PV_DATA_ROOT"/*/; do
         [[ -d "$subdir" ]] || continue
         local comp_name
         comp_name=$(basename "$subdir")
-        if sudo rm -rf "${subdir:?}"/* 2>/dev/null; then
+        if sudo find "${subdir%/}" -mindepth 1 -delete 2>/dev/null; then
             log_info "  已清理 $comp_name"
         else
-            log_warn "  清理 $comp_name 失败（可忽略，权限不足时手动 sudo rm -rf $subdir/*）"
+            log_warn "  清理 $comp_name 失败（可忽略，权限不足时手动: sudo find $subdir -mindepth 1 -delete）"
+        fi
+    done
+    # 历史 local-path 若曾把卷落在 hostPath 根下（pvc-* 目录），一并清掉
+    for pvc_dir in "$PV_DATA_ROOT"/pvc-*/; do
+        [[ -d "$pvc_dir" ]] || continue
+        local pvc_name
+        pvc_name=$(basename "$pvc_dir")
+        if sudo rm -rf "${pvc_dir:?}" 2>/dev/null; then
+            log_info "  已删除遗留动态卷目录 $pvc_name"
         fi
     done
     sudo chmod -R 777 "$PV_DATA_ROOT" 2>/dev/null || true
+    # Harbor 静态 hostPath 空目录默认 root:root，Bitnami PG/Redis(uid=1001) 会 Permission denied
+    sudo mkdir -p "$PV_DATA_ROOT/harbor"/{registry,database,redis,jobservice}
+    sudo chown -R 1001:1001 "$PV_DATA_ROOT/harbor" 2>/dev/null || true
     log_success "PV 数据已清理，组件将全量初始化"
 }
 

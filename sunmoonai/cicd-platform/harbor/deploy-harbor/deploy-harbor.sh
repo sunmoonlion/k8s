@@ -159,6 +159,181 @@ apply_harbor_static_pv_pvc() {
     fi
 }
 
+# 从 infrastructure 配置解析 Harbor 静态卷所在节点的 SSH（按 CLUSTER_HOSTNAME 匹配 HARBOR_STORAGE_NODE_HOSTNAME）
+get_harbor_storage_node_ssh_info() {
+    local ssh_port_var="$1"
+    local ssh_user_var="$2"
+    local ssh_key_var="$3"
+    local ssh_host_var="$4"
+    local target_hostname="${HARBOR_STORAGE_NODE_HOSTNAME:-hsy-local-3}"
+    local cluster_prefix=""
+
+    if [[ "${CLUSTER:-}" =~ ^C[0-9]+$ ]]; then
+        cluster_prefix="${CLUSTER}_"
+    else
+        cluster_prefix="C1_"
+    fi
+
+    local ssh_port="22" ssh_user="root" ssh_key="" ssh_host=""
+
+    if [[ ! -f "$SUNMOONAI_CONFIG_FILE" ]]; then
+        return 1
+    fi
+
+    for i in {1..10}; do
+        local cluster_hostname
+        cluster_hostname=$(grep -E "^${cluster_prefix}SERVER_${i}_CLUSTER_HOSTNAME=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+        if [[ -z "$cluster_hostname" ]]; then
+            cluster_hostname=$(grep -E "^SERVER_${i}_CLUSTER_HOSTNAME=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+        fi
+        if [[ "$cluster_hostname" != "$target_hostname" ]]; then
+            continue
+        fi
+        ssh_host=$(grep -E "^${cluster_prefix}SERVER_${i}_PUBLIC_IP=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+        ssh_port=$(grep -E "^${cluster_prefix}SERVER_${i}_SSH_PORT=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+        ssh_user=$(grep -E "^${cluster_prefix}SERVER_${i}_USER=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+        ssh_key=$(grep -E "^${cluster_prefix}SERVER_${i}_SECRET=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+        if [[ -z "$ssh_host" ]]; then
+            ssh_host=$(grep -E "^SERVER_${i}_PUBLIC_IP=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+            ssh_port=$(grep -E "^SERVER_${i}_SSH_PORT=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+            ssh_user=$(grep -E "^SERVER_${i}_USER=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+            ssh_key=$(grep -E "^SERVER_${i}_SECRET=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+        fi
+        ssh_port="${ssh_port:-22}"
+        ssh_user="${ssh_user:-root}"
+        eval "declare -g $ssh_port_var=\"$ssh_port\""
+        eval "declare -g $ssh_user_var=\"$ssh_user\""
+        eval "declare -g $ssh_key_var=\"$ssh_key\""
+        eval "declare -g $ssh_host_var=\"$ssh_host\""
+        [[ -n "$ssh_host" ]] && return 0
+    done
+    return 1
+}
+
+# 解析 Kind / 远程的宿主机存储根路径
+resolve_harbor_storage_base_path() {
+    local cluster_lower
+    cluster_lower="$(echo "${CLUSTER:-}" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$cluster_lower" == "kind" ]]; then
+        local kind_conf="${PROJECT_ROOT}/../../kind-infrastructure/deploy-kind/deploy-kind.conf"
+        if [[ -f "$kind_conf" ]]; then
+            local from_conf
+            from_conf=$(grep -E '^KIND_PV_HOST_PATH=' "$kind_conf" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+            echo "${from_conf:-${KIND_HARBOR_STORAGE_BASE_PATH:-/data/kind-local-storage}}"
+            return 0
+        fi
+        echo "${KIND_HARBOR_STORAGE_BASE_PATH:-/data/kind-local-storage}"
+        return 0
+    fi
+    echo "${HARBOR_STORAGE_BASE_PATH:-/data/local-storage}"
+}
+
+# 在宿主机上准备 Harbor 静态目录（wipe=true 时清空 harbor/* 与 base 下 pvc-* 遗留）
+harbor_host_storage_prepare() {
+    local wipe="${1:-false}"
+    local storage_base
+    storage_base="$(resolve_harbor_storage_base_path)"
+    local cluster_lower
+    cluster_lower="$(echo "${CLUSTER:-}" | tr '[:upper:]' '[:lower:]')"
+
+    local remote_script
+    remote_script=$(cat <<EOF
+set -euo pipefail
+BASE='${storage_base}'
+HARBOR="\${BASE}/harbor"
+WIPE='${wipe}'
+if [[ "\$WIPE" == "true" ]]; then
+  for sub in registry database redis jobservice trivy; do
+    if [[ -d "\${HARBOR}/\${sub}" ]]; then
+      find "\${HARBOR}/\${sub}" -mindepth 1 -delete 2>/dev/null || rm -rf "\${HARBOR}/\${sub}"/*
+    fi
+  done
+  for p in "\${BASE}"/pvc-*/; do
+    [[ -d "\$p" ]] && rm -rf "\${p:?}"
+  done
+fi
+mkdir -p "\${HARBOR}"/{registry,database,redis,jobservice,trivy}
+chown -R 1001:1001 "\${HARBOR}"
+du -sh "\${HARBOR}" 2>/dev/null || true
+EOF
+)
+
+    if [[ "$cluster_lower" == "kind" ]]; then
+        log_info "Kind：在 WSL 宿主机准备 Harbor 目录 (wipe=${wipe}): ${storage_base}/harbor/*"
+        if ! echo "$remote_script" | sudo -n bash -s 2>/dev/null; then
+            if ! echo "$remote_script" | sudo bash -s; then
+                log_error "Kind 宿主机 Harbor 目录准备失败，请手动执行（见 docs/HARBOR-STORAGE-RESET.md）"
+                return 1
+            fi
+        fi
+        log_success "Kind 宿主机 Harbor 目录已就绪 (uid 1001:1001)"
+        return 0
+    fi
+
+    local ssh_port ssh_user ssh_key ssh_host
+    if ! get_harbor_storage_node_ssh_info ssh_port ssh_user ssh_key ssh_host; then
+        log_error "无法解析存储节点 SSH（HARBOR_STORAGE_NODE_HOSTNAME=${HARBOR_STORAGE_NODE_HOSTNAME}）"
+        log_error "请检查 deploy-infrastructure-all.conf 中 ${CLUSTER:-C1}_SERVER_*_CLUSTER_HOSTNAME 与 deploy-harbor.conf 的 HARBOR_STORAGE_NODE_HOSTNAME 是否一致"
+        return 1
+    fi
+
+    local ssh_key_option=""
+    [[ -n "$ssh_key" && -f "$ssh_key" ]] && ssh_key_option="-i $ssh_key"
+    local ssh_port_option=""
+    [[ -n "$ssh_port" && "$ssh_port" != "22" ]] && ssh_port_option="-p $ssh_port"
+    local target="${ssh_user}@${ssh_host}"
+
+    log_info "远程：在 ${HARBOR_STORAGE_NODE_HOSTNAME} (${target}) 准备 Harbor 目录 (wipe=${wipe}): ${storage_base}/harbor/*"
+    local script_b64
+    script_b64=$(printf '%s' "$remote_script" | base64 -w0 2>/dev/null || printf '%s' "$remote_script" | base64)
+    if ! ssh $ssh_key_option $ssh_port_option -o ConnectTimeout=20 -o StrictHostKeyChecking=no \
+        "$target" "echo '${script_b64}' | base64 -d | sudo -n bash -s" 2>/dev/null; then
+        if ! ssh $ssh_key_option $ssh_port_option -o ConnectTimeout=20 -o StrictHostKeyChecking=no \
+            "$target" "echo '${script_b64}' | base64 -d | sudo bash -s"; then
+            log_error "远程宿主机 Harbor 目录准备失败（SSH/sudo）。请确认 ${target} 可达且用户可 sudo"
+            return 1
+        fi
+    fi
+    log_success "远程宿主机 Harbor 目录已就绪 (${HARBOR_STORAGE_NODE_HOSTNAME}, uid 1001:1001)"
+    return 0
+}
+
+# 宿主机卷权限变更后，自动重启 Harbor 有状态/无状态工作负载（无需人工 kubectl）
+restart_harbor_workloads() {
+    local project_id="$1"
+    local namespace="${2:-$HARBOR_NAMESPACE}"
+
+    if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
+        log_info "命名空间 $namespace 不存在，跳过 Harbor 工作负载重启"
+        return 0
+    fi
+
+    log_info "自动重启 Harbor 工作负载（拾取宿主机目录权限）..."
+    kubectl delete pod -n "$namespace" -l "app.kubernetes.io/name=postgresql,app.kubernetes.io/instance=${project_id}" \
+        --ignore-not-found --wait=false 2>/dev/null || true
+    kubectl delete pod -n "$namespace" -l "app.kubernetes.io/name=redis,app.kubernetes.io/instance=${project_id}" \
+        --ignore-not-found --wait=false 2>/dev/null || true
+    kubectl delete pod -n "$namespace" "${project_id}-harbor-postgresql-0" "${project_id}-harbor-redis-master-0" \
+        --ignore-not-found --wait=false 2>/dev/null || true
+    kubectl rollout restart deployment -n "$namespace" -l "app.kubernetes.io/instance=${project_id}" \
+        2>/dev/null || true
+    log_success "已触发 Harbor Pod 重建"
+}
+
+delete_harbor_static_pvs() {
+    local pvs=(
+        harbor-sunmoonai-registry-dev-pv
+        harbor-sunmoonai-database-dev-pv
+        harbor-sunmoonai-redis-dev-pv
+        harbor-sunmoonai-jobservice-dev-pv
+        harbor-sunmoonai-trivy-dev-pv
+    )
+    for pv in "${pvs[@]}"; do
+        kubectl patch pv "$pv" -p '{"metadata":{"finalizers":null}}' --type=merge 2>/dev/null || true
+        kubectl delete pv "$pv" --ignore-not-found --wait=false 2>/dev/null || true
+    done
+}
+
 # 处理 Harbor 特定的 values 文件
 process_harbor_values() {
     local project_id="$1"
@@ -353,6 +528,11 @@ deploy_harbor_core() {
 
     # 验证 Harbor 配置
     validate_harbor_config
+
+    # 部署前确保静态 hostPath 目录属主为 1001:1001（避免 PG/Redis Permission denied → API 503）
+    if [[ "$dry_run" != "true" ]]; then
+        harbor_host_storage_prepare false || log_warn "宿主机 Harbor 目录权限修正未完全成功，可执行: $0 reset-host-data $project_id（全自动）"
+    fi
 
     # 处理 Harbor 特定的 values 文件
     local harbor_values_file=$(process_harbor_values "$project_id" "$namespace" "$environment")
@@ -1972,7 +2152,7 @@ main() {
             fi
             
             if uninstall_harbor "$project_id" "$namespace" "$environment" "$dry_run"; then
-                log_info "⚠️  PVC 已保留，如需清除数据请使用: $0 clean"
+                log_info "⚠️  PVC 已保留，如需清除数据请使用: $0 clean（见 docs/HARBOR-STORAGE-RESET.md）"
                 return 0
             else
                 return 1
@@ -1985,8 +2165,11 @@ main() {
                 echo "示例: $0 clean $HARBOR_PROJECT_ID $HARBOR_NAMESPACE $ENVIRONMENT false"
                 exit 1
             fi
+            local namespace="${3:-$HARBOR_NAMESPACE}"
+            local environment="${4:-$ENVIRONMENT}"
 
-            log_warn "⚠️  警告：此操作将删除所有 Harbor 数据（包括 PVC）！"
+            log_warn "⚠️  警告：此操作将全自动清理 Harbor（K8s + 宿主机静态卷），默认随后自动 redeploy"
+            log_info "关闭自动重装: 在 deploy-harbor.conf 设 HARBOR_CLEAN_AUTO_REDEPLOY=false"
 
             if ! setup_kubectl_environment; then
                 log_error "无法建立 Kubernetes 连接"
@@ -1998,12 +2181,58 @@ main() {
             local release_name="${project_id}-harbor"
             helm uninstall "$release_name" -n "$namespace" || true
 
-            log_info "删除 PVC（会删除所有数据）..."
-            for pvc in $(kubectl get pvc -n "$namespace" -o name | grep harbor || true); do
+            log_info "删除 Harbor PVC..."
+            for pvc in $(kubectl get pvc -n "$namespace" -o name 2>/dev/null | grep -E 'harbor|sunmoonai-harbor' || true); do
                 kubectl patch "$pvc" -n "$namespace" -p '{"metadata":{"finalizers":null}}' --type=merge >/dev/null 2>&1 || true
                 kubectl delete "$pvc" -n "$namespace" --grace-period=0 --force >/dev/null 2>&1 || true
             done
-            log_success "✅ Harbor 清理完成（包括数据）"
+            # Trivy 动态卷 PVC 命名不含 harbor 前缀
+            kubectl delete pvc -n "$namespace" -l app.kubernetes.io/instance="${project_id}" --ignore-not-found --wait=false 2>/dev/null || true
+            kubectl delete pvc data-sunmoonai-harbor-trivy-0 -n "$namespace" --ignore-not-found --wait=false 2>/dev/null || true
+
+            log_info "删除 Harbor 静态 PV..."
+            delete_harbor_static_pvs
+
+            log_info "清空宿主机 Harbor 目录并 chown 1001:1001（SSH/本地自动）..."
+            if ! harbor_host_storage_prepare true; then
+                log_error "宿主机清盘失败，中止"
+                return 1
+            fi
+
+            if [[ "${HARBOR_CLEAN_AUTO_REDEPLOY:-true}" == "true" ]]; then
+                log_info "HARBOR_CLEAN_AUTO_REDEPLOY=true：自动重新部署 Harbor..."
+                if deploy_harbor "$project_id" "$namespace" "$environment" "false"; then
+                    log_success "✅ Harbor 清理并自动重装完成"
+                else
+                    log_error "自动重装失败，可重试: CLUSTER=${CLUSTER:-C1} $0 deploy $project_id"
+                    return 1
+                fi
+            else
+                log_success "✅ Harbor 清理完成；请执行: CLUSTER=${CLUSTER:-C1} $0 deploy $project_id"
+            fi
+            ;;
+        "reset-host-data")
+            if [[ -z "$project_id" ]]; then
+                log_error "请提供项目ID"
+                echo "用法: $0 reset-host-data <project_id> [namespace] [environment]"
+                exit 1
+            fi
+            local namespace="${2:-$HARBOR_NAMESPACE}"
+            local environment="${3:-$ENVIRONMENT}"
+
+            if ! setup_kubectl_environment; then
+                log_warn "无法连接集群，仅执行宿主机清盘"
+            fi
+
+            log_info "自动重置宿主机 Harbor 静态目录（不卸载 Helm）..."
+            if ! harbor_host_storage_prepare true; then
+                return 1
+            fi
+
+            if kubectl get namespace "$namespace" >/dev/null 2>&1; then
+                restart_harbor_workloads "$project_id" "$namespace"
+            fi
+            log_success "✅ 宿主机 Harbor 已重置并已触发工作负载自动重启"
             ;;
         "status")
             if [[ -z "$project_id" ]]; then
@@ -2050,7 +2279,8 @@ main() {
             echo "  deploy     部署 Harbor（递归部署）"
             echo "  upgrade    升级 Harbor"
             echo "  uninstall  卸载 Harbor（保留 PVC 数据）"
-            echo "  clean      清理 Harbor（包括数据）"
+            echo "  clean           全自动清理并重装（默认含宿主机 SSH 清盘 + redeploy）"
+            echo "  reset-host-data 全自动清宿主机 harbor/* 并重启 Pod（不卸 Helm）"
             echo "  status     检查 Harbor 状态"
             echo "  logs       获取 Harbor 日志"
             echo ""
@@ -2058,7 +2288,8 @@ main() {
             echo "  deploy:    $0 deploy <project_id> [namespace] [environment] [dry_run]"
             echo "  upgrade:   $0 upgrade <project_id> [namespace] [environment] [dry_run]"
             echo "  uninstall: $0 uninstall <project_id> [namespace] [environment] [dry_run]"
-            echo "  clean:     $0 clean <project_id> [namespace] [environment] [dry_run]"
+            echo "  clean:           $0 clean <project_id> [namespace] [environment] [dry_run]"
+            echo "  reset-host-data: $0 reset-host-data <project_id>"
             echo "  status:    $0 status <project_id> [namespace] [environment] [dry_run]"
             echo "  logs:      $0 logs <project_id> [namespace] [environment] [dry_run]"
             echo ""
