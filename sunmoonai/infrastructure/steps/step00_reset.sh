@@ -35,6 +35,7 @@ REMOVE_LOCAL_STORAGE="${STEP00_REMOVE_LOCAL_STORAGE:-false}"
 NETWORK_PLUGIN="${NETWORK_PLUGIN:-${STEP05_CNI:-calico}}"
 HELM_NS="${STEP05_HELM_NAMESPACE:-kube-system}"
 NS_NERDCTL="${STEP02_NERDCTL_NAMESPACE:-k8s.io}"
+REMOTE_KUBECONFIG="${STEP09_REMOTE_KUBECONFIG:-/etc/kubernetes/admin.conf}"
 
 # =============================================================================
 # 工具函数
@@ -202,7 +203,7 @@ cleanup_cni() {
         
         log_info "[Step00] 节点 $node: 尝试通过 Helm 卸载 CNI: $cni_release"
         # 添加错误处理
-        if ! ssh_exec_sudo "$node" "bash -lc 'export KUBECONFIG=/etc/kubernetes/admin.conf && helm uninstall $cni_release -n $HELM_NS 2>/dev/null'"; then
+        if ! ssh_exec_sudo "$node" "bash -lc 'export KUBECONFIG=\"$REMOTE_KUBECONFIG\" && helm uninstall $cni_release -n $HELM_NS 2>/dev/null'"; then
             log_warn "[Step00] 节点 $node: Helm 卸载失败，将依赖 kubeadm reset 清理"
         fi
     else
@@ -240,19 +241,45 @@ cleanup_pvcs() {
     log_warn "[Step00] 节点 $node: REMOVE_LOCAL_STORAGE=true，删除所有 PVC（数据将永久丢失）..."
 
     # 检查 API Server 是否可用
-    if ! ssh_exec "$node" "bash -lc 'KUBECONFIG=$REMOTE_KUBECONFIG kubectl get nodes >/dev/null 2>&1'"; then
+    if ! ssh_exec "$node" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl get nodes >/dev/null 2>&1'"; then
         log_warn "[Step00] 节点 $node: API Server 不可用，跳过 PVC 清理"
         return 0
     fi
 
     # 删除所有命名空间的 PVC
-    ssh_exec "$node" "bash -lc 'KUBECONFIG=$REMOTE_KUBECONFIG kubectl get pvc -A --no-headers 2>/dev/null | awk \"{print \\\$1, \\\$2}\" | while read ns name; do
-        KUBECONFIG=$REMOTE_KUBECONFIG kubectl patch pvc \"\$name\" -n \"\$ns\" -p \"{\\\"metadata\\\":{\\\"finalizers\\\":null}}\" --type=merge 2>/dev/null || true
-        KUBECONFIG=$REMOTE_KUBECONFIG kubectl delete pvc \"\$name\" -n \"\$ns\" --grace-period=0 --force 2>/dev/null || true
+    ssh_exec "$node" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl get pvc -A --no-headers 2>/dev/null | awk \"{print \\\$1, \\\$2}\" | while read ns name; do
+        KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl patch pvc \"\$name\" -n \"\$ns\" -p \"{\\\"metadata\\\":{\\\"finalizers\\\":null}}\" --type=merge 2>/dev/null || true
+        KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl delete pvc \"\$name\" -n \"\$ns\" --grace-period=0 --force 2>/dev/null || true
     done'" || true
 
     log_info "[Step00] 节点 $node: PVC 清理完成，等待 reclaim policy 触发..."
     sleep 5
+}
+
+# 删除所有 PV（含 Released 的 Retain 卷；需 REMOVE_LOCAL_STORAGE=true）
+cleanup_pvs() {
+    local node="$1"
+    local node_type
+    node_type="$(get_server_var "$node" TYPE)"
+
+    if [[ "$REMOVE_LOCAL_STORAGE" != "true" ]]; then
+        return 0
+    fi
+    if [[ "$node_type" != "master" ]]; then
+        return 0
+    fi
+
+    log_warn "[Step00] 节点 $node: 删除所有 PV（含静态 PV）..."
+    if ! ssh_exec "$node" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl get nodes >/dev/null 2>&1'"; then
+        log_warn "[Step00] 节点 $node: API Server 不可用，跳过 PV 清理"
+        return 0
+    fi
+
+    ssh_exec "$node" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl get pv --no-headers 2>/dev/null | awk \"{print \\\$1}\" | while read name; do
+        KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl patch pv \"\$name\" -p \"{\\\"metadata\\\":{\\\"finalizers\\\":null}}\" --type=merge 2>/dev/null || true
+        KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl delete pv \"\$name\" --grace-period=0 --force 2>/dev/null || true
+    done'" || true
+    log_info "[Step00] 节点 $node: PV 清理完成"
 }
 
 # 清理存储组件
@@ -269,6 +296,13 @@ cleanup_storage() {
     # 清理 local-path-provisioner 相关目录
     ssh_exec_sudo "$node" "bash -lc 'rm -rf /opt/local-path-provisioner 2>/dev/null || true'" || true
     ssh_exec_sudo "$node" "bash -lc 'rm -rf /var/lib/local-path-provisioner 2>/dev/null || true'" || true
+
+    # 清理 Step09 配置的宿主机数据目录（local-path + Harbor 静态 PV 等）
+    if [[ "$REMOVE_LOCAL_STORAGE" == "true" ]]; then
+        local storage_path="${STEP09_LOCAL_STORAGE_PATH:-/data/local-storage}"
+        log_warn "[Step00] 节点 $node: REMOVE_LOCAL_STORAGE=true，删除宿主机目录 $storage_path"
+        ssh_exec_sudo "$node" "bash -lc 'rm -rf \"${storage_path}\"/* \"${storage_path}\"/.[!.]* \"${storage_path}\"/..?* 2>/dev/null || true; mkdir -p \"${storage_path}\" && chmod 755 \"${storage_path}\"'" || true
+    fi
     
     # 清理 CSI 驱动相关目录
     ssh_exec_sudo "$node" "bash -lc 'rm -rf /var/lib/kubelet/plugins 2>/dev/null || true'" || true
@@ -357,8 +391,9 @@ execute() {
     # 先清理依赖 API Server 的资源，再停止 Kubernetes 组件
     cleanup_cni "$i"               # 1. 先清理 CNI 网络（需要 API Server 运行）
     cleanup_pvcs "$i"              # 2. 删除 PVC，触发 reclaim policy（REMOVE_LOCAL_STORAGE=true 时生效）
-    cleanup_kubernetes "$i"        # 3. 再执行 kubeadm reset（会停止 API Server）
-    cleanup_storage "$i"           # 4. 清理存储目录
+    cleanup_pvs "$i"               # 3. 删除 PV（含 Retain 静态卷）
+    cleanup_kubernetes "$i"        # 4. 再执行 kubeadm reset（会停止 API Server）
+    cleanup_storage "$i"           # 5. 清理宿主机存储目录（含 /data/local-storage）
     # cleanup_namespaces "$i"      # 5. 移除命名空间清理功能（kubeadm reset 会自动清理）
     cleanup_container_runtime "$i"  # 6. 清理容器运行时
     
