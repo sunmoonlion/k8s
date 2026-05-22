@@ -161,10 +161,11 @@ apply_harbor_static_pv_pvc() {
 
 # 从 infrastructure 配置解析 Harbor 静态卷所在节点的 SSH（按 CLUSTER_HOSTNAME 匹配 HARBOR_STORAGE_NODE_HOSTNAME）
 get_harbor_storage_node_ssh_info() {
-    local ssh_port_var="$1"
-    local ssh_user_var="$2"
-    local ssh_key_var="$3"
-    local ssh_host_var="$4"
+    # 使用 nameref 写回调用方变量（避免 declare -g 与调用方 local 冲突导致 set -u 下 ssh_key 未绑定）
+    local -n _ssh_port="$1"
+    local -n _ssh_user="$2"
+    local -n _ssh_key="$3"
+    local -n _ssh_host="$4"
     local target_hostname="${HARBOR_STORAGE_NODE_HOSTNAME:-hsy-local-3}"
     local cluster_prefix=""
 
@@ -174,7 +175,7 @@ get_harbor_storage_node_ssh_info() {
         cluster_prefix="C1_"
     fi
 
-    local ssh_port="22" ssh_user="root" ssh_key="" ssh_host=""
+    local p_ssh_port="22" p_ssh_user="root" p_ssh_key="" p_ssh_host=""
 
     if [[ ! -f "$SUNMOONAI_CONFIG_FILE" ]]; then
         return 1
@@ -189,23 +190,23 @@ get_harbor_storage_node_ssh_info() {
         if [[ "$cluster_hostname" != "$target_hostname" ]]; then
             continue
         fi
-        ssh_host=$(grep -E "^${cluster_prefix}SERVER_${i}_PUBLIC_IP=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
-        ssh_port=$(grep -E "^${cluster_prefix}SERVER_${i}_SSH_PORT=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
-        ssh_user=$(grep -E "^${cluster_prefix}SERVER_${i}_USER=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
-        ssh_key=$(grep -E "^${cluster_prefix}SERVER_${i}_SECRET=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
-        if [[ -z "$ssh_host" ]]; then
-            ssh_host=$(grep -E "^SERVER_${i}_PUBLIC_IP=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
-            ssh_port=$(grep -E "^SERVER_${i}_SSH_PORT=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
-            ssh_user=$(grep -E "^SERVER_${i}_USER=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
-            ssh_key=$(grep -E "^SERVER_${i}_SECRET=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+        p_ssh_host=$(grep -E "^${cluster_prefix}SERVER_${i}_PUBLIC_IP=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+        p_ssh_port=$(grep -E "^${cluster_prefix}SERVER_${i}_SSH_PORT=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+        p_ssh_user=$(grep -E "^${cluster_prefix}SERVER_${i}_USER=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+        p_ssh_key=$(grep -E "^${cluster_prefix}SERVER_${i}_SECRET=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+        if [[ -z "$p_ssh_host" ]]; then
+            p_ssh_host=$(grep -E "^SERVER_${i}_PUBLIC_IP=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+            p_ssh_port=$(grep -E "^SERVER_${i}_SSH_PORT=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+            p_ssh_user=$(grep -E "^SERVER_${i}_USER=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
+            p_ssh_key=$(grep -E "^SERVER_${i}_SECRET=" "$SUNMOONAI_CONFIG_FILE" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d ' "')
         fi
-        ssh_port="${ssh_port:-22}"
-        ssh_user="${ssh_user:-root}"
-        eval "declare -g $ssh_port_var=\"$ssh_port\""
-        eval "declare -g $ssh_user_var=\"$ssh_user\""
-        eval "declare -g $ssh_key_var=\"$ssh_key\""
-        eval "declare -g $ssh_host_var=\"$ssh_host\""
-        [[ -n "$ssh_host" ]] && return 0
+        p_ssh_port="${p_ssh_port:-22}"
+        p_ssh_user="${p_ssh_user:-root}"
+        _ssh_port="$p_ssh_port"
+        _ssh_user="$p_ssh_user"
+        _ssh_key="$p_ssh_key"
+        _ssh_host="$p_ssh_host"
+        [[ -n "$_ssh_host" ]] && return 0
     done
     return 1
 }
@@ -278,9 +279,9 @@ EOF
     fi
 
     local ssh_key_option=""
-    [[ -n "$ssh_key" && -f "$ssh_key" ]] && ssh_key_option="-i $ssh_key"
+    [[ -n "${ssh_key:-}" && -f "${ssh_key:-}" ]] && ssh_key_option="-i ${ssh_key}"
     local ssh_port_option=""
-    [[ -n "$ssh_port" && "$ssh_port" != "22" ]] && ssh_port_option="-p $ssh_port"
+    [[ -n "${ssh_port:-}" && "${ssh_port}" != "22" ]] && ssh_port_option="-p ${ssh_port}"
     local target="${ssh_user}@${ssh_host}"
 
     log_info "远程：在 ${HARBOR_STORAGE_NODE_HOSTNAME} (${target}) 准备 Harbor 目录 (wipe=${wipe}): ${storage_base}/harbor/*"

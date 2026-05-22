@@ -127,14 +127,20 @@ postgresql:
         volumeMounts:
           - name: data
             mountPath: /bitnami/postgresql
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 64Mi
     persistence:
       enabled: true
       existingClaim: harbor-sunmoonai-database-dev-pvc
     resources:
       limits:
-        memory: "512Mi"  # 限制最大内存使用
+        memory: "384Mi"
       requests:
-        memory: "256Mi"  # 请求最小内存
+        memory: "128Mi"  # hsy-local-3 仅 ~2Gi，压低 requests 便于与 registry/redis 同节点调度
     # 可以在这里自定义PostgreSQL镜像
     # image:
     #   registry: docker.io
@@ -182,14 +188,20 @@ redis:
         volumeMounts:
           - name: redis-data
             mountPath: /bitnami/redis
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 64Mi
     persistence:
       enabled: true
       existingClaim: harbor-sunmoonai-redis-dev-pvc
     resources:
       limits:
-        memory: "256Mi"  # 限制最大内存使用
+        memory: "192Mi"
       requests:
-        memory: "128Mi"  # 请求最小内存
+        memory: "64Mi"
 
 # 禁用外部 Redis 配置，使用内置 Redis
 # externalRedis:
@@ -217,13 +229,36 @@ core:
 # JobService（作业服务）
 jobservice:
   replicaCount: 1
-  maxJobWorkers: 10
+  maxJobWorkers: 3
+  resourcesPreset: "none"
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
 
 # Registry（镜像仓库）
 registry:
   replicaCount: 1
   storage:
     type: "filesystem"
+  server:
+    resourcesPreset: "none"
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+  controller:
+    resourcesPreset: "none"
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
   initContainers:
     - name: fix-storage-owner
       image: docker.io/bitnami/harbor-registry:2.13.2-debian-12-r2
@@ -233,6 +268,12 @@ registry:
       volumeMounts:
         - name: registry-data
           mountPath: /storage
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          memory: 64Mi
 
 # Trivy（镜像扫描）
 trivy:
