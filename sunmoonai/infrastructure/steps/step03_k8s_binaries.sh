@@ -50,8 +50,10 @@ _add_k8s_repo_cmd(){
   local channel="$1"
   cat <<CMD
 set -e
+export DEBIAN_FRONTEND=noninteractive
+APT_OPTS="-o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold"
 apt-get update -y || true
-apt-get install -y ca-certificates curl gnupg || true
+apt-get install -y \$APT_OPTS ca-certificates curl gnupg || true
 install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://pkgs.k8s.io/$channel/deb/Release.key | gpg --batch --yes --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 chmod 0644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
@@ -116,7 +118,7 @@ execute(){
       # 检查必要的工具
       if ! ssh_exec "$i" "bash -lc 'command -v curl >/dev/null 2>&1 && command -v gpg >/dev/null 2>&1'"; then
         log_warn "[Step03] 缺少必要工具，需要在线安装"
-        ssh_exec_sudo "$i" "apt-get update -y && apt-get install -y curl gnupg ca-certificates" || {
+        ssh_exec_sudo "$i" "bash -lc '${APT_NONINTERACTIVE_PREFIX}; apt-get update -y && apt-get install -y ${APT_INSTALL_OPTS} curl gnupg ca-certificates'" || {
           log_error "[Step03] 无法安装必要工具"
           return 1
         }
@@ -144,7 +146,7 @@ execute(){
     
     # 在线安装（可配置超时，默认 600s）
     log_info "[Step03] 节点 $i 尝试在线安装 K8s 组件"
-    if ssh_exec "$i" "$export_proxy bash -lc 'timeout ${ONLINE_TIMEOUT} sudo apt-get update -y && timeout ${ONLINE_TIMEOUT} sudo apt-get install -y kubelet kubeadm kubectl'"; then
+    if ssh_exec "$i" "$export_proxy bash -lc '${APT_NONINTERACTIVE_PREFIX}; timeout ${ONLINE_TIMEOUT} sudo apt-get update -y && timeout ${ONLINE_TIMEOUT} sudo apt-get install -y ${APT_INSTALL_OPTS} kubelet kubeadm kubectl'"; then
       install_ok=true
     fi
   fi
@@ -174,19 +176,7 @@ execute(){
           log_error "[Step03] 复制 deb 包到临时目录失败"
           return 1
         }
-        ssh_exec_sudo "$i" "bash -lc 'set -e; shopt -s nullglob; files=(/tmp/kube*.deb); if [ \${#files[@]} -gt 0 ]; then 
-          # 先安装 kubernetes-cni 依赖（如果存在）
-          if ls /tmp/kubernetes-cni*.deb >/dev/null 2>&1; then
-            dpkg -i /tmp/kubernetes-cni*.deb || true
-          fi
-          # 安装 kube 组件，如果 kubernetes-cni 不存在则忽略依赖
-          if ls /tmp/kubernetes-cni*.deb >/dev/null 2>&1; then
-            dpkg -i \"\${files[@]}\" || apt-get install -f -y
-          else
-            # 如果 kubernetes-cni 不存在，使用 --force-depends 忽略依赖
-            dpkg -i --force-depends \"\${files[@]}\" || apt-get install -f -y
-          fi
-        fi; rm -f /tmp/kube*.deb /tmp/kubernetes-cni*.deb'" && install_ok=true || {
+        ssh_exec_sudo "$i" "bash -lc '${APT_NONINTERACTIVE_PREFIX}; set -e; shopt -s nullglob; files=(/tmp/kube*.deb); if [ \${#files[@]} -gt 0 ]; then if ls /tmp/kubernetes-cni*.deb >/dev/null 2>&1; then dpkg -i /tmp/kubernetes-cni*.deb || true; fi; if ls /tmp/kubernetes-cni*.deb >/dev/null 2>&1; then dpkg -i \"\${files[@]}\" || apt-get install -f -y ${APT_INSTALL_OPTS}; else dpkg -i --force-depends \"\${files[@]}\" || apt-get install -f -y ${APT_INSTALL_OPTS}; fi; fi; rm -f /tmp/kube*.deb /tmp/kubernetes-cni*.deb'" && install_ok=true || {
           log_error "[Step03] deb 包安装失败"
           return 1
         }
@@ -223,7 +213,7 @@ execute(){
       return 1
     else
       log_info "[Step03] 尝试在线重新安装..."
-      ssh_exec_sudo "$i" "bash -lc 'apt-get update -y && apt-get install -y kubelet kubeadm kubectl'" || {
+      ssh_exec_sudo "$i" "bash -lc '${APT_NONINTERACTIVE_PREFIX}; apt-get update -y && apt-get install -y ${APT_INSTALL_OPTS} kubelet kubeadm kubectl'" || {
         log_error "[Step03] 重新安装失败"
         return 1
       }

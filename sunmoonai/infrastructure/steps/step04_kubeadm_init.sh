@@ -257,10 +257,10 @@ execute(){
   # 检查离线包是否存在
   if ssh_exec "$i" "bash -lc 'dir=\"$remote_dir\"; case \"\$dir\" in ~*) dir=\"/home/zym\${dir#\~}\" ;; esac; test -f \"\$dir/debs/conntrack_1%3a1.4.8-1ubuntu1_amd64.deb\" && test -f \"\$dir/debs/socat_1.8.0.0-4build3_amd64.deb\"'"; then
     log_info "[Step04] 使用离线 deb 包安装依赖"
-    ssh_exec_sudo "$i" "bash -lc 'dir=\"$remote_dir\"; case \"\$dir\" in ~*) dir=\"/home/zym\${dir#\~}\" ;; esac; cd \"\$dir/debs\" && dpkg -i conntrack_1%3a1.4.8-1ubuntu1_amd64.deb socat_1.8.0.0-4build3_amd64.deb || apt-get install -f -y'" || true
+    ssh_exec_sudo "$i" "bash -lc '${APT_NONINTERACTIVE_PREFIX}; dir=\"$remote_dir\"; case \"\$dir\" in ~*) dir=\"/home/zym\${dir#\~}\" ;; esac; cd \"\$dir/debs\" && dpkg -i conntrack_1%3a1.4.8-1ubuntu1_amd64.deb socat_1.8.0.0-4build3_amd64.deb || apt-get install -f -y ${APT_INSTALL_OPTS}'" || true
   else
     log_warn "[Step04] 离线包不存在，回退到在线安装"
-    ssh_exec_sudo "$i" "bash -lc 'apt-get update -y >/dev/null 2>&1 || true; apt-get install -y conntrack-tools socat >/dev/null 2>&1 || true'"
+    ssh_exec_sudo "$i" "bash -lc '${APT_NONINTERACTIVE_PREFIX}; apt-get update -y >/dev/null 2>&1 || true; apt-get install -y ${APT_INSTALL_OPTS} conntrack-tools socat >/dev/null 2>&1 || true'"
   fi
   # 根据 packages_deploy_mode 选择镜像获取方式
   if [[ "$PACKAGES_DEPLOY_MODE_EFFECTIVE" == "offline" ]]; then
@@ -312,7 +312,7 @@ execute(){
       return 1
     else
       log_warn "[Step04] 尝试在线重新安装 kubelet"
-      ssh_exec_sudo "$i" "bash -lc 'apt-get update -y && apt-get install -y kubelet'" || {
+      ssh_exec_sudo "$i" "bash -lc '${APT_NONINTERACTIVE_PREFIX}; apt-get update -y && apt-get install -y ${APT_INSTALL_OPTS} kubelet'" || {
         log_error "[Step04] kubelet 安装失败"
         return 1
       }

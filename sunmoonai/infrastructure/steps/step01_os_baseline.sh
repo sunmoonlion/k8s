@@ -127,7 +127,7 @@ _ensure_time_sync(){
     # 检查是否已安装 chrony
     if ! ssh_exec "$i" "bash -lc 'command -v chrony >/dev/null 2>&1'"; then
       log_warn "[Step01] chrony 未安装，需要在线安装"
-      ssh_exec_sudo "$i" "bash -lc 'apt-get update -y >/dev/null 2>&1 || true; apt-get install -y chrony >/dev/null 2>&1 || true; systemctl enable --now chrony >/dev/null 2>&1 || true'" || true
+      ssh_exec_sudo "$i" "bash -lc '${APT_NONINTERACTIVE_PREFIX}; apt-get update -y >/dev/null 2>&1 || true; apt-get install -y ${APT_INSTALL_OPTS} chrony >/dev/null 2>&1 || true; systemctl enable --now chrony >/dev/null 2>&1 || true'" || true
     else
       log_info "[Step01] chrony 已安装，启动服务"
       ssh_exec_sudo "$i" "bash -lc 'systemctl enable --now chrony >/dev/null 2>&1 || true'" || true
@@ -153,10 +153,10 @@ execute(){
   # 检查离线包是否存在
   if ssh_exec "$i" "bash -lc 'dir=\"$remote_dir\"; case \"\$dir\" in ~*) dir=\"/home/zym\${dir#\~}\" ;; esac; test -f \"\$dir/debs/conntrack_1%3a1.4.8-1ubuntu1_amd64.deb\" && test -f \"\$dir/debs/socat_1.8.0.0-4build3_amd64.deb\"'"; then
     log_info "[Step01] 使用离线 deb 包安装依赖"
-    ssh_exec_sudo "$i" "bash -lc 'dir=\"$remote_dir\"; case \"\$dir\" in ~*) dir=\"/home/zym\${dir#\~}\" ;; esac; cd \"\$dir/debs\" && dpkg -i conntrack_1%3a1.4.8-1ubuntu1_amd64.deb socat_1.8.0.0-4build3_amd64.deb || apt-get install -f -y'" || true
+    ssh_exec_sudo "$i" "bash -lc '${APT_NONINTERACTIVE_PREFIX}; dir=\"$remote_dir\"; case \"\$dir\" in ~*) dir=\"/home/zym\${dir#\~}\" ;; esac; cd \"\$dir/debs\" && dpkg -i conntrack_1%3a1.4.8-1ubuntu1_amd64.deb socat_1.8.0.0-4build3_amd64.deb || apt-get install -f -y ${APT_INSTALL_OPTS}'" || true
   else
     log_warn "[Step01] 离线包不存在，回退到在线安装"
-    ssh_exec_sudo "$i" "bash -lc 'export DEBIAN_FRONTEND=noninteractive; apt-get update -y >/dev/null 2>&1 || true; apt-get install -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\" conntrack socat ebtables >/dev/null 2>&1 || true'" || true
+    ssh_exec_sudo "$i" "bash -lc '${APT_NONINTERACTIVE_PREFIX}; apt-get update -y >/dev/null 2>&1 || true; apt-get install -y ${APT_INSTALL_OPTS} conntrack socat ebtables >/dev/null 2>&1 || true'" || true
   fi
 }
 

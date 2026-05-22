@@ -29,6 +29,10 @@ log_success(){ echo -e "\033[32m[SUCCESS]\033[0m $*"; }
 
 need(){ command -v "$1" >/dev/null 2>&1; }
 
+# 非交互 apt/dpkg：避免 config.toml 等配置文件冲突时阻塞（保留已有配置，不弹 Y/I/N/O）
+# 注意：勿在值内嵌双引号，否则嵌入 ssh "..." 时会截断命令字符串
+APT_NONINTERACTIVE_PREFIX="export DEBIAN_FRONTEND=noninteractive"
+APT_INSTALL_OPTS="-o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold"
 
 ## packages-management 模块已移除；如需离线准备，请使用各 Step 的 local 策略或按提示手动上传离线包。
 
