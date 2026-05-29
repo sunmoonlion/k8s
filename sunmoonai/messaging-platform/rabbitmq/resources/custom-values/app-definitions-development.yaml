@@ -1,0 +1,59 @@
+# RabbitMQ application topology for development.
+# One shared RabbitMQ instance, one vhost per app+env, one producer and one worker user per backend.
+
+auth:
+  securePassword: false
+
+loadDefinition:
+  enabled: true
+  existingSecret: rabbitmq-app-definitions
+
+extraConfiguration: |-
+  load_definitions = /app/load_definition.json
+
+extraSecrets:
+  rabbitmq-app-definitions:
+    load_definition.json: |
+      {
+        "vhosts": [
+          {"name": "investment-development"},
+          {"name": "llm-development"},
+          {"name": "tools-development"}
+        ],
+        "users": [
+          {"name": "investment-web-backend-producer", "password": "investment-web-backend-producer-dev", "tags": ""},
+          {"name": "investment-web-backend-worker", "password": "investment-web-backend-worker-dev", "tags": ""},
+          {"name": "investment-admin-backend-producer", "password": "investment-admin-backend-producer-dev", "tags": ""},
+          {"name": "investment-admin-backend-worker", "password": "investment-admin-backend-worker-dev", "tags": ""},
+          {"name": "llm-web-backend-producer", "password": "llm-web-backend-producer-dev", "tags": ""},
+          {"name": "llm-web-backend-worker", "password": "llm-web-backend-worker-dev", "tags": ""},
+          {"name": "llm-admin-backend-producer", "password": "llm-admin-backend-producer-dev", "tags": ""},
+          {"name": "llm-admin-backend-worker", "password": "llm-admin-backend-worker-dev", "tags": ""},
+          {"name": "tools-web-backend-producer", "password": "tools-web-backend-producer-dev", "tags": ""},
+          {"name": "tools-web-backend-worker", "password": "tools-web-backend-worker-dev", "tags": ""},
+          {"name": "tools-admin-backend-producer", "password": "tools-admin-backend-producer-dev", "tags": ""},
+          {"name": "tools-admin-backend-worker", "password": "tools-admin-backend-worker-dev", "tags": ""}
+        ],
+        "permissions": [
+          {"user": "investment-web-backend-producer", "vhost": "investment-development", "configure": "^investment\\.web\\.default$", "write": "^$|^investment\\.web\\.default$", "read": "^$"},
+          {"user": "investment-web-backend-worker", "vhost": "investment-development", "configure": "^investment\\.web\\.default$", "write": "^$|^investment\\.web\\.default$", "read": "^investment\\.web\\.default$"},
+          {"user": "investment-admin-backend-producer", "vhost": "investment-development", "configure": "^investment\\.admin\\.default$", "write": "^$|^investment\\.admin\\.default$", "read": "^$"},
+          {"user": "investment-admin-backend-worker", "vhost": "investment-development", "configure": "^investment\\.admin\\.default$", "write": "^$|^investment\\.admin\\.default$", "read": "^investment\\.admin\\.default$"},
+          {"user": "llm-web-backend-producer", "vhost": "llm-development", "configure": "^llm\\.web\\.default$", "write": "^$|^llm\\.web\\.default$", "read": "^$"},
+          {"user": "llm-web-backend-worker", "vhost": "llm-development", "configure": "^llm\\.web\\.default$", "write": "^$|^llm\\.web\\.default$", "read": "^llm\\.web\\.default$"},
+          {"user": "llm-admin-backend-producer", "vhost": "llm-development", "configure": "^llm\\.admin\\.default$", "write": "^$|^llm\\.admin\\.default$", "read": "^$"},
+          {"user": "llm-admin-backend-worker", "vhost": "llm-development", "configure": "^llm\\.admin\\.default$", "write": "^$|^llm\\.admin\\.default$", "read": "^llm\\.admin\\.default$"},
+          {"user": "tools-web-backend-producer", "vhost": "tools-development", "configure": "^tools\\.web\\.default$", "write": "^$|^tools\\.web\\.default$", "read": "^$"},
+          {"user": "tools-web-backend-worker", "vhost": "tools-development", "configure": "^tools\\.web\\.default$", "write": "^$|^tools\\.web\\.default$", "read": "^tools\\.web\\.default$"},
+          {"user": "tools-admin-backend-producer", "vhost": "tools-development", "configure": "^tools\\.admin\\.default$", "write": "^$|^tools\\.admin\\.default$", "read": "^$"},
+          {"user": "tools-admin-backend-worker", "vhost": "tools-development", "configure": "^tools\\.admin\\.default$", "write": "^$|^tools\\.admin\\.default$", "read": "^tools\\.admin\\.default$"}
+        ],
+        "queues": [
+          {"name": "investment.web.default", "vhost": "investment-development", "durable": true, "auto_delete": false, "arguments": {}},
+          {"name": "investment.admin.default", "vhost": "investment-development", "durable": true, "auto_delete": false, "arguments": {}},
+          {"name": "llm.web.default", "vhost": "llm-development", "durable": true, "auto_delete": false, "arguments": {}},
+          {"name": "llm.admin.default", "vhost": "llm-development", "durable": true, "auto_delete": false, "arguments": {}},
+          {"name": "tools.web.default", "vhost": "tools-development", "durable": true, "auto_delete": false, "arguments": {}},
+          {"name": "tools.admin.default", "vhost": "tools-development", "durable": true, "auto_delete": false, "arguments": {}}
+        ]
+      }

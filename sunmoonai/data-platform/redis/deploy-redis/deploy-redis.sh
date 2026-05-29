@@ -185,20 +185,30 @@ execute_redis_deployment() {
             if [[ "$cluster_lower" == "kind" ]]; then
                 # Kind：静态 hostPath PV + dev-values-kind.yaml
                 local pv_pvc_file="$REDIS_CUSTOM_VALUES_DIR/redis-kind-pv-pvc.yaml"
+                values_file="$REDIS_CUSTOM_VALUES_DIR/dev-values-kind.yaml"
+                if [[ "$project_id" == "nodebull" || "$project_id" == *"-nodebull" ]]; then
+                    pv_pvc_file="$REDIS_CUSTOM_VALUES_DIR/redis-nodebull-kind-pv-pvc.yaml"
+                    values_file="$REDIS_CUSTOM_VALUES_DIR/dev-values-nodebull-kind.yaml"
+                fi
                 if [[ ! -f "$pv_pvc_file" ]]; then
                     log_error "未找到 Kind 静态 PV/PVC 文件: $pv_pvc_file"
                     return 1
                 fi
                 log_info "Kind 集群：应用静态 PV/PVC: $pv_pvc_file"
                 kubectl apply -f "$pv_pvc_file"
-                values_file="$REDIS_CUSTOM_VALUES_DIR/dev-values-kind.yaml"
             else
                 # Remote：动态 local-path
                 values_file="$REDIS_CUSTOM_VALUES_DIR/dev-values.yaml"
+                if [[ "$project_id" == "nodebull" || "$project_id" == *"-nodebull" ]]; then
+                    values_file="$REDIS_CUSTOM_VALUES_DIR/dev-values-nodebull.yaml"
+                fi
             fi
             ;;
         "production"|"prod")
             values_file="$REDIS_CUSTOM_VALUES_DIR/prod-values.yaml"
+            if [[ "$project_id" == "nodebull" || "$project_id" == *"-nodebull" ]]; then
+                values_file="$REDIS_CUSTOM_VALUES_DIR/prod-values-nodebull.yaml"
+            fi
             ;;
         *)
             log_warn "未知环境: $environment，使用 dev-values.yaml"

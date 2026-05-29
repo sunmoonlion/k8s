@@ -21,38 +21,6 @@ spec:
     spec:
       imagePullSecrets:
       - name: ${CELERYWORKER_INVESTMENT_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}
-      initContainers:
-      - name: declare-rabbitmq-queue
-        image: ${CELERYWORKER_INVESTMENT_ADMIN_BACKEND_FULL_IMAGE_NAME}
-        imagePullPolicy: ${IMAGE_PULL_POLICY:-Always}
-        envFrom:
-        - configMapRef:
-            name: ${CELERYWORKER_INVESTMENT_ADMIN_BACKEND_CONFIGMAP_NAME:-celeryworker-investment-admin-backend-config}
-        - secretRef:
-            name: ${CELERYWORKER_INVESTMENT_ADMIN_BACKEND_SECRET_NAME:-celeryworker-investment-admin-backend-secret}
-        command:
-        - python
-        - -c
-        - |
-          import os
-          import sys
-          import time
-          from kombu import Connection, Queue
-
-          broker_url = os.environ["CELERY_BROKER_URL"]
-          queue_name = os.environ["CELERY_QUEUE"]
-          last_error = None
-          for attempt in range(1, 31):
-              try:
-                  with Connection(broker_url) as conn:
-                      Queue(queue_name, durable=True).bind(conn).declare()
-                  print(f"declared RabbitMQ queue: {queue_name}")
-                  sys.exit(0)
-              except Exception as exc:
-                  last_error = exc
-                  print(f"queue declare failed ({attempt}/30): {exc}", flush=True)
-                  time.sleep(2)
-          raise SystemExit(f"failed to declare RabbitMQ queue {queue_name}: {last_error}")
       containers:
       - name: celeryworker
         image: ${CELERYWORKER_INVESTMENT_ADMIN_BACKEND_FULL_IMAGE_NAME}

@@ -108,6 +108,12 @@ run_sub_components_by_priority() {
         local priority="${redis_priority:-700}"
         components+=("$priority:redis:$PROJECT_ROOT/redis/deploy-redis/deploy-redis.sh")
     fi
+
+    # 检查 Redis NodeBull 专用实例
+    if [[ "${redis_nodebull_enabled:-false}" == "true" ]]; then
+        local priority="${redis_nodebull_priority:-690}"
+        components+=("$priority:redis-nodebull:$PROJECT_ROOT/redis/deploy-redis/deploy-redis.sh")
+    fi
     
     # 检查 Elasticsearch
     if [[ "${elasticsearch_enabled:-false}" == "true" ]]; then
@@ -156,7 +162,12 @@ run_sub_components_by_priority() {
         log_info "🚀 ${action} $component..."
         
         if [[ -f "$script_path" ]]; then
-            if call_subscript "$script_path" "$action" "$project_id" "$namespace" "$environment" "$dry_run"; then
+            local component_project_id="$project_id"
+            if [[ "$component" == "redis-nodebull" ]]; then
+                component_project_id="nodebull"
+            fi
+
+            if call_subscript "$script_path" "$action" "$component_project_id" "$namespace" "$environment" "$dry_run"; then
                 log_success "✅ $component ${action} 成功"
             else
                 log_error "❌ $component ${action} 失败"

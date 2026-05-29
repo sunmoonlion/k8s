@@ -28,6 +28,8 @@ spec:
             name: ${LLM_WEB_BACKEND_CONFIGMAP_NAME:-llm-web-backend-config}
         - secretRef:
             name: ${LLM_WEB_BACKEND_SECRET_NAME:-llm-web-backend-secret}
+        - secretRef:
+            name: ${LLM_WEB_BACKEND_QUEUE_REDIS_SECRET_NAME:-llm-web-backend-nodebull-redis-conn}
         resources:
           requests:
             memory: "256Mi"

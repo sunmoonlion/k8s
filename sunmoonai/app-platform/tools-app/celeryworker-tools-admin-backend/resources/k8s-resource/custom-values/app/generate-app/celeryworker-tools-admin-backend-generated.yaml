@@ -21,38 +21,6 @@ spec:
     spec:
       imagePullSecrets:
       - name: harbor-registry-secret
-      initContainers:
-      - name: declare-rabbitmq-queue
-        image: harbor.sunmoonai.com:30443/k8s-images/tools-admin-backend:1.0.0
-        imagePullPolicy: Always
-        envFrom:
-        - configMapRef:
-            name: celeryworker-tools-admin-backend-config
-        - secretRef:
-            name: celeryworker-tools-admin-backend-secret
-        command:
-        - python
-        - -c
-        - |
-          import os
-          import sys
-          import time
-          from kombu import Connection, Queue
-
-          broker_url = os.environ["CELERY_BROKER_URL"]
-          queue_name = os.environ["CELERY_QUEUE"]
-          last_error = None
-          for attempt in range(1, 31):
-              try:
-                  with Connection(broker_url) as conn:
-                      Queue(queue_name, durable=True).bind(conn).declare()
-                  print(f"declared RabbitMQ queue: {queue_name}")
-                  sys.exit(0)
-              except Exception as exc:
-                  last_error = exc
-                  print(f"queue declare failed ({attempt}/30): {exc}", flush=True)
-                  time.sleep(2)
-          raise SystemExit(f"failed to declare RabbitMQ queue {queue_name}: {last_error}")
       containers:
       - name: celeryworker
         image: harbor.sunmoonai.com:30443/k8s-images/tools-admin-backend:1.0.0

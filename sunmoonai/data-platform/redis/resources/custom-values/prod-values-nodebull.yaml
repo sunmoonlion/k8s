@@ -1,0 +1,211 @@
+# Redis NodeBull 队列专用生产环境配置
+
+# 全局配置
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: "fast-ssd"
+
+# 镜像配置
+image:
+  registry: ""
+  repository: bitnami/redis
+  tag: "8.2.1-debian-12-r0"
+  pullPolicy: "IfNotPresent"
+  pullSecrets: []
+
+# 认证配置
+auth:
+  enabled: true
+  password: "Re!d1359admin"
+  existingSecret: ""
+  existingSecretPasswordKey: ""
+  acl:
+    enabled: true
+    sentinel: true
+
+# 主服务配置
+master:
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: "20Gi"
+    accessModes:
+      - "ReadWriteOnce"
+  
+  service:
+    type: "ClusterIP"
+    port: 6379
+  
+  resources:
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+  
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 5
+    successThreshold: 1
+
+  configuration: |-
+    appendonly yes
+    maxmemory-policy noeviction
+  
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+    successThreshold: 1
+
+# 副本配置
+replica:
+  replicaCount: 2
+  enabled: true
+  
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: "20Gi"
+    accessModes:
+      - "ReadWriteOnce"
+  
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+
+# Sentinel 配置
+sentinel:
+  enabled: true
+  image:
+    registry: ""
+    repository: bitnami/redis-sentinel
+    tag: "8.2.1-debian-12-r0"
+    pullPolicy: "IfNotPresent"
+  
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: "5Gi"
+    accessModes:
+      - "ReadWriteOnce"
+  
+  resources:
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+
+# 监控配置
+metrics:
+  enabled: true
+  image:
+    registry: ""
+    repository: bitnami/redis-exporter
+    tag: "1.76.0-debian-12-r0"
+    pullPolicy: "IfNotPresent"
+  
+  serviceMonitor:
+    enabled: true
+    interval: "15s"
+    scrapeTimeout: "10s"
+    honorLabels: true
+
+# 网络策略配置
+networkPolicy:
+  enabled: true
+  allowExternal: false
+
+# 自动扩缩容配置
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+# Redis 特定配置
+redis:
+  # 性能配置
+  maxMemory: "3GB"
+  maxMemoryPolicy: "allkeys-lru"
+  save: "900 1 300 10 60 10000"
+  timeout: "300"
+  tcpKeepalive: "300"
+  tcpBacklog: "511"
+  
+  # 安全配置
+  disableCommands: "FLUSHDB,FLUSHALL"
+  enableTLS: true
+  
+  # 日志配置
+  logLevel: "notice"
+  syslogEnabled: true
+  
+  # 持久化配置
+  appendOnly: "yes"
+  appendfsync: "everysec"
+
+# Ingress 配置 - 通过域名访问
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/backend-protocol: "TCP"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+  hosts:
+    - host: redis.sunmoonai.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# 标签和注解
+commonLabels:
+  app.kubernetes.io/part-of: "data-platform"
+  app.kubernetes.io/managed-by: "helm"
+
+commonAnnotations:
+  app.kubernetes.io/created-by: "unified-deployment-template"
+
+# 安全上下文
+securityContext:
+  enabled: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+podSecurityContext:
+  enabled: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+# 生产环境备份配置
+backup:
+  enabled: true
+  schedule: "0 2 * * *"
+  retention: "30d"
+
+# 生产环境审计配置
+audit:
+  enabled: true
+  level: "metadata"
+  logPath: "/var/log/redis/audit.log"
+  maxAge: "30"
+  maxBackup: "10"
+  maxSize: "100"

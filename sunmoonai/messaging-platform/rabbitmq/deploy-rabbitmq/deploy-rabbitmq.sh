@@ -169,6 +169,7 @@ execute_rabbitmq_deployment() {
     fi
     
     local values_file
+    local app_definitions_file
     local cluster_lower="$(echo "${CLUSTER:-}" | tr '[:upper:]' '[:lower:]')"
     case "$environment" in
         "development"|"dev")
@@ -182,13 +183,16 @@ execute_rabbitmq_deployment() {
                 log_info "Kind 集群：应用静态 PV/PVC: $pv_pvc_file"
                 kubectl apply -f "$pv_pvc_file"
                 values_file="$RABBITMQ_CUSTOM_VALUES_DIR/dev-values-kind.yaml"
+                app_definitions_file="$RABBITMQ_CUSTOM_VALUES_DIR/app-definitions-development.yaml"
             else
                 # Remote：动态 local-path
                 values_file="$RABBITMQ_CUSTOM_VALUES_DIR/dev-values.yaml"
+                app_definitions_file="$RABBITMQ_CUSTOM_VALUES_DIR/app-definitions-development.yaml"
             fi
             ;;
         "production"|"prod")
             values_file="$RABBITMQ_CUSTOM_VALUES_DIR/prod-values.yaml"
+            app_definitions_file="$RABBITMQ_CUSTOM_VALUES_DIR/app-definitions-production.yaml"
             ;;
         *)
             log_error "不支持的环境: $environment"
@@ -200,12 +204,18 @@ execute_rabbitmq_deployment() {
         log_error "环境配置文件不存在: $values_file"
         return 1
     fi
+
+    if [[ ! -f "$app_definitions_file" ]]; then
+        log_error "RabbitMQ 应用拓扑配置文件不存在: $app_definitions_file"
+        return 1
+    fi
     
     # 构建 Helm 命令
     local helm_cmd="helm upgrade --install rabbitmq-$project_id $RABBITMQ_CHART_DIR"
     helm_cmd="$helm_cmd --namespace $namespace"
     helm_cmd="$helm_cmd --values $RABBITMQ_CHART_DIR/values.yaml"
     helm_cmd="$helm_cmd --values $values_file"
+    helm_cmd="$helm_cmd --values $app_definitions_file"
     helm_cmd="$helm_cmd --set global.projectId=$project_id"
     helm_cmd="$helm_cmd --set global.namespace=$namespace"
     # 统一镜像与安全策略

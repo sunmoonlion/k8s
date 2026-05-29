@@ -1,0 +1,59 @@
+# RabbitMQ application topology for production.
+# Replace these passwords with cluster secret-management values before production rollout.
+
+auth:
+  securePassword: false
+
+loadDefinition:
+  enabled: true
+  existingSecret: rabbitmq-app-definitions
+
+extraConfiguration: |-
+  load_definitions = /app/load_definition.json
+
+extraSecrets:
+  rabbitmq-app-definitions:
+    load_definition.json: |
+      {
+        "vhosts": [
+          {"name": "investment-production"},
+          {"name": "llm-production"},
+          {"name": "tools-production"}
+        ],
+        "users": [
+          {"name": "investment-web-backend-producer", "password": "CHANGE_ME_investment_web_backend_producer_prod", "tags": ""},
+          {"name": "investment-web-backend-worker", "password": "CHANGE_ME_investment_web_backend_worker_prod", "tags": ""},
+          {"name": "investment-admin-backend-producer", "password": "CHANGE_ME_investment_admin_backend_producer_prod", "tags": ""},
+          {"name": "investment-admin-backend-worker", "password": "CHANGE_ME_investment_admin_backend_worker_prod", "tags": ""},
+          {"name": "llm-web-backend-producer", "password": "CHANGE_ME_llm_web_backend_producer_prod", "tags": ""},
+          {"name": "llm-web-backend-worker", "password": "CHANGE_ME_llm_web_backend_worker_prod", "tags": ""},
+          {"name": "llm-admin-backend-producer", "password": "CHANGE_ME_llm_admin_backend_producer_prod", "tags": ""},
+          {"name": "llm-admin-backend-worker", "password": "CHANGE_ME_llm_admin_backend_worker_prod", "tags": ""},
+          {"name": "tools-web-backend-producer", "password": "CHANGE_ME_tools_web_backend_producer_prod", "tags": ""},
+          {"name": "tools-web-backend-worker", "password": "CHANGE_ME_tools_web_backend_worker_prod", "tags": ""},
+          {"name": "tools-admin-backend-producer", "password": "CHANGE_ME_tools_admin_backend_producer_prod", "tags": ""},
+          {"name": "tools-admin-backend-worker", "password": "CHANGE_ME_tools_admin_backend_worker_prod", "tags": ""}
+        ],
+        "permissions": [
+          {"user": "investment-web-backend-producer", "vhost": "investment-production", "configure": "^investment\\.web\\.default$", "write": "^$|^investment\\.web\\.default$", "read": "^$"},
+          {"user": "investment-web-backend-worker", "vhost": "investment-production", "configure": "^investment\\.web\\.default$", "write": "^$|^investment\\.web\\.default$", "read": "^investment\\.web\\.default$"},
+          {"user": "investment-admin-backend-producer", "vhost": "investment-production", "configure": "^investment\\.admin\\.default$", "write": "^$|^investment\\.admin\\.default$", "read": "^$"},
+          {"user": "investment-admin-backend-worker", "vhost": "investment-production", "configure": "^investment\\.admin\\.default$", "write": "^$|^investment\\.admin\\.default$", "read": "^investment\\.admin\\.default$"},
+          {"user": "llm-web-backend-producer", "vhost": "llm-production", "configure": "^llm\\.web\\.default$", "write": "^$|^llm\\.web\\.default$", "read": "^$"},
+          {"user": "llm-web-backend-worker", "vhost": "llm-production", "configure": "^llm\\.web\\.default$", "write": "^$|^llm\\.web\\.default$", "read": "^llm\\.web\\.default$"},
+          {"user": "llm-admin-backend-producer", "vhost": "llm-production", "configure": "^llm\\.admin\\.default$", "write": "^$|^llm\\.admin\\.default$", "read": "^$"},
+          {"user": "llm-admin-backend-worker", "vhost": "llm-production", "configure": "^llm\\.admin\\.default$", "write": "^$|^llm\\.admin\\.default$", "read": "^llm\\.admin\\.default$"},
+          {"user": "tools-web-backend-producer", "vhost": "tools-production", "configure": "^tools\\.web\\.default$", "write": "^$|^tools\\.web\\.default$", "read": "^$"},
+          {"user": "tools-web-backend-worker", "vhost": "tools-production", "configure": "^tools\\.web\\.default$", "write": "^$|^tools\\.web\\.default$", "read": "^tools\\.web\\.default$"},
+          {"user": "tools-admin-backend-producer", "vhost": "tools-production", "configure": "^tools\\.admin\\.default$", "write": "^$|^tools\\.admin\\.default$", "read": "^$"},
+          {"user": "tools-admin-backend-worker", "vhost": "tools-production", "configure": "^tools\\.admin\\.default$", "write": "^$|^tools\\.admin\\.default$", "read": "^tools\\.admin\\.default$"}
+        ],
+        "queues": [
+          {"name": "investment.web.default", "vhost": "investment-production", "durable": true, "auto_delete": false, "arguments": {}},
+          {"name": "investment.admin.default", "vhost": "investment-production", "durable": true, "auto_delete": false, "arguments": {}},
+          {"name": "llm.web.default", "vhost": "llm-production", "durable": true, "auto_delete": false, "arguments": {}},
+          {"name": "llm.admin.default", "vhost": "llm-production", "durable": true, "auto_delete": false, "arguments": {}},
+          {"name": "tools.web.default", "vhost": "tools-production", "durable": true, "auto_delete": false, "arguments": {}},
+          {"name": "tools.admin.default", "vhost": "tools-production", "durable": true, "auto_delete": false, "arguments": {}}
+        ]
+      }

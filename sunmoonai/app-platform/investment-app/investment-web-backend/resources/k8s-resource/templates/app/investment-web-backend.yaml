@@ -28,6 +28,8 @@ spec:
             name: ${INVESTMENT_WEB_BACKEND_CONFIGMAP_NAME:-investment-web-backend-config}
         - secretRef:
             name: ${INVESTMENT_WEB_BACKEND_SECRET_NAME:-investment-web-backend-secret}
+        - secretRef:
+            name: ${INVESTMENT_WEB_BACKEND_QUEUE_REDIS_SECRET_NAME:-investment-web-backend-nodebull-redis-conn}
         resources:
           requests:
             memory: "256Mi"
