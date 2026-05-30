@@ -17,7 +17,7 @@ OUTPUT_DIR="$SCRIPT_DIR"
 # 尝试读取主应用的 deploy-*.conf
 MAIN_DEPLOY_CONFIG="$PROJECT_ROOT/deploy-tools-web-frontend/app/deploy-app/deploy-tools-web-frontend.conf"
 if [ -f "$MAIN_DEPLOY_CONFIG" ]; then
-    _temp_namespace=$(source "$MAIN_DEPLOY_CONFIG" 2>/dev/null && echo "${INVESTMENT_WEB_FRONTEND_NAMESPACE:-}")
+    _temp_namespace=$(source "$MAIN_DEPLOY_CONFIG" 2>/dev/null && echo "${TOOLS_WEB_FRONTEND_NAMESPACE:-}")
     _temp_environment=$(source "$MAIN_DEPLOY_CONFIG" 2>/dev/null && echo "${ENVIRONMENT:-}")
     [ -n "$_temp_namespace" ] && [ -z "${NAMESPACE:-}" ] && export NAMESPACE="$_temp_namespace"
     [ -n "$_temp_environment" ] && [ -z "${ENVIRONMENT:-}" ] && export ENVIRONMENT="$_temp_environment"

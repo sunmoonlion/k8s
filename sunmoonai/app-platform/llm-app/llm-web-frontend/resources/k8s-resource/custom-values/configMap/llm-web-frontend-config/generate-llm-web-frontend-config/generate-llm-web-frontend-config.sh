@@ -17,7 +17,7 @@ OUTPUT_DIR="$SCRIPT_DIR"
 # 尝试读取主应用的 deploy-*.conf（作为基础配置的默认值源）
 MAIN_DEPLOY_CONFIG="$PROJECT_ROOT/deploy-llm-web-frontend/app/deploy-app/deploy-llm-web-frontend.conf"
 if [ -f "$MAIN_DEPLOY_CONFIG" ]; then
-    _temp_namespace=$(source "$MAIN_DEPLOY_CONFIG" 2>/dev/null && echo "${INVESTMENT_WEB_FRONTEND_NAMESPACE:-}")
+    _temp_namespace=$(source "$MAIN_DEPLOY_CONFIG" 2>/dev/null && echo "${LLM_WEB_FRONTEND_NAMESPACE:-}")
     _temp_environment=$(source "$MAIN_DEPLOY_CONFIG" 2>/dev/null && echo "${ENVIRONMENT:-}")
 
     [ -n "$_temp_namespace" ] && [ -z "${NAMESPACE:-}" ] && export NAMESPACE="$_temp_namespace"
