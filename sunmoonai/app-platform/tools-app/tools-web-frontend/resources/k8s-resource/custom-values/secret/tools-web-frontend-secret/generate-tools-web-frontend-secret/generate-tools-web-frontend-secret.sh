@@ -1,5 +1,5 @@
 #!/bin/bash
-# Tools Web Frontend Secret YAML 生成脚本
+# TOOLS Web Frontend Secret YAML 生成脚本
 # 根据配置生成 Secret 的 YAML 文件
 
 set -euo pipefail
@@ -17,7 +17,7 @@ OUTPUT_DIR="$SCRIPT_DIR"
 # 尝试读取主应用的 deploy-*.conf
 MAIN_DEPLOY_CONFIG="$PROJECT_ROOT/deploy-tools-web-frontend/app/deploy-app/deploy-tools-web-frontend.conf"
 if [ -f "$MAIN_DEPLOY_CONFIG" ]; then
-    _temp_namespace=$(source "$MAIN_DEPLOY_CONFIG" 2>/dev/null && echo "${TOOLS_WEB_FRONTEND_NAMESPACE:-}")
+    _temp_namespace=$(source "$MAIN_DEPLOY_CONFIG" 2>/dev/null && echo "${INVESTMENT_WEB_FRONTEND_NAMESPACE:-}")
     _temp_environment=$(source "$MAIN_DEPLOY_CONFIG" 2>/dev/null && echo "${ENVIRONMENT:-}")
     [ -n "$_temp_namespace" ] && [ -z "${NAMESPACE:-}" ] && export NAMESPACE="$_temp_namespace"
     [ -n "$_temp_environment" ] && [ -z "${ENVIRONMENT:-}" ] && export ENVIRONMENT="$_temp_environment"
@@ -51,9 +51,6 @@ export NAMESPACE="${NAMESPACE:-}"
 export ENVIRONMENT="${ENVIRONMENT:-}"
 export ENV="${ENV:-}"
 
-export CASDOOR_CLIENT_SECRET="${CASDOOR_CLIENT_SECRET:-}"
-export REDIS_URL="${REDIS_URL:-}"
-
 # 验证 YAML 文件
 validate_yaml() {
     local yaml_file="$1"
@@ -75,7 +72,7 @@ validate_yaml() {
 
 # 生成 YAML
 main() {
-    log_info "开始生成 Tools Web Frontend Secret YAML 文件..."
+    log_info "开始生成 TOOLS Web Frontend Secret YAML 文件..."
     log_info "输出目录: $OUTPUT_DIR"
 
     local full_template_path

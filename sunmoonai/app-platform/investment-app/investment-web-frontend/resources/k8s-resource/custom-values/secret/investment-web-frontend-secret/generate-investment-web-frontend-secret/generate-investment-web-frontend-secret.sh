@@ -51,9 +51,6 @@ export NAMESPACE="${NAMESPACE:-}"
 export ENVIRONMENT="${ENVIRONMENT:-}"
 export ENV="${ENV:-}"
 
-export CASDOOR_CLIENT_SECRET="${CASDOOR_CLIENT_SECRET:-}"
-export REDIS_URL="${REDIS_URL:-}"
-
 # 验证 YAML 文件
 validate_yaml() {
     local yaml_file="$1"

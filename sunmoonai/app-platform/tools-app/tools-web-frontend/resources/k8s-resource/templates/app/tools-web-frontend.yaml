@@ -23,11 +23,6 @@ spec:
         imagePullPolicy: ${IMAGE_PULL_POLICY:-Always}
         ports:
         - containerPort: 3000
-        envFrom:
-        - configMapRef:
-            name: ${TOOLS_WEB_FRONTEND_CONFIGMAP_NAME:-tools-web-frontend-config}
-        - secretRef:
-            name: ${TOOLS_WEB_FRONTEND_SECRET_NAME:-tools-web-frontend-secret}
         resources:
           requests:
             memory: "256Mi"

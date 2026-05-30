@@ -23,11 +23,6 @@ spec:
         imagePullPolicy: ${IMAGE_PULL_POLICY:-Always}
         ports:
         - containerPort: 3000
-        envFrom:
-        - configMapRef:
-            name: ${LLM_WEB_FRONTEND_CONFIGMAP_NAME:-llm-web-frontend-config}
-        - secretRef:
-            name: ${LLM_WEB_FRONTEND_SECRET_NAME:-llm-web-frontend-secret}
         resources:
           requests:
             memory: "256Mi"
