@@ -410,8 +410,13 @@ run_db_access_bootstrap() {
         return 1
     fi
 
-    log_info "开始执行 Investment Admin Backend DB bootstrap..."
-    CLUSTER="${CLUSTER:-}" K8S_TARGET_MODE="${CLUSTER:-}" "$bootstrap_script"
+    log_info "开始执行 Investment Admin Backend DB bootstrap (namespace=${NAMESPACE})..."
+    APP_NAMESPACE="${NAMESPACE}" \
+    DATA_NAMESPACE="${DATA_NAMESPACE:-}" \
+    ENVIRONMENT="${ENVIRONMENT:-dev}" \
+    CLUSTER="${CLUSTER:-}" \
+    K8S_TARGET_MODE="${CLUSTER:-}" \
+    "$bootstrap_script"
     log_success "✅ Investment Admin Backend DB bootstrap 完成"
 }
 

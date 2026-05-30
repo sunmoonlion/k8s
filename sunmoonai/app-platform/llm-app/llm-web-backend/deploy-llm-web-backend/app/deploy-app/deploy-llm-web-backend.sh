@@ -410,8 +410,14 @@ run_db_access_bootstrap() {
         return 1
     fi
 
-    log_info "开始执行 Llm Web Backend DB bootstrap..."
-    CLUSTER="${CLUSTER:-}" K8S_TARGET_MODE="${CLUSTER:-}" "$bootstrap_script"
+    log_info "开始执行 Llm Web Backend DB bootstrap (namespace=${NAMESPACE})..."
+    APP_NAMESPACE="${NAMESPACE}" \
+    DATA_NAMESPACE="${DATA_NAMESPACE:-}" \
+    ENVIRONMENT="${ENVIRONMENT:-dev}" \
+    CLUSTER="${CLUSTER:-}" \
+    K8S_TARGET_MODE="${CLUSTER:-}" \
+    ENABLE_NODEBULL_REDIS="${ENABLE_NODEBULL_REDIS:-true}" \
+    "$bootstrap_script"
     log_success "✅ Llm Web Backend DB bootstrap 完成"
 }
 
