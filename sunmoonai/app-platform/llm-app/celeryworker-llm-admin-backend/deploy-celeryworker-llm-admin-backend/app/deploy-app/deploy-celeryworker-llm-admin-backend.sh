@@ -58,7 +58,7 @@ DEFAULT_PROJECT_ID="${CELERYWORKER_LLM_ADMIN_BACKEND_PROJECT_ID:-}"
 DEFAULT_NAMESPACE="${CELERYWORKER_LLM_ADMIN_BACKEND_NAMESPACE:-}"
 DEFAULT_ENVIRONMENT="${ENVIRONMENT:-}"
 
-RESOURCES_DIR="../../../resources"
+RESOURCES_DIR="$APP_ROOT/resources"
 K8S_RESOURCE_DIR="${RESOURCES_DIR}/k8s-resource"
 CELERYWORKER_LLM_ADMIN_BACKEND_YAML="${K8S_RESOURCE_DIR}/custom-values/app/generate-app/celeryworker-llm-admin-backend-generated.yaml"
 CELERYWORKER_LLM_ADMIN_BACKEND_PVC_YAML="${K8S_RESOURCE_DIR}/custom-values/pvc/celeryworker-llm-admin-backend-pvc/generate-celeryworker-llm-admin-backend-pvc/celeryworker-llm-admin-backend-pvc-generated.yaml"
