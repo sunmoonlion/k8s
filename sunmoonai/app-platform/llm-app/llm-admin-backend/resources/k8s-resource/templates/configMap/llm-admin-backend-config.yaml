@@ -29,3 +29,6 @@ data:
 
   # 前端跳转地址（登录完成后跳回）
   FRONTEND_BASE_URL: "${FRONTEND_BASE_URL}"
+
+  # Celery producer（默认队列，需与 celeryworker 一致）
+  CELERY_QUEUE: "${CELERY_QUEUE}"

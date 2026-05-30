@@ -30,8 +30,8 @@ spec:
         - -c
         - |
           set -eu
-          export NODE_ENV="${NODE_ENV:-production}"
-          export QUEUE_ON="${QUEUE_ON:-true}"
+          export NODE_ENV="__CONTAINER_NODE_ENV_DEFAULT__"
+          export QUEUE_ON="__CONTAINER_QUEUE_ON_DEFAULT__"
           exec node dist/worker
         envFrom:
         - configMapRef:

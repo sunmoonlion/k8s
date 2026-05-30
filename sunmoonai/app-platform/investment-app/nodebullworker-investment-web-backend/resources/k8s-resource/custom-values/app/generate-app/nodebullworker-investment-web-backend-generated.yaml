@@ -23,7 +23,7 @@ spec:
       - name: harbor-registry-secret
       containers:
       - name: nodebullworker
-        image: harbor.sunmoonai.com:30443/k8s-images/investment-web-backend:1.0.0
+        image: harbor.sunmoonai.com:30443/app-images/investment-web-backend:1.0.0
         imagePullPolicy: Always
         command:
         - sh
@@ -42,6 +42,8 @@ spec:
             name: nodebullworker-investment-web-backend-config
         - secretRef:
             name: nodebullworker-investment-web-backend-secret
+        - secretRef:
+            name: investment-web-backend-nodebull-redis-conn
         env:
         - name: QUEUE_WORKER_SERVICE
           value: "investment-web-backend"

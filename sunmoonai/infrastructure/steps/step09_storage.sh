@@ -732,7 +732,8 @@ _install_local_path_offline(){
     # 离线模式：直接内联生成 YAML，无需网络
     local storage_path="${STEP09_LOCAL_STORAGE_PATH:-/opt/local-path-provisioner}"
     local helper_image="${STEP09_HELPER_IMAGE:-busybox}"
-    log_info "[Step09] 生成 local-path-storage.yaml（storePath=$storage_path, helperImage=$helper_image）"
+    local helper_pull_policy="${STEP09_HELPER_IMAGE_PULL_POLICY:-IfNotPresent}"
+    log_info "[Step09] 生成 local-path-storage.yaml（storePath=$storage_path, helperImage=$helper_image, helperPullPolicy=$helper_pull_policy）"
     ssh_exec "$master_node_idx" "bash -lc 'KUBECONFIG=\"$REMOTE_KUBECONFIG\" kubectl apply -f -'" <<YAML
 apiVersion: v1
 kind: Namespace
@@ -868,7 +869,7 @@ data:
       containers:
         - name: helper-pod
           image: ${helper_image}
-          imagePullPolicy: Never
+          imagePullPolicy: ${helper_pull_policy}
           securityContext:
             runAsUser: 0
   setup: |-

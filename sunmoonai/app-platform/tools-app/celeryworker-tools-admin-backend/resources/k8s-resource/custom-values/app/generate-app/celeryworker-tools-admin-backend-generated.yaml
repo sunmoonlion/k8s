@@ -23,7 +23,7 @@ spec:
       - name: harbor-registry-secret
       containers:
       - name: celeryworker
-        image: harbor.sunmoonai.com:30443/k8s-images/tools-admin-backend:1.0.0
+        image: harbor.sunmoonai.com:30443/app-images/tools-admin-backend:1.0.0
         imagePullPolicy: Always
         command:
         - sh
@@ -63,20 +63,22 @@ spec:
         livenessProbe:
           exec:
             command:
-            - celery
-            - -A
-            - app.worker
-            - inspect
-            - ping
-          initialDelaySeconds: 30
+            - sh
+            - -c
+            - celery -A app.worker inspect ping --timeout 10
+          initialDelaySeconds: 60
           periodSeconds: 30
+          timeoutSeconds: 20
+          failureThreshold: 3
         readinessProbe:
           exec:
             command:
-            - celery
-            - -A
-            - app.worker
-            - inspect
-            - ping
+            - sh
+            - -c
+            - grep -aq celery /proc/1/cmdline
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
           initialDelaySeconds: 10
           periodSeconds: 15

@@ -87,6 +87,10 @@ main() {
 
     log_info "生成 app: $OUTPUT_FILE"
     sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$full_template_path" | envsubst > "$full_output_path"
+    sed -i \
+        -e 's|__CONTAINER_NODE_ENV_DEFAULT__|\${NODE_ENV:-production}|g' \
+        -e 's|__CONTAINER_QUEUE_ON_DEFAULT__|\${QUEUE_ON:-true}|g' \
+        "$full_output_path"
     validate_yaml "$full_output_path"
     log_success "✅ app 生成完成: $OUTPUT_FILE"
 }
