@@ -216,11 +216,23 @@ portal:
 # Core（核心服务）
 core:
   replicaCount: 1
+  startupProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 30
 
 # JobService（作业服务）
 jobservice:
   replicaCount: 1
   maxJobWorkers: 10
+  startupProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 30
 
 # Registry（镜像仓库）
 registry:

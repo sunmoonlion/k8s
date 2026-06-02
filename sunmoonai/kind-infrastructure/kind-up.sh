@@ -258,6 +258,43 @@ create_kind_cluster() {
     log_info "Kubeconfig 已写入: $KIND_KUBECONFIG"
 }
 
+configure_kind_node_runtime() {
+    local node
+    local inotify_instances="${KIND_INOTIFY_MAX_USER_INSTANCES:-8192}"
+    local inotify_watches="${KIND_INOTIFY_MAX_USER_WATCHES:-1048576}"
+
+    log_info "初始化 Kind 节点运行时：清理非法 DNS search 条目并提高 inotify 限额"
+    while IFS= read -r node; do
+        [[ -n "$node" ]] || continue
+        if ! docker exec "$node" sh -c "
+            awk '
+                /^search[[:space:]]/ {
+                    line = \"search\"
+                    for (i = 2; i <= NF; i++) {
+                        if (\$i !~ /\\//) {
+                            line = line \" \" \$i
+                        }
+                    }
+                    if (line != \"search\") {
+                        print line
+                    }
+                    next
+                }
+                { print }
+            ' /etc/resolv.conf > /tmp/resolv.conf.clean &&
+            cat /tmp/resolv.conf.clean > /etc/resolv.conf &&
+            sysctl -w \
+                fs.inotify.max_user_instances=$inotify_instances \
+                fs.inotify.max_user_watches=$inotify_watches >/dev/null
+        "; then
+            log_error "Kind 节点运行时初始化失败: $node"
+            return 1
+        fi
+        log_info "  已初始化 $node"
+    done < <(kind get nodes --name "$KIND_CLUSTER_NAME")
+    log_success "Kind 节点运行时初始化完成"
+}
+
 ensure_storage_check_hook_installed
 
 log_info "0/3 存储检查（native：目录就绪；vhd：独立盘挂载）"
@@ -265,6 +302,7 @@ ensure_storage_mounts_ready
 
 log_info "1/3 创建 Kind 集群（已存在则跳过）"
 create_kind_cluster
+configure_kind_node_runtime
 
 read_kind_config
 if [[ ! -f "$KIND_KUBECONFIG" ]]; then
