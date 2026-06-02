@@ -64,7 +64,7 @@ main() {
   if declare -F get_cluster_harbor_registry >/dev/null; then
     export DOCKER_SERVER="${DOCKER_SERVER:-$(get_cluster_harbor_registry)}"
   else
-    export DOCKER_SERVER="${DOCKER_SERVER:-harbor.sunmoonai.com}"
+    export DOCKER_SERVER="${DOCKER_SERVER:-harbor.sunmoonai.com:30443}"
   fi
   
   local generate_script="$PROJECT_ROOT/resources/k8s-resource/custom-values/secret/harbor-registry-secret/generate-harbor-registry-secret/generate-harbor-registry-secret.sh"
