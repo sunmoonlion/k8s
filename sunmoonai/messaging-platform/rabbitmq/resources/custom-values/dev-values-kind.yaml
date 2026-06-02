@@ -93,16 +93,16 @@ startupProbe:
 livenessProbe:
   enabled: true
   initialDelaySeconds: 30        # 从默）120 秒缩短到 30 秒（参）flower）
-  periodSeconds: 10              # 从默）30 秒缩短到 10 秒，更快发现问题
-  timeoutSeconds: 5              # 从默）20 秒缩短到 5 ）
+  periodSeconds: 30              # Kind 环境资源有限，避免诊断命令堆积
+  timeoutSeconds: 20             # rabbitmq-diagnostics 在 Kind 环境中可能需要约 10 秒
   failureThreshold: 5            # 保持默认 6，允许更多失败次）
   successThreshold: 1
 
 readinessProbe:
   enabled: true
   initialDelaySeconds: 0         # ）5 秒缩短到 0 秒（参）mongo-express，立即开始检查）
-  periodSeconds: 5               # 从默）30 秒缩短到 5 秒，更快响应
-  timeoutSeconds: 3              # 从默）20 秒缩短到 3 ）
+  periodSeconds: 10              # Kind 环境资源有限，避免诊断命令堆积
+  timeoutSeconds: 20             # rabbitmq-diagnostics 在 Kind 环境中可能需要约 10 秒
   failureThreshold: 3            # 保持默认
   successThreshold: 1
 
@@ -136,4 +136,3 @@ networkPolicy:
 # 集群配置 - 开发环境单节点
 clustering:
   enabled: false
-
