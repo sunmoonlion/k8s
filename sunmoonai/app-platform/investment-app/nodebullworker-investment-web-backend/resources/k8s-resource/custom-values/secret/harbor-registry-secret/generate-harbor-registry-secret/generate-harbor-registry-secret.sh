@@ -36,6 +36,36 @@ export NAMESPACE="${NAMESPACE:-}"
 export ENVIRONMENT="${ENVIRONMENT:-}"
 export ENV="${ENV:-}"
 
+# 解析 Docker registry 密码。仓库内只保留占位符，真实值通过环境变量或集群 Secret 注入。
+resolve_docker_password() {
+    local password="${DOCKER_PASSWORD:-}"
+    if [[ -n "$password" && "$password" != "TODO_FILL_IN_HARBOR_PASSWORD" ]]; then
+        printf '%s' "$password"
+        return 0
+    fi
+
+    if [[ -n "${HARBOR_ADMIN_PASSWORD:-}" ]]; then
+        printf '%s' "$HARBOR_ADMIN_PASSWORD"
+        return 0
+    fi
+
+    if command -v kubectl >/dev/null 2>&1; then
+        local secret_namespace="${HARBOR_SECRET_NAMESPACE:-cicd-platform-dev}"
+        local secret_name="${HARBOR_AUTH_SECRET_NAME:-harbor-secret}"
+        local secret_key="${HARBOR_AUTH_SECRET_PASSWORD_KEY:-HARBOR_ADMIN_PASSWORD}"
+        local secret_value
+        secret_value=$(kubectl get secret "$secret_name" -n "$secret_namespace" \
+            -o "jsonpath={.data.${secret_key}}" 2>/dev/null | base64 -d 2>/dev/null || true)
+        if [[ -n "$secret_value" ]]; then
+            printf '%s' "$secret_value"
+            return 0
+        fi
+    fi
+
+    log_error "未提供 Harbor registry 密码。请设置 DOCKER_PASSWORD 或 HARBOR_ADMIN_PASSWORD，或确保可读取 cicd-platform-dev/harbor-secret。"
+    return 1
+}
+
 # 生成 base64 编码的 Docker config JSON
 HARBOR_AUTH_STRING=$(echo -n "${DOCKER_USERNAME}:${DOCKER_PASSWORD}" | base64 -w 0)
 HARBOR_DOCKER_CONFIG_JSON=$(echo -n "{\"auths\":{\"${DOCKER_SERVER}\":{\"username\":\"${DOCKER_USERNAME}\",\"password\":\"${DOCKER_PASSWORD}\",\"auth\":\"${HARBOR_AUTH_STRING}\"}}}" | base64 -w 0)
