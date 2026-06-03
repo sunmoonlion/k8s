@@ -88,7 +88,7 @@ cd k8s/sunmoonai/kind-infrastructure
 
 ### 2.6 可选：WSL 宿主机 Harbor 域名解析与登录。
 
-在 WSL 中执行（默认添加 Harbor 解析到 Kind control-plane IP，并可选登录 Harbor）：
+在 WSL 中执行（添加 Harbor 解析到 WSL 本机可访问的 Harbor 入口，并可选登录 Harbor）：
 
 ```bash
 cd k8s/sunmoonai/kind-infrastructure
@@ -141,7 +141,7 @@ Traefik 与 Harbor 共用同一套脚本（如 `deploy-harbor.sh`）。阶段4�
 ### 3.2 集群拓扑与 Harbor（kind-cluster.yaml）
 
 - 默认 1 control-plane + 2 worker；Traefik NodePort 通过 control-plane 的 extraPortMappings 映射到宿主机。Worker 数量与端口映射见上级目录 **`kind-cluster.yaml`**，需自定义时修改后重新执行 `kind-up.sh`。
-- **集群内** Harbor 解析：`kind-cluster.yaml` 中通过 extraHosts 将 `harbor.sunmoonai.com` 指向固定 IP（默认 172.18.0.3，即第一个 worker）。**创建集群前须事先确定 Traefik 会跑在哪个节点**，并修改该 IP，否则集群内拉取 Harbor 镜像会失败，需改配置后重建集群。与远程 Step11 的 /etc/hosts 等效。
+- **集群内** Harbor 解析：Kind 节点启动后由 `apply-kind-node-harbor-hosts.sh` 在各节点 `/etc/hosts` 中维护 `harbor.sunmoonai.com`，默认指向节点默认路由网关（Docker 宿主机入口），再通过宿主机发布的 `30443` 端口访问 Harbor。不要再写死 control-plane/worker 容器 IP；容器 IP 和 IPv6 解析顺序在 WSL/Docker 重启后都可能变化。
 
 ### 3.3 存储（Kind 本地 PV）
 
@@ -196,7 +196,8 @@ kubectl get storageclass
 | `apply-namespaces-existing-cluster.sh` | 被 kind-up.sh 调用。对现成集群按配置创建命名空间（与 Step07 同源）。 |
 | `apply-nfs-existing-cluster.sh` | 被 kind-up.sh 调用；需 WSL 上已跑过 wsl-setup-nfs-server.sh。 |
 | `wsl-setup-nfs-server.sh` | 在 WSL 中安装 nfs-kernel-server 并导出 `/data/kind-nfs`（一次性）。 |
-| `wsl-setup-harbor-hosts.sh` / `wsl-setup-harbor-login.sh` | ① 在 WSL 写 `/etc/hosts`（harbor.sunmoonai.com → Kind control-plane IP 或外部 Harbor IP）；② 根据需要分发 CA 并配置 docker/nerdctl 登录（Harbor 未部署时可先只跑 hosts，部署后再跑 login）。 |
+| `apply-kind-node-harbor-hosts.sh` | 在 Kind 节点内维护 Harbor hosts 解析，默认指向 Docker 网关，供 containerd/kubelet 拉取 Harbor 镜像。 |
+| `wsl-setup-harbor-hosts.sh` / `wsl-setup-harbor-login.sh` | ① 在 WSL 写 `/etc/hosts`（harbor.sunmoonai.com → 本机访问 Harbor 的入口 IP）；② 根据需要分发 CA 并配置 docker/nerdctl 登录（Harbor 未部署时可先只跑 hosts，部署后再跑 login）。 |
 
 ---
 

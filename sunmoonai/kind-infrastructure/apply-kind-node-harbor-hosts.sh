@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# 在 Kind 各节点内写入 /etc/hosts：harbor.sunmoonai.com -> 指定 IP。
+# 在 Kind 各节点内写入 /etc/hosts：harbor.sunmoonai.com -> Docker 网关 IP。
+# 这样节点通过宿主机发布的 30443 访问 Harbor，避免依赖 control-plane 容器 IP 或 IPv6 解析顺序。
 # 因 kind v1alpha4 不支持节点 extraHosts，建集群后通过本脚本补上，供 containerd 拉镜像时解析。
 # 应在 kind-up.sh 之后、apply-kind-registry-config.sh 之前执行。
 #
@@ -42,13 +43,19 @@ cat >/usr/local/bin/kind-harbor-hosts.sh <<'"'"'EOF'"'"'
 set -eu
 host="${HARBOR_HOST:-harbor.sunmoonai.com}"
 control_plane="${KIND_CONTROL_PLANE_NAME:-kind-control-plane}"
-ip="$(getent hosts "$control_plane" 2>/dev/null | awk "{ print \$1; exit }" || true)"
+ip="$(ip route 2>/dev/null | awk "/^default / { print \$3; exit }" || true)"
+if [ -z "$ip" ]; then
+    ip="$(getent ahostsv4 "$control_plane" 2>/dev/null | awk "{ print \$1; exit }" || true)"
+fi
+if [ -z "$ip" ]; then
+    ip="$(getent hosts "$control_plane" 2>/dev/null | awk "\$1 ~ /^[0-9.]+\$/ { print \$1; exit }" || true)"
+fi
 if [ -z "$ip" ] && [ "$(hostname)" = "$control_plane" ]; then
-    ip="$(hostname -I 2>/dev/null | awk "{ print \$1; exit }" || true)"
+    ip="$(hostname -I 2>/dev/null | awk "/^[0-9.]+/ { print \$1; exit }" || true)"
 fi
 [ -n "$ip" ] || exit 0
 tmp="$(mktemp)"
-sed -E "/^[0-9.]+[[:space:]]+${host}[[:space:]]*$/d" /etc/hosts > "$tmp"
+sed -E "/[[:space:]]+${host}[[:space:]]*$/d" /etc/hosts > "$tmp"
 printf "%s %s\n" "$ip" "$host" >> "$tmp"
 cat "$tmp" > /etc/hosts
 rm -f "$tmp"
@@ -86,16 +93,6 @@ if [[ -f "$K8S_ADMIN_CONF" ]]; then
 fi
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kind}"
 
-# 如未在配置中显式指定 HARBOR_NODE_IP，则自动推导：
-# 默认使用 control-plane 容器的 IP，供 NodePort 暴露的「集群内 Harbor」使用。
-if [[ -z "${HARBOR_NODE_IP:-}" ]]; then
-    if docker inspect kind-control-plane &>/dev/null; then
-        HARBOR_NODE_IP="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' kind-control-plane 2>/dev/null || true)"
-    fi
-fi
-
-HARBOR_NODE_IP="${HARBOR_NODE_IP:-172.18.0.2}"
-
 prepend_kind_to_path_if_needed || true
 if ! command -v kind &>/dev/null; then
     log_error "未找到 kind 命令（请安装: ~/.local/bin/kind 或加入 PATH）"
@@ -107,6 +104,21 @@ if [[ -z "$nodes" ]]; then
     log_error "未找到 Kind 集群节点: $KIND_CLUSTER_NAME"
     exit 1
 fi
+
+# 如未在配置中显式指定 HARBOR_NODE_IP，则自动推导：
+# 优先使用节点默认路由网关，让节点经宿主机发布端口访问 Harbor。
+# 这比 control-plane 容器 IP 更稳定，Docker/WSL 重启后也不会受容器 IPv4/IPv6 解析顺序影响。
+if [[ -z "${HARBOR_NODE_IP:-}" ]]; then
+    first_node="$(printf '%s\n' "$nodes" | sed -n '1p')"
+    if [[ -n "$first_node" ]]; then
+        HARBOR_NODE_IP="$(docker exec "$first_node" sh -c 'ip route 2>/dev/null | awk "/^default / { print \$3; exit }"' 2>/dev/null || true)"
+    fi
+fi
+if [[ -z "${HARBOR_NODE_IP:-}" ]] && docker inspect kind-control-plane &>/dev/null; then
+    HARBOR_NODE_IP="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' kind-control-plane 2>/dev/null || true)"
+fi
+
+HARBOR_NODE_IP="${HARBOR_NODE_IP:-172.18.0.1}"
 
 log_info "在 Kind 各节点 /etc/hosts 中添加/更新 ${HARBOR_HOST} -> ${HARBOR_NODE_IP}（集群: $KIND_CLUSTER_NAME）"
 count=0

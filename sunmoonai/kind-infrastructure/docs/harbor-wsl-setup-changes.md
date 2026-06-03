@@ -27,7 +27,7 @@
 - WSL 访问思路几轮演进：
   1. 一开始在 WSL 访问 `harbor.sunmoonai.com` → `127.0.0.1:443`，证书是自签 CA。
   2. 发现 Docker 把 **127.0.0.0/8** 视为 insecure registry，容易退回 HTTP，配合自签证书导致各种 502/EOF。
-  3. 最终方案：**WSL 不再用 127.0.0.1，而是直连 Kind control-plane 的内网 IP：`<InternalIP>:30443`**，例如 `172.18.0.2:30443`。
+  3. 后续改为统一使用 `harbor.sunmoonai.com:30443`。WSL 本机访问可指向宿主机入口；Kind 节点内部访问由 `apply-kind-node-harbor-hosts.sh` 单独维护，默认指向 Docker 网关。
 
 ---
 
@@ -51,7 +51,7 @@
 
 - WSL 侧访问统一采用：`harbor.sunmoonai.com:30443`。
 - `wsl-setup-harbor-hosts.sh` / `wsl-setup-harbor-login.sh`：
-  - `/etc/hosts` 中将 `harbor.sunmoonai.com` 指到 Kind control-plane IP（后文自动检测）。
+  - `/etc/hosts` 中将 `harbor.sunmoonai.com` 指到 WSL 本机访问 Harbor 的入口 IP。
   - 将根 CA 拷贝到：
     - `/etc/docker/certs.d/harbor.sunmoonai.com:30443/ca.crt`
   - 同时将 CA 安装到系统信任：
@@ -111,15 +111,12 @@
 
 ### 六、配置通用化与自动检测 IP
 
-为避免写死 IP（如 `172.18.0.2`）在 Kind 重建后失效，对配置做了通用化处理：
+为避免写死 IP（如 `172.18.0.2`）在 Kind 重建或 WSL/Docker 重启后失效，对配置做了通用化处理：
 
 - `deploy-kind.conf` 中：
-  - `HARBOR_IP=""`（留空表示自动检测）。
-  - 保留 `HARBOR_NODE_IP="172.18.0.2"` 作为集群内使用。
+  - WSL 本机访问 Harbor 使用 `HARBOR_IP` / `HARBOR_PORT`。
+  - Kind 节点内部拉取 Harbor 镜像不复用 WSL 的 `HARBOR_IP`，由 `apply-kind-node-harbor-hosts.sh` 自动写入 Docker 网关 IP。
 - `wsl-setup-harbor-hosts.sh` / `wsl-setup-harbor-login.sh` 中：
-  - 若 `HARBOR_IP` 为空，则通过 `kubectl` 自动获取当前 Kind control-plane 的 `InternalIP`：
-    - `kubectl get nodes -l node-role.kubernetes.io/control-plane -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}'`
-  - 获取失败时退回 `HARBOR_NODE_IP`，再退回默认值。
   - `/etc/hosts`：
     - 若已有 `harbor.sunmoonai.com` 记录但 IP 不符，会自动更新为当前检测到的 IP。
 
@@ -186,10 +183,10 @@
 
 最终稳定方案核心点：
 
-- **访问路径**：WSL 统一使用 `harbor.sunmoonai.com:30443`，并通过 `/etc/hosts` 指向 Kind control-plane IP。
+- **访问路径**：WSL 统一使用 `harbor.sunmoonai.com:30443`；Kind 节点内部统一经 Docker 网关访问宿主机发布的 `30443`。
 - **证书信任**：CA 同时分发到 Docker `certs.d` 和系统 CA。
-- **代理绕过**：在 `NO_PROXY` 中加入 `harbor.sunmoonai.com,.sunmoonai.com`（可选再加当前 Kind 节点 IP）。
-- **IP 自动检测**：Kind 重建后，脚本自动通过 `kubectl` 获取 control-plane IP，不再写死。
+- **代理绕过**：在 `NO_PROXY` 中加入 `harbor.sunmoonai.com,.sunmoonai.com`。
+- **IP 自动检测**：Kind 节点内部由 `apply-kind-node-harbor-hosts.sh` 自动使用默认路由网关，避免写死 control-plane/worker 容器 IP。
 - **一键推送**：只在需要推送时严格等待 Harbor、自动登录，并在镜像源或登录失败时立即终止流程。
 
 这套设计兼顾了本机开发易用性（hosts+CA 自动配置、可选自动登录）与一键部署的可预期性（有推送需求时严格校验、失败即止）。 
@@ -199,15 +196,15 @@
 
 | 位置 | 改动内容 | 必要性 | 说明 |
 |------|----------|--------|------|
-| **deploy-kind.conf** | `HARBOR_IP="172.18.0.2"` | ✅ 必要 | 用 127.0.0.1 时 Docker 将 127.0.0.0/8 视为 insecure，强制走 HTTP → 502 |
+| **deploy-kind.conf** | `HARBOR_IP` / `HARBOR_PORT` | ✅ 必要 | 仅用于 WSL 本机访问 Harbor；Kind 节点内部解析由 `apply-kind-node-harbor-hosts.sh` 维护 |
 | **deploy-kind.conf** | `HARBOR_PORT="30443"` | ✅ 必要 | 直连 Kind 节点只能用 Traefik NodePort 30443；节点上无 443 监听 |
-| **wsl-setup-harbor-hosts.sh / wsl-setup-harbor-login.sh** | 默认 IP/端口 172.18.0.2 / 30443 | ✅ 必要 | 与 conf 一致，保证脚本单独跑时也正确 |
-| **wsl-setup-harbor-hosts.sh** | 已存在 hosts 但 IP 不符时自动更新 | ✅ 建议保留 | 从 127 切到 172.18.0.2 时无需手改 /etc/hosts |
+| **apply-kind-node-harbor-hosts.sh** | Kind 节点内默认写入 Docker 网关 IP | ✅ 必要 | 供 containerd/kubelet 拉 Harbor 镜像，避免依赖 control-plane/worker 容器 IP |
+| **wsl-setup-harbor-hosts.sh** | 已存在 hosts 但 IP 不符时自动更新 | ✅ 建议保留 | WSL 本机访问入口变化时无需手改 `/etc/hosts` |
 | **wsl-setup-harbor-login.sh** | CA 分发到 `certs.d/harbor.sunmoonai.com:30443` | ✅ 必要 | Docker 按「主机:端口」找证书，当前只用 :30443 |
 | **wsl-setup-harbor-login.sh** | CA 同时分发到 `certs.d/harbor.sunmoonai.com`（无端口） | ⚪ 可选 | 仅当有人用 `docker login harbor.sunmoonai.com`（默认 443）时才需要；当前统一用 :30443 可删 |
 | **wsl-setup-harbor-login.sh** | 根 CA 加入系统信任（ca-certificates + update-ca-certificates） | ⚪ 可选 | EOF 最终是代理导致，非证书；保留可提高 containerd/其他工具兼容性 |
 | **/etc/docker/daemon.json** | `"insecure-registries": []` | ❌ 非必要 | 无法覆盖 127.0.0.0/8 默认行为，可还原为仅 `data-root` |
-| **/etc/systemd/.../http-proxy.conf** | `NO_PROXY` 增加 `harbor.sunmoonai.com,.sunmoonai.com`（建议再加当前 Kind control-plane IP，或留空 HARBOR_IP 让脚本自动检测后按提示加） | ✅ 必要 | 否则 dockerd 走 HTTPS 代理访问 Harbor → EOF；用主机名可通用，集群重建后 IP 变也无需改 |
+| **/etc/systemd/.../http-proxy.conf** | `NO_PROXY` 增加 `harbor.sunmoonai.com,.sunmoonai.com` | ✅ 必要 | 否则 dockerd 走 HTTPS 代理访问 Harbor → EOF；用主机名可通用，集群重建后 IP 变也无需改 |
 
 ## 与一键推送 Harbor 相关的行为说明
 
@@ -223,5 +220,5 @@
 
 ## 结论
 
-- **必须保留**：`HARBOR_IP=172.18.0.2`、`HARBOR_PORT=30443`、hosts 更新逻辑、CA 分发到 `...:30443`、Docker 的 `NO_PROXY` 扩展。
+- **必须保留**：`HARBOR_PORT=30443`、WSL hosts 更新逻辑、Kind 节点 hosts 网关映射、CA 分发到 `...:30443`、Docker 的 `NO_PROXY` 扩展。
 - **可简化**：脚本里只保留对 `harbor.sunmoonai.com:30443` 的 certs.d 分发即可；系统 CA 和 daemon.json 的 `insecure-registries` 可按需保留或还原。
