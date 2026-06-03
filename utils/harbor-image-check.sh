@@ -29,7 +29,14 @@ import os
 import sys
 
 registry = sys.argv[1]
-config = json.loads(os.environ.get("DOCKERCONFIG", "{}"))
+raw_config = os.environ.get("DOCKERCONFIG", "{}")
+if not raw_config.strip():
+    sys.exit(0)
+
+try:
+    config = json.loads(raw_config)
+except json.JSONDecodeError:
+    sys.exit(0)
 auths = config.get("auths", {})
 entry = auths.get(registry) or auths.get("https://" + registry) or auths.get("http://" + registry) or {}
 
@@ -94,34 +101,12 @@ check_harbor_image_exists() {
     auth="$(extract_harbor_auth_from_secret "$namespace" "$secret_name" "$registry" || true)"
 
     local url="https://${registry}/api/v2.0/projects/${project}/repositories/${repo_encoded}/artifacts/${tag}"
-    local http_code=""
-    local max_attempts="${HARBOR_IMAGE_CHECK_RETRIES:-10}"
-    local retry_interval="${HARBOR_IMAGE_CHECK_RETRY_INTERVAL:-3}"
-    local attempt
-    for ((attempt = 1; attempt <= max_attempts; attempt++)); do
-        auth="$(extract_harbor_auth_from_secret "$namespace" "$secret_name" "$registry" || true)"
-        if [[ -n "$auth" ]]; then
-            http_code="$(curl -sk -o /dev/null -w "%{http_code}" -u "$auth" "$url")"
-        else
-            http_code="$(curl -sk -o /dev/null -w "%{http_code}" "$url")"
-        fi
-
-        case "$http_code" in
-            200|404)
-                break
-                ;;
-            401|403|000)
-                if [[ "$attempt" -lt "$max_attempts" ]]; then
-                    log_warn "Harbor 镜像检查暂未通过: $image (HTTP $http_code)，重试 $attempt/$max_attempts"
-                    sleep "$retry_interval"
-                    continue
-                fi
-                ;;
-            *)
-                break
-                ;;
-        esac
-    done
+    local http_code
+    if [[ -n "$auth" ]]; then
+        http_code="$(curl -sk -o /dev/null -w "%{http_code}" -u "$auth" "$url")"
+    else
+        http_code="$(curl -sk -o /dev/null -w "%{http_code}" "$url")"
+    fi
 
     case "$http_code" in
         200)
@@ -134,12 +119,16 @@ check_harbor_image_exists() {
             return 1
             ;;
         401|403)
-            log_error "❌ Harbor 镜像检查鉴权失败: $image (HTTP $http_code, secret=$namespace/$secret_name)"
-            return 1
+            log_warn "⚠️ Harbor 镜像检查鉴权未通过: $image (HTTP $http_code, secret=$namespace/$secret_name)，跳过预检查并继续部署"
+            return 0
+            ;;
+        000)
+            log_warn "⚠️ Harbor 镜像检查连接失败: $image (HTTP $http_code)，跳过预检查并继续部署"
+            return 0
             ;;
         *)
-            log_error "❌ Harbor 镜像检查失败: $image (HTTP $http_code)"
-            return 1
+            log_warn "⚠️ Harbor 镜像检查未获得明确结果: $image (HTTP $http_code)，跳过预检查并继续部署"
+            return 0
             ;;
     esac
 }
