@@ -150,7 +150,28 @@ if [[ -n \"\${NO_PROXY:-}\" ]] && [[ \"\$NO_PROXY\" != *${host}* ]]; then
 fi
 " 2>/dev/null || log_warn "节点 ${node} 更新 NO_PROXY 失败，可手动检查"
 
-        # 5) 重启 containerd/kubelet，使新配置立即生效
+        # 5) 提高 inotify 与 fd 限制，避免重启后 containerd CRI 插件因 fsnotify watcher 不足而无法加载。
+        docker exec "$node" bash -lc '
+set -euo pipefail
+cat >/etc/sysctl.d/99-kind-inotify.conf <<EOF
+fs.inotify.max_user_instances=8192
+fs.inotify.max_user_watches=1048576
+fs.inotify.max_queued_events=65536
+EOF
+sysctl -p /etc/sysctl.d/99-kind-inotify.conf >/dev/null 2>&1 || true
+
+mkdir -p /etc/systemd/system/containerd.service.d /etc/systemd/system/kubelet.service.d
+cat >/etc/systemd/system/containerd.service.d/99-nofile.conf <<EOF
+[Service]
+LimitNOFILE=1048576
+EOF
+cat >/etc/systemd/system/kubelet.service.d/99-nofile.conf <<EOF
+[Service]
+LimitNOFILE=1048576
+EOF
+' || log_warn "节点 ${node} 更新 inotify/NOFILE 限制失败，可手动检查"
+
+        # 6) 重启 containerd/kubelet，使新配置立即生效
         if ! docker exec "$node" bash -lc 'systemctl daemon-reload; systemctl restart containerd; systemctl restart kubelet'; then
             log_warn "节点 ${node} 重启 containerd/kubelet 失败，新配置可能在下次节点重启后才生效"
         fi
@@ -160,4 +181,3 @@ fi
 }
 
 main "$@"
-
