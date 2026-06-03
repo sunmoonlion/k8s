@@ -30,19 +30,19 @@ auth:
         enabled: "on"
         keys: "~bull:investment:web:*"
         channels: "&*"
-        commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset +@pubsub -@dangerous"
+        commands: "-@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset +@pubsub -@dangerous"
       - username: llm_web_nodebull
         password: LlmWebNodeBullRedisAcl_9pQ4vM2xL8nR6sK3
         enabled: "on"
         keys: "~bull:llm:web:*"
         channels: "&*"
-        commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset +@pubsub -@dangerous"
+        commands: "-@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset +@pubsub -@dangerous"
       - username: tools_web_nodebull
         password: ToolsWebNodeBullRedisAcl_9pQ4vM2xL8nR6sK3
         enabled: "on"
         keys: "~bull:tools:web:*"
         channels: "&*"
-        commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset +@pubsub -@dangerous"
+        commands: "-@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset +@pubsub -@dangerous"
 
 # 主服务配置
 master:

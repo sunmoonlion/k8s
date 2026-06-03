@@ -31,6 +31,50 @@ rm -f "$tmp"
 '
 }
 
+install_host_entry_service() {
+    local node="$1"
+    docker exec \
+        -e HARBOR_HOST="$HARBOR_HOST" \
+        "$node" sh -c '
+set -e
+cat >/usr/local/bin/kind-harbor-hosts.sh <<'"'"'EOF'"'"'
+#!/bin/sh
+set -eu
+host="${HARBOR_HOST:-harbor.sunmoonai.com}"
+control_plane="${KIND_CONTROL_PLANE_NAME:-kind-control-plane}"
+ip="$(getent hosts "$control_plane" 2>/dev/null | awk "{ print \$1; exit }" || true)"
+if [ -z "$ip" ] && [ "$(hostname)" = "$control_plane" ]; then
+    ip="$(hostname -I 2>/dev/null | awk "{ print \$1; exit }" || true)"
+fi
+[ -n "$ip" ] || exit 0
+tmp="$(mktemp)"
+sed -E "/^[0-9.]+[[:space:]]+${host}[[:space:]]*$/d" /etc/hosts > "$tmp"
+printf "%s %s\n" "$ip" "$host" >> "$tmp"
+cat "$tmp" > /etc/hosts
+rm -f "$tmp"
+EOF
+chmod +x /usr/local/bin/kind-harbor-hosts.sh
+
+mkdir -p /etc/systemd/system
+cat >/etc/systemd/system/kind-harbor-hosts.service <<EOF
+[Unit]
+Description=Refresh Harbor hosts entry for Kind node image pulls
+After=network-online.target
+Before=containerd.service kubelet.service
+
+[Service]
+Type=oneshot
+Environment=HARBOR_HOST=${HARBOR_HOST}
+ExecStart=/usr/local/bin/kind-harbor-hosts.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl daemon-reload >/dev/null 2>&1 || true
+systemctl enable kind-harbor-hosts.service >/dev/null 2>&1 || true
+'
+}
+
 # 集群名与节点内 Harbor 解析 IP。
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kind}"
 HARBOR_HOST="${HARBOR_HOST:-harbor.sunmoonai.com}"
@@ -81,6 +125,7 @@ while IFS= read -r node; do
         upsert_host_entry "$node"
         log_info "  节点 $node: 已添加 ${HARBOR_HOST} -> ${HARBOR_NODE_IP}"
     fi
+    install_host_entry_service "$node" || log_warn "  节点 $node: 安装 Harbor hosts 开机修复服务失败"
     ((count++)) || true
 done <<< "$nodes"
 

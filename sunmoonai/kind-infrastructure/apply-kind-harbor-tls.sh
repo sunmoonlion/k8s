@@ -150,7 +150,49 @@ if [[ -n \"\${NO_PROXY:-}\" ]] && [[ \"\$NO_PROXY\" != *${host}* ]]; then
 fi
 " 2>/dev/null || log_warn "节点 ${node} 更新 NO_PROXY 失败，可手动检查"
 
-        # 5) 提高 inotify 与 fd 限制，避免重启后 containerd CRI 插件因 fsnotify watcher 不足而无法加载。
+        # 5) 清理 Docker 从 WSL /etc/resolv.conf 继承的异常 search/domain。
+        #    WSL/VPN 场景可能出现 `search 172.16.8.0/22` 这类 CIDR 字段，Pod 继承后会把
+        #    *.svc.cluster.local 先拼成 *.svc.cluster.local.172.16.8.0/22，导致 CoreDNS 转发超时。
+        docker exec "$node" bash -lc '
+set -euo pipefail
+cat >/usr/local/bin/kind-clean-resolv.sh <<EOF
+#!/bin/sh
+set -eu
+if grep -Eq "^(search|domain)[[:space:]]" /etc/resolv.conf; then
+    cp /etc/resolv.conf /etc/resolv.conf.kind-backup 2>/dev/null || true
+    sed -E "/^(search|domain)[[:space:]]/d" /etc/resolv.conf > /tmp/resolv.conf.kind-clean
+    cat /tmp/resolv.conf.kind-clean > /etc/resolv.conf
+    rm -f /tmp/resolv.conf.kind-clean
+fi
+EOF
+chmod +x /usr/local/bin/kind-clean-resolv.sh
+
+mkdir -p /etc/systemd/system
+cat >/etc/systemd/system/kind-clean-resolv.service <<EOF
+[Unit]
+Description=Remove invalid DNS search/domain entries inherited by Kind node containers
+After=network-online.target
+Before=containerd.service kubelet.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/kind-clean-resolv.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl daemon-reload >/dev/null 2>&1 || true
+systemctl enable kind-clean-resolv.service >/dev/null 2>&1 || true
+
+if grep -Eq "^(search|domain)[[:space:]]" /etc/resolv.conf; then
+    cp /etc/resolv.conf /etc/resolv.conf.kind-backup 2>/dev/null || true
+    sed -E "/^(search|domain)[[:space:]]/d" /etc/resolv.conf > /tmp/resolv.conf.kind-clean
+    cat /tmp/resolv.conf.kind-clean > /etc/resolv.conf
+    rm -f /tmp/resolv.conf.kind-clean
+fi
+' || log_warn "节点 ${node} 清理 /etc/resolv.conf search/domain 失败，可手动检查"
+
+        # 6) 提高 inotify 与 fd 限制，避免重启后 containerd CRI 插件因 fsnotify watcher 不足而无法加载。
         docker exec "$node" bash -lc '
 set -euo pipefail
 cat >/etc/sysctl.d/99-kind-inotify.conf <<EOF
@@ -171,7 +213,7 @@ LimitNOFILE=1048576
 EOF
 ' || log_warn "节点 ${node} 更新 inotify/NOFILE 限制失败，可手动检查"
 
-        # 6) 重启 containerd/kubelet，使新配置立即生效
+        # 7) 重启 containerd/kubelet，使新配置立即生效
         if ! docker exec "$node" bash -lc 'systemctl daemon-reload; systemctl restart containerd; systemctl restart kubelet'; then
             log_warn "节点 ${node} 重启 containerd/kubelet 失败，新配置可能在下次节点重启后才生效"
         fi
