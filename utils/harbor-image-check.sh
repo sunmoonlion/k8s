@@ -95,8 +95,10 @@ check_harbor_image_exists() {
 
     local url="https://${registry}/api/v2.0/projects/${project}/repositories/${repo_encoded}/artifacts/${tag}"
     local http_code=""
+    local max_attempts="${HARBOR_IMAGE_CHECK_RETRIES:-10}"
+    local retry_interval="${HARBOR_IMAGE_CHECK_RETRY_INTERVAL:-3}"
     local attempt
-    for attempt in 1 2 3; do
+    for ((attempt = 1; attempt <= max_attempts; attempt++)); do
         auth="$(extract_harbor_auth_from_secret "$namespace" "$secret_name" "$registry" || true)"
         if [[ -n "$auth" ]]; then
             http_code="$(curl -sk -o /dev/null -w "%{http_code}" -u "$auth" "$url")"
@@ -109,9 +111,9 @@ check_harbor_image_exists() {
                 break
                 ;;
             401|403|000)
-                if [[ "$attempt" -lt 3 ]]; then
-                    log_warn "Harbor 镜像检查暂未通过: $image (HTTP $http_code)，重试 $attempt/3"
-                    sleep 2
+                if [[ "$attempt" -lt "$max_attempts" ]]; then
+                    log_warn "Harbor 镜像检查暂未通过: $image (HTTP $http_code)，重试 $attempt/$max_attempts"
+                    sleep "$retry_interval"
                     continue
                 fi
                 ;;
