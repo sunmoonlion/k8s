@@ -15,6 +15,55 @@ log_error() { echo -e "\033[31m[ERROR]\033[0m $*" >&2; }
 log_warn() { echo -e "\033[33m[WARN]\033[0m $*" >&2; }
 log_debug() { echo -e "\033[36m[DEBUG]\033[0m $*" >&2; }
 
+_is_placeholder_docker_password() {
+    local password="${1:-}"
+    [[ -z "$password" || "$password" == "TODO_FILL_IN_HARBOR_PASSWORD" ]]
+}
+
+_load_global_harbor_credentials() {
+    local lib_dir
+    lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local k8s_root
+    k8s_root="$(cd "$lib_dir/../../.." && pwd)"
+
+    local had_errexit=0
+    local had_nounset=0
+    [[ $- == *e* ]] && had_errexit=1
+    [[ $- == *u* ]] && had_nounset=1
+
+    for global_config in \
+        "$k8s_root/sunmoonai/deploy-sunmoonai-all/deploy-sunmoonai-all.conf" \
+        "$k8s_root/sunmoonai/kind-infrastructure/deploy-kind/deploy-kind.conf"; do
+        if [[ -f "$global_config" ]]; then
+            set +e +u
+            # shellcheck disable=SC1090
+            source "$global_config" >/dev/null 2>&1
+        fi
+    done
+
+    (( had_errexit )) && set -e
+    (( had_nounset )) && set -u
+}
+
+resolve_docker_auth_password() {
+    local password="${1:-}"
+
+    if ! _is_placeholder_docker_password "$password"; then
+        printf '%s\n' "$password"
+        return 0
+    fi
+
+    _load_global_harbor_credentials
+
+    if [[ -n "${HARBOR_ADMIN_PASSWORD:-}" ]]; then
+        printf '%s\n' "$HARBOR_ADMIN_PASSWORD"
+        return 0
+    fi
+
+    log_error "Docker registry 密码未配置。请设置 DOCKER_PASSWORD 或 HARBOR_ADMIN_PASSWORD，不能使用 TODO_FILL_IN_HARBOR_PASSWORD。"
+    return 1
+}
+
 # =============================================================================
 # TLS Secret 数据准备
 # =============================================================================
@@ -191,6 +240,8 @@ prepare_docker_auth_secret_data() {
         return 0
     fi
     
+    docker_password="$(resolve_docker_auth_password "$docker_password")" || return 1
+
     # 检查必需参数
     if [[ -z "$docker_username" || -z "$docker_password" ]]; then
         log_error "Docker认证需要 --username 和 --password 参数，或提供 --docker-config"

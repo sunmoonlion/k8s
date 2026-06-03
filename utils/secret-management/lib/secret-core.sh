@@ -196,6 +196,10 @@ generate_docker_secret_yaml() {
         fi
         b64_docker_config=$(base64 -w 0 "$docker_config_path")
     else
+        if command -v resolve_docker_auth_password >/dev/null 2>&1; then
+            docker_password="$(resolve_docker_auth_password "$docker_password")" || return 1
+        fi
+
         if [[ -z "$docker_server" || -z "$docker_username" || -z "$docker_password" ]]; then
             log_error "缺少 Docker 认证参数（需要 --docker-server/--docker-username/--docker-password 或 --docker-config）"
             return 1
@@ -581,4 +585,3 @@ generate_secret_yaml_by_type() {
             ;;
     esac
 }
-
