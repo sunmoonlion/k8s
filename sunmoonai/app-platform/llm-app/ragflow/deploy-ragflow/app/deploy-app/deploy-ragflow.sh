@@ -32,8 +32,7 @@ fi
 
 CHART_DIR="$APP_ROOT/resources/ragflow"
 VALUES_DIR="$APP_ROOT/resources/custom-values"
-RUNTIME_DIR="$APP_ROOT/.runtime"
-SECRET_VALUES="$RUNTIME_DIR/secrets-values.yaml"
+SECRET_VALUES="$VALUES_DIR/dev-secrets-values.yaml"
 INGRESS_SCRIPT="$DEPLOY_ROOT/ingress/ragflow-ingress/deploy-ingress/deploy-ingress.sh"
 
 run_ingress() {
@@ -42,30 +41,6 @@ run_ingress() {
     else
         DISABLE_AUTO_CLEANUP=true bash "$INGRESS_SCRIPT" "$@"
     fi
-}
-
-generate_secret_values() {
-    if [[ -f "$SECRET_VALUES" ]]; then
-        chmod 600 "$SECRET_VALUES"
-        return
-    fi
-    mkdir -p "$RUNTIME_DIR"
-    umask 077
-    local mysql_password minio_password redis_password elastic_password
-    mysql_password="$(openssl rand -hex 24)"
-    minio_password="$(openssl rand -hex 24)"
-    redis_password="$(openssl rand -hex 24)"
-    elastic_password="$(openssl rand -hex 24)"
-    cat > "$SECRET_VALUES" <<EOF
-env:
-  MYSQL_PASSWORD: "$mysql_password"
-  MINIO_ROOT_USER: "rag_flow"
-  MINIO_PASSWORD: "$minio_password"
-  REDIS_PASSWORD: "$redis_password"
-  ELASTIC_PASSWORD: "$elastic_password"
-EOF
-    chmod 600 "$SECRET_VALUES"
-    log_success "✅ 已生成 RAGFlow 运行时密码: $SECRET_VALUES"
 }
 
 required_images() {
@@ -84,8 +59,8 @@ EOF
 
 check_prerequisites() {
     command -v helm >/dev/null || { log_error "helm 未安装"; return 1; }
-    command -v openssl >/dev/null || { log_error "openssl 未安装"; return 1; }
     [[ -d "$CHART_DIR" ]] || { log_error "Helm Chart 不存在: $CHART_DIR"; return 1; }
+    [[ -f "$SECRET_VALUES" ]] || { log_error "开发密码 values 不存在: $SECRET_VALUES"; return 1; }
     kubectl get namespace "$1" >/dev/null
     kubectl get storageclass local-path >/dev/null
     kubectl get secret "$RAGFLOW_IMAGE_PULL_SECRET" -n "$1" >/dev/null
@@ -117,7 +92,6 @@ deploy_release() {
         cluster_values="$VALUES_DIR/dev-values-kind.yaml"
     fi
 
-    generate_secret_values
     helm lint "$CHART_DIR" -f "$values_file" ${cluster_values:+-f "$cluster_values"} -f "$SECRET_VALUES"
 
     if [[ "$dry_run" == "true" ]]; then
