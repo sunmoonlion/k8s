@@ -1,0 +1,14 @@
+ragflow:
+  deployment:
+    strategy:
+      type: Recreate
+
+elasticsearch:
+  deployment:
+    strategy:
+      type: OnDelete
+
+mysql:
+  deployment:
+    strategy:
+      type: OnDelete

@@ -1,0 +1,128 @@
+global:
+  imagePullSecrets:
+    - name: harbor-registry-secret
+
+env:
+  DOC_ENGINE: elasticsearch
+  STACK_VERSION: "8.11.3"
+  TZ: Asia/Shanghai
+  DOC_BULK_SIZE: 4
+  EMBEDDING_BATCH_SIZE: 16
+
+ragflow:
+  image:
+    repository: harbor.sunmoonai.com:30443/app-images/ragflow
+    tag: v0.25.4-sunmoonai.1
+    pullPolicy: IfNotPresent
+  deployment:
+    resources:
+      requests:
+        cpu: "2"
+        memory: 4Gi
+      limits:
+        cpu: "6"
+        memory: 12Gi
+  service:
+    type: ClusterIP
+  admin:
+    enabled: true
+    serviceType: ClusterIP
+  api:
+    service:
+      enabled: true
+      type: ClusterIP
+
+infinity:
+  image:
+    repository: harbor.sunmoonai.com:30443/app-images/infinity
+
+elasticsearch:
+  image:
+    repository: harbor.sunmoonai.com:30443/app-images/elasticsearch
+    tag: "8.11.3"
+    pullPolicy: IfNotPresent
+  initContainers:
+    alpine:
+      repository: harbor.sunmoonai.com:30443/app-images/alpine
+      tag: latest
+      pullPolicy: IfNotPresent
+    busybox:
+      repository: harbor.sunmoonai.com:30443/app-images/busybox
+      tag: latest
+      pullPolicy: IfNotPresent
+  storage:
+    className: local-path
+    capacity: 20Gi
+  deployment:
+    resources:
+      requests:
+        cpu: "1"
+        memory: 3Gi
+      limits:
+        cpu: "4"
+        memory: 8Gi
+
+mysql:
+  image:
+    repository: harbor.sunmoonai.com:30443/app-images/mysql
+    tag: 8.0.39
+    pullPolicy: IfNotPresent
+  storage:
+    className: local-path
+    capacity: 10Gi
+  deployment:
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: "2"
+        memory: 2Gi
+
+minio:
+  image:
+    repository: harbor.sunmoonai.com:30443/app-images/minio
+    tag: RELEASE.2026-03-25T00-00-00Z
+    pullPolicy: IfNotPresent
+  storage:
+    className: local-path
+    capacity: 20Gi
+  deployment:
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: "2"
+        memory: 2Gi
+
+redis:
+  image:
+    repository: harbor.sunmoonai.com:30443/app-images/valkey
+    tag: "8"
+    pullPolicy: IfNotPresent
+  storage:
+    className: local-path
+    capacity: 5Gi
+  persistence:
+    enabled: true
+    retentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
+  deployment:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+
+ingress:
+  enabled: false
+
+tests:
+  image:
+    repository: harbor.sunmoonai.com:30443/app-images/busybox
+    tag: latest
+    pullPolicy: IfNotPresent

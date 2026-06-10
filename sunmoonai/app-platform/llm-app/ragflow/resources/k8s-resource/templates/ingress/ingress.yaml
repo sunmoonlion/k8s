@@ -1,0 +1,17 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ragflow-ingress
+  namespace: {{NAMESPACE}}
+  labels:
+    app: app-platform-ingress
+    component: ragflow
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`{{UNIFIED_HOST}}`)
+      kind: Rule
+      services:
+        - name: {{SERVICE_NAME}}
+          port: 80
