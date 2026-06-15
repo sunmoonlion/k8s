@@ -1,9 +1,11 @@
-# Info Admin Backend 路由配置 (Traefik IngressRoute)
-# FastAPI 挂载点：app.include_router(router, prefix="/api")
-# 所有业务路由在 /api/* 下，e.g. /api/auth/login
-#
-# 访问方式：
-# - https://info-admin-api.sunmoonai.com/api/...
+# info-admin-backend 路由配置 (Traefik IngressRoute)
+# TODO: 根据实际路由规则修改 Host 和 PathPrefix
+# 推荐域名规则：
+# - {app}.sunmoonai.com
+# - {app}-api.sunmoonai.com
+# - {app}-admin.sunmoonai.com
+# - {app}-admin-api.sunmoonai.com
+# 注意：此模板使用  语法，由 generate-ingress.sh 转换为  后再 envsubst
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -17,7 +19,8 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`info-admin-api.sunmoonai.com`) && PathPrefix(`/api`)
+    # TODO: 修改 PathPrefix（如 /api 用于后端，/ 用于前端）
+    - match: Host(`info-admin-api.sunmoonai.com`) && PathPrefix(`/`)
       kind: Rule
       services:
         - name: info-admin-backend

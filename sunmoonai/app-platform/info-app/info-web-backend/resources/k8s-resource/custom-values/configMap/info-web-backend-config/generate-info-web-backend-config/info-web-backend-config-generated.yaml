@@ -6,31 +6,10 @@ metadata:
   labels:
     app: info-web-backend
 data:
-  # 基础（NestJS）
-  NODE_ENV: "production"
-  NODE_TLS_REJECT_UNAUTHORIZED: "0"
-  PORT: "8000"
-  QUEUE_ENABLED: "true"
-  QUEUE_ON: "false"
-
-  # 多租户配置
-  TENANT_MODE: "false"
-  TENANT_DB_TYPE: "prisma"
-
-  # Redis 非敏感部分
-  REDIS_TYPE: "single"
-  REDIS_HOST: "redis-sunmoonai-master.data-platform-dev.svc.cluster.local"
-  REDIS_PORT: "6379"
-  REDIS_DB: "0"
-  REDIS_USER: "info_web_backend"
-
-  # Casdoor BFF（非敏感字段）
-  CASDOOR_ENDPOINT: "https://casdoor.sunmoonai.com"
-  CASDOOR_CLIENT_ID: "cd8328352070e08cd432"
-  CASDOOR_REDIRECT_URI: "https://info-api.sunmoonai.com/api/auth/callback"
-  FRONTEND_URL: "https://info.sunmoonai.com"
-  CASDOOR_ORGANIZATION: "info-web"
-  CASDOOR_APPLICATION: "app-info-web"
-
-  # CORS
-  CORS: "true"
+  # TODO: 添加 ConfigMap key 列表（非敏感配置）
+  # 格式：KEY: ""
+  # 示例：
+  #   NODE_ENV: ""
+  #   PORT: ""
+  #   REDIS_HOST: ""
+  #   CASDOOR_ENDPOINT: ""

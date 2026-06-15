@@ -6,29 +6,10 @@ metadata:
   labels:
     app: info-admin-backend
 data:
-  # 基础（pydantic-settings: env / log_level）
-  ENV: "production"
-  LOG_LEVEL: "INFO"
-
-  # Redis 非敏感部分（redis_host / redis_port / redis_db / redis_user）
-  REDIS_HOST: "redis-sunmoonai-master.data-platform-dev.svc.cluster.local"
-  REDIS_PORT: "6379"
-  REDIS_DB: "0"
-  REDIS_USER: "info_admin_backend"
-
-  # Casdoor BFF（非敏感字段）
-  CASDOOR_ENDPOINT: "https://casdoor.sunmoonai.com"
-  CASDOOR_CLIENT_ID: "440db4e5a480c02c370d"
-  CASDOOR_REDIRECT_URI: "https://info-admin-api.sunmoonai.com/api/auth/callback"
-  CASDOOR_ORGANIZATION: "info-admin"
-  CASDOOR_APPLICATION: "app-info-admin"
-  CASDOOR_VERIFY_SSL: "false"
-
-  # Session
-  SESSION_TTL_SECONDS: "3600"
-
-  # 前端跳转地址（登录完成后跳回）
-  FRONTEND_BASE_URL: "https://info-admin.sunmoonai.com"
-
-  # Celery producer（默认队列，需与 celeryworker 一致）
-  CELERY_QUEUE: "info.admin.default"
+  # TODO: 添加 ConfigMap key 列表（非敏感配置）
+  # 格式：KEY: ""
+  # 示例：
+  #   NODE_ENV: ""
+  #   PORT: ""
+  #   REDIS_HOST: ""
+  #   CASDOOR_ENDPOINT: ""

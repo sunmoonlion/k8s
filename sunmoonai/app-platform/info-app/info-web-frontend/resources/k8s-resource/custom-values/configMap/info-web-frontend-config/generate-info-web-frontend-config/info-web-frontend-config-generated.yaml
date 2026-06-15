@@ -6,6 +6,10 @@ metadata:
   labels:
     app: info-web-frontend
 data:
-  # NEXT_PUBLIC_* 在 Docker 构建时通过 --build-arg 静态嵌入 bundle。
-  # 运行时无需 ConfigMap；auth / Casdoor / Redis 由 web-backend 处理。
-  APP_ROLE: "ui-only"
+  # TODO: 添加 ConfigMap key 列表（非敏感配置）
+  # 格式：KEY: ""
+  # 示例：
+  #   NODE_ENV: ""
+  #   PORT: ""
+  #   REDIS_HOST: ""
+  #   CASDOOR_ENDPOINT: ""
