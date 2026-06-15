@@ -58,7 +58,7 @@ DEFAULT_PROJECT_ID="${INFO_WEB_FRONTEND_PROJECT_ID:-}"
 DEFAULT_NAMESPACE="${INFO_WEB_FRONTEND_NAMESPACE:-}"
 DEFAULT_ENVIRONMENT="${ENVIRONMENT:-}"
 
-RESOURCES_DIR="../../../resources"
+RESOURCES_DIR="$APP_ROOT/resources"
 K8S_RESOURCE_DIR="${RESOURCES_DIR}/k8s-resource"
 INFO_WEB_FRONTEND_YAML="${K8S_RESOURCE_DIR}/custom-values/app/generate-app/info-web-frontend-generated.yaml"
 INFO_WEB_FRONTEND_PVC_YAML="${K8S_RESOURCE_DIR}/custom-values/pvc/info-web-frontend-pvc/generate-info-web-frontend-pvc/info-web-frontend-pvc-generated.yaml"

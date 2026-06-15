@@ -58,7 +58,7 @@ DEFAULT_PROJECT_ID="${INFO_ADMIN_FRONTEND_PROJECT_ID:-}"
 DEFAULT_NAMESPACE="${INFO_ADMIN_FRONTEND_NAMESPACE:-}"
 DEFAULT_ENVIRONMENT="${ENVIRONMENT:-}"
 
-RESOURCES_DIR="../../../resources"
+RESOURCES_DIR="$APP_ROOT/resources"
 K8S_RESOURCE_DIR="${RESOURCES_DIR}/k8s-resource"
 INFO_ADMIN_FRONTEND_YAML="${K8S_RESOURCE_DIR}/custom-values/app/generate-app/info-admin-frontend-generated.yaml"
 INFO_ADMIN_FRONTEND_PVC_YAML="${K8S_RESOURCE_DIR}/custom-values/pvc/info-admin-frontend-pvc/generate-info-admin-frontend-pvc/info-admin-frontend-pvc-generated.yaml"

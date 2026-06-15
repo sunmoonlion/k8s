@@ -58,7 +58,7 @@ DEFAULT_PROJECT_ID="${RESEARCH_ADMIN_FRONTEND_PROJECT_ID:-}"
 DEFAULT_NAMESPACE="${RESEARCH_ADMIN_FRONTEND_NAMESPACE:-}"
 DEFAULT_ENVIRONMENT="${ENVIRONMENT:-}"
 
-RESOURCES_DIR="../../../resources"
+RESOURCES_DIR="$APP_ROOT/resources"
 K8S_RESOURCE_DIR="${RESOURCES_DIR}/k8s-resource"
 RESEARCH_ADMIN_FRONTEND_YAML="${K8S_RESOURCE_DIR}/custom-values/app/generate-app/research-admin-frontend-generated.yaml"
 RESEARCH_ADMIN_FRONTEND_PVC_YAML="${K8S_RESOURCE_DIR}/custom-values/pvc/research-admin-frontend-pvc/generate-research-admin-frontend-pvc/research-admin-frontend-pvc-generated.yaml"

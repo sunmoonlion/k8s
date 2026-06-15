@@ -58,7 +58,7 @@ DEFAULT_PROJECT_ID="${INVESTMENT_ADMIN_FRONTEND_PROJECT_ID:-}"
 DEFAULT_NAMESPACE="${INVESTMENT_ADMIN_FRONTEND_NAMESPACE:-}"
 DEFAULT_ENVIRONMENT="${ENVIRONMENT:-}"
 
-RESOURCES_DIR="../../../resources"
+RESOURCES_DIR="$APP_ROOT/resources"
 K8S_RESOURCE_DIR="${RESOURCES_DIR}/k8s-resource"
 INVESTMENT_ADMIN_FRONTEND_YAML="${K8S_RESOURCE_DIR}/custom-values/app/generate-app/investment-admin-frontend-generated.yaml"
 INVESTMENT_ADMIN_FRONTEND_PVC_YAML="${K8S_RESOURCE_DIR}/custom-values/pvc/investment-admin-frontend-pvc/generate-investment-admin-frontend-pvc/investment-admin-frontend-pvc-generated.yaml"
