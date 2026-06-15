@@ -50,6 +50,11 @@ main() {
 
     export PROJECT_ID="$project_id" NAMESPACE="$namespace" ENVIRONMENT="$environment" ENV="${ENV:-dev}"
 
+    if [[ "$action" == "deploy" ]] && kubectl get secret "harbor-registry-secret" -n "$NAMESPACE" >/dev/null 2>&1; then
+        log_success "复用命名空间现有 Harbor Registry Secret"
+        return 0
+    fi
+
     local generate_script="$K8S_RESOURCE_DIR/custom-values/secret/harbor-registry-secret/generate-harbor-registry-secret/generate-harbor-registry-secret.sh"
     if [ -f "$generate_script" ]; then
         bash "$generate_script" || { log_error "Harbor Secret YAML 生成失败"; exit 1; }

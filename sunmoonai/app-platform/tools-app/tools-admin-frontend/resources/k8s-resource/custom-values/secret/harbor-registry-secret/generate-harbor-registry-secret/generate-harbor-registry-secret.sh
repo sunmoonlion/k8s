@@ -32,6 +32,11 @@ if [ "${ENABLED:-true}" != "true" ]; then
     log_info "跳过资源生成: harbor-registry-secret (已禁用)"; exit 0
 fi
 
+if [[ -z "${DOCKER_PASSWORD:-}" || "$DOCKER_PASSWORD" == "TODO_FILL_IN_HARBOR_PASSWORD" ]]; then
+    log_error "Harbor 密码未配置，拒绝生成无效的镜像拉取 Secret"
+    exit 1
+fi
+
 export NAMESPACE="${NAMESPACE:-}"
 export ENVIRONMENT="${ENVIRONMENT:-}"
 export ENV="${ENV:-}"
