@@ -225,12 +225,12 @@ deploy_secrets_core() {
     log_info "📝 验证 Secret 配置..."
     
     # 验证必要的环境变量
-    if [[ -z "$PROJECT_ID" ]]; then
+    if [[ -z "$project_id" ]]; then
         log_error "❌ PROJECT_ID 未设置"
         return 1
     fi
     
-    if [[ -z "$NAMESPACE" ]]; then
+    if [[ -z "$namespace" ]]; then
         log_error "❌ NAMESPACE 未设置"
         return 1
     fi
@@ -366,4 +366,3 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     fi
     main "$@"
 fi
-
