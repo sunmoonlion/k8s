@@ -1,0 +1,34 @@
+{
+  "apiVersion": "storage.sunmoonai.com/v1alpha1",
+  "kind": "ObjectStorageAccess",
+  "metadata": {
+    "name": "example-web-backend"
+  },
+  "spec": {
+    "provider": "platform-s3",
+    "environment": "development",
+    "app": "example-app",
+    "backend": "example-web-backend",
+    "namespace": "app-platform-dev",
+    "secretName": "example-web-backend-s3",
+    "configMapName": "example-web-backend-s3",
+    "region": "us-east-1",
+    "forcePathStyle": true,
+    "useTLS": false,
+    "deletionPolicy": "Retain",
+    "buckets": [
+      {
+        "name": "development-example-originals",
+        "permissions": ["read", "write", "delete", "list"],
+        "versioning": true,
+        "objectLock": false
+      },
+      {
+        "name": "development-example-derived",
+        "permissions": ["read", "write", "delete", "list"],
+        "versioning": false,
+        "objectLock": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: info-web-frontend-config
+  namespace: app-platform-dev
+  labels:
+    app: info-web-frontend
+data:
+  # NEXT_PUBLIC_* 在 Docker 构建时通过 --build-arg 静态嵌入 bundle。
+  # 运行时无需 ConfigMap；auth / Casdoor / Redis 由 web-backend 处理。
+  APP_ROLE: "ui-only"

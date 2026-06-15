@@ -31,8 +31,6 @@ image:
 auth:
   enabled: true
   existingSecret: "neo4j-secrets"
-  secretKeys:
-    password: "neo4j-password"
   database: "sunmoonai_dev"
 
 # 主服务配置

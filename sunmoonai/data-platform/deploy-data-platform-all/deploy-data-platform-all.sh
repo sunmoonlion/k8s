@@ -114,6 +114,12 @@ run_sub_components_by_priority() {
         local priority="${redis_nodebull_priority:-690}"
         components+=("$priority:redis-nodebull:$PROJECT_ROOT/redis/deploy-redis/deploy-redis.sh")
     fi
+
+    # 检查 S3 Object Storage
+    if [[ "${object_storage_enabled:-false}" == "true" ]]; then
+        local priority="${object_storage_priority:-650}"
+        components+=("$priority:object-storage:$PROJECT_ROOT/object-storage/deploy-object-storage/deploy-object-storage.sh")
+    fi
     
     # 检查 Elasticsearch
     if [[ "${elasticsearch_enabled:-false}" == "true" ]]; then

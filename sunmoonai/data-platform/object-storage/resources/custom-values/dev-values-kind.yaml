@@ -1,0 +1,62 @@
+secrets:
+  name: object-storage-root-credentials
+  existingSecret: true
+
+objectStore:
+  name: platform-object-storage
+  image:
+    repository: harbor.sunmoonai.com:30443/k8s-images/minio/aistor/minio
+    tag: RELEASE.2026-05-28T20-50-32Z
+    pullPolicy: IfNotPresent
+  imagePullSecret:
+    name: harbor-registry-secret
+
+  pools:
+    - name: pool-0
+      servers: 1
+      volumesPerServer: 1
+      size: 10Gi
+      storageClassName: object-storage-kind-static
+      nodeSelector:
+        kubernetes.io/hostname: kind-worker
+      resources:
+        requests:
+          cpu: 500m
+          memory: 1Gi
+        limits:
+          cpu: "2"
+          memory: 4Gi
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsNonRoot: true
+      containerSecurityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        seccompProfile:
+          type: RuntimeDefault
+
+  mountPath: /export
+  subPath: /data
+  podManagementPolicy: Parallel
+  pvcProtection: true
+
+  certificates:
+    disableAutoCert: true
+
+  services:
+    console:
+      serviceType: ClusterIP
+    minio:
+      serviceType: ClusterIP
+
+  metrics:
+    enabled: false
+

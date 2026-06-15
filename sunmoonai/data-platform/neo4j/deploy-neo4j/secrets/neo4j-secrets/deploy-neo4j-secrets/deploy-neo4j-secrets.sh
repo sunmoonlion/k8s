@@ -49,7 +49,7 @@ main() {
     local temp_data_dir=$(mktemp -d)
     trap "rm -rf $temp_data_dir" EXIT
     
-    [[ -n "${neo4j_password:-}" ]] && echo -n "${neo4j_password}" > "$temp_data_dir/neo4j-password"
+    [[ -n "${neo4j_password:-}" ]] && echo -n "${neo4j_password}" > "$temp_data_dir/password"
     
     local secret_yaml="$SECRET_DIR/neo4j-secrets.yaml"
     

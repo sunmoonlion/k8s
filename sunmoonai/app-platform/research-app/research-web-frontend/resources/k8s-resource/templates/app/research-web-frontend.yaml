@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: research-web-frontend
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: research-web-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: research-web-frontend
+  template:
+    metadata:
+      labels:
+        app: research-web-frontend
+    spec:
+      imagePullSecrets:
+      - name: ${RESEARCH_WEB_FRONTEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}
+      containers:
+      - name: research-web-frontend
+        image: ${RESEARCH_WEB_FRONTEND_FULL_IMAGE_NAME}
+        imagePullPolicy: ${IMAGE_PULL_POLICY:-Always}
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - configMapRef:
+            name: ${RESEARCH_WEB_FRONTEND_CONFIGMAP_NAME:-research-web-frontend-config}
+        - secretRef:
+            name: ${RESEARCH_WEB_FRONTEND_SECRET_NAME:-research-web-frontend-secret}
+${RESEARCH_WEB_FRONTEND_DATABASE_ENV_FROM}
+${RESEARCH_WEB_FRONTEND_OBJECT_STORAGE_ENV_FROM}
+${RESEARCH_WEB_FRONTEND_ELASTICSEARCH_ENV_FROM}
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: data
+          mountPath: ${PVC_MOUNT_PATH:-/app/data}
+${RESEARCH_WEB_FRONTEND_ELASTICSEARCH_VOLUME_MOUNT}
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: ${PVC_NAME:-research-web-frontend-pvc}
+${RESEARCH_WEB_FRONTEND_ELASTICSEARCH_VOLUME}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: research-web-frontend
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: research-web-frontend
+spec:
+  selector:
+    app: research-web-frontend
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+  type: ClusterIP

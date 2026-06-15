@@ -1,2 +1,2 @@
-# Kind 环境 Elasticsearch 不使用静态 PV/PVC
-# 持久化已禁用（persistence.enabled: false），日志数据无需跨集群保留
+# Kind 环境由 local-path StorageClass 动态创建 PVC。
+# 本文件保留为迁移说明，不包含需要 apply 的 Kubernetes 资源。

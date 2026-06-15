@@ -293,4 +293,12 @@ show_help() {
     echo "配置文件: $SECRETS_CONFIG_FILE"
 }
 
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    set -- "${ORIGINAL_ARGS[@]}"
+    if [[ "${1:-}" == "help" || "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+        show_help
+    else
+        deploy_secrets "$@"
+    fi
+fi
 

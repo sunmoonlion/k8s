@@ -28,6 +28,9 @@ spec:
             name: ${TOOLS_ADMIN_BACKEND_CONFIGMAP_NAME:-tools-admin-backend-config}
         - secretRef:
             name: ${TOOLS_ADMIN_BACKEND_SECRET_NAME:-tools-admin-backend-secret}
+${TOOLS_ADMIN_BACKEND_DATABASE_ENV_FROM}
+${TOOLS_ADMIN_BACKEND_OBJECT_STORAGE_ENV_FROM}
+${TOOLS_ADMIN_BACKEND_ELASTICSEARCH_ENV_FROM}
         resources:
           requests:
             memory: "256Mi"
@@ -52,10 +55,12 @@ spec:
         volumeMounts:
         - name: data
           mountPath: ${PVC_MOUNT_PATH:-/app/data}
+${TOOLS_ADMIN_BACKEND_ELASTICSEARCH_VOLUME_MOUNT}
       volumes:
       - name: data
         persistentVolumeClaim:
           claimName: ${PVC_NAME:-tools-admin-backend-pvc}
+${TOOLS_ADMIN_BACKEND_ELASTICSEARCH_VOLUME}
 ---
 apiVersion: v1
 kind: Service

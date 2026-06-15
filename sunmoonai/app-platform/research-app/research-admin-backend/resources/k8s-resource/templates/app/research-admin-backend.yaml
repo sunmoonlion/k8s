@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: research-admin-backend
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: research-admin-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: research-admin-backend
+  template:
+    metadata:
+      labels:
+        app: research-admin-backend
+    spec:
+      imagePullSecrets:
+      - name: ${RESEARCH_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}
+      containers:
+      - name: research-admin-backend
+        image: ${RESEARCH_ADMIN_BACKEND_FULL_IMAGE_NAME}
+        imagePullPolicy: ${IMAGE_PULL_POLICY:-Always}
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: ${RESEARCH_ADMIN_BACKEND_CONFIGMAP_NAME:-research-admin-backend-config}
+        - secretRef:
+            name: ${RESEARCH_ADMIN_BACKEND_SECRET_NAME:-research-admin-backend-secret}
+${RESEARCH_ADMIN_BACKEND_DATABASE_ENV_FROM}
+${RESEARCH_ADMIN_BACKEND_OBJECT_STORAGE_ENV_FROM}
+${RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_ENV_FROM}
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: data
+          mountPath: ${PVC_MOUNT_PATH:-/app/data}
+${RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_VOLUME_MOUNT}
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: ${PVC_NAME:-research-admin-backend-pvc}
+${RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_VOLUME}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: research-admin-backend
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: research-admin-backend
+spec:
+  selector:
+    app: research-admin-backend
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+  type: ClusterIP

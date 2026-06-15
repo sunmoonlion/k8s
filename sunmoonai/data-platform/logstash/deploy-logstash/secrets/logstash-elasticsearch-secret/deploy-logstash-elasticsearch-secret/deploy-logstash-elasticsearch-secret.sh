@@ -10,6 +10,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SECRET_DIR="$(dirname "$SCRIPT_DIR")"
+CONFIG_FILE="$SCRIPT_DIR/deploy-logstash-elasticsearch-secret.conf"
+[[ -f "$CONFIG_FILE" ]] || { echo "[ERROR] 缺少配置文件: $CONFIG_FILE" >&2; exit 1; }
+# shellcheck disable=SC1090
+source "$CONFIG_FILE"
 # 计算项目根目录（k8s目录）
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
 
@@ -103,4 +107,3 @@ main() {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     main "$@"
 fi
-

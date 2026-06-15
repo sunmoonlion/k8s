@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sunmoonai.com/schemas/elasticsearch-access.schema.json",
+  "title": "SunmoonAI Elasticsearch Access",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": {
+      "const": "search.sunmoonai.com/v1alpha1"
+    },
+    "kind": {
+      "const": "ElasticsearchAccess"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$",
+          "maxLength": 63
+        }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "environment",
+        "app",
+        "backend",
+        "namespace",
+        "secretName",
+        "configMapName",
+        "datasets"
+      ],
+      "properties": {
+        "provider": {
+          "const": "platform-elasticsearch"
+        },
+        "environment": {
+          "type": "string",
+          "enum": ["development", "staging", "production"]
+        },
+        "app": {"$ref": "#/$defs/dnsLabel"},
+        "backend": {"$ref": "#/$defs/dnsLabel"},
+        "namespace": {"$ref": "#/$defs/dnsLabel"},
+        "secretName": {"$ref": "#/$defs/dnsLabel"},
+        "configMapName": {"$ref": "#/$defs/dnsLabel"},
+        "datasets": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "schemaVersion", "permissions"],
+            "properties": {
+              "name": {"$ref": "#/$defs/dnsLabel"},
+              "schemaVersion": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "permissions": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "enum": ["read", "write"]
+                }
+              },
+              "settings": {
+                "type": "object",
+                "default": {}
+              },
+              "mappings": {
+                "type": "object",
+                "default": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "dnsLabel": {
+      "type": "string",
+      "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$",
+      "maxLength": 63
+    }
+  }
+}

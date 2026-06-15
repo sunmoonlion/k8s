@@ -149,14 +149,7 @@ execute_elasticsearch_deployment() {
     case "$environment" in
         "development"|"dev")
             if [[ "$cluster_lower" == "kind" ]]; then
-                # Kind：静态 hostPath PV + dev-values-kind.yaml
-                local pv_pvc_file="$ELASTICSEARCH_CUSTOM_VALUES_DIR/elasticsearch-kind-pv-pvc.yaml"
-                if [[ ! -f "$pv_pvc_file" ]]; then
-                    log_error "未找到 Kind 静态 PV/PVC 文件: $pv_pvc_file"
-                    return 1
-                fi
-                log_info "Kind 集群：应用静态 PV/PVC: $pv_pvc_file"
-                kubectl apply -f "$pv_pvc_file"
+                # Kind：使用 local-path StorageClass 动态创建持久卷
                 values_file="$ELASTICSEARCH_CUSTOM_VALUES_DIR/dev-values-kind.yaml"
             else
                 # Remote：动态 local-path
@@ -456,6 +449,10 @@ deploy_sub_components() {
             fi
         else
             log_info "跳过 $description (已禁用)"
+            if [[ "$name" == "elasticsearch_ingress" ]]; then
+                kubectl delete ingressroute elasticsearch-web-route \
+                    -n "$namespace" --ignore-not-found >/dev/null 2>&1 || true
+            fi
         fi
     done
 

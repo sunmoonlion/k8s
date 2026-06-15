@@ -103,7 +103,11 @@ filter: |-
 output: |-
   # 输出到 Elasticsearch
   elasticsearch {
-    hosts => ["elasticsearch-sunmoonai:9200"]
+    hosts => ["https://elasticsearch-sunmoonai:9200"]
+    user => "${ES_USERNAME}"
+    password => "${ES_PASSWORD}"
+    ssl_enabled => true
+    ssl_certificate_authorities => ["/opt/bitnami/logstash/certs/ca.crt"]
     index => "logstash-%{+YYYY.MM.dd}"
   }
   
@@ -119,33 +123,17 @@ env:
   - name: ELASTICSEARCH_PORT
     value: "9200"
 
-# ===================== 未来启用安全/密钥（预置占位，默认注释）====================
-# 使用说明：
-# 1) 由统一密管创建下列 Secret（示例名：logstash-elasticsearch-auth）：
-#    - username
-#    - password
-#    （如 ES 启用 TLS，再创建 Secret：elasticsearch-ca-secret，包含 ca.crt）
-# 2) 取消注释 env 与 output 中的相应配置，引用 Secret 并启用 SSL 校验。
+extraEnvVarsSecret: logstash-elasticsearch-secret
 
-# env:
-#   - name: ELASTICSEARCH_USERNAME
-#     valueFrom:
-#       secretKeyRef:
-#         name: logstash-elasticsearch-auth
-#         key: username
-#   - name: ELASTICSEARCH_PASSWORD
-#     valueFrom:
-#       secretKeyRef:
-#         name: logstash-elasticsearch-auth
-#         key: password
+extraVolumes:
+  - name: elasticsearch-ca
+    secret:
+      secretName: elasticsearch-sunmoonai-master-crt
+      items:
+        - key: ca.crt
+          path: ca.crt
 
-# output: |-
-#   elasticsearch {
-#     hosts => ["https://elasticsearch-sunmoonai:9200"]
-#     user => "${ELASTICSEARCH_USERNAME}"
-#     password => "${ELASTICSEARCH_PASSWORD}"
-#     ssl => true
-#     cacert => "/usr/share/logstash/config/certs/ca.crt"  # 通过 Secret 挂载
-#     index => "logstash-%{+YYYY.MM.dd}"
-#   }
-
+extraVolumeMounts:
+  - name: elasticsearch-ca
+    mountPath: /opt/bitnami/logstash/certs
+    readOnly: true

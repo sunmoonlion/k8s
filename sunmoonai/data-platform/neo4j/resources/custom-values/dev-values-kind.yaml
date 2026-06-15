@@ -22,8 +22,6 @@ image:
 auth:
   enabled: true
   existingSecret: "neo4j-secrets"
-  secretKeys:
-    password: "neo4j-password"
   database: "sunmoonai_dev"
 
 primary:
@@ -113,4 +111,3 @@ ingress:
 
 networkPolicy:
   enabled: false
-

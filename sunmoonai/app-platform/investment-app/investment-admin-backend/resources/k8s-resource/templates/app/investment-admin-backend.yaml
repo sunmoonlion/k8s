@@ -28,6 +28,9 @@ spec:
             name: ${INVESTMENT_ADMIN_BACKEND_CONFIGMAP_NAME:-investment-admin-backend-config}
         - secretRef:
             name: ${INVESTMENT_ADMIN_BACKEND_SECRET_NAME:-investment-admin-backend-secret}
+${INVESTMENT_ADMIN_BACKEND_DATABASE_ENV_FROM}
+${INVESTMENT_ADMIN_BACKEND_OBJECT_STORAGE_ENV_FROM}
+${INVESTMENT_ADMIN_BACKEND_ELASTICSEARCH_ENV_FROM}
         resources:
           requests:
             memory: "256Mi"
@@ -52,10 +55,12 @@ spec:
         volumeMounts:
         - name: data
           mountPath: ${PVC_MOUNT_PATH:-/app/data}
+${INVESTMENT_ADMIN_BACKEND_ELASTICSEARCH_VOLUME_MOUNT}
       volumes:
       - name: data
         persistentVolumeClaim:
           claimName: ${PVC_NAME:-investment-admin-backend-pvc}
+${INVESTMENT_ADMIN_BACKEND_ELASTICSEARCH_VOLUME}
 ---
 apiVersion: v1
 kind: Service

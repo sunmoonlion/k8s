@@ -28,8 +28,9 @@ spec:
             name: ${INVESTMENT_WEB_BACKEND_CONFIGMAP_NAME:-investment-web-backend-config}
         - secretRef:
             name: ${INVESTMENT_WEB_BACKEND_SECRET_NAME:-investment-web-backend-secret}
-        - secretRef:
-            name: ${INVESTMENT_WEB_BACKEND_QUEUE_REDIS_SECRET_NAME:-investment-web-backend-nodebull-redis-conn}
+${INVESTMENT_WEB_BACKEND_DATABASE_ENV_FROM}
+${INVESTMENT_WEB_BACKEND_OBJECT_STORAGE_ENV_FROM}
+${INVESTMENT_WEB_BACKEND_ELASTICSEARCH_ENV_FROM}
         resources:
           requests:
             memory: "256Mi"
@@ -54,10 +55,12 @@ spec:
         volumeMounts:
         - name: data
           mountPath: ${PVC_MOUNT_PATH:-/app/data}
+${INVESTMENT_WEB_BACKEND_ELASTICSEARCH_VOLUME_MOUNT}
       volumes:
       - name: data
         persistentVolumeClaim:
           claimName: ${PVC_NAME:-investment-web-backend-pvc}
+${INVESTMENT_WEB_BACKEND_ELASTICSEARCH_VOLUME}
 ---
 apiVersion: v1
 kind: Service

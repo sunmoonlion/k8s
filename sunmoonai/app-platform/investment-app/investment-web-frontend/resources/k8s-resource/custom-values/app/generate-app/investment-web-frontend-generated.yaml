@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: investment-web-frontend
+  namespace: app-platform-dev
+  labels:
+    app: investment-web-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: investment-web-frontend
+  template:
+    metadata:
+      labels:
+        app: investment-web-frontend
+    spec:
+      imagePullSecrets:
+      - name: harbor-registry-secret
+      containers:
+      - name: investment-web-frontend
+        image: harbor.sunmoonai.com/app-images/investment-web-frontend:1.0.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - configMapRef:
+            name: investment-web-frontend-config
+        - secretRef:
+            name: investment-web-frontend-secret
+
+
+
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: data
+          mountPath: /app/data
+
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: investment-web-frontend-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: investment-web-frontend
+  namespace: app-platform-dev
+  labels:
+    app: investment-web-frontend
+spec:
+  selector:
+    app: investment-web-frontend
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+  type: ClusterIP

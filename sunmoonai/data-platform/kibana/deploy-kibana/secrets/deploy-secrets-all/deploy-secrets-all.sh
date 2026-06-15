@@ -315,3 +315,11 @@ show_help() {
 # 解析命令行参数（支持 --cluster 或 -c）
 declare -a PARSED_ARGS
 
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    set -- "${ORIGINAL_ARGS[@]}"
+    if [[ "${1:-}" == "help" || "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+        show_help
+    else
+        deploy_secrets "$@"
+    fi
+fi

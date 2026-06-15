@@ -25,8 +25,6 @@ advertisedHost: neo4j-sunmoonai.data-platform-dev.svc.cluster.local
 auth:
   enabled: true
   existingSecret: "neo4j-secrets"
-  secretKeys:
-    password: "neo4j-password"
   database: "sunmoonai_dev"
 
 primary:

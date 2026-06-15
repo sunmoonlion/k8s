@@ -35,7 +35,15 @@ elasticsearch:
   port: 9200
   security:
     auth:
-      enabled: false
+      enabled: true
+      existingSecret: elasticsearch-secrets
+      createSystemUser: true
+      elasticsearchPasswordSecret: elasticsearch-secrets
+    tls:
+      enabled: true
+      verificationMode: certificate
+      existingSecret: elasticsearch-sunmoonai-master-crt
+      usePemCerts: true
 
 # 服务配置
 service:
@@ -87,44 +95,3 @@ configuration:
     rewriteBasePath: true
     # 公共基础 URL（可选，如果不设置，Chart 会根据 ingress 配置自动生成）
     # publicBaseUrl: ""
-
-# ===================== 未来启用安全/密钥（预置占位，默认注释）====================
-# 使用说明：
-# 1) 由统一密管创建下列 Secret（示例名：kibana-secrets），并写入强随机值：
-#    - xpack.security.encryptionKey
-#    - xpack.encryptedSavedObjects.encryptionKey
-#    - xpack.reporting.encryptionKey（如需要）
-# 2) 取消注释本节，并替换 Secret 名称/键名为实际值；升级部署后生效。
-# 3) 若 ES 端启用了安全（用户名/密码或 TLS），请同时在 Kibana 的 elasticsearch 配置块中开启相应项（见下方注释）。
-
-# xpack:
-#   security:
-#     enabled: true
-#     encryptionKey:
-#       # 建议从 Secret 挂载为环境变量或文件，本 Chart 直接支持值注入；为安全请从 Secret 注入：
-#       valueFromSecret: kibana-secrets
-#       key: xpack.security.encryptionKey
-#   encryptedSavedObjects:
-#     encryptionKey:
-#       valueFromSecret: kibana-secrets
-#       key: xpack.encryptedSavedObjects.encryptionKey
-#   reporting:
-#     encryptionKey:
-#       valueFromSecret: kibana-secrets
-#       key: xpack.reporting.encryptionKey
-
-# 若 ES 启用基本认证：
-# elasticsearch:
-#   hosts:
-#     - "https://elasticsearch-sunmoonai:9200"
-#   username:
-#     valueFromSecret: kibana-elasticsearch-auth
-#     key: username
-#   password:
-#     valueFromSecret: kibana-elasticsearch-auth
-#     key: password
-#   ssl:
-#     verificationMode: full
-#     # 引用 ES CA（Secret 中存放 ca.crt）
-#     certificateAuthoritiesSecret: elasticsearch-ca-secret
-#     certificateAuthoritiesSecretKey: ca.crt

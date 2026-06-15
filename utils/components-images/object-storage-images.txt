@@ -1,0 +1,4 @@
+quay.io/minio/aistor/operator:RELEASE.2026-06-10T05-02-21Z
+quay.io/minio/aistor/minio:RELEASE.2026-05-28T20-50-32Z
+quay.io/minio/aistor/minio-sidecar:RELEASE.2026-06-09T23-40-36Z
+quay.io/minio/aistor/mc:RELEASE.2026-04-21T04-26-49Z

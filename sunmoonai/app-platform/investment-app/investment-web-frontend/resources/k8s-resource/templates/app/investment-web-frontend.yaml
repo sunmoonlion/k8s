@@ -23,6 +23,14 @@ spec:
         imagePullPolicy: ${IMAGE_PULL_POLICY:-Always}
         ports:
         - containerPort: 3000
+        envFrom:
+        - configMapRef:
+            name: ${INVESTMENT_WEB_FRONTEND_CONFIGMAP_NAME:-investment-web-frontend-config}
+        - secretRef:
+            name: ${INVESTMENT_WEB_FRONTEND_SECRET_NAME:-investment-web-frontend-secret}
+${INVESTMENT_WEB_FRONTEND_DATABASE_ENV_FROM}
+${INVESTMENT_WEB_FRONTEND_OBJECT_STORAGE_ENV_FROM}
+${INVESTMENT_WEB_FRONTEND_ELASTICSEARCH_ENV_FROM}
         resources:
           requests:
             memory: "256Mi"
@@ -47,10 +55,12 @@ spec:
         volumeMounts:
         - name: data
           mountPath: ${PVC_MOUNT_PATH:-/app/data}
+${INVESTMENT_WEB_FRONTEND_ELASTICSEARCH_VOLUME_MOUNT}
       volumes:
       - name: data
         persistentVolumeClaim:
           claimName: ${PVC_NAME:-investment-web-frontend-pvc}
+${INVESTMENT_WEB_FRONTEND_ELASTICSEARCH_VOLUME}
 ---
 apiVersion: v1
 kind: Service

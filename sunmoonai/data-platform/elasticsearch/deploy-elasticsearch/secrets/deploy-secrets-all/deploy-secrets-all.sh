@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 CONF_FILE="$SCRIPT_DIR/deploy-secrets-all.conf"
 
 # 自动定位 k8s 根目录（向上查找 utils/cluster-arg-parser.sh）
@@ -59,6 +59,17 @@ apply_yaml() {
   fi
 }
 
+# 部署 Elasticsearch 管理员认证 Secret
+if [[ "${elasticsearch_admin_secret_enabled:-true}" == "true" ]]; then
+    admin_secret_script="$ROOT_DIR/elasticsearch-secrets/deploy-elasticsearch-secrets/deploy-elasticsearch-secrets.sh"
+    if [[ ! -x "$admin_secret_script" ]]; then
+        echo "[ERROR] Elasticsearch 管理员 Secret 脚本不存在或不可执行: $admin_secret_script" >&2
+        exit 1
+    fi
+    echo "[INFO] 部署 Elasticsearch 管理员认证 Secret..."
+    "$admin_secret_script" deploy "$NAMESPACE"
+fi
+
 # 部署 Harbor Registry Secret（如果启用）
 if [[ "${harbor_registry_secret_enabled:-true}" == "true" ]]; then
     if [[ -f "$ROOT_DIR/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh" ]]; then
@@ -80,4 +91,3 @@ if [[ "${elasticsearch_myapp_secret_enabled:-true}" == "true" ]]; then
 fi
 
 echo "[OK] Completed"
-

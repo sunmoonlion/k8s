@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: investment-web-backend
+  namespace: app-platform-dev
+  labels:
+    app: investment-web-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: investment-web-backend
+  template:
+    metadata:
+      labels:
+        app: investment-web-backend
+    spec:
+      imagePullSecrets:
+      - name: harbor-registry-secret
+      containers:
+      - name: investment-web-backend
+        image: harbor.sunmoonai.com/app-images/investment-web-backend:1.0.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: investment-web-backend-config
+        - secretRef:
+            name: investment-web-backend-secret
+        - secretRef:
+            name: investment-web-backend-postgresql-conn
+        - secretRef:
+            name: investment-web-backend-redis-conn
+        - secretRef:
+            name: investment-web-backend-mongodb-conn
+        - configMapRef:
+            name: investment-web-backend-s3
+        - secretRef:
+            name: investment-web-backend-s3
+        - configMapRef:
+            name: investment-web-backend-elasticsearch
+        - secretRef:
+            name: investment-web-backend-elasticsearch
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: data
+          mountPath: /app/data
+        - name: elasticsearch-ca
+          mountPath: /var/run/secrets/sunmoonai/elasticsearch
+          readOnly: true
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: investment-web-backend-pvc
+      - name: elasticsearch-ca
+        secret:
+          secretName: investment-web-backend-elasticsearch
+          items:
+          - key: ca.crt
+            path: ca.crt
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: investment-web-backend
+  namespace: app-platform-dev
+  labels:
+    app: investment-web-backend
+spec:
+  selector:
+    app: investment-web-backend
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+  type: ClusterIP

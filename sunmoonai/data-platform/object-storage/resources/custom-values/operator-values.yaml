@@ -1,0 +1,40 @@
+global:
+  clusterDomain: cluster.local
+  operator:
+    replicas: 1
+    imagePullPolicy: IfNotPresent
+    imagePullSecrets:
+      - name: harbor-registry-secret
+    resources:
+      requests:
+        cpu: 100m
+        ephemeral-storage: 256Mi
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+operators:
+  adminjob:
+    disabled: true
+  aihub:
+    disabled: true
+  object-store:
+    disabled: false
+    tokenValidation: TokenReview
+    webhook:
+      enabled: true
+      replicas: 1
+  prompt:
+    disabled: true
+  warp:
+    disabled: true
+
+repositories:
+  aistor:
+    hostname: harbor.sunmoonai.com:30443
+    pathPrefix: k8s-images/minio/aistor/
+    imagePullPolicy: IfNotPresent
+    imagePullSecrets:
+      - name: harbor-registry-secret
+

@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: object-storage-sunmoonai-dev-pv
+  labels:
+    app.kubernetes.io/name: object-storage
+    app.kubernetes.io/instance: sunmoonai
+    app.kubernetes.io/environment: development
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: object-storage-kind-static
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /data/kind-local-storage/object-storage
+    type: Directory
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - kind-worker
