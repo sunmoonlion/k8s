@@ -45,7 +45,13 @@ fi
 VAR_PREFIX="$(echo "$BUSINESS_APP_NAME" | tr '[:lower:]-' '[:upper:]_')"
 eval "DEFAULT_PROJECT_ID=\${${VAR_PREFIX}_PROJECT_ID:-sunmoonai}"
 eval "DEFAULT_NAMESPACE=\${${VAR_PREFIX}_NAMESPACE:-app-platform-dev}"
+eval "APP_IMAGE_TAG=\${${VAR_PREFIX}_IMAGE_TAG:-1.0.0}"
 DEFAULT_ENVIRONMENT="${ENVIRONMENT:-development}"
+
+APP_VAR_PREFIX="$(echo "${BUSINESS_APP_NAME%-app}" | tr '[:lower:]-' '[:upper:]_')"
+for component in ADMIN_BACKEND ADMIN_FRONTEND WEB_BACKEND WEB_FRONTEND; do
+    export "${APP_VAR_PREFIX}_${component}_TAG=${APP_IMAGE_TAG}"
+done
 
 call_subscript() {
     local script_path="$1"

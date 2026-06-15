@@ -19,7 +19,7 @@ spec:
       - name: harbor-registry-secret
       containers:
       - name: info-admin-backend
-        image: harbor.sunmoonai.com/app-images/info-admin-backend:1.0.0
+        image: harbor.sunmoonai.com/app-images/info-admin-backend:1.0.0-rebuild.20260615
         imagePullPolicy: Always
         ports:
         - containerPort: 8000

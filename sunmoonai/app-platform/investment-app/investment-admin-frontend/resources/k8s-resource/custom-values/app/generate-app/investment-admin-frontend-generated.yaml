@@ -19,7 +19,7 @@ spec:
       - name: harbor-registry-secret
       containers:
       - name: investment-admin-frontend
-        image: harbor.sunmoonai.com/app-images/investment-admin-frontend:1.0.0
+        image: harbor.sunmoonai.com/app-images/investment-admin-frontend:1.0.0-rebuild.20260615
         imagePullPolicy: Always
         ports:
         - containerPort: 80
