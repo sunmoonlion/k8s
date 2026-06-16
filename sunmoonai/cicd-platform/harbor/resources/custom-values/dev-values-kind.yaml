@@ -216,6 +216,13 @@ portal:
 # Core（核心服务）
 core:
   replicaCount: 1
+  # Kind 复制到远程 C1 时，core 需能解析远程域名。
+  # 远程 registry 认证 realm 仍为 harbor.sunmoonai.com，在 Kind Pod 内会落到 127.0.0.1 导致测试连接失败。
+  hostAliases:
+    - ip: 101.126.151.0
+      hostnames:
+        - harbor-c1.sunmoonai.com
+        - harbor.sunmoonai.com
   startupProbe:
     enabled: true
     initialDelaySeconds: 5
@@ -226,6 +233,11 @@ core:
 # JobService（作业服务）
 jobservice:
   replicaCount: 1
+  hostAliases:
+    - ip: 101.126.151.0
+      hostnames:
+        - harbor-c1.sunmoonai.com
+        - harbor.sunmoonai.com
   maxJobWorkers: 10
   startupProbe:
     enabled: true

@@ -74,6 +74,11 @@ ingress:
     ingressClassName: ""
     # Harbor访问域名 - 使用模板变量
     hostname: "{{HARBOR_EXTERNAL_HOST}}"
+    # 供 WSL 从 Kind Harbor 同步镜像时使用；集群内仍用 hostname，不改 externalURL
+    extraHosts:
+      - name: harbor-c1.sunmoonai.com
+        path: /
+        pathType: Prefix
     # 路径匹配类型
     pathType: "Prefix"
     # Annotations 配置（必须配置在 ingress.core.annotations 下）
