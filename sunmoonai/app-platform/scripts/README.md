@@ -1,27 +1,29 @@
 # App 镜像构建与推送
 
-本目录用于统一构建并推送 App Platform 下各业务 App 的四个标准组件镜像：
+本目录的 `build-push-app-images.sh` 只做一件事：**在 WSL 本地构建镜像，并直推到指定 Harbor**。
 
 ```text
-info
-research
-investment
-tools
-knowledge
-
-admin-backend
-admin-frontend
-web-backend
-web-frontend
+info / research / investment / tools / knowledge
+  × admin-backend / admin-frontend / web-backend / web-frontend
 ```
 
-脚本只负责本地 Docker 构建和推送镜像，不直接部署 Kubernetes 资源。Kind 和远程集群能否拉取镜像，取决于部署配置中使用的镜像仓库与这里推送的仓库是否一致。
+脚本不部署 Kubernetes，也不触发 Harbor 复制。
+
+## 两种镜像到达远程的方式（勿混淆）
+
+| 机制 | 入口 | 配置位置 |
+|------|------|----------|
+| **本地构建直推** | `build-push-app-images.sh` | 本目录 `build-push-app-images.conf` |
+| **Harbor 复制** | Kind Harbor UI → 复制管理 | `cicd-platform/harbor/docs/kind-to-c1-sync-README.md` |
+
+直推：改代码后 `docker build` + `docker push`，按 `CLUSTER` 推到对应 Harbor。  
+复制：镜像已在源 Harbor 中，由复制规则同步到目标 Harbor，无需重新构建。
 
 ## 文件
 
 ```text
-build-push-app-images.sh      # 构建并推送镜像
-build-push-app-images.conf    # 默认配置、集群仓库和镜像源
+build-push-app-images.sh      # 构建并直推镜像
+build-push-app-images.conf    # 各 CLUSTER 的直推仓库地址
 ```
 
 配置优先级：
@@ -30,63 +32,52 @@ build-push-app-images.conf    # 默认配置、集群仓库和镜像源
 命令行环境变量 > build-push-app-images.conf > 脚本内置默认值
 ```
 
-## 本地 Kind 使用
+## 直推目标：KIND 与 C1 配置不同
 
-Kind 当前使用本机 Harbor：
+Kind 与 C1 是**两套独立 Harbor**。`CLUSTER` 决定直推落到哪套：
+
+| CLUSTER | 本机 WSL 直推地址 | 其它机器直推 C1 |
+|---------|-------------------|-----------------|
+| `KIND` | `harbor.sunmoonai.com:30443` | 不适用（无本机 Kind 时无 KIND 直推场景） |
+| `C1` | `harbor-c1.sunmoonai.com:30443` | `harbor.sunmoonai.com:30443`（无本地 Kind 冲突，可直接用主域名） |
+
+本机 WSL 同时跑着 Kind Harbor，`harbor.sunmoonai.com` 会解析到本地实例，因此 C1 直推需用 `harbor-c1` 别名（`/etc/hosts` 指向 C1 公网 IP）。在其它机器上构建直推远程 C1 时，改 `build-push-app-images.conf` 中 `C1_*` 为 `harbor.sunmoonai.com:30443` 即可。
+
+对应配置项见 `build-push-app-images.conf` 中的 `KIND_*` 与 `C1_*`。
+
+## 推到 Kind Harbor
 
 ```bash
 cd ~/k8s/sunmoonai/app-platform
 
+docker login harbor.sunmoonai.com:30443
+
+CLUSTER=KIND ./scripts/build-push-app-images.sh
+# 或省略 CLUSTER（DEFAULT_CLUSTER=KIND）
 ./scripts/build-push-app-images.sh
 ```
 
-等价于：
-
-```bash
-CLUSTER=KIND ./scripts/build-push-app-images.sh
-```
-
-默认会推送到：
-
-```text
-harbor.sunmoonai.com:30443/app-images
-```
-
-并使用基础镜像仓库：
-
-```text
-harbor.sunmoonai.com:30443/k8s-images
-```
-
-## 远程集群使用
-
-如果远程集群和 Kind 使用同一个 Harbor，只需指定远程集群 profile：
+## 直推到远程 C1 Harbor
 
 ```bash
 cd ~/k8s/sunmoonai/app-platform
+
+docker login harbor-c1.sunmoonai.com:30443
 
 CLUSTER=C1 ./scripts/build-push-app-images.sh
 ```
 
-如果远程集群使用独立镜像仓库，优先修改 `build-push-app-images.conf` 中对应集群的配置：
+远程 `k8s-images` 中需已有 Python、Node 等基础镜像，否则 Dockerfile 构建阶段会失败。
 
-```bash
-C1_TARGET_REGISTRY="remote.example.com/app-images"
-C1_BASE_REGISTRY="remote.example.com/k8s-images"
-C1_TAG="1.0.0"
-```
-
-也可以临时覆盖：
+临时覆盖仓库地址：
 
 ```bash
 CLUSTER=C1 \
-TARGET_REGISTRY="remote.example.com/app-images" \
-BASE_REGISTRY="remote.example.com/k8s-images" \
+TARGET_REGISTRY="harbor-c1.sunmoonai.com:30443/app-images" \
+BASE_REGISTRY="harbor-c1.sunmoonai.com:30443/k8s-images" \
 TAG="1.0.0" \
 ./scripts/build-push-app-images.sh
 ```
-
-远程仓库必须已经存在基础镜像，例如 Python、Node 等 `k8s-images` 镜像，否则构建阶段会失败。
 
 ## 常用参数
 
@@ -128,31 +119,11 @@ COMPONENTS="admin-backend web-frontend" \
 ./scripts/build-push-app-images.sh
 ```
 
-## 登录 Harbor
-
-执行前需要 Docker 已登录目标 Harbor：
-
-```bash
-docker login harbor.sunmoonai.com:30443
-```
-
-如远程仓库不同，登录对应仓库：
-
-```bash
-docker login remote.example.com
-```
-
 ## 与部署配置的关系
 
-构建脚本推送的镜像版本必须与各 App Kubernetes 配置中的镜像版本一致。
+直推的镜像 tag 须与各 App Kubernetes 配置中的版本一致（当前基线 `1.0.0`）。
 
-当前标准版本为：
-
-```text
-1.0.0
-```
-
-构建完成后，部署入口仍使用：
+构建/复制完成后，部署入口：
 
 ```bash
 cd ~/k8s/sunmoonai/app-platform/deploy-app-platform-all
@@ -160,4 +131,4 @@ cd ~/k8s/sunmoonai/app-platform/deploy-app-platform-all
 ./deploy-app-platform-all.sh --cluster C1 deploy
 ```
 
-部署入口负责选择集群和启动组件；构建脚本负责把镜像放到相应仓库。
+若采用 Harbor 复制而非 C1 直推，复制说明见 `cicd-platform/harbor/docs/kind-to-c1-sync-README.md`。
