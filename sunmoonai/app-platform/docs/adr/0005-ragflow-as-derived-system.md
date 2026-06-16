@@ -9,9 +9,12 @@ RAGFlow 提供文档解析、分块、向量索引和知识检索，但其内部
 
 ## 决策
 
-`info-app` 保存资讯原始证据、规范化内容和历史版本。RAGFlow 接收受控副本，并保存处理状态、分块和检索索引。
+`info-app` 保存资讯原始证据、规范化内容和历史版本。`knowledge-app` 通过统一
+接口管理文档投递、映射、处理状态和重建；RAGFlow 接收受控副本，并保存产品内部
+状态、分块和检索索引。
 
-`info-app` 记录 RAGFlow Dataset、Document、同步版本、内容哈希和处理状态，并提供全量重建及增量对账。
+`info-app` 记录领域分发状态，`knowledge-app` 记录 RAGFlow Dataset、Document、
+同步版本、内容哈希和处理状态，并提供全量重建及增量对账。
 
 Data Platform 建设 S3 对象存储和 Elasticsearch 后，RAGFlow 仍继续使用其自带 MinIO 和 Elasticsearch：
 
@@ -28,5 +31,6 @@ Data Platform 建设 S3 对象存储和 Elasticsearch 后，RAGFlow 仍继续使
 - RAGFlow 故障不阻断资讯接收和保存。
 - 未来可以并行分发到其他搜索或知识引擎。
 - RAGFlow 可以连同其 MinIO、Elasticsearch、MySQL 和 Valkey 整体升级或重建。
+- 其他 App 依赖 `knowledge-app` 的公开契约，不直接绑定 RAGFlow 私有 API。
 - RAGFlow 解析和向量索引负载不会与平台领域存储形成同一故障和容量边界。
 - 同一内容会存在领域主档、领域派生产物和 RAGFlow 处理副本，这是有意的数据分级。

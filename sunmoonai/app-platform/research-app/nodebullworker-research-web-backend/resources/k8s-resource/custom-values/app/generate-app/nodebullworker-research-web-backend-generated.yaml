@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodebullworker-research-web-backend
+  namespace: app-platform-dev
+  labels:
+    app: nodebullworker-research-web-backend
+    component: node-bull-worker
+    backend: research-web-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nodebullworker-research-web-backend
+  template:
+    metadata:
+      labels:
+        app: nodebullworker-research-web-backend
+        component: node-bull-worker
+        backend: research-web-backend
+    spec:
+      imagePullSecrets:
+      - name: harbor-registry-secret
+      containers:
+      - name: nodebullworker
+        image: harbor.sunmoonai.com:30443/app-images/research-web-backend:1.0.0
+        imagePullPolicy: Always
+        command:
+        - sh
+        - -c
+        - |
+          set -eu
+          export NODE_ENV="${NODE_ENV:-production}"
+          export QUEUE_ON="${QUEUE_ON:-true}"
+          exec node dist/worker
+        envFrom:
+        - configMapRef:
+            name: research-web-backend-config
+        - secretRef:
+            name: research-web-backend-secret
+        - configMapRef:
+            name: nodebullworker-research-web-backend-config
+        - secretRef:
+            name: nodebullworker-research-web-backend-secret
+        - secretRef:
+            name: research-web-backend-nodebull-redis-conn
+        env:
+        - name: QUEUE_WORKER_SERVICE
+          value: "research-web-backend"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"

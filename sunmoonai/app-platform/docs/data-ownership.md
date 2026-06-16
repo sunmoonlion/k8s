@@ -59,7 +59,8 @@
 |---|---|---|
 | 用户、组织、服务身份、角色和权限 | `auth-app` | Token 声明、授权缓存 |
 | 资讯源、原始文件、资讯、版本、血缘和质量 | `info-app` | 搜索索引、RAG 文档、业务引用 |
-| 模型目录、Prompt、Agent、推理任务和知识处理状态 | `llm-app` | 调用方保存的结果引用和业务快照 |
+| 知识空间、文档投递、知识处理任务、引擎映射、模型辅助处理配置和推理运行引用 | `knowledge-app` | 领域引用、RAGFlow 处理副本、调用方业务快照 |
+| 通用研究项目、研究任务和跨领域研究产物 | `research-app` | 业务引用、报表、分析索引 |
 | 通用工具定义、工具任务和转换运行记录 | `tools-app` | 调用方拥有的处理产物 |
 | 证券主数据、研究、组合、持仓、估值、风险和决策 | `investment-app` | 报表、缓存、分析索引 |
 
@@ -93,7 +94,8 @@ investment-app.research_evidence
   quoted_hash
 
 investment-app.ai_run_reference
-  llm_run_id
+  ai_run_id
+  knowledge_run_id
   model_version
   prompt_version
 ```

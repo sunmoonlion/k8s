@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knowledge-admin-backend
+  namespace: app-platform-dev
+  labels:
+    app: knowledge-admin-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: knowledge-admin-backend
+  template:
+    metadata:
+      labels:
+        app: knowledge-admin-backend
+    spec:
+      imagePullSecrets:
+      - name: harbor-registry-secret
+      containers:
+      - name: knowledge-admin-backend
+        image: harbor.sunmoonai.com:30443/app-images/knowledge-admin-backend:1.0.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: knowledge-admin-backend-config
+        - secretRef:
+            name: knowledge-admin-backend-secret
+        - secretRef:
+            name: knowledge-admin-backend-postgresql-conn
+        - secretRef:
+            name: knowledge-admin-backend-redis-conn
+        - secretRef:
+            name: knowledge-admin-backend-mongodb-conn
+        - configMapRef:
+            name: knowledge-admin-backend-s3
+        - secretRef:
+            name: knowledge-admin-backend-s3
+        - configMapRef:
+            name: knowledge-admin-backend-elasticsearch
+        - secretRef:
+            name: knowledge-admin-backend-elasticsearch
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: data
+          mountPath: /app/data
+        - name: elasticsearch-ca
+          mountPath: /var/run/secrets/sunmoonai/elasticsearch
+          readOnly: true
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: knowledge-admin-backend-pvc
+      - name: elasticsearch-ca
+        secret:
+          secretName: knowledge-admin-backend-elasticsearch
+          items:
+          - key: ca.crt
+            path: ca.crt
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: knowledge-admin-backend
+  namespace: app-platform-dev
+  labels:
+    app: knowledge-admin-backend
+spec:
+  selector:
+    app: knowledge-admin-backend
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+  type: ClusterIP

@@ -699,6 +699,61 @@ clean_rabbitmq_pvc() {
     fi
 }
 
+# 确保 RabbitMQ 管理用户与 rabbitmq-auth-secret 一致。
+# RabbitMQ 用户会写入持久化内部数据库；load_definitions 中的应用用户可能导致
+# 管理用户在重建/升级后缺失，因此这里在 Helm 和 Secret 部署完成后显式收敛。
+ensure_rabbitmq_admin_user() {
+    local namespace="$1"
+
+    if [[ -z "$namespace" ]]; then
+        log_error "RabbitMQ 命名空间为空，无法确保管理用户"
+        return 1
+    fi
+
+    local pod_name="rabbitmq-${RABBITMQ_PROJECT_ID:-sunmoonai}-0"
+    local secret_name="${RABBITMQ_AUTH_SECRET_NAME:-rabbitmq-auth-secret}"
+
+    log_info "等待 RabbitMQ Pod 就绪以收敛管理用户..."
+    if ! kubectl wait --for=condition=Ready "pod/${pod_name}" -n "$namespace" --timeout=240s >/dev/null; then
+        log_error "RabbitMQ Pod 未就绪，无法收敛管理用户: ${pod_name}"
+        return 1
+    fi
+
+    local username_b64 password_b64 username password
+    username_b64=$(kubectl get secret "$secret_name" -n "$namespace" -o jsonpath='{.data.rabbitmq-username}' 2>/dev/null || true)
+    password_b64=$(kubectl get secret "$secret_name" -n "$namespace" -o jsonpath='{.data.rabbitmq-password}' 2>/dev/null || true)
+
+    if [[ -z "$username_b64" || -z "$password_b64" ]]; then
+        log_error "RabbitMQ Auth Secret 缺少 rabbitmq-username 或 rabbitmq-password: ${secret_name}"
+        return 1
+    fi
+
+    username=$(printf '%s' "$username_b64" | base64 -d)
+    password=$(printf '%s' "$password_b64" | base64 -d)
+
+    if kubectl exec -n "$namespace" "$pod_name" -- rabbitmqctl list_users --silent | awk '{print $1}' | grep -qx "$username"; then
+        kubectl exec -n "$namespace" "$pod_name" -- rabbitmqctl change_password "$username" "$password" >/dev/null
+    else
+        kubectl exec -n "$namespace" "$pod_name" -- rabbitmqctl add_user "$username" "$password" >/dev/null
+    fi
+
+    kubectl exec -n "$namespace" "$pod_name" -- rabbitmqctl set_user_tags "$username" administrator >/dev/null
+
+    local vhost
+    while IFS= read -r vhost; do
+        [[ -z "$vhost" ]] && continue
+        kubectl exec -n "$namespace" "$pod_name" -- rabbitmqctl set_permissions -p "$vhost" "$username" ".*" ".*" ".*" >/dev/null
+    done < <(kubectl exec -n "$namespace" "$pod_name" -- rabbitmqctl list_vhosts --silent | awk '/^[A-Za-z0-9_.-]+$/ {print $1}')
+
+    if kubectl exec -n "$namespace" "$pod_name" -- rabbitmqctl authenticate_user "$username" "$password" >/dev/null; then
+        log_success "✅ RabbitMQ 管理用户已与 ${secret_name} 对齐"
+        return 0
+    fi
+
+    log_error "RabbitMQ 管理用户认证验证失败"
+    return 1
+}
+
 # 解析命令行参数（支持 --cluster 或 -c）
 declare -a PARSED_ARGS
 
@@ -750,6 +805,12 @@ main() {
                 if ! deploy_sub_components "$project_id" "$namespace" "$environment" "$dry_run"; then
                     log_error "❌ 子组件部署失败"
                     return 1
+                fi
+                if [[ "$dry_run" != "true" ]]; then
+                    if ! ensure_rabbitmq_admin_user "$namespace"; then
+                        log_error "❌ RabbitMQ 管理用户收敛失败"
+                        return 1
+                    fi
                 fi
                 # 安装后清理控制平面 tar 包
                 if [[ -x "$PROJECT_ROOT/../../cicd-platform/harbor/utils/harbor-image-management/harbor-image.sh" ]]; then

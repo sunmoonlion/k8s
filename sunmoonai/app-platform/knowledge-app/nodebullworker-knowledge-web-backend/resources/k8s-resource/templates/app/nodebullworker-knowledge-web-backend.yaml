@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodebullworker-knowledge-web-backend
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: nodebullworker-knowledge-web-backend
+    component: node-bull-worker
+    backend: knowledge-web-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nodebullworker-knowledge-web-backend
+  template:
+    metadata:
+      labels:
+        app: nodebullworker-knowledge-web-backend
+        component: node-bull-worker
+        backend: knowledge-web-backend
+    spec:
+      imagePullSecrets:
+      - name: ${NODEBULLWORKER_KNOWLEDGE_WEB_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}
+      containers:
+      - name: nodebullworker
+        image: ${NODEBULLWORKER_KNOWLEDGE_WEB_BACKEND_FULL_IMAGE_NAME}
+        imagePullPolicy: ${IMAGE_PULL_POLICY:-Always}
+        command:
+        - sh
+        - -c
+        - |
+          set -eu
+          export NODE_ENV="__CONTAINER_NODE_ENV_DEFAULT__"
+          export QUEUE_ON="__CONTAINER_QUEUE_ON_DEFAULT__"
+          exec node dist/worker
+        envFrom:
+        - configMapRef:
+            name: ${KNOWLEDGE_WEB_BACKEND_CONFIGMAP_NAME:-knowledge-web-backend-config}
+        - secretRef:
+            name: ${KNOWLEDGE_WEB_BACKEND_SECRET_NAME:-knowledge-web-backend-secret}
+        - configMapRef:
+            name: ${NODEBULLWORKER_KNOWLEDGE_WEB_BACKEND_CONFIGMAP_NAME:-nodebullworker-knowledge-web-backend-config}
+        - secretRef:
+            name: ${NODEBULLWORKER_KNOWLEDGE_WEB_BACKEND_SECRET_NAME:-nodebullworker-knowledge-web-backend-secret}
+        - secretRef:
+            name: ${NODEBULLWORKER_KNOWLEDGE_WEB_BACKEND_QUEUE_REDIS_SECRET_NAME:-knowledge-web-backend-nodebull-redis-conn}
+        env:
+        - name: QUEUE_WORKER_SERVICE
+          value: "knowledge-web-backend"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"

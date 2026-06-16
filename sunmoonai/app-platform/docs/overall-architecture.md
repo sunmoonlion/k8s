@@ -13,7 +13,8 @@
 - [实施路线](./implementation-roadmap.md)
 - [Auth App](./auth-app.md)
 - [Info App](./info-app.md)
-- [LLM App](./llm-app.md)
+- [Knowledge App](./knowledge-app.md)
+- [Research App](./research-app.md)
 - [Tools App](./tools-app.md)
 - [Investment App](./investment-app.md)
 
@@ -27,7 +28,8 @@ App Platform 是由多个长期演进的应用系统组成的业务平台。各 
 App Platform
 ├── auth-app
 ├── info-app
-├── llm-app
+├── knowledge-app
+├── research-app
 ├── tools-app
 └── investment-app
 ```
@@ -36,7 +38,8 @@ App Platform
 
 - `auth-app`：身份、组织、认证和授权系统。
 - `info-app`：资讯获取、管理、治理、组织和分发系统。
-- `llm-app`：大模型、知识处理、语义检索和智能能力系统。
+- `knowledge-app`：知识处理、文档索引、语义检索、RAG 和模型辅助处理能力系统。
+- `research-app`：通用研究协作、研究任务、研究材料组织和研究产物系统。
 - `tools-app`：可复用的通用工具能力系统。
 - `investment-app`：投资研究、分析、组合、策略和决策支持系统。
 
@@ -48,7 +51,8 @@ App Platform
 
 领域 App 和 `tpl-app` 组件属于不同层次：
 
-- `auth-app`、`info-app`、`llm-app`、`tools-app`、`investment-app` 表达长期业务领域。
+- `auth-app`、`info-app`、`knowledge-app`、`research-app`、`tools-app`、
+  `investment-app` 表达长期业务领域。
 - `admin-backend`、`web-backend`、`admin-frontend`、`web-frontend` 是可选技术栈样板。
 - Deployment、Worker、Scheduler 和 Migration Job 是运行角色。
 
@@ -78,8 +82,8 @@ App Platform
                  ┌────────────────┼────────────────┐
                  │                │                │
         ┌────────▼────────┐ ┌─────▼──────┐ ┌──────▼─────────┐
-        │    info-app     │ │  llm-app   │ │    tools-app   │
-        │ 资讯管理与分发   │ │ 模型与知识能力│ │ 通用工具能力    │
+        │    info-app     │ │knowledge-app│ │    tools-app   │
+        │ 资讯管理与分发   │ │ 知识处理与检索│ │ 通用工具能力    │
         └────────┬────────┘ └─────┬──────┘ └──────┬─────────┘
                  │                │                │
                  └────────────────┼────────────────┘
@@ -92,9 +96,10 @@ App Platform
 
 该图表达主要能力关系，不表示所有调用都必须经过 `investment-app`。例如：
 
-- `info-app` 可以使用 `llm-app` 完成内容理解和知识检索。
+- `info-app` 可以使用 `knowledge-app` 完成内容理解、知识处理和检索。
 - `info-app` 可以使用 `tools-app` 完成文件转换。
-- 新业务 App 可以直接使用 `auth-app`、`info-app`、`llm-app` 和 `tools-app`。
+- 新业务 App 可以直接使用 `auth-app`、`info-app`、`knowledge-app`、`research-app`
+  和 `tools-app`。
 
 ## 4. 应用职责
 
@@ -122,19 +127,28 @@ App Platform
 
 `info-app` 是资讯领域的 System of Record，不是单一爬虫或投资资讯附属模块。
 
-### 4.3 LLM App
+### 4.3 Knowledge App
 
 负责：
 
-- 大模型接入和统一调用。
-- Prompt、Agent 和模型配置管理。
-- Embedding、语义检索和知识处理能力。
-- RAGFlow 等 RAG 基础设施。
-- 为其他 App 提供稳定的智能能力接口。
+- 知识空间、文档投递、处理任务和检索请求。
+- 文档解析、分块、Embedding、语义检索和 RAG 能力。
+- 领域文档与 RAGFlow 对象的映射、对账和重建。
+- 通过统一 API 隔离 RAGFlow 等具体知识引擎。
 
-不持有其他领域的业务主数据。
+不持有其他领域的唯一原文和业务主数据。
 
-### 4.4 Tools App
+### 4.4 Research App
+
+负责：
+
+- 通用研究项目、研究任务和研究协作。
+- 研究材料组织、证据引用和研究产物沉淀。
+- 跨领域研究工作流和过程审计。
+
+不持有资讯原文、知识处理副本、工具运行主档和投资领域结论。
+
+### 4.5 Tools App
 
 负责：
 
@@ -144,7 +158,7 @@ App Platform
 
 只有真正跨领域、无明确业务所有者的能力才进入 `tools-app`。
 
-### 4.5 Investment App
+### 4.6 Investment App
 
 负责：
 
@@ -152,7 +166,7 @@ App Platform
 - 公司、行业和标的分析。
 - 投资组合、策略和风险管理。
 - 研究观点、笔记、评级和投资结论。
-- 对 `info-app` 资讯及 `llm-app` 智能能力的投资领域编排。
+- 对 `info-app` 资讯、`knowledge-app` 知识/RAG 能力和 `tools-app` 工具能力的投资领域编排。
 
 不复制其他 App 的基础能力，也不成为其他领域主数据的所有者。
 
@@ -170,7 +184,7 @@ App Platform
 
 - `investment-app` 查询资讯或请求模型能力。
 - `info-app` 根据投资业务公开的关注对象执行定向分发。
-- `llm-app` 和 `tools-app` 回调任务状态或发布完成事件。
+- `knowledge-app`、`research-app` 和 `tools-app` 回调任务状态或发布完成事件。
 - `auth-app` 发布用户、组织和权限变化事件。
 
 需要控制的是领域依赖、数据所有权和故障传播：
@@ -181,7 +195,8 @@ App Platform
 - 事件生产者仍然拥有事件所表达的领域事实。
 - 避免形成启动、发布和运行时的循环强依赖。
 - 某个依赖暂时不可用时，能够根据业务要求降级、排队、重试或补偿。
-- `auth-app`、`info-app`、`llm-app` 和 `tools-app` 的核心能力不依赖 `investment-app` 才能成立。
+- `auth-app`、`info-app`、`knowledge-app`、`research-app` 和 `tools-app` 的核心能力
+  不依赖 `investment-app` 才能成立。
 
 `investment-app` 不是跨 App 的中心编排器。各 App 保持领域自治，并可以根据公开契约双向提供或消费能力。
 
@@ -217,7 +232,8 @@ App Platform
 |---|---|
 | 用户、组织、角色、权限 | `auth-app` |
 | 资讯源、原文、版本、标签、血缘、质量和分发状态 | `info-app` |
-| 模型配置、知识处理任务和 RAG 索引 | `llm-app` |
+| 知识空间、知识处理任务、映射、模型辅助处理配置和推理运行引用 | `knowledge-app` |
+| 通用研究项目、研究任务和跨领域研究产物 | `research-app` |
 | 通用工具配置和工具任务 | `tools-app` |
 | 投资研究、组合、策略、观点和结论 | `investment-app` |
 
@@ -294,11 +310,12 @@ app-platform
     -> deployable component
 ```
 
-新 App 原则上从统一 `tpl-app` 完整实例化四个组件，以继承认证、数据库、S3、
-Elasticsearch、构建、镜像和部署约定。完整实例化不代表四个组件必须同时承载
+新 App 原则上从统一 `tpl-app` 完整实例化四个源码组件和两个配套 Worker 运行角色，
+以继承认证、数据库、S3、Elasticsearch、构建、镜像和部署约定。完整实例化不代表这些角色必须同时承载
 业务或在所有集群运行：
 
 - 四个组件始终保留完整工程和平台接入配置。
+- Celery Worker 复用 admin-backend，NodeBull Worker 复用 web-backend；二者不建立独立子仓库、镜像或数据所有权。
 - 按功能和技术栈选择当前实际开发的组件。
 - 通过 Kubernetes 组件启用标志控制不同集群中的运行状态。
 - 领域模块可以在所选组件的 `app` 内采用与业务匹配的代码组织。

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: knowledge-admin-backend-pvc
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: knowledge-admin-backend
+spec:
+  accessModes:
+    - ${PVC_ACCESS_MODE:-ReadWriteOnce}
+  storageClassName: ${PVC_STORAGE_CLASS:-}
+  resources:
+    requests:
+      storage: ${PVC_STORAGE_SIZE:-10Gi}

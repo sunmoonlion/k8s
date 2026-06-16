@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knowledge-web-frontend
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: knowledge-web-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: knowledge-web-frontend
+  template:
+    metadata:
+      labels:
+        app: knowledge-web-frontend
+    spec:
+      imagePullSecrets:
+      - name: ${KNOWLEDGE_WEB_FRONTEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}
+      containers:
+      - name: knowledge-web-frontend
+        image: ${KNOWLEDGE_WEB_FRONTEND_FULL_IMAGE_NAME}
+        imagePullPolicy: ${IMAGE_PULL_POLICY:-Always}
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - configMapRef:
+            name: ${KNOWLEDGE_WEB_FRONTEND_CONFIGMAP_NAME:-knowledge-web-frontend-config}
+        - secretRef:
+            name: ${KNOWLEDGE_WEB_FRONTEND_SECRET_NAME:-knowledge-web-frontend-secret}
+${KNOWLEDGE_WEB_FRONTEND_DATABASE_ENV_FROM}
+${KNOWLEDGE_WEB_FRONTEND_OBJECT_STORAGE_ENV_FROM}
+${KNOWLEDGE_WEB_FRONTEND_ELASTICSEARCH_ENV_FROM}
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: data
+          mountPath: ${PVC_MOUNT_PATH:-/app/data}
+${KNOWLEDGE_WEB_FRONTEND_ELASTICSEARCH_VOLUME_MOUNT}
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: ${PVC_NAME:-knowledge-web-frontend-pvc}
+${KNOWLEDGE_WEB_FRONTEND_ELASTICSEARCH_VOLUME}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: knowledge-web-frontend
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: knowledge-web-frontend
+spec:
+  selector:
+    app: knowledge-web-frontend
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+  type: ClusterIP

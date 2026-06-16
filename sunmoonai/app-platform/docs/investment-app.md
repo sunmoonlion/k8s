@@ -140,9 +140,9 @@ calculation_at
 
 提供客观资讯、原始证据和版本。Investment App 保存引用、使用目的、研究解释和决策关系。
 
-### LLM App
+### Knowledge App
 
-提供模型、RAG 和 Agent 能力。Investment App 保存被采用结果的运行 ID、模型版本、Prompt 版本、引用和人工确认状态。
+提供知识检索、RAG、模型辅助处理和 AI 运行引用。Investment App 保存被采用结果的运行 ID、模型版本、Prompt 版本、引用和人工确认状态。
 
 ### Tools App
 
@@ -160,7 +160,7 @@ Security
 
 Research
   -> EvidenceReference(info_id, info_version_id)
-  -> AiRunReference(llm_run_id)
+  -> AiRunReference(ai_run_id, knowledge_run_id)
   -> InvestmentDecision
 
 Portfolio
@@ -235,7 +235,7 @@ investment-app
 - Security Master 最小模型。
 - Research、EvidenceReference 和研究版本。
 - 接入 Info App 资讯引用。
-- 接入 LLM App 运行引用。
+- 接入 Knowledge App / AI 运行引用。
 - 建立统一审计。
 
 ### 第二阶段：组合与估值

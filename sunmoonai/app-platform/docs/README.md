@@ -12,7 +12,8 @@
 
 - [Auth App](./auth-app.md)
 - [Info App](./info-app.md)
-- [LLM App](./llm-app.md)
+- [Knowledge App](./knowledge-app.md)
+- [Research App](./research-app.md)
 - [Tools App](./tools-app.md)
 - [Investment App](./investment-app.md)
 

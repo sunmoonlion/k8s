@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celeryworker-info-admin-backend
+  namespace: app-platform-dev
+  labels:
+    app: celeryworker-info-admin-backend
+    component: celery-worker
+    backend: info-admin-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: celeryworker-info-admin-backend
+  template:
+    metadata:
+      labels:
+        app: celeryworker-info-admin-backend
+        component: celery-worker
+        backend: info-admin-backend
+    spec:
+      imagePullSecrets:
+      - name: harbor-registry-secret
+      containers:
+      - name: celeryworker
+        image: harbor.sunmoonai.com:30443/app-images/info-admin-backend:1.0.0
+        imagePullPolicy: Always
+        command:
+        - sh
+        - -c
+        - |
+          set -eu
+          if [ -n "$(printenv CELERY_INCLUDE_MODULES)" ]; then
+            exec celery -A "$(printenv CELERY_APP_MODULE)" worker \
+              -I "$(printenv CELERY_INCLUDE_MODULES)" \
+              -l "$(printenv CELERY_LOG_LEVEL)" \
+              -Q "$(printenv CELERY_QUEUE)" \
+              -c "$(printenv CELERY_CONCURRENCY)"
+          fi
+          exec celery -A "$(printenv CELERY_APP_MODULE)" worker \
+            -l "$(printenv CELERY_LOG_LEVEL)" \
+            -Q "$(printenv CELERY_QUEUE)" \
+            -c "$(printenv CELERY_CONCURRENCY)"
+        envFrom:
+        - configMapRef:
+            name: info-admin-backend-config
+        - secretRef:
+            name: info-admin-backend-secret
+        - configMapRef:
+            name: celeryworker-info-admin-backend-config
+        - secretRef:
+            name: celeryworker-info-admin-backend-secret
+        env:
+        - name: CELERY_PRODUCER_SERVICE
+          value: "info-admin-backend"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - celery -A app.worker inspect ping --timeout 10
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 20
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - grep -aq celery /proc/1/cmdline
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3

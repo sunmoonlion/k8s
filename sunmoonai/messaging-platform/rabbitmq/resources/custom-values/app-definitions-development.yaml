@@ -16,44 +16,51 @@ extraSecrets:
     load_definition.json: |
       {
         "vhosts": [
+          {"name": "info-development"},
+          {"name": "research-development"},
           {"name": "investment-development"},
-          {"name": "llm-development"},
-          {"name": "tools-development"}
+          {"name": "tools-development"},
+          {"name": "knowledge-development"}
         ],
         "users": [
+          {"name": "info-admin-backend-producer", "password": "info-admin-backend-producer-dev", "tags": ""},
+          {"name": "info-admin-backend-worker", "password": "info-admin-backend-worker-dev", "tags": ""},
+          {"name": "research-admin-backend-producer", "password": "research-admin-backend-producer-dev", "tags": ""},
+          {"name": "research-admin-backend-worker", "password": "research-admin-backend-worker-dev", "tags": ""},
           {"name": "investment-web-backend-producer", "password": "investment-web-backend-producer-dev", "tags": ""},
           {"name": "investment-web-backend-worker", "password": "investment-web-backend-worker-dev", "tags": ""},
           {"name": "investment-admin-backend-producer", "password": "investment-admin-backend-producer-dev", "tags": ""},
           {"name": "investment-admin-backend-worker", "password": "investment-admin-backend-worker-dev", "tags": ""},
-          {"name": "llm-web-backend-producer", "password": "llm-web-backend-producer-dev", "tags": ""},
-          {"name": "llm-web-backend-worker", "password": "llm-web-backend-worker-dev", "tags": ""},
-          {"name": "llm-admin-backend-producer", "password": "llm-admin-backend-producer-dev", "tags": ""},
-          {"name": "llm-admin-backend-worker", "password": "llm-admin-backend-worker-dev", "tags": ""},
           {"name": "tools-web-backend-producer", "password": "tools-web-backend-producer-dev", "tags": ""},
           {"name": "tools-web-backend-worker", "password": "tools-web-backend-worker-dev", "tags": ""},
           {"name": "tools-admin-backend-producer", "password": "tools-admin-backend-producer-dev", "tags": ""},
-          {"name": "tools-admin-backend-worker", "password": "tools-admin-backend-worker-dev", "tags": ""}
+          {"name": "tools-admin-backend-worker", "password": "tools-admin-backend-worker-dev", "tags": ""},
+          {"name": "knowledge-admin-backend-producer", "password": "knowledge-admin-backend-producer-dev", "tags": ""},
+          {"name": "knowledge-admin-backend-worker", "password": "knowledge-admin-backend-worker-dev", "tags": ""}
         ],
         "permissions": [
+          {"user": "info-admin-backend-producer", "vhost": "info-development", "configure": "^info\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "write": "^info\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "read": "^info\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$"},
+          {"user": "info-admin-backend-worker", "vhost": "info-development", "configure": "^info\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "write": "^info\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "read": "^info\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$"},
+          {"user": "research-admin-backend-producer", "vhost": "research-development", "configure": "^research\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "write": "^research\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "read": "^research\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$"},
+          {"user": "research-admin-backend-worker", "vhost": "research-development", "configure": "^research\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "write": "^research\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "read": "^research\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$"},
           {"user": "investment-web-backend-producer", "vhost": "investment-development", "configure": "^investment\\.web\\.default$", "write": "^$|^investment\\.web\\.default$", "read": "^$"},
           {"user": "investment-web-backend-worker", "vhost": "investment-development", "configure": "^investment\\.web\\.default$", "write": "^$|^investment\\.web\\.default$", "read": "^investment\\.web\\.default$"},
           {"user": "investment-admin-backend-producer", "vhost": "investment-development", "configure": "^investment\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "write": "^investment\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "read": "^investment\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$"},
           {"user": "investment-admin-backend-worker", "vhost": "investment-development", "configure": "^investment\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "write": "^investment\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "read": "^investment\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$"},
-          {"user": "llm-web-backend-producer", "vhost": "llm-development", "configure": "^llm\\.web\\.default$", "write": "^$|^llm\\.web\\.default$", "read": "^$"},
-          {"user": "llm-web-backend-worker", "vhost": "llm-development", "configure": "^llm\\.web\\.default$", "write": "^$|^llm\\.web\\.default$", "read": "^llm\\.web\\.default$"},
-          {"user": "llm-admin-backend-producer", "vhost": "llm-development", "configure": "^llm\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "write": "^llm\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "read": "^llm\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$"},
-          {"user": "llm-admin-backend-worker", "vhost": "llm-development", "configure": "^llm\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "write": "^llm\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "read": "^llm\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$"},
           {"user": "tools-web-backend-producer", "vhost": "tools-development", "configure": "^tools\\.web\\.default$", "write": "^$|^tools\\.web\\.default$", "read": "^$"},
           {"user": "tools-web-backend-worker", "vhost": "tools-development", "configure": "^tools\\.web\\.default$", "write": "^$|^tools\\.web\\.default$", "read": "^tools\\.web\\.default$"},
           {"user": "tools-admin-backend-producer", "vhost": "tools-development", "configure": "^tools\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "write": "^tools\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "read": "^tools\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$"},
-          {"user": "tools-admin-backend-worker", "vhost": "tools-development", "configure": "^tools\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "write": "^tools\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "read": "^tools\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$"}
+          {"user": "tools-admin-backend-worker", "vhost": "tools-development", "configure": "^tools\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "write": "^tools\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "read": "^tools\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$"},
+          {"user": "knowledge-admin-backend-producer", "vhost": "knowledge-development", "configure": "^knowledge\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "write": "^knowledge\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "read": "^knowledge\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$"},
+          {"user": "knowledge-admin-backend-worker", "vhost": "knowledge-development", "configure": "^knowledge\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "write": "^knowledge\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "read": "^knowledge\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$"}
         ],
         "queues": [
+          {"name": "info.admin.default", "vhost": "info-development", "durable": true, "auto_delete": false, "arguments": {}},
+          {"name": "research.admin.default", "vhost": "research-development", "durable": true, "auto_delete": false, "arguments": {}},
           {"name": "investment.web.default", "vhost": "investment-development", "durable": true, "auto_delete": false, "arguments": {}},
           {"name": "investment.admin.default", "vhost": "investment-development", "durable": true, "auto_delete": false, "arguments": {}},
-          {"name": "llm.web.default", "vhost": "llm-development", "durable": true, "auto_delete": false, "arguments": {}},
-          {"name": "llm.admin.default", "vhost": "llm-development", "durable": true, "auto_delete": false, "arguments": {}},
           {"name": "tools.web.default", "vhost": "tools-development", "durable": true, "auto_delete": false, "arguments": {}},
-          {"name": "tools.admin.default", "vhost": "tools-development", "durable": true, "auto_delete": false, "arguments": {}}
+          {"name": "tools.admin.default", "vhost": "tools-development", "durable": true, "auto_delete": false, "arguments": {}},
+          {"name": "knowledge.admin.default", "vhost": "knowledge-development", "durable": true, "auto_delete": false, "arguments": {}}
         ]
       }

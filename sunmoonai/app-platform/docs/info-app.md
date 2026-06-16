@@ -49,16 +49,16 @@
 
 `investment-app` 引用 `info_id`，不复制资讯主档。
 
-### 3.2 与 LLM App
+### 3.2 与 Knowledge App
 
-`info-app` 拥有资讯主数据和原始证据；`llm-app` 提供模型与知识处理能力。
+`info-app` 拥有资讯主数据和原始证据；`knowledge-app` 提供知识处理和检索能力；
+模型辅助处理和 RAGFlow 适配能力也由 `knowledge-app` 对外封装。
 
 `info-app` 可以调用：
 
 - 文本分类和实体识别。
 - 摘要和标签生成。
-- Embedding 和语义检索。
-- RAGFlow 文档解析与知识检索。
+- 通过 `knowledge-app` 使用 Embedding、语义检索和 RAGFlow 文档处理。
 
 模型生成结果必须记录模型、版本、时间和输入来源，不能覆盖人工确认的主数据。
 
@@ -597,7 +597,7 @@ Info App 通过 Tools App 的任务接口请求文档转换，传递对象引用
 
 ### 14.4 RAGFlow 同步
 
-Info App 通过 LLM App 的 RAGFlow Adapter 提交文档，不让业务模块直接依赖 RAGFlow 私有 API。
+Info App 通过 Knowledge App 的 RAGFlow Adapter 提交文档，不让业务模块直接依赖 RAGFlow 私有 API。
 
 第一阶段知识空间按信息领域或访问权限划分，不按单个用户随意创建。每条同步记录保存：
 

@@ -16,44 +16,51 @@ extraSecrets:
     load_definition.json: |
       {
         "vhosts": [
+          {"name": "info-production"},
+          {"name": "research-production"},
           {"name": "investment-production"},
-          {"name": "llm-production"},
-          {"name": "tools-production"}
+          {"name": "tools-production"},
+          {"name": "knowledge-production"}
         ],
         "users": [
+          {"name": "info-admin-backend-producer", "password": "CHANGE_ME_info_admin_backend_producer_prod", "tags": ""},
+          {"name": "info-admin-backend-worker", "password": "CHANGE_ME_info_admin_backend_worker_prod", "tags": ""},
+          {"name": "research-admin-backend-producer", "password": "CHANGE_ME_research_admin_backend_producer_prod", "tags": ""},
+          {"name": "research-admin-backend-worker", "password": "CHANGE_ME_research_admin_backend_worker_prod", "tags": ""},
           {"name": "investment-web-backend-producer", "password": "CHANGE_ME_investment_web_backend_producer_prod", "tags": ""},
           {"name": "investment-web-backend-worker", "password": "CHANGE_ME_investment_web_backend_worker_prod", "tags": ""},
           {"name": "investment-admin-backend-producer", "password": "CHANGE_ME_investment_admin_backend_producer_prod", "tags": ""},
           {"name": "investment-admin-backend-worker", "password": "CHANGE_ME_investment_admin_backend_worker_prod", "tags": ""},
-          {"name": "llm-web-backend-producer", "password": "CHANGE_ME_llm_web_backend_producer_prod", "tags": ""},
-          {"name": "llm-web-backend-worker", "password": "CHANGE_ME_llm_web_backend_worker_prod", "tags": ""},
-          {"name": "llm-admin-backend-producer", "password": "CHANGE_ME_llm_admin_backend_producer_prod", "tags": ""},
-          {"name": "llm-admin-backend-worker", "password": "CHANGE_ME_llm_admin_backend_worker_prod", "tags": ""},
           {"name": "tools-web-backend-producer", "password": "CHANGE_ME_tools_web_backend_producer_prod", "tags": ""},
           {"name": "tools-web-backend-worker", "password": "CHANGE_ME_tools_web_backend_worker_prod", "tags": ""},
           {"name": "tools-admin-backend-producer", "password": "CHANGE_ME_tools_admin_backend_producer_prod", "tags": ""},
-          {"name": "tools-admin-backend-worker", "password": "CHANGE_ME_tools_admin_backend_worker_prod", "tags": ""}
+          {"name": "tools-admin-backend-worker", "password": "CHANGE_ME_tools_admin_backend_worker_prod", "tags": ""},
+          {"name": "knowledge-admin-backend-producer", "password": "CHANGE_ME_knowledge_admin_backend_producer_prod", "tags": ""},
+          {"name": "knowledge-admin-backend-worker", "password": "CHANGE_ME_knowledge_admin_backend_worker_prod", "tags": ""}
         ],
         "permissions": [
+          {"user": "info-admin-backend-producer", "vhost": "info-production", "configure": "^info\\.admin\\.default$", "write": "^$|^info\\.admin\\.default$", "read": "^$"},
+          {"user": "info-admin-backend-worker", "vhost": "info-production", "configure": "^info\\.admin\\.default$", "write": "^$|^info\\.admin\\.default$", "read": "^info\\.admin\\.default$"},
+          {"user": "research-admin-backend-producer", "vhost": "research-production", "configure": "^research\\.admin\\.default$", "write": "^$|^research\\.admin\\.default$", "read": "^$"},
+          {"user": "research-admin-backend-worker", "vhost": "research-production", "configure": "^research\\.admin\\.default$", "write": "^$|^research\\.admin\\.default$", "read": "^research\\.admin\\.default$"},
           {"user": "investment-web-backend-producer", "vhost": "investment-production", "configure": "^investment\\.web\\.default$", "write": "^$|^investment\\.web\\.default$", "read": "^$"},
           {"user": "investment-web-backend-worker", "vhost": "investment-production", "configure": "^investment\\.web\\.default$", "write": "^$|^investment\\.web\\.default$", "read": "^investment\\.web\\.default$"},
           {"user": "investment-admin-backend-producer", "vhost": "investment-production", "configure": "^investment\\.admin\\.default$", "write": "^$|^investment\\.admin\\.default$", "read": "^$"},
           {"user": "investment-admin-backend-worker", "vhost": "investment-production", "configure": "^investment\\.admin\\.default$", "write": "^$|^investment\\.admin\\.default$", "read": "^investment\\.admin\\.default$"},
-          {"user": "llm-web-backend-producer", "vhost": "llm-production", "configure": "^llm\\.web\\.default$", "write": "^$|^llm\\.web\\.default$", "read": "^$"},
-          {"user": "llm-web-backend-worker", "vhost": "llm-production", "configure": "^llm\\.web\\.default$", "write": "^$|^llm\\.web\\.default$", "read": "^llm\\.web\\.default$"},
-          {"user": "llm-admin-backend-producer", "vhost": "llm-production", "configure": "^llm\\.admin\\.default$", "write": "^$|^llm\\.admin\\.default$", "read": "^$"},
-          {"user": "llm-admin-backend-worker", "vhost": "llm-production", "configure": "^llm\\.admin\\.default$", "write": "^$|^llm\\.admin\\.default$", "read": "^llm\\.admin\\.default$"},
           {"user": "tools-web-backend-producer", "vhost": "tools-production", "configure": "^tools\\.web\\.default$", "write": "^$|^tools\\.web\\.default$", "read": "^$"},
           {"user": "tools-web-backend-worker", "vhost": "tools-production", "configure": "^tools\\.web\\.default$", "write": "^$|^tools\\.web\\.default$", "read": "^tools\\.web\\.default$"},
           {"user": "tools-admin-backend-producer", "vhost": "tools-production", "configure": "^tools\\.admin\\.default$", "write": "^$|^tools\\.admin\\.default$", "read": "^$"},
-          {"user": "tools-admin-backend-worker", "vhost": "tools-production", "configure": "^tools\\.admin\\.default$", "write": "^$|^tools\\.admin\\.default$", "read": "^tools\\.admin\\.default$"}
+          {"user": "tools-admin-backend-worker", "vhost": "tools-production", "configure": "^tools\\.admin\\.default$", "write": "^$|^tools\\.admin\\.default$", "read": "^tools\\.admin\\.default$"},
+          {"user": "knowledge-admin-backend-producer", "vhost": "knowledge-production", "configure": "^knowledge\\.admin\\.default$", "write": "^$|^knowledge\\.admin\\.default$", "read": "^$"},
+          {"user": "knowledge-admin-backend-worker", "vhost": "knowledge-production", "configure": "^knowledge\\.admin\\.default$", "write": "^$|^knowledge\\.admin\\.default$", "read": "^knowledge\\.admin\\.default$"}
         ],
         "queues": [
+          {"name": "info.admin.default", "vhost": "info-production", "durable": true, "auto_delete": false, "arguments": {}},
+          {"name": "research.admin.default", "vhost": "research-production", "durable": true, "auto_delete": false, "arguments": {}},
           {"name": "investment.web.default", "vhost": "investment-production", "durable": true, "auto_delete": false, "arguments": {}},
           {"name": "investment.admin.default", "vhost": "investment-production", "durable": true, "auto_delete": false, "arguments": {}},
-          {"name": "llm.web.default", "vhost": "llm-production", "durable": true, "auto_delete": false, "arguments": {}},
-          {"name": "llm.admin.default", "vhost": "llm-production", "durable": true, "auto_delete": false, "arguments": {}},
           {"name": "tools.web.default", "vhost": "tools-production", "durable": true, "auto_delete": false, "arguments": {}},
-          {"name": "tools.admin.default", "vhost": "tools-production", "durable": true, "auto_delete": false, "arguments": {}}
+          {"name": "tools.admin.default", "vhost": "tools-production", "durable": true, "auto_delete": false, "arguments": {}},
+          {"name": "knowledge.admin.default", "vhost": "knowledge-production", "durable": true, "auto_delete": false, "arguments": {}}
         ]
       }

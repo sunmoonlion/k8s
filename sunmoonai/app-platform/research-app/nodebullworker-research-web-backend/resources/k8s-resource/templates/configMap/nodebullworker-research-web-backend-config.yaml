@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nodebullworker-research-web-backend-config
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: nodebullworker-research-web-backend
+    component: node-bull-worker
+    backend: research-web-backend
+data:
+  NODE_ENV: "${NODE_ENV}"
+  QUEUE_ON: "${QUEUE_ON}"

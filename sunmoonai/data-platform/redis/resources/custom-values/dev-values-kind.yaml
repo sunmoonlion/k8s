@@ -34,18 +34,6 @@ auth:
         keys: "~session:* ~investment:*"
         channels: "&*"
         commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset -@dangerous"
-      - username: llm_admin_backend
-        password: LlmAdminRedisAcl_7nR4wP2vK9mL3qX8j
-        enabled: "on"
-        keys: "~session:* ~llm:*"
-        channels: "&*"
-        commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset -@dangerous"
-      - username: llm_web_backend
-        password: LlmWebRedisAcl_8k3Qm9xP2vL7nR4w
-        enabled: "on"
-        keys: "~session:* ~llm:*"
-        channels: "&*"
-        commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset -@dangerous"
       - username: tools_admin_backend
         password: ToolsAdminRedisAcl_7nR4wP2vK9mL3qX8j
         enabled: "on"
@@ -182,4 +170,3 @@ podSecurityContext:
   enabled: false
   runAsUser: 1001
   fsGroup: 1001
-

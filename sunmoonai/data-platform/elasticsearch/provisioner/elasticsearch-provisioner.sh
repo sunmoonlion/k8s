@@ -27,6 +27,7 @@ CA_SECRET="elasticsearch-sunmoonai-master-crt"
 SERVICE_NAME="elasticsearch-sunmoonai"
 SERVICE_HOST="$SERVICE_NAME.$DATA_NAMESPACE.svc.cluster.local"
 LOCAL_PORT="${ELASTICSEARCH_PROVISIONER_PORT:-19200}"
+CONNECT_TIMEOUT="${ELASTICSEARCH_PROVISIONER_CONNECT_TIMEOUT:-120}"
 WORK_DIR=""
 PORT_FORWARD_PID=""
 
@@ -91,22 +92,30 @@ EOF
 }
 
 start_port_forward() {
-    kubectl port-forward "service/$SERVICE_NAME" "$LOCAL_PORT:9200" \
-        -n "$DATA_NAMESPACE" > "$WORK_DIR/port-forward.log" 2>&1 &
-    PORT_FORWARD_PID=$!
-    for _ in $(seq 1 30); do
+    local deadline=$((SECONDS + CONNECT_TIMEOUT))
+    : > "$WORK_DIR/port-forward.log"
+
+    while (( SECONDS < deadline )); do
+        if [[ -z "$PORT_FORWARD_PID" ]] || ! kill -0 "$PORT_FORWARD_PID" >/dev/null 2>&1; then
+            if [[ -n "$PORT_FORWARD_PID" ]]; then
+                wait "$PORT_FORWARD_PID" >/dev/null 2>&1 || true
+            fi
+            kubectl port-forward "service/$SERVICE_NAME" "$LOCAL_PORT:9200" \
+                -n "$DATA_NAMESPACE" >> "$WORK_DIR/port-forward.log" 2>&1 &
+            PORT_FORWARD_PID=$!
+            sleep 1
+        fi
+
         if curl --config "$WORK_DIR/curl.conf" \
             --resolve "$SERVICE_HOST:$LOCAL_PORT:127.0.0.1" \
             "https://$SERVICE_HOST:$LOCAL_PORT/_cluster/health" >/dev/null 2>&1; then
             return
         fi
-        if ! kill -0 "$PORT_FORWARD_PID" >/dev/null 2>&1; then
-            cat "$WORK_DIR/port-forward.log" >&2
-            die "Elasticsearch port-forward 已退出"
-        fi
         sleep 1
     done
-    die "等待 Elasticsearch 连接超时"
+
+    cat "$WORK_DIR/port-forward.log" >&2
+    die "等待 Elasticsearch 连接超时 (${CONNECT_TIMEOUT}s)"
 }
 
 api() {

@@ -48,7 +48,7 @@
 
 - 接入 Tools App 文档转换。
 - 生成规范化内容和处理产物。
-- 通过 LLM App Adapter 同步 RAGFlow。
+- 通过 Knowledge App Adapter 同步 RAGFlow。
 - 完成状态跟踪、重试、对账和全量重建。
 
 阶段验收：
@@ -133,7 +133,7 @@
 3. 配置 Info App PostgreSQL 和对象存储
 4. 实现人工上传与版本主档
 5. 接入 Tools App 文档转换
-6. 封装 LLM App RAGFlow Adapter
+6. 封装 Knowledge App RAGFlow Adapter
 7. 完成同步、对账和重建
 8. 建立 Investment Security Master 和 Research
 9. 补齐可观测、备份和安全基线

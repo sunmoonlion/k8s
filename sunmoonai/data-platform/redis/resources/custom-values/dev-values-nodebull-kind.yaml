@@ -26,22 +26,34 @@ auth:
     sentinel: false
     # Bull worker 用户必须写入 ConfigMap；仅运行 ACL SETUSER 会在 Redis 容器重启后丢失。
     users:
+      - username: info_web_nodebull
+        password: InfoWebNodeBullRedisAcl_9pQ4vM2xL8nR6sK3
+        enabled: "on"
+        keys: "~bull:info:web:*"
+        channels: "&*"
+        commands: "-@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset +@pubsub -@dangerous"
+      - username: research_web_nodebull
+        password: ResearchWebNodeBullRedisAcl_9pQ4vM2xL8nR6sK3
+        enabled: "on"
+        keys: "~bull:research:web:*"
+        channels: "&*"
+        commands: "-@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset +@pubsub -@dangerous"
       - username: investment_web_nodebull
         password: InvestmentWebNodeBullRedisAcl_9pQ4vM2xL8nR6sK3
         enabled: "on"
         keys: "~bull:investment:web:*"
         channels: "&*"
         commands: "-@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset +@pubsub -@dangerous"
-      - username: llm_web_nodebull
-        password: LlmWebNodeBullRedisAcl_9pQ4vM2xL8nR6sK3
-        enabled: "on"
-        keys: "~bull:llm:web:*"
-        channels: "&*"
-        commands: "-@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset +@pubsub -@dangerous"
       - username: tools_web_nodebull
         password: ToolsWebNodeBullRedisAcl_9pQ4vM2xL8nR6sK3
         enabled: "on"
         keys: "~bull:tools:web:*"
+        channels: "&*"
+        commands: "-@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset +@pubsub -@dangerous"
+      - username: knowledge_web_nodebull
+        password: KnowledgeWebNodeBullRedisAcl_9pQ4vM2xL8nR6sK3
+        enabled: "on"
+        keys: "~bull:knowledge:web:*"
         channels: "&*"
         commands: "-@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset +@pubsub -@dangerous"
 
