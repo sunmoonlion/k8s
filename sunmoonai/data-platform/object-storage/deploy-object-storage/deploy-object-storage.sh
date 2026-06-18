@@ -173,26 +173,41 @@ deploy_object_store() {
     local environment="$3"
     local dry_run="$4"
     local cluster_lower
+    local values_file
     cluster_lower="$(echo "${CLUSTER:-}" | tr '[:upper:]' '[:lower:]')"
 
     if [[ "$environment" != "development" && "$environment" != "dev" ]]; then
         log_error "当前仅完成开发环境配置，拒绝部署 environment=$environment"
         return 1
     fi
-    if [[ "$cluster_lower" != "kind" ]]; then
-        log_error "当前步骤仅完成 Kind 配置，远程开发 values 尚未实施"
-        return 1
-    fi
 
-    if [[ "$dry_run" != "true" ]]; then
-        prepare_kind_host_path
-        kubectl apply -f "$CUSTOM_VALUES_DIR/object-storage-kind-pv.yaml"
+    case "$cluster_lower" in
+        kind)
+            values_file="$CUSTOM_VALUES_DIR/dev-values-kind.yaml"
+            if [[ "$dry_run" != "true" ]]; then
+                prepare_kind_host_path
+                kubectl apply -f "$CUSTOM_VALUES_DIR/object-storage-kind-pv.yaml"
+            fi
+            ;;
+        c[0-9]*)
+            values_file="$CUSTOM_VALUES_DIR/dev-values.yaml"
+            log_info "远程开发集群：使用动态 StorageClass values: $values_file"
+            ;;
+        *)
+            log_error "不支持的集群: ${CLUSTER:-未设置}，当前仅支持 KIND 和 C1/C2/C3 这类远程开发集群"
+            return 1
+            ;;
+    esac
+
+    if [[ ! -f "$values_file" ]]; then
+        log_error "环境配置文件不存在: $values_file"
+        return 1
     fi
 
     local args=(
         upgrade --install "$(object_store_release "$project_id")" "$OBJECT_STORE_CHART_DIR"
         --namespace "$namespace"
-        --values "$CUSTOM_VALUES_DIR/dev-values-kind.yaml"
+        --values "$values_file"
         --set "namespaceOverride=$namespace"
     )
     [[ "$dry_run" == "true" ]] && args+=(--dry-run)
@@ -202,11 +217,16 @@ deploy_object_store() {
 show_status() {
     local project_id="$1"
     local namespace="$2"
+    local cluster_lower
+    cluster_lower="$(echo "${CLUSTER:-}" | tr '[:upper:]' '[:lower:]')"
+
     helm status "$(operator_release)" -n "$namespace" || true
     helm status "$(object_store_release "$project_id")" -n "$namespace" || true
     kubectl get objectstore,pods,svc,pvc -n "$namespace" \
         -l 'app in (minio)' -o wide || true
-    kubectl get pv "${OBJECT_STORAGE_KIND_PV_NAME:-object-storage-sunmoonai-dev-pv}" || true
+    if [[ "$cluster_lower" == "kind" ]]; then
+        kubectl get pv "${OBJECT_STORAGE_KIND_PV_NAME:-object-storage-sunmoonai-dev-pv}" || true
+    fi
 }
 
 open_console() {

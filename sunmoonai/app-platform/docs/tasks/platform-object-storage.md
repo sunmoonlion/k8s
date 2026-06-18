@@ -224,7 +224,7 @@ storage_state
 - [x] 创建 `data-platform/object-storage` 目录。
 - [x] 遵循现有统一部署模板建立部署脚本和配置文件。
 - [x] 定义统一 S3 Endpoint、Region、Bucket、凭据和 TLS 配置契约。
-- [ ] 按集群映射选择 Kind 或远程 Provider。
+- [x] 按集群映射选择 Kind 或远程 Provider。
 - [x] 将组件注册到 `deploy-data-platform-all` 并配置部署优先级。
 - [x] 将 Provider 特有部署与 App 级资源初始化分离。
 - [ ] 不在业务代码中硬编码 MinIO 专有管理接口。

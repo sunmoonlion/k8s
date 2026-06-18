@@ -6,8 +6,10 @@ official MinIO AIStor Operator and ObjectStore Helm charts.
 Current scope:
 
 - Kind development cluster.
+- Remote development cluster such as C1.
 - AIStor Free single-node ObjectStore.
-- One retained static `hostPath` volume.
+- Kind uses one retained static `hostPath` volume.
+- Remote development uses the cluster `local-path` StorageClass.
 - Images pulled from the local Harbor project.
 - Cluster-internal S3 API and Console services.
 
@@ -54,11 +56,20 @@ without reinstalling the Helm releases.
 
 ## Deploy
 
+Kind:
+
 ```bash
 export KUBECONFIG="$HOME/.kube/kind-config"
 
 ./deploy-object-storage/deploy-object-storage.sh \
   --cluster KIND deploy sunmoonai data-platform-dev development false
+```
+
+Remote development, for example C1:
+
+```bash
+./deploy-object-storage/deploy-object-storage.sh \
+  --cluster C1 deploy sunmoonai data-platform-dev development false
 ```
 
 To override the default license location for one deployment:
@@ -70,6 +81,9 @@ export AISTOR_LICENSE_FILE=/absolute/path/to/minio.license
   --cluster KIND deploy sunmoonai data-platform-dev development false
 ```
 
+Use `--cluster C1` with the same command shape for the remote development
+cluster.
+
 ## Status
 
 ```bash
@@ -78,6 +92,8 @@ export KUBECONFIG="$HOME/.kube/kind-config"
 ./deploy-object-storage/deploy-object-storage.sh \
   --cluster KIND status sunmoonai data-platform-dev development
 ```
+
+Use `--cluster C1` for the remote development cluster.
 
 ## Console
 
@@ -114,6 +130,9 @@ capacity:  10Gi
 The deployment script creates the host directory and sets ownership to
 `1000:1000` before applying the PV because Kubernetes `fsGroup` does not
 reliably change permissions on a Kind `hostPath` volume.
+
+Remote development deployments do not apply this Kind PV manifest. They use
+dynamic PVC provisioning through `local-path`.
 
 Uninstalling the Helm releases does not delete the PV, PVC, license Secret, or
 root-credential Secret.
