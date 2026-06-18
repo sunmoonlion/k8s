@@ -5,6 +5,9 @@
 
 set -e
 
+# 作为子脚本被主部署流程调用时，勿在退出时拆掉父脚本仍需要的 SSH 隧道
+DISABLE_AUTO_CLEANUP=true
+
 # 脚本目录（保存为变量，防止被统一部署模板覆盖）
 RABBITMQ_MIDDLEWARE_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

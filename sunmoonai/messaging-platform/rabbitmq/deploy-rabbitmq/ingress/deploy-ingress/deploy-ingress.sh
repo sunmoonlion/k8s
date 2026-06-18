@@ -1,5 +1,7 @@
 #!/bin/bash
 set -e
+# 作为子脚本被主部署流程调用时，勿在退出时拆掉父脚本仍需要的 SSH 隧道
+DISABLE_AUTO_CLEANUP=true
 source "$(dirname "$0")/../../../../../../utils/unified-deployment-template.sh"
 
 # 脚本目录

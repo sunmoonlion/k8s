@@ -336,13 +336,13 @@ deploy_sub_components() {
             if [[ -f "$script_path" ]]; then
                 # Ingress 和 Secrets 脚本不接受 dry_run 参数
                 if [[ "$name" == "rabbitmq_ingress" || "$name" == "rabbitmq_secrets" ]]; then
-                    if bash "$script_path" deploy "$project_id" "$namespace" "$environment"; then
+                    if DISABLE_AUTO_CLEANUP=true bash "$script_path" deploy "$project_id" "$namespace" "$environment"; then
                         log_success "✅ $description 部署成功"
                     else
                         log_error "❌ $description 部署失败"; return 1
                     fi
                 else
-                    if bash "$script_path" deploy "$project_id" "$namespace" "$environment" "$dry_run"; then
+                    if DISABLE_AUTO_CLEANUP=true bash "$script_path" deploy "$project_id" "$namespace" "$environment" "$dry_run"; then
                         log_success "✅ $description 部署成功"
                     else
                         log_error "❌ $description 部署失败"; return 1

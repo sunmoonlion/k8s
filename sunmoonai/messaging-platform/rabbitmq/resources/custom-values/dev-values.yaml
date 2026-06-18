@@ -29,11 +29,11 @@ resourcesPreset: "none"
 
 resources:
   requests:
-    cpu: 50m
-    memory: 128Mi
+    cpu: 250m
+    memory: 512Mi
   limits:
-    cpu: 300m
-    memory: 384Mi
+    cpu: 500m
+    memory: 1Gi
 
 tolerations:
   - key: "node-role.kubernetes.io/control-plane"
@@ -97,18 +97,18 @@ startupProbe:
 
 livenessProbe:
   enabled: true
-  initialDelaySeconds: 30        # 从默认 120 秒缩短到 30 秒（参考 flower）
-  periodSeconds: 10              # 从默认 30 秒缩短到 10 秒，更快发现问题
-  timeoutSeconds: 5              # 从默认 20 秒缩短到 5 秒
-  failureThreshold: 5            # 保持默认 6，允许更多失败次数
+  initialDelaySeconds: 60
+  periodSeconds: 15
+  timeoutSeconds: 15
+  failureThreshold: 5
   successThreshold: 1
 
 readinessProbe:
   enabled: true
-  initialDelaySeconds: 0         # 从 5 秒缩短到 0 秒（参考 mongo-express，立即开始检查）
-  periodSeconds: 5               # 从默认 30 秒缩短到 5 秒，更快响应
-  timeoutSeconds: 3              # 从默认 20 秒缩短到 3 秒
-  failureThreshold: 3            # 保持默认
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 10
+  failureThreshold: 5
   successThreshold: 1
 
 # 管理界面配置
