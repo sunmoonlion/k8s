@@ -122,16 +122,32 @@ api() {
     local method="$1"
     local path="$2"
     local body="${3:-}"
-    if [[ -n "$body" ]]; then
-        curl --config "$WORK_DIR/curl.conf" -X "$method" \
-            -H "Content-Type: application/json" \
-            --resolve "$SERVICE_HOST:$LOCAL_PORT:127.0.0.1" \
-            --data-binary "@$body" "https://$SERVICE_HOST:$LOCAL_PORT$path"
-    else
-        curl --config "$WORK_DIR/curl.conf" -X "$method" \
-            --resolve "$SERVICE_HOST:$LOCAL_PORT:127.0.0.1" \
-            "https://$SERVICE_HOST:$LOCAL_PORT$path"
-    fi
+    local attempt max_attempts
+    max_attempts="${ELASTICSEARCH_PROVISIONER_API_RETRIES:-10}"
+
+    for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+        if [[ -n "$body" ]]; then
+            if curl --config "$WORK_DIR/curl.conf" -X "$method" \
+                -H "Content-Type: application/json" \
+                --resolve "$SERVICE_HOST:$LOCAL_PORT:127.0.0.1" \
+                --data-binary "@$body" "https://$SERVICE_HOST:$LOCAL_PORT$path"; then
+                return 0
+            fi
+        else
+            if curl --config "$WORK_DIR/curl.conf" -X "$method" \
+                --resolve "$SERVICE_HOST:$LOCAL_PORT:127.0.0.1" \
+                "https://$SERVICE_HOST:$LOCAL_PORT$path"; then
+                return 0
+            fi
+        fi
+
+        if (( attempt < max_attempts )); then
+            log_warn "Elasticsearch API 暂不可用，重试 ${attempt}/${max_attempts}: $method $path"
+            sleep 2
+        fi
+    done
+
+    return 1
 }
 
 load_or_generate_password() {
