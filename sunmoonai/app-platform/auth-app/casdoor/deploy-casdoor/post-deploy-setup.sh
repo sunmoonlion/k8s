@@ -16,6 +16,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+POST_DEPLOY_SCRIPT_DIR="$SCRIPT_DIR"
 SETUP_CONF="$SCRIPT_DIR/post-deploy-setup.conf"
 
 find_k8s_root_dir() {
@@ -32,6 +33,9 @@ find_k8s_root_dir() {
 K8S_ROOT_DIR="$(find_k8s_root_dir "$SCRIPT_DIR" || true)"
 if [[ -n "${K8S_ROOT_DIR:-}" ]]; then
     source "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh"
+    export DISABLE_AUTO_CLEANUP="${DISABLE_AUTO_CLEANUP:-true}"
+    source "$K8S_ROOT_DIR/utils/unified-deployment-template.sh"
+    SCRIPT_DIR="$POST_DEPLOY_SCRIPT_DIR"
 fi
 
 # ─────────────────────────── 日志 ───────────────────────────
@@ -39,6 +43,51 @@ log_info()    { echo "[INFO]  $*"; }
 log_ok()      { echo "[OK]    $*"; }
 log_warn()    { echo "[WARN]  $*"; }
 log_error()   { echo "[ERROR] $*" >&2; }
+
+wait_for_deployment_ready() {
+    local deployment="$1" namespace="$2" timeout="${3:-300}"
+    local interval=5 deadline now last_log=0
+    deadline=$((SECONDS + timeout))
+
+    while [[ $SECONDS -lt $deadline ]]; do
+        local status rc desired updated available observed generation
+        status=$(kubectl get deployment "$deployment" -n "$namespace" \
+            -o jsonpath='{.spec.replicas}|{.status.updatedReplicas}|{.status.availableReplicas}|{.status.observedGeneration}|{.metadata.generation}' 2>&1)
+        rc=$?
+
+        if [[ $rc -ne 0 ]]; then
+            log_warn "查询 Deployment 失败，尝试重连后继续等待: ${status%%$'\n'*}"
+            if command -v setup_kubectl_environment >/dev/null 2>&1; then
+                setup_kubectl_environment >/dev/null 2>&1 || true
+            fi
+            sleep "$interval"
+            continue
+        fi
+
+        IFS='|' read -r desired updated available observed generation <<< "$status"
+        desired="${desired:-1}"
+        updated="${updated:-0}"
+        available="${available:-0}"
+        observed="${observed:-0}"
+        generation="${generation:-0}"
+
+        if [[ "$observed" -ge "$generation" && "$updated" -ge "$desired" && "$available" -ge "$desired" ]]; then
+            log_ok "Deployment 已就绪: $namespace/$deployment ($available/$desired)"
+            return 0
+        fi
+
+        now=$SECONDS
+        if [[ $((now - last_log)) -ge 30 ]]; then
+            log_info "等待 Deployment 就绪: $namespace/$deployment updated=$updated/$desired available=$available/$desired observed=$observed/$generation"
+            last_log=$now
+        fi
+        sleep "$interval"
+    done
+
+    kubectl describe deployment "$deployment" -n "$namespace" || true
+    kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=${deployment}" -o wide || true
+    return 1
+}
 
 # ─────────────────────────── 参数解析 ───────────────────────────
 NAMESPACE="app-platform-dev"
@@ -114,7 +163,7 @@ logPostOnly = true
 EOF'
         log_info "重启 Casdoor deployment ..."
         kubectl rollout restart deployment/"$RELEASE" -n "$NAMESPACE"
-        kubectl rollout status deployment/"$RELEASE" -n "$NAMESPACE" --timeout=120s
+        wait_for_deployment_ready "$RELEASE" "$NAMESPACE" 300
         log_ok "app.conf 写入并重启完成"
     fi
 }

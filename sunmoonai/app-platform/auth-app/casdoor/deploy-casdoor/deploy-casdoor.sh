@@ -244,6 +244,49 @@ deploy_ingress() {
     fi
 }
 
+wait_for_deployment_ready() {
+    local deployment="$1" namespace="$2" timeout="${3:-300}"
+    local interval=5 deadline now last_log=0
+    deadline=$((SECONDS + timeout))
+
+    while [[ $SECONDS -lt $deadline ]]; do
+        local status rc desired updated available observed generation
+        status=$(kubectl get deployment "$deployment" -n "$namespace" \
+            -o jsonpath='{.spec.replicas}|{.status.updatedReplicas}|{.status.availableReplicas}|{.status.observedGeneration}|{.metadata.generation}' 2>&1)
+        rc=$?
+
+        if [[ $rc -ne 0 ]]; then
+            log_warn "查询 Deployment 失败，尝试重连后继续等待: ${status%%$'\n'*}"
+            setup_kubectl_environment >/dev/null 2>&1 || true
+            sleep "$interval"
+            continue
+        fi
+
+        IFS='|' read -r desired updated available observed generation <<< "$status"
+        desired="${desired:-1}"
+        updated="${updated:-0}"
+        available="${available:-0}"
+        observed="${observed:-0}"
+        generation="${generation:-0}"
+
+        if [[ "$observed" -ge "$generation" && "$updated" -ge "$desired" && "$available" -ge "$desired" ]]; then
+            log_success "✅ Deployment 已就绪: $namespace/$deployment ($available/$desired)"
+            return 0
+        fi
+
+        now=$SECONDS
+        if [[ $((now - last_log)) -ge 30 ]]; then
+            log_info "等待 Deployment 就绪: $namespace/$deployment updated=$updated/$desired available=$available/$desired observed=$observed/$generation"
+            last_log=$now
+        fi
+        sleep "$interval"
+    done
+
+    kubectl describe deployment "$deployment" -n "$namespace" || true
+    kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=${deployment}" -o wide || true
+    return 1
+}
+
 run_post_deploy_setup() {
     local namespace="$1" dry_run="$2"
     local setup_script="$SCRIPT_DIR/post-deploy-setup.sh"
@@ -254,9 +297,7 @@ run_post_deploy_setup() {
     setup_kubectl_environment || { log_error "无法建立 Kubernetes 连接"; return 1; }
 
     log_info "等待 Casdoor Pod 就绪..."
-    if ! kubectl rollout status deployment/"casdoor-${CASDOOR_PROJECT_ID:-sunmoonai}" \
-        -n "$namespace" --timeout=120s; then
-        kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=casdoor-${CASDOOR_PROJECT_ID:-sunmoonai}" -o wide || true
+    if ! wait_for_deployment_ready "casdoor-${CASDOOR_PROJECT_ID:-sunmoonai}" "$namespace" 300; then
         log_error "Casdoor Pod 未就绪"
         return 1
     fi
