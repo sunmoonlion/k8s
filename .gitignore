@@ -188,6 +188,10 @@ utils/HARBOR-KIND-EXTERNAL/harbor-runtime/
 # 本地 k8s 隧道 PID（运行态文件，避免阻塞 pull）
 utils/.k8s-tunnel.pid
 
+# App Platform manifests are generated at deploy time from templates/config.
+# Do not track generated output, especially generated image-pull secrets.
+sunmoonai/app-platform/**/resources/k8s-resource/custom-values/**/*-generated.yaml
+
 # Traefik TLS Secret：各集群不同，由部署脚本从 ca/、server-cert/ 生成，不提交
 sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/traefik-tls-secret.yaml
 sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/
