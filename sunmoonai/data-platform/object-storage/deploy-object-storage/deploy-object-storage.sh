@@ -106,9 +106,25 @@ export MINIO_ROOT_PASSWORD=${OBJECT_STORAGE_ROOT_PASSWORD}"
 ensure_harbor_secret() {
     local namespace="$1"
     local secret_name="${OBJECT_STORAGE_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}"
+    local harbor_secret_script="$PROJECT_ROOT/../postgresql/deploy-postgresql/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh"
+
     if ! kubectl get secret "$secret_name" -n "$namespace" >/dev/null 2>&1; then
-        log_error "缺少 Harbor 镜像拉取 Secret: $namespace/$secret_name"
-        return 1
+        log_warn "缺少 Harbor 镜像拉取 Secret: $namespace/$secret_name，尝试自动创建"
+        if [[ ! -x "$harbor_secret_script" ]]; then
+            log_error "缺少 Harbor Secret 部署脚本或不可执行: $harbor_secret_script"
+            return 1
+        fi
+
+        if [[ -n "${CLUSTER:-}" ]]; then
+            "$harbor_secret_script" --cluster "$CLUSTER" deploy "${OBJECT_STORAGE_PROJECT_ID:-sunmoonai}" "$namespace" "${ENVIRONMENT:-development}" false
+        else
+            "$harbor_secret_script" deploy "${OBJECT_STORAGE_PROJECT_ID:-sunmoonai}" "$namespace" "${ENVIRONMENT:-development}" false
+        fi
+
+        kubectl get secret "$secret_name" -n "$namespace" >/dev/null 2>&1 || {
+            log_error "Harbor 镜像拉取 Secret 自动创建后仍不存在: $namespace/$secret_name"
+            return 1
+        }
     fi
 }
 
