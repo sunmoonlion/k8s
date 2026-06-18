@@ -51,20 +51,18 @@ export TOOLS_ADMIN_FRONTEND_POSTGRESQL_SECRET_NAME="${TOOLS_ADMIN_FRONTEND_POSTG
 export TOOLS_ADMIN_FRONTEND_REDIS_SECRET_NAME="${TOOLS_ADMIN_FRONTEND_REDIS_SECRET_NAME:-}"
 export TOOLS_ADMIN_FRONTEND_MONGODB_SECRET_NAME="${TOOLS_ADMIN_FRONTEND_MONGODB_SECRET_NAME:-}"
 export TOOLS_ADMIN_FRONTEND_DATABASE_ENV_FROM=""
-if [[ -n "$TOOLS_ADMIN_FRONTEND_POSTGRESQL_SECRET_NAME" ||
-      -n "$TOOLS_ADMIN_FRONTEND_REDIS_SECRET_NAME" ||
-      -n "$TOOLS_ADMIN_FRONTEND_MONGODB_SECRET_NAME" ]]; then
-    if [[ -z "$TOOLS_ADMIN_FRONTEND_POSTGRESQL_SECRET_NAME" ||
-          -z "$TOOLS_ADMIN_FRONTEND_REDIS_SECRET_NAME" ||
-          -z "$TOOLS_ADMIN_FRONTEND_MONGODB_SECRET_NAME" ]]; then
-        log_error "PostgreSQL、Redis 和 MongoDB Secret 名称必须同时设置"
-        exit 1
+append_database_secret_ref() {
+    local secret_name="$1"
+    [[ -n "$secret_name" ]] || return 0
+    if [[ -n "$TOOLS_ADMIN_FRONTEND_DATABASE_ENV_FROM" ]]; then
+        TOOLS_ADMIN_FRONTEND_DATABASE_ENV_FROM+=$'\n'
     fi
-    printf -v TOOLS_ADMIN_FRONTEND_DATABASE_ENV_FROM \
-      '        - secretRef:\n            name: %s\n        - secretRef:\n            name: %s\n        - secretRef:\n            name: %s' \
-      "$TOOLS_ADMIN_FRONTEND_POSTGRESQL_SECRET_NAME" \
-      "$TOOLS_ADMIN_FRONTEND_REDIS_SECRET_NAME" \
-      "$TOOLS_ADMIN_FRONTEND_MONGODB_SECRET_NAME"
+    TOOLS_ADMIN_FRONTEND_DATABASE_ENV_FROM+="        - secretRef:"$'\n'"            name: ${secret_name}"
+}
+append_database_secret_ref "$TOOLS_ADMIN_FRONTEND_POSTGRESQL_SECRET_NAME"
+append_database_secret_ref "$TOOLS_ADMIN_FRONTEND_REDIS_SECRET_NAME"
+append_database_secret_ref "$TOOLS_ADMIN_FRONTEND_MONGODB_SECRET_NAME"
+if [[ -n "$TOOLS_ADMIN_FRONTEND_DATABASE_ENV_FROM" ]]; then
     export TOOLS_ADMIN_FRONTEND_DATABASE_ENV_FROM
 fi
 export TOOLS_ADMIN_FRONTEND_OBJECT_STORAGE_CONFIGMAP_NAME="${TOOLS_ADMIN_FRONTEND_OBJECT_STORAGE_CONFIGMAP_NAME:-}"

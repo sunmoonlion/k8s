@@ -70,13 +70,14 @@ run_bootstrap() {
     local script_path="$2"
     local action="$3"
     local cluster="${CLUSTER:-KIND}"
+    shift 3
 
     [[ -x "$script_path" ]] || {
         log_error "${label} 脚本不存在或不可执行: $script_path"
         return 1
     }
     log_info "${label}: ${action} (cluster=${cluster})"
-    DISABLE_AUTO_CLEANUP=true CLUSTER="$cluster" ELASTICSEARCH_CLUSTER="$cluster" OBJECT_STORAGE_CLUSTER="$cluster" \
+    env "$@" DISABLE_AUTO_CLEANUP=true CLUSTER="$cluster" ELASTICSEARCH_CLUSTER="$cluster" OBJECT_STORAGE_CLUSTER="$cluster" \
         "$script_path" "$action"
 }
 
@@ -88,7 +89,8 @@ run_backend_resources() {
     local storage_enabled_var="${backend//-/_}_storage_access_enabled"
     local search_enabled_var="${backend//-/_}_search_access_enabled"
     local database_enabled_var="${backend//-/_}_database_access_enabled"
-    local component_enabled database_enabled storage_enabled search_enabled
+    local mongodb_enabled_var="${backend//-/_}_mongodb_access_enabled"
+    local component_enabled database_enabled storage_enabled search_enabled mongodb_enabled
     eval "component_enabled=\${${component_enabled_var}:-false}"
     [[ "$component_enabled" == "true" ]] || {
         log_info "$backend 未启用，跳过资源 bootstrap"
@@ -102,11 +104,13 @@ run_backend_resources() {
     eval "database_enabled=\${${database_enabled_var}:-false}"
     eval "storage_enabled=\${${storage_enabled_var}:-false}"
     eval "search_enabled=\${${search_enabled_var}:-false}"
+    eval "mongodb_enabled=\${${mongodb_enabled_var}:-false}"
 
     if [[ "$database_enabled" == "true" ]]; then
         run_bootstrap "$backend Database" \
             "$source_root/$backend/db-access-bootstrap/db-access-bootstrap.sh" \
-            "$action"
+            "$action" \
+            "ENABLE_MONGODB=$mongodb_enabled"
     fi
     if [[ "$storage_enabled" == "true" ]]; then
         run_bootstrap "$backend S3" \
