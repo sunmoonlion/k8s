@@ -3,8 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_DIR="${SCRIPT_DIR}/config"
-# sunmoonai/.../db-access-bootstrap → ../../../../.. = k8s（与 deploy-casdoor.sh 一致）
-K8S_ROOT="$(cd "${SCRIPT_DIR}/../../../../.." && pwd)"
+# sunmoonai/.../db-access-bootstrap -> ../../../.. = sunmoonai k8s repo root
+K8S_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 
 # shellcheck disable=SC1091
 source "${CONFIG_DIR}/common.env"

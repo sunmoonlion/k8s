@@ -17,7 +17,8 @@ Casdoor 数据库开通工具。仅需 PostgreSQL，无 Redis / MongoDB。
 bash setup-external-db-access.sh
 ```
 
-**前提**：需要 `psql` 命令可用，且 `DBCTL_BIN` 路径正确（见 `config/common.env`）。
+**前提**：需要 `psql` 命令可用。`DBCTL_BIN` 默认使用本 k8s 仓库内的
+`utils/db-provisioner/bin/dbctl`，特殊环境可通过环境变量覆盖。
 
 ---
 
@@ -29,6 +30,9 @@ bash setup-k8s-db-access.sh
 
 在 `app-platform-dev` 命名空间创建 Secret `casdoor-postgresql-conn`，
 内含集群内连接串，供 Helm chart `envFrom` 引用。
+
+`DBCTL_BIN` 默认使用本 k8s 仓库内的 `utils/db-provisioner/bin/dbctl`，
+部署机无需额外 checkout `investment-app`。
 
 ---
 
