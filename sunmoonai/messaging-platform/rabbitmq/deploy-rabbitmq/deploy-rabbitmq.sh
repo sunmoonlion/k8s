@@ -731,21 +731,25 @@ ensure_rabbitmq_admin_user() {
     username=$(printf '%s' "$username_b64" | base64 -d)
     password=$(printf '%s' "$password_b64" | base64 -d)
 
-    if kubectl exec -n "$namespace" "$pod_name" -- rabbitmqctl list_users --silent | awk '{print $1}' | grep -qx "$username"; then
-        kubectl exec -n "$namespace" "$pod_name" -- rabbitmqctl change_password "$username" "$password" >/dev/null
+    rabbitmqctl_exec() {
+        kubectl exec -n "$namespace" "$pod_name" -c rabbitmq -- rabbitmqctl "$@"
+    }
+
+    if rabbitmqctl_exec list_users --silent | awk '{print $1}' | grep -qx "$username"; then
+        rabbitmqctl_exec change_password "$username" "$password" >/dev/null
     else
-        kubectl exec -n "$namespace" "$pod_name" -- rabbitmqctl add_user "$username" "$password" >/dev/null
+        rabbitmqctl_exec add_user "$username" "$password" >/dev/null
     fi
 
-    kubectl exec -n "$namespace" "$pod_name" -- rabbitmqctl set_user_tags "$username" administrator >/dev/null
+    rabbitmqctl_exec set_user_tags "$username" administrator >/dev/null
 
     local vhost
     while IFS= read -r vhost; do
         [[ -z "$vhost" ]] && continue
-        kubectl exec -n "$namespace" "$pod_name" -- rabbitmqctl set_permissions -p "$vhost" "$username" ".*" ".*" ".*" >/dev/null
-    done < <(kubectl exec -n "$namespace" "$pod_name" -- rabbitmqctl list_vhosts --silent | awk '/^[A-Za-z0-9_.-]+$/ {print $1}')
+        rabbitmqctl_exec set_permissions -p "$vhost" "$username" ".*" ".*" ".*" >/dev/null
+    done < <(rabbitmqctl_exec list_vhosts --silent | awk '/^[A-Za-z0-9_.-]+$/ {print $1}')
 
-    if kubectl exec -n "$namespace" "$pod_name" -- rabbitmqctl authenticate_user "$username" "$password" >/dev/null; then
+    if rabbitmqctl_exec authenticate_user "$username" "$password" >/dev/null; then
         log_success "✅ RabbitMQ 管理用户已与 ${secret_name} 对齐"
         return 0
     fi

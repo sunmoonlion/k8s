@@ -26,7 +26,7 @@ ADMIN_SECRET="elasticsearch-secrets"
 CA_SECRET="elasticsearch-sunmoonai-master-crt"
 SERVICE_NAME="elasticsearch-sunmoonai"
 SERVICE_HOST="$SERVICE_NAME.$DATA_NAMESPACE.svc.cluster.local"
-LOCAL_PORT="${ELASTICSEARCH_PROVISIONER_PORT:-19200}"
+LOCAL_PORT="${ELASTICSEARCH_PROVISIONER_PORT:-}"
 CONNECT_TIMEOUT="${ELASTICSEARCH_PROVISIONER_CONNECT_TIMEOUT:-120}"
 WORK_DIR=""
 PORT_FORWARD_PID=""
@@ -49,6 +49,21 @@ trap cleanup EXIT
 
 require_command() {
     command -v "$1" >/dev/null 2>&1 || die "缺少命令: $1"
+}
+
+choose_local_port() {
+    if [[ -n "$LOCAL_PORT" ]]; then
+        return
+    fi
+    require_command python3
+    LOCAL_PORT="$(python3 - <<'PY'
+import socket
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    s.bind(("127.0.0.1", 0))
+    print(s.getsockname()[1])
+PY
+)"
+    log_info "Elasticsearch provisioner 使用本地临时端口: $LOCAL_PORT"
 }
 
 ensure_cluster_connection() {
@@ -100,7 +115,7 @@ start_port_forward() {
             if [[ -n "$PORT_FORWARD_PID" ]]; then
                 wait "$PORT_FORWARD_PID" >/dev/null 2>&1 || true
             fi
-            kubectl port-forward "service/$SERVICE_NAME" "$LOCAL_PORT:9200" \
+            kubectl port-forward --address 127.0.0.1 "service/$SERVICE_NAME" "$LOCAL_PORT:9200" \
                 -n "$DATA_NAMESPACE" >> "$WORK_DIR/port-forward.log" 2>&1 &
             PORT_FORWARD_PID=$!
             sleep 1
@@ -126,6 +141,11 @@ api() {
     max_attempts="${ELASTICSEARCH_PROVISIONER_API_RETRIES:-10}"
 
     for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+        if [[ -z "$PORT_FORWARD_PID" ]] || ! kill -0 "$PORT_FORWARD_PID" >/dev/null 2>&1; then
+            log_warn "Elasticsearch port-forward 不可用，重新建立连接"
+            start_port_forward
+        fi
+
         if [[ -n "$body" ]]; then
             if curl --config "$WORK_DIR/curl.conf" -X "$method" \
                 -H "Content-Type: application/json" \
@@ -282,6 +302,7 @@ main() {
     ensure_cluster_connection
     kubectl get namespace "$TARGET_NAMESPACE" >/dev/null
     load_admin_material
+    choose_local_port
     start_port_forward
 
     case "$action" in
