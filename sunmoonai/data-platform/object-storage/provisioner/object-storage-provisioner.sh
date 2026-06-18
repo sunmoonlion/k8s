@@ -15,13 +15,13 @@ if [[ $# -gt 0 ]] && type unified_parse_cluster_arg >/dev/null 2>&1; then
     ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
 fi
 
-CONFIG_FILE="$PROJECT_ROOT/deploy-object-storage/deploy-object-storage.conf"
+OBJECT_STORAGE_CONFIG_FILE="$PROJECT_ROOT/deploy-object-storage/deploy-object-storage.conf"
 HELPER="$SCRIPT_DIR/lib/declaration.py"
-if [[ ! -f "$CONFIG_FILE" ]]; then
-    log_error "缺少 Object Storage 配置文件: $CONFIG_FILE"
+if [[ ! -f "$OBJECT_STORAGE_CONFIG_FILE" ]]; then
+    log_error "缺少 Object Storage 配置文件: $OBJECT_STORAGE_CONFIG_FILE"
     exit 1
 fi
-source "$CONFIG_FILE"
+source "$OBJECT_STORAGE_CONFIG_FILE"
 
 if [[ -f "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh" ]]; then
     source "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh"

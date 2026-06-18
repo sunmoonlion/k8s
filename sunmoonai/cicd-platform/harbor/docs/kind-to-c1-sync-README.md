@@ -97,10 +97,25 @@ Harbor 本身可能已正常，装 jq 后重试或等待下一轮检查即可通
 UI 成功率 **只统计 Succeed**，不含 InProgress。大镜像（如 `ragflow` ~7GB、`elasticsearch` ~600MB）跨网 Push 很慢，属正常。  
 查看任务详情或 API：`failed=0` 且有多项 `InProgress` 时继续等待即可。
 
-### 8. 复制规则「仓库扁平化」选「无替换」
+### 8. 复制后出现 `app-images/app-images/...` 双重前缀
 
-源、目标项目名一致时（`app-images` → `app-images`），应选 **无替换**。  
-「替换 1 级」可能改变仓库路径，导致 C1 部署配置中的镜像名对不上。
+源名称填 `app-images/**`、目标名称空间也填 `app-images`、且选 **无替换** 时，Harbor 会把源路径里的 `app-images/` 原样保留，再套一层目标项目名，远程变成：
+
+```text
+app-images/app-images/knowledge-admin-backend   ← 错误
+app-images/knowledge-admin-backend              ← 部署配置期望的路径
+```
+
+**正确填法**（二选一）：
+
+| 方案 | 源名称 | 目标名称空间 | 仓库扁平化 |
+|------|--------|--------------|------------|
+| A（推荐） | `app-images/**` | `app-images` | **替换 1 级** |
+| B | `**` | `app-images` | 无替换 |
+
+`k8s-images` 规则同理：用 `k8s-images/**` + **替换 1 级**，或 `**` + 无替换。
+
+已同步出错的镜像：在远程 C1 删除 `app-images/app-images/*` 下错误仓库，改好规则后重新点 **复制**。
 
 ### 9. Stopped 的复制任务记录不能删
 
@@ -178,7 +193,7 @@ CLUSTER=KIND ./deploy-harbor.sh deploy
 | 源名称 | `app-images/**` |
 | 资源 | image |
 | 目标名称空间 | `app-images` |
-| 仓库扁平化 | 无替换 |
+| 仓库扁平化 | **替换 1 级**（去掉源路径中的 `app-images/`，避免 `app-images/app-images/...`） |
 
 **规则 2：`kind-to-c1-k8s-images`**
 
@@ -186,7 +201,7 @@ CLUSTER=KIND ./deploy-harbor.sh deploy
 |------|-----|
 | 源名称 | `k8s-images/**` |
 | 目标名称空间 | `k8s-images` |
-| 仓库扁平化 | 无替换 |
+| 仓库扁平化 | **替换 1 级** |
 
 ---
 

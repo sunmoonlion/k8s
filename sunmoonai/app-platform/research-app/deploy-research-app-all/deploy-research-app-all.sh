@@ -59,9 +59,9 @@ call_subscript() {
     local script_path="$1"
     shift
     if [[ -n "${CLUSTER:-}" ]]; then
-        "$script_path" --cluster "$CLUSTER" "$@"
+        DISABLE_AUTO_CLEANUP=true "$script_path" --cluster "$CLUSTER" "$@"
     else
-        "$script_path" "$@"
+        DISABLE_AUTO_CLEANUP=true "$script_path" "$@"
     fi
 }
 
@@ -76,7 +76,7 @@ run_bootstrap() {
         return 1
     }
     log_info "${label}: ${action} (cluster=${cluster})"
-    CLUSTER="$cluster" ELASTICSEARCH_CLUSTER="$cluster" OBJECT_STORAGE_CLUSTER="$cluster" \
+    DISABLE_AUTO_CLEANUP=true CLUSTER="$cluster" ELASTICSEARCH_CLUSTER="$cluster" OBJECT_STORAGE_CLUSTER="$cluster" \
         "$script_path" "$action"
 }
 

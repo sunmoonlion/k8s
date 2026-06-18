@@ -15,12 +15,12 @@ if [[ $# -gt 0 ]] && type unified_parse_cluster_arg >/dev/null 2>&1; then
     ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
 fi
 
-CONFIG_FILE="$SCRIPT_DIR/deploy-object-storage.conf"
-if [[ ! -f "$CONFIG_FILE" ]]; then
-    log_error "缺少 Object Storage 配置文件: $CONFIG_FILE"
+OBJECT_STORAGE_CONFIG_FILE="$SCRIPT_DIR/deploy-object-storage.conf"
+if [[ ! -f "$OBJECT_STORAGE_CONFIG_FILE" ]]; then
+    log_error "缺少 Object Storage 配置文件: $OBJECT_STORAGE_CONFIG_FILE"
     exit 1
 fi
-source "$CONFIG_FILE"
+source "$OBJECT_STORAGE_CONFIG_FILE"
 
 if [[ -f "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh" ]]; then
     source "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh"

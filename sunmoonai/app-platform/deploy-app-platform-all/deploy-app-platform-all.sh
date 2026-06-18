@@ -55,9 +55,9 @@ call_subscript() {
     local script_path="$1"
     shift
     if [[ -n "${CLUSTER:-}" ]]; then
-        "$script_path" --cluster "$CLUSTER" "$@"
+        DISABLE_AUTO_CLEANUP=true "$script_path" --cluster "$CLUSTER" "$@"
     else
-        "$script_path" "$@"
+        DISABLE_AUTO_CLEANUP=true "$script_path" "$@"
     fi
 }
 
