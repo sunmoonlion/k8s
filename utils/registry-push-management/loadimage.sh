@@ -573,6 +573,26 @@ build_target_ref(){
   fi
 }
 
+target_name_for_ref(){
+  local img_ref="$1"
+  local repo="${img_ref%:*}"
+  local first="${repo%%/*}"
+  local repo_without_registry="$repo"
+
+  if [[ "$repo" == */* && ( "$first" == *.* || "$first" == *:* || "$first" == "localhost" ) ]]; then
+    repo_without_registry="${repo#*/}"
+  fi
+
+  case "$repo_without_registry" in
+    minio/aistor/*)
+      echo "$repo_without_registry"
+      ;;
+    *)
+      echo "${repo_without_registry##*/}"
+      ;;
+  esac
+}
+
 usage(){ cat <<EOF
 registry-push-management（通用）
 用法:
@@ -687,7 +707,7 @@ main(){
       local img_ref="$1" host="${2:-$REMOTE_HOST}" remote_dir="${3:-$REMOTE_IMAGE_DIR}" user="${4:-$REMOTE_USER}" port="${5:-$REMOTE_SSH_PORT}" secret="${6:-$REMOTE_SECRET}" pass="${7:-$REMOTE_PASS}"
       [[ -n "$host" ]] || { err "未提供 host（参数或 REMOTE_HOST）"; exit 1; }
       local tar_path; tar_path=$(find_local_tar_for_ref "$img_ref") || { err "未找到本地 tar: $img_ref"; exit 1; }
-      local name_only="${img_ref%:*}"; name_only="${name_only##*/}"; local tag="${img_ref##*:}"
+      local name_only; name_only="$(target_name_for_ref "$img_ref")"; local tag="${img_ref##*:}"
       local target_ref; target_ref=$(build_target_ref "$name_only" "$tag") || exit 1
       "${BASH_SOURCE[0]}" upload-load-push "$tar_path" "$host" "$remote_dir" "$target_ref" "$user" "$port" "$secret" "$pass"
       ;;
@@ -726,7 +746,7 @@ main(){
       if [[ $# -lt 1 ]]; then usage; exit 1; fi
       local img_ref="$1" host="${2:-$REMOTE_HOST}" remote_dir="${3:-$REMOTE_IMAGE_DIR}" user="${4:-$REMOTE_USER}" port="${5:-$REMOTE_SSH_PORT}" secret="${6:-$REMOTE_SECRET}" pass="${7:-$REMOTE_PASS}"
       [[ -n "$host" ]] || { err "未提供 host（参数或 REMOTE_HOST）"; exit 1; }
-      local name_only="${img_ref%:*}"; name_only="${name_only##*/}"; local tag="${img_ref##*:}"
+      local name_only; name_only="$(target_name_for_ref "$img_ref")"; local tag="${img_ref##*:}"
       local target_ref; target_ref=$(build_target_ref "$name_only" "$tag") || exit 1
       # 优先在远端找 tar；找不到则从本地上传（兜底）
       local tar_path
@@ -793,7 +813,7 @@ main(){
         scp_remote "$tar" "${host:-}" "${user:-}" "${port:-}" "$remote_dir" "${secret:-}" "${pass:-}" || { err "上传 tar 文件失败: $tar"; push_failed=true; continue; }
         local remote_tar="$remote_dir/$(basename "$tar")"
         local src_ref; src_ref=$(load_image "$remote_tar" "${host:-}" "${user:-}" "${port:-}" "${secret:-}" "${pass:-}") || { warn "跳过: 无法解析 $tar"; push_failed=true; continue; }
-        local name_only="${src_ref%:*}"; name_only="${name_only##*/}"; local tag="${src_ref##*:}"
+        local name_only; name_only="$(target_name_for_ref "$src_ref")"; local tag="${src_ref##*:}"
         local target_ref; target_ref=$(build_target_ref "$name_only" "$tag") || { warn "跳过: 无法构造目标 $src_ref"; push_failed=true; continue; }
         tag_image "$src_ref" "$target_ref" "${host:-}" "${user:-}" "${port:-}" "${secret:-}" "${pass:-}" || { err "打标镜像失败: $src_ref -> $target_ref"; push_failed=true; continue; }
         push_image "$target_ref" "${host:-}" "${user:-}" "${port:-}" "${secret:-}" "${pass:-}" || { err "推送镜像失败: $target_ref"; push_failed=true; continue; }
