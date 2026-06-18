@@ -10,6 +10,18 @@ K8S_RESOURCE_DIR="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
 OUTPUT_DIR="$SCRIPT_DIR"
 
+find_k8s_root_dir() {
+    local search_dir="$1"
+    while [[ -n "$search_dir" && "$search_dir" != "/" ]]; do
+        if [[ -f "$search_dir/utils/secret-management/lib/secret-data.sh" ]]; then
+            echo "$search_dir"
+            return 0
+        fi
+        search_dir="$(dirname "$search_dir")"
+    done
+    return 1
+}
+
 MAIN_DEPLOY_CONFIG="$PROJECT_ROOT/deploy-auth-app-front/app/deploy-app/deploy-auth-app-front.conf"
 if [ -f "$MAIN_DEPLOY_CONFIG" ]; then
     _temp_namespace=$(source "$MAIN_DEPLOY_CONFIG" 2>/dev/null && echo "${AUTH_APP_SSR_NAMESPACE:-}")
@@ -26,45 +38,26 @@ log_warn()    { echo -e "\033[1;33m[WARN]\033[0m $*"; }
 
 [ ! -f "$CONFIG_FILE" ] && log_error "配置文件不存在: $CONFIG_FILE" && exit 1
 source "$CONFIG_FILE"
+
+K8S_ROOT_DIR="$(find_k8s_root_dir "$PROJECT_ROOT" || true)"
+if [[ -n "${K8S_ROOT_DIR:-}" ]]; then
+    # shellcheck disable=SC1090
+    source "$K8S_ROOT_DIR/utils/secret-management/lib/secret-data.sh"
+    DOCKER_PASSWORD="$(resolve_docker_auth_password "${DOCKER_PASSWORD:-}")"
+fi
 [ "${ENABLED:-true}" != "true" ] && log_info "跳过资源生成: secret (已禁用)" && exit 0
 
 export NAMESPACE="${NAMESPACE:-}"
 export ENVIRONMENT="${ENVIRONMENT:-}"
 export ENV="${ENV:-}"
 
-# 解析 Docker registry 密码。仓库内只保留占位符，真实值通过环境变量或集群 Secret 注入。
-resolve_docker_password() {
-    local password="${DOCKER_PASSWORD:-}"
-    if [[ -n "$password" && "$password" != "TODO_FILL_IN_HARBOR_PASSWORD" ]]; then
-        printf '%s' "$password"
-        return 0
-    fi
-
-    if [[ -n "${HARBOR_ADMIN_PASSWORD:-}" ]]; then
-        printf '%s' "$HARBOR_ADMIN_PASSWORD"
-        return 0
-    fi
-
-    if command -v kubectl >/dev/null 2>&1; then
-        local secret_namespace="${HARBOR_SECRET_NAMESPACE:-cicd-platform-dev}"
-        local secret_name="${HARBOR_AUTH_SECRET_NAME:-harbor-secret}"
-        local secret_key="${HARBOR_AUTH_SECRET_PASSWORD_KEY:-HARBOR_ADMIN_PASSWORD}"
-        local secret_value
-        secret_value=$(kubectl get secret "$secret_name" -n "$secret_namespace" \
-            -o "jsonpath={.data.${secret_key}}" 2>/dev/null | base64 -d 2>/dev/null || true)
-        if [[ -n "$secret_value" ]]; then
-            printf '%s' "$secret_value"
-            return 0
-        fi
-    fi
-
-    log_error "未提供 Harbor registry 密码。请设置 DOCKER_PASSWORD 或 HARBOR_ADMIN_PASSWORD，或确保可读取 cicd-platform-dev/harbor-secret。"
-    return 1
-}
-
 HARBOR_DOCKER_SERVER="${DOCKER_SERVER:-}"
 HARBOR_DOCKER_USERNAME="${DOCKER_USERNAME:-}"
-HARBOR_DOCKER_PASSWORD="$(resolve_docker_password)" || exit 1
+HARBOR_DOCKER_PASSWORD="${DOCKER_PASSWORD:-}"
+if [[ -z "$HARBOR_DOCKER_PASSWORD" || "$HARBOR_DOCKER_PASSWORD" == "TODO_FILL_IN_HARBOR_PASSWORD" ]]; then
+    log_error "Harbor 密码未配置，拒绝生成无效的镜像拉取 Secret"
+    exit 1
+fi
 HARBOR_AUTH_STRING=$(echo -n "${HARBOR_DOCKER_USERNAME}:${HARBOR_DOCKER_PASSWORD}" | base64 -w 0)
 export HARBOR_DOCKER_CONFIG_JSON=$(echo -n "{\"auths\":{\"${HARBOR_DOCKER_SERVER}\":{\"username\":\"${HARBOR_DOCKER_USERNAME}\",\"password\":\"${HARBOR_DOCKER_PASSWORD}\",\"auth\":\"${HARBOR_AUTH_STRING}\"}}}" | base64 -w 0)
 

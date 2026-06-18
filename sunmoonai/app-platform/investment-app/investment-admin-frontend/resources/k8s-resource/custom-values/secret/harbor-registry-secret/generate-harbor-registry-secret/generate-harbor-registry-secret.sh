@@ -9,6 +9,18 @@ K8S_RESOURCE_DIR="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../../.." && pwd)"
 OUTPUT_DIR="$SCRIPT_DIR"
 
+find_k8s_root_dir() {
+    local search_dir="$1"
+    while [[ -n "$search_dir" && "$search_dir" != "/" ]]; do
+        if [[ -f "$search_dir/utils/secret-management/lib/secret-data.sh" ]]; then
+            echo "$search_dir"
+            return 0
+        fi
+        search_dir="$(dirname "$search_dir")"
+    done
+    return 1
+}
+
 MAIN_DEPLOY_CONFIG="$PROJECT_ROOT/deploy-investment-admin-frontend/app/deploy-app/deploy-investment-admin-frontend.conf"
 if [ -f "$MAIN_DEPLOY_CONFIG" ]; then
     _temp_namespace=$(source "$MAIN_DEPLOY_CONFIG" 2>/dev/null && echo "${INVESTMENT_ADMIN_FRONTEND_NAMESPACE:-}")
@@ -27,6 +39,13 @@ if [ ! -f "$CONFIG_FILE" ]; then
     log_error "配置文件不存在: $CONFIG_FILE"; exit 1
 fi
 source "$CONFIG_FILE"
+
+K8S_ROOT_DIR="$(find_k8s_root_dir "$PROJECT_ROOT" || true)"
+if [[ -n "${K8S_ROOT_DIR:-}" ]]; then
+    # shellcheck disable=SC1090
+    source "$K8S_ROOT_DIR/utils/secret-management/lib/secret-data.sh"
+    DOCKER_PASSWORD="$(resolve_docker_auth_password "${DOCKER_PASSWORD:-}")"
+fi
 
 if [ "${ENABLED:-true}" != "true" ]; then
     log_info "跳过资源生成: harbor-registry-secret (已禁用)"; exit 0
