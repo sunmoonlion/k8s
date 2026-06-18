@@ -84,10 +84,21 @@ run_backend_resources() {
     local backend="$1"
     local action="$2"
     local source_root="$3"
+    local component_enabled_var="${backend//-/_}_enabled"
     local storage_enabled_var="${backend//-/_}_storage_access_enabled"
     local search_enabled_var="${backend//-/_}_search_access_enabled"
     local database_enabled_var="${backend//-/_}_database_access_enabled"
-    local database_enabled storage_enabled search_enabled
+    local component_enabled database_enabled storage_enabled search_enabled
+    eval "component_enabled=\${${component_enabled_var}:-false}"
+    [[ "$component_enabled" == "true" ]] || {
+        log_info "$backend 未启用，跳过资源 bootstrap"
+        return 0
+    }
+    [[ -d "$source_root/$backend" ]] || {
+        log_error "$backend 资源目录不存在: $source_root/$backend"
+        log_error "请设置 ${VAR_PREFIX}_SOURCE_ROOT 指向包含 $backend 的业务仓库，或关闭 ${component_enabled_var}"
+        return 1
+    }
     eval "database_enabled=\${${database_enabled_var}:-false}"
     eval "storage_enabled=\${${storage_enabled_var}:-false}"
     eval "search_enabled=\${${search_enabled_var}:-false}"
