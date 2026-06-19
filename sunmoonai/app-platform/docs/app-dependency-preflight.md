@@ -8,6 +8,8 @@ k8s 部署配置是依赖开关的权威来源。
 
 业务仓库里的 `db-access-bootstrap/config/common.env` 只能作为 bootstrap 脚本的内部默认值，不能覆盖 k8s 部署脚本传入的开关。部署入口会保护调用方传入的 `ENABLE_POSTGRESQL`、`ENABLE_REDIS`、`ENABLE_NODEBULL_REDIS`、`ENABLE_MONGODB`，即使业务仓库的 `common.env` 写了固定值，也以 k8s 传入值为准。
 
+PostgreSQL、Redis、MongoDB、Elasticsearch 的配置策略是一套：都由 app-all 配置决定是否启用，启用则预检查，关闭则不检查、不 bootstrap、不挂载对应运行时配置。当前底层执行器有历史差异：PostgreSQL、Redis、MongoDB 属于 DB 类资源，走 `db-access-bootstrap`；Elasticsearch 属于搜索资源，走 `search-access-bootstrap`。执行器不同不代表配置机制不同。
+
 预检查只在会创建或校验资源的动作中执行：
 
 - `deploy`
@@ -70,6 +72,8 @@ info_admin_backend_search_access_enabled="true"
 | `*_search_access_enabled` | Elasticsearch 预检查、Search bootstrap、Elasticsearch ConfigMap/Secret 挂载 |
 
 建议显式配置 `*_redis_access_enabled`。如果未配置，脚本会临时按 `*_database_access_enabled` 的值兜底，但新配置不要依赖这个隐式行为。
+
+这些开关应被视为同一套依赖能力开关。不要把 ES 视为另一套独立策略；它只是由 `search-access-bootstrap` 执行，而不是由 `db-access-bootstrap` 执行。
 
 ## 集群级覆盖
 
