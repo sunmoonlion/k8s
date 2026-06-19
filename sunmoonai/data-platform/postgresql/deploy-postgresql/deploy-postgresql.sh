@@ -142,12 +142,12 @@ define_required_images() {
             "development"|"dev")
                 echo "bitnami/postgresql|true"
                 if [[ "${POSTGRESQL_MONITORING_ENABLED:-false}" == "true" ]]; then
-                    echo "bitnami/postgresql-exporter|true"
+                    echo "bitnami/postgres-exporter|true"
                 fi
                 ;;
             "production"|"prod")
                 echo "bitnami/postgresql|true"
-                echo "bitnami/postgresql-exporter|true"
+                echo "bitnami/postgres-exporter|true"
                 if [[ "${POSTGRESQL_BACKUP_ENABLED:-false}" == "true" ]]; then
                     echo "bitnami/postgresql|true"
                 fi
@@ -161,12 +161,12 @@ define_required_images() {
             "development"|"dev")
                 echo "bitnami/postgresql:$POSTGRESQL_IMAGE_VERSION|true"
                 if [[ "${POSTGRESQL_MONITORING_ENABLED:-false}" == "true" ]]; then
-                    echo "bitnami/postgresql-exporter:$POSTGRESQL_METRICS_IMAGE_VERSION|true"
+                    echo "bitnami/postgres-exporter:$POSTGRESQL_METRICS_IMAGE_VERSION|true"
                 fi
                 ;;
             "production"|"prod")
                 echo "bitnami/postgresql:$POSTGRESQL_IMAGE_VERSION|true"
-                echo "bitnami/postgresql-exporter:$POSTGRESQL_METRICS_IMAGE_VERSION|true"
+                echo "bitnami/postgres-exporter:$POSTGRESQL_METRICS_IMAGE_VERSION|true"
                 if [[ "${POSTGRESQL_BACKUP_ENABLED:-false}" == "true" ]]; then
                     echo "bitnami/postgresql:$POSTGRESQL_IMAGE_VERSION|true"
                 fi
