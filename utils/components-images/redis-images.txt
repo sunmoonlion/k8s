@@ -1,4 +1,6 @@
+# dev/C1 最小集（dev-values：metrics 与 sentinel 均已关闭）
 bitnami/redis:8.2.1-debian-12-r0
-bitnami/redis-exporter:1.76.0-debian-12-r0
-bitnami/redis-sentinel:8.2.1-debian-12-r0
 bitnami/os-shell:12-debian-12-r51
+# 启用 metrics 或 sentinel 时需先打包 tar 并推送到 Harbor，再取消注释：
+# bitnami/redis-exporter:1.76.0-debian-12-r0
+# bitnami/redis-sentinel:8.2.1-debian-12-r0
