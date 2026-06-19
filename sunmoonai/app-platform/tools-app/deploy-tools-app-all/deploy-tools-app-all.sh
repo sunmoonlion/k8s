@@ -78,8 +78,16 @@ run_bootstrap() {
         return 1
     }
     log_info "${label}: ${action} (cluster=${cluster})"
-    env "$@" DISABLE_AUTO_CLEANUP=true CLUSTER="$cluster" ELASTICSEARCH_CLUSTER="$cluster" OBJECT_STORAGE_CLUSTER="$cluster" \
-        "$script_path" "$action"
+    local status
+    app_dependency_install_db_switch_source_guard
+    if env "$@" DISABLE_AUTO_CLEANUP=true CLUSTER="$cluster" ELASTICSEARCH_CLUSTER="$cluster" OBJECT_STORAGE_CLUSTER="$cluster" \
+        "$script_path" "$action"; then
+        status=0
+    else
+        status=$?
+    fi
+    app_dependency_uninstall_db_switch_source_guard
+    return "$status"
 }
 
 run_backend_resources() {

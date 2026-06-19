@@ -61,6 +61,36 @@ app_dependency_export_component_secret_overrides() {
     fi
 }
 
+app_dependency_install_db_switch_source_guard() {
+    source() {
+        local env_file="${1:-}"
+        local -A caller_values=()
+        local var
+
+        for var in ENABLE_POSTGRESQL ENABLE_REDIS ENABLE_NODEBULL_REDIS ENABLE_MONGODB; do
+            if [[ ${!var+x} ]]; then
+                caller_values["$var"]="${!var}"
+            fi
+        done
+
+        builtin source "$@"
+
+        case "$env_file" in
+            */common.env|common.env)
+                for var in "${!caller_values[@]}"; do
+                    export "$var=${caller_values[$var]}"
+                done
+                ;;
+        esac
+    }
+    export -f source
+}
+
+app_dependency_uninstall_db_switch_source_guard() {
+    unset -f source 2>/dev/null || true
+    export -nf source 2>/dev/null || true
+}
+
 app_dependency_component_should_deploy() {
     local component="$1"
     local enabled="${2:-false}"

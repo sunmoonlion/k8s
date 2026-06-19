@@ -6,8 +6,26 @@ CONFIG_DIR="${SCRIPT_DIR}/config"
 # sunmoonai/.../db-access-bootstrap -> ../../../../.. = k8s repo root
 K8S_ROOT="$(cd "${SCRIPT_DIR}/../../../../.." && pwd)"
 
-# shellcheck disable=SC1091
-source "${CONFIG_DIR}/common.env"
+source_common_env_preserving_callers() {
+  local env_file="$1"
+  local -A caller_values=()
+  local var
+
+  for var in ENABLE_POSTGRESQL ENABLE_REDIS ENABLE_NODEBULL_REDIS ENABLE_MONGODB; do
+    if [[ ${!var+x} ]]; then
+      caller_values["$var"]="${!var}"
+    fi
+  done
+
+  # shellcheck disable=SC1090
+  source "$env_file"
+
+  for var in "${!caller_values[@]}"; do
+    export "$var=${caller_values[$var]}"
+  done
+}
+
+source_common_env_preserving_callers "${CONFIG_DIR}/common.env"
 
 # dbctl 依赖 kubectl；从 WSL 直接执行时未必已有 KUBECONFIG/隧道
 ensure_kubectl_for_dbctl() {
