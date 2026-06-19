@@ -1687,8 +1687,8 @@ deploy_harbor() {
     # - Kind 无远程节点与 SSH，因此当 K8S_TARGET_MODE=kind 时此处显式跳过阶段4，
     #   避免无意义/失败；Kind 的控制平面镜像由 load-images / push-to-harbor 等别处处理。
     # - K8S_TARGET_MODE 来自 unified-deployment-template 的 setup_kubectl_environment
-    #   （CLUSTER=KIND 时设为 kind）。各组件（Jenkins/RabbitMQ 等）的推镜像由
-    #   push_component_images_to_harbor 处理：Kind 用 push-to-harbor，远程用 loadimage.sh。
+    #   （CLUSTER=KIND 时设为 kind）。各组件（Jenkins/RabbitMQ 等）的镜像确保由
+    #   push_component_images_to_harbor/ensure_component_images_in_harbor 处理。
     # -------------------------------------------------------------------------
     if [[ "$dry_run" != "true" ]]; then
         if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then

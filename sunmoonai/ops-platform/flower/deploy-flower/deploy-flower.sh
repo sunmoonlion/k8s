@@ -462,7 +462,7 @@ main() {
             log_info "开始部署 Flower..."
             check_namespace "$namespace"
             # 在部署前按需推送 Flower 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
-            push_flower_images_to_harbor || log_warn "[images] Flower 镜像推送阶段出现警告，可稍后单独检查 Harbor 镜像状态"
+            push_flower_images_to_harbor
             
             # 部署 Secrets 子组件
             if ! create_flower_secrets_if_needed "$namespace" "$project_id" "$environment" "$dry_run"; then

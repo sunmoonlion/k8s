@@ -544,7 +544,7 @@ main() {
             log_info "开始部署 Jenkins..."
             check_namespace "$namespace"
             # 在部署前按需推送 Jenkins 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
-            push_jenkins_images_to_harbor || log_warn "[images] Jenkins 镜像推送阶段出现警告，可稍后单独检查 Harbor 镜像状态"
+            push_jenkins_images_to_harbor
             # 重要：必须先部署 Secret，再部署 Helm Chart
             # Bitnami Chart 只在首次启动时使用密码，如果 Secret 不存在，Chart 会生成随机密码
             if [[ "${secrets_enabled:-true}" == "true" ]]; then

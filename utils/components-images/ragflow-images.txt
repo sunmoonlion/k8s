@@ -1,0 +1,7 @@
+ragflow:v0.25.4-sunmoonai.1
+mysql:8.0.39
+elasticsearch:8.11.3
+minio:RELEASE.2026-03-25T00-00-00Z
+valkey:8
+alpine:latest
+busybox:latest

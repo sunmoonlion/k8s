@@ -649,7 +649,7 @@ main() {
             log_info "开始部署 Mongo Express..."
             check_namespace "$namespace"
             # 在部署前按需推送 Mongo Express 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
-            push_mongo_express_images_to_harbor || log_warn "[images] Mongo Express 镜像推送阶段出现警告，可稍后单独检查 Harbor 镜像状态"
+            push_mongo_express_images_to_harbor
             
             # 部署子组件（Secrets、Middleware）- 在核心组件之前部署（Ingress 在核心组件之后）
             # 注意：Ingress 依赖 Service 存在，必须在核心组件之后部署

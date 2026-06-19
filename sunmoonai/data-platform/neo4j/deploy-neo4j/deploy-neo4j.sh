@@ -489,7 +489,7 @@ main() {
             log_info "开始部署 Neo4j..."
             check_namespace "$namespace"
             # 在部署前按需推送 Neo4j 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
-            push_neo4j_images_to_harbor || log_warn "[images] Neo4j 镜像推送阶段出现警告，可稍后单独检查 Harbor 镜像状态"
+            push_neo4j_images_to_harbor
             # 先确保 neo4j-secrets 存在，再执行 Helm，避免 Pod 卡在 ContainerCreating（MountVolume.SetUp: secret "neo4j-secrets" not found）
             create_neo4j_secrets_if_needed "$namespace"
             execute_neo4j_deployment "$project_id" "$namespace" "$environment" "$dry_run"

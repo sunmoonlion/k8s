@@ -25,6 +25,8 @@ fi
 # 保存环境变量（如果已设置，用于覆盖配置文件中的值）
 # 组件脚本可以通过环境变量覆盖配置文件中的值
 SAVED_CLEANUP_REMOTE_TAR_AFTER_PUSH="${CLEANUP_REMOTE_TAR_AFTER_PUSH:-}"
+SAVED_REGISTRY_URL="${REGISTRY_URL:-}"
+SAVED_PROJECT_NAME="${PROJECT_NAME:-}"
 
 # =============================================================================
 # 解析命令行参数（支持 --cluster 或 -c 参数）
@@ -68,11 +70,23 @@ fi
 if [[ -n "$SAVED_CLEANUP_REMOTE_TAR_AFTER_PUSH" ]]; then
   CLEANUP_REMOTE_TAR_AFTER_PUSH="$SAVED_CLEANUP_REMOTE_TAR_AFTER_PUSH"
 fi
+if [[ -n "$SAVED_REGISTRY_URL" ]]; then
+  REGISTRY_URL="$SAVED_REGISTRY_URL"
+fi
+if [[ -n "$SAVED_PROJECT_NAME" ]]; then
+  PROJECT_NAME="$SAVED_PROJECT_NAME"
+fi
 
 # 应用集群配置映射（如果函数存在）
 # 此时 CLUSTER 环境变量应该已经设置（通过命令行参数或默认值）
 if type apply_cluster_config_mapping >/dev/null 2>&1; then
   apply_cluster_config_mapping
+fi
+if [[ -n "$SAVED_REGISTRY_URL" ]]; then
+  REGISTRY_URL="$SAVED_REGISTRY_URL"
+fi
+if [[ -n "$SAVED_PROJECT_NAME" ]]; then
+  PROJECT_NAME="$SAVED_PROJECT_NAME"
 fi
 
 log(){ printf "[reg-push] %s %s\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$*"; }

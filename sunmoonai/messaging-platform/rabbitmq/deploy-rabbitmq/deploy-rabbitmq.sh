@@ -801,7 +801,7 @@ main() {
             fi
             
             # 执行部署前，按需推送 RabbitMQ 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
-            push_rabbitmq_images_to_harbor || log_warn "[images] RabbitMQ 镜像推送阶段出现警告，可稍后单独检查 Harbor 镜像状态"
+            push_rabbitmq_images_to_harbor
             
             # 执行部署
             if execute_rabbitmq_deployment "$project_id" "$namespace" "$environment" "$dry_run"; then

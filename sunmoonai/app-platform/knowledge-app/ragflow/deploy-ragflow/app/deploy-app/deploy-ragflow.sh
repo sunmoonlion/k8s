@@ -15,7 +15,6 @@ done
 }
 
 source "$K8S_ROOT_DIR/utils/unified-deployment-template.sh"
-source "$K8S_ROOT_DIR/utils/harbor-image-check.sh"
 SCRIPT_DIR="$RAGFLOW_SCRIPT_DIR"
 
 ORIGINAL_ARGS=("$@")
@@ -68,11 +67,7 @@ check_prerequisites() {
 }
 
 check_images() {
-    local namespace="$1"
-    local image
-    while IFS= read -r image; do
-        check_harbor_image_exists "$image" "$namespace" "$RAGFLOW_IMAGE_PULL_SECRET"
-    done < <(required_images)
+    ensure_component_images_in_harbor "ragflow" "${RAGFLOW_IMAGE_PROJECT:-app-images}"
 }
 
 deploy_release() {

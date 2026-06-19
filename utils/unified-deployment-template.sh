@@ -1331,104 +1331,290 @@ cleanup_k8s_connection() {
 }
 
 # ========================================
-# Harbor 镜像按需推送（组件通用）
+# Harbor 组件镜像确保（组件通用）
 # ========================================
-# 按集群模式分流：
-#   - Kind：使用 sunmoonai/kind-infrastructure/push-to-harbor/push-images-to-harbor.sh（--img-file 组件清单）
-#   - 远程（C1/C2/...）：使用 utils/registry-push-management/loadimage.sh remote-push-from-list（tar 已在远端节点）
-# - component_name: 组件名称（用于定位 utils/components-images/<component_name>-images.txt）
-push_component_images_to_harbor() {
-    local component_name="$1"
+# 统一契约：
+#   - Harbor 已有目标镜像：跳过
+#   - Harbor 明确缺失：从远程/本地 tar load/tag/push 补齐
+#   - Harbor 状态无法确认：失败退出，避免误把网络/鉴权问题当成缺镜像
+#   - tar 缺失或推送失败：失败退出
+_image_ref_tag() {
+    local ref="$1"
+    if [[ "$ref" == *":"* && "${ref##*:}" != *"/"* ]]; then
+        echo "${ref##*:}"
+    else
+        echo "latest"
+    fi
+}
 
-    # 在首次推送组件镜像前等待 Harbor 就绪（只检查一次）
-    wait_for_harbor_if_needed || true
+_image_ref_repo_without_tag() {
+    local ref="$1"
+    if [[ "$ref" == *":"* && "${ref##*:}" != *"/"* ]]; then
+        echo "${ref%:*}"
+    else
+        echo "$ref"
+    fi
+}
 
-    # Kind 模式下确保 docker 已登录 Harbor（Harbor 刚部署完 auth 可能未完全就绪，重试 login）
-    if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
-        local harbor_host="${HARBOR_HOST:-harbor.sunmoonai.com:30443}"
-        local harbor_user="${HARBOR_ADMIN_USER:-admin}"
-        local harbor_pass="${HARBOR_ADMIN_PASSWORD:-}"
-        if [[ -n "$harbor_pass" ]]; then
-            echo "$harbor_pass" | docker login "$harbor_host" -u "$harbor_user" --password-stdin >/dev/null 2>&1 || true
+_image_ref_target_name() {
+    local img_ref="$1"
+    local repo
+    repo="$(_image_ref_repo_without_tag "$img_ref")"
+    local first="${repo%%/*}"
+    local repo_without_registry="$repo"
+
+    if [[ "$repo" == */* && ( "$first" == *.* || "$first" == *:* || "$first" == "localhost" ) ]]; then
+        repo_without_registry="${repo#*/}"
+    fi
+
+    case "$repo_without_registry" in
+        minio/aistor/*)
+            echo "$repo_without_registry"
+            ;;
+        *)
+            echo "${repo_without_registry##*/}"
+            ;;
+    esac
+}
+
+_component_target_ref() {
+    local img_ref="$1"
+    local registry="$2"
+    local project="$3"
+    local repo
+    repo="$(_image_ref_repo_without_tag "$img_ref")"
+    local first="${repo%%/*}"
+
+    if [[ "$repo" == */* && ( "$first" == "$registry" || "$first" == "${registry%%:*}" ) ]]; then
+        echo "$img_ref"
+        return 0
+    fi
+
+    echo "${registry}/${project}/$(_image_ref_target_name "$img_ref"):$(_image_ref_tag "$img_ref")"
+}
+
+_urlencode_harbor_repo() {
+    python3 - "$1" <<'PY'
+import sys
+from urllib.parse import quote
+print(quote(sys.argv[1], safe=""))
+PY
+}
+
+_harbor_auth_pair() {
+    if [[ -n "${HARBOR_USERNAME:-}" && -n "${HARBOR_PASSWORD:-}" ]]; then
+        echo "${HARBOR_USERNAME}:${HARBOR_PASSWORD}"
+    elif [[ -n "${REGISTRY_USERNAME:-}" && -n "${REGISTRY_PASSWORD:-}" ]]; then
+        echo "${REGISTRY_USERNAME}:${REGISTRY_PASSWORD}"
+    elif [[ -n "${HARBOR_ADMIN_USER:-}" && -n "${HARBOR_ADMIN_PASSWORD:-}" ]]; then
+        echo "${HARBOR_ADMIN_USER}:${HARBOR_ADMIN_PASSWORD}"
+    elif [[ -n "${HARBOR_ADMIN_PASSWORD:-}" ]]; then
+        echo "admin:${HARBOR_ADMIN_PASSWORD}"
+    fi
+}
+
+# 输出：exists / missing / unknown
+_check_harbor_ref_state() {
+    local target_ref="$1"
+    local image_without_tag tag registry remainder project repo repo_encoded url auth http_code
+
+    image_without_tag="$(_image_ref_repo_without_tag "$target_ref")"
+    tag="$(_image_ref_tag "$target_ref")"
+    registry="${image_without_tag%%/*}"
+    remainder="${image_without_tag#*/}"
+    project="${remainder%%/*}"
+    repo="${remainder#*/}"
+
+    if [[ -z "$registry" || -z "$project" || -z "$repo" || "$repo" == "$remainder" ]]; then
+        log_error "[images] 无法解析 Harbor 镜像地址: $target_ref" >&2
+        echo "unknown"
+        return 0
+    fi
+
+    if command -v curl >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
+        repo_encoded="$(_urlencode_harbor_repo "$repo")"
+        url="https://${registry}/api/v2.0/projects/${project}/repositories/${repo_encoded}/artifacts/${tag}"
+        auth="$(_harbor_auth_pair || true)"
+        if [[ -n "$auth" ]]; then
+            http_code="$(curl -sk -o /dev/null -w "%{http_code}" -u "$auth" "$url" 2>/dev/null || echo "000")"
+        else
+            http_code="$(curl -sk -o /dev/null -w "%{http_code}" "$url" 2>/dev/null || echo "000")"
+        fi
+        case "$http_code" in
+            200) echo "exists"; return 0 ;;
+            404) echo "missing"; return 0 ;;
+            *) log_warn "[images] Harbor API 未能确认镜像状态: $target_ref (HTTP $http_code)，尝试 fallback 检查" >&2 ;;
+        esac
+    else
+        log_warn "[images] curl 或 python3 不存在，跳过 Harbor API 检查，尝试 fallback 检查" >&2
+    fi
+
+    if command -v docker >/dev/null 2>&1; then
+        if docker manifest inspect "$target_ref" >/dev/null 2>&1; then
+            echo "exists"
+            return 0
         fi
     fi
+
+    if command -v skopeo >/dev/null 2>&1; then
+        local tlsopt="--tls-verify=false"
+        auth="$(_harbor_auth_pair || true)"
+        if [[ -n "$auth" ]]; then
+            if skopeo inspect "$tlsopt" --creds "$auth" "docker://$target_ref" >/dev/null 2>&1; then
+                echo "exists"
+                return 0
+            fi
+        elif skopeo inspect "$tlsopt" "docker://$target_ref" >/dev/null 2>&1; then
+            echo "exists"
+            return 0
+        fi
+    fi
+
+    echo "unknown"
+}
+
+_safe_image_name() {
+    echo "$1" | sed 's#[/:]#_#g'
+}
+
+_find_local_tar_for_image_ref() {
+    local img_ref="$1"
+    local dir="$2"
+    local target_name tag short_ref safe candidate
+    target_name="$(_image_ref_target_name "$img_ref")"
+    tag="$(_image_ref_tag "$img_ref")"
+    short_ref="${target_name}:${tag}"
+
+    for candidate in \
+        "$dir/${img_ref}.tar" \
+        "$dir/$(_safe_image_name "$img_ref").tar" \
+        "$dir/${img_ref}.tar.gz" \
+        "$dir/$(_safe_image_name "$img_ref").tar.gz" \
+        "$dir/${short_ref}.tar" \
+        "$dir/$(_safe_image_name "$short_ref").tar" \
+        "$dir/${short_ref}.tar.gz" \
+        "$dir/$(_safe_image_name "$short_ref").tar.gz"; do
+        [[ -f "$candidate" ]] && { echo "$candidate"; return 0; }
+    done
+    return 1
+}
+
+_kind_push_tar_to_harbor() {
+    local img_ref="$1"
+    local target_ref="$2"
+    local tar_dir="${COMPONENT_IMAGE_TAR_DIR:-$HOME/packages-to-be-installed/images}"
+    local tar_path loaded_ref line
+
+    [[ -d "$tar_dir" ]] || { log_error "[images] 本地 tar 目录不存在: $tar_dir"; return 1; }
+    tar_path="$(_find_local_tar_for_image_ref "$img_ref" "$tar_dir" || true)"
+    [[ -n "$tar_path" ]] || { log_error "[images] 本地 tar 不存在: $img_ref (dir=$tar_dir)"; return 1; }
+
+    log_info "[images] 从本地 tar 加载并推送: $tar_path -> $target_ref"
+    loaded_ref=""
+    while IFS= read -r line; do
+        if [[ "$line" =~ Loaded\ image:\ (.+) ]]; then
+            loaded_ref="${BASH_REMATCH[1]}"
+            break
+        fi
+    done < <(docker load -i "$tar_path" 2>&1)
+
+    [[ -n "$loaded_ref" ]] || { log_error "[images] docker load 未解析到镜像引用: $tar_path"; return 1; }
+    docker tag "$loaded_ref" "$target_ref"
+    docker push "$target_ref"
+}
+
+ensure_component_images_in_harbor() {
+    local component_name="$1"
+    local project_override="${2:-}"
+
+    if [[ "${SKIP_COMPONENT_IMAGE_ENSURE:-false}" == "true" ]]; then
+        log_warn "[images] SKIP_COMPONENT_IMAGE_ENSURE=true，跳过组件镜像确保: $component_name"
+        return 0
+    fi
+
+    wait_for_harbor_if_needed || {
+        log_error "[images] Harbor 未就绪，无法确保组件镜像: $component_name"
+        return 1
+    }
 
     local base_dir
     base_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
     local image_list_file="$base_dir/components-images/${component_name}-images.txt"
+    [[ -f "$image_list_file" ]] || { log_error "[images] 找不到组件镜像清单: $image_list_file"; return 1; }
 
-    if [[ ! -f "$image_list_file" ]]; then
-        log_warn "[images] 找不到组件镜像清单: $image_list_file，跳过 Harbor 镜像推送"
-        return 0
+    local registry project loadimage_conf
+    registry="${REGISTRY_URL:-}"
+    project="${project_override:-${PROJECT_NAME:-}}"
+
+    loadimage_conf="$base_dir/registry-push-management/loadimage.conf"
+    if [[ -f "$loadimage_conf" ]]; then
+        # shellcheck disable=SC1090
+        source "$loadimage_conf"
+        registry="${registry:-${REGISTRY_URL:-}}"
+        project="${project_override:-${PROJECT_NAME:-${project:-}}}"
     fi
-
-    local image_list_abs="$image_list_file"
-    [[ "$image_list_abs" != /* ]] && image_list_abs="$(cd "$(dirname "$image_list_file")" && pwd)/$(basename "$image_list_file")"
 
     if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
-        # Kind：使用 push-to-harbor；先按镜像列表 pull，若有本地 tar 目录则同时 load+push（pull 失败时仍可从 tar 推送）
-        local k8s_root; k8s_root="$(cd "$base_dir/.." && pwd)"
-        local kind_push_sh="$k8s_root/sunmoonai/kind-infrastructure/push-to-harbor/push-images-to-harbor.sh"
-        if [[ ! -f "$kind_push_sh" ]]; then
-            log_warn "[images] Kind 模式下 push-images-to-harbor.sh 不存在: $kind_push_sh，跳过 Harbor 镜像推送"
-            return 0
+        local k8s_root kind_push_conf harbor_host harbor_project harbor_user harbor_pass
+        k8s_root="$(cd "$base_dir/.." && pwd)"
+        kind_push_conf="$k8s_root/sunmoonai/kind-infrastructure/push-to-harbor/push-images-to-harbor.conf"
+        if [[ -f "$kind_push_conf" ]]; then
+            # shellcheck disable=SC1090
+            source "$kind_push_conf"
         fi
-        local kind_push_args=(--img-file "$image_list_abs")
-        # Kind 模式下传递集群名，启用 kind load 兜底（push 失败时直接加载到节点）
-        local kind_cluster="${KIND_CLUSTER_NAME:-kind}"
-        kind_push_args+=(--kind-cluster "$kind_cluster")
-        local tar_dir="${COMPONENT_IMAGE_TAR_DIR:-$HOME/packages-to-be-installed/images}"
-        if [[ -d "$tar_dir" ]]; then
-            kind_push_args+=(--tar-dir "$tar_dir")
-            log_info "[images] Kind 集群：使用 push-to-harbor 推送组件镜像（清单 + 本地 tar 目录: $tar_dir，push 失败时 kind load 兜底）"
-        else
-            log_info "[images] Kind 集群：使用 push-to-harbor 按需推送组件镜像到 Harbor（component=${component_name}，push 失败时 kind load 兜底）"
+        harbor_host="${HARBOR_HOST:-${registry:-harbor.sunmoonai.com:30443}}"
+        harbor_project="${project_override:-${HARBOR_PROJECT:-${project:-k8s-images}}}"
+        registry="$harbor_host"
+        project="$harbor_project"
+        harbor_user="${HARBOR_ADMIN_USER:-admin}"
+        harbor_pass="${HARBOR_ADMIN_PASSWORD:-}"
+        if [[ -n "$harbor_pass" ]]; then
+            echo "$harbor_pass" | docker login "$registry" -u "$harbor_user" --password-stdin >/dev/null 2>&1 || true
         fi
-        if ! "$kind_push_sh" "${kind_push_args[@]}"; then
-            log_warn "[images] 组件 ${component_name} 镜像推送返回非零状态，请检查 push-to-harbor 或稍后单独执行"
-        else
-            log_info "[images] 组件 ${component_name} 相关镜像已确保存在于 Harbor（或已按需推送）"
-        fi
-        return 0
     fi
 
-    # 远程集群：使用 registry-push-management（SSH + nerdctl）
+    registry="${registry:-harbor.sunmoonai.com:30443}"
+    project="${project:-k8s-images}"
+
     local loadimage_sh="$base_dir/registry-push-management/loadimage.sh"
-    if [[ ! -f "$loadimage_sh" ]]; then
-        log_warn "[images] registry-push-management 工具不存在: $loadimage_sh，跳过 Harbor 镜像推送"
-        return 0
-    fi
-
-    if [[ -z "${_REG_PUSH_CLEANUP_WARNED:-}" ]]; then
-        local cleanup_flag="${CLEANUP_REMOTE_TAR_AFTER_PUSH:-}"
-        if [[ -z "$cleanup_flag" ]]; then
-            local loadimage_conf="$base_dir/registry-push-management/loadimage.conf"
-            if [[ -f "$loadimage_conf" ]]; then
-                # shellcheck disable=SC1090
-                source "$loadimage_conf"
-                cleanup_flag="${CLEANUP_REMOTE_TAR_AFTER_PUSH:-}"
-            fi
-        fi
-        if [[ "${cleanup_flag:-true}" == "true" ]]; then
-            log_warn "[images] 提示：CLEANUP_REMOTE_TAR_AFTER_PUSH=true，推送后会删除远程 tar。上述风险仅针对 Step11 会校验的镜像（如 bitnami/redis、bitnami/postgresql）；其它组件镜像的 tar 删除后不会在 Step11 verify 中校验，故不影响 verify 结果。"
-        fi
-        _REG_PUSH_CLEANUP_WARNED=1
-    fi
-    log_info "[images] 使用 registry-push-management 按需推送组件镜像到 Harbor（component=${component_name}）"
-
     local cluster_args=()
-    if [[ -n "${CLUSTER:-}" ]]; then
-        cluster_args+=(--cluster "$CLUSTER")
-    fi
+    [[ -n "${CLUSTER:-}" ]] && cluster_args+=(--cluster "$CLUSTER")
 
-    if ! "$loadimage_sh" "${cluster_args[@]}" remote-push-from-list "$image_list_file"; then
-        log_warn "[images] 组件 ${component_name} 镜像推送工具返回非零状态，请稍后在 utils/registry-push-management 中单独检查"
-    else
-        log_info "[images] 组件 ${component_name} 相关镜像已确保存在于 Harbor（或已按需推送）"
-    fi
+    log_info "[images] 确保组件镜像存在于 Harbor: component=${component_name}, registry=${registry}, project=${project}"
 
-    return 0
+    local img state target_ref failed=0
+    while IFS= read -r img; do
+        [[ -z "$img" || "$img" =~ ^[[:space:]]*# ]] && continue
+        target_ref="$(_component_target_ref "$img" "$registry" "$project")"
+        state="$(_check_harbor_ref_state "$target_ref")"
+        case "$state" in
+            exists)
+                log_info "[images] Harbor 已存在，跳过: $target_ref"
+                ;;
+            missing)
+                log_warn "[images] Harbor 缺失，准备从 tar 补齐: $target_ref"
+                if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
+                    _kind_push_tar_to_harbor "$img" "$target_ref" || failed=1
+                else
+                    [[ -f "$loadimage_sh" ]] || { log_error "[images] registry-push-management 工具不存在: $loadimage_sh"; failed=1; continue; }
+                    PROJECT_NAME="$project" REGISTRY_URL="$registry" "$loadimage_sh" "${cluster_args[@]}" remote-push-by-ref "$img" || failed=1
+                fi
+                ;;
+            *)
+                log_error "[images] 无法确认 Harbor 镜像状态，停止部署: $target_ref"
+                failed=1
+                ;;
+        esac
+    done < "$image_list_file"
+
+    [[ "$failed" -eq 0 ]] || return 1
+    log_success "[images] 组件镜像检查/补齐完成: $component_name"
+}
+
+# 兼容旧调用名；语义已变为 strict ensure。
+push_component_images_to_harbor() {
+    ensure_component_images_in_harbor "$@"
 }
 
 # ========================================
@@ -1443,7 +1629,7 @@ show_usage() {
 专注于提供基础设施服务：
 - Kubernetes 连接管理
 - 基础工具函数
-- Harbor 镜像按需推送（push_component_images_to_harbor）
+- Harbor 组件镜像确保（ensure_component_images_in_harbor）
 
 用法: $0 <command> [options]
 

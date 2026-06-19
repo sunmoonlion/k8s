@@ -532,7 +532,7 @@ main() {
             detect_deployment_mode
             
             # 部署前：始终按需推送 PostgreSQL 镜像到 Harbor（仅对 Harbor 中缺失的镜像执行 push）
-            push_postgresql_images_to_harbor || log_warn "PostgreSQL 镜像推送阶段出现警告，可稍后单独检查 Harbor 镜像状态"
+            push_postgresql_images_to_harbor
             
             # ============================================================
             # 阶段1：部署子级组件（按优先级，先部署依赖项）

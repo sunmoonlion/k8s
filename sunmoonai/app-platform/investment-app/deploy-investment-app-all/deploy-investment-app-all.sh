@@ -20,6 +20,7 @@ if [[ -z "$K8S_ROOT_DIR" || ! -f "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh" ]];
 fi
 
 source "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh"
+source "$K8S_ROOT_DIR/utils/app-dependency-preflight.sh"
 
 log_info() { echo "ℹ️  $*"; }
 log_success() { echo "✅ $*"; }
@@ -70,13 +71,14 @@ run_bootstrap() {
     local script_path="$2"
     local action="$3"
     local cluster="${CLUSTER:-KIND}"
+    shift 3
 
     [[ -x "$script_path" ]] || {
         log_error "${label} 脚本不存在或不可执行: $script_path"
         return 1
     }
     log_info "${label}: ${action} (cluster=${cluster})"
-    DISABLE_AUTO_CLEANUP=true CLUSTER="$cluster" ELASTICSEARCH_CLUSTER="$cluster" OBJECT_STORAGE_CLUSTER="$cluster" \
+    env "$@" DISABLE_AUTO_CLEANUP=true CLUSTER="$cluster" ELASTICSEARCH_CLUSTER="$cluster" OBJECT_STORAGE_CLUSTER="$cluster" \
         "$script_path" "$action"
 }
 
@@ -84,18 +86,43 @@ run_backend_resources() {
     local backend="$1"
     local action="$2"
     local source_root="$3"
+    local component_enabled_var="${backend//-/_}_enabled"
     local storage_enabled_var="${backend//-/_}_storage_access_enabled"
     local search_enabled_var="${backend//-/_}_search_access_enabled"
     local database_enabled_var="${backend//-/_}_database_access_enabled"
-    local database_enabled storage_enabled search_enabled
+    local redis_enabled_var="${backend//-/_}_redis_access_enabled"
+    local mongodb_enabled_var="${backend//-/_}_mongodb_access_enabled"
+    local component_enabled database_enabled storage_enabled search_enabled redis_enabled mongodb_enabled
+    eval "component_enabled=\${${component_enabled_var}:-false}"
+    [[ "$component_enabled" == "true" ]] || {
+        log_info "$backend 未启用，跳过资源 bootstrap"
+        return 0
+    }
+    [[ -d "$source_root/$backend" ]] || {
+        log_error "$backend 资源目录不存在: $source_root/$backend"
+        log_error "请设置 ${VAR_PREFIX}_SOURCE_ROOT 指向包含 $backend 的业务仓库，或关闭 ${component_enabled_var}"
+        return 1
+    }
     eval "database_enabled=\${${database_enabled_var}:-false}"
     eval "storage_enabled=\${${storage_enabled_var}:-false}"
     eval "search_enabled=\${${search_enabled_var}:-false}"
+    eval "redis_enabled=\${${redis_enabled_var}:-$database_enabled}"
+    eval "mongodb_enabled=\${${mongodb_enabled_var}:-false}"
+    app_dependency_export_component_secret_overrides \
+        "$backend" "$database_enabled" "$redis_enabled" "$mongodb_enabled" "$storage_enabled" "$search_enabled"
+
+    local dependencies=()
+    app_dep_enabled "$database_enabled" && dependencies+=("postgresql")
+    app_dep_enabled "$redis_enabled" && dependencies+=("redis")
+    app_dep_enabled "$mongodb_enabled" && dependencies+=("mongodb")
+    app_dep_enabled "$search_enabled" && dependencies+=("elasticsearch")
+    preflight_app_dependencies "$backend" "$action" "${dependencies[@]}"
 
     if [[ "$database_enabled" == "true" ]]; then
         run_bootstrap "$backend Database" \
             "$source_root/$backend/db-access-bootstrap/db-access-bootstrap.sh" \
-            "$action"
+            "$action" \
+            "ENABLE_MONGODB=$mongodb_enabled"
     fi
     if [[ "$storage_enabled" == "true" ]]; then
         run_bootstrap "$backend S3" \
@@ -154,6 +181,9 @@ collect_components() {
         var_base="${component_name//-/_}"
         eval "enabled=\${${var_base}_enabled:-false}"
         eval "priority=\${${var_base}_priority:-100}"
+        if ! app_dependency_component_should_deploy "$component_name" "$enabled"; then
+            enabled="false"
+        fi
         if script_path="$(find_component_script "$component_dir")"; then
             printf '%s:%s:%s:%s\n' "$priority" "$component_name" "$enabled" "$script_path"
         elif [[ "$enabled" == "true" ]]; then

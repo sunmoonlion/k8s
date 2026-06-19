@@ -554,7 +554,7 @@ main() {
             check_namespace "$namespace"
             
             # 在部署前按需推送 Redis 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
-            push_redis_images_to_harbor || log_warn "[images] Redis 镜像推送阶段出现警告，可稍后单独检查 Harbor 镜像状态"
+            push_redis_images_to_harbor
             
             # ============================================================
             # 阶段1：部署子级组件（按优先级，先部署依赖项）

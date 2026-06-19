@@ -531,7 +531,7 @@ main() {
             
             check_namespace "$namespace"
             # 在部署前按需推送 pgAdmin 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
-            push_pgadmin_images_to_harbor || log_warn "[images] pgAdmin 镜像推送阶段出现警告，可稍后单独检查 Harbor 镜像状态"
+            push_pgadmin_images_to_harbor
             if ! create_pgadmin_secrets_if_needed "$namespace" "$project_id" "$environment" "$dry_run"; then
                 log_error "❌ pgAdmin Secrets 部署失败，终止主部署"
                 exit 1

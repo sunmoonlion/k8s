@@ -448,7 +448,7 @@ main() {
             fi
             check_namespace "$namespace"
             # 在部署前按需推送 Kibana 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
-            push_kibana_images_to_harbor || log_warn "[images] Kibana 镜像推送阶段出现警告，可稍后单独检查 Harbor 镜像状态"
+            push_kibana_images_to_harbor
             # 部署 Secrets（在主部署之前）
             if ! deploy_kibana_secrets "$project_id" "$namespace" "$environment" "$dry_run"; then
                 log_error "❌ Kibana Secrets 部署失败，终止主部署"
