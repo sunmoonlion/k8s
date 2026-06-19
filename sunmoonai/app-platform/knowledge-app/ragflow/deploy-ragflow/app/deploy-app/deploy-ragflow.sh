@@ -115,10 +115,26 @@ check_prerequisites() {
     command -v helm >/dev/null || { log_error "helm 未安装"; return 1; }
     [[ -d "$CHART_DIR" ]] || { log_error "Helm Chart 不存在: $CHART_DIR"; return 1; }
     [[ -f "$SECRET_VALUES" ]] || { log_error "开发密码 values 不存在: $SECRET_VALUES"; return 1; }
-    kubectl get namespace "$namespace" >/dev/null
-    kubectl get storageclass local-path >/dev/null
-    ensure_harbor_registry_secret "$namespace" "$dry_run"
-    kubectl get crd ingressroutes.traefik.io >/dev/null
+
+    if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
+        log_error "RAGFlow 前置检查失败: 命名空间不存在 $namespace"
+        return 1
+    fi
+
+    if ! kubectl get storageclass local-path >/dev/null 2>&1; then
+        log_error "RAGFlow 前置检查失败: StorageClass 不存在 local-path"
+        return 1
+    fi
+
+    ensure_harbor_registry_secret "$namespace" "$dry_run" || {
+        log_error "RAGFlow 前置检查失败: Harbor Registry Secret 未就绪"
+        return 1
+    }
+
+    if ! kubectl get crd ingressroutes.traefik.io >/dev/null 2>&1; then
+        log_error "RAGFlow 前置检查失败: Traefik IngressRoute CRD 不存在 ingressroutes.traefik.io"
+        return 1
+    fi
 }
 
 check_images() {
