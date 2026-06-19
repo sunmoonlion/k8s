@@ -29,6 +29,7 @@
 ## 工程约定
 
 - [新增 App 注意事项](./APP-DEVELOPMENT-NOTES.md)
+- [App 依赖预检查配置说明](./app-dependency-preflight.md)
 
 ## 建设任务
 
