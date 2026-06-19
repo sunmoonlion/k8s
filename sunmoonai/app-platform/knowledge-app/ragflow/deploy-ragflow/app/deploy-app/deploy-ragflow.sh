@@ -42,6 +42,58 @@ run_ingress() {
     fi
 }
 
+load_registry_secret_defaults() {
+    local registry_conf="$K8S_ROOT_DIR/utils/registry-push-management/loadimage.conf"
+    [[ -f "$registry_conf" ]] || return 0
+
+    local current_registry_username="${REGISTRY_USERNAME:-}"
+    local current_registry_password="${REGISTRY_PASSWORD:-}"
+    # shellcheck disable=SC1090
+    source "$registry_conf"
+    [[ -n "$current_registry_username" ]] && REGISTRY_USERNAME="$current_registry_username"
+    [[ -n "$current_registry_password" ]] && REGISTRY_PASSWORD="$current_registry_password"
+}
+
+ensure_harbor_registry_secret() {
+    local namespace="$1"
+    local dry_run="${2:-false}"
+    local secret_name="${RAGFLOW_IMAGE_PULL_SECRET:-harbor-registry-secret}"
+    local docker_server docker_username docker_password
+
+    if kubectl get secret "$secret_name" -n "$namespace" >/dev/null 2>&1; then
+        log_success "复用命名空间现有 Harbor Registry Secret: $namespace/$secret_name"
+        return 0
+    fi
+
+    if [[ "$dry_run" == "true" ]]; then
+        log_info "dry-run 模式跳过 Harbor Registry Secret 创建: $namespace/$secret_name"
+        return 0
+    fi
+
+    load_registry_secret_defaults
+
+    if declare -F get_cluster_harbor_registry >/dev/null 2>&1; then
+        docker_server="${DOCKER_SERVER:-${RAGFLOW_IMAGE_REGISTRY:-$(get_cluster_harbor_registry)}}"
+    else
+        docker_server="${DOCKER_SERVER:-${RAGFLOW_IMAGE_REGISTRY:-harbor.sunmoonai.com:30443}}"
+    fi
+    docker_username="${DOCKER_USERNAME:-${HARBOR_ADMIN_USER:-${HARBOR_USERNAME:-${REGISTRY_USERNAME:-admin}}}}"
+    docker_password="${DOCKER_PASSWORD:-${HARBOR_ADMIN_PASSWORD:-${HARBOR_PASSWORD:-${REGISTRY_PASSWORD:-}}}}"
+
+    if [[ -z "$docker_password" || "$docker_password" == "TODO_FILL_IN_HARBOR_PASSWORD" ]]; then
+        log_error "Harbor Registry Secret 不存在，且未配置 Harbor 密码。请设置 DOCKER_PASSWORD/HARBOR_ADMIN_PASSWORD/HARBOR_PASSWORD/REGISTRY_PASSWORD"
+        return 1
+    fi
+
+    log_info "创建 Harbor Registry Secret: $namespace/$secret_name"
+    kubectl create secret docker-registry "$secret_name" \
+        --namespace "$namespace" \
+        --docker-server="$docker_server" \
+        --docker-username="$docker_username" \
+        --docker-password="$docker_password" \
+        --dry-run=client -o yaml | kubectl apply -f -
+}
+
 required_images() {
     local registry="${RAGFLOW_IMAGE_REGISTRY:-harbor.sunmoonai.com:30443}"
     local project="${RAGFLOW_IMAGE_PROJECT:-app-images}"
@@ -57,12 +109,15 @@ EOF
 }
 
 check_prerequisites() {
+    local namespace="$1"
+    local dry_run="${2:-false}"
+
     command -v helm >/dev/null || { log_error "helm 未安装"; return 1; }
     [[ -d "$CHART_DIR" ]] || { log_error "Helm Chart 不存在: $CHART_DIR"; return 1; }
     [[ -f "$SECRET_VALUES" ]] || { log_error "开发密码 values 不存在: $SECRET_VALUES"; return 1; }
-    kubectl get namespace "$1" >/dev/null
+    kubectl get namespace "$namespace" >/dev/null
     kubectl get storageclass local-path >/dev/null
-    kubectl get secret "$RAGFLOW_IMAGE_PULL_SECRET" -n "$1" >/dev/null
+    ensure_harbor_registry_secret "$namespace" "$dry_run"
     kubectl get crd ingressroutes.traefik.io >/dev/null
 }
 
@@ -133,7 +188,7 @@ main() {
 
     case "$action" in
         deploy)
-            check_prerequisites "$namespace"
+            check_prerequisites "$namespace" "$dry_run"
             check_images "$namespace"
             deploy_release "$project_id" "$namespace" "$environment" "$dry_run"
             [[ "$dry_run" == "true" ]] || show_status "$project_id" "$namespace"
