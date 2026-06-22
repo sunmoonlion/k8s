@@ -1602,8 +1602,14 @@ ensure_component_images_in_harbor() {
                 fi
                 ;;
             *)
-                log_error "[images] 无法确认 Harbor 镜像状态，停止部署: $target_ref"
-                failed=1
+                if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
+                    log_error "[images] 无法确认 Harbor 镜像状态，停止部署: $target_ref"
+                    failed=1
+                else
+                    log_warn "[images] 本机无法确认 Harbor 镜像状态，改由远程节点检查/补齐: $target_ref"
+                    [[ -f "$loadimage_sh" ]] || { log_error "[images] registry-push-management 工具不存在: $loadimage_sh"; failed=1; continue; }
+                    PROJECT_NAME="$project" REGISTRY_URL="$registry" "$loadimage_sh" "${cluster_args[@]}" remote-push-by-ref "$img" || failed=1
+                fi
                 ;;
         esac
     done < "$image_list_file"
