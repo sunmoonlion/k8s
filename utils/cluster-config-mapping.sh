@@ -69,6 +69,7 @@ get_default_cluster() {
 #   - KIND 使用 NodePort 暴露的 Harbor: harbor.sunmoonai.com:30443
 #   - C1/C2/C3 等远程集群使用 NodePort 暴露的 Harbor: harbor.sunmoonai.com:30443
 # 可通过环境变量覆盖：
+#   {CLUSTER}_HARBOR_REGISTRY：指定集群优先值，例如 C1_HARBOR_REGISTRY
 #   HARBOR_REGISTRY / REMOTE_HARBOR_REGISTRY：远程集群默认值
 #   KIND_HARBOR_REGISTRY：Kind 默认值
 get_cluster_harbor_registry() {
@@ -79,6 +80,13 @@ get_cluster_harbor_registry() {
   fi
 
   cluster_selected=$(echo "$cluster_selected" | tr '[:lower:]' '[:upper:]')
+
+  local cluster_registry_var="${cluster_selected}_HARBOR_REGISTRY"
+  local cluster_registry="${!cluster_registry_var:-}"
+  if [[ -n "$cluster_registry" ]]; then
+    echo "$cluster_registry"
+    return 0
+  fi
 
   case "$cluster_selected" in
     KIND)
@@ -98,6 +106,24 @@ apply_cluster_harbor_default() {
   if [[ -z "${!var_name:-}" ]]; then
     export "$var_name=$registry"
   fi
+}
+
+apply_cluster_harbor_registry_defaults() {
+  local registry
+  registry="$(get_cluster_harbor_registry)"
+
+  local var_name var_value
+  for var_name in $(compgen -v | grep -E '(^DOCKER_SERVER$|_IMAGE_REGISTRY$)' || true); do
+    var_value="${!var_name:-}"
+
+    # Keep explicit custom registries. Normalize only empty values and the old
+    # scaffold defaults so generated manifests and imagePullSecrets stay aligned.
+    case "$var_value" in
+      ""|"harbor.sunmoonai.com"|"harbor.sunmoonai.com:30443")
+        export "$var_name=$registry"
+        ;;
+    esac
+  done
 }
 
 # =============================================================================
@@ -197,6 +223,8 @@ apply_cluster_config_mapping() {
       echo "[DEBUG] 集群配置映射: 已映射 $mapped_count 个配置项 (集群: $cluster_selected)" >&2
     fi
   fi
+
+  apply_cluster_harbor_registry_defaults
   
   return 0
 }
