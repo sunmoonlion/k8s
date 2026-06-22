@@ -15,6 +15,8 @@ K8S_ROOT_DIR="$(dirname "$PROJECT_ROOT")"
 
 # 集群参数解析（轻量，无连接副作用）
 source "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh"
+# shellcheck source=deploy-runtime-helpers.sh
+[[ -f "$K8S_ROOT_DIR/utils/deploy-runtime-helpers.sh" ]] && source "$K8S_ROOT_DIR/utils/deploy-runtime-helpers.sh"
 
 
 # 颜色输出函数
@@ -103,12 +105,17 @@ call_subscript() {
     local script_path="$1"
     shift
     local args=("$@")
+
+    if declare -F call_deploy_subscript >/dev/null 2>&1; then
+        call_deploy_subscript "$K8S_ROOT_DIR" "$script_path" "${args[@]}"
+        return $?
+    fi
     
     # 如果设置了 CLUSTER 环境变量，添加 --cluster 参数
     if [[ -n "${CLUSTER:-}" ]]; then
-        "$script_path" --cluster "$CLUSTER" "${args[@]}"
+        DISABLE_AUTO_CLEANUP=true "$script_path" --cluster "$CLUSTER" "${args[@]}"
     else
-        "$script_path" "${args[@]}"
+        DISABLE_AUTO_CLEANUP=true "$script_path" "${args[@]}"
     fi
 }
 

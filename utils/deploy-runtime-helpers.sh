@@ -9,7 +9,10 @@ inherit_deploy_kubeconfig() {
     fi
 
     [[ -n "$k8s_root" ]] || k8s_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    local status_file="$k8s_root/.k8s-status"
+    local status_file="$k8s_root/utils/.k8s-status"
+    if [[ ! -f "$status_file" && -f "$k8s_root/.k8s-status" ]]; then
+        status_file="$k8s_root/.k8s-status"
+    fi
     [[ -f "$status_file" ]] || return 0
 
     # shellcheck disable=SC1090
