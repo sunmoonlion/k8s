@@ -345,6 +345,7 @@ _scp_image_tar_between_nodes(){
     src_user="$(get_server_var "$source_idx" USER)"
     dst_user="$(get_server_var "$target_idx" USER)"
     dst_ip="$(get_server_var "$target_idx" LOCAL_IP)"
+    dst_ip="${dst_ip:-$(get_server_var "$target_idx" PUBLIC_IP)}"
 
     ssh_exec "$target_idx" "mkdir -p \"\$HOME${dst_dir#\~}/images\""
     ssh_exec "$source_idx" "scp -o StrictHostKeyChecking=no \"\$HOME${src_dir#\~}/images/$tar\" ${dst_user}@${dst_ip}:\"\$HOME${dst_dir#\~}/images/$tar\""
@@ -355,27 +356,14 @@ _scp_local_image_tar_to_node(){
     local tar="$2"
     local local_root="${LOCAL_PACKAGES_ROOT:-$HOME/packages-to-be-installed}"
     local local_file="$local_root/images/$tar"
-    local dst_dir host user secret pass port
-    local -a scp_opts
+    local dst_dir
 
     [[ -f "$local_file" ]] || return 1
 
     dst_dir="$(resolve_remote_dir "$(get_server_var "$node_idx" DIR)")"
     dst_dir="${dst_dir:-$REMOTE_DIR_FALLBACK}"
-    host="$(get_server_var "$node_idx" PUBLIC_IP)"
-    user="$(get_server_var "$node_idx" USER)"
-    secret="$(get_server_var "$node_idx" SECRET)"
-    pass="$(get_server_var "$node_idx" PASS)"
-    port="$(get_server_var "$node_idx" SSH_PORT)"; port="${port:-22}"
 
-    scp_opts=( -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -P "$port" )
-    if [[ -n "$secret" && -f "$secret" ]]; then
-        scp -i "$secret" "${scp_opts[@]}" "$local_file" "$user@$host:${dst_dir}/images/$tar"
-    elif [[ -n "$pass" ]] && command -v sshpass >/dev/null 2>&1; then
-        sshpass -p "$pass" scp "${scp_opts[@]}" "$local_file" "$user@$host:${dst_dir}/images/$tar"
-    else
-        scp "${scp_opts[@]}" "$local_file" "$user@$host:${dst_dir}/images/$tar"
-    fi
+    scp_copy_to "$node_idx" "$local_file" "${dst_dir}/images/$tar"
 }
 
 _ensure_offline_image_tar_on_node(){
