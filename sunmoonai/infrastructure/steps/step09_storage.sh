@@ -309,10 +309,79 @@ _check_image_exists(){
     fi
 }
 
+_find_offline_image_tar_source_node(){
+    local target_idx="$1"
+    local image_name="$2"
+    local preferred="${STEP09_OFFLINE_PACKAGES_SOURCE_NODE:-}"
+    local idx
+
+    if [[ -n "$preferred" && "$preferred" != "$target_idx" ]] \
+        && _check_image_exists "$image_name" "$preferred"; then
+        echo "$preferred"
+        return 0
+    fi
+
+    for idx in $(get_defined_server_indices); do
+        [[ "$idx" == "$target_idx" ]] && continue
+        if _check_image_exists "$image_name" "$idx"; then
+            echo "$idx"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+_scp_image_tar_between_nodes(){
+    local source_idx="$1"
+    local target_idx="$2"
+    local tar="$3"
+    local src_dir dst_dir src_user dst_user dst_ip
+
+    src_dir="$(resolve_remote_dir "$(get_server_var "$source_idx" DIR)")"
+    src_dir="${src_dir:-$REMOTE_DIR_FALLBACK}"
+    dst_dir="$(resolve_remote_dir "$(get_server_var "$target_idx" DIR)")"
+    dst_dir="${dst_dir:-$REMOTE_DIR_FALLBACK}"
+    src_user="$(get_server_var "$source_idx" USER)"
+    dst_user="$(get_server_var "$target_idx" USER)"
+    dst_ip="$(get_server_var "$target_idx" LOCAL_IP)"
+
+    ssh_exec "$target_idx" "mkdir -p \"\$HOME${dst_dir#\~}/images\""
+    ssh_exec "$source_idx" "scp -o StrictHostKeyChecking=no \"\$HOME${src_dir#\~}/images/$tar\" ${dst_user}@${dst_ip}:\"\$HOME${dst_dir#\~}/images/$tar\""
+}
+
+_scp_local_image_tar_to_node(){
+    local node_idx="$1"
+    local tar="$2"
+    local local_root="${LOCAL_PACKAGES_ROOT:-$HOME/packages-to-be-installed}"
+    local local_file="$local_root/images/$tar"
+    local dst_dir host user secret pass port
+    local -a scp_opts
+
+    [[ -f "$local_file" ]] || return 1
+
+    dst_dir="$(resolve_remote_dir "$(get_server_var "$node_idx" DIR)")"
+    dst_dir="${dst_dir:-$REMOTE_DIR_FALLBACK}"
+    host="$(get_server_var "$node_idx" PUBLIC_IP)"
+    user="$(get_server_var "$node_idx" USER)"
+    secret="$(get_server_var "$node_idx" SECRET)"
+    pass="$(get_server_var "$node_idx" PASS)"
+    port="$(get_server_var "$node_idx" SSH_PORT)"; port="${port:-22}"
+
+    scp_opts=( -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -P "$port" )
+    if [[ -n "$secret" && -f "$secret" ]]; then
+        scp -i "$secret" "${scp_opts[@]}" "$local_file" "$user@$host:${dst_dir}/images/$tar"
+    elif [[ -n "$pass" ]] && command -v sshpass >/dev/null 2>&1; then
+        sshpass -p "$pass" scp "${scp_opts[@]}" "$local_file" "$user@$host:${dst_dir}/images/$tar"
+    else
+        scp "${scp_opts[@]}" "$local_file" "$user@$host:${dst_dir}/images/$tar"
+    fi
+}
+
 _ensure_offline_image_tar_on_node(){
     local node_idx="$1"
     local image_name="$2"
-    local tar image_file_pattern source_idx src_dir dst_dir src_user dst_user dst_ip
+    local tar image_file_pattern source_idx local_root
 
     if _check_image_exists "$image_name" "$node_idx"; then
         return 0
@@ -320,35 +389,36 @@ _ensure_offline_image_tar_on_node(){
 
     image_file_pattern="$(echo "$image_name" | sed 's|/|_|g' | sed 's|:|_|g').tar"
     tar="$image_file_pattern"
-    source_idx="${STEP09_OFFLINE_PACKAGES_SOURCE_NODE:-2}"
 
-    if [[ "$node_idx" == "$source_idx" ]]; then
-        log_error "[Step09] 节点 $node_idx 缺少离线镜像 tar: $tar"
+    if source_idx="$(_find_offline_image_tar_source_node "$node_idx" "$image_name")"; then
+        log_info "[Step09] 节点 $node_idx 缺少 $tar，从节点 $source_idx 同步..."
+        if _scp_image_tar_between_nodes "$source_idx" "$node_idx" "$tar"; then
+            log_info "[Step09] 节点 $node_idx 已同步离线镜像 tar: $tar"
+            return 0
+        fi
+        log_error "[Step09] 节点 $node_idx 从节点 $source_idx 同步镜像 tar 失败: $tar"
         return 1
     fi
 
-    src_dir="$(resolve_remote_dir "$(get_server_var "$source_idx" DIR)")"
-    src_dir="${src_dir:-$REMOTE_DIR_FALLBACK}"
-    dst_dir="$(resolve_remote_dir "$(get_server_var "$node_idx" DIR)")"
-    dst_dir="${dst_dir:-$REMOTE_DIR_FALLBACK}"
-    src_user="$(get_server_var "$source_idx" USER)"
-    dst_user="$(get_server_var "$node_idx" USER)"
-    dst_ip="$(get_server_var "$node_idx" LOCAL_IP)"
-
-    if ! _check_image_exists "$image_name" "$source_idx"; then
-        log_error "[Step09] 权威节点 $source_idx 也缺少离线镜像 tar: $tar"
+    local_root="${LOCAL_PACKAGES_ROOT:-$HOME/packages-to-be-installed}"
+    if [[ -f "$local_root/images/$tar" ]]; then
+        local dst_dir
+        dst_dir="$(resolve_remote_dir "$(get_server_var "$node_idx" DIR)")"
+        dst_dir="${dst_dir:-$REMOTE_DIR_FALLBACK}"
+        log_info "[Step09] 节点 $node_idx 缺少 $tar，从本机 $local_root/images 同步..."
+        ssh_exec "$node_idx" "mkdir -p \"\$HOME${dst_dir#\~}/images\""
+        if _scp_local_image_tar_to_node "$node_idx" "$tar"; then
+            log_info "[Step09] 节点 $node_idx 已从本机同步离线镜像 tar: $tar"
+            return 0
+        fi
+        log_error "[Step09] 节点 $node_idx 从本机同步镜像 tar 失败: $tar"
         return 1
     fi
 
-    log_info "[Step09] 节点 $node_idx 缺少 $tar，从节点 $source_idx 同步..."
-    ssh_exec "$node_idx" "mkdir -p \"\$HOME${dst_dir#\~}/images\""
-    if ! ssh_exec "$source_idx" "scp -o StrictHostKeyChecking=no \"\$HOME${src_dir#\~}/images/$tar\" ${dst_user}@${dst_ip}:\"\$HOME${dst_dir#\~}/images/$tar\""; then
-        log_error "[Step09] 节点 $node_idx 同步镜像 tar 失败: $tar"
-        return 1
-    fi
-
-    log_info "[Step09] 节点 $node_idx 已同步离线镜像 tar: $tar"
-    return 0
+    log_error "[Step09] 节点 $node_idx 缺少离线镜像 tar: $tar"
+    log_error "[Step09] 集群内无节点持有该 tar，本机 $local_root/images/$tar 也不存在"
+    log_error "[Step09] 请先执行: infrastructure/utils/package-preparation/package-sync.sh sync-packages-to-all-nodes images"
+    return 1
 }
 
 _check_chart_exists(){
