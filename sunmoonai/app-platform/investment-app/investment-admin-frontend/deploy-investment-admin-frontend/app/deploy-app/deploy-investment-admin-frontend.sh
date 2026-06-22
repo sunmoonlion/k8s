@@ -252,9 +252,8 @@ deploy_app() {
     log_info "开始部署 investment-admin-frontend..."
     log_info "环境: $ENVIRONMENT, 命名空间: $NAMESPACE"
 
-    auto_generate_yaml "$INVESTMENT_ADMIN_FRONTEND_YAML" "$K8S_RESOURCE_DIR" || exit 1
 
-    export INVESTMENT_ADMIN_FRONTEND_IMAGE_REGISTRY="${INVESTMENT_ADMIN_FRONTEND_IMAGE_REGISTRY:-$(get_cluster_harbor_registry)}"
+    apply_deploy_image_registry INVESTMENT_ADMIN_FRONTEND_IMAGE_REGISTRY
     export INVESTMENT_ADMIN_FRONTEND_IMAGE_PROJECT="${INVESTMENT_ADMIN_FRONTEND_IMAGE_PROJECT:-app-images}"
     export INVESTMENT_ADMIN_FRONTEND_IMAGE="${INVESTMENT_ADMIN_FRONTEND_IMAGE:-investment-admin-frontend}"
     export INVESTMENT_ADMIN_FRONTEND_TAG="${INVESTMENT_ADMIN_FRONTEND_TAG:-1.0.0}"

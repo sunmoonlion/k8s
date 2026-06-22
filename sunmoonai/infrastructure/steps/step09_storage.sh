@@ -309,6 +309,48 @@ _check_image_exists(){
     fi
 }
 
+_ensure_offline_image_tar_on_node(){
+    local node_idx="$1"
+    local image_name="$2"
+    local tar image_file_pattern source_idx src_dir dst_dir src_user dst_user dst_ip
+
+    if _check_image_exists "$image_name" "$node_idx"; then
+        return 0
+    fi
+
+    image_file_pattern="$(echo "$image_name" | sed 's|/|_|g' | sed 's|:|_|g').tar"
+    tar="$image_file_pattern"
+    source_idx="${STEP09_OFFLINE_PACKAGES_SOURCE_NODE:-2}"
+
+    if [[ "$node_idx" == "$source_idx" ]]; then
+        log_error "[Step09] 节点 $node_idx 缺少离线镜像 tar: $tar"
+        return 1
+    fi
+
+    src_dir="$(resolve_remote_dir "$(get_server_var "$source_idx" DIR)")"
+    src_dir="${src_dir:-$REMOTE_DIR_FALLBACK}"
+    dst_dir="$(resolve_remote_dir "$(get_server_var "$node_idx" DIR)")"
+    dst_dir="${dst_dir:-$REMOTE_DIR_FALLBACK}"
+    src_user="$(get_server_var "$source_idx" USER)"
+    dst_user="$(get_server_var "$node_idx" USER)"
+    dst_ip="$(get_server_var "$node_idx" LOCAL_IP)"
+
+    if ! _check_image_exists "$image_name" "$source_idx"; then
+        log_error "[Step09] 权威节点 $source_idx 也缺少离线镜像 tar: $tar"
+        return 1
+    fi
+
+    log_info "[Step09] 节点 $node_idx 缺少 $tar，从节点 $source_idx 同步..."
+    ssh_exec "$node_idx" "mkdir -p \"\$HOME${dst_dir#\~}/images\""
+    if ! ssh_exec "$source_idx" "scp -o StrictHostKeyChecking=no \"\$HOME${src_dir#\~}/images/$tar\" ${dst_user}@${dst_ip}:\"\$HOME${dst_dir#\~}/images/$tar\""; then
+        log_error "[Step09] 节点 $node_idx 同步镜像 tar 失败: $tar"
+        return 1
+    fi
+
+    log_info "[Step09] 节点 $node_idx 已同步离线镜像 tar: $tar"
+    return 0
+}
+
 _check_chart_exists(){
     local chart_pattern="$1"
     local node_idx="$2"
@@ -566,6 +608,7 @@ _prepare_local_storage_on_node(){
                 # 用 ssh_exec_sudo（带密码 sudo）而非 ssh_exec（无 TTY 时 sudo 会失败）
                 # 路径用 ~username 展开，避免 sudo 下 $HOME 指向 /root
                 if ! ssh_exec_sudo "$node" "nerdctl -n k8s.io images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null | grep -Fx '${image}'"; then
+                    _ensure_offline_image_tar_on_node "$node" "$image" || return 1
                     log_info "[Step09] 节点 $node 加载镜像: $image"
                     if ssh_exec_sudo "$node" "nerdctl -n k8s.io load -i ~${user}${dir#\~}/images/$tar"; then
                         log_info "[Step09] 节点 $node 镜像加载成功: $image"

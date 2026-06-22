@@ -126,6 +126,19 @@ apply_cluster_harbor_registry_defaults() {
   done
 }
 
+# deploy_app() 内显式解析当前集群 Harbor（覆盖 deploy-*.conf 里的静态默认值）
+apply_deploy_image_registry() {
+  local var_name="$1"
+  local registry
+
+  if ! declare -F get_cluster_harbor_registry >/dev/null 2>&1; then
+    return 0
+  fi
+
+  registry="$(get_cluster_harbor_registry)"
+  export "$var_name=$registry"
+}
+
 # =============================================================================
 # 集群配置映射函数
 # =============================================================================

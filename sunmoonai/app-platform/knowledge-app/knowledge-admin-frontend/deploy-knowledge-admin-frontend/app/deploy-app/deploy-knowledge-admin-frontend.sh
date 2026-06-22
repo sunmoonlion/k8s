@@ -252,9 +252,8 @@ deploy_app() {
     log_info "开始部署 knowledge-admin-frontend..."
     log_info "环境: $ENVIRONMENT, 命名空间: $NAMESPACE"
 
-    auto_generate_yaml "$KNOWLEDGE_ADMIN_FRONTEND_YAML" "$K8S_RESOURCE_DIR" || exit 1
 
-    export KNOWLEDGE_ADMIN_FRONTEND_IMAGE_REGISTRY="${KNOWLEDGE_ADMIN_FRONTEND_IMAGE_REGISTRY:-$(get_cluster_harbor_registry)}"
+    apply_deploy_image_registry KNOWLEDGE_ADMIN_FRONTEND_IMAGE_REGISTRY
     export KNOWLEDGE_ADMIN_FRONTEND_IMAGE_PROJECT="${KNOWLEDGE_ADMIN_FRONTEND_IMAGE_PROJECT:-app-images}"
     export KNOWLEDGE_ADMIN_FRONTEND_IMAGE="${KNOWLEDGE_ADMIN_FRONTEND_IMAGE:-knowledge-admin-frontend}"
     export KNOWLEDGE_ADMIN_FRONTEND_TAG="${KNOWLEDGE_ADMIN_FRONTEND_TAG:-1.0.0}"

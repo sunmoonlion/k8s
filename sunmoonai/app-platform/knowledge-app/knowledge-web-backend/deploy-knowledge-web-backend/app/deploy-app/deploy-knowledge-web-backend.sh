@@ -252,9 +252,8 @@ deploy_app() {
     log_info "开始部署 knowledge-web-backend..."
     log_info "环境: $ENVIRONMENT, 命名空间: $NAMESPACE"
 
-    auto_generate_yaml "$KNOWLEDGE_WEB_BACKEND_YAML" "$K8S_RESOURCE_DIR" || exit 1
 
-    export KNOWLEDGE_WEB_BACKEND_IMAGE_REGISTRY="${KNOWLEDGE_WEB_BACKEND_IMAGE_REGISTRY:-$(get_cluster_harbor_registry)}"
+    apply_deploy_image_registry KNOWLEDGE_WEB_BACKEND_IMAGE_REGISTRY
     export KNOWLEDGE_WEB_BACKEND_IMAGE_PROJECT="${KNOWLEDGE_WEB_BACKEND_IMAGE_PROJECT:-app-images}"
     export KNOWLEDGE_WEB_BACKEND_IMAGE="${KNOWLEDGE_WEB_BACKEND_IMAGE:-knowledge-web-backend}"
     export KNOWLEDGE_WEB_BACKEND_TAG="${KNOWLEDGE_WEB_BACKEND_TAG:-1.0.0}"

@@ -252,9 +252,8 @@ deploy_app() {
     log_info "开始部署 research-admin-backend..."
     log_info "环境: $ENVIRONMENT, 命名空间: $NAMESPACE"
 
-    auto_generate_yaml "$RESEARCH_ADMIN_BACKEND_YAML" "$K8S_RESOURCE_DIR" || exit 1
 
-    export RESEARCH_ADMIN_BACKEND_IMAGE_REGISTRY="${RESEARCH_ADMIN_BACKEND_IMAGE_REGISTRY:-$(get_cluster_harbor_registry)}"
+    apply_deploy_image_registry RESEARCH_ADMIN_BACKEND_IMAGE_REGISTRY
     export RESEARCH_ADMIN_BACKEND_IMAGE_PROJECT="${RESEARCH_ADMIN_BACKEND_IMAGE_PROJECT:-app-images}"
     export RESEARCH_ADMIN_BACKEND_IMAGE="${RESEARCH_ADMIN_BACKEND_IMAGE:-research-admin-backend}"
     export RESEARCH_ADMIN_BACKEND_TAG="${RESEARCH_ADMIN_BACKEND_TAG:-1.0.0}"

@@ -20,6 +20,8 @@ if [[ -z "$K8S_ROOT_DIR" || ! -f "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh" ]];
 fi
 
 source "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh"
+# shellcheck source=deploy-runtime-helpers.sh
+[[ -f "$K8S_ROOT_DIR/utils/deploy-runtime-helpers.sh" ]] && source "$K8S_ROOT_DIR/utils/deploy-runtime-helpers.sh"
 source "$K8S_ROOT_DIR/utils/app-dependency-preflight.sh"
 
 log_info() { echo "ℹ️  $*"; }
@@ -59,6 +61,10 @@ export "NODEBULLWORKER_${APP_VAR_PREFIX}_WEB_BACKEND_TAG=${APP_IMAGE_TAG}"
 call_subscript() {
     local script_path="$1"
     shift
+    if declare -F call_deploy_subscript >/dev/null 2>&1; then
+        call_deploy_subscript "$K8S_ROOT_DIR" "$script_path" "$@"
+        return $?
+    fi
     if [[ -n "${CLUSTER:-}" ]]; then
         DISABLE_AUTO_CLEANUP=true "$script_path" --cluster "$CLUSTER" "$@"
     else

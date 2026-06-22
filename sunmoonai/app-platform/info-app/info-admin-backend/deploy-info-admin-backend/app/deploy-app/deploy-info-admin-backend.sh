@@ -252,9 +252,8 @@ deploy_app() {
     log_info "开始部署 info-admin-backend..."
     log_info "环境: $ENVIRONMENT, 命名空间: $NAMESPACE"
 
-    auto_generate_yaml "$INFO_ADMIN_BACKEND_YAML" "$K8S_RESOURCE_DIR" || exit 1
 
-    export INFO_ADMIN_BACKEND_IMAGE_REGISTRY="${INFO_ADMIN_BACKEND_IMAGE_REGISTRY:-$(get_cluster_harbor_registry)}"
+    apply_deploy_image_registry INFO_ADMIN_BACKEND_IMAGE_REGISTRY
     export INFO_ADMIN_BACKEND_IMAGE_PROJECT="${INFO_ADMIN_BACKEND_IMAGE_PROJECT:-app-images}"
     export INFO_ADMIN_BACKEND_IMAGE="${INFO_ADMIN_BACKEND_IMAGE:-info-admin-backend}"
     export INFO_ADMIN_BACKEND_TAG="${INFO_ADMIN_BACKEND_TAG:-1.0.0}"

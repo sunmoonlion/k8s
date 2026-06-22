@@ -252,9 +252,8 @@ deploy_app() {
     log_info "开始部署 info-web-frontend..."
     log_info "环境: $ENVIRONMENT, 命名空间: $NAMESPACE"
 
-    auto_generate_yaml "$INFO_WEB_FRONTEND_YAML" "$K8S_RESOURCE_DIR" || exit 1
 
-    export INFO_WEB_FRONTEND_IMAGE_REGISTRY="${INFO_WEB_FRONTEND_IMAGE_REGISTRY:-$(get_cluster_harbor_registry)}"
+    apply_deploy_image_registry INFO_WEB_FRONTEND_IMAGE_REGISTRY
     export INFO_WEB_FRONTEND_IMAGE_PROJECT="${INFO_WEB_FRONTEND_IMAGE_PROJECT:-app-images}"
     export INFO_WEB_FRONTEND_IMAGE="${INFO_WEB_FRONTEND_IMAGE:-info-web-frontend}"
     export INFO_WEB_FRONTEND_TAG="${INFO_WEB_FRONTEND_TAG:-1.0.0}"

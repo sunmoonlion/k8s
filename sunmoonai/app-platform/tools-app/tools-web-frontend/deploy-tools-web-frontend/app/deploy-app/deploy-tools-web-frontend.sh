@@ -252,9 +252,8 @@ deploy_app() {
     log_info "开始部署 tools-web-frontend..."
     log_info "环境: $ENVIRONMENT, 命名空间: $NAMESPACE"
 
-    auto_generate_yaml "$TOOLS_WEB_FRONTEND_YAML" "$K8S_RESOURCE_DIR" || exit 1
 
-    export TOOLS_WEB_FRONTEND_IMAGE_REGISTRY="${TOOLS_WEB_FRONTEND_IMAGE_REGISTRY:-$(get_cluster_harbor_registry)}"
+    apply_deploy_image_registry TOOLS_WEB_FRONTEND_IMAGE_REGISTRY
     export TOOLS_WEB_FRONTEND_IMAGE_PROJECT="${TOOLS_WEB_FRONTEND_IMAGE_PROJECT:-app-images}"
     export TOOLS_WEB_FRONTEND_IMAGE="${TOOLS_WEB_FRONTEND_IMAGE:-tools-web-frontend}"
     export TOOLS_WEB_FRONTEND_TAG="${TOOLS_WEB_FRONTEND_TAG:-1.0.0}"

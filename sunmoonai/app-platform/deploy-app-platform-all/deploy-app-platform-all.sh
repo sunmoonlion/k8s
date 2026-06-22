@@ -19,6 +19,8 @@ if [[ -z "$K8S_ROOT_DIR" ]]; then
 fi
 
 source "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh"
+# shellcheck source=deploy-runtime-helpers.sh
+[[ -f "$K8S_ROOT_DIR/utils/deploy-runtime-helpers.sh" ]] && source "$K8S_ROOT_DIR/utils/deploy-runtime-helpers.sh"
 
 red() { echo -e "\033[31m$*\033[0m"; }
 green() { echo -e "\033[32m$*\033[0m"; }
@@ -54,6 +56,10 @@ DEFAULT_ENVIRONMENT="${ENVIRONMENT:-development}"
 call_subscript() {
     local script_path="$1"
     shift
+    if declare -F call_deploy_subscript >/dev/null 2>&1; then
+        call_deploy_subscript "$K8S_ROOT_DIR" "$script_path" "$@"
+        return $?
+    fi
     if [[ -n "${CLUSTER:-}" ]]; then
         DISABLE_AUTO_CLEANUP=true "$script_path" --cluster "$CLUSTER" "$@"
     else

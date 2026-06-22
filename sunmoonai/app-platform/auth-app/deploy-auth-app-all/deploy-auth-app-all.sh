@@ -59,6 +59,10 @@ DEFAULT_ENVIRONMENT="${ENVIRONMENT:-development}"
 call_subscript() {
     local script_path="$1"
     shift
+    if declare -F call_deploy_subscript >/dev/null 2>&1; then
+        call_deploy_subscript "$K8S_ROOT_DIR" "$script_path" "$@"
+        return $?
+    fi
     if [[ -n "${CLUSTER:-}" ]]; then
         DISABLE_AUTO_CLEANUP=true "$script_path" --cluster "$CLUSTER" "$@"
     else

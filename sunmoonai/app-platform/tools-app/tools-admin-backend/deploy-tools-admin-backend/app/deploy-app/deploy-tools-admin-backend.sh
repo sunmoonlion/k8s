@@ -252,9 +252,8 @@ deploy_app() {
     log_info "开始部署 tools-admin-backend..."
     log_info "环境: $ENVIRONMENT, 命名空间: $NAMESPACE"
 
-    auto_generate_yaml "$TOOLS_ADMIN_BACKEND_YAML" "$K8S_RESOURCE_DIR" || exit 1
 
-    export TOOLS_ADMIN_BACKEND_IMAGE_REGISTRY="${TOOLS_ADMIN_BACKEND_IMAGE_REGISTRY:-$(get_cluster_harbor_registry)}"
+    apply_deploy_image_registry TOOLS_ADMIN_BACKEND_IMAGE_REGISTRY
     export TOOLS_ADMIN_BACKEND_IMAGE_PROJECT="${TOOLS_ADMIN_BACKEND_IMAGE_PROJECT:-app-images}"
     export TOOLS_ADMIN_BACKEND_IMAGE="${TOOLS_ADMIN_BACKEND_IMAGE:-tools-admin-backend}"
     export TOOLS_ADMIN_BACKEND_TAG="${TOOLS_ADMIN_BACKEND_TAG:-1.0.0}"
