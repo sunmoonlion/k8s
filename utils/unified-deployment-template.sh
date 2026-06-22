@@ -1615,6 +1615,25 @@ ensure_component_images_in_harbor() {
     done < "$image_list_file"
 
     [[ "$failed" -eq 0 ]] || return 1
+
+    # 二次校验：清单内镜像必须在 Harbor 中可拉取（避免 push 误报成功或路径 flatten）
+    local verify_state
+    while IFS= read -r img; do
+        [[ -z "$img" || "$img" =~ ^[[:space:]]*# ]] && continue
+        target_ref="$(_component_target_ref "$img" "$registry" "$project")"
+        verify_state="$(_check_harbor_ref_state "$target_ref")"
+        if [[ "$verify_state" == "exists" ]]; then
+            log_info "[images] Harbor 校验通过: $target_ref"
+        else
+            log_error "[images] Harbor 校验失败: $target_ref (state=${verify_state:-unknown})"
+            if [[ "$target_ref" == *"/minio/aistor/mc:"* ]]; then
+                log_error "[images] S3 provision Job 依赖此镜像；请检查离线 tar 或 push_control_plane_images 路径"
+            fi
+            failed=1
+        fi
+    done < "$image_list_file"
+
+    [[ "$failed" -eq 0 ]] || return 1
     log_success "[images] 组件镜像检查/补齐完成: $component_name"
 }
 

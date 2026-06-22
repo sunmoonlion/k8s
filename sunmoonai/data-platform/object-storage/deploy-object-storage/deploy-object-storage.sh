@@ -129,7 +129,10 @@ ensure_harbor_secret() {
 }
 
 push_object_storage_images_to_harbor() {
-    push_component_images_to_harbor "object-storage"
+    push_component_images_to_harbor "object-storage" || {
+        log_error "Object Storage 镜像未全部进入 Harbor（含 minio/aistor/mc），中止部署"
+        return 1
+    }
 }
 
 operator_release() {

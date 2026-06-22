@@ -1479,31 +1479,47 @@ if ! sudo nerdctl -n k8s.io login $harbor_host:$harbor_port -u $admin_user -p '$
 fi
 echo 'Harbor login successful'
 
+# 与 loadimage.sh / ensure_component_images_in_harbor 一致：minio/aistor/* 保留完整路径
+harbor_push_target_name() {
+    local repo="\$1"
+    local first="\${repo%%/*}"
+    local path="\$repo"
+
+    if [[ "\$repo" == */* && ( "\$first" == *.* || "\$first" == *:* || "\$first" == "localhost" ) ]]; then
+        path="\${repo#*/}"
+    fi
+    if [[ "\$path" == $target_project/* ]]; then
+        path="\${path#$target_project/}"
+    fi
+    case "\$path" in
+        minio/aistor/*) echo "\$path" ;;
+        *) echo "\${path##*/}" ;;
+    esac
+}
+
 # 获取所有镜像并推送到 Harbor
 echo 'Starting image push process...'
 sudo nerdctl -n k8s.io images | grep -v harbor.$harbor_host | grep -v '<none>' | awk '{print \$1":"\$2}' | while read image; do
     if [[ \$image == *'/'* ]]; then
-        # 提取镜像名和标签（改进：正确处理包含端口的镜像名）
-        # 使用 bash 参数扩展，从最后一个 : 分割，避免端口号被误分割
         repo=\${image%:*}
         tag=\${image##*:}
-        # 提取镜像名（最后一个/之后的部分，去掉可能的 registry 前缀）
-        # 如果包含多个 /，取最后一个 / 之后的部分作为镜像名
-        if [[ \$repo == *'/'* ]]; then
-            imagename=\${repo##*/}
-        else
-            imagename=\$repo
-        fi
-        # 推送到Harbor的指定项目
-        echo "Pushing: \$image -> $harbor_host:$harbor_port/$target_project/\$imagename:\$tag"
-        if sudo nerdctl -n k8s.io tag \$image $harbor_host:$harbor_port/$target_project/\$imagename:\$tag; then
-            if sudo nerdctl -n k8s.io push $harbor_host:$harbor_port/$target_project/\$imagename:\$tag; then
-                echo "SUCCESS: \$image pushed successfully"
+        imagename=\$(harbor_push_target_name "\$repo")
+        target_ref="$harbor_host:$harbor_port/$target_project/\$imagename:\$tag"
+        echo "Pushing: \$image -> \$target_ref"
+        if [[ "\$image" == "\$target_ref" ]]; then
+            if sudo nerdctl -n k8s.io push "\$target_ref"; then
+                echo "SUCCESS: \$target_ref pushed successfully"
             else
-                echo "ERROR: Failed to push \$image"
+                echo "ERROR: Failed to push \$target_ref"
+            fi
+        elif sudo nerdctl -n k8s.io tag "\$image" "\$target_ref"; then
+            if sudo nerdctl -n k8s.io push "\$target_ref"; then
+                echo "SUCCESS: \$image pushed successfully as \$target_ref"
+            else
+                echo "ERROR: Failed to push \$target_ref"
             fi
         else
-            echo "ERROR: Failed to tag \$image"
+            echo "ERROR: Failed to tag \$image -> \$target_ref"
         fi
     fi
 done
