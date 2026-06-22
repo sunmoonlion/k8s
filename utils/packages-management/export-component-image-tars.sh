@@ -99,7 +99,7 @@ export_component() {
 
 sync_missing_tars_to_nodes() {
     local component="$1"
-    local img tar_path safe host user port secret pass rdir ssh_opts
+    local img tar_path host user port secret pass rdir ssh_opts ssh_cmd
 
     [[ "$DRY_RUN" == true ]] && { log "[dry-run] 跳过节点同步"; return 0; }
 
@@ -118,13 +118,17 @@ sync_missing_tars_to_nodes() {
 
         ssh_opts=(-o StrictHostKeyChecking=no -o LogLevel=ERROR -p "$port")
         [[ -n "$secret" && -f "$secret" ]] && ssh_opts=(-i "$secret" "${ssh_opts[@]}")
+        ssh_cmd="ssh"
+        for opt in "${ssh_opts[@]}"; do
+            ssh_cmd+=" '$opt'"
+        done
 
         log "同步到节点 $idx ($user@$host)..."
         while IFS= read -r img; do
             [[ -z "$img" ]] && continue
             tar_path=$(_find_local_tar "$img" "$IMAGE_DIR" || true)
             [[ -n "$tar_path" ]] || continue
-            rsync -az "${ssh_opts[@]}" "$tar_path" "$user@$host:${rdir}/images/"
+            rsync -az -e "$ssh_cmd" "$tar_path" "$user@$host:${rdir}/images/"
         done < <(read_component_images "$component")
     done
 }
