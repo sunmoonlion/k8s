@@ -213,6 +213,41 @@ app_dependency_action_requires_check() {
     esac
 }
 
+app_dependency_ensure_kubectl_environment() {
+    if ! command -v kubectl >/dev/null 2>&1; then
+        APP_DEP_LAST_ERROR="kubectl 不存在，无法检查应用依赖"
+        return 1
+    fi
+
+    if kubectl get nodes >/dev/null 2>&1; then
+        return 0
+    fi
+
+    if ! declare -F setup_kubectl_environment >/dev/null 2>&1; then
+        local script_dir template_file previous_disable_cleanup
+        script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        template_file="$script_dir/unified-deployment-template.sh"
+        if [[ -f "$template_file" ]]; then
+            previous_disable_cleanup="${DISABLE_AUTO_CLEANUP:-}"
+            export DISABLE_AUTO_CLEANUP=true
+            # shellcheck source=unified-deployment-template.sh
+            source "$template_file"
+            if [[ -n "$previous_disable_cleanup" ]]; then
+                export DISABLE_AUTO_CLEANUP="$previous_disable_cleanup"
+            fi
+        fi
+    fi
+
+    if declare -F setup_kubectl_environment >/dev/null 2>&1; then
+        if setup_kubectl_environment >/dev/null 2>&1 && kubectl get nodes >/dev/null 2>&1; then
+            return 0
+        fi
+    fi
+
+    APP_DEP_LAST_ERROR="kubectl 连接不可用，无法检查应用依赖"
+    return 1
+}
+
 app_dependency_has_ready_endpoint() {
     local namespace="$1"
     local service="$2"
@@ -273,8 +308,8 @@ app_dependency_probe_ready() {
     namespace="${target%%:*}"
     service="${target#*:}"
 
-    if ! command -v kubectl >/dev/null 2>&1; then
-        APP_DEP_LAST_ERROR="kubectl 不存在，无法检查应用依赖: $dependency"
+    if ! app_dependency_ensure_kubectl_environment; then
+        APP_DEP_LAST_ERROR="${APP_DEP_LAST_ERROR}: $dependency"
         return 1
     fi
 
