@@ -214,6 +214,8 @@ run_components() {
             log_error "组件部署脚本不存在: $component_name"
             return 1
         }
+        app_dependency_export_component_secret_overrides_from_config "$component_name"
+        app_dependency_validate_component_generate_config "$component_name" "$BUSINESS_APP_ROOT/$component_name"
         call_subscript "$script_path" "$action" \
             "$project_id" "$namespace" "$environment" "$dry_run"
     done < <(collect_components | sort "$sort_flag" -t: -k1,1)

@@ -61,6 +61,90 @@ app_dependency_export_component_secret_overrides() {
     fi
 }
 
+app_dependency_get_component_dependency_flags() {
+    local component="$1"
+    local var_base
+
+    var_base="${component//-/_}"
+
+    eval "APP_DEP_COMPONENT_ENABLED=\${${var_base}_enabled:-false}"
+    eval "APP_DEP_DATABASE_ENABLED=\${${var_base}_database_access_enabled:-false}"
+    eval "APP_DEP_REDIS_ENABLED=\${${var_base}_redis_access_enabled:-$APP_DEP_DATABASE_ENABLED}"
+    eval "APP_DEP_MONGODB_ENABLED=\${${var_base}_mongodb_access_enabled:-false}"
+    eval "APP_DEP_STORAGE_ENABLED=\${${var_base}_storage_access_enabled:-false}"
+    eval "APP_DEP_SEARCH_ENABLED=\${${var_base}_search_access_enabled:-false}"
+}
+
+app_dependency_export_component_secret_overrides_from_config() {
+    local component="$1"
+
+    app_dependency_get_component_dependency_flags "$component"
+    app_dependency_export_component_secret_overrides \
+        "$component" \
+        "$APP_DEP_DATABASE_ENABLED" \
+        "$APP_DEP_REDIS_ENABLED" \
+        "$APP_DEP_MONGODB_ENABLED" \
+        "$APP_DEP_STORAGE_ENABLED" \
+        "$APP_DEP_SEARCH_ENABLED"
+}
+
+app_dependency_validate_empty_after_source() {
+    local var_name="$1"
+    local description="$2"
+
+    if [[ -n "${!var_name:-}" ]]; then
+        app_dep_log_error "$description 已关闭，但生成配置仍设置了 $var_name=${!var_name}"
+        return 1
+    fi
+}
+
+app_dependency_validate_component_generate_config() {
+    local component="$1"
+    local component_dir="$2"
+    local prefix conf_file
+
+    conf_file="$component_dir/resources/k8s-resource/custom-values/app/generate-app/generate-app.conf"
+    [[ -f "$conf_file" ]] || return 0
+
+    prefix="$(echo "$component" | tr '[:lower:]-' '[:upper:]_')"
+    app_dependency_get_component_dependency_flags "$component"
+
+    (
+        set -euo pipefail
+
+        app_dep_enabled "$APP_DEP_DATABASE_ENABLED" || export "${prefix}_POSTGRESQL_SECRET_NAME="
+        app_dep_enabled "$APP_DEP_REDIS_ENABLED" || export "${prefix}_REDIS_SECRET_NAME="
+        app_dep_enabled "$APP_DEP_MONGODB_ENABLED" || export "${prefix}_MONGODB_SECRET_NAME="
+        if ! app_dep_enabled "$APP_DEP_STORAGE_ENABLED"; then
+            export "${prefix}_OBJECT_STORAGE_CONFIGMAP_NAME="
+            export "${prefix}_OBJECT_STORAGE_SECRET_NAME="
+        fi
+        if ! app_dep_enabled "$APP_DEP_SEARCH_ENABLED"; then
+            export "${prefix}_ELASTICSEARCH_CONFIGMAP_NAME="
+            export "${prefix}_ELASTICSEARCH_SECRET_NAME="
+        fi
+
+        # generate-app.conf must treat an explicitly empty variable as disabled.
+        # Use ${VAR-default}, not ${VAR:-default}, for dependency names.
+        source "$conf_file"
+
+        app_dep_enabled "$APP_DEP_DATABASE_ENABLED" || \
+            app_dependency_validate_empty_after_source "${prefix}_POSTGRESQL_SECRET_NAME" "$component PostgreSQL"
+        app_dep_enabled "$APP_DEP_REDIS_ENABLED" || \
+            app_dependency_validate_empty_after_source "${prefix}_REDIS_SECRET_NAME" "$component Redis"
+        app_dep_enabled "$APP_DEP_MONGODB_ENABLED" || \
+            app_dependency_validate_empty_after_source "${prefix}_MONGODB_SECRET_NAME" "$component MongoDB"
+        if ! app_dep_enabled "$APP_DEP_STORAGE_ENABLED"; then
+            app_dependency_validate_empty_after_source "${prefix}_OBJECT_STORAGE_CONFIGMAP_NAME" "$component S3"
+            app_dependency_validate_empty_after_source "${prefix}_OBJECT_STORAGE_SECRET_NAME" "$component S3"
+        fi
+        if ! app_dep_enabled "$APP_DEP_SEARCH_ENABLED"; then
+            app_dependency_validate_empty_after_source "${prefix}_ELASTICSEARCH_CONFIGMAP_NAME" "$component Elasticsearch"
+            app_dependency_validate_empty_after_source "${prefix}_ELASTICSEARCH_SECRET_NAME" "$component Elasticsearch"
+        fi
+    )
+}
+
 app_dependency_install_db_switch_source_guard() {
     source() {
         local env_file="${1:-}"
@@ -180,35 +264,75 @@ app_dependency_resolve_target() {
     printf '%s:%s\n' "$namespace" "$service"
 }
 
-check_app_dependency_ready() {
+app_dependency_probe_ready() {
     local dependency="$1"
     local target namespace service
 
+    APP_DEP_LAST_ERROR=""
     target="$(app_dependency_resolve_target "$dependency")" || return 1
     namespace="${target%%:*}"
     service="${target#*:}"
 
     if ! command -v kubectl >/dev/null 2>&1; then
-        app_dep_log_error "kubectl 不存在，无法检查应用依赖: $dependency"
+        APP_DEP_LAST_ERROR="kubectl 不存在，无法检查应用依赖: $dependency"
         return 1
     fi
 
     if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
-        app_dep_log_error "应用依赖 $dependency 未就绪: 命名空间不存在 $namespace"
+        APP_DEP_LAST_ERROR="命名空间不存在 $namespace"
         return 1
     fi
 
     if ! kubectl get svc "$service" -n "$namespace" >/dev/null 2>&1; then
-        app_dep_log_error "应用依赖 $dependency 未就绪: Service 不存在 $namespace/$service"
+        APP_DEP_LAST_ERROR="Service 不存在 $namespace/$service"
         return 1
     fi
 
     if ! app_dependency_has_ready_endpoint "$namespace" "$service"; then
-        app_dep_log_error "应用依赖 $dependency 未就绪: Service 没有 ready endpoint $namespace/$service"
+        APP_DEP_LAST_ERROR="Service 没有 ready endpoint $namespace/$service"
         return 1
     fi
 
+    return 0
+}
+
+check_app_dependency_ready() {
+    local dependency="$1"
+    local target namespace service
+
+    if ! app_dependency_probe_ready "$dependency"; then
+        app_dep_log_error "应用依赖 $dependency 未就绪: ${APP_DEP_LAST_ERROR:-unknown}"
+        return 1
+    fi
+
+    target="$(app_dependency_resolve_target "$dependency")" || return 1
+    namespace="${target%%:*}"
+    service="${target#*:}"
     app_dep_log_success "应用依赖 $dependency 已就绪: $namespace/$service"
+}
+
+wait_app_dependency_ready() {
+    local owner="$1"
+    local dependency="$2"
+    local timeout="${APP_DEPENDENCY_WAIT_TIMEOUT_SECONDS:-300}"
+    local interval="${APP_DEPENDENCY_WAIT_INTERVAL_SECONDS:-5}"
+    local elapsed=0
+
+    while true; do
+        if app_dependency_probe_ready "$dependency"; then
+            check_app_dependency_ready "$dependency"
+            return 0
+        fi
+
+        if (( elapsed >= timeout )); then
+            app_dep_log_error "等待 $owner 依赖 $dependency 超时: ${timeout}s (${APP_DEP_LAST_ERROR:-unknown})"
+            return 1
+        fi
+
+        app_dep_log_info "等待 $owner 依赖 $dependency 就绪... (${elapsed}/${timeout}s, ${APP_DEP_LAST_ERROR:-unknown})"
+        sleep "$interval"
+        elapsed=$((elapsed + interval))
+    done
 }
 
 preflight_app_dependencies() {
@@ -222,6 +346,6 @@ preflight_app_dependencies() {
     for dependency in "$@"; do
         [[ -n "$dependency" ]] || continue
         app_dep_log_info "检查 $owner 依赖: $dependency"
-        check_app_dependency_ready "$dependency" || return 1
+        wait_app_dependency_ready "$owner" "$dependency" || return 1
     done
 }
