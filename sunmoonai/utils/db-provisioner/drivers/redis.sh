@@ -177,6 +177,7 @@ if [[ "\${redis_all_channels}" == "true" ]]; then
 else
   REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' ACL SETUSER '${APP_DB_USER}' on '>${APP_DB_PASSWORD}' "\${key_args[@]}" "\${channel_args[@]}" \${category} -@dangerous >/dev/null
 fi
+REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' ACL SAVE >/dev/null
 echo '[redis-client] ACL user upserted: ${APP_DB_USER}'
 EOF
     [[ $? -eq 0 ]] || die "Redis k8s provision client pod failed"
@@ -229,6 +230,8 @@ EOF
     # shellcheck disable=SC2086
     redis-cli -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} ACL SETUSER "${APP_DB_USER}" on ">${APP_DB_PASSWORD}" "${key_args[@]}" "${channel_args[@]}" ${category} -@dangerous >/dev/null
   fi
+  # shellcheck disable=SC2086
+  redis-cli -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} ACL SAVE >/dev/null
   log "[redis] ACL user upserted: ${APP_DB_USER}"
 
   APP_DB_URI="redis://${APP_DB_USER}:${APP_DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${REDIS_DB_INDEX}"
