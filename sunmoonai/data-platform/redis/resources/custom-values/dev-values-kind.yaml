@@ -20,10 +20,17 @@ auth:
   acl:
     enabled: true
     sentinel: false
-    # 与 app-platform 各应用 Secret 中 REDIS_USER/REDIS_PASSWORD 一致；key 前缀与 investment 同模式
+    # 与 app-platform 各应用 db-access-bootstrap/config/redis.k8s.env 中的
+    # REDIS_USER/REDIS_PASSWORD 一致；Redis Pod 重建时会从这里生成 users.acl。
     users:
+      - username: info_admin_backend
+        password: InfoAdminRedisAcl_7nR4wP2vK9mL3qX8j
+        enabled: "on"
+        keys: "~session:* ~info:*"
+        channels: "&*"
+        commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset -@dangerous"
       - username: investment_admin_backend
-        password: InvestmentAdminRedisAcl_7nR4wP2vK9mL3qX8j
+        password: TplAdminRedisAcl_7nR4wP2vK9mL3qX8j
         enabled: "on"
         keys: "~session:* ~investment:*"
         channels: "&*"
@@ -32,6 +39,18 @@ auth:
         password: InvestmentWebRedisAcl_8k3Qm9xP2vL7nR4w
         enabled: "on"
         keys: "~session:* ~investment:*"
+        channels: "&*"
+        commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset -@dangerous"
+      - username: knowledge_admin_backend
+        password: KnowledgeAdminRedisAcl_7nR4wP2vK9mL3qX8j
+        enabled: "on"
+        keys: "~session:* ~knowledge:*"
+        channels: "&*"
+        commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset -@dangerous"
+      - username: research_admin_backend
+        password: TplAdminRedisAcl_7nR4wP2vK9mL3qX8j
+        enabled: "on"
+        keys: "~session:* ~research:*"
         channels: "&*"
         commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset -@dangerous"
       - username: tools_admin_backend
