@@ -191,6 +191,8 @@ Infrastructure:      Postgres, Redis, RabbitMQ, Object Storage, Sandbox, RAGFlow
 会话记忆边界：AgentMemory 是 session 级可压缩上下文。
 长期记忆边界：Store / LongTermMemory 是跨 session 可复用知识。
 租户隔离边界：tenant_id/project_id 贯穿 memory/event/file/sandbox（V1 留占位，V2 全链路）。
+证据装配边界：EvidenceAssembler 是 run/session 级跨源证据的只读装配层（V2，见 §13.9），
+  只读各来源结果、不持有存储；不是 LangGraph state、不是 memory、不是 RAGFlow dataset。
 ```
 
 不要把这些边界合并成一个"大 JSON"。
@@ -961,6 +963,72 @@ RAG-02-golden-set.yaml：首个分块策略检索评估集。
 
 `~/rag/` 中的专题方案作为 Knowledge App 的 ingestion / retrieval / evaluation contract 候选输入；只有沉淀为可执行配置、预处理流程、RAGFlow Adapter 能力或评估门禁后，才进入平台实现。该目录不是运行时依赖，也不进入 `k8s` Git 仓库。
 
+### 13.9 ▲ EvidenceAssembler：跨源证据装配层（吸收 Agently 4.1.3.9 Workspace 的"证据装配"思想；V2，V1 只留边界与命名）
+
+§13.8 的"去重 / MMR / rerank / token budget / 引用标准化"主要落在 Knowledge App / RAGFlow 边界内，且只覆盖 RAG 一条源。但真正进入 Agent prompt 前，证据是**跨源**的：
+
+```text
+RAGFlow RetrievedChunk（§13.5）
+Memory recall（§12.5，带 confidence / sensitive / 来源）
+文件引用（FileStoragePort）
+工具产物 ArtifactRef（§19.3）
+人工输入附件
+```
+
+v4 当前没有任何组件负责把这些合并成统一的模型上下文块。EvidenceAssembler 补这一层——它吸收 Agently 4.1.3.9 Workspace `retrieve(...)` 的**证据装配**思想（多源 → 去重 / rerank / token budget / 引用标准化 / model-hot 打包 / raw readback），但**不把 Workspace 作为存储层引入**。
+
+定位（收窄为"装配"而非"存储"，避免 god object，呼应 §4.2）：
+
+```text
+EvidenceAssembler 只读各来源结果，不持有存储。
+不替代 KnowledgePort / MemoryStorePort / FileStoragePort（不是 ResearchWorkspace 那样的统一存储）。
+分源召回、各带治理元数据（RAG 带 provenance/引用；memory 带 confidence/sensitive/TTL），
+  只在装配层汇合成带来源标签的 EvidenceBlock —— 不在召回口抹平各源治理差异。
+```
+
+V2 目标态（V1 不实现，仅作命名与边界占位）：
+
+```python
+class EvidenceBlock(BaseModel):
+    id: str
+    source: Literal["rag", "memory", "file", "artifact", "user_attachment"]
+    ref: str                       # 指向原始事实源（chunk_id / memory_id / artifact_id / file_path）
+    model_hot: str                 # 进 prompt 的紧凑投影（摘要 / 短结构）
+    citation: dict[str, Any]       # dataset/document/page/score/confidence/来源，标准化引用
+    sensitive: bool = False
+    metadata: dict[str, Any] = Field(default_factory=dict)
+```
+
+装配职责（对齐 4.1.3.9 的 retrieval packaging）：
+
+```text
+- 去重：按 content_hash / ref。
+- 结构门控 rerank：默认不发起模型 rerank；仅宽查询 / 噪声 / 跨源 / 混入 distractor 时才 rerank，
+  失败降级为确定性顺序 + diagnostics（成本治理，呼应 §16 预算）。
+- token budget 打包：按长度预算或 top_n 选择（对齐 4.1.3.9 selection="length"|"top_n"）。
+- model-hot 投影 vs raw readback：只把摘要 / 短结构放进 prompt，原文通过 ref/readback 保留为事实源
+  （呼应 §9.6 状态最小化）。
+- 引用标准化：统一 dataset / document / chunk / page / score / confidence / 来源。
+```
+
+铁律：
+
+```text
+- EvidenceBlock 不进 LangGraph state（§9.6），只作为 prompt 装配的输入。
+- model-hot 摘要进 prompt；raw 内容通过 ref/readback 保持事实源，不整块塞进上下文。
+- ★ evidence ≠ 完成证明：检索命中只是候选证据，failed/empty evidence 只能支持"缺失数据"声明；
+  最终结论是否成立，必须由 verifier / readback / 引用校验 / 人工审查 / 评估门禁（§28.3）支撑。
+- 装配层不替代 RAGFlow、不替代 LongTermMemory、不替代 EventSink。
+```
+
+V1/V2 切分：
+
+```text
+V1：只在 §13.5 单 RetrievedChunk 与 §12.5 记忆召回之上留命名与边界占位；
+    prompt 装配先用最小拼接 + token 截断即可，不做跨源 rerank / 投影。
+V2：完整 EvidenceAssembler —— 跨源合并、结构门控 rerank、model-hot 投影、raw readback、evidence≠完成证明门禁。
+```
+
 ---
 
 ## 14. LangGraph 运行时设计（V1 核心）
@@ -1590,7 +1658,8 @@ V1 最小评估骨架（便宜，却能给后续每一次改动兜底）：
 
 V2 扩展：
   评估维度补全——计划质量 / 工具选择正确率 / 最终回答正确率 / 无效工具调用 /
-  错误写长期记忆 / 记忆召回采纳率（§12.5）/ 是否按要求等待用户 / 中断恢复是否正确。
+  错误写长期记忆 / 记忆召回采纳率（§12.5）/ 是否按要求等待用户 / 中断恢复是否正确 /
+  检索证据是否被误当作完成证明（evidence ≠ verification，§13.9）。
 ```
 
 ---
@@ -1697,6 +1766,7 @@ LongTermMemory domain/models/memory.py        infrastructure/graph/store.py(Memo
 | P3 | V2-F | 多智能体 Supervisor：AgentProfile、AgentRegistry、handoff、agent 级隔离 | 单 Agent 明显不够用 |
 | P3 | V2-G | 生产化数据模型：session_events/agent_runs/memories 分区/索引/归档 + CQRS 读模型物化 | 数据量/读压力撑不住单表 |
 | P3 | V2-H | 完整观测治理：TransportMessage envelope + IntegrationEvent/RabbitMQ + TraceSink + 完整评估门禁 | 多 app 协作 / 需要专业可观测 |
+| P3 | V2-I | EvidenceAssembler 跨源证据装配（§13.9）：多源 evidence 去重/结构门控 rerank/token budget/model-hot 打包/raw readback + evidence≠完成证明门禁 | 单源检索已稳，需把 RAG/memory/file/artifact 多源证据统一进 prompt |
 
 ### 31.3 阶段验收口径（V1）
 
@@ -1753,6 +1823,10 @@ ADR-025: ▲ 评估前置——最小 golden set + 录制回放在 V1 阶段 0.5
 ADR-026: ◆ 工具结果处理策略——ToolExecutionResult 经 ToolResultHandler 拆成 LLM ToolMessage /
          ArtifactRef / DomainEvent 三路，runner 禁止按 tool_name 写 if/elif（§19.3）
 ADR-027: ▲ 全新重建——旧 MoocManus 彻底废弃，不部署/不兼容/不回退；旧项目仅作 golden 样本与行为参考
+ADR-028: ▲ 跨源证据装配（吸收 Agently 4.1.3.9 Workspace 的证据装配思想）——分源召回保各自治理元数据，
+         统一到 EvidenceAssembler 做去重/结构门控 rerank/token budget/引用标准化/model-hot 打包；
+         EvidenceBlock 只读装配、不持有存储、不进 state；evidence ≠ 完成证明（V2，§13.9）。
+         不引入 ResearchWorkspace 统一存储层，不新增 RuntimeEventCenter（TraceSink 已收口，ADR-020）。
 ```
 
 ---
@@ -1893,7 +1967,14 @@ H. ▲ 全新重建定位：旧项目彻底废弃，不部署/不兼容/不回�
 + §24.1 明确 session_events 带 category/schema_version/lineage。
 + ADR-022 明确 Event/Message 语义边界。
 
+吸收 Agently 4.1.3.9（▲，收窄吸收，不破坏既有边界）：
++ §13.9 新增 EvidenceAssembler：跨源证据（RAG/memory/file/artifact/附件）→ 去重 / 结构门控 rerank /
+  token budget / 引用标准化 / model-hot 打包 / raw readback，只读装配、不持有存储（不是 ResearchWorkspace 统一存储层）。
++ 关键治理 evidence ≠ 完成证明进 §13.9 铁律与 §28.3 评估项；§4.2 加证据装配边界；ADR-028。
++ EventCenter 不再新增概念/改名：其精神已在 §9.2 / §10.4 RuntimeEvent / §28.2 TraceSink / ADR-020 收口。
+
 延后到 V2 的目标态（▲）：
+- EvidenceAssembler 是 V2：V1 只在 §13.5/§12.5 之上留命名与边界占位，prompt 装配先用最小拼接 + token 截断。
 - 不在 V1 上 TransportMessage envelope / IntegrationEvent / 四类基类全量：只立命名占位，实现归 V2（§18.5）。
   理由：在只有单 Redis+SSE 通道、无跨 app 协作时引入传输 envelope，是为未出现的复杂度提前付费。
 - legacy：本修订是 greenfield，本就无兼容对象；旧项目只作为 golden 样本来源，golden set 达标前不接用户流量（§9.4）。
