@@ -1,0 +1,29 @@
+下一台机器接着做：
+
+```bash
+cd ~/info-app
+git fetch origin
+git switch codex-1 || git switch -c codex-1 origin/codex-1
+git submodule update --init --recursive
+
+cd ~/info-app/info-admin-backend
+git fetch origin
+git switch codex-1 || git switch -c codex-1 origin/codex-1
+
+cd ~/info-app/info-admin-frontend
+git fetch origin
+git switch codex-1 || git switch -c codex-1 origin/codex-1
+
+cd ~/k8s
+git fetch origin
+git switch codex-1 || git switch -c codex-1 origin/codex-1
+```
+
+当前可接的下一步：
+
+- 继续做 Info App 阶段 G3：`document_version` 成功后异步/后台写入搜索索引。
+- 现有基础：`info-admin-backend` 已有搜索 index mapping、adapter 和手动 rebuild API。
+- 进度文档：
+  - `~/info-app/docs-cursor/SPIDER_MVP_HANDOFF.md`
+  - `~/info-app/info-admin-backend/docs/SPIDER_MVP.md`
+  - `~/k8s/sunmoonai/app-platform/info-app/docs/info-app-spider-implementation-tasks.md`
