@@ -183,15 +183,16 @@ GET  /documents/{id}/versions
 - [x] I2. 手动提交 URL。
 - [x] I3. 采集任务列表、详情和失败原因。
 - [x] I4. 文档列表、详情、版本和原始证据入口。
-- [ ] I5. 抽取结果审核和状态调整。
+- [x] I5. 抽取结果审核和状态调整。
 
 验收标准：
 
-- [ ] 无需直接查数据库即可完成第一阶段日常操作。
+- [x] 无需直接查数据库即可完成第一阶段日常操作。
 
 当前说明：
 
 - `info-admin-frontend/src/pages/info/crawl.vue` 已提供最小管理入口，覆盖来源、URL 任务、collector、上传和文档列表。
+- `info-admin-backend` 已提供 document 与 document_version 审核状态调整 API，可记录 reviewer、reason 和 review_history。
 - 前端依赖安装因 registry 超时/安装未获批准，尚未完成 `pnpm type-check` 和 `pnpm build-only` 验证。
 
 ## 13. 阶段 J：来源扩展
