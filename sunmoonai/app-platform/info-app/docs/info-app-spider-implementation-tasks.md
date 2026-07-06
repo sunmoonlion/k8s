@@ -170,12 +170,18 @@ GET  /documents/{id}/versions
 - [x] H2. 在 `distribution_record` 中记录目标、版本、内容哈希和状态。
 - [x] H3. 实现手动分发 API 或后台任务。
 - [x] H4. 不直接调用 RAGFlow 私有 API。
-- [ ] H5. 支持失败重试和状态对账。
+- [x] H5. 支持失败重试和状态对账。
 
 验收标准：
 
 - [x] `info-app` 能产生可分发的规范化文档包。
 - [x] `knowledge-app` / RAGFlow 故障不影响资讯主档保存。
+
+当前说明：
+
+- `info-admin-backend` 已提供分发记录列表、详情、状态更新和失败重试 API。
+- 状态对账记录保存在 `distribution_record.payload.status_history`，重试记录保存在 `payload.retry_history`。
+- 失败重试当前将 `failed` 记录重置为 `pending`，供后续分发 worker 再次处理。
 
 ## 12. 阶段 I：管理后台
 
