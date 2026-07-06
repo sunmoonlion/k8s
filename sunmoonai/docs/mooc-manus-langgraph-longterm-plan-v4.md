@@ -915,6 +915,52 @@ V1（若需要）：只做 ragflow_retrieve 只读检索。
 V2：ragflow_ask + 引用 -> KnowledgeAgent -> ragflow_ingest（加权限审批）-> 引用前端展示与知识库管理 UI。
 ```
 
+### 13.8 RAGFlow 知识工程专题沉淀
+
+RAGFlow 集成不是"接上 API 就结束"。生产可用的 RAGFlow 至少由四层共同构成：
+
+```text
+Helm / K8S 层：          部署、镜像、资源、存储、依赖服务、全局运行参数、service_conf、llm_factories。
+RAGFlow Dataset 层：     RAGFlow 原生支持的 parser、chunk method、embedding、rerank、retrieval 参数。
+Knowledge App 层：       文档类型识别、预处理、RAGFlow Adapter、metadata、去重/MMR、评估、任务状态。
+Research App 层：        只消费标准化 retrieve / ask 结果，负责 Agent 上下文组装、引用展示和安全边界。
+```
+
+知识库质量主要由文档解析、分块、Embedding、向量索引、检索优化、上下文融合、引用、评估、可观测性和生产运维闭环决定。这些策略归 Knowledge App / RAGFlow 边界内治理；Research App 不直接依赖 RAGFlow 私有 API、数据库、MinIO 或 Elasticsearch。
+
+RAG 系列文章、实验记录、实施方案和评估清单不直接堆进本文；统一沉淀在工作区外的 `~/rag/` 专题目录。目前该目录已形成：
+
+```text
+guide.md：后续 RAG 文章的统一处理流程：阅读文章 -> 映射平台实施 -> 进一步完善。
+RAG-02-分块策略-平台实施方案.md
+RAG-03-Embedding-平台实施方案.md
+RAG-04-向量数据库-平台实施方案.md
+RAG-05-检索优化-平台实施方案.md
+RAG-06-生成与上下文融合-平台实施方案.md
+RAG-07-评估与可观测性-平台实施方案.md
+RAG-08-生产实战-平台实施方案.md
+RAG-09-多模态RAG-平台实施方案.md
+RAG-10-前沿变体与高阶技巧-平台实施方案.md
+RAG-11-经典业务场景设计-平台实施方案.md
+RAG-02-golden-set.yaml：首个分块策略检索评估集。
+```
+
+本文只保留平台级约束：
+
+```text
+- RAGFlow 的 Helm values 只承载部署级/全局运行级参数，不承载所有知识工程策略。
+- RAGFlow 原生稳定支持的能力优先通过 Dataset/UI/API 配置；不稳定或不支持的能力进入 Knowledge App 预处理/后处理。
+- ingestion 前必须明确 Document Profile：Markdown/HTML/PDF/表格/图片/代码/业务场景。
+- chunk 必须尽量自包含：保留标题路径、来源、页码、段落/行号、版本、content_hash 等 metadata。
+- Embedding、chunk、retrieval、generation profile 都必须版本化，变更后可评估、可回滚、可重建。
+- overlap 默认控制在 10%-25%，避免存储膨胀、重复召回和上下文浪费。
+- retrieve 后必须考虑去重 / MMR / parent-document / rerank / token budget / 引用标准化。
+- RAGFlow 深度集成进入 V2 前，先建立真实 query golden set、离线评估口径、bad case 回流和可观测性指标。
+- 高风险场景（医疗、法律、金融数值问答等）默认不自动开放，必须有权限、审计、人工抽检和更高评估门槛。
+```
+
+`~/rag/` 中的专题方案作为 Knowledge App 的 ingestion / retrieval / evaluation contract 候选输入；只有沉淀为可执行配置、预处理流程、RAGFlow Adapter 能力或评估门禁后，才进入平台实现。该目录不是运行时依赖，也不进入 `k8s` Git 仓库。
+
 ---
 
 ## 14. LangGraph 运行时设计（V1 核心）
