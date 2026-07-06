@@ -148,21 +148,23 @@ GET  /documents/{id}/versions
 
 ## 10. 阶段 G：基础搜索
 
-- [ ] G1. 如果平台 Elasticsearch 资源已可用，声明 Info App `information` 索引字段。
-- [ ] G2. 实现索引写入 adapter。
+- [x] G1. 如果平台 Elasticsearch 资源已可用，声明 Info App `information` 索引字段。
+- [x] G2. 实现索引写入 adapter。
 - [ ] G3. 在 document version 成功后写入搜索索引。
 - [x] G4. 提供关键词搜索和来源、时间、状态过滤。
-- [ ] G5. 明确索引可从 PostgreSQL 和 S3 重建。
+- [x] G5. 明确索引可从 PostgreSQL 和 S3 重建。
 
 验收标准：
 
 - [x] 可以按关键词搜索已采集资讯。
-- [ ] 删除索引后有重建方案。
+- [x] 删除索引后有重建方案。
 
 当前说明：
 
 - 第一轮先提供 PostgreSQL 标题/URL 查询，满足 MVP 管理检索。
-- Elasticsearch 作为后续可重建全文索引接入，不阻塞采集主闭环。
+- `info-admin-backend` 已声明 `info-information` mapping，并提供 Elasticsearch/OpenSearch 写入 adapter。
+- `POST /api/admin/search-index/rebuild` 可从 PostgreSQL 中的 `document_version` 和 S3 artifact 引用重建索引。
+- G3 自动增量写入暂未启用，避免外部搜索服务故障影响采集主事务。
 
 ## 11. 阶段 H：Knowledge App 分发接口
 
