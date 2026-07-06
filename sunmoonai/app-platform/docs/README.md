@@ -12,6 +12,8 @@
 
 - [Auth App](./auth-app.md)
 - [Info App](./info-app.md)
+- [Info App 采集与资讯治理架构](../info-app/docs/info-app-spider-architecture.md)
+- [Info App 采集与资讯治理实施任务](../info-app/docs/info-app-spider-implementation-tasks.md)
 - [Knowledge App](./knowledge-app.md)
 - [Research App](./research-app.md)
 - [Tools App](./tools-app.md)
