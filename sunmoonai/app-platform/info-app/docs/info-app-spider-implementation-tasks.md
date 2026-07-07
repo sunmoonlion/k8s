@@ -250,7 +250,7 @@ GET  /documents/{id}/versions
 
 ## 14. 阶段 K：治理增强
 
-- [ ] K1. 来源可信度和版权状态。
+- [x] K1. 来源可信度和版权状态。
 - [ ] K2. 近似重复检测。
 - [ ] K3. 转载关系和同源合并。
 - [ ] K4. 公司、证券、行业、主题关联。
@@ -260,6 +260,10 @@ GET  /documents/{id}/versions
 验收标准：
 
 - [ ] 模型处理结果可追溯，不覆盖人工确认结果。
+
+当前说明：
+
+- `info_source` 已新增 `trust_level`、`copyright_status`、`license_url`、`terms_url`，并通过 API schema 与管理前端来源表单暴露。
 
 ## 15. 第一轮建议执行顺序
 
