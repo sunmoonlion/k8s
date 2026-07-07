@@ -4,17 +4,17 @@
 定位：在 app-platform/research-app 中**全新建设**一个以 LangGraph 为编排运行时、可长期维护、可扩展、支持多智能体与长期记忆的智能体平台。旧 `imooc-mas/mooc-manus` 已废弃，仅作领域概念启发与 golden 样本来源，不作工程底座、不迁移、不兼容。
 更新时间：2026-06-27
 基线：继承早期规划中的工程判断，口径统一为 greenfield 全新重建。
-设计策略：以 greenfield / V1·V2 切分 / Walking Skeleton / 评估前置 / 控范围控制落地节奏；以 Event-Message-Command-Transport 边界、ADR 铁律、目标态 schema 控制类型体系。完整类型体系**一律按本文 V1/V2 节奏落地、并显式打 V2/目标态标签，不在 V1 铺满**。
+设计策略：以 greenfield / M1·M2 切分 / Walking Skeleton / 评估前置 / 控范围控制落地节奏；以 Event-Message-Command-Transport 边界、ADR 铁律、目标态 schema 控制类型体系。完整类型体系**一律按本文 M1/M2 节奏落地、并显式打 M2/目标态标签，不在 M1 铺满**。
 
 > 本文的两条主轴：
 >
 > **主轴一（节奏）：先验证，再形式化；先打通竖线，再铺平台。**
-> 不「先规划一切、再验证」，不把多租户 / CQRS / GraphRegistry / 四类事件全量上在前面。而是：先用最小代价证伪最危险的假设（Walking Skeleton），把评估骨架提前，明确切出 **V1 必须** 与 **V2 延后**，并把「过度设计吞掉产品进度」列为一等风险。
+> 不「先规划一切、再验证」，不把多租户 / CQRS / GraphRegistry / 四类事件全量上在前面。而是：先用最小代价证伪最危险的假设（Walking Skeleton），把评估骨架提前，明确切出 **M1 必须** 与 **M2 延后**，并把「过度设计吞掉产品进度」列为一等风险。
 >
 > **主轴二（边界，按节奏主轴落地）：**
 > 建立 Event/Message 类型体系（Command、TransportMessage、拆 UIEvent）——
 > - 现在采用：`DomainEvent`（事实真相源）与 `UIEvent`（投影）的区分、`Command`（请求意图）与 `Event`（已发生事实）的命名规则、事件带 `schema_version`、`session_events` 落 `category/lineage`。这些**现在就声明为命名铁律**，成本低、防止改名债。
-> - 延后：`TransportMessage` envelope、完整的四类事件基类拆分、`Command` 的完整类层级——这些在系统真正长出多 broker / 多 app / 审计合规需求时才必要，列入 **V2**，现在只留命名占位，不进 V1 实现。
+> - 延后：`TransportMessage` envelope、完整的四类事件基类拆分、`Command` 的完整类层级——这些在系统真正长出多 broker / 多 app / 审计合规需求时才必要，列入 **M2**，现在只留命名占位，不进 M1 实现。
 > - legacy 问题：**确认旧 MoocManus 项目彻底废弃，本规划是全新重建（greenfield），不做 in-place 迁移**。因此不存在"回退到旧 flow"这回事——本修订的差异仅剩节奏：旧项目只作**只读行为参考 + golden 样本来源**，新系统在 golden set 验收通过前不被信任（用 Walking Skeleton + 评估骨架兜底，而非用旧 flow 兜底）。详见 §9.4、§33.1。
 
 > ▲ 项目定位（重要）：旧 `imooc-mas/mooc-manus` 项目以后**彻底不再使用**。本文不是"如何把旧项目迁到 LangGraph"，而是"按这套架构在 research-app 里全新重建"。旧项目仅用于：(1) 抽取真实任务作 golden 样本；(2) 行为对照参考。**不部署、不兼容、不回退。**
@@ -37,12 +37,14 @@ Research App（新项目）管产品业务、事件、会话、工具、文件�
 
 不要把新项目做成一个 LangGraph demo。要把 LangGraph 嵌入新 Research App，使它成为智能体执行内核。
 
-### 0.1 ▲ V1 / V2 范围切分（本修订最重要的新增）
+### 0.1 ▲ M1 / M2 范围切分（本修订最重要的新增）
+
+> ▲ 命名约定（避免混淆）：**`M1 / M2` 指项目交付阶段**（M = Milestone；`M1` = 先打通、能演示的竖线/MVP，`M2` = 等负载或真实需求出现后再做的平台能力），与封面的**文档版本 `v4`（本规划文档的第 4 次修订）不是一回事**。早期版本曾用 `V1/V2` 表示阶段，因与文档版本 `vN` 视觉太像、易被误读为"文档已到 v4，阶段是不是也该改"，本版起阶段统一改用 `M1/M2`；文档版本仍用小写 `vN`，schema 演进版本（§24.2 的 `v1 -> v2 -> current`）也仍是小写，二者互不相关。
 
 早期规划列了 13 个阶段、21 条 ADR。问题不在内容对错，而在**全部堆在一条路线上**——对一个仍是「手写 Planner-ReAct 能跑」的项目，这会把一个能落地的产品拖成永远发不出的平台工程。所以先把目标切成两层：
 
 ```text
-V1「能用、能演示、能验证」——先打通这一条竖线（P0，必须）：
+M1「能用、能演示、能验证」——先打通这一条竖线（P0，必须）：
   1. Walking Skeleton：证伪最危险的三个假设（§6.5）
   2. 最小评估骨架：golden set + LLM 录制回放（§28.3 前移）
   3. 消息体系 LangChain Core 化（§11）
@@ -52,23 +54,23 @@ V1「能用、能演示、能验证」——先打通这一条竖线（P0，必�
   7. 重放安全：reducer 幂等 + 工具副作用幂等 + 并发锁（§15）
   8. EventSink + DomainEvent/UIEvent 区分（◆ 类型边界强化，最小实现，§18）
 
-V1 明确"先不做"（不是删除，是等负载/需求真正出现再做）——V2：
-  - 多租户 SecurityContext 全链路传播（§21）—— V1 留单租户占位即可
+M1 明确"先不做"（不是删除，是等负载/需求真正出现再做）——M2：
+  - 多租户 SecurityContext 全链路传播（§21）—— M1 留单租户占位即可
   - GraphRegistry 版本化 + run 版本锁定 + 灰度（§15.4）
-  - CQRS 读模型物化（§18.2）—— V1 直接查事件流够用
+  - CQRS 读模型物化（§18.2）—— M1 直接查事件流够用
   - 完整四类事件基类拆分 + TransportMessage envelope（§18，◆ 部分延后）
   - Model Gateway 多 provider fallback（§23）
   - Supervisor 多智能体（§20）
   - Integration Event / RabbitMQ 跨 app（§18.1）
-  - 长期记忆 Store 深度集成（§12.4/12.5 仅在 V1 留接口）
-  - RAGFlow 深度集成（§13，V1 最多 retrieve 只读）
+  - 长期记忆 Store 深度集成（§12.4/12.5 仅在 M1 留接口）
+  - RAGFlow 深度集成（§13，M1 最多 retrieve 只读）
 ```
 
-判定一件事属于 V1 还是 V2 的尺子：
+判定一件事属于 M1 还是 M2 的尺子：
 
 ```text
-"不做它，单 Graph 任务就跑不通 / 不可恢复 / 调不动" -> V1
-"不做它，系统照样能跑，只是还没多租户/多 app/多模型/可灰度" -> V2
+"不做它，单 Graph 任务就跑不通 / 不可恢复 / 调不动" -> M1
+"不做它，系统照样能跑，只是还没多租户/多 app/多模型/可灰度" -> M2
 ```
 
 ### 0.2 推荐最终形态（不变，作为北极星）
@@ -190,8 +192,8 @@ Infrastructure:      Postgres, Redis, RabbitMQ, Object Storage, Sandbox, RAGFlow
 执行恢复边界：Checkpoint 是运行时 AgentState 的持久化快照（= ThreadMemory），不是"记忆"。
 会话记忆边界：AgentMemory 是 session 级可压缩上下文。
 长期记忆边界：Store / LongTermMemory 是跨 session 可复用知识。
-租户隔离边界：tenant_id/project_id 贯穿 memory/event/file/sandbox（V1 留占位，V2 全链路）。
-证据装配边界：EvidenceAssembler 是 run/session 级跨源证据的只读装配层（V2，见 §13.9），
+租户隔离边界：tenant_id/project_id 贯穿 memory/event/file/sandbox（M1 留占位，M2 全链路）。
+证据装配边界：EvidenceAssembler 是 run/session 级跨源证据的只读装配层（M2，见 §13.9），
   只读各来源结果、不持有存储；不是 LangGraph state、不是 memory、不是 RAGFlow dataset。
 ```
 
@@ -257,11 +259,11 @@ class KnowledgeRetrievalPort(Protocol):
 
 实现：`RagflowKnowledgeRetrievalAdapter`。配置（`RESEARCH_RAGFLOW_BASE_URL/API_KEY/...`）进 secret/configMap，不写死。开发阶段允许 RAGFlow disabled，不阻塞部署。
 
-> ▲ V1 注记：阶段 -1（平台边界约定）**只定文档与边界约定**，成本极低，可与 V1 并行；但 RAGFlow 深度集成本身是 V2（§0.1）。
+> ▲ M1 注记：阶段 -1（平台边界约定）**只定文档与边界约定**，成本极低，可与 M1 并行；但 RAGFlow 深度集成本身是 M2（§0.1）。
 
 ---
 
-## 6. ★ 执行拓扑：图在哪里跑（V1 核心，不变）
+## 6. ★ 执行拓扑：图在哪里跑（M1 核心，不变）
 
 长 Agent 任务**绝不能跑在 HTTP 请求生命周期内**，必须落到已有的 worker/队列/消息基础设施。
 
@@ -285,14 +287,14 @@ research-app Python 后端 SSE 端点
   - 订阅 Redis channel -> 推前端 ; 支持 last_event_id 断线补发（仅落库的 UIEvent）
 ```
 
-> ◆ 此处明确：事件链路明确为 `DomainEvent -> EventSink -> Projector -> UIEvent`，但 V1 不引入独立 TransportMessage envelope（直接用 Redis/SSE 原生载体），envelope 是 V2（§18.5）。
+> ◆ 此处明确：事件链路明确为 `DomainEvent -> EventSink -> Projector -> UIEvent`，但 M1 不引入独立 TransportMessage envelope（直接用 Redis/SSE 原生载体），envelope 是 M2（§18.5）。
 
 ### 6.2 队列分工与持久化真相源（ADR-009，不变）
 
 ```text
 Celery (Python, Redis broker): Research App 内部 graph run 的调度与执行（执行者必须同语言）。
 BullMQ / nodebullworker (Node): 仅 research-web-backend 的非 agent 轻量异步，不承载图执行。
-RabbitMQ: 跨业务应用的 Integration Event（V2）。
+RabbitMQ: 跨业务应用的 Integration Event（M2）。
 Redis Pub/Sub: SSE 临时通道，token 增量 + UIEvent 推送，不作持久化真相。
 ```
 
@@ -341,7 +343,7 @@ Redis Pub/Sub: SSE 临时通道，token 增量 + UIEvent 推送，不作持久�
   消息体系可先用最小 StoredMessage，不要求完整 serializer/upcaster。
 ```
 
-### 6.5.3 验收（必须全绿才进 V1 正式阶段）
+### 6.5.3 验收（必须全绿才进 M1 正式阶段）
 
 ```text
 1. 触发 graph -> 走到 ask_user -> interrupt -> session.status=waiting -> 前端渲染等待。
@@ -370,22 +372,22 @@ domain 层只依赖一组 Port，所有外部技术都是 Adapter。
 
 ```text
 domain/ports/
-  llm_port.py             # ModelGateway 抽象，见 §23（V1 可只接一个 provider）
+  llm_port.py             # ModelGateway 抽象，见 §23（M1 可只接一个 provider）
   tool_execution_port.py  # 工具执行，屏蔽沙箱/本地差异
   checkpoint_port.py      # 包一层 LangGraph checkpointer
-  memory_store_port.py    # 长期记忆读写（对应 LangGraph Store，V1 留接口）
+  memory_store_port.py    # 长期记忆读写（对应 LangGraph Store，M1 留接口）
   event_sink_port.py      # DomainEvent / IntegrationEvent 事实输出（◆ 类型边界强化）
   sandbox_port.py         # 沙箱生命周期
   file_storage_port.py    # 对象存储
   knowledge_port.py       # RAGFlow / 知识检索
-  # transport_port.py     # ◆ V2：TransportMessage 发布，屏蔽 Redis/SSE/RabbitMQ。V1 不建。
+  # transport_port.py     # ◆ M2：TransportMessage 发布，屏蔽 Redis/SSE/RabbitMQ。M1 不建。
 ```
 
 收益：可测试（图单测全对 Port mock）、可替换（DockerSandbox→K8s Pod Sandbox 不动 domain）、为 §9.3 ACL 边界提供支点。
 
 ---
 
-## 8. ★ 控制面 / 数据面分离（不变，V1 可轻量）
+## 8. ★ 控制面 / 数据面分离（不变，M1 可轻量）
 
 ```text
 Control Plane (research-admin-backend)：
@@ -396,7 +398,7 @@ Data Plane (research-app 后端 / graph-runner worker)：
 
 两条规则：配置是数据不是代码（存库、带 version、发布即快照）；数据面对控制面的依赖单向异步（admin 改配置→发布事件→worker 拉新版本）。
 
-> ▲ V1 注记：V1 可以先用 YAML + 进程内读取实现"有效配置"，**不需要 admin 后台 UI 和版本化发布流程**（那是 V2 GraphRegistry 的一部分）。控制面/数据面的**边界**现在就守住，**机制**延后。
+> ▲ M1 注记：M1 可以先用 YAML + 进程内读取实现"有效配置"，**不需要 admin 后台 UI 和版本化发布流程**（那是 M2 GraphRegistry 的一部分）。控制面/数据面的**边界**现在就守住，**机制**延后。
 
 ---
 
@@ -425,23 +427,23 @@ Checkpoint:    运行时 state 的持久化快照（= ThreadMemory），不是�
 可互相映射，不可互相替代。
 
 ```text
-▲ V1 落地范围（不全量上）：
+▲ M1 落地范围（不全量上）：
   - 现在就遵守上面的"命名铁律"（成本 = 约定，收益 = 不欠改名债）。
-  - V1 真正实现：UserInput、StoredMessage、DomainEvent、UIEvent、Checkpoint、AgentMemory。
-  - V1 延后实现：Command 完整类层级（V1 用一个 CreateRun/ResumeRun 的最小请求体即可）、
-    TransportMessage envelope（V1 用 Redis/SSE 原生载体）、IntegrationEvent（V2 跨 app 才需要）。
+  - M1 真正实现：UserInput、StoredMessage、DomainEvent、UIEvent、Checkpoint、AgentMemory。
+  - M1 延后实现：Command 完整类层级（M1 用一个 CreateRun/ResumeRun 的最小请求体即可）、
+    TransportMessage envelope（M1 用 Redis/SSE 原生载体）、IntegrationEvent（M2 跨 app 才需要）。
 ```
 
 补充两条通道边界（参考 Agently）：
 
 ```text
 观测通道（Runtime/Observation Event）：记录"运行时发生了什么"，面向 trace/debug/metrics，
-  不作业务事实、不进前端时间线、不驱动路由（V1 可只打日志，TraceSink 是 V2）。
+  不作业务事实、不进前端时间线、不驱动路由（M1 可只打日志，TraceSink 是 M2）。
 控制流通道：graph 路由只由 LangGraph state/edge/Command/interrupt 决定，
   禁止用任何 Event 驱动 graph 走向（铁律见 §15.5）。
 ```
 
-### 9.3 ★ ACL（Anti-Corruption Layer）边界必须被强制（V1 就上）
+### 9.3 ★ ACL（Anti-Corruption Layer）边界必须被强制（M1 就上）
 
 ```text
 铁律：
@@ -455,7 +457,7 @@ Checkpoint:    运行时 state 的持久化快照（= ThreadMemory），不是�
 强制手段：CI 用 import-linter / ruff banned-api 检查，违反即失败。
 ```
 
-> ▲ 为什么 ACL 是少数"V1 就必须上"的平台件：它是**约束**不是**功能**，成本只是一条 CI 规则；一旦放任 langgraph 类型渗进 domain，后期再拆的成本是指数级的。这类"便宜且防腐"的约束，本修订都保留在 V1（同理还有命名铁律、schema_version、lineage 占位）。
+> ▲ 为什么 ACL 是少数"M1 就必须上"的平台件：它是**约束**不是**功能**，成本只是一条 CI 规则；一旦放任 langgraph 类型渗进 domain，后期再拆的成本是指数级的。这类"便宜且防腐"的约束，本修订都保留在 M1（同理还有命名铁律、schema_version、lineage 占位）。
 
 ### 9.4 ▲ 全新重建：先统一消息再建 Graph；安全网是 golden set，不是旧 flow
 
@@ -474,21 +476,21 @@ LangGraph 接入前必须先稳住消息体系。关于 legacy，**已确认旧�
 
 ### 9.5 先单 Graph 稳定，再多智能体
 
-多智能体不是多个类，而是：权限隔离、memory 隔离、任务交接、失败处理、事件归属、结果汇总。V1 先把 Planner-ReAct 单 Graph 做扎实（多智能体是 V2）。
+多智能体不是多个类，而是：权限隔离、memory 隔离、任务交接、失败处理、事件归属、结果汇总。M1 先把 Planner-ReAct 单 Graph 做扎实（多智能体是 M2）。
 
 ### 9.6 状态最小化
 
 State 只放执行需要的最小事实：messages / session_id / user_input / plan / current_step / pending_tool_calls / artifacts / status / error。完整事件历史、文件详情、长期记忆不进 state。
 
-### 9.7 ★ 重放安全是第一性约束（V1 就上）
+### 9.7 ★ 重放安全是第一性约束（M1 就上）
 
 凡依赖 checkpoint 恢复/重放的设计，都必须保证：reducer 幂等、工具副作用幂等、并发幂等（见 §15）。这是 demo 与长期平台的分水岭，也正是 §6.5 Walking Skeleton 要先证伪的假设 C。
 
 ---
 
-## 10. 领域模型重构（◆ 强化命名边界，▲ 按 V1/V2 切分实现深度）
+## 10. 领域模型重构（◆ 强化命名边界，▲ 按 M1/M2 切分实现深度）
 
-### 10.1 UserInput 替代当前 Message（V1）
+### 10.1 UserInput 替代当前 Message（M1）
 
 ```python
 class UserInput(BaseModel):
@@ -499,7 +501,7 @@ class UserInput(BaseModel):
 
 > ▲ 全新重建，无需 `Message = UserInput` legacy alias（没有旧代码 import 旧 `Message`）。直接用 `UserInput`。
 
-### 10.2 StoredMessage 对齐 LangChain Core（V1）
+### 10.2 StoredMessage 对齐 LangChain Core（M1）
 
 ```python
 class StoredMessage(BaseModel):
@@ -516,7 +518,7 @@ class StoredMessage(BaseModel):
 
 序列化优先复用官方 `messages_to_dict / messages_from_dict`，`StoredMessage` 仅作 DB schema 薄封装。转换集中在 `domain/services/messages/serializer.py`。
 
-### 10.3 ◆ Command：请求意图，不是事件（V1 最小实现）
+### 10.3 ◆ Command：请求意图，不是事件（M1 最小实现）
 
 Command 表达"请系统做某事"，可能成功/失败/被拒绝/进入等待；不是已发生的事实。API、队列、worker、人工介入入口优先用 Command 表达请求，而非伪造一个"将要发生的 Event"。
 
@@ -546,13 +548,13 @@ class ResumeRunCommand(BaseCommand):
 Command 的处理结果必须落成 DomainEvent（`RunCreated` / `RunRejected` / `RunResumed` / `RunCancelled`）。
 
 ```text
-▲ V1/V2 切分：
-  V1 只需 CreateRun / ResumeRun / CancelRun 三个最小 Command；不需要完整 Command 总线、
-    不需要 correlation/causation 链路。Command 在 V1 就是"带 idempotency_key 的请求体"。
-  V2 再扩：CommandHandler 注册表、RequestToolApproval 等更多命令、跨进程 Command over TransportMessage。
+▲ M1/M2 切分：
+  M1 只需 CreateRun / ResumeRun / CancelRun 三个最小 Command；不需要完整 Command 总线、
+    不需要 correlation/causation 链路。Command 在 M1 就是"带 idempotency_key 的请求体"。
+  M2 再扩：CommandHandler 注册表、RequestToolApproval 等更多命令、跨进程 Command over TransportMessage。
 ```
 
-V2 目标态（完整 Command 形态，作为 V2 目标态，V1 不必全建）：
+M2 目标态（完整 Command 形态，作为 M2 目标态，M1 不必全建）：
 
 ```python
 class BaseCommand(BaseModel):
@@ -570,7 +572,7 @@ class CreateRunCommand(BaseCommand):
     session_id: str
     user_input: UserInput
     graph_name: str
-    requested_graph_version: str | None = None     # V2：配 GraphRegistry 版本锁定
+    requested_graph_version: str | None = None     # M2：配 GraphRegistry 版本锁定
 
 class ResumeRunCommand(BaseCommand):
     type: Literal["ResumeRun"] = "ResumeRun"
@@ -584,13 +586,13 @@ class CancelRunCommand(BaseCommand):
     reason: str = ""
 ```
 
-### 10.4 ◆ Event：事实模型 + 通道分类 + 调用树身份（V1 上 domain/ui 两类）
+### 10.4 ◆ Event：事实模型 + 通道分类 + 调用树身份（M1 上 domain/ui 两类）
 
 ```python
 class RunLineage(BaseModel):           # ★ correlation/tracing 轴，区别于 SecurityContext(authz 轴)
     run_id: str
-    root_run_id: str | None = None     # 多 Agent/子图调用树根（V1 = run_id）
-    parent_run_id: str | None = None   # 父 run（V1 = None）
+    root_run_id: str | None = None     # 多 Agent/子图调用树根（M1 = run_id）
+    parent_run_id: str | None = None   # 父 run（M1 = None）
     session_id: str
     thread_id: str | None = None
     graph_name: str | None = None
@@ -603,8 +605,8 @@ class RunLineage(BaseModel):           # ★ correlation/tracing 轴，区别于
 class EventCategory(str, Enum):
     domain = "domain"          # 业务事实，append-only，审计/回放
     ui = "ui"                  # 前端展示投影，可补发
-    integration = "integration"# 跨 app 协作，走 RabbitMQ（V2）
-    runtime = "runtime"        # 运行观测，trace/debug/metrics，可丢（V2 TraceSink）
+    integration = "integration"# 跨 app 协作，走 RabbitMQ（M2）
+    runtime = "runtime"        # 运行观测，trace/debug/metrics，可丢（M2 TraceSink）
 
 class BaseEvent(BaseModel):
     id: str
@@ -617,17 +619,17 @@ class BaseEvent(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 ```
 
-◆ 采用"按通道拆基类"，但 **V1 只实现 DomainEvent / UIEvent 两类**：
+◆ 采用"按通道拆基类"，但 **M1 只实现 DomainEvent / UIEvent 两类**：
 
 ```python
 class DomainEvent(BaseEvent):
     category: Literal[EventCategory.domain] = EventCategory.domain
 class UIEvent(BaseEvent):
     category: Literal[EventCategory.ui] = EventCategory.ui
-# IntegrationEvent / RuntimeEvent -> V2（跨 app / 观测平台真正需要时再加）
+# IntegrationEvent / RuntimeEvent -> M2（跨 app / 观测平台真正需要时再加）
 ```
 
-核心 DomainEvent 名称（V1 子集即可）：
+核心 DomainEvent 名称（M1 子集即可）：
 
 ```text
 RunCreated / RunStarted / RunWaiting / RunCompleted / RunFailed / RunCancelled
@@ -643,18 +645,18 @@ TimelineUserMessageAdded / TimelineAssistantMessageFinalized / TimelinePlanDispl
 TimelineStepUpdated / TimelineToolCardUpdated / TimelineWaitInputDisplayed / TimelineRunFinished
 ```
 
-> ▲ V1/V2 切分：完整目标态会定义 domain/ui/integration/runtime 四类基类 + 全套名称。本修订 V1 只落 domain/ui，把 integration/runtime 留到对应能力（跨 app / 观测平台）真正进场时再加——避免一开始就维护四套永远只用到两套的类型。
+> ▲ M1/M2 切分：完整目标态会定义 domain/ui/integration/runtime 四类基类 + 全套名称。本修订 M1 只落 domain/ui，把 integration/runtime 留到对应能力（跨 app / 观测平台）真正进场时再加——避免一开始就维护四套永远只用到两套的类型。
 
-V2 目标态（完整四类基类 + 全套事件名，作为 V2 目标态，V1 不必全建）：
+M2 目标态（完整四类基类 + 全套事件名，作为 M2 目标态，M1 不必全建）：
 
 ```python
 class DomainEvent(BaseEvent):
     category: Literal[EventCategory.domain] = EventCategory.domain
 class UIEvent(BaseEvent):
     category: Literal[EventCategory.ui] = EventCategory.ui
-class IntegrationEvent(BaseEvent):       # V2：跨 app 协作，走 RabbitMQ
+class IntegrationEvent(BaseEvent):       # M2：跨 app 协作，走 RabbitMQ
     category: Literal[EventCategory.integration] = EventCategory.integration
-class RuntimeEvent(BaseEvent):           # V2：运行观测，走 TraceSink，不进 session_events
+class RuntimeEvent(BaseEvent):           # M2：运行观测，走 TraceSink，不进 session_events
     category: Literal[EventCategory.runtime] = EventCategory.runtime
 ```
 
@@ -669,12 +671,12 @@ class RuntimeEvent(BaseEvent):           # V2：运行观测，走 TraceSink，�
 完整 UIEvent 名称：
   TimelineUserMessageAdded / TimelineAssistantMessageFinalized / TimelinePlanDisplayed
   TimelineStepUpdated / TimelineToolCardUpdated / TimelineWaitInputDisplayed / TimelineRunFinished
-完整 IntegrationEvent 名称（V2）：
+完整 IntegrationEvent 名称（M2）：
   DocumentIngestRequested / KnowledgeIndexUpdated / RunCompleted / ConfigPublished
-RuntimeEvent（V2）：节点生命周期、模型 token 计量、reasoning delta、工具 stdout、耗时、内部告警。
+RuntimeEvent（M2）：节点生命周期、模型 token 计量、reasoning delta、工具 stdout、耗时、内部告警。
 ```
 
-### 10.5 Plan/Step 从"展示模型"升级为"执行模型"（V1）
+### 10.5 Plan/Step 从"展示模型"升级为"执行模型"（M1）
 
 ```python
 class Step(BaseModel):
@@ -703,10 +705,10 @@ StoredMessage:     LLM 上下文消息的持久化形态。
 BaseMessage:       LangChain Core 运行时消息协议，只在 ACL 内出现。
 UIEvent:           前端时间线投影，不叫 MessageEvent。
 DomainEvent:       已发生事实，审计真相源。
-# TransportMessage: 通信 envelope，只在 adapter/broker/SSE 边界（V2，§18.5）。
+# TransportMessage: 通信 envelope，只在 adapter/broker/SSE 边界（M2，§18.5）。
 ```
 
-### 11.2 转换路径（V1）
+### 11.2 转换路径（M1）
 
 ```text
 UserInput -> HumanMessage -> StoredMessage
@@ -779,7 +781,7 @@ ThreadMemory：同一份 state 被 Checkpointer 落盘后跨"轮次/重启/resum
 
 落地职责（用 Port 包一层）：Checkpointer(CheckpointPort) 持久化当前 thread state 快照 = ThreadMemory；Store(MemoryStorePort) 持久化跨 thread 长期信息 = LongTermMemory；AgentMemory(MemoryRepository) 是介于两者之间的 session 级可压缩上下文。
 
-### 12.3 AgentMemory 与 MemoryPolicy（V1）
+### 12.3 AgentMemory 与 MemoryPolicy（M1）
 
 ```python
 class AgentMemory(BaseModel):
@@ -808,7 +810,7 @@ class MemoryPolicy(BaseModel):
 
 ### 12.4 ▲ 长期记忆：分类、价值判据与"不写"清单（重写——这才是 longterm 该重点着墨处）
 
-早期规划把长期记忆写得很薄（与事件/端口的笔墨严重不成比例），而文档名就叫 *longterm*。本修订把它补成一个**有判据、可度量**的子系统。注意：**长期记忆的深度集成属于 V2**（§0.1），但其判据必须现在想清楚，否则一开始就会写脏。
+早期规划把长期记忆写得很薄（与事件/端口的笔墨严重不成比例），而文档名就叫 *longterm*。本修订把它补成一个**有判据、可度量**的子系统。注意：**长期记忆的深度集成属于 M2**（§0.1），但其判据必须现在想清楚，否则一开始就会写脏。
 
 分类（不变）：Semantic（事实）/ Episodic（任务经验）/ Procedural（可复用流程）/ Preference（偏好）。
 
@@ -852,7 +854,7 @@ class MemoryPolicy(BaseModel):
 
 ---
 
-## 13. RAGFlow / Knowledge 集成（V1 最多只读 retrieve，深度集成 V2）
+## 13. RAGFlow / Knowledge 集成（M1 最多只读 retrieve，深度集成 M2）
 
 ### 13.1 定位
 
@@ -913,8 +915,8 @@ class RetrievedChunk(BaseModel):
 ### 13.7 实施优先级
 
 ```text
-V1（若需要）：只做 ragflow_retrieve 只读检索。
-V2：ragflow_ask + 引用 -> KnowledgeAgent -> ragflow_ingest（加权限审批）-> 引用前端展示与知识库管理 UI。
+M1（若需要）：只做 ragflow_retrieve 只读检索。
+M2：ragflow_ask + 引用 -> KnowledgeAgent -> ragflow_ingest（加权限审批）-> 引用前端展示与知识库管理 UI。
 ```
 
 ### 13.8 RAGFlow 知识工程专题沉淀
@@ -957,13 +959,13 @@ RAG-02-golden-set.yaml：首个分块策略检索评估集。
 - Embedding、chunk、retrieval、generation profile 都必须版本化，变更后可评估、可回滚、可重建。
 - overlap 默认控制在 10%-25%，避免存储膨胀、重复召回和上下文浪费。
 - retrieve 后必须考虑去重 / MMR / parent-document / rerank / token budget / 引用标准化。
-- RAGFlow 深度集成进入 V2 前，先建立真实 query golden set、离线评估口径、bad case 回流和可观测性指标。
+- RAGFlow 深度集成进入 M2 前，先建立真实 query golden set、离线评估口径、bad case 回流和可观测性指标。
 - 高风险场景（医疗、法律、金融数值问答等）默认不自动开放，必须有权限、审计、人工抽检和更高评估门槛。
 ```
 
 `~/rag/` 中的专题方案作为 Knowledge App 的 ingestion / retrieval / evaluation contract 候选输入；只有沉淀为可执行配置、预处理流程、RAGFlow Adapter 能力或评估门禁后，才进入平台实现。该目录不是运行时依赖，也不进入 `k8s` Git 仓库。
 
-### 13.9 ▲ EvidenceAssembler：跨源证据装配层（吸收 Agently 4.1.3.9 Workspace 的"证据装配"思想；V2，V1 只留边界与命名）
+### 13.9 ▲ EvidenceAssembler：跨源证据装配层（吸收 Agently 4.1.3.9 Workspace 的"证据装配"思想；M2，M1 只留边界与命名）
 
 §13.8 的"去重 / MMR / rerank / token budget / 引用标准化"主要落在 Knowledge App / RAGFlow 边界内，且只覆盖 RAG 一条源。但真正进入 Agent prompt 前，证据是**跨源**的：
 
@@ -986,7 +988,7 @@ EvidenceAssembler 只读各来源结果，不持有存储。
   只在装配层汇合成带来源标签的 EvidenceBlock —— 不在召回口抹平各源治理差异。
 ```
 
-V2 目标态（V1 不实现，仅作命名与边界占位）：
+M2 目标态（M1 不实现，仅作命名与边界占位）：
 
 ```python
 class EvidenceBlock(BaseModel):
@@ -1021,17 +1023,17 @@ class EvidenceBlock(BaseModel):
 - 装配层不替代 RAGFlow、不替代 LongTermMemory、不替代 EventSink。
 ```
 
-V1/V2 切分：
+M1/M2 切分：
 
 ```text
-V1：只在 §13.5 单 RetrievedChunk 与 §12.5 记忆召回之上留命名与边界占位；
+M1：只在 §13.5 单 RetrievedChunk 与 §12.5 记忆召回之上留命名与边界占位；
     prompt 装配先用最小拼接 + token 截断即可，不做跨源 rerank / 投影。
-V2：完整 EvidenceAssembler —— 跨源合并、结构门控 rerank、model-hot 投影、raw readback、evidence≠完成证明门禁。
+M2：完整 EvidenceAssembler —— 跨源合并、结构门控 rerank、model-hot 投影、raw readback、evidence≠完成证明门禁。
 ```
 
 ---
 
-## 14. LangGraph 运行时设计（V1 核心）
+## 14. LangGraph 运行时设计（M1 核心）
 
 ### 14.1 概念区分
 
@@ -1053,7 +1055,7 @@ START
   -> persist_memory -> END
 ```
 
-### 14.3 ★ State 设计 + Reducer（V1 关键）
+### 14.3 ★ State 设计 + Reducer（M1 关键）
 
 裸字段在多节点/并行/重放时会丢更新，必须为累积型字段配幂等 reducer。
 
@@ -1074,7 +1076,7 @@ def append_unique(old, new):                                    # 按 id 去重�
 class PlannerReactState(TypedDict, total=False):
     session_id: str
     run_id: str
-    tenant_id: str            # V1 可固定占位
+    tenant_id: str            # M1 可固定占位
     user_id: str | None
     project_id: str | None
     user_input: dict
@@ -1100,11 +1102,11 @@ class PlannerReactState(TypedDict, total=False):
 
 ### 14.5 GraphRuntimeService（Facade）
 
-`application/services/agent_run_service.py` 职责：创建 run、选择 graph（V1 单图，V2 含版本）、构造 config、传 thread_id、启动 stream、处理 interrupt/resume、把 LangGraph stream 转 MoocManus DomainEvent/UIEvent、更新 Session。API route 不直接调用 graph。
+`application/services/agent_run_service.py` 职责：创建 run、选择 graph（M1 单图，M2 含版本）、构造 config、传 thread_id、启动 stream、处理 interrupt/resume、把 LangGraph stream 转 MoocManus DomainEvent/UIEvent、更新 Session。API route 不直接调用 graph。
 
 ---
 
-## 15. ★ 重放安全：reducer + 工具幂等 + 并发幂等（V1 核心，Walking Skeleton 先验证）
+## 15. ★ 重放安全：reducer + 工具幂等 + 并发幂等（M1 核心，Walking Skeleton 先验证）
 
 ### 15.1 Reducer 幂等
 
@@ -1131,7 +1133,7 @@ created -> running -> (waiting <-> running)* -> completed
 - run 必须带 idempotency_key：API 重试/双击/SSE 重连触发的重复创建靠它去重。
 ```
 
-### 15.4 图版本锁定（GraphRegistry）—— V2
+### 15.4 图版本锁定（GraphRegistry）—— M2
 
 ```text
 GraphSpec: graph_name + version（不可变）+ nodes/edges/默认模型/入口/中断点定义。
@@ -1139,9 +1141,9 @@ agent_runs 必须 pin: graph_name + graph_version + agent_profile_version + prom
 已发布 GraphSpec 不可改，只能发新版本；活跃 run 锁定创建时版本直到结束（天然灰度）。
 ```
 
-> ▲ V1/V2：版本化是 V2。V1 单图阶段，graph 就是代码里的一份定义，不需要 registry 与 run 版本锁。但 §24 落库 schema 现在就预留 `graph_version` 字段（便宜的前向兼容）。
+> ▲ M1/M2：版本化是 M2。M1 单图阶段，graph 就是代码里的一份定义，不需要 registry 与 run 版本锁。但 §24 落库 schema 现在就预留 `graph_version` 字段（便宜的前向兼容）。
 
-### 15.5 ★ 控制流铁律：路由不靠事件（ADR-019，V1 就守）
+### 15.5 ★ 控制流铁律：路由不靠事件（ADR-019，M1 就守）
 
 ```text
 铁律：graph 内部控制流只由 LangGraph 的 state / 条件边(edge) / Command / interrupt 决定。
@@ -1155,7 +1157,7 @@ agent_runs 必须 pin: graph_name + graph_version + agent_profile_version + prom
 
 ---
 
-## 16. ★ 错误模型与预算治理（V1 上）
+## 16. ★ 错误模型与预算治理（M1 上）
 
 ### 16.1 统一错误分类
 
@@ -1191,7 +1193,7 @@ class RunBudget(BaseModel):
 
 ---
 
-## 17. Human-in-the-loop 设计（V1 核心，Walking Skeleton 先验证）
+## 17. Human-in-the-loop 设计（M1 核心，Walking Skeleton 先验证）
 
 ### 17.1 标准流程（基于 interrupt）
 
@@ -1213,18 +1215,18 @@ interrupt payload 必须 JSON 可序列化；interrupt 前副作用必须幂等�
 
 ---
 
-## 18. ★◆ 事件架构：事实流 + 投影（V1 上 DomainEvent/UIEvent + Projector；TransportMessage 延后 V2）
+## 18. ★◆ 事件架构：事实流 + 投影（M1 上 DomainEvent/UIEvent + Projector；TransportMessage 延后 M2）
 
-> ◆ 本节采用"事实流 / 投影"分层。▲ 但本修订把 TransportMessage envelope、IntegrationEvent、CQRS 物化、TraceSink 全部划入 V2，V1 只做能让单 Graph 跑通并被前端正确渲染的最小集。
+> ◆ 本节采用"事实流 / 投影"分层。▲ 但本修订把 TransportMessage envelope、IntegrationEvent、CQRS 物化、TraceSink 全部划入 M2，M1 只做能让单 Graph 跑通并被前端正确渲染的最小集。
 
 ### 18.1 事件分层
 
 ```text
-DomainEvent（事实流，V1）：graph/command handler 产生，写 session_events（append-only，审计/回放真相）。
-UIEvent（投影视图，V1）：从 DomainEvent 投影出的前端友好视图，可按 last_event_id 补发。
-Integration Event（跨 app，走 RabbitMQ）—— V2：research-app ↔ knowledge-app、配置发布等。
-Runtime / Observation Event（旁路观测）—— V2：节点生命周期、token 计量、stdout、耗时。
-  面向 trace/debug/metrics，不作业务事实、不进前端时间线、不驱动路由；V1 可只打日志。
+DomainEvent（事实流，M1）：graph/command handler 产生，写 session_events（append-only，审计/回放真相）。
+UIEvent（投影视图，M1）：从 DomainEvent 投影出的前端友好视图，可按 last_event_id 补发。
+Integration Event（跨 app，走 RabbitMQ）—— M2：research-app ↔ knowledge-app、配置发布等。
+Runtime / Observation Event（旁路观测）—— M2：节点生命周期、token 计量、stdout、耗时。
+  面向 trace/debug/metrics，不作业务事实、不进前端时间线、不驱动路由；M1 可只打日志。
 ```
 
 分层判定准则（litmus）：
@@ -1232,11 +1234,11 @@ Runtime / Observation Event（旁路观测）—— V2：节点生命周期、to
 ```text
 丢了它会破坏审计 / 回放 / 计费 / 法务  -> DomainEvent（严格 schema，不可丢）
 它只是 DomainEvent 的前端友好视图      -> UIEvent（投影，可补发，可丢可重建）
-它要跨业务应用通知别的服务              -> Integration Event（RabbitMQ，V2）
-丢了它只是少了排错 / 监控信息          -> Runtime/Observation Event（可摘要采样丢弃，V2）
+它要跨业务应用通知别的服务              -> Integration Event（RabbitMQ，M2）
+丢了它只是少了排错 / 监控信息          -> Runtime/Observation Event（可摘要采样丢弃，M2）
 ```
 
-### 18.2 ◆ Projector：DomainEvent → UIEvent（V1 核心机制）
+### 18.2 ◆ Projector：DomainEvent → UIEvent（M1 核心机制）
 
 ```text
 DomainEvent 是真相源；UIEvent 是可重建投影。
@@ -1246,9 +1248,9 @@ UIEvent 可丢弃并从 DomainEvent 重建；DomainEvent 不可丢。
 前端不得直接订阅原生 LangGraph event；只消费 UIEvent 或 LiveDelta。
 ```
 
-> ▲ V1 简化：早期规划中的 CQRS 读模型物化（session_timeline / current_plan_snapshot 物化表）是 V2。V1 直接从 `session_events` 投影/查询即可，数据量小时完全够用。先别为还没出现的读压力建物化视图。
+> ▲ M1 简化：早期规划中的 CQRS 读模型物化（session_timeline / current_plan_snapshot 物化表）是 M2。M1 直接从 `session_events` 投影/查询即可，数据量小时完全够用。先别为还没出现的读压力建物化视图。
 
-### 18.3 EventSink / Projector 职责切分（V1）
+### 18.3 EventSink / Projector 职责切分（M1）
 
 ```python
 class EventSink(Protocol):            # 业务事实出口
@@ -1258,16 +1260,16 @@ class EventProjector(Protocol):       # 投影，不是真相源
     async def project(self, event: DomainEvent) -> list[UIEvent]: ...
 ```
 
-V1 实现：`DBEventSink`（写 session_events）+ `TimelineProjector`（DomainEvent→UIEvent）+ 直接经 Redis Pub/Sub 推 SSE。
+M1 实现：`DBEventSink`（写 session_events）+ `TimelineProjector`（DomainEvent→UIEvent）+ 直接经 Redis Pub/Sub 推 SSE。
 
 ```text
 职责切分：
   EventSink 只负责 DomainEvent，保证不丢、有序、可补发。
   Projector 负责 DomainEvent -> UIEvent，不承担真相源职责。
-  (V2) IntegrationEventSink(RabbitMQ) / TraceSink(runtime 观测) / TransportAdapter(envelope)。
+  (M2) IntegrationEventSink(RabbitMQ) / TraceSink(runtime 观测) / TransportAdapter(envelope)。
 ```
 
-### 18.4 ★ 流式输出与前端 token 映射（V1，◆ 采用 LiveDelta 命名）
+### 18.4 ★ 流式输出与前端 token 映射（M1，◆ 采用 LiveDelta 命名）
 
 > ◆ 此处将 `TokenDelta` 直接改名为 `LiveDelta`：命名是零成本的前向决定，用更中性的 `LiveDelta` 能避免后续改名债。
 
@@ -1281,12 +1283,12 @@ stream_mode="values":   （可选）整图 state 快照，调试用。
 
 实时输出只有一类「live、可丢、不落库」的增量（`LiveDelta`，走 Redis Pub/Sub / SSE live channel），统一靠 final UIEvent 对账——不另立 StreamChunk 概念；进度提示作为 `LiveDelta` 的一种 `kind`（如 `kind="token"|"progress"`）即可。
 
-### 18.5 ◆ TransportMessage 与 Broker 边界（▲ 延后 V2，此处只记录目标形态）
+### 18.5 ◆ TransportMessage 与 Broker 边界（▲ 延后 M2，此处只记录目标形态）
 
 当系统真正长出"多 broker（Redis/RabbitMQ/SSE）+ 多 app 协作 + 跨进程 Command"时，需要一个显式传输 envelope，把"业务对象"与"传输载体"分开：
 
 ```python
-# —— 以下为 V2 目标形态（完整 schema 作为 V2 目标态），V1 不实现，仅作命名占位，避免将来改名债 ——
+# —— 以下为 M2 目标形态（完整 schema 作为 M2 目标态），M1 不实现，仅作命名占位，避免将来改名债 ——
 class TransportKind(str, Enum):
     command = "command"; event = "event"; response = "response"; live_delta = "live_delta"
 
@@ -1305,19 +1307,19 @@ class TransportMessage(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now)
 ```
 
-V2 还需补的两个 Protocol（V1 不建，目标态记此）：
+M2 还需补的两个 Protocol（M1 不建，目标态记此）：
 
 ```python
 class TransportAdapter(Protocol):     # 传输 envelope 边界（Redis/SSE/RabbitMQ）
     async def publish(self, message: TransportMessage) -> None: ...
 
-class EventSinkV2(Protocol):          # V2：事实出口扩出 integration 通道
+class EventSinkM2(Protocol):          # M2：事实出口扩出 integration 通道
     async def emit_domain(self, event: DomainEvent) -> None: ...
     async def emit_integration(self, event: IntegrationEvent) -> None: ...
 ```
 
 ```text
-V2 映射：
+M2 映射：
   Command   -> TransportMessage(kind=command) -> worker -> CommandHandler
   UIEvent   -> TransportMessage(kind=event)   -> SSE adapter -> 前端
   IntegrationEvent -> TransportMessage(kind=event) -> RabbitMQ -> 其他 app
@@ -1325,7 +1327,7 @@ V2 映射：
 铁律（现在就立）：TransportMessage 不进入 domain model / graph state / memory / DomainEvent payload；只存在于 adapter/broker 边界。
 ```
 
-V2 broker 边界全链路示例（Broker 只认识消息，不认识业务事件；payload 才是 Command/Event）：
+M2 broker 边界全链路示例（Broker 只认识消息，不认识业务事件；payload 才是 Command/Event）：
 
 ```text
 API -> Celery:        CreateRunCommand -> TransportMessage(kind=command) -> 队列 -> worker 反序列化为 CreateRunCommand
@@ -1334,23 +1336,23 @@ worker/API -> 前端:   UIEvent(TimelineRunStarted) -> TransportMessage(kind=eve
 research-app -> knowledge-app: IntegrationEvent(DocumentIngestRequested) -> TransportMessage(kind=event) -> RabbitMQ
 ```
 
-V2 CQRS 读模型（V1 直查事件流即可，物化是 V2）：
+M2 CQRS 读模型（M1 直查事件流即可，物化是 M2）：
 
 ```text
 写模型：session_events（不可变事件流，审计/回放真相）
-读模型（V2 物化）：session_timeline（前端时间线）/ current_plan_snapshot（当前计划）/ run_summary
+读模型（M2 物化）：session_timeline（前端时间线）/ current_plan_snapshot（当前计划）/ run_summary
 审计/回放靠事件流，前端读靠物化视图，互不拖累。
 ```
 
-> ▲ 关键取舍：不要把 TransportMessage 写成 V1 领域模型与目录的一部分。在只有一个 Redis+SSE 通道、还没有跨 app 协作的 V1 阶段，引入 envelope 是**为尚未出现的复杂度提前付费**。折中：**现在立命名铁律 + 留上述完整 V2 目标态**，但 V1 直接用 Redis/SSE 原生载体，等第二个 broker 或第二个 app 真正进场再落地 envelope。
+> ▲ 关键取舍：不要把 TransportMessage 写成 M1 领域模型与目录的一部分。在只有一个 Redis+SSE 通道、还没有跨 app 协作的 M1 阶段，引入 envelope 是**为尚未出现的复杂度提前付费**。折中：**现在立命名铁律 + 留上述完整 M2 目标态**，但 M1 直接用 Redis/SSE 原生载体，等第二个 broker 或第二个 app 真正进场再落地 envelope。
 
-### 18.6 事件可靠性（V1）
+### 18.6 事件可靠性（M1）
 
 event_id 全局唯一；run_id 标识一次 run；sequence_no 保证同 session 有序；tool_call_id 合并 requested/completed/failed；前端按 UIEvent.id 去重；SSE 断线按 last_event_id 补发（仅落库并可重建的 UIEvent）。
 
 ---
 
-## 19. 工具体系设计（V1）
+## 19. 工具体系设计（M1）
 
 ### 19.1 双层工具模型
 
@@ -1416,24 +1418,24 @@ tool_call -> ToolExecutionPort.invoke -> ToolExecutionResult
 - handler 必须幂等：同一 tool_call_id 重放时不得重复上传文件/重复截图/重复写库（呼应 §15.2）。
 ```
 
-> ▲ V1/V2 与"现在就拆"的理由：这个重构**便宜、纯属内部结构**，且**正好就是 §18.2 Projector「DomainEvent→UIEvent」的工具特化**——所以 V1 就该按策略拆，将来这些 handler 的 `to_domain_events` 几乎能平移成 projector 的工具卡片投影器，不白做。V1 可以先只把 `normalize_for_llm` + `to_domain_events` 做齐，`collect_artifacts` 按需补。
+> ▲ M1/M2 与"现在就拆"的理由：这个重构**便宜、纯属内部结构**，且**正好就是 §18.2 Projector「DomainEvent→UIEvent」的工具特化**——所以 M1 就该按策略拆，将来这些 handler 的 `to_domain_events` 几乎能平移成 projector 的工具卡片投影器，不白做。M1 可以先只把 `normalize_for_llm` + `to_domain_events` 做齐，`collect_artifacts` 按需补。
 
 ### 19.4 工具权限与高风险审批
 
 权限：read_file / write_file / execute_shell / browser_access / network_access / mcp_access / a2a_access / write_memory / delete_memory。默认需审批：删文件、覆盖文件、执行 shell、访问外网、调用远程 MCP、写长期记忆、导出敏感文件。
 
-> ▲ V1：工具权限**枚举与校验点**现在就上（便宜且涉及安全），但**审批流 UI / 多 Agent 差异化工具集**是 V2。
+> ▲ M1：工具权限**枚举与校验点**现在就上（便宜且涉及安全），但**审批流 UI / 多 Agent 差异化工具集**是 M2。
 
 ---
 
-## 20. 多智能体架构（V2）
+## 20. 多智能体架构（M2）
 
 ### 20.1 演进顺序
 
 ```text
-阶段一（V1）：单 Graph，Planner + ReAct。
-阶段二（V2）：Supervisor + 专业 Agent。
-阶段三（V2+）：多 Graph、多 Agent、可配置编排。
+阶段一（M1）：单 Graph，Planner + ReAct。
+阶段二（M2）：Supervisor + 专业 Agent。
+阶段三（M2+）：多 Graph、多 Agent、可配置编排。
 ```
 
 ### 20.2 AgentProfile
@@ -1467,7 +1469,7 @@ Long-term Store:       按 namespace、权限、召回策略读取。
 
 ---
 
-## 21. ★ 多租户与安全上下文传播（V1 留占位，V2 全链路）
+## 21. ★ 多租户与安全上下文传播（M1 留占位，M2 全链路）
 
 ### 21.1 租户隔离贯穿每一层
 
@@ -1489,42 +1491,42 @@ class SecurityContext(BaseModel):
 
 入队时随消息序列化，worker 取出后重建，注入每个工具调用与沙箱请求；工具/沙箱执行前再校验一次 scope（纵深防御）。
 
-> ▲ V1/V2：这是少数"现在留接口、V2 才全链路"的设计。V1 单租户场景，SecurityContext 可以是**固定单租户值 + run_id**，但**字段结构与"每跳重建"的传播位置现在就预留**——因为补租户隔离若要回填历史调用链，成本极高（同 §28 lineage 占位的理由一致）。
+> ▲ M1/M2：这是少数"现在留接口、M2 才全链路"的设计。M1 单租户场景，SecurityContext 可以是**固定单租户值 + run_id**，但**字段结构与"每跳重建"的传播位置现在就预留**——因为补租户隔离若要回填历史调用链，成本极高（同 §28 lineage 占位的理由一致）。
 
 ---
 
-## 22. ★ 沙箱与资源生命周期 + 故障隔离（V1 基础，配额/bulkhead V2）
+## 22. ★ 沙箱与资源生命周期 + 故障隔离（M1 基础，配额/bulkhead M2）
 
 ```text
 归属：Sandbox 作为 SandboxPort 实现，由数据面 worker 申请/释放。
 策略：
-  池化：预热 pool 降冷启动；按 tenant 配额限制并发（配额 V2）。
+  池化：预热 pool 降冷启动；按 tenant 配额限制并发（配额 M2）。
   绑定：sandbox 生命周期 ≤ session；interrupt 等待期可回收，resume 时重建。
-  GC：run 结束/超时/失败统一回收，避免泄漏（V1 就要做，否则跑几次就泄漏）。
-  隔离：每租户独立网络/资源限制，防 noisy neighbor 与逃逸（V2 bulkhead）。
+  GC：run 结束/超时/失败统一回收，避免泄漏（M1 就要做，否则跑几次就泄漏）。
+  隔离：每租户独立网络/资源限制，防 noisy neighbor 与逃逸（M2 bulkhead）。
 ```
 
 ---
 
-## 23. ★ 模型与 Prompt 抽象层（V1 单 provider，多 provider V2）
+## 23. ★ 模型与 Prompt 抽象层（M1 单 provider，多 provider M2）
 
 ### 23.1 Model Gateway（实现 LLMPort）
 
 ```text
-- 多 provider（OpenAI / Anthropic / 本地 vLLM / 自建）—— V2。
-- 主备 fallback —— V2。
-- 按 agent/任务路由不同档位模型 —— V2。
-- 统一注入 token 计量、tracing、超时、重试、预算扣减 —— V1 就要（预算在 §16）。
-- 屏蔽不同 provider tool-calling 协议差异 —— V1 接一个就行。
+- 多 provider（OpenAI / Anthropic / 本地 vLLM / 自建）—— M2。
+- 主备 fallback —— M2。
+- 按 agent/任务路由不同档位模型 —— M2。
+- 统一注入 token 计量、tracing、超时、重试、预算扣减 —— M1 就要（预算在 §16）。
+- 屏蔽不同 provider tool-calling 协议差异 —— M1 接一个就行。
 ```
 
-> ▲ V1：LLMPort 接口现在就定义（domain 不直接耦合某 SDK），但背后**先只接一个 provider（如 DeepSeek）**。Gateway 的多 provider/fallback/路由是 V2。
+> ▲ M1：LLMPort 接口现在就定义（domain 不直接耦合某 SDK），但背后**先只接一个 provider（如 DeepSeek）**。Gateway 的多 provider/fallback/路由是 M2。
 
-### 23.2 PromptRegistry（V2，V1 用带 id 的常量即可）
+### 23.2 PromptRegistry（M2，M1 用带 id 的常量即可）
 
 ```text
 prompt_id + version + 模板 + 变量 schema；运行时按 (agent, version) 取，trace 记录用了哪个版本。
-V1：prompt 用带 prompt_id 的代码常量，先不做版本化存储；但事件/日志现在就记录 prompt_id（便宜的可追溯）。
+M1：prompt 用带 prompt_id 的代码常量，先不做版本化存储；但事件/日志现在就记录 prompt_id（便宜的可追溯）。
 ```
 
 ---
@@ -1543,14 +1545,14 @@ session_files(id,session_id,file_path,filename,mime_type,size,storage_url,metada
 agent_memories(id,session_id,agent_name,schema_version,messages JSONB,summary,pinned_facts JSONB,token_count,version,updated_at)
 long_term_memories(id,namespace,scope,tenant_id,user_id,project_id,memory_type,content,embedding_id,confidence,source_session_id,sensitive,metadata JSONB,ttl,created_at,updated_at,last_used_at)
 graph_checkpoints(由 CheckpointPort 实现管理；存运行时 AgentState 的快照 = ThreadMemory)
-读模型（V2）：session_timeline / current_plan_snapshot / run_summary（由 projector 物化）
+读模型（M2）：session_timeline / current_plan_snapshot / run_summary（由 projector 物化）
 ```
 
-> ◆ 类型边界：`session_events` 现在就含 `category / payload_schema_version / lineage`（事实/投影/版本/调用树都落得下）。这是便宜且防债的字段，V1 就建。
+> ◆ 类型边界：`session_events` 现在就含 `category / payload_schema_version / lineage`（事实/投影/版本/调用树都落得下）。这是便宜且防债的字段，M1 就建。
 
 与记忆/状态相关的持久化表只有 **graph_checkpoints / agent_memories / long_term_memories** 三张——没有 `state` 表（对齐 §12.1）。
 
-### 24.2 ★ Schema 演进与重放兼容（V1 就上 schema_version + upcaster 骨架）
+### 24.2 ★ Schema 演进与重放兼容（M1 就上 schema_version + upcaster 骨架）
 
 ```text
 - 落库的消息/记忆/state/event 一律带 schema_version。
@@ -1559,18 +1561,18 @@ graph_checkpoints(由 CheckpointPort 实现管理；存运行时 AgentState 的�
   建议 checkpoint 只冻结最小稳定子集，业务大对象放外部表用 id 引用。
 ```
 
-### 24.3 ★ 数据治理与级联删除（V2，但 sensitive/ttl 字段 V1 就留）
+### 24.3 ★ 数据治理与级联删除（M2，但 sensitive/ttl 字段 M1 就留）
 
 TTL / 可删除 / 敏感标记落到结构层；用户或项目"被删除"时，级联清理 sessions / events / memories / checkpoints / RAGFlow dataset 绑定。
 
 ### 24.4 演进策略（起步从简 → 按负载拆，非迁移）
 
 ```text
-阶段1（V1）：核心表（sessions / agent_runs / session_events）按目标 schema 直接建；serializer/mapper + upcaster 就位。
-阶段2（V2）：session_events 增长最快，按需加分区/索引/归档。
-阶段3（V2）：agent_memories 独立演进。
-阶段4（V2）：session_files / long_term_memories 按需优化。
-阶段5（V2）：引入生产级 checkpointer/store。
+阶段1（M1）：核心表（sessions / agent_runs / session_events）按目标 schema 直接建；serializer/mapper + upcaster 就位。
+阶段2（M2）：session_events 增长最快，按需加分区/索引/归档。
+阶段3（M2）：agent_memories 独立演进。
+阶段4（M2）：session_files / long_term_memories 按需优化。
+阶段5（M2）：引入生产级 checkpointer/store。
 ```
 
 ---
@@ -1584,11 +1586,11 @@ ToolConfig:        name, enabled, permission, timeout, retry
 MemoryPolicyConfig:max_tokens, max_messages, summarize_strategy, long_term_write_policy
 ```
 
-V1：先 YAML + 进程内读取；不可变版本化工件（控制面产出）是 V2。
+M1：先 YAML + 进程内读取；不可变版本化工件（控制面产出）是 M2。
 
 ---
 
-## 26. ★ 模块边界与可抽取性（V1 就守边界）
+## 26. ★ 模块边界与可抽取性（M1 就守边界）
 
 ```text
 现在：Agent Runtime 作为 research-app Python 后端内的一个独立 package。
@@ -1608,7 +1610,7 @@ V1：先 YAML + 进程内读取；不可变版本化工件（控制面产出）�
 
 User Boundary / Agent Boundary / Tool Boundary / Data Boundary / Network Boundary。
 
-### 27.2 Prompt Injection 防护（V1 就上，便宜且关键）
+### 27.2 Prompt Injection 防护（M1 就上，便宜且关键）
 
 浏览器/文件/MCP/A2A 返回内容视为不可信输入：工具返回内容不得作为系统指令；文件内容不得覆盖 system prompt；外部网页不得指挥 Agent 泄露 memory；MCP 工具描述也要权限控制。
 
@@ -1618,7 +1620,7 @@ User Boundary / Agent Boundary / Tool Boundary / Data Boundary / Network Boundar
 
 ---
 
-## 28. 可观测性与评估门禁（▲ 评估骨架前移到 V1）
+## 28. 可观测性与评估门禁（▲ 评估骨架前移到 M1）
 
 ### 28.1 必须记录
 
@@ -1631,9 +1633,9 @@ Memory: recalled / written / used / ignored memories, compact events（◆ used/
 Interrupt: payload, resume input, wait duration
 ```
 
-correlation：所有日志/trace/事件携带 §10.4 的 `RunLineage`（含 root_run_id / parent_run_id），V1 单 run 时 root=run_id、parent=None，**但字段现在就贯穿**（否则后续补 trace 要回填历史）。
+correlation：所有日志/trace/事件携带 §10.4 的 `RunLineage`（含 root_run_id / parent_run_id），M1 单 run 时 root=run_id、parent=None，**但字段现在就贯穿**（否则后续补 trace 要回填历史）。
 
-### 28.2 TraceSink：Runtime/Observation 事件统一出口（V2）
+### 28.2 TraceSink：Runtime/Observation 事件统一出口（M2）
 
 ```text
 TraceSink -> LangSmith / OpenTelemetry / 本地日志 / DevTools
@@ -1643,20 +1645,20 @@ fail-open：Runtime/Observation 事件消费者忽略未知字段，不按严格
            Domain Event 仍按 schema_version + upcaster 严格演进。
 ```
 
-> ▲ V1：Runtime/Observation 事件先**只打结构化日志**，TraceSink 与投递策略是 V2。但日志现在就带 RunLineage。
+> ▲ M1：Runtime/Observation 事件先**只打结构化日志**，TraceSink 与投递策略是 M2。但日志现在就带 RunLineage。
 
-### 28.3 ▲ 评估骨架（从末期阶段前移到 V1，最小版）
+### 28.3 ▲ 评估骨架（从末期阶段前移到 M1，最小版）
 
-早期规划把评估放在最后一个阶段——这对 Agent 系统是顺序错误：**没有评估，规划质量、工具选择、记忆召回都调不动，全靠手感**。本修订把它的最小版拉到 V1（紧跟 Walking Skeleton）：
+早期规划把评估放在最后一个阶段——这对 Agent 系统是顺序错误：**没有评估，规划质量、工具选择、记忆召回都调不动，全靠手感**。本修订把它的最小版拉到 M1（紧跟 Walking Skeleton）：
 
 ```text
-V1 最小评估骨架（便宜，却能给后续每一次改动兜底）：
+M1 最小评估骨架（便宜，却能给后续每一次改动兜底）：
   - LLM 调用录制回放（VCR 式），保证 graph 路由/状态/中断恢复测试确定性。
   - 5~8 个 golden 任务：纯文本 / 一次工具 / 多次工具 / 工具失败 / ask_user 中断恢复 / 带附件。
   - 每次改 graph/prompt/tool，CI 跑 golden set，指标回退超阈值则阻断合并。
   - 第一个 golden 用例直接复用 §6.5 Walking Skeleton 的验证脚本。
 
-V2 扩展：
+M2 扩展：
   评估维度补全——计划质量 / 工具选择正确率 / 最终回答正确率 / 无效工具调用 /
   错误写长期记忆 / 记忆召回采纳率（§12.5）/ 是否按要求等待用户 / 中断恢复是否正确 /
   检索证据是否被误当作完成证明（evidence ≠ verification，§13.9）。
@@ -1701,13 +1703,13 @@ api/app
     ports/
       llm_port.py tool_execution_port.py checkpoint_port.py memory_store_port.py
       event_sink_port.py sandbox_port.py file_storage_port.py knowledge_port.py
-      # transport_port.py  # V2
+      # transport_port.py  # M2
     models/
       user_input.py commands.py events.py lineage.py stored_message.py   # ◆ 按语义拆分
       agent_profile.py agent_state.py                                     # agent_state.py = AgentState(运行时,不落地)
       memory.py memory_policy.py session.py plan.py security_context.py run_budget.py
     services/
-      graphs/        planner_react_graph.py graph_registry.py            # supervisor_graph.py V2
+      graphs/        planner_react_graph.py graph_registry.py            # supervisor_graph.py M2
       graph_nodes/   load_context.py planner.py select_step.py executor.py tools.py
                      update_plan.py summarize.py memory.py human.py retrieve_from_ragflow.py
       messages/      serializer.py input_mapper.py tool_call_mapper.py validators.py upcaster.py
@@ -1716,11 +1718,11 @@ api/app
       tools/         registry.py permissions.py adapters/langchain_adapter.py
   infrastructure/
     graph/           checkpointer.py store.py   # checkpointer.py -> graph_checkpoints(ThreadMemory)
-    model/           model_gateway.py prompt_registry.py                  # 多 provider/registry V2
+    model/           model_gateway.py prompt_registry.py                  # 多 provider/registry M2
     external/        ragflow/ragflow_client.py sandbox/docker_sandbox.py
-    messaging/       redis_adapter.py sse_adapter.py run_consumer.py      # transport_message.py / rabbitmq_adapter.py V2
+    messaging/       redis_adapter.py sse_adapter.py run_consumer.py      # transport_message.py / rabbitmq_adapter.py M2
     repositories/    session_repository.py event_repository.py memory_repository.py run_repository.py
-    observability/   trace_sink.py metrics.py                             # V2
+    observability/   trace_sink.py metrics.py                             # M2
 ```
 
 运行时对象 ↔ 代码位置 ↔ 持久化表（对齐 §12.1）：
@@ -1737,9 +1739,9 @@ LongTermMemory domain/models/memory.py        infrastructure/graph/store.py(Memo
 
 ## 31. ▲ 分阶段实施路线（本修订：先验证竖线，再铺平台）
 
-> 原则：先用 Walking Skeleton 证伪最危险假设；再打通"能用的单 Graph 产品"（V1）；平台能力（多租户/版本化/多 provider/多智能体/CQRS/RAGFlow 深度）一律 V2，等负载与需求真正出现再做。
+> 原则：先用 Walking Skeleton 证伪最危险假设；再打通"能用的单 Graph 产品"（M1）；平台能力（多租户/版本化/多 provider/多智能体/CQRS/RAGFlow 深度）一律 M2，等负载与需求真正出现再做。
 
-### 31.1 V1 路线（先打通这条竖线）
+### 31.1 M1 路线（先打通这条竖线）
 
 | 优先级 | 阶段 | 内容 | 关键依赖 |
 |---|---|---|---|
@@ -1752,23 +1754,23 @@ LongTermMemory domain/models/memory.py        infrastructure/graph/store.py(Memo
 | P1 | 阶段 4 | MemoryManager：AgentMemory、MemoryPolicy、compactor、summary | 阶段 1 |
 | P1 | 阶段 5 | LangGraph Planner-ReAct：State+Reducer、GraphRuntimeService、**ToolResultHandler 策略注册表（§19.3）**、工具重放幂等、错误模型、预算 | 阶段 3,4 |
 | P1 | 阶段 6 | Interrupt + Checkpoint：durable checkpointer、session_id=thread_id、ask_user→interrupt、resume API、waiting/running 切换 | 阶段 5 |
-| P1 | 阶段 7 | **V1 收尾**：单 Graph 在 golden set 上达标（对照旧项目抽取的样本）→ 接到用户流量；V1 可演示可发布 | 阶段 5,6 |
+| P1 | 阶段 7 | **M1 收尾**：单 Graph 在 golden set 上达标（对照旧项目抽取的样本）→ 接到用户流量；M1 可演示可发布 | 阶段 5,6 |
 
-### 31.2 V2 路线（V1 稳定且被真实需求驱动后再做）
+### 31.2 M2 路线（M1 稳定且被真实需求驱动后再做）
 
 | 优先级 | 阶段 | 内容 | 触发条件 |
 |---|---|---|---|
-| P2 | V2-A | GraphRegistry 图版本化 + run pin 版本 + 灰度 | 需要在不停机下迭代图拓扑 |
-| P2 | V2-B | Model Gateway 多 provider + fallback + 路由 | 需要第二个模型/降本/容灾 |
-| P2 | V2-C | 长期记忆 Store 深度：extraction/retrieval node、召回归因、安全过滤、人工确认、级联删除 | 单 Graph 任务质量已稳，要靠记忆提升 |
-| P2 | V2-D | 多租户 SecurityContext 全链路 + 配额 + bulkhead | 真正多租户/多用户上线 |
-| P3 | V2-E | KnowledgeAgent 与 RAGFlow 深度集成（ask/ingest/引用/权限） | 知识库问答成为核心场景 |
-| P3 | V2-F | 多智能体 Supervisor：AgentProfile、AgentRegistry、handoff、agent 级隔离 | 单 Agent 明显不够用 |
-| P3 | V2-G | 生产化数据模型：session_events/agent_runs/memories 分区/索引/归档 + CQRS 读模型物化 | 数据量/读压力撑不住单表 |
-| P3 | V2-H | 完整观测治理：TransportMessage envelope + IntegrationEvent/RabbitMQ + TraceSink + 完整评估门禁 | 多 app 协作 / 需要专业可观测 |
-| P3 | V2-I | EvidenceAssembler 跨源证据装配（§13.9）：多源 evidence 去重/结构门控 rerank/token budget/model-hot 打包/raw readback + evidence≠完成证明门禁 | 单源检索已稳，需把 RAG/memory/file/artifact 多源证据统一进 prompt |
+| P2 | M2-A | GraphRegistry 图版本化 + run pin 版本 + 灰度 | 需要在不停机下迭代图拓扑 |
+| P2 | M2-B | Model Gateway 多 provider + fallback + 路由 | 需要第二个模型/降本/容灾 |
+| P2 | M2-C | 长期记忆 Store 深度：extraction/retrieval node、召回归因、安全过滤、人工确认、级联删除 | 单 Graph 任务质量已稳，要靠记忆提升 |
+| P2 | M2-D | 多租户 SecurityContext 全链路 + 配额 + bulkhead | 真正多租户/多用户上线 |
+| P3 | M2-E | KnowledgeAgent 与 RAGFlow 深度集成（ask/ingest/引用/权限） | 知识库问答成为核心场景 |
+| P3 | M2-F | 多智能体 Supervisor：AgentProfile、AgentRegistry、handoff、agent 级隔离 | 单 Agent 明显不够用 |
+| P3 | M2-G | 生产化数据模型：session_events/agent_runs/memories 分区/索引/归档 + CQRS 读模型物化 | 数据量/读压力撑不住单表 |
+| P3 | M2-H | 完整观测治理：TransportMessage envelope + IntegrationEvent/RabbitMQ + TraceSink + 完整评估门禁 | 多 app 协作 / 需要专业可观测 |
+| P3 | M2-I | EvidenceAssembler 跨源证据装配（§13.9）：多源 evidence 去重/结构门控 rerank/token budget/model-hot 打包/raw readback + evidence≠完成证明门禁 | 单源检索已稳，需把 RAG/memory/file/artifact 多源证据统一进 prompt |
 
-### 31.3 阶段验收口径（V1）
+### 31.3 阶段验收口径（M1）
 
 ```text
 阶段 0（Walking Skeleton）：§6.5.3 五条验收全绿。worker 重启能 resume；副作用不重复；SSE 不缺字。
@@ -1783,7 +1785,7 @@ LongTermMemory domain/models/memory.py        infrastructure/graph/store.py(Memo
 阶段 7：单 Graph 在 golden set 上达标（对照旧项目样本）；可对外演示并接用户流量。
 ```
 
-通用验收口径：可重放、可恢复、可计量；V2 再加可灰度、可隔离、可跨 app。
+通用验收口径：可重放、可恢复、可计量；M2 再加可灰度、可隔离、可跨 app。
 
 ---
 
@@ -1795,37 +1797,37 @@ ADR-002: 使用 LangChain Core BaseMessage 作为 LLM 消息协议
 ADR-003: Event / Message / Memory / Checkpoint 的边界（Checkpoint = 持久化的运行时 State，非记忆类别）
 ADR-004: GraphRuntimeService 的职责与 Facade 边界
 ADR-005: 长期记忆写入和召回策略（+ 召回归因，见 §12.5）
-ADR-006: 多智能体 Supervisor 模式（V2）
+ADR-006: 多智能体 Supervisor 模式（M2）
 ADR-007: 工具权限和审批策略
 ADR-008: session_id 与 thread_id 映射规则
 ADR-009: 执行拓扑——图执行者为 Python graph-runner(Celery)；checkpointer 为持久化真相源，队列仅调度
 ADR-010: Ports & Adapters 端口目录与 ACL 强制（CI 边界检查）
 ADR-011: 控制面/数据面分离与有效配置解析
-ADR-012: GraphSpec 不可变版本化与 run 版本锁定（V2）
-ADR-013: 事实流 + 投影——DomainEvent / UIEvent + Projector + CQRS 读模型（物化 V2）
-ADR-014: 多租户 namespace 与 SecurityContext 跨异步边界传播（V1 占位，V2 全链路）
+ADR-012: GraphSpec 不可变版本化与 run 版本锁定（M2）
+ADR-013: 事实流 + 投影——DomainEvent / UIEvent + Projector + CQRS 读模型（物化 M2）
+ADR-014: 多租户 namespace 与 SecurityContext 跨异步边界传播（M1 占位，M2 全链路）
 ADR-015: 重放安全（reducer 幂等 + 工具副作用幂等 + 并发幂等）
 ADR-016: Schema 演进 / upcaster / checkpoint 向后兼容
 ADR-017: Sandbox 生命周期归属、池化、GC 与故障隔离域
 ADR-018: Agent Runtime 模块边界与可抽取为独立服务的判据
 ADR-019: 控制流铁律——graph 路由只由 state/edge/Command/interrupt 决定，禁用事件驱动路由
-ADR-020: Runtime/Observation 事件层 + RunLineage + TraceSink 投递策略（V2，fail-open/不阻塞/有界 flush）
+ADR-020: Runtime/Observation 事件层 + RunLineage + TraceSink 投递策略（M2，fail-open/不阻塞/有界 flush）
 ADR-021: 记忆/状态运行时对象↔表映射——无 state 表；AgentState 仅经 Checkpointer 落 ThreadMemory
-ADR-022: ◆ Event/Message/Memory/Checkpoint/Transport 统一边界铁律（命名 V1 即生效）：
+ADR-022: ◆ Event/Message/Memory/Checkpoint/Transport 统一边界铁律（命名 M1 即生效）：
          DomainEvent=已发生事实(审计真相源, append-only)；UIEvent=投影视图(可重建可丢)；
          Command=请求意图(可被拒绝)；StoredMessage/LLMMessage=LLM 上下文持久化；
          Memory=Agent 复用(AgentMemory/LongTermMemory)；Checkpoint=运行时 state 快照(非记忆)；
-         TransportMessage=通信 envelope, 只在 adapter/broker/SSE 边界, 不进 domain model(完整 schema 属 V2)。
+         TransportMessage=通信 envelope, 只在 adapter/broker/SSE 边界, 不进 domain model(完整 schema 属 M2)。
          铁律：Event 用过去式、Command 用祈使式；UIEvent 不是真相源；TransportMessage 不入 state/memory/payload。
 ADR-023: ▲ 验证优先（Walking Skeleton）——平台级建设前先端到端证伪 checkpoint/SSE/重放三假设（§6.5）
-ADR-024: ▲ V1/V2 范围纪律——"不做它单 Graph 就跑不通"才进 V1；平台件等负载/需求驱动（§0.1、§33.1）
-ADR-025: ▲ 评估前置——最小 golden set + 录制回放在 V1 阶段 0.5 就建，而非放到最后（§28.3）
+ADR-024: ▲ M1/M2 范围纪律——"不做它单 Graph 就跑不通"才进 M1；平台件等负载/需求驱动（§0.1、§33.1）
+ADR-025: ▲ 评估前置——最小 golden set + 录制回放在 M1 阶段 0.5 就建，而非放到最后（§28.3）
 ADR-026: ◆ 工具结果处理策略——ToolExecutionResult 经 ToolResultHandler 拆成 LLM ToolMessage /
          ArtifactRef / DomainEvent 三路，runner 禁止按 tool_name 写 if/elif（§19.3）
 ADR-027: ▲ 全新重建——旧 MoocManus 彻底废弃，不部署/不兼容/不回退；旧项目仅作 golden 样本与行为参考
 ADR-028: ▲ 跨源证据装配（吸收 Agently 4.1.3.9 Workspace 的证据装配思想）——分源召回保各自治理元数据，
          统一到 EvidenceAssembler 做去重/结构门控 rerank/token budget/引用标准化/model-hot 打包；
-         EvidenceBlock 只读装配、不持有存储、不进 state；evidence ≠ 完成证明（V2，§13.9）。
+         EvidenceBlock 只读装配、不持有存储、不进 state；evidence ≠ 完成证明（M2，§13.9）。
          不引入 ResearchWorkspace 统一存储层，不新增 RuntimeEventCenter（TraceSink 已收口，ADR-020）。
 ```
 
@@ -1836,10 +1838,10 @@ ADR-028: ▲ 跨源证据装配（吸收 Agently 4.1.3.9 Workspace 的证据装�
 ### 33.1 ▲ 过程风险（本修订新增，且列为第一类——它比任何技术故障更可能杀死项目）
 
 ```text
-过度设计吞掉产品进度（最大风险）| 严格 V1/V2 切分(§0.1)；每阶段以"可演示的用户价值"验收，
-                                  而非"架构完整度"；平台件默认 V2，需举证为何必须提前。
+过度设计吞掉产品进度（最大风险）| 严格 M1/M2 切分(§0.1)；每阶段以"可演示的用户价值"验收，
+                                  而非"架构完整度"；平台件默认 M2，需举证为何必须提前。
 先规划后验证 -> 地基假设是错的    | Walking Skeleton(§6.5) 在投入平台建设前先证伪 checkpoint/SSE/重放。
-没有评估 -> 调优全靠手感          | 评估骨架前移 V1 阶段 0.5(§28.3)。
+没有评估 -> 调优全靠手感          | 评估骨架前移 M1 阶段 0.5(§28.3)。
 全新系统未验证就接流量          | 旧项目已废弃无可回退；改用 Walking Skeleton + golden set 把关，达标前不接用户流量(§9.4、阶段 7)。
 为未出现的复杂度提前付费          | TransportMessage/多 provider/CQRS 物化等只立命名占位，实现延后(§18.5)。
 ```
@@ -1849,10 +1851,10 @@ ADR-028: ▲ 跨源证据装配（吸收 Agently 4.1.3.9 Workspace 的证据装�
 ```text
 State 过大，checkpoint 成本高     | state 最小化，大对象放文件/事件/memory store
 长期记忆污染上下文                | 价值判据 + 召回归因 + 置信度/来源/过滤/人工确认（§12.4/12.5）
-多智能体过早引入 -> 复杂度爆炸    | 先单 Graph，后 Supervisor（V2）
+多智能体过早引入 -> 复杂度爆炸    | 先单 Graph，后 Supervisor（M2）
 重放重复执行副作用                | reducer 幂等 + tool_call_id 结果缓存 + 并发锁（Walking Skeleton 先验证）
 发布后旧 checkpoint 读不了        | schema_version + upcaster + checkpoint 最小稳定子集
-图拓扑变更冲突活跃 run             | GraphSpec 不可变 + run 版本锁定（V2）
+图拓扑变更冲突活跃 run             | GraphSpec 不可变 + run 版本锁定（M2）
 成本失控                          | RunBudget 预算熔断 + Model Gateway 计量
 ```
 
@@ -1864,14 +1866,14 @@ State 过大，checkpoint 成本高     | state 最小化，大对象放文件/�
 流式消息缺字                    | LiveDelta/事件双流 + final UIEvent 对账
 ```
 
-### 33.4 运维/平台风险（多数对应 V2）
+### 33.4 运维/平台风险（多数对应 M2）
 
 ```text
-长任务恢复困难                  | checkpointer + run table + 状态机（V1）
+长任务恢复困难                  | checkpointer + run table + 状态机（M1）
 工具执行失控                    | sandbox + permission + timeout + approval
-租户互相影响 / 资源泄漏          | 多租户 namespace + 配额 + bulkhead + sandbox GC（GC 是 V1）
+租户互相影响 / 资源泄漏          | 多租户 namespace + 配额 + bulkhead + sandbox GC（GC 是 M1）
 跨服务上下文丢失                | SecurityContext 序列化随队列传播，每跳重建+复校验
-观测出口拖垮主任务              | TraceSink 非阻塞 + 超时 + backpressure + 有界投递（V2）
+观测出口拖垮主任务              | TraceSink 非阻塞 + 超时 + backpressure + 有界投递（M2）
 ```
 
 ---
@@ -1889,18 +1891,18 @@ State 过大，checkpoint 成本高     | state 最小化，大对象放文件/�
        -> LangGraph PlannerReact Graph（每跳携带 RunLineage）
             -> LLM via ModelGateway(LLMPort) + prompt_id
             -> Tools via ToolRegistry(ToolExecutionPort) + SecurityContext 复校验
-            -> Knowledge via KnowledgePort -> RagflowAdapter（V1 只读 / V2 深度）
+            -> Knowledge via KnowledgePort -> RagflowAdapter（M1 只读 / M2 深度）
             -> Memory via MemoryManager(MemoryStorePort)
             -> DomainEvent via EventSink (-> DB append-only) -> Projector -> UIEvent -> Redis/SSE
-            -> Runtime/Observation -> 日志(V1) / TraceSink(V2)
+            -> Runtime/Observation -> 日志(M1) / TraceSink(M2)
        -> Checkpointer(CheckpointPort) 持久化执行状态（真相源）
   -> Redis Pub/Sub -> research-app SSE（UIEvent 投影 + last_event_id 补发）
   -> research-web-frontend 时间线（LiveDelta 流 + final UIEvent 对账）
-  -> (V2) Integration Event(RabbitMQ) 跨 research-app/knowledge-app 协作
+  -> (M2) Integration Event(RabbitMQ) 跨 research-app/knowledge-app 协作
   -> Repositories 持久化 Session/Event/File/Run
 ```
 
-从零设计、不被旧 message/memory 体系困住；既用 LangGraph 的强项，也不把全部业务逻辑塞给 LangGraph；**既对齐 app-platform 分工，也坚持先验证、先发布 V1，再被真实需求驱动铺 V2。**
+从零设计、不被旧 message/memory 体系困住；既用 LangGraph 的强项，也不把全部业务逻辑塞给 LangGraph；**既对齐 app-platform 分工，也坚持先验证、先发布 M1，再被真实需求驱动铺 M2。**
 
 ---
 
@@ -1921,11 +1923,11 @@ State 过大，checkpoint 成本高     | state 最小化，大对象放文件/�
 7.  AgentMemory / MemoryPolicy。
 8.  LangGraph Planner-ReAct 单图（State+Reducer）+ ToolResultHandlerRegistry（browser/search/shell/file/mcp/a2a/default handlers，runner 不再按 tool_name 分支）。
 9.  为上述写单测（reducer 幂等、序列化往返、DomainEvent->UIEvent、idempotency、interrupt-resume）。
-10. 单 Graph 在 golden set 达标（对照旧项目抽取样本）后，接用户流量，V1 收尾可演示。
+10. 单 Graph 在 golden set 达标（对照旧项目抽取样本）后，接用户流量，M1 收尾可演示。
 11. 写 ADR-001~003、009、010、015、019、022、023、024、025。
 ```
 
-这批完成后，**地基（已验证的恢复/对账/幂等 + 消息协议 + 事件投影 + 执行拓扑 + 评估兜底）是被真实跑通过的，而不是纸面承诺**，再扩展 V2 能力风险显著降低。
+这批完成后，**地基（已验证的恢复/对账/幂等 + 消息协议 + 事件投影 + 执行拓扑 + 评估兜底）是被真实跑通过的，而不是纸面承诺**，再扩展 M2 能力风险显著降低。
 
 ---
 
@@ -1947,20 +1949,21 @@ State 过大，checkpoint 成本高     | state 最小化，大对象放文件/�
   "底座/保留/归位/过渡/迁移/继续拥有"等渐进改造语言，已改为"全新建设 + 采纳领域概念重新建模"。
   旧 MoocManus 一律只作反例与 golden 样本来源（ADR-027）。
 
-A. §0.1 新增 V1/V2 范围切分与"先不做"清单；新增判定尺子。
+A. §0.1 新增 M1/M2 范围切分与"先不做"清单；新增判定尺子。
+   （本版：项目阶段由 `V1/V2` 更名为 `M1/M2`，与文档版本 `v4` 明确区分，见 §0.1 命名约定。）
 B. §6.5 新增 Walking Skeleton，排在所有 P0 之前，先证伪 checkpoint/SSE/重放三假设。
-C. §28.3 评估骨架从末期阶段前移到 V1 阶段 0.5。
+C. §28.3 评估骨架从末期阶段前移到 M1 阶段 0.5。
 D. §12.4/12.5 重写长期记忆：价值判据 + "不写"清单 + 召回归因质量闭环。
 E. §33.1 新增"过程风险"类，把"过度设计吞掉进度"列为第一风险。
-F. 全文按 V1/V2 标注实现深度；§12.1 记忆↔表映射定为唯一权威，§30 只引用。
-G. §31 路线图重排为 V1 竖线 + V2 触发式两张表。
+F. 全文按 M1/M2 标注实现深度；§12.1 记忆↔表映射定为唯一权威，§30 只引用。
+G. §31 路线图重排为 M1 竖线 + M2 触发式两张表。
 
 H. ▲ 全新重建定位：旧项目彻底废弃，不部署/不兼容/不回退；据此移除 legacy alias 与 legacy fallback，
    安全网改为 Walking Skeleton + golden set（文首项目定位、§9.4、§33.1、ADR-027）。
 
 类型边界强化（◆，按本修订节奏落地）：
-+ §9.2/§10.4/§11 明确 DomainEvent(事实) vs UIEvent(投影) 的分层与命名铁律（V1 落 domain/ui 两类）。
-+ §10.3 明确 Command(请求意图) 概念（V1 只做 CreateRun/ResumeRun/CancelRun 最小集）。
++ §9.2/§10.4/§11 明确 DomainEvent(事实) vs UIEvent(投影) 的分层与命名铁律（M1 落 domain/ui 两类）。
++ §10.3 明确 Command(请求意图) 概念（M1 只做 CreateRun/ResumeRun/CancelRun 最小集）。
 + §18 明确"事实流 + 投影 + Projector"；§18.4 采纳 TokenDelta→LiveDelta 改名。
 + §19.3 引入 ToolResultHandler 策略：工具结果拆成 normalize_for_llm / collect_artifacts /
   to_domain_events 三路（比"只生成一个前端 content"更正确），替代旧项目的 tool_name if/elif；ADR-026。
@@ -1973,9 +1976,9 @@ H. ▲ 全新重建定位：旧项目彻底废弃，不部署/不兼容/不回�
 + 关键治理 evidence ≠ 完成证明进 §13.9 铁律与 §28.3 评估项；§4.2 加证据装配边界；ADR-028。
 + EventCenter 不再新增概念/改名：其精神已在 §9.2 / §10.4 RuntimeEvent / §28.2 TraceSink / ADR-020 收口。
 
-延后到 V2 的目标态（▲）：
-- EvidenceAssembler 是 V2：V1 只在 §13.5/§12.5 之上留命名与边界占位，prompt 装配先用最小拼接 + token 截断。
-- 不在 V1 上 TransportMessage envelope / IntegrationEvent / 四类基类全量：只立命名占位，实现归 V2（§18.5）。
+延后到 M2 的目标态（▲）：
+- EvidenceAssembler 是 M2：M1 只在 §13.5/§12.5 之上留命名与边界占位，prompt 装配先用最小拼接 + token 截断。
+- 不在 M1 上 TransportMessage envelope / IntegrationEvent / 四类基类全量：只立命名占位，实现归 M2（§18.5）。
   理由：在只有单 Redis+SSE 通道、无跨 app 协作时引入传输 envelope，是为未出现的复杂度提前付费。
 - legacy：本修订是 greenfield，本就无兼容对象；旧项目只作为 golden 样本来源，golden set 达标前不接用户流量（§9.4）。
 ```
