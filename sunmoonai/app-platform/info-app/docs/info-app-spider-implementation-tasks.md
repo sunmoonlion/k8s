@@ -230,15 +230,15 @@ GET  /documents/{id}/versions
 
 - [x] J1. RSS/Atom adapter。
 - [x] J2. 官方 API adapter。
-- [ ] J3. Scrapy spider adapter。
+- [x] J3. Scrapy spider adapter。
 - [x] J4. PDF/Office 上传与附件处理。
-- [ ] J5. Playwright 动态页面 adapter。
+- [x] J5. Playwright 动态页面 adapter。
 - [x] J6. changedetection 触发器。
 
 验收标准：
 
-- [ ] 新来源接入不改变 document 主档模型。
-- [ ] 动态页面只作为高价值来源的按需能力。
+- [x] 新来源接入不改变 document 主档模型。
+- [x] 动态页面只作为高价值来源的按需能力。
 
 当前说明：
 
@@ -246,7 +246,7 @@ GET  /documents/{id}/versions
 - 官方 API adapter 已实现，可从 JSON 列表发现 URL 并创建待采集 `crawl_job`。
 - 文件上传入口已实现；PDF/Office 暂标记为 `pending_tool_processing`，等待 `tools-app` 转换/OCR。
 - changedetection 触发器已实现为变化触发到 `crawl_job` 的桥接。
-- Scrapy 和 Playwright 已有 adapter 契约与显式占位实现，后续接专用 crawler worker。
+- Scrapy 和 Playwright 已实现外部结果导入 adapter，可将专用 crawler worker 产出的 `results` / `links` 转为待采集 `crawl_job`；真实 Scrapy/Playwright 执行仍由后续专用 crawler worker 承担。
 
 ## 14. 阶段 K：治理增强
 
