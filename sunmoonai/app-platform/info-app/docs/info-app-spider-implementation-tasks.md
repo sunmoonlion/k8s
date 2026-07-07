@@ -181,9 +181,10 @@ GET  /documents/{id}/versions
 
 当前说明：
 
-- `info-admin-backend` 已提供分发记录列表、详情、状态更新和失败重试 API。
+- `info-admin-backend` 已提供分发记录列表、详情、状态更新、失败重试和手动 dispatch API。
 - 状态对账记录保存在 `distribution_record.payload.status_history`，重试记录保存在 `payload.retry_history`。
 - 失败重试当前将 `failed` 记录重置为 `pending`，供后续分发 worker 再次处理。
+- 配置 `KNOWLEDGE_APP_INGEST_URL` 后可投递到 `knowledge-app` ingestion API；Celery broker 可用时后台执行，未配置时同步执行一次。未配置 ingestion URL 时记录保持 `pending` 并写入跳过原因。
 
 ## 12. 阶段 I：管理后台
 
