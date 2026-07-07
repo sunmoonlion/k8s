@@ -247,6 +247,33 @@ ingress / 网关          -> app-platform ingress/traefik（不自带 nginx）
 
 > 这些是「新建组件的落位」，不是「旧组件的搬迁」。旧 `mooc-manus/{api,ui,sandbox,nginx,docker-compose}` 一概不复用。
 
+> ▲ sandbox runtime 落地说明（§22 展开；代码留到 app 实施阶段，此处只定形态与边界）：
+> 沙箱不是 research-app 进程内的模块，而是工具调用真正执行副作用（跑代码 / shell / 写文件 / 浏览器）的**隔离算力**。业务侧只通过 `SandboxPort`（§7）解耦，其生命周期由数据面 graph-runner worker 申请/释放（§22）。上面第 243 行"独立 deployment 或平台工具服务"具体指下列三种形态之一，按 M1/M2 节奏选：
+
+```text
+落地模型（三选一，随阶段演进）：
+  A. 按需拉 Pod/容器（M1 推荐）：不新写常驻服务；graph-runner worker 内的 SandboxPort 适配器
+     直接调 K8s API，每个 run 拉一个受限 Pod 当沙箱，用完删。"平台工具服务" = 复用集群
+     已有的容器运行时本身，而非另写一个常驻沙箱服务。
+  B. 常驻 Sandbox Manager（M2）：独立 deployment，自管预热池 / 配额 / GC / 网络隔离，
+     暴露内部 gRPC/HTTP 供 research-app 调用；等池化/配额/bulkhead 真出现再从 A 抽出来。
+  C. 现成沙箱（可选）：E2B / gVisor(runsc) / Firecracker microVM 等，需要强隔离跑不可信代码时。
+
+M1 决定：不单独写沙箱微服务。由 graph-runner worker 实现 SandboxPort 的 K8s 适配器
+  （本地开发用 DockerSandbox / 生产用 K8sPodSandbox，落位见 §30 external/sandbox/），
+  "每 run 拉一个 Pod、用完回收"。Port 边界现在就立住，A → B → C 的演进都不动 domain 与图代码（§7）。
+
+M1 必须做（§22）：
+  - GC：run 结束/超时/失败在 finally 释放沙箱；另加兜底清理（按 label + 存活时长扫孤儿）防
+    worker 崩溃泄漏；Pod 设 activeDeadlineSeconds 作第三层保险。
+  - 隔离基础：非 root、drop ALL capabilities、只读根文件系统、不挂 serviceaccount token；
+    NetworkPolicy 默认禁止沙箱访问集群内部服务（DB/Redis/其它 app），仅按白名单放行出网。
+M2：预热池 + 每租户配额 + bulkhead + 强隔离 runtimeClass（gvisor/kata）（对应 §22 的配额/隔离条目）。
+
+app 实施阶段落地（此处不写代码）：SandboxPort 接口、K8sPodSandbox 适配器、Pod spec 安全上下文、
+  NetworkPolicy、兜底 GC CronJob。
+```
+
 ### 5.5 与 Knowledge App 的接口契约
 
 ```python
