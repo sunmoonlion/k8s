@@ -2,7 +2,7 @@
 
 ## 1. 任务状态
 
-- 状态：实施中（第一轮后端最小闭环已落代码，待数据库和运行环境验证）
+- 状态：实施中（第一轮后端最小闭环已落代码，并已用本机 kind PostgreSQL / Redis 跑通基础验证）
 - 优先级：高
 - 所属阶段：Info App MVP
 - 主架构文档：`info-app/docs/info-app-spider-architecture.md`
@@ -165,6 +165,7 @@ GET  /documents/{id}/versions
 - `info-admin-backend` 已声明 `info-information` mapping，并提供 Elasticsearch/OpenSearch 写入 adapter。
 - `POST /api/admin/search-index/rebuild` 可从 PostgreSQL 中的 `document_version` 和 S3 artifact 引用重建索引。
 - `document_version` 创建并提交成功后会触发增量索引；Celery broker 可用时后台执行，未配置时主事务提交后 best-effort 执行，避免外部搜索服务故障影响采集主事务。
+- 本机验证使用 `SEARCH_BACKEND=disabled` 跑通 crawl job 成功路径；真实 Elasticsearch 写入仍待联调。
 
 ## 11. 阶段 H：Knowledge App 分发接口
 
@@ -203,6 +204,7 @@ GET  /documents/{id}/versions
 - `info-admin-frontend/src/pages/info/crawl.vue` 已提供最小管理入口，覆盖来源、URL 任务、collector、上传和文档列表。
 - `info-admin-backend` 已提供 document 与 document_version 审核状态调整 API，可记录 reviewer、reason 和 review_history。
 - 前端依赖已安装，`pnpm type-check` 和 `pnpm build-only` 已通过。
+- 本机 API 已通过 `POST /api/admin/crawl-jobs/{job_id}/run` 抓取 `http://127.0.0.1:18080/`，生成 `document_id` 与 `document_version_id`；外网 `https://example.com` 在当前网络下超时并被记录为业务失败。
 
 ## 13. 阶段 J：来源扩展
 
