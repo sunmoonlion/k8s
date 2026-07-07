@@ -117,8 +117,13 @@ GET  /documents/{id}/versions
 
 验收标准：
 
-- [ ] 原始响应和抽取产物都能在对象存储找到。
+- [x] 原始响应和抽取产物都能在对象存储找到。
 - [x] 数据库不保存永久下载 URL，只保存对象清单。
+
+当前说明：
+
+- 已通过本机端口转发平台 MinIO/AIStor，用 `STORAGE_BACKEND=s3` 跑通 HTML crawl job。
+- 验证 job `93785fb0-efea-4dac-be2d-3ef0fddbe8f9` 成功生成 `raw_html`、`headers_json`、`clean_markdown`、`text_plain` 四类 artifact，均写入 `development-info-originals`，并返回对象 `version_id`。
 
 ## 8. 阶段 E：最小采集 worker
 
