@@ -252,7 +252,7 @@ GET  /documents/{id}/versions
 
 - [x] K1. 来源可信度和版权状态。
 - [x] K2. 近似重复检测。
-- [ ] K3. 转载关系和同源合并。
+- [x] K3. 转载关系和同源合并。
 - [ ] K4. 公司、证券、行业、主题关联。
 - [ ] K5. 摘要、标签和重要性评分。
 - [ ] K6. 人工审核和审计日志。
@@ -265,6 +265,7 @@ GET  /documents/{id}/versions
 
 - `info_source` 已新增 `trust_level`、`copyright_status`、`license_url`、`terms_url`，并通过 API schema 与管理前端来源表单暴露。
 - 正文入库时会生成 `simhash64` 内容指纹，并在 `info_document.metadata_json` 记录 `duplicate_state` 与最多 5 个 exact/near duplicate 候选；不自动合并，不覆盖人工审核记录。
+- `POST /documents/{document_id}/relations` 可把转载、同源故事和 canonical 候选写入 `metadata_json.document_relations`；当前只做关系标注和 canonical 指针，不删除、不物理合并文档。
 
 ## 15. 第一轮建议执行顺序
 
