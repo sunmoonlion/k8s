@@ -9,6 +9,13 @@
 - 参考资料：`info-app/docs/spider-reference/`
 - 首个目标：跑通“手动提交 URL -> 采集 -> 原始证据保存 -> 正文抽取 -> 资讯主档入库”的最小闭环。
 
+暂停交接（2026-07-07）：
+
+- 本轮先暂停，代码已推送到各仓库 `codex-1` 分支。
+- 已推送分支头：`info-admin-backend=55bf97c`、`info-admin-frontend=a40d0b2`、`info-app=23b0f5f`、`k8s=984c636`。
+- 当前不要默认认为集群已经更新；git push 只更新远端代码，运行中服务仍可能是旧镜像。
+- 下次恢复优先做新版镜像构建/部署、集群 migration、端到端采集/索引/治理 smoke test。
+
 ## 2. 实施原则
 
 1. 先闭环，再扩来源。
@@ -300,3 +307,12 @@ GET  /documents/{id}/versions
 - [平台 Info App 架构](../../docs/info-app.md)
 - [ADR-0001：按长期业务领域划分 App](../../docs/adr/0001-domain-boundaries.md)
 - [ADR-0005：RAGFlow 定位为可重建的派生系统](../../docs/adr/0005-ragflow-as-derived-system.md)
+
+## 18. 下次恢复建议
+
+1. 同步四个仓库到 `codex-1`，并确认工作区干净。
+2. 如需重新确认，后端执行 `uv run pytest` 和 `uv run pyright`，前端执行 `pnpm type-check` 和 `pnpm build-only`。
+3. 在合适窗口执行 `~/k8s/sunmoonai/app-platform/info-app/deploy-info-app-all.sh --cluster KIND`。
+4. 确认集群数据库 migration 到 head，包含来源治理 migration。
+5. 在集群内验证：URL 采集、S3 artifact、RabbitMQ worker、Elasticsearch 增量索引、治理 API metadata/audit_log。
+6. 暂缓项：真实 Scrapy/Playwright worker、PDF/Office 转换、完整反爬策略、治理前端产品化、真实 `knowledge-app` ingestion 联调。

@@ -19,11 +19,26 @@ git fetch origin
 git switch codex-1 || git switch -c codex-1 origin/codex-1
 ```
 
-当前可接的下一步：
+暂停交接（2026-07-07）：
 
-- 继续做 Info App 阶段 G3：`document_version` 成功后异步/后台写入搜索索引。
-- 现有基础：`info-admin-backend` 已有搜索 index mapping、adapter 和手动 rebuild API。
-- 进度文档：
-  - `~/info-app/docs-cursor/SPIDER_MVP_HANDOFF.md`
-  - `~/info-app/info-admin-backend/docs/SPIDER_MVP.md`
-  - `~/k8s/sunmoonai/app-platform/info-app/docs/info-app-spider-implementation-tasks.md`
+- 本轮先暂停，功能代码已推送到 `codex-1`。
+- 已推送分支头：
+  - `info-admin-backend`：`55bf97c`
+  - `info-admin-frontend`：`a40d0b2`
+  - `info-app`：`23b0f5f`
+  - `k8s`：`984c636`
+- 现在不要默认部署；git push 只更新远端代码，集群服务仍可能跑旧镜像。
+
+下次恢复优先：
+
+1. 同步四个仓库到 `codex-1`。
+2. 后端可重跑 `uv run pytest`、`uv run pyright`；前端可重跑 `pnpm type-check`、`pnpm build-only`。
+3. 合适窗口再执行 `~/k8s/sunmoonai/app-platform/info-app/deploy-info-app-all.sh --cluster KIND`。
+4. 确认集群 Alembic migration 到 head。
+5. 验证集群端到端：URL 采集、S3 artifact、RabbitMQ worker、Elasticsearch 增量索引、治理 API。
+
+交接文档：
+
+- `~/info-app/docs-cursor/SPIDER_MVP_HANDOFF.md`
+- `~/info-app/info-admin-backend/docs/SPIDER_MVP.md`
+- `~/k8s/sunmoonai/app-platform/info-app/docs/info-app-spider-implementation-tasks.md`
