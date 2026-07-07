@@ -68,8 +68,13 @@ POST URL
 
 验收标准：
 
-- [ ] migration 可重复执行到目标状态。
+- [x] migration 可重复执行到目标状态。
 - [x] 数据模型能表达 URL 去重、内容版本和原始证据对象路径。
+
+当前说明：
+
+- migration 已移除 `uuid-ossp` / `uuid_generate_v4()` 依赖，UUID 由应用侧生成。
+- 已用本机 kind PostgreSQL 创建全新临时库，并用普通 `info_admin_user` 执行 `alembic upgrade head` 成功。
 
 ## 6. 阶段 C：基础 API
 
