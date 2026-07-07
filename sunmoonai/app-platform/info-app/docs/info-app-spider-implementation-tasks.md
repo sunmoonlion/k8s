@@ -255,11 +255,11 @@ GET  /documents/{id}/versions
 - [x] K3. 转载关系和同源合并。
 - [x] K4. 公司、证券、行业、主题关联。
 - [x] K5. 摘要、标签和重要性评分。
-- [ ] K6. 人工审核和审计日志。
+- [x] K6. 人工审核和审计日志。
 
 验收标准：
 
-- [ ] 模型处理结果可追溯，不覆盖人工确认结果。
+- [x] 模型处理结果可追溯，不覆盖人工确认结果。
 
 当前说明：
 
@@ -268,6 +268,7 @@ GET  /documents/{id}/versions
 - `POST /documents/{document_id}/relations` 可把转载、同源故事和 canonical 候选写入 `metadata_json.document_relations`；当前只做关系标注和 canonical 指针，不删除、不物理合并文档。
 - `POST /documents/{document_id}/entity-links` 可写入公司、证券、行业、主题到 `metadata_json.entity_links`，并保留 `entity_link_history`，供人工或后续模型抽取统一复用。
 - `POST /documents/{document_id}/summary-profile` 可写入摘要、标签、重要性评分和评分原因到 `metadata_json.summary_profile`，并保留 `summary_history`。
+- review、relations、entity-links、summary-profile 都会追加统一的 `metadata_json.audit_log`，并保留各自原有 history，不覆盖人工确认结果。
 
 ## 15. 第一轮建议执行顺序
 
