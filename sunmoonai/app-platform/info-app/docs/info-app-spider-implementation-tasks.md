@@ -166,6 +166,7 @@ GET  /documents/{id}/versions
 - `POST /api/admin/search-index/rebuild` 可从 PostgreSQL 中的 `document_version` 和 S3 artifact 引用重建索引。
 - `document_version` 创建并提交成功后会触发增量索引；Celery broker 可用时后台执行，未配置时主事务提交后 best-effort 执行，避免外部搜索服务故障影响采集主事务。
 - 本机验证使用 `SEARCH_BACKEND=disabled` 跑通 crawl job 成功路径；真实 Elasticsearch 写入仍待联调。
+- 已补齐平台运行配置：后端支持 `ELASTICSEARCH_USERNAME` / `ELASTICSEARCH_PASSWORD` / `ELASTICSEARCH_CA_CERT_PATH` / `ELASTICSEARCH_ALIASES`，K8S ConfigMap 默认启用 `SEARCH_BACKEND=elasticsearch`，并优先写入 provisioner 提供的 `information.write` alias。
 
 ## 11. 阶段 H：Knowledge App 分发接口
 
@@ -205,6 +206,7 @@ GET  /documents/{id}/versions
 - `info-admin-backend` 已提供 document 与 document_version 审核状态调整 API，可记录 reviewer、reason 和 review_history。
 - 前端依赖已安装，`pnpm type-check` 和 `pnpm build-only` 已通过。
 - 本机 API 已通过 `POST /api/admin/crawl-jobs/{job_id}/run` 抓取 `http://127.0.0.1:18080/`，生成 `document_id` 与 `document_version_id`；外网 `https://example.com` 在当前网络下超时并被记录为业务失败。
+- K8S `info-admin-backend-config` 默认启用 `STORAGE_BACKEND=s3`，Celery worker 也会继承业务 PostgreSQL、Redis、S3、Elasticsearch 配置，并挂载 Elasticsearch CA。
 
 ## 13. 阶段 J：来源扩展
 
