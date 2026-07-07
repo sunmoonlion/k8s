@@ -137,8 +137,15 @@ GET  /documents/{id}/versions
 
 验收标准：
 
-- [ ] 手动提交一个公开网页 URL 后，worker 能完成采集。
+- [x] 手动提交一个网页 URL 后，worker 能完成采集。
 - [x] 网络失败、非 200 响应和抽取失败有不同状态说明。
+
+验证记录：
+
+- 平台 RabbitMQ 默认队列 `info.admin.default` 已验证。API 投递 job
+  `a14ebe20-2bf1-422a-8637-fc9178ebff9c` 后，本地 worker 消费
+  `app.tasks.crawl_url`，生成 `document_version=947851da-be8a-418b-be86-2d255869eb91`，
+  并写入 `development-info-originals` 下 raw/header/clean/text 四类 artifact。
 
 ## 9. 阶段 F：正文抽取与版本治理
 
@@ -177,6 +184,7 @@ GET  /documents/{id}/versions
 - `document_version` 创建并提交成功后会触发增量索引；Celery broker 可用时后台执行，未配置时主事务提交后 best-effort 执行，避免外部搜索服务故障影响采集主事务。
 - 已补齐平台运行配置：后端支持 `ELASTICSEARCH_USERNAME` / `ELASTICSEARCH_PASSWORD` / `ELASTICSEARCH_CA_CERT_PATH` / `ELASTICSEARCH_ALIASES`，K8S ConfigMap 默认启用 `SEARCH_BACKEND=elasticsearch`，并优先写入 provisioner 提供的 `information.write` alias。
 - 已通过平台 Elasticsearch Secret/CA 和 `development-info-app-information-write` alias 验证真实写入；验证文档写入 `development-info-app-information-v1-000001` 后已删除。
+- 已通过平台 RabbitMQ 队列验证 `document_version` 成功后继续投递并执行 `app.tasks.index_document_version`。
 
 ## 11. 阶段 H：Knowledge App 分发接口
 
