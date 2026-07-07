@@ -202,7 +202,7 @@ GET  /documents/{id}/versions
 
 - `info-admin-frontend/src/pages/info/crawl.vue` 已提供最小管理入口，覆盖来源、URL 任务、collector、上传和文档列表。
 - `info-admin-backend` 已提供 document 与 document_version 审核状态调整 API，可记录 reviewer、reason 和 review_history。
-- 前端依赖安装因 registry 超时/安装未获批准，尚未完成 `pnpm type-check` 和 `pnpm build-only` 验证。
+- 前端依赖已安装，`pnpm type-check` 和 `pnpm build-only` 已通过。
 
 ## 13. 阶段 J：来源扩展
 
