@@ -175,8 +175,8 @@ GET  /documents/{id}/versions
 - `info-admin-backend` 已声明 `info-information` mapping，并提供 Elasticsearch/OpenSearch 写入 adapter。
 - `POST /api/admin/search-index/rebuild` 可从 PostgreSQL 中的 `document_version` 和 S3 artifact 引用重建索引。
 - `document_version` 创建并提交成功后会触发增量索引；Celery broker 可用时后台执行，未配置时主事务提交后 best-effort 执行，避免外部搜索服务故障影响采集主事务。
-- 本机验证使用 `SEARCH_BACKEND=disabled` 跑通 crawl job 成功路径；真实 Elasticsearch 写入仍待联调。
 - 已补齐平台运行配置：后端支持 `ELASTICSEARCH_USERNAME` / `ELASTICSEARCH_PASSWORD` / `ELASTICSEARCH_CA_CERT_PATH` / `ELASTICSEARCH_ALIASES`，K8S ConfigMap 默认启用 `SEARCH_BACKEND=elasticsearch`，并优先写入 provisioner 提供的 `information.write` alias。
+- 已通过平台 Elasticsearch Secret/CA 和 `development-info-app-information-write` alias 验证真实写入；验证文档写入 `development-info-app-information-v1-000001` 后已删除。
 
 ## 11. 阶段 H：Knowledge App 分发接口
 
