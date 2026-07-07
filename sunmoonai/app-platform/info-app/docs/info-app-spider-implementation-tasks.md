@@ -254,7 +254,7 @@ GET  /documents/{id}/versions
 - [x] K2. 近似重复检测。
 - [x] K3. 转载关系和同源合并。
 - [x] K4. 公司、证券、行业、主题关联。
-- [ ] K5. 摘要、标签和重要性评分。
+- [x] K5. 摘要、标签和重要性评分。
 - [ ] K6. 人工审核和审计日志。
 
 验收标准：
@@ -267,6 +267,7 @@ GET  /documents/{id}/versions
 - 正文入库时会生成 `simhash64` 内容指纹，并在 `info_document.metadata_json` 记录 `duplicate_state` 与最多 5 个 exact/near duplicate 候选；不自动合并，不覆盖人工审核记录。
 - `POST /documents/{document_id}/relations` 可把转载、同源故事和 canonical 候选写入 `metadata_json.document_relations`；当前只做关系标注和 canonical 指针，不删除、不物理合并文档。
 - `POST /documents/{document_id}/entity-links` 可写入公司、证券、行业、主题到 `metadata_json.entity_links`，并保留 `entity_link_history`，供人工或后续模型抽取统一复用。
+- `POST /documents/{document_id}/summary-profile` 可写入摘要、标签、重要性评分和评分原因到 `metadata_json.summary_profile`，并保留 `summary_history`。
 
 ## 15. 第一轮建议执行顺序
 
