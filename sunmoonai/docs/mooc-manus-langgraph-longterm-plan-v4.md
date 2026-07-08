@@ -53,10 +53,11 @@ M1「能用、能演示、能验证」——先打通这一条竖线（P0，必�
   6. checkpoint + interrupt + resume（§17）
   7. 重放安全：reducer 幂等 + 工具副作用幂等 + 并发锁（§15）
   8. EventSink + DomainEvent/UIEvent 区分（◆ 类型边界强化，最小实现，§18）
+  9. 轻量 AgentProfile：同一单 Graph 下按业务选择/具体化不同智能体形态（§20）
 
 M1 明确"先不做"（不是删除，是等负载/需求真正出现再做）——M2：
   - 多租户 SecurityContext 全链路传播（§21）—— M1 留单租户占位即可
-  - GraphRegistry 版本化 + run 版本锁定 + 灰度（§15.4）
+  - AgentRegistry / GraphRegistry 版本化 + run 版本锁定 + 灰度（§15.4、§20）
   - CQRS 读模型物化（§18.2）—— M1 直接查事件流够用
   - 完整四类事件基类拆分 + TransportMessage envelope（§18，◆ 部分延后）
   - Model Gateway 多 provider fallback（§23）
@@ -190,8 +191,12 @@ Infrastructure:      Postgres, Redis, RabbitMQ, Object Storage, Sandbox, RAGFlow
 前端展示边界：UIEvent 是 UI 投影视图（◆ 区别于 DomainEvent 事实，见 §18）。
 模型上下文边界：LangChain Core BaseMessage 是 LLM 输入输出协议。
 执行恢复边界：Checkpoint 是运行时 AgentState 的持久化快照（= ThreadMemory），不是"记忆"。
+工作区边界：Workspace/Project 是产品组织层，聚合多个 session、文件、知识绑定与默认 AgentProfile；
+  不替代 state / memory / event / file / 外部数据源。
 会话记忆边界：AgentMemory 是 session 级可压缩上下文。
 长期记忆边界：Store / LongTermMemory 是跨 session 可复用知识。
+对象存储边界：Object Storage 只保存文件、附件、截图、工具产物等大对象；State/Event/Memory 只保存引用与元数据。
+外部数据源边界：RAGFlow、业务数据库、第三方 API 是外部事实源；通过 Port/Adapter 读取，不复制成 Workspace 内部万能数据。
 租户隔离边界：tenant_id/project_id 贯穿 memory/event/file/sandbox（M1 留占位，M2 全链路）。
 证据装配边界：EvidenceAssembler 是 run/session 级跨源证据的只读装配层（M2，见 §13.9），
   只读各来源结果、不持有存储；不是 LangGraph state、不是 memory、不是 RAGFlow dataset。
@@ -425,7 +430,9 @@ Data Plane (research-app 后端 / graph-runner worker)：
 
 两条规则：配置是数据不是代码（存库、带 version、发布即快照）；数据面对控制面的依赖单向异步（admin 改配置→发布事件→worker 拉新版本）。
 
-> ▲ M1 注记：M1 可以先用 YAML + 进程内读取实现"有效配置"，**不需要 admin 后台 UI 和版本化发布流程**（那是 M2 GraphRegistry 的一部分）。控制面/数据面的**边界**现在就守住，**机制**延后。
+> ▲ M1 注记：M1 可以先用 YAML + 进程内读取实现"有效配置"，包括少量内置 AgentProfile。
+> 业务创建 run 时选择 `agent_profile_key`，运行时把它解析成模型、prompt、工具、权限、memory policy 等有效配置。
+> **不需要 admin 后台 UI 和版本化发布流程**（那是 M2 AgentRegistry/GraphRegistry 的一部分）。控制面/数据面的**边界**现在就守住，**机制**延后。
 
 ---
 
@@ -509,6 +516,37 @@ LangGraph 接入前必须先稳住消息体系。关于 legacy，**已确认旧�
 
 State 只放执行需要的最小事实：messages / session_id / user_input / plan / current_step / pending_tool_calls / artifacts / status / error。完整事件历史、文件详情、长期记忆不进 state。
 
+### 9.6.1 State / Workspace / 外部数据 / 对象存储分层
+
+不要把 Workspace 做成"什么都塞进去"的万能上下文。四层边界如下：
+
+```text
+State:
+  当前 graph 执行所需的最小运行时状态。可 checkpoint，可 replay。
+  只放小对象、id、引用、当前计划/步骤和必要 messages。
+
+Workspace / Project:
+  产品组织层。用于把多个 session、文件、知识库绑定、默认 AgentProfile、权限策略组织在一起。
+  可以作为业务入口和权限边界，但不直接承载 graph state，也不吞掉外部数据源治理。
+
+External Database / Knowledge Source:
+  外部事实源，例如 RAGFlow dataset、业务库、第三方 API、用户系统。
+  通过 Port/Adapter 查询，保留来源、权限、版本、更新时间等 provenance。
+
+Object Storage:
+  大对象存储，例如上传文件、工具产物、截图、导出包、长 stdout。
+  数据库和 state 只保存 URI/ref/hash/metadata，不保存大对象内容。
+```
+
+规则：
+
+```text
+- State 不能变成 Workspace。
+- Workspace 不能变成外部数据库的复制品。
+- Object Storage 不能承载业务状态机。
+- EvidenceAssembler 只读并装配这些来源，不改变它们的治理边界。
+```
+
 ### 9.7 ★ 重放安全是第一性约束（M1 就上）
 
 凡依赖 checkpoint 恢复/重放的设计，都必须保证：reducer 幂等、工具副作用幂等、并发幂等（见 §15）。这是 demo 与长期平台的分水岭，也正是 §6.5 Walking Skeleton 要先证伪的假设 C。
@@ -564,6 +602,7 @@ class CreateRunCommand(BaseCommand):
     session_id: str
     user_input: UserInput
     graph_name: str
+    agent_profile_key: str | None = None
 
 class ResumeRunCommand(BaseCommand):
     type: Literal["ResumeRun"] = "ResumeRun"
@@ -599,7 +638,9 @@ class CreateRunCommand(BaseCommand):
     session_id: str
     user_input: UserInput
     graph_name: str
+    agent_profile_key: str | None = None
     requested_graph_version: str | None = None     # M2：配 GraphRegistry 版本锁定
+    requested_agent_profile_version: str | None = None  # M2：配 AgentRegistry 版本锁定
 
 class ResumeRunCommand(BaseCommand):
     type: Literal["ResumeRun"] = "ResumeRun"
@@ -1455,14 +1496,28 @@ tool_call -> ToolExecutionPort.invoke -> ToolExecutionResult
 
 ---
 
-## 20. 多智能体架构（M2）
+## 20. 智能体形态与多智能体架构（M1 可切换，M2 协作）
 
 ### 20.1 演进顺序
 
 ```text
-阶段一（M1）：单 Graph，Planner + ReAct。
-阶段二（M2）：Supervisor + 专业 Agent。
-阶段三（M2+）：多 Graph、多 Agent、可配置编排。
+阶段一（M1）：单 Graph + 可切换 AgentProfile。业务选择一个智能体形态，运行时具体化为 prompt/model/tools/permissions/memory policy。
+阶段二（M2）：AgentRegistry + GraphRegistry。AgentProfile/GraphSpec 不可变版本化、灰度、run pin 版本。
+阶段三（M2）：Supervisor + 专业 Agent。一个任务内多个 Agent 协作、handoff、隔离 memory/权限。
+阶段四（M2+）：多 Graph、多 Agent、可配置编排。
+```
+
+关键区分：
+
+```text
+AgentProfile 可切换 ≠ 多智能体协作。
+
+M1 要解决的是"业务要哪个智能体，就选择/具体化哪个智能体"：
+  课程研究助手、资料整理助手、代码实验助手、文件分析助手等，都可以共享同一个单 Graph runtime，
+  但使用不同的 system_prompt、工具白名单、权限、memory policy、RAGFlow binding。
+
+M2 才解决"一个任务里多个智能体互相协作"：
+  Supervisor、handoff、agent 私有 memory、跨 agent 事件归属、结果汇总。
 ```
 
 ### 20.2 AgentProfile
@@ -1470,20 +1525,67 @@ tool_call -> ToolExecutionPort.invoke -> ToolExecutionResult
 ```python
 class AgentProfile(BaseModel):
     version: int = 1
-    name: str; role: str; description: str
+    key: str                          # stable business key, e.g. "course_research"
+    name: str
+    role: str
+    description: str
+    business_capabilities: list[str] = []
+    graph_name: str = "planner_react" # M1 usually one graph, M2 can route to GraphRegistry
     system_prompt_id: str            # 引用 PromptRegistry（§23）
     model_name: str                  # 经 ModelGateway 解析
     tools: list[str]
     memory_policy: str
     permissions: list[str]
+    ragflow_binding: str | None = None
     max_iterations: int = 10
 ```
 
-### 20.3 推荐内置 Agent
+M1 落地方式：
+
+```text
+1. 用 YAML/代码常量维护少量内置 AgentProfile。
+2. CreateRunCommand 带 agent_profile_key；为空时使用 default。
+3. AgentRunService 在创建 run 时解析 profile，并把 graph_name / agent_profile_version / prompt_id / tools / permissions 等写入 run lineage 或 metadata。
+4. graph-runner 只接收已经解析好的有效配置，不在执行中热改 profile。
+5. agent_runs 预留 agent_profile_key / agent_profile_version 字段，M1 可固定 version=1。
+```
+
+M2 升级方式：
+
+```text
+AgentRegistry 管 AgentProfile 不可变版本、发布、灰度、回滚。
+GraphRegistry 管 GraphSpec 不可变版本、run pin、拓扑灰度。
+业务入口选择 business_capability，控制面解析到 AgentProfile + GraphSpec 的具体版本。
+```
+
+### 20.3 业务具体化流程
+
+```text
+业务模块/前端
+  -> 选择业务能力 business_capability 或 agent_profile_key
+  -> POST CreateRunCommand(agent_profile_key, user_input, idempotency_key)
+  -> AgentRunService 解析 AgentProfile
+  -> 生成 EffectiveAgentConfig(model/prompt/tools/permissions/memory/ragflow)
+  -> 创建 run 并 pin 当前有效配置
+  -> Celery graph-runner 执行同一个单 Graph，但行为由 EffectiveAgentConfig 具体化
+```
+
+这样业务不需要 fork 一套 Agent 代码。新增一个业务智能体，优先是新增/发布一个 AgentProfile；只有现有 Graph 表达不了新控制流时，才新增 GraphSpec。
+
+### 20.4 推荐内置 Agent
 
 PlannerAgent / ExecutorAgent / ResearchAgent / BrowserAgent / CodeAgent / FileAgent / CriticAgent / SummarizerAgent / KnowledgeAgent。
 
-### 20.4 多智能体 memory 边界
+M1 不必全部实现这些 Agent。M1 可以先有：
+
+```text
+DefaultResearchAgent：默认研究任务。
+CourseResearchAgent：课程/资料研究任务。
+CodeExperimentAgent：需要代码或沙箱实验的任务。
+FileAnalysisAgent：以文件/附件为核心输入的任务。
+```
+
+### 20.5 多智能体 memory 边界
 
 ```text
 Private Memory:        单 agent 私有。
@@ -1566,13 +1668,14 @@ M1：prompt 用带 prompt_id 的代码常量，先不做版本化存储；但事
 
 ```text
 sessions(id,user_id,project_id,tenant_id,title,status,latest_message,latest_message_at,created_at,updated_at)
-agent_runs(id,session_id,graph_name,graph_version,thread_id,idempotency_key,status,started_at,completed_at,error)
+agent_runs(id,session_id,graph_name,graph_version,agent_profile_key,agent_profile_version,thread_id,idempotency_key,status,started_at,completed_at,error)
 session_events(id,session_id,run_id,sequence_no,category,type,payload_schema_version,lineage JSONB,payload JSONB,metadata JSONB,created_at)
 session_files(id,session_id,file_path,filename,mime_type,size,storage_url,metadata JSONB,created_at)
 agent_memories(id,session_id,agent_name,schema_version,messages JSONB,summary,pinned_facts JSONB,token_count,version,updated_at)
 long_term_memories(id,namespace,scope,tenant_id,user_id,project_id,memory_type,content,embedding_id,confidence,source_session_id,sensitive,metadata JSONB,ttl,created_at,updated_at,last_used_at)
 graph_checkpoints(由 CheckpointPort 实现管理；存运行时 AgentState 的快照 = ThreadMemory)
 读模型（M2）：session_timeline / current_plan_snapshot / run_summary（由 projector 物化）
+产品工作区（M2 可选）：workspaces/projects 只做产品聚合与权限入口，不替代 sessions/events/files/memories/checkpoints。
 ```
 
 > ◆ 类型边界：`session_events` 现在就含 `category / payload_schema_version / lineage`（事实/投影/版本/调用树都落得下）。这是便宜且防债的字段，M1 就建。
@@ -1628,6 +1731,106 @@ M1：先 YAML + 进程内读取；不可变版本化工件（控制面产出）�
 ```
 
 这样"将来把 Runtime 从 package 抽成独立服务"不是一次性豪赌，而是有退路的渐进决策。
+
+### 26.1 ★ Context / State / Memory / Workspace / Storage 贯穿实现规则
+
+实现时每个模块、表、Port、测试都必须能回答：这个数据属于哪一层？不能因为"给模型要用"就混入同一个对象。
+
+```text
+Context:
+  某次 LLM 调用前临时装配的输入包。来源可以是 State、Memory、Workspace、RAG、工具结果、prompt。
+  不作为长期真相源落库；最多记录 prompt_id、evidence refs、摘要与审计元数据。
+
+State:
+  Graph runtime 的执行态。内存为主，经 Checkpointer 变成 graph_checkpoints。
+  只放恢复执行所需的最小小对象和引用，不放完整文件、完整事件历史、长期记忆全集。
+
+Memory:
+  可召回的经验/事实/摘要层。可从 State、Workspace、DB/Event、Object Storage 引用中提炼。
+  必须带来源、置信度、TTL/敏感标记/作用域；不能替代原始文件、事件流、业务库或 checkpoint。
+
+Workspace / Project:
+  产品组织层和工作文件域。组织 session、文件、知识绑定、默认 AgentProfile、权限策略。
+  可以有文件系统式工作目录语义，但不承载业务状态机，不复制外部数据库。
+
+Database:
+  结构化事实域。保存 sessions、runs、events、metadata、权限、索引、引用关系。
+  不保存大对象正文，不保存完整 Context，不直接保存 LangGraph runtime 活体 state。
+
+Object Storage:
+  大对象域。保存上传文件、截图、导出包、工具产物、长日志、二进制内容。
+  数据库、state、memory 只保存 uri/ref/hash/metadata。
+```
+
+落地检查：
+
+```text
+- 新增字段前，先标注它属于 Context / State / Memory / Workspace / Database / Object Storage 哪一层。
+- 新增 Port 前，先确认它访问的是事实源、对象源、记忆源、工作区还是执行态。
+- 新增测试时，至少覆盖一条"不混层"断言：例如 State 不含文件正文，Memory 带 source_ref，DB 只存 object URI。
+- EvidenceAssembler 只能装配 context，不得把装配结果反写成 Workspace/Memory 的万能副本。
+```
+
+### 26.2 ★ Strategy / Visitor / Handler Registry 实现模式约束
+
+v4 可以采用传统设计模式，但只在变化点明确的位置使用。目标不是"模式化炫技"，而是避免 graph runner、
+projector、tool handler 里出现不可维护的 `if/elif` 分支瀑布。
+
+Strategy 适用：同一接口下的可替换执行策略。
+
+```text
+ToolResultHandler:
+  不同工具结果如何生成 LLM ToolMessage / ArtifactRef / DomainEvent。
+
+MemoryPolicy:
+  不同记忆窗口、摘要、长期记忆写入、召回过滤策略。
+
+AgentProfile / EffectiveAgentConfig:
+  不同业务智能体选择不同 prompt、tools、permissions、model、memory policy。
+
+LLMPort / ModelProvider:
+  不同模型供应商、超时、重试、计量、fallback（fallback 深度属于 M2）。
+
+SandboxPort:
+  local Docker / K8s Pod / future Sandbox Manager。
+
+EvidenceAssembler:
+  RAG / memory / file / artifact 多源证据的去重、rerank、token budget 子策略。
+```
+
+Visitor / Handler Registry 适用：数据结构相对稳定，但要增加新的投影、导出、审计或 UI 表达。
+
+```text
+DomainEvent -> UIEvent:
+  TimelineProjector 用 event_type handler/visitor 扩展，避免在主流程里堆 if/elif。
+
+DomainEvent -> audit/export:
+  同一事实事件可被不同 visitor 生成审计、回放、导出视图。
+
+ToolExecutionResult -> 多路输出:
+  LLM 可见内容、artifact、DomainEvent、UI 卡片分离生成。
+
+Plan/Step tree -> timeline/summary/progress:
+  同一执行结构可投影成前端时间线、摘要和进度视图。
+```
+
+Python 落地建议：
+
+```text
+优先使用 Protocol + registry + 小 handler。
+需要按类型分派时，可使用 functools.singledispatch 或 pattern matching。
+不要为了"像 GoF Visitor"而写复杂继承树；可测试、可替换、可注册比形式更重要。
+```
+
+硬规则：
+
+```text
+- graph runner 不按 tool_name/event_type 写大段 if/elif。
+- 新增工具只新增 ToolResultHandler，不修改 runner 主流程。
+- 新增 UI 投影只新增 projector handler，不修改 EventSink。
+- 新增 memory 策略只新增 MemoryPolicy，不把策略写死在 AgentMemory 模型里。
+- registry 必须有 default/fallback handler，并对未知类型给出结构化错误。
+```
 
 ---
 
@@ -1779,7 +1982,7 @@ LongTermMemory domain/models/memory.py        infrastructure/graph/store.py(Memo
 | P0 | 阶段 2 | EventSink + DomainEvent/UIEvent + Projector + RunLineage(占位) + LiveDelta/事件双流对账 + 控制流铁律(ADR-019)；session_events 按新 schema 建表 | 阶段 1 |
 | P1 | 阶段 3 | 执行拓扑：API 入队 + Python graph-runner(Celery) + Redis Pub/Sub + SSE；Run 状态机 + idempotency_key + session 锁 | 阶段 2 |
 | P1 | 阶段 4 | MemoryManager：AgentMemory、MemoryPolicy、compactor、summary | 阶段 1 |
-| P1 | 阶段 5 | LangGraph Planner-ReAct：State+Reducer、GraphRuntimeService、**ToolResultHandler 策略注册表（§19.3）**、工具重放幂等、错误模型、预算 | 阶段 3,4 |
+| P1 | 阶段 5 | LangGraph Planner-ReAct：State+Reducer、GraphRuntimeService、轻量 AgentProfile 选择/具体化、**ToolResultHandler 策略注册表（§19.3）**、工具重放幂等、错误模型、预算 | 阶段 3,4 |
 | P1 | 阶段 6 | Interrupt + Checkpoint：durable checkpointer、session_id=thread_id、ask_user→interrupt、resume API、waiting/running 切换 | 阶段 5 |
 | P1 | 阶段 7 | **M1 收尾**：单 Graph 在 golden set 上达标（对照旧项目抽取的样本）→ 接到用户流量；M1 可演示可发布 | 阶段 5,6 |
 
@@ -1807,12 +2010,13 @@ LongTermMemory domain/models/memory.py        infrastructure/graph/store.py(Memo
         所有事件自创建即带 RunLineage（run_id/session_id 必填，root=run_id、parent=None）。
 阶段 3：API 创建 run 后立即返回 run_id；worker 可执行最小闭环；idempotency_key 去重生效。
 阶段 4：memory 更新不再散落在 Agent 基类；compact/summary/window 可测可配。
-阶段 5：LangGraph Planner-ReAct 能完成 plan/step/tool/summarize；工具结果统一走 ToolResultHandlerRegistry（runner 无 tool_name if/elif）；工具重放不重复副作用。
+阶段 5：LangGraph Planner-ReAct 能完成 plan/step/tool/summarize；工具结果统一走 ToolResultHandlerRegistry（runner 无 tool_name if/elif）；
+        Projector/MemoryPolicy/EvidenceAssembler 等变化点采用 Strategy / Visitor / Handler Registry；工具重放不重复副作用。
 阶段 6：服务重启后能恢复 waiting 任务；用户输入后能从 interrupt 点继续。
 阶段 7：单 Graph 在 golden set 上达标（对照旧项目样本）；可对外演示并接用户流量。
 ```
 
-通用验收口径：可重放、可恢复、可计量；M2 再加可灰度、可隔离、可跨 app。
+通用验收口径：可重放、可恢复、可计量；同时必须通过 Context / State / Memory / Workspace / Storage 不混层检查。M2 再加可灰度、可隔离、可跨 app。
 
 ---
 
@@ -1846,6 +2050,14 @@ ADR-022: ◆ Event/Message/Memory/Checkpoint/Transport 统一边界铁律（命�
          Memory=Agent 复用(AgentMemory/LongTermMemory)；Checkpoint=运行时 state 快照(非记忆)；
          TransportMessage=通信 envelope, 只在 adapter/broker/SSE 边界, 不进 domain model(完整 schema 属 M2)。
          铁律：Event 用过去式、Command 用祈使式；UIEvent 不是真相源；TransportMessage 不入 state/memory/payload。
+ADR-022A: ★ Context / State / Memory / Workspace / Database / Object Storage 分层铁律：
+          Context=临时模型输入包；State=可 checkpoint 的执行态；Memory=可召回经验/事实/摘要；
+          Workspace=产品组织与工作文件域；Database=结构化事实域；Object Storage=大对象域。
+          新增 schema/port/test 必须标注所属层并避免跨层污染。
+ADR-022B: ★ Strategy / Visitor / Handler Registry 实现模式：
+          Strategy 用于可替换执行策略（tool handler、memory policy、model provider、sandbox、evidence 子策略）；
+          Visitor/Handler Registry 用于稳定数据结构上的多种投影（DomainEvent->UIEvent、audit/export、Plan/Step view）。
+          禁止 graph runner/projector/tool pipeline 里堆大段 tool_name/event_type if/elif。
 ADR-023: ▲ 验证优先（Walking Skeleton）——平台级建设前先端到端证伪 checkpoint/SSE/重放三假设（§6.5）
 ADR-024: ▲ M1/M2 范围纪律——"不做它单 Graph 就跑不通"才进 M1；平台件等负载/需求驱动（§0.1、§33.1）
 ADR-025: ▲ 评估前置——最小 golden set + 录制回放在 M1 阶段 0.5 就建，而非放到最后（§28.3）
@@ -1878,10 +2090,11 @@ ADR-028: ▲ 跨源证据装配（吸收 Agently 4.1.3.9 Workspace 的证据装�
 ```text
 State 过大，checkpoint 成本高     | state 最小化，大对象放文件/事件/memory store
 长期记忆污染上下文                | 价值判据 + 召回归因 + 置信度/来源/过滤/人工确认（§12.4/12.5）
-多智能体过早引入 -> 复杂度爆炸    | 先单 Graph，后 Supervisor（M2）
+多智能体过早引入 -> 复杂度爆炸    | M1 只做单 Graph + 可切换 AgentProfile；Supervisor/多 Agent 协作放 M2
 重放重复执行副作用                | reducer 幂等 + tool_call_id 结果缓存 + 并发锁（Walking Skeleton 先验证）
 发布后旧 checkpoint 读不了        | schema_version + upcaster + checkpoint 最小稳定子集
 图拓扑变更冲突活跃 run             | GraphSpec 不可变 + run 版本锁定（M2）
+Workspace 变成 god object          | State / Workspace / External DB / Object Storage 分层；Workspace 只做产品聚合和权限入口
 成本失控                          | RunBudget 预算熔断 + Model Gateway 计量
 ```
 
@@ -1947,11 +2160,14 @@ State 过大，checkpoint 成本高     | state 最小化，大对象放文件/�
 5.  EventSink + DomainEvent/UIEvent + TimelineProjector + RunLineage(占位) + LiveDelta/事件双流对账。
     session_events 按新 schema(category/lineage/schema_version) 建表。
 6.  执行拓扑最小闭环：API 入队 -> Celery graph-runner -> Redis -> SSE；Run 状态机 + idempotency_key + session 锁。
-7.  AgentMemory / MemoryPolicy。
-8.  LangGraph Planner-ReAct 单图（State+Reducer）+ ToolResultHandlerRegistry（browser/search/shell/file/mcp/a2a/default handlers，runner 不再按 tool_name 分支）。
-9.  为上述写单测（reducer 幂等、序列化往返、DomainEvent->UIEvent、idempotency、interrupt-resume）。
-10. 单 Graph 在 golden set 达标（对照旧项目抽取样本）后，接用户流量，M1 收尾可演示。
-11. 写 ADR-001~003、009、010、015、019、022、023、024、025。
+7.  轻量 AgentProfile：内置少量可切换智能体形态；CreateRunCommand 支持 agent_profile_key；run 记录 profile key/version。
+8.  AgentMemory / MemoryPolicy。
+9.  LangGraph Planner-ReAct 单图（State+Reducer）+ ToolResultHandlerRegistry（browser/search/shell/file/mcp/a2a/default handlers，runner 不再按 tool_name 分支）。
+    对 ToolResultHandler / TimelineProjector / MemoryPolicy / LLMPort / SandboxPort / EvidenceAssembler 子策略落实 Strategy / Visitor / Handler Registry。
+10. 为上述写单测（reducer 幂等、序列化往返、DomainEvent->UIEvent、idempotency、interrupt-resume、AgentProfile 选择/权限生效）。
+    同时加不混层测试：State 不含文件正文/完整事件历史；Memory 必带 source_ref/provenance；DB 只存 object URI/ref；Context 不作为真相源落库。
+11. 单 Graph 在 golden set 达标（对照旧项目抽取样本）后，接用户流量，M1 收尾可演示。
+12. 写 ADR-001~003、009、010、015、019、022、022A、022B、023、024、025。
 ```
 
 这批完成后，**地基（已验证的恢复/对账/幂等 + 消息协议 + 事件投影 + 执行拓扑 + 评估兜底）是被真实跑通过的，而不是纸面承诺**，再扩展 M2 能力风险显著降低。
