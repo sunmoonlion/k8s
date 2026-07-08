@@ -191,12 +191,10 @@ Infrastructure:      Postgres, Redis, RabbitMQ, Object Storage, Sandbox, RAGFlow
 前端展示边界：UIEvent 是 UI 投影视图（◆ 区别于 DomainEvent 事实，见 §18）。
 模型上下文边界：LangChain Core BaseMessage 是 LLM 输入输出协议。
 执行恢复边界：Checkpoint 是运行时 AgentState 的持久化快照（= ThreadMemory），不是"记忆"。
-工作区边界：Workspace/Project 是产品组织层，聚合多个 session、文件、知识绑定与默认 AgentProfile；
-  不替代 state / memory / event / file / 外部数据源。
 会话记忆边界：AgentMemory 是 session 级可压缩上下文。
 长期记忆边界：Store / LongTermMemory 是跨 session 可复用知识。
-对象存储边界：Object Storage 只保存文件、附件、截图、工具产物等大对象；State/Event/Memory 只保存引用与元数据。
-外部数据源边界：RAGFlow、业务数据库、第三方 API 是外部事实源；通过 Port/Adapter 读取，不复制成 Workspace 内部万能数据。
+分层存储边界：Workspace/Project(M2 产品组织层) / Object Storage(大对象) / External Source(RAGFlow/业务库/三方 API)
+  各守其位，只存引用不复制内容——完整定义与 M1/M2 定位见 §26.1（分层唯一权威）。
 租户隔离边界：tenant_id/project_id 贯穿 memory/event/file/sandbox（M1 留占位，M2 全链路）。
 证据装配边界：EvidenceAssembler 是 run/session 级跨源证据的只读装配层（M2，见 §13.9），
   只读各来源结果、不持有存储；不是 LangGraph state、不是 memory、不是 RAGFlow dataset。
@@ -516,36 +514,9 @@ LangGraph 接入前必须先稳住消息体系。关于 legacy，**已确认旧�
 
 State 只放执行需要的最小事实：messages / session_id / user_input / plan / current_step / pending_tool_calls / artifacts / status / error。完整事件历史、文件详情、长期记忆不进 state。
 
-### 9.6.1 State / Workspace / 外部数据 / 对象存储分层
+### 9.6.1 State / Workspace / 外部数据 / 对象存储不混层
 
-不要把 Workspace 做成"什么都塞进去"的万能上下文。四层边界如下：
-
-```text
-State:
-  当前 graph 执行所需的最小运行时状态。可 checkpoint，可 replay。
-  只放小对象、id、引用、当前计划/步骤和必要 messages。
-
-Workspace / Project:
-  产品组织层。用于把多个 session、文件、知识库绑定、默认 AgentProfile、权限策略组织在一起。
-  可以作为业务入口和权限边界，但不直接承载 graph state，也不吞掉外部数据源治理。
-
-External Database / Knowledge Source:
-  外部事实源，例如 RAGFlow dataset、业务库、第三方 API、用户系统。
-  通过 Port/Adapter 查询，保留来源、权限、版本、更新时间等 provenance。
-
-Object Storage:
-  大对象存储，例如上传文件、工具产物、截图、导出包、长 stdout。
-  数据库和 state 只保存 URI/ref/hash/metadata，不保存大对象内容。
-```
-
-规则：
-
-```text
-- State 不能变成 Workspace。
-- Workspace 不能变成外部数据库的复制品。
-- Object Storage 不能承载业务状态机。
-- EvidenceAssembler 只读并装配这些来源，不改变它们的治理边界。
-```
+一句话原则：**State 不能变成 Workspace；Workspace 不能变成外部数据库的复制品；Object Storage 不能承载业务状态机；EvidenceAssembler 只读装配、不改变各来源的治理边界。** 完整的六层定义、落地检查与 Workspace 的 M1/M2 定位见 **§26.1（分层唯一权威）**，此处不重述。
 
 ### 9.7 ★ 重放安全是第一性约束（M1 就上）
 
@@ -1732,7 +1703,9 @@ M1：先 YAML + 进程内读取；不可变版本化工件（控制面产出）�
 
 这样"将来把 Runtime 从 package 抽成独立服务"不是一次性豪赌，而是有退路的渐进决策。
 
-### 26.1 ★ Context / State / Memory / Workspace / Storage 贯穿实现规则
+### 26.1 ★ Context / State / Memory / Workspace / Storage 分层（★ 分层唯一权威，全文只此处展开，§4.2/§9.6.1 只引用）
+
+> ★ 权威定义：本节是分层边界的**唯一权威来源**。§4.2 核心边界、§9.6.1 只做一句话摘要 + 指回本节；如需修改分层语义，只改这里。（与 §12.1「记忆↔表映射唯一权威」同一治理原则。）
 
 实现时每个模块、表、Port、测试都必须能回答：这个数据属于哪一层？不能因为"给模型要用"就混入同一个对象。
 
@@ -1749,7 +1722,7 @@ Memory:
   可召回的经验/事实/摘要层。可从 State、Workspace、DB/Event、Object Storage 引用中提炼。
   必须带来源、置信度、TTL/敏感标记/作用域；不能替代原始文件、事件流、业务库或 checkpoint。
 
-Workspace / Project:
+Workspace / Project（★ M2 产品组织层，M1 不建，见下方定位说明）:
   产品组织层和工作文件域。组织 session、文件、知识绑定、默认 AgentProfile、权限策略。
   可以有文件系统式工作目录语义，但不承载业务状态机，不复制外部数据库。
 
@@ -1761,6 +1734,12 @@ Object Storage:
   大对象域。保存上传文件、截图、导出包、工具产物、长日志、二进制内容。
   数据库、state、memory 只保存 uri/ref/hash/metadata。
 ```
+
+> ★ Workspace 定位与 M1/M2（重要，避免"先立规矩后定义"）：Workspace/Project 是 **M2 才建的产品组织层**，
+> 用于把多个 session / 文件 / 知识绑定 / 默认 AgentProfile / 权限策略聚合在一个业务入口下。
+> **M1 不建 Workspace 实体、不建 workspaces/projects 表**——M1 阶段 `project_id` 仅作 session/事件上的
+> 占位字段（同 tenant_id 占位，§21）。本文其它各处（§4.2、§9.6.1、§24.1）出现的"工作区边界"都只是
+> **提前把边界占住**，不代表 M1 要实现它。触发条件见 §31.2 M2 路线。
 
 落地检查：
 
@@ -2050,14 +2029,6 @@ ADR-022: ◆ Event/Message/Memory/Checkpoint/Transport 统一边界铁律（命�
          Memory=Agent 复用(AgentMemory/LongTermMemory)；Checkpoint=运行时 state 快照(非记忆)；
          TransportMessage=通信 envelope, 只在 adapter/broker/SSE 边界, 不进 domain model(完整 schema 属 M2)。
          铁律：Event 用过去式、Command 用祈使式；UIEvent 不是真相源；TransportMessage 不入 state/memory/payload。
-ADR-022A: ★ Context / State / Memory / Workspace / Database / Object Storage 分层铁律：
-          Context=临时模型输入包；State=可 checkpoint 的执行态；Memory=可召回经验/事实/摘要；
-          Workspace=产品组织与工作文件域；Database=结构化事实域；Object Storage=大对象域。
-          新增 schema/port/test 必须标注所属层并避免跨层污染。
-ADR-022B: ★ Strategy / Visitor / Handler Registry 实现模式：
-          Strategy 用于可替换执行策略（tool handler、memory policy、model provider、sandbox、evidence 子策略）；
-          Visitor/Handler Registry 用于稳定数据结构上的多种投影（DomainEvent->UIEvent、audit/export、Plan/Step view）。
-          禁止 graph runner/projector/tool pipeline 里堆大段 tool_name/event_type if/elif。
 ADR-023: ▲ 验证优先（Walking Skeleton）——平台级建设前先端到端证伪 checkpoint/SSE/重放三假设（§6.5）
 ADR-024: ▲ M1/M2 范围纪律——"不做它单 Graph 就跑不通"才进 M1；平台件等负载/需求驱动（§0.1、§33.1）
 ADR-025: ▲ 评估前置——最小 golden set + 录制回放在 M1 阶段 0.5 就建，而非放到最后（§28.3）
@@ -2068,6 +2039,14 @@ ADR-028: ▲ 跨源证据装配（吸收 Agently 4.1.3.9 Workspace 的证据装�
          统一到 EvidenceAssembler 做去重/结构门控 rerank/token budget/引用标准化/model-hot 打包；
          EvidenceBlock 只读装配、不持有存储、不进 state；evidence ≠ 完成证明（M2，§13.9）。
          不引入 ResearchWorkspace 统一存储层，不新增 RuntimeEventCenter（TraceSink 已收口，ADR-020）。
+ADR-029: ★ Context / State / Memory / Workspace / Database / Object Storage 分层铁律（分层唯一权威见 §26.1）：
+         Context=临时模型输入包；State=可 checkpoint 的执行态；Memory=可召回经验/事实/摘要；
+         Workspace=产品组织与工作文件域(M2 建，M1 不建)；Database=结构化事实域；Object Storage=大对象域。
+         新增 schema/port/test 必须标注所属层并避免跨层污染。
+ADR-030: ★ Strategy / Visitor / Handler Registry 实现模式（见 §26.2）：
+         Strategy 用于可替换执行策略（tool handler、memory policy、model provider、sandbox、evidence 子策略）；
+         Visitor/Handler Registry 用于稳定数据结构上的多种投影（DomainEvent->UIEvent、audit/export、Plan/Step view）。
+         禁止 graph runner/projector/tool pipeline 里堆大段 tool_name/event_type if/elif。
 ```
 
 ---
@@ -2167,7 +2146,7 @@ Workspace 变成 god object          | State / Workspace / External DB / Object 
 10. 为上述写单测（reducer 幂等、序列化往返、DomainEvent->UIEvent、idempotency、interrupt-resume、AgentProfile 选择/权限生效）。
     同时加不混层测试：State 不含文件正文/完整事件历史；Memory 必带 source_ref/provenance；DB 只存 object URI/ref；Context 不作为真相源落库。
 11. 单 Graph 在 golden set 达标（对照旧项目抽取样本）后，接用户流量，M1 收尾可演示。
-12. 写 ADR-001~003、009、010、015、019、022、022A、022B、023、024、025。
+12. 写 ADR-001~003、009、010、015、019、022、023、024、025、029、030。
 ```
 
 这批完成后，**地基（已验证的恢复/对账/幂等 + 消息协议 + 事件投影 + 执行拓扑 + 评估兜底）是被真实跑通过的，而不是纸面承诺**，再扩展 M2 能力风险显著降低。
@@ -2224,4 +2203,14 @@ H. ▲ 全新重建定位：旧项目彻底废弃，不部署/不兼容/不回�
 - 不在 M1 上 TransportMessage envelope / IntegrationEvent / 四类基类全量：只立命名占位，实现归 M2（§18.5）。
   理由：在只有单 Redis+SSE 通道、无跨 app 协作时引入传输 envelope，是为未出现的复杂度提前付费。
 - legacy：本修订是 greenfield，本就无兼容对象；旧项目只作为 golden 样本来源，golden set 达标前不接用户流量（§9.4）。
+
+AgentProfile 提前到 M1（▲，本次补充）：
++ §0.1/§20/§20.3/§24.1/§31/§35 明确"单 Graph + 可切换 AgentProfile"进 M1，区分"Profile 可切换 ≠ 多智能体协作"；
+  同一 Graph runtime 用不同 EffectiveAgentConfig(prompt/model/tools/permissions/memory/ragflow) 具体化，业务不 fork 代码。
+  AgentRegistry/GraphRegistry 版本化仍是 M2。
+
+分层与实现模式收敛（★，本次收敛整理）：
++ §26.1 定为"分层唯一权威"（Context/State/Memory/Workspace/Database/Object Storage），§4.2/§9.6.1 精简为一句话 + 引用，消除三处重复。
++ Workspace/Project 明确定位：M2 产品组织层，M1 不建实体/不建 workspaces/projects 表，各处"工作区边界"仅提前占边界（§26.1 定位说明、§24.1 标 M2 可选）。
++ ADR 编号清理：原 022A/022B 改为 ADR-029(分层铁律)/ADR-030(Strategy/Visitor/Handler Registry 模式)，去掉子编号（§26.1/§26.2）。
 ```
