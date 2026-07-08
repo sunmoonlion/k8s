@@ -1085,6 +1085,11 @@ Tool:  外部动作能力（shell、browser、file、mcp）。
 
 ### 14.2 第一版 Graph：Planner-ReAct
 
+> ★ 定位声明（避免"平台只支持一种编排"的误读）：Planner-ReAct 只是 **M1 落地的第一个 Graph**，
+> 用来最快打通"竖线"（拓扑/重放/事件/记忆/工具）。平台通过 `graph_name` + GraphRegistry（§15.4）支持
+> **任意编排结构**——supervisor、plan-execute、多 Agent 协作、纯 workflow 等都是"新注册一张 Graph +
+> 让 AgentProfile 指过去"，**不影响** Run/事件/记忆/工具链路与上层 API。换编排结构属于"加内容"，不是"改骨架"。
+
 ```text
 START
   -> load_session -> normalize_input -> recall_memory
@@ -1097,6 +1102,11 @@ START
 ### 14.3 ★ State 设计 + Reducer（M1 关键）
 
 裸字段在多节点/并行/重放时会丢更新，必须为累积型字段配幂等 reducer。
+
+> ★ 分层：State 拆成 **`BaseAgentState`（编排无关的通用执行态）** + 具体 Graph 的 State（如 `PlannerReactState`）。
+> 通用字段（ids/messages/tool_results/artifacts/status/budget/lineage）与 reducer 复用；换编排结构时新 Graph
+> 只需 `class XxxState(BaseAgentState)` 追加自己的领域字段（如 supervisor 的 `sub_agents`、plan-execute 的 `plan`），
+> checkpoint / reducer / 事件投影对通用部分保持兼容——避免"叫 PlannerReactState 却被别的图复用"的名实不符。
 
 ```python
 from typing import Annotated, TypedDict
@@ -1112,7 +1122,8 @@ def append_unique(old, new):                                    # 按 id 去重�
     seen = {x["id"] for x in old}
     return old + [x for x in new if x["id"] not in seen]
 
-class PlannerReactState(TypedDict, total=False):
+class BaseAgentState(TypedDict, total=False):
+    """编排无关的通用执行态，任何 Graph 都复用；换编排结构不动这一层。"""
     session_id: str
     run_id: str
     tenant_id: str            # M1 可固定占位
@@ -1120,9 +1131,6 @@ class PlannerReactState(TypedDict, total=False):
     project_id: str | None
     user_input: dict
     messages: Annotated[list[BaseMessage], add_messages]
-    plan: Annotated[dict | None, merge_plan]
-    current_step_id: str | None
-    current_step: dict | None
     pending_tool_calls: list[dict]
     tool_results: Annotated[list[dict], append_unique]
     artifacts: Annotated[list[dict], append_unique]
@@ -1131,9 +1139,15 @@ class PlannerReactState(TypedDict, total=False):
     status: str
     error: dict | None
     budget: dict              # 见 §16
+
+class PlannerReactState(BaseAgentState, total=False):
+    """Planner-ReAct 专属领域字段；其它编排结构自定义各自子类。"""
+    plan: Annotated[dict | None, merge_plan]
+    current_step_id: str | None
+    current_step: dict | None
 ```
 
-原则：任何会被多节点写、或会在重放中重复写的字段，禁止裸覆盖，必须配满足幂等的 reducer。
+原则：任何会被多节点写、或会在重放中重复写的字段，禁止裸覆盖，必须配满足幂等的 reducer。通用累积字段的 reducer 归 `BaseAgentState`，各 Graph 只为自己新增字段配 reducer。
 
 ### 14.4 Node 设计原则
 
