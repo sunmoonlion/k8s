@@ -115,6 +115,7 @@ EOF
   # +@connection：PING/CLIENT 等，ioredis 连接就绪检查需要；勿省略
   # +@pubsub：Bull/NodeBull worker 需要 subscribe/psubscribe
   local category="${REDIS_ACL_CATEGORY:-+@read +@write +@connection +@hash +@string +@list +@set +@sortedset}"
+  category="${category//resetchannels/}"
   local channel_spec="${REDIS_CHANNEL_PREFIX:-}"
   local redis_all_channels="false"
   if [[ "${category}" == *"+@pubsub"* ]]; then
@@ -173,9 +174,9 @@ if [[ "\${redis_all_channels}" != "true" && -n "\${channel_spec}" ]]; then
 fi
 REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' PING >/dev/null
 if [[ "\${redis_all_channels}" == "true" ]]; then
-  REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' ACL SETUSER '${APP_DB_USER}' on '>${APP_DB_PASSWORD}' "\${key_args[@]}" allchannels \${category} -@dangerous >/dev/null
+  REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' ACL SETUSER '${APP_DB_USER}' on '>${APP_DB_PASSWORD}' "\${key_args[@]}" resetchannels allchannels \${category} -@dangerous >/dev/null
 else
-  REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' ACL SETUSER '${APP_DB_USER}' on '>${APP_DB_PASSWORD}' "\${key_args[@]}" "\${channel_args[@]}" \${category} -@dangerous >/dev/null
+  REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' ACL SETUSER '${APP_DB_USER}' on '>${APP_DB_PASSWORD}' "\${key_args[@]}" resetchannels "\${channel_args[@]}" \${category} -@dangerous >/dev/null
 fi
 echo '[redis-client] ACL user upserted: ${APP_DB_USER}'
 EOF
@@ -224,10 +225,10 @@ EOF
   fi
   if [[ "${redis_all_channels}" == "true" ]]; then
     # shellcheck disable=SC2086
-    redis-cli -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} ACL SETUSER "${APP_DB_USER}" on ">${APP_DB_PASSWORD}" "${key_args[@]}" allchannels ${category} -@dangerous >/dev/null
+    redis-cli -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} ACL SETUSER "${APP_DB_USER}" on ">${APP_DB_PASSWORD}" "${key_args[@]}" resetchannels allchannels ${category} -@dangerous >/dev/null
   else
     # shellcheck disable=SC2086
-    redis-cli -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} ACL SETUSER "${APP_DB_USER}" on ">${APP_DB_PASSWORD}" "${key_args[@]}" "${channel_args[@]}" ${category} -@dangerous >/dev/null
+    redis-cli -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} ACL SETUSER "${APP_DB_USER}" on ">${APP_DB_PASSWORD}" "${key_args[@]}" resetchannels "${channel_args[@]}" ${category} -@dangerous >/dev/null
   fi
   log "[redis] ACL user upserted: ${APP_DB_USER}"
 

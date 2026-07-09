@@ -140,6 +140,7 @@ REDIS_ALLOW_FLUSH_DB=true
 - `REDIS_ACL_CATEGORY`（默认含 `+@read +@write +@connection` 等）：**须含 `+@connection`**，否则 ACL 用户无法执行 `PING`，ioredis 连接会失败；NodeBull/Bull worker 还须 **`+@pubsub`**（`nodebull-redis.k8s.env` 已默认包含）。执行机必须使用支持 `--user` 的 `redis-cli`（Redis CLI >= 6）。
 - `REDIS_ALL_CHANNELS`（默认在含 `+@pubsub` 时为 `true`）：Bull 的 `psubscribe` 订阅模式（如 `active*`、`waiting*`）无法被 `&key:*` 前缀 ACL 完全覆盖；专用 nodebull Redis 应设为 `true` 以授予 `allchannels`。
 - `REDIS_CHANNEL_PREFIX`（可选）：仅在 `REDIS_ALL_CHANNELS=false` 时生效；Pub/Sub channel 模式，空格分隔，与 `REDIS_KEY_PREFIX` 语法相同。
+- `resetchannels` 会由 Redis 驱动固定放在 channel 授权之前；即使误写进 `REDIS_ACL_CATEGORY`，驱动也会先剥离，避免清空刚授予的 `&*` / `allchannels`。
 
 ### k8s 输出字段
 
