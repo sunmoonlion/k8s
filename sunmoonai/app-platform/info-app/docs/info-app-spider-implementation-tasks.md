@@ -16,6 +16,17 @@
 - 当前不要默认认为集群已经更新；git push 只更新远端代码，运行中服务仍可能是旧镜像。
 - 下次恢复优先做新版镜像构建/部署、集群 migration、端到端采集/索引/治理 smoke test。
 
+恢复验证（2026-07-09）：
+
+- [x] 后端 `uv run pytest`：36 passed。
+- [x] 后端 `uv run pyright`：0 errors。
+- [x] 前端 `pnpm type-check`：passed。
+- [x] 前端 `pnpm build-only`：passed。
+- [x] `deploy-info-app-all.sh --cluster KIND validate-resources`：passed。
+- [x] KIND 部署完成：`info-admin-backend`、`celeryworker-info-admin-backend`、`info-admin-frontend` 使用 `1.0.1`；web 侧组件保持 `1.0.0`。
+- [x] 集群内 Alembic `upgrade head` / `current` 通过：`20260707_0002 (head)`。
+- [x] 部署态 smoke 通过：source 创建、Markdown 上传、S3 artifact、document/version 查询、review、entity-links、summary-profile、version review、Elasticsearch alias rebuild。
+
 ## 2. 实施原则
 
 1. 先闭环，再扩来源。
@@ -310,9 +321,7 @@ GET  /documents/{id}/versions
 
 ## 18. 下次恢复建议
 
-1. 同步四个仓库到 `codex-1`，并确认工作区干净。
-2. 如需重新确认，后端执行 `uv run pytest` 和 `uv run pyright`，前端执行 `pnpm type-check` 和 `pnpm build-only`。
-3. 在合适窗口执行 `~/k8s/sunmoonai/app-platform/info-app/deploy-info-app-all.sh --cluster KIND`。
-4. 确认集群数据库 migration 到 head，包含来源治理 migration。
-5. 在集群内验证：URL 采集、S3 artifact、RabbitMQ worker、Elasticsearch 增量索引、治理 API metadata/audit_log。
-6. 暂缓项：真实 Scrapy/Playwright worker、PDF/Office 转换、完整反爬策略、治理前端产品化、真实 `knowledge-app` ingestion 联调。
+1. 继续产品化治理前端：重复候选、转载关系、实体关联、摘要画像和统一审计日志。
+2. 补真实 URL 采集的部署态 smoke，确认 RabbitMQ worker 消费 `crawl_url -> index_document_version` 链路。
+3. 联调真实 `knowledge-app` ingestion API。
+4. 暂缓项：真实 Scrapy/Playwright worker、PDF/Office 转换、完整反爬策略。

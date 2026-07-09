@@ -279,6 +279,7 @@ deploy_app() {
     fi
 
     auto_generate_yaml "$CELERYWORKER_INFO_ADMIN_BACKEND_YAML" "$K8S_RESOURCE_DIR" || return 1
+    auto_generate_yaml "$CELERYWORKER_INFO_ADMIN_BACKEND_PVC_YAML" "$K8S_RESOURCE_DIR" || return 1
 
     if [ -f "$CELERYWORKER_INFO_ADMIN_BACKEND_PVC_YAML" ]; then
         log_info "部署 PVC..."
