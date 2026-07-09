@@ -174,7 +174,7 @@ Persistence: events/files/memories 都在 sessions JSONB 中，长期会膨胀�
 ### 4.1 分层视图
 
 ```text
-Frontend / API:      Next.js UI, FastAPI Routes, SSE, File Preview, VNC
+Frontend / API:      research-web-frontend(Next.js, 直连 FastAPI) / FastAPI Routes(agent+admin 两 API 面) / SSE / File Preview / VNC（配对与矛盾解法见 §5.6）
 Application:         AgentRunService, SessionService, FileService, ConfigService
 Domain (只依赖 Ports): Session, Event, Plan, Step, UserInput, AgentProfile, Policy
 Agent Runtime (ACL 内): LangGraph Graphs, Nodes, Edges, State+Reducer, Interrupt
@@ -240,9 +240,9 @@ knowledge-app priority = 950 ; research-app priority = 650
 ### 5.4 新项目在 research-app 内的组件落位
 
 ```text
-agent API + 用户侧入口 -> research-app Python 应用栈（FastAPI:8000），SSE/入队
+agent API + 用户侧入口 -> research-app Python 应用栈（FastAPI:8000）的 agent API 面，SSE/入队（配对见 §5.6）
 graph-runner            -> research-app Celery worker（Python），LangGraph 真正执行者
-智能体任务前端          -> research-web-frontend
+智能体任务前端          -> research-web-frontend（Next，直连 FastAPI agent API 面，不经 Node web-backend；见 §5.6）
 sandbox runtime         -> research-app 依赖的沙箱服务（独立 deployment 或平台工具服务）
 ingress / 网关          -> app-platform ingress/traefik（不自带 nginx）
 本地开发                -> 可用 compose 起最小依赖，生产一律 app-platform/k8s
@@ -290,6 +290,74 @@ class KnowledgeRetrievalPort(Protocol):
 实现：`RagflowKnowledgeRetrievalAdapter`。配置（`RESEARCH_RAGFLOW_BASE_URL/API_KEY/...`）进 secret/configMap，不写死。开发阶段允许 RAGFlow disabled，不阻塞部署。
 
 > ▲ M1 注记：阶段 -1（平台边界约定）**只定文档与边界约定**，成本极低，可与 M1 并行；但 RAGFlow 深度集成本身是 M2（§0.1）。
+
+### 5.6 ★ 前端选型与前后端配对（解决 admin/agent 配对矛盾）
+
+#### 5.6.1 矛盾的根因
+
+平台 `admin` / `web` 的划分**混叠了两个正交维度**，普通 CRUD 应用里两轴对齐，Agent 产品打破了对齐：
+
+```text
+维度①（语言栈）：admin = Python(FastAPI + Celery)    web = Node(:3000 + BullMQ)
+维度②（受众）  ：admin = 内部管理台               web = 终端用户产品
+
+普通应用：管理→Python(admin) / 用户→Node(web)，两轴对齐，无矛盾。
+Agent 产品：面向终端用户的 Agent 运行时【必须是 Python】(LangGraph/checkpoint/SSE)，
+           => "终端用户" 与 "Python" 重合，admin/web 命名无法表达 => 矛盾产生。
+```
+
+#### 5.6.2 解法：把两个维度显式解耦（M1 定案）
+
+不按"受众"拆物理服务，而是**认清 `research-admin-backend` 是"Python 应用后端"**（domain/ports/checkpointer 的唯一归属地），它同时暴露**两个 API 面**，用**路由前缀 + 鉴权作用域**隔离受众，而不是拆服务：
+
+```text
+research-admin-backend (Python/FastAPI:8000)  = 唯一 Python 应用后端，承载两 API 面：
+    - 管理 API 面  /api/admin/**   （内部/员工鉴权）  <- research-admin-frontend 消费
+    - agent API 面 /api/agent/**   （终端用户+租户鉴权，SSE/run/resume/files）
+                                                      <- research-web-frontend(Next) 直连消费
+celeryworker-research-admin-backend (Python/Celery) = graph-runner，LangGraph 真正执行者
+research-web-frontend (Next.js)  = 终端用户 Agent UI，直连 agent API 面（SSE/REST），不经 Node
+research-admin-frontend          = 内部管理台，消费管理 API 面
+research-web-backend (Node:3000) / nodebullworker = 【M1 不进 agent 关键路径】，保留作 M2 可选 BFF
+```
+
+一句话：**受众用"鉴权作用域 + 路由前缀"分，语言栈用"admin=Python / web=Node"分——两把尺子各管一维，不再互相绑架。** `web-frontend` 直连 Python 后端不是"越界"，而是"终端用户面恰好由 Python 后端提供"。
+
+#### 5.6.3 治理铁律（防止腐化）
+
+```text
+1. M1 一个 Python 服务、两 API 面：靠 route prefix + auth scope + 限流 硬隔离，不拆成两个服务。
+2. 受众隔离靠鉴权作用域，不靠服务边界：终端用户 token 不得到达 /api/admin/**；
+   员工代终端用户发起 run 必须显式 impersonation + 审计。
+3. web-frontend 只连 agent API 面；admin-frontend 只连管理 API 面；互不越界。
+4. Node web-backend 永不在 agent 关键路径上；若 M2 作为 BFF 复活，它只做代理/SSR/鉴权聚合，
+   绝不成为第二真相源（与 §18.5 TransportMessage/envelope 延后同一原则）。
+5. graph-runner(Celery) 永远只被后端内部经队列驱动，前端不得直连 worker。
+```
+
+#### 5.6.4 M2 触发式演进
+
+```text
+把 Python 后端物理拆成 agent-api 与 admin-api 两个服务 —— 仅当出现：
+  - 伸缩诉求分叉（终端用户流量 vs 内部管理流量量级/弹性差异大），或
+  - 安全隔离诉求（公网面 vs 内网面需独立部署/网络策略），或
+  - 发布节奏分叉（agent 侧高频迭代不想带上管理台）。
+在此之前：一个服务 + 两 router（同 tenant_id 占位、TransportMessage 命名先行的哲学，§18.5/§21）。
+引入 Node BFF —— 仅当需要 SSR/SEO、跨多 app 聚合、或 Node 侧统一鉴权网关时。
+```
+
+#### 5.6.5 前端脚手架：吸收 `mooc-manus/ui`（golden 样本，非迁移）
+
+旧 `imooc-mas/mooc-manus/ui` 的技术栈现代且与本设计一致（Next 16 + React 19 + TS5 + Tailwind4 + Radix/shadcn + lucide + react-markdown + sonner + `@novnc/novnc`），**整体作为 `research-web-frontend` 的脚手架起点吸收**，符合 ADR-027「旧项目仅作 golden 样本」。
+
+```text
+吸收（皮 + 交互范式）：VNC 沙箱查看器(novnc)、SSE 打字机时间线、工具调用卡片、
+                       Markdown/文件预览、interrupt 等待人工介入的交互形态。
+重做（数据层，禁止照搬旧事件消费）：
+  - 时间线只消费 UIEvent（投影，按 id 去重，断线走 last_event_id），
+  - 实时增量只消费 LiveDelta（kind=token|progress，可丢），用 final UIEvent 对账，
+  - 前端禁止直接订原生 LangGraph event（§18.2 铁律）。
+```
 
 ---
 
@@ -2061,6 +2129,14 @@ ADR-030: ★ Strategy / Visitor / Handler Registry 实现模式（见 §26.2）�
          Strategy 用于可替换执行策略（tool handler、memory policy、model provider、sandbox、evidence 子策略）；
          Visitor/Handler Registry 用于稳定数据结构上的多种投影（DomainEvent->UIEvent、audit/export、Plan/Step view）。
          禁止 graph runner/projector/tool pipeline 里堆大段 tool_name/event_type if/elif。
+ADR-031: ★ 前端选型与 admin/agent 配对（见 §5.6）——admin/web 的划分混叠"语言栈"与"受众"两维，
+         Agent 产品令"终端用户"与"Python"重合而产生矛盾。解法：把两维解耦——research-admin-backend
+         是唯一 Python 应用后端，暴露 /api/admin/**(管理) 与 /api/agent/**(终端用户) 两 API 面，
+         靠 route prefix + auth scope 隔离受众而非拆服务；research-web-frontend(Next) 直连 agent API 面
+         的 SSE/REST，不经 Node web-backend；Node BFF 与 Python 后端物理拆分均为 M2 触发式。
+ADR-032: ▲ 前端脚手架吸收 mooc-manus/ui（见 §5.6.5，呼应 ADR-027）——Next16/React19/Tailwind4/Radix/
+         novnc/react-markdown 栈整体作 research-web-frontend 起点；VNC/时间线/工具卡片/interrupt 交互直接吸收，
+         但事件消费层必须按 §18 UIEvent/LiveDelta 重建，禁止照搬旧"一 Event 兼四职"的消费逻辑。
 ```
 
 ---
@@ -2089,6 +2165,8 @@ State 过大，checkpoint 成本高     | state 最小化，大对象放文件/�
 图拓扑变更冲突活跃 run             | GraphSpec 不可变 + run 版本锁定（M2）
 Workspace 变成 god object          | State / Workspace / External DB / Object Storage 分层；Workspace 只做产品聚合和权限入口
 成本失控                          | RunBudget 预算熔断 + Model Gateway 计量
+admin/agent 配对混乱→越权或返工   | 两维解耦：语言栈 admin=Python/web=Node，受众靠 auth scope+route 前缀；一服务两 API 面(§5.6、ADR-031)
+终端用户流量打到管理 API 面       | /api/agent/** 与 /api/admin/** 鉴权作用域硬隔离，用户 token 不得触达 admin 路由(§5.6.3)
 ```
 
 ### 33.3 产品风险
@@ -2160,7 +2238,9 @@ Workspace 变成 god object          | State / Workspace / External DB / Object 
 10. 为上述写单测（reducer 幂等、序列化往返、DomainEvent->UIEvent、idempotency、interrupt-resume、AgentProfile 选择/权限生效）。
     同时加不混层测试：State 不含文件正文/完整事件历史；Memory 必带 source_ref/provenance；DB 只存 object URI/ref；Context 不作为真相源落库。
 11. 单 Graph 在 golden set 达标（对照旧项目抽取样本）后，接用户流量，M1 收尾可演示。
-12. 写 ADR-001~003、009、010、015、019、022、023、024、025、029、030。
+12. 写 ADR-001~003、009、010、015、019、022、023、024、025、029、030、031、032。
+13. 前端：research-web-frontend 以 mooc-manus/ui 为脚手架起点（Next16/React19/Tailwind4/Radix/novnc），
+    直连 FastAPI agent API 面(/api/agent/**)，只消费 UIEvent + LiveDelta；后端按 §5.6 分 agent/admin 两 API 面 + auth scope 隔离。
 ```
 
 这批完成后，**地基（已验证的恢复/对账/幂等 + 消息协议 + 事件投影 + 执行拓扑 + 评估兜底）是被真实跑通过的，而不是纸面承诺**，再扩展 M2 能力风险显著降低。
@@ -2227,4 +2307,12 @@ AgentProfile 提前到 M1（▲，本次补充）：
 + §26.1 定为"分层唯一权威"（Context/State/Memory/Workspace/Database/Object Storage），§4.2/§9.6.1 精简为一句话 + 引用，消除三处重复。
 + Workspace/Project 明确定位：M2 产品组织层，M1 不建实体/不建 workspaces/projects 表，各处"工作区边界"仅提前占边界（§26.1 定位说明、§24.1 标 M2 可选）。
 + ADR 编号清理：原 022A/022B 改为 ADR-029(分层铁律)/ADR-030(Strategy/Visitor/Handler Registry 模式)，去掉子编号（§26.1/§26.2）。
+
+前端选型与 admin/agent 配对矛盾（★，本次新增）：
++ 新增 §5.6：认清 admin/web 划分混叠"语言栈"与"受众"两维，Agent 令"终端用户"与"Python"重合而生矛盾；
+  解法为两维解耦——research-admin-backend 是唯一 Python 应用后端，暴露 /api/admin/**(管理) 与 /api/agent/**(终端用户) 两 API 面，
+  靠 route prefix + auth scope 隔离受众而非拆服务；research-web-frontend(Next) 直连 agent API 面，不经 Node web-backend。
++ Node BFF 与 Python 后端物理拆分均为 M2 触发式；§4.1/§5.4 前端行同步、§33.2 加两条配对风险；ADR-031。
++ mooc-manus/ui 作 research-web-frontend 脚手架 golden 样本吸收（Next16/React19/Tailwind4/Radix/novnc），
+  皮与交互直接吸收，事件消费层按 §18 UIEvent/LiveDelta 重建，禁止照搬旧事件消费；ADR-032（呼应 ADR-027）。
 ```
