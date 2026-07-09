@@ -174,7 +174,8 @@ Persistence: events/files/memories 都在 sessions JSONB 中，长期会膨胀�
 ### 4.1 分层视图
 
 ```text
-Frontend / API:      research-web-frontend(Next.js, 直连 FastAPI) / FastAPI Routes(agent+admin 两 API 面) / SSE / File Preview / VNC（配对与矛盾解法见 §5.6）
+Frontend / API:      research-web-frontend(Next.js，M1 用户侧实现) / research-admin-frontend(Vue，管理台实现) /
+                     FastAPI Routes(agent+admin 两 API 面) / SSE / File Preview / VNC（配对、技术栈解耦与矛盾解法见 §5.6）
 Application:         AgentRunService, SessionService, FileService, ConfigService
 Domain (只依赖 Ports): Session, Event, Plan, Step, UserInput, AgentProfile, Policy
 Agent Runtime (ACL 内): LangGraph Graphs, Nodes, Edges, State+Reducer, Interrupt
@@ -240,9 +241,10 @@ knowledge-app priority = 950 ; research-app priority = 650
 ### 5.4 新项目在 research-app 内的组件落位
 
 ```text
-agent API + 用户侧入口 -> research-app Python 应用栈（FastAPI:8000）的 agent API 面，SSE/入队（配对见 §5.6）
+agent API + 用户侧入口 -> research-app Python 应用栈（FastAPI:8000）的 agent API 面，SSE/入队（配对与多前端接入见 §5.6）
 graph-runner            -> research-app Celery worker（Python），LangGraph 真正执行者
-智能体任务前端          -> research-web-frontend（Next，直连 FastAPI agent API 面，不经 Node web-backend；见 §5.6）
+智能体任务前端          -> M1 先由 research-web-frontend（Next）实现，直连 FastAPI agent API 面，不经 Node web-backend；
+                           Vue 用户侧/实验侧前端也可作为并行或后续实现接同一 API contract（见 §5.6）
 sandbox runtime         -> research-app 依赖的沙箱服务（独立 deployment 或平台工具服务）
 ingress / 网关          -> app-platform ingress/traefik（不自带 nginx）
 本地开发                -> 可用 compose 起最小依赖，生产一律 app-platform/k8s
@@ -314,28 +316,70 @@ Agent 产品：面向终端用户的 Agent 运行时【必须是 Python】(LangG
 research-admin-backend (Python/FastAPI:8000)  = 唯一 Python 应用后端，承载两 API 面：
     - 管理 API 面  /api/admin/**   （内部/员工鉴权）  <- research-admin-frontend 消费
     - agent API 面 /api/agent/**   （终端用户+租户鉴权，SSE/run/resume/files）
-                                                      <- research-web-frontend(Next) 直连消费
+                                                      <- research-web-frontend(Next, M1) 直连消费
+                                                      <- 未来 Vue/移动端/嵌入式 Agent UI 可按同 contract 接入
 celeryworker-research-admin-backend (Python/Celery) = graph-runner，LangGraph 真正执行者
-research-web-frontend (Next.js)  = 终端用户 Agent UI，直连 agent API 面（SSE/REST），不经 Node
-research-admin-frontend          = 内部管理台，消费管理 API 面
+research-web-frontend (Next.js)  = M1 终端用户 Agent UI，直连 agent API 面（SSE/REST），不经 Node
+research-admin-frontend (Vue)    = 内部管理台，消费管理 API 面；若做受控 Agent 管理/调试，也必须走明确授权的 agent API 能力
 research-web-backend (Node:3000) / nodebullworker = 【M1 不进 agent 关键路径】，保留作 M2 可选 BFF
 ```
 
 一句话：**受众用"鉴权作用域 + 路由前缀"分，语言栈用"admin=Python / web=Node"分——两把尺子各管一维，不再互相绑架。** `web-frontend` 直连 Python 后端不是"越界"，而是"终端用户面恰好由 Python 后端提供"。
 
-#### 5.6.3 治理铁律（防止腐化）
+#### 5.6.3 前端技术栈与 API ownership 解耦（Vue / Next / 未来前端）
+
+更进一步，**前端技术栈不决定后端归属，API ownership 才决定后端配对**。`Vue`、`Next`、移动端或后续任何前端都只是 UI 实现选择；它们是否能接某个后端能力，取决于要消费的 API 面、鉴权作用域和产品职责，而不是目录名叫 `admin-frontend` 还是 `web-frontend`。
+
+```text
+后端事实源：
+  research-admin-backend
+    /api/admin/**  -> 管理事实与管理操作（内部/员工鉴权）
+    /api/agent/**  -> Agent 产品事实与交互操作（终端用户/租户鉴权，SSE/run/resume/files）
+
+前端实现：
+  research-admin-frontend(Vue)
+    -> 默认消费 /api/admin/**
+    -> 若需要 Agent 管理/调试能力，只能通过受控入口消费 /api/agent/**，必须有独立 scope + 审计
+
+  research-web-frontend(Next)
+    -> M1 当前用户侧 Agent UI 实现，消费 /api/agent/**
+
+  future research-agent-frontend(Vue) / mobile / embedded UI
+    -> 可作为并行或后续用户侧实现消费 /api/agent/**
+    -> 不新增第二套 session/run/event 协议
+
+  research-web-backend(Node)
+    -> 不是因"前端属于 web"就必经；只有 BFF 条件满足时才进入链路（§5.6.5）
+```
+
+因此，v4 的前端策略不是"只能 Next 直连 FastAPI"，而是：
+
+```text
+谁需要管理能力，谁消费 /api/admin/**；
+谁需要 Agent 能力，谁消费 /api/agent/**；
+所有前端共享同一套 Session / Run / UIEvent / LiveDelta / File contract；
+不得因为 Vue 与 Next 技术栈不同而分裂出两套 Agent 协议或两个事实源。
+```
+
+M1 当前落地仍以 `research-web-frontend(Next)` 吸收 `mooc-manus/ui` 为主，避免范围膨胀；Vue 用户侧/实验侧前端是**允许的并行实现或 M2 演进**，但它必须消费同一份 OpenAPI/SSE contract，并通过同一套 contract tests。
+
+#### 5.6.4 治理铁律（防止腐化）
 
 ```text
 1. M1 一个 Python 服务、两 API 面：靠 route prefix + auth scope + 限流 硬隔离，不拆成两个服务。
 2. 受众隔离靠鉴权作用域，不靠服务边界：终端用户 token 不得到达 /api/admin/**；
    员工代终端用户发起 run 必须显式 impersonation + 审计。
-3. web-frontend 只连 agent API 面；admin-frontend 只连管理 API 面；互不越界。
+3. 前端按 API scope 接入，不按 Vue/Next 或 admin/web 目录名接入：
+   默认 research-admin-frontend(Vue) -> /api/admin/**；
+   默认 research-web-frontend(Next) -> /api/agent/**；
+   任何跨 scope 接入都必须显式声明产品场景、独立权限、审计和 contract test。
 4. Node web-backend 永不在 agent 关键路径上；若 M2 作为 BFF 复活，它只做代理/SSR/鉴权聚合，
    绝不成为第二真相源（与 §18.5 TransportMessage/envelope 延后同一原则）。
-5. graph-runner(Celery) 永远只被后端内部经队列驱动，前端不得直连 worker。
+5. 多个前端可以并存，但只能共享同一套 Agent contract；不得复制 Session/Run/UIEvent/LiveDelta 协议。
+6. graph-runner(Celery) 永远只被后端内部经队列驱动，前端不得直连 worker。
 ```
 
-#### 5.6.4 M2 触发式演进
+#### 5.6.5 M2 触发式演进
 
 ```text
 把 Python 后端物理拆成 agent-api 与 admin-api 两个服务 —— 仅当出现：
@@ -344,9 +388,11 @@ research-web-backend (Node:3000) / nodebullworker = 【M1 不进 agent 关键路
   - 发布节奏分叉（agent 侧高频迭代不想带上管理台）。
 在此之前：一个服务 + 两 router（同 tenant_id 占位、TransportMessage 命名先行的哲学，§18.5/§21）。
 引入 Node BFF —— 仅当需要 SSR/SEO、跨多 app 聚合、或 Node 侧统一鉴权网关时。
+引入 Vue 用户侧/实验侧 Agent 前端 —— 仅当出现明确产品/团队/复用理由；它不是新协议，
+  只是同一 /api/agent/** contract 的另一种 UI 实现。
 ```
 
-#### 5.6.5 前端脚手架：吸收 `mooc-manus/ui`（golden 样本，非迁移）
+#### 5.6.6 前端脚手架：吸收 `mooc-manus/ui`（golden 样本，非迁移）
 
 旧 `imooc-mas/mooc-manus/ui` 的技术栈现代且与本设计一致（Next 16 + React 19 + TS5 + Tailwind4 + Radix/shadcn + lucide + react-markdown + sonner + `@novnc/novnc`），**整体作为 `research-web-frontend` 的脚手架起点吸收**，符合 ADR-027「旧项目仅作 golden 样本」。
 
@@ -2132,9 +2178,11 @@ ADR-030: ★ Strategy / Visitor / Handler Registry 实现模式（见 §26.2）�
 ADR-031: ★ 前端选型与 admin/agent 配对（见 §5.6）——admin/web 的划分混叠"语言栈"与"受众"两维，
          Agent 产品令"终端用户"与"Python"重合而产生矛盾。解法：把两维解耦——research-admin-backend
          是唯一 Python 应用后端，暴露 /api/admin/**(管理) 与 /api/agent/**(终端用户) 两 API 面，
-         靠 route prefix + auth scope 隔离受众而非拆服务；research-web-frontend(Next) 直连 agent API 面
-         的 SSE/REST，不经 Node web-backend；Node BFF 与 Python 后端物理拆分均为 M2 触发式。
-ADR-032: ▲ 前端脚手架吸收 mooc-manus/ui（见 §5.6.5，呼应 ADR-027）——Next16/React19/Tailwind4/Radix/
+         靠 route prefix + auth scope 隔离受众而非拆服务；前端技术栈(Vue/Next/移动端)不决定后端归属，
+         API ownership 才决定配对。research-web-frontend(Next) 是 M1 用户侧实现，直连 agent API 面
+         的 SSE/REST，不经 Node web-backend；Vue 用户侧/实验侧前端可作为同一 /api/agent/** contract
+         的并行实现，不得新增第二套 Session/Run/UIEvent/LiveDelta 协议；Node BFF 与 Python 后端物理拆分均为 M2 触发式。
+ADR-032: ▲ 前端脚手架吸收 mooc-manus/ui（见 §5.6.6，呼应 ADR-027）——Next16/React19/Tailwind4/Radix/
          novnc/react-markdown 栈整体作 research-web-frontend 起点；VNC/时间线/工具卡片/interrupt 交互直接吸收，
          但事件消费层必须按 §18 UIEvent/LiveDelta 重建，禁止照搬旧"一 Event 兼四职"的消费逻辑。
 ```
@@ -2166,7 +2214,8 @@ State 过大，checkpoint 成本高     | state 最小化，大对象放文件/�
 Workspace 变成 god object          | State / Workspace / External DB / Object Storage 分层；Workspace 只做产品聚合和权限入口
 成本失控                          | RunBudget 预算熔断 + Model Gateway 计量
 admin/agent 配对混乱→越权或返工   | 两维解耦：语言栈 admin=Python/web=Node，受众靠 auth scope+route 前缀；一服务两 API 面(§5.6、ADR-031)
-终端用户流量打到管理 API 面       | /api/agent/** 与 /api/admin/** 鉴权作用域硬隔离，用户 token 不得触达 admin 路由(§5.6.3)
+前端技术栈反向决定后端配对        | API ownership 优先于 Vue/Next/目录名；多前端共享同一 Session/Run/UIEvent/LiveDelta contract(§5.6.3)
+终端用户流量打到管理 API 面       | /api/agent/** 与 /api/admin/** 鉴权作用域硬隔离，用户 token 不得触达 admin 路由(§5.6.4)
 ```
 
 ### 33.3 产品风险
@@ -2241,6 +2290,8 @@ admin/agent 配对混乱→越权或返工   | 两维解耦：语言栈 admin=Py
 12. 写 ADR-001~003、009、010、015、019、022、023、024、025、029、030、031、032。
 13. 前端：research-web-frontend 以 mooc-manus/ui 为脚手架起点（Next16/React19/Tailwind4/Radix/novnc），
     直连 FastAPI agent API 面(/api/agent/**)，只消费 UIEvent + LiveDelta；后端按 §5.6 分 agent/admin 两 API 面 + auth scope 隔离。
+    同时沉淀 OpenAPI/SSE contract tests，保证未来 Vue 用户侧/实验侧前端或移动端接入时复用同一 Session/Run/UIEvent/LiveDelta 协议，
+    不因技术栈不同而复制第二套 Agent 前端协议。
 ```
 
 这批完成后，**地基（已验证的恢复/对账/幂等 + 消息协议 + 事件投影 + 执行拓扑 + 评估兜底）是被真实跑通过的，而不是纸面承诺**，再扩展 M2 能力风险显著降低。
@@ -2312,6 +2363,9 @@ AgentProfile 提前到 M1（▲，本次补充）：
 + 新增 §5.6：认清 admin/web 划分混叠"语言栈"与"受众"两维，Agent 令"终端用户"与"Python"重合而生矛盾；
   解法为两维解耦——research-admin-backend 是唯一 Python 应用后端，暴露 /api/admin/**(管理) 与 /api/agent/**(终端用户) 两 API 面，
   靠 route prefix + auth scope 隔离受众而非拆服务；research-web-frontend(Next) 直连 agent API 面，不经 Node web-backend。
++ 补充 §5.6.3：前端技术栈与 API ownership 解耦。Vue/Next/移动端只是 UI 实现选择，谁需要管理能力就消费 /api/admin/**，
+  谁需要 Agent 能力就消费 /api/agent/**；多个前端必须共享同一 Session/Run/UIEvent/LiveDelta/File contract，
+  不得因 Vue/Next 不同而复制第二套 Agent 协议或第二事实源。M1 仍以 Next 用户侧实现为主，Vue 用户侧/实验侧前端作为并行或 M2 演进。
 + Node BFF 与 Python 后端物理拆分均为 M2 触发式；§4.1/§5.4 前端行同步、§33.2 加两条配对风险；ADR-031。
 + mooc-manus/ui 作 research-web-frontend 脚手架 golden 样本吸收（Next16/React19/Tailwind4/Radix/novnc），
   皮与交互直接吸收，事件消费层按 §18 UIEvent/LiveDelta 重建，禁止照搬旧事件消费；ADR-032（呼应 ADR-027）。
