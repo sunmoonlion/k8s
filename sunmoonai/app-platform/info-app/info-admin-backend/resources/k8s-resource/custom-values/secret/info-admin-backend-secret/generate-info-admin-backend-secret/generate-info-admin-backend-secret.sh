@@ -41,27 +41,25 @@ export NAMESPACE="${NAMESPACE:-}"
 export ENVIRONMENT="${ENVIRONMENT:-}"
 export ENV="${ENV:-}"
 
-# TODO: 根据 Secret YAML 模板中的 key 列表，添加对应的 export 语句
-# 格式：export KEY="${KEY:-}"
-# 示例：
-# export DATABASE_URL="${DATABASE_URL:-}"
-# export REDIS_PASSWORD="${REDIS_PASSWORD:-}"
-# export CASDOOR_CLIENT_SECRET="${CASDOOR_CLIENT_SECRET:-}"
+export KNOWLEDGE_APP_API_KEY="${KNOWLEDGE_APP_API_KEY:-}"
 
 validate_yaml() {
     local yaml_file="$1"
-    if command -v kubectl &> /dev/null; then
-        if kubectl apply --dry-run=client -f "$yaml_file" &> /dev/null; then
+    if command -v ruby &> /dev/null; then
+        if ruby -e 'require "yaml"; YAML.load_stream(File.read(ARGV.fetch(0)))' "$yaml_file" &> /dev/null; then
             log_success "YAML 验证通过: $(basename "$yaml_file")"
-            return 0
         else
             log_error "YAML 验证失败: $(basename "$yaml_file")"
-            kubectl apply --dry-run=client -f "$yaml_file" 2>&1 | head -20
+            ruby -e 'require "yaml"; YAML.load_stream(File.read(ARGV.fetch(0)))' "$yaml_file" 2>&1 | head -20
             return 1
         fi
+    elif command -v kubectl &> /dev/null && kubectl config current-context &> /dev/null; then
+        kubectl apply --dry-run=client -f "$yaml_file" &> /dev/null || {
+            log_error "YAML/Kubernetes 资源验证失败: $(basename "$yaml_file")"
+            return 1
+        }
     else
-        log_warn "kubectl 未安装，跳过 YAML 验证"
-        return 0
+        log_warn "缺少 Ruby YAML 解析器且没有可用 Kubernetes context，跳过 YAML 验证"
     fi
 }
 
