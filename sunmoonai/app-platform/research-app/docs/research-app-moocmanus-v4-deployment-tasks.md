@@ -67,7 +67,7 @@ when run outside the sandbox with the explicit KIND kubeconfig.
   registration.
 - [x] Run Phase 0/M1 validation flow against deployed services.
 - [x] Verify SSE replay/reconnect through the deployed service path.
-- [ ] Verify no user route is enabled while `AGENT_V4_TRAFFIC_ENABLED=false`.
+- [x] Verify no user route is enabled while `AGENT_V4_TRAFFIC_ENABLED=false`.
 - [x] Record deploy command, cluster, image tag, and validation evidence in the
   source handoff.
 
@@ -85,6 +85,6 @@ M1 deployment is not complete until all of these are true:
 
 Current source validation:
 
-- `uv run pytest`: 52 passed.
+- `uv run pytest`: 54 passed.
 - `uv run pyright`: 0 errors.
 - `uv run python -m compileall app core scripts`: passed.

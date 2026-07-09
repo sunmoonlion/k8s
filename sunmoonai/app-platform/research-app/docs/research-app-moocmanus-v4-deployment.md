@@ -99,6 +99,8 @@ This flag is a deployment-level guard for future UI/user routing. It does not
 replace tests, golden validation, or controlled deployment validation.
 
 User traffic must remain disabled until the M1 release gate passes.
+The backend also defaults this flag to `false`, so a missing ConfigMap value
+fails closed.
 
 ## 7. Validation Commands
 
