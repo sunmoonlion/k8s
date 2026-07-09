@@ -52,7 +52,7 @@ auth:
         enabled: "on"
         keys: "~session:* ~research:*"
         channels: "&*"
-        commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset -@dangerous"
+        commands: "-@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset +@pubsub -@dangerous"
       - username: tools_admin_backend
         password: ToolsAdminRedisAcl_7nR4wP2vK9mL3qX8j
         enabled: "on"

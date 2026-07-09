@@ -61,9 +61,9 @@ data:
     {{- $userPassword := .password | default "" }}
     {{- if $userSecret }}
     {{- $secretPassword := include "common.secrets.get" (dict "secret" $userSecret "key" .username "context" $) }}
-    user {{ .username }} {{ default "on" .enabled }} {{ if $secretPassword }}#{{ sha256sum $secretPassword }}{{ else }}nopass{{ end }} {{ default "~*" .keys }} {{ default "&*" .channels }} {{ default "+@all" .commands }}
+    user {{ .username }} {{ default "on" .enabled }} {{ if $secretPassword }}#{{ sha256sum $secretPassword }}{{ else }}nopass{{ end }} {{ default "~*" .keys }} {{ default "+@all" .commands }} {{ default "&*" .channels }}
     {{- else }}
-    user {{ .username }} {{ default "on" .enabled }} {{ if $userPassword }}#{{ sha256sum $userPassword }}{{ else }}nopass{{ end }} {{ default "~*" .keys }} {{ default "&*" .channels }} {{ default "+@all" .commands }}
+    user {{ .username }} {{ default "on" .enabled }} {{ if $userPassword }}#{{ sha256sum $userPassword }}{{ else }}nopass{{ end }} {{ default "~*" .keys }} {{ default "+@all" .commands }} {{ default "&*" .channels }}
     {{- end }}
     {{- end }}
     {{- end }}
