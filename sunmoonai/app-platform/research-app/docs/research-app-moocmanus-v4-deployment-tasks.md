@@ -15,8 +15,10 @@
 3. Keep LangGraph execution in `research-admin-backend` and
    `celeryworker-research-admin-backend`.
 4. Keep `nodebullworker-research-web-backend` out of LangGraph execution.
-5. Keep user traffic disabled until golden tests and controlled deployment pass.
-6. Use existing bootstrap/provisioner flows for database, Redis, object storage,
+5. Host the M1 Agent UI in `research-web-frontend`, but keep Agent API/run/SSE
+   ownership in `research-admin-backend`.
+6. Keep user traffic disabled until golden tests and controlled deployment pass.
+7. Use existing bootstrap/provisioner flows for database, Redis, object storage,
    and search secrets.
 
 ## 3. M1 Runtime Wiring
@@ -31,6 +33,8 @@
 - [x] Add Celery producer broker/result backend wiring to backend Secret template.
 - [x] Keep generated DB/Redis/S3/Search secrets in the existing platform flow.
 - [x] Document that Node Bull worker does not execute LangGraph tasks.
+- [x] Wire `research-web-frontend` to `research-admin-backend` `/api/agent/**`
+  for the M1 Agent UI, not to `research-web-backend`.
 
 ## 4. Resource Validation
 
@@ -60,6 +64,7 @@ when run outside the sandbox with the explicit KIND kubeconfig.
 ## 5. Controlled Deployment
 
 - [x] Choose and record image tag for `research-admin-backend`: `1.0.1`.
+- [x] Choose and record image tag for `research-web-frontend`: `1.0.1`.
 - [x] Build/push image for the selected tag.
 - [x] Run controlled KIND deployment.
 - [x] Verify `research-admin-backend` pod health.
@@ -68,6 +73,9 @@ when run outside the sandbox with the explicit KIND kubeconfig.
 - [x] Run Phase 0/M1 validation flow against deployed services.
 - [x] Verify SSE replay/reconnect through the deployed service path.
 - [x] Verify no user route is enabled while `AGENT_V4_TRAFFIC_ENABLED=false`.
+- [ ] Build/push `research-web-frontend:1.0.1` after frontend dependency
+  validation and deploy it with `NEXT_PUBLIC_API_URL` pointing to the FastAPI
+  ingress.
 - [x] Record deploy command, cluster, image tag, and validation evidence in the
   source handoff.
 

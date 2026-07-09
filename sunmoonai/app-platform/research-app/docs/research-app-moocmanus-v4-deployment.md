@@ -18,7 +18,7 @@ validation records stay under `k8s/sunmoonai/app-platform/research-app/docs`.
 | `celeryworker-research-admin-backend` | Runs the same backend image as a Celery worker and consumes graph execution tasks. |
 | `research-admin-frontend` | Not part of the M1 graph runtime yet. It must not route user traffic to v4 before the release gate. |
 | `research-web-backend` | Not part of MoocManus v4 M1 execution. |
-| `research-web-frontend` | Not part of MoocManus v4 M1 execution. |
+| `research-web-frontend` | Hosts the M1 Agent UI and consumes `research-admin-backend` `/api/agent/**` directly. It does not execute LangGraph tasks. |
 | `nodebullworker-research-web-backend` | Remains a web/backend async worker and does not execute LangGraph tasks. |
 
 ## 3. Runtime Dependencies
@@ -98,7 +98,10 @@ K8S defaults `AGENT_V4_TRAFFIC_ENABLED=false`.
 This flag is a deployment-level guard for future UI/user routing. It does not
 replace tests, golden validation, or controlled deployment validation.
 
-User traffic must remain disabled until the M1 release gate passes.
+User traffic must remain disabled until the M1 release gate passes. After the
+gate opens, `research-web-frontend` points `NEXT_PUBLIC_API_URL` at the
+FastAPI ingress (`https://research-admin-api.sunmoonai.com/api`) and calls only
+`/api/agent/**` for Agent product flows.
 The backend also defaults this flag to `false`, so a missing ConfigMap value
 fails closed.
 
