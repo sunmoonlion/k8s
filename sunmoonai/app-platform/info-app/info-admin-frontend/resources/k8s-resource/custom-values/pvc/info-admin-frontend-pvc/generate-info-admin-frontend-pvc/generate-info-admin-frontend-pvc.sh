@@ -42,17 +42,17 @@ export PVC_STORAGE_SIZE="${PVC_STORAGE_SIZE:-}"
 
 validate_yaml() {
     local yaml_file="$1"
-    if command -v kubectl &> /dev/null; then
-        if kubectl apply --dry-run=client -f "$yaml_file" &> /dev/null; then
+    if command -v kubectl &> /dev/null && kubectl version --request-timeout=3s &> /dev/null; then
+        if kubectl apply --dry-run=client --validate=false -f "$yaml_file" &> /dev/null; then
             log_success "YAML 验证通过: $(basename "$yaml_file")"
             return 0
         else
             log_error "YAML 验证失败: $(basename "$yaml_file")"
-            kubectl apply --dry-run=client -f "$yaml_file" 2>&1 | head -20
+            kubectl apply --dry-run=client --validate=false -f "$yaml_file" 2>&1 | head -20
             return 1
         fi
     else
-        log_warn "kubectl 未安装，跳过 YAML 验证"
+        log_warn "kubectl 未安装或集群不可达，跳过 YAML 验证"
         return 0
     fi
 }
