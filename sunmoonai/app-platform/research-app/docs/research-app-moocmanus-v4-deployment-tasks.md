@@ -59,7 +59,7 @@ when run outside the sandbox with the explicit KIND kubeconfig.
 
 ## 5. Controlled Deployment
 
-- [x] Choose and record image tag for `research-admin-backend`: `codex-1-v4-20260709-5`.
+- [x] Choose and record image tag for `research-admin-backend`: `1.0.1`.
 - [x] Build/push image for the selected tag.
 - [x] Run controlled KIND deployment.
 - [x] Verify `research-admin-backend` pod health.

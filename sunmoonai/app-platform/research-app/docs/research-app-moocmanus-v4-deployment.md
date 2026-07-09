@@ -124,7 +124,9 @@ Current validation record:
 
 - Controlled KIND deployment passed on 2026-07-09.
 - API pod health, Celery worker startup, logs, and deployed Phase 0/M1 validation
-  flow passed with image `harbor.sunmoonai.com:30443/app-images/research-admin-backend:codex-1-v4-20260709-5`.
+  flow passed with temporary image `harbor.sunmoonai.com:30443/app-images/research-admin-backend:codex-1-v4-20260709-5`; the clean target tag is `harbor.sunmoonai.com:30443/app-images/research-admin-backend:1.0.1`.
+- Harbor cleanup retained `research-admin-backend:1.0.1` and removed the temporary
+  `codex-1-v4-20260709*` tags from `app-images/research-admin-backend`.
 - Deployed validation timeline:
   `TimelineRunStarted`, `TimelineWaitInputDisplayed`, `TimelineUserInputReceived`,
   `TimelineToolStarted`, `TimelineToolCompleted`, `TimelineRunCompleted`.
