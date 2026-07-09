@@ -81,7 +81,7 @@ M1 deployment is not complete until all of these are true:
 - [x] KIND resource validation passes.
 - [x] Controlled KIND deployment passes.
 - [x] Deployed Phase 0/M1 validation flow passes.
-- [ ] User traffic gate remains closed until the golden set passes.
+- [x] User traffic gate remains closed until the golden set passes.
 
 Current source validation:
 

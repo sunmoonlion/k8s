@@ -120,19 +120,24 @@ Current validation record:
 - Result: passed outside the Codex sandbox.
 - Covered dependencies: PostgreSQL, Redis, S3/Object Storage, Elasticsearch.
 
-## 8. Known Gaps
+## 8. Deployment Record
 
 - Controlled KIND deployment passed on 2026-07-09.
 - API pod health, Celery worker startup, logs, and deployed Phase 0/M1 validation
-  flow passed with temporary image `harbor.sunmoonai.com:30443/app-images/research-admin-backend:codex-1-v4-20260709-5`; the clean target tag is `harbor.sunmoonai.com:30443/app-images/research-admin-backend:1.0.1`.
-- Harbor cleanup retained `research-admin-backend:1.0.1` and removed the temporary
+  flow passed. API and worker now run the clean target tag
+  `harbor.sunmoonai.com:30443/app-images/research-admin-backend:1.0.1`.
+- Harbor cleanup retained rebuilt `research-admin-backend:1.0.1`
+  (`sha256:2db6d53e7a6560cda6d08e518b1e472fbbac9b2661a1233a09957f22e17c3f45`) and removed the temporary
   `codex-1-v4-20260709*` tags from `app-images/research-admin-backend`.
 - Deployed validation timeline:
   `TimelineRunStarted`, `TimelineWaitInputDisplayed`, `TimelineUserInputReceived`,
   `TimelineToolStarted`, `TimelineToolCompleted`, `TimelineRunCompleted`.
 - HTTP replay and SSE replay both returned the expected cursor-tail events.
-- Real ingress-level SSE reconnect is not verified yet; service-level SSE replay
-  through port-forward passed.
-- Real Celery process kill/restart recovery is not scripted yet.
+- Worker restart recovery passed with
+  `scripts/validate_deployed_agent_worker_restart.py`: the script created a waiting
+  run, restarted `celeryworker-research-admin-backend`, resumed the run, and
+  verified HTTP/SSE replay.
+- Final deployed `AGENT_V4_TRAFFIC_ENABLED=false`; POST `/api/agent/sessions`
+  returns `404` while the traffic gate is closed.
 - Redis ACL for `research_admin_backend` must allow `research:*` keys,
   `research:agent:*` channels, and `+@pubsub`.
