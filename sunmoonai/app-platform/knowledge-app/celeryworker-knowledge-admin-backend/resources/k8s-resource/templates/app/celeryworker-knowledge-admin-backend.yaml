@@ -50,6 +50,7 @@ spec:
             name: ${CELERYWORKER_KNOWLEDGE_ADMIN_BACKEND_CONFIGMAP_NAME:-celeryworker-knowledge-admin-backend-config}
         - secretRef:
             name: ${CELERYWORKER_KNOWLEDGE_ADMIN_BACKEND_SECRET_NAME:-celeryworker-knowledge-admin-backend-secret}
+${CELERYWORKER_KNOWLEDGE_ADMIN_BACKEND_DATABASE_ENV_FROM}
         env:
         - name: CELERY_PRODUCER_SERVICE
           value: "knowledge-admin-backend"
