@@ -6,10 +6,6 @@ metadata:
   labels:
     app: knowledge-admin-backend
 data:
-  # TODO: 添加 ConfigMap key 列表（非敏感配置）
-  # 格式：KEY: "${KEY}"
-  # 示例：
-  #   NODE_ENV: "${NODE_ENV}"
-  #   PORT: "${PORT}"
-  #   REDIS_HOST: "${REDIS_HOST}"
-  #   CASDOOR_ENDPOINT: "${CASDOOR_ENDPOINT}"
+  RAGFLOW_API_BASE: "${RAGFLOW_API_BASE}"
+  RAGFLOW_PARSE_TIMEOUT_SECONDS: "${RAGFLOW_PARSE_TIMEOUT_SECONDS}"
+  RAGFLOW_PARSE_POLL_INTERVAL_SECONDS: "${RAGFLOW_PARSE_POLL_INTERVAL_SECONDS}"

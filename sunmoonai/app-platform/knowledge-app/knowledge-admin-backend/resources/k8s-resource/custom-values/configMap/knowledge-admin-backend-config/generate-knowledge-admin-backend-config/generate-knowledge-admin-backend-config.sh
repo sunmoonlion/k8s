@@ -41,13 +41,9 @@ export NAMESPACE="${NAMESPACE:-}"
 export ENVIRONMENT="${ENVIRONMENT:-}"
 export ENV="${ENV:-}"
 
-# TODO: 根据 ConfigMap YAML 模板中的 key 列表，添加对应的 export 语句
-# 格式：export KEY="${KEY:-}"
-# 示例（NestJS 后端）：
-# export NODE_ENV="${NODE_ENV:-}"
-# export PORT="${PORT:-}"
-# export REDIS_HOST="${REDIS_HOST:-}"
-# export CASDOOR_ENDPOINT="${CASDOOR_ENDPOINT:-}"
+export RAGFLOW_API_BASE="${RAGFLOW_API_BASE:-}"
+export RAGFLOW_PARSE_TIMEOUT_SECONDS="${RAGFLOW_PARSE_TIMEOUT_SECONDS:-}"
+export RAGFLOW_PARSE_POLL_INTERVAL_SECONDS="${RAGFLOW_PARSE_POLL_INTERVAL_SECONDS:-}"
 
 validate_yaml() {
     local yaml_file="$1"
