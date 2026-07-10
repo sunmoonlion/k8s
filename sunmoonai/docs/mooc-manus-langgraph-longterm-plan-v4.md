@@ -91,8 +91,11 @@ M1 明确"先不做"（不是删除，是等负载/需求真正出现再做）�
 
 ```text
 knowledge-app:  知识库、RAGFlow、知识管理后台、文档处理 worker。
+info-app:       资讯采集、来源治理、原始证据、document_version 与向 knowledge-app 的派生分发。
 research-app:   智能体研究/任务平台、LangGraph runtime、会话、任务、沙箱、前端交互。
 research-app -> knowledge-app:  通过 RAGFlow API / 内部服务地址调用知识库能力。
+info-app -> knowledge-app:      通过标准 ingestion API 提交已治理 document_version；info-app 保留原始事实源，
+                                knowledge-app 负责知识工程、切片、索引、检索质量和 ingestion 状态闭环。
 ```
 
 ---
@@ -197,7 +200,7 @@ Infrastructure:      Postgres, Redis, RabbitMQ, Object Storage, Sandbox, RAGFlow
 分层存储边界：Workspace/Project(M2 产品组织层) / Object Storage(大对象) / External Source(RAGFlow/业务库/三方 API)
   各守其位，只存引用不复制内容——完整定义与 M1/M2 定位见 §26.1（分层唯一权威）。
 租户隔离边界：tenant_id/project_id 贯穿 memory/event/file/sandbox（M1 留占位，M2 全链路）。
-证据装配边界：EvidenceAssembler 是 run/session 级跨源证据的只读装配层（M2，见 §13.9），
+证据装配边界：EvidenceAssembler 是 run/session 级跨源证据的只读装配层（M2，见 §13.10），
   只读各来源结果、不持有存储；不是 LangGraph state、不是 memory、不是 RAGFlow dataset。
 ```
 
@@ -229,6 +232,10 @@ knowledge-app: 同构 + ragflow
 新 Research App 智能体能力 -> 建在 research-app 内
 RAGFlow                    -> knowledge-app/ragflow（已有）
 Research App 通过 RAGFlow API / 平台内部服务访问知识库能力。
+Info App                   -> 保留资讯原文、版本、治理元数据与分发记录；只把可入库的 document_version
+                              作为派生输入投递给 knowledge-app，不直接写 RAGFlow/向量库/对象存储内部结构。
+Knowledge App              -> 暴露 ingestion API，承接 info-app 等业务系统的文档入库请求，并负责
+                              Document Profile、chunk/embed/retrieval profile、任务状态、失败重试和状态对账。
 ```
 
 ### 5.3 部署优先级
@@ -281,6 +288,16 @@ app 实施阶段落地（此处不写代码）：SandboxPort 接口、K8sPodSand
 
 ### 5.5 与 Knowledge App 的接口契约
 
+Knowledge App 对平台内其它 app 暴露两类契约，方向必须分清：
+
+```text
+Retrieval contract（knowledge-app -> research-app 消费）:
+  research-app 只读检索/问答，用于 Agent evidence，不拥有知识库内部处理状态。
+
+Ingestion contract（info-app / tools-app / research-app -> knowledge-app 提交）:
+  上游 app 提交已治理文档版本或处理结果，knowledge-app 拥有后续知识工程流水线和状态机。
+```
+
 ```python
 class KnowledgeRetrievalPort(Protocol):
     async def list_datasets(...): ...
@@ -290,6 +307,19 @@ class KnowledgeRetrievalPort(Protocol):
 ```
 
 实现：`RagflowKnowledgeRetrievalAdapter`。配置（`RESEARCH_RAGFLOW_BASE_URL/API_KEY/...`）进 secret/configMap，不写死。开发阶段允许 RAGFlow disabled，不阻塞部署。
+
+```python
+class KnowledgeIngestionPort(Protocol):
+    async def submit_document_version(...): ...
+    async def get_ingestion_status(...): ...
+```
+
+`KnowledgeIngestionPort` 的首个生产消费者是 `info-app`：`info-admin-backend` 根据
+`document_version_id` 构造标准 payload，经 `KNOWLEDGE_APP_INGEST_URL/API_KEY/TIMEOUT`
+提交到 `knowledge-app`。`distribution_record` 是 info-app 侧的出站分发事实；只有当
+knowledge-app 返回可追踪的 ingestion job / document id，并完成状态对账后，才算
+`info-app -> knowledge-app` 联调闭环。仅在 info-app 内创建 `distribution_record=pending`
+或完成前端 smoke，不等于 knowledge-app ingestion 已完成。
 
 > ▲ M1 注记：阶段 -1（平台边界约定）**只定文档与边界约定**，成本极低，可与 M1 并行；但 RAGFlow 深度集成本身是 M2（§0.1）。
 
@@ -1081,6 +1111,8 @@ Helm / K8S 层：          部署、镜像、资源、存储、依赖服务、�
 RAGFlow Dataset 层：     RAGFlow 原生支持的 parser、chunk method、embedding、rerank、retrieval 参数。
 Knowledge App 层：       文档类型识别、预处理、RAGFlow Adapter、metadata、去重/MMR、评估、任务状态。
 Research App 层：        只消费标准化 retrieve / ask 结果，负责 Agent 上下文组装、引用展示和安全边界。
+Info App 层：            保存资讯原始证据、document_version、治理审计和出站 distribution_record；
+                         只通过 Knowledge App ingestion API 提交派生副本，不直接操作 RAGFlow 内部资源。
 ```
 
 知识库质量主要由文档解析、分块、Embedding、向量索引、检索优化、上下文融合、引用、评估、可观测性和生产运维闭环决定。这些策略归 Knowledge App / RAGFlow 边界内治理；Research App 不直接依赖 RAGFlow 私有 API、数据库、MinIO 或 Elasticsearch。
@@ -1118,7 +1150,55 @@ RAG-02-golden-set.yaml：首个分块策略检索评估集。
 
 `~/rag/` 中的专题方案作为 Knowledge App 的 ingestion / retrieval / evaluation contract 候选输入；只有沉淀为可执行配置、预处理流程、RAGFlow Adapter 能力或评估门禁后，才进入平台实现。该目录不是运行时依赖，也不进入 `k8s` Git 仓库。
 
-### 13.9 ▲ EvidenceAssembler：跨源证据装配层（吸收 Agently 4.1.3.9 Workspace 的"证据装配"思想；M2，M1 只留边界与命名）
+### 13.9 ★ 跨 app ingestion 闭环（info-app -> knowledge-app）
+
+`info-app` 与 `knowledge-app` 的关系必须按"主事实源 / 派生知识库"处理：
+
+```text
+info-app:
+  - 唯一保存资讯原文、来源、版权/可信度、document_version、artifact、治理审计。
+  - 负责生成 distribution_record，记录出站投递状态、payload、错误和重试。
+  - 不直接写 RAGFlow dataset、向量库、RAGFlow MinIO 或 knowledge-app 内部表。
+
+knowledge-app:
+  - 暴露标准 ingestion API，接收 document_version 派生副本。
+  - 负责 Document Profile、解析、切片、embedding、索引、检索参数、评估与状态机。
+  - 返回 ingestion_job_id / knowledge_document_id / 状态，用于上游对账。
+```
+
+最小 ingestion contract（字段可按实现扩展，但语义必须稳定）：
+
+```text
+source_app: "info-app"
+source_document_id
+source_document_version_id
+source_artifact_refs[]       # object storage 引用或可下载 URL，不复制未知大对象到请求体
+title / canonical_url / source_name / published_at
+content_hash / metadata      # copyright/trust/entity_links/summary_profile/audit pointer
+target_dataset
+profile_key                  # markdown/html/pdf/table/image/code/business profile
+idempotency_key              # source_app + document_version_id + target_dataset
+```
+
+完成判定：
+
+```text
+info-app 本地完成:
+  distribution_record 已创建，payload 可审计，可筛选/重试；状态通常为 pending/running/failed/succeeded。
+
+跨 app 联调完成:
+  1. KNOWLEDGE_APP_INGEST_URL/API_KEY 已配置到运行态。
+  2. info-app dispatch 调用 knowledge-app ingestion API 成功返回可追踪 id。
+  3. knowledge-app 能读取 artifact/content，完成解析/切片/索引或给出结构化失败。
+  4. info-app distribution_record 能对账到 succeeded/failed，并保留 last_error/status_history。
+  5. retrieval 侧能通过 knowledge-app/RAGFlow 查到该 document_version 的派生知识，并带回来源引用。
+```
+
+因此，**info-app 的部署态 smoke 到 `distribution_record=pending` 只能证明出站分发入口可用，不代表
+knowledge-app ingestion 已完成**。这条线必须作为独立跨 app 集成验收，不得混进
+info-app 自身完成口径。
+
+### 13.10 ▲ EvidenceAssembler：跨源证据装配层（吸收 Agently 4.1.3.9 Workspace 的"证据装配"思想；M2，M1 只留边界与命名）
 
 §13.8 的"去重 / MMR / rerank / token budget / 引用标准化"主要落在 Knowledge App / RAGFlow 边界内，且只覆盖 RAG 一条源。但真正进入 Agent prompt 前，证据是**跨源**的：
 
@@ -1998,7 +2078,7 @@ M1 最小评估骨架（便宜，却能给后续每一次改动兜底）：
 M2 扩展：
   评估维度补全——计划质量 / 工具选择正确率 / 最终回答正确率 / 无效工具调用 /
   错误写长期记忆 / 记忆召回采纳率（§12.5）/ 是否按要求等待用户 / 中断恢复是否正确 /
-  检索证据是否被误当作完成证明（evidence ≠ verification，§13.9）。
+  检索证据是否被误当作完成证明（evidence ≠ verification，§13.10）。
 ```
 
 ---
@@ -2105,7 +2185,7 @@ LongTermMemory domain/models/memory.py        infrastructure/graph/store.py(Memo
 | P3 | M2-F | 多智能体 Supervisor：AgentProfile、AgentRegistry、handoff、agent 级隔离 | 单 Agent 明显不够用 |
 | P3 | M2-G | 生产化数据模型：session_events/agent_runs/memories 分区/索引/归档 + CQRS 读模型物化 | 数据量/读压力撑不住单表 |
 | P3 | M2-H | 完整观测治理：TransportMessage envelope + IntegrationEvent/RabbitMQ + TraceSink + 完整评估门禁 | 多 app 协作 / 需要专业可观测 |
-| P3 | M2-I | EvidenceAssembler 跨源证据装配（§13.9）：多源 evidence 去重/结构门控 rerank/token budget/model-hot 打包/raw readback + evidence≠完成证明门禁 | 单源检索已稳，需把 RAG/memory/file/artifact 多源证据统一进 prompt |
+| P3 | M2-I | EvidenceAssembler 跨源证据装配（§13.10）：多源 evidence 去重/结构门控 rerank/token budget/model-hot 打包/raw readback + evidence≠完成证明门禁 | 单源检索已稳，需把 RAG/memory/file/artifact 多源证据统一进 prompt |
 
 ### 31.3 阶段验收口径（M1）
 
@@ -2165,7 +2245,7 @@ ADR-026: ◆ 工具结果处理策略——ToolExecutionResult 经 ToolResultHan
 ADR-027: ▲ 全新重建——旧 MoocManus 彻底废弃，不部署/不兼容/不回退；旧项目仅作 golden 样本与行为参考
 ADR-028: ▲ 跨源证据装配（吸收 Agently 4.1.3.9 Workspace 的证据装配思想）——分源召回保各自治理元数据，
          统一到 EvidenceAssembler 做去重/结构门控 rerank/token budget/引用标准化/model-hot 打包；
-         EvidenceBlock 只读装配、不持有存储、不进 state；evidence ≠ 完成证明（M2，§13.9）。
+         EvidenceBlock 只读装配、不持有存储、不进 state；evidence ≠ 完成证明（M2，§13.10）。
          不引入 ResearchWorkspace 统一存储层，不新增 RuntimeEventCenter（TraceSink 已收口，ADR-020）。
 ADR-029: ★ Context / State / Memory / Workspace / Database / Object Storage 分层铁律（分层唯一权威见 §26.1）：
          Context=临时模型输入包；State=可 checkpoint 的执行态；Memory=可召回经验/事实/摘要；
@@ -2185,6 +2265,12 @@ ADR-031: ★ 前端选型与 admin/agent 配对（见 §5.6）——admin/web �
 ADR-032: ▲ 前端脚手架吸收 mooc-manus/ui（见 §5.6.6，呼应 ADR-027）——Next16/React19/Tailwind4/Radix/
          novnc/react-markdown 栈整体作 research-web-frontend 起点；VNC/时间线/工具卡片/interrupt 交互直接吸收，
          但事件消费层必须按 §18 UIEvent/LiveDelta 重建，禁止照搬旧"一 Event 兼四职"的消费逻辑。
+ADR-033: ★ Knowledge App ingestion 闭环（见 §5.5、§13.9）——info-app 是资讯原文、版本和治理审计的主事实源；
+         knowledge-app 是知识工程、切片、索引、检索质量和 ingestion 状态机的主事实源。info-app 只通过
+         KnowledgeIngestionPort / 标准 ingestion API 提交 document_version 派生副本，不直接写 RAGFlow/向量库/
+         knowledge-app 内部表。`distribution_record=pending` 只证明 info-app 出站入口可用；只有配置运行态
+         KNOWLEDGE_APP_INGEST_URL/API_KEY、knowledge-app 返回可追踪 id、完成解析/索引或结构化失败并回写
+         succeeded/failed 对账后，才算跨 app ingestion 完成。
 ```
 
 ---
@@ -2216,6 +2302,8 @@ Workspace 变成 god object          | State / Workspace / External DB / Object 
 admin/agent 配对混乱→越权或返工   | 两维解耦：语言栈 admin=Python/web=Node，受众靠 auth scope+route 前缀；一服务两 API 面(§5.6、ADR-031)
 前端技术栈反向决定后端配对        | API ownership 优先于 Vue/Next/目录名；多前端共享同一 Session/Run/UIEvent/LiveDelta contract(§5.6.3)
 终端用户流量打到管理 API 面       | /api/agent/** 与 /api/admin/** 鉴权作用域硬隔离，用户 token 不得触达 admin 路由(§5.6.4)
+info-app pending 被误判为知识入库完成 | `distribution_record=pending` 只算出站入口可用；真实完成必须通过 knowledge-app ingestion id、
+                                  解析/索引状态和 succeeded/failed 对账验收(§13.9、ADR-033)
 ```
 
 ### 33.3 产品风险
@@ -2287,7 +2375,7 @@ admin/agent 配对混乱→越权或返工   | 两维解耦：语言栈 admin=Py
 10. 为上述写单测（reducer 幂等、序列化往返、DomainEvent->UIEvent、idempotency、interrupt-resume、AgentProfile 选择/权限生效）。
     同时加不混层测试：State 不含文件正文/完整事件历史；Memory 必带 source_ref/provenance；DB 只存 object URI/ref；Context 不作为真相源落库。
 11. 单 Graph 在 golden set 达标（对照旧项目抽取样本）后，接用户流量，M1 收尾可演示。
-12. 写 ADR-001~003、009、010、015、019、022、023、024、025、029、030、031、032。
+12. 写 ADR-001~003、009、010、015、019、022、023、024、025、029、030、031、032、033。
 13. 前端：research-web-frontend 以 mooc-manus/ui 为脚手架起点（Next16/React19/Tailwind4/Radix/novnc），
     直连 FastAPI agent API 面(/api/agent/**)，只消费 UIEvent + LiveDelta；后端按 §5.6 分 agent/admin 两 API 面 + auth scope 隔离。
     同时沉淀 OpenAPI/SSE contract tests，保证未来 Vue 用户侧/实验侧前端或移动端接入时复用同一 Session/Run/UIEvent/LiveDelta 协议，
@@ -2338,9 +2426,9 @@ H. ▲ 全新重建定位：旧项目彻底废弃，不部署/不兼容/不回�
 + ADR-022 明确 Event/Message 语义边界。
 
 吸收 Agently 4.1.3.9（▲，收窄吸收，不破坏既有边界）：
-+ §13.9 新增 EvidenceAssembler：跨源证据（RAG/memory/file/artifact/附件）→ 去重 / 结构门控 rerank /
++ §13.10 新增 EvidenceAssembler：跨源证据（RAG/memory/file/artifact/附件）→ 去重 / 结构门控 rerank /
   token budget / 引用标准化 / model-hot 打包 / raw readback，只读装配、不持有存储（不是 ResearchWorkspace 统一存储层）。
-+ 关键治理 evidence ≠ 完成证明进 §13.9 铁律与 §28.3 评估项；§4.2 加证据装配边界；ADR-028。
++ 关键治理 evidence ≠ 完成证明进 §13.10 铁律与 §28.3 评估项；§4.2 加证据装配边界；ADR-028。
 + EventCenter 不再新增概念/改名：其精神已在 §9.2 / §10.4 RuntimeEvent / §28.2 TraceSink / ADR-020 收口。
 
 延后到 M2 的目标态（▲）：
