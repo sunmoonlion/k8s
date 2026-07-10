@@ -29,6 +29,29 @@ This is a RAGFlow runtime configuration requirement, not a Knowledge App API
 compatibility issue. Configure a real embedding provider through the RAGFlow UI
 or API before running production ingestion smoke tests.
 
+Knowledge App now exposes an operational check:
+
+```text
+GET /api/knowledge/ragflow/config-check
+```
+
+Expected result before the embedding provider is configured:
+
+```text
+enabled=true
+reachable=true
+has_default_embedding=false
+ready=false
+```
+
+Failed ingestion jobs caused by this condition are recorded as
+`ragflow_config_error`. After configuring a valid embedding provider, retry them
+with:
+
+```text
+POST /api/knowledge/ingestions/{ingestion_id}/retry
+```
+
 Do not commit model API keys to this repository. For development, use a local
 values override or a secret-managed deployment process to populate
 `ragflow.service_conf.user_default_llm.default_models.embedding_model`. Example
