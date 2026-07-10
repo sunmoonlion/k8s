@@ -28,6 +28,10 @@ spec:
             name: ${KNOWLEDGE_ADMIN_BACKEND_CONFIGMAP_NAME:-knowledge-admin-backend-config}
         - secretRef:
             name: ${KNOWLEDGE_ADMIN_BACKEND_SECRET_NAME:-knowledge-admin-backend-secret}
+        - configMapRef:
+            name: ${CELERYWORKER_KNOWLEDGE_ADMIN_BACKEND_CONFIGMAP_NAME:-celeryworker-knowledge-admin-backend-config}
+        - secretRef:
+            name: ${CELERYWORKER_KNOWLEDGE_ADMIN_BACKEND_SECRET_NAME:-celeryworker-knowledge-admin-backend-secret}
 ${KNOWLEDGE_ADMIN_BACKEND_DATABASE_ENV_FROM}
 ${KNOWLEDGE_ADMIN_BACKEND_OBJECT_STORAGE_ENV_FROM}
 ${KNOWLEDGE_ADMIN_BACKEND_ELASTICSEARCH_ENV_FROM}
