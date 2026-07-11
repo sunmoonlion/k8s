@@ -56,17 +56,25 @@ POST /api/knowledge/ingestions/{ingestion_id}/retry
 
 - The admin tenant default models were configured through the RAGFlow UI.
 - Knowledge App `config-check` reports `ready=true`.
-- Real parse smoke now reaches chunk generation.
-- The remaining blocker is network egress from the RAGFlow Pod to the selected
-  provider endpoint:
+- The first real parse smoke reached chunk generation, then failed while calling
+  the provider default DashScope endpoint:
 
 ```text
 dashscope.aliyuncs.com:443 connect timeout
 ```
 
-Fix cluster egress/proxy for the RAGFlow Pod, or switch to an embedding provider
-that is reachable from the KIND cluster. This is no longer a missing default
-embedding setting.
+- After reconfiguring the provider endpoint to the Beijing MaaS URL, retrying
+  the same Knowledge App ingestion job succeeded:
+
+```text
+ingestion id: 7012be9a-7071-4445-9e01-f412b4717baf
+ragflow document: 20769e647cc911f1a85655b688ac3ca7
+parse status: DONE
+chunk count: 1
+```
+
+This confirms the remaining issue was provider endpoint reachability, not a
+missing default embedding setting and not a Knowledge App adapter issue.
 
 Do not commit model API keys to this repository. For development, use a local
 values override or a secret-managed deployment process to populate
@@ -85,7 +93,6 @@ ragflow:
           base_url: "https://api.openai.com/v1"
 ```
 
-The current KIND cluster has no configured embedding provider. The `Builtin`
-factory is present in RAGFlow metadata but the deployed image does not expose a
-working built-in encoder for `BAAI/bge-m3`; attempting to add it returns a model
-validation error.
+The `Builtin` factory is present in RAGFlow metadata but the deployed image does
+not expose a working built-in encoder for `BAAI/bge-m3`; attempting to add it
+returns a model validation error.
