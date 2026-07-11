@@ -52,6 +52,22 @@ with:
 POST /api/knowledge/ingestions/{ingestion_id}/retry
 ```
 
+2026-07-11 status:
+
+- The admin tenant default models were configured through the RAGFlow UI.
+- Knowledge App `config-check` reports `ready=true`.
+- Real parse smoke now reaches chunk generation.
+- The remaining blocker is network egress from the RAGFlow Pod to the selected
+  provider endpoint:
+
+```text
+dashscope.aliyuncs.com:443 connect timeout
+```
+
+Fix cluster egress/proxy for the RAGFlow Pod, or switch to an embedding provider
+that is reachable from the KIND cluster. This is no longer a missing default
+embedding setting.
+
 Do not commit model API keys to this repository. For development, use a local
 values override or a secret-managed deployment process to populate
 `ragflow.service_conf.user_default_llm.default_models.embedding_model`. Example
