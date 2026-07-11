@@ -596,6 +596,10 @@ Admin 规则：
 3. 并行建立 `tpl-admin-frontend-react` 最小生产模板；不是 Hello World，必须覆盖 auth、protected routes、typed client、Query、i18n、error/security、测试、Nginx/Docker/K8s smoke。
 4. 用 Info Admin Artifact/Delivery 真实薄切验证模板；通用能力回收模板，业务代码不进入模板。
 5. 三个 React Admin 完成功能、安全、可访问性和 E2E 等价后，将 React 模板提升为默认 `tpl-admin-frontend`，Vue 版本归档/保留 tag，不再双重维护。
+6. 现有 `tpl-web-frontend` 保持可回退，不在三个实例中分别修补；ADR-014 按 P0-008A/B/C 再基线 Next Web 模板。
+7. 在 ADR-001/004/005 决定 stream、Citation 和浏览器身份/BFF 前，只允许 Web 审计与紧急卫生修复，不提前实现 v2 主体。
+8. 隔离创建 `tpl-web-frontend-next-v2`，证明 Server/Client、DAL/DTO、typed client、render/cache、auth/BFF、SSE reconciliation、安全、测试和自托管多副本边界。
+9. 用 Research 真实 Run/SSE/cancel/resume/HITL/citation 薄切验证并冻结 v2；通过前不批量同步三个 Web，不把 Research 领域代码回流模板。
 
 ## 11. 可靠执行
 
@@ -808,7 +812,7 @@ GA 目标：
 - 修复 Git/集群 traffic flag 漂移，确保重新部署仍关闭流量。
 - 不等待 Phase 0 决策，不修改生产 Runner。
 
-### 19.2 Phase 0：七个阻塞性架构决策
+### 19.2 Phase 0：八个阻塞性架构决策/验证包
 
 - Runtime 选型。
 - Session/Thread/Run/Attempt 模型。
@@ -816,8 +820,10 @@ GA 目标：
 - Retrieval/Citation Contract。
 - 身份与服务调用。
 - 可靠交付 ADR。
+- React Admin 模板、Info 真实试点与 v1 冻结。
+- Next Web 模板架构再基线、Research 真实 streaming 试点与 v2 冻结。
 
-Runtime Spike 内验证 SSE/cancel/worker kill；可靠交付 Spike 内验证重复投递和副作用恢复；前端严格按 P0-007A `tpl-app` 骨架、P0-007B Info 真实试点、P0-007C 模板 v1 冻结推进，禁止未验证模板批量复制。Phase 0 时间盒 2~3 周，退出门禁是 ADR-001~006 有运行证据、ADR-013 已接受、P0-007A/B/C 全部通过、契约测试机制可执行且不存在阻断 M1a 的未决核心问题。
+Runtime Spike 内验证 SSE/cancel/worker kill；可靠交付 Spike 内验证重复投递和副作用恢复。前端先严格按 P0-007A/B/C 完成 React Admin，再在 ADR-001/004/005 有输出后按 P0-008A/B/C 完成 Next Web v2，禁止未验证模板批量复制。核心 ADR Spike 仍使用 2~3 周时间盒，但完整 Phase 0 还包含两个真实前端模板资格链，不能继续宣称全部工作可在同一 2~3 周内完成。退出门禁是 ADR-001~006/013/014 有运行或试点证据、P0-007A/B/C 与 P0-008A/B/C 全部通过、契约测试机制可执行且不存在阻断 M1a 的未决核心问题。
 
 ### 19.3 M1a：内部真实产品竖线
 
@@ -888,6 +894,7 @@ canary 指标、回滚和恢复演练达标后，才进入有限真实流量；�
 - ADR-011 Graph/Prompt/Model/Toolset 版本锁定。
 - ADR-012 Observability/Evaluation 实现。
 - ADR-013 前端技术栈、渲染模式与 Vue Admin 退出策略（Accepted）。
+- ADR-014 Next Web 模板架构再基线、BFF/渲染/缓存/stream 边界与推广策略（Proposed，待 P0-008A 接受）。
 
 ## 22. 主要风险
 
@@ -916,6 +923,7 @@ canary 指标、回滚和恢复演练达标后，才进入有限真实流量；�
 5. 四仓负责人确认数据所有权、契约所有权和删除责任。
 6. Web/Admin 前端边界、浏览器身份、Citation DTO 和 stream reconciliation 已分别进入 ADR-004/005/007 与 Runtime Spike 证据。
 7. ADR-013 已接受，P0-007A/B/C 通过且没有要求三个 Admin 新增 Node SSR 运行时；React Admin v1 有固定版本、重复实例化证据和 Vue 对照/迁移文档。
+8. ADR-014 已接受，P0-008A/B/C 通过；Next Web v2 有固定版本、真实 Research streaming/HITL/citation 试点、多副本自托管证据和旧模板回滚路径。
 
 这是进入 M1a 的架构基线冻结。Memory/Subagent 相关边界在 M1a.5 再做二次冻结；之后仍允许通过 ADR 修改，但禁止实现先行、文档事后追认。
 
