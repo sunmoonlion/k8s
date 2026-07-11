@@ -45,6 +45,7 @@ export LOG_LEVEL="${LOG_LEVEL:-}"
 export SESSION_TTL_SECONDS="${SESSION_TTL_SECONDS:-}"
 export AGENT_SESSION_LOCK_TTL_SECONDS="${AGENT_SESSION_LOCK_TTL_SECONDS:-}"
 export AGENT_V4_TRAFFIC_ENABLED="${AGENT_V4_TRAFFIC_ENABLED:-}"
+export AGENT_V5_TRAFFIC_MODE="${AGENT_V5_TRAFFIC_MODE:-}"
 export AGENT_REDIS_KEY_PREFIX="${AGENT_REDIS_KEY_PREFIX:-}"
 export FRONTEND_BASE_URL="${FRONTEND_BASE_URL:-}"
 export CASDOOR_ENDPOINT="${CASDOOR_ENDPOINT:-}"
@@ -56,7 +57,15 @@ export CELERY_QUEUE="${CELERY_QUEUE:-}"
 
 validate_yaml() {
     local yaml_file="$1"
+    if grep -q '\${[^}]*}' "$yaml_file"; then
+        log_error "YAML 仍包含未解析模板变量: $(basename "$yaml_file")"
+        return 1
+    fi
     if command -v kubectl &> /dev/null; then
+        if ! kubectl cluster-info --request-timeout=2s &> /dev/null; then
+            log_warn "Kubernetes API 不可用，已完成离线门禁/模板检查，跳过 OpenAPI 验证"
+            return 0
+        fi
         if kubectl apply --dry-run=client -f "$yaml_file" &> /dev/null; then
             log_success "YAML 验证通过: $(basename "$yaml_file")"
             return 0
@@ -82,15 +91,25 @@ main() {
         full_template_path="$K8S_RESOURCE_DIR/$TEMPLATE_FILE"
     fi
     local full_output_path="$OUTPUT_DIR/$OUTPUT_FILE"
+    local temporary_output_path
+    temporary_output_path="$(mktemp "$OUTPUT_DIR/.${OUTPUT_FILE}.XXXXXX.tmp.yaml")"
+    trap 'rm -f "${temporary_output_path:-}"' EXIT
 
     if [ ! -f "$full_template_path" ]; then
         log_error "模板文件不存在: $full_template_path"; exit 1
     fi
 
     log_info "生成 configmap: $OUTPUT_FILE"
-    sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$full_template_path" | envsubst > "$full_output_path"
+    sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$full_template_path" | envsubst > "$temporary_output_path"
 
-    if ! validate_yaml "$full_output_path"; then exit 1; fi
+    local traffic_gate_validator="$SCRIPT_DIR/validate-agent-traffic-gate.sh"
+    if ! bash "$traffic_gate_validator" "$temporary_output_path"; then
+        log_error "Agent 流量门禁验证失败，拒绝生成可部署配置"
+        exit 1
+    fi
+    if ! validate_yaml "$temporary_output_path"; then exit 1; fi
+    mv "$temporary_output_path" "$full_output_path"
+    trap - EXIT
     log_success "✅ configmap 生成完成: $OUTPUT_FILE"
 }
 
