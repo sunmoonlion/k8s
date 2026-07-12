@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sunmoonai.local/contracts/security/v1/browser-session.schema.json",
+  "title": "SunMoonAI Browser Session DTO v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "authenticated", "user", "csrf_token"],
+  "properties": {
+    "contract_version": {"const": 1},
+    "authenticated": {"const": true},
+    "user": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actor_id", "app", "surface", "roles", "scopes", "expires_at"],
+      "properties": {
+        "actor_id": {"type": "string", "format": "uuid"},
+        "app": {"enum": ["info", "knowledge", "research"]},
+        "surface": {"enum": ["admin", "web"]},
+        "display_name": {"type": ["string", "null"], "maxLength": 256},
+        "email": {"type": ["string", "null"], "maxLength": 320},
+        "roles": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1, "maxLength": 128},
+          "uniqueItems": true
+        },
+        "scopes": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1, "maxLength": 128},
+          "uniqueItems": true
+        },
+        "expires_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "csrf_token": {"type": "string", "minLength": 32, "maxLength": 256}
+  }
+}

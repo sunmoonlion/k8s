@@ -445,6 +445,8 @@ Citation 必须引用 `evidence_id`，最终可回溯到 InfoDocumentVersion。R
 - WorkloadIdentity：K8s ServiceAccount 与服务主体绑定。
 - DelegatedRunIdentity：Run 创建时保存用户授权快照，worker 执行时重建受限上下文。
 
+身份协议、浏览器 BFF 会话、六 audience、CSRF/CORS、服务 token 与路由分区的权威决策见 `sunmoonai/docs/mooc-manus-v5/adr/ADR-005-identity-service-calls-browser-bff.md`。本节只保留长期架构原则，不复制其字段和协议细节。
+
 ### 9.2 授权
 
 所有资源访问检查：
@@ -464,6 +466,8 @@ M1 至少实现：
 
 `reviewer`、`actor_id`、`tenant_id` 不得由客户端业务 payload 决定。
 
+认证成功不等于已授权。业务 Router 必须先按 Public、Admin/User、Internal 分区，再以 `principal + action + resource + policy_version` 判定；关键资源至少检查 owner/scope。人类 session 不得调用 Internal route，service token 不得调用浏览器业务 route。
+
 ### 9.3 网络、Secret 和数据
 
 - K8s 默认拒绝，按调用关系最小开放。
@@ -471,6 +475,8 @@ M1 至少实现：
 - worker 非 root、禁止提权、drop capabilities、seccomp。
 - 日志和事件不记录 token、Secret、完整敏感正文。
 - Prompt/Tool 输出按不可信输入处理，Knowledge 内容不得提升为系统指令。
+- 浏览器不保存 Provider token；后端 session、日志、事件和错误响应不暴露 token、authorization code、PKCE verifier、nonce 或 client secret。
+- credential CORS 使用精确 origin，禁止 `allow_credentials=true` 配合通配 origin；cookie-auth 的非安全方法必须有 Origin 与 CSRF 双重校验。
 
 ## 10. 消息、事件、投影与流式输出
 

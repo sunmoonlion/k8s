@@ -149,11 +149,44 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 
 - 类型/优先级：SECURITY/P0
 - 仓库：四仓
-- 目标：区分浏览器用户、Info service、Knowledge service、Research worker。
-- 实施：选择浏览器 OIDC/session 与服务 token 方案；建立 actor/scope/resource check、Web/Admin audience、cookie/token/CSRF/CORS 边界和 K8s ServiceAccount 映射设计。
-- 测试：匿名、错误 audience、过期 token、跨用户 Session、缺 scope、CSRF、Admin token 用于 Web API 及反向误用。
-- 验收：三套业务路由不再匿名；actor/reviewer 不信任请求体；浏览器 token 不被当作跨仓服务凭据，前端路由守卫不承担最终授权。
-- 状态：NOT_STARTED
+- ADR：`sunmoonai/docs/mooc-manus-v5/adr/ADR-005-identity-service-calls-browser-bff.md`（CANDIDATE）。
+- 目标：区分浏览器用户、Info service、Knowledge service、Research worker；先关闭三套 Admin 和 Info -> Knowledge 的真实匿名/身份混用缺口，再由 P0-008B/C 把相同 contract 应用于三套 Web。
+- 实施：Authorization Code + PKCE BFF session；严格 OIDC/JWKS 验证；Web/Admin 六 audience；App/Surface 隔离 cookie/session；CSRF/CORS；Principal 与 actor/scope/resource check；client-credentials 服务 token；K8s ServiceAccount 到服务主体的部署绑定。
+- 测试：匿名、伪造签名、错误 issuer/audience、过期 token、state/nonce/PKCE 重放、跨用户 Session/资源、缺 scope、CSRF、浏览器 session 调 internal route。P0 固定 Admin/Web audience consumer vectors；真实 Web route 的双向误用测试在 P0-008C 完成。
+- 验收：三套 Admin 业务路由不再匿名；关键资源不只检查“已登录”而检查 owner/scope；actor/reviewer 不信任请求体；Info -> Knowledge 使用真实、最小 scope 的服务 token；浏览器 token 不被当作跨仓服务凭据；前端路由守卫不承担最终授权。
+- 状态：IN_PROGRESS（2026-07-12；协议/代码已落地，KIND/Casdoor 真实证据待补；ADR 仍为 CANDIDATE）
+
+#### V5-P0-005A 冻结协议与测试向量
+
+- 仓库：`k8s`。
+- 实施：评审 ADR-005；以 `sunmoonai/docs/mooc-manus-v5/contracts/security/v1/` 为平台身份 contract 唯一真相源，固定六 application/audience、Principal、401/403、session/CSRF、OIDC callback、service binding 和路由分区语义；建立不含有效 credential 的配置模板和跨语言正/负 JWT claim fixtures。
+- 验收：后续 Python/Nest/K8s 工作不再自行解释 audience、scope、cookie 或错误语义；ADR 保持 CANDIDATE，必须等真实 KIND 证据后才 ACCEPTED。
+- 状态：CODE_COMPLETE_LOCAL（2026-07-12；contract 与测试向量已提交；KIND 证据待补）
+
+#### V5-P0-005B 三套 Admin 浏览器身份闭环
+
+- 仓库：`info-app` -> `knowledge-app` -> `research-app`，按顺序逐仓验证，不并行批量复制。
+- 实施：引入标准 JOSE/OIDC 能力；一次性 state/nonce/PKCE 登录事务；严格 ID Token 验证；安全 session 与 `/me`/POST logout；CSRF/CORS；shadow user migration；按 Public/Admin/Internal 分 Router；Admin 业务 route fail closed。
+- 关键资源：Info/Knowledge 管理 scope；Research Session/Run/Event/SSE 从认证 Principal 得到 owner，忽略或拒绝 payload 冒充的 actor/security context。
+- 测试：L1/L2/L3；每仓先跑共享安全向量，再跑本仓 allow/deny、旧行为回归和泄密断言。Research 还需跨用户 Session/Run/SSE 测试。
+- 验收：无 cookie 401、失效 cookie 401、scope/owner 不足 403；三仓 `/auth/me` 与 Redis/log 抽查无 token；login path 无 DDL；credential CORS 无通配 origin。
+- 状态：CODE_COMPLETE_LOCAL（2026-07-12；Info `c1dad4e`、Knowledge `a38eefd`、Research `7724a58`；三仓测试 60/48/76 通过，KIND 证据待补）
+
+#### V5-P0-005C Info -> Knowledge 服务身份闭环
+
+- 仓库：`info-app`、`knowledge-app`、`k8s`。
+- 实施：Casdoor client credentials；Knowledge exact issuer/audience/subject 验证；关系权限由 `knowledge:ingest` 本地 subject binding 强制（Casdoor provider 返回的 `scope`/`scp` 仅做格式校验，不能替代本地关系授权）；ingestion command 迁移到 `/api/internal/v1/knowledge/ingestions`；Info worker 短时 token cache；删除静态 API key 和匿名 ingestion fallback。
+- 测试：允许调用；无 token、Admin session、伪造签名、错误 audience、过期 token、未知 subject、畸形 scope 全拒绝；撤销 ingestion client 不影响浏览器 Admin；P0-003 artifact success/hash/404/403 回归。
+- 验收：Knowledge 审计能同时定位 service principal 与 operation/correlation ID；token 不进入任务 payload、数据库、日志和错误响应。
+- 状态：CODE_COMPLETE_LOCAL（2026-07-12；Info `1fb07f9`、Knowledge `22ccd58` + `65c6552`；Info/Knowledge 测试 60/48 通过，KIND 证据待补）
+
+#### V5-P0-005D K8s/Casdoor 真实验证与接受
+
+- 仓库：`k8s`。
+- 实施：以 Secret 引用配置六个浏览器 client/audience 和最小服务 client；绑定 workload ServiceAccount；构建、部署 traffic-off 镜像；运行允许/拒绝矩阵与停流回滚。
+- 测试：L4/L6/L7；配置缺失、JWKS rotation/未知 kid、Casdoor/Redis 不可用均 fail closed。
+- 验收：ADR-005 接受条件全部满足；归档 contract/config digest、镜像与 deployment digest、测试结果和回滚证据，然后把 P0-005/ADR-005 标记 ACCEPTED。
+- 状态：IN_PROGRESS（后端代码已完成；K8s 模板/生成器已补齐非密配置，Casdoor application 注册、Secret 注入、迁移与 KIND 矩阵待执行）
 
 ### V5-P0-006 可靠交付 ADR 与最小原型
 
@@ -169,7 +202,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 
 - 类型/优先级：ARCH/FRONTEND/P0
 - ADR：`sunmoonai/docs/mooc-manus-v5/adr/ADR-013-frontend-technology-rendering.md`（Accepted）。
-- 目标：按 `P0-007A -> P0-007B -> P0-007C` 证明并冻结 React Admin v1；父任务不直接写代码。
+- 目标：按 `P0-007A -> P0-005 -> P0-007B -> P0-007C` 证明并冻结 React Admin v1；P0-005 是真实 Admin 试点的安全前置，父任务不直接写代码。
 - 完成条件：三个子任务全部 ACCEPTED；任一子任务失败，父任务保持 IN_PROGRESS，禁止向三个 App 批量同步未冻结模板。
 - 状态：IN_PROGRESS（P0-007A 已接受；P0-007B/C 未开始）
 
@@ -192,9 +225,9 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 
 - 类型/优先级：FRONTEND/CONTRACT/P0
 - 仓库：`info-app`、`k8s`；仅在发现通用缺口时回改 `tpl-app`。
-- 前置：P0-007A ACCEPTED；P0-003 至少提供已版本化 Artifact/Delivery contract。若正式 Provider 未完成，可开发 UI，但不得以 mock 成功验收 B。
-- 实施：从 007A 固定 commit 实例化隔离 React Admin；实现 Artifact/Delivery list/detail，覆盖筛选、分页、状态刷新、受权 retry/deactivate、审计原因和 correlation ID。
-- 边界：Info 业务代码只在 Info App；模板只接收经复盘证明通用的修正，并记录 backport/cherry-pick 或重新实例化方式。
+- 前置：P0-007A、P0-003、P0-005 均 ACCEPTED；不得用前端路由守卫替代后端鉴权，也不得以 mock success 验收 B。
+- 实施：从 007A 固定 commit 实例化隔离 React Admin；实现 Artifact/Delivery list/detail，覆盖筛选、分页、状态刷新、受权 retry/re-dispatch、审计原因和 correlation ID。
+- 边界：Info 业务代码只在 Info App；模板只接收经复盘证明通用的修正，并记录 backport/cherry-pick 或重新实例化方式。Artifact Contract v1 仅支持 `upsert`，因此 deactivate/delete 不进入本任务；待 Knowledge domain identity 与生命周期契约落地后另行实现。
 - 测试：真实 contract/provider、匿名/403/过期 session、hash mismatch、对象缺失、重复操作、并发冲突、XSS/危险 URL、刷新恢复、Nginx/Docker/K8s 隔离 smoke。
 - 验收：不依赖 mock ingestion success；Vue/React 可并行部署但仅隔离测试入口访问；React 页面能沿 operation/correlation ID 对账；有明确旧 Vue 回滚路径。
 - 证据：模板源 commit -> Info 实例 commit 映射、contract digest、E2E trace、镜像/deployment digest、差异与回流清单。
@@ -279,9 +312,9 @@ P0-001 Runtime ADR ──> P0-002 Execution Identity ──> Runtime branch acti
         v                                                         |
 P0-003 Artifact ──> Info/Knowledge internal path                  |
 P0-004 Retrieval + contract CI ──> Knowledge/Research path       |
-P0-005 Identity ──> Security track                               |
+P0-005 Identity ──> Security track + P0-007B                     |
 P0-006 Delivery ADR ──> Reliability track                        |
-P0-007 React Admin Template ──> Frontend migration track         |
+P0-007A ──> P0-005 ──> P0-007B ──> P0-007C ──> Frontend track  |
 P0-001/004/005 + P0-007C ──> P0-008 Next Web v2 ──> Web track   |
         +-------------------------+-------------------------------+
                                   v
@@ -303,7 +336,7 @@ P0-001/004/005 + P0-007C ──> P0-008 Next Web v2 ──> Web track   |
 - R3 Knowledge/Contract：P0-004，随后 Knowledge domain/retrieval。
 - R4 Security/K8s：IMM-001、P0-005，随后 auth/network/secret/migration。
 - R5 Reliability/Evaluation：P0-006，随后 dispatcher/failure/E2E/evaluation。
-- R6 Frontend/Experience：严格按 P0-007A -> P0-007B -> P0-007C；再等待 P0-001/004/005 决策输出，按 P0-008A -> P0-008B -> P0-008C 再基线 Next Web。P0-007C/008C 分别使两个模板具备推广资格，但实际 411A 和三个 Web 批量迁移仍须等待 Gate P0。两个模板资格链完成后进入 M1-400~412 与跨仓浏览器 E2E。
+- R6 Frontend/Experience：严格按 P0-007A -> P0-005 -> P0-007B -> P0-007C；再等待 P0-001/004 决策输出，按 P0-008A -> P0-008B -> P0-008C 再基线 Next Web。P0-007C/008C 分别使两个模板具备推广资格，但实际 411A 和三个 Web 批量迁移仍须等待 Gate P0。两个模板资格链完成后进入 M1-400~412 与跨仓浏览器 E2E。
 
 粗粒度工作量用于容量规划，不是承诺日期：原七项约 14~22 人周；新增 P0-008A/B/C 约 5~9 人周（A 1~2、B 2~3、C 2~4），完整 Phase 0 调整为约 19~31 人周。P0-007A/B/C 仍约 5~8 人周。Frontend 内部按用户要求串行，因此不得再以“多人并行”承诺 2~3 个日历周；核心 ADR Spike 可保持各自 2~3 周时间盒，完整 Gate 以证据完成为准。M1a 因 Research Web 薄切前移到 P0-008C，重估为约 18~30 人周；M1a.5 约 4~7 人周；M1b 约 20~34 人周；M1c canary 观察至少 1~2 个自然周。每次 Gate 后重估，禁止把区间当固定 deadline。
 
@@ -1017,10 +1050,10 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 1. V5-IMM-001 配置真相紧急保护（已完成，可与其余任务独立）。
 2. Frontend-1：V5-P0-007A `tpl-app` React Admin 生产骨架（ACCEPTED，2026-07-11）。
 3. Contract-1：V5-P0-003 Artifact Contract；这是 007B 的阻塞前置。
-4. Frontend-2：V5-P0-007B Info Admin 真实业务试点。
-5. Frontend-3：V5-P0-007C 修正、重复实例化验证和 React Admin v1 冻结。
-6. Contract-2：V5-P0-004 Retrieval/Citation Contract。
-7. Security：V5-P0-005 身份与服务调用及浏览器 BFF 边界。
+4. Security：V5-P0-005 身份与服务调用及浏览器 BFF 边界；这是 007B 的阻塞前置。
+5. Frontend-2：V5-P0-007B Info Admin 真实业务试点。
+6. Frontend-3：V5-P0-007C 修正、重复实例化验证和 React Admin v1 冻结。
+7. Contract-2：V5-P0-004 Retrieval/Citation Contract。
 8. Runtime：恢复 V5-P0-001，完成选型后执行 V5-P0-002。
 9. Reliability：V5-P0-006 可靠交付 ADR 与最小原型。
 10. Web Re-baseline：严格执行 V5-P0-008A -> 008B -> 008C；其依赖此时已齐备。
