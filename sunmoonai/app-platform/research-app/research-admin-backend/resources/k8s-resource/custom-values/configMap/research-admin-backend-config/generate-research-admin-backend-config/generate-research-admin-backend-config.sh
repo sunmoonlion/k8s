@@ -30,6 +30,14 @@ if [ ! -f "$CONFIG_FILE" ]; then
 fi
 source "$CONFIG_FILE"
 
+# The deployment orchestrator historically uses the short label `dev`/`prod`
+# for resource metadata.  The backend uses the semantic environment names for
+# its production security checks, so normalize the aliases at the boundary.
+case "${ENV:-}" in
+    dev|development|"") ENV="development" ;;
+    prod|production) ENV="production" ;;
+esac
+
 if [ "${ENABLED:-true}" != "true" ]; then
     log_info "跳过资源生成: configmap (已禁用)"; exit 0
 fi
@@ -53,6 +61,9 @@ export CASDOOR_ORGANIZATION="${CASDOOR_ORGANIZATION:-}"
 export CASDOOR_APPLICATION="${CASDOOR_APPLICATION:-}"
 export CASDOOR_REDIRECT_URI="${CASDOOR_REDIRECT_URI:-}"
 export CASDOOR_VERIFY_SSL="${CASDOOR_VERIFY_SSL:-}"
+export FRONTEND_ALLOWED_ORIGINS="${FRONTEND_ALLOWED_ORIGINS:-}"
+export AUTH_POLICY_VERSION="${AUTH_POLICY_VERSION:-}"
+export AUTH_ALLOWED_ALGORITHMS="${AUTH_ALLOWED_ALGORITHMS:-}"
 export CELERY_QUEUE="${CELERY_QUEUE:-}"
 
 validate_yaml() {

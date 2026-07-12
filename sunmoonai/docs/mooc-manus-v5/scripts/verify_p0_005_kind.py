@@ -162,15 +162,24 @@ def assert_no_explicit_research_traffic_override(
         )
 
 
-def request_absolute_json(url: str, *, method: str = "GET", form: bytes | None = None) -> Any:
+def request_absolute_json(
+    url: str,
+    *,
+    method: str = "GET",
+    form: bytes | None = None,
+    headers: dict[str, str] | None = None,
+) -> Any:
+    request_headers = {
+        "Accept": "application/json",
+        **({"Content-Type": "application/x-www-form-urlencoded"} if form else {}),
+    }
+    if headers:
+        request_headers.update(headers)
     request = urllib.request.Request(
         url,
         data=form,
         method=method,
-        headers={
-            "Accept": "application/json",
-            **({"Content-Type": "application/x-www-form-urlencoded"} if form else {}),
-        },
+        headers=request_headers,
     )
     try:
         with urllib.request.urlopen(request, timeout=15) as response:
@@ -191,8 +200,13 @@ def get_service_token(casdoor_url: str, application: str) -> str:
     discovery_url = (
         f"{casdoor_url.rstrip('/')}/.well-known/{application}/openid-configuration"
     )
+    # A local port-forward changes the TCP destination but must not change the
+    # issuer host used by Casdoor.  KIND can set this to the in-cluster service
+    # host; production runs leave it unset and use the canonical public host.
+    host_header = os.environ.get("CASDOOR_TEST_HOST_HEADER", "")
+    request_headers = {"Host": host_header} if host_header else None
     try:
-        metadata = request_absolute_json(discovery_url)
+        metadata = request_absolute_json(discovery_url, headers=request_headers)
     except Exception as exc:
         raise VerificationError("Casdoor service discovery failed") from exc
     token_endpoint = metadata.get("token_endpoint") if isinstance(metadata, dict) else None
@@ -214,7 +228,9 @@ def get_service_token(casdoor_url: str, application: str) -> str:
          advertised.path, advertised.query, "")
     )
     try:
-        payload = request_absolute_json(token_url, method="POST", form=body)
+        payload = request_absolute_json(
+            token_url, method="POST", form=body, headers=request_headers
+        )
     except Exception as exc:
         raise VerificationError("Casdoor client-credentials request failed") from exc
     token = payload.get("access_token") if isinstance(payload, dict) else None
