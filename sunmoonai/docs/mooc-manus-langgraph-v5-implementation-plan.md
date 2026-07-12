@@ -178,7 +178,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 实施：Casdoor client credentials；Knowledge exact issuer/audience/subject 验证；关系权限由 `knowledge:ingest` 本地 subject binding 强制（Casdoor provider 返回的 `scope`/`scp` 仅做格式校验，不能替代本地关系授权）；ingestion command 迁移到 `/api/internal/v1/knowledge/ingestions`；Info worker 短时 token cache；删除静态 API key 和匿名 ingestion fallback。
 - 测试：允许调用；无 token、Admin session、伪造签名、错误 audience、过期 token、未知 subject、畸形 scope 全拒绝；撤销 ingestion client 不影响浏览器 Admin；P0-003 artifact success/hash/404/403 回归。
 - 验收：Knowledge 审计能同时定位 service principal 与 operation/correlation ID；token 不进入任务 payload、数据库、日志和错误响应。
-- 状态：CODE_COMPLETE_LOCAL（2026-07-12；Info `1fb07f9`、Knowledge `22ccd58` + `65c6552`；Info/Knowledge 测试 60/48 通过，KIND 证据待补）
+- 状态：CODE_COMPLETE_LOCAL（2026-07-12；Info `1fb07f9`、Knowledge `22ccd58` + `65c6552` + `3088815`；Info/Knowledge 测试 60/48 通过，accepted journal 已记录去敏 service principal，KIND 证据待补）
 
 #### V5-P0-005D K8s/Casdoor 真实验证与接受
 
