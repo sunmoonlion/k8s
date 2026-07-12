@@ -10,6 +10,7 @@ the browser PKCE matrix; that remains a separate Playwright/manual task.
 
 - namespace: `app-platform-dev`
 - traffic after the check: `research-admin-backend` `AGENT_V4_TRAFFIC_ENABLED=false`
+- final Admin Backend API/worker release tag: `1.0.1` for Info, Knowledge and Research
 - Info image: `info-admin-backend:p0-005-auth-20260712-r3`
   digest: `sha256:6c8041e83f96f4952718ecf63a8c8d8a5664d8343ecc135b1c1e0ad13a2ceb3d`
 - Knowledge image: `knowledge-admin-backend:p0-005-auth-20260712-r3`
@@ -54,6 +55,11 @@ the browser PKCE matrix; that remains a separate Playwright/manual task.
 The real Casdoor access-token claims were inspected in-process only: RS256,
 the configured service audience, and the allowlisted service subject. The
 token itself was never printed or persisted.
+
+After retagging the tested digests as `1.0.1`, the same verification was run
+again and passed with the identical 401/401/422 matrix. No `ImagePullBackOff`
+Pod remained in `app-platform-dev`; untested Web/Frontend components stayed on
+their previous stable tags.
 
 ## Acceptance status
 

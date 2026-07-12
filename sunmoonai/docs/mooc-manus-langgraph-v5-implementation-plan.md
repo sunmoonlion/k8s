@@ -193,7 +193,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 仓库：`k8s`，镜像仓库由部署机操作。
 - 规则：通过测试的 Info/Knowledge/Research Admin Backend API+worker 镜像统一发布为 `1.0.1`；Admin/Web/Frontend 未通过同一测试的组件不得继承 App 级临时 tag。部分组件部署必须使用组件级 `*_TAG`，不能把 `*_APP_IMAGE_TAG` 作为隐式全 App 发布开关。
 - 切换顺序：先以 digest 核对并把已验证镜像 retag 为 `1.0.1`，再只滚动三个 Admin Backend/API+worker；验证 P0-005 与 readiness 后，才允许删除临时 `p0-*` tag。旧稳定 tag 不得在没有回滚副本/归档 digest 的情况下直接删除。
-- 状态：IN_PROGRESS（已定位全 App tag 传播导致的 ImagePullBackOff；K8s 默认 Admin Backend tag 已改为 `1.0.1`，镜像 retag、后端滚动验证和临时 tag 清理待执行）
+- 状态：READY_FOR_TAG_GC（已定位全 App tag 传播导致的 ImagePullBackOff；三个已验证 Admin Backend API+worker 已 retag 为 `1.0.1`、滚动验证和 P0-005 复验通过；临时 `p0-*` tag 的 Harbor 清理待执行）
 
 ### V5-P0-006 可靠交付 ADR 与最小原型
 
