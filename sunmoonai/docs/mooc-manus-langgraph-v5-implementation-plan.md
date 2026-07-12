@@ -133,7 +133,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 安全：bucket/key allowlist、最大大小、hash mismatch 拒绝、日志脱敏。
 - 测试：L3；篡改 hash、对象缺失、权限拒绝、超大对象。
 - 验收：真实 Info DocumentVersion 产物被 Knowledge 读取，零数据库反查。
-- 状态：NOT_STARTED
+- 状态：ACCEPTED（2026-07-12；契约：`knowledge-app/contracts/artifact/v1`；schema SHA-256：`a3219604ed3562c436336d4650c2a0fd08afd9a8829e1d17b12d6a929f499c81`；ADR：`sunmoonai/docs/mooc-manus-v5/adr/ADR-003-info-knowledge-artifact-contract.md`；证据：`sunmoonai/docs/evidence/v5/V5-P0-003/result.md`）
 
 ### V5-P0-004 Retrieval/Citation Contract Spike
 

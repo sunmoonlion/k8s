@@ -883,7 +883,7 @@ canary 指标、回滚和恢复演练达标后，才进入有限真实流量；�
 
 - ADR-001 Runtime 选型：自建、Agent Server 或混合。
 - ADR-002 Session/Thread/Run/Attempt/Invocation 身份模型。
-- ADR-003 Info-Knowledge Artifact Contract。
+- ADR-003 Info-Knowledge Artifact Contract（Accepted）。
 - ADR-004 Knowledge-Retrieval/Citation Contract。
 - ADR-005 用户身份、服务身份和 delegated run identity。
 - ADR-006 异步可靠交付：outbox/dispatcher/reconciler。
