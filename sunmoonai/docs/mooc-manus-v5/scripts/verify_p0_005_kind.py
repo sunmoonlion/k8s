@@ -123,6 +123,45 @@ def start_port_forward(
     )
 
 
+def wait_for_reachable(base_url: str, path: str, *, timeout: float = 30) -> None:
+    deadline = time.monotonic() + timeout
+    last_error: Exception | None = None
+    while time.monotonic() < deadline:
+        try:
+            request_json(base_url, path)
+            return
+        except HttpFailure:
+            # A protected endpoint returning 401/404 is still reachable.
+            return
+        except VerificationError as exc:
+            last_error = exc
+            time.sleep(0.5)
+    raise VerificationError(f"timed out waiting for {base_url}{path}: {last_error}")
+
+
+def assert_no_explicit_research_traffic_override(
+    *, kubeconfig: str, namespace: str
+) -> None:
+    raw = kubectl(
+        [
+            "get",
+            "deployment/research-admin-backend",
+            "-n",
+            namespace,
+            "-o",
+            "json",
+        ],
+        kubeconfig=kubeconfig,
+        capture=True,
+    )
+    deployment = json.loads(raw)
+    env = deployment["spec"]["template"]["spec"]["containers"][0].get("env", [])
+    if any(item.get("name") == "AGENT_V4_TRAFFIC_ENABLED" for item in env):
+        raise VerificationError(
+            "refusing to overwrite explicit AGENT_V4_TRAFFIC_ENABLED deployment env"
+        )
+
+
 def request_absolute_json(url: str, *, method: str = "GET", form: bytes | None = None) -> Any:
     request = urllib.request.Request(
         url,
@@ -262,9 +301,15 @@ def main() -> int:
                 local_port=args.casdoor_port,
             ),
         ]
-        time.sleep(2)
+        wait_for_reachable(info_url, "/api/documents")
+        wait_for_reachable(knowledge_url, "/api/knowledge/ingestions")
+        wait_for_reachable(research_url, "/api/agent/sessions")
+        wait_for_reachable(casdoor_url, "/.well-known/" + args.casdoor_application + "/openid-configuration")
 
         # Research is traffic-off by default; enable only to verify its auth boundary.
+        assert_no_explicit_research_traffic_override(
+            kubeconfig=kubeconfig, namespace=args.namespace
+        )
         set_research_traffic(kubeconfig=kubeconfig, namespace=args.namespace, enabled=True)
         research_overridden = True
 
