@@ -188,6 +188,13 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 验收：ADR-005 接受条件全部满足；归档 contract/config digest、镜像与 deployment digest、测试结果和回滚证据，然后把 P0-005/ADR-005 标记 ACCEPTED。
 - 状态：IN_PROGRESS（2026-07-12；KIND 匿名/真实服务 JWT 矩阵已通过，镜像与迁移已执行；浏览器 PKCE/伪造 token 矩阵、可重复 Secret 注入和 migration job gate 仍待完成；Research traffic 已恢复 false）
 
+#### V5-P0-005E 镜像 tag 与组件部署隔离
+
+- 仓库：`k8s`，镜像仓库由部署机操作。
+- 规则：通过测试的 Info/Knowledge/Research Admin Backend API+worker 镜像统一发布为 `1.0.1`；Admin/Web/Frontend 未通过同一测试的组件不得继承 App 级临时 tag。部分组件部署必须使用组件级 `*_TAG`，不能把 `*_APP_IMAGE_TAG` 作为隐式全 App 发布开关。
+- 切换顺序：先以 digest 核对并把已验证镜像 retag 为 `1.0.1`，再只滚动三个 Admin Backend/API+worker；验证 P0-005 与 readiness 后，才允许删除临时 `p0-*` tag。旧稳定 tag 不得在没有回滚副本/归档 digest 的情况下直接删除。
+- 状态：IN_PROGRESS（已定位全 App tag 传播导致的 ImagePullBackOff；K8s 默认 Admin Backend tag 已改为 `1.0.1`，镜像 retag、后端滚动验证和临时 tag 清理待执行）
+
 ### V5-P0-006 可靠交付 ADR 与最小原型
 
 - 类型/优先级：ARCH/RELIABILITY/P0
