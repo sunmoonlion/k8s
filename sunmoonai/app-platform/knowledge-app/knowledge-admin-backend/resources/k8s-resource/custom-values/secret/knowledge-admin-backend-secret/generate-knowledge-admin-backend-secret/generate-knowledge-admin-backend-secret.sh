@@ -42,6 +42,8 @@ export ENVIRONMENT="${ENVIRONMENT:-}"
 export ENV="${ENV:-}"
 
 export RAGFLOW_API_KEY="${RAGFLOW_API_KEY:-}"
+export CASDOOR_CLIENT_ID="${CASDOOR_CLIENT_ID:-}"
+export CASDOOR_CLIENT_SECRET="${CASDOOR_CLIENT_SECRET:-}"
 
 validate_yaml() {
     local yaml_file="$1"
