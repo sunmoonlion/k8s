@@ -447,6 +447,11 @@ Citation 必须引用 `evidence_id`，最终可回溯到 InfoDocumentVersion。R
 
 身份协议、浏览器 BFF 会话、六 audience、CSRF/CORS、服务 token 与路由分区的权威决策见 `sunmoonai/docs/mooc-manus-v5/adr/ADR-005-identity-service-calls-browser-bff.md`。本节只保留长期架构原则，不复制其字段和协议细节。
 
+Casdoor 的浏览器 BFF 使用 application-specific discovery；当前版本的
+`client_credentials` access token 使用基础 issuer。服务关系必须显式配置
+独立的 service discovery URL，并严格接受该 metadata 的 issuer/JWKS；不得从
+token claim 推断 issuer，也不得把任意 provider host 加入 allowlist。
+
 ### 9.2 授权
 
 所有资源访问检查：
@@ -476,6 +481,7 @@ M1 至少实现：
 - 日志和事件不记录 token、Secret、完整敏感正文。
 - Prompt/Tool 输出按不可信输入处理，Knowledge 内容不得提升为系统指令。
 - 浏览器不保存 Provider token；后端 session、日志、事件和错误响应不暴露 token、authorization code、PKCE verifier、nonce 或 client secret。
+- 服务 client 的 Secret 只由部署机/Secret 管理器注入；KIND 的一次性验证凭据不得成为 Git 或镜像输入。
 - credential CORS 使用精确 origin，禁止 `allow_credentials=true` 配合通配 origin；cookie-auth 的非安全方法必须有 Origin 与 CSRF 双重校验。
 
 ## 10. 消息、事件、投影与流式输出
