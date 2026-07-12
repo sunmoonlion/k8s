@@ -154,14 +154,14 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 实施：Authorization Code + PKCE BFF session；严格 OIDC/JWKS 验证；Web/Admin 六 audience；App/Surface 隔离 cookie/session；CSRF/CORS；Principal 与 actor/scope/resource check；client-credentials 服务 token；K8s ServiceAccount 到服务主体的部署绑定。
 - 测试：匿名、伪造签名、错误 issuer/audience、过期 token、state/nonce/PKCE 重放、跨用户 Session/资源、缺 scope、CSRF、浏览器 session 调 internal route。P0 固定 Admin/Web audience consumer vectors；真实 Web route 的双向误用测试在 P0-008C 完成。
 - 验收：三套 Admin 业务路由不再匿名；关键资源不只检查“已登录”而检查 owner/scope；actor/reviewer 不信任请求体；Info -> Knowledge 使用真实、最小 scope 的服务 token；浏览器 token 不被当作跨仓服务凭据；前端路由守卫不承担最终授权。
-- 状态：IN_PROGRESS（2026-07-12；协议/代码已落地，KIND/Casdoor 真实证据待补；ADR 仍为 CANDIDATE）
+- 状态：IN_PROGRESS（2026-07-12；Admin/服务代码与 KIND 真实匿名/服务 JWT 证据已通过；浏览器 PKCE/跨用户矩阵和正式 ADR 接受仍待补）
 
 #### V5-P0-005A 冻结协议与测试向量
 
 - 仓库：`k8s`。
 - 实施：评审 ADR-005；以 `sunmoonai/docs/mooc-manus-v5/contracts/security/v1/` 为平台身份 contract 唯一真相源，固定六 application/audience、Principal、401/403、session/CSRF、OIDC callback、service binding 和路由分区语义；建立不含有效 credential 的配置模板和跨语言正/负 JWT claim fixtures。
 - 验收：后续 Python/Nest/K8s 工作不再自行解释 audience、scope、cookie 或错误语义；ADR 保持 CANDIDATE，必须等真实 KIND 证据后才 ACCEPTED。
-- 状态：CODE_COMPLETE_LOCAL（2026-07-12；contract 与测试向量已提交；KIND 证据待补）
+- 状态：CODE_COMPLETE_LOCAL（2026-07-12；contract 与测试向量已提交；KIND 服务身份证据已归档，浏览器/伪造 token 矩阵待补）
 
 #### V5-P0-005B 三套 Admin 浏览器身份闭环
 
@@ -170,7 +170,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 关键资源：Info/Knowledge 管理 scope；Research Session/Run/Event/SSE 从认证 Principal 得到 owner，忽略或拒绝 payload 冒充的 actor/security context。
 - 测试：L1/L2/L3；每仓先跑共享安全向量，再跑本仓 allow/deny、旧行为回归和泄密断言。Research 还需跨用户 Session/Run/SSE 测试。
 - 验收：无 cookie 401、失效 cookie 401、scope/owner 不足 403；三仓 `/auth/me` 与 Redis/log 抽查无 token；login path 无 DDL；credential CORS 无通配 origin。
-- 状态：CODE_COMPLETE_LOCAL（2026-07-12；Info `c1dad4e`、Knowledge `a38eefd`、Research `7724a58`；三仓测试 60/48/76 通过，KIND 证据待补）
+- 状态：CODE_COMPLETE_LOCAL（2026-07-12；Info `c1dad4e`、Knowledge `a38eefd`、Research `7724a58`；三仓测试 60/48/76 通过；KIND 匿名边界已在 P0-005D 复验，浏览器 PKCE/跨用户证据待补）
 
 #### V5-P0-005C Info -> Knowledge 服务身份闭环
 
@@ -178,7 +178,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 实施：Casdoor client credentials；Knowledge exact issuer/audience/subject 验证；关系权限由 `knowledge:ingest` 本地 subject binding 强制（Casdoor provider 返回的 `scope`/`scp` 仅做格式校验，不能替代本地关系授权）；ingestion command 迁移到 `/api/internal/v1/knowledge/ingestions`；Info worker 短时 token cache；删除静态 API key 和匿名 ingestion fallback。
 - 测试：允许调用；无 token、Admin session、伪造签名、错误 audience、过期 token、未知 subject、畸形 scope 全拒绝；撤销 ingestion client 不影响浏览器 Admin；P0-003 artifact success/hash/404/403 回归。
 - 验收：Knowledge 审计能同时定位 service principal 与 operation/correlation ID；token 不进入任务 payload、数据库、日志和错误响应。
-- 状态：CODE_COMPLETE_LOCAL（2026-07-12；Info `1fb07f9`、Knowledge `22ccd58` + `65c6552` + `3088815`；Info/Knowledge 测试 60/48 通过，accepted journal 已记录去敏 service principal，KIND 证据待补）
+- 状态：KIND_SERVICE_ACCEPTED（2026-07-12；Info `1fb07f9`、Knowledge `22ccd58` + `65c6552` + `3088815` + `e3eddcd`；真实 Casdoor client_credentials 通过标准 discovery issuer、RS256、audience、subject binding；证据见 `sunmoonai/docs/evidence/v5/V5-P0-005/result.md`）
 
 #### V5-P0-005D K8s/Casdoor 真实验证与接受
 
@@ -186,7 +186,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 实施：以 Secret 引用配置六个浏览器 client/audience 和最小服务 client；Casdoor 注册通过 `post-deploy-setup.local.conf`（仅部署机、gitignore、权限 0600）注入，不把 client secret 写入仓库；脚本支持浏览器 `authorization_code` 与服务 `client_credentials` grant；绑定 workload ServiceAccount；构建、部署 traffic-off 镜像；运行允许/拒绝矩阵与停流回滚。
 - 测试：L4/L6/L7；配置缺失、JWKS rotation/未知 kid、Casdoor/Redis 不可用均 fail closed。`sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_005_kind.py` 只输出状态码和去敏结果，不输出 access token/client secret；它覆盖三套 Admin 匿名拒绝、Research traffic-off 临时验证和真实 service client 到 Knowledge internal route 的认证边界，浏览器 PKCE 矩阵另由 Playwright/人工登录证据完成。
 - 验收：ADR-005 接受条件全部满足；归档 contract/config digest、镜像与 deployment digest、测试结果和回滚证据，然后把 P0-005/ADR-005 标记 ACCEPTED。
-- 状态：IN_PROGRESS（后端代码已完成；K8s 模板/生成器已补齐非密配置，Casdoor application 注册、Secret 注入、迁移与 KIND 矩阵待执行）
+- 状态：IN_PROGRESS（2026-07-12；KIND 匿名/真实服务 JWT 矩阵已通过，镜像与迁移已执行；浏览器 PKCE/伪造 token 矩阵、可重复 Secret 注入和 migration job gate 仍待完成；Research traffic 已恢复 false）
 
 ### V5-P0-006 可靠交付 ADR 与最小原型
 

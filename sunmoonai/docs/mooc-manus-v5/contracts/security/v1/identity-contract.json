@@ -58,7 +58,9 @@
       "caller": "info-distribution-worker",
       "resource_server": "knowledge-admin-backend",
       "scope": "knowledge:ingest",
-      "route": "POST /api/internal/v1/knowledge/ingestions"
+      "route": "POST /api/internal/v1/knowledge/ingestions",
+      "issuer_validation": "exact issuer from explicit INTERNAL_AUTH_DISCOVERY_URL metadata",
+      "provider_note": "Casdoor client_credentials uses standard discovery issuer; browser BFF uses application-specific discovery"
     }
   ],
   "csrf": {

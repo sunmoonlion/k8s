@@ -94,7 +94,7 @@ principal + action + resource owner/tenant/project + policy_version
 ### 2.5 服务身份与 Info -> Knowledge
 
 1. 服务调用使用 Casdoor OAuth 2.0 client credentials。每条调用关系使用独立 confidential client/subject，不共享 Admin client、浏览器 token 或静态 API key。
-2. Knowledge internal resource server 使用 application-specific discovery/JWKS 验证签名、issuer、精确 target audience、`exp`/`iat`，再以本地 binding 把 service subject 映射为 scopes。未知 subject 或 binding 默认拒绝；Provider 返回的 `scope`/`scp` 只作为格式化输入，不能替代本地关系授权（Casdoor client-credentials 令牌可能只返回 provider 级 `openid` scope）。
+2. Knowledge internal resource server 使用为该 service relation 显式配置的 discovery/JWKS 验证签名、issuer、精确 target audience、`exp`/`iat`，再以本地 binding 把 service subject 映射为 scopes。未知 subject 或 binding 默认拒绝；Provider 返回的 `scope`/`scp` 只作为格式化输入，不能替代本地关系授权（Casdoor client-credentials 令牌可能只返回 provider 级 `openid` scope）。浏览器 BFF 仍使用 application-specific discovery；Casdoor 当前版本的 client-credentials access token 使用基础 issuer，因此 service relation 的 `INTERNAL_AUTH_DISCOVERY_URL` 指向标准 discovery，issuer 必须完全取自该 metadata，禁止从 token 自行推断或放宽为任意 host。
 3. P0 第一条 binding 为 `Info distribution worker -> Knowledge ingestion`，scope 为 `knowledge:ingest`。该 credential 不能调用 Knowledge Admin API、Research retrieval 或其他 internal API。
 4. Knowledge ingestion command 迁移到版本化 internal route（目标：`POST /api/internal/v1/knowledge/ingestions`）；浏览器管理查询/重试继续走 Admin session route。旧匿名 ingestion route 在未接生产流量前直接关闭，不保留双写或匿名兼容。
 5. Info worker 按需取得并以内存短时缓存 access token，按 `exp` 留安全余量刷新；token 不写数据库、日志、事件、错误响应或任务 payload。
