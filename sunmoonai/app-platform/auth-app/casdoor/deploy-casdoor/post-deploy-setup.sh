@@ -5,7 +5,7 @@
 # 功能：
 #   1. 写入 /conf/app.conf（beego 配置，含 copyrequestbody=true）
 #   2. 幂等创建 Casdoor Organizations
-#   3. 幂等创建 Casdoor Applications
+#   3. 幂等创建 Casdoor Applications（本地配置可声明 authorization_code/client_credentials）
 #   4. 按 ORG_* 在各业务组织下幂等创建用户 admin（密码同 ADMIN_PASSWORD）
 #
 # 用法：
@@ -18,6 +18,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 POST_DEPLOY_SCRIPT_DIR="$SCRIPT_DIR"
 SETUP_CONF="$SCRIPT_DIR/post-deploy-setup.conf"
+LOCAL_SETUP_CONF="$SCRIPT_DIR/post-deploy-setup.local.conf"
 
 find_k8s_root_dir() {
     local search_dir="$1"
@@ -132,6 +133,13 @@ if [[ -f "$SETUP_CONF" ]]; then
     log_info "已加载配置: $SETUP_CONF"
 else
     log_warn "未找到 $SETUP_CONF，跳过 Organizations/Applications 初始化"
+fi
+if [[ -f "$LOCAL_SETUP_CONF" ]]; then
+    # 本地配置只允许存在于部署机，不应进入仓库；用于注入 Casdoor client secret。
+    source "$LOCAL_SETUP_CONF"
+    log_info "已加载本地敏感配置: $LOCAL_SETUP_CONF"
+else
+    log_info "未找到本地敏感配置，跳过额外 Organizations/Applications"
 fi
 
 # ─────────────────────────── 第一步：app.conf ───────────────────────────
@@ -320,15 +328,31 @@ patch_organization_languages() {
 
 create_app() {
     local entry="$1"
-    local name display_name client_id client_secret org redirect_uris enable_signup
-    IFS='|' read -r name display_name client_id client_secret org redirect_uris enable_signup <<< "$entry"
+    local name display_name client_id client_secret org redirect_uris enable_signup grant_types
+    IFS='|' read -r name display_name client_id client_secret org redirect_uris enable_signup grant_types <<< "$entry"
+
+    grant_types="${grant_types:-[\"authorization_code\"]}"
+    if [[ -z "$name" || -z "$client_id" || -z "$client_secret" || -z "$org" ]]; then
+        log_error "Application 配置缺少 name/client_id/client_secret/organization"
+        return 1
+    fi
+    if [[ "$enable_signup" != "true" && "$enable_signup" != "false" ]]; then
+        log_error "Application 配置 enable_sign_up 必须为 true/false: $name"
+        return 1
+    fi
 
     local now
     now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-    # redirect_uris 中的单引号转义
-    local safe_uris
+    # 所有来自本地配置的 SQL 字段均做单引号转义；grant_types/redirect_uris 仍由配置文件提供 JSON。
+    local safe_name safe_display_name safe_client_id safe_client_secret safe_org safe_uris safe_grant_types
+    safe_name="$(sql_escape_single "$name")"
+    safe_display_name="$(sql_escape_single "$display_name")"
+    safe_client_id="$(sql_escape_single "$client_id")"
+    safe_client_secret="$(sql_escape_single "$client_secret")"
+    safe_org="$(sql_escape_single "$org")"
     safe_uris="${redirect_uris//\'/\'\'}"
+    safe_grant_types="${grant_types//\'/\'\'}"
 
     local sql
     sql="INSERT INTO application (
@@ -338,10 +362,10 @@ create_app() {
         organization, enable_sign_up,
         token_format, expire_in_hours, refresh_expire_in_hours
     ) VALUES (
-        'admin', '$name', '$now',
-        '$display_name', '$client_id', '$client_secret',
-        '$safe_uris', 'cert-built-in', '[\"authorization_code\"]',
-        '$org', $enable_signup,
+        'admin', '$safe_name', '$now',
+        '$safe_display_name', '$safe_client_id', '$safe_client_secret',
+        '$safe_uris', 'cert-built-in', '$safe_grant_types',
+        '$safe_org', $enable_signup,
         'JWT', 168, 336
     ) ON CONFLICT (owner, name) DO UPDATE SET
         display_name = EXCLUDED.display_name,
@@ -357,7 +381,7 @@ create_app() {
         refresh_expire_in_hours = EXCLUDED.refresh_expire_in_hours;"
 
     if run_sql "$sql"; then
-        log_ok "Application 就绪: $name (client_id=$client_id)"
+        log_ok "Application 就绪: $name (grant_types=$grant_types)"
     else
         log_error "Application 创建失败: $name"
         return 1
@@ -498,8 +522,8 @@ main() {
     echo ""
     echo "═══════════ Casdoor 访问信息 ═══════════"
     echo "地址：https://casdoor.sunmoonai.com:30443"
-    echo "控制台：built-in 组织 admin / ${ADMIN_PASSWORD:-(见 post-deploy-setup.conf)}"
-    echo "Investment 应用登录：各业务组织下用户名 admin，密码同上（由 ORG_* 自动创建）"
+    echo "控制台：built-in 组织 admin（密码由受控配置注入，不在日志显示）"
+    echo "业务应用登录：凭据由 Casdoor/受控配置管理，不在日志显示"
     echo "════════════════════════════════════════"
     echo ""
 }

@@ -1,0 +1,21 @@
+# 复制为 post-deploy-setup.local.conf 后再填写实际值；不要提交后者。
+#
+#   cp post-deploy-setup.local.conf.example post-deploy-setup.local.conf
+#   chmod 600 post-deploy-setup.local.conf
+#
+# 该文件由 post-deploy-setup.sh 在受控部署机上 source。client secret 只从
+# 本地环境/Secret 管理器注入，不进入 git、镜像、ConfigMap 或日志。
+
+# 统一的 Casdoor 组织；六个浏览器 application 与一个服务 application 使用该组织。
+ORG_3="sunmoonai|SunMoon AI|sunmoonai-info-admin"
+
+# 浏览器 application。redirect URI 必须与对应 BFF 的公开回调地址完全一致。
+APP_3="sunmoonai-info-admin|SunMoon Info Admin|${CASDOOR_INFO_ADMIN_CLIENT_ID:?set CASDOOR_INFO_ADMIN_CLIENT_ID}|${CASDOOR_INFO_ADMIN_CLIENT_SECRET:?set CASDOOR_INFO_ADMIN_CLIENT_SECRET}|sunmoonai|[\"https://info-admin.example.com/api/auth/callback\"]|false|[\"authorization_code\"]"
+APP_4="sunmoonai-info-web|SunMoon Info Web|${CASDOOR_INFO_WEB_CLIENT_ID:?set CASDOOR_INFO_WEB_CLIENT_ID}|${CASDOOR_INFO_WEB_CLIENT_SECRET:?set CASDOOR_INFO_WEB_CLIENT_SECRET}|sunmoonai|[\"https://info.example.com/api/auth/callback\"]|false|[\"authorization_code\"]"
+APP_5="sunmoonai-knowledge-admin|SunMoon Knowledge Admin|${CASDOOR_KNOWLEDGE_ADMIN_CLIENT_ID:?set CASDOOR_KNOWLEDGE_ADMIN_CLIENT_ID}|${CASDOOR_KNOWLEDGE_ADMIN_CLIENT_SECRET:?set CASDOOR_KNOWLEDGE_ADMIN_CLIENT_SECRET}|sunmoonai|[\"https://knowledge-admin.example.com/api/auth/callback\"]|false|[\"authorization_code\"]"
+APP_6="sunmoonai-knowledge-web|SunMoon Knowledge Web|${CASDOOR_KNOWLEDGE_WEB_CLIENT_ID:?set CASDOOR_KNOWLEDGE_WEB_CLIENT_ID}|${CASDOOR_KNOWLEDGE_WEB_CLIENT_SECRET:?set CASDOOR_KNOWLEDGE_WEB_CLIENT_SECRET}|sunmoonai|[\"https://knowledge.example.com/api/auth/callback\"]|false|[\"authorization_code\"]"
+APP_7="sunmoonai-research-admin|SunMoon Research Admin|${CASDOOR_RESEARCH_ADMIN_CLIENT_ID:?set CASDOOR_RESEARCH_ADMIN_CLIENT_ID}|${CASDOOR_RESEARCH_ADMIN_CLIENT_SECRET:?set CASDOOR_RESEARCH_ADMIN_CLIENT_SECRET}|sunmoonai|[\"https://research-admin.example.com/api/auth/callback\"]|false|[\"authorization_code\"]"
+APP_8="sunmoonai-research-web|SunMoon Research Web|${CASDOOR_RESEARCH_WEB_CLIENT_ID:?set CASDOOR_RESEARCH_WEB_CLIENT_ID}|${CASDOOR_RESEARCH_WEB_CLIENT_SECRET:?set CASDOOR_RESEARCH_WEB_CLIENT_SECRET}|sunmoonai|[\"https://research.example.com/api/auth/callback\"]|false|[\"authorization_code\"]"
+
+# Info distribution worker -> Knowledge ingestion。无浏览器 redirect，且只允许 client_credentials。
+APP_9="sunmoonai-info-knowledge-ingest|SunMoon Info to Knowledge Ingest|${CASDOOR_INFO_KNOWLEDGE_CLIENT_ID:?set CASDOOR_INFO_KNOWLEDGE_CLIENT_ID}|${CASDOOR_INFO_KNOWLEDGE_CLIENT_SECRET:?set CASDOOR_INFO_KNOWLEDGE_CLIENT_SECRET}|sunmoonai|[]|false|[\"client_credentials\"]"

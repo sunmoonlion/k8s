@@ -183,7 +183,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 #### V5-P0-005D K8s/Casdoor 真实验证与接受
 
 - 仓库：`k8s`。
-- 实施：以 Secret 引用配置六个浏览器 client/audience 和最小服务 client；绑定 workload ServiceAccount；构建、部署 traffic-off 镜像；运行允许/拒绝矩阵与停流回滚。
+- 实施：以 Secret 引用配置六个浏览器 client/audience 和最小服务 client；Casdoor 注册通过 `post-deploy-setup.local.conf`（仅部署机、gitignore、权限 0600）注入，不把 client secret 写入仓库；脚本支持浏览器 `authorization_code` 与服务 `client_credentials` grant；绑定 workload ServiceAccount；构建、部署 traffic-off 镜像；运行允许/拒绝矩阵与停流回滚。
 - 测试：L4/L6/L7；配置缺失、JWKS rotation/未知 kid、Casdoor/Redis 不可用均 fail closed。
 - 验收：ADR-005 接受条件全部满足；归档 contract/config digest、镜像与 deployment digest、测试结果和回滚证据，然后把 P0-005/ADR-005 标记 ACCEPTED。
 - 状态：IN_PROGRESS（后端代码已完成；K8s 模板/生成器已补齐非密配置，Casdoor application 注册、Secret 注入、迁移与 KIND 矩阵待执行）
