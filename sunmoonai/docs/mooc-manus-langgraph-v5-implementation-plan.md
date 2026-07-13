@@ -186,7 +186,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 实施：以 Secret 引用配置六个浏览器 client/audience 和最小服务 client；Casdoor 注册通过 `post-deploy-setup.local.conf`（仅部署机、gitignore、权限 0600）注入，不把 client secret 写入仓库；脚本支持浏览器 `authorization_code` 与服务 `client_credentials` grant；绑定 workload ServiceAccount；构建、部署 traffic-off 镜像；运行允许/拒绝矩阵与停流回滚。
 - 测试：L4/L6/L7；配置缺失、JWKS rotation/未知 kid、Casdoor/Redis 不可用均 fail closed。`sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_005_kind.py` 只输出状态码和去敏结果，不输出 access token/client secret；它覆盖三套 Admin 匿名拒绝、Research traffic-off 临时验证和真实 service client 到 Knowledge internal route 的认证边界，浏览器 PKCE 矩阵另由 Playwright/人工登录证据完成。
 - 验收：ADR-005 接受条件全部满足；归档 contract/config digest、镜像与 deployment digest、测试结果和回滚证据，然后把 P0-005/ADR-005 标记 ACCEPTED。
-- 状态：IN_PROGRESS（2026-07-12；KIND 匿名/真实服务 JWT 矩阵已通过，镜像与迁移已执行；浏览器 PKCE/伪造 token 矩阵、可重复 Secret 注入和 migration job gate 仍待完成；Research traffic 已恢复 false）
+- 状态：IN_PROGRESS（更新于 2026-07-13；KIND 匿名/真实服务 JWT 矩阵、专用 migration role/Secret、运行时 DDL 撤权和 Deployment 前 Alembic Job gate 已通过正负向及幂等验证；浏览器 PKCE/CSRF/跨用户/伪造与过期 token 矩阵、可重复浏览器 client Secret 注入仍待完成；Research traffic 保持 false）
 
 #### V5-P0-005E 镜像 tag 与组件部署隔离
 

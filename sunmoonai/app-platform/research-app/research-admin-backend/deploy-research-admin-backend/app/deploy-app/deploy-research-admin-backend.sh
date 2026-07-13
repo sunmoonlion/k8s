@@ -31,6 +31,7 @@ if [[ -z "${K8S_ROOT_DIR:-}" ]]; then
 fi
 
 source "$K8S_ROOT_DIR/utils/unified-deployment-template.sh"
+source "$K8S_ROOT_DIR/utils/alembic-migration-gate.sh"
 
 SCRIPT_DIR="$RESEARCH_ADMIN_BACKEND_SCRIPT_DIR"
 
@@ -286,6 +287,17 @@ deploy_app() {
         && log_success "PVC 部署完成" \
         || { log_error "PVC 部署失败"; return 1; }
 
+    run_alembic_migration_gate \
+        "$NAMESPACE" \
+        "research-admin-backend" \
+        "$RESEARCH_ADMIN_BACKEND_FULL_IMAGE_NAME" \
+        "${RESEARCH_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}" \
+        "${RESEARCH_ADMIN_BACKEND_CONFIGMAP_NAME:-research-admin-backend-config}" \
+        "${RESEARCH_ADMIN_BACKEND_SECRET_NAME:-research-admin-backend-secret}" \
+        "${RESEARCH_ADMIN_BACKEND_POSTGRESQL_SECRET_NAME:-research-admin-backend-postgresql-conn}" \
+        "${RESEARCH_ADMIN_BACKEND_MIGRATION_SECRET_NAME:-research-admin-backend-migration-postgresql-conn}" \
+        || { log_error "数据库迁移门禁失败，拒绝更新 Deployment"; return 1; }
+
     kubectl apply -f "$RESEARCH_ADMIN_BACKEND_YAML" -n "$NAMESPACE"
 
     if [ $? -eq 0 ]; then
@@ -311,6 +323,7 @@ uninstall_app() {
     else
         kubectl delete -f "$RESEARCH_ADMIN_BACKEND_YAML" -n "$NAMESPACE" --ignore-not-found=true
     fi
+    kubectl delete job research-admin-backend-migration-gate -n "$NAMESPACE" --ignore-not-found=true
     log_success "✅ 核心服务卸载完成"
 
     log_info "🚀 阶段2：卸载子组件..."
@@ -349,6 +362,9 @@ show_status() {
     echo ""
     echo "📦 PVCs:"
     kubectl get pvc -n "$NAMESPACE" -l app=research-admin-backend 2>/dev/null || echo "  无 PVC"
+    echo ""
+    echo "🧭 Migration Gate:"
+    kubectl get job -n "$NAMESPACE" -l app=research-admin-backend,sunmoonai.com/gate=alembic 2>/dev/null || echo "  无迁移 Job"
 }
 
 main() {

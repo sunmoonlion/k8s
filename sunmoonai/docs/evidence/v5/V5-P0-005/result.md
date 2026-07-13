@@ -1,4 +1,4 @@
-# V5-P0-005 KIND evidence (2026-07-12)
+# V5-P0-005 KIND evidence (2026-07-12 to 2026-07-13)
 
 ## Scope
 
@@ -25,10 +25,48 @@ the browser PKCE matrix; that remains a separate Playwright/manual task.
 
 - Info: Alembic `20260712_0003 (head)`.
 - Knowledge: Alembic `20260712_0002 (head)`.
-- Research: `20260712_0002` was applied through the PostgreSQL migration
-  administrator because the existing runtime role was not owner of the legacy
-  `agent_sessions` table. The runtime role was not granted DDL; an automated
-  migration-job/privileged migration Secret is still required before M1b.
+- Research: Alembic `20260712_0002 (head)`.
+
+On 2026-07-13 the manual administrator workaround was replaced by a repeatable
+deployment-pre migration gate:
+
+- `provision_p0_005_migration_roles.sh` defaults to plan-only mode and requires
+  explicit `--apply`. It reconciles three distinct, non-superuser migration
+  roles and three app-namespace Secrets without printing credentials.
+- Each Secret contains only `MIGRATION_DATABASE_URL` and
+  `MIGRATION_DATABASE_USER`; the latter is used as non-secret identity metadata
+  and checked by the Job before Alembic runs.
+- Existing public-schema tables, sequences, views, materialized views, enum or
+  domain types, functions and procedures are transferred to the migration
+  owner. New objects inherit runtime DML/sequence grants from migration-owner
+  default privileges.
+- Runtime roles retain application DML but have public-schema `CREATE`
+  revoked. The live probes returned:
+  `info_admin_user=False`, `knowledge_admin_user=False`, and
+  `research_admin_user=False` for `has_schema_privilege(..., 'CREATE')`.
+- The shared gate is invoked by all three Admin Backend component deployment
+  scripts before `kubectl apply` updates a Deployment. It rejects a missing or
+  shared migration Secret and verifies that the image resolves a migration URL
+  whose user differs from the runtime user and matches Secret metadata.
+
+The role/Secret provisioner completed repeatedly, including after existing
+function/procedure ownership was added to its reconciliation scope, proving the
+operation is idempotent. The three positive gates then reported:
+
+```text
+info-admin-backend:      info_admin_user_migration      20260712_0003 (head)
+knowledge-admin-backend: knowledge_admin_user_migration 20260712_0002 (head)
+research-admin-backend:  research_admin_user_migration  20260712_0002 (head)
+```
+
+The Knowledge negative test used the previous `1.0.1` image, which did not
+resolve `MIGRATION_DATABASE_URL`. The gate failed before Alembic with
+`migration gate: image does not resolve MIGRATION_DATABASE_URL`, and the live
+Deployment remained on `knowledge-admin-backend:1.0.1`. The positive test used
+`knowledge-admin-backend:p0-005-migration-20260713`, registry digest
+`sha256:59889fdf08894546852ed3f92970e5d5f5c80bcf5a4fd92109ad22d641850e88`,
+and passed without changing that Deployment. Knowledge source commits are
+`bdc92bc` (backend) and `c18453d` (parent pointer).
 
 ## Verification output
 
@@ -63,7 +101,8 @@ their previous stable tags.
 
 ## Acceptance status
 
-`P0-005D` is **partial**: the real service boundary and anonymous checks pass;
-browser PKCE/CSRF/cross-user evidence, forged/expired-token matrix, repeatable
-Secret injection, and the migration job gate remain open. ADR-005 therefore
-stays `CANDIDATE`.
+`P0-005D` is **partial**: the real service boundary, anonymous checks,
+repeatable database migration Secret injection, role separation, and
+deployment-pre migration gate pass. Browser PKCE/CSRF/cross-user evidence,
+forged/expired-token KIND matrix, and repeatable browser-client Secret
+injection remain open. ADR-005 therefore stays `CANDIDATE`.
