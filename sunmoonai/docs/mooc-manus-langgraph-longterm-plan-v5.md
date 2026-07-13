@@ -604,12 +604,12 @@ Admin 规则：
 模板演进：
 
 1. 保留现有 `tpl-web-frontend`（它已经是 React + Next）。
-2. 暂时保留 Vue `tpl-admin-frontend`，冻结新增平台能力，只接受迁移期严重缺陷修复。
-3. 并行建立 `tpl-admin-frontend-react` React 生产骨架；该阶段只证明技术路线、部署形态和平台接入点，不能宣称完成 Vue 功能迁移。
+2. 将 React Admin 主模板固定在 `tpl-admin-frontend` 子仓库；原 Vue 模板迁移为独立的 `tpl-admin-frontend-vue` 子仓库，冻结新增平台能力，只接受迁移期严重缺陷修复。
+3. 在 canonical `tpl-admin-frontend` 中完成 React 生产骨架；该阶段只证明技术路线、部署形态和平台接入点，不能宣称完成 Vue 功能迁移。
 4. 新增独立的 React Admin 模板能力对齐门 `P0-007A2`：冻结 Vue 模板能力清单，逐项实现生产相关通用组件、布局、路由、权限、状态、国际化、错误/安全、构建和部署行为，并形成 Vue -> React 映射与测试矩阵。示例页、Electron/PWA 等 legacy 能力必须明确标记为保留、替代或延期，禁止静默遗漏。
 5. 用 Info Admin Artifact/Delivery 真实薄切验证模板；通用能力回收模板，业务代码不进入模板。只有 `P0-007A2` 完成后，模板才具备业务迁移资格。
-6. `P0-007C` 冻结后，先以 clean-room 方式把固定 React 模板骨架同步到三个 App，保留 Vue 部署和回退；同步骨架不等于切换流量。
-7. 三个 React Admin 分别完成真实业务功能、安全、可访问性和 E2E 等价后，才将 React 模板提升为默认 `tpl-admin-frontend`，Vue 版本归档/保留 tag，不再双重维护。
+6. `P0-007C` 冻结后，先以 clean-room 方式把固定 React 模板替换到三个 App 的前端实现，保留迁移前 Git tag 和可回滚镜像；替换代码不等于切换流量。
+7. 三个 React Admin 分别完成真实业务功能、安全、可访问性和 E2E 等价后，才允许切换流量；Vue 版本保留为 `tpl-admin-frontend-vue` 迁移参考和回滚基线，不再双重维护。
 8. 现有 `tpl-web-frontend` 保持可回退，不在三个实例中分别修补；ADR-014 按 P0-008A/B/C 再基线 Next Web 模板。
 9. 在 ADR-001/004/005 决定 stream、Citation 和浏览器身份/BFF 前，只允许 Web 审计与紧急卫生修复，不提前实现 v2 主体。
 10. 隔离创建 `tpl-web-frontend-next-v2`，证明 Server/Client、DAL/DTO、typed client、render/cache、auth/BFF、SSE reconciliation、安全、测试和自托管多副本边界。

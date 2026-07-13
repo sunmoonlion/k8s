@@ -99,7 +99,7 @@
 ### 4.5 `/home/zymun/tpl-app`
 
 - 分支：`master`，本地领先 `origin/master` 1 个提交：`fe8fc5c feat: add React admin production template`。
-- 原 Vue `tpl-admin-frontend` 未改动；新增 `tpl-admin-frontend-react` 尚未完成 007A2/007B/007C，也未同步到三个 App。
+- React Admin 已进入 canonical `tpl-admin-frontend` 子仓库；原 Vue 模板位于 `tpl-admin-frontend-vue`。当前尚未完成 007A2/007B/007C，也未同步到三个 App。
 - 恢复时再次确认是否已推送；不要重复推送或覆盖远端历史。
 
 ## 5. 当前 KIND / Harbor 事实

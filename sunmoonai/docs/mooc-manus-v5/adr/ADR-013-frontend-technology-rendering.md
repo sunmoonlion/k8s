@@ -23,8 +23,8 @@ v5 要同时建设 Research Agent 工作台与 Info/Knowledge/Research 治理面
 4. 不采用 Nuxt，不为 Admin 增加 Node Server，不把“统一 React”误解为“统一 Next”。
 5. TanStack Query 管理 API server state；React Router 管理 route module、进入条件、pending/error 和代码拆分。Router loader 不复制 Query cache。
 6. 现有 Vue Admin 为迁移期 legacy；React 等价替换完成后归档，不永久提供 Vue/React 两套默认模板。
-7. 先并行创建 `tpl-admin-frontend-react` 生产骨架，再通过独立的模板能力对齐门完成 Vue 模板生产相关能力的逐项映射和验证；禁止用 Hello World、Shell 或单一 Reference Page 判定模板完成。
-8. 不在 Vue 页面内长期混嵌 React；迁移以路由/应用边界替换，旧实现保持可回退直到等价门禁通过。
+7. 在 canonical `tpl-admin-frontend` 子仓库建设 React 生产骨架，再通过独立的模板能力对齐门完成 `tpl-admin-frontend-vue` 生产相关能力的逐项映射和验证；禁止用 Hello World、Shell 或单一 Reference Page 判定模板完成。
+8. 不在 Vue 页面内长期混嵌 React；迁移以路由/应用边界替换，迁移前实现通过 Git tag 和镜像保留可回退能力，直到等价门禁通过。
 9. React Admin 在页面布局、菜单/导航、交互密度、配置和部署接口上与现有 Vue Admin 建立可验收对应，并提供 Vue -> React 文件、能力和概念映射；内部仍采用标准 React/Router/Query 分工，不机械翻译 Vue API。Electron/PWA/自动导入等 legacy 能力必须显式标记为保留、重实现、延期或移除，不能静默遗漏；若任何 App 依赖延期能力，则必须重新评审迁移资格。
 10. React Admin v1 采用 React Router 8 与 Ant Design 6；Ant Design Table 是默认表格实现。只有真实业务数据量、编辑或虚拟化需求证明其不足时，才以单场景 ADR 引入专项 Data Grid，禁止预先并存两套完整 UI/表格体系。
 

@@ -1,5 +1,7 @@
 # V5-P0-007A tpl-app React Admin 生产骨架执行证据
 
+> 历史记录说明：本证据生成时 React 模板目录名为 `tpl-admin-frontend-react`。当前 canonical React 子仓库已改为 `tpl-admin-frontend`，原 Vue 模板已改为 `tpl-admin-frontend-vue`；以下旧路径和镜像 tag 保留用于审计，不代表当前目录结构。
+
 日期：2026-07-11  
 状态：ACCEPTED
 
