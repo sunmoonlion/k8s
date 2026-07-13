@@ -99,7 +99,7 @@
 ### 4.5 `/home/zymun/tpl-app`
 
 - 分支：`master`，本地领先 `origin/master` 1 个提交：`fe8fc5c feat: add React admin production template`。
-- React Admin 已进入 canonical `tpl-admin-frontend` 子仓库；原 Vue 模板位于 `tpl-admin-frontend-vue`。当前尚未完成 007A2/007B/007C，也未同步到三个 App。
+- React Admin 已进入 canonical `tpl-admin-frontend` 子仓库；`tpl-app` 已移除独立 Vue 模板子仓库。当前尚未完成 007A2/007B/007C，也未修改三个 App 的前端实现。
 - 恢复时再次确认是否已推送；不要重复推送或覆盖远端历史。
 
 ## 5. 当前 KIND / Harbor 事实
@@ -165,9 +165,9 @@ P0-005 完整接受前，不得把 Admin 页面当作已生产化，也不得把
 - 先完成 P0-007A2：冻结 Vue 模板能力清单，逐项实现生产相关通用组件、布局、权限、状态、i18n、错误/安全、构建/部署和测试映射。示例页、Electron/PWA 等延期项必须有明确处置记录。
 - P0-007A2 通过后，再从固定模板 commit 推进 007B Info 真实业务薄切，最后做 007C 模板冻结。
 - 007B 必须使用真实 Artifact/Delivery API、真实授权失败和审计 correlation ID；Reference fixture 只能测试组件。
-- 007C 通过后，Gate P0 后先做三个 App 的 411A clean-room 基础骨架同步；实际业务页面按 Info -> Knowledge -> Research 逐 App 等价迁移并保留 Vue 回滚。P0-001/004/005 没有执行输出前不要改造旧 Web 模板。
-- 之后按 P0-008A/B/C 重基线 `tpl-web-frontend` 的 Next Web v2。
-- 三个 App 的批量同步属于 Gate P0 之后的迁移动作，不要提前复制模板。
+- 007C 通过后，Gate P0 后先在三个 App 现有前端目录内做 411A clean-room 基础替换；实际业务页面按 Info -> Knowledge -> Research 逐 App 等价迁移，并用 Git tag/镜像 digest 回滚，不创建新 App 仓库。P0-001/004/005 没有执行输出前不要改造旧 Web 模板。
+- 之后按 P0-008A/B/C 在现有 `tpl-web-frontend` 仓库内重基线 Next Web v2，不创建 `tpl-web-frontend-next-v2`。
+- 三个 App 的批量替换属于 Gate P0 之后的迁移动作，不要提前覆盖业务前端目录。
 
 ### Step 5：Gate P0 后才进入 M1
 
