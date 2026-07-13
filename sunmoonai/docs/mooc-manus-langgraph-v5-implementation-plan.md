@@ -218,6 +218,16 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 
 仓库纪律：模板通用能力只进入两个既有模板仓库；业务能力只进入对应 App；任何迁移先打 Git tag、记录镜像 digest 和回滚步骤；不得再创建 `*-react`、`*-next-v2` 或平行业务仓库。
 
+### V5-DOC-HYGIENE-001 工具无关文档收敛
+
+- 类型/优先级：MAINTAINABILITY/IMMEDIATE；P0-007A2/A2.1 前置卫生任务。
+- 仓库：`tpl-app`、`info-app`、`knowledge-app`、`research-app` 及其 15 个含旧引用的子仓。
+- 实施：删除四个根仓重复且失真的 AI 工具专属文档树；以每仓 `docs/README.md` 建立中性入口；根 `CLAUDE.md` 和 Cursor rules 只指向代码/OpenAPI/tests、中性 docs 与 k8s v5 权威文档；子仓局部规则不再维护手写契约副本。
+- 保留：Info Spider MVP、Knowledge ingestion worker 和 Knowledge API 早期快照以 Git rename 迁入 `docs/history/`，并明确标记为历史审计资料；其他旧内容保留于 Git 历史，不作为当前恢复入口。
+- 验收：四仓普通/隐藏文件及全部子模块搜索旧目录名为零；旧目录不存在；`git diff --check` 通过；未改业务代码、依赖、镜像或集群状态。
+- 提交：tpl `9f1adcd`、Info `05cfacb`、Knowledge `9c8b9da`、Research `6080a4e`；子仓提交映射记录在最新交接文档。
+- 状态：ACCEPTED（2026-07-13；等待按子仓 -> 父仓顺序推送）
+
 ### V5-P0-007 React Admin Template Rollup
 
 - 类型/优先级：ARCH/FRONTEND/P0
@@ -1107,19 +1117,20 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 在不修改生产主链前，当前按项目负责人要求串行执行以下 Phase 0 顺序。任何时刻只允许一个代码任务为 `IN_PROGRESS`；“下一项”必须等待上一项的测试、证据、状态回填和提交完成：
 
 1. V5-IMM-001 配置真相紧急保护（已完成，可与其余任务独立）。
-2. Frontend-1：V5-P0-007A `tpl-app` React Admin 生产骨架（`SKELETON_ACCEPTED`，2026-07-11）。
-3. **当前任务** Frontend-1A2.1 Shell：完成菜单/权限过滤、响应式侧栏、面包屑、可关闭标签、主题/密度/语言和错误边界，并回填能力矩阵。
-4. Security：关闭 V5-P0-005D 的浏览器 PKCE/CSRF/跨用户、伪造/过期 token、可重复 Secret 和 migration gate 缺口，使 P0-005/ADR-005 ACCEPTED。
-5. Frontend-1A2.2 Identity/Data Foundation：消费已接受的身份契约，完成真实 session、typed client/error/correlation、Query 和 i18n 基础。
-6. Frontend-1A2.3 CRUD Toolkit：完成通用 Table/Form/Description/Modal/Drawer/通知/上传下载和写操作约定。
-7. Frontend-1A2.4 Rich/Utility Toolkit：完成或显式处置 Icon/Chart/Editor/Media/通用指令工具与 legacy 能力。
-8. Frontend-1A2.5 Production Gate：完成全套测试、安全负例、Docker/KIND、clean-room install、矩阵和证据，接受 P0-007A2。
-9. Contract-1：复核已接受的 V5-P0-003 Artifact Contract 仍为 007B 可用前置，不重复实现。
-10. Frontend-2：V5-P0-007B 在现有 Info Admin 仓库内做真实业务试点和隔离部署。
-11. Frontend-3：V5-P0-007C 修正、dry-run 替换验证和 React Admin v1 冻结（产生 `TEMPLATE_MIGRATION_READY`）。
-12. Contract-2：V5-P0-004 Retrieval/Citation Contract。
-13. Runtime：恢复 V5-P0-001，完成选型后执行 V5-P0-002。
-14. Reliability：V5-P0-006 可靠交付 ADR 与最小原型。
-15. Web Re-baseline：严格执行 V5-P0-008A -> 008B/B1~B4 -> 008C；其依赖此时已齐备。
+2. V5-DOC-HYGIENE-001 工具无关文档收敛（`ACCEPTED`，2026-07-13；不再使用 AI 工具专属文档树）。
+3. Frontend-1：V5-P0-007A `tpl-app` React Admin 生产骨架（`SKELETON_ACCEPTED`，2026-07-11）。
+4. **当前任务** Frontend-1A2.1 Shell：完成菜单/权限过滤、响应式侧栏、面包屑、可关闭标签、主题/密度/语言和错误边界，并回填能力矩阵。
+5. Security：关闭 V5-P0-005D 的浏览器 PKCE/CSRF/跨用户、伪造/过期 token、可重复 Secret 和 migration gate 缺口，使 P0-005/ADR-005 ACCEPTED。
+6. Frontend-1A2.2 Identity/Data Foundation：消费已接受的身份契约，完成真实 session、typed client/error/correlation、Query 和 i18n 基础。
+7. Frontend-1A2.3 CRUD Toolkit：完成通用 Table/Form/Description/Modal/Drawer/通知/上传下载和写操作约定。
+8. Frontend-1A2.4 Rich/Utility Toolkit：完成或显式处置 Icon/Chart/Editor/Media/通用指令工具与 legacy 能力。
+9. Frontend-1A2.5 Production Gate：完成全套测试、安全负例、Docker/KIND、clean-room install、矩阵和证据，接受 P0-007A2。
+10. Contract-1：复核已接受的 V5-P0-003 Artifact Contract 仍为 007B 可用前置，不重复实现。
+11. Frontend-2：V5-P0-007B 在现有 Info Admin 仓库内做真实业务试点和隔离部署。
+12. Frontend-3：V5-P0-007C 修正、dry-run 替换验证和 React Admin v1 冻结（产生 `TEMPLATE_MIGRATION_READY`）。
+13. Contract-2：V5-P0-004 Retrieval/Citation Contract。
+14. Runtime：恢复 V5-P0-001，完成选型后执行 V5-P0-002。
+15. Reliability：V5-P0-006 可靠交付 ADR 与最小原型。
+16. Web Re-baseline：严格执行 V5-P0-008A -> 008B/B1~B4 -> 008C；其依赖此时已齐备。
 
 P0-007A2/007C 前禁止向三个 App 应用 React Admin；P0-008C 前禁止向三个 Web 实例应用 Next Web v2。P0-007C/008C 只表示模板可推广；Gate P0 后依次执行 M1-411A -> 411B Info -> 411C Knowledge -> 411D Research，再执行 M1-413A Info -> 413B Knowledge -> 413C Research 的 Web 原地迁移。每个 App 都直接改造现有仓库，但必须先有 tag、镜像 digest、隔离部署和独立回滚；不能把基础替换当作切流量。完成全部 Phase 0 后更新 v5、按 ADR-001 激活唯一 Runtime 分支，再进入 M1a。禁止绕过 Gate P0 直接把 Walking Skeleton 扩建为生产 Runner；Memory/Subagent 薄切只能在 Gate M1a 后执行。

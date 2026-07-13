@@ -35,6 +35,7 @@
 | 任务 | 当前状态 | 已证明 | 仍未证明/下一步 |
 |---|---|---|---|
 | IMM-001 配置真相保护 | ACCEPTED | Git/K8s 配置漂移保护 | 后续由 M1-004 统一治理 |
+| DOC-HYGIENE-001 工具无关文档收敛 | ACCEPTED（本地提交待推送） | 四根仓旧 AI 工具文档树已删除；三份有效快照迁入中性 history；19 个仓库规则/入口无悬空引用 | 按子仓 -> 父仓 -> k8s 顺序推送；之后恢复 A2.1 |
 | P0-001 Runtime 选型 | IN_PROGRESS / Candidate A partial | 自建候选的部分 interrupt/resume、旧 Graph 恢复、Postgres checkpointer 重连 | 同 Thread 并发、cancel、cursor 恢复、真实 kill/故障矩阵；B/C 尚未对照；ADR-001 不得标 ACCEPTED |
 | P0-002 执行身份模型 | NOT_STARTED | 文档已有候选实体边界 | schema、状态转换、checkpoint mapping、并发条件更新和 lineage 测试 |
 | P0-003 Artifact Contract | ACCEPTED | Info -> Knowledge 真实 S3 artifact、version/hash/size/media type、404/403/hash mismatch | 不等同于 Retrieval/Citation 或完整 Research E2E |
@@ -71,6 +72,13 @@
 - Next 模板：`tpl-app/tpl-web-frontend@e529332bf191`；三个实例为 Info `29dc4dc61291`、Knowledge `c99ef6e32be0`、Research `bd2b98785a6a`。它们高度同源，Research 主要多 Agent 组件/页面差异。
 - 后续 Admin/Web 都直接改造现有仓库，但必须使用迁移分支、迁移前 tag、镜像 digest、隔离入口和逐 App 回滚；不得创建 `*-react`、`*-next-v2` 或其他平行业务仓库。
 
+### 3.3 工具无关文档基线（2026-07-13）
+
+- 四个根仓只以 `docs/README.md` 作为本仓文档入口；跨仓架构、任务、ADR、contract 和 evidence 继续由 k8s v5 文档统一拥有。
+- 原有两套 AI 工具专属目录已删除，普通文件、隐藏 Cursor rules 和全部子模块搜索旧目录名均为零。
+- Info `SPIDER_MVP_HANDOFF_20260710.md`、Knowledge `KNOWLEDGE_INGESTION_WORKER_20260711.md` 和 `KNOWLEDGE_API_CONTRACT_SNAPSHOT_20260711.md` 已迁入各 App 的 `docs/history/`，明确不是当前真相源。
+- 其他旧模板、会话交接、风险/决策样例和 Casdoor 历史问题仍在 Git 历史中可审计，但不得作为恢复入口或当前运行手册。
+
 ## 4. 仓库、分支和未提交内容
 
 ### 4.1 `/home/zymun/k8s`
@@ -81,22 +89,21 @@
 
 ### 4.2 `/home/zymun/info-app`
 
-- 分支：`codex-1`。
-- 外层有待处理的 `info-admin-backend` 子模块指针：记录为 `7682237`，工作区指向 `c6af773`。
-- 内层 `info-admin-backend`：`codex-1`，工作树干净且与远端同步；包含 artifact contract、service credentials、OIDC/Jose 校验和构建卫生修复。
-- 不要直接丢弃外层 submodule pointer；先审阅 diff 再决定是否提交外层仓库。
+- 分支：`codex-1`；DOC-HYGIENE 父仓提交 `05cfacb`，本地待推送。
+- 子仓提交：Admin Backend `f2891b7`（包含此前 artifact/auth 实现链）、Admin Frontend `2f4dcae`、Web Backend `e9b7052`、Web Frontend `1d2e1e3`；均只新增本轮中性文档规则提交，业务代码未在本轮修改。
+- 父仓已记录四个当前子仓指针，不再存在旧的未提交 backend pointer；必须先推四个子仓，再推父仓。
 
 ### 4.3 `/home/zymun/knowledge-app`
 
-- 分支：`codex-1`。
-- 外层有待处理的 `knowledge-admin-backend` 子模块指针：记录为 `acc8f79`，工作区指向 `4214c6a`。
-- 内层 `knowledge-admin-backend`：`codex-1`，工作树干净且与远端同步；包含 artifact ingestion contract、internal route、service principal journal、标准 discovery 和构建卫生修复。
+- 分支：`codex-1`；DOC-HYGIENE 父仓提交 `9c8b9da`，本地待推送。
+- 子仓提交：Admin Backend `924d3ed`（包含此前 ingestion/auth 实现链）、Admin Frontend `deb4643`、Web Backend `31e3576`、Web Frontend `c963de6`；本轮业务代码未修改。
+- 父仓已记录四个当前子仓指针；必须先推四个子仓，再推父仓。
 
 ### 4.4 `/home/zymun/research-app`
 
-- 分支：`codex-1`。
-- 外层有待处理的 `research-admin-backend` 子模块指针：记录为 `e77eed1`，工作区指向 `33fd6de`。
-- 内层 `research-admin-backend`：`codex-1`，工作树干净且 `33fd6de test: add runtime selection spike` 已与远端同步。四个 Runtime Spike 文件已作为隔离实验代码提交：
+- 分支：`codex-1`；DOC-HYGIENE 父仓提交 `6080a4e`，本地待推送。
+- 子仓提交：Admin Backend `4ace4f5`（其历史包含 `33fd6de` Runtime Spike）、Admin Frontend `0fb126b`、Web Backend `3f2c3d3`、Web Frontend `3305cbf`；本轮业务代码未修改。必须先推四个子仓，再推父仓。
+- 四个 Runtime Spike 文件仍是隔离实验代码：
   - `app/app/infrastructure/graph/runtime_selection_spike.py`
   - `app/scripts/run_runtime_selection_spike.py`
   - `app/scripts/run_runtime_selection_postgres_spike.py`
@@ -105,9 +112,9 @@
 
 ### 4.5 `/home/zymun/tpl-app`
 
-- 分支：`master`；仓库改名/指针调整已经推送；本轮计划基线提交后父仓为 `b47340d`，canonical React 子仓为 `1239a30`（A2 开工代码基线 `7a04bbe`）。
-- `tpl-admin-frontend` 远端已是 React 主模板；`tpl-app` 已移除独立 Vue 模板子仓库。当前 007A2/A2.1 已开始，但尚未修改三个 App 的前端实现。
-- 本轮文档提交后按“React 子仓 -> tpl-app 父仓 -> k8s”顺序推送；不要覆盖远端历史。
+- 分支：`master`；DOC-HYGIENE 父仓提交 `9f1adcd`，本地待推送；canonical React Admin 仍为已推送的 `1239a30`（A2 开工代码基线 `7a04bbe`）。
+- 本轮子仓提交：Admin Backend `e385bff`、Web Backend `ae0c293`、Web Frontend `2a2965a`；仅更新局部文档规则。先推这三个子仓，再推 tpl 父仓。
+- `tpl-app` 已移除独立 Vue 模板和 AI 工具专属文档树。A2.1 代码尚未在本轮继续修改。
 
 ## 5. 当前 KIND / Harbor 事实
 
@@ -203,6 +210,7 @@ P0-005 完整接受前，不得开始 A2.2 的真实 session 集成，不得把 
 - [ ] 确认 `AGENT_V4_TRAFFIC_ENABLED=false`，核对三个 Admin Backend 的实际 image digest。
 - [ ] 确认 Harbor 中 `1.0.1` 指向本文记录的三个 digest；不删除仍被使用的 `1.0.0`。
 - [ ] 确认 `app-platform-dev` 无异常 Pod、无 `p0-*` 引用和无意外 rollout。
+- [ ] 确认四仓均以 `docs/README.md` 为中性入口，旧 AI 工具文档目录和引用均不存在；历史快照不得覆盖 v5。
 - [ ] 确认当前唯一代码任务为 P0-007A2/A2.1；完成其测试/矩阵/证据/提交后再激活 P0-005。
 - [ ] 将 P0-005 的浏览器安全遗留项列为 A2.2 前置，不把 partial 当作完整接受。
 - [ ] 确认 P0-007A 只代表 `SKELETON_ACCEPTED`，A2.1 -> P0-005 -> A2.2~A2.5 是三个 Admin 迁移前置。
