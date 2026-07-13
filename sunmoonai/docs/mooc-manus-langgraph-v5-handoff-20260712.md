@@ -86,13 +86,13 @@
 ### 4.4 `/home/zymun/research-app`
 
 - 分支：`codex-1`。
-- 外层有待处理的 `research-admin-backend` 子模块指针：记录为 `e77eed1`，工作区指向 `7724a58`。
-- 内层 `research-admin-backend`：`codex-1`；已提交的身份/Session ownership 代码与远端同步，但有 4 个未跟踪的 Runtime Spike 文件：
+- 外层有待处理的 `research-admin-backend` 子模块指针：记录为 `e77eed1`，工作区指向 `33fd6de`。
+- 内层 `research-admin-backend`：`codex-1`，工作树干净，本地领先远端 1 个提交（`33fd6de test: add runtime selection spike`）。四个 Runtime Spike 文件已作为隔离实验代码提交：
   - `app/app/infrastructure/graph/runtime_selection_spike.py`
   - `app/scripts/run_runtime_selection_spike.py`
   - `app/scripts/run_runtime_selection_postgres_spike.py`
   - `app/tests/test_runtime_selection_spike.py`
-- 这些文件是 P0-001 Candidate A partial 的重要证据来源，禁止 `git clean -fd`、`git reset --hard` 或随意删除；恢复时先审阅、测试、决定是否提交。
+- 这些文件是 P0-001 Candidate A partial 的重要证据来源，但不接入生产 API/worker；恢复时先阅读并运行测试，不得据此把 ADR-001 标成 Accepted。
 
 ### 4.5 `/home/zymun/tpl-app`
 
@@ -148,7 +148,7 @@ P0-005 完整接受前，不得把 Admin 页面当作已生产化，也不得把
 
 ### Step 2：完成 P0-001 Runtime ADR
 
-先审阅并测试 Research backend 中 4 个未跟踪 Spike 文件，再补齐 Candidate A 缺失矩阵。若软件源、许可和 egress 允许，使用同一 Graph 对 B/C 做隔离对照；否则明确记录淘汰理由，不能只凭文档评分选择 Agent Server/Hybrid。
+先复核已提交并测试 Research backend 中的 4 个隔离 Spike 文件，再补齐 Candidate A 缺失矩阵。若软件源、许可和 egress 允许，使用同一 Graph 对 B/C 做隔离对照；否则明确记录淘汰理由，不能只凭文档评分选择 Agent Server/Hybrid。
 
 只有 ADR-001 选定分支后，才激活 M1-301~314 对应任务；未选分支标记 `NOT_APPLICABLE`。
 
@@ -174,7 +174,7 @@ P0-005 完整接受前，不得把 Admin 页面当作已生产化，也不得把
 - 任何安装、Docker build/push、Harbor 操作、KIND rollout 都先确认 registry、tag、digest、namespace 和回滚镜像；网络命令由项目负责人在本机执行。
 - 不要把 `1.0.1` 改写到另一个 digest；发布新内容使用新候选 tag，验证后再不可变 retag。
 - 不要删除 `1.0.0`、数据库 migration、Secret、PVC、Deployment 或非零副本 ReplicaSet 来“清理旧环境”。
-- 不要使用 `git reset --hard`、`git clean -fd`、强制 push 或删除未跟踪 Spike 文件来消除工作树噪声。
+- 不要使用 `git reset --hard`、`git clean -fd` 或强制 push；Runtime Spike 已提交但仍是隔离实验代码，不能删除或接入生产主链。
 - 先保存证据，再改状态；“代码写完”“镜像构建成功”“Pod Running”都不等于任务 ACCEPTED。
 - 交接材料不得包含 access token、refresh token、cookie、authorization code、PKCE verifier、client secret 或完整 OIDC/JWKS 响应。
 
@@ -186,7 +186,7 @@ P0-005 完整接受前，不得把 Admin 页面当作已生产化，也不得把
 - [ ] 确认 Harbor 中 `1.0.1` 指向本文记录的三个 digest；不删除仍被使用的 `1.0.0`。
 - [ ] 确认 `app-platform-dev` 无异常 Pod、无 `p0-*` 引用和无意外 rollout。
 - [ ] 将 P0-005 的浏览器安全遗留项列为当前优先安全工作，不把 partial 当作完整接受。
-- [ ] 审阅 Research Runtime Spike 未跟踪文件，再决定提交和 P0-001 证据归档方式。
+- [ ] 复核 Research Runtime Spike 的 `33fd6de` 提交和 P0-001 证据，确认它仍未接入生产主链。
 - [ ] 每完成一个任务更新对应 evidence/result.md、实施计划状态和本文快照；不要只更新聊天。
 
 ## 9. Git 收尾
@@ -200,4 +200,4 @@ git diff --check
 git log -3 --oneline
 ```
 
-推送由项目负责人执行。不要在未审阅其他仓库 dirty 状态前批量提交 submodule pointer；Info、Knowledge、Research 的外层 pointer 变更、Research Runtime Spike 文件和 tpl-app React 模板提交必须分别确认、分别记录，避免把未完成内容误包装成生产发布。
+推送由项目负责人执行。不要在未审阅其他仓库 dirty 状态前批量提交 submodule pointer；Info、Knowledge、Research 的外层 pointer 变更、Research Runtime Spike 提交和 tpl-app React 模板提交必须分别确认、分别记录，避免把未完成内容误包装成生产发布。

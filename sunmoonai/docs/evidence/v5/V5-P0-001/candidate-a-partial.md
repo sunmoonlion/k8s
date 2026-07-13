@@ -66,3 +66,26 @@ PostgreSQL checkpointer 跨连接/替代 worker 恢复：
 ## 候选 B/C 准备结果
 
 `langgraph-api`、`langgraph-cli` 不在当前项目环境。使用隔离的 `uvx --from 'langgraph-cli[inmem]'` 获取官方本地 CLI 时，当前软件源没有成功解析/下载该 extra；离线重试确认缓存中也不存在。故本轮没有候选 B/C 运行证据，且没有修改 `pyproject.toml` 或 `uv.lock`。需要先解决可审计软件源和版本锁定，再运行同一测试矩阵。
+
+## 2026-07-13 续作复验
+
+四个隔离 Spike 文件已在 Research Admin Backend 提交：
+
+- commit：`33fd6de test: add runtime selection spike`
+- 分支：`codex-1`
+- 文件仍不被 API、Celery 注册或生产路由导入。
+
+本次复验：
+
+```text
+.venv/bin/pytest -q tests/test_runtime_selection_spike.py
+4 passed in 0.19s
+
+.venv/bin/python scripts/run_runtime_selection_spike.py
+{"candidate":"A-custom-runtime","graph_version":"runtime-spike-v1","injected_crash_observed":true,"interrupt":true,"physical_side_effect_executions":1,"resume_completed":true}
+
+.venv/bin/pytest -q
+76 passed in 1.22s
+```
+
+该复验只确认 Spike 可重复运行且不破坏 Research Admin 现有测试；不增加真实 `SIGKILL`、同 Thread 并发、cancel、cursor streaming、双副本或候选 B/C 的证据。因此结论仍为 `PARTIAL_PASS`，ADR-001 仍不得 Accepted。
