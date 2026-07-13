@@ -24,7 +24,7 @@
 ## 2. 已同意方向
 
 1. 保留 React、Next.js App Router、next-intl 与 `standalone` 自托管，不改用 Nuxt，也不把 Web 降级为纯 SPA。
-2. 不在现有模板和三个实例中零散打补丁；以隔离的 `tpl-web-frontend-next-v2` 候选模板验证，旧模板和三个实例保持可回退。
+2. 不在三个实例中分别零散打补丁；在现有 `tpl-web-frontend` 仓库的迁移分支内重构和验证 v2，迁移前以 Git tag/镜像 digest 保留旧实现，不创建 `tpl-web-frontend-next-v2`。
 3. Web v2 必须显式区分 Server Component、Client Component、server-only DAL/DTO、浏览器 typed client 与可选的轻量 BFF/stream proxy。
 4. BFF 只允许承担 session/token mediation、同源代理、协议适配和流式透传；不复制领域规则、不保存第二份 Run/Artifact/Retrieval 状态。
 5. 浏览器不持久化权威认证状态或 token；Proxy 只做乐观路由检查，可靠授权在产品 API/靠近数据源处执行。
@@ -32,7 +32,7 @@
 7. SSE 客户端以 cursor、snapshot reconciliation、去重、退避、cancel/resume、页面隐藏、多标签和 terminal-state precedence 为契约；EventSource/ReadableStream 的具体 adapter 由 ADR-001 输出决定。
 8. v2 必须有 typecheck、lint、unit/component、Playwright、基础可访问性、安全头/CSP、Docker/KIND、多副本/滚动版本和浏览器故障证据。
 9. 模板只包含中性平台能力；Info/Knowledge/Research 页面和领域 DTO 留在各实例。Research 真实试点证明最难的 streaming/HITL/citation 路径后才冻结 v2。
-10. v2 冻结前不批量同步三个 Web，不删除旧模板，不改变现有流量。
+10. v2 冻结前不向三个 Web 实例应用 v2，不做无 tag/digest 的不可回滚覆盖，不改变现有流量；冻结且 Gate P0 通过后按 Info -> Knowledge -> Research 串行改造现有仓库。
 
 ## 3. 尚待上游 ADR 决定
 
@@ -48,9 +48,9 @@
 ## 4. 实施门
 
 - P0-008A：基于 ADR-001/004/005 输出接受本 ADR，冻结 Web v2 边界和验收矩阵。
-- P0-008B：在 `tpl-app` 创建并验证隔离的 Next v2 生产骨架。
+- P0-008B：在现有 `tpl-app/tpl-web-frontend` 仓库内按 B1~B4 串行重构并验证 Next v2 生产骨架。
 - P0-008C：在 Research 隔离入口运行真实 Run/SSE/cancel/resume/HITL/citation 薄切，回收通用修正并冻结 v2。
-- M1：从固定 v2 commit 实例化/迁移三个 Web；P0-008C 的 Research 薄切直接演进，不重新实现。
+- M1：按 Info -> Knowledge -> Research 串行把固定 v2 commit 应用到三个现有 Web 仓库；P0-008C 的 Research 薄切直接演进，不重新实现，也不创建平行业务仓库。
 
 任一阶段发现必须把领域状态放进 BFF、无法安全恢复 stream、或多副本自托管语义无法闭合，P0-008 标记 BLOCKED 并重开本 ADR，禁止带病推广。
 

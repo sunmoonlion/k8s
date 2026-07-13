@@ -205,14 +205,27 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 验收：ADR-006 获批；选定方案能自动发现并补投，不产生重复业务效果；明确 M1 各仓落地任务。
 - 状态：NOT_STARTED
 
+### 前端物理仓库与差异基线（2026-07-13）
+
+该基线只描述当前事实，任务与验收仍以 P0-007/P0-008 为唯一权威：
+
+| 角色 | 当前仓库/提交 | 事实与处置 |
+|---|---|---|
+| React Admin 模板 | `tpl-app/tpl-admin-frontend@1239a30`（A2 开工代码基线 `7a04bbe`） | 唯一 Admin 模板；React 19 + React Router 8 Framework Mode + Ant Design 6；当前约 40 个受控源码/配置文件，仍是骨架而非完整工具集 |
+| Vue Admin 输入 | Info `fd3a943`、Knowledge `6a33732`、Research `3ef205a` | 三个现有 App 约 250 个文件且高度同源；Info 仅多真实 `src/pages/info/crawl.vue`，其余少量差异主要来自生成内容；作为 A2 能力盘点和后续业务迁移输入，不再另建 Vue 模板仓库 |
+| Next Web 模板 | `tpl-app/tpl-web-frontend@e529332` | 现有 Next 16/App Router 仓库原地重构，不创建 v2 仓库 |
+| 三个 Web 实例 | Info `29dc4dc`、Knowledge `c99ef6e`、Research `bd2b987` | 与模板约 37~38 个文件且高度同源；Research 仅多 Agent 组件和相应 dashboard 差异；均在现有仓库内改造 |
+
+仓库纪律：模板通用能力只进入两个既有模板仓库；业务能力只进入对应 App；任何迁移先打 Git tag、记录镜像 digest 和回滚步骤；不得再创建 `*-react`、`*-next-v2` 或平行业务仓库。
+
 ### V5-P0-007 React Admin Template Rollup
 
 - 类型/优先级：ARCH/FRONTEND/P0
 - ADR：`sunmoonai/docs/mooc-manus-v5/adr/ADR-013-frontend-technology-rendering.md`（Accepted）。
-- 目标：按 `P0-007A -> P0-007A2 -> P0-005 -> P0-007B -> P0-007C` 完成 React Admin 模板资格链并冻结 React Admin v1；P0-005 是真实 Admin 试点的安全前置，父任务不直接写代码。
+- 目标：按 `P0-007A -> P0-007A2(A2.1) -> P0-005 -> P0-007A2(A2.2~A2.5) -> P0-007B -> P0-007C` 完成 React Admin 模板资格链并冻结 React Admin v1；A2.1 不依赖浏览器身份，P0-005 是 A2.2 真实身份接入和 007B 试点的安全前置，父任务不直接写代码。
 - 重要边界：`P0-007A` 只代表技术骨架通过，不代表 Vue 模板功能等价，也不允许据此同步三个 App。`P0-007A2` 是新增的完整模板能力对齐门。
-- 完成条件：三个子任务全部 ACCEPTED；任一子任务失败，父任务保持 IN_PROGRESS，禁止向三个 App 批量同步未冻结模板。
-- 状态：IN_PROGRESS（P0-007A 已接受；P0-007B/C 未开始）
+- 完成条件：P0-007A、P0-007A2、P0-007B、P0-007C 四个子任务全部 ACCEPTED；任一子任务失败，父任务保持 IN_PROGRESS，禁止向三个 App 应用未冻结模板。
+- 状态：IN_PROGRESS（P0-007A 已接受；P0-007A2/A2.1 施工中；P0-007B/C 未开始）
 
 ### V5-P0-007A tpl-app React Admin 生产骨架
 
@@ -223,9 +236,9 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - Vue 对齐：保持菜单、侧栏、面包屑、标签/导航、内容密度、登录跳转、权限路由、表格/表单/Dialog/Drawer、配置名和 Nginx/Docker 接口的可识别对应；采用 React 正常实现，不模拟 Composition API、Pinia 或 Element Plus API。此处只建立骨架接入点，不宣称已覆盖 Vue 模板的全部组件和页面。
 - 必需文档：`docs/vue-react-mapping.md`、`docs/add-a-page.md`、`docs/data-flow.md`、`docs/migration-guide.md`；包含文件路径和常用概念对照。
 - Reference Page：模板内只提供通用表格、筛选、分页、详情、表单、权限、错误、审计确认示例，使用中性 fixture，不包含 Info/Knowledge/Research 领域代码。
-- 不做：不删除/覆盖 Vue 模板，不切任何 App 流量，不引入 Nuxt/Next Admin，不复制 Electron/PWA/演示页等未决 legacy 能力，不先建设共享 UI 平台。
+- 不做：不修改三个 App 的 Vue 源码或切换其流量，不引入 Nuxt/Next Admin，不复制 Electron/PWA/演示页等未决 legacy 能力，不先建设共享 UI 平台。
 - 测试：typecheck、lint、unit/component、Playwright smoke、可访问性 smoke、route typegen/lazy split、Nginx history fallback、base path、Docker smoke。
-- 验收：静态镜像无需 Node runtime 即可运行；熟悉 Vue 模板的人能通过对照文档定位骨架中的路由、页面、状态、API、i18n 和部署配置；Vue 模板零破坏。该验收状态命名为 `SKELETON_ACCEPTED`，不能作为业务迁移资格。
+- 验收：静态镜像无需 Node runtime 即可运行；熟悉现有 Vue Admin 的人能通过对照文档定位骨架中的路由、页面、状态、API、i18n 和部署配置；三个 App 的 Vue 源码和部署零修改。该验收状态命名为 `SKELETON_ACCEPTED`，不能作为业务迁移资格。
 - 证据：模板 commit、依赖锁、命令输出、镜像 digest、页面截图/trace、Vue/React 对照清单。
 - 状态：ACCEPTED（2026-07-11；范围为 `SKELETON_ACCEPTED`；证据：`sunmoonai/docs/evidence/v5/V5-P0-007A/result.md`）
 
@@ -236,18 +249,25 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 前置：P0-007A；从三个现有 App 的 Vue Admin 源码和历史 commit 冻结基线、文件清单及实际差异；`tpl-app` 不再保留独立 Vue 模板子仓库。
 - 目标：让 React 模板覆盖仍由模板承担的生产相关能力，而不是只有 Shell、Reference Page 和登录占位。逐项建立 `Vue source -> React target -> behavior/API -> test/evidence -> owner` 映射。
 - 必须实现或明确对照：布局/菜单/标签/主题/响应式密度、登录/退出/受保护路由/权限、i18n、typed API/Query 状态、Table/筛选/分页、Form/校验、Dialog/Drawer/Description、通知、Icon、上传/下载、Editor/Media、Chart、UI 持久化、错误/安全边界、CSP/CSRF/CORS/session 接入、Nginx/Docker/K8s 接口和测试工具链。
+- 串行施工包：
+  1. `A2.1 Shell`：菜单元数据/权限过滤、侧栏/移动 Drawer、面包屑、可关闭标签、主题/密度/语言、route/global error；当前 `7a04bbe` 已有主题状态和 route boundary，尚未满足完整 Shell 验收。
+  2. `A2.2 Identity/Data Foundation`：在 P0-005 ACCEPTED 后接入真实 `/auth/me`、login/logout/return URL、401/403、CSRF/session，统一 typed error/correlation、TanStack Query 约定和 i18n 持久化；不得使用生产 demo auth。
+  3. `A2.3 CRUD Toolkit`：Table/筛选/分页/排序/选择、Form/schema/校验、Description、Modal/Drawer、通知、上传/下载和受审计写操作；使用中性 fixture 与 adapter contract。
+  4. `A2.4 Rich/Utility Toolkit`：Icon registry、Chart、Editor、Audio/Video、copy/debounce/throttle/drag/long-press/watermark 等 React idiomatic 对应；Electron/PWA 和纯展厅逐项 `REIMPLEMENT/DEFER/REMOVE`。
+  5. `A2.5 Production Gate`：CSP/CORS/session 负例、a11y、responsive/reduced-motion、typecheck/lint/unit/component/Playwright、base path、Nginx/Docker/KIND 和 clean-room install；回填能力矩阵与证据。
+- 每包完成定义：实现、单元/组件测试、键盘与错误状态、能力矩阵行和提交 SHA 同时齐全；只写代码或只更新矩阵均不得进入下一包。
 - Legacy 处置：Electron、PWA、纯演示/组件展厅等必须在矩阵中标记 `KEEP/REIMPLEMENT/DEFER/REMOVE`，写明理由、影响和恢复任务；禁止静默删除。若任一 App 依赖该能力，则不得标记 `DEFER` 后继续迁移。
 - 不做：不逐行翻译 Vue API，不把 Element Plus/Pinia/Composition API 机械搬到 React；不把 Info/Knowledge/Research 领域页面、DTO、业务规则写入模板；不接任何 App 流量。
 - 测试：模板全量 typecheck/lint/unit/component/Playwright/a11y；组件行为和错误状态矩阵；route/base path/Nginx/Docker smoke；clean-room 从固定 commit 重新生成；Vue/React 映射无未解释项。
 - 验收：能力矩阵无未分配的 `MUST` 项；所有 `DEFER` 有批准的 ADR/任务；从干净目录可重复构建；核心组件行为、权限和可访问性通过；状态命名为 `TEMPLATE_MIGRATION_READY`。只有本任务通过后，P0-007B 和三个 App 的 React 基础前端替换才可开始。
-- 状态：NOT_STARTED（P0-007A 现有证据不替代本任务）
+- 状态：IN_PROGRESS（A2.1 已开始；P0-007A 现有证据不替代本任务）
 
 ### V5-P0-007B Info Admin 真实业务试点
 
 - 类型/优先级：FRONTEND/CONTRACT/P0
 - 仓库：`info-app`、`k8s`；仅在发现通用缺口时回改 `tpl-app`。
 - 前置：P0-007A、P0-007A2、P0-003、P0-005 均 ACCEPTED；不得用前端路由守卫替代后端鉴权，也不得以 mock success 验收 B。
-- 实施：从 canonical `tpl-admin-frontend` 的 007A/007A2 固定 commit 实例化隔离 React Admin；实现 Artifact/Delivery list/detail，覆盖筛选、分页、状态刷新、受权 retry/re-dispatch、审计原因和 correlation ID。
+- 实施：先为现有 `info-admin-frontend` 创建迁移前 tag 并记录当前镜像 digest，再在该仓库的迁移分支中以 canonical `tpl-admin-frontend` 的 007A/007A2 固定 commit 原地替换基础实现；实现 Artifact/Delivery list/detail，覆盖筛选、分页、状态刷新、受权 retry/re-dispatch、审计原因和 correlation ID。验证使用隔离 Deployment/入口，不创建新的业务仓库。
 - 边界：Info 业务代码只在 Info App；模板只接收经复盘证明通用的修正，并记录 backport/cherry-pick 或重新实例化方式。Artifact Contract v1 仅支持 `upsert`，因此 deactivate/delete 不进入本任务；待 Knowledge domain identity 与生命周期契约落地后另行实现。
 - 测试：真实 contract/provider、匿名/403/过期 session、hash mismatch、对象缺失、重复操作、并发冲突、XSS/危险 URL、刷新恢复、Nginx/Docker/K8s 隔离 smoke。
 - 验收：不依赖 mock ingestion success；Vue/React 可并行部署但仅隔离测试入口访问；React 页面能沿 operation/correlation ID 对账；有明确旧 Vue 回滚路径。
@@ -259,10 +279,10 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 类型/优先级：ARCH/MAINTAINABILITY/P0
 - 仓库：`tpl-app`、`info-app`、`k8s`
 - 前置：P0-007A2、P0-007B ACCEPTED。
-- 实施：分类试点差异为 template/common、Info-specific、deferred；只回收 common；补齐 generator/实例化说明、版本清单、升级传播机制、compatibility matrix 和三个 App 等价迁移 checklist。
+- 实施：分类试点差异为 template/common、Info-specific、deferred；只回收 common；补齐原地替换清单、版本清单、升级传播机制、compatibility matrix 和三个 App 等价迁移 checklist。
 - 冻结产物：`react-admin-template-version`（tag 或 commit SHA）、Node/pnpm/dependency lock、目录契约、环境变量契约、Docker/Nginx/K8s 接口、UI/Data Grid 选型记录、已知限制。
 - 停止条件：若模板必须引入 Node SSR/BFF、无法满足 auth/security、或真实页面需要大量绕开框架约定，P0-007 标记 BLOCKED 并重开 ADR-013，不得带病批量复制。
-- 验收：从干净目录可重复实例化并通过全套模板测试；同一版本可生成三个不同 App 名称/config 的骨架；试点所需通用能力已进入模板且不含 Info 业务；能力矩阵、迁移 checklist 和 legacy 处置记录均已冻结。
+- 验收：从模板干净 checkout 可重复构建并通过全套测试；在三个 App 的临时干净 checkout 中执行 dry-run 替换清单，可得到名称/config 正确且来源可追溯的骨架，不向远端创建新仓库或提前提交业务替换；试点所需通用能力已进入模板且不含 Info 业务；能力矩阵、迁移 checklist 和 legacy 处置记录均已冻结。
 - 状态：NOT_STARTED
 
 ### V5-P0-008 Next Web Template Re-baseline Rollup
@@ -270,8 +290,8 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 类型/优先级：ARCH/FRONTEND/P0
 - ADR：`sunmoonai/docs/mooc-manus-v5/adr/ADR-014-next-web-template-rebaseline.md`（Proposed）。
 - 目标：按 `P0-008A -> P0-008B -> P0-008C` 保留 Next/App Router 技术路线、重建可信 Web v2，并以 Research 真实 streaming 薄切冻结模板；父任务不直接写代码。
-- 顺序纪律：Frontend 轨道先完成 P0-007C；ADR-001/004/005 没有可执行输出前不开始 008B；008C 前禁止向三个 Web 批量同步。
-- 完成条件：三个子任务全部 ACCEPTED；否则旧 `tpl-web-frontend` 和三个实例继续作为回退，P0-008 保持 IN_PROGRESS/BLOCKED。
+- 顺序纪律：Frontend 轨道先完成 P0-007C；ADR-001/004/005 没有可执行输出前不开始 008B；008C 前禁止把 v2 应用到三个 Web 实例。
+- 完成条件：三个子任务全部 ACCEPTED；否则现有仓库通过迁移前 tag/镜像回退，P0-008 保持 IN_PROGRESS/BLOCKED。
 - 状态：NOT_STARTED
 
 ### V5-P0-008A Web 架构契约冻结与紧急卫生
@@ -291,10 +311,11 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 仓库：`tpl-app`
 - 前置：P0-008A ACCEPTED。
 - 实施：在现有 `tpl-web-frontend` 仓库的迁移分支内重构并冻结 Next Web v2；保留 React 19、Next 16 App Router、next-intl、Tailwind/shadcn/Base UI 候选和 `standalone` 自托管；实现 ADR-014 冻结的 Server/Client、DAL/DTO、typed client、auth/BFF、render/cache、stream adapter、错误/correlation、观测、安全、测试和 Docker/KIND 骨架，不创建新的 Web 模板仓库。
+- 串行施工包：`B1 Repo/Env/Rendering` -> `B2 Auth/DAL/DTO` -> `B3 UI/Query/Stream` -> `B4 Security/Test/Deploy`；每包在现有仓库提交并可回滚，不复制目录形成 v2 副本。
 - Reference surfaces：只提供中性 public content、authenticated workspace、stream timeline/HITL、citation/error 状态示例；fixture 只验证组件，不得伪装成真实 Run/Retrieval 成功。
-- 不做：不覆盖旧模板、不改三个 App 流量、不把 Run/Artifact/Retrieval 领域状态放入 BFF/Zustand、不预建跨 App 共享 UI 平台、不用 nonce CSP 无条件强制全部 route dynamic。
+- 不做：不做无 tag/digest 的不可回滚覆盖、不改三个 App 流量、不把 Run/Artifact/Retrieval 领域状态放入 BFF/Zustand、不预建跨 App 共享 UI 平台、不用 nonce CSP 无条件强制全部 route dynamic。
 - 测试：typecheck、lint、unit/component、Playwright/a11y、route rendering/cache assertions、auth/CSRF/CSP、stream reconnect/reconcile、多标签、Docker/KIND、非 root/probes、两个 Pod 滚动版本与 cache/version-skew smoke。
-- 验收：从干净目录可重复构建；public 与 authenticated route 的渲染/cache 证据符合矩阵；最终镜像和 K8s 接口可追溯；旧模板和三实例零破坏。
+- 验收：从干净目录可重复构建；public 与 authenticated route 的渲染/cache 证据符合矩阵；最终镜像和 K8s 接口可追溯；迁移前 tag/镜像可恢复，三个 Web 实例未被提前修改。
 - 状态：NOT_STARTED
 
 ### V5-P0-008C Research Web 真实试点与 Next v2 冻结
@@ -305,7 +326,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 实施：从固定 v2 commit 实例化 Research 隔离入口；跑通真实 session/run、SSE cursor/reconnect、snapshot reconciliation、cancel/resume、HITL、citation 与受权来源跳转；把差异分类为 template/common、Research-specific、deferred，只回收 common。
 - 故障测试：刷新/断网/重复事件/事件缺口/陈旧 terminal、多标签、Runtime/Next Pod 重启、滚动版本、过期 approval、跨用户 URL、Citation 404/403、浏览器取消与后端竞态。
 - 冻结产物：`next-web-template-version`、依赖锁、route/render/cache/BFF/env/deploy 契约、三 Web migration checklist、旧模板回滚和 compatibility matrix。
-- 验收：真实试点可从稳定 URL 恢复且最终与服务端 Projection 收敛；浏览器不读原始 LangGraph/Provider 类型；两个 Pod/滚动版本无静默状态丢失；v2 固定 commit 可重复实例化且不含 Research 领域代码。
+- 验收：真实试点可从稳定 URL 恢复且最终与服务端 Projection 收敛；浏览器不读原始 LangGraph/Provider 类型；两个 Pod/滚动版本无静默状态丢失；v2 固定 commit 可干净重建并按迁移清单应用，且模板不含 Research 领域代码。
 - 状态：NOT_STARTED
 
 ### Gate P0
@@ -318,11 +339,13 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - Runtime 分支由 ADR-001 明确激活；其他分支停止。
 - Runtime Spike 的 SSE/cancel/worker-kill 与可靠交付 Spike 的副作用恢复证据通过。
 - 最小浏览器 harness 证明 stream 断线后能通过 cursor/Projection 收敛；Citation DTO 与浏览器身份边界进入 ADR-004/005 验收证据。
-- P0-007A/A2/B/C 全部 ACCEPTED；React Admin v1、完整模板能力矩阵、真实 Info 薄切和可重复实例化证据通过，Vue Admin 仍保留可回退且不再接收新的 v5 平台能力。
-- P0-008A/B/C 全部 ACCEPTED；Next Web v2、真实 Research streaming/HITL/citation 薄切、多副本自托管和可重复实例化证据通过，旧 Web 模板仍保留回退。
+- P0-007A/A2/B/C 全部 ACCEPTED；React Admin v1、完整模板能力矩阵、真实 Info 薄切和固定 commit 干净重建/dry-run 原地替换证据通过；Vue 回滚由各 App 的迁移前 tag/镜像提供。
+- P0-008A/B/C 全部 ACCEPTED；现有 Next Web 仓库内的 v2、真实 Research streaming/HITL/citation 薄切、多副本自托管和固定 commit 干净重建/迁移证据通过；旧实现由迁移前 tag/镜像提供回退。
 - v5 架构按 Spike 结果更新并标记 Baseline Accepted。
 
-### 2.2 关键路径、并行轨道与工作量
+### 2.2 关键路径、工作流与串行执行纪律
+
+下图只表达依赖，不授权并行施工。本轮由单一执行者推进：任何时刻最多一个代码任务处于 `IN_PROGRESS`；当前任务完成测试、证据、状态回填和提交后，才激活下一任务。R1~R6 只是责任域/证据归档分类。
 
 ```text
 V5-IMM-001（立即、独立）
@@ -333,9 +356,9 @@ P0-001 Runtime ADR ──> P0-002 Execution Identity ──> Runtime branch acti
         v                                                         |
 P0-003 Artifact ──> Info/Knowledge internal path                  |
 P0-004 Retrieval + contract CI ──> Knowledge/Research path       |
-P0-005 Identity ──> Security track + P0-007B                     |
+P0-007A2/A2.1 ──> P0-005 Identity ──> P0-007A2/A2.2~A2.5 ──> P0-007B |
 P0-006 Delivery ADR ──> Reliability track                        |
-P0-007A ──> P0-007A2 ──> P0-005 ──> P0-007B ──> P0-007C ──> Frontend track  |
+P0-007A ────────────────────────────────────────> P0-007C ──> Frontend track |
 P0-001/004/005 + P0-007C ──> P0-008 Next Web v2 ──> Web track   |
         +-------------------------+-------------------------------+
                                   v
@@ -350,16 +373,16 @@ P0-001/004/005 + P0-007C ──> P0-008 Next Web v2 ──> Web track   |
                          M1c Limited Production
 ```
 
-可并行轨道：
+工作流分类：
 
 - R1 Runtime/Research：P0-001/002，之后 Runtime Common 和选中分支。
 - R2 Info/Artifact：P0-003，随后 Info immutable artifact/delivery。
 - R3 Knowledge/Contract：P0-004，随后 Knowledge domain/retrieval。
 - R4 Security/K8s：IMM-001、P0-005，随后 auth/network/secret/migration。
 - R5 Reliability/Evaluation：P0-006，随后 dispatcher/failure/E2E/evaluation。
-- R6 Frontend/Experience：严格按 P0-007A -> P0-007A2 -> P0-005 -> P0-007B -> P0-007C；再等待 P0-001/004 决策输出，按 P0-008A -> P0-008B -> P0-008C 在现有 Web 仓库内重基线 Next Web。P0-007A2 通过才具备模板迁移资格；P0-007C/008C 分别使两个模板具备推广资格。Gate P0 后先执行 411A clean-room 基础前端替换，再逐 App 进行 411B/C/D 业务等价迁移和回滚验证；两个模板资格链完成后进入 M1-400~412 与跨仓浏览器 E2E。
+- R6 Frontend/Experience：严格按 P0-007A -> A2.1 -> P0-005 -> A2.2 -> A2.3 -> A2.4 -> A2.5 -> P0-007B -> P0-007C；再等待 P0-001/004 决策输出，按 P0-008A -> P0-008B(B1~B4) -> P0-008C 在现有 Web 仓库内重基线 Next Web。P0-007A2 通过才具备模板迁移资格；P0-007C/008C 分别使两个模板具备推广资格。Gate P0 后按 Info -> Knowledge -> Research 串行执行 411A/411B/411C/411D 和 413 的原地迁移/回滚验证；两个模板资格链完成后进入 M1-400~413 与跨仓浏览器 E2E。
 
-粗粒度工作量用于容量规划，不是承诺日期：原七项约 14~22 人周；新增 P0-008A/B/C 约 5~9 人周（A 1~2、B 2~3、C 2~4），完整 Phase 0 调整为约 19~31 人周。P0-007A/A2/B/C 重新估算约 10~18 人周（A 已完成；A2 4~8、B 3~5、C 1~2），三个 App 的 411A 原地替换另计约 1~2 人周，411B/C/D 业务等价迁移另计约 8~16 人周。Frontend 内部按用户要求串行，因此不得再以“多人并行”承诺 2~3 个日历周；核心 ADR Spike 可保持各自 2~3 周时间盒，完整 Gate 以证据完成为准。M1a 因 Research Web 薄切前移到 P0-008C，重估为约 18~30 人周；M1a.5 约 4~7 人周；M1b 约 20~34 人周；M1c canary 观察至少 1~2 个自然周。每次 Gate 后重估，禁止把区间当固定 deadline。
+粗粒度工作量用于容量规划，不是承诺日期：原七项约 14~22 人周；新增 P0-008A/B/C 约 5~9 人周（A 1~2、B 2~3、C 2~4），完整 Phase 0 调整为约 19~31 人周。P0-007A/A2/B/C 重新估算约 10~18 人周（A 已完成；A2 4~8、B 3~5、C 1~2），三个 App 的 411A 原地替换另计约 1~2 人周，411B/C/D 业务等价迁移另计约 8~16 人周，三个 Web 实例 413 原地迁移另计约 3~6 人周。Frontend 内部按用户要求串行，因此不得再以“多人并行”承诺 2~3 个日历周；核心 ADR Spike 可保持各自 2~3 周时间盒，完整 Gate 以证据完成为准。M1a 因 Research Web 薄切前移到 P0-008C，重估为约 18~30 人周；M1a.5 约 4~7 人周；M1b 约 23~40 人周；M1c canary 观察至少 1~2 个自然周。每次 Gate 后重估，禁止把区间当固定 deadline。
 
 ### 2.3 交付里程碑定义
 
@@ -762,8 +785,8 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 ### V5-M1-411 三个 React Admin 等价迁移 Rollup
 
 - 类型/优先级：FRONTEND/FUNC/P0
-- 目标：按 `411A -> (411B || 411C || 411D)` 推进；父任务只汇总迁移状态和共同风险。
-- 前置：Gate P0、P0-007A2/007C 已通过；411A 只能做 clean-room 基础前端替换，不能绕过后端契约、安全和模板能力门。
+- 目标：按 `411A -> 411B Info -> 411C Knowledge -> 411D Research` 串行推进；父任务只汇总迁移状态和共同风险。
+- 前置：Gate P0、P0-007A2/007C 已通过；411A 只能按冻结 commit 和替换清单做基础前端原地替换，不能绕过后端契约、安全和模板能力门。
 - M1a 要求：411A、411B、411C 的 M1a 最小面 ACCEPTED。
 - M1b 要求：411B/C/D 完整约定范围 ACCEPTED，逐 App 切换/回滚证据通过。
 - 状态：NOT_STARTED
@@ -776,7 +799,7 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 - 实施：在每个 App 的迁移分支中，以固定 React Admin v1 替换现有 Vue Admin 基础实现；替换 app name、API base、OIDC audience、locale、镜像/Deployment 名称；保留同版本目录契约、测试和部署接口，并在替换前创建 Git tag、镜像 digest 和回滚记录。
 - 传播机制：记录 template version、实例 commit、允许定制点、升级步骤和漂移检查；不得把三个 App 变成互相复制的模板来源。
 - 测试：三个实例分别 install/typecheck/lint/unit/build、Nginx fallback、Docker import/smoke、配置负例；验证无 Info 试点业务泄漏到 Knowledge/Research。
-- 验收：三个骨架来源可追踪且 clean-room 可再生成；尚未开放生产路由；Vue 部署不受影响。
+- 验收：三个骨架来源可追踪且替换步骤可在临时干净 checkout 重放；尚未开放生产路由；迁移前 tag/镜像均可恢复。
 - 状态：NOT_STARTED
 
 ### V5-M1-411B Info Admin React 等价迁移
@@ -814,6 +837,20 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 - 仓库：`tpl-app`、三个 App、`k8s`
 - 实施：React 版本提升为默认 `tpl-admin-frontend`；Vue 模板/实例归档为 tag 或历史分支；移除 Vue 构建矩阵、Electron/PWA 等未被明确采用的 legacy 能力和双栈文档。
 - 验收：三个实例均已越过约定观察窗且无回滚需求；模板只存在一个默认 Admin 技术栈；历史版本仍可审计但不接收功能开发。
+- 状态：NOT_STARTED
+
+### V5-M1-413 三个 Next Web 原地迁移 Rollup
+
+- 类型/优先级：FRONTEND/FUNC/MAINTAINABILITY/P0（M1b 前完成）
+- 仓库：`tpl-app`、`info-app`、`knowledge-app`、`research-app`、`k8s`
+- 前置：Gate P0、P0-008C ACCEPTED；使用冻结的 `next-web-template-version`，不得从任一业务 App 反向复制形成模板。
+- 目标：按 `413A Info -> 413B Knowledge -> 413C Research` 串行把 Next Web v2 的通用基础应用到三个现有 Web 仓库；不创建新仓库，不一次覆盖三个 App，不把“模板替换完成”误判为业务等价或切流完成。
+- 共同实施：每个 App 先创建迁移前 Git tag、记录当前镜像 digest/环境变量/route 清单，再在原仓迁移分支内重构；保留真实业务页面并逐项迁移，不以空模板覆盖后宣称完成。通用修正回流 `tpl-web-frontend`，领域页面、DTO 和规则留在 App。
+- `413A Info Web`：验证 public content、登录后 workspace、locale、render/cache 和 Info 真实业务 route；完成后才开始 Knowledge。
+- `413B Knowledge Web`：验证 public entry、授权检索/个人空间、Citation 跳转和 provider 隔离；完成后才开始 Research。
+- `413C Research Web`：复用 P0-008C 真实试点和 M1-409 workspace，不重复创建 stream client；验证 Run/HITL/citation、多标签恢复和滚动版本。
+- 测试：三个实例分别 install/typecheck/lint/unit/build、route/render/cache matrix、auth/CSRF/CSP、Playwright/a11y、Docker/KIND、多副本/version-skew；每个 App 独立切换和回滚演练。
+- 验收：三实例均可追溯到同一冻结模板版本且无未解释漂移；各自业务 route/contract/E2E 通过；M1b 前完成全部迁移，任一 App 失败只回滚该 App，不连带切换其他 App。
 - 状态：NOT_STARTED
 
 ## 8. 部署、迁移与观测工作流
@@ -931,7 +968,7 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 
 - P0 任务 ACCEPTED。
 - E2E/故障/安全/evaluation 报告通过。
-- M1-400~410 P0 任务及 M1-411A/B/C/D ACCEPTED；关键流程可访问性人工走查和浏览器恢复证据通过。M1-412 可在 M1b 后执行，但必须已有明确退出日期和 owner。
+- M1-400~410 P0 任务、M1-411A/B/C/D 和 M1-413 ACCEPTED；六个前端的关键流程可访问性人工走查、浏览器恢复及逐 App 回滚证据通过。M1-412 可在 M1b 后执行，但必须已有明确退出日期和 owner。
 - migration、rollback、recovery runbook 演练通过。
 - Git desired state 为 `off`，发布者显式切 `canary`。
 - canary 有监控、自动/人工停流条件。
@@ -1037,7 +1074,7 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 | 四仓数据闭环 | P0-003/004, M1-104/201/205/307/601 | 真实 E2E + citation 回溯 |
 | 安全 | P0-005, M1-001~005, M1-603 | 未授权/SSRF/tool 越权测试 |
 | durable execution | P0-001/002/006, M1-301~314（按 ADR-001 选择分支） | kill/retry/resume/SSE |
-| 前端产品闭环 | P0-001/004/005/007A/A2/B/C/008, M1-400~412, M1-600/601 | React Admin 模板完整能力矩阵、逐 App 等价迁移、Next Web v2、浏览器真实 E2E、HITL、刷新/断网恢复、跨 Admin lineage、legacy 退出 |
+| 前端产品闭环 | P0-001/004/005/007A/A2/B/C/008, M1-400~413, M1-600/601 | React Admin 模板完整能力矩阵、六实例逐 App 原地迁移、Next Web v2、浏览器真实 E2E、HITL、刷新/断网恢复、跨 Admin lineage、legacy 退出 |
 | 长期记忆 | M1-701, M2-001~005 | 跨 Session、纠错、删除、用户治理、质量 |
 | 多智能体 | M1-702, M2-101~105 | 隔离、预算、质量增益、用户可解释控制 |
 | 可维护演进 | M1-501/504, M2-104 | migration、digest、版本兼容 |
@@ -1067,18 +1104,22 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 
 ## 14. 第一执行批次
 
-在不修改生产主链前，当前按项目负责人要求串行执行以下 Phase 0 顺序。架构图保留可并行关系用于未来扩充人员，但本轮不得据此跨任务施工：
+在不修改生产主链前，当前按项目负责人要求串行执行以下 Phase 0 顺序。任何时刻只允许一个代码任务为 `IN_PROGRESS`；“下一项”必须等待上一项的测试、证据、状态回填和提交完成：
 
 1. V5-IMM-001 配置真相紧急保护（已完成，可与其余任务独立）。
 2. Frontend-1：V5-P0-007A `tpl-app` React Admin 生产骨架（`SKELETON_ACCEPTED`，2026-07-11）。
-3. Frontend-1A2：V5-P0-007A2 React Admin 模板完整能力对齐；这是所有 Admin 业务迁移和 007B 的阻塞前置。
-4. Contract-1：V5-P0-003 Artifact Contract；这是 007B 的阻塞前置（已完成）。
-5. Security：V5-P0-005 身份与服务调用及浏览器 BFF 边界；这是 007B 的阻塞前置。
-6. Frontend-2：V5-P0-007B Info Admin 真实业务试点。
-7. Frontend-3：V5-P0-007C 修正、重复实例化验证和 React Admin v1 冻结（产生 `TEMPLATE_MIGRATION_READY`）。
-8. Contract-2：V5-P0-004 Retrieval/Citation Contract。
-9. Runtime：恢复 V5-P0-001，完成选型后执行 V5-P0-002。
-10. Reliability：V5-P0-006 可靠交付 ADR 与最小原型。
-11. Web Re-baseline：严格执行 V5-P0-008A -> 008B -> 008C；其依赖此时已齐备。
+3. **当前任务** Frontend-1A2.1 Shell：完成菜单/权限过滤、响应式侧栏、面包屑、可关闭标签、主题/密度/语言和错误边界，并回填能力矩阵。
+4. Security：关闭 V5-P0-005D 的浏览器 PKCE/CSRF/跨用户、伪造/过期 token、可重复 Secret 和 migration gate 缺口，使 P0-005/ADR-005 ACCEPTED。
+5. Frontend-1A2.2 Identity/Data Foundation：消费已接受的身份契约，完成真实 session、typed client/error/correlation、Query 和 i18n 基础。
+6. Frontend-1A2.3 CRUD Toolkit：完成通用 Table/Form/Description/Modal/Drawer/通知/上传下载和写操作约定。
+7. Frontend-1A2.4 Rich/Utility Toolkit：完成或显式处置 Icon/Chart/Editor/Media/通用指令工具与 legacy 能力。
+8. Frontend-1A2.5 Production Gate：完成全套测试、安全负例、Docker/KIND、clean-room install、矩阵和证据，接受 P0-007A2。
+9. Contract-1：复核已接受的 V5-P0-003 Artifact Contract 仍为 007B 可用前置，不重复实现。
+10. Frontend-2：V5-P0-007B 在现有 Info Admin 仓库内做真实业务试点和隔离部署。
+11. Frontend-3：V5-P0-007C 修正、dry-run 替换验证和 React Admin v1 冻结（产生 `TEMPLATE_MIGRATION_READY`）。
+12. Contract-2：V5-P0-004 Retrieval/Citation Contract。
+13. Runtime：恢复 V5-P0-001，完成选型后执行 V5-P0-002。
+14. Reliability：V5-P0-006 可靠交付 ADR 与最小原型。
+15. Web Re-baseline：严格执行 V5-P0-008A -> 008B/B1~B4 -> 008C；其依赖此时已齐备。
 
-P0-007A2/007C 前禁止向三个 App 批量替换 React Admin；P0-008C 前禁止批量替换 Next Web v2。P0-007C/008C 只表示模板可推广；Gate P0 后先执行 M1-411A clean-room 基础前端替换，再逐 App 执行 411B/C/D 业务等价迁移和回滚，不能把基础替换当作切流量。完成全部 Phase 0 后更新 v5、按 ADR-001 激活唯一 Runtime 分支，再进入 M1a。禁止绕过 Gate P0 直接把 Walking Skeleton 扩建为生产 Runner；Memory/Subagent 薄切只能在 Gate M1a 后执行。
+P0-007A2/007C 前禁止向三个 App 应用 React Admin；P0-008C 前禁止向三个 Web 实例应用 Next Web v2。P0-007C/008C 只表示模板可推广；Gate P0 后依次执行 M1-411A -> 411B Info -> 411C Knowledge -> 411D Research，再执行 M1-413A Info -> 413B Knowledge -> 413C Research 的 Web 原地迁移。每个 App 都直接改造现有仓库，但必须先有 tag、镜像 digest、隔离部署和独立回滚；不能把基础替换当作切流量。完成全部 Phase 0 后更新 v5、按 ADR-001 激活唯一 Runtime 分支，再进入 M1a。禁止绕过 Gate P0 直接把 Walking Skeleton 扩建为生产 Runner；Memory/Subagent 薄切只能在 Gate M1a 后执行。

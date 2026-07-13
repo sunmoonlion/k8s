@@ -67,7 +67,7 @@ v5 不否定现有成果；现有代码作为验证资产重新分类为“保�
 - Info App 不负责向量检索和 Agent 记忆。
 - 第一阶段不建设通用低代码 Agent Builder。
 - 第一阶段不一次性实现全部 Provider、工具、多 Agent 模式和多租户能力。
-- M1 不重写三个现有 React/Next Web；三个 Vue Admin 通过并行 React 模板和逐 App 等价替换迁移，不在原 Vue 页面中长期混嵌 React；不因技术统一预先抽取跨 App 运行时 UI 包。
+- M1 不在三个现有 React/Next Web 中分别临时修补架构缺口，而是先原地重基线模板、再逐 App 原地迁移；三个 Vue Admin 通过迁移分支和逐 App 等价替换迁移，不在原 Vue 页面中长期混嵌 React；不因技术统一预先抽取跨 App 运行时 UI 包。
 - M1 不把 Info Web 或 Knowledge Web 改造成内部管理控制面；管理操作继续由各自 Admin Frontend 承担。
 
 ### 2.3 可度量成功标准
@@ -599,21 +599,21 @@ Admin 规则：
 - TanStack Query 是 API server-state/caching/mutation 主层；Router loader 仅用于路由 bootstrap、权限前置和必要进入条件，禁止维护第二份业务缓存。
 - Ant Design 6 是 Admin 主组件库，Ant Design Table 是默认表格；只有真实规模、编辑或虚拟化指标证明不足时，才为单一场景评估专项 Data Grid，禁止并存第二套完整 UI 体系。
 - URL 保存分页、筛选、排序和可恢复视图；表单状态与纯 UI state 分离；不得把领域事实长期复制到 Zustand。
-- Admin 不采用 Nuxt；Vue Admin 只作为迁移期 legacy，不形成永久双栈产品线。
+- Admin 不采用 Nuxt；Vue Admin 只保留在三个 App 的迁移前 tag/镜像和 Git 历史中作为可审计回滚基线，不维护独立 Vue 模板仓库，也不形成永久双栈产品线。
 
 模板演进：
 
 1. 保留现有 `tpl-web-frontend`（它已经是 React + Next）。
 2. 将 React Admin 主模板固定在 `tpl-admin-frontend` 子仓库；`tpl-app` 不再保留独立 Vue 模板子仓库，Vue 参考来自三个 App 的历史源码和 commit，冻结旧实现新增平台能力。
 3. 在 canonical `tpl-admin-frontend` 中完成 React 生产骨架；该阶段只证明技术路线、部署形态和平台接入点，不能宣称完成 Vue 功能迁移。
-4. 新增独立的 React Admin 模板能力对齐门 `P0-007A2`：冻结 Vue 模板能力清单，逐项实现生产相关通用组件、布局、路由、权限、状态、国际化、错误/安全、构建和部署行为，并形成 Vue -> React 映射与测试矩阵。示例页、Electron/PWA 等 legacy 能力必须明确标记为保留、替代或延期，禁止静默遗漏。
+4. 新增独立的 React Admin 模板能力对齐门 `P0-007A2`：从三个 App 的现有 Vue 源码和固定 commit 冻结能力清单，逐项实现生产相关通用组件、布局、路由、权限、状态、国际化、错误/安全、构建和部署行为，并形成 Vue -> React 映射与测试矩阵。示例页、Electron/PWA 等 legacy 能力必须明确标记为保留、替代或延期，禁止静默遗漏。
 5. 用 Info Admin Artifact/Delivery 真实薄切验证模板；通用能力回收模板，业务代码不进入模板。只有 `P0-007A2` 完成后，模板才具备业务迁移资格。
-6. `P0-007C` 冻结后，先以 clean-room 方式把固定 React 模板替换到三个 App 的前端实现，保留迁移前 Git tag 和可回滚镜像；替换代码不等于切换流量。
+6. `P0-007C` 冻结且 Gate P0 通过后，在三个现有 App 前端仓库内按 Info -> Knowledge -> Research 串行原地替换基础实现；每个 App 先保留迁移前 Git tag 和可回滚镜像，替换代码不等于切换流量，也不创建新的业务仓库。
 7. 三个 React Admin 分别在现有 App 仓库内完成真实业务功能、安全、可访问性和 E2E 等价后，才允许切换流量；迁移前用 Git tag 和镜像 digest 保留回滚基线，不再双重维护 Vue/React 实现。
 8. 现有 `tpl-web-frontend` 保持可回退，不在三个实例中分别修补；ADR-014 按 P0-008A/B/C 再基线 Next Web 模板。
 9. 在 ADR-001/004/005 决定 stream、Citation 和浏览器身份/BFF 前，只允许 Web 审计与紧急卫生修复，不提前实现 v2 主体。
 10. 在现有 `tpl-web-frontend` 仓库的迁移分支内重构 Next Web v2，证明 Server/Client、DAL/DTO、typed client、render/cache、auth/BFF、SSE reconciliation、安全、测试和自托管多副本边界。
-11. 用 Research 真实 Run/SSE/cancel/resume/HITL/citation 薄切验证并冻结 v2；通过前不修改三个 Web 的业务前端，不把 Research 领域代码回流模板。
+11. 用 Research 真实 Run/SSE/cancel/resume/HITL/citation 薄切验证并冻结 v2；通过前不修改三个 Web 的业务前端，不把 Research 领域代码回流模板。Gate P0 后再按 Info -> Knowledge -> Research 串行把冻结版本应用到三个现有 Web 仓库，每仓独立验证、切换和回滚。
 
 ### 10.11 React Admin 功能等价门槛
 
@@ -623,7 +623,7 @@ Admin 规则：
 - **逐项有证据**：每项记录 Vue 来源路径、React 目标路径、行为差异、API/契约、测试用例、可访问性结果和 owner；未实现项必须有明确的 defer ADR/任务，不得用“后续完善”作为状态。
 - **业务与模板分离**：Info/Knowledge/Research 的领域页面、DTO 和业务规则不进入模板；模板只提供通用能力和中性示例。
 - **Legacy 明确处置**：Electron、PWA、演示/组件展厅等不属于目标产品的能力可以延期，但必须在矩阵中标注理由、影响和恢复路径；如果任一 App 依赖它，则必须先完成对应 React 能力或重新批准 ADR-013。
-- **迁移资格**：P0-007A 的骨架测试通过只产生 `SKELETON_ACCEPTED`；P0-007A2 完整能力矩阵、映射、测试和 clean-room 重建通过后，才产生 `TEMPLATE_MIGRATION_READY`。
+- **迁移资格**：P0-007A 的骨架测试通过只产生 `SKELETON_ACCEPTED`；P0-007A2 完整能力矩阵、映射、测试和从固定 commit 的干净重建通过后，才产生 `TEMPLATE_MIGRATION_READY`。
 
 ## 11. 可靠执行
 
@@ -847,7 +847,7 @@ GA 目标：
 - React Admin 模板、Info 真实试点与 v1 冻结。
 - Next Web 模板架构再基线、Research 真实 streaming 试点与 v2 冻结。
 
-Runtime Spike 内验证 SSE/cancel/worker kill；可靠交付 Spike 内验证重复投递和副作用恢复。前端先严格按 P0-007A -> P0-007A2 -> P0-005 -> P0-007B -> P0-007C 完成 React Admin 模板资格链，再在现有三个 App 前端目录内按固定版本原地替换基础实现；实际业务迁移仍须逐 App 通过等价门禁。之后在 ADR-001/004/005 有输出后，在现有 `tpl-web-frontend` 仓库内按 P0-008A/B/C 完成 Next Web v2，禁止未验证模板直接覆盖业务代码。核心 ADR Spike 仍使用 2~3 周时间盒，但完整 Phase 0 还包含 React 模板能力对齐、真实 Admin 薄切和 Next 模板资格链，不能宣称全部工作可在同一 2~3 周内完成。退出门禁是 ADR-001~006/013/014 有运行或试点证据、P0-007A/A2/B/C 与 P0-008A/B/C 全部通过、契约测试机制可执行且不存在阻断 M1a 的未决核心问题。
+Runtime Spike 内验证 SSE/cancel/worker kill；可靠交付 Spike 内验证重复投递和副作用恢复。前端先严格按 P0-007A -> P0-007A2/A2.1 -> P0-005 -> P0-007A2/A2.2~A2.5 -> P0-007B -> P0-007C 完成 React Admin 模板资格链；A2.2 的真实身份接入不得先于 P0-005 接受。随后完成 P0-004、P0-001/002、P0-006，并在 ADR-001/004/005 有输出后于现有 `tpl-web-frontend` 仓库内按 P0-008A/B/C 完成 Next Web v2，禁止未验证模板直接覆盖业务代码。全部 Phase 0 退出条件满足并通过 Gate P0 后，才按 Info -> Knowledge -> Research 串行原地迁移三个 Admin（M1-411）和三个 Web（M1-413）。核心 ADR Spike 仍使用 2~3 周时间盒，但完整 Phase 0 还包含 React 模板能力对齐、真实 Admin 薄切和 Next 模板资格链，不能宣称全部工作可在同一 2~3 周内完成。退出门禁是 ADR-001~006/013/014 有运行或试点证据、P0-007A/A2/B/C 与 P0-008A/B/C 全部通过、契约测试机制可执行且不存在阻断 M1a 的未决核心问题。
 
 ### 19.3 M1a：内部真实产品竖线
 
@@ -891,7 +891,7 @@ canary 指标、回滚和恢复演练达标后，才进入有限真实流量；�
 - Research Run model、生产 Runner、事务 EventSink、SSE reconciliation、授权。
 - Research Web 从 Phase 0 Console 重构为可恢复产品工作台；Info/Knowledge/Research Admin 分别补齐 Artifact delivery、ingestion/retrieval 和 runtime/evaluation 治理面。
 - 六个 Frontend 的 typed client、浏览器身份、错误模型、观测和测试门禁。
-- `tpl-app` Admin 从 Vue/Vite legacy 迁移到 React Router Framework Mode SPA；先完成完整模板能力对齐，再以 clean-room 实例化和逐 App 等价门禁替换三个实例，禁止把骨架或单一业务薄切当作迁移完成。
+- `tpl-app` Admin 以 React Router Framework Mode SPA 为唯一主模板；先完成来自三个 App Vue 源码的完整通用能力对齐，再在现有 App 仓库内按固定 commit 原地替换并逐 App 通过等价门禁，禁止把骨架或单一业务薄切当作迁移完成。
 - K8s migration、安全上下文、NetworkPolicy、配置真相。
 
 ### 20.3 不进入生产主链
@@ -946,7 +946,7 @@ canary 指标、回滚和恢复演练达标后，才进入有限真实流量；�
 4. Runtime 分支已按 ADR-001 激活，未选分支明确停止。
 5. 四仓负责人确认数据所有权、契约所有权和删除责任。
 6. Web/Admin 前端边界、浏览器身份、Citation DTO 和 stream reconciliation 已分别进入 ADR-004/005/007 与 Runtime Spike 证据。
-7. ADR-013 已接受，P0-007A/A2/B/C 通过且没有要求三个 Admin 新增 Node SSR 运行时；React Admin v1 有完整能力矩阵、固定版本、clean-room 重复实例化证据和 Vue 对照/迁移文档。P0-007A 单独通过不得触发迁移。
+7. ADR-013 已接受，P0-007A/A2/B/C 通过且没有要求三个 Admin 新增 Node SSR 运行时；React Admin v1 有完整能力矩阵、固定版本、固定 commit 干净重建/dry-run 原地替换证据和 Vue 对照/迁移文档。P0-007A 单独通过不得触发迁移。
 8. ADR-014 已接受，P0-008A/B/C 通过；Next Web v2 有固定版本、真实 Research streaming/HITL/citation 试点、多副本自托管证据和旧模板回滚路径。
 
 这是进入 M1a 的架构基线冻结。Memory/Subagent 相关边界在 M1a.5 再做二次冻结；之后仍允许通过 ADR 修改，但禁止实现先行、文档事后追认。

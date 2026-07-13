@@ -28,7 +28,7 @@
 - 浏览器只使用本 App/Surface 的 BFF session；不能保存 access token，也不能编排跨仓 internal API。
 - 服务调用使用可验证、可撤销的 service identity；不能恢复静态 API key、Admin token 或匿名 internal route。
 - `AGENT_V4_TRAFFIC_ENABLED` 仍为 `false`；KIND 验证不代表允许真实流量。
-- 前端目标态为 React/TypeScript，但不强迫所有面使用同一运行框架：Admin 为 React Router Framework Mode + Vite 的静态 SPA，Web 为 React + Next.js App Router；Vue Admin 和旧 Next Web 作为迁移期回退。
+- 前端目标态为 React/TypeScript，但不强迫所有面使用同一运行框架：Admin 为 React Router Framework Mode + Vite 的静态 SPA，Web 为 React + Next.js App Router；Vue Admin/旧 Web 只通过各 App 的迁移前 tag、镜像和 Git 历史回退，不再维护平行模板仓库。
 
 ## 3. 当前任务状态
 
@@ -43,8 +43,8 @@
 | P0-005E 镜像/部署隔离 | ACCEPTED（本快照） | 三 Admin Backend API+worker 已验证 digest retag 为 1.0.1；临时 p0 tag 和无用零副本 RS 已清理 | 不要把 1.0.0 当旧垃圾删除；它仍被其他组件使用 |
 | P0-006 可靠交付 | NOT_STARTED | v5 已定义 outbox、lease、reconciler 方向 | ADR、最小原型、重复投递/副作用恢复证据 |
 | P0-007A React Admin 模板 | ACCEPTED（仅 `SKELETON_ACCEPTED`） | React 模板、静态构建、Nginx/base path、E2E/KIND smoke | 完整 Vue 能力对齐尚未完成；必须先完成新增 P0-007A2 |
-| P0-007A2 React Admin 模板能力对齐 | NOT_STARTED | 尚无完整能力矩阵和 clean-room 等价证据 | 通用组件/布局/权限/状态/i18n/错误安全/构建部署逐项映射与测试 |
-| P0-008 Next Web v2 | NOT_STARTED | ADR-014 仍为 Proposed，旧模板保留 | 等待 007C 及 P0-001/004/005 输出后再做 Next v2 |
+| P0-007A2 React Admin 模板能力对齐 | IN_PROGRESS（A2.1） | 三个 Vue App 固定输入 commit、现有 React commit 和五个串行施工包已冻结 | 先完成 Shell；P0-005 接受后再做 A2.2 身份/数据基础，随后 CRUD、Rich/Utility、Production Gate |
+| P0-008 Next Web v2 | NOT_STARTED | ADR-014 仍为 Proposed；模板和三个实例的当前提交/差异已冻结 | 等待 007C 及 P0-001/004/005 输出后，在现有模板仓原地重构并做 Research 真实试点 |
 | M1a/M1a.5/M1b | NOT_STARTED | 只有路线和 Gate 定义 | 不能因 Phase 0 smoke 通过而提前进入生产 Runner、记忆或多智能体产品化 |
 
 ### 3.1 已完成的关键证据
@@ -64,12 +64,19 @@
   - 生产产物为 `ssr: false` 静态 SPA，运行镜像只有 Nginx，不含 Node runtime。
   - 证据范围是 `SKELETON_ACCEPTED`；它不是 Vue 模板完整能力等价，也没有同步到三个业务 Admin。
 
+### 3.2 前端物理仓库基线（2026-07-13）
+
+- 唯一 React Admin 模板：`tpl-app/tpl-admin-frontend@1239a30cbe48`，A2 开工代码基线为 `7a04bbe301bc`；远端为 `sunmoonlion/tpl-admin-frontend`。它约 40 个受控源码/配置文件，仍是技术骨架。
+- Vue 能力输入只来自三个现有 App：Info `fd3a943358f6`、Knowledge `6a337322cdd1`、Research `3ef205afa26b`；三者约 250 个文件且高度同源，Info 仅多真实 `src/pages/info/crawl.vue`。不再创建或维护 Vue 模板仓库。
+- Next 模板：`tpl-app/tpl-web-frontend@e529332bf191`；三个实例为 Info `29dc4dc61291`、Knowledge `c99ef6e32be0`、Research `bd2b98785a6a`。它们高度同源，Research 主要多 Agent 组件/页面差异。
+- 后续 Admin/Web 都直接改造现有仓库，但必须使用迁移分支、迁移前 tag、镜像 digest、隔离入口和逐 App 回滚；不得创建 `*-react`、`*-next-v2` 或其他平行业务仓库。
+
 ## 4. 仓库、分支和未提交内容
 
 ### 4.1 `/home/zymun/k8s`
 
-- 分支：`codex-1`，当前与 `origin/codex-1` 同步，工作树干净。
-- 最近关键提交：`7a091a7`、`459f0ff`、`c2b3790`。
+- 分支：`codex-1`；本轮计划修订前与 `origin/codex-1` 同步，基线提交 `fe7b678`。恢复时以 `git status`/`git log` 复核后续计划提交。
+- 最近关键提交包含 `fe7b678`（原地前端迁移工作流）、`888afb8`（canonical React Admin 仓库）和 `f7f32af`（React Admin parity gate）。
 - Info 部署脚本真实路径为 `sunmoonai/app-platform/info-app/deploy-info-app-all/deploy-info-app-all.sh`；不要在 `sunmoonai/app-platform/info-app` 目录直接假设脚本位于当前目录。
 
 ### 4.2 `/home/zymun/info-app`
@@ -89,7 +96,7 @@
 
 - 分支：`codex-1`。
 - 外层有待处理的 `research-admin-backend` 子模块指针：记录为 `e77eed1`，工作区指向 `33fd6de`。
-- 内层 `research-admin-backend`：`codex-1`，工作树干净，本地领先远端 1 个提交（`33fd6de test: add runtime selection spike`）。四个 Runtime Spike 文件已作为隔离实验代码提交：
+- 内层 `research-admin-backend`：`codex-1`，工作树干净且 `33fd6de test: add runtime selection spike` 已与远端同步。四个 Runtime Spike 文件已作为隔离实验代码提交：
   - `app/app/infrastructure/graph/runtime_selection_spike.py`
   - `app/scripts/run_runtime_selection_spike.py`
   - `app/scripts/run_runtime_selection_postgres_spike.py`
@@ -98,9 +105,9 @@
 
 ### 4.5 `/home/zymun/tpl-app`
 
-- 分支：`master`，本地领先 `origin/master` 1 个提交：`fe8fc5c feat: add React admin production template`。
-- React Admin 已进入 canonical `tpl-admin-frontend` 子仓库；`tpl-app` 已移除独立 Vue 模板子仓库。当前尚未完成 007A2/007B/007C，也未修改三个 App 的前端实现。
-- 恢复时再次确认是否已推送；不要重复推送或覆盖远端历史。
+- 分支：`master`；仓库改名/指针调整已经推送；本轮计划基线提交后父仓为 `b47340d`，canonical React 子仓为 `1239a30`（A2 开工代码基线 `7a04bbe`）。
+- `tpl-admin-frontend` 远端已是 React 主模板；`tpl-app` 已移除独立 Vue 模板子仓库。当前 007A2/A2.1 已开始，但尚未修改三个 App 的前端实现。
+- 本轮文档提交后按“React 子仓 -> tpl-app 父仓 -> k8s”顺序推送；不要覆盖远端历史。
 
 ## 5. 当前 KIND / Harbor 事实
 
@@ -142,36 +149,43 @@ kubectl get deploy -n app-platform-dev -o custom-columns='NAME:.metadata.name,IM
 
 同时检查五个工作区及三个 backend 子模块的 branch/status。若出现新提交、镜像或 Secret 变化，先更新状态，不直接继续旧任务。
 
-### Step 1：先关闭 P0-005 的安全遗留项
+### Step 1：完成当前唯一施工项 P0-007A2/A2.1
+
+只在 canonical `tpl-admin-frontend` 完成 Shell：菜单元数据/权限过滤、响应式侧栏、面包屑、可关闭标签、主题/密度/语言和 route/global error；同步回填能力矩阵、测试和提交 SHA。A2.1 未接受前不进入身份、CRUD 或 App 迁移。
+
+### Step 2：关闭 P0-005 的安全遗留项
 
 优先完成浏览器 PKCE/state/nonce/CSRF、跨用户资源拒绝、伪造/过期 token、Secret 可重复注入和 migration job gate。保持 traffic off；测试命令不得输出 token、cookie、client secret 或完整响应正文。
 
-P0-005 完整接受前，不得把 Admin 页面当作已生产化，也不得把“匿名 401”误判为完整身份闭环。
+P0-005 完整接受前，不得开始 A2.2 的真实 session 集成，不得把 Admin 页面当作已生产化，也不得把“匿名 401”误判为完整身份闭环。
 
-### Step 2：完成 P0-001 Runtime ADR
+### Step 3：依次完成 A2.2~A2.5、007B 和 007C
 
-先复核已提交并测试 Research backend 中的 4 个隔离 Spike 文件，再补齐 Candidate A 缺失矩阵。若软件源、许可和 egress 允许，使用同一 Graph 对 B/C 做隔离对照；否则明确记录淘汰理由，不能只凭文档评分选择 Agent Server/Hybrid。
+- A2.2：真实身份/session、typed client/error/correlation、Query/i18n 基础。
+- A2.3：Table/Form/Description/Modal/Drawer/通知/上传下载通用能力。
+- A2.4：Icon/Chart/Editor/Media/通用工具与 legacy 处置。
+- A2.5：安全负例、a11y、全套测试、Docker/KIND、干净重建和证据。
+- 007B：在现有 Info Admin 仓库迁移分支原地替换，使用隔离入口验证真实 Artifact/Delivery；不创建新业务仓库。
+- 007C：回收通用修正，冻结 React Admin v1 和三个 App 的 dry-run 原地替换清单。
+
+### Step 4：依次完成 P0-004、P0-001/P0-002、P0-006
+
+- P0-004：真正实现 Knowledge Retrieval API、Evidence/Citation DTO、allowlist 和 Research consumer；不能用 P0-003 artifact smoke 代替。
+- P0-001：复核已提交并测试的 Research Runtime Spike，再补齐 Candidate A 缺失矩阵；对 B/C 做同图对照或记录可审计淘汰证据。
+- P0-002：ADR-001 选定后冻结 Execution Identity、lineage schema、状态转换和 checkpoint mapping。
+- P0-006：确定 outbox/dispatcher/lease/reconciler 和副作用幂等语义；不能先把当前 Celery dispatch 代码扩成生产 Runner。
 
 只有 ADR-001 选定分支后，才激活 M1-301~314 对应任务；未选分支标记 `NOT_APPLICABLE`。
 
-### Step 3：依次完成 P0-002、P0-004、P0-006
+### Step 5：完成 P0-008 Next Web 原仓重基线
 
-- P0-002：冻结 Execution Identity 和 lineage schema。
-- P0-004：真正实现 Knowledge Retrieval API、Evidence/Citation DTO、allowlist 和 Research consumer；不能用 P0-003 artifact smoke 代替。
-- P0-006：确定 outbox/dispatcher/lease/reconciler 和副作用幂等语义；不能先把当前 Celery dispatch 代码扩成生产 Runner。
+- 008A：接受 ADR-014，冻结 Server/Client、DAL/DTO、BFF、render/cache、stream、安全和部署矩阵。
+- 008B：只在现有 `tpl-web-frontend` 依次执行 B1 Repo/Env/Rendering、B2 Auth/DAL/DTO、B3 UI/Query/Stream、B4 Security/Test/Deploy。
+- 008C：在现有 Research Web 仓库用隔离入口证明真实 Run/SSE/HITL/Citation，冻结 Next Web v2；不创建 `tpl-web-frontend-next-v2` 或 Research 平行仓库。
 
-### Step 4：先完成 React Admin 模板能力对齐，再推进业务迁移
+### Step 6：Gate P0 后逐仓迁移，再进入 M1
 
-- 先完成 P0-007A2：冻结 Vue 模板能力清单，逐项实现生产相关通用组件、布局、权限、状态、i18n、错误/安全、构建/部署和测试映射。示例页、Electron/PWA 等延期项必须有明确处置记录。
-- P0-007A2 通过后，再从固定模板 commit 推进 007B Info 真实业务薄切，最后做 007C 模板冻结。
-- 007B 必须使用真实 Artifact/Delivery API、真实授权失败和审计 correlation ID；Reference fixture 只能测试组件。
-- 007C 通过后，Gate P0 后先在三个 App 现有前端目录内做 411A clean-room 基础替换；实际业务页面按 Info -> Knowledge -> Research 逐 App 等价迁移，并用 Git tag/镜像 digest 回滚，不创建新 App 仓库。P0-001/004/005 没有执行输出前不要改造旧 Web 模板。
-- 之后按 P0-008A/B/C 在现有 `tpl-web-frontend` 仓库内重基线 Next Web v2，不创建 `tpl-web-frontend-next-v2`。
-- 三个 App 的批量替换属于 Gate P0 之后的迁移动作，不要提前覆盖业务前端目录。
-
-### Step 5：Gate P0 后才进入 M1
-
-按 `M1a -> M1a.5 -> M1b -> M1c` 推进。M1a 允许内部测试身份和测试数据，但必须使用真实模型、真实工具、真实 Retrieval/Citation 和可恢复的服务端 Projection；禁止 fake LLM、mock ingestion、伪造 retrieval 或 fake SSE。
+先按 411A -> 411B Info -> 411C Knowledge -> 411D Research 串行迁移三个 Admin，再按 413A Info -> 413B Knowledge -> 413C Research 串行迁移三个 Web；每个 App 都在现有仓库内改造并独立回滚。然后按 `M1a -> M1a.5 -> M1b -> M1c` 推进。M1a 允许内部测试身份和测试数据，但必须使用真实模型、真实工具、真实 Retrieval/Citation 和可恢复的服务端 Projection；禁止 fake LLM、mock ingestion、伪造 retrieval 或 fake SSE。
 
 ## 7. 恢复时的安全规则
 
@@ -189,8 +203,10 @@ P0-005 完整接受前，不得把 Admin 页面当作已生产化，也不得把
 - [ ] 确认 `AGENT_V4_TRAFFIC_ENABLED=false`，核对三个 Admin Backend 的实际 image digest。
 - [ ] 确认 Harbor 中 `1.0.1` 指向本文记录的三个 digest；不删除仍被使用的 `1.0.0`。
 - [ ] 确认 `app-platform-dev` 无异常 Pod、无 `p0-*` 引用和无意外 rollout。
-- [ ] 将 P0-005 的浏览器安全遗留项列为当前优先安全工作，不把 partial 当作完整接受。
-- [ ] 确认 P0-007A 只代表 `SKELETON_ACCEPTED`，将 P0-007A2 模板完整能力对齐列为三个 Admin 迁移前置。
+- [ ] 确认当前唯一代码任务为 P0-007A2/A2.1；完成其测试/矩阵/证据/提交后再激活 P0-005。
+- [ ] 将 P0-005 的浏览器安全遗留项列为 A2.2 前置，不把 partial 当作完整接受。
+- [ ] 确认 P0-007A 只代表 `SKELETON_ACCEPTED`，A2.1 -> P0-005 -> A2.2~A2.5 是三个 Admin 迁移前置。
+- [ ] 确认两个模板和六个实例均使用现有仓库原地改造；不得创建平行 React/Next/Vue 仓库。
 - [ ] 复核 Research Runtime Spike 的 `33fd6de` 提交和 P0-001 证据，确认它仍未接入生产主链。
 - [ ] 每完成一个任务更新对应 evidence/result.md、实施计划状态和本文快照；不要只更新聊天。
 

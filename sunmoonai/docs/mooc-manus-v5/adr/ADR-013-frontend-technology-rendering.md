@@ -6,10 +6,11 @@
 
 ## 1. 背景
 
-`tpl-app` 及三个实例当前不是“两套 Vue”：
+原始基线不是“两套 Vue”；截至 2026-07-13，模板仓库调整已完成，但三个业务实例尚未迁移：
 
 - `tpl-web-frontend` 与三个 Web 已是 React 19 + Next.js App Router。
-- `tpl-admin-frontend` 与三个 Admin 是 Vue 3 + Vite SPA + Element Plus，由 Nginx 静态部署。
+- canonical `tpl-admin-frontend` 已是 React Router Framework Mode SPA；三个 Admin 仍是 Vue 3 + Vite SPA + Element Plus，由 Nginx 静态部署。
+- `tpl-app` 不再维护 Vue Admin 模板；Vue 能力基线来自三个 App 的固定源码 commit 和迁移前 tag。
 
 v5 要同时建设 Research Agent 工作台与 Info/Knowledge/Research 治理面。继续永久维护 React Web/Vue Admin 会分裂类型、路由、组件、测试、身份、安全和流式交互生态；但把内部 Admin 全部改为 Next 又会引入没有明确收益的 Node/RSC/SSR 运行复杂度。
 
@@ -60,7 +61,7 @@ v5 要同时建设 Research Agent 工作台与 Info/Knowledge/Research 治理面
 - 不直接访问 internal API，不在不受控持久存储保存 token。
 - `vue-react-mapping`、新增页面、数据流和迁移指南齐全；Reference Page 覆盖熟悉的表格/筛选/详情/Dialog/权限/错误路径。
 
-真实 Info Artifact/Delivery 薄切必须另外证明表格、筛选、详情、异步状态、受权 retry/deactivate 和审计原因；业务代码不得回流模板。模板资格分两级：P0-007A 为 `SKELETON_ACCEPTED`，P0-007A2 完整能力矩阵和 clean-room 重建通过后才为 `TEMPLATE_MIGRATION_READY`。
+真实 Info Artifact/Delivery 薄切必须另外证明表格、筛选、详情、异步状态、受权 retry/deactivate 和审计原因；业务代码不得回流模板。模板资格分两级：P0-007A 为 `SKELETON_ACCEPTED`，P0-007A2 完整能力矩阵和固定 commit 干净重建通过后才为 `TEMPLATE_MIGRATION_READY`。
 
 ## 6. 迁移与回滚
 
@@ -68,13 +69,13 @@ v5 要同时建设 Research Agent 工作台与 Info/Knowledge/Research 治理面
 - 每个 App 独立完成 contract、功能、安全、可访问性和浏览器 E2E 等价后切换。
 - 迁移期间 Vue 只修复严重缺陷，不并行开发同一项新平台能力。
 - 任一实例切换失败可回退旧 Vue 镜像/路由；数据和 API 契约不依赖前端框架。
-- 三个实例完成后，React 版本成为默认 `tpl-admin-frontend`；Vue 归档为 tag/历史分支。
+- 三个实例完成后只维护 React 主线；Vue 实现保留为各 App 的迁移前 tag/镜像和 Git 历史。
 
 ## 7. 后果
 
 正向：统一 React 人员与测试生态；Web 保留 Next 能力；Admin 保留静态部署和较小运行面；现在迁移成本低于 M1 治理页面完成后迁移。
 
-代价：短期存在两个 Admin 模板；需要重建现有 Vue shell/组件；Element Plus 不能直接复用；Ant Design 与 Ant Table 必须通过 Info 真实薄切继续验证。该短期双轨必须有退出条件，不能演变为永久双栈。
+代价：短期存在 React 主模板与三个 Vue 业务实例；需要重建现有 Vue shell/组件；Element Plus 不能直接复用；Ant Design 与 Ant Table 必须通过 Info 真实薄切继续验证。该迁移期双轨必须有退出条件，不能演变为永久双栈。
 
 ## 8. 2026-07-13 约束补充：模板能力对齐门
 
@@ -83,4 +84,4 @@ v5 要同时建设 Research Agent 工作台与 Info/Knowledge/Research 治理面
 1. P0-007A 已证明的是 React Admin 技术骨架、静态部署和基础平台接入点，不是 Vue 模板功能迁移完成。
 2. P0-007A2 必须从三个现有 App 的 Vue Admin 源码和历史 commit 冻结基线，覆盖生产相关通用组件、布局、路由/权限、状态、i18n、错误/安全、构建/部署和测试能力，并逐项记录 React 对应实现、行为差异、测试证据与 owner；`tpl-app` 不再保留独立 Vue 模板子仓库。
 3. 示例/展厅页面、Electron/PWA 等非目标能力可以延期，但必须有明确处置记录；任何 App 依赖项不得在无替代方案时延期。
-4. P0-007A2 通过前，不得修改三个业务 Admin 的前端实现；通过后在现有 App 仓库内做 clean-room 基础替换，实际业务页面仍按 Info -> Knowledge -> Research 逐 App 等价迁移并通过 Git tag/镜像 digest 回滚，不创建新 App 仓库。
+4. P0-007A2 通过前，不得修改三个业务 Admin 的前端实现；Gate P0 后在现有 App 仓库内按冻结 commit 和替换清单原地替换基础实现，实际业务页面仍按 Info -> Knowledge -> Research 逐 App 等价迁移并通过 Git tag/镜像 digest 回滚，不创建新 App 仓库。
