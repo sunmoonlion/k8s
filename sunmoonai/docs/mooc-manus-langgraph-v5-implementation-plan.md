@@ -211,7 +211,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 
 | 角色 | 当前仓库/提交 | 事实与处置 |
 |---|---|---|
-| React Admin 模板 | `tpl-app/tpl-admin-frontend@1239a30`（A2 开工代码基线 `7a04bbe`） | 唯一 Admin 模板；React 19 + React Router 8 Framework Mode + Ant Design 6；当前约 40 个受控源码/配置文件，仍是骨架而非完整工具集 |
+| React Admin 模板 | `tpl-app/tpl-admin-frontend@451d22f`（A2.1 实现 `d2fa1a8`；A2 开工基线 `7a04bbe`） | 唯一 Admin 模板；React 19 + React Router 8 Framework Mode + Ant Design 6；A2.1 Shell 已接受，身份、CRUD、Rich/Utility 和 Production Gate 仍未完成 |
 | Vue Admin 输入 | Info `fd3a943`、Knowledge `6a33732`、Research `3ef205a` | 三个现有 App 约 250 个文件且高度同源；Info 仅多真实 `src/pages/info/crawl.vue`，其余少量差异主要来自生成内容；作为 A2 能力盘点和后续业务迁移输入，不再另建 Vue 模板仓库 |
 | Next Web 模板 | `tpl-app/tpl-web-frontend@e529332` | 现有 Next 16/App Router 仓库原地重构，不创建 v2 仓库 |
 | 三个 Web 实例 | Info `29dc4dc`、Knowledge `c99ef6e`、Research `bd2b987` | 与模板约 37~38 个文件且高度同源；Research 仅多 Agent 组件和相应 dashboard 差异；均在现有仓库内改造 |
@@ -222,11 +222,11 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 
 - 类型/优先级：MAINTAINABILITY/IMMEDIATE；P0-007A2/A2.1 前置卫生任务。
 - 仓库：`tpl-app`、`info-app`、`knowledge-app`、`research-app` 及其 15 个含旧引用的子仓。
-- 实施：删除四个根仓重复且失真的 AI 工具专属文档树；以每仓 `docs/README.md` 建立中性入口；根 `CLAUDE.md` 和 Cursor rules 只指向代码/OpenAPI/tests、中性 docs 与 k8s v5 权威文档；子仓局部规则不再维护手写契约副本。
+- 实施：删除根仓和子仓重复且失真的 AI 工具专属文档树及引用；曾用于过渡的根 `docs/README.md` 已在确认不承担权威入口后删除。当前事实以代码/OpenAPI/tests、明确标注的领域文档与 k8s v5 权威文档为准，不再维护易失真的总索引或手写契约副本。
 - 保留：Info Spider MVP、Knowledge ingestion worker 和 Knowledge API 早期快照以 Git rename 迁入 `docs/history/`，并明确标记为历史审计资料；其他旧内容保留于 Git 历史，不作为当前恢复入口。
 - 验收：四仓普通/隐藏文件及全部子模块搜索旧目录名为零；旧目录不存在；`git diff --check` 通过；未改业务代码、依赖、镜像或集群状态。
-- 提交：tpl `9f1adcd`、Info `05cfacb`、Knowledge `9c8b9da`、Research `6080a4e`；子仓提交映射记录在最新交接文档。
-- 状态：ACCEPTED（2026-07-13；等待按子仓 -> 父仓顺序推送）
+- 提交：第一轮收敛为 tpl `9f1adcd`、Info `05cfacb`、Knowledge `9c8b9da`、Research `6080a4e`；过渡索引删除为 tpl `1fd597c`、Info `1c9b1e9`、Knowledge `32878d3`、Research `c155e1a`。子仓与父仓均已按顺序推送。
+- 状态：ACCEPTED（2026-07-13；工具专属文档树和过渡索引均已退出当前基线）
 
 ### V5-P0-007 React Admin Template Rollup
 
@@ -235,7 +235,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 目标：按 `P0-007A -> P0-007A2(A2.1) -> P0-005 -> P0-007A2(A2.2~A2.5) -> P0-007B -> P0-007C` 完成 React Admin 模板资格链并冻结 React Admin v1；A2.1 不依赖浏览器身份，P0-005 是 A2.2 真实身份接入和 007B 试点的安全前置，父任务不直接写代码。
 - 重要边界：`P0-007A` 只代表技术骨架通过，不代表 Vue 模板功能等价，也不允许据此同步三个 App。`P0-007A2` 是新增的完整模板能力对齐门。
 - 完成条件：P0-007A、P0-007A2、P0-007B、P0-007C 四个子任务全部 ACCEPTED；任一子任务失败，父任务保持 IN_PROGRESS，禁止向三个 App 应用未冻结模板。
-- 状态：IN_PROGRESS（P0-007A 已接受；P0-007A2/A2.1 施工中；P0-007B/C 未开始）
+- 状态：IN_PROGRESS（P0-007A 与 P0-007A2/A2.1 已接受；等待 P0-005 后进入 A2.2；P0-007B/C 未开始）
 
 ### V5-P0-007A tpl-app React Admin 生产骨架
 
@@ -260,7 +260,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 目标：让 React 模板覆盖仍由模板承担的生产相关能力，而不是只有 Shell、Reference Page 和登录占位。逐项建立 `Vue source -> React target -> behavior/API -> test/evidence -> owner` 映射。
 - 必须实现或明确对照：布局/菜单/标签/主题/响应式密度、登录/退出/受保护路由/权限、i18n、typed API/Query 状态、Table/筛选/分页、Form/校验、Dialog/Drawer/Description、通知、Icon、上传/下载、Editor/Media、Chart、UI 持久化、错误/安全边界、CSP/CSRF/CORS/session 接入、Nginx/Docker/K8s 接口和测试工具链。
 - 串行施工包：
-  1. `A2.1 Shell`：菜单元数据/权限过滤、侧栏/移动 Drawer、面包屑、可关闭标签、主题/密度/语言、route/global error；当前 `7a04bbe` 已有主题状态和 route boundary，尚未满足完整 Shell 验收。
+  1. `A2.1 Shell`：菜单元数据/权限过滤、侧栏/移动 Drawer、面包屑、可关闭标签、主题/密度/语言、route/global error；已以实现提交 `d2fa1a8` 和矩阵提交 `451d22f` 接受，证据见 `sunmoonai/docs/evidence/v5/V5-P0-007A2/A2.1/result.md`。
   2. `A2.2 Identity/Data Foundation`：在 P0-005 ACCEPTED 后接入真实 `/auth/me`、login/logout/return URL、401/403、CSRF/session，统一 typed error/correlation、TanStack Query 约定和 i18n 持久化；不得使用生产 demo auth。
   3. `A2.3 CRUD Toolkit`：Table/筛选/分页/排序/选择、Form/schema/校验、Description、Modal/Drawer、通知、上传/下载和受审计写操作；使用中性 fixture 与 adapter contract。
   4. `A2.4 Rich/Utility Toolkit`：Icon registry、Chart、Editor、Audio/Video、copy/debounce/throttle/drag/long-press/watermark 等 React idiomatic 对应；Electron/PWA 和纯展厅逐项 `REIMPLEMENT/DEFER/REMOVE`。
@@ -270,7 +270,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 不做：不逐行翻译 Vue API，不把 Element Plus/Pinia/Composition API 机械搬到 React；不把 Info/Knowledge/Research 领域页面、DTO、业务规则写入模板；不接任何 App 流量。
 - 测试：模板全量 typecheck/lint/unit/component/Playwright/a11y；组件行为和错误状态矩阵；route/base path/Nginx/Docker smoke；clean-room 从固定 commit 重新生成；Vue/React 映射无未解释项。
 - 验收：能力矩阵无未分配的 `MUST` 项；所有 `DEFER` 有批准的 ADR/任务；从干净目录可重复构建；核心组件行为、权限和可访问性通过；状态命名为 `TEMPLATE_MIGRATION_READY`。只有本任务通过后，P0-007B 和三个 App 的 React 基础前端替换才可开始。
-- 状态：IN_PROGRESS（A2.1 已开始；P0-007A 现有证据不替代本任务）
+- 状态：IN_PROGRESS（A2.1 ACCEPTED；P0-005 是当前串行任务；A2.2~A2.5 尚未开始，P0-007A 现有证据不替代本任务）
 
 ### V5-P0-007B Info Admin 真实业务试点
 
@@ -1119,8 +1119,8 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 1. V5-IMM-001 配置真相紧急保护（已完成，可与其余任务独立）。
 2. V5-DOC-HYGIENE-001 工具无关文档收敛（`ACCEPTED`，2026-07-13；不再使用 AI 工具专属文档树）。
 3. Frontend-1：V5-P0-007A `tpl-app` React Admin 生产骨架（`SKELETON_ACCEPTED`，2026-07-11）。
-4. **当前任务** Frontend-1A2.1 Shell：完成菜单/权限过滤、响应式侧栏、面包屑、可关闭标签、主题/密度/语言和错误边界，并回填能力矩阵。
-5. Security：关闭 V5-P0-005D 的浏览器 PKCE/CSRF/跨用户、伪造/过期 token、可重复 Secret 和 migration gate 缺口，使 P0-005/ADR-005 ACCEPTED。
+4. Frontend-1A2.1 Shell（`ACCEPTED`，2026-07-13；实现 `d2fa1a8`，矩阵 `451d22f`，证据 `V5-P0-007A2/A2.1/result.md`）。
+5. **当前任务** Security：关闭 V5-P0-005D 的浏览器 PKCE/CSRF/跨用户、伪造/过期 token、可重复 Secret 和 migration gate 缺口，使 P0-005/ADR-005 ACCEPTED。
 6. Frontend-1A2.2 Identity/Data Foundation：消费已接受的身份契约，完成真实 session、typed client/error/correlation、Query 和 i18n 基础。
 7. Frontend-1A2.3 CRUD Toolkit：完成通用 Table/Form/Description/Modal/Drawer/通知/上传下载和写操作约定。
 8. Frontend-1A2.4 Rich/Utility Toolkit：完成或显式处置 Icon/Chart/Editor/Media/通用指令工具与 legacy 能力。
