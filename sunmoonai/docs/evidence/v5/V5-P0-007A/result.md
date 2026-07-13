@@ -93,5 +93,6 @@ pod deleted
 - 回滚 React 模板只需 revert `fe8fc5c`；当前镜像未进入任何长期 Deployment。
 - `VITE_AUTH_MODE=demo` 仅用于开发/E2E，生产构建显式拒绝该值。
 - P0-007A 只证明通用模板；真实 Artifact/Delivery 契约、权限失败、审计操作和真实 K8s Deployment 属于 P0-007B，不能用 Reference fixture 替代验收。
+- 本证据的范围是 `SKELETON_ACCEPTED`，不是 Vue 模板功能等价完成。完整能力矩阵、Vue -> React 逐项映射、legacy 处置和 clean-room 重建属于新增的 P0-007A2；在 A2 通过前不得将该模板同步到三个业务 Admin 或把任何现有 Vue 镜像标签解释为 React 发布。
 - Node 22.22 build image 在进入 P0-007C/M1 前必须按 digest 镜像到 Harbor；不得因镜像缺失回退 Node 18。
 - 未执行 `git push`；由项目负责人按仓库流程推送。

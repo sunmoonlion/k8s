@@ -23,9 +23,9 @@ v5 要同时建设 Research Agent 工作台与 Info/Knowledge/Research 治理面
 4. 不采用 Nuxt，不为 Admin 增加 Node Server，不把“统一 React”误解为“统一 Next”。
 5. TanStack Query 管理 API server state；React Router 管理 route module、进入条件、pending/error 和代码拆分。Router loader 不复制 Query cache。
 6. 现有 Vue Admin 为迁移期 legacy；React 等价替换完成后归档，不永久提供 Vue/React 两套默认模板。
-7. 先并行创建 `tpl-admin-frontend-react` 最小生产模板，再用 Info Artifact/Delivery 真实薄切验证，禁止用 Hello World 判定模板完成。
+7. 先并行创建 `tpl-admin-frontend-react` 生产骨架，再通过独立的模板能力对齐门完成 Vue 模板生产相关能力的逐项映射和验证；禁止用 Hello World、Shell 或单一 Reference Page 判定模板完成。
 8. 不在 Vue 页面内长期混嵌 React；迁移以路由/应用边界替换，旧实现保持可回退直到等价门禁通过。
-9. React Admin 在页面布局、菜单/导航、交互密度、配置和部署接口上尽量与现有 Vue Admin 对齐，并提供 Vue -> React 文件与概念映射；内部仍采用标准 React/Router/Query 分工，不机械翻译 Vue API 或继承未采用的 Electron/PWA/自动导入包袱。
+9. React Admin 在页面布局、菜单/导航、交互密度、配置和部署接口上与现有 Vue Admin 建立可验收对应，并提供 Vue -> React 文件、能力和概念映射；内部仍采用标准 React/Router/Query 分工，不机械翻译 Vue API。Electron/PWA/自动导入等 legacy 能力必须显式标记为保留、重实现、延期或移除，不能静默遗漏；若任何 App 依赖延期能力，则必须重新评审迁移资格。
 10. React Admin v1 采用 React Router 8 与 Ant Design 6；Ant Design Table 是默认表格实现。只有真实业务数据量、编辑或虚拟化需求证明其不足时，才以单场景 ADR 引入专项 Data Grid，禁止预先并存两套完整 UI/表格体系。
 
 ## 3. 产品面策略
@@ -60,7 +60,7 @@ v5 要同时建设 Research Agent 工作台与 Info/Knowledge/Research 治理面
 - 不直接访问 internal API，不在不受控持久存储保存 token。
 - `vue-react-mapping`、新增页面、数据流和迁移指南齐全；Reference Page 覆盖熟悉的表格/筛选/详情/Dialog/权限/错误路径。
 
-真实 Info Artifact/Delivery 薄切必须另外证明表格、筛选、详情、异步状态、受权 retry/deactivate 和审计原因；业务代码不得回流模板。
+真实 Info Artifact/Delivery 薄切必须另外证明表格、筛选、详情、异步状态、受权 retry/deactivate 和审计原因；业务代码不得回流模板。模板资格分两级：P0-007A 为 `SKELETON_ACCEPTED`，P0-007A2 完整能力矩阵和 clean-room 重建通过后才为 `TEMPLATE_MIGRATION_READY`。
 
 ## 6. 迁移与回滚
 
@@ -75,3 +75,12 @@ v5 要同时建设 Research Agent 工作台与 Info/Knowledge/Research 治理面
 正向：统一 React 人员与测试生态；Web 保留 Next 能力；Admin 保留静态部署和较小运行面；现在迁移成本低于 M1 治理页面完成后迁移。
 
 代价：短期存在两个 Admin 模板；需要重建现有 Vue shell/组件；Element Plus 不能直接复用；Ant Design 与 Ant Table 必须通过 Info 真实薄切继续验证。该短期双轨必须有退出条件，不能演变为永久双栈。
+
+## 8. 2026-07-13 约束补充：模板能力对齐门
+
+本补充不改变 React Router/Vite/SPA/Ant Design 的技术决策，只明确“等价替换”的验收范围：
+
+1. P0-007A 已证明的是 React Admin 技术骨架、静态部署和基础平台接入点，不是 Vue 模板功能迁移完成。
+2. P0-007A2 必须冻结 Vue 模板基线，覆盖生产相关通用组件、布局、路由/权限、状态、i18n、错误/安全、构建/部署和测试能力，并逐项记录 React 对应实现、行为差异、测试证据与 owner。
+3. 示例/展厅页面、Electron/PWA 等非目标能力可以延期，但必须有明确处置记录；任何 App 依赖项不得在无替代方案时延期。
+4. P0-007A2 通过前，不得从 React 模板实例化三个业务 Admin；通过后先做 clean-room 基础骨架同步，实际业务页面仍按 Info -> Knowledge -> Research 逐 App 等价迁移并保留 Vue 回滚。

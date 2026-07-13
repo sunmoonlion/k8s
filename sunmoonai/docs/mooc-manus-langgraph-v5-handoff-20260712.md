@@ -42,7 +42,8 @@
 | P0-005 身份与服务调用 | IN_PROGRESS / partial | 三 Admin 匿名 401；真实 Casdoor client-credentials 边界；复验矩阵 401/401/422 | 浏览器 PKCE/CSRF/跨用户、伪造/过期 token、可重复 Secret、migration job gate、ADR-005 接受 |
 | P0-005E 镜像/部署隔离 | ACCEPTED（本快照） | 三 Admin Backend API+worker 已验证 digest retag 为 1.0.1；临时 p0 tag 和无用零副本 RS 已清理 | 不要把 1.0.0 当旧垃圾删除；它仍被其他组件使用 |
 | P0-006 可靠交付 | NOT_STARTED | v5 已定义 outbox、lease、reconciler 方向 | ADR、最小原型、重复投递/副作用恢复证据 |
-| P0-007A React Admin 模板 | ACCEPTED | React 模板、静态构建、Nginx/base path、E2E/KIND smoke | 007B Info 真实业务试点、007C 模板修正/冻结 |
+| P0-007A React Admin 模板 | ACCEPTED（仅 `SKELETON_ACCEPTED`） | React 模板、静态构建、Nginx/base path、E2E/KIND smoke | 完整 Vue 能力对齐尚未完成；必须先完成新增 P0-007A2 |
+| P0-007A2 React Admin 模板能力对齐 | NOT_STARTED | 尚无完整能力矩阵和 clean-room 等价证据 | 通用组件/布局/权限/状态/i18n/错误安全/构建部署逐项映射与测试 |
 | P0-008 Next Web v2 | NOT_STARTED | ADR-014 仍为 Proposed，旧模板保留 | 等待 007C 及 P0-001/004/005 输出后再做 Next v2 |
 | M1a/M1a.5/M1b | NOT_STARTED | 只有路线和 Gate 定义 | 不能因 Phase 0 smoke 通过而提前进入生产 Runner、记忆或多智能体产品化 |
 
@@ -61,6 +62,7 @@
   - tpl-app React Admin commit：`fe8fc5cfd2a9d23f4f8a1bcd0465440b2341d85e`
   - React 19.2.7、React Router Framework Mode 8.2.0、Vite 7.3.6、Ant Design 6.5.0、TanStack Query 5、Zustand 5。
   - 生产产物为 `ssr: false` 静态 SPA，运行镜像只有 Nginx，不含 Node runtime。
+  - 证据范围是 `SKELETON_ACCEPTED`；它不是 Vue 模板完整能力等价，也没有同步到三个业务 Admin。
 
 ## 4. 仓库、分支和未提交内容
 
@@ -97,7 +99,7 @@
 ### 4.5 `/home/zymun/tpl-app`
 
 - 分支：`master`，本地领先 `origin/master` 1 个提交：`fe8fc5c feat: add React admin production template`。
-- 原 Vue `tpl-admin-frontend` 未改动；新增 `tpl-admin-frontend-react` 尚未完成 007B/007C，也未同步到三个 App。
+- 原 Vue `tpl-admin-frontend` 未改动；新增 `tpl-admin-frontend-react` 尚未完成 007A2/007B/007C，也未同步到三个 App。
 - 恢复时再次确认是否已推送；不要重复推送或覆盖远端历史。
 
 ## 5. 当前 KIND / Harbor 事实
@@ -158,11 +160,13 @@ P0-005 完整接受前，不得把 Admin 页面当作已生产化，也不得把
 - P0-004：真正实现 Knowledge Retrieval API、Evidence/Citation DTO、allowlist 和 Research consumer；不能用 P0-003 artifact smoke 代替。
 - P0-006：确定 outbox/dispatcher/lease/reconciler 和副作用幂等语义；不能先把当前 Celery dispatch 代码扩成生产 Runner。
 
-### Step 4：再推进前端资格链
+### Step 4：先完成 React Admin 模板能力对齐，再推进业务迁移
 
-- 从 007A 固定 commit 推进 007B Info 真实业务薄切，再做 007C 模板冻结。
+- 先完成 P0-007A2：冻结 Vue 模板能力清单，逐项实现生产相关通用组件、布局、权限、状态、i18n、错误/安全、构建/部署和测试映射。示例页、Electron/PWA 等延期项必须有明确处置记录。
+- P0-007A2 通过后，再从固定模板 commit 推进 007B Info 真实业务薄切，最后做 007C 模板冻结。
 - 007B 必须使用真实 Artifact/Delivery API、真实授权失败和审计 correlation ID；Reference fixture 只能测试组件。
-- 007C 通过后，按 P0-008A/B/C 重基线 `tpl-web-frontend` 的 Next Web v2；P0-001/004/005 没有执行输出前不要改造旧 Web 模板。
+- 007C 通过后，Gate P0 后先做三个 App 的 411A clean-room 基础骨架同步；实际业务页面按 Info -> Knowledge -> Research 逐 App 等价迁移并保留 Vue 回滚。P0-001/004/005 没有执行输出前不要改造旧 Web 模板。
+- 之后按 P0-008A/B/C 重基线 `tpl-web-frontend` 的 Next Web v2。
 - 三个 App 的批量同步属于 Gate P0 之后的迁移动作，不要提前复制模板。
 
 ### Step 5：Gate P0 后才进入 M1
@@ -186,6 +190,7 @@ P0-005 完整接受前，不得把 Admin 页面当作已生产化，也不得把
 - [ ] 确认 Harbor 中 `1.0.1` 指向本文记录的三个 digest；不删除仍被使用的 `1.0.0`。
 - [ ] 确认 `app-platform-dev` 无异常 Pod、无 `p0-*` 引用和无意外 rollout。
 - [ ] 将 P0-005 的浏览器安全遗留项列为当前优先安全工作，不把 partial 当作完整接受。
+- [ ] 确认 P0-007A 只代表 `SKELETON_ACCEPTED`，将 P0-007A2 模板完整能力对齐列为三个 Admin 迁移前置。
 - [ ] 复核 Research Runtime Spike 的 `33fd6de` 提交和 P0-001 证据，确认它仍未接入生产主链。
 - [ ] 每完成一个任务更新对应 evidence/result.md、实施计划状态和本文快照；不要只更新聊天。
 
