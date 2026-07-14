@@ -1,6 +1,8 @@
-# P0-007B Info Admin 正式镜像固化清单
+# P0-007B Info Admin 正式镜像固化清单（已撤回草案）
 
-状态：`READY_FOR_OPERATOR_PROMOTION`
+状态：`WITHDRAWN_BLOCKED_BY_VERSION_POLICY`
+
+> 本文件中的 `1.1.0` promotion 命令禁止执行。它是版本决策完成前生成的旧草案，保留仅用于审计，不能作为 Runbook。
 
 ## 范围
 
@@ -9,7 +11,9 @@ React Admin。它不固化 Knowledge/Research；两者当前仍是 Vue 基线，
 React 等价迁移和独立验收。
 
 旧正式版本 `1.0.1` 继续保留为 Vue 回滚基线，不覆盖、不删除。`p0-*` candidate
-也保留为审计和回滚证据，不作为普通部署默认值。
+也保留为审计和回滚证据，不作为普通部署默认值。当前不产生 `1.1.0`，也不允许
+用 React 镜像覆盖 `1.0.1`；统一 release version 必须在三个 Admin React 迁移完成
+后通过单独决策确定。
 
 ## Candidate 输入（不可变）
 
@@ -21,66 +25,16 @@ React 等价迁移和独立验收。
 这些 digest 已通过严格 TLS、浏览器身份、CSP、mutation、并发、恢复和无外连矩阵。
 Promotion 前仍必须由执行者通过 registry inspect 复核，不能只相信本地 tag。
 
-## Promotion 规则
+## 原草案规则（禁止执行）
 
-1. 先确认源 candidate 的远程 digest 与上表一致。
-2. 先确认目标 `1.1.0` 尚不存在；若已存在，停止并人工核对，不得覆盖既有 tag。
-3. 将同一镜像内容推为正式 tag `1.1.0`；不得重新 build、修改 Dockerfile 或用新源码覆盖。
-4. 复核 `1.1.0` 的远程 digest 与源 candidate 一致。
-5. 仅将 Info Admin backend、celeryworker 和 frontend 的部署配置切到 `1.1.0`；Info Web、Knowledge、Research 不在本次切换范围。
-6. 完成 rollout、imageID/digest 核对、匿名/身份/CSRF/业务 mutation/浏览器和回滚验证后，才能把本清单改为 `ACCEPTED`。
+本节只说明为什么草案被撤回：Info 单独提升为 `1.1.0` 会造成阶段版本和组件版本混淆；复用或覆盖
+`1.0.1` 又会破坏不可变 tag 与 Vue 回滚资产。因此在版本治理 ADR/统一 release manifest
+完成前，不执行任何 retag、push 或正式 Deployment 切换。
 
-## 推荐执行命令
+## 原执行流程（已禁用）
 
-网络和 Harbor 操作由 operator 执行；可在本地已有 candidate 镜像上运行：
+旧草案中的 pull/tag/push、KIND 部署和回滚命令已从本文件移除，防止误复制执行。下一版正式 Runbook
+必须在版本决策后重新生成，并包含统一的 release manifest、不可变 digest 和回滚观察期。
+正式路径仍必须核对 Deployment imageID/digest，保持 `V5_FRONTEND_TEST_MODE=false`，禁止用隔离测试开关绕过 `p0-*` tag 门禁。
 
-```bash
-set -e
-
-BACKEND=harbor.sunmoonai.com:30443/app-images/info-admin-backend
-FRONTEND=harbor.sunmoonai.com:30443/app-images/info-admin-frontend
-
-docker pull "$BACKEND:p0-007b-concurrency-20260714"
-docker pull "$FRONTEND:p0-007b-concurrency-20260714"
-
-docker tag "$BACKEND:p0-007b-concurrency-20260714" "$BACKEND:1.1.0"
-docker tag "$FRONTEND:p0-007b-concurrency-20260714" "$FRONTEND:1.1.0"
-
-docker push "$BACKEND:1.1.0"
-docker push "$FRONTEND:1.1.0"
-
-docker buildx imagetools inspect "$BACKEND:1.1.0"
-docker buildx imagetools inspect "$FRONTEND:1.1.0"
-```
-
-只有两个 inspect 结果都与上表一致，才执行 KIND 部署：
-
-```bash
-cd /home/zymun/k8s
-
-INFO_ADMIN_BACKEND_TAG=1.1.0 \
-CELERYWORKER_INFO_ADMIN_BACKEND_TAG=1.1.0 \
-INFO_ADMIN_FRONTEND_TAG=1.1.0 \
-./sunmoonai/app-platform/info-app/deploy-info-app-all/deploy-info-app-all.sh \
-  deploy --cluster KIND
-```
-
-部署后必须核对三个 Deployment 的镜像和 imageID；正式路径保持
-`V5_FRONTEND_TEST_MODE=false`，禁止用隔离测试开关绕过 `p0-*` tag 门禁。
-
-## 回滚
-
-若任一门禁失败，立即使用旧 Vue 基线恢复：
-
-```bash
-cd /home/zymun/k8s
-
-INFO_ADMIN_BACKEND_TAG=1.0.1 \
-CELERYWORKER_INFO_ADMIN_BACKEND_TAG=1.0.1 \
-INFO_ADMIN_FRONTEND_TAG=1.0.1 \
-./sunmoonai/app-platform/info-app/deploy-info-app-all/deploy-info-app-all.sh \
-  deploy --cluster KIND
-```
-
-回滚完成并重新核对 imageID 后，`1.1.0` 仍保留以便复盘；不得删除 candidate、旧
-`1.0.1` 或通过复用 tag 隐藏失败版本。
+旧 Vue 回滚基线、candidate digest 和正式切换命令将在统一版本决策后另行生成；在此之前不得删除 candidate、旧 `1.0.1` 或通过复用 tag 隐藏版本。

@@ -51,5 +51,5 @@ P0-007C 的模板修正、迁移契约、clean-room 构建和三个现有 Admin 
 
 - 本证据不代表三个 App 已完成 React 替换；它只证明替换来源、变量契约和串行施工步骤可重复。
 - 不创建 `*-react`、`*-next-v2` 或新的业务仓库；后续必须在现有三个 Admin 子仓原地替换。
-- Info 的 P0-007B candidate digest 保持不可变，正式 `1.1.0` 提升仍需按 Gate P0、正式 digest 核对、canary 和回滚证据执行；旧 `1.0.1` 保持 Vue 回滚资产，不覆盖、不删除。
+- Info 的 P0-007B candidate digest 保持不可变；正式生产 tag 暂不提升，尤其不得执行旧草案中的 `1.1.0` promotion 或覆盖 `1.0.1`。待三个 Admin React 迁移完成并通过统一 release decision 后，按正式 digest、canary 和回滚证据重新生成固化清单；旧 `1.0.1` 保持 Vue 回滚资产，不覆盖、不删除。
 - 下一步为按 Info → Knowledge → Research 串行执行真实迁移，每个 App 都必须先打迁移前 tag、记录镜像 digest/Deployment/回滚命令，再做隔离候选验证；不得批量覆盖或跳过证据。

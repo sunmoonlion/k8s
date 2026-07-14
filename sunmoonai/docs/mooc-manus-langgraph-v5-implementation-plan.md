@@ -98,7 +98,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 严格规则：
   1. `SKELETON_ACCEPTED` 不产生业务迁移资格；只有 `TEMPLATE_MIGRATION_READY` 和 `P0-007C/P0-008C ACCEPTED` 才能进入 M1-411/M1-413。
   2. App 级 `*_APP_IMAGE_TAG` 不得隐式决定任一 Frontend tag；部署必须使用组件级 tag，并在生成后拒绝 `p0-*` 临时 tag（显式隔离测试模式除外）。
-  3. 旧 Vue/旧 Next 镜像、迁移前 Git tag 和 digest 是回滚资产，不得因“统一版本号”删除或覆盖；React/Next 重构必须使用新的候选 tag 和新的正式版本号。
+  3. 旧 Vue/旧 Next 镜像、迁移前 Git tag 和 digest 是回滚资产，不得因“统一版本号”删除或覆盖；React/Next 重构必须使用新的候选 tag 和新的正式版本号。阶段编号（如 P0-007B）不是镜像版本号，不能据此强行复用 `1.0.1`，也不能未经版本决策擅自提升为 `1.1.0`。
   4. 任一 App 迁移必须单独完成“迁移前 tag/digest → candidate 镜像 → 隔离部署 → 浏览器/E2E/回滚证据 → 正式 tag”，不得三个 App 批量切换。
   5. 任何提前实现只能标记为 `PROVISIONAL_EARLY_SLICE`，必须记录与正式任务的差异、风险和恢复路径，不能修改任务状态或 Gate 结论。
 - 恢复顺序：先完成本节的版本矩阵/生成清单清理，再恢复 `P0-007A2/A2.2`；随后完成 `P0-007B/C`、`P0-008A/B/C` 和 Gate P0，最后才按 Info → Knowledge → Research 执行 M1-411 与 M1-413。
@@ -138,7 +138,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 测试：L2/L5/L7。
 - 验收：评分矩阵、许可结论、运行证据、退出成本和 ADR-001 获批。
 - 回滚：Spike 不接生产数据；删除部署即可。
-- 状态：IN_PROGRESS / CANDIDATE_A_PARTIAL（2026-07-11；ADR：`sunmoonai/docs/mooc-manus-v5/adr/ADR-001-runtime-selection.md`；证据：`sunmoonai/docs/evidence/v5/V5-P0-001/candidate-a-partial.md`）
+- 状态：IN_PROGRESS / CANDIDATE_A_PARTIAL（2026-07-14；隔离 Graph 的基础恢复语义和 Research 事件交付层的 advisory-lock/SSE snapshot 修正已验证，但真实 Runtime 仍未完成；ADR：`sunmoonai/docs/mooc-manus-v5/adr/ADR-001-runtime-selection.md`；证据：`sunmoonai/docs/evidence/v5/V5-P0-001/candidate-a-partial.md`）
 
 ### V5-P0-002 执行身份模型 Spike
 
@@ -246,10 +246,13 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 类型/优先级：ARCH/RELIABILITY/P0
 - 仓库：`info-app`、`knowledge-app`、`research-app`
 - 目标：为“数据库提交成功、消息未投递”选择统一语义，不要求立即抽取共享框架。
-- 实施：比较 transactional outbox、数据库 pending scanner 和 broker transaction 限制；至少在一个链路实现并注入 broker 故障；验证稳定 operation ID 和外部副作用阶段恢复。
-- 测试：DB commit 后阻断 RabbitMQ、dispatcher 重启、重复 publish、两个 dispatcher 竞争、外部 upload 后 kill/retry。
-- 验收：ADR-006 获批；选定方案能自动发现并补投，不产生重复业务效果；明确 M1 各仓落地任务。
-- 状态：NOT_STARTED
+- ADR：`sunmoonai/docs/mooc-manus-v5/adr/ADR-006-durable-asynchronous-delivery.md`。
+- 决策候选：transactional local outbox + `FOR UPDATE SKIP LOCKED` lease scanner + at-least-once publish + stable operation idempotency。RabbitMQ/Celery 不是事实源，broker transaction/result backend 不能取代 outbox；不承诺跨 DB/Broker/Provider exactly-once。
+- P0 原型链路：Info `DistributionRecord`（用户实际请求 dispatch/retry/re-dispatch）与 `delivery_outbox_message` 在同一 transaction 写入；HTTP 只作 best-effort kick；有界 CLI scanner 从 pending/过期 leased/未确认 published 中恢复；worker 只在 Knowledge business success 后确认 completed。只创建待审核分发记录时不自动入队，保留既有 API 语义。
+- 实施：Info migration `20260714_0004`、outbox state machine/lease/retry、stable Celery task ID、worker acknowledgement、`app.cli.drain_delivery_outbox`；随后在 KIND 用受限 CronJob 部署 scanner。暂不把 Info helper 抽成四仓 SDK，不修改 Knowledge/Research 业务消息链路。
+- 测试：同事务写入、DB commit 后阻断 RabbitMQ、dispatcher/worker restart、重复 publish、两个 dispatcher 竞争、Broker accept 后 DB 写入中断、外部 ingestion 后 worker kill/retry；所有情况核对 stable distribution/operation ID、Knowledge 幂等效果、outbox terminal state 和无 credential 输出。
+- 验收：ADR-006 获批；选定方案能自动发现并补投，不产生重复业务效果；CronJob/image digest/ServiceAccount/最小网络权限/指标/runbook 已验证；明确 M1 各仓落地任务。
+- 状态：IN_PROGRESS / INFO_PROTOTYPE_IMPLEMENTED_NOT_ACCEPTED（2026-07-14：Info 本地代码、Alembic head、CLI help、75 个单元测试和 `pyright app core` 已通过；尚未 build/deploy image、尚未应用 migration、尚未在 KIND 执行 RabbitMQ/Knowledge fault matrix，故不得标记 ACCEPTED、不得变更 `1.0.1` 或任何正式 tag。）
 
 ### 前端物理仓库与差异基线（2026-07-13）
 
@@ -332,9 +335,9 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 测试：真实 contract/provider、匿名/403/过期 session、hash mismatch、对象缺失、重复操作、并发冲突、XSS/危险 URL、刷新恢复、Nginx/Docker/K8s 隔离 smoke。
 - 验收：不依赖 mock ingestion success；Vue/React 可并行部署但仅隔离测试入口访问；React 页面能沿 operation/correlation ID 对账；有明确旧 Vue 回滚路径。
 - 证据：模板源 commit -> Info 实例 commit 映射、contract digest、E2E trace、镜像/deployment digest、差异与回流清单。
-- 状态：ACCEPTED（2026-07-14：已创建并记录迁移前 tag `p0-007b-info-admin-vue-baseline-20260714`，冻结 Vue commit、父仓指针、当前镜像 tag/digest 和运行 Pod；React 业务竖切已推送为 Info `42e524e`、父仓 `f4e6e41`，K8s 同源 API 路由及隔离证据已推送至 `245918d`，typecheck/lint/test/build、Docker/Nginx、KIND 严格 TLS/同源 API 隔离 smoke、真实 Info Casdoor 浏览器身份矩阵、真实 Info 业务 contract/E2E（含刷新恢复）、候选后端审核/实体链接/摘要画像可恢复 mutation→审计对账→状态恢复和候选前后端联合严格 TLS 均通过；旧 candidate 的真实浏览器诊断发现严格 CSP 拦截 React Router 4 个内联启动脚本并导致空白页，模板 `c8b2bd0`、Info 前端 `1f86ee7`、Info 父仓 `85cb800` 已补构建期 CSP hash 生成；新候选模板 digest 为 `sha256:ad35b3c97a9a89626ae998297da2e0348d1648b418b26ab4c178f387f88fb9fa`、Info 前端 digest 为 `sha256:f553514576d4d1bf15722aeceb514e710d6d91f7af3d2b65f302e6df9c5f4087`，模板无头浏览器 CSP 验证和 Info KIND 严格 TLS/同源 Casdoor 业务 E2E 均通过；生产 `ENV=production` 对 HTTP Casdoor redirect URI 按预期 fail-closed；来源/Collector/上传/分发真实 mutation 矩阵、残余安全/恢复矩阵和并发远程 digest 复验均通过（危险 URL `422`、XSS 文本安全渲染、重复回放 `200/409`、并发双写 `409/200`、显式恢复、无外连、无凭据输出和隔离清理）；Info 并发候选已推送 Harbor：后端 `sha256:d665089b011e798d2be0da2ad3f17c182259869fb970a7abfb14872214707dea`、前端 `sha256:3c1a7e4ad40d5e0abea4f7ad629ac6362216c4ea7cd910f3d1f2c8620ee6cd8b`，正式前后端仍为 `1.0.1`，待按新正式版本号固化，不覆盖旧回滚基线）
+- 状态：ACCEPTED（2026-07-14：已创建并记录迁移前 tag `p0-007b-info-admin-vue-baseline-20260714`，冻结 Vue commit、父仓指针、当前镜像 tag/digest 和运行 Pod；React 业务竖切已推送为 Info `42e524e`、父仓 `f4e6e41`，K8s 同源 API 路由及隔离证据已推送至 `245918d`，typecheck/lint/test/build、Docker/Nginx、KIND 严格 TLS/同源 API 隔离 smoke、真实 Info Casdoor 浏览器身份矩阵、真实 Info 业务 contract/E2E（含刷新恢复）、候选后端审核/实体链接/摘要画像可恢复 mutation→审计对账→状态恢复和候选前后端联合严格 TLS 均通过；旧 candidate 的真实浏览器诊断发现严格 CSP 拦截 React Router 4 个内联启动脚本并导致空白页，模板 `c8b2bd0`、Info 前端 `1f86ee7`、Info 父仓 `85cb800` 已补构建期 CSP hash 生成；新候选模板 digest 为 `sha256:ad35b3c97a9a89626ae998297da2e0348d1648b418b26ab4c178f387f88fb9fa`、Info 前端 digest 为 `sha256:f553514576d4d1bf15722aeceb514e710d6d91f7af3d2b65f302e6df9c5f4087`，模板无头浏览器 CSP 验证和 Info KIND 严格 TLS/同源 Casdoor 业务 E2E 均通过；生产 `ENV=production` 对 HTTP Casdoor redirect URI 按预期 fail-closed；来源/Collector/上传/分发真实 mutation 矩阵、残余安全/恢复矩阵和并发远程 digest 复验均通过（危险 URL `422`、XSS 文本安全渲染、重复回放 `200/409`、并发双写 `409/200`、显式恢复、无外连、无凭据输出和隔离清理）；Info 并发候选已推送 Harbor：后端 `sha256:d665089b011e798d2be0da2ad3f17c182259869fb970a7abfb14872214707dea`、前端 `sha256:3c1a7e4ad40d5e0abea4f7ad629ac6362216c4ea7cd910f3d1f2c8620ee6cd8b`；正式生产 tag 尚未变更，`1.0.1` 仍是旧 Vue 回滚基线，任何新正式版本号须在统一 release decision 后确定）
 - 基线证据：`sunmoonai/docs/evidence/v5/V5-P0-007B/result.md`。
-- 当前实施顺序：先复制冻结 React Admin v1 到 Info 现有前端目录；再以 Info 业务 adapter/route 逐步迁移 `src/pages/info/crawl.vue` 的文档、审核、画像、分发、上传和创建任务能力；来源/Collector/上传/分发真实 mutation 矩阵、残余安全/恢复矩阵和同一远程 digest 的严格 TLS/浏览器复验均已通过；并发修正由后端行锁+`expected_updated_at` 和 React mutation 版本传递实现。P0-007B 已 ACCEPTED；候选 digest 保持不可变，正式 `1.1.0` tag 提升排在 P0-007C（模板修正与 `TEMPLATE_MIGRATION_READY`）之后，再执行正式 Deployment 的 digest 核对、canary 和回滚验证；旧 `1.0.1` 保持为 Vue 回滚基线，不覆盖、不删除。浏览器验收必须同时转发后端 OIDC 回调端口 `18082:8000` 和前端端口 `19082:80`，不得只转发前端。
+- 当前实施顺序：先复制冻结 React Admin v1 到 Info 现有前端目录；再以 Info 业务 adapter/route 逐步迁移 `src/pages/info/crawl.vue` 的文档、审核、画像、分发、上传和创建任务能力；来源/Collector/上传/分发真实 mutation 矩阵、残余安全/恢复矩阵和同一远程 digest 的严格 TLS/浏览器复验均已通过；并发修正由后端行锁+`expected_updated_at` 和 React mutation 版本传递实现。P0-007B 已 ACCEPTED；候选 digest 保持不可变，正式生产 tag 暂不提升，尤其不得执行旧草案中的 `1.1.0` promotion，也不得覆盖现有 `1.0.1`。待 Knowledge/Research Admin React 迁移和统一 release decision 完成后，再按组件级 digest、canary 和回滚验证确定正式版本；旧 `1.0.1` 保持为 Vue 回滚基线，不覆盖、不删除。浏览器验收必须同时转发后端 OIDC 回调端口 `18082:8000` 和前端端口 `19082:80`，不得只转发前端。
 
 ### V5-P0-007C React Admin v1 修正与冻结
 

@@ -89,3 +89,28 @@ PostgreSQL checkpointer 跨连接/替代 worker 恢复：
 ```
 
 该复验只确认 Spike 可重复运行且不破坏 Research Admin 现有测试；不增加真实 `SIGKILL`、同 Thread 并发、cancel、cursor streaming、双副本或候选 B/C 的证据。因此结论仍为 `PARTIAL_PASS`，ADR-001 仍不得 Accepted。
+
+## 2026-07-14 事件交付补强
+
+在不把隔离 Spike 接入生产 Runner 的前提下，Research Admin 对两个已确认的交付缺口
+完成了最小修正：
+
+- `session_events` 的 per-session `sequence_no` 分配在 `append_event` 事务内使用
+  `pg_advisory_xact_lock(hashtextextended(session_id, 0))`，消除 API/worker 并发
+  `max(sequence_no)+1` 冲突；未改变表结构和外部契约。
+- SSE 先订阅 Redis，再读取数据库 durable snapshot；对 snapshot 与 live UI event
+  的重叠按 event id 去重，同时保留 `LiveDelta`（它与 UI event 具有不同语义）。
+- 新增 `tests/test_agent_stream_delivery.py`，验证 subscribe-before-snapshot、重叠
+  UI event 去重、LiveDelta 保留和资源清理。
+
+验证：
+
+```text
+.venv/bin/pytest -q
+79 passed in 1.18s
+.venv/bin/pyright app
+0 errors, 0 warnings, 0 informations
+```
+
+这只是交付层补强，不等同于 Runtime 选型通过；真实 worker kill、cancel、cursor
+恢复、双副本、故障矩阵及候选 B/C 对照仍未完成，ADR-001 继续保持 `PARTIAL_PASS`。
