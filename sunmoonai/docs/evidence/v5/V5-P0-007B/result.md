@@ -1,6 +1,6 @@
 # V5-P0-007B Info Admin 真实业务试点
 
-状态：`IN_PROGRESS`（迁移前基线已冻结；React 业务竖切已在本地实现，尚待依赖安装、浏览器/构建、隔离部署和真实后端验收）
+状态：`IN_PROGRESS`（迁移前基线已冻结；React 业务竖切和同源 API 拓扑已在本地实现，尚待候选镜像、隔离部署、浏览器和真实后端验收）
 
 ## 迁移前基线
 
@@ -38,12 +38,13 @@ React Admin v1 完整消费已冻结的 `tpl-admin-frontend@f24500f6d8f437a0162f
 
 ## 当前实现快照（未验收）
 
-- 本地实现提交：Info Admin `5311569a7287717539f5fcac592f73c7fad0f124`；父仓指针 `info-app@af9dee626ef623befb83391828dd3ddb70675800`；canonical 模板通用修正 `tpl-admin-frontend@f8d6ac86198ee2acfdf6f5b3e3ad49031c279779`（父仓 `tpl-app@b7cf6bf1dcae85ac54c1615874879ec0e0ce9462`）。这些都是本地提交，尚未推送或发布。
+- 本地实现提交：Info Admin `42e524e`（完整实现基线为其父提交 `5311569a7287717539f5fcac592f73c7fad0f124`）；父仓指针 `info-app@f4e6e41`；canonical 模板通用修正 `tpl-admin-frontend@f8d6ac86198ee2acfdf6f5b3e3ad49031c279779`（父仓 `tpl-app@b7cf6bf1dcae85ac54c1615874879ec0e0ce9462`）。K8s 同源 API 路由模板为 `k8s@570f969`。这些都是本地提交，尚未推送或发布。
 - React 基线已在现有 `info-admin-frontend` 子仓库原地替换；旧 Vue 源码保留在迁移前 Git tag，不作为当前工作树运行时。
 - 新增 `app/lib/info-api.ts`：所有领域请求显式走 `/api`，JSON mutation 自动声明 `Content-Type`，上传保持浏览器 multipart boundary；审计 mutation 由 correlation/operation/reason headers 传递。
+- 生产构建默认 `VITE_API_URL=`；Info Admin IngressRoute 已把同一 Host 的 `/api` 按顺序转发到 `info-admin-backend:8000`，`/` 才转发到前端，保持 CSP `connect-src 'self'`、session/CSRF cookie 和 OIDC 回调在同一浏览器 Origin。KIND 临时 OIDC 的 `127.0.0.1` 值仍只能由隔离脚本覆盖，不是生产默认。
 - 新增 `app/routes/info-crawl.tsx` 和 `/info/crawl` 导航：URL crawl、source、collector/discover、上传、文档筛选/选择/版本、单条/批量审核、实体链接、摘要画像、Knowledge 分发/详情/dispatch/retry 均使用真实 API，不提供 mock success。
 - 通用 `apiRequest` 的 JSON Content-Type 修正同步回 canonical React Admin 模板及其单元测试；该修正属于 template/common，不能把 Info DTO 或页面回流模板。
-- 已增加 Info API adapter、导航和通用请求头测试；操作员安装 React 依赖后，Info `typecheck`、`lint` 和 `test` 已通过（11 files / 43 tests），并清理了 Ant Design 弃用 API 和测试 warning。Docker/build 与隔离浏览器/真实后端门禁仍未验收。
+- 已增加 Info API adapter、导航和通用请求头测试；Info `typecheck`、`lint` 和 `test` 已通过（11 files / 43 tests），并清理了 Ant Design 弃用 API 和测试 warning；生产 `pnpm build` 已在允许临时 preview 监听的环境通过。Docker/候选镜像、隔离浏览器/严格 TLS 和真实后端门禁仍未验收。
 
 ## 验收前明确禁止
 

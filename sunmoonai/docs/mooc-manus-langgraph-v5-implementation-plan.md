@@ -332,7 +332,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 测试：真实 contract/provider、匿名/403/过期 session、hash mismatch、对象缺失、重复操作、并发冲突、XSS/危险 URL、刷新恢复、Nginx/Docker/K8s 隔离 smoke。
 - 验收：不依赖 mock ingestion success；Vue/React 可并行部署但仅隔离测试入口访问；React 页面能沿 operation/correlation ID 对账；有明确旧 Vue 回滚路径。
 - 证据：模板源 commit -> Info 实例 commit 映射、contract digest、E2E trace、镜像/deployment digest、差异与回流清单。
-- 状态：IN_PROGRESS（2026-07-14：已创建并记录迁移前 tag `p0-007b-info-admin-vue-baseline-20260714`，冻结 Vue commit、父仓指针、当前镜像 tag/digest 和运行 Pod；React 业务竖切本地提交为 Info `5311569a7287717539f5fcac592f73c7fad0f124`、父仓 `af9dee626ef623befb83391828dd3ddb70675800`，typecheck/lint/test 已通过且测试 warning 已清理，尚待 Docker/build、隔离 Deployment/Ingress 和真实后端 E2E；不得切正式流量）
+- 状态：IN_PROGRESS（2026-07-14：已创建并记录迁移前 tag `p0-007b-info-admin-vue-baseline-20260714`，冻结 Vue commit、父仓指针、当前镜像 tag/digest 和运行 Pod；React 业务竖切提交为 Info `42e524e`、父仓 `f4e6e41`，K8s 同源 API 路由提交为 `570f969`，typecheck/lint/test/build 已通过且测试 warning 已清理，尚待候选镜像、隔离 Deployment/Ingress、严格 TLS/浏览器和真实后端 E2E；不得切正式流量）
 - 基线证据：`sunmoonai/docs/evidence/v5/V5-P0-007B/result.md`。
 - 当前实施顺序：先复制冻结 React Admin v1 到 Info 现有前端目录；再以 Info 业务 adapter/route 逐步迁移 `src/pages/info/crawl.vue` 的文档、审核、画像、分发、上传和创建任务能力；当前本地已完成第一条真实竖切（`/info/crawl` + typed adapter + 审计 mutation），下一步必须由操作员重新安装 React 依赖并通过 typecheck/lint/test/build，再使用新 candidate 镜像做隔离 Deployment/Ingress、严格 TLS/浏览器/真实后端 E2E。每一阶段使用真实 `/api` contract、无 mock success、可回滚镜像。
 
