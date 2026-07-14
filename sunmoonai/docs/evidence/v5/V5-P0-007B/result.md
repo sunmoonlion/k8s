@@ -1,6 +1,6 @@
 # V5-P0-007B Info Admin 真实业务试点
 
-状态：`IN_PROGRESS`（迁移前基线已冻结；React 业务竖切、候选镜像和隔离严格 TLS 已通过，尚待真实浏览器会话和后端业务 contract/E2E 验收）
+状态：`IN_PROGRESS`（迁移前基线已冻结；React 业务竖切、候选镜像、隔离严格 TLS、真实浏览器身份和业务 contract/E2E 已通过；尚待新后端候选镜像的 mutation/审计对账及回滚证据）
 
 ## 迁移前基线
 
@@ -38,7 +38,7 @@ React Admin v1 完整消费已冻结的 `tpl-admin-frontend@f24500f6d8f437a0162f
 
 ## 当前实现快照（未验收）
 
-- 本地实现提交：Info Admin `42e524e`（完整实现基线为其父提交 `5311569a7287717539f5fcac592f73c7fad0f124`）；父仓指针 `info-app@f4e6e41`；canonical 模板通用修正 `tpl-admin-frontend@f8d6ac86198ee2acfdf6f5b3e3ad49031c279779`（父仓 `tpl-app@b7cf6bf1dcae85ac54c1615874879ec0e0ce9462`）。K8s 同源 API 路由模板为 `k8s@570f969`。这些都是本地提交，尚未推送或发布。
+- 前端实现已推送：Info Admin `42e524e`，父仓 `info-app@f4e6e41`；canonical 模板通用修正 `tpl-admin-frontend@f8d6ac8`（父仓 `tpl-app@b7cf6bf`）；K8s 同源 API 路由与隔离证据提交已推送至 `k8s@245918d`。候选镜像已推送，但尚未覆盖正式 `1.0.1`。
 - React 基线已在现有 `info-admin-frontend` 子仓库原地替换；旧 Vue 源码保留在迁移前 Git tag，不作为当前工作树运行时。
 - 新增 `app/lib/info-api.ts`：所有领域请求显式走 `/api`，JSON mutation 自动声明 `Content-Type`，上传保持浏览器 multipart boundary；审计 mutation 由 correlation/operation/reason headers 传递。
 - 生产构建默认 `VITE_API_URL=`；Info Admin IngressRoute 已把同一 Host 的 `/api` 按顺序转发到 `info-admin-backend:8000`，`/` 才转发到前端，保持 CSP `connect-src 'self'`、session/CSRF cookie 和 OIDC 回调在同一浏览器 Origin。KIND 临时 OIDC 的 `127.0.0.1` 值仍只能由隔离脚本覆盖，不是生产默认。
@@ -49,6 +49,7 @@ React Admin v1 完整消费已冻结的 `tpl-admin-frontend@f24500f6d8f437a0162f
 - Docker/Nginx smoke 已通过；KIND 隔离 `info-admin-frontend-p0-007b` 已用固定 digest 完成严格 CA/SNI 验收：`/health`、首页、`/info/crawl`、未知 asset `404`、同源 `/api/auth/me=401`、CSP 和无 Node runtime 均通过。临时 Deployment、Service、IngressRoute 已自动删除；正式 `info-admin-frontend:1.0.1` 与 `info-admin-backend:1.0.1` 未改变。首次 port-forward 建立前的瞬时 `curl (7)` 已由 readiness loop 收敛，不作为失败证据。
 - 真实 Info 浏览器身份矩阵已通过（`verify_p0_005_browser.mjs`，`P0_BROWSER_APPS=info`、严格 TLS、真实 Casdoor/KIND backend、Info React 工作树）：`authenticated_me=200`、stable actor binding、callback one-time、HttpOnly session cookie、transaction cookie consumed、Admin role/scope、4 个 CSRF negative cases、CORS=200、positive logout、session revoked 全部通过；provider UI 一次完成（569ms），`credentials_printed=false`、`provider_tokens_printed=false`。首次运行的 Vite 冷启动依赖优化失败已在重试中消除，不计为业务失败。
 - 真实 Info 业务 E2E 已通过（临时 port-forward + 当前 Info React 客户端，未写入业务数据）：`/info/crawl` 页面登录后渲染并在刷新后恢复；`/api/auth/me=200` 且 CSRF 存在；`/api/documents`、`/api/admin/sources`、`/api/admin/collectors`、`/api/admin/distributions` 均返回 `200` 数组；携带正确 CSRF 的非法 `POST /api/admin/crawl-jobs` 返回 `422`；浏览器无意外外连，凭据未输出。未带 CSRF 的同一请求先返回 `403`，证明安全门禁优先于 schema 校验。
+- 本轮复盘发现并修复后端审计上下文缺口：后端现在生成/回显受校验的 `X-Correlation-ID`，允许并回显 `X-Operation-ID`，允许 `X-Audit-Reason` CORS 头；已认证 actor 会进入请求上下文，文档审核和 Knowledge 分发状态/重试会把 correlation、operation、actor、reason 写入内部审计记录，并在下游 Artifact Contract 载荷中剔除内部审计字段。后端单测/类型检查当前为 `67 passed`、`pyright 0 errors`；该修复仍需构建新候选镜像、隔离部署后做真实 mutation→审计读取→状态恢复验证。
 
 ## 验收前明确禁止
 
@@ -62,4 +63,4 @@ React Admin v1 完整消费已冻结的 `tpl-admin-frontend@f24500f6d8f437a0162f
 3. 重新部署并确认镜像 tag `1.0.1`、digest `sha256:3ce28192f97bd38a46d47b3bc357b9d826f219cff79fa47bd05dbdb84180bc98`。
 4. 通过现有 Info Admin 严格 TLS、session、403 和业务 smoke 后，才可关闭试点回滚窗口。
 
-下一证据必须同时包含：React Info 实例提交、父仓指针、迁移镜像 tag+digest、隔离 Deployment/Ingress、真实后端 contract/E2E、失败矩阵和回滚演练。
+下一证据必须同时包含：React Info 实例提交、父仓指针、迁移镜像 tag+digest、隔离 Deployment/Ingress、真实 mutation→审计对账→恢复、失败矩阵和回滚演练；在此之前不能把 P0-007B 标记为 `ACCEPTED`。
