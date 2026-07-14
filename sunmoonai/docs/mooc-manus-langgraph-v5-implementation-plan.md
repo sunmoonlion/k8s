@@ -317,6 +317,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 测试：模板全量 typecheck/lint/unit/component/Playwright/a11y；组件行为和错误状态矩阵；route/base path/Nginx/Docker smoke；clean-room 从固定 commit 重新生成；Vue/React 映射无未解释项。
 - 验收：能力矩阵无未分配的 `MUST` 项；所有 `DEFER` 有批准的 ADR/任务；从干净目录可重复构建；核心组件行为、权限和可访问性通过；状态命名为 `TEMPLATE_MIGRATION_READY`。只有本任务通过后，P0-007B 和三个 App 的 React 基础前端替换才可开始。
 - 状态：IN_PROGRESS（A2.1、A2.2 已接受；A2.3 当前施工包，A2.4/A2.5 尚未开始；P0-007A 现有证据不替代本任务）
+- A2.3 当前施工已在 `tpl-admin-frontend` 开始：首批 `DataTable`、`SchemaForm`、`ResourceDescription`、`AuditedActionModal`、通知、上传 adapter 和 same-origin 下载工具已实现，并以 Reference Page 中性 fixture 验证。仍需补服务端分页/排序 adapter、受审计写操作 correlation 对账、通知集成和可访问性矩阵；未完成前不得进入 A2.4。
 
 ### V5-P0-007B Info Admin 真实业务试点
 
