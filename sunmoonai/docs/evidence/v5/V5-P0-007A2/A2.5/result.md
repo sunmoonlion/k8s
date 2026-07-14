@@ -1,12 +1,12 @@
 # V5-P0-007A2 / A2.5 Production Gate
 
-状态：`IN_PROGRESS`（clean-room 已接受；Docker/KIND 待验收）
+状态：`IN_PROGRESS`（clean-room、Docker/Nginx 本地 smoke 已接受；Harbor digest/KIND 待验收）
 
 ## 固定实现
 
 - 模板仓库：`tpl-admin-frontend`
-- 实现提交：`dabd541d59f553a83b23559ac6564a98dcbff1ca`
-- 父仓指针：`tpl-app@eac78686e819148e5528f00d55c4852e4d56e252`
+- 实现提交：`168ed144e419a5b4b01abc2224d345a8ccd9785a`
+- 父仓指针：`tpl-app@b884ad404940e92013979642db82ab178c95b5af`
 - 业务 App：未修改，未部署，未切流量。
 
 ## 已通过的模板本地门禁
@@ -31,11 +31,15 @@ BASE_PATH=/admin pnpm build # passed; assets use /admin/assets/*
 
 从固定 `488585f81a13e8d2f51378dffb36f653b90dc881` 全新目录完成离线安装和全量门禁：39 个 Vitest、`verify:production`、typecheck、lint、正式 build、7 个 Chromium Playwright 全部通过。工作目录：`/tmp/tpl-admin-frontend-a25-clean.XEHGyu`。
 
+## Docker/Nginx 结果
+
+候选镜像：`tpl-admin-frontend:a25-candidate-20260714`。容器 `tpl-admin-frontend-a25-smoke` 通过 `/health`、根页面、`/rich-reference` deep-link、未知 asset `404`、CSP 响应头、`nginx -t`，并确认运行容器不存在 Node runtime。第一次 readiness probe 出现一次 `curl 56` 连接重置，随后重试成功；该瞬态已通过显式 readiness loop 收敛，不能作为失败证据。当前尚未产生 Harbor 镜像 digest。
+
 ## 尚未完成的外部门禁
 
 以下项目必须在目标 Docker/KIND 环境执行并回填原始命令、镜像 digest、部署 commit 和清理结果后，才能把状态改为 `ACCEPTED` / `TEMPLATE_MIGRATION_READY`：
 
-1. 使用固定 commit 构建候选镜像；验证 `/health`、`/`、SPA deep link、未知 asset 404、响应安全头、`nginx -t`，并确认运行容器无 Node runtime。
+1. 将候选镜像推送到 Harbor，记录不可变镜像 digest。
 2. 以固定镜像 digest 部署 KIND 隔离入口，执行严格 TLS/浏览器 smoke，并记录回滚路径。
 3. 只有以上证据齐全，才可勾选能力矩阵 P0-007A2 退出条件并开始 P0-007B；在此之前禁止同步三个业务 Admin。
 
