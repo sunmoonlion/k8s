@@ -11,7 +11,7 @@
 - API immediate kick 仅为加速，不因 RabbitMQ 故障回滚已持久化业务命令；worker 在 Knowledge business success 后才确认 outbox complete。
 - scanner CLI：`python -m app.cli.drain_delivery_outbox --limit 50`；尚未在集群运行。
 - 现有 Info worker 资源会生成独立 scanner ServiceAccount/CronJob，默认 `suspend: true`；它只引入 PostgreSQL 与 RabbitMQ secret，不引入 Knowledge service client 或浏览器 OIDC secret。
-- KIND 故障验证器已准备：`sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_006_kind.py`。它会临时阻断 API 的 broker wake-up、验证两个 scanner 的单次 lease 竞争并检查 CronJob 恢复后回到 `suspend: true`；尚未针对集群执行。
+- KIND 故障验证器已准备：`sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_006_kind.py`。它会临时阻断 API 的 broker wake-up、验证两个 scanner 的单次 lease 竞争、注入“Broker accept 后/published 写库前”与“Provider effect 后/outbox ack 前”中断，并检查 CronJob 恢复后回到 `suspend: true`；所有临时 API/Knowledge/CronJob/测试队列状态在 `finally` 清理，尚未针对集群执行。
 
 ## 已执行的本地验证
 

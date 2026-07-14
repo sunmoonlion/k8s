@@ -15,7 +15,7 @@ import subprocess
 import sys
 import time
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable
 
@@ -83,6 +83,8 @@ async def main():
             "state": row.state,
             "attempt_count": row.attempt_count,
             "available_at": row.available_at.isoformat() if row.available_at else None,
+            "lease_expires_at": row.lease_expires_at.isoformat() if row.lease_expires_at else None,
+            "published_at": row.published_at.isoformat() if row.published_at else None,
             "has_broker_message_id": bool(row.broker_message_id),
             "has_last_error": bool(row.last_error),
         }, sort_keys=True))
@@ -136,16 +138,25 @@ def wait_for_outbox(
 
 
 def scanner_job_yaml(
-    *, namespace: str, name: str, image: str, broken_broker: bool
+    *,
+    namespace: str,
+    name: str,
+    image: str,
+    broken_broker: bool,
+    ack_timeout_seconds: int | None = None,
 ) -> str:
-    broker_override = ""
+    extra_env: list[tuple[str, str]] = []
     if broken_broker:
         # Deliberately non-routable test endpoint; no real credential is used.
-        broker_override = """
-        env:
-        - name: CELERY_BROKER_URL
-          value: amqp://127.0.0.1:1/p0
-"""
+        extra_env.append(("CELERY_BROKER_URL", "amqp://127.0.0.1:1/p0"))
+    if ack_timeout_seconds is not None:
+        extra_env.append(("DELIVERY_OUTBOX_ACK_TIMEOUT_SECONDS", str(ack_timeout_seconds)))
+    env_override = ""
+    if extra_env:
+        env_override = "\n        env:\n" + "".join(
+            f"        - name: {name}\n          value: {value}\n"
+            for name, value in extra_env
+        )
     return f"""apiVersion: batch/v1
 kind: Job
 metadata:
@@ -185,11 +196,17 @@ spec:
             name: celeryworker-info-admin-backend-secret
         - secretRef:
             name: info-admin-backend-postgresql-conn
-{broker_override}"""
+{env_override}"""
 
 
 def create_scanner_job(
-    *, kubeconfig: str, namespace: str, name: str, image: str, broken_broker: bool
+    *,
+    kubeconfig: str,
+    namespace: str,
+    name: str,
+    image: str,
+    broken_broker: bool,
+    ack_timeout_seconds: int | None = None,
 ) -> None:
     kubectl(
         ["apply", "-f", "-"],
@@ -199,6 +216,7 @@ def create_scanner_job(
             name=name,
             image=image,
             broken_broker=broken_broker,
+            ack_timeout_seconds=ack_timeout_seconds,
         ),
     )
     kubectl(
@@ -233,6 +251,235 @@ def scanner_job_summary(*, kubeconfig: str, namespace: str, name: str) -> dict[s
                 "broker_failures": int(value.get("broker_failures", 0)),
             }
     raise VerificationError(f"scanner job {name} did not emit a count summary")
+
+
+def deployment_python_expect_exit(
+    *,
+    kubeconfig: str,
+    namespace: str,
+    deployment: str,
+    program: str,
+    program_args: list[str],
+    expected_exit: int,
+    label: str,
+) -> None:
+    """Run a bounded, credential-silent fault process inside an existing pod."""
+    try:
+        result = subprocess.run(
+            [
+                "kubectl",
+                "--kubeconfig",
+                kubeconfig,
+                "exec",
+                "-n",
+                namespace,
+                f"deploy/{deployment}",
+                "--",
+                ".venv/bin/python",
+                "-c",
+                program,
+                *program_args,
+            ],
+            check=False,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=180,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise VerificationError(f"{label} timed out") from exc
+    if result.returncode != expected_exit:
+        # Do not surface captured process output: it can contain infrastructure
+        # details and is not needed to explain a deterministic verifier failure.
+        raise VerificationError(
+            f"{label} exited {result.returncode}, expected {expected_exit}"
+        )
+
+
+_PUBLISH_THEN_EXIT = r"""
+import asyncio
+import os
+import sys
+import uuid
+from datetime import timedelta
+
+os.environ["CELERY_QUEUE"] = sys.argv[2]
+
+from sqlalchemy import select
+from app.application.services.delivery_outbox import STATE_LEASED, STATE_PENDING, _now
+from app.infrastructure.messaging.celery_producer import get_celery_producer
+from app.infrastructure.models.info import DeliveryOutboxMessage
+from app.infrastructure.storage.postgres import get_postgres
+from core.config import get_settings
+
+async def main():
+    distribution_id = uuid.UUID(sys.argv[1])
+    postgres = get_postgres()
+    await postgres.init()
+    async with postgres.session_factory() as session:
+        result = await session.execute(
+            select(DeliveryOutboxMessage)
+            .where(DeliveryOutboxMessage.aggregate_id == distribution_id)
+            .with_for_update()
+        )
+        row = result.scalar_one()
+        now = _now()
+        if row.state != STATE_PENDING or row.available_at > now:
+            raise RuntimeError("fault message is not due and pending")
+        row.state = STATE_LEASED
+        row.lease_token = uuid.uuid4()
+        row.lease_expires_at = now + timedelta(
+            seconds=get_settings().delivery_outbox_lease_seconds
+        )
+        row.attempt_count += 1
+        await session.commit()
+        get_celery_producer().dispatch_distribution(
+            distribution_id, outbox_message_id=row.id
+        )
+        # Intentionally skip mark_delivery_outbox_published.  The parent
+        # verifier expects this process to disappear at this exact window.
+        os._exit(86)
+
+asyncio.run(main())
+"""
+
+
+_FORCE_PUBLISHED = r"""
+import asyncio
+import sys
+import uuid
+
+from sqlalchemy import select
+from app.application.services.delivery_outbox import STATE_PENDING, STATE_PUBLISHED, _now
+from app.infrastructure.models.info import DeliveryOutboxMessage
+from app.infrastructure.storage.postgres import get_postgres
+
+async def main():
+    distribution_id = uuid.UUID(sys.argv[1])
+    postgres = get_postgres()
+    await postgres.init()
+    async with postgres.session_factory() as session:
+        result = await session.execute(
+            select(DeliveryOutboxMessage)
+            .where(DeliveryOutboxMessage.aggregate_id == distribution_id)
+            .with_for_update()
+        )
+        row = result.scalar_one()
+        now = _now()
+        if row.state != STATE_PENDING or row.available_at > now:
+            raise RuntimeError("provider fault message is not due and pending")
+        row.state = STATE_PUBLISHED
+        row.attempt_count += 1
+        row.lease_token = None
+        row.lease_expires_at = None
+        row.broker_message_id = "p0-provider-effect-control"
+        row.published_at = now
+        row.last_error = None
+        await session.commit()
+    await postgres.shutdown()
+
+asyncio.run(main())
+"""
+
+
+_WORKER_EFFECT_THEN_EXIT = r"""
+import asyncio
+import os
+import sys
+import uuid
+
+from app.application.services.info_crawl_service import dispatch_distribution
+from app.infrastructure.storage.postgres import get_postgres
+
+async def main():
+    postgres = get_postgres()
+    await postgres.init()
+    async with postgres.session_factory() as session:
+        record = await dispatch_distribution(
+            session, distribution_id=uuid.UUID(sys.argv[1])
+        )
+        if record.status != "succeeded":
+            raise RuntimeError("provider effect did not reach succeeded state")
+        # Simulate a worker process loss after the downstream side effect and
+        # before task code can acknowledge the durable outbox operation.
+        os._exit(87)
+
+asyncio.run(main())
+"""
+
+
+_DELETE_FAULT_QUEUE = r"""
+import os
+import sys
+
+os.environ["CELERY_QUEUE"] = sys.argv[1]
+
+from app.worker import celery_app, configure_celery
+
+configure_celery(require_broker=True)
+with celery_app.connection_for_write() as connection:
+    channel = connection.channel()
+    try:
+        channel.queue_delete(queue=sys.argv[1])
+    finally:
+        channel.close()
+"""
+
+
+def force_broker_accept_then_exit(
+    *, kubeconfig: str, namespace: str, distribution_id: str, queue: str
+) -> None:
+    """Publish to a unique unconsumed queue, then exit before published is saved."""
+    deployment_python_expect_exit(
+        kubeconfig=kubeconfig,
+        namespace=namespace,
+        deployment="info-admin-backend",
+        program=_PUBLISH_THEN_EXIT,
+        program_args=[distribution_id, queue],
+        expected_exit=86,
+        label="broker accept-before-published fault process",
+    )
+
+
+def force_published_for_provider_fault(
+    *, kubeconfig: str, namespace: str, distribution_id: str
+) -> None:
+    """Isolate the provider/acknowledgement window after broker semantics are tested."""
+    deployment_python_expect_exit(
+        kubeconfig=kubeconfig,
+        namespace=namespace,
+        deployment="info-admin-backend",
+        program=_FORCE_PUBLISHED,
+        program_args=[distribution_id],
+        expected_exit=0,
+        label="provider acknowledgement control setup",
+    )
+
+
+def force_provider_effect_then_exit(
+    *, kubeconfig: str, namespace: str, distribution_id: str
+) -> None:
+    deployment_python_expect_exit(
+        kubeconfig=kubeconfig,
+        namespace=namespace,
+        deployment="celeryworker-info-admin-backend",
+        program=_WORKER_EFFECT_THEN_EXIT,
+        program_args=[distribution_id],
+        expected_exit=87,
+        label="provider effect-before-outbox-ack fault process",
+    )
+
+
+def delete_fault_queue(*, kubeconfig: str, namespace: str, queue: str) -> None:
+    deployment_python_expect_exit(
+        kubeconfig=kubeconfig,
+        namespace=namespace,
+        deployment="info-admin-backend",
+        program=_DELETE_FAULT_QUEUE,
+        program_args=[queue],
+        expected_exit=0,
+        label="temporary broker queue cleanup",
+    )
 
 
 def assert_candidate_images(*, kubeconfig: str, namespace: str, image: str) -> None:
@@ -346,15 +593,24 @@ def set_info_api_broker_override(
     )
 
 
-def wait_until_outbox_due(row: dict[str, Any]) -> None:
-    """Wait for the configured retry deadline instead of assuming five seconds."""
-    available_at = row.get("available_at")
-    if not available_at:
-        raise VerificationError("recovered outbox row did not contain available_at")
-    due_at = datetime.fromisoformat(str(available_at).replace("Z", "+00:00"))
+def wait_until_timestamp(
+    value: str | None, *, description: str, after_seconds: int = 0
+) -> None:
+    if not value:
+        raise VerificationError(f"{description} did not contain a timestamp")
+    due_at = datetime.fromisoformat(str(value).replace("Z", "+00:00")) + timedelta(
+        seconds=after_seconds
+    )
     remaining = (due_at - datetime.now(UTC)).total_seconds()
     if remaining > 0:
         time.sleep(remaining + 1)
+
+
+def wait_until_outbox_due(row: dict[str, Any]) -> None:
+    """Wait for the configured retry deadline instead of assuming five seconds."""
+    wait_until_timestamp(
+        row.get("available_at"), description="recovered outbox row available_at"
+    )
 
 
 def assert_one_ingestion(knowledge_url: str, idempotency_key: str) -> dict[str, Any]:
@@ -406,6 +662,8 @@ def main() -> int:
     knowledge_worker_overridden = False
     info_api_broker_overridden = False
     temp_jobs: list[str] = []
+    fault_queue = f"p0-006-publish-window-{suffix}"
+    fault_queue_created = False
     summary: dict[str, Any] = {"task": "V5-P0-006", "result": "failed"}
     try:
         assert_candidate_images(
@@ -561,6 +819,287 @@ def main() -> int:
         if ingestion.get("status") not in {"artifact_verified", "succeeded"}:
             raise VerificationError("Knowledge did not finish recovered ingestion")
 
+        # Broker accepted / published-write interruption.  The API first
+        # creates a real durable request while its wake-up is blocked.  A
+        # bounded process then publishes to a unique queue and exits before it
+        # can record `published`; no normal worker consumes that unique queue.
+        for process in forwards:
+            process.terminate()
+        for process in forwards:
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+        forwards = []
+        set_info_api_broker_override(
+            kubeconfig=kubeconfig, namespace=args.namespace, broken=True
+        )
+        info_api_broker_overridden = True
+        forwards = [
+            start_port_forward(
+                kubeconfig=kubeconfig,
+                namespace=args.namespace,
+                service="info-admin-backend",
+                local_port=args.info_port,
+            ),
+            start_port_forward(
+                kubeconfig=kubeconfig,
+                namespace=args.namespace,
+                service="knowledge-admin-backend",
+                local_port=args.knowledge_port,
+            ),
+        ]
+        wait_until(
+            "Info port-forward for broker accepted fault",
+            lambda: api_json(info_url, "/api/documents", query={"limit": 1}),
+            lambda _: True,
+            timeout=30,
+        )
+        publish_window_distribution = create_real_distribution(
+            info_url, f"p0-outbox-published-window-{suffix}"
+        )
+        publish_window_id = publish_window_distribution["id"]
+        publish_window_pending = wait_for_outbox(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=publish_window_id,
+            done=lambda row: row is not None
+            and row["state"] == "pending"
+            and row["attempt_count"] >= 1
+            and row["has_last_error"],
+            description="broker-window durable pending work",
+        )
+        for process in forwards:
+            process.terminate()
+        for process in forwards:
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+        forwards = []
+        set_info_api_broker_override(
+            kubeconfig=kubeconfig, namespace=args.namespace, broken=False
+        )
+        info_api_broker_overridden = False
+        forwards = [
+            start_port_forward(
+                kubeconfig=kubeconfig,
+                namespace=args.namespace,
+                service="info-admin-backend",
+                local_port=args.info_port,
+            ),
+            start_port_forward(
+                kubeconfig=kubeconfig,
+                namespace=args.namespace,
+                service="knowledge-admin-backend",
+                local_port=args.knowledge_port,
+            ),
+        ]
+        wait_until(
+            "Info port-forward before broker accepted fault process",
+            lambda: api_json(info_url, "/api/documents", query={"limit": 1}),
+            lambda _: True,
+            timeout=30,
+        )
+        wait_until_outbox_due(publish_window_pending)
+        fault_queue_created = True
+        force_broker_accept_then_exit(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=publish_window_id,
+            queue=fault_queue,
+        )
+        publish_window_leased = wait_for_outbox(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=publish_window_id,
+            done=lambda row: row is not None
+            and row["state"] == "leased"
+            and row["attempt_count"] >= 2,
+            description="broker accepted before published write",
+        )
+        wait_until_timestamp(
+            publish_window_leased.get("lease_expires_at"),
+            description="broker accepted lease expiry",
+        )
+        publish_recovery_job = f"p0-006-publish-recovery-{suffix}"
+        temp_jobs.append(publish_recovery_job)
+        create_scanner_job(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            name=publish_recovery_job,
+            image=args.image,
+            broken_broker=False,
+        )
+        publish_recovery_summary = scanner_job_summary(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            name=publish_recovery_job,
+        )
+        if publish_recovery_summary["claimed"] != 1:
+            raise VerificationError("expired broker-window lease was not recovered once")
+        publish_window_done = wait_for_distribution(info_url, publish_window_id)
+        if publish_window_done.get("status") != "succeeded":
+            raise VerificationError("broker-window distribution did not succeed")
+        publish_window_outbox = wait_for_outbox(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=publish_window_id,
+            done=lambda row: row is not None
+            and row["state"] == "completed"
+            and row["attempt_count"] >= 3,
+            description="broker-window outbox completion",
+        )
+        publish_window_ingestion = assert_one_ingestion(
+            knowledge_url, contract_payload(publish_window_done)["idempotency_key"]
+        )
+        if publish_window_ingestion.get("status") not in {"artifact_verified", "succeeded"}:
+            raise VerificationError("Knowledge did not finish broker-window recovery")
+        delete_fault_queue(
+            kubeconfig=kubeconfig, namespace=args.namespace, queue=fault_queue
+        )
+        fault_queue_created = False
+
+        # Provider side effect / acknowledgement interruption.  This uses a
+        # real worker credential path to make Knowledge succeed, exits before
+        # `complete_delivery_outbox`, then lets a scanner recover `published`
+        # with a short test-only acknowledgement threshold.
+        for process in forwards:
+            process.terminate()
+        for process in forwards:
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+        forwards = []
+        set_info_api_broker_override(
+            kubeconfig=kubeconfig, namespace=args.namespace, broken=True
+        )
+        info_api_broker_overridden = True
+        forwards = [
+            start_port_forward(
+                kubeconfig=kubeconfig,
+                namespace=args.namespace,
+                service="info-admin-backend",
+                local_port=args.info_port,
+            ),
+            start_port_forward(
+                kubeconfig=kubeconfig,
+                namespace=args.namespace,
+                service="knowledge-admin-backend",
+                local_port=args.knowledge_port,
+            ),
+        ]
+        wait_until(
+            "Info port-forward for provider acknowledgement fault",
+            lambda: api_json(info_url, "/api/documents", query={"limit": 1}),
+            lambda _: True,
+            timeout=30,
+        )
+        provider_distribution = create_real_distribution(
+            info_url, f"p0-outbox-provider-window-{suffix}"
+        )
+        provider_id = provider_distribution["id"]
+        provider_pending = wait_for_outbox(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=provider_id,
+            done=lambda row: row is not None
+            and row["state"] == "pending"
+            and row["attempt_count"] >= 1
+            and row["has_last_error"],
+            description="provider-window durable pending work",
+        )
+        for process in forwards:
+            process.terminate()
+        for process in forwards:
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+        forwards = []
+        set_info_api_broker_override(
+            kubeconfig=kubeconfig, namespace=args.namespace, broken=False
+        )
+        info_api_broker_overridden = False
+        forwards = [
+            start_port_forward(
+                kubeconfig=kubeconfig,
+                namespace=args.namespace,
+                service="info-admin-backend",
+                local_port=args.info_port,
+            ),
+            start_port_forward(
+                kubeconfig=kubeconfig,
+                namespace=args.namespace,
+                service="knowledge-admin-backend",
+                local_port=args.knowledge_port,
+            ),
+        ]
+        wait_until(
+            "Info port-forward before provider acknowledgement fault process",
+            lambda: api_json(info_url, "/api/documents", query={"limit": 1}),
+            lambda _: True,
+            timeout=30,
+        )
+        wait_until_outbox_due(provider_pending)
+        force_published_for_provider_fault(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=provider_id,
+        )
+        provider_published = wait_for_outbox(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=provider_id,
+            done=lambda row: row is not None
+            and row["state"] == "published"
+            and row["attempt_count"] >= 2,
+            description="provider effect published control",
+        )
+        force_provider_effect_then_exit(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=provider_id,
+        )
+        provider_done = wait_for_distribution(info_url, provider_id)
+        if provider_done.get("status") != "succeeded":
+            raise VerificationError("provider effect did not leave a succeeded distribution")
+        wait_until_timestamp(
+            provider_published.get("published_at"),
+            description="provider acknowledgement timeout",
+            after_seconds=5,
+        )
+        provider_recovery_job = f"p0-006-provider-recovery-{suffix}"
+        temp_jobs.append(provider_recovery_job)
+        create_scanner_job(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            name=provider_recovery_job,
+            image=args.image,
+            broken_broker=False,
+            ack_timeout_seconds=5,
+        )
+        provider_recovery_summary = scanner_job_summary(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            name=provider_recovery_job,
+        )
+        if provider_recovery_summary["claimed"] != 1:
+            raise VerificationError("expired provider acknowledgement was not recovered once")
+        provider_outbox = wait_for_outbox(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=provider_id,
+            done=lambda row: row is not None and row["state"] == "completed",
+            description="provider acknowledgement outbox completion",
+        )
+        provider_ingestion = assert_one_ingestion(
+            knowledge_url, contract_payload(provider_done)["idempotency_key"]
+        )
+        if provider_ingestion.get("status") not in {"artifact_verified", "succeeded"}:
+            raise VerificationError("Knowledge did not finish provider acknowledgement recovery")
+
         # Finally exercise the scheduler, rather than only one-off jobs.  Use
         # the same API-side broker fault so the normal immediate wake-up cannot
         # consume the record before the suspended CronJob gets its turn.
@@ -678,6 +1217,20 @@ def main() -> int:
                 "claimed": sum(item["claimed"] for item in scanner_summaries),
                 "business_effects": 1,
             },
+            "broker_accept_before_published": {
+                "distribution_id": publish_window_id,
+                "outbox_id": publish_window_outbox["id"],
+                "recovery_claimed": publish_recovery_summary["claimed"],
+                "final_state": publish_window_outbox["state"],
+                "business_effects": 1,
+            },
+            "provider_effect_before_ack": {
+                "distribution_id": provider_id,
+                "outbox_id": provider_outbox["id"],
+                "recovery_claimed": provider_recovery_summary["claimed"],
+                "final_state": provider_outbox["state"],
+                "business_effects": 1,
+            },
             "scheduled_scanner": {
                 "distribution_id": scheduled_distribution["id"],
                 "outbox_id": scheduled_outbox["id"],
@@ -718,6 +1271,21 @@ def main() -> int:
                         {
                             "warning": "failed to restore Info API broker envFrom configuration",
                             "manual_action": "remove explicit CELERY_BROKER_URL from info-admin-backend and wait for rollout",
+                        }
+                    ),
+                    file=sys.stderr,
+                )
+        if fault_queue_created:
+            try:
+                delete_fault_queue(
+                    kubeconfig=kubeconfig, namespace=args.namespace, queue=fault_queue
+                )
+            except VerificationError:
+                print(
+                    json.dumps(
+                        {
+                            "warning": "failed to delete temporary P0 broker queue",
+                            "manual_action": "delete only the unique p0-006-publish-window queue created by this verifier",
                         }
                     ),
                     file=sys.stderr,
