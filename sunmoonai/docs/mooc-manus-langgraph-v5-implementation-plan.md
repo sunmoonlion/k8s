@@ -281,7 +281,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 目标：按 `P0-007A -> P0-007A2(A2.1) -> P0-005 -> P0-007A2(A2.2~A2.5) -> P0-007B -> P0-007C` 完成 React Admin 模板资格链并冻结 React Admin v1；A2.1 不依赖浏览器身份，P0-005 是 A2.2 真实身份接入和 007B 试点的安全前置，父任务不直接写代码。
 - 重要边界：`P0-007A` 只代表技术骨架通过，不代表 Vue 模板功能等价，也不允许据此同步三个 App。`P0-007A2` 是新增的完整模板能力对齐门。
 - 完成条件：P0-007A、P0-007A2、P0-007B、P0-007C 四个子任务全部 ACCEPTED；任一子任务失败，父任务保持 IN_PROGRESS，禁止向三个 App 应用未冻结模板。
-- 状态：IN_PROGRESS（P0-007A、P0-007A2/A2.1、A2.2、A2.3、A2.4 与 P0-005 已接受；A2.5 当前施工，P0-007B/C 未开始）
+- 状态：IN_PROGRESS（P0-007A、P0-007A2、P0-005 已接受；P0-007B 已冻结 Info Vue 基线，正在施工；P0-007C 未开始）
 
 ### V5-P0-007A tpl-app React Admin 生产骨架
 
@@ -331,7 +331,9 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 测试：真实 contract/provider、匿名/403/过期 session、hash mismatch、对象缺失、重复操作、并发冲突、XSS/危险 URL、刷新恢复、Nginx/Docker/K8s 隔离 smoke。
 - 验收：不依赖 mock ingestion success；Vue/React 可并行部署但仅隔离测试入口访问；React 页面能沿 operation/correlation ID 对账；有明确旧 Vue 回滚路径。
 - 证据：模板源 commit -> Info 实例 commit 映射、contract digest、E2E trace、镜像/deployment digest、差异与回流清单。
-- 状态：NOT_STARTED
+- 状态：IN_PROGRESS（2026-07-14：已创建并记录迁移前 tag `p0-007b-info-admin-vue-baseline-20260714`，冻结 Vue commit、父仓指针、当前镜像 tag/digest 和运行 Pod；尚未替换代码、部署 React 或切流量）
+- 基线证据：`sunmoonai/docs/evidence/v5/V5-P0-007B/result.md`。
+- 当前实施顺序：先复制冻结 React Admin v1 到 Info 现有前端目录；再以 Info 业务 adapter/route 逐步迁移 `src/pages/info/crawl.vue` 的文档、审核、画像、分发、上传和创建任务能力；每一阶段使用真实 `/api` contract、无 mock success、隔离 Deployment 和可回滚镜像。
 
 ### V5-P0-007C React Admin v1 修正与冻结
 
