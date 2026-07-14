@@ -1,7 +1,7 @@
 # V5-P0-007A2/A2.3 CRUD Toolkit 施工证据
 
 日期：2026-07-14  
-状态：`IN_PROGRESS`
+状态：`ACCEPTED`
 
 ## 范围
 
@@ -21,6 +21,10 @@ Info、Knowledge、Research DTO、接口 URL 或业务规则；Reference Page �
 - `app/components/crud/contract-upload.tsx`：上传 transport 由 App 注入，模板不持有
   领域 URL 或凭据；包含文件大小边界。
 - `app/lib/download.ts`：Blob 下载和 same-origin 下载 URL 校验。
+- `app/components/crud/server-query.ts`：服务端分页、排序和筛选的 transport-neutral
+  参数 contract；固定页码/页大小边界和稳定 query 编码，支持消费方注入 `AbortSignal`。
+- `app/components/crud/use-crud-mutation.ts`：受审计 mutation 的 correlation/operation
+  context、请求 header contract 和 `idle/running/succeeded/failed` 状态转移。
 - Reference Page 已改用 DataTable、ResourceDescription、AuditedActionModal，并展示
   中性上传/下载 adapter。
 
@@ -30,20 +34,25 @@ Info、Knowledge、Research DTO、接口 URL 或业务规则；Reference Page �
 pnpm install --frozen-lockfile --offline => PASS
 pnpm typecheck                          => PASS
 pnpm lint                               => PASS
-pnpm test                               => PASS（8 files，27 tests）
+pnpm test                               => PASS（8 files，31 tests）
 pnpm test:e2e                            => PASS（Chromium，5 tests）
 pnpm build                              => PASS（SPA Mode）
 git diff --check                         => PASS
 ```
 
-已覆盖：Table 空态/错误态/重试、审计原因校验、SchemaForm 提交、上传 adapter、
-same-origin 下载 URL、Blob 下载调用和既有 Reference Page 行为。
+已覆盖：Table 空态/错误态/重试、分页/排序/筛选参数归一化和 query 编码、审计原因校验、
+mutation correlation/operation header 与状态转移、SchemaForm 提交、上传 adapter、
+same-origin 下载 URL、Blob 下载调用、Ant Design notification provider 集成、dialog/label/button
+基础可访问性语义和既有 Reference Page 行为。浏览器验证使用固定模板启动流程，未接入任何
+Info/Knowledge/Research 领域接口或凭据。
 
-## 尚未完成
+## 边界与后续
 
-- 服务端分页/排序/选择的 Query adapter contract 和请求取消/重试约定。
-- 受审计写操作的 correlation/operation 对账与统一 mutation 状态。
-- 通知 hook 的真实集成测试、键盘/屏幕阅读器和 reduced-motion 矩阵。
-- 从固定 commit clean-room 重建后的组件证据和 A2.3 最终 commit/SHA。
+- 这里的可访问性是 A2.3 基础 role/label/dialog smoke；完整键盘路径、屏幕阅读器、响应式和
+  reduced-motion 矩阵属于 A2.5 Production Gate，不能以本证据替代。
+- 领域 App 必须提供自己的 resource DTO、query/mutation adapter、后端授权和错误映射；模板
+  contract 不代表 Info/Knowledge/Research 业务已迁移。
+- A2.4 Rich/Utility 尚未开始；A2.3 接受后仍禁止向三个 App 直接替换前端。
 
-A2.3 未接受前不得进入 A2.4，也不得开始任何三个 App 的 React 基础替换。
+A2.3 已接受，可以进入 A2.4；在 A2.5 与 P0-007A2 整体接受前，仍不得开始任何三个 App 的
+React 基础替换。

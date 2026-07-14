@@ -281,7 +281,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 目标：按 `P0-007A -> P0-007A2(A2.1) -> P0-005 -> P0-007A2(A2.2~A2.5) -> P0-007B -> P0-007C` 完成 React Admin 模板资格链并冻结 React Admin v1；A2.1 不依赖浏览器身份，P0-005 是 A2.2 真实身份接入和 007B 试点的安全前置，父任务不直接写代码。
 - 重要边界：`P0-007A` 只代表技术骨架通过，不代表 Vue 模板功能等价，也不允许据此同步三个 App。`P0-007A2` 是新增的完整模板能力对齐门。
 - 完成条件：P0-007A、P0-007A2、P0-007B、P0-007C 四个子任务全部 ACCEPTED；任一子任务失败，父任务保持 IN_PROGRESS，禁止向三个 App 应用未冻结模板。
-- 状态：IN_PROGRESS（P0-007A、P0-007A2/A2.1、A2.2 与 P0-005 已接受；A2.3/A2.4/A2.5、P0-007B/C 未开始）
+- 状态：IN_PROGRESS（P0-007A、P0-007A2/A2.1、A2.2、A2.3 与 P0-005 已接受；A2.4 当前施工，A2.5、P0-007B/C 未开始）
 
 ### V5-P0-007A tpl-app React Admin 生产骨架
 
@@ -316,8 +316,8 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 不做：不逐行翻译 Vue API，不把 Element Plus/Pinia/Composition API 机械搬到 React；不把 Info/Knowledge/Research 领域页面、DTO、业务规则写入模板；不接任何 App 流量。
 - 测试：模板全量 typecheck/lint/unit/component/Playwright/a11y；组件行为和错误状态矩阵；route/base path/Nginx/Docker smoke；clean-room 从固定 commit 重新生成；Vue/React 映射无未解释项。
 - 验收：能力矩阵无未分配的 `MUST` 项；所有 `DEFER` 有批准的 ADR/任务；从干净目录可重复构建；核心组件行为、权限和可访问性通过；状态命名为 `TEMPLATE_MIGRATION_READY`。只有本任务通过后，P0-007B 和三个 App 的 React 基础前端替换才可开始。
-- 状态：IN_PROGRESS（A2.1、A2.2 已接受；A2.3 当前施工包，A2.4/A2.5 尚未开始；P0-007A 现有证据不替代本任务）
-- A2.3 当前施工已在 `tpl-admin-frontend` 开始：首批 `DataTable`、`SchemaForm`、`ResourceDescription`、`AuditedActionModal`、通知、上传 adapter 和 same-origin 下载工具已实现，并以 Reference Page 中性 fixture 验证。仍需补服务端分页/排序 adapter、受审计写操作 correlation 对账、通知集成和可访问性矩阵；未完成前不得进入 A2.4。
+- 状态：IN_PROGRESS（A2.1、A2.2、A2.3 已接受；A2.4 当前施工包，A2.5 尚未开始；P0-007A 现有证据不替代本任务）
+- A2.3 已于 2026-07-14 接受：`tpl-admin-frontend@77a25c839198b9267d54c3402738ce8196d698eb` 完成 `DataTable`、服务端分页/排序/筛选 adapter contract、`SchemaForm`、`ResourceDescription`、`AuditedActionModal`、correlation/operation mutation 状态、通知、上传/下载和中性 Reference Page；8 个 Vitest 文件/31 个测试、5 个 Chromium 测试、typecheck、lint、SPA build 和 diff 检查通过。证据：`sunmoonai/docs/evidence/v5/V5-P0-007A2/A2.3/result.md`。该接受仅覆盖 A2.3 基础可访问性 smoke；完整 a11y、responsive/reduced-motion 和生产 Gate 仍属于 A2.5，三个 App 仍不得开始 React 基础替换。
 
 ### V5-P0-007B Info Admin 真实业务试点
 
@@ -1172,8 +1172,8 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 4. Frontend-1A2.1 Shell（`ACCEPTED`，2026-07-13；实现 `d2fa1a8`，矩阵 `451d22f`，证据 `V5-P0-007A2/A2.1/result.md`）。
 5. Frontend-1A2.2（施工入口）：P0-005/ADR-005 已 ACCEPTED，消费真实身份契约；不得回退到 demo/mock auth。`ACCEPTED` 证据见 `sunmoonai/docs/evidence/v5/V5-P0-007A2/A2.2/result.md`。
 6. Frontend-1A2.2 Identity/Data Foundation（`ACCEPTED`，2026-07-14）：真实 session、typed client/error/correlation、TanStack Query、i18n 基础，以及三应用严格 TLS/CORS/CSRF/跨用户/过期 session consumer 矩阵均通过；实现 `tpl-admin-frontend@0b68498`，扩展 gate `k8s@3558a08`。
-7. **当前任务** Frontend-1A2.3 CRUD Toolkit：完成通用 Table/Form/Description/Modal/Drawer/通知/上传下载和写操作约定。
-8. Frontend-1A2.4 Rich/Utility Toolkit：完成或显式处置 Icon/Chart/Editor/Media/通用指令工具与 legacy 能力。
+7. Frontend-1A2.3 CRUD Toolkit（`ACCEPTED`，2026-07-14）：`tpl-admin-frontend@77a25c8`；证据 `V5-P0-007A2/A2.3/result.md`。
+8. **当前任务** Frontend-1A2.4 Rich/Utility Toolkit：完成或显式处置 Icon/Chart/Editor/Media/通用指令工具与 legacy 能力。
 9. Frontend-1A2.5 Production Gate：完成全套测试、安全负例、Docker/KIND、clean-room install、矩阵和证据，接受 P0-007A2。
 10. Contract-1：复核已接受的 V5-P0-003 Artifact Contract 仍为 007B 可用前置，不重复实现。
 11. Frontend-2：V5-P0-007B 在现有 Info Admin 仓库内做真实业务试点和隔离部署。
