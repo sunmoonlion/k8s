@@ -30,6 +30,27 @@ app_dep_enabled() {
     [[ "${1:-false}" == "true" ]]
 }
 
+# Frontend release tags are independent from the App/backend tag. Temporary
+# p0-* images are allowed only by an explicitly isolated test deployment;
+# normal deploy/validate paths fail closed instead of promoting a provisional
+# frontend build by accident.
+app_dependency_validate_frontend_release_tags() {
+    local app_prefix="$1"
+    local test_mode="${V5_FRONTEND_TEST_MODE:-false}"
+    local component tag_var tag
+
+    [[ "$test_mode" == "true" ]] && return 0
+    for component in ADMIN_FRONTEND WEB_FRONTEND; do
+        tag_var="${app_prefix}_${component}_TAG"
+        eval "tag=\${${tag_var}:-}"
+        if [[ "$tag" == p0-* ]]; then
+            app_dep_log_error "拒绝未固化的前端镜像 tag: ${tag_var}=${tag}（仅 V5_FRONTEND_TEST_MODE=true 的隔离测试允许）"
+            return 1
+        fi
+    done
+    return 0
+}
+
 app_dependency_export_component_secret_overrides() {
     local component="$1"
     local database_enabled="${2:-false}"

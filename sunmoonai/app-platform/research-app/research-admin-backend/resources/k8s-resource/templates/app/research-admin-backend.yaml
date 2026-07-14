@@ -28,6 +28,8 @@ spec:
             name: ${RESEARCH_ADMIN_BACKEND_CONFIGMAP_NAME:-research-admin-backend-config}
         - secretRef:
             name: ${RESEARCH_ADMIN_BACKEND_SECRET_NAME:-research-admin-backend-secret}
+        - secretRef:
+            name: ${RESEARCH_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME:-research-admin-backend-browser-oidc}
 ${RESEARCH_ADMIN_BACKEND_DATABASE_ENV_FROM}
 ${RESEARCH_ADMIN_BACKEND_OBJECT_STORAGE_ENV_FROM}
 ${RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_ENV_FROM}

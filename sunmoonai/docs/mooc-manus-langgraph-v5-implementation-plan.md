@@ -85,6 +85,33 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - ADR 是决策理由的唯一权威；Runbook 是操作步骤的唯一权威；Evidence 是完成结果的唯一权威。
 - 发现重复且可能漂移的定义时，删除副本并改成引用，禁止两处同步维护。
 
+### 1.6 V5-REC-001 前端执行偏差恢复与经验固化
+
+- 类型/优先级：RELIABILITY/FRONTEND/P0；在继续任何前端迁移或 Harbor 清理前执行。
+- 背景：后端 `P0-005E` 的 `1.0.1` 固化、Info Admin 的旧 Vue 治理页面以及 Research Web 的旧 v4 Agent Console 曾在模板资格链完成前分别落地，造成“组件已经迁移/全部前端已经固化”的错误印象。它们不能改变 P0-007/P0-008/M1 的依赖关系，也不能被倒推为模板或业务迁移验收证据。
+- 当前前端基线（2026-07-14）必须明确记录为：
+  - `info-admin-frontend:1.0.1`：旧 Vue 治理实现，保留为迁移前回滚基线；不计入 React Admin 迁移。
+  - `info-web-frontend:1.0.0`：旧 Next 基线。
+  - `research-admin-frontend:1.0.0`：旧 Vue 基线。
+  - `research-web-frontend:1.0.1`：旧 v4 Agent Console 临时试点；仅限隔离 KIND 开发环境，不计入 P0-008C Accepted 或 M1-413C 完成。
+  - `knowledge-admin-frontend`、`knowledge-web-frontend`：按配置关闭且无 Deployment；在对应 React/Next 迁移完成前不得启用。
+- 严格规则：
+  1. `SKELETON_ACCEPTED` 不产生业务迁移资格；只有 `TEMPLATE_MIGRATION_READY` 和 `P0-007C/P0-008C ACCEPTED` 才能进入 M1-411/M1-413。
+  2. App 级 `*_APP_IMAGE_TAG` 不得隐式决定任一 Frontend tag；部署必须使用组件级 tag，并在生成后拒绝 `p0-*` 临时 tag（显式隔离测试模式除外）。
+  3. 旧 Vue/旧 Next 镜像、迁移前 Git tag 和 digest 是回滚资产，不得因“统一版本号”删除或覆盖；React/Next 重构必须使用新的候选 tag 和新的正式版本号。
+  4. 任一 App 迁移必须单独完成“迁移前 tag/digest → candidate 镜像 → 隔离部署 → 浏览器/E2E/回滚证据 → 正式 tag”，不得三个 App 批量切换。
+  5. 任何提前实现只能标记为 `PROVISIONAL_EARLY_SLICE`，必须记录与正式任务的差异、风险和恢复路径，不能修改任务状态或 Gate 结论。
+- 恢复顺序：先完成本节的版本矩阵/生成清单清理，再恢复 `P0-007A2/A2.2`；随后完成 `P0-007B/C`、`P0-008A/B/C` 和 Gate P0，最后才按 Info → Knowledge → Research 执行 M1-411 与 M1-413。
+- Harbor 清理：本节完成前不得删除任何稳定 tag；只允许在 Deployment、回滚记录和 digest 三方确认无引用后删除临时 tag，且保留观察期内的旧稳定版本。
+- 经验教训：后续每个任务关闭时必须同时更新“任务状态、Git/SHA、镜像 tag+digest、Deployment、测试证据、回滚结论”六项；任何一项缺失都保持 `IN_PROGRESS`，不得以“镜像已运行”代替迁移验收。
+- 本次恢复执行记录（2026-07-14）：
+  - 三个 App 的前端组件 tag 已从 App 级继承链中分离，并写入各自顶层配置；Knowledge 前端保持关闭。
+  - `k8s/utils/app-dependency-preflight.sh` 及三套 App 模板/入口已增加前端 `p0-*` fail-closed 门禁；只有显式 `V5_FRONTEND_TEST_MODE=true` 才允许隔离测试。
+  - 六个前端生成清单已重新生成并核对：Info Admin `1.0.1`、Info Web `1.0.0`、Knowledge Admin/Web `1.0.0`（未部署）、Research Admin `1.0.0`、Research Web `1.0.1`（仅隔离旧 v4 试点）。
+  - 六个生成清单均通过 `kubectl apply --dry-run=client --validate=false`；Info/Knowledge/Research 的 `validate-resources --cluster KIND` 均通过。
+  - 未删除 Harbor 镜像；稳定回滚版本和旧试点仍按规则保留。当前没有任何业务 App 迁移被宣称完成。
+- 状态：ACCEPTED（2026-07-14；恢复证据为组件级 tag 矩阵、六份生成清单 dry-run、三套 validate-resources 结果；下一步仅进入 P0-007A2/A2.2）。本轮工作树改动尚未提交/推送，不得视为新的可发布 release；提交时仍须补齐 Git/SHA、变更文件和回滚记录。
+
 ## 2. Immediate Safeguard 与 Phase 0
 
 ### V5-IMM-001 配置真相紧急保护
@@ -154,14 +181,14 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 实施：Authorization Code + PKCE BFF session；严格 OIDC/JWKS 验证；Web/Admin 六 audience；App/Surface 隔离 cookie/session；CSRF/CORS；Principal 与 actor/scope/resource check；client-credentials 服务 token；K8s ServiceAccount 到服务主体的部署绑定。
 - 测试：匿名、伪造签名、错误 issuer/audience、过期 token、state/nonce/PKCE 重放、跨用户 Session/资源、缺 scope、CSRF、浏览器 session 调 internal route。P0 固定 Admin/Web audience consumer vectors；真实 Web route 的双向误用测试在 P0-008C 完成。
 - 验收：三套 Admin 业务路由不再匿名；关键资源不只检查“已登录”而检查 owner/scope；actor/reviewer 不信任请求体；Info -> Knowledge 使用真实、最小 scope 的服务 token；浏览器 token 不被当作跨仓服务凭据；前端路由守卫不承担最终授权。
-- 状态：IN_PROGRESS（2026-07-12；Admin/服务代码与 KIND 真实匿名/服务 JWT 证据已通过；浏览器 PKCE/跨用户矩阵和正式 ADR 接受仍待补）
+- 状态：ACCEPTED（2026-07-14；三套 Admin 的真实匿名/服务 JWT、负向 token、浏览器 PKCE/CSRF/跨用户和严格 TLS 矩阵均通过；三组 API/worker 已以 1.0.1 运行并按 digest 核对；正式 ADR-005 可接受）
 
 #### V5-P0-005A 冻结协议与测试向量
 
 - 仓库：`k8s`。
 - 实施：评审 ADR-005；以 `sunmoonai/docs/mooc-manus-v5/contracts/security/v1/` 为平台身份 contract 唯一真相源，固定六 application/audience、Principal、401/403、session/CSRF、OIDC callback、service binding 和路由分区语义；建立不含有效 credential 的配置模板和跨语言正/负 JWT claim fixtures。
 - 验收：后续 Python/Nest/K8s 工作不再自行解释 audience、scope、cookie 或错误语义；ADR 保持 CANDIDATE，必须等真实 KIND 证据后才 ACCEPTED。
-- 状态：CODE_COMPLETE_LOCAL（2026-07-12；contract 与测试向量已提交；KIND 服务身份证据已归档，浏览器/伪造 token 矩阵待补）
+- 状态：ACCEPTED（2026-07-14；contract、正负 JWT 向量、KIND 服务身份证据和严格 TLS 浏览器证据已归档）
 
 #### V5-P0-005B 三套 Admin 浏览器身份闭环
 
@@ -170,7 +197,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 关键资源：Info/Knowledge 管理 scope；Research Session/Run/Event/SSE 从认证 Principal 得到 owner，忽略或拒绝 payload 冒充的 actor/security context。
 - 测试：L1/L2/L3；每仓先跑共享安全向量，再跑本仓 allow/deny、旧行为回归和泄密断言。Research 还需跨用户 Session/Run/SSE 测试。
 - 验收：无 cookie 401、失效 cookie 401、scope/owner 不足 403；三仓 `/auth/me` 与 Redis/log 抽查无 token；login path 无 DDL；credential CORS 无通配 origin。
-- 状态：CODE_COMPLETE_LOCAL（2026-07-12；Info `c1dad4e`、Knowledge `a38eefd`、Research `7724a58`；三仓测试 60/48/76 通过；KIND 匿名边界已在 P0-005D 复验，浏览器 PKCE/跨用户证据待补）
+- 状态：ACCEPTED（2026-07-14；Info `c1dad4e`、Knowledge `a38eefd`、Research `7724a58`；三仓测试 60/48/76 通过；KIND 匿名、跨用户、CSRF 和严格 TLS 浏览器矩阵已复验）
 
 #### V5-P0-005C Info -> Knowledge 服务身份闭环
 
@@ -184,16 +211,35 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 
 - 仓库：`k8s`。
 - 实施：以 Secret 引用配置六个浏览器 client/audience 和最小服务 client；Casdoor 注册通过 `post-deploy-setup.local.conf`（仅部署机、gitignore、权限 0600）注入，不把 client secret 写入仓库；脚本支持浏览器 `authorization_code` 与服务 `client_credentials` grant；绑定 workload ServiceAccount；构建、部署 traffic-off 镜像；运行允许/拒绝矩阵与停流回滚。
-- 测试：L4/L6/L7；配置缺失、JWKS rotation/未知 kid、Casdoor/Redis 不可用均 fail closed。`sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_005_kind.py` 只输出状态码和去敏结果，不输出 access token/client secret；它覆盖三套 Admin 匿名拒绝、Research traffic-off 临时验证和真实 service client 到 Knowledge internal route 的认证边界，浏览器 PKCE 矩阵另由 Playwright/人工登录证据完成。
+- 测试：L4/L6/L7；配置缺失、JWKS rotation/未知 kid、Casdoor/Redis 不可用均 fail closed。`sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_005_kind.py` 只输出状态码和去敏结果，不输出 access token/client secret；它覆盖三套 Admin 匿名拒绝、Research traffic-off 临时验证和真实 service client 到 Knowledge internal route 的认证边界；Playwright 严格 TLS 矩阵覆盖三套 Admin 的 PKCE/CSRF/跨用户、provider UI latency 和无外部主机请求。
 - 验收：ADR-005 接受条件全部满足；归档 contract/config digest、镜像与 deployment digest、测试结果和回滚证据，然后把 P0-005/ADR-005 标记 ACCEPTED。
-- 状态：IN_PROGRESS（更新于 2026-07-13；KIND 匿名/真实服务 JWT 矩阵、专用 migration role/Secret、运行时 DDL 撤权和 Deployment 前 Alembic Job gate 已通过正负向及幂等验证；浏览器 PKCE/CSRF/跨用户/伪造与过期 token 矩阵、可重复浏览器 client Secret 注入仍待完成；Research traffic 保持 false）
+- 状态：ACCEPTED（更新于 2026-07-14；KIND 匿名/真实服务 JWT、负向 token、专用 migration role/Secret、运行时 DDL 撤权、Always-pull Deployment 前 Alembic gate、浏览器 PKCE/CSRF/跨用户和严格 TLS 矩阵全部通过；Research traffic 已恢复 false）
+
+#### V5-P0-005F Casdoor UI / 配置 / 就绪硬化
+
+- 类型/优先级：SECURITY/RELIABILITY/P0，且是 `P0-005E` 镜像固化的阻塞前置。
+- 仓库：`k8s`（Casdoor Helm chart、部署脚本、Ingress、浏览器验证脚本）。
+- 根因基线：Casdoor 3.42.0 登录页在 `organization.languages` 为 NULL 时会在前端读取 `.length` 并白屏；原部署后 SQL 只修 `owner=admin` 且数据库失败时仍放行；TCP/Pod phase 不能证明 HTTP/DB/静态资源就绪；`/conf` 曾允许 PVC 漂移和 `kubectl exec` 写入；UI 仍依赖 Google Fonts/Casdoor CDN，浏览器 gate 默认 60 秒且忽略 TLS。
+- 实施：
+  1. 所有环境使用 Secret 引用 `APP_DB_URI`，`app.conf` 由 ConfigMap 单一声明（`runmode=prod`、`copyrequestbody=true`、`staticBaseUrl="."`、`aiAssistantUrl=""`），删除向 `/conf` 写临时文件的 fallback；`deploy` 与 `upgrade` 走同一 identity/readiness 流程。
+  2. Helm 启动时将静态包复制到 `emptyDir`，移除非必要外部字体/CDN；Ingress 仅对带 hash 的 `/static/` 使用压缩和 immutable cache，不缓存 OAuth/API/HTML。
+  3. post-deploy 在所有组织上修补 `languages`，建立 JSON array 数据库不变量；PostgreSQL、ConfigMap、静态资源任一检查失败都必须返回非零。
+  4. post-deploy 的 K8s PostgreSQL client 在同一轮初始化中复用并在退出时清理，禁止每条 SQL 重新创建 Pod。
+  5. 删除仓库中的 Casdoor business credential/placeholder；P0-005 provision Job 是业务 identity 的默认唯一入口，legacy operator-only local config 必须显式开关；DB bootstrap 的管理员/租户密码改为 operator environment required。
+  6. 真实 HTTP/DB/静态 readiness probe 取代 TCP probe；浏览器 gate 将 Casdoor UI 默认边界降到 20 秒，pageerror、静态/网络失败严格失败，并提供 `P0_BROWSER_STRICT_TLS=true` 的不忽略证书路径。严格模式使用完整 Chromium + 隔离 NSS DB 导入平台 Root CA；缺少 `certutil` 时必须 fail closed。
+  7. KIND 环境的 Casdoor PostgreSQL DSN 固定使用 `sslmode=disable`（Casdoor 使用的 `lib/pq` 不支持 `prefer`），且 upgrade 在 Secret/ConfigMap 变化后显式滚动重启 Deployment。
+  8. 迁移门禁 Job 使用共享脚本的可配置 `ttlSecondsAfterFinished`（默认 7 天）和默认 `imagePullPolicy: Always`，避免稳定 tag 被节点旧缓存覆盖；成功日志先进入集中/本地审计归档，再由 TTL 自动清理，禁止把长期保留 Completed Pod 当作审计系统。
+- 测试：Helm lint/template（三环境）；shell/node syntax；静态 asset rewrite；`sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_005_casdoor_runtime.sh` 只读 runtime gate；Casdoor Pod 冷启动/删除 Pod 后 readiness；组织 `languages` NULL/invalid/array 负例；canonical host TLS；三套 Admin Playwright PKCE/CSRF/跨用户矩阵。
+- 验收：连续冷启动首屏无白屏；Casdoor 外部字体/CDN 不再成为 UI 必需依赖；配置或数据库不变量失败时部署退出非零；`deploy` 和 `upgrade` 的结果等价；浏览器输出包含 provider UI latency 且不输出 credential/token。
+- 状态：ACCEPTED（更新于 2026-07-14；KIND Helm upgrade、最终配置冷启动、runtime gate、三套 Admin 浏览器 PKCE/CSRF/跨用户矩阵、完整 Chromium 隔离 NSS Root CA 严格 TLS 和无外部主机请求检查均通过；迁移 Job 已归档并由 TTL 自动清理；Casdoor 首屏 UI latency 约 0.5–1.0 秒）
 
 #### V5-P0-005E 镜像 tag 与组件部署隔离
 
 - 仓库：`k8s`，镜像仓库由部署机操作。
 - 规则：通过测试的 Info/Knowledge/Research Admin Backend API+worker 镜像统一发布为 `1.0.1`；Admin/Web/Frontend 未通过同一测试的组件不得继承 App 级临时 tag。部分组件部署必须使用组件级 `*_TAG`，不能把 `*_APP_IMAGE_TAG` 作为隐式全 App 发布开关。
 - 切换顺序：先以 digest 核对并把已验证镜像 retag 为 `1.0.1`，再只滚动三个 Admin Backend/API+worker；验证 P0-005 与 readiness 后，才允许删除临时 `p0-*` tag。旧稳定 tag 不得在没有回滚副本/归档 digest 的情况下直接删除。
-- 状态：ACCEPTED（2026-07-12；已定位全 App tag 传播导致的 ImagePullBackOff；三个已验证 Admin Backend API+worker 已 retag 为 `1.0.1`、滚动验证和 P0-005 复验通过；临时 `p0-*` tag、无引用旧 artifact 及零副本历史 ReplicaSet 已清理；仍保留被现有组件使用的 `1.0.0` 回滚基线）
+- 本次纠偏：原 Harbor `1.0.1` 中 Knowledge/Info 的旧 digest 未满足最终 migration/service contract，已先由 `p0-005-auth-*` 回滚 tag 保留，再将通过最终门禁的 digest 发布为 `1.0.1`；后续发布不得复用该纠偏流程，必须使用新候选 tag 后不可变 retag。
+- 状态：ACCEPTED（2026-07-14；Info `1.0.1` -> `sha256:0dd720796ad52086345ca3b5f5b87a52bf2e2141fa00214a1c301561dda570ad`，Knowledge `1.0.1` -> `sha256:29fdbabc8a59ed855141bb292b2525a585bf94cfdb3ddb434973fcc91774911f`，Research `1.0.1` -> `sha256:1ad5ef63069f4345ce52a4951b1a82eacb2e86267c848561c172b399e5e114ef`；六个 API/worker 实际 imageID 已核对，迁移/服务/浏览器门禁均通过；旧 digest 仍由 `p0-005-auth-*` 回滚 tag 保留，未删除 `1.0.0`）
 
 ### V5-P0-006 可靠交付 ADR 与最小原型
 
@@ -235,7 +281,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 目标：按 `P0-007A -> P0-007A2(A2.1) -> P0-005 -> P0-007A2(A2.2~A2.5) -> P0-007B -> P0-007C` 完成 React Admin 模板资格链并冻结 React Admin v1；A2.1 不依赖浏览器身份，P0-005 是 A2.2 真实身份接入和 007B 试点的安全前置，父任务不直接写代码。
 - 重要边界：`P0-007A` 只代表技术骨架通过，不代表 Vue 模板功能等价，也不允许据此同步三个 App。`P0-007A2` 是新增的完整模板能力对齐门。
 - 完成条件：P0-007A、P0-007A2、P0-007B、P0-007C 四个子任务全部 ACCEPTED；任一子任务失败，父任务保持 IN_PROGRESS，禁止向三个 App 应用未冻结模板。
-- 状态：IN_PROGRESS（P0-007A 与 P0-007A2/A2.1 已接受；等待 P0-005 后进入 A2.2；P0-007B/C 未开始）
+- 状态：IN_PROGRESS（P0-007A 与 P0-007A2/A2.1 已接受；P0-005 已接受，A2.2 正在施工；P0-007B/C 未开始）
 
 ### V5-P0-007A tpl-app React Admin 生产骨架
 
@@ -270,7 +316,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 不做：不逐行翻译 Vue API，不把 Element Plus/Pinia/Composition API 机械搬到 React；不把 Info/Knowledge/Research 领域页面、DTO、业务规则写入模板；不接任何 App 流量。
 - 测试：模板全量 typecheck/lint/unit/component/Playwright/a11y；组件行为和错误状态矩阵；route/base path/Nginx/Docker smoke；clean-room 从固定 commit 重新生成；Vue/React 映射无未解释项。
 - 验收：能力矩阵无未分配的 `MUST` 项；所有 `DEFER` 有批准的 ADR/任务；从干净目录可重复构建；核心组件行为、权限和可访问性通过；状态命名为 `TEMPLATE_MIGRATION_READY`。只有本任务通过后，P0-007B 和三个 App 的 React 基础前端替换才可开始。
-- 状态：IN_PROGRESS（A2.1 ACCEPTED；P0-005 是当前串行任务；A2.2~A2.5 尚未开始，P0-007A 现有证据不替代本任务）
+- 状态：IN_PROGRESS（A2.1 ACCEPTED；A2.2 已完成模板侧 session/CSRF/logout/correlation/Query 基础实现、clean-room/build、Docker/Nginx smoke，并通过 Info/Knowledge/Research（含 Research secondary）全量严格 TLS 模板真实身份基础矩阵；仍缺跨用户/过期 session/CORS/401/403 等扩展 consumer 矩阵及最终 SHA/可回滚产物；A2.3~A2.5 尚未开始，P0-007A 现有证据不替代本任务）
 
 ### V5-P0-007B Info Admin 真实业务试点
 
@@ -310,6 +356,8 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 仓库：`tpl-app`、`k8s`
 - 前置：P0-007C ACCEPTED；P0-001/004/005 已分别给出 stream adapter、Citation DTO、浏览器身份/BFF 的可执行决策证据。
 - 实施：接受或重开 ADR-014；固定 Server/Client、server-only DAL/DTO、typed browser client、BFF/直接 API、render/cache、SSE reconciliation、CSP、自托管多副本和发布拓扑；盘点三实例差异。仅执行不依赖未决契约的紧急卫生：停止跟踪 `.env.local`、禁止 secret/default credential、移除硬编码 origin、迁移 Next 16 `middleware.ts -> proxy.ts`、校准 Node/pnpm/.nvmrc/README。
+- 外部参考：以 MIT 许可的 `ixartz/Next-js-Boilerplate` 固定参考 commit 和依赖清单作为工程能力输入，逐项提取 App Router 目录约定、严格 TypeScript、环境校验、国际化、错误/加载边界、测试/Storybook/CI 组织和可访问性实践；必须形成“采用/改造/拒绝”矩阵，不得复制其产品页面或整套依赖。
+- 兼容性决策：上游当前 README 要求 Node 24+，不因此自动升级 SunmoonAI 基础镜像；ADR-014 必须单独记录 Node/Next/React 支持矩阵、镜像可用性和升级回滚证据。Casdoor OIDC/BFF 替代 Clerk，后端 API/Provider Contract 替代 Drizzle/PGlite/前端数据库，未经批准的 SaaS 集成全部排除。
 - Spike：分别证明 protected route 的服务端 session check、public static route、authenticated dynamic route、同源/直连 API 选中拓扑，以及 Runtime adapter 的浏览器断线对账；不得把 Proxy 当最终授权。
 - 测试：错误/过期 session、跨 locale return URL、CSRF/CORS/audience、cache 泄露、CSP、同一用户跨 Pod、滚动版本、stream cursor/reconcile。
 - 验收：ADR-014 Accepted；一张当前/目标拓扑、route rendering matrix、cache owner matrix、BFF allowlist、环境变量和部署兼容矩阵获批；所有未决项都有 owner/阻断任务，不以“模板以后处理”放行。
@@ -321,6 +369,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 仓库：`tpl-app`
 - 前置：P0-008A ACCEPTED。
 - 实施：在现有 `tpl-web-frontend` 仓库的迁移分支内重构并冻结 Next Web v2；保留 React 19、Next 16 App Router、next-intl、Tailwind/shadcn/Base UI 候选和 `standalone` 自托管；实现 ADR-014 冻结的 Server/Client、DAL/DTO、typed client、auth/BFF、render/cache、stream adapter、错误/correlation、观测、安全、测试和 Docker/KIND 骨架，不创建新的 Web 模板仓库。
+- 能力吸收边界：参考 ixartz 的工程化组织而非其 SaaS 业务；新增 strict env schema、server-only DAL、Casdoor session、统一 API/error/correlation、route metadata、loading/error/not-found、a11y、Playwright/Vitest、Storybook（若 ADR-014 认为有价值）和可重复 CI。前端不拥有数据库，不引入 Clerk/Drizzle/PGlite/第三方遥测或外部字体/CDN 作为运行时依赖。
 - 串行施工包：`B1 Repo/Env/Rendering` -> `B2 Auth/DAL/DTO` -> `B3 UI/Query/Stream` -> `B4 Security/Test/Deploy`；每包在现有仓库提交并可回滚，不复制目录形成 v2 副本。
 - Reference surfaces：只提供中性 public content、authenticated workspace、stream timeline/HITL、citation/error 状态示例；fixture 只验证组件，不得伪装成真实 Run/Retrieval 成功。
 - 不做：不做无 tag/digest 的不可回滚覆盖、不改三个 App 流量、不把 Run/Artifact/Retrieval 领域状态放入 BFF/Zustand、不预建跨 App 共享 UI 平台、不用 nonce CSP 无条件强制全部 route dynamic。
@@ -1120,7 +1169,7 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 2. V5-DOC-HYGIENE-001 工具无关文档收敛（`ACCEPTED`，2026-07-13；不再使用 AI 工具专属文档树）。
 3. Frontend-1：V5-P0-007A `tpl-app` React Admin 生产骨架（`SKELETON_ACCEPTED`，2026-07-11）。
 4. Frontend-1A2.1 Shell（`ACCEPTED`，2026-07-13；实现 `d2fa1a8`，矩阵 `451d22f`，证据 `V5-P0-007A2/A2.1/result.md`）。
-5. **当前任务** Security：关闭 V5-P0-005D 的浏览器 PKCE/CSRF/跨用户、伪造/过期 token、可重复 Secret 和 migration gate 缺口，使 P0-005/ADR-005 ACCEPTED。
+5. **当前任务** Frontend-1A2.2：P0-005/ADR-005 已 ACCEPTED，开始消费真实身份契约，完成 React Admin session、typed client/error/correlation、TanStack Query 和 i18n 基础；不得回退到 demo/mock auth。
 6. Frontend-1A2.2 Identity/Data Foundation：消费已接受的身份契约，完成真实 session、typed client/error/correlation、Query 和 i18n 基础。
 7. Frontend-1A2.3 CRUD Toolkit：完成通用 Table/Form/Description/Modal/Drawer/通知/上传下载和写操作约定。
 8. Frontend-1A2.4 Rich/Utility Toolkit：完成或显式处置 Icon/Chart/Editor/Media/通用指令工具与 legacy 能力。

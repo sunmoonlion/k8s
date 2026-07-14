@@ -1,7 +1,7 @@
 # ADR-005：用户身份、服务身份与浏览器 BFF 边界
 
-状态：CANDIDATE  
-日期：2026-07-12  
+状态：ACCEPTED
+日期：2026-07-14
 决策者：项目负责人、四仓 owner、架构与安全评审
 
 ## 1. 背景与已确认事实
@@ -175,7 +175,7 @@ P0-005 不包含：完整 RBAC 管理 UI、全量细粒度资源策略、Provide
 
 ## 6. 接受条件
 
-本 ADR 在以下证据齐全后由 CANDIDATE 转为 ACCEPTED：
+本 ADR 已在 2026-07-14 由 CANDIDATE 转为 ACCEPTED，证据为：
 
 - 三套 Admin contract/unit/integration 测试和真实 KIND 负向矩阵通过；
 - Info -> Knowledge 使用真实 client-credentials token，Knowledge 确认 exact audience/subject，并以本地 `knowledge:ingest` binding 授权（同时记录去敏的 provider scope 形状），Artifact Contract v1 仍通过；
@@ -183,6 +183,8 @@ P0-005 不包含：完整 RBAC 管理 UI、全量细粒度资源策略、Provide
 - 三套业务 Router 匿名访问为 401，已认证越权为 403，关键资源跨用户访问被拒绝；
 - K8s 配置从 Secret 引用六个 client 与服务 client，不提交有效 credential；
 - 证据目录记录 contract digest、测试命令、镜像/deployment digest、允许/拒绝矩阵和回滚演练。
+- 严格 TLS 浏览器运行使用完整 Chromium 与隔离 NSS Root CA；Casdoor 本地静态资源、HTTP/DB readiness 和 Organization.languages 不变量均通过。
+- 三个 Admin Backend 的 API/worker 均运行 Harbor `1.0.1`，实际 digest 与证据文件一致；迁移 Job 默认 `imagePullPolicy: Always`，避免节点缓存绕过 digest。
 
 ## 7. 标准依据
 

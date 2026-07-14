@@ -32,6 +32,8 @@ fi
 
 source "$K8S_ROOT_DIR/utils/unified-deployment-template.sh"
 source "$K8S_ROOT_DIR/utils/alembic-migration-gate.sh"
+source "$K8S_ROOT_DIR/utils/browser-oidc-gate.sh"
+source "$K8S_ROOT_DIR/utils/service-identity-gate.sh"
 
 SCRIPT_DIR="$KNOWLEDGE_ADMIN_BACKEND_SCRIPT_DIR"
 
@@ -260,6 +262,8 @@ deploy_app() {
     export KNOWLEDGE_ADMIN_BACKEND_TAG="${KNOWLEDGE_ADMIN_BACKEND_TAG:-1.0.1}"
     export IMAGE_PULL_POLICY="${IMAGE_PULL_POLICY:-Always}"
     export KNOWLEDGE_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME="${KNOWLEDGE_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}"
+    export KNOWLEDGE_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME="${KNOWLEDGE_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME:-knowledge-admin-backend-browser-oidc}"
+    export KNOWLEDGE_INFO_INGEST_BINDING_SECRET_NAME="${KNOWLEDGE_INFO_INGEST_BINDING_SECRET_NAME:-knowledge-info-ingest-service-binding}"
     export KNOWLEDGE_ADMIN_BACKEND_FULL_IMAGE_NAME="${KNOWLEDGE_ADMIN_BACKEND_IMAGE_REGISTRY}/${KNOWLEDGE_ADMIN_BACKEND_IMAGE_PROJECT}/${KNOWLEDGE_ADMIN_BACKEND_IMAGE}:${KNOWLEDGE_ADMIN_BACKEND_TAG}"
 
     log_info "镜像: $KNOWLEDGE_ADMIN_BACKEND_FULL_IMAGE_NAME"
@@ -286,6 +290,22 @@ deploy_app() {
     kubectl apply -f "$KNOWLEDGE_ADMIN_BACKEND_PVC_YAML" -n "$NAMESPACE" \
         && log_success "PVC 部署完成" \
         || { log_error "PVC 部署失败"; return 1; }
+
+    require_browser_oidc_secret \
+        "$NAMESPACE" \
+        "knowledge-admin-backend" \
+        "${KNOWLEDGE_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME:-knowledge-admin-backend-browser-oidc}" \
+        "sunmoonai-knowledge-admin" \
+        || { log_error "浏览器 OIDC 配置门禁失败，拒绝更新 Deployment"; return 1; }
+
+    require_service_identity_relation \
+        "$NAMESPACE" \
+        "info-distribution-worker" \
+        "${INFO_KNOWLEDGE_INGEST_CLIENT_SECRET_NAME:-info-knowledge-ingest-client}" \
+        "${KNOWLEDGE_INFO_INGEST_BINDING_SECRET_NAME:-knowledge-info-ingest-service-binding}" \
+        "sunmoonai-info-knowledge-ingest" \
+        "knowledge:ingest" \
+        || { log_error "服务身份关系门禁失败，拒绝更新 Deployment"; return 1; }
 
     run_alembic_migration_gate \
         "$NAMESPACE" \

@@ -32,6 +32,7 @@ fi
 
 source "$K8S_ROOT_DIR/utils/unified-deployment-template.sh"
 source "$K8S_ROOT_DIR/utils/alembic-migration-gate.sh"
+source "$K8S_ROOT_DIR/utils/browser-oidc-gate.sh"
 
 SCRIPT_DIR="$INFO_ADMIN_BACKEND_SCRIPT_DIR"
 
@@ -260,6 +261,7 @@ deploy_app() {
     export INFO_ADMIN_BACKEND_TAG="${INFO_ADMIN_BACKEND_TAG:-1.0.1}"
     export IMAGE_PULL_POLICY="${IMAGE_PULL_POLICY:-Always}"
     export INFO_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME="${INFO_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}"
+    export INFO_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME="${INFO_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME:-info-admin-backend-browser-oidc}"
     export INFO_ADMIN_BACKEND_FULL_IMAGE_NAME="${INFO_ADMIN_BACKEND_IMAGE_REGISTRY}/${INFO_ADMIN_BACKEND_IMAGE_PROJECT}/${INFO_ADMIN_BACKEND_IMAGE}:${INFO_ADMIN_BACKEND_TAG}"
 
     log_info "镜像: $INFO_ADMIN_BACKEND_FULL_IMAGE_NAME"
@@ -286,6 +288,13 @@ deploy_app() {
     kubectl apply -f "$INFO_ADMIN_BACKEND_PVC_YAML" -n "$NAMESPACE" \
         && log_success "PVC 部署完成" \
         || { log_error "PVC 部署失败"; return 1; }
+
+    require_browser_oidc_secret \
+        "$NAMESPACE" \
+        "info-admin-backend" \
+        "${INFO_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME:-info-admin-backend-browser-oidc}" \
+        "sunmoonai-info-admin" \
+        || { log_error "浏览器 OIDC 配置门禁失败，拒绝更新 Deployment"; return 1; }
 
     run_alembic_migration_gate \
         "$NAMESPACE" \

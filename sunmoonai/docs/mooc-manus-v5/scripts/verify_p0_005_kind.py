@@ -1,34 +1,26 @@
 #!/usr/bin/env python3
 """KIND verification for V5-P0-005 identity boundaries.
 
-The script never prints access tokens or client secrets. It checks anonymous
-fail-closed behavior for the three Admin APIs and, when service credentials are
-provided through the environment, checks that the Info -> Knowledge internal
-route accepts a real client-credentials token while rejecting an unauthenticated
-request. Research traffic is enabled only for the duration of the check and is
-restored in ``finally``.
-
-Required environment for the service-token check::
-
-    CASDOOR_SERVICE_CLIENT_ID
-    CASDOOR_SERVICE_CLIENT_SECRET
-
-The Casdoor application, audience, and subject binding must already be present
-in the Knowledge deployment configuration. No browser login is automated here;
-the browser PKCE/session matrix remains an interactive or Playwright evidence
-task after the real Casdoor applications are provisioned.
+The script never reads service credentials into the local process and never
+prints access tokens or client secrets. It checks anonymous fail-closed
+behavior for the three Admin APIs and executes the real Info distribution
+worker code inside its Pod. An empty ingestion payload must reach Knowledge's
+schema validation as HTTP 422, proving that the workload obtained a real
+client-credentials token and crossed the service-auth boundary. Research
+traffic is enabled only for the duration of the check and restored in
+``finally``.
 """
 
 from __future__ import annotations
 
 import argparse
+import http.client
 import json
 import os
 import subprocess
 import sys
 import time
 import urllib.error
-import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -79,7 +71,12 @@ def request_json(
             return json.loads(body) if body else None
     except urllib.error.HTTPError as exc:
         raise HttpFailure(exc.code, exc.read().decode(errors="replace")) from exc
-    except (urllib.error.URLError, TimeoutError) as exc:
+    except (
+        urllib.error.URLError,
+        TimeoutError,
+        ConnectionResetError,
+        http.client.RemoteDisconnected,
+    ) as exc:
         raise VerificationError(f"request failed for {path}: {exc}") from exc
 
 
@@ -156,87 +153,140 @@ def assert_no_explicit_research_traffic_override(
     )
     deployment = json.loads(raw)
     env = deployment["spec"]["template"]["spec"]["containers"][0].get("env", [])
-    if any(item.get("name") == "AGENT_V4_TRAFFIC_ENABLED" for item in env):
-        raise VerificationError(
-            "refusing to overwrite explicit AGENT_V4_TRAFFIC_ENABLED deployment env"
-        )
+    explicit = [
+        item
+        for item in env
+        if item.get("name") == "AGENT_V4_TRAFFIC_ENABLED"
+    ]
+    # The declarative deployment now carries an explicit fail-closed value in
+    # some generated manifests.  It is safe to replace that exact value for
+    # the duration of this internal verification; an explicit true or an
+    # indeterminate value must still fail closed.
+    for item in explicit:
+        if item.get("value") != "false" or "valueFrom" in item:
+            raise VerificationError(
+                "refusing to overwrite non-false AGENT_V4_TRAFFIC_ENABLED deployment env"
+            )
 
 
-def request_absolute_json(
-    url: str,
-    *,
-    method: str = "GET",
-    form: bytes | None = None,
-    headers: dict[str, str] | None = None,
-) -> Any:
-    request_headers = {
-        "Accept": "application/json",
-        **({"Content-Type": "application/x-www-form-urlencoded"} if form else {}),
-    }
-    if headers:
-        request_headers.update(headers)
-    request = urllib.request.Request(
-        url,
-        data=form,
-        method=method,
-        headers=request_headers,
+def verify_service_workload_binding(*, kubeconfig: str, namespace: str) -> dict[str, bool]:
+    raw = kubectl(
+        [
+            "get",
+            "deployment/info-admin-backend",
+            "deployment/celeryworker-info-admin-backend",
+            "deployment/knowledge-admin-backend",
+            "-n",
+            namespace,
+            "-o",
+            "json",
+        ],
+        kubeconfig=kubeconfig,
+        capture=True,
     )
-    try:
-        with urllib.request.urlopen(request, timeout=15) as response:
-            return json.loads(response.read())
-    except urllib.error.HTTPError as exc:
-        raise HttpFailure(exc.code, exc.read().decode(errors="replace")) from exc
-    except (urllib.error.URLError, TimeoutError) as exc:
-        raise VerificationError(f"request failed: {exc}") from exc
+    items = {item["metadata"]["name"]: item for item in json.loads(raw)["items"]}
 
+    def pod_spec(name: str) -> dict[str, Any]:
+        return items[name]["spec"]["template"]["spec"]
 
-def get_service_token(casdoor_url: str, application: str) -> str:
-    client_id = os.environ.get("CASDOOR_SERVICE_CLIENT_ID", "")
-    client_secret = os.environ.get("CASDOOR_SERVICE_CLIENT_SECRET", "")
-    if not client_id or not client_secret:
-        raise VerificationError(
-            "CASDOOR_SERVICE_CLIENT_ID and CASDOOR_SERVICE_CLIENT_SECRET are required"
-        )
-    discovery_url = (
-        f"{casdoor_url.rstrip('/')}/.well-known/{application}/openid-configuration"
-    )
-    # A local port-forward changes the TCP destination but must not change the
-    # issuer host used by Casdoor.  KIND can set this to the in-cluster service
-    # host; production runs leave it unset and use the canonical public host.
-    host_header = os.environ.get("CASDOOR_TEST_HOST_HEADER", "")
-    request_headers = {"Host": host_header} if host_header else None
-    try:
-        metadata = request_absolute_json(discovery_url, headers=request_headers)
-    except Exception as exc:
-        raise VerificationError("Casdoor service discovery failed") from exc
-    token_endpoint = metadata.get("token_endpoint") if isinstance(metadata, dict) else None
-    if not isinstance(token_endpoint, str) or not token_endpoint:
-        raise VerificationError("Casdoor discovery did not provide token_endpoint")
-    body = urllib.parse.urlencode(
-        {
-            "grant_type": "client_credentials",
-            "client_id": client_id,
-            "client_secret": client_secret,
-            "scope": "openid",
+    def secret_refs(name: str) -> set[str]:
+        container = pod_spec(name)["containers"][0]
+        return {
+            entry["secretRef"]["name"]
+            for entry in container.get("envFrom", [])
+            if "secretRef" in entry
         }
-    ).encode()
-    # Discovery may advertise the cluster/external hostname. Use the local
-    # port-forward while preserving its path and query.
-    advertised = urllib.parse.urlsplit(token_endpoint)
-    token_url = urllib.parse.urlunsplit(
-        (urllib.parse.urlsplit(casdoor_url).scheme, urllib.parse.urlsplit(casdoor_url).netloc,
-         advertised.path, advertised.query, "")
-    )
+
+    worker = pod_spec("celeryworker-info-admin-backend")
+    checks = {
+        "caller_secret_only_on_worker": (
+            "info-knowledge-ingest-client"
+            in secret_refs("celeryworker-info-admin-backend")
+            and "info-knowledge-ingest-client" not in secret_refs("info-admin-backend")
+        ),
+        "resource_binding_on_knowledge": (
+            "knowledge-info-ingest-service-binding"
+            in secret_refs("knowledge-admin-backend")
+        ),
+        "dedicated_service_account": (
+            worker.get("serviceAccountName") == "info-distribution-worker"
+        ),
+        "service_account_token_not_mounted": (
+            worker.get("automountServiceAccountToken") is False
+        ),
+    }
+    if not all(checks.values()):
+        raise VerificationError("service workload binding does not match the P0 contract")
+    return checks
+
+
+def verify_info_worker_service_call(*, kubeconfig: str, namespace: str) -> int:
+    probe = r'''
+import asyncio
+import json
+
+import httpx
+
+from app.infrastructure.external.knowledge_app import get_knowledge_app_client
+
+
+async def main() -> None:
+    client = get_knowledge_app_client()
+    if not client.enabled:
+        raise RuntimeError("service client is disabled")
     try:
-        payload = request_absolute_json(
-            token_url, method="POST", form=body, headers=request_headers
-        )
-    except Exception as exc:
-        raise VerificationError("Casdoor client-credentials request failed") from exc
-    token = payload.get("access_token") if isinstance(payload, dict) else None
-    if not isinstance(token, str) or not token:
-        raise VerificationError("Casdoor token response did not contain access_token")
-    return token
+        await client.ingest_document({})
+    except httpx.HTTPStatusError as exc:
+        status = exc.response.status_code
+        if status != 422:
+            raise RuntimeError(f"unexpected Knowledge response status: {status}") from None
+        print(json.dumps({
+            "with_real_worker_client_credentials": status,
+            "token_printed": False,
+            "credentials_read_by_local_process": False,
+        }, separators=(",", ":")))
+        return
+    raise RuntimeError("empty ingestion unexpectedly returned success")
+
+
+asyncio.run(main())
+'''
+    result = subprocess.run(
+        [
+            "kubectl",
+            "--kubeconfig",
+            kubeconfig,
+            "exec",
+            "-i",
+            "-n",
+            namespace,
+            "deployment/celeryworker-info-admin-backend",
+            "--",
+            "sh",
+            "-lc",
+            "cd /app && .venv/bin/python -",
+        ],
+        input=probe,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if result.returncode != 0:
+        raise VerificationError("Info worker service-call probe failed")
+    lines = [line for line in result.stdout.splitlines() if line.strip()]
+    if not lines:
+        raise VerificationError("Info worker service-call probe returned no result")
+    try:
+        payload = json.loads(lines[-1])
+    except json.JSONDecodeError as exc:
+        raise VerificationError("Info worker service-call probe returned invalid JSON") from exc
+    if payload != {
+        "with_real_worker_client_credentials": 422,
+        "token_printed": False,
+        "credentials_read_by_local_process": False,
+    }:
+        raise VerificationError("Info worker service-call probe result mismatch")
+    return 422
 
 
 def set_research_traffic(*, kubeconfig: str, namespace: str, enabled: bool) -> None:
@@ -275,22 +325,25 @@ def main() -> int:
     parser.add_argument("--info-port", type=int, default=18082)
     parser.add_argument("--knowledge-port", type=int, default=18083)
     parser.add_argument("--research-port", type=int, default=18084)
-    parser.add_argument("--casdoor-port", type=int, default=18081)
-    parser.add_argument("--casdoor-service", default="service/casdoor-sunmoonai")
-    parser.add_argument(
-        "--casdoor-application", default="sunmoonai-info-knowledge-ingest"
-    )
     args = parser.parse_args()
 
     kubeconfig = str(Path(args.kubeconfig).expanduser())
     info_url = f"http://127.0.0.1:{args.info_port}"
     knowledge_url = f"http://127.0.0.1:{args.knowledge_port}"
     research_url = f"http://127.0.0.1:{args.research_port}"
-    casdoor_url = f"http://127.0.0.1:{args.casdoor_port}"
     forwards: list[subprocess.Popen[bytes]] = []
     research_overridden = False
     summary: dict[str, Any] = {"task": "V5-P0-005", "result": "failed"}
     try:
+        # Enabling Research replaces its Pod. Complete that rollout before
+        # binding a port-forward, otherwise the tunnel may stay attached to
+        # the terminating Pod and fail mid-request.
+        assert_no_explicit_research_traffic_override(
+            kubeconfig=kubeconfig, namespace=args.namespace
+        )
+        set_research_traffic(kubeconfig=kubeconfig, namespace=args.namespace, enabled=True)
+        research_overridden = True
+
         forwards = [
             start_port_forward(
                 kubeconfig=kubeconfig,
@@ -310,24 +363,10 @@ def main() -> int:
                 target="service/research-admin-backend",
                 local_port=args.research_port,
             ),
-            start_port_forward(
-                kubeconfig=kubeconfig,
-                namespace=args.namespace,
-                target=args.casdoor_service,
-                local_port=args.casdoor_port,
-            ),
         ]
         wait_for_reachable(info_url, "/api/documents")
         wait_for_reachable(knowledge_url, "/api/knowledge/ingestions")
         wait_for_reachable(research_url, "/api/agent/sessions")
-        wait_for_reachable(casdoor_url, "/.well-known/" + args.casdoor_application + "/openid-configuration")
-
-        # Research is traffic-off by default; enable only to verify its auth boundary.
-        assert_no_explicit_research_traffic_override(
-            kubeconfig=kubeconfig, namespace=args.namespace
-        )
-        set_research_traffic(kubeconfig=kubeconfig, namespace=args.namespace, enabled=True)
-        research_overridden = True
 
         anonymous = {
             "info_documents": expect_status(info_url, "/api/documents", {401}),
@@ -339,8 +378,9 @@ def main() -> int:
             ),
         }
 
-        service_token = get_service_token(casdoor_url, args.casdoor_application)
-        service_headers = {"Authorization": f"Bearer {service_token}"}
+        workload_binding = verify_service_workload_binding(
+            kubeconfig=kubeconfig, namespace=args.namespace
+        )
         internal_unauthenticated = expect_status(
             knowledge_url,
             "/api/internal/v1/knowledge/ingestions",
@@ -348,15 +388,10 @@ def main() -> int:
             method="POST",
             payload={},
         )
-        # Empty JSON reaches Pydantic only after the service dependency succeeds;
-        # 422 therefore proves the real service token crossed the auth boundary.
-        internal_authenticated = expect_status(
-            knowledge_url,
-            "/api/internal/v1/knowledge/ingestions",
-            {422},
-            method="POST",
-            payload={},
-            headers=service_headers,
+        # The probe runs the production Info worker client. Empty JSON reaches
+        # Pydantic only after Knowledge validates the real service token.
+        internal_authenticated = verify_info_worker_service_call(
+            kubeconfig=kubeconfig, namespace=args.namespace
         )
         summary = {
             "task": "V5-P0-005",
@@ -364,9 +399,11 @@ def main() -> int:
             "anonymous": anonymous,
             "internal_route": {
                 "without_service_token": internal_unauthenticated,
-                "with_real_client_credentials": internal_authenticated,
+                "with_real_worker_client_credentials": internal_authenticated,
                 "token_printed": False,
+                "credentials_read_by_local_process": False,
             },
+            "workload_binding": workload_binding,
             "browser_pkce_matrix": "not_automated_by_this_script",
         }
         print(json.dumps(summary, ensure_ascii=False, indent=2))

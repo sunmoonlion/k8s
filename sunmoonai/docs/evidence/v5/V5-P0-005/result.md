@@ -1,22 +1,21 @@
-# V5-P0-005 KIND evidence (2026-07-12 to 2026-07-13)
+# V5-P0-005 KIND evidence (2026-07-12 to 2026-07-14)
 
 ## Scope
 
-This result covers the real Casdoor service-token boundary and the anonymous
-fail-closed checks for the three Admin APIs. It does not claim completion of
-the browser PKCE matrix; that remains a separate Playwright/manual task.
+This result covers the real Casdoor service-token boundary, anonymous
+fail-closed checks, negative JWT matrix, browser PKCE/CSRF/cross-user matrix,
+and strict TLS browser execution for the three Admin APIs.
 
 ## Runtime
 
 - namespace: `app-platform-dev`
 - traffic after the check: `research-admin-backend` `AGENT_V4_TRAFFIC_ENABLED=false`
 - final Admin Backend API/worker release tag: `1.0.1` for Info, Knowledge and Research
-- Info image: `info-admin-backend:p0-005-auth-20260712-r3`
-  digest: `sha256:6c8041e83f96f4952718ecf63a8c8d8a5664d8343ecc135b1c1e0ad13a2ceb3d`
-- Knowledge image: `knowledge-admin-backend:p0-005-auth-20260712-r3`
-  digest: `sha256:7c55d2bfd130f0b68a8b8df3f338739c1570ceef36b6112da63f1bd740b9b7d4`
-- Research image: `research-admin-backend:p0-005-auth-20260712`
-  digest: `sha256:b10820a71218f5630cc519452c426a867a85ba5ed95870fae164e9d31fec6d5b`
+- Info image digest: `sha256:0dd720796ad52086345ca3b5f5b87a52bf2e2141fa00214a1c301561dda570ad`
+- Knowledge image digest: `sha256:29fdbabc8a59ed855141bb292b2525a585bf94cfdb3ddb434973fcc91774911f`
+- Research image digest: `sha256:1ad5ef63069f4345ce52a4951b1a82eacb2e86267c848561c172b399e5e114ef`
+- All six API/worker Pods reported the corresponding registry digest; no
+  `p0-*` image remains in the six Admin Backend Deployments.
 - Knowledge service verifier uses the explicit standard Casdoor discovery URL
   for the provider's access-token issuer; browser BFF discovery remains
   application-specific.
@@ -59,14 +58,13 @@ knowledge-admin-backend: knowledge_admin_user_migration 20260712_0002 (head)
 research-admin-backend:  research_admin_user_migration  20260712_0002 (head)
 ```
 
-The Knowledge negative test used the previous `1.0.1` image, which did not
-resolve `MIGRATION_DATABASE_URL`. The gate failed before Alembic with
-`migration gate: image does not resolve MIGRATION_DATABASE_URL`, and the live
-Deployment remained on `knowledge-admin-backend:1.0.1`. The positive test used
-`knowledge-admin-backend:p0-005-migration-20260713`, registry digest
-`sha256:59889fdf08894546852ed3f92970e5d5f5c80bcf5a4fd92109ad22d641850e88`,
-and passed without changing that Deployment. Knowledge source commits are
-`bdc92bc` (backend) and `c18453d` (parent pointer).
+An earlier check intentionally caught that the pre-existing Knowledge
+`1.0.1` digest did not resolve `MIGRATION_DATABASE_URL`. The tested candidates
+were therefore deployed under unique tags first, passed the migration gate,
+and only then published as `1.0.1`. The shared migration gate now defaults to
+`imagePullPolicy: Always`; this prevents a node-local old tag cache from
+silently bypassing the digest selected in Harbor. The old stable artifacts
+remain reachable through their `p0-005-auth-*` rollback tags.
 
 ## Verification output
 
@@ -99,10 +97,22 @@ again and passed with the identical 401/401/422 matrix. No `ImagePullBackOff`
 Pod remained in `app-platform-dev`; untested Web/Frontend components stayed on
 their previous stable tags.
 
+The service negative matrix passed with statuses:
+`valid_control=422`, `expired=401`, `wrong_audience=401`, `wrong_issuer=401`,
+`unbound_subject=403`, `malformed_scope=401`, `forged_signature=401`.
+
+The strict TLS browser matrix passed with primary and secondary identities for
+Info, Knowledge, and Research. Each identity returned `authenticated_me=200`,
+stable actor binding, one-time callback consumption, HttpOnly session cookie,
+four CSRF negative cases, logout revocation, and no provider material. The
+strict runner used full bundled Chromium with an isolated NSS database seeded
+from the platform Root CA; provider UI latency was approximately 0.5–1.0 s.
+Casdoor runtime checks confirmed local static assets (no external font/CDN),
+PostgreSQL connectivity, and the `Organization.languages` JSON-array
+invariant.
+
 ## Acceptance status
 
-`P0-005D` is **partial**: the real service boundary, anonymous checks,
-repeatable database migration Secret injection, role separation, and
-deployment-pre migration gate pass. Browser PKCE/CSRF/cross-user evidence,
-forged/expired-token KIND matrix, and repeatable browser-client Secret
-injection remain open. ADR-005 therefore stays `CANDIDATE`.
+`P0-005D`, `P0-005E`, and `P0-005F` are **ACCEPTED** as of 2026-07-14.
+ADR-005 is ready to move from `CANDIDATE` to `ACCEPTED`; Research traffic was
+restored to the declarative fail-closed value `false` after every check.

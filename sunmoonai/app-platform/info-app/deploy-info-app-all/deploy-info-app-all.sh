@@ -63,6 +63,7 @@ for worker_tag_var in \
     eval "current_tag=\${${worker_tag_var}:-}"
     export "${worker_tag_var}=${current_tag:-$APP_IMAGE_TAG}"
 done
+app_dependency_validate_frontend_release_tags "$APP_VAR_PREFIX"
 
 call_subscript() {
     local script_path="$1"

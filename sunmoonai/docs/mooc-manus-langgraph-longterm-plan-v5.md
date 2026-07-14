@@ -586,6 +586,8 @@ ADR-013 已接受以下目标态：统一 React + TypeScript 开发生态，但�
 | Info/Knowledge/Research Web | React 19 + Next.js App Router | 按路由/组件混合渲染，`standalone` Node 部署 |
 | Info/Knowledge/Research Admin | React 19 + React Router 8 Framework Mode + Vite + Ant Design 6 | `ssr: false` 纯 SPA，Nginx 静态部署 |
 
+Web 模板可参考 `ixartz/Next-js-Boilerplate` 的 App Router、严格 TypeScript、环境校验、国际化、边界组件、测试和 CI 组织，但必须在 ADR-014 中逐项记录采用、改造或拒绝；不复制 Clerk、Drizzle/PGlite、前端数据库、SaaS 集成或其产品页面。Casdoor OIDC/BFF、Provider Contract、后端领域 API 和自托管 Node/KIND 约束优先于上游模板默认值；上游 Node 版本要求也不得未经兼容性验证直接带入。
+
 Web 规则：
 
 - Info Web 的公开内容优先 SSG/ISR/SSR，登录后交互使用 Client Component。
@@ -848,6 +850,8 @@ GA 目标：
 - Next Web 模板架构再基线、Research 真实 streaming 试点与 v2 冻结。
 
 Runtime Spike 内验证 SSE/cancel/worker kill；可靠交付 Spike 内验证重复投递和副作用恢复。前端先严格按 P0-007A -> P0-007A2/A2.1 -> P0-005 -> P0-007A2/A2.2~A2.5 -> P0-007B -> P0-007C 完成 React Admin 模板资格链；A2.2 的真实身份接入不得先于 P0-005 接受。随后完成 P0-004、P0-001/002、P0-006，并在 ADR-001/004/005 有输出后于现有 `tpl-web-frontend` 仓库内按 P0-008A/B/C 完成 Next Web v2，禁止未验证模板直接覆盖业务代码。全部 Phase 0 退出条件满足并通过 Gate P0 后，才按 Info -> Knowledge -> Research 串行原地迁移三个 Admin（M1-411）和三个 Web（M1-413）。核心 ADR Spike 仍使用 2~3 周时间盒，但完整 Phase 0 还包含 React 模板能力对齐、真实 Admin 薄切和 Next 模板资格链，不能宣称全部工作可在同一 2~3 周内完成。退出门禁是 ADR-001~006/013/014 有运行或试点证据、P0-007A/A2/B/C 与 P0-008A/B/C 全部通过、契约测试机制可执行且不存在阻断 M1a 的未决核心问题。
+
+执行恢复纪律：旧 v4 局部实现、已运行镜像或单一模板骨架不得倒推为 v5 迁移完成。`SKELETON_ACCEPTED`、`PROVISIONAL_EARLY_SLICE` 与 `TEMPLATE_MIGRATION_READY` 必须使用不同状态；只有模板资格链和 Gate P0 全部通过后，才允许按 Info → Knowledge → Research 逐 App 原地迁移、独立切换和回滚。版本清理遵循“先记录 digest 和回滚基线，后删除临时 tag”，不得覆盖或删除仍被任何 Deployment/回滚流程引用的稳定版本。三套 App 的部署入口现在默认拒绝前端 `p0-*` tag，仅显式隔离测试模式可放行。具体操作、当前前端矩阵和经验教训以实施计划 §1.6 为唯一执行权威。
 
 ### 19.3 M1a：内部真实产品竖线
 

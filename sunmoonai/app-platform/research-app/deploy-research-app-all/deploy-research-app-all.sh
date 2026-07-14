@@ -64,6 +64,7 @@ tag_var="NODEBULLWORKER_${APP_VAR_PREFIX}_WEB_BACKEND_TAG"
 eval "component_tag=\${${tag_var}:-}"
 export "${tag_var}=${component_tag:-$APP_IMAGE_TAG}"
 unset tag_var component_tag
+app_dependency_validate_frontend_release_tags "$APP_VAR_PREFIX"
 
 call_subscript() {
     local script_path="$1"

@@ -17,12 +17,27 @@ run_alembic_migration_gate() {
     local migration_database_secret="$8"
     local job_name="${app_name}-migration-gate"
     local timeout_seconds="${ALEMBIC_MIGRATION_GATE_TIMEOUT_SECONDS:-300}"
+    local ttl_seconds="${ALEMBIC_MIGRATION_GATE_TTL_SECONDS:-604800}"
+    local image_pull_policy="${ALEMBIC_MIGRATION_GATE_IMAGE_PULL_POLICY:-Always}"
     local migration_url
+
+    if ! [[ "$ttl_seconds" =~ ^[1-9][0-9]*$ ]]; then
+        log_error "迁移门禁 Job TTL 必须是正整数秒: app=$app_name value=$ttl_seconds"
+        return 1
+    fi
 
     if [[ -z "$migration_database_secret" || "$migration_database_secret" == "$runtime_database_secret" ]]; then
         log_error "迁移门禁要求独立于运行时数据库 Secret: app=$app_name"
         return 1
     fi
+
+    case "$image_pull_policy" in
+        Always|IfNotPresent|Never) ;;
+        *)
+            log_error "迁移门禁 imagePullPolicy 非法: app=$app_name value=$image_pull_policy"
+            return 1
+            ;;
+    esac
 
     if ! kubectl get secret "$migration_database_secret" -n "$namespace" >/dev/null 2>&1; then
         log_error "迁移 Secret 不存在: $namespace/$migration_database_secret"
@@ -53,6 +68,7 @@ metadata:
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: ${timeout_seconds}
+  ttlSecondsAfterFinished: ${ttl_seconds}
   template:
     metadata:
       labels:
@@ -67,7 +83,7 @@ spec:
       containers:
       - name: migrate
         image: ${image}
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: ${image_pull_policy}
         command: ["/bin/sh", "-ec"]
         args:
         - |

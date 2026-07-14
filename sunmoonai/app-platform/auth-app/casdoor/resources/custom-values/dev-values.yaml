@@ -3,7 +3,7 @@
 
 image:
   repository: harbor.sunmoonai.com:30443/k8s-images/casdoor
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   # tag 由 deploy-casdoor.sh 中通过 --set image.tag= 注入
 
 imagePullSecrets:
@@ -15,8 +15,12 @@ imagePullSecrets:
 env:
   RUNNING_IN_DOCKER: "true"
   driverName: postgres
-  # ⚠️ 密码通过 K8s Secret 覆盖，这里仅作结构占位
-  dataSourceName: "user=casdoor password=casdoor_dev_pass host=postgresql-sunmoonai.data-platform-dev.svc.cluster.local port=5432 sslmode=disable dbname=casdoor"
+  dataSourceName:
+    valueFrom:
+      secretKeyRef:
+        name: casdoor-postgresql-conn
+        key: APP_DB_URI
+        optional: false
   dbName: ""
 
 # ──────────────────────────────────────────────────────────────
@@ -38,11 +42,48 @@ ingress:
 # ──────────────────────────────────────────────────────────────
 resources:
   requests:
-    cpu: 200m
-    memory: 256Mi
-  limits:
     cpu: 500m
     memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+controller:
+  strategy: RollingUpdate
+  rollingUpdate:
+    unavailable: "0"
+    surge: 1
+
+probes:
+  liveness:
+    custom: true
+    spec:
+      httpGet:
+        path: /api/get-account
+        port: http
+      initialDelaySeconds: 20
+      periodSeconds: 15
+      timeoutSeconds: 5
+      failureThreshold: 6
+  readiness:
+    custom: true
+    spec:
+      httpGet:
+        path: /api/get-account
+        port: http
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 6
+  startup:
+    custom: true
+    spec:
+      httpGet:
+        path: /api/get-account
+        port: http
+      periodSeconds: 5
+      timeoutSeconds: 5
+      failureThreshold: 60
 
 # ──────────────────────────────────────────────────────────────
 # app.conf（beego 配置，通过 ConfigMap 挂载到 /conf）
@@ -55,10 +96,12 @@ configmap:
       app.conf: |
         appname = casdoor
         httpport = 8000
-        runmode = dev
+        runmode = prod
         SessionOn = true
         copyrequestbody = true
         logPostOnly = true
+        staticBaseUrl = "."
+        aiAssistantUrl = ""
 
 persistence:
   config:

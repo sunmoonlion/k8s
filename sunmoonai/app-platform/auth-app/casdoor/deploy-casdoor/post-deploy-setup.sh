@@ -3,7 +3,7 @@
 # Casdoor 首次部署后初始化脚本
 #
 # 功能：
-#   1. 写入 /conf/app.conf（beego 配置，含 copyrequestbody=true）
+#   1. 验证 Helm 声明式挂载的 /conf/app.conf 和本地化静态资源
 #   2. 幂等创建 Casdoor Organizations
 #   3. 幂等创建 Casdoor Applications（本地配置可声明 authorization_code/client_credentials）
 #   4. 按 ORG_* 在各业务组织下幂等创建用户 admin（密码同 ADMIN_PASSWORD）
@@ -47,47 +47,16 @@ log_error()   { echo "[ERROR] $*" >&2; }
 
 wait_for_deployment_ready() {
     local deployment="$1" namespace="$2" timeout="${3:-300}"
-    local interval=5 deadline now last_log=0
-    deadline=$((SECONDS + timeout))
-
-    while [[ $SECONDS -lt $deadline ]]; do
-        local status rc desired updated available observed generation
-        status=$(kubectl get deployment "$deployment" -n "$namespace" \
-            -o jsonpath='{.spec.replicas}|{.status.updatedReplicas}|{.status.availableReplicas}|{.status.observedGeneration}|{.metadata.generation}' 2>&1)
-        rc=$?
-
-        if [[ $rc -ne 0 ]]; then
-            log_warn "查询 Deployment 失败，尝试重连后继续等待: ${status%%$'\n'*}"
-            if command -v setup_kubectl_environment >/dev/null 2>&1; then
-                setup_kubectl_environment >/dev/null 2>&1 || true
-            fi
-            sleep "$interval"
-            continue
-        fi
-
-        IFS='|' read -r desired updated available observed generation <<< "$status"
-        desired="${desired:-1}"
-        updated="${updated:-0}"
-        available="${available:-0}"
-        observed="${observed:-0}"
-        generation="${generation:-0}"
-
-        if [[ "$observed" -ge "$generation" && "$updated" -ge "$desired" && "$available" -ge "$desired" ]]; then
-            log_ok "Deployment 已就绪: $namespace/$deployment ($available/$desired)"
-            return 0
-        fi
-
-        now=$SECONDS
-        if [[ $((now - last_log)) -ge 30 ]]; then
-            log_info "等待 Deployment 就绪: $namespace/$deployment updated=$updated/$desired available=$available/$desired observed=$observed/$generation"
-            last_log=$now
-        fi
-        sleep "$interval"
-    done
-
-    kubectl describe deployment "$deployment" -n "$namespace" || true
-    kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=${deployment}" -o wide || true
-    return 1
+    # availableReplicas may still belong to the old ReplicaSet. Require the
+    # Kubernetes rollout controller to report the new template complete.
+    if ! kubectl rollout status "deployment/$deployment" -n "$namespace" \
+        --timeout="${timeout}s"; then
+        kubectl describe deployment "$deployment" -n "$namespace" || true
+        kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=${deployment}" -o wide || true
+        return 1
+    fi
+    log_ok "Deployment 新 ReplicaSet 已完成 rollout: $namespace/$deployment"
+    return 0
 }
 
 # ─────────────────────────── 参数解析 ───────────────────────────
@@ -101,6 +70,16 @@ for arg in "$@"; do
 done
 
 RELEASE="casdoor-sunmoonai"
+PG_CLIENT_POD_NAME=""
+
+cleanup_k8s_sql_client() {
+    if [[ -n "$PG_CLIENT_POD_NAME" ]]; then
+        kubectl delete pod "$PG_CLIENT_POD_NAME" -n "$(k8s_client_namespace)" \
+            --ignore-not-found --wait=false >/dev/null 2>&1 || true
+        PG_CLIENT_POD_NAME=""
+    fi
+}
+trap cleanup_k8s_sql_client EXIT
 CLUSTER_LOWER="$(echo "${CLUSTER:-}" | tr '[:upper:]' '[:lower:]')"
 if [[ "$CLUSTER_LOWER" == "kind" || "$CLUSTER_LOWER" =~ ^c[0-9]+$ ]]; then
     DB_ACCESS_CONFIG="$SCRIPT_DIR/../db-access-bootstrap/config/postgresql.k8s.env"
@@ -134,10 +113,13 @@ if [[ -f "$SETUP_CONF" ]]; then
 else
     log_warn "未找到 $SETUP_CONF，跳过 Organizations/Applications 初始化"
 fi
-if [[ -f "$LOCAL_SETUP_CONF" ]]; then
-    # 本地配置只允许存在于部署机，不应进入仓库；用于注入 Casdoor client secret。
+if [[ "${CASDOOR_ENABLE_LEGACY_IDENTITY_SETUP:-false}" == "true" && -f "$LOCAL_SETUP_CONF" ]]; then
+    # 兼容旧的 operator-only 配置，但默认关闭；P0-005 provision Job 是
+    # 业务 identity 的唯一正常入口，避免与本脚本形成第二套漂移真相源。
     source "$LOCAL_SETUP_CONF"
-    log_info "已加载本地敏感配置: $LOCAL_SETUP_CONF"
+    log_warn "已显式启用 legacy Casdoor identity setup；迁移完成后应关闭 CASDOOR_ENABLE_LEGACY_IDENTITY_SETUP"
+elif [[ -f "$LOCAL_SETUP_CONF" ]]; then
+    log_info "检测到 operator-only identity 配置，但默认跳过（由 P0-005 provision Job 负责）"
 else
     log_info "未找到本地敏感配置，跳过额外 Organizations/Applications"
 fi
@@ -148,7 +130,7 @@ setup_app_conf() {
     local pod
     pod=$(kubectl get pods -n "$NAMESPACE" \
         -l "app.kubernetes.io/instance=$RELEASE" \
-        -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+        -o jsonpath='{range .items[?(@.status.containerStatuses[0].ready==true)]}{.metadata.name}{"\n"}{end}' 2>/dev/null | head -n 1)
 
     if [[ -z "$pod" ]]; then
         log_error "未找到 Casdoor pod (release=$RELEASE, namespace=$NAMESPACE)"
@@ -156,23 +138,27 @@ setup_app_conf() {
     fi
     log_info "目标 Pod: $pod"
 
+    local expected_runmode="${CASDOOR_RUNMODE:-prod}"
+    if ! kubectl exec -n "$NAMESPACE" "$pod" -- \
+        sh -ec "test -f /conf/app.conf && grep -Eq '^[[:space:]]*copyrequestbody[[:space:]]*=[[:space:]]*true' /conf/app.conf && grep -Eq '^[[:space:]]*runmode[[:space:]]*=[[:space:]]*${expected_runmode}[[:space:]]*' /conf/app.conf && grep -Eq '^[[:space:]]*staticBaseUrl[[:space:]]*=[[:space:]]*\"\.\"[[:space:]]*' /conf/app.conf" 2>/dev/null; then
+        log_error "/conf/app.conf 不符合 Helm 声明式配置（runmode=$expected_runmode/copyrequestbody=true/staticBaseUrl=local）；拒绝执行临时 kubectl exec 写入"
+        return 1
+    fi
     if kubectl exec -n "$NAMESPACE" "$pod" -- \
-        sh -c 'test -f /conf/app.conf && grep -q copyrequestbody /conf/app.conf' 2>/dev/null; then
-        log_info "/conf/app.conf 已存在，跳过写入"
+        sh -ec '
+          set -eu
+          test -f /web/build/index.html
+          ! grep -qE "fonts\\.googleapis\\.com|cdn\\.casbin\\.org|cdn\\.casdoor\\.com" /web/build/index.html
+          ! grep -Rql --include="*.css" "fonts\\.googleapis\\.com" /web/build/static/css 2>/dev/null
+          test -z "$(find /web/build/static/js -type f -name '*.js' -exec grep -l "cdn\\.casdoor\\.com" {} + 2>/dev/null)"
+          if command -v curl >/dev/null 2>&1; then
+            ! curl -fsS -D - -o /dev/null http://127.0.0.1:8000/ | grep -qiE "fonts\\.googleapis\\.com|cdn\\.casbin\\.org|cdn\\.casdoor\\.com"
+          fi
+        '; then
+        log_ok "Casdoor 配置与静态资源就绪（无外部字体/CDN 依赖）"
     else
-        log_info "写入 /conf/app.conf ..."
-        kubectl exec -n "$NAMESPACE" "$pod" -- sh -c 'cat > /conf/app.conf << '"'"'EOF'"'"'
-appname = casdoor
-httpport = 8000
-runmode = dev
-SessionOn = true
-copyrequestbody = true
-logPostOnly = true
-EOF'
-        log_info "重启 Casdoor deployment ..."
-        kubectl rollout restart deployment/"$RELEASE" -n "$NAMESPACE"
-        wait_for_deployment_ready "$RELEASE" "$NAMESPACE" 300
-        log_ok "app.conf 写入并重启完成"
+        log_error "Casdoor 静态资源仍含外部网络依赖或资源不完整"
+        return 1
     fi
 }
 
@@ -242,10 +228,9 @@ k8s_client_image() {
 
 run_sql_with_k8s_client() {
     local sql="$1"
-    local client_ns client_image pod_name timeout pull_policy
+    local client_ns client_image timeout pull_policy
     client_ns="$(k8s_client_namespace)"
     client_image="$(k8s_client_image)"
-    pod_name="casdoor-postdeploy-pg-$(date +%s%N | tail -c 8)"
     timeout="${PG_CLIENT_POD_RUNNING_TIMEOUT:-5m0s}"
     pull_policy="${PG_CLIENT_IMAGE_PULL_POLICY:-IfNotPresent}"
 
@@ -254,13 +239,21 @@ run_sql_with_k8s_client() {
         return 1
     }
 
-    kubectl run "$pod_name" --rm -i --restart=Never -n "$client_ns" \
-        --image="$client_image" \
-        --image-pull-policy="$pull_policy" \
-        --pod-running-timeout="$timeout" \
-        --env="PGPASSWORD=$DB_PASSWORD" \
-        --command -- psql \
-            -h "$DB_HOST" -p "$DB_PORT" \
+    if [[ -z "$PG_CLIENT_POD_NAME" ]]; then
+        PG_CLIENT_POD_NAME="casdoor-postdeploy-pg-$(date +%s%N | tail -c 8)"
+        kubectl run "$PG_CLIENT_POD_NAME" --restart=Never -n "$client_ns" \
+            --image="$client_image" \
+            --image-pull-policy="$pull_policy" \
+            --pod-running-timeout="$timeout" \
+            --env="PGPASSWORD=$DB_PASSWORD" \
+            --labels="app.kubernetes.io/component=casdoor-postdeploy-sql" \
+            --command -- sleep 900 >/dev/null
+        kubectl wait --for=condition=Ready "pod/$PG_CLIENT_POD_NAME" \
+            -n "$client_ns" --timeout="$timeout" >/dev/null
+    fi
+
+    kubectl exec -n "$client_ns" "$PG_CLIENT_POD_NAME" -- \
+        psql -h "$DB_HOST" -p "$DB_PORT" \
             -U "$DB_USER" -d "$DB_NAME" \
             -q -c "$sql"
 }
@@ -313,15 +306,19 @@ setup_organizations() {
         local val="${!var:-}"
         [[ -z "$val" ]] && break
         create_org "$val"
-        ((i++))
+        i=$((i + 1))
     done
 }
 
 # 已用旧脚本写入的组织可能没有 languages，补上以免 OAuth 登录页崩溃
 patch_organization_languages() {
-    log_info "校验 Organization.languages（修补 NULL 以避免登录页白板）..."
-    run_sql "UPDATE organization SET languages = '[\"en\",\"zh\"]' WHERE owner = 'admin' AND (languages IS NULL OR languages = '' OR btrim(languages) = 'null');" \
-        && log_ok "Organization.languages 已就绪"
+    log_info "校验所有 Organization.languages，并建立数据库不变量（修复登录页白板根因）..."
+    run_sql "UPDATE organization SET languages = '[\"en\",\"zh\"]' WHERE languages IS NULL OR btrim(languages) = '' OR lower(btrim(languages)) = 'null';" \
+        || return 1
+    run_sql "ALTER TABLE organization DROP CONSTRAINT IF EXISTS sunmoonai_org_languages_json_array;" \
+        || return 1
+    run_sql "ALTER TABLE organization ADD CONSTRAINT sunmoonai_org_languages_json_array CHECK (languages IS NOT NULL AND btrim(languages) <> '' AND jsonb_typeof(languages::jsonb) = 'array');" \
+        && log_ok "Organization.languages 不变量已建立（所有组织均为非空 JSON array）"
 }
 
 # ─────────────────────────── 第三步：Applications ───────────────────────────
@@ -396,7 +393,7 @@ setup_applications() {
         local val="${!var:-}"
         [[ -z "$val" ]] && break
         create_app "$val"
-        ((i++))
+        i=$((i + 1))
     done
 }
 
@@ -427,7 +424,7 @@ ensure_org_admin_users() {
 
         if [[ "$org_name" == "built-in" ]]; then
             log_info "跳过 built-in（使用全局 admin 流程）"
-            ((i++))
+            i=$((i + 1))
             continue
         fi
 
@@ -471,7 +468,7 @@ ensure_org_admin_users() {
             return 1
         fi
 
-        ((i++))
+        i=$((i + 1))
     done
 }
 
@@ -509,15 +506,15 @@ main() {
     setup_app_conf || exit 1
 
     # Step 2～5：Organizations / Applications / 组织 admin / 全局 admin（需要 psql）
-    if check_psql; then
-        setup_organizations
-        patch_organization_languages
-        setup_applications
-        ensure_org_admin_users
-        setup_admin_password
-    else
-        log_warn "跳过 Organizations/Applications/组织 admin/全局 admin 密码初始化（psql 不可用或连接失败）"
-    fi
+    check_psql || {
+        log_error "PostgreSQL 不可用；拒绝以未完成身份/数据不变量的状态报告部署成功"
+        exit 1
+    }
+    setup_organizations
+    patch_organization_languages
+    setup_applications
+    ensure_org_admin_users
+    setup_admin_password
 
     echo ""
     echo "═══════════ Casdoor 访问信息 ═══════════"

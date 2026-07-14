@@ -32,6 +32,55 @@ resources: {}
 env: 
   RUNNING_IN_DOCKER: "true"
   driverName: postgres
-  dataSourceName: "user=postgres password=postgres host=localhost port=5432 sslmode=disable dbname=casdoor"
+  dataSourceName: {}
   dbName: "" # leave this empty
 
+enableServiceLinks: false
+
+# The upstream bundle references Google Fonts and the Casdoor CDN. Copy the
+# immutable bundle into an emptyDir and remove those optional network
+# dependencies before the main container becomes ready.
+initContainers:
+  prepare-web-assets:
+    image: '{{ printf "%s:%s" .Values.image.repository (default .Chart.AppVersion .Values.image.tag) }}'
+    imagePullPolicy: '{{ .Values.image.pullPolicy }}'
+    command: ["/bin/sh", "-ec"]
+    args:
+      - |
+        set -eu
+        cp -r /web/build/. /work/web/
+        # Source maps are not needed by the production UI and may embed
+        # development-only source imports such as Google Fonts. Do not serve
+        # them from the production asset volume.
+        find /work/web/static -type f -name '*.map' -delete
+        if [ -f /work/web/index.html ]; then
+          sed -i -e 's#<link rel="apple-touch-icon" href="https://cdn.casbin.org[^"]*"/>##g' \
+            -e 's#<link rel="manifest" href="https://cdn.casbin.org[^"]*"/>##g' \
+            /work/web/index.html
+        fi
+        # Casdoor's compiled bundle uses a remote favicon URL in the default
+        # document head and MFA QR view. Replace it with a tiny data URI so the
+        # provider UI has no runtime dependency on cdn.casdoor.com.
+        for js in /work/web/static/js/*.js; do
+          [ -f "$js" ] || continue
+          sed -i 's#https://cdn\.casdoor\.com/static/favicon\.png#data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==#g' "$js"
+        done
+        for css in /work/web/static/css/*.css; do
+          [ -f "$css" ] || continue
+          sed -E -i 's#@import url\(https://fonts\.googleapis\.com[^)]*\);##g' "$css"
+        done
+        test -s /work/web/index.html
+        js_found=false
+        for js in /work/web/static/js/*.js; do
+          if [ -s "$js" ]; then js_found=true; break; fi
+        done
+        test "$js_found" = true
+    volumeMounts:
+      - name: web
+        mountPath: /work/web
+
+persistence:
+  web:
+    enabled: true
+    type: emptyDir
+    mountPath: /web/build

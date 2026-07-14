@@ -32,6 +32,7 @@ fi
 
 source "$K8S_ROOT_DIR/utils/unified-deployment-template.sh"
 source "$K8S_ROOT_DIR/utils/alembic-migration-gate.sh"
+source "$K8S_ROOT_DIR/utils/browser-oidc-gate.sh"
 
 SCRIPT_DIR="$RESEARCH_ADMIN_BACKEND_SCRIPT_DIR"
 
@@ -260,6 +261,7 @@ deploy_app() {
     export RESEARCH_ADMIN_BACKEND_TAG="${RESEARCH_ADMIN_BACKEND_TAG:-1.0.1}"
     export IMAGE_PULL_POLICY="${IMAGE_PULL_POLICY:-Always}"
     export RESEARCH_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME="${RESEARCH_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}"
+    export RESEARCH_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME="${RESEARCH_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME:-research-admin-backend-browser-oidc}"
     export RESEARCH_ADMIN_BACKEND_FULL_IMAGE_NAME="${RESEARCH_ADMIN_BACKEND_IMAGE_REGISTRY}/${RESEARCH_ADMIN_BACKEND_IMAGE_PROJECT}/${RESEARCH_ADMIN_BACKEND_IMAGE}:${RESEARCH_ADMIN_BACKEND_TAG}"
 
     log_info "镜像: $RESEARCH_ADMIN_BACKEND_FULL_IMAGE_NAME"
@@ -286,6 +288,13 @@ deploy_app() {
     kubectl apply -f "$RESEARCH_ADMIN_BACKEND_PVC_YAML" -n "$NAMESPACE" \
         && log_success "PVC 部署完成" \
         || { log_error "PVC 部署失败"; return 1; }
+
+    require_browser_oidc_secret \
+        "$NAMESPACE" \
+        "research-admin-backend" \
+        "${RESEARCH_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME:-research-admin-backend-browser-oidc}" \
+        "sunmoonai-research-admin" \
+        || { log_error "浏览器 OIDC 配置门禁失败，拒绝更新 Deployment"; return 1; }
 
     run_alembic_migration_gate \
         "$NAMESPACE" \

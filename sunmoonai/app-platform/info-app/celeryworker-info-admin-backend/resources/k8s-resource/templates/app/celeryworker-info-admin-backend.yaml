@@ -1,3 +1,13 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ${INFO_DISTRIBUTION_WORKER_SERVICE_ACCOUNT_NAME:-info-distribution-worker}
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: celeryworker-info-admin-backend
+    sunmoonai.com/service-principal: info-knowledge-ingest
+automountServiceAccountToken: false
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,6 +29,8 @@ spec:
         component: celery-worker
         backend: info-admin-backend
     spec:
+      serviceAccountName: ${INFO_DISTRIBUTION_WORKER_SERVICE_ACCOUNT_NAME:-info-distribution-worker}
+      automountServiceAccountToken: false
       imagePullSecrets:
       - name: ${CELERYWORKER_INFO_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}
       containers:
@@ -46,6 +58,8 @@ spec:
             name: ${INFO_ADMIN_BACKEND_CONFIGMAP_NAME:-info-admin-backend-config}
         - secretRef:
             name: ${INFO_ADMIN_BACKEND_SECRET_NAME:-info-admin-backend-secret}
+        - secretRef:
+            name: ${INFO_KNOWLEDGE_INGEST_CLIENT_SECRET_NAME:-info-knowledge-ingest-client}
         - configMapRef:
             name: ${CELERYWORKER_INFO_ADMIN_BACKEND_CONFIGMAP_NAME:-celeryworker-info-admin-backend-config}
         - secretRef:
