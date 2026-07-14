@@ -48,7 +48,7 @@ React Admin v1 完整消费已冻结的 `tpl-admin-frontend@f24500f6d8f437a0162f
 - 已增加 Info API adapter、导航和通用请求头测试；Info `typecheck`、`lint` 和 `test` 已通过（11 files / 43 tests），并清理了 Ant Design 弃用 API 和测试 warning；生产 `pnpm build` 已在允许临时 preview 监听的环境通过。
 - Docker/Nginx smoke 已通过；KIND 隔离 `info-admin-frontend-p0-007b` 已用固定 digest 完成严格 CA/SNI 验收：`/health`、首页、`/info/crawl`、未知 asset `404`、同源 `/api/auth/me=401`、CSP 和无 Node runtime 均通过。临时 Deployment、Service、IngressRoute 已自动删除；正式 `info-admin-frontend:1.0.1` 与 `info-admin-backend:1.0.1` 未改变。首次 port-forward 建立前的瞬时 `curl (7)` 已由 readiness loop 收敛，不作为失败证据。
 - 真实 Info 浏览器身份矩阵已通过（`verify_p0_005_browser.mjs`，`P0_BROWSER_APPS=info`、严格 TLS、真实 Casdoor/KIND backend、Info React 工作树）：`authenticated_me=200`、stable actor binding、callback one-time、HttpOnly session cookie、transaction cookie consumed、Admin role/scope、4 个 CSRF negative cases、CORS=200、positive logout、session revoked 全部通过；provider UI 一次完成（569ms），`credentials_printed=false`、`provider_tokens_printed=false`。首次运行的 Vite 冷启动依赖优化失败已在重试中消除，不计为业务失败。
-- 真实 Info 业务 E2E 已通过（临时 port-forward + 当前 Info React 客户端，未写入业务数据）：`/info/crawl` 页面登录后渲染；`/api/auth/me=200` 且 CSRF 存在；`/api/documents`、`/api/admin/sources`、`/api/admin/collectors`、`/api/admin/distributions` 均返回 `200` 数组；携带正确 CSRF 的非法 `POST /api/admin/crawl-jobs` 返回 `422`；浏览器无意外外连，凭据未输出。未带 CSRF 的同一请求先返回 `403`，证明安全门禁优先于 schema 校验。
+- 真实 Info 业务 E2E 已通过（临时 port-forward + 当前 Info React 客户端，未写入业务数据）：`/info/crawl` 页面登录后渲染并在刷新后恢复；`/api/auth/me=200` 且 CSRF 存在；`/api/documents`、`/api/admin/sources`、`/api/admin/collectors`、`/api/admin/distributions` 均返回 `200` 数组；携带正确 CSRF 的非法 `POST /api/admin/crawl-jobs` 返回 `422`；浏览器无意外外连，凭据未输出。未带 CSRF 的同一请求先返回 `403`，证明安全门禁优先于 schema 校验。
 
 ## 验收前明确禁止
 
