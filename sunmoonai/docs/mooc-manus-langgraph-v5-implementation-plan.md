@@ -326,6 +326,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 类型/优先级：FRONTEND/CONTRACT/P0
 - 仓库：`info-app`、`k8s`；仅在发现通用缺口时回改 `tpl-app`。
 - 前置：P0-007A、P0-007A2、P0-003、P0-005 均 ACCEPTED；不得用前端路由守卫替代后端鉴权，也不得以 mock success 验收 B。
+- 继承口径（冻结）：Info Admin 必须完整继承 `tpl-admin-frontend` 冻结 React Admin v1 的全部已验收通用能力和安全/生产门禁（Shell、身份会话/CSRF、角色路由、CRUD/Query/审计/上传、错误边界、主题/语言/响应式、CSP/Nginx、无 Node runtime、typecheck/lint/test/build/浏览器门禁）；迁移使用 canonical commit 的完整工作树，不允许只拷贝“部分能力”。Info 仅新增领域 DTO、API adapter、资讯页面和 Info-specific 测试；后端安全由 `info-admin-backend` 实现并通过既定 contract 对接，不得以“前端继承”替代后端鉴权。
 - 实施：先为现有 `info-admin-frontend` 创建迁移前 tag 并记录当前镜像 digest，再在该仓库的迁移分支中以 canonical `tpl-admin-frontend` 的 007A/007A2 固定 commit 原地替换基础实现；实现 Artifact/Delivery list/detail，覆盖筛选、分页、状态刷新、受权 retry/re-dispatch、审计原因和 correlation ID。验证使用隔离 Deployment/入口，不创建新的业务仓库。
 - 边界：Info 业务代码只在 Info App；模板只接收经复盘证明通用的修正，并记录 backport/cherry-pick 或重新实例化方式。Artifact Contract v1 仅支持 `upsert`，因此 deactivate/delete 不进入本任务；待 Knowledge domain identity 与生命周期契约落地后另行实现。
 - 测试：真实 contract/provider、匿名/403/过期 session、hash mismatch、对象缺失、重复操作、并发冲突、XSS/危险 URL、刷新恢复、Nginx/Docker/K8s 隔离 smoke。

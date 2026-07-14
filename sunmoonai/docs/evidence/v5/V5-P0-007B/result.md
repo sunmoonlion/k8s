@@ -19,7 +19,7 @@
 
 ## 业务迁移范围
 
-React Admin v1 只消费已冻结的 `tpl-admin-frontend@f24500f6d8f437a0162fa4939d3ed6b9b8ddbcf1`，然后在 Info 现有仓库内增加领域页面与 typed adapter。Vue `src/pages/info/crawl.vue` 的真实业务薄切包含：
+React Admin v1 完整消费已冻结的 `tpl-admin-frontend@f24500f6d8f437a0162fa4939d3ed6b9b8ddbcf1` 工作树及其全部已验收通用、安全和生产能力，然后在 Info 现有仓库内增加领域页面与 typed adapter；不是只复制 Shell 或部分组件。Vue `src/pages/info/crawl.vue` 的真实业务薄切包含：
 
 - 文档列表：关键词/状态筛选、刷新、选中和版本列表。
 - 来源/Collector/URL crawl/文件上传创建操作。
