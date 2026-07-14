@@ -103,5 +103,6 @@ Info 原型代码已形成但尚未部署验收：
 - `app/cli/drain_delivery_outbox.py`
 - Info distribution API/worker 的 outbox 接入与单元测试。
 - Info worker 资源中的 suspended scanner CronJob/独立无 token ServiceAccount，以及显式 outbox config values。
+- `verify_p0_006_scanner_manifest.sh` 与 `verify_p0_006_kind.py`：前者验证生成资源默认暂停和最小凭据，后者将在候选 KIND 环境验证 API broker block/recover、scanner 竞争和 CronJob 恢复；两者都不输出 credential。
 
 当前阶段不生成正式镜像 tag、不替换正在运行的 `1.0.1` 后端、不修改其他两仓的消息链路。KIND fault matrix 和 CronJob 通过前，状态保持 `PROPOSED / INFO_PROTOTYPE_IMPLEMENTED_NOT_ACCEPTED`。
