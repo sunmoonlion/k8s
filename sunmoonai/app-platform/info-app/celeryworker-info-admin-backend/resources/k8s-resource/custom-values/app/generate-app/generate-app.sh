@@ -51,6 +51,12 @@ export INFO_ADMIN_BACKEND_SECRET_NAME="${INFO_ADMIN_BACKEND_SECRET_NAME:-}"
 export INFO_ADMIN_BACKEND_CONFIGMAP_NAME="${INFO_ADMIN_BACKEND_CONFIGMAP_NAME:-}"
 export INFO_KNOWLEDGE_INGEST_CLIENT_SECRET_NAME="${INFO_KNOWLEDGE_INGEST_CLIENT_SECRET_NAME:-}"
 export INFO_DISTRIBUTION_WORKER_SERVICE_ACCOUNT_NAME="${INFO_DISTRIBUTION_WORKER_SERVICE_ACCOUNT_NAME:-}"
+export INFO_DELIVERY_OUTBOX_SCANNER_NAME="${INFO_DELIVERY_OUTBOX_SCANNER_NAME:-}"
+export INFO_DELIVERY_OUTBOX_SCANNER_SERVICE_ACCOUNT_NAME="${INFO_DELIVERY_OUTBOX_SCANNER_SERVICE_ACCOUNT_NAME:-}"
+export INFO_DELIVERY_OUTBOX_SCANNER_SCHEDULE="${INFO_DELIVERY_OUTBOX_SCANNER_SCHEDULE:-}"
+export INFO_DELIVERY_OUTBOX_SCANNER_SUSPEND="${INFO_DELIVERY_OUTBOX_SCANNER_SUSPEND:-}"
+export INFO_DELIVERY_OUTBOX_SCANNER_TTL_SECONDS="${INFO_DELIVERY_OUTBOX_SCANNER_TTL_SECONDS:-}"
+export INFO_DELIVERY_OUTBOX_SCANNER_BATCH_SIZE="${INFO_DELIVERY_OUTBOX_SCANNER_BATCH_SIZE:-}"
 export INFO_ADMIN_BACKEND_POSTGRESQL_SECRET_NAME="${INFO_ADMIN_BACKEND_POSTGRESQL_SECRET_NAME:-}"
 export INFO_ADMIN_BACKEND_REDIS_SECRET_NAME="${INFO_ADMIN_BACKEND_REDIS_SECRET_NAME:-}"
 export INFO_ADMIN_BACKEND_MONGODB_SECRET_NAME="${INFO_ADMIN_BACKEND_MONGODB_SECRET_NAME:-}"
@@ -116,7 +122,15 @@ export PVC_SUB_PATH="${PVC_SUB_PATH:-}"
 
 validate_yaml() {
     local yaml_file="$1"
-    if command -v kubectl &> /dev/null; then
+    if command -v ruby &> /dev/null; then
+        if ruby -e 'require "yaml"; YAML.load_stream(File.read(ARGV.fetch(0)))' "$yaml_file" &> /dev/null; then
+            log_success "YAML 验证通过: $(basename "$yaml_file")"
+        else
+            log_error "YAML 验证失败: $(basename "$yaml_file")"
+            ruby -e 'require "yaml"; YAML.load_stream(File.read(ARGV.fetch(0)))' "$yaml_file" 2>&1 | head -20
+            return 1
+        fi
+    elif command -v kubectl &> /dev/null && kubectl config current-context &> /dev/null; then
         if kubectl apply --dry-run=client -f "$yaml_file" &> /dev/null; then
             log_success "YAML 验证通过: $(basename "$yaml_file")"
         else
@@ -125,7 +139,7 @@ validate_yaml() {
             return 1
         fi
     else
-        log_warn "kubectl 未安装，跳过 YAML 验证"
+        log_warn "缺少 Ruby YAML 解析器且没有可用 Kubernetes context，跳过 YAML 验证"
     fi
 }
 

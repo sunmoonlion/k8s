@@ -106,3 +106,71 @@ ${INFO_ADMIN_BACKEND_ELASTICSEARCH_VOLUME_MOUNT}
         persistentVolumeClaim:
           claimName: ${PVC_NAME:-celeryworker-info-admin-backend-pvc}
 ${INFO_ADMIN_BACKEND_ELASTICSEARCH_VOLUME}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ${INFO_DELIVERY_OUTBOX_SCANNER_SERVICE_ACCOUNT_NAME:-info-delivery-outbox-scanner}
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: celeryworker-info-admin-backend
+    component: delivery-outbox-scanner
+automountServiceAccountToken: false
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ${INFO_DELIVERY_OUTBOX_SCANNER_NAME:-info-delivery-outbox-scanner}
+  namespace: ${NAMESPACE:-app-platform-dev}
+  labels:
+    app: celeryworker-info-admin-backend
+    component: delivery-outbox-scanner
+    backend: info-admin-backend
+spec:
+  schedule: "${INFO_DELIVERY_OUTBOX_SCANNER_SCHEDULE:-*/1 * * * *}"
+  suspend: ${INFO_DELIVERY_OUTBOX_SCANNER_SUSPEND:-true}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      ttlSecondsAfterFinished: ${INFO_DELIVERY_OUTBOX_SCANNER_TTL_SECONDS:-300}
+      template:
+        metadata:
+          labels:
+            app: celeryworker-info-admin-backend
+            component: delivery-outbox-scanner
+        spec:
+          serviceAccountName: ${INFO_DELIVERY_OUTBOX_SCANNER_SERVICE_ACCOUNT_NAME:-info-delivery-outbox-scanner}
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          imagePullSecrets:
+          - name: ${CELERYWORKER_INFO_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}
+          containers:
+          - name: delivery-outbox-scanner
+            image: ${CELERYWORKER_INFO_ADMIN_BACKEND_FULL_IMAGE_NAME}
+            imagePullPolicy: ${IMAGE_PULL_POLICY:-Always}
+            command:
+            - .venv/bin/python
+            - -m
+            - app.cli.drain_delivery_outbox
+            args:
+            - --limit
+            - "${INFO_DELIVERY_OUTBOX_SCANNER_BATCH_SIZE:-50}"
+            envFrom:
+            - configMapRef:
+                name: ${INFO_ADMIN_BACKEND_CONFIGMAP_NAME:-info-admin-backend-config}
+            - configMapRef:
+                name: ${CELERYWORKER_INFO_ADMIN_BACKEND_CONFIGMAP_NAME:-celeryworker-info-admin-backend-config}
+            - secretRef:
+                name: ${CELERYWORKER_INFO_ADMIN_BACKEND_SECRET_NAME:-celeryworker-info-admin-backend-secret}
+            - secretRef:
+                name: ${INFO_ADMIN_BACKEND_POSTGRESQL_SECRET_NAME:-info-admin-backend-postgresql-conn}
+            resources:
+              requests:
+                memory: "128Mi"
+                cpu: "50m"
+              limits:
+                memory: "256Mi"
+                cpu: "250m"

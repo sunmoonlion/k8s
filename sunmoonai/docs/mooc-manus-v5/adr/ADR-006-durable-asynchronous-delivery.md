@@ -44,7 +44,7 @@ delivery_outbox_message
 3. Broker accept 后才记录 `published`；若进程在二者之间退出，租约过期后会重新发布。Celery task ID 固定为 outbox UUID，只用于 trace，并不被误认为 Broker 去重保证。
 4. `leased` 超时与 `published` 在确认超时前未完成都会重新变为可投递。发布失败按有上限的指数退避重试；P0 保留失败记录而不做静默丢弃。
 5. Worker 仅在 `DistributionRecord` 进入 `succeeded` 后把 outbox 标记为 `completed`。worker 已调用外部 Provider 但未确认时，scanner 可能再发一次；这正是由稳定 Provider idempotency key 承担的场景。
-6. P0 scanner 采用同一后端镜像中的有界 CLI，未来由 Kubernetes CronJob 以最小 ServiceAccount 启动；它只需 PostgreSQL/RabbitMQ，不携带 Info -> Knowledge service credential。真正调用 Knowledge 的仍是已绑定服务身份的 Info worker。
+6. P0 scanner 采用同一后端镜像中的有界 CLI，并由现有 Info worker 资源生成一个默认 `suspend: true` 的 Kubernetes CronJob；它只需 PostgreSQL/RabbitMQ，不携带 Info -> Knowledge service credential。真正调用 Knowledge 的仍是已绑定服务身份的 Info worker。只有候选镜像、migration 与 fault matrix 通过后，隔离验证才可显式解除暂停。
 
 ### 2.4 状态机
 
@@ -102,5 +102,6 @@ Info 原型代码已形成但尚未部署验收：
 - `app/application/services/delivery_outbox.py`
 - `app/cli/drain_delivery_outbox.py`
 - Info distribution API/worker 的 outbox 接入与单元测试。
+- Info worker 资源中的 suspended scanner CronJob/独立无 token ServiceAccount，以及显式 outbox config values。
 
 当前阶段不生成正式镜像 tag、不替换正在运行的 `1.0.1` 后端、不修改其他两仓的消息链路。KIND fault matrix 和 CronJob 通过前，状态保持 `PROPOSED / INFO_PROTOTYPE_IMPLEMENTED_NOT_ACCEPTED`。
