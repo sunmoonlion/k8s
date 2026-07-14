@@ -1,12 +1,12 @@
 # V5-P0-007A2 / A2.5 Production Gate
 
-状态：`IN_PROGRESS`（clean-room、Docker/Nginx 本地 smoke 已接受；Harbor digest/KIND 待验收）
+状态：`ACCEPTED`（2026-07-14；P0-007A2 = TEMPLATE_MIGRATION_READY）
 
 ## 固定实现
 
 - 模板仓库：`tpl-admin-frontend`
-- 实现提交：`168ed144e419a5b4b01abc2224d345a8ccd9785a`
-- 父仓指针：`tpl-app@b884ad404940e92013979642db82ab178c95b5af`
+- 实现提交：`f24500f6d8f437a0162fa4939d3ed6b9b8ddbcf1`
+- 父仓指针：`tpl-app@f0ea6d616a8e7ed59d29d76e553c77d2c51cb8f0`
 - 业务 App：未修改，未部署，未切流量。
 
 ## 已通过的模板本地门禁
@@ -33,15 +33,15 @@ BASE_PATH=/admin pnpm build # passed; assets use /admin/assets/*
 
 ## Docker/Nginx 结果
 
-候选镜像：`tpl-admin-frontend:a25-candidate-20260714`。容器 `tpl-admin-frontend-a25-smoke` 通过 `/health`、根页面、`/rich-reference` deep-link、未知 asset `404`、CSP 响应头、`nginx -t`，并确认运行容器不存在 Node runtime。第一次 readiness probe 出现一次 `curl 56` 连接重置，随后重试成功；该瞬态已通过显式 readiness loop 收敛，不能作为失败证据。当前尚未产生 Harbor 镜像 digest。
+候选镜像：`tpl-admin-frontend:a25-candidate-20260714`。容器 `tpl-admin-frontend-a25-smoke` 通过 `/health`、根页面、`/rich-reference` deep-link、未知 asset `404`、CSP 响应头、`nginx -t`，并确认运行容器不存在 Node runtime。第一次 readiness probe 出现一次 `curl 56` 连接重置，随后重试成功；该瞬态已通过显式 readiness loop 收敛，不能作为失败证据。Harbor 固化镜像：`harbor.sunmoonai.com:30443/app-images/tpl-admin-frontend:a25-20260714@sha256:44301ec3651cf822bb866db1253112634470463b92c05ecb3a52f2c7a0eb3278`。
 
-## 尚未完成的外部门禁
+## KIND 严格 TLS 结果
 
-以下项目必须在目标 Docker/KIND 环境执行并回填原始命令、镜像 digest、部署 commit 和清理结果后，才能把状态改为 `ACCEPTED` / `TEMPLATE_MIGRATION_READY`：
+使用 Harbor 固定 digest 创建隔离 `tpl-admin-frontend-a25` Deployment、Service 和 Traefik IngressRoute；严格 CA/SNI 访问 `https://tpl-admin-a25.sunmoonai.com:19443`，首页、`/rich-reference`、未知 asset `404`、CSP 和无 Node runtime 全部通过。首次 readiness probe 在 port-forward 建立前出现一次 `curl (7)`，随后重试成功；最终 smoke 输出 `A2.5 KIND strict TLS smoke passed`。验收退出时临时资源已删除，三个业务前端 Deployment 未修改。
 
-1. 将候选镜像推送到 Harbor，记录不可变镜像 digest。
-2. 以固定镜像 digest 部署 KIND 隔离入口，执行严格 TLS/浏览器 smoke，并记录回滚路径。
-3. 只有以上证据齐全，才可勾选能力矩阵 P0-007A2 退出条件并开始 P0-007B；在此之前禁止同步三个业务 Admin。
+## 迁移边界
+
+P0-007A2 现在已达到 `TEMPLATE_MIGRATION_READY`，模板冻结提交为 `f24500f6d8f437a0162fa4939d3ed6b9b8ddbcf1`，父仓指针为 `tpl-app@f0ea6d616a8e7ed59d29d76e553c77d2c51cb8f0`。这不是三个业务 App 已迁移。下一步只能按 P0-007B 在现有 Info Admin 仓库内建立迁移前 tag、固定镜像 digest、隔离入口和回滚路径，先完成 Info，再 Knowledge，最后 Research；禁止批量替换或创建新业务仓库。
 
 ## 防止重复失误
 

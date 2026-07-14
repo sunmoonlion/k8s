@@ -316,10 +316,10 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 不做：不逐行翻译 Vue API，不把 Element Plus/Pinia/Composition API 机械搬到 React；不把 Info/Knowledge/Research 领域页面、DTO、业务规则写入模板；不接任何 App 流量。
 - 测试：模板全量 typecheck/lint/unit/component/Playwright/a11y；组件行为和错误状态矩阵；route/base path/Nginx/Docker smoke；clean-room 从固定 commit 重新生成；Vue/React 映射无未解释项。
 - 验收：能力矩阵无未分配的 `MUST` 项；所有 `DEFER` 有批准的 ADR/任务；从干净目录可重复构建；核心组件行为、权限和可访问性通过；状态命名为 `TEMPLATE_MIGRATION_READY`。只有本任务通过后，P0-007B 和三个 App 的 React 基础前端替换才可开始。
-- 状态：IN_PROGRESS（A2.1、A2.2、A2.3、A2.4 已接受；A2.5 本地门禁通过，待 Docker/KIND/clean-room 外部证据；P0-007A 现有证据不替代本任务）
+- 状态：ACCEPTED（2026-07-14；A2.1~A2.5 全部接受，状态为 `TEMPLATE_MIGRATION_READY`；P0-007A 现有骨架证据不替代本任务，但已由完整矩阵和固定 digest 补齐）
 - A2.3 已于 2026-07-14 接受：`tpl-admin-frontend@77a25c839198b9267d54c3402738ce8196d698eb` 完成 `DataTable`、服务端分页/排序/筛选 adapter contract、`SchemaForm`、`ResourceDescription`、`AuditedActionModal`、correlation/operation mutation 状态、通知、上传/下载和中性 Reference Page；8 个 Vitest 文件/31 个测试、5 个 Chromium 测试、typecheck、lint、SPA build 和 diff 检查通过。证据：`sunmoonai/docs/evidence/v5/V5-P0-007A2/A2.3/result.md`。该接受仅覆盖 A2.3 基础可访问性 smoke；完整 a11y、responsive/reduced-motion 和生产 Gate 仍属于 A2.5，三个 App 仍不得开始 React 基础替换。
 - A2.4 已于 2026-07-14 接受：本地图标/头像、SVG chart adapter、文本 Markdown boundary、同源媒体、progress/transition/watermark、通用 hooks/effects 及 `/rich-reference` 中性 fixture route；第三方 Vditor/Howler/Video.js/ECharts 全量 option、远程 Iconify 和 PWA/Electron 按 ADR-015 明确延期或专项引入。实现提交为 `tpl-admin-frontend@a9aed42e9c7d380e371144a03cab52e7c8288a80`，证据见 `sunmoonai/docs/evidence/v5/V5-P0-007A2/A2.4/result.md`；A2.5 仍需完成完整 a11y、responsive/reduced-motion、clean-room/Docker/KIND gate。
-- A2.5 当前施工包已形成模板实现提交 `tpl-admin-frontend@168ed144e419a5b4b01abc2224d345a8ccd9785a`：Vite 生产构建拒绝 `VITE_AUTH_MODE=demo`，Docker 构建强制 typecheck/lint/unit/build，加入静态生产配置门禁和 reduced-motion/键盘焦点 E2E；39 个 Vitest、7 个 Chromium、typecheck、lint、普通构建及 `BASE_PATH=/admin` 构建通过；从该固定 commit 的 clean-room install、verify:production、build 和 7 个 Playwright 也已通过；候选 Docker/Nginx 镜像已通过 health、SPA/deep-link、asset 404、CSP、`nginx -t` 和无 Node runtime smoke。A2.5 仍未接受：必须补齐 Harbor 镜像 digest 和 KIND/严格 TLS 证据；不得以本地或 clean-room 结果替代这些证据。矩阵已回填至 `tpl-admin-frontend/docs/vue-react-capability-matrix.md`，父仓指针为 `tpl-app@b884ad404940e92013979642db82ab178c95b5af`。
+- A2.5 已于 2026-07-14 接受：模板固定提交 `tpl-admin-frontend@f24500f6d8f437a0162fa4939d3ed6b9b8ddbcf1`，父仓指针 `tpl-app@f0ea6d616a8e7ed59d29d76e553c77d2c51cb8f0`；39 个 Vitest、7 个 Chromium、typecheck、lint、普通构建、`BASE_PATH=/admin`、固定 commit clean-room、Docker/Nginx smoke、Harbor digest 和 KIND 严格 TLS 隔离 smoke 全部通过。Harbor digest 为 `sha256:44301ec3651cf822bb866db1253112634470463b92c05ecb3a52f2c7a0eb3278`，证据见 `sunmoonai/docs/evidence/v5/V5-P0-007A2/A2.5/result.md`。从现在起允许进入 P0-007B，但仍禁止三个 App 批量替换，必须按 Info -> Knowledge -> Research 串行迁移。
 
 ### V5-P0-007B Info Admin 真实业务试点
 
@@ -1176,9 +1176,9 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 6. Frontend-1A2.2 Identity/Data Foundation（`ACCEPTED`，2026-07-14）：真实 session、typed client/error/correlation、TanStack Query、i18n 基础，以及三应用严格 TLS/CORS/CSRF/跨用户/过期 session consumer 矩阵均通过；实现 `tpl-admin-frontend@0b68498`，扩展 gate `k8s@3558a08`。
 7. Frontend-1A2.3 CRUD Toolkit（`ACCEPTED`，2026-07-14）：`tpl-admin-frontend@77a25c8`；证据 `V5-P0-007A2/A2.3/result.md`。
 8. Frontend-1A2.4 Rich/Utility Toolkit（`ACCEPTED`，2026-07-14）：本地 registry、SVG/媒体/编辑器安全边界和 hooks 已完成；第三方/legacy 处置见 ADR-015。
-9. **当前任务** Frontend-1A2.5 Production Gate：完成全套测试、安全负例、Docker/KIND、clean-room install、矩阵和证据，接受 P0-007A2。
+9. Frontend-1A2.5 Production Gate（`ACCEPTED`，2026-07-14）：固定 Harbor digest、Docker/Nginx、clean-room、KIND 严格 TLS 证据齐全，P0-007A2 = `TEMPLATE_MIGRATION_READY`。
 10. Contract-1：复核已接受的 V5-P0-003 Artifact Contract 仍为 007B 可用前置，不重复实现。
-11. Frontend-2：V5-P0-007B 在现有 Info Admin 仓库内做真实业务试点和隔离部署。
+11. **下一任务** Frontend-2：V5-P0-007B 在现有 Info Admin 仓库内做真实业务试点和隔离部署。
 12. Frontend-3：V5-P0-007C 修正、dry-run 替换验证和 React Admin v1 冻结（产生 `TEMPLATE_MIGRATION_READY`）。
 13. Contract-2：V5-P0-004 Retrieval/Citation Contract。
 14. Runtime：恢复 V5-P0-001，完成选型后执行 V5-P0-002。
