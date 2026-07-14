@@ -1,6 +1,6 @@
 # V5-P0-007B Info Admin 真实业务试点
 
-状态：`IN_PROGRESS`（迁移前基线已冻结，尚未替换业务前端）
+状态：`IN_PROGRESS`（迁移前基线已冻结；React 业务竖切已在本地实现，尚待依赖安装、浏览器/构建、隔离部署和真实后端验收）
 
 ## 迁移前基线
 
@@ -35,6 +35,20 @@ React Admin v1 只消费已冻结的 `tpl-admin-frontend@f24500f6d8f437a0162fa49
 - Vue `components/**`、`directives/**` 纯展厅页不复制；能力已由模板矩阵和 A2.4/A2.5 证据覆盖。
 - PWA/Electron、纯 about/demo 页面不进入业务迁移主链。
 - 不修改 Knowledge/Research Admin，不批量同步，不切换正式入口流量。
+
+## 当前实现快照（未验收）
+
+- 本地实现提交：Info Admin `11d2f051adea80842ad531b264cccf1b0016ed83`；父仓指针 `info-app@0a5f1a4915f1e446111bc4fc1810d2b98557e8e5`；canonical 模板通用请求修正 `tpl-admin-frontend@888fb1c799e02140aebff8d62408528afc116b90`（父仓 `tpl-app@4490c50b43451ee5f99169c1fad4ee79e2ddcf09`）。这些都是本地提交，尚未推送、构建或发布。
+- React 基线已在现有 `info-admin-frontend` 子仓库原地替换；旧 Vue 源码保留在迁移前 Git tag，不作为当前工作树运行时。
+- 新增 `app/lib/info-api.ts`：所有领域请求显式走 `/api`，JSON mutation 自动声明 `Content-Type`，上传保持浏览器 multipart boundary；审计 mutation 由 correlation/operation/reason headers 传递。
+- 新增 `app/routes/info-crawl.tsx` 和 `/info/crawl` 导航：URL crawl、source、collector/discover、上传、文档筛选/选择/版本、单条/批量审核、实体链接、摘要画像、Knowledge 分发/详情/dispatch/retry 均使用真实 API，不提供 mock success。
+- 通用 `apiRequest` 的 JSON Content-Type 修正同步回 canonical React Admin 模板及其单元测试；该修正属于 template/common，不能把 Info DTO 或页面回流模板。
+- 已增加 Info API adapter、导航和通用请求头测试；当前机器未使用旧 Vue `node_modules` 做验收，必须由操作员按实施计划重新安装 React 依赖后执行 typecheck/lint/test/build。
+
+## 验收前明确禁止
+
+- 不把当前本地提交标记为 `P0-007B ACCEPTED`，不覆盖现有 `info-admin-frontend:1.0.1`，不修改正式 Ingress/流量。
+- 必须先构建新的 candidate tag，在隔离 Deployment/Ingress 上验证首页、`/info/crawl`、未知 asset 404、CSP、严格 TLS、无 Node runtime，再做真实 Info backend contract/E2E；失败时删除隔离资源即可回到 Vue 基线。
 
 ## 回滚基线
 
