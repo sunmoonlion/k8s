@@ -281,7 +281,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 目标：按 `P0-007A -> P0-007A2(A2.1) -> P0-005 -> P0-007A2(A2.2~A2.5) -> P0-007B -> P0-007C` 完成 React Admin 模板资格链并冻结 React Admin v1；A2.1 不依赖浏览器身份，P0-005 是 A2.2 真实身份接入和 007B 试点的安全前置，父任务不直接写代码。
 - 重要边界：`P0-007A` 只代表技术骨架通过，不代表 Vue 模板功能等价，也不允许据此同步三个 App。`P0-007A2` 是新增的完整模板能力对齐门。
 - 完成条件：P0-007A、P0-007A2、P0-007B、P0-007C 四个子任务全部 ACCEPTED；任一子任务失败，父任务保持 IN_PROGRESS，禁止向三个 App 应用未冻结模板。
-- 状态：IN_PROGRESS（P0-007A、P0-007A2、P0-005 已接受；P0-007B 已冻结 Info Vue 基线，正在施工；P0-007C 未开始）
+- 状态：ACCEPTED（2026-07-14；P0-007A、P0-007A2、P0-007B、P0-007C 均已接受；React Admin v1 已达到 `TEMPLATE_MIGRATION_READY`。三个 App 的实际原地替换仍必须在 Gate P0 后按 Info -> Knowledge -> Research 串行执行）
 
 ### V5-P0-007A tpl-app React Admin 生产骨架
 
@@ -345,7 +345,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 冻结产物：`react-admin-template-version`（tag 或 commit SHA）、Node/pnpm/dependency lock、目录契约、环境变量契约、Docker/Nginx/K8s 接口、UI/Data Grid 选型记录、已知限制。
 - 停止条件：若模板必须引入 Node SSR/BFF、无法满足 auth/security、或真实页面需要大量绕开框架约定，P0-007 标记 BLOCKED 并重开 ADR-013，不得带病批量复制。
 - 验收：从模板干净 checkout 可重复构建并通过全套测试；在三个 App 的临时干净 checkout 中执行 dry-run 替换清单，可得到名称/config 正确且来源可追溯的骨架，不向远端创建新仓库或提前提交业务替换；试点所需通用能力已进入模板且不含 Info 业务；能力矩阵、迁移 checklist 和 legacy 处置记录均已冻结。
-- 状态：NOT_STARTED
+- 状态：ACCEPTED（2026-07-14；模板功能提交 `tpl-admin-frontend@1ddb056d62646eb6f4e08d7afd7acdb7a88f38e4`，冻结提交 `tpl-admin-frontend@be4bf3dcaa1b70e5c659169831b8bee9da668fdc`，父仓指针 `tpl-app@28469db`；clean-room 全套测试、Docker/Nginx/生产门禁和 Info -> Knowledge -> Research 只读迁移 dry-run 均通过。证据：`sunmoonai/docs/evidence/v5/V5-P0-007C/result.md`；脚本：`sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_007c_admin_migration_dry_run.sh`。本状态只冻结可推广模板和施工契约，不代表三个 App 已完成替换或已切正式流量）
 
 ### V5-P0-008 Next Web Template Re-baseline Rollup
 
