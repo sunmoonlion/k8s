@@ -820,6 +820,33 @@ async function verifyLogin(browser, app, identityLabel, identity) {
       });
     }
 
+    let browserCorsStatus = "not_applicable";
+    if (frontendMode === "template") {
+      stage = "cors_matrix";
+      const browserCors = await page.evaluate(async (url) => {
+        const response = await fetch(url, { credentials: "include" });
+        return response.status;
+      }, `${backendOrigin}/api/auth/me`);
+      if (browserCors !== 200) {
+        throw new Error(`browser credential CORS returned ${browserCors}`);
+      }
+      const allowedCors = await context.request.get(`${backendOrigin}/api/auth/me`, {
+        headers: { Origin: frontendOrigin },
+      });
+      const deniedCors = await context.request.get(`${backendOrigin}/api/auth/me`, {
+        headers: { Origin: "https://attacker.example.test" },
+      });
+      if (
+        allowedCors.status() !== 200 ||
+        allowedCors.headers()["access-control-allow-origin"] !== frontendOrigin ||
+        allowedCors.headers()["access-control-allow-credentials"] !== "true" ||
+        deniedCors.headers()["access-control-allow-origin"]
+      ) {
+        throw new Error("credential CORS allow/deny matrix is invalid");
+      }
+      browserCorsStatus = 200;
+    }
+
     stage = "session_me";
     const meResponse = await context.request.get(`${backendOrigin}/api/auth/me`);
     if (meResponse.status() !== 200) {
@@ -940,6 +967,7 @@ async function verifyLogin(browser, app, identityLabel, identity) {
       browser_session_internal_route: browserSessionInternalRoute,
       csrf_positive_logout: true,
       session_revoked_on_logout: true,
+      browser_cors_status: browserCorsStatus,
       provider_ui_attempts: providerUiAttempts,
       provider_ui_ms: providerUiMs,
     };
@@ -983,6 +1011,16 @@ async function openOwnerIsolationSession(browser, app, identity) {
       waitUntil: "domcontentloaded",
       timeout: 45000,
     });
+    if (frontendMode === "template") {
+      await page.goto(`${frontendOrigin}/`, {
+        waitUntil: "domcontentloaded",
+        timeout: 30000,
+      });
+      await page.getByRole("heading", { name: "管理首页" }).waitFor({
+        state: "visible",
+        timeout: 30000,
+      });
+    }
     const response = await context.request.get(`${backendOrigin}/api/auth/me`);
     if (response.status() !== 200) {
       throw new Error("owner-isolation /me did not authenticate");
@@ -999,7 +1037,7 @@ async function openOwnerIsolationSession(browser, app, identity) {
       throw new Error("owner-isolation principal policy is incomplete");
     }
     assertProviderMaterialAbsent(me);
-    return { context, me, providerUiAttempts };
+    return { context, page, me, providerUiAttempts };
   } catch (error) {
     await context.close();
     throw new Error("owner-isolation browser login failed");
@@ -1017,6 +1055,103 @@ async function closeOwnerIsolationSession(handle, app) {
         "X-CSRF-Token": handle.me.csrf_token,
       },
     });
+  } finally {
+    await handle.context.close();
+  }
+}
+
+function expireBrowserSession(app, sessionId) {
+  const prefixes = {
+    info: "info:auth:admin:session:",
+    knowledge: "knowledge:auth:admin:session:",
+    research: "research:auth:admin:session:",
+  };
+  const prefix = prefixes[app.key];
+  if (!prefix) throw new Error(`unknown browser session prefix: ${app.key}`);
+  const payload = JSON.stringify({ session_id: sessionId });
+  const program = String.raw`
+import asyncio
+import json
+import sys
+
+from app.infrastructure.storage.redis import get_redis
+
+async def main():
+    payload = json.load(sys.stdin)
+    await get_redis().init()
+    try:
+        key = ${JSON.stringify(prefix)} + payload["session_id"]
+        expired = await get_redis().client.expire(key, 0)
+        print(json.dumps({"expired": bool(expired)}, sort_keys=True))
+    finally:
+        await get_redis().shutdown()
+
+asyncio.run(main())
+`;
+  const child = spawnSync(
+    "kubectl",
+    [
+      "--kubeconfig",
+      kubeconfig,
+      "exec",
+      "-i",
+      "-n",
+      namespace,
+      `deploy/${app.key}-admin-backend`,
+      "--",
+      ".venv/bin/python",
+      "-c",
+      program,
+    ],
+    { input: payload, encoding: "utf8", maxBuffer: 1024 * 1024 },
+  );
+  if (child.status !== 0) {
+    throw new Error(`browser session expiry process failed: app=${app.key}`);
+  }
+  const lines = (child.stdout || "").trim().split("\n").filter(Boolean);
+  const outcome = lines.length ? JSON.parse(lines.at(-1)) : {};
+  if (outcome.expired !== true) {
+    throw new Error(`browser session was not expired: app=${app.key}`);
+  }
+}
+
+async function verifyExpiredBrowserSession(browser, app, identity) {
+  const handle = await openOwnerIsolationSession(browser, app, identity);
+  const backendOrigin = `http://127.0.0.1:${app.backendPort}`;
+  const frontendOrigin = `http://127.0.0.1:${app.frontendPort}`;
+  try {
+    const cookies = await handle.context.cookies();
+    const sessionCookie = cookies.find((cookie) => cookie.name === app.sessionCookie);
+    if (!sessionCookie?.value) throw new Error("expired-session cookie is missing");
+    expireBrowserSession(app, sessionCookie.value);
+    const meAfterExpiry = await handle.context.request.get(
+      `${backendOrigin}/api/auth/me`,
+    );
+    if (meAfterExpiry.status() !== 401) {
+      throw new Error(`expired session /me returned ${meAfterExpiry.status()}`);
+    }
+    let templateRedirectLogin = "not_applicable";
+    if (frontendMode === "template") {
+      await handle.page.goto(`${frontendOrigin}/`, {
+        waitUntil: "domcontentloaded",
+        timeout: 30000,
+      });
+      await handle.page.waitForURL(
+        (url) =>
+          url.origin === frontendOrigin &&
+          url.pathname === "/login" &&
+          url.searchParams.get("return_to") === "/",
+        { timeout: 30000 },
+      );
+      templateRedirectLogin = true;
+    }
+    return {
+      authenticated_before_expiry: true,
+      session_expired: true,
+      me_after_expiry: 401,
+      template_redirect_login: templateRedirectLogin,
+      provider_ui_attempts: handle.providerUiAttempts,
+    };
   } finally {
     await handle.context.close();
   }
@@ -1151,6 +1286,8 @@ async function main() {
   const identities = loadTestIdentities();
   const ownerIsolationMode =
     process.env.P0_BROWSER_OWNER_ISOLATION === "true";
+  const sessionExpiryMode =
+    process.env.P0_BROWSER_SESSION_EXPIRY === "true";
   const requestedApps = new Set(
     (process.env.P0_BROWSER_APPS ||
       (ownerIsolationMode ? "research" : "info,knowledge,research"))
@@ -1168,6 +1305,12 @@ async function main() {
   ) {
     throw new Error("owner-isolation mode requires only the Research application");
   }
+  if (
+    sessionExpiryMode &&
+    (ownerIsolationMode || selectedApps.length !== 1)
+  ) {
+    throw new Error("session-expiry mode requires exactly one application");
+  }
   const forwards = [];
   const sinks = [];
   const templateFrontends = [];
@@ -1177,6 +1320,8 @@ async function main() {
   const summary = {
     task: ownerIsolationMode
       ? "V5-P0-005-browser-owner-isolation"
+      : sessionExpiryMode
+        ? "V5-P0-005-browser-session-expiry"
       : "V5-P0-005-browser",
     result: "failed",
     credentials_printed: false,
@@ -1253,6 +1398,15 @@ async function main() {
       assertResearchTrafficClosed();
       summary.research_traffic_restored_closed = true;
       progress("research_traffic_restored");
+    } else if (sessionExpiryMode) {
+      const app = selectedApps[0];
+      progress("session_expiry_start", app.key);
+      summary.session_expiry = await verifyExpiredBrowserSession(
+        browser,
+        app,
+        identities.primary,
+      );
+      progress("session_expiry_passed", app.key);
     } else {
       const results = {};
       for (const app of selectedApps) {
