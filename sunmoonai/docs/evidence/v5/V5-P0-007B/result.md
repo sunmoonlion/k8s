@@ -1,6 +1,6 @@
 # V5-P0-007B Info Admin 真实业务试点
 
-状态：`IN_PROGRESS`（迁移前基线已冻结；React 业务竖切、前后端候选镜像、联合隔离严格 TLS、真实浏览器身份、业务 contract/E2E、可恢复 mutation/审计对账和隔离回滚均已通过；尚未切正式流量，完整业务 mutation 矩阵仍需后续阶段补齐）
+状态：`IN_PROGRESS`（迁移前基线已冻结；React 业务竖切、前后端候选镜像、联合隔离严格 TLS、真实浏览器身份、业务 contract/E2E、可恢复 mutation/审计对账和隔离回滚均已通过；本轮又发现并修复 React Router SPA 与严格 CSP 的内联启动脚本冲突，旧 candidate 不再作为验收依据，需用 CSP hash candidate 重跑；尚未切正式流量，完整业务 mutation 矩阵仍需后续阶段补齐）
 
 ## 迁移前基线
 
@@ -54,6 +54,7 @@ React Admin v1 完整消费已冻结的 `tpl-admin-frontend@f24500f6d8f437a0162f
 - 本轮复盘发现并修复后端审计上下文缺口：后端现在生成/回显受校验的 `X-Correlation-ID`，允许并回显 `X-Operation-ID`，允许 `X-Audit-Reason` CORS 头；已认证 actor 会进入请求上下文，文档审核和 Knowledge 分发状态/重试会把 correlation、operation、actor、reason 写入内部审计记录，并在下游 Artifact Contract 载荷中剔除内部审计字段。后端单测/类型检查当前为 `67 passed`、`pyright 0 errors`；该修复仍需构建新候选镜像、隔离部署后做真实 mutation→审计读取→状态恢复验证。
 - 2026-07-14 本地补齐后端请求级结构化审计日志：所有 `/api/` 非读请求记录 method/path/status/actor/correlation/operation/reason_present；未处理异常按 `500` 记录；日志不写入原始 reason、凭据或正文。对应测试断言审计日志存在且不泄露 reason；后端当前仍为 `67 passed`、`pyright 0 errors`。
 - 当前未推送提交链：Info 前端 `b694ccd`（父仓指针提交 `d65df13`）、Info 后端 `8ce914e`、K8s 文档 `d35bd9e`；这些提交必须与新 candidate 镜像的 digest 一起推送，不能只推其中一个仓库。
+- 2026-07-14 CSP 复盘：在旧 candidate 的真实浏览器诊断中确认 `script-src 'self'` 会拦截 React Router SPA `index.html` 的 4 个框架启动内联脚本，表现为登录回跳后页面空白。模板与 Info 均新增构建期 `scripts/generate_csp_headers.mjs`，按最终 `index.html` 内容生成精确 `sha256-*` script sources；Docker run stage 只复制生成文件，继续禁止 `unsafe-inline` 和 `unsafe-eval`。模板提交 `c8b2bd0`，Info 前端提交 `1f86ee7`，Info 父仓指针提交 `85cb800`。旧 `p0-007b-audit-ui-20260714` candidate 不得验收，需重新构建 `p0-007c-csp-20260714` 与 `p0-007b-csp-20260714`。
 - 候选后端真实可恢复 mutation 已通过：在开发库一篇现有文档上仅执行 `reviewed → active → reviewed`，以及实体链接、摘要画像的变更→审计读取→原值恢复；读取到 actor/correlation/operation/reason 审计字段，正文/标题/来源/分发未改变；审计历史按设计保留。候选前后端联合 IngressRoute 严格 TLS 也通过：健康检查 `200`、首页与 `/info/crawl`、同源 `/api/auth/me=401`、未知 asset `404`、CSP、无 Node runtime、Nginx 配置均通过。联合候选资源已清理，正式前后端镜像仍为 `1.0.1`。
 
 ## 验收前明确禁止
@@ -68,4 +69,4 @@ React Admin v1 完整消费已冻结的 `tpl-admin-frontend@f24500f6d8f437a0162f
 3. 重新部署并确认镜像 tag `1.0.1`、digest `sha256:3ce28192f97bd38a46d47b3bc357b9d826f219cff79fa47bd05dbdb84180bc98`。
 4. 通过现有 Info Admin 严格 TLS、session、403 和业务 smoke 后，才可关闭试点回滚窗口。
 
-下一证据必须同时包含：React Info 实例提交、父仓指针、迁移镜像 tag+digest、隔离 Deployment/Ingress、真实 mutation→审计对账→恢复、失败矩阵和回滚演练。当前候选/隔离证据已齐，但本地新增的全写操作审计改动尚未出新镜像，P0-007B 仍保持 `IN_PROGRESS`：必须先构建并验证新前后端 candidate，再按业务 mutation 矩阵补齐来源、Collector、上传和分发受权动作，不能以单一审核 mutation 代替全部业务等价迁移。
+下一证据必须同时包含：React Info 实例提交、父仓指针、迁移镜像 tag+digest、隔离 Deployment/Ingress、真实浏览器页面无 CSP 拦截、真实 mutation→审计对账→恢复、失败矩阵和回滚演练。当前旧 candidate 的隔离证据不能覆盖 CSP 修复，P0-007B 仍保持 `IN_PROGRESS`：必须先构建并验证新的 CSP hash candidate，再按业务 mutation 矩阵补齐来源、Collector、上传和分发受权动作，不能以单一审核 mutation 代替全部业务等价迁移。
