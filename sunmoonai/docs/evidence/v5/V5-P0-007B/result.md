@@ -1,6 +1,6 @@
 # V5-P0-007B Info Admin 真实业务试点
 
-状态：`IN_PROGRESS`（迁移前基线已冻结；React 业务竖切和同源 API 拓扑已在本地实现，尚待候选镜像、隔离部署、浏览器和真实后端验收）
+状态：`IN_PROGRESS`（迁移前基线已冻结；React 业务竖切、候选镜像和隔离严格 TLS 已通过，尚待真实浏览器会话和后端业务 contract/E2E 验收）
 
 ## 迁移前基线
 
@@ -42,9 +42,11 @@ React Admin v1 完整消费已冻结的 `tpl-admin-frontend@f24500f6d8f437a0162f
 - React 基线已在现有 `info-admin-frontend` 子仓库原地替换；旧 Vue 源码保留在迁移前 Git tag，不作为当前工作树运行时。
 - 新增 `app/lib/info-api.ts`：所有领域请求显式走 `/api`，JSON mutation 自动声明 `Content-Type`，上传保持浏览器 multipart boundary；审计 mutation 由 correlation/operation/reason headers 传递。
 - 生产构建默认 `VITE_API_URL=`；Info Admin IngressRoute 已把同一 Host 的 `/api` 按顺序转发到 `info-admin-backend:8000`，`/` 才转发到前端，保持 CSP `connect-src 'self'`、session/CSRF cookie 和 OIDC 回调在同一浏览器 Origin。KIND 临时 OIDC 的 `127.0.0.1` 值仍只能由隔离脚本覆盖，不是生产默认。
+- 候选镜像已推送：`harbor.sunmoonai.com:30443/app-images/info-admin-frontend:p0-007b-info-admin-react-20260714@sha256:f57517ec36e08fada1438f8cf396dae572dd9da31113d31ee547e2f2b0d3ea36`。
 - 新增 `app/routes/info-crawl.tsx` 和 `/info/crawl` 导航：URL crawl、source、collector/discover、上传、文档筛选/选择/版本、单条/批量审核、实体链接、摘要画像、Knowledge 分发/详情/dispatch/retry 均使用真实 API，不提供 mock success。
 - 通用 `apiRequest` 的 JSON Content-Type 修正同步回 canonical React Admin 模板及其单元测试；该修正属于 template/common，不能把 Info DTO 或页面回流模板。
-- 已增加 Info API adapter、导航和通用请求头测试；Info `typecheck`、`lint` 和 `test` 已通过（11 files / 43 tests），并清理了 Ant Design 弃用 API 和测试 warning；生产 `pnpm build` 已在允许临时 preview 监听的环境通过。Docker/候选镜像、隔离浏览器/严格 TLS 和真实后端门禁仍未验收。
+- 已增加 Info API adapter、导航和通用请求头测试；Info `typecheck`、`lint` 和 `test` 已通过（11 files / 43 tests），并清理了 Ant Design 弃用 API 和测试 warning；生产 `pnpm build` 已在允许临时 preview 监听的环境通过。
+- Docker/Nginx smoke 已通过；KIND 隔离 `info-admin-frontend-p0-007b` 已用固定 digest 完成严格 CA/SNI 验收：`/health`、首页、`/info/crawl`、未知 asset `404`、同源 `/api/auth/me=401`、CSP 和无 Node runtime 均通过。临时 Deployment、Service、IngressRoute 已自动删除；正式 `info-admin-frontend:1.0.1` 与 `info-admin-backend:1.0.1` 未改变。首次 port-forward 建立前的瞬时 `curl (7)` 已由 readiness loop 收敛，不作为失败证据。
 
 ## 验收前明确禁止
 
