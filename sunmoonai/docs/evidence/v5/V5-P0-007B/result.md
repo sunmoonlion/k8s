@@ -53,6 +53,7 @@ React Admin v1 完整消费已冻结的 `tpl-admin-frontend@f24500f6d8f437a0162f
 - 真实 Info 业务 E2E 已通过（临时 port-forward + 当前 Info React 客户端，未写入业务数据）：`/info/crawl` 页面登录后渲染并在刷新后恢复；`/api/auth/me=200` 且 CSRF 存在；`/api/documents`、`/api/admin/sources`、`/api/admin/collectors`、`/api/admin/distributions` 均返回 `200` 数组；携带正确 CSRF 的非法 `POST /api/admin/crawl-jobs` 返回 `422`；浏览器无意外外连，凭据未输出。未带 CSRF 的同一请求先返回 `403`，证明安全门禁优先于 schema 校验。
 - 本轮复盘发现并修复后端审计上下文缺口：后端现在生成/回显受校验的 `X-Correlation-ID`，允许并回显 `X-Operation-ID`，允许 `X-Audit-Reason` CORS 头；已认证 actor 会进入请求上下文，文档审核和 Knowledge 分发状态/重试会把 correlation、operation、actor、reason 写入内部审计记录，并在下游 Artifact Contract 载荷中剔除内部审计字段。后端单测/类型检查当前为 `67 passed`、`pyright 0 errors`；该修复仍需构建新候选镜像、隔离部署后做真实 mutation→审计读取→状态恢复验证。
 - 2026-07-14 本地补齐后端请求级结构化审计日志：所有 `/api/` 非读请求记录 method/path/status/actor/correlation/operation/reason_present；未处理异常按 `500` 记录；日志不写入原始 reason、凭据或正文。对应测试断言审计日志存在且不泄露 reason；后端当前仍为 `67 passed`、`pyright 0 errors`。
+- 当前未推送提交链：Info 前端 `b694ccd`（父仓指针提交 `d65df13`）、Info 后端 `8ce914e`、K8s 文档 `d35bd9e`；这些提交必须与新 candidate 镜像的 digest 一起推送，不能只推其中一个仓库。
 - 候选后端真实可恢复 mutation 已通过：在开发库一篇现有文档上仅执行 `reviewed → active → reviewed`，以及实体链接、摘要画像的变更→审计读取→原值恢复；读取到 actor/correlation/operation/reason 审计字段，正文/标题/来源/分发未改变；审计历史按设计保留。候选前后端联合 IngressRoute 严格 TLS 也通过：健康检查 `200`、首页与 `/info/crawl`、同源 `/api/auth/me=401`、未知 asset `404`、CSP、无 Node runtime、Nginx 配置均通过。联合候选资源已清理，正式前后端镜像仍为 `1.0.1`。
 
 ## 验收前明确禁止
