@@ -61,6 +61,7 @@ React Admin v1 完整消费已冻结的 `tpl-admin-frontend@f24500f6d8f437a0162f
 - 2026-07-14 生产门禁验证：隔离后端临时设置 `ENV=production` 时因本地 Casdoor HTTP redirect URI 被拒绝启动（`CASDOOR_REDIRECT_URI must use HTTPS in production`），证明生产 HTTPS 回调门禁为 fail-closed；随后恢复仅用于本地浏览器矩阵的 development 配置，正式配置未改变。
 - 候选后端真实可恢复 mutation 已通过：在开发库一篇现有文档上仅执行 `reviewed → active → reviewed`，以及实体链接、摘要画像的变更→审计读取→原值恢复；读取到 actor/correlation/operation/reason 审计字段，正文/标题/来源/分发未改变；审计历史按设计保留。候选后端产生请求级 `audit_mutation` 结构化日志（仅字段/布尔 `reason_present`，不由应用 logger 写入原始 reason）；开发环境的 SQL echo 会在 SQL 参数调试日志中显示持久化 JSON，这是已知开发配置行为，生产环境已由启动门禁强制使用 HTTPS 并应关闭 debug SQL echo。联合候选资源已清理，正式前后端镜像仍为 `1.0.1`。
 - 2026-07-14 并发修正实现：Info 后端 `cde47eb` 为文档/文档版本受保护写操作加入可选 `expected_updated_at` + 行锁；带旧版本返回 `409`，不带前置条件的旧调用保持兼容。Info React `429f315` 在审核、批量审核、实体链接、摘要画像 mutation 中传递该版本；Info 父仓指针为 `3e64241`。Harbor 候选镜像固定 manifest digest：后端 `info-admin-backend:p0-007b-concurrency-20260714@sha256:d665089b011e798d2be0da2ad3f17c182259869fb970a7abfb14872214707dea`，前端 `info-admin-frontend:p0-007b-concurrency-20260714@sha256:3c1a7e4ad40d5e0abea4f7ad629ac6362216c4ea7cd910f3d1f2c8620ee6cd8b`。该远程 digest 的严格 CA/SNI smoke 已通过（health/home/deep-link/unknown-asset-404/CSP/same-origin-401/no-Node/Nginx）；补齐临时后端 `18082` OIDC 回调转发后，远程浏览器残余矩阵也通过（auth/CSRF、危险 URL 422、XSS、回放 200/409、并发 409/200、恢复、无外连、无凭据输出）。
+- 验收编排修正：临时后端配置的 `CASDOOR_REDIRECT_URI` 指向 `http://127.0.0.1:18082/api/auth/callback`，因此同源 Info 浏览器矩阵必须同时启动后端 `18082:8000` 和前端 `19082:80` 两个 port-forward；只启动前端会在 Casdoor 回跳时产生 `ERR_CONNECTION_REFUSED`，这不是业务失败，也不得被记录为通过。该要求已作为后续脚本/Runbook 的固定前置。
 
 ## 验收前明确禁止
 
