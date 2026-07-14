@@ -1,6 +1,6 @@
 # ADR-014：Next Web 模板架构再基线
 
-状态：PROPOSED（重构方向已获项目负责人同意；待 ADR-001/004/005 输出后冻结细节）  
+状态：IN_PROGRESS / BLOCKED_BY_ADR-001（P0-008A 紧急卫生已完成；等待 Runtime ADR 的可执行 stream/cancel/resume 输出后冻结细节）
 日期：2026-07-11  
 决策者：项目负责人、架构评审
 
@@ -54,7 +54,31 @@
 
 任一阶段发现必须把领域状态放进 BFF、无法安全恢复 stream、或多副本自托管语义无法闭合，P0-008 标记 BLOCKED 并重开本 ADR，禁止带病推广。
 
-## 5. 参考
+## 5. P0-008A 审查结果（尚不代表 ADR Accepted）
+
+### 已完成的紧急卫生
+
+- 删除被 Git 跟踪的 `app/.env.local`，并在 `app/.gitignore` 中明确忽略本地环境文件；可提交的环境样例不再包含 Casdoor client secret、Redis URL 或其他凭据。
+- 删除 `next.config.ts` 中硬编码的开发来源 IP；开发来源不得通过模板写死，隔离环境如确有需要必须由部署契约显式提供。
+- 按 Next 16 约定将 `middleware.ts` 改为 `proxy.ts`；Proxy 只做 next-intl locale negotiation，不能承担最终身份认证/授权。
+- 固定模板工具链：生产/CI/Docker 使用 Node `20.18.0`、pnpm `10.24.x`；本地开发允许 Node `>=20.18.0 <25`，但必须以 Docker/CI 的 Node 20.18.0 结果作为发布证据。Next 16 的最低 Node 要求由官方升级说明单独核验，不因外部模板的 Node 24 要求擅自升级基础镜像。
+- `.env.example` 和 `.env.k8s` 改为同源 `/api` 默认值；跨源 API 只能作为有证据的隔离诊断配置，必须通过 CORS/CSRF/audience 契约。
+
+### 当前架构矩阵（候选，未冻结）
+
+| 主题 | 当前模板候选 | 冻结前必须消费的证据 |
+| --- | --- | --- |
+| Server/Client | App Router；Server Component 不直接暴露 Provider 类型；交互面才使用 Client Component | P0-008B route/render matrix |
+| API 拓扑 | 同源 `/api` typed browser client；BFF 只保留为 ADR-005 允许的 session/协议适配边界 | ADR-005 + P0-008B BFF allowlist |
+| 身份 | App/Surface 专属 HttpOnly session、CSRF、audience/owner check；Proxy 仅 UX 检查 | ADR-005 已接受；Web 真实浏览器矩阵 |
+| Rendering/cache | public 内容可 SSG/ISR；受权 workspace 默认 dynamic；产品 Backend/Projection 是权威状态，浏览器不使用 Zustand 持久化认证 | P0-008B route/render/cache owner matrix |
+| Stream | cursor、重连、去重、snapshot reconciliation、cancel/resume、terminal precedence | ADR-001（当前仍 partial，阻塞） |
+| Citation | 浏览器只消费安全 Citation DTO 和受权来源跳转 | ADR-004 Accepted 输出 + Research 试点 |
+| Runtime/deploy | `standalone` 自托管；反向代理前置；固定镜像 digest；滚动版本需验证 Server Action/stream/cache 兼容 | P0-008B Docker/KIND/双 Pod evidence |
+
+因此本 ADR 目前只能作为 P0-008B 的候选输入，不能宣称 `Accepted`，也不能据此开始三个 Web 实例的替换。
+
+## 6. 参考
 
 - <https://nextjs.org/docs/app/guides/authentication>
 - <https://nextjs.org/docs/app/guides/backend-for-frontend>

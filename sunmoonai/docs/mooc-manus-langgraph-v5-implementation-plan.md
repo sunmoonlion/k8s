@@ -149,7 +149,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 实施：最小迁移或隔离表；一个 Session 创建两个 Run；一次 worker retry 产生第二 Attempt；Subagent 产生子 Invocation。
 - 测试：唯一性、状态转换、checkpoint mapping、并发条件更新、lineage 查询。
 - 验收：任何 ID 不复用承担两种实体；waiting/resume/retry 能准确定位。
-- 状态：NOT_STARTED
+- 状态：IN_PROGRESS / BLOCKED_BY_P0-001（2026-07-14 已完成模板审计和不依赖上游决策的紧急卫生：移除跟踪的 `.env.local`、删除硬编码开发 origin、`middleware.ts -> proxy.ts`、固定 Node/pnpm、清理环境样例；开发机允许 Node 20.18–24.x，发布证据仍固定 Node 20.18.0；typecheck/lint/Next 16.2.2 build 已通过。ADR-014 增加候选架构矩阵但尚未 Accepted。P0-001 Runtime stream/cancel/resume 输出完成后，才能冻结 ADR-014 并进入 P0-008B）
 
 ### V5-P0-003 Info-Knowledge Artifact Contract Spike
 
@@ -367,7 +367,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - Spike：分别证明 protected route 的服务端 session check、public static route、authenticated dynamic route、同源/直连 API 选中拓扑，以及 Runtime adapter 的浏览器断线对账；不得把 Proxy 当最终授权。
 - 测试：错误/过期 session、跨 locale return URL、CSRF/CORS/audience、cache 泄露、CSP、同一用户跨 Pod、滚动版本、stream cursor/reconcile。
 - 验收：ADR-014 Accepted；一张当前/目标拓扑、route rendering matrix、cache owner matrix、BFF allowlist、环境变量和部署兼容矩阵获批；所有未决项都有 owner/阻断任务，不以“模板以后处理”放行。
-- 状态：NOT_STARTED
+- 状态：IN_PROGRESS / BLOCKED_BY_P0-001（2026-07-14 已完成模板审计和不依赖上游决策的紧急卫生：移除跟踪的 `.env.local`、删除硬编码开发 origin、`middleware.ts -> proxy.ts`、固定 Node/pnpm、清理环境样例；ADR-014 增加候选架构矩阵但尚未 Accepted。P0-001 Runtime stream/cancel/resume 输出完成后，才能冻结 ADR-014 并进入 P0-008B）
 
 ### V5-P0-008B tpl-app Next Web v2 生产骨架
 
