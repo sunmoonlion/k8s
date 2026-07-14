@@ -1,6 +1,6 @@
 # ADR-006：异步可靠交付与本地 Outbox
 
-状态：PROPOSED / INFO_PROTOTYPE_IMPLEMENTED_NOT_ACCEPTED  
+状态：PROPOSED / INFO_CANDIDATE_DEPLOYED_NOT_ACCEPTED
 日期：2026-07-14  
 任务：V5-P0-006
 
@@ -96,13 +96,13 @@ pending --claim--> leased --broker accepted--> published --worker business succe
 
 ## 5. 当前实现与未决事项
 
-Info 原型代码已形成但尚未部署验收：
+Info 原型代码已形成，候选镜像/migration 已部署，但尚未完成故障验收：
 
 - `info-app/info-admin-backend/app/alembic/versions/20260714_0004_delivery_outbox.py`
 - `app/application/services/delivery_outbox.py`
 - `app/cli/drain_delivery_outbox.py`
 - Info distribution API/worker 的 outbox 接入与单元测试。
 - Info worker 资源中的 suspended scanner CronJob/独立无 token ServiceAccount，以及显式 outbox config values。
-- `verify_p0_006_scanner_manifest.sh` 与 `verify_p0_006_kind.py`：前者验证生成资源默认暂停和最小凭据；后者将在候选 KIND 环境验证 API broker block/recover、scanner 竞争、broker accept/published 写库中断、provider effect/outbox acknowledgement 中断和 CronJob 恢复。验证器的临时 API env、Knowledge worker env、CronJob suspend 与唯一测试队列均在 `finally` 恢复；两者都不输出 credential。
+- `verify_p0_006_scanner_manifest.sh` 与 `verify_p0_006_kind.py`：前者验证生成资源默认暂停和最小凭据；后者在候选 KIND 环境验证 API broker block/recover、scanner 竞争、broker accept/published 写库中断、provider effect/outbox acknowledgement 中断和 CronJob 恢复。验证器的临时 API env、Knowledge worker env、CronJob suspend 与唯一测试队列均需恢复；API broker override 的 helper 还必须在 rollout 失败或 SIGINT/SIGTERM 时自行回滚，不能只依赖调用者的 `finally`。两者都不输出 credential。
 
-当前阶段不生成正式镜像 tag、不替换正在运行的 `1.0.1` 后端、不修改其他两仓的消息链路。KIND fault matrix 和 CronJob 通过前，状态保持 `PROPOSED / INFO_PROTOTYPE_IMPLEMENTED_NOT_ACCEPTED`。
+候选镜像 `p0-006-outbox-20260714` 已推送，migration `20260714_0004` 已通过 KIND migration gate，API/worker 已候选部署，scanner 仍默认暂停。首次故障演练发现并修复验证器 cleanup 缺陷，且已手工恢复 Info API 配置；这不是 fault matrix 成功。KIND 全矩阵、CronJob 和最终证据通过前，不生成正式镜像 tag、不替换正在运行的 `1.0.1` 发布基线、不修改其他两仓的消息链路，状态保持 `PROPOSED / INFO_CANDIDATE_DEPLOYED_NOT_ACCEPTED`。

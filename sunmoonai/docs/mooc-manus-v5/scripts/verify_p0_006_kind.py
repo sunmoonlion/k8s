@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -597,28 +598,66 @@ def set_info_api_broker_override(
 ) -> None:
     """Temporarily make the API's immediate wake-up fail, then restore envFrom."""
     value = "CELERY_BROKER_URL=amqp://127.0.0.1:1/p0" if broken else "CELERY_BROKER_URL-"
-    kubectl(
-        [
-            "set",
-            "env",
-            "deployment/info-admin-backend",
-            "-n",
-            namespace,
-            value,
-        ],
-        kubeconfig=kubeconfig,
-    )
-    kubectl(
-        [
-            "rollout",
-            "status",
-            "deployment/info-admin-backend",
-            "-n",
-            namespace,
-            "--timeout=120s",
-        ],
-        kubeconfig=kubeconfig,
-    )
+    changed = False
+    try:
+        kubectl(
+            [
+                "set",
+                "env",
+                "deployment/info-admin-backend",
+                "-n",
+                namespace,
+                value,
+            ],
+            kubeconfig=kubeconfig,
+        )
+        changed = broken
+        kubectl(
+            [
+                "rollout",
+                "status",
+                "deployment/info-admin-backend",
+                "-n",
+                namespace,
+                "--timeout=120s",
+            ],
+            kubeconfig=kubeconfig,
+        )
+    except subprocess.CalledProcessError as exc:
+        # `kubectl set env` succeeds before the rollout can fail.  Keep this
+        # rollback inside the helper: callers cannot safely set their cleanup
+        # flag until this function returns, which previously left a broken
+        # broker URL behind on a rollout error.
+        if changed:
+            try:
+                kubectl(
+                    [
+                        "set",
+                        "env",
+                        "deployment/info-admin-backend",
+                        "-n",
+                        namespace,
+                        "CELERY_BROKER_URL-",
+                    ],
+                    kubeconfig=kubeconfig,
+                )
+                kubectl(
+                    [
+                        "rollout",
+                        "status",
+                        "deployment/info-admin-backend",
+                        "-n",
+                        namespace,
+                        "--timeout=120s",
+                    ],
+                    kubeconfig=kubeconfig,
+                )
+            except subprocess.CalledProcessError as rollback_exc:
+                raise VerificationError(
+                    "Info API broker fault setup failed and automatic rollback failed; "
+                    "remove explicit CELERY_BROKER_URL before retrying"
+                ) from rollback_exc
+        raise exc
 
 
 def wait_until_timestamp(
@@ -697,6 +736,17 @@ def main() -> int:
     fault_queue = f"p0-006-publish-window-{suffix}"
     fault_queue_created = False
     summary: dict[str, Any] = {"task": "V5-P0-006", "result": "failed"}
+    previous_signal_handlers = {
+        sig: signal.getsignal(sig) for sig in (signal.SIGINT, signal.SIGTERM)
+    }
+
+    def request_cleanup(signum: int, _frame: Any) -> None:
+        raise VerificationError(
+            f"received signal {signum}; restoring temporary verifier state"
+        )
+
+    for sig in previous_signal_handlers:
+        signal.signal(sig, request_cleanup)
     try:
         assert_candidate_images(
             kubeconfig=kubeconfig, namespace=args.namespace, image=args.image
@@ -770,6 +820,8 @@ def main() -> int:
                 process.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 process.kill()
+        for sig, handler in previous_signal_handlers.items():
+            signal.signal(sig, handler)
         forwards = []
         set_info_api_broker_override(
             kubeconfig=kubeconfig, namespace=args.namespace, broken=False

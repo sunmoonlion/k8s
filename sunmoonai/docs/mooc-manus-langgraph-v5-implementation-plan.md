@@ -245,6 +245,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 
 - 类型/优先级：ARCH/RELIABILITY/P0
 - 仓库：`info-app`、`knowledge-app`、`research-app`
+- 与 Runtime 选型的关系（冻结）：**不依赖 ADR-001**。本文中的 `Runtime` 专指 Research 智能体的编排执行运行时（自建、LangGraph Agent Server 或混合），不是 Docker、Kubernetes、Celery 或 Next.js 的运行环境。P0-006 只依赖已接受的 P0-003 Artifact contract、P0-005 服务身份，以及 Info API/worker、PostgreSQL、RabbitMQ/Celery、Knowledge ingestion 的既有边界；不得在本任务中预设或引入任何 Research Agent Runtime、Run/SSE/cancel/resume 语义。
 - 目标：为“数据库提交成功、消息未投递”选择统一语义，不要求立即抽取共享框架。
 - ADR：`sunmoonai/docs/mooc-manus-v5/adr/ADR-006-durable-asynchronous-delivery.md`。
 - 决策候选：transactional local outbox + `FOR UPDATE SKIP LOCKED` lease scanner + at-least-once publish + stable operation idempotency。RabbitMQ/Celery 不是事实源，broker transaction/result backend 不能取代 outbox；不承诺跨 DB/Broker/Provider exactly-once。
@@ -252,7 +253,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 实施：Info migration `20260714_0004`、outbox state machine/lease/retry、stable Celery task ID、worker acknowledgement、`app.cli.drain_delivery_outbox`；现有 Info worker 生成资源附带独立 ServiceAccount 和默认 `suspend: true` 的受限 CronJob，候选镜像/migration/fault matrix 达标后才可在 KIND 解除暂停。默认资源门禁脚本为 `sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_006_scanner_manifest.sh`，候选集群故障验证器为 `sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_006_kind.py`（执行中临时阻断 API broker wake-up，并注入 broker accept/published 与 provider effect/outbox ack 两个窗口；finally 恢复 API/Knowledge/CronJob/测试队列临时状态）。暂不把 Info helper 抽成四仓 SDK，不修改 Knowledge/Research 业务消息链路。
 - 测试：同事务写入、DB commit 后阻断 RabbitMQ、dispatcher/worker restart、重复 publish、两个 dispatcher 竞争、Broker accept 后 DB 写入中断、外部 ingestion 后 worker kill/retry；所有情况核对 stable distribution/operation ID、Knowledge 幂等效果、outbox terminal state 和无 credential 输出。
 - 验收：ADR-006 获批；选定方案能自动发现并补投，不产生重复业务效果；CronJob/image digest/ServiceAccount/最小网络权限/指标/runbook 已验证；明确 M1 各仓落地任务。
-- 状态：IN_PROGRESS / INFO_PROTOTYPE_IMPLEMENTED_NOT_ACCEPTED（2026-07-14：Info 本地代码、Alembic head、CLI help、75 个单元测试和 `pyright app core` 已通过；尚未 build/deploy image、尚未应用 migration、尚未在 KIND 执行 RabbitMQ/Knowledge fault matrix，故不得标记 ACCEPTED、不得变更 `1.0.1` 或任何正式 tag。）
+- 状态：IN_PROGRESS / INFO_CANDIDATE_DEPLOYED_NOT_ACCEPTED（2026-07-14：Info 本地代码、Alembic head、CLI help、75 个单元测试和 `pyright app core` 已通过；候选 `info-admin-backend:p0-006-outbox-20260714` 已推送为 `sha256:017f3c8ff58f58403fe2d6e83ec9bc1efa31711b09422fd75355ffd13102fdc9`，API migration gate 已实际执行 `20260712_0003 -> 20260714_0004`；worker/受限 scanner 的候选部署已发起且 scanner 保持 suspend。尚未完成 rollout/imageID 核对和 KIND RabbitMQ/Knowledge 全故障矩阵，故不得标记 ACCEPTED、不得变更 `1.0.1` 或任何正式 tag。）
 
 ### 前端物理仓库与差异基线（2026-07-13）
 
@@ -365,8 +366,12 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 仓库：`tpl-app`、`k8s`
 - 前置：P0-007C ACCEPTED；P0-001/004/005 已分别给出 stream adapter、Citation DTO、浏览器身份/BFF 的可执行决策证据。
 - 实施：接受或重开 ADR-014；固定 Server/Client、server-only DAL/DTO、typed browser client、BFF/直接 API、render/cache、SSE reconciliation、CSP、自托管多副本和发布拓扑；盘点三实例差异。仅执行不依赖未决契约的紧急卫生：停止跟踪 `.env.local`、禁止 secret/default credential、移除硬编码 origin、迁移 Next 16 `middleware.ts -> proxy.ts`、校准 Node/pnpm/.nvmrc/README。
-- 外部参考：以 MIT 许可的 `ixartz/Next-js-Boilerplate` 固定参考 commit 和依赖清单作为工程能力输入，逐项提取 App Router 目录约定、严格 TypeScript、环境校验、国际化、错误/加载边界、测试/Storybook/CI 组织和可访问性实践；必须形成“采用/改造/拒绝”矩阵，不得复制其产品页面或整套依赖。
-- 兼容性决策：上游当前 README 要求 Node 24+，不因此自动升级 SunmoonAI 基础镜像；ADR-014 必须单独记录 Node/Next/React 支持矩阵、镜像可用性和升级回滚证据。Casdoor OIDC/BFF 替代 Clerk，后端 API/Provider Contract 替代 Drizzle/PGlite/前端数据库，未经批准的 SaaS 集成全部排除。
+- 外部参考：以 MIT 许可的 `ixartz/Next-js-Boilerplate` **固定 source SHA、审查日期和依赖清单**作为工程能力输入；固定输入后才可开始 B1。它提供工程实践，不是可复制的产品底座：必须形成 ADR-014 的“采用/改造/拒绝”矩阵，不得复制产品页面、认证流、数据库或整套依赖。
+- ixartz 吸收决策：
+  - **采用（B1/B4 必做）**：严格 TypeScript 与可复现命令；环境变量 schema/启动期 fail-fast；`poweredByHeader: false`、严格模式和可选 bundle 分析；`next-intl` 缺失 key 检查；`loading`/`error`/`not-found`、metadata/robots 及 public/authenticated route rendering matrix；Vitest component/unit、Playwright E2E（失败保留 trace/video）、基础 a11y 和 CI 证据归档。
+  - **改造后采用（必须先由 ADR-005/001/004 冻结）**：App Router 的 server/client 分层改为 `server-only` DAL/DTO + typed browser client + 最小 BFF allowlist；Playwright 的本地 server 改为真实配对后端或受控 contract fixture；可观测/源图上传仅接已批准的自托管方案；Storybook 只在模板组件面稳定且能服务组件回归时再启用，不作为 P0 放行条件。
+  - **拒绝**：Clerk（由 Casdoor OIDC/BFF 替代）、Drizzle/PGlite/Neon/前端 migration（领域数据归后端）、Arcjet/PostHog/BetterStack/Sentry/Crowdin 等未经批准的 SaaS、外部字体/CDN 运行时依赖、其产品页面与支付/账户模型、GitHub 专用发布流程，以及因上游 `Node >=24` 而未经兼容性证据升级 SunmoonAI Node 20.18 发布基线。
+- 兼容性决策：ADR-014 必须单独记录 Node/Next/React 支持矩阵、镜像可用性和升级回滚证据。Casdoor OIDC/BFF 替代 Clerk，后端 API/Provider Contract 替代 Drizzle/PGlite/前端数据库，未经批准的 SaaS 集成全部排除。
 - Spike：分别证明 protected route 的服务端 session check、public static route、authenticated dynamic route、同源/直连 API 选中拓扑，以及 Runtime adapter 的浏览器断线对账；不得把 Proxy 当最终授权。
 - 测试：错误/过期 session、跨 locale return URL、CSRF/CORS/audience、cache 泄露、CSP、同一用户跨 Pod、滚动版本、stream cursor/reconcile。
 - 验收：ADR-014 Accepted；一张当前/目标拓扑、route rendering matrix、cache owner matrix、BFF allowlist、环境变量和部署兼容矩阵获批；所有未决项都有 owner/阻断任务，不以“模板以后处理”放行。
@@ -378,12 +383,12 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 仓库：`tpl-app`
 - 前置：P0-008A ACCEPTED。
 - 实施：在现有 `tpl-web-frontend` 仓库的迁移分支内重构并冻结 Next Web v2；保留 React 19、Next 16 App Router、next-intl、Tailwind/shadcn/Base UI 候选和 `standalone` 自托管；实现 ADR-014 冻结的 Server/Client、DAL/DTO、typed client、auth/BFF、render/cache、stream adapter、错误/correlation、观测、安全、测试和 Docker/KIND 骨架，不创建新的 Web 模板仓库。
-- 能力吸收边界：参考 ixartz 的工程化组织而非其 SaaS 业务；新增 strict env schema、server-only DAL、Casdoor session、统一 API/error/correlation、route metadata、loading/error/not-found、a11y、Playwright/Vitest、Storybook（若 ADR-014 认为有价值）和可重复 CI。前端不拥有数据库，不引入 Clerk/Drizzle/PGlite/第三方遥测或外部字体/CDN 作为运行时依赖。
+- 能力吸收边界：严格执行 P0-008A/ADR-014 的采用/改造/拒绝矩阵，而不是仅“参考” ixartz。新增 strict env schema、server-only DAL、Casdoor session、统一 API/error/correlation、route metadata、loading/error/not-found、i18n 缺失 key 检查、a11y、Vitest/Playwright 与可重复 CI。Storybook、bundle 分析和依赖漂移扫描必须有明确触发条件；前端不拥有数据库，不引入 Clerk/Drizzle/PGlite/第三方遥测或外部字体/CDN 作为运行时依赖。
 - 串行施工包：`B1 Repo/Env/Rendering` -> `B2 Auth/DAL/DTO` -> `B3 UI/Query/Stream` -> `B4 Security/Test/Deploy`；每包在现有仓库提交并可回滚，不复制目录形成 v2 副本。
 - Reference surfaces：只提供中性 public content、authenticated workspace、stream timeline/HITL、citation/error 状态示例；fixture 只验证组件，不得伪装成真实 Run/Retrieval 成功。
 - 不做：不做无 tag/digest 的不可回滚覆盖、不改三个 App 流量、不把 Run/Artifact/Retrieval 领域状态放入 BFF/Zustand、不预建跨 App 共享 UI 平台、不用 nonce CSP 无条件强制全部 route dynamic。
-- 测试：typecheck、lint、unit/component、Playwright/a11y、route rendering/cache assertions、auth/CSRF/CSP、stream reconnect/reconcile、多标签、Docker/KIND、非 root/probes、两个 Pod 滚动版本与 cache/version-skew smoke。
-- 验收：从干净目录可重复构建；public 与 authenticated route 的渲染/cache 证据符合矩阵；最终镜像和 K8s 接口可追溯；迁移前 tag/镜像可恢复，三个 Web 实例未被提前修改。
+- 测试：typecheck、lint、unit/component、Playwright/a11y、route rendering/cache assertions、auth/CSRF/CSP、stream reconnect/reconcile、多标签、Docker/KIND、非 root/probes、两个 Pod 滚动版本与 cache/version-skew smoke。模板级 fixture 仅可验证 UI/错误映射，不能替代后续 App 级 Web↔Web Backend 的真实配对 E2E。
+- 验收：从干净目录可重复构建；public 与 authenticated route 的渲染/cache 证据符合矩阵；最终镜像和 K8s 接口可追溯；迁移前 tag/镜像可恢复，三个 Web 实例未被提前修改；每项 ixartz 决策均有 source SHA、采用结果或拒绝理由。
 - 状态：NOT_STARTED
 
 ### V5-P0-008C Research Web 真实试点与 Next v2 冻结
@@ -391,11 +396,27 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 类型/优先级：FUNC/RELIABILITY/FRONTEND/P0
 - 仓库：`tpl-app`、`research-app`、`knowledge-app`、`k8s`
 - 前置：P0-008B ACCEPTED；P0-001 选中 Runtime 有隔离可运行 endpoint，P0-004/005 有可执行 Provider/身份；不要求生产流量，但禁止 fake SSE、fake citation、mock Run success。
-- 实施：从固定 v2 commit 实例化 Research 隔离入口；跑通真实 session/run、SSE cursor/reconnect、snapshot reconciliation、cancel/resume、HITL、citation 与受权来源跳转；把差异分类为 template/common、Research-specific、deferred，只回收 common。
+- 实施：从固定 v2 commit 实例化 Research 隔离入口；**Research Web 只与 Research Web Backend/选中 Runtime adapter 成对部署和测试**，跑通真实 session/run、SSE cursor/reconnect、snapshot reconciliation、cancel/resume、HITL、citation 与受权来源跳转；把差异分类为 template/common、Research-specific、deferred，只回收 common。
 - 故障测试：刷新/断网/重复事件/事件缺口/陈旧 terminal、多标签、Runtime/Next Pod 重启、滚动版本、过期 approval、跨用户 URL、Citation 404/403、浏览器取消与后端竞态。
 - 冻结产物：`next-web-template-version`、依赖锁、route/render/cache/BFF/env/deploy 契约、三 Web migration checklist、旧模板回滚和 compatibility matrix。
 - 验收：真实试点可从稳定 URL 恢复且最终与服务端 Projection 收敛；浏览器不读原始 LangGraph/Provider 类型；两个 Pod/滚动版本无静默状态丢失；v2 固定 commit 可干净重建并按迁移清单应用，且模板不含 Research 领域代码。
 - 状态：NOT_STARTED
+
+### 浏览器 Frontend/Backend 配对门禁（所有前端任务的强制规则）
+
+前端单测、静态页面 smoke、mock/fixture contract 与后端 API 测试都必须保留，但**都不能替代真实浏览器到同一领域后端的配对验收**。一个前端只能连接其同 surface、同 App、同 audience 的后端；不允许用 Admin Backend 证明 Web，或用 Web Backend 证明 Admin。
+
+| 浏览器前端 | 唯一配对后端 | 真实配对验收最小内容 |
+|---|---|---|
+| Info Admin | Info Admin Backend | Casdoor session/CSRF、角色与资源授权、Info 管理 mutation、审计/correlation、刷新恢复、拒绝路径 |
+| Knowledge Admin | Knowledge Admin Backend | Casdoor session/CSRF、Dataset/Provider/Ingestion/Retrieval 诊断、权限拒绝和 correlation |
+| Research Admin | Research Admin Backend | Casdoor session/CSRF、Runtime/evaluation 治理权限、审计和停流拒绝 |
+| Info Web | Info Web Backend | public/authenticated route、locale/render/cache、同源 session/CSRF、Info 用户业务流程 |
+| Knowledge Web | Knowledge Web Backend | public/authenticated route、授权检索/个人空间、Citation 跳转、provider 隔离 |
+| Research Web | Research Web Backend + ADR-001 选中 adapter | session/Run/SSE/HITL/cancel-resume/citation、刷新/断线/多标签、跨用户拒绝 |
+
+- 环境纪律：每次配对 E2E 记录前端 digest、配对后端 API/worker digest、BFF/proxy 配置、OIDC client/audience、base URL 和 contract version；测试前显式断言这些值相配。浏览器不得持有服务间 token，`Info -> Knowledge` 仍是独立的服务到服务可靠交付/contract 测试链，不得伪装成 Web↔Backend 配对。
+- 完成纪律：迁移或正式 tag 的证据必须同时包含独立前端质量测试、独立后端 contract/安全测试、以及上表对应的真实浏览器配对 E2E；任一缺失保持 `IN_PROGRESS`。模板 P0-008B 只可用受控 fixture，不获得任何业务 App 的迁移或发布资格。
 
 ### Gate P0
 
@@ -845,9 +866,9 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 
 - 类型/优先级：QUALITY/RELIABILITY/P0
 - 仓库：四仓 CI
-- 实施：状态机/错误映射/sanitizer 单元测试；关键组件测试；typed client contract；Playwright/Cypress 浏览器 E2E。
-- E2E：登录 -> Info Artifact/交付 -> Knowledge ingestion/diagnostic -> Research 创建/stream/HITL/refresh/cancel/citation -> Admin lineage；包含断网、多标签、重复动作和权限拒绝。
-- 验收：M1a 跑内部真实竖线浏览器子集；M1b 跑完整安全/恢复子集并保存截图、trace、video 或等价证据；后端脚本不能替代本任务。
+- 实施：状态机/错误映射/sanitizer 单元测试；关键组件测试；typed client contract；Playwright/Cypress 浏览器 E2E。每个前端的 E2E 必须先按“浏览器 Frontend/Backend 配对门禁”完成其同 App、同 surface 后端；mock/fixture 只属于组件层。
+- E2E：先分别完成六组 Web/Admin ↔ 同领域 Backend 的登录、session/CSRF、audience、业务 mutation/读取、刷新和拒绝路径；再执行跨仓旅程 `Info Admin -> Info Admin Backend -> Artifact/Delivery -> Knowledge Admin/Backend ingestion diagnostic -> Research Web/Backend Run/stream/HITL/refresh/cancel/citation -> Research Admin lineage`。包含断网、多标签、重复动作和权限拒绝；每一跳记录配对的 image digest 与 contract version。
+- 验收：M1a 跑内部真实竖线的必要配对子集；M1b 跑全部六组配对安全/恢复子集和跨仓旅程，并保存截图、trace、video 或等价证据；后端脚本、只跑前端或错配后端都不能替代本任务。
 - 状态：NOT_STARTED
 
 ### V5-M1-411 三个 React Admin 等价迁移 Rollup
@@ -917,8 +938,8 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 - `413A Info Web`：验证 public content、登录后 workspace、locale、render/cache 和 Info 真实业务 route；完成后才开始 Knowledge。
 - `413B Knowledge Web`：验证 public entry、授权检索/个人空间、Citation 跳转和 provider 隔离；完成后才开始 Research。
 - `413C Research Web`：复用 P0-008C 真实试点和 M1-409 workspace，不重复创建 stream client；验证 Run/HITL/citation、多标签恢复和滚动版本。
-- 测试：三个实例分别 install/typecheck/lint/unit/build、route/render/cache matrix、auth/CSRF/CSP、Playwright/a11y、Docker/KIND、多副本/version-skew；每个 App 独立切换和回滚演练。
-- 验收：三实例均可追溯到同一冻结模板版本且无未解释漂移；各自业务 route/contract/E2E 通过；M1b 前完成全部迁移，任一 App 失败只回滚该 App，不连带切换其他 App。
+- 测试：三个实例分别 install/typecheck/lint/unit/build、route/render/cache matrix、auth/CSRF/CSP、Playwright/a11y、Docker/KIND、多副本/version-skew；`413A` 只配对 Info Web Backend，`413B` 只配对 Knowledge Web Backend，`413C` 只配对 Research Web Backend + 选中 Runtime adapter。每个 App 独立切换和回滚演练。
+- 验收：三实例均可追溯到同一冻结模板版本且无未解释漂移；各自业务 route/contract/与唯一配对后端的真实浏览器 E2E 通过；M1b 前完成全部迁移，任一 App 失败只回滚该 App，不连带切换其他 App。
 - 状态：NOT_STARTED
 
 ## 8. 部署、迁移与观测工作流

@@ -151,32 +151,48 @@ def assert_no_explicit_worker_overrides(*, kubeconfig: str, namespace: str) -> N
 
 
 def configure_isolated_verifier(*, kubeconfig: str, namespace: str) -> None:
-    kubectl(
-        [
-            "set",
-            "env",
-            "deployment/celeryworker-knowledge-admin-backend",
-            "-n",
-            namespace,
-            "RAGFLOW_API_KEY=",
-            (
-                "ARTIFACT_S3_ALLOWED_BUCKETS=development-info-originals,"
-                "development-research-admin-assets"
-            ),
-        ],
-        kubeconfig=kubeconfig,
-    )
-    kubectl(
-        [
-            "rollout",
-            "status",
-            "deployment/celeryworker-knowledge-admin-backend",
-            "-n",
-            namespace,
-            "--timeout=120s",
-        ],
-        kubeconfig=kubeconfig,
-    )
+    changed = False
+    try:
+        kubectl(
+            [
+                "set",
+                "env",
+                "deployment/celeryworker-knowledge-admin-backend",
+                "-n",
+                namespace,
+                "RAGFLOW_API_KEY=",
+                (
+                    "ARTIFACT_S3_ALLOWED_BUCKETS=development-info-originals,"
+                    "development-research-admin-assets"
+                ),
+            ],
+            kubeconfig=kubeconfig,
+        )
+        changed = True
+        kubectl(
+            [
+                "rollout",
+                "status",
+                "deployment/celeryworker-knowledge-admin-backend",
+                "-n",
+                namespace,
+                "--timeout=120s",
+            ],
+            kubeconfig=kubeconfig,
+        )
+    except subprocess.CalledProcessError as exc:
+        # The caller can only mark its cleanup as active after this helper
+        # returns.  If rollout fails after `set env`, restore here so no
+        # verifier-only provider override survives a failed setup.
+        if changed:
+            try:
+                restore_worker(kubeconfig=kubeconfig, namespace=namespace)
+            except subprocess.CalledProcessError as rollback_exc:
+                raise VerificationError(
+                    "Knowledge worker verifier setup failed and automatic rollback failed; "
+                    "remove RAGFLOW_API_KEY and ARTIFACT_S3_ALLOWED_BUCKETS overrides"
+                ) from rollback_exc
+        raise exc
 
 
 def restore_worker(*, kubeconfig: str, namespace: str) -> None:

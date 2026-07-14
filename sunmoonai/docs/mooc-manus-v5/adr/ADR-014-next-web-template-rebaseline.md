@@ -85,3 +85,23 @@
 - <https://nextjs.org/docs/app/getting-started/proxy>
 - <https://nextjs.org/docs/app/guides/content-security-policy>
 - <https://nextjs.org/docs/app/guides/self-hosting>
+- <https://github.com/ixartz/Next-js-Boilerplate>（工程实践参考；不是可直接引入的产品或 SaaS 底座）
+
+## 7. ixartz 参考审查与受控吸收（2026-07-15）
+
+审查对象必须在 P0-008B 开始前记录为不可变 Git SHA；本节记录当前 `main` 的能力分类，不把上游 `main` 当作运行时依赖。其当前配置提供 Next App Router、`next-intl`、严格环境变量、Vitest/Playwright、i18n 检查、bundle analysis、Storybook/a11y 等工程能力，也同时捆绑 Clerk、Drizzle/PGlite、Neon、Sentry、Arcjet、PostHog/BetterStack/Crowdin 等与 SunmoonAI 不相容的产品/SaaS 选择。
+
+| 上游能力 | SunmoonAI 决策 | 落点与边界 |
+| --- | --- | --- |
+| 类型检查、格式/静态检查、unit/component、Playwright、失败 trace/video | 采用 | P0-008B B1/B4；E2E 的 server 必须改为受控 pair backend 或 fixture，不启动 PGlite/Drizzle。 |
+| 严格环境变量校验 | 采用 | 以 Zod 或等价 schema 在 build/start fail-fast；客户端仅允许显式 `NEXT_PUBLIC_*`，服务端 secret 不进入浏览器。 |
+| `next-intl`、错误/加载边界、metadata、`poweredByHeader: false`、严格模式、可选 bundle 分析 | 采用 | 进入 route/render/cache matrix；分析只在明确命令启用，不引入 SaaS。 |
+| App Router 的 server/client 分层 | 改造后采用 | 用 `server-only` DAL/DTO、typed browser client 和 ADR-005 批准的最小 BFF；领域状态仍归产品后端。 |
+| Storybook、依赖扫描、提交钩子 | 条件采用 | 组件面达到稳定规模、可服务回归且 Gitee CI 有对应 owner 后再启用；不是 P0 放行前提。 |
+| Clerk、Drizzle/PGlite/Neon、db migration、账户/支付页面 | 拒绝 | Casdoor OIDC/BFF 和领域 Backend/Contract 分别替代；模板不拥有数据库。 |
+| Sentry、Arcjet、PostHog、BetterStack、Crowdin、Chromatic 等外部服务 | 拒绝，除非另行 ADR 批准 | 默认不引入外传遥测、外部 CDN、第三方身份或运行时 SaaS 依赖。 |
+| 上游 Node `>=24` | 拒绝自动跟随 | 继续以 Node 20.18/pnpm 10 的容器发布证据为准；升级必须有独立兼容、镜像和回滚证明。 |
+
+## 8. 前端/后端成对验证约束
+
+本 ADR 的 Web v2 骨架只可使用中性 fixture，不能借此声明任一业务 Web 已验证。每个真实 Web E2E 必须连接同 App 的 Web Backend：Info Web↔Info Web Backend、Knowledge Web↔Knowledge Web Backend、Research Web↔Research Web Backend 加 ADR-001 选中的 Runtime adapter。Admin 与 Web 后端不能互换作为证据。每次验收记录双方 image digest、OIDC audience、BFF/proxy 配置、URL 和 contract version；独立前端/后端测试均不能替代成对浏览器 E2E。
