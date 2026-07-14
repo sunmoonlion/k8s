@@ -1,7 +1,7 @@
 # V5-P0-007A2/A2.2 Identity/Data Foundation 施工证据
 
 日期：2026-07-14  
-状态：`IN_PROGRESS（Info/KIND 严格 TLS 模板真实身份正向验收通过；完整 consumer gate 未完成）`
+状态：`ACCEPTED（2026-07-14；模板基础身份 consumer gate 已通过）`
 
 ## 本轮范围
 
@@ -70,6 +70,7 @@ admin_role_and_scope         => true
 csrf_negative_cases          => 4
 csrf_positive_logout         => true
 session_revoked_on_logout    => true
+browser_cors_status          => 200
 provider_material_exposed    => false
 credentials_printed         => false
 provider_tokens_printed      => false
@@ -89,6 +90,15 @@ credentials/provider tokens  => never printed
 template/port-forward cleanup=> no residual process or listener on 19082-19084/18082-18084
 ```
 
+扩展 consumer 矩阵：
+
+```text
+Research owner isolation     => passed; owner read=200; cross-owner read=403
+Research traffic restoration => passed; gate restored closed
+Info expired Redis session   => passed; /me=401; template redirect=/login?return_to=/
+All template CORS checks     => passed; allowed origin=200, attacker ACAO=absent
+```
+
 这证明同一 React 模板消费三套 Admin 身份契约时没有按 App 写分叉逻辑；它不等价于
 三个业务前端已经迁移，也不改变 Knowledge 前端当前保持 disabled 的基线。
 
@@ -100,14 +110,17 @@ template/port-forward cleanup=> no residual process or listener on 19082-19084/1
 
 测试覆盖 `/api/auth/me` 归一化、CSRF 内存边界、unsafe 请求头、POST logout、401 redirect 和 correlation/error 行为。
 
-## 尚未完成
+## 验收结论与边界
 
-- 仍需把跨用户、过期 session、CORS、401/403 等更广泛的浏览器矩阵纳入模板
-  consumer gate；本次已覆盖 Info 模板真实登录、回调、`/me`、CSRF 和登出。
-- 仍需与 P0-005 security contract fixtures 建立可重复的浏览器 consumer test，
-  并在最终 release gate 中记录模板 commit/SHA 与可回滚构建产物。
-- 本轮 `pnpm build`/`pnpm test:e2e` 使用模板 demo auth；它们只证明通用壳和
-  错误/请求边界可运行，真实身份结论以本节严格 TLS 浏览器验收为准。
+- 三套 Admin 的真实 Casdoor/KIND 基础矩阵、CORS、CSRF、401/403、Research
+  跨用户隔离和 Redis session 过期矩阵均已通过；consumer 验收脚本为
+  `verify_p0_005_browser.mjs` 的 template/owner-isolation/session-expiry 模式。
+- React 模板实现 commit：`tpl-admin-frontend@0b68498`；扩展浏览器 consumer
+  gate commit：`k8s@3558a08`。clean-room、Docker/Nginx smoke 和依赖锁证据见上文。
+- `pnpm build`/`pnpm test:e2e` 的 demo auth 只用于模板壳和通用错误/请求边界；
+  真实身份结论以严格 TLS 浏览器矩阵为准。
+- A2.5 仍需继续处理全量 a11y、响应式/reduced-motion、最终镜像固化和生产
+  Gate；A2.2 的身份/数据底座不得被解释为三个业务前端已迁移。
 
 说明：P0-005 的三套现有 Admin 严格 TLS/浏览器证据已接受（见 `V5-P0-005/result.md`），但该证据不自动转移为 React 模板的真实身份验收；模板后续必须在隔离入口消费同一 security contract 再复验。
 
@@ -125,6 +138,6 @@ strict TLS requires certutil and a valid NSS profile: spawnSync certutil ENOENT
 通过；首次使用非固定回调端口的尝试被正确判为失败，随后清理残留并按固定
 `19082` 重新运行通过。
 
-上述项目完成前，A2.2 维持 `IN_PROGRESS`，不得进入 A2.3 或 P0-007B，也不得用于三个 App 的 React 替换。
-
-本轮实现尚在 `tpl-admin-frontend` 工作树，尚未提交/推送；正式接受前必须记录实现 commit/SHA、依赖锁和可回滚构建产物。
+A2.2 已接受；下一施工包为 A2.3 CRUD Toolkit。P0-007B 和三个 App 的 React
+替换仍必须等待 A2.4/A2.5、P0-007C 与 `TEMPLATE_MIGRATION_READY`，不能因
+A2.2 接受而提前推广。
