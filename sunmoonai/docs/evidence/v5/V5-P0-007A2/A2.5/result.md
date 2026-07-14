@@ -5,8 +5,8 @@
 ## 固定实现
 
 - 模板仓库：`tpl-admin-frontend`
-- 实现提交：`f46924a8668c93fbc45742cc8d775411fd064449`
-- 父仓指针：`tpl-app@2a630a3392249d80002423625a5523e645f34b57`
+- 实现提交：`488585f81a13e8d2f51378dffb36f653b90dc881`
+- 父仓指针：`tpl-app@82a7bd879dab49ce884ffb084642ced3d283359d`
 - 业务 App：未修改，未部署，未切流量。
 
 ## 已通过的模板本地门禁
@@ -31,7 +31,7 @@ BASE_PATH=/admin pnpm build # passed; assets use /admin/assets/*
 
 以下项目必须在目标 Docker/KIND 环境执行并回填原始命令、镜像 digest、部署 commit 和清理结果后，才能把状态改为 `ACCEPTED` / `TEMPLATE_MIGRATION_READY`：
 
-1. 从 `f46924a8668c93fbc45742cc8d775411fd064449` 全新目录执行 clean-room install 与全量门禁。
+1. 从 `488585f81a13e8d2f51378dffb36f653b90dc881` 全新目录执行 clean-room install 与全量门禁。
 2. 使用固定 commit 构建候选镜像；验证 `/health`、`/`、SPA deep link、未知 asset 404、响应安全头、`nginx -t`，并确认运行容器无 Node runtime。
 3. 以固定镜像 digest 部署 KIND 隔离入口，执行严格 TLS/浏览器 smoke，并记录回滚路径。
 4. 只有以上证据齐全，才可勾选能力矩阵 P0-007A2 退出条件并开始 P0-007B；在此之前禁止同步三个业务 Admin。
