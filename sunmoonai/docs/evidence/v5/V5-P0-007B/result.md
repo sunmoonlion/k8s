@@ -1,6 +1,6 @@
 # V5-P0-007B Info Admin 真实业务试点
 
-状态：`IN_PROGRESS`（迁移前基线已冻结；React 业务竖切、CSP hash 候选镜像、联合隔离严格 TLS、真实浏览器身份、业务 contract/E2E、可恢复 mutation/审计对账和隔离回滚均已通过；尚未切正式流量，完整来源/Collector/上传/分发 mutation 矩阵仍需后续阶段补齐）
+状态：`IN_PROGRESS`（迁移前基线已冻结；React 业务竖切、CSP hash 候选镜像、联合隔离严格 TLS、真实浏览器身份、业务 contract/E2E、可恢复 mutation/审计对账、来源/Collector/上传/分发真实 mutation 矩阵和隔离回滚均已通过；尚未切正式流量，仍需补齐重复操作、并发冲突、XSS/危险 URL 与显式回滚演练等剩余验收证据）
 
 ## 迁移前基线
 
@@ -56,6 +56,7 @@ React Admin v1 完整消费已冻结的 `tpl-admin-frontend@f24500f6d8f437a0162f
 - 当前待推送提交链：模板前端 `c8b2bd0`（tpl-app 父仓需更新子仓指针）、Info 前端 `1f86ee7`（父仓指针 `85cb800`）、Info 后端 `8ce914e`、K8s 文档基线 `ab81ce5` 加本轮证据更新；这些提交必须与对应 candidate 镜像 digest 一起推送，不能只推其中一个仓库。
 - 2026-07-14 CSP 复盘与修复：旧 candidate 的真实浏览器诊断确认 `script-src 'self'` 会拦截 React Router SPA `index.html` 的 4 个框架启动内联脚本，表现为登录回跳后页面空白。模板与 Info 均新增构建期 `scripts/generate_csp_headers.mjs`，按最终 `index.html` 内容生成精确 `sha256-*` script sources；Docker run stage 只复制生成文件，继续禁止 `unsafe-inline` 和 `unsafe-eval`。模板提交 `c8b2bd0`，Info 前端提交 `1f86ee7`，Info 父仓指针提交 `85cb800`。新候选：模板 `harbor.sunmoonai.com:30443/app-images/tpl-admin-frontend:p0-007c-csp-20260714@sha256:ad35b3c97a9a89626ae998297da2e0348d1648b418b26ab4c178f387f88fb9fa`；Info `harbor.sunmoonai.com:30443/app-images/info-admin-frontend:p0-007b-csp-20260714@sha256:f553514576d4d1bf15722aeceb514e710d6d91f7af3d2b65f302e6df9c5f4087`。
 - 2026-07-14 CSP 候选验证：模板真实无头浏览器页面有渲染文本、CSP 阻断错误为 `0`、控制台错误为 `0`、响应头包含 hash；Info 候选 Docker/Nginx smoke 和 KIND 严格 TLS smoke 均通过（`health=200`、首页、`/info/crawl`、未知 asset `404`、同源 `/api/auth/me=401`、CSP、Nginx `-t`、无 Node runtime）。Info 候选同源真实 Casdoor 浏览器 E2E 通过：刷新恢复、CSRF、6 篇文档、审核可恢复 mutation、实体链接/摘要画像可恢复 mutation、sources/collectors/distributions 数组 contract、非法 crawl `422`、无外连、凭据未输出。
+- 2026-07-14 来源/Collector/上传/分发 mutation 矩阵已通过：脚本 `sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_007b_info_mutation_matrix.mjs` 以真实 Casdoor 身份、真实同源 `/api` 执行；source 创建 `201`、changedetection Collector 创建 `201` 且 source 绑定、discover 生成 1 个本地 crawl job（无外部抓取）、multipart 上传 `201` 且 raw/clean/text 三类 artifact 均创建、Knowledge distribution 创建 `201` 且 contract v1、失败状态→retry→pending、dispatch `200`（本地 Knowledge 配置返回 pending）；所有 mutation 带 CSRF/correlation/operation/reason，浏览器无外连、凭据未输出。
 - 2026-07-14 生产门禁验证：隔离后端临时设置 `ENV=production` 时因本地 Casdoor HTTP redirect URI 被拒绝启动（`CASDOOR_REDIRECT_URI must use HTTPS in production`），证明生产 HTTPS 回调门禁为 fail-closed；随后恢复仅用于本地浏览器矩阵的 development 配置，正式配置未改变。
 - 候选后端真实可恢复 mutation 已通过：在开发库一篇现有文档上仅执行 `reviewed → active → reviewed`，以及实体链接、摘要画像的变更→审计读取→原值恢复；读取到 actor/correlation/operation/reason 审计字段，正文/标题/来源/分发未改变；审计历史按设计保留。候选后端产生请求级 `audit_mutation` 结构化日志（仅字段/布尔 `reason_present`，不由应用 logger 写入原始 reason）；开发环境的 SQL echo 会在 SQL 参数调试日志中显示持久化 JSON，这是已知开发配置行为，生产环境已由启动门禁强制使用 HTTPS 并应关闭 debug SQL echo。联合候选资源已清理，正式前后端镜像仍为 `1.0.1`。
 
@@ -71,4 +72,4 @@ React Admin v1 完整消费已冻结的 `tpl-admin-frontend@f24500f6d8f437a0162f
 3. 重新部署并确认镜像 tag `1.0.1`、digest `sha256:3ce28192f97bd38a46d47b3bc357b9d826f219cff79fa47bd05dbdb84180bc98`。
 4. 通过现有 Info Admin 严格 TLS、session、403 和业务 smoke 后，才可关闭试点回滚窗口。
 
-下一证据必须同时包含：React Info 实例提交、父仓指针、迁移镜像 tag+digest、隔离 Deployment/Ingress、真实浏览器页面无 CSP 拦截、真实 mutation→审计对账→恢复、失败矩阵和回滚演练。CSP candidate 已完成构建和隔离验证，P0-007B 仍保持 `IN_PROGRESS`：必须按业务 mutation 矩阵补齐来源、Collector、上传和分发受权动作，不能以单一审核 mutation 代替全部业务等价迁移；正式 `1.0.1` 流量保持不变。
+下一证据必须同时包含：React Info 实例提交、父仓指针、迁移镜像 tag+digest、隔离 Deployment/Ingress、真实浏览器页面无 CSP 拦截、真实 mutation→审计对账→恢复、失败矩阵和回滚演练。CSP candidate 和来源/Collector/上传/分发 mutation 矩阵均已完成构建与隔离验证；P0-007B 仍保持 `IN_PROGRESS`，下一步仅补齐重复操作、并发冲突、XSS/危险 URL 与显式回滚演练等剩余证据，不能把候选验证误标为 `ACCEPTED`，正式 `1.0.1` 流量保持不变。
