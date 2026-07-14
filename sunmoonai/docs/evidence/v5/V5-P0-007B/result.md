@@ -75,4 +75,4 @@ React Admin v1 完整消费已冻结的 `tpl-admin-frontend@f24500f6d8f437a0162f
 3. 重新部署并确认镜像 tag `1.0.1`、digest `sha256:3ce28192f97bd38a46d47b3bc357b9d826f219cff79fa47bd05dbdb84180bc98`。
 4. 通过现有 Info Admin 严格 TLS、session、403 和业务 smoke 后，才可关闭试点回滚窗口。
 
-本任务证据已闭合：React Info 实例提交、父仓指针、迁移镜像 tag+digest、隔离 Deployment/Ingress、真实浏览器页面无 CSP 拦截、真实 mutation→审计对账→恢复、失败矩阵和回滚演练均已记录。P0-007B 已 `ACCEPTED`；下一步是按固定 digest 将候选提升为新的正式组件版本（建议 `1.1.0`），再执行正式 Deployment 的 digest 核对和 canary/回滚验证。旧 `1.0.1` 不覆盖、不删除。
+本任务证据已闭合：React Info 实例提交、父仓指针、迁移镜像 tag+digest、隔离 Deployment/Ingress、真实浏览器页面无 CSP 拦截、真实 mutation→审计对账→恢复、失败矩阵和回滚演练均已记录。P0-007B 已 `ACCEPTED`；候选 digest 保持不可变。正式 `1.1.0` 组件 tag 的提升排在 P0-007C（模板修正与 `TEMPLATE_MIGRATION_READY`）之后，避免模板公共修正导致正式 tag 反复重发；旧 `1.0.1` 不覆盖、不删除。
