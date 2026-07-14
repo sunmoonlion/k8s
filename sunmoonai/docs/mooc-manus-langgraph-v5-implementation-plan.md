@@ -316,9 +316,10 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 不做：不逐行翻译 Vue API，不把 Element Plus/Pinia/Composition API 机械搬到 React；不把 Info/Knowledge/Research 领域页面、DTO、业务规则写入模板；不接任何 App 流量。
 - 测试：模板全量 typecheck/lint/unit/component/Playwright/a11y；组件行为和错误状态矩阵；route/base path/Nginx/Docker smoke；clean-room 从固定 commit 重新生成；Vue/React 映射无未解释项。
 - 验收：能力矩阵无未分配的 `MUST` 项；所有 `DEFER` 有批准的 ADR/任务；从干净目录可重复构建；核心组件行为、权限和可访问性通过；状态命名为 `TEMPLATE_MIGRATION_READY`。只有本任务通过后，P0-007B 和三个 App 的 React 基础前端替换才可开始。
-- 状态：IN_PROGRESS（A2.1、A2.2、A2.3、A2.4 已接受；A2.5 当前施工包；P0-007A 现有证据不替代本任务）
+- 状态：IN_PROGRESS（A2.1、A2.2、A2.3、A2.4 已接受；A2.5 本地门禁通过，待 Docker/KIND/clean-room 外部证据；P0-007A 现有证据不替代本任务）
 - A2.3 已于 2026-07-14 接受：`tpl-admin-frontend@77a25c839198b9267d54c3402738ce8196d698eb` 完成 `DataTable`、服务端分页/排序/筛选 adapter contract、`SchemaForm`、`ResourceDescription`、`AuditedActionModal`、correlation/operation mutation 状态、通知、上传/下载和中性 Reference Page；8 个 Vitest 文件/31 个测试、5 个 Chromium 测试、typecheck、lint、SPA build 和 diff 检查通过。证据：`sunmoonai/docs/evidence/v5/V5-P0-007A2/A2.3/result.md`。该接受仅覆盖 A2.3 基础可访问性 smoke；完整 a11y、responsive/reduced-motion 和生产 Gate 仍属于 A2.5，三个 App 仍不得开始 React 基础替换。
 - A2.4 已于 2026-07-14 接受：本地图标/头像、SVG chart adapter、文本 Markdown boundary、同源媒体、progress/transition/watermark、通用 hooks/effects 及 `/rich-reference` 中性 fixture route；第三方 Vditor/Howler/Video.js/ECharts 全量 option、远程 Iconify 和 PWA/Electron 按 ADR-015 明确延期或专项引入。实现提交为 `tpl-admin-frontend@a9aed42e9c7d380e371144a03cab52e7c8288a80`，证据见 `sunmoonai/docs/evidence/v5/V5-P0-007A2/A2.4/result.md`；A2.5 仍需完成完整 a11y、responsive/reduced-motion、clean-room/Docker/KIND gate。
+- A2.5 当前施工包已形成模板实现提交 `tpl-admin-frontend@f46924a8668c93fbc45742cc8d775411fd064449`：Vite 生产构建拒绝 `VITE_AUTH_MODE=demo`，Docker 构建强制 typecheck/lint/unit/build，加入静态生产配置门禁和 reduced-motion/键盘焦点 E2E；39 个 Vitest、7 个 Chromium、typecheck、lint、普通构建及 `BASE_PATH=/admin` 构建通过。A2.5 仍未接受：必须由目标环境补齐固定 commit 的 clean-room、Docker/Nginx smoke、镜像 digest 和 KIND/严格 TLS 证据；不得以本地静态门禁替代这些证据。矩阵已回填至 `tpl-admin-frontend/docs/vue-react-capability-matrix.md`，父仓指针为 `tpl-app@2a630a3392249d80002423625a5523e645f34b57`。
 
 ### V5-P0-007B Info Admin 真实业务试点
 
