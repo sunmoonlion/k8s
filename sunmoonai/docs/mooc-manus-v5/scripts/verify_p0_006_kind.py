@@ -527,6 +527,34 @@ def assert_candidate_images(*, kubeconfig: str, namespace: str, image: str) -> N
         raise VerificationError("scanner CronJob must use candidate image and start suspended")
 
 
+def running_candidate_image_ids(*, kubeconfig: str, namespace: str) -> dict[str, str]:
+    """Capture the pulled digests that back the two candidate Deployments."""
+    values: dict[str, str] = {}
+    for app_name in ("info-admin-backend", "celeryworker-info-admin-backend"):
+        raw = kubectl(
+            ["get", "pods", "-n", namespace, "-l", f"app={app_name}", "-o", "json"],
+            kubeconfig=kubeconfig,
+            capture=True,
+        )
+        items = json.loads(raw).get("items", [])
+        ready = [
+            item
+            for item in items
+            if item.get("status", {}).get("phase") == "Running"
+            and item.get("status", {}).get("containerStatuses")
+            and item["status"]["containerStatuses"][0].get("ready") is True
+        ]
+        if len(ready) != 1:
+            raise VerificationError(
+                f"expected one ready {app_name} candidate pod, got {len(ready)}"
+            )
+        image_id = ready[0]["status"]["containerStatuses"][0].get("imageID")
+        if not image_id or "@sha256:" not in image_id:
+            raise VerificationError(f"{app_name} does not expose a pulled image digest")
+        values[app_name] = image_id
+    return values
+
+
 def set_cronjob_suspend(*, kubeconfig: str, namespace: str, value: bool) -> None:
     kubectl(
         [
@@ -643,7 +671,11 @@ def contract_payload(distribution: dict[str, Any]) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image", required=True, help="immutable P0 candidate image reference")
+    parser.add_argument(
+        "--image",
+        required=True,
+        help="unique P0 candidate image tag; pulled image IDs are captured in the result",
+    )
     parser.add_argument(
         "--kubeconfig",
         default=os.environ.get("KUBECONFIG", str(Path.home() / ".kube/kind-config")),
@@ -668,6 +700,9 @@ def main() -> int:
     try:
         assert_candidate_images(
             kubeconfig=kubeconfig, namespace=args.namespace, image=args.image
+        )
+        candidate_image_ids = running_candidate_image_ids(
+            kubeconfig=kubeconfig, namespace=args.namespace
         )
         assert_no_explicit_worker_overrides(
             kubeconfig=kubeconfig, namespace=args.namespace
@@ -1205,6 +1240,7 @@ def main() -> int:
         summary = {
             "task": "V5-P0-006",
             "result": "passed",
+            "candidate_image_ids": candidate_image_ids,
             "broker_failure": {
                 "distribution_id": failed_id,
                 "outbox_id": recovered_pending["id"],
