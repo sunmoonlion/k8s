@@ -1,0 +1,33 @@
+{
+  "captured_at": "2026-07-15T10:21:04+08:00",
+  "namespace": "app-platform-dev",
+  "active_outbox": 0,
+  "outbox_states": {
+    "completed": 16
+  },
+  "info_admin_backend": {
+    "ready": "1/1",
+    "image": "harbor.sunmoonai.com:30443/app-images/info-admin-backend:p0-006-outbox-r3-20260715",
+    "image_id": "sha256:ff2291ab40ef238acff359af1e1509a010a63949c43fe64a31051bf30e973dc8"
+  },
+  "celeryworker_info_admin_backend": {
+    "ready": "1/1",
+    "image": "harbor.sunmoonai.com:30443/app-images/info-admin-backend:p0-006-outbox-r3-20260715",
+    "image_id": "sha256:ff2291ab40ef238acff359af1e1509a010a63949c43fe64a31051bf30e973dc8"
+  },
+  "celeryworker_knowledge_admin_backend": {
+    "ready": "1/1",
+    "image": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-backend:1.0.1"
+  },
+  "scanner": {
+    "suspend": true,
+    "schedule": "*/1 * * * *",
+    "service_account": "info-delivery-outbox-scanner",
+    "automount_service_account_token": false,
+    "knowledge_service_credential_mounted": false,
+    "image": "harbor.sunmoonai.com:30443/app-images/info-admin-backend:p0-006-outbox-r3-20260715",
+    "ttl_seconds_after_finished": 300
+  },
+  "temporary_overrides_present": false,
+  "p0_verifier_jobs_remaining": 0
+}

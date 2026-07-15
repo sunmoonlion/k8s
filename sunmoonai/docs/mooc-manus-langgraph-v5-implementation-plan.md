@@ -149,7 +149,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 实施：最小迁移或隔离表；一个 Session 创建两个 Run；一次 worker retry 产生第二 Attempt；Subagent 产生子 Invocation。
 - 测试：唯一性、状态转换、checkpoint mapping、并发条件更新、lineage 查询。
 - 验收：任何 ID 不复用承担两种实体；waiting/resume/retry 能准确定位。
-- 状态：IN_PROGRESS / BLOCKED_BY_P0-001（2026-07-14 已完成模板审计和不依赖上游决策的紧急卫生：移除跟踪的 `.env.local`、删除硬编码开发 origin、`middleware.ts -> proxy.ts`、固定 Node/pnpm、清理环境样例；开发机允许 Node 20.18–24.x，发布证据仍固定 Node 20.18.0；typecheck/lint/Next 16.2.2 build 已通过。ADR-014 增加候选架构矩阵但尚未 Accepted。P0-001 Runtime stream/cancel/resume 输出完成后，才能冻结 ADR-014 并进入 P0-008B）
+- 状态：NOT_STARTED / BLOCKED_BY_P0-001（尚无 Session/Thread/Run/Attempt/Invocation 隔离模型的 Spike 实现或验收证据。原状态中的 Next 模板审计与环境卫生属于 P0-008A，不得计为 P0-002 进度。ADR-001 选定 Runtime 并冻结 checkpoint/stream/cancel/resume 边界后再启动本 Spike。）
 
 ### V5-P0-003 Info-Knowledge Artifact Contract Spike
 
@@ -170,7 +170,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 实施：在 `knowledge-app/contracts/` 建权威 OpenAPI/JSON Schema；静态 allowlist dataset；query/top_k/filter/token_budget；返回 Evidence 和 Info lineage；发布版本化 contract artifact；定义前端可安全展示的 Citation DTO 与受权来源跳转，不把 Provider metadata 原样暴露给浏览器。
 - 测试：L3；未知 dataset、空结果、权限拒绝、Provider timeout、citation 回溯。
 - 验收：Research KnowledgePort 不引用 RAGFlow 类型即可完成查询；Knowledge provider compatibility、Info/Research consumer-driven tests 和 k8s 兼容矩阵均可在 CI 运行。
-- 状态：NOT_STARTED
+- 状态：NOT_STARTED / NEXT_TASK（P0-006 已于 2026-07-15 收口；本任务现为唯一允许启动的代码任务。）
 
 ### V5-P0-005 身份与服务调用 Spike
 
@@ -244,16 +244,16 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 ### V5-P0-006 可靠交付 ADR 与最小原型
 
 - 类型/优先级：ARCH/RELIABILITY/P0
-- 仓库：`info-app`、`knowledge-app`、`research-app`
+- 仓库：`info-app`、`k8s`；`knowledge-app` 只作为真实下游参与验证，`research-app` 在 P0 只回填 M1 任务边界，两者均不引入 P0-006 业务实现。
 - 与 Runtime 选型的关系（冻结）：**不依赖 ADR-001**。本文中的 `Runtime` 专指 Research 智能体的编排执行运行时（自建、LangGraph Agent Server 或混合），不是 Docker、Kubernetes、Celery 或 Next.js 的运行环境。P0-006 只依赖已接受的 P0-003 Artifact contract、P0-005 服务身份，以及 Info API/worker、PostgreSQL、RabbitMQ/Celery、Knowledge ingestion 的既有边界；不得在本任务中预设或引入任何 Research Agent Runtime、Run/SSE/cancel/resume 语义。
 - 目标：为“数据库提交成功、消息未投递”选择统一语义，不要求立即抽取共享框架。
 - ADR：`sunmoonai/docs/mooc-manus-v5/adr/ADR-006-durable-asynchronous-delivery.md`。
 - 决策候选：transactional local outbox + `FOR UPDATE SKIP LOCKED` lease scanner + at-least-once publish + stable operation idempotency。RabbitMQ/Celery 不是事实源，broker transaction/result backend 不能取代 outbox；不承诺跨 DB/Broker/Provider exactly-once。
 - P0 原型链路：Info `DistributionRecord`（经认证用户实际请求 dispatch/retry/re-dispatch）与 `delivery_outbox_message` 在同一 transaction 写入；HTTP 只作 best-effort kick；有界 CLI scanner 从 pending/过期 leased/未确认 published 中恢复；worker 只在 Knowledge business success 后确认 completed。只创建待审核分发记录时不自动入队，保留既有 API 语义。
-- 实施：Info migration `20260714_0004`、outbox state machine/lease/retry、stable Celery task ID、worker acknowledgement、`app.cli.drain_delivery_outbox`；现有 Info worker 生成资源附带独立 ServiceAccount 和默认 `suspend: true` 的受限 CronJob，候选镜像/migration/fault matrix 达标后才可在 KIND 解除暂停。默认资源门禁脚本为 `sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_006_scanner_manifest.sh`，候选集群故障验证器为 `sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_006_kind.py`（先拒绝存在非 completed Info outbox 的候选 namespace，避免 drills 触碰无关业务；执行中临时阻断 Info 的 broker wake-up，并注入 broker accept/published 与 provider effect/outbox ack 两个窗口；它通过受控 `kubectl exec` 在已有 Info/Knowledge Pod 中调用同一领域服务并只读取无凭据状态标记，**不**回退到 P0-005 已禁止的匿名 Admin HTTP，也不提取浏览器 cookie；浏览器身份/HTTP 路由仍由 P0-005/P0-007 配对 E2E 证明；finally 恢复 API/Knowledge/CronJob/测试队列临时状态）。暂不把 Info helper 抽成四仓 SDK，不修改 Knowledge/Research 业务消息链路。
+- 实施：Info migration `20260714_0004`、outbox state machine/lease/retry、stable Celery task ID、worker acknowledgement、`app.cli.drain_delivery_outbox`；现有 Info worker 生成资源附带独立 ServiceAccount 和默认 `suspend: true` 的受限 CronJob。默认资源门禁脚本为 `sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_006_scanner_manifest.sh`，候选集群故障验证器为 `sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_006_kind.py`：先拒绝存在非 completed Info outbox 的 namespace；临时阻断 Info broker wake-up；用两个 scanner 验证 lease 竞争；在不放宽 RabbitMQ 权限的前提下短暂缩容 Info worker、把真实任务投递到既有 `info.admin.default`，验证 broker accept/published 窗口和重复业务幂等；再验证 provider effect/outbox ack 窗口与正式 CronJob 恢复。验证器通过受控 Pod 内领域 harness 读取无凭据状态标记，**不**回退匿名 Admin HTTP、不提取浏览器 cookie/token；`finally` 恢复 API/Knowledge/Info worker/CronJob 并删除验证 Job。暂不把 Info helper 抽成四仓 SDK，不修改 Knowledge/Research 业务消息链路。
 - 测试：同事务写入、DB commit 后阻断 RabbitMQ、dispatcher/worker restart、重复 publish、两个 dispatcher 竞争、Broker accept 后 DB 写入中断、外部 ingestion 后 worker kill/retry；所有情况核对 stable distribution/operation ID、Knowledge 幂等效果、outbox terminal state 和无 credential 输出。
-- 验收：ADR-006 获批；选定方案能自动发现并补投，不产生重复业务效果；CronJob/image digest/ServiceAccount/最小网络权限/指标/runbook 已验证；明确 M1 各仓落地任务。
-- 状态：IN_PROGRESS / INFO_CANDIDATE_DEPLOYED_NOT_ACCEPTED（2026-07-15：Info 本地代码、Alembic head、CLI help、75 个单元测试和 `pyright app core` 已通过；候选 `info-admin-backend:p0-006-outbox-20260714` 已推送为 `sha256:017f3c8ff58f58403fe2d6e83ec9bc1efa31711b09422fd75355ffd13102fdc9`，API migration gate 已实际执行 `20260712_0003 -> 20260714_0004`；worker/受限 scanner 已候选部署且 scanner 保持 suspend。第二次 KIND 运行证明旧验证器错误地把 P0-005 所要求的匿名 HTTP `401` 当成 port-forward 故障；不改变鉴权，改为受控 Pod 内领域验证后重新执行完整矩阵。尚未完成全矩阵，故不得标记 ACCEPTED、不得变更 `1.0.1` 或任何正式 tag。）
+- 验收：ADR-006 获批；选定方案能自动发现并补投，不产生重复业务效果；CronJob/image digest/ServiceAccount/最小 broker 权限/结构化计数与恢复 runbook 已验证；完整 NetworkPolicy 与 Prometheus 指标分别留在 M1-005/M1-503；明确 M1 各仓落地任务。
+- 状态：**ACCEPTED / INFO_REFERENCE_IMPLEMENTATION**（2026-07-15：migration gate 已应用 `20260714_0004`；后端 `77 passed`、`pyright app core` 0 error；API、worker、scanner 使用候选 `p0-006-outbox-r3-20260715`，实际 API/worker imageID 均为 `sha256:ff2291ab40ef238acff359af1e1509a010a63949c43fe64a31051bf30e973dc8`。最终 KIND 连续矩阵通过 broker block/recover、双 scanner 单 claim、broker accept 后中断、provider effect 后中断及正式 CronJob 恢复，所有 outbox 最终 `completed`、各 Knowledge 业务效果为 1、凭据输出为 false；清理后 active outbox=0、验证 Job=0、scanner 恢复 `suspend=true`。本结论只接受 Info→Knowledge P0 参考实现和 ADR，不代表四仓共享 SDK、M1-005 NetworkPolicy、M1-503 指标或 Knowledge/Research 后续任务完成。按版本策略保留不可变 candidate digest，**不覆盖现有稳定 `1.0.1`**。）
 
 ### 前端物理仓库与差异基线（2026-07-13）
 
@@ -358,7 +358,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 目标：按 `P0-008A -> P0-008B -> P0-008C` 保留 Next/App Router 技术路线、重建可信 Web v2，并以 Research 真实 streaming 薄切冻结模板；父任务不直接写代码。
 - 顺序纪律：Frontend 轨道先完成 P0-007C；ADR-001/004/005 没有可执行输出前不开始 008B；008C 前禁止把 v2 应用到三个 Web 实例。
 - 完成条件：三个子任务全部 ACCEPTED；否则现有仓库通过迁移前 tag/镜像回退，P0-008 保持 IN_PROGRESS/BLOCKED。
-- 状态：NOT_STARTED
+- 状态：IN_PROGRESS / BLOCKED_BY_P0-001_AND_P0-004（P0-008A 的不依赖上游的紧急卫生已完成，但 ADR-014 尚未接受，008B/008C 均未开始。必须先完成 P0-004 Citation DTO 和 P0-001 Runtime stream/cancel/resume 决策输出。）
 
 ### V5-P0-008A Web 架构契约冻结与紧急卫生
 
@@ -375,7 +375,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - Spike：分别证明 protected route 的服务端 session check、public static route、authenticated dynamic route、同源/直连 API 选中拓扑，以及 Runtime adapter 的浏览器断线对账；不得把 Proxy 当最终授权。
 - 测试：错误/过期 session、跨 locale return URL、CSRF/CORS/audience、cache 泄露、CSP、同一用户跨 Pod、滚动版本、stream cursor/reconcile。
 - 验收：ADR-014 Accepted；一张当前/目标拓扑、route rendering matrix、cache owner matrix、BFF allowlist、环境变量和部署兼容矩阵获批；所有未决项都有 owner/阻断任务，不以“模板以后处理”放行。
-- 状态：IN_PROGRESS / BLOCKED_BY_P0-001（2026-07-14 已完成模板审计和不依赖上游决策的紧急卫生：移除跟踪的 `.env.local`、删除硬编码开发 origin、`middleware.ts -> proxy.ts`、固定 Node/pnpm、清理环境样例；ADR-014 增加候选架构矩阵但尚未 Accepted。P0-001 Runtime stream/cancel/resume 输出完成后，才能冻结 ADR-014 并进入 P0-008B）
+- 状态：IN_PROGRESS / BLOCKED_BY_P0-001_AND_P0-004（2026-07-14 已完成模板审计和不依赖上游决策的紧急卫生：移除跟踪的 `.env.local`、删除硬编码开发 origin、`middleware.ts -> proxy.ts`、固定 Node/pnpm、清理环境样例；ADR-014 增加候选架构矩阵但尚未 Accepted。P0-004 Citation DTO 与 P0-001 Runtime stream/cancel/resume 决策输出完成后，才能冻结 ADR-014 并进入 P0-008B。）
 
 ### V5-P0-008B tpl-app Next Web v2 生产骨架
 
@@ -573,7 +573,7 @@ M1a 允许 P0 契约原型继续作为隔离环境 Provider，但 M1b 前必须�
 
 - 类型/优先级：RELIABILITY/P0
 - 仓库：`info-app`
-- 实施：事务 outbox 或 pending scanner（二选一由 ADR）；`FOR UPDATE SKIP LOCKED`/lease；指数退避；stuck record reconciliation。
+- 实施：按已接受 ADR-006 产品化现有 Info transactional outbox/scanner；补 stuck record reconciliation、告警/指标、保留/归档和正式环境运行策略，不再重开“outbox 或 pending scanner”选型。
 - 故障测试：DB 成功/RabbitMQ 失败、重复 delivery、worker kill。
 - 状态：NOT_STARTED
 
@@ -1205,11 +1205,11 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 8. Frontend-1A2.4 Rich/Utility Toolkit（`ACCEPTED`，2026-07-14）：本地 registry、SVG/媒体/编辑器安全边界和 hooks 已完成；第三方/legacy 处置见 ADR-015。
 9. Frontend-1A2.5 Production Gate（`ACCEPTED`，2026-07-14）：固定 Harbor digest、Docker/Nginx、clean-room、KIND 严格 TLS 证据齐全，P0-007A2 = `TEMPLATE_MIGRATION_READY`。
 10. Contract-1：复核已接受的 V5-P0-003 Artifact Contract 仍为 007B 可用前置，不重复实现。
-11. **下一任务** Frontend-2：V5-P0-007B 在现有 Info Admin 仓库内做真实业务试点和隔离部署。
-12. Frontend-3：V5-P0-007C 修正、dry-run 替换验证和 React Admin v1 冻结（产生 `TEMPLATE_MIGRATION_READY`）。
-13. Contract-2：V5-P0-004 Retrieval/Citation Contract。
-14. Runtime：恢复 V5-P0-001，完成选型后执行 V5-P0-002。
-15. Reliability：V5-P0-006 可靠交付 ADR 与最小原型。
-16. Web Re-baseline：严格执行 V5-P0-008A -> 008B/B1~B4 -> 008C；其依赖此时已齐备。
+11. Frontend-2：V5-P0-007B Info Admin 真实业务试点（`ACCEPTED`，2026-07-14）。
+12. Frontend-3：V5-P0-007C React Admin v1 冻结（`ACCEPTED / TEMPLATE_MIGRATION_READY`，2026-07-14）。
+13. Reliability：V5-P0-006 可靠交付 ADR 与 Info→Knowledge 参考实现（`ACCEPTED`，2026-07-15）。该项不依赖 Runtime，故在 P0-004/001 前先行收口；这是有记录的任务游标调整，不改变依赖图。
+14. **下一任务** Contract-2：V5-P0-004 Retrieval/Citation Contract。
+15. Runtime：恢复 V5-P0-001，完成选型后执行 V5-P0-002。
+16. Web Re-baseline：待 P0-004/001/002 输出齐备后，继续 V5-P0-008A 并严格执行 008B/B1~B4 -> 008C。
 
 P0-007A2/007C 前禁止向三个 App 应用 React Admin；P0-008C 前禁止向三个 Web 实例应用 Next Web v2。P0-007C/008C 只表示模板可推广；Gate P0 后依次执行 M1-411A -> 411B Info -> 411C Knowledge -> 411D Research，再执行 M1-413A Info -> 413B Knowledge -> 413C Research 的 Web 原地迁移。每个 App 都直接改造现有仓库，但必须先有 tag、镜像 digest、隔离部署和独立回滚；不能把基础替换当作切流量。完成全部 Phase 0 后更新 v5、按 ADR-001 激活唯一 Runtime 分支，再进入 M1a。禁止绕过 Gate P0 直接把 Walking Skeleton 扩建为生产 Runner；Memory/Subagent 薄切只能在 Gate M1a 后执行。

@@ -9,12 +9,14 @@
 3. Info React 的 `p0-007b-*` 仅是 candidate；本阶段不提升为 `1.1.0`，也不覆盖现有 `1.0.1`。
 4. 当前 Info `1.0.1` 前端仍是 Vue 回滚基线。Knowledge/Research 尚未完成 React Admin 迁移，不能删除 Vue 回滚资产。
 5. 三个 Admin React 迁移完成后，再通过单独 release decision 选择正式版本，并生成一份统一 release manifest；在此之前不得执行任何正式 retag/push/deploy。
+6. P0-006 接受的 Info Backend candidate `p0-006-outbox-r3-20260715` 是可靠性交付证据，不得覆盖现有稳定 `1.0.1`；后端正式发布同样需要独立 release decision 和新版本。
 
 ## 当前资产矩阵
 
 | 资产 | 当前状态 | 处理规则 |
 | --- | --- | --- |
 | Info/Knowledge/Research Admin Backend `1.0.1` | 已接受稳定版本 | 不覆盖、不删除；部署按 digest 核对 |
+| Info Backend `p0-006-outbox-r3-20260715` | P0-006 已接受 candidate | 保留 digest `sha256:ff2291ab...73dc8`；仅限隔离 KIND/P0 证据，正式发布另行决策 |
 | Info Admin Frontend `1.0.1` | 旧 Vue 基线 | 仅作回滚；不把 React candidate 直接推成同名 tag |
 | Info React `p0-007b-*` | 通过隔离验收的 candidate | 保留 digest；不作为普通部署默认值 |
 | Knowledge/Research Admin Frontend | 尚未完成 React 迁移 | 继续按各自现状运行，不提前切换 |
@@ -42,4 +44,3 @@ Vue 只能在以下条件全部满足后退出 active path：
 `tpl-admin-frontend:1.0.1` tag 重新 push 过镜像。该事实必须通过 Harbor 的 tag/digest
 审计或 registry inspect 核对；在核对前不得声称该 tag “没有变化”。如果确认发生过复用，
 将其记录为历史治理缺陷，不再继续复用 stable tag。
-

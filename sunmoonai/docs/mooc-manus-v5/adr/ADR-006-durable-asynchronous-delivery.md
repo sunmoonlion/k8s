@@ -1,7 +1,7 @@
 # ADR-006：异步可靠交付与本地 Outbox
 
-状态：PROPOSED / INFO_CANDIDATE_DEPLOYED_NOT_ACCEPTED
-日期：2026-07-14  
+状态：ACCEPTED / INFO_REFERENCE_IMPLEMENTATION
+日期：2026-07-15
 任务：V5-P0-006
 
 ## 1. 问题
@@ -61,8 +61,8 @@ pending --claim--> leased --broker accepted--> published --worker business succe
 ### 2.5 安全、观测与保留
 
 - 日志/metrics 只记录 outbox ID、distribution ID、attempt、状态和错误分类；不记录 service token、RabbitMQ URL 密码、artifact 正文或完整 Provider response。
-- 最小指标：pending/leased/published 数量、最老 lag、lease expiry、publish failure、completed latency、重复投递/幂等命中。
-- `completed` 行的归档期限、失败告警/人工重驱与跨仓通用 library 不属于 P0；M1/M3 以实际容量、告警和第二条链路触发。
+- P0 观测证据使用 scanner 的结构化 `claimed/published/broker_failures` 汇总，以及按状态、attempt、时间戳查询的 outbox 快照；恢复步骤见 `runbooks/info-delivery-outbox.md`。正式 Prometheus 指标与告警在 M1-503 落地，至少覆盖 pending/leased/published 数量、最老 lag、lease expiry、publish failure、completed latency、重复投递/幂等命中。
+- `completed` 行的归档期限、正式失败告警/人工重驱产品面与跨仓通用 library 不属于 P0；分别进入 M1-105/M1-503/M3-001。
 
 ## 3. 拒绝方案
 
@@ -90,19 +90,20 @@ pending --claim--> leased --broker accepted--> published --worker business succe
 2. KIND 中支撑认证 Info Admin dispatch 的同一领域服务创建分发 + outbox 同事务可证实；故意阻断 RabbitMQ 后记录仍是 pending，恢复后 scanner 自动补投。该可靠性交付验证不得为方便测试重开匿名 Admin HTTP；浏览器身份、角色、CSRF 与 HTTP 路由由 P0-005/P0-007 的配对 E2E 单独证明。
 3. 两个 scanner 同时运行时，一条消息同一 lease 周期只被一个 scanner claim；lease expiry 后可恢复。
 4. 注入“Broker 接受后、published 写库前”与“Provider 副作用后、worker acknowledgement 前”中断，重复投递后 Knowledge 无重复业务效果，最终 outbox completed。
-5. worker/scan restart、错误重试和手工 re-dispatch 的 audit/operation/correlation 链完整；日志与输出不泄露 credential。
-6. CronJob 的镜像 digest、ServiceAccount、网络最小权限、运行频率、指标和恢复 runbook 已验证。
+5. worker/scan restart、错误重试和 re-dispatch 始终重启同一 outbox operation，保留稳定 idempotency/correlation/causation identity 与已有 distribution audit；日志与输出不泄露 credential。完整的人工重驱操作台、审计报表与告警属于 M1-105/M1-503。
+6. CronJob 的镜像 digest、ServiceAccount、运行频率、结构化计数和恢复 runbook 已验证；P0 最小权限要求为不挂载 ServiceAccount token、不挂载 Knowledge 调用凭据、RabbitMQ 身份只能操作既有 Info 队列。完整 L3/L4 NetworkPolicy 与 Prometheus 指标分别由 M1-005/M1-503 验收，不得在 P0 误报完成。
 7. 对 Knowledge/Research 的 M1 任务边界和统一 contract 已回填，不把 Info 原型误称为四仓通用能力。
 
-## 5. 当前实现与未决事项
+## 5. 已接受实现与后续边界
 
-Info 原型代码已形成，候选镜像/migration 已部署，但尚未完成故障验收：
+Info 参考实现、候选镜像、migration 与真实故障矩阵均已通过：
 
 - `info-app/info-admin-backend/app/alembic/versions/20260714_0004_delivery_outbox.py`
 - `app/application/services/delivery_outbox.py`
 - `app/cli/drain_delivery_outbox.py`
 - Info distribution API/worker 的 outbox 接入与单元测试。
 - Info worker 资源中的 suspended scanner CronJob/独立无 token ServiceAccount，以及显式 outbox config values。
-- `verify_p0_006_scanner_manifest.sh` 与 `verify_p0_006_kind.py`：前者验证生成资源默认暂停和最小凭据；后者在候选 KIND 环境验证 Info broker block/recover、scanner 竞争、broker accept/published 写库中断、provider effect/outbox acknowledgement 中断和 CronJob 恢复。P0-005 后 Admin HTTP 必须保持 browser-session/CSRF 保护，因此后者通过受控 `kubectl exec` 在既有 Info/Knowledge Pod 内调用同一领域服务、仅读取无凭据状态标记，绝不抽取 cookie/token 或把匿名 `401` 误判为网络故障。验证器的临时 API env、Knowledge worker env、CronJob suspend 与唯一测试队列均需恢复；API broker override 的 helper 还必须在 rollout 失败或 SIGINT/SIGTERM 时自行回滚，不能只依赖调用方的 `finally`。两者都不输出 credential。
-
-候选镜像 `p0-006-outbox-20260714` 已推送，migration `20260714_0004` 已通过 KIND migration gate，API/worker 已候选部署，scanner 仍默认暂停。首次故障演练发现并修复验证器 cleanup 缺陷，且已手工恢复 Info API 配置；这不是 fault matrix 成功。KIND 全矩阵、CronJob 和最终证据通过前，不生成正式镜像 tag、不替换正在运行的 `1.0.1` 发布基线、不修改其他两仓的消息链路，状态保持 `PROPOSED / INFO_CANDIDATE_DEPLOYED_NOT_ACCEPTED`。
+- `verify_p0_006_scanner_manifest.sh` 与 `verify_p0_006_kind.py`：前者验证默认暂停、无 token ServiceAccount 和最小 secret；后者验证 Info broker block/recover、scanner 竞争、broker accept/published 写库中断、provider effect/outbox acknowledgement 中断和 CronJob 恢复。P0-005 后 Admin HTTP 保持 browser-session/CSRF 保护，验证器只通过受控 Pod 内领域 harness 读取安全状态。broker 窗口使用既有 `info.admin.default` 且短暂缩容/恢复 Info worker，不创建越权队列；所有临时 API/worker/CronJob/Job 状态由 `finally` 恢复。
+- 最终候选 `p0-006-outbox-r3-20260715` 的 API/worker 实际 imageID 均为 `sha256:ff2291ab40ef238acff359af1e1509a010a63949c43fe64a31051bf30e973dc8`。连续故障矩阵所有路径最终 `completed`、每项 Knowledge 业务效果为 1、无 credential 输出；清理后 active outbox 为 0。
+- 本 ADR 固定跨进程命令的可靠语义，但不声称 Info 代码已经是四仓共享库。M1-104/105 产品化 Info；M1-202/203 固化 Knowledge ingestion；Research 按 ADR-001 选中分支在 M1-302/311 等任务消费同一语义；第二条链路稳定后再由 M3-001 决定共享 outbox/inbox 规范或 SDK。
+- 候选 digest 作为 P0 证据保留，不覆盖既有稳定 `1.0.1`；正式发布必须走独立 release decision。
