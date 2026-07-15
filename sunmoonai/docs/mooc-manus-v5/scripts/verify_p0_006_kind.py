@@ -9,6 +9,7 @@ The suspended CronJob is always returned to suspend=true in ``finally``.
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import os
 import signal
@@ -130,6 +131,13 @@ async def main():
             if record is None:
                 raise RuntimeError("no distributable Info document version was available")
 
+            # Capture the durable operation identity before the optional
+            # dispatcher wake-up starts its own commit cycle.
+            distribution = {
+                "id": str(record.id),
+                "idempotency_key": record.payload["idempotency_key"],
+            }
+
             # This is the same post-commit best-effort kick used by the
             # authenticated Admin route.  Its failure is intentionally
             # swallowed: the durable row written above remains the recovery
@@ -137,14 +145,14 @@ async def main():
             try:
                 producer = get_celery_producer()
                 if producer.enabled:
-                    await dispatch_due_delivery_outbox(session, publisher=producer)
+                    async with postgres.session_factory() as dispatch_session:
+                        await dispatch_due_delivery_outbox(
+                            dispatch_session, publisher=producer
+                        )
             except Exception:
                 pass
 
-            print("P0_DISTRIBUTION=" + json.dumps({
-                "id": str(record.id),
-                "idempotency_key": record.payload["idempotency_key"],
-            }, sort_keys=True))
+            print("P0_DISTRIBUTION=" + json.dumps(distribution, sort_keys=True))
     finally:
         await postgres.shutdown()
 
@@ -452,7 +460,7 @@ def scanner_job_yaml(
     env_override = ""
     if extra_env:
         env_override = "\n        env:\n" + "".join(
-            f"        - name: {name}\n          value: {value}\n"
+            f"        - name: {name}\n          value: {json.dumps(value)}\n"
             for name, value in extra_env
         )
     return f"""apiVersion: batch/v1
@@ -630,9 +638,10 @@ async def main():
             seconds=get_settings().delivery_outbox_lease_seconds
         )
         row.attempt_count += 1
+        outbox_message_id = row.id
         await session.commit()
         get_celery_producer().dispatch_distribution(
-            distribution_id, outbox_message_id=row.id
+            distribution_id, outbox_message_id=outbox_message_id
         )
         # Intentionally skip mark_delivery_outbox_published.  The parent
         # verifier expects this process to disappear at this exact window.
@@ -706,36 +715,93 @@ asyncio.run(main())
 """
 
 
-_DELETE_FAULT_QUEUE = r"""
-import os
-import sys
+def broker_accept_fault_job_yaml(
+    *, namespace: str, name: str, image: str, distribution_id: str
+) -> str:
+    """Run the publish/exit fault without granting any extra broker permission.
 
-os.environ["CELERY_QUEUE"] = sys.argv[1]
-
-from app.worker import celery_app, configure_celery
-
-configure_celery(require_broker=True)
-with celery_app.connection_for_write() as connection:
-    channel = connection.channel()
-    try:
-        channel.queue_delete(queue=sys.argv[1])
-    finally:
-        channel.close()
+    RabbitMQ correctly restricts the workload to the pre-created
+    ``info.admin.default`` queue. The normal Info worker is scaled to zero
+    around this Job, so the real task can be accepted by that queue without
+    being consumed before the outbox lease-recovery check.
+    """
+    program = base64.b64encode(_PUBLISH_THEN_EXIT.encode()).decode()
+    return f"""apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {name}
+  namespace: {namespace}
+  labels:
+    app: celeryworker-info-admin-backend
+    component: p0-broker-accept-fault
+    sunmoonai.com/p0-verifier: "true"
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        app: celeryworker-info-admin-backend
+        component: p0-broker-accept-fault
+        sunmoonai.com/p0-verifier: "true"
+    spec:
+      serviceAccountName: info-delivery-outbox-scanner
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      imagePullSecrets:
+      - name: harbor-registry-secret
+      containers:
+      - name: broker-accept-fault
+        image: {image}
+        imagePullPolicy: Always
+        command: ["/bin/sh", "-ec"]
+        args:
+        - |
+          set +e
+          .venv/bin/python -c 'import base64, os; exec(base64.b64decode(os.environ["P0_FAULT_PROGRAM"]))' "$P0_DISTRIBUTION_ID" "$CELERY_QUEUE"
+          code=$?
+          set -e
+          test "$code" -eq 86
+        env:
+        - name: P0_FAULT_PROGRAM
+          value: {json.dumps(program)}
+        - name: P0_DISTRIBUTION_ID
+          value: {json.dumps(distribution_id)}
+        envFrom:
+        - configMapRef:
+            name: info-admin-backend-config
+        - configMapRef:
+            name: celeryworker-info-admin-backend-config
+        - secretRef:
+            name: celeryworker-info-admin-backend-secret
+        - secretRef:
+            name: info-admin-backend-postgresql-conn
 """
 
 
 def force_broker_accept_then_exit(
-    *, kubeconfig: str, namespace: str, distribution_id: str, queue: str
+    *, kubeconfig: str, namespace: str, name: str, image: str, distribution_id: str
 ) -> None:
-    """Publish to a unique unconsumed queue, then exit before published is saved."""
-    deployment_python_expect_exit(
+    kubectl(
+        ["apply", "-f", "-"],
         kubeconfig=kubeconfig,
-        namespace=namespace,
-        deployment="info-admin-backend",
-        program=_PUBLISH_THEN_EXIT,
-        program_args=[distribution_id, queue],
-        expected_exit=86,
-        label="broker accept-before-published fault process",
+        input_text=broker_accept_fault_job_yaml(
+            namespace=namespace,
+            name=name,
+            image=image,
+            distribution_id=distribution_id,
+        ),
+    )
+    kubectl(
+        [
+            "wait",
+            "--for=condition=complete",
+            f"job/{name}",
+            "-n",
+            namespace,
+            "--timeout=150s",
+        ],
+        kubeconfig=kubeconfig,
     )
 
 
@@ -768,15 +834,40 @@ def force_provider_effect_then_exit(
     )
 
 
-def delete_fault_queue(*, kubeconfig: str, namespace: str, queue: str) -> None:
-    deployment_python_expect_exit(
+def deployment_replicas(
+    *, kubeconfig: str, namespace: str, deployment: str
+) -> int:
+    raw = kubectl(
+        ["get", f"deployment/{deployment}", "-n", namespace, "-o", "json"],
         kubeconfig=kubeconfig,
-        namespace=namespace,
-        deployment="info-admin-backend",
-        program=_DELETE_FAULT_QUEUE,
-        program_args=[queue],
-        expected_exit=0,
-        label="temporary broker queue cleanup",
+        capture=True,
+    )
+    return int(json.loads(raw)["spec"].get("replicas", 1))
+
+
+def scale_deployment(
+    *, kubeconfig: str, namespace: str, deployment: str, replicas: int
+) -> None:
+    kubectl(
+        [
+            "scale",
+            f"deployment/{deployment}",
+            "-n",
+            namespace,
+            f"--replicas={replicas}",
+        ],
+        kubeconfig=kubeconfig,
+    )
+    kubectl(
+        [
+            "rollout",
+            "status",
+            f"deployment/{deployment}",
+            "-n",
+            namespace,
+            "--timeout=150s",
+        ],
+        kubeconfig=kubeconfig,
     )
 
 
@@ -996,9 +1087,9 @@ def main() -> int:
     cronjob_unsuspended = False
     knowledge_worker_overridden = False
     info_api_broker_overridden = False
+    info_worker_scaled_down = False
+    info_worker_original_replicas: int | None = None
     temp_jobs: list[str] = []
-    fault_queue = f"p0-006-publish-window-{suffix}"
-    fault_queue_created = False
     summary: dict[str, Any] = {"task": "V5-P0-006", "result": "failed"}
     previous_signal_handlers = {
         sig: signal.getsignal(sig) for sig in (signal.SIGINT, signal.SIGTERM)
@@ -1116,11 +1207,13 @@ def main() -> int:
             idempotency_key=failed_distribution["idempotency_key"],
         )
 
-        # Broker accepted / published-write interruption.  The trusted Info
+        # Broker accepted / published-write interruption. The trusted Info
         # harness first creates a real durable request while its wake-up is
-        # blocked.  A
-        # bounded process then publishes to a unique queue and exits before it
-        # can record `published`; no normal worker consumes that unique queue.
+        # blocked. Scale the normal Info worker to zero, publish the real task
+        # to its existing least-privilege queue from a bounded Job, and exit
+        # before `published` can be recorded. A scanner then republishes after
+        # lease expiry; restoring the worker exercises downstream idempotency
+        # with both accepted messages.
         set_info_api_broker_override(
             kubeconfig=kubeconfig, namespace=args.namespace, broken=True
         )
@@ -1146,12 +1239,30 @@ def main() -> int:
         )
         info_api_broker_overridden = False
         wait_until_outbox_due(publish_window_pending)
-        fault_queue_created = True
+        info_worker_original_replicas = deployment_replicas(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            deployment="celeryworker-info-admin-backend",
+        )
+        if info_worker_original_replicas != 1:
+            raise VerificationError(
+                "broker-window verification requires exactly one Info worker replica"
+            )
+        scale_deployment(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            deployment="celeryworker-info-admin-backend",
+            replicas=0,
+        )
+        info_worker_scaled_down = True
+        broker_fault_job = f"p0-006-broker-fault-{suffix}"
+        temp_jobs.append(broker_fault_job)
         force_broker_accept_then_exit(
             kubeconfig=kubeconfig,
             namespace=args.namespace,
+            name=broker_fault_job,
+            image=args.image,
             distribution_id=publish_window_id,
-            queue=fault_queue,
         )
         publish_window_leased = wait_for_outbox(
             kubeconfig=kubeconfig,
@@ -1182,6 +1293,13 @@ def main() -> int:
         )
         if publish_recovery_summary["claimed"] != 1:
             raise VerificationError("expired broker-window lease was not recovered once")
+        scale_deployment(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            deployment="celeryworker-info-admin-backend",
+            replicas=info_worker_original_replicas,
+        )
+        info_worker_scaled_down = False
         publish_window_done = wait_for_distribution(
             kubeconfig=kubeconfig,
             namespace=args.namespace,
@@ -1201,10 +1319,6 @@ def main() -> int:
             namespace=args.namespace,
             idempotency_key=publish_window_distribution["idempotency_key"],
         )
-        delete_fault_queue(
-            kubeconfig=kubeconfig, namespace=args.namespace, queue=fault_queue
-        )
-        fault_queue_created = False
 
         # Provider side effect / acknowledgement interruption.  This uses a
         # real worker credential path to make Knowledge succeed, exits before
@@ -1416,17 +1530,20 @@ def main() -> int:
                     ),
                     file=sys.stderr,
                 )
-        if fault_queue_created:
+        if info_worker_scaled_down and info_worker_original_replicas is not None:
             try:
-                delete_fault_queue(
-                    kubeconfig=kubeconfig, namespace=args.namespace, queue=fault_queue
+                scale_deployment(
+                    kubeconfig=kubeconfig,
+                    namespace=args.namespace,
+                    deployment="celeryworker-info-admin-backend",
+                    replicas=info_worker_original_replicas,
                 )
-            except VerificationError:
+            except subprocess.CalledProcessError:
                 print(
                     json.dumps(
                         {
-                            "warning": "failed to delete temporary P0 broker queue",
-                            "manual_action": "delete only the unique p0-006-publish-window queue created by this verifier",
+                            "warning": "failed to restore Info worker replica count",
+                            "manual_action": f"scale celeryworker-info-admin-backend to {info_worker_original_replicas}",
                         }
                     ),
                     file=sys.stderr,
