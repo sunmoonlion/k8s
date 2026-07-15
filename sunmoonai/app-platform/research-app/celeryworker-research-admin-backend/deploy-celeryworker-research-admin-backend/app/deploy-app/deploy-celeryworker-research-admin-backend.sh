@@ -101,6 +101,30 @@ check_namespace() {
     fi
 }
 
+require_research_retrieval_config() {
+    local namespace="$1" configmap="research-admin-backend-config"
+    local retrieval_url application scope timeout
+    retrieval_url="$(kubectl get configmap "$configmap" -n "$namespace" \
+        -o jsonpath='{.data.KNOWLEDGE_RETRIEVAL_URL}' 2>/dev/null || true)"
+    application="$(kubectl get configmap "$configmap" -n "$namespace" \
+        -o jsonpath='{.data.KNOWLEDGE_RETRIEVAL_SERVICE_APPLICATION}' 2>/dev/null || true)"
+    scope="$(kubectl get configmap "$configmap" -n "$namespace" \
+        -o jsonpath='{.data.KNOWLEDGE_RETRIEVAL_SERVICE_SCOPE}' 2>/dev/null || true)"
+    timeout="$(kubectl get configmap "$configmap" -n "$namespace" \
+        -o jsonpath='{.data.KNOWLEDGE_RETRIEVAL_TIMEOUT_SECONDS}' 2>/dev/null || true)"
+
+    [[ "$retrieval_url" == "http://knowledge-admin-backend:8000/api/internal/v1/knowledge/retrievals" ]] \
+        || { log_error "共享 ConfigMap 缺少受治理的 Knowledge retrieval URL"; return 1; }
+    [[ "$application" == "sunmoonai-research-knowledge-retrieve" ]] \
+        || { log_error "共享 ConfigMap 的 retrieval service application 不匹配"; return 1; }
+    [[ "$scope" == "knowledge:retrieve" ]] \
+        || { log_error "共享 ConfigMap 的 retrieval scope 不匹配"; return 1; }
+    [[ "$timeout" =~ ^[0-9]+([.][0-9]+)?$ ]] \
+        || { log_error "共享 ConfigMap 的 retrieval timeout 无效"; return 1; }
+
+    log_success "Research 共享检索配置门禁通过: $namespace/$configmap"
+}
+
 auto_generate_yaml() {
     local yaml_file="$1"
     log_info "重新生成 YAML 文件..."
@@ -282,6 +306,9 @@ deploy_app() {
     fi
 
     auto_generate_yaml "$CELERYWORKER_RESEARCH_ADMIN_BACKEND_YAML" "$K8S_RESOURCE_DIR" || return 1
+
+    require_research_retrieval_config "$NAMESPACE" \
+        || { log_error "共享检索配置门禁失败，拒绝更新 Worker Deployment"; return 1; }
 
     require_service_identity_relation \
         "$NAMESPACE" \

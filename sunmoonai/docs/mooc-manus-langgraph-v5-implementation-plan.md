@@ -170,7 +170,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 实施：在 `knowledge-app/contracts/` 建权威 OpenAPI/JSON Schema；静态 allowlist dataset；query/top_k/filter/token_budget；返回 Evidence 和 Info lineage；发布版本化 contract artifact；定义前端可安全展示的 Citation DTO 与受权来源跳转，不把 Provider metadata 原样暴露给浏览器。
 - 测试：L3；未知 dataset、空结果、权限拒绝、Provider timeout、citation 回溯。
 - 验收：Research KnowledgePort 不引用 RAGFlow 类型即可完成查询；Knowledge provider compatibility、Info/Research consumer-driven tests 和 k8s 兼容矩阵均可在 CI 运行。
-- 状态：NOT_STARTED / NEXT_TASK（P0-006 已于 2026-07-15 收口；本任务现为唯一允许启动的代码任务。）
+- 状态：IN_PROGRESS / BLOCKED_BY_KIND_EGRESS_PROXY（2026-07-16：契约、稳定领域身份/migration、Knowledge provider adapter、Research KnowledgePort、独立 retrieval 服务身份和 r2 候选 digest 已进入真实 KIND 验证；身份、未知 dataset、空结果已通过，但真实 RAGFlow retrieval 在正式 `15/20s` 和诊断 `90/120s` 下均因 DashScope connect timeout 失败。RAGFlow Pod 对同一 Fake-IP 的连续 TLS 探针仅 `2/10` 成功；Windows FlClash 稳定代理只监听 loopback `127.0.0.1:7890`，KIND 无可达显式代理。ADR-004 继续保持 `CANDIDATE / CONTRACT_FROZEN`。共享 ConfigMap、敏感 Secret 防空覆盖、verifier 安全诊断均已系统修复，所有诊断 timeout 已恢复正式默认。证据：`sunmoonai/docs/evidence/v5/V5-P0-004/partial.md`。禁止用 mock/fake Provider、应用重试或放宽 timeout 绕过；先建立受限 KIND egress proxy，再完成余下矩阵。）
 
 ### V5-P0-005 身份与服务调用 Spike
 
@@ -1208,7 +1208,7 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 11. Frontend-2：V5-P0-007B Info Admin 真实业务试点（`ACCEPTED`，2026-07-14）。
 12. Frontend-3：V5-P0-007C React Admin v1 冻结（`ACCEPTED / TEMPLATE_MIGRATION_READY`，2026-07-14）。
 13. Reliability：V5-P0-006 可靠交付 ADR 与 Info→Knowledge 参考实现（`ACCEPTED`，2026-07-15）。该项不依赖 Runtime，故在 P0-004/001 前先行收口；这是有记录的任务游标调整，不改变依赖图。
-14. **下一任务** Contract-2：V5-P0-004 Retrieval/Citation Contract。
+14. **当前唯一代码任务** Contract-2：V5-P0-004 Retrieval/Citation Contract（`IN_PROGRESS / BLOCKED_BY_KIND_EGRESS_PROXY`；保持任务游标，不跳到 Runtime/P0-001。先为 KIND 建立受限、显式、稳定的真实 embedding egress proxy，或另行批准真实本地 Provider + reindex，再完成 KIND 全矩阵）。
 15. Runtime：恢复 V5-P0-001，完成选型后执行 V5-P0-002。
 16. Web Re-baseline：待 P0-004/001/002 输出齐备后，继续 V5-P0-008A 并严格执行 008B/B1~B4 -> 008C。
 

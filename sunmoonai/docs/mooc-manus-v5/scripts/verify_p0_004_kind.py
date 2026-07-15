@@ -76,7 +76,18 @@ def deployment_marker(
         timeout=180,
     )
     if result.returncode != 0:
-        raise VerificationError(f"{label} exited {result.returncode}")
+        safe_failure_prefix = "P0_SAFE_FAILURE="
+        safe_failure = None
+        for line in result.stdout.splitlines():
+            if line.startswith(safe_failure_prefix):
+                safe_failure = json.loads(line.removeprefix(safe_failure_prefix))
+                break
+        suffix = (
+            f"; safe_failure={json.dumps(safe_failure, sort_keys=True)}"
+            if safe_failure is not None
+            else ""
+        )
+        raise VerificationError(f"{label} exited {result.returncode}{suffix}")
     prefix = f"{marker}="
     for line in result.stdout.splitlines():
         if line.startswith(prefix):
@@ -370,7 +381,16 @@ async def main():
     finally:
         await postgres.shutdown()
 
-asyncio.run(main())
+try:
+    asyncio.run(main())
+except Exception as exc:
+    failure = {"type": type(exc).__name__}
+    # Only messages raised directly by this controlled harness are safe to
+    # expose.  Provider/client exception messages may contain request data.
+    if type(exc) is RuntimeError:
+        failure["detail"] = str(exc)
+    print("P0_SAFE_FAILURE=" + json.dumps(failure, sort_keys=True))
+    raise SystemExit(1) from None
 """
 
 
@@ -525,7 +545,19 @@ async def main():
             raise RuntimeError("unsupported matrix mode")
     print("P0_RESEARCH_RESULT=" + json.dumps(result, sort_keys=True))
 
-asyncio.run(main())
+try:
+    asyncio.run(main())
+except Exception as exc:
+    failure = {"type": type(exc).__name__}
+    # Only messages raised directly by this controlled harness are safe to
+    # expose.  KnowledgeRetrievalUnavailableError is also safe because the
+    # client constructs it exclusively from fixed messages and HTTP status.
+    if type(exc) is RuntimeError or isinstance(
+        exc, KnowledgeRetrievalUnavailableError
+    ):
+        failure["detail"] = str(exc)
+    print("P0_SAFE_FAILURE=" + json.dumps(failure, sort_keys=True))
+    raise SystemExit(1) from None
 """
 
 
