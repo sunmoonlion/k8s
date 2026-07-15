@@ -44,6 +44,9 @@ export ENV="${ENV:-}"
 export RAGFLOW_API_BASE="${RAGFLOW_API_BASE:-}"
 export RAGFLOW_PARSE_TIMEOUT_SECONDS="${RAGFLOW_PARSE_TIMEOUT_SECONDS:-}"
 export RAGFLOW_PARSE_POLL_INTERVAL_SECONDS="${RAGFLOW_PARSE_POLL_INTERVAL_SECONDS:-}"
+export RETRIEVAL_DATASET_ALLOWLIST="${RETRIEVAL_DATASET_ALLOWLIST:-}"
+export RETRIEVAL_DEFAULT_TENANT_ID="${RETRIEVAL_DEFAULT_TENANT_ID:-}"
+export RETRIEVAL_PROVIDER_TIMEOUT_SECONDS="${RETRIEVAL_PROVIDER_TIMEOUT_SECONDS:-}"
 export ARTIFACT_S3_ALLOWED_BUCKETS="${ARTIFACT_S3_ALLOWED_BUCKETS:-}"
 export ARTIFACT_S3_ALLOWED_PREFIXES="${ARTIFACT_S3_ALLOWED_PREFIXES:-}"
 export ARTIFACT_MAX_SIZE_BYTES="${ARTIFACT_MAX_SIZE_BYTES:-}"
@@ -59,13 +62,24 @@ export AUTH_ALLOWED_ALGORITHMS="${AUTH_ALLOWED_ALGORITHMS:-}"
 
 validate_yaml() {
     local yaml_file="$1"
-    if command -v kubectl &> /dev/null; then
-        if kubectl apply --dry-run=client -f "$yaml_file" &> /dev/null; then
+    if grep -q '\${[^}]*}' "$yaml_file"; then
+        log_error "YAML 仍包含未解析模板变量: $(basename "$yaml_file")"
+        return 1
+    fi
+    if [[ -x /usr/bin/python3 ]] && /usr/bin/python3 -c 'import yaml' &> /dev/null; then
+        if /usr/bin/python3 -c 'import sys, yaml; docs=list(yaml.safe_load_all(open(sys.argv[1], encoding="utf-8"))); assert docs and all(isinstance(d, dict) and d.get("apiVersion") and d.get("kind") for d in docs)' "$yaml_file"; then
+            log_success "YAML 验证通过: $(basename "$yaml_file")"
+            return 0
+        fi
+        log_error "YAML 验证失败: $(basename "$yaml_file")"
+        return 1
+    elif command -v kubectl &> /dev/null; then
+        if kubectl apply --dry-run=client --validate=false -f "$yaml_file" &> /dev/null; then
             log_success "YAML 验证通过: $(basename "$yaml_file")"
             return 0
         else
             log_error "YAML 验证失败: $(basename "$yaml_file")"
-            kubectl apply --dry-run=client -f "$yaml_file" 2>&1 | head -20
+            kubectl apply --dry-run=client --validate=false -f "$yaml_file" 2>&1 | head -20
             return 1
         fi
     else

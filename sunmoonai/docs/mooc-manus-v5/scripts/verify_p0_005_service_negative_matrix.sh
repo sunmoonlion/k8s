@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
-# Verify the V5-P0-005 service-token rejection matrix against the real
-# Knowledge workload in KIND. The short-lived probe keeps provider signing
-# material and tokens in memory and prints only case names and HTTP statuses.
+# Verify one Knowledge service-token relation against the real KIND workload.
+# The default is the V5-P0-005 ingestion relation; P0-004 reuses the same
+# mechanism with ``--relation retrieve``. The short-lived probe keeps provider
+# signing material and tokens in memory and prints only statuses.
 
 set -euo pipefail
 
@@ -11,6 +12,16 @@ APP_NAMESPACE="app-platform-dev"
 CASDOOR_DATABASE_SECRET="casdoor-postgresql-conn"
 CALLER_SECRET="info-knowledge-ingest-client"
 BINDING_SECRET="knowledge-info-ingest-service-binding"
+RELATION="ingest"
+TASK_ID="V5-P0-005"
+SERVICE_ENDPOINT="http://knowledge-admin-backend:8000/api/internal/v1/knowledge/ingestions"
+CALLER_CLIENT_ID_KEY="KNOWLEDGE_APP_SERVICE_CLIENT_ID"
+CALLER_CLIENT_SECRET_KEY="KNOWLEDGE_APP_SERVICE_CLIENT_SECRET"
+CALLER_DISCOVERY_KEY="KNOWLEDGE_APP_SERVICE_DISCOVERY_URL"
+CALLER_BACKCHANNEL_KEY="KNOWLEDGE_APP_SERVICE_BACKCHANNEL_ENDPOINT"
+BINDING_AUDIENCE_KEY="INTERNAL_AUTH_AUDIENCE"
+BINDING_SUBJECTS_KEY="INTERNAL_AUTH_SUBJECT_ALLOWLIST"
+BINDING_SCOPE_KEY="INTERNAL_AUTH_REQUIRED_SCOPE"
 PROBE_IMAGE=""
 RUN=false
 
@@ -19,6 +30,7 @@ usage() {
 Usage: verify_p0_005_service_negative_matrix.sh [--run] [options]
 
   --run                 Create the ephemeral verifier Job (default: plan only)
+  --relation NAME       ingest (default) or retrieve
   --kubeconfig PATH     Kubeconfig path
   --namespace NAME      Application namespace
   --probe-image IMAGE   Backend image containing asyncpg, httpx and joserfc
@@ -28,6 +40,7 @@ EOF
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --run) RUN=true; shift ;;
+        --relation) RELATION="$2"; shift 2 ;;
         --kubeconfig) KUBECONFIG_PATH="$2"; shift 2 ;;
         --namespace) APP_NAMESPACE="$2"; shift 2 ;;
         --probe-image) PROBE_IMAGE="$2"; shift 2 ;;
@@ -36,9 +49,30 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+case "$RELATION" in
+    ingest) ;;
+    retrieve)
+        CALLER_SECRET="research-knowledge-retrieval-client"
+        BINDING_SECRET="knowledge-research-retrieval-service-binding"
+        TASK_ID="V5-P0-004"
+        SERVICE_ENDPOINT="http://knowledge-admin-backend:8000/api/internal/v1/knowledge/retrievals"
+        CALLER_CLIENT_ID_KEY="KNOWLEDGE_RETRIEVAL_SERVICE_CLIENT_ID"
+        CALLER_CLIENT_SECRET_KEY="KNOWLEDGE_RETRIEVAL_SERVICE_CLIENT_SECRET"
+        CALLER_DISCOVERY_KEY="KNOWLEDGE_RETRIEVAL_SERVICE_DISCOVERY_URL"
+        CALLER_BACKCHANNEL_KEY="KNOWLEDGE_RETRIEVAL_SERVICE_BACKCHANNEL_ENDPOINT"
+        BINDING_AUDIENCE_KEY="RETRIEVAL_AUTH_AUDIENCE"
+        BINDING_SUBJECTS_KEY="RETRIEVAL_AUTH_SUBJECT_ALLOWLIST"
+        BINDING_SCOPE_KEY="RETRIEVAL_AUTH_REQUIRED_SCOPE"
+        ;;
+    *)
+        echo "unsupported relation: $RELATION" >&2
+        exit 2
+        ;;
+esac
+
 k() { kubectl --kubeconfig "$KUBECONFIG_PATH" "$@"; }
 
-job="p0-005-service-negative-matrix"
+job="p0-${TASK_ID##*-}-service-negative-matrix"
 
 cleanup() {
     k delete job "$job" -n "$APP_NAMESPACE" --ignore-not-found=true \
@@ -99,7 +133,7 @@ metadata:
   name: ${job}
   namespace: ${APP_NAMESPACE}
   labels:
-    sunmoonai.com/task: v5-p0-005
+    sunmoonai.com/task: ${TASK_ID,,}
     app.kubernetes.io/component: service-token-negative-matrix
 spec:
   backoffLimit: 0
@@ -108,7 +142,7 @@ spec:
   template:
     metadata:
       labels:
-        sunmoonai.com/task: v5-p0-005
+        sunmoonai.com/task: ${TASK_ID,,}
         app.kubernetes.io/component: service-token-negative-matrix
     spec:
       restartPolicy: Never
@@ -131,19 +165,19 @@ spec:
         - name: DB_PASSWORD
           valueFrom: {secretKeyRef: {name: ${CASDOOR_DATABASE_SECRET}, key: APP_DB_PASSWORD}}
         - name: SERVICE_CLIENT_ID
-          valueFrom: {secretKeyRef: {name: ${CALLER_SECRET}, key: KNOWLEDGE_APP_SERVICE_CLIENT_ID}}
+          valueFrom: {secretKeyRef: {name: ${CALLER_SECRET}, key: ${CALLER_CLIENT_ID_KEY}}}
         - name: SERVICE_CLIENT_SECRET
-          valueFrom: {secretKeyRef: {name: ${CALLER_SECRET}, key: KNOWLEDGE_APP_SERVICE_CLIENT_SECRET}}
+          valueFrom: {secretKeyRef: {name: ${CALLER_SECRET}, key: ${CALLER_CLIENT_SECRET_KEY}}}
         - name: SERVICE_DISCOVERY_URL
-          valueFrom: {secretKeyRef: {name: ${CALLER_SECRET}, key: KNOWLEDGE_APP_SERVICE_DISCOVERY_URL}}
+          valueFrom: {secretKeyRef: {name: ${CALLER_SECRET}, key: ${CALLER_DISCOVERY_KEY}}}
         - name: SERVICE_BACKCHANNEL_ENDPOINT
-          valueFrom: {secretKeyRef: {name: ${CALLER_SECRET}, key: KNOWLEDGE_APP_SERVICE_BACKCHANNEL_ENDPOINT}}
+          valueFrom: {secretKeyRef: {name: ${CALLER_SECRET}, key: ${CALLER_BACKCHANNEL_KEY}}}
         - name: EXPECTED_AUDIENCE
-          valueFrom: {secretKeyRef: {name: ${BINDING_SECRET}, key: INTERNAL_AUTH_AUDIENCE}}
+          valueFrom: {secretKeyRef: {name: ${BINDING_SECRET}, key: ${BINDING_AUDIENCE_KEY}}}
         - name: EXPECTED_SUBJECTS
-          valueFrom: {secretKeyRef: {name: ${BINDING_SECRET}, key: INTERNAL_AUTH_SUBJECT_ALLOWLIST}}
+          valueFrom: {secretKeyRef: {name: ${BINDING_SECRET}, key: ${BINDING_SUBJECTS_KEY}}}
         - name: EXPECTED_SCOPE
-          valueFrom: {secretKeyRef: {name: ${BINDING_SECRET}, key: INTERNAL_AUTH_REQUIRED_SCOPE}}
+          valueFrom: {secretKeyRef: {name: ${BINDING_SECRET}, key: ${BINDING_SCOPE_KEY}}}
         command: ["/bin/sh", "-ec"]
         args:
         - |
@@ -161,10 +195,7 @@ spec:
           from joserfc import jwt
           from joserfc.jwk import RSAKey
 
-          ENDPOINT = (
-              "http://knowledge-admin-backend:8000"
-              "/api/internal/v1/knowledge/ingestions"
-          )
+          ENDPOINT = "${SERVICE_ENDPOINT}"
 
           def decode_header(encoded: str) -> dict:
               segment = encoded.split(".", 1)[0]
@@ -307,7 +338,7 @@ spec:
               private_pem = ""
               real_token = ""
               print(json.dumps({
-                  "task": "V5-P0-005-service-negative-matrix",
+                  "task": "${TASK_ID}-service-negative-matrix",
                   "result": "passed",
                   "statuses": statuses,
                   "token_printed": False,
@@ -320,7 +351,7 @@ spec:
               asyncio.run(main())
           except Exception as exc:
               print(json.dumps({
-                  "task": "V5-P0-005-service-negative-matrix",
+                  "task": "${TASK_ID}-service-negative-matrix",
                   "result": "failed",
                   "reason": type(exc).__name__,
                   "token_printed": False,
@@ -333,9 +364,9 @@ EOF
 
 if ! wait_job; then
     k logs "job/$job" -n "$APP_NAMESPACE" --all-containers=true || true
-    echo "V5-P0-005 service negative matrix failed" >&2
+    echo "$TASK_ID service negative matrix failed" >&2
     exit 1
 fi
 
 k logs "job/$job" -n "$APP_NAMESPACE"
-echo "V5-P0-005 service negative matrix passed"
+echo "$TASK_ID service negative matrix passed"

@@ -10,21 +10,50 @@ require_service_identity_relation() {
     local binding_secret_name="$4"
     local expected_application="$5"
     local expected_scope="$6"
+    local relation_kind="${7:-ingest}"
     local key encoded client_id audience application scope discovery backchannel subjects
     local caller_discovery caller_backchannel
+    local client_id_key client_secret_key caller_discovery_key caller_backchannel_key
+    local application_key discovery_key backchannel_key audience_key subjects_key scope_key
+    if [[ "$relation_kind" == "retrieve" ]]; then
+        client_id_key="KNOWLEDGE_RETRIEVAL_SERVICE_CLIENT_ID"
+        client_secret_key="KNOWLEDGE_RETRIEVAL_SERVICE_CLIENT_SECRET"
+        caller_discovery_key="KNOWLEDGE_RETRIEVAL_SERVICE_DISCOVERY_URL"
+        caller_backchannel_key="KNOWLEDGE_RETRIEVAL_SERVICE_BACKCHANNEL_ENDPOINT"
+        application_key="RETRIEVAL_AUTH_CASDOOR_APPLICATION"
+        discovery_key="RETRIEVAL_AUTH_DISCOVERY_URL"
+        backchannel_key="RETRIEVAL_AUTH_BACKCHANNEL_ENDPOINT"
+        audience_key="RETRIEVAL_AUTH_AUDIENCE"
+        subjects_key="RETRIEVAL_AUTH_SUBJECT_ALLOWLIST"
+        scope_key="RETRIEVAL_AUTH_REQUIRED_SCOPE"
+    elif [[ "$relation_kind" == "ingest" ]]; then
+        client_id_key="KNOWLEDGE_APP_SERVICE_CLIENT_ID"
+        client_secret_key="KNOWLEDGE_APP_SERVICE_CLIENT_SECRET"
+        caller_discovery_key="KNOWLEDGE_APP_SERVICE_DISCOVERY_URL"
+        caller_backchannel_key="KNOWLEDGE_APP_SERVICE_BACKCHANNEL_ENDPOINT"
+        application_key="INTERNAL_AUTH_CASDOOR_APPLICATION"
+        discovery_key="INTERNAL_AUTH_DISCOVERY_URL"
+        backchannel_key="INTERNAL_AUTH_BACKCHANNEL_ENDPOINT"
+        audience_key="INTERNAL_AUTH_AUDIENCE"
+        subjects_key="INTERNAL_AUTH_SUBJECT_ALLOWLIST"
+        scope_key="INTERNAL_AUTH_REQUIRED_SCOPE"
+    else
+        log_error "未知服务身份关系类型: $relation_kind"
+        return 1
+    fi
     local client_keys=(
-        KNOWLEDGE_APP_SERVICE_CLIENT_ID
-        KNOWLEDGE_APP_SERVICE_CLIENT_SECRET
-        KNOWLEDGE_APP_SERVICE_DISCOVERY_URL
-        KNOWLEDGE_APP_SERVICE_BACKCHANNEL_ENDPOINT
+        "$client_id_key"
+        "$client_secret_key"
+        "$caller_discovery_key"
+        "$caller_backchannel_key"
     )
     local binding_keys=(
-        INTERNAL_AUTH_CASDOOR_APPLICATION
-        INTERNAL_AUTH_DISCOVERY_URL
-        INTERNAL_AUTH_BACKCHANNEL_ENDPOINT
-        INTERNAL_AUTH_AUDIENCE
-        INTERNAL_AUTH_SUBJECT_ALLOWLIST
-        INTERNAL_AUTH_REQUIRED_SCOPE
+        "$application_key"
+        "$discovery_key"
+        "$backchannel_key"
+        "$audience_key"
+        "$subjects_key"
+        "$scope_key"
     )
 
     for secret_name in "$client_secret_name" "$binding_secret_name"; do
@@ -53,23 +82,23 @@ require_service_identity_relation() {
     done
 
     client_id="$(kubectl get secret "$client_secret_name" -n "$namespace" \
-        -o jsonpath='{.data.KNOWLEDGE_APP_SERVICE_CLIENT_ID}' | base64 --decode)"
+        -o "jsonpath={.data.${client_id_key}}" | base64 --decode)"
     audience="$(kubectl get secret "$binding_secret_name" -n "$namespace" \
-        -o jsonpath='{.data.INTERNAL_AUTH_AUDIENCE}' | base64 --decode)"
+        -o "jsonpath={.data.${audience_key}}" | base64 --decode)"
     application="$(kubectl get secret "$binding_secret_name" -n "$namespace" \
-        -o jsonpath='{.data.INTERNAL_AUTH_CASDOOR_APPLICATION}' | base64 --decode)"
+        -o "jsonpath={.data.${application_key}}" | base64 --decode)"
     scope="$(kubectl get secret "$binding_secret_name" -n "$namespace" \
-        -o jsonpath='{.data.INTERNAL_AUTH_REQUIRED_SCOPE}' | base64 --decode)"
+        -o "jsonpath={.data.${scope_key}}" | base64 --decode)"
     discovery="$(kubectl get secret "$binding_secret_name" -n "$namespace" \
-        -o jsonpath='{.data.INTERNAL_AUTH_DISCOVERY_URL}' | base64 --decode)"
+        -o "jsonpath={.data.${discovery_key}}" | base64 --decode)"
     backchannel="$(kubectl get secret "$binding_secret_name" -n "$namespace" \
-        -o jsonpath='{.data.INTERNAL_AUTH_BACKCHANNEL_ENDPOINT}' | base64 --decode)"
+        -o "jsonpath={.data.${backchannel_key}}" | base64 --decode)"
     subjects="$(kubectl get secret "$binding_secret_name" -n "$namespace" \
-        -o jsonpath='{.data.INTERNAL_AUTH_SUBJECT_ALLOWLIST}' | base64 --decode)"
+        -o "jsonpath={.data.${subjects_key}}" | base64 --decode)"
     caller_discovery="$(kubectl get secret "$client_secret_name" -n "$namespace" \
-        -o jsonpath='{.data.KNOWLEDGE_APP_SERVICE_DISCOVERY_URL}' | base64 --decode)"
+        -o "jsonpath={.data.${caller_discovery_key}}" | base64 --decode)"
     caller_backchannel="$(kubectl get secret "$client_secret_name" -n "$namespace" \
-        -o jsonpath='{.data.KNOWLEDGE_APP_SERVICE_BACKCHANNEL_ENDPOINT}' | base64 --decode)"
+        -o "jsonpath={.data.${caller_backchannel_key}}" | base64 --decode)"
 
     if [[ "$client_id" != "$audience" ]]; then
         log_error "服务调用 client 与资源 audience 不一致: caller=$caller"

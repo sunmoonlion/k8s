@@ -32,6 +32,8 @@ spec:
             name: ${KNOWLEDGE_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME:-knowledge-admin-backend-browser-oidc}
         - secretRef:
             name: ${KNOWLEDGE_INFO_INGEST_BINDING_SECRET_NAME:-knowledge-info-ingest-service-binding}
+        - secretRef:
+            name: ${KNOWLEDGE_RESEARCH_RETRIEVAL_BINDING_SECRET_NAME:-knowledge-research-retrieval-service-binding}
         - configMapRef:
             name: ${CELERYWORKER_KNOWLEDGE_ADMIN_BACKEND_CONFIGMAP_NAME:-celeryworker-knowledge-admin-backend-config}
         - secretRef:

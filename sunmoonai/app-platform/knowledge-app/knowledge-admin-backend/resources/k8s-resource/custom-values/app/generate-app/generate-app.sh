@@ -48,6 +48,7 @@ export KNOWLEDGE_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME="${KNOWLEDGE_ADMIN_BACKEND
 export KNOWLEDGE_ADMIN_BACKEND_SECRET_NAME="${KNOWLEDGE_ADMIN_BACKEND_SECRET_NAME:-}"
 export KNOWLEDGE_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME="${KNOWLEDGE_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME:-}"
 export KNOWLEDGE_INFO_INGEST_BINDING_SECRET_NAME="${KNOWLEDGE_INFO_INGEST_BINDING_SECRET_NAME:-}"
+export KNOWLEDGE_RESEARCH_RETRIEVAL_BINDING_SECRET_NAME="${KNOWLEDGE_RESEARCH_RETRIEVAL_BINDING_SECRET_NAME:-}"
 export KNOWLEDGE_ADMIN_BACKEND_CONFIGMAP_NAME="${KNOWLEDGE_ADMIN_BACKEND_CONFIGMAP_NAME:-}"
 export CELERYWORKER_KNOWLEDGE_ADMIN_BACKEND_SECRET_NAME="${CELERYWORKER_KNOWLEDGE_ADMIN_BACKEND_SECRET_NAME:-}"
 export CELERYWORKER_KNOWLEDGE_ADMIN_BACKEND_CONFIGMAP_NAME="${CELERYWORKER_KNOWLEDGE_ADMIN_BACKEND_CONFIGMAP_NAME:-}"
@@ -116,6 +117,10 @@ export PVC_SUB_PATH="${PVC_SUB_PATH:-}"
 
 validate_yaml() {
     local yaml_file="$1"
+    if grep -q '\${[^}]*}' "$yaml_file"; then
+        log_error "YAML 仍包含未解析模板变量: $(basename "$yaml_file")"
+        return 1
+    fi
     if command -v ruby &> /dev/null; then
         if ruby -e 'require "yaml"; YAML.load_stream(File.read(ARGV.fetch(0)))' "$yaml_file" &> /dev/null; then
             log_success "YAML 验证通过: $(basename "$yaml_file")"
@@ -124,8 +129,14 @@ validate_yaml() {
             ruby -e 'require "yaml"; YAML.load_stream(File.read(ARGV.fetch(0)))' "$yaml_file" 2>&1 | head -20
             return 1
         fi
-    elif command -v kubectl &> /dev/null && kubectl config current-context &> /dev/null; then
-        kubectl apply --dry-run=client -f "$yaml_file" &> /dev/null || {
+    elif [[ -x /usr/bin/python3 ]] && /usr/bin/python3 -c 'import yaml' &> /dev/null; then
+        /usr/bin/python3 -c 'import sys, yaml; docs=list(yaml.safe_load_all(open(sys.argv[1], encoding="utf-8"))); assert docs and all(isinstance(d, dict) and d.get("apiVersion") and d.get("kind") for d in docs)' "$yaml_file" || {
+            log_error "YAML 解析失败: $(basename "$yaml_file")"
+            return 1
+        }
+        log_success "YAML 验证通过: $(basename "$yaml_file")"
+    elif command -v kubectl &> /dev/null; then
+        kubectl apply --dry-run=client --validate=false -f "$yaml_file" &> /dev/null || {
             log_error "YAML/Kubernetes 资源验证失败: $(basename "$yaml_file")"
             return 1
         }

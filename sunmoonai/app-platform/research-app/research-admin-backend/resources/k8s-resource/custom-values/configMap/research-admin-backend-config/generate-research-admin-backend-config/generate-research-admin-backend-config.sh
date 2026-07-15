@@ -64,6 +64,12 @@ export CASDOOR_VERIFY_SSL="${CASDOOR_VERIFY_SSL:-}"
 export FRONTEND_ALLOWED_ORIGINS="${FRONTEND_ALLOWED_ORIGINS:-}"
 export AUTH_POLICY_VERSION="${AUTH_POLICY_VERSION:-}"
 export AUTH_ALLOWED_ALGORITHMS="${AUTH_ALLOWED_ALGORITHMS:-}"
+export KNOWLEDGE_RETRIEVAL_URL="${KNOWLEDGE_RETRIEVAL_URL:-}"
+export KNOWLEDGE_RETRIEVAL_SERVICE_APPLICATION="${KNOWLEDGE_RETRIEVAL_SERVICE_APPLICATION:-}"
+export KNOWLEDGE_RETRIEVAL_SERVICE_DISCOVERY_URL="${KNOWLEDGE_RETRIEVAL_SERVICE_DISCOVERY_URL:-}"
+export KNOWLEDGE_RETRIEVAL_SERVICE_BACKCHANNEL_ENDPOINT="${KNOWLEDGE_RETRIEVAL_SERVICE_BACKCHANNEL_ENDPOINT:-}"
+export KNOWLEDGE_RETRIEVAL_SERVICE_SCOPE="${KNOWLEDGE_RETRIEVAL_SERVICE_SCOPE:-}"
+export KNOWLEDGE_RETRIEVAL_TIMEOUT_SECONDS="${KNOWLEDGE_RETRIEVAL_TIMEOUT_SECONDS:-}"
 export CELERY_QUEUE="${CELERY_QUEUE:-}"
 
 validate_yaml() {
@@ -72,7 +78,14 @@ validate_yaml() {
         log_error "YAML 仍包含未解析模板变量: $(basename "$yaml_file")"
         return 1
     fi
-    if command -v kubectl &> /dev/null; then
+    if [[ -x /usr/bin/python3 ]] && /usr/bin/python3 -c 'import yaml' &> /dev/null; then
+        if /usr/bin/python3 -c 'import sys, yaml; docs=list(yaml.safe_load_all(open(sys.argv[1], encoding="utf-8"))); assert docs and all(isinstance(d, dict) and d.get("apiVersion") and d.get("kind") for d in docs)' "$yaml_file"; then
+            log_success "YAML 验证通过: $(basename "$yaml_file")"
+            return 0
+        fi
+        log_error "YAML 验证失败: $(basename "$yaml_file")"
+        return 1
+    elif command -v kubectl &> /dev/null; then
         if ! kubectl cluster-info --request-timeout=2s &> /dev/null; then
             log_warn "Kubernetes API 不可用，已完成离线门禁/模板检查，跳过 OpenAPI 验证"
             return 0

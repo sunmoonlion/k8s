@@ -264,6 +264,7 @@ deploy_app() {
     export KNOWLEDGE_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME="${KNOWLEDGE_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}"
     export KNOWLEDGE_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME="${KNOWLEDGE_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME:-knowledge-admin-backend-browser-oidc}"
     export KNOWLEDGE_INFO_INGEST_BINDING_SECRET_NAME="${KNOWLEDGE_INFO_INGEST_BINDING_SECRET_NAME:-knowledge-info-ingest-service-binding}"
+    export KNOWLEDGE_RESEARCH_RETRIEVAL_BINDING_SECRET_NAME="${KNOWLEDGE_RESEARCH_RETRIEVAL_BINDING_SECRET_NAME:-knowledge-research-retrieval-service-binding}"
     export KNOWLEDGE_ADMIN_BACKEND_FULL_IMAGE_NAME="${KNOWLEDGE_ADMIN_BACKEND_IMAGE_REGISTRY}/${KNOWLEDGE_ADMIN_BACKEND_IMAGE_PROJECT}/${KNOWLEDGE_ADMIN_BACKEND_IMAGE}:${KNOWLEDGE_ADMIN_BACKEND_TAG}"
 
     log_info "镜像: $KNOWLEDGE_ADMIN_BACKEND_FULL_IMAGE_NAME"
@@ -306,6 +307,16 @@ deploy_app() {
         "sunmoonai-info-knowledge-ingest" \
         "knowledge:ingest" \
         || { log_error "服务身份关系门禁失败，拒绝更新 Deployment"; return 1; }
+
+    require_service_identity_relation \
+        "$NAMESPACE" \
+        "research-knowledge-retrieval-worker" \
+        "${RESEARCH_KNOWLEDGE_RETRIEVAL_CLIENT_SECRET_NAME:-research-knowledge-retrieval-client}" \
+        "${KNOWLEDGE_RESEARCH_RETRIEVAL_BINDING_SECRET_NAME:-knowledge-research-retrieval-service-binding}" \
+        "sunmoonai-research-knowledge-retrieve" \
+        "knowledge:retrieve" \
+        "retrieve" \
+        || { log_error "检索服务身份关系门禁失败，拒绝更新 Deployment"; return 1; }
 
     run_alembic_migration_gate \
         "$NAMESPACE" \

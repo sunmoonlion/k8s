@@ -31,6 +31,7 @@ if [[ -z "${K8S_ROOT_DIR:-}" ]]; then
 fi
 
 source "$K8S_ROOT_DIR/utils/unified-deployment-template.sh"
+source "$K8S_ROOT_DIR/utils/service-identity-gate.sh"
 
 SCRIPT_DIR="$CELERYWORKER_RESEARCH_ADMIN_BACKEND_SCRIPT_DIR"
 
@@ -266,6 +267,8 @@ deploy_app() {
 
     export NAMESPACE="$NAMESPACE" ENV="$ENV" ENVIRONMENT="$ENVIRONMENT"
     export CELERYWORKER_RESEARCH_ADMIN_BACKEND_FULL_IMAGE_NAME
+    export RESEARCH_KNOWLEDGE_RETRIEVAL_CALLER_SECRET_NAME="${RESEARCH_KNOWLEDGE_RETRIEVAL_CALLER_SECRET_NAME:-research-knowledge-retrieval-client}"
+    export RESEARCH_KNOWLEDGE_RETRIEVAL_SERVICE_ACCOUNT_NAME="${RESEARCH_KNOWLEDGE_RETRIEVAL_SERVICE_ACCOUNT_NAME:-research-knowledge-retrieval-worker}"
 
     log_info "🚀 阶段1：部署子组件..."
     deploy_sub_components "$PROJECT_ID" "$NAMESPACE" "$ENVIRONMENT" false \
@@ -279,6 +282,16 @@ deploy_app() {
     fi
 
     auto_generate_yaml "$CELERYWORKER_RESEARCH_ADMIN_BACKEND_YAML" "$K8S_RESOURCE_DIR" || return 1
+
+    require_service_identity_relation \
+        "$NAMESPACE" \
+        "research-knowledge-retrieval-worker" \
+        "${RESEARCH_KNOWLEDGE_RETRIEVAL_CALLER_SECRET_NAME}" \
+        "${KNOWLEDGE_RESEARCH_RETRIEVAL_BINDING_SECRET_NAME:-knowledge-research-retrieval-service-binding}" \
+        "sunmoonai-research-knowledge-retrieve" \
+        "knowledge:retrieve" \
+        "retrieve" \
+        || { log_error "检索服务身份关系门禁失败，拒绝更新 Deployment"; return 1; }
 
     log_info "生成并部署 PVC..."
     auto_generate_yaml "$CELERYWORKER_RESEARCH_ADMIN_BACKEND_PVC_YAML" "$K8S_RESOURCE_DIR" || return 1

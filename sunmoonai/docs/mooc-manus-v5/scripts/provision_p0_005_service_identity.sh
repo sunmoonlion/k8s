@@ -16,7 +16,22 @@ POSTGRES_CLIENT_IMAGE="harbor.sunmoonai.com:30443/k8s-images/postgresql:17.6.0-d
 PUBLIC_CASDOOR_ENDPOINT="https://casdoor.sunmoonai.com:30443"
 BACKCHANNEL_CASDOOR_ENDPOINT="http://casdoor-sunmoonai:8000"
 SERVICE_APPLICATION="sunmoonai-info-knowledge-ingest"
+SERVICE_DISPLAY_NAME="SunMoon Info to Knowledge Ingest"
 SERVICE_SCOPE="knowledge:ingest"
+RELATION="ingest"
+TASK_ID="v5-p0-005"
+CALLER_NAME="info-distribution-worker"
+RELATION_LABEL="info-knowledge-ingest"
+CALLER_CLIENT_ID_KEY="KNOWLEDGE_APP_SERVICE_CLIENT_ID"
+CALLER_CLIENT_SECRET_KEY="KNOWLEDGE_APP_SERVICE_CLIENT_SECRET"
+CALLER_DISCOVERY_KEY="KNOWLEDGE_APP_SERVICE_DISCOVERY_URL"
+CALLER_BACKCHANNEL_KEY="KNOWLEDGE_APP_SERVICE_BACKCHANNEL_ENDPOINT"
+BINDING_APPLICATION_KEY="INTERNAL_AUTH_CASDOOR_APPLICATION"
+BINDING_DISCOVERY_KEY="INTERNAL_AUTH_DISCOVERY_URL"
+BINDING_BACKCHANNEL_KEY="INTERNAL_AUTH_BACKCHANNEL_ENDPOINT"
+BINDING_AUDIENCE_KEY="INTERNAL_AUTH_AUDIENCE"
+BINDING_SUBJECTS_KEY="INTERNAL_AUTH_SUBJECT_ALLOWLIST"
+BINDING_SCOPE_KEY="INTERNAL_AUTH_REQUIRED_SCOPE"
 PROBE_IMAGE=""
 APPLY=false
 
@@ -25,6 +40,7 @@ usage() {
 Usage: provision_p0_005_service_identity.sh [--apply] [options]
 
   --apply                     Reconcile Casdoor and Secrets (default: plan only)
+  --relation NAME             ingest (default) or retrieve
   --kubeconfig PATH           Kubeconfig path
   --namespace NAME            Application namespace
   --public-endpoint URL       Canonical public Casdoor origin
@@ -37,6 +53,7 @@ EOF
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --apply) APPLY=true; shift ;;
+        --relation) RELATION="$2"; shift 2 ;;
         --kubeconfig) KUBECONFIG_PATH="$2"; shift 2 ;;
         --namespace) APP_NAMESPACE="$2"; shift 2 ;;
         --public-endpoint) PUBLIC_CASDOOR_ENDPOINT="$2"; shift 2 ;;
@@ -47,6 +64,35 @@ while [[ $# -gt 0 ]]; do
         *) echo "unknown argument: $1" >&2; usage >&2; exit 2 ;;
     esac
 done
+
+case "$RELATION" in
+    ingest) ;;
+    retrieve)
+        OPERATOR_SECRET="sunmoonai-p0-004-retrieval-identity"
+        CALLER_SECRET="research-knowledge-retrieval-client"
+        BINDING_SECRET="knowledge-research-retrieval-service-binding"
+        SERVICE_APPLICATION="sunmoonai-research-knowledge-retrieve"
+        SERVICE_DISPLAY_NAME="SunMoon Research to Knowledge Retrieval"
+        SERVICE_SCOPE="knowledge:retrieve"
+        TASK_ID="v5-p0-004"
+        CALLER_NAME="research-knowledge-retrieval-worker"
+        RELATION_LABEL="research-knowledge-retrieve"
+        CALLER_CLIENT_ID_KEY="KNOWLEDGE_RETRIEVAL_SERVICE_CLIENT_ID"
+        CALLER_CLIENT_SECRET_KEY="KNOWLEDGE_RETRIEVAL_SERVICE_CLIENT_SECRET"
+        CALLER_DISCOVERY_KEY="KNOWLEDGE_RETRIEVAL_SERVICE_DISCOVERY_URL"
+        CALLER_BACKCHANNEL_KEY="KNOWLEDGE_RETRIEVAL_SERVICE_BACKCHANNEL_ENDPOINT"
+        BINDING_APPLICATION_KEY="RETRIEVAL_AUTH_CASDOOR_APPLICATION"
+        BINDING_DISCOVERY_KEY="RETRIEVAL_AUTH_DISCOVERY_URL"
+        BINDING_BACKCHANNEL_KEY="RETRIEVAL_AUTH_BACKCHANNEL_ENDPOINT"
+        BINDING_AUDIENCE_KEY="RETRIEVAL_AUTH_AUDIENCE"
+        BINDING_SUBJECTS_KEY="RETRIEVAL_AUTH_SUBJECT_ALLOWLIST"
+        BINDING_SCOPE_KEY="RETRIEVAL_AUTH_REQUIRED_SCOPE"
+        ;;
+    *)
+        echo "unsupported relation: $RELATION" >&2
+        exit 2
+        ;;
+esac
 
 k() { kubectl --kubeconfig "$KUBECONFIG_PATH" "$@"; }
 
@@ -101,7 +147,7 @@ metadata:
   name: ${OPERATOR_SECRET}
   namespace: ${APP_NAMESPACE}
   labels:
-    sunmoonai.com/task: v5-p0-005
+    sunmoonai.com/task: ${TASK_ID}
     app.kubernetes.io/component: service-identity-provisioning
 type: Opaque
 stringData:
@@ -122,7 +168,7 @@ validate_credentials() {
 }
 
 reconcile_casdoor_application() {
-    local job="p0-005-service-identity-provision"
+    local job="p0-${TASK_ID##*-}-service-identity-provision"
     cleanup_job "$job"
     k wait --for=delete "job/$job" -n "$APP_NAMESPACE" --timeout=60s \
         >/dev/null 2>&1 || true
@@ -133,7 +179,7 @@ metadata:
   name: ${job}
   namespace: ${APP_NAMESPACE}
   labels:
-    sunmoonai.com/task: v5-p0-005
+    sunmoonai.com/task: ${TASK_ID}
     app.kubernetes.io/component: service-identity-provisioning
 spec:
   backoffLimit: 0
@@ -141,7 +187,7 @@ spec:
   template:
     metadata:
       labels:
-        sunmoonai.com/task: v5-p0-005
+        sunmoonai.com/task: ${TASK_ID}
         app.kubernetes.io/component: service-identity-provisioning
     spec:
       restartPolicy: Never
@@ -175,7 +221,9 @@ spec:
           psql -h "\$DB_HOST" -p "\$DB_PORT" -U "\$DB_USER" -d "\$DB_NAME" \
             -q -v ON_ERROR_STOP=1 \
             --set=client_id="\$SERVICE_CLIENT_ID" \
-            --set=client_secret="\$SERVICE_CLIENT_SECRET" <<'SQL'
+            --set=client_secret="\$SERVICE_CLIENT_SECRET" \
+            --set=service_application="${SERVICE_APPLICATION}" \
+            --set=service_display_name="${SERVICE_DISPLAY_NAME}" <<'SQL'
           SELECT count(*) = 1 AS organization_ok FROM organization
           WHERE owner='admin' AND name='sunmoonai' \gset
           \if :organization_ok
@@ -189,8 +237,8 @@ spec:
             redirect_uris, cert, grant_types, organization, enable_sign_up,
             token_format, expire_in_hours, refresh_expire_in_hours
           ) VALUES (
-            'admin','sunmoonai-info-knowledge-ingest',NOW()::text,
-            'SunMoon Info to Knowledge Ingest',:'client_id',:'client_secret',
+            'admin',:'service_application',NOW()::text,
+            :'service_display_name',:'client_id',:'client_secret',
             '[]','cert-built-in','["client_credentials"]','sunmoonai',false,
             'JWT',1,1
           ) ON CONFLICT (owner, name) DO UPDATE SET
@@ -208,7 +256,7 @@ spec:
 
           SELECT count(*) = 1 AS application_ok FROM application
           WHERE owner='admin'
-            AND name='sunmoonai-info-knowledge-ingest'
+            AND name=:'service_application'
             AND client_id=:'client_id'
             AND grant_types='["client_credentials"]'
             AND redirect_uris='[]'
@@ -246,7 +294,7 @@ resolve_probe_image() {
 }
 
 probe_real_token_claims() {
-    local job="p0-005-service-token-probe" logs subject_b64
+    local job="p0-${TASK_ID##*-}-service-token-probe" logs subject_b64
     resolve_probe_image
     cleanup_job "$job"
     k wait --for=delete "job/$job" -n "$APP_NAMESPACE" --timeout=60s \
@@ -258,7 +306,7 @@ metadata:
   name: ${job}
   namespace: ${APP_NAMESPACE}
   labels:
-    sunmoonai.com/task: v5-p0-005
+    sunmoonai.com/task: ${TASK_ID}
     app.kubernetes.io/component: service-token-probe
 spec:
   backoffLimit: 0
@@ -266,7 +314,7 @@ spec:
   template:
     metadata:
       labels:
-        sunmoonai.com/task: v5-p0-005
+        sunmoonai.com/task: ${TASK_ID}
         app.kubernetes.io/component: service-token-probe
     spec:
       restartPolicy: Never
@@ -288,6 +336,8 @@ spec:
           value: "${BACKCHANNEL_CASDOOR_ENDPOINT}"
         - name: SERVICE_SCOPE
           value: "${SERVICE_SCOPE}"
+        - name: TASK_ID
+          value: "${TASK_ID}"
         command: ["/bin/sh", "-ec"]
         args:
         - |
@@ -381,7 +431,7 @@ spec:
               subject_b64 = base64.b64encode(subject.encode()).decode()
               print(f"P0_SUBJECT_B64={subject_b64}")
               print(json.dumps({
-                  "task": "V5-P0-005-service-token-probe",
+                  "task": os.environ["TASK_ID"].upper() + "-service-token-probe",
                   "result": "passed",
                   "signature": "RS256",
                   "issuer_exact": True,
@@ -395,7 +445,7 @@ spec:
               asyncio.run(main())
           except Exception as exc:
               print(json.dumps({
-                  "task": "V5-P0-005-service-token-probe",
+                  "task": os.environ["TASK_ID"].upper() + "-service-token-probe",
                   "result": "failed",
                   "reason": type(exc).__name__,
                   "token_printed": False,
@@ -437,15 +487,15 @@ metadata:
   name: ${CALLER_SECRET}
   namespace: ${APP_NAMESPACE}
   labels:
-    sunmoonai.com/task: v5-p0-005
+    sunmoonai.com/task: ${TASK_ID}
     app.kubernetes.io/component: service-identity-caller
-    sunmoonai.com/service-relation: info-knowledge-ingest
+    sunmoonai.com/service-relation: ${RELATION_LABEL}
 type: Opaque
 stringData:
-  KNOWLEDGE_APP_SERVICE_CLIENT_ID: "${SERVICE_CLIENT_ID}"
-  KNOWLEDGE_APP_SERVICE_CLIENT_SECRET: "${SERVICE_CLIENT_SECRET}"
-  KNOWLEDGE_APP_SERVICE_DISCOVERY_URL: "${PUBLIC_CASDOOR_ENDPOINT}/.well-known/openid-configuration"
-  KNOWLEDGE_APP_SERVICE_BACKCHANNEL_ENDPOINT: "${BACKCHANNEL_CASDOOR_ENDPOINT}"
+  ${CALLER_CLIENT_ID_KEY}: "${SERVICE_CLIENT_ID}"
+  ${CALLER_CLIENT_SECRET_KEY}: "${SERVICE_CLIENT_SECRET}"
+  ${CALLER_DISCOVERY_KEY}: "${PUBLIC_CASDOOR_ENDPOINT}/.well-known/openid-configuration"
+  ${CALLER_BACKCHANNEL_KEY}: "${BACKCHANNEL_CASDOOR_ENDPOINT}"
 ---
 apiVersion: v1
 kind: Secret
@@ -453,17 +503,17 @@ metadata:
   name: ${BINDING_SECRET}
   namespace: ${APP_NAMESPACE}
   labels:
-    sunmoonai.com/task: v5-p0-005
+    sunmoonai.com/task: ${TASK_ID}
     app.kubernetes.io/component: service-identity-resource-binding
-    sunmoonai.com/service-relation: info-knowledge-ingest
+    sunmoonai.com/service-relation: ${RELATION_LABEL}
 type: Opaque
 stringData:
-  INTERNAL_AUTH_CASDOOR_APPLICATION: "${SERVICE_APPLICATION}"
-  INTERNAL_AUTH_DISCOVERY_URL: "${PUBLIC_CASDOOR_ENDPOINT}/.well-known/openid-configuration"
-  INTERNAL_AUTH_BACKCHANNEL_ENDPOINT: "${BACKCHANNEL_CASDOOR_ENDPOINT}"
-  INTERNAL_AUTH_AUDIENCE: "${SERVICE_CLIENT_ID}"
-  INTERNAL_AUTH_SUBJECT_ALLOWLIST: "${VERIFIED_SUBJECT}"
-  INTERNAL_AUTH_REQUIRED_SCOPE: "${SERVICE_SCOPE}"
+  ${BINDING_APPLICATION_KEY}: "${SERVICE_APPLICATION}"
+  ${BINDING_DISCOVERY_KEY}: "${PUBLIC_CASDOOR_ENDPOINT}/.well-known/openid-configuration"
+  ${BINDING_BACKCHANNEL_KEY}: "${BACKCHANNEL_CASDOOR_ENDPOINT}"
+  ${BINDING_AUDIENCE_KEY}: "${SERVICE_CLIENT_ID}"
+  ${BINDING_SUBJECTS_KEY}: "${VERIFIED_SUBJECT}"
+  ${BINDING_SCOPE_KEY}: "${SERVICE_SCOPE}"
 EOF
     echo "APPLIED caller Secret: $APP_NAMESPACE/$CALLER_SECRET"
     echo "APPLIED resource binding Secret: $APP_NAMESPACE/$BINDING_SECRET"
@@ -486,7 +536,7 @@ done
 k get namespace "$APP_NAMESPACE" >/dev/null
 k get secret "$CASDOOR_DATABASE_SECRET" -n "$APP_NAMESPACE" >/dev/null
 
-echo "PLAN relation: info-distribution-worker -> knowledge-admin-backend"
+echo "PLAN relation: $CALLER_NAME -> knowledge-admin-backend"
 echo "PLAN grant: client_credentials, exact audience/subject, local scope=$SERVICE_SCOPE"
 echo "PLAN runtime caller Secret: $APP_NAMESPACE/$CALLER_SECRET"
 echo "PLAN runtime resource binding Secret: $APP_NAMESPACE/$BINDING_SECRET"
@@ -501,4 +551,4 @@ reconcile_casdoor_application
 probe_real_token_claims
 apply_runtime_secrets
 unset SERVICE_CLIENT_ID SERVICE_CLIENT_SECRET VERIFIED_SUBJECT
-echo "V5-P0-005 service identity reconciled and empirically bound without printing credentials"
+echo "${TASK_ID^^} service identity reconciled and empirically bound without printing credentials"
