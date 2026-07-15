@@ -42,9 +42,10 @@ pnpm 报告 `@parcel/watcher`、`@swc/core`、`msw` 的 build scripts 当前被�
 
 ## 外部参考采用矩阵
 
-参考固定为 MIT 许可的 `ixartz/Next-js-Boilerplate` release `v6.3.4`（2026-05-22
-页面所示；地址：`https://github.com/ixartz/Next-js-Boilerplate/tree/v6.3.4`）。只提取
-工程实践，不复制其产品页面和依赖栈。
+参考输入已重新固定为本地只读 clone `/home/zymun/repo/Next-js-Boilerplate` 的 MIT
+许可 Git SHA `9926cc1f8664f67eca63065bf1c31bc4f60b09c2`（提交日期 2026-07-08，审查日期
+2026-07-15）。此前的 `v6.3.4` 网页记录仅为首次发现来源，不再作为 P0-008B 的实施输入。
+只提取工程实践，不复制其产品页面和依赖栈，也不跟随上游 `main`。
 
 | 参考能力 | 决策 | SunmoonAI 处理 |
 | --- | --- | --- |
@@ -55,6 +56,26 @@ pnpm 报告 `@parcel/watcher`、`@swc/core`、`msw` 的 build scripts 当前被�
 | Sentry、Arcjet、PostHog、Better Stack、Checkly 等 SaaS | 暂不采用 | 需另有供应商、数据出境、成本和部署 ADR；不能成为模板运行时依赖 |
 | Crowdin、外部字体/CDN、完整 SaaS demo 页面 | 拒绝 | 保持自托管和本地/受控资源，避免运行时外连和领域污染 |
 | Node 24+ 要求 | 不直接采纳 | Next 16 官方最低 Node 为 20.9；SunmoonAI 先固定已验证的 Node 20.18，升级需单独兼容矩阵和镜像证据 |
+
+## 固定源码复核补充（2026-07-15）
+
+本地审查了 `package.json`、`next.config.ts`、`src/libs/Env.ts`、`src/libs/I18n*.ts`、
+`Logger.ts`、`global-error.tsx`、`robots.ts`、`sitemap.ts`、Vitest/Playwright 配置、
+测试样例和 GitHub CI。结论已同步 ADR-014 §7.1，作为后续 B1~B4 的逐项施工输入：
+
+- **B1 必做**：public/server env 白名单与 fail-fast、`poweredByHeader: false`、严格模式、
+  locale/navigation 收口、missing-key 检查、locale-aware error/loading/not-found、metadata/
+  robots/sitemap、unit/component 和 production-server Playwright 的最小基线。
+- **B4 必做**：失败 trace/video/screenshot 受控归档、a11y、静态/i18n/build/test 阶段进入
+  现有 Gitee/Jenkins 责任链；每项记录 Node 20.18/pnpm 10/lockfile 与镜像 digest。
+- **仅经 ADR 后改造**：server-only DAL/DTO、typed browser client、Casdoor session/minimal
+  BFF、真实后端配对 Playwright、stream adapter、bundle analysis、依赖扫描和 Storybook。
+- **明确排除**：Clerk、Drizzle/PGlite/Neon、Sentry/Arcjet/PostHog/Better Stack/Crowdin/
+  Checkly/Chromatic/Codecov、外部字体/CDN、GitHub Action、上游 Node 24、数据库迁移、
+  账号/支付/营销页面及任何把领域状态放入 Web 的实现。
+
+这是一份实施约束，不解锁 P0-008B：ADR-001/004/005 的 stream、citation、身份/BFF 输出
+仍是 P0-008A 接受和 B1 开工的前置。
 
 ## 候选架构矩阵（尚未冻结）
 

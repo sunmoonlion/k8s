@@ -87,7 +87,7 @@ pending --claim--> leased --broker accepted--> published --worker business succe
 本 ADR 只能在下列证据全部存在后改为 `ACCEPTED`：
 
 1. Info migration gate 应用 `delivery_outbox_message`，并有 rollback/升级检查。
-2. KIND 中 API 创建分发 + outbox 同事务可证实；故意阻断 RabbitMQ 后记录仍是 pending，恢复后 scanner 自动补投。
+2. KIND 中支撑认证 Info Admin dispatch 的同一领域服务创建分发 + outbox 同事务可证实；故意阻断 RabbitMQ 后记录仍是 pending，恢复后 scanner 自动补投。该可靠性交付验证不得为方便测试重开匿名 Admin HTTP；浏览器身份、角色、CSRF 与 HTTP 路由由 P0-005/P0-007 的配对 E2E 单独证明。
 3. 两个 scanner 同时运行时，一条消息同一 lease 周期只被一个 scanner claim；lease expiry 后可恢复。
 4. 注入“Broker 接受后、published 写库前”与“Provider 副作用后、worker acknowledgement 前”中断，重复投递后 Knowledge 无重复业务效果，最终 outbox completed。
 5. worker/scan restart、错误重试和手工 re-dispatch 的 audit/operation/correlation 链完整；日志与输出不泄露 credential。
@@ -103,6 +103,6 @@ Info 原型代码已形成，候选镜像/migration 已部署，但尚未完成�
 - `app/cli/drain_delivery_outbox.py`
 - Info distribution API/worker 的 outbox 接入与单元测试。
 - Info worker 资源中的 suspended scanner CronJob/独立无 token ServiceAccount，以及显式 outbox config values。
-- `verify_p0_006_scanner_manifest.sh` 与 `verify_p0_006_kind.py`：前者验证生成资源默认暂停和最小凭据；后者在候选 KIND 环境验证 API broker block/recover、scanner 竞争、broker accept/published 写库中断、provider effect/outbox acknowledgement 中断和 CronJob 恢复。验证器的临时 API env、Knowledge worker env、CronJob suspend 与唯一测试队列均需恢复；API broker override 的 helper 还必须在 rollout 失败或 SIGINT/SIGTERM 时自行回滚，不能只依赖调用者的 `finally`。两者都不输出 credential。
+- `verify_p0_006_scanner_manifest.sh` 与 `verify_p0_006_kind.py`：前者验证生成资源默认暂停和最小凭据；后者在候选 KIND 环境验证 Info broker block/recover、scanner 竞争、broker accept/published 写库中断、provider effect/outbox acknowledgement 中断和 CronJob 恢复。P0-005 后 Admin HTTP 必须保持 browser-session/CSRF 保护，因此后者通过受控 `kubectl exec` 在既有 Info/Knowledge Pod 内调用同一领域服务、仅读取无凭据状态标记，绝不抽取 cookie/token 或把匿名 `401` 误判为网络故障。验证器的临时 API env、Knowledge worker env、CronJob suspend 与唯一测试队列均需恢复；API broker override 的 helper 还必须在 rollout 失败或 SIGINT/SIGTERM 时自行回滚，不能只依赖调用方的 `finally`。两者都不输出 credential。
 
 候选镜像 `p0-006-outbox-20260714` 已推送，migration `20260714_0004` 已通过 KIND migration gate，API/worker 已候选部署，scanner 仍默认暂停。首次故障演练发现并修复验证器 cleanup 缺陷，且已手工恢复 Info API 配置；这不是 fault matrix 成功。KIND 全矩阵、CronJob 和最终证据通过前，不生成正式镜像 tag、不替换正在运行的 `1.0.1` 发布基线、不修改其他两仓的消息链路，状态保持 `PROPOSED / INFO_CANDIDATE_DEPLOYED_NOT_ACCEPTED`。

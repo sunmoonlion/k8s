@@ -21,16 +21,10 @@ from pathlib import Path
 from typing import Any, Callable
 
 from verify_p0_003_kind import (
-    ApiError,
     VerificationError,
-    api_json,
     assert_no_explicit_worker_overrides,
     configure_isolated_verifier,
-    create_real_distribution,
     restore_worker,
-    start_port_forward,
-    wait_for_distribution,
-    wait_for_ingestion_by_key,
     wait_until,
 )
 
@@ -47,6 +41,309 @@ def kubectl(
         stderr=subprocess.PIPE if capture else None,
     )
     return result.stdout if capture else ""
+
+
+def deployment_python_json(
+    *,
+    kubeconfig: str,
+    namespace: str,
+    deployment: str,
+    program: str,
+    program_args: list[str],
+    marker: str,
+    label: str,
+) -> Any:
+    """Run a trusted in-pod harness and return only its explicit safe marker.
+
+    P0-005 intentionally made the Admin HTTP APIs browser-session protected.
+    P0-006 therefore exercises the same domain services from an operator-owned
+    in-pod harness instead of weakening an API or extracting browser cookies.
+    Browser identity and route behavior remain covered by P0-005/P0-007 E2E.
+    """
+    result = subprocess.run(
+        [
+            "kubectl",
+            "--kubeconfig",
+            kubeconfig,
+            "exec",
+            "-n",
+            namespace,
+            f"deploy/{deployment}",
+            "--",
+            ".venv/bin/python",
+            "-c",
+            program,
+            *program_args,
+        ],
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=180,
+    )
+    if result.returncode != 0:
+        raise VerificationError(f"{label} exited {result.returncode}")
+    prefix = f"{marker}="
+    for line in result.stdout.splitlines():
+        if line.startswith(prefix):
+            return json.loads(line.removeprefix(prefix))
+    raise VerificationError(f"{label} did not return its safe state marker")
+
+
+_CREATE_DISTRIBUTION = r"""
+import asyncio
+import json
+import sys
+
+from sqlalchemy import select
+
+from app.application.services import info_crawl_service
+from app.application.services.delivery_outbox import dispatch_due_delivery_outbox
+from app.infrastructure.messaging.celery_producer import get_celery_producer
+from app.infrastructure.models.info import InfoDocumentVersion
+from app.infrastructure.storage.postgres import get_postgres
+
+async def main():
+    postgres = get_postgres()
+    await postgres.init()
+    try:
+        async with postgres.session_factory() as session:
+            versions = list(
+                (await session.execute(
+                    select(InfoDocumentVersion.id)
+                    .order_by(InfoDocumentVersion.created_at.desc())
+                    .limit(200)
+                )).scalars()
+            )
+            record = None
+            for version_id in versions:
+                try:
+                    record = await info_crawl_service.create_knowledge_distribution(
+                        session,
+                        document_version_id=version_id,
+                        target_dataset=sys.argv[1],
+                        dispatch=True,
+                    )
+                    break
+                except info_crawl_service.ArtifactNotDistributableError:
+                    await session.rollback()
+            if record is None:
+                raise RuntimeError("no distributable Info document version was available")
+
+            # This is the same post-commit best-effort kick used by the
+            # authenticated Admin route.  Its failure is intentionally
+            # swallowed: the durable row written above remains the recovery
+            # source of truth.
+            try:
+                producer = get_celery_producer()
+                if producer.enabled:
+                    await dispatch_due_delivery_outbox(session, publisher=producer)
+            except Exception:
+                pass
+
+            print("P0_DISTRIBUTION=" + json.dumps({
+                "id": str(record.id),
+                "idempotency_key": record.payload["idempotency_key"],
+            }, sort_keys=True))
+    finally:
+        await postgres.shutdown()
+
+asyncio.run(main())
+"""
+
+
+def create_real_distribution(
+    *, kubeconfig: str, namespace: str, dataset_key: str
+) -> dict[str, Any]:
+    return deployment_python_json(
+        kubeconfig=kubeconfig,
+        namespace=namespace,
+        deployment="info-admin-backend",
+        program=_CREATE_DISTRIBUTION,
+        program_args=[dataset_key],
+        marker="P0_DISTRIBUTION",
+        label="trusted Info delivery creation harness",
+    )
+
+
+_READ_DISTRIBUTION = r"""
+import asyncio
+import json
+import sys
+import uuid
+
+from app.infrastructure.models.info import DistributionRecord
+from app.infrastructure.storage.postgres import get_postgres
+
+async def main():
+    postgres = get_postgres()
+    await postgres.init()
+    try:
+        async with postgres.session_factory() as session:
+            row = await session.get(DistributionRecord, uuid.UUID(sys.argv[1]))
+            if row is None:
+                print("P0_DISTRIBUTION_STATE=null")
+                return
+            print("P0_DISTRIBUTION_STATE=" + json.dumps({
+                "id": str(row.id),
+                "status": row.status,
+                "idempotency_key": row.payload.get("idempotency_key"),
+            }, sort_keys=True))
+    finally:
+        await postgres.shutdown()
+
+asyncio.run(main())
+"""
+
+
+def read_distribution(
+    *, kubeconfig: str, namespace: str, distribution_id: str
+) -> dict[str, Any] | None:
+    value = deployment_python_json(
+        kubeconfig=kubeconfig,
+        namespace=namespace,
+        deployment="info-admin-backend",
+        program=_READ_DISTRIBUTION,
+        program_args=[distribution_id],
+        marker="P0_DISTRIBUTION_STATE",
+        label="trusted Info distribution state reader",
+    )
+    return value
+
+
+def wait_for_distribution(
+    *,
+    kubeconfig: str,
+    namespace: str,
+    distribution_id: str,
+    timeout: float = 150,
+) -> dict[str, Any]:
+    value = wait_until(
+        "distribution completion",
+        lambda: read_distribution(
+            kubeconfig=kubeconfig,
+            namespace=namespace,
+            distribution_id=distribution_id,
+        ),
+        lambda row: row is not None and row.get("status") == "succeeded",
+        timeout=timeout,
+    )
+    if value is None:
+        raise VerificationError("completed distribution was not found")
+    return value
+
+
+_READ_INGESTION = r"""
+import asyncio
+import json
+import sys
+
+from sqlalchemy import select
+
+from app.infrastructure.models.knowledge import KnowledgeIngestionJob
+from app.infrastructure.storage.postgres import get_postgres
+
+async def main():
+    postgres = get_postgres()
+    await postgres.init()
+    try:
+        async with postgres.session_factory() as session:
+            rows = list((await session.execute(
+                select(KnowledgeIngestionJob).where(
+                    KnowledgeIngestionJob.idempotency_key == sys.argv[1]
+                )
+            )).scalars())
+            print("P0_INGESTION_STATE=" + json.dumps({
+                "count": len(rows),
+                "statuses": sorted(row.status for row in rows),
+            }, sort_keys=True))
+    finally:
+        await postgres.shutdown()
+
+asyncio.run(main())
+"""
+
+
+def assert_one_ingestion(
+    *, kubeconfig: str, namespace: str, idempotency_key: str
+) -> dict[str, Any]:
+    value = wait_until(
+        "Knowledge ingestion completion",
+        lambda: deployment_python_json(
+            kubeconfig=kubeconfig,
+            namespace=namespace,
+            deployment="knowledge-admin-backend",
+            program=_READ_INGESTION,
+            program_args=[idempotency_key],
+            marker="P0_INGESTION_STATE",
+            label="trusted Knowledge ingestion state reader",
+        ),
+        lambda row: row["count"] == 1
+        and row["statuses"] in (["artifact_verified"], ["succeeded"]),
+        timeout=150,
+    )
+    if value["count"] != 1:
+        raise VerificationError(
+            f"expected one Knowledge ingestion operation, got {value['count']}"
+        )
+    return value
+
+
+_READ_ACTIVE_OUTBOX = r"""
+import asyncio
+import json
+
+from sqlalchemy import func, select
+
+from app.application.services.delivery_outbox import TOPIC_DISTRIBUTION_DISPATCH_V1
+from app.infrastructure.models.info import DeliveryOutboxMessage
+from app.infrastructure.storage.postgres import get_postgres
+
+async def main():
+    postgres = get_postgres()
+    await postgres.init()
+    try:
+        async with postgres.session_factory() as session:
+            rows = list((await session.execute(
+                select(DeliveryOutboxMessage.state, func.count(DeliveryOutboxMessage.id))
+                .where(DeliveryOutboxMessage.topic == TOPIC_DISTRIBUTION_DISPATCH_V1)
+                .group_by(DeliveryOutboxMessage.state)
+            )).all())
+            states = {state: int(count) for state, count in rows}
+            active = sum(
+                count for state, count in states.items() if state != "completed"
+            )
+            print("P0_OUTBOX_PRECONDITION=" + json.dumps({
+                "active": active,
+                "states": states,
+            }, sort_keys=True))
+    finally:
+        await postgres.shutdown()
+
+asyncio.run(main())
+"""
+
+
+def assert_delivery_outbox_quiescent(*, kubeconfig: str, namespace: str) -> None:
+    """Refuse to make a fault drill touch unrelated delivery work.
+
+    The production route deliberately kicks every due row.  This verifier has
+    the same behavior, so it first requires a clean candidate namespace rather
+    than accidentally claiming an operator's pending delivery.
+    """
+    value = deployment_python_json(
+        kubeconfig=kubeconfig,
+        namespace=namespace,
+        deployment="info-admin-backend",
+        program=_READ_ACTIVE_OUTBOX,
+        program_args=[],
+        marker="P0_OUTBOX_PRECONDITION",
+        label="Info delivery outbox precondition reader",
+    )
+    if value.get("active") != 0:
+        raise VerificationError(
+            "refusing P0-006 fault drill while active Info delivery outbox work exists"
+        )
 
 
 def read_outbox(
@@ -680,34 +977,6 @@ def wait_until_outbox_due(row: dict[str, Any]) -> None:
     )
 
 
-def assert_one_ingestion(knowledge_url: str, idempotency_key: str) -> dict[str, Any]:
-    job = wait_for_ingestion_by_key(knowledge_url, idempotency_key)
-    jobs = api_json(
-        knowledge_url,
-        "/api/knowledge/ingestions",
-        query={"idempotency_key": idempotency_key},
-    )
-    if len(jobs) != 1:
-        raise VerificationError(f"expected one Knowledge ingestion operation, got {len(jobs)}")
-    return job
-
-
-def contract_payload(distribution: dict[str, Any]) -> dict[str, Any]:
-    internal_keys = {
-        "status_history",
-        "last_status_update",
-        "retry_history",
-        "last_retry",
-        "audit_log",
-        "last_audit",
-    }
-    return {
-        key: value
-        for key, value in distribution["payload"].items()
-        if key not in internal_keys
-    }
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -720,15 +989,10 @@ def main() -> int:
         default=os.environ.get("KUBECONFIG", str(Path.home() / ".kube/kind-config")),
     )
     parser.add_argument("--namespace", default="app-platform-dev")
-    parser.add_argument("--info-port", type=int, default=18086)
-    parser.add_argument("--knowledge-port", type=int, default=18087)
     args = parser.parse_args()
 
     kubeconfig = str(Path(args.kubeconfig).expanduser())
     suffix = f"{int(time.time())}-{uuid.uuid4().hex[:8]}"
-    info_url = f"http://127.0.0.1:{args.info_port}"
-    knowledge_url = f"http://127.0.0.1:{args.knowledge_port}"
-    forwards: list[subprocess.Popen[bytes]] = []
     cronjob_unsuspended = False
     knowledge_worker_overridden = False
     info_api_broker_overridden = False
@@ -760,43 +1024,19 @@ def main() -> int:
         assert_no_explicit_info_api_broker_override(
             kubeconfig=kubeconfig, namespace=args.namespace
         )
+        assert_delivery_outbox_quiescent(
+            kubeconfig=kubeconfig, namespace=args.namespace
+        )
         configure_isolated_verifier(kubeconfig=kubeconfig, namespace=args.namespace)
         knowledge_worker_overridden = True
         set_info_api_broker_override(
             kubeconfig=kubeconfig, namespace=args.namespace, broken=True
         )
         info_api_broker_overridden = True
-        forwards = [
-            start_port_forward(
-                kubeconfig=kubeconfig,
-                namespace=args.namespace,
-                service="info-admin-backend",
-                local_port=args.info_port,
-            ),
-            start_port_forward(
-                kubeconfig=kubeconfig,
-                namespace=args.namespace,
-                service="knowledge-admin-backend",
-                local_port=args.knowledge_port,
-            ),
-        ]
-        wait_until(
-            "Info port-forward",
-            lambda: api_json(info_url, "/api/documents", query={"limit": 1}),
-            lambda _: True,
-            timeout=30,
-        )
-        wait_until(
-            "Knowledge port-forward",
-            lambda: api_json(
-                knowledge_url, "/api/knowledge/ingestions", query={"limit": 1}
-            ),
-            lambda _: True,
-            timeout=30,
-        )
-
         failed_distribution = create_real_distribution(
-            info_url, f"p0-outbox-broker-{suffix}"
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            dataset_key=f"p0-outbox-broker-{suffix}",
         )
         failed_id = failed_distribution["id"]
         recovered_pending = wait_for_outbox(
@@ -811,42 +1051,12 @@ def main() -> int:
         )
 
         # Restore the normal envFrom-provided broker before exercising scanner
-        # recovery.  Restart port-forwards because an API rollout replaces the
-        # selected service endpoint.
-        for process in forwards:
-            process.terminate()
-        for process in forwards:
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
-        for sig, handler in previous_signal_handlers.items():
-            signal.signal(sig, handler)
-        forwards = []
+        # recovery.  No anonymous API readiness probe is used: P0-005 made
+        # these Admin routes session-protected by design.
         set_info_api_broker_override(
             kubeconfig=kubeconfig, namespace=args.namespace, broken=False
         )
         info_api_broker_overridden = False
-        forwards = [
-            start_port_forward(
-                kubeconfig=kubeconfig,
-                namespace=args.namespace,
-                service="info-admin-backend",
-                local_port=args.info_port,
-            ),
-            start_port_forward(
-                kubeconfig=kubeconfig,
-                namespace=args.namespace,
-                service="knowledge-admin-backend",
-                local_port=args.knowledge_port,
-            ),
-        ]
-        wait_until(
-            "Info port-forward after API broker restore",
-            lambda: api_json(info_url, "/api/documents", query={"limit": 1}),
-            lambda _: True,
-            timeout=30,
-        )
         wait_until_outbox_due(recovered_pending)
 
         # Two independent scanners race for the same due row.  SKIP LOCKED
@@ -890,9 +1100,9 @@ def main() -> int:
                 "scanner competition must claim the recovered operation exactly once"
             )
 
-        completed_distribution = wait_for_distribution(info_url, failed_id)
-        if completed_distribution.get("status") != "succeeded":
-            raise VerificationError("recovered distribution did not succeed")
+        completed_distribution = wait_for_distribution(
+            kubeconfig=kubeconfig, namespace=args.namespace, distribution_id=failed_id
+        )
         completed_outbox = wait_for_outbox(
             kubeconfig=kubeconfig,
             namespace=args.namespace,
@@ -900,50 +1110,25 @@ def main() -> int:
             done=lambda row: row is not None and row["state"] == "completed" and row["attempt_count"] >= 2,
             description="recovered outbox completion",
         )
-        ingestion = assert_one_ingestion(
-            knowledge_url, contract_payload(completed_distribution)["idempotency_key"]
+        assert_one_ingestion(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            idempotency_key=failed_distribution["idempotency_key"],
         )
-        if ingestion.get("status") not in {"artifact_verified", "succeeded"}:
-            raise VerificationError("Knowledge did not finish recovered ingestion")
 
-        # Broker accepted / published-write interruption.  The API first
-        # creates a real durable request while its wake-up is blocked.  A
+        # Broker accepted / published-write interruption.  The trusted Info
+        # harness first creates a real durable request while its wake-up is
+        # blocked.  A
         # bounded process then publishes to a unique queue and exits before it
         # can record `published`; no normal worker consumes that unique queue.
-        for process in forwards:
-            process.terminate()
-        for process in forwards:
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
-        forwards = []
         set_info_api_broker_override(
             kubeconfig=kubeconfig, namespace=args.namespace, broken=True
         )
         info_api_broker_overridden = True
-        forwards = [
-            start_port_forward(
-                kubeconfig=kubeconfig,
-                namespace=args.namespace,
-                service="info-admin-backend",
-                local_port=args.info_port,
-            ),
-            start_port_forward(
-                kubeconfig=kubeconfig,
-                namespace=args.namespace,
-                service="knowledge-admin-backend",
-                local_port=args.knowledge_port,
-            ),
-        ]
-        wait_until(
-            "Info port-forward for broker accepted fault",
-            lambda: api_json(info_url, "/api/documents", query={"limit": 1}),
-            lambda _: True,
-            timeout=30,
-        )
         publish_window_distribution = create_real_distribution(
-            info_url, f"p0-outbox-published-window-{suffix}"
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            dataset_key=f"p0-outbox-published-window-{suffix}",
         )
         publish_window_id = publish_window_distribution["id"]
         publish_window_pending = wait_for_outbox(
@@ -956,38 +1141,10 @@ def main() -> int:
             and row["has_last_error"],
             description="broker-window durable pending work",
         )
-        for process in forwards:
-            process.terminate()
-        for process in forwards:
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
-        forwards = []
         set_info_api_broker_override(
             kubeconfig=kubeconfig, namespace=args.namespace, broken=False
         )
         info_api_broker_overridden = False
-        forwards = [
-            start_port_forward(
-                kubeconfig=kubeconfig,
-                namespace=args.namespace,
-                service="info-admin-backend",
-                local_port=args.info_port,
-            ),
-            start_port_forward(
-                kubeconfig=kubeconfig,
-                namespace=args.namespace,
-                service="knowledge-admin-backend",
-                local_port=args.knowledge_port,
-            ),
-        ]
-        wait_until(
-            "Info port-forward before broker accepted fault process",
-            lambda: api_json(info_url, "/api/documents", query={"limit": 1}),
-            lambda _: True,
-            timeout=30,
-        )
         wait_until_outbox_due(publish_window_pending)
         fault_queue_created = True
         force_broker_accept_then_exit(
@@ -1025,9 +1182,11 @@ def main() -> int:
         )
         if publish_recovery_summary["claimed"] != 1:
             raise VerificationError("expired broker-window lease was not recovered once")
-        publish_window_done = wait_for_distribution(info_url, publish_window_id)
-        if publish_window_done.get("status") != "succeeded":
-            raise VerificationError("broker-window distribution did not succeed")
+        publish_window_done = wait_for_distribution(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=publish_window_id,
+        )
         publish_window_outbox = wait_for_outbox(
             kubeconfig=kubeconfig,
             namespace=args.namespace,
@@ -1037,11 +1196,11 @@ def main() -> int:
             and row["attempt_count"] >= 3,
             description="broker-window outbox completion",
         )
-        publish_window_ingestion = assert_one_ingestion(
-            knowledge_url, contract_payload(publish_window_done)["idempotency_key"]
+        assert_one_ingestion(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            idempotency_key=publish_window_distribution["idempotency_key"],
         )
-        if publish_window_ingestion.get("status") not in {"artifact_verified", "succeeded"}:
-            raise VerificationError("Knowledge did not finish broker-window recovery")
         delete_fault_queue(
             kubeconfig=kubeconfig, namespace=args.namespace, queue=fault_queue
         )
@@ -1051,40 +1210,14 @@ def main() -> int:
         # real worker credential path to make Knowledge succeed, exits before
         # `complete_delivery_outbox`, then lets a scanner recover `published`
         # with a short test-only acknowledgement threshold.
-        for process in forwards:
-            process.terminate()
-        for process in forwards:
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
-        forwards = []
         set_info_api_broker_override(
             kubeconfig=kubeconfig, namespace=args.namespace, broken=True
         )
         info_api_broker_overridden = True
-        forwards = [
-            start_port_forward(
-                kubeconfig=kubeconfig,
-                namespace=args.namespace,
-                service="info-admin-backend",
-                local_port=args.info_port,
-            ),
-            start_port_forward(
-                kubeconfig=kubeconfig,
-                namespace=args.namespace,
-                service="knowledge-admin-backend",
-                local_port=args.knowledge_port,
-            ),
-        ]
-        wait_until(
-            "Info port-forward for provider acknowledgement fault",
-            lambda: api_json(info_url, "/api/documents", query={"limit": 1}),
-            lambda _: True,
-            timeout=30,
-        )
         provider_distribution = create_real_distribution(
-            info_url, f"p0-outbox-provider-window-{suffix}"
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            dataset_key=f"p0-outbox-provider-window-{suffix}",
         )
         provider_id = provider_distribution["id"]
         provider_pending = wait_for_outbox(
@@ -1097,38 +1230,10 @@ def main() -> int:
             and row["has_last_error"],
             description="provider-window durable pending work",
         )
-        for process in forwards:
-            process.terminate()
-        for process in forwards:
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
-        forwards = []
         set_info_api_broker_override(
             kubeconfig=kubeconfig, namespace=args.namespace, broken=False
         )
         info_api_broker_overridden = False
-        forwards = [
-            start_port_forward(
-                kubeconfig=kubeconfig,
-                namespace=args.namespace,
-                service="info-admin-backend",
-                local_port=args.info_port,
-            ),
-            start_port_forward(
-                kubeconfig=kubeconfig,
-                namespace=args.namespace,
-                service="knowledge-admin-backend",
-                local_port=args.knowledge_port,
-            ),
-        ]
-        wait_until(
-            "Info port-forward before provider acknowledgement fault process",
-            lambda: api_json(info_url, "/api/documents", query={"limit": 1}),
-            lambda _: True,
-            timeout=30,
-        )
         wait_until_outbox_due(provider_pending)
         force_published_for_provider_fault(
             kubeconfig=kubeconfig,
@@ -1149,9 +1254,9 @@ def main() -> int:
             namespace=args.namespace,
             distribution_id=provider_id,
         )
-        provider_done = wait_for_distribution(info_url, provider_id)
-        if provider_done.get("status") != "succeeded":
-            raise VerificationError("provider effect did not leave a succeeded distribution")
+        provider_done = wait_for_distribution(
+            kubeconfig=kubeconfig, namespace=args.namespace, distribution_id=provider_id
+        )
         wait_until_timestamp(
             provider_published.get("published_at"),
             description="provider acknowledgement timeout",
@@ -1181,49 +1286,23 @@ def main() -> int:
             done=lambda row: row is not None and row["state"] == "completed",
             description="provider acknowledgement outbox completion",
         )
-        provider_ingestion = assert_one_ingestion(
-            knowledge_url, contract_payload(provider_done)["idempotency_key"]
+        assert_one_ingestion(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            idempotency_key=provider_distribution["idempotency_key"],
         )
-        if provider_ingestion.get("status") not in {"artifact_verified", "succeeded"}:
-            raise VerificationError("Knowledge did not finish provider acknowledgement recovery")
 
         # Finally exercise the scheduler, rather than only one-off jobs.  Use
-        # the same API-side broker fault so the normal immediate wake-up cannot
-        # consume the record before the suspended CronJob gets its turn.
-        for process in forwards:
-            process.terminate()
-        for process in forwards:
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
-        forwards = []
+        # the same Info immediate-wake-up broker fault so the normal dispatcher
+        # cannot consume the record before the suspended CronJob gets its turn.
         set_info_api_broker_override(
             kubeconfig=kubeconfig, namespace=args.namespace, broken=True
         )
         info_api_broker_overridden = True
-        forwards = [
-            start_port_forward(
-                kubeconfig=kubeconfig,
-                namespace=args.namespace,
-                service="info-admin-backend",
-                local_port=args.info_port,
-            ),
-            start_port_forward(
-                kubeconfig=kubeconfig,
-                namespace=args.namespace,
-                service="knowledge-admin-backend",
-                local_port=args.knowledge_port,
-            ),
-        ]
-        wait_until(
-            "Info port-forward for scheduled scanner fault",
-            lambda: api_json(info_url, "/api/documents", query={"limit": 1}),
-            lambda _: True,
-            timeout=30,
-        )
         scheduled_distribution = create_real_distribution(
-            info_url, f"p0-outbox-schedule-{suffix}"
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            dataset_key=f"p0-outbox-schedule-{suffix}",
         )
         scheduled_pending = wait_for_outbox(
             kubeconfig=kubeconfig,
@@ -1235,46 +1314,20 @@ def main() -> int:
             and row["has_last_error"],
             description="scheduled scanner durable pending outbox work",
         )
-        for process in forwards:
-            process.terminate()
-        for process in forwards:
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
-        forwards = []
         set_info_api_broker_override(
             kubeconfig=kubeconfig, namespace=args.namespace, broken=False
         )
         info_api_broker_overridden = False
-        forwards = [
-            start_port_forward(
-                kubeconfig=kubeconfig,
-                namespace=args.namespace,
-                service="info-admin-backend",
-                local_port=args.info_port,
-            ),
-            start_port_forward(
-                kubeconfig=kubeconfig,
-                namespace=args.namespace,
-                service="knowledge-admin-backend",
-                local_port=args.knowledge_port,
-            ),
-        ]
-        wait_until(
-            "Info port-forward before scheduled scanner",
-            lambda: api_json(info_url, "/api/documents", query={"limit": 1}),
-            lambda _: True,
-            timeout=30,
-        )
         wait_until_outbox_due(scheduled_pending)
         set_cronjob_suspend(
             kubeconfig=kubeconfig, namespace=args.namespace, value=False
         )
         cronjob_unsuspended = True
-        scheduled_done = wait_for_distribution(info_url, scheduled_distribution["id"])
-        if scheduled_done.get("status") != "succeeded":
-            raise VerificationError("CronJob scanner did not finish distribution")
+        scheduled_done = wait_for_distribution(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=scheduled_distribution["id"],
+        )
         scheduled_outbox = wait_for_outbox(
             kubeconfig=kubeconfig,
             namespace=args.namespace,
@@ -1283,11 +1336,11 @@ def main() -> int:
             description="CronJob outbox completion",
             timeout=150,
         )
-        scheduled_ingestion = assert_one_ingestion(
-            knowledge_url, contract_payload(scheduled_done)["idempotency_key"]
+        assert_one_ingestion(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            idempotency_key=scheduled_distribution["idempotency_key"],
         )
-        if scheduled_ingestion.get("status") not in {"artifact_verified", "succeeded"}:
-            raise VerificationError("Knowledge did not finish scheduled ingestion")
 
         summary = {
             "task": "V5-P0-006",
@@ -1328,7 +1381,7 @@ def main() -> int:
         }
         print(json.dumps(summary, ensure_ascii=False, indent=2))
         return 0
-    except (ApiError, VerificationError, subprocess.CalledProcessError) as exc:
+    except (VerificationError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
         summary["error"] = str(exc)[:500]
         print(json.dumps(summary, ensure_ascii=False, indent=2), file=sys.stderr)
         return 1
@@ -1399,13 +1452,8 @@ def main() -> int:
                 )
             except subprocess.CalledProcessError:
                 pass
-        for process in forwards:
-            process.terminate()
-        for process in forwards:
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
+        for sig, handler in previous_signal_handlers.items():
+            signal.signal(sig, handler)
 
 
 if __name__ == "__main__":

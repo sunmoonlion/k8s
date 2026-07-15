@@ -89,7 +89,7 @@
 
 ## 7. ixartz 参考审查与受控吸收（2026-07-15）
 
-审查对象必须在 P0-008B 开始前记录为不可变 Git SHA；本节记录当前 `main` 的能力分类，不把上游 `main` 当作运行时依赖。其当前配置提供 Next App Router、`next-intl`、严格环境变量、Vitest/Playwright、i18n 检查、bundle analysis、Storybook/a11y 等工程能力，也同时捆绑 Clerk、Drizzle/PGlite、Neon、Sentry、Arcjet、PostHog/BetterStack/Crowdin 等与 SunmoonAI 不相容的产品/SaaS 选择。
+审查对象已固定为本地只读 clone `/home/zymun/repo/Next-js-Boilerplate` 的 Git SHA `9926cc1f8664f67eca63065bf1c31bc4f60b09c2`（审查日期 2026-07-15，MIT License，提交日期 2026-07-08）。此前文档中出现的 `v6.3.4` 仅是首次发现时的网页参考，**不得**再作为 P0-008B 的实现输入。此 SHA 不是运行时依赖，也不允许 `git clone` 后跟随上游 `main`。其当前配置提供 Next App Router、`next-intl`、严格环境变量、Vitest/Playwright、i18n 检查、bundle analysis、Storybook/a11y 等工程能力，也同时捆绑 Clerk、Drizzle/PGlite、Neon、Sentry、Arcjet、PostHog/BetterStack/Crowdin 等与 SunmoonAI 不相容的产品/SaaS 选择。
 
 | 上游能力 | SunmoonAI 决策 | 落点与边界 |
 | --- | --- | --- |
@@ -101,6 +101,20 @@
 | Clerk、Drizzle/PGlite/Neon、db migration、账户/支付页面 | 拒绝 | Casdoor OIDC/BFF 和领域 Backend/Contract 分别替代；模板不拥有数据库。 |
 | Sentry、Arcjet、PostHog、BetterStack、Crowdin、Chromatic 等外部服务 | 拒绝，除非另行 ADR 批准 | 默认不引入外传遥测、外部 CDN、第三方身份或运行时 SaaS 依赖。 |
 | 上游 Node `>=24` | 拒绝自动跟随 | 继续以 Node 20.18/pnpm 10 的容器发布证据为准；升级必须有独立兼容、镜像和回滚证明。 |
+
+### 7.1 固定源码的逐项可执行拆解
+
+| 固定源码位置 | 吸收结论 | P0-008B 的具体落点与禁止项 |
+| --- | --- | --- |
+| `src/libs/Env.ts` | 改造后采用 | 以 Zod 或等价 schema 建立 server/public env 白名单，并在 build/start fail-fast；不采用 `@t3-oss/env-nextjs` 前必须证明 Next 16/Node 20.18 兼容。严禁把 Casdoor secret、service token、Redis/Provider 连接串放进 `NEXT_PUBLIC_*`。 |
+| `src/libs/I18n*.ts`、`src/app/[locale]` | 采用 | 保留 `next-intl`，集中 locale/routing/navigation；补 i18n missing-key check。翻译不接 Crowdin，页面不得硬编码面向用户的字符串。 |
+| `next.config.ts` | 选择性采用 | 保留 `poweredByHeader: false`、`reactStrictMode: true` 和明确命令才启用的 bundle analysis。`reactCompiler`、Sentry wrapper、source-map 上传、browser-to-terminal log 都不随模板复制；前者待性能/兼容性证据，后三者需独立 ADR。 |
+| `src/app/global-error.tsx`、`robots.ts`、`sitemap.ts` | 改造后采用 | 增加 locale-aware error/loading/not-found、Metadata/robots/sitemap；真实公开路由由每个 App 提供，受权 workspace 和内部路径必须明确禁止索引。不得复制其产品页面或 Sentry 调用。 |
+| `playwright.config.ts`、`tests/e2e/*` | 改造后采用 | 使用 pnpm、Node 20.18、模板的 standalone production server 或同领域受控 backend/fixture；失败保留 trace/video/screenshots 并归档到受控 CI。不得启动 PGlite/Drizzle，也不得用 fixture 替代业务 App 的成对浏览器 E2E。 |
+| `vitest.config.ts`、co-located `*.test.*` | 采用 | B1/B4 建立 unit/component 两层；浏览器组件测试只覆盖 UI，真实鉴权、SSE/citation 必须走配对 Playwright。测试浏览器版本要由模板 lockfile/镜像固定。 |
+| `.github/workflows/CI.yml`、`knip`、`lefthook` | 改造后采用 | 将“静态检查、i18n 检查、build、unit、E2E 失败产物”迁入已有 Gitee/Jenkins 流程；依赖漂移扫描和 pre-commit hook 仅在噪声、执行时长和责任人被记录后启用。不得复制 GitHub Action、Codecov、Chromatic、Crowdin 或 Checkly。 |
+| `Logger.ts`、`instrumentation*.ts`、SaaS SDK | 拒绝 | 它们会把浏览器/运行时数据送往 Better Stack、Sentry、PostHog 等外部端点；无单独的数据出境、保留期、成本与自托管 ADR 前不引入。 |
+| `src/models`、`src/libs/DB.ts`、`migrations`、Clerk auth 页面 | 拒绝 | 数据、迁移、账户/支付/身份模型归产品后端与 Casdoor；Web v2 仅有 ADR-005 批准的最小 BFF/session mediation。 |
 
 ## 8. 前端/后端成对验证约束
 
