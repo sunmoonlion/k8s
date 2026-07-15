@@ -114,3 +114,29 @@ PostgreSQL checkpointer 跨连接/替代 worker 恢复：
 
 这只是交付层补强，不等同于 Runtime 选型通过；真实 worker kill、cancel、cursor
 恢复、双副本、故障矩阵及候选 B/C 对照仍未完成，ADR-001 继续保持 `PARTIAL_PASS`。
+
+## 2026-07-15 工作区收口与复验
+
+上一节的三个事件交付文件曾因跨任务切换停留在 Research 子仓工作区，文档已记录但
+缺少对应子仓提交。P0-004 继续部署前完成了独立收口：
+
+- commit：`1e26374 fix: close agent event delivery race`
+- 父仓指针：`8039c71 fix: pin agent event delivery race fix`
+- `append_event` 的 advisory lock 在分配 `max(sequence_no)+1` 前执行，并有独立顺序测试。
+- SSE 仍先订阅再读取 durable snapshot，只对 snapshot/live 重叠去重；不再把后续每个
+  live event ID 永久加入集合，避免长连接集合无界增长。
+- 断开时同时 `unsubscribe` 和 `aclose` Pub/Sub，并由测试断言资源清理。
+
+全量复验：
+
+```text
+uv run pyright
+0 errors, 0 warnings, 0 informations
+
+uv run pytest -q
+86 passed in 1.13s
+```
+
+这次收口只确认事件交付修正成为可追踪、工作区干净的独立提交；它没有补齐真实
+worker kill、cancel、浏览器 cursor reconciliation、双副本或候选 B/C，因此不改变
+`PARTIAL_PASS` 结论。
