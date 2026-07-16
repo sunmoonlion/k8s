@@ -1,7 +1,8 @@
 # ADR-014：Next Web 模板架构再基线
 
-状态：IN_PROGRESS / BLOCKED_BY_ADR-001（P0-008A 紧急卫生已完成；等待 Runtime ADR 的可执行 stream/cancel/resume 输出后冻结细节）
-日期：2026-07-11  
+状态：ACCEPTED
+原始日期：2026-07-11
+接受日期：2026-07-16
 决策者：项目负责人、架构评审
 
 ## 1. 背景与代码事实
@@ -34,28 +35,34 @@
 9. 模板只包含中性平台能力；Info/Knowledge/Research 页面和领域 DTO 留在各实例。Research 真实试点证明最难的 streaming/HITL/citation 路径后才冻结 v2。
 10. v2 冻结前不向三个 Web 实例应用 v2，不做无 tag/digest 的不可回滚覆盖，不改变现有流量；冻结且 Gate P0 通过后按 Info -> Knowledge -> Research 串行改造现有仓库。
 
-## 3. 尚待上游 ADR 决定
+## 3. 上游输入已收敛
 
-以下内容不得由模板实现先行决定：
+P0-008A 已消费以下 Accepted 决策：
 
-- ADR-005：浏览器 session/cookie、CSRF/CORS、Web/Admin audience，以及 frontend BFF 或直接产品 API 的默认拓扑。
-- ADR-001：SSE/stream adapter、cursor、cancel/resume 和 Runtime endpoint 形态。
-- ADR-004：已于 2026-07-16 Accepted；Citation DTO、安全跳转与 evidence 展示
-  边界可直接消费，不再阻塞本 ADR。
-- Kubernetes/发布设计：Node/pnpm 固定版本、反向代理、CSP 策略、共享 cache/tag invalidation、deployment ID、Server Action encryption key 和滚动版本兼容。
+- ADR-001：Custom Runtime；SSE 是 live channel，PostgreSQL cursor/snapshot 是 durable
+  truth；浏览器必须重连、去重并最终对账；cancel/resume 是受权命令。
+- ADR-002：Session/Thread/Run/Attempt/Invocation 分离；浏览器 DTO 不得把这些 ID 混用，
+  resume/retry 不创建新 Run。
+- ADR-004：浏览器只消费安全 Citation DTO；来源跳转必须走同源受权端点，不能暴露
+  Provider ID、raw source URI 或服务身份。
+- ADR-005：六个 App/Surface 独立 audience；浏览器只持有同产品 Web 的不透明 HttpOnly
+  session；Authorization Code + PKCE、nonce、state、签名/issuer/audience 校验、CSRF/
+  Origin 和资源授权均由服务端执行。
 
-这些输出未冻结前，只允许审计和紧急卫生修复，不开始 v2 主体实现。
+因此 Runtime、执行身份、Citation 与浏览器身份不再阻塞本 ADR。P0-008B 可以开始，
+但必须同时改造模板的 Next Web Frontend 和配对 Nest Web Backend，不能只升级页面。
 
 ## 4. 实施门
 
-- P0-008A：基于 ADR-001/004/005 输出接受本 ADR，冻结 Web v2 边界和验收矩阵。
-- P0-008B：在现有 `tpl-app/tpl-web-frontend` 仓库内按 B1~B4 串行重构并验证 Next v2 生产骨架。
+- P0-008A：基于 ADR-001/002/004/005 输出接受本 ADR，冻结 Web v2 边界和验收矩阵。
+- P0-008B：在现有 `tpl-app/tpl-web-frontend` 与 `tpl-app/tpl-web-backend` 仓库内按
+  B1~B4 串行重构并验证 Next v2 与 Nest Web BFF 的配对生产骨架。
 - P0-008C：在 Research 隔离入口运行真实 Run/SSE/cancel/resume/HITL/citation 薄切，回收通用修正并冻结 v2。
 - M1：按 Info -> Knowledge -> Research 串行把固定 v2 commit 应用到三个现有 Web 仓库；P0-008C 的 Research 薄切直接演进，不重新实现，也不创建平行业务仓库。
 
 任一阶段发现必须把领域状态放进 BFF、无法安全恢复 stream、或多副本自托管语义无法闭合，P0-008 标记 BLOCKED 并重开本 ADR，禁止带病推广。
 
-## 5. P0-008A 审查结果（尚不代表 ADR Accepted）
+## 5. P0-008A 审查结果
 
 ### 已完成的紧急卫生
 
@@ -65,19 +72,19 @@
 - 固定模板工具链：生产/CI/Docker 使用 Node `20.18.0`、pnpm `10.24.x`；本地开发允许 Node `>=20.18.0 <25`，但必须以 Docker/CI 的 Node 20.18.0 结果作为发布证据。Next 16 的最低 Node 要求由官方升级说明单独核验，不因外部模板的 Node 24 要求擅自升级基础镜像。
 - `.env.example` 和 `.env.k8s` 改为同源 `/api` 默认值；跨源 API 只能作为有证据的隔离诊断配置，必须通过 CORS/CSRF/audience 契约。
 
-### 当前架构矩阵（候选，未冻结）
+### 已冻结架构矩阵
 
-| 主题 | 当前模板候选 | 冻结前必须消费的证据 |
+| 主题 | 冻结决策 | 后续验收 |
 | --- | --- | --- |
-| Server/Client | App Router；Server Component 不直接暴露 Provider 类型；交互面才使用 Client Component | P0-008B route/render matrix |
-| API 拓扑 | 同源 `/api` typed browser client；BFF 只保留为 ADR-005 允许的 session/协议适配边界 | ADR-005 + P0-008B BFF allowlist |
-| 身份 | App/Surface 专属 HttpOnly session、CSRF、audience/owner check；Proxy 仅 UX 检查 | ADR-005 已接受；Web 真实浏览器矩阵 |
-| Rendering/cache | public 内容可 SSG/ISR；受权 workspace 默认 dynamic；产品 Backend/Projection 是权威状态，浏览器不使用 Zustand 持久化认证 | P0-008B route/render/cache owner matrix |
-| Stream | cursor、重连、去重、snapshot reconciliation、cancel/resume、terminal precedence | ADR-001（当前仍 partial，阻塞） |
-| Citation | 浏览器只消费安全 Citation DTO 和受权来源跳转 | ADR-004 Accepted 输出 + Research 试点 |
-| Runtime/deploy | `standalone` 自托管；反向代理前置；固定镜像 digest；滚动版本需验证 Server Action/stream/cache 兼容 | P0-008B Docker/KIND/双 Pod evidence |
+| Server/Client | App Router；Server Component 只经 `server-only` DAL/DTO 调用配对 Web Backend；交互面才使用 Client Component | P0-008B route/render matrix |
+| API/BFF | 浏览器只访问同源 `/api`；配对 Nest Web Backend 是默认 BFF；Next Route Handler 不建立第二套 auth/domain BFF | P0-008B BFF allowlist |
+| 身份 | App/Surface 专属 HttpOnly session、PKCE/nonce/state、CSRF、audience/owner check；Proxy 仅 UX | P0-008B Web 安全内核与真实浏览器矩阵 |
+| Rendering/cache | public 可静态/ISR；受权 workspace dynamic/no-store；产品 Backend/Projection 是权威状态；不持久化浏览器认证 | P0-008B route/cache owner matrix |
+| Stream | Web Backend 受权代理 Runtime SSE；cursor、重连、去重、snapshot reconcile、cancel/resume、terminal precedence | P0-008B adapter；P0-008C 真实 Research 试点 |
+| Citation | 浏览器只消费 ADR-004 Citation DTO 和同源受权来源跳转 | P0-008C lineage/越权矩阵 |
+| Runtime/deploy | Next/Nest 两个 Deployment 是一个配对 release tuple；固定双 digest、contract/audience、滚动兼容与回滚 | P0-008B Docker/KIND/双 Pod evidence |
 
-因此本 ADR 目前只能作为 P0-008B 的候选输入，不能宣称 `Accepted`，也不能据此开始三个 Web 实例的替换。
+本 ADR 接受只允许进入模板 P0-008B；不允许向三个业务 Web 实例切流量。
 
 ## 6. 参考
 
@@ -120,3 +127,144 @@
 ## 8. 前端/后端成对验证约束
 
 本 ADR 的 Web v2 骨架只可使用中性 fixture，不能借此声明任一业务 Web 已验证。每个真实 Web E2E 必须连接同 App 的 Web Backend：Info Web↔Info Web Backend、Knowledge Web↔Knowledge Web Backend、Research Web↔Research Web Backend 加 ADR-001 选中的 Runtime adapter。Admin 与 Web 后端不能互换作为证据。每次验收记录双方 image digest、OIDC audience、BFF/proxy 配置、URL 和 contract version；独立前端/后端测试均不能替代成对浏览器 E2E。
+
+## 9. 目标拓扑与 BFF 归属
+
+```text
+Browser
+  │ HTTPS, same-origin, Web audience session
+  ▼
+Ingress / Gateway
+  ├── /, /_next/*, public assets ──> Next Web Frontend
+  └── /api/*                    ──> paired Nest Web Backend (BFF)
+                                          │
+                                          ├── Casdoor OIDC/JWKS + Redis session
+                                          ├── same-product Web domain API
+                                          └── service identity + delegated user snapshot
+                                                └── Admin/Runtime/Knowledge internal API
+```
+
+冻结规则：
+
+1. `Info|Knowledge|Research Web Frontend + 同名 Web Backend` 是一个发布和验收单元。
+   二者仍可独立 Deployment/镜像，但 release manifest 必须记录双 digest、contract
+   version、Web audience 和回滚组合。
+2. Nest Web Backend 是默认 BFF，拥有 Web OIDC transaction、session、CSRF、浏览器
+   Principal、资源授权、同源 API 和下游协议适配。Next 不复制第二套 session/token
+   store。
+3. Next Route Handler 默认只允许 frontend-owned health/metadata 或经 allowlist 批准的
+   UI 协议适配；不得复制 `/auth/*`、通用反向代理、领域写模型或 durable Run 状态。
+4. Server Component 只通过 `server-only` DAL 调用配对 Web Backend 的内部 Service
+   URL；只转发 allowlist cookie/correlation/locale，返回最小 DTO。不能直连数据库、
+   RAGFlow、LangGraph、Admin 浏览器 API或 Provider。
+5. 浏览器不再直连 Research Admin/FastAPI。Research Web Backend 以 Web session 重新
+   授权，再用独立 service identity 与 delegated user snapshot 调用 Research Runtime。
+6. 任一 App 的 Web Frontend 不能用另一 App 的 Web Backend；Admin Backend 也不能作为
+   Web BFF 的替代证据。
+
+## 10. BFF 路由 allowlist
+
+| 类别 | 对外形态 | Owner | 关键约束 |
+| --- | --- | --- | --- |
+| 登录 | `/api/auth/login|signup|callback|continue` | Nest Web Backend | PKCE S256、state/nonce、一次性 transaction、精确 Web audience |
+| 会话 | `GET /api/auth/me` | Nest Web Backend | browser-safe Principal DTO + CSRF；`no-store` |
+| 退出 | `POST /api/auth/logout` | Nest Web Backend | CSRF + Origin；删除服务端 session；禁止 GET 副作用 |
+| Web 领域 API | `/api/web/v1/...` | 同产品 Nest Web Backend | session/scope/owner；稳定错误与 correlation ID |
+| Research stream | `/api/web/v1/research/runs/{run_id}/events` | Research Web Backend | session/owner、cursor、重连、背压、权限撤销断流 |
+| Research command | `/api/web/v1/research/runs/{run_id}:cancel|:resume` | Research Web Backend | POST、CSRF、幂等 command ID、Run/Thread 语义来自 ADR-002 |
+| Citation source | `/api/web/v1/citations/{evidence_id}/source` | Research Web Backend | 当前用户重新授权；302/stream；不暴露 raw URI |
+
+禁止提供任意目标 URL、任意 header/cookie 转发或 `/api/proxy/**` 通用代理。Web Backend
+调用 Admin/Runtime/Knowledge 必须使用固定下游 allowlist、独立 service relation 和
+结构化 DTO。
+
+## 11. Route rendering matrix
+
+| Route class | 示例 | 渲染 | 身份检查 | Cache/SEO |
+| --- | --- | --- | --- | --- |
+| Public immutable | favicon、静态资源、公开固定说明 | build-time static | 无 | 长缓存、内容 hash |
+| Public content | 公开课程/知识介绍 | SSG/受控 ISR | 无或后端 public contract | 可索引；多 Pod 前先证明共享失效 |
+| Login/callback result UI | `/{locale}/login` | dynamic Server Component | 服务端读取 Web session，已登录则 redirect | `no-store`、禁止用户间缓存 |
+| Authenticated workspace | `/{locale}/workspace` | dynamic shell + Server DTO | DAL 调用 Web Backend `/auth/me`/workspace | `private, no-store`、noindex |
+| Live Run | `/{locale}/runs/{id}` | dynamic shell + Client stream island | 首屏和每次 stream/reconcile 均 owner check | 不缓存权威 Run 状态 |
+| Error/loading/not-found | locale-aware boundary | 按父 route | 不显示敏感错误 | 内部/受权路径 noindex |
+
+不得用全局 `force-dynamic` 牺牲所有 public 路由，也不得为保留静态化而跳过受权页面的
+服务端 session 检查。
+
+## 12. Cache owner matrix
+
+| 数据 | 权威 owner | Web 允许缓存 | 规则 |
+| --- | --- | --- | --- |
+| Public content DTO | 对应 Web Backend/领域服务 | Next build cache/受控 ISR | 只缓存公开且不含用户维度的数据 |
+| Session/Principal | Nest Web Backend + Redis | Next 仅 request-scope memoization | 绝不进入 shared cache、localStorage 或持久 Zustand |
+| Authenticated resource DTO | 对应 Web Backend | request-scope；浏览器短期 React Query | key 必含资源/用户上下文；logout/身份切换立即清空 |
+| Run/Event/Attempt | Research PostgreSQL projection | 浏览器内存派生状态 | SSE 不是真相；最终 cursor snapshot reconcile |
+| Citation | Research projection | 当前页面内存 | 来源打开时重新授权；不缓存 raw source |
+| Next route/ISR cache | Next runtime | 仅 public route | 多 Pod on-demand invalidation 前必须共享 cache/tag 或禁用 ISR |
+
+P0-008B 默认不开启跨 Pod on-demand ISR，也不引入新 Redis cache。先用 build-time static
+与 dynamic/no-store 闭合正确性；只有共享 cache owner、key namespace、失效和版本兼容
+有证据后才启用 ISR。
+
+## 13. Stream/reconciliation 契约
+
+1. Browser -> Research Web Backend 使用同源 cookie SSE；连接和重连都重新验证 Web
+   audience、session、Run owner 和权限版本。
+2. 每个事件具有稳定 `event_id`、Run ID、单调 cursor、event type、occurred_at 和安全
+   UI payload；不得发送 Provider response、service token 或内部 checkpoint 对象。
+3. 客户端先订阅 live stream，再请求 durable snapshot/cursor；按 `event_id` 去重，
+   应用 terminal-state precedence，避免 snapshot/stream 窗口丢失事件。
+4. 断线使用最后确认 cursor 重连；cursor 过期或版本不兼容时返回明确 reason，客户端
+   清空派生状态并从 snapshot 收敛，不能静默从头重复副作用。
+5. cancel/resume 是独立 POST command，带 CSRF、operation/idempotency key；SSE
+   disconnect 不等于 cancel。
+6. 多标签页不共享写权限；每个 command 仍由服务端条件更新。客户端可用 BroadcastChannel
+   降低重复刷新，但不能把浏览器锁当并发真相。
+
+## 14. 环境、兼容与发布矩阵
+
+### 14.1 Next Web Frontend
+
+| 项 | 冻结值/规则 |
+| --- | --- |
+| Node | Docker/CI `20.18.0`；本地 `>=20.18 <25` 只作开发兼容 |
+| pnpm | `10.24.x`，lockfile frozen |
+| Next/React | 当前基线 Next `16.2.2`、React `19.2.4`；升级独立验证 |
+| client env | `NEXT_PUBLIC_APP_NAME`；API 固定同源 `/api`，不接受 secret/绝对生产 credential |
+| server env | `WEB_BACKEND_INTERNAL_URL`、`APP_ORIGIN`、`DEPLOYMENT_ID/BUILD_VERSION` 等经 schema allowlist 的非浏览器值 |
+| build | `output: standalone`；`poweredByHeader: false`；self-host assets/fonts |
+
+### 14.2 Nest Web Backend
+
+- App/Surface 专属 Casdoor discovery/client/audience、Redis namespace、cookie 名/属性、
+  allowed origin 和 internal downstream relations 必须通过 Secret/config schema 注入。
+- 当前模板中随机但未持久校验的 state、无 PKCE/nonce/JWT 验签、完整 token Redis
+  session、`session:{id}`、GET logout 和浏览器安全 DTO 泄漏均是 P0-008B 阻断缺陷。
+- Web Backend 不得继续以 base64 decode 的 claims 建 Principal，也不得在登录路径执行
+  schema DDL。
+
+### 14.3 发布
+
+- Next/Nest 均使用不可变 image digest；release manifest 记录 frontend digest、backend
+  digest、contract version、OIDC audience、deployment ID 和回滚 tuple。
+- 默认不使用 Server Actions 承担身份/领域 mutation，避免滚动版本的 action ID/加密 key
+  变成隐藏耦合。未来启用时必须固定 encryption key 并运行 version-skew 矩阵。
+- CSP 按 route class 验证：authenticated dynamic route 使用严格 nonce/hash 策略；
+  public static route不得因此被全局强制 dynamic。任何 `unsafe-eval` 仅限开发环境。
+- P0-008B 必须验证至少两个 Frontend Pod、两个 Backend Pod、滚动新旧版本、session
+  跨 Pod、stream 断线、静态资源 version skew、health/readiness 和回滚 tuple。
+
+## 15. 接受结论与未完成项
+
+ADR-014 在 2026-07-16 接受，P0-008A 结束。接受依据：
+
+- ADR-001/002/004/005 已提供可执行 Runtime、身份、Citation 和浏览器安全边界。
+- ixartz 固定 SHA、MIT 许可、依赖与逐文件采用/改造/拒绝矩阵已归档。
+- 当前模板和三个 Web pair 已盘点；确认现有 Next 与 Nest 身份实现仍不满足本 ADR。
+- 目标拓扑、route/cache、BFF allowlist、stream、环境/兼容、双镜像发布和配对 E2E
+  矩阵已冻结。
+
+未完成项全部进入 P0-008B/B1~B4 和 P0-008C，尤其是 Web Backend 安全内核、Next DAL/
+DTO、真实 stream adapter、多副本/CSP/浏览器证据。ADR Accepted 不表示当前模板或三个
+业务 Web 已达到生产资格。

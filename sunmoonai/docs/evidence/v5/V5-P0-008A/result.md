@@ -1,97 +1,174 @@
-# V5-P0-008A Next Web 架构契约审查与紧急卫生
+# V5-P0-008A Next Web 架构契约验收证据
 
-状态：`IN_PROGRESS / BLOCKED_BY_P0-001`
+状态：`ACCEPTED`
 
-日期：2026-07-14（Asia/Shanghai）
+日期：2026-07-16（Asia/Shanghai）
 
-## 结论
+ADR：`sunmoonai/docs/mooc-manus-v5/adr/ADR-014-next-web-template-rebaseline.md`
 
-P0-008A 已完成不依赖上游 Runtime 选型的模板卫生和架构盘点，但不能宣称
-`ADR-014 Accepted`。ADR-001 当前仍为 `CANDIDATE_A_PARTIAL`；在其给出可执行的
-stream/cursor/cancel/resume/worker-failure 语义前，不开始 P0-008B，不向三个 Web
-实例复制任何 v2 代码。
+## 1. 结论
 
-本轮只修改 `tpl-app/tpl-web-frontend` 模板和 k8s 文档，未修改 Info、Knowledge、
-Research Web 工作树、父仓 gitlink、Deployment、镜像或正式流量。
+P0-008A 已结束。ADR-014 已冻结以下生产边界：
 
-## 本地验证结果
+- Next Web Frontend 与同产品 Nest Web Backend 是不可拆分的发布/验收 pair。
+- 浏览器只访问同源 `/api`，Nest Web Backend 是默认 BFF；Next 不复制第二套身份、
+  session 或领域 BFF。
+- Server Component 只经 `server-only` DAL/DTO 调用配对 Web Backend。
+- public、login、authenticated workspace、live Run 的 rendering/cache owner 已分离。
+- Research stream 使用受权 BFF adapter、durable cursor/snapshot reconciliation。
+- 双镜像 digest、Web audience、contract 和回滚 tuple 必须一起验收。
 
-用户在 Node `v24.18.0`、pnpm `10.24.0` 环境中执行了：
+本结论只解锁 P0-008B；当前模板和三个业务 Web 尚未达到生产资格。
 
-- `corepack pnpm install --frozen-lockfile --registry=https://registry.npmmirror.com`：通过。
-- `corepack pnpm typecheck`：通过。
-- `corepack pnpm lint`：通过。
-- `corepack pnpm build`：通过；Next `16.2.2` 正确识别 `ƒ Proxy (Middleware)`，静态页和动态页均完成构建。
+## 2. 上游决策输入
 
-pnpm 报告 `@parcel/watcher`、`@swc/core`、`msw` 的 build scripts 当前被忽略。这不是构建失败；在 P0-008B 依赖治理前不执行全量 `approve-builds`。后续只允许对经验证确实需要的原生构建/测试脚本建立最小 allowlist，并把 lockfile、安装日志和构建结果一起纳入证据。
-
-## 已实施的模板卫生
-
-- 删除被 Git 跟踪的 `app/.env.local`，并将其加入 `app/.gitignore`；`.env.example`
-  和 `.env.k8s` 不再放置 Casdoor/Redis/服务凭据或不受支持的“frontend BFF”声明。
-- 删除 `next.config.ts` 中硬编码的开发来源 IP。
-- 按 Next 16 文件约定将 `middleware.ts` 改为 `proxy.ts`。Proxy 只做 next-intl
-  locale negotiation，明确不承担最终认证/授权。
-- 固定 Web 模板工具链：`.nvmrc`/Docker/CI Node `20.18.0`，`packageManager`
-  `pnpm@10.24.0`；package engines 允许本地 Node `>=20.18.0 <25`，pnpm 仍固定
-  `10.24.x`。发布证据以 Node 20.18.0 构建为准。
-- 默认 API 入口改为同源 `/api`；跨源地址只允许在有隔离诊断证据、CORS/CSRF/
-  audience 契约和回滚记录时由部署显式覆盖。
-- README 改为 SunmoonAI 模板说明、质量门禁、Server/Client 与 BFF 边界，移除
-  create-next-app/Vercel/默认产品文案。
-
-## 外部参考采用矩阵
-
-参考输入已重新固定为本地只读 clone `/home/zymun/repo/Next-js-Boilerplate` 的 MIT
-许可 Git SHA `9926cc1f8664f67eca63065bf1c31bc4f60b09c2`（提交日期 2026-07-08，审查日期
-2026-07-15）。此前的 `v6.3.4` 网页记录仅为首次发现来源，不再作为 P0-008B 的实施输入。
-只提取工程实践，不复制其产品页面和依赖栈，也不跟随上游 `main`。
-
-| 参考能力 | 决策 | SunmoonAI 处理 |
+| ADR | 状态 | 本任务消费的输出 |
 | --- | --- | --- |
-| App Router、严格 TypeScript、清晰的 `src/app`/components/tests 组织 | 采用 | 保持现有 App Router，B1 再补 server-only DAL/DTO、route matrix 和测试目录 |
-| Vitest/Testing Library、Playwright、a11y、错误/加载边界 | 采用并改造 | 按 ADR-014 增加真实身份、CSP、stream reconnect/reconcile 和双 Pod 验证 |
-| 环境变量 schema 与启动时校验 | 采用 | 只允许公开变量进入 `NEXT_PUBLIC_*`；Casdoor/Redis/服务凭据由后端/BFF contract 管理 |
-| Clerk、DrizzleORM、PGlite、Neon | 拒绝替换 | 身份使用 Casdoor + ADR-005；数据和 Provider contract 归后端，不在 Web 建第二数据库 |
-| Sentry、Arcjet、PostHog、Better Stack、Checkly 等 SaaS | 暂不采用 | 需另有供应商、数据出境、成本和部署 ADR；不能成为模板运行时依赖 |
-| Crowdin、外部字体/CDN、完整 SaaS demo 页面 | 拒绝 | 保持自托管和本地/受控资源，避免运行时外连和领域污染 |
-| Node 24+ 要求 | 不直接采纳 | Next 16 官方最低 Node 为 20.9；SunmoonAI 先固定已验证的 Node 20.18，升级需单独兼容矩阵和镜像证据 |
+| ADR-001 | Accepted / Custom Runtime | SSE live channel、PostgreSQL durable cursor/snapshot、cancel/resume、terminal reconcile |
+| ADR-002 | Accepted | Session/Thread/Run/Attempt/Invocation 分离与浏览器 ID 语义 |
+| ADR-004 | Accepted | browser-safe Citation DTO 与同源受权来源跳转 |
+| ADR-005 | Accepted | 六 audience、Web BFF session、PKCE/nonce/state、CSRF/Origin、资源授权 |
 
-## 固定源码复核补充（2026-07-15）
+P0-008A 不再被 Runtime、Citation 或身份决策阻塞。
 
-本地审查了 `package.json`、`next.config.ts`、`src/libs/Env.ts`、`src/libs/I18n*.ts`、
-`Logger.ts`、`global-error.tsx`、`robots.ts`、`sitemap.ts`、Vitest/Playwright 配置、
-测试样例和 GitHub CI。结论已同步 ADR-014 §7.1，作为后续 B1~B4 的逐项施工输入：
+## 3. ixartz 固定参考输入
 
-- **B1 必做**：public/server env 白名单与 fail-fast、`poweredByHeader: false`、严格模式、
-  locale/navigation 收口、missing-key 检查、locale-aware error/loading/not-found、metadata/
-  robots/sitemap、unit/component 和 production-server Playwright 的最小基线。
-- **B4 必做**：失败 trace/video/screenshot 受控归档、a11y、静态/i18n/build/test 阶段进入
-  现有 Gitee/Jenkins 责任链；每项记录 Node 20.18/pnpm 10/lockfile 与镜像 digest。
-- **仅经 ADR 后改造**：server-only DAL/DTO、typed browser client、Casdoor session/minimal
-  BFF、真实后端配对 Playwright、stream adapter、bundle analysis、依赖扫描和 Storybook。
-- **明确排除**：Clerk、Drizzle/PGlite/Neon、Sentry/Arcjet/PostHog/Better Stack/Crowdin/
-  Checkly/Chromatic/Codecov、外部字体/CDN、GitHub Action、上游 Node 24、数据库迁移、
-  账号/支付/营销页面及任何把领域状态放入 Web 的实现。
+本地只读 clone：`/home/zymun/repo/Next-js-Boilerplate`
 
-这是一份实施约束，不解锁 P0-008B：ADR-001/004/005 的 stream、citation、身份/BFF 输出
-仍是 P0-008A 接受和 B1 开工的前置。
+Git SHA：`9926cc1f8664f67eca63065bf1c31bc4f60b09c2`
 
-## 候选架构矩阵（尚未冻结）
+提交日期：`2026-07-08T17:27:26+02:00`
 
-| 主题 | 当前候选 | 阻塞/验收证据 |
-| --- | --- | --- |
-| Server/Client | Server Component 负责受控读取；交互面使用 Client Component | P0-008B route/render matrix |
-| API | 同源 `/api` typed browser client；BFF 仅做 session/token mediation、同源代理和协议适配 | ADR-005 + P0-008B BFF allowlist |
-| 身份 | App/Surface 专属 HttpOnly session、CSRF、audience/owner check；Proxy 只改善 UX | ADR-005 已接受，待 Web 浏览器矩阵 |
-| Rendering/cache | public 内容可 SSG/ISR；受权 workspace 默认 dynamic；Backend/Projection 是权威状态 | P0-008B cache owner matrix |
-| Streaming | cursor、去重、退避、snapshot reconciliation、cancel/resume、terminal precedence | ADR-001（当前 partial，阻塞） |
-| Citation | 浏览器只消费安全 Citation DTO 和受权跳转 | ADR-004 + P0-008C Research 试点 |
-| 部署 | `standalone` 自托管，反向代理前置，固定 digest，多副本滚动兼容 | P0-008B Docker/KIND evidence |
+许可证：MIT
 
-## 下一步
+| 文件 | SHA-256 |
+| --- | --- |
+| `LICENSE` | `cc79352a90f66bb27020bc40cb7481e661de807875e4ece5533ee4d4d9d20616` |
+| `package.json` | `282b8613b0dcbe641e9698702b08b7ef3772a895da9c85d8a8b081ca2c5b2508` |
+| `next.config.ts` | `6651768a85259ca706b7fd741534a62231eba528e0d99b5be1c397bc2912662f` |
+| `src/libs/Env.ts` | `8184052ba254478aaf0d97305b281212ffd87c38aa11c5029c3a823d958ebe65` |
+| `playwright.config.ts` | `8acb5d4674b5c022721b3d8ae8230e9e8cceb3d5f79d7f5a3f6e5c41fccefa10` |
+| `vitest.config.ts` | `71bc7d83e65556064bc0278262afbce6627e66bdad3a65ceb3b3e289cc9c2b66` |
+| `.github/workflows/CI.yml` | `421016c4d2db8d47b79fe8014462c399980840ffeadf7fc4a243bd6511f51bf3` |
 
-1. 完成 ADR-001 Runtime 选型和浏览器 stream harness，确定 adapter 形态。
-2. 消费 ADR-004 Citation DTO 与 ADR-005 Web BFF/身份边界，正式接受 ADR-014。
-3. 进入 P0-008B，仍在现有 `tpl-web-frontend` 仓库内原地重构；完成前不改三个
-   Web 实例，不创建 `*-next-v2` 仓库。
+### 采用
+
+- 严格 TypeScript、可复现命令和环境 schema/fail-fast。
+- `next-intl` 集中路由与 missing-key 检查。
+- locale-aware loading/error/not-found、metadata/robots/sitemap。
+- Vitest unit/component、Playwright、失败 trace/video/screenshot、基础 a11y。
+- `poweredByHeader: false`、严格模式、显式命令启用 bundle analysis。
+
+### 改造后采用
+
+- App Router server/client 分层改为 `server-only` HTTP DAL/安全 DTO。
+- Playwright 使用配对 Nest Web Backend 或受控 fixture，不使用 PGlite/Drizzle。
+- GitHub CI 任务语义迁入现有 Gitee/Jenkins 责任链，不复制 GitHub/SaaS 流程。
+- Storybook/依赖扫描只在组件面、owner、噪声和执行成本满足触发条件后启用。
+
+### 拒绝
+
+- Clerk、Drizzle/PGlite/Neon、前端数据库和 migration。
+- Sentry、Arcjet、PostHog、Better Stack、Crowdin、Chromatic、Checkly 等未批准 SaaS。
+- 外部字体/CDN、产品账户/支付/营销页面、GitHub 专用发布流程。
+- 因上游 `engines.node >=24` 自动升级 SunmoonAI Node 20.18 发布基线。
+
+## 4. 当前模板基线
+
+### 4.1 Next Web Frontend
+
+仓库：`tpl-app/tpl-web-frontend`
+
+基线提交：`4db03b2e04025a8014237f00e63835a99ddd81ca`
+
+| 文件 | SHA-256 |
+| --- | --- |
+| `app/package.json` | `7cfbd584e383398540a229d5dc4165a3b07d08d58053e2321b401aff1ef8d1b7` |
+| `app/pnpm-lock.yaml` | `ba938b76b26143e6f9e9617aebfef9cbadfd4291b3a5a4504032fd36b17d4f32` |
+| `app/next.config.ts` | `99d26d0a5a2a7401e651f6380fb37a36a9fa9682213457d82e69b0ce9225bef1` |
+| `app/proxy.ts` | `352b4cf8fb50540861f398e807221a5d74e9f02d954cfff78aaf9dbca2085c08` |
+| `app/.env.example` | `2fca2078c07c7564a461d439bcf3db1897b83517733928fe8320cde565e58334` |
+| `app/.env.k8s` | `746e875c5814ad8b526f723c31312d2e192c3efb0cd56ae168bf4a6ea556fbbc` |
+| `mybuild/Dockerfile` | `a069b967429fe9ee754befceae523ffd8f42311245b583a27ca4b7c6c552128a` |
+
+已完成卫生：`.env.local` 不再跟踪、`proxy.ts` 已替代 `middleware.ts`、默认同源
+`/api`、Node/pnpm 已固定。仍待 P0-008B：env schema、DAL/DTO、真实服务端 session
+检查、测试、安全头/CSP、多副本与 stream。
+
+### 4.2 Nest Web Backend
+
+仓库：`tpl-app/tpl-web-backend`
+
+基线提交：`d1abfa3409aae93d62d36733d55f50021e104ba1`
+
+代码审查确认当前仍是不可生产的旧身份原型：
+
+- `state` 随机生成但未持久化/回调消费。
+- 无 PKCE、nonce、discovery/JWKS 签名和精确 issuer/audience 校验。
+- Redis `session:{id}` 保存完整 token response。
+- 以 base64 decode 的 ID Token claims 建立请求用户。
+- `/auth/logout` 是有副作用的 GET。
+- `/auth/me` 返回完整 session/token 结构。
+- 多数 Web 业务 Controller 的 fail-closed/owner 策略尚未形成统一门禁。
+
+这些不是“以后优化”，而是 P0-008B B2/B4 的阻断项。
+
+## 5. 三个业务 Web pair 快照
+
+| App | 父仓提交 | Web Frontend | Web Backend |
+| --- | --- | --- | --- |
+| Info | `37988c873e8dc4e6a7f019ee8eec26f90ce8c82d` | `abdbf63849c847b4301c37d31dec12405e2d3257` | `ffbc54ea2fe739495cdbd73ce174ec8c70bbd79e` |
+| Knowledge | `2e410ad0ba8f813844147df39cda56269618a97e` | `2f4f68257062ea006e8e03ccd8e06844db7c1ad6` | `ada118c984e6338998d7f405579e3a4cd5434e76` |
+| Research | `81215951809ead1cb5b06df182937551b026ebed` | `ea42d2974f1063ede160c8a547f49e616d6948aa` | `0714115ab64a730033f3544bdf2de78ed06aba81` |
+
+三个 Web Frontend 都已是 Next 16，不存在 Vue→React Web 迁移。待完成的是 Web v2
+通用能力再基线和配对安全改造。Research 当前 Agent Console 直连 Admin/FastAPI，
+违反本 ADR；P0-008C 前必须改为 Research Web Backend 受权 adapter。
+
+## 6. 冻结矩阵
+
+ADR-014 已给出并接受：
+
+- 目标拓扑与 BFF owner。
+- BFF 路由 allowlist。
+- route rendering matrix。
+- cache owner matrix。
+- stream/cursor/reconciliation contract。
+- frontend/backend 环境和兼容矩阵。
+- 双镜像 release tuple、CSP、多副本、滚动版本和回滚门禁。
+- Info/Knowledge/Research Web↔同产品 Web Backend 的成对浏览器 E2E 纪律。
+
+## 7. 静态验证
+
+验证器：
+
+```text
+python sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_008a.py
+```
+
+结果：
+
+```json
+{
+  "task": "V5-P0-008A",
+  "result": "passed",
+  "adr_status": "ACCEPTED",
+  "ixartz_sha": "9926cc1f8664f67eca63065bf1c31bc4f60b09c2",
+  "tpl_web_frontend_baseline": "4db03b2e04025a8014237f00e63835a99ddd81ca",
+  "tpl_web_backend_baseline": "d1abfa3409aae93d62d36733d55f50021e104ba1",
+  "web_pairs": ["info", "knowledge", "research"],
+  "legacy_bff_findings_recorded": true,
+  "secrets_printed": false
+}
+```
+
+## 8. 下一步
+
+当前唯一代码任务切换为 P0-008B/B1：
+
+1. Repo/Env/Rendering 基线与测试骨架。
+2. 配对 Nest Web Backend 身份/BFF 安全内核。
+3. typed DAL/DTO、Query/stream/citation 通用能力。
+4. Security/Test/Docker/KIND 双 Pod 与双镜像 release tuple。
+
+P0-008B 未通过前不修改三个业务 Web；P0-008C 未通过前不推广模板或切正式流量。

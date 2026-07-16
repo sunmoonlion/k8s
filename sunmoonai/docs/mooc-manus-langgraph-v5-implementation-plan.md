@@ -354,11 +354,11 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 ### V5-P0-008 Next Web Template Re-baseline Rollup
 
 - 类型/优先级：ARCH/FRONTEND/P0
-- ADR：`sunmoonai/docs/mooc-manus-v5/adr/ADR-014-next-web-template-rebaseline.md`（Proposed）。
+- ADR：`sunmoonai/docs/mooc-manus-v5/adr/ADR-014-next-web-template-rebaseline.md`（Accepted）。
 - 目标：按 `P0-008A -> P0-008B -> P0-008C` 保留 Next/App Router 技术路线、重建可信 Web v2，并以 Research 真实 streaming 薄切冻结模板；父任务不直接写代码。
 - 顺序纪律：Frontend 轨道先完成 P0-007C；ADR-001/004/005 没有可执行输出前不开始 008B；008C 前禁止把 v2 应用到三个 Web 实例。
 - 完成条件：三个子任务全部 ACCEPTED；否则现有仓库通过迁移前 tag/镜像回退，P0-008 保持 IN_PROGRESS/BLOCKED。
-- 状态：IN_PROGRESS / P0-008A_ACTIVE（P0-002 与 ADR-001/002/004/005 已提供 Runtime、执行身份、Citation DTO 和浏览器身份/BFF 的完整输入；P0-008A 的紧急卫生已完成，当前冻结 ADR-014 的拓扑、render/cache、auth/DAL/DTO、stream reconciliation、工程能力吸收与推广边界。008B/008C 均未开始。）
+- 状态：IN_PROGRESS / P0-008B_ACTIVE（P0-008A 与 ADR-014 已于 2026-07-16 ACCEPTED，固定了 ixartz 输入、Next+Nest 配对拓扑、route/cache、BFF allowlist、stream reconciliation、环境/兼容和双镜像发布边界。当前进入 P0-008B/B1；008C 未开始。）
 
 ### V5-P0-008A Web 架构契约冻结与紧急卫生
 
@@ -375,21 +375,21 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - Spike：分别证明 protected route 的服务端 session check、public static route、authenticated dynamic route、同源/直连 API 选中拓扑，以及 Runtime adapter 的浏览器断线对账；不得把 Proxy 当最终授权。
 - 测试：错误/过期 session、跨 locale return URL、CSRF/CORS/audience、cache 泄露、CSP、同一用户跨 Pod、滚动版本、stream cursor/reconcile。
 - 验收：ADR-014 Accepted；一张当前/目标拓扑、route rendering matrix、cache owner matrix、BFF allowlist、环境变量和部署兼容矩阵获批；所有未决项都有 owner/阻断任务，不以“模板以后处理”放行。
-- 状态：IN_PROGRESS / CURRENT_TASK（2026-07-14 已完成模板审计和不依赖上游决策的紧急卫生：移除跟踪的 `.env.local`、删除硬编码开发 origin、`middleware.ts -> proxy.ts`、固定 Node/pnpm、清理环境样例。2026-07-16 ADR-001/002/004/005 均已有可执行输出；当前以固定 ixartz source SHA 和本地审计结果完成采用/改造/拒绝矩阵，冻结 ADR-014 后才可进入 P0-008B。）
+- 状态：ACCEPTED（2026-07-16；ADR-014 已接受。固定 ixartz SHA `9926cc1f8664f67eca63065bf1c31bc4f60b09c2`、MIT 许可和逐文件采用/改造/拒绝矩阵；冻结同产品 Next Web Frontend + Nest Web Backend 配对发布单元、Nest 默认 BFF、server-only DAL/DTO、BFF allowlist、route/cache owner、stream/cursor reconciliation、Node/Next/React 兼容、双 digest release tuple 和三组配对 E2E 纪律。静态验证脚本通过；证据：`sunmoonai/docs/evidence/v5/V5-P0-008A/result.md`）
 
-### V5-P0-008B tpl-app Next Web v2 生产骨架
+### V5-P0-008B tpl-app Next Web v2 + Nest Web BFF 配对生产骨架
 
 - 类型/优先级：ARCH/FRONTEND/P0
 - 仓库：`tpl-app`
 - 前置：P0-008A ACCEPTED。
-- 实施：在现有 `tpl-web-frontend` 仓库的迁移分支内重构并冻结 Next Web v2；保留 React 19、Next 16 App Router、next-intl、Tailwind/shadcn/Base UI 候选和 `standalone` 自托管；实现 ADR-014 冻结的 Server/Client、DAL/DTO、typed client、auth/BFF、render/cache、stream adapter、错误/correlation、观测、安全、测试和 Docker/KIND 骨架，不创建新的 Web 模板仓库。
+- 实施：在现有 `tpl-web-frontend` 与 `tpl-web-backend` 仓库内重构并冻结配对 Web v2；保留 React 19、Next 16 App Router、next-intl、Tailwind/shadcn/Base UI 候选和 `standalone` 自托管；Nest Web Backend 作为默认 BFF，落地 ADR-005 的 PKCE/nonce/state/JWKS/session/CSRF/授权；Next 实现 Server/Client、server-only DAL/DTO、typed client、render/cache、stream UI adapter、错误/correlation、安全、测试和 Docker/KIND 骨架。不创建新的 Web 模板或第二套 Next auth/BFF 仓库。
 - 能力吸收边界：严格执行 P0-008A/ADR-014 的采用/改造/拒绝矩阵，而不是仅“参考” ixartz。新增 strict env schema、server-only DAL、Casdoor session、统一 API/error/correlation、route metadata、loading/error/not-found、i18n 缺失 key 检查、a11y、Vitest/Playwright 与可重复 CI。Storybook、bundle 分析和依赖漂移扫描必须有明确触发条件；前端不拥有数据库，不引入 Clerk/Drizzle/PGlite/第三方遥测或外部字体/CDN 作为运行时依赖。
-- 串行施工包：`B1 Repo/Env/Rendering` -> `B2 Auth/DAL/DTO` -> `B3 UI/Query/Stream` -> `B4 Security/Test/Deploy`；每包在现有仓库提交并可回滚，不复制目录形成 v2 副本。
+- 串行施工包：`B1 Repo/Env/Rendering/Test Baseline` -> `B2 Nest BFF Identity + Next DAL/DTO` -> `B3 UI/Query/Stream/Citation` -> `B4 Security/Paired Test/Deploy`；每包在现有前后端仓库分别提交、由父仓固定双 gitlink，并可作为 release tuple 回滚，不复制目录形成 v2 副本。
 - Reference surfaces：只提供中性 public content、authenticated workspace、stream timeline/HITL、citation/error 状态示例；fixture 只验证组件，不得伪装成真实 Run/Retrieval 成功。
 - 不做：不做无 tag/digest 的不可回滚覆盖、不改三个 App 流量、不把 Run/Artifact/Retrieval 领域状态放入 BFF/Zustand、不预建跨 App 共享 UI 平台、不用 nonce CSP 无条件强制全部 route dynamic。
-- 测试：typecheck、lint、unit/component、Playwright/a11y、route rendering/cache assertions、auth/CSRF/CSP、stream reconnect/reconcile、多标签、Docker/KIND、非 root/probes、两个 Pod 滚动版本与 cache/version-skew smoke。模板级 fixture 仅可验证 UI/错误映射，不能替代后续 App 级 Web↔Web Backend 的真实配对 E2E。
+- 测试：Next 与 Nest 分别 typecheck/lint/unit，配对 Playwright/a11y、route rendering/cache assertions、PKCE/nonce/state/JWKS/audience/session/CSRF/CSP、stream reconnect/reconcile、多标签、Docker/KIND、非 root/probes、Frontend/Backend 各两个 Pod、滚动版本与 cache/version-skew smoke。模板级 fixture 仅可验证 UI/错误映射，不能替代后续 App 级 Web↔Web Backend 的真实配对 E2E。
 - 验收：从干净目录可重复构建；public 与 authenticated route 的渲染/cache 证据符合矩阵；最终镜像和 K8s 接口可追溯；迁移前 tag/镜像可恢复，三个 Web 实例未被提前修改；每项 ixartz 决策均有 source SHA、采用结果或拒绝理由。
-- 状态：NOT_STARTED
+- 状态：IN_PROGRESS / B1_CURRENT_TASK（P0-008A 已接受；先建立 Repo/Env/Rendering/Test Baseline，不提前修改三个业务 Web 实例。）
 
 ### V5-P0-008C Research Web 真实试点与 Next v2 冻结
 
@@ -1211,6 +1211,7 @@ Hybrid only：M1-314（NOT_APPLICABLE）
 14. Contract-2：V5-P0-004 Retrieval/Citation Contract（`ACCEPTED`，2026-07-16；真实 RAGFlow retrieval、独立身份、Citation lineage、负向/故障矩阵和清理恢复全部通过）。
 15. Runtime：V5-P0-001 `ACCEPTED / CANDIDATE_A_SELECTED`（2026-07-16）；Custom Runtime 边界已冻结，Agent Server/Hybrid 分支停止。
 16. Execution Identity：V5-P0-002（`ACCEPTED`，2026-07-16）；ADR-002、隔离语义模型、关系 schema、并发/checkpoint/lineage 证据已收口，未提前修改生产 Runner。
-17. **当前唯一任务** Web Re-baseline：V5-P0-008A；消费 ADR-001/002/004/005 的 Runtime、执行身份、Citation 和身份/BFF 输入，固定 ixartz source SHA，接受 ADR-014 后再严格执行 008B/B1~B4 -> 008C。
+17. Web Architecture Freeze：V5-P0-008A（`ACCEPTED`，2026-07-16）；ADR-014、固定 ixartz 输入、Next+Nest 配对拓扑和全部架构矩阵已收口。
+18. **当前唯一代码任务** Web Re-baseline：V5-P0-008B/B1；在模板 Next Frontend 与 Nest Web Backend 中建立 Repo/Env/Rendering/Test Baseline，再按 B2 -> B3 -> B4 -> P0-008C 串行推进。
 
 P0-007A2/007C 前禁止向三个 App 应用 React Admin；P0-008C 前禁止向三个 Web 实例应用 Next Web v2。P0-007C/008C 只表示模板可推广；Gate P0 后依次执行 M1-411A -> 411B Info -> 411C Knowledge -> 411D Research，再执行 M1-413A Info -> 413B Knowledge -> 413C Research 的 Web 原地迁移。每个 App 都直接改造现有仓库，但必须先有 tag、镜像 digest、隔离部署和独立回滚；不能把基础替换当作切流量。完成全部 Phase 0 后更新 v5、按 ADR-001 激活唯一 Runtime 分支，再进入 M1a。禁止绕过 Gate P0 直接把 Walking Skeleton 扩建为生产 Runner；Memory/Subagent 薄切只能在 Gate M1a 后执行。
