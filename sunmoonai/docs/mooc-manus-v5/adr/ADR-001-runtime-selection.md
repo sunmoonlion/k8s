@@ -1,165 +1,210 @@
 # ADR-001：Research Agent Runtime 选型
 
-状态：IN_PROGRESS / CANDIDATE_A_PARTIAL
-日期：2026-07-11
+状态：ACCEPTED / CANDIDATE_A_SELECTED
+
+原始日期：2026-07-11
+
+接受日期：2026-07-16
+
 任务：V5-P0-001
 
-## 1. 决策问题
+## 1. 决策
 
-Research App 应采用以下哪种生产执行运行时：
+Research Agent 的当前生产基线选择：
 
-- A：自建 FastAPI + durable dispatcher/Celery + LangGraph checkpointer + Redis/SSE。
+> **A：Research 自有控制面 + 自建 durable dispatcher/worker + LangGraph
+> executor/checkpointer + PostgreSQL durable state + Redis live signaling/SSE。**
+
+不选择：
+
 - B：自托管 Standalone Agent Server。
 - C：Research 产品控制面 + Agent Server 执行面的混合模式。
 
-本 ADR 决定执行职责归属，不决定 LangGraph 是否使用；三种候选都以 LangGraph 为图编排内核。
+本决策选择的是生产责任边界，不表示当前 Walking Skeleton 已具备生产资格，也不授权
+绕过 Gate P0 扩建主链。P0-002 必须先冻结 Session/Thread/Run/Attempt/Invocation 映射；
+Gate P0 后再按 M1-301~312 实现选中分支。
 
-## 2. 硬约束
+## 2. 决策驱动与硬约束
 
 - 部署在现有私有 Kubernetes/App Platform。
-- Research 领域数据库、用户授权和产品事件仍由 Research App 拥有。
-- 支持长任务、interrupt/resume、checkpoint、stream、cancel、同 Thread 并发控制和 worker 恢复。
-- 不允许 Redis 成为 Run/用户数据的持久真相源。
-- 必须支持四仓身份、契约、citation 和审计 lineage。
-- 生产依赖的商业许可、外部 egress 和 usage reporting 必须显式批准，不能作为隐藏前提。
-- 未选 Runtime 分支不得继续建设。
+- Research 领域数据库、用户授权、产品事件、citation 和审计 lineage 仍由 Research
+  App 拥有。
+- 支持长任务、interrupt/resume、checkpoint、stream、cancel、同 Thread 并发控制、
+  worker 恢复与 Graph 版本 pin。
+- PostgreSQL 是 Run、checkpoint、event、dispatch intent 和 operation journal 的 durable
+  真相源；Redis 只允许承担 live signaling、短期锁、cancel signal 和 Pub/Sub。
+- 产品身份必须安全传递到 Knowledge、Tool 和 Sandbox。
+- 商业许可、采购、外部 egress 和 usage reporting 必须显式批准，不能成为隐藏前提。
+- 未选 Runtime 分支不得继续进入生产主链。
 
-## 3. 已核验事实
+## 3. 候选事实
 
-### 3.1 当前自建基线
+### 3.1 候选 A：当前自建基线
 
-当前 Research 已有：
+Research 已有 FastAPI、RabbitMQ/Celery、PostgreSQL checkpointer、Redis Pub/Sub/SSE、
+interrupt/resume 骨架、资源授权和副作用去重原型。P0-001 隔离 Spike 进一步证明：
 
-- FastAPI 创建 Session/Run。
-- RabbitMQ/Celery worker。
-- Postgres checkpointer。
-- Redis Pub/Sub + SSE。
-- interrupt/resume Walking Skeleton。
-- Redis session lock 和副作用去重骨架。
+- 同 Thread 的非终态 Run 采用确定的 `reject` 策略。
+- 运行中 cooperative cancel 可形成 durable `cancelled` 终态，且取消前不产生副作用。
+- 副作用提交前和提交后杀死进程，replacement worker 均可恢复；operation journal 保证
+  副作用恰好一次。
+- 两个独立 worker 进程可共享 PostgreSQL checkpoint 并同时完成不同 Thread。
+- PostgreSQL 不可达时 fail closed；恢复后 replacement worker 继续完成。
+- live stream 丢失后，浏览器按 durable cursor snapshot 对账，无缺口和重复。
+- API 与 worker Deployment 均可临时扩为两个 Ready 副本并恢复为一个副本。
+- broker 不可达时，durable dispatch intent 保持 `pending`，恢复后只投递一次。
 
-但缺少或存在缺陷：
+这些证据证明候选 A 的架构语义可行，不代表当前生产代码已经实现全部语义。
 
-- durable enqueue/outbox、RunAttempt/lease、cancel 和 reconciler。
-- 首轮 input 传递、原子 resume、真正 reducer、生产 Graph。
-- SSE catch-up/live 空窗。
-- 领域状态/事件/投影事务收口。
+### 3.2 候选 B/C：官方能力
 
-因此候选 A 不是“零成本沿用”，而是继续自行承担上述生产运行时能力。
+官方 Agent Server 提供 assistant/thread/run、PostgreSQL persistence、durable task queue、
+worker lease、stream、cancel、同 Thread 单 Run、API/queue worker 分离和故障 sweeper。
+Redis 只承担 signaling、cancellation 和 streaming，不持久化 Run 数据。
 
-### 3.2 Agent Server 官方能力
+来源：
 
-官方 Agent Server 提供 assistant/thread/run、持久化、durable task queue、stream、cancel、worker lease、同 Thread 单 Run、API/queue worker 分离以及长期 Store。Run 数据写 PostgreSQL，Redis 用于 signaling/cancellation/streaming，不持久化 Run 数据。
+- [Agent Server architecture](https://docs.langchain.com/langsmith/agent-server)
+- [Scalability and resilience](https://docs.langchain.com/langsmith/scalability-and-resilience)
+- [Cancel a run](https://docs.langchain.com/langsmith/cancel-run)
 
-来源：[Agent Server architecture](https://docs.langchain.com/langsmith/agent-server)
+因此 B/C 在通用运行时能力上优于当前 A 基线；本 ADR 没有否认这一事实。
 
-Standalone Server 可部署到 Kubernetes，需要 PostgreSQL 和 Redis；生产自托管仍由使用方管理扩缩容、CI/CD 和基础设施。
+### 3.3 B/C 的生产硬门
 
-来源：[Deploy standalone server](https://docs.langchain.com/langsmith/deploy-standalone-server)
+截至接受日期，官方 Standalone Server 文档仍要求：
 
-### 3.3 商业与网络约束
+- `LANGGRAPH_CLOUD_LICENSE_KEY`。
+- 非 air-gapped 模式访问 `https://beacon.langchain.com`，用于 license verification 和
+  usage reporting。
+- self-hosted LangSmith/Deployment 属于 Enterprise 范围，许可或试用需与供应商确认。
 
-官方文档要求 Standalone Server 配置 `LANGGRAPH_CLOUD_LICENSE_KEY`，启动时验证许可证；非 air-gapped 模式还要求访问 `https://beacon.langchain.com` 进行 license verification/usage reporting。平台文档把 self-hosted/hybrid 列为 Enterprise，免费仅明确覆盖本地测试和开发。
+来源：
 
-来源：[Standalone prerequisites](https://docs.langchain.com/langsmith/deploy-standalone-server)、[Platform setup](https://docs.langchain.com/langsmith/platform-setup)
+- [Deploy standalone server](https://docs.langchain.com/langsmith/deploy-standalone-server)
+- [Self-hosted LangSmith](https://docs.langchain.com/langsmith/self-hosted)
+- [Self-host dependency versions](https://docs.langchain.com/langsmith/self-host-dependency-versions)
 
-这构成生产选用 B/C 的硬门：没有可接受的许可、采购结论、数据/usage reporting 审查和 egress 决策时，B/C 不能进入生产候选，但仍可进行隔离的免费本地 Spike。
+当前项目没有已批准的商业许可、采购结论、air-gapped entitlement 或 beacon egress/
+usage-reporting 审查。因此 B/C 同时触发两条预先冻结的淘汰规则：
 
-## 4. 评分模型
+1. 无法证明许可/采购可接受。
+2. 生产运行依赖未经批准的外部 egress/usage reporting。
 
-评分：1=差，3=可接受，5=强。权重在 Spike 前冻结，防止结果导向调整。
+候选在硬约束阶段被淘汰后，不再为了形式完整而把其组件装入生产集群。若未来硬门解除，
+可新建 ADR 重新比较，不修改本次历史结论。
 
-| 维度 | 权重 | A 自建 | B Agent Server | C 混合 | Spike 证据 |
-|---|---:|---:|---:|---:|---|
-| 私有化/许可可接受性 | 20 | 5 | 待定 | 待定 | 商务、法务、egress |
-| durable queue/lease/cancel | 15 | 2 | 5 | 5 | kill/cancel/concurrency |
-| 产品领域事务集成 | 15 | 5 | 2 | 4 | Run+event+outbox |
-| 身份与资源授权 | 10 | 5 | 3 | 4 | delegated identity |
-| streaming/SSE 恢复 | 10 | 2 | 5 | 4 | disconnect race |
-| checkpoint/store 升级 | 10 | 3 | 5 | 4 | upgrade/resume |
-| K8s 运维复杂度 | 10 | 3 | 3 | 2 | deployment/backup |
-| 团队维护与锁定 | 10 | 2 | 3 | 2 | 代码量/退出演练 |
+## 4. 最终评分
 
-表中非“待定”分数是进入 Spike 的初始假设，不是最终结论。
+评分：1=差，3=可接受，5=强。候选 B/C 已在硬约束阶段淘汰，不再计算一个会掩盖硬门的
+加权总分。
 
-## 5. 必须运行的同构 Spike
+| 维度 | 权重 | A 自建最终分 | 证据/约束 |
+|---|---:|---:|---|
+| 私有化/许可可接受性 | 20 | 5 | 无新增生产商业许可或外部 usage-reporting 前提 |
+| durable queue/lease/cancel | 15 | 3 | Spike 通过；生产 outbox/Attempt/lease/reconciler 待 M1 |
+| 产品领域事务集成 | 15 | 5 | Research 继续拥有 Run/event/citation/auth |
+| 身份与资源授权 | 10 | 5 | 消费 ADR-005 与独立服务身份 |
+| streaming/SSE 恢复 | 10 | 4 | subscribe-before-snapshot、cursor/browser reconciliation |
+| checkpoint/store 升级 | 10 | 4 | PostgreSQL replacement、旧 Graph version pin |
+| K8s 运维复杂度 | 10 | 3 | 复用现有 Postgres/Redis/RabbitMQ/Celery，但责任自担 |
+| 团队维护与锁定 | 10 | 3 | 代码维护较多；无 Agent Server 运行时锁定 |
 
-对 A 和至少一个 B/C 候选使用同一测试 Graph：
+加权结果：`4.10 / 5.00`。
+
+## 5. P0 同构 Spike 结果
+
+同构 Graph：
 
 ```text
 START -> persist_input -> ask_user(interrupt)
       -> side_effect_tool(idempotent) -> final -> END
 ```
 
-测试矩阵：
+| 验证项 | 结果 | 证据 |
+|---|---|---|
+| 创建、interrupt、resume | PASS | LangGraph 单元与 PostgreSQL checkpoint |
+| side effect 前 SIGKILL | PASS | replacement 完成，journal count=1 |
+| side effect 后 SIGKILL | PASS | replacement 完成，journal count=1 |
+| 同 Thread 并发 | PASS | 非终态第二 Run 明确 reject；实现落 P0-002/M1 |
+| running cancel | PASS | durable cancelled，journal count=0 |
+| stream/cursor 恢复 | PASS | 服务端顺序测试 + Chromium 断线对账 |
+| 双 worker 执行 | PASS | 两个进程均 exit=0、completed、journal count=1 |
+| API/worker 双副本 | PASS | 两个 Deployment 均达到 requested=2/ready=2 后恢复 |
+| Graph 升级 waiting resume | PASS | waiting Run 使用 pinned v1 builder/checkpoint |
+| PostgreSQL 故障 | PASS | fail closed count=0，恢复后 count=1 |
+| Redis/live channel 丢失 | PASS | durable snapshot 补偿，Redis 不作为真相源 |
+| queue/broker 故障 | PASS（模式） | durable dispatch intent 保持 pending，恢复后单次发送 |
 
-1. 创建 Thread/Run 并 stream。
-2. interrupt 后杀死 worker，重启并 resume。
-3. side effect 前、后分别 kill，验证不重复。
-4. 同 Thread 并发创建两个 Run。
-5. running 时 cancel，验证终态和 checkpoint。
-6. SSE/stream 断线后按 cursor 恢复。
-7. API 与 worker 分别扩为两个副本。
-8. Graph 版本升级后恢复旧 waiting Run。
-9. 注入 PostgreSQL、Redis 和 queue 短暂故障。
-10. 记录代码量、运行组件、资源、日志、指标和人工恢复步骤。
+权威证据：`sunmoonai/docs/evidence/v5/V5-P0-001/result.md`。
 
-## 6. 候选淘汰规则
+## 6. 冻结的运行时边界
 
-任一条件满足即淘汰对应候选：
+### 6.1 Research 控制面拥有
 
-- 无法满足私有部署、许可或合规要求。
-- 生产运行必须依赖未经批准的外部 egress/usage reporting。
-- worker kill 后无法从已确认 checkpoint 恢复。
-- 同 Thread 并发不能保证确定语义。
-- 无法把产品用户/服务身份安全传递到 Knowledge/Tool/Sandbox。
-- 无法 pin Graph/Prompt/Model/Toolset 版本或无法处理旧 waiting Run。
-- 无法提供可测试的 cancel 和 stream 恢复。
+- Session/Thread/Run/Attempt/Invocation 和资源 ACL。
+- EffectiveRunConfig、Graph/Prompt/Model/Toolset 版本。
+- Run command/outbox、Attempt lease、cancel intent、reconciler。
+- 领域事件、UI projection、citation、审计与成本 lineage。
+- 对 Knowledge、Tool、Sandbox 的 delegated identity。
 
-## 7. 当前临时结论
+### 6.2 LangGraph executor 拥有
 
-- A 保持生产候选，原因是无新增商业许可且与现有平台集成直接；风险是需要自行补齐大量 durable runtime 能力。
-- B/C 仅保持 Spike 候选。它们在运行能力上明显更完整，但生产资格取决于许可、egress、采购和控制面集成。
-- 在同构 Spike 和商业硬门完成前不作最终选择，不扩建任何候选的生产主链。
+- 选定 Graph 的节点调度与状态 channel/reducer。
+- PostgreSQL checkpointer 上的 step checkpoint。
+- interrupt/resume 的图内语义。
 
-## 8. 决策完成条件
+LangGraph checkpoint 不替代 Research Run、Attempt、event 或 operation journal。
 
-- A 与 B 或 C 的同构 Spike 报告。
-- 商业许可/成本/egress 书面结论。
-- 加权评分与淘汰规则结果。
-- 选中分支的实施任务激活，其他分支标记 `NOT_APPLICABLE`。
-- 从选中 Runtime 退出或迁移的最小方案。
+### 6.3 基础设施职责
 
-## 9. Spike 执行记录
+- PostgreSQL：所有 durable truth。
+- RabbitMQ/Celery：执行 transport；消息不是业务真相。
+- Redis：live Pub/Sub、短期 signal/lock；丢失后必须能从 PostgreSQL cursor 收敛。
+- Kubernetes：API/worker 独立扩缩、滚动升级、Pod termination 与探针。
 
-### 9.1 候选 A：自建 Runtime（部分完成）
+### 6.4 冻结语义
 
-2026-07-11 已在 `research-app/research-admin-backend/app` 增加隔离、不可被生产路由导入的同构 Spike：
+- 同 Thread 非终态 Run：默认 `reject`。未来若支持 enqueue/interrupt/rollback，必须作为
+  显式策略而不是竞态副作用。
+- cancel：先持久化 cancel intent/终态，再通过 signal 加速；Tool/LLM/Sandbox 必须在
+  cooperative boundary 检查。
+- resume：token/idempotency 必须原子消费；重复 resume 不得重复 dispatch。
+- stream：先订阅 live channel，再读取 durable snapshot；浏览器最终以 cursor snapshot
+  对账，不能把 SSE 当事实源。
+- side effect：稳定 operation ID + durable journal；worker 重放不得重复外部动作。
+- Graph upgrade：waiting Run 必须路由到被 pin 的旧 Graph 版本，直到显式迁移或终止。
 
-- `app/infrastructure/graph/runtime_selection_spike.py`
-- `scripts/run_runtime_selection_spike.py`
-- `scripts/run_runtime_selection_postgres_spike.py`
-- `tests/test_runtime_selection_spike.py`
+## 7. P0-001 不包含的生产实施
 
-已验证：
+以下是选中 A 后必须实施的工作，不得因为 ADR Accepted 被误报为完成：
 
-- interrupt/resume 后完成。
-- 副作用提交后注入崩溃，再次执行从 checkpoint 恢复；稳定 operation ID 使物理副作用为一次。
-- 两个不同 Thread 不共享 checkpoint 和 operation ID。
-- waiting Run 使用被 pin 的旧 Graph builder 恢复。
-- PostgreSQL checkpointer 关闭并重新连接后，替代 worker 能恢复 waiting Thread。
+- P0-002：Session/Thread/Run/Attempt/Invocation 隔离模型。
+- M1-301/302：Run command/outbox、dispatcher 与投递幂等。
+- M1-303/304：Attempt lease、heartbeat、worker claim。
+- M1-305：原子 resume/cancel。
+- M1-306/307：reconciler、超时/孤儿恢复。
+- M1-308：transactional event/projection。
+- M1-309：SSE v2/backpressure/final reconciliation。
+- M1-310~312：Graph registry/version migration、运维与可观测。
 
-尚未验证，因此候选 A 不能判定通过：
+当前 `app/tasks/agent_graph.py` 仍固定构建 Walking Skeleton，不能进入生产主链。
 
-- 同一 Thread 的两个并发 Run 的正式拒绝/排队语义。
-- running cancel 及终态/checkpoint 一致性。
-- cursor stream 断线无缝补偿。
-- API/worker 双副本、真实 worker `SIGKILL` 和 queue/Redis/PostgreSQL 故障矩阵。
-- durable operation journal；当前 Spike ledger 只是进程内测试替身。
+## 8. 风险与退出方案
 
-执行证据：`sunmoonai/docs/evidence/v5/V5-P0-001/candidate-a-partial.md`。
+### 8.1 主要风险
 
-### 9.2 候选 B/C
+- 自建分支需要长期维护 durable runtime 能力，不能把 Celery 默认重试误当业务恢复。
+- Redis session lock 不是 Attempt lease；生产实现必须以 PostgreSQL 条件更新为准。
+- 当前事件写入、Run 状态和 dispatch 尚未同事务收口。
 
-尚未执行。2026-07-11 尝试以不写入项目依赖的 `uvx --from 'langgraph-cli[inmem]'` 获取官方本地开发 CLI，但当前软件源未解析到该 extra，离线缓存也不存在。因此没有伪造候选 B 的运行结果，也没有把 CLI 写入生产依赖。
+### 8.2 退出/重开条件
 
-后续必须确认可审计的软件源、锁定版本与本地开发许可获取方式；生产资格仍受第 3.3 节商业、egress 和 usage reporting 硬门约束。候选 A 的部分成功不得代替 B/C 对照，也不得触发 ADR Accepted。
+满足以下条件可重新评估 Agent Server：
+
+- 获得明确的生产许可、成本和 air-gapped/egress 条款。
+- 完成数据、usage reporting 和供应链审查。
+- 用本 ADR 同一故障矩阵运行 B/C。
+- 提供 Research Run/ACL/event 与 Agent Server thread/run 的双写迁移和回退方案。
+
+在此之前，M1-313/314 标记为 `NOT_APPLICABLE`，不得平行建设第二套 Runtime。

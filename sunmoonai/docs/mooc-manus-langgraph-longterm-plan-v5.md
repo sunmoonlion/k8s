@@ -36,7 +36,7 @@ v4 的 greenfield、Walking Skeleton、评估前置、重放安全以及 Memory/
 - 数据库提交与异步投递之间没有可靠交接规范。
 - `session_id = thread_id` 被写成长期铁律，无法覆盖分支、换图、多 Agent 和重试。
 - 多智能体和长期记忆直到后期才首次验证，可能过晚暴露基础模型错误。
-- 自建 Runtime 与 LangGraph Agent Server 未经过正式选择。
+- 自建 Runtime 与 LangGraph Agent Server 在 v4 阶段未经过正式选择；v5 ADR-001 已于 2026-07-16 选择 Custom Runtime。
 - 单一巨型文档同时承载目标态、任务、历史说明和实施状态，权威边界不清。
 
 v5 不否定现有成果；现有代码作为验证资产重新分类为“保留、重构、替换或废弃”。
@@ -254,36 +254,39 @@ causation_id
 
 不是所有表都要求全部字段，但不得用一个模糊 `run_id` 替代整条调用关系。
 
-## 6. Runtime 选型决策门
+## 6. Runtime 选型决策与冻结边界
 
-v5 不预设最终必须自建或必须采用 Agent Server。Phase 0 通过 ADR-001 做有时间盒的对比 Spike。
+v5 起草时不预设最终必须自建或必须采用 Agent Server。ADR-001 已于 2026-07-16
+`ACCEPTED / CANDIDATE_A_SELECTED`：
 
-候选 A：自建 FastAPI + durable dispatcher/Celery + PostgresSaver + Redis/SSE。
-候选 B：自托管 LangGraph Agent Server，Research App 保留产品控制面和 ACL。
-候选 C：混合模式，产品 API/领域在 Research，执行委托独立 Agent Server。
+- 选中候选 A：Research 自有控制面 + durable dispatcher/Celery + PostgresSaver +
+  Redis live signaling/SSE。
+- 候选 B（Standalone Agent Server）和 C（混合）因当前没有已批准的生产许可、采购、
+  air-gapped entitlement 或 beacon egress/usage-reporting 审查，触发预设硬淘汰规则。
+- B/C 的通用 runtime 能力更完整这一事实保留；若未来硬门解除，必须新建 ADR 并复用
+  同一故障矩阵，不得直接恢复第二套生产分支。
 
-评分维度：
+已验证：
 
-- 私有化、许可和长期成本。
-- K8s 与现有身份体系兼容性。
-- Thread/Run/cancel/lease/stream/store 能力。
-- 自定义领域事务和事件集成。
-- 多 Graph、多 Agent 和版本升级。
-- 可观测性、扩缩容和灾难恢复。
-- 团队维护负担和供应商锁定。
+- PostgreSQL checkpoint replacement、提交前/后 SIGKILL、running cancel、双 worker。
+- 同 Thread 非终态 Run 的 `reject` 语义。
+- PostgreSQL fail-closed/recovery、broker pending intent/retry。
+- subscribe-before-snapshot、cursor reconciliation 和真实 Chromium 断线恢复。
+- API/worker 各两个 K8s Ready 副本并恢复。
 
-ADR 必须包含可运行 Spike、失败注入结果和退出成本。未完成 ADR 前，只允许修复现有 Phase 0 安全问题，不继续扩展生产 Runner。
+证据：`sunmoonai/docs/evidence/v5/V5-P0-001/result.md`。
 
-ADR-001 是实施关键路径门，而不是形式评审。后续运行时工作分为：
+ADR 接受只选择分支，不表示当前 Walking Skeleton 可生产。后续运行时工作冻结为：
 
 ```text
 Runtime Common（始终实施）：产品领域、EffectiveRunConfig、Ports、授权、业务事件、评估
-Runtime Custom（仅选择自建时）：dispatcher/lease/checkpointer/SSE/cancel/reconciler
-Runtime Agent Server（仅选择 Agent Server 时）：assistant/thread/run 映射、远程 stream/auth/store
-Runtime Hybrid（仅选择混合时）：控制面/执行面协议、远程执行身份与版本映射
+Runtime Custom（已激活）：dispatcher/Attempt lease/checkpointer/SSE/cancel/reconciler
+Runtime Agent Server：NOT_APPLICABLE
+Runtime Hybrid：NOT_APPLICABLE
 ```
 
-ADR 获批后只能激活一个 Runtime 分支；不得用自建任务反向预设 ADR 结果。
+P0-002 必须先冻结 Session/Thread/Run/Attempt/Invocation；Gate P0 后才按 M1-301~312
+建设生产 Runner。M1-313/314 只有新 ADR 重开选型后才可激活。
 
 ## 7. LangGraph 运行时边界
 
@@ -909,7 +912,7 @@ canary 指标、回滚和恢复演练达标后，才进入有限真实流量；�
 
 ## 21. 关键 ADR 清单
 
-- ADR-001 Runtime 选型：自建、Agent Server 或混合。
+- ADR-001 Runtime 选型：Accepted，选择 Custom Runtime；Agent Server/Hybrid 当前不适用。
 - ADR-002 Session/Thread/Run/Attempt/Invocation 身份模型。
 - ADR-003 Info-Knowledge Artifact Contract（Accepted）。
 - ADR-004 Knowledge-Retrieval/Citation Contract。

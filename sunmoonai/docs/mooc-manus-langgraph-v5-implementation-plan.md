@@ -134,11 +134,11 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 类型/优先级：ARCH/P0
 - 仓库：`research-app`、`k8s`
 - 目标：比较自建 Runtime、Agent Server、混合模式。
-- 实施：为相同两节点 interrupt/tool graph 建三个候选中至少两个可运行原型；测创建、stream、SSE 断线对账、cancel、worker kill、resume、同 Thread 并发；以最小浏览器 harness 验证 Runtime stream 可被产品客户端恢复，不能只用命令行读取流。
+- 实施：对未触发硬淘汰规则的候选运行相同 interrupt/tool graph；测创建、stream、SSE 断线对账、cancel、worker kill、resume、同 Thread 并发；以最小浏览器 harness 验证 Runtime stream 可被产品客户端恢复，不能只用命令行读取流。许可、合规或未经批准 egress 先触发淘汰时，不为形式比较部署不可进入生产的候选。
 - 测试：L2/L5/L7。
 - 验收：评分矩阵、许可结论、运行证据、退出成本和 ADR-001 获批。
 - 回滚：Spike 不接生产数据；删除部署即可。
-- 状态：IN_PROGRESS / CANDIDATE_A_PARTIAL（2026-07-14；隔离 Graph 的基础恢复语义和 Research 事件交付层的 advisory-lock/SSE snapshot 修正已验证，但真实 Runtime 仍未完成；ADR：`sunmoonai/docs/mooc-manus-v5/adr/ADR-001-runtime-selection.md`；证据：`sunmoonai/docs/evidence/v5/V5-P0-001/candidate-a-partial.md`）
+- 状态：ACCEPTED / CANDIDATE_A_SELECTED（2026-07-16；自建 Runtime 的 PostgreSQL checkpoint、提交前/后真实 SIGKILL、running cancel、双 worker、PostgreSQL fail-closed/recovery、同 Thread reject、durable dispatch intent、服务端 cursor 与 Chromium 断线对账均通过；API/worker 双副本验证后恢复为 1。Agent Server/Hybrid 因未批准的生产许可、采购和 beacon egress/usage reporting 触发预设硬淘汰规则。ADR：`sunmoonai/docs/mooc-manus-v5/adr/ADR-001-runtime-selection.md`；证据：`sunmoonai/docs/evidence/v5/V5-P0-001/result.md`）
 
 ### V5-P0-002 执行身份模型 Spike
 
@@ -149,7 +149,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 实施：最小迁移或隔离表；一个 Session 创建两个 Run；一次 worker retry 产生第二 Attempt；Subagent 产生子 Invocation。
 - 测试：唯一性、状态转换、checkpoint mapping、并发条件更新、lineage 查询。
 - 验收：任何 ID 不复用承担两种实体；waiting/resume/retry 能准确定位。
-- 状态：NOT_STARTED / BLOCKED_BY_P0-001（尚无 Session/Thread/Run/Attempt/Invocation 隔离模型的 Spike 实现或验收证据。原状态中的 Next 模板审计与环境卫生属于 P0-008A，不得计为 P0-002 进度。ADR-001 选定 Runtime 并冻结 checkpoint/stream/cancel/resume 边界后再启动本 Spike。）
+- 状态：IN_PROGRESS / UNBLOCKED_BY_P0-001（2026-07-16；ADR-001 已选择 Custom Runtime，并冻结 PostgreSQL durable truth、同 Thread reject、Attempt/lease、原子 resume/cancel、cursor reconciliation 和 Graph version pin 边界。当前开始隔离实体模型 Spike；不得直接修改生产 Runner。）
 
 ### V5-P0-003 Info-Knowledge Artifact Contract Spike
 
@@ -358,7 +358,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 目标：按 `P0-008A -> P0-008B -> P0-008C` 保留 Next/App Router 技术路线、重建可信 Web v2，并以 Research 真实 streaming 薄切冻结模板；父任务不直接写代码。
 - 顺序纪律：Frontend 轨道先完成 P0-007C；ADR-001/004/005 没有可执行输出前不开始 008B；008C 前禁止把 v2 应用到三个 Web 实例。
 - 完成条件：三个子任务全部 ACCEPTED；否则现有仓库通过迁移前 tag/镜像回退，P0-008 保持 IN_PROGRESS/BLOCKED。
-- 状态：IN_PROGRESS / BLOCKED_BY_P0-001（P0-008A 的不依赖上游紧急卫生已完成，ADR-004 Citation DTO 与 ADR-005 身份边界已经可消费；ADR-014 尚未接受，008B/008C 均未开始。必须先完成 P0-001 Runtime stream/cancel/resume 决策输出。）
+- 状态：IN_PROGRESS / QUEUED_BEHIND_P0-002（P0-008A 的不依赖上游紧急卫生已完成，ADR-001 的 Custom Runtime stream/cancel/resume/cursor 边界、ADR-004 Citation DTO 与 ADR-005 身份边界均已可消费；ADR-014 尚未接受，008B/008C 均未开始。按单一代码任务纪律先完成 P0-002，再恢复 008A。）
 
 ### V5-P0-008A Web 架构契约冻结与紧急卫生
 
@@ -375,7 +375,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - Spike：分别证明 protected route 的服务端 session check、public static route、authenticated dynamic route、同源/直连 API 选中拓扑，以及 Runtime adapter 的浏览器断线对账；不得把 Proxy 当最终授权。
 - 测试：错误/过期 session、跨 locale return URL、CSRF/CORS/audience、cache 泄露、CSP、同一用户跨 Pod、滚动版本、stream cursor/reconcile。
 - 验收：ADR-014 Accepted；一张当前/目标拓扑、route rendering matrix、cache owner matrix、BFF allowlist、环境变量和部署兼容矩阵获批；所有未决项都有 owner/阻断任务，不以“模板以后处理”放行。
-- 状态：IN_PROGRESS / BLOCKED_BY_P0-001（2026-07-14 已完成模板审计和不依赖上游决策的紧急卫生：移除跟踪的 `.env.local`、删除硬编码开发 origin、`middleware.ts -> proxy.ts`、固定 Node/pnpm、清理环境样例；ADR-014 增加候选架构矩阵但尚未 Accepted。2026-07-16 P0-004 Citation DTO 已接受并成为可执行输入；待 P0-001 Runtime stream/cancel/resume 决策输出后冻结 ADR-014 并进入 P0-008B。）
+- 状态：IN_PROGRESS / QUEUED_BEHIND_P0-002（2026-07-14 已完成模板审计和不依赖上游决策的紧急卫生：移除跟踪的 `.env.local`、删除硬编码开发 origin、`middleware.ts -> proxy.ts`、固定 Node/pnpm、清理环境样例；ADR-014 增加候选架构矩阵但尚未 Accepted。2026-07-16 P0-001 Custom Runtime 与 P0-004 Citation DTO 均已接受；按串行游标完成 P0-002 后冻结 ADR-014 并进入 P0-008B。）
 
 ### V5-P0-008B tpl-app Next Web v2 生产骨架
 
@@ -629,16 +629,16 @@ M1a 允许 P0 契约原型继续作为隔离环境 Provider，但 M1b 前必须�
 
 ## 6. Research Runtime 工作流（受 ADR-001 控制）
 
-本节不是默认自建清单。任务适用性如下：
+ADR-001 已选择 Custom Runtime。任务适用性如下：
 
 ```text
 Runtime Common：M1-301、303、305~309、312（实现形态按选型适配）
 Custom only：M1-302、310、311
-Agent Server only：M1-313
-Hybrid only：M1-314
+Agent Server only：M1-313（NOT_APPLICABLE）
+Hybrid only：M1-314（NOT_APPLICABLE）
 ```
 
-ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 并记录 ADR 引用。Common 任务不得重复实现选定 Runtime 已可靠提供的能力，只负责产品领域和 ACL 适配。
+未选分支已按 ADR-001 标记为 `NOT_APPLICABLE`。Common 任务和 Custom 任务必须实现 ADR-001 冻结的产品领域、ACL、durability 与 recovery 边界，不得把 P0 Spike 直接升级为生产 Runner。
 
 ### V5-M1-301 新执行 schema
 
@@ -747,7 +747,7 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 - 仓库：`research-app`、`k8s`
 - 实施：产品 Session/Run 与 assistant/thread/run 映射；auth、remote stream、cancel、Store/checkpoint、版本和产品事件投影。
 - 测试：远程 worker kill、同 Thread 并发、stream reconnect、cancel、升级恢复。
-- 状态：NOT_STARTED
+- 状态：NOT_APPLICABLE（ADR-001 于 2026-07-16 选择 Custom Runtime；只有新 ADR 解除 Agent Server 许可/egress 硬门并重开选型后才能激活。）
 
 ### V5-M1-314 Hybrid 控制面/执行面适配
 
@@ -756,7 +756,7 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 - 仓库：`research-app`、`k8s`
 - 实施：远程执行 contract、delegated identity、EffectiveRunConfig/version mapping、stream/event reconciliation、故障归属。
 - 测试：控制面和执行面分别重启、网络分区、重复 remote create。
-- 状态：NOT_STARTED
+- 状态：NOT_APPLICABLE（ADR-001 于 2026-07-16 选择 Custom Runtime；不得平行建设第二套执行面。）
 
 ## 7. 前端架构与产品体验工作流
 
@@ -1209,7 +1209,8 @@ ADR-001 获批后，在任务跟踪中把未选分支标记为 `NOT_APPLICABLE` 
 12. Frontend-3：V5-P0-007C React Admin v1 冻结（`ACCEPTED / TEMPLATE_MIGRATION_READY`，2026-07-14）。
 13. Reliability：V5-P0-006 可靠交付 ADR 与 Info→Knowledge 参考实现（`ACCEPTED`，2026-07-15）。该项不依赖 Runtime，故在 P0-004/001 前先行收口；这是有记录的任务游标调整，不改变依赖图。
 14. Contract-2：V5-P0-004 Retrieval/Citation Contract（`ACCEPTED`，2026-07-16；真实 RAGFlow retrieval、独立身份、Citation lineage、负向/故障矩阵和清理恢复全部通过）。
-15. **当前唯一代码任务** Runtime：恢复 V5-P0-001，先完成 ADR-001 Runtime 选型与 stream/cancel/resume/checkpoint 可执行边界；接受后再执行 V5-P0-002。
-16. Web Re-baseline：P0-004 已提供 Citation 输入；待 P0-001/002 输出齐备后，继续 V5-P0-008A 并严格执行 008B/B1~B4 -> 008C。
+15. Runtime：V5-P0-001 `ACCEPTED / CANDIDATE_A_SELECTED`（2026-07-16）；Custom Runtime 边界已冻结，Agent Server/Hybrid 分支停止。
+16. **当前唯一代码任务** Execution Identity：V5-P0-002，验证 Session/Thread/Run/Attempt/Invocation 分离、checkpoint mapping、retry Attempt 和子 Invocation；只做隔离 Spike，不提前改生产 Runner。
+17. Web Re-baseline：P0-001/004/005 已提供 Runtime/Citation/身份输入；待 P0-002 收口后继续 V5-P0-008A，并严格执行 008B/B1~B4 -> 008C。
 
 P0-007A2/007C 前禁止向三个 App 应用 React Admin；P0-008C 前禁止向三个 Web 实例应用 Next Web v2。P0-007C/008C 只表示模板可推广；Gate P0 后依次执行 M1-411A -> 411B Info -> 411C Knowledge -> 411D Research，再执行 M1-413A Info -> 413B Knowledge -> 413C Research 的 Web 原地迁移。每个 App 都直接改造现有仓库，但必须先有 tag、镜像 digest、隔离部署和独立回滚；不能把基础替换当作切流量。完成全部 Phase 0 后更新 v5、按 ADR-001 激活唯一 Runtime 分支，再进入 M1a。禁止绕过 Gate P0 直接把 Walking Skeleton 扩建为生产 Runner；Memory/Subagent 薄切只能在 Gate M1a 后执行。
