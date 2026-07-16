@@ -40,7 +40,8 @@
 
 - ADR-005：浏览器 session/cookie、CSRF/CORS、Web/Admin audience，以及 frontend BFF 或直接产品 API 的默认拓扑。
 - ADR-001：SSE/stream adapter、cursor、cancel/resume 和 Runtime endpoint 形态。
-- ADR-004：Citation DTO、安全跳转与 evidence 展示边界。
+- ADR-004：已于 2026-07-16 Accepted；Citation DTO、安全跳转与 evidence 展示
+  边界可直接消费，不再阻塞本 ADR。
 - Kubernetes/发布设计：Node/pnpm 固定版本、反向代理、CSP 策略、共享 cache/tag invalidation、deployment ID、Server Action encryption key 和滚动版本兼容。
 
 这些输出未冻结前，只允许审计和紧急卫生修复，不开始 v2 主体实现。

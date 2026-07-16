@@ -149,6 +149,10 @@ deploy_release() {
     local release_name="${RAGFLOW_RELEASE_PREFIX}-${project_id}"
     local values_file="$VALUES_DIR/dev-values.yaml"
     local cluster_values=""
+    local proxy_url="${RAGFLOW_KIND_EGRESS_PROXY_URL:-}"
+    local proxy_no_proxy="${RAGFLOW_KIND_EGRESS_NO_PROXY:-}"
+    local proxy_no_proxy_helm=""
+    local -a values_args=(-f "$values_file")
 
     case "$environment" in
         development|dev) ;;
@@ -156,22 +160,46 @@ deploy_release() {
     esac
     if [[ "${CLUSTER:-}" == "KIND" ]]; then
         cluster_values="$VALUES_DIR/dev-values-kind.yaml"
+        values_args+=(-f "$cluster_values")
+    fi
+    values_args+=(-f "$SECRET_VALUES")
+
+    if [[ -n "$proxy_url" ]]; then
+        if [[ "${CLUSTER:-}" != "KIND" ]]; then
+            log_error "RAGFLOW_KIND_EGRESS_PROXY_URL 仅允许用于 KIND"
+            return 1
+        fi
+        if [[ "$proxy_url" == *"@"* || ! "$proxy_url" =~ ^https?://[^[:space:]/]+:[0-9]+$ ]]; then
+            log_error "KIND egress proxy 必须是无凭据的 http(s)://host:port"
+            return 1
+        fi
+        if [[ -z "$proxy_no_proxy" ]]; then
+            log_error "启用 KIND egress proxy 时 RAGFLOW_KIND_EGRESS_NO_PROXY 不能为空"
+            return 1
+        fi
+        # Helm's --set parser treats commas as value separators unless escaped.
+        proxy_no_proxy_helm="${proxy_no_proxy//,/\\,}"
+        values_args+=(
+            --set ragflow.egressProxy.enabled=true
+            --set-string "ragflow.egressProxy.httpProxy=$proxy_url"
+            --set-string "ragflow.egressProxy.httpsProxy=$proxy_url"
+            --set-string "ragflow.egressProxy.noProxy=$proxy_no_proxy_helm"
+        )
+        log_info "为 KIND RAGFlow 启用显式 egress proxy（无凭据，内部地址直连）"
     fi
 
-    helm lint "$CHART_DIR" -f "$values_file" ${cluster_values:+-f "$cluster_values"} -f "$SECRET_VALUES"
+    helm lint "$CHART_DIR" "${values_args[@]}"
 
     if [[ "$dry_run" == "true" ]]; then
         helm template "$release_name" "$CHART_DIR" -n "$namespace" \
-            -f "$values_file" ${cluster_values:+-f "$cluster_values"} -f "$SECRET_VALUES" >/dev/null
+            "${values_args[@]}" >/dev/null
         log_success "✅ RAGFlow Helm 渲染校验通过"
         return
     fi
 
     helm upgrade --install "$release_name" "$CHART_DIR" \
         --namespace "$namespace" \
-        -f "$values_file" \
-        ${cluster_values:+-f "$cluster_values"} \
-        -f "$SECRET_VALUES" \
+        "${values_args[@]}" \
         --atomic --wait --timeout "$RAGFLOW_HELM_TIMEOUT"
 
     if [[ "$RAGFLOW_INGRESS_ENABLED" == "true" ]]; then

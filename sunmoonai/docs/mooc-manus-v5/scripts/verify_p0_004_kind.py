@@ -503,10 +503,14 @@ async def main():
             evidence = response.evidence[0]
             citation = Citation.from_evidence(evidence)
             raw = citation.model_dump(mode="json")
-            if {"source_uri", "provider_metadata"}.intersection(raw):
+            forbidden_fields = {
+                key
+                for key in raw
+                if key in {"source_uri", "provider", "provider_metadata"}
+                or key.startswith(("provider_", "ragflow_"))
+            }
+            if forbidden_fields:
                 raise RuntimeError("citation leaked provider evidence fields")
-            if "ragflow" in json.dumps(raw).lower():
-                raise RuntimeError("citation leaked provider identity")
             result = {
                 "evidence_count": len(response.evidence),
                 "evidence_id": str(evidence.evidence_id),

@@ -96,3 +96,23 @@ ragflow:
 The `Builtin` factory is present in RAGFlow metadata but the deployed image does
 not expose a working built-in encoder for `BAAI/bge-m3`; attempting to add it
 returns a model validation error.
+
+## KIND development egress proxy
+
+The chart supports an explicit RAGFlow-only HTTP(S) egress proxy. It is disabled
+by default and is never inferred for production. This is useful when a local
+KIND cluster cannot reliably reach the configured embedding provider directly.
+
+For WSL development, expose an unauthenticated proxy only on the Windows WSL
+gateway/private interface, then deploy with the current gateway:
+
+```bash
+WIN_HOST="$(ip route show default | awk '{print $3; exit}')"
+RAGFLOW_KIND_EGRESS_PROXY_URL="http://${WIN_HOST}:7890" \
+  deploy-ragflow/app/deploy-app/deploy-ragflow.sh --cluster KIND deploy
+```
+
+The deployment injects both upper- and lower-case proxy variables into the
+RAGFlow container and keeps loopback, cluster DNS and private service networks
+in `NO_PROXY`. Do not use a developer desktop proxy as a production egress
+design; production must use governed NAT, egress gateway or proxy controls.

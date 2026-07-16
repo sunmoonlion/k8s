@@ -1,7 +1,7 @@
 # ADR-004：Knowledge Retrieval / Evidence / Citation Contract
 
-状态：CANDIDATE / CONTRACT_FROZEN
-日期：2026-07-15
+状态：ACCEPTED
+日期：2026-07-15（2026-07-16 接受）
 任务：V5-P0-004
 
 ## 1. 问题
@@ -143,7 +143,28 @@ metadata filters、多 Provider federation 在真实检索基线稳定后单独�
 7. KIND 以候选镜像 digest 运行 provider/consumer compatibility matrix，清理恢复原
    Deployment 配置；证据归档到 `docs/evidence/v5/V5-P0-004/`。
 
-## 6. 后续边界
+## 6. 接受结果
+
+2026-07-16 使用固定 Knowledge/Research r2 候选 digest 在 KIND 完成全矩阵：
+
+1. 真实 RAGFlow/DashScope retrieval 返回一条可治理 Evidence；citation 能回溯
+   Knowledge version 与 Info source version，且浏览器 DTO 只包含结构化安全字段。
+2. 未知 dataset `403`、空结果、不可映射 chunk 丢弃、Provider timeout `504` 和
+   token budget 截断均符合本 ADR。
+3. 独立 retrieval 身份的有效控制、匿名、跨 ingestion/retrieval credential、过期、
+   issuer、audience、subject、scope 和伪造签名矩阵全部通过；凭据和正文未输出。
+4. RAGFlow KIND 出站通过默认关闭的显式 Helm egress proxy 配置恢复；Pod 自动代理
+   连续探测 `10/10`。生产仍要求受治理 NAT/egress gateway/proxy，不继承开发者桌面
+   代理。
+5. 验证器发现并修正一次值级误判：合法 `title`/`quote` 可以包含“RAGFlow”字样；
+   Provider 泄漏必须按字段结构检查，不能对来源正文做关键词封禁。
+6. 验证结束后 Knowledge 临时 override 和 Provider double 均已清理，正式 timeout
+   保持 Knowledge `15s`、Research `20s`。
+
+最终证据：
+`sunmoonai/docs/evidence/v5/V5-P0-004/result.md`。
+
+## 7. 后续边界
 
 P0-004 只建立真实最小 Retrieval/Citation 竖切及其治理。完整 Knowledge Admin 诊断、
 deactivate/delete/reindex、正式 tokenizer/reranker、检索指标告警和 Research 答案质量

@@ -1,9 +1,11 @@
-# V5-P0-004 Retrieval/Citation Contract 阶段证据
+# V5-P0-004 Retrieval/Citation Contract 阶段证据（历史）
 
 - 日期：2026-07-15
-- 状态：**IN_PROGRESS / BLOCKED_BY_KIND_EGRESS_PROXY**
+- 状态：**SUPERSEDED_BY_ACCEPTED_RESULT**
 - ADR：`sunmoonai/docs/mooc-manus-v5/adr/ADR-004-knowledge-retrieval-citation-contract.md`
-- 结论：契约、领域身份、Provider adapter、Research consumer 和独立服务身份已进入真实 KIND 候选验证；真实 RAGFlow retrieval 尚未通过，因此 ADR-004 继续保持 `CANDIDATE / CONTRACT_FROZEN`，不得提升正式 tag、不得宣称 P0-004 Accepted。
+- 结论：本文保留阻塞定位过程。2026-07-16 已建立 KIND 显式 egress proxy、
+  完成真实全矩阵并接受 ADR-004；最终结论以
+  `sunmoonai/docs/evidence/v5/V5-P0-004/result.md` 为准。
 
 ## 1. 固定候选
 
