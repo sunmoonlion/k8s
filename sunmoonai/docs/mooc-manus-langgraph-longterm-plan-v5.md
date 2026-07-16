@@ -285,8 +285,10 @@ Runtime Agent Server：NOT_APPLICABLE
 Runtime Hybrid：NOT_APPLICABLE
 ```
 
-P0-002 必须先冻结 Session/Thread/Run/Attempt/Invocation；Gate P0 后才按 M1-301~312
-建设生产 Runner。M1-313/314 只有新 ADR 重开选型后才可激活。
+P0-002 已通过 ADR-002 冻结 Session/Thread/Run/Attempt/Invocation；Gate P0 后才按
+M1-301~312 建设生产 Runner。M1-313/314 只有新 ADR 重开选型后才可激活。P0-002
+证据见 `sunmoonai/docs/evidence/v5/V5-P0-002/result.md`；其隔离 schema 不代表生产
+migration、Attempt lease 或 reconciler 已完成。
 
 ## 7. LangGraph 运行时边界
 
@@ -913,7 +915,7 @@ canary 指标、回滚和恢复演练达标后，才进入有限真实流量；�
 ## 21. 关键 ADR 清单
 
 - ADR-001 Runtime 选型：Accepted，选择 Custom Runtime；Agent Server/Hybrid 当前不适用。
-- ADR-002 Session/Thread/Run/Attempt/Invocation 身份模型。
+- ADR-002 Session/Thread/Run/Attempt/Invocation 身份模型（Accepted）。
 - ADR-003 Info-Knowledge Artifact Contract（Accepted）。
 - ADR-004 Knowledge-Retrieval/Citation Contract。
 - ADR-005 用户身份、服务身份和 delegated run identity。
