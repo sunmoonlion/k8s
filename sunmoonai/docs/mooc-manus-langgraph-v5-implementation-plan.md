@@ -389,7 +389,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 不做：不做无 tag/digest 的不可回滚覆盖、不改三个 App 流量、不把 Run/Artifact/Retrieval 领域状态放入 BFF/Zustand、不预建跨 App 共享 UI 平台、不用 nonce CSP 无条件强制全部 route dynamic。
 - 测试：Next 与 Nest 分别 typecheck/lint/unit，配对 Playwright/a11y、route rendering/cache assertions、PKCE/nonce/state/JWKS/audience/session/CSRF/CSP、stream reconnect/reconcile、多标签、Docker/KIND、非 root/probes、Frontend/Backend 各两个 Pod、滚动版本与 cache/version-skew smoke。模板级 fixture 仅可验证 UI/错误映射，不能替代后续 App 级 Web↔Web Backend 的真实配对 E2E。
 - 验收：从干净目录可重复构建；public 与 authenticated route 的渲染/cache 证据符合矩阵；最终镜像和 K8s 接口可追溯；迁移前 tag/镜像可恢复，三个 Web 实例未被提前修改；每项 ixartz 决策均有 source SHA、采用结果或拒绝理由。
-- 状态：IN_PROGRESS / B1_CURRENT_TASK（P0-008A 已接受；先建立 Repo/Env/Rendering/Test Baseline，不提前修改三个业务 Web 实例。）
+- 状态：IN_PROGRESS / B1_ACCEPTED / B2_CURRENT_TASK（2026-07-18：B1 固定为 `tpl-web-frontend@9e01dcf`、`tpl-web-backend@73eead4`、`tpl-app@6beb363`；静态验证、前端 typecheck/lint/i18n/unit、后端 typecheck/scoped-lint/unit/HTTP E2E，以及双镜像可复现构建、非 root、环境隔离、standalone smoke 和最终 Playwright 4/4 全部通过。Backend Docker bootstrap 的代理/registry 契约已上移到共享 base stage，并由实际首次安装验证。证据：`sunmoonai/docs/evidence/v5/V5-P0-008B/B1/result.md`。当前只进入 B2，不提前修改三个业务 Web 实例。）
 
 ### V5-P0-008C Research Web 真实试点与 Next v2 冻结
 
@@ -1212,6 +1212,7 @@ Hybrid only：M1-314（NOT_APPLICABLE）
 15. Runtime：V5-P0-001 `ACCEPTED / CANDIDATE_A_SELECTED`（2026-07-16）；Custom Runtime 边界已冻结，Agent Server/Hybrid 分支停止。
 16. Execution Identity：V5-P0-002（`ACCEPTED`，2026-07-16）；ADR-002、隔离语义模型、关系 schema、并发/checkpoint/lineage 证据已收口，未提前修改生产 Runner。
 17. Web Architecture Freeze：V5-P0-008A（`ACCEPTED`，2026-07-16）；ADR-014、固定 ixartz 输入、Next+Nest 配对拓扑和全部架构矩阵已收口。
-18. **当前唯一代码任务** Web Re-baseline：V5-P0-008B/B1；在模板 Next Frontend 与 Nest Web Backend 中建立 Repo/Env/Rendering/Test Baseline，再按 B2 -> B3 -> B4 -> P0-008C 串行推进。
+18. Web Re-baseline B1（`ACCEPTED`，2026-07-18）：固定 `tpl-web-frontend@9e01dcf`、`tpl-web-backend@73eead4`、`tpl-app@6beb363`；source、双镜像 build、非 root、standalone 和 Playwright 门禁已通过。
+19. **当前唯一代码任务** Web Re-baseline B2：在固定 B1 上实现 Nest BFF Identity + Next server-only DAL/DTO；严格按 B2 -> B3 -> B4 -> P0-008C 串行推进，B2 通过前不修改三个业务 Web 实例。
 
 P0-007A2/007C 前禁止向三个 App 应用 React Admin；P0-008C 前禁止向三个 Web 实例应用 Next Web v2。P0-007C/008C 只表示模板可推广；Gate P0 后依次执行 M1-411A -> 411B Info -> 411C Knowledge -> 411D Research，再执行 M1-413A Info -> 413B Knowledge -> 413C Research 的 Web 原地迁移。每个 App 都直接改造现有仓库，但必须先有 tag、镜像 digest、隔离部署和独立回滚；不能把基础替换当作切流量。完成全部 Phase 0 后更新 v5、按 ADR-001 激活唯一 Runtime 分支，再进入 M1a。禁止绕过 Gate P0 直接把 Walking Skeleton 扩建为生产 Runner；Memory/Subagent 薄切只能在 Gate M1a 后执行。
