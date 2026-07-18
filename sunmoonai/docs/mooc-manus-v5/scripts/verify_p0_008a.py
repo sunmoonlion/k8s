@@ -191,23 +191,44 @@ def validate_pairs(workspace: Path) -> None:
             )
 
 
-def validate_adr(k8s: Path) -> None:
-    adr = (
+def validate_adrs(k8s: Path) -> None:
+    adr_014 = (
         k8s
         / "sunmoonai/docs/mooc-manus-v5/adr/ADR-014-next-web-template-rebaseline.md"
     ).read_text()
-    required = (
+    required_014 = (
         "状态：ACCEPTED",
-        "Nest Web Backend 是默认 BFF",
+        "FastAPI 为默认 profile",
+        "Nest 为受维护可选 profile",
         "## 10. BFF 路由 allowlist",
         "## 11. Route rendering matrix",
         "## 12. Cache owner matrix",
         "## 13. Stream/reconciliation 契约",
         "## 14. 环境、兼容与发布矩阵",
     )
-    missing = [item for item in required if item not in adr]
-    if missing:
-        raise AssertionError(f"ADR-014 missing frozen decisions: {missing}")
+    missing_014 = [item for item in required_014 if item not in adr_014]
+    if missing_014:
+        raise AssertionError(
+            f"ADR-014 missing revised frozen decisions: {missing_014}"
+        )
+
+    adr_016 = (
+        k8s
+        / "sunmoonai/docs/mooc-manus-v5/adr/ADR-016-web-bff-implementation-profiles.md"
+    ).read_text()
+    required_016 = (
+        "状态：ACCEPTED",
+        "tpl-web-backend         FastAPI，默认实现",
+        "tpl-web-backend-nest    NestJS，受维护的可选实现",
+        "### 2.2 FastAPI 通用母版来源",
+        "### 2.3 配对与信任边界",
+        "### 2.4 共享契约与双实现门禁",
+        "1. B1：",
+        "6. B6：",
+    )
+    missing_016 = [item for item in required_016 if item not in adr_016]
+    if missing_016:
+        raise AssertionError(f"ADR-016 missing frozen decisions: {missing_016}")
 
 
 def parse_args() -> argparse.Namespace:
@@ -233,7 +254,7 @@ def main() -> None:
     validate_template_frontend(tpl_frontend)
     validate_template_backend(tpl_backend)
     validate_pairs(workspace)
-    validate_adr(k8s)
+    validate_adrs(k8s)
 
     print(
         json.dumps(
@@ -241,6 +262,9 @@ def main() -> None:
                 "task": "V5-P0-008A",
                 "result": "passed",
                 "adr_status": "ACCEPTED",
+                "adr_revision": "ADR-016",
+                "default_web_backend_profile": "fastapi",
+                "optional_web_backend_profiles": ["nest"],
                 "ixartz_sha": IXARTZ_SHA,
                 "tpl_web_frontend_baseline": TPL_FRONTEND_SHA,
                 "tpl_web_backend_baseline": TPL_BACKEND_SHA,

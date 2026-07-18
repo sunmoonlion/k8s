@@ -88,6 +88,8 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 ### 1.6 V5-REC-001 前端执行偏差恢复与经验固化
 
 - 类型/优先级：RELIABILITY/FRONTEND/P0；在继续任何前端迁移或 Harbor 清理前执行。
+- 状态：ACCEPTED / HISTORICAL_CONTROL。以下 2026-07-14 矩阵保留用于解释旧镜像和早期
+  偏差，不是 2026-07-18 的当前任务游标；当前游标只看 §14 和最新 handoff。
 - 背景：后端 `P0-005E` 的 `1.0.1` 固化、Info Admin 的旧 Vue 治理页面以及 Research Web 的旧 v4 Agent Console 曾在模板资格链完成前分别落地，造成“组件已经迁移/全部前端已经固化”的错误印象。它们不能改变 P0-007/P0-008/M1 的依赖关系，也不能被倒推为模板或业务迁移验收证据。
 - 当前前端基线（2026-07-14）必须明确记录为：
   - `info-admin-frontend:1.0.1`：旧 Vue 治理实现，保留为迁移前回滚基线；不计入 React Admin 迁移。
@@ -101,7 +103,10 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
   3. 旧 Vue/旧 Next 镜像、迁移前 Git tag 和 digest 是回滚资产，不得因“统一版本号”删除或覆盖；React/Next 重构必须使用新的候选 tag 和新的正式版本号。阶段编号（如 P0-007B）不是镜像版本号，不能据此强行复用 `1.0.1`，也不能未经版本决策擅自提升为 `1.1.0`。
   4. 任一 App 迁移必须单独完成“迁移前 tag/digest → candidate 镜像 → 隔离部署 → 浏览器/E2E/回滚证据 → 正式 tag”，不得三个 App 批量切换。
   5. 任何提前实现只能标记为 `PROVISIONAL_EARLY_SLICE`，必须记录与正式任务的差异、风险和恢复路径，不能修改任务状态或 Gate 结论。
-- 恢复顺序：先完成本节的版本矩阵/生成清单清理，再恢复 `P0-007A2/A2.2`；随后完成 `P0-007B/C`、`P0-008A/B/C` 和 Gate P0，最后才按 Info → Knowledge → Research 执行 M1-411 与 M1-413。
+- 当时恢复顺序（已执行到 P0-008B/B1）：先完成本节的版本矩阵/生成清单清理，再恢复
+  `P0-007A2/A2.2`；随后完成 `P0-007B/C` 和 `P0-008A`。当前不得重放这些已接受任务，
+  必须从 §14 的 B2 开始，完成 B2~B6、P0-008C 和 Gate P0 后，才按 Info → Knowledge →
+  Research 执行 M1-411 与 M1-413。
 - Harbor 清理：本节完成前不得删除任何稳定 tag；只允许在 Deployment、回滚记录和 digest 三方确认无引用后删除临时 tag，且保留观察期内的旧稳定版本。
 - 经验教训：后续每个任务关闭时必须同时更新“任务状态、Git/SHA、镜像 tag+digest、Deployment、测试证据、回滚结论”六项；任何一项缺失都保持 `IN_PROGRESS`，不得以“镜像已运行”代替迁移验收。
 - 本次恢复执行记录（2026-07-14）：
@@ -255,7 +260,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 验收：ADR-006 获批；选定方案能自动发现并补投，不产生重复业务效果；CronJob/image digest/ServiceAccount/最小 broker 权限/结构化计数与恢复 runbook 已验证；完整 NetworkPolicy 与 Prometheus 指标分别留在 M1-005/M1-503；明确 M1 各仓落地任务。
 - 状态：**ACCEPTED / INFO_REFERENCE_IMPLEMENTATION**（2026-07-15：migration gate 已应用 `20260714_0004`；后端 `77 passed`、`pyright app core` 0 error；API、worker、scanner 使用候选 `p0-006-outbox-r3-20260715`，实际 API/worker imageID 均为 `sha256:ff2291ab40ef238acff359af1e1509a010a63949c43fe64a31051bf30e973dc8`。最终 KIND 连续矩阵通过 broker block/recover、双 scanner 单 claim、broker accept 后中断、provider effect 后中断及正式 CronJob 恢复，所有 outbox 最终 `completed`、各 Knowledge 业务效果为 1、凭据输出为 false；清理后 active outbox=0、验证 Job=0、scanner 恢复 `suspend=true`。本结论只接受 Info→Knowledge P0 参考实现和 ADR，不代表四仓共享 SDK、M1-005 NetworkPolicy、M1-503 指标或 Knowledge/Research 后续任务完成。按版本策略保留不可变 candidate digest，**不覆盖现有稳定 `1.0.1`**。）
 
-### 前端物理仓库与差异基线（2026-07-13）
+### 前端/配对后端物理仓库与差异基线（初始 2026-07-13，Web 修订 2026-07-18）
 
 该基线只描述当前事实，任务与验收仍以 P0-007/P0-008 为唯一权威：
 
@@ -264,9 +269,14 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 | React Admin 模板 | `tpl-app/tpl-admin-frontend@451d22f`（A2.1 实现 `d2fa1a8`；A2 开工基线 `7a04bbe`） | 唯一 Admin 模板；React 19 + React Router 8 Framework Mode + Ant Design 6；A2.1 Shell 已接受，身份、CRUD、Rich/Utility 和 Production Gate 仍未完成 |
 | Vue Admin 输入 | Info `fd3a943`、Knowledge `6a33732`、Research `3ef205a` | 三个现有 App 约 250 个文件且高度同源；Info 仅多真实 `src/pages/info/crawl.vue`，其余少量差异主要来自生成内容；作为 A2 能力盘点和后续业务迁移输入，不再另建 Vue 模板仓库 |
 | Next Web 模板 | `tpl-app/tpl-web-frontend@e529332` | 现有 Next 16/App Router 仓库原地重构，不创建 v2 仓库 |
+| Web Backend 当前输入 | `tpl-app/tpl-web-backend@f5bedfb`（B1 固定） | 当前仍是 Nest 实现；B2~B4 完成后固化并改名 `tpl-web-backend-nest`，不能提前把现状当成可用模板 |
+| Web Backend 目标默认 | 尚未创建 | B5 先补齐 canonical FastAPI 母版，再创建新的 `tpl-web-backend`；FastAPI 为默认、Nest 为可选 profile |
 | 三个 Web 实例 | Info `29dc4dc`、Knowledge `c99ef6e`、Research `bd2b987` | 与模板约 37~38 个文件且高度同源；Research 仅多 Agent 组件和相应 dashboard 差异；均在现有仓库内改造 |
 
-仓库纪律：模板通用能力只进入两个既有模板仓库；业务能力只进入对应 App；任何迁移先打 Git tag、记录镜像 digest 和回滚步骤；不得再创建 `*-react`、`*-next-v2` 或平行业务仓库。
+仓库纪律：业务能力只进入对应 App；任何迁移先打 Git tag、记录镜像 digest 和回滚步骤；
+不得再创建 `*-react`、`*-next-v2` 或平行业务仓库。ADR-016 批准的
+`tpl-web-backend-nest` 是唯一新增模板实现 profile：它必须由现有 Nest 仓固化改名产生，
+不是第二套业务仓；新的 `tpl-web-backend` 名称只承载 FastAPI 默认实现。
 
 ### V5-DOC-HYGIENE-001 工具无关文档收敛
 
@@ -354,11 +364,17 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 ### V5-P0-008 Next Web Template Re-baseline Rollup
 
 - 类型/优先级：ARCH/FRONTEND/P0
-- ADR：`sunmoonai/docs/mooc-manus-v5/adr/ADR-014-next-web-template-rebaseline.md`（Accepted）。
-- 目标：按 `P0-008A -> P0-008B -> P0-008C` 保留 Next/App Router 技术路线、重建可信 Web v2，并以 Research 真实 streaming 薄切冻结模板；父任务不直接写代码。
+- ADR：`sunmoonai/docs/mooc-manus-v5/adr/ADR-014-next-web-template-rebaseline.md`、
+  `sunmoonai/docs/mooc-manus-v5/adr/ADR-016-web-bff-implementation-profiles.md`（Accepted）。
+- 目标：按 `P0-008A -> P0-008B(B1~B6) -> P0-008C` 保留 Next/App Router 技术路线，
+  完成受维护 Nest 可选 BFF、FastAPI 默认 BFF 和共享契约门禁，并以 Research+FastAPI
+  真实 streaming 薄切冻结 Web v2；父任务不直接写代码。
 - 顺序纪律：Frontend 轨道先完成 P0-007C；ADR-001/004/005 没有可执行输出前不开始 008B；008C 前禁止把 v2 应用到三个 Web 实例。
 - 完成条件：三个子任务全部 ACCEPTED；否则现有仓库通过迁移前 tag/镜像回退，P0-008 保持 IN_PROGRESS/BLOCKED。
-- 状态：IN_PROGRESS / PAUSED_FOR_ARCHITECTURE_DISCUSSION（P0-008A 与 ADR-014 已于 2026-07-16 ACCEPTED；2026-07-18 因 Node 20 EOL 重开 B1，并已完成 Node 24.18.0 LTS、pnpm 10.24.x、JOSE 6.2.3 的源码与 clean-room 容器门禁。B2 未开始，008C 未开始；按项目负责人要求暂停全部后续实施，先讨论并记录待澄清问题及处置决定。）
+- 状态：IN_PROGRESS / ADR-016_ACCEPTED / B2_NEXT（P0-008A 与 ADR-014 已于 2026-07-16
+  ACCEPTED；2026-07-18 完成 Node 24.18.0 LTS、pnpm 10.24.x、JOSE 6.2.3 的 B1 门禁，
+  并接受 ADR-016。架构讨论已收口；B2 尚未开始，三个业务 Web 实例未修改。完成本轮
+  文档/任务/handoff 一致性门后，B2 是唯一下一代码任务。）
 
 ### V5-P0-008A Web 架构契约冻结与紧急卫生
 
@@ -374,29 +390,82 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 兼容性决策：ADR-014 必须单独记录 Node/Next/React 支持矩阵、镜像可用性和升级回滚证据。Casdoor OIDC/BFF 替代 Clerk，后端 API/Provider Contract 替代 Drizzle/PGlite/前端数据库，未经批准的 SaaS 集成全部排除。
 - Spike：分别证明 protected route 的服务端 session check、public static route、authenticated dynamic route、同源/直连 API 选中拓扑，以及 Runtime adapter 的浏览器断线对账；不得把 Proxy 当最终授权。
 - 测试：错误/过期 session、跨 locale return URL、CSRF/CORS/audience、cache 泄露、CSP、同一用户跨 Pod、滚动版本、stream cursor/reconcile。
-- 验收：ADR-014 Accepted；一张当前/目标拓扑、route rendering matrix、cache owner matrix、BFF allowlist、环境变量和部署兼容矩阵获批；所有未决项都有 owner/阻断任务，不以“模板以后处理”放行。
-- 状态：ACCEPTED（2026-07-16；ADR-014 已接受。固定 ixartz SHA `9926cc1f8664f67eca63065bf1c31bc4f60b09c2`、MIT 许可和逐文件采用/改造/拒绝矩阵；冻结同产品 Next Web Frontend + Nest Web Backend 配对发布单元、Nest 默认 BFF、server-only DAL/DTO、BFF allowlist、route/cache owner、stream/cursor reconciliation、Node/Next/React 兼容、双 digest release tuple 和三组配对 E2E 纪律。静态验证脚本通过；证据：`sunmoonai/docs/evidence/v5/V5-P0-008A/result.md`）
+- 验收：ADR-014/016 Accepted；一张当前/目标拓扑、route rendering matrix、cache owner
+  matrix、BFF allowlist、backend profile/仓库迁移、FastAPI 母版来源、环境变量和部署兼容
+  矩阵获批；所有未决项都有 owner/阻断任务，不以“模板以后处理”放行。
+- 状态：ACCEPTED / REVISION_2（2026-07-18；原 2026-07-16 结果及固定 ixartz SHA
+  `9926cc1f8664f67eca63065bf1c31bc4f60b09c2` 继续有效；ADR-016 将原 Nest 默认改为
+  FastAPI 默认、Nest 受维护可选 profile，并冻结 B2~B6、仓库改名、新 FastAPI 仓建立、
+  母版来源和双实现共享契约纪律。原证据：`sunmoonai/docs/evidence/v5/V5-P0-008A/result.md`；
+  修订附录：`sunmoonai/docs/evidence/v5/V5-P0-008A/revision-20260718.md`。原运行证据保持
+  不变；本附录只修订后续决策，不冒充 B2~B6 运行证据。）
 
-### V5-P0-008B tpl-app Next Web v2 + Nest Web BFF 配对生产骨架
+### V5-P0-008B tpl-app Next Web v2 + 双 Web BFF 模板（FastAPI 默认）
 
 - 类型/优先级：ARCH/FRONTEND/P0
 - 仓库：`tpl-app`
 - 前置：P0-008A ACCEPTED。
-- 实施：在现有 `tpl-web-frontend` 与 `tpl-web-backend` 仓库内重构并冻结配对 Web v2；保留 React 19、Next 16 App Router、next-intl、Tailwind/shadcn/Base UI 候选和 `standalone` 自托管；Nest Web Backend 作为默认 BFF，落地 ADR-005 的 PKCE/nonce/state/JWKS/session/CSRF/授权；Next 实现 Server/Client、server-only DAL/DTO、typed client、render/cache、stream UI adapter、错误/correlation、安全、测试和 Docker/KIND 骨架。不创建新的 Web 模板或第二套 Next auth/BFF 仓库。
+- 实施：保留 React 19、Next 16 App Router、next-intl、Tailwind/shadcn/Base UI 候选和
+  `standalone` 自托管。先在现有 `tpl-web-backend` 完成 Nest 生产 BFF 并与 Next 验收，
+  固化后改名为 `tpl-web-backend-nest`；再补齐 canonical `tpl-admin-backend` 的 FastAPI
+  通用安全母版，并创建新的默认 `tpl-web-backend` FastAPI Web surface。Next 实现统一的
+  Server/Client、server-only DAL/DTO、typed client、render/cache、stream UI adapter、
+  错误/correlation、安全、测试和 Docker/KIND 骨架。只允许 ADR-016 批准的一个模板
+  backend profile 仓，不创建第二套 Next 前端或任何平行业务仓库。
 - 能力吸收边界：严格执行 P0-008A/ADR-014 的采用/改造/拒绝矩阵，而不是仅“参考” ixartz。新增 strict env schema、server-only DAL、Casdoor session、统一 API/error/correlation、route metadata、loading/error/not-found、i18n 缺失 key 检查、a11y、Vitest/Playwright 与可重复 CI。Storybook、bundle 分析和依赖漂移扫描必须有明确触发条件；前端不拥有数据库，不引入 Clerk/Drizzle/PGlite/第三方遥测或外部字体/CDN 作为运行时依赖。
-- 串行施工包：`B1 Repo/Env/Rendering/Test Baseline` -> `B2 Nest BFF Identity + Next DAL/DTO` -> `B3 UI/Query/Stream/Citation` -> `B4 Security/Paired Test/Deploy`；每包在现有前后端仓库分别提交、由父仓固定双 gitlink，并可作为 release tuple 回滚，不复制目录形成 v2 副本。
+- 串行施工包：
+  1. `B1 Repo/Env/Rendering/Test Baseline`：Node 24/Next/Nest/clean-room（已接受）。
+  2. `B2 Nest BFF Identity + Next DAL/DTO`：按 ADR-005 重写 Nest 的 PKCE/state/nonce/
+     JWKS、最小 Redis session、Principal、CSRF/Origin、POST logout、Web audience；Next
+     只经统一 server-only DAL/DTO 使用它。
+  3. `B3 UI/Query/Stream/Citation + Nest Pair`：完成中性 UI 与共享 Auth/Error/SSE/
+     Citation contract，不把 fixture 当真实业务。
+  4. `B4 Nest Security/Paired Test/Deploy/Freeze`：Next+Nest 双 Pod、浏览器、滚动/回滚和
+     安全负向矩阵通过后，固定 tag/digest/contract，原子改名为
+     `tpl-web-backend-nest` 并更新父仓 gitlink/远端；未通过不得改名冒充完成模板。
+  5. `B5 FastAPI Canonical Kernel + Default Web BFF`：先从三套已通过 P0-005 的业务后端
+     仅回收通用能力，补齐并验收 `tpl-admin-backend`；再由其固定 commit 初始化新的
+     `tpl-web-backend`，替换为 Web surface/audience/cookie/namespace/API/downstream。
+     禁止直接复制当前旧 `tpl-admin-backend`，禁止把业务领域代码带入模板。
+  6. `B6 Dual-profile Contract/Paired/Release Gate`：同一 Next typed client/DAL 和语言无关
+     contract vectors 分别验证 FastAPI/Nest；FastAPI 获得默认 release tuple，Nest 保持
+     可选 profile。任何实现无法持续通过时保持 `IN_PROGRESS` 或将 Nest 降为
+     `REFERENCE_ONLY`，不得缩减契约迁就实现。
+
+  每包分别提交并由 `tpl-app` 固定准确 gitlink；仓库改名/新建前后都保存远端 URL、Git
+  tag、镜像 digest 和恢复步骤。B1~B6 全部 ACCEPTED 才关闭 P0-008B。
 - Reference surfaces：只提供中性 public content、authenticated workspace、stream timeline/HITL、citation/error 状态示例；fixture 只验证组件，不得伪装成真实 Run/Retrieval 成功。
-- 不做：不做无 tag/digest 的不可回滚覆盖、不改三个 App 流量、不把 Run/Artifact/Retrieval 领域状态放入 BFF/Zustand、不预建跨 App 共享 UI 平台、不用 nonce CSP 无条件强制全部 route dynamic。
-- 测试：Next 与 Nest 分别 typecheck/lint/unit，配对 Playwright/a11y、route rendering/cache assertions、PKCE/nonce/state/JWKS/audience/session/CSRF/CSP、stream reconnect/reconcile、多标签、Docker/KIND、非 root/probes、Frontend/Backend 各两个 Pod、滚动版本与 cache/version-skew smoke。模板级 fixture 仅可验证 UI/错误映射，不能替代后续 App 级 Web↔Web Backend 的真实配对 E2E。
-- 验收：从干净目录可重复构建；public 与 authenticated route 的渲染/cache 证据符合矩阵；最终镜像和 K8s 接口可追溯；迁移前 tag/镜像可恢复，三个 Web 实例未被提前修改；每项 ixartz 决策均有 source SHA、采用结果或拒绝理由。
-- 状态：IN_PROGRESS / B1_NODE24_ACCEPTED / IMPLEMENTATION_PAUSED（2026-07-18：Node 24.18.0 LTS、pnpm 10.24.x、JOSE 6.2.3 修订已完成；固定 `tpl-admin-frontend@1561e5d`、`tpl-web-frontend@f5340ac`、`tpl-web-backend@f5bedfb`、`tpl-app@fe29739`，固定基础镜像 digest `sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc`。source、Admin 纯 Nginx、Next/Nest clean-room 双镜像、非 root、standalone、生产 fail-fast 和 Playwright 4/4 门禁已通过；证据：`sunmoonai/docs/evidence/v5/V5-P0-008B/B1/result.md`。原 Node 20 B1 为 `SUPERSEDED / NO_NEW_RELEASE`。B2 未开始；按项目负责人要求暂停实施，先讨论并落实必要措施。不得修改三个业务 Web 实例。）
+- 不做：不做无 tag/digest 的不可回滚覆盖、不改三个 App 流量、不把 Admin/Web 合成一个
+  FastAPI 服务、不让 Next Route Handler 建第三套 BFF、不把 Run/Artifact/Retrieval
+  领域状态放入 BFF/Zustand、不预建跨 App 共享 UI 平台、不用 nonce CSP 无条件强制全部
+  route dynamic、不在一个入口随机混跑 FastAPI/Nest。
+- 测试：Next、FastAPI、Nest 分别 typecheck/lint/unit/contract（按语言适用）；共享 provider/
+  consumer vectors；Next+FastAPI 与 Next+Nest 两套 Playwright/a11y、route rendering/cache、
+  PKCE/nonce/state/JWKS/audience/session/CSRF/CSP、stream reconnect/reconcile、多标签、Docker/
+  KIND、非 root/probes、Frontend/Backend 各两个 Pod、滚动版本与 cache/version-skew smoke。
+  模板 fixture 仅验证中性 UI/错误映射，不能替代 App 级真实配对 E2E。
+- 验收：从干净目录可重复构建；public/authenticated route 渲染/cache 符合矩阵；
+  `tpl-admin-backend` 的 FastAPI 母版来源清单证明没有业务代码和旧认证缺陷；两个 backend
+  profile 的仓库 URL/tag/digest/contract 可追溯；FastAPI 默认 tuple 和 Nest 可选 tuple
+  均可独立回滚；三个 Web 实例未提前修改；每项 ixartz 决策有 source SHA 和结果。
+- 状态：IN_PROGRESS / B1_NODE24_ACCEPTED / B2_NEXT（2026-07-18：Node 24.18.0 LTS、
+  pnpm 10.24.x、JOSE 6.2.3 修订已完成；固定 `tpl-admin-frontend@1561e5d`、
+  `tpl-web-frontend@f5340ac`、`tpl-web-backend@f5bedfb`、`tpl-app@fe29739` 和基础镜像
+  digest `sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc`。
+  B1 source、Admin 纯 Nginx、Next/Nest clean-room 双镜像、非 root、standalone、fail-fast
+  和 Playwright 4/4 门禁已通过；证据：`sunmoonai/docs/evidence/v5/V5-P0-008B/B1/result.md`。
+  原 Node 20 B1 为 `SUPERSEDED / NO_NEW_RELEASE`。ADR-016 已接受；B2~B6、008C 未开始，
+  三个业务 Web 实例未修改。）
 
 ### V5-P0-008C Research Web 真实试点与 Next v2 冻结
 
 - 类型/优先级：FUNC/RELIABILITY/FRONTEND/P0
 - 仓库：`tpl-app`、`research-app`、`knowledge-app`、`k8s`
 - 前置：P0-008B ACCEPTED；P0-001 选中 Runtime 有隔离可运行 endpoint，P0-004/005 有可执行 Provider/身份；不要求生产流量，但禁止 fake SSE、fake citation、mock Run success。
-- 实施：从固定 v2 commit 实例化 Research 隔离入口；**Research Web 只与 Research Web Backend/选中 Runtime adapter 成对部署和测试**，跑通真实 session/run、SSE cursor/reconnect、snapshot reconciliation、cancel/resume、HITL、citation 与受权来源跳转；把差异分类为 template/common、Research-specific、deferred，只回收 common。
+- 实施：从固定 v2 commit 实例化 Research 隔离入口；**Research Web 只与默认 FastAPI
+  Research Web Backend/选中 Runtime adapter 成对部署和测试**，跑通真实 session/run、
+  SSE cursor/reconnect、snapshot reconciliation、cancel/resume、HITL、citation 与受权
+  来源跳转；把差异分类为 template/common、Research-specific、deferred，只回收 common。
 - 故障测试：刷新/断网/重复事件/事件缺口/陈旧 terminal、多标签、Runtime/Next Pod 重启、滚动版本、过期 approval、跨用户 URL、Citation 404/403、浏览器取消与后端竞态。
 - 冻结产物：`next-web-template-version`、依赖锁、route/render/cache/BFF/env/deploy 契约、三 Web migration checklist、旧模板回滚和 compatibility matrix。
 - 验收：真实试点可从稳定 URL 恢复且最终与服务端 Projection 收敛；浏览器不读原始 LangGraph/Provider 类型；两个 Pod/滚动版本无静默状态丢失；v2 固定 commit 可干净重建并按迁移清单应用，且模板不含 Research 领域代码。
@@ -422,14 +491,16 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 
 全部条件满足才进入 M1 主链重构：
 
-- ADR-001~006、ADR-013/014 Accepted。
+- ADR-001~006、ADR-013/014/016 Accepted。
 - Artifact/Retrieval consumer-provider contract tests 通过。
 - 身份模型可实施且不依赖匿名 API。
 - Runtime 分支由 ADR-001 明确激活；其他分支停止。
 - Runtime Spike 的 SSE/cancel/worker-kill 与可靠交付 Spike 的副作用恢复证据通过。
 - 最小浏览器 harness 证明 stream 断线后能通过 cursor/Projection 收敛；Citation DTO 与浏览器身份边界进入 ADR-004/005 验收证据。
 - P0-007A/A2/B/C 全部 ACCEPTED；React Admin v1、完整模板能力矩阵、真实 Info 薄切和固定 commit 干净重建/dry-run 原地替换证据通过；Vue 回滚由各 App 的迁移前 tag/镜像提供。
-- P0-008A/B/C 全部 ACCEPTED；现有 Next Web 仓库内的 v2、真实 Research streaming/HITL/citation 薄切、多副本自托管和固定 commit 干净重建/迁移证据通过；旧实现由迁移前 tag/镜像提供回退。
+- P0-008A/B/C 全部 ACCEPTED；现有 Next Web 仓库内的 v2、FastAPI 默认 BFF、Nest 可选
+  profile、共享契约和两套模板配对证据通过；真实 Research streaming/HITL/citation 使用
+  FastAPI 默认 profile；多副本、固定 commit 干净重建/迁移和旧实现回退证据通过。
 - v5 架构按 Spike 结果更新并标记 Baseline Accepted。
 
 ### 2.2 关键路径、工作流与串行执行纪律
@@ -469,9 +540,17 @@ P0-001/004/005 + P0-007C ──> P0-008 Next Web v2 ──> Web track   |
 - R3 Knowledge/Contract：P0-004，随后 Knowledge domain/retrieval。
 - R4 Security/K8s：IMM-001、P0-005，随后 auth/network/secret/migration。
 - R5 Reliability/Evaluation：P0-006，随后 dispatcher/failure/E2E/evaluation。
-- R6 Frontend/Experience：严格按 P0-007A -> A2.1 -> P0-005 -> A2.2 -> A2.3 -> A2.4 -> A2.5 -> P0-007B -> P0-007C；再等待 P0-001/004 决策输出，按 P0-008A -> P0-008B(B1~B4) -> P0-008C 在现有 Web 仓库内重基线 Next Web。P0-007A2 通过才具备模板迁移资格；P0-007C/008C 分别使两个模板具备推广资格。Gate P0 后按 Info -> Knowledge -> Research 串行执行 411A/411B/411C/411D 和 413 的原地迁移/回滚验证；两个模板资格链完成后进入 M1-400~413 与跨仓浏览器 E2E。
+- R6 Frontend/Experience：严格按 P0-007A -> A2.1 -> P0-005 -> A2.2 -> A2.3 -> A2.4 -> A2.5 -> P0-007B -> P0-007C；再等待 P0-001/004 决策输出，按 P0-008A -> P0-008B(B1~B6) -> P0-008C 重基线 Next Web。B2~B4 完成 Nest 可选模板，B5~B6 完成 FastAPI 母版/默认 Web BFF 和双实现门禁；P0-008C 只用 FastAPI 默认 profile。P0-007A2 通过才具备模板迁移资格；P0-007C/008C 分别使两个前端模板具备推广资格。Gate P0 后按 Info -> Knowledge -> Research 串行执行 411A/411B/411C/411D 和 413 的原地迁移/回滚验证；两个模板资格链完成后进入 M1-400~413 与跨仓浏览器 E2E。
 
-粗粒度工作量用于容量规划，不是承诺日期：原七项约 14~22 人周；新增 P0-008A/B/C 约 5~9 人周（A 1~2、B 2~3、C 2~4），完整 Phase 0 调整为约 19~31 人周。P0-007A/A2/B/C 重新估算约 10~18 人周（A 已完成；A2 4~8、B 3~5、C 1~2），三个 App 的 411A 原地替换另计约 1~2 人周，411B/C/D 业务等价迁移另计约 8~16 人周，三个 Web 实例 413 原地迁移另计约 3~6 人周。Frontend 内部按用户要求串行，因此不得再以“多人并行”承诺 2~3 个日历周；核心 ADR Spike 可保持各自 2~3 周时间盒，完整 Gate 以证据完成为准。M1a 因 Research Web 薄切前移到 P0-008C，重估为约 18~30 人周；M1a.5 约 4~7 人周；M1b 约 23~40 人周；M1c canary 观察至少 1~2 个自然周。每次 Gate 后重估，禁止把区间当固定 deadline。
+粗粒度工作量用于容量规划，不是承诺日期：ADR-016 将 P0-008 从单一 Nest 配对扩展为
+Nest 可选模板、FastAPI 通用母版/默认 Web BFF 和双实现共享门禁，P0-008A/B/C 重新估算为
+约 11~19 人周（A 1~2、B1~B6 8~13、C 2~4），完整 Phase 0 重估为约 25~41 人周。
+P0-007A/A2/B/C 约 10~18 人周；三个 App 的 411A 原地替换另计约 1~2 人周，411B/C/D
+业务等价迁移另计约 8~16 人周，三个 Web 实例 413 原地迁移另计约 3~6 人周。Frontend
+内部按用户要求串行，因此不得以“多人并行”压缩日历时间；核心 ADR Spike 可保持各自
+2~3 周时间盒，完整 Gate 以证据完成为准。M1a 因 Research Web 薄切前移到 P0-008C，
+重估为约 18~30 人周；M1a.5 约 4~7 人周；M1b 约 23~40 人周；M1c canary 观察至少
+1~2 个自然周。每次 Gate 后重估，禁止把区间当固定 deadline。
 
 ### 2.3 交付里程碑定义
 
@@ -766,9 +845,11 @@ Hybrid only：M1-314（NOT_APPLICABLE）
 
 - 类型/优先级：ARCH/FUNC/P0
 - 仓库：`info-app`、`knowledge-app`、`research-app`、`k8s`
-- 前置：P0-007C、P0-008C；ADR-013/014。
+- 前置：P0-007C、P0-008C；ADR-013/014/016。
 - 实施：消费两个模板资格链的证据，记录六个实例相对固定模板版本的用户、路由、部署、认证、API/BFF、状态管理、测试和 owner；冻结跨 App deep-link 与实例迁移顺序；记录 Vue legacy -> React Admin 和旧 Next -> Next v2 的 route/feature/evidence 映射，不重复进行 P0 已完成的模板现状审计。
-- ADR 输入：ADR-005 浏览器身份、ADR-007 UIProjection、ADR-001 stream adapter、ADR-013/014 技术与模板边界；不另造重复契约。
+- ADR 输入：ADR-005 浏览器身份、ADR-007 UIProjection、ADR-001 stream adapter、
+  ADR-013/014/016 技术、配对、backend profile 与模板边界；业务 Web 统一使用 FastAPI
+  默认 profile，不另造重复契约。
 - 测试：从每个已部署入口验证路由、登录跳转、API audience/CORS；检查浏览器无法直连内部服务。
 - 验收：形成一张当前/目标拓扑和 gap 清单；每个界面能力有唯一 owner；Info Web/Knowledge Web 不被误用为治理控制面。
 - 状态：NOT_STARTED
@@ -932,13 +1013,14 @@ Hybrid only：M1-314（NOT_APPLICABLE）
 
 - 类型/优先级：FRONTEND/FUNC/MAINTAINABILITY/P0（M1b 前完成）
 - 仓库：`tpl-app`、`info-app`、`knowledge-app`、`research-app`、`k8s`
-- 前置：Gate P0、P0-008C ACCEPTED；使用冻结的 `next-web-template-version`，不得从任一业务 App 反向复制形成模板。
+- 前置：Gate P0、P0-008C ACCEPTED；使用冻结的 `next-web-template-version` 和 FastAPI 默认
+  `web-backend-template-version`，不得从任一业务 App 反向复制领域代码形成模板。
 - 目标：按 `413A Info -> 413B Knowledge -> 413C Research` 串行把 Next Web v2 的通用基础应用到三个现有 Web 仓库；不创建新仓库，不一次覆盖三个 App，不把“模板替换完成”误判为业务等价或切流完成。
 - 共同实施：每个 App 先创建迁移前 Git tag、记录当前镜像 digest/环境变量/route 清单，再在原仓迁移分支内重构；保留真实业务页面并逐项迁移，不以空模板覆盖后宣称完成。通用修正回流 `tpl-web-frontend`，领域页面、DTO 和规则留在 App。
 - `413A Info Web`：验证 public content、登录后 workspace、locale、render/cache 和 Info 真实业务 route；完成后才开始 Knowledge。
 - `413B Knowledge Web`：验证 public entry、授权检索/个人空间、Citation 跳转和 provider 隔离；完成后才开始 Research。
 - `413C Research Web`：复用 P0-008C 真实试点和 M1-409 workspace，不重复创建 stream client；验证 Run/HITL/citation、多标签恢复和滚动版本。
-- 测试：三个实例分别 install/typecheck/lint/unit/build、route/render/cache matrix、auth/CSRF/CSP、Playwright/a11y、Docker/KIND、多副本/version-skew；`413A` 只配对 Info Web Backend，`413B` 只配对 Knowledge Web Backend，`413C` 只配对 Research Web Backend + 选中 Runtime adapter。每个 App 独立切换和回滚演练。
+- 测试：三个实例分别 install/typecheck/lint/unit/build、route/render/cache matrix、auth/CSRF/CSP、Playwright/a11y、Docker/KIND、多副本/version-skew；`413A` 只配对 FastAPI Info Web Backend，`413B` 只配对 FastAPI Knowledge Web Backend，`413C` 只配对 FastAPI Research Web Backend + 选中 Runtime adapter。Nest profile 只在模板共享契约门持续验证，不作为三个业务 App 的完成证据。每个 App 独立切换和回滚演练。
 - 验收：三实例均可追溯到同一冻结模板版本且无未解释漂移；各自业务 route/contract/与唯一配对后端的真实浏览器 E2E 通过；M1b 前完成全部迁移，任一 App 失败只回滚该 App，不连带切换其他 App。
 - 状态：NOT_STARTED
 
@@ -1163,7 +1245,7 @@ Hybrid only：M1-314（NOT_APPLICABLE）
 | 四仓数据闭环 | P0-003/004, M1-104/201/205/307/601 | 真实 E2E + citation 回溯 |
 | 安全 | P0-005, M1-001~005, M1-603 | 未授权/SSRF/tool 越权测试 |
 | durable execution | P0-001/002/006, M1-301~314（按 ADR-001 选择分支） | kill/retry/resume/SSE |
-| 前端产品闭环 | P0-001/004/005/007A/A2/B/C/008, M1-400~413, M1-600/601 | React Admin 模板完整能力矩阵、六实例逐 App 原地迁移、Next Web v2、浏览器真实 E2E、HITL、刷新/断网恢复、跨 Admin lineage、legacy 退出 |
+| 前端产品闭环 | P0-001/004/005/007A/A2/B/C/008, ADR-016, M1-400~413, M1-600/601 | React Admin 模板完整能力矩阵、FastAPI 默认/Nest 可选 Web BFF 共享契约、六实例逐 App 原地迁移、Next Web v2、浏览器真实 E2E、HITL、刷新/断网恢复、跨 Admin lineage、legacy 退出 |
 | 长期记忆 | M1-701, M2-001~005 | 跨 Session、纠错、删除、用户治理、质量 |
 | 多智能体 | M1-702, M2-101~105 | 隔离、预算、质量增益、用户可解释控制 |
 | 可维护演进 | M1-501/504, M2-104 | migration、digest、版本兼容 |
@@ -1211,8 +1293,15 @@ Hybrid only：M1-314（NOT_APPLICABLE）
 14. Contract-2：V5-P0-004 Retrieval/Citation Contract（`ACCEPTED`，2026-07-16；真实 RAGFlow retrieval、独立身份、Citation lineage、负向/故障矩阵和清理恢复全部通过）。
 15. Runtime：V5-P0-001 `ACCEPTED / CANDIDATE_A_SELECTED`（2026-07-16）；Custom Runtime 边界已冻结，Agent Server/Hybrid 分支停止。
 16. Execution Identity：V5-P0-002（`ACCEPTED`，2026-07-16）；ADR-002、隔离语义模型、关系 schema、并发/checkpoint/lineage 证据已收口，未提前修改生产 Runner。
-17. Web Architecture Freeze：V5-P0-008A（`ACCEPTED`，2026-07-16）；ADR-014、固定 ixartz 输入、Next+Nest 配对拓扑和全部架构矩阵已收口。
+17. Web Architecture Freeze：V5-P0-008A（`ACCEPTED / REVISION_2`，2026-07-18）；
+    ADR-014/016、固定 ixartz 输入、Web 配对拓扑、FastAPI 默认/Nest 可选 profile、仓库迁移、
+    FastAPI 母版来源和全部架构矩阵已收口。
 18. Web Re-baseline B1 Node 24 运行时修订（`ACCEPTED / NODE24_RUNTIME_BASELINE`，2026-07-18）：固定 `tpl-admin-frontend@1561e5d`、`tpl-web-frontend@f5340ac`、`tpl-web-backend@f5bedfb`、`tpl-app@fe29739` 和 Node 基础镜像 digest `sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc`；source、Admin 纯 Nginx、Next/Nest clean-room 双镜像、非 root、standalone、fail-fast 和 Playwright 门禁已通过。旧 Node 20 基线只作历史审计，不得产生新发布。
-19. **当前没有代码任务，实施已暂停**：按项目负责人要求，先讨论此前未澄清的问题并记录决定/措施；B2 尚未开始，三个业务 Web 实例未修改。只有项目负责人明确恢复实施后，才能把 Web Re-baseline B2 重新设为唯一代码任务，并继续执行 B2 -> B3 -> B4 -> P0-008C 的串行纪律。
+19. Web Re-baseline B2 Nest BFF Identity + Next DAL/DTO：**唯一下一代码任务**。必须先补齐
+    Nest Web BFF 的 ADR-005 安全内核和共享契约，不得提前改名仓库、创建 FastAPI Web
+    仓或修改三个业务 Web 实例。
+20. B2 接受后严格执行 `B3 -> B4（Nest 固化/改名） -> B5（FastAPI 母版/默认 Web） ->
+    B6（双实现门禁） -> P0-008C（Research+FastAPI）`。任何一步的测试、证据、状态、提交、
+    tag/digest 或回滚缺失，下一步保持未激活。
 
 P0-007A2/007C 前禁止向三个 App 应用 React Admin；P0-008C 前禁止向三个 Web 实例应用 Next Web v2。P0-007C/008C 只表示模板可推广；Gate P0 后依次执行 M1-411A -> 411B Info -> 411C Knowledge -> 411D Research，再执行 M1-413A Info -> 413B Knowledge -> 413C Research 的 Web 原地迁移。每个 App 都直接改造现有仓库，但必须先有 tag、镜像 digest、隔离部署和独立回滚；不能把基础替换当作切流量。完成全部 Phase 0 后更新 v5、按 ADR-001 激活唯一 Runtime 分支，再进入 M1a。禁止绕过 Gate P0 直接把 Walking Skeleton 扩建为生产 Runner；Memory/Subagent 薄切只能在 Gate M1a 后执行。

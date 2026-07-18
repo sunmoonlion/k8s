@@ -1,5 +1,12 @@
 # MoocManus 长期智能体平台架构规划
 
+> **归档声明（2026-07-18）**：本文 v4 已由
+> [`mooc-manus-langgraph-longterm-plan-v5.md`](./mooc-manus-langgraph-longterm-plan-v5.md)
+> 取代，只保留为历史设计输入，不再作为架构、任务顺序、仓库命名、前后端技术栈或
+> Gate 状态的权威来源。后续实施必须同时以 v5、v5 implementation plan、Accepted ADR
+> 和当前 handoff 为准；不得因本文仍包含旧 M1/M2、Next/Nest 或 Research 单仓描述而
+> 恢复已被 v5 推翻的路径。
+
 版本：**v4**
 定位：在 app-platform/research-app 中**全新建设**一个以 LangGraph 为编排运行时、可长期维护、可扩展、支持多智能体与长期记忆的智能体平台。旧 `imooc-mas/mooc-manus` 已废弃，仅作领域概念启发与 golden 样本来源，不作工程底座、不迁移、不兼容。
 更新时间：2026-06-27

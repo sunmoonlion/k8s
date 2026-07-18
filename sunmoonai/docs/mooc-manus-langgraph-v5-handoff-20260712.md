@@ -1,232 +1,232 @@
-# MoocManus v5 交接文档
+# MoocManus v5 当前交接文档
 
-> 快照初始日期：2026-07-12；最近更新：2026-07-13（Asia/Shanghai）
-> 适用分支：各仓库的 `codex-1`；`tpl-app` 当前为 `master`
-> 目的：在较长时间暂停后，让下一位执行者能够从已验证状态安全恢复，而不把局部验证误判为生产完成。
+> 文件名保留最初快照日期以避免旧链接失效；本文内容已于 **2026-07-18
+> （Asia/Shanghai）整体重写**，旧 2026-07-12/13 状态不再有效。
+>
+> 适用分支：`k8s/info-app/knowledge-app/research-app` 的 `codex-1`；`tpl-app` 及模板
+> 子仓当前为 `master`。
 
-## 1. 阅读顺序与事实优先级
+## 1. 权威顺序
 
-本文件是当前状态快照，不是新的架构方案。恢复时依次阅读：
+恢复工作时依次阅读：
 
-1. 目标架构：`sunmoonai/docs/mooc-manus-langgraph-longterm-plan-v5.md`
-2. 施工顺序：`sunmoonai/docs/mooc-manus-langgraph-v5-implementation-plan.md`
-3. 本文的当前事实、未完成项和恢复顺序
-4. 对应任务证据：`sunmoonai/docs/evidence/v5/`
-5. 相关 ADR：`sunmoonai/docs/mooc-manus-v5/adr/`
+1. `sunmoonai/docs/mooc-manus-langgraph-longterm-plan-v5.md`
+2. `sunmoonai/docs/mooc-manus-langgraph-v5-implementation-plan.md`
+3. `sunmoonai/docs/mooc-manus-v5/adr/ADR-014-next-web-template-rebaseline.md`
+4. `sunmoonai/docs/mooc-manus-v5/adr/ADR-016-web-bff-implementation-profiles.md`
+5. 本文当前游标、仓库事实和禁止项
+6. `sunmoonai/docs/evidence/v5/` 对应任务的原始证据
 
-如本文与 live cluster 不一致，以只读核验命令、当前镜像 digest 和 Git 提交重新确认；不要凭旧聊天记录直接部署。
+`mooc-manus-langgraph-longterm-plan-v4.md` 已归档，只能作为历史设计输入。聊天、旧镜像
+tag、Pod Running、单个 smoke 或本文中的提交快照都不能覆盖 v5、Accepted ADR、任务状态
+和当前只读核验结果。
 
-## 2. 目标和不可改变的边界
+## 2. 2026-07-18 已确认的架构决定
 
-最终目标是在 `app-platform/research-app` 建立以 LangGraph 为编排内核、可长期维护、可扩展、支持多智能体和长期记忆的智能体平台，同时保持 Info、Knowledge、Research 三个领域的数据所有权边界。
+### 2.1 前端运行形态
 
-在 M1b 之前不能改变：
+- Admin：React 19 + React Router 8 Framework Mode，`ssr:false`，最终运行镜像只有 Nginx。
+- Web：React 19 + Next 16 App Router，public route 可 static/SSG/受控 ISR，受权 workspace
+  dynamic/no-store，Client Component 承担交互；`standalone` Node 24.18.0 运行。
+- 渲染模式不决定身份模式。Admin/Web 都使用 backend-owned BFF session，浏览器不保存
+  Provider token；前端守卫只改善 UX，最终授权在对应 Backend。
 
-- Redis 只能承担 live signaling/cache，不能成为 Run、用户数据或事件的持久真相源。
-- `Session / Thread / Run / Attempt / Invocation` 必须显式区分。
-- Artifact、Retrieval、Citation、Identity 和事件/投影必须有版本化跨仓契约；不能用 mock success 或临时 URL 代替真实契约。
-- 浏览器只使用本 App/Surface 的 BFF session；不能保存 access token，也不能编排跨仓 internal API。
-- 服务调用使用可验证、可撤销的 service identity；不能恢复静态 API key、Admin token 或匿名 internal route。
-- `AGENT_V4_TRAFFIC_ENABLED` 仍为 `false`；KIND 验证不代表允许真实流量。
-- 前端目标态为 React/TypeScript，但不强迫所有面使用同一运行框架：Admin 为 React Router Framework Mode + Vite 的静态 SPA，Web 为 React + Next.js App Router；Vue Admin/旧 Web 只通过各 App 的迁移前 tag、镜像和 Git 历史回退，不再维护平行模板仓库。
+### 2.2 配对关系
 
-## 3. 当前任务状态
-
-| 任务 | 当前状态 | 已证明 | 仍未证明/下一步 |
-|---|---|---|---|
-| IMM-001 配置真相保护 | ACCEPTED | Git/K8s 配置漂移保护 | 后续由 M1-004 统一治理 |
-| DOC-HYGIENE-001 工具无关文档收敛 | ACCEPTED（本地提交待推送） | 四根仓旧 AI 工具文档树已删除；三份有效快照迁入中性 history；19 个仓库规则/入口无悬空引用 | 按子仓 -> 父仓 -> k8s 顺序推送；之后恢复 A2.1 |
-| P0-001 Runtime 选型 | IN_PROGRESS / Candidate A partial | 自建候选的部分 interrupt/resume、旧 Graph 恢复、Postgres checkpointer 重连 | 同 Thread 并发、cancel、cursor 恢复、真实 kill/故障矩阵；B/C 尚未对照；ADR-001 不得标 ACCEPTED |
-| P0-002 执行身份模型 | NOT_STARTED | 文档已有候选实体边界 | schema、状态转换、checkpoint mapping、并发条件更新和 lineage 测试 |
-| P0-003 Artifact Contract | ACCEPTED | Info -> Knowledge 真实 S3 artifact、version/hash/size/media type、404/403/hash mismatch | 不等同于 Retrieval/Citation 或完整 Research E2E |
-| P0-004 Retrieval/Citation | NOT_STARTED | 目标契约已写入 v5 | Knowledge Retrieval API、Evidence DTO、Research consumer 和服务授权 |
-| P0-005 身份与服务调用 | IN_PROGRESS / partial | 三 Admin 匿名 401；真实 Casdoor client-credentials 边界；复验矩阵 401/401/422 | 浏览器 PKCE/CSRF/跨用户、伪造/过期 token、可重复 Secret、migration job gate、ADR-005 接受 |
-| P0-005E 镜像/部署隔离 | ACCEPTED（本快照） | 三 Admin Backend API+worker 已验证 digest retag 为 1.0.1；临时 p0 tag 和无用零副本 RS 已清理 | 不要把 1.0.0 当旧垃圾删除；它仍被其他组件使用 |
-| P0-006 可靠交付 | NOT_STARTED | v5 已定义 outbox、lease、reconciler 方向 | ADR、最小原型、重复投递/副作用恢复证据 |
-| P0-007A React Admin 模板 | ACCEPTED（仅 `SKELETON_ACCEPTED`） | React 模板、静态构建、Nginx/base path、E2E/KIND smoke | 完整 Vue 能力对齐尚未完成；必须先完成新增 P0-007A2 |
-| P0-007A2 React Admin 模板能力对齐 | IN_PROGRESS（A2.1） | 三个 Vue App 固定输入 commit、现有 React commit 和五个串行施工包已冻结 | 先完成 Shell；P0-005 接受后再做 A2.2 身份/数据基础，随后 CRUD、Rich/Utility、Production Gate |
-| P0-008 Next Web v2 | NOT_STARTED | ADR-014 仍为 Proposed；模板和三个实例的当前提交/差异已冻结 | 等待 007C 及 P0-001/004/005 输出后，在现有模板仓原地重构并做 Research 真实试点 |
-| M1a/M1a.5/M1b | NOT_STARTED | 只有路线和 Gate 定义 | 不能因 Phase 0 smoke 通过而提前进入生产 Runner、记忆或多智能体产品化 |
-
-### 3.1 已完成的关键证据
-
-- `V5-P0-003`：`sunmoonai/docs/evidence/v5/V5-P0-003/result.md`
-  - Artifact schema SHA-256：`a3219604ed3562c436336d4650c2a0fd08afd9a8829e1d17b12d6a929f499c81`
-  - 真实 KIND 成功状态为 `artifact_verified`；hash mismatch、合法不存在对象的 404、权限拒绝 403 均通过。
-  - 该任务只证明 Artifact transport/integrity，不证明 RAGFlow、Retrieval 或 Citation。
-- `V5-P0-005`：`sunmoonai/docs/evidence/v5/V5-P0-005/result.md`
-  - 三 Admin 匿名业务入口：401。
-  - Knowledge internal route 无 service token：401；真实 service credential 请求到达业务校验：422。
-  - token 未打印、未写入证据；Research traffic 验证后恢复为 `false`。
-  - 浏览器 PKCE 矩阵尚未由该脚本覆盖。
-- `V5-P0-007A`：`sunmoonai/docs/evidence/v5/V5-P0-007A/result.md`
-  - tpl-app React Admin commit：`fe8fc5cfd2a9d23f4f8a1bcd0465440b2341d85e`
-  - React 19.2.7、React Router Framework Mode 8.2.0、Vite 7.3.6、Ant Design 6.5.0、TanStack Query 5、Zustand 5。
-  - 生产产物为 `ssr: false` 静态 SPA，运行镜像只有 Nginx，不含 Node runtime。
-  - 证据范围是 `SKELETON_ACCEPTED`；它不是 Vue 模板完整能力等价，也没有同步到三个业务 Admin。
-
-### 3.2 前端物理仓库基线（2026-07-13）
-
-- 唯一 React Admin 模板：`tpl-app/tpl-admin-frontend@1239a30cbe48`，A2 开工代码基线为 `7a04bbe301bc`；远端为 `sunmoonlion/tpl-admin-frontend`。它约 40 个受控源码/配置文件，仍是技术骨架。
-- Vue 能力输入只来自三个现有 App：Info `fd3a943358f6`、Knowledge `6a337322cdd1`、Research `3ef205afa26b`；三者约 250 个文件且高度同源，Info 仅多真实 `src/pages/info/crawl.vue`。不再创建或维护 Vue 模板仓库。
-- Next 模板：`tpl-app/tpl-web-frontend@e529332bf191`；三个实例为 Info `29dc4dc61291`、Knowledge `c99ef6e32be0`、Research `bd2b98785a6a`。它们高度同源，Research 主要多 Agent 组件/页面差异。
-- 后续 Admin/Web 都直接改造现有仓库，但必须使用迁移分支、迁移前 tag、镜像 digest、隔离入口和逐 App 回滚；不得创建 `*-react`、`*-next-v2` 或其他平行业务仓库。
-
-### 3.3 工具无关文档基线（2026-07-13）
-
-- 四个根仓只以 `docs/README.md` 作为本仓文档入口；跨仓架构、任务、ADR、contract 和 evidence 继续由 k8s v5 文档统一拥有。
-- 原有两套 AI 工具专属目录已删除，普通文件、隐藏 Cursor rules 和全部子模块搜索旧目录名均为零。
-- Info `SPIDER_MVP_HANDOFF_20260710.md`、Knowledge `KNOWLEDGE_INGESTION_WORKER_20260711.md` 和 `KNOWLEDGE_API_CONTRACT_SNAPSHOT_20260711.md` 已迁入各 App 的 `docs/history/`，明确不是当前真相源。
-- 其他旧模板、会话交接、风险/决策样例和 Casdoor 历史问题仍在 Git 历史中可审计，但不得作为恢复入口或当前运行手册。
-
-## 4. 仓库、分支和未提交内容
-
-### 4.1 `/home/zymun/k8s`
-
-- 分支：`codex-1`；本轮计划修订前与 `origin/codex-1` 同步，基线提交 `fe7b678`。恢复时以 `git status`/`git log` 复核后续计划提交。
-- 最近关键提交包含 `fe7b678`（原地前端迁移工作流）、`888afb8`（canonical React Admin 仓库）和 `f7f32af`（React Admin parity gate）。
-- Info 部署脚本真实路径为 `sunmoonai/app-platform/info-app/deploy-info-app-all/deploy-info-app-all.sh`；不要在 `sunmoonai/app-platform/info-app` 目录直接假设脚本位于当前目录。
-
-### 4.2 `/home/zymun/info-app`
-
-- 分支：`codex-1`；DOC-HYGIENE 父仓提交 `05cfacb`，本地待推送。
-- 子仓提交：Admin Backend `f2891b7`（包含此前 artifact/auth 实现链）、Admin Frontend `2f4dcae`、Web Backend `e9b7052`、Web Frontend `1d2e1e3`；均只新增本轮中性文档规则提交，业务代码未在本轮修改。
-- 父仓已记录四个当前子仓指针，不再存在旧的未提交 backend pointer；必须先推四个子仓，再推父仓。
-
-### 4.3 `/home/zymun/knowledge-app`
-
-- 分支：`codex-1`；DOC-HYGIENE 父仓提交 `9c8b9da`，本地待推送。
-- 子仓提交：Admin Backend `924d3ed`（包含此前 ingestion/auth 实现链）、Admin Frontend `deb4643`、Web Backend `31e3576`、Web Frontend `c963de6`；本轮业务代码未修改。
-- 父仓已记录四个当前子仓指针；必须先推四个子仓，再推父仓。
-
-### 4.4 `/home/zymun/research-app`
-
-- 分支：`codex-1`；DOC-HYGIENE 父仓提交 `6080a4e`，本地待推送。
-- 子仓提交：Admin Backend `4ace4f5`（其历史包含 `33fd6de` Runtime Spike）、Admin Frontend `0fb126b`、Web Backend `3f2c3d3`、Web Frontend `3305cbf`；本轮业务代码未修改。必须先推四个子仓，再推父仓。
-- 四个 Runtime Spike 文件仍是隔离实验代码：
-  - `app/app/infrastructure/graph/runtime_selection_spike.py`
-  - `app/scripts/run_runtime_selection_spike.py`
-  - `app/scripts/run_runtime_selection_postgres_spike.py`
-  - `app/tests/test_runtime_selection_spike.py`
-- 这些文件是 P0-001 Candidate A partial 的重要证据来源，但不接入生产 API/worker；恢复时先阅读并运行测试，不得据此把 ADR-001 标成 Accepted。
-
-### 4.5 `/home/zymun/tpl-app`
-
-- 分支：`master`；DOC-HYGIENE 父仓提交 `9f1adcd`，本地待推送；canonical React Admin 仍为已推送的 `1239a30`（A2 开工代码基线 `7a04bbe`）。
-- 本轮子仓提交：Admin Backend `e385bff`、Web Backend `ae0c293`、Web Frontend `2a2965a`；仅更新局部文档规则。先推这三个子仓，再推 tpl 父仓。
-- `tpl-app` 已移除独立 Vue 模板和 AI 工具专属文档树。A2.1 代码尚未在本轮继续修改。
-
-## 5. 当前 KIND / Harbor 事实
-
-### 5.1 三个已验证 Admin Backend
-
-| 组件 | 1.0.1 对应的已验证 digest |
-|---|---|
-| Info Admin Backend | `sha256:6c8041e83f96f4952718ecf63a8c8d8a5664d8343ecc135b1c1e0ad13a2ceb3d` |
-| Knowledge Admin Backend | `sha256:7c55d2bfd130f0b68a8b8df3f338739c1570ceef36b6112da63f1bd740b9b7d4` |
-| Research Admin Backend | `sha256:b10820a71218f5630cc519452c426a867a85ba5ed95870fae164e9d31fec6d5b` |
-
-### 5.2 Harbor 清理结果
-
-已删除三个后端仓库的临时 `p0-005-auth-20260712*` tag，以及两个只被旧 r2 tag 引用的 standalone artifact digest。r3 和 Research 临时 tag 与 `1.0.1` 共享 digest，因此只删 tag，artifact 仍由 `1.0.1` 保留。
-
-当前三个后端 Harbor 仓库都保留 `1.0.0` 和 `1.0.1`。`1.0.0` 不能删除：当前 Info/Research Web、NodeBullWorker、Research Admin Frontend 等组件仍在使用它，并且它是可回滚基线。
-
-### 5.3 当前部署边界
-
-- 三个 Admin Backend API/worker：`1.0.1`。
-- Info Admin Frontend：`1.0.1`；Research Admin Frontend：`1.0.0`。
-- 未通过同一后端测试的 Web/Frontend/worker 保持原稳定标签；不能把 App 级 tag 作为全 App 发布开关。
-- `app-platform-dev` 最后核验：无非 Running/Succeeded Pod、无 `p0-*` 镜像引用、无残留的零副本 `v5-p0-003` ReplicaSet。
-- 这是 KIND/内部环境状态；没有 Ingress、生产流量或 M1b canary 授权。
-
-## 6. 暂停后的推荐恢复顺序
-
-恢复时不要一次展开全部 Phase 0。每一步完成后保存证据并重新确认工作树和集群。
-
-### Step 0：只读复核环境
-
-```bash
-cd /home/zymun/k8s
-git status --short --branch
-export KUBECONFIG="$HOME/.kube/kind-config"
-kubectl get pods -n app-platform-dev -o wide
-kubectl get deploy -n app-platform-dev -o custom-columns='NAME:.metadata.name,IMAGE:.spec.template.spec.containers[0].image'
+```text
+tpl-admin-frontend + tpl-admin-backend        # React SPA/Nginx + FastAPI Admin
+tpl-web-frontend   + tpl-web-backend          # Next Node + FastAPI Web（默认）
+tpl-web-frontend   + tpl-web-backend-nest     # Next Node + Nest Web（可选 profile）
 ```
 
-同时检查五个工作区及三个 backend 子模块的 branch/status。若出现新提交、镜像或 Secret 变化，先更新状态，不直接继续旧任务。
+“配对”由 surface、Casdoor client/audience、cookie、contract、双镜像 digest、部署和回滚
+tuple 定义，不由前后端是否采用不同语言定义。Admin 与 Web 即使都使用 FastAPI，仍是
+独立仓库、信任面、Deployment、session namespace 和发布单元；不得互相替代 E2E。
 
-### Step 1：完成当前唯一施工项 P0-007A2/A2.1
+### 2.3 Web Backend 双实现与默认主线
 
-只在 canonical `tpl-admin-frontend` 完成 Shell：菜单元数据/权限过滤、响应式侧栏、面包屑、可关闭标签、主题/密度/语言和 route/global error；同步回填能力矩阵、测试和提交 SHA。A2.1 未接受前不进入身份、CRUD 或 App 迁移。
+- 现有 `tpl-web-backend` 先完成 Nest 生产模板，再固化并改名
+  `tpl-web-backend-nest`，作为受维护可选 profile。
+- 新的 `tpl-web-backend` 使用 FastAPI，成为 `tpl-app` 默认 Web BFF。
+- FastAPI 与 Nest 消费同一语言无关 Auth/Principal/CSRF/Error/SSE/Citation contract；
+  Next typed client/DAL 不得按语言分叉。
+- 若 Nest 后续不能持续通过共享门禁，必须降级为 `REFERENCE_ONLY`，不得声称可直接使用。
+- P0-008C 和三个业务 Web 的后续迁移只使用 FastAPI 默认 profile。
 
-### Step 2：关闭 P0-005 的安全遗留项
+### 2.4 FastAPI 母版来源
 
-优先完成浏览器 PKCE/state/nonce/CSRF、跨用户资源拒绝、伪造/过期 token、Secret 可重复注入和 migration job gate。保持 traffic off；测试命令不得输出 token、cookie、client secret 或完整响应正文。
+当前 canonical `tpl-admin-backend` 仍是旧认证原型，不能直接复制为新 Web 主线。已核实的
+阻断缺陷包括：state 未持久/校验、无 PKCE/nonce/JWKS、ID Token 只 base64 decode、完整
+Provider token 写 Redis、登录路径 DDL、GET logout、`/auth/me` 返回原始 session 或
+`200 + null`。
 
-P0-005 完整接受前，不得开始 A2.2 的真实 session 集成，不得把 Admin 页面当作已生产化，也不得把“匿名 401”误判为完整身份闭环。
+顺序必须是：
 
-### Step 3：依次完成 A2.2~A2.5、007B 和 007C
+1. 从 Info/Knowledge/Research 已通过 P0-005 的代码中只回收通用安全/基础设施能力，
+   反向补齐并验收 `tpl-admin-backend`。
+2. 不得带入 Document、Ingestion、Run 等领域代码。
+3. 由修复后 `tpl-admin-backend` 的固定 commit 初始化新的 FastAPI `tpl-web-backend`。
+4. 立即替换成 Web surface/audience/cookie/Redis namespace/API allowlist/downstream
+   relation；Admin Backend 不能直接充当 Web BFF。
 
-- A2.2：真实身份/session、typed client/error/correlation、Query/i18n 基础。
-- A2.3：Table/Form/Description/Modal/Drawer/通知/上传下载通用能力。
-- A2.4：Icon/Chart/Editor/Media/通用工具与 legacy 处置。
-- A2.5：安全负例、a11y、全套测试、Docker/KIND、干净重建和证据。
-- 007B：在现有 Info Admin 仓库迁移分支原地替换，使用隔离入口验证真实 Artifact/Delivery；不创建新业务仓库。
-- 007C：回收通用修正，冻结 React Admin v1 和三个 App 的 dry-run 原地替换清单。
+### 2.5 Next 与 BFF 边界
 
-### Step 4：依次完成 P0-004、P0-001/P0-002、P0-006
+- Browser `/`, `/_next/*` -> Next；Browser `/api/*` -> 选中的配对 Web Backend。
+- Server Component 只经 `server-only` DAL 调用配对 backend 内部 Service URL，只转发
+  allowlist cookie、locale、correlation ID，返回最小 DTO。
+- Next Route Handler 不复制 `/auth/*`、通用代理、领域写模型或 durable Run 状态。
+- Web BFF 只负责 session/token mediation、授权、DTO、命令转发和受控 SSE；LangGraph
+  长任务及 Run/Artifact/Retrieval/Citation 真相仍归 Runtime/领域数据库。
 
-- P0-004：真正实现 Knowledge Retrieval API、Evidence/Citation DTO、allowlist 和 Research consumer；不能用 P0-003 artifact smoke 代替。
-- P0-001：复核已提交并测试的 Research Runtime Spike，再补齐 Candidate A 缺失矩阵；对 B/C 做同图对照或记录可审计淘汰证据。
-- P0-002：ADR-001 选定后冻结 Execution Identity、lineage schema、状态转换和 checkpoint mapping。
-- P0-006：确定 outbox/dispatcher/lease/reconciler 和副作用幂等语义；不能先把当前 Celery dispatch 代码扩成生产 Runner。
+## 3. 当前任务游标
 
-只有 ADR-001 选定分支后，才激活 M1-301~314 对应任务；未选分支标记 `NOT_APPLICABLE`。
+### 已接受且不能倒退的关键输入
 
-### Step 5：完成 P0-008 Next Web 原仓重基线
+- P0-003 Artifact Contract：真实 S3 artifact 完整性和 403/404/hash mismatch。
+- P0-004 Retrieval/Citation：真实 RAGFlow retrieval、独立服务身份、Citation lineage 和
+  负向/故障矩阵。
+- P0-005 Identity：三 Admin、服务身份、PKCE/JWKS/session/CSRF/所有权边界；Web consumer
+  语义由 P0-008 落地。
+- P0-006 Reliable Delivery：Info -> Knowledge outbox 参考实现。
+- P0-007C React Admin v1：`TEMPLATE_MIGRATION_READY`；不代表三个业务 Admin 已迁移。
+- P0-001：Custom Runtime selected。
+- P0-002：Execution Identity model accepted。
+- P0-008A/ADR-014：Next Web 架构矩阵 accepted；ADR-016 于 2026-07-18 修订 backend profile。
+- P0-008B/B1：Node 24.18.0、pnpm 10.24.x、JOSE 6.2.3、Next/Nest clean-room、非 root、
+  standalone、fail-fast 和 Playwright 基线 accepted。
 
-- 008A：接受 ADR-014，冻结 Server/Client、DAL/DTO、BFF、render/cache、stream、安全和部署矩阵。
-- 008B：只在现有 `tpl-web-frontend` 依次执行 B1 Repo/Env/Rendering、B2 Auth/DAL/DTO、B3 UI/Query/Stream、B4 Security/Test/Deploy。
-- 008C：在现有 Research Web 仓库用隔离入口证明真实 Run/SSE/HITL/Citation，冻结 Next Web v2；不创建 `tpl-web-frontend-next-v2` 或 Research 平行仓库。
+### 当前状态
 
-### Step 6：Gate P0 后逐仓迁移，再进入 M1
-
-先按 411A -> 411B Info -> 411C Knowledge -> 411D Research 串行迁移三个 Admin，再按 413A Info -> 413B Knowledge -> 413C Research 串行迁移三个 Web；每个 App 都在现有仓库内改造并独立回滚。然后按 `M1a -> M1a.5 -> M1b -> M1c` 推进。M1a 允许内部测试身份和测试数据，但必须使用真实模型、真实工具、真实 Retrieval/Citation 和可恢复的服务端 Projection；禁止 fake LLM、mock ingestion、伪造 retrieval 或 fake SSE。
-
-## 7. 恢复时的安全规则
-
-- 任何安装、Docker build/push、Harbor 操作、KIND rollout 都先确认 registry、tag、digest、namespace 和回滚镜像；网络命令由项目负责人在本机执行。
-- 不要把 `1.0.1` 改写到另一个 digest；发布新内容使用新候选 tag，验证后再不可变 retag。
-- 不要删除 `1.0.0`、数据库 migration、Secret、PVC、Deployment 或非零副本 ReplicaSet 来“清理旧环境”。
-- 不要使用 `git reset --hard`、`git clean -fd` 或强制 push；Runtime Spike 已提交但仍是隔离实验代码，不能删除或接入生产主链。
-- 先保存证据，再改状态；“代码写完”“镜像构建成功”“Pod Running”都不等于任务 ACCEPTED。
-- 交接材料不得包含 access token、refresh token、cookie、authorization code、PKCE verifier、client secret 或完整 OIDC/JWKS 响应。
-
-## 8. 恢复检查清单
-
-- [ ] 阅读 v5 长期方案、实施计划、本文和目标 ADR。
-- [ ] 确认五个顶层工作区以及三个 backend 子模块的分支、dirty 状态和远端关系。
-- [ ] 确认 `AGENT_V4_TRAFFIC_ENABLED=false`，核对三个 Admin Backend 的实际 image digest。
-- [ ] 确认 Harbor 中 `1.0.1` 指向本文记录的三个 digest；不删除仍被使用的 `1.0.0`。
-- [ ] 确认 `app-platform-dev` 无异常 Pod、无 `p0-*` 引用和无意外 rollout。
-- [ ] 确认四仓均以 `docs/README.md` 为中性入口，旧 AI 工具文档目录和引用均不存在；历史快照不得覆盖 v5。
-- [ ] 确认当前唯一代码任务为 P0-007A2/A2.1；完成其测试/矩阵/证据/提交后再激活 P0-005。
-- [ ] 将 P0-005 的浏览器安全遗留项列为 A2.2 前置，不把 partial 当作完整接受。
-- [ ] 确认 P0-007A 只代表 `SKELETON_ACCEPTED`，A2.1 -> P0-005 -> A2.2~A2.5 是三个 Admin 迁移前置。
-- [ ] 确认两个模板和六个实例均使用现有仓库原地改造；不得创建平行 React/Next/Vue 仓库。
-- [ ] 复核 Research Runtime Spike 的 `33fd6de` 提交和 P0-001 证据，确认它仍未接入生产主链。
-- [ ] 每完成一个任务更新对应 evidence/result.md、实施计划状态和本文快照；不要只更新聊天。
-
-## 9. Git 收尾
-
-交接文档提交后先查看：
-
-```bash
-cd /home/zymun/k8s
-git status --short --branch
-git diff --check
-git log -3 --oneline
+```text
+P0-008B = IN_PROGRESS / B1_NODE24_ACCEPTED / B2_NEXT
+P0-008C = NOT_STARTED
+三个业务 Web 实例 = 未应用 Web v2
 ```
 
-推送由项目负责人执行。不要在未审阅其他仓库 dirty 状态前批量提交 submodule pointer；Info、Knowledge、Research 的外层 pointer 变更、Research Runtime Spike 提交和 tpl-app React 模板提交必须分别确认、分别记录，避免把未完成内容误包装成生产发布。
+架构讨论已经收口。本轮文档一致性变更完成、检查和提交后，**唯一下一代码任务是 B2**；
+不能跳到仓库改名、FastAPI 复制、P0-008C 或业务 App 迁移。
+
+## 4. P0-008B 串行施工包
+
+### B1 Repo/Env/Rendering/Test Baseline — ACCEPTED
+
+- 固定 `tpl-web-frontend@f5340ac`、`tpl-web-backend@f5bedfb`、`tpl-app@fe29739`。
+- Node 基础镜像 digest：
+  `sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc`。
+- 证据：`sunmoonai/docs/evidence/v5/V5-P0-008B/B1/result.md`。
+- 旧 Node 20 基线为 `SUPERSEDED / NO_NEW_RELEASE`。
+
+### B2 Nest BFF Identity + Next DAL/DTO — NEXT
+
+只修改 canonical `tpl-web-backend`、`tpl-web-frontend`、必要 contract/evidence 和
+`tpl-app` gitlink：
+
+- Nest：PKCE S256、一次性 state/nonce transaction、JWKS/issuer/audience/time 校验、
+  最小 Principal session、Web 专属 cookie/namespace、CSRF/Origin、POST logout、稳定错误。
+- Next：真正的 server-only DAL/DTO、受权 dynamic/no-store route、浏览器同源 typed client；
+  不建立第二套 auth store/BFF。
+- 共享输入：ADR-005、ADR-014、ADR-016 和 security contract vectors。
+- 禁止：改名仓库、创建 FastAPI Web 仓、修改三个业务 Web、使用 fake auth 绕过门禁。
+
+### B3 UI/Query/Stream/Citation + Nest Pair
+
+完成中性 public/authenticated/stream/HITL/citation/error surfaces 和共享 contract adapter；
+fixture 只能验证 UI/错误，不得冒充真实 Run/Retrieval 成功。
+
+### B4 Nest Security/Paired Test/Deploy/Freeze
+
+Next+Nest 完成双 Pod、真实浏览器、PKCE/CSRF/audience、SSE、CSP、滚动/version-skew、
+回滚和不可变 digest 证据后，才将现有仓原子改名为 `tpl-web-backend-nest`。改名前必须
+固定 Git tag、镜像 digest、远端 URL 和恢复步骤；改名后必须核对 `.gitmodules`、本地路径、
+gitlink 和远端一致。失败时回滚，不得留下两个同名或错指远端。
+
+### B5 FastAPI Canonical Kernel + Default Web BFF
+
+先修 `tpl-admin-backend` 通用母版，再创建新的 `tpl-web-backend`。完成 Web 专属语义后运行
+独立 typecheck/lint/unit/contract、Docker/KIND、身份负向和 clean-room 门禁。原样复制当前
+旧 Admin 认证代码属于阻断错误。
+
+### B6 Dual-profile Contract/Paired/Release Gate
+
+同一 Next 分别对 FastAPI/Nest 跑共享 consumer vectors 和配对 E2E。FastAPI 获得默认
+release tuple；Nest 获得可选 tuple。记录双方 contract version、前后端 digest、audience、
+profile、兼容矩阵和独立回滚。B1~B6 全部接受后 P0-008B 才结束。
+
+### P0-008C Research 真实试点
+
+只使用 FastAPI 默认 Research Web Backend + Custom Runtime adapter，证明真实 Run/SSE/
+cancel/resume/HITL/citation、刷新/断线/多标签、跨用户拒绝和滚动版本。通过前禁止向 Info/
+Knowledge/Research 三个业务 Web 推广模板。
+
+## 5. 当前仓库事实（2026-07-18）
+
+### k8s
+
+- 分支：`codex-1`；文档修订前 HEAD `ce99192`，与 `origin/codex-1` 同步。
+- 本轮只修改 v4 归档提示、v5、implementation plan、ADR-014、新 ADR-016、P0-008A
+  架构修订附录/静态验证器和本文；未修改运行代码、Deployment、Secret、Harbor 或 KIND。
+
+### tpl-app
+
+- 父仓：`master@fe29739`，与远端同步。
+- `tpl-admin-backend@2760862`：当前仍是旧认证原型，B5 前不得作为安全母版复制。
+- `tpl-admin-frontend@1561e5d`。
+- `tpl-web-backend@f5bedfb`：当前 Nest/B1 输入，尚未达到 B2/B4 完成标准。
+- `tpl-web-frontend@f5340ac`：Next/B1 输入。
+- 当前 `.gitmodules` 仍只有原 `tpl-web-backend`；`tpl-web-backend-nest` 尚未创建，这是正确
+  状态，必须等 B4。
+
+### 业务仓
+
+- `info-app/codex-1@37988c8`：本次未修改。
+- `research-app/codex-1@8121595`：本次未修改。
+- `knowledge-app/codex-1@2e410ad`：本地相对 `origin/codex-1` ahead 3；这是进入本轮前已存在
+  的提交，不得被 Web 模板任务重写、reset 或顺带包装。恢复时先独立核对是否已推送。
+
+## 6. 集群、Harbor 与发布边界
+
+本文 2026-07-18 修订没有重新部署或重新核验 live cluster/Harbor，因此不能沿用旧 handoff
+的 Pod/tag 描述作为当前事实。任何 build/push/rollout 前必须只读确认：
+
+```bash
+git -C /home/zymun/k8s status --short --branch
+git -C /home/zymun/tpl-app status --short --branch
+git -C /home/zymun/tpl-app submodule status
+
+KUBECONFIG="$HOME/.kube/kind-config" kubectl get pods -A
+KUBECONFIG="$HOME/.kube/kind-config" kubectl get deploy -A \
+  -o custom-columns='NAMESPACE:.metadata.namespace,NAME:.metadata.name,IMAGE:.spec.template.spec.containers[0].image'
+```
+
+保持以下规则：
+
+- `AGENT_V4_TRAFFIC_ENABLED=false`，除非未来 Gate 明确授权。
+- 候选内容不得覆盖已有稳定 tag；tag 与 digest 一一记录。
+- 不删除仍被 Deployment、回滚清单或证据引用的镜像、Secret、PVC、migration 或 RS。
+- “构建成功”“push 成功”“Pod Running”都不等于任务 ACCEPTED。
+- 任何 OIDC/Secret/浏览器验证不得打印 token、cookie、code、verifier 或 client secret。
+
+## 7. 恢复检查清单
+
+- [ ] 阅读 v5、implementation plan、ADR-014、ADR-016 和本文。
+- [ ] 确认 v4 顶部是归档声明，不从 v4 恢复任务。
+- [ ] 确认 k8s 文档变更已检查/提交，未混入运行代码。
+- [ ] 确认 tpl-app 四个 gitlink 与本文 B1 固定值一致。
+- [ ] 确认当前不存在 `tpl-web-backend-nest`；只有 B4 接受后才能改名。
+- [ ] 确认当前 `tpl-admin-backend` 未被误当成 P0-005 安全母版。
+- [ ] 确认三个业务 Web 未被修改、部署或打上 Web v2 完成标签。
+- [ ] 将 B2 设为唯一代码任务；完成测试、证据、状态、提交后再激活 B3。
+- [ ] B4 前不开始 B5；B5 前先验收 canonical FastAPI 母版。
+- [ ] P0-008C 只使用 FastAPI 默认 profile；Nest 只保留模板契约门。
+- [ ] 每个包关闭时同时记录 Git SHA、image digest、contract version、测试、部署、故障和
+      回滚，不以聊天结论代替证据。
+
+## 8. 禁止项
+
+- 禁止 `git reset --hard`、`git clean -fd`、强制 push 或顺带处理业务仓已有提交。
+- 禁止直接整树复制当前 `tpl-admin-backend` 后声称 FastAPI Web 完成。
+- 禁止把 Admin 与 Web 合为一个 FastAPI 服务或共用 audience/cookie/session namespace。
+- 禁止让 Next Route Handler 成为第三套通用 BFF。
+- 禁止在同一生产入口随机混跑 FastAPI/Nest backend。
+- 禁止在 B4 前改名远程仓，在 B6 前把 FastAPI 作为已冻结业务模板推广。
+- 禁止用 Nest profile 代替 P0-008C 或三个业务 Web 的 FastAPI 默认主线证据。
