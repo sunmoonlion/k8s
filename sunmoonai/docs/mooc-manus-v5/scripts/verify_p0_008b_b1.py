@@ -8,9 +8,16 @@ import subprocess
 from pathlib import Path
 
 
-FRONTEND_SHA = "9e01dcfcf7981fca4413a513f7e1f42dc007cb52"
-BACKEND_SHA = "73eead4a7d771dd05bd61eac81f48e867e305b42"
-PARENT_SHA = "6beb3638c698a32c2237fb44abc44b6814641bf4"
+ADMIN_SHA = "1561e5d02251ccc0f96fa48e272e4c5072a1e2c3"
+FRONTEND_SHA = "f5340ac9c9b63d8179b9a5dc8feff3e85fb213ab"
+BACKEND_SHA = "f5bedfb3ebd8ad3696545b1d0feb0a945ee1866f"
+PARENT_SHA = "fe297396b07a05d684f985beac4f0292058f11b4"
+NODE_VERSION = "24.18.0"
+NODE_ENGINE = ">=24.18.0 <25"
+PNPM_VERSION = "pnpm@10.24.0"
+NODE_IMAGE_DIGEST = (
+    "sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc"
+)
 
 BUSINESS_WEB_SNAPSHOTS = {
     "info": (
@@ -60,13 +67,32 @@ def assert_gitlink(parent: Path, path: str, expected: str) -> None:
         raise AssertionError(f"{path} does not point at its B1 commit")
 
 
+def validate_runtime_files(repo: Path, package_path: str) -> dict[str, object]:
+    package = json.loads((repo / package_path).read_text())
+    if package["packageManager"] != PNPM_VERSION:
+        raise AssertionError(f"{repo.name} pnpm baseline drifted")
+    if package["engines"]["node"] != NODE_ENGINE:
+        raise AssertionError(f"{repo.name} Node compatibility drifted")
+    if package["engines"]["pnpm"] != "10.24.x":
+        raise AssertionError(f"{repo.name} pnpm compatibility drifted")
+    for version_file in (".nvmrc", ".node-version"):
+        if (repo / version_file).read_text().strip() != NODE_VERSION:
+            raise AssertionError(f"{repo.name} {version_file} drifted")
+    require_text(repo / "mybuild/Dockerfile", NODE_VERSION, NODE_IMAGE_DIGEST)
+    return package
+
+
+def validate_admin(repo: Path) -> None:
+    assert_clean_commit(repo, ADMIN_SHA)
+    package = validate_runtime_files(repo, "package.json")
+    if package["dependencies"]["react-router"] != "^8.2.0":
+        raise AssertionError("admin React Router baseline drifted")
+    require_text(repo / "mybuild/Dockerfile", "pnpm@10.24.0")
+
+
 def validate_frontend(repo: Path) -> None:
     assert_clean_commit(repo, FRONTEND_SHA)
-    package = json.loads((repo / "app/package.json").read_text())
-    if package["packageManager"] != "pnpm@10.24.0":
-        raise AssertionError("frontend pnpm baseline drifted")
-    if package["engines"]["node"] != ">=20.18.0 <25":
-        raise AssertionError("frontend Node compatibility drifted")
+    package = validate_runtime_files(repo, "app/package.json")
     if package["dependencies"]["next"] != "16.2.2":
         raise AssertionError("frontend Next baseline drifted")
     if package["dependencies"]["react"] != "19.2.4":
@@ -117,7 +143,7 @@ def validate_frontend(repo: Path) -> None:
 
     dockerfile = require_text(
         repo / "mybuild/Dockerfile",
-        "ARG NODE_VERSION=20.18.0",
+        "ARG NODE_VERSION=24.18.0",
         "NEXT_TELEMETRY_DISABLED=1",
         "USER nextjs",
         'CMD ["server.js"]',
@@ -130,9 +156,9 @@ def validate_frontend(repo: Path) -> None:
 
 def validate_backend(repo: Path) -> None:
     assert_clean_commit(repo, BACKEND_SHA)
-    package = json.loads((repo / "app/package.json").read_text())
-    if package["packageManager"] != "pnpm@10.24.0":
-        raise AssertionError("backend pnpm baseline drifted")
+    package = validate_runtime_files(repo, "app/package.json")
+    if package["dependencies"]["jose"] != "6.2.3":
+        raise AssertionError("backend JOSE baseline drifted")
     for script in ("typecheck", "lint", "lint:all", "test:e2e", "check"):
         if script not in package["scripts"]:
             raise AssertionError(f"backend script missing: {script}")
@@ -199,12 +225,15 @@ def validate_business_web_unchanged(workspace: Path) -> None:
 def main() -> None:
     workspace = Path.home()
     parent = workspace / "tpl-app"
+    admin = parent / "tpl-admin-frontend"
     frontend = parent / "tpl-web-frontend"
     backend = parent / "tpl-web-backend"
 
     assert_clean_commit(parent, PARENT_SHA)
+    assert_gitlink(parent, "tpl-admin-frontend", ADMIN_SHA)
     assert_gitlink(parent, "tpl-web-frontend", FRONTEND_SHA)
     assert_gitlink(parent, "tpl-web-backend", BACKEND_SHA)
+    validate_admin(admin)
     validate_frontend(frontend)
     validate_backend(backend)
     validate_business_web_unchanged(workspace)
@@ -214,9 +243,12 @@ def main() -> None:
             {
                 "task": "V5-P0-008B-B1-source",
                 "result": "passed",
+                "admin_commit": ADMIN_SHA,
                 "frontend_commit": FRONTEND_SHA,
                 "backend_commit": BACKEND_SHA,
                 "parent_commit": PARENT_SHA,
+                "node_version": NODE_VERSION,
+                "node_image_digest": NODE_IMAGE_DIGEST,
                 "business_web_repositories_unchanged": True,
                 "secrets_printed": False,
             },

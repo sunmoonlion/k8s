@@ -358,7 +358,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 目标：按 `P0-008A -> P0-008B -> P0-008C` 保留 Next/App Router 技术路线、重建可信 Web v2，并以 Research 真实 streaming 薄切冻结模板；父任务不直接写代码。
 - 顺序纪律：Frontend 轨道先完成 P0-007C；ADR-001/004/005 没有可执行输出前不开始 008B；008C 前禁止把 v2 应用到三个 Web 实例。
 - 完成条件：三个子任务全部 ACCEPTED；否则现有仓库通过迁移前 tag/镜像回退，P0-008 保持 IN_PROGRESS/BLOCKED。
-- 状态：IN_PROGRESS / P0-008B_ACTIVE（P0-008A 与 ADR-014 已于 2026-07-16 ACCEPTED，固定了 ixartz 输入、Next+Nest 配对拓扑、route/cache、BFF allowlist、stream reconciliation、环境/兼容和双镜像发布边界。当前进入 P0-008B/B1；008C 未开始。）
+- 状态：IN_PROGRESS / PAUSED_FOR_ARCHITECTURE_DISCUSSION（P0-008A 与 ADR-014 已于 2026-07-16 ACCEPTED；2026-07-18 因 Node 20 EOL 重开 B1，并已完成 Node 24.18.0 LTS、pnpm 10.24.x、JOSE 6.2.3 的源码与 clean-room 容器门禁。B2 未开始，008C 未开始；按项目负责人要求暂停全部后续实施，先讨论并记录待澄清问题及处置决定。）
 
 ### V5-P0-008A Web 架构契约冻结与紧急卫生
 
@@ -370,7 +370,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - ixartz 吸收决策：
   - **采用（B1/B4 必做）**：严格 TypeScript 与可复现命令；环境变量 schema/启动期 fail-fast；`poweredByHeader: false`、严格模式和可选 bundle 分析；`next-intl` 缺失 key 检查；`loading`/`error`/`not-found`、metadata/robots 及 public/authenticated route rendering matrix；Vitest component/unit、Playwright E2E（失败保留 trace/video）、基础 a11y 和 CI 证据归档。
   - **改造后采用（必须先由 ADR-005/001/004 冻结）**：App Router 的 server/client 分层改为 `server-only` DAL/DTO + typed browser client + 最小 BFF allowlist；Playwright 的本地 server 改为真实配对后端或受控 contract fixture；可观测/源图上传仅接已批准的自托管方案；Storybook 只在模板组件面稳定且能服务组件回归时再启用，不作为 P0 放行条件。
-  - **拒绝**：Clerk（由 Casdoor OIDC/BFF 替代）、Drizzle/PGlite/Neon/前端 migration（领域数据归后端）、Arcjet/PostHog/BetterStack/Sentry/Crowdin 等未经批准的 SaaS、外部字体/CDN 运行时依赖、其产品页面与支付/账户模型、GitHub 专用发布流程，以及因上游 `Node >=24` 而未经兼容性证据升级 SunmoonAI Node 20.18 发布基线。
+  - **拒绝**：Clerk（由 Casdoor OIDC/BFF 替代）、Drizzle/PGlite/Neon/前端 migration（领域数据归后端）、Arcjet/PostHog/BetterStack/Sentry/Crowdin 等未经批准的 SaaS、外部字体/CDN 运行时依赖、其产品页面与支付/账户模型、GitHub 专用发布流程，以及未经生命周期/兼容/镜像/回滚证据便自动跟随外部 Node 版本。Node 24.18.0 LTS 修订是 Node 20 EOL 后的独立决策。
 - 兼容性决策：ADR-014 必须单独记录 Node/Next/React 支持矩阵、镜像可用性和升级回滚证据。Casdoor OIDC/BFF 替代 Clerk，后端 API/Provider Contract 替代 Drizzle/PGlite/前端数据库，未经批准的 SaaS 集成全部排除。
 - Spike：分别证明 protected route 的服务端 session check、public static route、authenticated dynamic route、同源/直连 API 选中拓扑，以及 Runtime adapter 的浏览器断线对账；不得把 Proxy 当最终授权。
 - 测试：错误/过期 session、跨 locale return URL、CSRF/CORS/audience、cache 泄露、CSP、同一用户跨 Pod、滚动版本、stream cursor/reconcile。
@@ -389,7 +389,7 @@ P0/P1 任务必须明确适用的测试层次，不能只写“补测试”。
 - 不做：不做无 tag/digest 的不可回滚覆盖、不改三个 App 流量、不把 Run/Artifact/Retrieval 领域状态放入 BFF/Zustand、不预建跨 App 共享 UI 平台、不用 nonce CSP 无条件强制全部 route dynamic。
 - 测试：Next 与 Nest 分别 typecheck/lint/unit，配对 Playwright/a11y、route rendering/cache assertions、PKCE/nonce/state/JWKS/audience/session/CSRF/CSP、stream reconnect/reconcile、多标签、Docker/KIND、非 root/probes、Frontend/Backend 各两个 Pod、滚动版本与 cache/version-skew smoke。模板级 fixture 仅可验证 UI/错误映射，不能替代后续 App 级 Web↔Web Backend 的真实配对 E2E。
 - 验收：从干净目录可重复构建；public 与 authenticated route 的渲染/cache 证据符合矩阵；最终镜像和 K8s 接口可追溯；迁移前 tag/镜像可恢复，三个 Web 实例未被提前修改；每项 ixartz 决策均有 source SHA、采用结果或拒绝理由。
-- 状态：IN_PROGRESS / B1_ACCEPTED / B2_CURRENT_TASK（2026-07-18：B1 固定为 `tpl-web-frontend@9e01dcf`、`tpl-web-backend@73eead4`、`tpl-app@6beb363`；静态验证、前端 typecheck/lint/i18n/unit、后端 typecheck/scoped-lint/unit/HTTP E2E，以及双镜像可复现构建、非 root、环境隔离、standalone smoke 和最终 Playwright 4/4 全部通过。Backend Docker bootstrap 的代理/registry 契约已上移到共享 base stage，并由实际首次安装验证。证据：`sunmoonai/docs/evidence/v5/V5-P0-008B/B1/result.md`。当前只进入 B2，不提前修改三个业务 Web 实例。）
+- 状态：IN_PROGRESS / B1_NODE24_ACCEPTED / IMPLEMENTATION_PAUSED（2026-07-18：Node 24.18.0 LTS、pnpm 10.24.x、JOSE 6.2.3 修订已完成；固定 `tpl-admin-frontend@1561e5d`、`tpl-web-frontend@f5340ac`、`tpl-web-backend@f5bedfb`、`tpl-app@fe29739`，固定基础镜像 digest `sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc`。source、Admin 纯 Nginx、Next/Nest clean-room 双镜像、非 root、standalone、生产 fail-fast 和 Playwright 4/4 门禁已通过；证据：`sunmoonai/docs/evidence/v5/V5-P0-008B/B1/result.md`。原 Node 20 B1 为 `SUPERSEDED / NO_NEW_RELEASE`。B2 未开始；按项目负责人要求暂停实施，先讨论并落实必要措施。不得修改三个业务 Web 实例。）
 
 ### V5-P0-008C Research Web 真实试点与 Next v2 冻结
 
@@ -1212,7 +1212,7 @@ Hybrid only：M1-314（NOT_APPLICABLE）
 15. Runtime：V5-P0-001 `ACCEPTED / CANDIDATE_A_SELECTED`（2026-07-16）；Custom Runtime 边界已冻结，Agent Server/Hybrid 分支停止。
 16. Execution Identity：V5-P0-002（`ACCEPTED`，2026-07-16）；ADR-002、隔离语义模型、关系 schema、并发/checkpoint/lineage 证据已收口，未提前修改生产 Runner。
 17. Web Architecture Freeze：V5-P0-008A（`ACCEPTED`，2026-07-16）；ADR-014、固定 ixartz 输入、Next+Nest 配对拓扑和全部架构矩阵已收口。
-18. Web Re-baseline B1（`ACCEPTED`，2026-07-18）：固定 `tpl-web-frontend@9e01dcf`、`tpl-web-backend@73eead4`、`tpl-app@6beb363`；source、双镜像 build、非 root、standalone 和 Playwright 门禁已通过。
-19. **当前唯一代码任务** Web Re-baseline B2：在固定 B1 上实现 Nest BFF Identity + Next server-only DAL/DTO；严格按 B2 -> B3 -> B4 -> P0-008C 串行推进，B2 通过前不修改三个业务 Web 实例。
+18. Web Re-baseline B1 Node 24 运行时修订（`ACCEPTED / NODE24_RUNTIME_BASELINE`，2026-07-18）：固定 `tpl-admin-frontend@1561e5d`、`tpl-web-frontend@f5340ac`、`tpl-web-backend@f5bedfb`、`tpl-app@fe29739` 和 Node 基础镜像 digest `sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc`；source、Admin 纯 Nginx、Next/Nest clean-room 双镜像、非 root、standalone、fail-fast 和 Playwright 门禁已通过。旧 Node 20 基线只作历史审计，不得产生新发布。
+19. **当前没有代码任务，实施已暂停**：按项目负责人要求，先讨论此前未澄清的问题并记录决定/措施；B2 尚未开始，三个业务 Web 实例未修改。只有项目负责人明确恢复实施后，才能把 Web Re-baseline B2 重新设为唯一代码任务，并继续执行 B2 -> B3 -> B4 -> P0-008C 的串行纪律。
 
 P0-007A2/007C 前禁止向三个 App 应用 React Admin；P0-008C 前禁止向三个 Web 实例应用 Next Web v2。P0-007C/008C 只表示模板可推广；Gate P0 后依次执行 M1-411A -> 411B Info -> 411C Knowledge -> 411D Research，再执行 M1-413A Info -> 413B Knowledge -> 413C Research 的 Web 原地迁移。每个 App 都直接改造现有仓库，但必须先有 tag、镜像 digest、隔离部署和独立回滚；不能把基础替换当作切流量。完成全部 Phase 0 后更新 v5、按 ADR-001 激活唯一 Runtime 分支，再进入 M1a。禁止绕过 Gate P0 直接把 Walking Skeleton 扩建为生产 Runner；Memory/Subagent 薄切只能在 Gate M1a 后执行。

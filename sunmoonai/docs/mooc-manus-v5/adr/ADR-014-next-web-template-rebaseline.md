@@ -1,6 +1,6 @@
 # ADR-014：Next Web 模板架构再基线
 
-状态：ACCEPTED
+状态：ACCEPTED（2026-07-18 运行时基线修订）
 原始日期：2026-07-11
 接受日期：2026-07-16
 决策者：项目负责人、架构评审
@@ -18,7 +18,7 @@
 - 没有 unit/component/Playwright/a11y、CSP、安全头、health/readiness、多副本 cache/version-skew 和浏览器观测门禁。
 - `.env.local` 被 Git 跟踪；当前只含 `NEXT_PUBLIC_*`，未发现 secret，但该模式不允许延续。
 - Next 16 已把 `middleware.ts` 约定改名为 `proxy.ts`；现有模板尚未迁移。
-- Docker 使用 Node 20.18/pnpm 10，而新 React Admin 使用 Node 22.22/pnpm 9；这不自动构成运行错误，但版本治理、注释和缺失 `.nvmrc` 已漂移。
+- 初始审查时 Docker 使用 Node 20.18/pnpm 10，而新 React Admin 使用 Node 22.22/pnpm 9；该漂移已在 2026-07-18 运行时基线修订中统一到 Node 24.18.0 LTS/pnpm 10.24.x。
 
 三个实例的依赖和大部分文件仍近似同源，Research 只新增了 Agent Console，因此现在仍是低成本受控重构窗口。
 
@@ -69,7 +69,7 @@ P0-008A 已消费以下 Accepted 决策：
 - 删除被 Git 跟踪的 `app/.env.local`，并在 `app/.gitignore` 中明确忽略本地环境文件；可提交的环境样例不再包含 Casdoor client secret、Redis URL 或其他凭据。
 - 删除 `next.config.ts` 中硬编码的开发来源 IP；开发来源不得通过模板写死，隔离环境如确有需要必须由部署契约显式提供。
 - 按 Next 16 约定将 `middleware.ts` 改为 `proxy.ts`；Proxy 只做 next-intl locale negotiation，不能承担最终身份认证/授权。
-- 固定模板工具链：生产/CI/Docker 使用 Node `20.18.0`、pnpm `10.24.x`；本地开发允许 Node `>=20.18.0 <25`，但必须以 Docker/CI 的 Node 20.18.0 结果作为发布证据。Next 16 的最低 Node 要求由官方升级说明单独核验，不因外部模板的 Node 24 要求擅自升级基础镜像。
+- 固定模板工具链：生产/CI/Docker 使用 Node `24.18.0` LTS、pnpm `10.24.x`；本地、Docker 与 CI 均接受 Node `>=24.18.0 <25`，发布证据必须使用精确的 24.18.0 镜像及不可变 digest。该升级来自 Node 20 已 EOL 后的独立生命周期审查，不是自动追随外部模板。
 - `.env.example` 和 `.env.k8s` 改为同源 `/api` 默认值；跨源 API 只能作为有证据的隔离诊断配置，必须通过 CORS/CSRF/audience 契约。
 
 ### 已冻结架构矩阵
@@ -108,17 +108,17 @@ P0-008A 已消费以下 Accepted 决策：
 | Storybook、依赖扫描、提交钩子 | 条件采用 | 组件面达到稳定规模、可服务回归且 Gitee CI 有对应 owner 后再启用；不是 P0 放行前提。 |
 | Clerk、Drizzle/PGlite/Neon、db migration、账户/支付页面 | 拒绝 | Casdoor OIDC/BFF 和领域 Backend/Contract 分别替代；模板不拥有数据库。 |
 | Sentry、Arcjet、PostHog、BetterStack、Crowdin、Chromatic 等外部服务 | 拒绝，除非另行 ADR 批准 | 默认不引入外传遥测、外部 CDN、第三方身份或运行时 SaaS 依赖。 |
-| 上游 Node `>=24` | 拒绝自动跟随 | 继续以 Node 20.18/pnpm 10 的容器发布证据为准；升级必须有独立兼容、镜像和回滚证明。 |
+| 上游 Node `>=24` | 不自动跟随；独立审查后采用 Node 24 LTS | 以 Node 24.18.0/pnpm 10.24 的本地、容器和回滚证据为准；上游继续升版也不能绕过兼容门禁。 |
 
 ### 7.1 固定源码的逐项可执行拆解
 
 | 固定源码位置 | 吸收结论 | P0-008B 的具体落点与禁止项 |
 | --- | --- | --- |
-| `src/libs/Env.ts` | 改造后采用 | 以 Zod 或等价 schema 建立 server/public env 白名单，并在 build/start fail-fast；不采用 `@t3-oss/env-nextjs` 前必须证明 Next 16/Node 20.18 兼容。严禁把 Casdoor secret、service token、Redis/Provider 连接串放进 `NEXT_PUBLIC_*`。 |
+| `src/libs/Env.ts` | 改造后采用 | 以 Zod 或等价 schema 建立 server/public env 白名单，并在 build/start fail-fast；不采用 `@t3-oss/env-nextjs` 前必须证明 Next 16/Node 24.18 兼容。严禁把 Casdoor secret、service token、Redis/Provider 连接串放进 `NEXT_PUBLIC_*`。 |
 | `src/libs/I18n*.ts`、`src/app/[locale]` | 采用 | 保留 `next-intl`，集中 locale/routing/navigation；补 i18n missing-key check。翻译不接 Crowdin，页面不得硬编码面向用户的字符串。 |
 | `next.config.ts` | 选择性采用 | 保留 `poweredByHeader: false`、`reactStrictMode: true` 和明确命令才启用的 bundle analysis。`reactCompiler`、Sentry wrapper、source-map 上传、browser-to-terminal log 都不随模板复制；前者待性能/兼容性证据，后三者需独立 ADR。 |
 | `src/app/global-error.tsx`、`robots.ts`、`sitemap.ts` | 改造后采用 | 增加 locale-aware error/loading/not-found、Metadata/robots/sitemap；真实公开路由由每个 App 提供，受权 workspace 和内部路径必须明确禁止索引。不得复制其产品页面或 Sentry 调用。 |
-| `playwright.config.ts`、`tests/e2e/*` | 改造后采用 | 使用 pnpm、Node 20.18、模板的 standalone production server 或同领域受控 backend/fixture；失败保留 trace/video/screenshots 并归档到受控 CI。不得启动 PGlite/Drizzle，也不得用 fixture 替代业务 App 的成对浏览器 E2E。 |
+| `playwright.config.ts`、`tests/e2e/*` | 改造后采用 | 使用 pnpm、Node 24.18、模板的 standalone production server 或同领域受控 backend/fixture；失败保留 trace/video/screenshots 并归档到受控 CI。不得启动 PGlite/Drizzle，也不得用 fixture 替代业务 App 的成对浏览器 E2E。 |
 | `vitest.config.ts`、co-located `*.test.*` | 采用 | B1/B4 建立 unit/component 两层；浏览器组件测试只覆盖 UI，真实鉴权、SSE/citation 必须走配对 Playwright。测试浏览器版本要由模板 lockfile/镜像固定。 |
 | `.github/workflows/CI.yml`、`knip`、`lefthook` | 改造后采用 | 将“静态检查、i18n 检查、build、unit、E2E 失败产物”迁入已有 Gitee/Jenkins 流程；依赖漂移扫描和 pre-commit hook 仅在噪声、执行时长和责任人被记录后启用。不得复制 GitHub Action、Codecov、Chromatic、Crowdin 或 Checkly。 |
 | `Logger.ts`、`instrumentation*.ts`、SaaS SDK | 拒绝 | 它们会把浏览器/运行时数据送往 Better Stack、Sentry、PostHog 等外部端点；无单独的数据出境、保留期、成本与自托管 ADR 前不引入。 |
@@ -228,7 +228,7 @@ P0-008B 默认不开启跨 Pod on-demand ISR，也不引入新 Redis cache。先
 
 | 项 | 冻结值/规则 |
 | --- | --- |
-| Node | Docker/CI `20.18.0`；本地 `>=20.18 <25` 只作开发兼容 |
+| Node | 本地/CI/Docker `24.18.0` LTS；`package.json` 接受 `>=24.18.0 <25`，发布镜像固定精确版本与 digest |
 | pnpm | `10.24.x`，lockfile frozen |
 | Next/React | 当前基线 Next `16.2.2`、React `19.2.4`；升级独立验证 |
 | client env | `NEXT_PUBLIC_APP_NAME`；API 固定同源 `/api`，不接受 secret/绝对生产 credential |
@@ -254,6 +254,14 @@ P0-008B 默认不开启跨 Pod on-demand ISR，也不引入新 Redis cache。先
   public static route不得因此被全局强制 dynamic。任何 `unsafe-eval` 仅限开发环境。
 - P0-008B 必须验证至少两个 Frontend Pod、两个 Backend Pod、滚动新旧版本、session
   跨 Pod、stream 断线、静态资源 version skew、health/readiness 和回滚 tuple。
+
+### 14.4 Node 运行时生命周期治理
+
+- “冻结”表示一个 release tuple 内的本地、CI、Docker 和证据可复现，不表示永久停留在某个 Node 主版本。
+- 模板只采用处于维护期的偶数 Node LTS；Current 版本不得直接成为生产基线。
+- 每季度复核 Node、pnpm、Next、React、Nest 与 JOSE 兼容矩阵；距离 Node EOL 六个月时必须建立升级任务，EOL 后不得继续形成新发布基线。
+- 升级顺序固定为模板基线、完整本地门禁、双镜像门禁、固定 commit/digest，最后才允许业务 App 按迁移任务继承；禁止三个业务仓各自选择运行时版本。
+- 2026-07-18 的 Node `24.18.0` 修订必须重跑 B1 全部门禁。B2 在修订接受前暂停，且不得把运行时升级与身份安全业务改动混入同一提交。
 
 ## 15. 接受结论与未完成项
 
