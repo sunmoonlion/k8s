@@ -1,6 +1,6 @@
 # ADR-014：Next Web 模板架构再基线
 
-状态：ACCEPTED（2026-07-18 由 ADR-016 修订 Web Backend profile）
+状态：ACCEPTED（2026-07-18 由 ADR-016 修订 Web Backend profile；2026-07-22 由 ADR-017 修订实例采纳顺序）
 原始日期：2026-07-11
 接受日期：2026-07-16
 决策者：项目负责人、架构评审
@@ -33,7 +33,9 @@
 7. SSE 客户端以 cursor、snapshot reconciliation、去重、退避、cancel/resume、页面隐藏、多标签和 terminal-state precedence 为契约；EventSource/ReadableStream 的具体 adapter 由 ADR-001 输出决定。
 8. v2 必须有 typecheck、lint、unit/component、Playwright、基础可访问性、安全头/CSP、Docker/KIND、多副本/滚动版本和浏览器故障证据。
 9. 模板只包含中性平台能力；Info/Knowledge/Research 页面和领域 DTO 留在各实例。Research 真实试点证明最难的 streaming/HITL/citation 路径后才冻结 v2。
-10. v2 冻结前不向三个 Web 实例应用 v2，不做无 tag/digest 的不可回滚覆盖，不改变现有流量；冻结且 Gate P0 通过后按 Info -> Knowledge -> Research 串行改造现有仓库。
+10. P0-008B/B6 统一模板 release 冻结前不向三个 Web 实例应用 v2；冻结后必须立即按
+    ADR-017/P0-009 以 Info -> Knowledge -> Research 串行同步共同基础，不等待 Gate P0。
+    同步不做无 tag/digest 的不可回滚覆盖，也不自动改变现有稳定流量。
 
 ## 3. 上游输入已收敛
 
@@ -58,8 +60,11 @@ P0-008A 已消费以下 Accepted 决策：
 - P0-008A：基于 ADR-001/002/004/005 输出接受本 ADR，冻结 Web v2 边界和验收矩阵。
 - P0-008B：按 B1~B6 串行完成 Next v2、Nest 可选 BFF、FastAPI 通用母版与默认 Web
   BFF、共享契约和两套配对生产骨架；仓库改名/新建必须遵守 ADR-016 的原子迁移纪律。
-- P0-008C：在 Research 隔离入口运行真实 Run/SSE/cancel/resume/HITL/citation 薄切，回收通用修正并冻结 v2。
-- M1：按 Info -> Knowledge -> Research 串行把固定 v2 commit 应用到三个现有 Web 仓库；P0-008C 的 Research 薄切直接演进，不重新实现，也不创建平行业务仓库。
+- P0-009：P0-008B/B6 接受后，立即按 Info -> Knowledge -> Research 把统一模板 release
+  的 Admin/Web 前后端共同基础原地同步到三个 App；不得等待 Gate P0 或插入其他业务开发。
+- P0-008C：只能在 P0-009 已收敛的 Research 基线上运行真实
+  Run/SSE/cancel/resume/HITL/citation 薄切，回收通用修正并冻结 v2。
+- M1：只补完整业务等价、产品能力、切流和旧实现退出，不得再次执行共同基础首次同步。
 
 任一阶段发现必须把领域状态放进 BFF、无法安全恢复 stream、或多副本自托管语义无法闭合，P0-008 标记 BLOCKED 并重开本 ADR，禁止带病推广。
 
@@ -96,6 +101,7 @@ P0-008A 已消费以下 Accepted 决策：
 - <https://nextjs.org/docs/app/guides/self-hosting>
 - <https://github.com/ixartz/Next-js-Boilerplate>（工程实践参考；不是可直接引入的产品或 SaaS 底座）
 - `ADR-016-web-bff-implementation-profiles.md`（FastAPI 默认、Nest 可选、仓库与母版来源）
+- `ADR-017-template-first-instance-adoption.md`（模板完成后立即串行收敛三个实例）
 
 ## 7. ixartz 参考审查与受控吸收（2026-07-15）
 
@@ -280,7 +286,8 @@ Nest 可选 profile：
 - “冻结”表示一个 release tuple 内的本地、CI、Docker 和证据可复现，不表示永久停留在某个 Node 主版本。
 - 模板只采用处于维护期的偶数 Node LTS；Current 版本不得直接成为生产基线。
 - 每季度复核 Node、pnpm、Next、React，以及 Nest 可选 profile 与 JOSE 的兼容矩阵；距离 Node EOL 六个月时必须建立升级任务，EOL 后不得继续形成新发布基线。
-- 升级顺序固定为模板基线、完整本地门禁、双镜像门禁、固定 commit/digest，最后才允许业务 App 按迁移任务继承；禁止三个业务仓各自选择运行时版本。
+- 升级顺序固定为模板基线、完整本地门禁、双镜像门禁、固定 commit/digest，随后必须由
+  业务 App 按 ADR-017 紧邻继承；禁止等待 Gate P0，也禁止三个业务仓各自选择运行时版本。
 - 2026-07-18 的 Node `24.18.0` 修订必须重跑 B1 全部门禁。B2 在修订接受前暂停，且不得把运行时升级与身份安全业务改动混入同一提交。
 
 ## 15. 接受结论与未完成项
@@ -294,6 +301,6 @@ ADR-014 在 2026-07-16 接受，P0-008A 结束。接受依据：
 - 目标拓扑、route/cache、BFF allowlist、stream、环境/兼容、双镜像发布和配对 E2E
   矩阵已冻结。
 
-未完成项全部进入 P0-008B/B1~B6 和 P0-008C，尤其是 Nest 安全内核与固化改名、FastAPI
+未完成项全部进入 P0-008B/B1~B6、P0-009 和 P0-008C，尤其是 Nest 安全内核与固化改名、FastAPI
 通用母版与默认 Web surface、共享契约、Next DAL/DTO、真实 stream adapter、多副本/CSP/
 浏览器证据。ADR Accepted 不表示当前模板或三个业务 Web 已达到生产资格。

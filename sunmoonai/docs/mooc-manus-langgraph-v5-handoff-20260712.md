@@ -1,6 +1,6 @@
 # MoocManus v5 当前交接文档
 
-> 文件名保留最初快照日期以避免旧链接失效；本文内容已于 **2026-07-18
+> 文件名保留最初快照日期以避免旧链接失效；本文内容已于 **2026-07-22
 > （Asia/Shanghai）整体重写**，旧 2026-07-12/13 状态不再有效。
 >
 > 适用分支：`k8s/info-app/knowledge-app/research-app` 的 `codex-1`；`tpl-app` 及模板
@@ -14,8 +14,9 @@
 2. `sunmoonai/docs/mooc-manus-langgraph-v5-implementation-plan.md`
 3. `sunmoonai/docs/mooc-manus-v5/adr/ADR-014-next-web-template-rebaseline.md`
 4. `sunmoonai/docs/mooc-manus-v5/adr/ADR-016-web-bff-implementation-profiles.md`
-5. 本文当前游标、仓库事实和禁止项
-6. `sunmoonai/docs/evidence/v5/` 对应任务的原始证据
+5. `sunmoonai/docs/mooc-manus-v5/adr/ADR-017-template-first-instance-adoption.md`
+6. 本文当前游标、仓库事实和禁止项
+7. `sunmoonai/docs/evidence/v5/` 对应任务的原始证据
 
 `mooc-manus-langgraph-longterm-plan-v4.md` 已归档，只能作为历史设计输入。聊天、旧镜像
 tag、Pod Running、单个 smoke 或本文中的提交快照都不能覆盖 v5、Accepted ADR、任务状态
@@ -51,7 +52,8 @@ tuple 定义，不由前后端是否采用不同语言定义。Admin 与 Web 即
 - FastAPI 与 Nest 消费同一语言无关 Auth/Principal/CSRF/Error/SSE/Citation contract；
   Next typed client/DAL 不得按语言分叉。
 - 若 Nest 后续不能持续通过共享门禁，必须降级为 `REFERENCE_ONLY`，不得声称可直接使用。
-- P0-008C 和三个业务 Web 的后续迁移只使用 FastAPI 默认 profile。
+- P0-009 的三个业务 Web 基础同步、P0-008C 和后续业务等价/切流都只使用 FastAPI 默认
+  profile。
 
 ### 2.4 FastAPI 母版来源
 
@@ -78,6 +80,21 @@ Provider token 写 Redis、登录路径 DDL、GET logout、`/auth/me` 返回原�
 - Web BFF 只负责 session/token mediation、授权、DTO、命令转发和受控 SSE；LangGraph
   长任务及 Run/Artifact/Retrieval/Citation 真相仍归 Runtime/领域数据库。
 
+### 2.6 模板先行与实例立即收敛
+
+- 当前只开发 `tpl-app` 的模板/契约/门禁，唯一代码游标仍是 P0-008B/B2。
+- React Admin Frontend 虽已达到 `TEMPLATE_MIGRATION_READY`，但 B5 还要修复
+  `tpl-admin-backend`；现在只同步 Admin Frontend 会形成混代底座并导致第二次迁移。因此
+  先完成 B2~B6 的四默认组件统一 release，不是在推迟模板优先原则。
+- B2~B6 完成后必须冻结四个默认组件统一 `template_release_id`，紧接执行 P0-009；不得先
+  做 P0-008C、产品功能、Memory/Subagent 或 Agent 主链扩建。
+- P0-009 按 Info -> Knowledge -> Research 串行把 Admin/Web 前后端共同底座原地同步；
+  任一实例失败即停止，不做三个 App 同时覆盖。
+- Frontend 同步基础并重接领域页面；Backend 只同步通用内核，不覆盖领域模型、migration
+  lineage、worker 和数据所有权。
+- P0-009 只产生 `INSTANCE_FOUNDATION_ALIGNED`，不自动切流、不删除旧 Vue/Next/Backend
+  镜像；完整业务等价和切流仍由 M1-411B/C/D、M1-413 完成。
+
 ## 3. 当前任务游标
 
 ### 已接受且不能倒退的关键输入
@@ -94,17 +111,20 @@ Provider token 写 Redis、登录路径 DDL、GET logout、`/auth/me` 返回原�
 - P0-008A/ADR-014：Next Web 架构矩阵 accepted；ADR-016 于 2026-07-18 修订 backend profile。
 - P0-008B/B1：Node 24.18.0、pnpm 10.24.x、JOSE 6.2.3、Next/Nest clean-room、非 root、
   standalone、fail-fast 和 Playwright 基线 accepted。
+- ADR-017：模板统一 release 后立即按 Info -> Knowledge -> Research 收敛三个实例，
+  共同底座对齐前冻结普通业务开发。
 
 ### 当前状态
 
 ```text
 P0-008B = IN_PROGRESS / B1_NODE24_ACCEPTED / B2_NEXT
+P0-009  = NOT_STARTED / BLOCKED_BY_P0_008B_B2_TO_B6
 P0-008C = NOT_STARTED
 三个业务 Web 实例 = 未应用 Web v2
 ```
 
-架构讨论已经收口。本轮文档一致性变更完成、检查和提交后，**唯一下一代码任务是 B2**；
-不能跳到仓库改名、FastAPI 复制、P0-008C 或业务 App 迁移。
+架构讨论已经收口。**唯一下一代码任务是 B2**；不能跳到仓库改名、FastAPI 复制、
+P0-009、P0-008C 或业务 App。B2~B6 完成后，P0-009 自动成为唯一任务。
 
 ## 4. P0-008B 串行施工包
 
@@ -150,21 +170,41 @@ gitlink 和远端一致。失败时回滚，不得留下两个同名或错指远
 
 同一 Next 分别对 FastAPI/Nest 跑共享 consumer vectors 和配对 E2E。FastAPI 获得默认
 release tuple；Nest 获得可选 tuple。记录双方 contract version、前后端 digest、audience、
-profile、兼容矩阵和独立回滚。B1~B6 全部接受后 P0-008B 才结束。
+profile、兼容矩阵和独立回滚。B1~B6 全部接受后 P0-008B 才结束，并立即进入 P0-009。
+
+### P0-009 统一模板发布与三实例立即收敛
+
+1. P0-009A：冻结四默认组件 release manifest、三实例保留/替换/删除清单、迁移前
+   tag/digest/DB revision 与逐实例回滚。
+2. P0-009B：Info 原地同步并完成 Admin/Web 配对、Docker/KIND、配置/migration 和回滚。
+3. P0-009C：Knowledge 同步，保留 Dataset/Ingestion/Retrieval 领域边界。
+4. P0-009D：Research 同步，保留 Run/Runtime 领域边界，不提前做真实产品试点。
+5. P0-009E：clean-room 重放、共享 contract、六组基础配对、漂移报告和总回滚门。
+
+五步必须串行；P0-009E 接受前禁止普通业务开发。三个 App 都记录同一
+`template_release_id` 后，才解锁 P0-008C。
+
+计划顺序静态门禁：
+
+```bash
+python sunmoonai/docs/mooc-manus-v5/scripts/verify_template_first_plan.py \
+  --k8s /home/zymun/k8s
+```
 
 ### P0-008C Research 真实试点
 
-只使用 FastAPI 默认 Research Web Backend + Custom Runtime adapter，证明真实 Run/SSE/
-cancel/resume/HITL/citation、刷新/断线/多标签、跨用户拒绝和滚动版本。通过前禁止向 Info/
-Knowledge/Research 三个业务 Web 推广模板。
+只在 P0-009 已对齐的 Research 基线上使用 FastAPI 默认 Research Web Backend + Custom
+Runtime adapter，证明真实 Run/SSE/cancel/resume/HITL/citation、刷新/断线/多标签、跨用户
+拒绝和滚动版本。通过前禁止把基础同步当成完整 Web 产品能力或切正式流量。
 
-## 5. 当前仓库事实（2026-07-18）
+## 5. 当前仓库事实（2026-07-22）
 
 ### k8s
 
-- 分支：`codex-1`；文档修订前 HEAD `ce99192`，与 `origin/codex-1` 同步。
-- 本轮只修改 v4 归档提示、v5、implementation plan、ADR-014、新 ADR-016、P0-008A
-  架构修订附录/静态验证器和本文；未修改运行代码、Deployment、Secret、Harbor 或 KIND。
+- 分支：`codex-1`；本轮文档修订前 HEAD `0348025`，与 `origin/codex-1` 同步。
+- 2026-07-18 提交 `0348025` 已同步远端。本轮新增 ADR-017 并调整 v5、implementation
+  plan、ADR-013/014/016 和本文的任务顺序；未修改运行代码、Deployment、Secret、Harbor
+  或 KIND。
 
 ### tpl-app
 
@@ -185,7 +225,7 @@ Knowledge/Research 三个业务 Web 推广模板。
 
 ## 6. 集群、Harbor 与发布边界
 
-本文 2026-07-18 修订没有重新部署或重新核验 live cluster/Harbor，因此不能沿用旧 handoff
+本文 2026-07-22 修订没有重新部署或重新核验 live cluster/Harbor，因此不能沿用旧 handoff
 的 Pod/tag 描述作为当前事实。任何 build/push/rollout 前必须只读确认：
 
 ```bash
@@ -208,7 +248,7 @@ KUBECONFIG="$HOME/.kube/kind-config" kubectl get deploy -A \
 
 ## 7. 恢复检查清单
 
-- [ ] 阅读 v5、implementation plan、ADR-014、ADR-016 和本文。
+- [ ] 阅读 v5、implementation plan、ADR-014、ADR-016、ADR-017 和本文。
 - [ ] 确认 v4 顶部是归档声明，不从 v4 恢复任务。
 - [ ] 确认 k8s 文档变更已检查/提交，未混入运行代码。
 - [ ] 确认 tpl-app 四个 gitlink 与本文 B1 固定值一致。
@@ -217,6 +257,8 @@ KUBECONFIG="$HOME/.kube/kind-config" kubectl get deploy -A \
 - [ ] 确认三个业务 Web 未被修改、部署或打上 Web v2 完成标签。
 - [ ] 将 B2 设为唯一代码任务；完成测试、证据、状态、提交后再激活 B3。
 - [ ] B4 前不开始 B5；B5 前先验收 canonical FastAPI 母版。
+- [ ] B6 后立即激活 P0-009A；P0-009E 前不开始 P0-008C 或普通业务开发。
+- [ ] P0-009 严格按 Info -> Knowledge -> Research 串行，不同时覆盖三个 App。
 - [ ] P0-008C 只使用 FastAPI 默认 profile；Nest 只保留模板契约门。
 - [ ] 每个包关闭时同时记录 Git SHA、image digest、contract version、测试、部署、故障和
       回滚，不以聊天结论代替证据。
@@ -229,4 +271,6 @@ KUBECONFIG="$HOME/.kube/kind-config" kubectl get deploy -A \
 - 禁止让 Next Route Handler 成为第三套通用 BFF。
 - 禁止在同一生产入口随机混跑 FastAPI/Nest backend。
 - 禁止在 B4 前改名远程仓，在 B6 前把 FastAPI 作为已冻结业务模板推广。
+- 禁止 B6 后跳过 P0-009继续开发业务、Runtime 产品面、Memory/Subagent 或 P0-008C。
+- 禁止用模板整树覆盖领域 Backend，或把基础同步误报为业务等价/正式切流。
 - 禁止用 Nest profile 代替 P0-008C 或三个业务 Web 的 FastAPI 默认主线证据。

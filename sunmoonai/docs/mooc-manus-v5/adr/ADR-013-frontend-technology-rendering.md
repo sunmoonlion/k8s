@@ -1,6 +1,6 @@
 # ADR-013：前端技术栈与渲染策略
 
-状态：ACCEPTED
+状态：ACCEPTED（2026-07-22 迁移顺序由 ADR-017 修订）
 日期：2026-07-11
 决策者：项目负责人、架构评审
 
@@ -84,4 +84,7 @@ v5 要同时建设 Research Agent 工作台与 Info/Knowledge/Research 治理面
 1. P0-007A 已证明的是 React Admin 技术骨架、静态部署和基础平台接入点，不是 Vue 模板功能迁移完成。
 2. P0-007A2 必须从三个现有 App 的 Vue Admin 源码和历史 commit 冻结基线，覆盖生产相关通用组件、布局、路由/权限、状态、i18n、错误/安全、构建/部署和测试能力，并逐项记录 React 对应实现、行为差异、测试证据与 owner；`tpl-app` 不再保留独立 Vue 模板子仓库。
 3. 示例/展厅页面、Electron/PWA 等非目标能力可以延期，但必须有明确处置记录；任何 App 依赖项不得在无替代方案时延期。
-4. P0-007A2 通过前，不得修改三个业务 Admin 的前端实现；Gate P0 后在现有 App 仓库内按冻结 commit 和替换清单原地替换基础实现，实际业务页面仍按 Info -> Knowledge -> Research 逐 App 等价迁移并通过 Git tag/镜像 digest 回滚，不创建新 App 仓库。
+4. P0-007A2 通过前，不得修改三个业务 Admin 的前端实现；P0-007C 与完整 `tpl-app`
+   默认组件发布清单冻结后，必须按 ADR-017/P0-009 在现有 App 仓库内以 Info ->
+   Knowledge -> Research 顺序立即原地同步共同基础，不再等待 Gate P0。实际业务页面等价、
+   流量切换和旧 Vue 退出仍逐 App 验收并通过 Git tag/镜像 digest 回滚，不创建新 App 仓库。

@@ -1,6 +1,6 @@
 # ADR-016：Web BFF 双实现模板与 FastAPI 默认主线
 
-状态：ACCEPTED
+状态：ACCEPTED（2026-07-22 实例采纳顺序由 ADR-017 补充）
 日期：2026-07-18
 决策者：项目负责人、架构评审
 
@@ -109,8 +109,10 @@ P0-008B 串行拆为：
    `tpl-web-backend` FastAPI Web surface。
 6. B6：共享 contract vectors、Next+FastAPI 配对 E2E、双实现差异矩阵与默认发布 tuple。
 
-B1~B6 全部接受后 P0-008B 才完成。P0-008C 的 Research 真实试点和三个业务 Web 的后续
-原地迁移只使用 FastAPI 默认实现；Nest profile 不能作为业务主线完成证据。
+B1~B6 全部接受后 P0-008B 才完成。随后必须先执行 ADR-017/P0-009，把 FastAPI 默认
+Admin/Web 基础按 Info -> Knowledge -> Research 串行同步到三个业务 App；P0-009 前不得
+开始 P0-008C 或新增业务开发。P0-008C 的 Research 真实试点和三个业务 Web 的后续业务
+等价/切流只使用 FastAPI 默认实现；Nest profile 不能作为业务主线完成证据。
 
 ## 4. 拒绝的替代方案
 

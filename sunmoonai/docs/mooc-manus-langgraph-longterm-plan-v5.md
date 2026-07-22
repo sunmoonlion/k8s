@@ -2,7 +2,7 @@
 
 状态：Architecture Baseline（待 Phase 0 Spike 验证后冻结）
 日期：2026-07-11
-最近修订：2026-07-18（ADR-016：Web BFF 双实现模板，FastAPI 默认主线）
+最近修订：2026-07-22（ADR-017：模板先行与三实例立即收敛门禁）
 范围：`k8s`、`info-app`、`knowledge-app`、`research-app` 的统一系统架构
 实施计划：见 `mooc-manus-langgraph-v5-implementation-plan.md`
 
@@ -26,6 +26,9 @@ v5 的核心结论：
 10. 在最小安全闭环和真实跨仓 E2E 通过前，Research Agent 流量保持关闭。
 11. 前端不是后端事件的调试器：Research 用户工作台和三套治理控制面都是平台边界的一部分，必须共享身份、契约、恢复、审计和 E2E 门禁。
 12. Admin/Web 后端默认统一为 Python/FastAPI，但保持独立 surface、audience、cookie、仓库、Deployment 和发布单元；NestJS Web BFF 作为通过相同契约门禁的可选模板保留。
+13. `tpl-app` 是业务代码的前置底座：四个默认组件形成统一可追溯 release 后，必须立即按
+    Info -> Knowledge -> Research 串行同步三个实例；全部实例收敛前禁止继续新增业务功能
+    或扩建 Agent 主链，基础同步与正式切流仍由不同门禁控制。
 
 ## 1. 背景与 v4 重构原因
 
@@ -69,7 +72,9 @@ v5 不否定现有成果；现有代码作为验证资产重新分类为“保�
 - Info App 不负责向量检索和 Agent 记忆。
 - 第一阶段不建设通用低代码 Agent Builder。
 - 第一阶段不一次性实现全部 Provider、工具、多 Agent 模式和多租户能力。
-- M1 不在三个现有 React/Next Web 中分别临时修补架构缺口，而是先原地重基线模板、再逐 App 原地迁移；三个 Vue Admin 通过迁移分支和逐 App 等价替换迁移，不在原 Vue 页面中长期混嵌 React；不因技术统一预先抽取跨 App 运行时 UI 包。
+- M1 不在三个现有 React/Next Web 中分别临时修补架构缺口，而是先原地重基线模板，并在
+  Phase 0 立即逐 App 收敛共同底座；三个 Vue Admin 通过迁移分支和逐 App 等价替换迁移，
+  不在原 Vue 页面中长期混嵌 React；不因技术统一预先抽取跨 App 运行时 UI 包。
 - M1 不把 Info Web 或 Knowledge Web 改造成内部管理控制面；管理操作继续由各自 Admin Frontend 承担。
 
 ### 2.3 可度量成功标准
@@ -619,7 +624,11 @@ Admin 规则：
 3. 在 canonical `tpl-admin-frontend` 中完成 React 生产骨架；该阶段只证明技术路线、部署形态和平台接入点，不能宣称完成 Vue 功能迁移。
 4. 新增独立的 React Admin 模板能力对齐门 `P0-007A2`：从三个 App 的现有 Vue 源码和固定 commit 冻结能力清单，逐项实现生产相关通用组件、布局、路由、权限、状态、国际化、错误/安全、构建和部署行为，并形成 Vue -> React 映射与测试矩阵。示例页、Electron/PWA 等 legacy 能力必须明确标记为保留、替代或延期，禁止静默遗漏。
 5. 用 Info Admin Artifact/Delivery 真实薄切验证模板；通用能力回收模板，业务代码不进入模板。只有 `P0-007A2` 完成后，模板才具备业务迁移资格。
-6. `P0-007C` 冻结且 Gate P0 通过后，在三个现有 App 前端仓库内按 Info -> Knowledge -> Research 串行原地替换基础实现；每个 App 先保留迁移前 Git tag 和可回滚镜像，替换代码不等于切换流量，也不创建新的业务仓库。
+6. `P0-007C` 冻结 React Admin；待 P0-008B 同时完成 Admin Backend、Next Web 和默认
+   FastAPI Web Backend 的统一模板 release 后，必须紧接执行 ADR-017/P0-009，在三个现有
+   App 中按 Info -> Knowledge -> Research 串行原地同步全部默认共同基础，不再等待 Gate
+   P0。每个 App 先保留迁移前 Git tag 和可回滚镜像；同步代码不等于切换流量，也不创建
+   新的业务仓库。
 7. 三个 React Admin 分别在现有 App 仓库内完成真实业务功能、安全、可访问性和 E2E 等价后，才允许切换流量；迁移前用 Git tag 和镜像 digest 保留回滚基线，不再双重维护 Vue/React 实现。
 8. 现有 `tpl-web-frontend`/`tpl-web-backend` 保持可回退，不在三个实例中分别修补。
    现有 Nest `tpl-web-backend` 先按 P0-008B/B2~B4 补齐生产 BFF、与 Next 配对验收并
@@ -637,7 +646,12 @@ Admin 规则：
 12. Next typed client/DAL 对 FastAPI 与 Nest 使用同一语言无关 Auth/DTO/SSE/Error
     契约；FastAPI 是 `tpl-app` 默认 profile，Nest 是可选 profile。P0-008C 和三个业务
     Web 的正式迁移只使用默认 FastAPI profile。
-13. 用 Research 真实 Run/SSE/cancel/resume/HITL/citation 薄切验证并冻结 v2；通过前不修改三个 Web 的业务前端，不把 Research 领域代码回流模板。Gate P0 后再按 Info -> Knowledge -> Research 串行把冻结版本应用到三个现有 Web 仓库，每仓独立验证、切换和回滚。
+13. B1~B6 完成后先冻结四个默认组件的统一 template release manifest，并按 P0-009 将其
+    共同基础立即同步至 Info、Knowledge、Research；Frontend 是基础原地替换并重接领域
+    扩展，Backend 只同步通用内核，不覆盖领域模型、migration lineage 或数据所有权。
+14. P0-009 三实例收敛后，才在已收敛的 Research 基线上运行真实
+    Run/SSE/cancel/resume/HITL/citation 薄切并冻结 v2；通用修正先回流模板并按相同顺序传播。
+    完整业务等价、正式流量切换和旧实现退出仍逐 App 独立验证和回滚。
 
 ### 10.11 React Admin 功能等价门槛
 
@@ -860,7 +874,7 @@ GA 目标：
 - 修复 Git/集群 traffic flag 漂移，确保重新部署仍关闭流量。
 - 不等待 Phase 0 决策，不修改生产 Runner。
 
-### 19.2 Phase 0：八个阻塞性架构决策/验证包
+### 19.2 Phase 0：九个阻塞性架构决策/验证包
 
 - Runtime 选型。
 - Session/Thread/Run/Attempt 模型。
@@ -869,11 +883,13 @@ GA 目标：
 - 身份与服务调用。
 - 可靠交付 ADR。
 - React Admin 模板、Info 真实试点与 v1 冻结。
-- Next Web 模板架构再基线、Research 真实 streaming 试点与 v2 冻结。
+- Next Web/默认 FastAPI BFF 模板再基线。
+- 四个默认模板组件统一 release、三实例共同底座立即收敛、Research 真实 streaming
+  试点与 v2 冻结。
 
-Runtime Spike 内验证 SSE/cancel/worker kill；可靠交付 Spike 内验证重复投递和副作用恢复。前端先严格按 P0-007A -> P0-007A2/A2.1 -> P0-005 -> P0-007A2/A2.2~A2.5 -> P0-007B -> P0-007C 完成 React Admin 模板资格链；A2.2 的真实身份接入不得先于 P0-005 接受。随后完成 P0-004、P0-001/002、P0-006，并在 ADR-001/002/004/005 有输出后按 P0-008A/B/C 完成 Web v2：先完成并固化 Next+Nest 可选配对，再收敛 FastAPI 通用母版、建立 Next+FastAPI 默认配对和双实现共享契约门禁，最后以默认 FastAPI profile 完成 Research 真实试点。禁止未验证模板直接覆盖业务代码。全部 Phase 0 退出条件满足并通过 Gate P0 后，才按 Info -> Knowledge -> Research 串行原地迁移三个 Admin（M1-411）和三个 Web（M1-413）。核心 ADR Spike 仍使用 2~3 周时间盒，但完整 Phase 0 还包含 React 模板能力对齐、真实 Admin 薄切和 Next/Web Backend 双实现模板资格链，不能宣称全部工作可在同一 2~3 周内完成。退出门禁是 ADR-001~006/013/014/016 有运行或试点证据、P0-007A/A2/B/C 与 P0-008A/B/C 全部通过、契约测试机制可执行且不存在阻断 M1a 的未决核心问题。
+Runtime Spike 内验证 SSE/cancel/worker kill；可靠交付 Spike 内验证重复投递和副作用恢复。前端先严格按 P0-007A -> P0-007A2/A2.1 -> P0-005 -> P0-007A2/A2.2~A2.5 -> P0-007B -> P0-007C 完成 React Admin 模板资格链；A2.2 的真实身份接入不得先于 P0-005 接受。随后完成 P0-004、P0-001/002、P0-006，并按 P0-008A -> P0-008B/B1~B6 完成 Next、FastAPI 默认 Web BFF、Nest 可选 BFF 和 FastAPI Admin 母版。B6 接受后不得先做 Research 试点或业务功能，必须立即执行 P0-009A~E：冻结统一模板 release，按 Info -> Knowledge -> Research 串行同步四个默认组件的共同基础并通过总漂移/回滚门；之后才执行 P0-008C Research 真实试点。基础同步不是流量切换，M1-411B/C/D 与 M1-413 只补业务等价、切流和旧实现退出，不再首次替换共同底座。核心 ADR Spike 仍使用 2~3 周时间盒，但完整 Phase 0 还包含模板资格链和三实例收敛，不能宣称全部工作可在同一 2~3 周内完成。退出门禁是 ADR-001~006/013/014/016/017 有运行或试点证据、P0-007A/A2/B/C、P0-008A/B/C 与 P0-009 全部通过、契约测试机制可执行且不存在阻断 M1a 的未决核心问题。
 
-执行恢复纪律：旧 v4 局部实现、已运行镜像或单一模板骨架不得倒推为 v5 迁移完成。`SKELETON_ACCEPTED`、`PROVISIONAL_EARLY_SLICE` 与 `TEMPLATE_MIGRATION_READY` 必须使用不同状态；只有模板资格链和 Gate P0 全部通过后，才允许按 Info → Knowledge → Research 逐 App 原地迁移、独立切换和回滚。版本清理遵循“先记录 digest 和回滚基线，后删除临时 tag”，不得覆盖或删除仍被任何 Deployment/回滚流程引用的稳定版本。三套 App 的部署入口现在默认拒绝前端 `p0-*` tag，仅显式隔离测试模式可放行。具体操作、当前前端矩阵和经验教训以实施计划 §1.6 为唯一执行权威。
+执行恢复纪律：旧 v4 局部实现、已运行镜像或单一模板骨架不得倒推为 v5 迁移完成。`SKELETON_ACCEPTED`、`TEMPLATE_MIGRATION_READY`、`INSTANCE_FOUNDATION_ALIGNED` 与业务等价/切流必须使用不同状态。模板统一 release 冻结后只能按 Info → Knowledge → Research 逐 App 原地同步、独立验证和回滚，不能等 Gate P0，也不能三仓同时覆盖；P0-009 全部通过前不得继续新增业务功能。版本清理遵循“先记录 digest 和回滚基线，后删除临时 tag”，不得覆盖或删除仍被任何 Deployment/回滚流程引用的稳定版本。三套 App 的部署入口默认拒绝前端 `p0-*` tag，仅显式隔离测试模式可放行。具体操作、当前矩阵和经验教训以实施计划 §1.6、P0-009 与最新 handoff 为执行权威。
 
 ### 19.3 M1a：内部真实产品竖线
 
@@ -948,6 +964,7 @@ canary 指标、回滚和恢复演练达标后，才进入有限真实流量；�
   （Accepted，实施 profile 由 ADR-016 修订）。
 - ADR-016 Web BFF 双实现模板、FastAPI 默认主线、Nest 可选 profile、FastAPI 母版来源
   与共享契约门禁（Accepted）。
+- ADR-017 模板先行、统一 release、三实例立即串行收敛和业务开发解锁门禁（Accepted）。
 
 ## 22. 主要风险
 
@@ -976,7 +993,9 @@ canary 指标、回滚和恢复演练达标后，才进入有限真实流量；�
 5. 四仓负责人确认数据所有权、契约所有权和删除责任。
 6. Web/Admin 前端边界、浏览器身份、Citation DTO 和 stream reconciliation 已分别进入 ADR-004/005/007 与 Runtime Spike 证据。
 7. ADR-013 已接受，P0-007A/A2/B/C 通过且没有要求三个 Admin 新增 Node SSR 运行时；React Admin v1 有完整能力矩阵、固定版本、固定 commit 干净重建/dry-run 原地替换证据和 Vue 对照/迁移文档。P0-007A 单独通过不得触发迁移。
-8. ADR-014/016 已接受，P0-008A/B/C 通过；Next Web v2 有固定版本、FastAPI 默认 Web
+8. ADR-014/016/017 已接受，P0-008A/B、P0-009、P0-008C 依次通过；四个默认模板组件
+   有统一 release manifest，Info/Knowledge/Research 共同底座均达到
+   `INSTANCE_FOUNDATION_ALIGNED`；Next Web v2 有固定版本、FastAPI 默认 Web
    Backend、受维护 Nest 可选 profile、共享契约结果、真实 Research
    streaming/HITL/citation 试点、多副本自托管证据和两个 backend profile 的回滚路径。
 
