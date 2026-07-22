@@ -45,10 +45,10 @@ def main() -> None:
     plan = require(
         docs / "mooc-manus-langgraph-v5-implementation-plan.md",
         "### V5-P0-009 统一模板发布与三实例立即收敛 Rollup",
-        "NOT_STARTED / BLOCKED_BY_P0_008B_B2_TO_B6",
+        "NOT_STARTED / BLOCKED_BY_P0_008B_B3_TO_B6",
         "### V5-M1-411A 固定模板替换三个 App 基础前端",
         "状态：SUPERSEDED_BY_P0_009",
-        "B2 仍是唯一下一代码任务",
+        "B3 是唯一下一代码任务",
         "P0-009E -> P0-008C",
     )
     long_term = require(
@@ -59,8 +59,8 @@ def main() -> None:
     )
     handoff = require(
         docs / "mooc-manus-langgraph-v5-handoff-20260712.md",
-        "P0-008B = IN_PROGRESS / B1_NODE24_ACCEPTED / B2_NEXT",
-        "P0-009  = NOT_STARTED / BLOCKED_BY_P0_008B_B2_TO_B6",
+        "P0-008B = IN_PROGRESS / B2_ACCEPTED / B3_NEXT",
+        "P0-009  = NOT_STARTED / BLOCKED_BY_P0_008B_B3_TO_B6",
         "B6 后立即激活 P0-009A",
     )
 
@@ -85,7 +85,7 @@ def main() -> None:
                 "task": "V5-PLAN-TEMPLATE-FIRST",
                 "result": "passed",
                 "decision": "ADR-017",
-                "current_code_task": "P0-008B/B2",
+                "current_code_task": "P0-008B/B3",
                 "next_after_template_release": "P0-009A",
                 "instance_order": ["info", "knowledge", "research"],
                 "business_development_locked_until": "P0-009E_ACCEPTED",

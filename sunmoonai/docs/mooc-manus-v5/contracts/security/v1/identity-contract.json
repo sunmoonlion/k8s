@@ -76,6 +76,7 @@
     "issuer_mismatch",
     "audience_mismatch",
     "csrf_invalid",
+    "provider_unavailable",
     "scope_denied",
     "resource_forbidden",
     "service_token_required"

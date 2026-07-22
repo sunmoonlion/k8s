@@ -82,7 +82,7 @@ Provider token 写 Redis、登录路径 DDL、GET logout、`/auth/me` 返回原�
 
 ### 2.6 模板先行与实例立即收敛
 
-- 当前只开发 `tpl-app` 的模板/契约/门禁，唯一代码游标仍是 P0-008B/B2。
+- 当前只开发 `tpl-app` 的模板/契约/门禁，B2 已接受，唯一代码游标是 P0-008B/B3。
 - React Admin Frontend 虽已达到 `TEMPLATE_MIGRATION_READY`，但 B5 还要修复
   `tpl-admin-backend`；现在只同步 Admin Frontend 会形成混代底座并导致第二次迁移。因此
   先完成 B2~B6 的四默认组件统一 release，不是在推迟模板优先原则。
@@ -111,20 +111,22 @@ Provider token 写 Redis、登录路径 DDL、GET logout、`/auth/me` 返回原�
 - P0-008A/ADR-014：Next Web 架构矩阵 accepted；ADR-016 于 2026-07-18 修订 backend profile。
 - P0-008B/B1：Node 24.18.0、pnpm 10.24.x、JOSE 6.2.3、Next/Nest clean-room、非 root、
   standalone、fail-fast 和 Playwright 基线 accepted。
+- P0-008B/B2：Nest identity kernel、Next server-only DAL/DTO、严格 browser session
+  contract 和受控 Next+Nest 配对门禁 accepted。
 - ADR-017：模板统一 release 后立即按 Info -> Knowledge -> Research 收敛三个实例，
   共同底座对齐前冻结普通业务开发。
 
 ### 当前状态
 
 ```text
-P0-008B = IN_PROGRESS / B1_NODE24_ACCEPTED / B2_NEXT
-P0-009  = NOT_STARTED / BLOCKED_BY_P0_008B_B2_TO_B6
+P0-008B = IN_PROGRESS / B2_ACCEPTED / B3_NEXT
+P0-009  = NOT_STARTED / BLOCKED_BY_P0_008B_B3_TO_B6
 P0-008C = NOT_STARTED
 三个业务 Web 实例 = 未应用 Web v2
 ```
 
-架构讨论已经收口。**唯一下一代码任务是 B2**；不能跳到仓库改名、FastAPI 复制、
-P0-009、P0-008C 或业务 App。B2~B6 完成后，P0-009 自动成为唯一任务。
+架构讨论已经收口。**唯一下一代码任务是 B3**；不能跳到仓库改名、FastAPI 创建、
+P0-009、P0-008C 或业务 App。B3~B6 完成后，P0-009 自动成为唯一任务。
 
 ## 4. P0-008B 串行施工包
 
@@ -136,7 +138,7 @@ P0-009、P0-008C 或业务 App。B2~B6 完成后，P0-009 自动成为唯一任�
 - 证据：`sunmoonai/docs/evidence/v5/V5-P0-008B/B1/result.md`。
 - 旧 Node 20 基线为 `SUPERSEDED / NO_NEW_RELEASE`。
 
-### B2 Nest BFF Identity + Next DAL/DTO — NEXT
+### B2 Nest BFF Identity + Next DAL/DTO — ACCEPTED
 
 只修改 canonical `tpl-web-backend`、`tpl-web-frontend`、必要 contract/evidence 和
 `tpl-app` gitlink：
@@ -146,9 +148,11 @@ P0-009、P0-008C 或业务 App。B2~B6 完成后，P0-009 自动成为唯一任�
 - Next：真正的 server-only DAL/DTO、受权 dynamic/no-store route、浏览器同源 typed client；
   不建立第二套 auth store/BFF。
 - 共享输入：ADR-005、ADR-014、ADR-016 和 security contract vectors。
-- 禁止：改名仓库、创建 FastAPI Web 仓、修改三个业务 Web、使用 fake auth 绕过门禁。
+- 固定：`tpl-web-backend@839ea09`、`tpl-web-frontend@b1730a6`、`tpl-app@4cae61d`。
+- 证据：`sunmoonai/docs/evidence/v5/V5-P0-008B/B2/result.md`。
+- B2 的受控 fixture 不是 Casdoor/KIND/真实业务证据；这些门禁仍属于 B4。
 
-### B3 UI/Query/Stream/Citation + Nest Pair
+### B3 UI/Query/Stream/Citation + Nest Pair — NEXT
 
 完成中性 public/authenticated/stream/HITL/citation/error surfaces 和共享 contract adapter；
 fixture 只能验证 UI/错误，不得冒充真实 Run/Retrieval 成功。
@@ -208,11 +212,11 @@ Runtime adapter，证明真实 Run/SSE/cancel/resume/HITL/citation、刷新/断�
 
 ### tpl-app
 
-- 父仓：`master@fe29739`，与远端同步。
+- 父仓：`master@4cae61d`；B2 gitlink 已本地固定，待本包证据提交后统一推送。
 - `tpl-admin-backend@2760862`：当前仍是旧认证原型，B5 前不得作为安全母版复制。
 - `tpl-admin-frontend@1561e5d`。
-- `tpl-web-backend@f5bedfb`：当前 Nest/B1 输入，尚未达到 B2/B4 完成标准。
-- `tpl-web-frontend@f5340ac`：Next/B1 输入。
+- `tpl-web-backend@839ea09`：当前 Nest/B2 输入；身份内核已接受，尚未达到 B4 生产冻结标准。
+- `tpl-web-frontend@b1730a6`：Next/B2 输入；server-only DAL/DTO 已接受，B3 产品中性面待完成。
 - 当前 `.gitmodules` 仍只有原 `tpl-web-backend`；`tpl-web-backend-nest` 尚未创建，这是正确
   状态，必须等 B4。
 
@@ -251,11 +255,11 @@ KUBECONFIG="$HOME/.kube/kind-config" kubectl get deploy -A \
 - [ ] 阅读 v5、implementation plan、ADR-014、ADR-016、ADR-017 和本文。
 - [ ] 确认 v4 顶部是归档声明，不从 v4 恢复任务。
 - [ ] 确认 k8s 文档变更已检查/提交，未混入运行代码。
-- [ ] 确认 tpl-app 四个 gitlink 与本文 B1 固定值一致。
+- [ ] 确认 tpl-app 四个 gitlink与本文最新固定值一致；Web Frontend/Backend 必须是 B2 commit。
 - [ ] 确认当前不存在 `tpl-web-backend-nest`；只有 B4 接受后才能改名。
 - [ ] 确认当前 `tpl-admin-backend` 未被误当成 P0-005 安全母版。
 - [ ] 确认三个业务 Web 未被修改、部署或打上 Web v2 完成标签。
-- [ ] 将 B2 设为唯一代码任务；完成测试、证据、状态、提交后再激活 B3。
+- [ ] 将 B3 设为唯一代码任务；完成测试、证据、状态、提交后再激活 B4。
 - [ ] B4 前不开始 B5；B5 前先验收 canonical FastAPI 母版。
 - [ ] B6 后立即激活 P0-009A；P0-009E 前不开始 P0-008C 或普通业务开发。
 - [ ] P0-009 严格按 Info -> Knowledge -> Research 串行，不同时覆盖三个 App。
