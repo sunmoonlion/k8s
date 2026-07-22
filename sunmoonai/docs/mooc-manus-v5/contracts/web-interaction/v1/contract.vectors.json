@@ -1,0 +1,53 @@
+{
+  "contract_version": 1,
+  "run_id": "00000000-0000-5000-8000-000000000001",
+  "initial_snapshot": {
+    "contract_version": 1,
+    "run_id": "00000000-0000-5000-8000-000000000001",
+    "title": "Reference interaction",
+    "status": "running",
+    "summary": null,
+    "last_sequence_no": 1,
+    "last_event_id": "00000000-0000-5000-8000-000000000010",
+    "citations": [],
+    "required_action": null,
+    "updated_at": "2030-01-01T00:00:00.000Z"
+  },
+  "ordered_events": [
+    {
+      "contract_version": 1,
+      "event_id": "00000000-0000-5000-8000-000000000011",
+      "run_id": "00000000-0000-5000-8000-000000000001",
+      "sequence_no": 2,
+      "occurred_at": "2030-01-01T00:00:01.000Z",
+      "type": "delta",
+      "data": {"text": "A streamed answer fragment. "}
+    },
+    {
+      "contract_version": 1,
+      "event_id": "00000000-0000-5000-8000-000000000013",
+      "run_id": "00000000-0000-5000-8000-000000000001",
+      "sequence_no": 4,
+      "occurred_at": "2030-01-01T00:00:03.000Z",
+      "type": "input_required",
+      "data": {
+        "action": {
+          "action_id": "00000000-0000-5000-8000-000000000020",
+          "kind": "confirmation",
+          "prompt": "Confirm the reference action to finish this run."
+        }
+      }
+    }
+  ],
+  "action": {
+    "contract_version": 1,
+    "action_id": "00000000-0000-5000-8000-000000000020",
+    "value": "confirm"
+  },
+  "negative_rules": [
+    "event_id must equal the SSE id field",
+    "sequence gaps require snapshot reconciliation",
+    "unknown fields and provider credentials are rejected",
+    "citation source resolution requires current browser authorization"
+  ]
+}

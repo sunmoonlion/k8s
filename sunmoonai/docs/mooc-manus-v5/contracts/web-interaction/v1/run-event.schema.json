@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.sunmoonai.com/web/interaction/v1/run-event.schema.json",
+  "title": "Browser Run Event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "event_id",
+    "run_id",
+    "sequence_no",
+    "occurred_at",
+    "type",
+    "data"
+  ],
+  "properties": {
+    "contract_version": {"const": 1},
+    "event_id": {"$ref": "#/$defs/uuid"},
+    "run_id": {"$ref": "#/$defs/uuid"},
+    "sequence_no": {"type": "integer", "minimum": 1},
+    "occurred_at": {"type": "string", "format": "date-time"},
+    "type": {
+      "enum": [
+        "status",
+        "delta",
+        "citation",
+        "input_required",
+        "completed",
+        "failed",
+        "heartbeat"
+      ]
+    },
+    "data": {"type": "object"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"type": {"const": "status"}}, "required": ["type"]},
+      "then": {"properties": {"data": {"$ref": "#/$defs/status_data"}}}
+    },
+    {
+      "if": {"properties": {"type": {"const": "delta"}}, "required": ["type"]},
+      "then": {"properties": {"data": {"$ref": "#/$defs/delta_data"}}}
+    },
+    {
+      "if": {"properties": {"type": {"const": "citation"}}, "required": ["type"]},
+      "then": {"properties": {"data": {"$ref": "#/$defs/citation_data"}}}
+    },
+    {
+      "if": {"properties": {"type": {"const": "input_required"}}, "required": ["type"]},
+      "then": {"properties": {"data": {"$ref": "#/$defs/input_required_data"}}}
+    },
+    {
+      "if": {"properties": {"type": {"const": "completed"}}, "required": ["type"]},
+      "then": {"properties": {"data": {"$ref": "#/$defs/completed_data"}}}
+    },
+    {
+      "if": {"properties": {"type": {"const": "failed"}}, "required": ["type"]},
+      "then": {"properties": {"data": {"$ref": "#/$defs/failed_data"}}}
+    },
+    {
+      "if": {"properties": {"type": {"const": "heartbeat"}}, "required": ["type"]},
+      "then": {"properties": {"data": {"$ref": "#/$defs/heartbeat_data"}}}
+    }
+  ],
+  "$defs": {
+    "uuid": {"type": "string", "format": "uuid"},
+    "run_status": {
+      "enum": ["queued", "running", "waiting_for_input", "succeeded", "failed", "cancelled"]
+    },
+    "status_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {"status": {"$ref": "#/$defs/run_status"}}
+    },
+    "delta_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text"],
+      "properties": {"text": {"type": "string", "minLength": 1, "maxLength": 4096}}
+    },
+    "citation_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["citation"],
+      "properties": {
+        "citation": {
+          "$ref": "https://contracts.sunmoonai.com/knowledge/retrieval/v1/citation.schema.json"
+        }
+      }
+    },
+    "input_required_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action"],
+      "properties": {
+        "action": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["action_id", "kind", "prompt"],
+          "properties": {
+            "action_id": {"$ref": "#/$defs/uuid"},
+            "kind": {"enum": ["confirmation", "input"]},
+            "prompt": {"type": "string", "minLength": 1, "maxLength": 2000}
+          }
+        }
+      }
+    },
+    "completed_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary"],
+      "properties": {"summary": {"type": "string", "maxLength": 20000}}
+    },
+    "failed_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {"type": "string", "minLength": 1, "maxLength": 128},
+        "message": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "heartbeat_data": {
+      "type": "object",
+      "maxProperties": 0
+    }
+  }
+}

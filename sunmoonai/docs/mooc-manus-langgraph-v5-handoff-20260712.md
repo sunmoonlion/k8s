@@ -82,7 +82,7 @@ Provider token 写 Redis、登录路径 DDL、GET logout、`/auth/me` 返回原�
 
 ### 2.6 模板先行与实例立即收敛
 
-- 当前只开发 `tpl-app` 的模板/契约/门禁，B2 已接受，唯一代码游标是 P0-008B/B3。
+- 当前只开发 `tpl-app` 的模板/契约/门禁，B3 已接受，唯一游标是 P0-008B/B4。
 - React Admin Frontend 虽已达到 `TEMPLATE_MIGRATION_READY`，但 B5 还要修复
   `tpl-admin-backend`；现在只同步 Admin Frontend 会形成混代底座并导致第二次迁移。因此
   先完成 B2~B6 的四默认组件统一 release，不是在推迟模板优先原则。
@@ -113,20 +113,23 @@ Provider token 写 Redis、登录路径 DDL、GET logout、`/auth/me` 返回原�
   standalone、fail-fast 和 Playwright 基线 accepted。
 - P0-008B/B2：Nest identity kernel、Next server-only DAL/DTO、严格 browser session
   contract 和受控 Next+Nest 配对门禁 accepted。
+- P0-008B/B3：Web interaction v1、Next SSE projection/reconcile、Citation/HITL 中性面和
+  测试专用 Next+Nest 进程级配对门禁 accepted；不代表 B4 真实部署固化完成。
 - ADR-017：模板统一 release 后立即按 Info -> Knowledge -> Research 收敛三个实例，
   共同底座对齐前冻结普通业务开发。
 
 ### 当前状态
 
 ```text
-P0-008B = IN_PROGRESS / B2_ACCEPTED / B3_NEXT
-P0-009  = NOT_STARTED / BLOCKED_BY_P0_008B_B3_TO_B6
+P0-008B = IN_PROGRESS / B3_ACCEPTED / B4_NEXT
+P0-009  = NOT_STARTED / BLOCKED_BY_P0_008B_B4_TO_B6
 P0-008C = NOT_STARTED
 三个业务 Web 实例 = 未应用 Web v2
 ```
 
-架构讨论已经收口。**唯一下一代码任务是 B3**；不能跳到仓库改名、FastAPI 创建、
-P0-009、P0-008C 或业务 App。B3~B6 完成后，P0-009 自动成为唯一任务。
+架构讨论已经收口。**唯一下一任务是 B4**；只有 B4 的真实安全/部署/回滚门禁通过后
+才执行 Nest 仓原子改名，不能提前创建 FastAPI 仓、进入 P0-009/P0-008C 或修改业务 App。
+B4~B6 完成后，P0-009 自动成为唯一任务。
 
 ## 4. P0-008B 串行施工包
 
@@ -152,12 +155,16 @@ P0-009、P0-008C 或业务 App。B3~B6 完成后，P0-009 自动成为唯一任�
 - 证据：`sunmoonai/docs/evidence/v5/V5-P0-008B/B2/result.md`。
 - B2 的受控 fixture 不是 Casdoor/KIND/真实业务证据；这些门禁仍属于 B4。
 
-### B3 UI/Query/Stream/Citation + Nest Pair — NEXT
+### B3 UI/Query/Stream/Citation + Nest Pair — ACCEPTED
 
-完成中性 public/authenticated/stream/HITL/citation/error surfaces 和共享 contract adapter；
-fixture 只能验证 UI/错误，不得冒充真实 Run/Retrieval 成功。
+固定 `tpl-web-backend@e1876a4`、`tpl-web-frontend@d10cffa`、`tpl-app@8b1df6a`。已完成
+严格 interaction v1、Next Query/SSE projection、cursor 去重与 gap reconcile、Citation
+授权解析、HITL 和中性状态面；36+2 个 Nest 测试、31 个 Next 测试、6 个 Next+Nest
+进程级 Playwright 通过。fixture 只在 Nest `test/fixtures`，未进入生产 AppModule；该结果
+不冒充真实 Run/Retrieval、Casdoor/KIND 或正式 release。证据：
+`sunmoonai/docs/evidence/v5/V5-P0-008B/B3/result.md`。
 
-### B4 Nest Security/Paired Test/Deploy/Freeze
+### B4 Nest Security/Paired Test/Deploy/Freeze — NEXT
 
 Next+Nest 完成双 Pod、真实浏览器、PKCE/CSRF/audience、SSE、CSP、滚动/version-skew、
 回滚和不可变 digest 证据后，才将现有仓原子改名为 `tpl-web-backend-nest`。改名前必须
@@ -205,18 +212,20 @@ Runtime adapter，证明真实 Run/SSE/cancel/resume/HITL/citation、刷新/断�
 
 ### k8s
 
-- 分支：`codex-1`；本轮文档修订前 HEAD `0348025`，与 `origin/codex-1` 同步。
-- 2026-07-18 提交 `0348025` 已同步远端。本轮新增 ADR-017 并调整 v5、implementation
-  plan、ADR-013/014/016 和本文的任务顺序；未修改运行代码、Deployment、Secret、Harbor
-  或 KIND。
+- 分支：`codex-1`；B3 证据提交前 HEAD `32f890d`，本地相对 `origin/codex-1` ahead 1；
+  该未推提交是已接受的 B2 证据，不得丢弃。
+- 本轮只新增 B3 contract、验证器、证据并更新 implementation plan/本文；未修改运行中
+  Deployment、Secret、Harbor 或 KIND。B4 才重新核验并变更真实部署/发布状态。
 
 ### tpl-app
 
-- 父仓：`master@4cae61d`；B2 gitlink 已本地固定，待本包证据提交后统一推送。
+- 父仓：`master@8b1df6a`；B3 gitlink 已本地固定。
 - `tpl-admin-backend@2760862`：当前仍是旧认证原型，B5 前不得作为安全母版复制。
 - `tpl-admin-frontend@1561e5d`。
-- `tpl-web-backend@839ea09`：当前 Nest/B2 输入；身份内核已接受，尚未达到 B4 生产冻结标准。
-- `tpl-web-frontend@b1730a6`：Next/B2 输入；server-only DAL/DTO 已接受，B3 产品中性面待完成。
+- `tpl-web-backend@e1876a4`：当前 Nest/B3 输入；身份与 interaction boundary 已接受，尚未
+  达到 B4 生产冻结标准。
+- `tpl-web-frontend@d10cffa`：Next/B3 输入；server-only DAL/DTO、typed stream、Citation/
+  HITL 中性面与配对门禁已接受。
 - 当前 `.gitmodules` 仍只有原 `tpl-web-backend`；`tpl-web-backend-nest` 尚未创建，这是正确
   状态，必须等 B4。
 
@@ -255,12 +264,12 @@ KUBECONFIG="$HOME/.kube/kind-config" kubectl get deploy -A \
 - [ ] 阅读 v5、implementation plan、ADR-014、ADR-016、ADR-017 和本文。
 - [ ] 确认 v4 顶部是归档声明，不从 v4 恢复任务。
 - [ ] 确认 k8s 文档变更已检查/提交，未混入运行代码。
-- [ ] 确认 tpl-app 四个 gitlink与本文最新固定值一致；Web Frontend/Backend 必须是 B2 commit。
+- [ ] 确认 tpl-app 四个 gitlink 与本文最新固定值一致；Web Frontend/Backend 必须是 B3 commit。
 - [ ] 确认当前不存在 `tpl-web-backend-nest`；只有 B4 接受后才能改名。
 - [ ] 确认当前 `tpl-admin-backend` 未被误当成 P0-005 安全母版。
 - [ ] 确认三个业务 Web 未被修改、部署或打上 Web v2 完成标签。
-- [ ] 将 B3 设为唯一代码任务；完成测试、证据、状态、提交后再激活 B4。
-- [ ] B4 前不开始 B5；B5 前先验收 canonical FastAPI 母版。
+- [ ] 将 B4 设为唯一任务；完成真实安全、部署、回滚、tag/digest 和原子改名后再激活 B5。
+- [ ] B4 前不改名、不开始 B5；B5 前先验收 canonical FastAPI 母版。
 - [ ] B6 后立即激活 P0-009A；P0-009E 前不开始 P0-008C 或普通业务开发。
 - [ ] P0-009 严格按 Info -> Knowledge -> Research 串行，不同时覆盖三个 App。
 - [ ] P0-008C 只使用 FastAPI 默认 profile；Nest 只保留模板契约门。
