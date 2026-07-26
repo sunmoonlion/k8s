@@ -42,26 +42,41 @@ def main() -> None:
         "INSTANCE_FOUNDATION_ALIGNED",
         "SUPERSEDED_BY_P0_009",
     )
+    unified_frontend_adr = require(
+        docs / "mooc-manus-v5/adr/ADR-018-unified-next-frontend-surfaces.md",
+        "状态：ACCEPTED",
+        "P0-007D React Admin Legacy Closure + 原子改名",
+        "P0-007E Next Admin Template + FastAPI Admin Pair",
+        "P0-007D/E 插入后，B6 不再是当前立即任务",
+        "tpl-admin-frontend-react",
+    )
     plan = require(
         docs / "mooc-manus-langgraph-v5-implementation-plan.md",
+        "### V5-P0-007D React Router Admin Legacy 最终配对与原子改名",
+        "### V5-P0-007E Next Admin 默认模板与 FastAPI Admin 配对",
+        "NOT_STARTED / CURRENT_UNIQUE_TASK",
+        "NOT_STARTED / BLOCKED_BY_P0_007D",
         "### V5-P0-009 统一模板发布与三实例立即收敛 Rollup",
-        "NOT_STARTED / BLOCKED_BY_P0_008B_B6",
+        "NOT_STARTED / BLOCKED_BY_P0_007E_AND_P0_008B_B6",
         "### V5-M1-411A 固定模板替换三个 App 基础前端",
         "状态：SUPERSEDED_BY_P0_009",
-        "B6 是唯一下一任务",
+        "P0-007D（`NOT_STARTED / CURRENT_UNIQUE_TASK`）",
         "P0-009E -> P0-008C",
     )
     long_term = require(
         docs / "mooc-manus-langgraph-longterm-plan-v5.md",
-        "最近修订：2026-07-26（P0-008B/B5 FastAPI 通用内核与默认 Web BFF 固定）",
+        "最近修订：2026-07-26（ADR-018 Admin/Web 前端统一 Next.js）",
+        "P0-007D -> P0-007E -> P0-008B/B6",
         "P0-009 全部通过前不得继续新增业务功能",
         "INSTANCE_FOUNDATION_ALIGNED",
     )
     handoff = require(
         docs / "mooc-manus-langgraph-v5-handoff-20260712.md",
-        "P0-008B = IN_PROGRESS / B5_ACCEPTED / B6_NEXT",
-        "P0-009  = NOT_STARTED / BLOCKED_BY_P0_008B_B6",
-        "唯一下一任务是 B6",
+        "P0-007D = NOT_STARTED / CURRENT_UNIQUE_TASK",
+        "P0-007E = NOT_STARTED / BLOCKED_BY_P0_007D",
+        "P0-008B = IN_PROGRESS / B5_ACCEPTED / B6_BLOCKED_BY_P0_007D_E",
+        "P0-009  = NOT_STARTED / BLOCKED_BY_P0_007E_AND_P0_008B_B6",
+        "唯一下一任务是 P0-007D",
         "B6 后立即激活 P0-009A",
     )
 
@@ -72,6 +87,7 @@ def main() -> None:
     )
     for name, text in (
         ("ADR-017", adr),
+        ("ADR-018", unified_frontend_adr),
         ("implementation plan", plan),
         ("v5", long_term),
         ("handoff", handoff),
@@ -85,8 +101,10 @@ def main() -> None:
             {
                 "task": "V5-PLAN-TEMPLATE-FIRST",
                 "result": "passed",
-                "decision": "ADR-017",
-                "current_code_task": "P0-008B/B6",
+                "decision": "ADR-017+ADR-018",
+                "current_code_task": "P0-007D",
+                "next_after_legacy_closure": "P0-007E",
+                "next_after_next_admin": "P0-008B/B6",
                 "next_after_template_release": "P0-009A",
                 "instance_order": ["info", "knowledge", "research"],
                 "business_development_locked_until": "P0-009E_ACCEPTED",

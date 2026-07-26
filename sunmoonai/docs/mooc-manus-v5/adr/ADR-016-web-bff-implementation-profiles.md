@@ -62,10 +62,13 @@ Admin 路由、Admin cookie/audience、领域模块或数据库所有权。
 默认发布单元为：
 
 ```text
-tpl-admin-frontend  + tpl-admin-backend       # React SPA/Nginx + FastAPI Admin
+tpl-admin-frontend  + tpl-admin-backend       # Next Node + FastAPI Admin
 tpl-web-frontend    + tpl-web-backend         # Next Node + FastAPI Web（默认）
 tpl-web-frontend    + tpl-web-backend-nest    # Next Node + Nest Web（可选 profile）
 ```
+
+Admin 的 Next 运行形态由 ADR-018 修订；本 ADR 的 Web FastAPI 默认/Nest 可选双 profile
+决策保持不变。
 
 前后端配对取决于 contract、surface、audience、cookie、部署和回滚 tuple，不取决于是否使用
 不同编程语言。Admin 与 Web 即使都使用 FastAPI，仍是两个独立信任面、仓库、Deployment、
@@ -109,10 +112,11 @@ P0-008B 串行拆为：
    `tpl-web-backend` FastAPI Web surface。
 6. B6：共享 contract vectors、Next+FastAPI 配对 E2E、双实现差异矩阵与默认发布 tuple。
 
-B1~B6 全部接受后 P0-008B 才完成。随后必须先执行 ADR-017/P0-009，把 FastAPI 默认
-Admin/Web 基础按 Info -> Knowledge -> Research 串行同步到三个业务 App；P0-009 前不得
-开始 P0-008C 或新增业务开发。P0-008C 的 Research 真实试点和三个业务 Web 的后续业务
-等价/切流只使用 FastAPI 默认实现；Nest profile 不能作为业务主线完成证据。
+ADR-018 插入 P0-007D/E 后，B6 的 Web 双 profile 职责不变，但不再是 B5 后的立即任务。
+P0-007E 与 B6 全部接受后，必须先执行 ADR-017/P0-009，把 Next Admin/Web +
+FastAPI 默认 Backend 基础按 Info -> Knowledge -> Research 串行同步到三个业务 App；
+P0-009 前不得开始 P0-008C 或新增业务开发。P0-008C 的 Research 真实试点和三个业务
+Web 的后续业务等价/切流只使用 FastAPI 默认实现；Nest profile 不能作为业务主线完成证据。
 
 ## 4. 拒绝的替代方案
 

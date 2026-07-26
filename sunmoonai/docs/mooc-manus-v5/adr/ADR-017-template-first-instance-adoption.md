@@ -6,7 +6,7 @@
 
 ## 1. 背景
 
-此前计划让 React Admin/Next Web 模板先取得迁移资格，但把三个业务 App 的基础替换留到
+此前计划让 Admin/Next Web 模板先取得迁移资格，但把三个业务 App 的基础替换留到
 Gate P0 之后的 M1-411/M1-413。这会产生两个问题：
 
 1. 模板继续演进，而 Info/Knowledge/Research 长期停留在旧 Vue、旧 Next、旧认证或不同
@@ -24,13 +24,14 @@ Gate P0 之后的 M1-411/M1-413。这会产生两个问题：
 当前唯一开发主线保持在 `tpl-app`，直至以下默认组件形成同一个可追溯模板发布清单：
 
 ```text
-tpl-admin-frontend   React Router SPA / Nginx
+tpl-admin-frontend   Next App Router / Node standalone
 tpl-admin-backend    FastAPI Admin
 tpl-web-frontend     Next App Router / Node standalone
 tpl-web-backend      FastAPI Web BFF（默认）
 ```
 
 `tpl-web-backend-nest` 同期完成为受维护可选 profile，但三个业务 App 不采用它作为主线。
+`tpl-admin-frontend-react` 是 ADR-018 固定的 legacy/reference，也不进入业务实例。
 `tpl-app` 父仓的初始化、命名替换、配置生成、子模块 URL/gitlink 和部署接口也属于模板
 release 控制面，必须能从干净目录生成上述组件，不能只验收四个子仓各自可构建。
 模板发布清单必须固定各子仓 commit、父仓 gitlink、contract/schema version、依赖锁、镜像
@@ -39,7 +40,7 @@ digest、生成/迁移清单、兼容矩阵和回滚步骤。任何组件只有�
 
 在模板发布清单冻结前，只允许：
 
-- P0-008B/B2~B6 所需的模板代码、契约、测试、证据和阻断修复；
+- P0-007D/E、P0-008B/B6 所需的模板代码、契约、测试、证据和阻断修复；
 - 为提取通用能力而只读审计三个业务 App；
 - 修复会阻断模板构建、安全或迁移的 P0 缺陷。
 
@@ -48,7 +49,7 @@ digest、生成/迁移清单、兼容矩阵和回滚步骤。任何组件只有�
 
 ### 2.2 模板完成后的“立即同步”
 
-P0-007C 与 P0-008B/B6 全部接受后，下一任务必须是 P0-009，不得在其间插入 P0-008C、
+P0-007E 与 P0-008B/B6 全部接受后，下一任务必须是 P0-009，不得在其间插入 P0-008C、
 M1 产品功能、Memory/Subagent、Provider 扩展或其他非阻断开发。P0-009 按以下顺序串行：
 
 1. P0-009A：冻结统一 template release manifest、三仓迁移/保留/删除清单和回滚基线。
@@ -104,7 +105,8 @@ App 修复后长期不回流。紧急安全修复可缩短门禁，但不能绕�
    可以跳过依赖。
 2. 原 M1-411A“固定模板替换三个 App 基础前端”职责并入 P0-009，标记
    `SUPERSEDED_BY_P0_009`。
-3. M1-411B/C/D 保留为 Admin 领域页面等价、切流和退出旧 Vue；M1-413 保留为三个 Web
+3. M1-411B/C/D 保留为 Admin 领域页面等价、切流和退出旧 Vue/React Router；
+   M1-413 保留为三个 Web
    的业务等价、真实配对和切流，不再承担共同基础首次同步。
 4. Gate P0 新增 P0-009 ACCEPTED，且 P0-008C 必须使用 P0-009 已收敛的 Research 基线。
 
@@ -118,5 +120,5 @@ App 修复后长期不回流。紧急安全修复可缩短门禁，但不能绕�
 
 ## 5. 接受条件
 
-本 ADR 接受即刻改变任务顺序，但不宣称模板或实例已经同步完成。当前仍从 P0-008B/B2
-开始；B2~B6 完成后必须进入 P0-009，P0-009 完成后才能进入 P0-008C 和后续业务开发。
+ADR-018 再次修订当前游标：B5 接受后先执行 P0-007D/E，再执行 P0-008B/B6；两条模板
+门全部接受后必须进入 P0-009，P0-009 完成后才能进入 P0-008C 和后续业务开发。

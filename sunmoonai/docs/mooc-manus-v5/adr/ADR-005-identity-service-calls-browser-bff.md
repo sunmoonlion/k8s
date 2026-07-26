@@ -77,7 +77,10 @@ Redis namespace、PKCE、nonce、签名与本地 policy 同时保证。验证器
 2. CORS 按 App/Surface 配置精确 origin；`allow_credentials=true` 时禁止 `*`。允许的 method/header 取最小集合。
 3. 前端路由守卫只改善 UX。每个 Backend/BFF Router 和资源操作必须在服务端重新认证和授权。
 4. SSE 可使用同源 cookie 建连，不要求自定义 CSRF header，但建连前必须验证 session、audience 和资源所有权；重连/对账时重新授权，并定义权限撤销后的断流策略。
-5. React Admin 不直接解析 JWT，不把 token 写入 localStorage/sessionStorage。typed client 默认携带 cookie，并只为非安全方法注入 `/auth/me` 获得的 CSRF token。
+5. Admin 浏览器不直接解析 JWT，不把 token 写入 localStorage/sessionStorage。Next
+   Admin 的 server-only DAL 与浏览器 typed client 均只面向 Admin FastAPI BFF；浏览器
+   client 默认携带 cookie，并只为非安全方法注入 `/auth/me` 获得的 CSRF token。历史
+   React Router Admin 的同一规则继续作为 P0-007D legacy 验收输入。
 
 ### 2.4 内部 Principal 与授权输入
 

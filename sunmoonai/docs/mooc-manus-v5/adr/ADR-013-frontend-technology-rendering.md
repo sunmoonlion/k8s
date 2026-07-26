@@ -1,8 +1,13 @@
 # ADR-013：前端技术栈与渲染策略
 
-状态：ACCEPTED（2026-07-22 迁移顺序由 ADR-017 修订）
+状态：PARTIALLY_SUPERSEDED（2026-07-26 Admin 默认运行形态由 ADR-018 修订）
 日期：2026-07-11
 决策者：项目负责人、架构评审
+
+> ADR-013 的 Vue 能力盘点、React Router Admin 实现和历史验收证据继续有效；“Admin
+> 默认 React Router SPA/Nginx 且不增加 Node”的目标态已由 ADR-018 取代。新的 canonical
+> Admin 是 Next App Router/Node standalone，现有 React Router 实现完成最终配对后改名为
+> `tpl-admin-frontend-react`，只作 legacy/reference。
 
 ## 1. 背景
 
