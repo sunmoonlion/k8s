@@ -1,6 +1,6 @@
 # MoocManus v5 当前交接文档
 
-> 文件名保留最初快照日期以避免旧链接失效；本文内容已于 **2026-07-22
+> 文件名保留最初快照日期以避免旧链接失效；本文内容已于 **2026-07-26
 > （Asia/Shanghai）整体重写**，旧 2026-07-12/13 状态不再有效。
 >
 > 适用分支：`k8s/info-app/knowledge-app/research-app` 的 `codex-1`；`tpl-app` 及模板
@@ -82,7 +82,7 @@ Provider token 写 Redis、登录路径 DDL、GET logout、`/auth/me` 返回原�
 
 ### 2.6 模板先行与实例立即收敛
 
-- 当前只开发 `tpl-app` 的模板/契约/门禁，B3 已接受，唯一游标是 P0-008B/B4。
+- 当前只开发 `tpl-app` 的模板/契约/门禁，B4 已接受，唯一游标是 P0-008B/B5。
 - React Admin Frontend 虽已达到 `TEMPLATE_MIGRATION_READY`，但 B5 还要修复
   `tpl-admin-backend`；现在只同步 Admin Frontend 会形成混代底座并导致第二次迁移。因此
   先完成 B2~B6 的四默认组件统一 release，不是在推迟模板优先原则。
@@ -115,21 +115,24 @@ Provider token 写 Redis、登录路径 DDL、GET logout、`/auth/me` 返回原�
   contract 和受控 Next+Nest 配对门禁 accepted。
 - P0-008B/B3：Web interaction v1、Next SSE projection/reconcile、Citation/HITL 中性面和
   测试专用 Next+Nest 进程级配对门禁 accepted；不代表 B4 真实部署固化完成。
+- P0-008B/B4：真实 Casdoor、严格 TLS、Next+Nest 2+2 Pod、CSP/CSRF/资源授权、SSE、
+  Redis 跨副本、滚动/version-skew、回滚、immutable digest 和 Git tag 全部 accepted；
+  Nest 仓与父仓 gitlink 已改名为 `tpl-web-backend-nest`。
 - ADR-017：模板统一 release 后立即按 Info -> Knowledge -> Research 收敛三个实例，
   共同底座对齐前冻结普通业务开发。
 
 ### 当前状态
 
 ```text
-P0-008B = IN_PROGRESS / B3_ACCEPTED / B4_NEXT
-P0-009  = NOT_STARTED / BLOCKED_BY_P0_008B_B4_TO_B6
+P0-008B = IN_PROGRESS / B4_ACCEPTED / B5_NEXT
+P0-009  = NOT_STARTED / BLOCKED_BY_P0_008B_B5_TO_B6
 P0-008C = NOT_STARTED
 三个业务 Web 实例 = 未应用 Web v2
 ```
 
-架构讨论已经收口。**唯一下一任务是 B4**；只有 B4 的真实安全/部署/回滚门禁通过后
-才执行 Nest 仓原子改名，不能提前创建 FastAPI 仓、进入 P0-009/P0-008C 或修改业务 App。
-B4~B6 完成后，P0-009 自动成为唯一任务。
+架构讨论已经收口。**唯一下一任务是 B5**：先修复并验收 canonical FastAPI Admin
+母版，再创建新的默认 FastAPI `tpl-web-backend`。不能跳到 B6、P0-009/P0-008C 或修改
+业务 App。B5~B6 完成后，P0-009 自动成为唯一任务。
 
 ## 4. P0-008B 串行施工包
 
@@ -164,12 +167,18 @@ B4~B6 完成后，P0-009 自动成为唯一任务。
 不冒充真实 Run/Retrieval、Casdoor/KIND 或正式 release。证据：
 `sunmoonai/docs/evidence/v5/V5-P0-008B/B3/result.md`。
 
-### B4 Nest Security/Paired Test/Deploy/Freeze — NEXT
+### B4 Nest Security/Paired Test/Deploy/Freeze — ACCEPTED
 
-Next+Nest 完成双 Pod、真实浏览器、PKCE/CSRF/audience、SSE、CSP、滚动/version-skew、
-回滚和不可变 digest 证据后，才将现有仓原子改名为 `tpl-web-backend-nest`。改名前必须
-固定 Git tag、镜像 digest、远端 URL 和恢复步骤；改名后必须核对 `.gitmodules`、本地路径、
-gitlink 和远端一致。失败时回滚，不得留下两个同名或错指远端。
+固定 Nest `947021c` / `p0-008b-b4-nest-20260726`、Next `f746255` /
+`p0-008b-b4-next-20260726`、父仓改名后 `bc4c03f`。双 Pod、真实浏览器、
+PKCE/CSRF/audience、SSE、CSP、滚动/version-skew、回滚和不可变 digest 门禁均通过；
+现有远端和父仓路径已改名为 `tpl-web-backend-nest`。证据：
+`sunmoonai/docs/evidence/v5/V5-P0-008B/B4/result.md`。
+
+首轮滚动实际发现 asset 502，已用 preStop 排空、termination grace 和
+minReadySeconds 修复；最终升级 72 次、回滚 87 次严格 TLS 连续探测均通过。Casdoor
+`v3.42.0` 的 application-specific discovery issuer 与实际 token issuer 不一致，当前
+严格使用标准 discovery 的唯一基础 issuer，禁止双 issuer 放宽；详见 ADR-005。
 
 ### B5 FastAPI Canonical Kernel + Default Web BFF
 
@@ -208,26 +217,26 @@ python sunmoonai/docs/mooc-manus-v5/scripts/verify_template_first_plan.py \
 Runtime adapter，证明真实 Run/SSE/cancel/resume/HITL/citation、刷新/断线/多标签、跨用户
 拒绝和滚动版本。通过前禁止把基础同步当成完整 Web 产品能力或切正式流量。
 
-## 5. 当前仓库事实（2026-07-22）
+## 5. 当前仓库事实（2026-07-26）
 
 ### k8s
 
-- 分支：`codex-1`；B3 证据提交前 HEAD `32f890d`，本地相对 `origin/codex-1` ahead 1；
-  该未推提交是已接受的 B2 证据，不得丢弃。
-- 本轮只新增 B3 contract、验证器、证据并更新 implementation plan/本文；未修改运行中
-  Deployment、Secret、Harbor 或 KIND。B4 才重新核验并变更真实部署/发布状态。
+- 分支：`codex-1`；本地包含 B4 deploy/identity/strict verifier/rollout verifier、ADR/
+  plan/handoff/evidence 更新，必须以本轮最终 k8s commit 为准。
+- KIND 保留隔离的 `tpl-web-backend-b4` 与 `tpl-web-frontend-b4` 各 2 个副本，最终状态为
+  Nest r5 + Next v1；三个业务 Deployment 在 B4 全程未变化。
 
 ### tpl-app
 
-- 父仓：`master@8b1df6a`；B3 gitlink 已本地固定。
+- 父仓：`master@bc4c03f`；B4 gitlink 和 Nest profile 改名已推送。
 - `tpl-admin-backend@2760862`：当前仍是旧认证原型，B5 前不得作为安全母版复制。
 - `tpl-admin-frontend@1561e5d`。
-- `tpl-web-backend@e1876a4`：当前 Nest/B3 输入；身份与 interaction boundary 已接受，尚未
-  达到 B4 生产冻结标准。
-- `tpl-web-frontend@d10cffa`：Next/B3 输入；server-only DAL/DTO、typed stream、Citation/
-  HITL 中性面与配对门禁已接受。
-- 当前 `.gitmodules` 仍只有原 `tpl-web-backend`；`tpl-web-backend-nest` 尚未创建，这是正确
-  状态，必须等 B4。
+- `tpl-web-backend-nest@947021c`：Nest B4 可选 profile；远端、tag、镜像 digest、真实
+  identity/paired deploy/rollback 证据均已固定。
+- `tpl-web-frontend@f746255`：Next B4 输入；server-only DAL/DTO、typed stream、
+  Citation/HITL、nonce CSP 与 deployment identity 已接受。
+- canonical FastAPI `tpl-web-backend` 远端/本地目录尚未创建，这是 B5 开始前的正确状态；
+  不得把已改名的 Nest 目录再次改回。
 
 ### 业务仓
 
@@ -238,8 +247,8 @@ Runtime adapter，证明真实 Run/SSE/cancel/resume/HITL/citation、刷新/断�
 
 ## 6. 集群、Harbor 与发布边界
 
-本文 2026-07-22 修订没有重新部署或重新核验 live cluster/Harbor，因此不能沿用旧 handoff
-的 Pod/tag 描述作为当前事实。任何 build/push/rollout 前必须只读确认：
+本文 2026-07-26 已重新核验 B4 live cluster/Harbor，但业务 App 的旧 Pod/tag 仍不能仅凭
+handoff 推断为当前事实。任何 B5 build/push/rollout 前必须只读确认：
 
 ```bash
 git -C /home/zymun/k8s status --short --branch
@@ -264,12 +273,15 @@ KUBECONFIG="$HOME/.kube/kind-config" kubectl get deploy -A \
 - [ ] 阅读 v5、implementation plan、ADR-014、ADR-016、ADR-017 和本文。
 - [ ] 确认 v4 顶部是归档声明，不从 v4 恢复任务。
 - [ ] 确认 k8s 文档变更已检查/提交，未混入运行代码。
-- [ ] 确认 tpl-app 四个 gitlink 与本文最新固定值一致；Web Frontend/Backend 必须是 B3 commit。
-- [ ] 确认当前不存在 `tpl-web-backend-nest`；只有 B4 接受后才能改名。
+- [ ] 确认 `tpl-app@bc4c03f` 的 gitlink、`.gitmodules` 和本地目录一致；Next 必须是
+      `f746255`，Nest profile 必须是 `947021c`。
+- [ ] 确认 `tpl-web-backend-nest` 新远端、Git tag 和本地 origin 一致，旧
+      `tpl-web-backend` 远端名称已释放，不能把 Nest 改回默认仓名。
 - [ ] 确认当前 `tpl-admin-backend` 未被误当成 P0-005 安全母版。
 - [ ] 确认三个业务 Web 未被修改、部署或打上 Web v2 完成标签。
-- [ ] 将 B4 设为唯一任务；完成真实安全、部署、回滚、tag/digest 和原子改名后再激活 B5。
-- [ ] B4 前不改名、不开始 B5；B5 前先验收 canonical FastAPI 母版。
+- [ ] 将 B5 设为唯一任务；先修复并验收 canonical FastAPI 母版，再初始化新的默认
+      `tpl-web-backend`，不得从旧认证原型或业务整树直接复制。
+- [ ] B5 完成前不开始 B6；B6 未接受前不生成统一模板 release 或修改三个业务 App。
 - [ ] B6 后立即激活 P0-009A；P0-009E 前不开始 P0-008C 或普通业务开发。
 - [ ] P0-009 严格按 Info -> Knowledge -> Research 串行，不同时覆盖三个 App。
 - [ ] P0-008C 只使用 FastAPI 默认 profile；Nest 只保留模板契约门。
@@ -283,7 +295,8 @@ KUBECONFIG="$HOME/.kube/kind-config" kubectl get deploy -A \
 - 禁止把 Admin 与 Web 合为一个 FastAPI 服务或共用 audience/cookie/session namespace。
 - 禁止让 Next Route Handler 成为第三套通用 BFF。
 - 禁止在同一生产入口随机混跑 FastAPI/Nest backend。
-- 禁止在 B4 前改名远程仓，在 B6 前把 FastAPI 作为已冻结业务模板推广。
+- 禁止撤销 B4 已完成的 Nest 原子改名或让新 FastAPI 默认仓继承 Nest Git 历史；在 B6
+  前不得把 FastAPI 作为已冻结业务模板推广。
 - 禁止 B6 后跳过 P0-009继续开发业务、Runtime 产品面、Memory/Subagent 或 P0-008C。
 - 禁止用模板整树覆盖领域 Backend，或把基础同步误报为业务等价/正式切流。
 - 禁止用 Nest profile 代替 P0-008C 或三个业务 Web 的 FastAPI 默认主线证据。

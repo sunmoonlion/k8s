@@ -20,6 +20,16 @@ and strict TLS browser execution for the three Admin APIs.
   for the provider's access-token issuer; browser BFF discovery remains
   application-specific.
 
+> 2026-07-26 compatibility addendum: the final clause above is retained as the
+> historical P0-005 assumption, not as the current browser rule. P0-008B/B4
+> proved against Casdoor `v3.42.0` and its official tagged source that
+> application-specific discovery advertises an application-scoped issuer while
+> `generateJwtToken()` still signs browser and service tokens with the base
+> `originBackend` issuer. ADR-005 now requires standard discovery/base issuer
+> for this Provider version and still enforces exact client audience and all
+> other App/Surface isolation. This is a correction with a stricter single
+> issuer, not a dual-issuer compatibility bypass.
+
 ## Database
 
 - Info: Alembic `20260712_0003 (head)`.

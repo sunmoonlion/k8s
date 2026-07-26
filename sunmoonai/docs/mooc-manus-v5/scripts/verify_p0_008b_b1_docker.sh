@@ -2,9 +2,9 @@
 set -euo pipefail
 
 FRONTEND_REPO="${HOME}/tpl-app/tpl-web-frontend"
-BACKEND_REPO="${HOME}/tpl-app/tpl-web-backend"
+BACKEND_REPO="${P0_008B_B1_BACKEND_REPO:-${HOME}/tpl-app/tpl-web-backend-nest}"
 FRONTEND_IMAGE="tpl-web-frontend:p0-008b-b1-candidate-20260716"
-BACKEND_IMAGE="tpl-web-backend:p0-008b-b1-candidate-20260716"
+BACKEND_IMAGE="tpl-web-backend-nest:p0-008b-b1-candidate-20260716"
 FRONTEND_CONTAINER="p0-008b-b1-web-frontend"
 FRONTEND_PORT="${P0_008B_FRONTEND_PORT:-18094}"
 NPM_REGISTRY="${NPM_REGISTRY:-https://registry.npmmirror.com}"
@@ -73,6 +73,8 @@ validateEnvironment({
   REDIS_USER: "web-backend",
   REDIS_PASSWORD: "redis-password",
   CASDOOR_ENDPOINT: "https://casdoor.sunmoonai.com",
+  CASDOOR_ISSUER: "https://casdoor.sunmoonai.com",
+  CASDOOR_DISCOVERY_URL: "https://casdoor.sunmoonai.com/.well-known/openid-configuration",
   CASDOOR_CLIENT_ID: "web-client",
   CASDOOR_CLIENT_SECRET: "client-secret",
   CASDOOR_REDIRECT_URI: "https://tpl.sunmoonai.com/api/auth/callback",

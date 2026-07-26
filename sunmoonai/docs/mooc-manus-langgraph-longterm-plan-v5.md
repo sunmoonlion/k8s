@@ -2,7 +2,7 @@
 
 状态：Architecture Baseline（待 Phase 0 Spike 验证后冻结）
 日期：2026-07-11
-最近修订：2026-07-22（ADR-017：模板先行与三实例立即收敛门禁）
+最近修订：2026-07-26（P0-008B/B4 生产门禁与 Nest profile 原子改名）
 范围：`k8s`、`info-app`、`knowledge-app`、`research-app` 的统一系统架构
 实施计划：见 `mooc-manus-langgraph-v5-implementation-plan.md`
 
@@ -459,10 +459,13 @@ Citation 必须引用 `evidence_id`，最终可回溯到 InfoDocumentVersion。R
 
 身份协议、浏览器 BFF 会话、六 audience、CSRF/CORS、服务 token 与路由分区的权威决策见 `sunmoonai/docs/mooc-manus-v5/adr/ADR-005-identity-service-calls-browser-bff.md`。本节只保留长期架构原则，不复制其字段和协议细节。
 
-Casdoor 的浏览器 BFF 使用 application-specific discovery；当前版本的
-`client_credentials` access token 使用基础 issuer。服务关系必须显式配置
-独立的 service discovery URL，并严格接受该 metadata 的 issuer/JWKS；不得从
-token claim 推断 issuer，也不得把任意 provider host 加入 allowlist。
+Casdoor `v3.42.0` 的 application-specific discovery issuer 与该版本实际签发的 token
+issuer 不一致；当前浏览器 BFF 和 `client_credentials` 服务关系均使用标准 discovery 的
+基础 issuer/JWKS。应用隔离由独立 client、精确 audience/redirect URI、cookie/Redis
+namespace、PKCE/nonce 和本地 policy 保证，验证器只接受一个精确 issuer，不得从 token
+claim 推断、同时接受两个 issuer 或把任意 provider host 加入 allowlist。只有 Provider
+升级门禁证明 application-specific metadata issuer 与真实 token `iss` 完全相等后，才可
+切换 discovery 模式并重跑全部允许/拒绝矩阵。
 
 ### 9.2 授权
 

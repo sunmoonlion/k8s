@@ -45,22 +45,23 @@ def main() -> None:
     plan = require(
         docs / "mooc-manus-langgraph-v5-implementation-plan.md",
         "### V5-P0-009 统一模板发布与三实例立即收敛 Rollup",
-        "NOT_STARTED / BLOCKED_BY_P0_008B_B4_TO_B6",
+        "NOT_STARTED / BLOCKED_BY_P0_008B_B5_TO_B6",
         "### V5-M1-411A 固定模板替换三个 App 基础前端",
         "状态：SUPERSEDED_BY_P0_009",
-        "B4 是唯一下一任务",
+        "B5 是唯一下一任务",
         "P0-009E -> P0-008C",
     )
     long_term = require(
         docs / "mooc-manus-langgraph-longterm-plan-v5.md",
-        "最近修订：2026-07-22（ADR-017：模板先行与三实例立即收敛门禁）",
+        "最近修订：2026-07-26（P0-008B/B4 生产门禁与 Nest profile 原子改名）",
         "P0-009 全部通过前不得继续新增业务功能",
         "INSTANCE_FOUNDATION_ALIGNED",
     )
     handoff = require(
         docs / "mooc-manus-langgraph-v5-handoff-20260712.md",
-        "P0-008B = IN_PROGRESS / B3_ACCEPTED / B4_NEXT",
-        "P0-009  = NOT_STARTED / BLOCKED_BY_P0_008B_B4_TO_B6",
+        "P0-008B = IN_PROGRESS / B4_ACCEPTED / B5_NEXT",
+        "P0-009  = NOT_STARTED / BLOCKED_BY_P0_008B_B5_TO_B6",
+        "唯一下一任务是 B5",
         "B6 后立即激活 P0-009A",
     )
 
@@ -85,7 +86,7 @@ def main() -> None:
                 "task": "V5-PLAN-TEMPLATE-FIRST",
                 "result": "passed",
                 "decision": "ADR-017",
-                "current_code_task": "P0-008B/B4",
+                "current_code_task": "P0-008B/B5",
                 "next_after_template_release": "P0-009A",
                 "instance_order": ["info", "knowledge", "research"],
                 "business_development_locked_until": "P0-009E_ACCEPTED",
