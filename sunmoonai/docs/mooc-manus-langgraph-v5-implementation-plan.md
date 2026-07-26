@@ -277,7 +277,7 @@ Spike，重复投递/外部副作用恢复并入可靠交付 Spike；P0-007 验�
 | Vue Admin 输入 | Info `fd3a943`、Knowledge `6a33732`、Research `3ef205a` | 三个现有 App 约 250 个文件且高度同源；Info 仅多真实 `src/pages/info/crawl.vue`，其余少量差异主要来自生成内容；作为 A2 能力盘点和后续业务迁移输入，不再另建 Vue 模板仓库 |
 | Next Web 模板 | `tpl-app/tpl-web-frontend@f746255`（B4 固定） | 现有 Next 16/App Router 仓库原地重构，不创建 v2 仓库；server-only DAL、typed interaction、SSE reconcile、Citation/HITL、真实身份、严格 TLS、滚动与回滚已接受 |
 | Web Backend 可选 profile | `tpl-app/tpl-web-backend-nest@947021c`（B4 固定） | Nest 实现已通过真实 B4 门禁并完成远端/本地/父仓原子改名；只作为受维护可选 profile，不占用默认仓名 |
-| Web Backend 目标默认 | 尚未创建 | B5 先补齐 canonical FastAPI 母版，再创建新的 `tpl-web-backend`；FastAPI 为默认、Nest 为可选 profile |
+| Web Backend 默认 profile | `tpl-app/tpl-web-backend@6b6c71e`（B5 固定） | 已由固定 canonical FastAPI Admin tree 初始化并完成 Web surface 适配；FastAPI 为默认、Nest 为可选 profile，B6 前不推广到业务实例 |
 | 三个 Web 实例 | Info `29dc4dc`、Knowledge `c99ef6e`、Research `bd2b987` | 与模板约 37~38 个文件且高度同源；Research 仅多 Agent 组件和相应 dashboard 差异；均在现有仓库内改造 |
 
 仓库纪律：业务能力只进入对应 App；任何迁移先打 Git tag、记录镜像 digest 和回滚步骤；
@@ -381,7 +381,7 @@ Spike，重复投递/外部副作用恢复并入可靠交付 Spike；P0-007 验�
   008B；B6 后必须立即执行 P0-009，P0-009 前禁止 P0-008C 和普通业务开发。
 - 完成条件：P0-008A/B/C 与 P0-009 全部 ACCEPTED；否则现有仓库通过迁移前 tag/镜像
   回退，P0-008 保持 IN_PROGRESS/BLOCKED。
-- 状态：IN_PROGRESS / B4_ACCEPTED / B5_NEXT（P0-008A 与 ADR-014 已于 2026-07-16
+- 状态：IN_PROGRESS / B5_ACCEPTED / B6_NEXT（P0-008A 与 ADR-014 已于 2026-07-16
   ACCEPTED；2026-07-18 完成 Node 24.18.0 LTS、pnpm 10.24.x、JOSE 6.2.3 的 B1 门禁，
   并接受 ADR-016。ADR-017 已于 2026-07-22 接受；同日 B2 Nest Identity + Next
   server-only DAL/DTO 的实现、共享契约、29+2 个后端测试、22 个前端测试及 5 个配对
@@ -389,7 +389,9 @@ Spike，重复投递/外部副作用恢复并入可靠交付 Spike；P0-007 验�
   36+2 个 Nest 测试、31 个 Next 测试和 6 个配对 Playwright 已接受。2026-07-26 B4
   完成真实 Casdoor、严格 TLS、双 Pod、SSE/授权、滚动/version-skew、回滚与 immutable
   digest 门禁，并把现有 Nest 仓原子改名为 `tpl-web-backend-nest`。三个业务 Web 实例
-  未修改。B5 是唯一下一任务；B5~B6 之后唯一下一任务是 P0-009，不得跳到 008C。）
+  未修改。同日 B5 完成 canonical FastAPI Admin 内核与默认 FastAPI Web BFF 的来源、
+  安全、迁移、Docker/KIND 和不可变产物门禁。B6 是唯一下一任务；B6 之后唯一下一任务
+  是 P0-009，不得跳到 008C。）
 
 ### V5-P0-008A Web 架构契约冻结与紧急卫生
 
@@ -463,7 +465,7 @@ Spike，重复投递/外部副作用恢复并入可靠交付 Spike；P0-007 验�
   `tpl-admin-backend` 的 FastAPI 母版来源清单证明没有业务代码和旧认证缺陷；两个 backend
   profile 的仓库 URL/tag/digest/contract 可追溯；FastAPI 默认 tuple 和 Nest 可选 tuple
   均可独立回滚；三个 Web 实例未提前修改；每项 ixartz 决策有 source SHA 和结果。
-- 状态：IN_PROGRESS / B4_ACCEPTED / B5_NEXT（2026-07-18：Node 24.18.0 LTS、
+- 状态：IN_PROGRESS / B5_ACCEPTED / B6_NEXT（2026-07-18：Node 24.18.0 LTS、
   pnpm 10.24.x、JOSE 6.2.3 修订已完成；固定 `tpl-admin-frontend@1561e5d`、
   `tpl-web-frontend@f5340ac`、`tpl-web-backend@f5bedfb`、`tpl-app@fe29739` 和基础镜像
   digest `sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc`。
@@ -486,7 +488,15 @@ Spike，重复投递/外部副作用恢复并入可靠交付 Spike；P0-007 验�
   系统修复；Casdoor `v3.42.0` application-specific issuer 不一致已按 ADR-005 收口为
   标准 discovery 的唯一基础 issuer，没有双 issuer 放宽。证据：
   `sunmoonai/docs/evidence/v5/V5-P0-008B/B4/result.md`。现有 Nest 远端已改名为
-  `tpl-web-backend-nest`；B5~B6、P0-009、008C 未开始，三个业务 Web 实例未修改。）
+  `tpl-web-backend-nest`。2026-07-26：B5 固定 canonical Admin
+  `456bd65` / tag `p0-008b-b5-admin-kernel-20260726`、默认 FastAPI Web
+  `6b6c71e` / tag `p0-008b-b5-fastapi-web-20260726`、父仓 `bd19ee2`；新 Web 仓的
+  初始化 tree 与固定 Admin tree 完全一致，随后只实施 Web surface/audience/cookie/
+  namespace/interaction/downstream 适配。Admin `34 passed`、Web `43 passed`，Docker
+  migration roundtrip、生产配置负向矩阵及 KIND 两副本 immutable/non-root/read-only/
+  probe/PDB/consumer 门禁均通过，证据：
+  `sunmoonai/docs/evidence/v5/V5-P0-008B/B5/result.md`。B6、P0-009、008C 未开始，三个
+  业务 Web 实例未修改。）
 
 ### V5-P0-009 统一模板发布与三实例立即收敛 Rollup
 
@@ -526,7 +536,7 @@ Spike，重复投递/外部副作用恢复并入可靠交付 Spike；P0-007 验�
   M1-413A/B/C。
 - 验收：三个 App 都可追溯到同一 release manifest；无未解释模板漂移；每实例失败可独立
   回滚；前一实例未 ACCEPTED 不开始下一实例；P0-009E 前不得解锁 P0-008C。
-- 状态：NOT_STARTED / BLOCKED_BY_P0_008B_B5_TO_B6。
+- 状态：NOT_STARTED / BLOCKED_BY_P0_008B_B6。
 
 ### V5-P0-008C Research Web 真实试点与 Next v2 冻结
 
@@ -1410,11 +1420,17 @@ digest 继续作为回滚基线，但不再作为默认开发基础。
 22. Web Re-baseline B4 Nest Security/Paired Deploy/Freeze（`ACCEPTED`，2026-07-26）：
     固定 Nest/Next commit、Git tag 和三份 Harbor immutable digest；真实 Casdoor、严格
     TLS、2+2 Pod、滚动/version-skew、回滚和资源授权矩阵通过；Nest 远端及父仓 gitlink
-    已原子改名为 `tpl-web-backend-nest`，三个业务实例未修改。B5 是唯一下一任务；随后
-    严格执行 `B5（FastAPI Admin 母版/默认
+    已原子改名为 `tpl-web-backend-nest`，三个业务实例未修改。当时的下一任务 B5 已于
+    同日接受；后续严格执行 `B5（FastAPI Admin 母版/默认
     Web） -> B6（双实现与统一模板 release 门禁） -> P0-009A -> P0-009B Info ->
     P0-009C Knowledge -> P0-009D Research -> P0-009E -> P0-008C（Research+FastAPI）`。
     任何一步的测试、证据、状态、提交、tag/digest 或回滚缺失，下一步保持未激活。
+23. Web Re-baseline B5 FastAPI Canonical Kernel + Default Web BFF（`ACCEPTED`，
+    2026-07-26）：固定 Admin `456bd65`、FastAPI Web `6b6c71e`、父仓 `bd19ee2` 及两份
+    Harbor immutable digest；Web 初始化 commit 与 Admin 固定 tree 完全一致，随后显式
+    替换 Web surface/audience/cookie/namespace/interaction/downstream。独立源码、迁移
+    roundtrip、生产配置负向、Docker 和 KIND 两副本门禁通过，三个业务实例未修改。B6
+    成为唯一任务；B6 接受后不得插入其他开发，必须立即执行 P0-009A。
 
 P0-007A2/007C 前禁止应用未冻结 React Admin；P0-008B/B6 前禁止应用未冻结 Web/FastAPI
 Backend。B6 后必须立即执行 P0-009，不能等待 Gate P0，也不能三仓同时覆盖。P0-009 只

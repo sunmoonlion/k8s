@@ -2,7 +2,7 @@
 
 状态：Architecture Baseline（待 Phase 0 Spike 验证后冻结）
 日期：2026-07-11
-最近修订：2026-07-26（P0-008B/B4 生产门禁与 Nest profile 原子改名）
+最近修订：2026-07-26（P0-008B/B5 FastAPI 通用内核与默认 Web BFF 固定）
 范围：`k8s`、`info-app`、`knowledge-app`、`research-app` 的统一系统架构
 实施计划：见 `mooc-manus-langgraph-v5-implementation-plan.md`
 

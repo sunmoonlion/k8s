@@ -57,10 +57,10 @@ tuple 定义，不由前后端是否采用不同语言定义。Admin 与 Web 即
 
 ### 2.4 FastAPI 母版来源
 
-当前 canonical `tpl-admin-backend` 仍是旧认证原型，不能直接复制为新 Web 主线。已核实的
-阻断缺陷包括：state 未持久/校验、无 PKCE/nonce/JWKS、ID Token 只 base64 decode、完整
-Provider token 写 Redis、登录路径 DDL、GET logout、`/auth/me` 返回原始 session 或
-`200 + null`。
+canonical `tpl-admin-backend` 的旧认证原型已在 B5 被替换为固定安全内核
+`456bd65`；旧原型的 state 未持久/校验、缺少 PKCE/nonce/JWKS、只 base64 decode ID
+Token、完整 Provider token 写 Redis、登录路径 DDL、GET logout 和原始 session 返回等
+缺陷均已退出当前模板。以下顺序已经执行并由 B5 证据固定：
 
 顺序必须是：
 
@@ -82,10 +82,10 @@ Provider token 写 Redis、登录路径 DDL、GET logout、`/auth/me` 返回原�
 
 ### 2.6 模板先行与实例立即收敛
 
-- 当前只开发 `tpl-app` 的模板/契约/门禁，B4 已接受，唯一游标是 P0-008B/B5。
-- React Admin Frontend 虽已达到 `TEMPLATE_MIGRATION_READY`，但 B5 还要修复
-  `tpl-admin-backend`；现在只同步 Admin Frontend 会形成混代底座并导致第二次迁移。因此
-  先完成 B2~B6 的四默认组件统一 release，不是在推迟模板优先原则。
+- 当前只开发 `tpl-app` 的模板/契约/门禁，B5 已接受，唯一游标是 P0-008B/B6。
+- React Admin Frontend 与 canonical Admin Backend、Next Web 与 FastAPI Web BFF 的独立
+  基线均已成立，但 B6 尚需形成同一共享契约下的双 profile 配对和统一 release tuple。
+  此时提前同步任何单组件仍会形成混代底座。
 - B2~B6 完成后必须冻结四个默认组件统一 `template_release_id`，紧接执行 P0-009；不得先
   做 P0-008C、产品功能、Memory/Subagent 或 Agent 主链扩建。
 - P0-009 按 Info -> Knowledge -> Research 串行把 Admin/Web 前后端共同底座原地同步；
@@ -118,21 +118,25 @@ Provider token 写 Redis、登录路径 DDL、GET logout、`/auth/me` 返回原�
 - P0-008B/B4：真实 Casdoor、严格 TLS、Next+Nest 2+2 Pod、CSP/CSRF/资源授权、SSE、
   Redis 跨副本、滚动/version-skew、回滚、immutable digest 和 Git tag 全部 accepted；
   Nest 仓与父仓 gitlink 已改名为 `tpl-web-backend-nest`。
+- P0-008B/B5：canonical FastAPI Admin 内核与默认 FastAPI Web BFF 已固定；来源 tree、
+  Web surface 隔离、interaction/downstream、源码、迁移、Docker、生产负向和 KIND 两
+  副本门禁 accepted。
 - ADR-017：模板统一 release 后立即按 Info -> Knowledge -> Research 收敛三个实例，
   共同底座对齐前冻结普通业务开发。
 
 ### 当前状态
 
 ```text
-P0-008B = IN_PROGRESS / B4_ACCEPTED / B5_NEXT
-P0-009  = NOT_STARTED / BLOCKED_BY_P0_008B_B5_TO_B6
+P0-008B = IN_PROGRESS / B5_ACCEPTED / B6_NEXT
+P0-009  = NOT_STARTED / BLOCKED_BY_P0_008B_B6
 P0-008C = NOT_STARTED
 三个业务 Web 实例 = 未应用 Web v2
 ```
 
-架构讨论已经收口。**唯一下一任务是 B5**：先修复并验收 canonical FastAPI Admin
-母版，再创建新的默认 FastAPI `tpl-web-backend`。不能跳到 B6、P0-009/P0-008C 或修改
-业务 App。B5~B6 完成后，P0-009 自动成为唯一任务。
+架构讨论已经收口。**唯一下一任务是 B6**：用同一 Next typed client/DAL 与共享
+contract vectors 分别验收 FastAPI 默认 profile 和 Nest 可选 profile，形成统一可回滚
+release tuple。不能跳到 P0-009/P0-008C 或修改业务 App。B6 完成后，P0-009 自动成为
+唯一任务。
 
 ## 4. P0-008B 串行施工包
 
@@ -180,11 +184,13 @@ minReadySeconds 修复；最终升级 72 次、回滚 87 次严格 TLS 连续探
 `v3.42.0` 的 application-specific discovery issuer 与实际 token issuer 不一致，当前
 严格使用标准 discovery 的唯一基础 issuer，禁止双 issuer 放宽；详见 ADR-005。
 
-### B5 FastAPI Canonical Kernel + Default Web BFF
+### B5 FastAPI Canonical Kernel + Default Web BFF — ACCEPTED
 
-先修 `tpl-admin-backend` 通用母版，再创建新的 `tpl-web-backend`。完成 Web 专属语义后运行
-独立 typecheck/lint/unit/contract、Docker/KIND、身份负向和 clean-room 门禁。原样复制当前
-旧 Admin 认证代码属于阻断错误。
+固定 Admin `456bd65`、FastAPI Web `6b6c71e`、父仓 `bd19ee2`；新 Web 初始化 commit
+与固定 Admin tree 相同，随后只实施 Web surface/audience/cookie/namespace/API/
+downstream 适配。Admin `34 passed`、Web `43 passed`，迁移 roundtrip、生产负向、
+Docker 和 KIND 两副本门禁通过。证据：
+`sunmoonai/docs/evidence/v5/V5-P0-008B/B5/result.md`。
 
 ### B6 Dual-profile Contract/Paired/Release Gate
 
@@ -228,15 +234,19 @@ Runtime adapter，证明真实 Run/SSE/cancel/resume/HITL/citation、刷新/断�
 
 ### tpl-app
 
-- 父仓：`master@bc4c03f`；B4 gitlink 和 Nest profile 改名已推送。
-- `tpl-admin-backend@2760862`：当前仍是旧认证原型，B5 前不得作为安全母版复制。
+- 父仓：`master@bd19ee2`；B5 四组件 gitlink 与默认/可选 Web profile 已推送。
+- `tpl-admin-backend@456bd65`：canonical FastAPI 安全母版；tag
+  `p0-008b-b5-admin-kernel-20260726`。
 - `tpl-admin-frontend@1561e5d`。
 - `tpl-web-backend-nest@947021c`：Nest B4 可选 profile；远端、tag、镜像 digest、真实
   identity/paired deploy/rollback 证据均已固定。
 - `tpl-web-frontend@f746255`：Next B4 输入；server-only DAL/DTO、typed stream、
   Citation/HITL、nonce CSP 与 deployment identity 已接受。
-- canonical FastAPI `tpl-web-backend` 远端/本地目录尚未创建，这是 B5 开始前的正确状态；
-  不得把已改名的 Nest 目录再次改回。
+- `tpl-web-backend@6b6c71e`：默认 FastAPI Web BFF；tag
+  `p0-008b-b5-fastapi-web-20260726`，镜像 digest
+  `sha256:f47f1ddd633cb3e8fa8561780a05e53c2f660193aed672d6b553d700dc9f2773`。
+- 已清除父仓中未提交且与 React 默认方案冲突的旧 Vue 子模块暂存残留；未修改其远端 Git
+  历史。
 
 ### 业务仓
 
@@ -247,8 +257,8 @@ Runtime adapter，证明真实 Run/SSE/cancel/resume/HITL/citation、刷新/断�
 
 ## 6. 集群、Harbor 与发布边界
 
-本文 2026-07-26 已重新核验 B4 live cluster/Harbor，但业务 App 的旧 Pod/tag 仍不能仅凭
-handoff 推断为当前事实。任何 B5 build/push/rollout 前必须只读确认：
+本文 2026-07-26 已重新核验 B4/B5 live cluster/Harbor，但业务 App 的旧 Pod/tag 仍不能
+仅凭 handoff 推断为当前事实。任何 B6 build/push/rollout 前必须只读确认：
 
 ```bash
 git -C /home/zymun/k8s status --short --branch
@@ -273,15 +283,16 @@ KUBECONFIG="$HOME/.kube/kind-config" kubectl get deploy -A \
 - [ ] 阅读 v5、implementation plan、ADR-014、ADR-016、ADR-017 和本文。
 - [ ] 确认 v4 顶部是归档声明，不从 v4 恢复任务。
 - [ ] 确认 k8s 文档变更已检查/提交，未混入运行代码。
-- [ ] 确认 `tpl-app@bc4c03f` 的 gitlink、`.gitmodules` 和本地目录一致；Next 必须是
-      `f746255`，Nest profile 必须是 `947021c`。
+- [ ] 确认 `tpl-app@bd19ee2` 的 gitlink、`.gitmodules` 和本地目录一致；Next 必须是
+      `f746255`，FastAPI Web 必须是 `6b6c71e`，Nest profile 必须是 `947021c`。
 - [ ] 确认 `tpl-web-backend-nest` 新远端、Git tag 和本地 origin 一致，旧
       `tpl-web-backend` 远端名称已释放，不能把 Nest 改回默认仓名。
-- [ ] 确认当前 `tpl-admin-backend` 未被误当成 P0-005 安全母版。
+- [ ] 确认 `tpl-admin-backend@456bd65` 与 `tpl-web-backend` 初始化 commit 使用同一固定
+      tree，且 Web 后续差异只属于 surface 适配。
 - [ ] 确认三个业务 Web 未被修改、部署或打上 Web v2 完成标签。
-- [ ] 将 B5 设为唯一任务；先修复并验收 canonical FastAPI 母版，再初始化新的默认
-      `tpl-web-backend`，不得从旧认证原型或业务整树直接复制。
-- [ ] B5 完成前不开始 B6；B6 未接受前不生成统一模板 release 或修改三个业务 App。
+- [ ] 将 B6 设为唯一任务；同一 Next/consumer vectors 必须同时通过 FastAPI/Nest，不得
+      为任一实现分叉浏览器 contract。
+- [ ] B6 未接受前不生成统一模板 release 或修改三个业务 App。
 - [ ] B6 后立即激活 P0-009A；P0-009E 前不开始 P0-008C 或普通业务开发。
 - [ ] P0-009 严格按 Info -> Knowledge -> Research 串行，不同时覆盖三个 App。
 - [ ] P0-008C 只使用 FastAPI 默认 profile；Nest 只保留模板契约门。
