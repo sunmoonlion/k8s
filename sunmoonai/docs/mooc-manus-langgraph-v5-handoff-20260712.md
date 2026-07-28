@@ -234,6 +234,11 @@ B6 必须按以下顺序完成，不能只做最后一项：
 每个 tuple 记录 contract version、前后端 digest、audience、profile、兼容矩阵和独立
 回滚。B1~B6 全部接受后 P0-008B 才结束，并立即进入 P0-009。
 
+模板配对唯一清单是 `tpl-app/frontend-pairing-matrix.json`，当前共五条：
+Next Admin+FastAPI Admin（默认）、React Router Admin+FastAPI Admin（备查）、
+Vue Admin+FastAPI Admin（备查）、Next Web+FastAPI Web（默认）和
+Next Web+Nest Web（可选）。P0-007D 的 React 配对不得因为它已退出默认仓名而从矩阵遗漏。
+
 ### P0-009 统一模板发布与三实例立即收敛
 
 1. P0-009A：冻结四默认组件 release manifest、三实例保留/替换/删除清单、迁移前
@@ -339,6 +344,8 @@ KUBECONFIG="$HOME/.kube/kind-config" kubectl get deploy -A \
       错误复制；组件能力门与配对门分别有证据。
 - [x] B6.2 Vue legacy 已作为父仓子模块固定，package/repo 身份无歧义；Vue+FastAPI
       Admin 真实配对和独立回滚通过，但未进入默认 release 或实例传播清单。
+- [x] React Router Admin+FastAPI Admin 的 P0-007D 固定 tuple、真实浏览器、严格 TLS、
+      2+2 和双向回滚证据已进入现行配对矩阵；它仍为 `REFERENCE_ONLY`。
 - [ ] B6.3 Next Web+FastAPI 默认与 Next Web+Nest 可选均通过同一 consumer vectors 和
       独立真实配对。
 - [ ] B6.4 七子模块递归 clean clone 可重放，统一 manifest 明确四默认/三非默认 tuple。

@@ -672,12 +672,17 @@ ADR-018 批准的 `tpl-admin-frontend-react`，以及本轮明确收口的只读
 | 浏览器前端 | 唯一配对后端 | 真实配对验收最小内容 |
 |---|---|---|
 | Template Next Admin（默认） | Template FastAPI Admin Backend | P0-007E 固定 tuple；真实 Casdoor、session/CSRF、角色/资源授权、mutation、严格 TLS、两副本、滚动/回滚 |
+| Template React Router Admin（备查） | Template FastAPI Admin Backend | P0-007D 固定 tuple；真实 Casdoor、session/CSRF、POST logout、严格 TLS、两副本、105/75 次连续探测和双向回滚；不得作为默认发布证据 |
 | Template Vue Admin（备查） | Template FastAPI Admin Backend | B6.2 独立 tuple；真实 Casdoor、session/CSRF、POST logout、权限负向、严格 TLS、两副本和恢复；不得作为默认发布证据 |
 | Template Next Web（默认） | Template FastAPI Web Backend | B6.3 默认 tuple；共享 consumer contract、真实身份、SSR/DAL、业务中性 interaction、两副本和回滚 |
 | Template Next Web（可选） | Template Nest Web Backend | B6.3 可选 tuple；与 FastAPI 使用同一 consumer vectors、身份/interaction 契约和独立回滚 |
 | Info Admin | Info Admin Backend | Casdoor session/CSRF、角色与资源授权、Info 管理 mutation、审计/correlation、刷新恢复、拒绝路径 |
 | Knowledge Admin | Knowledge Admin Backend | Casdoor session/CSRF、Dataset/Provider/Ingestion/Retrieval 诊断、权限拒绝和 correlation |
 | Research Admin | Research Admin Backend | Casdoor session/CSRF、Runtime/evaluation 治理权限、审计和停流拒绝 |
+
+模板层的机器可读唯一清单为 `tpl-app/frontend-pairing-matrix.json`。文档表、release
+manifest 与配对验证器必须消费同一组 pair id；不得因某 profile 已降为
+`REFERENCE_ONLY` 就从清单删除，它仍须保留固定后端、证据和恢复边界。
 | Info Web | Info Web Backend | public/authenticated route、locale/render/cache、同源 session/CSRF、Info 用户业务流程 |
 | Knowledge Web | Knowledge Web Backend | public/authenticated route、授权检索/个人空间、Citation 跳转、provider 隔离 |
 | Research Web | Research Web Backend + ADR-001 选中 adapter | session/Run/SSE/HITL/cancel-resume/citation、刷新/断线/多标签、跨用户拒绝 |

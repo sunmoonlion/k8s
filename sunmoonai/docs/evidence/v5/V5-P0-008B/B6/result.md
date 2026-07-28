@@ -18,6 +18,11 @@ FastAPI Admin 的 session/CSRF/POST logout、同源 API、CSP、无运行时 CDN
 Vue tuple 固定为 `REFERENCE_ONLY`。它不进入默认模板 release，也不进入
 Info/Knowledge/Research 的 P0-009 传播清单。
 
+现行模板配对矩阵同时显式保留 P0-007D 已验收的
+`React Router Admin + FastAPI Admin`。该 tuple 与 Vue 一样属于 `REFERENCE_ONLY`，
+但仍保留真实 Casdoor、严格 TLS、2+2、CSRF/logout、双向回滚和固定 digest 证据；
+不能因为它退出默认仓名而从兼容清单中删除。
+
 ## 2. 固定源码与产物
 
 | 单元 | 固定值 |

@@ -683,6 +683,10 @@ Admin 规则：
     Next Admin/Web 有可验证对应物；Admin Shell/菜单/标签为 `ADMIN_ONLY`，
     Run/SSE/HITL/Citation 为 `WEB_ONLY`。组件能力门与 Frontend/Backend 真实配对门
     分开验收，二者都通过才可发布。
+16. 模板兼容矩阵始终保留五条前后端配对：Next Admin+FastAPI Admin（默认）、
+    React Router Admin+FastAPI Admin（备查）、Vue Admin+FastAPI Admin（备查）、
+    Next Web+FastAPI Web（默认）、Next Web+Nest Web（可选）。非默认 profile 可以停止
+    新业务开发，但不得丢失固定 tuple、真实配对证据和独立恢复路径。
 
 ### 10.11 Next Admin 功能等价门槛
 
