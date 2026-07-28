@@ -17,7 +17,7 @@ import path from "node:path";
 
 const require = createRequire(import.meta.url);
 const { chromium } = require(
-  "/home/zymun/tpl-app/tpl-admin-frontend/node_modules/@playwright/test",
+  "/home/zymun/tpl-app/tpl-admin-frontend-react/node_modules/@playwright/test",
 );
 
 const kubeconfig =
@@ -41,7 +41,7 @@ const browserCertutil = process.env.P0_BROWSER_CERTUTIL || "certutil";
 const frontendMode = process.env.P0_BROWSER_FRONTEND_MODE || "sink";
 const templateFrontendRoot =
   process.env.P0_BROWSER_FRONTEND_ROOT ||
-  "/home/zymun/tpl-app/tpl-admin-frontend";
+  "/home/zymun/tpl-app/tpl-admin-frontend-react";
 const templateFrontendPortOverride = process.env.P0_BROWSER_FRONTEND_PORT || "";
 if (!["sink", "template"].includes(frontendMode)) {
   throw new Error("P0_BROWSER_FRONTEND_MODE must be sink or template");

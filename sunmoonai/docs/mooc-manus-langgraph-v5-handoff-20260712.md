@@ -1,7 +1,7 @@
 # MoocManus v5 当前交接文档
 
-> 文件名保留最初快照日期以避免旧链接失效；本文内容已于 **2026-07-26
-> （Asia/Shanghai）整体重写**，旧 2026-07-12/13 状态不再有效。
+> 文件名保留最初快照日期以避免旧链接失效；本文内容已于 **2026-07-28
+> （Asia/Shanghai）更新至 P0-007D ACCEPTED**，旧 2026-07-12/13/26 游标不再有效。
 >
 > 适用分支：`k8s/info-app/knowledge-app/research-app` 的 `codex-1`；`tpl-app` 及模板
 > 子仓当前为 `master`。
@@ -89,10 +89,10 @@ Token、完整 Provider token 写 Redis、登录路径 DDL、GET logout 和原�
 
 ### 2.6 模板先行与实例立即收敛
 
-- 当前只开发 `tpl-app` 的模板/契约/门禁。B5 已接受；ADR-018 将唯一游标改为 P0-007D。
-- 当前 React Router Admin 与 canonical Admin Backend 尚缺最后一次真实配对和原子改名；
-  canonical Next Admin 尚未创建，因此 B6 暂停。严格顺序是
-  `P0-007D -> P0-007E -> P0-008B/B6`。
+- 当前只开发 `tpl-app` 的模板/契约/门禁。B5 与 P0-007D 已接受；React Router Admin
+  已完成最终真实配对、双向回滚并原子改名为 `tpl-admin-frontend-react`。
+- canonical Next Admin 尚未创建，因此当前唯一任务是 P0-007E，B6 继续暂停。严格顺序
+  保持 `P0-007E -> P0-008B/B6`。
 - P0-007E 与 B6 完成后必须冻结四个默认组件统一 `template_release_id`，紧接执行
   P0-009；不得先
   做 P0-008C、产品功能、Memory/Subagent 或 Agent 主链扩建。
@@ -133,23 +133,26 @@ Token、完整 Provider token 写 Redis、登录路径 DDL、GET logout 和原�
   共同底座对齐前冻结普通业务开发。
 - ADR-018：Admin/Web 默认前端统一 Next；React Router Admin 先最终配对并改名 legacy，
   再以固定 Next Web 工程树和 React Router 完整能力矩阵建立新 canonical Next Admin。
+- P0-007D：legacy `0b58adc`、父仓 `a280ea2`、双 frontend/单 backend immutable
+  digest、真实 Casdoor 严格 TLS、105/75 连续滚动探测、18/18 跨版本资产、双向回滚和
+  父仓递归 clean clone accepted；证据为
+  `sunmoonai/docs/evidence/v5/V5-P0-007D/result.md`。
 
 ### 当前状态
 
 ```text
-P0-007D = NOT_STARTED / CURRENT_UNIQUE_TASK
-P0-007E = NOT_STARTED / BLOCKED_BY_P0_007D
-P0-008B = IN_PROGRESS / B5_ACCEPTED / B6_BLOCKED_BY_P0_007D_E
+P0-007D = ACCEPTED
+P0-007E = NOT_STARTED / CURRENT_UNIQUE_TASK
+P0-008B = IN_PROGRESS / B5_ACCEPTED / B6_BLOCKED_BY_P0_007E
 P0-009  = NOT_STARTED / BLOCKED_BY_P0_007E_AND_P0_008B_B6
 P0-008C = NOT_STARTED
 三个业务 Admin/Web 实例 = 未应用统一 Next/FastAPI release
 ```
 
-架构讨论已经收口。**唯一下一任务是 P0-007D**：用 B5 固定 Admin Backend 对 React
-Router Admin 做最终真实配对、固定 tuple/回滚，再原子改名
-`tpl-admin-frontend-react`。D 完成后自动激活 P0-007E；E 完成后才恢复 B6；B6 完成后
-P0-009 自动成为唯一任务。不能跳到新 Next Admin 写码、B6、P0-009/P0-008C 或修改业务
-App。
+架构讨论已经收口。**唯一下一任务是 P0-007E**：创建新的空 canonical
+`tpl-admin-frontend`，从固定 Next Web 工程树建立全新历史，再按 P0-007D 的完整能力
+矩阵实施 Admin 化并与 B5 FastAPI Admin 配对。E 完成后才恢复 B6；B6 完成后 P0-009
+自动成为唯一任务。不能跳到 B6、P0-009/P0-008C 或修改业务 App。
 
 ## 4. P0-008B 串行施工包
 
@@ -238,7 +241,7 @@ python sunmoonai/docs/mooc-manus-v5/scripts/verify_template_first_plan.py \
 Runtime adapter，证明真实 Run/SSE/cancel/resume/HITL/citation、刷新/断线/多标签、跨用户
 拒绝和滚动版本。通过前禁止把基础同步当成完整 Web 产品能力或切正式流量。
 
-## 5. 当前仓库事实（2026-07-26）
+## 5. 当前仓库事实（2026-07-28）
 
 ### k8s
 
@@ -249,11 +252,13 @@ Runtime adapter，证明真实 Run/SSE/cancel/resume/HITL/citation、刷新/断�
 
 ### tpl-app
 
-- 父仓：`master@bd19ee2`；B5 四组件 gitlink 与默认/可选 Web profile 已推送。
+- 父仓：`master@a280ea2`；P0-007D 子模块原子改名与发布标签已推送，递归 clean clone
+  通过。
 - `tpl-admin-backend@456bd65`：canonical FastAPI 安全母版；tag
   `p0-008b-b5-admin-kernel-20260726`。
-- `tpl-admin-frontend@1561e5d`：当前仍是 React Router legacy 候选；P0-007D 前不得改名。
-  新 canonical Next Admin 尚未创建。
+- `tpl-admin-frontend-react@0b58adc`：React Router/Nginx legacy/reference；tag
+  `p0-007d-react-legacy-20260728`，只作 P0-007E 能力迁移、审计和恢复输入。
+- 新 canonical `tpl-admin-frontend` 尚未创建；该空远端与全新 Next 历史属于 P0-007E。
 - `tpl-web-backend-nest@947021c`：Nest B4 可选 profile；远端、tag、镜像 digest、真实
   identity/paired deploy/rollback 证据均已固定。
 - `tpl-web-frontend@f746255`：Next B4 输入；server-only DAL/DTO、typed stream、
@@ -299,16 +304,16 @@ KUBECONFIG="$HOME/.kube/kind-config" kubectl get deploy -A \
 - [ ] 阅读 v5、implementation plan、ADR-014、ADR-016、ADR-017、ADR-018 和本文。
 - [ ] 确认 v4 顶部是归档声明，不从 v4 恢复任务。
 - [ ] 确认 k8s 文档变更已检查/提交，未混入运行代码。
-- [ ] 确认 `tpl-app@bd19ee2` 的 gitlink、`.gitmodules` 和本地目录一致；Next 必须是
+- [ ] 确认 `tpl-app@a280ea2` 的 gitlink、`.gitmodules` 和本地目录一致；Next 必须是
       `f746255`，FastAPI Web 必须是 `6b6c71e`，Nest profile 必须是 `947021c`。
 - [ ] 确认 `tpl-web-backend-nest` 新远端、Git tag 和本地 origin 一致，旧
       `tpl-web-backend` 远端名称已释放，不能把 Nest 改回默认仓名。
 - [ ] 确认 `tpl-admin-backend@456bd65` 与 `tpl-web-backend` 初始化 commit 使用同一固定
       tree，且 Web 后续差异只属于 surface 适配。
 - [ ] 确认三个业务 Admin/Web 未被统一模板任务修改、部署或打上完成标签。
-- [ ] 将 P0-007D 设为唯一任务；React Router Admin 必须与 B5 Admin Backend 完成真实
-      配对、固定 tuple/回滚后，才可原子改名 `tpl-admin-frontend-react`。
-- [ ] P0-007D 未接受前不创建/写入新 Next Admin；P0-007E 未接受前不恢复 B6。
+- [ ] 确认 P0-007D 的 legacy/parent tag、immutable tuple、双向回滚、改名和递归
+      clean clone 证据仍成立，不把 legacy 放入业务发布矩阵。
+- [ ] 将 P0-007E 设为唯一任务；P0-007E 未接受前不恢复 B6。
 - [ ] P0-007E 必须使用固定 Next Web 工程树的新 Git 历史和 React Router 完整能力矩阵，
       不复制 Web 业务语义，也不把 Next 变成第三套 BFF。
 - [ ] B6 未接受前不生成统一模板 release 或修改三个业务 App。
@@ -324,7 +329,8 @@ KUBECONFIG="$HOME/.kube/kind-config" kubectl get deploy -A \
 - 禁止直接整树复制当前 `tpl-admin-backend` 后声称 FastAPI Web 完成。
 - 禁止把 Admin 与 Web 合为一个 FastAPI 服务或共用 audience/cookie/session namespace。
 - 禁止让 Next Route Handler 成为第三套通用 BFF。
-- 禁止在 P0-007D 最终配对前改名 React Router Admin，或在 D 接受前初始化新 Next Admin。
+- 禁止把已固定的 React Router Admin 改回默认仓名，或让 P0-007E 新 Next Admin 继承其
+  Git 历史/runtime。
 - 禁止让新 Next Admin 继承 Web 仓 Git 历史、Web audience/cookie/namespace 或遗漏
   React Router 完整能力矩阵中的 MUST 项。
 - 禁止在同一生产入口随机混跑 FastAPI/Nest backend。
