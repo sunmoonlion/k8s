@@ -2,7 +2,7 @@
 
 状态：Architecture Baseline（待 Phase 0 Spike 验证后冻结）
 日期：2026-07-11
-最近修订：2026-07-28（P0-007D React Router Admin legacy 关闭与原子改名）
+最近修订：2026-07-28（P0-007E canonical Next Admin 默认模板与 FastAPI Admin 配对接受）
 范围：`k8s`、`info-app`、`knowledge-app`、`research-app` 的统一系统架构
 实施计划：见 `mooc-manus-langgraph-v5-implementation-plan.md`
 
@@ -912,7 +912,7 @@ GA 目标：
 - 四个默认模板组件统一 release、三实例共同底座立即收敛、Research 真实 streaming
   试点与 v2 冻结。
 
-Runtime Spike 内验证 SSE/cancel/worker kill；可靠交付 Spike 内验证重复投递和副作用恢复。历史 P0-007A/A2/B/C 已固定 React Router Admin 能力输入；P0-007D 已完成 legacy 最终配对/双向回滚/原子改名，P0-007E 现负责 Next Admin 默认模板/配对。P0-008B/B5 已完成 FastAPI Admin 母版与默认 Web BFF，当前严格执行 `P0-007E -> P0-008B/B6`。两条 Next 模板门全部接受后，不得先做 Research 试点或业务功能，必须立即执行 P0-009A~E：冻结统一模板 release，按 Info -> Knowledge -> Research 串行同步四个默认组件的共同基础并通过总漂移/回滚门；之后才执行 P0-008C Research 真实试点。基础同步不是流量切换，M1-411B/C/D 与 M1-413 只补业务等价、切流和旧实现退出，不再首次替换共同底座。核心 ADR Spike 仍使用 2~3 周时间盒，但完整 Phase 0 还包含模板资格链和三实例收敛，不能宣称全部工作可在同一 2~3 周内完成。退出门禁是 ADR-001~006/013/014/016/017/018 有运行或试点证据、P0-007A/A2/B/C/D/E、P0-008A/B/C 与 P0-009 全部通过、契约测试机制可执行且不存在阻断 M1a 的未决核心问题。
+Runtime Spike 内验证 SSE/cancel/worker kill；可靠交付 Spike 内验证重复投递和副作用恢复。历史 P0-007A/A2/B/C 已固定 React Router Admin 能力输入；P0-007D 已完成 legacy 最终配对/双向回滚/原子改名，P0-007E 已完成 canonical Next Admin 默认模板、完整能力矩阵和 FastAPI Admin 真实配对。P0-008B/B5 已完成 FastAPI Admin 母版与默认 Web BFF，当前唯一任务是 P0-008B/B6。B6 接受后，不得先做 Research 试点或业务功能，必须立即执行 P0-009A~E：冻结统一模板 release，按 Info -> Knowledge -> Research 串行同步四个默认组件的共同基础并通过总漂移/回滚门；之后才执行 P0-008C Research 真实试点。基础同步不是流量切换，M1-411B/C/D 与 M1-413 只补业务等价、切流和旧实现退出，不再首次替换共同底座。核心 ADR Spike 仍使用 2~3 周时间盒，但完整 Phase 0 还包含模板资格链和三实例收敛，不能宣称全部工作可在同一 2~3 周内完成。退出门禁是 ADR-001~006/013/014/016/017/018 有运行或试点证据、P0-007A/A2/B/C/D/E、P0-008A/B/C 与 P0-009 全部通过、契约测试机制可执行且不存在阻断 M1a 的未决核心问题。
 
 执行恢复纪律：旧 v4 局部实现、已运行镜像或单一模板骨架不得倒推为 v5 迁移完成。`SKELETON_ACCEPTED`、`TEMPLATE_MIGRATION_READY`、`INSTANCE_FOUNDATION_ALIGNED` 与业务等价/切流必须使用不同状态。模板统一 release 冻结后只能按 Info → Knowledge → Research 逐 App 原地同步、独立验证和回滚，不能等 Gate P0，也不能三仓同时覆盖；P0-009 全部通过前不得继续新增业务功能。版本清理遵循“先记录 digest 和回滚基线，后删除临时 tag”，不得覆盖或删除仍被任何 Deployment/回滚流程引用的稳定版本。三套 App 的部署入口默认拒绝前端 `p0-*` tag，仅显式隔离测试模式可放行。具体操作、当前矩阵和经验教训以实施计划 §1.6、P0-009 与最新 handoff 为执行权威。
 

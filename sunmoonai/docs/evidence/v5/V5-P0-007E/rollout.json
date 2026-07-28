@@ -1,0 +1,26 @@
+{
+  "task": "V5-P0-007E-rollout",
+  "result": "passed",
+  "strict_tls": true,
+  "credentials_printed": false,
+  "tokens_printed": false,
+  "rollback_continuity": {
+    "probes": 41
+  },
+  "forward_continuity": {
+    "probes": 44
+  },
+  "accepted_image": "harbor.sunmoonai.com:30443/app-images/tpl-admin-frontend@sha256:b426551c0e027b25965995e23486c590c29fa52047779dd14721d93a245a74f1",
+  "rollback_image": "harbor.sunmoonai.com:30443/app-images/tpl-admin-frontend@sha256:f08d5a5840979e0435c28965eceeac84ea8afc6b24ed1996540864357275b251",
+  "backend_image": "harbor.sunmoonai.com:30443/app-images/tpl-admin-backend@sha256:b24ce7a39e7e10a5541b2a29ff9795a6944d6f17ec4d0479e2051f59a0688c56",
+  "cross_version_assets": {
+    "accepted_on_rollback": 18,
+    "rollback_on_accepted": 18
+  },
+  "full_verifications": [
+    "rollback_v1",
+    "accepted_v2"
+  ],
+  "unaffected_deployments_unchanged": true,
+  "final_state": "p0-007e-accepted-6d3b28f-69e634b"
+}

@@ -55,28 +55,28 @@ def main() -> None:
         "### V5-P0-007D React Router Admin Legacy 最终配对与原子改名",
         "### V5-P0-007E Next Admin 默认模板与 FastAPI Admin 配对",
         "P0-007D（`ACCEPTED`，2026-07-28）",
-        "P0-007E（`NOT_STARTED / CURRENT_UNIQUE_TASK`）",
+        "P0-007E（`ACCEPTED`，2026-07-28）",
         "### V5-P0-009 统一模板发布与三实例立即收敛 Rollup",
-        "NOT_STARTED / BLOCKED_BY_P0_007E_AND_P0_008B_B6",
+        "NOT_STARTED / BLOCKED_BY_P0_008B_B6",
         "### V5-M1-411A 固定模板替换三个 App 基础前端",
         "状态：SUPERSEDED_BY_P0_009",
-        "B6_BLOCKED_BY_P0_007E",
+        "B6_CURRENT_UNIQUE_TASK",
         "P0-009E -> P0-008C",
     )
     long_term = require(
         docs / "mooc-manus-langgraph-longterm-plan-v5.md",
-        "最近修订：2026-07-28（P0-007D React Router Admin legacy 关闭与原子改名）",
-        "P0-007E -> P0-008B/B6",
+        "最近修订：2026-07-28（P0-007E canonical Next Admin 默认模板与 FastAPI Admin 配对接受）",
+        "当前唯一任务是 P0-008B/B6",
         "P0-009 全部通过前不得继续新增业务功能",
         "INSTANCE_FOUNDATION_ALIGNED",
     )
     handoff = require(
         docs / "mooc-manus-langgraph-v5-handoff-20260712.md",
         "P0-007D = ACCEPTED",
-        "P0-007E = NOT_STARTED / CURRENT_UNIQUE_TASK",
-        "P0-008B = IN_PROGRESS / B5_ACCEPTED / B6_BLOCKED_BY_P0_007E",
-        "P0-009  = NOT_STARTED / BLOCKED_BY_P0_007E_AND_P0_008B_B6",
-        "唯一下一任务是 P0-007E",
+        "P0-007E = ACCEPTED",
+        "P0-008B = IN_PROGRESS / B5_ACCEPTED / B6_CURRENT_UNIQUE_TASK",
+        "P0-009  = NOT_STARTED / BLOCKED_BY_P0_008B_B6",
+        "唯一下一任务是 P0-008B/B6",
         "B6 后立即激活 P0-009A",
     )
     legacy_evidence = require(
@@ -86,6 +86,14 @@ def main() -> None:
         "0b58adc4035d2b695646b0700dfc2fb707d14b57",
         "a280ea2eed40d2eb262e428918961299490e2026",
         "P0-007E",
+    )
+    next_admin_evidence = require(
+        docs / "evidence/v5/V5-P0-007E/result.md",
+        "状态：`ACCEPTED`",
+        "fb69795b04e0b888a2917c3936f7f80aeac79cc9",
+        "69e634b8e5b06da9d1dcd01c9b1350e0571d74bd",
+        "7089e191b10d4ff33109691cf5e5e1b7f0dd8efe",
+        "P0-008B/B6",
     )
 
     stale_current_statements = (
@@ -100,6 +108,7 @@ def main() -> None:
         ("v5", long_term),
         ("handoff", handoff),
         ("P0-007D evidence", legacy_evidence),
+        ("P0-007E evidence", next_admin_evidence),
     ):
         stale = [item for item in stale_current_statements if item in text]
         if stale:
@@ -112,8 +121,8 @@ def main() -> None:
                 "result": "passed",
                 "decision": "ADR-017+ADR-018",
                 "legacy_closure": "P0-007D_ACCEPTED",
-                "current_code_task": "P0-007E",
-                "next_after_next_admin": "P0-008B/B6",
+                "next_admin": "P0-007E_ACCEPTED",
+                "current_code_task": "P0-008B/B6",
                 "next_after_template_release": "P0-009A",
                 "instance_order": ["info", "knowledge", "research"],
                 "business_development_locked_until": "P0-009E_ACCEPTED",

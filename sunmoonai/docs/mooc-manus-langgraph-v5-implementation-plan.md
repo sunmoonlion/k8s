@@ -313,9 +313,9 @@ ADR-018 批准的 `tpl-admin-frontend-react` 是仅有的附加模板 profile：
 - 重要边界：`P0-007A` 只代表技术骨架通过，不代表 Vue 模板功能等价，也不允许据此同步三个 App。`P0-007A2` 是新增的完整模板能力对齐门。
 - 完成条件：P0-007A/A2/B/C/D/E 全部 ACCEPTED；任一子任务失败，父任务保持
   IN_PROGRESS，禁止向三个 App 应用未冻结模板。
-- 状态：IN_PROGRESS（P0-007A/A2/B/C/D 已接受；P0-007E 是当前唯一任务。历史 React
-  Router v1 已固定并改名为 `tpl-admin-frontend-react`，其 `TEMPLATE_MIGRATION_READY`
-  只表示可作为迁移输入，不再等于默认 Admin 模板资格。）
+- 状态：ACCEPTED（P0-007A/A2/B/C/D/E 已全部接受。历史 React Router v1 已固定并
+  改名为 `tpl-admin-frontend-react`，只作 legacy/reference；canonical Next Admin 已由
+  P0-007E 接受并成为默认 Admin 模板。）
 
 ### V5-P0-007A tpl-app React Admin 生产骨架
 
@@ -383,7 +383,7 @@ ADR-018 批准的 `tpl-admin-frontend-react` 是仅有的附加模板 profile：
 
 ### V5-P0-007D React Router Admin Legacy 最终配对与原子改名
 
-- 类型/优先级：ARCH/FRONTEND/RELEASE/P0；ADR-018 接受后的当前唯一任务。
+- 类型/优先级：ARCH/FRONTEND/RELEASE/P0；ADR-018 接受后的历史已完成任务。
 - 仓库：`tpl-app/tpl-admin-frontend`、`tpl-app/tpl-admin-backend`、`tpl-app`、`k8s`。
 - 前置：P0-007C、P0-008B/B5 ACCEPTED；Admin Backend 必须使用 B5 固定 commit/tree，
   不得用业务实例后端或 mock 代替。
@@ -436,7 +436,13 @@ ADR-018 批准的 `tpl-admin-frontend-react` 是仅有的附加模板 profile：
 - 验收：React Router 能力矩阵无未解释 MUST；Admin/Web 的 client/audience/cookie/
   namespace/镜像/Deployment 完全隔离；新仓 clean clone 与父仓递归初始化可重放；三个
   App 未修改。接受后 Next Admin 成为唯一默认模板，legacy 只作审计/恢复。
-- 状态：NOT_STARTED / CURRENT_UNIQUE_TASK。
+- 状态：ACCEPTED（2026-07-28；实现 `tpl-admin-frontend@6d3b28f`，验收矩阵 release
+  `tpl-admin-frontend@fb69795` / tag `p0-007e-next-admin-20260728`，配对 FastAPI
+  Admin `69e634b` / tag `p0-007e-admin-backend-20260728`，父仓 `7089e19` / tag
+  `p0-007e-next-admin-parent-20260728`。42 个 unit/component、10 个 Playwright、
+  clean-room、Docker standalone、真实 Casdoor、严格 TLS、2+2 Pod、缓存/角色隔离、
+  41/44 次回滚/前滚连续探测和双向 18 个静态资源门禁通过；三个 App 未修改。证据：
+  `sunmoonai/docs/evidence/v5/V5-P0-007E/result.md`。）
 
 ### V5-P0-008 Next Web Template Re-baseline Rollup
 
@@ -451,7 +457,7 @@ ADR-018 批准的 `tpl-admin-frontend-react` 是仅有的附加模板 profile：
   接受后才重新激活。B6 后必须立即执行 P0-009，P0-009 前禁止 P0-008C 和普通业务开发。
 - 完成条件：P0-008A/B/C 与 P0-009 全部 ACCEPTED；否则现有仓库通过迁移前 tag/镜像
   回退，P0-008 保持 IN_PROGRESS/BLOCKED。
-- 状态：IN_PROGRESS / B5_ACCEPTED / B6_BLOCKED_BY_P0_007E（P0-008A 与 ADR-014 已于 2026-07-16
+- 状态：IN_PROGRESS / B5_ACCEPTED / B6_CURRENT_UNIQUE_TASK（P0-008A 与 ADR-014 已于 2026-07-16
   ACCEPTED；2026-07-18 完成 Node 24.18.0 LTS、pnpm 10.24.x、JOSE 6.2.3 的 B1 门禁，
   并接受 ADR-016。ADR-017 已于 2026-07-22 接受；同日 B2 Nest Identity + Next
   server-only DAL/DTO 的实现、共享契约、29+2 个后端测试、22 个前端测试及 5 个配对
@@ -461,8 +467,9 @@ ADR-018 批准的 `tpl-admin-frontend-react` 是仅有的附加模板 profile：
   digest 门禁，并把现有 Nest 仓原子改名为 `tpl-web-backend-nest`。三个业务 Web 实例
   未修改。同日 B5 完成 canonical FastAPI Admin 内核与默认 FastAPI Web BFF 的来源、
   安全、迁移、Docker/KIND 和不可变产物门禁。2026-07-28 P0-007D 完成 legacy 最终
-  配对、双向回滚和原子改名；当前唯一任务是 P0-007E。P0-007E 接受后恢复 B6，B6
-  之后唯一下一任务是 P0-009，不得跳到 008C。）
+  配对、双向回滚和原子改名；同日 P0-007E 完成 canonical Next Admin、FastAPI Admin
+  真实配对、clean-room 与双向回滚并接受。当前唯一任务已恢复为 B6；B6 之后唯一下一
+  任务是 P0-009，不得跳到 008C。）
 
 ### V5-P0-008A Web 架构契约冻结与紧急卫生
 
@@ -536,7 +543,7 @@ ADR-018 批准的 `tpl-admin-frontend-react` 是仅有的附加模板 profile：
   `tpl-admin-backend` 的 FastAPI 母版来源清单证明没有业务代码和旧认证缺陷；两个 backend
   profile 的仓库 URL/tag/digest/contract 可追溯；FastAPI 默认 tuple 和 Nest 可选 tuple
   均可独立回滚；三个 Web 实例未提前修改；每项 ixartz 决策有 source SHA 和结果。
-- 状态：IN_PROGRESS / B5_ACCEPTED / B6_BLOCKED_BY_P0_007E（2026-07-18：Node 24.18.0 LTS、
+- 状态：IN_PROGRESS / B5_ACCEPTED / B6_CURRENT_UNIQUE_TASK（2026-07-18：Node 24.18.0 LTS、
   pnpm 10.24.x、JOSE 6.2.3 修订已完成；固定 `tpl-admin-frontend@1561e5d`、
   `tpl-web-frontend@f5340ac`、`tpl-web-backend@f5bedfb`、`tpl-app@fe29739` 和基础镜像
   digest `sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc`。
@@ -607,7 +614,7 @@ ADR-018 批准的 `tpl-admin-frontend-react` 是仅有的附加模板 profile：
   M1-413A/B/C。
 - 验收：三个 App 都可追溯到同一 release manifest；无未解释模板漂移；每实例失败可独立
   回滚；前一实例未 ACCEPTED 不开始下一实例；P0-009E 前不得解锁 P0-008C。
-- 状态：NOT_STARTED / BLOCKED_BY_P0_007E_AND_P0_008B_B6。
+- 状态：NOT_STARTED / BLOCKED_BY_P0_008B_B6。
 
 ### V5-P0-008C Research Web 真实试点与 Next v2 冻结
 
@@ -1524,12 +1531,16 @@ digest 继续作为回滚基线，但不再作为默认开发基础。
 25. Admin Legacy Closure：V5-P0-007D（`ACCEPTED`，2026-07-28）；已用 B5 FastAPI
     Admin 完成 React Router Admin 的最终真实配对、固定 tuple、双向回滚和递归
     clean clone，并原子改名为 `tpl-admin-frontend-react`。
-26. Next Admin Default：V5-P0-007E（`NOT_STARTED / CURRENT_UNIQUE_TASK`）；从固定
-    Next Web 工程树以全新历史初始化新的 canonical `tpl-admin-frontend`，完成 Admin 化、
-    完整通用能力迁移和 FastAPI Admin 配对。接受后才恢复 P0-008B/B6。
+26. Next Admin Default：V5-P0-007E（`ACCEPTED`，2026-07-28）；固定 Next Admin
+    `fb69795`、FastAPI Admin `69e634b`、父仓 `7089e19`、三份 Git tag 及前后端
+    immutable digest；完整能力矩阵、clean-room、真实 Casdoor、严格 TLS、2+2 Pod、
+    缓存/角色隔离和双向滚动/回滚已通过。证据：
+    `sunmoonai/docs/evidence/v5/V5-P0-007E/result.md`。
+27. Web Re-baseline B6：`CURRENT_UNIQUE_TASK`；对默认 FastAPI 与可选 Nest 执行共享
+    consumer/pair/release 门禁并冻结统一模板 release。接受后立即进入 P0-009A。
 
-P0-007D 已固定并改名 legacy；P0-007E 前禁止把 Next Admin 视为默认模板；P0-008B/B6 前
-禁止应用未冻结的统一 Next/FastAPI release。B6 后必须立即执行 P0-009，不能等待 Gate
+P0-007D 已固定并改名 legacy；P0-007E 已接受，Next Admin 现为默认模板；P0-008B/B6 前
+仍禁止应用未冻结的统一 Next/FastAPI release。B6 后必须立即执行 P0-009，不能等待 Gate
 P0，也不能三仓同时覆盖。P0-009 只同步共同底座，不自动切流；P0-008C 只能在对齐后的
 Research 上实施。Gate P0 后的 M1-411B/C/D 与 M1-413 只做业务等价、切流和 legacy
 退出。完成全部 Phase 0 后更新 v5，再进入 M1a；禁止绕过模板与实例收敛门直接扩建

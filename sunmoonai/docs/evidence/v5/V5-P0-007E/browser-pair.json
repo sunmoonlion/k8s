@@ -1,0 +1,20 @@
+{
+  "task": "V5-P0-007E-browser-pair",
+  "result": "passed",
+  "anonymous": 401,
+  "authenticated": 200,
+  "invalid_csrf": 403,
+  "scoped_mutation": 503,
+  "logout": 204,
+  "post_logout": 401,
+  "frontend_image": "harbor.sunmoonai.com:30443/app-images/tpl-admin-frontend@sha256:b426551c0e027b25965995e23486c590c29fa52047779dd14721d93a245a74f1",
+  "backend_image": "harbor.sunmoonai.com:30443/app-images/tpl-admin-backend@sha256:b24ce7a39e7e10a5541b2a29ff9795a6944d6f17ec4d0479e2051f59a0688c56",
+  "deployment_id": "p0-007e-accepted-6d3b28f-69e634b",
+  "contract_version": 1,
+  "csp_checked": true,
+  "authenticated_cache_no_store": true,
+  "real_role_negative": true,
+  "isolated_context_status": 401,
+  "credentials_printed": false,
+  "tokens_printed": false
+}
