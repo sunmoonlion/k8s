@@ -1,0 +1,16 @@
+{
+  "task": "V5-P0-008B-B6.1",
+  "result": "passed",
+  "contract_version": 1,
+  "classes": [
+    "ADMIN_ONLY",
+    "COMMON",
+    "DEFERRED",
+    "WEB_ONLY"
+  ],
+  "common_capability_count": 7,
+  "next_web_test_files": 10,
+  "next_web_tests": 42,
+  "admin_only_copied_to_web": false,
+  "web_only_copied_to_admin": false
+}

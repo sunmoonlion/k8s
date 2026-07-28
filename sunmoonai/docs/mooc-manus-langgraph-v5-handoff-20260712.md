@@ -214,11 +214,25 @@ Docker 和 KIND 两副本门禁通过。证据：
 
 ### B6 Dual-profile Contract/Paired/Release Gate
 
-状态：`CURRENT_UNIQUE_TASK`。P0-007E 已接受，本包已恢复。
+状态：`B6.1_ACCEPTED / B6.2_ACCEPTED / B6.3_CURRENT_UNIQUE_TASK`。
+P0-007E 已接受；COMMON 能力核与 Vue reference 配对已经关闭。
 
-同一 Next 分别对 FastAPI/Nest 跑共享 consumer vectors 和配对 E2E。FastAPI 获得默认
-release tuple；Nest 获得可选 tuple。记录双方 contract version、前后端 digest、audience、
-profile、兼容矩阵和独立回滚。B1~B6 全部接受后 P0-008B 才结束，并立即进入 P0-009。
+B6 必须按以下顺序完成，不能只做最后一项：
+
+1. `B6.1 Frontend Common Kernel Parity`：`ACCEPTED`；能力已标为
+   `COMMON/ADMIN_ONLY/WEB_ONLY/DEFERRED`，Next Web 7 项 COMMON 及独立测试已补齐；
+   组件能力门与配对门继续分离。
+2. `B6.2 Vue Legacy Intake + Admin Pair`：`ACCEPTED`；`tpl-admin-frontend-vue@9b3d29b`
+   已纳入父仓，真实 Casdoor、严格 TLS、两副本、session/CSRF/logout、无远程 CDN 及
+   Vue→Next→Vue 恢复通过；固定为 `REFERENCE_ONLY`。
+3. `B6.3 Dual Web Profile Pair`：同一 Next Web 分别对 FastAPI/Nest 跑共享 consumer
+   vectors 和配对 E2E。FastAPI 获得默认 release tuple；Nest 获得可选 tuple。
+4. `B6.4 Unified Release/Clean-room`：递归 clean clone 七个子模块；默认 release 只含
+   Next Admin、FastAPI Admin、Next Web、FastAPI Web，React Router Admin、Vue Admin、
+   Nest Web 仅在 compatibility manifest 中列出。
+
+每个 tuple 记录 contract version、前后端 digest、audience、profile、兼容矩阵和独立
+回滚。B1~B6 全部接受后 P0-008B 才结束，并立即进入 P0-009。
 
 ### P0-009 统一模板发布与三实例立即收敛
 
@@ -321,6 +335,13 @@ KUBECONFIG="$HOME/.kube/kind-config" kubectl get deploy -A \
 - [ ] 确认 P0-007E 的三份 tag、前后端 digest、完整能力矩阵、clean-room、真实配对和
       双向回滚证据仍成立；将 B6 设为唯一任务。
 - [ ] B6 未接受前不生成统一模板 release 或修改三个业务 App。
+- [x] B6.1 COMMON 能力在 Next Admin/Web 均有实现与测试；ADMIN_ONLY/WEB_ONLY 未被
+      错误复制；组件能力门与配对门分别有证据。
+- [x] B6.2 Vue legacy 已作为父仓子模块固定，package/repo 身份无歧义；Vue+FastAPI
+      Admin 真实配对和独立回滚通过，但未进入默认 release 或实例传播清单。
+- [ ] B6.3 Next Web+FastAPI 默认与 Next Web+Nest 可选均通过同一 consumer vectors 和
+      独立真实配对。
+- [ ] B6.4 七子模块递归 clean clone 可重放，统一 manifest 明确四默认/三非默认 tuple。
 - [ ] B6 后立即激活 P0-009A；P0-009E 前不开始 P0-008C 或普通业务开发。
 - [ ] P0-009 严格按 Info -> Knowledge -> Research 串行，不同时覆盖三个 App。
 - [ ] P0-008C 只使用 FastAPI 默认 profile；Nest 只保留模板契约门。

@@ -622,11 +622,16 @@ Admin 规则：
   Admin BFF。
 - TanStack Query 是 Client Component 的 API server-state/caching/mutation 主层；RSC
   bootstrap 不维护第二份业务缓存。
-- Ant Design 6 是 Admin 主组件库，Ant Design Table 是默认表格；只有真实规模、编辑或虚拟化指标证明不足时，才为单一场景评估专项 Data Grid，禁止并存第二套完整 UI 体系。
+- 默认 Next Admin 与 Next Web 统一采用 Tailwind CSS 4、shadcn/Base UI、Lucide 和
+  TanStack Query；Admin 的 Table/Form/Dialog/Drawer 等能力由这套可组合 primitives
+  构建，不再引入 Ant Design 作为第二套主 UI 体系。React Router legacy 的 Ant Design
+  和 Vue legacy 的 Element Plus 只属于其各自 reference profile。
 - URL 保存分页、筛选、排序和可恢复视图；表单状态与纯 UI state 分离；不得把领域事实长期复制到 Zustand。
 - Next Route Handler 不复制通用 auth/domain BFF；最终身份和资源授权仍由
   `tpl-admin-backend` 完成。
-- Admin 不采用 Nuxt；Vue Admin 只保留在三个 App 的迁移前 tag/镜像和 Git 历史中。
+- Admin 不采用 Nuxt；Vue Admin 除三个 App 的迁移前 tag/镜像和 Git 历史外，再保留一个
+  `tpl-app/tpl-admin-frontend-vue` 兼容模板用于能力审计、理解和灾难恢复。该模板必须与
+  FastAPI Admin 完成独立配对，但不进入默认 release、不传播到三个 App、不接受新业务开发。
   React Router Admin 在 P0-007D 后改名为 `tpl-admin-frontend-react`，只作模板迁移审计
   与回滚参考，不形成永久双栈产品线。
 
@@ -674,6 +679,10 @@ Admin 规则：
 14. P0-009 三实例收敛后，才在已收敛的 Research 基线上运行真实
     Run/SSE/cancel/resume/HITL/citation 薄切并冻结 v2；通用修正先回流模板并按相同顺序传播。
     完整业务等价、正式流量切换和旧实现退出仍逐 App 独立验证和回滚。
+15. B6 在冻结统一 release 前增加 Frontend Common Kernel 门：`COMMON` 能力必须同时在
+    Next Admin/Web 有可验证对应物；Admin Shell/菜单/标签为 `ADMIN_ONLY`，
+    Run/SSE/HITL/Citation 为 `WEB_ONLY`。组件能力门与 Frontend/Backend 真实配对门
+    分开验收，二者都通过才可发布。
 
 ### 10.11 Next Admin 功能等价门槛
 

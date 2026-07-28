@@ -277,8 +277,9 @@ Web/Web Backend，P0-009 在任何新增业务开发前传播统一 Next/FastAPI
 | 角色 | 当前仓库/提交 | 事实与处置 |
 |---|---|---|
 | React Router Admin legacy/reference | `tpl-app/tpl-admin-frontend-react@0b58adc` / tag `p0-007d-react-legacy-20260728` | P0-007D 已与 B5 Admin Backend 完成真实配对、双向回滚及远端/本地/父仓原子改名；只作 P0-007E 完整能力迁移、审计和恢复输入 |
-| Next Admin 默认模板 | 尚未创建（P0-007E） | 从固定 `tpl-web-frontend` 工程树以全新 Git 历史初始化新的 canonical `tpl-admin-frontend`，再完成 Admin audience/cookie/namespace/DAL/页面和完整通用能力迁移；不得让 Web 业务语义或 React Router runtime 混入 |
-| Vue Admin 输入 | Info `fd3a943`、Knowledge `6a33732`、Research `3ef205a` | 三个现有 App 约 250 个文件且高度同源；Info 仅多真实 `src/pages/info/crawl.vue`，其余少量差异主要来自生成内容；作为 A2 能力盘点和后续业务迁移输入，不再另建 Vue 模板仓库 |
+| Next Admin 默认模板 | `tpl-app/tpl-admin-frontend@fb69795` / tag `p0-007e-next-admin-20260728` | P0-007E 已按固定 Web 工程基线建立独立历史，并完成 Admin audience/cookie/namespace/DAL、完整通用能力矩阵、FastAPI Admin 真实配对、clean-room 和双向回滚 |
+| Vue Admin legacy/reference | `tpl-app/tpl-admin-frontend-vue@9b3d29b`（B6.2 已纳入） | Vue 3/Element Plus 通用能力作为审计、理解和灾难恢复输入；当前 FastAPI Admin 的 session/CSRF/POST logout/CSP/容器门禁、真实 Casdoor 配对及 Vue→Next→Vue 恢复均已通过。它不进入默认 template release、不传播到三个实例，也不形成双栈产品线 |
+| 三实例 Vue Admin 迁移输入 | Info `fd3a943`、Knowledge `6a33732`、Research `3ef205a` | 三个现有 App 约 250 个文件且高度同源；Info 仅多真实 `src/pages/info/crawl.vue`，其余少量差异主要来自生成内容；作为 A2 能力盘点、领域保留清单和后续 Next 业务迁移输入 |
 | Next Web 模板 | `tpl-app/tpl-web-frontend@f746255`（B4 固定） | 现有 Next 16/App Router 仓库原地重构，不创建 v2 仓库；server-only DAL、typed interaction、SSE reconcile、Citation/HITL、真实身份、严格 TLS、滚动与回滚已接受 |
 | Web Backend 可选 profile | `tpl-app/tpl-web-backend-nest@947021c`（B4 固定） | Nest 实现已通过真实 B4 门禁并完成远端/本地/父仓原子改名；只作为受维护可选 profile，不占用默认仓名 |
 | Web Backend 默认 profile | `tpl-app/tpl-web-backend@6b6c71e`（B5 固定） | 已由固定 canonical FastAPI Admin tree 初始化并完成 Web surface 适配；FastAPI 为默认、Nest 为可选 profile，B6 前不推广到业务实例 |
@@ -286,9 +287,11 @@ Web/Web Backend，P0-009 在任何新增业务开发前传播统一 Next/FastAPI
 
 仓库纪律：业务能力只进入对应 App；任何迁移先打 Git tag、记录镜像 digest 和回滚步骤；
 不得创建 `*-next-v2` 或平行业务仓库。ADR-016 批准的 `tpl-web-backend-nest` 与
-ADR-018 批准的 `tpl-admin-frontend-react` 是仅有的附加模板 profile：二者都必须由
+ADR-018 批准的 `tpl-admin-frontend-react`，以及本轮明确收口的只读兼容模板
+`tpl-admin-frontend-vue`，都是非默认 profile：它们都必须有明确配对证据；前者由
 既有实现完成最终配对/固化后原子改名产生，只作可选实现或 legacy/reference，不是第二套
-业务仓。新的 `tpl-web-backend` 只承载 FastAPI 默认实现，新的 canonical
+业务仓；后者只作 Vue 能力审计、理解和恢复，不进入业务实例传播。新的
+`tpl-web-backend` 只承载 FastAPI 默认实现，新的 canonical
 `tpl-admin-frontend` 只承载 Next Admin 默认实现；三个 App 仍在既有子仓内原地改造。
 
 ### V5-DOC-HYGIENE-001 工具无关文档收敛
@@ -522,10 +525,26 @@ ADR-018 批准的 `tpl-admin-frontend-react` 是仅有的附加模板 profile：
      仅回收通用能力，补齐并验收 `tpl-admin-backend`；再由其固定 commit 初始化新的
      `tpl-web-backend`，替换为 Web surface/audience/cookie/namespace/API/downstream。
      禁止直接复制当前旧 `tpl-admin-backend`，禁止把业务领域代码带入模板。
-  6. `B6 Dual-profile Contract/Paired/Release Gate`：同一 Next typed client/DAL 和语言无关
-     contract vectors 分别验证 FastAPI/Nest；FastAPI 获得默认 release tuple，Nest 保持
-     可选 profile。任何实现无法持续通过时保持 `IN_PROGRESS` 或将 Nest 降为
+  6. `B6.1 Frontend Common Kernel Parity Gate`：以 P0-007E 已接受能力矩阵为输入，把
+     前端能力逐项划分为 `COMMON`、`ADMIN_ONLY`、`WEB_ONLY`、`DEFERRED`。把缺失的
+     `COMMON`（统一 API/error/correlation、Query/mutation、表格/表单/描述/反馈/
+     上传下载、通用富内容和可测试状态边界）适配进 Next Web；Admin Shell、菜单、标签页
+     保持 `ADMIN_ONLY`，Run/SSE/HITL/Citation 保持 `WEB_ONLY`。不得复制整个 Admin
+     页面或建立尚无必要的共享 UI 仓库。
+  7. `B6.2 Vue Legacy Intake + Admin Pair Gate`：将既有
+     `tpl-admin-frontend-vue` 作为子模块纳入 `tpl-app`，修正仓库/package 身份，补齐
+     当前 FastAPI Admin 的 session/CSRF/POST logout、同源/跨源 cookie、严格 CSP、
+     非 root/read-only 容器和可重复测试；以真实 Casdoor、严格 TLS、固定 digest 完成
+     `Vue Admin + FastAPI Admin` 独立配对。该 tuple 标记 `REFERENCE_ONLY`，不得进入
+     默认 release 或 P0-009 传播清单。
+  8. `B6.3 Dual Web Profile Contract/Paired Gate`：同一 Next Web typed client/DAL 和
+     语言无关 contract vectors 分别验证 FastAPI/Nest；FastAPI 获得默认 release tuple，
+     Nest 保持可选 profile。任何实现无法持续通过时保持 `IN_PROGRESS` 或将 Nest 降为
      `REFERENCE_ONLY`，不得缩减契约迁就实现。
+  9. `B6.4 Unified Release/Clean-room Gate`：递归 clean clone 七个模板子模块，重放
+     install/typecheck/lint/unit/build/Docker/contract/配对/回滚；统一 release manifest
+     只包含 Next Admin、FastAPI Admin、Next Web、FastAPI Web 四个默认组件，另列
+     React Router Admin、Vue Admin、Nest Web 三个非默认 tuple 及恢复边界。
 
   每包分别提交并由 `tpl-app` 固定准确 gitlink；仓库改名/新建前后都保存远端 URL、Git
   tag、镜像 digest 和恢复步骤。B1~B6 全部 ACCEPTED 才关闭 P0-008B。
@@ -534,16 +553,20 @@ ADR-018 批准的 `tpl-admin-frontend-react` 是仅有的附加模板 profile：
   FastAPI 服务、不让 Next Route Handler 建第三套 BFF、不把 Run/Artifact/Retrieval
   领域状态放入 BFF/Zustand、不预建跨 App 共享 UI 平台、不用 nonce CSP 无条件强制全部
   route dynamic、不在一个入口随机混跑 FastAPI/Nest。
-- 测试：Next、FastAPI、Nest 分别 typecheck/lint/unit/contract（按语言适用）；共享 provider/
+- 测试：Next Admin/Web、Vue Admin、FastAPI Admin/Web、Nest 分别 typecheck/lint/unit/
+  contract（按语言适用）；共享 provider/
   consumer vectors；Next+FastAPI 与 Next+Nest 两套 Playwright/a11y、route rendering/cache、
   PKCE/nonce/state/JWKS/audience/session/CSRF/CSP、stream reconnect/reconcile、多标签、Docker/
   KIND、非 root/probes、Frontend/Backend 各两个 Pod、滚动版本与 cache/version-skew smoke。
+  Vue+FastAPI Admin 另跑真实 Casdoor/严格 TLS/session/CSRF/POST logout/权限负向、两副本和
+  独立回滚；它只证明 legacy 可恢复，不替代 Next Admin 默认配对。
   模板 fixture 仅验证中性 UI/错误映射，不能替代 App 级真实配对 E2E。
 - 验收：从干净目录可重复构建；public/authenticated route 渲染/cache 符合矩阵；
   `tpl-admin-backend` 的 FastAPI 母版来源清单证明没有业务代码和旧认证缺陷；两个 backend
   profile 的仓库 URL/tag/digest/contract 可追溯；FastAPI 默认 tuple 和 Nest 可选 tuple
   均可独立回滚；三个 Web 实例未提前修改；每项 ixartz 决策有 source SHA 和结果。
-- 状态：IN_PROGRESS / B5_ACCEPTED / B6_CURRENT_UNIQUE_TASK（2026-07-18：Node 24.18.0 LTS、
+- 状态：IN_PROGRESS / B5_ACCEPTED / B6.1_ACCEPTED / B6.2_ACCEPTED /
+  B6.3_CURRENT_UNIQUE_TASK（2026-07-18：Node 24.18.0 LTS、
   pnpm 10.24.x、JOSE 6.2.3 修订已完成；固定 `tpl-admin-frontend@1561e5d`、
   `tpl-web-frontend@f5340ac`、`tpl-web-backend@f5bedfb`、`tpl-app@fe29739` 和基础镜像
   digest `sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc`。
@@ -573,8 +596,14 @@ ADR-018 批准的 `tpl-admin-frontend-react` 是仅有的附加模板 profile：
   namespace/interaction/downstream 适配。Admin `34 passed`、Web `43 passed`，Docker
   migration roundtrip、生产配置负向矩阵及 KIND 两副本 immutable/non-root/read-only/
   probe/PDB/consumer 门禁均通过，证据：
-  `sunmoonai/docs/evidence/v5/V5-P0-008B/B5/result.md`。ADR-018 已插入 P0-007D/E；
-  B6、P0-009、008C 未开始，三个业务 Web 实例未修改。）
+  `sunmoonai/docs/evidence/v5/V5-P0-008B/B5/result.md`。ADR-018 已插入 P0-007D/E。
+  2026-07-28：B6.1 固定 Next Web COMMON `400fa64`，typecheck/lint/i18n、10 files/
+  42 tests 和能力矩阵门通过；B6.2 固定 Vue reference `9b3d29b`、父仓 `aa04199`、
+  Vue digest `sha256:5380b1b56b3c6f0c825b2e0a2df03b0e23517eb8de6d440edccbe2579b738a57`，
+  真实 Casdoor/严格 TLS/session/CSRF/POST logout/角色负向、2+2 Pod、无远程 CDN 和
+  Vue→Next→Vue 恢复均通过。证据：
+  `sunmoonai/docs/evidence/v5/V5-P0-008B/B6/result.md`。B6.3/B6.4、P0-009、008C
+  未开始，三个业务 Web 实例未修改。）
 
 ### V5-P0-009 统一模板发布与三实例立即收敛 Rollup
 
@@ -642,6 +671,10 @@ ADR-018 批准的 `tpl-admin-frontend-react` 是仅有的附加模板 profile：
 
 | 浏览器前端 | 唯一配对后端 | 真实配对验收最小内容 |
 |---|---|---|
+| Template Next Admin（默认） | Template FastAPI Admin Backend | P0-007E 固定 tuple；真实 Casdoor、session/CSRF、角色/资源授权、mutation、严格 TLS、两副本、滚动/回滚 |
+| Template Vue Admin（备查） | Template FastAPI Admin Backend | B6.2 独立 tuple；真实 Casdoor、session/CSRF、POST logout、权限负向、严格 TLS、两副本和恢复；不得作为默认发布证据 |
+| Template Next Web（默认） | Template FastAPI Web Backend | B6.3 默认 tuple；共享 consumer contract、真实身份、SSR/DAL、业务中性 interaction、两副本和回滚 |
+| Template Next Web（可选） | Template Nest Web Backend | B6.3 可选 tuple；与 FastAPI 使用同一 consumer vectors、身份/interaction 契约和独立回滚 |
 | Info Admin | Info Admin Backend | Casdoor session/CSRF、角色与资源授权、Info 管理 mutation、审计/correlation、刷新恢复、拒绝路径 |
 | Knowledge Admin | Knowledge Admin Backend | Casdoor session/CSRF、Dataset/Provider/Ingestion/Retrieval 诊断、权限拒绝和 correlation |
 | Research Admin | Research Admin Backend | Casdoor session/CSRF、Runtime/evaluation 治理权限、审计和停流拒绝 |
@@ -650,7 +683,8 @@ ADR-018 批准的 `tpl-admin-frontend-react` 是仅有的附加模板 profile：
 | Research Web | Research Web Backend + ADR-001 选中 adapter | session/Run/SSE/HITL/cancel-resume/citation、刷新/断线/多标签、跨用户拒绝 |
 
 - 环境纪律：每次配对 E2E 记录前端 digest、配对后端 API/worker digest、BFF/proxy 配置、OIDC client/audience、base URL 和 contract version；测试前显式断言这些值相配。浏览器不得持有服务间 token，`Info -> Knowledge` 仍是独立的服务到服务可靠交付/contract 测试链，不得伪装成 Web↔Backend 配对。
-- 完成纪律：实例同步、业务等价或正式 tag 的证据必须同时包含独立前端质量测试、独立
+- 完成纪律：组件能力补齐与配对是两个门，不能互相替代。实例同步、业务等价或正式 tag
+  的证据必须同时包含独立前端质量测试、独立
   后端 contract/安全测试、以及上表对应的真实浏览器配对 E2E；任一缺失保持
   `IN_PROGRESS`。模板 P0-008B 只可用受控 fixture；只有 P0-009 产生
   `INSTANCE_FOUNDATION_ALIGNED`，且该状态仍不等于业务等价或生产发布。
@@ -1536,8 +1570,11 @@ digest 继续作为回滚基线，但不再作为默认开发基础。
     immutable digest；完整能力矩阵、clean-room、真实 Casdoor、严格 TLS、2+2 Pod、
     缓存/角色隔离和双向滚动/回滚已通过。证据：
     `sunmoonai/docs/evidence/v5/V5-P0-007E/result.md`。
-27. Web Re-baseline B6：`CURRENT_UNIQUE_TASK`；对默认 FastAPI 与可选 Nest 执行共享
-    consumer/pair/release 门禁并冻结统一模板 release。接受后立即进入 P0-009A。
+27. Web Re-baseline B6：`B6.1_ACCEPTED / B6.2_ACCEPTED /
+    B6.3_CURRENT_UNIQUE_TASK`（2026-07-28）；Next Web 已补齐 7 项 COMMON，
+    Vue reference 已纳入第七子模块并通过 FastAPI Admin 真实配对和独立恢复。下一步对
+    默认 FastAPI 与可选 Nest 执行共享 consumer/pair 门禁，随后 B6.4 冻结统一模板
+    release。B6 整体接受后立即进入 P0-009A。
 
 P0-007D 已固定并改名 legacy；P0-007E 已接受，Next Admin 现为默认模板；P0-008B/B6 前
 仍禁止应用未冻结的统一 Next/FastAPI release。B6 后必须立即执行 P0-009，不能等待 Gate

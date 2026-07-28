@@ -61,6 +61,11 @@ def main() -> None:
         "### V5-M1-411A 固定模板替换三个 App 基础前端",
         "状态：SUPERSEDED_BY_P0_009",
         "B6_CURRENT_UNIQUE_TASK",
+        "B6.1 Frontend Common Kernel Parity Gate",
+        "B6.2 Vue Legacy Intake + Admin Pair Gate",
+        "B6.3 Dual Web Profile Contract/Paired Gate",
+        "B6.4 Unified Release/Clean-room Gate",
+        "组件能力补齐与配对是两个门",
         "P0-009E -> P0-008C",
     )
     long_term = require(
@@ -68,6 +73,8 @@ def main() -> None:
         "最近修订：2026-07-28（P0-007E canonical Next Admin 默认模板与 FastAPI Admin 配对接受）",
         "当前唯一任务是 P0-008B/B6",
         "P0-009 全部通过前不得继续新增业务功能",
+        "tpl-app/tpl-admin-frontend-vue",
+        "组件能力门与 Frontend/Backend 真实配对门",
         "INSTANCE_FOUNDATION_ALIGNED",
     )
     handoff = require(
@@ -77,6 +84,10 @@ def main() -> None:
         "P0-008B = IN_PROGRESS / B5_ACCEPTED / B6_CURRENT_UNIQUE_TASK",
         "P0-009  = NOT_STARTED / BLOCKED_BY_P0_008B_B6",
         "唯一下一任务是 P0-008B/B6",
+        "B6.1 Frontend Common Kernel Parity",
+        "B6.2 Vue Legacy Intake + Admin Pair",
+        "B6.3 Dual Web Profile Pair",
+        "B6.4 Unified Release/Clean-room",
         "B6 后立即激活 P0-009A",
     )
     legacy_evidence = require(
@@ -123,6 +134,12 @@ def main() -> None:
                 "legacy_closure": "P0-007D_ACCEPTED",
                 "next_admin": "P0-007E_ACCEPTED",
                 "current_code_task": "P0-008B/B6",
+                "b6_order": [
+                    "frontend-common-kernel",
+                    "vue-admin-fastapi-admin-reference-pair",
+                    "next-web-dual-backend-pair",
+                    "unified-clean-room-release",
+                ],
                 "next_after_template_release": "P0-009A",
                 "instance_order": ["info", "knowledge", "research"],
                 "business_development_locked_until": "P0-009E_ACCEPTED",

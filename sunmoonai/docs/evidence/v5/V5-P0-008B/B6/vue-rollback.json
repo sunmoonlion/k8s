@@ -1,0 +1,11 @@
+{
+  "task": "V5-P0-008B-B6.2-vue-admin-rollback",
+  "result": "passed",
+  "path": "vue->next->vue",
+  "next_pair_reverified": true,
+  "vue_pair_reverified": true,
+  "backend_unchanged": true,
+  "business_deployments_unchanged": true,
+  "credentials_printed": false,
+  "tokens_printed": false
+}
