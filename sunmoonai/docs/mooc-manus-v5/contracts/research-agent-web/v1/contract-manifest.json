@@ -1,0 +1,32 @@
+{
+  "contract": "sunmoonai.research.agent-web",
+  "major": 1,
+  "owner": "research-app",
+  "consumer": "research-web-frontend",
+  "provider": "research-web-backend",
+  "files": {
+    "create-run.schema.json": "a1349e5996d8d4d908b9d0bb58b21f1421b0569a765cacbca181b755d5011794",
+    "cancel-run.schema.json": "7bdd59a0e947cf65c4e0d3254043789198b773e623fd9dc42f33c274e325d96c"
+  },
+  "composes": {
+    "web-interaction-v1": {
+      "owner": "sunmoonai-platform-web",
+      "manifest": "../web-interaction/v1/contract-manifest.json",
+      "usage": "snapshot, SSE event, HITL action, citation source and error envelope"
+    }
+  },
+  "routes": {
+    "create": "POST /api/runs",
+    "snapshot": "GET /api/runs/{run_id}",
+    "stream": "GET /api/runs/{run_id}/events",
+    "hitl": "POST /api/runs/{run_id}/actions",
+    "cancel": "POST /api/runs/{run_id}/cancel",
+    "citation": "GET /api/citations/{evidence_id}/source"
+  },
+  "browser_boundary": {
+    "origin": "same-origin only",
+    "identity": "HttpOnly web session plus CSRF for mutations",
+    "service_token": "forbidden",
+    "provider_types": "forbidden"
+  }
+}

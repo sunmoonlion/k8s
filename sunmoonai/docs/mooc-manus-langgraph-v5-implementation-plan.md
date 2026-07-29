@@ -678,7 +678,59 @@ ADR-018 批准的 `tpl-admin-frontend-react`，以及本轮明确收口的只读
 - 故障测试：刷新/断网/重复事件/事件缺口/陈旧 terminal、多标签、Runtime/Next Pod 重启、滚动版本、过期 approval、跨用户 URL、Citation 404/403、浏览器取消与后端竞态。
 - 冻结产物：`next-web-template-version`、依赖锁、route/render/cache/BFF/env/deploy 契约、三 Web migration checklist、旧模板回滚和 compatibility matrix。
 - 验收：真实试点可从稳定 URL 恢复且最终与服务端 Projection 收敛；浏览器不读原始 LangGraph/Provider 类型；两个 Pod/滚动版本无静默状态丢失；v2 固定 commit 可干净重建并按迁移清单应用，且模板不含 Research 领域代码。
-- 状态：NOT_STARTED
+- Runtime 边界：本任务使用 ADR-001 选中的 Custom Runtime **隔离候选实现**验证产品契约，
+  不把 `runtime_selection_spike.py`、Reference Adapter 或 Walking Skeleton 直接转正，
+  也不提前宣称 M1-301~312 durable Runtime 已完成。候选实现必须默认关闭、只在隔离
+  Deployment/Host 激活，接口方向与 M1 一致且允许在 Gate P0 后废弃重写。正式 Run
+  command/outbox、Attempt lease/heartbeat、reconciler 和生产 traffic 仍属于 M1。
+- 当前审计事实（2026-07-29）：
+  1. Research Next Web 同时保留旧 `/api/agent` 直连 `AgentConsole` 与受控
+     `/api/runs` Reference UI；旧控制台绕过 Web BFF 契约，不能作为 P0-008C 证据。
+  2. Research FastAPI Web Backend 的 production 默认是
+     `UnavailableWebInteractionAdapter`，`ReferenceWebInteractionAdapter` 只能用于
+     配对测试；当前尚无真实 Runtime adapter。
+  3. Research Admin Worker 仍固定调用 `build_walking_skeleton_graph()`；ADR-001 的
+     Runtime spike 明确是可废弃验证代码，未接入 API/worker 主链。
+  4. 因此 P0-008C 不是部署既有镜像即可完成，必须先补齐浏览器契约、Web BFF service
+     identity adapter 与隔离 Runtime candidate，再进入 KIND。
+- 串行施工包（每包必须测试、证据、提交后才进入下一包）：
+  1. `P0-008C.0 Security/Release Preflight`：消费
+     `V5-RELEASE-1.0.0` 凭据轮换证据，复验旧凭据拒绝、源码/构建上下文/候选镜像
+     secret scan、19 个 release tag 与稳定 Deployment 不变性。
+  2. `P0-008C.1 Contract and Ownership Freeze`：冻结 Browser DTO、create/snapshot/
+     stream/action/cancel/citation source、cursor 与错误码；明确浏览器只访问同源
+     Research Web Backend，Web BFF 使用独立 client-credentials 调用 Runtime internal
+     adapter，不转发浏览器 token；固定 user/resource delegation 与审计字段。
+  3. `P0-008C.2 Isolated Runtime Candidate`：在 Research Runtime 所有权边界内实现
+     默认关闭的隔离 endpoint/worker；必须使用真实 PostgreSQL checkpoint/event、
+     Redis live signal、真实 LangGraph interrupt/resume、真实 KnowledgePort retrieval
+     与 Citation projection。禁止 hardcode success、Reference Adapter、fake SSE 或
+     fake citation；候选代码与 Walking Skeleton 分开。
+  4. `P0-008C.3 FastAPI Web Adapter`：实现 production-disabled、试点显式启用的
+     `WebInteractionPort` adapter；完成 create/get/stream/action/cancel/source 的
+     DTO 转换、超时、路径 allowlist、服务身份、用户 delegation、401/403/409/410/502/
+     503 映射和 SSE 背压/断线处理。
+  5. `P0-008C.4 Next Product Surface`：删除页面对旧 `/api/agent` 直连控制台和固定
+     Reference Run ID 的依赖，统一使用 typed `/api/runs` contract；实现创建 Run、
+     snapshot reconciliation、cursor 重连、cancel/resume/HITL、Citation 与错误恢复。
+     Reference UI 仍可保留在非生产测试开关下，但不得进入验收路径。
+  6. `P0-008C.5 Isolated Build/Deploy`：以候选 tag/digest 部署 Next、FastAPI Web BFF、
+     Runtime API、Runtime worker；固定 2+2 API/Frontend、副本/anti-affinity、严格 TLS、
+     Casdoor Web audience、独立 Runtime service identity、配置 fingerprint、migration
+     gate 和一键回滚；稳定业务 Deployment/Ingress/Secret/PVC 不得改变。
+  7. `P0-008C.6 Real Vertical and Fault Matrix`：真实登录后创建 session/run，验证
+     retrieval/citation、SSE cursor/reconnect、snapshot 收敛、cancel、HITL resume；
+     执行刷新、断网、重复/缺口、陈旧 terminal、多标签、Pod restart/rolling、过期
+     approval、跨用户、Citation 404/403 和 cancel race。
+  8. `P0-008C.7 Template Feedback/Freeze`：仅把 common 缺陷回流 `tpl-app`；如模板
+     commit 改变，严格重放 P0-009B→C→D→E。冻结 Next v2 manifest、compatibility
+     matrix、三 Web migration checklist、候选/旧版本双向回滚和最终零残留。
+- 状态：IN_PROGRESS / P0-008C.0_ACCEPTED / P0-008C.1_ACCEPTED /
+  P0-008C.2_IN_PROGRESS（2026-07-29；安全预检引用
+  `sunmoonai/docs/evidence/v5/V5-RELEASE-1.0.0/result.md`；源码调用链审计确认上述三个
+  断点；Browser/Internal 两个 exact-field contract、service identity/delegation 与
+  pilot fail-closed 边界已经 `verify_p0_008c_contracts.py` 通过。尚未部署候选、未改变
+  稳定流量）。
 
 ### 浏览器 Frontend/Backend 配对门禁（所有前端任务的强制规则）
 

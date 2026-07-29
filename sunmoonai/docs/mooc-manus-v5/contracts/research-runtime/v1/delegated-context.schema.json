@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.sunmoonai.com/research/runtime/v1/delegated-context.schema.json",
+  "title": "Research Runtime Delegated User Context v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["actor_id", "authenticated_at", "policy_version"],
+  "properties": {
+    "actor_id": {"type": "string", "format": "uuid"},
+    "authenticated_at": {"type": "string", "format": "date-time"},
+    "policy_version": {"type": "string", "minLength": 1, "maxLength": 64},
+    "roles": {
+      "type": "array",
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 128}
+    },
+    "scopes": {
+      "type": "array",
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 128}
+    }
+  }
+}

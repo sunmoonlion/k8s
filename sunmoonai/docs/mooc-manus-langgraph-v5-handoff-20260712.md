@@ -368,3 +368,34 @@ KUBECONFIG="$HOME/.kube/kind-config" kubectl get deploy -A \
 - 禁止 B6 后跳过 P0-009继续开发业务、Runtime 产品面、Memory/Subagent 或 P0-008C。
 - 禁止用模板整树覆盖领域 Backend，或把基础同步误报为业务等价/正式切流。
 - 禁止用 Nest profile 代替 P0-008C 或三个业务 Web 的 FastAPI 默认主线证据。
+
+## 9. 2026-07-29 P0-008C 恢复增量（当前权威入口）
+
+P0-009A~E、统一 `1.0.0` 发布、凭据轮换、Harbor 安全裁剪和 GC 已完成。当前唯一激活
+任务为 `V5-P0-008C`，实施清单以
+`mooc-manus-langgraph-v5-implementation-plan.md` 的 `P0-008C.0~.7` 为准。
+
+恢复时必须先接受以下代码事实：
+
+- Research Next Web 当前有两套交互面：旧 `AgentConsole` 直连 `/api/agent`，以及只在
+  Reference 开关下展示的 typed `/api/runs` 工作区。前者绕过 Web BFF，后者使用固定
+  fixture Run；二者都不是 P0-008C 最终路径。
+- Research FastAPI Web Backend 默认返回 `provider_unavailable`，目前没有真实
+  `WebInteractionPort` Runtime adapter。
+- Research Admin Worker 当前仍固定运行 Walking Skeleton。ADR-001 已接受的是 Custom
+  Runtime 责任边界及隔离 spike 证据，不是该 worker 已取得生产资格。
+
+因此不得直接把现有 `1.0.0` 镜像部署后宣布 P0-008C 完成。正确顺序是：
+
+1. 冻结 Web Browser DTO、Runtime internal contract、service identity 与用户 delegation。
+2. 实现默认关闭、可废弃的隔离 Custom Runtime candidate；真实使用 PostgreSQL durable
+   state、Redis live signal、LangGraph interrupt/resume、Knowledge retrieval/citation。
+3. 让 FastAPI Web BFF 通过独立服务身份适配该 candidate；浏览器只访问同源 Web BFF。
+4. Next 页面统一到 typed `/api/runs`，移除验收路径对旧 `/api/agent` 与固定 fixture 的
+   依赖。
+5. 只在隔离 Host/Deployment 运行真实浏览器、故障、滚动和回滚矩阵；稳定入口保持不变。
+6. common 缺陷先回流模板并重放 P0-009；Research-only 代码不得进入模板。
+
+P0-008C 与 M1 的边界：本任务证明真实产品竖线及契约可行，不提前实现或宣称
+M1-301~312 完成。正式 outbox/Attempt lease/reconciler/SSE v2 生产主链仍在 Gate P0
+之后；试点 candidate 必须默认关闭、隔离部署、可删除且不得被稳定流量引用。
