@@ -2,7 +2,7 @@
 
 日期：2026-07-29（Asia/Shanghai）  
 最终集成分支：`k8s/codex-1`；Info / Knowledge / Research 父仓及 12 个组件均为 `codex-1`
-远端 Git：**未推送**
+远端 Git：**已推送并以 `git ls-remote` 精确核对**
 
 ## 结论
 
@@ -12,7 +12,9 @@ P0-009E **经 Codex 重新实现门禁并复核后本地 ACCEPTED**。原 Cursor
 freeze→目标 binary patch 重放后的 Git tree 必须逐仓一致、六组配对必须引用 digest、
 三 App 四组件真实回滚必须通过、共享内核漂移必须逐文件可解释、KIND 必须可达且零残留。
 三 App 均标记 `INSTANCE_FOUNDATION_ALIGNED`。  
-业务 Info/Knowledge/Research 稳定 Deployment **未切流量**；远端 **未推**。
+业务 Info/Knowledge/Research 稳定 Deployment **未切流量**。门禁运行时未推远端；
+门禁通过后，正式 `master`/`codex-1` 和 12 个冻结标签已发布，详见
+`remote-publish.json`。未推送任何 `cursor-1` 或 `p0-009*` 工作分支。
 
 **P0-009 整体 ACCEPTED**；下一任务解锁 **P0-008C**（本波未开工）。
 
@@ -56,6 +58,7 @@ freeze→目标 binary patch 重放后的 Git tree 必须逐仓一致、六组�
 | 归档、生成物、二进制与证据敏感信息卫生 | passed | `convergence.json` → `archive_hygiene` |
 | KIND 隔离残留 | passed | `kind_hygiene` |
 | `INSTANCE_FOUNDATION_ALIGNED` | written | 三 App `docs/INSTANCE_FOUNDATION_ALIGNED.json` |
+| 正式远端分支 + 12 个冻结标签 | passed | `remote-publish.json` |
 
 脚本：`docs/mooc-manus-v5/scripts/verify_p0_009e_convergence.py`
 
@@ -67,7 +70,9 @@ freeze→目标 binary patch 重放后的 Git tree 必须逐仓一致、六组�
 | knowledge | `INSTANCE_FOUNDATION_ALIGNED` | `knowledge-app/docs/INSTANCE_FOUNDATION_ALIGNED.json` |
 | research | `INSTANCE_FOUNDATION_ALIGNED` | `research-app/docs/INSTANCE_FOUNDATION_ALIGNED.json` |
 
-`traffic_cutover=false`，`remote_git_push=false`。
+`traffic_cutover=false`。`convergence.json` 和三个 alignment marker 中的
+`remote_git_push=false` 是门禁发生时的不可变快照；门禁后发布事实由
+`remote-publish.json` 记录，不回写篡改历史快照。
 
 `alignment-lock.json` 固定 12 个组件的 commit 与 tree；以后任一组件漂移都会使本门禁失败，
 不能复用本次 ACCEPTED 结论。
@@ -75,8 +80,12 @@ freeze→目标 binary patch 重放后的 Git tree 必须逐仓一致、六组�
 ## 边界（本波未做）
 
 - 未切业务流量；未删旧 Vue/Nest 稳定镜像。  
-- 未推 Gitee。  
+- 已推 Gitee 正式分支与冻结标签；未推临时工作分支。
 - **未开始 P0-008C** Research 真实试点。
+
+发布前树审计发现三个 Admin Backend 的历史曾追踪含非占位凭据的 `.env`/`.env.k8s`。
+当前正式树已停止追踪且 alignment lock 已重建、复验；但历史凭据仍须在 P0-008C 首个真实
+环境步骤前轮换，并证明旧凭据失效。
 
 ## 下一任务
 

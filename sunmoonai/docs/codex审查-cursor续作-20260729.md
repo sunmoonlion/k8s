@@ -12,7 +12,8 @@ Cursor 完成了大量有效的模板传播、领域缝合和隔离配对工作�
 - Info、Knowledge、Research：`INSTANCE_FOUNDATION_ALIGNED`
 - P0-008C：仅“已解锁”，尚未开工
 - 业务流量：未切换
-- 远端 Git：本审查完成时尚未推送
+- 远端 Git：正式 `master`/`codex-1` 与 12 个冻结标签已推送并逐 ref 精确核对；
+  `cursor-1` 和 `p0-009*` 工作分支未推送
 
 ## 否决并修正的内容
 

@@ -653,7 +653,8 @@ ADR-018 批准的 `tpl-admin-frontend-react`，以及本轮明确收口的只读
   `INSTANCE_FOUNDATION_ALIGNED`。Codex 发布前树审计另发现三个 Admin Backend 历史追踪
   含非占位凭据的 `app/.env`/`app/.env.k8s`；当前正式树已停止追踪并重建 alignment lock，
   但 Git 历史泄露要求在 P0-008C 首个真实环境步骤前完成数据库、Redis、Casdoor 凭据轮换、
-  旧凭据拒绝验证和 secret scan。未切业务流量、未推远端。
+  旧凭据拒绝验证和 secret scan。未切业务流量；正式 `master`/`codex-1` 与 12 个冻结
+  标签已推送并按远端 ref 精确核对，临时工作分支未推送。
   唯一下一任务是 P0-008C Research 真实试点）。
 
 ### V5-P0-008C Research Web 真实试点与 Next v2 冻结

@@ -87,7 +87,7 @@
   },
   "archive_hygiene": {
     "result": "passed",
-    "evidence_files_scanned": 42
+    "evidence_files_scanned": 43
   },
   "kernel_drift": {
     "info": {
