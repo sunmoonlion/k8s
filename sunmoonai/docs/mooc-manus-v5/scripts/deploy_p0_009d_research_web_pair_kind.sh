@@ -8,20 +8,20 @@ set -euo pipefail
 KUBECONFIG_PATH="${KUBECONFIG:-$HOME/.kube/kind-config}"
 KUBECTL_BIN="${KUBECTL_BIN:-kubectl}"
 NAMESPACE="app-platform-dev"
-HOST="tpl-web-p0-008b-b63f.sunmoonai.com"
+HOST="research-web-p0-009d.sunmoonai.com"
 PUBLIC_PORT="30443"
 BACKEND_IMAGE=""
 FRONTEND_IMAGE=""
-DEPLOYMENT_ID="p0-008b-b63f-v1"
-IDENTITY_SECRET="sunmoonai-p0-008b-b63f-web-identity"
-RUNTIME_SECRET="sunmoonai-p0-008b-b63f-runtime"
+DEPLOYMENT_ID="p0-009d-v1"
+IDENTITY_SECRET="sunmoonai-p0-009d-web-identity"
+RUNTIME_SECRET="sunmoonai-p0-009d-web-runtime"
 MODE="plan"
 POSTGRES_IMAGE="harbor.sunmoonai.com:30443/k8s-images/postgresql:17.6.0-debian-12-r4"
 REDIS_IMAGE="harbor.sunmoonai.com:30443/k8s-images/redis:8.2.1-debian-12-r0"
 
 usage() {
   cat <<'EOF'
-Usage: deploy_b6_web_fastapi_pair_kind.sh [--apply|--cleanup] [options]
+Usage: deploy_p0_009d_research_web_pair_kind.sh [--apply|--cleanup] [options]
   --backend-image IMAGE@sha256:DIGEST
   --frontend-image IMAGE@sha256:DIGEST
   --deployment-id ID
@@ -51,23 +51,32 @@ done
 k() { env -u DEBUG "$KUBECTL_BIN" --kubeconfig "$KUBECONFIG_PATH" "$@"; }
 
 cleanup() {
-  k delete ingressroute tpl-web-p0-008b-b63f -n "$NAMESPACE" \
+  k delete ingressroute research-web-p0-009d -n "$NAMESPACE" \
     --ignore-not-found=true >/dev/null
-  k delete pdb tpl-web-backend-p0-008b-b63f tpl-web-frontend-p0-008b-b63f \
+  k delete pdb research-web-backend-p0-009d research-web-frontend-p0-009d \
     -n "$NAMESPACE" --ignore-not-found=true >/dev/null
-  k delete service tpl-web-backend-p0-008b-b63f tpl-web-frontend-p0-008b-b63f \
-    p0-008b-b63f-postgresql p0-008b-b63f-redis -n "$NAMESPACE" \
+  k delete service research-web-backend-p0-009d research-web-frontend-p0-009d \
+    p0-009d-web-postgresql p0-009d-web-redis -n "$NAMESPACE" \
     --ignore-not-found=true >/dev/null
-  k delete deployment tpl-web-backend-p0-008b-b63f tpl-web-frontend-p0-008b-b63f \
-    p0-008b-b63f-postgresql p0-008b-b63f-redis -n "$NAMESPACE" \
+  k delete deployment research-web-backend-p0-009d research-web-frontend-p0-009d \
+    p0-009d-web-postgresql p0-009d-web-redis -n "$NAMESPACE" \
     --ignore-not-found=true --wait=true >/dev/null
-  k delete job p0-008b-b63f-migration -n "$NAMESPACE" \
+  k delete job p0-009d-web-migration -n "$NAMESPACE" \
     --ignore-not-found=true --wait=true >/dev/null
-  k delete configmap tpl-web-p0-008b-b63f-config -n "$NAMESPACE" \
+  k delete configmap research-web-p0-009d-config -n "$NAMESPACE" \
     --ignore-not-found=true >/dev/null
   k delete secret "$RUNTIME_SECRET" -n "$NAMESPACE" \
     --ignore-not-found=true >/dev/null
-  printf 'V5-P0-008B-B6.3F isolated runtime cleaned\n'
+  for _attempt in $(seq 1 60); do
+    if ! k get pod -n "$NAMESPACE" -o name | grep -Eq '(research-web.*p0-009d|p0-009d-web)'; then
+      printf 'V5-P0-009D isolated runtime cleaned\n'
+      return 0
+    fi
+    sleep 2
+  done
+  printf 'P0-009D terminating Pods remain after cleanup timeout\n' >&2
+  k get pod -n "$NAMESPACE" -o name | grep -E '(research-web.*p0-009d|p0-009d-web)' >&2 || true
+  return 1
 }
 
 if [[ "$MODE" == "cleanup" ]]; then
@@ -88,8 +97,8 @@ printf 'PLAN resources=PostgreSQL,Redis,migration,2xFastAPI,2xNext Web,Services,
   printf 'frontend image must be an immutable digest reference\n' >&2
   exit 1
 }
-[[ "$HOST" == "tpl-web-p0-008b-b63f.sunmoonai.com" ]] || {
-  printf 'host is outside the P0-008B-B6.3F trust boundary\n' >&2
+[[ "$HOST" == "research-web-p0-009d.sunmoonai.com" ]] || {
+  printf 'host is outside the P0-009D trust boundary\n' >&2
   exit 1
 }
 k get secret "$IDENTITY_SECRET" -n "$NAMESPACE" >/dev/null
@@ -105,26 +114,26 @@ if ! k get secret "$RUNTIME_SECRET" -n "$NAMESPACE" >/dev/null 2>&1; then
   unset postgres_password redis_password
 fi
 k label secret "$RUNTIME_SECRET" -n "$NAMESPACE" \
-  sunmoonai.com/task=v5-p0-008b-b63f --overwrite >/dev/null
+  sunmoonai.com/task=v5-p0-009d-web --overwrite >/dev/null
 
 origin="https://${HOST}:${PUBLIC_PORT}"
 cat <<EOF | k apply -f - >/dev/null
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: tpl-web-p0-008b-b63f-config
+  name: research-web-p0-009d-config
   namespace: ${NAMESPACE}
   labels:
-    sunmoonai.com/task: v5-p0-008b-b63f
+    sunmoonai.com/task: v5-p0-009d-web
 data:
   # The deterministic interaction adapter is available only in this isolated
   # verification profile. Strict TLS and real Casdoor remain mandatory.
   ENV: test
   LOG_LEVEL: INFO
-  SERVICE_NAME: tpl-web-backend-p0-008b-b63f
-  APP_SLUG: info
+  SERVICE_NAME: research-web-backend-p0-009d
+  APP_SLUG: research
   SURFACE: web
-  REDIS_HOST: p0-008b-b63f-redis
+  REDIS_HOST: p0-009d-web-redis
   REDIS_PORT: "6379"
   REDIS_DB: "0"
   CASDOOR_ENDPOINT: "https://casdoor.sunmoonai.com:${PUBLIC_PORT}"
@@ -132,9 +141,9 @@ data:
   CASDOOR_BACKCHANNEL_ENDPOINT: "http://casdoor-sunmoonai:8000"
   CASDOOR_REDIRECT_URI: "${origin}/api/auth/callback"
   CASDOOR_ORGANIZATION: sunmoonai
-  CASDOOR_APPLICATION: sunmoonai-tpl-web-p0-008b-b63f
+  CASDOOR_APPLICATION: sunmoonai-research-web-p0-009d
   CASDOOR_VERIFY_SSL: "true"
-  AUTH_POLICY_VERSION: tpl-web-p0-008b-b63f-v1
+  AUTH_POLICY_VERSION: research-web-p0-009d-v1
   AUTH_ROLE_ALLOWLIST: admin,operator
   AUTH_SCOPE_ALLOWLIST: profile:read
   AUTH_DEFAULT_RETURN_TO: /zh-CN/dashboard
@@ -143,26 +152,26 @@ data:
   REFERENCE_INTERACTION_ENABLED: "true"
   FRONTEND_BASE_URL: "${origin}"
   FRONTEND_ALLOWED_ORIGINS: "${origin}"
-  ALLOWED_HOSTS: "${HOST},tpl-web-backend-p0-008b-b63f"
+  ALLOWED_HOSTS: "${HOST},research-web-backend-p0-009d"
   SESSION_COOKIE_SECURE: "true"
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: p0-008b-b63f-postgresql
+  name: p0-009d-web-postgresql
   namespace: ${NAMESPACE}
   labels:
-    sunmoonai.com/task: v5-p0-008b-b63f
+    sunmoonai.com/task: v5-p0-009d-web
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: p0-008b-b63f-postgresql
+      app: p0-009d-web-postgresql
   template:
     metadata:
       labels:
-        app: p0-008b-b63f-postgresql
-        sunmoonai.com/task: v5-p0-008b-b63f
+        app: p0-009d-web-postgresql
+        sunmoonai.com/task: v5-p0-009d-web
     spec:
       automountServiceAccountToken: false
       imagePullSecrets:
@@ -195,11 +204,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: p0-008b-b63f-postgresql
+  name: p0-009d-web-postgresql
   namespace: ${NAMESPACE}
 spec:
   selector:
-    app: p0-008b-b63f-postgresql
+    app: p0-009d-web-postgresql
   ports:
     - name: postgres
       port: 5432
@@ -208,20 +217,20 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: p0-008b-b63f-redis
+  name: p0-009d-web-redis
   namespace: ${NAMESPACE}
   labels:
-    sunmoonai.com/task: v5-p0-008b-b63f
+    sunmoonai.com/task: v5-p0-009d-web
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: p0-008b-b63f-redis
+      app: p0-009d-web-redis
   template:
     metadata:
       labels:
-        app: p0-008b-b63f-redis
-        sunmoonai.com/task: v5-p0-008b-b63f
+        app: p0-009d-web-redis
+        sunmoonai.com/task: v5-p0-009d-web
     spec:
       automountServiceAccountToken: false
       imagePullSecrets:
@@ -250,30 +259,30 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: p0-008b-b63f-redis
+  name: p0-009d-web-redis
   namespace: ${NAMESPACE}
 spec:
   selector:
-    app: p0-008b-b63f-redis
+    app: p0-009d-web-redis
   ports:
     - name: redis
       port: 6379
       targetPort: redis
 EOF
 
-k rollout status deployment/p0-008b-b63f-postgresql -n "$NAMESPACE" --timeout=180s
-k rollout status deployment/p0-008b-b63f-redis -n "$NAMESPACE" --timeout=180s
+k rollout status deployment/p0-009d-web-postgresql -n "$NAMESPACE" --timeout=180s
+k rollout status deployment/p0-009d-web-redis -n "$NAMESPACE" --timeout=180s
 
-k delete job p0-008b-b63f-migration -n "$NAMESPACE" \
+k delete job p0-009d-web-migration -n "$NAMESPACE" \
   --ignore-not-found=true --wait=true >/dev/null
 cat <<EOF | k apply -f - >/dev/null
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: p0-008b-b63f-migration
+  name: p0-009d-web-migration
   namespace: ${NAMESPACE}
   labels:
-    sunmoonai.com/task: v5-p0-008b-b63f
+    sunmoonai.com/task: v5-p0-009d-web
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
@@ -281,7 +290,7 @@ spec:
   template:
     metadata:
       labels:
-        sunmoonai.com/task: v5-p0-008b-b63f
+        sunmoonai.com/task: v5-p0-009d-web
     spec:
       restartPolicy: Never
       automountServiceAccountToken: false
@@ -299,6 +308,11 @@ spec:
           command: ["/bin/sh", "-ec"]
           args:
             - |
+              for attempt in \$(seq 1 30); do
+                .venv/bin/python -c "import socket; socket.create_connection(('p0-009d-web-postgresql', 5432), 2).close()" && break
+                [ "\$attempt" -eq 30 ] && exit 1
+                sleep 2
+              done
               exec .venv/bin/alembic upgrade head
           env:
             - name: POSTGRES_PASSWORD
@@ -307,25 +321,25 @@ spec:
                   name: ${RUNTIME_SECRET}
                   key: POSTGRES_PASSWORD
             - name: DATABASE_URL
-              value: postgresql+asyncpg://tpl:\$(POSTGRES_PASSWORD)@p0-008b-b63f-postgresql:5432/tpl
+              value: postgresql+asyncpg://tpl:\$(POSTGRES_PASSWORD)@p0-009d-web-postgresql:5432/tpl
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
 EOF
-k wait --for=condition=complete job/p0-008b-b63f-migration \
+k wait --for=condition=complete job/p0-009d-web-migration \
   -n "$NAMESPACE" --timeout=180s
-k logs job/p0-008b-b63f-migration -n "$NAMESPACE" --tail=20
+k logs job/p0-009d-web-migration -n "$NAMESPACE" --tail=20
 
 cat <<EOF | k apply -f - >/dev/null
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tpl-web-backend-p0-008b-b63f
+  name: research-web-backend-p0-009d
   namespace: ${NAMESPACE}
   labels:
-    app: tpl-web-backend-p0-008b-b63f
-    sunmoonai.com/task: v5-p0-008b-b63f
+    app: research-web-backend-p0-009d
+    sunmoonai.com/task: v5-p0-009d-web
 spec:
   replicas: 2
   revisionHistoryLimit: 3
@@ -335,12 +349,12 @@ spec:
     rollingUpdate: {maxUnavailable: 0, maxSurge: 1}
   selector:
     matchLabels:
-      app: tpl-web-backend-p0-008b-b63f
+      app: research-web-backend-p0-009d
   template:
     metadata:
       labels:
-        app: tpl-web-backend-p0-008b-b63f
-        sunmoonai.com/task: v5-p0-008b-b63f
+        app: research-web-backend-p0-009d
+        sunmoonai.com/task: v5-p0-009d-web
       annotations:
         sunmoonai.com/deployment-id: "${DEPLOYMENT_ID}"
     spec:
@@ -362,7 +376,7 @@ spec:
               containerPort: 8000
           envFrom:
             - configMapRef:
-                name: tpl-web-p0-008b-b63f-config
+                name: research-web-p0-009d-config
           env:
             - name: DEPLOYMENT_ID
               value: "${DEPLOYMENT_ID}"
@@ -372,7 +386,7 @@ spec:
                   name: ${RUNTIME_SECRET}
                   key: POSTGRES_PASSWORD
             - name: DATABASE_URL
-              value: postgresql+asyncpg://tpl:\$(POSTGRES_PASSWORD)@p0-008b-b63f-postgresql:5432/tpl
+              value: postgresql+asyncpg://tpl:\$(POSTGRES_PASSWORD)@p0-009d-web-postgresql:5432/tpl
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -431,11 +445,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: tpl-web-backend-p0-008b-b63f
+  name: research-web-backend-p0-009d
   namespace: ${NAMESPACE}
 spec:
   selector:
-    app: tpl-web-backend-p0-008b-b63f
+    app: research-web-backend-p0-009d
   ports:
     - name: http
       port: 8000
@@ -444,22 +458,22 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: tpl-web-backend-p0-008b-b63f
+  name: research-web-backend-p0-009d
   namespace: ${NAMESPACE}
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: tpl-web-backend-p0-008b-b63f
+      app: research-web-backend-p0-009d
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tpl-web-frontend-p0-008b-b63f
+  name: research-web-frontend-p0-009d
   namespace: ${NAMESPACE}
   labels:
-    app: tpl-web-frontend-p0-008b-b63f
-    sunmoonai.com/task: v5-p0-008b-b63f
+    app: research-web-frontend-p0-009d
+    sunmoonai.com/task: v5-p0-009d-web
 spec:
   replicas: 2
   revisionHistoryLimit: 3
@@ -469,12 +483,12 @@ spec:
     rollingUpdate: {maxUnavailable: 0, maxSurge: 1}
   selector:
     matchLabels:
-      app: tpl-web-frontend-p0-008b-b63f
+      app: research-web-frontend-p0-009d
   template:
     metadata:
       labels:
-        app: tpl-web-frontend-p0-008b-b63f
-        sunmoonai.com/task: v5-p0-008b-b63f
+        app: research-web-frontend-p0-009d
+        sunmoonai.com/task: v5-p0-009d-web
       annotations:
         sunmoonai.com/deployment-id: "${DEPLOYMENT_ID}"
     spec:
@@ -498,14 +512,14 @@ spec:
             - name: DEPLOYMENT_ENV
               value: production
             - name: AUTH_APP
-              value: info
+              value: research
             - name: APP_ORIGIN
               value: "${origin}"
             - name: WEB_BACKEND_INTERNAL_URL
-              value: http://tpl-web-backend-p0-008b-b63f:8000
+              value: http://research-web-backend-p0-009d:8000
             - name: DEPLOYMENT_ID
               value: "${DEPLOYMENT_ID}"
-            # Isolated B6.3F only: enable the deterministic reference workspace UI.
+            # Isolated P0-009D only: enable the deterministic reference workspace UI.
             - name: REFERENCE_UI_ENABLED
               value: "true"
           readinessProbe:
@@ -540,11 +554,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: tpl-web-frontend-p0-008b-b63f
+  name: research-web-frontend-p0-009d
   namespace: ${NAMESPACE}
 spec:
   selector:
-    app: tpl-web-frontend-p0-008b-b63f
+    app: research-web-frontend-p0-009d
   ports:
     - name: http
       port: 3000
@@ -553,18 +567,18 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: tpl-web-frontend-p0-008b-b63f
+  name: research-web-frontend-p0-009d
   namespace: ${NAMESPACE}
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: tpl-web-frontend-p0-008b-b63f
+      app: research-web-frontend-p0-009d
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: tpl-web-p0-008b-b63f
+  name: research-web-p0-009d
   namespace: ${NAMESPACE}
 spec:
   entryPoints:
@@ -574,29 +588,29 @@ spec:
       kind: Rule
       priority: 100
       services:
-        - name: tpl-web-backend-p0-008b-b63f
+        - name: research-web-backend-p0-009d
           port: 8000
     - match: Host(\`${HOST}\`) && PathPrefix(\`/\`)
       kind: Rule
       priority: 10
       services:
-        - name: tpl-web-frontend-p0-008b-b63f
+        - name: research-web-frontend-p0-009d
           port: 3000
   tls: {}
 EOF
 
-k rollout status deployment/tpl-web-backend-p0-008b-b63f \
+k rollout status deployment/research-web-backend-p0-009d \
   -n "$NAMESPACE" --timeout=240s
-k rollout status deployment/tpl-web-frontend-p0-008b-b63f \
+k rollout status deployment/research-web-frontend-p0-009d \
   -n "$NAMESPACE" --timeout=240s
 
-backend_ready="$(k get deployment tpl-web-backend-p0-008b-b63f -n "$NAMESPACE" \
+backend_ready="$(k get deployment research-web-backend-p0-009d -n "$NAMESPACE" \
   -o jsonpath='{.status.readyReplicas}')"
-frontend_ready="$(k get deployment tpl-web-frontend-p0-008b-b63f -n "$NAMESPACE" \
+frontend_ready="$(k get deployment research-web-frontend-p0-009d -n "$NAMESPACE" \
   -o jsonpath='{.status.readyReplicas}')"
 [[ "$backend_ready" == 2 && "$frontend_ready" == 2 ]] || {
-  printf 'P0-008B-B6.3F pair is not ready at 2+2\n' >&2
+  printf 'P0-009D pair is not ready at 2+2\n' >&2
   exit 1
 }
-printf 'V5-P0-008B-B6.3F isolated pair deployed backend=%s frontend=%s\n' \
+printf 'V5-P0-009D isolated pair deployed backend=%s frontend=%s\n' \
   "$backend_ready" "$frontend_ready"

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Strict-TLS, real-Casdoor verification for V5-P0-008B/B6.3F.
+ * Strict-TLS, real-Casdoor verification for V5-P0-009C Knowledge Web.
  *
  * Credentials, session cookies, OIDC codes/state/nonces and CSRF tokens remain
  * in memory. The emitted evidence contains only statuses, counts and immutable
@@ -23,12 +23,14 @@ const { chromium } = require(
 
 const kubeconfig = process.env.KUBECONFIG || `${process.env.HOME}/.kube/kind-config`
 const kubectlBinary = process.env.KUBECTL_BIN || 'kubectl'
-const namespace = process.env.B63F_NAMESPACE || 'app-platform-dev'
-const origin = process.env.B63F_ORIGIN || 'https://tpl-web-p0-008b-b63f.sunmoonai.com:30443'
+const taskId = 'V5-P0-009C-web-pair'
+const namespace = process.env.P0_009C_NAMESPACE || 'app-platform-dev'
+const origin =
+  process.env.P0_009C_ORIGIN || 'https://knowledge-web-p0-009c.sunmoonai.com:30443'
 const providerHost = 'casdoor.sunmoonai.com'
 const identitySecret = 'sunmoonai-p0-005-browser-identity'
 const caCertificate =
-  process.env.B63F_CA_CERT ||
+  process.env.P0_009C_CA_CERT ||
   `${process.env.HOME}/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/ca.crt`
 const runId = '00000000-0000-5000-8000-000000000001'
 const actionId = '00000000-0000-5000-8000-000000000020'
@@ -43,7 +45,7 @@ const kubectlEnvironment = { ...process.env }
 delete kubectlEnvironment.DEBUG
 
 function stage(value) {
-  console.error(`B63F_STAGE=${value}`)
+  console.error(`P0_009C_WEB_STAGE=${value}`)
 }
 
 function kubectl(args, capture = true) {
@@ -135,7 +137,7 @@ function businessDeploymentSnapshot() {
   const value = JSON.parse(kubectl(['get', 'deployments', '-n', namespace, '-o', 'json']))
   return Object.fromEntries(
     value.items
-      .filter((item) => !item.metadata.name.endsWith('-p0-008b-b63f'))
+      .filter((item) => !item.metadata.name.endsWith('-p0-009c'))
       .map((item) => [
         item.metadata.name,
         {
@@ -327,7 +329,7 @@ function requestPod(port, cookieHeader) {
           Accept: 'application/json',
           // TrustedHostMiddleware rejects Host=127.0.0.1; use the Service DNS
           // name that the isolated ConfigMap already allows.
-          Host: 'tpl-web-backend-p0-008b-b63f',
+          Host: 'knowledge-web-backend-p0-009c',
         },
       },
       (response) => {
@@ -348,7 +350,7 @@ async function verifySessionOnEveryBackendPod(cookieHeader) {
       '-n',
       namespace,
       '-l',
-      'app=tpl-web-backend-p0-008b-b63f',
+      'app=knowledge-web-backend-p0-009c',
       '-o',
       'json',
     ]),
@@ -362,7 +364,7 @@ async function verifySessionOnEveryBackendPod(cookieHeader) {
         ),
     )
     .map((item) => item.metadata.name)
-  if (pods.length !== 2) throw new Error('expected exactly two B6.3F backend pods')
+  if (pods.length !== 2) throw new Error('expected exactly two P0-009C backend pods')
   await Promise.all(pods.map((pod, index) => startPodForward(pod, 18120 + index)))
   const statuses = await Promise.all(
     pods.map((_pod, index) => requestPod(18120 + index, cookieHeader)),
@@ -375,7 +377,7 @@ async function verifySessionOnEveryBackendPod(cookieHeader) {
 
 async function main() {
   const summary = {
-    task: 'V5-P0-008B/B6.3F',
+    task: taskId,
     result: 'failed',
     strict_tls: true,
     credentials_printed: false,
@@ -386,8 +388,8 @@ async function main() {
   try {
     stage('infrastructure_preflight')
     summary.kubectl = assertKubectlCompatibility()
-    summary.backend = assertDeployment('tpl-web-backend-p0-008b-b63f', 8000)
-    summary.frontend = assertDeployment('tpl-web-frontend-p0-008b-b63f', 3000)
+    summary.backend = assertDeployment('knowledge-web-backend-p0-009c', 8000)
+    summary.frontend = assertDeployment('knowledge-web-frontend-p0-009c', 3000)
     const identity = loadIdentity()
 
     stage('strict_tls_browser_start')
@@ -395,7 +397,7 @@ async function main() {
     browser = await chromium.launch({
       headless: true,
       args: [
-        `--host-resolver-rules=MAP tpl-web-p0-008b-b63f.sunmoonai.com 127.0.0.1, MAP ${providerHost} 127.0.0.1`,
+        `--host-resolver-rules=MAP knowledge-web-p0-009c.sunmoonai.com 127.0.0.1, MAP ${providerHost} 127.0.0.1`,
       ],
       executablePath: chromium.executablePath(),
       env: { ...process.env, HOME: strictTlsHome },
@@ -437,7 +439,7 @@ async function main() {
 
     stage('session_and_cookie')
     const cookies = await context.cookies(origin)
-    const sessionCookie = cookies.find((cookie) => cookie.name === 'sunmoonai_info_web_sid')
+    const sessionCookie = cookies.find((cookie) => cookie.name === 'sunmoonai_knowledge_web_sid')
     if (
       !sessionCookie ||
       !sessionCookie.httpOnly ||
@@ -579,7 +581,7 @@ async function main() {
     if (afterLogout.status !== 401) throw new Error('logout did not revoke the Redis session')
 
     if (JSON.stringify(businessBefore) !== JSON.stringify(businessDeploymentSnapshot())) {
-      throw new Error('a non-B6.3F business deployment changed during isolated verification')
+      throw new Error('a business deployment changed during isolated P0-009C verification')
     }
     summary.http = {
       home: home.status,
@@ -604,7 +606,8 @@ async function main() {
     stage('complete')
     console.log(JSON.stringify(summary, null, 2))
   } catch (error) {
-    summary.error = error instanceof Error ? error.message : 'unknown B6.3F verification failure'
+    summary.error =
+      error instanceof Error ? error.message : 'unknown P0-009C Web verification failure'
     console.error(JSON.stringify(summary, null, 2))
     process.exitCode = 1
   } finally {

@@ -1,0 +1,55 @@
+{
+  "task": "V5-P0-009E",
+  "template_release_id": "p0-008b-b6-unified-20260729",
+  "freeze_tag": "p0-009a-pre-20260729",
+  "repositories": {
+    "info-admin-backend": {
+      "commit": "ee4b6d8b8fd625a602a6c277c9cdb96b1ded51ae",
+      "tree": "125e7e7dc992153d01f01bf3a5815d28758e2a92"
+    },
+    "info-admin-frontend": {
+      "commit": "90af7729f6f02e82d1a84f213ce8d8340fe3111d",
+      "tree": "bda7440161438bf136bc3239223f7e90ff73f956"
+    },
+    "info-web-backend": {
+      "commit": "a142106e5cedf8e258bd2b89744744c0448e2e64",
+      "tree": "2bdb1fe946d7ac7a272602f758ef5a494a555c2d"
+    },
+    "info-web-frontend": {
+      "commit": "52dbb5a3c8d0483abd3d85c4a284dfe58b0d83c0",
+      "tree": "861e92f1435ec1ae5a38c528fdd6ee41308cf9e7"
+    },
+    "knowledge-admin-backend": {
+      "commit": "5d01bdd9013b67cb05b838d520282b25e1337eb7",
+      "tree": "772d0f3790b487f1366729834f9e0261236fea84"
+    },
+    "knowledge-admin-frontend": {
+      "commit": "544814f9fb443350edefb5776c3a0cac07f6f497",
+      "tree": "d673265e0ae09b796e7fe8a45fd7463ff1b7d8b2"
+    },
+    "knowledge-web-backend": {
+      "commit": "e542cdd6ad24e9bedf9f55f503552bccb1c46546",
+      "tree": "9319d9bfdc1442fed7d5d4d0ec43837d99b55dca"
+    },
+    "knowledge-web-frontend": {
+      "commit": "eccd7cd2a4f7cb4019edafbd089f5883b8e0792e",
+      "tree": "3c982431c79c619ad690b8d322f2879c02938b94"
+    },
+    "research-admin-backend": {
+      "commit": "1c20a1c90289c9bed89f4d025ab6bc78650efa49",
+      "tree": "71d62db6ff260c0ee2d2d0143d0810e3e06205b3"
+    },
+    "research-admin-frontend": {
+      "commit": "32b3bcaf156f12fa780d4a38ec84912f8621cf66",
+      "tree": "40398dbd970099aae8a7d92c5026438e543ed1a1"
+    },
+    "research-web-backend": {
+      "commit": "9cc463424d42f658296ccb06965e61a276adcf48",
+      "tree": "c7429dce3147aa044096e2341325d749cfce89c8"
+    },
+    "research-web-frontend": {
+      "commit": "bfee1704c0272a5525abbb1383db5fea14328c07",
+      "tree": "212c34fd5aeb35ba8743fc5c9e5c4d4c12578819"
+    }
+  }
+}

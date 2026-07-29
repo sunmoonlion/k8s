@@ -1,0 +1,58 @@
+{
+  "task": "V5-P0-009B-rollback",
+  "result": "passed",
+  "method": "same-runtime digest rollback plus exact candidate restore",
+  "pre_migration_git_recovery": {
+    "tag": "p0-009a-pre-20260729",
+    "validated_by": "V5-P0-009E deterministic binary patch replay"
+  },
+  "drills": [
+    {
+      "deployment": "info-admin-backend-p0-009b",
+      "container": "backend",
+      "path": [
+        "harbor.sunmoonai.com:30443/app-images/info-admin-backend@sha256:06baa0ba2c0deb7bf9408bab3a4ecc1d459dafdc19611d8ecd77041acbc5b43a",
+        "harbor.sunmoonai.com:30443/app-images/tpl-admin-backend@sha256:b24ce7a39e7e10a5541b2a29ff9795a6944d6f17ec4d0479e2051f59a0688c56",
+        "harbor.sunmoonai.com:30443/app-images/info-admin-backend@sha256:06baa0ba2c0deb7bf9408bab3a4ecc1d459dafdc19611d8ecd77041acbc5b43a"
+      ],
+      "rollback_rollout": "passed",
+      "candidate_restore_rollout": "passed"
+    },
+    {
+      "deployment": "info-admin-frontend-p0-009b",
+      "container": "frontend",
+      "path": [
+        "harbor.sunmoonai.com:30443/app-images/info-admin-frontend@sha256:3cb6966c4f0eef9d2121333318b94a05cce60630809578a222215fb72a4b6954",
+        "harbor.sunmoonai.com:30443/app-images/tpl-admin-frontend@sha256:b426551c0e027b25965995e23486c590c29fa52047779dd14721d93a245a74f1",
+        "harbor.sunmoonai.com:30443/app-images/info-admin-frontend@sha256:3cb6966c4f0eef9d2121333318b94a05cce60630809578a222215fb72a4b6954"
+      ],
+      "rollback_rollout": "passed",
+      "candidate_restore_rollout": "passed"
+    },
+    {
+      "deployment": "info-web-backend-p0-009b",
+      "container": "backend",
+      "path": [
+        "harbor.sunmoonai.com:30443/app-images/info-web-backend@sha256:b6a5a2e26f2409ed732c06179b3cbeabdbf29f61daf1aa7ac145df52b3b01c48",
+        "harbor.sunmoonai.com:30443/app-images/tpl-web-backend@sha256:41dc3a781033dda3e60cd3594ffac7caf767e3c8cb2295ac0b8a21986fbd2414",
+        "harbor.sunmoonai.com:30443/app-images/info-web-backend@sha256:b6a5a2e26f2409ed732c06179b3cbeabdbf29f61daf1aa7ac145df52b3b01c48"
+      ],
+      "rollback_rollout": "passed",
+      "candidate_restore_rollout": "passed"
+    },
+    {
+      "deployment": "info-web-frontend-p0-009b",
+      "container": "frontend",
+      "path": [
+        "harbor.sunmoonai.com:30443/app-images/info-web-frontend@sha256:b3429e8aa06a2bf156e816ffe7c86f644c6d30754c633768a0813231d4ae66d5",
+        "harbor.sunmoonai.com:30443/app-images/tpl-web-frontend@sha256:2a359c8d213813ecbc3b5dbf6a6ed828e73a4c26b6dffaa1d163a507756db2b3",
+        "harbor.sunmoonai.com:30443/app-images/info-web-frontend@sha256:b3429e8aa06a2bf156e816ffe7c86f644c6d30754c633768a0813231d4ae66d5"
+      ],
+      "rollback_rollout": "passed",
+      "candidate_restore_rollout": "passed"
+    }
+  ],
+  "business_traffic_switched": false,
+  "credentials_printed": false,
+  "tokens_printed": false
+}

@@ -1,0 +1,50 @@
+{
+  "task": "V5-P0-009C-web-pair",
+  "result": "passed",
+  "strict_tls": true,
+  "credentials_printed": false,
+  "tokens_printed": false,
+  "cookies_printed": false,
+  "kubectl": {
+    "client_minor": 27,
+    "server_minor": 27
+  },
+  "backend": {
+    "image": "harbor.sunmoonai.com:30443/app-images/knowledge-web-backend@sha256:a2718a1b254eddc81b096836c8bb2e86e8be52a3dfa25c6da6295b04bcb545f1",
+    "deployment_id": "p0-009c-v1"
+  },
+  "frontend": {
+    "image": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:597193f3d16334e2d81b24c6cd00b54e361fa810f284ba7c11db72f5f34a7cd4",
+    "deployment_id": "p0-009c-v1"
+  },
+  "redis_cross_replica_statuses": [
+    200,
+    200
+  ],
+  "http": {
+    "home": 200,
+    "anonymous_me": 401,
+    "authenticated_me": 200,
+    "action": 200,
+    "logout_me": 401
+  },
+  "sse": {
+    "initial_sequences": [
+      2,
+      3,
+      4
+    ],
+    "resumed_sequences": [
+      3,
+      4
+    ],
+    "invalid_cursor": 400,
+    "conflicting_cursor": 400
+  },
+  "resource_authorization": {
+    "forbidden_run": 403,
+    "forbidden_citation": 403,
+    "authorized_source": 200
+  },
+  "business_deployments_unchanged": true
+}

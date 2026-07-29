@@ -1,0 +1,13 @@
+{
+  "consumers": [
+    "next-web",
+    "fastapi-web",
+    "nest-web"
+  ],
+  "contract": "sunmoonai.web-interaction",
+  "contract_version": 1,
+  "invalid_vectors": 6,
+  "result": "passed",
+  "task": "V5-P0-008B-B6.3-consumer-vectors",
+  "valid_vectors": 9
+}

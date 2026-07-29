@@ -1,8 +1,8 @@
 # V5-P0-008B/B6 Frontend Common Kernel 与 Vue 参考配对证据
 
-状态：`B6.1_ACCEPTED / B6.2_ACCEPTED / B6.3_NEXT / B6_IN_PROGRESS`
+状态：`B6.1_ACCEPTED / B6.2_ACCEPTED / B6.3_ACCEPTED / B6.4_ACCEPTED / P0-008B_ACCEPTED`
 
-验收日期：2026-07-28（Asia/Shanghai）
+验收日期：2026-07-28 / 2026-07-29（Asia/Shanghai）
 
 ## 1. 本次结论
 
@@ -108,11 +108,69 @@ Vue reference -> accepted Next Admin -> Vue reference
 FastAPI Admin digest 未变化，Info/Knowledge/Research 的 Deployment 镜像快照未变化，
 最终恢复 Vue 固定 digest。结果见 `vue-rollback.json`。
 
-## 7. 下一游标
+## 7. B6.3 Dual Web Profile 配对门
 
-B6.1 与 B6.2 关闭。P0-008B/B6 整体仍未关闭；唯一下一任务是 B6.3：
-同一 Next Web 对默认 FastAPI Web 和可选 Nest Web 运行共享 consumer vectors 与两套
-真实配对。随后 B6.4 执行七子模块递归 clean-room 和统一四默认/三非默认 release。
+同一 Next Web（含 `expires_at` 对 FastAPI `+00:00` 的 DTO 修复）对默认 FastAPI Web
+与可选 Nest Web 完成共享 consumer vectors、真实 Casdoor、严格 TLS、2+2、SSE/CSRF/
+资源授权和独立前后端回滚。Info/Knowledge/Research Deployment 镜像快照未变化。
 
-B6.4 接受前仍禁止把模板同步到三个业务 App；B6 接受后必须立即进入 P0-009A，并按
-Info -> Knowledge -> Research 串行传播。
+| 单元 | 固定值 |
+|---|---|
+| Next Web commit | `1db9377d38dac5510331149d9122f8d375d83fe3` |
+| FastAPI Web commit | `289f2c46410e0aa2891fdf3da28242ceb1a33bdb` |
+| Nest Web commit | `8a24e24126c86a0faccdedbc6c5474b3ffc9cef4` |
+| FastAPI candidate digest | `sha256:41dc3a781033dda3e60cd3594ffac7caf767e3c8cb2295ac0b8a21986fbd2414` |
+| Nest candidate digest | `sha256:8d17b350df03968c4a847a4f089a2145e3ba326cdbb16db1f2996146cb359536` |
+| Next Web candidate digest（r3） | `sha256:2a359c8d213813ecbc3b5dbf6a6ed828e73a4c26b6dffaa1d163a507756db2b3` |
+| Next Web rollback baseline digest（r2） | `sha256:d695dc24c29890ebf58c327c0f19d31f9a2283d462777c36de632367aa39437a` |
+| FastAPI rollback baseline digest（B5） | `sha256:f47f1ddd633cb3e8fa8561780a05e53c2f660193aed672d6b553d700dc9f2773` |
+| Nest rollback baseline digest（B4） | `sha256:78b9929ddf6735341768093ae1093fd0f05420f581189af60913577d6f2f2e3a` |
+
+机器可读证据：
+
+- `consumer-vectors.json`
+- `b63f-pair.json` / `b63f-rollback.json`
+- `b63n-pair.json` / `b63n-rollback.json`
+- 更新后的 `pairing-matrix.json`
+
+隔离 B6.3F runtime 与 Casdoor application 已 cleanup；既有 B4 Nest 拓扑已恢复到验收前
+digest，未保留候选镜像占用。
+
+## 8. B6.4 Unified Release / Clean-room
+
+从本地固定 commit 对七个子模块执行 fresh `git clone` + `git clean -fdx`，重放
+install/typecheck/lint/unit(/e2e)/build；校验既有不可变镜像 digest；引用 B6.2/B6.3/007D/007E
+的配对与回滚证据。未推 Gitee，因此远端递归 clone 重放记为
+`deferred_until_push_authorized`。
+
+`template_release_id`：`p0-008b-b6-unified-20260729`
+
+默认 release（进入 P0-009 传播）：
+
+| 组件 | commit | digest |
+|---|---|---|
+| Next Admin | `fb69795` | `sha256:b426551c…` |
+| FastAPI Admin | `69e634b` | `sha256:b24ce7a3…` |
+| Next Web | `1db9377` | `sha256:2a359c8d…` |
+| FastAPI Web | `289f2c4` | `sha256:41dc3a78…` |
+
+非默认 profile（只留模板门 / 恢复边界，不进入业务实例）：
+
+| 组件 | class | commit | digest |
+|---|---|---|---|
+| React Router Admin | `REFERENCE_ONLY` | `0b58adc` | `sha256:358f2445…` |
+| Vue Admin | `REFERENCE_ONLY` | `9b3d29b` | `sha256:5380b1b5…` |
+| Nest Web | `OPTIONAL` | `ecb01d9` | `sha256:8d17b350…` |
+
+机器可读证据：`unified-clean-room.json`；父仓清单：
+`tpl-app/template-release-manifest.json`。
+
+说明：冻结的 FastAPI Admin tree 在当前锁内 `ruff 0.16.0` 下出现一处
+`ruff format --check` 漂移；`ruff check` 与 pytest 通过，已记为
+`format: tool_skew_recorded`，未改动冻结 commit。
+
+## 9. 下一游标
+
+B6.1~B6.4 与 P0-008B 关闭。P0-009A 已冻结三实例迁移基线（见
+`sunmoonai/docs/evidence/v5/V5-P0-009A/result.md`）。唯一下一任务是 **P0-009B**：
+只在 Info 原地同步四默认组件共同底座并验收；通过前不得开始 Knowledge。

@@ -1,0 +1,1640 @@
+{
+    "apiVersion": "v1",
+    "items": [
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "69",
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"info-admin-backend\"},\"name\":\"info-admin-backend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"info-admin-backend\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"info-admin-backend\"}},\"spec\":{\"containers\":[{\"envFrom\":[{\"configMapRef\":{\"name\":\"info-admin-backend-config\"}},{\"secretRef\":{\"name\":\"info-admin-backend-secret\"}},{\"secretRef\":{\"name\":\"info-admin-backend-browser-oidc\"}},{\"secretRef\":{\"name\":\"info-admin-backend-postgresql-conn\"}},{\"secretRef\":{\"name\":\"info-admin-backend-redis-conn\"}},{\"configMapRef\":{\"name\":\"info-admin-backend-s3\"}},{\"secretRef\":{\"name\":\"info-admin-backend-s3\"}},{\"configMapRef\":{\"name\":\"info-admin-backend-elasticsearch\"}},{\"secretRef\":{\"name\":\"info-admin-backend-elasticsearch\"}}],\"image\":\"harbor.sunmoonai.com:30443/app-images/info-admin-backend:p0-006-outbox-20260714\",\"imagePullPolicy\":\"Always\",\"livenessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":30,\"periodSeconds\":10,\"tcpSocket\":{\"port\":8000},\"timeoutSeconds\":5},\"name\":\"info-admin-backend\",\"ports\":[{\"containerPort\":8000}],\"readinessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":15,\"periodSeconds\":5,\"tcpSocket\":{\"port\":8000},\"timeoutSeconds\":3},\"resources\":{\"limits\":{\"cpu\":\"500m\",\"memory\":\"512Mi\"},\"requests\":{\"cpu\":\"100m\",\"memory\":\"256Mi\"}},\"volumeMounts\":[{\"mountPath\":\"/app/data\",\"name\":\"data\"},{\"mountPath\":\"/var/run/secrets/sunmoonai/elasticsearch\",\"name\":\"elasticsearch-ca\",\"readOnly\":true}]}],\"imagePullSecrets\":[{\"name\":\"harbor-registry-secret\"}],\"volumes\":[{\"name\":\"data\",\"persistentVolumeClaim\":{\"claimName\":\"info-admin-backend-pvc\"}},{\"name\":\"elasticsearch-ca\",\"secret\":{\"items\":[{\"key\":\"ca.crt\",\"path\":\"ca.crt\"}],\"secretName\":\"info-admin-backend-elasticsearch\"}}]}}}}\n"
+                },
+                "creationTimestamp": "2026-06-22T09:04:39Z",
+                "generation": 69,
+                "labels": {
+                    "app": "info-admin-backend"
+                },
+                "name": "info-admin-backend",
+                "namespace": "app-platform-dev",
+                "resourceVersion": "887988",
+                "uid": "1404d75e-64c0-4698-9bc7-322fc6fe007e"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 600,
+                "replicas": 1,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app": "info-admin-backend"
+                    }
+                },
+                "strategy": {
+                    "rollingUpdate": {
+                        "maxSurge": "25%",
+                        "maxUnavailable": "25%"
+                    },
+                    "type": "RollingUpdate"
+                },
+                "template": {
+                    "metadata": {
+                        "annotations": {
+                            "kubectl.kubernetes.io/restartedAt": "2026-07-12T14:04:16+08:00"
+                        },
+                        "creationTimestamp": null,
+                        "labels": {
+                            "app": "info-admin-backend"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "envFrom": [
+                                    {
+                                        "configMapRef": {
+                                            "name": "info-admin-backend-config"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "info-admin-backend-secret"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "info-admin-backend-browser-oidc"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "info-admin-backend-postgresql-conn"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "info-admin-backend-redis-conn"
+                                        }
+                                    },
+                                    {
+                                        "configMapRef": {
+                                            "name": "info-admin-backend-s3"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "info-admin-backend-s3"
+                                        }
+                                    },
+                                    {
+                                        "configMapRef": {
+                                            "name": "info-admin-backend-elasticsearch"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "info-admin-backend-elasticsearch"
+                                        }
+                                    }
+                                ],
+                                "image": "harbor.sunmoonai.com:30443/app-images/info-admin-backend:p0-006-outbox-r3-20260715",
+                                "imagePullPolicy": "Always",
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 30,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": 8000
+                                    },
+                                    "timeoutSeconds": 5
+                                },
+                                "name": "info-admin-backend",
+                                "ports": [
+                                    {
+                                        "containerPort": 8000,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 15,
+                                    "periodSeconds": 5,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": 8000
+                                    },
+                                    "timeoutSeconds": 3
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "500m",
+                                        "memory": "512Mi"
+                                    },
+                                    "requests": {
+                                        "cpu": "100m",
+                                        "memory": "256Mi"
+                                    }
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File",
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/app/data",
+                                        "name": "data"
+                                    },
+                                    {
+                                        "mountPath": "/var/run/secrets/sunmoonai/elasticsearch",
+                                        "name": "elasticsearch-ca",
+                                        "readOnly": true
+                                    }
+                                ]
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "imagePullSecrets": [
+                            {
+                                "name": "harbor-registry-secret"
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {},
+                        "terminationGracePeriodSeconds": 30,
+                        "volumes": [
+                            {
+                                "name": "data",
+                                "persistentVolumeClaim": {
+                                    "claimName": "info-admin-backend-pvc"
+                                }
+                            },
+                            {
+                                "name": "elasticsearch-ca",
+                                "secret": {
+                                    "defaultMode": 420,
+                                    "items": [
+                                        {
+                                            "key": "ca.crt",
+                                            "path": "ca.crt"
+                                        }
+                                    ],
+                                    "secretName": "info-admin-backend-elasticsearch"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 1,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2026-07-12T05:25:06Z",
+                        "lastUpdateTime": "2026-07-15T02:10:32Z",
+                        "message": "ReplicaSet \"info-admin-backend-7fdb5df875\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    },
+                    {
+                        "lastTransitionTime": "2026-07-29T04:34:28Z",
+                        "lastUpdateTime": "2026-07-29T04:34:28Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    }
+                ],
+                "observedGeneration": 69,
+                "readyReplicas": 1,
+                "replicas": 1,
+                "updatedReplicas": 1
+            }
+        },
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "9",
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"info-admin-frontend\"},\"name\":\"info-admin-frontend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"info-admin-frontend\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"info-admin-frontend\"}},\"spec\":{\"containers\":[{\"image\":\"harbor.sunmoonai.com:30443/app-images/info-admin-frontend:p0-005-auth-20260712-r3\",\"imagePullPolicy\":\"Always\",\"livenessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":10,\"periodSeconds\":10,\"tcpSocket\":{\"port\":80},\"timeoutSeconds\":5},\"name\":\"info-admin-frontend\",\"ports\":[{\"containerPort\":80}],\"readinessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":5,\"periodSeconds\":5,\"tcpSocket\":{\"port\":80},\"timeoutSeconds\":3},\"resources\":{\"limits\":{\"cpu\":\"200m\",\"memory\":\"128Mi\"},\"requests\":{\"cpu\":\"50m\",\"memory\":\"64Mi\"}},\"volumeMounts\":[{\"mountPath\":\"/app/data\",\"name\":\"data\"}]}],\"imagePullSecrets\":[{\"name\":\"harbor-registry-secret\"}],\"volumes\":[{\"name\":\"data\",\"persistentVolumeClaim\":{\"claimName\":\"info-admin-frontend-pvc\"}}]}}}}\n"
+                },
+                "creationTimestamp": "2026-06-22T09:04:43Z",
+                "generation": 9,
+                "labels": {
+                    "app": "info-admin-frontend"
+                },
+                "name": "info-admin-frontend",
+                "namespace": "app-platform-dev",
+                "resourceVersion": "887585",
+                "uid": "f66f48c5-1ed6-4e9a-80d8-31077fe5334a"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 600,
+                "replicas": 1,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app": "info-admin-frontend"
+                    }
+                },
+                "strategy": {
+                    "rollingUpdate": {
+                        "maxSurge": "25%",
+                        "maxUnavailable": "25%"
+                    },
+                    "type": "RollingUpdate"
+                },
+                "template": {
+                    "metadata": {
+                        "annotations": {
+                            "kubectl.kubernetes.io/restartedAt": "2026-07-09T22:25:08+08:00"
+                        },
+                        "creationTimestamp": null,
+                        "labels": {
+                            "app": "info-admin-frontend"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "image": "harbor.sunmoonai.com:30443/app-images/info-admin-frontend:1.0.1",
+                                "imagePullPolicy": "Always",
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 10,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": 80
+                                    },
+                                    "timeoutSeconds": 5
+                                },
+                                "name": "info-admin-frontend",
+                                "ports": [
+                                    {
+                                        "containerPort": 80,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 5,
+                                    "periodSeconds": 5,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": 80
+                                    },
+                                    "timeoutSeconds": 3
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "200m",
+                                        "memory": "128Mi"
+                                    },
+                                    "requests": {
+                                        "cpu": "50m",
+                                        "memory": "64Mi"
+                                    }
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File",
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/app/data",
+                                        "name": "data"
+                                    }
+                                ]
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "imagePullSecrets": [
+                            {
+                                "name": "harbor-registry-secret"
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {},
+                        "terminationGracePeriodSeconds": 30,
+                        "volumes": [
+                            {
+                                "name": "data",
+                                "persistentVolumeClaim": {
+                                    "claimName": "info-admin-frontend-pvc"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 1,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2026-07-12T11:30:51Z",
+                        "lastUpdateTime": "2026-07-12T11:34:14Z",
+                        "message": "ReplicaSet \"info-admin-frontend-7669774c99\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    },
+                    {
+                        "lastTransitionTime": "2026-07-29T04:32:50Z",
+                        "lastUpdateTime": "2026-07-29T04:32:50Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    }
+                ],
+                "observedGeneration": 9,
+                "readyReplicas": 1,
+                "replicas": 1,
+                "updatedReplicas": 1
+            }
+        },
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "6",
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"info-web-backend\"},\"name\":\"info-web-backend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"info-web-backend\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"info-web-backend\"}},\"spec\":{\"containers\":[{\"envFrom\":[{\"configMapRef\":{\"name\":\"info-web-backend-config\"}},{\"secretRef\":{\"name\":\"info-web-backend-secret\"}},{\"secretRef\":{\"name\":\"info-web-backend-postgresql-conn\"}},{\"secretRef\":{\"name\":\"info-web-backend-redis-conn\"}},{\"configMapRef\":{\"name\":\"info-web-backend-s3\"}},{\"secretRef\":{\"name\":\"info-web-backend-s3\"}},{\"configMapRef\":{\"name\":\"info-web-backend-elasticsearch\"}},{\"secretRef\":{\"name\":\"info-web-backend-elasticsearch\"}}],\"image\":\"harbor.sunmoonai.com:30443/app-images/info-web-backend:p0-005-auth-20260712-r3\",\"imagePullPolicy\":\"Always\",\"livenessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":30,\"periodSeconds\":10,\"tcpSocket\":{\"port\":3000},\"timeoutSeconds\":5},\"name\":\"info-web-backend\",\"ports\":[{\"containerPort\":3000}],\"readinessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":15,\"periodSeconds\":5,\"tcpSocket\":{\"port\":3000},\"timeoutSeconds\":3},\"resources\":{\"limits\":{\"cpu\":\"500m\",\"memory\":\"512Mi\"},\"requests\":{\"cpu\":\"100m\",\"memory\":\"256Mi\"}},\"volumeMounts\":[{\"mountPath\":\"/app/data\",\"name\":\"data\"},{\"mountPath\":\"/var/run/secrets/sunmoonai/elasticsearch\",\"name\":\"elasticsearch-ca\",\"readOnly\":true}]}],\"imagePullSecrets\":[{\"name\":\"harbor-registry-secret\"}],\"volumes\":[{\"name\":\"data\",\"persistentVolumeClaim\":{\"claimName\":\"info-web-backend-pvc\"}},{\"name\":\"elasticsearch-ca\",\"secret\":{\"items\":[{\"key\":\"ca.crt\",\"path\":\"ca.crt\"}],\"secretName\":\"info-web-backend-elasticsearch\"}}]}}}}\n"
+                },
+                "creationTimestamp": "2026-06-22T09:04:46Z",
+                "generation": 6,
+                "labels": {
+                    "app": "info-web-backend"
+                },
+                "name": "info-web-backend",
+                "namespace": "app-platform-dev",
+                "resourceVersion": "887957",
+                "uid": "e844c96d-dd92-4a82-8016-d5e61ee6d6e6"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 600,
+                "replicas": 1,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app": "info-web-backend"
+                    }
+                },
+                "strategy": {
+                    "rollingUpdate": {
+                        "maxSurge": "25%",
+                        "maxUnavailable": "25%"
+                    },
+                    "type": "RollingUpdate"
+                },
+                "template": {
+                    "metadata": {
+                        "creationTimestamp": null,
+                        "labels": {
+                            "app": "info-web-backend"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "envFrom": [
+                                    {
+                                        "configMapRef": {
+                                            "name": "info-web-backend-config"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "info-web-backend-secret"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "info-web-backend-postgresql-conn"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "info-web-backend-redis-conn"
+                                        }
+                                    },
+                                    {
+                                        "configMapRef": {
+                                            "name": "info-web-backend-s3"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "info-web-backend-s3"
+                                        }
+                                    },
+                                    {
+                                        "configMapRef": {
+                                            "name": "info-web-backend-elasticsearch"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "info-web-backend-elasticsearch"
+                                        }
+                                    }
+                                ],
+                                "image": "harbor.sunmoonai.com:30443/app-images/info-web-backend:1.0.0",
+                                "imagePullPolicy": "Always",
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 30,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": 3000
+                                    },
+                                    "timeoutSeconds": 5
+                                },
+                                "name": "info-web-backend",
+                                "ports": [
+                                    {
+                                        "containerPort": 3000,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 15,
+                                    "periodSeconds": 5,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": 3000
+                                    },
+                                    "timeoutSeconds": 3
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "500m",
+                                        "memory": "512Mi"
+                                    },
+                                    "requests": {
+                                        "cpu": "100m",
+                                        "memory": "256Mi"
+                                    }
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File",
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/app/data",
+                                        "name": "data"
+                                    },
+                                    {
+                                        "mountPath": "/var/run/secrets/sunmoonai/elasticsearch",
+                                        "name": "elasticsearch-ca",
+                                        "readOnly": true
+                                    }
+                                ]
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "imagePullSecrets": [
+                            {
+                                "name": "harbor-registry-secret"
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {},
+                        "terminationGracePeriodSeconds": 30,
+                        "volumes": [
+                            {
+                                "name": "data",
+                                "persistentVolumeClaim": {
+                                    "claimName": "info-web-backend-pvc"
+                                }
+                            },
+                            {
+                                "name": "elasticsearch-ca",
+                                "secret": {
+                                    "defaultMode": 420,
+                                    "items": [
+                                        {
+                                            "key": "ca.crt",
+                                            "path": "ca.crt"
+                                        }
+                                    ],
+                                    "secretName": "info-web-backend-elasticsearch"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 1,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2026-07-12T11:30:51Z",
+                        "lastUpdateTime": "2026-07-12T11:34:14Z",
+                        "message": "ReplicaSet \"info-web-backend-77585f84b7\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    },
+                    {
+                        "lastTransitionTime": "2026-07-29T04:34:22Z",
+                        "lastUpdateTime": "2026-07-29T04:34:22Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    }
+                ],
+                "observedGeneration": 6,
+                "readyReplicas": 1,
+                "replicas": 1,
+                "updatedReplicas": 1
+            }
+        },
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "6",
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"info-web-frontend\"},\"name\":\"info-web-frontend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"info-web-frontend\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"info-web-frontend\"}},\"spec\":{\"containers\":[{\"envFrom\":[{\"configMapRef\":{\"name\":\"info-web-frontend-config\"}},{\"secretRef\":{\"name\":\"info-web-frontend-secret\"}}],\"image\":\"harbor.sunmoonai.com:30443/app-images/info-web-frontend:p0-005-auth-20260712-r3\",\"imagePullPolicy\":\"Always\",\"livenessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":30,\"periodSeconds\":10,\"tcpSocket\":{\"port\":3000},\"timeoutSeconds\":5},\"name\":\"info-web-frontend\",\"ports\":[{\"containerPort\":3000}],\"readinessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":15,\"periodSeconds\":5,\"tcpSocket\":{\"port\":3000},\"timeoutSeconds\":3},\"resources\":{\"limits\":{\"cpu\":\"500m\",\"memory\":\"512Mi\"},\"requests\":{\"cpu\":\"100m\",\"memory\":\"256Mi\"}},\"volumeMounts\":[{\"mountPath\":\"/app/data\",\"name\":\"data\"}]}],\"imagePullSecrets\":[{\"name\":\"harbor-registry-secret\"}],\"volumes\":[{\"name\":\"data\",\"persistentVolumeClaim\":{\"claimName\":\"info-web-frontend-pvc\"}}]}}}}\n"
+                },
+                "creationTimestamp": "2026-06-22T09:04:50Z",
+                "generation": 6,
+                "labels": {
+                    "app": "info-web-frontend"
+                },
+                "name": "info-web-frontend",
+                "namespace": "app-platform-dev",
+                "resourceVersion": "887721",
+                "uid": "3ad5ec81-70e9-46ad-aecb-2a254692f48d"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 600,
+                "replicas": 1,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app": "info-web-frontend"
+                    }
+                },
+                "strategy": {
+                    "rollingUpdate": {
+                        "maxSurge": "25%",
+                        "maxUnavailable": "25%"
+                    },
+                    "type": "RollingUpdate"
+                },
+                "template": {
+                    "metadata": {
+                        "creationTimestamp": null,
+                        "labels": {
+                            "app": "info-web-frontend"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "envFrom": [
+                                    {
+                                        "configMapRef": {
+                                            "name": "info-web-frontend-config"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "info-web-frontend-secret"
+                                        }
+                                    }
+                                ],
+                                "image": "harbor.sunmoonai.com:30443/app-images/info-web-frontend:1.0.0",
+                                "imagePullPolicy": "Always",
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 30,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": 3000
+                                    },
+                                    "timeoutSeconds": 5
+                                },
+                                "name": "info-web-frontend",
+                                "ports": [
+                                    {
+                                        "containerPort": 3000,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 15,
+                                    "periodSeconds": 5,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": 3000
+                                    },
+                                    "timeoutSeconds": 3
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "500m",
+                                        "memory": "512Mi"
+                                    },
+                                    "requests": {
+                                        "cpu": "100m",
+                                        "memory": "256Mi"
+                                    }
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File",
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/app/data",
+                                        "name": "data"
+                                    }
+                                ]
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "imagePullSecrets": [
+                            {
+                                "name": "harbor-registry-secret"
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {},
+                        "terminationGracePeriodSeconds": 30,
+                        "volumes": [
+                            {
+                                "name": "data",
+                                "persistentVolumeClaim": {
+                                    "claimName": "info-web-frontend-pvc"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 1,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2026-07-12T11:30:51Z",
+                        "lastUpdateTime": "2026-07-12T11:34:14Z",
+                        "message": "ReplicaSet \"info-web-frontend-cd8799fbf\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    },
+                    {
+                        "lastTransitionTime": "2026-07-29T04:33:10Z",
+                        "lastUpdateTime": "2026-07-29T04:33:10Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    }
+                ],
+                "observedGeneration": 6,
+                "readyReplicas": 1,
+                "replicas": 1,
+                "updatedReplicas": 1
+            }
+        },
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "61",
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"knowledge-admin-backend\"},\"name\":\"knowledge-admin-backend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"knowledge-admin-backend\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"knowledge-admin-backend\"}},\"spec\":{\"containers\":[{\"envFrom\":[{\"configMapRef\":{\"name\":\"knowledge-admin-backend-config\"}},{\"secretRef\":{\"name\":\"knowledge-admin-backend-secret\"}},{\"secretRef\":{\"name\":\"knowledge-admin-backend-browser-oidc\"}},{\"secretRef\":{\"name\":\"knowledge-info-ingest-service-binding\"}},{\"secretRef\":{\"name\":\"knowledge-research-retrieval-service-binding\"}},{\"configMapRef\":{\"name\":\"celeryworker-knowledge-admin-backend-config\"}},{\"secretRef\":{\"name\":\"celeryworker-knowledge-admin-backend-secret\"}},{\"secretRef\":{\"name\":\"knowledge-admin-backend-postgresql-conn\"}},{\"secretRef\":{\"name\":\"knowledge-admin-backend-redis-conn\"}},{\"configMapRef\":{\"name\":\"knowledge-admin-backend-s3\"}},{\"secretRef\":{\"name\":\"knowledge-admin-backend-s3\"}},{\"configMapRef\":{\"name\":\"knowledge-admin-backend-elasticsearch\"}},{\"secretRef\":{\"name\":\"knowledge-admin-backend-elasticsearch\"}}],\"image\":\"harbor.sunmoonai.com:30443/app-images/knowledge-admin-backend:p0-004-retrieval-r2-20260715\",\"imagePullPolicy\":\"Always\",\"livenessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":30,\"periodSeconds\":10,\"tcpSocket\":{\"port\":8000},\"timeoutSeconds\":5},\"name\":\"knowledge-admin-backend\",\"ports\":[{\"containerPort\":8000}],\"readinessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":15,\"periodSeconds\":5,\"tcpSocket\":{\"port\":8000},\"timeoutSeconds\":3},\"resources\":{\"limits\":{\"cpu\":\"500m\",\"memory\":\"512Mi\"},\"requests\":{\"cpu\":\"100m\",\"memory\":\"256Mi\"}},\"volumeMounts\":[{\"mountPath\":\"/app/data\",\"name\":\"data\"},{\"mountPath\":\"/var/run/secrets/sunmoonai/elasticsearch\",\"name\":\"elasticsearch-ca\",\"readOnly\":true}]}],\"imagePullSecrets\":[{\"name\":\"harbor-registry-secret\"}],\"volumes\":[{\"name\":\"data\",\"persistentVolumeClaim\":{\"claimName\":\"knowledge-admin-backend-pvc\"}},{\"name\":\"elasticsearch-ca\",\"secret\":{\"items\":[{\"key\":\"ca.crt\",\"path\":\"ca.crt\"}],\"secretName\":\"knowledge-admin-backend-elasticsearch\"}}]}}}}\n"
+                },
+                "creationTimestamp": "2026-06-22T09:01:59Z",
+                "generation": 61,
+                "labels": {
+                    "app": "knowledge-admin-backend"
+                },
+                "name": "knowledge-admin-backend",
+                "namespace": "app-platform-dev",
+                "resourceVersion": "887975",
+                "uid": "1e764338-8a55-4cd3-b46d-0ee8bd2c2a3e"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 600,
+                "replicas": 1,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app": "knowledge-admin-backend"
+                    }
+                },
+                "strategy": {
+                    "rollingUpdate": {
+                        "maxSurge": "25%",
+                        "maxUnavailable": "25%"
+                    },
+                    "type": "RollingUpdate"
+                },
+                "template": {
+                    "metadata": {
+                        "annotations": {
+                            "kubectl.kubernetes.io/restartedAt": "2026-07-16T16:31:33+08:00"
+                        },
+                        "creationTimestamp": null,
+                        "labels": {
+                            "app": "knowledge-admin-backend"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "envFrom": [
+                                    {
+                                        "configMapRef": {
+                                            "name": "knowledge-admin-backend-config"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "knowledge-admin-backend-secret"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "knowledge-admin-backend-browser-oidc"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "knowledge-info-ingest-service-binding"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "knowledge-research-retrieval-service-binding"
+                                        }
+                                    },
+                                    {
+                                        "configMapRef": {
+                                            "name": "celeryworker-knowledge-admin-backend-config"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "celeryworker-knowledge-admin-backend-secret"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "knowledge-admin-backend-postgresql-conn"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "knowledge-admin-backend-redis-conn"
+                                        }
+                                    },
+                                    {
+                                        "configMapRef": {
+                                            "name": "knowledge-admin-backend-s3"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "knowledge-admin-backend-s3"
+                                        }
+                                    },
+                                    {
+                                        "configMapRef": {
+                                            "name": "knowledge-admin-backend-elasticsearch"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "knowledge-admin-backend-elasticsearch"
+                                        }
+                                    }
+                                ],
+                                "image": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-backend:p0-004-retrieval-r2-20260715",
+                                "imagePullPolicy": "Always",
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 30,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": 8000
+                                    },
+                                    "timeoutSeconds": 5
+                                },
+                                "name": "knowledge-admin-backend",
+                                "ports": [
+                                    {
+                                        "containerPort": 8000,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 15,
+                                    "periodSeconds": 5,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": 8000
+                                    },
+                                    "timeoutSeconds": 3
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "500m",
+                                        "memory": "512Mi"
+                                    },
+                                    "requests": {
+                                        "cpu": "100m",
+                                        "memory": "256Mi"
+                                    }
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File",
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/app/data",
+                                        "name": "data"
+                                    },
+                                    {
+                                        "mountPath": "/var/run/secrets/sunmoonai/elasticsearch",
+                                        "name": "elasticsearch-ca",
+                                        "readOnly": true
+                                    }
+                                ]
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "imagePullSecrets": [
+                            {
+                                "name": "harbor-registry-secret"
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {},
+                        "terminationGracePeriodSeconds": 30,
+                        "volumes": [
+                            {
+                                "name": "data",
+                                "persistentVolumeClaim": {
+                                    "claimName": "knowledge-admin-backend-pvc"
+                                }
+                            },
+                            {
+                                "name": "elasticsearch-ca",
+                                "secret": {
+                                    "defaultMode": 420,
+                                    "items": [
+                                        {
+                                            "key": "ca.crt",
+                                            "path": "ca.crt"
+                                        }
+                                    ],
+                                    "secretName": "knowledge-admin-backend-elasticsearch"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 1,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2026-06-22T09:01:59Z",
+                        "lastUpdateTime": "2026-07-16T09:07:04Z",
+                        "message": "ReplicaSet \"knowledge-admin-backend-644f54f99f\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    },
+                    {
+                        "lastTransitionTime": "2026-07-29T04:34:26Z",
+                        "lastUpdateTime": "2026-07-29T04:34:26Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    }
+                ],
+                "observedGeneration": 61,
+                "readyReplicas": 1,
+                "replicas": 1,
+                "updatedReplicas": 1
+            }
+        },
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "67",
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-admin-backend\"},\"name\":\"research-admin-backend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"research-admin-backend\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"research-admin-backend\"}},\"spec\":{\"containers\":[{\"envFrom\":[{\"configMapRef\":{\"name\":\"research-admin-backend-config\"}},{\"secretRef\":{\"name\":\"research-admin-backend-secret\"}},{\"secretRef\":{\"name\":\"research-admin-backend-browser-oidc\"}},{\"secretRef\":{\"name\":\"research-admin-backend-postgresql-conn\"}},{\"secretRef\":{\"name\":\"research-admin-backend-redis-conn\"}},{\"configMapRef\":{\"name\":\"research-admin-backend-s3\"}},{\"secretRef\":{\"name\":\"research-admin-backend-s3\"}},{\"configMapRef\":{\"name\":\"research-admin-backend-elasticsearch\"}},{\"secretRef\":{\"name\":\"research-admin-backend-elasticsearch\"}}],\"image\":\"harbor.sunmoonai.com:30443/app-images/research-admin-backend:1.0.1\",\"imagePullPolicy\":\"Always\",\"livenessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":30,\"periodSeconds\":10,\"tcpSocket\":{\"port\":8000},\"timeoutSeconds\":5},\"name\":\"research-admin-backend\",\"ports\":[{\"containerPort\":8000}],\"readinessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":15,\"periodSeconds\":5,\"tcpSocket\":{\"port\":8000},\"timeoutSeconds\":3},\"resources\":{\"limits\":{\"cpu\":\"500m\",\"memory\":\"512Mi\"},\"requests\":{\"cpu\":\"100m\",\"memory\":\"256Mi\"}},\"volumeMounts\":[{\"mountPath\":\"/app/data\",\"name\":\"data\"},{\"mountPath\":\"/var/run/secrets/sunmoonai/elasticsearch\",\"name\":\"elasticsearch-ca\",\"readOnly\":true}]}],\"imagePullSecrets\":[{\"name\":\"harbor-registry-secret\"}],\"volumes\":[{\"name\":\"data\",\"persistentVolumeClaim\":{\"claimName\":\"research-admin-backend-pvc\"}},{\"name\":\"elasticsearch-ca\",\"secret\":{\"items\":[{\"key\":\"ca.crt\",\"path\":\"ca.crt\"}],\"secretName\":\"research-admin-backend-elasticsearch\"}}]}}}}\n"
+                },
+                "creationTimestamp": "2026-06-22T09:06:00Z",
+                "generation": 69,
+                "labels": {
+                    "app": "research-admin-backend"
+                },
+                "name": "research-admin-backend",
+                "namespace": "app-platform-dev",
+                "resourceVersion": "887676",
+                "uid": "becfff58-8444-407d-b586-9562d9d7584d"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 600,
+                "replicas": 1,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app": "research-admin-backend"
+                    }
+                },
+                "strategy": {
+                    "rollingUpdate": {
+                        "maxSurge": "25%",
+                        "maxUnavailable": "25%"
+                    },
+                    "type": "RollingUpdate"
+                },
+                "template": {
+                    "metadata": {
+                        "annotations": {
+                            "kubectl.kubernetes.io/restartedAt": "2026-07-12T13:59:20+08:00"
+                        },
+                        "creationTimestamp": null,
+                        "labels": {
+                            "app": "research-admin-backend"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "envFrom": [
+                                    {
+                                        "configMapRef": {
+                                            "name": "research-admin-backend-config"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "research-admin-backend-secret"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "research-admin-backend-browser-oidc"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "research-admin-backend-postgresql-conn"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "research-admin-backend-redis-conn"
+                                        }
+                                    },
+                                    {
+                                        "configMapRef": {
+                                            "name": "research-admin-backend-s3"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "research-admin-backend-s3"
+                                        }
+                                    },
+                                    {
+                                        "configMapRef": {
+                                            "name": "research-admin-backend-elasticsearch"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "research-admin-backend-elasticsearch"
+                                        }
+                                    }
+                                ],
+                                "image": "harbor.sunmoonai.com:30443/app-images/research-admin-backend:1.0.1",
+                                "imagePullPolicy": "Always",
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 30,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": 8000
+                                    },
+                                    "timeoutSeconds": 5
+                                },
+                                "name": "research-admin-backend",
+                                "ports": [
+                                    {
+                                        "containerPort": 8000,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 15,
+                                    "periodSeconds": 5,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": 8000
+                                    },
+                                    "timeoutSeconds": 3
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "500m",
+                                        "memory": "512Mi"
+                                    },
+                                    "requests": {
+                                        "cpu": "100m",
+                                        "memory": "256Mi"
+                                    }
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File",
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/app/data",
+                                        "name": "data"
+                                    },
+                                    {
+                                        "mountPath": "/var/run/secrets/sunmoonai/elasticsearch",
+                                        "name": "elasticsearch-ca",
+                                        "readOnly": true
+                                    }
+                                ]
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "imagePullSecrets": [
+                            {
+                                "name": "harbor-registry-secret"
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {},
+                        "terminationGracePeriodSeconds": 30,
+                        "volumes": [
+                            {
+                                "name": "data",
+                                "persistentVolumeClaim": {
+                                    "claimName": "research-admin-backend-pvc"
+                                }
+                            },
+                            {
+                                "name": "elasticsearch-ca",
+                                "secret": {
+                                    "defaultMode": 420,
+                                    "items": [
+                                        {
+                                            "key": "ca.crt",
+                                            "path": "ca.crt"
+                                        }
+                                    ],
+                                    "secretName": "research-admin-backend-elasticsearch"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 1,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2026-06-22T09:06:00Z",
+                        "lastUpdateTime": "2026-07-14T04:55:44Z",
+                        "message": "ReplicaSet \"research-admin-backend-5ffd76b86\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    },
+                    {
+                        "lastTransitionTime": "2026-07-29T04:33:03Z",
+                        "lastUpdateTime": "2026-07-29T04:33:03Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    }
+                ],
+                "observedGeneration": 69,
+                "readyReplicas": 1,
+                "replicas": 1,
+                "updatedReplicas": 1
+            }
+        },
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "3",
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-admin-frontend\"},\"name\":\"research-admin-frontend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"research-admin-frontend\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"research-admin-frontend\"}},\"spec\":{\"containers\":[{\"image\":\"harbor.sunmoonai.com:30443/app-images/research-admin-frontend:p0-005-auth-20260712\",\"imagePullPolicy\":\"Always\",\"livenessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":10,\"periodSeconds\":10,\"tcpSocket\":{\"port\":80},\"timeoutSeconds\":5},\"name\":\"research-admin-frontend\",\"ports\":[{\"containerPort\":80}],\"readinessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":5,\"periodSeconds\":5,\"tcpSocket\":{\"port\":80},\"timeoutSeconds\":3},\"resources\":{\"limits\":{\"cpu\":\"200m\",\"memory\":\"128Mi\"},\"requests\":{\"cpu\":\"50m\",\"memory\":\"64Mi\"}},\"volumeMounts\":[{\"mountPath\":\"/app/data\",\"name\":\"data\"}]}],\"imagePullSecrets\":[{\"name\":\"harbor-registry-secret\"}],\"volumes\":[{\"name\":\"data\",\"persistentVolumeClaim\":{\"claimName\":\"research-admin-frontend-pvc\"}}]}}}}\n"
+                },
+                "creationTimestamp": "2026-06-22T09:06:04Z",
+                "generation": 3,
+                "labels": {
+                    "app": "research-admin-frontend"
+                },
+                "name": "research-admin-frontend",
+                "namespace": "app-platform-dev",
+                "resourceVersion": "887653",
+                "uid": "3526b606-0354-4087-8b68-059dd00a9bcf"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 600,
+                "replicas": 1,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app": "research-admin-frontend"
+                    }
+                },
+                "strategy": {
+                    "rollingUpdate": {
+                        "maxSurge": "25%",
+                        "maxUnavailable": "25%"
+                    },
+                    "type": "RollingUpdate"
+                },
+                "template": {
+                    "metadata": {
+                        "creationTimestamp": null,
+                        "labels": {
+                            "app": "research-admin-frontend"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "image": "harbor.sunmoonai.com:30443/app-images/research-admin-frontend:1.0.0",
+                                "imagePullPolicy": "Always",
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 10,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": 80
+                                    },
+                                    "timeoutSeconds": 5
+                                },
+                                "name": "research-admin-frontend",
+                                "ports": [
+                                    {
+                                        "containerPort": 80,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 5,
+                                    "periodSeconds": 5,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": 80
+                                    },
+                                    "timeoutSeconds": 3
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "200m",
+                                        "memory": "128Mi"
+                                    },
+                                    "requests": {
+                                        "cpu": "50m",
+                                        "memory": "64Mi"
+                                    }
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File",
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/app/data",
+                                        "name": "data"
+                                    }
+                                ]
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "imagePullSecrets": [
+                            {
+                                "name": "harbor-registry-secret"
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {},
+                        "terminationGracePeriodSeconds": 30,
+                        "volumes": [
+                            {
+                                "name": "data",
+                                "persistentVolumeClaim": {
+                                    "claimName": "research-admin-frontend-pvc"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 1,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2026-07-12T11:30:52Z",
+                        "lastUpdateTime": "2026-07-12T11:30:52Z",
+                        "message": "ReplicaSet \"research-admin-frontend-77c7cc8f55\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    },
+                    {
+                        "lastTransitionTime": "2026-07-29T04:33:00Z",
+                        "lastUpdateTime": "2026-07-29T04:33:00Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    }
+                ],
+                "observedGeneration": 3,
+                "readyReplicas": 1,
+                "replicas": 1,
+                "updatedReplicas": 1
+            }
+        },
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "3",
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-web-backend\"},\"name\":\"research-web-backend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"research-web-backend\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"research-web-backend\"}},\"spec\":{\"containers\":[{\"envFrom\":[{\"configMapRef\":{\"name\":\"research-web-backend-config\"}},{\"secretRef\":{\"name\":\"research-web-backend-secret\"}},{\"secretRef\":{\"name\":\"research-web-backend-postgresql-conn\"}},{\"secretRef\":{\"name\":\"research-web-backend-redis-conn\"}},{\"configMapRef\":{\"name\":\"research-web-backend-s3\"}},{\"secretRef\":{\"name\":\"research-web-backend-s3\"}},{\"configMapRef\":{\"name\":\"research-web-backend-elasticsearch\"}},{\"secretRef\":{\"name\":\"research-web-backend-elasticsearch\"}}],\"image\":\"harbor.sunmoonai.com:30443/app-images/research-web-backend:p0-005-auth-20260712\",\"imagePullPolicy\":\"Always\",\"livenessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":30,\"periodSeconds\":10,\"tcpSocket\":{\"port\":3000},\"timeoutSeconds\":5},\"name\":\"research-web-backend\",\"ports\":[{\"containerPort\":3000}],\"readinessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":15,\"periodSeconds\":5,\"tcpSocket\":{\"port\":3000},\"timeoutSeconds\":3},\"resources\":{\"limits\":{\"cpu\":\"500m\",\"memory\":\"512Mi\"},\"requests\":{\"cpu\":\"100m\",\"memory\":\"256Mi\"}},\"volumeMounts\":[{\"mountPath\":\"/app/data\",\"name\":\"data\"},{\"mountPath\":\"/var/run/secrets/sunmoonai/elasticsearch\",\"name\":\"elasticsearch-ca\",\"readOnly\":true}]}],\"imagePullSecrets\":[{\"name\":\"harbor-registry-secret\"}],\"volumes\":[{\"name\":\"data\",\"persistentVolumeClaim\":{\"claimName\":\"research-web-backend-pvc\"}},{\"name\":\"elasticsearch-ca\",\"secret\":{\"items\":[{\"key\":\"ca.crt\",\"path\":\"ca.crt\"}],\"secretName\":\"research-web-backend-elasticsearch\"}}]}}}}\n"
+                },
+                "creationTimestamp": "2026-06-22T09:06:07Z",
+                "generation": 3,
+                "labels": {
+                    "app": "research-web-backend"
+                },
+                "name": "research-web-backend",
+                "namespace": "app-platform-dev",
+                "resourceVersion": "887726",
+                "uid": "cd20caaa-f396-4909-b2a3-a0694dcce95f"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 600,
+                "replicas": 1,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app": "research-web-backend"
+                    }
+                },
+                "strategy": {
+                    "rollingUpdate": {
+                        "maxSurge": "25%",
+                        "maxUnavailable": "25%"
+                    },
+                    "type": "RollingUpdate"
+                },
+                "template": {
+                    "metadata": {
+                        "creationTimestamp": null,
+                        "labels": {
+                            "app": "research-web-backend"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "envFrom": [
+                                    {
+                                        "configMapRef": {
+                                            "name": "research-web-backend-config"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "research-web-backend-secret"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "research-web-backend-postgresql-conn"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "research-web-backend-redis-conn"
+                                        }
+                                    },
+                                    {
+                                        "configMapRef": {
+                                            "name": "research-web-backend-s3"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "research-web-backend-s3"
+                                        }
+                                    },
+                                    {
+                                        "configMapRef": {
+                                            "name": "research-web-backend-elasticsearch"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "research-web-backend-elasticsearch"
+                                        }
+                                    }
+                                ],
+                                "image": "harbor.sunmoonai.com:30443/app-images/research-web-backend:1.0.0",
+                                "imagePullPolicy": "Always",
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 30,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": 3000
+                                    },
+                                    "timeoutSeconds": 5
+                                },
+                                "name": "research-web-backend",
+                                "ports": [
+                                    {
+                                        "containerPort": 3000,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 15,
+                                    "periodSeconds": 5,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": 3000
+                                    },
+                                    "timeoutSeconds": 3
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "500m",
+                                        "memory": "512Mi"
+                                    },
+                                    "requests": {
+                                        "cpu": "100m",
+                                        "memory": "256Mi"
+                                    }
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File",
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/app/data",
+                                        "name": "data"
+                                    },
+                                    {
+                                        "mountPath": "/var/run/secrets/sunmoonai/elasticsearch",
+                                        "name": "elasticsearch-ca",
+                                        "readOnly": true
+                                    }
+                                ]
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "imagePullSecrets": [
+                            {
+                                "name": "harbor-registry-secret"
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {},
+                        "terminationGracePeriodSeconds": 30,
+                        "volumes": [
+                            {
+                                "name": "data",
+                                "persistentVolumeClaim": {
+                                    "claimName": "research-web-backend-pvc"
+                                }
+                            },
+                            {
+                                "name": "elasticsearch-ca",
+                                "secret": {
+                                    "defaultMode": 420,
+                                    "items": [
+                                        {
+                                            "key": "ca.crt",
+                                            "path": "ca.crt"
+                                        }
+                                    ],
+                                    "secretName": "research-web-backend-elasticsearch"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 1,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2026-07-12T11:30:53Z",
+                        "lastUpdateTime": "2026-07-12T11:30:53Z",
+                        "message": "ReplicaSet \"research-web-backend-788b9d7c86\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    },
+                    {
+                        "lastTransitionTime": "2026-07-29T04:33:10Z",
+                        "lastUpdateTime": "2026-07-29T04:33:10Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    }
+                ],
+                "observedGeneration": 3,
+                "readyReplicas": 1,
+                "replicas": 1,
+                "updatedReplicas": 1
+            }
+        },
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "annotations": {
+                    "deployment.kubernetes.io/revision": "4",
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-web-frontend\"},\"name\":\"research-web-frontend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"research-web-frontend\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"research-web-frontend\"}},\"spec\":{\"containers\":[{\"envFrom\":[{\"configMapRef\":{\"name\":\"research-web-frontend-config\"}},{\"secretRef\":{\"name\":\"research-web-frontend-secret\"}}],\"image\":\"harbor.sunmoonai.com:30443/app-images/research-web-frontend:p0-005-auth-20260712\",\"imagePullPolicy\":\"Always\",\"livenessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":30,\"periodSeconds\":10,\"tcpSocket\":{\"port\":3000},\"timeoutSeconds\":5},\"name\":\"research-web-frontend\",\"ports\":[{\"containerPort\":3000}],\"readinessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":15,\"periodSeconds\":5,\"tcpSocket\":{\"port\":3000},\"timeoutSeconds\":3},\"resources\":{\"limits\":{\"cpu\":\"500m\",\"memory\":\"512Mi\"},\"requests\":{\"cpu\":\"100m\",\"memory\":\"256Mi\"}},\"volumeMounts\":[{\"mountPath\":\"/app/data\",\"name\":\"data\"}]}],\"imagePullSecrets\":[{\"name\":\"harbor-registry-secret\"}],\"volumes\":[{\"name\":\"data\",\"persistentVolumeClaim\":{\"claimName\":\"research-web-frontend-pvc\"}}]}}}}\n"
+                },
+                "creationTimestamp": "2026-06-22T09:06:11Z",
+                "generation": 4,
+                "labels": {
+                    "app": "research-web-frontend"
+                },
+                "name": "research-web-frontend",
+                "namespace": "app-platform-dev",
+                "resourceVersion": "887687",
+                "uid": "289998da-8b36-4ec6-a8a9-d0e02b484fa7"
+            },
+            "spec": {
+                "progressDeadlineSeconds": 600,
+                "replicas": 1,
+                "revisionHistoryLimit": 10,
+                "selector": {
+                    "matchLabels": {
+                        "app": "research-web-frontend"
+                    }
+                },
+                "strategy": {
+                    "rollingUpdate": {
+                        "maxSurge": "25%",
+                        "maxUnavailable": "25%"
+                    },
+                    "type": "RollingUpdate"
+                },
+                "template": {
+                    "metadata": {
+                        "creationTimestamp": null,
+                        "labels": {
+                            "app": "research-web-frontend"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "envFrom": [
+                                    {
+                                        "configMapRef": {
+                                            "name": "research-web-frontend-config"
+                                        }
+                                    },
+                                    {
+                                        "secretRef": {
+                                            "name": "research-web-frontend-secret"
+                                        }
+                                    }
+                                ],
+                                "image": "harbor.sunmoonai.com:30443/app-images/research-web-frontend:1.0.1",
+                                "imagePullPolicy": "Always",
+                                "livenessProbe": {
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 30,
+                                    "periodSeconds": 10,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": 3000
+                                    },
+                                    "timeoutSeconds": 5
+                                },
+                                "name": "research-web-frontend",
+                                "ports": [
+                                    {
+                                        "containerPort": 3000,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 15,
+                                    "periodSeconds": 5,
+                                    "successThreshold": 1,
+                                    "tcpSocket": {
+                                        "port": 3000
+                                    },
+                                    "timeoutSeconds": 3
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "cpu": "500m",
+                                        "memory": "512Mi"
+                                    },
+                                    "requests": {
+                                        "cpu": "100m",
+                                        "memory": "256Mi"
+                                    }
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "terminationMessagePolicy": "File",
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/app/data",
+                                        "name": "data"
+                                    }
+                                ]
+                            }
+                        ],
+                        "dnsPolicy": "ClusterFirst",
+                        "imagePullSecrets": [
+                            {
+                                "name": "harbor-registry-secret"
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "schedulerName": "default-scheduler",
+                        "securityContext": {},
+                        "terminationGracePeriodSeconds": 30,
+                        "volumes": [
+                            {
+                                "name": "data",
+                                "persistentVolumeClaim": {
+                                    "claimName": "research-web-frontend-pvc"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "status": {
+                "availableReplicas": 1,
+                "conditions": [
+                    {
+                        "lastTransitionTime": "2026-07-12T11:30:53Z",
+                        "lastUpdateTime": "2026-07-12T11:30:53Z",
+                        "message": "ReplicaSet \"research-web-frontend-648d746674\" has successfully progressed.",
+                        "reason": "NewReplicaSetAvailable",
+                        "status": "True",
+                        "type": "Progressing"
+                    },
+                    {
+                        "lastTransitionTime": "2026-07-29T04:33:05Z",
+                        "lastUpdateTime": "2026-07-29T04:33:05Z",
+                        "message": "Deployment has minimum availability.",
+                        "reason": "MinimumReplicasAvailable",
+                        "status": "True",
+                        "type": "Available"
+                    }
+                ],
+                "observedGeneration": 4,
+                "readyReplicas": 1,
+                "replicas": 1,
+                "updatedReplicas": 1
+            }
+        }
+    ],
+    "kind": "List",
+    "metadata": {
+        "resourceVersion": ""
+    }
+}

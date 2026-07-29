@@ -1,0 +1,58 @@
+{
+  "task": "V5-P0-009D-rollback",
+  "result": "passed",
+  "method": "same-runtime digest rollback plus exact candidate restore",
+  "pre_migration_git_recovery": {
+    "tag": "p0-009a-pre-20260729",
+    "validated_by": "V5-P0-009E deterministic binary patch replay"
+  },
+  "drills": [
+    {
+      "deployment": "research-admin-backend-p0-009d",
+      "container": "backend",
+      "path": [
+        "harbor.sunmoonai.com:30443/app-images/research-admin-backend@sha256:1b9c3b6b5e5af377961ff2e2b2ae861d6057e878663ab671674a1c25dd5c774b",
+        "harbor.sunmoonai.com:30443/app-images/tpl-admin-backend@sha256:b24ce7a39e7e10a5541b2a29ff9795a6944d6f17ec4d0479e2051f59a0688c56",
+        "harbor.sunmoonai.com:30443/app-images/research-admin-backend@sha256:1b9c3b6b5e5af377961ff2e2b2ae861d6057e878663ab671674a1c25dd5c774b"
+      ],
+      "rollback_rollout": "passed",
+      "candidate_restore_rollout": "passed"
+    },
+    {
+      "deployment": "research-admin-frontend-p0-009d",
+      "container": "frontend",
+      "path": [
+        "harbor.sunmoonai.com:30443/app-images/research-admin-frontend@sha256:f4225868225bcffe9d34e482ebad132ee13c6ac000e31820bcfe7be6efdc1e4c",
+        "harbor.sunmoonai.com:30443/app-images/tpl-admin-frontend@sha256:b426551c0e027b25965995e23486c590c29fa52047779dd14721d93a245a74f1",
+        "harbor.sunmoonai.com:30443/app-images/research-admin-frontend@sha256:f4225868225bcffe9d34e482ebad132ee13c6ac000e31820bcfe7be6efdc1e4c"
+      ],
+      "rollback_rollout": "passed",
+      "candidate_restore_rollout": "passed"
+    },
+    {
+      "deployment": "research-web-backend-p0-009d",
+      "container": "backend",
+      "path": [
+        "harbor.sunmoonai.com:30443/app-images/research-web-backend@sha256:901ee1c2fd0ddcacc178a832ec215c84ad6237e81a02030300107030e9df8202",
+        "harbor.sunmoonai.com:30443/app-images/tpl-web-backend@sha256:41dc3a781033dda3e60cd3594ffac7caf767e3c8cb2295ac0b8a21986fbd2414",
+        "harbor.sunmoonai.com:30443/app-images/research-web-backend@sha256:901ee1c2fd0ddcacc178a832ec215c84ad6237e81a02030300107030e9df8202"
+      ],
+      "rollback_rollout": "passed",
+      "candidate_restore_rollout": "passed"
+    },
+    {
+      "deployment": "research-web-frontend-p0-009d",
+      "container": "frontend",
+      "path": [
+        "harbor.sunmoonai.com:30443/app-images/research-web-frontend@sha256:e0ce9a48084a2506448a756bdb4b6fe92b1e210ab49c073781a4a832cf958851",
+        "harbor.sunmoonai.com:30443/app-images/tpl-web-frontend@sha256:2a359c8d213813ecbc3b5dbf6a6ed828e73a4c26b6dffaa1d163a507756db2b3",
+        "harbor.sunmoonai.com:30443/app-images/research-web-frontend@sha256:e0ce9a48084a2506448a756bdb4b6fe92b1e210ab49c073781a4a832cf958851"
+      ],
+      "rollback_rollout": "passed",
+      "candidate_restore_rollout": "passed"
+    }
+  ],
+  "business_traffic_switched": false,
+  "credentials_printed": false,
+  "tokens_printed": false
+}

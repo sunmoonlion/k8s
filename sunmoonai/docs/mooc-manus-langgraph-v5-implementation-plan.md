@@ -643,7 +643,15 @@ ADR-018 批准的 `tpl-admin-frontend-react`，以及本轮明确收口的只读
   M1-413A/B/C。
 - 验收：三个 App 都可追溯到同一 release manifest；无未解释模板漂移；每实例失败可独立
   回滚；前一实例未 ACCEPTED 不开始下一实例；P0-009E 前不得解锁 P0-008C。
-- 状态：NOT_STARTED / BLOCKED_BY_P0_008B_B6。
+- 状态：ACCEPTED / P0-009A_ACCEPTED / P0-009B_ACCEPTED / P0-009C_ACCEPTED /
+  P0-009D_ACCEPTED / P0-009E_ACCEPTED（2026-07-29：经 Codex 独立审查并撤销 Cursor
+  初版 fail-open 结论后，使用干净源码重建的 12 个 digest、六组严格 TLS/Casdoor 配对、
+  三套四组件真实回滚及恢复后复验、freeze→目标完整 binary patch tree clean-room、
+  精确内核漂移、证据/归档敏感信息卫生、24 个非隔离 Deployment 完整 spec/generation
+  不变性和 KIND 零残留通过；证据
+  `sunmoonai/docs/evidence/v5/V5-P0-009E/result.md`；三 App
+  `INSTANCE_FOUNDATION_ALIGNED`。未切业务流量、未推远端。
+  唯一下一任务是 P0-008C Research 真实试点）。
 
 ### V5-P0-008C Research Web 真实试点与 Next v2 冻结
 

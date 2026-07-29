@@ -178,7 +178,8 @@ roll_with_continuity() {
 
   sleep 1
   patch_component "$deployment" "$image" "$deployment_id"
-  if ! k rollout status "deployment/$deployment" -n "$NAMESPACE" --timeout=300s; then
+  # Keep rollout chatter on stderr so the captured probe count stays JSON-safe.
+  if ! k rollout status "deployment/$deployment" -n "$NAMESPACE" --timeout=300s >&2; then
     kill "$monitor_pid" >/dev/null 2>&1 || true
     wait "$monitor_pid" >/dev/null 2>&1 || true
     rm -rf "$monitor_dir"
@@ -203,7 +204,8 @@ roll_with_continuity() {
     rm -rf "$monitor_dir"
     return 1
   }
-  cat "${monitor_dir}/count"
+  tr -d '[:space:]' <"${monitor_dir}/count"
+  printf '\n'
   rm -rf "$monitor_dir"
 }
 

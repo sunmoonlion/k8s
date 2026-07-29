@@ -1,0 +1,350 @@
+{
+  "task": "V5-P0-009E",
+  "template_release_id": "p0-008b-b6-unified-20260729",
+  "result": "passed",
+  "p0_008c_unlocked": true,
+  "business_traffic_unchanged": true,
+  "remote_git_push": false,
+  "source_heads": {
+    "info-admin-frontend": "90af7729f6f02e82d1a84f213ce8d8340fe3111d",
+    "info-admin-backend": "ee4b6d8b8fd625a602a6c277c9cdb96b1ded51ae",
+    "info-web-frontend": "52dbb5a3c8d0483abd3d85c4a284dfe58b0d83c0",
+    "info-web-backend": "a142106e5cedf8e258bd2b89744744c0448e2e64",
+    "knowledge-admin-frontend": "544814f9fb443350edefb5776c3a0cac07f6f497",
+    "knowledge-admin-backend": "5d01bdd9013b67cb05b838d520282b25e1337eb7",
+    "knowledge-web-frontend": "eccd7cd2a4f7cb4019edafbd089f5883b8e0792e",
+    "knowledge-web-backend": "e542cdd6ad24e9bedf9f55f503552bccb1c46546",
+    "research-admin-frontend": "32b3bcaf156f12fa780d4a38ec84912f8621cf66",
+    "research-admin-backend": "1c20a1c90289c9bed89f4d025ab6bc78650efa49",
+    "research-web-frontend": "bfee1704c0272a5525abbb1383db5fea14328c07",
+    "research-web-backend": "9cc463424d42f658296ccb06965e61a276adcf48"
+  },
+  "prior": {
+    "freeze": "/home/zymun/k8s/sunmoonai/docs/evidence/v5/V5-P0-009A/freeze.json",
+    "pairs": {
+      "info-admin": {
+        "result": "passed",
+        "frontend_image": "harbor.sunmoonai.com:30443/app-images/info-admin-frontend@sha256:3cb6966c4f0eef9d2121333318b94a05cce60630809578a222215fb72a4b6954",
+        "backend_image": "harbor.sunmoonai.com:30443/app-images/info-admin-backend@sha256:06baa0ba2c0deb7bf9408bab3a4ecc1d459dafdc19611d8ecd77041acbc5b43a"
+      },
+      "info-web": {
+        "result": "passed",
+        "frontend_image": "harbor.sunmoonai.com:30443/app-images/info-web-frontend@sha256:b3429e8aa06a2bf156e816ffe7c86f644c6d30754c633768a0813231d4ae66d5",
+        "backend_image": "harbor.sunmoonai.com:30443/app-images/info-web-backend@sha256:b6a5a2e26f2409ed732c06179b3cbeabdbf29f61daf1aa7ac145df52b3b01c48"
+      },
+      "knowledge-admin": {
+        "result": "passed",
+        "frontend_image": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:85b66d68d54784e6a70f3f5d51a7893db62dea4d2a64a91672c66a037d8e3efb",
+        "backend_image": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-backend@sha256:0b8b949fd2247395f5df329dc705b32b39c33af9d195adf43f3a50865fe8701d"
+      },
+      "knowledge-web": {
+        "result": "passed",
+        "frontend_image": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:597193f3d16334e2d81b24c6cd00b54e361fa810f284ba7c11db72f5f34a7cd4",
+        "backend_image": "harbor.sunmoonai.com:30443/app-images/knowledge-web-backend@sha256:a2718a1b254eddc81b096836c8bb2e86e8be52a3dfa25c6da6295b04bcb545f1"
+      },
+      "research-admin": {
+        "result": "passed",
+        "frontend_image": "harbor.sunmoonai.com:30443/app-images/research-admin-frontend@sha256:f4225868225bcffe9d34e482ebad132ee13c6ac000e31820bcfe7be6efdc1e4c",
+        "backend_image": "harbor.sunmoonai.com:30443/app-images/research-admin-backend@sha256:1b9c3b6b5e5af377961ff2e2b2ae861d6057e878663ab671674a1c25dd5c774b"
+      },
+      "research-web": {
+        "result": "passed",
+        "frontend_image": "harbor.sunmoonai.com:30443/app-images/research-web-frontend@sha256:e0ce9a48084a2506448a756bdb4b6fe92b1e210ab49c073781a4a832cf958851",
+        "backend_image": "harbor.sunmoonai.com:30443/app-images/research-web-backend@sha256:901ee1c2fd0ddcacc178a832ec215c84ad6237e81a02030300107030e9df8202"
+      }
+    },
+    "rollback": {
+      "info": "passed",
+      "knowledge": "passed",
+      "research": "passed"
+    }
+  },
+  "shared_contracts": {
+    "template_release_id": "p0-008b-b6-unified-20260729",
+    "default_components": {
+      "tpl-admin-frontend": "fb69795b04e0b888a2917c3936f7f80aeac79cc9",
+      "tpl-admin-backend": "69e634b8e5b06da9d1dcd01c9b1350e0571d74bd",
+      "tpl-web-frontend": "1db9377d38dac5510331149d9122f8d375d83fe3",
+      "tpl-web-backend": "289f2c46410e0aa2891fdf3da28242ceb1a33bdb"
+    }
+  },
+  "identity_domain_recovery": {
+    "info": {
+      "identity": "passed",
+      "domain": "passed",
+      "recovery": "/home/zymun/info-app/docs/P0-009-DOMAIN-RECOVERY.md"
+    },
+    "knowledge": {
+      "identity": "passed",
+      "domain": "passed",
+      "recovery": "/home/zymun/knowledge-app/docs/P0-009-DOMAIN-RECOVERY.md"
+    },
+    "research": {
+      "identity": "passed",
+      "domain": "passed",
+      "recovery": "/home/zymun/research-app/docs/P0-009-DOMAIN-RECOVERY.md"
+    }
+  },
+  "archive_hygiene": {
+    "result": "passed",
+    "evidence_files_scanned": 42
+  },
+  "kernel_drift": {
+    "info": {
+      "result": "passed",
+      "files": {
+        "app/domain/security/principal.py": {
+          "template_sha256": "b8d4c28d0e1f2cbbf3360b4480a6eef3fdb4638bc1fec1d916660311b2b314f1",
+          "instance_sha256": "b8d4c28d0e1f2cbbf3360b4480a6eef3fdb4638bc1fec1d916660311b2b314f1",
+          "status": "identical"
+        },
+        "app/application/services/auth_service.py": {
+          "template_sha256": "f1600b9efdb96d438afaa532d60e50e0143d29ff70f5c50a7dca0d7689b1cd49",
+          "instance_sha256": "f1600b9efdb96d438afaa532d60e50e0143d29ff70f5c50a7dca0d7689b1cd49",
+          "status": "identical"
+        },
+        "app/infrastructure/security/oidc.py": {
+          "template_sha256": "0555a51e843c2c28b21b6d41894608be737c4a802ed36c30c527789f7dca0723",
+          "instance_sha256": "0555a51e843c2c28b21b6d41894608be737c4a802ed36c30c527789f7dca0723",
+          "status": "identical"
+        },
+        "app/infrastructure/storage/postgres.py": {
+          "template_sha256": "8ebfc884bc67338d75b54aad83db80fb87b857fc2862aa69e36c6b4f6ec6ad2f",
+          "instance_sha256": "8ebfc884bc67338d75b54aad83db80fb87b857fc2862aa69e36c6b4f6ec6ad2f",
+          "status": "identical"
+        },
+        "app/infrastructure/storage/redis.py": {
+          "template_sha256": "0ee9bab52d01482012a01a0993cb055b4e016cbc23aeddd73af101e53ee624e7",
+          "instance_sha256": "0ee9bab52d01482012a01a0993cb055b4e016cbc23aeddd73af101e53ee624e7",
+          "status": "identical"
+        }
+      }
+    },
+    "knowledge": {
+      "result": "passed",
+      "files": {
+        "app/domain/security/principal.py": {
+          "template_sha256": "b8d4c28d0e1f2cbbf3360b4480a6eef3fdb4638bc1fec1d916660311b2b314f1",
+          "instance_sha256": "b8d4c28d0e1f2cbbf3360b4480a6eef3fdb4638bc1fec1d916660311b2b314f1",
+          "status": "identical"
+        },
+        "app/application/services/auth_service.py": {
+          "template_sha256": "f1600b9efdb96d438afaa532d60e50e0143d29ff70f5c50a7dca0d7689b1cd49",
+          "instance_sha256": "f1600b9efdb96d438afaa532d60e50e0143d29ff70f5c50a7dca0d7689b1cd49",
+          "status": "identical"
+        },
+        "app/infrastructure/security/oidc.py": {
+          "template_sha256": "0555a51e843c2c28b21b6d41894608be737c4a802ed36c30c527789f7dca0723",
+          "instance_sha256": "794b764f2385a9d3403a8c5ff553cd4f50dec7bba29eef15617f0afadbf307e2",
+          "status": "allowed_service_jwks_accessor"
+        },
+        "app/infrastructure/storage/postgres.py": {
+          "template_sha256": "8ebfc884bc67338d75b54aad83db80fb87b857fc2862aa69e36c6b4f6ec6ad2f",
+          "instance_sha256": "8ebfc884bc67338d75b54aad83db80fb87b857fc2862aa69e36c6b4f6ec6ad2f",
+          "status": "identical"
+        },
+        "app/infrastructure/storage/redis.py": {
+          "template_sha256": "0ee9bab52d01482012a01a0993cb055b4e016cbc23aeddd73af101e53ee624e7",
+          "instance_sha256": "0ee9bab52d01482012a01a0993cb055b4e016cbc23aeddd73af101e53ee624e7",
+          "status": "identical"
+        }
+      }
+    },
+    "research": {
+      "result": "passed",
+      "files": {
+        "app/domain/security/principal.py": {
+          "template_sha256": "b8d4c28d0e1f2cbbf3360b4480a6eef3fdb4638bc1fec1d916660311b2b314f1",
+          "instance_sha256": "b8d4c28d0e1f2cbbf3360b4480a6eef3fdb4638bc1fec1d916660311b2b314f1",
+          "status": "identical"
+        },
+        "app/application/services/auth_service.py": {
+          "template_sha256": "f1600b9efdb96d438afaa532d60e50e0143d29ff70f5c50a7dca0d7689b1cd49",
+          "instance_sha256": "f1600b9efdb96d438afaa532d60e50e0143d29ff70f5c50a7dca0d7689b1cd49",
+          "status": "identical"
+        },
+        "app/infrastructure/security/oidc.py": {
+          "template_sha256": "0555a51e843c2c28b21b6d41894608be737c4a802ed36c30c527789f7dca0723",
+          "instance_sha256": "794b764f2385a9d3403a8c5ff553cd4f50dec7bba29eef15617f0afadbf307e2",
+          "status": "allowed_service_jwks_accessor"
+        },
+        "app/infrastructure/storage/postgres.py": {
+          "template_sha256": "8ebfc884bc67338d75b54aad83db80fb87b857fc2862aa69e36c6b4f6ec6ad2f",
+          "instance_sha256": "8ebfc884bc67338d75b54aad83db80fb87b857fc2862aa69e36c6b4f6ec6ad2f",
+          "status": "identical"
+        },
+        "app/infrastructure/storage/redis.py": {
+          "template_sha256": "0ee9bab52d01482012a01a0993cb055b4e016cbc23aeddd73af101e53ee624e7",
+          "instance_sha256": "0ee9bab52d01482012a01a0993cb055b4e016cbc23aeddd73af101e53ee624e7",
+          "status": "identical"
+        }
+      }
+    }
+  },
+  "rollback_tags": {
+    "tag": "p0-009a-pre-20260729",
+    "repos": {
+      "info-admin-frontend": "429f31578a80d6054d895f89a45415bcafe81408",
+      "info-admin-backend": "ac481945eced61d256fb568eb34e19aaa4a9ec70",
+      "info-web-frontend": "abdbf63849c847b4301c37d31dec12405e2d3257",
+      "info-web-backend": "ffbc54ea2fe739495cdbd73ce174ec8c70bbd79e",
+      "knowledge-admin-frontend": "1fc2cc611c063e5f706cb4164da3281bf3878416",
+      "knowledge-admin-backend": "7d3a6fee62bef5926ee32fb623210c84b815e0dd",
+      "knowledge-web-frontend": "2f4f68257062ea006e8e03ccd8e06844db7c1ad6",
+      "knowledge-web-backend": "ada118c984e6338998d7f405579e3a4cd5434e76",
+      "research-admin-frontend": "0ba13f3c57d951086258fa6b666278b5d759503f",
+      "research-admin-backend": "9d72a137f7790a6e89577a16098840511dd088e6",
+      "research-web-frontend": "ea42d2974f1063ede160c8a547f49e616d6948aa",
+      "research-web-backend": "0714115ab64a730033f3544bdf2de78ed06aba81"
+    }
+  },
+  "clean_room": {
+    "info-admin-frontend": {
+      "from_tag": "p0-009a-pre-20260729",
+      "target_commit": "90af7729f6f02e82d1a84f213ce8d8340fe3111d",
+      "target_tree": "bda7440161438bf136bc3239223f7e90ff73f956",
+      "patch_bytes": 904720,
+      "result": "passed"
+    },
+    "info-admin-backend": {
+      "from_tag": "p0-009a-pre-20260729",
+      "target_commit": "ee4b6d8b8fd625a602a6c277c9cdb96b1ded51ae",
+      "target_tree": "125e7e7dc992153d01f01bf3a5815d28758e2a92",
+      "patch_bytes": 121970,
+      "result": "passed"
+    },
+    "info-web-frontend": {
+      "from_tag": "p0-009a-pre-20260729",
+      "target_commit": "52dbb5a3c8d0483abd3d85c4a284dfe58b0d83c0",
+      "target_tree": "861e92f1435ec1ae5a38c528fdd6ee41308cf9e7",
+      "patch_bytes": 259913,
+      "result": "passed"
+    },
+    "info-web-backend": {
+      "from_tag": "p0-009a-pre-20260729",
+      "target_commit": "a142106e5cedf8e258bd2b89744744c0448e2e64",
+      "target_tree": "2bdb1fe946d7ac7a272602f758ef5a494a555c2d",
+      "patch_bytes": 41674360,
+      "result": "passed"
+    },
+    "knowledge-admin-frontend": {
+      "from_tag": "p0-009a-pre-20260729",
+      "target_commit": "544814f9fb443350edefb5776c3a0cac07f6f497",
+      "target_tree": "d673265e0ae09b796e7fe8a45fd7463ff1b7d8b2",
+      "patch_bytes": 3612703,
+      "result": "passed"
+    },
+    "knowledge-admin-backend": {
+      "from_tag": "p0-009a-pre-20260729",
+      "target_commit": "5d01bdd9013b67cb05b838d520282b25e1337eb7",
+      "target_tree": "772d0f3790b487f1366729834f9e0261236fea84",
+      "patch_bytes": 119560,
+      "result": "passed"
+    },
+    "knowledge-web-frontend": {
+      "from_tag": "p0-009a-pre-20260729",
+      "target_commit": "eccd7cd2a4f7cb4019edafbd089f5883b8e0792e",
+      "target_tree": "3c982431c79c619ad690b8d322f2879c02938b94",
+      "patch_bytes": 260224,
+      "result": "passed"
+    },
+    "knowledge-web-backend": {
+      "from_tag": "p0-009a-pre-20260729",
+      "target_commit": "e542cdd6ad24e9bedf9f55f503552bccb1c46546",
+      "target_tree": "9319d9bfdc1442fed7d5d4d0ec43837d99b55dca",
+      "patch_bytes": 41674794,
+      "result": "passed"
+    },
+    "research-admin-frontend": {
+      "from_tag": "p0-009a-pre-20260729",
+      "target_commit": "32b3bcaf156f12fa780d4a38ec84912f8621cf66",
+      "target_tree": "40398dbd970099aae8a7d92c5026438e543ed1a1",
+      "patch_bytes": 3612831,
+      "result": "passed"
+    },
+    "research-admin-backend": {
+      "from_tag": "p0-009a-pre-20260729",
+      "target_commit": "1c20a1c90289c9bed89f4d025ab6bc78650efa49",
+      "target_tree": "71d62db6ff260c0ee2d2d0143d0810e3e06205b3",
+      "patch_bytes": 124121,
+      "result": "passed"
+    },
+    "research-web-frontend": {
+      "from_tag": "p0-009a-pre-20260729",
+      "target_commit": "bfee1704c0272a5525abbb1383db5fea14328c07",
+      "target_tree": "212c34fd5aeb35ba8743fc5c9e5c4d4c12578819",
+      "patch_bytes": 260541,
+      "result": "passed"
+    },
+    "research-web-backend": {
+      "from_tag": "p0-009a-pre-20260729",
+      "target_commit": "9cc463424d42f658296ccb06965e61a276adcf48",
+      "target_tree": "c7429dce3147aa044096e2341325d749cfce89c8",
+      "patch_bytes": 41674643,
+      "result": "passed"
+    }
+  },
+  "kind_hygiene": {
+    "result": "passed",
+    "namespace": "app-platform-dev",
+    "isolation_leftovers": []
+  },
+  "alignment_lock": {
+    "result": "created",
+    "repositories": {
+      "info-admin-backend": {
+        "commit": "ee4b6d8b8fd625a602a6c277c9cdb96b1ded51ae",
+        "tree": "125e7e7dc992153d01f01bf3a5815d28758e2a92"
+      },
+      "info-admin-frontend": {
+        "commit": "90af7729f6f02e82d1a84f213ce8d8340fe3111d",
+        "tree": "bda7440161438bf136bc3239223f7e90ff73f956"
+      },
+      "info-web-backend": {
+        "commit": "a142106e5cedf8e258bd2b89744744c0448e2e64",
+        "tree": "2bdb1fe946d7ac7a272602f758ef5a494a555c2d"
+      },
+      "info-web-frontend": {
+        "commit": "52dbb5a3c8d0483abd3d85c4a284dfe58b0d83c0",
+        "tree": "861e92f1435ec1ae5a38c528fdd6ee41308cf9e7"
+      },
+      "knowledge-admin-backend": {
+        "commit": "5d01bdd9013b67cb05b838d520282b25e1337eb7",
+        "tree": "772d0f3790b487f1366729834f9e0261236fea84"
+      },
+      "knowledge-admin-frontend": {
+        "commit": "544814f9fb443350edefb5776c3a0cac07f6f497",
+        "tree": "d673265e0ae09b796e7fe8a45fd7463ff1b7d8b2"
+      },
+      "knowledge-web-backend": {
+        "commit": "e542cdd6ad24e9bedf9f55f503552bccb1c46546",
+        "tree": "9319d9bfdc1442fed7d5d4d0ec43837d99b55dca"
+      },
+      "knowledge-web-frontend": {
+        "commit": "eccd7cd2a4f7cb4019edafbd089f5883b8e0792e",
+        "tree": "3c982431c79c619ad690b8d322f2879c02938b94"
+      },
+      "research-admin-backend": {
+        "commit": "1c20a1c90289c9bed89f4d025ab6bc78650efa49",
+        "tree": "71d62db6ff260c0ee2d2d0143d0810e3e06205b3"
+      },
+      "research-admin-frontend": {
+        "commit": "32b3bcaf156f12fa780d4a38ec84912f8621cf66",
+        "tree": "40398dbd970099aae8a7d92c5026438e543ed1a1"
+      },
+      "research-web-backend": {
+        "commit": "9cc463424d42f658296ccb06965e61a276adcf48",
+        "tree": "c7429dce3147aa044096e2341325d749cfce89c8"
+      },
+      "research-web-frontend": {
+        "commit": "bfee1704c0272a5525abbb1383db5fea14328c07",
+        "tree": "212c34fd5aeb35ba8743fc5c9e5c4d4c12578819"
+      }
+    }
+  },
+  "instance_foundation_aligned": [
+    "info",
+    "knowledge",
+    "research"
+  ]
+}

@@ -1,8 +1,8 @@
 # MoocManus v5 当前交接文档
 
-> 文件名保留最初快照日期以避免旧链接失效；本文内容已于 **2026-07-28
-> （Asia/Shanghai）更新至 P0-007E ACCEPTED**，旧 2026-07-12/13/26 及 P0-007D 游标
-> 不再有效。
+> 文件名保留最初快照日期以避免旧链接失效；本文内容已于 **2026-07-29
+> （Asia/Shanghai）更新至经 Codex 独立复验的 P0-009E ACCEPTED**。Cursor 续作的历史
+> 自评不能覆盖本交接、严格证据和 alignment lock。
 >
 > 适用分支：`k8s/info-app/knowledge-app/research-app` 的 `codex-1`；`tpl-app` 及模板
 > 子仓当前为 `master`。
@@ -19,6 +19,7 @@
 6. `sunmoonai/docs/mooc-manus-v5/adr/ADR-018-unified-next-frontend-surfaces.md`
 7. 本文当前游标、仓库事实和禁止项
 8. `sunmoonai/docs/evidence/v5/` 对应任务的原始证据
+9. `sunmoonai/docs/codex审查-cursor续作-20260729.md`
 
 `mooc-manus-langgraph-longterm-plan-v4.md` 已归档，只能作为历史设计输入。聊天、旧镜像
 tag、Pod Running、单个 smoke 或本文中的提交快照都不能覆盖 v5、Accepted ADR、任务状态
@@ -90,15 +91,11 @@ Token、完整 Provider token 写 Redis、登录路径 DDL、GET logout 和原�
 
 ### 2.6 模板先行与实例立即收敛
 
-- 当前只开发 `tpl-app` 的模板/契约/门禁。B5、P0-007D 与 P0-007E 已接受；React Router Admin
-  已完成最终真实配对、双向回滚并原子改名为 `tpl-admin-frontend-react`。
-- canonical Next Admin 已建立全新历史并完成完整能力矩阵、FastAPI Admin 配对、
-  clean-room 与双向回滚；当前唯一任务恢复为 P0-008B/B6。
-- B6 完成后必须冻结四个默认组件统一 `template_release_id`，紧接执行
-  P0-009；不得先
-  做 P0-008C、产品功能、Memory/Subagent 或 Agent 主链扩建。
-- P0-009 按 Info -> Knowledge -> Research 串行把 Admin/Web 前后端共同底座原地同步；
-  任一实例失败即停止，不做三个 App 同时覆盖。
+- `tpl-app` B6 与四默认组件统一 `template_release_id` 已接受；React Router Admin 和 Nest
+  Web Backend 只保留为 legacy/可选 profile。
+- P0-009 已按 Info -> Knowledge -> Research 串行完成共同底座原地同步，并经 Codex
+  重新构建 12 个镜像、六组真实配对、三套四组件真实回滚、完整 tree clean-room 和
+  fail-closed P0-009E 总门禁复验。
 - Frontend 同步基础并重接领域页面；Backend 只同步通用内核，不覆盖领域模型、migration
   lineage、worker 和数据所有权。
 - P0-009 只产生 `INSTANCE_FOUNDATION_ALIGNED`，不自动切流、不删除旧 Vue/Next/Backend
@@ -148,15 +145,16 @@ Token、完整 Provider token 写 Redis、登录路径 DDL、GET logout 和原�
 ```text
 P0-007D = ACCEPTED
 P0-007E = ACCEPTED
-P0-008B = IN_PROGRESS / B5_ACCEPTED / B6_CURRENT_UNIQUE_TASK
-P0-009  = NOT_STARTED / BLOCKED_BY_P0_008B_B6
-P0-008C = NOT_STARTED
-三个业务 Admin/Web 实例 = 未应用统一 Next/FastAPI release
+P0-008B = ACCEPTED / B6_ACCEPTED
+P0-009  = ACCEPTED / P0-009A_ACCEPTED / P0-009B_ACCEPTED / P0-009C_ACCEPTED / P0-009D_ACCEPTED / P0-009E_ACCEPTED
+P0-008C = NOT_STARTED / P0-008C_NEXT
+三个业务 Admin/Web 实例 = Info/Knowledge/Research INSTANCE_FOUNDATION_ALIGNED（未切流）
 ```
 
-架构讨论已经收口。**唯一下一任务是 P0-008B/B6**：对同一 Next Web 分别执行默认
-FastAPI 与可选 Nest 的共享 consumer、真实配对和 release 门禁，并冻结统一模板 release。
-B6 完成后 P0-009A 自动成为唯一任务。不能跳到 P0-009B、P0-008C 或修改业务 App。
+架构讨论已经收口。**唯一下一任务是 P0-008C**：在已对齐 Research 上做真实 Web 试点与
+Next v2 冻结；common 缺陷必须回流 `tpl-app` 再传播。P0-009E 证据见
+`sunmoonai/docs/evidence/v5/V5-P0-009E/result.md`，审查差异见
+`sunmoonai/docs/codex审查-cursor续作-20260729.md`。未切业务流量、未推远端。
 
 ## 4. P0-008B 串行施工包
 

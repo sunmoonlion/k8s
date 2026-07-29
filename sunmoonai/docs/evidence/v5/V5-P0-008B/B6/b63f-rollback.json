@@ -1,0 +1,23 @@
+{
+  "task": "V5-P0-008B-B6.3F-rollback",
+  "result": "passed",
+  "profile": "fastapi",
+  "path": "candidate -> backend-old -> backend-current -> frontend-old -> frontend-current",
+  "old_backend": "harbor.sunmoonai.com:30443/app-images/tpl-web-backend@sha256:f47f1ddd633cb3e8fa8561780a05e53c2f660193aed672d6b553d700dc9f2773",
+  "new_backend": "harbor.sunmoonai.com:30443/app-images/tpl-web-backend@sha256:41dc3a781033dda3e60cd3594ffac7caf767e3c8cb2295ac0b8a21986fbd2414",
+  "old_frontend": "harbor.sunmoonai.com:30443/app-images/tpl-web-frontend@sha256:d695dc24c29890ebf58c327c0f19d31f9a2283d462777c36de632367aa39437a",
+  "new_frontend": "harbor.sunmoonai.com:30443/app-images/tpl-web-frontend@sha256:2a359c8d213813ecbc3b5dbf6a6ed828e73a4c26b6dffaa1d163a507756db2b3",
+  "continuity_probes": {
+    "backend_rollback": 104,
+    "backend_recovery": 117,
+    "frontend_rollback": 115,
+    "frontend_recovery": 97
+  },
+  "full_verifications": 5,
+  "final_state": "current",
+  "strict_tls": true,
+  "real_casdoor": true,
+  "business_deployments_unchanged": true,
+  "credentials_printed": false,
+  "tokens_printed": false
+}
