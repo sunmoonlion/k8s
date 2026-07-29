@@ -290,7 +290,7 @@
     "isolation_leftovers": []
   },
   "alignment_lock": {
-    "result": "created",
+    "result": "matched",
     "repositories": {
       "info-admin-backend": {
         "commit": "0d2c864edb660d248de52ae94610810405f74c2b",
