@@ -4,8 +4,8 @@
   "freeze_tag": "p0-009a-pre-20260729",
   "repositories": {
     "info-admin-backend": {
-      "commit": "ee4b6d8b8fd625a602a6c277c9cdb96b1ded51ae",
-      "tree": "125e7e7dc992153d01f01bf3a5815d28758e2a92"
+      "commit": "0d2c864edb660d248de52ae94610810405f74c2b",
+      "tree": "59297c80f944f193af39e9306229c1079e07ab08"
     },
     "info-admin-frontend": {
       "commit": "90af7729f6f02e82d1a84f213ce8d8340fe3111d",
@@ -20,8 +20,8 @@
       "tree": "861e92f1435ec1ae5a38c528fdd6ee41308cf9e7"
     },
     "knowledge-admin-backend": {
-      "commit": "5d01bdd9013b67cb05b838d520282b25e1337eb7",
-      "tree": "772d0f3790b487f1366729834f9e0261236fea84"
+      "commit": "6cb71ce402b2d823532f6ef22655741b2f4655a8",
+      "tree": "2c8a6223664426224d15eabaaf847d835446a3ff"
     },
     "knowledge-admin-frontend": {
       "commit": "544814f9fb443350edefb5776c3a0cac07f6f497",
@@ -36,8 +36,8 @@
       "tree": "3c982431c79c619ad690b8d322f2879c02938b94"
     },
     "research-admin-backend": {
-      "commit": "1c20a1c90289c9bed89f4d025ab6bc78650efa49",
-      "tree": "71d62db6ff260c0ee2d2d0143d0810e3e06205b3"
+      "commit": "74d28699899183c43ab3cfca069d21c56ac58e61",
+      "tree": "2f85ba776e20cb583d13d5145b23c577df0b69af"
     },
     "research-admin-frontend": {
       "commit": "32b3bcaf156f12fa780d4a38ec84912f8621cf66",

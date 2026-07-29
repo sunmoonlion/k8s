@@ -650,7 +650,10 @@ ADR-018 批准的 `tpl-admin-frontend-react`，以及本轮明确收口的只读
   精确内核漂移、证据/归档敏感信息卫生、24 个非隔离 Deployment 完整 spec/generation
   不变性和 KIND 零残留通过；证据
   `sunmoonai/docs/evidence/v5/V5-P0-009E/result.md`；三 App
-  `INSTANCE_FOUNDATION_ALIGNED`。未切业务流量、未推远端。
+  `INSTANCE_FOUNDATION_ALIGNED`。Codex 发布前树审计另发现三个 Admin Backend 历史追踪
+  含非占位凭据的 `app/.env`/`app/.env.k8s`；当前正式树已停止追踪并重建 alignment lock，
+  但 Git 历史泄露要求在 P0-008C 首个真实环境步骤前完成数据库、Redis、Casdoor 凭据轮换、
+  旧凭据拒绝验证和 secret scan。未切业务流量、未推远端。
   唯一下一任务是 P0-008C Research 真实试点）。
 
 ### V5-P0-008C Research Web 真实试点与 Next v2 冻结
@@ -660,6 +663,9 @@ ADR-018 批准的 `tpl-admin-frontend-react`，以及本轮明确收口的只读
 - 前置：P0-008B、P0-009 ACCEPTED；P0-001 选中 Runtime 有隔离可运行 endpoint，
   P0-004/005 有可执行 Provider/身份；不要求生产流量，但禁止 fake SSE、fake citation、
   mock Run success。
+- 安全预检：在任何真实 Provider/身份试点前，轮换曾进入三个 Admin Backend Git 历史的
+  数据库、Redis、Casdoor 凭据；证明旧凭据被拒绝，当前源码/构建上下文/镜像通过 secret
+  scan，且新凭据只由 Secret/部署机受控配置注入。删除当前 `.env` 文件不能替代轮换。
 - 实施：只在达到 `INSTANCE_FOUNDATION_ALIGNED` 的 Research 现有仓库上建立隔离入口，
   不再从模板重新覆盖一次；**Research Web 只与默认 FastAPI
   Research Web Backend/选中 Runtime adapter 成对部署和测试**，跑通真实 session/run、
