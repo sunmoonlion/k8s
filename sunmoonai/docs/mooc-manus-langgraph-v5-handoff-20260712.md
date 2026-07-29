@@ -19,7 +19,6 @@
 6. `sunmoonai/docs/mooc-manus-v5/adr/ADR-018-unified-next-frontend-surfaces.md`
 7. 本文当前游标、仓库事实和禁止项
 8. `sunmoonai/docs/evidence/v5/` 对应任务的原始证据
-9. `sunmoonai/docs/codex审查-cursor续作-20260729.md`
 
 `mooc-manus-langgraph-longterm-plan-v4.md` 已归档，只能作为历史设计输入。聊天、旧镜像
 tag、Pod Running、单个 smoke 或本文中的提交快照都不能覆盖 v5、Accepted ADR、任务状态
@@ -153,8 +152,8 @@ P0-008C = NOT_STARTED / P0-008C_NEXT
 
 架构讨论已经收口。**唯一下一任务是 P0-008C**：在已对齐 Research 上做真实 Web 试点与
 Next v2 冻结；common 缺陷必须回流 `tpl-app` 再传播。P0-009E 证据见
-`sunmoonai/docs/evidence/v5/V5-P0-009E/result.md`，审查差异见
-`sunmoonai/docs/codex审查-cursor续作-20260729.md`。未切业务流量、未推远端。
+`sunmoonai/docs/evidence/v5/V5-P0-009E/result.md`。未切业务流量；正式分支与冻结标签
+已推送，精确远端 ref 见 `sunmoonai/docs/evidence/v5/V5-P0-009E/remote-publish.json`。
 
 ## 4. P0-008B 串行施工包
 
