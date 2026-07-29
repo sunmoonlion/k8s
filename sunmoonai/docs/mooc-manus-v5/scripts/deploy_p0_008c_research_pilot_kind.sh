@@ -67,6 +67,24 @@ done
 
 k() { env -u DEBUG "$KUBECTL_BIN" --kubeconfig "$KUBECONFIG_PATH" "$@"; }
 
+stable_research_deployment_digest() {
+  k get deployment \
+    research-admin-backend celeryworker-research-admin-backend \
+    research-admin-frontend research-web-backend \
+    nodebullworker-research-web-backend research-web-frontend \
+    -n "$NAMESPACE" -o json \
+    | jq -S '[
+        .items[]
+        | {
+            name: .metadata.name,
+            generation: .metadata.generation,
+            spec: .spec
+          }
+      ] | sort_by(.name)' \
+    | sha256sum \
+    | awk '{print $1}'
+}
+
 cleanup() {
   k delete ingressroute research-web-p0-008c -n "$NAMESPACE" \
     --ignore-not-found=true >/dev/null
@@ -124,6 +142,13 @@ done
   printf 'deployment ID is invalid\n' >&2
   exit 1
 }
+for command in jq sha256sum openssl; do
+  command -v "$command" >/dev/null || {
+    printf 'required command is missing: %s\n' "$command" >&2
+    exit 1
+  }
+done
+stable_before="$(stable_research_deployment_digest)"
 
 for secret in harbor-registry-secret "$LLM_SECRET" "$BROWSER_SECRET" \
   "$SERVICE_CALLER_SECRET" "$SERVICE_BINDING_SECRET" "$RETRIEVAL_SECRET" \
@@ -693,6 +718,11 @@ next_ready="$(k get deployment research-web-frontend-p0-008c -n "$NAMESPACE" \
   && "$bff_ready" == 2 && "$next_ready" == 2 ]] || {
   printf 'P0-008C readiness mismatch runtime=%s worker=%s bff=%s next=%s\n' \
     "$runtime_ready" "$worker_ready" "$bff_ready" "$next_ready" >&2
+  exit 1
+}
+stable_after="$(stable_research_deployment_digest)"
+[[ "$stable_after" == "$stable_before" ]] || {
+  printf 'stable Research Deployment spec/generation changed during P0-008C\n' >&2
   exit 1
 }
 printf 'V5-P0-008C isolated pilot deployed runtime=%s worker=%s bff=%s next=%s\n' \
