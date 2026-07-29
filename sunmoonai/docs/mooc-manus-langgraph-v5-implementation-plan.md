@@ -726,11 +726,18 @@ ADR-018 批准的 `tpl-admin-frontend-react`，以及本轮明确收口的只读
      commit 改变，严格重放 P0-009B→C→D→E。冻结 Next v2 manifest、compatibility
      matrix、三 Web migration checklist、候选/旧版本双向回滚和最终零残留。
 - 状态：IN_PROGRESS / P0-008C.0_ACCEPTED / P0-008C.1_ACCEPTED /
-  P0-008C.2_IN_PROGRESS（2026-07-29；安全预检引用
+  P0-008C.2_CODE_ACCEPTED / P0-008C.3_CODE_ACCEPTED /
+  P0-008C.4_CODE_ACCEPTED / P0-008C.5_PENDING（2026-07-29；安全预检引用
   `sunmoonai/docs/evidence/v5/V5-RELEASE-1.0.0/result.md`；源码调用链审计确认上述三个
-  断点；Browser/Internal 两个 exact-field contract、service identity/delegation 与
-  pilot fail-closed 边界已经 `verify_p0_008c_contracts.py` 通过。尚未部署候选、未改变
-  稳定流量）。
+  断点后，已分别实现隔离 Runtime、FastAPI Web BFF adapter 与 typed Next product
+  surface；Browser/Internal exact-field contract、service identity/delegation 与 pilot
+  fail-closed 边界已经 `verify_p0_008c_contracts.py` 通过；Admin Backend 123 tests、
+  Web Backend 48 passed/2 skipped、Next 44 passed/2 skipped 且各静态门禁通过。
+  `build_p0_008c_images.sh`、`provision_p0_008c_identities.sh` 和
+  `deploy_p0_008c_research_pilot_kind.sh` 已建立并通过语法/plan 门禁。受当前执行环境
+  Docker/KIND 权限和 LLM Secret 缺口影响，尚未取得生产构建、digest、隔离部署或真实
+  竖线证据；未改变稳定流量。完整证据见
+  `sunmoonai/docs/evidence/v5/V5-P0-008C/result.md`）。
 
 ### 浏览器 Frontend/Backend 配对门禁（所有前端任务的强制规则）
 

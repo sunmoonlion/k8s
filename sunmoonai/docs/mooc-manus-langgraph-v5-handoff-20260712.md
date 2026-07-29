@@ -399,3 +399,16 @@ P0-009A~E、统一 `1.0.0` 发布、凭据轮换、Harbor 安全裁剪和 GC 已
 P0-008C 与 M1 的边界：本任务证明真实产品竖线及契约可行，不提前实现或宣称
 M1-301~312 完成。正式 outbox/Attempt lease/reconciler/SSE v2 生产主链仍在 Gate P0
 之后；试点 candidate 必须默认关闭、隔离部署、可删除且不得被稳定流量引用。
+
+### 9.1 2026-07-29 C2~C4 代码完成增量
+
+- C2 隔离 Runtime、C3 FastAPI Web BFF adapter、C4 typed Next workspace 已完成代码和
+  本地测试；准确状态是 `CODE_ACCEPTED`，不是环境 `ACCEPTED`。
+- Runtime internal-only 部署不得借用稳定 Admin/Web 浏览器 client secret；新增
+  `BROWSER_IDENTITY_ENABLED=false` 只允许与完整 pilot 配置同时启用，默认稳定行为不变。
+- 下一游标固定为 C5：先由 `build_p0_008c_images.sh --all` 取得三项 digest，再运行
+  `provision_p0_008c_identities.sh --apply`，最后由
+  `deploy_p0_008c_research_pilot_kind.sh --apply` 只部署隔离资源。
+- C5 前必须由受控 Secret 提供真实 LLM base URL/key/model。不得把 key 写入命令、文档、
+  `.env`、generated YAML、镜像 ARG/ENV 或日志；脚本不会猜测 Provider 凭据。
+- 当前尚无候选镜像/digest/隔离资源/真实竖线证据，稳定 `1.0.0` tuple 与流量未改变。
