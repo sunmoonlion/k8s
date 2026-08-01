@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-08-01",
+  "baseline_tag": "pre-architecture-v2-20260801",
+  "baseline_branch": "master",
+  "work_branch": "architecture-v2",
+  "repositories": [
+    {"name": "k8s", "commit": "d64f36bf3b2a27657f63d670f0c746fa470c8bd6", "tree": "7e7d37ff9e994151a2e5e34e8fe7f50932f0dc60"},
+    {"name": "tpl-app", "commit": "2aaae015e4a8f34fa6f815c9ccc78612ab4a0493", "tree": "3d23b6524b90c1baec0719a0bb9747feca38c1c8"},
+    {"name": "tpl-admin-backend", "commit": "69e634b8e5b06da9d1dcd01c9b1350e0571d74bd", "tree": "b31b5cca055cf02b355f07b66b750ca8063d01ee"},
+    {"name": "tpl-admin-frontend", "commit": "fb69795b04e0b888a2917c3936f7f80aeac79cc9", "tree": "d19cfc47a2946be07bf1b6ced268aad80c5f8331"},
+    {"name": "tpl-admin-frontend-react", "commit": "0b58adc4035d2b695646b0700dfc2fb707d14b57", "tree": "437e06c1a61b08dff8f31f4108f2ec8b82842f32", "role": "reference"},
+    {"name": "tpl-admin-frontend-vue", "commit": "9b3d29b8913989970f3da5093ee84d4f7d4cdfcf", "tree": "888641caf962ea886b7528fdee0a13f84262f82a", "role": "reference"},
+    {"name": "tpl-web-backend", "commit": "289f2c46410e0aa2891fdf3da28242ceb1a33bdb", "tree": "d64e1a6e530ae720324a27e354abf342e85d1b4f"},
+    {"name": "tpl-web-backend-nest", "commit": "ecb01d97e13cf86f27e09e77edf9663dcefd3fb7", "tree": "504a0814b73918fb86699d69ad32af6d886600b0", "role": "reference"},
+    {"name": "tpl-web-frontend", "commit": "f69d02c69007349eed6ab94bf69a453680cad455", "tree": "e73702bb6c7eef6014d405552687783ce6cbb35e"},
+    {"name": "info-app", "commit": "770b5bb397434181aff74df998fbfd82e0f867f1", "tree": "e15ec1310c6a82a69bbae931858cd568759ea8f6"},
+    {"name": "info-admin-backend", "commit": "1805cb8f73e4a0f8ea44ef10f18005cb42c645aa", "tree": "59297c80f944f193af39e9306229c1079e07ab08"},
+    {"name": "info-admin-frontend", "commit": "608d82e3a8eb3270a8c4cf6af37ccf334ee46ad9", "tree": "bda7440161438bf136bc3239223f7e90ff73f956"},
+    {"name": "info-web-backend", "commit": "a142106e5cedf8e258bd2b89744744c0448e2e64", "tree": "2bdb1fe946d7ac7a272602f758ef5a494a555c2d"},
+    {"name": "info-web-frontend", "commit": "2423a744464016bd956d344a888461eabbb6383b", "tree": "317971a199d4f77a13057a4c34ab4aa4dd1dc9f1"},
+    {"name": "knowledge-app", "commit": "960361b548a92013e00bedaa96cd7cb3f6006f15", "tree": "759b0a345cc62a60327b3cf63181cd2d26a8fc3b"},
+    {"name": "knowledge-admin-backend", "commit": "bf4489b444fc41d5e6b76b51abd75d15cc4f37e5", "tree": "2c8a6223664426224d15eabaaf847d835446a3ff"},
+    {"name": "knowledge-admin-frontend", "commit": "544814f9fb443350edefb5776c3a0cac07f6f497", "tree": "d673265e0ae09b796e7fe8a45fd7463ff1b7d8b2"},
+    {"name": "knowledge-web-backend", "commit": "e542cdd6ad24e9bedf9f55f503552bccb1c46546", "tree": "9319d9bfdc1442fed7d5d4d0ec43837d99b55dca"},
+    {"name": "knowledge-web-frontend", "commit": "f2a774772a83843215b95c80c1ccb1a32d49f3e7", "tree": "d6b0864c5edbad21a4c21988ae911b1136388764"},
+    {"name": "research-app", "commit": "4f2ec83b4dc2ecb945bc52d0ff813bd57a320b4b", "tree": "46d32b6749f5a67a1d5148892b2b1fe8a1b439d5"},
+    {"name": "research-admin-backend", "commit": "85a7b9da80f425ab160c6b1977405730b63a745e", "tree": "ffd87b51a602788d1b551bb1e76ba5d730babcb2"},
+    {"name": "research-admin-frontend", "commit": "32b3bcaf156f12fa780d4a38ec84912f8621cf66", "tree": "40398dbd970099aae8a7d92c5026438e543ed1a1"},
+    {"name": "research-web-backend", "commit": "6e79f1203458079b383cc6cb9c6b8e5cfa02baaf", "tree": "9fa34e57e7d39c7db57864f7339d1c6496e87d0e"},
+    {"name": "research-web-frontend", "commit": "b20c39d4802c9da6a0dc4a584a6319a8118f0d3e", "tree": "a1c832200c284ae358c5e823a8fc74cbc21c1cf2"}
+  ]
+}

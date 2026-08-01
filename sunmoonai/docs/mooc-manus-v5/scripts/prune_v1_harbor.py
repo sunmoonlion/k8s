@@ -13,6 +13,11 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROMOTE_PATH = SCRIPT_DIR / "promote_v1_0_0.py"
+ARCHITECTURE_V2_LOCK_PATH = (
+    SCRIPT_DIR.parents[1]
+    / "architecture-v2"
+    / "pre-refactor-image-lock.json"
+)
 CONFIRMATION = "DELETE-UNREFERENCED-V1-ARTIFACTS"
 
 
@@ -119,6 +124,21 @@ def release_digests() -> dict[str, set[str]]:
     return result
 
 
+def architecture_v2_locked_digests() -> dict[str, set[str]]:
+    result = {repository: set() for repository in TARGET_REPOSITORIES}
+    if not ARCHITECTURE_V2_LOCK_PATH.exists():
+        raise RuntimeError(
+            f"architecture v2 image lock missing: {ARCHITECTURE_V2_LOCK_PATH}"
+        )
+    payload = json.loads(ARCHITECTURE_V2_LOCK_PATH.read_text())
+    for item in payload.get("artifacts") or []:
+        repository = item.get("repository")
+        digest = item.get("digest")
+        if repository in result and digest:
+            result[repository].add(digest)
+    return result
+
+
 def delete_artifact(repository: str, digest: str) -> None:
     encoded_repository = urllib.parse.quote(repository, safe="")
     encoded_digest = urllib.parse.quote(digest, safe="")
@@ -170,12 +190,17 @@ def main() -> None:
 
     releases = release_digests()
     live = live_digests(args.kubeconfig)
+    architecture_v2_locked = architecture_v2_locked_digests()
     candidates: list[tuple[str, str, list[str]]] = []
     protected_count = 0
 
     for repository in sorted(TARGET_REPOSITORIES):
         artifacts = list_artifacts(repository)
-        roots = releases[repository] | live[repository]
+        roots = (
+            releases[repository]
+            | live[repository]
+            | architecture_v2_locked[repository]
+        )
         protected = referenced_closure(artifacts, roots)
         for artifact in artifacts:
             digest = artifact["digest"]
@@ -187,6 +212,8 @@ def main() -> None:
                     reasons.append("release")
                 if digest in live[repository]:
                     reasons.append("live")
+                if digest in architecture_v2_locked[repository]:
+                    reasons.append("architecture-v2-lock")
                 if digest not in roots:
                     reasons.append("referenced-child")
                 print(
