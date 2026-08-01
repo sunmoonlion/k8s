@@ -1,6 +1,6 @@
 # App Platform Architecture v2 重构执行基线
 
-状态：`ACTIVE / R0 COMPLETE / R1 NOT_STARTED / NO ARCHITECTURE CODE CHANGED`
+状态：`ACTIVE / R0 COMPLETE / R1 DESIGN COMPLETE / R2 PREFLIGHT / NO ARCHITECTURE CODE CHANGED`
 
 日期：2026-08-01
 
@@ -274,6 +274,10 @@ R0 完成前不得开始 Backend 合并。
 
 退出条件：ADR 全部 `ACCEPTED`，仓库/API/数据/部署目标无悬空决策。
 
+状态：`DONE`。逐仓执行矩阵见 `architecture-v2/R1-migration-matrices.md`，门禁结果见
+`architecture-v2/R1-gate-result.md`。R1 盘点同时发现 Info/Knowledge API 的 Redis ACL 配置
+漂移；它是 R2 前必须清除的旧拓扑健康前置条件，不是新的架构悬空决策。
+
 ### R2 tpl-backend 合并
 
 1. 建立或重命名规范 `tpl-backend`；
@@ -373,6 +377,7 @@ R4 全部完成前停止新业务功能开发。
 
 ## 9. 当前下一步
 
-R0 证据见 `architecture-v2/R0-baseline-result.md`。当前只允许进入 R1 ADR，不得直接开始
-复制、重命名或删除 Backend 代码。R1 的第一项工作是把本文第 2～5 节的冻结决定转化为
-可签署 ADR 和逐仓迁移矩阵，并消除所有仓库/API/数据库/部署悬空决策。
+R0 证据见 `architecture-v2/R0-baseline-result.md`；R1 证据见
+`architecture-v2/R1-gate-result.md`。当前进入 R2 preflight：先恢复 Info/Knowledge 旧拓扑的
+Redis ACL 与 API 健康，再生成模板 Admin/Web Backend 能力 manifest，之后才允许执行
+`tpl-admin-backend -> tpl-backend` 原地改名和模板代码合并。不得先改实例或删除旧 Web Backend。
