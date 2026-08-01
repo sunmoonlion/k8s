@@ -15,13 +15,16 @@ def git(repo: Path, *args: str) -> str:
     ).strip()
 
 
-def tracked_files(repo: Path) -> set[str]:
-    output = git(repo, "ls-files", "app")
+def tracked_files(repo: Path, revision: str) -> set[str]:
+    output = git(repo, "ls-tree", "-r", "--name-only", revision, "app")
     return set(output.splitlines()) if output else set()
 
 
-def digest(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+def digest(repo: Path, revision: str, path: str) -> str:
+    content = subprocess.check_output(
+        ["git", "-C", str(repo), "show", f"{revision}:{path}"]
+    )
+    return hashlib.sha256(content).hexdigest()
 
 
 def parse_args() -> argparse.Namespace:
@@ -32,7 +35,11 @@ def parse_args() -> argparse.Namespace:
         default=Path(__file__).resolve().parents[1]
         / "tpl-backend-capability-manifest.json",
     )
-    parser.add_argument("--tpl-root", type=Path, default=Path("/home/zymun/tpl-app"))
+    parser.add_argument(
+        "--tpl-root",
+        type=Path,
+        default=Path(__file__).resolve().parents[5] / "tpl-app",
+    )
     return parser.parse_args()
 
 
@@ -43,6 +50,7 @@ def main() -> int:
         raise SystemExit("manifest schema/status is not accepted v1")
 
     repos: dict[str, Path] = {}
+    baselines: dict[str, str] = {}
     tracked: dict[str, set[str]] = {}
     for name, source in manifest["sources"].items():
         repo = args.tpl_root / source["repository_directory"]
@@ -54,14 +62,16 @@ def main() -> int:
             check=True,
         )
         repos[name] = repo
-        tracked[name] = tracked_files(repo)
+        baselines[name] = baseline
+        tracked[name] = tracked_files(repo, baseline)
 
     actual_admin_only = sorted(tracked["admin"] - tracked["web"])
     actual_web_only = sorted(tracked["web"] - tracked["admin"])
     actual_common_different = sorted(
         path
         for path in tracked["admin"] & tracked["web"]
-        if digest(repos["admin"] / path) != digest(repos["web"] / path)
+        if digest(repos["admin"], baselines["admin"], path)
+        != digest(repos["web"], baselines["web"], path)
     )
     coverage = manifest["coverage"]
     expected = {

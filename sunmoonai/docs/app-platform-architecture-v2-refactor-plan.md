@@ -1,6 +1,6 @@
 # App Platform Architecture v2 重构执行基线
 
-状态：`ACTIVE / R0 COMPLETE / R1 COMPLETE / R2 PREFLIGHT COMPLETE / TEMPLATE CODE MERGE ACTIVE`
+状态：`ACTIVE / R0 COMPLETE / R1 COMPLETE / R2 COMPLETE / R3 NEXT`
 
 日期：2026-08-01
 
@@ -293,6 +293,12 @@ R0 完成前不得开始 Backend 合并。
 
 退出条件：模板三组件可在隔离环境以不可变 digest 完整运行。
 
+状态：`DONE`。统一 Backend、Admin Next、Web Next 已由真实 PostgreSQL/Redis、迁移往返、
+Outbox/Inbox、角色启动、身份隔离和 16 条 Playwright 用例共同验收；三张候选镜像已按源码
+commit 推送 Harbor 并从远端复核不可变 digest。证据见
+`architecture-v2/R2-template-backend-result.md`。这些候选尚未晋级正式 `2.0.0`，也尚未部署
+KIND；后者属于 R3。
+
 ### R3 K8s 模板重构
 
 - 一个 Backend Config/Secret/Service；
@@ -379,7 +385,7 @@ R4 全部完成前停止新业务功能开发。
 
 R0 证据见 `architecture-v2/R0-baseline-result.md`；R1 证据见
 `architecture-v2/R1-gate-result.md`；R2 前置门禁见 `architecture-v2/R2-preflight-result.md`。
-Redis ACL 旧拓扑已恢复，模板能力 manifest 已通过机器校验。当前只允许执行
-能力清单驱动的模板代码合并。`tpl-admin-backend -> tpl-backend` 的远端、origin、父仓 gitlink、
-clean clone 与 refs 一致性事务已经通过，证据见
-`architecture-v2/R2-template-repository-transaction.md`。不得先改实例或删除旧 Web Backend。
+Redis ACL 旧拓扑已恢复，模板能力 manifest 和模板代码合并均已通过机器门禁；R2 证据见
+`architecture-v2/R2-template-backend-result.md`。当前只允许进入 R3 K8s 模板重构：把统一
+Backend 的 API/Worker/Scheduler/Migration 与两个 Next 前端落实为可生成、可 clean-room 验证、
+可回滚的部署模板。R3 完成前不得改实例、删除旧 Web Backend 或开始新业务开发。
