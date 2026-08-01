@@ -1,6 +1,6 @@
 # App Platform Architecture v2 重构执行基线
 
-状态：`ACTIVE / R0 COMPLETE / R1 COMPLETE / R2 COMPLETE / R3 NEXT`
+状态：`ACTIVE / R0-R3 COMPLETE / R4 NEXT`
 
 日期：2026-08-01
 
@@ -309,6 +309,14 @@ KIND；后者属于 R3。
 - PDB/HPA/资源/探针按角色配置；
 - 生成器和部署脚本 clean-room 验证。
 
+退出条件：同一模板 release 以不可变 digest 完成结构、部署、Migration、严格 TLS、真实 Casdoor、
+双端身份隔离、NetworkPolicy 报文级 allow/deny、原生回滚/前滚和资源清理门禁。
+
+状态：`DONE`。规范 scaffold、部署器、真实 Casdoor 双端门禁、R2 回滚/R3 前滚复验和独立
+Calico 策略集群均已通过；schema 2 模板 release 已锁定为 R4 唯一来源。证据见
+`architecture-v2/R3-kubernetes-template-result.md` 与
+`architecture-v2/evidence/R3-template-gate/`。候选仍未晋级正式 `2.0.0`。
+
 ### R4 立即同步三个实例共同底座
 
 严格串行：Info -> Knowledge -> Research。每个实例必须：
@@ -385,7 +393,8 @@ R4 全部完成前停止新业务功能开发。
 
 R0 证据见 `architecture-v2/R0-baseline-result.md`；R1 证据见
 `architecture-v2/R1-gate-result.md`；R2 前置门禁见 `architecture-v2/R2-preflight-result.md`。
-Redis ACL 旧拓扑已恢复，模板能力 manifest 和模板代码合并均已通过机器门禁；R2 证据见
-`architecture-v2/R2-template-backend-result.md`。当前只允许进入 R3 K8s 模板重构：把统一
-Backend 的 API/Worker/Scheduler/Migration 与两个 Next 前端落实为可生成、可 clean-room 验证、
-可回滚的部署模板。R3 完成前不得改实例、删除旧 Web Backend 或开始新业务开发。
+Redis ACL 旧拓扑已恢复，R2 模板代码和 R3 Kubernetes/身份/回滚/策略门禁均已通过。R3 证据见
+`architecture-v2/R3-kubernetes-template-result.md`。当前只允许进入 R4，严格按
+`Info -> Knowledge -> Research` 从 schema 2 模板 release 同步全部共同能力；每个实例必须完成
+差异分类、配对、身份、数据与回滚验证后才能进入下一个。R4 完成前不得开始 R5 数据归并、删除
+旧 Web Backend/数据库/Secret、晋级 `2.0.0` 或继续新业务开发。
