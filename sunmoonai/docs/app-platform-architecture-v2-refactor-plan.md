@@ -1,6 +1,6 @@
 # App Platform Architecture v2 重构执行基线
 
-状态：`ACTIVE / R0 COMPLETE / R1 DESIGN COMPLETE / R2 PREFLIGHT / NO ARCHITECTURE CODE CHANGED`
+状态：`ACTIVE / R0 COMPLETE / R1 COMPLETE / R2 PREFLIGHT COMPLETE / TEMPLATE REPO TRANSACTION NEXT`
 
 日期：2026-08-01
 
@@ -378,6 +378,7 @@ R4 全部完成前停止新业务功能开发。
 ## 9. 当前下一步
 
 R0 证据见 `architecture-v2/R0-baseline-result.md`；R1 证据见
-`architecture-v2/R1-gate-result.md`。当前进入 R2 preflight：先恢复 Info/Knowledge 旧拓扑的
-Redis ACL 与 API 健康，再生成模板 Admin/Web Backend 能力 manifest，之后才允许执行
-`tpl-admin-backend -> tpl-backend` 原地改名和模板代码合并。不得先改实例或删除旧 Web Backend。
+`architecture-v2/R1-gate-result.md`；R2 前置门禁见 `architecture-v2/R2-preflight-result.md`。
+Redis ACL 旧拓扑已恢复，模板能力 manifest 已通过机器校验。当前只允许执行
+`tpl-admin-backend -> tpl-backend` 原地改名事务，完成远端、origin、父仓 gitlink、clean clone 与
+分支/标签一致性验证后，才进入模板代码合并。不得先改实例或删除旧 Web Backend。

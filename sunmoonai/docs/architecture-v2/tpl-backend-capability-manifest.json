@@ -1,0 +1,230 @@
+{
+  "schema_version": 1,
+  "status": "accepted",
+  "target_repository": "tpl-backend",
+  "sources": {
+    "admin": {
+      "repository_directory": "tpl-admin-backend",
+      "baseline_commit": "69e634b8e5b06da9d1dcd01c9b1350e0571d74bd"
+    },
+    "web": {
+      "repository_directory": "tpl-web-backend",
+      "baseline_commit": "289f2c46410e0aa2891fdf3da28242ceb1a33bdb"
+    }
+  },
+  "coverage": {
+    "admin_only_tracked": [
+      "app/app/interfaces/endpoints/tasks_routes.py"
+    ],
+    "web_only_tracked": [
+      "app/app/application/ports/__init__.py",
+      "app/app/application/ports/web_interaction.py",
+      "app/app/application/services/web_interaction.py",
+      "app/app/infrastructure/external/downstream_service.py",
+      "app/app/interfaces/endpoints/interaction_routes.py",
+      "app/app/interfaces/schemas/interaction.py",
+      "app/tests/test_downstream_service.py",
+      "app/tests/test_interaction_consumer_vectors.py",
+      "app/tests/test_interaction_contract.py"
+    ],
+    "common_different_tracked": [
+      "app/.env.example",
+      "app/alembic/env.py",
+      "app/alembic/versions/20260726_0001_auth_identity.py",
+      "app/app/application/audit_context.py",
+      "app/app/application/errors/exceptions.py",
+      "app/app/application/services/auth_service.py",
+      "app/app/infrastructure/messaging/celery_producer.py",
+      "app/app/infrastructure/security/oidc.py",
+      "app/app/interfaces/endpoints/auth_routes.py",
+      "app/app/interfaces/endpoints/routes.py",
+      "app/app/interfaces/errors/exception_handlers.py",
+      "app/app/interfaces/middleware/auth.py",
+      "app/app/main.py",
+      "app/app/tasks/__init__.py",
+      "app/app/worker.py",
+      "app/core/config.py",
+      "app/pyproject.toml",
+      "app/tests/test_auth_routes_security.py",
+      "app/tests/test_auth_service.py",
+      "app/tests/test_config_security.py",
+      "app/tests/test_oidc_security.py",
+      "app/uv.lock"
+    ]
+  },
+  "capabilities": [
+    {
+      "id": "canonical-build-and-configuration",
+      "action": "merge",
+      "sources": [
+        {"repository": "admin", "path": "app/.env.example"},
+        {"repository": "web", "path": "app/.env.example"},
+        {"repository": "admin", "path": "app/core/config.py"},
+        {"repository": "web", "path": "app/core/config.py"},
+        {"repository": "admin", "path": "app/pyproject.toml"},
+        {"repository": "web", "path": "app/pyproject.toml"},
+        {"repository": "admin", "path": "app/uv.lock"},
+        {"repository": "web", "path": "app/uv.lock"}
+      ],
+      "target": "app/core/config.py and one regenerated pyproject.toml/uv.lock",
+      "acceptance": [
+        "one Settings root with explicit admin and web browser profiles",
+        "one dependency graph and one lockfile",
+        "no ADMIN_BACKEND_INTERNAL_URL or WEB_BACKEND_INTERNAL_URL in the Backend"
+      ]
+    },
+    {
+      "id": "canonical-database-migration-chain",
+      "action": "retain-admin-discard-web",
+      "sources": [
+        {"repository": "admin", "path": "app/alembic/env.py"},
+        {"repository": "web", "path": "app/alembic/env.py"},
+        {"repository": "admin", "path": "app/alembic/versions/20260726_0001_auth_identity.py"},
+        {"repository": "web", "path": "app/alembic/versions/20260726_0001_auth_identity.py"}
+      ],
+      "target": "app/alembic with the Admin history as its only root",
+      "acceptance": [
+        "one Alembic head",
+        "the Web root is not copied or spliced into the Admin history",
+        "upgrade, downgrade and empty-database replay tests pass"
+      ]
+    },
+    {
+      "id": "shared-authentication-kernel",
+      "action": "merge",
+      "sources": [
+        {"repository": "admin", "path": "app/app/application/audit_context.py"},
+        {"repository": "web", "path": "app/app/application/audit_context.py"},
+        {"repository": "admin", "path": "app/app/application/errors/exceptions.py"},
+        {"repository": "web", "path": "app/app/application/errors/exceptions.py"},
+        {"repository": "admin", "path": "app/app/application/services/auth_service.py"},
+        {"repository": "web", "path": "app/app/application/services/auth_service.py"},
+        {"repository": "admin", "path": "app/app/infrastructure/security/oidc.py"},
+        {"repository": "web", "path": "app/app/infrastructure/security/oidc.py"},
+        {"repository": "admin", "path": "app/app/interfaces/errors/exception_handlers.py"},
+        {"repository": "web", "path": "app/app/interfaces/errors/exception_handlers.py"},
+        {"repository": "admin", "path": "app/app/interfaces/middleware/auth.py"},
+        {"repository": "web", "path": "app/app/interfaces/middleware/auth.py"},
+        {"repository": "admin", "path": "app/tests/test_auth_service.py"},
+        {"repository": "web", "path": "app/tests/test_auth_service.py"},
+        {"repository": "admin", "path": "app/tests/test_oidc_security.py"},
+        {"repository": "web", "path": "app/tests/test_oidc_security.py"}
+      ],
+      "target": "app/app/application/security and app/app/infrastructure/security",
+      "acceptance": [
+        "one AuthService and one OIDC implementation",
+        "surface is an explicit input and immutable session claim",
+        "provider tokens never enter browser storage"
+      ]
+    },
+    {
+      "id": "separate-admin-and-web-auth-surfaces",
+      "action": "split-interface",
+      "sources": [
+        {"repository": "admin", "path": "app/app/interfaces/endpoints/auth_routes.py"},
+        {"repository": "web", "path": "app/app/interfaces/endpoints/auth_routes.py"},
+        {"repository": "admin", "path": "app/tests/test_auth_routes_security.py"},
+        {"repository": "web", "path": "app/tests/test_auth_routes_security.py"},
+        {"repository": "admin", "path": "app/tests/test_config_security.py"},
+        {"repository": "web", "path": "app/tests/test_config_security.py"}
+      ],
+      "target": "app/app/interfaces/http/admin/auth.py and app/app/interfaces/http/web/auth.py",
+      "acceptance": [
+        "/api/auth/admin and /api/auth/web use separate OIDC clients and cookies",
+        "Admin has no signup route",
+        "Web signup and continue preserve strict return-to validation"
+      ]
+    },
+    {
+      "id": "admin-task-diagnostics",
+      "action": "retain",
+      "sources": [
+        {"repository": "admin", "path": "app/app/interfaces/endpoints/tasks_routes.py"}
+      ],
+      "target": "app/app/interfaces/http/admin/diagnostics.py",
+      "acceptance": [
+        "route requires Admin authorization and CSRF for browser mutation",
+        "diagnostic enqueue uses the shared application port"
+      ]
+    },
+    {
+      "id": "web-interaction-contract",
+      "action": "migrate",
+      "sources": [
+        {"repository": "web", "path": "app/app/application/ports/__init__.py"},
+        {"repository": "web", "path": "app/app/application/ports/web_interaction.py"},
+        {"repository": "web", "path": "app/app/application/services/web_interaction.py"},
+        {"repository": "web", "path": "app/app/interfaces/endpoints/interaction_routes.py"},
+        {"repository": "web", "path": "app/app/interfaces/schemas/interaction.py"},
+        {"repository": "web", "path": "app/tests/test_interaction_consumer_vectors.py"},
+        {"repository": "web", "path": "app/tests/test_interaction_contract.py"}
+      ],
+      "target": "app/app/application/ports and app/app/interfaces/http/web/interactions.py",
+      "acceptance": [
+        "run snapshot, cursor SSE, actions and citation source contracts remain compatible",
+        "reference adapter is test-only and production fails closed",
+        "SSE keeps cursor validation, no buffering and ownership checks"
+      ]
+    },
+    {
+      "id": "real-cross-app-downstream-client",
+      "action": "migrate-with-restriction",
+      "sources": [
+        {"repository": "web", "path": "app/app/infrastructure/external/downstream_service.py"},
+        {"repository": "web", "path": "app/tests/test_downstream_service.py"}
+      ],
+      "target": "app/app/infrastructure/external/downstream_service.py",
+      "acceptance": [
+        "usable only for a different App/provider boundary",
+        "same-Backend calls are rejected by architecture tests",
+        "timeout, redirect, allowlist and service-identity tests pass"
+      ]
+    },
+    {
+      "id": "single-runtime-bootstrap",
+      "action": "merge",
+      "sources": [
+        {"repository": "admin", "path": "app/app/infrastructure/messaging/celery_producer.py"},
+        {"repository": "web", "path": "app/app/infrastructure/messaging/celery_producer.py"},
+        {"repository": "admin", "path": "app/app/interfaces/endpoints/routes.py"},
+        {"repository": "web", "path": "app/app/interfaces/endpoints/routes.py"},
+        {"repository": "admin", "path": "app/app/main.py"},
+        {"repository": "web", "path": "app/app/main.py"},
+        {"repository": "admin", "path": "app/app/tasks/__init__.py"},
+        {"repository": "web", "path": "app/app/tasks/__init__.py"},
+        {"repository": "admin", "path": "app/app/worker.py"},
+        {"repository": "web", "path": "app/app/worker.py"}
+      ],
+      "target": "app/app/bootstrap/api.py and app/app/bootstrap/worker.py",
+      "acceptance": [
+        "one image starts API or Worker through explicit commands",
+        "API startup validates browser profiles and Redis/PostgreSQL readiness",
+        "Worker startup does not require browser client secrets"
+      ]
+    },
+    {
+      "id": "health-readiness-and-route-composition",
+      "action": "merge",
+      "sources": [
+        {"repository": "admin", "path": "app/app/interfaces/endpoints/routes.py"},
+        {"repository": "web", "path": "app/app/interfaces/endpoints/routes.py"},
+        {"repository": "admin", "path": "app/app/main.py"},
+        {"repository": "web", "path": "app/app/main.py"}
+      ],
+      "target": "app/app/bootstrap/api.py and app/app/interfaces/http/routes.py",
+      "acceptance": [
+        "/health/live is process-only and /health/ready checks required dependencies",
+        "legacy /health, /ready and /api/health aliases call the same handlers",
+        "Kubernetes startup, liveness and readiness probes are mandatory"
+      ]
+    }
+  ],
+  "forbidden_results": [
+    "a second Alembic root or second auth_user table",
+    "separate AdminAuthService and WebAuthService cores",
+    "a Backend service-token HTTP call to itself",
+    "browser access to /api/internal",
+    "mock success or reference fixtures enabled in production",
+    "a Deployment without startup, liveness and readiness probes"
+  ]
+}
