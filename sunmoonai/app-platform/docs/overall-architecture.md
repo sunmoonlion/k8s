@@ -1,5 +1,12 @@
 # App Platform 总体架构
 
+> **Architecture v2 迁移提示（2026-08-01）**：本文中的四组件、独立 Admin/Web
+> Backend 和旧模板技术栈描述是重构前 v1 现状。Architecture v2 已决定保留领域 App
+> 边界，但把每个 App 收敛为一个规范 FastAPI Backend、两个 Next.js 前端和一个逻辑
+> 数据库。重构期间唯一施工权威是
+> [Architecture v2 重构执行基线](../../docs/app-platform-architecture-v2-refactor-plan.md)，
+> 决策权威是 ADR-0007～ADR-0013。本文将在 R8 根据已验收实现整体重写。
+
 ## 1. 文档定位
 
 本文只描述 App Platform 的总体架构，包括平台目标、应用边界、依赖方向、数据所有权和共同设计原则。

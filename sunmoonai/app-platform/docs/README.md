@@ -1,5 +1,9 @@
 # App Platform 架构文档
 
+> Architecture v2 正在 `architecture-v2` 分支施工。当前唯一执行基线为
+> [App Platform Architecture v2 重构执行基线](../../docs/app-platform-architecture-v2-refactor-plan.md)。
+> 总体架构正文仍包含 v1 现状，冲突部分以 ADR-0007～ADR-0013 为准。
+
 ## 总体设计
 
 - [总体架构](./overall-architecture.md)
@@ -27,6 +31,13 @@
 - [ADR-0004：对象存储按领域拥有和隔离](./adr/0004-object-storage-ownership.md)
 - [ADR-0005：RAGFlow 定位为可重建的派生系统](./adr/0005-ragflow-as-derived-system.md)
 - [ADR-0006：模板组件不定义领域边界](./adr/0006-template-components-and-domain-boundaries.md)
+- [ADR-0007：每个领域 App 只有一个规范 Backend](./adr/0007-one-canonical-backend-per-app.md)
+- [ADR-0008：Backend 仓库收敛与归档](./adr/0008-backend-repository-convergence.md)
+- [ADR-0009：Admin、Web 与 Internal 接口及身份分面](./adr/0009-api-surfaces-and-identity.md)
+- [ADR-0010：每个 App 的数据库与迁移链归并](./adr/0010-database-convergence.md)
+- [ADR-0011：Backend 运行角色与容量边界](./adr/0011-backend-runtime-roles.md)
+- [ADR-0012：模板优先与实例完整同步](./adr/0012-template-first-adoption.md)
+- [ADR-0013：发布 Artifact 生命周期](./adr/0013-release-artifact-lifecycle.md)
 
 ## 工程约定
 
