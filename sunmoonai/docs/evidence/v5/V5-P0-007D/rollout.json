@@ -1,0 +1,26 @@
+{
+  "task": "V5-P0-007D-rollout",
+  "result": "passed",
+  "strict_tls": true,
+  "credentials_printed": false,
+  "tokens_printed": false,
+  "rollback_continuity": {
+    "probes": 105
+  },
+  "forward_continuity": {
+    "probes": 75
+  },
+  "accepted_image": "harbor.sunmoonai.com:30443/app-images/tpl-admin-frontend@sha256:358f24459dcf62b52cd10fcb84a0fa2ac6432d5b96dff2b07d279bc3f98759e2",
+  "rollback_image": "harbor.sunmoonai.com:30443/app-images/tpl-admin-frontend@sha256:4eda1d8db806855ec43893d493c623918759aa07a18314362fd17a0c6077c8f8",
+  "backend_image": "harbor.sunmoonai.com:30443/app-images/tpl-admin-backend@sha256:0fe898a76e33fd72fba53c1c1c4cd9f9d51ea0a8632c75c16705f41efa8e29ba",
+  "cross_version_assets": {
+    "accepted_on_rollback": 18,
+    "rollback_on_accepted": 18
+  },
+  "full_verifications": [
+    "rollback_v1",
+    "accepted_v2"
+  ],
+  "unaffected_deployments_unchanged": true,
+  "final_state": "p0-007d-v2-compat"
+}

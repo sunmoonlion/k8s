@@ -11,8 +11,12 @@ imagePullSecrets:
 env:
   RUNNING_IN_DOCKER: "true"
   driverName: postgres
-  # ⚠️ 生产环境必须通过 K8s Secret + envFrom 注入 dataSourceName，禁止明文
-  dataSourceName: ""
+  dataSourceName:
+    valueFrom:
+      secretKeyRef:
+        name: casdoor-postgresql-conn
+        key: APP_DB_URI
+        optional: false
   dbName: ""
 
 service:
@@ -33,11 +37,62 @@ resources:
     cpu: 1000m
     memory: 1Gi
 
+controller:
+  replicas: 2
+  strategy: RollingUpdate
+  rollingUpdate:
+    unavailable: "0"
+    surge: 1
+
+probes:
+  liveness:
+    custom: true
+    spec:
+      httpGet:
+        path: /api/get-account
+        port: http
+      initialDelaySeconds: 20
+      periodSeconds: 15
+      timeoutSeconds: 5
+      failureThreshold: 6
+  readiness:
+    custom: true
+    spec:
+      httpGet:
+        path: /api/get-account
+        port: http
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 6
+  startup:
+    custom: true
+    spec:
+      httpGet:
+        path: /api/get-account
+        port: http
+      periodSeconds: 5
+      timeoutSeconds: 5
+      failureThreshold: 60
+
+configmap:
+  config:
+    enabled: true
+    data:
+      app.conf: |
+        appname = casdoor
+        httpport = 8000
+        runmode = prod
+        SessionOn = true
+        copyrequestbody = true
+        logPostOnly = true
+        staticBaseUrl = "."
+        aiAssistantUrl = ""
+
 persistence:
   config:
     enabled: true
-    accessMode: ReadWriteOnce
-    type: pvc
+    type: configMap
+    name: casdoor-sunmoonai-config
     mountPath: /conf
-    size: 5Gi
-    storageClass: "fast-ssd"
+    readOnly: true

@@ -1,0 +1,20 @@
+{
+  "task": "V5-P0-008B-B6.2-vue-admin-pair",
+  "result": "passed",
+  "anonymous": 401,
+  "authenticated": 200,
+  "invalid_csrf": 403,
+  "scoped_mutation": 503,
+  "logout": 204,
+  "post_logout": 401,
+  "frontend_image": "harbor.sunmoonai.com:30443/app-images/tpl-admin-frontend-vue@sha256:5380b1b56b3c6f0c825b2e0a2df03b0e23517eb8de6d440edccbe2579b738a57",
+  "backend_image": "harbor.sunmoonai.com:30443/app-images/tpl-admin-backend@sha256:b24ce7a39e7e10a5541b2a29ff9795a6944d6f17ec4d0479e2051f59a0688c56",
+  "deployment_id": "b6-vue-9b3d29b-69e634b",
+  "contract_version": 1,
+  "strict_tls": true,
+  "csp_checked": true,
+  "real_role_negative": true,
+  "remote_runtime_hosts": 0,
+  "credentials_printed": false,
+  "tokens_printed": false
+}

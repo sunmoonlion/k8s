@@ -49,13 +49,88 @@ export CELERYWORKER_INFO_ADMIN_BACKEND_SECRET_NAME="${CELERYWORKER_INFO_ADMIN_BA
 export CELERYWORKER_INFO_ADMIN_BACKEND_CONFIGMAP_NAME="${CELERYWORKER_INFO_ADMIN_BACKEND_CONFIGMAP_NAME:-}"
 export INFO_ADMIN_BACKEND_SECRET_NAME="${INFO_ADMIN_BACKEND_SECRET_NAME:-}"
 export INFO_ADMIN_BACKEND_CONFIGMAP_NAME="${INFO_ADMIN_BACKEND_CONFIGMAP_NAME:-}"
+export INFO_KNOWLEDGE_INGEST_CLIENT_SECRET_NAME="${INFO_KNOWLEDGE_INGEST_CLIENT_SECRET_NAME:-}"
+export INFO_DISTRIBUTION_WORKER_SERVICE_ACCOUNT_NAME="${INFO_DISTRIBUTION_WORKER_SERVICE_ACCOUNT_NAME:-}"
+export INFO_DELIVERY_OUTBOX_SCANNER_NAME="${INFO_DELIVERY_OUTBOX_SCANNER_NAME:-}"
+export INFO_DELIVERY_OUTBOX_SCANNER_SERVICE_ACCOUNT_NAME="${INFO_DELIVERY_OUTBOX_SCANNER_SERVICE_ACCOUNT_NAME:-}"
+export INFO_DELIVERY_OUTBOX_SCANNER_SCHEDULE="${INFO_DELIVERY_OUTBOX_SCANNER_SCHEDULE:-}"
+export INFO_DELIVERY_OUTBOX_SCANNER_SUSPEND="${INFO_DELIVERY_OUTBOX_SCANNER_SUSPEND:-}"
+export INFO_DELIVERY_OUTBOX_SCANNER_TTL_SECONDS="${INFO_DELIVERY_OUTBOX_SCANNER_TTL_SECONDS:-}"
+export INFO_DELIVERY_OUTBOX_SCANNER_BATCH_SIZE="${INFO_DELIVERY_OUTBOX_SCANNER_BATCH_SIZE:-}"
+export INFO_ADMIN_BACKEND_POSTGRESQL_SECRET_NAME="${INFO_ADMIN_BACKEND_POSTGRESQL_SECRET_NAME:-}"
+export INFO_ADMIN_BACKEND_REDIS_SECRET_NAME="${INFO_ADMIN_BACKEND_REDIS_SECRET_NAME:-}"
+export INFO_ADMIN_BACKEND_MONGODB_SECRET_NAME="${INFO_ADMIN_BACKEND_MONGODB_SECRET_NAME:-}"
+export INFO_ADMIN_BACKEND_DATABASE_ENV_FROM=""
+append_database_secret_ref() {
+    local secret_name="$1"
+    [[ -n "$secret_name" ]] || return 0
+    if [[ -n "$INFO_ADMIN_BACKEND_DATABASE_ENV_FROM" ]]; then
+        INFO_ADMIN_BACKEND_DATABASE_ENV_FROM+=$'\n'
+    fi
+    INFO_ADMIN_BACKEND_DATABASE_ENV_FROM+="        - secretRef:"$'\n'"            name: ${secret_name}"
+}
+append_database_secret_ref "$INFO_ADMIN_BACKEND_POSTGRESQL_SECRET_NAME"
+append_database_secret_ref "$INFO_ADMIN_BACKEND_REDIS_SECRET_NAME"
+append_database_secret_ref "$INFO_ADMIN_BACKEND_MONGODB_SECRET_NAME"
+if [[ -n "$INFO_ADMIN_BACKEND_DATABASE_ENV_FROM" ]]; then
+    export INFO_ADMIN_BACKEND_DATABASE_ENV_FROM
+fi
+export INFO_ADMIN_BACKEND_OBJECT_STORAGE_CONFIGMAP_NAME="${INFO_ADMIN_BACKEND_OBJECT_STORAGE_CONFIGMAP_NAME:-}"
+export INFO_ADMIN_BACKEND_OBJECT_STORAGE_SECRET_NAME="${INFO_ADMIN_BACKEND_OBJECT_STORAGE_SECRET_NAME:-}"
+export INFO_ADMIN_BACKEND_OBJECT_STORAGE_ENV_FROM=""
+if [[ -n "$INFO_ADMIN_BACKEND_OBJECT_STORAGE_CONFIGMAP_NAME" ||
+      -n "$INFO_ADMIN_BACKEND_OBJECT_STORAGE_SECRET_NAME" ]]; then
+    if [[ -z "$INFO_ADMIN_BACKEND_OBJECT_STORAGE_CONFIGMAP_NAME" ||
+          -z "$INFO_ADMIN_BACKEND_OBJECT_STORAGE_SECRET_NAME" ]]; then
+        log_error "对象存储 ConfigMap 和 Secret 名称必须同时设置"
+        exit 1
+    fi
+    printf -v INFO_ADMIN_BACKEND_OBJECT_STORAGE_ENV_FROM \
+      '        - configMapRef:\n            name: %s\n        - secretRef:\n            name: %s' \
+      "$INFO_ADMIN_BACKEND_OBJECT_STORAGE_CONFIGMAP_NAME" \
+      "$INFO_ADMIN_BACKEND_OBJECT_STORAGE_SECRET_NAME"
+    export INFO_ADMIN_BACKEND_OBJECT_STORAGE_ENV_FROM
+fi
+export INFO_ADMIN_BACKEND_ELASTICSEARCH_CONFIGMAP_NAME="${INFO_ADMIN_BACKEND_ELASTICSEARCH_CONFIGMAP_NAME:-}"
+export INFO_ADMIN_BACKEND_ELASTICSEARCH_SECRET_NAME="${INFO_ADMIN_BACKEND_ELASTICSEARCH_SECRET_NAME:-}"
+export INFO_ADMIN_BACKEND_ELASTICSEARCH_ENV_FROM=""
+export INFO_ADMIN_BACKEND_ELASTICSEARCH_VOLUME_MOUNT=""
+export INFO_ADMIN_BACKEND_ELASTICSEARCH_VOLUME=""
+if [[ -n "$INFO_ADMIN_BACKEND_ELASTICSEARCH_CONFIGMAP_NAME" ||
+      -n "$INFO_ADMIN_BACKEND_ELASTICSEARCH_SECRET_NAME" ]]; then
+    if [[ -z "$INFO_ADMIN_BACKEND_ELASTICSEARCH_CONFIGMAP_NAME" ||
+          -z "$INFO_ADMIN_BACKEND_ELASTICSEARCH_SECRET_NAME" ]]; then
+        log_error "Elasticsearch ConfigMap 和 Secret 名称必须同时设置"
+        exit 1
+    fi
+    printf -v INFO_ADMIN_BACKEND_ELASTICSEARCH_ENV_FROM \
+      '        - configMapRef:\n            name: %s\n        - secretRef:\n            name: %s' \
+      "$INFO_ADMIN_BACKEND_ELASTICSEARCH_CONFIGMAP_NAME" \
+      "$INFO_ADMIN_BACKEND_ELASTICSEARCH_SECRET_NAME"
+    printf -v INFO_ADMIN_BACKEND_ELASTICSEARCH_VOLUME_MOUNT \
+      '        - name: elasticsearch-ca\n          mountPath: /var/run/secrets/sunmoonai/elasticsearch\n          readOnly: true'
+    printf -v INFO_ADMIN_BACKEND_ELASTICSEARCH_VOLUME \
+      '      - name: elasticsearch-ca\n        secret:\n          secretName: %s\n          items:\n          - key: ca.crt\n            path: ca.crt' \
+      "$INFO_ADMIN_BACKEND_ELASTICSEARCH_SECRET_NAME"
+    export INFO_ADMIN_BACKEND_ELASTICSEARCH_ENV_FROM
+    export INFO_ADMIN_BACKEND_ELASTICSEARCH_VOLUME_MOUNT
+    export INFO_ADMIN_BACKEND_ELASTICSEARCH_VOLUME
+fi
 export PVC_NAME="${PVC_NAME:-}"
 export PVC_MOUNT_PATH="${PVC_MOUNT_PATH:-}"
 export PVC_SUB_PATH="${PVC_SUB_PATH:-}"
 
 validate_yaml() {
     local yaml_file="$1"
-    if command -v kubectl &> /dev/null; then
+    if command -v ruby &> /dev/null; then
+        if ruby -e 'require "yaml"; YAML.load_stream(File.read(ARGV.fetch(0)))' "$yaml_file" &> /dev/null; then
+            log_success "YAML 验证通过: $(basename "$yaml_file")"
+        else
+            log_error "YAML 验证失败: $(basename "$yaml_file")"
+            ruby -e 'require "yaml"; YAML.load_stream(File.read(ARGV.fetch(0)))' "$yaml_file" 2>&1 | head -20
+            return 1
+        fi
+    elif command -v kubectl &> /dev/null && kubectl config current-context &> /dev/null; then
         if kubectl apply --dry-run=client -f "$yaml_file" &> /dev/null; then
             log_success "YAML 验证通过: $(basename "$yaml_file")"
         else
@@ -64,7 +139,7 @@ validate_yaml() {
             return 1
         fi
     else
-        log_warn "kubectl 未安装，跳过 YAML 验证"
+        log_warn "缺少 Ruby YAML 解析器且没有可用 Kubernetes context，跳过 YAML 验证"
     fi
 }
 

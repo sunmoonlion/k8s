@@ -31,6 +31,19 @@ ragflow:
     service:
       enabled: true
       type: ClusterIP
+  # RAGFlow document parsing requires a default embedding model.
+  # Do not enable this block with placeholder credentials: RAGFlow validates
+  # the model before saving it and parsing will fail without a real provider.
+  #
+  # Example:
+  # service_conf:
+  #   user_default_llm:
+  #     default_models:
+  #       embedding_model:
+  #         name: text-embedding-3-small
+  #         factory: OpenAI
+  #         api_key: "<managed outside git>"
+  #         base_url: "https://api.openai.com/v1"
 
 infinity:
   image:

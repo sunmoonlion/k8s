@@ -1,0 +1,160 @@
+{
+  "task": "V5-P0-008B/B6.4",
+  "result": "passed",
+  "template_release_id": "p0-008b-b6-unified-20260729",
+  "clean_root": "/tmp/b6-unified-clean-room-codex-audit",
+  "source_replay": "local_git_clean_clone",
+  "remote_gitee_replay": "deferred_until_push_authorized",
+  "parent_gitlinks": {
+    "tpl-admin-frontend": "fb69795b04e0b888a2917c3936f7f80aeac79cc9",
+    "tpl-admin-backend": "69e634b8e5b06da9d1dcd01c9b1350e0571d74bd",
+    "tpl-web-frontend": "1db9377d38dac5510331149d9122f8d375d83fe3",
+    "tpl-web-backend": "289f2c46410e0aa2891fdf3da28242ceb1a33bdb",
+    "tpl-admin-frontend-react": "0b58adc4035d2b695646b0700dfc2fb707d14b57",
+    "tpl-admin-frontend-vue": "9b3d29b8913989970f3da5093ee84d4f7d4cdfcf",
+    "tpl-web-backend-nest": "ecb01d97e13cf86f27e09e77edf9663dcefd3fb7"
+  },
+  "modules": {
+    "tpl-admin-frontend": {
+      "commit": "fb69795b04e0b888a2917c3936f7f80aeac79cc9",
+      "path": "/tmp/b6-unified-clean-room-codex-audit/tpl-admin-frontend",
+      "gates": {
+        "install": "passed",
+        "typecheck": "passed",
+        "lint": "passed",
+        "i18n": "passed",
+        "unit": "passed",
+        "build": "passed"
+      },
+      "image_ref": "tpl-admin-frontend@sha256:b426551c0e027b25965995e23486c590c29fa52047779dd14721d93a245a74f1",
+      "release_class": "DEFAULT"
+    },
+    "tpl-admin-backend": {
+      "commit": "69e634b8e5b06da9d1dcd01c9b1350e0571d74bd",
+      "path": "/tmp/b6-unified-clean-room-codex-audit/tpl-admin-backend",
+      "gates": {
+        "install": "passed",
+        "ruff": "passed",
+        "format": "tool_skew_recorded",
+        "unit": "passed"
+      },
+      "image_ref": "tpl-admin-backend@sha256:b24ce7a39e7e10a5541b2a29ff9795a6944d6f17ec4d0479e2051f59a0688c56",
+      "release_class": "DEFAULT"
+    },
+    "tpl-web-frontend": {
+      "commit": "1db9377d38dac5510331149d9122f8d375d83fe3",
+      "path": "/tmp/b6-unified-clean-room-codex-audit/tpl-web-frontend",
+      "gates": {
+        "install": "passed",
+        "typecheck": "passed",
+        "lint": "passed",
+        "i18n": "passed",
+        "unit": "passed",
+        "build": "passed"
+      },
+      "image_ref": "tpl-web-frontend@sha256:2a359c8d213813ecbc3b5dbf6a6ed828e73a4c26b6dffaa1d163a507756db2b3",
+      "release_class": "DEFAULT"
+    },
+    "tpl-web-backend": {
+      "commit": "289f2c46410e0aa2891fdf3da28242ceb1a33bdb",
+      "path": "/tmp/b6-unified-clean-room-codex-audit/tpl-web-backend",
+      "gates": {
+        "install": "passed",
+        "ruff": "passed",
+        "format": "passed",
+        "unit": "passed"
+      },
+      "image_ref": "tpl-web-backend@sha256:41dc3a781033dda3e60cd3594ffac7caf767e3c8cb2295ac0b8a21986fbd2414",
+      "release_class": "DEFAULT"
+    },
+    "tpl-admin-frontend-react": {
+      "commit": "0b58adc4035d2b695646b0700dfc2fb707d14b57",
+      "path": "/tmp/b6-unified-clean-room-codex-audit/tpl-admin-frontend-react",
+      "gates": {
+        "install": "passed",
+        "typecheck": "passed",
+        "lint": "passed",
+        "unit": "passed",
+        "verify_production": "passed",
+        "build": "passed"
+      },
+      "image_ref": "harbor.sunmoonai.com:30443/app-images/tpl-admin-frontend@sha256:358f24459dcf62b52cd10fcb84a0fa2ac6432d5b96dff2b07d279bc3f98759e2",
+      "release_class": "REFERENCE_ONLY"
+    },
+    "tpl-admin-frontend-vue": {
+      "commit": "9b3d29b8913989970f3da5093ee84d4f7d4cdfcf",
+      "path": "/tmp/b6-unified-clean-room-codex-audit/tpl-admin-frontend-vue",
+      "gates": {
+        "install": "passed",
+        "typecheck": "passed",
+        "lint": "passed",
+        "unit": "passed",
+        "build": "passed"
+      },
+      "image_ref": "harbor.sunmoonai.com:30443/app-images/tpl-admin-frontend-vue@sha256:5380b1b56b3c6f0c825b2e0a2df03b0e23517eb8de6d440edccbe2579b738a57",
+      "release_class": "REFERENCE_ONLY"
+    },
+    "tpl-web-backend-nest": {
+      "commit": "ecb01d97e13cf86f27e09e77edf9663dcefd3fb7",
+      "path": "/tmp/b6-unified-clean-room-codex-audit/tpl-web-backend-nest",
+      "gates": {
+        "install": "passed",
+        "typecheck": "passed",
+        "lint": "passed",
+        "unit": "passed",
+        "e2e": "passed",
+        "build": "passed"
+      },
+      "image_ref": "tpl-web-backend-nest@sha256:8d17b350df03968c4a847a4f089a2145e3ba326cdbb16db1f2996146cb359536",
+      "release_class": "OPTIONAL"
+    }
+  },
+  "pair_and_rollback_evidence": {
+    "next-admin-fastapi-admin": {
+      "gate": "V5-P0-007E",
+      "files": [
+        "sunmoonai/docs/evidence/v5/V5-P0-007E/result.md"
+      ],
+      "result": "passed"
+    },
+    "react-router-admin-fastapi-admin": {
+      "gate": "V5-P0-007D",
+      "files": [
+        "sunmoonai/docs/evidence/v5/V5-P0-007D/result.md"
+      ],
+      "result": "passed"
+    },
+    "vue-admin-fastapi-admin": {
+      "gate": "V5-P0-008B-B6.2",
+      "files": [
+        "sunmoonai/docs/evidence/v5/V5-P0-008B/B6/vue-pair.json",
+        "sunmoonai/docs/evidence/v5/V5-P0-008B/B6/vue-rollback.json"
+      ],
+      "result": "passed"
+    },
+    "next-web-fastapi-web": {
+      "gate": "V5-P0-008B-B6.3",
+      "files": [
+        "sunmoonai/docs/evidence/v5/V5-P0-008B/B6/b63f-pair.json",
+        "sunmoonai/docs/evidence/v5/V5-P0-008B/B6/b63f-rollback.json"
+      ],
+      "result": "passed"
+    },
+    "next-web-nest-web": {
+      "gate": "V5-P0-008B-B6.3",
+      "files": [
+        "sunmoonai/docs/evidence/v5/V5-P0-008B/B6/b63n-pair.json",
+        "sunmoonai/docs/evidence/v5/V5-P0-008B/B6/b63n-rollback.json"
+      ],
+      "result": "passed"
+    },
+    "shared_consumer_vectors": {
+      "file": "sunmoonai/docs/evidence/v5/V5-P0-008B/B6/consumer-vectors.json",
+      "result": "passed"
+    }
+  },
+  "default_count": 4,
+  "non_default_count": 3,
+  "business_deployments_touched": false,
+  "manifest": "/home/zymun/tpl-app/template-release-manifest.json"
+}

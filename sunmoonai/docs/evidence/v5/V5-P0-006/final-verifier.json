@@ -1,0 +1,40 @@
+{
+  "task": "V5-P0-006",
+  "result": "passed",
+  "candidate_image_ids": {
+    "info-admin-backend": "harbor.sunmoonai.com:30443/app-images/info-admin-backend@sha256:ff2291ab40ef238acff359af1e1509a010a63949c43fe64a31051bf30e973dc8",
+    "celeryworker-info-admin-backend": "harbor.sunmoonai.com:30443/app-images/info-admin-backend@sha256:ff2291ab40ef238acff359af1e1509a010a63949c43fe64a31051bf30e973dc8"
+  },
+  "broker_failure": {
+    "distribution_id": "151eef15-2fad-469f-94a8-6618dab05bba",
+    "outbox_id": "7da2211d-f5cd-41d4-8d50-d8cab251b724",
+    "attempts_after_block": 1,
+    "attempts_after_recovery": 2,
+    "final_state": "completed"
+  },
+  "scanner_competition": {
+    "jobs": 2,
+    "claimed": 1,
+    "business_effects": 1
+  },
+  "broker_accept_before_published": {
+    "distribution_id": "2c88ae60-bc13-426a-80d3-646c30910219",
+    "outbox_id": "e71c8895-a3f3-41eb-ba33-afaab4f17396",
+    "recovery_claimed": 1,
+    "final_state": "completed",
+    "business_effects": 1
+  },
+  "provider_effect_before_ack": {
+    "distribution_id": "300a2344-9f57-487c-a5da-9fff77f8fc3d",
+    "outbox_id": "34d3e77e-79ff-487d-9281-349953be9a9d",
+    "recovery_claimed": 1,
+    "final_state": "completed",
+    "business_effects": 1
+  },
+  "scheduled_scanner": {
+    "distribution_id": "d9c1db75-43ab-4787-9b38-1d6cd5ce952b",
+    "outbox_id": "3c76154e-dfa2-42d9-a433-2f31c2a04d94",
+    "final_state": "completed"
+  },
+  "credentials_printed": false
+}

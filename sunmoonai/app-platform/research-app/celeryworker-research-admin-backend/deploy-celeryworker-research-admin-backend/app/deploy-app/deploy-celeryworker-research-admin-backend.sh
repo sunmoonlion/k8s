@@ -31,6 +31,7 @@ if [[ -z "${K8S_ROOT_DIR:-}" ]]; then
 fi
 
 source "$K8S_ROOT_DIR/utils/unified-deployment-template.sh"
+source "$K8S_ROOT_DIR/utils/service-identity-gate.sh"
 
 SCRIPT_DIR="$CELERYWORKER_RESEARCH_ADMIN_BACKEND_SCRIPT_DIR"
 
@@ -98,6 +99,30 @@ check_namespace() {
         log_error "❌ kubectl 连接失败，请检查 KUBECONFIG"
         return 1
     fi
+}
+
+require_research_retrieval_config() {
+    local namespace="$1" configmap="research-admin-backend-config"
+    local retrieval_url application scope timeout
+    retrieval_url="$(kubectl get configmap "$configmap" -n "$namespace" \
+        -o jsonpath='{.data.KNOWLEDGE_RETRIEVAL_URL}' 2>/dev/null || true)"
+    application="$(kubectl get configmap "$configmap" -n "$namespace" \
+        -o jsonpath='{.data.KNOWLEDGE_RETRIEVAL_SERVICE_APPLICATION}' 2>/dev/null || true)"
+    scope="$(kubectl get configmap "$configmap" -n "$namespace" \
+        -o jsonpath='{.data.KNOWLEDGE_RETRIEVAL_SERVICE_SCOPE}' 2>/dev/null || true)"
+    timeout="$(kubectl get configmap "$configmap" -n "$namespace" \
+        -o jsonpath='{.data.KNOWLEDGE_RETRIEVAL_TIMEOUT_SECONDS}' 2>/dev/null || true)"
+
+    [[ "$retrieval_url" == "http://knowledge-admin-backend:8000/api/internal/v1/knowledge/retrievals" ]] \
+        || { log_error "共享 ConfigMap 缺少受治理的 Knowledge retrieval URL"; return 1; }
+    [[ "$application" == "sunmoonai-research-knowledge-retrieve" ]] \
+        || { log_error "共享 ConfigMap 的 retrieval service application 不匹配"; return 1; }
+    [[ "$scope" == "knowledge:retrieve" ]] \
+        || { log_error "共享 ConfigMap 的 retrieval scope 不匹配"; return 1; }
+    [[ "$timeout" =~ ^[0-9]+([.][0-9]+)?$ ]] \
+        || { log_error "共享 ConfigMap 的 retrieval timeout 无效"; return 1; }
+
+    log_success "Research 共享检索配置门禁通过: $namespace/$configmap"
 }
 
 auto_generate_yaml() {
@@ -256,7 +281,7 @@ deploy_app() {
     apply_deploy_image_registry CELERYWORKER_RESEARCH_ADMIN_BACKEND_IMAGE_REGISTRY
     export CELERYWORKER_RESEARCH_ADMIN_BACKEND_IMAGE_PROJECT="${CELERYWORKER_RESEARCH_ADMIN_BACKEND_IMAGE_PROJECT:-app-images}"
     export CELERYWORKER_RESEARCH_ADMIN_BACKEND_IMAGE="${CELERYWORKER_RESEARCH_ADMIN_BACKEND_IMAGE:-research-admin-backend}"
-    export CELERYWORKER_RESEARCH_ADMIN_BACKEND_TAG="${CELERYWORKER_RESEARCH_ADMIN_BACKEND_TAG:-1.0.0}"
+    export CELERYWORKER_RESEARCH_ADMIN_BACKEND_TAG="${CELERYWORKER_RESEARCH_ADMIN_BACKEND_TAG:-1.0.1}"
     export IMAGE_PULL_POLICY="${IMAGE_PULL_POLICY:-Always}"
     export CELERYWORKER_RESEARCH_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME="${CELERYWORKER_RESEARCH_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}"
     export CELERYWORKER_RESEARCH_ADMIN_BACKEND_FULL_IMAGE_NAME="${CELERYWORKER_RESEARCH_ADMIN_BACKEND_IMAGE_REGISTRY}/${CELERYWORKER_RESEARCH_ADMIN_BACKEND_IMAGE_PROJECT}/${CELERYWORKER_RESEARCH_ADMIN_BACKEND_IMAGE}:${CELERYWORKER_RESEARCH_ADMIN_BACKEND_TAG}"
@@ -266,6 +291,8 @@ deploy_app() {
 
     export NAMESPACE="$NAMESPACE" ENV="$ENV" ENVIRONMENT="$ENVIRONMENT"
     export CELERYWORKER_RESEARCH_ADMIN_BACKEND_FULL_IMAGE_NAME
+    export RESEARCH_KNOWLEDGE_RETRIEVAL_CALLER_SECRET_NAME="${RESEARCH_KNOWLEDGE_RETRIEVAL_CALLER_SECRET_NAME:-research-knowledge-retrieval-client}"
+    export RESEARCH_KNOWLEDGE_RETRIEVAL_SERVICE_ACCOUNT_NAME="${RESEARCH_KNOWLEDGE_RETRIEVAL_SERVICE_ACCOUNT_NAME:-research-knowledge-retrieval-worker}"
 
     log_info "🚀 阶段1：部署子组件..."
     deploy_sub_components "$PROJECT_ID" "$NAMESPACE" "$ENVIRONMENT" false \
@@ -279,6 +306,19 @@ deploy_app() {
     fi
 
     auto_generate_yaml "$CELERYWORKER_RESEARCH_ADMIN_BACKEND_YAML" "$K8S_RESOURCE_DIR" || return 1
+
+    require_research_retrieval_config "$NAMESPACE" \
+        || { log_error "共享检索配置门禁失败，拒绝更新 Worker Deployment"; return 1; }
+
+    require_service_identity_relation \
+        "$NAMESPACE" \
+        "research-knowledge-retrieval-worker" \
+        "${RESEARCH_KNOWLEDGE_RETRIEVAL_CALLER_SECRET_NAME}" \
+        "${KNOWLEDGE_RESEARCH_RETRIEVAL_BINDING_SECRET_NAME:-knowledge-research-retrieval-service-binding}" \
+        "sunmoonai-research-knowledge-retrieve" \
+        "knowledge:retrieve" \
+        "retrieve" \
+        || { log_error "检索服务身份关系门禁失败，拒绝更新 Deployment"; return 1; }
 
     log_info "生成并部署 PVC..."
     auto_generate_yaml "$CELERYWORKER_RESEARCH_ADMIN_BACKEND_PVC_YAML" "$K8S_RESOURCE_DIR" || return 1

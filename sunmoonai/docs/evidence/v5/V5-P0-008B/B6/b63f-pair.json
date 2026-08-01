@@ -1,0 +1,50 @@
+{
+  "task": "V5-P0-008B/B6.3F",
+  "result": "passed",
+  "strict_tls": true,
+  "credentials_printed": false,
+  "tokens_printed": false,
+  "cookies_printed": false,
+  "kubectl": {
+    "client_minor": 27,
+    "server_minor": 27
+  },
+  "backend": {
+    "image": "harbor.sunmoonai.com:30443/app-images/tpl-web-backend@sha256:41dc3a781033dda3e60cd3594ffac7caf767e3c8cb2295ac0b8a21986fbd2414",
+    "deployment_id": "b63-fastapi-backend-current"
+  },
+  "frontend": {
+    "image": "harbor.sunmoonai.com:30443/app-images/tpl-web-frontend@sha256:2a359c8d213813ecbc3b5dbf6a6ed828e73a4c26b6dffaa1d163a507756db2b3",
+    "deployment_id": "b63-fastapi-frontend-current"
+  },
+  "redis_cross_replica_statuses": [
+    200,
+    200
+  ],
+  "http": {
+    "home": 200,
+    "anonymous_me": 401,
+    "authenticated_me": 200,
+    "action": 200,
+    "logout_me": 401
+  },
+  "sse": {
+    "initial_sequences": [
+      2,
+      3,
+      4
+    ],
+    "resumed_sequences": [
+      3,
+      4
+    ],
+    "invalid_cursor": 400,
+    "conflicting_cursor": 400
+  },
+  "resource_authorization": {
+    "forbidden_run": 403,
+    "forbidden_citation": 403,
+    "authorized_source": 200
+  },
+  "business_deployments_unchanged": true
+}

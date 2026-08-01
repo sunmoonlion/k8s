@@ -74,6 +74,21 @@ spec:
             subPath: llm_factories.json
             name: service-conf-volume
           {{- end }}
+        {{- if .Values.ragflow.egressProxy.enabled }}
+        env:
+          - name: HTTP_PROXY
+            value: {{ required "ragflow.egressProxy.httpProxy is required when egressProxy is enabled" .Values.ragflow.egressProxy.httpProxy | quote }}
+          - name: HTTPS_PROXY
+            value: {{ required "ragflow.egressProxy.httpsProxy is required when egressProxy is enabled" .Values.ragflow.egressProxy.httpsProxy | quote }}
+          - name: NO_PROXY
+            value: {{ required "ragflow.egressProxy.noProxy is required when egressProxy is enabled" .Values.ragflow.egressProxy.noProxy | quote }}
+          - name: http_proxy
+            value: {{ .Values.ragflow.egressProxy.httpProxy | quote }}
+          - name: https_proxy
+            value: {{ .Values.ragflow.egressProxy.httpsProxy | quote }}
+          - name: no_proxy
+            value: {{ .Values.ragflow.egressProxy.noProxy | quote }}
+        {{- end }}
         envFrom:
           - secretRef:
               name: {{ include "ragflow.fullname" . }}-env-config

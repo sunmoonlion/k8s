@@ -41,28 +41,45 @@ export NAMESPACE="${NAMESPACE:-}"
 export ENVIRONMENT="${ENVIRONMENT:-}"
 export ENV="${ENV:-}"
 
-# TODO: 根据 ConfigMap YAML 模板中的 key 列表，添加对应的 export 语句
-# 格式：export KEY="${KEY:-}"
-# 示例（NestJS 后端）：
-# export NODE_ENV="${NODE_ENV:-}"
-# export PORT="${PORT:-}"
-# export REDIS_HOST="${REDIS_HOST:-}"
-# export CASDOOR_ENDPOINT="${CASDOOR_ENDPOINT:-}"
+export STORAGE_BACKEND="${STORAGE_BACKEND:-}"
+export SEARCH_BACKEND="${SEARCH_BACKEND:-}"
+export ELASTICSEARCH_INDEX="${ELASTICSEARCH_INDEX:-}"
+export CELERY_QUEUE="${CELERY_QUEUE:-}"
+export DELIVERY_OUTBOX_BATCH_SIZE="${DELIVERY_OUTBOX_BATCH_SIZE:-}"
+export DELIVERY_OUTBOX_LEASE_SECONDS="${DELIVERY_OUTBOX_LEASE_SECONDS:-}"
+export DELIVERY_OUTBOX_ACK_TIMEOUT_SECONDS="${DELIVERY_OUTBOX_ACK_TIMEOUT_SECONDS:-}"
+export DELIVERY_OUTBOX_RETRY_BASE_SECONDS="${DELIVERY_OUTBOX_RETRY_BASE_SECONDS:-}"
+export DELIVERY_OUTBOX_RETRY_MAX_SECONDS="${DELIVERY_OUTBOX_RETRY_MAX_SECONDS:-}"
+export KNOWLEDGE_APP_INGEST_URL="${KNOWLEDGE_APP_INGEST_URL:-}"
+export KNOWLEDGE_APP_SERVICE_APPLICATION="${KNOWLEDGE_APP_SERVICE_APPLICATION:-}"
+export KNOWLEDGE_APP_SERVICE_SCOPE="${KNOWLEDGE_APP_SERVICE_SCOPE:-}"
+export KNOWLEDGE_APP_TIMEOUT_SECONDS="${KNOWLEDGE_APP_TIMEOUT_SECONDS:-}"
+export CASDOOR_ENDPOINT="${CASDOOR_ENDPOINT:-}"
+export CASDOOR_APPLICATION="${CASDOOR_APPLICATION:-}"
+export CASDOOR_REDIRECT_URI="${CASDOOR_REDIRECT_URI:-}"
+export CASDOOR_VERIFY_SSL="${CASDOOR_VERIFY_SSL:-}"
+export FRONTEND_BASE_URL="${FRONTEND_BASE_URL:-}"
+export FRONTEND_ALLOWED_ORIGINS="${FRONTEND_ALLOWED_ORIGINS:-}"
+export AUTH_POLICY_VERSION="${AUTH_POLICY_VERSION:-}"
+export AUTH_ALLOWED_ALGORITHMS="${AUTH_ALLOWED_ALGORITHMS:-}"
 
 validate_yaml() {
     local yaml_file="$1"
-    if command -v kubectl &> /dev/null; then
-        if kubectl apply --dry-run=client -f "$yaml_file" &> /dev/null; then
+    if command -v ruby &> /dev/null; then
+        if ruby -e 'require "yaml"; YAML.load_stream(File.read(ARGV.fetch(0)))' "$yaml_file" &> /dev/null; then
             log_success "YAML 验证通过: $(basename "$yaml_file")"
-            return 0
         else
             log_error "YAML 验证失败: $(basename "$yaml_file")"
-            kubectl apply --dry-run=client -f "$yaml_file" 2>&1 | head -20
+            ruby -e 'require "yaml"; YAML.load_stream(File.read(ARGV.fetch(0)))' "$yaml_file" 2>&1 | head -20
             return 1
         fi
+    elif command -v kubectl &> /dev/null && kubectl config current-context &> /dev/null; then
+        kubectl apply --dry-run=client -f "$yaml_file" &> /dev/null || {
+            log_error "YAML/Kubernetes 资源验证失败: $(basename "$yaml_file")"
+            return 1
+        }
     else
-        log_warn "kubectl 未安装，跳过 YAML 验证"
-        return 0
+        log_warn "缺少 Ruby YAML 解析器且没有可用 Kubernetes context，跳过 YAML 验证"
     fi
 }
 

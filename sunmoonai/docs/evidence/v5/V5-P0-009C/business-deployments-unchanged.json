@@ -1,0 +1,209 @@
+{
+  "task": "V5-P0-009-business-deployments-unchanged",
+  "result": "passed",
+  "comparison": "metadata.generation plus complete Deployment spec",
+  "baseline": "sunmoonai/docs/evidence/v5/V5-P0-009C/pre-isolation-business-deployments.json",
+  "baseline_scope": "complete non-P0-009 deployment set",
+  "deployment_count": 24,
+  "before": {
+    "casdoor-sunmoonai": {
+      "generation": 11,
+      "spec_sha256": "47e7218fb3de419804d0b5380c717b30c52d9a590578c5ec9663c7c48ab560b3"
+    },
+    "celeryworker-info-admin-backend": {
+      "generation": 32,
+      "spec_sha256": "96bb61ed9634532a07442ea385a1a3f2439172ddd93e566257ca0859c1cdfeef"
+    },
+    "celeryworker-investment-admin-backend": {
+      "generation": 1,
+      "spec_sha256": "c07fee6db23ea82b9612470835b61d0f31578dd868a4ca20215bd0c69dfd3006"
+    },
+    "celeryworker-knowledge-admin-backend": {
+      "generation": 51,
+      "spec_sha256": "a34a6ba85be0b4e5db2461e891a59363584430ccd51bba9fc638dc7fd29977b5"
+    },
+    "celeryworker-research-admin-backend": {
+      "generation": 26,
+      "spec_sha256": "9656ea7b58c1d886308d6aafbfd906663d7513dba46ffa8b33ad8e9f555ca191"
+    },
+    "info-admin-backend": {
+      "generation": 69,
+      "spec_sha256": "ce50cafa788710bc823f97d87e5283605dc8f9d5d948fd0bd7f7569f6213a3d6"
+    },
+    "info-admin-frontend": {
+      "generation": 9,
+      "spec_sha256": "d47f06ff712eb57ab3f2d8b44f983278475470861cde2f5b32fb88052c2ea18f"
+    },
+    "info-web-backend": {
+      "generation": 6,
+      "spec_sha256": "0d31996179dfe2e904ffc99d3f320487d6abef2f405efd6c72cfd531414a9b39"
+    },
+    "info-web-frontend": {
+      "generation": 6,
+      "spec_sha256": "37fc3c07aa4a9d793c095b0ea763b79e1abb815300992c7c63340b5b330e1cc1"
+    },
+    "investment-admin-backend": {
+      "generation": 4,
+      "spec_sha256": "42f9b5c4174ce722d92eca2f0efe1a937562af61c34c9ace1b185ca7181c2dc3"
+    },
+    "investment-admin-frontend": {
+      "generation": 1,
+      "spec_sha256": "9dd27909b551b4c70ca95a080a18be0b1ad67597384951e278ff3850f783a37b"
+    },
+    "investment-web-backend": {
+      "generation": 1,
+      "spec_sha256": "fa4d9f56c1ef35fefb8aaf541e2eaff0ab37e5a4ebaffa7eed08345edb6ec336"
+    },
+    "investment-web-frontend": {
+      "generation": 1,
+      "spec_sha256": "23073a92dd234bacbdfc022b17b9fec12aeefcc43c0815610ba9fb2446ea00fd"
+    },
+    "knowledge-admin-backend": {
+      "generation": 61,
+      "spec_sha256": "89534a47a23cc77ceaa4ff517affcf2ce39f661d1c346fa8531a9f321e28273d"
+    },
+    "nodebullworker-info-web-backend": {
+      "generation": 6,
+      "spec_sha256": "ccb4505ce26ea9f322fdb719eb603632b8c1948fe4e443aa7a759ac4251679df"
+    },
+    "nodebullworker-investment-web-backend": {
+      "generation": 1,
+      "spec_sha256": "36dad89013c4efaf257a96dd0c4015c6674c2fedb40236728f6f3d79e3258c46"
+    },
+    "nodebullworker-research-web-backend": {
+      "generation": 3,
+      "spec_sha256": "b25bd61979745ef0c2154da0a2d87a5a3745117ff2f30df180ecbc7b8e24bfc8"
+    },
+    "ragflow-sunmoonai": {
+      "generation": 2,
+      "spec_sha256": "6977cca5a1581b197d87263d943d6f2d39d738e5b5284449523fe08d76de64d3"
+    },
+    "research-admin-backend": {
+      "generation": 69,
+      "spec_sha256": "02642db09df0942d0135469f07d31fb666aaffc6425d651998e9b749edf79226"
+    },
+    "research-admin-frontend": {
+      "generation": 3,
+      "spec_sha256": "1d77f593d90f71f9a555c9f0b25b620e7f5400f8cd783c9342a1f8dd210b541a"
+    },
+    "research-web-backend": {
+      "generation": 3,
+      "spec_sha256": "c63efe85db012f6ba31f0b8f0303333908ebc73557681601146c0d46f2f7c421"
+    },
+    "research-web-frontend": {
+      "generation": 4,
+      "spec_sha256": "6009391508217c9ea4080572b0ca7a980d5d154bd1714afeda47fc52b070ff43"
+    },
+    "tpl-web-backend-b4": {
+      "generation": 17,
+      "spec_sha256": "d8c955a8cc9008e946bb2c1de508b6ed0920936c83e5fe1ec8615012d1b9111c"
+    },
+    "tpl-web-frontend-b4": {
+      "generation": 17,
+      "spec_sha256": "6c9ed0564aba6d5783d326d8aaf952be27f54f5120611c7c107dc6805a426c29"
+    }
+  },
+  "after": {
+    "casdoor-sunmoonai": {
+      "generation": 11,
+      "spec_sha256": "47e7218fb3de419804d0b5380c717b30c52d9a590578c5ec9663c7c48ab560b3"
+    },
+    "celeryworker-info-admin-backend": {
+      "generation": 32,
+      "spec_sha256": "96bb61ed9634532a07442ea385a1a3f2439172ddd93e566257ca0859c1cdfeef"
+    },
+    "celeryworker-investment-admin-backend": {
+      "generation": 1,
+      "spec_sha256": "c07fee6db23ea82b9612470835b61d0f31578dd868a4ca20215bd0c69dfd3006"
+    },
+    "celeryworker-knowledge-admin-backend": {
+      "generation": 51,
+      "spec_sha256": "a34a6ba85be0b4e5db2461e891a59363584430ccd51bba9fc638dc7fd29977b5"
+    },
+    "celeryworker-research-admin-backend": {
+      "generation": 26,
+      "spec_sha256": "9656ea7b58c1d886308d6aafbfd906663d7513dba46ffa8b33ad8e9f555ca191"
+    },
+    "info-admin-backend": {
+      "generation": 69,
+      "spec_sha256": "ce50cafa788710bc823f97d87e5283605dc8f9d5d948fd0bd7f7569f6213a3d6"
+    },
+    "info-admin-frontend": {
+      "generation": 9,
+      "spec_sha256": "d47f06ff712eb57ab3f2d8b44f983278475470861cde2f5b32fb88052c2ea18f"
+    },
+    "info-web-backend": {
+      "generation": 6,
+      "spec_sha256": "0d31996179dfe2e904ffc99d3f320487d6abef2f405efd6c72cfd531414a9b39"
+    },
+    "info-web-frontend": {
+      "generation": 6,
+      "spec_sha256": "37fc3c07aa4a9d793c095b0ea763b79e1abb815300992c7c63340b5b330e1cc1"
+    },
+    "investment-admin-backend": {
+      "generation": 4,
+      "spec_sha256": "42f9b5c4174ce722d92eca2f0efe1a937562af61c34c9ace1b185ca7181c2dc3"
+    },
+    "investment-admin-frontend": {
+      "generation": 1,
+      "spec_sha256": "9dd27909b551b4c70ca95a080a18be0b1ad67597384951e278ff3850f783a37b"
+    },
+    "investment-web-backend": {
+      "generation": 1,
+      "spec_sha256": "fa4d9f56c1ef35fefb8aaf541e2eaff0ab37e5a4ebaffa7eed08345edb6ec336"
+    },
+    "investment-web-frontend": {
+      "generation": 1,
+      "spec_sha256": "23073a92dd234bacbdfc022b17b9fec12aeefcc43c0815610ba9fb2446ea00fd"
+    },
+    "knowledge-admin-backend": {
+      "generation": 61,
+      "spec_sha256": "89534a47a23cc77ceaa4ff517affcf2ce39f661d1c346fa8531a9f321e28273d"
+    },
+    "nodebullworker-info-web-backend": {
+      "generation": 6,
+      "spec_sha256": "ccb4505ce26ea9f322fdb719eb603632b8c1948fe4e443aa7a759ac4251679df"
+    },
+    "nodebullworker-investment-web-backend": {
+      "generation": 1,
+      "spec_sha256": "36dad89013c4efaf257a96dd0c4015c6674c2fedb40236728f6f3d79e3258c46"
+    },
+    "nodebullworker-research-web-backend": {
+      "generation": 3,
+      "spec_sha256": "b25bd61979745ef0c2154da0a2d87a5a3745117ff2f30df180ecbc7b8e24bfc8"
+    },
+    "ragflow-sunmoonai": {
+      "generation": 2,
+      "spec_sha256": "6977cca5a1581b197d87263d943d6f2d39d738e5b5284449523fe08d76de64d3"
+    },
+    "research-admin-backend": {
+      "generation": 69,
+      "spec_sha256": "02642db09df0942d0135469f07d31fb666aaffc6425d651998e9b749edf79226"
+    },
+    "research-admin-frontend": {
+      "generation": 3,
+      "spec_sha256": "1d77f593d90f71f9a555c9f0b25b620e7f5400f8cd783c9342a1f8dd210b541a"
+    },
+    "research-web-backend": {
+      "generation": 3,
+      "spec_sha256": "c63efe85db012f6ba31f0b8f0303333908ebc73557681601146c0d46f2f7c421"
+    },
+    "research-web-frontend": {
+      "generation": 4,
+      "spec_sha256": "6009391508217c9ea4080572b0ca7a980d5d154bd1714afeda47fc52b070ff43"
+    },
+    "tpl-web-backend-b4": {
+      "generation": 17,
+      "spec_sha256": "d8c955a8cc9008e946bb2c1de508b6ed0920936c83e5fe1ec8615012d1b9111c"
+    },
+    "tpl-web-frontend-b4": {
+      "generation": 17,
+      "spec_sha256": "6c9ed0564aba6d5783d326d8aaf952be27f54f5120611c7c107dc6805a426c29"
+    }
+  },
+  "current_extras_outside_baseline_scope": [],
+  "added": [],
+  "removed": [],
+  "changed": [],
+  "business_traffic_switched": false
+}

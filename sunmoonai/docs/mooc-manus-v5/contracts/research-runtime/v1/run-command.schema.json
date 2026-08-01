@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.sunmoonai.com/research/runtime/v1/run-command.schema.json",
+  "title": "Research Runtime Run Command v1",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_version",
+        "kind",
+        "idempotency_key",
+        "operation_id",
+        "delegated_user",
+        "action_id",
+        "value"
+      ],
+      "properties": {
+        "contract_version": {"const": 1},
+        "kind": {"const": "resume"},
+        "idempotency_key": {"type": "string", "format": "uuid"},
+        "operation_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "delegated_user": {
+          "$ref": "https://contracts.sunmoonai.com/research/runtime/v1/delegated-context.schema.json"
+        },
+        "action_id": {"type": "string", "format": "uuid"},
+        "value": {"type": "string", "maxLength": 4000}
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_version",
+        "kind",
+        "idempotency_key",
+        "operation_id",
+        "delegated_user"
+      ],
+      "properties": {
+        "contract_version": {"const": 1},
+        "kind": {"const": "cancel"},
+        "idempotency_key": {"type": "string", "format": "uuid"},
+        "operation_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "delegated_user": {
+          "$ref": "https://contracts.sunmoonai.com/research/runtime/v1/delegated-context.schema.json"
+        },
+        "reason": {"type": ["string", "null"], "maxLength": 1000}
+      }
+    }
+  ]
+}

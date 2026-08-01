@@ -1,0 +1,59 @@
+{
+  "contract_version": 1,
+  "valid": [
+    {
+      "name": "info-web-session",
+      "value": {
+        "contract_version": 1,
+        "authenticated": true,
+        "user": {
+          "actor_id": "9dd4f91a-5030-5b4a-964f-a917aa08c8c3",
+          "app": "info",
+          "surface": "web",
+          "display_name": "Template User",
+          "email": "template@example.test",
+          "roles": ["reader"],
+          "scopes": ["profile:read"],
+          "expires_at": "2030-01-01T00:00:00.000Z"
+        },
+        "csrf_token": "0123456789abcdef0123456789abcdef"
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "provider-token-leak",
+      "value": {
+        "contract_version": 1,
+        "authenticated": true,
+        "user": {
+          "actor_id": "9dd4f91a-5030-5b4a-964f-a917aa08c8c3",
+          "app": "info",
+          "surface": "web",
+          "roles": [],
+          "scopes": [],
+          "expires_at": "2030-01-01T00:00:00.000Z"
+        },
+        "csrf_token": "0123456789abcdef0123456789abcdef",
+        "access_token": "must-never-cross-the-browser-boundary"
+      }
+    },
+    {
+      "name": "admin-session-on-web-consumer",
+      "value": {
+        "contract_version": 1,
+        "authenticated": true,
+        "user": {
+          "actor_id": "9dd4f91a-5030-5b4a-964f-a917aa08c8c3",
+          "app": "info",
+          "surface": "admin",
+          "roles": [],
+          "scopes": [],
+          "expires_at": "2030-01-01T00:00:00.000Z"
+        },
+        "csrf_token": "0123456789abcdef0123456789abcdef"
+      },
+      "consumer_rule": "web consumers must reject non-web surfaces"
+    }
+  ]
+}

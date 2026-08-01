@@ -19,7 +19,13 @@ spec:
   entryPoints:
     - websecure
   routes:
-    # TODO: 修改 PathPrefix（如 /api 用于后端，/ 用于前端）
+    # Keep browser API traffic same-origin so the frontend CSP can remain
+    # connect-src 'self' and session/CSRF cookies stay on one origin.
+    - match: Host(`{{UNIFIED_HOST}}`) && PathPrefix(`/api`)
+      kind: Rule
+      services:
+        - name: {{API_SERVICE_NAME}}
+          port: {{API_SERVICE_PORT}}
     - match: Host(`{{UNIFIED_HOST}}`) && PathPrefix(`/`)
       kind: Rule
       services:

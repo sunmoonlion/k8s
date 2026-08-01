@@ -1,0 +1,60 @@
+B63F_STAGE=infrastructure_preflight
+B63F_STAGE=strict_tls_browser_start
+B63F_STAGE=anonymous_and_csp
+B63F_STAGE=real_casdoor_login
+B63F_STAGE=session_and_cookie
+B63F_STAGE=sse_cursor_contract
+B63F_STAGE=authorization_and_csrf
+B63F_STAGE=citation_and_paired_ui
+B63F_STAGE=logout
+B63F_STAGE=complete
+{
+  "task": "V5-P0-008B/B6.3F",
+  "result": "passed",
+  "strict_tls": true,
+  "credentials_printed": false,
+  "tokens_printed": false,
+  "cookies_printed": false,
+  "kubectl": {
+    "client_minor": 27,
+    "server_minor": 27
+  },
+  "backend": {
+    "image": "harbor.sunmoonai.com:30443/app-images/research-web-backend@sha256:f273741ce81e69b3c2b693db8d43708f84b10c9db3d65be32b1981a9238a32c2",
+    "deployment_id": "p0-009d-v1"
+  },
+  "frontend": {
+    "image": "harbor.sunmoonai.com:30443/app-images/research-web-frontend@sha256:5d7c18baf8393552e04d1431485e21e52a31912f9336b5860de0381de5f2dc54",
+    "deployment_id": "p0-009d-v1"
+  },
+  "redis_cross_replica_statuses": [
+    200,
+    200
+  ],
+  "http": {
+    "home": 200,
+    "anonymous_me": 401,
+    "authenticated_me": 200,
+    "action": 200,
+    "logout_me": 401
+  },
+  "sse": {
+    "initial_sequences": [
+      2,
+      3,
+      4
+    ],
+    "resumed_sequences": [
+      3,
+      4
+    ],
+    "invalid_cursor": 400,
+    "conflicting_cursor": 400
+  },
+  "resource_authorization": {
+    "forbidden_run": 403,
+    "forbidden_citation": 403,
+    "authorized_source": 200
+  },
+  "business_deployments_unchanged": true
+}

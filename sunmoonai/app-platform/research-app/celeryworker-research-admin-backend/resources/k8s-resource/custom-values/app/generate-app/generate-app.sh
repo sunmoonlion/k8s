@@ -49,18 +49,90 @@ export CELERYWORKER_RESEARCH_ADMIN_BACKEND_SECRET_NAME="${CELERYWORKER_RESEARCH_
 export CELERYWORKER_RESEARCH_ADMIN_BACKEND_CONFIGMAP_NAME="${CELERYWORKER_RESEARCH_ADMIN_BACKEND_CONFIGMAP_NAME:-}"
 export RESEARCH_ADMIN_BACKEND_SECRET_NAME="${RESEARCH_ADMIN_BACKEND_SECRET_NAME:-}"
 export RESEARCH_ADMIN_BACKEND_CONFIGMAP_NAME="${RESEARCH_ADMIN_BACKEND_CONFIGMAP_NAME:-}"
+export RESEARCH_KNOWLEDGE_RETRIEVAL_CALLER_SECRET_NAME="${RESEARCH_KNOWLEDGE_RETRIEVAL_CALLER_SECRET_NAME:-research-knowledge-retrieval-client}"
+export RESEARCH_KNOWLEDGE_RETRIEVAL_SERVICE_ACCOUNT_NAME="${RESEARCH_KNOWLEDGE_RETRIEVAL_SERVICE_ACCOUNT_NAME:-research-knowledge-retrieval-worker}"
+export RESEARCH_ADMIN_BACKEND_POSTGRESQL_SECRET_NAME="${RESEARCH_ADMIN_BACKEND_POSTGRESQL_SECRET_NAME:-}"
+export RESEARCH_ADMIN_BACKEND_REDIS_SECRET_NAME="${RESEARCH_ADMIN_BACKEND_REDIS_SECRET_NAME:-}"
+export RESEARCH_ADMIN_BACKEND_MONGODB_SECRET_NAME="${RESEARCH_ADMIN_BACKEND_MONGODB_SECRET_NAME:-}"
+export RESEARCH_ADMIN_BACKEND_DATABASE_ENV_FROM=""
+append_database_secret_ref() {
+    local secret_name="$1"
+    [[ -n "$secret_name" ]] || return 0
+    if [[ -n "$RESEARCH_ADMIN_BACKEND_DATABASE_ENV_FROM" ]]; then
+        RESEARCH_ADMIN_BACKEND_DATABASE_ENV_FROM+=$'\n'
+    fi
+    RESEARCH_ADMIN_BACKEND_DATABASE_ENV_FROM+="        - secretRef:"$'\n'"            name: ${secret_name}"
+}
+append_database_secret_ref "$RESEARCH_ADMIN_BACKEND_POSTGRESQL_SECRET_NAME"
+append_database_secret_ref "$RESEARCH_ADMIN_BACKEND_REDIS_SECRET_NAME"
+append_database_secret_ref "$RESEARCH_ADMIN_BACKEND_MONGODB_SECRET_NAME"
+if [[ -n "$RESEARCH_ADMIN_BACKEND_DATABASE_ENV_FROM" ]]; then
+    export RESEARCH_ADMIN_BACKEND_DATABASE_ENV_FROM
+fi
+export RESEARCH_ADMIN_BACKEND_OBJECT_STORAGE_CONFIGMAP_NAME="${RESEARCH_ADMIN_BACKEND_OBJECT_STORAGE_CONFIGMAP_NAME:-}"
+export RESEARCH_ADMIN_BACKEND_OBJECT_STORAGE_SECRET_NAME="${RESEARCH_ADMIN_BACKEND_OBJECT_STORAGE_SECRET_NAME:-}"
+export RESEARCH_ADMIN_BACKEND_OBJECT_STORAGE_ENV_FROM=""
+if [[ -n "$RESEARCH_ADMIN_BACKEND_OBJECT_STORAGE_CONFIGMAP_NAME" ||
+      -n "$RESEARCH_ADMIN_BACKEND_OBJECT_STORAGE_SECRET_NAME" ]]; then
+    if [[ -z "$RESEARCH_ADMIN_BACKEND_OBJECT_STORAGE_CONFIGMAP_NAME" ||
+          -z "$RESEARCH_ADMIN_BACKEND_OBJECT_STORAGE_SECRET_NAME" ]]; then
+        log_error "对象存储 ConfigMap 和 Secret 名称必须同时设置"
+        exit 1
+    fi
+    printf -v RESEARCH_ADMIN_BACKEND_OBJECT_STORAGE_ENV_FROM \
+      '        - configMapRef:\n            name: %s\n        - secretRef:\n            name: %s' \
+      "$RESEARCH_ADMIN_BACKEND_OBJECT_STORAGE_CONFIGMAP_NAME" \
+      "$RESEARCH_ADMIN_BACKEND_OBJECT_STORAGE_SECRET_NAME"
+    export RESEARCH_ADMIN_BACKEND_OBJECT_STORAGE_ENV_FROM
+fi
+export RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_CONFIGMAP_NAME="${RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_CONFIGMAP_NAME:-}"
+export RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_SECRET_NAME="${RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_SECRET_NAME:-}"
+export RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_ENV_FROM=""
+export RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_VOLUME_MOUNT=""
+export RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_VOLUME=""
+if [[ -n "$RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_CONFIGMAP_NAME" ||
+      -n "$RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_SECRET_NAME" ]]; then
+    if [[ -z "$RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_CONFIGMAP_NAME" ||
+          -z "$RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_SECRET_NAME" ]]; then
+        log_error "Elasticsearch ConfigMap 和 Secret 名称必须同时设置"
+        exit 1
+    fi
+    printf -v RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_ENV_FROM \
+      '        - configMapRef:\n            name: %s\n        - secretRef:\n            name: %s' \
+      "$RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_CONFIGMAP_NAME" \
+      "$RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_SECRET_NAME"
+    printf -v RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_VOLUME_MOUNT \
+      '        - name: elasticsearch-ca\n          mountPath: /var/run/secrets/sunmoonai/elasticsearch\n          readOnly: true'
+    printf -v RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_VOLUME \
+      '      - name: elasticsearch-ca\n        secret:\n          secretName: %s\n          items:\n          - key: ca.crt\n            path: ca.crt' \
+      "$RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_SECRET_NAME"
+    export RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_ENV_FROM
+    export RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_VOLUME_MOUNT
+    export RESEARCH_ADMIN_BACKEND_ELASTICSEARCH_VOLUME
+fi
 export PVC_NAME="${PVC_NAME:-}"
 export PVC_MOUNT_PATH="${PVC_MOUNT_PATH:-}"
 export PVC_SUB_PATH="${PVC_SUB_PATH:-}"
 
 validate_yaml() {
     local yaml_file="$1"
-    if command -v kubectl &> /dev/null; then
-        if kubectl apply --dry-run=client -f "$yaml_file" &> /dev/null; then
+    if grep -q '\${[^}]*}' "$yaml_file"; then
+        log_error "YAML 仍包含未解析模板变量: $(basename "$yaml_file")"
+        return 1
+    fi
+    if [[ -x /usr/bin/python3 ]] && /usr/bin/python3 -c 'import yaml' &> /dev/null; then
+        if /usr/bin/python3 -c 'import sys, yaml; docs=list(yaml.safe_load_all(open(sys.argv[1], encoding="utf-8"))); assert docs and all(isinstance(d, dict) and d.get("apiVersion") and d.get("kind") for d in docs)' "$yaml_file"; then
             log_success "YAML 验证通过: $(basename "$yaml_file")"
         else
             log_error "YAML 验证失败: $(basename "$yaml_file")"
-            kubectl apply --dry-run=client -f "$yaml_file" 2>&1 | head -20
+            return 1
+        fi
+    elif command -v kubectl &> /dev/null; then
+        if kubectl apply --dry-run=client --validate=false -f "$yaml_file" &> /dev/null; then
+            log_success "YAML 验证通过: $(basename "$yaml_file")"
+        else
+            log_error "YAML 验证失败: $(basename "$yaml_file")"
+            kubectl apply --dry-run=client --validate=false -f "$yaml_file" 2>&1 | head -20
             return 1
         fi
     else

@@ -41,12 +41,9 @@ export NAMESPACE="${NAMESPACE:-}"
 export ENVIRONMENT="${ENVIRONMENT:-}"
 export ENV="${ENV:-}"
 
-# TODO: 根据 Secret YAML 模板中的 key 列表，添加对应的 export 语句
-# 格式：export KEY="${KEY:-}"
-# 示例：
-# export DATABASE_URL="${DATABASE_URL:-}"
-# export REDIS_PASSWORD="${REDIS_PASSWORD:-}"
-# export CASDOOR_CLIENT_SECRET="${CASDOOR_CLIENT_SECRET:-}"
+export RAGFLOW_API_KEY="${RAGFLOW_API_KEY:-}"
+export CASDOOR_CLIENT_ID="${CASDOOR_CLIENT_ID:-}"
+export CASDOOR_CLIENT_SECRET="${CASDOOR_CLIENT_SECRET:-}"
 
 validate_yaml() {
     local yaml_file="$1"

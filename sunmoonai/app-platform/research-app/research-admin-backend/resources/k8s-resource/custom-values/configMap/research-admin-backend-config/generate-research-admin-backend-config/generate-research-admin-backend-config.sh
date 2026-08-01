@@ -30,6 +30,14 @@ if [ ! -f "$CONFIG_FILE" ]; then
 fi
 source "$CONFIG_FILE"
 
+# The deployment orchestrator historically uses the short label `dev`/`prod`
+# for resource metadata.  The backend uses the semantic environment names for
+# its production security checks, so normalize the aliases at the boundary.
+case "${ENV:-}" in
+    dev|development|"") ENV="development" ;;
+    prod|production) ENV="production" ;;
+esac
+
 if [ "${ENABLED:-true}" != "true" ]; then
     log_info "跳过资源生成: configmap (已禁用)"; exit 0
 fi
@@ -41,17 +49,47 @@ export NAMESPACE="${NAMESPACE:-}"
 export ENVIRONMENT="${ENVIRONMENT:-}"
 export ENV="${ENV:-}"
 
-# TODO: 根据 ConfigMap YAML 模板中的 key 列表，添加对应的 export 语句
-# 格式：export KEY="${KEY:-}"
-# 示例（NestJS 后端）：
-# export NODE_ENV="${NODE_ENV:-}"
-# export PORT="${PORT:-}"
-# export REDIS_HOST="${REDIS_HOST:-}"
-# export CASDOOR_ENDPOINT="${CASDOOR_ENDPOINT:-}"
+export LOG_LEVEL="${LOG_LEVEL:-}"
+export SESSION_TTL_SECONDS="${SESSION_TTL_SECONDS:-}"
+export AGENT_SESSION_LOCK_TTL_SECONDS="${AGENT_SESSION_LOCK_TTL_SECONDS:-}"
+export AGENT_V4_TRAFFIC_ENABLED="${AGENT_V4_TRAFFIC_ENABLED:-}"
+export AGENT_V5_TRAFFIC_MODE="${AGENT_V5_TRAFFIC_MODE:-}"
+export AGENT_REDIS_KEY_PREFIX="${AGENT_REDIS_KEY_PREFIX:-}"
+export FRONTEND_BASE_URL="${FRONTEND_BASE_URL:-}"
+export CASDOOR_ENDPOINT="${CASDOOR_ENDPOINT:-}"
+export CASDOOR_ORGANIZATION="${CASDOOR_ORGANIZATION:-}"
+export CASDOOR_APPLICATION="${CASDOOR_APPLICATION:-}"
+export CASDOOR_REDIRECT_URI="${CASDOOR_REDIRECT_URI:-}"
+export CASDOOR_VERIFY_SSL="${CASDOOR_VERIFY_SSL:-}"
+export FRONTEND_ALLOWED_ORIGINS="${FRONTEND_ALLOWED_ORIGINS:-}"
+export AUTH_POLICY_VERSION="${AUTH_POLICY_VERSION:-}"
+export AUTH_ALLOWED_ALGORITHMS="${AUTH_ALLOWED_ALGORITHMS:-}"
+export KNOWLEDGE_RETRIEVAL_URL="${KNOWLEDGE_RETRIEVAL_URL:-}"
+export KNOWLEDGE_RETRIEVAL_SERVICE_APPLICATION="${KNOWLEDGE_RETRIEVAL_SERVICE_APPLICATION:-}"
+export KNOWLEDGE_RETRIEVAL_SERVICE_DISCOVERY_URL="${KNOWLEDGE_RETRIEVAL_SERVICE_DISCOVERY_URL:-}"
+export KNOWLEDGE_RETRIEVAL_SERVICE_BACKCHANNEL_ENDPOINT="${KNOWLEDGE_RETRIEVAL_SERVICE_BACKCHANNEL_ENDPOINT:-}"
+export KNOWLEDGE_RETRIEVAL_SERVICE_SCOPE="${KNOWLEDGE_RETRIEVAL_SERVICE_SCOPE:-}"
+export KNOWLEDGE_RETRIEVAL_TIMEOUT_SECONDS="${KNOWLEDGE_RETRIEVAL_TIMEOUT_SECONDS:-}"
+export CELERY_QUEUE="${CELERY_QUEUE:-}"
 
 validate_yaml() {
     local yaml_file="$1"
-    if command -v kubectl &> /dev/null; then
+    if grep -q '\${[^}]*}' "$yaml_file"; then
+        log_error "YAML 仍包含未解析模板变量: $(basename "$yaml_file")"
+        return 1
+    fi
+    if [[ -x /usr/bin/python3 ]] && /usr/bin/python3 -c 'import yaml' &> /dev/null; then
+        if /usr/bin/python3 -c 'import sys, yaml; docs=list(yaml.safe_load_all(open(sys.argv[1], encoding="utf-8"))); assert docs and all(isinstance(d, dict) and d.get("apiVersion") and d.get("kind") for d in docs)' "$yaml_file"; then
+            log_success "YAML 验证通过: $(basename "$yaml_file")"
+            return 0
+        fi
+        log_error "YAML 验证失败: $(basename "$yaml_file")"
+        return 1
+    elif command -v kubectl &> /dev/null; then
+        if ! kubectl cluster-info --request-timeout=2s &> /dev/null; then
+            log_warn "Kubernetes API 不可用，已完成离线门禁/模板检查，跳过 OpenAPI 验证"
+            return 0
+        fi
         if kubectl apply --dry-run=client -f "$yaml_file" &> /dev/null; then
             log_success "YAML 验证通过: $(basename "$yaml_file")"
             return 0
@@ -77,15 +115,25 @@ main() {
         full_template_path="$K8S_RESOURCE_DIR/$TEMPLATE_FILE"
     fi
     local full_output_path="$OUTPUT_DIR/$OUTPUT_FILE"
+    local temporary_output_path
+    temporary_output_path="$(mktemp "$OUTPUT_DIR/.${OUTPUT_FILE}.XXXXXX.tmp.yaml")"
+    trap 'rm -f "${temporary_output_path:-}"' EXIT
 
     if [ ! -f "$full_template_path" ]; then
         log_error "模板文件不存在: $full_template_path"; exit 1
     fi
 
     log_info "生成 configmap: $OUTPUT_FILE"
-    sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$full_template_path" | envsubst > "$full_output_path"
+    sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$full_template_path" | envsubst > "$temporary_output_path"
 
-    if ! validate_yaml "$full_output_path"; then exit 1; fi
+    local traffic_gate_validator="$SCRIPT_DIR/validate-agent-traffic-gate.sh"
+    if ! bash "$traffic_gate_validator" "$temporary_output_path"; then
+        log_error "Agent 流量门禁验证失败，拒绝生成可部署配置"
+        exit 1
+    fi
+    if ! validate_yaml "$temporary_output_path"; then exit 1; fi
+    mv "$temporary_output_path" "$full_output_path"
+    trap - EXIT
     log_success "✅ configmap 生成完成: $OUTPUT_FILE"
 }
 

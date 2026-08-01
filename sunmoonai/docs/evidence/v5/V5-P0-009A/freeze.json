@@ -1,0 +1,543 @@
+{
+  "task": "V5-P0-009A",
+  "result": "passed",
+  "template_release_id": "p0-008b-b6-unified-20260729",
+  "template_manifest": "tpl-app/template-release-manifest.json",
+  "policy": {
+    "serial_order": [
+      "info",
+      "knowledge",
+      "research"
+    ],
+    "default_components_only": true,
+    "excluded_from_instances": [
+      "tpl-admin-frontend-react",
+      "tpl-admin-frontend-vue",
+      "tpl-web-backend-nest"
+    ],
+    "business_code_changes_in_009a": false,
+    "stable_traffic_unchanged": true,
+    "remote_git_push": false,
+    "pre_migration_tags_local_only": true
+  },
+  "template_defaults": {
+    "tpl-admin-frontend": {
+      "module": "tpl-admin-frontend",
+      "commit": "fb69795b04e0b888a2917c3936f7f80aeac79cc9",
+      "release_class": "DEFAULT",
+      "role": "next-admin",
+      "pair": "next-admin-fastapi-admin",
+      "image": "harbor.sunmoonai.com:30443/app-images/tpl-admin-frontend:p0-007e-next-accepted-20260728",
+      "digest": "sha256:b426551c0e027b25965995e23486c590c29fa52047779dd14721d93a245a74f1",
+      "clean_room": {
+        "install": "passed",
+        "typecheck": "passed",
+        "lint": "passed",
+        "i18n": "passed",
+        "unit": "passed",
+        "build": "passed"
+      },
+      "image_ref": "tpl-admin-frontend@sha256:b426551c0e027b25965995e23486c590c29fa52047779dd14721d93a245a74f1"
+    },
+    "tpl-admin-backend": {
+      "module": "tpl-admin-backend",
+      "commit": "69e634b8e5b06da9d1dcd01c9b1350e0571d74bd",
+      "release_class": "DEFAULT",
+      "role": "fastapi-admin",
+      "pair": "next-admin-fastapi-admin",
+      "image": "harbor.sunmoonai.com:30443/app-images/tpl-admin-backend:p0-007e-e3-r2-20260728",
+      "digest": "sha256:b24ce7a39e7e10a5541b2a29ff9795a6944d6f17ec4d0479e2051f59a0688c56",
+      "clean_room": {
+        "install": "passed",
+        "ruff": "passed",
+        "format": "tool_skew_recorded",
+        "unit": "passed"
+      },
+      "image_ref": "tpl-admin-backend@sha256:b24ce7a39e7e10a5541b2a29ff9795a6944d6f17ec4d0479e2051f59a0688c56"
+    },
+    "tpl-web-frontend": {
+      "module": "tpl-web-frontend",
+      "commit": "1db9377d38dac5510331149d9122f8d375d83fe3",
+      "release_class": "DEFAULT",
+      "role": "next-web",
+      "pair": "next-web-fastapi-web",
+      "image": "harbor.sunmoonai.com:30443/app-images/tpl-web-frontend:p0-008b-b63-candidate-20260729-r3",
+      "digest": "sha256:2a359c8d213813ecbc3b5dbf6a6ed828e73a4c26b6dffaa1d163a507756db2b3",
+      "clean_room": {
+        "install": "passed",
+        "typecheck": "passed",
+        "lint": "passed",
+        "i18n": "passed",
+        "unit": "passed",
+        "build": "passed"
+      },
+      "image_ref": "tpl-web-frontend@sha256:2a359c8d213813ecbc3b5dbf6a6ed828e73a4c26b6dffaa1d163a507756db2b3"
+    },
+    "tpl-web-backend": {
+      "module": "tpl-web-backend",
+      "commit": "289f2c46410e0aa2891fdf3da28242ceb1a33bdb",
+      "release_class": "DEFAULT",
+      "role": "fastapi-web",
+      "pair": "next-web-fastapi-web",
+      "image": "harbor.sunmoonai.com:30443/app-images/tpl-web-backend:p0-008b-b63-candidate-20260729",
+      "digest": "sha256:41dc3a781033dda3e60cd3594ffac7caf767e3c8cb2295ac0b8a21986fbd2414",
+      "clean_room": {
+        "install": "passed",
+        "ruff": "passed",
+        "format": "passed",
+        "unit": "passed"
+      },
+      "image_ref": "tpl-web-backend@sha256:41dc3a781033dda3e60cd3594ffac7caf767e3c8cb2295ac0b8a21986fbd2414"
+    }
+  },
+  "apps": {
+    "info": {
+      "parent_commit": "37988c873e8dc4e6a7f019ee8eec26f90ce8c82d",
+      "parent_branch": "codex-1",
+      "pre_migration_tag": "p0-009a-pre-20260729",
+      "serial_order_index": 1,
+      "instance_config": {
+        "admin_audience": "info:admin",
+        "web_audience": "info:web",
+        "admin_session_cookie": "sunmoonai_info_admin_sid",
+        "web_session_cookie": "sunmoonai_info_web_sid",
+        "image_prefix": "info-"
+      },
+      "modules": {
+        "info-admin-frontend": {
+          "commit": "429f31578a80d6054d895f89a45415bcafe81408",
+          "branch": "codex-1",
+          "pre_migration_tag": "p0-009a-pre-20260729",
+          "pre_migration_tag_commit": "429f31578a80d6054d895f89a45415bcafe81408",
+          "current_stack": "react-router-legacy",
+          "alembic_head": null,
+          "kind_deployment": {
+            "image": "harbor.sunmoonai.com:30443/app-images/info-admin-frontend:1.0.1",
+            "generation": 9
+          },
+          "image_digest_local": "sha256:3ce28192f97bd38a46d47b3bc357b9d826f219cff79fa47bd05dbdb84180bc98",
+          "plan": {
+            "action": "REPLACE_COMMON_BASE",
+            "from_stack": "react-router-legacy",
+            "to_template": "tpl-admin-frontend",
+            "to_commit": "fb69795b04e0b888a2917c3936f7f80aeac79cc9",
+            "to_digest": "sha256:b426551c0e027b25965995e23486c590c29fa52047779dd14721d93a245a74f1",
+            "notes": "Replace common Next Admin base; reattach domain routes. Do not propagate React/Vue reference profiles."
+          },
+          "keep": [
+            "domain routes/pages for crawl/source governance",
+            "Info DTO/API adapters",
+            "locale/branding"
+          ]
+        },
+        "info-admin-backend": {
+          "commit": "ac481945eced61d256fb568eb34e19aaa4a9ec70",
+          "branch": "codex-1",
+          "pre_migration_tag": "p0-009a-pre-20260729",
+          "pre_migration_tag_commit": "ac481945eced61d256fb568eb34e19aaa4a9ec70",
+          "current_stack": "fastapi-domain",
+          "alembic_head": "20260714_0004",
+          "kind_deployment": {
+            "image": "harbor.sunmoonai.com:30443/app-images/info-admin-backend:p0-006-outbox-r3-20260715",
+            "generation": 69
+          },
+          "image_digest_local": "sha256:ff2291ab40ef238acff359af1e1509a010a63949c43fe64a31051bf30e973dc8",
+          "plan": {
+            "action": "SYNC_COMMON_KERNEL",
+            "from_stack": "fastapi-domain",
+            "to_template": "tpl-admin-backend",
+            "to_commit": "69e634b8e5b06da9d1dcd01c9b1350e0571d74bd",
+            "to_digest": "sha256:b24ce7a39e7e10a5541b2a29ff9795a6944d6f17ec4d0479e2051f59a0688c56",
+            "notes": "Sync verified security/infra kernel only; never wipe domain tables or alembic history."
+          },
+          "keep": [
+            "spider/source/outbox domain models+APIs",
+            "alembic lineage 20260706_0001..20260714_0004",
+            "celery workers"
+          ]
+        },
+        "info-web-frontend": {
+          "commit": "abdbf63849c847b4301c37d31dec12405e2d3257",
+          "branch": "master",
+          "pre_migration_tag": "p0-009a-pre-20260729",
+          "pre_migration_tag_commit": "abdbf63849c847b4301c37d31dec12405e2d3257",
+          "current_stack": "next-16",
+          "alembic_head": null,
+          "kind_deployment": {
+            "image": "harbor.sunmoonai.com:30443/app-images/info-web-frontend:1.0.0",
+            "generation": 6
+          },
+          "image_digest_local": "sha256:ed24c44fcf8db2dafb4bd28c67334f35f8fad5fb93c94c8564488d1794f864eb",
+          "plan": {
+            "action": "REPLACE_COMMON_BASE",
+            "from_stack": "next-16",
+            "to_template": "tpl-web-frontend",
+            "to_commit": "1db9377d38dac5510331149d9122f8d375d83fe3",
+            "to_digest": "sha256:2a359c8d213813ecbc3b5dbf6a6ed828e73a4c26b6dffaa1d163a507756db2b3",
+            "notes": "Replace common Next Web base including expires_at offset fix; keep domain pages."
+          },
+          "keep": [
+            "Info user-facing domain pages/routes",
+            "locale/branding"
+          ]
+        },
+        "info-web-backend": {
+          "commit": "ffbc54ea2fe739495cdbd73ce174ec8c70bbd79e",
+          "branch": "master",
+          "pre_migration_tag": "p0-009a-pre-20260729",
+          "pre_migration_tag_commit": "ffbc54ea2fe739495cdbd73ce174ec8c70bbd79e",
+          "current_stack": "nest-node",
+          "alembic_head": null,
+          "kind_deployment": {
+            "image": "harbor.sunmoonai.com:30443/app-images/info-web-backend:1.0.0",
+            "generation": 6
+          },
+          "image_digest_local": "sha256:c94808763dd53855ffa07316026894837574abc58b6cb1455d54296feaec763b",
+          "plan": {
+            "action": "REPLACE_WITH_FASTAPI_DEFAULT",
+            "from_stack": "nest-node",
+            "to_template": "tpl-web-backend",
+            "to_commit": "289f2c46410e0aa2891fdf3da28242ceb1a33bdb",
+            "to_digest": "sha256:41dc3a781033dda3e60cd3594ffac7caf767e3c8cb2295ac0b8a21986fbd2414",
+            "notes": "Adopt FastAPI Web BFF default. Nest remains OPTIONAL template profile and must not enter instances."
+          },
+          "keep": [
+            "Info web domain adapters once FastAPI kernel lands",
+            "existing Nest domain until replaced"
+          ]
+        }
+      },
+      "delete": {
+        "stable_git_tags": [],
+        "stable_image_tags": [],
+        "notes": "P0-009A deletes nothing. Old Vue/React/Nest tags and images remain rollback assets. Only temporary candidate Deployments created in later 009B/C/D may be cleaned after evidence."
+      },
+      "replace": [
+        "info-admin-frontend common base -> tpl-admin-frontend@fb69795",
+        "info-admin-backend common kernel -> tpl-admin-backend@69e634b",
+        "info-web-frontend common base -> tpl-web-frontend@1db9377",
+        "info-web-backend Nest/Node -> FastAPI tpl-web-backend@289f2c4"
+      ],
+      "migration_commands": {
+        "prepare": [
+          "git -C /home/zymun/info-app checkout -B p0-009b-info p0-009a-pre-20260729",
+          "Work only after previous app ACCEPTED; never start Knowledge before Info, Research before Knowledge."
+        ],
+        "sync_semantics": [
+          "Frontend: replace common base files from frozen template commit; reattach domain routes/pages/DTO adapters.",
+          "Backend: sync common security/infra kernel only; preserve domain models, tables, alembic history, APIs, workers.",
+          "Instantiate audience/cookie/session namespace/ServiceAccount/image names; never copy Info values into other apps.",
+          "Deploy candidates with isolated Host/Deployment; do not retag stable traffic."
+        ],
+        "rollback": [
+          "Restore each module to tag p0-009a-pre-20260729 (commit recorded in this freeze).",
+          "Restore KIND Deployments to recorded pre-migration image references.",
+          "Do not drop databases; alembic downgrade only if an explicit forward migration was applied and has a tested downgrade path.",
+          "Failure of one app must not mutate the next app."
+        ]
+      },
+      "status": "FROZEN_NOT_STARTED_SYNC"
+    },
+    "knowledge": {
+      "parent_commit": "2e410ad0ba8f813844147df39cda56269618a97e",
+      "parent_branch": "codex-1",
+      "pre_migration_tag": "p0-009a-pre-20260729",
+      "serial_order_index": 2,
+      "instance_config": {
+        "admin_audience": "knowledge:admin",
+        "web_audience": "knowledge:web",
+        "admin_session_cookie": "sunmoonai_knowledge_admin_sid",
+        "web_session_cookie": "sunmoonai_knowledge_web_sid",
+        "image_prefix": "knowledge-"
+      },
+      "modules": {
+        "knowledge-admin-frontend": {
+          "commit": "1fc2cc611c063e5f706cb4164da3281bf3878416",
+          "branch": "master",
+          "pre_migration_tag": "p0-009a-pre-20260729",
+          "pre_migration_tag_commit": "1fc2cc611c063e5f706cb4164da3281bf3878416",
+          "current_stack": "vue-legacy",
+          "alembic_head": null,
+          "kind_deployment": null,
+          "image_digest_local": null,
+          "plan": {
+            "action": "REPLACE_COMMON_BASE",
+            "from_stack": "vue-legacy",
+            "to_template": "tpl-admin-frontend",
+            "to_commit": "fb69795b04e0b888a2917c3936f7f80aeac79cc9",
+            "to_digest": "sha256:b426551c0e027b25965995e23486c590c29fa52047779dd14721d93a245a74f1",
+            "notes": "Replace common Next Admin base; reattach domain routes. Do not propagate React/Vue reference profiles."
+          },
+          "keep": [
+            "Dataset/Ingestion/Retrieval admin pages",
+            "Knowledge DTO/API adapters"
+          ]
+        },
+        "knowledge-admin-backend": {
+          "commit": "7d3a6fee62bef5926ee32fb623210c84b815e0dd",
+          "branch": "codex-1",
+          "pre_migration_tag": "p0-009a-pre-20260729",
+          "pre_migration_tag_commit": "7d3a6fee62bef5926ee32fb623210c84b815e0dd",
+          "current_stack": "fastapi-domain",
+          "alembic_head": "20260715_0003",
+          "kind_deployment": {
+            "image": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-backend:p0-004-retrieval-r2-20260715",
+            "generation": 61
+          },
+          "image_digest_local": "sha256:13e31518585b2bda9091eedb503217e9e28064fe73e944c103fa5df5604e26eb",
+          "plan": {
+            "action": "SYNC_COMMON_KERNEL",
+            "from_stack": "fastapi-domain",
+            "to_template": "tpl-admin-backend",
+            "to_commit": "69e634b8e5b06da9d1dcd01c9b1350e0571d74bd",
+            "to_digest": "sha256:b24ce7a39e7e10a5541b2a29ff9795a6944d6f17ec4d0479e2051f59a0688c56",
+            "notes": "Sync verified security/infra kernel only; never wipe domain tables or alembic history."
+          },
+          "keep": [
+            "ingestion/retrieval domain",
+            "alembic lineage incl. 20260715_0003",
+            "workers"
+          ]
+        },
+        "knowledge-web-frontend": {
+          "commit": "2f4f68257062ea006e8e03ccd8e06844db7c1ad6",
+          "branch": "master",
+          "pre_migration_tag": "p0-009a-pre-20260729",
+          "pre_migration_tag_commit": "2f4f68257062ea006e8e03ccd8e06844db7c1ad6",
+          "current_stack": "next-16",
+          "alembic_head": null,
+          "kind_deployment": null,
+          "image_digest_local": null,
+          "plan": {
+            "action": "REPLACE_COMMON_BASE",
+            "from_stack": "next-16",
+            "to_template": "tpl-web-frontend",
+            "to_commit": "1db9377d38dac5510331149d9122f8d375d83fe3",
+            "to_digest": "sha256:2a359c8d213813ecbc3b5dbf6a6ed828e73a4c26b6dffaa1d163a507756db2b3",
+            "notes": "Replace common Next Web base including expires_at offset fix; keep domain pages."
+          },
+          "keep": [
+            "authorized search / personal space pages"
+          ]
+        },
+        "knowledge-web-backend": {
+          "commit": "ada118c984e6338998d7f405579e3a4cd5434e76",
+          "branch": "master",
+          "pre_migration_tag": "p0-009a-pre-20260729",
+          "pre_migration_tag_commit": "ada118c984e6338998d7f405579e3a4cd5434e76",
+          "current_stack": "nest-node",
+          "alembic_head": null,
+          "kind_deployment": null,
+          "image_digest_local": null,
+          "plan": {
+            "action": "REPLACE_WITH_FASTAPI_DEFAULT",
+            "from_stack": "nest-node",
+            "to_template": "tpl-web-backend",
+            "to_commit": "289f2c46410e0aa2891fdf3da28242ceb1a33bdb",
+            "to_digest": "sha256:41dc3a781033dda3e60cd3594ffac7caf767e3c8cb2295ac0b8a21986fbd2414",
+            "notes": "Adopt FastAPI Web BFF default. Nest remains OPTIONAL template profile and must not enter instances."
+          },
+          "keep": [
+            "Knowledge web domain adapters after FastAPI adoption"
+          ]
+        }
+      },
+      "delete": {
+        "stable_git_tags": [],
+        "stable_image_tags": [],
+        "notes": "P0-009A deletes nothing. Old Vue/React/Nest tags and images remain rollback assets. Only temporary candidate Deployments created in later 009B/C/D may be cleaned after evidence."
+      },
+      "replace": [
+        "knowledge-admin-frontend common base -> tpl-admin-frontend@fb69795",
+        "knowledge-admin-backend common kernel -> tpl-admin-backend@69e634b",
+        "knowledge-web-frontend common base -> tpl-web-frontend@1db9377",
+        "knowledge-web-backend Nest/Node -> FastAPI tpl-web-backend@289f2c4"
+      ],
+      "migration_commands": {
+        "prepare": [
+          "git -C /home/zymun/knowledge-app checkout -B p0-009c-knowledge p0-009a-pre-20260729",
+          "Work only after previous app ACCEPTED; never start Knowledge before Info, Research before Knowledge."
+        ],
+        "sync_semantics": [
+          "Frontend: replace common base files from frozen template commit; reattach domain routes/pages/DTO adapters.",
+          "Backend: sync common security/infra kernel only; preserve domain models, tables, alembic history, APIs, workers.",
+          "Instantiate audience/cookie/session namespace/ServiceAccount/image names; never copy Info values into other apps.",
+          "Deploy candidates with isolated Host/Deployment; do not retag stable traffic."
+        ],
+        "rollback": [
+          "Restore each module to tag p0-009a-pre-20260729 (commit recorded in this freeze).",
+          "Restore KIND Deployments to recorded pre-migration image references.",
+          "Do not drop databases; alembic downgrade only if an explicit forward migration was applied and has a tested downgrade path.",
+          "Failure of one app must not mutate the next app."
+        ]
+      },
+      "status": "FROZEN_NOT_STARTED_SYNC",
+      "kind_gap": {
+        "missing_deployments": [
+          "knowledge-admin-frontend",
+          "knowledge-web-frontend",
+          "knowledge-web-backend"
+        ],
+        "present": [
+          "knowledge-admin-backend",
+          "celeryworker-knowledge-admin-backend"
+        ],
+        "implication": "P0-009C must create candidate Admin/Web pairs from scratch for missing surfaces; still no stable traffic cutover in foundation sync."
+      }
+    },
+    "research": {
+      "parent_commit": "81215951809ead1cb5b06df182937551b026ebed",
+      "parent_branch": "codex-1",
+      "pre_migration_tag": "p0-009a-pre-20260729",
+      "serial_order_index": 3,
+      "instance_config": {
+        "admin_audience": "research:admin",
+        "web_audience": "research:web",
+        "admin_session_cookie": "sunmoonai_research_admin_sid",
+        "web_session_cookie": "sunmoonai_research_web_sid",
+        "image_prefix": "research-"
+      },
+      "modules": {
+        "research-admin-frontend": {
+          "commit": "0ba13f3c57d951086258fa6b666278b5d759503f",
+          "branch": "master",
+          "pre_migration_tag": "p0-009a-pre-20260729",
+          "pre_migration_tag_commit": "0ba13f3c57d951086258fa6b666278b5d759503f",
+          "current_stack": "vue-legacy",
+          "alembic_head": null,
+          "kind_deployment": {
+            "image": "harbor.sunmoonai.com:30443/app-images/research-admin-frontend:1.0.0",
+            "generation": 3
+          },
+          "image_digest_local": "sha256:c0a8b782ca578e30946719c2d0b35dde2a8ed16dfaaa31c779e5cf1aa0cc864c",
+          "plan": {
+            "action": "REPLACE_COMMON_BASE",
+            "from_stack": "vue-legacy",
+            "to_template": "tpl-admin-frontend",
+            "to_commit": "fb69795b04e0b888a2917c3936f7f80aeac79cc9",
+            "to_digest": "sha256:b426551c0e027b25965995e23486c590c29fa52047779dd14721d93a245a74f1",
+            "notes": "Replace common Next Admin base; reattach domain routes. Do not propagate React/Vue reference profiles."
+          },
+          "keep": [
+            "Runtime/evaluation governance pages",
+            "Research DTO/API adapters"
+          ]
+        },
+        "research-admin-backend": {
+          "commit": "9d72a137f7790a6e89577a16098840511dd088e6",
+          "branch": "codex-1",
+          "pre_migration_tag": "p0-009a-pre-20260729",
+          "pre_migration_tag_commit": "9d72a137f7790a6e89577a16098840511dd088e6",
+          "current_stack": "fastapi-domain",
+          "alembic_head": "20260712_0002",
+          "kind_deployment": {
+            "image": "harbor.sunmoonai.com:30443/app-images/research-admin-backend:1.0.1",
+            "generation": 69
+          },
+          "image_digest_local": "sha256:1ad5ef63069f4345ce52a4951b1a82eacb2e86267c848561c172b399e5e114ef",
+          "plan": {
+            "action": "SYNC_COMMON_KERNEL",
+            "from_stack": "fastapi-domain",
+            "to_template": "tpl-admin-backend",
+            "to_commit": "69e634b8e5b06da9d1dcd01c9b1350e0571d74bd",
+            "to_digest": "sha256:b24ce7a39e7e10a5541b2a29ff9795a6944d6f17ec4d0479e2051f59a0688c56",
+            "notes": "Sync verified security/infra kernel only; never wipe domain tables or alembic history."
+          },
+          "keep": [
+            "agent/runtime domain",
+            "alembic lineage 20260708_0001..20260712_0002",
+            "workers"
+          ]
+        },
+        "research-web-frontend": {
+          "commit": "ea42d2974f1063ede160c8a547f49e616d6948aa",
+          "branch": "codex-1",
+          "pre_migration_tag": "p0-009a-pre-20260729",
+          "pre_migration_tag_commit": "ea42d2974f1063ede160c8a547f49e616d6948aa",
+          "current_stack": "next-16",
+          "alembic_head": null,
+          "kind_deployment": {
+            "image": "harbor.sunmoonai.com:30443/app-images/research-web-frontend:1.0.1",
+            "generation": 4
+          },
+          "image_digest_local": "sha256:96fd1e8202bb0e481589f2edbcdc34d24bc56155f274ee73d0e590a7d7cf0206",
+          "plan": {
+            "action": "REPLACE_COMMON_BASE",
+            "from_stack": "next-16",
+            "to_template": "tpl-web-frontend",
+            "to_commit": "1db9377d38dac5510331149d9122f8d375d83fe3",
+            "to_digest": "sha256:2a359c8d213813ecbc3b5dbf6a6ed828e73a4c26b6dffaa1d163a507756db2b3",
+            "notes": "Replace common Next Web base including expires_at offset fix; keep domain pages."
+          },
+          "keep": [
+            "Run/HITL/citation user pages (product depth deferred to P0-008C)"
+          ]
+        },
+        "research-web-backend": {
+          "commit": "0714115ab64a730033f3544bdf2de78ed06aba81",
+          "branch": "master",
+          "pre_migration_tag": "p0-009a-pre-20260729",
+          "pre_migration_tag_commit": "0714115ab64a730033f3544bdf2de78ed06aba81",
+          "current_stack": "nest-node",
+          "alembic_head": null,
+          "kind_deployment": {
+            "image": "harbor.sunmoonai.com:30443/app-images/research-web-backend:1.0.0",
+            "generation": 3
+          },
+          "image_digest_local": "sha256:d550d9b54b2c33781c46cd51cae3f73c28b5924a81257dd412133e8c4c3208ae",
+          "plan": {
+            "action": "REPLACE_WITH_FASTAPI_DEFAULT",
+            "from_stack": "nest-node",
+            "to_template": "tpl-web-backend",
+            "to_commit": "289f2c46410e0aa2891fdf3da28242ceb1a33bdb",
+            "to_digest": "sha256:41dc3a781033dda3e60cd3594ffac7caf767e3c8cb2295ac0b8a21986fbd2414",
+            "notes": "Adopt FastAPI Web BFF default. Nest remains OPTIONAL template profile and must not enter instances."
+          },
+          "keep": [
+            "Research web domain + runtime adapter boundary after FastAPI adoption"
+          ]
+        }
+      },
+      "delete": {
+        "stable_git_tags": [],
+        "stable_image_tags": [],
+        "notes": "P0-009A deletes nothing. Old Vue/React/Nest tags and images remain rollback assets. Only temporary candidate Deployments created in later 009B/C/D may be cleaned after evidence."
+      },
+      "replace": [
+        "research-admin-frontend common base -> tpl-admin-frontend@fb69795",
+        "research-admin-backend common kernel -> tpl-admin-backend@69e634b",
+        "research-web-frontend common base -> tpl-web-frontend@1db9377",
+        "research-web-backend Nest/Node -> FastAPI tpl-web-backend@289f2c4"
+      ],
+      "migration_commands": {
+        "prepare": [
+          "git -C /home/zymun/research-app checkout -B p0-009d-research p0-009a-pre-20260729",
+          "Work only after previous app ACCEPTED; never start Knowledge before Info, Research before Knowledge."
+        ],
+        "sync_semantics": [
+          "Frontend: replace common base files from frozen template commit; reattach domain routes/pages/DTO adapters.",
+          "Backend: sync common security/infra kernel only; preserve domain models, tables, alembic history, APIs, workers.",
+          "Instantiate audience/cookie/session namespace/ServiceAccount/image names; never copy Info values into other apps.",
+          "Deploy candidates with isolated Host/Deployment; do not retag stable traffic."
+        ],
+        "rollback": [
+          "Restore each module to tag p0-009a-pre-20260729 (commit recorded in this freeze).",
+          "Restore KIND Deployments to recorded pre-migration image references.",
+          "Do not drop databases; alembic downgrade only if an explicit forward migration was applied and has a tested downgrade path.",
+          "Failure of one app must not mutate the next app."
+        ]
+      },
+      "status": "FROZEN_NOT_STARTED_SYNC"
+    }
+  },
+  "global_keep": [
+    "All existing stable image tags and Git tags",
+    "Domain models/tables/migrations/API/workers",
+    "Per-app audience/cookie/session namespaces"
+  ],
+  "global_delete": [
+    "Nothing in P0-009A. Later packages may delete only ephemeral candidate resources after evidence."
+  ],
+  "next_task": "V5-P0-009B",
+  "next_task_gate": "Only Info foundation adoption; Knowledge/Research remain frozen until Info ACCEPTED"
+}

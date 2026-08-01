@@ -1,0 +1,92 @@
+{
+  "info": {
+    "result": "passed",
+    "files": {
+      "app/domain/security/principal.py": {
+        "template_sha256": "b8d4c28d0e1f2cbbf3360b4480a6eef3fdb4638bc1fec1d916660311b2b314f1",
+        "instance_sha256": "b8d4c28d0e1f2cbbf3360b4480a6eef3fdb4638bc1fec1d916660311b2b314f1",
+        "status": "identical"
+      },
+      "app/application/services/auth_service.py": {
+        "template_sha256": "f1600b9efdb96d438afaa532d60e50e0143d29ff70f5c50a7dca0d7689b1cd49",
+        "instance_sha256": "f1600b9efdb96d438afaa532d60e50e0143d29ff70f5c50a7dca0d7689b1cd49",
+        "status": "identical"
+      },
+      "app/infrastructure/security/oidc.py": {
+        "template_sha256": "0555a51e843c2c28b21b6d41894608be737c4a802ed36c30c527789f7dca0723",
+        "instance_sha256": "0555a51e843c2c28b21b6d41894608be737c4a802ed36c30c527789f7dca0723",
+        "status": "identical"
+      },
+      "app/infrastructure/storage/postgres.py": {
+        "template_sha256": "8ebfc884bc67338d75b54aad83db80fb87b857fc2862aa69e36c6b4f6ec6ad2f",
+        "instance_sha256": "8ebfc884bc67338d75b54aad83db80fb87b857fc2862aa69e36c6b4f6ec6ad2f",
+        "status": "identical"
+      },
+      "app/infrastructure/storage/redis.py": {
+        "template_sha256": "0ee9bab52d01482012a01a0993cb055b4e016cbc23aeddd73af101e53ee624e7",
+        "instance_sha256": "0ee9bab52d01482012a01a0993cb055b4e016cbc23aeddd73af101e53ee624e7",
+        "status": "identical"
+      }
+    }
+  },
+  "knowledge": {
+    "result": "passed",
+    "files": {
+      "app/domain/security/principal.py": {
+        "template_sha256": "b8d4c28d0e1f2cbbf3360b4480a6eef3fdb4638bc1fec1d916660311b2b314f1",
+        "instance_sha256": "b8d4c28d0e1f2cbbf3360b4480a6eef3fdb4638bc1fec1d916660311b2b314f1",
+        "status": "identical"
+      },
+      "app/application/services/auth_service.py": {
+        "template_sha256": "f1600b9efdb96d438afaa532d60e50e0143d29ff70f5c50a7dca0d7689b1cd49",
+        "instance_sha256": "f1600b9efdb96d438afaa532d60e50e0143d29ff70f5c50a7dca0d7689b1cd49",
+        "status": "identical"
+      },
+      "app/infrastructure/security/oidc.py": {
+        "template_sha256": "0555a51e843c2c28b21b6d41894608be737c4a802ed36c30c527789f7dca0723",
+        "instance_sha256": "794b764f2385a9d3403a8c5ff553cd4f50dec7bba29eef15617f0afadbf307e2",
+        "status": "allowed_service_jwks_accessor"
+      },
+      "app/infrastructure/storage/postgres.py": {
+        "template_sha256": "8ebfc884bc67338d75b54aad83db80fb87b857fc2862aa69e36c6b4f6ec6ad2f",
+        "instance_sha256": "8ebfc884bc67338d75b54aad83db80fb87b857fc2862aa69e36c6b4f6ec6ad2f",
+        "status": "identical"
+      },
+      "app/infrastructure/storage/redis.py": {
+        "template_sha256": "0ee9bab52d01482012a01a0993cb055b4e016cbc23aeddd73af101e53ee624e7",
+        "instance_sha256": "0ee9bab52d01482012a01a0993cb055b4e016cbc23aeddd73af101e53ee624e7",
+        "status": "identical"
+      }
+    }
+  },
+  "research": {
+    "result": "passed",
+    "files": {
+      "app/domain/security/principal.py": {
+        "template_sha256": "b8d4c28d0e1f2cbbf3360b4480a6eef3fdb4638bc1fec1d916660311b2b314f1",
+        "instance_sha256": "b8d4c28d0e1f2cbbf3360b4480a6eef3fdb4638bc1fec1d916660311b2b314f1",
+        "status": "identical"
+      },
+      "app/application/services/auth_service.py": {
+        "template_sha256": "f1600b9efdb96d438afaa532d60e50e0143d29ff70f5c50a7dca0d7689b1cd49",
+        "instance_sha256": "f1600b9efdb96d438afaa532d60e50e0143d29ff70f5c50a7dca0d7689b1cd49",
+        "status": "identical"
+      },
+      "app/infrastructure/security/oidc.py": {
+        "template_sha256": "0555a51e843c2c28b21b6d41894608be737c4a802ed36c30c527789f7dca0723",
+        "instance_sha256": "794b764f2385a9d3403a8c5ff553cd4f50dec7bba29eef15617f0afadbf307e2",
+        "status": "allowed_service_jwks_accessor"
+      },
+      "app/infrastructure/storage/postgres.py": {
+        "template_sha256": "8ebfc884bc67338d75b54aad83db80fb87b857fc2862aa69e36c6b4f6ec6ad2f",
+        "instance_sha256": "8ebfc884bc67338d75b54aad83db80fb87b857fc2862aa69e36c6b4f6ec6ad2f",
+        "status": "identical"
+      },
+      "app/infrastructure/storage/redis.py": {
+        "template_sha256": "0ee9bab52d01482012a01a0993cb055b4e016cbc23aeddd73af101e53ee624e7",
+        "instance_sha256": "0ee9bab52d01482012a01a0993cb055b4e016cbc23aeddd73af101e53ee624e7",
+        "status": "identical"
+      }
+    }
+  }
+}

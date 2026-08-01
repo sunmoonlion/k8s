@@ -1,0 +1,1577 @@
+#!/usr/bin/env python3
+"""Fault verification for the Info transactional-outbox P0 prototype.
+
+The verifier creates only new, uniquely named Info distributions and temporary
+scanner Jobs.  It never prints credentials, object contents or broker URLs.
+The suspended CronJob is always returned to suspend=true in ``finally``.
+"""
+
+from __future__ import annotations
+
+import argparse
+import base64
+import json
+import os
+import signal
+import subprocess
+import sys
+import time
+import uuid
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from typing import Any, Callable
+
+from verify_p0_003_kind import (
+    VerificationError,
+    assert_no_explicit_worker_overrides,
+    configure_isolated_verifier,
+    restore_worker,
+    wait_until,
+)
+
+
+def kubectl(
+    args: list[str], *, kubeconfig: str, capture: bool = False, input_text: str | None = None
+) -> str:
+    result = subprocess.run(
+        ["kubectl", "--kubeconfig", kubeconfig, *args],
+        input=input_text,
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE if capture else None,
+        stderr=subprocess.PIPE if capture else None,
+    )
+    return result.stdout if capture else ""
+
+
+def deployment_python_json(
+    *,
+    kubeconfig: str,
+    namespace: str,
+    deployment: str,
+    program: str,
+    program_args: list[str],
+    marker: str,
+    label: str,
+) -> Any:
+    """Run a trusted in-pod harness and return only its explicit safe marker.
+
+    P0-005 intentionally made the Admin HTTP APIs browser-session protected.
+    P0-006 therefore exercises the same domain services from an operator-owned
+    in-pod harness instead of weakening an API or extracting browser cookies.
+    Browser identity and route behavior remain covered by P0-005/P0-007 E2E.
+    """
+    result = subprocess.run(
+        [
+            "kubectl",
+            "--kubeconfig",
+            kubeconfig,
+            "exec",
+            "-n",
+            namespace,
+            f"deploy/{deployment}",
+            "--",
+            ".venv/bin/python",
+            "-c",
+            program,
+            *program_args,
+        ],
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=180,
+    )
+    if result.returncode != 0:
+        raise VerificationError(f"{label} exited {result.returncode}")
+    prefix = f"{marker}="
+    for line in result.stdout.splitlines():
+        if line.startswith(prefix):
+            return json.loads(line.removeprefix(prefix))
+    raise VerificationError(f"{label} did not return its safe state marker")
+
+
+_CREATE_DISTRIBUTION = r"""
+import asyncio
+import json
+import sys
+
+from sqlalchemy import select
+
+from app.application.services import info_crawl_service
+from app.application.services.delivery_outbox import dispatch_due_delivery_outbox
+from app.infrastructure.messaging.celery_producer import get_celery_producer
+from app.infrastructure.models.info import InfoDocumentVersion
+from app.infrastructure.storage.postgres import get_postgres
+
+async def main():
+    postgres = get_postgres()
+    await postgres.init()
+    try:
+        async with postgres.session_factory() as session:
+            versions = list(
+                (await session.execute(
+                    select(InfoDocumentVersion.id)
+                    .order_by(InfoDocumentVersion.created_at.desc())
+                    .limit(200)
+                )).scalars()
+            )
+            record = None
+            for version_id in versions:
+                try:
+                    record = await info_crawl_service.create_knowledge_distribution(
+                        session,
+                        document_version_id=version_id,
+                        target_dataset=sys.argv[1],
+                        dispatch=True,
+                    )
+                    break
+                except info_crawl_service.ArtifactNotDistributableError:
+                    await session.rollback()
+            if record is None:
+                raise RuntimeError("no distributable Info document version was available")
+
+            # Capture the durable operation identity before the optional
+            # dispatcher wake-up starts its own commit cycle.
+            distribution = {
+                "id": str(record.id),
+                "idempotency_key": record.payload["idempotency_key"],
+            }
+
+            # This is the same post-commit best-effort kick used by the
+            # authenticated Admin route.  Its failure is intentionally
+            # swallowed: the durable row written above remains the recovery
+            # source of truth.
+            try:
+                producer = get_celery_producer()
+                if producer.enabled:
+                    async with postgres.session_factory() as dispatch_session:
+                        await dispatch_due_delivery_outbox(
+                            dispatch_session, publisher=producer
+                        )
+            except Exception:
+                pass
+
+            print("P0_DISTRIBUTION=" + json.dumps(distribution, sort_keys=True))
+    finally:
+        await postgres.shutdown()
+
+asyncio.run(main())
+"""
+
+
+def create_real_distribution(
+    *, kubeconfig: str, namespace: str, dataset_key: str
+) -> dict[str, Any]:
+    return deployment_python_json(
+        kubeconfig=kubeconfig,
+        namespace=namespace,
+        deployment="info-admin-backend",
+        program=_CREATE_DISTRIBUTION,
+        program_args=[dataset_key],
+        marker="P0_DISTRIBUTION",
+        label="trusted Info delivery creation harness",
+    )
+
+
+_READ_DISTRIBUTION = r"""
+import asyncio
+import json
+import sys
+import uuid
+
+from app.infrastructure.models.info import DistributionRecord
+from app.infrastructure.storage.postgres import get_postgres
+
+async def main():
+    postgres = get_postgres()
+    await postgres.init()
+    try:
+        async with postgres.session_factory() as session:
+            row = await session.get(DistributionRecord, uuid.UUID(sys.argv[1]))
+            if row is None:
+                print("P0_DISTRIBUTION_STATE=null")
+                return
+            print("P0_DISTRIBUTION_STATE=" + json.dumps({
+                "id": str(row.id),
+                "status": row.status,
+                "idempotency_key": row.payload.get("idempotency_key"),
+            }, sort_keys=True))
+    finally:
+        await postgres.shutdown()
+
+asyncio.run(main())
+"""
+
+
+def read_distribution(
+    *, kubeconfig: str, namespace: str, distribution_id: str
+) -> dict[str, Any] | None:
+    value = deployment_python_json(
+        kubeconfig=kubeconfig,
+        namespace=namespace,
+        deployment="info-admin-backend",
+        program=_READ_DISTRIBUTION,
+        program_args=[distribution_id],
+        marker="P0_DISTRIBUTION_STATE",
+        label="trusted Info distribution state reader",
+    )
+    return value
+
+
+def wait_for_distribution(
+    *,
+    kubeconfig: str,
+    namespace: str,
+    distribution_id: str,
+    timeout: float = 150,
+) -> dict[str, Any]:
+    value = wait_until(
+        "distribution completion",
+        lambda: read_distribution(
+            kubeconfig=kubeconfig,
+            namespace=namespace,
+            distribution_id=distribution_id,
+        ),
+        lambda row: row is not None and row.get("status") == "succeeded",
+        timeout=timeout,
+    )
+    if value is None:
+        raise VerificationError("completed distribution was not found")
+    return value
+
+
+_READ_INGESTION = r"""
+import asyncio
+import json
+import sys
+
+from sqlalchemy import select
+
+from app.infrastructure.models.knowledge import KnowledgeIngestionJob
+from app.infrastructure.storage.postgres import get_postgres
+
+async def main():
+    postgres = get_postgres()
+    await postgres.init()
+    try:
+        async with postgres.session_factory() as session:
+            rows = list((await session.execute(
+                select(KnowledgeIngestionJob).where(
+                    KnowledgeIngestionJob.idempotency_key == sys.argv[1]
+                )
+            )).scalars())
+            print("P0_INGESTION_STATE=" + json.dumps({
+                "count": len(rows),
+                "statuses": sorted(row.status for row in rows),
+            }, sort_keys=True))
+    finally:
+        await postgres.shutdown()
+
+asyncio.run(main())
+"""
+
+
+def assert_one_ingestion(
+    *, kubeconfig: str, namespace: str, idempotency_key: str
+) -> dict[str, Any]:
+    value = wait_until(
+        "Knowledge ingestion completion",
+        lambda: deployment_python_json(
+            kubeconfig=kubeconfig,
+            namespace=namespace,
+            deployment="knowledge-admin-backend",
+            program=_READ_INGESTION,
+            program_args=[idempotency_key],
+            marker="P0_INGESTION_STATE",
+            label="trusted Knowledge ingestion state reader",
+        ),
+        lambda row: row["count"] == 1
+        and row["statuses"] in (["artifact_verified"], ["succeeded"]),
+        timeout=150,
+    )
+    if value["count"] != 1:
+        raise VerificationError(
+            f"expected one Knowledge ingestion operation, got {value['count']}"
+        )
+    return value
+
+
+_READ_ACTIVE_OUTBOX = r"""
+import asyncio
+import json
+
+from sqlalchemy import func, select
+
+from app.application.services.delivery_outbox import TOPIC_DISTRIBUTION_DISPATCH_V1
+from app.infrastructure.models.info import DeliveryOutboxMessage
+from app.infrastructure.storage.postgres import get_postgres
+
+async def main():
+    postgres = get_postgres()
+    await postgres.init()
+    try:
+        async with postgres.session_factory() as session:
+            rows = list((await session.execute(
+                select(DeliveryOutboxMessage.state, func.count(DeliveryOutboxMessage.id))
+                .where(DeliveryOutboxMessage.topic == TOPIC_DISTRIBUTION_DISPATCH_V1)
+                .group_by(DeliveryOutboxMessage.state)
+            )).all())
+            states = {state: int(count) for state, count in rows}
+            active = sum(
+                count for state, count in states.items() if state != "completed"
+            )
+            print("P0_OUTBOX_PRECONDITION=" + json.dumps({
+                "active": active,
+                "states": states,
+            }, sort_keys=True))
+    finally:
+        await postgres.shutdown()
+
+asyncio.run(main())
+"""
+
+
+def assert_delivery_outbox_quiescent(*, kubeconfig: str, namespace: str) -> None:
+    """Refuse to make a fault drill touch unrelated delivery work.
+
+    The production route deliberately kicks every due row.  This verifier has
+    the same behavior, so it first requires a clean candidate namespace rather
+    than accidentally claiming an operator's pending delivery.
+    """
+    value = deployment_python_json(
+        kubeconfig=kubeconfig,
+        namespace=namespace,
+        deployment="info-admin-backend",
+        program=_READ_ACTIVE_OUTBOX,
+        program_args=[],
+        marker="P0_OUTBOX_PRECONDITION",
+        label="Info delivery outbox precondition reader",
+    )
+    if value.get("active") != 0:
+        raise VerificationError(
+            "refusing P0-006 fault drill while active Info delivery outbox work exists"
+        )
+
+
+def read_outbox(
+    *, kubeconfig: str, namespace: str, distribution_id: str
+) -> dict[str, Any] | None:
+    # The query runs in the existing backend container, so DATABASE_URL never
+    # leaves Kubernetes and the verifier only receives safe state metadata.
+    query = """
+import asyncio
+import json
+import sys
+import uuid
+from sqlalchemy import select
+from app.infrastructure.models.info import DeliveryOutboxMessage
+from app.infrastructure.storage.postgres import get_postgres
+
+async def main():
+    postgres = get_postgres()
+    await postgres.init()
+    async with postgres.session_factory() as session:
+        result = await session.execute(
+            select(DeliveryOutboxMessage).where(
+                DeliveryOutboxMessage.aggregate_id == uuid.UUID(sys.argv[1])
+            )
+        )
+        rows = list(result.scalars())
+        if len(rows) > 1:
+            raise RuntimeError("expected no more than one outbox operation")
+        if not rows:
+            print("P0_OUTBOX_STATE=null")
+            return
+        row = rows[0]
+        print("P0_OUTBOX_STATE=" + json.dumps({
+            "id": str(row.id),
+            "state": row.state,
+            "attempt_count": row.attempt_count,
+            "available_at": row.available_at.isoformat() if row.available_at else None,
+            "lease_expires_at": row.lease_expires_at.isoformat() if row.lease_expires_at else None,
+            "published_at": row.published_at.isoformat() if row.published_at else None,
+            "has_broker_message_id": bool(row.broker_message_id),
+            "has_last_error": bool(row.last_error),
+        }, sort_keys=True))
+
+asyncio.run(main())
+"""
+    output = kubectl(
+        [
+            "exec",
+            "-n",
+            namespace,
+            "deploy/info-admin-backend",
+            "--",
+            ".venv/bin/python",
+            "-c",
+            query,
+            distribution_id,
+        ],
+        kubeconfig=kubeconfig,
+        capture=True,
+    )
+    for line in output.splitlines():
+        if line.startswith("P0_OUTBOX_STATE="):
+            value = line.removeprefix("P0_OUTBOX_STATE=")
+            return None if value == "null" else json.loads(value)
+    raise VerificationError("outbox query did not return its safe state marker")
+
+
+def wait_for_outbox(
+    *,
+    kubeconfig: str,
+    namespace: str,
+    distribution_id: str,
+    done: Callable[[dict[str, Any] | None], bool],
+    description: str,
+    timeout: float = 150,
+) -> dict[str, Any]:
+    value = wait_until(
+        description,
+        lambda: read_outbox(
+            kubeconfig=kubeconfig,
+            namespace=namespace,
+            distribution_id=distribution_id,
+        ),
+        done,
+        timeout=timeout,
+    )
+    if value is None:
+        raise VerificationError(f"{description}: outbox row was not found")
+    return value
+
+
+def scanner_job_yaml(
+    *,
+    namespace: str,
+    name: str,
+    image: str,
+    broken_broker: bool,
+    ack_timeout_seconds: int | None = None,
+) -> str:
+    extra_env: list[tuple[str, str]] = []
+    if broken_broker:
+        # Deliberately non-routable test endpoint; no real credential is used.
+        extra_env.append(("CELERY_BROKER_URL", "amqp://127.0.0.1:1/p0"))
+    if ack_timeout_seconds is not None:
+        extra_env.append(("DELIVERY_OUTBOX_ACK_TIMEOUT_SECONDS", str(ack_timeout_seconds)))
+    env_override = ""
+    if extra_env:
+        env_override = "\n        env:\n" + "".join(
+            f"        - name: {name}\n          value: {json.dumps(value)}\n"
+            for name, value in extra_env
+        )
+    return f"""apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {name}
+  namespace: {namespace}
+  labels:
+    app: celeryworker-info-admin-backend
+    component: delivery-outbox-scanner
+    sunmoonai.com/p0-verifier: "true"
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        app: celeryworker-info-admin-backend
+        component: delivery-outbox-scanner
+        sunmoonai.com/p0-verifier: "true"
+    spec:
+      serviceAccountName: info-delivery-outbox-scanner
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      imagePullSecrets:
+      - name: harbor-registry-secret
+      containers:
+      - name: delivery-outbox-scanner
+        image: {image}
+        imagePullPolicy: Always
+        command: [".venv/bin/python", "-m", "app.cli.drain_delivery_outbox"]
+        args: ["--limit", "50"]
+        envFrom:
+        - configMapRef:
+            name: info-admin-backend-config
+        - configMapRef:
+            name: celeryworker-info-admin-backend-config
+        - secretRef:
+            name: celeryworker-info-admin-backend-secret
+        - secretRef:
+            name: info-admin-backend-postgresql-conn
+{env_override}"""
+
+
+def create_scanner_job(
+    *,
+    kubeconfig: str,
+    namespace: str,
+    name: str,
+    image: str,
+    broken_broker: bool,
+    ack_timeout_seconds: int | None = None,
+) -> None:
+    kubectl(
+        ["apply", "-f", "-"],
+        kubeconfig=kubeconfig,
+        input_text=scanner_job_yaml(
+            namespace=namespace,
+            name=name,
+            image=image,
+            broken_broker=broken_broker,
+            ack_timeout_seconds=ack_timeout_seconds,
+        ),
+    )
+    kubectl(
+        [
+            "wait",
+            "--for=condition=complete",
+            f"job/{name}",
+            "-n",
+            namespace,
+            "--timeout=150s",
+        ],
+        kubeconfig=kubeconfig,
+    )
+
+
+def scanner_job_summary(*, kubeconfig: str, namespace: str, name: str) -> dict[str, Any]:
+    """Read only the scanner's count summary; it never includes credentials."""
+    output = kubectl(
+        ["logs", f"job/{name}", "-n", namespace],
+        kubeconfig=kubeconfig,
+        capture=True,
+    )
+    for line in reversed(output.splitlines()):
+        try:
+            value = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if value.get("task") == "info-delivery-outbox":
+            return {
+                "claimed": int(value.get("claimed", 0)),
+                "published": int(value.get("published", 0)),
+                "broker_failures": int(value.get("broker_failures", 0)),
+            }
+    raise VerificationError(f"scanner job {name} did not emit a count summary")
+
+
+def deployment_python_expect_exit(
+    *,
+    kubeconfig: str,
+    namespace: str,
+    deployment: str,
+    program: str,
+    program_args: list[str],
+    expected_exit: int,
+    label: str,
+) -> None:
+    """Run a bounded, credential-silent fault process inside an existing pod."""
+    try:
+        result = subprocess.run(
+            [
+                "kubectl",
+                "--kubeconfig",
+                kubeconfig,
+                "exec",
+                "-n",
+                namespace,
+                f"deploy/{deployment}",
+                "--",
+                ".venv/bin/python",
+                "-c",
+                program,
+                *program_args,
+            ],
+            check=False,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=180,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise VerificationError(f"{label} timed out") from exc
+    if result.returncode != expected_exit:
+        # Do not surface captured process output: it can contain infrastructure
+        # details and is not needed to explain a deterministic verifier failure.
+        raise VerificationError(
+            f"{label} exited {result.returncode}, expected {expected_exit}"
+        )
+
+
+_PUBLISH_THEN_EXIT = r"""
+import asyncio
+import os
+import sys
+import uuid
+from datetime import timedelta
+
+os.environ["CELERY_QUEUE"] = sys.argv[2]
+
+from sqlalchemy import select
+from app.application.services.delivery_outbox import STATE_LEASED, STATE_PENDING, _now
+from app.infrastructure.messaging.celery_producer import get_celery_producer
+from app.infrastructure.models.info import DeliveryOutboxMessage
+from app.infrastructure.storage.postgres import get_postgres
+from core.config import get_settings
+
+async def main():
+    distribution_id = uuid.UUID(sys.argv[1])
+    postgres = get_postgres()
+    await postgres.init()
+    async with postgres.session_factory() as session:
+        result = await session.execute(
+            select(DeliveryOutboxMessage)
+            .where(DeliveryOutboxMessage.aggregate_id == distribution_id)
+            .with_for_update()
+        )
+        row = result.scalar_one()
+        now = _now()
+        if row.state != STATE_PENDING or row.available_at > now:
+            raise RuntimeError("fault message is not due and pending")
+        row.state = STATE_LEASED
+        row.lease_token = uuid.uuid4()
+        row.lease_expires_at = now + timedelta(
+            seconds=get_settings().delivery_outbox_lease_seconds
+        )
+        row.attempt_count += 1
+        outbox_message_id = row.id
+        await session.commit()
+        get_celery_producer().dispatch_distribution(
+            distribution_id, outbox_message_id=outbox_message_id
+        )
+        # Intentionally skip mark_delivery_outbox_published.  The parent
+        # verifier expects this process to disappear at this exact window.
+        os._exit(86)
+
+asyncio.run(main())
+"""
+
+
+_FORCE_PUBLISHED = r"""
+import asyncio
+import sys
+import uuid
+
+from sqlalchemy import select
+from app.application.services.delivery_outbox import STATE_PENDING, STATE_PUBLISHED, _now
+from app.infrastructure.models.info import DeliveryOutboxMessage
+from app.infrastructure.storage.postgres import get_postgres
+
+async def main():
+    distribution_id = uuid.UUID(sys.argv[1])
+    postgres = get_postgres()
+    await postgres.init()
+    async with postgres.session_factory() as session:
+        result = await session.execute(
+            select(DeliveryOutboxMessage)
+            .where(DeliveryOutboxMessage.aggregate_id == distribution_id)
+            .with_for_update()
+        )
+        row = result.scalar_one()
+        now = _now()
+        if row.state != STATE_PENDING or row.available_at > now:
+            raise RuntimeError("provider fault message is not due and pending")
+        row.state = STATE_PUBLISHED
+        row.attempt_count += 1
+        row.lease_token = None
+        row.lease_expires_at = None
+        row.broker_message_id = "p0-provider-effect-control"
+        row.published_at = now
+        row.last_error = None
+        await session.commit()
+    await postgres.shutdown()
+
+asyncio.run(main())
+"""
+
+
+_WORKER_EFFECT_THEN_EXIT = r"""
+import asyncio
+import os
+import sys
+import uuid
+
+from app.application.services.info_crawl_service import dispatch_distribution
+from app.infrastructure.storage.postgres import get_postgres
+
+async def main():
+    postgres = get_postgres()
+    await postgres.init()
+    async with postgres.session_factory() as session:
+        record = await dispatch_distribution(
+            session, distribution_id=uuid.UUID(sys.argv[1])
+        )
+        if record.status != "succeeded":
+            raise RuntimeError("provider effect did not reach succeeded state")
+        # Simulate a worker process loss after the downstream side effect and
+        # before task code can acknowledge the durable outbox operation.
+        os._exit(87)
+
+asyncio.run(main())
+"""
+
+
+def broker_accept_fault_job_yaml(
+    *, namespace: str, name: str, image: str, distribution_id: str
+) -> str:
+    """Run the publish/exit fault without granting any extra broker permission.
+
+    RabbitMQ correctly restricts the workload to the pre-created
+    ``info.admin.default`` queue. The normal Info worker is scaled to zero
+    around this Job, so the real task can be accepted by that queue without
+    being consumed before the outbox lease-recovery check.
+    """
+    program = base64.b64encode(_PUBLISH_THEN_EXIT.encode()).decode()
+    return f"""apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {name}
+  namespace: {namespace}
+  labels:
+    app: celeryworker-info-admin-backend
+    component: p0-broker-accept-fault
+    sunmoonai.com/p0-verifier: "true"
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        app: celeryworker-info-admin-backend
+        component: p0-broker-accept-fault
+        sunmoonai.com/p0-verifier: "true"
+    spec:
+      serviceAccountName: info-delivery-outbox-scanner
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      imagePullSecrets:
+      - name: harbor-registry-secret
+      containers:
+      - name: broker-accept-fault
+        image: {image}
+        imagePullPolicy: Always
+        command: ["/bin/sh", "-ec"]
+        args:
+        - |
+          set +e
+          .venv/bin/python -c 'import base64, os; exec(base64.b64decode(os.environ["P0_FAULT_PROGRAM"]))' "$P0_DISTRIBUTION_ID" "$CELERY_QUEUE"
+          code=$?
+          set -e
+          test "$code" -eq 86
+        env:
+        - name: P0_FAULT_PROGRAM
+          value: {json.dumps(program)}
+        - name: P0_DISTRIBUTION_ID
+          value: {json.dumps(distribution_id)}
+        envFrom:
+        - configMapRef:
+            name: info-admin-backend-config
+        - configMapRef:
+            name: celeryworker-info-admin-backend-config
+        - secretRef:
+            name: celeryworker-info-admin-backend-secret
+        - secretRef:
+            name: info-admin-backend-postgresql-conn
+"""
+
+
+def force_broker_accept_then_exit(
+    *, kubeconfig: str, namespace: str, name: str, image: str, distribution_id: str
+) -> None:
+    kubectl(
+        ["apply", "-f", "-"],
+        kubeconfig=kubeconfig,
+        input_text=broker_accept_fault_job_yaml(
+            namespace=namespace,
+            name=name,
+            image=image,
+            distribution_id=distribution_id,
+        ),
+    )
+    kubectl(
+        [
+            "wait",
+            "--for=condition=complete",
+            f"job/{name}",
+            "-n",
+            namespace,
+            "--timeout=150s",
+        ],
+        kubeconfig=kubeconfig,
+    )
+
+
+def force_published_for_provider_fault(
+    *, kubeconfig: str, namespace: str, distribution_id: str
+) -> None:
+    """Isolate the provider/acknowledgement window after broker semantics are tested."""
+    deployment_python_expect_exit(
+        kubeconfig=kubeconfig,
+        namespace=namespace,
+        deployment="info-admin-backend",
+        program=_FORCE_PUBLISHED,
+        program_args=[distribution_id],
+        expected_exit=0,
+        label="provider acknowledgement control setup",
+    )
+
+
+def force_provider_effect_then_exit(
+    *, kubeconfig: str, namespace: str, distribution_id: str
+) -> None:
+    deployment_python_expect_exit(
+        kubeconfig=kubeconfig,
+        namespace=namespace,
+        deployment="celeryworker-info-admin-backend",
+        program=_WORKER_EFFECT_THEN_EXIT,
+        program_args=[distribution_id],
+        expected_exit=87,
+        label="provider effect-before-outbox-ack fault process",
+    )
+
+
+def deployment_replicas(
+    *, kubeconfig: str, namespace: str, deployment: str
+) -> int:
+    raw = kubectl(
+        ["get", f"deployment/{deployment}", "-n", namespace, "-o", "json"],
+        kubeconfig=kubeconfig,
+        capture=True,
+    )
+    return int(json.loads(raw)["spec"].get("replicas", 1))
+
+
+def scale_deployment(
+    *, kubeconfig: str, namespace: str, deployment: str, replicas: int
+) -> None:
+    kubectl(
+        [
+            "scale",
+            f"deployment/{deployment}",
+            "-n",
+            namespace,
+            f"--replicas={replicas}",
+        ],
+        kubeconfig=kubeconfig,
+    )
+    kubectl(
+        [
+            "rollout",
+            "status",
+            f"deployment/{deployment}",
+            "-n",
+            namespace,
+            "--timeout=150s",
+        ],
+        kubeconfig=kubeconfig,
+    )
+
+
+def assert_candidate_images(*, kubeconfig: str, namespace: str, image: str) -> None:
+    raw = kubectl(
+        [
+            "get",
+            "deployment/info-admin-backend",
+            "deployment/celeryworker-info-admin-backend",
+            "-n",
+            namespace,
+            "-o",
+            "json",
+        ],
+        kubeconfig=kubeconfig,
+        capture=True,
+    )
+    deployments = json.loads(raw)["items"]
+    actual = {
+        item["metadata"]["name"]: item["spec"]["template"]["spec"]["containers"][0][
+            "image"
+        ]
+        for item in deployments
+    }
+    if set(actual.values()) != {image}:
+        raise VerificationError(f"candidate image mismatch: {actual}")
+
+    cronjob = json.loads(
+        kubectl(
+            [
+                "get",
+                "cronjob/info-delivery-outbox-scanner",
+                "-n",
+                namespace,
+                "-o",
+                "json",
+            ],
+            kubeconfig=kubeconfig,
+            capture=True,
+        )
+    )
+    scanner_image = cronjob["spec"]["jobTemplate"]["spec"]["template"]["spec"][
+        "containers"
+    ][0]["image"]
+    if scanner_image != image or cronjob["spec"].get("suspend") is not True:
+        raise VerificationError("scanner CronJob must use candidate image and start suspended")
+
+
+def running_candidate_image_ids(*, kubeconfig: str, namespace: str) -> dict[str, str]:
+    """Capture the pulled digests that back the two candidate Deployments."""
+    values: dict[str, str] = {}
+    for app_name in ("info-admin-backend", "celeryworker-info-admin-backend"):
+        raw = kubectl(
+            ["get", "pods", "-n", namespace, "-l", f"app={app_name}", "-o", "json"],
+            kubeconfig=kubeconfig,
+            capture=True,
+        )
+        items = json.loads(raw).get("items", [])
+        ready = [
+            item
+            for item in items
+            if item.get("status", {}).get("phase") == "Running"
+            and item.get("status", {}).get("containerStatuses")
+            and item["status"]["containerStatuses"][0].get("ready") is True
+        ]
+        if len(ready) != 1:
+            raise VerificationError(
+                f"expected one ready {app_name} candidate pod, got {len(ready)}"
+            )
+        image_id = ready[0]["status"]["containerStatuses"][0].get("imageID")
+        if not image_id or "@sha256:" not in image_id:
+            raise VerificationError(f"{app_name} does not expose a pulled image digest")
+        values[app_name] = image_id
+    return values
+
+
+def set_cronjob_suspend(*, kubeconfig: str, namespace: str, value: bool) -> None:
+    kubectl(
+        [
+            "patch",
+            "cronjob/info-delivery-outbox-scanner",
+            "-n",
+            namespace,
+            "--type=merge",
+            "-p",
+            json.dumps({"spec": {"suspend": value}}),
+        ],
+        kubeconfig=kubeconfig,
+    )
+
+
+def assert_no_explicit_info_api_broker_override(*, kubeconfig: str, namespace: str) -> None:
+    """Do not hide an operator-owned API broker override during verification."""
+    raw = kubectl(
+        [
+            "get",
+            "deployment/info-admin-backend",
+            "-n",
+            namespace,
+            "-o",
+            "json",
+        ],
+        kubeconfig=kubeconfig,
+        capture=True,
+    )
+    deployment = json.loads(raw)
+    env = deployment["spec"]["template"]["spec"]["containers"][0].get("env", [])
+    if any(item.get("name") == "CELERY_BROKER_URL" for item in env):
+        raise VerificationError(
+            "refusing to overwrite an existing explicit Info API CELERY_BROKER_URL"
+        )
+
+
+def set_info_api_broker_override(
+    *, kubeconfig: str, namespace: str, broken: bool
+) -> None:
+    """Temporarily make the API's immediate wake-up fail, then restore envFrom."""
+    value = "CELERY_BROKER_URL=amqp://127.0.0.1:1/p0" if broken else "CELERY_BROKER_URL-"
+    changed = False
+    try:
+        kubectl(
+            [
+                "set",
+                "env",
+                "deployment/info-admin-backend",
+                "-n",
+                namespace,
+                value,
+            ],
+            kubeconfig=kubeconfig,
+        )
+        changed = broken
+        kubectl(
+            [
+                "rollout",
+                "status",
+                "deployment/info-admin-backend",
+                "-n",
+                namespace,
+                "--timeout=120s",
+            ],
+            kubeconfig=kubeconfig,
+        )
+    except subprocess.CalledProcessError as exc:
+        # `kubectl set env` succeeds before the rollout can fail.  Keep this
+        # rollback inside the helper: callers cannot safely set their cleanup
+        # flag until this function returns, which previously left a broken
+        # broker URL behind on a rollout error.
+        if changed:
+            try:
+                kubectl(
+                    [
+                        "set",
+                        "env",
+                        "deployment/info-admin-backend",
+                        "-n",
+                        namespace,
+                        "CELERY_BROKER_URL-",
+                    ],
+                    kubeconfig=kubeconfig,
+                )
+                kubectl(
+                    [
+                        "rollout",
+                        "status",
+                        "deployment/info-admin-backend",
+                        "-n",
+                        namespace,
+                        "--timeout=120s",
+                    ],
+                    kubeconfig=kubeconfig,
+                )
+            except subprocess.CalledProcessError as rollback_exc:
+                raise VerificationError(
+                    "Info API broker fault setup failed and automatic rollback failed; "
+                    "remove explicit CELERY_BROKER_URL before retrying"
+                ) from rollback_exc
+        raise exc
+
+
+def wait_until_timestamp(
+    value: str | None, *, description: str, after_seconds: int = 0
+) -> None:
+    if not value:
+        raise VerificationError(f"{description} did not contain a timestamp")
+    due_at = datetime.fromisoformat(str(value).replace("Z", "+00:00")) + timedelta(
+        seconds=after_seconds
+    )
+    remaining = (due_at - datetime.now(UTC)).total_seconds()
+    if remaining > 0:
+        time.sleep(remaining + 1)
+
+
+def wait_until_outbox_due(row: dict[str, Any]) -> None:
+    """Wait for the configured retry deadline instead of assuming five seconds."""
+    wait_until_timestamp(
+        row.get("available_at"), description="recovered outbox row available_at"
+    )
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--image",
+        required=True,
+        help="unique P0 candidate image tag; pulled image IDs are captured in the result",
+    )
+    parser.add_argument(
+        "--kubeconfig",
+        default=os.environ.get("KUBECONFIG", str(Path.home() / ".kube/kind-config")),
+    )
+    parser.add_argument("--namespace", default="app-platform-dev")
+    args = parser.parse_args()
+
+    kubeconfig = str(Path(args.kubeconfig).expanduser())
+    suffix = f"{int(time.time())}-{uuid.uuid4().hex[:8]}"
+    cronjob_unsuspended = False
+    knowledge_worker_overridden = False
+    info_api_broker_overridden = False
+    info_worker_scaled_down = False
+    info_worker_original_replicas: int | None = None
+    temp_jobs: list[str] = []
+    summary: dict[str, Any] = {"task": "V5-P0-006", "result": "failed"}
+    previous_signal_handlers = {
+        sig: signal.getsignal(sig) for sig in (signal.SIGINT, signal.SIGTERM)
+    }
+
+    def request_cleanup(signum: int, _frame: Any) -> None:
+        raise VerificationError(
+            f"received signal {signum}; restoring temporary verifier state"
+        )
+
+    for sig in previous_signal_handlers:
+        signal.signal(sig, request_cleanup)
+    try:
+        assert_candidate_images(
+            kubeconfig=kubeconfig, namespace=args.namespace, image=args.image
+        )
+        candidate_image_ids = running_candidate_image_ids(
+            kubeconfig=kubeconfig, namespace=args.namespace
+        )
+        assert_no_explicit_worker_overrides(
+            kubeconfig=kubeconfig, namespace=args.namespace
+        )
+        assert_no_explicit_info_api_broker_override(
+            kubeconfig=kubeconfig, namespace=args.namespace
+        )
+        assert_delivery_outbox_quiescent(
+            kubeconfig=kubeconfig, namespace=args.namespace
+        )
+        configure_isolated_verifier(kubeconfig=kubeconfig, namespace=args.namespace)
+        knowledge_worker_overridden = True
+        set_info_api_broker_override(
+            kubeconfig=kubeconfig, namespace=args.namespace, broken=True
+        )
+        info_api_broker_overridden = True
+        failed_distribution = create_real_distribution(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            dataset_key=f"p0-outbox-broker-{suffix}",
+        )
+        failed_id = failed_distribution["id"]
+        recovered_pending = wait_for_outbox(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=failed_id,
+            done=lambda row: row is not None
+            and row["state"] == "pending"
+            and row["attempt_count"] >= 1
+            and row["has_last_error"],
+            description="API broker failure retained as pending outbox work",
+        )
+
+        # Restore the normal envFrom-provided broker before exercising scanner
+        # recovery.  No anonymous API readiness probe is used: P0-005 made
+        # these Admin routes session-protected by design.
+        set_info_api_broker_override(
+            kubeconfig=kubeconfig, namespace=args.namespace, broken=False
+        )
+        info_api_broker_overridden = False
+        wait_until_outbox_due(recovered_pending)
+
+        # Two independent scanners race for the same due row.  SKIP LOCKED
+        # permits only one current lease and the downstream idempotency key
+        # permits a safe retry after any acknowledgement ambiguity.
+        scanner_jobs = [f"p0-006-scan-a-{suffix}", f"p0-006-scan-b-{suffix}"]
+        temp_jobs.extend(scanner_jobs)
+        kubectl(
+            ["apply", "-f", "-"],
+            kubeconfig=kubeconfig,
+            input_text="---\n".join(
+                scanner_job_yaml(
+                    namespace=args.namespace,
+                    name=job_name,
+                    image=args.image,
+                    broken_broker=False,
+                )
+                for job_name in scanner_jobs
+            ),
+        )
+        for job_name in scanner_jobs:
+            kubectl(
+                [
+                    "wait",
+                    "--for=condition=complete",
+                    f"job/{job_name}",
+                    "-n",
+                    args.namespace,
+                    "--timeout=150s",
+                ],
+                kubeconfig=kubeconfig,
+            )
+        scanner_summaries = [
+            scanner_job_summary(
+                kubeconfig=kubeconfig, namespace=args.namespace, name=job_name
+            )
+            for job_name in scanner_jobs
+        ]
+        if sum(item["claimed"] for item in scanner_summaries) != 1:
+            raise VerificationError(
+                "scanner competition must claim the recovered operation exactly once"
+            )
+
+        completed_distribution = wait_for_distribution(
+            kubeconfig=kubeconfig, namespace=args.namespace, distribution_id=failed_id
+        )
+        completed_outbox = wait_for_outbox(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=failed_id,
+            done=lambda row: row is not None and row["state"] == "completed" and row["attempt_count"] >= 2,
+            description="recovered outbox completion",
+        )
+        assert_one_ingestion(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            idempotency_key=failed_distribution["idempotency_key"],
+        )
+
+        # Broker accepted / published-write interruption. The trusted Info
+        # harness first creates a real durable request while its wake-up is
+        # blocked. Scale the normal Info worker to zero, publish the real task
+        # to its existing least-privilege queue from a bounded Job, and exit
+        # before `published` can be recorded. A scanner then republishes after
+        # lease expiry; restoring the worker exercises downstream idempotency
+        # with both accepted messages.
+        set_info_api_broker_override(
+            kubeconfig=kubeconfig, namespace=args.namespace, broken=True
+        )
+        info_api_broker_overridden = True
+        publish_window_distribution = create_real_distribution(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            dataset_key=f"p0-outbox-published-window-{suffix}",
+        )
+        publish_window_id = publish_window_distribution["id"]
+        publish_window_pending = wait_for_outbox(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=publish_window_id,
+            done=lambda row: row is not None
+            and row["state"] == "pending"
+            and row["attempt_count"] >= 1
+            and row["has_last_error"],
+            description="broker-window durable pending work",
+        )
+        set_info_api_broker_override(
+            kubeconfig=kubeconfig, namespace=args.namespace, broken=False
+        )
+        info_api_broker_overridden = False
+        wait_until_outbox_due(publish_window_pending)
+        info_worker_original_replicas = deployment_replicas(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            deployment="celeryworker-info-admin-backend",
+        )
+        if info_worker_original_replicas != 1:
+            raise VerificationError(
+                "broker-window verification requires exactly one Info worker replica"
+            )
+        scale_deployment(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            deployment="celeryworker-info-admin-backend",
+            replicas=0,
+        )
+        info_worker_scaled_down = True
+        broker_fault_job = f"p0-006-broker-fault-{suffix}"
+        temp_jobs.append(broker_fault_job)
+        force_broker_accept_then_exit(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            name=broker_fault_job,
+            image=args.image,
+            distribution_id=publish_window_id,
+        )
+        publish_window_leased = wait_for_outbox(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=publish_window_id,
+            done=lambda row: row is not None
+            and row["state"] == "leased"
+            and row["attempt_count"] >= 2,
+            description="broker accepted before published write",
+        )
+        wait_until_timestamp(
+            publish_window_leased.get("lease_expires_at"),
+            description="broker accepted lease expiry",
+        )
+        publish_recovery_job = f"p0-006-publish-recovery-{suffix}"
+        temp_jobs.append(publish_recovery_job)
+        create_scanner_job(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            name=publish_recovery_job,
+            image=args.image,
+            broken_broker=False,
+        )
+        publish_recovery_summary = scanner_job_summary(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            name=publish_recovery_job,
+        )
+        if publish_recovery_summary["claimed"] != 1:
+            raise VerificationError("expired broker-window lease was not recovered once")
+        scale_deployment(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            deployment="celeryworker-info-admin-backend",
+            replicas=info_worker_original_replicas,
+        )
+        info_worker_scaled_down = False
+        publish_window_done = wait_for_distribution(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=publish_window_id,
+        )
+        publish_window_outbox = wait_for_outbox(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=publish_window_id,
+            done=lambda row: row is not None
+            and row["state"] == "completed"
+            and row["attempt_count"] >= 3,
+            description="broker-window outbox completion",
+        )
+        assert_one_ingestion(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            idempotency_key=publish_window_distribution["idempotency_key"],
+        )
+
+        # Provider side effect / acknowledgement interruption.  This uses a
+        # real worker credential path to make Knowledge succeed, exits before
+        # `complete_delivery_outbox`, then lets a scanner recover `published`
+        # with a short test-only acknowledgement threshold.
+        set_info_api_broker_override(
+            kubeconfig=kubeconfig, namespace=args.namespace, broken=True
+        )
+        info_api_broker_overridden = True
+        provider_distribution = create_real_distribution(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            dataset_key=f"p0-outbox-provider-window-{suffix}",
+        )
+        provider_id = provider_distribution["id"]
+        provider_pending = wait_for_outbox(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=provider_id,
+            done=lambda row: row is not None
+            and row["state"] == "pending"
+            and row["attempt_count"] >= 1
+            and row["has_last_error"],
+            description="provider-window durable pending work",
+        )
+        set_info_api_broker_override(
+            kubeconfig=kubeconfig, namespace=args.namespace, broken=False
+        )
+        info_api_broker_overridden = False
+        wait_until_outbox_due(provider_pending)
+        force_published_for_provider_fault(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=provider_id,
+        )
+        provider_published = wait_for_outbox(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=provider_id,
+            done=lambda row: row is not None
+            and row["state"] == "published"
+            and row["attempt_count"] >= 2,
+            description="provider effect published control",
+        )
+        force_provider_effect_then_exit(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=provider_id,
+        )
+        provider_done = wait_for_distribution(
+            kubeconfig=kubeconfig, namespace=args.namespace, distribution_id=provider_id
+        )
+        wait_until_timestamp(
+            provider_published.get("published_at"),
+            description="provider acknowledgement timeout",
+            after_seconds=5,
+        )
+        provider_recovery_job = f"p0-006-provider-recovery-{suffix}"
+        temp_jobs.append(provider_recovery_job)
+        create_scanner_job(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            name=provider_recovery_job,
+            image=args.image,
+            broken_broker=False,
+            ack_timeout_seconds=5,
+        )
+        provider_recovery_summary = scanner_job_summary(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            name=provider_recovery_job,
+        )
+        if provider_recovery_summary["claimed"] != 1:
+            raise VerificationError("expired provider acknowledgement was not recovered once")
+        provider_outbox = wait_for_outbox(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=provider_id,
+            done=lambda row: row is not None and row["state"] == "completed",
+            description="provider acknowledgement outbox completion",
+        )
+        assert_one_ingestion(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            idempotency_key=provider_distribution["idempotency_key"],
+        )
+
+        # Finally exercise the scheduler, rather than only one-off jobs.  Use
+        # the same Info immediate-wake-up broker fault so the normal dispatcher
+        # cannot consume the record before the suspended CronJob gets its turn.
+        set_info_api_broker_override(
+            kubeconfig=kubeconfig, namespace=args.namespace, broken=True
+        )
+        info_api_broker_overridden = True
+        scheduled_distribution = create_real_distribution(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            dataset_key=f"p0-outbox-schedule-{suffix}",
+        )
+        scheduled_pending = wait_for_outbox(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=scheduled_distribution["id"],
+            done=lambda row: row is not None
+            and row["state"] == "pending"
+            and row["attempt_count"] >= 1
+            and row["has_last_error"],
+            description="scheduled scanner durable pending outbox work",
+        )
+        set_info_api_broker_override(
+            kubeconfig=kubeconfig, namespace=args.namespace, broken=False
+        )
+        info_api_broker_overridden = False
+        wait_until_outbox_due(scheduled_pending)
+        set_cronjob_suspend(
+            kubeconfig=kubeconfig, namespace=args.namespace, value=False
+        )
+        cronjob_unsuspended = True
+        scheduled_done = wait_for_distribution(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=scheduled_distribution["id"],
+        )
+        scheduled_outbox = wait_for_outbox(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            distribution_id=scheduled_distribution["id"],
+            done=lambda row: row is not None and row["state"] == "completed",
+            description="CronJob outbox completion",
+            timeout=150,
+        )
+        assert_one_ingestion(
+            kubeconfig=kubeconfig,
+            namespace=args.namespace,
+            idempotency_key=scheduled_distribution["idempotency_key"],
+        )
+
+        summary = {
+            "task": "V5-P0-006",
+            "result": "passed",
+            "candidate_image_ids": candidate_image_ids,
+            "broker_failure": {
+                "distribution_id": failed_id,
+                "outbox_id": recovered_pending["id"],
+                "attempts_after_block": recovered_pending["attempt_count"],
+                "attempts_after_recovery": completed_outbox["attempt_count"],
+                "final_state": completed_outbox["state"],
+            },
+            "scanner_competition": {
+                "jobs": 2,
+                "claimed": sum(item["claimed"] for item in scanner_summaries),
+                "business_effects": 1,
+            },
+            "broker_accept_before_published": {
+                "distribution_id": publish_window_id,
+                "outbox_id": publish_window_outbox["id"],
+                "recovery_claimed": publish_recovery_summary["claimed"],
+                "final_state": publish_window_outbox["state"],
+                "business_effects": 1,
+            },
+            "provider_effect_before_ack": {
+                "distribution_id": provider_id,
+                "outbox_id": provider_outbox["id"],
+                "recovery_claimed": provider_recovery_summary["claimed"],
+                "final_state": provider_outbox["state"],
+                "business_effects": 1,
+            },
+            "scheduled_scanner": {
+                "distribution_id": scheduled_distribution["id"],
+                "outbox_id": scheduled_outbox["id"],
+                "final_state": scheduled_outbox["state"],
+            },
+            "credentials_printed": False,
+        }
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+        return 0
+    except (VerificationError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        summary["error"] = str(exc)[:500]
+        print(json.dumps(summary, ensure_ascii=False, indent=2), file=sys.stderr)
+        return 1
+    finally:
+        if cronjob_unsuspended:
+            try:
+                set_cronjob_suspend(
+                    kubeconfig=kubeconfig, namespace=args.namespace, value=True
+                )
+            except subprocess.CalledProcessError:
+                print(
+                    json.dumps(
+                        {
+                            "warning": "failed to restore scanner CronJob suspension",
+                            "manual_action": "patch info-delivery-outbox-scanner spec.suspend=true",
+                        }
+                    ),
+                    file=sys.stderr,
+                )
+        if info_api_broker_overridden:
+            try:
+                set_info_api_broker_override(
+                    kubeconfig=kubeconfig, namespace=args.namespace, broken=False
+                )
+            except subprocess.CalledProcessError:
+                print(
+                    json.dumps(
+                        {
+                            "warning": "failed to restore Info API broker envFrom configuration",
+                            "manual_action": "remove explicit CELERY_BROKER_URL from info-admin-backend and wait for rollout",
+                        }
+                    ),
+                    file=sys.stderr,
+                )
+        if info_worker_scaled_down and info_worker_original_replicas is not None:
+            try:
+                scale_deployment(
+                    kubeconfig=kubeconfig,
+                    namespace=args.namespace,
+                    deployment="celeryworker-info-admin-backend",
+                    replicas=info_worker_original_replicas,
+                )
+            except subprocess.CalledProcessError:
+                print(
+                    json.dumps(
+                        {
+                            "warning": "failed to restore Info worker replica count",
+                            "manual_action": f"scale celeryworker-info-admin-backend to {info_worker_original_replicas}",
+                        }
+                    ),
+                    file=sys.stderr,
+                )
+        if knowledge_worker_overridden:
+            try:
+                restore_worker(kubeconfig=kubeconfig, namespace=args.namespace)
+            except subprocess.CalledProcessError:
+                print(
+                    json.dumps(
+                        {
+                            "warning": "failed to restore temporary Knowledge worker verifier overrides",
+                            "manual_action": "remove RAGFLOW_API_KEY and ARTIFACT_S3_ALLOWED_BUCKETS deployment overrides",
+                        }
+                    ),
+                    file=sys.stderr,
+                )
+        for job_name in temp_jobs:
+            try:
+                kubectl(
+                    ["delete", "job", job_name, "-n", args.namespace, "--ignore-not-found=true"],
+                    kubeconfig=kubeconfig,
+                )
+            except subprocess.CalledProcessError:
+                pass
+        for sig, handler in previous_signal_handlers.items():
+            signal.signal(sig, handler)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

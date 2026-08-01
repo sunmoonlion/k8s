@@ -1,0 +1,49 @@
+{
+  "task": "V5-P0-009E-REMOTE-PUBLISH",
+  "date": "2026-07-29",
+  "result": "passed",
+  "verification": "git ls-remote exact ref equality",
+  "branches_verified": 20,
+  "rollback_tags_verified": 12,
+  "branches": {
+    "tpl-web-frontend/master": "1db9377d38dac5510331149d9122f8d375d83fe3",
+    "tpl-web-backend/master": "289f2c46410e0aa2891fdf3da28242ceb1a33bdb",
+    "tpl-web-backend-nest/master": "ecb01d97e13cf86f27e09e77edf9663dcefd3fb7",
+    "tpl-app/master": "dcd6f05e74400403721e272d11a76c06a4e64ddd",
+    "info-admin-frontend/codex-1": "90af7729f6f02e82d1a84f213ce8d8340fe3111d",
+    "info-admin-backend/codex-1": "0d2c864edb660d248de52ae94610810405f74c2b",
+    "info-web-frontend/codex-1": "52dbb5a3c8d0483abd3d85c4a284dfe58b0d83c0",
+    "info-web-backend/codex-1": "a142106e5cedf8e258bd2b89744744c0448e2e64",
+    "info-app/codex-1": "3e0accd03927979bc8e95313eab7e1a0e8d34e67",
+    "knowledge-admin-frontend/codex-1": "544814f9fb443350edefb5776c3a0cac07f6f497",
+    "knowledge-admin-backend/codex-1": "6cb71ce402b2d823532f6ef22655741b2f4655a8",
+    "knowledge-web-frontend/codex-1": "eccd7cd2a4f7cb4019edafbd089f5883b8e0792e",
+    "knowledge-web-backend/codex-1": "e542cdd6ad24e9bedf9f55f503552bccb1c46546",
+    "knowledge-app/codex-1": "06384dc17096ded9dab5c5c0f74731f2705e2aa2",
+    "research-admin-frontend/codex-1": "32b3bcaf156f12fa780d4a38ec84912f8621cf66",
+    "research-admin-backend/codex-1": "74d28699899183c43ab3cfca069d21c56ac58e61",
+    "research-web-frontend/codex-1": "bfee1704c0272a5525abbb1383db5fea14328c07",
+    "research-web-backend/codex-1": "9cc463424d42f658296ccb06965e61a276adcf48",
+    "research-app/codex-1": "cbc81be049e69938683e81f25569e59b517d5d7a",
+    "k8s/codex-1-published-through": "8d1a25bfa8311cdf1c9c76bd8ded7a7060fc90e6"
+  },
+  "rollback_tag": "p0-009a-pre-20260729",
+  "rollback_tag_targets": {
+    "info-admin-frontend": "429f31578a80d6054d895f89a45415bcafe81408",
+    "info-admin-backend": "ac481945eced61d256fb568eb34e19aaa4a9ec70",
+    "info-web-frontend": "abdbf63849c847b4301c37d31dec12405e2d3257",
+    "info-web-backend": "ffbc54ea2fe739495cdbd73ce174ec8c70bbd79e",
+    "knowledge-admin-frontend": "1fc2cc611c063e5f706cb4164da3281bf3878416",
+    "knowledge-admin-backend": "7d3a6fee62bef5926ee32fb623210c84b815e0dd",
+    "knowledge-web-frontend": "2f4f68257062ea006e8e03ccd8e06844db7c1ad6",
+    "knowledge-web-backend": "ada118c984e6338998d7f405579e3a4cd5434e76",
+    "research-admin-frontend": "0ba13f3c57d951086258fa6b666278b5d759503f",
+    "research-admin-backend": "9d72a137f7790a6e89577a16098840511dd088e6",
+    "research-web-frontend": "ea42d2974f1063ede160c8a547f49e616d6948aa",
+    "research-web-backend": "0714115ab64a730033f3544bdf2de78ed06aba81"
+  },
+  "excluded_refs": [
+    "cursor-1",
+    "p0-009* work branches"
+  ]
+}

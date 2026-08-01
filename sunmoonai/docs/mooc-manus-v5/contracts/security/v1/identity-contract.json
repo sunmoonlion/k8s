@@ -1,0 +1,84 @@
+{
+  "contract_version": 1,
+  "owner": "sunmoonai-platform-security",
+  "browser_surfaces": [
+    {
+      "app": "info",
+      "surface": "admin",
+      "casdoor_application": "sunmoonai-info-admin",
+      "session_cookie": "sunmoonai_info_admin_sid",
+      "transaction_cookie": "sunmoonai_info_admin_oidc_tx",
+      "session_key_prefix": "sunmoonai:auth:info:admin:session:"
+    },
+    {
+      "app": "info",
+      "surface": "web",
+      "casdoor_application": "sunmoonai-info-web",
+      "session_cookie": "sunmoonai_info_web_sid",
+      "transaction_cookie": "sunmoonai_info_web_oidc_tx",
+      "session_key_prefix": "sunmoonai:auth:info:web:session:"
+    },
+    {
+      "app": "knowledge",
+      "surface": "admin",
+      "casdoor_application": "sunmoonai-knowledge-admin",
+      "session_cookie": "sunmoonai_knowledge_admin_sid",
+      "transaction_cookie": "sunmoonai_knowledge_admin_oidc_tx",
+      "session_key_prefix": "sunmoonai:auth:knowledge:admin:session:"
+    },
+    {
+      "app": "knowledge",
+      "surface": "web",
+      "casdoor_application": "sunmoonai-knowledge-web",
+      "session_cookie": "sunmoonai_knowledge_web_sid",
+      "transaction_cookie": "sunmoonai_knowledge_web_oidc_tx",
+      "session_key_prefix": "sunmoonai:auth:knowledge:web:session:"
+    },
+    {
+      "app": "research",
+      "surface": "admin",
+      "casdoor_application": "sunmoonai-research-admin",
+      "session_cookie": "sunmoonai_research_admin_sid",
+      "transaction_cookie": "sunmoonai_research_admin_oidc_tx",
+      "session_key_prefix": "sunmoonai:auth:research:admin:session:"
+    },
+    {
+      "app": "research",
+      "surface": "web",
+      "casdoor_application": "sunmoonai-research-web",
+      "session_cookie": "sunmoonai_research_web_sid",
+      "transaction_cookie": "sunmoonai_research_web_oidc_tx",
+      "session_key_prefix": "sunmoonai:auth:research:web:session:"
+    }
+  ],
+  "service_relations": [
+    {
+      "name": "info-to-knowledge-ingest",
+      "casdoor_application": "sunmoonai-info-knowledge-ingest",
+      "caller": "info-distribution-worker",
+      "resource_server": "knowledge-admin-backend",
+      "scope": "knowledge:ingest",
+      "route": "POST /api/internal/v1/knowledge/ingestions",
+      "issuer_validation": "exact issuer from explicit INTERNAL_AUTH_DISCOVERY_URL metadata",
+      "provider_note": "Casdoor client_credentials uses standard discovery issuer; browser BFF uses application-specific discovery"
+    }
+  ],
+  "csrf": {
+    "header": "X-CSRF-Token",
+    "unsafe_methods": ["POST", "PUT", "PATCH", "DELETE"],
+    "requires_origin_allowlist": true
+  },
+  "reason_codes": [
+    "auth_required",
+    "session_expired",
+    "oidc_transaction_invalid",
+    "token_invalid",
+    "issuer_mismatch",
+    "audience_mismatch",
+    "csrf_invalid",
+    "provider_unavailable",
+    "scope_denied",
+    "resource_forbidden",
+    "service_token_required"
+  ]
+}

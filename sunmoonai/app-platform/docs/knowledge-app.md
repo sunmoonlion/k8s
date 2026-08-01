@@ -25,6 +25,12 @@ knowledge-app
 `knowledge-admin-backend` 是平台统一知识服务和编排接口。组件名中的 `admin`
 表示采用 Python/FastAPI 技术栈，不限制调用方必须是管理界面。
 
+当前 ingestion worker 已支持两种模式：
+
+- 未配置 `RAGFLOW_API_KEY`：保持 mock 模式，只验证任务状态机和队列链路。
+- 配置 `RAGFLOW_API_BASE` + `RAGFLOW_API_KEY`：通过 RAGFlow 公开 HTTP API
+  创建/查找 Dataset、上传 Document、触发解析并回写 `ragflow_document_id`。
+
 ## 3. 职责边界
 
 负责：
@@ -78,3 +84,6 @@ RAGFlow 自带的 MySQL、MinIO、Elasticsearch 和 Valkey 保存产品内部状
 - 关闭的 Backend 同时关闭数据库、S3 和 Elasticsearch 自动 provision，避免产生
   无使用者的资源。
 - RAGFlow 是 `knowledge-app` 的可替换内部组件，不是跨 App 的直接集成契约。
+- `knowledge-admin-backend` 与 worker 默认注入
+  `RAGFLOW_API_BASE=http://ragflow-sunmoonai-api:80`；真实入库需在 Secret 中配置
+  `RAGFLOW_API_KEY`。

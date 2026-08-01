@@ -1,5 +1,12 @@
 # MoocManus 长期智能体平台架构规划
 
+> **归档声明（2026-07-18）**：本文 v4 已由
+> [`mooc-manus-langgraph-longterm-plan-v5.md`](./mooc-manus-langgraph-longterm-plan-v5.md)
+> 取代，只保留为历史设计输入，不再作为架构、任务顺序、仓库命名、前后端技术栈或
+> Gate 状态的权威来源。后续实施必须同时以 v5、v5 implementation plan、Accepted ADR
+> 和当前 handoff 为准；不得因本文仍包含旧 M1/M2、Next/Nest 或 Research 单仓描述而
+> 恢复已被 v5 推翻的路径。
+
 版本：**v4**
 定位：在 app-platform/research-app 中**全新建设**一个以 LangGraph 为编排运行时、可长期维护、可扩展、支持多智能体与长期记忆的智能体平台。旧 `imooc-mas/mooc-manus` 已废弃，仅作领域概念启发与 golden 样本来源，不作工程底座、不迁移、不兼容。
 更新时间：2026-06-27
@@ -91,8 +98,10 @@ M1 明确"先不做"（不是删除，是等负载/需求真正出现再做）�
 
 ```text
 knowledge-app:  知识库、RAGFlow、知识管理后台、文档处理 worker。
+info-app:       资讯采集、来源治理、原始证据、document_version 与向 knowledge-app 的派生分发。
 research-app:   智能体研究/任务平台、LangGraph runtime、会话、任务、沙箱、前端交互。
-research-app -> knowledge-app:  通过 RAGFlow API / 内部服务地址调用知识库能力。
+research-app -> knowledge-app:  只读消费 knowledge retrieval（RAGFlow API / 内部服务），不拥有 ingestion（见 §5.5）。
+info-app -> knowledge-app:      外部平台 ingestion 链路，不属本 agent 方案范围（边界见 §5.5，细节以 info-app/knowledge-app 文档为准）。
 ```
 
 ---
@@ -228,7 +237,8 @@ knowledge-app: 同构 + ragflow
 ```text
 新 Research App 智能体能力 -> 建在 research-app 内
 RAGFlow                    -> knowledge-app/ragflow（已有）
-Research App 通过 RAGFlow API / 平台内部服务访问知识库能力。
+Research App 通过 RAGFlow API / 平台内部服务【只读消费】知识库检索能力，不拥有 ingestion（边界见 §5.5）。
+Info App / Knowledge App 之间的 ingestion 链路是外部平台职责，不在本方案范围（见 §5.5）。
 ```
 
 ### 5.3 部署优先级
@@ -279,7 +289,22 @@ app 实施阶段落地（此处不写代码）：SandboxPort 接口、K8sPodSand
   NetworkPolicy、兜底 GC CronJob。
 ```
 
-### 5.5 与 Knowledge App 的接口契约
+### 5.5 ★ 与 Knowledge App 的接口契约（知识边界唯一权威）
+
+> ★ 权威边界：Knowledge App 的对外契约分两个**方向相反**的面，本节是**唯一权威**，其它各处（§0/§5.2/§13.4）只做一句话摘要并指回本节。
+
+```text
+Retrieval contract（knowledge-app -> research-app 消费）★ 本文档主关注：
+  research-app 只读检索/问答，用于 Agent evidence。
+  research-app 【不拥有】知识库内部处理状态，也【不拥有 ingestion 状态机】。
+
+Ingestion contract（info-app / tools-app 等 -> knowledge-app 提交）：
+  上游 app 提交已治理文档版本，knowledge-app 拥有后续知识工程流水线与状态机。
+  这是【外部平台链路】，不属于本 agent 方案范围；契约字段、dispatch、distribution_record
+  对账等实现细节以 info-app / knowledge-app 各自文档为准，本文档不展开。
+```
+
+research-app 侧只依赖 retrieval 端口：
 
 ```python
 class KnowledgeRetrievalPort(Protocol):
@@ -1081,6 +1106,7 @@ Helm / K8S 层：          部署、镜像、资源、存储、依赖服务、�
 RAGFlow Dataset 层：     RAGFlow 原生支持的 parser、chunk method、embedding、rerank、retrieval 参数。
 Knowledge App 层：       文档类型识别、预处理、RAGFlow Adapter、metadata、去重/MMR、评估、任务状态。
 Research App 层：        只消费标准化 retrieve / ask 结果，负责 Agent 上下文组装、引用展示和安全边界。
+（Info App 等上游作为 ingestion 生产者属外部平台链路，不在本层展开，见 §5.5。）
 ```
 
 知识库质量主要由文档解析、分块、Embedding、向量索引、检索优化、上下文融合、引用、评估、可观测性和生产运维闭环决定。这些策略归 Knowledge App / RAGFlow 边界内治理；Research App 不直接依赖 RAGFlow 私有 API、数据库、MinIO 或 Elasticsearch。
@@ -2185,6 +2211,9 @@ ADR-031: ★ 前端选型与 admin/agent 配对（见 §5.6）——admin/web �
 ADR-032: ▲ 前端脚手架吸收 mooc-manus/ui（见 §5.6.6，呼应 ADR-027）——Next16/React19/Tailwind4/Radix/
          novnc/react-markdown 栈整体作 research-web-frontend 起点；VNC/时间线/工具卡片/interrupt 交互直接吸收，
          但事件消费层必须按 §18 UIEvent/LiveDelta 重建，禁止照搬旧"一 Event 兼四职"的消费逻辑。
+ADR-033: ★ 知识边界（见 §5.5）——research-app 只【只读消费】knowledge retrieval，【不拥有】knowledge
+         ingestion 状态机；info-app -> knowledge-app 的 ingestion 是【外部平台链路】，其契约字段、dispatch、
+         distribution_record 对账等实现细节不在本 agent 方案内，以 info-app / knowledge-app 各自文档为准。
 ```
 
 ---
@@ -2216,6 +2245,7 @@ Workspace 变成 god object          | State / Workspace / External DB / Object 
 admin/agent 配对混乱→越权或返工   | 两维解耦：语言栈 admin=Python/web=Node，受众靠 auth scope+route 前缀；一服务两 API 面(§5.6、ADR-031)
 前端技术栈反向决定后端配对        | API ownership 优先于 Vue/Next/目录名；多前端共享同一 Session/Run/UIEvent/LiveDelta contract(§5.6.3)
 终端用户流量打到管理 API 面       | /api/agent/** 与 /api/admin/** 鉴权作用域硬隔离，用户 token 不得触达 admin 路由(§5.6.4)
+research-app 误当 ingestion 拥有者 | research-app 只读消费 retrieval，ingestion 属外部平台链路(§5.5、ADR-033)
 ```
 
 ### 33.3 产品风险
@@ -2287,7 +2317,7 @@ admin/agent 配对混乱→越权或返工   | 两维解耦：语言栈 admin=Py
 10. 为上述写单测（reducer 幂等、序列化往返、DomainEvent->UIEvent、idempotency、interrupt-resume、AgentProfile 选择/权限生效）。
     同时加不混层测试：State 不含文件正文/完整事件历史；Memory 必带 source_ref/provenance；DB 只存 object URI/ref；Context 不作为真相源落库。
 11. 单 Graph 在 golden set 达标（对照旧项目抽取样本）后，接用户流量，M1 收尾可演示。
-12. 写 ADR-001~003、009、010、015、019、022、023、024、025、029、030、031、032。
+12. 写 ADR-001~003、009、010、015、019、022、023、024、025、029、030、031、032、033。
 13. 前端：research-web-frontend 以 mooc-manus/ui 为脚手架起点（Next16/React19/Tailwind4/Radix/novnc），
     直连 FastAPI agent API 面(/api/agent/**)，只消费 UIEvent + LiveDelta；后端按 §5.6 分 agent/admin 两 API 面 + auth scope 隔离。
     同时沉淀 OpenAPI/SSE contract tests，保证未来 Vue 用户侧/实验侧前端或移动端接入时复用同一 Session/Run/UIEvent/LiveDelta 协议，
@@ -2369,4 +2399,13 @@ AgentProfile 提前到 M1（▲，本次补充）：
 + Node BFF 与 Python 后端物理拆分均为 M2 触发式；§4.1/§5.4 前端行同步、§33.2 加两条配对风险；ADR-031。
 + mooc-manus/ui 作 research-web-frontend 脚手架 golden 样本吸收（Next16/React19/Tailwind4/Radix/novnc），
   皮与交互直接吸收，事件消费层按 §18 UIEvent/LiveDelta 重建，禁止照搬旧事件消费；ADR-032（呼应 ADR-027）。
+
+知识边界收敛（★，本次收敛整理——聚焦 agent 方案，去平台范围膨胀）：
++ §5.5 定为知识边界唯一权威：research-app 只【只读消费】retrieval、【不拥有】ingestion 状态机；
+  info-app -> knowledge-app 的 ingestion 为【外部平台链路】，不在本方案范围。
++ 移出原 §13.9「跨 app ingestion 闭环」整节 + 最小 ingestion contract 字段 + distribution_record 完成判定，
+  EvidenceAssembler 恢复为 §13.9（撤销 §13.10 顺移，全文引用回改）。相关 ingestion contract/dispatch/对账
+  细节回归 info-app / knowledge-app 各自文档。
++ §0/§5.2/§13.4 重复的 ingestion 细节压缩为一句 + 引用 §5.5；ADR-033 压缩为边界 ADR（去实现细节）；
+  §33.2 风险改为"research-app 误当 ingestion 拥有者"。
 ```

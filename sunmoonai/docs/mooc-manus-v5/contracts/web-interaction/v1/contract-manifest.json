@@ -1,0 +1,34 @@
+{
+  "contract": "sunmoonai.web.interaction",
+  "major": 1,
+  "owner": "sunmoonai-platform-web",
+  "backend_profiles": ["fastapi-default", "nest-optional"],
+  "consumer": "tpl-web-frontend",
+  "files": {
+    "run-snapshot.schema.json": "3d2192e175810631df720c83bf22da26ea51df4ec0f566407bf0d678b245117f",
+    "run-event.schema.json": "4777488068a0bc1fb3bec39d9b253bf05ff208ce546399e910d9d089fac2e2b6",
+    "run-action.schema.json": "d171f3ec707ccc798eb06abffb8fa2393983e682d56c2c1d8f5e5a7a7ce23b79",
+    "error.schema.json": "1853823ece95a39c2f02d59cf80e2823c5ebdbb4db641cbd19af6c3070d1d581",
+    "contract.vectors.json": "c5722136ed17a40674c1ac525a44c72e09195c2e9cecb144a477727959cccd8e"
+  },
+  "external_dependencies": {
+    "knowledge-citation-v1": {
+      "owner": "knowledge-app",
+      "schema_id": "https://contracts.sunmoonai.com/knowledge/retrieval/v1/citation.schema.json",
+      "sha256": "b5cf350f4a9360cfd2211d66fcd65018fd3f1f1300e8071a480ce5ffcaa768c8"
+    }
+  },
+  "sse": {
+    "event_type": "run-event",
+    "cursor_header": "Last-Event-ID",
+    "cursor_query": "last_event_id",
+    "ordering": "strictly increasing sequence_no per run",
+    "duplicate_handling": "event_id de-duplication",
+    "gap_handling": "GET snapshot reconciliation before reconnect"
+  },
+  "compatibility": {
+    "request": "exact-fields-v1",
+    "response": "exact-browser-boundary-v1",
+    "breaking_change": "new-major-and-dual-profile-window"
+  }
+}

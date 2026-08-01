@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.sunmoonai.com/web/interaction/v1/run-snapshot.schema.json",
+  "title": "Browser Run Snapshot v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "run_id",
+    "title",
+    "status",
+    "summary",
+    "last_sequence_no",
+    "last_event_id",
+    "citations",
+    "required_action",
+    "updated_at"
+  ],
+  "properties": {
+    "contract_version": {"const": 1},
+    "run_id": {"$ref": "#/$defs/uuid"},
+    "title": {"type": "string", "minLength": 1, "maxLength": 512},
+    "status": {"$ref": "#/$defs/run_status"},
+    "summary": {"type": ["string", "null"], "maxLength": 20000},
+    "last_sequence_no": {"type": "integer", "minimum": 0},
+    "last_event_id": {
+      "oneOf": [
+        {"$ref": "#/$defs/uuid"},
+        {"type": "null"}
+      ]
+    },
+    "citations": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "$ref": "https://contracts.sunmoonai.com/knowledge/retrieval/v1/citation.schema.json"
+      }
+    },
+    "required_action": {
+      "oneOf": [
+        {"$ref": "#/$defs/required_action"},
+        {"type": "null"}
+      ]
+    },
+    "updated_at": {"type": "string", "format": "date-time"}
+  },
+  "$defs": {
+    "uuid": {"type": "string", "format": "uuid"},
+    "run_status": {
+      "enum": ["queued", "running", "waiting_for_input", "succeeded", "failed", "cancelled"]
+    },
+    "required_action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action_id", "kind", "prompt"],
+      "properties": {
+        "action_id": {"$ref": "#/$defs/uuid"},
+        "kind": {"enum": ["confirmation", "input"]},
+        "prompt": {"type": "string", "minLength": 1, "maxLength": 2000}
+      }
+    }
+  }
+}

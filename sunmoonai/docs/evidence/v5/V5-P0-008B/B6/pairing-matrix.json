@@ -1,0 +1,27 @@
+{
+  "task": "V5-P0-008B-B6-template-pairing-matrix",
+  "result": "passed",
+  "pair_count": 5,
+  "accepted_admin_pairs": [
+    "next-admin-fastapi-admin",
+    "react-router-admin-fastapi-admin",
+    "vue-admin-fastapi-admin"
+  ],
+  "accepted_web_pairs": [
+    "next-web-fastapi-web",
+    "next-web-nest-web"
+  ],
+  "web_pairs_pending_b6_3": [],
+  "react_router_pair_evidence": "V5-P0-007D",
+  "web_pair_evidence": {
+    "next-web-fastapi-web": [
+      "b63f-pair.json",
+      "b63f-rollback.json"
+    ],
+    "next-web-nest-web": [
+      "b63n-pair.json",
+      "b63n-rollback.json"
+    ],
+    "shared_consumer_vectors": "consumer-vectors.json"
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "task": "V5-P0-009-business-deployments-unchanged",
+  "result": "passed",
+  "comparison": "metadata.generation plus complete Deployment spec",
+  "baseline": "sunmoonai/docs/evidence/v5/V5-P0-009B/pre-isolation-business-deployments.json",
+  "baseline_scope": "captured deployment names",
+  "deployment_count": 9,
+  "before": {
+    "info-admin-backend": {
+      "generation": 69,
+      "spec_sha256": "ce50cafa788710bc823f97d87e5283605dc8f9d5d948fd0bd7f7569f6213a3d6"
+    },
+    "info-admin-frontend": {
+      "generation": 9,
+      "spec_sha256": "d47f06ff712eb57ab3f2d8b44f983278475470861cde2f5b32fb88052c2ea18f"
+    },
+    "info-web-backend": {
+      "generation": 6,
+      "spec_sha256": "0d31996179dfe2e904ffc99d3f320487d6abef2f405efd6c72cfd531414a9b39"
+    },
+    "info-web-frontend": {
+      "generation": 6,
+      "spec_sha256": "37fc3c07aa4a9d793c095b0ea763b79e1abb815300992c7c63340b5b330e1cc1"
+    },
+    "knowledge-admin-backend": {
+      "generation": 61,
+      "spec_sha256": "89534a47a23cc77ceaa4ff517affcf2ce39f661d1c346fa8531a9f321e28273d"
+    },
+    "research-admin-backend": {
+      "generation": 69,
+      "spec_sha256": "02642db09df0942d0135469f07d31fb666aaffc6425d651998e9b749edf79226"
+    },
+    "research-admin-frontend": {
+      "generation": 3,
+      "spec_sha256": "1d77f593d90f71f9a555c9f0b25b620e7f5400f8cd783c9342a1f8dd210b541a"
+    },
+    "research-web-backend": {
+      "generation": 3,
+      "spec_sha256": "c63efe85db012f6ba31f0b8f0303333908ebc73557681601146c0d46f2f7c421"
+    },
+    "research-web-frontend": {
+      "generation": 4,
+      "spec_sha256": "6009391508217c9ea4080572b0ca7a980d5d154bd1714afeda47fc52b070ff43"
+    }
+  },
+  "after": {
+    "research-web-frontend": {
+      "generation": 4,
+      "spec_sha256": "6009391508217c9ea4080572b0ca7a980d5d154bd1714afeda47fc52b070ff43"
+    },
+    "info-admin-backend": {
+      "generation": 69,
+      "spec_sha256": "ce50cafa788710bc823f97d87e5283605dc8f9d5d948fd0bd7f7569f6213a3d6"
+    },
+    "info-web-frontend": {
+      "generation": 6,
+      "spec_sha256": "37fc3c07aa4a9d793c095b0ea763b79e1abb815300992c7c63340b5b330e1cc1"
+    },
+    "research-admin-frontend": {
+      "generation": 3,
+      "spec_sha256": "1d77f593d90f71f9a555c9f0b25b620e7f5400f8cd783c9342a1f8dd210b541a"
+    },
+    "knowledge-admin-backend": {
+      "generation": 61,
+      "spec_sha256": "89534a47a23cc77ceaa4ff517affcf2ce39f661d1c346fa8531a9f321e28273d"
+    },
+    "info-admin-frontend": {
+      "generation": 9,
+      "spec_sha256": "d47f06ff712eb57ab3f2d8b44f983278475470861cde2f5b32fb88052c2ea18f"
+    },
+    "research-web-backend": {
+      "generation": 3,
+      "spec_sha256": "c63efe85db012f6ba31f0b8f0303333908ebc73557681601146c0d46f2f7c421"
+    },
+    "info-web-backend": {
+      "generation": 6,
+      "spec_sha256": "0d31996179dfe2e904ffc99d3f320487d6abef2f405efd6c72cfd531414a9b39"
+    },
+    "research-admin-backend": {
+      "generation": 69,
+      "spec_sha256": "02642db09df0942d0135469f07d31fb666aaffc6425d651998e9b749edf79226"
+    }
+  },
+  "current_extras_outside_baseline_scope": [
+    "casdoor-sunmoonai",
+    "celeryworker-info-admin-backend",
+    "celeryworker-investment-admin-backend",
+    "celeryworker-knowledge-admin-backend",
+    "celeryworker-research-admin-backend",
+    "investment-admin-backend",
+    "investment-admin-frontend",
+    "investment-web-backend",
+    "investment-web-frontend",
+    "nodebullworker-info-web-backend",
+    "nodebullworker-investment-web-backend",
+    "nodebullworker-research-web-backend",
+    "ragflow-sunmoonai",
+    "tpl-web-backend-b4",
+    "tpl-web-frontend-b4"
+  ],
+  "added": [],
+  "removed": [],
+  "changed": [],
+  "business_traffic_switched": false
+}

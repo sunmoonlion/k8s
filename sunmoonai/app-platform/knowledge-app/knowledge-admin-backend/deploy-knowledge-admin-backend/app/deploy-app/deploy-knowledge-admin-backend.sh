@@ -31,6 +31,9 @@ if [[ -z "${K8S_ROOT_DIR:-}" ]]; then
 fi
 
 source "$K8S_ROOT_DIR/utils/unified-deployment-template.sh"
+source "$K8S_ROOT_DIR/utils/alembic-migration-gate.sh"
+source "$K8S_ROOT_DIR/utils/browser-oidc-gate.sh"
+source "$K8S_ROOT_DIR/utils/service-identity-gate.sh"
 
 SCRIPT_DIR="$KNOWLEDGE_ADMIN_BACKEND_SCRIPT_DIR"
 
@@ -256,9 +259,12 @@ deploy_app() {
     apply_deploy_image_registry KNOWLEDGE_ADMIN_BACKEND_IMAGE_REGISTRY
     export KNOWLEDGE_ADMIN_BACKEND_IMAGE_PROJECT="${KNOWLEDGE_ADMIN_BACKEND_IMAGE_PROJECT:-app-images}"
     export KNOWLEDGE_ADMIN_BACKEND_IMAGE="${KNOWLEDGE_ADMIN_BACKEND_IMAGE:-knowledge-admin-backend}"
-    export KNOWLEDGE_ADMIN_BACKEND_TAG="${KNOWLEDGE_ADMIN_BACKEND_TAG:-1.0.0}"
+    export KNOWLEDGE_ADMIN_BACKEND_TAG="${KNOWLEDGE_ADMIN_BACKEND_TAG:-1.0.1}"
     export IMAGE_PULL_POLICY="${IMAGE_PULL_POLICY:-Always}"
     export KNOWLEDGE_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME="${KNOWLEDGE_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}"
+    export KNOWLEDGE_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME="${KNOWLEDGE_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME:-knowledge-admin-backend-browser-oidc}"
+    export KNOWLEDGE_INFO_INGEST_BINDING_SECRET_NAME="${KNOWLEDGE_INFO_INGEST_BINDING_SECRET_NAME:-knowledge-info-ingest-service-binding}"
+    export KNOWLEDGE_RESEARCH_RETRIEVAL_BINDING_SECRET_NAME="${KNOWLEDGE_RESEARCH_RETRIEVAL_BINDING_SECRET_NAME:-knowledge-research-retrieval-service-binding}"
     export KNOWLEDGE_ADMIN_BACKEND_FULL_IMAGE_NAME="${KNOWLEDGE_ADMIN_BACKEND_IMAGE_REGISTRY}/${KNOWLEDGE_ADMIN_BACKEND_IMAGE_PROJECT}/${KNOWLEDGE_ADMIN_BACKEND_IMAGE}:${KNOWLEDGE_ADMIN_BACKEND_TAG}"
 
     log_info "镜像: $KNOWLEDGE_ADMIN_BACKEND_FULL_IMAGE_NAME"
@@ -286,6 +292,43 @@ deploy_app() {
         && log_success "PVC 部署完成" \
         || { log_error "PVC 部署失败"; return 1; }
 
+    require_browser_oidc_secret \
+        "$NAMESPACE" \
+        "knowledge-admin-backend" \
+        "${KNOWLEDGE_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME:-knowledge-admin-backend-browser-oidc}" \
+        "sunmoonai-knowledge-admin" \
+        || { log_error "浏览器 OIDC 配置门禁失败，拒绝更新 Deployment"; return 1; }
+
+    require_service_identity_relation \
+        "$NAMESPACE" \
+        "info-distribution-worker" \
+        "${INFO_KNOWLEDGE_INGEST_CLIENT_SECRET_NAME:-info-knowledge-ingest-client}" \
+        "${KNOWLEDGE_INFO_INGEST_BINDING_SECRET_NAME:-knowledge-info-ingest-service-binding}" \
+        "sunmoonai-info-knowledge-ingest" \
+        "knowledge:ingest" \
+        || { log_error "服务身份关系门禁失败，拒绝更新 Deployment"; return 1; }
+
+    require_service_identity_relation \
+        "$NAMESPACE" \
+        "research-knowledge-retrieval-worker" \
+        "${RESEARCH_KNOWLEDGE_RETRIEVAL_CLIENT_SECRET_NAME:-research-knowledge-retrieval-client}" \
+        "${KNOWLEDGE_RESEARCH_RETRIEVAL_BINDING_SECRET_NAME:-knowledge-research-retrieval-service-binding}" \
+        "sunmoonai-research-knowledge-retrieve" \
+        "knowledge:retrieve" \
+        "retrieve" \
+        || { log_error "检索服务身份关系门禁失败，拒绝更新 Deployment"; return 1; }
+
+    run_alembic_migration_gate \
+        "$NAMESPACE" \
+        "knowledge-admin-backend" \
+        "$KNOWLEDGE_ADMIN_BACKEND_FULL_IMAGE_NAME" \
+        "${KNOWLEDGE_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}" \
+        "${KNOWLEDGE_ADMIN_BACKEND_CONFIGMAP_NAME:-knowledge-admin-backend-config}" \
+        "${KNOWLEDGE_ADMIN_BACKEND_SECRET_NAME:-knowledge-admin-backend-secret}" \
+        "${KNOWLEDGE_ADMIN_BACKEND_POSTGRESQL_SECRET_NAME:-knowledge-admin-backend-postgresql-conn}" \
+        "${KNOWLEDGE_ADMIN_BACKEND_MIGRATION_SECRET_NAME:-knowledge-admin-backend-migration-postgresql-conn}" \
+        || { log_error "数据库迁移门禁失败，拒绝更新 Deployment"; return 1; }
+
     kubectl apply -f "$KNOWLEDGE_ADMIN_BACKEND_YAML" -n "$NAMESPACE"
 
     if [ $? -eq 0 ]; then
@@ -311,6 +354,7 @@ uninstall_app() {
     else
         kubectl delete -f "$KNOWLEDGE_ADMIN_BACKEND_YAML" -n "$NAMESPACE" --ignore-not-found=true
     fi
+    kubectl delete job knowledge-admin-backend-migration-gate -n "$NAMESPACE" --ignore-not-found=true
     log_success "✅ 核心服务卸载完成"
 
     log_info "🚀 阶段2：卸载子组件..."
@@ -349,6 +393,9 @@ show_status() {
     echo ""
     echo "📦 PVCs:"
     kubectl get pvc -n "$NAMESPACE" -l app=knowledge-admin-backend 2>/dev/null || echo "  无 PVC"
+    echo ""
+    echo "🧭 Migration Gate:"
+    kubectl get job -n "$NAMESPACE" -l app=knowledge-admin-backend,sunmoonai.com/gate=alembic 2>/dev/null || echo "  无迁移 Job"
 }
 
 main() {

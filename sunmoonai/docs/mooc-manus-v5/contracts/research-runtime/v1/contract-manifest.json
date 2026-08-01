@@ -1,0 +1,38 @@
+{
+  "contract": "sunmoonai.research.runtime",
+  "major": 1,
+  "owner": "research-app",
+  "consumer": "research-web-backend",
+  "provider": "research-runtime-candidate",
+  "files": {
+    "delegated-context.schema.json": "bbd4e64f8a26249b16624f7d1cca7a1058afab73086870ba9336c989a308d487",
+    "create-run.schema.json": "843d8dab76078947096c127fb9e374f81549b2b3ecc600b61f7a2fdc8ffee898",
+    "run-command.schema.json": "de47c1c09c2d8dcf0f4371dcad32217c72230dc5e1c021cc26e8908024d5aad9",
+    "source-resolution.schema.json": "eac84040cad19c41efefcbb51b82080c7fbcf94473f293eb1c2a46e4de4e8bbf"
+  },
+  "composes": {
+    "web-interaction-v1": {
+      "usage": "runtime responses are projected to the exact browser snapshot/event/citation DTO"
+    }
+  },
+  "routes": {
+    "create": "POST /internal/v1/research/runs",
+    "snapshot": "GET /internal/v1/research/runs/{run_id}",
+    "stream": "GET /internal/v1/research/runs/{run_id}/events",
+    "command": "POST /internal/v1/research/runs/{run_id}/commands",
+    "citation": "GET /internal/v1/research/citations/{evidence_id}/source"
+  },
+  "identity": {
+    "caller": "dedicated Web BFF client-credentials subject",
+    "authorization": "exact issuer, audience, subject binding and local relation",
+    "delegation": "body accepted only after caller authentication; actor ownership checked on every resource",
+    "delegated_read_header": "X-Delegated-Actor-ID (UUID, supplied only by the authenticated Web BFF)",
+    "browser_token_forwarding": "forbidden"
+  },
+  "pilot_boundary": {
+    "enabled_by_default": false,
+    "stable_traffic": false,
+    "m1_production_runtime": false,
+    "disposable_after_gate_p0": true
+  }
+}

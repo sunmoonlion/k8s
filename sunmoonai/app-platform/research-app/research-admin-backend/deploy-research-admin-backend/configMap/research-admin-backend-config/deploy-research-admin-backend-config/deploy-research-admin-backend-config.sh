@@ -7,6 +7,7 @@ CONFIG_FILE="$SCRIPT_DIR/deploy-research-admin-backend-config.conf"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 K8S_RESOURCE_DIR="$PROJECT_ROOT/resources/k8s-resource"
 CONFIG_YAML="$K8S_RESOURCE_DIR/custom-values/configMap/research-admin-backend-config/generate-research-admin-backend-config/research-admin-backend-config-generated.yaml"
+TRAFFIC_GATE_VALIDATOR="$K8S_RESOURCE_DIR/custom-values/configMap/research-admin-backend-config/generate-research-admin-backend-config/validate-agent-traffic-gate.sh"
 
 log_info()    { echo -e "[INFO] $*"; }
 log_success() { echo -e "\033[32m[SUCCESS]\033[0m $*"; }
@@ -33,6 +34,8 @@ main() {
 
     case "$action" in
         deploy)
+            bash "$TRAFFIC_GATE_VALIDATOR" "$CONFIG_YAML" \
+                || { log_error "Agent 流量门禁验证失败，拒绝部署"; exit 1; }
             kubectl apply -f "$CONFIG_YAML" -n "$NAMESPACE"
             log_success "research-admin-backend ConfigMap 部署完成"
             ;;

@@ -28,6 +28,8 @@ spec:
             name: ${INFO_ADMIN_BACKEND_CONFIGMAP_NAME:-info-admin-backend-config}
         - secretRef:
             name: ${INFO_ADMIN_BACKEND_SECRET_NAME:-info-admin-backend-secret}
+        - secretRef:
+            name: ${INFO_ADMIN_BACKEND_BROWSER_OIDC_SECRET_NAME:-info-admin-backend-browser-oidc}
 ${INFO_ADMIN_BACKEND_DATABASE_ENV_FROM}
 ${INFO_ADMIN_BACKEND_OBJECT_STORAGE_ENV_FROM}
 ${INFO_ADMIN_BACKEND_ELASTICSEARCH_ENV_FROM}

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.sunmoonai.com/research/agent-web/v1/cancel-run.schema.json",
+  "title": "Research Browser Cancel Run v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "idempotency_key"],
+  "properties": {
+    "contract_version": {"const": 1},
+    "idempotency_key": {"type": "string", "format": "uuid"},
+    "reason": {"type": ["string", "null"], "maxLength": 1000}
+  }
+}

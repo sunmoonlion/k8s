@@ -16,6 +16,17 @@ spec:
   entryPoints:
     - websecure
   routes:
+    # Hashed assets are immutable. Keep this route separate from OAuth/API
+    # responses so only static files receive long-lived caching and compression.
+    - match: Host(`{{UNIFIED_HOST}}`) && PathPrefix(`/static/`)
+      kind: Rule
+      priority: 100
+      middlewares:
+        - name: casdoor-static-compress
+        - name: casdoor-static-cache
+      services:
+        - name: {{SERVICE_NAME}}
+          port: {{SERVICE_PORT}}
     - match: Host(`{{UNIFIED_HOST}}`)
       kind: Rule
       services:
@@ -36,3 +47,21 @@ spec:
   stripPrefix:
     prefixes:
       - "/casdoor"
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: casdoor-static-compress
+  namespace: {{NAMESPACE}}
+spec:
+  compress: {}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: casdoor-static-cache
+  namespace: {{NAMESPACE}}
+spec:
+  headers:
+    customResponseHeaders:
+      Cache-Control: "public, max-age=31536000, immutable"

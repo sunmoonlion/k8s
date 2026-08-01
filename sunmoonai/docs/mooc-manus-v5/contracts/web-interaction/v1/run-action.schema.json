@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.sunmoonai.com/web/interaction/v1/run-action.schema.json",
+  "title": "Browser Run Action v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "action_id", "value"],
+  "properties": {
+    "contract_version": {"const": 1},
+    "action_id": {"type": "string", "format": "uuid"},
+    "value": {"type": "string", "maxLength": 4000}
+  }
+}

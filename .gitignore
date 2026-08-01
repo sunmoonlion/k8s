@@ -95,6 +95,9 @@ Jenkinsfile
 # Virtual environments (Python/Node etc.)
 # Ignore virtual environment directories created by Python (venv, pyenv) or Node.js
 .env/
+
+# Casdoor post-deploy local application/client credentials
+sunmoonai/app-platform/auth-app/casdoor/deploy-casdoor/post-deploy-setup.local.conf
 .venv/
 node_modules/
 *.pnp.js

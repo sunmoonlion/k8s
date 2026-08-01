@@ -31,6 +31,7 @@ if [[ -z "${K8S_ROOT_DIR:-}" ]]; then
 fi
 
 source "$K8S_ROOT_DIR/utils/unified-deployment-template.sh"
+source "$K8S_ROOT_DIR/utils/service-identity-gate.sh"
 
 SCRIPT_DIR="$CELERYWORKER_INFO_ADMIN_BACKEND_SCRIPT_DIR"
 
@@ -256,9 +257,11 @@ deploy_app() {
     apply_deploy_image_registry CELERYWORKER_INFO_ADMIN_BACKEND_IMAGE_REGISTRY
     export CELERYWORKER_INFO_ADMIN_BACKEND_IMAGE_PROJECT="${CELERYWORKER_INFO_ADMIN_BACKEND_IMAGE_PROJECT:-app-images}"
     export CELERYWORKER_INFO_ADMIN_BACKEND_IMAGE="${CELERYWORKER_INFO_ADMIN_BACKEND_IMAGE:-info-admin-backend}"
-    export CELERYWORKER_INFO_ADMIN_BACKEND_TAG="${CELERYWORKER_INFO_ADMIN_BACKEND_TAG:-1.0.0}"
+    export CELERYWORKER_INFO_ADMIN_BACKEND_TAG="${CELERYWORKER_INFO_ADMIN_BACKEND_TAG:-1.0.1}"
     export IMAGE_PULL_POLICY="${IMAGE_PULL_POLICY:-Always}"
     export CELERYWORKER_INFO_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME="${CELERYWORKER_INFO_ADMIN_BACKEND_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}"
+    export INFO_KNOWLEDGE_INGEST_CLIENT_SECRET_NAME="${INFO_KNOWLEDGE_INGEST_CLIENT_SECRET_NAME:-info-knowledge-ingest-client}"
+    export INFO_DISTRIBUTION_WORKER_SERVICE_ACCOUNT_NAME="${INFO_DISTRIBUTION_WORKER_SERVICE_ACCOUNT_NAME:-info-distribution-worker}"
     export CELERYWORKER_INFO_ADMIN_BACKEND_FULL_IMAGE_NAME="${CELERYWORKER_INFO_ADMIN_BACKEND_IMAGE_REGISTRY}/${CELERYWORKER_INFO_ADMIN_BACKEND_IMAGE_PROJECT}/${CELERYWORKER_INFO_ADMIN_BACKEND_IMAGE}:${CELERYWORKER_INFO_ADMIN_BACKEND_TAG}"
 
     log_info "镜像: $CELERYWORKER_INFO_ADMIN_BACKEND_FULL_IMAGE_NAME"
@@ -284,6 +287,15 @@ deploy_app() {
     kubectl apply -f "$CELERYWORKER_INFO_ADMIN_BACKEND_PVC_YAML" -n "$NAMESPACE" \
         && log_success "PVC 部署完成" \
         || { log_error "PVC 部署失败"; return 1; }
+
+    require_service_identity_relation \
+        "$NAMESPACE" \
+        "info-distribution-worker" \
+        "${INFO_KNOWLEDGE_INGEST_CLIENT_SECRET_NAME:-info-knowledge-ingest-client}" \
+        "${KNOWLEDGE_INFO_INGEST_BINDING_SECRET_NAME:-knowledge-info-ingest-service-binding}" \
+        "sunmoonai-info-knowledge-ingest" \
+        "knowledge:ingest" \
+        || { log_error "服务身份关系门禁失败，拒绝更新 Deployment"; return 1; }
 
     kubectl apply -f "$CELERYWORKER_INFO_ADMIN_BACKEND_YAML" -n "$NAMESPACE"
 

@@ -187,31 +187,50 @@ check_casdoor_status() {
         log_error "❌ Casdoor Helm Release 不存在"; return 1
     fi
 
-    local pods_running
-    pods_running=$(kubectl get pods -n "$namespace" \
-        -l "app.kubernetes.io/instance=$release_name" \
-        -o jsonpath='{.items[*].status.phase}' 2>/dev/null | tr ' ' '\n' | { grep -c '^Running$' || true; })
-
-    if [[ "$pods_running" -gt 0 ]]; then
-        log_success "✅ Casdoor Pod 运行正常 (${pods_running} 个)"
-    else
-        local pods_pending
-        pods_pending=$(kubectl get pods -n "$namespace" \
-            -l "app.kubernetes.io/instance=$release_name" \
-            -o jsonpath='{.items[*].status.phase}' 2>/dev/null | tr ' ' '\n' | { grep -cE '^(Pending|ContainerCreating)$' || true; })
-        if [[ "$pods_pending" -gt 0 ]]; then
-            log_warn "⏳ Casdoor Pod 启动中 ($pods_pending 个 Pending)"
-        else
-            log_error "❌ Casdoor Pod 未运行"
-            return 1
-        fi
-    fi
+    wait_for_deployment_ready "$release_name" "$namespace" 120 || {
+        log_error "❌ Casdoor Deployment 未达到 Ready"
+        return 1
+    }
+    check_casdoor_http "$release_name" "$namespace" || return 1
 
     echo ""
     echo "=== Casdoor 访问信息 ==="
     echo "管理控制台: https://${CASDOOR_UNIFIED_HOST:-casdoor.sunmoonai.com}"
     echo "命名空间:   $namespace"
     echo ""
+}
+
+check_casdoor_http() {
+    local release_name="$1" namespace="$2"
+    local pod
+    pod=$(kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=$release_name" \
+        -o jsonpath='{range .items[?(@.status.containerStatuses[0].ready==true)]}{.metadata.name}{"\n"}{end}' 2>/dev/null | head -n 1)
+    [[ -n "$pod" ]] || { log_error "❌ 找不到 Casdoor Pod，无法执行 HTTP readiness gate"; return 1; }
+
+    if kubectl exec -n "$namespace" "$pod" -- sh -ec '
+        set -eu
+        probe() {
+          path="$1"
+          if command -v curl >/dev/null 2>&1; then
+            code="$(curl -fsS -o /dev/null -w "%{http_code}" --max-time 5 "http://127.0.0.1:8000${path}")"
+          elif command -v wget >/dev/null 2>&1; then
+            wget -q -O /dev/null --timeout=5 "http://127.0.0.1:8000${path}"
+            code=200
+          else
+            echo "neither curl nor wget is available" >&2
+            return 1
+          fi
+          case "$code" in 2??) ;; *) echo "${path} returned HTTP ${code}" >&2; return 1 ;; esac
+        }
+        probe /
+        probe /.well-known/openid-configuration
+        probe /api/get-account
+    ' >/dev/null; then
+        log_success "✅ Casdoor HTTP/DB/static readiness gate 通过"
+    else
+        log_error "❌ Casdoor HTTP/DB/static readiness gate 失败"
+        return 1
+    fi
 }
 
 # ─────────────────────────── 子组件部署 ───────────────────────────
@@ -246,45 +265,25 @@ deploy_ingress() {
 
 wait_for_deployment_ready() {
     local deployment="$1" namespace="$2" timeout="${3:-300}"
-    local interval=5 deadline now last_log=0
-    deadline=$((SECONDS + timeout))
+    # Deployment.status.availableReplicas includes old ReplicaSets during a
+    # RollingUpdate. Use rollout status first so an old Ready Pod can never
+    # satisfy the post-deploy gate for a new template.
+    if ! kubectl rollout status "deployment/$deployment" -n "$namespace" \
+        --timeout="${timeout}s"; then
+        kubectl describe deployment "$deployment" -n "$namespace" || true
+        kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=${deployment}" -o wide || true
+        return 1
+    fi
+    log_success "✅ Deployment 新 ReplicaSet 已完成 rollout: $namespace/$deployment"
+    return 0
+}
 
-    while [[ $SECONDS -lt $deadline ]]; do
-        local status rc desired updated available observed generation
-        status=$(kubectl get deployment "$deployment" -n "$namespace" \
-            -o jsonpath='{.spec.replicas}|{.status.updatedReplicas}|{.status.availableReplicas}|{.status.observedGeneration}|{.metadata.generation}' 2>&1)
-        rc=$?
-
-        if [[ $rc -ne 0 ]]; then
-            log_warn "查询 Deployment 失败，尝试重连后继续等待: ${status%%$'\n'*}"
-            setup_kubectl_environment >/dev/null 2>&1 || true
-            sleep "$interval"
-            continue
-        fi
-
-        IFS='|' read -r desired updated available observed generation <<< "$status"
-        desired="${desired:-1}"
-        updated="${updated:-0}"
-        available="${available:-0}"
-        observed="${observed:-0}"
-        generation="${generation:-0}"
-
-        if [[ "$observed" -ge "$generation" && "$updated" -ge "$desired" && "$available" -ge "$desired" ]]; then
-            log_success "✅ Deployment 已就绪: $namespace/$deployment ($available/$desired)"
-            return 0
-        fi
-
-        now=$SECONDS
-        if [[ $((now - last_log)) -ge 30 ]]; then
-            log_info "等待 Deployment 就绪: $namespace/$deployment updated=$updated/$desired available=$available/$desired observed=$observed/$generation"
-            last_log=$now
-        fi
-        sleep "$interval"
-    done
-
-    kubectl describe deployment "$deployment" -n "$namespace" || true
-    kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=${deployment}" -o wide || true
-    return 1
+restart_casdoor_deployment() {
+    local project_id="$1" namespace="$2"
+    local deployment="casdoor-${project_id}"
+    log_info "Secret/ConfigMap 可能已变化，重启 Casdoor Deployment 以刷新环境变量: $namespace/$deployment"
+    kubectl rollout restart "deployment/$deployment" -n "$namespace"
+    wait_for_deployment_ready "$deployment" "$namespace" 300
 }
 
 run_post_deploy_setup() {
@@ -307,6 +306,7 @@ run_post_deploy_setup() {
     else
         log_error "❌ Casdoor post-deploy-setup 失败"; return 1
     fi
+    check_casdoor_http "casdoor-${CASDOOR_PROJECT_ID:-sunmoonai}" "$namespace"
 }
 
 # ─────────────────────────── 主函数 ───────────────────────────
@@ -345,16 +345,22 @@ main() {
             provision_casdoor_database "$environment" "$dry_run" || exit 1
             deploy_secrets "$project_id" "$namespace" "$environment" "$dry_run" || exit 1
             execute_casdoor_deployment "$project_id" "$namespace" "$environment" "$dry_run" || exit 1
-            deploy_ingress "$project_id" "$namespace" "$environment"
+            deploy_ingress "$project_id" "$namespace" "$environment" || exit 1
             run_post_deploy_setup "$namespace" "$dry_run" || exit 1
             log_success "🎉 Casdoor 完整部署成功！"
-            check_casdoor_status "$project_id" "$namespace" || true
+            check_casdoor_status "$project_id" "$namespace" || exit 1
             ;;
         "upgrade")
             log_info "升级 Casdoor..."
             provision_casdoor_database "$environment" "$dry_run" || exit 1
-            execute_casdoor_deployment "$project_id" "$namespace" "$environment" "$dry_run"
-            check_casdoor_status "$project_id" "$namespace"
+            deploy_secrets "$project_id" "$namespace" "$environment" "$dry_run" || exit 1
+            execute_casdoor_deployment "$project_id" "$namespace" "$environment" "$dry_run" || exit 1
+            if [[ "$dry_run" != "true" ]]; then
+                restart_casdoor_deployment "$project_id" "$namespace" || exit 1
+            fi
+            deploy_ingress "$project_id" "$namespace" "$environment" || exit 1
+            run_post_deploy_setup "$namespace" "$dry_run" || exit 1
+            check_casdoor_status "$project_id" "$namespace" || exit 1
             ;;
         "uninstall")
             log_info "卸载 Casdoor..."

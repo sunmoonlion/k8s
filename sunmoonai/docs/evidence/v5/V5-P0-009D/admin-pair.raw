@@ -1,0 +1,11 @@
+P0_009B_ADMIN_BROWSER_STAGE=deployment_preflight
+P0_009B_ADMIN_BROWSER_STAGE=casdoor_stability_window
+P0_009B_ADMIN_BROWSER_STAGE=strict_tls_browser_start
+P0_009B_ADMIN_BROWSER_STAGE=casdoor_strict_tls_preflight
+P0_009B_ADMIN_BROWSER_STAGE=anonymous_and_csp
+P0_009B_ADMIN_BROWSER_STAGE=real_casdoor_login
+P0_009B_ADMIN_BROWSER_STAGE=cache_and_role_isolation
+P0_009B_ADMIN_BROWSER_STAGE=csrf_and_mutation_boundary
+P0_009B_ADMIN_BROWSER_STAGE=logout_and_audit
+{"task":"V5-P0-009D-browser-pair","result":"passed","anonymous":401,"authenticated":200,"invalid_csrf":403,"scoped_mutation":503,"logout":204,"post_logout":401,"frontend_image":"harbor.sunmoonai.com:30443/app-images/research-admin-frontend@sha256:fea931c05a91a23ff446e86bf257a068b7d9d565b101f03b7c90d60d7a643636","backend_image":"harbor.sunmoonai.com:30443/app-images/research-admin-backend@sha256:5b50fd4ea540c8a591a728ede94ce7b6fc5eae1eade95e2c66892609b2e9ec2f","deployment_id":"p0-009d-v1","contract_version":1,"csp_checked":true,"authenticated_cache_no_store":true,"real_role_negative":true,"isolated_context_status":401,"credentials_printed":false,"tokens_printed":false}
+P0_009B_ADMIN_BROWSER_STAGE=complete
