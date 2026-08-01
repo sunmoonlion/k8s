@@ -4,7 +4,7 @@
   "target_repository": "tpl-backend",
   "sources": {
     "admin": {
-      "repository_directory": "tpl-admin-backend",
+      "repository_directory": "tpl-backend",
       "baseline_commit": "69e634b8e5b06da9d1dcd01c9b1350e0571d74bd"
     },
     "web": {
