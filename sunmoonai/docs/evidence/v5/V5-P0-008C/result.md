@@ -1,10 +1,12 @@
 # V5-P0-008C Research Web 真实试点证据
 
-日期：2026-07-29
+日期：2026-07-29；阶段收口：2026-08-01
 
-状态：`IN_PROGRESS / P0-008C.0_ACCEPTED / P0-008C.1_ACCEPTED /
+状态：`PAUSED_FOR_ARCHITECTURE_REVIEW / NOT_ACCEPTED /
+P0-008C.0_ACCEPTED / P0-008C.1_ACCEPTED /
 P0-008C.2_CODE_ACCEPTED / P0-008C.3_CODE_ACCEPTED /
-P0-008C.4_CODE_ACCEPTED / P0-008C.5_PENDING`
+P0-008C.4_CODE_ACCEPTED / P0-008C.5_BUILD_ACCEPTED /
+P0-008C.5_DEPLOY_BLOCKED_MISSING_LLM_SECRET / P0-008C.6_NOT_RUN`
 
 ## 1. 已完成前置
 
@@ -110,9 +112,9 @@ All checks passed!
 - 产品 dashboard 已删除旧 `/api/agent` 控制台和固定 fixture Run，统一使用 typed
   `/api/runs`，实现 create、URL 恢复、snapshot/SSE reconciliation、HITL、cancel、
   citation 和新 Run。
-- typecheck、lint、i18n 与 Vitest 已通过；本地 `next build` 因当前受限执行环境禁止
-  Turbopack 子进程绑定 loopback 端口而未取得生产构建证据，必须由 C5 Docker 构建补证，
-  不得把静态测试解释为生产镜像通过。
+- typecheck、lint、i18n 与 Vitest 已通过；2026-08-01 C5 Docker 内的 Next 16.2.2
+  Turbopack production build 已通过并生成 standalone runtime。此前受限环境中的本地
+  build 失败不再是当前阻塞。
 
 ```text
 44 passed, 2 skipped
@@ -131,16 +133,55 @@ All checks passed!
 - 部署在变更集群前强制要求 `sunmoonai-p0-008c-llm`、浏览器/服务身份、
   Knowledge retrieval identity 和 broker Secret；不得由脚本猜测或生成 Provider key。
 
-## 6. 待补环境证据
+## 6. 2026-08-01 C5 构建、身份与闭锁结果
+
+三项镜像均由已提交的干净 `codex-1` worktree 构建、推送并使用 Harbor 远端 manifest
+按 digest 复验：
+
+| 组件 | commit | 候选 tag | Harbor digest |
+|---|---|---|---|
+| Research Runtime API/worker | `fccf73d` | `p0-008c-runtime-20260801` | `sha256:2937158690143bd81c192c383c891f0b7b12e45c490e68d09069f73cdecad42c` |
+| FastAPI Research Web BFF | `6e79f12` | `p0-008c-bff-20260801` | `sha256:a0ccb4b684d79a5fa14ae38f69cdb80a09b171d8dea82e50e0fa1ab3fd51d06d` |
+| Next Research Web | `8f3d45b` | `p0-008c-next-20260801` | `sha256:8e04f030b4e060e251a1daf192ba72d721645f6ba871cb99832087ea80ef81ac` |
+
+身份施工结果：
+
+- 独立浏览器 authorization-code application reconciliation 通过。
+- 独立 BFF→Runtime client-credentials application reconciliation 通过。
+- 真实 RS256 token 的 issuer/audience/subject probe 通过；token、client secret 未输出。
+- 部署预检发现 `app-platform-dev/sunmoonai-p0-008c-llm` 不存在并在创建任何运行资源前
+  fail closed，退出码为 `1`。
+- 集群及本地受控配置只发现示例文件；没有 `DASHSCOPE_API_KEY`、`OPENAI_API_KEY` 或
+  `AGENT_PILOT_LLM_API_KEY` 的可用 Secret。RAGFlow/Knowledge 的现有凭据未被挪用。
+
+清理结果：
+
+- P0-008C Deployment、Service、IngressRoute、PDB、ConfigMap、runtime Secret：零残留。
+- 两个 P0-008C Casdoor application 与三项 identity/binding Secret 已删除。
+- label `sunmoonai.com/task=v5-p0-008c` 查询为空。
+- 稳定 Research 六个 Deployment 均保持 `1/1 Ready`，镜像与入口未被本任务修改。
+- 三项 Harbor 候选保留为本证据引用的可重建 artifact；未提升为 `1.0.0`、未被任何
+  Deployment 引用。
+
+## 7. 阶段结论与暂停边界
+
+本轮已经完成 contract、Runtime/Web BFF/Next 代码、测试、生产镜像、服务身份及部署
+fail-closed 机制，但**没有完成真实 LLM、真实竖线、浏览器/故障矩阵，因此
+P0-008C 不得标记 ACCEPTED**。根据 2026-08-01 决策，任务在架构重新评审前暂停：
+
+- 不补 dummy key，不复用 RAGFlow credential，不运行 fake/mock 竖线。
+- 不部署候选、不切稳定流量、不提升 stable tag。
+- 架构评审若保留本路径，恢复前先决定 LLM credential/provider governance，再从 C5
+  digest 与隔离部署重放；若推翻 Runtime/BFF 边界，三项候选按可废弃试点处理。
+- 暂停期间不开始 M1 Runtime、Memory/Subagent 或任何依赖 P0-008C ACCEPTED 的任务。
+
+## 8. 门禁追踪
 
 - [x] P0-008C.1 Browser/Internal contract 与身份边界。
 - [x] P0-008C.2 隔离 Runtime candidate 代码单元、契约与故障测试。
 - [x] P0-008C.3 FastAPI Web adapter 单元/contract/security。
-- [x] P0-008C.4 Next product surface 单元测试；生产 Docker build 归 C5。
-- [ ] P0-008C.5 固定 commit、镜像 digest、隔离部署与回滚清单。
+- [x] P0-008C.4 Next product surface 单元测试与生产 Docker build。
+- [x] P0-008C.5 固定 commit、三镜像 digest、身份和 fail-closed/cleanup；隔离运行部署
+      因缺少专用 LLM Secret 未执行。
 - [ ] P0-008C.6 真实竖线及完整故障/安全矩阵。
 - [ ] P0-008C.7 模板回流判定、Next v2 freeze、clean-room 与零残留。
-
-当前环境阻塞不是代码结论：此 Codex 受限执行环境不能访问 Docker daemon、KIND API 或
-外网，且没有可读取的 `AGENT_PILOT_LLM_API_KEY`。因此尚未构建/推送候选、未创建身份或
-LLM Secret、未部署任何 P0-008C 资源，也未改变稳定流量。

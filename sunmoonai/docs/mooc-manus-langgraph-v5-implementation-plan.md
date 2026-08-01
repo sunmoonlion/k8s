@@ -655,7 +655,7 @@ ADR-018 批准的 `tpl-admin-frontend-react`，以及本轮明确收口的只读
   但 Git 历史泄露要求在 P0-008C 首个真实环境步骤前完成数据库、Redis、Casdoor 凭据轮换、
   旧凭据拒绝验证和 secret scan。未切业务流量；正式 `master`/`codex-1` 与 12 个冻结
   标签已推送并按远端 ref 精确核对，临时工作分支未推送。
-  唯一下一任务是 P0-008C Research 真实试点）。
+  当时解锁的下一任务为 P0-008C Research 真实试点；其 2026-08-01 收口与暂停状态见下节）。
 
 ### V5-P0-008C Research Web 真实试点与 Next v2 冻结
 
@@ -725,18 +725,24 @@ ADR-018 批准的 `tpl-admin-frontend-react`，以及本轮明确收口的只读
   8. `P0-008C.7 Template Feedback/Freeze`：仅把 common 缺陷回流 `tpl-app`；如模板
      commit 改变，严格重放 P0-009B→C→D→E。冻结 Next v2 manifest、compatibility
      matrix、三 Web migration checklist、候选/旧版本双向回滚和最终零残留。
-- 状态：IN_PROGRESS / P0-008C.0_ACCEPTED / P0-008C.1_ACCEPTED /
+- 状态：PAUSED_FOR_ARCHITECTURE_REVIEW / NOT_ACCEPTED /
+  P0-008C.0_ACCEPTED / P0-008C.1_ACCEPTED /
   P0-008C.2_CODE_ACCEPTED / P0-008C.3_CODE_ACCEPTED /
-  P0-008C.4_CODE_ACCEPTED / P0-008C.5_PENDING（2026-07-29；安全预检引用
+  P0-008C.4_CODE_ACCEPTED / P0-008C.5_BUILD_ACCEPTED /
+  P0-008C.5_DEPLOY_BLOCKED_MISSING_LLM_SECRET / P0-008C.6_NOT_RUN
+  （2026-08-01；安全预检引用
   `sunmoonai/docs/evidence/v5/V5-RELEASE-1.0.0/result.md`；源码调用链审计确认上述三个
   断点后，已分别实现隔离 Runtime、FastAPI Web BFF adapter 与 typed Next product
   surface；Browser/Internal exact-field contract、service identity/delegation 与 pilot
   fail-closed 边界已经 `verify_p0_008c_contracts.py` 通过；Admin Backend 123 tests、
   Web Backend 48 passed/2 skipped、Next 44 passed/2 skipped 且各静态门禁通过。
   `build_p0_008c_images.sh`、`provision_p0_008c_identities.sh` 和
-  `deploy_p0_008c_research_pilot_kind.sh` 已建立并通过语法/plan 门禁。受当前执行环境
-  Docker/KIND 权限和 LLM Secret 缺口影响，尚未取得生产构建、digest、隔离部署或真实
-  竖线证据；未改变稳定流量。完整证据见
+  `deploy_p0_008c_research_pilot_kind.sh` 已建立；三项 production image build、Harbor
+  digest 和独立 Casdoor browser/service identity probe 已通过。部署在任何运行资源创建
+  前因专用 `sunmoonai-p0-008c-llm` 缺失而 fail closed；未复用其他 Provider credential，
+  已清理全部 P0-008C KIND/Casdoor identity 资源，稳定流量未改变。任务按用户要求暂停，
+  等待整体架构重新评审；不得将 build/identity 通过解释为真实竖线或 P0-008C ACCEPTED。
+  完整证据见
   `sunmoonai/docs/evidence/v5/V5-P0-008C/result.md`）。
 
 ### 浏览器 Frontend/Backend 配对门禁（所有前端任务的强制规则）

@@ -146,14 +146,16 @@ P0-007D = ACCEPTED
 P0-007E = ACCEPTED
 P0-008B = ACCEPTED / B6_ACCEPTED
 P0-009  = ACCEPTED / P0-009A_ACCEPTED / P0-009B_ACCEPTED / P0-009C_ACCEPTED / P0-009D_ACCEPTED / P0-009E_ACCEPTED
-P0-008C = NOT_STARTED / P0-008C_NEXT
+P0-008C = PAUSED_FOR_ARCHITECTURE_REVIEW / NOT_ACCEPTED / C5_BUILD_ACCEPTED / C5_DEPLOY_BLOCKED_MISSING_LLM_SECRET / C6_NOT_RUN
 三个业务 Admin/Web 实例 = Info/Knowledge/Research INSTANCE_FOUNDATION_ALIGNED（未切流）
 ```
 
-架构讨论已经收口。**唯一下一任务是 P0-008C**：在已对齐 Research 上做真实 Web 试点与
-Next v2 冻结；common 缺陷必须回流 `tpl-app` 再传播。P0-009E 证据见
-`sunmoonai/docs/evidence/v5/V5-P0-009E/result.md`。未切业务流量；正式分支与冻结标签
-已推送，精确远端 ref 见 `sunmoonai/docs/evidence/v5/V5-P0-009E/remote-publish.json`。
+P0-008C 已完成 C0～C4 的设计/代码门禁及 C5 的候选构建与身份探测，但因专用 LLM
+Secret 缺失在创建运行资源前 fail closed，C6 真实竖线未执行。按 2026-08-01 用户决策，
+**当前不是继续实施，而是暂停并重新讨论整体架构**；不得在讨论结论冻结前恢复 P0-008C、
+启动 M1 或切换业务流量。P0-009E 证据见
+`sunmoonai/docs/evidence/v5/V5-P0-009E/result.md`；P0-008C 收口证据见
+`sunmoonai/docs/evidence/v5/V5-P0-008C/result.md`。
 
 ## 4. P0-008B 串行施工包
 
@@ -411,4 +413,19 @@ M1-301~312 完成。正式 outbox/Attempt lease/reconciler/SSE v2 生产主链�
   `deploy_p0_008c_research_pilot_kind.sh --apply` 只部署隔离资源。
 - C5 前必须由受控 Secret 提供真实 LLM base URL/key/model。不得把 key 写入命令、文档、
   `.env`、generated YAML、镜像 ARG/ENV 或日志；脚本不会猜测 Provider 凭据。
-- 当前尚无候选镜像/digest/隔离资源/真实竖线证据，稳定 `1.0.0` tuple 与流量未改变。
+- C2～C4 收口时尚无候选镜像；2026-08-01 已按下节补齐三项候选 digest，但仍无隔离运行与真实竖线证据，稳定流量未改变。
+
+### 9.2 2026-08-01 阶段收口与架构评审暂停
+
+- C2~C4 code gates 保持通过；三项 production candidate 已构建并以 Harbor digest 固定，
+  详见 `evidence/v5/V5-P0-008C/result.md`。
+- P0-008C 专用 browser/service identity reconciliation 和真实 RS256 token binding probe
+  通过；随后均已清理。
+- 集群不存在 `sunmoonai-p0-008c-llm`，部署脚本在创建运行资源前 fail closed。禁止使用
+  dummy key、复用 RAGFlow credential 或 mock LLM 绕过。
+- P0-008C 当前是 `PAUSED_FOR_ARCHITECTURE_REVIEW / NOT_ACCEPTED`；C6/C7 未完成，任何
+  后续任务不得依赖其已接受。
+- KIND 中 P0-008C label 资源为零，稳定 Research Deployment 均 Ready 且未改流量；Harbor
+  三项候选仅作证据 artifact，未提升 stable tag、未被 Deployment 引用。
+- 下一次恢复先讨论并冻结整体架构；在明确“保留还是废弃当前 Runtime/BFF/Next 试点”及
+  LLM Provider/credential governance 前，不继续实施。
