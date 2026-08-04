@@ -1,0 +1,4 @@
+# 忽略动态生成的 YAML 文件（用于调试和审计）
+# 这些文件由部署脚本动态生成，不应提交到版本控制
+*-generated.yaml
+*-generated.yml
