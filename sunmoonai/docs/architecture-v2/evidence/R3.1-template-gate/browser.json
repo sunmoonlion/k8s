@@ -1,0 +1,23 @@
+{
+  "task": "architecture-v2-r3-browser",
+  "result": "passed",
+  "strict_tls": true,
+  "provider_preflight": 200,
+  "admin": {
+    "anonymous": 401,
+    "authenticated": 200,
+    "logout": 204,
+    "revoked": 401,
+    "surface": "admin"
+  },
+  "web": {
+    "anonymous": 401,
+    "authenticated": 200,
+    "logout": 204,
+    "revoked": 401,
+    "surface": "web"
+  },
+  "clients_isolated": true,
+  "credentials_printed": false,
+  "provider_tokens_printed": false
+}

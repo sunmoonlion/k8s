@@ -17,10 +17,11 @@ CALICO_VERSION="v3.28.2"
 CALICO_URL="https://raw.githubusercontent.com/projectcalico/calico/${CALICO_VERSION}/manifests/calico.yaml"
 CALICO_SHA256="be59408bf990e96276f631d2f9285c2a0f9802194c0ad1cecdb6d9c52623a1c8"
 CALICO_ARCHIVE_DIR="${R3_CALICO_ARCHIVE_DIR:-/home/zymun/packages-to-be-installed/images}"
+CALICO_MANIFEST_CACHE="${R3_CALICO_MANIFEST_CACHE:-${CALICO_ARCHIVE_DIR}/calico-v3.28.2.yaml}"
 SERVER_IMAGE="${R3_POLICY_SERVER_IMAGE:-python:3.12-slim}"
 CLIENT_IMAGE="${R3_POLICY_CLIENT_IMAGE:-busybox:latest}"
-NAMESPACE="tpl-architecture-v2-r3"
-APP="tpl"
+NAMESPACE=""
+APP=""
 BUNDLE=""
 KEEP_CLUSTER=false
 WORK_DIR="$(mktemp -d /tmp/architecture-v2-r3-calico.XXXXXX)"
@@ -47,8 +48,23 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -n "$BUNDLE" && -f "${BUNDLE}/30-network-policies.yaml" ]] || {
+[[ -n "$BUNDLE" && -f "${BUNDLE}/30-network-policies.yaml" && -f "${BUNDLE}/release.json" ]] || {
   usage
+  exit 2
+}
+
+read -r APP NAMESPACE < <(
+  python3 - "${BUNDLE}/release.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    release = json.load(handle)
+print(release["app"], release["namespace"])
+PY
+)
+[[ -n "$APP" && -n "$NAMESPACE" ]] || {
+  printf 'bundle app or namespace is absent: %s\n' "${BUNDLE}/release.json" >&2
   exit 2
 }
 
@@ -68,7 +84,7 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM HUP
 
-for command in "$KIND_BIN" "$KUBECTL_BIN" "$DOCKER_BIN" curl sha256sum; do
+for command in "$KIND_BIN" "$KUBECTL_BIN" "$DOCKER_BIN" curl install python3 sha256sum; do
   command -v "$command" >/dev/null 2>&1 || {
     printf 'required command is missing: %s\n' "$command" >&2
     exit 1
@@ -81,8 +97,21 @@ if "$KIND_BIN" get clusters 2>/dev/null | grep -Fxq "$CLUSTER_NAME"; then
 fi
 
 printf 'R3_POLICY_STAGE=calico_manifest\n'
-curl --fail --silent --show-error --location --retry 3 \
-  --output "${WORK_DIR}/calico.yaml" "$CALICO_URL"
+if [[ -f "$CALICO_MANIFEST_CACHE" ]] \
+  && printf '%s  %s\n' "$CALICO_SHA256" "$CALICO_MANIFEST_CACHE" \
+    | sha256sum --check --status; then
+  install -m 0644 "$CALICO_MANIFEST_CACHE" "${WORK_DIR}/calico.yaml"
+  printf 'R3_POLICY_CALICO_SOURCE=verified_cache\n'
+else
+  curl --fail --silent --show-error --location \
+    --connect-timeout 10 --max-time 90 --retry 2 --retry-all-errors \
+    --output "${WORK_DIR}/calico.yaml" "$CALICO_URL"
+  printf '%s  %s\n' "$CALICO_SHA256" "${WORK_DIR}/calico.yaml" \
+    | sha256sum --check --status
+  mkdir -p "$CALICO_ARCHIVE_DIR"
+  install -m 0644 "${WORK_DIR}/calico.yaml" "$CALICO_MANIFEST_CACHE"
+  printf 'R3_POLICY_CALICO_SOURCE=verified_download\n'
+fi
 printf '%s  %s\n' "$CALICO_SHA256" "${WORK_DIR}/calico.yaml" | sha256sum --check --status
 
 calico_images=(

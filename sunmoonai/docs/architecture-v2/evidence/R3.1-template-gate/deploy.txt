@@ -1,0 +1,61 @@
+namespace/tpl-architecture-v2-r31 unchanged
+serviceaccount/tpl-backend-api unchanged
+serviceaccount/tpl-backend-worker unchanged
+serviceaccount/tpl-backend-scheduler unchanged
+serviceaccount/tpl-backend-migration unchanged
+serviceaccount/tpl-admin-frontend unchanged
+serviceaccount/tpl-web-frontend unchanged
+configmap/tpl-backend-config unchanged
+configmap/tpl-admin-frontend-config unchanged
+configmap/tpl-web-frontend-config unchanged
+service/tpl-backend unchanged
+service/tpl-admin-frontend unchanged
+service/tpl-web-frontend unchanged
+secret/tpl-backend-runtime created
+networkpolicy.networking.k8s.io/tpl-default-deny created
+networkpolicy.networking.k8s.io/tpl-dns-egress created
+networkpolicy.networking.k8s.io/tpl-frontend-ingress created
+networkpolicy.networking.k8s.io/tpl-frontend-egress created
+networkpolicy.networking.k8s.io/tpl-backend-ingress created
+networkpolicy.networking.k8s.io/tpl-backend-runtime-egress created
+networkpolicy.networking.k8s.io/tpl-backend-migration-egress created
+job.batch/tpl-backend-migration-r3-001 created
+job.batch/tpl-backend-migration-r3-001 condition met
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260726_0001, create the canonical local identity binding
+INFO  [alembic.runtime.migration] Running upgrade 20260726_0001 -> 20260801_0002, add transactional outbox and idempotent inbox primitives
+deployment.apps/tpl-backend-api created
+poddisruptionbudget.policy/tpl-backend-api created
+horizontalpodautoscaler.autoscaling/tpl-backend-api created
+deployment.apps/tpl-backend-worker created
+poddisruptionbudget.policy/tpl-backend-worker created
+horizontalpodautoscaler.autoscaling/tpl-backend-worker created
+deployment.apps/tpl-backend-scheduler created
+deployment.apps/tpl-admin-frontend created
+poddisruptionbudget.policy/tpl-admin-frontend created
+horizontalpodautoscaler.autoscaling/tpl-admin-frontend created
+deployment.apps/tpl-web-frontend created
+poddisruptionbudget.policy/tpl-web-frontend created
+horizontalpodautoscaler.autoscaling/tpl-web-frontend created
+ingressroute.traefik.io/tpl-admin created
+ingressroute.traefik.io/tpl-web created
+Waiting for deployment "tpl-backend-api" rollout to finish: 0 of 2 updated replicas are available...
+Waiting for deployment "tpl-backend-api" rollout to finish: 0 of 2 updated replicas are available...
+Waiting for deployment "tpl-backend-api" rollout to finish: 0 of 2 updated replicas are available...
+deployment "tpl-backend-api" successfully rolled out
+Waiting for deployment "tpl-backend-worker" rollout to finish: 0 of 1 updated replicas are available...
+deployment "tpl-backend-worker" successfully rolled out
+deployment "tpl-backend-scheduler" successfully rolled out
+deployment "tpl-admin-frontend" successfully rolled out
+deployment "tpl-web-frontend" successfully rolled out
+job.batch "tpl-backend-migration-r3-001" deleted from tpl-architecture-v2-r31 namespace
+{
+  "task": "architecture-v2-deploy",
+  "result": "passed",
+  "app": "tpl",
+  "namespace": "tpl-architecture-v2-r31",
+  "release_id": "r3-001",
+  "migration_job_cleaned": true,
+  "credentials_printed": false
+}

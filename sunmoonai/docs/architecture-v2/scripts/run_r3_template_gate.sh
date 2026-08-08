@@ -27,9 +27,28 @@ TARGET_TLS_SECRET="tpl-r3-tls"
 SOURCE_PULL_SECRET="harbor-registry-secret"
 TARGET_PULL_SECRET="harbor-registry-secret"
 
-BACKEND_IMAGE="harbor.sunmoonai.com:30443/app-images/tpl-backend@sha256:131793e27f5782511b7e6f8ce4c688639f9c2d460fe57fbe1ea805989ca481f1"
-ADMIN_IMAGE="harbor.sunmoonai.com:30443/app-images/tpl-admin-frontend@sha256:84c8343f57ae2475cc11bd871379bb7b506ed2b81b474a20affcc9249a6c5f81"
-WEB_IMAGE="harbor.sunmoonai.com:30443/app-images/tpl-web-frontend@sha256:54c62d90c833b4577d304b79cffef63c980b39c98262bbf082546839added33d"
+RELEASE_MANIFEST="${R3_RELEASE_MANIFEST:-${TPL_ROOT}/template-release-manifest.json}"
+
+release_component_image() {
+  python3 - "$RELEASE_MANIFEST" "$1" <<'PY'
+import json
+import sys
+
+manifest_path, component_path = sys.argv[1:3]
+with open(manifest_path, encoding="utf-8") as handle:
+    release = json.load(handle)
+for component in release["default_components"]:
+    if component["path"] == component_path:
+        print(component["image"])
+        break
+else:
+    raise SystemExit(f"release component is absent: {component_path}")
+PY
+}
+
+BACKEND_IMAGE="${BACKEND_IMAGE:-$(release_component_image tpl-backend)}"
+ADMIN_IMAGE="${ADMIN_IMAGE:-$(release_component_image tpl-admin-frontend)}"
+WEB_IMAGE="${WEB_IMAGE:-$(release_component_image tpl-web-frontend)}"
 WEB_R2_IMAGE="harbor.sunmoonai.com:30443/app-images/tpl-web-frontend@sha256:ea5d872c82c764b01eaa427a32e6393b9197e9842a002d4c8cad2ef7b5648808"
 POSTGRES_IMAGE="harbor.sunmoonai.com:30443/k8s-images/postgresql@sha256:dbd371582fbbb100b22b891e485f4559187362348c1d4b5d0a2191134807516b"
 REDIS_IMAGE="harbor.sunmoonai.com:30443/k8s-images/redis@sha256:0d2c5324b7373522e1fce60d657d60c851aa2921b211fd795f20c8515bee429e"
