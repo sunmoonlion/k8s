@@ -10,7 +10,8 @@ umask 077
 KUBECTL_BIN="${KUBECTL_BIN:-kubectl}"
 KUBECONFIG_PATH="${KUBECONFIG:-$HOME/.kube/kind-config}"
 NAMESPACE="${R3_NAMESPACE:-tpl-architecture-v2-r3}"
-APP="tpl"
+APP="${R3_APP:-tpl}"
+TASK="${R3_ROLLBACK_TASK:-architecture-v2-r3-rollback}"
 BUNDLE=""
 R2_IMAGE=""
 WEB_ORIGIN="${R3_WEB_ORIGIN:-https://tpl-web-r3.sunmoonai.com:30443}"
@@ -123,4 +124,4 @@ k rollout status "deployment/${deployment}" -n "$NAMESPACE" --timeout=300s >/dev
 assert_deployment "$candidate_image" /healthz
 strict_get /healthz
 
-printf '{"task":"architecture-v2-r3-rollback","result":"passed","native_undo":true,"strict_tls_r2":200,"forward_reconcile":true,"strict_tls_r3_health":200,"credentials_printed":false}\n'
+printf '{"task":"%s","result":"passed","native_undo":true,"strict_tls_previous":200,"forward_reconcile":true,"strict_tls_candidate_health":200,"credentials_printed":false}\n' "$TASK"

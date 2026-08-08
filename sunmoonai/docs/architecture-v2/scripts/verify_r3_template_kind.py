@@ -263,7 +263,7 @@ def assert_structure(args: argparse.Namespace, release: dict[str, object]) -> di
         rules = route["spec"]["routes"]
         if rules[0].get("priority") != 100 or rules[0]["services"][0]["name"] != f"{app}-backend":
             raise GateError(f"{surface} /api ingress does not target the canonical Backend")
-        if route["spec"].get("tls", {}).get("secretName") != "tpl-r3-tls":
+        if route["spec"].get("tls", {}).get("secretName") != args.tls_secret:
             raise GateError(f"{surface} ingress does not use the strict TLS Secret")
 
     return {
@@ -364,6 +364,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--bundle", type=Path, required=True)
     parser.add_argument("--namespace", default="tpl-architecture-v2-r3")
     parser.add_argument("--app", default="tpl")
+    parser.add_argument("--tls-secret", default="tpl-r3-tls")
+    parser.add_argument("--task", default="architecture-v2-r3-kind")
     parser.add_argument("--kubeconfig", type=Path)
     parser.add_argument("--kubectl", default="kubectl")
     parser.add_argument(
@@ -406,7 +408,7 @@ def main() -> int:
         print(
             json.dumps(
                 {
-                    "task": "architecture-v2-r3-kind",
+                    "task": args.task,
                     "result": "passed",
                     **summary,
                     "network_runtime_gate": network_runtime_gate,
@@ -423,7 +425,7 @@ def main() -> int:
         print(
             json.dumps(
                 {
-                    "task": "architecture-v2-r3-kind",
+                    "task": args.task,
                     "result": "failed",
                     "error": str(exc),
                 },

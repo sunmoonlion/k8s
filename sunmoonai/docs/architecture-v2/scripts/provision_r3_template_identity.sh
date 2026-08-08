@@ -7,14 +7,18 @@ set -euo pipefail
 
 KUBECONFIG_PATH="${KUBECONFIG:-$HOME/.kube/kind-config}"
 KUBECTL_BIN="${KUBECTL_BIN:-kubectl}"
-PROVIDER_NAMESPACE="app-platform-dev"
-IDENTITY_SECRET="sunmoonai-architecture-v2-r3-identity"
+PROVIDER_NAMESPACE="${R3_PROVIDER_NAMESPACE:-app-platform-dev}"
+IDENTITY_SECRET="${R3_IDENTITY_SECRET:-sunmoonai-architecture-v2-r3-identity}"
 CASDOOR_DATABASE_SECRET="casdoor-postgresql-conn"
 POSTGRES_CLIENT_IMAGE="harbor.sunmoonai.com:30443/k8s-images/postgresql:17.6.0-debian-12-r4"
-ADMIN_APPLICATION="sunmoonai-tpl-architecture-v2-r3-admin"
-WEB_APPLICATION="sunmoonai-tpl-architecture-v2-r3-web"
-ADMIN_REDIRECT_URI="https://tpl-admin-r3.sunmoonai.com:30443/api/auth/admin/callback"
-WEB_REDIRECT_URI="https://tpl-web-r3.sunmoonai.com:30443/api/auth/web/callback"
+ADMIN_APPLICATION="${R3_ADMIN_APPLICATION:-sunmoonai-tpl-architecture-v2-r3-admin}"
+WEB_APPLICATION="${R3_WEB_APPLICATION:-sunmoonai-tpl-architecture-v2-r3-web}"
+ADMIN_REDIRECT_URI="${R3_ADMIN_REDIRECT_URI:-https://tpl-admin-r3.sunmoonai.com:30443/api/auth/admin/callback}"
+WEB_REDIRECT_URI="${R3_WEB_REDIRECT_URI:-https://tpl-web-r3.sunmoonai.com:30443/api/auth/web/callback}"
+ADMIN_DISPLAY_NAME="${R3_ADMIN_DISPLAY_NAME:-Template Architecture v2 R3 Admin}"
+WEB_DISPLAY_NAME="${R3_WEB_DISPLAY_NAME:-Template Architecture v2 R3 Web}"
+TASK_LABEL="${R3_TASK_LABEL:-architecture-v2-r3}"
+JOB_PREFIX="${R3_IDENTITY_JOB_PREFIX:-architecture-v2-r3-identity}"
 MODE="plan"
 
 usage() {
@@ -24,8 +28,15 @@ Usage: provision_r3_template_identity.sh [--apply|--cleanup] [options]
   --cleanup                   Delete both applications and the task Secret
   --kubeconfig PATH           Kubeconfig path
   --provider-namespace NAME   Namespace containing Casdoor and its DB Secret
+  --identity-secret NAME      Secret holding the two isolated browser clients
+  --admin-application NAME    Casdoor Admin application name
+  --web-application NAME      Casdoor Web application name
   --admin-redirect-uri URL    Exact Admin callback URI
   --web-redirect-uri URL      Exact Web callback URI
+  --admin-display-name TEXT   Casdoor Admin display name
+  --web-display-name TEXT     Casdoor Web display name
+  --task-label VALUE          sunmoonai.com/task label value
+  --job-prefix VALUE          Unique Kubernetes Job name prefix
 EOF
 }
 
@@ -35,8 +46,15 @@ while [[ $# -gt 0 ]]; do
     --cleanup) MODE="cleanup"; shift ;;
     --kubeconfig) KUBECONFIG_PATH="$2"; shift 2 ;;
     --provider-namespace) PROVIDER_NAMESPACE="$2"; shift 2 ;;
+    --identity-secret) IDENTITY_SECRET="$2"; shift 2 ;;
+    --admin-application) ADMIN_APPLICATION="$2"; shift 2 ;;
+    --web-application) WEB_APPLICATION="$2"; shift 2 ;;
     --admin-redirect-uri) ADMIN_REDIRECT_URI="$2"; shift 2 ;;
     --web-redirect-uri) WEB_REDIRECT_URI="$2"; shift 2 ;;
+    --admin-display-name) ADMIN_DISPLAY_NAME="$2"; shift 2 ;;
+    --web-display-name) WEB_DISPLAY_NAME="$2"; shift 2 ;;
+    --task-label) TASK_LABEL="$2"; shift 2 ;;
+    --job-prefix) JOB_PREFIX="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'unknown argument: %s\n' "$1" >&2; usage >&2; exit 2 ;;
   esac
@@ -56,7 +74,7 @@ wait_job() {
 }
 
 delete_applications() {
-  local job="architecture-v2-r3-identity-delete"
+  local job="${JOB_PREFIX}-delete"
   k get secret "$CASDOOR_DATABASE_SECRET" -n "$PROVIDER_NAMESPACE" >/dev/null
   k delete job "$job" -n "$PROVIDER_NAMESPACE" \
     --ignore-not-found=true --wait=true >/dev/null
@@ -67,7 +85,7 @@ metadata:
   name: ${job}
   namespace: ${PROVIDER_NAMESPACE}
   labels:
-    sunmoonai.com/task: architecture-v2-r3
+    sunmoonai.com/task: ${TASK_LABEL}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
@@ -75,7 +93,7 @@ spec:
   template:
     metadata:
       labels:
-        sunmoonai.com/task: architecture-v2-r3
+        sunmoonai.com/task: ${TASK_LABEL}
     spec:
       restartPolicy: Never
       automountServiceAccountToken: false
@@ -95,7 +113,7 @@ spec:
                 -v ON_ERROR_STOP=1 \
                 -c "DELETE FROM application WHERE owner='admin' AND name IN ('${ADMIN_APPLICATION}','${WEB_APPLICATION}')" \
                 >/dev/null
-              printf 'Architecture v2 R3 Casdoor applications removed\n'
+              printf 'Architecture v2 gate Casdoor applications removed\n'
 EOF
   wait_job "$job"
 }
@@ -104,22 +122,34 @@ if [[ "$MODE" == "cleanup" ]]; then
   delete_applications
   k delete secret "$IDENTITY_SECRET" -n "$PROVIDER_NAMESPACE" \
     --ignore-not-found=true >/dev/null
-  printf 'Architecture v2 R3 identity cleanup passed\n'
+  printf 'Architecture v2 identity cleanup passed\n'
   exit 0
 fi
 
-printf 'PLAN R3 browser clients: admin=%s web=%s secret=%s/%s\n' \
+printf 'PLAN Architecture v2 browser clients: admin=%s web=%s secret=%s/%s\n' \
   "$ADMIN_APPLICATION" "$WEB_APPLICATION" "$PROVIDER_NAMESPACE" "$IDENTITY_SECRET"
 [[ "$MODE" == "apply" ]] || exit 0
 
-[[ "$ADMIN_REDIRECT_URI" =~ ^https://tpl-admin-r3\.sunmoonai\.com(:[0-9]+)?/api/auth/admin/callback$ ]] || {
-  printf 'Admin redirect URI is outside the R3 trust boundary\n' >&2
-  exit 1
-}
-[[ "$WEB_REDIRECT_URI" =~ ^https://tpl-web-r3\.sunmoonai\.com(:[0-9]+)?/api/auth/web/callback$ ]] || {
-  printf 'Web redirect URI is outside the R3 trust boundary\n' >&2
-  exit 1
-}
+python3 - "$ADMIN_REDIRECT_URI" "$WEB_REDIRECT_URI" <<'PY'
+import sys
+from urllib.parse import urlsplit
+
+for surface, value, suffix in (
+    ("Admin", sys.argv[1], "/api/auth/admin/callback"),
+    ("Web", sys.argv[2], "/api/auth/web/callback"),
+):
+    parsed = urlsplit(value)
+    if (
+        parsed.scheme != "https"
+        or not parsed.hostname
+        or not parsed.hostname.endswith(".sunmoonai.com")
+        or parsed.port not in (None, 30443)
+        or parsed.path != suffix
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise SystemExit(f"{surface} redirect URI is outside the Architecture v2 trust boundary")
+PY
 k get secret "$CASDOOR_DATABASE_SECRET" -n "$PROVIDER_NAMESPACE" >/dev/null
 
 if ! k get secret "$IDENTITY_SECRET" -n "$PROVIDER_NAMESPACE" >/dev/null 2>&1; then
@@ -136,9 +166,9 @@ if ! k get secret "$IDENTITY_SECRET" -n "$PROVIDER_NAMESPACE" >/dev/null 2>&1; t
   unset admin_client_id admin_client_secret web_client_id web_client_secret
 fi
 k label secret "$IDENTITY_SECRET" -n "$PROVIDER_NAMESPACE" \
-  sunmoonai.com/task=architecture-v2-r3 --overwrite >/dev/null
+  sunmoonai.com/task="$TASK_LABEL" --overwrite >/dev/null
 
-job="architecture-v2-r3-identity-provision"
+job="${JOB_PREFIX}-provision"
 k delete job "$job" -n "$PROVIDER_NAMESPACE" \
   --ignore-not-found=true --wait=true >/dev/null
 cat <<EOF | k apply -f - >/dev/null
@@ -148,7 +178,7 @@ metadata:
   name: ${job}
   namespace: ${PROVIDER_NAMESPACE}
   labels:
-    sunmoonai.com/task: architecture-v2-r3
+    sunmoonai.com/task: ${TASK_LABEL}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
@@ -156,7 +186,7 @@ spec:
   template:
     metadata:
       labels:
-        sunmoonai.com/task: architecture-v2-r3
+        sunmoonai.com/task: ${TASK_LABEL}
     spec:
       restartPolicy: Never
       automountServiceAccountToken: false
@@ -198,11 +228,11 @@ spec:
                 token_format, expire_in_hours, refresh_expire_in_hours
               ) VALUES
                 ('admin', '${ADMIN_APPLICATION}', NOW()::text,
-                 'Template Architecture v2 R3 Admin', :'admin_id', :'admin_secret',
+                 '${ADMIN_DISPLAY_NAME}', :'admin_id', :'admin_secret',
                  json_build_array(:'admin_redirect')::text, 'cert-built-in',
                  '["authorization_code"]', 'sunmoonai', false, 'JWT', 1, 24),
                 ('admin', '${WEB_APPLICATION}', NOW()::text,
-                 'Template Architecture v2 R3 Web', :'web_id', :'web_secret',
+                 '${WEB_DISPLAY_NAME}', :'web_id', :'web_secret',
                  json_build_array(:'web_redirect')::text, 'cert-built-in',
                  '["authorization_code"]', 'sunmoonai', false, 'JWT', 1, 24)
               ON CONFLICT (owner, name) DO UPDATE SET
@@ -237,7 +267,7 @@ spec:
                       AND redirect_uris=json_build_array(:'web_redirect')::text))
                 AND grant_types='["authorization_code"]';
               SQL
-              printf 'Architecture v2 R3 Casdoor applications reconciled\n'
+              printf 'Architecture v2 Casdoor applications reconciled\n'
 EOF
 wait_job "$job"
-printf 'Architecture v2 R3 identity provisioning passed\n'
+printf 'Architecture v2 identity provisioning passed\n'

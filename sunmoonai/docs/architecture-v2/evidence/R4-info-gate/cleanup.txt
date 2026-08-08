@@ -1,0 +1,7 @@
+namespace/info-architecture-v2-r4 absent
+secret/app-platform-dev/sunmoonai-architecture-v2-r4-info-identity absent
+kind cluster info-r4-policy absent
+Casdoor applications sunmoonai-info-architecture-v2-r4-admin and
+sunmoonai-info-architecture-v2-r4-web removed by an idempotent database cleanup Job
+legacy Info deployments in app-platform-dev remained ready at 1/1 with unchanged image references
+credentials_printed=false

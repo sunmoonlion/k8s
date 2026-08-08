@@ -1,6 +1,8 @@
 # Architecture v2 R4 实例同步规则
 
-状态：`ACTIVE / INFO PREFLIGHT`
+状态：`ACTIVE / INFO DONE / KNOWLEDGE NEXT`
+
+唯一模板源：`architecture-v2-r3.2-20260808`。R3.1 仅保留为历史证据，不得继续作为新同步目标。
 
 R4 只允许按 `Info -> Knowledge -> Research` 串行同步同一个已验收模板 release。前一个实例未完成
 源码、配对、身份、数据库与回滚门禁时，不得修改下一个实例。
@@ -53,3 +55,9 @@ R4 不拼接模板 Alembic root。每个实例继续保留当前规范数据库�
 
 模板在 R4 前若发现缺陷，必须先修模板、更新 release manifest、重建镜像并复验受影响的 R3
 门禁；不得在实例仓静默打补丁后继续扩散。
+
+## 6. 串行进度
+
+- Info：`DONE`，见 `R4-info-result.md` 与 `evidence/R4-info-gate/`；
+- Knowledge：`NEXT`，必须继续使用 `architecture-v2-r3.2-20260808`；
+- Research：`BLOCKED BY KNOWLEDGE R4`，不得提前同步。

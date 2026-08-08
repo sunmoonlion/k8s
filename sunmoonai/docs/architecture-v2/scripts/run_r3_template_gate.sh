@@ -14,20 +14,33 @@ KUBECTL_BIN="${KUBECTL_BIN:-kubectl}"
 NAMESPACE="${R3_NAMESPACE:-tpl-architecture-v2-r3}"
 PROVIDER_NAMESPACE="${R3_PROVIDER_NAMESPACE:-app-platform-dev}"
 INGRESS_NAMESPACE="${R3_INGRESS_NAMESPACE:-ingress-platform-dev}"
-APP="tpl"
-RELEASE_ID="r3-001"
-ADMIN_ORIGIN="https://tpl-admin-r3.sunmoonai.com:30443"
-WEB_ORIGIN="https://tpl-web-r3.sunmoonai.com:30443"
-CASDOOR_ORIGIN="https://casdoor.sunmoonai.com:30443"
+APP="${R3_APP:-tpl}"
+RELEASE_ID="${R3_RELEASE_ID:-r3-001}"
+ADMIN_ORIGIN="${R3_ADMIN_ORIGIN:-https://tpl-admin-r3.sunmoonai.com:30443}"
+WEB_ORIGIN="${R3_WEB_ORIGIN:-https://tpl-web-r3.sunmoonai.com:30443}"
+CASDOOR_ORIGIN="${R3_CASDOOR_ORIGIN:-https://casdoor.sunmoonai.com:30443}"
 CASDOOR_BACKCHANNEL="http://casdoor-sunmoonai.${PROVIDER_NAMESPACE}.svc.cluster.local:8000"
-IDENTITY_SECRET="sunmoonai-architecture-v2-r3-identity"
+IDENTITY_SECRET="${R3_IDENTITY_SECRET:-sunmoonai-architecture-v2-r3-identity}"
+ADMIN_APPLICATION="${R3_ADMIN_APPLICATION:-sunmoonai-tpl-architecture-v2-r3-admin}"
+WEB_APPLICATION="${R3_WEB_APPLICATION:-sunmoonai-tpl-architecture-v2-r3-web}"
+ADMIN_DISPLAY_NAME="${R3_ADMIN_DISPLAY_NAME:-Template Architecture v2 R3 Admin}"
+WEB_DISPLAY_NAME="${R3_WEB_DISPLAY_NAME:-Template Architecture v2 R3 Web}"
+TASK_LABEL="${R3_TASK_LABEL:-architecture-v2-r3}"
+IDENTITY_JOB_PREFIX="${R3_IDENTITY_JOB_PREFIX:-architecture-v2-r3-identity}"
+RESULT_TASK="${R3_RESULT_TASK:-architecture-v2-r3}"
+POLICY_CLUSTER_NAME="${R3_POLICY_CLUSTER_NAME:-tpl-r3-policy}"
 OPERATOR_SECRET="sunmoonai-p0-005-browser-identity"
 SOURCE_TLS_SECRET="traefik-tls-secret"
-TARGET_TLS_SECRET="tpl-r3-tls"
+TARGET_TLS_SECRET="${R3_TARGET_TLS_SECRET:-tpl-r3-tls}"
 SOURCE_PULL_SECRET="harbor-registry-secret"
 TARGET_PULL_SECRET="harbor-registry-secret"
 
 RELEASE_MANIFEST="${R3_RELEASE_MANIFEST:-${TPL_ROOT}/template-release-manifest.json}"
+
+[[ "$APP" =~ ^[a-z][a-z0-9-]{0,31}$ ]] || {
+  printf 'invalid gate app slug: %s\n' "$APP" >&2
+  exit 2
+}
 
 release_component_image() {
   python3 - "$RELEASE_MANIFEST" "$1" <<'PY'
@@ -49,11 +62,11 @@ PY
 BACKEND_IMAGE="${BACKEND_IMAGE:-$(release_component_image tpl-backend)}"
 ADMIN_IMAGE="${ADMIN_IMAGE:-$(release_component_image tpl-admin-frontend)}"
 WEB_IMAGE="${WEB_IMAGE:-$(release_component_image tpl-web-frontend)}"
-WEB_R2_IMAGE="harbor.sunmoonai.com:30443/app-images/tpl-web-frontend@sha256:ea5d872c82c764b01eaa427a32e6393b9197e9842a002d4c8cad2ef7b5648808"
+WEB_R2_IMAGE="${WEB_R2_IMAGE:-harbor.sunmoonai.com:30443/app-images/tpl-web-frontend@sha256:ea5d872c82c764b01eaa427a32e6393b9197e9842a002d4c8cad2ef7b5648808}"
 POSTGRES_IMAGE="harbor.sunmoonai.com:30443/k8s-images/postgresql@sha256:dbd371582fbbb100b22b891e485f4559187362348c1d4b5d0a2191134807516b"
 REDIS_IMAGE="harbor.sunmoonai.com:30443/k8s-images/redis@sha256:0d2c5324b7373522e1fce60d657d60c851aa2921b211fd795f20c8515bee429e"
 
-WORK_DIR="$(mktemp -d /tmp/architecture-v2-r3.XXXXXX)"
+WORK_DIR="$(mktemp -d "/tmp/architecture-v2-${APP}-gate.XXXXXX")"
 BUNDLE_DIR="${WORK_DIR}/bundle"
 DEPENDENCY_ENV="${WORK_DIR}/dependencies.env"
 RUNTIME_ENV="${WORK_DIR}/backend-runtime.env"
@@ -82,12 +95,12 @@ value = json.load(sys.stdin)
 value["metadata"] = {
     "name": name,
     "namespace": namespace,
-    "labels": {"sunmoonai.com/task": "architecture-v2-r3"},
+    "labels": {"sunmoonai.com/task": sys.argv[3]},
 }
 for key in ("status", "immutable"):
     value.pop(key, None)
 json.dump(value, sys.stdout, separators=(",", ":"))
-' "$NAMESPACE" "$target_name" \
+' "$NAMESPACE" "$target_name" "$TASK_LABEL" \
     | k apply -f - >/dev/null
 }
 
@@ -105,7 +118,12 @@ cleanup() {
   fi
   "${SCRIPT_ROOT}/provision_r3_template_identity.sh" --cleanup \
     --kubeconfig "$KUBECONFIG_PATH" \
-    --provider-namespace "$PROVIDER_NAMESPACE" >/dev/null 2>&1
+    --provider-namespace "$PROVIDER_NAMESPACE" \
+    --identity-secret "$IDENTITY_SECRET" \
+    --admin-application "$ADMIN_APPLICATION" \
+    --web-application "$WEB_APPLICATION" \
+    --task-label "$TASK_LABEL" \
+    --job-prefix "$IDENTITY_JOB_PREFIX" >/dev/null 2>&1
   if [[ "$rc" -eq 0 ]]; then
     rm -rf "$WORK_DIR"
   else
@@ -132,7 +150,16 @@ k get secret "$OPERATOR_SECRET" -n "$PROVIDER_NAMESPACE" >/dev/null
 printf 'R3_STAGE=identity\n'
 "${SCRIPT_ROOT}/provision_r3_template_identity.sh" --apply \
   --kubeconfig "$KUBECONFIG_PATH" \
-  --provider-namespace "$PROVIDER_NAMESPACE"
+  --provider-namespace "$PROVIDER_NAMESPACE" \
+  --identity-secret "$IDENTITY_SECRET" \
+  --admin-application "$ADMIN_APPLICATION" \
+  --web-application "$WEB_APPLICATION" \
+  --admin-redirect-uri "${ADMIN_ORIGIN}/api/auth/admin/callback" \
+  --web-redirect-uri "${WEB_ORIGIN}/api/auth/web/callback" \
+  --admin-display-name "$ADMIN_DISPLAY_NAME" \
+  --web-display-name "$WEB_DISPLAY_NAME" \
+  --task-label "$TASK_LABEL" \
+  --job-prefix "$IDENTITY_JOB_PREFIX"
 
 admin_client_id="$(secret_value "$PROVIDER_NAMESPACE" "$IDENTITY_SECRET" ADMIN_CLIENT_ID)"
 admin_client_secret="$(secret_value "$PROVIDER_NAMESPACE" "$IDENTITY_SECRET" ADMIN_CLIENT_SECRET)"
@@ -155,8 +182,8 @@ python3 "${TPL_ROOT}/k8s-scaffold-v2/scaffold.py" \
   --casdoor-namespace "$PROVIDER_NAMESPACE" \
   --admin-client-id "$admin_client_id" \
   --web-client-id "$web_client_id" \
-  --admin-application sunmoonai-tpl-architecture-v2-r3-admin \
-  --web-application sunmoonai-tpl-architecture-v2-r3-web \
+  --admin-application "$ADMIN_APPLICATION" \
+  --web-application "$WEB_APPLICATION" \
   --tls-secret "$TARGET_TLS_SECRET" \
   --image-pull-secret "$TARGET_PULL_SECRET" \
   --ingress-namespace "$INGRESS_NAMESPACE" \
@@ -197,7 +224,7 @@ k create secret generic tpl-r3-dependencies -n "$NAMESPACE" \
   --from-env-file="$DEPENDENCY_ENV" --dry-run=client -o yaml \
   | k apply -f - >/dev/null
 k label secret tpl-r3-dependencies -n "$NAMESPACE" \
-  sunmoonai.com/task=architecture-v2-r3 --overwrite >/dev/null
+  sunmoonai.com/task="$TASK_LABEL" --overwrite >/dev/null
 
 cat <<EOF | k apply -f - >/dev/null
 apiVersion: apps/v1
@@ -206,7 +233,7 @@ metadata:
   name: tpl-r3-postgresql
   namespace: ${NAMESPACE}
   labels:
-    sunmoonai.com/task: architecture-v2-r3
+    sunmoonai.com/task: ${TASK_LABEL}
 spec:
   replicas: 1
   selector:
@@ -216,8 +243,8 @@ spec:
     metadata:
       labels:
         app: tpl-r3-postgresql
-        sunmoonai.com/backend-dependency: tpl
-        sunmoonai.com/task: architecture-v2-r3
+        sunmoonai.com/backend-dependency: ${APP}
+        sunmoonai.com/task: ${TASK_LABEL}
     spec:
       automountServiceAccountToken: false
       imagePullSecrets:
@@ -249,8 +276,8 @@ metadata:
   name: tpl-r3-postgresql
   namespace: ${NAMESPACE}
   labels:
-    sunmoonai.com/backend-dependency: tpl
-    sunmoonai.com/task: architecture-v2-r3
+    sunmoonai.com/backend-dependency: ${APP}
+    sunmoonai.com/task: ${TASK_LABEL}
 spec:
   selector: {app: tpl-r3-postgresql}
   ports:
@@ -262,7 +289,7 @@ metadata:
   name: tpl-r3-redis
   namespace: ${NAMESPACE}
   labels:
-    sunmoonai.com/task: architecture-v2-r3
+    sunmoonai.com/task: ${TASK_LABEL}
 spec:
   replicas: 1
   selector:
@@ -272,8 +299,8 @@ spec:
     metadata:
       labels:
         app: tpl-r3-redis
-        sunmoonai.com/backend-dependency: tpl
-        sunmoonai.com/task: architecture-v2-r3
+        sunmoonai.com/backend-dependency: ${APP}
+        sunmoonai.com/task: ${TASK_LABEL}
     spec:
       automountServiceAccountToken: false
       imagePullSecrets:
@@ -301,8 +328,8 @@ metadata:
   name: tpl-r3-redis
   namespace: ${NAMESPACE}
   labels:
-    sunmoonai.com/backend-dependency: tpl
-    sunmoonai.com/task: architecture-v2-r3
+    sunmoonai.com/backend-dependency: ${APP}
+    sunmoonai.com/task: ${TASK_LABEL}
 spec:
   selector: {app: tpl-r3-redis}
   ports:
@@ -319,14 +346,14 @@ metadata:
   name: tpl-r3-postgresql-roles
   namespace: ${NAMESPACE}
   labels:
-    sunmoonai.com/task: architecture-v2-r3
+    sunmoonai.com/task: ${TASK_LABEL}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
   template:
     metadata:
       labels:
-        sunmoonai.com/task: architecture-v2-r3
+        sunmoonai.com/task: ${TASK_LABEL}
     spec:
       restartPolicy: Never
       automountServiceAccountToken: false
@@ -416,6 +443,9 @@ printf 'R3_STAGE=kind_structure_gate\n'
 python3 "${SCRIPT_ROOT}/verify_r3_template_kind.py" \
   --bundle "$BUNDLE_DIR" \
   --namespace "$NAMESPACE" \
+  --app "$APP" \
+  --tls-secret "$TARGET_TLS_SECRET" \
+  --task "${RESULT_TASK}-kind" \
   --kubeconfig "$KUBECONFIG_PATH" \
   --skip-network-runtime \
   | tee "${EVIDENCE_DIR}/kind.json"
@@ -424,13 +454,20 @@ printf 'R3_STAGE=strict_tls_browser_gate\n'
 KUBECONFIG="$KUBECONFIG_PATH" \
 R3_NAMESPACE="$NAMESPACE" \
 R3_PROVIDER_NAMESPACE="$PROVIDER_NAMESPACE" \
+R3_APP="$APP" \
+R3_ADMIN_ORIGIN="$ADMIN_ORIGIN" \
+R3_WEB_ORIGIN="$WEB_ORIGIN" \
+R3_CASDOOR_ORIGIN="$CASDOOR_ORIGIN" \
+R3_BROWSER_TASK="${RESULT_TASK}-browser" \
 node "${SCRIPT_ROOT}/verify_r3_template_browser.mjs" \
   | tee "${EVIDENCE_DIR}/browser.json"
 
 printf 'R3_STAGE=rollback_forward_gate\n'
 KUBECONFIG="$KUBECONFIG_PATH" \
 R3_NAMESPACE="$NAMESPACE" \
+R3_APP="$APP" \
 R3_WEB_ORIGIN="$WEB_ORIGIN" \
+R3_ROLLBACK_TASK="${RESULT_TASK}-rollback" \
 "${SCRIPT_ROOT}/verify_r3_template_rollback.sh" \
   --bundle "$BUNDLE_DIR" \
   --r2-image "$WEB_R2_IMAGE" \
@@ -440,15 +477,22 @@ printf 'R3_STAGE=post_forward_browser_gate\n'
 KUBECONFIG="$KUBECONFIG_PATH" \
 R3_NAMESPACE="$NAMESPACE" \
 R3_PROVIDER_NAMESPACE="$PROVIDER_NAMESPACE" \
+R3_APP="$APP" \
+R3_ADMIN_ORIGIN="$ADMIN_ORIGIN" \
+R3_WEB_ORIGIN="$WEB_ORIGIN" \
+R3_CASDOOR_ORIGIN="$CASDOOR_ORIGIN" \
+R3_BROWSER_TASK="${RESULT_TASK}-browser" \
 node "${SCRIPT_ROOT}/verify_r3_template_browser.mjs" \
   | tee "${EVIDENCE_DIR}/browser-after-forward.json"
 
 printf 'R3_STAGE=calico_network_policy_gate\n'
+R3_POLICY_TASK="${RESULT_TASK}-network-policy" \
+R3_POLICY_CLUSTER_NAME="$POLICY_CLUSTER_NAME" \
 "${SCRIPT_ROOT}/verify_r3_network_policy_calico.sh" \
   --bundle "$BUNDLE_DIR" \
   | tee "${EVIDENCE_DIR}/network-policy.txt"
 
 cp "${BUNDLE_DIR}/release.json" "${EVIDENCE_DIR}/release.json"
-printf '{"task":"architecture-v2-r3","result":"passed","formal_release":false,"credentials_printed":false}\n' \
+printf '{"task":"%s","result":"passed","formal_release":false,"credentials_printed":false}\n' "$RESULT_TASK" \
   | tee "${EVIDENCE_DIR}/result.json"
 printf 'R3 gate passed; evidence directory=%s\n' "$EVIDENCE_DIR"

@@ -1,6 +1,6 @@
 # App Platform Architecture v2 重构执行基线
 
-状态：`ACTIVE / R0-R3.1 COMPLETE / R4 NEXT`
+状态：`ACTIVE / R0-R3.2 COMPLETE / R4 INFO COMPLETE / KNOWLEDGE NEXT`
 
 日期：2026-08-01
 
@@ -314,12 +314,12 @@ KIND；后者属于 R3。
 退出条件：同一模板 release 以不可变 digest 完成结构、部署、Migration、严格 TLS、真实 Casdoor、
 双端身份隔离、NetworkPolicy 报文级 allow/deny、原生回滚/前滚和资源清理门禁。
 
-状态：`DONE / R3.1 REVALIDATED`。规范 scaffold、部署器、真实 Casdoor 双端门禁、R2 回滚/
-R3.1 前滚复验和独立 Calico 策略集群均已通过；schema 2 模板 release
-`architecture-v2-r3.1-20260808` 已取代原 R3 锁，成为 R4 唯一来源。证据见
+状态：`DONE / R3.2 REVALIDATED`。规范 scaffold、部署器、真实 Casdoor 双端门禁、R2 回滚/
+R3.2 前滚复验和独立 Calico 策略集群均已通过；schema 2 模板 release
+`architecture-v2-r3.2-20260808` 已取代 R3.1 锁，成为 R4 唯一来源。证据见
 `architecture-v2/R3-kubernetes-template-result.md`、
-`architecture-v2/R3.1-template-revalidation-result.md` 与
-`architecture-v2/evidence/R3.1-template-gate/`。候选仍未晋级正式 `2.0.0`。
+`architecture-v2/R3.2-template-revalidation-result.md` 与
+`architecture-v2/evidence/R3.2-template-gate/`。候选仍未晋级正式 `2.0.0`。
 
 ### R4 立即同步三个实例共同底座
 
@@ -331,6 +331,10 @@ R3.1 前滚复验和独立 Calico 策略集群均已通过；schema 2 模板 rel
 4. 通过后才允许进入下一个实例。
 
 R4 全部完成前停止新业务功能开发。
+
+当前进度：Info 已完成源码差异分类、两套配对、隔离 KIND、严格 TLS 双身份、原生回滚/前滚和
+Calico 报文门禁，证据见 `architecture-v2/R4-info-result.md`。下一实例只能是 Knowledge；
+Research 仍不得修改。
 
 ### R5 实例 Backend 与数据库归并
 
@@ -397,10 +401,10 @@ R4 全部完成前停止新业务功能开发。
 
 R0 证据见 `architecture-v2/R0-baseline-result.md`；R1 证据见
 `architecture-v2/R1-gate-result.md`；R2 前置门禁见 `architecture-v2/R2-preflight-result.md`。
-Redis ACL 旧拓扑已恢复，R2 模板代码和 R3 Kubernetes/身份/回滚/策略门禁均已通过；R3.1 又对
-两前端规范 Backend 环境变量修正完成了连续完整复验。当前唯一模板源是 schema 2 release
-`architecture-v2-r3.1-20260808`，证据见
-`architecture-v2/R3.1-template-revalidation-result.md`。当前只允许进入 R4，严格按
-`Info -> Knowledge -> Research` 同步全部共同能力；每个实例必须完成差异分类、配对、身份、数据
-与回滚验证后才能进入下一个。R4 完成前不得开始 R5 数据归并、删除旧 Web Backend/数据库/
-Secret、晋级 `2.0.0` 或继续新业务开发。
+Redis ACL 旧拓扑已恢复，R2 模板代码和 R3 Kubernetes/身份/回滚/策略门禁均已通过；R3.2 又对
+Web 配对部署标识和 Admin/Web 构建代理入口完成了模板优先修正及连续完整复验。当前唯一模板源
+是 schema 2 release `architecture-v2-r3.2-20260808`，证据见
+`architecture-v2/R3.2-template-revalidation-result.md`。Info R4 已按真实候选镜像完成全部退出
+门禁，证据见 `architecture-v2/R4-info-result.md`；当前只允许继续 Knowledge R4。Research 必须
+等待 Knowledge 完成差异分类、配对、身份、数据与回滚验证后才能开始。R4 完成前不得开始 R5
+数据归并、删除旧 Web Backend/数据库/Secret、晋级 `2.0.0` 或继续新业务开发。

@@ -1,0 +1,950 @@
+{
+  "task": "architecture-v2-r4-component-sync",
+  "action": "apply",
+  "result": "passed",
+  "app": "info",
+  "component": "backend",
+  "base_revision": "69e634b",
+  "target_revision": "8997e9e9422fd5fefaff6ab3519bd0367075fdb0",
+  "instance_commit": "1805cb8f73e4a0f8ea44ef10f18005cb42c645aa",
+  "writes": 69,
+  "deletes": 7,
+  "prohibited_drift": [],
+  "prohibited_drift_count": 0,
+  "operations": [
+    {
+      "path": ".dockerignore",
+      "action": "already-current"
+    },
+    {
+      "path": ".gitignore",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "恢复模板根目录忽略规则"
+    },
+    {
+      "path": "CLAUDE.md",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步规范 Backend 仓库说明"
+    },
+    {
+      "path": "app/.dockerignore",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步生产镜像上下文规则"
+    },
+    {
+      "path": "app/.env.example",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "先采用双浏览器表面配置基线，随后显式回填 Info adapter 配置"
+    },
+    {
+      "path": "app/.gitignore",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步应用目录忽略规则"
+    },
+    {
+      "path": "app/.python-version",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步受支持 Python 运行时"
+    },
+    {
+      "path": "app/Dockerfile",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "采用非 root 多阶段统一 Backend 镜像"
+    },
+    {
+      "path": "app/alembic.ini",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "app/alembic/env.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "采用 migration principal 与规范 migration_url 装配"
+    },
+    {
+      "path": "app/alembic/script.py.mako",
+      "action": "already-current"
+    },
+    {
+      "path": "app/alembic/versions/20260726_0001_auth_identity.py",
+      "action": "skip-template",
+      "class": "temporary-compatibility",
+      "reason": "禁止把模板 migration root 拼入 Info 现有 Alembic 历史",
+      "owner": "R5-info-database",
+      "deadline": "R5"
+    },
+    {
+      "path": "app/alembic/versions/20260801_0002_outbox_primitives.py",
+      "action": "skip-template",
+      "class": "temporary-compatibility",
+      "reason": "统一 outbox migration 必须在 R5 以 Info 当前 head 为 down_revision 重建",
+      "owner": "R5-info-database",
+      "deadline": "R5"
+    },
+    {
+      "path": "app/alembic/versions/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/application/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/application/audit_context.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/application/dto/__init__.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/application/dto/interaction.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/application/dto/outbox.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/application/errors/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/application/errors/exceptions.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "采用稳定字符串错误码与 RFC 7807 基线"
+    },
+    {
+      "path": "app/app/application/ports/__init__.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/application/ports/outbox.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/application/ports/web_interaction.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/application/services/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/application/services/auth_service.py",
+      "action": "update-common"
+    },
+    {
+      "path": "app/app/application/services/web_interaction.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/bootstrap/__init__.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/bootstrap/api.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/bootstrap/migration.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/bootstrap/scheduler.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/bootstrap/worker.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/domain/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/domain/models/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/domain/repositories/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/domain/security/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/domain/security/principal.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/domain/services/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/external/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/external/downstream_service.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/infrastructure/logging/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/logging/logging.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/messaging/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/messaging/celery_producer.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "先同步通用 producer，再显式回填 Info 领域投递方法"
+    },
+    {
+      "path": "app/app/infrastructure/models/__init__.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "先同步通用 inbox/outbox 模型导出，再显式合并 Info 模型"
+    },
+    {
+      "path": "app/app/infrastructure/models/auth.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/models/base.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/models/outbox.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/infrastructure/repositories/__init__.py",
+      "action": "update-common"
+    },
+    {
+      "path": "app/app/infrastructure/repositories/outbox.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/infrastructure/security/__init__.py",
+      "action": "update-common"
+    },
+    {
+      "path": "app/app/infrastructure/security/oidc.py",
+      "action": "update-common"
+    },
+    {
+      "path": "app/app/infrastructure/security/service_identity.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/infrastructure/storage/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/storage/postgres.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/storage/redis.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/interfaces/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/interfaces/endpoints/__init__.py",
+      "action": "remove-obsolete-common"
+    },
+    {
+      "path": "app/app/interfaces/endpoints/auth_routes.py",
+      "action": "remove-obsolete-common"
+    },
+    {
+      "path": "app/app/interfaces/endpoints/routes.py",
+      "action": "resolve-target-deletion",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "旧聚合路由由 interfaces/http/routes 替代"
+    },
+    {
+      "path": "app/app/interfaces/endpoints/tasks_routes.py",
+      "action": "remove-obsolete-common"
+    },
+    {
+      "path": "app/app/interfaces/errors/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/interfaces/errors/exception_handlers.py",
+      "action": "update-common"
+    },
+    {
+      "path": "app/app/interfaces/http/__init__.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/admin/__init__.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/admin/auth.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/admin/diagnostics.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/auth_common.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/internal/__init__.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/middleware/__init__.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/middleware/auth.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/routes.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/web/__init__.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/web/auth.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/web/interactions.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/middleware/__init__.py",
+      "action": "remove-obsolete-common"
+    },
+    {
+      "path": "app/app/interfaces/middleware/auth.py",
+      "action": "resolve-target-deletion",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "旧单表面鉴权由双表面 middleware 替代"
+    },
+    {
+      "path": "app/app/interfaces/schemas/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/interfaces/schemas/base.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步 Python 3.12 泛型响应基线"
+    },
+    {
+      "path": "app/app/main.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "进程构造迁入 bootstrap.api，main 仅保留兼容导出"
+    },
+    {
+      "path": "app/app/tasks/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/tasks/ping.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/worker.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "先同步统一 Worker 基线，再显式注册 Info 领域任务"
+    },
+    {
+      "path": "app/core/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/core/config.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "先同步双表面安全配置，再显式回填 Info adapter 配置"
+    },
+    {
+      "path": "app/pyproject.toml",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "先同步规范包元数据与共享依赖，再显式回填 Info 可选 adapter 依赖"
+    },
+    {
+      "path": "app/scripts/__init__.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/scripts/pair_fixture.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/tests/test_auth_routes_security.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "共享鉴权测试以验收模板为准"
+    },
+    {
+      "path": "app/tests/test_auth_service.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "共享 AuthService 测试以验收模板为准"
+    },
+    {
+      "path": "app/tests/test_config_security.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "共享生产配置负向测试以验收模板为准"
+    },
+    {
+      "path": "app/tests/test_downstream_service.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/tests/test_interaction_consumer_vectors.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/tests/test_interaction_contract.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/tests/test_kernel_invariants.py",
+      "action": "update-common"
+    },
+    {
+      "path": "app/tests/test_oidc_security.py",
+      "action": "update-common"
+    },
+    {
+      "path": "app/tests/test_outbox_primitives.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/tests/test_service_identity.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "服务身份碰撞文件采用验收模板实现"
+    },
+    {
+      "path": "app/uv.lock",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "先同步模板锁文件，回填 Info 依赖后重新生成"
+    },
+    {
+      "path": "db-access-bootstrap/.gitignore",
+      "action": "already-current"
+    },
+    {
+      "path": "db-access-bootstrap/README.md",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-access-bootstrap/config/base.env.template",
+      "action": "already-current"
+    },
+    {
+      "path": "db-access-bootstrap/config/common.env",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-access-bootstrap/config/mongodb.external.env",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-access-bootstrap/config/mongodb.k8s.env",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-access-bootstrap/config/postgresql.external.env",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-access-bootstrap/config/postgresql.k8s.env",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-access-bootstrap/config/redis.external.env",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-access-bootstrap/config/redis.k8s.env",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-access-bootstrap/db-access-bootstrap.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-access-bootstrap/merge-and-generate-app-env.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-access-bootstrap/merge-to-app-env.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-access-bootstrap/setup-external-db-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-access-bootstrap/setup-k8s-db-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-access-bootstrap/teardown-external-db-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-access-bootstrap/teardown-k8s-db-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/README.md",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-provisioner/adapters/external.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/adapters/k8s.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/bin/dbctl",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/bin/init-service-provision-template.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/drivers/mongodb.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/drivers/postgresql.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/drivers/redis.sh",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-provisioner/lib/common.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/templates/db-access-bootstrap-template/README.md",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/templates/db-access-bootstrap-template/setup-external-db-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/templates/db-access-bootstrap-template/setup-k8s-db-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/templates/db-access-bootstrap-template/teardown-external-db-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/templates/db-access-bootstrap-template/teardown-k8s-db-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "docs/CELERY.md",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步单镜像多角色运行说明"
+    },
+    {
+      "path": "mybuild/Dockerfile",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步规范 Backend 构建入口"
+    },
+    {
+      "path": "mybuild/README.md",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步规范 Backend 镜像说明"
+    },
+    {
+      "path": "mybuild/build-image.sh",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步规范 Backend 构建脚本"
+    },
+    {
+      "path": "mybuild/build.conf",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步规范 Backend 镜像名称"
+    },
+    {
+      "path": "mybuild/harbor-cluster.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "mybuild/push-image.sh",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步规范 Backend 推送脚本"
+    },
+    {
+      "path": "mybuild/rebuild-and-run.sh",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步规范 Backend 本地运行脚本"
+    },
+    {
+      "path": "search-access-bootstrap/README.md",
+      "action": "already-current"
+    },
+    {
+      "path": "search-access-bootstrap/config/access.json",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "search-access-bootstrap/config/common.env",
+      "action": "already-current"
+    },
+    {
+      "path": "search-access-bootstrap/search-access-bootstrap.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "search-access-bootstrap/setup-k8s-search-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "search-access-bootstrap/teardown-k8s-search-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "storage-access-bootstrap/README.md",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "storage-access-bootstrap/config/access.json",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "storage-access-bootstrap/config/common.env",
+      "action": "already-current"
+    },
+    {
+      "path": "storage-access-bootstrap/setup-k8s-storage-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "storage-access-bootstrap/storage-access-bootstrap.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "storage-access-bootstrap/teardown-k8s-storage-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "app/alembic/versions/20260706_0001_info_spider_mvp.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/alembic/versions/20260707_0002_source_governance.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/alembic/versions/20260712_0003_auth_identity.py",
+      "action": "preserve-instance",
+      "class": "temporary-compatibility"
+    },
+    {
+      "path": "app/alembic/versions/20260714_0004_delivery_outbox.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/collectors/__init__.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/collectors/api.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/collectors/base.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/collectors/changedetection.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/collectors/external_results.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/collectors/playwright.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/collectors/registry.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/collectors/rss.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/collectors/scrapy.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/services/delivery_outbox.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/services/info_crawl_service.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/cli/__init__.py",
+      "action": "preserve-instance",
+      "class": "temporary-compatibility"
+    },
+    {
+      "path": "app/app/cli/drain_delivery_outbox.py",
+      "action": "preserve-instance",
+      "class": "temporary-compatibility"
+    },
+    {
+      "path": "app/app/infrastructure/external/knowledge_app.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/models/info.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/search/__init__.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/search/info_index.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/storage/object_storage.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/interfaces/endpoints/info_routes.py",
+      "action": "preserve-instance",
+      "class": "temporary-compatibility"
+    },
+    {
+      "path": "app/app/interfaces/schemas/info.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/tasks/crawl.py",
+      "action": "preserve-instance",
+      "class": "temporary-compatibility"
+    },
+    {
+      "path": "app/app/tasks/distribution.py",
+      "action": "preserve-instance",
+      "class": "temporary-compatibility"
+    },
+    {
+      "path": "app/app/tasks/search.py",
+      "action": "preserve-instance",
+      "class": "temporary-compatibility"
+    },
+    {
+      "path": "app/tests/test_collectors.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_database_config.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_delivery_outbox.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_distribution_helpers.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_document_relations.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_duplicate_detection.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_entity_links.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_object_storage.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_review_helpers.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_search_index.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_source_governance.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_summary_profile.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_upload_helpers.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_worker_config.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "db-access-bootstrap/.env.local.k8s.db",
+      "action": "remove-instance-obsolete"
+    },
+    {
+      "path": "docs/SPIDER_MVP.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    }
+  ]
+}

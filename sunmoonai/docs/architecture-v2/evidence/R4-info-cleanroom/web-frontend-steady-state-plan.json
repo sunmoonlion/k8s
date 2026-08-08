@@ -1,0 +1,417 @@
+{
+  "task": "architecture-v2-r4-component-sync",
+  "action": "plan",
+  "result": "passed",
+  "app": "info",
+  "component": "web-frontend",
+  "base_revision": "024dda1d0d06ecbbb72434c7e0203496390b065d",
+  "target_revision": "024dda1d0d06ecbbb72434c7e0203496390b065d",
+  "instance_commit": "39a01df7a80b8ec6c864ed28d305d5f82ac950a6",
+  "steady_state": true,
+  "writes": 0,
+  "deletes": 0,
+  "prohibited_drift": [],
+  "prohibited_drift_count": 0,
+  "operations": [
+    {
+      "path": ".dockerignore",
+      "action": "already-current"
+    },
+    {
+      "path": ".gitignore",
+      "action": "already-current"
+    },
+    {
+      "path": ".node-version",
+      "action": "already-current"
+    },
+    {
+      "path": ".nvmrc",
+      "action": "already-current"
+    },
+    {
+      "path": "CLAUDE.md",
+      "action": "already-current"
+    },
+    {
+      "path": "LICENSE",
+      "action": "already-current"
+    },
+    {
+      "path": "app/.env.example",
+      "action": "already-current"
+    },
+    {
+      "path": "app/.env.k8s",
+      "action": "already-current"
+    },
+    {
+      "path": "app/.gitignore",
+      "action": "already-current"
+    },
+    {
+      "path": "app/AGENTS.md",
+      "action": "already-current"
+    },
+    {
+      "path": "app/CLAUDE.md",
+      "action": "already-current"
+    },
+    {
+      "path": "app/README.md",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/(auth)/login/page.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/(dashboard)/dashboard/page.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/(dashboard)/toolkit/page.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/error.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/layout.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/loading.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/not-found.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/page.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/favicon.ico",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/global-error.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/globals.css",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/healthz/route.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/layout.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/not-found.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/page.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/robots.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/sitemap.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components.json",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/auth/logout-button.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/common/common-kernel.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/common/common-reference.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/platform/providers.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/platform/public-home.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/platform/reference-workspace.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/ui/button.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/contracts/auth.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/contracts/interaction.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/env/client.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/env/server-schema.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/env/server.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/eslint.config.mjs",
+      "action": "already-current"
+    },
+    {
+      "path": "app/i18n.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/i18n/navigation.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/i18n/routing.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/instrumentation.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/auth/browser-session.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/common/api-client.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/common/query.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/interaction/client.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/interaction/projection.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/interaction/use-run-projection.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/security/content-security-policy.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/security/response-headers.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/server/auth-session.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/utils.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/messages/en.json",
+      "action": "preserve-local",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/messages/zh-CN.json",
+      "action": "preserve-local",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/next.config.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/package.json",
+      "action": "already-current"
+    },
+    {
+      "path": "app/playwright.config.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/pnpm-lock.yaml",
+      "action": "already-current"
+    },
+    {
+      "path": "app/pnpm-workspace.yaml",
+      "action": "already-current"
+    },
+    {
+      "path": "app/postcss.config.mjs",
+      "action": "already-current"
+    },
+    {
+      "path": "app/prettier.config.mjs",
+      "action": "already-current"
+    },
+    {
+      "path": "app/proxy.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/public/file.svg",
+      "action": "already-current"
+    },
+    {
+      "path": "app/public/globe.svg",
+      "action": "already-current"
+    },
+    {
+      "path": "app/public/next.svg",
+      "action": "already-current"
+    },
+    {
+      "path": "app/public/vercel.svg",
+      "action": "already-current"
+    },
+    {
+      "path": "app/public/window.svg",
+      "action": "already-current"
+    },
+    {
+      "path": "app/scripts/check-i18n.mjs",
+      "action": "already-current"
+    },
+    {
+      "path": "app/scripts/pair-gateway.mjs",
+      "action": "already-current"
+    },
+    {
+      "path": "app/scripts/prepare-standalone.mjs",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/component/common-kernel.test.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/component/logout-button.test.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/component/public-home.test.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/e2e/rendering.e2e.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/browser-session.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/common-api-client.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/common-query.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/content-security-policy.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/env.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/interaction-client.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/interaction-consumer-vectors.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/run-projection.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/tracked-env-contract.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tsconfig.json",
+      "action": "already-current"
+    },
+    {
+      "path": "app/types/index.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/vitest.config.mts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/vitest.setup.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "mybuild/Dockerfile",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "mybuild/README.md",
+      "action": "already-current"
+    },
+    {
+      "path": "mybuild/build-image.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "mybuild/build.conf",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "mybuild/harbor-cluster.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "mybuild/push-image.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "mybuild/rebuild-and-run.sh",
+      "action": "already-current"
+    }
+  ]
+}

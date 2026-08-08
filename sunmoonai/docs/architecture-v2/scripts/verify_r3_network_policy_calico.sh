@@ -67,6 +67,9 @@ PY
   printf 'bundle app or namespace is absent: %s\n' "${BUNDLE}/release.json" >&2
   exit 2
 }
+TASK="${R3_POLICY_TASK:-architecture-v2-r3-network-policy}"
+BACKEND_DEPLOYMENT="${APP}-backend-api"
+BACKEND_SERVICE="${APP}-backend"
 
 cleanup() {
   local rc=$?
@@ -195,18 +198,18 @@ cat <<EOF | k apply -f - >/dev/null
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tpl-backend-api
+  name: ${BACKEND_DEPLOYMENT}
   namespace: ${NAMESPACE}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      sunmoonai.com/app: tpl
+      sunmoonai.com/app: ${APP}
       app.kubernetes.io/component: backend-api
   template:
     metadata:
       labels:
-        sunmoonai.com/app: tpl
+        sunmoonai.com/app: ${APP}
         app.kubernetes.io/component: backend-api
     spec:
       automountServiceAccountToken: false
@@ -227,16 +230,16 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: tpl-backend
+  name: ${BACKEND_SERVICE}
   namespace: ${NAMESPACE}
 spec:
   selector:
-    sunmoonai.com/app: tpl
+    sunmoonai.com/app: ${APP}
     app.kubernetes.io/component: backend-api
   ports:
     - {name: http, port: 8000, targetPort: http}
 EOF
-k rollout status deployment/tpl-backend-api -n "$NAMESPACE" --timeout=180s >/dev/null
+k rollout status "deployment/${BACKEND_DEPLOYMENT}" -n "$NAMESPACE" --timeout=180s >/dev/null
 
 probe() {
   local name="$1" labels="$2" expected="$3" phase=""
@@ -248,7 +251,7 @@ probe() {
     --labels="$labels" \
     --overrides='{"spec":{"automountServiceAccountToken":false}}' \
     --command -- sh -ec \
-    "timeout 12 wget -q -T 5 -O /dev/null http://tpl-backend:8000/" >/dev/null
+    "timeout 12 wget -q -T 5 -O /dev/null http://${BACKEND_SERVICE}:8000/" >/dev/null
   for _ in $(seq 1 30); do
     phase="$(k get pod "$name" -n "$NAMESPACE" -o jsonpath='{.status.phase}' 2>/dev/null || true)"
     [[ "$phase" == Succeeded || "$phase" == Failed ]] && break
@@ -263,8 +266,8 @@ probe() {
 }
 
 printf 'R3_POLICY_STAGE=packet_gate\n'
-probe r3-policy-internal 'sunmoonai.com/allow-tpl-internal=true' Succeeded
-probe r3-policy-frontend 'sunmoonai.com/app=tpl,app.kubernetes.io/component=admin-frontend' Succeeded
+probe r3-policy-internal "sunmoonai.com/allow-${APP}-internal=true" Succeeded
+probe r3-policy-frontend "sunmoonai.com/app=${APP},app.kubernetes.io/component=admin-frontend" Succeeded
 probe r3-policy-denied 'sunmoonai.com/r3-probe=denied' Failed
 
-printf '{"task":"architecture-v2-r3-network-policy","result":"passed","cni":"calico","calico_version":"%s","internal_to_backend":200,"frontend_to_backend":200,"unlabelled_to_backend":"denied","credentials_printed":false}\n' "$CALICO_VERSION"
+printf '{"task":"%s","result":"passed","cni":"calico","calico_version":"%s","internal_to_backend":200,"frontend_to_backend":200,"unlabelled_to_backend":"denied","credentials_printed":false}\n' "$TASK" "$CALICO_VERSION"

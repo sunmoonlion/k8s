@@ -57,5 +57,33 @@ class InstantiateTests(unittest.TestCase):
         )
 
 
+class ResolutionTests(unittest.TestCase):
+    def test_target_resolution_is_forced_during_initial_sync(self) -> None:
+        resolution = {"strategy": "target"}
+
+        self.assertTrue(
+            MODULE.resolution_is_forced(resolution, steady_state=False)
+        )
+
+    def test_target_resolution_is_not_reapplied_in_steady_state(self) -> None:
+        resolution = {"strategy": "target"}
+
+        self.assertFalse(
+            MODULE.resolution_is_forced(resolution, steady_state=True)
+        )
+
+    def test_local_and_merge_resolutions_remain_explicit_in_steady_state(self) -> None:
+        self.assertTrue(
+            MODULE.resolution_is_forced(
+                {"strategy": "local"}, steady_state=True
+            )
+        )
+        self.assertTrue(
+            MODULE.resolution_is_forced(
+                {"strategy": "merge"}, steady_state=True
+            )
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

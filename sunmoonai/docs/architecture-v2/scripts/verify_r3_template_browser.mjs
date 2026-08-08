@@ -19,6 +19,8 @@ const { chromium } = require(
 const kubeconfig = process.env.KUBECONFIG || `${process.env.HOME}/.kube/kind-config`
 const namespace = process.env.R3_NAMESPACE || 'tpl-architecture-v2-r3'
 const providerNamespace = process.env.R3_PROVIDER_NAMESPACE || 'app-platform-dev'
+const app = process.env.R3_APP || 'tpl'
+const task = process.env.R3_BROWSER_TASK || 'architecture-v2-r3-browser'
 const adminOrigin = process.env.R3_ADMIN_ORIGIN || 'https://tpl-admin-r3.sunmoonai.com:30443'
 const webOrigin = process.env.R3_WEB_ORIGIN || 'https://tpl-web-r3.sunmoonai.com:30443'
 const providerOrigin = process.env.R3_CASDOOR_ORIGIN || 'https://casdoor.sunmoonai.com:30443'
@@ -32,7 +34,7 @@ let browser
 let strictTlsHome
 
 function stage(value) {
-  process.stderr.write(`ARCH_V2_R3_BROWSER_STAGE=${value}\n`)
+  process.stderr.write(`ARCH_V2_BROWSER_STAGE=${value}\n`)
 }
 
 function kubectl(args) {
@@ -149,7 +151,7 @@ async function submitCasdoorLogin(page, identity, surface) {
   } catch (error) {
     let location = 'not-written'
     try {
-      location = `/tmp/architecture-v2-r3-${surface}-casdoor.png`
+      location = `/tmp/architecture-v2-${app}-${surface}-casdoor.png`
       await page.screenshot({ path: location, fullPage: true, timeout: 5000 })
     } catch {
       location = 'failed'
@@ -233,15 +235,15 @@ async function verifySurface({ surface, origin, loginLabel, heading, identity })
     me.status !== 200 ||
     me.body?.contract_version !== 1 ||
     me.body?.authenticated !== true ||
-    me.body?.user?.app !== 'tpl' ||
+    me.body?.user?.app !== app ||
     me.body?.user?.surface !== surface ||
     typeof me.body?.csrf_token !== 'string'
   ) {
     throw new Error(`${surface} authenticated identity contract is invalid`)
   }
   const cookies = await context.cookies(origin)
-  const expectedCookie = `sunmoonai_tpl_${surface}_sid`
-  const otherCookie = `sunmoonai_tpl_${surface === 'admin' ? 'web' : 'admin'}_sid`
+  const expectedCookie = `sunmoonai_${app}_${surface}_sid`
+  const otherCookie = `sunmoonai_${app}_${surface === 'admin' ? 'web' : 'admin'}_sid`
   const session = cookies.find((cookie) => cookie.name === expectedCookie)
   if (!session?.httpOnly || !session.secure || session.sameSite !== 'Lax') {
     throw new Error(`${surface} session cookie contract is incomplete`)
@@ -269,7 +271,7 @@ async function verifySurface({ surface, origin, loginLabel, heading, identity })
 
 async function main() {
   stage('deployment_preflight')
-  for (const name of ['tpl-backend-api', 'tpl-admin-frontend', 'tpl-web-frontend']) {
+  for (const name of [`${app}-backend-api`, `${app}-admin-frontend`, `${app}-web-frontend`]) {
     const deployment = JSON.parse(
       kubectl(['get', `deployment/${name}`, '-n', namespace, '-o', 'json']),
     )
@@ -322,7 +324,7 @@ async function main() {
   console.log(
     JSON.stringify(
       {
-        task: 'architecture-v2-r3-browser',
+        task,
         result: 'passed',
         strict_tls: true,
         provider_preflight: 200,

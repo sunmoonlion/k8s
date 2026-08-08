@@ -104,6 +104,23 @@ def classify(path: str, rules: list[dict[str, str]]) -> str | None:
     return rule["class"] if rule else None
 
 
+def resolution_is_forced(
+    resolution: dict[str, str] | None, *, steady_state: bool
+) -> bool:
+    """Force declared conflict resolution only during the base-to-target sync.
+
+    Once base and target are the same accepted template revision, classified
+    instance adaptations are authoritative instance-owned extensions.  A
+    repeated plan must preserve them rather than re-applying the one-time
+    target resolution and silently undoing the adapter layer.
+    """
+
+    return bool(
+        resolution
+        and not (steady_state and resolution.get("strategy") == "target")
+    )
+
+
 def operation_with_rule(
     path: str,
     action: str,
@@ -210,6 +227,7 @@ def main() -> int:
         base_files = revision_files(template, args.base_revision)
         target_files = revision_files(template, args.target_revision)
         local_files = instance_files(instance)
+        steady_state = args.base_revision == args.target_revision
         operations: list[dict[str, object]] = []
         writes: dict[str, tuple[bytes, str]] = {}
         deletes: set[str] = set()
@@ -235,7 +253,7 @@ def main() -> int:
                 continue
 
             resolution = matching_rule(path, resolutions)
-            if resolution:
+            if resolution_is_forced(resolution, steady_state=steady_state):
                 strategy = resolution["strategy"]
                 if strategy == "target":
                     if in_target:
@@ -357,6 +375,7 @@ def main() -> int:
             "base_revision": args.base_revision,
             "target_revision": args.target_revision,
             "instance_commit": actual_head,
+            "steady_state": steady_state,
             "writes": len(writes),
             "deletes": len(deletes),
             "prohibited_drift": sorted(set(prohibited)),

@@ -1,0 +1,56 @@
+{
+  "result": "valid",
+  "schema_version": 1,
+  "architecture": "app-platform-v2",
+  "app": "info",
+  "namespace": "info-architecture-v2-r4",
+  "release_id": "r4-info-001",
+  "images": {
+    "backend": "harbor.sunmoonai.com:30443/app-images/info-backend@sha256:bab29c3fc2795f41cd80a0a3da75df0e9761d9465360600a9810c679db50c19c",
+    "admin": "harbor.sunmoonai.com:30443/app-images/info-admin-frontend@sha256:defacc2f58584541561ada6ce13918efe4be41e9dd7ef21decd30299cd2f149d",
+    "web": "harbor.sunmoonai.com:30443/app-images/info-web-frontend@sha256:60f3f70a67630997cc3d0fe9884c166fd5023dac9eed81a3a03b22c5e5c66c52"
+  },
+  "origins": {
+    "admin": "https://info-admin-r4.sunmoonai.com:30443",
+    "web": "https://info-web-r4.sunmoonai.com:30443",
+    "casdoor": "https://casdoor.sunmoonai.com:30443"
+  },
+  "resources": [
+    "00-prerequisites.yaml",
+    "10-migration.yaml",
+    "20-runtime.yaml",
+    "30-network-policies.yaml",
+    "40-ingress.yaml"
+  ],
+  "sha256": {
+    "00-prerequisites.yaml": "a0f0b88f983cd9ae684c4a4bfc4dcf75118dd31d9d4af0ad0637b542f6b37519",
+    "10-migration.yaml": "462dea2b14143382894bbf644796dfb2552ebb2b55858a4a5959794ff4c21d4c",
+    "20-runtime.yaml": "e415358ceea1de6097fa020a00e404c945b67390b9e7b0bab6aab1bd2bd571e7",
+    "30-network-policies.yaml": "2673411eeff6e3c55d98177ba2723e23ab44c96cebf1df0986264d91851bc719",
+    "40-ingress.yaml": "500ab92961ea48c4b74bee835230b082f5e21fbfc09ced6155db1ee4385a4138"
+  },
+  "secret_name": "info-backend-runtime",
+  "secret_keys": [
+    "ADMIN_CASDOOR_CLIENT_SECRET",
+    "API_CELERY_BROKER_URL",
+    "API_DATABASE_URL",
+    "MIGRATION_DATABASE_URL",
+    "REDIS_PASSWORD",
+    "SCHEDULER_CELERY_BROKER_URL",
+    "SCHEDULER_DATABASE_URL",
+    "WEB_CASDOOR_CLIENT_SECRET",
+    "WORKER_CELERY_BROKER_URL",
+    "WORKER_DATABASE_URL"
+  ],
+  "optional_secret_keys": [
+    "WORKER_CELERY_RESULT_BACKEND",
+    "WORKER_DOWNSTREAM_CLIENT_SECRET"
+  ],
+  "dependencies": {
+    "image_pull_secret": "harbor-registry-secret",
+    "tls_secret": "info-r4-tls",
+    "casdoor_namespace": "app-platform-dev",
+    "ingress_namespace": "ingress-platform-dev"
+  },
+  "formal_release": false
+}

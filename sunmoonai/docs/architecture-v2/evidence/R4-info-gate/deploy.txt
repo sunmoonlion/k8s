@@ -1,0 +1,65 @@
+namespace/info-architecture-v2-r4 unchanged
+serviceaccount/info-backend-api unchanged
+serviceaccount/info-backend-worker unchanged
+serviceaccount/info-backend-scheduler unchanged
+serviceaccount/info-backend-migration unchanged
+serviceaccount/info-admin-frontend unchanged
+serviceaccount/info-web-frontend unchanged
+configmap/info-backend-config unchanged
+configmap/info-admin-frontend-config unchanged
+configmap/info-web-frontend-config unchanged
+service/info-backend unchanged
+service/info-admin-frontend unchanged
+service/info-web-frontend unchanged
+secret/info-backend-runtime created
+networkpolicy.networking.k8s.io/info-default-deny created
+networkpolicy.networking.k8s.io/info-dns-egress created
+networkpolicy.networking.k8s.io/info-frontend-ingress created
+networkpolicy.networking.k8s.io/info-frontend-egress created
+networkpolicy.networking.k8s.io/info-backend-ingress created
+networkpolicy.networking.k8s.io/info-backend-runtime-egress created
+networkpolicy.networking.k8s.io/info-backend-migration-egress created
+job.batch/info-backend-migration-r4-info-001 created
+job.batch/info-backend-migration-r4-info-001 condition met
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 20260706_0001, info spider mvp
+INFO  [alembic.runtime.migration] Running upgrade 20260706_0001 -> 20260707_0002, source governance metadata
+INFO  [alembic.runtime.migration] Running upgrade 20260707_0002 -> 20260712_0003, auth identity boundary
+INFO  [alembic.runtime.migration] Running upgrade 20260712_0003 -> 20260714_0004, durable delivery outbox
+deployment.apps/info-backend-api created
+poddisruptionbudget.policy/info-backend-api created
+horizontalpodautoscaler.autoscaling/info-backend-api created
+deployment.apps/info-backend-worker created
+poddisruptionbudget.policy/info-backend-worker created
+horizontalpodautoscaler.autoscaling/info-backend-worker created
+deployment.apps/info-backend-scheduler created
+deployment.apps/info-admin-frontend created
+poddisruptionbudget.policy/info-admin-frontend created
+horizontalpodautoscaler.autoscaling/info-admin-frontend created
+deployment.apps/info-web-frontend created
+poddisruptionbudget.policy/info-web-frontend created
+horizontalpodautoscaler.autoscaling/info-web-frontend created
+ingressroute.traefik.io/info-admin created
+ingressroute.traefik.io/info-web created
+Waiting for deployment "info-backend-api" rollout to finish: 0 of 2 updated replicas are available...
+Waiting for deployment "info-backend-api" rollout to finish: 0 of 2 updated replicas are available...
+Waiting for deployment "info-backend-api" rollout to finish: 1 of 2 updated replicas are available...
+Waiting for deployment "info-backend-api" rollout to finish: 1 of 2 updated replicas are available...
+deployment "info-backend-api" successfully rolled out
+Waiting for deployment "info-backend-worker" rollout to finish: 0 of 1 updated replicas are available...
+deployment "info-backend-worker" successfully rolled out
+deployment "info-backend-scheduler" successfully rolled out
+deployment "info-admin-frontend" successfully rolled out
+Waiting for deployment "info-web-frontend" rollout to finish: 1 of 2 updated replicas are available...
+deployment "info-web-frontend" successfully rolled out
+job.batch "info-backend-migration-r4-info-001" deleted from info-architecture-v2-r4 namespace
+{
+  "task": "architecture-v2-deploy",
+  "result": "passed",
+  "app": "info",
+  "namespace": "info-architecture-v2-r4",
+  "release_id": "r4-info-001",
+  "migration_job_cleaned": true,
+  "credentials_printed": false
+}
