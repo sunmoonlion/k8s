@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: ${NAMESPACE}
-  labels:
-    app: app-platform
-    component: tools-admin-frontend
-    environment: ${ENVIRONMENT}
-    managed-by: deploy-script
