@@ -61,7 +61,7 @@ DEBIAN_SECURITY_MIRROR="${DEBIAN_SECURITY_MIRROR:-http://mirrors.tuna.tsinghua.e
 NPM_REGISTRY="${NPM_REGISTRY:-https://registry.npmmirror.com}"
 SOURCE_ROOT="${SOURCE_ROOT:-${HOME}}"
 
-APPS=(${APPS:-info research investment tools knowledge})
+APPS=(${APPS:-info research knowledge})
 COMPONENTS=(${COMPONENTS:-admin-backend admin-frontend web-backend web-frontend})
 
 log() {
