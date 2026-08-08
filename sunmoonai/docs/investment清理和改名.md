@@ -1,8 +1,8 @@
 # Investment 应用清理与重建迁移方案
 
-> 状态：规划中，暂不执行
+> 状态：旧 investment 清理已完成；`research-app` → `investment-app` 重构暂缓。
 >
-> 前置条件：新版 `tpl-app` 完成、验证并冻结后，才允许启动本方案。
+> 当前前置条件：新版 `tpl-app` 完成、验证并冻结后，才允许启动后续重构与迁移。
 
 ## 1. 目标
 
@@ -28,20 +28,29 @@ nodebullworker-investment-web-backend
 - GitHub 为主 remote，Gitee 为备份/迁移 remote。
 - GitHub 与 Gitee 的 `architecture-v2` 必须在执行前保持同一 SHA。
 - 现有 `research-app` 在迁移验收完成前必须保留，作为业务来源和回滚基线。
-- 现有旧 `investment-app` 在清理前必须完成归档。
+- 旧 `investment-app` 的本地代码、KIND 运行资源、PVC/PV 和 Harbor 镜像仓库已完成清理；Gitee `investment-app` 源码仓库按计划保留，供未来新仓库覆盖使用。
+- 清理操作仅针对 WSL 本机和当前 KIND 集群；不再主动维护或同步 aly-ecs。
 - 本方案不允许在新版 `tpl-app` 冻结前执行。
 
-## 3. 不在本阶段执行的事项
+## 3. 当前仍暂不执行的事项
 
-在模板完成前，禁止执行以下操作：
+在模板完成并冻结前，禁止执行以下后续操作：
 
-- 删除 `investment-app` 本地目录；
-- 删除 `k8s` 中 investment 相关资源；
-- 删除旧 investment 数据库、PVC、对象存储或 Redis 数据；
 - 删除 `research-app`；
 - 覆盖 Gitee `investment-app` 仓库；
 - 强制推送新的 investment 分支；
 - 修改生产或共享环境中的域名和数据绑定。
+
+已清理工作的临时归档目录 `/tmp/investment-app-cleanup-20260808` 在确认无回滚需求前保留，不作为新应用代码来源。
+
+## 清理结果（已完成）
+
+- WSL 本机旧 investment 工作区已移出，临时归档位于 `/tmp/investment-app-cleanup-20260808`。
+- `k8s/sunmoonai/app-platform/investment-app` 及其旧部署配置已移除；平台默认应用列表已收敛为 `info`、`knowledge`、`research`。
+- KIND 中旧 investment 的 Deployment、Service、IngressRoute、worker、配置、凭据、任务、RBAC、PVC 和释放后的 PV 已清理。
+- Harbor 中四个旧 investment 镜像仓库已删除；Harbor 后台配额统计若未立即下降，需等待 registry 垃圾回收完成后再复核。
+- Gitee `investment-app` 仓库未删除、未覆盖、未强推；待新模板应用验收完成后再按本方案执行覆盖。
+- `research-app` 保持不变，继续作为业务迁移来源和回滚基线。
 
 ## 4. 阶段 A：执行前冻结与备份
 
@@ -306,3 +315,20 @@ Gitee 覆盖并验证成功后：
 - 迁移没有回滚方案；
 - 未明确当前阶段的唯一工作分支。
 
+## aly-ecs 同步策略
+
+从本方案更新起，WSL 与 aly-ecs 不再做主动双向同步：
+
+- 日常开发、提交和推送只在当前工作机的 `architecture-v2` 完成。
+- 不再要求 Codex 主动 SSH 到 aly-ecs、复制工作区或执行镜像/代码同步。
+- aly-ecs 需要使用最新代码时，在 aly-ecs 上按需执行 `git pull --ff-only`；先确认当前分支和远程，再拉取对应分支。
+- 不使用 `reset --hard`、强推或覆盖 aly-ecs 未备份的本地改动。
+
+示例（在 aly-ecs 上按需执行）：
+
+```bash
+cd /home/zym/k8s
+git fetch origin --prune
+git switch architecture-v2
+git pull --ff-only origin architecture-v2
+```
