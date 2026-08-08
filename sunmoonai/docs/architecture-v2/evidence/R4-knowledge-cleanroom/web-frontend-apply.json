@@ -1,0 +1,465 @@
+{
+  "task": "architecture-v2-r4-component-sync",
+  "action": "apply",
+  "result": "passed",
+  "app": "knowledge",
+  "component": "web-frontend",
+  "base_revision": "1db9377",
+  "target_revision": "e56965af03ac583c30ef648fe11e85700af0f2b9",
+  "instance_commit": "f2a774772a83843215b95c80c1ccb1a32d49f3e7",
+  "steady_state": false,
+  "writes": 31,
+  "deletes": 0,
+  "prohibited_drift": [],
+  "prohibited_drift_count": 0,
+  "operations": [
+    {
+      "path": ".dockerignore",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步 Next 构建上下文规则"
+    },
+    {
+      "path": ".gitignore",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步 Playwright 产物忽略规则"
+    },
+    {
+      "path": ".node-version",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步 Node 24.18 运行时"
+    },
+    {
+      "path": ".nvmrc",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步 Node 24.18 运行时"
+    },
+    {
+      "path": "CLAUDE.md",
+      "action": "already-current"
+    },
+    {
+      "path": "LICENSE",
+      "action": "already-current"
+    },
+    {
+      "path": "app/.env.example",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "采用统一 BACKEND_INTERNAL_URL 开发契约"
+    },
+    {
+      "path": "app/.env.k8s",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "采用统一 Backend K8s 运行契约"
+    },
+    {
+      "path": "app/.gitignore",
+      "action": "already-current"
+    },
+    {
+      "path": "app/AGENTS.md",
+      "action": "already-current"
+    },
+    {
+      "path": "app/CLAUDE.md",
+      "action": "already-current"
+    },
+    {
+      "path": "app/README.md",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步 Next Web 与规范 Backend 配对说明"
+    },
+    {
+      "path": "app/app/[locale]/(auth)/login/page.tsx",
+      "action": "update-common"
+    },
+    {
+      "path": "app/app/[locale]/(dashboard)/dashboard/page.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/(dashboard)/toolkit/page.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/error.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/layout.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/loading.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/not-found.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/page.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/favicon.ico",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/global-error.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/globals.css",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/healthz/route.ts",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/layout.tsx",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步 Knowledge Web 根 metadata"
+    },
+    {
+      "path": "app/app/not-found.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/page.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/robots.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/sitemap.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components.json",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/auth/logout-button.tsx",
+      "action": "update-common"
+    },
+    {
+      "path": "app/components/common/common-kernel.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/common/common-reference.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/platform/providers.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/platform/public-home.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/platform/reference-workspace.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/ui/button.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/contracts/auth.ts",
+      "action": "update-common"
+    },
+    {
+      "path": "app/contracts/interaction.ts",
+      "action": "update-common"
+    },
+    {
+      "path": "app/env/client.ts",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步 Knowledge Web 客户端默认标识"
+    },
+    {
+      "path": "app/env/server-schema.ts",
+      "action": "update-common"
+    },
+    {
+      "path": "app/env/server.ts",
+      "action": "update-common"
+    },
+    {
+      "path": "app/eslint.config.mjs",
+      "action": "already-current"
+    },
+    {
+      "path": "app/i18n.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/i18n/navigation.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/i18n/routing.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/instrumentation.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/auth/browser-session.ts",
+      "action": "update-common"
+    },
+    {
+      "path": "app/lib/common/api-client.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/common/query.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/interaction/client.ts",
+      "action": "update-common"
+    },
+    {
+      "path": "app/lib/interaction/projection.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/interaction/use-run-projection.ts",
+      "action": "update-common"
+    },
+    {
+      "path": "app/lib/security/content-security-policy.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/security/response-headers.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/server/auth-session.ts",
+      "action": "update-common"
+    },
+    {
+      "path": "app/lib/utils.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/messages/en.json",
+      "action": "preserve-local",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/messages/zh-CN.json",
+      "action": "preserve-local",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/next.config.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/package.json",
+      "action": "already-current"
+    },
+    {
+      "path": "app/playwright.config.ts",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "配对测试改用同一个 FastAPI Backend fixture"
+    },
+    {
+      "path": "app/pnpm-lock.yaml",
+      "action": "already-current"
+    },
+    {
+      "path": "app/pnpm-workspace.yaml",
+      "action": "already-current"
+    },
+    {
+      "path": "app/postcss.config.mjs",
+      "action": "already-current"
+    },
+    {
+      "path": "app/prettier.config.mjs",
+      "action": "already-current"
+    },
+    {
+      "path": "app/proxy.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/public/file.svg",
+      "action": "already-current"
+    },
+    {
+      "path": "app/public/globe.svg",
+      "action": "already-current"
+    },
+    {
+      "path": "app/public/next.svg",
+      "action": "already-current"
+    },
+    {
+      "path": "app/public/vercel.svg",
+      "action": "already-current"
+    },
+    {
+      "path": "app/public/window.svg",
+      "action": "already-current"
+    },
+    {
+      "path": "app/scripts/check-i18n.mjs",
+      "action": "already-current"
+    },
+    {
+      "path": "app/scripts/pair-gateway.mjs",
+      "action": "already-current"
+    },
+    {
+      "path": "app/scripts/prepare-standalone.mjs",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/component/common-kernel.test.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/component/logout-button.test.tsx",
+      "action": "update-common"
+    },
+    {
+      "path": "app/tests/component/public-home.test.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/e2e/rendering.e2e.ts",
+      "action": "update-common"
+    },
+    {
+      "path": "app/tests/unit/browser-session.test.ts",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步 Web auth surface session contract"
+    },
+    {
+      "path": "app/tests/unit/common-api-client.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/common-query.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/content-security-policy.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/env.test.ts",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步统一 Backend 环境负向测试"
+    },
+    {
+      "path": "app/tests/unit/interaction-client.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/interaction-consumer-vectors.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/run-projection.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/tracked-env-contract.test.ts",
+      "action": "add-common"
+    },
+    {
+      "path": "app/tsconfig.json",
+      "action": "already-current"
+    },
+    {
+      "path": "app/types/index.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/vitest.config.mts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/vitest.setup.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "mybuild/Dockerfile",
+      "action": "merge-common",
+      "class": "deployment-config"
+    },
+    {
+      "path": "mybuild/README.md",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步 Knowledge Web 镜像说明"
+    },
+    {
+      "path": "mybuild/build-image.sh",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步 Knowledge Web 构建脚本"
+    },
+    {
+      "path": "mybuild/build.conf",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "mybuild/harbor-cluster.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "mybuild/push-image.sh",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步 Knowledge Web 推送脚本"
+    },
+    {
+      "path": "mybuild/rebuild-and-run.sh",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步 Knowledge Web 本地运行脚本"
+    }
+  ]
+}

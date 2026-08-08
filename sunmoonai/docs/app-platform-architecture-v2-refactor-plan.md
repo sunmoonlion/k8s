@@ -1,6 +1,6 @@
 # App Platform Architecture v2 重构执行基线
 
-状态：`ACTIVE / R0-R3.2 COMPLETE / R4 INFO COMPLETE / KNOWLEDGE NEXT`
+状态：`ACTIVE / R0-R3.2 COMPLETE / R4 INFO+KNOWLEDGE COMPLETE / RESEARCH NEXT`
 
 日期：2026-08-01
 
@@ -332,9 +332,9 @@ R3.2 前滚复验和独立 Calico 策略集群均已通过；schema 2 模板 rel
 
 R4 全部完成前停止新业务功能开发。
 
-当前进度：Info 已完成源码差异分类、两套配对、隔离 KIND、严格 TLS 双身份、原生回滚/前滚和
-Calico 报文门禁，证据见 `architecture-v2/R4-info-result.md`。下一实例只能是 Knowledge；
-Research 仍不得修改。
+当前进度：Info 与 Knowledge 均已完成源码差异分类、两套配对、隔离 KIND、严格 TLS 双身份、
+原生回滚/前滚和 Calico 报文门禁，证据见 `architecture-v2/R4-info-result.md` 与
+`architecture-v2/R4-knowledge-result.md`。下一实例只能是 Research。
 
 ### R5 实例 Backend 与数据库归并
 
@@ -404,7 +404,7 @@ R0 证据见 `architecture-v2/R0-baseline-result.md`；R1 证据见
 Redis ACL 旧拓扑已恢复，R2 模板代码和 R3 Kubernetes/身份/回滚/策略门禁均已通过；R3.2 又对
 Web 配对部署标识和 Admin/Web 构建代理入口完成了模板优先修正及连续完整复验。当前唯一模板源
 是 schema 2 release `architecture-v2-r3.2-20260808`，证据见
-`architecture-v2/R3.2-template-revalidation-result.md`。Info R4 已按真实候选镜像完成全部退出
-门禁，证据见 `architecture-v2/R4-info-result.md`；当前只允许继续 Knowledge R4。Research 必须
-等待 Knowledge 完成差异分类、配对、身份、数据与回滚验证后才能开始。R4 完成前不得开始 R5
+`architecture-v2/R3.2-template-revalidation-result.md`。Info 与 Knowledge R4 已按真实候选镜像
+完成全部退出门禁，证据见 `architecture-v2/R4-info-result.md` 与
+`architecture-v2/R4-knowledge-result.md`；当前只允许继续 Research R4。R4 完成前不得开始 R5
 数据归并、删除旧 Web Backend/数据库/Secret、晋级 `2.0.0` 或继续新业务开发。

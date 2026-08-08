@@ -16,6 +16,8 @@ BUNDLE=""
 R2_IMAGE=""
 WEB_ORIGIN="${R3_WEB_ORIGIN:-https://tpl-web-r3.sunmoonai.com:30443}"
 CA_CERT="${R3_CA_CERT:-$HOME/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/ca.crt}"
+R2_BACKEND_ENV_NAME="${R3_R2_BACKEND_ENV_NAME:-}"
+R2_BACKEND_ENV_VALUE="${R3_R2_BACKEND_ENV_VALUE:-http://${APP}-backend:8000}"
 
 usage() {
   printf 'usage: %s --bundle DIR --r2-image REPOSITORY@sha256:DIGEST\n' "$0" >&2
@@ -46,6 +48,10 @@ done
   printf 'R2 image must use an immutable digest\n' >&2
   exit 2
 }
+if [[ -n "$R2_BACKEND_ENV_NAME" && ! "$R2_BACKEND_ENV_NAME" =~ ^[A-Z][A-Z0-9_]*$ ]]; then
+  printf 'invalid legacy backend environment variable name: %s\n' "$R2_BACKEND_ENV_NAME" >&2
+  exit 2
+fi
 [[ -f "$CA_CERT" ]] || {
   printf 'strict TLS CA certificate is absent: %s\n' "$CA_CERT" >&2
   exit 1
@@ -87,19 +93,22 @@ PY
 }
 
 printf 'R3_ROLLBACK_STAGE=seed_r2_revision\n'
-k patch deployment "$deployment" -n "$NAMESPACE" --type=strategic -p "$(python3 - "$R2_IMAGE" <<'PY'
+k patch deployment "$deployment" -n "$NAMESPACE" --type=strategic -p "$(python3 - "$R2_IMAGE" "$R2_BACKEND_ENV_NAME" "$R2_BACKEND_ENV_VALUE" <<'PY'
 import json, sys
-image = sys.argv[1]
+image, legacy_env_name, legacy_env_value = sys.argv[1:4]
+container = {
+    "name": "web",
+    "image": image,
+    "startupProbe": {"httpGet": {"path": "/zh-CN"}},
+    "readinessProbe": {"httpGet": {"path": "/zh-CN"}},
+    "livenessProbe": {"httpGet": {"path": "/zh-CN"}},
+}
+if legacy_env_name:
+    container["env"] = [{"name": legacy_env_name, "value": legacy_env_value}]
 print(json.dumps({
     "spec": {"template": {
         "metadata": {"annotations": {"sunmoonai.com/release-id": "r2-rollback"}},
-        "spec": {"containers": [{
-            "name": "web",
-            "image": image,
-            "startupProbe": {"httpGet": {"path": "/zh-CN"}},
-            "readinessProbe": {"httpGet": {"path": "/zh-CN"}},
-            "livenessProbe": {"httpGet": {"path": "/zh-CN"}},
-        }]},
+        "spec": {"containers": [container]},
     }}
 }, separators=(",", ":")))
 PY
@@ -121,6 +130,12 @@ strict_get /zh-CN
 printf 'R3_ROLLBACK_STAGE=forward_reconcile\n'
 k apply -f "${BUNDLE}/20-runtime.yaml" >/dev/null
 k rollout status "deployment/${deployment}" -n "$NAMESPACE" --timeout=300s >/dev/null
+if [[ -n "$R2_BACKEND_ENV_NAME" ]]; then
+  # The alias exists only to boot the accepted legacy revision. Remove it from
+  # the final Architecture v2 Pod template after the native undo proof.
+  k set env "deployment/${deployment}" -n "$NAMESPACE" "${R2_BACKEND_ENV_NAME}-" >/dev/null
+  k rollout status "deployment/${deployment}" -n "$NAMESPACE" --timeout=300s >/dev/null
+fi
 assert_deployment "$candidate_image" /healthz
 strict_get /healthz
 

@@ -1,0 +1,17 @@
+{
+  "namespace": "app-platform-dev",
+  "deployments": [
+    {
+      "name": "celeryworker-knowledge-admin-backend",
+      "image": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-backend:1.0.1",
+      "replicas": 1,
+      "ready": 1
+    },
+    {
+      "name": "knowledge-admin-backend",
+      "image": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-backend:p0-004-retrieval-r2-20260715",
+      "replicas": 1,
+      "ready": 1
+    }
+  ]
+}

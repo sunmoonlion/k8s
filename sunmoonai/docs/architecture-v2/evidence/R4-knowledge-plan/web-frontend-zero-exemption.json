@@ -1,0 +1,454 @@
+{
+  "task": "architecture-v2-r4-component-sync",
+  "action": "plan",
+  "result": "needs-resolution",
+  "app": "knowledge",
+  "component": "web-frontend",
+  "base_revision": "1db9377",
+  "target_revision": "e56965af03ac583c30ef648fe11e85700af0f2b9",
+  "instance_commit": "f2a774772a83843215b95c80c1ccb1a32d49f3e7",
+  "steady_state": false,
+  "writes": 14,
+  "deletes": 0,
+  "prohibited_drift": [
+    ".dockerignore",
+    ".gitignore",
+    ".node-version",
+    ".nvmrc",
+    "app/.env.example",
+    "app/.env.k8s",
+    "app/README.md",
+    "app/app/layout.tsx",
+    "app/env/client.ts",
+    "app/messages/en.json",
+    "app/messages/zh-CN.json",
+    "app/playwright.config.ts",
+    "app/tests/unit/browser-session.test.ts",
+    "app/tests/unit/env.test.ts",
+    "mybuild/Dockerfile",
+    "mybuild/README.md",
+    "mybuild/build-image.sh",
+    "mybuild/build.conf",
+    "mybuild/push-image.sh",
+    "mybuild/rebuild-and-run.sh"
+  ],
+  "prohibited_drift_count": 20,
+  "operations": [
+    {
+      "path": ".dockerignore",
+      "action": "unclassified-local-change",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": ".gitignore",
+      "action": "unclassified-local-change",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": ".node-version",
+      "action": "missing-common",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": ".nvmrc",
+      "action": "unclassified-local-change",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": "CLAUDE.md",
+      "action": "already-current"
+    },
+    {
+      "path": "LICENSE",
+      "action": "already-current"
+    },
+    {
+      "path": "app/.env.example",
+      "action": "unclassified-merged-change",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": "app/.env.k8s",
+      "action": "merge-conflict",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": "app/.gitignore",
+      "action": "already-current"
+    },
+    {
+      "path": "app/AGENTS.md",
+      "action": "already-current"
+    },
+    {
+      "path": "app/CLAUDE.md",
+      "action": "already-current"
+    },
+    {
+      "path": "app/README.md",
+      "action": "unclassified-merged-change",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": "app/app/[locale]/(auth)/login/page.tsx",
+      "action": "update-common"
+    },
+    {
+      "path": "app/app/[locale]/(dashboard)/dashboard/page.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/(dashboard)/toolkit/page.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/error.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/layout.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/loading.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/not-found.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/[locale]/page.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/favicon.ico",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/global-error.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/globals.css",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/healthz/route.ts",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/layout.tsx",
+      "action": "unclassified-local-change",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": "app/app/not-found.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/page.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/robots.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/sitemap.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components.json",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/auth/logout-button.tsx",
+      "action": "update-common"
+    },
+    {
+      "path": "app/components/common/common-kernel.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/common/common-reference.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/platform/providers.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/platform/public-home.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/platform/reference-workspace.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/components/ui/button.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/contracts/auth.ts",
+      "action": "update-common"
+    },
+    {
+      "path": "app/contracts/interaction.ts",
+      "action": "update-common"
+    },
+    {
+      "path": "app/env/client.ts",
+      "action": "unclassified-local-change",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": "app/env/server-schema.ts",
+      "action": "update-common"
+    },
+    {
+      "path": "app/env/server.ts",
+      "action": "update-common"
+    },
+    {
+      "path": "app/eslint.config.mjs",
+      "action": "already-current"
+    },
+    {
+      "path": "app/i18n.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/i18n/navigation.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/i18n/routing.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/instrumentation.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/auth/browser-session.ts",
+      "action": "update-common"
+    },
+    {
+      "path": "app/lib/common/api-client.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/common/query.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/interaction/client.ts",
+      "action": "update-common"
+    },
+    {
+      "path": "app/lib/interaction/projection.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/interaction/use-run-projection.ts",
+      "action": "update-common"
+    },
+    {
+      "path": "app/lib/security/content-security-policy.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/security/response-headers.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/lib/server/auth-session.ts",
+      "action": "update-common"
+    },
+    {
+      "path": "app/lib/utils.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/messages/en.json",
+      "action": "unclassified-local-change",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": "app/messages/zh-CN.json",
+      "action": "unclassified-local-change",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": "app/next.config.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/package.json",
+      "action": "already-current"
+    },
+    {
+      "path": "app/playwright.config.ts",
+      "action": "merge-conflict",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": "app/pnpm-lock.yaml",
+      "action": "already-current"
+    },
+    {
+      "path": "app/pnpm-workspace.yaml",
+      "action": "already-current"
+    },
+    {
+      "path": "app/postcss.config.mjs",
+      "action": "already-current"
+    },
+    {
+      "path": "app/prettier.config.mjs",
+      "action": "already-current"
+    },
+    {
+      "path": "app/proxy.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/public/file.svg",
+      "action": "already-current"
+    },
+    {
+      "path": "app/public/globe.svg",
+      "action": "already-current"
+    },
+    {
+      "path": "app/public/next.svg",
+      "action": "already-current"
+    },
+    {
+      "path": "app/public/vercel.svg",
+      "action": "already-current"
+    },
+    {
+      "path": "app/public/window.svg",
+      "action": "already-current"
+    },
+    {
+      "path": "app/scripts/check-i18n.mjs",
+      "action": "already-current"
+    },
+    {
+      "path": "app/scripts/pair-gateway.mjs",
+      "action": "already-current"
+    },
+    {
+      "path": "app/scripts/prepare-standalone.mjs",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/component/common-kernel.test.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/component/logout-button.test.tsx",
+      "action": "update-common"
+    },
+    {
+      "path": "app/tests/component/public-home.test.tsx",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/e2e/rendering.e2e.ts",
+      "action": "update-common"
+    },
+    {
+      "path": "app/tests/unit/browser-session.test.ts",
+      "action": "merge-conflict",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": "app/tests/unit/common-api-client.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/common-query.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/content-security-policy.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/env.test.ts",
+      "action": "merge-conflict",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": "app/tests/unit/interaction-client.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/interaction-consumer-vectors.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/run-projection.test.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/tests/unit/tracked-env-contract.test.ts",
+      "action": "add-common"
+    },
+    {
+      "path": "app/tsconfig.json",
+      "action": "already-current"
+    },
+    {
+      "path": "app/types/index.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/vitest.config.mts",
+      "action": "already-current"
+    },
+    {
+      "path": "app/vitest.setup.ts",
+      "action": "already-current"
+    },
+    {
+      "path": "mybuild/Dockerfile",
+      "action": "unclassified-merged-change",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": "mybuild/README.md",
+      "action": "unclassified-local-change",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": "mybuild/build-image.sh",
+      "action": "unclassified-merged-change",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": "mybuild/build.conf",
+      "action": "unclassified-local-change",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": "mybuild/harbor-cluster.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "mybuild/push-image.sh",
+      "action": "unclassified-local-change",
+      "class": "prohibited-drift"
+    },
+    {
+      "path": "mybuild/rebuild-and-run.sh",
+      "action": "unclassified-local-change",
+      "class": "prohibited-drift"
+    }
+  ]
+}

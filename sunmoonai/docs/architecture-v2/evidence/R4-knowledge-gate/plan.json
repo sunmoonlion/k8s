@@ -1,0 +1,56 @@
+{
+  "result": "valid",
+  "schema_version": 1,
+  "architecture": "app-platform-v2",
+  "app": "knowledge",
+  "namespace": "knowledge-architecture-v2-r4",
+  "release_id": "r4-knowledge-002",
+  "images": {
+    "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:a5db9fab89bd131992c205d61294c27d2511be14bf6d50cfb9cb5bce75e8367a",
+    "admin": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:07130d859a89b18842ce043178b5477bbb67a3ab183aadfe18baed039bd0b9c2",
+    "web": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:7bdd329bf24e479d1c8f859ef6ed909958bc1479b7296b3b212c2293c7601148"
+  },
+  "origins": {
+    "admin": "https://knowledge-admin-r4.sunmoonai.com:30443",
+    "web": "https://knowledge-web-r4.sunmoonai.com:30443",
+    "casdoor": "https://casdoor.sunmoonai.com:30443"
+  },
+  "resources": [
+    "00-prerequisites.yaml",
+    "10-migration.yaml",
+    "20-runtime.yaml",
+    "30-network-policies.yaml",
+    "40-ingress.yaml"
+  ],
+  "sha256": {
+    "00-prerequisites.yaml": "838d925dfe726643ea71ac1ae0edd2b17b4e3a9cd6f1b70f2cc0ecfb9e529a7f",
+    "10-migration.yaml": "0f14e5fdda108caf6b74ef5b8b634113fafe141f59939df489b62b6e06f338d2",
+    "20-runtime.yaml": "e49a7873f1a528de9114fce849cc20129596b858f9d04fbad139cb0d3d2a542d",
+    "30-network-policies.yaml": "627459ac89a4bd29cc1cecf1e89db7dfb7b619e558b8e38b6e160e0f6ab9c25b",
+    "40-ingress.yaml": "72c63b737f7e94922a39dfa99ef476d93762f01dc64a9ad23d1dc54c765a4215"
+  },
+  "secret_name": "knowledge-backend-runtime",
+  "secret_keys": [
+    "ADMIN_CASDOOR_CLIENT_SECRET",
+    "API_CELERY_BROKER_URL",
+    "API_DATABASE_URL",
+    "MIGRATION_DATABASE_URL",
+    "REDIS_PASSWORD",
+    "SCHEDULER_CELERY_BROKER_URL",
+    "SCHEDULER_DATABASE_URL",
+    "WEB_CASDOOR_CLIENT_SECRET",
+    "WORKER_CELERY_BROKER_URL",
+    "WORKER_DATABASE_URL"
+  ],
+  "optional_secret_keys": [
+    "WORKER_CELERY_RESULT_BACKEND",
+    "WORKER_DOWNSTREAM_CLIENT_SECRET"
+  ],
+  "dependencies": {
+    "image_pull_secret": "harbor-registry-secret",
+    "tls_secret": "knowledge-r4-tls",
+    "casdoor_namespace": "app-platform-dev",
+    "ingress_namespace": "ingress-platform-dev"
+  },
+  "formal_release": false
+}

@@ -1,0 +1,4 @@
+namespace_absent=true
+identity_secret_absent=true
+policy_cluster_absent=true
+preexisting_topology_unchanged=true
