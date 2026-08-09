@@ -157,6 +157,25 @@ OOMKilled。修复没有做 Investment 临时补丁，而是进入模板 `7f2942
 门禁退出后已确认隔离 namespace、临时身份 Secret 和临时 Calico 集群均无残留；旧 Research
 运行拓扑未被门禁用作写入目标。
 
+### 8.1 R4 后源码拓扑收口
+
+R4 门禁通过后又发现父仓仍跟踪旧四组件时代的独立 Celery/NodeBull Worker、v1
+`k8s-scaffold`、手工 dev-to-prod 工具和实例化 `init.sh`；统一 Backend 的数据库、搜索、对象存储
+接入声明也仍使用 `research-admin-backend` 基础设施身份。这些内容不影响已完成的隔离门禁，但会
+让维护者误判活动架构。
+
+2026-08-09 已完成以下收口：
+
+- `investment-backend` 提交 `40d09b6`：接入声明统一为 `investment-app` /
+  `investment-backend`，仓库内开发口令改为不可用占位符，并增加自动回归门禁；
+- `investment-app` 提交 `6230079`：只保留三个活动子模块，删除独立 Worker、Node BFF、v1
+  脚手架和旧四组件初始化/发布说明；
+- K8s `research-app` 目录显式标记为 `LEGACY-ROLLBACK-ONLY`，只允许 R7 前恢复旧基线；
+- 历史文档中的 Research 名称保留为来源证据，不得重新解释为当前运行配置。
+
+该收口不重建 R4 镜像、不修改 R4 digest 锁，也不提前执行 R5 数据迁移。后续任何模板同步都必须
+同时通过三子模块拓扑门禁和 Backend 基础设施身份门禁。
+
 ## 9. 发布与归档
 
 只有完整门禁通过后才允许：
