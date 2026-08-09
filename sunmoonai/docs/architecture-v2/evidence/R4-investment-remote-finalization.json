@@ -35,6 +35,13 @@
   },
   "github_visibility": "private",
   "research_remotes_preserved": true,
+  "research_github_archives": {
+    "research-app": true,
+    "research-admin-backend": true,
+    "research-admin-frontend": true,
+    "research-web-backend": true,
+    "research-web-frontend": true
+  },
   "legacy_gitee_master_rewritten": false,
   "credentials_printed": false
 }

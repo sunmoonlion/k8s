@@ -28,6 +28,7 @@ Celery 在容器中继承节点 CPU 数，默认启动 12 个 prefork 子进程�
 - Web：`investment-web-frontend@sha256:d3ac86bdea887ed3be4ab2b61a8928bdf23086e20137c02e0ec2ca520ae51a0a`
 
 GitHub 四个正式仓均已创建为私有仓，且本地、GitHub、Gitee 的 `architecture-v2` SHA 一致。
+五个旧 Research GitHub 仓已标记为可恢复的只读归档；Gitee 归档仓和所有运行资源继续保留。
 Gitee Backend 仍由旧仓名 `investment-admin-backend` 承载候选分支；由于当前无 Gitee 仓库管理 API
 凭据，服务器端改名为 `investment-backend` 是唯一受控外部操作。该别名不影响源码、镜像、K8s
 身份或 GitHub 正式仓名，且旧 `master` 未被改写。

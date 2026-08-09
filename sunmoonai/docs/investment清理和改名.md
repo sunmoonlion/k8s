@@ -171,7 +171,8 @@ OOMKilled。修复没有做 Investment 临时补丁，而是进入模板 `7f2942
 晋级。
 
 当前远端收口状态：GitHub 已创建四个私有正式仓，父仓 `.gitmodules` 已指向 GitHub；四仓本地、
-GitHub、Gitee 的 `architecture-v2` SHA 均一致。Gitee Backend 因当前没有仓库管理 API 凭据，
+GitHub、Gitee 的 `architecture-v2` SHA 均一致；五个旧 Research GitHub 仓已标记为只读归档。
+Gitee Backend 因当前没有仓库管理 API 凭据，
 暂时继续由 `investment-admin-backend` 旧仓名承载候选分支，旧 `master` 未改写。服务器端改名为
 `investment-backend` 是受控外部操作，不得通过创建第二份历史或强推 `master` 规避。
 
