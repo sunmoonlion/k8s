@@ -1,0 +1,1062 @@
+{
+  "schema_version": 2,
+  "app": "investment",
+  "components": {
+    "backend": {
+      "substitutions": [
+        {
+          "from": "tpl-admin-backend",
+          "to": "investment-backend"
+        },
+        {
+          "from": "tpl-web-backend",
+          "to": "investment-backend"
+        },
+        {
+          "from": "tpl-backend",
+          "to": "investment-backend"
+        },
+        {
+          "from": "tpl-admin-frontend",
+          "to": "investment-admin-frontend"
+        },
+        {
+          "from": "tpl-web-frontend",
+          "to": "investment-web-frontend"
+        },
+        {
+          "from": "sunmoonai-tpl",
+          "to": "sunmoonai-investment"
+        },
+        {
+          "from": "sunmoonai_tpl",
+          "to": "sunmoonai_investment"
+        },
+        {
+          "from": "tpl:admin",
+          "to": "investment:admin"
+        },
+        {
+          "from": "tpl-admin-v2",
+          "to": "investment-admin-v2"
+        },
+        {
+          "from": "tpl-web-v2",
+          "to": "investment-web-v2"
+        },
+        {
+          "from": "tpl.default",
+          "to": "investment.default"
+        },
+        {
+          "from": "tpl_admin",
+          "to": "investment_admin"
+        },
+        {
+          "from": "tpl-producer",
+          "to": "investment-producer"
+        },
+        {
+          "from": "tpl-worker",
+          "to": "investment-worker"
+        },
+        {
+          "from": "tpl_audit_context",
+          "to": "investment_audit_context"
+        },
+        {
+          "from": "require_tpl_admin",
+          "to": "require_investment_admin"
+        },
+        {
+          "glob": "app/core/config.py",
+          "from": "postgresql+asyncpg://tpl:tpl@localhost:5432/tpl",
+          "to": "postgresql+asyncpg://investment:investment@localhost:5432/investment"
+        },
+        {
+          "glob": "app/.env.example",
+          "from": "postgresql://tpl:change-me@localhost:5432/tpl",
+          "to": "postgresql://investment:change-me@localhost:5432/investment"
+        },
+        {
+          "glob": "app/app/bootstrap/api.py",
+          "from": "title=\"tpl Backend\"",
+          "to": "title=\"Investment Backend\""
+        },
+        {
+          "glob": "app/core/config.py",
+          "from": "app_slug: str = \"tpl\"",
+          "to": "app_slug: str = \"investment\""
+        },
+        {
+          "glob": "app/.env.example",
+          "from": "APP_SLUG=tpl",
+          "to": "APP_SLUG=investment"
+        },
+        {
+          "glob": "app/scripts/pair_fixture.py",
+          "from": "app=\"tpl\"",
+          "to": "app=\"investment\""
+        },
+        {
+          "glob": "app/tests/test_*.py",
+          "from": "app=\"tpl\"",
+          "to": "app=\"investment\""
+        }
+      ],
+      "classifications": [
+        {
+          "glob": "app/.env.example",
+          "class": "deployment-config"
+        },
+        {
+          "glob": "app/alembic/versions/20260708_0001_agent_phase0.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/alembic/versions/20260712_0002_auth_identity.py",
+          "class": "temporary-compatibility",
+          "owner": "R5-investment-database",
+          "deadline": "R5",
+          "reason": "Investment 当前规范 Alembic 历史在 R5 归并前必须保持原样"
+        },
+        {
+          "glob": "app/alembic/versions/20260729_0003_agent_pilot.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/application/agent/**",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/application/errors/exceptions.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/domain/agent/**",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/infrastructure/agent/**",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/infrastructure/external/knowledge_retrieval.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/infrastructure/external/pilot_llm.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/infrastructure/graph/**",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/infrastructure/messaging/celery_producer.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/infrastructure/models/__init__.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/infrastructure/security/pilot_service_auth.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/interfaces/endpoints/agent_routes.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/interfaces/endpoints/pilot_runtime_routes.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/interfaces/endpoints/tasks_routes.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/interfaces/endpoints/routes.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/interfaces/schemas/pilot_runtime.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/tasks/agent_graph.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/tasks/pilot_agent_graph.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/worker.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/core/config.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/pyproject.toml",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/scripts/agent_golden.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/scripts/run_agent_golden.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/scripts/run_execution_identity_spike.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/scripts/run_runtime_selection_*.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/scripts/runtime_selection_*",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/scripts/validate_agent_phase0.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/scripts/validate_deployed_agent_*.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/tests/golden/**",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/tests/test_agent_*.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/tests/test_event_sink_live_delta.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/tests/test_execution_identity_spike.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/tests/test_first_m1_graph.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/tests/test_graph_runtime_service.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/tests/test_knowledge_retrieval_contract.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/tests/test_pilot_*.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/tests/test_run_logging.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/tests/test_runtime_selection_spike.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/tests/test_session_lock.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/tests/test_side_effect_service.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/tests/test_tool_result_handlers.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/tests/test_worker_config.py",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/uv.lock",
+          "class": "deployment-config"
+        },
+        {
+          "glob": "app/alembic.ini",
+          "class": "deployment-config"
+        },
+        {
+          "glob": "db-access-bootstrap/**",
+          "class": "deployment-config"
+        },
+        {
+          "glob": "db-provisioner/**",
+          "class": "deployment-config"
+        },
+        {
+          "glob": "search-access-bootstrap/**",
+          "class": "deployment-config"
+        },
+        {
+          "glob": "storage-access-bootstrap/**",
+          "class": "deployment-config"
+        },
+        {
+          "glob": "docs/adr/**",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "docs/mooc-manus-v4-*.md",
+          "class": "temporary-compatibility",
+          "owner": "R7-investment-archive",
+          "deadline": "R7",
+          "reason": "保留 Research Agent 历史交接资料直至 Investment 正式晋级"
+        },
+        {
+          "glob": "mybuild/harbor-cluster.sh",
+          "class": "deployment-config"
+        },
+      {
+        "glob": "app/app/domain/security/__init__.py",
+        "class": "domain-extension"
+      },
+      {
+        "glob": "app/alembic/versions/20260809_0004_outbox_primitives.py",
+        "class": "domain-extension"
+      },
+      {
+        "glob": "app/app/application/dto/interaction.py",
+        "class": "domain-extension"
+      },
+      {
+        "glob": "app/app/application/dto/pilot_runtime.py",
+        "class": "domain-extension"
+      },
+      {
+        "glob": "app/app/application/ports/web_interaction.py",
+        "class": "domain-extension"
+      },
+      {
+        "glob": "app/app/application/services/web_interaction.py",
+        "class": "domain-extension"
+      },
+      {
+        "glob": "app/app/interfaces/http/middleware/auth.py",
+        "class": "domain-extension"
+      },
+      {
+        "glob": "app/app/interfaces/http/routes.py",
+        "class": "domain-extension"
+      },
+      {
+        "glob": "app/app/interfaces/http/web/interactions.py",
+        "class": "domain-extension"
+      },
+      {
+        "glob": "app/scripts/pair_fixture.py",
+        "class": "domain-extension"
+      },
+      {
+        "glob": "app/tests/test_config_security.py",
+        "class": "deployment-config"
+      },
+      {
+        "glob": "app/tests/test_downstream_service.py",
+        "class": "domain-extension"
+      },
+      {
+        "glob": "app/tests/test_interaction_contract.py",
+        "class": "domain-extension"
+      },
+      {
+        "glob": "app/tests/test_kernel_invariants.py",
+        "class": "domain-extension"
+      },
+      {
+        "glob": "app/tests/test_service_identity.py",
+        "class": "deployment-config"
+      }
+      ],
+      "skip_template": [
+        {
+          "glob": "app/alembic/versions/20260726_0001_auth_identity.py",
+          "class": "temporary-compatibility",
+          "owner": "R5-investment-database",
+          "deadline": "R5",
+          "reason": "禁止把模板 migration root 拼入 Investment 现有 Alembic 历史"
+        },
+        {
+          "glob": "app/alembic/versions/20260801_0002_outbox_primitives.py",
+          "class": "temporary-compatibility",
+          "owner": "R5-investment-database",
+          "deadline": "R5",
+          "reason": "统一 outbox migration 必须在 R5 以 Investment 当前 head 为 down_revision 重建"
+        }
+      ],
+      "resolutions": [
+        {
+          "glob": ".gitignore",
+          "strategy": "target",
+          "reason": "恢复模板根目录忽略规则"
+        },
+        {
+          "glob": "CLAUDE.md",
+          "strategy": "target",
+          "reason": "同步规范 Backend 仓库说明"
+        },
+        {
+          "glob": "app/.dockerignore",
+          "strategy": "target",
+          "reason": "同步生产镜像上下文规则"
+        },
+        {
+          "glob": "app/.env.example",
+          "strategy": "target",
+          "reason": "先采用双浏览器表面配置基线，随后显式回填 Investment adapter 配置"
+        },
+        {
+          "glob": "app/.gitignore",
+          "strategy": "target",
+          "reason": "同步应用目录忽略规则"
+        },
+        {
+          "glob": "app/.python-version",
+          "strategy": "target",
+          "reason": "同步受支持 Python 运行时"
+        },
+        {
+          "glob": "app/Dockerfile",
+          "strategy": "target",
+          "reason": "采用非 root 多阶段统一 Backend 镜像"
+        },
+        {
+          "glob": "app/alembic/env.py",
+          "strategy": "target",
+          "reason": "采用 migration principal 与规范 migration_url 装配"
+        },
+        {
+          "glob": "app/app/application/audit_context.py",
+          "strategy": "target",
+          "reason": "采用模板统一审计上下文"
+        },
+        {
+          "glob": "app/app/application/errors/exceptions.py",
+          "strategy": "target",
+          "reason": "采用 R3.2 共同基线，apply 后显式回填并测试 Investment Agent 扩展"
+        },
+        {
+          "glob": "app/app/infrastructure/messaging/celery_producer.py",
+          "strategy": "merge",
+          "reason": "三方无冲突合并模板共同能力与 Investment Agent 领域扩展；真实冲突继续阻断"
+        },
+        {
+          "glob": "app/app/infrastructure/models/__init__.py",
+          "strategy": "merge",
+          "reason": "三方无冲突合并模板共同能力与 Investment Agent 领域扩展；真实冲突继续阻断"
+        },
+        {
+          "glob": "app/app/infrastructure/security/__init__.py",
+          "strategy": "target",
+          "reason": "同步统一安全模块导出并保留独立 Investment service_auth 模块"
+        },
+        {
+          "glob": "app/app/infrastructure/security/oidc.py",
+          "strategy": "target",
+          "reason": "采用双浏览器表面及严格 workload token 验证实现"
+        },
+        {
+          "glob": "app/app/interfaces/endpoints/routes.py",
+          "strategy": "merge",
+          "reason": "三方无冲突合并模板共同能力与 Investment Agent 领域扩展；真实冲突继续阻断"
+        },
+        {
+          "glob": "app/app/interfaces/middleware/auth.py",
+          "strategy": "target",
+          "reason": "旧单表面鉴权由双表面 middleware 替代"
+        },
+        {
+          "glob": "app/app/interfaces/schemas/base.py",
+          "strategy": "target",
+          "reason": "同步 Python 3.12 泛型响应基线"
+        },
+        {
+          "glob": "app/app/worker.py",
+          "strategy": "merge",
+          "reason": "三方无冲突合并模板共同能力与 Investment Agent 领域扩展；真实冲突继续阻断"
+        },
+        {
+          "glob": "app/core/config.py",
+          "strategy": "target",
+          "reason": "采用 R3.2 共同基线，apply 后显式回填并测试 Investment Agent 扩展"
+        },
+        {
+          "glob": "app/pyproject.toml",
+          "strategy": "target",
+          "reason": "采用 R3.2 共同基线，apply 后显式回填并测试 Investment Agent 扩展"
+        },
+        {
+          "glob": "app/tests/test_auth_routes_security.py",
+          "strategy": "target",
+          "reason": "共享鉴权测试以验收模板为准"
+        },
+        {
+          "glob": "app/tests/test_auth_service.py",
+          "strategy": "target",
+          "reason": "共享 AuthService 测试以验收模板为准"
+        },
+        {
+          "glob": "app/tests/test_config_security.py",
+          "strategy": "target",
+          "reason": "共享生产配置负向测试以验收模板为准"
+        },
+        {
+          "glob": "app/uv.lock",
+          "strategy": "target",
+          "reason": "采用 R3.2 共同基线，apply 后显式回填并测试 Investment Agent 扩展"
+        },
+        {
+          "glob": "docs/CELERY.md",
+          "strategy": "target",
+          "reason": "同步单镜像多角色运行说明"
+        },
+        {
+          "glob": "mybuild/Dockerfile",
+          "strategy": "target",
+          "reason": "同步规范 Backend 构建入口"
+        },
+        {
+          "glob": "mybuild/README.md",
+          "strategy": "target",
+          "reason": "同步规范 Backend 镜像说明"
+        },
+        {
+          "glob": "mybuild/build-image.sh",
+          "strategy": "target",
+          "reason": "同步规范 Backend 构建脚本"
+        },
+        {
+          "glob": "mybuild/build.conf",
+          "strategy": "target",
+          "reason": "同步规范 Backend 镜像名称"
+        },
+        {
+          "glob": "mybuild/push-image.sh",
+          "strategy": "target",
+          "reason": "同步规范 Backend 推送脚本"
+        },
+        {
+          "glob": "mybuild/rebuild-and-run.sh",
+          "strategy": "target",
+          "reason": "同步规范 Backend 本地运行脚本"
+        },
+        {
+          "glob": "app/app/main.py",
+          "strategy": "target",
+          "reason": "采用 bootstrap.api 进程构造；Agent 路由在统一 HTTP 聚合器显式挂载"
+        },
+        {
+          "glob": "app/tests/test_oidc_security.py",
+          "strategy": "target",
+          "reason": "共享双浏览器 OIDC 安全测试以验收模板为准"
+        }
+      ],
+      "remove": [
+        "db-access-bootstrap/.env.local.k8s.db"
+      ]
+    },
+    "admin-frontend": {
+      "substitutions": [
+        {
+          "from": "tpl-admin-frontend",
+          "to": "investment-admin-frontend"
+        },
+        {
+          "from": "tpl-admin-backend",
+          "to": "investment-backend"
+        },
+        {
+          "from": "tpl-backend",
+          "to": "investment-backend"
+        },
+        {
+          "from": "tpl-admin.sunmoonai.com",
+          "to": "investment-admin.sunmoonai.com"
+        },
+        {
+          "from": "sunmoonai_tpl_admin",
+          "to": "sunmoonai_investment_admin"
+        },
+        {
+          "glob": "app/.env*",
+          "from": "NEXT_PUBLIC_APP_NAME=tpl-admin",
+          "to": "NEXT_PUBLIC_APP_NAME=investment-admin"
+        },
+        {
+          "glob": "app/.env*",
+          "from": "AUTH_APP=tpl",
+          "to": "AUTH_APP=investment"
+        },
+        {
+          "glob": "app/env/client.ts",
+          "from": "default('tpl-admin')",
+          "to": "default('investment-admin')"
+        },
+        {
+          "glob": "app/env/server-schema.ts",
+          "from": "allowLocalDefaults ? 'tpl' : undefined",
+          "to": "allowLocalDefaults ? 'investment' : undefined"
+        },
+        {
+          "glob": "app/playwright.config.ts",
+          "from": "AUTH_APP: 'tpl'",
+          "to": "AUTH_APP: 'investment'"
+        },
+        {
+          "glob": "app/tests/unit/browser-session.test.ts",
+          "from": "app: 'tpl'",
+          "to": "app: 'investment'"
+        },
+        {
+          "glob": "app/tests/unit/browser-session.test.ts",
+          "from": "expectedApp: 'tpl'",
+          "to": "expectedApp: 'investment'"
+        },
+        {
+          "glob": "app/tests/unit/env.test.ts",
+          "from": "AUTH_APP: 'tpl'",
+          "to": "AUTH_APP: 'investment'"
+        },
+        {
+          "glob": "app/tests/unit/env.test.ts",
+          "from": ").AUTH_APP).toBe('tpl')",
+          "to": ").AUTH_APP).toBe('investment')"
+        },
+        {
+          "glob": "app/tests/unit/env.test.ts",
+          "from": "NEXT_PUBLIC_APP_NAME: 'tpl'",
+          "to": "NEXT_PUBLIC_APP_NAME: 'investment'"
+        }
+      ],
+      "classifications": [
+        {
+          "glob": "app/app/*/(dashboard)/research/**",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/app/*/(dashboard)/investment/**",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/components/research/**",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/components/investment/**",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/lib/navigation.ts",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/messages/*.json",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/tests/unit/navigation.test.ts",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "mybuild/build.conf",
+          "class": "deployment-config"
+        },
+      {
+        "glob": "app/package.json",
+        "class": "deployment-config"
+      },
+      {
+        "glob": "app/README.md",
+        "class": "deployment-config"
+      },
+      {
+        "glob": "app/app/layout.tsx",
+        "class": "deployment-config"
+      },
+      {
+        "glob": "app/components/admin/app-shell.tsx",
+        "class": "deployment-config"
+      },
+      {
+        "glob": "app/components/platform/public-home.tsx",
+        "class": "deployment-config"
+      },
+      {
+        "glob": "app/contracts/auth.ts",
+        "class": "deployment-config"
+      },
+      {
+        "glob": "app/env/server-schema.ts",
+        "class": "deployment-config"
+      },
+      {
+        "glob": "app/lib/auth/browser-session.ts",
+        "class": "deployment-config"
+      },
+      {
+        "glob": "app/playwright.config.ts",
+        "class": "deployment-config"
+      }
+      ],
+      "skip_template": [],
+      "resolutions": [
+        {
+          "glob": "app/.env.example",
+          "strategy": "target",
+          "reason": "采用统一 BACKEND_INTERNAL_URL 开发契约"
+        },
+        {
+          "glob": "app/.env.k8s",
+          "strategy": "target",
+          "reason": "采用统一 Backend K8s 运行契约"
+        },
+        {
+          "glob": "app/README.md",
+          "strategy": "target",
+          "reason": "同步 Next Admin 与规范 Backend 配对说明"
+        },
+        {
+          "glob": "app/env/client.ts",
+          "strategy": "target",
+          "reason": "同步 Investment Admin 客户端默认标识"
+        },
+        {
+          "glob": "app/env/server-schema.ts",
+          "strategy": "target",
+          "reason": "采用统一 BACKEND_INTERNAL_URL 服务端 schema"
+        },
+        {
+          "glob": "app/playwright.config.ts",
+          "strategy": "target",
+          "reason": "配对测试改用同一个 FastAPI Backend fixture"
+        },
+        {
+          "glob": "app/scripts/admin-pair-fixture.mjs",
+          "strategy": "target",
+          "reason": "删除失真的独立 Node fixture"
+        },
+        {
+          "glob": "app/tests/e2e/rendering.e2e.ts",
+          "strategy": "target",
+          "reason": "同步独立 Admin cookie 与配对向量"
+        },
+        {
+          "glob": "app/tests/unit/browser-session.test.ts",
+          "strategy": "target",
+          "reason": "同步 Admin auth surface session contract"
+        },
+        {
+          "glob": "app/tests/unit/env.test.ts",
+          "strategy": "target",
+          "reason": "同步统一 Backend 环境负向测试"
+        },
+        {
+          "glob": "docs/next-admin-capability-matrix.md",
+          "strategy": "target",
+          "reason": "同步验收后的 Next Admin 能力矩阵"
+        },
+        {
+          "glob": "mybuild/Dockerfile",
+          "strategy": "target",
+          "reason": "同步 Next standalone 构建契约"
+        },
+        {
+          "glob": "mybuild/README.md",
+          "strategy": "target",
+          "reason": "同步 Investment Admin 镜像说明"
+        },
+        {
+          "glob": "mybuild/build-image.sh",
+          "strategy": "target",
+          "reason": "同步 Investment Admin 构建脚本"
+        },
+        {
+          "glob": "mybuild/push-image.sh",
+          "strategy": "target",
+          "reason": "同步 Investment Admin 推送脚本"
+        },
+        {
+          "glob": "mybuild/rebuild-and-run.sh",
+          "strategy": "target",
+          "reason": "同步 Investment Admin 本地运行脚本"
+        }
+      ],
+      "remove": [
+        "app/playwright-report/index.html",
+        "mybuild/nginx.conf"
+      ]
+    },
+    "web-frontend": {
+      "substitutions": [
+        {
+          "from": "tpl-web-frontend",
+          "to": "investment-web-frontend"
+        },
+        {
+          "from": "tpl-web-backend",
+          "to": "investment-backend"
+        },
+        {
+          "from": "tpl-backend",
+          "to": "investment-backend"
+        },
+        {
+          "from": "tpl.sunmoonai.com",
+          "to": "investment.sunmoonai.com"
+        },
+        {
+          "from": "sunmoonai_tpl_web",
+          "to": "sunmoonai_investment_web"
+        },
+        {
+          "glob": "app/.env*",
+          "from": "NEXT_PUBLIC_APP_NAME=tpl",
+          "to": "NEXT_PUBLIC_APP_NAME=investment"
+        },
+        {
+          "glob": "app/.env*",
+          "from": "AUTH_APP=tpl",
+          "to": "AUTH_APP=investment"
+        },
+        {
+          "glob": "app/app/layout.tsx",
+          "from": "'tpl App'",
+          "to": "'investment App'"
+        },
+        {
+          "glob": "app/app/layout.tsx",
+          "from": "'tpl web application'",
+          "to": "'investment web application'"
+        },
+        {
+          "glob": "app/env/client.ts",
+          "from": "default('tpl')",
+          "to": "default('investment')"
+        },
+        {
+          "glob": "app/env/server-schema.ts",
+          "from": "allowLocalDefaults ? 'tpl' : undefined",
+          "to": "allowLocalDefaults ? 'investment' : undefined"
+        },
+        {
+          "glob": "app/playwright.config.ts",
+          "from": "AUTH_APP: 'tpl'",
+          "to": "AUTH_APP: 'investment'"
+        },
+        {
+          "glob": "app/tests/unit/browser-session.test.ts",
+          "from": "app: 'tpl'",
+          "to": "app: 'investment'"
+        },
+        {
+          "glob": "app/tests/unit/browser-session.test.ts",
+          "from": "expectedApp: 'tpl'",
+          "to": "expectedApp: 'investment'"
+        },
+        {
+          "glob": "app/tests/unit/env.test.ts",
+          "from": "AUTH_APP: 'tpl'",
+          "to": "AUTH_APP: 'investment'"
+        },
+        {
+          "glob": "app/tests/unit/env.test.ts",
+          "from": ").AUTH_APP).toBe('tpl')",
+          "to": ").AUTH_APP).toBe('investment')"
+        },
+        {
+          "glob": "app/tests/unit/env.test.ts",
+          "from": "NEXT_PUBLIC_APP_NAME: 'tpl'",
+          "to": "NEXT_PUBLIC_APP_NAME: 'investment'"
+        }
+      ],
+      "classifications": [
+        {
+          "glob": "app/components/research/**",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/components/investment/**",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/messages/*.json",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "mybuild/build.conf",
+          "class": "deployment-config"
+        },
+        {
+          "glob": "mybuild/Dockerfile",
+          "class": "deployment-config"
+        },
+        {
+          "glob": "app/app/*/(dashboard)/dashboard/page.tsx",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/contracts/interaction.ts",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/lib/interaction/client.ts",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/lib/interaction/use-run-projection.ts",
+          "class": "domain-extension"
+        },
+        {
+          "glob": "app/package.json",
+          "class": "deployment-config"
+        },
+      {
+        "glob": "app/tests/unit/interaction-client.test.ts",
+        "class": "domain-extension"
+      },
+      {
+        "glob": "app/README.md",
+        "class": "deployment-config"
+      },
+      {
+        "glob": "app/components/platform/public-home.tsx",
+        "class": "deployment-config"
+      },
+      {
+        "glob": "app/contracts/auth.ts",
+        "class": "deployment-config"
+      },
+      {
+        "glob": "app/env/server-schema.ts",
+        "class": "deployment-config"
+      },
+      {
+        "glob": "app/lib/auth/browser-session.ts",
+        "class": "deployment-config"
+      },
+      {
+        "glob": "app/playwright.config.ts",
+        "class": "deployment-config"
+      },
+      {
+        "glob": "app/tests/e2e/rendering.e2e.ts",
+        "class": "domain-extension"
+      }
+      ],
+      "skip_template": [],
+      "resolutions": [
+        {
+          "glob": ".dockerignore",
+          "strategy": "target",
+          "reason": "同步 Next 构建上下文规则"
+        },
+        {
+          "glob": ".gitignore",
+          "strategy": "target",
+          "reason": "同步 Playwright 产物忽略规则"
+        },
+        {
+          "glob": ".node-version",
+          "strategy": "target",
+          "reason": "同步 Node 24.18 运行时"
+        },
+        {
+          "glob": ".nvmrc",
+          "strategy": "target",
+          "reason": "同步 Node 24.18 运行时"
+        },
+        {
+          "glob": "app/.env.example",
+          "strategy": "target",
+          "reason": "采用统一 BACKEND_INTERNAL_URL 开发契约"
+        },
+        {
+          "glob": "app/.env.k8s",
+          "strategy": "target",
+          "reason": "采用统一 Backend K8s 运行契约"
+        },
+        {
+          "glob": "app/README.md",
+          "strategy": "target",
+          "reason": "同步 Next Web 与规范 Backend 配对说明"
+        },
+        {
+          "glob": "app/app/layout.tsx",
+          "strategy": "target",
+          "reason": "同步 Investment Web 根 metadata"
+        },
+        {
+          "glob": "app/env/client.ts",
+          "strategy": "target",
+          "reason": "同步 Investment Web 客户端默认标识"
+        },
+        {
+          "glob": "app/playwright.config.ts",
+          "strategy": "target",
+          "reason": "配对测试改用同一个 FastAPI Backend fixture"
+        },
+        {
+          "glob": "app/tests/unit/browser-session.test.ts",
+          "strategy": "target",
+          "reason": "同步 Web auth surface session contract"
+        },
+        {
+          "glob": "app/tests/unit/env.test.ts",
+          "strategy": "target",
+          "reason": "同步统一 Backend 环境负向测试"
+        },
+        {
+          "glob": "mybuild/README.md",
+          "strategy": "target",
+          "reason": "同步 Investment Web 镜像说明"
+        },
+        {
+          "glob": "mybuild/build-image.sh",
+          "strategy": "target",
+          "reason": "同步 Investment Web 构建脚本"
+        },
+        {
+          "glob": "mybuild/push-image.sh",
+          "strategy": "target",
+          "reason": "同步 Investment Web 推送脚本"
+        },
+        {
+          "glob": "mybuild/rebuild-and-run.sh",
+          "strategy": "target",
+          "reason": "同步 Investment Web 本地运行脚本"
+        },
+        {
+          "glob": "CLAUDE.md",
+          "strategy": "target",
+          "reason": "同步规范 Web Frontend 仓库边界说明"
+        },
+        {
+          "glob": "app/components/platform/reference-workspace.tsx",
+          "strategy": "target",
+          "reason": "恢复模板共同参考工作区，同时保留 Investment 领域工作区"
+        }
+      ],
+      "remove": []
+    }
+  }
+}

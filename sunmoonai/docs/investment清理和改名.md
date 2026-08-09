@@ -1,6 +1,6 @@
 # Research 原地改名为 Investment 的 Architecture v2 实施方案
 
-状态：`ACTIVE / I0-I1 COMPLETE / I2 IN PROGRESS`
+状态：`ACTIVE / I0-I4 COMPLETE / R4 PASSED / R5 NOT STARTED`
 
 日期：2026-08-09
 
@@ -74,6 +74,10 @@ Research 五仓与旧 Investment 五仓必须同时具备：
 
 证据见 `architecture-v2/evidence/I1-investment-rename-backup.json`。备份不完整时禁止改名或覆盖。
 
+本地拓扑改名和远端隔离结果见
+`architecture-v2/evidence/I3-investment-topology-rename.json`。旧 Investment 的四个 `master`
+均保持原 SHA，新候选只新增 `architecture-v2`。
+
 ## 5. 本地原地改名事务
 
 执行顺序：
@@ -138,6 +142,21 @@ Secret、PVC、Casdoor Client、K8s Deployment 和 Harbor digest 全部保留为
 10. 退出后 namespace、凭据 Secret 和临时集群无残留；
 11. 旧 Research 运行拓扑前后快照哈希一致。
 
+R4 已于 2026-08-09 完整通过。证据位于：
+
+```text
+architecture-v2/evidence/R4-investment-source-gate.json
+architecture-v2/evidence/R4-investment-apply/
+architecture-v2/evidence/R4-investment-gate/
+```
+
+门禁过程中发现 Celery 会继承节点 CPU 数并默认启动 12 个 prefork 进程，导致 768Mi Worker
+OOMKilled。修复没有做 Investment 临时补丁，而是进入模板 `7f2942c`：Worker 并发默认显式锁定为
+2，并保留水平扩容作为 Kubernetes 主容量策略。修复后重新从零执行门禁通过。
+
+门禁退出后已确认隔离 namespace、临时身份 Secret 和临时 Calico 集群均无残留；旧 Research
+运行拓扑未被门禁用作写入目标。
+
 ## 9. 发布与归档
 
 只有完整门禁通过后才允许：
@@ -150,6 +169,11 @@ Secret、PVC、Casdoor Client、K8s Deployment 和 Harbor digest 全部保留为
 
 旧 Research 远端、镜像、数据库和部署在 R7 观察窗结束前不得删除。正式 `2.0.0` 仍只能在 R7
 晋级。
+
+当前远端收口状态：GitHub 已创建四个私有正式仓，父仓 `.gitmodules` 已指向 GitHub；四仓本地、
+GitHub、Gitee 的 `architecture-v2` SHA 均一致。Gitee Backend 因当前没有仓库管理 API 凭据，
+暂时继续由 `investment-admin-backend` 旧仓名承载候选分支，旧 `master` 未改写。服务器端改名为
+`investment-backend` 是受控外部操作，不得通过创建第二份历史或强推 `master` 规避。
 
 ## 10. 主线顺序
 

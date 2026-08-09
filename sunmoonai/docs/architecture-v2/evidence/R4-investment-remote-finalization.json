@@ -1,0 +1,40 @@
+{
+  "task": "architecture-v2-r4-investment-remotes",
+  "result": "passed_with_controlled_alias",
+  "branch": "architecture-v2",
+  "repositories": {
+    "parent": {
+      "local": "dc281b8086f3a14905a6ba5e32fdab0e728883ee",
+      "github": "dc281b8086f3a14905a6ba5e32fdab0e728883ee",
+      "gitee": "dc281b8086f3a14905a6ba5e32fdab0e728883ee",
+      "github_repository": "investment-app",
+      "gitee_repository": "investment-app"
+    },
+    "backend": {
+      "local": "e88588191419e3ee0c9b1428db71762e748e5fe7",
+      "github": "e88588191419e3ee0c9b1428db71762e748e5fe7",
+      "gitee": "e88588191419e3ee0c9b1428db71762e748e5fe7",
+      "github_repository": "investment-backend",
+      "gitee_repository": "investment-admin-backend",
+      "gitee_name_status": "legacy_repository_alias_pending_server_rename"
+    },
+    "admin": {
+      "local": "4a7053b138148fb9ce5c4295c39472e6183fdc8d",
+      "github": "4a7053b138148fb9ce5c4295c39472e6183fdc8d",
+      "gitee": "4a7053b138148fb9ce5c4295c39472e6183fdc8d",
+      "github_repository": "investment-admin-frontend",
+      "gitee_repository": "investment-admin-frontend"
+    },
+    "web": {
+      "local": "e463809eb4fb0cbeeb0a87ab4bb23919c64c4395",
+      "github": "e463809eb4fb0cbeeb0a87ab4bb23919c64c4395",
+      "gitee": "e463809eb4fb0cbeeb0a87ab4bb23919c64c4395",
+      "github_repository": "investment-web-frontend",
+      "gitee_repository": "investment-web-frontend"
+    }
+  },
+  "github_visibility": "private",
+  "research_remotes_preserved": true,
+  "legacy_gitee_master_rewritten": false,
+  "credentials_printed": false
+}

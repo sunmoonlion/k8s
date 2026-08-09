@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "architecture": "app-platform-v2",
+  "app": "investment",
+  "stage": "R4",
+  "formal_release": false,
+  "template": {
+    "release": "architecture-v2-r3.2-20260808",
+    "scaffold_commit": "7f2942c"
+  },
+  "source": {
+    "candidate_parent_commit": "e744d90673289d946648c0c6f91c9a91be072483",
+    "canonical_parent_commit": "dc281b8086f3a14905a6ba5e32fdab0e728883ee",
+    "backend_commit": "e88588191419e3ee0c9b1428db71762e748e5fe7",
+    "admin_commit": "4a7053b138148fb9ce5c4295c39472e6183fdc8d",
+    "web_commit": "e463809eb4fb0cbeeb0a87ab4bb23919c64c4395"
+  },
+  "images": {
+    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:abab9895b9323430fa357a01c4ad796ea3130b76853c7206306be54d3307834d",
+    "admin": "harbor.sunmoonai.com:30443/app-images/investment-admin-frontend@sha256:15d8253d2125045f38ea8bd159df77642250214b3bd72e8733cedbd50464f41d",
+    "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:d3ac86bdea887ed3be4ab2b61a8928bdf23086e20137c02e0ec2ca520ae51a0a"
+  },
+  "rollback_baseline": {
+    "product": "research",
+    "web_image": "harbor.sunmoonai.com:30443/app-images/research-web-frontend@sha256:46f7c4b59857b734b6d74257c5f9e02d3d3bba64a640b4d030b9290f73ed4b91"
+  },
+  "gate": {
+    "result": "passed",
+    "evidence": "sunmoonai/docs/architecture-v2/evidence/R4-investment-gate/result.json",
+    "research_topology_unchanged": true
+  }
+}

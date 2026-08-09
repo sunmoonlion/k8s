@@ -1,0 +1,1317 @@
+{
+  "task": "architecture-v2-r4-component-sync",
+  "action": "apply",
+  "result": "passed",
+  "app": "investment",
+  "component": "backend",
+  "base_revision": "69e634b",
+  "target_revision": "8997e9e9422fd5fefaff6ab3519bd0367075fdb0",
+  "instance_commit": "85a7b9da80f425ab160c6b1977405730b63a745e",
+  "steady_state": false,
+  "writes": 70,
+  "deletes": 5,
+  "prohibited_drift": [],
+  "prohibited_drift_count": 0,
+  "operations": [
+    {
+      "path": ".dockerignore",
+      "action": "already-current"
+    },
+    {
+      "path": ".gitignore",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "恢复模板根目录忽略规则"
+    },
+    {
+      "path": "CLAUDE.md",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步规范 Backend 仓库说明"
+    },
+    {
+      "path": "app/.dockerignore",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步生产镜像上下文规则"
+    },
+    {
+      "path": "app/.env.example",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "先采用双浏览器表面配置基线，随后显式回填 Investment adapter 配置"
+    },
+    {
+      "path": "app/.gitignore",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步应用目录忽略规则"
+    },
+    {
+      "path": "app/.python-version",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步受支持 Python 运行时"
+    },
+    {
+      "path": "app/Dockerfile",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "采用非 root 多阶段统一 Backend 镜像"
+    },
+    {
+      "path": "app/alembic.ini",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "app/alembic/env.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "采用 migration principal 与规范 migration_url 装配"
+    },
+    {
+      "path": "app/alembic/script.py.mako",
+      "action": "already-current"
+    },
+    {
+      "path": "app/alembic/versions/20260726_0001_auth_identity.py",
+      "action": "skip-template",
+      "class": "temporary-compatibility",
+      "reason": "禁止把模板 migration root 拼入 Investment 现有 Alembic 历史",
+      "owner": "R5-investment-database",
+      "deadline": "R5"
+    },
+    {
+      "path": "app/alembic/versions/20260801_0002_outbox_primitives.py",
+      "action": "skip-template",
+      "class": "temporary-compatibility",
+      "reason": "统一 outbox migration 必须在 R5 以 Investment 当前 head 为 down_revision 重建",
+      "owner": "R5-investment-database",
+      "deadline": "R5"
+    },
+    {
+      "path": "app/alembic/versions/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/application/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/application/audit_context.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "采用模板统一审计上下文"
+    },
+    {
+      "path": "app/app/application/dto/__init__.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/application/dto/interaction.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/application/dto/outbox.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/application/errors/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/application/errors/exceptions.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "采用 R3.2 共同基线，apply 后显式回填并测试 Investment Agent 扩展"
+    },
+    {
+      "path": "app/app/application/ports/__init__.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/application/ports/outbox.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/application/ports/web_interaction.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/application/services/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/application/services/auth_service.py",
+      "action": "update-common"
+    },
+    {
+      "path": "app/app/application/services/web_interaction.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/bootstrap/__init__.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/bootstrap/api.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/bootstrap/migration.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/bootstrap/scheduler.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/bootstrap/worker.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/domain/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/domain/models/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/domain/repositories/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/domain/security/__init__.py",
+      "action": "preserve-local",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/domain/security/principal.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/domain/services/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/external/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/external/downstream_service.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/infrastructure/logging/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/logging/logging.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/messaging/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/messaging/celery_producer.py",
+      "action": "merge-common",
+      "class": "domain-extension",
+      "strategy": "merge",
+      "reason": "三方无冲突合并模板共同能力与 Investment Agent 领域扩展；真实冲突继续阻断"
+    },
+    {
+      "path": "app/app/infrastructure/models/__init__.py",
+      "action": "update-common"
+    },
+    {
+      "path": "app/app/infrastructure/models/auth.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/models/base.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/models/outbox.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/infrastructure/repositories/__init__.py",
+      "action": "update-common"
+    },
+    {
+      "path": "app/app/infrastructure/repositories/outbox.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/infrastructure/security/__init__.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步统一安全模块导出并保留独立 Investment service_auth 模块"
+    },
+    {
+      "path": "app/app/infrastructure/security/oidc.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "采用双浏览器表面及严格 workload token 验证实现"
+    },
+    {
+      "path": "app/app/infrastructure/security/service_identity.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/infrastructure/storage/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/storage/postgres.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/infrastructure/storage/redis.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/interfaces/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/interfaces/endpoints/__init__.py",
+      "action": "remove-obsolete-common"
+    },
+    {
+      "path": "app/app/interfaces/endpoints/auth_routes.py",
+      "action": "remove-obsolete-common"
+    },
+    {
+      "path": "app/app/interfaces/endpoints/routes.py",
+      "action": "preserve-template-deleted-local",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/interfaces/endpoints/tasks_routes.py",
+      "action": "preserve-template-deleted-local",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/interfaces/errors/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/interfaces/errors/exception_handlers.py",
+      "action": "update-common"
+    },
+    {
+      "path": "app/app/interfaces/http/__init__.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/admin/__init__.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/admin/auth.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/admin/diagnostics.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/auth_common.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/internal/__init__.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/middleware/__init__.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/middleware/auth.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/routes.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/web/__init__.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/web/auth.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/http/web/interactions.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/app/interfaces/middleware/__init__.py",
+      "action": "remove-obsolete-common"
+    },
+    {
+      "path": "app/app/interfaces/middleware/auth.py",
+      "action": "resolve-target-deletion",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "旧单表面鉴权由双表面 middleware 替代"
+    },
+    {
+      "path": "app/app/interfaces/schemas/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/interfaces/schemas/base.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步 Python 3.12 泛型响应基线"
+    },
+    {
+      "path": "app/app/main.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "采用 bootstrap.api 进程构造；Agent 路由在统一 HTTP 聚合器显式挂载"
+    },
+    {
+      "path": "app/app/tasks/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/tasks/ping.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/app/worker.py",
+      "action": "merge-common",
+      "class": "domain-extension",
+      "strategy": "merge",
+      "reason": "三方无冲突合并模板共同能力与 Investment Agent 领域扩展；真实冲突继续阻断"
+    },
+    {
+      "path": "app/core/__init__.py",
+      "action": "already-current"
+    },
+    {
+      "path": "app/core/config.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "采用 R3.2 共同基线，apply 后显式回填并测试 Investment Agent 扩展"
+    },
+    {
+      "path": "app/pyproject.toml",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "采用 R3.2 共同基线，apply 后显式回填并测试 Investment Agent 扩展"
+    },
+    {
+      "path": "app/scripts/__init__.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/scripts/pair_fixture.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/tests/test_auth_routes_security.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "共享鉴权测试以验收模板为准"
+    },
+    {
+      "path": "app/tests/test_auth_service.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "共享 AuthService 测试以验收模板为准"
+    },
+    {
+      "path": "app/tests/test_config_security.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "共享生产配置负向测试以验收模板为准"
+    },
+    {
+      "path": "app/tests/test_downstream_service.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/tests/test_interaction_consumer_vectors.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/tests/test_interaction_contract.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/tests/test_kernel_invariants.py",
+      "action": "update-common"
+    },
+    {
+      "path": "app/tests/test_oidc_security.py",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "共享双浏览器 OIDC 安全测试以验收模板为准"
+    },
+    {
+      "path": "app/tests/test_outbox_primitives.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/tests/test_service_identity.py",
+      "action": "add-common"
+    },
+    {
+      "path": "app/uv.lock",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "采用 R3.2 共同基线，apply 后显式回填并测试 Investment Agent 扩展"
+    },
+    {
+      "path": "db-access-bootstrap/.gitignore",
+      "action": "already-current"
+    },
+    {
+      "path": "db-access-bootstrap/README.md",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-access-bootstrap/config/base.env.template",
+      "action": "already-current"
+    },
+    {
+      "path": "db-access-bootstrap/config/common.env",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-access-bootstrap/config/mongodb.external.env",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-access-bootstrap/config/mongodb.k8s.env",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-access-bootstrap/config/postgresql.external.env",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-access-bootstrap/config/postgresql.k8s.env",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-access-bootstrap/config/redis.external.env",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-access-bootstrap/config/redis.k8s.env",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-access-bootstrap/db-access-bootstrap.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-access-bootstrap/merge-and-generate-app-env.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-access-bootstrap/merge-to-app-env.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-access-bootstrap/setup-external-db-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-access-bootstrap/setup-k8s-db-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-access-bootstrap/teardown-external-db-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-access-bootstrap/teardown-k8s-db-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/README.md",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-provisioner/adapters/external.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/adapters/k8s.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/bin/dbctl",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/bin/init-service-provision-template.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/drivers/mongodb.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/drivers/postgresql.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/drivers/redis.sh",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "db-provisioner/lib/common.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/templates/db-access-bootstrap-template/README.md",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/templates/db-access-bootstrap-template/setup-external-db-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/templates/db-access-bootstrap-template/setup-k8s-db-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/templates/db-access-bootstrap-template/teardown-external-db-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "db-provisioner/templates/db-access-bootstrap-template/teardown-k8s-db-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "docs/CELERY.md",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步单镜像多角色运行说明"
+    },
+    {
+      "path": "mybuild/Dockerfile",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步规范 Backend 构建入口"
+    },
+    {
+      "path": "mybuild/README.md",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步规范 Backend 镜像说明"
+    },
+    {
+      "path": "mybuild/build-image.sh",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步规范 Backend 构建脚本"
+    },
+    {
+      "path": "mybuild/build.conf",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步规范 Backend 镜像名称"
+    },
+    {
+      "path": "mybuild/harbor-cluster.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "mybuild/push-image.sh",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步规范 Backend 推送脚本"
+    },
+    {
+      "path": "mybuild/rebuild-and-run.sh",
+      "action": "resolve-target",
+      "class": "common-template",
+      "strategy": "target",
+      "reason": "同步规范 Backend 本地运行脚本"
+    },
+    {
+      "path": "search-access-bootstrap/README.md",
+      "action": "already-current"
+    },
+    {
+      "path": "search-access-bootstrap/config/access.json",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "search-access-bootstrap/config/common.env",
+      "action": "already-current"
+    },
+    {
+      "path": "search-access-bootstrap/search-access-bootstrap.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "search-access-bootstrap/setup-k8s-search-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "search-access-bootstrap/teardown-k8s-search-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "storage-access-bootstrap/README.md",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "storage-access-bootstrap/config/access.json",
+      "action": "preserve-local",
+      "class": "deployment-config"
+    },
+    {
+      "path": "storage-access-bootstrap/config/common.env",
+      "action": "already-current"
+    },
+    {
+      "path": "storage-access-bootstrap/setup-k8s-storage-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "storage-access-bootstrap/storage-access-bootstrap.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "storage-access-bootstrap/teardown-k8s-storage-access.sh",
+      "action": "already-current"
+    },
+    {
+      "path": "app/alembic/versions/20260708_0001_agent_phase0.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/alembic/versions/20260712_0002_auth_identity.py",
+      "action": "preserve-instance",
+      "class": "temporary-compatibility"
+    },
+    {
+      "path": "app/alembic/versions/20260729_0003_agent_pilot.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/agent/event_sink.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/agent/graph_runtime_service.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/agent/memory_service.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/agent/pilot_redis.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/agent/pilot_service.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/agent/profile_catalog.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/agent/redis_keys.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/agent/run_logging.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/agent/run_service.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/agent/session_lock.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/agent/side_effect_service.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/agent/timeline_projector.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/application/agent/tool_result_handlers.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/domain/agent/commands.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/domain/agent/knowledge.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/domain/agent/llm.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/domain/agent/memory.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/domain/agent/message_upcaster.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/domain/agent/models.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/domain/agent/profiles.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/domain/agent/runtime.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/domain/agent/sandbox.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/domain/agent/security.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/domain/agent/tools.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/agent/fake_llm.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/agent/fake_sandbox.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/agent/memory_repository.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/agent/message_mapper.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/agent/pilot_repository.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/agent/repositories.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/agent/session_lock.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/external/knowledge_retrieval.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/external/pilot_llm.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/graph/checkpointer.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/graph/execution_identity_spike.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/graph/execution_identity_spike.sql",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/graph/first_m1_graph.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/graph/langgraph_runtime.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/graph/pilot_graph.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/graph/runtime_selection_spike.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/graph/state.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/graph/walking_skeleton.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/infrastructure/security/pilot_service_auth.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/interfaces/endpoints/agent_routes.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/interfaces/endpoints/pilot_runtime_routes.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/interfaces/schemas/pilot_runtime.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/tasks/agent_graph.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/app/tasks/pilot_agent_graph.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/scripts/agent_golden.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/scripts/run_agent_golden.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/scripts/run_execution_identity_spike.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/scripts/run_runtime_selection_browser_spike.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/scripts/run_runtime_selection_postgres_spike.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/scripts/run_runtime_selection_sigkill_spike.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/scripts/run_runtime_selection_spike.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/scripts/runtime_selection_browser_client.js",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/scripts/runtime_selection_browser_harness.html",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/scripts/runtime_selection_browser_spike.cjs",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/scripts/validate_agent_phase0.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/scripts/validate_deployed_agent_http.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/scripts/validate_deployed_agent_worker_restart.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/golden/first_m1_graph.json",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/golden/old_project_planner_react_reference.json",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/golden/phase0_walking_skeleton.json",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_agent_golden.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_agent_graph_state.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_agent_llm_port.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_agent_memory.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_agent_message_boundary.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_agent_phase0.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_agent_profile.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_agent_runtime_budget.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_agent_sandbox_port.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_agent_security_context.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_agent_stream_delivery.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_agent_traffic_gate.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_event_sink_live_delta.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_execution_identity_spike.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_first_m1_graph.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_graph_runtime_service.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_knowledge_retrieval_contract.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_pilot_graph.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_pilot_llm.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_pilot_service.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_run_logging.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_runtime_selection_spike.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_session_lock.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_side_effect_service.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_tool_result_handlers.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "app/tests/test_worker_config.py",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "db-access-bootstrap/.env.local.k8s.db",
+      "action": "remove-instance-obsolete"
+    },
+    {
+      "path": "docs/adr/ADR-001-greenfield-domain-model.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "docs/adr/ADR-002-langchain-core-message-protocol.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "docs/adr/ADR-003-event-message-memory-checkpoint-boundaries.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "docs/adr/ADR-009-runtime-framework-boundary.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "docs/adr/ADR-010-ports-adapters-acl.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "docs/adr/ADR-013-event-sink-and-timeline-projection.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "docs/adr/ADR-015-replay-idempotency-and-side-effects.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "docs/adr/ADR-016-hitl-interrupt-resume.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "docs/adr/ADR-019-live-delta-and-sse-reconciliation.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "docs/adr/ADR-021-security-context-m1-placeholder.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "docs/adr/ADR-022-unified-boundary-naming-rules.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "docs/adr/ADR-023-agent-profile-effective-config.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "docs/adr/ADR-024-m1-m2-scope-gates.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "docs/adr/ADR-025-postgres-checkpoint-and-event-persistence.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "docs/adr/ADR-026-redis-sse-session-locks.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "docs/adr/ADR-027-research-app-platform-deployment-boundary.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "docs/adr/ADR-029-context-state-memory-workspace-storage-layers.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "docs/adr/ADR-030-strategy-visitor-handler-registry.md",
+      "action": "preserve-instance",
+      "class": "domain-extension"
+    },
+    {
+      "path": "docs/mooc-manus-v4-handoff.md",
+      "action": "preserve-instance",
+      "class": "temporary-compatibility"
+    },
+    {
+      "path": "docs/mooc-manus-v4-phase-0-inventory.md",
+      "action": "preserve-instance",
+      "class": "temporary-compatibility"
+    },
+    {
+      "path": "docs/mooc-manus-v4-rebuild-task.md",
+      "action": "preserve-instance",
+      "class": "temporary-compatibility"
+    }
+  ]
+}

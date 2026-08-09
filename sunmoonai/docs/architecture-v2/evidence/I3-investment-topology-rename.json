@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "task": "architecture-v2-investment-topology-rename",
+  "result": "passed",
+  "date": "2026-08-09",
+  "source_history": "research-app",
+  "active_local_root": "/home/zymun/investment-app",
+  "old_local_root_absent": true,
+  "archived_web_backend": "/home/zymun/archives/investment-rename-20260809/research-web-backend-worktree",
+  "archived_web_backend_clean": true,
+  "repositories": {
+    "investment-app": {
+      "architecture_v2": "f37cb052778faf77ab9f8636d2ff183ec2f24070",
+      "preserved_master": "5379dd71f113b21484dcbac646a4d1ec0aa6e137",
+      "destination": "https://gitee.com/sunmoonlion/investment-app.git"
+    },
+    "investment-backend": {
+      "architecture_v2": "85a7b9da80f425ab160c6b1977405730b63a745e",
+      "preserved_master": "a1a419b6d1a779b1248318afc5eba77a40348153",
+      "temporary_destination": "https://gitee.com/sunmoonlion/investment-admin-backend.git"
+    },
+    "investment-admin-frontend": {
+      "architecture_v2": "32b3bcaf156f12fa780d4a38ec84912f8621cf66",
+      "preserved_master": "8b854fc298ec400967f1567941a1c69112451ec7",
+      "destination": "https://gitee.com/sunmoonlion/investment-admin-frontend.git"
+    },
+    "investment-web-frontend": {
+      "architecture_v2": "b20c39d4802c9da6a0dc4a584a6319a8118f0d3e",
+      "preserved_master": "f6c613168d934bd20fd28e2969a44101949e73a5",
+      "destination": "https://gitee.com/sunmoonlion/investment-web-frontend.git"
+    }
+  },
+  "archive_remotes_preserved": true,
+  "legacy_master_overwritten": false,
+  "force_push_used": false,
+  "credentials_printed": false
+}

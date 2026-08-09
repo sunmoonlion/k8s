@@ -1,0 +1,43 @@
+{
+  "task": "architecture-v2-r4-investment-source",
+  "result": "passed",
+  "formal_release": false,
+  "template_release": "architecture-v2-r3.2-20260808",
+  "template_scaffold_commit": "7f2942c",
+  "source_commits": {
+    "parent": "e744d90673289d946648c0c6f91c9a91be072483",
+    "backend": "e88588191419e3ee0c9b1428db71762e748e5fe7",
+    "admin": "4a7053b138148fb9ce5c4295c39472e6183fdc8d",
+    "web": "e463809eb4fb0cbeeb0a87ab4bb23919c64c4395"
+  },
+  "backend": {
+    "ruff": "passed",
+    "pyright_errors": 0,
+    "pytest_passed": 128,
+    "pytest_skipped": 2,
+    "consumer_vectors": "2/2 passed"
+  },
+  "admin": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "i18n": "passed",
+    "unit_tests": 44,
+    "production_build": "passed",
+    "playwright": "10 passed"
+  },
+  "web": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "i18n": "passed",
+    "unit_tests": 47,
+    "consumer_vectors": "2/2 passed",
+    "production_build": "passed",
+    "playwright": "7 passed"
+  },
+  "steady_state": {
+    "backend": {"writes": 0, "deletes": 0, "prohibited_drift": 0},
+    "admin": {"writes": 0, "deletes": 0, "prohibited_drift": 0},
+    "web": {"writes": 0, "deletes": 0, "prohibited_drift": 0}
+  },
+  "credentials_printed": false
+}

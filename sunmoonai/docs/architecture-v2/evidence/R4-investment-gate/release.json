@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "architecture": "app-platform-v2",
+  "app": "investment",
+  "namespace": "investment-architecture-v2-r4",
+  "release_id": "r4-investment-001",
+  "images": {
+    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:abab9895b9323430fa357a01c4ad796ea3130b76853c7206306be54d3307834d",
+    "admin": "harbor.sunmoonai.com:30443/app-images/investment-admin-frontend@sha256:15d8253d2125045f38ea8bd159df77642250214b3bd72e8733cedbd50464f41d",
+    "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:d3ac86bdea887ed3be4ab2b61a8928bdf23086e20137c02e0ec2ca520ae51a0a"
+  },
+  "origins": {
+    "admin": "https://investment-admin-r4.sunmoonai.com:30443",
+    "web": "https://investment-web-r4.sunmoonai.com:30443",
+    "casdoor": "https://casdoor.sunmoonai.com:30443"
+  },
+  "resources": [
+    "00-prerequisites.yaml",
+    "10-migration.yaml",
+    "20-runtime.yaml",
+    "30-network-policies.yaml",
+    "40-ingress.yaml"
+  ],
+  "sha256": {
+    "00-prerequisites.yaml": "e0baf46616c7fa0f020e73cb8ed0148dc366660d333ee227aba163b91948af79",
+    "10-migration.yaml": "c48bf26542352dbc264d41a60bd8a99add1136c95bb2fa3ce35c72b452605342",
+    "20-runtime.yaml": "8daaa33c3c3e8fb6e60b935bf6385c25c500ed27267aca56481ccc6a18bf17f6",
+    "30-network-policies.yaml": "7cdce446159c314bc801217dfcf813187404a61cea1b58d32ac2cc4cfec2da84",
+    "40-ingress.yaml": "45bb3e93a47a855b849e22d9ebf1df0892c37cdaddbe163ae3a0035a53d58ce0"
+  },
+  "secret_name": "investment-backend-runtime",
+  "secret_keys": [
+    "ADMIN_CASDOOR_CLIENT_SECRET",
+    "API_CELERY_BROKER_URL",
+    "API_DATABASE_URL",
+    "MIGRATION_DATABASE_URL",
+    "REDIS_PASSWORD",
+    "SCHEDULER_CELERY_BROKER_URL",
+    "SCHEDULER_DATABASE_URL",
+    "WEB_CASDOOR_CLIENT_SECRET",
+    "WORKER_CELERY_BROKER_URL",
+    "WORKER_DATABASE_URL"
+  ],
+  "optional_secret_keys": [
+    "WORKER_CELERY_RESULT_BACKEND",
+    "WORKER_DOWNSTREAM_CLIENT_SECRET"
+  ],
+  "dependencies": {
+    "image_pull_secret": "harbor-registry-secret",
+    "tls_secret": "investment-r4-tls",
+    "casdoor_namespace": "app-platform-dev",
+    "ingress_namespace": "ingress-platform-dev"
+  },
+  "formal_release": false
+}
