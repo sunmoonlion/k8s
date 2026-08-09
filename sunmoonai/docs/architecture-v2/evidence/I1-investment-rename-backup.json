@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "task": "architecture-v2-investment-rename-backup",
+  "result": "passed",
+  "date": "2026-08-09",
+  "archive_root": "/home/zymun/archives/investment-rename-20260809",
+  "research_source": {
+    "repositories": 5,
+    "bundle_verify": true,
+    "tag": "pre-investment-rename-20260809",
+    "tag_pushed_to_github": true,
+    "tag_pushed_to_gitee": true,
+    "sha256_manifest": "research-source/SHA256SUMS"
+  },
+  "legacy_investment": {
+    "repositories": 5,
+    "mirror_fsck": true,
+    "bundle_verify": true,
+    "tag": "legacy-pre-architecture-v2-20260809",
+    "tag_pushed_to_gitee": true,
+    "sha256_manifest": "legacy-investment/SHA256SUMS"
+  },
+  "credentials_printed": false,
+  "destructive_branch_update_performed": false
+}

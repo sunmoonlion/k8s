@@ -1,6 +1,6 @@
 # Architecture v2 R4 实例同步规则
 
-状态：`ACTIVE / INFO DONE / KNOWLEDGE DONE / RESEARCH NEXT`
+状态：`ACTIVE / INFO DONE / KNOWLEDGE DONE / INVESTMENT RENAME NEXT`
 
 唯一模板源：`architecture-v2-r3.2-20260808`。R3.1 仅保留为历史证据，不得继续作为新同步目标。
 
@@ -60,4 +60,5 @@ R4 不拼接模板 Alembic root。每个实例继续保留当前规范数据库�
 
 - Info：`DONE`，见 `R4-info-result.md` 与 `evidence/R4-info-gate/`；
 - Knowledge：`DONE`，见 `R4-knowledge-result.md` 与 `evidence/R4-knowledge-gate/`；
-- Research：`NEXT`，必须继续使用 `architecture-v2-r3.2-20260808`。
+- Investment：`NEXT`，以 Research 历史为主体原地改名，必须继续使用
+  `architecture-v2-r3.2-20260808`；见 `../investment清理和改名.md`。

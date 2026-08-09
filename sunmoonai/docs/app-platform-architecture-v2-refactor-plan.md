@@ -1,6 +1,6 @@
 # App Platform Architecture v2 重构执行基线
 
-状态：`ACTIVE / R0-R3.2 COMPLETE / R4 INFO+KNOWLEDGE COMPLETE / RESEARCH NEXT`
+状态：`ACTIVE / R0-R3.2 COMPLETE / R4 INFO+KNOWLEDGE COMPLETE / INVESTMENT RENAME NEXT`
 
 日期：2026-08-01
 
@@ -334,7 +334,8 @@ R4 全部完成前停止新业务功能开发。
 
 当前进度：Info 与 Knowledge 均已完成源码差异分类、两套配对、隔离 KIND、严格 TLS 双身份、
 原生回滚/前滚和 Calico 报文门禁，证据见 `architecture-v2/R4-info-result.md` 与
-`architecture-v2/R4-knowledge-result.md`。下一实例只能是 Research。
+`architecture-v2/R4-knowledge-result.md`。原 Research R4 已被 Investment 原地改名/迁移 R4 取代，
+权威边界见 `../investment清理和改名.md`；不得先同步旧 Research 再重复改名。
 
 ### R5 实例 Backend 与数据库归并
 
@@ -406,5 +407,5 @@ Web 配对部署标识和 Admin/Web 构建代理入口完成了模板优先修�
 是 schema 2 release `architecture-v2-r3.2-20260808`，证据见
 `architecture-v2/R3.2-template-revalidation-result.md`。Info 与 Knowledge R4 已按真实候选镜像
 完成全部退出门禁，证据见 `architecture-v2/R4-info-result.md` 与
-`architecture-v2/R4-knowledge-result.md`；当前只允许继续 Research R4。R4 完成前不得开始 R5
+`architecture-v2/R4-knowledge-result.md`；当前只允许继续 Investment 原地改名/迁移 R4。R4 完成前不得开始 R5
 数据归并、删除旧 Web Backend/数据库/Secret、晋级 `2.0.0` 或继续新业务开发。

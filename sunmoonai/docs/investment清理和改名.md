@@ -1,334 +1,163 @@
-# Investment 应用清理与重建迁移方案
+# Research 原地改名为 Investment 的 Architecture v2 实施方案
 
-> 状态：旧 investment 清理已完成；`research-app` → `investment-app` 重构暂缓。
->
-> 当前前置条件：新版 `tpl-app` 完成、验证并冻结后，才允许启动后续重构与迁移。
+状态：`ACTIVE / I0-I1 COMPLETE / I2 IN PROGRESS`
 
-## 1. 目标
+日期：2026-08-09
 
-将现有 `research-app` 的业务能力迁移到一个以新版 `tpl-app` 为底座的全新 `investment-app`，并清理旧的 investment 实例与部署资源。
+分支：`architecture-v2`
 
-最终正式名称统一使用完整的 `investment`，不使用 `inv` 作为长期系统名称。
+模板唯一来源：`architecture-v2-r3.2-20260808`
 
-目标仓库和部署对象包括：
+## 1. 决策
 
-```text
-investment-app
-investment-admin-backend
-investment-web-backend
-investment-admin-frontend
-investment-web-frontend
-celeryworker-investment-admin-backend
-nodebullworker-investment-web-backend
-```
-
-## 2. 当前状态与约束
-
-- 当前开发基线为 `architecture-v2`。
-- GitHub 为主 remote，Gitee 为备份/迁移 remote。
-- GitHub 与 Gitee 的 `architecture-v2` 必须在执行前保持同一 SHA。
-- 现有 `research-app` 在迁移验收完成前必须保留，作为业务来源和回滚基线。
-- 旧 `investment-app` 的本地代码、KIND 运行资源、PVC/PV 和 Harbor 镜像仓库已完成清理；Gitee `investment-app` 源码仓库按计划保留，供未来新仓库覆盖使用。
-- 清理操作仅针对 WSL 本机和当前 KIND 集群；不再主动维护或同步 aly-ecs。
-- 本方案不允许在新版 `tpl-app` 冻结前执行。
-
-## 3. 当前仍暂不执行的事项
-
-在模板完成并冻结前，禁止执行以下后续操作：
-
-- 删除 `research-app`；
-- 覆盖 Gitee `investment-app` 仓库；
-- 强制推送新的 investment 分支；
-- 修改生产或共享环境中的域名和数据绑定。
-
-已清理工作的临时归档目录 `/tmp/investment-app-cleanup-20260808` 在确认无回滚需求前保留，不作为新应用代码来源。
-
-## 清理结果（已完成）
-
-- WSL 本机旧 investment 工作区已移出，临时归档位于 `/tmp/investment-app-cleanup-20260808`。
-- `k8s/sunmoonai/app-platform/investment-app` 及其旧部署配置已移除；平台默认应用列表已收敛为 `info`、`knowledge`、`research`。
-- KIND 中旧 investment 的 Deployment、Service、IngressRoute、worker、配置、凭据、任务、RBAC、PVC 和释放后的 PV 已清理。
-- Harbor 中四个旧 investment 镜像仓库已删除；Harbor 后台配额统计若未立即下降，需等待 registry 垃圾回收完成后再复核。
-- Gitee `investment-app` 仓库未删除、未覆盖、未强推；待新模板应用验收完成后再按本方案执行覆盖。
-- `research-app` 保持不变，继续作为业务迁移来源和回滚基线。
-
-## 4. 阶段 A：执行前冻结与备份
-
-启动迁移前必须完成：
-
-1. 冻结新版 `tpl-app` 的 `architecture-v2` 提交。
-2. 验证模板的前端、后端、worker、部署和配对测试。
-3. 记录五个相关仓库的 HEAD、remote、分支和工作区状态。
-4. 记录旧 `investment-app` 的所有远程分支、tag 和提交。
-5. 对旧 Gitee 仓库创建备份 tag，并保存本地裸仓库和 `git bundle`。
-6. 导出旧 investment 的 Kubernetes 资源清单。
-7. 备份数据库、PVC、对象存储和 Redis 中需要保留的数据。
-
-任何一项未完成，都不得进入清理阶段。
-
-## 5. 阶段 B：清理旧 investment-app
-
-### 5.1 代码目录
-
-清理前确认以下目录是否存在，并完成归档：
+不再从空仓重建 Investment。以现有 Research 仓库及其 Git 历史为迁移主体，原地改名并同步
+R3.2 共同底座：
 
 ```text
-/home/zym/investment-app
-/home/zymun/investment-app
+research-app              -> investment-app
+research-admin-backend    -> investment-backend
+research-admin-frontend   -> investment-admin-frontend
+research-web-frontend     -> investment-web-frontend
+research-web-backend      -> 只读归档，不进入新拓扑
 ```
 
-不得直接删除未归档的工作区或 Git 仓库。
+选择 `research-admin-backend` 作为统一 Backend 的历史主体，因为 LangGraph、Agent Runtime、
+SSE、检索和长期记忆等 Python 领域能力位于该仓。旧 Research Web Backend 中仍有效的合同和逻辑
+逐文件迁入统一 Backend，禁止整体复制旧基础设施。
 
-### 5.2 KIND 应用资源
+源码保留历史并原地改名；Kubernetes 新拓扑必须从已验收模板重新生成，禁止机械改旧 YAML。
 
-清理旧的 investment 应用运行资源：
+## 2. 命名边界
 
-- Deployment；
-- Service；
-- IngressRoute/Ingress；
-- ConfigMap；
-- Secret；
-- Job/CronJob；
-- Celery worker；
-- NodeBull worker；
-- ServiceAccount、Role、RoleBinding；
-- NetworkPolicy；
-- PodDisruptionBudget。
+下列应用与基础设施身份必须改为 `investment-*`：
 
-### 5.3 数据资源
+- 父子仓、本地目录、包和镜像仓库；
+- K8s 资源、ServiceAccount、Secret、ConfigMap、Ingress 和 TLS Secret；
+- 数据库目标名、角色、Redis namespace、对象存储前缀；
+- Casdoor Application、Client ID、redirect URI、Cookie 和 policy namespace；
+- 服务身份、审计 app 标识、前端应用名称。
 
-第一轮只清理应用运行资源，默认保留：
+禁止全局替换所有 `research`。`ResearchSession`、投资研究工作流和 deep-research Agent 等仍可能是
+Investment 内部的合法领域术语，必须逐项分类。
 
-- PostgreSQL 数据库；
-- PVC；
-- 对象存储 bucket；
-- Redis 数据和队列。
+## 3. 远端同名冲突
 
-数据资源只有在备份、迁移和回滚窗口均通过后，才能单独审批删除。
+Gitee 已存在旧 `investment-*` 仓。首选服务器端 Legacy 改名，但当前环境没有可用的仓库管理 API
+会话，因此采用受保护备用路径：
 
-### 5.4 清理退出条件
+1. 旧 Investment 五仓均已完成 mirror、bundle、refs 和 SHA-256 备份；
+2. 旧仓 `master` 保持不变；
+3. 旧仓均保存 `legacy-pre-architecture-v2-20260809` 标签；
+4. 新 Investment 只写入原仓不存在的 `architecture-v2` 分支；
+5. 完整门禁前禁止改写 `master`；
+6. 统一 Backend 暂由旧 `investment-admin-backend` 仓承载，门禁通过后服务器端改名为
+   `investment-backend`；
+7. GitHub 仓库在 Gitee 候选验收后创建或改名，随后恢复 `origin=GitHub`、`gitee=Gitee`。
 
-- KIND 中不再存在旧的 `investment-*` 工作负载；
-- 没有旧入口、Service、worker 和定时任务；
-- 数据库/PVC/对象存储的保留策略有记录；
-- 清理前后资源清单已保存。
+任何已有分支若需要替换，只允许使用带精确旧 SHA 的 `--force-with-lease`；禁止裸 `--force`。
 
-## 6. 阶段 C：从新版 tpl-app 创建 investment-app
+## 4. 备份与冻结门
 
-新应用必须以冻结后的新版 `tpl-app` 为唯一底座，不得以旧 `research-app` 复制改名。
-
-模板应先完成并冻结：
-
-- Next.js admin 前端；
-- Next.js web 前端；
-- FastAPI admin/web 后端；
-- 前后端配对协议；
-- Casdoor 认证；
-- 通用组件和布局；
-- 请求层、错误边界、国际化和主题；
-- 数据库迁移、健康检查和 worker 基线；
-- Docker/Kubernetes 部署和测试脚本。
-
-新 `investment-app` 初始只包含模板通用能力，暂不混入旧 research 代码。
-
-## 7. 阶段 D：迁移 research 业务逻辑
-
-`research-app` 仅作为业务来源，按边界迁移，不直接复制整个仓库。
-
-### 7.1 后端迁移范围
-
-迁移：
-
-- 领域模型；
-- API 路由；
-- Service/use-case；
-- Repository；
-- 数据库迁移；
-- 异步任务；
-- 业务配置；
-- 业务测试。
-
-不直接迁移：
-
-- research 仓库 Git 历史；
-- 旧部署名称；
-- 旧镜像标签；
-- 已废弃的 Runtime/SSE 实验代码；
-- 与模板能力重复的旧基础设施。
-
-### 7.2 前端迁移范围
-
-迁移：
-
-- admin 业务页面；
-- web 业务页面；
-- 业务组件和交互；
-- 表单、列表、详情和状态流；
-- 业务 API 对接；
-- 业务级菜单和权限。
-
-继续使用模板提供的：
-
-- Next.js 运行模式；
-- 统一组件库；
-- Layout；
-- 认证流程；
-- 请求层；
-- 错误边界；
-- 国际化和主题；
-- 通用权限框架。
-
-### 7.3 命名迁移范围
-
-必须系统检查并按需替换：
-
-- `research` 目录和包名；
-- Python import/package；
-- 环境变量；
-- 数据库名和迁移标识；
-- Redis key；
-- S3/object-storage key 前缀；
-- Kubernetes resource name 和 label；
-- Service DNS；
-- 镜像仓库和标签；
-- API 路径；
-- 前端路由；
-- 文档、测试和 CI/CD 脚本。
-
-## 8. 阶段 E：新 investment 验证
-
-必须按以下顺序验收：
-
-1. 模板基础测试；
-2. 后端单元测试；
-3. 前端 typecheck、lint、build；
-4. 数据库迁移；
-5. admin 前后端配对测试；
-6. web 前后端配对测试；
-7. Casdoor 登录和退出；
-8. worker 和任务重试；
-9. API 契约测试；
-10. Docker/Nginx/Next 运行时测试；
-11. KIND 部署测试；
-12. E2E 和故障恢复测试。
-
-退出条件：
-
-- admin/web 前后端均能正常运行；
-- 业务 API 完整连通；
-- 数据迁移通过；
-- 镜像使用不可变 digest；
-- KIND 资源全部使用 `investment-*` 命名；
-- 旧 research 仍可作为回滚基线。
-
-## 9. 阶段 F：覆盖 Gitee investment-app 仓库
-
-只有阶段 E 全部通过后才能覆盖旧 Gitee 仓库。
-
-覆盖前必须：
-
-1. 创建旧仓库备份 tag；
-2. 保存旧分支和 tag 清单；
-3. 保存裸仓库和 `git bundle`；
-4. 确认没有其他开发者正在使用旧仓库；
-5. 确认新仓库工作区干净；
-6. 确认新分支 SHA 和验收记录一致。
-
-强制推送使用：
+备份根目录：
 
 ```text
-git push --force-with-lease
+/home/zymun/archives/investment-rename-20260809/
 ```
 
-禁止无保护地使用 `git push --force`。
+Research 五仓与旧 Investment 五仓必须同时具备：
 
-推荐远程结果：
+- 可独立恢复的 Git bundle；
+- 全量 refs 清单；
+- SHA-256 校验和；
+- `git bundle verify` 与 `git fsck` 通过；
+- 远端不可变改名前标签。
+
+证据见 `architecture-v2/evidence/I1-investment-rename-backup.json`。备份不完整时禁止改名或覆盖。
+
+## 5. 本地原地改名事务
+
+执行顺序：
+
+1. 再次确认五个 Research 工作树 clean；
+2. 把 Research 的 GitHub/Gitee remote 改名为 archive remote；
+3. 将三个活动子仓目录改成 Investment 名；
+4. 将旧 Web Backend 从活动 submodule 拓扑移除，但保留远端、bundle 和标签；
+5. 更新 `.gitmodules`、gitlink 和父仓说明；
+6. 将父目录 `/home/zymun/research-app` 改为 `/home/zymun/investment-app`；
+7. 提交纯拓扑改名，不混入业务修改；
+8. 验证 bundle 可恢复和所有 archive remote 可达。
+
+## 6. R4 模板同步与领域迁移
+
+三个活动组件均以 R3.2 release 为唯一共同底座，执行：
 
 ```text
-Gitee investment-app
-  architecture-v2 = 新 investment 基线
-  master          = 验收后的稳定基线
+plan -> prohibited-drift=0 -> clean-room apply -> 测试
+     -> 实例 apply -> 测试 -> 提交 -> steady-state plan
 ```
 
-## 10. 阶段 G：迁移到 GitHub
-
-Gitee 覆盖并验证成功后：
-
-1. 创建或确认 GitHub `investment-app` 仓库；
-2. 从 Gitee 拉取并核验提交；
-3. 推送 `architecture-v2`、`master` 和必要 tag；
-4. 将 GitHub 设置为 `origin`；
-5. 将 Gitee 保留为 `gitee`；
-6. 对比两个 remote 的分支 SHA；
-7. 重新同步 aly-ecs、WSL 和其他开发机。
-
-## 11. 阶段 H：最终清理 research-app
-
-只有新 investment 稳定运行并完成回滚窗口后，才允许清理：
-
-- research-app KIND 工作负载；
-- research 入口和 Service；
-- research 镜像；
-- research 相关分支和部署脚本。
-
-必须保留：
-
-- research 最终迁移 tag；
-- 数据迁移记录；
-- 回滚说明；
-- 旧镜像 digest；
-- 迁移验收报告。
-
-## 12. 总体执行顺序
+最终稳态必须同时满足：
 
 ```text
-新版 tpl-app 完成并冻结
-    ↓
-旧 investment 备份
-    ↓
-清理旧 investment 运行资源
-    ↓
-从 tpl-app 创建新 investment-app
-    ↓
-迁移 research 业务逻辑
-    ↓
-完成前后端配对、数据、worker、E2E 验收
-    ↓
-备份并覆盖 Gitee investment-app
-    ↓
-迁移并核验 GitHub investment-app
-    ↓
-回滚窗口结束后清理 research-app
+writes=0
+deletes=0
+prohibited-drift=0
 ```
 
-## 13. 最终门禁
+Backend 必须保留并验证：
 
-以下任意条件不满足，都不得进入下一阶段：
+- LangGraph 图、State reducer 和 checkpoint；
+- Session/Thread/Run/Attempt 映射；
+- SSE、resume、cancel 和幂等；
+- Knowledge retrieval 与证据引用；
+- Agent Worker、工具副作用和长期记忆边界；
+- 现有规范 Alembic 历史，模板 migration 只按 R4/R5 边界处理。
 
-- 模板未冻结；
-- GitHub/Gitee 基线不一致；
-- 旧仓库没有备份；
-- 数据没有备份；
-- 新 investment 配对测试未通过；
-- KIND 验证未通过；
-- 镜像没有不可变 digest；
-- 迁移没有回滚方案；
-- 未明确当前阶段的唯一工作分支。
+Admin/Web 继续使用两个独立 Next.js 表面，但共同调用一个 `investment-backend`。
 
-## aly-ecs 同步策略
+## 7. 数据和运行边界
 
-从本方案更新起，WSL 与 aly-ecs 不再做主动双向同步：
+R4 只在隔离 namespace、全新测试数据库和独立 Casdoor Client 中验收。现有 Research 的数据库、
+Secret、PVC、Casdoor Client、K8s Deployment 和 Harbor digest 全部保留为回滚面。
 
-- 日常开发、提交和推送只在当前工作机的 `architecture-v2` 完成。
-- 不再要求 Codex 主动 SSH 到 aly-ecs、复制工作区或执行镜像/代码同步。
-- aly-ecs 需要使用最新代码时，在 aly-ecs 上按需执行 `git pull --ff-only`；先确认当前分支和远程，再拉取对应分支。
-- 不使用 `reset --hard`、强推或覆盖 aly-ecs 未备份的本地改动。
+真实数据迁移、对账、切读、切写和旧写入封锁属于 R5，不得夹带进改名事务。
 
-示例（在 aly-ecs 上按需执行）：
+## 8. Investment R4 完整门禁
 
-```bash
-cd /home/zym/k8s
-git fetch origin --prune
-git switch architecture-v2
-git pull --ff-only origin architecture-v2
+必须通过：
+
+1. Backend Ruff、Pyright、pytest；
+2. Admin/Backend 与 Web/Backend 两套真实配对；
+3. Agent Runtime、SSE、resume、cancel、checkpoint 和 retrieval 合同测试；
+4. 三个候选镜像与源码 commit/tree/digest 锁；
+5. 连续 Alembic migration；
+6. 同一 Backend 镜像的 API/Worker/Scheduler 多角色；
+7. Admin/Web 严格 TLS 和真实 Casdoor 登录/退出；
+8. 原生 Deployment 回滚和前滚；
+9. Calico allow/deny 报文门禁；
+10. 退出后 namespace、凭据 Secret 和临时集群无残留；
+11. 旧 Research 运行拓扑前后快照哈希一致。
+
+## 9. 发布与归档
+
+只有完整门禁通过后才允许：
+
+- 把 Gitee `architecture-v2` 固化为验收提交；
+- 将 `investment-admin-backend` 服务器端仓名改为 `investment-backend`；
+- 创建或改名 GitHub Investment 父子仓；
+- 设置 `origin=GitHub`、`gitee=Gitee` 并逐仓核对 SHA；
+- 把 Research 仓库标记为只读归档。
+
+旧 Research 远端、镜像、数据库和部署在 R7 观察窗结束前不得删除。正式 `2.0.0` 仍只能在 R7
+晋级。
+
+## 10. 主线顺序
+
+```text
+Info R4 DONE
+  -> Knowledge R4 DONE
+  -> Investment Rename/Migration R4
+  -> R5 数据迁移与切流
+  -> R6 Info -> Knowledge -> Investment 真实竖线
+  -> R7 2.0.0 晋级与旧 Research 退役
 ```
