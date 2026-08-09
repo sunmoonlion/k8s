@@ -1,5 +1,10 @@
 # Research App 架构
 
+> **未来候选领域，尚未创建（2026-08-09）**：旧 `research-app` 已由 `investment-app` 取代。
+> 本文只描述未来可能建立的通用 Research 边界，不代表当前存在该 App。未来实现必须从届时
+> 已验收的 Architecture v2 模板重新实例化，并使用新的仓库、身份、数据库和契约；不得恢复
+> 旧 Research 拓扑或继承 Investment 的数据所有权。
+
 `research-app` 是 App Platform 的通用研究协作系统，负责跨领域研究项目、
 研究任务、研究材料组织、研究过程记录和研究产物沉淀。
 
@@ -29,19 +34,15 @@
 跨 App 引用不复制对方主档。需要历史可重现时，可以保存必要的只读快照，
 但必须同时保留来源 App 的标识、版本和哈希。
 
-## 3. 当前部署组件
+## 3. 未来目标组件
 
 ```text
 research-app
-├── research-web-backend
-├── research-admin-backend
-├── nodebullworker-research-web-backend
-├── celeryworker-research-admin-backend
-├── research-web-frontend
+├── research-backend
 ├── research-admin-frontend
-└── deploy-research-app-all
+└── research-web-frontend
 ```
 
-四个模板组件完整保留。具体业务职责在实现功能时按唯一写入原则分配给
-对应 Backend；未承载业务的组件可以保留样板代码，但是否启动由 Kubernetes
-部署配置决定。
+两个 Next.js 前端使用同一 FastAPI Backend 和一个 Research 逻辑数据库；API、Worker、
+Scheduler、Migration 由同一 Backend 镜像按角色启动。是否创建该 App，必须先证明通用研究
+边界与 Investment 内部研究模块不同，并完成数据所有权和跨 App 契约评审。

@@ -19,7 +19,6 @@ extraSecrets:
           {"name": "info-production"},
           {"name": "research-production"},
           {"name": "investment-production"},
-          {"name": "tools-production"},
           {"name": "knowledge-production"}
         ],
         "users": [
@@ -31,10 +30,6 @@ extraSecrets:
           {"name": "investment-web-backend-worker", "password": "CHANGE_ME_investment_web_backend_worker_prod", "tags": ""},
           {"name": "investment-admin-backend-producer", "password": "CHANGE_ME_investment_admin_backend_producer_prod", "tags": ""},
           {"name": "investment-admin-backend-worker", "password": "CHANGE_ME_investment_admin_backend_worker_prod", "tags": ""},
-          {"name": "tools-web-backend-producer", "password": "CHANGE_ME_tools_web_backend_producer_prod", "tags": ""},
-          {"name": "tools-web-backend-worker", "password": "CHANGE_ME_tools_web_backend_worker_prod", "tags": ""},
-          {"name": "tools-admin-backend-producer", "password": "CHANGE_ME_tools_admin_backend_producer_prod", "tags": ""},
-          {"name": "tools-admin-backend-worker", "password": "CHANGE_ME_tools_admin_backend_worker_prod", "tags": ""},
           {"name": "knowledge-admin-backend-producer", "password": "CHANGE_ME_knowledge_admin_backend_producer_prod", "tags": ""},
           {"name": "knowledge-admin-backend-worker", "password": "CHANGE_ME_knowledge_admin_backend_worker_prod", "tags": ""}
         ],
@@ -47,10 +42,6 @@ extraSecrets:
           {"user": "investment-web-backend-worker", "vhost": "investment-production", "configure": "^investment\\.web\\.default$", "write": "^$|^investment\\.web\\.default$", "read": "^investment\\.web\\.default$"},
           {"user": "investment-admin-backend-producer", "vhost": "investment-production", "configure": "^investment\\.admin\\.default$", "write": "^$|^investment\\.admin\\.default$", "read": "^$"},
           {"user": "investment-admin-backend-worker", "vhost": "investment-production", "configure": "^investment\\.admin\\.default$", "write": "^$|^investment\\.admin\\.default$", "read": "^investment\\.admin\\.default$"},
-          {"user": "tools-web-backend-producer", "vhost": "tools-production", "configure": "^tools\\.web\\.default$", "write": "^$|^tools\\.web\\.default$", "read": "^$"},
-          {"user": "tools-web-backend-worker", "vhost": "tools-production", "configure": "^tools\\.web\\.default$", "write": "^$|^tools\\.web\\.default$", "read": "^tools\\.web\\.default$"},
-          {"user": "tools-admin-backend-producer", "vhost": "tools-production", "configure": "^tools\\.admin\\.default$", "write": "^$|^tools\\.admin\\.default$", "read": "^$"},
-          {"user": "tools-admin-backend-worker", "vhost": "tools-production", "configure": "^tools\\.admin\\.default$", "write": "^$|^tools\\.admin\\.default$", "read": "^tools\\.admin\\.default$"},
           {"user": "knowledge-admin-backend-producer", "vhost": "knowledge-production", "configure": "^knowledge\\.admin\\.default$", "write": "^$|^knowledge\\.admin\\.default$", "read": "^$"},
           {"user": "knowledge-admin-backend-worker", "vhost": "knowledge-production", "configure": "^knowledge\\.admin\\.default$", "write": "^$|^knowledge\\.admin\\.default$", "read": "^knowledge\\.admin\\.default$"}
         ],
@@ -59,8 +50,6 @@ extraSecrets:
           {"name": "research.admin.default", "vhost": "research-production", "durable": true, "auto_delete": false, "arguments": {}},
           {"name": "investment.web.default", "vhost": "investment-production", "durable": true, "auto_delete": false, "arguments": {}},
           {"name": "investment.admin.default", "vhost": "investment-production", "durable": true, "auto_delete": false, "arguments": {}},
-          {"name": "tools.web.default", "vhost": "tools-production", "durable": true, "auto_delete": false, "arguments": {}},
-          {"name": "tools.admin.default", "vhost": "tools-production", "durable": true, "auto_delete": false, "arguments": {}},
           {"name": "knowledge.admin.default", "vhost": "knowledge-production", "durable": true, "auto_delete": false, "arguments": {}}
         ]
       }

@@ -1,5 +1,11 @@
 # Tools App 架构
 
+> **当前状态（2026-08-09）**：旧四组件 `tools-app` 源码与运行拓扑已经退役。本文只保留未来
+> Tools 领域的边界设计，不描述当前已部署系统。后续必须从 Architecture v2 `tpl-app` 重新
+> 实例化为两个 Next.js 前端、一个统一 FastAPI Backend，以及同一 Backend 镜像的
+> API/Worker/Scheduler/Migration 运行角色；禁止恢复旧 Admin/Web 双 Backend 和独立 Worker
+> 源码副本。
+
 ## 1. 系统定位
 
 `tools-app` 提供跨领域、无明确业务所有者、可独立复用的工具能力。
@@ -115,23 +121,19 @@ tools.job.cancelled.v1
 
 不同资源等级的工具可以使用独立 Worker 池。
 
-## 8. 当前部署与目标组件
+## 8. 下一次实例化的目标组件
 
-当前组件：
+目标源码拓扑：
 
 ```text
 tools-app
-├── tools-web-backend
-├── tools-admin-backend
-├── nodebullworker-tools-web-backend
-├── celeryworker-tools-admin-backend
-├── tools-web-frontend
 ├── tools-admin-frontend
-├── document-converter-backend
-└── deploy-tools-app-all
+├── tools-web-frontend
+└── tools-backend
 ```
 
-文档转换器已经存在，但当前未纳入默认组件部署。
+文档转换器与 ONLYOFFICE BFF 的保留代码当前位于 Knowledge App 的 `components/`，不属于
+已部署 Tools Runtime。未来是否迁入新 Tools App 必须另行完成契约、数据所有权和安全评审。
 
 目标逻辑模块：
 

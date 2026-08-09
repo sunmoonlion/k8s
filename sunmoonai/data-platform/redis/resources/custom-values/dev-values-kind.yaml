@@ -53,18 +53,6 @@ auth:
         keys: "~session:* ~research:*"
         channels: "&*"
         commands: "-@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset +@pubsub -@dangerous"
-      - username: tools_admin_backend
-        password: ToolsAdminRedisAcl_7nR4wP2vK9mL3qX8j
-        enabled: "on"
-        keys: "~session:* ~tools:*"
-        channels: "&*"
-        commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@sortedset -@dangerous"
-      - username: tools_web_backend
-        password: ToolsWebRedisAcl_8k3Qm9xP2vL7nR4w
-        enabled: "on"
-        keys: "~session:* ~tools:*"
-        channels: "&*"
-        commands: "resetchannels -@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset -@dangerous"
 
 master:
   # 持久化：复用 Redis master 的数据盘（静态 PVC redis-sunmoonai-dev-pvc）

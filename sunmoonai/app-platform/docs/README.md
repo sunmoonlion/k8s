@@ -1,8 +1,9 @@
 # App Platform 架构文档
 
-> Architecture v2 正在 `architecture-v2` 分支施工。当前唯一执行基线为
-> [App Platform Architecture v2 重构执行基线](../../docs/app-platform-architecture-v2-refactor-plan.md)。
-> 总体架构正文仍包含 v1 现状，冲突部分以 ADR-0007～ADR-0013 为准。
+> Architecture v2 正在 `architecture-v2` 分支施工。总体边界以
+> [总体架构](./overall-architecture.md)为准，阶段、门禁和回滚点以
+> [App Platform Architecture v2 重构执行基线](../../docs/app-platform-architecture-v2-refactor-plan.md)
+> 为准。旧 v1 组件文档只可作为迁移记录，不能覆盖 Architecture v2 决策。
 
 ## 总体设计
 
@@ -19,9 +20,9 @@
 - [Info App 采集与资讯治理架构](../info-app/docs/info-app-spider-architecture.md)
 - [Info App 采集与资讯治理实施任务](../info-app/docs/info-app-spider-implementation-tasks.md)
 - [Knowledge App](./knowledge-app.md)
-- [Research App](./research-app.md)
-- [Tools App](./tools-app.md)
 - [Investment App](./investment-app.md)
+- [未来 Research App（尚未创建）](./research-app.md)
+- [未来 Tools App（尚未创建）](./tools-app.md)
 
 ## 架构决策
 

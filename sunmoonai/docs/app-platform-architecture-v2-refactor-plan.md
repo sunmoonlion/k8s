@@ -1,6 +1,6 @@
 # App Platform Architecture v2 重构执行基线
 
-状态：`ACTIVE / R0-R3.2 COMPLETE / R4 INFO+KNOWLEDGE COMPLETE / INVESTMENT RENAME NEXT`
+状态：`ACTIVE / R0-R4 COMPLETE / R4.2 RUNTIME CLEANUP IN PROGRESS`
 
 日期：2026-08-01
 
@@ -27,11 +27,11 @@ Task 和 Handoff；在此之前不得用未来文档宣称尚未完成的能力�
 
 ### 2.1 保留三个领域 App
 
-Info、Knowledge、Research 保持三个独立有界上下文，不合并成一个业务 App：
+Info、Knowledge、Investment 保持三个独立有界上下文，不合并成一个业务 App：
 
 - Info 拥有来源、文档版本、Artifact、分发与可靠投递；
 - Knowledge 拥有摄取、索引、RAGFlow 绑定与检索；
-- Research 拥有 Agent Runtime、研究会话、证据组装与长期记忆；
+- Investment 拥有投资研究、Agent Runtime、研究会话、证据组装与长期记忆；
 - 三者继续使用显式 Artifact、Ingestion、Retrieval、Identity 与 Outbox 契约协作；
 - 不共享数据库，不跨 App 直接读表。
 
@@ -45,7 +45,7 @@ Info、Knowledge、Research 保持三个独立有界上下文，不合并成一�
 ```text
 Info       -> info-backend       -> info database
 Knowledge  -> knowledge-backend  -> knowledge database
-Research   -> research-backend   -> research database
+Investment -> investment-backend -> investment database
 ```
 
 Admin 与 Web 两个 Next.js 前端继续独立部署，但调用同一个领域 Backend。数据库属于 Backend，
@@ -57,7 +57,7 @@ Admin 与 Web 两个 Next.js 前端继续独立部署，但调用同一个领域
 
 - API：短请求、认证、命令受理、查询和 SSE；
 - Worker：异步任务和可靠投递；
-- Agent Worker：仅 Research 的长时 LangGraph 执行；
+- Agent Worker：仅 Investment 的长时 LangGraph 执行；
 - Scheduler/Scanner：定时扫描和补偿；
 - Migration Job：Alembic 迁移；
 - CLI/Reconciler：运维修复和对账。
@@ -122,13 +122,13 @@ backend/
 - 独立扩缩容有持续指标支持；
 - 权限或网络边界要求独立工作负载身份。
 
-Research Agent Worker 因长时执行、取消、checkpoint 和沙箱边界可从 API Worker 独立；是否
+Investment Agent Worker 因长时执行、取消、checkpoint 和沙箱边界可从 API Worker 独立；是否
 进一步拆分仍必须由门禁证据决定。
 
 ### 2.6 模板优先和立即同步
 
 任何共同底座能力必须先在 tpl-app 完成并通过配对门禁，然后立即同步到 Info、Knowledge、
-Research。三个实例完成共同底座同步前，禁止继续在旧实例底座上扩展业务功能。
+Investment。三个实例完成共同底座同步前，禁止继续在旧实例底座上扩展业务功能。
 
 “同步模板”表示继承全部规范共同能力，不只是安全中间件；实例只允许以显式扩展点增加领域
 代码，不得复制后形成不可解释漂移。
@@ -323,7 +323,7 @@ R3.2 前滚复验和独立 Calico 策略集群均已通过；schema 2 模板 rel
 
 ### R4 立即同步三个实例共同底座
 
-严格串行：Info -> Knowledge -> Research。每个实例必须：
+严格串行：Info -> Knowledge -> Investment。每个实例必须：
 
 1. 从已验收模板 release manifest 同步全部共同能力；
 2. 保留领域代码并通过差异分类；
@@ -339,13 +339,13 @@ R4 全部完成前停止新业务功能开发。
 
 ### R5 实例 Backend 与数据库归并
 
-按 Info -> Knowledge -> Research 串行完成代码迁入、迁移链归并、数据回填、对账、切读、
-切写、旧写入封锁和回滚门禁。Research 还必须独立验证 Agent Worker、checkpoint、SSE、
+按 Info -> Knowledge -> Investment 串行完成代码迁入、迁移链归并、数据回填、对账、切读、
+切写、旧写入封锁和回滚门禁。Investment 还必须独立验证 Agent Worker、checkpoint、SSE、
 取消、resume、工具副作用和长期记忆边界。
 
 ### R6 跨 App 真实竖线
 
-真实文档 -> Info Artifact/Outbox -> Knowledge Ingestion/Index/Retrieval -> Research 引用回答。
+真实文档 -> Info Artifact/Outbox -> Knowledge Ingestion/Index/Retrieval -> Investment 引用回答。
 禁止 fake LLM、mock ingestion、伪造 retrieval 或绕过身份。
 
 ### R7 发布、观察窗与退役
