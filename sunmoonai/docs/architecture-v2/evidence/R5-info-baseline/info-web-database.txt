@@ -1,0 +1,14 @@
+section=database
+{"database": "info_web", "captured_at": "2026-08-09T04:44:56.346003+00:00", "session_user": "postgres", "database_owner": "postgres", "server_version": "17.6"}
+section=alembic_heads
+[]
+section=table_counts
+{}
+section=constraints
+{"not_valid": 0, "foreign_keys": 0, "primary_keys": 0, "check_constraints": 0, "unique_constraints": 0}
+section=table_owners
+{}
+section=roles
+[{"role": "info_admin_user", "can_login": true, "is_superuser": false, "can_create_db": false, "can_create_role": false}, {"role": "info_admin_user_migration", "can_login": true, "is_superuser": false, "can_create_db": false, "can_create_role": false}, {"role": "info_web_user", "can_login": true, "is_superuser": false, "can_create_db": false, "can_create_role": false}]
+section=role_privileges
+[{"role": "info_admin_user", "schema_usage": true, "delete_tables": 0, "insert_tables": 0, "schema_create": false, "select_tables": 0, "update_tables": 0, "database_create": false, "database_connect": true}, {"role": "info_admin_user_migration", "schema_usage": true, "delete_tables": 0, "insert_tables": 0, "schema_create": false, "select_tables": 0, "update_tables": 0, "database_create": false, "database_connect": true}, {"role": "info_web_user", "schema_usage": true, "delete_tables": 0, "insert_tables": 0, "schema_create": true, "select_tables": 0, "update_tables": 0, "database_create": false, "database_connect": true}]

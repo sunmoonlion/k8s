@@ -1,0 +1,71 @@
+{
+  "task": "R5-I4-info-formal-runtime",
+  "result": "passed",
+  "release_id": "r5-info-candidate-001",
+  "single_writer": true,
+  "async_writers_enabled": true,
+  "replicas": {
+    "info-r5-backend-api": 2,
+    "info-r5-backend-worker": 1,
+    "info-r5-backend-scheduler": 1,
+    "info-r5-admin-frontend": 2,
+    "info-r5-web-frontend": 2
+  },
+  "v1_replicas": {
+    "info-admin-backend": 0,
+    "celeryworker-info-admin-backend": 0,
+    "info-admin-frontend": 0,
+    "info-web-backend": 0,
+    "nodebullworker-info-web-backend": 0,
+    "info-web-frontend": 0
+  },
+  "database": {
+    "head": "20260809_0005",
+    "database_owner": "info_backend_user_migration",
+    "schema_owner": "info_backend_user_migration",
+    "all_13_tables_owned_by": "info_backend_user_migration",
+    "runtime_role_login": true,
+    "migration_role_login": true,
+    "old_runtime_role_login": false,
+    "old_migration_role_login": false,
+    "counts": {
+      "auth_user": 1,
+      "crawl_job": 25,
+      "delivery_outbox_message": 16,
+      "distribution_record": 22,
+      "extracted_content": 30,
+      "inbox_message": 0,
+      "info_collector": 1,
+      "info_document": 8,
+      "info_document_version": 16,
+      "info_source": 7,
+      "outbox_message": 0,
+      "raw_artifact": 56
+    },
+    "delivery_states": {"completed": 16},
+    "invariant_failures": 0,
+    "not_valid_constraints": 0
+  },
+  "legacy_web_database": {
+    "database": "info_web",
+    "public_tables": 0,
+    "role_can_login": false,
+    "role_can_connect": false,
+    "role_can_create_schema_objects": false
+  },
+  "principals": {
+    "api": "info_backend_user",
+    "worker": "info_backend_user",
+    "scheduler": "info_backend_user",
+    "migration": "info_backend_user_migration"
+  },
+  "worker_service_identity_status": 422,
+  "worker_only_downstream_identity": true,
+  "network_policy": {
+    "long_lived_kind_cni": "kindnet",
+    "long_lived_kind_enforced": false,
+    "production_packet_matrix_evidence": "network-policy-calico-gate.json",
+    "production_packet_matrix_result": "passed"
+  },
+  "credentials_printed": false
+}

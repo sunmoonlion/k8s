@@ -1,0 +1,78 @@
+section=result
+{
+  "task": "R5-INFO-MIGRATION-ROUNDTRIP",
+  "result": "passed",
+  "image": "harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ee962dff40dd0ebee6969f084dceac10a9283814df7af45d1da6e114047bea0d",
+  "backup_sha256": "ce553f688de4310d266d040538b9ab3bbaa8a21793945e96cef1edfe0e5c411e",
+  "heads": {
+    "baseline": "20260714_0004",
+    "upgraded": "20260809_0005",
+    "downgraded": "20260714_0004",
+    "reupgraded": "20260809_0005"
+  },
+  "counts": {
+    "baseline": {
+      "auth_user": 1,
+      "crawl_job": 25,
+      "info_source": 7,
+      "raw_artifact": 56,
+      "info_document": 8,
+      "info_collector": 1,
+      "extracted_content": 30,
+      "distribution_record": 22,
+      "info_document_version": 16,
+      "delivery_outbox_message": 16
+    },
+    "upgraded": {
+      "auth_user": 1,
+      "crawl_job": 25,
+      "info_source": 7,
+      "raw_artifact": 56,
+      "inbox_message": 0,
+      "info_document": 8,
+      "info_collector": 1,
+      "outbox_message": 0,
+      "extracted_content": 30,
+      "distribution_record": 22,
+      "info_document_version": 16,
+      "delivery_outbox_message": 16
+    },
+    "downgraded": {
+      "auth_user": 1,
+      "crawl_job": 25,
+      "info_source": 7,
+      "raw_artifact": 56,
+      "info_document": 8,
+      "info_collector": 1,
+      "extracted_content": 30,
+      "distribution_record": 22,
+      "info_document_version": 16,
+      "delivery_outbox_message": 16
+    },
+    "reupgraded": {
+      "auth_user": 1,
+      "crawl_job": 25,
+      "info_source": 7,
+      "raw_artifact": 56,
+      "inbox_message": 0,
+      "info_document": 8,
+      "info_collector": 1,
+      "outbox_message": 0,
+      "extracted_content": 30,
+      "distribution_record": 22,
+      "info_document_version": 16,
+      "delivery_outbox_message": 16
+    }
+  },
+  "business_counts_unchanged": true,
+  "invariant_failures": 0,
+  "temporary_database_cleanup": "on-exit",
+  "temporary_secret_cleanup": "on-exit",
+  "temporary_jobs_cleanup": "on-exit"
+}
+section=cleanup
+{
+  "restore_database_exists": false,
+  "temporary_secret_exists": false,
+  "temporary_jobs_exist": false
+}

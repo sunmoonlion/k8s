@@ -1,0 +1,41 @@
+{
+  "task": "R5-I5-info-rollback-forward",
+  "result": "passed",
+  "migration_retained": "20260809_0005",
+  "v1_assets_deleted": false,
+  "rollback": {
+    "new_api_worker_scheduler_replicas": 0,
+    "old_six_deployments_ready": "1/1",
+    "four_v1_ingress_routes_restored": true,
+    "info_admin_owner": "info_admin_user_migration",
+    "old_admin_roles_login": true,
+    "new_backend_roles_login": false,
+    "old_admin_api_anonymous_status": 401,
+    "old_runtime_principal": "info_admin_user",
+    "old_runtime_transactional_write_probe": "rolled_back",
+    "business_rows_unchanged": true
+  },
+  "legacy_info_web_roundtrip": {
+    "tables_before": 0,
+    "rollback": {"login": true, "connect": true, "schema_create": true},
+    "forward": {"login": false, "connect": false, "schema_create": false},
+    "tables_after": 0
+  },
+  "forward": {
+    "backup_capture": "r5-info-final-20260809T0704Z",
+    "backup_sha256": "50b897c7b009d58431b019acc75489c8a471bb3e2e4bdbe0d6b3d446abd0ad93",
+    "single_writer": true,
+    "formal_browser_gate_repeated": "passed",
+    "formal_runtime_gate_repeated": "passed",
+    "candidate_ingress_routes_deleted": true,
+    "temporary_probe_pods_remaining": 0,
+    "final_pod_restarts": 0
+  },
+  "observed_environment_limits": {
+    "long_lived_kind_network_policy": "kindnet-does-not-enforce-networkpolicy",
+    "long_lived_kind_hpa_metrics": "metrics-server-absent",
+    "production_network_policy_gate": "passed-in-disposable-calico-kind"
+  },
+  "credentials_printed": false,
+  "business_data_committed": false
+}

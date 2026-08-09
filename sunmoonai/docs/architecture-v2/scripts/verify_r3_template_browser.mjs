@@ -20,6 +20,9 @@ const kubeconfig = process.env.KUBECONFIG || `${process.env.HOME}/.kube/kind-con
 const namespace = process.env.R3_NAMESPACE || 'tpl-architecture-v2-r3'
 const providerNamespace = process.env.R3_PROVIDER_NAMESPACE || 'app-platform-dev'
 const app = process.env.R3_APP || 'tpl'
+// Kubernetes resource names can carry a rollout suffix (for example info-r5),
+// while the authenticated business identity and cookie namespace remain stable.
+const logicalApp = process.env.R3_LOGICAL_APP || app
 const task = process.env.R3_BROWSER_TASK || 'architecture-v2-r3-browser'
 const adminOrigin = process.env.R3_ADMIN_ORIGIN || 'https://tpl-admin-r3.sunmoonai.com:30443'
 const webOrigin = process.env.R3_WEB_ORIGIN || 'https://tpl-web-r3.sunmoonai.com:30443'
@@ -235,15 +238,15 @@ async function verifySurface({ surface, origin, loginLabel, heading, identity })
     me.status !== 200 ||
     me.body?.contract_version !== 1 ||
     me.body?.authenticated !== true ||
-    me.body?.user?.app !== app ||
+    me.body?.user?.app !== logicalApp ||
     me.body?.user?.surface !== surface ||
     typeof me.body?.csrf_token !== 'string'
   ) {
     throw new Error(`${surface} authenticated identity contract is invalid`)
   }
   const cookies = await context.cookies(origin)
-  const expectedCookie = `sunmoonai_${app}_${surface}_sid`
-  const otherCookie = `sunmoonai_${app}_${surface === 'admin' ? 'web' : 'admin'}_sid`
+  const expectedCookie = `sunmoonai_${logicalApp}_${surface}_sid`
+  const otherCookie = `sunmoonai_${logicalApp}_${surface === 'admin' ? 'web' : 'admin'}_sid`
   const session = cookies.find((cookie) => cookie.name === expectedCookie)
   if (!session?.httpOnly || !session.secure || session.sameSite !== 'Lax') {
     throw new Error(`${surface} session cookie contract is incomplete`)

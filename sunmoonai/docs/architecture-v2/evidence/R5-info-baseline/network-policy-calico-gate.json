@@ -1,0 +1,13 @@
+{
+  "task": "architecture-v2-r5-info-network-policy",
+  "result": "passed",
+  "cni": "calico",
+  "calico_version": "v3.28.2",
+  "internal_to_backend": 200,
+  "frontend_to_backend": 200,
+  "unlabelled_to_backend": "denied",
+  "worker_to_knowledge": 200,
+  "api_to_knowledge": "denied",
+  "scheduler_to_knowledge": "denied",
+  "credentials_printed": false
+}

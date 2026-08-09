@@ -1,0 +1,49 @@
+{
+  "task": "R5-I2",
+  "result": "passed",
+  "runtime_secret_keys": [
+    "APP_DB_NAME",
+    "APP_DB_PASSWORD",
+    "APP_DB_URI",
+    "APP_DB_USER",
+    "DATABASE_URL",
+    "DB_ENGINE",
+    "DB_HOST",
+    "DB_PORT",
+    "ENVIRONMENT",
+    "SERVICE_NAME"
+  ],
+  "migration_secret_keys": [
+    "MIGRATION_DATABASE_URL",
+    "MIGRATION_DATABASE_USER"
+  ],
+  "runtime_secret_state": "prepared-not-active",
+  "migration_secret_state": "prepared-not-active",
+  "database": {
+    "runtime_login": true,
+    "migration_login": true,
+    "runtime_create_db": false,
+    "runtime_principal": "info_backend_user",
+    "runtime_superuser": false,
+    "probe_table_absent": true,
+    "runtime_ddl_denied": true,
+    "legacy_owner_tables": 11,
+    "migration_create_db": false,
+    "migration_principal": "info_backend_user_migration",
+    "migration_superuser": false,
+    "runtime_create_role": false,
+    "runtime_replication": false,
+    "migration_create_role": false,
+    "migration_replication": false,
+    "runtime_delete_tables": 11,
+    "runtime_insert_tables": 11,
+    "runtime_schema_create": false,
+    "runtime_select_tables": 11,
+    "runtime_update_tables": 11,
+    "migration_schema_create": true
+  },
+  "credentials_printed": false,
+  "owner_transfer": false,
+  "legacy_revoke": false,
+  "deployment_change": false
+}

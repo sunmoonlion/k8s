@@ -1,0 +1,20 @@
+section=database
+{"database": "info_admin", "captured_at": "2026-08-09T04:44:54.29484+00:00", "session_user": "postgres", "database_owner": "info_admin_user_migration", "server_version": "17.6"}
+section=alembic_heads
+["20260714_0004"]
+section=table_counts
+{"auth_user": 1, "crawl_job": 25, "info_source": 7, "raw_artifact": 56, "info_document": 8, "info_collector": 1, "extracted_content": 30, "distribution_record": 22, "info_document_version": 16, "delivery_outbox_message": 16}
+section=constraints
+{"not_valid": 0, "foreign_keys": 14, "primary_keys": 11, "check_constraints": 0, "unique_constraints": 5}
+section=table_owners
+{"info_admin_user_migration": 11}
+section=roles
+[{"role": "info_admin_user", "can_login": true, "is_superuser": false, "can_create_db": false, "can_create_role": false}, {"role": "info_admin_user_migration", "can_login": true, "is_superuser": false, "can_create_db": false, "can_create_role": false}, {"role": "info_web_user", "can_login": true, "is_superuser": false, "can_create_db": false, "can_create_role": false}]
+section=role_privileges
+[{"role": "info_admin_user", "schema_usage": true, "delete_tables": 10, "insert_tables": 10, "schema_create": false, "select_tables": 10, "update_tables": 10, "database_create": false, "database_connect": true}, {"role": "info_admin_user_migration", "schema_usage": true, "delete_tables": 10, "insert_tables": 10, "schema_create": true, "select_tables": 10, "update_tables": 10, "database_create": true, "database_connect": true}, {"role": "info_web_user", "schema_usage": true, "delete_tables": 0, "insert_tables": 0, "schema_create": false, "select_tables": 0, "update_tables": 0, "database_create": false, "database_connect": true}]
+section=info_invariants
+{"invalid_artifact_sizes": 0, "duplicate_auth_identities": 0, "duplicate_document_versions": 0, "invalid_extracted_content_sizes": 0, "document_current_version_missing": 0, "distribution_version_wrong_document": 0, "duplicate_delivery_idempotency_keys": 0, "document_current_version_wrong_owner": 0}
+section=delivery_outbox_states
+{"completed": 16}
+section=template_outbox_presence
+{"inbox_message": false, "outbox_message": false}

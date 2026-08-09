@@ -1,0 +1,17 @@
+{
+  "task": "V5-P0-005-service-negative-matrix",
+  "result": "passed",
+  "statuses": {
+    "valid_control": 422,
+    "expired": 401,
+    "wrong_audience": 401,
+    "wrong_issuer": 401,
+    "unbound_subject": 403,
+    "malformed_scope": 401,
+    "forged_signature": 401
+  },
+  "token_printed": false,
+  "credentials_printed": false,
+  "provider_private_key_printed": false,
+  "service_account_token_mounted": false
+}

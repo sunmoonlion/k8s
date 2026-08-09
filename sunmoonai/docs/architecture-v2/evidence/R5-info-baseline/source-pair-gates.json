@@ -1,0 +1,51 @@
+{
+  "task": "R5-I1-info-source-pair-gates",
+  "result": "passed",
+  "checked_at": "2026-08-09",
+  "unified_backend": {
+    "commit": "7a1669da37a5582691d523905b85c11a0e5ba6b4",
+    "test_result": "96 passed, 2 skipped",
+    "alembic_head": "20260809_0005",
+    "surfaces": [
+      "/api/auth/admin",
+      "/api/admin",
+      "/api/auth/web",
+      "/api/web/v1"
+    ]
+  },
+  "admin_frontend": {
+    "commit": "29f3cf6356303d597dca3c8074863bc1c5fb84a3",
+    "framework": "Next.js 16.2.2",
+    "typecheck": "passed",
+    "lint": "passed",
+    "i18n": "66 keys passed",
+    "tests": "44 passed",
+    "production_build": "passed",
+    "backend_contract": "same-origin /api plus server-only BACKEND_INTERNAL_URL",
+    "surface": "admin"
+  },
+  "web_frontend": {
+    "commit": "57ce5a743a666eea97dc77ff94c9762eaba1a49c",
+    "framework": "Next.js 16.2.2",
+    "typecheck": "passed",
+    "lint": "passed",
+    "i18n": "64 keys passed",
+    "tests": "46 passed, 2 skipped provider vectors",
+    "production_build": "passed",
+    "backend_contract": "same-origin /api plus server-only BACKEND_INTERNAL_URL",
+    "surface": "web"
+  },
+  "isolation": {
+    "distinct_surface": true,
+    "distinct_callback": true,
+    "distinct_cookie_namespace": true,
+    "distinct_session_namespace": true,
+    "provider_tokens_in_browser": false,
+    "frontend_database_access": false
+  },
+  "notes": [
+    "The first Admin build attempt failed only because the managed sandbox forbids Turbopack from binding its internal localhost port.",
+    "The same unmodified source built successfully outside that network sandbox.",
+    "Provider-backed interaction vectors remain intentionally skipped until the R5 strict-TLS candidate gate."
+  ]
+}

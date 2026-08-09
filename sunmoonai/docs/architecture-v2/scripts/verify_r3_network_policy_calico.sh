@@ -60,7 +60,10 @@ import sys
 
 with open(sys.argv[1], encoding="utf-8") as handle:
     release = json.load(handle)
-print(release["app"], release["namespace"])
+resource_app = release.get("app") or release.get("resource_app")
+if not resource_app:
+    raise SystemExit("release app/resource_app is absent")
+print(resource_app, release["namespace"])
 PY
 )
 [[ -n "$APP" && -n "$NAMESPACE" ]] || {
@@ -238,11 +241,54 @@ spec:
     app.kubernetes.io/component: backend-api
   ports:
     - {name: http, port: 8000, targetPort: http}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knowledge-policy-target
+  namespace: ${NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: knowledge-policy-target
+  template:
+    metadata:
+      labels:
+        app: knowledge-policy-target
+        sunmoonai.com/internal-provider: 'true'
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: server
+          image: ${SERVER_IMAGE}
+          imagePullPolicy: Never
+          command: ["python", "-m", "http.server", "8000"]
+          ports:
+            - {name: http, containerPort: 8000}
+          readinessProbe:
+            tcpSocket: {port: http}
+            periodSeconds: 2
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: knowledge-admin-backend
+  namespace: ${NAMESPACE}
+spec:
+  selector:
+    app: knowledge-policy-target
+  ports:
+    - {name: http, port: 8000, targetPort: http}
 EOF
 k rollout status "deployment/${BACKEND_DEPLOYMENT}" -n "$NAMESPACE" --timeout=180s >/dev/null
+k rollout status deployment/knowledge-policy-target -n "$NAMESPACE" --timeout=180s >/dev/null
 
 probe() {
-  local name="$1" labels="$2" expected="$3" phase=""
+  local name="$1" labels="$2" expected="$3" target="${4:-http://${BACKEND_SERVICE}:8000/}" phase=""
   k delete pod "$name" -n "$NAMESPACE" --ignore-not-found=true --wait=true >/dev/null
   k run "$name" -n "$NAMESPACE" \
     --restart=Never \
@@ -251,7 +297,7 @@ probe() {
     --labels="$labels" \
     --overrides='{"spec":{"automountServiceAccountToken":false}}' \
     --command -- sh -ec \
-    "timeout 12 wget -q -T 5 -O /dev/null http://${BACKEND_SERVICE}:8000/" >/dev/null
+    "timeout 12 wget -q -T 5 -O /dev/null '${target}'" >/dev/null
   for _ in $(seq 1 30); do
     phase="$(k get pod "$name" -n "$NAMESPACE" -o jsonpath='{.status.phase}' 2>/dev/null || true)"
     [[ "$phase" == Succeeded || "$phase" == Failed ]] && break
@@ -269,5 +315,17 @@ printf 'R3_POLICY_STAGE=packet_gate\n'
 probe r3-policy-internal "sunmoonai.com/allow-${APP}-internal=true" Succeeded
 probe r3-policy-frontend "sunmoonai.com/app=${APP},app.kubernetes.io/component=admin-frontend" Succeeded
 probe r3-policy-denied 'sunmoonai.com/r3-probe=denied' Failed
+probe r3-policy-worker-knowledge \
+  "sunmoonai.com/app=${APP},app.kubernetes.io/component=backend-worker" \
+  Succeeded \
+  'http://knowledge-admin-backend:8000/'
+probe r3-policy-api-knowledge \
+  "sunmoonai.com/app=${APP},app.kubernetes.io/component=backend-api" \
+  Failed \
+  'http://knowledge-admin-backend:8000/'
+probe r3-policy-scheduler-knowledge \
+  "sunmoonai.com/app=${APP},app.kubernetes.io/component=backend-scheduler" \
+  Failed \
+  'http://knowledge-admin-backend:8000/'
 
-printf '{"task":"%s","result":"passed","cni":"calico","calico_version":"%s","internal_to_backend":200,"frontend_to_backend":200,"unlabelled_to_backend":"denied","credentials_printed":false}\n' "$TASK" "$CALICO_VERSION"
+printf '{"task":"%s","result":"passed","cni":"calico","calico_version":"%s","internal_to_backend":200,"frontend_to_backend":200,"unlabelled_to_backend":"denied","worker_to_knowledge":200,"api_to_knowledge":"denied","scheduler_to_knowledge":"denied","credentials_printed":false}\n' "$TASK" "$CALICO_VERSION"

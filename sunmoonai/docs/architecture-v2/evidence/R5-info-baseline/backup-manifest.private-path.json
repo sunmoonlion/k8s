@@ -1,0 +1,11 @@
+{
+  "task": "R5-INFO-BACKUP",
+  "result": "passed",
+  "database": "info_admin",
+  "capture_id": "info-baseline-20260809",
+  "private_state_locator": "$HOME/.local/state/sunmoonai/architecture-v2/r5-info/info-baseline-20260809/info_admin.dump",
+  "sha256": "ce553f688de4310d266d040538b9ab3bbaa8a21793945e96cef1edfe0e5c411e",
+  "bytes": 71412,
+  "contains_secrets_or_business_data": true,
+  "commit_to_git": false
+}

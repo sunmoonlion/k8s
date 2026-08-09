@@ -1,0 +1,61 @@
+{
+  "async_writers_enabled": false,
+  "candidate_replicas": {
+    "info-r5-admin-frontend": 2,
+    "info-r5-backend-api": 2,
+    "info-r5-backend-scheduler": 0,
+    "info-r5-backend-worker": 0,
+    "info-r5-web-frontend": 2
+  },
+  "credentials_printed": false,
+  "database": {
+    "counts": {
+      "auth_user": 1,
+      "crawl_job": 25,
+      "delivery_outbox_message": 16,
+      "distribution_record": 22,
+      "extracted_content": 30,
+      "inbox_message": 0,
+      "info_collector": 1,
+      "info_document": 8,
+      "info_document_version": 16,
+      "info_source": 7,
+      "outbox_message": 0,
+      "raw_artifact": 56
+    },
+    "delivery_states": {"completed": 16},
+    "head": "20260809_0005",
+    "invariant_failures": 0,
+    "not_valid_constraints": 0
+  },
+  "knowledge_egress_denied": {
+    "api": {"reason": "kindnet-does-not-enforce-networkpolicy", "verified": false},
+    "scheduler": {"reason": "kindnet-does-not-enforce-networkpolicy", "verified": false}
+  },
+  "migration_job_state": "ttl_expired_after_head_observed",
+  "network_policy_runtime": {
+    "detected_daemonsets": ["kindnet", "kube-proxy"],
+    "enforced": false,
+    "limitation": "kindnet-does-not-enforce-networkpolicy"
+  },
+  "principals": {
+    "api": {"database": "info_admin", "head": "20260809_0005", "principal": "info_backend_user"},
+    "migration": {"database": "info_admin", "head": "20260809_0005", "principal": "info_backend_user_migration"},
+    "scheduler": {"database": "info_admin", "head": "20260809_0005", "principal": "info_backend_user"},
+    "worker": {"database": "info_admin", "head": "20260809_0005", "principal": "info_backend_user"}
+  },
+  "production_network_policy_gate_satisfied": false,
+  "release_id": "r5-info-candidate-001",
+  "result": "passed",
+  "task": "R5-I3-info-candidate-runtime",
+  "v1": {
+    "celeryworker-info-admin-backend": {"image_unchanged": true, "replicas": 1},
+    "info-admin-backend": {"image_unchanged": true, "replicas": 1},
+    "info-admin-frontend": {"image_unchanged": true, "replicas": 1},
+    "info-web-backend": {"image_unchanged": true, "replicas": 1},
+    "info-web-frontend": {"image_unchanged": true, "replicas": 1},
+    "nodebullworker-info-web-backend": {"image_unchanged": true, "replicas": 1}
+  },
+  "worker_only_downstream_identity": true,
+  "worker_service_identity": {"status": 422, "token_printed": false}
+}
