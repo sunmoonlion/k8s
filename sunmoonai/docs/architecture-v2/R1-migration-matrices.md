@@ -70,6 +70,10 @@
 - `2.0.0` 观察窗结束且引用扫描为零后归档为只读；
 - 归档不等于删除 Git 历史或旧镜像，后两者受 ADR-0013 的回滚和 GC 门禁控制。
 
+R4 实例三组件门禁通过后，旧 Web Backend 应从实例父仓的活跃 `.gitmodules`
+解除，避免继续被误认为可开发源码。这里的“R5 compatibility-only”保留面是旧独立
+仓库/冻结标签、锁定镜像和 K8s v1 回滚声明；不要求在实例父仓继续挂载第四个子模块。
+
 ### 2.3 父仓和参考实现
 
 模板默认实例化链只包含：
@@ -88,9 +92,10 @@ tpl-web-frontend
 
 参考仓必须能独立验证，但不得把它们的 Worker、数据库或 K8s 组件实例化到新 App。
 
-现有 `celeryworker-*-admin-backend`、`nodebullworker-*-web-backend` 是父仓中的部署脚手架，
-不是独立源码所有者。R3 将其收敛为规范 Backend 的 runtime-role manifests；旧目录保留到 R7，
-不再生成第二套 Backend。
+现有 `celeryworker-*-admin-backend`、`nodebullworker-*-web-backend` 不是独立源码所有者。
+R3 已把新架构运行角色收敛为规范 Backend 的 runtime-role manifests；R4 通过后，从实例
+源码父仓删除这些重复脚手架。旧目录仅在 `k8s` 仓库作为 v1 运行基线/回滚声明保留到
+R7，不再生成第二套 Backend。
 
 ## 3. 源码能力迁移矩阵
 
