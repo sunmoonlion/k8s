@@ -1,6 +1,6 @@
 # Architecture v2 R5 Info Backend 与数据库归并方案
 
-状态：`R5 CUTOVER PASSED / R7 OBSERVATION ACTIVE`
+状态：`R5 RUNTIME CUTOVER PASSED / DECLARATIVE CLOSEOUT IN PROGRESS`
 
 日期：2026-08-09
 
@@ -9,7 +9,7 @@
 上游基线：`architecture-v2-r3.2-20260808`、Info R4、R4.1、R4.2
 
 本文件是 R5 第一个串行对象 Info 的权威施工方案。Knowledge 和 Investment 在 Info 完成源码、
-数据库、KIND 切换、回滚和证据门禁前不得进入 R5。
+数据库、KIND 切换、回滚、`app-platform/info-app` 声明式部署收口和证据门禁前不得进入 R5。
 
 ## 1. 结论
 
@@ -67,15 +67,15 @@ Info 采用以下不可变决策：
 - 约束：0；
 - 当前角色 `info_web_user` 仍可连接并创建 schema 对象，这是 R5 切换时必须封锁的旧写入口。
 
-### 2.3 当前 v1 运行拓扑
+### 2.3 R5 切换前的 v1 运行拓扑基线
 
-当前 `app-platform-dev` 仍运行六个旧 Deployment：
+R5 切换前，`app-platform-dev` 运行六个旧 Deployment：
 
 - `info-admin-backend`、`celeryworker-info-admin-backend`；
 - `info-web-backend`、`nodebullworker-info-web-backend`；
 - `info-admin-frontend`、`info-web-frontend`。
 
-另有已暂停的 `info-delivery-outbox-scanner` CronJob。旧 Admin/Web Backend 分别引用
+另有已暂停的 `info-delivery-outbox-scanner` CronJob。旧 Admin/Web Backend 当时分别引用
 `info-admin-backend-postgresql-conn` 和 `info-web-backend-postgresql-conn`；这证明切换前仍是双
 Backend、双数据库接线，不能把 R4 隔离门禁误当成生产 namespace 已迁移。
 
@@ -273,6 +273,27 @@ R5 完成后仍保留旧数据库、角色、Secret、PVC、Deployment 声明和
 不得提交。正式验收证据见 `formal-browser-gate.json`、`formal-runtime-gate.json` 和
 `rollback-forward-gate.json`。
 
+### R5-I6 声明式部署收口
+
+- [x] 将 `app-platform/info-app` 的默认部署入口切换为已验收的统一 Backend 正式态；
+- [x] 正式清单声明 API=2、Worker=1、Scheduler=1、Admin=2、Web=2 及不可变镜像 digest；
+- [x] 正式清单声明双前端 `/api` 与 `/` 优先级路由、正式配置、角色隔离和 NetworkPolicy；
+- [x] 将旧六组件部署生成器移出默认扫描面，保留于显式 `legacy-v1` 回滚边界；
+- [x] 提供 render、静态验证、server-side dry-run、apply、status 和 drift reconciliation；
+- [ ] 从干净生成目录重建正式态并重复浏览器、运行、数据和单写者门禁；
+- [ ] 提交并双远端对齐后，才允许将 Info R5 标记 DONE、开始 Knowledge R5。
+
+该步骤是 Info 暂时重新打开 R5 的原因。私有候选 bundle 和已经成功的集群切换不能替代 Git 中
+的声明式部署真相。
+
+2026-08-09 声明式收口已完成以下子门禁：空目录重复生成与 Git bundle 逐字一致、跨实例通用
+静态门禁通过、Kubernetes server-side dry-run 通过、默认入口正式 reconcile 通过、Migration Job
+成功后清理、旧六组件保持 0 副本、`kubectl diff` 零漂移。深层 runtime/data/single-writer 与
+严格 TLS 浏览器门禁须在本次 reconcile 后再重复一次，之后才能勾选最后两项。
+
+通用门禁为 `app-platform/scripts/verify-architecture-v2-instance.py`。Knowledge 与 Investment
+必须提交同一 schema 的 formal `release.json` 并通过该脚本，禁止另写弱化版实例检查器。
+
 ## 5. 退出门禁
 
 只有以下全部通过，Info R5 才可标记 DONE：
@@ -287,6 +308,7 @@ R5 完成后仍保留旧数据库、角色、Secret、PVC、Deployment 声明和
 - 统一 Backend 的 Admin/Web 契约与异步交付通过；
 - 原生回滚和再次前滚均通过，前后数据不变量一致；
 - 临时 namespace、恢复数据库、临时凭据和测试任务已清理；
+- `app-platform/info-app` 默认部署可从 Git 重建当前正式态，且旧 v1 不在默认扫描面；
 - GitHub/Gitee、源码 commit、镜像 digest 和证据闭合。
 
 任何一项失败均不得开始 Knowledge R5，不得晋级 `2.0.0`，不得删除 v1 资产。

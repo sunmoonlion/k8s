@@ -1,0 +1,21 @@
+{
+  "task": "R5-I6-info-declarative-closeout",
+  "result": "passed",
+  "date": "2026-08-09",
+  "source_of_truth": "sunmoonai/app-platform/info-app/architecture-v2/bundle",
+  "release_id": "r5-info-formal-001",
+  "clean_room_render_equal": true,
+  "shared_static_gate": true,
+  "server_side_dry_run": true,
+  "formal_reconcile": true,
+  "drift": false,
+  "migration_job_cleaned": true,
+  "legacy_deployment_replicas": 0,
+  "credentials_printed": false,
+  "credentials_committed": false,
+  "overall_r5_closeout_pending": [
+    "post-reconcile-runtime-data-single-writer-gate",
+    "post-reconcile-strict-tls-browser-gate",
+    "dual-remote-alignment"
+  ]
+}

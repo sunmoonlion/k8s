@@ -1,0 +1,203 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: info-r5-backend-api
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: info-r5
+    sunmoonai.com/managed-by: architecture-v2
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: info-r5-backend-worker
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: info-r5
+    sunmoonai.com/managed-by: architecture-v2
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: info-r5-backend-scheduler
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: info-r5
+    sunmoonai.com/managed-by: architecture-v2
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: info-r5-backend-migration
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: info-r5
+    sunmoonai.com/managed-by: architecture-v2
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: info-r5-admin-frontend
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: info-r5
+    sunmoonai.com/managed-by: architecture-v2
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: info-r5-web-frontend
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: info-r5
+    sunmoonai.com/managed-by: architecture-v2
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: info-r5-backend-config
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: info-r5
+    sunmoonai.com/managed-by: architecture-v2
+data:
+  ENV: production
+  LOG_LEVEL: INFO
+  SERVICE_NAME: info-backend
+  DEPLOYMENT_ID: r5-info-formal-001
+  APP_SLUG: info
+  REDIS_HOST: redis-sunmoonai-master.data-platform-dev.svc.cluster.local
+  REDIS_PORT: '6379'
+  REDIS_DB: '0'
+  CASDOOR_ENDPOINT: https://casdoor.sunmoonai.com:30443
+  CASDOOR_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  CASDOOR_BACKCHANNEL_ENDPOINT: http://casdoor-sunmoonai.app-platform-dev.svc.cluster.local:8000
+  CASDOOR_ORGANIZATION: sunmoonai
+  CASDOOR_VERIFY_SSL: 'true'
+  ADMIN_CASDOOR_CLIENT_ID: sunmoonai-info-r5-admin
+  ADMIN_CASDOOR_REDIRECT_URI: https://info-admin.sunmoonai.com:30443/api/auth/admin/callback
+  ADMIN_CASDOOR_APPLICATION: sunmoonai-info-r5-admin
+  ADMIN_AUTH_POLICY_VERSION: info-admin-v2
+  ADMIN_AUTH_ROLE_ALLOWLIST: admin,operator
+  ADMIN_AUTH_SCOPE_ALLOWLIST: info:admin
+  ADMIN_FRONTEND_BASE_URL: https://info-admin.sunmoonai.com:30443
+  ADMIN_FRONTEND_ALLOWED_ORIGINS: https://info-admin.sunmoonai.com:30443
+  ADMIN_AUTH_DEFAULT_RETURN_TO: /
+  ADMIN_AUTH_ALLOWED_RETURN_PATHS: /
+  WEB_CASDOOR_CLIENT_ID: sunmoonai-info-r5-web
+  WEB_CASDOOR_REDIRECT_URI: https://info.sunmoonai.com:30443/api/auth/web/callback
+  WEB_CASDOOR_APPLICATION: sunmoonai-info-r5-web
+  WEB_AUTH_POLICY_VERSION: info-web-v2
+  WEB_AUTH_ROLE_ALLOWLIST: member
+  WEB_AUTH_SCOPE_ALLOWLIST: profile:read
+  WEB_FRONTEND_BASE_URL: https://info.sunmoonai.com:30443
+  WEB_FRONTEND_ALLOWED_ORIGINS: https://info.sunmoonai.com:30443
+  WEB_AUTH_DEFAULT_RETURN_TO: /zh-CN/dashboard
+  WEB_AUTH_ALLOWED_RETURN_PATHS: /zh-CN/dashboard,/en/dashboard,/zh-CN/login,/en/login
+  WEB_FRONTEND_DEFAULT_LOCALE: zh-CN
+  SESSION_COOKIE_SECURE: 'true'
+  ALLOWED_HOSTS: info-r5-backend,info-r5-backend.app-platform-dev,info-r5-backend.app-platform-dev.svc,info-r5-backend.app-platform-dev.svc.cluster.local,info-admin.sunmoonai.com,info.sunmoonai.com,info-admin-api.sunmoonai.com,info-api.sunmoonai.com
+  REFERENCE_INTERACTION_ENABLED: 'false'
+  SERVICE_AUTH_SUBJECT_BINDINGS_JSON: '{}'
+  CELERY_QUEUE: info.admin.default
+  CELERY_WORKER_CONCURRENCY: '2'
+  STORAGE_BACKEND: s3
+  SEARCH_BACKEND: elasticsearch
+  ELASTICSEARCH_INDEX: info-information
+  DELIVERY_OUTBOX_BATCH_SIZE: '50'
+  DELIVERY_OUTBOX_LEASE_SECONDS: '30'
+  DELIVERY_OUTBOX_ACK_TIMEOUT_SECONDS: '300'
+  DELIVERY_OUTBOX_RETRY_BASE_SECONDS: '5'
+  DELIVERY_OUTBOX_RETRY_MAX_SECONDS: '300'
+  KNOWLEDGE_APP_INGEST_URL: http://knowledge-admin-backend:8000/api/internal/v1/knowledge/ingestions
+  KNOWLEDGE_APP_SERVICE_APPLICATION: sunmoonai-info-knowledge-ingest
+  KNOWLEDGE_APP_SERVICE_SCOPE: knowledge:ingest
+  KNOWLEDGE_APP_TIMEOUT_SECONDS: '20'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: info-r5-admin-frontend-config
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: info-r5
+    sunmoonai.com/managed-by: architecture-v2
+data:
+  DEPLOYMENT_ENV: production
+  AUTH_APP: info
+  APP_ORIGIN: https://info-admin.sunmoonai.com:30443
+  BACKEND_INTERNAL_URL: http://info-r5-backend:8000
+  DEPLOYMENT_ID: r5-info-formal-001-admin
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: info-r5-web-frontend-config
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: info-r5
+    sunmoonai.com/managed-by: architecture-v2
+data:
+  DEPLOYMENT_ENV: production
+  AUTH_APP: info
+  APP_ORIGIN: https://info.sunmoonai.com:30443
+  BACKEND_INTERNAL_URL: http://info-r5-backend:8000
+  DEPLOYMENT_ID: r5-info-formal-001-web
+  REFERENCE_UI_ENABLED: 'false'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: info-r5-backend
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: info-r5
+    sunmoonai.com/managed-by: architecture-v2
+spec:
+  selector:
+    sunmoonai.com/app: info-r5
+    app.kubernetes.io/component: backend-api
+  ports:
+  - name: http
+    port: 8000
+    targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: info-r5-admin-frontend
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: info-r5
+    sunmoonai.com/managed-by: architecture-v2
+spec:
+  selector:
+    sunmoonai.com/app: info-r5
+    app.kubernetes.io/component: admin-frontend
+  ports:
+  - name: http
+    port: 3000
+    targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: info-r5-web-frontend
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: info-r5
+    sunmoonai.com/managed-by: architecture-v2
+spec:
+  selector:
+    sunmoonai.com/app: info-r5
+    app.kubernetes.io/component: web-frontend
+  ports:
+  - name: http
+    port: 3000
+    targetPort: http

@@ -343,6 +343,21 @@ R4 全部完成前停止新业务功能开发。
 切写、旧写入封锁和回滚门禁。Investment 还必须独立验证 Agent Worker、checkpoint、SSE、
 取消、resume、工具副作用和长期记忆边界。
 
+每个实例必须在进入下一个实例前同时完成以下五个闭环，缺一项都不得标记 R5 DONE：
+
+1. 实例源码父仓只保留规范 `backend + admin-frontend + web-frontend` 活跃拓扑；
+2. 数据库 migration、owner、runtime/migration role 和旧写入口完成可逆切换；
+3. KIND/目标集群完成严格 TLS、真实身份、单写者、数据对账和原生回滚/前滚；
+4. `k8s/sunmoonai/app-platform/<app>` 成为正式声明式部署唯一真相源，默认整体部署只能重建
+   已验收的 v2 正式态，不能重新启用旧双 Backend；
+5. 从干净生成目录执行 render/diff/apply/reconcile 门禁，证明 Git 清单与集群对象无漂移，且
+   GitHub/Gitee SHA 一致。
+
+候选 bundle、`$HOME/.local/state` 产物、手工 `kubectl patch/scale` 和运行态 smoke 都只能作为
+迁移手段或证据，禁止替代第 4、5 项。v1 回滚声明在 R7 前必须保留于显式 `legacy-v1` 边界，
+但不得继续被默认部署入口扫描或应用。此规则对 Info、Knowledge、Investment 完全相同；若前一
+实例未完成声明式收口，禁止开始后一实例。
+
 ### R6 跨 App 真实竖线
 
 真实文档 -> Info Artifact/Outbox -> Knowledge Ingestion/Index/Retrieval -> Investment 引用回答。
