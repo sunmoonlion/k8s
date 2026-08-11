@@ -1,6 +1,6 @@
 # App Platform Architecture v2 重构执行基线
 
-状态：`ACTIVE / R0-R4.2 COMPLETE / R5 INFO DONE / KNOWLEDGE NOT STARTED`
+状态：`ACTIVE / R0-R4.2 COMPLETE / R5 INFO DONE / KNOWLEDGE BASELINE IN PROGRESS`
 
 日期：2026-08-01
 
@@ -363,7 +363,8 @@ R4 全部完成前停止新业务功能开发。
 `app-platform/info-app` 声明式部署收口。干净生成、静态验证、server-side dry-run、正式
 reconcile、零漂移、reconcile 后 runtime/data/single-writer 与浏览器复验均通过；实现与验收
 父提交 `4fcf7667917b350cb7fd9b85036c70431e07ccb8` 已完成 GitHub/Gitee 对齐。Info R5 状态为
-`DONE`；Knowledge R5 仅从此状态提交之后才允许开始，本提交本身不启动 Knowledge 施工。
+`DONE`。Knowledge R5 已从 Info 关闭提交之后进入只读基线与备份/恢复阶段，权威方案为
+`architecture-v2/R5-knowledge-migration-plan.md`；在该方案全部门禁闭合前不得开始 Investment R5。
 
 ### R6 跨 App 真实竖线
 

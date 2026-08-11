@@ -1,0 +1,39 @@
+{
+  "task": "R5-K0-knowledge-database-baseline",
+  "result": "passed",
+  "date": "2026-08-11",
+  "database": "knowledge_admin",
+  "server_version": "17.6",
+  "database_owner": "knowledge_admin_user_migration",
+  "alembic_heads": ["20260715_0003"],
+  "table_counts": {
+    "auth_user": 1,
+    "knowledge_document": 1,
+    "knowledge_document_version": 1,
+    "knowledge_ingestion_job": 38
+  },
+  "constraints": {
+    "primary_keys": 5,
+    "foreign_keys": 2,
+    "unique_constraints": 5,
+    "check_constraints": 0,
+    "not_valid": 0
+  },
+  "table_owners": {"knowledge_admin_user_migration": 5},
+  "ingestion_states": {
+    "accepted": 5,
+    "artifact_unreadable": 5,
+    "artifact_verified": 18,
+    "failed": 6,
+    "legacy_binding_missing": 3,
+    "succeeded": 1
+  },
+  "document_states": {"active": 1},
+  "version_states": {"indexed": 1},
+  "invariant_failures": 0,
+  "template_outbox_present": false,
+  "template_inbox_present": false,
+  "old_runtime_role_login": true,
+  "old_migration_role_login": true,
+  "credentials_printed": false
+}
