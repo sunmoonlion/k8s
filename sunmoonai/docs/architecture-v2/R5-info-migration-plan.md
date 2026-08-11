@@ -288,8 +288,9 @@ R5 完成后仍保留旧数据库、角色、Secret、PVC、Deployment 声明和
 
 2026-08-09 声明式收口已完成以下子门禁：空目录重复生成与 Git bundle 逐字一致、跨实例通用
 静态门禁通过、Kubernetes server-side dry-run 通过、默认入口正式 reconcile 通过、Migration Job
-成功后清理、旧六组件保持 0 副本、`kubectl diff` 零漂移。深层 runtime/data/single-writer 与
-严格 TLS 浏览器门禁须在本次 reconcile 后再重复一次，之后才能勾选最后两项。
+成功后清理、旧六组件保持 0 副本、`kubectl diff` 零漂移。2026-08-11 已在本次 reconcile 后重复
+严格 TLS 浏览器门禁，Admin/Web 两个表面的真实 Casdoor 登录、注销、撤销和 client 隔离再次通过。
+深层 runtime/data/single-writer 门禁仍须重复，之后才能勾选最后两项。
 
 通用门禁为 `app-platform/scripts/verify-architecture-v2-instance.py`。Knowledge 与 Investment
 必须提交同一 schema 的 formal `release.json` 并通过该脚本，禁止另写弱化版实例检查器。

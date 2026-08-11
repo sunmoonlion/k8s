@@ -9,13 +9,13 @@
   "server_side_dry_run": true,
   "formal_reconcile": true,
   "drift": false,
+  "post_reconcile_strict_tls_browser_gate": true,
   "migration_job_cleaned": true,
   "legacy_deployment_replicas": 0,
   "credentials_printed": false,
   "credentials_committed": false,
   "overall_r5_closeout_pending": [
     "post-reconcile-runtime-data-single-writer-gate",
-    "post-reconcile-strict-tls-browser-gate",
     "dual-remote-alignment"
   ]
 }

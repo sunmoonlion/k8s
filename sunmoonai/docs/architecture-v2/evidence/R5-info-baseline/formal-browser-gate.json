@@ -1,6 +1,7 @@
 {
-  "task": "architecture-v2-r5-info-final-browser",
+  "task": "architecture-v2-r5-info-post-reconcile-browser",
   "result": "passed",
+  "date": "2026-08-11",
   "strict_tls": true,
   "provider_preflight": 200,
   "admin": {
