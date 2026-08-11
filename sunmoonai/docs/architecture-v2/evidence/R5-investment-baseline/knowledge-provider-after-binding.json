@@ -1,0 +1,18 @@
+{
+  "credentials_printed": false,
+  "dataset_id_sha256": "c264004e3fb8da8982d97a49871e9997885b48f4fcee1575066f80c079c0009b",
+  "document_id_sha256": "f9373fee437b6d16dc94dbd6c7ff1528cc6794cf74ecf3f26b6e9f2b47cfa3ef",
+  "indexed_binding_count": 1,
+  "provider_document_chunk_count": 1,
+  "provider_document_found": true,
+  "provider_document_run": "DONE",
+  "provider_has_default_embedding": true,
+  "provider_ids_printed": false,
+  "provider_reachable": true,
+  "result": "passed",
+  "retrieval_content_printed": false,
+  "retrieval_matching_chunks": 1,
+  "retrieval_returned_chunks": 1,
+  "retrieval_total": 1,
+  "task": "R5-K0-knowledge-provider-baseline"
+}

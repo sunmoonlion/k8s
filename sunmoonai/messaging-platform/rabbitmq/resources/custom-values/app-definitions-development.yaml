@@ -30,6 +30,7 @@ extraSecrets:
           {"name": "investment-web-backend-worker", "password": "investment-web-backend-worker-dev", "tags": ""},
           {"name": "investment-admin-backend-producer", "password": "investment-admin-backend-producer-dev", "tags": ""},
           {"name": "investment-admin-backend-worker", "password": "investment-admin-backend-worker-dev", "tags": ""},
+          {"name": "investment-backend-worker", "password": "investment-backend-worker-dev", "tags": ""},
           {"name": "knowledge-admin-backend-producer", "password": "knowledge-admin-backend-producer-dev", "tags": ""},
           {"name": "knowledge-admin-backend-worker", "password": "knowledge-admin-backend-worker-dev", "tags": ""}
         ],
@@ -42,6 +43,7 @@ extraSecrets:
           {"user": "investment-web-backend-worker", "vhost": "investment-development", "configure": "^investment\\.web\\.default$", "write": "^$|^investment\\.web\\.default$", "read": "^investment\\.web\\.default$"},
           {"user": "investment-admin-backend-producer", "vhost": "investment-development", "configure": "^investment\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "write": "^investment\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "read": "^investment\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$"},
           {"user": "investment-admin-backend-worker", "vhost": "investment-development", "configure": "^investment\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "write": "^investment\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "read": "^investment\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$"},
+          {"user": "investment-backend-worker", "vhost": "investment-development", "configure": "^investment\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "write": "^investment\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "read": "^investment\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$"},
           {"user": "knowledge-admin-backend-producer", "vhost": "knowledge-development", "configure": "^knowledge\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "write": "^knowledge\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "read": "^knowledge\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$"},
           {"user": "knowledge-admin-backend-worker", "vhost": "knowledge-development", "configure": "^knowledge\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "write": "^knowledge\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$", "read": "^knowledge\\.admin\\.default$|^celery|^celery\\..*|^reply\\.celery\\..*|^.*\\.reply\\.celery\\.pidbox$|^celeryev$"}
         ],
@@ -50,6 +52,7 @@ extraSecrets:
           {"name": "research.admin.default", "vhost": "research-development", "durable": true, "auto_delete": false, "arguments": {}},
           {"name": "investment.web.default", "vhost": "investment-development", "durable": true, "auto_delete": false, "arguments": {}},
           {"name": "investment.admin.default", "vhost": "investment-development", "durable": true, "auto_delete": false, "arguments": {}},
+          {"name": "investment.default", "vhost": "investment-development", "durable": true, "auto_delete": false, "arguments": {}},
           {"name": "knowledge.admin.default", "vhost": "knowledge-development", "durable": true, "auto_delete": false, "arguments": {}}
         ]
       }

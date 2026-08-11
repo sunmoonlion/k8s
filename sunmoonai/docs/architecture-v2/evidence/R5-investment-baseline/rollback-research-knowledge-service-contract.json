@@ -1,0 +1,14 @@
+{
+  "anonymous_retrieval": 401,
+  "citation_provider_fields_absent": true,
+  "credentials_printed": false,
+  "evidence_count": 1,
+  "provider_ids_printed": false,
+  "result": "passed",
+  "retrieval_content_printed": false,
+  "retrieval_token_on_ingestion": 401,
+  "service_account_token_mounted": false,
+  "task": "R5-K3-knowledge-service-contract",
+  "token_printed": false,
+  "valid_retrieval_shape": 422
+}

@@ -1,0 +1,22 @@
+PLAN task=R5-V4-investment action=rollback capture=r5-investment-cutover-20260811T052124Z delete_legacy=false source_mutation=false automatic_rollback=true
+R5_INVESTMENT_ROLLBACK_STAGE=stop_investment
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+ALTER ROLE
+PLAN Architecture v2 browser clients: admin=sunmoonai-investment-r5-admin web=sunmoonai-investment-r5-web secret=app-platform-dev/investment-r5-browser-identity
+job.batch/architecture-v2-r5-investment-identity-provision condition met
+INSERT 0 2
+UPDATE 2
+ ?column? 
+----------
+        1
+(1 row)
+
+Architecture v2 Casdoor applications reconciled
+Architecture v2 identity provisioning passed
+R5_INVESTMENT_ROLLBACK_STAGE=restore_research
+{"task":"R5-V5-investment-rollback","result":"restored","source_database":"research_admin","target_retained":true,"legacy_assets_deleted":false}

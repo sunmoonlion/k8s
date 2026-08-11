@@ -226,6 +226,8 @@ def main() -> int:
             "celeryworker-knowledge-admin-backend-secret", "knowledge-admin-backend-secret",
             "knowledge-admin-backend-s3", "knowledge-info-ingest-service-binding",
             "knowledge-research-retrieval-service-binding",
+            "knowledge-investment-retrieval-service-binding",
+            "knowledge-active-retrieval-service-binding",
         ],
         "protected_provider_resources": ["ragflow-sunmoonai"],
         "forbidden_markers": ["knowledge-admin-r5.sunmoonai.com", "knowledge-web-r5.sunmoonai.com", "knowledge.r5.candidate"],

@@ -1,0 +1,84 @@
+{
+  "task": "architecture-v2-declarative-instance-gate",
+  "result": "passed",
+  "logical_app": "knowledge",
+  "resource_app": "knowledge-r5",
+  "release_id": "r5-knowledge-formal-001",
+  "deployments": {
+    "knowledge-r5-backend-api": 2,
+    "knowledge-r5-backend-worker": 1,
+    "knowledge-r5-backend-scheduler": 1,
+    "knowledge-r5-admin-frontend": 2,
+    "knowledge-r5-web-frontend": 2
+  },
+  "ingress_routes": [
+    "knowledge-admin-backend-ingress",
+    "knowledge-admin-frontend-ingress",
+    "knowledge-web-frontend-ingress"
+  ],
+  "legacy_deployments_in_bundle": [],
+  "credentials_in_release": false
+}
+serviceaccount/knowledge-r5-backend-api unchanged
+serviceaccount/knowledge-r5-backend-worker unchanged
+serviceaccount/knowledge-r5-backend-scheduler unchanged
+serviceaccount/knowledge-r5-backend-migration unchanged
+serviceaccount/knowledge-r5-admin-frontend unchanged
+serviceaccount/knowledge-r5-web-frontend unchanged
+configmap/knowledge-r5-backend-config unchanged
+configmap/knowledge-r5-admin-frontend-config unchanged
+configmap/knowledge-r5-web-frontend-config unchanged
+service/knowledge-r5-backend unchanged
+service/knowledge-r5-admin-frontend unchanged
+service/knowledge-r5-web-frontend unchanged
+networkpolicy.networking.k8s.io/knowledge-r5-default-deny unchanged
+networkpolicy.networking.k8s.io/knowledge-r5-dns-egress unchanged
+networkpolicy.networking.k8s.io/knowledge-r5-frontend-ingress unchanged
+networkpolicy.networking.k8s.io/knowledge-r5-frontend-egress unchanged
+networkpolicy.networking.k8s.io/knowledge-r5-backend-ingress unchanged
+networkpolicy.networking.k8s.io/knowledge-r5-backend-migration-egress unchanged
+networkpolicy.networking.k8s.io/knowledge-r5-backend-api-egress unchanged
+networkpolicy.networking.k8s.io/knowledge-r5-backend-worker-egress unchanged
+networkpolicy.networking.k8s.io/knowledge-r5-backend-scheduler-egress unchanged
+job.batch/knowledge-r5-backend-migration-r5-knowledge-formal-001 created
+job.batch/knowledge-r5-backend-migration-r5-knowledge-formal-001 condition met
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+deployment.apps/knowledge-r5-backend-api configured
+poddisruptionbudget.policy/knowledge-r5-backend-api configured
+horizontalpodautoscaler.autoscaling/knowledge-r5-backend-api unchanged
+deployment.apps/knowledge-r5-backend-worker unchanged
+poddisruptionbudget.policy/knowledge-r5-backend-worker configured
+deployment.apps/knowledge-r5-backend-scheduler unchanged
+deployment.apps/knowledge-r5-admin-frontend unchanged
+poddisruptionbudget.policy/knowledge-r5-admin-frontend configured
+horizontalpodautoscaler.autoscaling/knowledge-r5-admin-frontend unchanged
+deployment.apps/knowledge-r5-web-frontend unchanged
+poddisruptionbudget.policy/knowledge-r5-web-frontend configured
+horizontalpodautoscaler.autoscaling/knowledge-r5-web-frontend unchanged
+ingressroute.traefik.io/knowledge-admin-frontend-ingress unchanged
+ingressroute.traefik.io/knowledge-web-frontend-ingress unchanged
+ingressroute.traefik.io/knowledge-admin-backend-ingress unchanged
+Waiting for deployment "knowledge-r5-backend-api" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "knowledge-r5-backend-api" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "knowledge-r5-backend-api" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "knowledge-r5-backend-api" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "knowledge-r5-backend-api" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "knowledge-r5-backend-api" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "knowledge-r5-backend-api" rollout to finish: 1 old replicas are pending termination...
+deployment "knowledge-r5-backend-api" successfully rolled out
+deployment "knowledge-r5-backend-worker" successfully rolled out
+deployment "knowledge-r5-backend-scheduler" successfully rolled out
+deployment "knowledge-r5-admin-frontend" successfully rolled out
+deployment "knowledge-r5-web-frontend" successfully rolled out
+deployment.apps/knowledge-admin-backend scaled
+deployment.apps/celeryworker-knowledge-admin-backend scaled
+job.batch "knowledge-r5-backend-migration-r5-knowledge-formal-001" deleted from app-platform-dev namespace
+{
+  "task": "architecture-v2-knowledge-formal-reconcile",
+  "result": "passed",
+  "release_id": "r5-knowledge-formal-001",
+  "legacy_replicas": 0,
+  "migration_job_cleaned": true,
+  "credentials_printed": false
+}

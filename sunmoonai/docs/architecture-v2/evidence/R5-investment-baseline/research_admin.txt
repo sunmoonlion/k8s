@@ -1,0 +1,24 @@
+section=database
+{"database": "research_admin", "captured_at": "2026-08-11T04:05:30.732861+00:00", "session_user": "postgres", "database_owner": "research_admin_user_migration", "server_version": "17.6"}
+section=alembic_heads
+["20260712_0002"]
+section=table_counts
+{"auth_user": 2, "agent_runs": 28, "checkpoints": 160, "agent_sessions": 29, "session_events": 278, "checkpoint_blobs": 40, "checkpoint_writes": 363, "tool_side_effects": 21, "checkpoint_migrations": 10}
+section=constraints
+{"not_valid": 0, "foreign_keys": 4, "primary_keys": 10, "check_constraints": 0, "unique_constraints": 3}
+section=table_owners
+{"research_admin_user_migration": 10}
+section=roles
+[{"role": "investment_admin_user", "can_login": true, "is_superuser": false, "can_create_db": false, "can_create_role": false}, {"role": "investment_web_user", "can_login": true, "is_superuser": false, "can_create_db": false, "can_create_role": false}, {"role": "research_admin_user", "can_login": true, "is_superuser": false, "can_create_db": false, "can_create_role": false}, {"role": "research_admin_user_migration", "can_login": true, "is_superuser": false, "can_create_db": false, "can_create_role": false}, {"role": "research_web_user", "can_login": true, "is_superuser": false, "can_create_db": false, "can_create_role": false}]
+section=role_privileges
+[{"role": "investment_admin_user", "schema_usage": true, "delete_tables": 0, "insert_tables": 0, "schema_create": false, "select_tables": 0, "update_tables": 0, "database_create": false, "database_connect": true}, {"role": "investment_web_user", "schema_usage": true, "delete_tables": 0, "insert_tables": 0, "schema_create": false, "select_tables": 0, "update_tables": 0, "database_create": false, "database_connect": true}, {"role": "research_admin_user", "schema_usage": true, "delete_tables": 9, "insert_tables": 9, "schema_create": false, "select_tables": 9, "update_tables": 9, "database_create": false, "database_connect": true}, {"role": "research_admin_user_migration", "schema_usage": true, "delete_tables": 9, "insert_tables": 9, "schema_create": true, "select_tables": 9, "update_tables": 9, "database_create": true, "database_connect": true}, {"role": "research_web_user", "schema_usage": true, "delete_tables": 0, "insert_tables": 0, "schema_create": false, "select_tables": 0, "update_tables": 0, "database_create": false, "database_connect": true}]
+section=session_states
+{"created": 6, "running": 1, "waiting": 1, "completed": 21}
+section=run_states
+{"created": 5, "running": 1, "waiting": 1, "completed": 21}
+section=side_effect_states
+{"completed": 21}
+section=investment_invariants
+{"orphan_runs": 0, "orphan_events": 0, "orphan_side_effects": 0, "duplicate_auth_identities": 0, "event_session_run_mismatch": 0, "duplicate_session_sequences": 0, "duplicate_run_idempotency_keys": 0}
+section=template_outbox_presence
+{"inbox_message": false, "outbox_message": false}

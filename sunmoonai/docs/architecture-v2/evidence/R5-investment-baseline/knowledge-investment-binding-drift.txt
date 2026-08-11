@@ -1,0 +1,22 @@
+{
+  "task": "architecture-v2-declarative-instance-gate",
+  "result": "passed",
+  "logical_app": "knowledge",
+  "resource_app": "knowledge-r5",
+  "release_id": "r5-knowledge-formal-001",
+  "deployments": {
+    "knowledge-r5-backend-api": 2,
+    "knowledge-r5-backend-worker": 1,
+    "knowledge-r5-backend-scheduler": 1,
+    "knowledge-r5-admin-frontend": 2,
+    "knowledge-r5-web-frontend": 2
+  },
+  "ingress_routes": [
+    "knowledge-admin-backend-ingress",
+    "knowledge-admin-frontend-ingress",
+    "knowledge-web-frontend-ingress"
+  ],
+  "legacy_deployments_in_bundle": [],
+  "credentials_in_release": false
+}
+{"result": "passed", "action": "drift", "drift": false}

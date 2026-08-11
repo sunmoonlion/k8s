@@ -1,0 +1,11 @@
+{
+  "task": "R5-INVESTMENT-BACKUP",
+  "result": "passed",
+  "database": "research_admin",
+  "capture_id": "r5-investment-baseline-20260811T040557Z",
+  "backup_file": "/home/zymun/.local/state/sunmoonai/architecture-v2/r5-investment/r5-investment-baseline-20260811T040557Z/research_admin.dump",
+  "sha256": "df321bb1f5fa87a29717d8c71fdd162e317da56b4c9199406986aea6516b0a4c",
+  "bytes": 68572,
+  "contains_secrets_or_business_data": true,
+  "commit_to_git": false
+}

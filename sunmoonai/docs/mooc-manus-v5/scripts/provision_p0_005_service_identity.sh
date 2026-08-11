@@ -40,7 +40,7 @@ usage() {
 Usage: provision_p0_005_service_identity.sh [--apply] [options]
 
   --apply                     Reconcile Casdoor and Secrets (default: plan only)
-  --relation NAME             ingest (default) or retrieve
+  --relation NAME             ingest (default), retrieve (legacy Research), or investment-retrieve
   --kubeconfig PATH           Kubeconfig path
   --namespace NAME            Application namespace
   --public-endpoint URL       Canonical public Casdoor origin
@@ -77,6 +77,27 @@ case "$RELATION" in
         TASK_ID="v5-p0-004"
         CALLER_NAME="research-knowledge-retrieval-worker"
         RELATION_LABEL="research-knowledge-retrieve"
+        CALLER_CLIENT_ID_KEY="KNOWLEDGE_RETRIEVAL_SERVICE_CLIENT_ID"
+        CALLER_CLIENT_SECRET_KEY="KNOWLEDGE_RETRIEVAL_SERVICE_CLIENT_SECRET"
+        CALLER_DISCOVERY_KEY="KNOWLEDGE_RETRIEVAL_SERVICE_DISCOVERY_URL"
+        CALLER_BACKCHANNEL_KEY="KNOWLEDGE_RETRIEVAL_SERVICE_BACKCHANNEL_ENDPOINT"
+        BINDING_APPLICATION_KEY="RETRIEVAL_AUTH_CASDOOR_APPLICATION"
+        BINDING_DISCOVERY_KEY="RETRIEVAL_AUTH_DISCOVERY_URL"
+        BINDING_BACKCHANNEL_KEY="RETRIEVAL_AUTH_BACKCHANNEL_ENDPOINT"
+        BINDING_AUDIENCE_KEY="RETRIEVAL_AUTH_AUDIENCE"
+        BINDING_SUBJECTS_KEY="RETRIEVAL_AUTH_SUBJECT_ALLOWLIST"
+        BINDING_SCOPE_KEY="RETRIEVAL_AUTH_REQUIRED_SCOPE"
+        ;;
+    investment-retrieve)
+        OPERATOR_SECRET="sunmoonai-r5-investment-retrieval-identity"
+        CALLER_SECRET="investment-knowledge-retrieval-client"
+        BINDING_SECRET="knowledge-investment-retrieval-service-binding"
+        SERVICE_APPLICATION="sunmoonai-investment-knowledge-retrieve"
+        SERVICE_DISPLAY_NAME="SunMoon Investment to Knowledge Retrieval"
+        SERVICE_SCOPE="knowledge:retrieve"
+        TASK_ID="r5-investment-retrieval"
+        CALLER_NAME="investment-backend-worker"
+        RELATION_LABEL="investment-knowledge-retrieve"
         CALLER_CLIENT_ID_KEY="KNOWLEDGE_RETRIEVAL_SERVICE_CLIENT_ID"
         CALLER_CLIENT_SECRET_KEY="KNOWLEDGE_RETRIEVAL_SERVICE_CLIENT_SECRET"
         CALLER_DISCOVERY_KEY="KNOWLEDGE_RETRIEVAL_SERVICE_DISCOVERY_URL"

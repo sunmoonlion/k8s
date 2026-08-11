@@ -76,10 +76,12 @@ BACKEND_SERVICE="${APP}-backend"
 POLICY_PROVIDER_SERVICE="knowledge-admin-backend"
 POLICY_PROVIDER_PORT="8000"
 POLICY_PROVIDER_TARGET_PORT="8000"
+POLICY_PROVIDER_COMPONENT="backend-api"
 if [[ "$APP" == "knowledge-r5" ]]; then
   POLICY_PROVIDER_SERVICE="ragflow-sunmoonai-api"
   POLICY_PROVIDER_PORT="80"
   POLICY_PROVIDER_TARGET_PORT="9380"
+  POLICY_PROVIDER_COMPONENT="ragflow"
 fi
 
 cleanup() {
@@ -264,10 +266,11 @@ spec:
     metadata:
       labels:
         app: knowledge-policy-target
+        sunmoonai.com/app: knowledge-r5
+        app.kubernetes.io/component: ${POLICY_PROVIDER_COMPONENT}
         sunmoonai.com/internal-provider: 'true'
         app.kubernetes.io/name: ragflow
         app.kubernetes.io/instance: ragflow-sunmoonai
-        app.kubernetes.io/component: ragflow
     spec:
       automountServiceAccountToken: false
       containers:

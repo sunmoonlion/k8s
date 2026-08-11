@@ -30,33 +30,46 @@ from app.infrastructure.external.knowledge_retrieval import (
 )
 
 
+class ContractGateError(RuntimeError):
+    """A fixed, non-sensitive failure code safe to emit from the gate."""
+
+
 async def main() -> None:
     client = get_knowledge_retrieval_client()
     provider = client._token_provider
     retrieval_url = client._retrieval_url
     if provider is None or not retrieval_url:
-        raise RuntimeError("retrieval relation is not configured")
+        raise ContractGateError("relation-not-configured")
 
-    token = await provider.get_token()
+    try:
+        token = await provider.get_token()
+    except Exception as exc:
+        raise ContractGateError("token-acquisition") from exc
     ingestion_url = retrieval_url.rsplit("/", 1)[0] + "/ingestions"
-    async with httpx.AsyncClient(timeout=20) as http:
-        valid_shape = await http.post(
-            retrieval_url,
-            json={},
-            headers={"Authorization": f"Bearer {token}"},
-        )
-        cross_relation = await http.post(
-            ingestion_url,
-            json={},
-            headers={"Authorization": f"Bearer {token}"},
-        )
-        anonymous = await http.post(retrieval_url, json={})
+    try:
+        async with httpx.AsyncClient(timeout=20) as http:
+            valid_shape = await http.post(
+                retrieval_url,
+                json={},
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            cross_relation = await http.post(
+                ingestion_url,
+                json={},
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            anonymous = await http.post(retrieval_url, json={})
+    except Exception as exc:
+        raise ContractGateError("boundary-http") from exc
     if (
         valid_shape.status_code,
         cross_relation.status_code,
         anonymous.status_code,
     ) != (422, 401, 401):
-        raise RuntimeError("service identity boundary returned unexpected statuses")
+        raise ContractGateError(
+            "boundary-status-"
+            f"{valid_shape.status_code}-{cross_relation.status_code}-{anonymous.status_code}"
+        )
 
     query = KnowledgeQuery(
         request_id=uuid.uuid4(),
@@ -72,9 +85,12 @@ async def main() -> None:
             policy_version="architecture-v2-r5",
         ),
     )
-    response = await client.retrieve(query)
+    try:
+        response = await client.retrieve(query)
+    except Exception as exc:
+        raise ContractGateError("governed-retrieval") from exc
     if not response.evidence:
-        raise RuntimeError("candidate retrieval returned no governed evidence")
+        raise ContractGateError("governed-retrieval-empty")
     citation = Citation.from_evidence(response.evidence[0])
     citation_payload = citation.model_dump(mode="json")
     forbidden = {
@@ -84,7 +100,7 @@ async def main() -> None:
         or key.startswith(("provider_", "ragflow_"))
     }
     if forbidden:
-        raise RuntimeError("citation leaked provider fields")
+        raise ContractGateError("citation-provider-field-leak")
 
     token = ""
     print(json.dumps({
@@ -110,6 +126,7 @@ except Exception as exc:
         "task": "R5-K3-knowledge-service-contract",
         "result": "failed",
         "reason": type(exc).__name__,
+        "stage": str(exc) if isinstance(exc, ContractGateError) else "unexpected",
         "token_printed": False,
         "credentials_printed": False,
         "retrieval_content_printed": False,

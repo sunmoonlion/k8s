@@ -1,0 +1,59 @@
+{
+  "task": "architecture-v2-declarative-instance-gate",
+  "result": "passed",
+  "logical_app": "knowledge",
+  "resource_app": "knowledge-r5",
+  "release_id": "r5-knowledge-formal-001",
+  "deployments": {
+    "knowledge-r5-backend-api": 2,
+    "knowledge-r5-backend-worker": 1,
+    "knowledge-r5-backend-scheduler": 1,
+    "knowledge-r5-admin-frontend": 2,
+    "knowledge-r5-web-frontend": 2
+  },
+  "ingress_routes": [
+    "knowledge-admin-backend-ingress",
+    "knowledge-admin-frontend-ingress",
+    "knowledge-web-frontend-ingress"
+  ],
+  "legacy_deployments_in_bundle": [],
+  "credentials_in_release": false
+}
+serviceaccount/knowledge-r5-backend-api unchanged (server dry run)
+serviceaccount/knowledge-r5-backend-worker unchanged (server dry run)
+serviceaccount/knowledge-r5-backend-scheduler unchanged (server dry run)
+serviceaccount/knowledge-r5-backend-migration unchanged (server dry run)
+serviceaccount/knowledge-r5-admin-frontend unchanged (server dry run)
+serviceaccount/knowledge-r5-web-frontend unchanged (server dry run)
+configmap/knowledge-r5-backend-config unchanged (server dry run)
+configmap/knowledge-r5-admin-frontend-config unchanged (server dry run)
+configmap/knowledge-r5-web-frontend-config unchanged (server dry run)
+service/knowledge-r5-backend unchanged (server dry run)
+service/knowledge-r5-admin-frontend unchanged (server dry run)
+service/knowledge-r5-web-frontend unchanged (server dry run)
+job.batch/knowledge-r5-backend-migration-r5-knowledge-formal-001 created (server dry run)
+deployment.apps/knowledge-r5-backend-api configured (server dry run)
+poddisruptionbudget.policy/knowledge-r5-backend-api configured (server dry run)
+horizontalpodautoscaler.autoscaling/knowledge-r5-backend-api unchanged (server dry run)
+deployment.apps/knowledge-r5-backend-worker unchanged (server dry run)
+poddisruptionbudget.policy/knowledge-r5-backend-worker configured (server dry run)
+deployment.apps/knowledge-r5-backend-scheduler unchanged (server dry run)
+deployment.apps/knowledge-r5-admin-frontend unchanged (server dry run)
+poddisruptionbudget.policy/knowledge-r5-admin-frontend configured (server dry run)
+horizontalpodautoscaler.autoscaling/knowledge-r5-admin-frontend unchanged (server dry run)
+deployment.apps/knowledge-r5-web-frontend unchanged (server dry run)
+poddisruptionbudget.policy/knowledge-r5-web-frontend configured (server dry run)
+horizontalpodautoscaler.autoscaling/knowledge-r5-web-frontend unchanged (server dry run)
+networkpolicy.networking.k8s.io/knowledge-r5-default-deny unchanged (server dry run)
+networkpolicy.networking.k8s.io/knowledge-r5-dns-egress unchanged (server dry run)
+networkpolicy.networking.k8s.io/knowledge-r5-frontend-ingress unchanged (server dry run)
+networkpolicy.networking.k8s.io/knowledge-r5-frontend-egress unchanged (server dry run)
+networkpolicy.networking.k8s.io/knowledge-r5-backend-ingress unchanged (server dry run)
+networkpolicy.networking.k8s.io/knowledge-r5-backend-migration-egress unchanged (server dry run)
+networkpolicy.networking.k8s.io/knowledge-r5-backend-api-egress unchanged (server dry run)
+networkpolicy.networking.k8s.io/knowledge-r5-backend-worker-egress unchanged (server dry run)
+networkpolicy.networking.k8s.io/knowledge-r5-backend-scheduler-egress unchanged (server dry run)
+ingressroute.traefik.io/knowledge-admin-frontend-ingress unchanged (server dry run)
+ingressroute.traefik.io/knowledge-web-frontend-ingress unchanged (server dry run)
+ingressroute.traefik.io/knowledge-admin-backend-ingress unchanged (server dry run)
+{"result": "passed", "action": "server-dry-run"}

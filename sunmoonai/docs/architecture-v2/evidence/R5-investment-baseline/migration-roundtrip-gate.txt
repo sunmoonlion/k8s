@@ -1,0 +1,79 @@
+section=result
+{
+  "task": "R5-INVESTMENT-MIGRATION-ROUNDTRIP",
+  "result": "passed",
+  "image": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:edc52084c243703a68ab9b422d8ad0e1d2ff8519e6a25190b8b52fe8c1e1ed10",
+  "backup_sha256": "df321bb1f5fa87a29717d8c71fdd162e317da56b4c9199406986aea6516b0a4c",
+  "heads": {
+    "baseline": "20260712_0002",
+    "upgraded": "20260809_0004",
+    "downgraded": "20260712_0002",
+    "reupgraded": "20260809_0004"
+  },
+  "counts": {
+    "baseline": {
+      "auth_user": 2,
+      "agent_runs": 28,
+      "checkpoints": 160,
+      "agent_sessions": 29,
+      "session_events": 278,
+      "checkpoint_blobs": 40,
+      "checkpoint_writes": 363,
+      "tool_side_effects": 21,
+      "checkpoint_migrations": 10
+    },
+    "upgraded": {
+      "auth_user": 2,
+      "agent_runs": 28,
+      "checkpoints": 160,
+      "inbox_message": 0,
+      "agent_sessions": 29,
+      "outbox_message": 0,
+      "session_events": 278,
+      "checkpoint_blobs": 40,
+      "checkpoint_writes": 363,
+      "tool_side_effects": 21,
+      "agent_pilot_controls": 0,
+      "agent_pilot_requests": 0,
+      "checkpoint_migrations": 10
+    },
+    "downgraded": {
+      "auth_user": 2,
+      "agent_runs": 28,
+      "checkpoints": 160,
+      "agent_sessions": 29,
+      "session_events": 278,
+      "checkpoint_blobs": 40,
+      "checkpoint_writes": 363,
+      "tool_side_effects": 21,
+      "checkpoint_migrations": 10
+    },
+    "reupgraded": {
+      "auth_user": 2,
+      "agent_runs": 28,
+      "checkpoints": 160,
+      "inbox_message": 0,
+      "agent_sessions": 29,
+      "outbox_message": 0,
+      "session_events": 278,
+      "checkpoint_blobs": 40,
+      "checkpoint_writes": 363,
+      "tool_side_effects": 21,
+      "agent_pilot_controls": 0,
+      "agent_pilot_requests": 0,
+      "checkpoint_migrations": 10
+    }
+  },
+  "business_counts_unchanged": true,
+  "invariant_failures": 0,
+  "temporary_database_cleanup": "on-exit",
+  "temporary_secret_cleanup": "on-exit",
+  "temporary_jobs_cleanup": "on-exit"
+}
+section=cleanup
+{
+  "restore_database": "investment_r5_restore_roundtrip_20260811",
+  "restore_database_exists": false,
+  "temporary_secret_exists": false,
+  "temporary_jobs_exist": false
+}

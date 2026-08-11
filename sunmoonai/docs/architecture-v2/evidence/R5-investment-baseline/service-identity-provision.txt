@@ -1,0 +1,10 @@
+PLAN relation: investment-backend-worker -> knowledge-admin-backend
+PLAN grant: client_credentials, exact audience/subject, local scope=knowledge:retrieve
+PLAN runtime caller Secret: app-platform-dev/investment-knowledge-retrieval-client
+PLAN runtime resource binding Secret: app-platform-dev/knowledge-investment-retrieval-service-binding
+PLAN create operator Secret: app-platform-dev/sunmoonai-r5-investment-retrieval-identity
+Casdoor service application reconciled with client_credentials only
+{"task":"R5-INVESTMENT-RETRIEVAL-service-token-probe","result":"passed","signature":"RS256","issuer_exact":true,"audience_exact":true,"subject_present":true,"scope_shape_valid":true,"token_printed":false}
+APPLIED caller Secret: app-platform-dev/investment-knowledge-retrieval-client
+APPLIED resource binding Secret: app-platform-dev/knowledge-investment-retrieval-service-binding
+R5-INVESTMENT-RETRIEVAL service identity reconciled and empirically bound without printing credentials

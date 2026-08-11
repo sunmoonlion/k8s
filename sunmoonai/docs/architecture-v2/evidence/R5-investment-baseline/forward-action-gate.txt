@@ -1,0 +1,15 @@
+PLAN task=R5-V4-investment action=apply capture=r5-investment-cutover-20260811T054134Z delete_legacy=false source_mutation=false automatic_rollback=true
+R5_INVESTMENT_CUTOVER_STAGE=formal_identity
+R5_INVESTMENT_CUTOVER_STAGE=activate_investment_knowledge_binding
+{"task":"R5-Knowledge-active-retrieval-binding","result":"passed","active_caller":"investment","target_secret":"knowledge-active-retrieval-service-binding","credentials_printed":false}
+R5_INVESTMENT_CUTOVER_STAGE=freeze_legacy_producers
+R5_INVESTMENT_LEGACY_QUEUE={"messages_ready":0,"messages_unacknowledged":0,"consumers":1}
+R5_INVESTMENT_CUTOVER_STAGE=final_private_backup
+R5_INVESTMENT_BACKUP_CAPTURE=r5-investment-cutover-20260811T054134Z
+R5_INVESTMENT_BACKUP_SHA256=ac2c75b00eb9325b1830c636ddd9fc3ebe369505380b6f649fe82ddf0d9a52e4
+R5_INVESTMENT_CUTOVER_STAGE=rebuild_target
+R5_INVESTMENT_CUTOVER_STAGE=migrate_target
+R5_INVESTMENT_CUTOVER_STAGE=seal_legacy_roles
+R5_INVESTMENT_CUTOVER_STAGE=start_investment
+R5_INVESTMENT_CUTOVER_STAGE=switch_formal_routes
+{"task":"R5-V4-investment-cutover","result":"cutover","single_writer":true,"source_database_mutated":false,"backup_capture":"r5-investment-cutover-20260811T054134Z","migration":"20260809_0004","legacy_assets_deleted":false}

@@ -27,7 +27,7 @@
   "sha256": {
     "00-prerequisites.yaml": "75a89a0847ed761d96bdc6afb2673657062c0624582f57c7f98bd94ce6f6f7a2",
     "10-migration.yaml": "34ea3d60cc06e059cb77db43116d5265936af8d19ffc120d576688f449d3e5f5",
-    "20-runtime.yaml": "94423ddffa61819af4dd85591ee7365d519796135e5c53c1f5759193c11c1be4",
+    "20-runtime.yaml": "669808835f7b99851dfc063aafdc7212d7d796d1193799bff91280a6d5d69e71",
     "30-network-policies.yaml": "b8e3598db20d7c60aa2edf2877e71860005951b5e7144a150704f4b49a916c21",
     "40-ingress.yaml": "9f07e14ba567ea865e829144aca410d1f7a6e73ae1e559b58b7e7c5c841041d3"
   },
@@ -111,7 +111,9 @@
     "knowledge-admin-backend-secret",
     "knowledge-admin-backend-s3",
     "knowledge-info-ingest-service-binding",
-    "knowledge-research-retrieval-service-binding"
+    "knowledge-research-retrieval-service-binding",
+    "knowledge-investment-retrieval-service-binding",
+    "knowledge-active-retrieval-service-binding"
   ],
   "protected_provider_resources": [
     "ragflow-sunmoonai"
@@ -123,7 +125,7 @@
   ],
   "contains_credentials": false,
   "renderer_inputs_sha256": {
-    "k8s:sunmoonai/docs/architecture-v2/scripts/render_r5_knowledge_candidate.py": "d9ae4b7e6e1aa71299e1d28b517a75fdf1cb372d3915d4a378e07ea405e2ed09",
+    "k8s:sunmoonai/docs/architecture-v2/scripts/render_r5_knowledge_candidate.py": "f539aadb389153656b197eb3f5c04dced9534687fb5b883612c7462f42192238",
     "tpl-app:k8s-scaffold-v2/scaffold.py": "2f65213916ac338f4126c43b084dacd4a832906735d034b37a247b8507479828",
     "tpl-app:k8s-scaffold-v2/templates/00-prerequisites.yaml.tpl": "d201e550d730d77444ea9e0e405bc283b6db00df96fad474e661cbb261d0f842",
     "tpl-app:k8s-scaffold-v2/templates/10-migration.yaml.tpl": "d19ceea9d08f4b230721333076bdf5a65af0bf591507fd07eab3ac09784b1944",

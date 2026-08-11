@@ -1,0 +1,2135 @@
+{
+  "apiVersion": "v1",
+  "items": [
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "annotations": {
+          "deployment.kubernetes.io/revision": "26",
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"celeryworker-research-admin-backend\",\"backend\":\"research-admin-backend\",\"component\":\"celery-worker\"},\"name\":\"celeryworker-research-admin-backend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"celeryworker-research-admin-backend\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"celeryworker-research-admin-backend\",\"backend\":\"research-admin-backend\",\"component\":\"celery-worker\"}},\"spec\":{\"automountServiceAccountToken\":false,\"containers\":[{\"command\":[\"sh\",\"-c\",\"set -eu\\nif [ -n \\\"$(printenv CELERY_INCLUDE_MODULES)\\\" ]; then\\n  exec celery -A \\\"$(printenv CELERY_APP_MODULE)\\\" worker \\\\\\n    -I \\\"$(printenv CELERY_INCLUDE_MODULES)\\\" \\\\\\n    -l \\\"$(printenv CELERY_LOG_LEVEL)\\\" \\\\\\n    -Q \\\"$(printenv CELERY_QUEUE)\\\" \\\\\\n    -c \\\"$(printenv CELERY_CONCURRENCY)\\\"\\nfi\\nexec celery -A \\\"$(printenv CELERY_APP_MODULE)\\\" worker \\\\\\n  -l \\\"$(printenv CELERY_LOG_LEVEL)\\\" \\\\\\n  -Q \\\"$(printenv CELERY_QUEUE)\\\" \\\\\\n  -c \\\"$(printenv CELERY_CONCURRENCY)\\\"\\n\"],\"env\":[{\"name\":\"CELERY_PRODUCER_SERVICE\",\"value\":\"research-admin-backend\"}],\"envFrom\":[{\"configMapRef\":{\"name\":\"research-admin-backend-config\"}},{\"secretRef\":{\"name\":\"research-admin-backend-secret\"}},{\"configMapRef\":{\"name\":\"celeryworker-research-admin-backend-config\"}},{\"secretRef\":{\"name\":\"celeryworker-research-admin-backend-secret\"}},{\"secretRef\":{\"name\":\"research-knowledge-retrieval-client\"}},{\"secretRef\":{\"name\":\"research-admin-backend-postgresql-conn\"}},{\"secretRef\":{\"name\":\"research-admin-backend-redis-conn\"}},{\"configMapRef\":{\"name\":\"research-admin-backend-s3\"}},{\"secretRef\":{\"name\":\"research-admin-backend-s3\"}},{\"configMapRef\":{\"name\":\"research-admin-backend-elasticsearch\"}},{\"secretRef\":{\"name\":\"research-admin-backend-elasticsearch\"}}],\"image\":\"harbor.sunmoonai.com:30443/app-images/research-admin-backend:p0-004-retrieval-r2-20260715\",\"imagePullPolicy\":\"Always\",\"livenessProbe\":{\"exec\":{\"command\":[\"sh\",\"-c\",\"celery -A app.worker inspect ping --timeout 10\"]},\"failureThreshold\":3,\"initialDelaySeconds\":60,\"periodSeconds\":30,\"timeoutSeconds\":20},\"name\":\"celeryworker\",\"readinessProbe\":{\"exec\":{\"command\":[\"sh\",\"-c\",\"grep -aq celery /proc/1/cmdline\"]},\"failureThreshold\":3,\"initialDelaySeconds\":15,\"periodSeconds\":10,\"timeoutSeconds\":5},\"resources\":{\"limits\":{\"cpu\":\"500m\",\"memory\":\"1Gi\"},\"requests\":{\"cpu\":\"200m\",\"memory\":\"512Mi\"}}}],\"imagePullSecrets\":[{\"name\":\"harbor-registry-secret\"}],\"serviceAccountName\":\"research-knowledge-retrieval-worker\"}}}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:02Z",
+        "generation": 29,
+        "labels": {
+          "app": "celeryworker-research-admin-backend",
+          "backend": "research-admin-backend",
+          "component": "celery-worker"
+        },
+        "name": "celeryworker-research-admin-backend",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "1330079",
+        "uid": "daefefd4-777b-40ef-82f6-9d60a2d03dc4"
+      },
+      "spec": {
+        "progressDeadlineSeconds": 600,
+        "replicas": 1,
+        "revisionHistoryLimit": 10,
+        "selector": {
+          "matchLabels": {
+            "app": "celeryworker-research-admin-backend"
+          }
+        },
+        "strategy": {
+          "rollingUpdate": {
+            "maxSurge": "25%",
+            "maxUnavailable": "25%"
+          },
+          "type": "RollingUpdate"
+        },
+        "template": {
+          "metadata": {
+            "annotations": {
+              "kubectl.kubernetes.io/restartedAt": "2026-07-29T20:25:28+08:00"
+            },
+            "creationTimestamp": null,
+            "labels": {
+              "app": "celeryworker-research-admin-backend",
+              "backend": "research-admin-backend",
+              "component": "celery-worker"
+            }
+          },
+          "spec": {
+            "automountServiceAccountToken": false,
+            "containers": [
+              {
+                "command": [
+                  "sh",
+                  "-c",
+                  "set -eu\nif [ -n \"$(printenv CELERY_INCLUDE_MODULES)\" ]; then\n  exec celery -A \"$(printenv CELERY_APP_MODULE)\" worker \\\n    -I \"$(printenv CELERY_INCLUDE_MODULES)\" \\\n    -l \"$(printenv CELERY_LOG_LEVEL)\" \\\n    -Q \"$(printenv CELERY_QUEUE)\" \\\n    -c \"$(printenv CELERY_CONCURRENCY)\"\nfi\nexec celery -A \"$(printenv CELERY_APP_MODULE)\" worker \\\n  -l \"$(printenv CELERY_LOG_LEVEL)\" \\\n  -Q \"$(printenv CELERY_QUEUE)\" \\\n  -c \"$(printenv CELERY_CONCURRENCY)\"\n"
+                ],
+                "env": [
+                  {
+                    "name": "CELERY_PRODUCER_SERVICE",
+                    "value": "research-admin-backend"
+                  }
+                ],
+                "envFrom": [
+                  {
+                    "configMapRef": {
+                      "name": "research-admin-backend-config"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-admin-backend-secret"
+                    }
+                  },
+                  {
+                    "configMapRef": {
+                      "name": "celeryworker-research-admin-backend-config"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "celeryworker-research-admin-backend-secret"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-knowledge-retrieval-client"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-admin-backend-postgresql-conn"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-admin-backend-redis-conn"
+                    }
+                  },
+                  {
+                    "configMapRef": {
+                      "name": "research-admin-backend-s3"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-admin-backend-s3"
+                    }
+                  },
+                  {
+                    "configMapRef": {
+                      "name": "research-admin-backend-elasticsearch"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-admin-backend-elasticsearch"
+                    }
+                  }
+                ],
+                "image": "harbor.sunmoonai.com:30443/app-images/research-admin-backend:p0-004-retrieval-r2-20260715",
+                "imagePullPolicy": "Always",
+                "livenessProbe": {
+                  "exec": {
+                    "command": [
+                      "sh",
+                      "-c",
+                      "celery -A app.worker inspect ping --timeout 10"
+                    ]
+                  },
+                  "failureThreshold": 3,
+                  "initialDelaySeconds": 60,
+                  "periodSeconds": 30,
+                  "successThreshold": 1,
+                  "timeoutSeconds": 20
+                },
+                "name": "celeryworker",
+                "readinessProbe": {
+                  "exec": {
+                    "command": [
+                      "sh",
+                      "-c",
+                      "grep -aq celery /proc/1/cmdline"
+                    ]
+                  },
+                  "failureThreshold": 3,
+                  "initialDelaySeconds": 15,
+                  "periodSeconds": 10,
+                  "successThreshold": 1,
+                  "timeoutSeconds": 5
+                },
+                "resources": {
+                  "limits": {
+                    "cpu": "500m",
+                    "memory": "1Gi"
+                  },
+                  "requests": {
+                    "cpu": "200m",
+                    "memory": "512Mi"
+                  }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File"
+              }
+            ],
+            "dnsPolicy": "ClusterFirst",
+            "imagePullSecrets": [
+              {
+                "name": "harbor-registry-secret"
+              }
+            ],
+            "restartPolicy": "Always",
+            "schedulerName": "default-scheduler",
+            "securityContext": {},
+            "serviceAccount": "research-knowledge-retrieval-worker",
+            "serviceAccountName": "research-knowledge-retrieval-worker",
+            "terminationGracePeriodSeconds": 30
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "annotations": {
+          "deployment.kubernetes.io/revision": "4",
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"nodebullworker-research-web-backend\",\"backend\":\"research-web-backend\",\"component\":\"node-bull-worker\"},\"name\":\"nodebullworker-research-web-backend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"nodebullworker-research-web-backend\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"nodebullworker-research-web-backend\",\"backend\":\"research-web-backend\",\"component\":\"node-bull-worker\"}},\"spec\":{\"containers\":[{\"command\":[\"sh\",\"-c\",\"set -eu\\nexport NODE_ENV=\\\"${NODE_ENV:-production}\\\"\\nexport QUEUE_ON=\\\"${QUEUE_ON:-true}\\\"\\nexec node dist/worker\\n\"],\"env\":[{\"name\":\"QUEUE_WORKER_SERVICE\",\"value\":\"research-web-backend\"}],\"envFrom\":[{\"configMapRef\":{\"name\":\"research-web-backend-config\"}},{\"secretRef\":{\"name\":\"research-web-backend-secret\"}},{\"configMapRef\":{\"name\":\"nodebullworker-research-web-backend-config\"}},{\"secretRef\":{\"name\":\"nodebullworker-research-web-backend-secret\"}},{\"secretRef\":{\"name\":\"research-web-backend-nodebull-redis-conn\"}}],\"image\":\"harbor.sunmoonai.com:30443/app-images/research-web-backend:p0-005-auth-20260712\",\"imagePullPolicy\":\"Always\",\"name\":\"nodebullworker\",\"resources\":{\"limits\":{\"cpu\":\"500m\",\"memory\":\"1Gi\"},\"requests\":{\"cpu\":\"200m\",\"memory\":\"512Mi\"}}}],\"imagePullSecrets\":[{\"name\":\"harbor-registry-secret\"}]}}}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:08Z",
+        "generation": 4,
+        "labels": {
+          "app": "nodebullworker-research-web-backend",
+          "backend": "research-web-backend",
+          "component": "node-bull-worker"
+        },
+        "name": "nodebullworker-research-web-backend",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "1330409",
+        "uid": "ac3929cf-6d02-465d-862e-296407bc3d82"
+      },
+      "spec": {
+        "progressDeadlineSeconds": 600,
+        "replicas": 1,
+        "revisionHistoryLimit": 10,
+        "selector": {
+          "matchLabels": {
+            "app": "nodebullworker-research-web-backend"
+          }
+        },
+        "strategy": {
+          "rollingUpdate": {
+            "maxSurge": "25%",
+            "maxUnavailable": "25%"
+          },
+          "type": "RollingUpdate"
+        },
+        "template": {
+          "metadata": {
+            "creationTimestamp": null,
+            "labels": {
+              "app": "nodebullworker-research-web-backend",
+              "backend": "research-web-backend",
+              "component": "node-bull-worker"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "command": [
+                  "sh",
+                  "-c",
+                  "set -eu\nexport NODE_ENV=\"${NODE_ENV:-production}\"\nexport QUEUE_ON=\"${QUEUE_ON:-true}\"\nexec node dist/worker\n"
+                ],
+                "env": [
+                  {
+                    "name": "QUEUE_WORKER_SERVICE",
+                    "value": "research-web-backend"
+                  }
+                ],
+                "envFrom": [
+                  {
+                    "configMapRef": {
+                      "name": "research-web-backend-config"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-web-backend-secret"
+                    }
+                  },
+                  {
+                    "configMapRef": {
+                      "name": "nodebullworker-research-web-backend-config"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "nodebullworker-research-web-backend-secret"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-web-backend-nodebull-redis-conn"
+                    }
+                  }
+                ],
+                "image": "harbor.sunmoonai.com:30443/app-images/research-web-backend@sha256:d550d9b54b2c33781c46cd51cae3f73c28b5924a81257dd412133e8c4c3208ae",
+                "imagePullPolicy": "Always",
+                "name": "nodebullworker",
+                "resources": {
+                  "limits": {
+                    "cpu": "500m",
+                    "memory": "1Gi"
+                  },
+                  "requests": {
+                    "cpu": "200m",
+                    "memory": "512Mi"
+                  }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File"
+              }
+            ],
+            "dnsPolicy": "ClusterFirst",
+            "imagePullSecrets": [
+              {
+                "name": "harbor-registry-secret"
+              }
+            ],
+            "restartPolicy": "Always",
+            "schedulerName": "default-scheduler",
+            "securityContext": {},
+            "terminationGracePeriodSeconds": 30
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "annotations": {
+          "deployment.kubernetes.io/revision": "70",
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-admin-backend\"},\"name\":\"research-admin-backend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"research-admin-backend\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"research-admin-backend\"}},\"spec\":{\"containers\":[{\"envFrom\":[{\"configMapRef\":{\"name\":\"research-admin-backend-config\"}},{\"secretRef\":{\"name\":\"research-admin-backend-secret\"}},{\"secretRef\":{\"name\":\"research-admin-backend-browser-oidc\"}},{\"secretRef\":{\"name\":\"research-admin-backend-postgresql-conn\"}},{\"secretRef\":{\"name\":\"research-admin-backend-redis-conn\"}},{\"configMapRef\":{\"name\":\"research-admin-backend-s3\"}},{\"secretRef\":{\"name\":\"research-admin-backend-s3\"}},{\"configMapRef\":{\"name\":\"research-admin-backend-elasticsearch\"}},{\"secretRef\":{\"name\":\"research-admin-backend-elasticsearch\"}}],\"image\":\"harbor.sunmoonai.com:30443/app-images/research-admin-backend:1.0.1\",\"imagePullPolicy\":\"Always\",\"livenessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":30,\"periodSeconds\":10,\"tcpSocket\":{\"port\":8000},\"timeoutSeconds\":5},\"name\":\"research-admin-backend\",\"ports\":[{\"containerPort\":8000}],\"readinessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":15,\"periodSeconds\":5,\"tcpSocket\":{\"port\":8000},\"timeoutSeconds\":3},\"resources\":{\"limits\":{\"cpu\":\"500m\",\"memory\":\"512Mi\"},\"requests\":{\"cpu\":\"100m\",\"memory\":\"256Mi\"}},\"volumeMounts\":[{\"mountPath\":\"/app/data\",\"name\":\"data\"},{\"mountPath\":\"/var/run/secrets/sunmoonai/elasticsearch\",\"name\":\"elasticsearch-ca\",\"readOnly\":true}]}],\"imagePullSecrets\":[{\"name\":\"harbor-registry-secret\"}],\"volumes\":[{\"name\":\"data\",\"persistentVolumeClaim\":{\"claimName\":\"research-admin-backend-pvc\"}},{\"name\":\"elasticsearch-ca\",\"secret\":{\"items\":[{\"key\":\"ca.crt\",\"path\":\"ca.crt\"}],\"secretName\":\"research-admin-backend-elasticsearch\"}}]}}}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:00Z",
+        "generation": 72,
+        "labels": {
+          "app": "research-admin-backend"
+        },
+        "name": "research-admin-backend",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "1330187",
+        "uid": "becfff58-8444-407d-b586-9562d9d7584d"
+      },
+      "spec": {
+        "progressDeadlineSeconds": 600,
+        "replicas": 1,
+        "revisionHistoryLimit": 10,
+        "selector": {
+          "matchLabels": {
+            "app": "research-admin-backend"
+          }
+        },
+        "strategy": {
+          "rollingUpdate": {
+            "maxSurge": "25%",
+            "maxUnavailable": "25%"
+          },
+          "type": "RollingUpdate"
+        },
+        "template": {
+          "metadata": {
+            "annotations": {
+              "kubectl.kubernetes.io/restartedAt": "2026-07-29T20:25:28+08:00"
+            },
+            "creationTimestamp": null,
+            "labels": {
+              "app": "research-admin-backend"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "envFrom": [
+                  {
+                    "configMapRef": {
+                      "name": "research-admin-backend-config"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-admin-backend-secret"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-admin-backend-browser-oidc"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-admin-backend-postgresql-conn"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-admin-backend-redis-conn"
+                    }
+                  },
+                  {
+                    "configMapRef": {
+                      "name": "research-admin-backend-s3"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-admin-backend-s3"
+                    }
+                  },
+                  {
+                    "configMapRef": {
+                      "name": "research-admin-backend-elasticsearch"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-admin-backend-elasticsearch"
+                    }
+                  }
+                ],
+                "image": "harbor.sunmoonai.com:30443/app-images/research-admin-backend:1.0.1",
+                "imagePullPolicy": "Always",
+                "livenessProbe": {
+                  "failureThreshold": 3,
+                  "initialDelaySeconds": 30,
+                  "periodSeconds": 10,
+                  "successThreshold": 1,
+                  "tcpSocket": {
+                    "port": 8000
+                  },
+                  "timeoutSeconds": 5
+                },
+                "name": "research-admin-backend",
+                "ports": [
+                  {
+                    "containerPort": 8000,
+                    "protocol": "TCP"
+                  }
+                ],
+                "readinessProbe": {
+                  "failureThreshold": 3,
+                  "initialDelaySeconds": 15,
+                  "periodSeconds": 5,
+                  "successThreshold": 1,
+                  "tcpSocket": {
+                    "port": 8000
+                  },
+                  "timeoutSeconds": 3
+                },
+                "resources": {
+                  "limits": {
+                    "cpu": "500m",
+                    "memory": "512Mi"
+                  },
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "256Mi"
+                  }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "volumeMounts": [
+                  {
+                    "mountPath": "/app/data",
+                    "name": "data"
+                  },
+                  {
+                    "mountPath": "/var/run/secrets/sunmoonai/elasticsearch",
+                    "name": "elasticsearch-ca",
+                    "readOnly": true
+                  }
+                ]
+              }
+            ],
+            "dnsPolicy": "ClusterFirst",
+            "imagePullSecrets": [
+              {
+                "name": "harbor-registry-secret"
+              }
+            ],
+            "restartPolicy": "Always",
+            "schedulerName": "default-scheduler",
+            "securityContext": {},
+            "terminationGracePeriodSeconds": 30,
+            "volumes": [
+              {
+                "name": "data",
+                "persistentVolumeClaim": {
+                  "claimName": "research-admin-backend-pvc"
+                }
+              },
+              {
+                "name": "elasticsearch-ca",
+                "secret": {
+                  "defaultMode": 420,
+                  "items": [
+                    {
+                      "key": "ca.crt",
+                      "path": "ca.crt"
+                    }
+                  ],
+                  "secretName": "research-admin-backend-elasticsearch"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "annotations": {
+          "deployment.kubernetes.io/revision": "7",
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-admin-frontend\"},\"name\":\"research-admin-frontend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"research-admin-frontend\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"research-admin-frontend\"}},\"spec\":{\"containers\":[{\"image\":\"harbor.sunmoonai.com:30443/app-images/research-admin-frontend:p0-005-auth-20260712\",\"imagePullPolicy\":\"Always\",\"livenessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":10,\"periodSeconds\":10,\"tcpSocket\":{\"port\":80},\"timeoutSeconds\":5},\"name\":\"research-admin-frontend\",\"ports\":[{\"containerPort\":80}],\"readinessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":5,\"periodSeconds\":5,\"tcpSocket\":{\"port\":80},\"timeoutSeconds\":3},\"resources\":{\"limits\":{\"cpu\":\"200m\",\"memory\":\"128Mi\"},\"requests\":{\"cpu\":\"50m\",\"memory\":\"64Mi\"}},\"volumeMounts\":[{\"mountPath\":\"/app/data\",\"name\":\"data\"}]}],\"imagePullSecrets\":[{\"name\":\"harbor-registry-secret\"}],\"volumes\":[{\"name\":\"data\",\"persistentVolumeClaim\":{\"claimName\":\"research-admin-frontend-pvc\"}}]}}}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:04Z",
+        "generation": 7,
+        "labels": {
+          "app": "research-admin-frontend"
+        },
+        "name": "research-admin-frontend",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "1330177",
+        "uid": "3526b606-0354-4087-8b68-059dd00a9bcf"
+      },
+      "spec": {
+        "progressDeadlineSeconds": 600,
+        "replicas": 1,
+        "revisionHistoryLimit": 10,
+        "selector": {
+          "matchLabels": {
+            "app": "research-admin-frontend"
+          }
+        },
+        "strategy": {
+          "rollingUpdate": {
+            "maxSurge": "25%",
+            "maxUnavailable": "25%"
+          },
+          "type": "RollingUpdate"
+        },
+        "template": {
+          "metadata": {
+            "creationTimestamp": null,
+            "labels": {
+              "app": "research-admin-frontend"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "image": "harbor.sunmoonai.com:30443/app-images/research-admin-frontend@sha256:c0a8b782ca578e30946719c2d0b35dde2a8ed16dfaaa31c779e5cf1aa0cc864c",
+                "imagePullPolicy": "Always",
+                "livenessProbe": {
+                  "failureThreshold": 3,
+                  "initialDelaySeconds": 10,
+                  "periodSeconds": 10,
+                  "successThreshold": 1,
+                  "tcpSocket": {
+                    "port": 80
+                  },
+                  "timeoutSeconds": 5
+                },
+                "name": "research-admin-frontend",
+                "ports": [
+                  {
+                    "containerPort": 80,
+                    "protocol": "TCP"
+                  }
+                ],
+                "readinessProbe": {
+                  "failureThreshold": 3,
+                  "initialDelaySeconds": 5,
+                  "periodSeconds": 5,
+                  "successThreshold": 1,
+                  "tcpSocket": {
+                    "port": 80
+                  },
+                  "timeoutSeconds": 3
+                },
+                "resources": {
+                  "limits": {
+                    "cpu": "200m",
+                    "memory": "128Mi"
+                  },
+                  "requests": {
+                    "cpu": "50m",
+                    "memory": "64Mi"
+                  }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "volumeMounts": [
+                  {
+                    "mountPath": "/app/data",
+                    "name": "data"
+                  }
+                ]
+              }
+            ],
+            "dnsPolicy": "ClusterFirst",
+            "imagePullSecrets": [
+              {
+                "name": "harbor-registry-secret"
+              }
+            ],
+            "restartPolicy": "Always",
+            "schedulerName": "default-scheduler",
+            "securityContext": {},
+            "terminationGracePeriodSeconds": 30,
+            "volumes": [
+              {
+                "name": "data",
+                "persistentVolumeClaim": {
+                  "claimName": "research-admin-frontend-pvc"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "annotations": {
+          "deployment.kubernetes.io/revision": "7",
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-web-backend\"},\"name\":\"research-web-backend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"research-web-backend\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"research-web-backend\"}},\"spec\":{\"containers\":[{\"envFrom\":[{\"configMapRef\":{\"name\":\"research-web-backend-config\"}},{\"secretRef\":{\"name\":\"research-web-backend-secret\"}},{\"secretRef\":{\"name\":\"research-web-backend-postgresql-conn\"}},{\"secretRef\":{\"name\":\"research-web-backend-redis-conn\"}},{\"configMapRef\":{\"name\":\"research-web-backend-s3\"}},{\"secretRef\":{\"name\":\"research-web-backend-s3\"}},{\"configMapRef\":{\"name\":\"research-web-backend-elasticsearch\"}},{\"secretRef\":{\"name\":\"research-web-backend-elasticsearch\"}}],\"image\":\"harbor.sunmoonai.com:30443/app-images/research-web-backend:p0-005-auth-20260712\",\"imagePullPolicy\":\"Always\",\"livenessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":30,\"periodSeconds\":10,\"tcpSocket\":{\"port\":3000},\"timeoutSeconds\":5},\"name\":\"research-web-backend\",\"ports\":[{\"containerPort\":3000}],\"readinessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":15,\"periodSeconds\":5,\"tcpSocket\":{\"port\":3000},\"timeoutSeconds\":3},\"resources\":{\"limits\":{\"cpu\":\"500m\",\"memory\":\"512Mi\"},\"requests\":{\"cpu\":\"100m\",\"memory\":\"256Mi\"}},\"volumeMounts\":[{\"mountPath\":\"/app/data\",\"name\":\"data\"},{\"mountPath\":\"/var/run/secrets/sunmoonai/elasticsearch\",\"name\":\"elasticsearch-ca\",\"readOnly\":true}]}],\"imagePullSecrets\":[{\"name\":\"harbor-registry-secret\"}],\"volumes\":[{\"name\":\"data\",\"persistentVolumeClaim\":{\"claimName\":\"research-web-backend-pvc\"}},{\"name\":\"elasticsearch-ca\",\"secret\":{\"items\":[{\"key\":\"ca.crt\",\"path\":\"ca.crt\"}],\"secretName\":\"research-web-backend-elasticsearch\"}}]}}}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:07Z",
+        "generation": 7,
+        "labels": {
+          "app": "research-web-backend"
+        },
+        "name": "research-web-backend",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "1330240",
+        "uid": "cd20caaa-f396-4909-b2a3-a0694dcce95f"
+      },
+      "spec": {
+        "progressDeadlineSeconds": 600,
+        "replicas": 1,
+        "revisionHistoryLimit": 10,
+        "selector": {
+          "matchLabels": {
+            "app": "research-web-backend"
+          }
+        },
+        "strategy": {
+          "rollingUpdate": {
+            "maxSurge": "25%",
+            "maxUnavailable": "25%"
+          },
+          "type": "RollingUpdate"
+        },
+        "template": {
+          "metadata": {
+            "creationTimestamp": null,
+            "labels": {
+              "app": "research-web-backend"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "envFrom": [
+                  {
+                    "configMapRef": {
+                      "name": "research-web-backend-config"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-web-backend-secret"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-web-backend-postgresql-conn"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-web-backend-redis-conn"
+                    }
+                  },
+                  {
+                    "configMapRef": {
+                      "name": "research-web-backend-s3"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-web-backend-s3"
+                    }
+                  },
+                  {
+                    "configMapRef": {
+                      "name": "research-web-backend-elasticsearch"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-web-backend-elasticsearch"
+                    }
+                  }
+                ],
+                "image": "harbor.sunmoonai.com:30443/app-images/research-web-backend@sha256:d550d9b54b2c33781c46cd51cae3f73c28b5924a81257dd412133e8c4c3208ae",
+                "imagePullPolicy": "Always",
+                "livenessProbe": {
+                  "failureThreshold": 3,
+                  "initialDelaySeconds": 30,
+                  "periodSeconds": 10,
+                  "successThreshold": 1,
+                  "tcpSocket": {
+                    "port": 3000
+                  },
+                  "timeoutSeconds": 5
+                },
+                "name": "research-web-backend",
+                "ports": [
+                  {
+                    "containerPort": 3000,
+                    "protocol": "TCP"
+                  }
+                ],
+                "readinessProbe": {
+                  "failureThreshold": 3,
+                  "initialDelaySeconds": 15,
+                  "periodSeconds": 5,
+                  "successThreshold": 1,
+                  "tcpSocket": {
+                    "port": 3000
+                  },
+                  "timeoutSeconds": 3
+                },
+                "resources": {
+                  "limits": {
+                    "cpu": "500m",
+                    "memory": "512Mi"
+                  },
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "256Mi"
+                  }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "volumeMounts": [
+                  {
+                    "mountPath": "/app/data",
+                    "name": "data"
+                  },
+                  {
+                    "mountPath": "/var/run/secrets/sunmoonai/elasticsearch",
+                    "name": "elasticsearch-ca",
+                    "readOnly": true
+                  }
+                ]
+              }
+            ],
+            "dnsPolicy": "ClusterFirst",
+            "imagePullSecrets": [
+              {
+                "name": "harbor-registry-secret"
+              }
+            ],
+            "restartPolicy": "Always",
+            "schedulerName": "default-scheduler",
+            "securityContext": {},
+            "terminationGracePeriodSeconds": 30,
+            "volumes": [
+              {
+                "name": "data",
+                "persistentVolumeClaim": {
+                  "claimName": "research-web-backend-pvc"
+                }
+              },
+              {
+                "name": "elasticsearch-ca",
+                "secret": {
+                  "defaultMode": 420,
+                  "items": [
+                    {
+                      "key": "ca.crt",
+                      "path": "ca.crt"
+                    }
+                  ],
+                  "secretName": "research-web-backend-elasticsearch"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "annotations": {
+          "deployment.kubernetes.io/revision": "7",
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-web-frontend\"},\"name\":\"research-web-frontend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"research-web-frontend\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"research-web-frontend\"}},\"spec\":{\"containers\":[{\"envFrom\":[{\"configMapRef\":{\"name\":\"research-web-frontend-config\"}},{\"secretRef\":{\"name\":\"research-web-frontend-secret\"}}],\"image\":\"harbor.sunmoonai.com:30443/app-images/research-web-frontend:p0-005-auth-20260712\",\"imagePullPolicy\":\"Always\",\"livenessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":30,\"periodSeconds\":10,\"tcpSocket\":{\"port\":3000},\"timeoutSeconds\":5},\"name\":\"research-web-frontend\",\"ports\":[{\"containerPort\":3000}],\"readinessProbe\":{\"failureThreshold\":3,\"initialDelaySeconds\":15,\"periodSeconds\":5,\"tcpSocket\":{\"port\":3000},\"timeoutSeconds\":3},\"resources\":{\"limits\":{\"cpu\":\"500m\",\"memory\":\"512Mi\"},\"requests\":{\"cpu\":\"100m\",\"memory\":\"256Mi\"}},\"volumeMounts\":[{\"mountPath\":\"/app/data\",\"name\":\"data\"}]}],\"imagePullSecrets\":[{\"name\":\"harbor-registry-secret\"}],\"volumes\":[{\"name\":\"data\",\"persistentVolumeClaim\":{\"claimName\":\"research-web-frontend-pvc\"}}]}}}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:11Z",
+        "generation": 7,
+        "labels": {
+          "app": "research-web-frontend"
+        },
+        "name": "research-web-frontend",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "1330194",
+        "uid": "289998da-8b36-4ec6-a8a9-d0e02b484fa7"
+      },
+      "spec": {
+        "progressDeadlineSeconds": 600,
+        "replicas": 1,
+        "revisionHistoryLimit": 10,
+        "selector": {
+          "matchLabels": {
+            "app": "research-web-frontend"
+          }
+        },
+        "strategy": {
+          "rollingUpdate": {
+            "maxSurge": "25%",
+            "maxUnavailable": "25%"
+          },
+          "type": "RollingUpdate"
+        },
+        "template": {
+          "metadata": {
+            "creationTimestamp": null,
+            "labels": {
+              "app": "research-web-frontend"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "envFrom": [
+                  {
+                    "configMapRef": {
+                      "name": "research-web-frontend-config"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "research-web-frontend-secret"
+                    }
+                  }
+                ],
+                "image": "harbor.sunmoonai.com:30443/app-images/research-web-frontend:1.0.1",
+                "imagePullPolicy": "Always",
+                "livenessProbe": {
+                  "failureThreshold": 3,
+                  "initialDelaySeconds": 30,
+                  "periodSeconds": 10,
+                  "successThreshold": 1,
+                  "tcpSocket": {
+                    "port": 3000
+                  },
+                  "timeoutSeconds": 5
+                },
+                "name": "research-web-frontend",
+                "ports": [
+                  {
+                    "containerPort": 3000,
+                    "protocol": "TCP"
+                  }
+                ],
+                "readinessProbe": {
+                  "failureThreshold": 3,
+                  "initialDelaySeconds": 15,
+                  "periodSeconds": 5,
+                  "successThreshold": 1,
+                  "tcpSocket": {
+                    "port": 3000
+                  },
+                  "timeoutSeconds": 3
+                },
+                "resources": {
+                  "limits": {
+                    "cpu": "500m",
+                    "memory": "512Mi"
+                  },
+                  "requests": {
+                    "cpu": "100m",
+                    "memory": "256Mi"
+                  }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "volumeMounts": [
+                  {
+                    "mountPath": "/app/data",
+                    "name": "data"
+                  }
+                ]
+              }
+            ],
+            "dnsPolicy": "ClusterFirst",
+            "imagePullSecrets": [
+              {
+                "name": "harbor-registry-secret"
+              }
+            ],
+            "restartPolicy": "Always",
+            "schedulerName": "default-scheduler",
+            "securityContext": {},
+            "terminationGracePeriodSeconds": 30,
+            "volumes": [
+              {
+                "name": "data",
+                "persistentVolumeClaim": {
+                  "claimName": "research-web-frontend-pvc"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-admin-backend\"},\"name\":\"research-admin-backend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"ports\":[{\"port\":8000,\"protocol\":\"TCP\",\"targetPort\":8000}],\"selector\":{\"app\":\"research-admin-backend\"},\"type\":\"ClusterIP\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:00Z",
+        "labels": {
+          "app": "research-admin-backend"
+        },
+        "name": "research-admin-backend",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5095",
+        "uid": "330806b1-17ef-4910-8530-eada63a5a281"
+      },
+      "spec": {
+        "clusterIP": "10.96.158.152",
+        "clusterIPs": [
+          "10.96.158.152"
+        ],
+        "internalTrafficPolicy": "Cluster",
+        "ipFamilies": [
+          "IPv4"
+        ],
+        "ipFamilyPolicy": "SingleStack",
+        "ports": [
+          {
+            "port": 8000,
+            "protocol": "TCP",
+            "targetPort": 8000
+          }
+        ],
+        "selector": {
+          "app": "research-admin-backend"
+        },
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-admin-frontend\"},\"name\":\"research-admin-frontend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"ports\":[{\"port\":80,\"protocol\":\"TCP\",\"targetPort\":80}],\"selector\":{\"app\":\"research-admin-frontend\"},\"type\":\"ClusterIP\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:04Z",
+        "labels": {
+          "app": "research-admin-frontend"
+        },
+        "name": "research-admin-frontend",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "954351",
+        "uid": "1ebc6c4c-84a7-4bb0-87e7-bdf78bfaf1dc"
+      },
+      "spec": {
+        "clusterIP": "10.96.226.65",
+        "clusterIPs": [
+          "10.96.226.65"
+        ],
+        "internalTrafficPolicy": "Cluster",
+        "ipFamilies": [
+          "IPv4"
+        ],
+        "ipFamilyPolicy": "SingleStack",
+        "ports": [
+          {
+            "port": 80,
+            "protocol": "TCP",
+            "targetPort": 80
+          }
+        ],
+        "selector": {
+          "app": "research-admin-frontend"
+        },
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-web-backend\"},\"name\":\"research-web-backend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"ports\":[{\"port\":3000,\"protocol\":\"TCP\",\"targetPort\":3000}],\"selector\":{\"app\":\"research-web-backend\"},\"type\":\"ClusterIP\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:07Z",
+        "labels": {
+          "app": "research-web-backend"
+        },
+        "name": "research-web-backend",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "954357",
+        "uid": "d28ea333-8455-493b-8886-ced79e8a749d"
+      },
+      "spec": {
+        "clusterIP": "10.96.70.69",
+        "clusterIPs": [
+          "10.96.70.69"
+        ],
+        "internalTrafficPolicy": "Cluster",
+        "ipFamilies": [
+          "IPv4"
+        ],
+        "ipFamilyPolicy": "SingleStack",
+        "ports": [
+          {
+            "port": 3000,
+            "protocol": "TCP",
+            "targetPort": 3000
+          }
+        ],
+        "selector": {
+          "app": "research-web-backend"
+        },
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-web-frontend\"},\"name\":\"research-web-frontend\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"ports\":[{\"port\":3000,\"protocol\":\"TCP\",\"targetPort\":3000}],\"selector\":{\"app\":\"research-web-frontend\"},\"type\":\"ClusterIP\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:11Z",
+        "labels": {
+          "app": "research-web-frontend"
+        },
+        "name": "research-web-frontend",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "953624",
+        "uid": "da5498f1-3277-4f42-943d-62135a4f4701"
+      },
+      "spec": {
+        "clusterIP": "10.96.209.2",
+        "clusterIPs": [
+          "10.96.209.2"
+        ],
+        "internalTrafficPolicy": "Cluster",
+        "ipFamilies": [
+          "IPv4"
+        ],
+        "ipFamilyPolicy": "SingleStack",
+        "ports": [
+          {
+            "name": "http",
+            "port": 3000,
+            "protocol": "TCP",
+            "targetPort": 3000
+          }
+        ],
+        "selector": {
+          "app": "research-web-frontend"
+        },
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      }
+    },
+    {
+      "apiVersion": "traefik.io/v1alpha1",
+      "kind": "IngressRoute",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"traefik.io/v1alpha1\",\"kind\":\"IngressRoute\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"app-platform-ingress\",\"component\":\"research-admin-backend\"},\"name\":\"research-admin-backend-ingress\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"entryPoints\":[\"websecure\"],\"routes\":[{\"kind\":\"Rule\",\"match\":\"Host(`research-admin-api.sunmoonai.com`) \\u0026\\u0026 PathPrefix(`/`)\",\"services\":[{\"name\":\"research-admin-backend\",\"port\":8000}]}]}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:00Z",
+        "generation": 1,
+        "labels": {
+          "app": "app-platform-ingress",
+          "component": "research-admin-backend"
+        },
+        "name": "research-admin-backend-ingress",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5086",
+        "uid": "b4ffdb47-ba98-4d9f-a08f-63cb104d23f4"
+      },
+      "spec": {
+        "entryPoints": [
+          "websecure"
+        ],
+        "routes": [
+          {
+            "kind": "Rule",
+            "match": "Host(`research-admin-api.sunmoonai.com`) && PathPrefix(`/`)",
+            "services": [
+              {
+                "name": "research-admin-backend",
+                "port": 8000
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "traefik.io/v1alpha1",
+      "kind": "IngressRoute",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"traefik.io/v1alpha1\",\"kind\":\"IngressRoute\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"app-platform-ingress\",\"component\":\"research-admin-frontend\"},\"name\":\"research-admin-frontend-ingress\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"entryPoints\":[\"websecure\"],\"routes\":[{\"kind\":\"Rule\",\"match\":\"Host(`research-admin.sunmoonai.com`) \\u0026\\u0026 PathPrefix(`/`)\",\"services\":[{\"name\":\"research-admin-frontend\",\"port\":80}]}]}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:04Z",
+        "generation": 1,
+        "labels": {
+          "app": "app-platform-ingress",
+          "component": "research-admin-frontend"
+        },
+        "name": "research-admin-frontend-ingress",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5136",
+        "uid": "7d569d46-2f0c-48a8-8072-e9d3c5331a8b"
+      },
+      "spec": {
+        "entryPoints": [
+          "websecure"
+        ],
+        "routes": [
+          {
+            "kind": "Rule",
+            "match": "Host(`research-admin.sunmoonai.com`) && PathPrefix(`/`)",
+            "services": [
+              {
+                "name": "research-admin-frontend",
+                "port": 80
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "traefik.io/v1alpha1",
+      "kind": "IngressRoute",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"traefik.io/v1alpha1\",\"kind\":\"IngressRoute\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"app-platform-ingress\",\"component\":\"research-web-backend\"},\"name\":\"research-web-backend-ingress\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"entryPoints\":[\"websecure\"],\"routes\":[{\"kind\":\"Rule\",\"match\":\"Host(`research-api.sunmoonai.com`) \\u0026\\u0026 PathPrefix(`/`)\",\"services\":[{\"name\":\"research-web-backend\",\"port\":3000}]}]}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:06Z",
+        "generation": 1,
+        "labels": {
+          "app": "app-platform-ingress",
+          "component": "research-web-backend"
+        },
+        "name": "research-web-backend-ingress",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5192",
+        "uid": "75b2312a-a089-41b1-a734-41e1d87e0065"
+      },
+      "spec": {
+        "entryPoints": [
+          "websecure"
+        ],
+        "routes": [
+          {
+            "kind": "Rule",
+            "match": "Host(`research-api.sunmoonai.com`) && PathPrefix(`/`)",
+            "services": [
+              {
+                "name": "research-web-backend",
+                "port": 3000
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "traefik.io/v1alpha1",
+      "kind": "IngressRoute",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"traefik.io/v1alpha1\",\"kind\":\"IngressRoute\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"app-platform-ingress\",\"component\":\"research-web-frontend\"},\"name\":\"research-web-frontend-ingress\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"entryPoints\":[\"websecure\"],\"routes\":[{\"kind\":\"Rule\",\"match\":\"Host(`research.sunmoonai.com`) \\u0026\\u0026 PathPrefix(`/`)\",\"services\":[{\"name\":\"research-web-frontend\",\"port\":3000}]}]}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:10Z",
+        "generation": 1,
+        "labels": {
+          "app": "app-platform-ingress",
+          "component": "research-web-frontend"
+        },
+        "name": "research-web-frontend-ingress",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5273",
+        "uid": "e90e762f-a824-4a4b-b7d4-cbe3a119ff7d"
+      },
+      "spec": {
+        "entryPoints": [
+          "websecure"
+        ],
+        "routes": [
+          {
+            "kind": "Rule",
+            "match": "Host(`research.sunmoonai.com`) && PathPrefix(`/`)",
+            "services": [
+              {
+                "name": "research-web-frontend",
+                "port": 3000
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "data": {
+        "CELERY_APP_MODULE": "app.worker",
+        "CELERY_CONCURRENCY": "2",
+        "CELERY_INCLUDE_MODULES": "",
+        "CELERY_LOG_LEVEL": "info",
+        "CELERY_QUEUE": "research.admin.default",
+        "CELERY_TASK_ACKS_LATE": "true",
+        "CELERY_TASK_DEFAULT_QUEUE": "research.admin.default",
+        "CELERY_WORKER_MAX_TASKS_PER_CHILD": "1000",
+        "CELERY_WORKER_PREFETCH_MULTIPLIER": "1"
+      },
+      "kind": "ConfigMap",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"CELERY_APP_MODULE\":\"app.worker\",\"CELERY_CONCURRENCY\":\"2\",\"CELERY_INCLUDE_MODULES\":\"\",\"CELERY_LOG_LEVEL\":\"info\",\"CELERY_QUEUE\":\"research.admin.default\",\"CELERY_TASK_ACKS_LATE\":\"true\",\"CELERY_TASK_DEFAULT_QUEUE\":\"research.admin.default\",\"CELERY_WORKER_MAX_TASKS_PER_CHILD\":\"1000\",\"CELERY_WORKER_PREFETCH_MULTIPLIER\":\"1\"},\"kind\":\"ConfigMap\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"celeryworker-research-admin-backend\",\"backend\":\"research-admin-backend\",\"component\":\"celery-worker\"},\"name\":\"celeryworker-research-admin-backend-config\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:02Z",
+        "labels": {
+          "app": "celeryworker-research-admin-backend",
+          "backend": "research-admin-backend",
+          "component": "celery-worker"
+        },
+        "name": "celeryworker-research-admin-backend-config",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5119",
+        "uid": "5de3a976-f87d-4572-a367-3456d79258d4"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "data": {
+        "NODE_ENV": "production",
+        "QUEUE_ON": "true"
+      },
+      "kind": "ConfigMap",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"NODE_ENV\":\"production\",\"QUEUE_ON\":\"true\"},\"kind\":\"ConfigMap\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"nodebullworker-research-web-backend\",\"backend\":\"research-web-backend\",\"component\":\"node-bull-worker\"},\"name\":\"nodebullworker-research-web-backend-config\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:08Z",
+        "labels": {
+          "app": "nodebullworker-research-web-backend",
+          "backend": "research-web-backend",
+          "component": "node-bull-worker"
+        },
+        "name": "nodebullworker-research-web-backend-config",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5233",
+        "uid": "bcaaa07f-969d-4377-911d-4c427f453a92"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "data": {
+        "AGENT_REDIS_KEY_PREFIX": "research:agent",
+        "AGENT_SESSION_LOCK_TTL_SECONDS": "300",
+        "AGENT_V4_TRAFFIC_ENABLED": "false",
+        "AGENT_V5_TRAFFIC_MODE": "off",
+        "AUTH_ALLOWED_ALGORITHMS": "RS256,ES256",
+        "AUTH_POLICY_VERSION": "research-admin-v1",
+        "CASDOOR_APPLICATION": "sunmoonai-research-admin",
+        "CASDOOR_ENDPOINT": "",
+        "CASDOOR_ORGANIZATION": "built-in",
+        "CASDOOR_REDIRECT_URI": "",
+        "CASDOOR_VERIFY_SSL": "true",
+        "CELERY_QUEUE": "research.admin.default",
+        "CELERY_TASK_DEFAULT_QUEUE": "research.admin.default",
+        "ENV": "development",
+        "FRONTEND_ALLOWED_ORIGINS": "http://research-admin-frontend:80",
+        "FRONTEND_BASE_URL": "http://research-admin-frontend:80",
+        "KNOWLEDGE_RETRIEVAL_SERVICE_APPLICATION": "sunmoonai-research-knowledge-retrieve",
+        "KNOWLEDGE_RETRIEVAL_SERVICE_BACKCHANNEL_ENDPOINT": "http://casdoor-sunmoonai:8000",
+        "KNOWLEDGE_RETRIEVAL_SERVICE_DISCOVERY_URL": "https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration",
+        "KNOWLEDGE_RETRIEVAL_SERVICE_SCOPE": "knowledge:retrieve",
+        "KNOWLEDGE_RETRIEVAL_TIMEOUT_SECONDS": "20",
+        "KNOWLEDGE_RETRIEVAL_URL": "http://knowledge-admin-backend:8000/api/internal/v1/knowledge/retrievals",
+        "LOG_LEVEL": "INFO",
+        "SESSION_TTL_SECONDS": "3600"
+      },
+      "kind": "ConfigMap",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"AGENT_REDIS_KEY_PREFIX\":\"research:agent\",\"AGENT_SESSION_LOCK_TTL_SECONDS\":\"300\",\"AGENT_V4_TRAFFIC_ENABLED\":\"false\",\"AGENT_V5_TRAFFIC_MODE\":\"off\",\"AUTH_ALLOWED_ALGORITHMS\":\"RS256,ES256\",\"AUTH_POLICY_VERSION\":\"research-admin-v1\",\"CASDOOR_APPLICATION\":\"sunmoonai-research-admin\",\"CASDOOR_ENDPOINT\":\"\",\"CASDOOR_ORGANIZATION\":\"built-in\",\"CASDOOR_REDIRECT_URI\":\"\",\"CASDOOR_VERIFY_SSL\":\"true\",\"CELERY_QUEUE\":\"research.admin.default\",\"CELERY_TASK_DEFAULT_QUEUE\":\"research.admin.default\",\"ENV\":\"development\",\"FRONTEND_ALLOWED_ORIGINS\":\"http://research-admin-frontend:80\",\"FRONTEND_BASE_URL\":\"http://research-admin-frontend:80\",\"KNOWLEDGE_RETRIEVAL_SERVICE_APPLICATION\":\"sunmoonai-research-knowledge-retrieve\",\"KNOWLEDGE_RETRIEVAL_SERVICE_BACKCHANNEL_ENDPOINT\":\"http://casdoor-sunmoonai:8000\",\"KNOWLEDGE_RETRIEVAL_SERVICE_DISCOVERY_URL\":\"https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration\",\"KNOWLEDGE_RETRIEVAL_SERVICE_SCOPE\":\"knowledge:retrieve\",\"KNOWLEDGE_RETRIEVAL_TIMEOUT_SECONDS\":\"20\",\"KNOWLEDGE_RETRIEVAL_URL\":\"http://knowledge-admin-backend:8000/api/internal/v1/knowledge/retrievals\",\"LOG_LEVEL\":\"INFO\",\"SESSION_TTL_SECONDS\":\"3600\"},\"kind\":\"ConfigMap\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-admin-backend\"},\"name\":\"research-admin-backend-config\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:00Z",
+        "labels": {
+          "app": "research-admin-backend"
+        },
+        "name": "research-admin-backend-config",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "626400",
+        "uid": "d32c32e9-4139-44ca-aaf9-e9b45217c01d"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "data": {
+        "ELASTICSEARCH_ALIASES": "{\"admin-documents\":{\"read\":\"development-research-app-admin-documents-read\",\"write\":\"development-research-app-admin-documents-write\"}}",
+        "ELASTICSEARCH_CA_CERT_PATH": "/var/run/secrets/sunmoonai/elasticsearch/ca.crt",
+        "ELASTICSEARCH_URL": "https://elasticsearch-sunmoonai.data-platform-dev.svc.cluster.local:9200"
+      },
+      "kind": "ConfigMap",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"ELASTICSEARCH_ALIASES\":\"{\\\"admin-documents\\\":{\\\"read\\\":\\\"development-research-app-admin-documents-read\\\",\\\"write\\\":\\\"development-research-app-admin-documents-write\\\"}}\",\"ELASTICSEARCH_CA_CERT_PATH\":\"/var/run/secrets/sunmoonai/elasticsearch/ca.crt\",\"ELASTICSEARCH_URL\":\"https://elasticsearch-sunmoonai.data-platform-dev.svc.cluster.local:9200\"},\"kind\":\"ConfigMap\",\"metadata\":{\"annotations\":{},\"name\":\"research-admin-backend-elasticsearch\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:05:25Z",
+        "name": "research-admin-backend-elasticsearch",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "4945",
+        "uid": "58baceba-be21-468e-b842-1bc28aa6bc89"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "data": {
+        "S3_BUCKET": "development-research-admin-assets",
+        "S3_BUCKETS": "development-research-admin-assets",
+        "S3_ENDPOINT": "http://minio.data-platform-dev.svc.cluster.local",
+        "S3_FORCE_PATH_STYLE": "true",
+        "S3_REGION": "us-east-1",
+        "S3_USE_TLS": "false"
+      },
+      "kind": "ConfigMap",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"S3_BUCKET\":\"development-research-admin-assets\",\"S3_BUCKETS\":\"development-research-admin-assets\",\"S3_ENDPOINT\":\"http://minio.data-platform-dev.svc.cluster.local\",\"S3_FORCE_PATH_STYLE\":\"true\",\"S3_REGION\":\"us-east-1\",\"S3_USE_TLS\":\"false\"},\"kind\":\"ConfigMap\",\"metadata\":{\"annotations\":{},\"name\":\"research-admin-backend-s3\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:05:04Z",
+        "name": "research-admin-backend-s3",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "4886",
+        "uid": "76addf9b-d6cf-44cc-b75f-67a094183d10"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "ConfigMap",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":null,\"kind\":\"ConfigMap\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-web-backend\"},\"name\":\"research-web-backend-config\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:06Z",
+        "labels": {
+          "app": "research-web-backend"
+        },
+        "name": "research-web-backend-config",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5190",
+        "uid": "6d9318b5-04be-47f4-af34-bcd88e36144f"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "data": {
+        "ELASTICSEARCH_ALIASES": "{\"web-documents\":{\"read\":\"development-research-app-web-documents-read\",\"write\":\"development-research-app-web-documents-write\"}}",
+        "ELASTICSEARCH_CA_CERT_PATH": "/var/run/secrets/sunmoonai/elasticsearch/ca.crt",
+        "ELASTICSEARCH_URL": "https://elasticsearch-sunmoonai.data-platform-dev.svc.cluster.local:9200"
+      },
+      "kind": "ConfigMap",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"ELASTICSEARCH_ALIASES\":\"{\\\"web-documents\\\":{\\\"read\\\":\\\"development-research-app-web-documents-read\\\",\\\"write\\\":\\\"development-research-app-web-documents-write\\\"}}\",\"ELASTICSEARCH_CA_CERT_PATH\":\"/var/run/secrets/sunmoonai/elasticsearch/ca.crt\",\"ELASTICSEARCH_URL\":\"https://elasticsearch-sunmoonai.data-platform-dev.svc.cluster.local:9200\"},\"kind\":\"ConfigMap\",\"metadata\":{\"annotations\":{},\"name\":\"research-web-backend-elasticsearch\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:00Z",
+        "name": "research-web-backend-elasticsearch",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5080",
+        "uid": "14b31362-ff2b-4817-91af-e36e60f3bbf9"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "data": {
+        "S3_BUCKET": "development-research-web-assets",
+        "S3_BUCKETS": "development-research-web-assets",
+        "S3_ENDPOINT": "http://minio.data-platform-dev.svc.cluster.local",
+        "S3_FORCE_PATH_STYLE": "true",
+        "S3_REGION": "us-east-1",
+        "S3_USE_TLS": "false"
+      },
+      "kind": "ConfigMap",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"S3_BUCKET\":\"development-research-web-assets\",\"S3_BUCKETS\":\"development-research-web-assets\",\"S3_ENDPOINT\":\"http://minio.data-platform-dev.svc.cluster.local\",\"S3_FORCE_PATH_STYLE\":\"true\",\"S3_REGION\":\"us-east-1\",\"S3_USE_TLS\":\"false\"},\"kind\":\"ConfigMap\",\"metadata\":{\"annotations\":{},\"name\":\"research-web-backend-s3\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:05:40Z",
+        "name": "research-web-backend-s3",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5039",
+        "uid": "c1a98524-450f-4a0a-9695-91adcea41a63"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "data": {
+        "NEXT_PUBLIC_API_URL": "https://research-admin-api.sunmoonai.com/api",
+        "NEXT_PUBLIC_APP_NAME": "research",
+        "NODE_ENV": "production"
+      },
+      "kind": "ConfigMap",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"NEXT_PUBLIC_API_URL\":\"https://research-admin-api.sunmoonai.com/api\",\"NEXT_PUBLIC_APP_NAME\":\"research\",\"NODE_ENV\":\"production\"},\"kind\":\"ConfigMap\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-web-frontend\"},\"name\":\"research-web-frontend-config\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:10Z",
+        "labels": {
+          "app": "research-web-frontend"
+        },
+        "name": "research-web-frontend-config",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "253827",
+        "uid": "82f75d4d-ef58-47cb-a102-cf2bd6a665ed"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "data": [
+        "CELERY_BROKER_URL",
+        "CELERY_RESULT_BACKEND"
+      ],
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"celeryworker-research-admin-backend\",\"backend\":\"research-admin-backend\",\"component\":\"celery-worker\"},\"name\":\"celeryworker-research-admin-backend-secret\",\"namespace\":\"app-platform-dev\"},\"stringData\":{\"CELERY_BROKER_URL\":\"amqp://research-admin-backend-worker:research-admin-backend-worker-dev@rabbitmq-sunmoonai.messaging-platform-dev.svc.cluster.local:5672/research-development\",\"CELERY_RESULT_BACKEND\":\"\"},\"type\":\"Opaque\"}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:02Z",
+        "labels": {
+          "app": "celeryworker-research-admin-backend",
+          "backend": "research-admin-backend",
+          "component": "celery-worker"
+        },
+        "name": "celeryworker-research-admin-backend-secret",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5118",
+        "uid": "c0d1623e-5e85-4f15-a79d-5a742a2a7cc0"
+      },
+      "type": "Opaque"
+    },
+    {
+      "apiVersion": "v1",
+      "data": [
+        "RETRIEVAL_AUTH_AUDIENCE",
+        "RETRIEVAL_AUTH_BACKCHANNEL_ENDPOINT",
+        "RETRIEVAL_AUTH_CASDOOR_APPLICATION",
+        "RETRIEVAL_AUTH_DISCOVERY_URL",
+        "RETRIEVAL_AUTH_REQUIRED_SCOPE",
+        "RETRIEVAL_AUTH_SUBJECT_ALLOWLIST"
+      ],
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"labels\":{\"app.kubernetes.io/component\":\"service-identity-resource-binding\",\"sunmoonai.com/service-relation\":\"research-knowledge-retrieve\",\"sunmoonai.com/task\":\"v5-p0-004\"},\"name\":\"knowledge-research-retrieval-service-binding\",\"namespace\":\"app-platform-dev\"},\"stringData\":{\"RETRIEVAL_AUTH_AUDIENCE\":\"c1569fa6f0a7e43a3c8ab64d17e22ae8\",\"RETRIEVAL_AUTH_BACKCHANNEL_ENDPOINT\":\"http://casdoor-sunmoonai:8000\",\"RETRIEVAL_AUTH_CASDOOR_APPLICATION\":\"sunmoonai-research-knowledge-retrieve\",\"RETRIEVAL_AUTH_DISCOVERY_URL\":\"https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration\",\"RETRIEVAL_AUTH_REQUIRED_SCOPE\":\"knowledge:retrieve\",\"RETRIEVAL_AUTH_SUBJECT_ALLOWLIST\":\"admin/sunmoonai-research-knowledge-retrieve\"},\"type\":\"Opaque\"}\n"
+        },
+        "creationTimestamp": "2026-07-15T03:12:55Z",
+        "labels": {
+          "app.kubernetes.io/component": "service-identity-resource-binding",
+          "sunmoonai.com/service-relation": "research-knowledge-retrieve",
+          "sunmoonai.com/task": "v5-p0-004"
+        },
+        "name": "knowledge-research-retrieval-service-binding",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "615218",
+        "uid": "e0af3ed2-3aa0-46f6-94a3-c2725c369970"
+      },
+      "type": "Opaque"
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"nodebullworker-research-web-backend\",\"backend\":\"research-web-backend\",\"component\":\"node-bull-worker\"},\"name\":\"nodebullworker-research-web-backend-secret\",\"namespace\":\"app-platform-dev\"},\"stringData\":{},\"type\":\"Opaque\"}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:08Z",
+        "labels": {
+          "app": "nodebullworker-research-web-backend",
+          "backend": "research-web-backend",
+          "component": "node-bull-worker"
+        },
+        "name": "nodebullworker-research-web-backend-secret",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5231",
+        "uid": "f72242b8-b23a-4c12-8121-1de2df00eb9a"
+      },
+      "type": "Opaque",
+      "data": []
+    },
+    {
+      "apiVersion": "v1",
+      "data": [
+        "CASDOOR_APPLICATION",
+        "CASDOOR_BACKCHANNEL_ENDPOINT",
+        "CASDOOR_CLIENT_ID",
+        "CASDOOR_CLIENT_SECRET",
+        "CASDOOR_ENDPOINT",
+        "CASDOOR_REDIRECT_URI",
+        "CASDOOR_VERIFY_SSL",
+        "FRONTEND_ALLOWED_ORIGINS",
+        "FRONTEND_BASE_URL",
+        "SESSION_COOKIE_SECURE"
+      ],
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-admin-backend\",\"app.kubernetes.io/component\":\"browser-identity\",\"sunmoonai.com/task\":\"v5-p0-005\"},\"name\":\"research-admin-backend-browser-oidc\",\"namespace\":\"app-platform-dev\"},\"stringData\":{\"CASDOOR_APPLICATION\":\"sunmoonai-research-admin\",\"CASDOOR_BACKCHANNEL_ENDPOINT\":\"http://casdoor-sunmoonai:8000\",\"CASDOOR_CLIENT_ID\":\"a8dbb05adac4724a237c8160f89374d2\",\"CASDOOR_CLIENT_SECRET\":\"4b010f64e9a179a713ca9f0b268ca19ba4b33b8e7a618b9438db18852761b94a\",\"CASDOOR_ENDPOINT\":\"https://casdoor.sunmoonai.com:30443\",\"CASDOOR_REDIRECT_URI\":\"http://127.0.0.1:18084/api/auth/callback\",\"CASDOOR_VERIFY_SSL\":\"true\",\"FRONTEND_ALLOWED_ORIGINS\":\"http://127.0.0.1:19084\",\"FRONTEND_BASE_URL\":\"http://127.0.0.1:19084\",\"SESSION_COOKIE_SECURE\":\"false\"},\"type\":\"Opaque\"}\n"
+        },
+        "creationTimestamp": "2026-07-13T09:03:22Z",
+        "labels": {
+          "app": "research-admin-backend",
+          "app.kubernetes.io/component": "browser-identity",
+          "sunmoonai.com/task": "v5-p0-005"
+        },
+        "name": "research-admin-backend-browser-oidc",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "481439",
+        "uid": "406a9144-af29-4c5f-b973-7b995e18528f"
+      },
+      "type": "Opaque"
+    },
+    {
+      "apiVersion": "v1",
+      "data": [
+        "ELASTICSEARCH_PASSWORD",
+        "ELASTICSEARCH_USERNAME",
+        "ca.crt"
+      ],
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"ELASTICSEARCH_PASSWORD\":\"MWIzYzQxYWMyNzExZGE5MmU4ZGJmMDhmN2ViNDJmOWJmZDQzYThkNDc0NTMxN2Zi\",\"ELASTICSEARCH_USERNAME\":\"cmVzZWFyY2gtYWRtaW4tYmFja2VuZA==\",\"ca.crt\":\"LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURJakNDQWdxZ0F3SUJBZ0lSQVBNVk1vaWdBMlhqM05YT0Q5cDRMWU13RFFZSktvWklodmNOQVFFTEJRQXcKR3pFWk1CY0dBMVVFQXhNUVpXeGhjM1JwWTNObFlYSmphQzFqWVRBZUZ3MHlOakEyTWpJd09EVXlNamRhRncweQpOekEyTWpJd09EVXlNamRhTUJzeEdUQVhCZ05WQkFNVEVHVnNZWE4wYVdOelpXRnlZMmd0WTJFd2dnRWlNQTBHCkNTcUdTSWIzRFFFQkFRVUFBNElCRHdBd2dnRUtBb0lCQVFERFpHelRNZEhhRjhEZXlCOUwrL3B4WSsvRWZDN04KdUo5YzRwZStBd2ZWelNQNUl0WURJdEdxMElsWHB4NFZhUVlBbnQ5QXVlajY4UUNsTi9oam5YT2dCaHZWdnJodQpqK0U4K0ZHZGQ1aUdvRGZnM3lweDd1OGFJZjBZWkJvSVFjb29XaHNTVlhqNlFrbUc4M3VoUUlTdnErTjBRaHRsCmJNbjJvSUVmMVRSMVEwYVQzQ1N5YkpDTS81bXdrZVpKM0wrV3VSNVozMHVLSzhUVEdDaWsrUndrbERPaHYyVlQKd3U2aFJlZW84Q2YrNjlMK2FOTFo0eHNXTWU1Myt2NG9WNmFmYXNIcVA5b0EzbE8zK2c2b29xWDV4OUc3UmtiTwpXWDM1TDFBb0FEVURtejFzMmpXRGZ2cXlwUWRFS2xDNW5lNitneHFSTEEyM3RTWTdzUitza2NHckFnTUJBQUdqCllUQmZNQTRHQTFVZER3RUIvd1FFQXdJQ3BEQWRCZ05WSFNVRUZqQVVCZ2dyQmdFRkJRY0RBUVlJS3dZQkJRVUgKQXdJd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVXNxeENEQmlHOWhzZm13VWhEWTFmUkJWYgpaRmt3RFFZSktvWklodmNOQVFFTEJRQURnZ0VCQUltVUxGZ2hBSGZrNy9mYnlwYldRbFU4eS9WcXh6eW5KRGxKCmo1QXQwb1VtUllPNW5hTE10ZXEvaHFBTUpOaDZ5eFYvZ00wU0FmbGFiY2JUMFZFZnozeFh2V0ozZGhjUmcyTXUKOGcwaVpOSGFhbUt3cWc3cThGcEllUENaYW5CWnZZM2lNV3duYzRvbW5rRnR1QW9uczVlR3VzdndZV09WbVJFcQp4T09SV0ZaSmt3UjRTVllScnY5Mk1vNWx3QWtHQUgvTEtEazZyQ3o0MkZDTUtHaWRCUGZjR2NlYWVPc1gycEljCmN1ZEtqME44ZkhaTmlrTFVIdkRpb3Uya1Z6dC85Zld1ai9ISGFHQ1VOem13aW1MR242ZzhIekNDYlltdFZlb2MKM0lMSE4xTUozbE5sT2JuTVlhT0VXK3YxRTBnMzBKZWRWd2Q3T200VTl2dTM2MG91MzRFPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==\"},\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"name\":\"research-admin-backend-elasticsearch\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:05:25Z",
+        "name": "research-admin-backend-elasticsearch",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "4944",
+        "uid": "bf853efd-a84a-4de2-b8c6-6af160571baa"
+      },
+      "type": "Opaque"
+    },
+    {
+      "apiVersion": "v1",
+      "data": [
+        "MIGRATION_DATABASE_URL",
+        "MIGRATION_DATABASE_USER"
+      ],
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-admin-backend\",\"app.kubernetes.io/component\":\"database-migration\",\"sunmoonai.com/task\":\"v5-p0-005\"},\"name\":\"research-admin-backend-migration-postgresql-conn\",\"namespace\":\"app-platform-dev\"},\"stringData\":{\"MIGRATION_DATABASE_URL\":\"postgresql+asyncpg://research_admin_user_migration:e141a2a22ed83297b3c9fc3ad013728b6db3a87bfb8354779e6c2ba39ecbb3fe@postgresql-sunmoonai.data-platform-dev.svc.cluster.local:5432/research_admin\",\"MIGRATION_DATABASE_USER\":\"research_admin_user_migration\"},\"type\":\"Opaque\"}\n"
+        },
+        "creationTimestamp": "2026-07-13T08:20:54Z",
+        "labels": {
+          "app": "research-admin-backend",
+          "app.kubernetes.io/component": "database-migration",
+          "sunmoonai.com/task": "v5-p0-005"
+        },
+        "name": "research-admin-backend-migration-postgresql-conn",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "476866",
+        "uid": "5510fafc-2feb-4fc1-a126-ce77bf257085"
+      },
+      "type": "Opaque"
+    },
+    {
+      "apiVersion": "v1",
+      "data": [
+        "APP_DB_NAME",
+        "APP_DB_PASSWORD",
+        "APP_DB_URI",
+        "APP_DB_USER",
+        "DATABASE_URL",
+        "DB_ENGINE",
+        "DB_HOST",
+        "DB_PORT",
+        "ENVIRONMENT",
+        "SERVICE_NAME"
+      ],
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"APP_DB_NAME\":\"cmVzZWFyY2hfYWRtaW4=\",\"APP_DB_PASSWORD\":\"UG8hczEzNTk=\",\"APP_DB_URI\":\"cG9zdGdyZXNxbDovL3Jlc2VhcmNoX2FkbWluX3VzZXI6UG8hczEzNTlAcG9zdGdyZXNxbC1zdW5tb29uYWkuZGF0YS1wbGF0Zm9ybS1kZXYuc3ZjLmNsdXN0ZXIubG9jYWw6NTQzMi9yZXNlYXJjaF9hZG1pbj9zc2xtb2RlPXByZWZlcg==\",\"APP_DB_USER\":\"cmVzZWFyY2hfYWRtaW5fdXNlcg==\",\"DATABASE_URL\":\"cG9zdGdyZXNxbDovL3Jlc2VhcmNoX2FkbWluX3VzZXI6UG8hczEzNTlAcG9zdGdyZXNxbC1zdW5tb29uYWkuZGF0YS1wbGF0Zm9ybS1kZXYuc3ZjLmNsdXN0ZXIubG9jYWw6NTQzMi9yZXNlYXJjaF9hZG1pbj9zc2xtb2RlPXByZWZlcg==\",\"DB_ENGINE\":\"cG9zdGdyZXNxbA==\",\"DB_HOST\":\"cG9zdGdyZXNxbC1zdW5tb29uYWkuZGF0YS1wbGF0Zm9ybS1kZXYuc3ZjLmNsdXN0ZXIubG9jYWw=\",\"DB_PORT\":\"NTQzMg==\",\"ENVIRONMENT\":\"ZGV2\",\"SERVICE_NAME\":\"cmVzZWFyY2gtYWRtaW4tYmFja2VuZA==\"},\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"name\":\"research-admin-backend-postgresql-conn\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:04:56Z",
+        "name": "research-admin-backend-postgresql-conn",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "950780",
+        "uid": "4b9c09b3-6d24-4f61-9393-a3f2ecdffbd5"
+      },
+      "type": "Opaque"
+    },
+    {
+      "apiVersion": "v1",
+      "data": [
+        "APP_DB_NAME",
+        "APP_DB_PASSWORD",
+        "APP_DB_URI",
+        "APP_DB_USER",
+        "DB_ENGINE",
+        "DB_HOST",
+        "DB_PORT",
+        "ENVIRONMENT",
+        "REDIS_DB",
+        "REDIS_HOST",
+        "REDIS_PASSWORD",
+        "REDIS_PORT",
+        "REDIS_URI",
+        "REDIS_USER",
+        "SERVICE_NAME"
+      ],
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"APP_DB_NAME\":\"MA==\",\"APP_DB_PASSWORD\":\"VHBsQWRtaW5SZWRpc0FjbF83blI0d1Aydks5bUwzcVg4ag==\",\"APP_DB_URI\":\"cmVkaXM6Ly9yZXNlYXJjaF9hZG1pbl9iYWNrZW5kOlRwbEFkbWluUmVkaXNBY2xfN25SNHdQMnZLOW1MM3FYOGpAcmVkaXMtc3VubW9vbmFpLW1hc3Rlci5kYXRhLXBsYXRmb3JtLWRldi5zdmMuY2x1c3Rlci5sb2NhbDo2Mzc5LzA=\",\"APP_DB_USER\":\"cmVzZWFyY2hfYWRtaW5fYmFja2VuZA==\",\"DB_ENGINE\":\"cmVkaXM=\",\"DB_HOST\":\"cmVkaXMtc3VubW9vbmFpLW1hc3Rlci5kYXRhLXBsYXRmb3JtLWRldi5zdmMuY2x1c3Rlci5sb2NhbA==\",\"DB_PORT\":\"NjM3OQ==\",\"ENVIRONMENT\":\"ZGV2\",\"REDIS_DB\":\"MA==\",\"REDIS_HOST\":\"cmVkaXMtc3VubW9vbmFpLW1hc3Rlci5kYXRhLXBsYXRmb3JtLWRldi5zdmMuY2x1c3Rlci5sb2NhbA==\",\"REDIS_PASSWORD\":\"VHBsQWRtaW5SZWRpc0FjbF83blI0d1Aydks5bUwzcVg4ag==\",\"REDIS_PORT\":\"NjM3OQ==\",\"REDIS_URI\":\"cmVkaXM6Ly9yZXNlYXJjaF9hZG1pbl9iYWNrZW5kOlRwbEFkbWluUmVkaXNBY2xfN25SNHdQMnZLOW1MM3FYOGpAcmVkaXMtc3VubW9vbmFpLW1hc3Rlci5kYXRhLXBsYXRmb3JtLWRldi5zdmMuY2x1c3Rlci5sb2NhbDo2Mzc5LzA=\",\"REDIS_USER\":\"cmVzZWFyY2hfYWRtaW5fYmFja2VuZA==\",\"SERVICE_NAME\":\"cmVzZWFyY2gtYWRtaW4tYmFja2VuZA==\"},\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"name\":\"research-admin-backend-redis-conn\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:04:58Z",
+        "name": "research-admin-backend-redis-conn",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "4825",
+        "uid": "d1d6aa13-c742-4ad3-a781-b89b54a0ea7c"
+      },
+      "type": "Opaque"
+    },
+    {
+      "apiVersion": "v1",
+      "data": [
+        "S3_ACCESS_KEY_ID",
+        "S3_SECRET_ACCESS_KEY"
+      ],
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"S3_ACCESS_KEY_ID\":\"cmVzZWFyY2gtYWRtaW4tYmFja2VuZA==\",\"S3_SECRET_ACCESS_KEY\":\"YWE0MWY5ZjQ1NmZiMTllOThhNjgxYTc2ODE3NDNkYTBlMWJmMDc3MzE0ZDA1Yjlk\"},\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"name\":\"research-admin-backend-s3\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:05:04Z",
+        "name": "research-admin-backend-s3",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "4885",
+        "uid": "4a0f9d29-46fe-495d-9ae2-28b485b8aa8c"
+      },
+      "type": "Opaque"
+    },
+    {
+      "apiVersion": "v1",
+      "data": [
+        "CASDOOR_CLIENT_ID",
+        "CASDOOR_CLIENT_SECRET",
+        "CELERY_BROKER_URL",
+        "CELERY_RESULT_BACKEND"
+      ],
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-admin-backend\"},\"name\":\"research-admin-backend-secret\",\"namespace\":\"app-platform-dev\"},\"stringData\":{\"CASDOOR_CLIENT_ID\":\"\",\"CASDOOR_CLIENT_SECRET\":\"\",\"CELERY_BROKER_URL\":\"amqp://research-admin-backend-producer:research-admin-backend-producer-dev@rabbitmq-sunmoonai.messaging-platform-dev.svc.cluster.local:5672/research-development\",\"CELERY_RESULT_BACKEND\":\"\"},\"type\":\"Opaque\"}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:05:59Z",
+        "labels": {
+          "app": "research-admin-backend"
+        },
+        "name": "research-admin-backend-secret",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "219006",
+        "uid": "17802ad9-a0cc-4ad3-a2b8-f431944cb8b8"
+      },
+      "type": "Opaque"
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-admin-frontend\"},\"name\":\"research-admin-frontend-secret\",\"namespace\":\"app-platform-dev\"},\"stringData\":null,\"type\":\"Opaque\"}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:03Z",
+        "labels": {
+          "app": "research-admin-frontend"
+        },
+        "name": "research-admin-frontend-secret",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5135",
+        "uid": "4486ff2c-78ba-4316-b1c0-4237701e7f2c"
+      },
+      "type": "Opaque",
+      "data": []
+    },
+    {
+      "apiVersion": "v1",
+      "data": [
+        "KNOWLEDGE_RETRIEVAL_SERVICE_BACKCHANNEL_ENDPOINT",
+        "KNOWLEDGE_RETRIEVAL_SERVICE_CLIENT_ID",
+        "KNOWLEDGE_RETRIEVAL_SERVICE_CLIENT_SECRET",
+        "KNOWLEDGE_RETRIEVAL_SERVICE_DISCOVERY_URL"
+      ],
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"labels\":{\"app.kubernetes.io/component\":\"service-identity-caller\",\"sunmoonai.com/service-relation\":\"research-knowledge-retrieve\",\"sunmoonai.com/task\":\"v5-p0-004\"},\"name\":\"research-knowledge-retrieval-client\",\"namespace\":\"app-platform-dev\"},\"stringData\":{\"KNOWLEDGE_RETRIEVAL_SERVICE_BACKCHANNEL_ENDPOINT\":\"http://casdoor-sunmoonai:8000\",\"KNOWLEDGE_RETRIEVAL_SERVICE_CLIENT_ID\":\"c1569fa6f0a7e43a3c8ab64d17e22ae8\",\"KNOWLEDGE_RETRIEVAL_SERVICE_CLIENT_SECRET\":\"17c35cc5b6d2a605a7a20548e7b40e0e827547566793864f129ac51172a4a91a\",\"KNOWLEDGE_RETRIEVAL_SERVICE_DISCOVERY_URL\":\"https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration\"},\"type\":\"Opaque\"}\n"
+        },
+        "creationTimestamp": "2026-07-15T03:12:55Z",
+        "labels": {
+          "app.kubernetes.io/component": "service-identity-caller",
+          "sunmoonai.com/service-relation": "research-knowledge-retrieve",
+          "sunmoonai.com/task": "v5-p0-004"
+        },
+        "name": "research-knowledge-retrieval-client",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "615217",
+        "uid": "45598a4e-011c-4259-97e3-57d9c9ed1ef9"
+      },
+      "type": "Opaque"
+    },
+    {
+      "apiVersion": "v1",
+      "data": [
+        "ELASTICSEARCH_PASSWORD",
+        "ELASTICSEARCH_USERNAME",
+        "ca.crt"
+      ],
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"ELASTICSEARCH_PASSWORD\":\"NzE2ZTJmYmQ0MmVlOTUwOWZlNjFlMzcwNzUzMjQwZDA1NGRmMjUzY2E2NzZlNjE1\",\"ELASTICSEARCH_USERNAME\":\"cmVzZWFyY2gtd2ViLWJhY2tlbmQ=\",\"ca.crt\":\"LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURJakNDQWdxZ0F3SUJBZ0lSQVBNVk1vaWdBMlhqM05YT0Q5cDRMWU13RFFZSktvWklodmNOQVFFTEJRQXcKR3pFWk1CY0dBMVVFQXhNUVpXeGhjM1JwWTNObFlYSmphQzFqWVRBZUZ3MHlOakEyTWpJd09EVXlNamRhRncweQpOekEyTWpJd09EVXlNamRhTUJzeEdUQVhCZ05WQkFNVEVHVnNZWE4wYVdOelpXRnlZMmd0WTJFd2dnRWlNQTBHCkNTcUdTSWIzRFFFQkFRVUFBNElCRHdBd2dnRUtBb0lCQVFERFpHelRNZEhhRjhEZXlCOUwrL3B4WSsvRWZDN04KdUo5YzRwZStBd2ZWelNQNUl0WURJdEdxMElsWHB4NFZhUVlBbnQ5QXVlajY4UUNsTi9oam5YT2dCaHZWdnJodQpqK0U4K0ZHZGQ1aUdvRGZnM3lweDd1OGFJZjBZWkJvSVFjb29XaHNTVlhqNlFrbUc4M3VoUUlTdnErTjBRaHRsCmJNbjJvSUVmMVRSMVEwYVQzQ1N5YkpDTS81bXdrZVpKM0wrV3VSNVozMHVLSzhUVEdDaWsrUndrbERPaHYyVlQKd3U2aFJlZW84Q2YrNjlMK2FOTFo0eHNXTWU1Myt2NG9WNmFmYXNIcVA5b0EzbE8zK2c2b29xWDV4OUc3UmtiTwpXWDM1TDFBb0FEVURtejFzMmpXRGZ2cXlwUWRFS2xDNW5lNitneHFSTEEyM3RTWTdzUitza2NHckFnTUJBQUdqCllUQmZNQTRHQTFVZER3RUIvd1FFQXdJQ3BEQWRCZ05WSFNVRUZqQVVCZ2dyQmdFRkJRY0RBUVlJS3dZQkJRVUgKQXdJd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVXNxeENEQmlHOWhzZm13VWhEWTFmUkJWYgpaRmt3RFFZSktvWklodmNOQVFFTEJRQURnZ0VCQUltVUxGZ2hBSGZrNy9mYnlwYldRbFU4eS9WcXh6eW5KRGxKCmo1QXQwb1VtUllPNW5hTE10ZXEvaHFBTUpOaDZ5eFYvZ00wU0FmbGFiY2JUMFZFZnozeFh2V0ozZGhjUmcyTXUKOGcwaVpOSGFhbUt3cWc3cThGcEllUENaYW5CWnZZM2lNV3duYzRvbW5rRnR1QW9uczVlR3VzdndZV09WbVJFcQp4T09SV0ZaSmt3UjRTVllScnY5Mk1vNWx3QWtHQUgvTEtEazZyQ3o0MkZDTUtHaWRCUGZjR2NlYWVPc1gycEljCmN1ZEtqME44ZkhaTmlrTFVIdkRpb3Uya1Z6dC85Zld1ai9ISGFHQ1VOem13aW1MR242ZzhIekNDYlltdFZlb2MKM0lMSE4xTUozbE5sT2JuTVlhT0VXK3YxRTBnMzBKZWRWd2Q3T200VTl2dTM2MG91MzRFPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==\"},\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"name\":\"research-web-backend-elasticsearch\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:00Z",
+        "name": "research-web-backend-elasticsearch",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5079",
+        "uid": "cba4ee99-10b9-4453-94f8-3264528594d7"
+      },
+      "type": "Opaque"
+    },
+    {
+      "apiVersion": "v1",
+      "data": [
+        "APP_DB_NAME",
+        "APP_DB_PASSWORD",
+        "APP_DB_URI",
+        "APP_DB_USER",
+        "DB_ENGINE",
+        "DB_HOST",
+        "DB_PORT",
+        "ENVIRONMENT",
+        "QUEUE_REDIS_DB",
+        "QUEUE_REDIS_HOST",
+        "QUEUE_REDIS_PASSWORD",
+        "QUEUE_REDIS_PORT",
+        "QUEUE_REDIS_PREFIX",
+        "QUEUE_REDIS_URI",
+        "QUEUE_REDIS_USERNAME",
+        "REDIS_DB",
+        "REDIS_HOST",
+        "REDIS_PASSWORD",
+        "REDIS_PORT",
+        "REDIS_URI",
+        "REDIS_USER",
+        "SERVICE_NAME"
+      ],
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"APP_DB_NAME\":\"MA==\",\"APP_DB_PASSWORD\":\"UmVzZWFyY2hXZWJOb2RlQnVsbFJlZGlzQWNsXzlwUTR2TTJ4TDhuUjZzSzM=\",\"APP_DB_URI\":\"cmVkaXM6Ly9yZXNlYXJjaF93ZWJfbm9kZWJ1bGw6UmVzZWFyY2hXZWJOb2RlQnVsbFJlZGlzQWNsXzlwUTR2TTJ4TDhuUjZzSzNAcmVkaXMtbm9kZWJ1bGwtbWFzdGVyLmRhdGEtcGxhdGZvcm0tZGV2LnN2Yy5jbHVzdGVyLmxvY2FsOjYzNzkvMA==\",\"APP_DB_USER\":\"cmVzZWFyY2hfd2ViX25vZGVidWxs\",\"DB_ENGINE\":\"cmVkaXM=\",\"DB_HOST\":\"cmVkaXMtbm9kZWJ1bGwtbWFzdGVyLmRhdGEtcGxhdGZvcm0tZGV2LnN2Yy5jbHVzdGVyLmxvY2Fs\",\"DB_PORT\":\"NjM3OQ==\",\"ENVIRONMENT\":\"ZGV2\",\"QUEUE_REDIS_DB\":\"MA==\",\"QUEUE_REDIS_HOST\":\"cmVkaXMtbm9kZWJ1bGwtbWFzdGVyLmRhdGEtcGxhdGZvcm0tZGV2LnN2Yy5jbHVzdGVyLmxvY2Fs\",\"QUEUE_REDIS_PASSWORD\":\"UmVzZWFyY2hXZWJOb2RlQnVsbFJlZGlzQWNsXzlwUTR2TTJ4TDhuUjZzSzM=\",\"QUEUE_REDIS_PORT\":\"NjM3OQ==\",\"QUEUE_REDIS_PREFIX\":\"YnVsbDpyZXNlYXJjaDp3ZWI=\",\"QUEUE_REDIS_URI\":\"cmVkaXM6Ly9yZXNlYXJjaF93ZWJfbm9kZWJ1bGw6UmVzZWFyY2hXZWJOb2RlQnVsbFJlZGlzQWNsXzlwUTR2TTJ4TDhuUjZzSzNAcmVkaXMtbm9kZWJ1bGwtbWFzdGVyLmRhdGEtcGxhdGZvcm0tZGV2LnN2Yy5jbHVzdGVyLmxvY2FsOjYzNzkvMA==\",\"QUEUE_REDIS_USERNAME\":\"cmVzZWFyY2hfd2ViX25vZGVidWxs\",\"REDIS_DB\":\"MA==\",\"REDIS_HOST\":\"cmVkaXMtbm9kZWJ1bGwtbWFzdGVyLmRhdGEtcGxhdGZvcm0tZGV2LnN2Yy5jbHVzdGVyLmxvY2Fs\",\"REDIS_PASSWORD\":\"UmVzZWFyY2hXZWJOb2RlQnVsbFJlZGlzQWNsXzlwUTR2TTJ4TDhuUjZzSzM=\",\"REDIS_PORT\":\"NjM3OQ==\",\"REDIS_URI\":\"cmVkaXM6Ly9yZXNlYXJjaF93ZWJfbm9kZWJ1bGw6UmVzZWFyY2hXZWJOb2RlQnVsbFJlZGlzQWNsXzlwUTR2TTJ4TDhuUjZzSzNAcmVkaXMtbm9kZWJ1bGwtbWFzdGVyLmRhdGEtcGxhdGZvcm0tZGV2LnN2Yy5jbHVzdGVyLmxvY2FsOjYzNzkvMA==\",\"REDIS_USER\":\"cmVzZWFyY2hfd2ViX25vZGVidWxs\",\"SERVICE_NAME\":\"cmVzZWFyY2gtd2ViLWJhY2tlbmQtbm9kZWJ1bGw=\"},\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"name\":\"research-web-backend-nodebull-redis-conn\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:05:34Z",
+        "name": "research-web-backend-nodebull-redis-conn",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5005",
+        "uid": "ed0ea10f-2814-4317-ae9c-865be6d62b5e"
+      },
+      "type": "Opaque"
+    },
+    {
+      "apiVersion": "v1",
+      "data": [
+        "APP_DB_NAME",
+        "APP_DB_PASSWORD",
+        "APP_DB_URI",
+        "APP_DB_USER",
+        "DATABASE_URL",
+        "DB_ENGINE",
+        "DB_HOST",
+        "DB_PORT",
+        "ENVIRONMENT",
+        "SERVICE_NAME"
+      ],
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"APP_DB_NAME\":\"cmVzZWFyY2hfd2Vi\",\"APP_DB_PASSWORD\":\"UG8hczEzNTk=\",\"APP_DB_URI\":\"cG9zdGdyZXNxbDovL3Jlc2VhcmNoX3dlYl91c2VyOlBvIXMxMzU5QHBvc3RncmVzcWwtc3VubW9vbmFpLmRhdGEtcGxhdGZvcm0tZGV2LnN2Yy5jbHVzdGVyLmxvY2FsOjU0MzIvcmVzZWFyY2hfd2ViP3NzbG1vZGU9cHJlZmVy\",\"APP_DB_USER\":\"cmVzZWFyY2hfd2ViX3VzZXI=\",\"DATABASE_URL\":\"cG9zdGdyZXNxbDovL3Jlc2VhcmNoX3dlYl91c2VyOlBvIXMxMzU5QHBvc3RncmVzcWwtc3VubW9vbmFpLmRhdGEtcGxhdGZvcm0tZGV2LnN2Yy5jbHVzdGVyLmxvY2FsOjU0MzIvcmVzZWFyY2hfd2ViP3NzbG1vZGU9cHJlZmVy\",\"DB_ENGINE\":\"cG9zdGdyZXNxbA==\",\"DB_HOST\":\"cG9zdGdyZXNxbC1zdW5tb29uYWkuZGF0YS1wbGF0Zm9ybS1kZXYuc3ZjLmNsdXN0ZXIubG9jYWw=\",\"DB_PORT\":\"NTQzMg==\",\"ENVIRONMENT\":\"ZGV2\",\"SERVICE_NAME\":\"cmVzZWFyY2gtd2ViLWJhY2tlbmQ=\"},\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"name\":\"research-web-backend-postgresql-conn\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:05:28Z",
+        "name": "research-web-backend-postgresql-conn",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "4967",
+        "uid": "c7f5d4a7-1167-406e-a646-445f5debf562"
+      },
+      "type": "Opaque"
+    },
+    {
+      "apiVersion": "v1",
+      "data": [
+        "APP_DB_NAME",
+        "APP_DB_PASSWORD",
+        "APP_DB_URI",
+        "APP_DB_USER",
+        "DB_ENGINE",
+        "DB_HOST",
+        "DB_PORT",
+        "ENVIRONMENT",
+        "REDIS_DB",
+        "REDIS_HOST",
+        "REDIS_PASSWORD",
+        "REDIS_PORT",
+        "REDIS_URI",
+        "REDIS_USER",
+        "SERVICE_NAME"
+      ],
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"APP_DB_NAME\":\"MA==\",\"APP_DB_PASSWORD\":\"VHBsV2ViUmVkaXNBY2xfOGszUW05eFAydkw3blI0dw==\",\"APP_DB_URI\":\"cmVkaXM6Ly9yZXNlYXJjaF93ZWJfYmFja2VuZDpUcGxXZWJSZWRpc0FjbF84azNRbTl4UDJ2TDduUjR3QHJlZGlzLXN1bm1vb25haS1tYXN0ZXIuZGF0YS1wbGF0Zm9ybS1kZXYuc3ZjLmNsdXN0ZXIubG9jYWw6NjM3OS8w\",\"APP_DB_USER\":\"cmVzZWFyY2hfd2ViX2JhY2tlbmQ=\",\"DB_ENGINE\":\"cmVkaXM=\",\"DB_HOST\":\"cmVkaXMtc3VubW9vbmFpLW1hc3Rlci5kYXRhLXBsYXRmb3JtLWRldi5zdmMuY2x1c3Rlci5sb2NhbA==\",\"DB_PORT\":\"NjM3OQ==\",\"ENVIRONMENT\":\"ZGV2\",\"REDIS_DB\":\"MA==\",\"REDIS_HOST\":\"cmVkaXMtc3VubW9vbmFpLW1hc3Rlci5kYXRhLXBsYXRmb3JtLWRldi5zdmMuY2x1c3Rlci5sb2NhbA==\",\"REDIS_PASSWORD\":\"VHBsV2ViUmVkaXNBY2xfOGszUW05eFAydkw3blI0dw==\",\"REDIS_PORT\":\"NjM3OQ==\",\"REDIS_URI\":\"cmVkaXM6Ly9yZXNlYXJjaF93ZWJfYmFja2VuZDpUcGxXZWJSZWRpc0FjbF84azNRbTl4UDJ2TDduUjR3QHJlZGlzLXN1bm1vb25haS1tYXN0ZXIuZGF0YS1wbGF0Zm9ybS1kZXYuc3ZjLmNsdXN0ZXIubG9jYWw6NjM3OS8w\",\"REDIS_USER\":\"cmVzZWFyY2hfd2ViX2JhY2tlbmQ=\",\"SERVICE_NAME\":\"cmVzZWFyY2gtd2ViLWJhY2tlbmQ=\"},\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"name\":\"research-web-backend-redis-conn\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:05:31Z",
+        "name": "research-web-backend-redis-conn",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "4987",
+        "uid": "ed8a7c88-b742-44f3-8f9d-220c3930bf97"
+      },
+      "type": "Opaque"
+    },
+    {
+      "apiVersion": "v1",
+      "data": [
+        "S3_ACCESS_KEY_ID",
+        "S3_SECRET_ACCESS_KEY"
+      ],
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"data\":{\"S3_ACCESS_KEY_ID\":\"cmVzZWFyY2gtd2ViLWJhY2tlbmQ=\",\"S3_SECRET_ACCESS_KEY\":\"YTczN2NiZmU3NjM5NDE1MGZiMGFkZWMwMDRlNzljMWZmYzU0NzliZDczZjY5NTYx\"},\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"name\":\"research-web-backend-s3\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:05:40Z",
+        "name": "research-web-backend-s3",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5038",
+        "uid": "47ac377c-96f9-40dd-9f04-2e8d92e83b18"
+      },
+      "type": "Opaque"
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-web-backend\"},\"name\":\"research-web-backend-secret\",\"namespace\":\"app-platform-dev\"},\"stringData\":null,\"type\":\"Opaque\"}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:05Z",
+        "labels": {
+          "app": "research-web-backend"
+        },
+        "name": "research-web-backend-secret",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5184",
+        "uid": "46c8e7ae-7700-480a-926b-9098db80e2f9"
+      },
+      "type": "Opaque",
+      "data": []
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Secret",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Secret\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-web-frontend\"},\"name\":\"research-web-frontend-secret\",\"namespace\":\"app-platform-dev\"},\"stringData\":null,\"type\":\"Opaque\"}\n"
+        },
+        "creationTimestamp": "2026-06-22T09:06:10Z",
+        "labels": {
+          "app": "research-web-frontend"
+        },
+        "name": "research-web-frontend-secret",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5261",
+        "uid": "44c59473-9749-4c12-8e38-06df699726bb"
+      },
+      "type": "Opaque",
+      "data": []
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolumeClaim",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"PersistentVolumeClaim\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"celeryworker-research-admin-backend\",\"backend\":\"research-admin-backend\",\"component\":\"celery-worker\"},\"name\":\"celeryworker-research-admin-backend-pvc\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"accessModes\":[\"ReadWriteOnce\"],\"resources\":{\"requests\":{\"storage\":\"10Gi\"}},\"storageClassName\":\"local-path\"}}\n"
+        },
+        "creationTimestamp": "2026-07-12T05:39:29Z",
+        "finalizers": [
+          "kubernetes.io/pvc-protection"
+        ],
+        "labels": {
+          "app": "celeryworker-research-admin-backend",
+          "backend": "research-admin-backend",
+          "component": "celery-worker"
+        },
+        "name": "celeryworker-research-admin-backend-pvc",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "406821",
+        "uid": "587bbd82-ea3a-4c28-be9b-5d7786a758a0"
+      },
+      "spec": {
+        "accessModes": [
+          "ReadWriteOnce"
+        ],
+        "resources": {
+          "requests": {
+            "storage": "10Gi"
+          }
+        },
+        "storageClassName": "local-path",
+        "volumeMode": "Filesystem"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolumeClaim",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"PersistentVolumeClaim\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"nodebullworker-research-web-backend\",\"backend\":\"research-web-backend\",\"component\":\"node-bull-worker\"},\"name\":\"nodebullworker-research-web-backend-pvc\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"accessModes\":[\"ReadWriteOnce\"],\"resources\":{\"requests\":{\"storage\":\"10Gi\"}},\"storageClassName\":\"local-path\"}}\n"
+        },
+        "creationTimestamp": "2026-07-12T05:39:36Z",
+        "finalizers": [
+          "kubernetes.io/pvc-protection"
+        ],
+        "labels": {
+          "app": "nodebullworker-research-web-backend",
+          "backend": "research-web-backend",
+          "component": "node-bull-worker"
+        },
+        "name": "nodebullworker-research-web-backend-pvc",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "406878",
+        "uid": "e2799495-f37a-4907-9e64-6a93e88ee80b"
+      },
+      "spec": {
+        "accessModes": [
+          "ReadWriteOnce"
+        ],
+        "resources": {
+          "requests": {
+            "storage": "10Gi"
+          }
+        },
+        "storageClassName": "local-path",
+        "volumeMode": "Filesystem"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolumeClaim",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"PersistentVolumeClaim\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-admin-backend\"},\"name\":\"research-admin-backend-pvc\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"accessModes\":[\"ReadWriteOnce\"],\"resources\":{\"requests\":{\"storage\":\"10Gi\"}},\"storageClassName\":\"local-path\"}}\n",
+          "pv.kubernetes.io/bind-completed": "yes",
+          "pv.kubernetes.io/bound-by-controller": "yes",
+          "volume.beta.kubernetes.io/storage-provisioner": "rancher.io/local-path",
+          "volume.kubernetes.io/selected-node": "kind-worker",
+          "volume.kubernetes.io/storage-provisioner": "rancher.io/local-path"
+        },
+        "creationTimestamp": "2026-06-22T09:06:00Z",
+        "finalizers": [
+          "kubernetes.io/pvc-protection"
+        ],
+        "labels": {
+          "app": "research-admin-backend"
+        },
+        "name": "research-admin-backend-pvc",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5143",
+        "uid": "eb9184f2-2bd3-45c2-9149-c47243f46415"
+      },
+      "spec": {
+        "accessModes": [
+          "ReadWriteOnce"
+        ],
+        "resources": {
+          "requests": {
+            "storage": "10Gi"
+          }
+        },
+        "storageClassName": "local-path",
+        "volumeMode": "Filesystem",
+        "volumeName": "pvc-eb9184f2-2bd3-45c2-9149-c47243f46415"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolumeClaim",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"PersistentVolumeClaim\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-admin-frontend\"},\"name\":\"research-admin-frontend-pvc\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"accessModes\":[\"ReadWriteOnce\"],\"resources\":{\"requests\":{\"storage\":\"10Gi\"}},\"storageClassName\":\"local-path\"}}\n",
+          "pv.kubernetes.io/bind-completed": "yes",
+          "pv.kubernetes.io/bound-by-controller": "yes",
+          "volume.beta.kubernetes.io/storage-provisioner": "rancher.io/local-path",
+          "volume.kubernetes.io/selected-node": "kind-worker2",
+          "volume.kubernetes.io/storage-provisioner": "rancher.io/local-path"
+        },
+        "creationTimestamp": "2026-06-22T09:06:04Z",
+        "finalizers": [
+          "kubernetes.io/pvc-protection"
+        ],
+        "labels": {
+          "app": "research-admin-frontend"
+        },
+        "name": "research-admin-frontend-pvc",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5227",
+        "uid": "2c7523dd-976f-4d76-8646-893b77ad947f"
+      },
+      "spec": {
+        "accessModes": [
+          "ReadWriteOnce"
+        ],
+        "resources": {
+          "requests": {
+            "storage": "10Gi"
+          }
+        },
+        "storageClassName": "local-path",
+        "volumeMode": "Filesystem",
+        "volumeName": "pvc-2c7523dd-976f-4d76-8646-893b77ad947f"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolumeClaim",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"PersistentVolumeClaim\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-web-backend\"},\"name\":\"research-web-backend-pvc\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"accessModes\":[\"ReadWriteOnce\"],\"resources\":{\"requests\":{\"storage\":\"10Gi\"}},\"storageClassName\":\"local-path\"}}\n",
+          "pv.kubernetes.io/bind-completed": "yes",
+          "pv.kubernetes.io/bound-by-controller": "yes",
+          "volume.beta.kubernetes.io/storage-provisioner": "rancher.io/local-path",
+          "volume.kubernetes.io/selected-node": "kind-worker2",
+          "volume.kubernetes.io/storage-provisioner": "rancher.io/local-path"
+        },
+        "creationTimestamp": "2026-06-22T09:06:07Z",
+        "finalizers": [
+          "kubernetes.io/pvc-protection"
+        ],
+        "labels": {
+          "app": "research-web-backend"
+        },
+        "name": "research-web-backend-pvc",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5268",
+        "uid": "113ed9aa-75a7-4c32-b151-73218f1b7462"
+      },
+      "spec": {
+        "accessModes": [
+          "ReadWriteOnce"
+        ],
+        "resources": {
+          "requests": {
+            "storage": "10Gi"
+          }
+        },
+        "storageClassName": "local-path",
+        "volumeMode": "Filesystem",
+        "volumeName": "pvc-113ed9aa-75a7-4c32-b151-73218f1b7462"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolumeClaim",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"PersistentVolumeClaim\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"research-web-frontend\"},\"name\":\"research-web-frontend-pvc\",\"namespace\":\"app-platform-dev\"},\"spec\":{\"accessModes\":[\"ReadWriteOnce\"],\"resources\":{\"requests\":{\"storage\":\"10Gi\"}},\"storageClassName\":\"local-path\"}}\n",
+          "pv.kubernetes.io/bind-completed": "yes",
+          "pv.kubernetes.io/bound-by-controller": "yes",
+          "volume.beta.kubernetes.io/storage-provisioner": "rancher.io/local-path",
+          "volume.kubernetes.io/selected-node": "kind-worker2",
+          "volume.kubernetes.io/storage-provisioner": "rancher.io/local-path"
+        },
+        "creationTimestamp": "2026-06-22T09:06:11Z",
+        "finalizers": [
+          "kubernetes.io/pvc-protection"
+        ],
+        "labels": {
+          "app": "research-web-frontend"
+        },
+        "name": "research-web-frontend-pvc",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "5349",
+        "uid": "959f59e8-331d-4096-b25f-7d505045dd63"
+      },
+      "spec": {
+        "accessModes": [
+          "ReadWriteOnce"
+        ],
+        "resources": {
+          "requests": {
+            "storage": "10Gi"
+          }
+        },
+        "storageClassName": "local-path",
+        "volumeMode": "Filesystem",
+        "volumeName": "pvc-959f59e8-331d-4096-b25f-7d505045dd63"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "automountServiceAccountToken": false,
+      "kind": "ServiceAccount",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"automountServiceAccountToken\":false,\"kind\":\"ServiceAccount\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"celeryworker-research-admin-backend\",\"sunmoonai.com/service-relation\":\"research-knowledge-retrieve\"},\"name\":\"research-knowledge-retrieval-worker\",\"namespace\":\"app-platform-dev\"}}\n"
+        },
+        "creationTimestamp": "2026-07-15T03:19:37Z",
+        "labels": {
+          "app": "celeryworker-research-admin-backend",
+          "sunmoonai.com/service-relation": "research-knowledge-retrieve"
+        },
+        "name": "research-knowledge-retrieval-worker",
+        "namespace": "app-platform-dev",
+        "resourceVersion": "616067",
+        "uid": "f5c94f7d-4210-49f5-8793-f22458c598ca"
+      }
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plan, validate, reconcile and inspect the committed Knowledge release."""
+"""Plan, validate, reconcile and inspect the committed Investment release."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ def command(args: argparse.Namespace, *items: str) -> list[str]:
     result = [args.kubectl]
     if args.kubeconfig:
         result.extend(("--kubeconfig", str(args.kubeconfig)))
-    result.extend(("--request-timeout=20s", *items))
+    result.extend(("--request-timeout=30s", *items))
     return result
 
 
@@ -42,6 +42,7 @@ def run(
     *items: str,
     check: bool = True,
     capture: bool = False,
+    input_text: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env.pop("DEBUG", None)
@@ -50,33 +51,51 @@ def run(
         check=check,
         capture_output=capture,
         text=True,
+        input=input_text,
         env=env,
     )
 
 
 def release() -> dict[str, Any]:
-    subprocess.run(
-        [sys.executable, str(GATE), "--bundle", str(BUNDLE)], check=True
-    )
+    subprocess.run([sys.executable, str(GATE), "--bundle", str(BUNDLE)], check=True)
     return json.loads((BUNDLE / "release.json").read_text(encoding="utf-8"))
 
 
+def helper(args: argparse.Namespace, script: str, *items: str) -> None:
+    command_line = ["bash", str(SCRIPTS / script), *items]
+    if args.kubeconfig:
+        command_line.extend(("--kubeconfig", str(args.kubeconfig)))
+    env = os.environ.copy()
+    env.pop("DEBUG", None)
+    subprocess.run(command_line, check=True, env=env)
+
+
+def reconcile_external_state(args: argparse.Namespace) -> None:
+    helper(args, "prepare_r5_investment_broker_kind.sh", "--apply", "--no-restart")
+    helper(args, "prepare_r5_investment_redis_acl_kind.sh", "--apply", "--no-restart")
+    helper(
+        args,
+        "reconcile_r5_knowledge_active_retrieval_binding_kind.sh",
+        "--caller",
+        "investment",
+    )
+
+
 def external_secret_gate(args: argparse.Namespace, data: dict[str, Any]) -> None:
-    namespace = data["namespace"]
-    missing: list[str] = []
-    for name in data["external_secrets"]:
-        result = run(
+    missing = [
+        name
+        for name in data["external_secrets"]
+        if run(
             args,
             "get",
             "secret",
             name,
             "-n",
-            namespace,
+            data["namespace"],
             check=False,
             capture=True,
-        )
-        if result.returncode:
-            missing.append(name)
+        ).returncode
+    ]
     if missing:
         raise DeployError(f"missing external Secrets: {missing}")
 
@@ -96,19 +115,40 @@ def server_dry_run(args: argparse.Namespace, data: dict[str, Any]) -> None:
     print(json.dumps({"result": "passed", "action": "server-dry-run"}))
 
 
+def set_formal_database_roles(args: argparse.Namespace) -> None:
+    sql = (
+        "ALTER ROLE investment_backend_user LOGIN; "
+        "ALTER ROLE investment_backend_user_migration LOGIN; "
+        "ALTER ROLE research_admin_user NOLOGIN; "
+        "ALTER ROLE research_admin_user_migration NOLOGIN; "
+        "ALTER ROLE research_web_user NOLOGIN; "
+        "ALTER ROLE investment_admin_user NOLOGIN; "
+        "ALTER ROLE investment_web_user NOLOGIN;"
+    )
+    shell = (
+        'export PGPASSWORD="$(cat "$POSTGRES_POSTGRES_PASSWORD_FILE")"; '
+        'exec /opt/bitnami/postgresql/bin/psql -U postgres -d postgres '
+        '-X -v ON_ERROR_STOP=1 -c "$1"'
+    )
+    run(
+        args,
+        "exec",
+        "--quiet",
+        "-n",
+        "data-platform-dev",
+        "postgresql-sunmoonai-0",
+        "--",
+        "sh",
+        "-lc",
+        shell,
+        "sh",
+        sql,
+    )
+
+
 def apply(args: argparse.Namespace, data: dict[str, Any]) -> None:
     namespace = data["namespace"]
-    binding_command = [
-        "bash",
-        str(SCRIPTS / "reconcile_r5_knowledge_active_retrieval_binding_kind.sh"),
-        "--caller",
-        "investment",
-    ]
-    if args.kubeconfig:
-        binding_command.extend(("--kubeconfig", str(args.kubeconfig)))
-    binding_env = os.environ.copy()
-    binding_env.pop("DEBUG", None)
-    subprocess.run(binding_command, check=True, env=binding_env)
+    reconcile_external_state(args)
     external_secret_gate(args, data)
     apply_file(args, "00-prerequisites.yaml")
     apply_file(args, "30-network-policies.yaml")
@@ -124,6 +164,7 @@ def apply(args: argparse.Namespace, data: dict[str, Any]) -> None:
         "--ignore-not-found=true",
         "--wait=true",
     )
+    set_formal_database_roles(args)
     apply_file(args, "10-migration.yaml")
     completed = run(
         args,
@@ -138,7 +179,6 @@ def apply(args: argparse.Namespace, data: dict[str, Any]) -> None:
     if completed.returncode:
         run(args, "logs", f"job/{migration}", "-n", namespace, "--tail=100", check=False)
         raise DeployError("migration Job failed or timed out")
-    run(args, "logs", f"job/{migration}", "-n", namespace, "--tail=100")
 
     apply_file(args, "20-runtime.yaml")
     apply_file(args, "40-ingress.yaml")
@@ -152,9 +192,8 @@ def apply(args: argparse.Namespace, data: dict[str, Any]) -> None:
             namespace,
             f"--timeout={args.timeout}s",
         )
-
     for deployment in data["legacy_deployments"]:
-        exists = run(
+        if run(
             args,
             "get",
             "deployment",
@@ -163,18 +202,31 @@ def apply(args: argparse.Namespace, data: dict[str, Any]) -> None:
             namespace,
             check=False,
             capture=True,
-        )
-        if exists.returncode == 0:
+        ).returncode == 0:
             run(args, "scale", "deployment", deployment, "--replicas=0", "-n", namespace)
+
+    run(
+        args,
+        "delete",
+        "ingressroute",
+        "investment-r5-admin",
+        "investment-r5-web",
+        "-n",
+        namespace,
+        "--ignore-not-found=true",
+        "--wait=true",
+    )
     run(args, "delete", "job", migration, "-n", namespace, "--wait=true")
     print(
         json.dumps(
             {
-                "task": "architecture-v2-knowledge-formal-reconcile",
+                "task": "architecture-v2-investment-formal-reconcile",
                 "result": "passed",
                 "release_id": data["release_id"],
+                "knowledge_active_caller": "investment",
                 "legacy_replicas": 0,
                 "migration_job_cleaned": True,
+                "candidate_ingress_cleaned": True,
                 "credentials_printed": False,
             },
             ensure_ascii=False,
@@ -221,7 +273,7 @@ def drift(args: argparse.Namespace, data: dict[str, Any]) -> None:
         args,
         "get",
         "secret",
-        "knowledge-active-retrieval-service-binding",
+        data["knowledge_binding"],
         "-n",
         namespace,
         "-o",
@@ -230,19 +282,19 @@ def drift(args: argparse.Namespace, data: dict[str, Any]) -> None:
     ).stdout
     if drifted or legacy_nonzero or active != "investment":
         raise DeployError(
-            f"declarative drift files={drifted} legacy_nonzero={legacy_nonzero} active_caller={active!r}"
+            "declarative drift "
+            f"files={drifted} legacy_nonzero={legacy_nonzero} active_caller={active!r}"
         )
     print(json.dumps({"result": "passed", "action": "drift", "drift": False}))
 
 
 def status(args: argparse.Namespace, data: dict[str, Any]) -> None:
-    namespace = data["namespace"]
     run(
         args,
         "get",
         "deployment,service,ingressroute,networkpolicy",
         "-n",
-        namespace,
+        data["namespace"],
         "-l",
         f"sunmoonai.com/app={data['resource_app']}",
         "-o",
@@ -252,7 +304,9 @@ def status(args: argparse.Namespace, data: dict[str, Any]) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=("plan", "server-dry-run", "apply", "status", "drift"))
+    parser.add_argument(
+        "action", choices=("plan", "server-dry-run", "apply", "status", "drift")
+    )
     parser.add_argument("--kubeconfig", type=Path)
     parser.add_argument("--kubectl", default="kubectl")
     parser.add_argument("--timeout", type=int, default=300)
@@ -264,7 +318,13 @@ def main() -> int:
     try:
         data = release()
         if args.action == "plan":
-            print(json.dumps({"result": "passed", "action": "plan", **data}, ensure_ascii=False, indent=2))
+            print(
+                json.dumps(
+                    {"result": "passed", "action": "plan", **data},
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
         elif args.action == "server-dry-run":
             server_dry_run(args, data)
         elif args.action == "apply":

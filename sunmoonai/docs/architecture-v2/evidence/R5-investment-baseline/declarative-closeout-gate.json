@@ -1,0 +1,75 @@
+{
+  "active_knowledge_binding": {
+    "active_caller": "investment",
+    "changed_on_second_apply": false,
+    "target_secret": "knowledge-active-retrieval-service-binding"
+  },
+  "broker": {
+    "consumers": 1,
+    "messages_ready": 0,
+    "messages_unacknowledged": 0,
+    "queue": "investment.default",
+    "source_of_truth": "rabbitmq-app-definitions"
+  },
+  "browser": {
+    "admin": {
+      "anonymous": 401,
+      "authenticated": 200,
+      "logout": 204,
+      "revoked": 401
+    },
+    "clients_isolated": true,
+    "provider_preflight": 200,
+    "strict_tls": true,
+    "web": {
+      "anonymous": 401,
+      "authenticated": 200,
+      "logout": 204,
+      "revoked": 401
+    }
+  },
+  "credentials_printed": false,
+  "declarative": {
+    "apply_count": 2,
+    "clean_room_render_equal": true,
+    "instance_gate": "passed",
+    "migration_job_cleaned": true,
+    "server_dry_run": "passed",
+    "steady_state_drift": false
+  },
+  "formal_release_id": "r5-investment-formal-001",
+  "knowledge_contract": {
+    "anonymous_retrieval": 401,
+    "citation_provider_fields_absent": true,
+    "evidence_count": 1,
+    "retrieval_token_on_ingestion": 401,
+    "valid_retrieval_shape": 422
+  },
+  "provider": {
+    "indexed_binding_count": 1,
+    "provider_document_chunk_count": 1,
+    "provider_document_found": true,
+    "provider_reachable": true,
+    "retrieval_matching_chunks": 1
+  },
+  "result": "passed",
+  "rollback_frontroll": {
+    "frontroll_after_rollback": "passed",
+    "legacy_assets_deleted": false,
+    "native_research_knowledge_contract": "passed",
+    "rollback_runtime": "passed",
+    "source_database_mutated": false,
+    "target_migration_retained": "20260809_0004"
+  },
+  "runtime": {
+    "api": 2,
+    "database": "investment_admin",
+    "database_head": "20260809_0004",
+    "invariant_failures": 0,
+    "legacy_research_replicas": 0,
+    "scheduler": 1,
+    "single_writer": true,
+    "worker": 1
+  },
+  "task": "R5-V6-investment-declarative-closeout"
+}

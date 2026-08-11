@@ -1,0 +1,6 @@
+PLAN source_database=research_admin source_mutation=false
+PLAN target_database=investment_admin exists=t tables=0 rebuild=false
+PLAN backup_sha256=df321bb1f5fa87a29717d8c71fdd162e317da56b4c9199406986aea6516b0a4c
+PLAN runtime_role=investment_backend_user migration_role=investment_backend_user_migration
+PLAN worker_enable=false deployment_change=false route_change=false
+PLAN ONLY: rerun with --apply after review
