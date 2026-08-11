@@ -70,7 +70,7 @@ data:
   ENV: production
   LOG_LEVEL: INFO
   SERVICE_NAME: info-backend
-  DEPLOYMENT_ID: r5-info-formal-001
+  DEPLOYMENT_ID: r6-info-formal-004
   APP_SLUG: info
   REDIS_HOST: redis-sunmoonai-master.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -115,7 +115,7 @@ data:
   DELIVERY_OUTBOX_ACK_TIMEOUT_SECONDS: '300'
   DELIVERY_OUTBOX_RETRY_BASE_SECONDS: '5'
   DELIVERY_OUTBOX_RETRY_MAX_SECONDS: '300'
-  KNOWLEDGE_APP_INGEST_URL: http://knowledge-admin-backend:8000/api/internal/v1/knowledge/ingestions
+  KNOWLEDGE_APP_INGEST_URL: http://knowledge-r5-backend:8000/api/internal/v1/knowledge/ingestions
   KNOWLEDGE_APP_SERVICE_APPLICATION: sunmoonai-info-knowledge-ingest
   KNOWLEDGE_APP_SERVICE_SCOPE: knowledge:ingest
   KNOWLEDGE_APP_TIMEOUT_SECONDS: '20'
@@ -133,7 +133,7 @@ data:
   AUTH_APP: info
   APP_ORIGIN: https://info-admin.sunmoonai.com:30443
   BACKEND_INTERNAL_URL: http://info-r5-backend:8000
-  DEPLOYMENT_ID: r5-info-formal-001-admin
+  DEPLOYMENT_ID: r6-info-formal-004-admin
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -148,7 +148,7 @@ data:
   AUTH_APP: info
   APP_ORIGIN: https://info.sunmoonai.com:30443
   BACKEND_INTERNAL_URL: http://info-r5-backend:8000
-  DEPLOYMENT_ID: r5-info-formal-001-web
+  DEPLOYMENT_ID: r6-info-formal-004-web
   REFERENCE_UI_ENABLED: 'false'
 ---
 apiVersion: v1

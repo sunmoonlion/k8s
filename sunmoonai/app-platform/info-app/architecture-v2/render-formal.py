@@ -27,7 +27,7 @@ FILES = (
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True, type=Path)
-    parser.add_argument("--release-id", default="r5-info-formal-001")
+    parser.add_argument("--release-id", default="r6-info-formal-004")
     return parser.parse_args()
 
 
@@ -128,6 +128,10 @@ def main() -> int:
         {
             "DEPLOYMENT_ID": args.release_id,
             "CELERY_QUEUE": "info.admin.default",
+            "KNOWLEDGE_APP_INGEST_URL": (
+                "http://knowledge-r5-backend:8000/"
+                "api/internal/v1/knowledge/ingestions"
+            ),
             "ALLOWED_HOSTS": (
                 "info-r5-backend,info-r5-backend.app-platform-dev,"
                 "info-r5-backend.app-platform-dev.svc,"
@@ -139,6 +143,30 @@ def main() -> int:
     )
     dump(output / "00-prerequisites.yaml", prerequisites)
 
+    images = {
+        "backend": (
+            "harbor.sunmoonai.com:30443/app-images/info-backend@sha256:"
+            "ad279489e13b5efb43f98949000760353e77ff0ccc9d58fc32878ce28b9dd247"
+        ),
+        "admin": (
+            "harbor.sunmoonai.com:30443/app-images/info-admin-frontend@sha256:"
+            "defacc2f58584541561ada6ce13918efe4be41e9dd7ef21decd30299cd2f149d"
+        ),
+        "web": (
+            "harbor.sunmoonai.com:30443/app-images/info-web-frontend@sha256:"
+            "60f3f70a67630997cc3d0fe9884c166fd5023dac9eed81a3a03b22c5e5c66c52"
+        ),
+    }
+    migration = load(output / "10-migration.yaml")
+    migration_job = named(
+        migration,
+        "Job",
+        f"info-r5-backend-migration-{args.release_id}",
+    )
+    migration_job["spec"]["template"]["spec"]["containers"][0]["image"] = images[
+        "backend"
+    ]
+    dump(output / "10-migration.yaml", migration)
     runtime = load(output / "20-runtime.yaml")
     replicas = {
         "info-r5-backend-api": 2,
@@ -149,6 +177,37 @@ def main() -> int:
     }
     for deployment, count in replicas.items():
         named(runtime, "Deployment", deployment)["spec"]["replicas"] = count
+    deployment_images = {
+        "info-r5-backend-api": images["backend"],
+        "info-r5-backend-worker": images["backend"],
+        "info-r5-backend-scheduler": images["backend"],
+        "info-r5-admin-frontend": images["admin"],
+        "info-r5-web-frontend": images["web"],
+    }
+    for deployment, image in deployment_images.items():
+        named(runtime, "Deployment", deployment)["spec"]["template"]["spec"][
+            "containers"
+        ][0]["image"] = image
+    config_sources = {
+        "info-r5-backend-api": "info-r5-backend-config",
+        "info-r5-backend-worker": "info-r5-backend-config",
+        "info-r5-backend-scheduler": "info-r5-backend-config",
+        "info-r5-admin-frontend": "info-r5-admin-frontend-config",
+        "info-r5-web-frontend": "info-r5-web-frontend-config",
+    }
+    for deployment, config_name in config_sources.items():
+        config_data = named(prerequisites, "ConfigMap", config_name).get("data", {})
+        config_digest = hashlib.sha256(
+            json.dumps(
+                config_data, sort_keys=True, separators=(",", ":")
+            ).encode()
+        ).hexdigest()
+        template_metadata = named(runtime, "Deployment", deployment)["spec"][
+            "template"
+        ].setdefault("metadata", {})
+        template_metadata.setdefault("annotations", {})[
+            "sunmoonai.com/config-sha256"
+        ] = config_digest
     dump(output / "20-runtime.yaml", runtime)
 
     ingress_routes = [
@@ -181,20 +240,6 @@ def main() -> int:
     ]
     dump(output / "40-ingress.yaml", ingress_routes)
 
-    images = {
-        "backend": (
-            "harbor.sunmoonai.com:30443/app-images/info-backend@sha256:"
-            "ee962dff40dd0ebee6969f084dceac10a9283814df7af45d1da6e114047bea0d"
-        ),
-        "admin": (
-            "harbor.sunmoonai.com:30443/app-images/info-admin-frontend@sha256:"
-            "defacc2f58584541561ada6ce13918efe4be41e9dd7ef21decd30299cd2f149d"
-        ),
-        "web": (
-            "harbor.sunmoonai.com:30443/app-images/info-web-frontend@sha256:"
-            "60f3f70a67630997cc3d0fe9884c166fd5023dac9eed81a3a03b22c5e5c66c52"
-        ),
-    }
     renderer_inputs = {
         "k8s:sunmoonai/docs/architecture-v2/scripts/render_r5_info_candidate.py": (
             candidate_renderer

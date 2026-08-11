@@ -32,7 +32,8 @@ spec:
         sunmoonai.com/managed-by: architecture-v2
         sunmoonai.com/internal-provider: 'true'
       annotations:
-        sunmoonai.com/release-id: r5-info-formal-001
+        sunmoonai.com/release-id: r6-info-formal-004
+        sunmoonai.com/config-sha256: 31a9c37b61d75706a9d30e79815e24f16cc8b7efbed26a84707b53a639040d89
     spec:
       serviceAccountName: info-r5-backend-api
       automountServiceAccountToken: false
@@ -56,7 +57,7 @@ spec:
             app.kubernetes.io/component: backend-api
       containers:
       - name: api
-        image: harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ee962dff40dd0ebee6969f084dceac10a9283814df7af45d1da6e114047bea0d
+        image: harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ad279489e13b5efb43f98949000760353e77ff0ccc9d58fc32878ce28b9dd247
         imagePullPolicy: IfNotPresent
         command:
         - uvicorn
@@ -272,6 +273,8 @@ spec:
         app.kubernetes.io/part-of: info-r5
         sunmoonai.com/app: info-r5
         sunmoonai.com/managed-by: architecture-v2
+      annotations:
+        sunmoonai.com/config-sha256: 31a9c37b61d75706a9d30e79815e24f16cc8b7efbed26a84707b53a639040d89
     spec:
       serviceAccountName: info-r5-backend-worker
       automountServiceAccountToken: false
@@ -287,7 +290,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: worker
-        image: harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ee962dff40dd0ebee6969f084dceac10a9283814df7af45d1da6e114047bea0d
+        image: harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ad279489e13b5efb43f98949000760353e77ff0ccc9d58fc32878ce28b9dd247
         imagePullPolicy: IfNotPresent
         command:
         - /bin/sh
@@ -446,7 +449,8 @@ spec:
         sunmoonai.com/app: info-r5
         sunmoonai.com/managed-by: architecture-v2
       annotations:
-        sunmoonai.com/release-id: r5-info-formal-001
+        sunmoonai.com/release-id: r6-info-formal-004
+        sunmoonai.com/config-sha256: 31a9c37b61d75706a9d30e79815e24f16cc8b7efbed26a84707b53a639040d89
     spec:
       serviceAccountName: info-r5-backend-scheduler
       automountServiceAccountToken: false
@@ -462,7 +466,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: scheduler
-        image: harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ee962dff40dd0ebee6969f084dceac10a9283814df7af45d1da6e114047bea0d
+        image: harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ad279489e13b5efb43f98949000760353e77ff0ccc9d58fc32878ce28b9dd247
         imagePullPolicy: IfNotPresent
         command:
         - celery
@@ -540,7 +544,8 @@ spec:
         sunmoonai.com/app: info-r5
         sunmoonai.com/managed-by: architecture-v2
       annotations:
-        sunmoonai.com/release-id: r5-info-formal-001
+        sunmoonai.com/release-id: r6-info-formal-004
+        sunmoonai.com/config-sha256: 23bb7f6acb449d8c47e27d8610307fdf451c902bd7f79641613be4c99c893687
     spec:
       serviceAccountName: info-r5-admin-frontend
       automountServiceAccountToken: false
@@ -697,7 +702,8 @@ spec:
         sunmoonai.com/app: info-r5
         sunmoonai.com/managed-by: architecture-v2
       annotations:
-        sunmoonai.com/release-id: r5-info-formal-001
+        sunmoonai.com/release-id: r6-info-formal-004
+        sunmoonai.com/config-sha256: 64bd1353568c069dbe09947bbfb284e8a5c68796b7488fa7043e252ee3d7c8e8
     spec:
       serviceAccountName: info-r5-web-frontend
       automountServiceAccountToken: false

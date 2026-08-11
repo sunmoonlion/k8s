@@ -27,7 +27,7 @@ FILES = (
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True, type=Path)
-    parser.add_argument("--release-id", default="r5-knowledge-formal-001")
+    parser.add_argument("--release-id", default="r6-knowledge-formal-003")
     parser.add_argument("--retrieval-dataset-allowlist", default="codex-smoke")
     return parser.parse_args()
 
@@ -153,6 +153,22 @@ def main() -> int:
     })
     dump(output / "00-prerequisites.yaml", prerequisites)
 
+    images = {
+        "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:e6998183a3aadaff337f822031a1bc2396d5256fa395331176dc2b1a44480757",
+        "admin": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:07130d859a89b18842ce043178b5477bbb67a3ab183aadfe18baed039bd0b9c2",
+        "web": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:7bdd329bf24e479d1c8f859ef6ed909958bc1479b7296b3b212c2293c7601148",
+    }
+    migration = load(output / "10-migration.yaml")
+    migration_job = named(
+        migration,
+        "Job",
+        f"knowledge-r5-backend-migration-{args.release_id}",
+    )
+    migration_job["spec"]["template"]["spec"]["containers"][0]["image"] = images[
+        "backend"
+    ]
+    dump(output / "10-migration.yaml", migration)
+
     runtime = load(output / "20-runtime.yaml")
     replicas = {
         "knowledge-r5-backend-api": 2,
@@ -163,6 +179,32 @@ def main() -> int:
     }
     for deployment, count in replicas.items():
         named(runtime, "Deployment", deployment)["spec"]["replicas"] = count
+    deployment_images = {
+        "knowledge-r5-backend-api": images["backend"],
+        "knowledge-r5-backend-worker": images["backend"],
+        "knowledge-r5-backend-scheduler": images["backend"],
+        "knowledge-r5-admin-frontend": images["admin"],
+        "knowledge-r5-web-frontend": images["web"],
+    }
+    config_sources = {
+        "knowledge-r5-backend-api": "knowledge-r5-backend-config",
+        "knowledge-r5-backend-worker": "knowledge-r5-backend-config",
+        "knowledge-r5-backend-scheduler": "knowledge-r5-backend-config",
+        "knowledge-r5-admin-frontend": "knowledge-r5-admin-frontend-config",
+        "knowledge-r5-web-frontend": "knowledge-r5-web-frontend-config",
+    }
+    for deployment, image in deployment_images.items():
+        item = named(runtime, "Deployment", deployment)
+        item["spec"]["template"]["spec"]["containers"][0]["image"] = image
+        config_data = named(
+            prerequisites, "ConfigMap", config_sources[deployment]
+        ).get("data", {})
+        digest = hashlib.sha256(
+            json.dumps(config_data, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        item["spec"]["template"].setdefault("metadata", {}).setdefault(
+            "annotations", {}
+        )["sunmoonai.com/config-sha256"] = digest
     replace_legacy_config_refs(runtime)
     dump(output / "20-runtime.yaml", runtime)
 
@@ -181,11 +223,6 @@ def main() -> int:
     ]
     dump(output / "40-ingress.yaml", ingress_routes)
 
-    images = {
-        "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:3814dfc08608f32e693736ae72b4b3dbe946493003d5592ce344c636fda6c430",
-        "admin": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:07130d859a89b18842ce043178b5477bbb67a3ab183aadfe18baed039bd0b9c2",
-        "web": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:7bdd329bf24e479d1c8f859ef6ed909958bc1479b7296b3b212c2293c7601148",
-    }
     renderer_inputs = {
         "k8s:sunmoonai/docs/architecture-v2/scripts/render_r5_knowledge_candidate.py": candidate_renderer,
         "tpl-app:k8s-scaffold-v2/scaffold.py": scaffold / "scaffold.py",

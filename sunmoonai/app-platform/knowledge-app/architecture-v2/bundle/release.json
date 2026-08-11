@@ -4,10 +4,10 @@
   "logical_app": "knowledge",
   "resource_app": "knowledge-r5",
   "namespace": "app-platform-dev",
-  "release_id": "r5-knowledge-formal-001",
+  "release_id": "r6-knowledge-formal-003",
   "formal_release": true,
   "images": {
-    "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:3814dfc08608f32e693736ae72b4b3dbe946493003d5592ce344c636fda6c430",
+    "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:e6998183a3aadaff337f822031a1bc2396d5256fa395331176dc2b1a44480757",
     "admin": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:07130d859a89b18842ce043178b5477bbb67a3ab183aadfe18baed039bd0b9c2",
     "web": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:7bdd329bf24e479d1c8f859ef6ed909958bc1479b7296b3b212c2293c7601148"
   },
@@ -25,9 +25,9 @@
     "40-ingress.yaml"
   ],
   "sha256": {
-    "00-prerequisites.yaml": "75a89a0847ed761d96bdc6afb2673657062c0624582f57c7f98bd94ce6f6f7a2",
-    "10-migration.yaml": "34ea3d60cc06e059cb77db43116d5265936af8d19ffc120d576688f449d3e5f5",
-    "20-runtime.yaml": "669808835f7b99851dfc063aafdc7212d7d796d1193799bff91280a6d5d69e71",
+    "00-prerequisites.yaml": "afe9706e525a83ea6d03b0c594ab50355d3d756ee8d1760fb34de2aea37ea74a",
+    "10-migration.yaml": "2b6e5578a37421bae41e795be8145e345b5c65d6e8b7bc0e8829d942c57e38df",
+    "20-runtime.yaml": "73834e583ec1238b8bd796153a2144f578220ef0cddcfae2aff5d44abdb521f1",
     "30-network-policies.yaml": "b8e3598db20d7c60aa2edf2877e71860005951b5e7144a150704f4b49a916c21",
     "40-ingress.yaml": "9f07e14ba567ea865e829144aca410d1f7a6e73ae1e559b58b7e7c5c841041d3"
   },
