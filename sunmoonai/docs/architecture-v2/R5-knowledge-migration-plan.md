@@ -1,6 +1,6 @@
 # Architecture v2 R5 Knowledge Backend 与数据库归并方案
 
-状态：`BASELINE FROZEN / IMPLEMENTATION NOT STARTED`
+状态：`R5-K0 DONE / R5-K1 IN PROGRESS`
 
 日期：2026-08-11
 
@@ -108,9 +108,9 @@ additive `0004`，禁止为恢复旧运行态破坏性 downgrade。
 
 - [x] 盘点源码、旧 Deployment、Service、Ingress、PVC、Secret 键名和 RAGFlow 运行面；
 - [x] 精确审计 `knowledge_admin` head、表计数、owner、约束、状态和不变量；
-- [ ] 生成私有备份并记录摘要；
-- [ ] 隔离恢复、对账并清理恢复库；
-- [ ] 读取并冻结真实 RAGFlow dataset/document 绑定与检索基线。
+- [x] 生成私有备份并记录摘要；
+- [x] 隔离恢复、对账并清理恢复库；
+- [x] 读取并冻结真实 RAGFlow dataset/document 绑定与检索基线。
 
 ### R5-K1 源码、迁移链与配对
 
@@ -174,4 +174,3 @@ additive `0004`，禁止为恢复旧运行态破坏性 downgrade。
 - Git 声明可重建正式态、零漂移、双远端 SHA 一致。
 
 任一失败均不得开始 Investment R5、不得晋级 `2.0.0`、不得删除 v1 或 RAGFlow 资产。
-

@@ -1,0 +1,20 @@
+{
+  "task": "R5-K0-knowledge-backup-restore",
+  "result": "passed",
+  "date": "2026-08-11",
+  "database": "knowledge_admin",
+  "capture_id": "r5-knowledge-baseline-20260811T0220Z",
+  "backup_sha256": "8ceefc8df2f99f6f668ce2e32eafc568f71f74c62c8199f4bd3dd93c321e84ca",
+  "backup_bytes": 33991,
+  "private_state_only": true,
+  "restore_database": "knowledge_r5_restore_baseline_20260811",
+  "restore_head": "20260715_0003",
+  "restore_counts_equal": true,
+  "restore_constraints_equal": true,
+  "restore_owners_equal": true,
+  "restore_states_equal": true,
+  "restore_invariant_failures": 0,
+  "restore_database_exists_after_cleanup": false,
+  "business_data_committed": false,
+  "credentials_printed": false
+}
