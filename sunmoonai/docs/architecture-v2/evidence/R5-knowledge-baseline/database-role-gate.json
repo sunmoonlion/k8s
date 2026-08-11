@@ -1,0 +1,16 @@
+{
+  "task": "R5-K2",
+  "result": "passed",
+  "state": "prepared-not-active",
+  "runtime_role": "knowledge_backend_user",
+  "migration_role": "knowledge_backend_user_migration",
+  "runtime_table_grants": 5,
+  "runtime_ddl_denied": true,
+  "migration_ddl_allowed": true,
+  "legacy_owner_tables": 5,
+  "owner_transfer": false,
+  "legacy_revoke": false,
+  "deployment_change": false,
+  "probe_table_absent": true,
+  "credentials_printed": false
+}

@@ -1,0 +1,16 @@
+{
+  "task": "R5-KNOWLEDGE-BACKEND-IMAGE",
+  "result": "passed",
+  "source_commit": "9041585308dd6bdc3ac6fbed394d6e0789dd6a85",
+  "image": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:3814dfc08608f32e693736ae72b4b3dbe946493003d5592ce344c636fda6c430",
+  "roles": [
+    "api",
+    "worker",
+    "scheduler",
+    "migration"
+  ],
+  "runs_as_uid": 1001,
+  "node_runtime_present": false,
+  "role_import_smoke": true,
+  "credentials_printed": false
+}

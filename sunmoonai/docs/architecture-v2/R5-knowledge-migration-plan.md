@@ -1,6 +1,6 @@
 # Architecture v2 R5 Knowledge Backend 与数据库归并方案
 
-状态：`R5-K0 DONE / R5-K1 IN PROGRESS`
+状态：`R5-K0 DONE / R5-K1 DONE / R5-K2 IN PROGRESS`
 
 日期：2026-08-11
 
@@ -114,15 +114,15 @@ additive `0004`，禁止为恢复旧运行态破坏性 downgrade。
 
 ### R5-K1 源码、迁移链与配对
 
-- [ ] 复核 `20260808_0004` metadata、单 head 和 downgrade 边界；
-- [ ] 在恢复副本完成 migration roundtrip；
-- [ ] Backend Ruff、Pyright、全测试与生产镜像通过；
-- [ ] Admin/Backend 与 Web/Backend 源码、构建和配对门禁通过；
-- [ ] Info ingest、Investment retrieval、RAGFlow adapter 契约测试通过。
+- [x] 复核 `20260808_0004` metadata、单 head 和 downgrade 边界；
+- [x] 在恢复副本完成 migration roundtrip；
+- [x] Backend Ruff、Pyright、全测试与生产镜像通过；
+- [x] Admin/Backend 与 Web/Backend 源码、构建和配对门禁通过；
+- [x] Info ingest、Investment retrieval、RAGFlow adapter 契约测试通过。
 
 ### R5-K2 数据角色与候选声明
 
-- [ ] 幂等创建规范 runtime/migration 数据库角色和可逆 owner/grant SQL；
+- [x] 幂等创建规范 runtime/migration 数据库角色和可逆 owner/grant SQL；
 - [ ] 生成 API/Worker/Scheduler/Migration、双前端、Service/Ingress/NetworkPolicy；
 - [ ] Worker/API/Scheduler/Migration 凭据严格分离；
 - [ ] 候选清单使用不可变 digest，且不覆盖旧 v1 资源。

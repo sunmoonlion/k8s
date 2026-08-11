@@ -22,7 +22,11 @@ MIGRATION_SECRET="${MIGRATION_SECRET:-info-backend-migration-postgresql-conn}"
 RUNTIME_ROLE="${RUNTIME_ROLE:-info_backend_user}"
 MIGRATION_ROLE="${MIGRATION_ROLE:-info_backend_user_migration}"
 LEGACY_OWNER_ROLE="${LEGACY_OWNER_ROLE:-info_admin_user_migration}"
-TEMP_SECRET="r5-info-role-provisioner"
+SERVICE_NAME="${SERVICE_NAME:-info-backend}"
+TASK_ID="${TASK_ID:-R5-I2}"
+TASK_LABEL="${TASK_LABEL:-r5-info}"
+APP_ID="${APP_ID:-info}"
+TEMP_SECRET="${TEMP_SECRET:-r5-info-role-provisioner}"
 
 usage() {
   cat <<'EOF'
@@ -178,7 +182,7 @@ migration_secret_exists=false
 k get secret "$RUNTIME_SECRET" -n "$APP_NAMESPACE" >/dev/null 2>&1 && runtime_secret_exists=true
 k get secret "$MIGRATION_SECRET" -n "$APP_NAMESPACE" >/dev/null 2>&1 && migration_secret_exists=true
 
-printf 'PLAN task=R5-I2 app=info database=%s\n' "$db_name"
+printf 'PLAN task=%s app=%s database=%s\n' "$TASK_ID" "$APP_ID" "$db_name"
 printf 'PLAN role=%s exists=%s purpose=api-worker-scheduler\n' "$RUNTIME_ROLE" "$runtime_exists"
 printf 'PLAN role=%s exists=%s purpose=migration-only\n' "$MIGRATION_ROLE" "$migration_exists"
 printf 'PLAN secret=%s/%s exists=%s purpose=runtime\n' "$APP_NAMESPACE" "$RUNTIME_SECRET" "$runtime_secret_exists"
@@ -240,6 +244,7 @@ cleanup_temp_secret
 jq -n \
   --arg namespace "$DATA_NAMESPACE" \
   --arg name "$TEMP_SECRET" \
+  --arg task_label "$TASK_LABEL" \
   --arg runtime_password "$(printf '%s' "$runtime_password" | base64 --wrap=0)" \
   --arg migration_password "$(printf '%s' "$migration_password" | base64 --wrap=0)" \
   '{
@@ -248,7 +253,7 @@ jq -n \
     metadata: {
       namespace: $namespace,
       name: $name,
-      labels: {"architecture.sunmoonai.com/task": "r5-info"}
+      labels: {"architecture.sunmoonai.com/task": $task_label}
     },
     type: "Opaque",
     data: {
@@ -359,7 +364,8 @@ migration_url="postgresql://${MIGRATION_ROLE}:${migration_password}@${db_host}:$
 jq -n \
   --arg namespace "$APP_NAMESPACE" \
   --arg name "$RUNTIME_SECRET" \
-  --arg service_name "info-backend" \
+  --arg service_name "$SERVICE_NAME" \
+  --arg task_label "$TASK_LABEL" \
   --arg environment "$environment" \
   --arg db_engine "$db_engine" \
   --arg db_host "$db_host" \
@@ -377,9 +383,9 @@ jq -n \
       namespace: $namespace,
       name: $name,
       labels: {
-        "app.kubernetes.io/name": "info-backend",
+        "app.kubernetes.io/name": $service_name,
         "app.kubernetes.io/component": "database-runtime",
-        "architecture.sunmoonai.com/task": "r5-info"
+        "architecture.sunmoonai.com/task": $task_label
       },
       annotations: {"architecture.sunmoonai.com/state": "prepared-not-active"}
     },
@@ -401,6 +407,8 @@ jq -n \
 jq -n \
   --arg namespace "$APP_NAMESPACE" \
   --arg name "$MIGRATION_SECRET" \
+  --arg service_name "$SERVICE_NAME" \
+  --arg task_label "$TASK_LABEL" \
   --arg migration_user "$MIGRATION_ROLE" \
   --arg migration_url "$migration_url" \
   'def b64: @base64;
@@ -411,9 +419,9 @@ jq -n \
       namespace: $namespace,
       name: $name,
       labels: {
-        "app.kubernetes.io/name": "info-backend",
+        "app.kubernetes.io/name": $service_name,
         "app.kubernetes.io/component": "database-migration",
-        "architecture.sunmoonai.com/task": "r5-info"
+        "architecture.sunmoonai.com/task": $task_label
       },
       annotations: {"architecture.sunmoonai.com/state": "prepared-not-active"}
     },
@@ -449,7 +457,7 @@ role_audit="$(postgres_sql "$db_name" "
   );
 ")"
 
-printf 'APPLIED task=R5-I2 state=prepared-not-active\n'
+printf 'APPLIED task=%s state=prepared-not-active\n' "$TASK_ID"
 printf 'runtime_secret_keys=%s\n' "$(secret_keys "$APP_NAMESPACE" "$RUNTIME_SECRET")"
 printf 'migration_secret_keys=%s\n' "$(secret_keys "$APP_NAMESPACE" "$MIGRATION_SECRET")"
 printf 'role_audit=%s\n' "$role_audit"

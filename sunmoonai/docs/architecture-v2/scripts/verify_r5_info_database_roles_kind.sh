@@ -14,7 +14,10 @@ MIGRATION_SECRET="${MIGRATION_SECRET:-info-backend-migration-postgresql-conn}"
 RUNTIME_ROLE="${RUNTIME_ROLE:-info_backend_user}"
 MIGRATION_ROLE="${MIGRATION_ROLE:-info_backend_user_migration}"
 LEGACY_OWNER_ROLE="${LEGACY_OWNER_ROLE:-info_admin_user_migration}"
-PROBE_TABLE="r5_info_role_probe"
+DATABASE_NAME="${DATABASE_NAME:-info_admin}"
+PROBE_TABLE="${PROBE_TABLE:-r5_info_role_probe}"
+TASK_ID="${TASK_ID:-R5-I2}"
+MIN_TABLE_COUNT="${MIN_TABLE_COUNT:-11}"
 
 k() {
   env -u DEBUG kubectl \
@@ -72,7 +75,7 @@ psql_bin=/opt/bitnami/postgresql/bin/psql
 admin_password="$(cat "$POSTGRES_POSTGRES_PASSWORD_FILE")"
 
 export PGPASSWORD="$admin_password"
-"$psql_bin" -U postgres -d info_admin -X -v ON_ERROR_STOP=1 \
+"$psql_bin" -U postgres -d "$5" -X -v ON_ERROR_STOP=1 \
   -c "DROP TABLE IF EXISTS public.$probe_table" >/dev/null
 
 runtime_principal="$(
@@ -112,10 +115,11 @@ ROLLBACK;
 SQL
 
 export PGPASSWORD="$admin_password"
-"$psql_bin" -U postgres -d info_admin -X -v ON_ERROR_STOP=1 -At \
+"$psql_bin" -U postgres -d "$5" -X -v ON_ERROR_STOP=1 -At \
   --set=runtime_role="$runtime_role" \
   --set=migration_role="$migration_role" \
   --set=legacy_owner_role="$legacy_owner_role" \
+  --set=probe_table="$probe_table" \
   --set=runtime_ddl_denied="$runtime_ddl_denied" <<'SQL'
 WITH public_tables AS (
   SELECT format('%I.%I', schemaname, tablename) AS relation
@@ -168,16 +172,17 @@ SELECT jsonb_build_object(
     SELECT count(*) FROM pg_tables
     WHERE schemaname = 'public' AND tableowner = :'legacy_owner_role'
   ),
-  'probe_table_absent', to_regclass('public.r5_info_role_probe') IS NULL
+  'probe_table_absent', to_regclass(format('public.%I', :'probe_table')) IS NULL
 );
 SQL
 REMOTE_SCRIPT
 } | k exec --quiet -i -n "$DATA_NAMESPACE" "$POSTGRES_POD" -- \
-  sh -s -- "$RUNTIME_ROLE" "$MIGRATION_ROLE" "$LEGACY_OWNER_ROLE" "$PROBE_TABLE")"
+  sh -s -- "$RUNTIME_ROLE" "$MIGRATION_ROLE" "$LEGACY_OWNER_ROLE" "$PROBE_TABLE" "$DATABASE_NAME")"
 
 unset runtime_url migration_url
 
-printf '%s\n' "$remote_result" | jq -e '
+printf '%s\n' "$remote_result" | jq -e \
+  --argjson minimum "$MIN_TABLE_COUNT" '
   .runtime_login == true and
   .runtime_superuser == false and
   .runtime_create_db == false and
@@ -185,22 +190,22 @@ printf '%s\n' "$remote_result" | jq -e '
   .runtime_replication == false and
   .runtime_schema_create == false and
   .runtime_ddl_denied == true and
-  .runtime_select_tables >= 11 and
-  .runtime_insert_tables >= 11 and
-  .runtime_update_tables >= 11 and
-  .runtime_delete_tables >= 11 and
+  .runtime_select_tables >= $minimum and
+  .runtime_insert_tables >= $minimum and
+  .runtime_update_tables >= $minimum and
+  .runtime_delete_tables >= $minimum and
   .migration_login == true and
   .migration_superuser == false and
   .migration_create_db == false and
   .migration_create_role == false and
   .migration_replication == false and
   .migration_schema_create == true and
-  .legacy_owner_tables >= 11 and
+  .legacy_owner_tables >= $minimum and
   .probe_table_absent == true
 ' >/dev/null
 
 jq -n \
-  --arg task 'R5-I2' \
+  --arg task "$TASK_ID" \
   --arg result 'passed' \
   --argjson runtime_secret_keys "$runtime_keys" \
   --argjson migration_secret_keys "$migration_keys" \

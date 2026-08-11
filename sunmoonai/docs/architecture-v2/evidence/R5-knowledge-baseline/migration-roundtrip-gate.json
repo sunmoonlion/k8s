@@ -1,0 +1,26 @@
+{
+  "task": "R5-KNOWLEDGE-MIGRATION-ROUNDTRIP",
+  "result": "passed",
+  "image": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:3814dfc08608f32e693736ae72b4b3dbe946493003d5592ce344c636fda6c430",
+  "backup_sha256": "8ceefc8df2f99f6f668ce2e32eafc568f71f74c62c8199f4bd3dd93c321e84ca",
+  "heads": {
+    "baseline": "20260715_0003",
+    "upgraded": "20260808_0004",
+    "downgraded": "20260715_0003",
+    "reupgraded": "20260808_0004"
+  },
+  "business_counts": {
+    "auth_user": 1,
+    "knowledge_document": 1,
+    "knowledge_document_version": 1,
+    "knowledge_ingestion_job": 38
+  },
+  "business_counts_unchanged": true,
+  "outbox_rows_after_upgrade": 0,
+  "inbox_rows_after_upgrade": 0,
+  "invariant_failures": 0,
+  "restore_database_exists_after_cleanup": false,
+  "temporary_secret_exists_after_cleanup": false,
+  "temporary_jobs_exist_after_cleanup": false,
+  "credentials_printed": false
+}
