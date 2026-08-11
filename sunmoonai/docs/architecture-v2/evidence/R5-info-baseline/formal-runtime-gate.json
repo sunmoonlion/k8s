@@ -1,9 +1,12 @@
 {
   "task": "R5-I4-info-formal-runtime",
   "result": "passed",
-  "release_id": "r5-info-candidate-001",
+  "date": "2026-08-11",
+  "release_id": "r5-info-formal-001",
+  "post_reconcile": true,
   "single_writer": true,
   "async_writers_enabled": true,
+  "migration_job_state": "ttl_expired_after_head_observed",
   "replicas": {
     "info-r5-backend-api": 2,
     "info-r5-backend-worker": 1,
@@ -64,6 +67,8 @@
   "network_policy": {
     "long_lived_kind_cni": "kindnet",
     "long_lived_kind_enforced": false,
+    "long_lived_kind_gate_satisfied": false,
+    "long_lived_kind_limitation": "kindnet-does-not-enforce-networkpolicy",
     "production_packet_matrix_evidence": "network-policy-calico-gate.json",
     "production_packet_matrix_result": "passed"
   },
