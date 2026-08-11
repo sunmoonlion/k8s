@@ -1,6 +1,6 @@
 # Architecture v2 R5 Knowledge Backend 与数据库归并方案
 
-状态：`R5-K0 DONE / R5-K1 DONE / R5-K2 IN PROGRESS`
+状态：`R5-K0 DONE / R5-K1 DONE / R5-K2 DONE / R5-K3 DONE / R5-K4 IN PROGRESS`
 
 日期：2026-08-11
 
@@ -123,18 +123,19 @@ additive `0004`，禁止为恢复旧运行态破坏性 downgrade。
 ### R5-K2 数据角色与候选声明
 
 - [x] 幂等创建规范 runtime/migration 数据库角色和可逆 owner/grant SQL；
-- [ ] 生成 API/Worker/Scheduler/Migration、双前端、Service/Ingress/NetworkPolicy；
-- [ ] Worker/API/Scheduler/Migration 凭据严格分离；
-- [ ] 候选清单使用不可变 digest，且不覆盖旧 v1 资源。
+- [x] 生成 API/Worker/Scheduler/Migration、双前端、Service/Ingress/NetworkPolicy；
+- [x] Worker/API/Scheduler/Migration 凭据严格分离；
+- [x] 候选清单使用不可变 digest，且不覆盖旧 v1 资源；
+- [x] 将受治理 dataset allowlist 作为显式发布输入，禁止空值与 `*`。
 
 ### R5-K3 平行候选与预切换
 
-- [ ] Migration 在正式切换前只对恢复/候选路径演练；
-- [ ] API 与双前端候选平行部署，候选 Worker/Scheduler 保持零写者；
-- [ ] 严格 TLS 完成 Admin/Web 两套真实 Casdoor 登录；
-- [ ] 验证四角色数据库 principal、Provider/S3 最小权限和服务身份矩阵；
-- [ ] 真实 RAGFlow 检索、Info 摄取控制向量和数据对账通过；
-- [ ] Calico 包级 NetworkPolicy allow/deny 通过。
+- [x] Migration 在正式切换前只对恢复/候选路径演练；
+- [x] API 与双前端候选平行部署，候选 Worker/Scheduler 保持零写者；
+- [x] 严格 TLS 完成 Admin/Web 两套真实 Casdoor 登录；
+- [x] 验证四角色数据库 principal、Provider/S3 最小权限和服务身份矩阵；
+- [x] 真实 RAGFlow 检索、过渡消费者契约和数据对账通过；
+- [x] Calico 包级 NetworkPolicy allow/deny 通过。
 
 ### R5-K4 切读、切写与旧写入封锁
 

@@ -1,0 +1,15 @@
+{
+  "task": "R5-K2-knowledge-candidate-bundle",
+  "result": "passed",
+  "release_id": "r5-knowledge-001",
+  "backend_role_count": 4,
+  "browser_identity_count": 2,
+  "candidate_async_writers": 0,
+  "v1_name_collisions": 0,
+  "immutable_images": true,
+  "retrieval_dataset_allowlist": "codex-smoke",
+  "retrieval_wildcard_allowed": false,
+  "provider_secret_roles": ["api", "worker"],
+  "artifact_secret_roles": ["worker"],
+  "credentials_printed": false
+}

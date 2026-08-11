@@ -1,0 +1,14 @@
+{
+  "task": "R5-K3-knowledge-legacy-runtime-baseline",
+  "result": "passed",
+  "knowledge-admin-backend": {
+    "replicas": 1,
+    "image": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-backend:p0-004-retrieval-r2-20260715"
+  },
+  "celeryworker-knowledge-admin-backend": {
+    "replicas": 1,
+    "image": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-backend:1.0.1"
+  },
+  "v1_assets_deleted": false,
+  "credentials_printed": false
+}

@@ -1,0 +1,37 @@
+{
+  "task": "R5-K3-knowledge-candidate-runtime",
+  "result": "passed",
+  "release_id": "r5-knowledge-001",
+  "migration_applied": false,
+  "candidate_async_writers": 0,
+  "replicas": {
+    "knowledge-r5-backend-api": 2,
+    "knowledge-r5-backend-worker": 0,
+    "knowledge-r5-backend-scheduler": 0,
+    "knowledge-r5-admin-frontend": 2,
+    "knowledge-r5-web-frontend": 2
+  },
+  "database": {
+    "head": "20260715_0003",
+    "database_owner": "knowledge_admin_user_migration",
+    "counts": {
+      "auth_user": 1,
+      "knowledge_ingestion_job": 38,
+      "knowledge_document": 1,
+      "knowledge_document_version": 1
+    },
+    "indexed_bindings": 1,
+    "invariant_failures": 0,
+    "not_valid_constraints": 0
+  },
+  "principals": {
+    "api": "knowledge_backend_user",
+    "worker": "knowledge_backend_user",
+    "scheduler": "knowledge_backend_user",
+    "migration": "knowledge_backend_user_migration"
+  },
+  "legacy_api_unchanged": true,
+  "legacy_worker_unchanged": true,
+  "ragflow_mutated": false,
+  "credentials_printed": false
+}

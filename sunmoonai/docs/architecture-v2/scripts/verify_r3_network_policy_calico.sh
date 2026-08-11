@@ -73,6 +73,14 @@ PY
 TASK="${R3_POLICY_TASK:-architecture-v2-r3-network-policy}"
 BACKEND_DEPLOYMENT="${APP}-backend-api"
 BACKEND_SERVICE="${APP}-backend"
+POLICY_PROVIDER_SERVICE="knowledge-admin-backend"
+POLICY_PROVIDER_PORT="8000"
+POLICY_PROVIDER_TARGET_PORT="8000"
+if [[ "$APP" == "knowledge-r5" ]]; then
+  POLICY_PROVIDER_SERVICE="ragflow-sunmoonai-api"
+  POLICY_PROVIDER_PORT="80"
+  POLICY_PROVIDER_TARGET_PORT="9380"
+fi
 
 cleanup() {
   local rc=$?
@@ -257,15 +265,18 @@ spec:
       labels:
         app: knowledge-policy-target
         sunmoonai.com/internal-provider: 'true'
+        app.kubernetes.io/name: ragflow
+        app.kubernetes.io/instance: ragflow-sunmoonai
+        app.kubernetes.io/component: ragflow
     spec:
       automountServiceAccountToken: false
       containers:
         - name: server
           image: ${SERVER_IMAGE}
           imagePullPolicy: Never
-          command: ["python", "-m", "http.server", "8000"]
+          command: ["python", "-m", "http.server", "${POLICY_PROVIDER_TARGET_PORT}"]
           ports:
-            - {name: http, containerPort: 8000}
+            - {name: http, containerPort: ${POLICY_PROVIDER_TARGET_PORT}}
           readinessProbe:
             tcpSocket: {port: http}
             periodSeconds: 2
@@ -276,13 +287,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: knowledge-admin-backend
+  name: ${POLICY_PROVIDER_SERVICE}
   namespace: ${NAMESPACE}
 spec:
   selector:
     app: knowledge-policy-target
   ports:
-    - {name: http, port: 8000, targetPort: http}
+    - {name: http, port: ${POLICY_PROVIDER_PORT}, targetPort: http}
 EOF
 k rollout status "deployment/${BACKEND_DEPLOYMENT}" -n "$NAMESPACE" --timeout=180s >/dev/null
 k rollout status deployment/knowledge-policy-target -n "$NAMESPACE" --timeout=180s >/dev/null
@@ -318,14 +329,23 @@ probe r3-policy-denied 'sunmoonai.com/r3-probe=denied' Failed
 probe r3-policy-worker-knowledge \
   "sunmoonai.com/app=${APP},app.kubernetes.io/component=backend-worker" \
   Succeeded \
-  'http://knowledge-admin-backend:8000/'
-probe r3-policy-api-knowledge \
-  "sunmoonai.com/app=${APP},app.kubernetes.io/component=backend-api" \
-  Failed \
-  'http://knowledge-admin-backend:8000/'
+  "http://${POLICY_PROVIDER_SERVICE}:${POLICY_PROVIDER_PORT}/"
+if [[ "$APP" == "knowledge-r5" ]]; then
+  probe r3-policy-api-knowledge \
+    "sunmoonai.com/app=${APP},app.kubernetes.io/component=backend-api" \
+    Succeeded \
+    "http://${POLICY_PROVIDER_SERVICE}:${POLICY_PROVIDER_PORT}/"
+  api_to_knowledge=200
+else
+  probe r3-policy-api-knowledge \
+    "sunmoonai.com/app=${APP},app.kubernetes.io/component=backend-api" \
+    Failed \
+    "http://${POLICY_PROVIDER_SERVICE}:${POLICY_PROVIDER_PORT}/"
+  api_to_knowledge=denied
+fi
 probe r3-policy-scheduler-knowledge \
   "sunmoonai.com/app=${APP},app.kubernetes.io/component=backend-scheduler" \
   Failed \
-  'http://knowledge-admin-backend:8000/'
+  "http://${POLICY_PROVIDER_SERVICE}:${POLICY_PROVIDER_PORT}/"
 
-printf '{"task":"%s","result":"passed","cni":"calico","calico_version":"%s","internal_to_backend":200,"frontend_to_backend":200,"unlabelled_to_backend":"denied","worker_to_knowledge":200,"api_to_knowledge":"denied","scheduler_to_knowledge":"denied","credentials_printed":false}\n' "$TASK" "$CALICO_VERSION"
+printf '{"task":"%s","result":"passed","cni":"calico","calico_version":"%s","internal_to_backend":200,"frontend_to_backend":200,"unlabelled_to_backend":"denied","worker_to_knowledge":200,"api_to_knowledge":"%s","scheduler_to_knowledge":"denied","credentials_printed":false}\n' "$TASK" "$CALICO_VERSION" "$api_to_knowledge"

@@ -1,0 +1,15 @@
+{
+  "task": "R5-K3-knowledge-service-contract",
+  "result": "passed",
+  "consumer": "legacy-research-transitioning-to-investment",
+  "valid_retrieval_shape": 422,
+  "retrieval_token_on_ingestion": 401,
+  "anonymous_retrieval": 401,
+  "evidence_count": 1,
+  "citation_provider_fields_absent": true,
+  "service_account_token_mounted": false,
+  "token_printed": false,
+  "credentials_printed": false,
+  "provider_ids_printed": false,
+  "retrieval_content_printed": false
+}
