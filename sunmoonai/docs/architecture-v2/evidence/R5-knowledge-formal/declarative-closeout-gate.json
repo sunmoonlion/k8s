@@ -1,0 +1,21 @@
+{
+  "task": "R5-K6-knowledge-declarative-closeout",
+  "result": "passed",
+  "release_id": "r5-knowledge-formal-001",
+  "source_of_truth": "sunmoonai/app-platform/knowledge-app/architecture-v2/bundle",
+  "clean_room_render_equal": true,
+  "shared_static_gate": "passed",
+  "server_side_dry_run": "passed",
+  "apply": "passed",
+  "second_apply": "passed",
+  "drift": false,
+  "migration_job_cleaned": true,
+  "legacy_deployments_replicas": 0,
+  "ragflow_protected_provider": true,
+  "legacy_configmap_runtime_references": false,
+  "strict_tls_browser": "passed",
+  "service_contract": "passed",
+  "provider_retrieval": "passed",
+  "single_writer": true,
+  "credentials_printed": false
+}

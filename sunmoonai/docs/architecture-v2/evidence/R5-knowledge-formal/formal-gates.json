@@ -1,0 +1,35 @@
+{
+  "task": "R5-K4-knowledge-formal-gates",
+  "result": "passed",
+  "database": {
+    "head": "20260808_0004",
+    "auth_user": 1,
+    "knowledge_ingestion_job": 38,
+    "knowledge_document": 1,
+    "knowledge_document_version": 1,
+    "indexed_bindings": 1,
+    "invariant_failures": 0,
+    "not_valid_constraints": 0
+  },
+  "runtime_roles": ["api", "worker", "scheduler"],
+  "runtime_principal": "knowledge_backend_user",
+  "legacy_roles_login": false,
+  "strict_tls": true,
+  "admin_statuses": [401, 200, 204, 401],
+  "web_statuses": [401, 200, 204, 401],
+  "browser_clients_isolated": true,
+  "service_contract": {
+    "valid_shape": 422,
+    "cross_relation": 401,
+    "anonymous": 401,
+    "evidence_count": 1,
+    "provider_fields_absent": true
+  },
+  "ragflow": {
+    "document_found": true,
+    "retrieval_matching_chunks": 1,
+    "provider_ids_printed": false,
+    "retrieval_content_printed": false
+  },
+  "credentials_printed": false
+}

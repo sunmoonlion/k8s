@@ -1,0 +1,20 @@
+{
+  "task": "R5-K4-knowledge-cutover",
+  "result": "passed",
+  "capture_id": "r5-knowledge-cutover-20260811T033438Z",
+  "backup_sha256": "aa9a74cb6ea84aa44d7fe067f29fc00e121367a96b5a5c513947bcb64f1c0910",
+  "migration": "20260808_0004",
+  "database_owner": "knowledge_backend_user_migration",
+  "old_api_replicas": 0,
+  "old_worker_replicas": 0,
+  "new_api_replicas": 2,
+  "new_worker_replicas": 1,
+  "new_scheduler_replicas": 1,
+  "queue_ready": 0,
+  "queue_unacknowledged": 0,
+  "queue_consumers": 1,
+  "single_writer": true,
+  "v1_assets_deleted": false,
+  "ragflow_mutated": false,
+  "credentials_printed": false
+}

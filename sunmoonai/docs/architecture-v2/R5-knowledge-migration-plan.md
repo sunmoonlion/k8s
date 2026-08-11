@@ -1,6 +1,6 @@
 # Architecture v2 R5 Knowledge Backend 与数据库归并方案
 
-状态：`R5-K0 DONE / R5-K1 DONE / R5-K2 DONE / R5-K3 DONE / R5-K4 IN PROGRESS`
+状态：`R5-K0 DONE / R5-K1 DONE / R5-K2 DONE / R5-K3 DONE / R5-K4 DONE / R5-K5 DONE / R5-K6 DONE / Knowledge R5 DONE`
 
 日期：2026-08-11
 
@@ -139,26 +139,26 @@ additive `0004`，禁止为恢复旧运行态破坏性 downgrade。
 
 ### R5-K4 切读、切写与旧写入封锁
 
-- [ ] 冻结摄取写入、排空旧队列并生成第二份备份；
-- [ ] 停止旧 API/Worker，迁移 owner/grants 并封锁旧角色；
-- [ ] 正式 Migration 升到 `0004`，启用统一 API/Worker/Scheduler；
-- [ ] 切换 Admin/Web `/api` 与 `/` Ingress；
-- [ ] 单写者、双端、异步摄取、检索、数据与 Provider 对账通过。
+- [x] 冻结摄取写入、排空旧队列并生成第二份备份；
+- [x] 停止旧 API/Worker，迁移 owner/grants 并封锁旧角色；
+- [x] 正式 Migration 升到 `0004`，启用统一 API/Worker/Scheduler；
+- [x] 切换 Admin/Web `/api` 与 `/` Ingress；
+- [x] 单写者、双端、异步摄取、检索、数据与 Provider 对账通过。
 
 ### R5-K5 回滚、前滚与观察
 
-- [ ] 原生恢复旧 API/Worker、角色授权与旧 Ingress；
-- [ ] 保留 additive `0004`，验证旧镜像兼容；
-- [ ] 再次前滚并重复浏览器、身份、数据、Provider 与单写者门禁；
-- [ ] 临时资源清理，旧 v1 声明与受保护数据保留。
+- [x] 原生恢复旧 API/Worker、角色授权与旧 Ingress；
+- [x] 保留 additive `0004`，验证旧镜像兼容；
+- [x] 再次前滚并重复浏览器、身份、数据、Provider 与单写者门禁；
+- [x] 临时资源清理，旧 v1 声明与受保护数据保留。
 
 ### R5-K6 声明式部署收口
 
-- [ ] `app-platform/knowledge-app` 默认入口只重建统一正式态；
-- [ ] 旧 v1 生成器移至显式 `legacy-v1`；RAGFlow 继续作为受保护 Provider 子系统；
-- [ ] clean-room render、共享静态门禁、server-side dry-run、apply、status、diff/reconcile 通过；
-- [ ] reconcile 后重复 runtime/data/provider/single-writer 与严格 TLS 浏览器门禁；
-- [ ] GitHub/Gitee SHA 对齐后标记 Knowledge R5 DONE，才允许开始 Investment R5。
+- [x] `app-platform/knowledge-app` 默认入口只重建统一正式态；
+- [x] 旧 v1 生成器移至显式入口；RAGFlow 继续作为受保护 Provider 子系统；
+- [x] clean-room render、共享静态门禁、server-side dry-run、两次 apply 与 diff/reconcile 通过；
+- [x] reconcile 后重复 runtime/data/provider/single-writer 与严格 TLS 浏览器门禁；
+- [x] GitHub/Gitee SHA 对齐后标记 Knowledge R5 DONE，才允许开始 Investment R5。
 
 ## 5. 退出门禁
 

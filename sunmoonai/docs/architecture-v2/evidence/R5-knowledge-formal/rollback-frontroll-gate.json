@@ -1,0 +1,26 @@
+{
+  "task": "R5-K5-knowledge-rollback-frontroll",
+  "result": "passed",
+  "rollback": {
+    "migration_retained": "20260808_0004",
+    "legacy_database_owner": "knowledge_admin_user_migration",
+    "legacy_api_replicas": 1,
+    "legacy_worker_replicas": 1,
+    "new_backend_roles_replicas": 0,
+    "queue_consumers": 1,
+    "provider_retrieval": "passed-after-stability-retry"
+  },
+  "frontroll": {
+    "capture_id": "r5-knowledge-frontroll-20260811T0343Z",
+    "backup_sha256": "a79cea20f7d680a6a264774a74c4998a14c7478aa7de1869ea8dbe8b39cf4216",
+    "migration_reapplied": false,
+    "formal_runtime": "passed",
+    "strict_tls_browser": "passed",
+    "service_contract": "passed",
+    "ragflow_provider": "passed"
+  },
+  "provider_stability_note": "The first legacy-provider probe raced external retrieval readiness; direct diagnosis and the full retry both passed without data or configuration mutation.",
+  "v1_assets_deleted": false,
+  "ragflow_mutated": false,
+  "credentials_printed": false
+}
