@@ -1,0 +1,204 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: knowledge-r5-backend-api
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: knowledge-r5-backend-worker
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: knowledge-r5-backend-scheduler
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: knowledge-r5-backend-migration
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: knowledge-r5-admin-frontend
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: knowledge-r5-web-frontend
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: knowledge-r5-backend-config
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+data:
+  ENV: production
+  LOG_LEVEL: INFO
+  SERVICE_NAME: knowledge-backend
+  DEPLOYMENT_ID: r5-knowledge-formal-001
+  APP_SLUG: knowledge
+  REDIS_HOST: redis-sunmoonai-master.data-platform-dev.svc.cluster.local
+  REDIS_PORT: '6379'
+  REDIS_DB: '0'
+  CASDOOR_ENDPOINT: https://casdoor.sunmoonai.com:30443
+  CASDOOR_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  CASDOOR_BACKCHANNEL_ENDPOINT: http://casdoor-sunmoonai.app-platform-dev.svc.cluster.local:8000
+  CASDOOR_ORGANIZATION: sunmoonai
+  CASDOOR_VERIFY_SSL: 'true'
+  ADMIN_CASDOOR_CLIENT_ID: sunmoonai-knowledge-r5-admin
+  ADMIN_CASDOOR_REDIRECT_URI: https://knowledge-admin.sunmoonai.com:30443/api/auth/admin/callback
+  ADMIN_CASDOOR_APPLICATION: sunmoonai-knowledge-r5-admin
+  ADMIN_AUTH_POLICY_VERSION: knowledge-admin-v2
+  ADMIN_AUTH_ROLE_ALLOWLIST: admin,operator
+  ADMIN_AUTH_SCOPE_ALLOWLIST: knowledge:admin
+  ADMIN_FRONTEND_BASE_URL: https://knowledge-admin.sunmoonai.com:30443
+  ADMIN_FRONTEND_ALLOWED_ORIGINS: https://knowledge-admin.sunmoonai.com:30443
+  ADMIN_AUTH_DEFAULT_RETURN_TO: /
+  ADMIN_AUTH_ALLOWED_RETURN_PATHS: /
+  WEB_CASDOOR_CLIENT_ID: sunmoonai-knowledge-r5-web
+  WEB_CASDOOR_REDIRECT_URI: https://knowledge.sunmoonai.com:30443/api/auth/web/callback
+  WEB_CASDOOR_APPLICATION: sunmoonai-knowledge-r5-web
+  WEB_AUTH_POLICY_VERSION: knowledge-web-v2
+  WEB_AUTH_ROLE_ALLOWLIST: member
+  WEB_AUTH_SCOPE_ALLOWLIST: profile:read
+  WEB_FRONTEND_BASE_URL: https://knowledge.sunmoonai.com:30443
+  WEB_FRONTEND_ALLOWED_ORIGINS: https://knowledge.sunmoonai.com:30443
+  WEB_AUTH_DEFAULT_RETURN_TO: /zh-CN/dashboard
+  WEB_AUTH_ALLOWED_RETURN_PATHS: /zh-CN/dashboard,/en/dashboard,/zh-CN/login,/en/login
+  WEB_FRONTEND_DEFAULT_LOCALE: zh-CN
+  SESSION_COOKIE_SECURE: 'true'
+  ALLOWED_HOSTS: knowledge-r5-backend,knowledge-r5-backend.app-platform-dev,knowledge-r5-backend.app-platform-dev.svc,knowledge-r5-backend.app-platform-dev.svc.cluster.local,knowledge-admin.sunmoonai.com,knowledge.sunmoonai.com,knowledge-admin-api.sunmoonai.com
+  REFERENCE_INTERACTION_ENABLED: 'false'
+  SERVICE_AUTH_SUBJECT_BINDINGS_JSON: '{}'
+  CELERY_QUEUE: knowledge.admin.default
+  CELERY_WORKER_CONCURRENCY: '2'
+  AUTH_ALLOWED_ALGORITHMS: RS256,ES256
+  RAGFLOW_API_BASE: http://ragflow-sunmoonai-api:80
+  RAGFLOW_PARSE_POLL_INTERVAL_SECONDS: '1.0'
+  RAGFLOW_PARSE_TIMEOUT_SECONDS: '120'
+  RETRIEVAL_DEFAULT_TENANT_ID: sunmoonai
+  RETRIEVAL_PROVIDER_TIMEOUT_SECONDS: '15'
+  ARTIFACT_ALLOWED_CONTENT_TYPES: text/markdown,text/plain
+  ARTIFACT_MAX_SIZE_BYTES: '52428800'
+  ARTIFACT_S3_ALLOWED_BUCKETS: development-info-originals
+  ARTIFACT_S3_ALLOWED_PREFIXES: info/original/
+  S3_ENDPOINT: http://minio.data-platform-dev.svc.cluster.local
+  S3_FORCE_PATH_STYLE: 'true'
+  S3_REGION: us-east-1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: knowledge-r5-admin-frontend-config
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+data:
+  DEPLOYMENT_ENV: production
+  AUTH_APP: knowledge
+  APP_ORIGIN: https://knowledge-admin.sunmoonai.com:30443
+  BACKEND_INTERNAL_URL: http://knowledge-r5-backend:8000
+  DEPLOYMENT_ID: r5-knowledge-formal-001-admin
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: knowledge-r5-web-frontend-config
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+data:
+  DEPLOYMENT_ENV: production
+  AUTH_APP: knowledge
+  APP_ORIGIN: https://knowledge.sunmoonai.com:30443
+  BACKEND_INTERNAL_URL: http://knowledge-r5-backend:8000
+  DEPLOYMENT_ID: r5-knowledge-formal-001-web
+  REFERENCE_UI_ENABLED: 'false'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: knowledge-r5-backend
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+spec:
+  selector:
+    sunmoonai.com/app: knowledge-r5
+    app.kubernetes.io/component: backend-api
+  ports:
+  - name: http
+    port: 8000
+    targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: knowledge-r5-admin-frontend
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+spec:
+  selector:
+    sunmoonai.com/app: knowledge-r5
+    app.kubernetes.io/component: admin-frontend
+  ports:
+  - name: http
+    port: 3000
+    targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: knowledge-r5-web-frontend
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+spec:
+  selector:
+    sunmoonai.com/app: knowledge-r5
+    app.kubernetes.io/component: web-frontend
+  ports:
+  - name: http
+    port: 3000
+    targetPort: http

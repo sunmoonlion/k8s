@@ -1,0 +1,874 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knowledge-r5-backend-api
+  namespace: app-platform-dev
+  labels:
+    app.kubernetes.io/name: knowledge-r5-backend
+    app.kubernetes.io/component: backend-api
+    app.kubernetes.io/part-of: knowledge-r5
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      sunmoonai.com/app: knowledge-r5
+      app.kubernetes.io/component: backend-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: knowledge-r5-backend
+        app.kubernetes.io/component: backend-api
+        app.kubernetes.io/part-of: knowledge-r5
+        sunmoonai.com/app: knowledge-r5
+        sunmoonai.com/managed-by: architecture-v2
+        sunmoonai.com/internal-provider: 'true'
+      annotations:
+        sunmoonai.com/release-id: r5-knowledge-formal-001
+    spec:
+      serviceAccountName: knowledge-r5-backend-api
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 45
+      imagePullSecrets:
+      - name: harbor-registry-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            sunmoonai.com/app: knowledge-r5
+            app.kubernetes.io/component: backend-api
+      containers:
+      - name: api
+        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:3814dfc08608f32e693736ae72b4b3dbe946493003d5592ce344c636fda6c430
+        imagePullPolicy: IfNotPresent
+        command:
+        - uvicorn
+        args:
+        - app.bootstrap.api:app
+        - --host
+        - 0.0.0.0
+        - --port
+        - '8000'
+        - --no-access-log
+        ports:
+        - name: http
+          containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: knowledge-r5-backend-config
+        - secretRef:
+            name: knowledge-info-ingest-service-binding
+        - secretRef:
+            name: knowledge-research-retrieval-service-binding
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: knowledge-backend-postgresql-conn
+              key: DATABASE_URL
+        - name: REDIS_HOST
+          valueFrom:
+            secretKeyRef:
+              name: knowledge-admin-backend-redis-conn
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            secretKeyRef:
+              name: knowledge-admin-backend-redis-conn
+              key: REDIS_PORT
+        - name: REDIS_DB
+          valueFrom:
+            secretKeyRef:
+              name: knowledge-admin-backend-redis-conn
+              key: REDIS_DB
+        - name: REDIS_USER
+          valueFrom:
+            secretKeyRef:
+              name: knowledge-admin-backend-redis-conn
+              key: REDIS_USER
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: knowledge-admin-backend-redis-conn
+              key: REDIS_PASSWORD
+        - name: ADMIN_CASDOOR_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: knowledge-r5-browser-identity
+              key: ADMIN_CLIENT_ID
+        - name: ADMIN_CASDOOR_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: knowledge-r5-browser-identity
+              key: ADMIN_CLIENT_SECRET
+        - name: WEB_CASDOOR_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: knowledge-r5-browser-identity
+              key: WEB_CLIENT_ID
+        - name: WEB_CASDOOR_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: knowledge-r5-browser-identity
+              key: WEB_CLIENT_SECRET
+        - name: CELERY_BROKER_URL
+          valueFrom:
+            secretKeyRef:
+              name: celeryworker-knowledge-admin-backend-secret
+              key: CELERY_BROKER_URL
+        - name: RAGFLOW_API_BASE
+          valueFrom:
+            configMapKeyRef:
+              name: knowledge-r5-backend-config
+              key: RAGFLOW_API_BASE
+        - name: RAGFLOW_PARSE_POLL_INTERVAL_SECONDS
+          valueFrom:
+            configMapKeyRef:
+              name: knowledge-r5-backend-config
+              key: RAGFLOW_PARSE_POLL_INTERVAL_SECONDS
+        - name: RAGFLOW_PARSE_TIMEOUT_SECONDS
+          valueFrom:
+            configMapKeyRef:
+              name: knowledge-r5-backend-config
+              key: RAGFLOW_PARSE_TIMEOUT_SECONDS
+        - name: RETRIEVAL_DEFAULT_TENANT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: knowledge-r5-backend-config
+              key: RETRIEVAL_DEFAULT_TENANT_ID
+        - name: RETRIEVAL_PROVIDER_TIMEOUT_SECONDS
+          valueFrom:
+            configMapKeyRef:
+              name: knowledge-r5-backend-config
+              key: RETRIEVAL_PROVIDER_TIMEOUT_SECONDS
+        - name: RETRIEVAL_DATASET_ALLOWLIST
+          value: codex-smoke
+        - name: RAGFLOW_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: knowledge-admin-backend-secret
+              key: RAGFLOW_API_KEY
+        startupProbe:
+          httpGet:
+            path: /health/live
+            port: http
+            httpHeaders:
+            - name: Host
+              value: knowledge-r5-backend
+          periodSeconds: 2
+          failureThreshold: 30
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: http
+            httpHeaders:
+            - name: Host
+              value: knowledge-r5-backend
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: http
+            httpHeaders:
+            - name: Host
+              value: knowledge-r5-backend
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -ec
+              - sleep 10
+        resources:
+          requests:
+            cpu: 100m
+            memory: 192Mi
+          limits:
+            cpu: '1'
+            memory: 768Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 128Mi
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: knowledge-r5-backend-api
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      sunmoonai.com/app: knowledge-r5
+      app.kubernetes.io/component: backend-api
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: knowledge-r5-backend-api
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: knowledge-r5-backend-api
+  minReplicas: 2
+  maxReplicas: 6
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+    scaleUp:
+      stabilizationWindowSeconds: 30
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knowledge-r5-backend-worker
+  namespace: app-platform-dev
+  labels:
+    app.kubernetes.io/name: knowledge-r5-backend
+    app.kubernetes.io/component: backend-worker
+    app.kubernetes.io/part-of: knowledge-r5
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      sunmoonai.com/app: knowledge-r5
+      app.kubernetes.io/component: backend-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: knowledge-r5-backend
+        app.kubernetes.io/component: backend-worker
+        app.kubernetes.io/part-of: knowledge-r5
+        sunmoonai.com/app: knowledge-r5
+        sunmoonai.com/managed-by: architecture-v2
+    spec:
+      serviceAccountName: knowledge-r5-backend-worker
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 90
+      imagePullSecrets:
+      - name: harbor-registry-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: worker
+        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:3814dfc08608f32e693736ae72b4b3dbe946493003d5592ce344c636fda6c430
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/sh
+        - -ec
+        args:
+        - exec celery -A app.bootstrap.worker:celery_app worker --loglevel=INFO --concurrency="${CELERY_WORKER_CONCURRENCY}"
+          --hostname="celery@${POD_NAME}"
+        envFrom:
+        - configMapRef:
+            name: knowledge-r5-backend-config
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: knowledge-backend-postgresql-conn
+              key: DATABASE_URL
+        - name: CELERY_BROKER_URL
+          valueFrom:
+            secretKeyRef:
+              name: celeryworker-knowledge-admin-backend-secret
+              key: CELERY_BROKER_URL
+        - name: CELERY_RESULT_BACKEND
+          valueFrom:
+            secretKeyRef:
+              name: celeryworker-knowledge-admin-backend-secret
+              key: CELERY_RESULT_BACKEND
+              optional: true
+        - name: RAGFLOW_API_BASE
+          valueFrom:
+            configMapKeyRef:
+              name: knowledge-r5-backend-config
+              key: RAGFLOW_API_BASE
+        - name: RAGFLOW_PARSE_POLL_INTERVAL_SECONDS
+          valueFrom:
+            configMapKeyRef:
+              name: knowledge-r5-backend-config
+              key: RAGFLOW_PARSE_POLL_INTERVAL_SECONDS
+        - name: RAGFLOW_PARSE_TIMEOUT_SECONDS
+          valueFrom:
+            configMapKeyRef:
+              name: knowledge-r5-backend-config
+              key: RAGFLOW_PARSE_TIMEOUT_SECONDS
+        - name: RETRIEVAL_DEFAULT_TENANT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: knowledge-r5-backend-config
+              key: RETRIEVAL_DEFAULT_TENANT_ID
+        - name: RETRIEVAL_PROVIDER_TIMEOUT_SECONDS
+          valueFrom:
+            configMapKeyRef:
+              name: knowledge-r5-backend-config
+              key: RETRIEVAL_PROVIDER_TIMEOUT_SECONDS
+        - name: RETRIEVAL_DATASET_ALLOWLIST
+          value: codex-smoke
+        - name: RAGFLOW_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: knowledge-admin-backend-secret
+              key: RAGFLOW_API_KEY
+        - name: ARTIFACT_ALLOWED_CONTENT_TYPES
+          valueFrom:
+            configMapKeyRef:
+              name: knowledge-r5-backend-config
+              key: ARTIFACT_ALLOWED_CONTENT_TYPES
+        - name: ARTIFACT_MAX_SIZE_BYTES
+          valueFrom:
+            configMapKeyRef:
+              name: knowledge-r5-backend-config
+              key: ARTIFACT_MAX_SIZE_BYTES
+        - name: ARTIFACT_S3_ALLOWED_BUCKETS
+          valueFrom:
+            configMapKeyRef:
+              name: knowledge-r5-backend-config
+              key: ARTIFACT_S3_ALLOWED_BUCKETS
+        - name: ARTIFACT_S3_ALLOWED_PREFIXES
+          valueFrom:
+            configMapKeyRef:
+              name: knowledge-r5-backend-config
+              key: ARTIFACT_S3_ALLOWED_PREFIXES
+        - name: S3_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: knowledge-r5-backend-config
+              key: S3_ENDPOINT
+        - name: S3_FORCE_PATH_STYLE
+          valueFrom:
+            configMapKeyRef:
+              name: knowledge-r5-backend-config
+              key: S3_FORCE_PATH_STYLE
+        - name: S3_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: knowledge-r5-backend-config
+              key: S3_REGION
+        - name: S3_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: knowledge-admin-backend-s3
+              key: S3_ACCESS_KEY_ID
+        - name: S3_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: knowledge-admin-backend-s3
+              key: S3_SECRET_ACCESS_KEY
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -ec
+            - celery -A app.bootstrap.worker:celery_app inspect ping --destination="celery@${POD_NAME}"
+              --timeout=3 | grep -q pong
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          timeoutSeconds: 8
+          failureThreshold: 4
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -ec
+              - sleep 10
+        resources:
+          requests:
+            cpu: 100m
+            memory: 192Mi
+          limits:
+            cpu: '1'
+            memory: 768Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 256Mi
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: knowledge-r5-backend-worker
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      sunmoonai.com/app: knowledge-r5
+      app.kubernetes.io/component: backend-worker
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knowledge-r5-backend-scheduler
+  namespace: app-platform-dev
+  labels:
+    app.kubernetes.io/name: knowledge-r5-backend
+    app.kubernetes.io/component: backend-scheduler
+    app.kubernetes.io/part-of: knowledge-r5
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      sunmoonai.com/app: knowledge-r5
+      app.kubernetes.io/component: backend-scheduler
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: knowledge-r5-backend
+        app.kubernetes.io/component: backend-scheduler
+        app.kubernetes.io/part-of: knowledge-r5
+        sunmoonai.com/app: knowledge-r5
+        sunmoonai.com/managed-by: architecture-v2
+      annotations:
+        sunmoonai.com/release-id: r5-knowledge-formal-001
+    spec:
+      serviceAccountName: knowledge-r5-backend-scheduler
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 45
+      imagePullSecrets:
+      - name: harbor-registry-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: scheduler
+        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:3814dfc08608f32e693736ae72b4b3dbe946493003d5592ce344c636fda6c430
+        imagePullPolicy: IfNotPresent
+        command:
+        - celery
+        args:
+        - -A
+        - app.bootstrap.scheduler:celery_app
+        - beat
+        - --loglevel=INFO
+        - --schedule=/tmp/celerybeat-schedule
+        envFrom:
+        - configMapRef:
+            name: knowledge-r5-backend-config
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: knowledge-backend-postgresql-conn
+              key: DATABASE_URL
+        - name: CELERY_BROKER_URL
+          valueFrom:
+            secretKeyRef:
+              name: celeryworker-knowledge-admin-backend-secret
+              key: CELERY_BROKER_URL
+        resources:
+          requests:
+            cpu: 25m
+            memory: 96Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 64Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knowledge-r5-admin-frontend
+  namespace: app-platform-dev
+  labels:
+    app.kubernetes.io/name: knowledge-r5-admin-frontend
+    app.kubernetes.io/component: admin-frontend
+    app.kubernetes.io/part-of: knowledge-r5
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      sunmoonai.com/app: knowledge-r5
+      app.kubernetes.io/component: admin-frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: knowledge-r5-admin-frontend
+        app.kubernetes.io/component: admin-frontend
+        app.kubernetes.io/part-of: knowledge-r5
+        sunmoonai.com/app: knowledge-r5
+        sunmoonai.com/managed-by: architecture-v2
+      annotations:
+        sunmoonai.com/release-id: r5-knowledge-formal-001
+    spec:
+      serviceAccountName: knowledge-r5-admin-frontend
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      imagePullSecrets:
+      - name: harbor-registry-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            sunmoonai.com/app: knowledge-r5
+            app.kubernetes.io/component: admin-frontend
+      containers:
+      - name: admin
+        image: harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:07130d859a89b18842ce043178b5477bbb67a3ab183aadfe18baed039bd0b9c2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 3000
+        envFrom:
+        - configMapRef:
+            name: knowledge-r5-admin-frontend-config
+        startupProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 2
+          failureThreshold: 30
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 5
+          timeoutSeconds: 3
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 3
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -ec
+              - sleep 5
+        resources:
+          requests:
+            cpu: 75m
+            memory: 160Mi
+          limits:
+            cpu: 750m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: next-cache
+          mountPath: /app/.next/cache
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 64Mi
+      - name: next-cache
+        emptyDir:
+          sizeLimit: 256Mi
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: knowledge-r5-admin-frontend
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      sunmoonai.com/app: knowledge-r5
+      app.kubernetes.io/component: admin-frontend
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: knowledge-r5-admin-frontend
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: knowledge-r5-admin-frontend
+  minReplicas: 2
+  maxReplicas: 6
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: knowledge-r5-web-frontend
+  namespace: app-platform-dev
+  labels:
+    app.kubernetes.io/name: knowledge-r5-web-frontend
+    app.kubernetes.io/component: web-frontend
+    app.kubernetes.io/part-of: knowledge-r5
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      sunmoonai.com/app: knowledge-r5
+      app.kubernetes.io/component: web-frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: knowledge-r5-web-frontend
+        app.kubernetes.io/component: web-frontend
+        app.kubernetes.io/part-of: knowledge-r5
+        sunmoonai.com/app: knowledge-r5
+        sunmoonai.com/managed-by: architecture-v2
+      annotations:
+        sunmoonai.com/release-id: r5-knowledge-formal-001
+    spec:
+      serviceAccountName: knowledge-r5-web-frontend
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      imagePullSecrets:
+      - name: harbor-registry-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            sunmoonai.com/app: knowledge-r5
+            app.kubernetes.io/component: web-frontend
+      containers:
+      - name: web
+        image: harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:7bdd329bf24e479d1c8f859ef6ed909958bc1479b7296b3b212c2293c7601148
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 3000
+        envFrom:
+        - configMapRef:
+            name: knowledge-r5-web-frontend-config
+        startupProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 2
+          failureThreshold: 30
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 5
+          timeoutSeconds: 3
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 3
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -ec
+              - sleep 5
+        resources:
+          requests:
+            cpu: 75m
+            memory: 160Mi
+          limits:
+            cpu: 750m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: next-cache
+          mountPath: /app/.next/cache
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 64Mi
+      - name: next-cache
+        emptyDir:
+          sizeLimit: 256Mi
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: knowledge-r5-web-frontend
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      sunmoonai.com/app: knowledge-r5
+      app.kubernetes.io/component: web-frontend
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: knowledge-r5-web-frontend
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/managed-by: architecture-v2
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: knowledge-r5-web-frontend
+  minReplicas: 2
+  maxReplicas: 6
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
