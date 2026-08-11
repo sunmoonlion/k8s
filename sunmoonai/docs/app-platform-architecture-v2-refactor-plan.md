@@ -1,10 +1,10 @@
 # App Platform Architecture v2 重构执行基线
 
-状态：`ACTIVE / R0-R4 COMPLETE / R4.2 RUNTIME CLEANUP IN PROGRESS`
+状态：`ACTIVE / R0-R4.2 COMPLETE / R5 INFO DONE / KNOWLEDGE NOT STARTED`
 
 日期：2026-08-01
 
-最近重新冻结：2026-08-08
+最近重新冻结：2026-08-11
 
 工作分支：`architecture-v2`
 
@@ -357,6 +357,13 @@ R4 全部完成前停止新业务功能开发。
 迁移手段或证据，禁止替代第 4、5 项。v1 回滚声明在 R7 前必须保留于显式 `legacy-v1` 边界，
 但不得继续被默认部署入口扫描或应用。此规则对 Info、Knowledge、Investment 完全相同；若前一
 实例未完成声明式收口，禁止开始后一实例。
+
+当前进度：Info 已完成源码与迁移链归并、数据库角色/owner 切换、统一 Backend 正式运行、
+双 Next.js 严格 TLS 真实身份门禁、单写者、数据对账、原生回滚/前滚，以及
+`app-platform/info-app` 声明式部署收口。干净生成、静态验证、server-side dry-run、正式
+reconcile、零漂移、reconcile 后 runtime/data/single-writer 与浏览器复验均通过；实现与验收
+父提交 `4fcf7667917b350cb7fd9b85036c70431e07ccb8` 已完成 GitHub/Gitee 对齐。Info R5 状态为
+`DONE`；Knowledge R5 仅从此状态提交之后才允许开始，本提交本身不启动 Knowledge 施工。
 
 ### R6 跨 App 真实竖线
 

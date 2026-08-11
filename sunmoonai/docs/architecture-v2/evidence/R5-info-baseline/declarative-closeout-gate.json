@@ -15,5 +15,10 @@
   "legacy_deployment_replicas": 0,
   "credentials_printed": false,
   "credentials_committed": false,
-  "overall_r5_closeout_pending": ["dual-remote-alignment"]
+  "dual_remote_alignment": {
+    "verified_parent_commit": "4fcf7667917b350cb7fd9b85036c70431e07ccb8",
+    "github": true,
+    "gitee": true
+  },
+  "overall_r5_closeout_pending": []
 }
