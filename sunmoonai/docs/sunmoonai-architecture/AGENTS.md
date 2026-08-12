@@ -9,13 +9,14 @@
 ## 0. 目录定位
 
 本目录（`k8s/sunmoonai/docs/sunmoonai-architecture/`，git 管理，分支
-`architecture-v2`）是 SunMoonAI 平台的提示文档集，三层结构：
+`architecture-v2`）是 SunMoonAI 平台的提示文档集，按五环归位为四组：
 
-| 层 | 位置 | 性质 |
-| --- | --- | --- |
-| 总体架构 | `overall-architecture/`（app-platform-architecture.md、sunmoonai·-architecture.md） | 慢变知识，跨 App 事实的唯一权威 |
-| 现状摘要 | `tpl-app/` `info-app/` `knowledge-app/` `investment-app/` `k8s/` 各项目摘要 | 源码的阅读缓存，快变 |
-| 目标需求 | `goals/` | 用户需求输入，经评审才进入权威链 |
+| 组 | 位置 | 性质 | 五环 |
+| --- | --- | --- | --- |
+| 目标态架构 | `architecture/`（app-platform-architecture.md、sunmoonai·-architecture.md，ADR 随首条落地建 `adr/`） | 慢变知识，跨 App 事实的唯一权威 | 环 2 |
+| 现状摘要 | `apps/<项目>/项目摘要.md`（tpl/info/knowledge/investment/k8s） | 源码的阅读缓存，快变 | 环 4 的镜像 |
+| 目标需求 | `goals/` | 用户需求输入，经评审才进入权威链 | 环 1 |
+| 工程阶段 | `phases/<阶段>/`（baseline + plan-* + handoff，v6 开写时创建） | 执行过程，做完归档 | 环 3 + 5 |
 
 文档清单与阅读顺序见 `README.md`。
 
@@ -58,7 +59,7 @@ goal（为什么做）      → goals/G-XXX.md
    ↓ 完成证据引用
 commit/evidence（做了）→ git SHA / docs/evidence/<阶段>/<任务ID>/
    ↓ 游标汇总
-handoff（做到哪了）   → 当期 handoff 文档
+handoff（做到哪了）   → phases/<阶段>/handoff 文档
 ```
 
 每个引用只写一行（`源自 G-001` / `落地于 V6-302` / `证据见 <sha>`），不复述内容。
@@ -91,6 +92,10 @@ handoff（做到哪了）   → 当期 handoff 文档
 - 与现有架构冲突时：不默默服从也不默默拒绝，摆出"按 goal 做的代价 vs
   维持现状的代价"两个选项，由用户拍板；拍板改变架构则走 ADR。
 - 被拒 goal 保留记录，条件变化后可重新评审。
+
+**goal 与基线的边界（防重复）：**goal 是一次性需求快照，回答“为什么做 + 决策结论”；
+基线回答“被决定做成什么样”。goal 采纳后目标态事实必须写进基线/任务，goal 文件
+冻结、只留 `落地去向` 引用，不留目标态正文；此后只允许追加状态流转行。
 
 ## 6. 演进闭环（长期演进机制）
 
