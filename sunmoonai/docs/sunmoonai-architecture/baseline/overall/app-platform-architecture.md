@@ -1,24 +1,15 @@
 # SunMoonAI App Platform 总体架构
 
-状态：`Architecture v2 目标架构 / 迁移实施中`
-
 最后更新：2026-08-12
-
-适用分支：`architecture-v2`
 
 ## 1. 文档定位
 
-本文定义 App Platform 的长期边界、标准 App 形态、运行时拓扑和跨 App 协作规则。它描述的
-Architecture v2 已在 `tpl-app` 以及 Info、Knowledge、Investment 的新源码底座中实现；旧版
-Kubernetes 目录和运行资源在完成数据迁移、切流与回滚观察窗前仍可能保留。
-
-实施阶段、门禁和回滚点以
-[Architecture v2 重构执行基线](../../app-platform-architecture-v2-refactor-plan.md)为准。
-若“目标架构”和“当前集群”不一致，必须明确标注迁移状态，不能把旧资源解释为长期设计。
+本文定义 App Platform 的长期边界、标准 App 形态、运行时拓扑和跨 App 协作规则，是领域
+App 开发的目标态权威。若文档与代码现状不一致，以代码为准并按 AGENTS.md 流程处理。
 
 ## 2. 核心决策
 
-Architecture v2 固定以下边界：
+App Platform 固定以下边界：
 
 1. Info、Knowledge、Investment 是相互独立的领域 App，不合并为一个巨型 App。
 2. 每个领域 App 只有一个规范 FastAPI Backend、一个逻辑业务数据库和一条 Alembic 迁移链。
@@ -35,34 +26,34 @@ Architecture v2 固定以下边界：
 
 ### 3.1 当前领域 App
 
-| App | 定位 | 权威数据 | 当前规范源码仓 |
+| App | 定位 | 权威数据 | 规范源码仓 |
 | --- | --- | --- | --- |
 | `auth-app` | 身份提供与平台认证基础 | 用户、组织、应用、服务身份和授权关系 | 位于 App Platform，核心 IdP 为 Casdoor |
 | `info-app` | 来源发现、采集、版本化、Artifact 和可靠分发 | 来源、原始内容、文档版本、Artifact、血缘和投递状态 | `info-backend` + 两个 Next.js 前端 |
 | `knowledge-app` | 摄取、解析、索引、检索和知识引擎适配 | 摄取任务、知识对象、索引绑定、检索与引用元数据 | `knowledge-backend` + 两个 Next.js 前端 |
 | `investment-app` | 投资研究、Agent Runtime、证据组装及未来投资领域能力 | 投资研究会话、运行、证据、记忆及投资领域事实 | `investment-backend` + 两个 Next.js 前端 |
 
-`auth-app` 是平台身份子系统，目前不强制套用普通领域 App 的三仓模板；它向各 App 提供 OIDC
+`auth-app` 是平台身份子系统，不强制套用普通领域 App 的三仓模板；它向各 App 提供 OIDC
 能力，但不替代各 Backend 的资源级授权。
 
-### 3.2 Research 名称与历史边界
+### 3.2 Research 命名治理
 
 必须区分两个完全不同的概念：
 
-- **旧 `research-app`**：此前承载投资研究和 Agent 能力，已经由 `investment-app` 取代。
-  旧源码身份不再代表当前活动 App；迁移期仍可在文档、领域类型或 Kubernetes 回滚目录中看到
-  `research` 名称，这些是历史兼容或 Investment 内部的“研究”业务模块。
-- **未来 `research-app`**：将来可能从完成验收的 Architecture v2 模板创建，用于通用、跨领域
-  研究。它必须是新的有界上下文，使用新的仓库、身份、数据库、对象空间、消息资源和契约；
-  不得复用旧 `research-app` 的身份或把 Investment 数据自动归属给它。
+- **历史 `research-app`**：其投资研究与 Agent 能力已由 `investment-app` 取代。残留的
+  `research` 名称（历史目录、镜像、类型或兼容字段）不代表当前活动 App；Investment 内部的
+  “研究”是业务模块，不是独立 App。
+- **未来 `research-app`**：将来如创建，用于通用、跨领域研究。它必须是新的有界上下文，
+  从已验收模板实例化，使用新的仓库、身份、数据库、对象空间、消息资源和契约；不得复用
+  历史身份，也不得把 Investment 数据自动归属给它。
 
-因此，当前拓扑中的“研究能力”默认属于 `investment-app`；只有新的 Research 领域定义、数据
-所有权和 ADR 获得批准后，未来 `research-app` 才能进入当前 App 清单。
+当前拓扑中的“研究能力”默认属于 `investment-app`；未来 `research-app` 进入 App 清单前，
+必须先有独立的领域定义、数据所有权和 ADR。
 
 ### 3.3 未来 App
 
 未来的 `research-app`、`tools-app` 或其他领域 App，应从当时最新、已验收的 `tpl-app` 版本
-实例化。删除的旧 Tools/Research 结构不是新 App 的模板或恢复源。
+实例化；任何历史目录都不是新 App 的模板或恢复源。
 
 ## 4. 一个领域 App 的标准拓扑
 
@@ -79,9 +70,8 @@ Architecture v2 固定以下边界：
 - `<app>-admin-frontend`：Next.js、React、TypeScript（shadcn/@base-ui + Tailwind v4），面向运营和管理人员。
 - `<app>-web-frontend`：Next.js、React、TypeScript（shadcn/@base-ui + Tailwind v4），面向最终用户和产品交互。
 
-旧的独立 Admin Backend、Web Backend、Celery Worker 仓和 Node Bull Worker 仓不属于 v2
-规范拓扑。`tpl-web-backend-nest`、`tpl-admin-frontend-react`、`tpl-admin-frontend-vue` 只可作为
-参考实现，不进入默认生成链。
+规范拓扑只有这三仓。独立 Admin Backend、Web Backend、独立 Worker 仓等结构不是规范形态；
+模板仓中的参考实现（如 Nest/Vue 变体）仅供参照，不进入默认生成链。
 
 ### 4.2 请求拓扑
 
@@ -290,7 +280,8 @@ tpl-app/
 -> Info -> Knowledge -> Investment 串行同步 -> 每个实例独立验收
 ```
 
-未来新 `research-app` 或 `tools-app` 也必须从已冻结 release 创建，不能从旧目录复制。
+新 App（如未来的 `research-app`、`tools-app`）也必须从已冻结 release 创建，不能从历史目录
+复制。
 
 ## 11. Kubernetes 目标形态
 
@@ -304,25 +295,9 @@ tpl-app/
 - 角色化 ServiceAccount、NetworkPolicy、PDB、HPA、资源与探针。
 
 部署顺序：prerequisite/secret/network -> migration -> runtime -> ingress。数据库迁移失败时不得
-继续部署运行角色；切流前必须验证前滚、回滚和数据兼容窗口。
+继续部署运行角色；重大变更上线前必须验证前滚、回滚和数据兼容窗口。
 
-## 12. 当前迁移状态
-
-| 范围 | 状态 | 说明 |
-| --- | --- | --- |
-| `tpl-app` 统一 Backend、双 Next.js、K8s scaffold | 已实现并通过阶段门禁 | 是 Architecture v2 的唯一模板源 |
-| Info、Knowledge、Investment 新三组件源码底座 | 已同步并通过 R4 门禁 | R5 数据迁移已执行，R6 跨 App 真实竖线已于 2026-08-11 通过 |
-| Investment 新三组件源码底座 | 已由旧 Research 原地迁移并同步 | 旧 Research 身份已被 Investment 取代 |
-| R7 发布收口与 R8 文档重建 | 进行中 | 模板隔离门禁、发布晋级与文档重建未完成前，切流收口不宣告完成 |
-| 旧 v1 K8s 目录、部署、数据库和 Secret | 迁移期回滚资产 | R7 门禁和观察窗完成前不得误删 |
-| `app-platform/research-app` 旧目录 | 历史回滚拓扑，不是未来 Research | 最终退役与未来新 App 创建是两件事 |
-| 未来 `research-app` | 尚未创建 | 需独立 ADR、数据所有权和模板实例化 |
-| 未来 `tools-app` | 尚未创建 | 旧实现已退出当前活动拓扑 |
-
-“源码完成”“镜像构建”或“Pod Ready”都不等于迁移完成。只有数据库对账、真实双端配对、严格
-TLS、真实身份、跨 App 契约、故障与回滚门禁通过后，才能切流和删除旧资产。
-
-## 13. 架构约束
+## 12. 架构约束
 
 以下做法不被允许：
 
@@ -331,14 +306,12 @@ TLS、真实身份、跨 App 契约、故障与回滚门禁通过后，才能切
 - 让 Next.js 持有领域主数据或成为最终授权点；
 - 跨 App 直接访问数据库、Bucket、Redis key 或内部队列；
 - 为每类任务预先建立独立 Worker 源码仓；
-- 用未来 `research-app` 名称指代旧 Research 或 Investment 内部研究模块；
-- 在模板门禁前直接修改三个实例，或用模板覆盖实例领域代码；
-- 在回滚观察窗结束前删除旧数据库、Secret、镜像或部署；
+- 用未来 `research-app` 名称指代历史 Research 或 Investment 内部研究模块；
+- 在模板门禁前直接修改实例，或用模板覆盖实例领域代码；
 - 用可变 tag 替代正式发布的 digest 锁定。
 
-## 14. 相关文档
+## 13. 相关文档
 
-- [Architecture v2 重构执行基线](../../app-platform-architecture-v2-refactor-plan.md)
 - [数据所有权](../../../app-platform/docs/data-ownership.md)
 - [集成规范](../../../app-platform/docs/integration-standards.md)
 - [生产就绪标准](../../../app-platform/docs/production-readiness.md)
@@ -346,4 +319,3 @@ TLS、真实身份、跨 App 契约、故障与回滚门禁通过后，才能切
 - [ADR-0009：Admin、Web 与 Internal 接口及身份分面](../../../app-platform/docs/adr/0009-api-surfaces-and-identity.md)
 - [ADR-0010：每个 App 的数据库与迁移链归并](../../../app-platform/docs/adr/0010-database-convergence.md)
 - [ADR-0011：Backend 运行角色与容量边界](../../../app-platform/docs/adr/0011-backend-runtime-roles.md)
-- [Investment 清理与改名方案](../../investment清理和改名.md)

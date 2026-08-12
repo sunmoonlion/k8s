@@ -1,20 +1,14 @@
 # SunMoonAI 总体平台架构
 
-状态：`Architecture v2 权威总体说明 / 迁移实施中`
-
 最后更新：2026-08-12
-
-适用分支：`architecture-v2`
 
 ## 1. 文档定位
 
 本文说明 `sunmoonai/` 下各个平台的职责、依赖方向、运行关系和治理边界。App Platform 内部的
-详细设计见 [App Platform 总体架构](./app-platform-architecture.md)；重构任务状态见
-[Architecture v2 重构执行基线](../../app-platform-architecture-v2-refactor-plan.md)。
+详细设计见 [App Platform 总体架构](./app-platform-architecture.md)。
 
-旧文档中以 Portal、Nuxt、独立 Admin/Web Backend 和松散微服务为中心的描述已经废止。当前
-架构以 Kubernetes 平台能力、领域 App、双 Next.js 前端、统一 FastAPI Backend、每 App 单一
-逻辑数据库和显式跨 App 契约为基线。
+平台架构以 Kubernetes 平台能力、领域 App、双 Next.js 前端、统一 FastAPI Backend、每 App
+单一逻辑数据库和显式跨 App 契约为基线。
 
 ## 2. 总体分层
 
@@ -89,7 +83,7 @@ deploy-* -> all platform scripts    只做编排
 
 ### 4.2 部署顺序不是运行时耦合
 
-当前总控按基础设施、数据、消息、应用、运维等优先级部署。该顺序用于满足启动前置条件，不代表
+总控按基础设施、数据、消息、应用、运维等优先级部署。该顺序用于满足启动前置条件，不代表
 运行时可以无限等待下游。每个 App 仍必须为依赖定义：
 
 - 连接和请求超时；
@@ -114,19 +108,15 @@ CI/CD 和 Ops 平台故障不应立即中断已发布业务；Ingress、数据�
 `auth-app` 提供平台身份基础，Casdoor 是当前 OIDC Provider。各业务 Backend 仍是自身资源授权
 和数据所有权的最终责任人。
 
-### 5.2 Research 历史与未来
+### 5.2 Research 命名治理
 
-旧 `research-app` 已被 `investment-app` 取代。旧名称可能暂时出现在：
-
-- 迁移前的 K8s 目录、镜像、Secret、数据库或回滚记录；
-- Investment 内部“投资研究”模块、类型或历史兼容字段；
-- 尚未完成改名清理的阶段证据。
-
-这些内容都不表示当前还存在一个与 Investment 并列的活动 `research-app`。
+历史 `research-app` 的投资研究与 Agent 能力已由 `investment-app` 取代；残留在历史目录、
+镜像、Secret、兼容字段或 Investment 内部“研究”模块中的 `research` 名称，都不表示当前存在
+一个与 Investment 并列的活动 `research-app`。
 
 未来可能创建新的 `research-app`，用于通用、跨领域研究。它必须从届时已验收的 `tpl-app`
 实例化，并获得独立的领域 ADR、仓库、工作负载身份、数据库、对象空间、消息资源和 API/事件
-契约。未来 Research 不继承旧 Research 的身份，也不能直接拥有 Investment 的研究数据。
+契约。未来 Research 不继承历史身份，也不能直接拥有 Investment 的研究数据。
 
 ### 5.3 标准 App 形态
 
@@ -221,8 +211,7 @@ Ingress 只根据 Host/Path 转发，不根据页面角色决定最终业务授�
 
 ## 11. CI/CD 与制品治理
 
-源码在 GitHub 主远端维护，Gitee 作为镜像远端；施工分支当前为 `architecture-v2`。发布流程应
-遵循：
+源码在 GitHub 主远端维护，Gitee 作为镜像远端。发布流程应遵循：
 
 ```text
 source commit -> tests/gates -> image build -> scan -> Harbor immutable digest
@@ -230,8 +219,7 @@ source commit -> tests/gates -> image build -> scan -> Harbor immutable digest
 ```
 
 禁止为正式版本重新构建、使用可变 tag 代替 digest、或在未计算 release/live/evidence/rollback
-保护闭包时删除 Harbor artifact。`1.0.0` 是旧架构回滚基线；Architecture v2 全部门禁通过后，
-同一验收 digest 晋级 `2.0.0`。
+保护闭包时删除 Harbor artifact。
 
 ## 12. Ops Platform 与可观测性
 
@@ -267,22 +255,9 @@ pgAdmin、RedisInsight、Flower 等只用于观察和授权管理；删除 Ops �
 共性修改先进入模板，经完整门禁后按 Info -> Knowledge -> Investment 串行同步。实例保留领域
 代码，不允许模板覆盖业务实现。未来 Research/Tools 等 App 也从新模板创建。
 
-`k8s/sunmoonai/app-platform/<app>` 是部署声明和迁移资产，不是业务源码仓的替代品。旧 v1 目录
-在观察窗中存在，不代表其架构仍有效；目标目录只有在真实切流后才成为运行事实。
+`k8s/sunmoonai/app-platform/<app>` 是部署声明，不是业务源码仓的替代品。
 
-## 15. 当前迁移快照
-
-| 范围 | 当前状态 |
-| --- | --- |
-| 模板统一 Backend、双 Next.js、角色化 K8s | 已实现并完成阶段验收 |
-| Info、Knowledge、Investment 新源码底座 | 已建立并完成共同底座同步（R4 门禁通过） |
-| 数据迁移（R5）与跨 App 真实竖线（R6） | 已完成；R6 全链验证于 2026-08-11 通过 |
-| 发布收口与旧资源退役（R7/R8） | 进行中；门禁与观察窗完成前旧资产保留为回滚面 |
-| 旧 `research-app` | 已由 `investment-app` 取代；遗留仅作迁移/回滚处理 |
-| 未来新 `research-app` | 尚未创建，必须独立设计和实例化 |
-| 旧 `tools-app` | 不属于当前活动拓扑；未来需要时重新从模板创建 |
-
-## 16. 全局禁止事项
+## 15. 全局禁止事项
 
 - 以共享物理数据库为理由跨 App 读表；
 - 将平台部署顺序当作运行时可靠性；
@@ -290,14 +265,11 @@ pgAdmin、RedisInsight、Flower 等只用于观察和授权管理；删除 Ops �
 - 把 Admin/Web 拆回两个 Backend 或两套主数据库；
 - 复用用户 Token 作为服务身份；
 - 将 Ops/CI/CD 工具放进业务同步关键路径；
-- 把旧 `research-app`、Investment 内部研究模块和未来 `research-app` 混为一体；
-- 在数据对账、回滚和观察窗完成前删除旧部署、数据库、Secret 或镜像；
+- 把历史 `research-app`、Investment 内部研究模块和未来 `research-app` 混为一体；
 - 未经模板门禁在多个实例重复修改共同底座。
 
-## 17. 相关权威文档
+## 16. 相关权威文档
 
 - [App Platform 总体架构](./app-platform-architecture.md)
 - [App Platform 数据所有权](../../../app-platform/docs/data-ownership.md)
 - [App Platform 集成规范](../../../app-platform/docs/integration-standards.md)
-- [Architecture v2 重构执行基线](../../app-platform-architecture-v2-refactor-plan.md)
-- [Investment 清理与改名方案](../../investment清理和改名.md)

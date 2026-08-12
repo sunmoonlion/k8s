@@ -8,8 +8,7 @@
 
 ## 0. 目录定位
 
-本目录（`k8s/sunmoonai/docs/sunmoonai-architecture/`，git 管理，分支
-`architecture-v2`）是 SunMoonAI 平台的提示文档集，两组结构：
+本目录（`k8s/sunmoonai/docs/sunmoonai-architecture/`，git 管理）是 SunMoonAI 平台的提示文档集，两组结构：
 
 | 组 | 位置 | 性质 |
 | --- | --- | --- |
@@ -62,7 +61,7 @@
    ↓
 审核（四选一结论） → request.md ②架构评审
    ↓ 采纳（小请求可跳过下一步直接实施）
-定开发任务         → requests/REQ-XXX/plan-*.md / 任务 ID（如 V6-XXX）
+定开发任务         → requests/REQ-XXX/plan-*.md / 任务 ID（如 TASK-XXX）
    ↓
 实施               → 代码 + commit SHA 证据；大请求用 handoff.md 记进度游标
    ↓
@@ -74,7 +73,7 @@
 **不是每个请求都走全步**：小改动可只走 提议→审核→实施→评估；定任务、
 更新 baseline 仅在需要时发生。baseline 更新永远在评估之后，不在实施之前。
 
-每个引用只写一行（`源自 REQ-001` / `落地于 V6-302` / `证据见 <sha>`），不复述内容。
+每个引用只写一行（`源自 REQ-XXX` / `落地于 TASK-XXX` / `证据见 <sha>`），不复述内容。
 任何事实向上能追到“当初为什么”，向下能追到“代码里的实锤”。
 
 ## 3. 进度单面（防多头漂移）
