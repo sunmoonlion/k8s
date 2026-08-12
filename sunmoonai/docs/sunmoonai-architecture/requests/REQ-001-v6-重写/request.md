@@ -1,4 +1,4 @@
-# G-001：重写 task handoff 与 implementation 为 v6
+# REQ-001：重写 task handoff 与 implementation 为 v6
 
 > 状态：ADOPTED ｜ 提出日期：2026-08-12 ｜ 评审日期：2026-08-12
 
@@ -22,15 +22,15 @@
     全部 ACCEPTED）；
   - 四份 v4/v5 文档已于 2026-08-12 全量深读，具备重写输入。
 - 结构决策（用户确认）：基线 1 份 + handoff 1 份 + 按 App 施工清单 4 份
-  （info / knowledge / investment / platform），落 `sunmoonai-architecture/goals/v6/`（五环闭环在 goals/ 内）。
+  （info / knowledge / investment / platform），落 `sunmoonai-architecture/requests/REQ-001-v6-重写/`（五环闭环在 requests/ 内）。
   v5 的 Phase 0 历史不再保留任务编号，只作"既成现状"一节交代。
 
 ## ③ 落地去向
 
-- v6 基线：`k8s/sunmoonai/docs/sunmoonai-architecture/goals/v6/v6-longterm-baseline.md`（待写）
-- v6 handoff：`k8s/sunmoonai/docs/sunmoonai-architecture/goals/v6/v6-handoff.md`（待写）
-- v6 施工清单：`k8s/sunmoonai/docs/sunmoonai-architecture/goals/v6/v6-plan-{info,knowledge,investment,platform}.md`（待写）
-- 任务编号采用 `V6-XXX`，按 AGENTS.md 五环链回指本 goal。
+- v6 基线：`k8s/sunmoonai/docs/sunmoonai-architecture/requests/REQ-001-v6-重写/v6-longterm-baseline.md`（待写）
+- v6 handoff：`k8s/sunmoonai/docs/sunmoonai-architecture/requests/REQ-001-v6-重写/v6-handoff.md`（待写）
+- v6 施工清单：`k8s/sunmoonai/docs/sunmoonai-architecture/requests/REQ-001-v6-重写/v6-plan-{info,knowledge,investment,platform}.md`（待写）
+- 任务编号采用 `V6-XXX`，按 AGENTS.md 五环链回指本 request。
 
 ## ④ 状态流转
 
@@ -38,4 +38,4 @@
 | --- | --- | --- |
 | 2026-08-12 | PROPOSED | 用户于本会话提出 |
 | 2026-08-12 | REVIEWED → ADOPTED | 架构评审采纳，结构方案经用户确认 |
-| 2026-08-12 | ADOPTED（暂缓执行） | 用户决定：后续还有更多 goal 要提，待 goal 集合收敛后再启动 v6 基线撰写 |
+| 2026-08-12 | ADOPTED（暂缓执行） | 用户决定：后续还有更多 request 要提，待 request 集合收敛后再启动 v6 基线撰写 |

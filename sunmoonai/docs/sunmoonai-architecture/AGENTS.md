@@ -15,26 +15,30 @@
 | --- | --- | --- |
 | 总体架构摘要（App 之间） | `overall-architecture-summarizations/`（app-platform-architecture.md、sunmoonai·-architecture.md；ADR 随首条落地建 `adr/`） | 跨 App 结构与目标态决策，唯一权威 |
 | App 架构摘要（各 App 内部） | `apps-architecture-summarizations/<项目>/项目摘要.md`（tpl/info/knowledge/investment/k8s） | 各 App 的结构与摘要 |
-| goals 五环闭环 | `goals/`（goal 文件 + 派生的 baseline/plan-*/handoff，见 §5） | 需求→评审→实施→进度，五环全部在此闭环 |
+| requests 五环闭环 | `requests/`（request 文件 + 派生的 baseline/plan-*/handoff，见 §5） | 需求→评审→实施→进度，五环全部在此闭环 |
 
 **两套 summarizations 的稳定政策**：一定时期内不变，供 AI 快速了解项目（需要时阅读，
-不必每次全读）；goal 实施完成**不自动触发**其更新，只在必要时由用户手动触发刷新。
+不必每次全读）；request 实施完成**不自动触发**其更新，只在必要时由用户手动触发刷新。
+
+**术语对应**：本文件说的“基线”不是单独一套文档——**平台级基线 = 这两套
+summarizations**（overall = App 间规矩，apps = 各 App 结构）；request 文件夹内的
+`baseline.md` 是该次请求的目标态，做完后长期有效的部分吸收进平台级基线。
 
 文档清单与阅读顺序见 `README.md`。
 
 ## 1. 权威排序（矛盾仲裁）
 
 ```
-源代码（各仓） > 架构基线/ADR > 任务文件/证据 > goal
+源代码（各仓） > 架构基线/ADR > 任务文件/证据 > request
 ```
 
 - 代码是现状的唯一真相；摘要是帮助理解代码的缓存，与代码冲突时以代码为准。
-- goal 是输入不是权威：评审采纳后，目标态事实写进基线/任务，goal 只留引用。
+- request 是输入不是权威：评审采纳后，目标态事实写进基线/任务，request 只留引用。
 - 文档间矛盾：先比“最后更新”时间戳，再比上面的层级，不盲目采信。
 
 ### 1.1 直接开发车道：漂移标记规则
 
-不经 goal 的直接开发（快车道）不必走五环，但改动触碰“基线覆盖的事实”时必须显式标记。
+不经 request 的直接开发（快车道）不必走五环，但改动触碰“基线覆盖的事实”时必须显式标记。
 判断尺子：**这个改动是否改变了“另一个 App 的开发者或新来者也需要遵守”的事实**。
 
 **需标记（命中任一即标记 TODO）：**
@@ -56,18 +60,18 @@
 ## 2. 五环链（任何事实可追溯）
 
 ```
-goal（为什么做）      → goals/G-XXX.md
+request（为什么做）      → requests/REQ-XXX/request.md
    ↓ 采纳后引用
-基线/ADR（做成什么样） → 架构基线 §X / ADR-XXX
+基线/ADR（做成什么样） → 两套 summarizations §X / ADR-XXX / requests/<请求>/baseline.md
    ↓ 派生任务引用
 任务（怎么做）        → 实施计划任务 ID（如 V6-XXX）
    ↓ 完成证据引用
 commit/evidence（做了）→ git SHA / docs/evidence/<阶段>/<任务ID>/
    ↓ 游标汇总
-handoff（做到哪了）   → goals/<阶段>/handoff 文档
+handoff（做到哪了）   → requests/<请求>/handoff 文档
 ```
 
-每个引用只写一行（`源自 G-001` / `落地于 V6-302` / `证据见 <sha>`），不复述内容。
+每个引用只写一行（`源自 REQ-001` / `落地于 V6-302` / `证据见 <sha>`），不复述内容。
 从任何一环出发，向上能追到"当初为什么"，向下能追到"代码里的实锤"。
 
 ## 3. 进度单面（防多头漂移）
@@ -75,7 +79,7 @@ handoff（做到哪了）   → goals/<阶段>/handoff 文档
 - handoff = 唯一全局进度面：现在卡在哪、下一步是什么。
 - 任务文件 = 唯一任务状态面：单任务的状态枚举与验收证据。
 - handoff 只写游标指向哪个任务，不重复任务细节。
-- 摘要、goals、基线**一律不写进度**。
+- 摘要、requests、基线**一律不写进度**。
 
 ## 4. 三条维护约定 + 编辑自检
 
@@ -90,25 +94,25 @@ handoff（做到哪了）   → goals/<阶段>/handoff 文档
 2. 确认新写入的事实没有第二处复述（有则改为引用）；
 3. 检查被改动章节在其它文档中的引用/注记是否仍成立。
 
-## 5. goals 评审流程
+## 5. requests 评审流程
 
-- 用户开发需求落盘为 `goals/G-<编号>-<短名>.md`（按 `goals/TEMPLATE.md`）。
-- **五环全部存于 goals/ 内闭环**：goal 文件（环 1）→ 采纳后派生 `goals/<阶段>/baseline`
-  （环 2 阶段级）、`goals/<阶段>/plan-*`（环 3）、证据引用 commit SHA（环 4 在代码仓）、
-  `goals/<阶段>/handoff`（环 5）；阶段做完归档，不删。
-- 每个 goal 必有书面评审结论：采纳 / 修改后采纳 / 不采纳 / 待澄清。
-- 与现有架构冲突时：不默默服从也不默默拒绝，摆出"按 goal 做的代价 vs
+- 用户开发需求落盘为 `requests/REQ-<编号>-<短名>/request.md`（按 `requests/TEMPLATE.md`）。
+- **五环全部存于 requests/ 内闭环**：request 文件（环 1）→ 采纳后派生 `requests/<请求>/baseline`
+  （环 2 阶段级）、`requests/<请求>/plan-*`（环 3）、证据引用 commit SHA（环 4 在代码仓）、
+  `requests/<请求>/handoff`（环 5）；阶段做完归档，不删。
+- 每个 request 必有书面评审结论：采纳 / 修改后采纳 / 不采纳 / 待澄清。
+- 与现有架构冲突时：不默默服从也不默默拒绝，摆出"按 request 做的代价 vs
   维持现状的代价"两个选项，由用户拍板；拍板改变架构则走 ADR。
-- 被拒 goal 保留记录，条件变化后可重新评审。
+- 被拒 request 保留记录，条件变化后可重新评审。
 
-**goal 与基线的边界（防重复）：**goal 是一次性需求快照，回答“为什么做 + 决策结论”；
-基线回答“被决定做成什么样”。goal 采纳后目标态事实必须写进基线/任务，goal 文件
+**request 与基线的边界（防重复）：**request 是一次性需求快照，回答“为什么做 + 决策结论”；
+基线回答“被决定做成什么样”。request 采纳后目标态事实必须写进基线/任务，request 文件
 冻结、只留 `落地去向` 引用，不留目标态正文；此后只允许追加状态流转行。
 
 ## 6. 演进闭环（长期演进机制）
 
 ```
-goal → 评审进基线 → 派生任务 → 执行 → 代码变化（新现状）
+request → 评审进基线 → 派生任务 → 执行 → 代码变化（新现状）
   ↑                                          ↓
   └── 里程碑收口：手动刷新摘要（按需）+ 接手演练 ←──┘
 ```
