@@ -393,7 +393,7 @@ lifecycle
 
 ## 11. 关联文档
 
-- [总体架构](../../../docs/sunmoonai-architecture/overall-architecture-summarizations/app-platform-architecture.md)
+- [总体架构](../../../docs/sunmoonai-architecture/baseline/overall/app-platform-architecture.md)
 - [数据所有权](../data-ownership.md)
 - [Info App](../info-app.md)
 - [ADR-0004：对象存储按领域拥有和隔离](../adr/0004-object-storage-ownership.md)

@@ -2,8 +2,8 @@
 
 > 状态：PROPOSED ｜ 提出日期：YYYY-MM-DD ｜ 评审日期：—
 
-<!-- 一个 REQ 文件夹 = 一次开发任务请求的五环闭环：
-     request.md（本文件）+ 采纳后按需派生 baseline.md / plan-*.md / handoff.md。 -->
+<!-- 一个 REQ 文件夹 = 一次开发任务请求的闭环（提议→审核→定任务→实施→评估→按需更新 baseline，
+     不必每步都走）：request.md（本文件）+ 按需派生 baseline.md / plan-*.md / handoff.md。 -->
 
 ## ① 原始需求
 
@@ -12,7 +12,7 @@
 ## ② 架构评审
 
 <!-- 结论四选一：采纳 / 修改后采纳 / 不采纳 / 待澄清。
-     附理由：依据（或冲突）的架构原则，引用 overall-architecture-summarizations/ 两份文档的 §编号；
+     附理由：依据（或冲突）的架构原则，引用 baseline/overall/ 两份文档的 §编号；
      若与现有架构冲突，必须摆出"按 request 做的代价 vs 维持现状的代价"两个选项，由用户拍板。 -->
 
 - 结论：
@@ -21,7 +21,7 @@
 
 ## ③ 落地去向
 
-<!-- 采纳后写进了哪：本文件夹 baseline.md §X / 某 App 任务 ID / 新 ADR / 平台级 summarizations §X。
+<!-- 采纳后写进了哪：本文件夹 baseline.md §X / 某 App 任务 ID / 新 ADR / 平台级 baseline/ §X。
      目标态事实写进基线或任务文件，本文件只留引用，不复述（维护约定 1）。
      不采纳的也记录去向：无，保留本记录以备条件变化后重新评审。 -->
 

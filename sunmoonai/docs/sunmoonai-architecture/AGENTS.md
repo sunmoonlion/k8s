@@ -9,20 +9,18 @@
 ## 0. 目录定位
 
 本目录（`k8s/sunmoonai/docs/sunmoonai-architecture/`，git 管理，分支
-`architecture-v2`）是 SunMoonAI 平台的提示文档集，三组结构：
+`architecture-v2`）是 SunMoonAI 平台的提示文档集，两组结构：
 
 | 组 | 位置 | 性质 |
 | --- | --- | --- |
-| 总体架构摘要（App 之间） | `overall-architecture-summarizations/`（app-platform-architecture.md、sunmoonai·-architecture.md；ADR 随首条落地建 `adr/`） | 跨 App 结构与目标态决策，唯一权威 |
-| App 架构摘要（各 App 内部） | `apps-architecture-summarizations/<项目>/项目摘要.md`（tpl/info/knowledge/investment/k8s） | 各 App 的结构与摘要 |
-| requests 五环闭环 | `requests/`（request 文件 + 派生的 baseline/plan-*/handoff，见 §5） | 需求→评审→实施→进度，五环全部在此闭环 |
+| baseline（平台级基线） | `baseline/overall/`（App 之间：app-platform-architecture.md、sunmoonai·-architecture.md；ADR 随首条落地建 `adr/`）+ `baseline/apps/<项目>/项目摘要.md`（各 App 内部：tpl/info/knowledge/investment/k8s） | 供 AI 快速了解项目，唯一权威 |
+| requests（开发任务请求） | `requests/REQ-<编号>-<短名>/`（见 §5） | 一次请求一个文件夹，闭环产物都在里面 |
 
-**两套 summarizations 的稳定政策**：一定时期内不变，供 AI 快速了解项目（需要时阅读，
-不必每次全读）；request 实施完成**不自动触发**其更新，只在必要时由用户手动触发刷新。
+**baseline 的稳定政策**：一定时期内不变，供 AI 快速了解项目（需要时阅读，
+不必每次全读）；请求实施完成**不自动触发**其更新，只在评估认定需要时手动更新（见 §2）。
 
-**术语对应**：本文件说的“基线”不是单独一套文档——**平台级基线 = 这两套
-summarizations**（overall = App 间规矩，apps = 各 App 结构）；request 文件夹内的
-`baseline.md` 是该次请求的目标态，做完后长期有效的部分吸收进平台级基线。
+**术语对应**：request 文件夹内的 `baseline.md` 是该次请求的目标态；长期有效的
+部分在闭环末尾吸收进平台级 `baseline/`。
 
 文档清单与阅读顺序见 `README.md`。
 
@@ -38,7 +36,7 @@ summarizations**（overall = App 间规矩，apps = 各 App 结构）；request 
 
 ### 1.1 直接开发车道：漂移标记规则
 
-不经 request 的直接开发（快车道）不必走五环，但改动触碰“基线覆盖的事实”时必须显式标记。
+不经 request 的直接开发（快车道）不必走完整闭环，但改动触碰“基线覆盖的事实”时必须显式标记。
 判断尺子：**这个改动是否改变了“另一个 App 的开发者或新来者也需要遵守”的事实**。
 
 **需标记（命中任一即标记 TODO）：**
@@ -52,34 +50,39 @@ summarizations**（overall = App 间规矩，apps = 各 App 结构）；request 
 
 **不需要标记（纯 App 内部，不影响跨 App 认知）：**单 App 内部实现（算法/UI/单库表结构/bugfix/性能）、不改发布单元的依赖构建微调、不改门禁语义的测试与 CI 细节。
 
-**时机与责任：**两套 summarizations 是“手动更新”文档（§0），直接开发命中上述六类
-不自动改 summarizations；但开发者必须显式记 TODO（提交信息或 handoff）并提醒用户
-决定是否手动触发更新，不允许无声漂移。智能体发现 summarizations 与代码漂移时
+**时机与责任：**baseline 是“手动更新”文档（§0），直接开发命中上述六类
+不自动改 baseline；但开发者必须显式记 TODO（提交信息或 handoff）并提醒用户
+决定是否手动触发更新，不允许无声漂移。智能体发现 baseline 与代码漂移时
 必须主动指出并提出手动刷新建议。
 
-## 2. 五环链（任何事实可追溯）
+## 2. 请求闭环（不一定每步都走）
 
 ```
-request（为什么做）      → requests/REQ-XXX/request.md
-   ↓ 采纳后引用
-基线/ADR（做成什么样） → 两套 summarizations §X / ADR-XXX / requests/<请求>/baseline.md
-   ↓ 派生任务引用
-任务（怎么做）        → 实施计划任务 ID（如 V6-XXX）
-   ↓ 完成证据引用
-commit/evidence（做了）→ git SHA / docs/evidence/<阶段>/<任务ID>/
-   ↓ 游标汇总
-handoff（做到哪了）   → requests/<请求>/handoff 文档
+提议（用户原话）   → requests/REQ-XXX/request.md
+   ↓
+审核（四选一结论） → request.md ②架构评审
+   ↓ 采纳（小请求可跳过下一步直接实施）
+定开发任务         → requests/REQ-XXX/plan-*.md / 任务 ID（如 V6-XXX）
+   ↓
+实施               → 代码 + commit SHA 证据；大请求用 handoff.md 记进度游标
+   ↓
+评估               → 验收结果 + 判断：是否改变了跨 App 事实？
+   ↓ 如需要（不需要则直接归档）
+更新 baseline      → baseline/（手动）→ 闭环
 ```
+
+**不是每个请求都走全步**：小改动可只走 提议→审核→实施→评估；定任务、
+更新 baseline 仅在需要时发生。baseline 更新永远在评估之后，不在实施之前。
 
 每个引用只写一行（`源自 REQ-001` / `落地于 V6-302` / `证据见 <sha>`），不复述内容。
-从任何一环出发，向上能追到"当初为什么"，向下能追到"代码里的实锤"。
+任何事实向上能追到“当初为什么”，向下能追到“代码里的实锤”。
 
 ## 3. 进度单面（防多头漂移）
 
 - handoff = 唯一全局进度面：现在卡在哪、下一步是什么。
 - 任务文件 = 唯一任务状态面：单任务的状态枚举与验收证据。
 - handoff 只写游标指向哪个任务，不重复任务细节。
-- 摘要、requests、基线**一律不写进度**。
+- 摘要、requests、baseline **一律不写进度**。
 
 ## 4. 三条维护约定 + 编辑自检
 
@@ -96,10 +99,10 @@ handoff（做到哪了）   → requests/<请求>/handoff 文档
 
 ## 5. requests 评审流程
 
-- 用户开发需求落盘为 `requests/REQ-<编号>-<短名>/request.md`（按 `requests/TEMPLATE.md`）。
-- **五环全部存于 requests/ 内闭环**：request 文件（环 1）→ 采纳后派生 `requests/<请求>/baseline`
-  （环 2 阶段级）、`requests/<请求>/plan-*`（环 3）、证据引用 commit SHA（环 4 在代码仓）、
-  `requests/<请求>/handoff`（环 5）；阶段做完归档，不删。
+- 用户开发任务请求落盘为 `requests/REQ-<编号>-<短名>/request.md`（按 `requests/TEMPLATE.md`）。
+- **闭环产物都在请求文件夹内**（按 §2 步骤按需产生，不强制全有）：request.md（提议+审核）、
+  baseline.md（该请求目标态，需要时）、plan-*.md（开发任务，需要时）、handoff.md
+  （大请求的进度游标，需要时）；证据 = 代码仓 commit SHA；做完归档，不删。
 - 每个 request 必有书面评审结论：采纳 / 修改后采纳 / 不采纳 / 待澄清。
 - 与现有架构冲突时：不默默服从也不默默拒绝，摆出"按 request 做的代价 vs
   维持现状的代价"两个选项，由用户拍板；拍板改变架构则走 ADR。
@@ -112,13 +115,12 @@ handoff（做到哪了）   → requests/<请求>/handoff 文档
 ## 6. 演进闭环（长期演进机制）
 
 ```
-request → 评审进基线 → 派生任务 → 执行 → 代码变化（新现状）
-  ↑                                          ↓
-  └── 里程碑收口：手动刷新摘要（按需）+ 接手演练 ←──┘
+提议 → 审核 → 定任务 → 实施 → 评估 →（如需要）更新 baseline → 归档
+  ↑                                                              ↓
+  └──────────── 里程碑收口：接手演练 ←──────────────────┘
 ```
 
-- 任务 ACCEPTED 后即成为新现状。摘要文档不自动刷新；里程碑收口或发现漂移时，
-  由用户手动触发深读刷新（更新深读时间戳）。
+- 任务 ACCEPTED 后即成为新现状；baseline 只在评估认定需要时手动更新。
 - **接手演练**：每次大阶段收口验证"一个从未接触过项目的智能体/人，只靠读本
   目录文件能否完整恢复工作现场"；发现断点立即补文档。
 
