@@ -26,7 +26,10 @@ App 之间，apps/ = 各 App 内部）；request 文件夹内的 `baseline.md` �
 保留“旧规则曾是什么”；历史由 git 提交与 ADR 承担（ADR 追加不覆盖，记录每次决策的
 来龙去脉）。
 
-文档清单与阅读顺序见 `README.md`。
+文档清单见 `README.md`。
+
+**阅读路径**：改某个项目前，先读 baseline/overall/ 两篇中相关章节 + 该项目摘要；
+跨项目问题（契约、身份、发布）以 baseline/overall/ 为准。
 
 ## 1. 权威排序（矛盾仲裁）
 
