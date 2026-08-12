@@ -214,7 +214,7 @@ credential type
 
 ## 10. 关联文档
 
-- [总体架构](../../../docs/sunmoonai-architecture/architecture/app-platform-architecture.md)
+- [总体架构](../../../docs/sunmoonai-architecture/overall-architecture-summarizations/app-platform-architecture.md)
 - [数据所有权](../data-ownership.md)
 - [Info App](../info-app.md)
 - [生产就绪标准](../production-readiness.md)
