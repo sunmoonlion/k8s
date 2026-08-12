@@ -148,10 +148,21 @@ App 之间，apps/ = 各 App 内部）；request 文件夹内的 `baseline.md` �
 
 ## 7. Git 与推送纪律
 
-- 本目录随 k8s 仓 `architecture-v2` 分支管理；一次提交只完成一个可验证目标，
-  禁止混入大规模格式化。
+- 本目录随 k8s 仓共享分支管理（当前 `architecture-v2`）；一次提交只完成一个可验证
+  目标，禁止混入大规模格式化。
 - 智能体可以执行 `git commit`，**不得执行 `git push`**（代理环境限制）；
   推送命令一次性交给用户：`git push origin <分支> && git push gitee <分支>`。
+
+**多助手分支协作**：每个助手从 master 开自己的功能分支开发时，本目录**单份共享、
+不 fork**：
+
+- 功能分支上本目录默认只读（读 AGENTS.md 与 baseline 干活）；
+- 唯一合法写时机 = 请求闭环产物：自己的 `requests/REQ-XXX/` 文件夹（一个 REQ 一个
+  助手负责，天然隔离）；`baseline/` 仅在评估认定需要时手动更新；
+- AGENTS.md / README / TEMPLATE 等治理文件功能分支上禁改，变更只在共享分支经
+  用户批准后进行；
+- REQ 编号撞车：合并/rebase 后撞车一方改用下一个可用编号（文件夹改名，内容无损）；
+- baseline 合并冲突按 §1 仲裁：代码为准，再比时间戳新旧。
 
 ## 8. AI 助手启动流程（切换助手时必读）
 
