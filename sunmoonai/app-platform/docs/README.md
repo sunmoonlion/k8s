@@ -1,13 +1,13 @@
 # App Platform 架构文档
 
 > Architecture v2 正在 `architecture-v2` 分支施工。总体边界以
-> [总体架构](./overall-architecture.md)为准，阶段、门禁和回滚点以
+> [总体架构](../../docs/sunmoonai-architecture/overall-architecture/app-platform-architecture.md)为准，阶段、门禁和回滚点以
 > [App Platform Architecture v2 重构执行基线](../../docs/app-platform-architecture-v2-refactor-plan.md)
 > 为准。旧 v1 组件文档只可作为迁移记录，不能覆盖 Architecture v2 决策。
 
 ## 总体设计
 
-- [总体架构](./overall-architecture.md)
+- [总体架构](../../docs/sunmoonai-architecture/overall-architecture/app-platform-architecture.md)
 - [数据所有权](./data-ownership.md)
 - [集成规范](./integration-standards.md)
 - [生产就绪标准](./production-readiness.md)

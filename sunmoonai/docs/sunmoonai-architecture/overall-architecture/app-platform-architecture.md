@@ -2,7 +2,7 @@
 
 状态：`Architecture v2 目标架构 / 迁移实施中`
 
-最后更新：2026-08-09
+最后更新：2026-08-12
 
 适用分支：`architecture-v2`
 
@@ -13,7 +13,7 @@ Architecture v2 已在 `tpl-app` 以及 Info、Knowledge、Investment 的新源�
 Kubernetes 目录和运行资源在完成数据迁移、切流与回滚观察窗前仍可能保留。
 
 实施阶段、门禁和回滚点以
-[Architecture v2 重构执行基线](../../docs/app-platform-architecture-v2-refactor-plan.md)为准。
+[Architecture v2 重构执行基线](../../app-platform-architecture-v2-refactor-plan.md)为准。
 若“目标架构”和“当前集群”不一致，必须明确标注迁移状态，不能把旧资源解释为长期设计。
 
 ## 2. 核心决策
@@ -76,8 +76,8 @@ Architecture v2 固定以下边界：
 ```
 
 - `<app>-backend`：Python、FastAPI、领域模型、应用用例、外部适配、异步任务和迁移。
-- `<app>-admin-frontend`：Next.js、React、TypeScript、Ant Design，面向运营和管理人员。
-- `<app>-web-frontend`：Next.js、React、TypeScript，面向最终用户和产品交互。
+- `<app>-admin-frontend`：Next.js、React、TypeScript（shadcn/@base-ui + Tailwind v4），面向运营和管理人员。
+- `<app>-web-frontend`：Next.js、React、TypeScript（shadcn/@base-ui + Tailwind v4），面向最终用户和产品交互。
 
 旧的独立 Admin Backend、Web Backend、Celery Worker 仓和 Node Bull Worker 仓不属于 v2
 规范拓扑。`tpl-web-backend-nest`、`tpl-admin-frontend-react`、`tpl-admin-frontend-vue` 只可作为
@@ -311,9 +311,10 @@ tpl-app/
 | 范围 | 状态 | 说明 |
 | --- | --- | --- |
 | `tpl-app` 统一 Backend、双 Next.js、K8s scaffold | 已实现并通过阶段门禁 | 是 Architecture v2 的唯一模板源 |
-| Info、Knowledge 新三组件源码底座 | 已同步 | 仍需按后续阶段完成数据归并和切流 |
+| Info、Knowledge、Investment 新三组件源码底座 | 已同步并通过 R4 门禁 | R5 数据迁移已执行，R6 跨 App 真实竖线已于 2026-08-11 通过 |
 | Investment 新三组件源码底座 | 已由旧 Research 原地迁移并同步 | 旧 Research 身份已被 Investment 取代 |
-| 旧 v1 K8s 目录、部署、数据库和 Secret | 迁移期回滚资产 | R5/R7 门禁和观察窗完成前不得误删 |
+| R7 发布收口与 R8 文档重建 | 进行中 | 模板隔离门禁、发布晋级与文档重建未完成前，切流收口不宣告完成 |
+| 旧 v1 K8s 目录、部署、数据库和 Secret | 迁移期回滚资产 | R7 门禁和观察窗完成前不得误删 |
 | `app-platform/research-app` 旧目录 | 历史回滚拓扑，不是未来 Research | 最终退役与未来新 App 创建是两件事 |
 | 未来 `research-app` | 尚未创建 | 需独立 ADR、数据所有权和模板实例化 |
 | 未来 `tools-app` | 尚未创建 | 旧实现已退出当前活动拓扑 |
@@ -337,12 +338,12 @@ TLS、真实身份、跨 App 契约、故障与回滚门禁通过后，才能切
 
 ## 14. 相关文档
 
-- [Architecture v2 重构执行基线](../../docs/app-platform-architecture-v2-refactor-plan.md)
-- [数据所有权](./data-ownership.md)
-- [集成规范](./integration-standards.md)
-- [生产就绪标准](./production-readiness.md)
-- [ADR-0007：每个领域 App 只有一个规范 Backend](./adr/0007-one-canonical-backend-per-app.md)
-- [ADR-0009：Admin、Web 与 Internal 接口及身份分面](./adr/0009-api-surfaces-and-identity.md)
-- [ADR-0010：每个 App 的数据库与迁移链归并](./adr/0010-database-convergence.md)
-- [ADR-0011：Backend 运行角色与容量边界](./adr/0011-backend-runtime-roles.md)
-- [Investment 清理与改名方案](../../docs/investment清理和改名.md)
+- [Architecture v2 重构执行基线](../../app-platform-architecture-v2-refactor-plan.md)
+- [数据所有权](../../../app-platform/docs/data-ownership.md)
+- [集成规范](../../../app-platform/docs/integration-standards.md)
+- [生产就绪标准](../../../app-platform/docs/production-readiness.md)
+- [ADR-0007：每个领域 App 只有一个规范 Backend](../../../app-platform/docs/adr/0007-one-canonical-backend-per-app.md)
+- [ADR-0009：Admin、Web 与 Internal 接口及身份分面](../../../app-platform/docs/adr/0009-api-surfaces-and-identity.md)
+- [ADR-0010：每个 App 的数据库与迁移链归并](../../../app-platform/docs/adr/0010-database-convergence.md)
+- [ADR-0011：Backend 运行角色与容量边界](../../../app-platform/docs/adr/0011-backend-runtime-roles.md)
+- [Investment 清理与改名方案](../../investment清理和改名.md)

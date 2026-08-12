@@ -2,15 +2,15 @@
 
 状态：`Architecture v2 权威总体说明 / 迁移实施中`
 
-最后更新：2026-08-09
+最后更新：2026-08-12
 
 适用分支：`architecture-v2`
 
 ## 1. 文档定位
 
 本文说明 `sunmoonai/` 下各个平台的职责、依赖方向、运行关系和治理边界。App Platform 内部的
-详细设计见 [App Platform 总体架构](../app-platform/docs/overall-architecture.md)；重构任务状态见
-[Architecture v2 重构执行基线](./app-platform-architecture-v2-refactor-plan.md)。
+详细设计见 [App Platform 总体架构](./app-platform-architecture.md)；重构任务状态见
+[Architecture v2 重构执行基线](../../app-platform-architecture-v2-refactor-plan.md)。
 
 旧文档中以 Portal、Nuxt、独立 Admin/Web Backend 和松散微服务为中心的描述已经废止。当前
 架构以 Kubernetes 平台能力、领域 App、双 Next.js 前端、统一 FastAPI Backend、每 App 单一
@@ -275,8 +275,9 @@ pgAdmin、RedisInsight、Flower 等只用于观察和授权管理；删除 Ops �
 | 范围 | 当前状态 |
 | --- | --- |
 | 模板统一 Backend、双 Next.js、角色化 K8s | 已实现并完成阶段验收 |
-| Info、Knowledge、Investment 新源码底座 | 已建立并完成共同底座同步 |
-| 数据库归并、真实切流与旧资源退役 | 后续 R5/R7，尚未整体完成 |
+| Info、Knowledge、Investment 新源码底座 | 已建立并完成共同底座同步（R4 门禁通过） |
+| 数据迁移（R5）与跨 App 真实竖线（R6） | 已完成；R6 全链验证于 2026-08-11 通过 |
+| 发布收口与旧资源退役（R7/R8） | 进行中；门禁与观察窗完成前旧资产保留为回滚面 |
 | 旧 `research-app` | 已由 `investment-app` 取代；遗留仅作迁移/回滚处理 |
 | 未来新 `research-app` | 尚未创建，必须独立设计和实例化 |
 | 旧 `tools-app` | 不属于当前活动拓扑；未来需要时重新从模板创建 |
@@ -295,8 +296,8 @@ pgAdmin、RedisInsight、Flower 等只用于观察和授权管理；删除 Ops �
 
 ## 17. 相关权威文档
 
-- [App Platform 总体架构](../app-platform/docs/overall-architecture.md)
-- [App Platform 数据所有权](../app-platform/docs/data-ownership.md)
-- [App Platform 集成规范](../app-platform/docs/integration-standards.md)
-- [Architecture v2 重构执行基线](./app-platform-architecture-v2-refactor-plan.md)
-- [Investment 清理与改名方案](./investment清理和改名.md)
+- [App Platform 总体架构](./app-platform-architecture.md)
+- [App Platform 数据所有权](../../../app-platform/docs/data-ownership.md)
+- [App Platform 集成规范](../../../app-platform/docs/integration-standards.md)
+- [Architecture v2 重构执行基线](../../app-platform-architecture-v2-refactor-plan.md)
+- [Investment 清理与改名方案](../../investment清理和改名.md)
