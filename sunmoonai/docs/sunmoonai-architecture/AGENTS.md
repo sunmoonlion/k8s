@@ -12,14 +12,19 @@
 
 | 组 | 位置 | 性质 |
 | --- | --- | --- |
-| baseline（平台级基线） | `baseline/overall/`（App 之间：app-platform-architecture.md、sunmoonai·-architecture.md；ADR 随首条落地建 `adr/`）+ `baseline/apps/<项目>/项目摘要.md`（各 App 内部：tpl/info/knowledge/investment/k8s） | 供 AI 快速了解项目，唯一权威 |
+| baseline（基线） | `baseline/overall/`（App 之间：app-platform-architecture.md、sunmoonai·-architecture.md；ADR 随首条落地建 `adr/`）+ `baseline/apps/<项目>/项目摘要.md`（各 App 内部：tpl/info/knowledge/investment/k8s） | 供 AI 快速了解项目，唯一权威 |
 | requests（开发任务请求） | `requests/REQ-<编号>-<短名>/`（见 §5） | 一次请求一个文件夹，闭环产物都在里面 |
 
 **baseline 的稳定政策**：一定时期内不变，供 AI 快速了解项目（需要时阅读，
 不必每次全读）；请求实施完成**不自动触发**其更新，只在评估认定需要时手动更新（见 §2）。
 
-**术语对应**：request 文件夹内的 `baseline.md` 是该次请求的目标态；长期有效的
-部分在闭环末尾吸收进平台级 `baseline/`。
+**术语对应**：baseline 只有一套，就是 `baseline/`（内部只分两个视角：overall/ =
+App 之间，apps/ = 各 App 内部）；request 文件夹内的 `baseline.md` 不是另一级基线，
+只是该次请求的目标态描述，长期有效的部分在评估后吸收进 `baseline/` 相应视角。
+
+**baseline 的修改方式**：覆盖式——直接替换旧条文，只反映当前有效规则，不在文档内
+保留“旧规则曾是什么”；历史由 git 提交与 ADR 承担（ADR 追加不覆盖，记录每次决策的
+来龙去脉）。
 
 文档清单与阅读顺序见 `README.md`。
 

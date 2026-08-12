@@ -2,7 +2,7 @@
 
 > 最后更新：2026-08-12
 >
-> 本目录（`k8s/sunmoonai/docs/sunmoonai-architecture`，git 管理）是 SunMoonAI App Platform 的提示文档集。**两组结构**：`baseline/`（平台级基线：overall/ = App 之间 + apps/ = 各 App 内部，时期内稳定、评估后按需手动更新）+ `requests/`（开发任务请求，一次请求一个 REQ 文件夹，闭环：提议→审核→定任务→实施→评估→按需更新 baseline）。权威链：代码 > baseline > request。
+> 本目录（`k8s/sunmoonai/docs/sunmoonai-architecture`，git 管理）是 SunMoonAI App Platform 的提示文档集。**两组结构**：`baseline/`（基线：overall/ = App 之间 + apps/ = 各 App 内部，时期内稳定、评估后按需手动更新）+ `requests/`（开发任务请求，一次请求一个 REQ 文件夹，闭环：提议→审核→定任务→实施→评估→按需更新 baseline）。权威链：代码 > baseline > request。
 
 ## 文档清单与阅读顺序
 
