@@ -25,6 +25,22 @@ EVIDENCE_FILES = {
     "cross_app_vertical": "cross-app-vertical.json",
 }
 TEMP_MARKERS = ("candidate", "-r3", "-r4", "-b4", "smoke")
+TEMP_RESOURCE_TYPES = (
+    "deployments",
+    "statefulsets",
+    "daemonsets",
+    "services",
+    "configmaps",
+    "secrets",
+    "serviceaccounts",
+    "networkpolicies",
+    "ingressroutes.traefik.io",
+    "poddisruptionbudgets",
+    "horizontalpodautoscalers",
+    "jobs",
+    "cronjobs",
+    "persistentvolumeclaims",
+)
 LEGACY_RESEARCH_INGRESSES = {
     "research-admin-frontend-ingress",
     "research-web-frontend-ingress",
@@ -268,13 +284,15 @@ def main() -> int:
             "temporary tpl B4 IngressRoute remains",
         )
 
-        active_resource_names = (
-            formal_names | {item["metadata"]["name"] for item in jobs} | ingress_names
-        )
+        namespace_resources = kubectl.json(
+            "get", ",".join(TEMP_RESOURCE_TYPES)
+        )["items"]
         temporary = sorted(
-            name
-            for name in active_resource_names
-            if any(marker in name for marker in TEMP_MARKERS)
+            f"{item['kind']}/{item['metadata']['name']}"
+            for item in namespace_resources
+            if any(
+                marker in item["metadata"]["name"] for marker in TEMP_MARKERS
+            )
         )
         require(not temporary, f"temporary/candidate resources remain: {temporary}")
 
