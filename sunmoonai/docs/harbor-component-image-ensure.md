@@ -250,10 +250,10 @@ PROJECT_NAME="k8s-images"
 组件也可以通过函数参数覆盖 project：
 
 ```bash
-ensure_component_images_in_harbor "auth-app-backend" "app-images"
+ensure_component_images_in_harbor "casdoor" "k8s-images"
 ```
 
-App 自身镜像通常进入 `app-images`，平台基础镜像通常进入 `k8s-images`。
+业务 App 自身镜像通常进入 `app-images`，Casdoor 等平台基础镜像通常进入 `k8s-images`。
 
 KIND 场景还会读取：
 
