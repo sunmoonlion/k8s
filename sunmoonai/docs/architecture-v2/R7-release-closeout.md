@@ -1,6 +1,6 @@
 # Architecture v2 R7 发布收口
 
-状态：`IN_PROGRESS`
+状态：`DONE`
 
 日期：2026-08-11
 
@@ -37,14 +37,27 @@ R7 把 Architecture v2 从“已完成迁移并跑通真实竖线”提升为可
 | R7-2 三 App Admin/Web 真实浏览器 | DONE | strict TLS、真实 Casdoor、client isolation |
 | R7-3 跨 App 真实竖线复验 | DONE | 真实 S3、Outbox、RAGFlow、Investment citation、幂等重放 |
 | R7-4 模板源码静态与组件测试 | DONE | Backend + 两前端全部门禁通过 |
-| R7-5 模板隔离全门禁 | PENDING | KIND、真实 Casdoor、rollback/forward、Calico NetworkPolicy |
-| R7-6 镜像精确晋级 | PARTIAL | 九个实例镜像已晋级；模板三镜像待 R7-5 |
-| R7-7 发布清单与机器门禁 | IN_PROGRESS | `verify_r7_release_kind.py` |
-| R7-8 源码标签及双远端一致性 | PENDING | GitHub/Gitee branch/tag SHA 一致 |
+| R7-5 模板隔离全门禁 | DONE | KIND、真实 Casdoor、rollback/forward、Calico NetworkPolicy |
+| R7-6 镜像精确晋级 | DONE | 十二个正式镜像以原 digest 晋级 `2.0.0` |
+| R7-7 发布清单与机器门禁 | DONE | `verify_r7_release_kind.py` |
+| R7-8 源码标签及双远端一致性 | DONE | GitHub/Gitee branch/tag SHA 一致 |
 
 ## 4. R7 机器门禁
 
-最终命令：
+正式发布命令（必须使用该入口）：
+
+```bash
+cd /home/zymun/k8s
+bash sunmoonai/docs/architecture-v2/scripts/run_r7_instance_release_gate.sh
+```
+
+该入口先以 Info → Knowledge → Investment 顺序重复执行正式 `apply` 和
+`drift` 门禁，包括 Investment 的 RabbitMQ principal、Redis ACL 和 Knowledge
+retrieval binding 等外部运行态的幂等重建；然后重跑三个 App 的严格 TLS
+真实 Casdoor 浏览器门禁、跨 App 真实竖线和最终只读验收。因此数据平台重启后
+不得绕过正式入口、直接以旧证据执行最终只读验收。
+
+最终只读验收命令（供诊断与重复检查）：
 
 ```bash
 cd /home/zymun/k8s

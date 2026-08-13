@@ -1,0 +1,15 @@
+{
+  "task": "architecture-v2-r7-template-kind",
+  "result": "passed",
+  "backend_digest_shared": true,
+  "database_principals": 4,
+  "oidc_clients_isolated": true,
+  "hpa_count": 4,
+  "pdb_count": 4,
+  "network_policy_count": 9,
+  "migration_job_cleaned": true,
+  "network_runtime_gate": "delegated",
+  "network_positive": "delegated_to_calico_gate",
+  "network_negative": "delegated_to_calico_gate",
+  "credentials_printed": false
+}

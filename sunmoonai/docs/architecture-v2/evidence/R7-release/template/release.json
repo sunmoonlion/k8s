@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "architecture": "app-platform-v2",
+  "app": "tpl",
+  "namespace": "tpl-architecture-v2-r7",
+  "release_id": "r7-template-001",
+  "images": {
+    "backend": "harbor.sunmoonai.com:30443/app-images/tpl-backend@sha256:8b504098427ab5349a04e933e1fdf71e3a8fc11ce0f5b36fff703ad356bad348",
+    "admin": "harbor.sunmoonai.com:30443/app-images/tpl-admin-frontend@sha256:cd2b91f54d71586b69c7f3d558066fb8afecf8a701911951076aa3ea5b30ea6b",
+    "web": "harbor.sunmoonai.com:30443/app-images/tpl-web-frontend@sha256:a835b1d4dcb8b405233fc901c11452f26f971b9d21c679e3cdee6c0d9bfbf729"
+  },
+  "origins": {
+    "admin": "https://tpl-admin-r3.sunmoonai.com:30443",
+    "web": "https://tpl-web-r3.sunmoonai.com:30443",
+    "casdoor": "https://casdoor.sunmoonai.com:30443"
+  },
+  "resources": [
+    "00-prerequisites.yaml",
+    "10-migration.yaml",
+    "20-runtime.yaml",
+    "30-network-policies.yaml",
+    "40-ingress.yaml"
+  ],
+  "sha256": {
+    "00-prerequisites.yaml": "6a8340af308c70229fd90ab41bfd81ec9dbbcd979961e8c1d3e2d0fa35839a20",
+    "10-migration.yaml": "31d8624015d341eb186bee738a93df9769c0a6169b2de40e028a287eb0f73b36",
+    "20-runtime.yaml": "643d3b30d5097ed6908dd831d0ed0bea6b98d8a1486ab149689a8e784a02c789",
+    "30-network-policies.yaml": "70ab964221fa9857db7c39094b823b1b8d17efc18e659a5548ff0fab5e5e1309",
+    "40-ingress.yaml": "26640e42c9e41d0e22a011be52b48ccb3a69ff7f2287759af28864b845790f52"
+  },
+  "secret_name": "tpl-backend-runtime",
+  "secret_keys": [
+    "ADMIN_CASDOOR_CLIENT_SECRET",
+    "API_CELERY_BROKER_URL",
+    "API_DATABASE_URL",
+    "MIGRATION_DATABASE_URL",
+    "REDIS_PASSWORD",
+    "SCHEDULER_CELERY_BROKER_URL",
+    "SCHEDULER_DATABASE_URL",
+    "WEB_CASDOOR_CLIENT_SECRET",
+    "WORKER_CELERY_BROKER_URL",
+    "WORKER_DATABASE_URL"
+  ],
+  "optional_secret_keys": [
+    "WORKER_CELERY_RESULT_BACKEND",
+    "WORKER_DOWNSTREAM_CLIENT_SECRET"
+  ],
+  "dependencies": {
+    "image_pull_secret": "harbor-registry-secret",
+    "tls_secret": "tpl-r7-tls",
+    "casdoor_namespace": "app-platform-dev",
+    "ingress_namespace": "ingress-platform-dev"
+  },
+  "formal_release": false
+}

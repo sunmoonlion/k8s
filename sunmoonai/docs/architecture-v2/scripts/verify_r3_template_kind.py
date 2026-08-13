@@ -241,22 +241,34 @@ def assert_structure(args: argparse.Namespace, release: dict[str, object]) -> di
         f"{app}-frontend-ingress",
         f"{app}-frontend-egress",
         f"{app}-backend-ingress",
-        f"{app}-backend-runtime-egress",
+        f"{app}-backend-api-egress",
+        f"{app}-backend-worker-egress",
+        f"{app}-backend-scheduler-egress",
         f"{app}-backend-migration-egress",
     }
     if not expected_policies <= policy_names:
         raise GateError("NetworkPolicy set is incomplete")
-    runtime_policy = next(
+    api_policy = next(
         item
         for item in policies
-        if item["metadata"]["name"] == f"{app}-backend-runtime-egress"
+        if item["metadata"]["name"] == f"{app}-backend-api-egress"
     )
-    encoded_policy = json.dumps(runtime_policy, separators=(",", ":"))
+    encoded_policy = json.dumps(api_policy, separators=(",", ":"))
     if (
         '"kubernetes.io/metadata.name":"app-platform-dev"' not in encoded_policy
         or '"app":"casdoor-sunmoonai"' not in encoded_policy
     ):
         raise GateError("Casdoor cross-namespace egress policy is absent")
+    worker_policy = next(
+        item
+        for item in policies
+        if item["metadata"]["name"] == f"{app}-backend-worker-egress"
+    )
+    encoded_worker_policy = json.dumps(worker_policy, separators=(",", ":"))
+    if '"sunmoonai.com/internal-provider":"true"' not in encoded_worker_policy:
+        raise GateError("Worker internal-provider egress policy is absent")
+    if '"sunmoonai.com/internal-provider":"true"' in encoded_policy:
+        raise GateError("API unexpectedly inherits Worker provider egress")
 
     for surface in ("admin", "web"):
         route = resource(args, "ingressroute", f"{app}-{surface}")

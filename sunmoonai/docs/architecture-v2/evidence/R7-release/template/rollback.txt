@@ -1,0 +1,5 @@
+R3_ROLLBACK_STAGE=seed_r2_revision
+R3_ROLLBACK_STAGE=seed_r3_revision
+R3_ROLLBACK_STAGE=native_undo
+R3_ROLLBACK_STAGE=forward_reconcile
+{"task":"architecture-v2-r7-template-rollback","result":"passed","native_undo":true,"strict_tls_previous":200,"forward_reconcile":true,"strict_tls_candidate_health":200,"credentials_printed":false}

@@ -1,0 +1,6 @@
+R3_POLICY_STAGE=calico_manifest
+R3_POLICY_CALICO_SOURCE=verified_cache
+R3_POLICY_STAGE=cluster
+R3_POLICY_STAGE=policy
+R3_POLICY_STAGE=packet_gate
+{"task":"architecture-v2-r7-template-network-policy","result":"passed","cni":"calico","calico_version":"v3.28.2","internal_to_backend":200,"frontend_to_backend":200,"unlabelled_to_backend":"denied","worker_to_knowledge":200,"api_to_knowledge":"denied","scheduler_to_knowledge":"denied","credentials_printed":false}

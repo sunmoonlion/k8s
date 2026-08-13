@@ -129,14 +129,17 @@ def main() -> int:
         "schema_version": 1,
         "architecture": "app-platform-v2",
         "version": "2.0.0",
-        "release_date": "2026-08-11",
+        "release_date": "2026-08-13",
         "branch": "architecture-v2",
         "status": "FORMAL_RELEASE",
         "source_repositories": sources,
         "deployment_bundle": {
             "repository": "k8s",
             "baseline_commit": "6abcbc9d7a34a64d7cbb0f5e11a5c58e3d08a55e",
-            "note": "R6 committed formal bundles; the R7 commit adds release evidence only",
+            "note": (
+                "R6 committed the formal bundles; the R7 tag adds release gates, "
+                "role-scoped template policy verification and immutable evidence"
+            ),
         },
         "template": {
             "manifest_sha256": sha256(

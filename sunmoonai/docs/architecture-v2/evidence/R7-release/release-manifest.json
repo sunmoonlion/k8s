@@ -1,0 +1,299 @@
+{
+  "schema_version": 1,
+  "architecture": "app-platform-v2",
+  "version": "2.0.0",
+  "release_date": "2026-08-13",
+  "branch": "architecture-v2",
+  "status": "FORMAL_RELEASE",
+  "source_repositories": [
+    {
+      "path": "tpl-app",
+      "branch": "architecture-v2",
+      "commit": "a49218ef7017e24f8a8b654e3367fb8d157a59a6",
+      "tree": "78aaf9d7970e81020c52b92a5f772cd62a7990a5",
+      "tracked_files": 35
+    },
+    {
+      "path": "tpl-app/tpl-backend",
+      "branch": "architecture-v2",
+      "commit": "75a17f94567beb70fbf412829827152f772c98fd",
+      "tree": "49b46cb9f63f67fe25b3b5853c4de36fdc794417",
+      "tracked_files": 146
+    },
+    {
+      "path": "tpl-app/tpl-admin-frontend",
+      "branch": "architecture-v2",
+      "commit": "798203a31ead431aa93e761109c46e0b0e4aed3c",
+      "tree": "11eb41dbf57481ba9b1d51ef75512d06bce4a725",
+      "tracked_files": 123
+    },
+    {
+      "path": "tpl-app/tpl-web-frontend",
+      "branch": "architecture-v2",
+      "commit": "e56965af03ac583c30ef648fe11e85700af0f2b9",
+      "tree": "55e4ecc496b5bded277ed6329c8f2dbb67b6d7b0",
+      "tracked_files": 99
+    },
+    {
+      "path": "info-app",
+      "branch": "architecture-v2",
+      "commit": "4bc832a31673a584c12782ad64fa32b9d5448884",
+      "tree": "d82d529186fbfb8b9d77916294bb1f2919880086",
+      "tracked_files": 19
+    },
+    {
+      "path": "info-app/info-backend",
+      "branch": "architecture-v2",
+      "commit": "0b3948d07830eff1c7638461535894007e0de4e5",
+      "tree": "ae42e8390d46e12e7be79520af5deb13f60e590f",
+      "tracked_files": 189
+    },
+    {
+      "path": "info-app/info-admin-frontend",
+      "branch": "architecture-v2",
+      "commit": "29f3cf6356303d597dca3c8074863bc1c5fb84a3",
+      "tree": "d7a128d0bf4782731aeac510db37bbd8e7bfb254",
+      "tracked_files": 127
+    },
+    {
+      "path": "info-app/info-web-frontend",
+      "branch": "architecture-v2",
+      "commit": "57ce5a743a666eea97dc77ff94c9762eaba1a49c",
+      "tree": "347b117bd4a978c2301c2f55c16f893b22e2c9bc",
+      "tracked_files": 99
+    },
+    {
+      "path": "knowledge-app",
+      "branch": "architecture-v2",
+      "commit": "89db24ce37c43256a8ee52fd7120edd24ca2762b",
+      "tree": "f5626febffa7404f59a6dc0d21129a5044de0022",
+      "tracked_files": 29
+    },
+    {
+      "path": "knowledge-app/knowledge-backend",
+      "branch": "architecture-v2",
+      "commit": "a00aaba5ea67d407764fc12dd21d4862f9c96155",
+      "tree": "c59b4349099ae3340a2856bfeac679af685aeaa9",
+      "tracked_files": 166
+    },
+    {
+      "path": "knowledge-app/knowledge-admin-frontend",
+      "branch": "architecture-v2",
+      "commit": "351ffd94a5af088345073d60732ce46b0d432200",
+      "tree": "5155d7b988eb02d3c317eea659b40d475ad5bc29",
+      "tracked_files": 125
+    },
+    {
+      "path": "knowledge-app/knowledge-web-frontend",
+      "branch": "architecture-v2",
+      "commit": "8541dcad668deaf5b67727a1ac3eca2a842f5180",
+      "tree": "9623f3034a47e66b5235c50a0cc49dfe07f414d2",
+      "tracked_files": 99
+    },
+    {
+      "path": "investment-app",
+      "branch": "architecture-v2",
+      "commit": "e161639fc5142262fa67987002ddf2f4a9a633ed",
+      "tree": "056d81f9d07b2415eb79970bc4faf2c6ea33a8a7",
+      "tracked_files": 20
+    },
+    {
+      "path": "investment-app/investment-backend",
+      "branch": "architecture-v2",
+      "commit": "7955c4f9b0f75b296af1681f79b9547c59ad444e",
+      "tree": "5df6a23a9cd72efb50b0e7ecb2644c0a36e2b8c5",
+      "tracked_files": 261
+    },
+    {
+      "path": "investment-app/investment-admin-frontend",
+      "branch": "architecture-v2",
+      "commit": "4a7053b138148fb9ce5c4295c39472e6183fdc8d",
+      "tree": "45151c1cdd33cfe4a17a047770e7110b9246d9db",
+      "tracked_files": 125
+    },
+    {
+      "path": "investment-app/investment-web-frontend",
+      "branch": "architecture-v2",
+      "commit": "e463809eb4fb0cbeeb0a87ab4bb23919c64c4395",
+      "tree": "c553332eabaf0f4974a145545bbc93af3773140c",
+      "tracked_files": 100
+    }
+  ],
+  "deployment_bundle": {
+    "repository": "k8s",
+    "baseline_commit": "6abcbc9d7a34a64d7cbb0f5e11a5c58e3d08a55e",
+    "note": "R6 committed the formal bundles; the R7 tag adds release gates, role-scoped template policy verification and immutable evidence"
+  },
+  "template": {
+    "manifest_sha256": "6e629e757480b5d3fc10d81740ce23dbcb0feb650c41cae705248778d64f13b4",
+    "release_id": "r7-template-001",
+    "gate_sha256": "33f0279e64fc1e7f606c6dd0b8a3de8e3e6cadb7544141d6dc1ff0f415345521"
+  },
+  "apps": {
+    "info": {
+      "release_id": "r6-info-formal-004",
+      "release_sha256": "d81d5c08a78994b9bdbae0cb03080962f690a377576a3220913f43223ad9f06c",
+      "migration_head": "20260811_0006",
+      "images": {
+        "backend": "harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ad279489e13b5efb43f98949000760353e77ff0ccc9d58fc32878ce28b9dd247",
+        "admin": "harbor.sunmoonai.com:30443/app-images/info-admin-frontend@sha256:defacc2f58584541561ada6ce13918efe4be41e9dd7ef21decd30299cd2f149d",
+        "web": "harbor.sunmoonai.com:30443/app-images/info-web-frontend@sha256:60f3f70a67630997cc3d0fe9884c166fd5023dac9eed81a3a03b22c5e5c66c52"
+      }
+    },
+    "knowledge": {
+      "release_id": "r6-knowledge-formal-003",
+      "release_sha256": "4c6d24c61988ee1d0640045e954cb2cd9b35b6a3aaf3b84d7ac4adf2d0f0134b",
+      "migration_head": "20260811_0005",
+      "images": {
+        "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:e6998183a3aadaff337f822031a1bc2396d5256fa395331176dc2b1a44480757",
+        "admin": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:07130d859a89b18842ce043178b5477bbb67a3ab183aadfe18baed039bd0b9c2",
+        "web": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:7bdd329bf24e479d1c8f859ef6ed909958bc1479b7296b3b212c2293c7601148"
+      }
+    },
+    "investment": {
+      "release_id": "r6-investment-formal-002",
+      "release_sha256": "e42eb723994618ce980324d40edbd0c9ff5c660ec30f16eebc9045e828f3a305",
+      "migration_head": "20260811_0005",
+      "images": {
+        "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:b50ffde5a79fc4f1f2b78bbe74f7dbbfb02570514096ea67a7b5d5dde6526272",
+        "admin": "harbor.sunmoonai.com:30443/app-images/investment-admin-frontend@sha256:15d8253d2125045f38ea8bd159df77642250214b3bd72e8733cedbd50464f41d",
+        "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:d3ac86bdea887ed3be4ab2b61a8928bdf23086e20137c02e0ec2ca520ae51a0a"
+      }
+    }
+  },
+  "images": {
+    "tpl-backend": {
+      "repository": "harbor.sunmoonai.com:30443/app-images/tpl-backend",
+      "tag": "harbor.sunmoonai.com:30443/app-images/tpl-backend:2.0.0",
+      "digest": "sha256:8b504098427ab5349a04e933e1fdf71e3a8fc11ce0f5b36fff703ad356bad348",
+      "immutable": "harbor.sunmoonai.com:30443/app-images/tpl-backend@sha256:8b504098427ab5349a04e933e1fdf71e3a8fc11ce0f5b36fff703ad356bad348"
+    },
+    "tpl-admin": {
+      "repository": "harbor.sunmoonai.com:30443/app-images/tpl-admin-frontend",
+      "tag": "harbor.sunmoonai.com:30443/app-images/tpl-admin-frontend:2.0.0",
+      "digest": "sha256:cd2b91f54d71586b69c7f3d558066fb8afecf8a701911951076aa3ea5b30ea6b",
+      "immutable": "harbor.sunmoonai.com:30443/app-images/tpl-admin-frontend@sha256:cd2b91f54d71586b69c7f3d558066fb8afecf8a701911951076aa3ea5b30ea6b"
+    },
+    "tpl-web": {
+      "repository": "harbor.sunmoonai.com:30443/app-images/tpl-web-frontend",
+      "tag": "harbor.sunmoonai.com:30443/app-images/tpl-web-frontend:2.0.0",
+      "digest": "sha256:a835b1d4dcb8b405233fc901c11452f26f971b9d21c679e3cdee6c0d9bfbf729",
+      "immutable": "harbor.sunmoonai.com:30443/app-images/tpl-web-frontend@sha256:a835b1d4dcb8b405233fc901c11452f26f971b9d21c679e3cdee6c0d9bfbf729"
+    },
+    "info-backend": {
+      "repository": "harbor.sunmoonai.com:30443/app-images/info-backend",
+      "tag": "harbor.sunmoonai.com:30443/app-images/info-backend:2.0.0",
+      "digest": "sha256:ad279489e13b5efb43f98949000760353e77ff0ccc9d58fc32878ce28b9dd247",
+      "immutable": "harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ad279489e13b5efb43f98949000760353e77ff0ccc9d58fc32878ce28b9dd247"
+    },
+    "info-admin": {
+      "repository": "harbor.sunmoonai.com:30443/app-images/info-admin-frontend",
+      "tag": "harbor.sunmoonai.com:30443/app-images/info-admin-frontend:2.0.0",
+      "digest": "sha256:defacc2f58584541561ada6ce13918efe4be41e9dd7ef21decd30299cd2f149d",
+      "immutable": "harbor.sunmoonai.com:30443/app-images/info-admin-frontend@sha256:defacc2f58584541561ada6ce13918efe4be41e9dd7ef21decd30299cd2f149d"
+    },
+    "info-web": {
+      "repository": "harbor.sunmoonai.com:30443/app-images/info-web-frontend",
+      "tag": "harbor.sunmoonai.com:30443/app-images/info-web-frontend:2.0.0",
+      "digest": "sha256:60f3f70a67630997cc3d0fe9884c166fd5023dac9eed81a3a03b22c5e5c66c52",
+      "immutable": "harbor.sunmoonai.com:30443/app-images/info-web-frontend@sha256:60f3f70a67630997cc3d0fe9884c166fd5023dac9eed81a3a03b22c5e5c66c52"
+    },
+    "knowledge-backend": {
+      "repository": "harbor.sunmoonai.com:30443/app-images/knowledge-backend",
+      "tag": "harbor.sunmoonai.com:30443/app-images/knowledge-backend:2.0.0",
+      "digest": "sha256:e6998183a3aadaff337f822031a1bc2396d5256fa395331176dc2b1a44480757",
+      "immutable": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:e6998183a3aadaff337f822031a1bc2396d5256fa395331176dc2b1a44480757"
+    },
+    "knowledge-admin": {
+      "repository": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend",
+      "tag": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend:2.0.0",
+      "digest": "sha256:07130d859a89b18842ce043178b5477bbb67a3ab183aadfe18baed039bd0b9c2",
+      "immutable": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:07130d859a89b18842ce043178b5477bbb67a3ab183aadfe18baed039bd0b9c2"
+    },
+    "knowledge-web": {
+      "repository": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend",
+      "tag": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend:2.0.0",
+      "digest": "sha256:7bdd329bf24e479d1c8f859ef6ed909958bc1479b7296b3b212c2293c7601148",
+      "immutable": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:7bdd329bf24e479d1c8f859ef6ed909958bc1479b7296b3b212c2293c7601148"
+    },
+    "investment-backend": {
+      "repository": "harbor.sunmoonai.com:30443/app-images/investment-backend",
+      "tag": "harbor.sunmoonai.com:30443/app-images/investment-backend:2.0.0",
+      "digest": "sha256:b50ffde5a79fc4f1f2b78bbe74f7dbbfb02570514096ea67a7b5d5dde6526272",
+      "immutable": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:b50ffde5a79fc4f1f2b78bbe74f7dbbfb02570514096ea67a7b5d5dde6526272"
+    },
+    "investment-admin": {
+      "repository": "harbor.sunmoonai.com:30443/app-images/investment-admin-frontend",
+      "tag": "harbor.sunmoonai.com:30443/app-images/investment-admin-frontend:2.0.0",
+      "digest": "sha256:15d8253d2125045f38ea8bd159df77642250214b3bd72e8733cedbd50464f41d",
+      "immutable": "harbor.sunmoonai.com:30443/app-images/investment-admin-frontend@sha256:15d8253d2125045f38ea8bd159df77642250214b3bd72e8733cedbd50464f41d"
+    },
+    "investment-web": {
+      "repository": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend",
+      "tag": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend:2.0.0",
+      "digest": "sha256:d3ac86bdea887ed3be4ab2b61a8928bdf23086e20137c02e0ec2ca520ae51a0a",
+      "immutable": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:d3ac86bdea887ed3be4ab2b61a8928bdf23086e20137c02e0ec2ca520ae51a0a"
+    }
+  },
+  "evidence": {
+    "sunmoonai/docs/architecture-v2/evidence/R7-release/cross-app-vertical.json": {
+      "sha256": "ced279d0eb75e767906cb1fc1363d2cc42dfaff9afc05869ec69db47a4916c22"
+    },
+    "sunmoonai/docs/architecture-v2/evidence/R7-release/info-browser.json": {
+      "sha256": "68ee9e079d11aea9eb1a10e23a78ec3f22ea99be3c322707ea7d11e16ced64cf"
+    },
+    "sunmoonai/docs/architecture-v2/evidence/R7-release/investment-browser.json": {
+      "sha256": "7ad33a3ebee73655fa0972a7452323c3eca597bb6e77c8c4362e282e801aca4c"
+    },
+    "sunmoonai/docs/architecture-v2/evidence/R7-release/knowledge-browser.json": {
+      "sha256": "799399dd919e8f342980b0d38d4b063db70dbad1924f35ac1ccadc26360fc0c8"
+    },
+    "sunmoonai/docs/architecture-v2/evidence/R7-release/result.json": {
+      "sha256": "1183740c5a588e5c00a14d787165eeb01c3118ac92a09b9a7322b48276918a95"
+    },
+    "sunmoonai/docs/architecture-v2/evidence/R7-release/template/browser-after-forward.json": {
+      "sha256": "ecb28daa8afa14cc12d89e433cd49d5067273482f5f0dbdbd11fa8bfe2a66bdd"
+    },
+    "sunmoonai/docs/architecture-v2/evidence/R7-release/template/browser.json": {
+      "sha256": "ecb28daa8afa14cc12d89e433cd49d5067273482f5f0dbdbd11fa8bfe2a66bdd"
+    },
+    "sunmoonai/docs/architecture-v2/evidence/R7-release/template/deploy.txt": {
+      "sha256": "2d44038dbbbb0d5666137e1577ab0711ff6b76c95c3910ed2e70a58ad9429b57"
+    },
+    "sunmoonai/docs/architecture-v2/evidence/R7-release/template/kind.json": {
+      "sha256": "b896447f9d3d20cf0d35e8706e4a7cea14956b0a7714d79e198c91557fee5599"
+    },
+    "sunmoonai/docs/architecture-v2/evidence/R7-release/template/network-policy.txt": {
+      "sha256": "563d22ea6c93a69ba5933dd9ef14325b280c1017beeea500b17f982068460c86"
+    },
+    "sunmoonai/docs/architecture-v2/evidence/R7-release/template/plan.json": {
+      "sha256": "a1c0e5741b4a416d0146d60d030e299bd5d67d47834112f09497195b4129dd3f"
+    },
+    "sunmoonai/docs/architecture-v2/evidence/R7-release/template/release.json": {
+      "sha256": "414ace779fc8127b75fc7b71ea3d8f5dd264ef0879c1052dc22dcf6245e051fa"
+    },
+    "sunmoonai/docs/architecture-v2/evidence/R7-release/template/render.json": {
+      "sha256": "9859fd68686d794c53d4c3031ed6b7844fcdfd2e61759ca3912474a869b2aecb"
+    },
+    "sunmoonai/docs/architecture-v2/evidence/R7-release/template/result.json": {
+      "sha256": "33f0279e64fc1e7f606c6dd0b8a3de8e3e6cadb7544141d6dc1ff0f415345521"
+    },
+    "sunmoonai/docs/architecture-v2/evidence/R7-release/template/rollback.txt": {
+      "sha256": "c9569d7d391004764f62159ebfe801029d16029df3bab1c5aa1602a3c52fe9f3"
+    }
+  },
+  "rollback_protection": {
+    "status": "ACTIVE_OBSERVATION_WINDOW",
+    "pre_refactor_source_lock": "sunmoonai/docs/architecture-v2/pre-refactor-source-lock.json",
+    "pre_refactor_image_lock": "sunmoonai/docs/architecture-v2/pre-refactor-image-lock.json",
+    "legacy_deployments_scaled_to_zero": true,
+    "legacy_public_ingress_removed": true,
+    "legacy_databases_secrets_pvcs_images_retained": true,
+    "irreversible_retirement_authorized": false
+  },
+  "security": {
+    "contains_credentials": false,
+    "credentials_printed": false,
+    "tokens_printed": false
+  }
+}
