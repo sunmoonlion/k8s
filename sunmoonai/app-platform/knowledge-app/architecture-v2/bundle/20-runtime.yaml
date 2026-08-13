@@ -32,8 +32,8 @@ spec:
         sunmoonai.com/managed-by: architecture-v2
         sunmoonai.com/internal-provider: 'true'
       annotations:
-        sunmoonai.com/release-id: r71-knowledge-formal-001
-        sunmoonai.com/config-sha256: e2e467d18e005f785d2f94a6ffcbdb20e28b8eba1329c530fce52717df4c8abb
+        sunmoonai.com/release-id: v20-knowledge-formal-001
+        sunmoonai.com/config-sha256: 13033b5d950363a55d96c35b11194b020eca53a0ca9565c11dc4fa491ccdc339
     spec:
       serviceAccountName: knowledge-r5-backend-api
       automountServiceAccountToken: false
@@ -57,7 +57,7 @@ spec:
             app.kubernetes.io/component: backend-api
       containers:
       - name: api
-        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:1abc6081ae02900744b9f86aeaeb4eeb2a49663fd0d897ee10ad5e7cfe384b57
+        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:38ef7c29a43e4a47a339ba06c6dd77bd0a31277035d1df31b0fc2ca69cd862c0
         imagePullPolicy: IfNotPresent
         command:
         - uvicorn
@@ -293,7 +293,7 @@ spec:
         sunmoonai.com/app: knowledge-r5
         sunmoonai.com/managed-by: architecture-v2
       annotations:
-        sunmoonai.com/config-sha256: e2e467d18e005f785d2f94a6ffcbdb20e28b8eba1329c530fce52717df4c8abb
+        sunmoonai.com/config-sha256: 13033b5d950363a55d96c35b11194b020eca53a0ca9565c11dc4fa491ccdc339
     spec:
       serviceAccountName: knowledge-r5-backend-worker
       automountServiceAccountToken: false
@@ -309,7 +309,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: worker
-        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:1abc6081ae02900744b9f86aeaeb4eeb2a49663fd0d897ee10ad5e7cfe384b57
+        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:38ef7c29a43e4a47a339ba06c6dd77bd0a31277035d1df31b0fc2ca69cd862c0
         imagePullPolicy: IfNotPresent
         command:
         - /bin/sh
@@ -501,8 +501,8 @@ spec:
         sunmoonai.com/app: knowledge-r5
         sunmoonai.com/managed-by: architecture-v2
       annotations:
-        sunmoonai.com/release-id: r71-knowledge-formal-001
-        sunmoonai.com/config-sha256: e2e467d18e005f785d2f94a6ffcbdb20e28b8eba1329c530fce52717df4c8abb
+        sunmoonai.com/release-id: v20-knowledge-formal-001
+        sunmoonai.com/config-sha256: 13033b5d950363a55d96c35b11194b020eca53a0ca9565c11dc4fa491ccdc339
     spec:
       serviceAccountName: knowledge-r5-backend-scheduler
       automountServiceAccountToken: false
@@ -518,7 +518,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: scheduler
-        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:1abc6081ae02900744b9f86aeaeb4eeb2a49663fd0d897ee10ad5e7cfe384b57
+        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:38ef7c29a43e4a47a339ba06c6dd77bd0a31277035d1df31b0fc2ca69cd862c0
         imagePullPolicy: IfNotPresent
         command:
         - celery
@@ -596,8 +596,8 @@ spec:
         sunmoonai.com/app: knowledge-r5
         sunmoonai.com/managed-by: architecture-v2
       annotations:
-        sunmoonai.com/release-id: r71-knowledge-formal-001
-        sunmoonai.com/config-sha256: 98f407ee473c76b8de1ebbd4a6d376f9e842ae9839a4626fde1fee142b13c6fd
+        sunmoonai.com/release-id: v20-knowledge-formal-001
+        sunmoonai.com/config-sha256: 5ac5250efa4ec3e96d0473d637aef7a510c0bc154a8368205a0bdbce0c3c473c
     spec:
       serviceAccountName: knowledge-r5-admin-frontend
       automountServiceAccountToken: false
@@ -754,8 +754,8 @@ spec:
         sunmoonai.com/app: knowledge-r5
         sunmoonai.com/managed-by: architecture-v2
       annotations:
-        sunmoonai.com/release-id: r71-knowledge-formal-001
-        sunmoonai.com/config-sha256: 2cbb18dbdf38809a930be8989f5c8378e52529e43136be199d439becc6895a77
+        sunmoonai.com/release-id: v20-knowledge-formal-001
+        sunmoonai.com/config-sha256: 5da48094daa73137708746444f09acf98cd5c1e251a8774d5d99b78f4dad2d8b
     spec:
       serviceAccountName: knowledge-r5-web-frontend
       automountServiceAccountToken: false

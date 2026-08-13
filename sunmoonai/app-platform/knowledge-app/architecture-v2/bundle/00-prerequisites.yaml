@@ -70,7 +70,7 @@ data:
   ENV: production
   LOG_LEVEL: INFO
   SERVICE_NAME: knowledge-backend
-  DEPLOYMENT_ID: r71-knowledge-formal-001
+  DEPLOYMENT_ID: v20-knowledge-formal-001
   APP_SLUG: knowledge
   REDIS_HOST: redis-sunmoonai-master.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -134,7 +134,7 @@ data:
   AUTH_APP: knowledge
   APP_ORIGIN: https://knowledge-admin.sunmoonai.com:30443
   BACKEND_INTERNAL_URL: http://knowledge-r5-backend:8000
-  DEPLOYMENT_ID: r71-knowledge-formal-001-admin
+  DEPLOYMENT_ID: v20-knowledge-formal-001-admin
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -149,7 +149,7 @@ data:
   AUTH_APP: knowledge
   APP_ORIGIN: https://knowledge.sunmoonai.com:30443
   BACKEND_INTERNAL_URL: http://knowledge-r5-backend:8000
-  DEPLOYMENT_ID: r71-knowledge-formal-001-web
+  DEPLOYMENT_ID: v20-knowledge-formal-001-web
   REFERENCE_UI_ENABLED: 'false'
 ---
 apiVersion: v1

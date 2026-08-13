@@ -27,7 +27,7 @@ FILES = (
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True, type=Path)
-    parser.add_argument("--release-id", default="r71-knowledge-formal-001")
+    parser.add_argument("--release-id", default="v20-knowledge-formal-001")
     parser.add_argument("--retrieval-dataset-allowlist", default="codex-smoke")
     return parser.parse_args()
 
@@ -170,7 +170,7 @@ def main() -> int:
     dump(output / "00-prerequisites.yaml", prerequisites)
 
     images = {
-        "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:1abc6081ae02900744b9f86aeaeb4eeb2a49663fd0d897ee10ad5e7cfe384b57",
+        "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:38ef7c29a43e4a47a339ba06c6dd77bd0a31277035d1df31b0fc2ca69cd862c0",
         "admin": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:07130d859a89b18842ce043178b5477bbb67a3ab183aadfe18baed039bd0b9c2",
         "web": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:7bdd329bf24e479d1c8f859ef6ed909958bc1479b7296b3b212c2293c7601148",
     }
