@@ -266,7 +266,7 @@ tpl-app/
 ├── tpl-backend
 ├── tpl-admin-frontend
 ├── tpl-web-frontend
-└── k8s-scaffold-v2
+└── k8s-deployment
 ```
 
 模板负责统一认证、安全响应头、错误模型、日志、健康检查、Outbox/Inbox、运行角色、构建、镜像、
