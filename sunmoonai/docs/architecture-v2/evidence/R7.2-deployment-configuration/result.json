@@ -1,0 +1,49 @@
+{
+  "task": "R7.2-formal-deployment-configuration",
+  "result": "passed",
+  "date": "2026-08-13",
+  "scope": [
+    "tpl-app",
+    "info",
+    "knowledge",
+    "investment"
+  ],
+  "contract": {
+    "strict_non_shell_conf": true,
+    "unknown_keys_rejected": true,
+    "credentials_in_conf": false,
+    "immutable_release_match_required": true,
+    "app_entry_preserved": true,
+    "component_entries_preserved": true,
+    "profiles": {
+      "KIND": "enabled-and-gated",
+      "C1": "disabled-until-gated",
+      "production": "disabled-until-gated"
+    }
+  },
+  "formal_releases": {
+    "info": "r6-info-formal-004",
+    "knowledge": "v20-knowledge-formal-001",
+    "investment": "r6-investment-formal-002"
+  },
+  "verification": {
+    "tpl_unit_tests": "8 passed",
+    "platform_unit_tests": "4 passed",
+    "effective_config_checks": "3 passed",
+    "formal_plan_checks": "3 passed",
+    "component_entry_check": "passed",
+    "disabled_profile_negative_check": "passed",
+    "kind_server_dry_run": {
+      "info": "passed",
+      "knowledge": "passed",
+      "investment": "passed"
+    },
+    "kind_drift": {
+      "info": false,
+      "knowledge": false,
+      "investment": false
+    }
+  },
+  "credentials_printed": false,
+  "cluster_mutated": false
+}

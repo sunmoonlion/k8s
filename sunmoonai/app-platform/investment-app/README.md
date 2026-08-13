@@ -16,17 +16,22 @@ investment-web-frontend   (Next.js) ─┘       ├─ API
 
 `deployment/bundle/` 锁定统一 Backend 的 API、Worker、Scheduler、Migration、双 Next.js
 前端、正式 TLS 路由和最小 NetworkPolicy；镜像全部使用 `repository@sha256:digest`。
+`deploy-investment-app-all/` 同时保存正式 `.conf` 与集群 profiles；它在执行前逐项核对 bundle。
 
 默认入口：
 
 ```bash
 ./deploy-investment-app-all/deploy-investment-app-all.sh plan --cluster KIND
+./deploy-investment-app-all/deploy-investment-app-all.sh config --cluster KIND
 ./deploy-investment-app-all/deploy-investment-app-all.sh server-dry-run --cluster KIND
 ./deploy-investment-app-all/deploy-investment-app-all.sh deploy --cluster KIND
 ./deploy-investment-app-all/deploy-investment-app-all.sh drift --cluster KIND
 ./deploy-investment-app-all/deploy-investment-app-all.sh status --cluster KIND
 ./deploy-investment-backend-scheduler/deploy-investment-backend-scheduler.sh deploy --cluster KIND
 ```
+
+配置合同见 `../docs/formal-deployment-configuration.md`。当前只有 KIND profile 已启用；C1 和
+production 必须在各自门禁完成后随新 release 启用。
 
 `deploy` 会幂等收敛专用 RabbitMQ/Redis、激活 Investment→Knowledge 身份、运行 Migration、
 部署五个正式工作负载。旧 Research 六组件已退役且不会被重建。它不会重建或覆盖

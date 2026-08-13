@@ -121,14 +121,16 @@ COMPONENTS="admin-backend web-frontend" \
 
 ## 与部署配置的关系
 
-直推的镜像 tag 须与各 App Kubernetes 配置中的版本一致（当前基线 `1.0.0`）。
+正式 App 使用不可变 `repository@sha256:digest`，不再用可变 tag 驱动部署。每个 App 的
+`deploy-<app>-app-all.conf` 是可读发布声明，`profiles/` 保存集群操作参数；入口会先与已门禁
+bundle 逐项核对。完整合同见 `../docs/formal-deployment-configuration.md`。
 
 构建/复制完成后，部署入口：
 
 ```bash
-cd ~/k8s/sunmoonai/app-platform/deploy-app-platform-all
-./deploy-app-platform-all.sh --cluster KIND deploy
-./deploy-app-platform-all.sh --cluster C1 deploy
+cd ~/k8s/sunmoonai/app-platform/info-app
+./deploy-info-app-all/deploy-info-app-all.sh config --cluster KIND
+./deploy-info-app-all/deploy-info-app-all.sh deploy --cluster KIND
 ```
 
-若采用 Harbor 复制而非 C1 直推，复制说明见 `cicd-platform/harbor/docs/kind-to-c1-sync-README.md`。
+当前 C1/production formal profile 默认禁用；在对应门禁完成前不得仅靠复制镜像或修改开关启用。
