@@ -1,0 +1,132 @@
+{
+  "schema_version": 2,
+  "architecture": "app-platform-v2-formal",
+  "logical_app": "knowledge",
+  "resource_app": "knowledge-r5",
+  "namespace": "app-platform-dev",
+  "release_id": "v20-knowledge-formal-001",
+  "formal_release": true,
+  "images": {
+    "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:38ef7c29a43e4a47a339ba06c6dd77bd0a31277035d1df31b0fc2ca69cd862c0",
+    "admin": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:07130d859a89b18842ce043178b5477bbb67a3ab183aadfe18baed039bd0b9c2",
+    "web": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:7bdd329bf24e479d1c8f859ef6ed909958bc1479b7296b3b212c2293c7601148"
+  },
+  "origins": {
+    "admin": "https://knowledge-admin.sunmoonai.com:30443",
+    "web": "https://knowledge.sunmoonai.com:30443",
+    "casdoor": "https://casdoor.sunmoonai.com:30443"
+  },
+  "retrieval_dataset_allowlist": "codex-smoke",
+  "resources": [
+    "00-prerequisites.yaml",
+    "10-migration.yaml",
+    "20-runtime.yaml",
+    "30-network-policies.yaml",
+    "40-ingress.yaml"
+  ],
+  "sha256": {
+    "00-prerequisites.yaml": "2999df14356d03f11c1ed6db748b414fe5eee55ea42f8e9378defae8a6f76fed",
+    "10-migration.yaml": "4ce62924c53c102ad3904e28cad9f3c8ea1ba690252a84b30721cb5de4fa81f0",
+    "20-runtime.yaml": "f7185e32f2bd834dc429c82f1cd82fc578b24ee1679809c1a3af3f7938ef1ba8",
+    "30-network-policies.yaml": "ddc7c8ed7fe0d5d53b4e77df50551847d64046ab16465d376a7680900f2fad3d",
+    "40-ingress.yaml": "ebf916510aa3a280d544171ed7ebf5449aa6a3b24c3a4e1732024f2812279329"
+  },
+  "deployment_replicas": {
+    "knowledge-r5-backend-api": 2,
+    "knowledge-r5-backend-worker": 1,
+    "knowledge-r5-backend-scheduler": 1,
+    "knowledge-r5-admin-frontend": 2,
+    "knowledge-r5-web-frontend": 2
+  },
+  "ingress_routes": {
+    "knowledge-r5-admin-route": [
+      {
+        "match": "Host(`knowledge-admin.sunmoonai.com`) && PathPrefix(`/api`)",
+        "priority": 100,
+        "services": [
+          {
+            "name": "knowledge-r5-backend",
+            "port": 8000
+          }
+        ]
+      },
+      {
+        "match": "Host(`knowledge-admin.sunmoonai.com`) && PathPrefix(`/`)",
+        "priority": 10,
+        "services": [
+          {
+            "name": "knowledge-r5-admin-frontend",
+            "port": 3000
+          }
+        ]
+      }
+    ],
+    "knowledge-r5-web-route": [
+      {
+        "match": "Host(`knowledge.sunmoonai.com`) && PathPrefix(`/api`)",
+        "priority": 100,
+        "services": [
+          {
+            "name": "knowledge-r5-backend",
+            "port": 8000
+          }
+        ]
+      },
+      {
+        "match": "Host(`knowledge.sunmoonai.com`) && PathPrefix(`/`)",
+        "priority": 10,
+        "services": [
+          {
+            "name": "knowledge-r5-web-frontend",
+            "port": 3000
+          }
+        ]
+      }
+    ],
+    "knowledge-r5-admin-api-route": [
+      {
+        "match": "Host(`knowledge-admin-api.sunmoonai.com`) && PathPrefix(`/`)",
+        "priority": null,
+        "services": [
+          {
+            "name": "knowledge-r5-backend",
+            "port": 8000
+          }
+        ]
+      }
+    ]
+  },
+  "legacy_deployments": [],
+  "external_secrets": [
+    "harbor-registry-secret",
+    "knowledge-r5-tls",
+    "knowledge-backend-postgresql-conn",
+    "knowledge-backend-migration-postgresql-conn",
+    "knowledge-r5-browser-identity",
+    "knowledge-backend-redis-conn",
+    "knowledge-backend-broker",
+    "knowledge-ragflow-provider",
+    "knowledge-backend-s3",
+    "knowledge-info-ingest-service-binding",
+    "knowledge-investment-retrieval-service-binding",
+    "knowledge-active-retrieval-service-binding"
+  ],
+  "protected_provider_resources": [
+    "ragflow-sunmoonai"
+  ],
+  "forbidden_markers": [
+    "knowledge-admin-r5.sunmoonai.com",
+    "knowledge-web-r5.sunmoonai.com",
+    "knowledge.r5.candidate"
+  ],
+  "contains_credentials": false,
+  "renderer_inputs_sha256": {
+    "k8s:sunmoonai/app-platform/scripts/render_knowledge_release_base.py": "d7edb4fbcadaad66fdf3114042cdb138f0e5961dfc7b6c9e59ccae87ded1824c",
+    "tpl-app:k8s-deployment/scaffold.py": "2f65213916ac338f4126c43b084dacd4a832906735d034b37a247b8507479828",
+    "tpl-app:k8s-deployment/templates/00-prerequisites.yaml.tpl": "c87ac75dce8507e9f88732d3e8708945ee18a87418fedfd9dc184423916d32bf",
+    "tpl-app:k8s-deployment/templates/10-migration.yaml.tpl": "2a78b9770f61b94cc267f267449b0e0593b147a61a444a7463fe4f3fcc1508f4",
+    "tpl-app:k8s-deployment/templates/20-runtime.yaml.tpl": "1ca1c9df52705922abccf7906ff96ddd4b2e578c327a5d86502fa07d23de5b42",
+    "tpl-app:k8s-deployment/templates/30-network-policies.yaml.tpl": "2eede852d9710c20cba56cfe4a1b9864cb2a9aac907babbf5b9cf2c258f5d3c5",
+    "tpl-app:k8s-deployment/templates/40-ingress.yaml.tpl": "5f79e6a40bdfa8a581b92eeabe1a9f0cbf3a031221f5c9a40708b4682190ce3d"
+  }
+}

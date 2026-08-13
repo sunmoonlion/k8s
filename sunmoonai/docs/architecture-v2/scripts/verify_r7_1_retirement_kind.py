@@ -86,8 +86,8 @@ def main() -> int:
         errors.append("platform aggregate config lacks investment_app")
 
     for app in APPS:
-        bundle = ROOT / f"sunmoonai/app-platform/{app}-app/architecture-v2/bundle"
-        gate = ROOT / "sunmoonai/app-platform/scripts/verify-architecture-v2-instance.py"
+        bundle = ROOT / f"sunmoonai/app-platform/{app}-app/deployment/bundle"
+        gate = ROOT / "sunmoonai/app-platform/scripts/verify-formal-instance.py"
         result = subprocess.run([sys.executable, str(gate), "--bundle", str(bundle)],
                                 capture_output=True, text=True)
         if result.returncode:
@@ -141,7 +141,7 @@ def main() -> int:
         errors.append(f"unhealthy pod phases: {bad_pods}")
 
     report: dict[str, Any] = {
-        "task": "architecture-v2-r7.1-retirement-gate",
+        "task": "app-platform-v2-r7.1-retirement-gate",
         "result": "failed" if errors else "passed",
         "formal_deployments_ready": len(FORMAL_DEPLOYMENTS) if not errors else None,
         "retired_platform_directory_absent": "research-app" not in active_dirs,

@@ -87,7 +87,10 @@ def main() -> int:
     if template_manifest.get("formal_release") is not True:
         raise SystemExit("template release manifest is not formal")
 
-    sources: list[dict[str, Any]] = [repo_record(workspace / "tpl-app", workspace)]
+    sources: list[dict[str, Any]] = [
+        repo_record(k8s, workspace),
+        repo_record(workspace / "tpl-app", workspace),
+    ]
     sources.extend(
         repo_record(workspace / "tpl-app" / f"tpl-{component}", workspace)
         for component in COMPONENTS
@@ -108,7 +111,7 @@ def main() -> int:
     for app in APPS:
         release_path = (
             k8s
-            / f"sunmoonai/app-platform/{app}-app/architecture-v2/bundle/release.json"
+            / f"sunmoonai/app-platform/{app}-app/deployment/bundle/release.json"
         )
         release = load(release_path)
         app_releases[app] = {
@@ -135,10 +138,11 @@ def main() -> int:
         "source_repositories": sources,
         "deployment_bundle": {
             "repository": "k8s",
-            "baseline_commit": "6abcbc9d7a34a64d7cbb0f5e11a5c58e3d08a55e",
+            "baseline_commit": git(k8s, "rev-parse", "HEAD"),
             "note": (
-                "R6 committed the formal bundles; the R7 tag adds release gates, "
-                "role-scoped template policy verification and immutable evidence"
+                "Stable deployment/ bundles are independent of the development "
+                "branch name; R7 adds release gates, component entry points, "
+                "role-scoped policy verification and immutable evidence"
             ),
         },
         "template": {
@@ -152,13 +156,13 @@ def main() -> int:
         "images": images,
         "evidence": evidence_records,
         "rollback_protection": {
-            "status": "ACTIVE_OBSERVATION_WINDOW",
+            "status": "CLOSED",
             "pre_refactor_source_lock": "sunmoonai/docs/architecture-v2/pre-refactor-source-lock.json",
             "pre_refactor_image_lock": "sunmoonai/docs/architecture-v2/pre-refactor-image-lock.json",
-            "legacy_deployments_scaled_to_zero": True,
+            "legacy_deployments_deleted": True,
             "legacy_public_ingress_removed": True,
             "legacy_databases_secrets_pvcs_images_retained": True,
-            "irreversible_retirement_authorized": False,
+            "irreversible_retirement_authorized": True,
         },
         "security": {
             "contains_credentials": False,

@@ -36,7 +36,7 @@ bash "$ROOT/sunmoonai/docs/architecture-v2/scripts/provision_architecture_v2_bro
   --kubeconfig "$KUBECONFIG_PATH" --namespace "$NAMESPACE"
 
 for app in info knowledge investment; do
-  "$PYTHON_BIN" "$ROOT/sunmoonai/app-platform/${app}-app/architecture-v2/deploy-formal.py" \
+  "$PYTHON_BIN" "$ROOT/sunmoonai/app-platform/${app}-app/deployment/deploy.py" \
     drift --kubeconfig "$KUBECONFIG_PATH"
 done
 

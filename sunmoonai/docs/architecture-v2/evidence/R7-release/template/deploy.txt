@@ -27,6 +27,7 @@ INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
 INFO  [alembic.runtime.migration] Will assume transactional DDL.
 INFO  [alembic.runtime.migration] Running upgrade  -> 20260726_0001, create the canonical local identity binding
 INFO  [alembic.runtime.migration] Running upgrade 20260726_0001 -> 20260801_0002, add transactional outbox and idempotent inbox primitives
+job.batch "tpl-backend-migration-r7-template-001" deleted from tpl-architecture-v2-r7 namespace
 deployment.apps/tpl-backend-api created
 poddisruptionbudget.policy/tpl-backend-api created
 horizontalpodautoscaler.autoscaling/tpl-backend-api created
@@ -51,9 +52,8 @@ deployment "tpl-backend-worker" successfully rolled out
 deployment "tpl-backend-scheduler" successfully rolled out
 deployment "tpl-admin-frontend" successfully rolled out
 deployment "tpl-web-frontend" successfully rolled out
-job.batch "tpl-backend-migration-r7-template-001" deleted from tpl-architecture-v2-r7 namespace
 {
-  "task": "architecture-v2-deploy",
+  "task": "app-platform-deploy",
   "result": "passed",
   "app": "tpl",
   "namespace": "tpl-architecture-v2-r7",

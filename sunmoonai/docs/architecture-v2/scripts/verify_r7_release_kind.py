@@ -179,7 +179,7 @@ def main() -> int:
         args.kubectl, args.kubeconfig.expanduser().resolve(), args.namespace
     )
     result: dict[str, Any] = {
-        "task": "architecture-v2-r7-release",
+        "task": "app-platform-v2-r7-release",
         "result": "failed",
         "namespace": args.namespace,
         "apps": {},
@@ -195,7 +195,7 @@ def main() -> int:
         formal_ingresses: set[str] = set()
 
         for app in APPS:
-            bundle = k8s / f"sunmoonai/app-platform/{app}-app/architecture-v2/bundle"
+            bundle = k8s / f"sunmoonai/app-platform/{app}-app/deployment/bundle"
             release_path = bundle / "release.json"
             release = load_json(release_path)
             require(

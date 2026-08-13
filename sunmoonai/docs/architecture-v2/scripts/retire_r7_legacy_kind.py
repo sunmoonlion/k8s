@@ -181,7 +181,7 @@ def clone_resource(args: argparse.Namespace, kind: str, source: str, target: str
             "name": target,
             "namespace": args.namespace,
             "labels": {
-                "sunmoonai.com/managed-by": "architecture-v2",
+                "sunmoonai.com/managed-by": "app-platform-v2",
                 "sunmoonai.com/retirement-migration": "r7-1",
             },
         },
@@ -208,7 +208,7 @@ def clone_resource(args: argparse.Namespace, kind: str, source: str, target: str
 
 def reconcile_formal(args: argparse.Namespace) -> None:
     for app in APPS:
-        deployer = ROOT / f"sunmoonai/app-platform/{app}-app/architecture-v2/deploy-formal.py"
+        deployer = ROOT / f"sunmoonai/app-platform/{app}-app/deployment/deploy.py"
         subprocess.run(
             [sys.executable, str(deployer), "apply", "--kubeconfig", str(args.kubeconfig),
              "--timeout", str(args.timeout)],

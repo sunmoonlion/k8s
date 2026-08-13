@@ -1,6 +1,6 @@
 # Research 原地改名为 Investment 的 Architecture v2 实施方案
 
-状态：`ACTIVE / I0-I4 COMPLETE / R4 PASSED / R5 NOT STARTED`
+状态：`COMPLETE / R4-R7.1 PASSED / 2.0.0 RELEASED`
 
 日期：2026-08-09
 
@@ -50,7 +50,7 @@ Gitee 已存在旧 `investment-*` 仓。首选服务器端 Legacy 改名，但�
 3. 旧仓均保存 `legacy-pre-architecture-v2-20260809` 标签；
 4. 新 Investment 只写入原仓不存在的 `architecture-v2` 分支；
 5. 完整门禁前禁止改写 `master`；
-6. 统一 Backend 暂由旧 `investment-admin-backend` 仓承载，门禁通过后服务器端改名为
+6. 统一 Backend 已完成服务器端改名，GitHub 与 Gitee 均使用
    `investment-backend`；
 7. GitHub 仓库在 Gitee 候选验收后创建或改名，随后恢复 `origin=GitHub`、`gitee=Gitee`。
 
@@ -178,7 +178,7 @@ R4 门禁通过后又发现父仓仍跟踪旧四组件时代的独立 Celery/Nod
 
 ## 9. 发布与归档
 
-只有完整门禁通过后才允许：
+以下发布与归档操作均已完成：
 
 - 把 Gitee `architecture-v2` 固化为验收提交；
 - 将 `investment-admin-backend` 服务器端仓名改为 `investment-backend`；
@@ -191,9 +191,8 @@ R4 门禁通过后又发现父仓仍跟踪旧四组件时代的独立 Celery/Nod
 
 当前远端收口状态：GitHub 已创建四个私有正式仓，父仓 `.gitmodules` 已指向 GitHub；四仓本地、
 GitHub、Gitee 的 `architecture-v2` SHA 均一致；五个旧 Research GitHub 仓已标记为只读归档。
-Gitee Backend 因当前没有仓库管理 API 凭据，
-暂时继续由 `investment-admin-backend` 旧仓名承载候选分支，旧 `master` 未改写。服务器端改名为
-`investment-backend` 是受控外部操作，不得通过创建第二份历史或强推 `master` 规避。
+Gitee Backend 已原地改名为 `investment-backend`，与 GitHub 同名；改名保留了完整
+Git 历史，没有创建第二份 Backend 或重写业务历史。
 
 ## 10. 主线顺序
 

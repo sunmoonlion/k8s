@@ -206,22 +206,29 @@ investment.decision.approved.v1
 - 外部数据进入系统时执行完整性、时效性和异常值校验。
 - 修订数据不覆盖已发布结果，而是生成新版本并标记影响范围。
 
-## 9. 当前部署与目标组件
+## 9. 当前正式部署
 
-当前组件：
+当前组件和运行角色：
 
 ```text
 investment-app
-├── investment-web-backend
-├── investment-admin-backend
-├── nodebullworker-investment-web-backend
-├── celeryworker-investment-admin-backend
-├── investment-web-frontend
+├── investment-backend
+│   ├── API
+│   ├── Celery Worker
+│   ├── Celery Scheduler
+│   └── Alembic Migration Job
 ├── investment-admin-frontend
-└── deploy-investment-app-all
+├── investment-web-frontend
+├── deploy-investment-app-all
+└── deploy-investment-<component>
 ```
 
-目标是在现有后端内部先实现清晰领域模块，不立即拆为八个微服务。只有满足以下条件时才拆分：
+Admin 与 Web 前端共享同一个 FastAPI Backend 和一个逻辑数据库。API、Worker、Scheduler 与
+Migration 复用同一源码和镜像，但以独立 Kubernetes 工作负载运行，可分别部署、扩缩和恢复。
+`deployment/` 是正式声明的唯一真相源；App 级入口负责整体验收和收敛，每个
+`deploy-investment-<component>/` 入口负责独立组件操作。
+
+领域模块继续位于统一后端内部，不立即拆为八个微服务。只有满足以下条件时才拆分：
 
 - 需要独立发布或团队独立负责。
 - 负载和扩缩容特征显著不同。

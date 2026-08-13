@@ -142,7 +142,7 @@ kind: IngressRoute
 metadata:
   name: knowledge-admin-frontend-ingress
   namespace: app-platform-dev
-  labels: {sunmoonai.com/app: knowledge-r5, sunmoonai.com/managed-by: architecture-v2}
+  labels: {sunmoonai.com/app: knowledge-r5, sunmoonai.com/managed-by: app-platform-v2}
 spec:
   entryPoints: [websecure]
   routes:
@@ -161,7 +161,7 @@ kind: IngressRoute
 metadata:
   name: knowledge-web-frontend-ingress
   namespace: app-platform-dev
-  labels: {sunmoonai.com/app: knowledge-r5, sunmoonai.com/managed-by: architecture-v2}
+  labels: {sunmoonai.com/app: knowledge-r5, sunmoonai.com/managed-by: app-platform-v2}
 spec:
   entryPoints: [websecure]
   routes:

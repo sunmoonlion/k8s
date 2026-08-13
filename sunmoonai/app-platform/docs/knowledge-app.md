@@ -63,8 +63,9 @@ RAGFlow 的 MySQL、MinIO、Elasticsearch 和 Redis 保存 provider 内部状态
 - 正式摄取必须使用真实 Artifact、真实 RAGFlow 和真实 embedding provider；禁止 mock success；
 - RAGFlow 通过 `knowledge-ragflow-provider` 和 `RAGFLOW_API_BASE` 适配，调用方不可见 provider ID；
 - 解析失败、配置失败、Artifact 不可读和外部 API 失败必须有稳定、可重试的分类；
-- 正式 bundle 由 `architecture-v2/render-formal.py` 生成并按 digest 固定镜像；
-- 当前正式 release id 为 `r71-knowledge-formal-001`，R7.1 深层门禁包含真实
+- 正式 bundle 由 `knowledge-app/deployment/render.py` 生成并按 digest 固定镜像；
+- 当前正式 release id 为 `v20-knowledge-formal-001`，正式版本与 Info、Investment 统一为
+  `2.0.0`；R7.1 深层门禁包含真实
   Info→Knowledge→Investment 竖线、严格 TLS 和 Casdoor 浏览器登录。
 
 总体边界以[App Platform 总体架构](../../docs/sunmoonai-architecture/baseline/overall/app-platform-architecture.md)

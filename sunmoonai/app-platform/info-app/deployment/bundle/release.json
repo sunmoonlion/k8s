@@ -1,0 +1,138 @@
+{
+  "schema_version": 2,
+  "architecture": "app-platform-v2-formal",
+  "logical_app": "info",
+  "resource_app": "info-r5",
+  "namespace": "app-platform-dev",
+  "release_id": "r6-info-formal-004",
+  "formal_release": true,
+  "images": {
+    "backend": "harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ad279489e13b5efb43f98949000760353e77ff0ccc9d58fc32878ce28b9dd247",
+    "admin": "harbor.sunmoonai.com:30443/app-images/info-admin-frontend@sha256:defacc2f58584541561ada6ce13918efe4be41e9dd7ef21decd30299cd2f149d",
+    "web": "harbor.sunmoonai.com:30443/app-images/info-web-frontend@sha256:60f3f70a67630997cc3d0fe9884c166fd5023dac9eed81a3a03b22c5e5c66c52"
+  },
+  "origins": {
+    "admin": "https://info-admin.sunmoonai.com:30443",
+    "web": "https://info.sunmoonai.com:30443",
+    "casdoor": "https://casdoor.sunmoonai.com:30443"
+  },
+  "resources": [
+    "00-prerequisites.yaml",
+    "10-migration.yaml",
+    "20-runtime.yaml",
+    "30-network-policies.yaml",
+    "40-ingress.yaml"
+  ],
+  "sha256": {
+    "00-prerequisites.yaml": "99c6757f34aa9e602798f1a6302a7fb96970411647900b658ebc82d064fcc4a1",
+    "10-migration.yaml": "c657e49c12bc05698c0e697b880f16bd2fd4dcae16cd2b3415520f288587acf0",
+    "20-runtime.yaml": "d2593e2fc1bbaf577687428d99b91c6f223817557c8a28916ff2158fff940f2c",
+    "30-network-policies.yaml": "164b8c6484097cc05d0ee0b9f8609b298869b9e70eddebfeab6494ce8c0dc20f",
+    "40-ingress.yaml": "b9b6bfbd891a3e8a7e2fb394273f76594fe125712a6c2e37682654a3ed34864c"
+  },
+  "deployment_replicas": {
+    "info-r5-backend-api": 2,
+    "info-r5-backend-worker": 1,
+    "info-r5-backend-scheduler": 1,
+    "info-r5-admin-frontend": 2,
+    "info-r5-web-frontend": 2
+  },
+  "ingress_routes": {
+    "info-r5-admin-route": [
+      {
+        "match": "Host(`info-admin.sunmoonai.com`) && PathPrefix(`/api`)",
+        "priority": 100,
+        "services": [
+          {
+            "name": "info-r5-backend",
+            "port": 8000
+          }
+        ]
+      },
+      {
+        "match": "Host(`info-admin.sunmoonai.com`) && PathPrefix(`/`)",
+        "priority": 10,
+        "services": [
+          {
+            "name": "info-r5-admin-frontend",
+            "port": 3000
+          }
+        ]
+      }
+    ],
+    "info-r5-web-route": [
+      {
+        "match": "Host(`info.sunmoonai.com`) && PathPrefix(`/api`)",
+        "priority": 100,
+        "services": [
+          {
+            "name": "info-r5-backend",
+            "port": 8000
+          }
+        ]
+      },
+      {
+        "match": "Host(`info.sunmoonai.com`) && PathPrefix(`/`)",
+        "priority": 10,
+        "services": [
+          {
+            "name": "info-r5-web-frontend",
+            "port": 3000
+          }
+        ]
+      }
+    ],
+    "info-r5-admin-api-route": [
+      {
+        "match": "Host(`info-admin-api.sunmoonai.com`) && PathPrefix(`/`)",
+        "priority": null,
+        "services": [
+          {
+            "name": "info-r5-backend",
+            "port": 8000
+          }
+        ]
+      }
+    ],
+    "info-r5-web-api-route": [
+      {
+        "match": "Host(`info-api.sunmoonai.com`) && PathPrefix(`/`)",
+        "priority": null,
+        "services": [
+          {
+            "name": "info-r5-backend",
+            "port": 8000
+          }
+        ]
+      }
+    ]
+  },
+  "legacy_deployments": [],
+  "external_secrets": [
+    "harbor-registry-secret",
+    "info-r5-tls",
+    "info-backend-postgresql-conn",
+    "info-backend-migration-postgresql-conn",
+    "info-r5-browser-identity",
+    "info-backend-redis-conn",
+    "info-backend-broker",
+    "info-backend-s3",
+    "info-backend-elasticsearch",
+    "info-knowledge-ingest-client"
+  ],
+  "forbidden_markers": [
+    "info-admin-r5.sunmoonai.com",
+    "info-web-r5.sunmoonai.com",
+    "info.r5.candidate"
+  ],
+  "contains_credentials": false,
+  "renderer_inputs_sha256": {
+    "k8s:sunmoonai/app-platform/scripts/render_info_release_base.py": "04613c1aa28b3186afce2dbae26506590c0f6ee9536a455e205e1675ad15e315",
+    "tpl-app:k8s-deployment/scaffold.py": "2f65213916ac338f4126c43b084dacd4a832906735d034b37a247b8507479828",
+    "tpl-app:k8s-deployment/templates/00-prerequisites.yaml.tpl": "c87ac75dce8507e9f88732d3e8708945ee18a87418fedfd9dc184423916d32bf",
+    "tpl-app:k8s-deployment/templates/10-migration.yaml.tpl": "2a78b9770f61b94cc267f267449b0e0593b147a61a444a7463fe4f3fcc1508f4",
+    "tpl-app:k8s-deployment/templates/20-runtime.yaml.tpl": "1ca1c9df52705922abccf7906ff96ddd4b2e578c327a5d86502fa07d23de5b42",
+    "tpl-app:k8s-deployment/templates/30-network-policies.yaml.tpl": "2eede852d9710c20cba56cfe4a1b9864cb2a9aac907babbf5b9cf2c258f5d3c5",
+    "tpl-app:k8s-deployment/templates/40-ingress.yaml.tpl": "5f79e6a40bdfa8a581b92eeabe1a9f0cbf3a031221f5c9a40708b4682190ce3d"
+  }
+}

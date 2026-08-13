@@ -54,7 +54,7 @@ jq -e '.result == "passed"' \
   "$EVIDENCE_DIR/template/result.json" >/dev/null
 
 for app in info knowledge investment; do
-  formal="sunmoonai/app-platform/${app}-app/architecture-v2/deploy-formal.py"
+  formal="sunmoonai/app-platform/${app}-app/deployment/deploy.py"
   stage "${app}_formal_apply"
   python3 "$formal" apply --kubeconfig "$KUBECONFIG_PATH"
   stage "${app}_zero_drift"

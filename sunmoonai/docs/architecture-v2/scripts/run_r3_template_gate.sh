@@ -29,7 +29,7 @@ TASK_LABEL="${R3_TASK_LABEL:-architecture-v2-r3}"
 IDENTITY_JOB_PREFIX="${R3_IDENTITY_JOB_PREFIX:-architecture-v2-r3-identity}"
 RESULT_TASK="${R3_RESULT_TASK:-architecture-v2-r3}"
 POLICY_CLUSTER_NAME="${R3_POLICY_CLUSTER_NAME:-tpl-r3-policy}"
-OPERATOR_SECRET="sunmoonai-p0-005-browser-identity"
+OPERATOR_SECRET="${R3_OPERATOR_SECRET:-architecture-v2-browser-operator}"
 SOURCE_TLS_SECRET="traefik-tls-secret"
 TARGET_TLS_SECRET="${R3_TARGET_TLS_SECRET:-tpl-r3-tls}"
 SOURCE_PULL_SECRET="harbor-registry-secret"
@@ -109,7 +109,7 @@ cleanup() {
   trap - EXIT INT TERM HUP
   set +e
   if [[ -f "${BUNDLE_DIR}/release.json" ]]; then
-    python3 "${TPL_ROOT}/k8s-scaffold-v2/deploy.py" cleanup \
+    python3 "${TPL_ROOT}/k8s-deployment/deploy.py" cleanup \
       --bundle "$BUNDLE_DIR" \
       --kubeconfig "$KUBECONFIG_PATH" \
       --delete-namespace >/dev/null 2>&1
@@ -168,7 +168,7 @@ web_client_secret="$(secret_value "$PROVIDER_NAMESPACE" "$IDENTITY_SECRET" WEB_C
 [[ "$admin_client_id" != "$web_client_id" && "$admin_client_secret" != "$web_client_secret" ]]
 
 printf 'R3_STAGE=render\n'
-python3 "${TPL_ROOT}/k8s-scaffold-v2/scaffold.py" \
+python3 "${TPL_ROOT}/k8s-deployment/scaffold.py" \
   --app "$APP" \
   --namespace "$NAMESPACE" \
   --release-id "$RELEASE_ID" \
@@ -191,7 +191,7 @@ python3 "${TPL_ROOT}/k8s-scaffold-v2/scaffold.py" \
   --output-dir "$BUNDLE_DIR" \
   >"${EVIDENCE_DIR}/render.json"
 
-python3 "${TPL_ROOT}/k8s-scaffold-v2/deploy.py" plan \
+python3 "${TPL_ROOT}/k8s-deployment/deploy.py" plan \
   --bundle "$BUNDLE_DIR" \
   >"${EVIDENCE_DIR}/plan.json"
 
@@ -432,7 +432,7 @@ unset admin_client_secret web_client_secret postgres_admin_password
 unset migration_db_password api_db_password worker_db_password scheduler_db_password redis_password
 
 printf 'R3_STAGE=deploy\n'
-python3 "${TPL_ROOT}/k8s-scaffold-v2/deploy.py" apply \
+python3 "${TPL_ROOT}/k8s-deployment/deploy.py" apply \
   --bundle "$BUNDLE_DIR" \
   --secret-env-file "$RUNTIME_ENV" \
   --kubeconfig "$KUBECONFIG_PATH" \

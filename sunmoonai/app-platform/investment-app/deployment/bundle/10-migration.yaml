@@ -1,0 +1,83 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: investment-r5-backend-migration-r6-investment-formal-002
+  namespace: app-platform-dev
+  labels:
+    app.kubernetes.io/name: investment-r5-backend
+    app.kubernetes.io/component: backend-migration
+    app.kubernetes.io/part-of: investment-r5
+    sunmoonai.com/app: investment-r5
+    sunmoonai.com/managed-by: app-platform-v2
+    sunmoonai.com/release-id: r6-investment-formal-002
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: investment-r5-backend
+        app.kubernetes.io/component: backend-migration
+        app.kubernetes.io/part-of: investment-r5
+        sunmoonai.com/app: investment-r5
+        sunmoonai.com/managed-by: app-platform-v2
+        sunmoonai.com/release-id: r6-investment-formal-002
+    spec:
+      restartPolicy: Never
+      serviceAccountName: investment-r5-backend-migration
+      automountServiceAccountToken: false
+      imagePullSecrets:
+      - name: harbor-registry-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: migration
+        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:b50ffde5a79fc4f1f2b78bbe74f7dbbfb02570514096ea67a7b5d5dde6526272
+        imagePullPolicy: IfNotPresent
+        command:
+        - python
+        - -m
+        - app.bootstrap.migration
+        args:
+        - upgrade
+        - head
+        envFrom:
+        - configMapRef:
+            name: investment-r5-backend-config
+        env:
+        - name: MIGRATION_DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: investment-backend-migration-postgresql-conn
+              key: MIGRATION_DATABASE_URL
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: investment-backend-migration-postgresql-conn
+              key: MIGRATION_DATABASE_URL
+        resources:
+          requests:
+            cpu: 50m
+            memory: 96Mi
+          limits:
+            cpu: 500m
+            memory: 384Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 64Mi

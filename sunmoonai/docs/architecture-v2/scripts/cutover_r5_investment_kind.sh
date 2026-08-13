@@ -12,6 +12,7 @@ KUBECONFIG_PATH="${KUBECONFIG:-$HOME/.kube/kind-config}"
 NAMESPACE=app-platform-dev
 CAPTURE_ID="r5-investment-cutover-$(date -u +%Y%m%dT%H%M%SZ)"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+APP_PLATFORM_SCRIPTS="$(cd -- "$SCRIPT_DIR/../../../app-platform/scripts" && pwd)"
 ROLLBACK_ARMED=false
 IN_ROLLBACK=false
 
@@ -78,14 +79,14 @@ reconcile_identity() {
     bash "$SCRIPT_DIR/provision_r3_template_identity.sh" --apply --kubeconfig "$KUBECONFIG_PATH" --provider-namespace "$NAMESPACE"
 }
 reconcile_knowledge_binding() {
-  bash "$SCRIPT_DIR/reconcile_r5_knowledge_active_retrieval_binding_kind.sh" \
+  bash "$APP_PLATFORM_SCRIPTS/reconcile-knowledge-active-retrieval-binding-kind.sh" \
     --caller "$1" --kubeconfig "$KUBECONFIG_PATH" --namespace "$NAMESPACE"
 }
 formal_ingress() {
   cat <<'EOF' | k apply -f - >/dev/null
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
-metadata: {name: investment-admin-frontend-ingress, namespace: app-platform-dev, labels: {sunmoonai.com/app: investment-r5, sunmoonai.com/managed-by: architecture-v2}}
+metadata: {name: investment-admin-frontend-ingress, namespace: app-platform-dev, labels: {sunmoonai.com/app: investment-r5, sunmoonai.com/managed-by: app-platform-v2}}
 spec:
   entryPoints: [websecure]
   routes:
@@ -95,7 +96,7 @@ spec:
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
-metadata: {name: investment-web-frontend-ingress, namespace: app-platform-dev, labels: {sunmoonai.com/app: investment-r5, sunmoonai.com/managed-by: architecture-v2}}
+metadata: {name: investment-web-frontend-ingress, namespace: app-platform-dev, labels: {sunmoonai.com/app: investment-r5, sunmoonai.com/managed-by: app-platform-v2}}
 spec:
   entryPoints: [websecure]
   routes:
@@ -105,12 +106,12 @@ spec:
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
-metadata: {name: investment-admin-backend-ingress, namespace: app-platform-dev, labels: {sunmoonai.com/app: investment-r5, sunmoonai.com/managed-by: architecture-v2}}
+metadata: {name: investment-admin-backend-ingress, namespace: app-platform-dev, labels: {sunmoonai.com/app: investment-r5, sunmoonai.com/managed-by: app-platform-v2}}
 spec: {entryPoints: [websecure], routes: [{kind: Rule, match: 'Host(`investment-admin-api.sunmoonai.com`) && PathPrefix(`/`)', services: [{name: investment-r5-backend, port: 8000}]}], tls: {secretName: investment-r5-tls}}
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
-metadata: {name: investment-web-backend-ingress, namespace: app-platform-dev, labels: {sunmoonai.com/app: investment-r5, sunmoonai.com/managed-by: architecture-v2}}
+metadata: {name: investment-web-backend-ingress, namespace: app-platform-dev, labels: {sunmoonai.com/app: investment-r5, sunmoonai.com/managed-by: app-platform-v2}}
 spec: {entryPoints: [websecure], routes: [{kind: Rule, match: 'Host(`investment-api.sunmoonai.com`) && PathPrefix(`/`)', services: [{name: investment-r5-backend, port: 8000}]}], tls: {secretName: investment-r5-tls}}
 EOF
 }

@@ -6,6 +6,7 @@ ROOT="$(dirname "$THIS_DIR")"
 ACTION=""
 KUBECONFIG_PATH="${KUBECONFIG:-$HOME/.kube/kind-config}"
 TIMEOUT=300
+COMPONENT=all
 POSITIONAL=()
 
 while [[ $# -gt 0 ]]; do
@@ -17,13 +18,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --cluster)
       [[ "${2:-}" == "KIND" ]] || {
-        echo "Architecture v2 Knowledge 当前只验收 KIND；收到: ${2:-}" >&2
+        echo "Knowledge formal release 当前只验收 KIND；收到: ${2:-}" >&2
         exit 2
       }
       shift 2
       ;;
     --kubeconfig) KUBECONFIG_PATH="$2"; shift 2 ;;
     --timeout) TIMEOUT="$2"; shift 2 ;;
+    --component) COMPONENT="$2"; shift 2 ;;
     --*) echo "未知参数: $1" >&2; exit 2 ;;
     *) POSITIONAL+=("$1"); shift ;;
   esac
@@ -51,6 +53,7 @@ if [[ ${#POSITIONAL[@]} -ge 2 && "${POSITIONAL[1]}" != "app-platform-dev" ]]; th
   exit 2
 fi
 
-exec python3 "$ROOT/architecture-v2/deploy-formal.py" "$ACTION" \
+exec python3 "$ROOT/deployment/deploy.py" "$ACTION" \
   --kubeconfig "$KUBECONFIG_PATH" \
-  --timeout "$TIMEOUT"
+  --timeout "$TIMEOUT" \
+  --component "$COMPONENT"

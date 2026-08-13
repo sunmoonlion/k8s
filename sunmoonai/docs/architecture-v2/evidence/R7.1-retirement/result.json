@@ -1,5 +1,5 @@
 {
-  "task": "architecture-v2-r7.1-retirement-gate",
+  "task": "app-platform-v2-r7.1-retirement-gate",
   "result": "passed",
   "formal_deployments_ready": 15,
   "retired_platform_directory_absent": true,

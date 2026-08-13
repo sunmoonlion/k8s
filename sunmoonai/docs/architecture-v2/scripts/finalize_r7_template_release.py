@@ -90,9 +90,9 @@ def main() -> int:
         )
     manifest["kubernetes_scaffold"].update(
         {
-            "tree": git(tpl_root, "rev-parse", "HEAD:k8s-scaffold-v2"),
+            "tree": git(tpl_root, "rev-parse", "HEAD:k8s-deployment"),
             "tracked_files": len(
-                git(tpl_root, "ls-files", "k8s-scaffold-v2").splitlines()
+                git(tpl_root, "ls-files", "k8s-deployment").splitlines()
             ),
         }
     )
@@ -109,8 +109,8 @@ def main() -> int:
         "overwrite_v1_1_0_0": False,
         "formal_version": "2.0.0",
         "promotion_method": "exact-digest-alias",
-        "observation_window": "active",
-        "irreversible_v1_cleanup_allowed": False,
+                "observation_window": "closed",
+                "irreversible_v1_cleanup_allowed": True,
     }
     manifest_path.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

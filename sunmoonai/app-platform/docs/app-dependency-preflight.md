@@ -2,7 +2,7 @@
 
 > **Architecture v2 迁移提示（2026-08-09）**：本页主要记录 v1 `app-all` 部署器。旧
 > `tools-app` 已退役，Research 已迁移为 Investment；Architecture v2 的 API、Worker、Scheduler
-> 和 Migration 依赖由 `tpl-app/k8s-scaffold-v2` 的角色化 Config/Secret 与 NetworkPolicy 管理。
+> 和 Migration 依赖由 `tpl-app/k8s-deployment` 的角色化 Config/Secret 与 NetworkPolicy 管理。
 
 本文说明 app-platform 中业务 App 部署前的依赖预检查规则。这里的“依赖”主要指 PostgreSQL、Redis、MongoDB、Elasticsearch，以及与这些依赖相关的 App 级 Secret/ConfigMap 生成逻辑。
 

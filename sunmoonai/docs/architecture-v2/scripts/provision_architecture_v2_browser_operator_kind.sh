@@ -33,7 +33,7 @@ if ! k get secret "$OPERATOR_SECRET" -n "$NAMESPACE" >/dev/null 2>&1; then
 fi
 
 k label secret "$OPERATOR_SECRET" -n "$NAMESPACE" \
-  sunmoonai.com/managed-by=architecture-v2 \
+  sunmoonai.com/managed-by=app-platform-v2 \
   app.kubernetes.io/component=browser-gate-identity --overwrite >/dev/null
 
 k delete job "$JOB" -n "$NAMESPACE" --ignore-not-found=true --wait=true >/dev/null
@@ -44,7 +44,7 @@ metadata:
   name: ${JOB}
   namespace: ${NAMESPACE}
   labels:
-    sunmoonai.com/managed-by: architecture-v2
+    sunmoonai.com/managed-by: app-platform-v2
     app.kubernetes.io/component: browser-gate-identity
 spec:
   backoffLimit: 0
@@ -52,7 +52,7 @@ spec:
   template:
     metadata:
       labels:
-        sunmoonai.com/managed-by: architecture-v2
+        sunmoonai.com/managed-by: app-platform-v2
         app.kubernetes.io/component: browser-gate-identity
     spec:
       restartPolicy: Never

@@ -1,9 +1,9 @@
 # App Platform 架构文档
 
-> Architecture v2 正在 `architecture-v2` 分支施工。总体边界以
+> Architecture v2 已完成运行架构切换。正式部署不依赖临时分支名，总体边界以
 > [总体架构](../../docs/sunmoonai-architecture/baseline/overall/app-platform-architecture.md)为准，阶段、门禁和回滚点以
 > [App Platform Architecture v2 重构执行基线](../../docs/app-platform-architecture-v2-refactor-plan.md)
-> 为准。旧 v1 组件文档只可作为迁移记录，不能覆盖 Architecture v2 决策。
+> 为准。旧 v1 组件和阶段证据只可作为迁移记录，不能覆盖当前部署目录与 Architecture v2 决策。
 
 ## 总体设计
 

@@ -119,7 +119,7 @@ def main() -> int:
     if not default_paths.issubset(tpl_paths):
         errors.append("tpl: default three components are not all registered")
 
-    runtime_template = template / "k8s-scaffold-v2" / "templates" / "20-runtime.yaml.tpl"
+    runtime_template = template / "k8s-deployment" / "templates" / "20-runtime.yaml.tpl"
     runtime_text = runtime_template.read_text()
     required_runtime_tokens = (
         "__APP__-backend-api",
