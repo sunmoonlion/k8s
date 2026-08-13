@@ -14,8 +14,9 @@
 ./deploy-info-app-all/deploy-info-app-all.sh status --cluster KIND
 ```
 
-`deploy` 按 prerequisites/network policy -> migration -> runtime -> ingress 的顺序收敛，
-并确保六个 v1 Deployment 为 0 副本。它只引用集群中预先受管的 Secret，不复制、不输出凭据。
+`deploy` 按 prerequisites/network policy -> migration -> runtime -> ingress 的顺序收敛。
+六个 v1 Deployment 已在 R7 后退役收口中删除；默认入口不会重建它们。它只引用集群中预先
+受管的 Secret，不复制、不输出凭据。
 Migration Job 成功后立即删除。
 
 重新生成必须写到空目录并与已提交 `bundle/` 逐字比较：
@@ -25,5 +26,5 @@ python3 architecture-v2/render-formal.py --output-dir /tmp/info-formal
 diff -ru architecture-v2/bundle /tmp/info-formal
 ```
 
-`legacy-v1/` 只保留 R7 观察窗所需的回滚声明；默认部署器不会扫描它。任何私有 state bundle、
-手工 `kubectl patch/scale/apply` 或集群当前状态都不能替代本目录。
+v1 声明保留在 Git 历史、`2.0.0` 标签和 R5/R7 证据中，不再复制到活动目录。任何私有 state
+bundle、手工 `kubectl patch/scale/apply` 或集群当前状态都不能替代本目录。

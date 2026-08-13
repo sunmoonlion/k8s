@@ -14,8 +14,9 @@ NetworkPolicy 与正式 TLS 路由；所有镜像均使用 Harbor digest。
 ./deploy-knowledge-app-all/deploy-knowledge-app-all.sh status --cluster KIND
 ```
 
-`deploy` 按 prerequisites/network policy → migration → runtime → ingress 收敛，
-并确保旧 API 与旧 Worker 为 0 副本。它只引用预先受管的 Secret，不复制或输出凭据。
+`deploy` 按 prerequisites/network policy → migration → runtime → ingress 收敛。旧 v1 API、
+Worker 和双 Backend 部署生成器已在 R7 后退役收口中删除；默认入口不会重建它们。它只引用
+预先受管的 Secret，不复制或输出凭据。
 Migration Job 成功后立即删除。
 
 RAGFlow 是 Knowledge 之外的受保护 Provider。正式 bundle 仅声明访问策略和 Provider
@@ -28,5 +29,5 @@ python3 architecture-v2/render-formal.py --output-dir /tmp/knowledge-formal
 diff -ru architecture-v2/bundle /tmp/knowledge-formal
 ```
 
-`LEGACY-V1-RUNTIME.md` 只记录 R7 观察窗内的回退资产。默认部署器不会扫描旧目录；
-私有备份、手工 `kubectl patch/scale/apply` 或集群当前状态均不能替代本目录。
+v1 声明保留在 Git 历史、`2.0.0` 标签和 R5/R7 证据中，不再复制到活动目录。私有备份、
+手工 `kubectl patch/scale/apply` 或集群当前状态均不能替代本目录。

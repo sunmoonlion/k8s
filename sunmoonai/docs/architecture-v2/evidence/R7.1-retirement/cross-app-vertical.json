@@ -1,0 +1,85 @@
+{
+  "task": "architecture-v2-r6-cross-app-vertical",
+  "result": "passed",
+  "topology_ready": {
+    "info-r5-backend-api": 2,
+    "info-r5-backend-worker": 1,
+    "info-r5-backend-scheduler": 1,
+    "knowledge-r5-backend-api": 2,
+    "knowledge-r5-backend-worker": 1,
+    "knowledge-r5-backend-scheduler": 1,
+    "investment-r5-backend-api": 2,
+    "investment-r5-backend-worker": 1,
+    "investment-r5-backend-scheduler": 1,
+    "ragflow-sunmoonai": 1
+  },
+  "info": {
+    "artifact_hash_bound": true,
+    "artifact_versioned": true,
+    "content_hash": "d21b63c392fafa2823838c9d2544198ee596ab0c66219c01753b4442ed8b6fee",
+    "content_printed": false,
+    "dataset_key": "codex-smoke",
+    "distribution_id": "222af96d-7656-4f95-8c26-ad4e7344aee7",
+    "document_id": "771fd308-0a8e-419c-93fa-f83e1cd8c736",
+    "document_version_id": "ac5ebaa2-6025-4644-9b2f-6f90895b5296",
+    "idempotency_key": "info-app:ac5ebaa2-6025-4644-9b2f-6f90895b5296:codex-smoke:artifact-v1",
+    "outbox_published": 1,
+    "first_delivery": {
+      "broker_message_bound": true,
+      "distribution_status": "succeeded",
+      "has_error": false,
+      "outbox_attempt_count": 1,
+      "outbox_count": 1,
+      "outbox_state": "completed"
+    }
+  },
+  "knowledge": {
+    "content_hash_matches": true,
+    "content_printed": false,
+    "ingestion_count": 1,
+    "ingestion_status": "succeeded",
+    "knowledge_document_id": "a9c5bb09-acbf-586e-9ceb-6ce4d4b3abbc",
+    "knowledge_document_version_id": "ef92eb94-d8b7-5da9-8154-147f2e0a2f9a",
+    "provider_binding_count": 1,
+    "provider_ids_printed": false,
+    "source_version_matches": true,
+    "version_count": 1,
+    "version_status": "indexed"
+  },
+  "investment": {
+    "citation_provider_fields_absent": true,
+    "citation_source_href": "/api/citations/6826d0d4-cb77-5b12-801f-473dedeede28/source",
+    "content_hash_matches": true,
+    "content_printed": false,
+    "evidence_count": 1,
+    "evidence_id": "6826d0d4-cb77-5b12-801f-473dedeede28",
+    "knowledge_document_id": "a9c5bb09-acbf-586e-9ceb-6ce4d4b3abbc",
+    "knowledge_document_version_id": "ef92eb94-d8b7-5da9-8154-147f2e0a2f9a",
+    "provider_ids_printed": false,
+    "source_document_id": "771fd308-0a8e-419c-93fa-f83e1cd8c736",
+    "source_document_version_id": "ac5ebaa2-6025-4644-9b2f-6f90895b5296",
+    "token_printed": false
+  },
+  "replay": {
+    "broker_failures": 0,
+    "published": 1,
+    "same_distribution": true,
+    "delivery": {
+      "broker_message_bound": true,
+      "distribution_status": "succeeded",
+      "has_error": false,
+      "outbox_attempt_count": 2,
+      "outbox_count": 1,
+      "outbox_state": "completed"
+    },
+    "knowledge_ingestion_count": 1,
+    "knowledge_version_count": 1,
+    "provider_binding_count": 1
+  },
+  "database_cross_read_used": false,
+  "mock_provider_used": false,
+  "credentials_printed": false,
+  "token_printed": false,
+  "artifact_content_printed": false,
+  "provider_ids_printed": false
+}

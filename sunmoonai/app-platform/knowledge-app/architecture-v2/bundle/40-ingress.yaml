@@ -1,7 +1,7 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: knowledge-admin-frontend-ingress
+  name: knowledge-r5-admin-route
   namespace: app-platform-dev
   labels:
     sunmoonai.com/app: knowledge-r5
@@ -28,7 +28,7 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: knowledge-web-frontend-ingress
+  name: knowledge-r5-web-route
   namespace: app-platform-dev
   labels:
     sunmoonai.com/app: knowledge-r5
@@ -55,7 +55,7 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: knowledge-admin-backend-ingress
+  name: knowledge-r5-admin-api-route
   namespace: app-platform-dev
   labels:
     sunmoonai.com/app: knowledge-r5

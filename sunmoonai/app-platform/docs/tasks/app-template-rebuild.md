@@ -1,5 +1,8 @@
 # 任务：统一 App 模板并重新实例化业务 App
 
+> 历史任务记录：本文描述 2026-06 的 V1 重建，已被 Architecture v2 与 R7.1 取代，
+> 不得作为当前部署或实例化清单。当前权威入口见上级 `README.md`。
+
 ## 1. 目标
 
 以 `tpl-app` 为唯一工程模板，完整保留 Python/FastAPI、NestJS、Vue 和 Next.js
@@ -12,8 +15,8 @@
 - [x] 新增完整 App Kubernetes 脚手架和 `deploy-<app>-all` 统一入口。
 - [x] 支持 `KIND`、`C1` 等集群分别控制四个组件是否运行。
 - [x] 恢复两个配套 Worker 模板、Backend Worker 入口和聚合部署开关。
-- [x] 从当前模板重新实例化 `info-app`、`research-app`、`investment-app`、`tools-app`
-  和 `knowledge-app`。
+- [x] 当时曾从模板实例化多个 V1 App；其中旧 `research-app` 后续由 `investment-app`
+  取代，`tools-app` 已删除，不能按本文恢复。
 - [x] 各 App 均保持父仓库加四个子仓库的 Git 结构；两个 Worker 由父仓直接跟踪。
 - [x] 各 App 的 Kubernetes 部署目录已重新生成。
 - [x] Kind 中八个 Backend 的 PostgreSQL、MongoDB、Redis、S3 和 Elasticsearch 资源已创建。

@@ -75,13 +75,13 @@ spec:
         - configMapRef:
             name: info-r5-backend-config
         - configMapRef:
-            name: info-admin-backend-s3
+            name: info-backend-s3
         - secretRef:
-            name: info-admin-backend-s3
+            name: info-backend-s3
         - configMapRef:
-            name: info-admin-backend-elasticsearch
+            name: info-backend-elasticsearch
         - secretRef:
-            name: info-admin-backend-elasticsearch
+            name: info-backend-elasticsearch
         env:
         - name: DATABASE_URL
           valueFrom:
@@ -91,27 +91,27 @@ spec:
         - name: REDIS_HOST
           valueFrom:
             secretKeyRef:
-              name: info-admin-backend-redis-conn
+              name: info-backend-redis-conn
               key: REDIS_HOST
         - name: REDIS_PORT
           valueFrom:
             secretKeyRef:
-              name: info-admin-backend-redis-conn
+              name: info-backend-redis-conn
               key: REDIS_PORT
         - name: REDIS_DB
           valueFrom:
             secretKeyRef:
-              name: info-admin-backend-redis-conn
+              name: info-backend-redis-conn
               key: REDIS_DB
         - name: REDIS_USER
           valueFrom:
             secretKeyRef:
-              name: info-admin-backend-redis-conn
+              name: info-backend-redis-conn
               key: REDIS_USER
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: info-admin-backend-redis-conn
+              name: info-backend-redis-conn
               key: REDIS_PASSWORD
         - name: ADMIN_CASDOOR_CLIENT_ID
           valueFrom:
@@ -136,7 +136,7 @@ spec:
         - name: CELERY_BROKER_URL
           valueFrom:
             secretKeyRef:
-              name: celeryworker-info-admin-backend-secret
+              name: info-backend-broker
               key: CELERY_BROKER_URL
         startupProbe:
           httpGet:
@@ -199,7 +199,7 @@ spec:
           sizeLimit: 128Mi
       - name: elasticsearch-ca
         secret:
-          secretName: info-admin-backend-elasticsearch
+          secretName: info-backend-elasticsearch
           items:
           - key: ca.crt
             path: ca.crt
@@ -304,13 +304,13 @@ spec:
         - secretRef:
             name: info-knowledge-ingest-client
         - configMapRef:
-            name: info-admin-backend-s3
+            name: info-backend-s3
         - secretRef:
-            name: info-admin-backend-s3
+            name: info-backend-s3
         - configMapRef:
-            name: info-admin-backend-elasticsearch
+            name: info-backend-elasticsearch
         - secretRef:
-            name: info-admin-backend-elasticsearch
+            name: info-backend-elasticsearch
         env:
         - name: POD_NAME
           valueFrom:
@@ -324,37 +324,37 @@ spec:
         - name: REDIS_HOST
           valueFrom:
             secretKeyRef:
-              name: info-admin-backend-redis-conn
+              name: info-backend-redis-conn
               key: REDIS_HOST
         - name: REDIS_PORT
           valueFrom:
             secretKeyRef:
-              name: info-admin-backend-redis-conn
+              name: info-backend-redis-conn
               key: REDIS_PORT
         - name: REDIS_DB
           valueFrom:
             secretKeyRef:
-              name: info-admin-backend-redis-conn
+              name: info-backend-redis-conn
               key: REDIS_DB
         - name: REDIS_USER
           valueFrom:
             secretKeyRef:
-              name: info-admin-backend-redis-conn
+              name: info-backend-redis-conn
               key: REDIS_USER
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: info-admin-backend-redis-conn
+              name: info-backend-redis-conn
               key: REDIS_PASSWORD
         - name: CELERY_BROKER_URL
           valueFrom:
             secretKeyRef:
-              name: celeryworker-info-admin-backend-secret
+              name: info-backend-broker
               key: CELERY_BROKER_URL
         - name: CELERY_RESULT_BACKEND
           valueFrom:
             secretKeyRef:
-              name: celeryworker-info-admin-backend-secret
+              name: info-backend-broker
               key: CELERY_RESULT_BACKEND
               optional: true
         readinessProbe:
@@ -400,7 +400,7 @@ spec:
           sizeLimit: 256Mi
       - name: elasticsearch-ca
         secret:
-          secretName: info-admin-backend-elasticsearch
+          secretName: info-backend-elasticsearch
           items:
           - key: ca.crt
             path: ca.crt
@@ -488,7 +488,7 @@ spec:
         - name: CELERY_BROKER_URL
           valueFrom:
             secretKeyRef:
-              name: celeryworker-info-admin-backend-secret
+              name: info-backend-broker
               key: CELERY_BROKER_URL
         resources:
           requests:

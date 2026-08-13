@@ -86,6 +86,12 @@ collect_business_apps() {
         apps+=("$priority:$app_name:$enabled:$script_path")
     done
 
+    if [[ -d "$PROJECT_ROOT/research-app" ]]; then
+        log_error "发现已退役的活动目录: $PROJECT_ROOT/research-app"
+        log_error "未来 Research App 必须按新领域重新实例化，不能复用历史 Investment 前身。"
+        return 1
+    fi
+
     printf '%s\n' "${apps[@]}"
 }
 

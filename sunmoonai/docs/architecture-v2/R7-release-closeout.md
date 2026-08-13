@@ -83,3 +83,10 @@ python sunmoonai/docs/architecture-v2/scripts/verify_r7_release_kind.py \
 
 只有 R7-1～R7-8 全部完成，才可把本文件状态改为 `DONE` 并宣布 Architecture v2 重构完成。
 此后立即暂停；下一次工作从“把旧 v5 任务、Handoff 和实施计划重新设计为 v6”开始。
+
+## 6. 发布后退役说明
+
+R7 的观察窗关闭后，活动分支通过
+[`R7.1-legacy-retirement-closeout.md`](R7.1-legacy-retirement-closeout.md) 退役旧 V1 运行面。
+本文件与 `2.0.0` 标签继续记录发布当时的事实；复验当前分支必须使用 R7.1 门禁，不能把
+“旧 Deployment 必须存在且为零副本”的历史断言当作当前运行要求。

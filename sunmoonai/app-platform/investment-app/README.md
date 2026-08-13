@@ -1,7 +1,8 @@
 # Investment Architecture v2 部署入口
 
-本目录保存 Investment Architecture v2 正式运行态的唯一 Git 真相源。旧 Research 产品只作为
-R7 观察窗内的原生回滚资产保留；默认入口绝不部署旧 Admin/Web 双 Backend。
+本目录保存 Investment Architecture v2 正式运行态的唯一 Git 真相源。旧 Research 产品的
+观察窗已经关闭，其部署声明与 KIND 运行资源由 R7 后退役流程移除；默认入口绝不部署或重建
+旧 Admin/Web 双 Backend。
 
 唯一部署模型：
 
@@ -27,8 +28,8 @@ investment-web-frontend   (Next.js) ─┘       ├─ API
 ```
 
 `deploy` 会幂等收敛专用 RabbitMQ/Redis、激活 Investment→Knowledge 身份、运行 Migration、
-部署五个正式工作负载，并把旧 Research 六组件保持为 0 副本。它不会重建或覆盖
-`investment_admin` 业务数据，也不会删除 `research_admin`、旧 Secret、PVC 或镜像。
+部署五个正式工作负载。旧 Research 六组件已退役且不会被重建。它不会重建或覆盖
+`investment_admin` 业务数据。
 
 重新生成必须写入空目录并与已提交 bundle 逐字比较：
 
@@ -37,5 +38,6 @@ python3 architecture-v2/render-formal.py --output-dir /tmp/investment-formal
 diff -ru architecture-v2/bundle /tmp/investment-formal
 ```
 
-`release-inputs.json` 只保留 R4 历史来源证明，不是部署入口。原生回滚必须走受保护的 R5/R7
+`architecture-v2/evidence/R4-release-inputs.json` 只保留 R4 历史来源证明，不是部署入口。
+原生回滚必须走受保护的 R5/R7
 专用流程；私有备份、手工 patch 或集群当前状态均不能替代本目录。

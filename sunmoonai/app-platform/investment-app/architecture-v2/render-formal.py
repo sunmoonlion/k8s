@@ -232,7 +232,7 @@ def main() -> int:
 
     ingress_routes = [
         ingress(
-            "investment-admin-frontend-ingress",
+            "investment-r5-admin-route",
             "investment-admin.sunmoonai.com",
             [
                 ("/api", 100, "investment-r5-backend", 8000),
@@ -240,7 +240,7 @@ def main() -> int:
             ],
         ),
         ingress(
-            "investment-web-frontend-ingress",
+            "investment-r5-web-route",
             "investment.sunmoonai.com",
             [
                 ("/api", 100, "investment-r5-backend", 8000),
@@ -248,12 +248,12 @@ def main() -> int:
             ],
         ),
         ingress(
-            "investment-admin-backend-ingress",
+            "investment-r5-admin-api-route",
             "investment-admin-api.sunmoonai.com",
             [("/", None, "investment-r5-backend", 8000)],
         ),
         ingress(
-            "investment-web-backend-ingress",
+            "investment-r5-web-api-route",
             "investment-api.sunmoonai.com",
             [("/", None, "investment-r5-backend", 8000)],
         ),

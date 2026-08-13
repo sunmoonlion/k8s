@@ -1,89 +1,71 @@
 # Knowledge App 架构
 
+最后更新：2026-08-13
+
 ## 1. 系统定位
 
-`knowledge-app` 是 App Platform 的统一知识处理与检索能力系统，为所有领域 App
-提供文档接入、知识库管理、解析、分块、索引、检索和 RAG 能力。
+`knowledge-app` 是独立领域 App，负责 Artifact 摄取、知识对象版本、知识引擎绑定、索引、
+检索和引用元数据。Info 拥有原文与 Artifact，Investment 拥有投资研究和证据使用记录；
+Knowledge 不复制二者的权威主档。
 
-它不拥有资讯原文、研究结论或投资数据等其他领域主档。领域 App 保存权威数据，
-`knowledge-app` 保存知识处理配置、任务状态、映射关系和可重建的处理副本。
-
-## 2. 当前组件
-
-工程完整保留 `tpl-app` 的四个标准组件，当前部署仅启用：
+## 2. 当前 Architecture v2 拓扑
 
 ```text
-knowledge-app
-├── knowledge-admin-backend
-├── knowledge-admin-frontend  # 保留，当前关闭
-├── knowledge-web-backend     # 保留，当前关闭
-├── knowledge-web-frontend    # 保留，当前关闭
-├── ragflow
-└── deploy-knowledge-app-all
+knowledge-app/
+├── knowledge-backend          # 唯一 FastAPI Backend
+├── knowledge-admin-frontend   # Next.js Admin
+└── knowledge-web-frontend     # Next.js Web
+
+Kubernetes:
+knowledge-r5-backend-api       # HTTP / Admin / Web / Internal API
+knowledge-r5-backend-worker    # Celery 摄取和外部 provider 任务
+knowledge-r5-backend-scheduler # 扫描、补偿、对账
+knowledge-r5-admin-frontend
+knowledge-r5-web-frontend
 ```
 
-`knowledge-admin-backend` 是平台统一知识服务和编排接口。组件名中的 `admin`
-表示采用 Python/FastAPI 技术栈，不限制调用方必须是管理界面。
+API、Worker、Scheduler 和 Migration 使用同一 `knowledge-backend` 源码与不可变镜像，但以
+不同命令、ServiceAccount、凭据和容量策略运行。旧 `knowledge-admin-backend`、
+`knowledge-web-backend` 和独立 worker 仓/部署树已在 R7.1 退役，不是回滚入口。
 
-当前 ingestion worker 已支持两种模式：
-
-- 未配置 `RAGFLOW_API_KEY`：保持 mock 模式，只验证任务状态机和队列链路。
-- 配置 `RAGFLOW_API_BASE` + `RAGFLOW_API_KEY`：通过 RAGFlow 公开 HTTP API
-  创建/查找 Dataset、上传 Document、触发解析并回写 `ragflow_document_id`。
-
-## 3. 职责边界
-
-负责：
-
-- 对外提供稳定的知识服务 API。
-- 管理知识空间、文档投递、处理任务和检索请求。
-- 管理领域文档与 RAGFlow Dataset、Document 的映射关系。
-- 统一认证、权限、幂等、重试、审计和状态回调。
-- 隔离 RAGFlow 私有 API，支持未来替换或并行接入其他知识引擎。
-- 提供全量重建、增量同步和一致性对账。
-
-不负责：
-
-- 保存其他 App 的唯一原文或业务主档。
-- 决定资讯、研究或投资数据的业务含义。
-- 把模型输出直接升级为领域事实。
-
-## 4. 调用关系
+## 3. 接口与调用关系
 
 ```text
-info-app / research-app / investment-app / tools-app
-                         |
-                         v
-            knowledge-admin-backend
-                         |
-                         v
-                     RAGFlow
+Info Artifact + Outbox
+          |
+          v
+Knowledge Internal Ingestion -> knowledge-backend -> RAGFlow
+                                             |
+Investment service identity -> Retrieval API-+
 ```
 
-其他 App 通过 `knowledge-admin-backend` 的公开 API、事件或任务协议使用知识能力，
-不直接依赖 RAGFlow API、数据库、MinIO 或 Elasticsearch。
+- Admin/Web 前端共享同一个 Backend 和一个 Knowledge 逻辑数据库；
+- Admin、Web、Internal 是独立接口与身份分面，不是独立 Backend；
+- Info 使用受绑定的服务身份投递不可变 Artifact；
+- Investment 使用受绑定的服务身份检索；
+- 调用方不能直接访问 Knowledge 数据库、RAGFlow、MinIO 或 Elasticsearch。
 
-## 5. 数据与存储
+## 4. 数据所有权
 
-`knowledge-app` 的业务数据库保存：
+Knowledge 数据库保存：
 
-- 知识空间及访问策略。
-- 文档投递任务和幂等记录。
-- 领域对象、版本与知识引擎对象的映射。
-- 处理状态、错误、重试、对账和重建记录。
+- 摄取任务、幂等键、状态历史和失败分类；
+- Knowledge Document/Version；
+- Info 源文档版本与 Knowledge 版本的稳定映射；
+- Dataset/Document provider binding；
+- 检索、引用所需的稳定元数据。
 
-RAGFlow 自带的 MySQL、MinIO、Elasticsearch 和 Valkey 保存产品内部状态与处理副本。
-这些数据必须可由领域主档和 `knowledge-app` 的映射、任务记录重新构建。
+RAGFlow 的 MySQL、MinIO、Elasticsearch 和 Redis 保存 provider 内部状态与可重建派生数据，
+不能成为跨 App 契约或唯一业务主档。
 
-## 6. 部署原则
+## 5. 正式运行规则
 
-- 四个模板组件完整保留，按集群配置决定是否启动。
-- 当前启用 `knowledge-admin-backend` 和 `ragflow`。
-- 当前关闭 `knowledge-admin-frontend`、`knowledge-web-backend` 和
-  `knowledge-web-frontend`。
-- 关闭的 Backend 同时关闭数据库、S3 和 Elasticsearch 自动 provision，避免产生
-  无使用者的资源。
-- RAGFlow 是 `knowledge-app` 的可替换内部组件，不是跨 App 的直接集成契约。
-- `knowledge-admin-backend` 与 worker 默认注入
-  `RAGFLOW_API_BASE=http://ragflow-sunmoonai-api:80`；真实入库需在 Secret 中配置
-  `RAGFLOW_API_KEY`。
+- 正式摄取必须使用真实 Artifact、真实 RAGFlow 和真实 embedding provider；禁止 mock success；
+- RAGFlow 通过 `knowledge-ragflow-provider` 和 `RAGFLOW_API_BASE` 适配，调用方不可见 provider ID；
+- 解析失败、配置失败、Artifact 不可读和外部 API 失败必须有稳定、可重试的分类；
+- 正式 bundle 由 `architecture-v2/render-formal.py` 生成并按 digest 固定镜像；
+- 当前正式 release id 为 `r71-knowledge-formal-001`，R7.1 深层门禁包含真实
+  Info→Knowledge→Investment 竖线、严格 TLS 和 Casdoor 浏览器登录。
+
+总体边界以[App Platform 总体架构](../../docs/sunmoonai-architecture/baseline/overall/app-platform-architecture.md)
+为准。

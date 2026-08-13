@@ -14,8 +14,9 @@ interaction 能力。模板也具有相同形态。
 ## 决策
 
 - `tpl-admin-backend` 重命名为 `tpl-backend`；
-- `info-admin-backend`、`knowledge-admin-backend`、`research-admin-backend` 分别重命名为
-  `info-backend`、`knowledge-backend`、`research-backend`；
+- `info-admin-backend`、`knowledge-admin-backend` 分别重命名为 `info-backend`、
+  `knowledge-backend`；历史 `research-admin-backend` 随领域改名收敛为
+  `investment-backend`；
 - Web Backend 中仍有效的能力通过有审计的能力清单迁入规范 Backend；
 - 旧 `*-web-backend` 仓在迁移期间只接受兼容/回滚修复，完成观察窗后归档为只读；
 - 仓库重命名必须同步 Gitee、`.gitmodules`、本地 URL、CI、构建脚本、Harbor 仓名、K8s
@@ -34,3 +35,5 @@ interaction 能力。模板也具有相同形态。
 ## 结果
 
 规范 Backend 保留领域历史，Web Backend 历史继续可追溯但不再是长期活跃产品仓。
+截至 R7.1，三个活动领域仓分别为 `info-backend`、`knowledge-backend` 和
+`investment-backend`；活动 K8s 树中不存在 `research-app` Backend。

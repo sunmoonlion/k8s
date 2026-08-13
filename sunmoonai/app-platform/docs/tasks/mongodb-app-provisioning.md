@@ -1,5 +1,8 @@
 # 任务：MongoDB 按 App Backend 自动配置
 
+> 历史 V1 任务记录：双 Backend 与旧 App 清单已经退役。当前 Architecture v2 每 App
+> 只有一个规范 Backend；是否启用 MongoDB 必须由领域需求和新实施计划重新决定。
+
 ## 目标
 
 所有 App 共享 Data Platform 的 MongoDB 物理实例，但每个 Backend 使用独立
@@ -13,7 +16,7 @@ Secret，不能使用 MongoDB 管理员账号。
 - [x] 自动创建独立数据库、用户和 `readWrite`、`dbAdmin` 权限。
 - [x] 自动生成 `<backend>-mongodb-conn` Secret。
 - [x] K8s 工作负载通过 `envFrom` 引用 MongoDB Secret。
-- [x] 已同步到 `info-app`、`research-app`、`investment-app` 和 `tools-app`。
+- [x] 当时曾同步到 V1 App；该记录不代表当前 `research-app` 或 `tools-app` 存在。
 - [x] Kind 中八个 Backend 的 MongoDB 资源已完成初始化。
 - [x] 初始化日志不输出包含密码的 MongoDB URI。
 - [ ] 在远程集群重建时执行相同的自动初始化和连通性验证。

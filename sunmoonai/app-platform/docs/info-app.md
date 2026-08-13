@@ -62,9 +62,9 @@
 
 模型生成结果必须记录模型、版本、时间和输入来源，不能覆盖人工确认的主数据。
 
-### 3.3 与 Tools App
+### 3.3 与未来 Tools App
 
-`tools-app` 提供跨领域通用工具，例如：
+未来若按新 ADR 创建 `tools-app`，可提供跨领域通用工具，例如：
 
 - PDF、Office、HTML 和 Markdown 转换。
 - OCR。

@@ -85,6 +85,22 @@ def ingress(
     }
 
 
+def replace_resource_names(value: Any, mapping: dict[str, str]) -> None:
+    """Replace exact Kubernetes resource-name values in a rendered object."""
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if isinstance(item, str) and item in mapping:
+                value[key] = mapping[item]
+            else:
+                replace_resource_names(item, mapping)
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            if isinstance(item, str) and item in mapping:
+                value[index] = mapping[item]
+            else:
+                replace_resource_names(item, mapping)
+
+
 def main() -> int:
     args = parse_args()
     output = args.output_dir.resolve()
@@ -168,6 +184,15 @@ def main() -> int:
     ]
     dump(output / "10-migration.yaml", migration)
     runtime = load(output / "20-runtime.yaml")
+    replace_resource_names(
+        runtime,
+        {
+            "info-admin-backend-redis-conn": "info-backend-redis-conn",
+            "celeryworker-info-admin-backend-secret": "info-backend-broker",
+            "info-admin-backend-s3": "info-backend-s3",
+            "info-admin-backend-elasticsearch": "info-backend-elasticsearch",
+        },
+    )
     replicas = {
         "info-r5-backend-api": 2,
         "info-r5-backend-worker": 1,
@@ -212,7 +237,7 @@ def main() -> int:
 
     ingress_routes = [
         ingress(
-            "info-admin-frontend-ingress",
+            "info-r5-admin-route",
             "info-admin.sunmoonai.com",
             [
                 ("/api", 100, "info-r5-backend", 8000),
@@ -220,7 +245,7 @@ def main() -> int:
             ],
         ),
         ingress(
-            "info-web-frontend-ingress",
+            "info-r5-web-route",
             "info.sunmoonai.com",
             [
                 ("/api", 100, "info-r5-backend", 8000),
@@ -228,12 +253,12 @@ def main() -> int:
             ],
         ),
         ingress(
-            "info-admin-backend-ingress",
+            "info-r5-admin-api-route",
             "info-admin-api.sunmoonai.com",
             [("/", None, "info-r5-backend", 8000)],
         ),
         ingress(
-            "info-web-backend-ingress",
+            "info-r5-web-api-route",
             "info-api.sunmoonai.com",
             [("/", None, "info-r5-backend", 8000)],
         ),
@@ -298,10 +323,10 @@ def main() -> int:
             "info-backend-postgresql-conn",
             "info-backend-migration-postgresql-conn",
             "info-r5-browser-identity",
-            "info-admin-backend-redis-conn",
-            "celeryworker-info-admin-backend-secret",
-            "info-admin-backend-s3",
-            "info-admin-backend-elasticsearch",
+            "info-backend-redis-conn",
+            "info-backend-broker",
+            "info-backend-s3",
+            "info-backend-elasticsearch",
             "info-knowledge-ingest-client",
         ],
         "forbidden_markers": [

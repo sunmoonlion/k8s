@@ -1,6 +1,7 @@
 # Knowledge 内部组件（源码保留区）
 
-本目录当前仅用于保留组件源码，尚未纳入 Knowledge 的运行链。
+本目录当前仅用于保留组件源码，尚未纳入 Knowledge 的运行链，也不会被
+`deploy-knowledge-app-all` 或平台总部署入口自动部署。
 
 - `document-converter-backend/`：从历史 `tools-app` 恢复的文档转换组件。
 - `onlyoffice-docs-bff/`：从历史 `shared-apps` 恢复的 ONLYOFFICE BFF 组件。

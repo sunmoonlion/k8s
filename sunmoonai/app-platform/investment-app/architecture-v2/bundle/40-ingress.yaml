@@ -1,7 +1,7 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: investment-admin-frontend-ingress
+  name: investment-r5-admin-route
   namespace: app-platform-dev
   labels:
     sunmoonai.com/app: investment-r5
@@ -28,7 +28,7 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: investment-web-frontend-ingress
+  name: investment-r5-web-route
   namespace: app-platform-dev
   labels:
     sunmoonai.com/app: investment-r5
@@ -55,7 +55,7 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: investment-admin-backend-ingress
+  name: investment-r5-admin-api-route
   namespace: app-platform-dev
   labels:
     sunmoonai.com/app: investment-r5
@@ -75,7 +75,7 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: investment-web-backend-ingress
+  name: investment-r5-web-api-route
   namespace: app-platform-dev
   labels:
     sunmoonai.com/app: investment-r5

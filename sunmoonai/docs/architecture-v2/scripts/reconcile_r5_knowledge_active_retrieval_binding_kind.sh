@@ -2,8 +2,8 @@
 
 # Reconcile the single active Knowledge retrieval binding from one of the
 # provider-managed caller bindings. Secret values never leave the cluster or
-# appear in command output. Research is retained only for the native rollback
-# path; Investment is the Architecture v2 formal state.
+# appear in command output. R7.1 has retired the Research rollback runtime, so
+# Investment is now the only accepted active caller.
 set -euo pipefail
 
 KUBECONFIG_PATH="${KUBECONFIG:-$HOME/.kube/kind-config}"
@@ -13,7 +13,7 @@ RESTART=true
 TARGET_SECRET=knowledge-active-retrieval-service-binding
 
 usage() {
-  echo "usage: $0 --caller research|investment [--no-restart] [--kubeconfig PATH] [--namespace NAME]" >&2
+  echo "usage: $0 [--caller investment] [--no-restart] [--kubeconfig PATH] [--namespace NAME]" >&2
 }
 
 while [[ $# -gt 0 ]]; do
@@ -27,9 +27,12 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$CALLER" in
-  research) SOURCE_SECRET=knowledge-research-retrieval-service-binding ;;
   investment) SOURCE_SECRET=knowledge-investment-retrieval-service-binding ;;
-  *) usage; exit 2 ;;
+  *)
+    echo "caller '$CALLER' is retired; only investment is accepted after R7.1" >&2
+    usage
+    exit 2
+    ;;
 esac
 
 [[ "$NAMESPACE" == app-platform-dev ]] || {

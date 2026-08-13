@@ -300,10 +300,15 @@ def overlay(output: Path, namespace: str) -> None:
     common.dump_documents(output / "20-runtime.yaml", runtime_docs)
 
     policies = common.load_documents(output / "30-network-policies.yaml")
+    replaced_policy_names = {
+        "investment-r5-backend-runtime-egress",
+        "investment-r5-backend-api-egress",
+        "investment-r5-backend-worker-egress",
+        "investment-r5-backend-scheduler-egress",
+    }
     policies = [
-        item
-        for item in policies
-        if item.get("metadata", {}).get("name") != "investment-r5-backend-runtime-egress"
+        item for item in policies
+        if item.get("metadata", {}).get("name") not in replaced_policy_names
     ]
     policies.extend(
         [

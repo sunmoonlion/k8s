@@ -9,14 +9,20 @@
 
 ## 决策
 
-App Platform 按领域划分为：
+App Platform 当前按领域划分为：
 
 - `auth-app`
 - `info-app`
 - `knowledge-app`
-- `research-app`
-- `tools-app`
 - `investment-app`
+
+未来可在独立 ADR 和数据所有权获批后，从最新模板创建：
+
+- 新的通用 `research-app`；
+- 新的 `tools-app`。
+
+历史 `research-app` 的投资研究能力已迁入并由 `investment-app` 取代；该历史名称不代表
+当前活动 App，也不得作为未来 Research 的恢复源。
 
 每个 App 拥有独立业务边界和数据所有权。`investment-app` 是投资业务核心，但不是其他 App 的总控系统。
 

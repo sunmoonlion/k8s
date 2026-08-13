@@ -4,10 +4,10 @@
   "logical_app": "knowledge",
   "resource_app": "knowledge-r5",
   "namespace": "app-platform-dev",
-  "release_id": "r6-knowledge-formal-003",
+  "release_id": "r71-knowledge-formal-001",
   "formal_release": true,
   "images": {
-    "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:e6998183a3aadaff337f822031a1bc2396d5256fa395331176dc2b1a44480757",
+    "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:1abc6081ae02900744b9f86aeaeb4eeb2a49663fd0d897ee10ad5e7cfe384b57",
     "admin": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:07130d859a89b18842ce043178b5477bbb67a3ab183aadfe18baed039bd0b9c2",
     "web": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:7bdd329bf24e479d1c8f859ef6ed909958bc1479b7296b3b212c2293c7601148"
   },
@@ -25,11 +25,11 @@
     "40-ingress.yaml"
   ],
   "sha256": {
-    "00-prerequisites.yaml": "afe9706e525a83ea6d03b0c594ab50355d3d756ee8d1760fb34de2aea37ea74a",
-    "10-migration.yaml": "2b6e5578a37421bae41e795be8145e345b5c65d6e8b7bc0e8829d942c57e38df",
-    "20-runtime.yaml": "73834e583ec1238b8bd796153a2144f578220ef0cddcfae2aff5d44abdb521f1",
+    "00-prerequisites.yaml": "cd2edf7141e72df85129e696689378537c68da63efe1611ce0032008c8d6211c",
+    "10-migration.yaml": "ca64486709b971127a15d4b9543a742d2da694c0d9b8c6f4cf618c5bcfdeb9a1",
+    "20-runtime.yaml": "9f1db62ea0acafd4be467cbfc988524cb95844836047c647ab31353cbefb54ca",
     "30-network-policies.yaml": "b8e3598db20d7c60aa2edf2877e71860005951b5e7144a150704f4b49a916c21",
-    "40-ingress.yaml": "9f07e14ba567ea865e829144aca410d1f7a6e73ae1e559b58b7e7c5c841041d3"
+    "40-ingress.yaml": "519f08b674daef56cace64f2e6894649acdd49c3d0af36b7a4c23a32d612b681"
   },
   "deployment_replicas": {
     "knowledge-r5-backend-api": 2,
@@ -39,7 +39,7 @@
     "knowledge-r5-web-frontend": 2
   },
   "ingress_routes": {
-    "knowledge-admin-frontend-ingress": [
+    "knowledge-r5-admin-route": [
       {
         "match": "Host(`knowledge-admin.sunmoonai.com`) && PathPrefix(`/api`)",
         "priority": 100,
@@ -61,7 +61,7 @@
         ]
       }
     ],
-    "knowledge-web-frontend-ingress": [
+    "knowledge-r5-web-route": [
       {
         "match": "Host(`knowledge.sunmoonai.com`) && PathPrefix(`/api`)",
         "priority": 100,
@@ -83,7 +83,7 @@
         ]
       }
     ],
-    "knowledge-admin-backend-ingress": [
+    "knowledge-r5-admin-api-route": [
       {
         "match": "Host(`knowledge-admin-api.sunmoonai.com`) && PathPrefix(`/`)",
         "priority": null,
@@ -106,12 +106,11 @@
     "knowledge-backend-postgresql-conn",
     "knowledge-backend-migration-postgresql-conn",
     "knowledge-r5-browser-identity",
-    "knowledge-admin-backend-redis-conn",
-    "celeryworker-knowledge-admin-backend-secret",
-    "knowledge-admin-backend-secret",
-    "knowledge-admin-backend-s3",
+    "knowledge-backend-redis-conn",
+    "knowledge-backend-broker",
+    "knowledge-ragflow-provider",
+    "knowledge-backend-s3",
     "knowledge-info-ingest-service-binding",
-    "knowledge-research-retrieval-service-binding",
     "knowledge-investment-retrieval-service-binding",
     "knowledge-active-retrieval-service-binding"
   ],
@@ -125,12 +124,12 @@
   ],
   "contains_credentials": false,
   "renderer_inputs_sha256": {
-    "k8s:sunmoonai/docs/architecture-v2/scripts/render_r5_knowledge_candidate.py": "f539aadb389153656b197eb3f5c04dced9534687fb5b883612c7462f42192238",
+    "k8s:sunmoonai/docs/architecture-v2/scripts/render_r5_knowledge_candidate.py": "311058b9f0691a132d3c396dea9590455a3111844e89f235d602f28430346c57",
     "tpl-app:k8s-scaffold-v2/scaffold.py": "2f65213916ac338f4126c43b084dacd4a832906735d034b37a247b8507479828",
     "tpl-app:k8s-scaffold-v2/templates/00-prerequisites.yaml.tpl": "d201e550d730d77444ea9e0e405bc283b6db00df96fad474e661cbb261d0f842",
     "tpl-app:k8s-scaffold-v2/templates/10-migration.yaml.tpl": "d19ceea9d08f4b230721333076bdf5a65af0bf591507fd07eab3ac09784b1944",
     "tpl-app:k8s-scaffold-v2/templates/20-runtime.yaml.tpl": "eb4ed69a58a0219bb5c3400927ed0630652b9514479db6f01ed6b9783b8af9e3",
-    "tpl-app:k8s-scaffold-v2/templates/30-network-policies.yaml.tpl": "de8e13dfb9d8a9e8029a8c6bf6411139a6d70e4b949cbd6c959af3b8644bb791",
+    "tpl-app:k8s-scaffold-v2/templates/30-network-policies.yaml.tpl": "76005c896a830e31f166392440c03bb6d698bd0520566d4db616fe3f46f88d5c",
     "tpl-app:k8s-scaffold-v2/templates/40-ingress.yaml.tpl": "3a66c5a50d1fd55b01d34d2cb420cd58a9b18cd0bf928f014fe9db870976f09f"
   }
 }

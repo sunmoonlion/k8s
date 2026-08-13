@@ -1,0 +1,18 @@
+{
+  "task": "architecture-v2-r7.1-retirement-gate",
+  "result": "passed",
+  "formal_deployments_ready": 15,
+  "retired_platform_directory_absent": true,
+  "research_prefixed_runtime_resources": [],
+  "legacy_allowlist_remaining": [],
+  "casdoor_and_ragflow_preserved": true,
+  "required_evidence": {
+    "info-browser.json": "passed",
+    "knowledge-browser.json": "passed",
+    "investment-browser.json": "passed",
+    "cross-app-vertical.json": "passed"
+  },
+  "databases_deleted": false,
+  "secret_values_printed": false,
+  "errors": []
+}

@@ -27,7 +27,7 @@ const task = process.env.R3_BROWSER_TASK || 'architecture-v2-r3-browser'
 const adminOrigin = process.env.R3_ADMIN_ORIGIN || 'https://tpl-admin-r3.sunmoonai.com:30443'
 const webOrigin = process.env.R3_WEB_ORIGIN || 'https://tpl-web-r3.sunmoonai.com:30443'
 const providerOrigin = process.env.R3_CASDOOR_ORIGIN || 'https://casdoor.sunmoonai.com:30443'
-const operatorSecret = process.env.R3_OPERATOR_SECRET || 'sunmoonai-p0-005-browser-identity'
+const operatorSecret = process.env.R3_OPERATOR_SECRET || 'architecture-v2-browser-operator'
 const caCertificate =
   process.env.R3_CA_CERT ||
   `${process.env.HOME}/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/ca.crt`

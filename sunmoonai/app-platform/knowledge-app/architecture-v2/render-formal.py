@@ -27,7 +27,7 @@ FILES = (
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True, type=Path)
-    parser.add_argument("--release-id", default="r6-knowledge-formal-003")
+    parser.add_argument("--release-id", default="r71-knowledge-formal-001")
     parser.add_argument("--retrieval-dataset-allowlist", default="codex-smoke")
     return parser.parse_args()
 
@@ -94,6 +94,22 @@ def replace_legacy_config_refs(runtime: list[dict[str, Any]]) -> None:
                     ref["name"] = "knowledge-r5-backend-config"
 
 
+def replace_resource_names(value: Any, mapping: dict[str, str]) -> None:
+    """Replace exact Kubernetes resource-name values in a rendered object."""
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if isinstance(item, str) and item in mapping:
+                value[key] = mapping[item]
+            else:
+                replace_resource_names(item, mapping)
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            if isinstance(item, str) and item in mapping:
+                value[index] = mapping[item]
+            else:
+                replace_resource_names(item, mapping)
+
+
 def main() -> int:
     args = parse_args()
     if not args.retrieval_dataset_allowlist.strip() or "*" in args.retrieval_dataset_allowlist:
@@ -154,7 +170,7 @@ def main() -> int:
     dump(output / "00-prerequisites.yaml", prerequisites)
 
     images = {
-        "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:e6998183a3aadaff337f822031a1bc2396d5256fa395331176dc2b1a44480757",
+        "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:1abc6081ae02900744b9f86aeaeb4eeb2a49663fd0d897ee10ad5e7cfe384b57",
         "admin": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:07130d859a89b18842ce043178b5477bbb67a3ab183aadfe18baed039bd0b9c2",
         "web": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:7bdd329bf24e479d1c8f859ef6ed909958bc1479b7296b3b212c2293c7601148",
     }
@@ -206,18 +222,27 @@ def main() -> int:
             "annotations", {}
         )["sunmoonai.com/config-sha256"] = digest
     replace_legacy_config_refs(runtime)
+    replace_resource_names(
+        runtime,
+        {
+            "knowledge-admin-backend-redis-conn": "knowledge-backend-redis-conn",
+            "celeryworker-knowledge-admin-backend-secret": "knowledge-backend-broker",
+            "knowledge-admin-backend-secret": "knowledge-ragflow-provider",
+            "knowledge-admin-backend-s3": "knowledge-backend-s3",
+        },
+    )
     dump(output / "20-runtime.yaml", runtime)
 
     ingress_routes = [
-        ingress("knowledge-admin-frontend-ingress", "knowledge-admin.sunmoonai.com", [
+        ingress("knowledge-r5-admin-route", "knowledge-admin.sunmoonai.com", [
             ("/api", 100, "knowledge-r5-backend", 8000),
             ("/", 10, "knowledge-r5-admin-frontend", 3000),
         ]),
-        ingress("knowledge-web-frontend-ingress", "knowledge.sunmoonai.com", [
+        ingress("knowledge-r5-web-route", "knowledge.sunmoonai.com", [
             ("/api", 100, "knowledge-r5-backend", 8000),
             ("/", 10, "knowledge-r5-web-frontend", 3000),
         ]),
-        ingress("knowledge-admin-backend-ingress", "knowledge-admin-api.sunmoonai.com", [
+        ingress("knowledge-r5-admin-api-route", "knowledge-admin-api.sunmoonai.com", [
             ("/", None, "knowledge-r5-backend", 8000),
         ]),
     ]
@@ -259,10 +284,9 @@ def main() -> int:
         "external_secrets": [
             "harbor-registry-secret", "knowledge-r5-tls",
             "knowledge-backend-postgresql-conn", "knowledge-backend-migration-postgresql-conn",
-            "knowledge-r5-browser-identity", "knowledge-admin-backend-redis-conn",
-            "celeryworker-knowledge-admin-backend-secret", "knowledge-admin-backend-secret",
-            "knowledge-admin-backend-s3", "knowledge-info-ingest-service-binding",
-            "knowledge-research-retrieval-service-binding",
+            "knowledge-r5-browser-identity", "knowledge-backend-redis-conn",
+            "knowledge-backend-broker", "knowledge-ragflow-provider",
+            "knowledge-backend-s3", "knowledge-info-ingest-service-binding",
             "knowledge-investment-retrieval-service-binding",
             "knowledge-active-retrieval-service-binding",
         ],

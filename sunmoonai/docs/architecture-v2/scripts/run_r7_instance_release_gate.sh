@@ -15,7 +15,7 @@ NAMESPACE="${ARCH_V2_NAMESPACE:-app-platform-dev}"
 EVIDENCE_DIR="${K8S_ROOT}/sunmoonai/docs/architecture-v2/evidence/R7-release"
 SCRIPTS="${K8S_ROOT}/sunmoonai/docs/architecture-v2/scripts"
 BROWSER_GATE="${SCRIPTS}/verify_r3_template_browser.mjs"
-BROWSER_OPERATOR_SECRET="${ARCH_V2_BROWSER_OPERATOR_SECRET:-sunmoonai-p0-005-browser-identity}"
+BROWSER_OPERATOR_SECRET="${ARCH_V2_BROWSER_OPERATOR_SECRET:-architecture-v2-browser-operator}"
 
 stage() {
   printf 'R7_INSTANCE_STAGE=%s\n' "$1" >&2
