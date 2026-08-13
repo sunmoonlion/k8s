@@ -16,7 +16,7 @@ browser_gate() {
   KUBECONFIG="$KUBECONFIG_PATH" \
   R3_NAMESPACE="$NAMESPACE" \
   R3_PROVIDER_NAMESPACE="$NAMESPACE" \
-  R3_APP="${app}-r5" \
+  R3_APP="${app}" \
   R3_LOGICAL_APP="$app" \
   R3_BROWSER_TASK="architecture-v2-r7.1-${app}-browser" \
   R3_ADMIN_ORIGIN="https://${app}-admin.sunmoonai.com:30443" \

@@ -20,7 +20,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[4]
 APPS = ("info", "knowledge", "investment")
 FORMAL_DEPLOYMENTS = {
-    f"{app}-r5-{component}"
+    f"{app}-{component}"
     for app in APPS
     for component in (
         "backend-api", "backend-worker", "backend-scheduler",
@@ -112,6 +112,59 @@ LEGACY: dict[str, tuple[str, ...]] = {
         "research-web-backend-pvc", "research-web-frontend-pvc",
     ),
 }
+
+# Architecture-v2 initially used an ``*-r5`` rollout namespace for the same
+# logical applications.  After the stable names have passed the release gate,
+# those resources are legacy too.  Keep this list closed and derived only from
+# the three fixed application identities; callers cannot supply resource names.
+for _app in APPS:
+    LEGACY["deployment"] += tuple(
+        f"{_app}-r5-{component}"
+        for component in (
+            "backend-api", "backend-worker", "backend-scheduler",
+            "admin-frontend", "web-frontend",
+        )
+    )
+    LEGACY["service"] += tuple(
+        f"{_app}-r5-{component}"
+        for component in ("backend", "admin-frontend", "web-frontend")
+    )
+    LEGACY["configmap"] += tuple(
+        f"{_app}-r5-{component}-config"
+        for component in ("backend", "admin-frontend", "web-frontend")
+    )
+    LEGACY["secret"] += (
+        f"{_app}-r5-browser-identity",
+        f"{_app}-r5-tls",
+    )
+    LEGACY["serviceaccount"] += tuple(
+        f"{_app}-r5-{component}"
+        for component in (
+            "backend-api", "backend-worker", "backend-scheduler",
+            "backend-migration", "admin-frontend", "web-frontend",
+        )
+    )
+    LEGACY.setdefault("poddisruptionbudget", ())
+    LEGACY["poddisruptionbudget"] += tuple(
+        f"{_app}-r5-{component}"
+        for component in (
+            "backend-api", "backend-worker", "admin-frontend", "web-frontend",
+        )
+    )
+    LEGACY.setdefault("horizontalpodautoscaler", ())
+    LEGACY["horizontalpodautoscaler"] += tuple(
+        f"{_app}-r5-{component}"
+        for component in ("backend-api", "admin-frontend", "web-frontend")
+    )
+    LEGACY.setdefault("networkpolicy", ())
+    LEGACY["networkpolicy"] += tuple(
+        f"{_app}-r5-{suffix}"
+        for suffix in (
+            "default-deny", "dns-egress", "frontend-ingress", "frontend-egress",
+            "backend-ingress", "backend-migration-egress", "backend-api-egress",
+            "backend-worker-egress", "backend-scheduler-egress",
+        )
+    )
 
 
 class RetirementError(RuntimeError):

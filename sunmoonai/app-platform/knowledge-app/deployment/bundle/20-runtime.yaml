@@ -1,13 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: knowledge-r5-backend-api
+  name: knowledge-backend-api
   namespace: app-platform-dev
   labels:
-    app.kubernetes.io/name: knowledge-r5-backend
+    app.kubernetes.io/name: knowledge-backend
     app.kubernetes.io/component: backend-api
-    app.kubernetes.io/part-of: knowledge-r5
-    sunmoonai.com/app: knowledge-r5
+    app.kubernetes.io/part-of: knowledge
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   replicas: 2
@@ -20,22 +20,22 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      sunmoonai.com/app: knowledge-r5
+      sunmoonai.com/app: knowledge
       app.kubernetes.io/component: backend-api
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: knowledge-r5-backend
+        app.kubernetes.io/name: knowledge-backend
         app.kubernetes.io/component: backend-api
-        app.kubernetes.io/part-of: knowledge-r5
-        sunmoonai.com/app: knowledge-r5
+        app.kubernetes.io/part-of: knowledge
+        sunmoonai.com/app: knowledge
         sunmoonai.com/managed-by: app-platform-v2
         sunmoonai.com/internal-provider: 'true'
       annotations:
-        sunmoonai.com/release-id: v20-knowledge-formal-001
-        sunmoonai.com/config-sha256: 13033b5d950363a55d96c35b11194b020eca53a0ca9565c11dc4fa491ccdc339
+        sunmoonai.com/release-id: v20-knowledge-stable-001
+        sunmoonai.com/config-sha256: d8842a161ab2eeacb476a363fd1bcaa4312e6157603b0c1a6a0916f2e0ef2a16
     spec:
-      serviceAccountName: knowledge-r5-backend-api
+      serviceAccountName: knowledge-backend-api
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 45
       imagePullSecrets:
@@ -53,7 +53,7 @@ spec:
         whenUnsatisfiable: ScheduleAnyway
         labelSelector:
           matchLabels:
-            sunmoonai.com/app: knowledge-r5
+            sunmoonai.com/app: knowledge
             app.kubernetes.io/component: backend-api
       containers:
       - name: api
@@ -73,7 +73,7 @@ spec:
           containerPort: 8000
         envFrom:
         - configMapRef:
-            name: knowledge-r5-backend-config
+            name: knowledge-backend-config
         - secretRef:
             name: knowledge-info-ingest-service-binding
         - secretRef:
@@ -112,22 +112,22 @@ spec:
         - name: ADMIN_CASDOOR_CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name: knowledge-r5-browser-identity
+              name: knowledge-browser-identity
               key: ADMIN_CLIENT_ID
         - name: ADMIN_CASDOOR_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
-              name: knowledge-r5-browser-identity
+              name: knowledge-browser-identity
               key: ADMIN_CLIENT_SECRET
         - name: WEB_CASDOOR_CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name: knowledge-r5-browser-identity
+              name: knowledge-browser-identity
               key: WEB_CLIENT_ID
         - name: WEB_CASDOOR_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
-              name: knowledge-r5-browser-identity
+              name: knowledge-browser-identity
               key: WEB_CLIENT_SECRET
         - name: CELERY_BROKER_URL
           valueFrom:
@@ -137,27 +137,27 @@ spec:
         - name: RAGFLOW_API_BASE
           valueFrom:
             configMapKeyRef:
-              name: knowledge-r5-backend-config
+              name: knowledge-backend-config
               key: RAGFLOW_API_BASE
         - name: RAGFLOW_PARSE_POLL_INTERVAL_SECONDS
           valueFrom:
             configMapKeyRef:
-              name: knowledge-r5-backend-config
+              name: knowledge-backend-config
               key: RAGFLOW_PARSE_POLL_INTERVAL_SECONDS
         - name: RAGFLOW_PARSE_TIMEOUT_SECONDS
           valueFrom:
             configMapKeyRef:
-              name: knowledge-r5-backend-config
+              name: knowledge-backend-config
               key: RAGFLOW_PARSE_TIMEOUT_SECONDS
         - name: RETRIEVAL_DEFAULT_TENANT_ID
           valueFrom:
             configMapKeyRef:
-              name: knowledge-r5-backend-config
+              name: knowledge-backend-config
               key: RETRIEVAL_DEFAULT_TENANT_ID
         - name: RETRIEVAL_PROVIDER_TIMEOUT_SECONDS
           valueFrom:
             configMapKeyRef:
-              name: knowledge-r5-backend-config
+              name: knowledge-backend-config
               key: RETRIEVAL_PROVIDER_TIMEOUT_SECONDS
         - name: RETRIEVAL_DATASET_ALLOWLIST
           value: codex-smoke
@@ -172,7 +172,7 @@ spec:
             port: http
             httpHeaders:
             - name: Host
-              value: knowledge-r5-backend
+              value: knowledge-backend
           periodSeconds: 2
           failureThreshold: 30
         readinessProbe:
@@ -181,7 +181,7 @@ spec:
             port: http
             httpHeaders:
             - name: Host
-              value: knowledge-r5-backend
+              value: knowledge-backend
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 3
@@ -191,7 +191,7 @@ spec:
             port: http
             httpHeaders:
             - name: Host
-              value: knowledge-r5-backend
+              value: knowledge-backend
           periodSeconds: 10
           timeoutSeconds: 3
           failureThreshold: 3
@@ -226,31 +226,31 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: knowledge-r5-backend-api
+  name: knowledge-backend-api
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   maxUnavailable: 1
   selector:
     matchLabels:
-      sunmoonai.com/app: knowledge-r5
+      sunmoonai.com/app: knowledge
       app.kubernetes.io/component: backend-api
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: knowledge-r5-backend-api
+  name: knowledge-backend-api
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: knowledge-r5-backend-api
+    name: knowledge-backend-api
   minReplicas: 2
   maxReplicas: 6
   behavior:
@@ -269,33 +269,33 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: knowledge-r5-backend-worker
+  name: knowledge-backend-worker
   namespace: app-platform-dev
   labels:
-    app.kubernetes.io/name: knowledge-r5-backend
+    app.kubernetes.io/name: knowledge-backend
     app.kubernetes.io/component: backend-worker
-    app.kubernetes.io/part-of: knowledge-r5
-    sunmoonai.com/app: knowledge-r5
+    app.kubernetes.io/part-of: knowledge
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   replicas: 1
   revisionHistoryLimit: 3
   selector:
     matchLabels:
-      sunmoonai.com/app: knowledge-r5
+      sunmoonai.com/app: knowledge
       app.kubernetes.io/component: backend-worker
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: knowledge-r5-backend
+        app.kubernetes.io/name: knowledge-backend
         app.kubernetes.io/component: backend-worker
-        app.kubernetes.io/part-of: knowledge-r5
-        sunmoonai.com/app: knowledge-r5
+        app.kubernetes.io/part-of: knowledge
+        sunmoonai.com/app: knowledge
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/config-sha256: 13033b5d950363a55d96c35b11194b020eca53a0ca9565c11dc4fa491ccdc339
+        sunmoonai.com/config-sha256: d8842a161ab2eeacb476a363fd1bcaa4312e6157603b0c1a6a0916f2e0ef2a16
     spec:
-      serviceAccountName: knowledge-r5-backend-worker
+      serviceAccountName: knowledge-backend-worker
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 90
       imagePullSecrets:
@@ -319,7 +319,7 @@ spec:
           --hostname="celery@${POD_NAME}"
         envFrom:
         - configMapRef:
-            name: knowledge-r5-backend-config
+            name: knowledge-backend-config
         env:
         - name: POD_NAME
           valueFrom:
@@ -344,27 +344,27 @@ spec:
         - name: RAGFLOW_API_BASE
           valueFrom:
             configMapKeyRef:
-              name: knowledge-r5-backend-config
+              name: knowledge-backend-config
               key: RAGFLOW_API_BASE
         - name: RAGFLOW_PARSE_POLL_INTERVAL_SECONDS
           valueFrom:
             configMapKeyRef:
-              name: knowledge-r5-backend-config
+              name: knowledge-backend-config
               key: RAGFLOW_PARSE_POLL_INTERVAL_SECONDS
         - name: RAGFLOW_PARSE_TIMEOUT_SECONDS
           valueFrom:
             configMapKeyRef:
-              name: knowledge-r5-backend-config
+              name: knowledge-backend-config
               key: RAGFLOW_PARSE_TIMEOUT_SECONDS
         - name: RETRIEVAL_DEFAULT_TENANT_ID
           valueFrom:
             configMapKeyRef:
-              name: knowledge-r5-backend-config
+              name: knowledge-backend-config
               key: RETRIEVAL_DEFAULT_TENANT_ID
         - name: RETRIEVAL_PROVIDER_TIMEOUT_SECONDS
           valueFrom:
             configMapKeyRef:
-              name: knowledge-r5-backend-config
+              name: knowledge-backend-config
               key: RETRIEVAL_PROVIDER_TIMEOUT_SECONDS
         - name: RETRIEVAL_DATASET_ALLOWLIST
           value: codex-smoke
@@ -376,37 +376,37 @@ spec:
         - name: ARTIFACT_ALLOWED_CONTENT_TYPES
           valueFrom:
             configMapKeyRef:
-              name: knowledge-r5-backend-config
+              name: knowledge-backend-config
               key: ARTIFACT_ALLOWED_CONTENT_TYPES
         - name: ARTIFACT_MAX_SIZE_BYTES
           valueFrom:
             configMapKeyRef:
-              name: knowledge-r5-backend-config
+              name: knowledge-backend-config
               key: ARTIFACT_MAX_SIZE_BYTES
         - name: ARTIFACT_S3_ALLOWED_BUCKETS
           valueFrom:
             configMapKeyRef:
-              name: knowledge-r5-backend-config
+              name: knowledge-backend-config
               key: ARTIFACT_S3_ALLOWED_BUCKETS
         - name: ARTIFACT_S3_ALLOWED_PREFIXES
           valueFrom:
             configMapKeyRef:
-              name: knowledge-r5-backend-config
+              name: knowledge-backend-config
               key: ARTIFACT_S3_ALLOWED_PREFIXES
         - name: S3_ENDPOINT
           valueFrom:
             configMapKeyRef:
-              name: knowledge-r5-backend-config
+              name: knowledge-backend-config
               key: S3_ENDPOINT
         - name: S3_FORCE_PATH_STYLE
           valueFrom:
             configMapKeyRef:
-              name: knowledge-r5-backend-config
+              name: knowledge-backend-config
               key: S3_FORCE_PATH_STYLE
         - name: S3_REGION
           valueFrom:
             configMapKeyRef:
-              name: knowledge-r5-backend-config
+              name: knowledge-backend-config
               key: S3_REGION
         - name: S3_ACCESS_KEY_ID
           valueFrom:
@@ -460,28 +460,28 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: knowledge-r5-backend-worker
+  name: knowledge-backend-worker
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   maxUnavailable: 1
   selector:
     matchLabels:
-      sunmoonai.com/app: knowledge-r5
+      sunmoonai.com/app: knowledge
       app.kubernetes.io/component: backend-worker
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: knowledge-r5-backend-scheduler
+  name: knowledge-backend-scheduler
   namespace: app-platform-dev
   labels:
-    app.kubernetes.io/name: knowledge-r5-backend
+    app.kubernetes.io/name: knowledge-backend
     app.kubernetes.io/component: backend-scheduler
-    app.kubernetes.io/part-of: knowledge-r5
-    sunmoonai.com/app: knowledge-r5
+    app.kubernetes.io/part-of: knowledge
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   replicas: 1
@@ -490,21 +490,21 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      sunmoonai.com/app: knowledge-r5
+      sunmoonai.com/app: knowledge
       app.kubernetes.io/component: backend-scheduler
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: knowledge-r5-backend
+        app.kubernetes.io/name: knowledge-backend
         app.kubernetes.io/component: backend-scheduler
-        app.kubernetes.io/part-of: knowledge-r5
-        sunmoonai.com/app: knowledge-r5
+        app.kubernetes.io/part-of: knowledge
+        sunmoonai.com/app: knowledge
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: v20-knowledge-formal-001
-        sunmoonai.com/config-sha256: 13033b5d950363a55d96c35b11194b020eca53a0ca9565c11dc4fa491ccdc339
+        sunmoonai.com/release-id: v20-knowledge-stable-001
+        sunmoonai.com/config-sha256: d8842a161ab2eeacb476a363fd1bcaa4312e6157603b0c1a6a0916f2e0ef2a16
     spec:
-      serviceAccountName: knowledge-r5-backend-scheduler
+      serviceAccountName: knowledge-backend-scheduler
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 45
       imagePullSecrets:
@@ -530,7 +530,7 @@ spec:
         - --schedule=/tmp/celerybeat-schedule
         envFrom:
         - configMapRef:
-            name: knowledge-r5-backend-config
+            name: knowledge-backend-config
         env:
         - name: DATABASE_URL
           valueFrom:
@@ -566,13 +566,13 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: knowledge-r5-admin-frontend
+  name: knowledge-admin-frontend
   namespace: app-platform-dev
   labels:
-    app.kubernetes.io/name: knowledge-r5-admin-frontend
+    app.kubernetes.io/name: knowledge-admin-frontend
     app.kubernetes.io/component: admin-frontend
-    app.kubernetes.io/part-of: knowledge-r5
-    sunmoonai.com/app: knowledge-r5
+    app.kubernetes.io/part-of: knowledge
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   replicas: 2
@@ -585,21 +585,21 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      sunmoonai.com/app: knowledge-r5
+      sunmoonai.com/app: knowledge
       app.kubernetes.io/component: admin-frontend
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: knowledge-r5-admin-frontend
+        app.kubernetes.io/name: knowledge-admin-frontend
         app.kubernetes.io/component: admin-frontend
-        app.kubernetes.io/part-of: knowledge-r5
-        sunmoonai.com/app: knowledge-r5
+        app.kubernetes.io/part-of: knowledge
+        sunmoonai.com/app: knowledge
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: v20-knowledge-formal-001
-        sunmoonai.com/config-sha256: 5ac5250efa4ec3e96d0473d637aef7a510c0bc154a8368205a0bdbce0c3c473c
+        sunmoonai.com/release-id: v20-knowledge-stable-001
+        sunmoonai.com/config-sha256: 5de662c60d3f4485fd585c0df7cc2bdd5310fb36c6c01d91bad8d29263faaa86
     spec:
-      serviceAccountName: knowledge-r5-admin-frontend
+      serviceAccountName: knowledge-admin-frontend
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30
       imagePullSecrets:
@@ -617,7 +617,7 @@ spec:
         whenUnsatisfiable: ScheduleAnyway
         labelSelector:
           matchLabels:
-            sunmoonai.com/app: knowledge-r5
+            sunmoonai.com/app: knowledge
             app.kubernetes.io/component: admin-frontend
       containers:
       - name: admin
@@ -628,7 +628,7 @@ spec:
           containerPort: 3000
         envFrom:
         - configMapRef:
-            name: knowledge-r5-admin-frontend-config
+            name: knowledge-admin-frontend-config
         startupProbe:
           httpGet:
             path: /healthz
@@ -683,31 +683,31 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: knowledge-r5-admin-frontend
+  name: knowledge-admin-frontend
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   maxUnavailable: 1
   selector:
     matchLabels:
-      sunmoonai.com/app: knowledge-r5
+      sunmoonai.com/app: knowledge
       app.kubernetes.io/component: admin-frontend
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: knowledge-r5-admin-frontend
+  name: knowledge-admin-frontend
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: knowledge-r5-admin-frontend
+    name: knowledge-admin-frontend
   minReplicas: 2
   maxReplicas: 6
   behavior:
@@ -724,13 +724,13 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: knowledge-r5-web-frontend
+  name: knowledge-web-frontend
   namespace: app-platform-dev
   labels:
-    app.kubernetes.io/name: knowledge-r5-web-frontend
+    app.kubernetes.io/name: knowledge-web-frontend
     app.kubernetes.io/component: web-frontend
-    app.kubernetes.io/part-of: knowledge-r5
-    sunmoonai.com/app: knowledge-r5
+    app.kubernetes.io/part-of: knowledge
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   replicas: 2
@@ -743,21 +743,21 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      sunmoonai.com/app: knowledge-r5
+      sunmoonai.com/app: knowledge
       app.kubernetes.io/component: web-frontend
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: knowledge-r5-web-frontend
+        app.kubernetes.io/name: knowledge-web-frontend
         app.kubernetes.io/component: web-frontend
-        app.kubernetes.io/part-of: knowledge-r5
-        sunmoonai.com/app: knowledge-r5
+        app.kubernetes.io/part-of: knowledge
+        sunmoonai.com/app: knowledge
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: v20-knowledge-formal-001
-        sunmoonai.com/config-sha256: 5da48094daa73137708746444f09acf98cd5c1e251a8774d5d99b78f4dad2d8b
+        sunmoonai.com/release-id: v20-knowledge-stable-001
+        sunmoonai.com/config-sha256: 572aa1c095667231bb6aa92a9e11a4987b4b6c8b2601d4f28e5940b5ea9e9b4d
     spec:
-      serviceAccountName: knowledge-r5-web-frontend
+      serviceAccountName: knowledge-web-frontend
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30
       imagePullSecrets:
@@ -775,7 +775,7 @@ spec:
         whenUnsatisfiable: ScheduleAnyway
         labelSelector:
           matchLabels:
-            sunmoonai.com/app: knowledge-r5
+            sunmoonai.com/app: knowledge
             app.kubernetes.io/component: web-frontend
       containers:
       - name: web
@@ -786,7 +786,7 @@ spec:
           containerPort: 3000
         envFrom:
         - configMapRef:
-            name: knowledge-r5-web-frontend-config
+            name: knowledge-web-frontend-config
         startupProbe:
           httpGet:
             path: /healthz
@@ -841,31 +841,31 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: knowledge-r5-web-frontend
+  name: knowledge-web-frontend
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   maxUnavailable: 1
   selector:
     matchLabels:
-      sunmoonai.com/app: knowledge-r5
+      sunmoonai.com/app: knowledge
       app.kubernetes.io/component: web-frontend
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: knowledge-r5-web-frontend
+  name: knowledge-web-frontend
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: knowledge-r5-web-frontend
+    name: knowledge-web-frontend
   minReplicas: 2
   maxReplicas: 6
   behavior:

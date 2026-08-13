@@ -1,76 +1,76 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: knowledge-r5-backend-api
+  name: knowledge-backend-api
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 automountServiceAccountToken: false
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: knowledge-r5-backend-worker
+  name: knowledge-backend-worker
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 automountServiceAccountToken: false
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: knowledge-r5-backend-scheduler
+  name: knowledge-backend-scheduler
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 automountServiceAccountToken: false
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: knowledge-r5-backend-migration
+  name: knowledge-backend-migration
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 automountServiceAccountToken: false
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: knowledge-r5-admin-frontend
+  name: knowledge-admin-frontend
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 automountServiceAccountToken: false
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: knowledge-r5-web-frontend
+  name: knowledge-web-frontend
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 automountServiceAccountToken: false
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: knowledge-r5-backend-config
+  name: knowledge-backend-config
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 data:
   ENV: production
   LOG_LEVEL: INFO
   SERVICE_NAME: knowledge-backend
-  DEPLOYMENT_ID: v20-knowledge-formal-001
+  DEPLOYMENT_ID: v20-knowledge-stable-001
   APP_SLUG: knowledge
   REDIS_HOST: redis-sunmoonai-master.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -80,9 +80,9 @@ data:
   CASDOOR_BACKCHANNEL_ENDPOINT: http://casdoor-sunmoonai.app-platform-dev.svc.cluster.local:8000
   CASDOOR_ORGANIZATION: sunmoonai
   CASDOOR_VERIFY_SSL: 'true'
-  ADMIN_CASDOOR_CLIENT_ID: sunmoonai-knowledge-r5-admin
+  ADMIN_CASDOOR_CLIENT_ID: sunmoonai-knowledge-admin
   ADMIN_CASDOOR_REDIRECT_URI: https://knowledge-admin.sunmoonai.com:30443/api/auth/admin/callback
-  ADMIN_CASDOOR_APPLICATION: sunmoonai-knowledge-r5-admin
+  ADMIN_CASDOOR_APPLICATION: sunmoonai-knowledge-admin
   ADMIN_AUTH_POLICY_VERSION: knowledge-admin-v2
   ADMIN_AUTH_ROLE_ALLOWLIST: admin,operator
   ADMIN_AUTH_SCOPE_ALLOWLIST: knowledge:admin
@@ -90,9 +90,9 @@ data:
   ADMIN_FRONTEND_ALLOWED_ORIGINS: https://knowledge-admin.sunmoonai.com:30443
   ADMIN_AUTH_DEFAULT_RETURN_TO: /
   ADMIN_AUTH_ALLOWED_RETURN_PATHS: /
-  WEB_CASDOOR_CLIENT_ID: sunmoonai-knowledge-r5-web
+  WEB_CASDOOR_CLIENT_ID: sunmoonai-knowledge-web
   WEB_CASDOOR_REDIRECT_URI: https://knowledge.sunmoonai.com:30443/api/auth/web/callback
-  WEB_CASDOOR_APPLICATION: sunmoonai-knowledge-r5-web
+  WEB_CASDOOR_APPLICATION: sunmoonai-knowledge-web
   WEB_AUTH_POLICY_VERSION: knowledge-web-v2
   WEB_AUTH_ROLE_ALLOWLIST: member
   WEB_AUTH_SCOPE_ALLOWLIST: profile:read
@@ -102,7 +102,7 @@ data:
   WEB_AUTH_ALLOWED_RETURN_PATHS: /zh-CN/dashboard,/en/dashboard,/zh-CN/login,/en/login
   WEB_FRONTEND_DEFAULT_LOCALE: zh-CN
   SESSION_COOKIE_SECURE: 'true'
-  ALLOWED_HOSTS: knowledge-r5-backend,knowledge-r5-backend.app-platform-dev,knowledge-r5-backend.app-platform-dev.svc,knowledge-r5-backend.app-platform-dev.svc.cluster.local,knowledge-admin.sunmoonai.com,knowledge.sunmoonai.com,knowledge-admin-api.sunmoonai.com
+  ALLOWED_HOSTS: knowledge-backend,knowledge-backend.app-platform-dev,knowledge-backend.app-platform-dev.svc,knowledge-backend.app-platform-dev.svc.cluster.local,knowledge-admin.sunmoonai.com,knowledge.sunmoonai.com,knowledge-admin-api.sunmoonai.com
   REFERENCE_INTERACTION_ENABLED: 'false'
   SERVICE_AUTH_SUBJECT_BINDINGS_JSON: '{}'
   CELERY_QUEUE: knowledge.admin.default
@@ -124,45 +124,45 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: knowledge-r5-admin-frontend-config
+  name: knowledge-admin-frontend-config
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 data:
   DEPLOYMENT_ENV: production
   AUTH_APP: knowledge
   APP_ORIGIN: https://knowledge-admin.sunmoonai.com:30443
-  BACKEND_INTERNAL_URL: http://knowledge-r5-backend:8000
-  DEPLOYMENT_ID: v20-knowledge-formal-001-admin
+  BACKEND_INTERNAL_URL: http://knowledge-backend:8000
+  DEPLOYMENT_ID: v20-knowledge-stable-001-admin
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: knowledge-r5-web-frontend-config
+  name: knowledge-web-frontend-config
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 data:
   DEPLOYMENT_ENV: production
   AUTH_APP: knowledge
   APP_ORIGIN: https://knowledge.sunmoonai.com:30443
-  BACKEND_INTERNAL_URL: http://knowledge-r5-backend:8000
-  DEPLOYMENT_ID: v20-knowledge-formal-001-web
+  BACKEND_INTERNAL_URL: http://knowledge-backend:8000
+  DEPLOYMENT_ID: v20-knowledge-stable-001-web
   REFERENCE_UI_ENABLED: 'false'
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: knowledge-r5-backend
+  name: knowledge-backend
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   selector:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     app.kubernetes.io/component: backend-api
   ports:
   - name: http
@@ -172,14 +172,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: knowledge-r5-admin-frontend
+  name: knowledge-admin-frontend
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   selector:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     app.kubernetes.io/component: admin-frontend
   ports:
   - name: http
@@ -189,14 +189,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: knowledge-r5-web-frontend
+  name: knowledge-web-frontend
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   selector:
-    sunmoonai.com/app: knowledge-r5
+    sunmoonai.com/app: knowledge
     app.kubernetes.io/component: web-frontend
   ports:
   - name: http

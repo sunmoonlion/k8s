@@ -1,5 +1,5 @@
 {
-  "task": "architecture-v2-r7-info-browser",
+  "task": "stable-name-info-browser",
   "result": "passed",
   "strict_tls": true,
   "provider_preflight": 200,

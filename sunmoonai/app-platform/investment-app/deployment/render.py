@@ -27,7 +27,7 @@ FILES = (
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True, type=Path)
-    parser.add_argument("--release-id", default="r6-investment-formal-002")
+    parser.add_argument("--release-id", default="v20-investment-001")
     return parser.parse_args()
 
 
@@ -51,6 +51,26 @@ def named(items: list[dict[str, Any]], kind: str, name: str) -> dict[str, Any]:
     if len(matches) != 1:
         raise RuntimeError(f"expected one {kind}/{name}, found {len(matches)}")
     return matches[0]
+
+
+def replace_resource_prefixes(value: Any, mapping: dict[str, str]) -> Any:
+    """Replace rollout-only prefixes while preserving the rendered structure."""
+    if isinstance(value, dict):
+        for key, item in list(value.items()):
+            target_key = replace_resource_prefixes(key, mapping)
+            rendered_item = replace_resource_prefixes(item, mapping)
+            if target_key != key:
+                del value[key]
+            value[target_key] = rendered_item
+        return value
+    if isinstance(value, list):
+        for index, item in enumerate(value):
+            value[index] = replace_resource_prefixes(item, mapping)
+        return value
+    if isinstance(value, str):
+        for source, target in mapping.items():
+            value = value.replace(source, target)
+    return value
 
 
 def ingress(
@@ -140,6 +160,7 @@ def main() -> int:
             ),
             "WEB_FRONTEND_BASE_URL": "https://investment.sunmoonai.com:30443",
             "WEB_FRONTEND_ALLOWED_ORIGINS": "https://investment.sunmoonai.com:30443",
+            "AGENT_REDIS_KEY_PREFIX": "investment:agent",
             "ALLOWED_HOSTS": (
                 "investment-r5-backend,investment-r5-backend.app-platform-dev,"
                 "investment-r5-backend.app-platform-dev.svc,"
@@ -228,6 +249,10 @@ def main() -> int:
         item["spec"]["template"].setdefault("metadata", {}).setdefault(
             "annotations", {}
         )["sunmoonai.com/config-sha256"] = digest
+    worker_labels = named(
+        runtime, "Deployment", "investment-r5-backend-worker"
+    )["spec"]["template"].setdefault("metadata", {}).setdefault("labels", {})
+    worker_labels["sunmoonai.com/allow-knowledge-r5-internal"] = "true"
     dump(output / "20-runtime.yaml", runtime)
 
     ingress_routes = [
@@ -272,6 +297,39 @@ def main() -> int:
             for path in sorted((scaffold / "templates").glob("*.tpl"))
         }
     )
+    stable_prefixes = {
+        "investment-r5": "investment",
+        "knowledge-r5": "knowledge",
+    }
+    for filename in FILES:
+        documents = load(output / filename)
+        replace_resource_prefixes(documents, stable_prefixes)
+        dump(output / filename, documents)
+    replace_resource_prefixes(ingress_routes, stable_prefixes)
+    replicas = {
+        replace_resource_prefixes(name, stable_prefixes): count
+        for name, count in replicas.items()
+    }
+
+    prerequisites = load(output / "00-prerequisites.yaml")
+    runtime = load(output / "20-runtime.yaml")
+    stable_config_sources = {
+        "investment-backend-api": "investment-backend-config",
+        "investment-backend-worker": "investment-backend-config",
+        "investment-backend-scheduler": "investment-backend-config",
+        "investment-admin-frontend": "investment-admin-frontend-config",
+        "investment-web-frontend": "investment-web-frontend-config",
+    }
+    for deployment, config_name in stable_config_sources.items():
+        config_data = named(prerequisites, "ConfigMap", config_name).get("data", {})
+        digest = hashlib.sha256(
+            json.dumps(config_data, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        item = named(runtime, "Deployment", deployment)
+        item["spec"]["template"].setdefault("metadata", {}).setdefault(
+            "annotations", {}
+        )["sunmoonai.com/config-sha256"] = digest
+    dump(output / "20-runtime.yaml", runtime)
     route_contract = {
         item["metadata"]["name"]: [
             {
@@ -287,7 +345,7 @@ def main() -> int:
         "schema_version": 2,
         "architecture": "app-platform-v2-formal",
         "logical_app": "investment",
-        "resource_app": "investment-r5",
+        "resource_app": "investment",
         "namespace": "app-platform-dev",
         "release_id": args.release_id,
         "formal_release": True,
@@ -307,10 +365,10 @@ def main() -> int:
         "legacy_deployments": [],
         "external_secrets": [
             "harbor-registry-secret",
-            "investment-r5-tls",
+            "investment-tls",
             "investment-backend-postgresql-conn",
             "investment-backend-migration-postgresql-conn",
-            "investment-r5-browser-identity",
+            "investment-browser-identity",
             "investment-backend-redis-conn",
             "investment-backend-broker",
             "investment-knowledge-retrieval-client",

@@ -27,7 +27,7 @@ FILES = (
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True, type=Path)
-    parser.add_argument("--release-id", default="r6-info-formal-004")
+    parser.add_argument("--release-id", default="v20-info-stable-001")
     return parser.parse_args()
 
 
@@ -99,6 +99,26 @@ def replace_resource_names(value: Any, mapping: dict[str, str]) -> None:
                 value[index] = mapping[item]
             else:
                 replace_resource_names(item, mapping)
+
+
+def replace_resource_prefixes(value: Any, mapping: dict[str, str]) -> Any:
+    """Replace rollout-only prefixes while preserving the rendered structure."""
+    if isinstance(value, dict):
+        for key, item in list(value.items()):
+            target_key = replace_resource_prefixes(key, mapping)
+            rendered_item = replace_resource_prefixes(item, mapping)
+            if target_key != key:
+                del value[key]
+            value[target_key] = rendered_item
+        return value
+    if isinstance(value, list):
+        for index, item in enumerate(value):
+            value[index] = replace_resource_prefixes(item, mapping)
+        return value
+    if isinstance(value, str):
+        for source, target in mapping.items():
+            value = value.replace(source, target)
+    return value
 
 
 def main() -> int:
@@ -277,6 +297,36 @@ def main() -> int:
             for path in sorted((scaffold / "templates").glob("*.tpl"))
         }
     )
+    stable_prefixes = {"info-r5": "info", "knowledge-r5": "knowledge"}
+    for filename in FILES:
+        documents = load(output / filename)
+        replace_resource_prefixes(documents, stable_prefixes)
+        dump(output / filename, documents)
+    replace_resource_prefixes(ingress_routes, stable_prefixes)
+    replicas = {
+        replace_resource_prefixes(name, stable_prefixes): count
+        for name, count in replicas.items()
+    }
+
+    prerequisites = load(output / "00-prerequisites.yaml")
+    runtime = load(output / "20-runtime.yaml")
+    stable_config_sources = {
+        "info-backend-api": "info-backend-config",
+        "info-backend-worker": "info-backend-config",
+        "info-backend-scheduler": "info-backend-config",
+        "info-admin-frontend": "info-admin-frontend-config",
+        "info-web-frontend": "info-web-frontend-config",
+    }
+    for deployment, config_name in stable_config_sources.items():
+        config_data = named(prerequisites, "ConfigMap", config_name).get("data", {})
+        config_digest = hashlib.sha256(
+            json.dumps(config_data, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        template = named(runtime, "Deployment", deployment)["spec"]["template"]
+        template.setdefault("metadata", {}).setdefault("annotations", {})[
+            "sunmoonai.com/config-sha256"
+        ] = config_digest
+    dump(output / "20-runtime.yaml", runtime)
     route_contract = {
         item["metadata"]["name"]: [
             {
@@ -292,7 +342,7 @@ def main() -> int:
         "schema_version": 2,
         "architecture": "app-platform-v2-formal",
         "logical_app": "info",
-        "resource_app": "info-r5",
+        "resource_app": "info",
         "namespace": "app-platform-dev",
         "release_id": args.release_id,
         "formal_release": True,
@@ -312,10 +362,10 @@ def main() -> int:
         "legacy_deployments": [],
         "external_secrets": [
             "harbor-registry-secret",
-            "info-r5-tls",
+            "info-tls",
             "info-backend-postgresql-conn",
             "info-backend-migration-postgresql-conn",
-            "info-r5-browser-identity",
+            "info-browser-identity",
             "info-backend-redis-conn",
             "info-backend-broker",
             "info-backend-s3",

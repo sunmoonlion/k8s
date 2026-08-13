@@ -27,7 +27,7 @@ FILES = (
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True, type=Path)
-    parser.add_argument("--release-id", default="v20-knowledge-formal-001")
+    parser.add_argument("--release-id", default="v20-knowledge-stable-001")
     parser.add_argument("--retrieval-dataset-allowlist", default="codex-smoke")
     return parser.parse_args()
 
@@ -108,6 +108,26 @@ def replace_resource_names(value: Any, mapping: dict[str, str]) -> None:
                 value[index] = mapping[item]
             else:
                 replace_resource_names(item, mapping)
+
+
+def replace_resource_prefixes(value: Any, mapping: dict[str, str]) -> Any:
+    """Replace rollout-only prefixes while preserving the rendered structure."""
+    if isinstance(value, dict):
+        for key, item in list(value.items()):
+            target_key = replace_resource_prefixes(key, mapping)
+            rendered_item = replace_resource_prefixes(item, mapping)
+            if target_key != key:
+                del value[key]
+            value[target_key] = rendered_item
+        return value
+    if isinstance(value, list):
+        for index, item in enumerate(value):
+            value[index] = replace_resource_prefixes(item, mapping)
+        return value
+    if isinstance(value, str):
+        for source, target in mapping.items():
+            value = value.replace(source, target)
+    return value
 
 
 def main() -> int:
@@ -256,11 +276,41 @@ def main() -> int:
         f"tpl-app:k8s-deployment/templates/{path.name}": path
         for path in sorted((scaffold / "templates").glob("*.tpl"))
     })
+    stable_prefixes = {"knowledge-r5": "knowledge"}
+    for filename in FILES:
+        documents = load(output / filename)
+        replace_resource_prefixes(documents, stable_prefixes)
+        dump(output / filename, documents)
+    replace_resource_prefixes(ingress_routes, stable_prefixes)
+    replicas = {
+        replace_resource_prefixes(name, stable_prefixes): count
+        for name, count in replicas.items()
+    }
+
+    prerequisites = load(output / "00-prerequisites.yaml")
+    runtime = load(output / "20-runtime.yaml")
+    stable_config_sources = {
+        "knowledge-backend-api": "knowledge-backend-config",
+        "knowledge-backend-worker": "knowledge-backend-config",
+        "knowledge-backend-scheduler": "knowledge-backend-config",
+        "knowledge-admin-frontend": "knowledge-admin-frontend-config",
+        "knowledge-web-frontend": "knowledge-web-frontend-config",
+    }
+    for deployment, config_name in stable_config_sources.items():
+        config_data = named(prerequisites, "ConfigMap", config_name).get("data", {})
+        digest = hashlib.sha256(
+            json.dumps(config_data, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        item = named(runtime, "Deployment", deployment)
+        item["spec"]["template"].setdefault("metadata", {}).setdefault(
+            "annotations", {}
+        )["sunmoonai.com/config-sha256"] = digest
+    dump(output / "20-runtime.yaml", runtime)
     release = {
         "schema_version": 2,
         "architecture": "app-platform-v2-formal",
         "logical_app": "knowledge",
-        "resource_app": "knowledge-r5",
+        "resource_app": "knowledge",
         "namespace": "app-platform-dev",
         "release_id": args.release_id,
         "formal_release": True,
@@ -282,9 +332,9 @@ def main() -> int:
         },
         "legacy_deployments": [],
         "external_secrets": [
-            "harbor-registry-secret", "knowledge-r5-tls",
+            "harbor-registry-secret", "knowledge-tls",
             "knowledge-backend-postgresql-conn", "knowledge-backend-migration-postgresql-conn",
-            "knowledge-r5-browser-identity", "knowledge-backend-redis-conn",
+            "knowledge-browser-identity", "knowledge-backend-redis-conn",
             "knowledge-backend-broker", "knowledge-ragflow-provider",
             "knowledge-backend-s3", "knowledge-info-ingest-service-binding",
             "knowledge-investment-retrieval-service-binding",

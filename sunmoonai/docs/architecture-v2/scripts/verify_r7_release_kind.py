@@ -24,7 +24,7 @@ EVIDENCE_FILES = {
     "investment_browser": "investment-browser.json",
     "cross_app_vertical": "cross-app-vertical.json",
 }
-TEMP_MARKERS = ("candidate", "-r3", "-r4", "-b4", "smoke")
+TEMP_MARKERS = ("candidate", "-r3", "-r4", "-r5", "-b4", "smoke")
 TEMP_RESOURCE_TYPES = (
     "deployments",
     "statefulsets",
@@ -147,7 +147,7 @@ async def main():
 asyncio.run(main())"""
     output = kubectl.run(
         "exec",
-        "deployment/info-r5-backend-api",
+        "deployment/info-backend-api",
         "--",
         "/app/.venv/bin/python",
         "-c",
@@ -257,7 +257,7 @@ def main() -> int:
 
             formal_ingresses.update(release["ingress_routes"])
             app_result["migration_head"] = verify_database_head(
-                kubectl, f"{app}-r5-backend-api", EXPECTED_HEADS[app]
+                kubectl, f"{app}-backend-api", EXPECTED_HEADS[app]
             )
             result["apps"][app] = app_result
 

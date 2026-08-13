@@ -1,10 +1,10 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: info-r5-admin-route
+  name: info-admin-route
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   entryPoints:
@@ -13,25 +13,25 @@ spec:
   - kind: Rule
     match: Host(`info-admin.sunmoonai.com`) && PathPrefix(`/api`)
     services:
-    - name: info-r5-backend
+    - name: info-backend
       port: 8000
     priority: 100
   - kind: Rule
     match: Host(`info-admin.sunmoonai.com`) && PathPrefix(`/`)
     services:
-    - name: info-r5-admin-frontend
+    - name: info-admin-frontend
       port: 3000
     priority: 10
   tls:
-    secretName: info-r5-tls
+    secretName: info-tls
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: info-r5-web-route
+  name: info-web-route
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   entryPoints:
@@ -40,25 +40,25 @@ spec:
   - kind: Rule
     match: Host(`info.sunmoonai.com`) && PathPrefix(`/api`)
     services:
-    - name: info-r5-backend
+    - name: info-backend
       port: 8000
     priority: 100
   - kind: Rule
     match: Host(`info.sunmoonai.com`) && PathPrefix(`/`)
     services:
-    - name: info-r5-web-frontend
+    - name: info-web-frontend
       port: 3000
     priority: 10
   tls:
-    secretName: info-r5-tls
+    secretName: info-tls
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: info-r5-admin-api-route
+  name: info-admin-api-route
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   entryPoints:
@@ -67,18 +67,18 @@ spec:
   - kind: Rule
     match: Host(`info-admin-api.sunmoonai.com`) && PathPrefix(`/`)
     services:
-    - name: info-r5-backend
+    - name: info-backend
       port: 8000
   tls:
-    secretName: info-r5-tls
+    secretName: info-tls
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: info-r5-web-api-route
+  name: info-web-api-route
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   entryPoints:
@@ -87,7 +87,7 @@ spec:
   - kind: Rule
     match: Host(`info-api.sunmoonai.com`) && PathPrefix(`/`)
     services:
-    - name: info-r5-backend
+    - name: info-backend
       port: 8000
   tls:
-    secretName: info-r5-tls
+    secretName: info-tls

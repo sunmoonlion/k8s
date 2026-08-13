@@ -1,15 +1,15 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: info-r5-default-deny
+  name: info-default-deny
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   podSelector:
     matchLabels:
-      sunmoonai.com/app: info-r5
+      sunmoonai.com/app: info
   policyTypes:
   - Ingress
   - Egress
@@ -17,15 +17,15 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: info-r5-dns-egress
+  name: info-dns-egress
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   podSelector:
     matchLabels:
-      sunmoonai.com/app: info-r5
+      sunmoonai.com/app: info
   policyTypes:
   - Egress
   egress:
@@ -45,10 +45,10 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: info-r5-frontend-ingress
+  name: info-frontend-ingress
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   podSelector:
@@ -56,7 +56,7 @@ spec:
     - key: sunmoonai.com/app
       operator: In
       values:
-      - info-r5
+      - info
     - key: app.kubernetes.io/component
       operator: In
       values:
@@ -79,10 +79,10 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: info-r5-frontend-egress
+  name: info-frontend-egress
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   podSelector:
@@ -90,7 +90,7 @@ spec:
     - key: sunmoonai.com/app
       operator: In
       values:
-      - info-r5
+      - info
     - key: app.kubernetes.io/component
       operator: In
       values:
@@ -102,7 +102,7 @@ spec:
   - to:
     - podSelector:
         matchLabels:
-          sunmoonai.com/app: info-r5
+          sunmoonai.com/app: info
           app.kubernetes.io/component: backend-api
     ports:
     - protocol: TCP
@@ -111,15 +111,15 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: info-r5-backend-ingress
+  name: info-backend-ingress
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   podSelector:
     matchLabels:
-      sunmoonai.com/app: info-r5
+      sunmoonai.com/app: info
       app.kubernetes.io/component: backend-api
   policyTypes:
   - Ingress
@@ -141,10 +141,10 @@ spec:
         - key: sunmoonai.com/app
           operator: In
           values:
-          - info-r5
+          - info
     - podSelector:
         matchLabels:
-          sunmoonai.com/allow-info-r5-internal: 'true'
+          sunmoonai.com/allow-info-internal: 'true'
     ports:
     - protocol: TCP
       port: 8000
@@ -152,15 +152,15 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: info-r5-backend-migration-egress
+  name: info-backend-migration-egress
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   podSelector:
     matchLabels:
-      sunmoonai.com/app: info-r5
+      sunmoonai.com/app: info
       app.kubernetes.io/component: backend-migration
   policyTypes:
   - Egress
@@ -168,7 +168,7 @@ spec:
   - to:
     - podSelector:
         matchLabels:
-          sunmoonai.com/backend-dependency: info-r5
+          sunmoonai.com/backend-dependency: info
     ports:
     - protocol: TCP
       port: 5432
@@ -183,15 +183,15 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: info-r5-backend-api-egress
+  name: info-backend-api-egress
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   podSelector:
     matchLabels:
-      sunmoonai.com/app: info-r5
+      sunmoonai.com/app: info
       app.kubernetes.io/component: backend-api
   policyTypes:
   - Egress
@@ -221,15 +221,15 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: info-r5-backend-worker-egress
+  name: info-backend-worker-egress
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   podSelector:
     matchLabels:
-      sunmoonai.com/app: info-r5
+      sunmoonai.com/app: info
       app.kubernetes.io/component: backend-worker
   policyTypes:
   - Egress
@@ -272,15 +272,15 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: info-r5-backend-scheduler-egress
+  name: info-backend-scheduler-egress
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   podSelector:
     matchLabels:
-      sunmoonai.com/app: info-r5
+      sunmoonai.com/app: info
       app.kubernetes.io/component: backend-scheduler
   policyTypes:
   - Egress

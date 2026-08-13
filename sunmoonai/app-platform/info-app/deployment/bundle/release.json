@@ -2,9 +2,9 @@
   "schema_version": 2,
   "architecture": "app-platform-v2-formal",
   "logical_app": "info",
-  "resource_app": "info-r5",
+  "resource_app": "info",
   "namespace": "app-platform-dev",
-  "release_id": "r6-info-formal-004",
+  "release_id": "v20-info-stable-001",
   "formal_release": true,
   "images": {
     "backend": "harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ad279489e13b5efb43f98949000760353e77ff0ccc9d58fc32878ce28b9dd247",
@@ -24,27 +24,27 @@
     "40-ingress.yaml"
   ],
   "sha256": {
-    "00-prerequisites.yaml": "99c6757f34aa9e602798f1a6302a7fb96970411647900b658ebc82d064fcc4a1",
-    "10-migration.yaml": "c657e49c12bc05698c0e697b880f16bd2fd4dcae16cd2b3415520f288587acf0",
-    "20-runtime.yaml": "d2593e2fc1bbaf577687428d99b91c6f223817557c8a28916ff2158fff940f2c",
-    "30-network-policies.yaml": "164b8c6484097cc05d0ee0b9f8609b298869b9e70eddebfeab6494ce8c0dc20f",
-    "40-ingress.yaml": "b9b6bfbd891a3e8a7e2fb394273f76594fe125712a6c2e37682654a3ed34864c"
+    "00-prerequisites.yaml": "41096574231553033b62434388f391282ccb8afb126c67bf88d4dc2a4e02a52b",
+    "10-migration.yaml": "9e6f62027cacdd0cae83600daee62f41c5e7a0ac2675a14a115e9980b1193f36",
+    "20-runtime.yaml": "cd5f047d6f32fb3c599b000597a376521e3279ec0cfd9f03ae3bb17a98849604",
+    "30-network-policies.yaml": "e16fc0e4a350a598c561c1637a73060d24f5ad9d94162930e2efb5454c3dd539",
+    "40-ingress.yaml": "b646e896dec6491ae16bd2a1044682925e51af0850c955dbca8af6ce72b40004"
   },
   "deployment_replicas": {
-    "info-r5-backend-api": 2,
-    "info-r5-backend-worker": 1,
-    "info-r5-backend-scheduler": 1,
-    "info-r5-admin-frontend": 2,
-    "info-r5-web-frontend": 2
+    "info-backend-api": 2,
+    "info-backend-worker": 1,
+    "info-backend-scheduler": 1,
+    "info-admin-frontend": 2,
+    "info-web-frontend": 2
   },
   "ingress_routes": {
-    "info-r5-admin-route": [
+    "info-admin-route": [
       {
         "match": "Host(`info-admin.sunmoonai.com`) && PathPrefix(`/api`)",
         "priority": 100,
         "services": [
           {
-            "name": "info-r5-backend",
+            "name": "info-backend",
             "port": 8000
           }
         ]
@@ -54,19 +54,19 @@
         "priority": 10,
         "services": [
           {
-            "name": "info-r5-admin-frontend",
+            "name": "info-admin-frontend",
             "port": 3000
           }
         ]
       }
     ],
-    "info-r5-web-route": [
+    "info-web-route": [
       {
         "match": "Host(`info.sunmoonai.com`) && PathPrefix(`/api`)",
         "priority": 100,
         "services": [
           {
-            "name": "info-r5-backend",
+            "name": "info-backend",
             "port": 8000
           }
         ]
@@ -76,31 +76,31 @@
         "priority": 10,
         "services": [
           {
-            "name": "info-r5-web-frontend",
+            "name": "info-web-frontend",
             "port": 3000
           }
         ]
       }
     ],
-    "info-r5-admin-api-route": [
+    "info-admin-api-route": [
       {
         "match": "Host(`info-admin-api.sunmoonai.com`) && PathPrefix(`/`)",
         "priority": null,
         "services": [
           {
-            "name": "info-r5-backend",
+            "name": "info-backend",
             "port": 8000
           }
         ]
       }
     ],
-    "info-r5-web-api-route": [
+    "info-web-api-route": [
       {
         "match": "Host(`info-api.sunmoonai.com`) && PathPrefix(`/`)",
         "priority": null,
         "services": [
           {
-            "name": "info-r5-backend",
+            "name": "info-backend",
             "port": 8000
           }
         ]
@@ -110,10 +110,10 @@
   "legacy_deployments": [],
   "external_secrets": [
     "harbor-registry-secret",
-    "info-r5-tls",
+    "info-tls",
     "info-backend-postgresql-conn",
     "info-backend-migration-postgresql-conn",
-    "info-r5-browser-identity",
+    "info-browser-identity",
     "info-backend-redis-conn",
     "info-backend-broker",
     "info-backend-s3",

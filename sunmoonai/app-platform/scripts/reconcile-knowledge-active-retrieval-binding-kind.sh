@@ -90,43 +90,45 @@ jq \
     data:.data
   }' <<<"$source_json" | k apply -f - >/dev/null
 
-DEPLOYMENT=knowledge-r5-backend-api
-deployment_json="$(k get deployment "$DEPLOYMENT" -n "$NAMESPACE" -o json)"
-container_name="$(jq -er '.spec.template.spec.containers[0].name' <<<"$deployment_json")"
-current_env_from="$(jq -c '.spec.template.spec.containers[0].envFrom' <<<"$deployment_json")"
-env_from="$(
-  jq -c '
-    .spec.template.spec.containers[0].envFrom
-    | map(
-        if .secretRef.name == "knowledge-research-retrieval-service-binding"
-           or .secretRef.name == "knowledge-investment-retrieval-service-binding"
-        then {secretRef:{name:"knowledge-active-retrieval-service-binding"}}
-        else .
-        end
-      )
-    | reduce .[] as $item (
-        [];
-        ($item.configMapRef.name // $item.secretRef.name) as $key
-        | if any(.[]; (.configMapRef.name // .secretRef.name) == $key)
-          then .
-          else . + [$item]
+DEPLOYMENT=knowledge-backend-api
+deployment_json="$(k get deployment "$DEPLOYMENT" -n "$NAMESPACE" -o json 2>/dev/null || true)"
+if [[ -n "$deployment_json" ]]; then
+  container_name="$(jq -er '.spec.template.spec.containers[0].name' <<<"$deployment_json")"
+  current_env_from="$(jq -c '.spec.template.spec.containers[0].envFrom' <<<"$deployment_json")"
+  env_from="$(
+    jq -c '
+      .spec.template.spec.containers[0].envFrom
+      | map(
+          if .secretRef.name == "knowledge-research-retrieval-service-binding"
+             or .secretRef.name == "knowledge-investment-retrieval-service-binding"
+          then {secretRef:{name:"knowledge-active-retrieval-service-binding"}}
+          else .
           end
-      )
-  ' <<<"$deployment_json"
-)"
-if [[ "$current_env_from" != "$env_from" ]]; then
-  jq -n \
-    --arg name "$container_name" \
-    --argjson envFrom "$env_from" \
-    '{spec:{template:{spec:{containers:[{name:$name,envFrom:$envFrom}]}}}}' \
-    | k patch deployment "$DEPLOYMENT" -n "$NAMESPACE" \
-        --type=strategic --patch-file=/dev/stdin >/dev/null
-  changed=true
-fi
+        )
+      | reduce .[] as $item (
+          [];
+          ($item.configMapRef.name // $item.secretRef.name) as $key
+          | if any(.[]; (.configMapRef.name // .secretRef.name) == $key)
+            then .
+            else . + [$item]
+            end
+        )
+    ' <<<"$deployment_json"
+  )"
+  if [[ "$current_env_from" != "$env_from" ]]; then
+    jq -n \
+      --arg name "$container_name" \
+      --argjson envFrom "$env_from" \
+      '{spec:{template:{spec:{containers:[{name:$name,envFrom:$envFrom}]}}}}' \
+      | k patch deployment "$DEPLOYMENT" -n "$NAMESPACE" \
+          --type=strategic --patch-file=/dev/stdin >/dev/null
+    changed=true
+  fi
 
-if [[ "$RESTART" == true && "$changed" == true ]]; then
-  k rollout restart "deployment/$DEPLOYMENT" -n "$NAMESPACE" >/dev/null
-  k rollout status "deployment/$DEPLOYMENT" -n "$NAMESPACE" --timeout=300s >/dev/null
+  if [[ "$RESTART" == true && "$changed" == true ]]; then
+    k rollout restart "deployment/$DEPLOYMENT" -n "$NAMESPACE" >/dev/null
+    k rollout status "deployment/$DEPLOYMENT" -n "$NAMESPACE" --timeout=300s >/dev/null
+  fi
 fi
 
 active="$(k get secret "$TARGET_SECRET" -n "$NAMESPACE" -o jsonpath='{.metadata.labels.sunmoonai\.com/active-caller}')"

@@ -59,7 +59,7 @@ data={
 }
 data["REDIS_USER"]=base64.b64encode(user.encode()).decode()
 data["REDIS_PASSWORD"]=base64.b64encode(password.encode()).decode()
-print(json.dumps({"apiVersion":"v1","kind":"Secret","metadata":{"name":name,"namespace":namespace,"labels":{"sunmoonai.com/architecture":"v2","sunmoonai.com/app":"investment-r5"}},"type":"Opaque","data":data},separators=(",",":")))
+print(json.dumps({"apiVersion":"v1","kind":"Secret","metadata":{"name":name,"namespace":namespace,"labels":{"sunmoonai.com/architecture":"v2","sunmoonai.com/app":"investment"}},"type":"Opaque","data":data},separators=(",",":")))
 PY
   k apply -f "$tmpdir/target.json" >/dev/null
   unset password
@@ -74,14 +74,14 @@ kind: Job
 metadata:
   name: ${job}
   namespace: ${DATA_NAMESPACE}
-  labels: {sunmoonai.com/architecture: v2, sunmoonai.com/app: investment-r5}
+  labels: {sunmoonai.com/architecture: v2, sunmoonai.com/app: investment}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 120
   ttlSecondsAfterFinished: 600
   template:
     metadata:
-      labels: {sunmoonai.com/architecture: v2, sunmoonai.com/app: investment-r5}
+      labels: {sunmoonai.com/architecture: v2, sunmoonai.com/app: investment}
     spec:
       restartPolicy: Never
       automountServiceAccountToken: false
@@ -96,7 +96,7 @@ spec:
         - name: APP_REDIS_USER
           value: ${USER_NAME}
         - name: APP_REDIS_PASSWORD
-          valueFrom: {secretKeyRef: {name: investment-r5-redis-credential, key: REDIS_PASSWORD}}
+          valueFrom: {secretKeyRef: {name: investment-redis-credential, key: REDIS_PASSWORD}}
         command: ["/bin/bash", "-ec"]
         args:
         - |
@@ -116,7 +116,7 @@ EOF
 k get secret "$TARGET_SECRET" -n "$APP_NAMESPACE" -o json >"$tmpdir/live.json"
 python3 - "$tmpdir/live.json" "$DATA_NAMESPACE" <<'PY' >"$tmpdir/data.json"
 import json,sys
-v=json.load(open(sys.argv[1])); v["metadata"]={"name":"investment-r5-redis-credential","namespace":sys.argv[2]}; v["data"]={"REDIS_PASSWORD":v["data"]["REDIS_PASSWORD"]}; v.pop("status",None); print(json.dumps(v,separators=(",",":")))
+v=json.load(open(sys.argv[1])); v["metadata"]={"name":"investment-redis-credential","namespace":sys.argv[2]}; v["data"]={"REDIS_PASSWORD":v["data"]["REDIS_PASSWORD"]}; v.pop("status",None); print(json.dumps(v,separators=(",",":")))
 PY
 k apply -f "$tmpdir/data.json" >/dev/null
 if ! k wait --for=condition=complete "job/$job" -n "$DATA_NAMESPACE" --timeout=120s; then
@@ -124,9 +124,9 @@ if ! k wait --for=condition=complete "job/$job" -n "$DATA_NAMESPACE" --timeout=1
 fi
 k logs "job/$job" -n "$DATA_NAMESPACE" --tail=20
 k delete job "$job" -n "$DATA_NAMESPACE" --wait=true >/dev/null
-k delete secret investment-r5-redis-credential -n "$DATA_NAMESPACE" >/dev/null
-if [[ "$RESTART" == true ]] && k get deployment investment-r5-backend-api -n "$APP_NAMESPACE" >/dev/null 2>&1; then
-  k rollout restart deployment/investment-r5-backend-api deployment/investment-r5-backend-worker deployment/investment-r5-backend-scheduler -n "$APP_NAMESPACE" >/dev/null
-  k rollout status deployment/investment-r5-backend-api -n "$APP_NAMESPACE" --timeout=300s >/dev/null
+k delete secret investment-redis-credential -n "$DATA_NAMESPACE" >/dev/null
+if [[ "$RESTART" == true ]] && k get deployment investment-backend-api -n "$APP_NAMESPACE" >/dev/null 2>&1; then
+  k rollout restart deployment/investment-backend-api deployment/investment-backend-worker deployment/investment-backend-scheduler -n "$APP_NAMESPACE" >/dev/null
+  k rollout status deployment/investment-backend-api -n "$APP_NAMESPACE" --timeout=300s >/dev/null
 fi
 printf '{"task":"R5-V2-investment-redis-acl","result":"passed","principal":"investment_backend","keyspace":"investment:*","credential_source":"%s","credentials_printed":false}\n' "$credential_source"

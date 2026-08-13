@@ -1,13 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: info-r5-backend-api
+  name: info-backend-api
   namespace: app-platform-dev
   labels:
-    app.kubernetes.io/name: info-r5-backend
+    app.kubernetes.io/name: info-backend
     app.kubernetes.io/component: backend-api
-    app.kubernetes.io/part-of: info-r5
-    sunmoonai.com/app: info-r5
+    app.kubernetes.io/part-of: info
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   replicas: 2
@@ -20,22 +20,22 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      sunmoonai.com/app: info-r5
+      sunmoonai.com/app: info
       app.kubernetes.io/component: backend-api
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: info-r5-backend
+        app.kubernetes.io/name: info-backend
         app.kubernetes.io/component: backend-api
-        app.kubernetes.io/part-of: info-r5
-        sunmoonai.com/app: info-r5
+        app.kubernetes.io/part-of: info
+        sunmoonai.com/app: info
         sunmoonai.com/managed-by: app-platform-v2
         sunmoonai.com/internal-provider: 'true'
       annotations:
-        sunmoonai.com/release-id: r6-info-formal-004
-        sunmoonai.com/config-sha256: 31a9c37b61d75706a9d30e79815e24f16cc8b7efbed26a84707b53a639040d89
+        sunmoonai.com/release-id: v20-info-stable-001
+        sunmoonai.com/config-sha256: 8fe926476343abd89bee2afeb9e3c57d882ba23db4f1d671c4fc8d1170cd24d3
     spec:
-      serviceAccountName: info-r5-backend-api
+      serviceAccountName: info-backend-api
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 45
       imagePullSecrets:
@@ -53,7 +53,7 @@ spec:
         whenUnsatisfiable: ScheduleAnyway
         labelSelector:
           matchLabels:
-            sunmoonai.com/app: info-r5
+            sunmoonai.com/app: info
             app.kubernetes.io/component: backend-api
       containers:
       - name: api
@@ -73,7 +73,7 @@ spec:
           containerPort: 8000
         envFrom:
         - configMapRef:
-            name: info-r5-backend-config
+            name: info-backend-config
         - configMapRef:
             name: info-backend-s3
         - secretRef:
@@ -116,22 +116,22 @@ spec:
         - name: ADMIN_CASDOOR_CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name: info-r5-browser-identity
+              name: info-browser-identity
               key: ADMIN_CLIENT_ID
         - name: ADMIN_CASDOOR_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
-              name: info-r5-browser-identity
+              name: info-browser-identity
               key: ADMIN_CLIENT_SECRET
         - name: WEB_CASDOOR_CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name: info-r5-browser-identity
+              name: info-browser-identity
               key: WEB_CLIENT_ID
         - name: WEB_CASDOOR_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
-              name: info-r5-browser-identity
+              name: info-browser-identity
               key: WEB_CLIENT_SECRET
         - name: CELERY_BROKER_URL
           valueFrom:
@@ -144,7 +144,7 @@ spec:
             port: http
             httpHeaders:
             - name: Host
-              value: info-r5-backend
+              value: info-backend
           periodSeconds: 2
           failureThreshold: 30
         readinessProbe:
@@ -153,7 +153,7 @@ spec:
             port: http
             httpHeaders:
             - name: Host
-              value: info-r5-backend
+              value: info-backend
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 3
@@ -163,7 +163,7 @@ spec:
             port: http
             httpHeaders:
             - name: Host
-              value: info-r5-backend
+              value: info-backend
           periodSeconds: 10
           timeoutSeconds: 3
           failureThreshold: 3
@@ -207,31 +207,31 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: info-r5-backend-api
+  name: info-backend-api
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   maxUnavailable: 1
   selector:
     matchLabels:
-      sunmoonai.com/app: info-r5
+      sunmoonai.com/app: info
       app.kubernetes.io/component: backend-api
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: info-r5-backend-api
+  name: info-backend-api
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: info-r5-backend-api
+    name: info-backend-api
   minReplicas: 2
   maxReplicas: 6
   behavior:
@@ -250,33 +250,33 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: info-r5-backend-worker
+  name: info-backend-worker
   namespace: app-platform-dev
   labels:
-    app.kubernetes.io/name: info-r5-backend
+    app.kubernetes.io/name: info-backend
     app.kubernetes.io/component: backend-worker
-    app.kubernetes.io/part-of: info-r5
-    sunmoonai.com/app: info-r5
+    app.kubernetes.io/part-of: info
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   replicas: 1
   revisionHistoryLimit: 3
   selector:
     matchLabels:
-      sunmoonai.com/app: info-r5
+      sunmoonai.com/app: info
       app.kubernetes.io/component: backend-worker
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: info-r5-backend
+        app.kubernetes.io/name: info-backend
         app.kubernetes.io/component: backend-worker
-        app.kubernetes.io/part-of: info-r5
-        sunmoonai.com/app: info-r5
+        app.kubernetes.io/part-of: info
+        sunmoonai.com/app: info
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/config-sha256: 31a9c37b61d75706a9d30e79815e24f16cc8b7efbed26a84707b53a639040d89
+        sunmoonai.com/config-sha256: 8fe926476343abd89bee2afeb9e3c57d882ba23db4f1d671c4fc8d1170cd24d3
     spec:
-      serviceAccountName: info-r5-backend-worker
+      serviceAccountName: info-backend-worker
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 90
       imagePullSecrets:
@@ -300,7 +300,7 @@ spec:
           --hostname="celery@${POD_NAME}"
         envFrom:
         - configMapRef:
-            name: info-r5-backend-config
+            name: info-backend-config
         - secretRef:
             name: info-knowledge-ingest-client
         - configMapRef:
@@ -408,28 +408,28 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: info-r5-backend-worker
+  name: info-backend-worker
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   maxUnavailable: 1
   selector:
     matchLabels:
-      sunmoonai.com/app: info-r5
+      sunmoonai.com/app: info
       app.kubernetes.io/component: backend-worker
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: info-r5-backend-scheduler
+  name: info-backend-scheduler
   namespace: app-platform-dev
   labels:
-    app.kubernetes.io/name: info-r5-backend
+    app.kubernetes.io/name: info-backend
     app.kubernetes.io/component: backend-scheduler
-    app.kubernetes.io/part-of: info-r5
-    sunmoonai.com/app: info-r5
+    app.kubernetes.io/part-of: info
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   replicas: 1
@@ -438,21 +438,21 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      sunmoonai.com/app: info-r5
+      sunmoonai.com/app: info
       app.kubernetes.io/component: backend-scheduler
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: info-r5-backend
+        app.kubernetes.io/name: info-backend
         app.kubernetes.io/component: backend-scheduler
-        app.kubernetes.io/part-of: info-r5
-        sunmoonai.com/app: info-r5
+        app.kubernetes.io/part-of: info
+        sunmoonai.com/app: info
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: r6-info-formal-004
-        sunmoonai.com/config-sha256: 31a9c37b61d75706a9d30e79815e24f16cc8b7efbed26a84707b53a639040d89
+        sunmoonai.com/release-id: v20-info-stable-001
+        sunmoonai.com/config-sha256: 8fe926476343abd89bee2afeb9e3c57d882ba23db4f1d671c4fc8d1170cd24d3
     spec:
-      serviceAccountName: info-r5-backend-scheduler
+      serviceAccountName: info-backend-scheduler
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 45
       imagePullSecrets:
@@ -478,7 +478,7 @@ spec:
         - --schedule=/tmp/celerybeat-schedule
         envFrom:
         - configMapRef:
-            name: info-r5-backend-config
+            name: info-backend-config
         env:
         - name: DATABASE_URL
           valueFrom:
@@ -514,13 +514,13 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: info-r5-admin-frontend
+  name: info-admin-frontend
   namespace: app-platform-dev
   labels:
-    app.kubernetes.io/name: info-r5-admin-frontend
+    app.kubernetes.io/name: info-admin-frontend
     app.kubernetes.io/component: admin-frontend
-    app.kubernetes.io/part-of: info-r5
-    sunmoonai.com/app: info-r5
+    app.kubernetes.io/part-of: info
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   replicas: 2
@@ -533,21 +533,21 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      sunmoonai.com/app: info-r5
+      sunmoonai.com/app: info
       app.kubernetes.io/component: admin-frontend
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: info-r5-admin-frontend
+        app.kubernetes.io/name: info-admin-frontend
         app.kubernetes.io/component: admin-frontend
-        app.kubernetes.io/part-of: info-r5
-        sunmoonai.com/app: info-r5
+        app.kubernetes.io/part-of: info
+        sunmoonai.com/app: info
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: r6-info-formal-004
-        sunmoonai.com/config-sha256: 23bb7f6acb449d8c47e27d8610307fdf451c902bd7f79641613be4c99c893687
+        sunmoonai.com/release-id: v20-info-stable-001
+        sunmoonai.com/config-sha256: 87cbbe86c91ff64a56a3e2f4513463720b285d86fcb21954d2b7693f39f271c1
     spec:
-      serviceAccountName: info-r5-admin-frontend
+      serviceAccountName: info-admin-frontend
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30
       imagePullSecrets:
@@ -565,7 +565,7 @@ spec:
         whenUnsatisfiable: ScheduleAnyway
         labelSelector:
           matchLabels:
-            sunmoonai.com/app: info-r5
+            sunmoonai.com/app: info
             app.kubernetes.io/component: admin-frontend
       containers:
       - name: admin
@@ -576,7 +576,7 @@ spec:
           containerPort: 3000
         envFrom:
         - configMapRef:
-            name: info-r5-admin-frontend-config
+            name: info-admin-frontend-config
         startupProbe:
           httpGet:
             path: /healthz
@@ -631,31 +631,31 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: info-r5-admin-frontend
+  name: info-admin-frontend
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   maxUnavailable: 1
   selector:
     matchLabels:
-      sunmoonai.com/app: info-r5
+      sunmoonai.com/app: info
       app.kubernetes.io/component: admin-frontend
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: info-r5-admin-frontend
+  name: info-admin-frontend
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: info-r5-admin-frontend
+    name: info-admin-frontend
   minReplicas: 2
   maxReplicas: 6
   behavior:
@@ -672,13 +672,13 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: info-r5-web-frontend
+  name: info-web-frontend
   namespace: app-platform-dev
   labels:
-    app.kubernetes.io/name: info-r5-web-frontend
+    app.kubernetes.io/name: info-web-frontend
     app.kubernetes.io/component: web-frontend
-    app.kubernetes.io/part-of: info-r5
-    sunmoonai.com/app: info-r5
+    app.kubernetes.io/part-of: info
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   replicas: 2
@@ -691,21 +691,21 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      sunmoonai.com/app: info-r5
+      sunmoonai.com/app: info
       app.kubernetes.io/component: web-frontend
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: info-r5-web-frontend
+        app.kubernetes.io/name: info-web-frontend
         app.kubernetes.io/component: web-frontend
-        app.kubernetes.io/part-of: info-r5
-        sunmoonai.com/app: info-r5
+        app.kubernetes.io/part-of: info
+        sunmoonai.com/app: info
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: r6-info-formal-004
-        sunmoonai.com/config-sha256: 64bd1353568c069dbe09947bbfb284e8a5c68796b7488fa7043e252ee3d7c8e8
+        sunmoonai.com/release-id: v20-info-stable-001
+        sunmoonai.com/config-sha256: a696f86c24c66f731d0b8b5f287221553ce4b1490a16a67ada5e13950645c1d8
     spec:
-      serviceAccountName: info-r5-web-frontend
+      serviceAccountName: info-web-frontend
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30
       imagePullSecrets:
@@ -723,7 +723,7 @@ spec:
         whenUnsatisfiable: ScheduleAnyway
         labelSelector:
           matchLabels:
-            sunmoonai.com/app: info-r5
+            sunmoonai.com/app: info
             app.kubernetes.io/component: web-frontend
       containers:
       - name: web
@@ -734,7 +734,7 @@ spec:
           containerPort: 3000
         envFrom:
         - configMapRef:
-            name: info-r5-web-frontend-config
+            name: info-web-frontend-config
         startupProbe:
           httpGet:
             path: /healthz
@@ -789,31 +789,31 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: info-r5-web-frontend
+  name: info-web-frontend
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   maxUnavailable: 1
   selector:
     matchLabels:
-      sunmoonai.com/app: info-r5
+      sunmoonai.com/app: info
       app.kubernetes.io/component: web-frontend
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: info-r5-web-frontend
+  name: info-web-frontend
   namespace: app-platform-dev
   labels:
-    sunmoonai.com/app: info-r5
+    sunmoonai.com/app: info
     sunmoonai.com/managed-by: app-platform-v2
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: info-r5-web-frontend
+    name: info-web-frontend
   minReplicas: 2
   maxReplicas: 6
   behavior:

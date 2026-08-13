@@ -22,7 +22,7 @@ stage() {
 }
 
 browser_gate() {
-  local app="$1" resource_app="${1}-r5"
+  local app="$1" resource_app="${1}"
   local admin_origin="https://${app}-admin.sunmoonai.com:30443"
   local web_origin="https://${app}.sunmoonai.com:30443"
   local output="${EVIDENCE_DIR}/${app}-browser.json"

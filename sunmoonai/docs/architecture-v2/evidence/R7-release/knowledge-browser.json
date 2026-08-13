@@ -1,5 +1,5 @@
 {
-  "task": "architecture-v2-r7-knowledge-browser",
+  "task": "stable-name-knowledge-browser",
   "result": "passed",
   "strict_tls": true,
   "provider_preflight": 200,

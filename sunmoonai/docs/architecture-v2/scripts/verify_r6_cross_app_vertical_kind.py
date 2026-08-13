@@ -110,15 +110,15 @@ def wait_for(
 
 def assert_ready(*, kubeconfig: str, namespace: str) -> dict[str, int]:
     expected = {
-        "info-r5-backend-api": 2,
-        "info-r5-backend-worker": 1,
-        "info-r5-backend-scheduler": 1,
-        "knowledge-r5-backend-api": 2,
-        "knowledge-r5-backend-worker": 1,
-        "knowledge-r5-backend-scheduler": 1,
-        "investment-r5-backend-api": 2,
-        "investment-r5-backend-worker": 1,
-        "investment-r5-backend-scheduler": 1,
+        "info-backend-api": 2,
+        "info-backend-worker": 1,
+        "info-backend-scheduler": 1,
+        "knowledge-backend-api": 2,
+        "knowledge-backend-worker": 1,
+        "knowledge-backend-scheduler": 1,
+        "investment-backend-api": 2,
+        "investment-backend-worker": 1,
+        "investment-backend-scheduler": 1,
         "ragflow-sunmoonai": 1,
     }
     raw = kubectl(
@@ -140,13 +140,13 @@ def assert_ready(*, kubeconfig: str, namespace: str) -> dict[str, int]:
 
     info_config = json.loads(
         kubectl(
-            ["get", "configmap/info-r5-backend-config", "-n", namespace, "-o", "json"],
+            ["get", "configmap/info-backend-config", "-n", namespace, "-o", "json"],
             kubeconfig=kubeconfig,
             capture=True,
         )
     )
     expected_url = (
-        "http://knowledge-r5-backend:8000/"
+        "http://knowledge-backend:8000/"
         "api/internal/v1/knowledge/ingestions"
     )
     if info_config.get("data", {}).get("KNOWLEDGE_APP_INGEST_URL") != expected_url:
@@ -178,7 +178,7 @@ from core.config import get_settings
 
 async def main():
     marker, dataset, filename, title = sys.argv[1:5]
-    expected_url = "http://knowledge-r5-backend:8000/api/internal/v1/knowledge/ingestions"
+    expected_url = "http://knowledge-backend:8000/api/internal/v1/knowledge/ingestions"
     settings = get_settings()
     if settings.knowledge_app_ingest_url != expected_url:
         raise RuntimeError("formal-ingest-url")
@@ -545,7 +545,7 @@ def main() -> int:
         created = pod_marker(
             kubeconfig=kubeconfig,
             namespace=args.namespace,
-            deployment="info-r5-backend-api",
+            deployment="info-backend-api",
             program=CREATE_INFO,
             args=[marker, dataset, filename, title],
             marker="R6_INFO_CREATED",
@@ -558,7 +558,7 @@ def main() -> int:
             return pod_marker(
                 kubeconfig=kubeconfig,
                 namespace=args.namespace,
-                deployment="info-r5-backend-api",
+                deployment="info-backend-api",
                 program=READ_INFO,
                 args=[created["distribution_id"]],
                 marker="R6_INFO_STATE",
@@ -577,7 +577,7 @@ def main() -> int:
             return pod_marker(
                 kubeconfig=kubeconfig,
                 namespace=args.namespace,
-                deployment="knowledge-r5-backend-api",
+                deployment="knowledge-backend-api",
                 program=READ_KNOWLEDGE,
                 args=[
                     created["idempotency_key"],
@@ -604,7 +604,7 @@ def main() -> int:
         investment = pod_marker(
             kubeconfig=kubeconfig,
             namespace=args.namespace,
-            deployment="investment-r5-backend-worker",
+            deployment="investment-backend-worker",
             program=INVESTMENT_RETRIEVE,
             args=[
                 marker,
@@ -620,7 +620,7 @@ def main() -> int:
         replay = pod_marker(
             kubeconfig=kubeconfig,
             namespace=args.namespace,
-            deployment="info-r5-backend-api",
+            deployment="info-backend-api",
             program=REPLAY_INFO,
             args=[created["distribution_id"]],
             marker="R6_REPLAY",

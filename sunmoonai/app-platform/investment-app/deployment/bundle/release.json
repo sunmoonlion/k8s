@@ -2,9 +2,9 @@
   "schema_version": 2,
   "architecture": "app-platform-v2-formal",
   "logical_app": "investment",
-  "resource_app": "investment-r5",
+  "resource_app": "investment",
   "namespace": "app-platform-dev",
-  "release_id": "r6-investment-formal-002",
+  "release_id": "v20-investment-001",
   "formal_release": true,
   "images": {
     "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:b50ffde5a79fc4f1f2b78bbe74f7dbbfb02570514096ea67a7b5d5dde6526272",
@@ -24,27 +24,27 @@
     "40-ingress.yaml"
   ],
   "sha256": {
-    "00-prerequisites.yaml": "22a4daf8f7161ff5d4ce5f9e05ee50a388fe0da945bb78dbd09cbcfbf4832f5b",
-    "10-migration.yaml": "af1c3dd9ac1c1f09309040e0cf8947815d2248472ead9538caf0cd630e9ad863",
-    "20-runtime.yaml": "b8eb38765e542b3357ca59801d21af9e246efe8d02039a05c6f13910c798d40e",
-    "30-network-policies.yaml": "24278da24e5aca80a3d5d6cbb87c89ff6de1c83bf96a01a8b270201d75646f02",
-    "40-ingress.yaml": "94b3f4000249000dba96cb29241ab71248c32af8a1a84afd2b16bd319b266fd9"
+    "00-prerequisites.yaml": "9df324b29e386bda29aad14d828e6c60d5f4c4ec710c3e6825d60c61415e979f",
+    "10-migration.yaml": "9992272149694f12fca4bbff2e00743f411620f6e2a58ad7a3f35514237c6644",
+    "20-runtime.yaml": "9cf1a669db2b6643fffc7b18780e4a73f845dbcfb3cb4c62f34d3d345539c0be",
+    "30-network-policies.yaml": "0395dfe9576e80ef13b7f9d313d03d1af85a971cf4a1f71e44a3415287e46ff3",
+    "40-ingress.yaml": "9f5fa10feb105cf71e9e796d35c1a64044c774b453c39948409d00177bbbeafd"
   },
   "deployment_replicas": {
-    "investment-r5-backend-api": 2,
-    "investment-r5-backend-worker": 1,
-    "investment-r5-backend-scheduler": 1,
-    "investment-r5-admin-frontend": 2,
-    "investment-r5-web-frontend": 2
+    "investment-backend-api": 2,
+    "investment-backend-worker": 1,
+    "investment-backend-scheduler": 1,
+    "investment-admin-frontend": 2,
+    "investment-web-frontend": 2
   },
   "ingress_routes": {
-    "investment-r5-admin-route": [
+    "investment-admin-route": [
       {
         "match": "Host(`investment-admin.sunmoonai.com`) && PathPrefix(`/api`)",
         "priority": 100,
         "services": [
           {
-            "name": "investment-r5-backend",
+            "name": "investment-backend",
             "port": 8000
           }
         ]
@@ -54,19 +54,19 @@
         "priority": 10,
         "services": [
           {
-            "name": "investment-r5-admin-frontend",
+            "name": "investment-admin-frontend",
             "port": 3000
           }
         ]
       }
     ],
-    "investment-r5-web-route": [
+    "investment-web-route": [
       {
         "match": "Host(`investment.sunmoonai.com`) && PathPrefix(`/api`)",
         "priority": 100,
         "services": [
           {
-            "name": "investment-r5-backend",
+            "name": "investment-backend",
             "port": 8000
           }
         ]
@@ -76,31 +76,31 @@
         "priority": 10,
         "services": [
           {
-            "name": "investment-r5-web-frontend",
+            "name": "investment-web-frontend",
             "port": 3000
           }
         ]
       }
     ],
-    "investment-r5-admin-api-route": [
+    "investment-admin-api-route": [
       {
         "match": "Host(`investment-admin-api.sunmoonai.com`) && PathPrefix(`/`)",
         "priority": null,
         "services": [
           {
-            "name": "investment-r5-backend",
+            "name": "investment-backend",
             "port": 8000
           }
         ]
       }
     ],
-    "investment-r5-web-api-route": [
+    "investment-web-api-route": [
       {
         "match": "Host(`investment-api.sunmoonai.com`) && PathPrefix(`/`)",
         "priority": null,
         "services": [
           {
-            "name": "investment-r5-backend",
+            "name": "investment-backend",
             "port": 8000
           }
         ]
@@ -110,10 +110,10 @@
   "legacy_deployments": [],
   "external_secrets": [
     "harbor-registry-secret",
-    "investment-r5-tls",
+    "investment-tls",
     "investment-backend-postgresql-conn",
     "investment-backend-migration-postgresql-conn",
-    "investment-r5-browser-identity",
+    "investment-browser-identity",
     "investment-backend-redis-conn",
     "investment-backend-broker",
     "investment-knowledge-retrieval-client"

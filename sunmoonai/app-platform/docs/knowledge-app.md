@@ -17,11 +17,11 @@ knowledge-app/
 └── knowledge-web-frontend     # Next.js Web
 
 Kubernetes:
-knowledge-r5-backend-api       # HTTP / Admin / Web / Internal API
-knowledge-r5-backend-worker    # Celery 摄取和外部 provider 任务
-knowledge-r5-backend-scheduler # 扫描、补偿、对账
-knowledge-r5-admin-frontend
-knowledge-r5-web-frontend
+knowledge-backend-api       # HTTP / Admin / Web / Internal API
+knowledge-backend-worker    # Celery 摄取和外部 provider 任务
+knowledge-backend-scheduler # 扫描、补偿、对账
+knowledge-admin-frontend
+knowledge-web-frontend
 ```
 
 API、Worker、Scheduler 和 Migration 使用同一 `knowledge-backend` 源码与不可变镜像，但以

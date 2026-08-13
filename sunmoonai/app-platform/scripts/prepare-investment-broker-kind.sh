@@ -109,9 +109,9 @@ url="amqp://${USER_NAME}:${password}@rabbitmq-sunmoonai.messaging-platform-dev.s
 echo BROKER_STAGE=active-user-authenticated
 k create secret generic "$SECRET" -n "$APP_NAMESPACE" --from-literal=CELERY_BROKER_URL="$url" --dry-run=client -o yaml | k apply -f - >/dev/null
 echo BROKER_STAGE=application-secret-reconciled
-k label secret "$SECRET" -n "$APP_NAMESPACE" sunmoonai.com/architecture=v2 sunmoonai.com/app=investment-r5 sunmoonai.com/managed-by=app-platform-v2 --overwrite >/dev/null
+k label secret "$SECRET" -n "$APP_NAMESPACE" sunmoonai.com/architecture=v2 sunmoonai.com/app=investment sunmoonai.com/managed-by=app-platform-v2 --overwrite >/dev/null
 unset password url definition_json definition_b64 expected_hash observed_hash permission_pattern
-if [[ "$RESTART" == true ]] && k get deployment investment-r5-backend-api -n "$APP_NAMESPACE" >/dev/null 2>&1; then
-  k rollout restart deployment/investment-r5-backend-api deployment/investment-r5-backend-worker deployment/investment-r5-backend-scheduler -n "$APP_NAMESPACE" >/dev/null
+if [[ "$RESTART" == true ]] && k get deployment investment-backend-api -n "$APP_NAMESPACE" >/dev/null 2>&1; then
+  k rollout restart deployment/investment-backend-api deployment/investment-backend-worker deployment/investment-backend-scheduler -n "$APP_NAMESPACE" >/dev/null
 fi
 printf '{"task":"R5-V2-investment-broker","result":"passed","source_of_truth":"rabbitmq-app-definitions","user":"investment-backend-worker","vhost":"investment-development","queue":"investment.default","credentials_printed":false}\n'

@@ -2,9 +2,9 @@
   "schema_version": 2,
   "architecture": "app-platform-v2-formal",
   "logical_app": "knowledge",
-  "resource_app": "knowledge-r5",
+  "resource_app": "knowledge",
   "namespace": "app-platform-dev",
-  "release_id": "v20-knowledge-formal-001",
+  "release_id": "v20-knowledge-stable-001",
   "formal_release": true,
   "images": {
     "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:38ef7c29a43e4a47a339ba06c6dd77bd0a31277035d1df31b0fc2ca69cd862c0",
@@ -25,27 +25,27 @@
     "40-ingress.yaml"
   ],
   "sha256": {
-    "00-prerequisites.yaml": "2999df14356d03f11c1ed6db748b414fe5eee55ea42f8e9378defae8a6f76fed",
-    "10-migration.yaml": "4ce62924c53c102ad3904e28cad9f3c8ea1ba690252a84b30721cb5de4fa81f0",
-    "20-runtime.yaml": "f7185e32f2bd834dc429c82f1cd82fc578b24ee1679809c1a3af3f7938ef1ba8",
-    "30-network-policies.yaml": "ddc7c8ed7fe0d5d53b4e77df50551847d64046ab16465d376a7680900f2fad3d",
-    "40-ingress.yaml": "ebf916510aa3a280d544171ed7ebf5449aa6a3b24c3a4e1732024f2812279329"
+    "00-prerequisites.yaml": "590124428d69cbb38224ca77c67a071582eec9a449cb660580592c44592f2bf8",
+    "10-migration.yaml": "c1682df1f479cad782db56934c279a0f62d66d2271ef4da3f82aa0275cc8e678",
+    "20-runtime.yaml": "c736e110adc1e4d1f9f4f5bd5e016ac142238bfe49b61a1d54ba648538ff39aa",
+    "30-network-policies.yaml": "b9b749171245e8c5788a7a2aaced8a6b883a13ead69296253fcff39959315f3a",
+    "40-ingress.yaml": "628f3391754910a96e5dfda18d5bf5237f7acb31e31a246eef0b6126c08b329d"
   },
   "deployment_replicas": {
-    "knowledge-r5-backend-api": 2,
-    "knowledge-r5-backend-worker": 1,
-    "knowledge-r5-backend-scheduler": 1,
-    "knowledge-r5-admin-frontend": 2,
-    "knowledge-r5-web-frontend": 2
+    "knowledge-backend-api": 2,
+    "knowledge-backend-worker": 1,
+    "knowledge-backend-scheduler": 1,
+    "knowledge-admin-frontend": 2,
+    "knowledge-web-frontend": 2
   },
   "ingress_routes": {
-    "knowledge-r5-admin-route": [
+    "knowledge-admin-route": [
       {
         "match": "Host(`knowledge-admin.sunmoonai.com`) && PathPrefix(`/api`)",
         "priority": 100,
         "services": [
           {
-            "name": "knowledge-r5-backend",
+            "name": "knowledge-backend",
             "port": 8000
           }
         ]
@@ -55,19 +55,19 @@
         "priority": 10,
         "services": [
           {
-            "name": "knowledge-r5-admin-frontend",
+            "name": "knowledge-admin-frontend",
             "port": 3000
           }
         ]
       }
     ],
-    "knowledge-r5-web-route": [
+    "knowledge-web-route": [
       {
         "match": "Host(`knowledge.sunmoonai.com`) && PathPrefix(`/api`)",
         "priority": 100,
         "services": [
           {
-            "name": "knowledge-r5-backend",
+            "name": "knowledge-backend",
             "port": 8000
           }
         ]
@@ -77,19 +77,19 @@
         "priority": 10,
         "services": [
           {
-            "name": "knowledge-r5-web-frontend",
+            "name": "knowledge-web-frontend",
             "port": 3000
           }
         ]
       }
     ],
-    "knowledge-r5-admin-api-route": [
+    "knowledge-admin-api-route": [
       {
         "match": "Host(`knowledge-admin-api.sunmoonai.com`) && PathPrefix(`/`)",
         "priority": null,
         "services": [
           {
-            "name": "knowledge-r5-backend",
+            "name": "knowledge-backend",
             "port": 8000
           }
         ]
@@ -99,10 +99,10 @@
   "legacy_deployments": [],
   "external_secrets": [
     "harbor-registry-secret",
-    "knowledge-r5-tls",
+    "knowledge-tls",
     "knowledge-backend-postgresql-conn",
     "knowledge-backend-migration-postgresql-conn",
-    "knowledge-r5-browser-identity",
+    "knowledge-browser-identity",
     "knowledge-backend-redis-conn",
     "knowledge-backend-broker",
     "knowledge-ragflow-provider",
