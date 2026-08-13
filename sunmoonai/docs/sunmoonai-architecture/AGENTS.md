@@ -126,6 +126,16 @@ App 之间，apps/ = 各 App 内部）；request 文件夹内的 `baseline.md` �
 - 巨型重组 = 1 个总壳/决策 REQ + N 个可独立验收的实施 REQ，不塞单一巨型 REQ
   （否则评估被绑架、request.md 冻结规则冲突、部分被拒会传染）。
 
+**总盘请求与模块请求：**大重组的总盘 REQ（如 REQ-001）的 baseline.md 是该轮唯一的
+全盘目标态权威；全盘计划不产生代码，代码只在各 App 仓由模块 REQ 实施。
+
+- 模块 REQ 的评审必须引用总盘 baseline.md 的具体 §（证明挂在全盘之下）；
+- 模块 REQ 的 baseline.md 只写本模块目标态，全盘事实只引用、不复述（约定 1/3）；
+- 模块与全盘目标态矛盾：要么服从全盘，要么升级给用户拍板改全盘（立决策 REQ
+  修总盘 baseline.md），不许在模块层私了；
+- 总盘 baseline.md 随总盘完结冻结为快照；长期有效事实评估后按归属吸收进
+  baseline/（跨 App → overall/，单 App → apps/）。
+
 **命名规范：**
 
 - request 文件夹：`REQ-<三位序号>-<短名>`，如 `REQ-001-v6-重写`。
