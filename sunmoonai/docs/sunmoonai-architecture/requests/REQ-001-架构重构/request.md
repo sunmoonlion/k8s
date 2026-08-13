@@ -1,4 +1,4 @@
-# REQ-001：sumova 重构（重写 task handoff 与 implementation）
+# REQ-001：架构重构（重写 task handoff 与 implementation）
 
 > 状态：ADOPTED ｜ 提出日期：2026-08-12 ｜ 评审日期：2026-08-12
 
@@ -22,19 +22,20 @@
     全部 ACCEPTED）；
   - 四份 v4/v5 文档已于 2026-08-12 全量深读，具备重写输入。
 - 结构决策（用户确认）：基线 1 份 + handoff 1 份 + 按 App 施工清单 4 份
-  （info / knowledge / investment / platform），落 `sunmoonai-architecture/requests/REQ-001-sumova-重构/`（闭环在 requests/ 内）。
+  （info / knowledge / investment / platform），落 `sunmoonai-architecture/requests/REQ-001-架构重构/`（闭环在 requests/ 内）。
   v5 的 Phase 0 历史不再保留任务编号，只作"既成现状"一节交代。
 
 ## ③ 落地去向
 
-- sumova 基线：`k8s/sunmoonai/docs/sunmoonai-architecture/requests/REQ-001-sumova-重构/baseline.md`（待写）
-- sumova handoff：`k8s/sunmoonai/docs/sunmoonai-architecture/requests/REQ-001-sumova-重构/handoff.md`（待写）
-- sumova 施工清单：`k8s/sunmoonai/docs/sunmoonai-architecture/requests/REQ-001-sumova-重构/plan-{info,knowledge,investment,platform}.md`（待写）
-- 任务编号采用 `SUMOVA-XXX`，按 AGENTS.md 请求闭环回指本请求。
+- 基线：`k8s/sunmoonai/docs/sunmoonai-architecture/requests/REQ-001-架构重构/baseline.md`（待写）
+- handoff：`k8s/sunmoonai/docs/sunmoonai-architecture/requests/REQ-001-架构重构/handoff.md`（待写）
+- 施工清单：`k8s/sunmoonai/docs/sunmoonai-architecture/requests/REQ-001-架构重构/plan-{info,knowledge,investment,platform}.md`（待写）
+- 任务编号采用 `SMAI-XXX`（SunMoonAI 缩写），按 AGENTS.md 请求闭环回指本请求。
 
 ## ④ 状态流转
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-08-12 | ADOPTED（暂缓执行） | 评审采纳、结构方案经用户确认；待请求集合收敛后启动基线撰写 |
-| 2026-08-13 | ADOPTED（暂缓执行） | 品牌定为 sumova：本重构视为新起点（不写演进叙事），文件夹与产物命名迁移至 sumova 规范 |
+| 2026-08-13 | ADOPTED（暂缓执行） | 曾拟品牌 sumova：本重构视为新起点（不写演进叙事），文件夹与产物命名迁移至新品牌规范 |
+| 2026-08-13 | ADOPTED（暂缓执行） | 品牌定名 SunMoonAI（sunmoonai 域名已注册）：sumova 迁移撤销，文件夹改 REQ-001-架构重构，产物回归 sunmoonai 命名 |
