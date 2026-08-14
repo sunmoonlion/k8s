@@ -1,11 +1,12 @@
 # SunMoonAI 总体平台架构
 
-最后更新：2026-08-12
+最后更新：2026-08-14
 
 ## 1. 文档定位
 
-本文说明 `sunmoonai/` 下各个平台的职责、依赖方向、运行关系和治理边界。App Platform 内部的
-详细设计见 [App Platform 总体架构](./app-platform-architecture.md)。
+本文说明 `sunmoonai/` 下各个平台的职责、依赖方向、运行关系和治理边界。App Platform 内部
+的公共规则（标准形态、统一 Backend、数据所有权、跨 App 契约、模板治理）见
+[App Platform 公共规则](./app-platform-rules.md)。
 
 平台架构以 Kubernetes 平台能力、领域 App、双 Next.js 前端、统一 FastAPI Backend、每 App
 单一逻辑数据库和显式跨 App 契约为基线。
@@ -97,38 +98,14 @@ CI/CD 和 Ops 平台故障不应立即中断已发布业务；Ingress、数据�
 
 ## 5. App Platform 在总体架构中的位置
 
-### 5.1 当前业务边界
+当前活动领域 App 为 `info-app`（来源、内容、版本、Artifact、血缘与可靠分发）、
+`knowledge-app`（摄取、索引、检索适配与引用）、`investment-app`（投资研究、Agent Runtime、
+证据与记忆）；`auth-app` 提供平台身份基础，Casdoor 是当前 OIDC Provider，各业务 Backend
+仍是自身资源授权和数据所有权的最终责任人。
 
-当前活动领域 App 为：
-
-- `info-app`：来源、原始内容、版本、Artifact、血缘和可靠分发；
-- `knowledge-app`：摄取、解析、索引、RAGFlow/检索适配和引用；
-- `investment-app`：投资研究、Agent Runtime、证据、记忆及后续投资领域能力。
-
-`auth-app` 提供平台身份基础，Casdoor 是当前 OIDC Provider。各业务 Backend 仍是自身资源授权
-和数据所有权的最终责任人。
-
-### 5.2 Research 命名治理
-
-历史 `research-app` 的投资研究与 Agent 能力已由 `investment-app` 取代；残留在历史目录、
-镜像、Secret、兼容字段或 Investment 内部“研究”模块中的 `research` 名称，都不表示当前存在
-一个与 Investment 并列的活动 `research-app`。
-
-未来可能创建新的 `research-app`，用于通用、跨领域研究。它必须从届时已验收的 `tpl-app`
-实例化，并获得独立的领域 ADR、仓库、工作负载身份、数据库、对象空间、消息资源和 API/事件
-契约。未来 Research 不继承历史身份，也不能直接拥有 Investment 的研究数据。
-
-### 5.3 标准 App 形态
-
-```text
-Admin Next.js SSR -----+
-                       +--> one FastAPI Backend --> one logical App database
-Web Next.js SSR -------+           |
-                                   +--> API / Worker / Scheduler / Migration roles
-```
-
-Admin 和 Web 是不同产品表面和安全会话，但共享本 App 的统一 Backend 与业务事实。这里的一个
-数据库是“每 App 一个逻辑数据库”，绝不是所有 App 一个数据库。
+标准 App 形态（双前端 + 统一 Backend + 每 App 一个逻辑数据库）、Research 命名治理、
+未来 App 从模板实例化的规则，是 App Platform 的公共规则，权威细节见
+[App Platform 公共规则](./app-platform-rules.md) §2–§3、§10。
 
 ## 6. 典型在线请求流
 
@@ -245,31 +222,23 @@ pgAdmin、RedisInsight、Flower 等只用于观察和授权管理；删除 Ops �
 
 ## 14. 模板、实例与平台资源的关系
 
-`tpl-app` 不属于生产业务领域；它是创建领域 App 的工程基线，包含：
-
-- 统一 FastAPI Backend；
-- Admin/Web 两个 Next.js 前端；
-- API/Worker/Scheduler/Migration 角色；
-- K8s scaffold、身份、网络、构建和门禁。
-
-共性修改先进入模板，经完整门禁后按 Info -> Knowledge -> Investment 串行同步。实例保留领域
-代码，不允许模板覆盖业务实现。未来 Research/Tools 等 App 也从新模板创建。
+`tpl-app` 是创建领域 App 的工程基线（统一 Backend、双前端、四运行角色、K8s 脚手架与门禁）；
+模板同步顺序与实例边界见 [App Platform 公共规则](./app-platform-rules.md) §10。
 
 `k8s/sunmoonai/app-platform/<app>` 是部署声明，不是业务源码仓的替代品。
 
 ## 15. 全局禁止事项
 
-- 以共享物理数据库为理由跨 App 读表；
 - 将平台部署顺序当作运行时可靠性；
 - 让 Ingress、Next.js、队列、缓存或搜索索引成为领域主档；
-- 把 Admin/Web 拆回两个 Backend 或两套主数据库；
 - 复用用户 Token 作为服务身份；
-- 将 Ops/CI/CD 工具放进业务同步关键路径；
-- 把历史 `research-app`、Investment 内部研究模块和未来 `research-app` 混为一体；
-- 未经模板门禁在多个实例重复修改共同底座。
+- 将 Ops/CI/CD 工具放进业务同步关键路径。
+
+App 侧禁止事项（跨 App 读表、Admin/Web 拆分、Research 命名混淆、绕过模板门禁等）见
+[App Platform 公共规则](./app-platform-rules.md) §12。
 
 ## 16. 相关权威文档
 
-- [App Platform 总体架构](./app-platform-architecture.md)
+- [App Platform 公共规则](./app-platform-rules.md)
 - [App Platform 数据所有权](../../../app-platform/docs/data-ownership.md)
 - [App Platform 集成规范](../../../app-platform/docs/integration-standards.md)

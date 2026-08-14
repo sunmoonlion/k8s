@@ -1,11 +1,12 @@
-# SunMoonAI App Platform 总体架构
+# SunMoonAI App Platform 公共规则
 
-最后更新：2026-08-12
+最后更新：2026-08-14
 
 ## 1. 文档定位
 
-本文定义 App Platform 的长期边界、标准 App 形态、运行时拓扑和跨 App 协作规则，是领域
-App 开发的目标态权威。若文档与代码现状不一致，以代码为准并按 AGENTS.md 流程处理。
+本文定义 App Platform 的长期边界、标准 App 形态与跨 App 协作规则，是领域
+App 开发的目标态权威；平台全景与平台间关系见 [总体平台架构](./platform-architecture.md)。
+若文档与代码现状不一致，以代码为准并按 AGENTS.md 流程处理。
 
 ## 2. 核心决策
 

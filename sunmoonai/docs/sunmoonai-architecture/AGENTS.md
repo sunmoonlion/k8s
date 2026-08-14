@@ -12,7 +12,7 @@
 
 | 组 | 位置 | 性质 |
 | --- | --- | --- |
-| baseline（基线） | `baseline/overall/`（App 之间：app-platform-architecture.md、sunmoonai·-architecture.md；ADR 随首条落地建 `adr/`）+ `baseline/apps/<项目>/项目摘要.md`（各 App 内部：tpl/info/knowledge/investment/k8s） | 供 AI 快速了解项目，唯一权威 |
+| baseline（基线） | `baseline/overall/`（platform-architecture.md = 平台间关系；app-platform-rules.md = App 公共规则；ADR 随首条落地建 `adr/`）+ `baseline/apps/<项目>/`（摘要.md 快层 + 架构.md 深刻层；tpl/info/knowledge/investment/k8s） | 供 AI 快速了解项目，唯一权威；阅读地图见 baseline/README.md |
 | requests（开发任务请求） | `requests/REQ-<编号>-<短名>/`（见 §5） | 一次请求一个文件夹，闭环产物都在里面 |
 
 **baseline 的稳定政策**：一定时期内不变，供 AI 快速了解项目（需要时阅读，
@@ -37,7 +37,7 @@ App 之间，apps/ = 各 App 内部），定位是**现行有效事实**（代�
 
 文档清单见 `README.md`。
 
-**阅读路径**：改某个项目前，先读 baseline/overall/ 两篇中相关章节 + 该项目摘要；
+**阅读路径**：改某个项目前，先读 baseline/overall/ 两篇中相关章节 + 该项目摘要.md（深入再读架构.md）；
 跨项目问题（契约、身份、发布）以 baseline/overall/ 为准。
 
 ## 1. 权威排序（矛盾仲裁）
@@ -104,7 +104,7 @@ App 之间，apps/ = 各 App 内部），定位是**现行有效事实**（代�
 
 ## 4. 三条维护约定 + 编辑自检
 
-1. **每个事实只有一个权威位置**：跨项目事实→总体层；项目内事实→该项目摘要；
+1. **每个事实只有一个权威位置**：跨项目事实→总体层；项目内事实→该项目摘要.md / 架构.md；
    判断标准是"这个事实将来变了，应该在哪一处改"。两处都写 = 必然漂移。
 2. **每份文档带时间戳**：文档头部写"最后更新：YYYY-MM-DD"；摘要头部写"深读时间"。
 3. **层间引用而非复制**：引用写"见 §X"+一句话结论，不抄全文。
@@ -162,7 +162,7 @@ App 之间，apps/ = 各 App 内部），定位是**现行有效事实**（代�
   handoff.md——不带序号不带日期（唯一性由文件夹保证，时间在文档头时间戳里）。
 - 任务 ID：前缀由该请求自定（如 `TASK-` 或短名缩写）+ 数字，回指所属 REQ。
 - 目录与文档：小写英文连字符（kebab-case）；app 目录用仓库名（tpl-app 等），
-  摘要文件统一命名 `项目摘要.md`。
+  apps 下每项目两个文件：`摘要.md`（快层）与 `架构.md`（深刻层）。
 - 未来 ADR：`baseline/overall/adr/ADR-<三位序号>-<短名>.md`，序号原则同 REQ。
 - 品牌定名：项目品牌统一为 **SunMoonAI**（sunmoonai 域名已注册）；路径与命名中用
   小写 `sunmoonai`，任务 ID 前缀可用缩写 `SMAI-`；文件夹内固定名文件（baseline.md
