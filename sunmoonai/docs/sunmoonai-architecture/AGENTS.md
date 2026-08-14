@@ -12,14 +12,14 @@
 
 | 组 | 位置 | 性质 |
 | --- | --- | --- |
-| baseline（基线） | `baseline/overall/overall-architecture.md`（平台间关系；ADR 随首条落地建 `overall/adr/`）+ `baseline/apps/`（六项：app-platform-architecture 与五仓；每项 摘要.md 快层 + 架构.md 深刻层） | 供 AI 快速了解项目，唯一权威；阅读地图见 baseline/README.md |
+| baseline（基线） | `baseline/sunmoonai/architecture.md`（平台间关系；ADR 随首条落地建 `sunmoonai/adr/`）+ `baseline/app-platform/`（六项：app-platform-architecture 与五仓；每项 摘要.md 快层 + 架构.md 深刻层） | 供 AI 快速了解项目，唯一权威；阅读地图见 baseline/README.md |
 | requests（开发任务请求） | `requests/REQ-<编号>-<短名>/`（见 §5） | 一次请求一个文件夹，闭环产物都在里面 |
 
 **baseline 的稳定政策**：一定时期内不变，供 AI 快速了解项目（需要时阅读，
 不必每次全读）；请求实施完成**不自动触发**其更新，只在评估认定需要时手动更新（见 §2）。
 
-**术语对应**：baseline 只有一套，就是 `baseline/`（内部只分两个视角：overall/ =
-App 之间，apps/ = 各 App 内部），定位是**现行有效事实**（代码现状的镜子），
+**术语对应**：baseline 只有一套，就是 `baseline/`（内部只分两个视角：sunmoonai/ =
+平台之间，app-platform/ = 各 App 与公共形态），定位是**现行有效事实**（代码现状的镜子），
 从不描述将来；request 文件夹内的 `baseline.md` 不是另一级基线，只是该次请求的
 目标态描述——**目标态不另设文档集**，只临时住在所属 REQ 里，实施完成后目标变
 现状，长期有效部分评估后吸收进 `baseline/` 相应视角，REQ 那份冻结归档。
@@ -37,8 +37,8 @@ App 之间，apps/ = 各 App 内部），定位是**现行有效事实**（代�
 
 文档清单见 `README.md`。
 
-**阅读路径**：改某个项目前，先读 baseline/overall/ 两篇中相关章节 + 该项目摘要.md（深入再读架构.md）；
-跨项目问题（契约、身份、发布）以 baseline/overall/ 为准。
+**阅读路径**：改某个项目前，先读 baseline/sunmoonai/ 相关章节 + 该项目摘要.md（深入再读架构.md）；
+跨项目问题（契约、身份、发布）以 baseline/sunmoonai/ 与 baseline/app-platform/app-platform-architecture/ 为准。
 
 ## 1. 权威排序（矛盾仲裁）
 
@@ -143,7 +143,7 @@ App 之间，apps/ = 各 App 内部），定位是**现行有效事实**（代�
 - 模块与全盘目标态矛盾：要么服从全盘，要么升级给用户拍板改全盘（立决策 REQ
   修总盘 baseline.md），不许在模块层私了；
 - 总盘 baseline.md 随总盘完结冻结为快照；长期有效事实评估后按归属吸收进
-  baseline/（跨 App → overall/，单 App → apps/）。
+  baseline/（平台之间 → sunmoonai/，各 App → app-platform/）。
 
 **实施顺序与并行**：顺序由依赖决定，不由行政指定——实施清单是一张依赖图，
 无依赖边的任务可任意并行，有依赖边的必须前件验收后件才开工。硬依赖四类：
@@ -162,8 +162,8 @@ App 之间，apps/ = 各 App 内部），定位是**现行有效事实**（代�
   handoff.md——不带序号不带日期（唯一性由文件夹保证，时间在文档头时间戳里）。
 - 任务 ID：前缀由该请求自定（如 `TASK-` 或短名缩写）+ 数字，回指所属 REQ。
 - 目录与文档：小写英文连字符（kebab-case）；app 目录用仓库名（tpl-app 等），
-  apps 下每项目两个文件：`摘要.md`（快层）与 `架构.md`（深刻层）。
-- 未来 ADR：`baseline/overall/adr/ADR-<三位序号>-<短名>.md`，序号原则同 REQ。
+  app-platform 下每项目两个文件：`摘要.md`（快层）与 `架构.md`（深刻层）。
+- 未来 ADR：`baseline/sunmoonai/adr/ADR-<三位序号>-<短名>.md`，序号原则同 REQ。
 - 品牌定名：项目品牌统一为 **SunMoonAI**（sunmoonai 域名已注册）；路径与命名中用
   小写 `sunmoonai`，任务 ID 前缀可用缩写 `SMAI-`；文件夹内固定名文件（baseline.md
   等）不加前缀，唯一性由文件夹名保证。

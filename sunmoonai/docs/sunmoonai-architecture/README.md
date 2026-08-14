@@ -2,7 +2,7 @@
 
 > 最后更新：2026-08-14
 >
-> 本目录（`k8s/sunmoonai/docs/sunmoonai-architecture`，git 管理）是 SunMoonAI App Platform 的提示文档集。**两组结构**：`baseline/`（基线：overall/ = App 之间 + apps/ = 各 App 内部，时期内稳定、评估后按需手动更新）+ `requests/`（开发任务请求，一次请求一个 REQ 文件夹，闭环：提议→审核→定任务→实施→评估→按需更新 baseline）。权威链：代码 > baseline > request。
+> 本目录（`k8s/sunmoonai/docs/sunmoonai-architecture`，git 管理）是 SunMoonAI App Platform 的提示文档集。**两组结构**：`baseline/`（基线：sunmoonai/ = 平台之间 + app-platform/ = 各 App 与公共形态，时期内稳定、评估后按需手动更新）+ `requests/`（开发任务请求，一次请求一个 REQ 文件夹，闭环：提议→审核→定任务→实施→评估→按需更新 baseline）。权威链：代码 > baseline > request。
 
 ## 目录内容
 
@@ -11,10 +11,10 @@ sunmoonai-architecture/
 ├── AGENTS.md                          协作规则总入口
 ├── baseline/
 │   ├── README.md                          阅读地图：三层阅读（关系/规则/摘要/架构）
-│   ├── overall/
-│   │   └── overall-architecture.md        总体平台全景：九平台分层、依赖方向、请求/异步数据流、
+│   ├── sunmoonai/
+│   │   └── architecture.md                总体平台全景：九平台分层、依赖方向、请求/异步数据流、
 │   │                                      CI/CD 与可观测性
-│   └── apps/
+│   └── app-platform/
 │       ├── app-platform-architecture/（摘要.md + 架构.md） App Platform 公共形态：核心决策、标准 App 拓扑、
 │       │                                      统一 Backend、数据所有权、跨 App 契约、模板治理、禁止事项
 │       ├── tpl-app/（摘要.md + 架构.md）      母模板：四角色一镜像、认证体系、web-interaction 契约、
