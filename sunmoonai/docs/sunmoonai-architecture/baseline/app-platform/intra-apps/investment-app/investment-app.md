@@ -50,7 +50,7 @@ investment-app/
 未来 research-app 边界：未来通用研究 App 必须从届时已验收的 tpl-app 全新实例化（独立仓库/
 身份/数据库/对象空间/消息资源/契约），不继承旧 Research 身份，也不得把 Investment 的研究数据
 自动归属给它；当前拓扑中的"研究能力"默认全部属于 investment-app（详见
-`../../inter-apps/app-platform.md` §3）。
+`../../inter-apps/app-platform.md` §10）。
 
 ### 3.2 发布规则
 
@@ -151,5 +151,5 @@ investment-app/
 ## 4. 关联
 
 - 证据上游（retrieval 契约真源）：`../knowledge-app/knowledge-app.md`。
-- 母模板：`../tpl-app/tpl-app.md`；公共形态与 Research 命名治理：`../../inter-apps/app-platform.md`（§3）。
+- 母模板：`../tpl-app/tpl-app.md`；公共形态与 Research 命名治理：`../../inter-apps/app-platform.md`（§10）。
 - 部署声明：`../k8s/k8s.md`；平台间关系：`../../../sunmoonai/architecture.md`。

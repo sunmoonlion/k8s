@@ -38,8 +38,6 @@ App Platform 固定以下边界：
 
 ## 3. App Platform 领域地图
 
-### 3.1 当前领域 App
-
 | App | 定位 | 权威数据 | 规范源码仓 |
 | --- | --- | --- | --- |
 | `auth-app` | 身份提供与平台认证基础 | 用户、组织、应用、服务身份和授权关系 | 位于 App Platform，核心 IdP 为 Casdoor |
@@ -49,25 +47,6 @@ App Platform 固定以下边界：
 
 `auth-app` 是平台身份子系统，不强制套用普通领域 App 的三仓模板；它向各 App 提供 OIDC
 能力，但不替代各 Backend 的资源级授权。
-
-### 3.2 Research 命名治理
-
-必须区分两个完全不同的概念：
-
-- **历史 `research-app`**：其投资研究与 Agent 能力已由 `investment-app` 取代。残留的
-  `research` 名称（历史目录、镜像、类型或兼容字段）不代表当前活动 App；Investment 内部的
-  "研究"是业务模块，不是独立 App。
-- **未来 `research-app`**：将来如创建，用于通用、跨领域研究。它必须是新的有界上下文，
-  从已验收模板实例化，使用新的仓库、身份、数据库、对象空间、消息资源和契约；不得复用
-  历史身份，也不得把 Investment 数据自动归属给它。
-
-当前拓扑中的"研究能力"默认属于 `investment-app`；未来 `research-app` 进入 App 清单前，
-必须先有独立的领域定义、数据所有权和 ADR。
-
-### 3.3 未来 App
-
-未来的 `research-app`、`tools-app` 或其他领域 App，应从当时最新、已验收的 `tpl-app` 版本
-实例化；任何历史目录都不是新 App 的模板或恢复源。
 
 ## 4. 一个领域 App 的标准拓扑
 
@@ -294,8 +273,16 @@ tpl-app/
 -> Info -> Knowledge -> Investment 串行同步 -> 每个实例独立验收
 ```
 
-新 App（如未来的 `research-app`、`tools-app`）也必须从已冻结 release 创建，不能从历史目录
-复制。
+新 App（如未来的 `research-app`、`tools-app`）必须从当时最新、已验收的冻结 release 创建，
+不能从历史目录复制；任何历史目录都不是新 App 的模板或恢复源。
+
+**Research 命名护栏**：必须区分两个完全不同的概念——历史 `research-app` 的投资研究与
+Agent 能力已由 `investment-app` 取代，残留的 `research` 名称（历史目录、镜像、类型或兼容
+字段）不代表当前活动 App，Investment 内部的"研究"是业务模块而非独立 App；未来
+`research-app` 如创建，用于通用跨领域研究，是新的有界上下文，使用独立的仓库、身份、
+数据库、对象空间、消息资源和契约，不复用历史身份，也不得把 Investment 数据自动归属给它。
+当前拓扑中的"研究能力"默认属于 `investment-app`；未来 `research-app` 进入 App 清单前，
+必须先有独立的领域定义、数据所有权和 ADR。
 
 ## 11. Kubernetes 目标形态
 

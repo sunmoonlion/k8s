@@ -105,7 +105,7 @@ CI/CD 和 Ops 平台故障不应立即中断已发布业务；Ingress、数据�
 
 标准 App 形态（双前端 + 统一 Backend + 每 App 一个逻辑数据库）、Research 命名治理、
 未来 App 从模板实例化的规则，是 App Platform 的公共规则，权威细节见
-[App Platform 架构](../app-platform/inter-apps/app-platform.md) §2–§3、§10。
+[App Platform 架构](../app-platform/inter-apps/app-platform.md) §2、§10。
 
 ## 6. 典型在线请求流
 

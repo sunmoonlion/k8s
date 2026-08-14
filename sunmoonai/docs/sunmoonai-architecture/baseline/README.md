@@ -37,7 +37,7 @@ baseline/
 | 项 | 必须知道（§ 指回原文） |
 | --- | --- |
 | 九大平台 | 基础能力向上提供、领域所有权不向下泄漏；部署顺序≠运行时耦合（`sunmoonai/architecture.md`） |
-| App 公共形态 | 标准五组件拓扑（backend+admin/web 前端+db-provisioner+access-bootstrap）；四运行角色同一不可变镜像；数据所有权归各 App，跨 App 只走契约；未来 App 必须从已验收模板实例化（`inter-apps/app-platform.md` §2） |
+| App 公共形态 | 标准五组件拓扑（backend+admin/web 前端+db-provisioner+access-bootstrap）；四运行角色同一不可变镜像；数据所有权归各 App，跨 App 只走契约；未来 App 必须从已验收模板实例化（`inter-apps/app-platform.md` §2、§10） |
 | tpl-app | 三仓唯一模板源，禁伪造 fake 端点；Alembic 迁移只进不退（`intra-apps/tpl-app/tpl-app.md` §2） |
 | info-app | sha256+simhash64(0.84) 去重；仅 clean_markdown/text_plain、≤50MiB、有 S3 version 才可分发；delivery outbox completed=业务完成，broker 故障不使 API 5xx（`intra-apps/info-app/info-app.md` §2） |
 | knowledge-app | 摄入/检索契约唯一真源；一请求=恰好一个不可变带版本对象；浏览器只见 citation 投影，永不见 provider 原始 URL（`intra-apps/knowledge-app/knowledge-app.md` §2） |
