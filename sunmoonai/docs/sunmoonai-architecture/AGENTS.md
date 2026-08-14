@@ -12,7 +12,7 @@
 
 | 组 | 位置 | 性质 |
 | --- | --- | --- |
-| baseline（基线） | `baseline/overall/`（platform-architecture.md = 平台间关系；app-platform-rules.md = App 公共规则；ADR 随首条落地建 `adr/`）+ `baseline/apps/<项目>/`（摘要.md 快层 + 架构.md 深刻层；tpl/info/knowledge/investment/k8s） | 供 AI 快速了解项目，唯一权威；阅读地图见 baseline/README.md |
+| baseline（基线） | `baseline/overall/overall-architecture.md`（平台间关系；ADR 随首条落地建 `overall/adr/`）+ `baseline/apps/`（六项：app-platform-architecture 与五仓；每项 摘要.md 快层 + 架构.md 深刻层） | 供 AI 快速了解项目，唯一权威；阅读地图见 baseline/README.md |
 | requests（开发任务请求） | `requests/REQ-<编号>-<短名>/`（见 §5） | 一次请求一个文件夹，闭环产物都在里面 |
 
 **baseline 的稳定政策**：一定时期内不变，供 AI 快速了解项目（需要时阅读，

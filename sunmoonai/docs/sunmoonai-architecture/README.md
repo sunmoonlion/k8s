@@ -12,11 +12,11 @@ sunmoonai-architecture/
 ├── baseline/
 │   ├── README.md                          阅读地图：三层阅读（关系/规则/摘要/架构）
 │   ├── overall/
-│   │   ├── platform-architecture.md       总体平台全景：九平台分层、依赖方向、请求/异步数据流、
-│   │   │                                  CI/CD 与可观测性
-│   │   └── app-platform-rules.md          App Platform 公共规则：核心决策、标准 App 拓扑、
-│   │                                      统一 Backend、数据所有权、跨 App 契约、模板治理、禁止事项
+│   │   └── overall-architecture.md        总体平台全景：九平台分层、依赖方向、请求/异步数据流、
+│   │                                      CI/CD 与可观测性
 │   └── apps/
+│       ├── app-platform-architecture/（摘要.md + 架构.md） App Platform 公共形态：核心决策、标准 App 拓扑、
+│       │                                      统一 Backend、数据所有权、跨 App 契约、模板治理、禁止事项
 │       ├── tpl-app/（摘要.md + 架构.md）      母模板：四角色一镜像、认证体系、web-interaction 契约、
 │       │                                    Outbox 原语、scaffold、发布 manifest
 │       ├── info-app/（摘要.md + 架构.md）     资讯采集与内容治理域：采集-抽取链、治理审计、

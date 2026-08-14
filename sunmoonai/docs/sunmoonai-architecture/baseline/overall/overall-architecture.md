@@ -6,7 +6,7 @@
 
 本文说明 `sunmoonai/` 下各个平台的职责、依赖方向、运行关系和治理边界。App Platform 内部
 的公共规则（标准形态、统一 Backend、数据所有权、跨 App 契约、模板治理）见
-[App Platform 公共规则](./app-platform-rules.md)。
+[App Platform 架构](../apps/app-platform-architecture/架构.md)。
 
 平台架构以 Kubernetes 平台能力、领域 App、双 Next.js 前端、统一 FastAPI Backend、每 App
 单一逻辑数据库和显式跨 App 契约为基线。
@@ -105,7 +105,7 @@ CI/CD 和 Ops 平台故障不应立即中断已发布业务；Ingress、数据�
 
 标准 App 形态（双前端 + 统一 Backend + 每 App 一个逻辑数据库）、Research 命名治理、
 未来 App 从模板实例化的规则，是 App Platform 的公共规则，权威细节见
-[App Platform 公共规则](./app-platform-rules.md) §2–§3、§10。
+[App Platform 架构](../apps/app-platform-architecture/架构.md) §2–§3、§10。
 
 ## 6. 典型在线请求流
 
@@ -223,7 +223,7 @@ pgAdmin、RedisInsight、Flower 等只用于观察和授权管理；删除 Ops �
 ## 14. 模板、实例与平台资源的关系
 
 `tpl-app` 是创建领域 App 的工程基线（统一 Backend、双前端、四运行角色、K8s 脚手架与门禁）；
-模板同步顺序与实例边界见 [App Platform 公共规则](./app-platform-rules.md) §10。
+模板同步顺序与实例边界见 [App Platform 架构](../apps/app-platform-architecture/架构.md) §10。
 
 `k8s/sunmoonai/app-platform/<app>` 是部署声明，不是业务源码仓的替代品。
 
@@ -235,10 +235,10 @@ pgAdmin、RedisInsight、Flower 等只用于观察和授权管理；删除 Ops �
 - 将 Ops/CI/CD 工具放进业务同步关键路径。
 
 App 侧禁止事项（跨 App 读表、Admin/Web 拆分、Research 命名混淆、绕过模板门禁等）见
-[App Platform 公共规则](./app-platform-rules.md) §12。
+[App Platform 架构](../apps/app-platform-architecture/架构.md) §12。
 
 ## 16. 相关权威文档
 
-- [App Platform 公共规则](./app-platform-rules.md)
+- [App Platform 架构](../apps/app-platform-architecture/架构.md)
 - [App Platform 数据所有权](../../../app-platform/docs/data-ownership.md)
 - [App Platform 集成规范](../../../app-platform/docs/integration-standards.md)
