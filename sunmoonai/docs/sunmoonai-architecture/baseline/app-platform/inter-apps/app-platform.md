@@ -1,15 +1,27 @@
-# app-platform 架构
+# app-platform：App 之间的公共形态
 
-最后更新：2026-08-14
+> App Platform 的长期边界、标准 App 形态与跨 App 协作规则，是领域 App 开发的目标态权威。
+> 平台全景（九大平台之间）见 `baseline/sunmoonai/architecture.md`；各 App 内部见
+> `baseline/app-platform/intra-apps/<app>/`。若文档与代码现状不一致，以代码为准并按
+> AGENTS.md 流程处理。最后更新：2026-08-14。
 
-## 1. 文档定位
+## 1. 概要
 
-本文是 App Platform 的深刻层：长期边界、标准 App 形态与跨 App 协作规则，是领域
-App 开发的目标态权威；快层见同目录 `摘要.md`；平台全景与平台间关系见
-[总体平台架构](../../sunmoonai/architecture.md)。
-若文档与代码现状不一致，以代码为准并按 AGENTS.md 流程处理。
+App Platform = auth-app（身份基础）+ 三个领域 App（info / knowledge / investment）+ 约束
+它们的公共形态与契约。本项不对应单个源码仓，而是"所有 App 共同遵守的形态"的权威描述；
+模板的实现载体是 `tpl-app`（见 `intra-apps/tpl-app/`），部署声明在 `k8s` 仓（见
+`intra-apps/k8s/`）。
 
-## 2. 核心决策
+### 标准 App 形态
+
+```text
+Admin Next.js SSR ──┐
+                    ├──▶ one FastAPI Backend ──▶ one logical App database
+Web Next.js SSR ────┘        │
+                             └──▶ API / Worker / Scheduler / Migration 角色
+```
+
+## 2. 重要点（核心决策）
 
 App Platform 固定以下边界：
 
@@ -21,7 +33,7 @@ App Platform 固定以下边界：
 6. App 之间只能通过受版本控制的 API、事件和 Artifact 契约协作，禁止跨 App 直接读写数据库。
 7. 共性能力先在 `tpl-app` 完成并通过门禁，再完整同步到实例 App；领域代码只使用显式扩展点。
 
-这里的“统一数据库”是指：**一个 App 内的 Admin 与 Web 统一到该 App Backend 所拥有的一个
+这里的"统一数据库"是指：**一个 App 内的 Admin 与 Web 统一到该 App Backend 所拥有的一个
 逻辑数据库**。它不表示 Info、Knowledge、Investment 共用一个业务数据库。
 
 ## 3. App Platform 领域地图
@@ -44,12 +56,12 @@ App Platform 固定以下边界：
 
 - **历史 `research-app`**：其投资研究与 Agent 能力已由 `investment-app` 取代。残留的
   `research` 名称（历史目录、镜像、类型或兼容字段）不代表当前活动 App；Investment 内部的
-  “研究”是业务模块，不是独立 App。
+  "研究"是业务模块，不是独立 App。
 - **未来 `research-app`**：将来如创建，用于通用、跨领域研究。它必须是新的有界上下文，
   从已验收模板实例化，使用新的仓库、身份、数据库、对象空间、消息资源和契约；不得复用
   历史身份，也不得把 Investment 数据自动归属给它。
 
-当前拓扑中的“研究能力”默认属于 `investment-app`；未来 `research-app` 进入 App 清单前，
+当前拓扑中的"研究能力"默认属于 `investment-app`；未来 `research-app` 进入 App 清单前，
 必须先有独立的领域定义、数据所有权和 ADR。
 
 ### 3.3 未来 App
@@ -312,12 +324,14 @@ tpl-app/
 - 在模板门禁前直接修改实例，或用模板覆盖实例领域代码；
 - 用可变 tag 替代正式发布的 digest 锁定。
 
-## 13. 相关文档
+## 13. 关联
 
-- [数据所有权](../../../app-platform/docs/data-ownership.md)
-- [集成规范](../../../app-platform/docs/integration-standards.md)
-- [生产就绪标准](../../../app-platform/docs/production-readiness.md)
-- [ADR-0007：每个领域 App 只有一个规范 Backend](../../../app-platform/docs/adr/0007-one-canonical-backend-per-app.md)
-- [ADR-0009：Admin、Web 与 Internal 接口及身份分面](../../../app-platform/docs/adr/0009-api-surfaces-and-identity.md)
-- [ADR-0010：每个 App 的数据库与迁移链归并](../../../app-platform/docs/adr/0010-database-convergence.md)
-- [ADR-0011：Backend 运行角色与容量边界](../../../app-platform/docs/adr/0011-backend-runtime-roles.md)
+- 平台全景与平台间关系：`baseline/sunmoonai/architecture.md`。
+- 模板实现：`intra-apps/tpl-app/tpl-app.md`；部署声明：`intra-apps/k8s/k8s.md`。
+- [数据所有权](../../../../../app-platform/docs/data-ownership.md)
+- [集成规范](../../../../../app-platform/docs/integration-standards.md)
+- [生产就绪标准](../../../../../app-platform/docs/production-readiness.md)
+- [ADR-0007：每个领域 App 只有一个规范 Backend](../../../../../app-platform/docs/adr/0007-one-canonical-backend-per-app.md)
+- [ADR-0009：Admin、Web 与 Internal 接口及身份分面](../../../../../app-platform/docs/adr/0009-api-surfaces-and-identity.md)
+- [ADR-0010：每个 App 的数据库与迁移链归并](../../../../../app-platform/docs/adr/0010-database-convergence.md)
+- [ADR-0011：Backend 运行角色与容量边界](../../../../../app-platform/docs/adr/0011-backend-runtime-roles.md)

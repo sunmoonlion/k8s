@@ -10,23 +10,25 @@
 sunmoonai-architecture/
 ├── AGENTS.md                          协作规则总入口
 ├── baseline/
-│   ├── README.md                          阅读地图：三层阅读（关系/规则/摘要/架构）
+│   ├── README.md                          阅读地图：目录结构、阅读路径、全项目重要点一屏表
 │   ├── sunmoonai/
 │   │   └── architecture.md                总体平台全景：九平台分层、依赖方向、请求/异步数据流、
 │   │                                      CI/CD 与可观测性
 │   └── app-platform/
-│       ├── app-platform-architecture/（摘要.md + 架构.md） App Platform 公共形态：核心决策、标准 App 拓扑、
-│       │                                      统一 Backend、数据所有权、跨 App 契约、模板治理、禁止事项
-│       ├── tpl-app/（摘要.md + 架构.md）      母模板：四角色一镜像、认证体系、web-interaction 契约、
-│       │                                    Outbox 原语、scaffold、发布 manifest
-│       ├── info-app/（摘要.md + 架构.md）     资讯采集与内容治理域：采集-抽取链、治理审计、
-│       │                                    delivery outbox、→Knowledge 分发
-│       ├── knowledge-app/（摘要.md + 架构.md） 知识库域：artifact/retrieval 双契约、RAGFlow 摄入链、
-│       │                                    检索链、双关系 service identity
-│       ├── investment-app/（摘要.md + 架构.md） 投资研究与智能体域：Agent 领域模型、LangGraph 图族、
-│       │                                    pilot/agent v4 双链、契约消费锁
-│       └── k8s/（摘要.md + 架构.md）          部署编排仓：各平台部署声明、领域 App 部署 bundle、
-│                                            发布输入与验收门禁
+│       ├── inter-apps/app-platform.md     App 之间公共形态：核心决策、标准 App 拓扑、
+│       │                                  统一 Backend、数据所有权、跨 App 契约、模板治理、禁止事项
+│       └── intra-apps/                    各 App 内部，一项一文件（四段骨架：
+│           │                              概要→重要点→架构→关联）
+│           ├── tpl-app/tpl-app.md         母模板：四角色一镜像、认证体系、web-interaction 契约、
+│           │                              Outbox 原语、scaffold、发布 manifest
+│           ├── info-app/info-app.md       资讯采集与内容治理域：采集-抽取链、治理审计、
+│           │                              delivery outbox、→Knowledge 分发
+│           ├── knowledge-app/knowledge-app.md 知识库域：artifact/retrieval 双契约、RAGFlow 摄入链、
+│           │                              检索链、双关系 service identity
+│           ├── investment-app/investment-app.md 投资研究与智能体域：Agent 领域模型、LangGraph 图族、
+│           │                              pilot/agent v4 双链、契约消费锁
+│           └── k8s/k8s.md                 部署编排仓：各平台部署声明、领域 App 部署 bundle、
+│                                          发布输入与验收门禁
 └── requests/
     ├── TEMPLATE.md                    request 模板
     └── REQ-<编号>-<短名>/              一次请求一个文件夹：request.md + 按需派生

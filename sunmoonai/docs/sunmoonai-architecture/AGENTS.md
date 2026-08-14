@@ -1,6 +1,6 @@
 # AGENTS.md · SunMoonAI 文档协作总入口（工具中立）
 
-> 最后更新：2026-08-12
+> 最后更新：2026-08-14
 >
 > 任何开发者（人或 AI 智能体，不限工具：Qoder / Cursor / Codex / Claude Code…）
 > 动手前必须先读本文件。各工具的配置（长期记忆 / rules）只保留指向本文件的一行指针，
@@ -12,14 +12,14 @@
 
 | 组 | 位置 | 性质 |
 | --- | --- | --- |
-| baseline（基线） | `baseline/sunmoonai/architecture.md`（平台间关系；ADR 随首条落地建 `sunmoonai/adr/`）+ `baseline/app-platform/`（六项：app-platform-architecture 与五仓；每项 摘要.md 快层 + 架构.md 深刻层） | 供 AI 快速了解项目，唯一权威；阅读地图见 baseline/README.md |
+| baseline（基线） | `baseline/sunmoonai/architecture.md`（平台间关系；ADR 随首条落地建 `sunmoonai/adr/`）+ `baseline/app-platform/`（inter-apps/ = App 之间公共形态；intra-apps/ = 各 App 内部，一项一文件） | 供 AI 快速了解项目，唯一权威；阅读地图见 baseline/README.md |
 | requests（开发任务请求） | `requests/REQ-<编号>-<短名>/`（见 §5） | 一次请求一个文件夹，闭环产物都在里面 |
 
 **baseline 的稳定政策**：一定时期内不变，供 AI 快速了解项目（需要时阅读，
 不必每次全读）；请求实施完成**不自动触发**其更新，只在评估认定需要时手动更新（见 §2）。
 
 **术语对应**：baseline 只有一套，就是 `baseline/`（内部只分两个视角：sunmoonai/ =
-平台之间，app-platform/ = 各 App 与公共形态），定位是**现行有效事实**（代码现状的镜子），
+平台之间，app-platform/ = inter-apps/ App 之间公共形态 + intra-apps/ 各 App 内部），定位是**现行有效事实**（代码现状的镜子），
 从不描述将来；request 文件夹内的 `baseline.md` 不是另一级基线，只是该次请求的
 目标态描述——**目标态不另设文档集**，只临时住在所属 REQ 里，实施完成后目标变
 现状，长期有效部分评估后吸收进 `baseline/` 相应视角，REQ 那份冻结归档。
@@ -30,15 +30,16 @@
 
 **新起点原则**：大规模重构（自本次架构重构起）视为新起点——文档中不写历史演进
 叙事（“原来是 v5…”“重写自…”、版本演进对比），仿佛一开始就是如此；演进历史全部
-由 git 承担。baseline 维护同样适用：更新摘要时直接覆盖写成现状，不留“复核/修订/
+由 git 承担。baseline 维护同样适用：更新时直接覆盖写成现状，不留“复核/修订/
 曾为/已改为”等修订叙事，文档头只保留最新深读时间。request 的 ① 原始需求除外
 （原话证据，允许含旧词）。品牌改名等奠基变更属于起点之前的前置工作，不立 REQ；
 请求序列自改名成功的时刻开始。
 
 文档清单见 `README.md`。
 
-**阅读路径**：改某个项目前，先读 baseline/sunmoonai/ 相关章节 + 该项目摘要.md（深入再读架构.md）；
-跨项目问题（契约、身份、发布）以 baseline/sunmoonai/ 与 baseline/app-platform/app-platform-architecture/ 为准。
+**阅读路径**：改某个项目前，先读 baseline/sunmoonai/ 相关章节 + 该项目
+`app-platform/intra-apps/<app>/<app>.md`（四段骨架：概要→重要点→架构→关联，可随时停）；
+跨项目问题（契约、身份、发布）以 baseline/sunmoonai/ 与 baseline/app-platform/inter-apps/app-platform.md 为准。
 
 ## 1. 权威排序（矛盾仲裁）
 
@@ -46,7 +47,7 @@
 源代码（各仓） > 架构基线/ADR > 任务文件/证据 > request
 ```
 
-- 代码是现状的唯一真相；摘要是帮助理解代码的缓存，与代码冲突时以代码为准。
+- 代码是现状的唯一真相；baseline 是帮助理解代码的缓存，与代码冲突时以代码为准。
 - request 是输入不是权威：评审采纳后，目标态事实写进基线/任务，request 只留引用。
 - 文档间矛盾：先比“最后更新”时间戳，再比上面的层级，不盲目采信。
 
@@ -104,9 +105,10 @@
 
 ## 4. 三条维护约定 + 编辑自检
 
-1. **每个事实只有一个权威位置**：跨项目事实→总体层；项目内事实→该项目摘要.md / 架构.md；
+1. **每个事实只有一个权威位置**：跨项目事实→总体层；项目内事实→该项目
+   `intra-apps/<app>/<app>.md`；
    判断标准是"这个事实将来变了，应该在哪一处改"。两处都写 = 必然漂移。
-2. **每份文档带时间戳**：文档头部写"最后更新：YYYY-MM-DD"；摘要头部写"深读时间"。
+2. **每份文档带时间戳**：文档头部写"最后更新：YYYY-MM-DD"；baseline 项文件头部写"深读时间"。
 3. **层间引用而非复制**：引用写"见 §X"+一句话结论，不抄全文。
 
 **编辑自检（任何一次新增/修改本目录文档，必须同时完成，缺一项视为未完成）：**
@@ -162,7 +164,8 @@
   handoff.md——不带序号不带日期（唯一性由文件夹保证，时间在文档头时间戳里）。
 - 任务 ID：前缀由该请求自定（如 `TASK-` 或短名缩写）+ 数字，回指所属 REQ。
 - 目录与文档：小写英文连字符（kebab-case）；app 目录用仓库名（tpl-app 等），
-  app-platform 下每项目两个文件：`摘要.md`（快层）与 `架构.md`（深刻层）。
+  baseline 一项一文件：`inter-apps/app-platform.md` 与 `intra-apps/<app>/<app>.md`，
+  统一四段骨架（§1 概要 §2 重要点 §3 架构 §4 关联）。
 - 未来 ADR：`baseline/sunmoonai/adr/ADR-<三位序号>-<短名>.md`，序号原则同 REQ。
 - 品牌定名：项目品牌统一为 **SunMoonAI**（sunmoonai 域名已注册）；路径与命名中用
   小写 `sunmoonai`，任务 ID 前缀可用缩写 `SMAI-`；文件夹内固定名文件（baseline.md
