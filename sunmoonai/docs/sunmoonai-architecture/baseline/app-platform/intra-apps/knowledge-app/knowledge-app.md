@@ -1,6 +1,7 @@
 # knowledge-app
 
-> 仓库路径 `/home/zymun/knowledge-app`。深读基线：2026-08-13（后端约 7000 行 Python、契约
+> 仓库 `sunmoonlion/knowledge-app`。
+> 最后更新：2026-08-14 ｜ 深读时间：2026-08-14（后端约 7000 行 Python、契约
 > schema、迁移链、前端结构）。App 之间的公共形态见 `baseline/app-platform/inter-apps/app-platform.md`。
 
 ## 1. 概要
@@ -123,7 +124,7 @@ knowledge-app/
 
 与模板/info 同构（Next.js 16 + shadcn + Tailwind v4 + next-intl + standalone）：
 
-- **admin**：`(dashboard)/knowledge/ingestions` 页 + `knowledge-ingestions-panel.tsx`（入库任务列表/重试/dispatch/config-check），另有 dashboard/settings/reference/rich-reference/forbidden；复用 crud/rich 组件套件。
+- **admin**：`(dashboard)/knowledge/ingestions` 页 + `knowledge-ingestions-panel.tsx`——**当前是静态占位页，未接后端**，不具备入库任务列表/重试/dispatch/config-check 能力（见 `requests/REQ-002-基线核对整改/plan-baseline.md` §3 Q3）；另有 dashboard/settings/reference/rich-reference/forbidden；复用 crud/rich 组件套件。
 - **web**：dashboard/toolkit/login，interaction 运行时与 info web 同构。
 
 ### 3.6 关键边界规则速查

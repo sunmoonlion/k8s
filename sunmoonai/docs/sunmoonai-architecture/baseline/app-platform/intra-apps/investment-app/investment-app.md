@@ -1,12 +1,13 @@
 # investment-app
 
-> 仓库路径 `/home/zymun/investment-app`。深读基线：2026-08-13（后端约 15600 行 Python 含
+> 仓库 `sunmoonlion/investment-app`。
+> 最后更新：2026-08-14 ｜ 深读时间：2026-08-14（后端约 15600 行 Python 含
 > 测试/脚本、契约锁、迁移链、两个前端、父仓文档）。App 之间的公共形态见
 > `baseline/app-platform/inter-apps/app-platform.md`。
 
 ## 1. 概要
 
-投资研究与智能体域 App（曾用名 research-app）。拥有 Session/Thread/Run/Attempt/Invocation、
+投资研究与智能体域 App。拥有 Session/Thread/Run、
 Graph/Runtime 与 Agent 产品状态；**不接管 Info/Knowledge 领域事实**。旧 Research 四组件无
 运行态（回滚面为零），历史材料只在冻结标签，不得复制回活动架构。
 
@@ -62,6 +63,19 @@ investment-app/
 - 规则：唯一可编辑真源在 `knowledge-app/contracts/retrieval/`；契约 CI 必须下载/检出 provider 制品、设 `KNOWLEDGE_RETRIEVAL_CONTRACT_DIR` 并跑消费方测试；**没有 provider+consumer 双测的锁更新不是有效升级**；生成/复制的 schema 不得成为第二真源。
 - 后端 `app/domain/agent/knowledge.py` 是契约的客户端领域模型：KnowledgeQuery / KnowledgeEvidence / Citation（`from_evidence` 投影、source_href 必须 `^/api/citations/{uuid}/source$`）/ KnowledgePort，字段与 provider 的 retrieval DTO 严格对齐（extra=forbid）。
 
+#### citation 三路径消歧
+
+三条路径都真实存在，分属不同层，不是矛盾。看到其中一条时先对号入座：
+
+| 路径 | 是什么 | 代码位置 |
+| --- | --- | --- |
+| `/api/web/v1/citations/{id}/source` | 模板 web-interaction v1 的**浏览器契约端点** | `application/dto/interaction.py:35` |
+| `/api/citations/{uuid}/source` | knowledge retrieval/v1 Citation 投影的 **DTO 字段约束**（`source_href` 正则） | `knowledge-app/contracts/retrieval/v1/citation.schema.json:33`；`domain/agent/knowledge.py:124` |
+| `/api/citation-sources/{evidence_id}` | Pilot BFF `citation_source` 解析后返回的 **location 值** | `application/agent/pilot_service.py:214`；`dto/pilot_runtime.py:134` |
+
+§2 第 4 条与 §3.11 说的「只回 `/api/citation-sources/{evidence_id}`」指第三行（解析结果），
+与第二行的字段正则不冲突。
+
 ### 3.4 Agent 领域模型（domain/agent）
 
 - **Run 状态机**：created→running→{waiting,completed,failed,cancelled,budget_exceeded}；waiting→{running,failed,cancelled}；四个终态不可转出（`RUN_STATUS_TRANSITIONS` + `validate_run_status_transition`）。
@@ -81,11 +95,16 @@ investment-app/
 | `first_m1_graph` | planner-react 雏形：normalize_input → create_or_update_plan（消耗 budget，超限转 budget_exceeded）→ summarize |
 
 - checkpointer 用 `PostgresSaver`（`phase0_postgres_checkpointer`，asyncpg URL 转 psycopg 同步 URL）；`LangGraphRuntimeService` 统一 stream/resume 封装。
-- 验收红线（CLAUDE.md）：**禁止 fake SSE、fake citation、mock retrieval、hardcode graph**。
+- 验收红线：**禁止 fake SSE、fake citation、mock retrieval、hardcode graph**。
+  （这些是项目口头约定，仓内 `CLAUDE.md` 并未收录该条文；如需可执行出处，应先落到某份规范文件。）
 
 ### 3.6 两条运行链
 
-#### Pilot 链（真产品链，Web 用户面）
+#### Pilot 链（真产品链）
+
+> 现状边界：Pilot 链目前**只在 API 面接线**。Web 前端的 `/api/web/v1` 端点尚未接到
+> `PilotService`，因此浏览器用户面走的不是本节描述的这条链。见
+> `requests/REQ-002-基线核对整改/plan-baseline.md` §3 Q2。
 
 - **API 面**（`PilotService`）：create_run 要求 Celery producer 可用，idempotency_key 幂等建 run，dispatch 失败立即置 failed 并写 `failed` 浏览器事件；snapshot 回放 browser events 聚合 citation/input_required/summary；resume 用 `consume_resume` **原子消费 action token**——消费后 transport 失败必须落终态 failed（token 永不可复用）；`citation_source` 先 `assert_citation_owner`，只返回同源 BFF 路径 `/api/citation-sources/{evidence_id}`，**永不重定向到 provider 控制的 URI**。
 - **Worker 面**（`tasks/pilot_agent_graph.run`）：终态直接返回 → running 事件 → 调 KnowledgeRetrievalClient（dataset_keys=`AGENT_PILOT_DATASET_KEYS`、top_k 5、token_budget 4000、tenant `sunmoonai`、actor_type human、`delegated_run_id=run_id`）→ **无授权证据即失败** → `Citation.from_evidence` 逐条写 citation 事件 → 每步检查 cancel → `OpenAICompatiblePilotLLM`（OpenAI 兼容 /chat/completions，temperature 0，只取 top5 证据各 4000 字，system prompt 要求只据证据回答、不泄露内部标识）→ 跑 pilot graph **必须 interrupt**（否则报错）→ input_required 事件 + waiting（resume_token=action_id）→ resume 分支拿 summary（空则报错）→ delta + completed。任何异常：非终态则置 failed + `pilot_failed` 事件后 re-raise。
@@ -113,7 +132,7 @@ investment-app/
 
 ### 3.8 数据模型与迁移（head = `20260811_0005`）
 
-1. `20260708_0001` agent phase0：LangGraph 三表（checkpoints/checkpoint_blobs/checkpoint_writes，thread_id 索引）+ agent sessions/runs 领域表。
+1. `20260708_0001` agent phase0：共八张表——LangGraph 四表（`checkpoints`/`checkpoint_blobs`/`checkpoint_writes`/`checkpoint_migrations`，thread_id 索引）+ 领域四表（`agent_sessions`/`agent_runs`/`session_events`/`tool_side_effects`）。
 2. `20260712_0002` auth_identity（auth_user）。
 3. `20260729_0003` agent_pilot：pilot runs 表（owner_actor_id、uq idempotency_key、title≤512、user_input）+ pilot run state（run_id PK、resume_action_id、cancel 标志等）。
 4. `20260809_0004` outbox primitives（模板原语）。
@@ -139,7 +158,7 @@ investment-app/
 
 | 规则 | 位置 |
 |---|---|
-| pilot draft/citation 必须真实，禁止 mock/fake 验收 | pilot_graph / CLAUDE.md |
+| pilot draft/citation 必须真实，禁止 mock/fake 验收 | pilot_graph（口头约定，无规范文件出处） |
 | resume token 原子消费后永不复用，transport 失败即终态 failed | PilotService._fail_consumed_resume |
 | citation source 只回同源 BFF 路径，不重定向 provider URI | PilotService.citation_source |
 | 检索无授权证据 = 失败，不是空答案 | pilot_agent_graph |

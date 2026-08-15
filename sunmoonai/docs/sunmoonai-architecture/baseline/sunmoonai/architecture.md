@@ -53,6 +53,9 @@ deploy-sunmoonai-all orchestrates deployment order; it does not own domains.
 
 ## 3. 平台职责
 
+下表末行 `deploy-sunmoonai-all` 是**总控编排入口，不是平台**：它不拥有任何领域，
+只按依赖顺序调用各平台。即八个平台 + 一个编排入口。
+
 | 平台 | 核心职责 | 明确不负责 |
 | --- | --- | --- |
 | `kind-infrastructure` | 本地 KIND 集群、节点、CNI、镜像加载、挂载与集群引导 | 业务 App 和领域数据 |
@@ -198,6 +201,10 @@ source commit -> tests/gates -> image build -> scan -> Harbor immutable digest
 禁止为正式版本重新构建、使用可变 tag 代替 digest、或在未计算 release/live/evidence/rollback
 保护闭包时删除 Harbor artifact。
 
+现状差距：上述链路尚未在脚本中完整串起。`app-platform/scripts/build-push-app-images.sh`
+构建并推送的是**可变 tag**（`:${TAG}`）而非 digest 晋级；digest 的不可变性目前靠
+`release.json` 只收 `repository@sha256` 与 `verify-formal-instance.py` 的静态校验兜底。
+
 ## 12. Ops Platform 与可观测性
 
 Ops Platform 提供受控的运维 UI 和诊断能力，不拥有数据。业务服务自身必须输出：
@@ -240,5 +247,5 @@ App 侧禁止事项（跨 App 读表、Admin/Web 拆分、Research 命名混淆�
 ## 16. 相关权威文档
 
 - [App Platform 架构](../app-platform/inter-apps/app-platform.md)
-- [App Platform 数据所有权](../../../app-platform/docs/data-ownership.md)
-- [App Platform 集成规范](../../../app-platform/docs/integration-standards.md)
+- [App Platform 数据所有权](../../../../app-platform/docs/data-ownership.md)
+- [App Platform 集成规范](../../../../app-platform/docs/integration-standards.md)

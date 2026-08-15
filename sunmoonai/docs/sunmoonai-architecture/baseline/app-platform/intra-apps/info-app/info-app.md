@@ -1,6 +1,7 @@
 # info-app
 
-> 仓库路径 `/home/zymun/info-app`。深读基线：2026-08-11（后端约 1.2 万行 Python、两个前端、
+> 仓库 `sunmoonlion/info-app`。
+> 最后更新：2026-08-14 ｜ 深读时间：2026-08-14（后端约 1.2 万行 Python、两个前端、
 > 契约与文档）。App 之间的公共形态见 `baseline/app-platform/inter-apps/app-platform.md`。
 
 ## 1. 概要
@@ -67,7 +68,7 @@ KnowledgeAppClient 跨 App 集成、info 专属配置段（crawl/storage/search/
 - `app/application/collectors/`：采集适配器 Protocol（`discover(url, config) → list[CollectedLink]`）+ registry；实现：rss/atom（ElementTree 双格式）、api（items_path 点路径 + 字段映射）、changedetection（需 watch_id）、scrapy/playwright（外部 crawler worker 提供结果，`parse_external_links` 解析）。
 - `app/infrastructure/`：models、repositories、external（downstream_service + knowledge_app 客户端）、search、storage、security、messaging（celery_producer）。
 - `app/domain/`：Principal / BrowserSession 等领域类型。
-- `app/tasks/`：`crawl_url`、`dispatch_distribution`、`index_document_version`、`ping`（每个任务 `asyncio.run` 独立事件循环，任务内必须 shutdown postgres）。
+- `app/tasks/`：`crawl_url`、`dispatch_distribution`、`index_document_version`（各自 `asyncio.run` 独立事件循环，任务内必须 shutdown postgres）+ `ping`（同步实现，不起事件循环）。
 - `app/cli/drain_delivery_outbox.py`：Kubernetes CronJob 用有界单次扫描（--limit 1~1000，需 CELERY_BROKER_URL）。
 - `core/config.py`：Info 专属配置段（见 §3.5）。
 
@@ -181,7 +182,7 @@ env.py 用 `get_settings().migration_url`，异步引擎 `asyncio.run`。
 
 ### 3.7 部署与发布
 
-- 走 k8s-deployment 脚手架五件套 + `deployment/bundle/release.json`（schema 2、formal_release=true）；Secret 名 `info-backend-runtime`（10 个 required key）。
+- 走 k8s-deployment 脚手架五件套 + `deployment/bundle/release.json`（schema 2、formal_release=true，该文件在 k8s 仓 `sunmoonai/app-platform/info-app/deployment/`，不在本仓）；运行凭据已由单个 `info-backend-runtime` Secret 拆分为按角色划分的多个 Secret，以各 bundle 清单为准。
 - 实例同步顺序：info → knowledge → investment（见 tpl 的 template-release-manifest）。
 
 ## 4. 关联

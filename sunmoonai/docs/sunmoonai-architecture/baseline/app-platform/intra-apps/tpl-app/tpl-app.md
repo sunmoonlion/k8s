@@ -1,6 +1,7 @@
 # tpl-app
 
-> 仓库路径 `/home/zymun/tpl-app`。深读基线：2026-08-13。
+> 仓库 `sunmoonlion/tpl-app`。
+> 最后更新：2026-08-14 ｜ 深读时间：2026-08-14。
 > App 之间的公共形态见 `baseline/app-platform/inter-apps/app-platform.md`；
 > 平台间关系见 `baseline/sunmoonai/architecture.md`。
 
@@ -93,7 +94,7 @@ Next Web↔FastAPI；历史 release manifest 中的旧路径仅作冻结审计�
 
 #### Web 交互契约（web-interaction v1）
 
-`/api/web/v1` 四端点：`GET /runs/{id}`（RunSnapshot）、`GET /runs/{id}/events`（SSE，Last-Event-ID 头与 last_event_id 参数冲突即 400，事件 `id:/event: run-event/data:` 格式，no-cache + X-Accel-Buffering:no）、`POST /runs/{id}/actions`（RunAction）、`GET /citations/{evidence_id}/source`（302，location 必须安全相对路径）。DTO 全部 contract_version=1、frozen、extra=forbid：RunStatus 六态、七种 RunEvent（status/delta/citation/input_required/completed/failed/heartbeat，discriminator=type）、BrowserCitation 的 source_href 正则且必须与 evidence_id 自洽、citations ≤50 且 evidence_id 唯一。Port 未实现时默认 UnavailableAdapter（503 provider_unavailable）；ReferenceAdapter 是确定性配对测试适配器，用固定 uuid5 序列，生产配置拒绝启用。`contracts/web-interaction-v1.consumer-vectors.json` 是消费方测试向量（快照+七事件流+invalid 向量）。
+`/api/web/v1` 四端点：`GET /runs/{id}`（RunSnapshot）、`GET /runs/{id}/events`（SSE，Last-Event-ID 头与 last_event_id 参数冲突即 400，事件 `id:/event: run-event/data:` 格式，no-cache + X-Accel-Buffering:no）、`POST /runs/{id}/actions`（RunAction）、`GET /citations/{evidence_id}/source`（302，location 必须安全相对路径）。DTO 全部 contract_version=1、frozen、extra=forbid：RunStatus 六态、七种 RunEvent（status/delta/citation/input_required/completed/failed/heartbeat，discriminator=type）、BrowserCitation 的 source_href 正则且必须与 evidence_id 自洽、citations ≤50 且 evidence_id 唯一。Port 未实现时默认 `UnavailableWebInteractionAdapter`（503 provider_unavailable）；ReferenceAdapter 是确定性配对测试适配器，用一组硬编码的 v5 格式 UUID 常量（代码中不调用 `uuid5()`，无 namespace/name 参数可推导），生产配置拒绝启用。`contracts/web-interaction-v1.consumer-vectors.json` 是消费方测试向量（快照+七事件流+invalid 向量）。
 
 #### Outbox/Inbox 原语
 
@@ -124,7 +125,7 @@ pyproject：Python ≥3.12，fastapi/sqlalchemy2/asyncpg/redis/celery/httpx/jose
 
 ### 3.5 k8s-deployment 脚手架（scaffold.py + deploy.py + deployment_config.py + 五模板）
 
-`scaffold.py`：渲染五件套（00-prerequisites/10-migration/20-runtime/30-network-policies/40-ingress）。校验：镜像必须 `repo@sha256:64hex`、DNS label、strict origin、app+release-id 生成的 Job 名 ≤63、副本 1-20、输出目录必须为空、渲染后拒绝残留 `__TOKEN__`。默认值：client_id `sunmoonai-{app}-{surface}`、casdoor namespace `app-platform-dev`、image-pull `harbor-registry-secret`、ingress namespace `kube-system`（traefik pod label）。产物：required-secret-keys.txt 十键（ADMIN/WEB_CASDOOR_CLIENT_SECRET、API/WORKER/SCHEDULER_CELERY_BROKER_URL、API/MIGRATION/SCHEDULER/WORKER_DATABASE_URL、REDIS_PASSWORD）+ optional 两键（WORKER_CELERY_RESULT_BACKEND、WORKER_DOWNSTREAM_CLIENT_SECRET）+ release.json（模板侧 schema 1，正式实例 bundle 已演进为 schema 2，见 `intra-apps/k8s/k8s.md`）、每文件 sha256。`deploy.py`：plan/apply/cleanup；apply 强制 `--secret-env-file`（0600 env 注入 Secret）；cleanup 按 selector `sunmoonai.com/managed-by=architecture-v2`。runtime 模板：非 root 1001、seccomp RuntimeDefault、automountServiceAccountToken:false、topologySpread、RollingUpdate maxUnavailable:0；API 只拿 API_* Secret 键，角色间 Secret 键隔离。
+`scaffold.py`：渲染五件套（00-prerequisites/10-migration/20-runtime/30-network-policies/40-ingress）。校验：镜像必须 `repo@sha256:64hex`、DNS label、strict origin、app+release-id 生成的 Job 名 ≤63、副本 1-20、输出目录必须为空、渲染后拒绝残留 `__TOKEN__`。默认值：client_id `sunmoonai-{app}-{surface}`、casdoor namespace `app-platform-dev`、image-pull `harbor-registry-secret`、ingress namespace `kube-system`（traefik pod label）。产物：required-secret-keys.txt 十键（ADMIN/WEB_CASDOOR_CLIENT_SECRET、API/WORKER/SCHEDULER_CELERY_BROKER_URL、API/MIGRATION/SCHEDULER/WORKER_DATABASE_URL、REDIS_PASSWORD）+ optional 两键（WORKER_CELERY_RESULT_BACKEND、WORKER_DOWNSTREAM_CLIENT_SECRET）+ release.json（模板侧 schema 1，正式实例 bundle 已演进为 schema 2，见 `intra-apps/k8s/k8s.md`）、每文件 sha256。`deploy.py`：plan/apply/cleanup；apply 强制 `--secret-env-file`（0600 env 注入 Secret）；cleanup 按 selector `sunmoonai.com/managed-by=app-platform-v2`。runtime 模板：非 root 1001、seccomp RuntimeDefault、automountServiceAccountToken:false、topologySpread、RollingUpdate maxUnavailable:0；API 只拿 API_* Secret 键，角色间 Secret 键隔离。
 
 ### 3.6 发布治理（template-release-manifest.json + verify_template_release.py）
 
