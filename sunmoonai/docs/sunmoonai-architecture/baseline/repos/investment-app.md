@@ -73,6 +73,10 @@ Internal Pilot Runtime、Phase 0 Agent API 与 Celery Worker。
 （验证：`rg -l RunBudget investment-backend/app/app`）。
 `pilot_agent_graph.py:122` 的 `token_budget=4000` 是 Knowledge 检索参数，与 `RunBudget` 无关。
 
+推论：**`budget_exceeded` 这个 run 状态在生产中不可达。**唯一写入它的地方是
+`first_m1_graph.py:36`（验证：`rg -n budget_exceeded app --glob '!**/tests/**'`）。
+`pilot_service.py:26` 仍保留 `"budget_exceeded" → "failed"` 的对外映射，但该分支不会被触发。
+
 ### 4.3 运行链
 
 | 链 | 入口位置 | 面向的前缀 | 门控 |
