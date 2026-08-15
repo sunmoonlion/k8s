@@ -1,51 +1,55 @@
-# baseline 阅读地图
+# baseline：五仓代码投影
 
-baseline 是 SunMoonAI 项目的唯一基线：只反映当前有效事实，覆盖式更新（政策见 AGENTS.md
-§0/§2）。
+> 最后更新：2026-08-15
+> 本目录是**现有代码的投影**，唯一用途是让人与智能体在动手改代码前快速了解现状。
+> 与代码冲突时永远是本目录错。每条断言都可落到 `file:line` 或可执行命令；
+> 各文件的验证时点见 [`verify.md`](verify.md)。
 
-## 目录结构
+## 我要做什么 → 读哪里
 
-```
+| 我的任务 | 先读 | 再读 |
+| --- | --- | --- |
+| 第一次接触这个项目 | [`map.md`](map.md) | 对应仓的 `repos/*.md` §1–§3 |
+| 改某个仓的业务代码 | 该仓 `repos/*.md` §2 目录地图、§3 硬规则 | §4 分层与流程 |
+| 加或改一个跨 App 契约 | [`shared/contracts.md`](shared/contracts.md) | provider 仓与 consumer 仓各自的 §6 |
+| 动登录、权限、服务间调用 | [`shared/identity.md`](shared/identity.md) | 该仓 `repos/*.md` §3 |
+| 加表、改迁移、动数据库 | [`shared/data.md`](shared/data.md) | 该仓 `repos/*.md` §5 |
+| 发一个新版本、改部署清单 | [`shared/release.md`](shared/release.md) | [`repos/k8s.md`](repos/k8s.md) §4–§6 |
+| 从模板起一个新 App | [`repos/tpl-app.md`](repos/tpl-app.md) | [`shared/conventions.md`](shared/conventions.md) |
+| 本地把某个仓跑起来 | 该仓 `repos/*.md` §7 | — |
+| 想知道某个功能到底做完没有 | 该仓 `repos/*.md` **§8 已知未实现** | — |
+| 想知道当前镜像 digest / 迁移 head 是什么 | 本目录**不记这些值** | [`verify.md`](verify.md) §2 真源速查 |
+
+## 目录
+
+```text
 baseline/
-├── sunmoonai/
-│   └── architecture.md                    # 九大平台之间：分层、职责、依赖方向、典型流
-└── app-platform/
-    ├── inter-apps/
-    │   └── app-platform.md                # App 之间：公共形态、契约、模板治理
-    └── intra-apps/                        # 各 App 内部，一项一文件
-        ├── tpl-app/tpl-app.md
-        ├── info-app/info-app.md
-        ├── knowledge-app/knowledge-app.md
-        ├── investment-app/investment-app.md
-        └── k8s/k8s.md
+├── README.md      本文件：任务索引
+├── map.md         五仓分工、依赖方向、平台构成
+├── repos/         一仓一文件，八节固定结构
+│   ├── tpl-app.md            info-app.md
+│   ├── knowledge-app.md      investment-app.md
+│   └── k8s.md
+├── shared/        跨仓共同规则，按主题
+│   ├── contracts.md   identity.md   data.md
+│   ├── release.md     conventions.md
+└── verify.md      验证方法、验证时点总表、易腐值真源速查
 ```
 
-每个文档统一四段骨架：**§1 概要**（定位 + 拓扑，30 秒）→ **§2 重要点**（必须知道的事实与
-红线，3 分钟）→ **§3 架构**（全部机制细节，按需深读）→ **§4 关联**（上下游指针）。
+## 每份仓文件的固定八节
 
-## 阅读路径
+1｜这个仓是什么　2｜目录地图　3｜改动前必读的硬规则　4｜分层与关键流程
+5｜数据与迁移　6｜契约与对外接口　7｜本地怎么跑与怎么验　8｜已知未实现
 
-| 目的 | 读什么 |
+§3 只收**真正会导致失败**的规则（有校验、断言、抛错或门禁脚本作证），不罗列最佳实践。
+§8 专门列那些**看起来做完了、其实是占位或未接线**的东西——这是本投影主动暴露缺口的地方，
+也通常是读者最需要先知道的一节。
+
+## 本目录不写什么
+
+| 不写 | 去哪 |
 | --- | --- |
-| 九大平台之间的关系与典型流 | `sunmoonai/architecture.md` |
-| 约束所有 App 的公共规则（形态/Backend/DB/契约/模板/禁止事项） | `app-platform/inter-apps/app-platform.md` |
-| 快速或深入把握某个 App（概要到全机制） | `app-platform/intra-apps/<app>/<app>.md` |
-| 30 秒速览全项目关键事实 | 下方一屏表 |
-
-## 全项目重要点一屏表
-
-| 项 | 必须知道（§ 指回原文） |
-| --- | --- |
-| 九大平台 | 基础能力向上提供、领域所有权不向下泄漏；部署顺序≠运行时耦合（`sunmoonai/architecture.md`） |
-| App 公共形态 | 标准五组件拓扑（backend+admin/web 前端+db-provisioner+access-bootstrap）；四运行角色同一不可变镜像；数据所有权归各 App，跨 App 只走契约；未来 App 必须从已验收模板实例化（`inter-apps/app-platform.md` §2、§10） |
-| tpl-app | 三仓唯一模板源，禁伪造 fake 端点；Alembic 迁移只进不退（`intra-apps/tpl-app/tpl-app.md` §2） |
-| info-app | sha256+simhash64(0.84) 去重；仅 clean_markdown/text_plain、≤50MiB、有 S3 version 才可分发；delivery outbox completed=业务完成，broker 故障不使 API 5xx（`intra-apps/info-app/info-app.md` §2） |
-| knowledge-app | 摄入/检索契约唯一真源；一请求=恰好一个不可变带版本对象；浏览器只见 citation 投影，永不见 provider 原始 URL（`intra-apps/knowledge-app/knowledge-app.md` §2） |
-| investment-app | resume token 原子消费后永不复用；citation source 只回同源 BFF 路径；无授权证据=失败不是空答案；Run 四终态不可转出（`intra-apps/investment-app/investment-app.md` §2） |
-| k8s | 五件套固定部署顺序、迁移失败不得继续；release.json 只收 digest、禁重构建打 tag；证据分层 L1-L7，smoke 不算完成（`intra-apps/k8s/k8s.md` §2） |
-
-## 更新政策
-
-- 仅在评估认定需要时手动更新，且永远在评估之后；覆盖式，不留修订叙事。
-- 目标态先写进所属请求文件夹的 baseline.md，验收吸收后才进入 baseline/。
-- 未来 ADR 落 `sunmoonai/adr/`（随首条落地创建）。
+| 将来要做什么、应该怎样 | `../requests/` 各请求的目标态 |
+| 为什么这样设计 | `../decisions/`（ADR） |
+| 做到第几步了 | 请求文件夹内的进度文件 |
+| 镜像 digest、schema sha256、迁移 head、commit | [`verify.md`](verify.md) §2 指出真源，不落值 |
