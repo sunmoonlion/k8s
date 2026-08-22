@@ -8,7 +8,7 @@ import os
 import subprocess
 from pathlib import Path
 
-ROOT = Path("/home/zymun/tpl-app")
+ROOT = Path("/home/zymun/master/tpl-app")
 VECTORS = ROOT / "contracts/web-interaction-v1.consumer-vectors.json"
 
 

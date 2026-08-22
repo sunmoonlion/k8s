@@ -100,7 +100,7 @@ primary:
 
 #### 步骤1：创建Secret
 ```bash
-cd ~/k8s/sunmoonai/data-platform/postgresql
+cd ~/master/k8s/sunmoonai/data-platform/postgresql
 ./scripts/create-postgresql-secrets.sh
 ```
 

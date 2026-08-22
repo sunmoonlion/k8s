@@ -48,7 +48,7 @@ Kind 与 C1 是**两套独立 Harbor**。`CLUSTER` 决定直推落到哪套：
 ## 推到 Kind Harbor
 
 ```bash
-cd ~/k8s/sunmoonai/app-platform
+cd ~/master/k8s/sunmoonai/app-platform
 
 docker login harbor.sunmoonai.com:30443
 
@@ -60,7 +60,7 @@ CLUSTER=KIND ./scripts/build-push-app-images.sh
 ## 直推到远程 C1 Harbor
 
 ```bash
-cd ~/k8s/sunmoonai/app-platform
+cd ~/master/k8s/sunmoonai/app-platform
 
 docker login harbor-c1.sunmoonai.com:30443
 
@@ -128,7 +128,7 @@ bundle 逐项核对。完整合同见 `../docs/formal-deployment-configuration.m
 构建/复制完成后，部署入口：
 
 ```bash
-cd ~/k8s/sunmoonai/app-platform/info-app
+cd ~/master/k8s/sunmoonai/app-platform/info-app
 ./deploy-info-app-all/deploy-info-app-all.sh config --cluster KIND
 ./deploy-info-app-all/deploy-info-app-all.sh deploy --cluster KIND
 ```

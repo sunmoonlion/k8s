@@ -8,7 +8,7 @@ AIStor Console 默认使用 `ClusterIP` Service，只能在 Kubernetes 集群内
 需要管理对象存储时，在 WSL 终端运行：
 
 ```bash
-cd ~/k8s
+cd ~/master/k8s
 
 ./sunmoonai/data-platform/object-storage/deploy-object-storage/deploy-object-storage.sh \
   --cluster KIND console
@@ -77,7 +77,7 @@ Backend 创建最小权限的独立 S3 凭据。
 Kind 集群重建后，先重新部署对象存储：
 
 ```bash
-cd ~/k8s
+cd ~/master/k8s
 
 ./sunmoonai/data-platform/object-storage/deploy-object-storage/deploy-object-storage.sh \
   --cluster KIND deploy

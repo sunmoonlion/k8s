@@ -1,6 +1,6 @@
 # knowledge-app
 
-> 仓库路径 `/home/zymun/knowledge-app`。深读基线：2026-08-13（后端约 7000 行 Python、契约
+> 仓库路径 `/home/zymun/master/knowledge-app`。深读基线：2026-08-13（后端约 7000 行 Python、契约
 > schema、迁移链、前端结构）。App 之间的公共形态见 `baseline/app-platform/inter-apps/app-platform.md`。
 
 ## 1. 概要

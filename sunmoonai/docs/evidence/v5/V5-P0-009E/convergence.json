@@ -20,7 +20,7 @@
     "research-web-backend": "9cc463424d42f658296ccb06965e61a276adcf48"
   },
   "prior": {
-    "freeze": "/home/zymun/k8s/sunmoonai/docs/evidence/v5/V5-P0-009A/freeze.json",
+    "freeze": "/home/zymun/master/k8s/sunmoonai/docs/evidence/v5/V5-P0-009A/freeze.json",
     "pairs": {
       "info-admin": {
         "result": "passed",
@@ -72,12 +72,12 @@
     "info": {
       "identity": "passed",
       "domain": "passed",
-      "recovery": "/home/zymun/info-app/docs/P0-009-DOMAIN-RECOVERY.md"
+      "recovery": "/home/zymun/master/info-app/docs/P0-009-DOMAIN-RECOVERY.md"
     },
     "knowledge": {
       "identity": "passed",
       "domain": "passed",
-      "recovery": "/home/zymun/knowledge-app/docs/P0-009-DOMAIN-RECOVERY.md"
+      "recovery": "/home/zymun/master/knowledge-app/docs/P0-009-DOMAIN-RECOVERY.md"
     },
     "research": {
       "identity": "passed",

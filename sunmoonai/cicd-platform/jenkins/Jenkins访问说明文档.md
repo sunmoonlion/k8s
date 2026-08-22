@@ -73,11 +73,11 @@ export KUBECONFIG=/home/zym/.kube/cluster-c2-admin.conf
 kubectl delete deployment,service,secret,pvc jenkins-sunmoonai -n cicd-platform-dev
 
 # 2. 重新部署 Secret
-cd ~/k8s/sunmoonai/cicd-platform/jenkins/deploy-jenkins/secrets/jenkins-sunmoonai/deploy-jenkins-sunmoonai
+cd ~/master/k8s/sunmoonai/cicd-platform/jenkins/deploy-jenkins/secrets/jenkins-sunmoonai/deploy-jenkins-sunmoonai
 ./deploy-jenkins-secrets.sh deploy
 
 # 3. 重新部署 Jenkins（会使用 Secret 中的密码初始化）
-cd ~/k8s/sunmoonai/cicd-platform/jenkins/deploy-jenkins
+cd ~/master/k8s/sunmoonai/cicd-platform/jenkins/deploy-jenkins
 ./deploy-jenkins.sh deploy
 ```
 
@@ -225,7 +225,7 @@ kubectl --kubeconfig=.kube/cluster-admin.conf logs jenkins-sunmoonai-<pod-name> 
 
 ```bash
 # 使用提供的清理脚本
-cd ~/k8s/sunmoonai/cicd-platform/jenkins
+cd ~/master/k8s/sunmoonai/cicd-platform/jenkins
 ./cleanup-jenkins.sh
 
 # 脚本会提示确认，输入 "yes" 继续
@@ -244,11 +244,11 @@ kubectl delete deployment,service,secret,pvc jenkins-sunmoonai -n cicd-platform-
 kubectl get deployment,service,secret,pvc -n cicd-platform-dev | grep jenkins-sunmoonai || echo "✅ 所有资源已删除"
 
 # 3. 重新部署 Secret
-cd ~/k8s/sunmoonai/cicd-platform/jenkins/deploy-jenkins/secrets/jenkins-sunmoonai/deploy-jenkins-sunmoonai
+cd ~/master/k8s/sunmoonai/cicd-platform/jenkins/deploy-jenkins/secrets/jenkins-sunmoonai/deploy-jenkins-sunmoonai
 ./deploy-jenkins-secrets.sh deploy
 
 # 4. 重新部署 Jenkins（会使用 Secret 中的密码初始化）
-cd ~/k8s/sunmoonai/cicd-platform/jenkins/deploy-jenkins
+cd ~/master/k8s/sunmoonai/cicd-platform/jenkins/deploy-jenkins
 ./deploy-jenkins.sh deploy
 ```
 

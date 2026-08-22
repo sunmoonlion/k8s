@@ -33,7 +33,7 @@
 #### 集群1配置
 ```bash
 # 服务端前缀：TRAEFIK_K1
-TRAEFIK_K1_K1_LOCAL_CA_CERT_DIR="~/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca"
+TRAEFIK_K1_K1_LOCAL_CA_CERT_DIR="~/master/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca"
 
 # 客户端节点配置
 C1_TRAEFIK_K1_K1_CLIENT_NODES="node1,node2,node3"
@@ -62,7 +62,7 @@ C2_TRAEFIK_K1_K1_CLIENT_NODE_HOSTS="115.190.37.57,115.190.153.150,115.190.86.211
 1. 集群2必须使用集群1的归档目录：
    ```bash
    # 在 cert-secret.conf 中添加集群2的归档目录配置
-   C2_TRAEFIK_K1_K1_LOCAL_CA_CERT_DIR="~/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca"
+   C2_TRAEFIK_K1_K1_LOCAL_CA_CERT_DIR="~/master/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca"
    ```
    或者，如果集群2和集群1在同一台机器上，直接使用相同的路径。
 
@@ -97,16 +97,16 @@ C2_TRAEFIK_K1_K1_CLIENT_NODE_HOSTS="115.190.37.57,115.190.153.150,115.190.86.211
 **配置要求**：
 1. 集群2使用自己的归档目录：
    ```bash
-   C2_TRAEFIK_K1_K1_LOCAL_CA_CERT_DIR="~/k8s/cluster2/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca"
+   C2_TRAEFIK_K1_K1_LOCAL_CA_CERT_DIR="~/master/k8s/cluster2/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca"
    ```
 
 2. 手动同步CA证书：
    ```bash
    # 从集群1复制CA证书到集群2
-   scp ~/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/ca.crt \
-       user@cluster2:~/k8s/cluster2/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/
-   scp ~/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/ca.key \
-       user@cluster2:~/k8s/cluster2/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/
+   scp ~/master/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/ca.crt \
+       user@cluster2:~/master/k8s/cluster2/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/
+   scp ~/master/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/ca.key \
+       user@cluster2:~/master/k8s/cluster2/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/
    ```
 
 **优点**：
@@ -132,7 +132,7 @@ C2_TRAEFIK_K1_K1_CLIENT_NODE_HOSTS="115.190.37.57,115.190.153.150,115.190.86.211
 
 ```bash
 # 集群2使用集群1的归档目录（共享CA证书）
-C2_TRAEFIK_K1_K1_LOCAL_CA_CERT_DIR="~/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca"
+C2_TRAEFIK_K1_K1_LOCAL_CA_CERT_DIR="~/master/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca"
 ```
 
 **注意**：如果集群2在不同机器上，需要：
@@ -160,7 +160,7 @@ C2_TRAEFIK_K1_K1_CLIENT_CONTAINERD_PATH="/etc/containerd/certs.d/harbor.sunmoona
 export CLUSTER=C2
 
 # 部署集群2的客户端（只分发CA证书）
-cd ~/k8s/utils/unified-cert-secret-management
+cd ~/master/k8s/utils/unified-cert-secret-management
 ./deploy-all.sh --cluster C2 rotate TRAEFIK_K1_K1
 ```
 

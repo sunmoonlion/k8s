@@ -43,7 +43,7 @@ kubectl auth can-i get pods --as=system:serviceaccount:cicd-platform-dev:jenkins
 ### 3. 部署脚本要求
 
 确保部署脚本路径正确：
-- 部署脚本路径：`~/k8s/sunmoonai/incubator-app/incubator-app-bff/deploy-incubator-bff/app/deploy-app/deploy-incubator-bff.sh`
+- 部署脚本路径：`~/master/k8s/sunmoonai/incubator-app/incubator-app-bff/deploy-incubator-bff/app/deploy-app/deploy-incubator-bff.sh`
 - 部署脚本应支持参数：`deploy <project_id> <namespace> <environment>`
 - 部署脚本应支持 `--cluster` 参数（可选）
 
@@ -188,7 +188,7 @@ Pipeline 支持以下参数（可在首次构建时设置默认值）：
 **问题**：Pipeline 报错 "部署脚本不存在"
 
 **解决**：
-- 检查部署脚本路径是否正确：`~/k8s/sunmoonai/incubator-app/incubator-app-bff/deploy-incubator-bff/app/deploy-app/deploy-incubator-bff.sh`
+- 检查部署脚本路径是否正确：`~/master/k8s/sunmoonai/incubator-app/incubator-app-bff/deploy-incubator-bff/app/deploy-app/deploy-incubator-bff.sh`
 - 确保 Jenkins 节点可以访问该路径
 - 检查文件权限：`chmod +x deploy-incubator-bff.sh`
 
@@ -242,7 +242,7 @@ BUILD_SCRIPT_PATH = "mybuild/build-image.sh"
 如果需要修改部署脚本路径，编辑 Pipeline 脚本中的：
 
 ```groovy
-DEPLOY_SCRIPT_PATH = "~/k8s/sunmoonai/incubator-app/incubator-app-bff/deploy-incubator-bff/app/deploy-app/deploy-incubator-bff.sh"
+DEPLOY_SCRIPT_PATH = "~/master/k8s/sunmoonai/incubator-app/incubator-app-bff/deploy-incubator-bff/app/deploy-app/deploy-incubator-bff.sh"
 ```
 
 ### 添加构建后通知

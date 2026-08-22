@@ -30,7 +30,7 @@ secret-management/
 
 ```bash
 # 加载 Secret 生成函数
-source ~/k8s/utils/secret-management/lib/secret-core.sh
+source ~/master/k8s/utils/secret-management/lib/secret-core.sh
 
 # 生成 TLS Secret YAML
 generate_tls_secret_yaml \
@@ -47,7 +47,7 @@ kubectl apply -f my-tls-secret.yaml
 ### 生成 Docker Secret
 
 ```bash
-source ~/k8s/utils/secret-management/lib/secret-core.sh
+source ~/master/k8s/utils/secret-management/lib/secret-core.sh
 
 generate_docker_secret_yaml \
     --name "docker-registry-secret" \
@@ -148,10 +148,10 @@ generate_secret_yaml_by_type \
 
 ```bash
 # 加载证书生成函数
-source ~/k8s/utils/secret-management/lib/cert-core.sh
+source ~/master/k8s/utils/secret-management/lib/cert-core.sh
 
 # 加载 CA 配置（从 ca-management 模块）
-source ~/k8s/utils/ca-management/ca-management.conf
+source ~/master/k8s/utils/ca-management/ca-management.conf
 
 # 获取 CA 路径
 CA_DIR="${ROOT_CA_LOCAL_DIR/#\~/$HOME}"
@@ -178,9 +178,9 @@ generate_server_cert_from_ca \
 #!/bin/bash
 
 # 1. 加载函数库
-source ~/k8s/utils/secret-management/lib/cert-core.sh
-source ~/k8s/utils/secret-management/lib/secret-core.sh
-source ~/k8s/utils/ca-management/ca-management.conf
+source ~/master/k8s/utils/secret-management/lib/cert-core.sh
+source ~/master/k8s/utils/secret-management/lib/secret-core.sh
+source ~/master/k8s/utils/ca-management/ca-management.conf
 
 # 2. 获取 CA 路径
 CA_DIR="${ROOT_CA_LOCAL_DIR/#\~/$HOME}"

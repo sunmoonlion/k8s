@@ -1,6 +1,6 @@
 # tpl-app
 
-> 仓库路径 `/home/zymun/tpl-app`。深读基线：2026-08-13。
+> 仓库路径 `/home/zymun/master/tpl-app`。深读基线：2026-08-13。
 > App 之间的公共形态见 `baseline/app-platform/inter-apps/app-platform.md`；
 > 平台间关系见 `baseline/sunmoonai/architecture.md`。
 

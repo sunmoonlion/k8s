@@ -8,7 +8,7 @@ FastAPI Backend；Backend 以 API、Celery Worker、Celery Scheduler 和一次�
 - `deploy-info-app-all/`：总入口、正式发布 `.conf` 与集群 profiles；
 - `deploy-info-*/`：API、Worker、Scheduler、Migration 和两个前端的独立部署入口；
 - 旧 Admin/Web 双 Backend、NodeBull Worker、旧前端部署树已在 R7.1 退役，不得恢复；
-- 业务源码位于独立的 `/home/zymun/info-app` 仓库，不复制到本目录。
+- 业务源码位于独立的 `/home/zymun/master/info-app` 仓库，不复制到本目录。
 
 默认入口：
 

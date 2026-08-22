@@ -7,7 +7,7 @@
 
 ## 固定产物
 
-- 仓库：`/home/zymun/tpl-app`
+- 仓库：`/home/zymun/master/tpl-app`
 - 模板：`tpl-admin-frontend-react`
 - Git commit：`fe8fc5cfd2a9d23f4f8a1bcd0465440b2341d85e`
 - 依赖锁：`tpl-admin-frontend-react/pnpm-lock.yaml`

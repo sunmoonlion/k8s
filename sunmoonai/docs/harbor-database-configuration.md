@@ -68,7 +68,7 @@ redis:
 
 ```bash
 # 编辑PostgreSQL子Chart的values.yaml
-vim ~/k8s/sunmoonai/cicd-platform/harbor/resources/harbor/charts/postgresql/values.yaml
+vim ~/master/k8s/sunmoonai/cicd-platform/harbor/resources/harbor/charts/postgresql/values.yaml
 ```
 
 找到并修改镜像配置：
@@ -88,7 +88,7 @@ image:
 
 ```bash
 # 编辑Redis子Chart的values.yaml
-vim ~/k8s/sunmoonai/cicd-platform/harbor/resources/harbor/charts/redis/values.yaml
+vim ~/master/k8s/sunmoonai/cicd-platform/harbor/resources/harbor/charts/redis/values.yaml
 ```
 
 找到并修改镜像配置：
@@ -148,7 +148,7 @@ externalDatabase:
 
 ```bash
 # 使用现有的PostgreSQL Secret创建脚本
-cd ~/k8s/sunmoonai/data-platform/postgresql/scripts
+cd ~/master/k8s/sunmoonai/data-platform/postgresql/scripts
 ./create-postgresql-secrets.sh
 ```
 

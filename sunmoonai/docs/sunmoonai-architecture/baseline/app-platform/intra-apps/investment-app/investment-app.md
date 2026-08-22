@@ -1,6 +1,6 @@
 # investment-app
 
-> 仓库路径 `/home/zymun/investment-app`。深读基线：2026-08-13（后端约 15600 行 Python 含
+> 仓库路径 `/home/zymun/master/investment-app`。深读基线：2026-08-13（后端约 15600 行 Python 含
 > 测试/脚本、契约锁、迁移链、两个前端、父仓文档）。App 之间的公共形态见
 > `baseline/app-platform/inter-apps/app-platform.md`。
 

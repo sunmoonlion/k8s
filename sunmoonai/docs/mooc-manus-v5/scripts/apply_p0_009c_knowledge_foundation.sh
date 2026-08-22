@@ -10,15 +10,15 @@ exit 64
 TAG_TEMPLATE_RELEASE="p0-008b-b6-unified-20260729"
 CANDIDATE_TAG="p0-009c-knowledge-candidate-20260729"
 
-TPL_ADMIN_FE="/home/zymun/tpl-app/tpl-admin-frontend"
-TPL_ADMIN_BE="/home/zymun/tpl-app/tpl-admin-backend"
-TPL_WEB_FE="/home/zymun/tpl-app/tpl-web-frontend"
-TPL_WEB_BE="/home/zymun/tpl-app/tpl-web-backend"
+TPL_ADMIN_FE="/home/zymun/master/tpl-app/tpl-admin-frontend"
+TPL_ADMIN_BE="/home/zymun/master/tpl-app/tpl-admin-backend"
+TPL_WEB_FE="/home/zymun/master/tpl-app/tpl-web-frontend"
+TPL_WEB_BE="/home/zymun/master/tpl-app/tpl-web-backend"
 
-KN_ADMIN_FE="/home/zymun/knowledge-app/knowledge-admin-frontend"
-KN_ADMIN_BE="/home/zymun/knowledge-app/knowledge-admin-backend"
-KN_WEB_FE="/home/zymun/knowledge-app/knowledge-web-frontend"
-KN_WEB_BE="/home/zymun/knowledge-app/knowledge-web-backend"
+KN_ADMIN_FE="/home/zymun/master/knowledge-app/knowledge-admin-frontend"
+KN_ADMIN_BE="/home/zymun/master/knowledge-app/knowledge-admin-backend"
+KN_WEB_FE="/home/zymun/master/knowledge-app/knowledge-web-frontend"
+KN_WEB_BE="/home/zymun/master/knowledge-app/knowledge-web-backend"
 
 ADMIN_FE_COMMIT="fb69795b04e0b888a2917c3936f7f80aeac79cc9"
 ADMIN_BE_COMMIT="69e634b8e5b06da9d1dcd01c9b1350e0571d74bd"
@@ -60,12 +60,12 @@ rsync -a --delete \
 python3 - <<'PY'
 import json
 from pathlib import Path
-pkg=Path('/home/zymun/knowledge-app/knowledge-web-frontend/app/package.json')
+pkg=Path('/home/zymun/master/knowledge-app/knowledge-web-frontend/app/package.json')
 data=json.loads(pkg.read_text())
 data['name']='knowledge-web-frontend'
 pkg.write_text(json.dumps(data, indent=2, ensure_ascii=False)+'\n')
 for locale, welcome in [('zh-CN.json','欢迎使用 Knowledge'), ('en.json','Welcome to Knowledge')]:
-  path=Path('/home/zymun/knowledge-app/knowledge-web-frontend/app/messages')/locale
+  path=Path('/home/zymun/master/knowledge-app/knowledge-web-frontend/app/messages')/locale
   msg=json.loads(path.read_text())
   msg.setdefault('Dashboard',{})
   if 'dashboardWelcome' in msg.get('Dashboard',{}):
@@ -120,7 +120,7 @@ for f in .dockerignore .gitignore README.md; do
 done
 python3 - <<'PY'
 from pathlib import Path
-cfg=Path('/home/zymun/knowledge-app/knowledge-web-backend/app/core/config.py')
+cfg=Path('/home/zymun/master/knowledge-app/knowledge-web-backend/app/core/config.py')
 text=cfg.read_text()
 repls={
   'service_name: str = "tpl-web-backend"': 'service_name: str = "knowledge-web-backend"',
@@ -133,7 +133,7 @@ for a,b in repls.items():
     raise SystemExit(f'missing config anchor: {a}')
   text=text.replace(a,b,1)
 cfg.write_text(text)
-py=Path('/home/zymun/knowledge-app/knowledge-web-backend/app/pyproject.toml')
+py=Path('/home/zymun/master/knowledge-app/knowledge-web-backend/app/pyproject.toml')
 py.write_text(py.read_text().replace('name = "tpl-web-backend"','name = "knowledge-web-backend"',1))
 print('web-backend instantiated')
 PY
@@ -169,7 +169,7 @@ rsync -a "$TPL_ADMIN_FE/mybuild/" "$KN_ADMIN_FE/mybuild/"
 # Drop Vue root leftovers that conflict with Next module layout (keep docs/CLAUDE/git)
 python3 - <<'PY'
 from pathlib import Path
-root=Path('/home/zymun/knowledge-app/knowledge-admin-frontend')
+root=Path('/home/zymun/master/knowledge-app/knowledge-admin-frontend')
 keep={'app','mybuild','docs','.git','CLAUDE.md','README.md','LICENSE','.gitignore','.dockerignore'}
 for child in list(root.iterdir()):
   if child.name in keep or child.name.startswith('.'):
@@ -185,12 +185,12 @@ PY
 python3 - <<'PY'
 import json
 from pathlib import Path
-pkg=Path('/home/zymun/knowledge-app/knowledge-admin-frontend/app/package.json')
+pkg=Path('/home/zymun/master/knowledge-app/knowledge-admin-frontend/app/package.json')
 data=json.loads(pkg.read_text())
 data['name']='knowledge-admin-frontend'
 pkg.write_text(json.dumps(data, indent=2, ensure_ascii=False)+'\n')
 for locale in ['zh-CN.json','en.json']:
-  path=Path('/home/zymun/knowledge-app/knowledge-admin-frontend/app/messages')/locale
+  path=Path('/home/zymun/master/knowledge-app/knowledge-admin-frontend/app/messages')/locale
   msg=json.loads(path.read_text())
   zh=locale.startswith('zh')
   for section, key, value in [
@@ -260,7 +260,7 @@ cp "$KN_ADMIN_BE/app/core/config.py" "$KEEP_ADMIN_BE/pre-kernel/core-config.py"
 cp "$TPL_ADMIN_BE/app/core/config.py" "$KN_ADMIN_BE/app/core/config.py"
 python3 - <<'PY'
 from pathlib import Path
-cfg=Path('/home/zymun/knowledge-app/knowledge-admin-backend/app/core/config.py')
+cfg=Path('/home/zymun/master/knowledge-app/knowledge-admin-backend/app/core/config.py')
 text=cfg.read_text()
 repls={
   'service_name: str = "tpl-admin-backend"': 'service_name: str = "knowledge-admin-backend"',

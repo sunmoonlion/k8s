@@ -215,7 +215,7 @@ docker compose ps
 - 重建 Kind：
 
 ```bash
-cd ~/k8s/sunmoonai/kind-infrastructure
+cd ~/master/k8s/sunmoonai/kind-infrastructure
 ./deploy-kind/deploy-kind.sh
 ```
 
@@ -223,13 +223,13 @@ cd ~/k8s/sunmoonai/kind-infrastructure
 
 ```bash
 export KUBECONFIG=$HOME/.kube/kind-config
-cd ~/k8s/sunmoonai/deploy-sunmoonai-all
+cd ~/master/k8s/sunmoonai/deploy-sunmoonai-all
 ./deploy-sunmoonai-all.sh deploy sunmoonai development false
 ```
 
 > **重要提醒（外部 Harbor 场景）**：  
 > 在执行 `deploy-kind.sh`、`deploy-sunmoonai-all.sh` 之前，请先确保 **外部 Harbor 已经启动**：  
-> - 可以在 `~/k8s/utils/HARBOR-KIND-EXTERNAL/harbor-runtime` 目录运行 `sudo docker compose up -d`；  
+> - 可以在 `~/master/k8s/utils/HARBOR-KIND-EXTERNAL/harbor-runtime` 目录运行 `sudo docker compose up -d`；  
 > - 或者先用 `docker compose ps` 查看 `nginx/harbor-core/registry` 等容器是否都是 `Up` 状态。  
 > 若 Harbor 未启动，集群中的 Pod 会在拉取镜像时出现 `connect refused` / `ImagePullBackOff`。
 
@@ -250,7 +250,7 @@ cd ~/k8s/sunmoonai/deploy-sunmoonai-all
 
 2. 继续使用现有脚本：
    ```bash
-   cd ~/k8s/sunmoonai/kind-infrastructure/push-to-harbor
+   cd ~/master/k8s/sunmoonai/kind-infrastructure/push-to-harbor
    ./push-images-to-harbor.sh   # 按 push-images-to-harbor.conf 中的默认配置
    ```
    **推荐用法**：

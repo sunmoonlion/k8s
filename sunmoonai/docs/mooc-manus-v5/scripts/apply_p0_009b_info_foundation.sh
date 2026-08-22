@@ -8,15 +8,15 @@ echo "ERROR: retired unsafe one-shot overlay; use verify_p0_009e_convergence.py 
 exit 64
 
 TAG_TEMPLATE_RELEASE="p0-008b-b6-unified-20260729"
-TPL_ADMIN_FE="/home/zymun/tpl-app/tpl-admin-frontend"
-TPL_ADMIN_BE="/home/zymun/tpl-app/tpl-admin-backend"
-TPL_WEB_FE="/home/zymun/tpl-app/tpl-web-frontend"
-TPL_WEB_BE="/home/zymun/tpl-app/tpl-web-backend"
+TPL_ADMIN_FE="/home/zymun/master/tpl-app/tpl-admin-frontend"
+TPL_ADMIN_BE="/home/zymun/master/tpl-app/tpl-admin-backend"
+TPL_WEB_FE="/home/zymun/master/tpl-app/tpl-web-frontend"
+TPL_WEB_BE="/home/zymun/master/tpl-app/tpl-web-backend"
 
-INFO_ADMIN_FE="/home/zymun/info-app/info-admin-frontend"
-INFO_ADMIN_BE="/home/zymun/info-app/info-admin-backend"
-INFO_WEB_FE="/home/zymun/info-app/info-web-frontend"
-INFO_WEB_BE="/home/zymun/info-app/info-web-backend"
+INFO_ADMIN_FE="/home/zymun/master/info-app/info-admin-frontend"
+INFO_ADMIN_BE="/home/zymun/master/info-app/info-admin-backend"
+INFO_WEB_FE="/home/zymun/master/info-app/info-web-frontend"
+INFO_WEB_BE="/home/zymun/master/info-app/info-web-backend"
 
 ADMIN_FE_COMMIT="fb69795b04e0b888a2917c3936f7f80aeac79cc9"
 ADMIN_BE_COMMIT="69e634b8e5b06da9d1dcd01c9b1350e0571d74bd"
@@ -59,13 +59,13 @@ rsync -a --delete \
 python3 - <<'PY'
 import json
 from pathlib import Path
-pkg=Path('/home/zymun/info-app/info-web-frontend/app/package.json')
+pkg=Path('/home/zymun/master/info-app/info-web-frontend/app/package.json')
 data=json.loads(pkg.read_text())
 data['name']='info-web-frontend'
 pkg.write_text(json.dumps(data, indent=2, ensure_ascii=False)+'\n')
 # branding messages
 for locale, welcome in [('zh-CN.json','欢迎使用 Info'), ('en.json','Welcome to Info')]:
-  path=Path('/home/zymun/info-app/info-web-frontend/app/messages')/locale
+  path=Path('/home/zymun/master/info-app/info-web-frontend/app/messages')/locale
   msg=json.loads(path.read_text())
   msg.setdefault('Dashboard',{})
   if 'dashboardWelcome' in msg.get('Dashboard',{}):
@@ -129,7 +129,7 @@ done
 # instantiate info identity defaults in config via sed on service defaults after copy
 python3 - <<'PY'
 from pathlib import Path
-cfg=Path('/home/zymun/info-app/info-web-backend/app/core/config.py')
+cfg=Path('/home/zymun/master/info-app/info-web-backend/app/core/config.py')
 text=cfg.read_text()
 repls={
   'service_name: str = "tpl-web-backend"': 'service_name: str = "info-web-backend"',
@@ -144,9 +144,9 @@ for a,b in repls.items():
 # cookie / redis prefix patterns often derived from app_slug; leave validators intact
 cfg.write_text(text)
 # pyproject name
-py=Path('/home/zymun/info-app/info-web-backend/app/pyproject.toml')
+py=Path('/home/zymun/master/info-app/info-web-backend/app/pyproject.toml')
 py.write_text(py.read_text().replace('name = "tpl-web-backend"','name = "info-web-backend"',1))
-Path('/home/zymun/info-app/info-web-backend/mybuild/build.conf').write_text('''# Info Web Backend (FastAPI) P0-009B
+Path('/home/zymun/master/info-app/info-web-backend/mybuild/build.conf').write_text('''# Info Web Backend (FastAPI) P0-009B
 WEB_BACKEND_IMAGE="info-web-backend"
 WEB_BACKEND_TAG="p0-009b-info-candidate-20260729"
 SOURCE_DIR="app"
@@ -183,12 +183,12 @@ rsync -a "$TPL_ADMIN_FE/mybuild/" "$INFO_ADMIN_FE/mybuild/"
 python3 - <<'PY'
 import json
 from pathlib import Path
-pkg=Path('/home/zymun/info-app/info-admin-frontend/app/package.json')
+pkg=Path('/home/zymun/master/info-app/info-admin-frontend/app/package.json')
 data=json.loads(pkg.read_text())
 data['name']='info-admin-frontend'
 pkg.write_text(json.dumps(data, indent=2, ensure_ascii=False)+'\n')
 for locale in ['zh-CN.json','en.json']:
-  path=Path('/home/zymun/info-app/info-admin-frontend/app/messages')/locale
+  path=Path('/home/zymun/master/info-app/info-admin-frontend/app/messages')/locale
   msg=json.loads(path.read_text())
   # inject info crawl label keys
   for section, key, value in [
@@ -200,7 +200,7 @@ for locale in ['zh-CN.json','en.json']:
     if isinstance(msg[section], dict):
       msg[section][key]=value
   path.write_text(json.dumps(msg, indent=2, ensure_ascii=False)+'\n')
-Path('/home/zymun/info-app/info-admin-frontend/mybuild/build.conf').write_text('''# Info Admin Frontend (Next) P0-009B
+Path('/home/zymun/master/info-app/info-admin-frontend/mybuild/build.conf').write_text('''# Info Admin Frontend (Next) P0-009B
 ADMIN_FRONTEND_IMAGE="info-admin-frontend"
 ADMIN_FRONTEND_TAG="p0-009b-info-candidate-20260729"
 SOURCE_DIR="app"
@@ -255,7 +255,7 @@ cp "$INFO_ADMIN_BE/app/core/config.py" "$KEEP_ADMIN_BE/pre-kernel/core-config.py
 cp "$TPL_ADMIN_BE/app/core/config.py" "$INFO_ADMIN_BE/app/core/config.py"
 python3 - <<'PY'
 from pathlib import Path
-cfg=Path('/home/zymun/info-app/info-admin-backend/app/core/config.py')
+cfg=Path('/home/zymun/master/info-app/info-admin-backend/app/core/config.py')
 text=cfg.read_text()
 repls={
   'service_name: str = "tpl-admin-backend"': 'service_name: str = "info-admin-backend"',

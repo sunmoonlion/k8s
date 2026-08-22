@@ -43,7 +43,7 @@ if [[ -f "${HARBOR_CA_PATH}" ]]; then
 else
     echo "⚠️  未找到根 CA 证书: $HARBOR_CA_PATH"
     echo "    如为 Kind 场景，请先在 WSL 中生成本地根 CA："
-    echo "      cd ~/k8s/sunmoonai/kind-infrastructure"
+    echo "      cd ~/master/k8s/sunmoonai/kind-infrastructure"
     echo "      ./ensure-kind-ca.sh"
     echo "    或在一键部署中启用 DEPLOY_KIND_RUN_CA_INIT，再重跑 deploy-kind.sh。"
 fi

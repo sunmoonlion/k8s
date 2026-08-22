@@ -4,7 +4,7 @@ Start-Sleep -Seconds 20
 # 仅当 WSL 内 deploy-kind.conf 设置 KIND_PV_STORAGE_MODE=vhd 时需要本脚本（计划任务/开机挂载）。
 # native 模式请勿再挂载 E 盘 vhdx；可禁用本计划任务。
 $WslUser = "zymun"
-$CheckScript = "/home/zymun/k8s/sunmoonai/kind-infrastructure/deploy-kind/check-storage-mounts.sh"
+$CheckScript = "/home/zymun/master/k8s/sunmoonai/kind-infrastructure/deploy-kind/check-storage-mounts.sh"
 
 function Notify-Failure($code) {
   $title = "docker-pv mount failed"

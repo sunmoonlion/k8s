@@ -177,11 +177,11 @@ KUBECONFIG=~/.kube/cluster-admin.conf kubectl get ingressroute,ingressroutetcp -
 ### 部署和更新
 ```bash
 # 部署数据库路由
-cd ~/k8s/sunmoonai/ingress-platform/ingress/data-platform
+cd ~/master/k8s/sunmoonai/ingress-platform/ingress/data-platform
 KUBECONFIG=~/.kube/cluster-admin.conf ./deploy.sh apply
 
 # 部署 ELK 路由
-cd ~/k8s/sunmoonai/ingress-platform/ingress/data-platform/elk
+cd ~/master/k8s/sunmoonai/ingress-platform/ingress/data-platform/elk
 KUBECONFIG=~/.kube/cluster-admin.conf ./deploy-ingress.sh apply
 ```
 

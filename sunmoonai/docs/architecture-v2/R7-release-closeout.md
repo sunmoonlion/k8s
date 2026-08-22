@@ -47,7 +47,7 @@ R7 把 Architecture v2 从“已完成迁移并跑通真实竖线”提升为可
 正式发布命令（必须使用该入口）：
 
 ```bash
-cd /home/zymun/k8s
+cd /home/zymun/master/k8s
 bash sunmoonai/docs/architecture-v2/scripts/run_r7_instance_release_gate.sh
 ```
 
@@ -60,7 +60,7 @@ retrieval binding 等外部运行态的幂等重建；然后重跑三个 App 的
 最终只读验收命令（供诊断与重复检查）：
 
 ```bash
-cd /home/zymun/k8s
+cd /home/zymun/master/k8s
 python sunmoonai/docs/architecture-v2/scripts/verify_r7_release_kind.py \
   --kubeconfig "$HOME/.kube/kind-config" \
   --namespace app-platform-dev \

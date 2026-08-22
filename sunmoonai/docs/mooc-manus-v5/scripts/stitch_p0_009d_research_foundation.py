@@ -252,7 +252,7 @@ def stitch_oidc_public_jwks() -> None:
 
 
 def stitch_audit_context() -> None:
-    src = Path("/home/zymun/tpl-app/tpl-admin-backend/app/app/application/audit_context.py")
+    src = Path("/home/zymun/master/tpl-app/tpl-admin-backend/app/app/application/audit_context.py")
     dst = RS_ADMIN_BE / "app/app/application/audit_context.py"
     dst.write_text(src.read_text())
     print("copied audit_context from template")

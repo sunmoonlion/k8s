@@ -5,7 +5,7 @@ Start-Sleep -Seconds 20
 # 若计划任务指向桌面上的本脚本，请将下方 $CheckScript 改为该副本在 WSL 中的路径（通常为 /mnt/c/Users/<用户>/Desktop/.../mount/check-storage-mounts.sh）。
 # native 模式请勿挂载 E 盘 vhdx；可禁用计划任务。
 $WslUser = "zymun"
-$CheckScript = "/home/zymun/k8s/sunmoonai/kind-infrastructure/mount/check-storage-mounts.sh"
+$CheckScript = "/home/zymun/master/k8s/sunmoonai/kind-infrastructure/mount/check-storage-mounts.sh"
 
 function Notify-Failure($code) {
   $title = "docker-pv mount failed"

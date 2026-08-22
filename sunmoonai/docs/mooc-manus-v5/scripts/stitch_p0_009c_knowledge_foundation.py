@@ -8,9 +8,9 @@ import re
 import textwrap
 from pathlib import Path
 
-KN_ADMIN_BE = Path("/home/zymun/knowledge-app/knowledge-admin-backend")
-KN_ADMIN_FE = Path("/home/zymun/knowledge-app/knowledge-admin-frontend")
-KN_WEB_BE = Path("/home/zymun/knowledge-app/knowledge-web-backend")
+KN_ADMIN_BE = Path("/home/zymun/master/knowledge-app/knowledge-admin-backend")
+KN_ADMIN_FE = Path("/home/zymun/master/knowledge-app/knowledge-admin-frontend")
+KN_WEB_BE = Path("/home/zymun/master/knowledge-app/knowledge-web-backend")
 KEEP_CFG = KN_ADMIN_BE / "docs/p0-009c-domain-keep/pre-kernel/core-config.py"
 CFG = KN_ADMIN_BE / "app/core/config.py"
 CELERY = KN_ADMIN_BE / "app/app/infrastructure/messaging/celery_producer.py"
@@ -420,7 +420,7 @@ def stitch_oidc_public_jwks() -> None:
 
 
 def stitch_audit_context() -> None:
-    src = Path("/home/zymun/tpl-app/tpl-admin-backend/app/app/application/audit_context.py")
+    src = Path("/home/zymun/master/tpl-app/tpl-admin-backend/app/app/application/audit_context.py")
     dst = KN_ADMIN_BE / "app/app/application/audit_context.py"
     if not src.exists():
         raise SystemExit("tpl audit_context missing")

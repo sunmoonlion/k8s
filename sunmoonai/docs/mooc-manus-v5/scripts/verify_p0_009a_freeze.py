@@ -7,8 +7,8 @@ import json
 import subprocess
 from pathlib import Path
 
-K8S = Path("/home/zymun/k8s")
-TPL = Path("/home/zymun/tpl-app")
+K8S = Path("/home/zymun/master/k8s")
+TPL = Path("/home/zymun/master/tpl-app")
 FREEZE = K8S / "sunmoonai/docs/evidence/v5/V5-P0-009A/freeze.json"
 MANIFEST = TPL / "template-release-manifest.json"
 TAG = "p0-009a-pre-20260729"

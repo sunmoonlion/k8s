@@ -7,12 +7,12 @@
 ### 1. 准备目录与安装包存放位置
 
 - **推荐规划**：
-  - 文档与脚本目录：`~/k8s/utils/HARBOR-KIND-EXTERNAL/`
-  - Harbor 官方安装包存放：`~/k8s/utils/HARBOR-KIND-EXTERNAL/packages/`
+  - 文档与脚本目录：`~/master/k8s/utils/HARBOR-KIND-EXTERNAL/`
+  - Harbor 官方安装包存放：`~/master/k8s/utils/HARBOR-KIND-EXTERNAL/packages/`
 
 ```bash
-mkdir -p ~/k8s/utils/HARBOR-KIND-EXTERNAL/packages
-cd ~/k8s/utils/HARBOR-KIND-EXTERNAL/packages
+mkdir -p ~/master/k8s/utils/HARBOR-KIND-EXTERNAL/packages
+cd ~/master/k8s/utils/HARBOR-KIND-EXTERNAL/packages
 ```
 
 > 以后如果重新下载 `harbor-online-installer-*.tgz`，也统一放在 `packages/` 目录，便于管理和迁移。
@@ -56,7 +56,7 @@ source ./toggle-wsl-proxy.sh on
 在你刚才的 `packages/` 目录下执行（版本号可按需要调整，这里以 `v2.11.0` 为例）：
 
 ```bash
-cd ~/k8s/utils/HARBOR-KIND-EXTERNAL/packages
+cd ~/master/k8s/utils/HARBOR-KIND-EXTERNAL/packages
 
 wget https://github.com/goharbor/harbor/releases/download/v2.11.0/harbor-online-installer-v2.11.0.tgz
 
@@ -68,7 +68,7 @@ cd ../harbor-runtime
 说明：
 
 - `packages/` 下只放压缩包备份；
-- 实际运行 Harbor 的目录使用 `~/k8s/utils/HARBOR-KIND-EXTERNAL/harbor-runtime`，便于将来迁移或备份整个目录。
+- 实际运行 Harbor 的目录使用 `~/master/k8s/utils/HARBOR-KIND-EXTERNAL/harbor-runtime`，便于将来迁移或备份整个目录。
 
 ---
 
@@ -107,11 +107,11 @@ data_volume: /data/harbor
 sudo mkdir -p /data/harbor/certs
 
 sudo cp \
-  ~/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/server-cert/server.crt \
+  ~/master/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/server-cert/server.crt \
   /data/harbor/certs/harbor.crt
 
 sudo cp \
-  ~/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/server-cert/server.key \
+  ~/master/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/server-cert/server.key \
   /data/harbor/certs/harbor.key
 
 sudo chown -R root:root /data/harbor
@@ -126,7 +126,7 @@ sudo chown -R root:root /data/harbor
 在 `harbor-runtime` 目录内执行：
 
 ```bash
-cd ~/k8s/utils/HARBOR-KIND-EXTERNAL/harbor-runtime
+cd ~/master/k8s/utils/HARBOR-KIND-EXTERNAL/harbor-runtime
 
 sudo ./prepare
 sudo ./install.sh
@@ -141,7 +141,7 @@ sudo ./install.sh
 #### 8.1 进程状态
 
 ```bash
-cd ~/k8s/utils/HARBOR-KIND-EXTERNAL/harbor-runtime
+cd ~/master/k8s/utils/HARBOR-KIND-EXTERNAL/harbor-runtime
 docker compose ps
 ```
 
@@ -166,7 +166,7 @@ curl -k https://harbor.sunmoonai.com:30443/api/v2.0/projects
 - 可选地执行 `docker login`）：
 
 ```bash
-cd ~/k8s/sunmoonai/kind-infrastructure
+cd ~/master/k8s/sunmoonai/kind-infrastructure
 ./wsl-setup-harbor-hosts-and-login.sh --login
 ```
 
@@ -186,11 +186,11 @@ docker login harbor.sunmoonai.com:30443
 
 ```bash
 # 停止
-cd ~/k8s/utils/HARBOR-KIND-EXTERNAL/harbor-runtime
+cd ~/master/k8s/utils/HARBOR-KIND-EXTERNAL/harbor-runtime
 sudo docker compose down
 
 # 启动
-cd ~/k8s/utils/HARBOR-KIND-EXTERNAL/harbor-runtime
+cd ~/master/k8s/utils/HARBOR-KIND-EXTERNAL/harbor-runtime
 sudo docker compose up -d
 ```
 

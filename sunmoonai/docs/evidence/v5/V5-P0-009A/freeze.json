@@ -220,7 +220,7 @@
       ],
       "migration_commands": {
         "prepare": [
-          "git -C /home/zymun/info-app checkout -B p0-009b-info p0-009a-pre-20260729",
+          "git -C /home/zymun/master/info-app checkout -B p0-009b-info p0-009a-pre-20260729",
           "Work only after previous app ACCEPTED; never start Knowledge before Info, Research before Knowledge."
         ],
         "sync_semantics": [
@@ -355,7 +355,7 @@
       ],
       "migration_commands": {
         "prepare": [
-          "git -C /home/zymun/knowledge-app checkout -B p0-009c-knowledge p0-009a-pre-20260729",
+          "git -C /home/zymun/master/knowledge-app checkout -B p0-009c-knowledge p0-009a-pre-20260729",
           "Work only after previous app ACCEPTED; never start Knowledge before Info, Research before Knowledge."
         ],
         "sync_semantics": [

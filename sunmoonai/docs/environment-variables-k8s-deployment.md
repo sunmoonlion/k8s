@@ -39,7 +39,7 @@
 
 ### 文件位置
 
-`~/k8s/sunmoonai/configmaps/environment-configmap.yaml`
+`~/master/k8s/sunmoonai/configmaps/environment-configmap.yaml`
 
 ### 包含的配置
 
@@ -101,7 +101,7 @@ spec:
 
 ### 文件位置
 
-`~/k8s/sunmoonai/secrets/environment-secret.yaml.example`
+`~/master/k8s/sunmoonai/secrets/environment-secret.yaml.example`
 
 ### 包含的配置
 

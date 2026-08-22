@@ -7,13 +7,13 @@
 #### 1. 配置文件定义（generate-server-cert.conf）
 ```bash
 # 共享CA路径（从全局配置读取，或使用默认值）
-ROOT_CA_LOCAL_DIR="${ROOT_CA_LOCAL_DIR:-~/k8s/certs/ca/shared}"
+ROOT_CA_LOCAL_DIR="${ROOT_CA_LOCAL_DIR:-~/master/k8s/certs/ca/shared}"
 ```
 
 **关键点**：
 - 使用 `${ROOT_CA_LOCAL_DIR:-默认值}` 语法
 - 如果环境变量 `ROOT_CA_LOCAL_DIR` 已设置，使用环境变量的值
-- 否则使用默认值 `~/k8s/certs/ca/shared`
+- 否则使用默认值 `~/master/k8s/certs/ca/shared`
 
 #### 2. 脚本加载配置（generate-server-cert.sh）
 ```bash
@@ -40,7 +40,7 @@ main() {
 ```
 
 **关键点**：
-- `${ROOT_CA_LOCAL_DIR/#\~/$HOME}` 将 `~/k8s/certs/ca/shared` 展开为 `~/k8s/certs/ca/shared`
+- `${ROOT_CA_LOCAL_DIR/#\~/$HOME}` 将 `~/master/k8s/certs/ca/shared` 展开为 `~/master/k8s/certs/ca/shared`
 - 使用 `${变量/#模式/替换}` 语法进行字符串替换
 
 #### 4. 作为命令行参数传递（generate-server-cert.sh）
@@ -58,8 +58,8 @@ main() {
 ```
 
 **实际传递的路径示例**：
-- `--ca-cert "~/k8s/certs/ca/shared/ca.crt"`
-- `--ca-key "~/k8s/certs/ca/shared/ca.key"`
+- `--ca-cert "~/master/k8s/certs/ca/shared/ca.crt"`
+- `--ca-key "~/master/k8s/certs/ca/shared/ca.key"`
 
 ### 另一种方式：deploy-traefik-tls-secret.sh（不直接调用证书生成）
 
@@ -90,10 +90,10 @@ temp_data_dir=$(prepare_tls_secret_data "${prepare_args[@]}")
 ├─────────────────────────────────────────────────────────┤
 │ a) 环境变量: export ROOT_CA_LOCAL_DIR="/custom/path"    │
 │ b) 组件配置文件: generate-server-cert.conf               │
-│    ROOT_CA_LOCAL_DIR="${ROOT_CA_LOCAL_DIR:-~/k8s/...}" │
+│    ROOT_CA_LOCAL_DIR="${ROOT_CA_LOCAL_DIR:-~/master/k8s/...}" │
 │ c) 全局配置文件: ca-management/ca-management.conf        │
-│    ROOT_CA_LOCAL_DIR="${ROOT_CA_LOCAL_DIR:-~/k8s/...}" │
-│ d) 默认值: ~/k8s/certs/ca/shared                        │
+│    ROOT_CA_LOCAL_DIR="${ROOT_CA_LOCAL_DIR:-~/master/k8s/...}" │
+│ d) 默认值: ~/master/k8s/certs/ca/shared                        │
 └─────────────────────────────────────────────────────────┘
                         ↓
 ┌─────────────────────────────────────────────────────────┐
@@ -108,8 +108,8 @@ temp_data_dir=$(prepare_tls_secret_data "${prepare_args[@]}")
 ├─────────────────────────────────────────────────────────┤
 │ local ca_dir="${ROOT_CA_LOCAL_DIR/#\~/$HOME}"           │
 │ → 将 ~ 替换为 $HOME 的完整路径                          │
-│ → 例如: ~/k8s/certs/ca/shared                          │
-│      → ~/k8s/certs/ca/shared                    │
+│ → 例如: ~/master/k8s/certs/ca/shared                          │
+│      → ~/master/k8s/certs/ca/shared                    │
 └─────────────────────────────────────────────────────────┘
                         ↓
 ┌─────────────────────────────────────────────────────────┐
@@ -117,8 +117,8 @@ temp_data_dir=$(prepare_tls_secret_data "${prepare_args[@]}")
 ├─────────────────────────────────────────────────────────┤
 │ local ca_cert="$ca_dir/ca.crt"                          │
 │ local ca_key="$ca_dir/ca.key"                           │
-│ → ca_cert = "~/k8s/certs/ca/shared/ca.crt"     │
-│ → ca_key  = "~/k8s/certs/ca/shared/ca.key"     │
+│ → ca_cert = "~/master/k8s/certs/ca/shared/ca.crt"     │
+│ → ca_key  = "~/master/k8s/certs/ca/shared/ca.key"     │
 └─────────────────────────────────────────────────────────┘
                         ↓
 ┌─────────────────────────────────────────────────────────┐
@@ -158,9 +158,9 @@ get_ca_paths() {
     
     if [[ -f "$ca_config_file" ]]; then
         source "$ca_config_file"  # ← 加载配置，设置 ROOT_CA_LOCAL_DIR
-        ca_dir="${ROOT_CA_LOCAL_DIR:-~/k8s/certs/ca/shared}"
+        ca_dir="${ROOT_CA_LOCAL_DIR:-~/master/k8s/certs/ca/shared}"
     else
-        ca_dir="${ROOT_CA_LOCAL_DIR:-~/k8s/certs/ca/shared}"
+        ca_dir="${ROOT_CA_LOCAL_DIR:-~/master/k8s/certs/ca/shared}"
     fi
     
     # 展开路径
@@ -222,7 +222,7 @@ IFS='|' read -r CA_CERT CA_KEY <<< "$CA_PATHS"
 ### 1. TLS Secret 相关（使用证书生成功能）
 
 #### Traefik TLS Secret
-- **路径**: `~/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/`
+- **路径**: `~/master/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/`
 - **脚本**: 
   - `server-cert/generate-server-cert/generate-server-cert.sh` - 生成服务器证书
   - `deploy-traefik-tls-secret/deploy-traefik-tls-secret.sh` - 部署 TLS Secret
@@ -267,11 +267,11 @@ IFS='|' read -r CA_CERT CA_KEY <<< "$CA_PATHS"
 
 ### 方式1：从 ca-management.conf 读取（推荐）
 
-**配置文件位置**: `~/k8s/utils/ca-management/ca-management.conf`
+**配置文件位置**: `~/master/k8s/utils/ca-management/ca-management.conf`
 
 ```bash
 # ca-management.conf 中定义
-ROOT_CA_LOCAL_DIR="${ROOT_CA_LOCAL_DIR:-~/k8s/certs/ca/shared}"
+ROOT_CA_LOCAL_DIR="${ROOT_CA_LOCAL_DIR:-~/master/k8s/certs/ca/shared}"
 ```
 
 **使用方式**:
@@ -279,7 +279,7 @@ ROOT_CA_LOCAL_DIR="${ROOT_CA_LOCAL_DIR:-~/k8s/certs/ca/shared}"
 #### 方式1.1：直接加载配置文件
 ```bash
 # 加载 CA 配置
-source ~/k8s/utils/ca-management/ca-management.conf
+source ~/master/k8s/utils/ca-management/ca-management.conf
 
 # 展开路径
 CA_DIR="${ROOT_CA_LOCAL_DIR/#\~/$HOME}"
@@ -297,7 +297,7 @@ generate_server_cert_from_ca \
 #### 方式1.2：使用辅助函数 get_ca_paths（推荐）
 ```bash
 # 加载 secret-management 的证书生成函数
-source ~/k8s/utils/secret-management/lib/cert-core.sh
+source ~/master/k8s/utils/secret-management/lib/cert-core.sh
 
 # 获取 CA 路径（自动从 ca-management.conf 读取）
 CA_PATHS=$(get_ca_paths)
@@ -321,7 +321,7 @@ generate_server_cert_from_ca \
 
 ```bash
 # 共享CA路径（从全局配置读取，或使用默认值）
-ROOT_CA_LOCAL_DIR="${ROOT_CA_LOCAL_DIR:-~/k8s/certs/ca/shared}"
+ROOT_CA_LOCAL_DIR="${ROOT_CA_LOCAL_DIR:-~/master/k8s/certs/ca/shared}"
 ```
 
 **使用方式**:
@@ -451,9 +451,9 @@ generate_opaque_secret_yaml \
 
 ### CA 路径传递的统一模式
 
-1. **配置源**: `~/k8s/utils/ca-management/ca-management.conf`
+1. **配置源**: `~/master/k8s/utils/ca-management/ca-management.conf`
    - 定义 `ROOT_CA_LOCAL_DIR` 变量
-   - 默认值: `~/k8s/certs/ca/shared`
+   - 默认值: `~/master/k8s/certs/ca/shared`
 
 2. **传递方式**:
    - **方式1（推荐）**: 使用 `get_ca_paths()` 辅助函数，自动从配置读取并验证

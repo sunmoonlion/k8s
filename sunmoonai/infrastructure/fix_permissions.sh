@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 修复步骤脚本权限
 
-cd ~/k8s/sunmoonai/infrastructure/steps
+cd ~/master/k8s/sunmoonai/infrastructure/steps
 
 # 给所有步骤脚本添加执行权限
 chmod +x step*.sh

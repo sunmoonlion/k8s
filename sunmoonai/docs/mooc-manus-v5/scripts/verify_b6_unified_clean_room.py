@@ -19,8 +19,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-TPL_APP = Path("/home/zymun/tpl-app")
-K8S = Path("/home/zymun/k8s")
+TPL_APP = Path("/home/zymun/master/tpl-app")
+K8S = Path("/home/zymun/master/k8s")
 EVIDENCE = K8S / "sunmoonai/docs/evidence/v5/V5-P0-008B/B6"
 RELEASE_ID = "p0-008b-b6-unified-20260729"
 

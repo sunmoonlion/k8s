@@ -13,7 +13,7 @@ import path from 'node:path'
 
 const require = createRequire(import.meta.url)
 const { chromium } = require(
-  '/home/zymun/tpl-app/tpl-admin-frontend/app/node_modules/@playwright/test',
+  '/home/zymun/master/tpl-app/tpl-admin-frontend/app/node_modules/@playwright/test',
 )
 
 const kubeconfig = process.env.KUBECONFIG || `${process.env.HOME}/.kube/kind-config`

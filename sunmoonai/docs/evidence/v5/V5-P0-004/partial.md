@@ -79,7 +79,7 @@ Secret 部署脚本现改为：显式输入优先，否则保留集群既有非�
 出站或本地 Provider 修复后，使用相同 r2 digest 重新运行：
 
 ```bash
-cd /home/zymun/k8s
+cd /home/zymun/master/k8s
 export KUBECONFIG="$HOME/.kube/kind-config"
 python -u sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_004_kind.py \
   --knowledge-image harbor.sunmoonai.com:30443/app-images/knowledge-admin-backend:p0-004-retrieval-r2-20260715 \

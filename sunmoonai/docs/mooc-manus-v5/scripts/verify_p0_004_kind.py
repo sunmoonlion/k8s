@@ -871,7 +871,7 @@ def main() -> int:
     parser.add_argument("--namespace", default="app-platform-dev")
     parser.add_argument(
         "--knowledge-contract-dir",
-        default="/home/zymun/knowledge-app/contracts/retrieval/v1",
+        default="/home/zymun/master/knowledge-app/contracts/retrieval/v1",
     )
     parser.add_argument(
         "--research-contract-lock",

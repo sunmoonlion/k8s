@@ -1,6 +1,6 @@
 # info-app
 
-> 仓库路径 `/home/zymun/info-app`。深读基线：2026-08-11（后端约 1.2 万行 Python、两个前端、
+> 仓库路径 `/home/zymun/master/info-app`。深读基线：2026-08-11（后端约 1.2 万行 Python、两个前端、
 > 契约与文档）。App 之间的公共形态见 `baseline/app-platform/inter-apps/app-platform.md`。
 
 ## 1. 概要

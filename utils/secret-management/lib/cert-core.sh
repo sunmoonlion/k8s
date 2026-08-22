@@ -6,7 +6,7 @@
 # 用途: 提供服务器证书生成函数（基于 CA 生成服务器证书）
 # 设计: 完全参数化，不依赖组合代码，组件可直接调用
 # 注意: 此模块只提供服务器证书生成，不提供 CA 生成功能
-#       CA 生成请使用 ~/k8s/utils/ca-management/
+#       CA 生成请使用 ~/master/k8s/utils/ca-management/
 # =============================================================================
 
 # 日志函数（如果未定义）
@@ -241,7 +241,7 @@ EOF
 # 用法: get_ca_paths
 # 返回: ca_cert_path|ca_key_path（通过echo输出，用|分隔）
 # 说明: 从配置文件或环境变量读取CA路径，确保路径一致性
-# 注意: CA 配置已迁移到 ~/k8s/utils/ca-management/ca-management.conf
+# 注意: CA 配置已迁移到 ~/master/k8s/utils/ca-management/ca-management.conf
 get_ca_paths() {
     # 优先从 ca-management 配置文件读取
     local ca_config_file="$HOME/k8s/utils/ca-management/ca-management.conf"
@@ -250,10 +250,10 @@ get_ca_paths() {
     if [[ -f "$ca_config_file" ]]; then
         # 从 ca-management 配置读取
         source "$ca_config_file"
-        ca_dir="${ROOT_CA_LOCAL_DIR:-~/k8s/certs/ca/shared}"
+        ca_dir="${ROOT_CA_LOCAL_DIR:-~/master/k8s/certs/ca/shared}"
     else
         # 回退到环境变量或默认值
-        ca_dir="${ROOT_CA_LOCAL_DIR:-~/k8s/certs/ca/shared}"
+        ca_dir="${ROOT_CA_LOCAL_DIR:-~/master/k8s/certs/ca/shared}"
     fi
     
     # 展开路径中的 ~ 符号
@@ -265,15 +265,15 @@ get_ca_paths() {
     # 检查CA文件是否存在
     if [[ ! -f "$ca_cert" ]]; then
         log_error "CA证书不存在: $ca_cert"
-        log_error "请先运行: ~/k8s/utils/ca-management/generate-ca.sh"
-        log_error "CA 管理已迁移到 ~/k8s/utils/ca-management/"
+        log_error "请先运行: ~/master/k8s/utils/ca-management/generate-ca.sh"
+        log_error "CA 管理已迁移到 ~/master/k8s/utils/ca-management/"
         return 1
     fi
     
     if [[ ! -f "$ca_key" ]]; then
         log_error "CA私钥不存在: $ca_key"
-        log_error "请先运行: ~/k8s/utils/ca-management/generate-ca.sh"
-        log_error "CA 管理已迁移到 ~/k8s/utils/ca-management/"
+        log_error "请先运行: ~/master/k8s/utils/ca-management/generate-ca.sh"
+        log_error "CA 管理已迁移到 ~/master/k8s/utils/ca-management/"
         return 1
     fi
     

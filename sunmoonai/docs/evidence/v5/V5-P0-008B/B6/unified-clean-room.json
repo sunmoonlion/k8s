@@ -156,5 +156,5 @@
   "default_count": 4,
   "non_default_count": 3,
   "business_deployments_touched": false,
-  "manifest": "/home/zymun/tpl-app/template-release-manifest.json"
+  "manifest": "/home/zymun/master/tpl-app/template-release-manifest.json"
 }

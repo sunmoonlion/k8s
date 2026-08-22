@@ -107,7 +107,7 @@ EXECUTION_MODE="conditional"              # conditional（条件执行）或 alw
 
 ```bash
 # 使用安装脚本（推荐）
-cd ~/k8s/sunmoonai/infrastructure/utils/image-cleanup
+cd ~/master/k8s/sunmoonai/infrastructure/utils/image-cleanup
 sudo ./cron/install-cron.sh install
 
 # 或手动安装

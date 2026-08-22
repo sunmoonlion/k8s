@@ -29,7 +29,7 @@
 我们提供了一个交互式菜单工具，方便配置管理和镜像推送：
 
 ```bash
-cd ~/k8s/utils/registry-push-management
+cd ~/master/k8s/utils/registry-push-management
 ./registry-push-menu.sh
 ```
 
@@ -141,7 +141,7 @@ Registry 存储
 ### 配置文件位置
 
 ```bash
-~/k8s/utils/registry-push-management/loadimage.conf
+~/master/k8s/utils/registry-push-management/loadimage.conf
 ```
 
 ### 核心配置项
@@ -238,7 +238,7 @@ REGISTRY_TLS_VERIFY="false"
 #### 启动菜单
 
 ```bash
-cd ~/k8s/utils/registry-push-management
+cd ~/master/k8s/utils/registry-push-management
 ./registry-push-menu.sh
 ```
 
@@ -461,7 +461,7 @@ done
 #!/bin/bash
 # 从基础设施配置读取节点列表
 
-INFRA_CONFIG="~/k8s/sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf"
+INFRA_CONFIG="~/master/k8s/sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf"
 source "$INFRA_CONFIG"
 
 # 镜像列表
@@ -544,7 +544,7 @@ ok() { log "✅ $*"; }
 err() { log "❌ $*"; }
 
 # 从基础设施配置读取节点
-INFRA_CONFIG="~/k8s/sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf"
+INFRA_CONFIG="~/master/k8s/sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf"
 if [[ ! -f "$INFRA_CONFIG" ]]; then
   err "基础设施配置文件不存在: $INFRA_CONFIG"
   exit 1
@@ -923,7 +923,7 @@ fi
 set -euo pipefail
 
 # 1. 加载配置
-source ~/k8s/utils/registry-push-management/loadimage.conf
+source ~/master/k8s/utils/registry-push-management/loadimage.conf
 
 # 2. 验证环境
 echo "验证环境..."
@@ -992,7 +992,7 @@ pipeline {
         stage('Push to Harbor') {
             steps {
                 sh '''
-                    cd ~/k8s/utils/registry-push-management
+                    cd ~/master/k8s/utils/registry-push-management
                     ./loadimage.sh upload-load-push \
                         ${WORKSPACE}/myapp.tar \
                         ${REMOTE_NODE} \
@@ -1012,7 +1012,7 @@ pipeline {
 push-to-harbor:
   stage: deploy
   script:
-    - cd ~/k8s/utils/registry-push-management
+    - cd ~/master/k8s/utils/registry-push-management
     - |
       ./loadimage.sh upload-load-push \
         ${CI_PROJECT_DIR}/myapp.tar \

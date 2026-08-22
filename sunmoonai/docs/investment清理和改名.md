@@ -88,6 +88,7 @@ Research 五仓与旧 Investment 五仓必须同时具备：
 4. 将旧 Web Backend 从活动 submodule 拓扑移除，但保留远端、bundle 和标签；
 5. 更新 `.gitmodules`、gitlink 和父仓说明；
 6. 将父目录 `/home/zymun/research-app` 改为 `/home/zymun/investment-app`；
+   （2026-08-21 五仓再迁至 `~/master/`，现活路径为 `/home/zymun/master/investment-app`）
 7. 提交纯拓扑改名，不混入业务修改；
 8. 验证 bundle 可恢复和所有 archive remote 可达。
 

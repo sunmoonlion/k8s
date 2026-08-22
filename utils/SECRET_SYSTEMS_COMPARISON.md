@@ -26,7 +26,7 @@
    - 示例：
      ```bash
      # 在 deploy-rabbitmq.sh 中
-     source ~/k8s/utils/secret-management/lib/secret-core.sh
+     source ~/master/k8s/utils/secret-management/lib/secret-core.sh
      
      generate_opaque_secret_yaml \
          --name "rabbitmq-auth-secret" \
@@ -41,7 +41,7 @@
    - 快速生成 Secret YAML 文件
    - 示例：
      ```bash
-     source ~/k8s/utils/secret-management/lib/secret-core.sh
+     source ~/master/k8s/utils/secret-management/lib/secret-core.sh
      
      generate_docker_secret_yaml \
          --name "harbor-registry-secret" \
@@ -58,7 +58,7 @@
    - 示例：
      ```bash
      # 自定义生成流程
-     source ~/k8s/utils/secret-management/lib/secret-core.sh
+     source ~/master/k8s/utils/secret-management/lib/secret-core.sh
      
      # 1. 准备数据
      prepare_data
@@ -75,7 +75,7 @@
    - 只需要将证书打包成 Kubernetes Secret
    - 示例：
      ```bash
-     source ~/k8s/utils/secret-management/lib/secret-core.sh
+     source ~/master/k8s/utils/secret-management/lib/secret-core.sh
      
      generate_tls_secret_yaml \
          --name "my-tls-secret" \
@@ -103,7 +103,7 @@
    - 支持多环境：K8s、Docker、nerdctl
    - 示例：
      ```bash
-     cd ~/k8s/utils/unified-cert-secret-management
+     cd ~/master/k8s/utils/unified-cert-secret-management
      ./deploy-all.sh rotate TRAEFIK_K1_K1
      ```
 
@@ -122,7 +122,7 @@
    - 示例：
      ```bash
      # 设置每月1号自动轮换
-     0 0 1 * * ~/k8s/utils/unified-cert-secret-management/deploy-all.sh
+     0 0 1 * * ~/master/k8s/utils/unified-cert-secret-management/deploy-all.sh
      ```
 
 4. **系统初始化时的 CA 证书分发**
@@ -130,7 +130,7 @@
    - 通过 `step12_ca_generation.sh` 调用（init 模式）
    - 示例：
      ```bash
-     cd ~/k8s/sunmoonai/infrastructure
+     cd ~/master/k8s/sunmoonai/infrastructure
      ./deploy-infrastructure-all.sh  # 内部调用 step12
      ```
 
@@ -185,7 +185,7 @@
 
 ```bash
 # deploy-rabbitmq-auth-secret.sh
-source ~/k8s/utils/secret-management/lib/secret-core.sh
+source ~/master/k8s/utils/secret-management/lib/secret-core.sh
 
 generate_opaque_secret_yaml \
     --name "rabbitmq-auth-secret" \
@@ -209,7 +209,7 @@ kubectl apply -f rabbitmq-auth-secret.yaml
 **使用 unified-cert-secret-management**
 
 ```bash
-cd ~/k8s/utils/unified-cert-secret-management
+cd ~/master/k8s/utils/unified-cert-secret-management
 ./deploy-all.sh rotate TRAEFIK_K1_K1
 ```
 
@@ -234,7 +234,7 @@ cd ~/k8s/utils/unified-cert-secret-management
 ```bash
 # 分发 Traefik CA 证书到客户端节点
 # （Harbor 使用 Traefik 的证书，客户端需要信任 Traefik 的 CA）
-cd ~/k8s/utils/unified-cert-secret-management
+cd ~/master/k8s/utils/unified-cert-secret-management
 ./deploy-all.sh --cluster C2 rotate TRAEFIK_K1_K1
 ```
 
@@ -255,7 +255,7 @@ cd ~/k8s/utils/unified-cert-secret-management
 
 ```bash
 # 证书已通过其他方式生成，只需要打包成 Secret
-source ~/k8s/utils/secret-management/lib/secret-core.sh
+source ~/master/k8s/utils/secret-management/lib/secret-core.sh
 
 generate_tls_secret_yaml \
     --name "my-service-tls-secret" \
@@ -303,7 +303,7 @@ kubectl apply -f my-service-tls-secret.yaml
 
 ```bash
 # unified-cert-secret-management 内部可能这样使用：
-source ~/k8s/utils/secret-management/lib/secret-core.sh
+source ~/master/k8s/utils/secret-management/lib/secret-core.sh
 
 generate_tls_secret_yaml \
     --name "$SECRET_NAME" \

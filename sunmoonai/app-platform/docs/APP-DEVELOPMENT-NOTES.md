@@ -2,7 +2,7 @@
 
 ## App 与 tpl-app 组件的关系
 
-新增领域 App 原则上从 `/home/zymun/tpl-app` 统一实例化。`tpl-app` 中的四个组件是技术栈样板，不是固定业务分层：
+新增领域 App 原则上从 `/home/zymun/master/tpl-app` 统一实例化。`tpl-app` 中的四个组件是技术栈样板，不是固定业务分层：
 
 | 模板组件 | 技术栈 |
 |---|---|

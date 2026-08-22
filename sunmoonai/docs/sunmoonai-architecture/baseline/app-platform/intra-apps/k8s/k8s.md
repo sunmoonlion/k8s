@@ -1,13 +1,13 @@
 # k8s
 
-> 仓库路径 `/home/zymun/k8s`。深读基线：2026-08-13（`sunmoonai/` 各平台部署编排、三个领域
+> 仓库路径 `/home/zymun/master/k8s`。深读基线：2026-08-13（`sunmoonai/` 各平台部署编排、三个领域
 > App 的部署 bundle）。App 之间的公共形态见 `baseline/app-platform/inter-apps/app-platform.md`。
 
 ## 1. 概要
 
 sunmoonai 平台的**部署编排与治理仓**，不含任何 App 源码：KIND 集群上各平台的部署清单与
-运维脚本 + 领域 App 的声明式部署 bundle、发布输入与验收门禁。源码在 ~/tpl-app、~/info-app、
-~/knowledge-app、~/investment-app 独立维护。
+运维脚本 + 领域 App 的声明式部署 bundle、发布输入与验收门禁。源码在 ~/master/tpl-app、~/master/info-app、
+~/master/knowledge-app、~/master/investment-app 独立维护。
 
 ### 顶层结构（`sunmoonai/` 九平台目录）
 

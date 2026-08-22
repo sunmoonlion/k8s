@@ -254,7 +254,7 @@ Next Web+Nest Web（可选）。P0-007D 的 React 配对不得因为它已退出
 
 ```bash
 python sunmoonai/docs/mooc-manus-v5/scripts/verify_template_first_plan.py \
-  --k8s /home/zymun/k8s
+  --k8s /home/zymun/master/k8s
 ```
 
 ### P0-008C Research 真实试点
@@ -305,9 +305,9 @@ Runtime adapter，证明真实 Run/SSE/cancel/resume/HITL/citation、刷新/断�
 仅凭 handoff 推断为当前事实。任何 B6 build/push/rollout 前必须只读确认：
 
 ```bash
-git -C /home/zymun/k8s status --short --branch
-git -C /home/zymun/tpl-app status --short --branch
-git -C /home/zymun/tpl-app submodule status
+git -C /home/zymun/master/k8s status --short --branch
+git -C /home/zymun/master/tpl-app status --short --branch
+git -C /home/zymun/master/tpl-app submodule status
 
 KUBECONFIG="$HOME/.kube/kind-config" kubectl get pods -A
 KUBECONFIG="$HOME/.kube/kind-config" kubectl get deploy -A \

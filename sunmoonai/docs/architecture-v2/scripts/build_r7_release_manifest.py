@@ -68,7 +68,7 @@ def main() -> int:
         "--output",
         type=Path,
         default=Path(
-            "/home/zymun/k8s/sunmoonai/docs/architecture-v2/evidence/R7-release/release-manifest.json"
+            "/home/zymun/master/k8s/sunmoonai/docs/architecture-v2/evidence/R7-release/release-manifest.json"
         ),
     )
     args = parser.parse_args()

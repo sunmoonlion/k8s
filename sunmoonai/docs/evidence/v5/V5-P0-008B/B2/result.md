@@ -59,7 +59,7 @@ Web consumer 接受。
 Nest：
 
 ```bash
-cd /home/zymun/tpl-app/tpl-web-backend/app
+cd /home/zymun/master/tpl-app/tpl-web-backend/app
 pnpm check
 ```
 
@@ -69,7 +69,7 @@ pnpm check
 Next：
 
 ```bash
-cd /home/zymun/tpl-app/tpl-web-frontend/app
+cd /home/zymun/master/tpl-app/tpl-web-frontend/app
 pnpm check
 pnpm test:e2e
 ```
@@ -91,7 +91,7 @@ production build、5/5 Playwright 全部通过。配对 E2E 明确验证：
 执行：
 
 ```bash
-cd /home/zymun/k8s
+cd /home/zymun/master/k8s
 python sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_008b_b2.py
 ```
 

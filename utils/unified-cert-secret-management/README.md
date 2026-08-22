@@ -7,7 +7,7 @@
 ### 推荐使用方式：证书轮换
 
 ```bash
-cd ~/k8s/utils/unified-cert-secret-management
+cd ~/master/k8s/utils/unified-cert-secret-management
 ./deploy-all.sh
 ```
 
@@ -230,7 +230,7 @@ cd ~/k8s/utils/unified-cert-secret-management
 
 ```bash
 # 在K8s系统初始化时自动调用（init模式）
-cd ~/k8s/sunmoonai/infrastructure
+cd ~/master/k8s/sunmoonai/infrastructure
 ./deploy-infrastructure-all.sh
 ```
 
@@ -428,7 +428,7 @@ TRAEFIK_K1_K1_SECRET_0_RESTART_COMPONENTS_LIST="traefik-sunmoonai"
 ```bash
 # 定期执行证书轮换（建议每月执行）
 # 可以设置cron任务
-0 0 1 * * ~/k8s/utils/unified-cert-secret-management/deploy-all.sh
+0 0 1 * * ~/master/k8s/utils/unified-cert-secret-management/deploy-all.sh
 
 # 结果：
 # - 生成全新的服务器证书（CA证书保持不变）
@@ -484,8 +484,8 @@ ls -la /tmp/*-ca-certs/
 ls -la /tmp/*-server-certs/
 
 # 检查归档证书
-ls -la ~/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/
-ls -la ~/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/server-cert/
+ls -la ~/master/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/
+ls -la ~/master/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/server-cert/
 ```
 
 ### 检查Kubernetes Secret
@@ -639,8 +639,8 @@ rm -rf /tmp/*-ca-certs/
 rm -rf /tmp/*-server-certs/
 
 # 清理归档证书（谨慎操作）
-rm -rf ~/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/*
-rm -rf ~/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/server-cert/*
+rm -rf ~/master/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/*
+rm -rf ~/master/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/server-cert/*
 
 # 删除Kubernetes Secret
 kubectl delete secret traefik-tls-secret -n ingress-platform-dev
@@ -662,7 +662,7 @@ openssl x509 -in /tmp/TRAEFIK_K1-server-certs/server.crt -noout -dates
 
 ```bash
 # 设置每月1号自动轮换证书
-echo "0 0 1 * * ~/k8s/utils/unified-cert-secret-management/deploy-all.sh" | crontab -
+echo "0 0 1 * * ~/master/k8s/utils/unified-cert-secret-management/deploy-all.sh" | crontab -
 
 # 查看cron任务
 crontab -l

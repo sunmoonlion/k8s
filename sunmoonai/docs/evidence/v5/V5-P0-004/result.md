@@ -52,7 +52,7 @@ retrieval 在 Knowledge `15s` 和诊断 `90s` 下均 connect timeout。未通过
 执行：
 
 ```bash
-cd /home/zymun/k8s
+cd /home/zymun/master/k8s
 export KUBECONFIG="$HOME/.kube/kind-config"
 
 python -u sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_004_kind.py \

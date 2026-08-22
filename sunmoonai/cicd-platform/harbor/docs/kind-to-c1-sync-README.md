@@ -160,7 +160,7 @@ C1_STEP11_HARBOR_PUBLIC_IP="101.126.151.0"   # 示例，以实际为准
 
 ```bash
 # 远程 C1（应用 dev-values.yaml 中的 harbor-c1 路由）
-cd ~/k8s/sunmoonai/cicd-platform/harbor/deploy-harbor
+cd ~/master/k8s/sunmoonai/cicd-platform/harbor/deploy-harbor
 CLUSTER=C1 ./deploy-harbor.sh deploy
 
 # 本地 Kind（应用 dev-values-kind.yaml 中的 hostAliases）
@@ -218,7 +218,7 @@ CLUSTER=KIND ./deploy-harbor.sh deploy
 ### 4.1 构建推到 Kind
 
 ```bash
-cd ~/k8s/sunmoonai/app-platform
+cd ~/master/k8s/sunmoonai/app-platform
 CLUSTER=KIND ./scripts/build-push-app-images.sh
 ```
 
@@ -231,7 +231,7 @@ Kind Harbor → **复制管理** → 选中规则 → **复制**。
 ### 4.3 部署 C1
 
 ```bash
-cd ~/k8s/sunmoonai/app-platform/deploy-app-platform-all
+cd ~/master/k8s/sunmoonai/app-platform/deploy-app-platform-all
 ./deploy-app-platform-all.sh --cluster C1 deploy
 ```
 

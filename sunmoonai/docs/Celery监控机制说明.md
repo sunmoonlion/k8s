@@ -568,9 +568,9 @@ CELERY_QUEUE="incubator-queue"
 
 ### 相关配置路径
 
-- RabbitMQ: `~/k8s/sunmoonai/messaging-platform/rabbitmq/`
-- Flower: `~/k8s/sunmoonai/ops-platform/flower/`
-- Celery Worker: `~/k8s/sunmoonai/app-platform/business-apps/*/celeryworker-*/`
+- RabbitMQ: `~/master/k8s/sunmoonai/messaging-platform/rabbitmq/`
+- Flower: `~/master/k8s/sunmoonai/ops-platform/flower/`
+- Celery Worker: `~/master/k8s/sunmoonai/app-platform/business-apps/*/celeryworker-*/`
 
 ### 参考链接
 

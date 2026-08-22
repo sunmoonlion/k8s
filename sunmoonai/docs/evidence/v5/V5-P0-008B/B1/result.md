@@ -122,7 +122,7 @@ ixartz 只读输入继续固定为：
 执行：
 
 ```bash
-cd /home/zymun/k8s
+cd /home/zymun/master/k8s
 python sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_008b_b1.py
 ```
 
@@ -137,7 +137,7 @@ python sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_008b_b1.py
 执行：
 
 ```bash
-cd /home/zymun/k8s
+cd /home/zymun/master/k8s
 P0_HTTP_PROXY=http://192.168.32.1:7890 \
 bash sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_008b_b1_docker.sh
 ```

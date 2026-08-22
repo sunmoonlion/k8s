@@ -40,14 +40,14 @@
 使用统一的部署脚本创建 Secret：
 
 ```bash
-cd ~/k8s/sunmoonai/cicd-platform/jenkins/deploy-jenkins/secrets/kaniko-registry-secret/deploy-kaniko-registry-secret
+cd ~/master/k8s/sunmoonai/cicd-platform/jenkins/deploy-jenkins/secrets/kaniko-registry-secret/deploy-kaniko-registry-secret
 ./deploy-kaniko-registry-secret.sh deploy
 ```
 
 或者使用统一部署脚本部署所有 Secret：
 
 ```bash
-cd ~/k8s/sunmoonai/cicd-platform/jenkins/deploy-jenkins/secrets/deploy-secrets-all
+cd ~/master/k8s/sunmoonai/cicd-platform/jenkins/deploy-jenkins/secrets/deploy-secrets-all
 ./deploy-secrets-all.sh
 ```
 
@@ -88,7 +88,7 @@ configAsCode:
 ### 3. 重新部署 Jenkins
 
 ```bash
-cd ~/k8s/sunmoonai/cicd-platform/jenkins/deploy-jenkins
+cd ~/master/k8s/sunmoonai/cicd-platform/jenkins/deploy-jenkins
 ./deploy-jenkins.sh deploy
 ```
 

@@ -63,14 +63,14 @@ case "$PROFILE" in
     BACKEND_DEPLOYMENT="tpl-web-backend-p0-008b-b63f"
     FRONTEND_DEPLOYMENT="tpl-web-frontend-p0-008b-b63f"
     ORIGIN="https://tpl-web-p0-008b-b63f.sunmoonai.com:30443"
-    VERIFIER="/home/zymun/k8s/sunmoonai/docs/mooc-manus-v5/scripts/verify_b6_web_fastapi_pair.mjs"
+    VERIFIER="/home/zymun/master/k8s/sunmoonai/docs/mooc-manus-v5/scripts/verify_b6_web_fastapi_pair.mjs"
     TASK="V5-P0-008B-B6.3F-rollback"
     ;;
   nest)
     BACKEND_DEPLOYMENT="tpl-web-backend-b4"
     FRONTEND_DEPLOYMENT="tpl-web-frontend-b4"
     ORIGIN="https://tpl-web-b4.sunmoonai.com:30443"
-    VERIFIER="/home/zymun/k8s/sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_008b_b4.mjs"
+    VERIFIER="/home/zymun/master/k8s/sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_008b_b4.mjs"
     TASK="V5-P0-008B-B6.3N-rollback"
     ;;
   *)

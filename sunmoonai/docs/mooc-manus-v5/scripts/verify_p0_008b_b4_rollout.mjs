@@ -24,7 +24,7 @@ const caCertificate =
   `${process.env.HOME}/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/ca.crt`
 const fullVerifier =
   process.env.B4_FULL_VERIFIER ||
-  '/home/zymun/k8s/sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_008b_b4.mjs'
+  '/home/zymun/master/k8s/sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_008b_b4.mjs'
 
 const options = parseArguments(process.argv.slice(2))
 const portForwards = []

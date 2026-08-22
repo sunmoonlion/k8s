@@ -25,7 +25,7 @@ const caCertificate =
   `${process.env.HOME}/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/ca.crt`
 const fullVerifier =
   process.env.P0_007D_FULL_VERIFIER ||
-  '/home/zymun/k8s/sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_007d_browser.mjs'
+  '/home/zymun/master/k8s/sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_007d_browser.mjs'
 const deploymentName = 'tpl-admin-frontend-p0-007d'
 const options = parseArguments(process.argv.slice(2))
 const kubectlEnvironment = { ...process.env }

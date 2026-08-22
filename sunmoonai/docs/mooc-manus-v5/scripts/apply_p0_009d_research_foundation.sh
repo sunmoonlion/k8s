@@ -10,10 +10,10 @@ exit 64
 TAG_TEMPLATE_RELEASE="p0-008b-b6-unified-20260729"
 CANDIDATE_TAG="p0-009d-research-candidate-20260729"
 
-TPL_ADMIN_FE="/home/zymun/tpl-app/tpl-admin-frontend"
-TPL_ADMIN_BE="/home/zymun/tpl-app/tpl-admin-backend"
-TPL_WEB_FE="/home/zymun/tpl-app/tpl-web-frontend"
-TPL_WEB_BE="/home/zymun/tpl-app/tpl-web-backend"
+TPL_ADMIN_FE="/home/zymun/master/tpl-app/tpl-admin-frontend"
+TPL_ADMIN_BE="/home/zymun/master/tpl-app/tpl-admin-backend"
+TPL_WEB_FE="/home/zymun/master/tpl-app/tpl-web-frontend"
+TPL_WEB_BE="/home/zymun/master/tpl-app/tpl-web-backend"
 
 RS_ADMIN_FE="/home/zymun/research-app/research-admin-frontend"
 RS_ADMIN_BE="/home/zymun/research-app/research-admin-backend"

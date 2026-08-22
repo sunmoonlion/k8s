@@ -41,12 +41,12 @@ def tracked_files(repo: Path) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--tpl-root", type=Path, default=Path("/home/zymun/tpl-app"))
+    parser.add_argument("--tpl-root", type=Path, default=Path("/home/zymun/master/tpl-app"))
     parser.add_argument(
         "--evidence-dir",
         type=Path,
         default=Path(
-            "/home/zymun/k8s/sunmoonai/docs/architecture-v2/evidence/R7-release/template"
+            "/home/zymun/master/k8s/sunmoonai/docs/architecture-v2/evidence/R7-release/template"
         ),
     )
     args = parser.parse_args()

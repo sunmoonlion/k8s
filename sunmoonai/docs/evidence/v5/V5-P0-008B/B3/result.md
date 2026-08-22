@@ -52,7 +52,7 @@ event-id 绑定、去重、gap reconciliation、有界指数退避，以及中�
 Nest：
 
 ```bash
-cd /home/zymun/tpl-app/tpl-web-backend/app
+cd /home/zymun/master/tpl-app/tpl-web-backend/app
 pnpm check
 ```
 
@@ -62,7 +62,7 @@ pnpm check
 Next：
 
 ```bash
-cd /home/zymun/tpl-app/tpl-web-frontend/app
+cd /home/zymun/master/tpl-app/tpl-web-frontend/app
 pnpm check
 pnpm test:e2e
 ```
@@ -83,7 +83,7 @@ production build、6/6 Chromium 全部通过。浏览器矩阵验证：
 ## 5. 固定静态门禁
 
 ```bash
-cd /home/zymun/k8s
+cd /home/zymun/master/k8s
 python sunmoonai/docs/mooc-manus-v5/scripts/verify_p0_008b_b3.py
 ```
 

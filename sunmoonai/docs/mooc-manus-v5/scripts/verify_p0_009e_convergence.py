@@ -21,8 +21,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-K8S = Path("/home/zymun/k8s")
-TPL = Path("/home/zymun/tpl-app")
+K8S = Path("/home/zymun/master/k8s")
+TPL = Path("/home/zymun/master/tpl-app")
 EVIDENCE = K8S / "sunmoonai/docs/evidence/v5/V5-P0-009E"
 LOCK_FILE = EVIDENCE / "alignment-lock.json"
 RELEASE_ID = "p0-008b-b6-unified-20260729"
@@ -37,7 +37,7 @@ TEMPLATE_COMMITS = {
 
 APPS: dict[str, dict[str, Any]] = {
     "info": {
-        "parent": Path("/home/zymun/info-app"),
+        "parent": Path("/home/zymun/master/info-app"),
         "branch": "codex-1",
         "evidence": "V5-P0-009B",
         "admin_task": "V5-P0-009B-browser-pair",
@@ -46,7 +46,7 @@ APPS: dict[str, dict[str, Any]] = {
         "domain_needles": ["dispatch_crawl_url", "delivery_outbox_batch_size"],
     },
     "knowledge": {
-        "parent": Path("/home/zymun/knowledge-app"),
+        "parent": Path("/home/zymun/master/knowledge-app"),
         "branch": "codex-1",
         "evidence": "V5-P0-009C",
         "admin_task": "V5-P0-009C-browser-pair",

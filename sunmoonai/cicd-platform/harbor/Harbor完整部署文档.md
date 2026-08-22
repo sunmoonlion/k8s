@@ -252,17 +252,17 @@ ssh <control-plane-node> "grep harbor.sunmoonai.com /etc/hosts"
 
 ```bash
 # Harbor 部署脚本
-~/k8s/sunmoonai/cicd-platform/harbor/deploy/deploy-harbor.sh
+~/master/k8s/sunmoonai/cicd-platform/harbor/deploy/deploy-harbor.sh
 
 # Harbor 配置文件
-~/k8s/sunmoonai/cicd-platform/harbor/deploy/deploy-harbor.conf
+~/master/k8s/sunmoonai/cicd-platform/harbor/deploy/deploy-harbor.conf
 
 # Harbor Helm Values
-~/k8s/sunmoonai/cicd-platform/harbor/resources/custom-values/dev-values.yaml
+~/master/k8s/sunmoonai/cicd-platform/harbor/resources/custom-values/dev-values.yaml
 
 # Traefik 路由配置
-~/k8s/sunmoonai/ingress-platform/ingress/cicd-platform/harbor/web-routes/harbor-web-route.yaml
-~/k8s/sunmoonai/ingress-platform/ingress/cicd-platform/harbor/web-routes/harbor-middleware.yaml
+~/master/k8s/sunmoonai/ingress-platform/ingress/cicd-platform/harbor/web-routes/harbor-web-route.yaml
+~/master/k8s/sunmoonai/ingress-platform/ingress/cicd-platform/harbor/web-routes/harbor-middleware.yaml
 ```
 
 ### 2. 关键配置参数
@@ -353,7 +353,7 @@ spec:
 
 ```bash
 # 部署 Harbor
-cd ~/k8s/sunmoonai/cicd-platform/harbor/deploy
+cd ~/master/k8s/sunmoonai/cicd-platform/harbor/deploy
 ./deploy-harbor.sh deploy
 
 # 升级 Harbor
@@ -372,7 +372,7 @@ cd ~/k8s/sunmoonai/cicd-platform/harbor/deploy
 ### 4. 部署 Traefik 路由
 
 ```bash
-cd ~/k8s/sunmoonai/ingress-platform/ingress/cicd-platform/harbor/web-routes
+cd ~/master/k8s/sunmoonai/ingress-platform/ingress/cicd-platform/harbor/web-routes
 
 # 部署路由
 bash deploy.sh apply
@@ -1223,7 +1223,7 @@ kubectl exec -n data-platform-dev postgresql-sunmoonai-0 -- \
 
 **执行重新部署**:
 ```bash
-cd ~/k8s/sunmoonai/cicd-platform/harbor/deploy
+cd ~/master/k8s/sunmoonai/cicd-platform/harbor/deploy
 ./deploy-harbor.sh deploy
 ```
 
@@ -1345,7 +1345,7 @@ kubectl describe pod <pod-name> -n cicd-platform-dev
 kubectl logs <pod-name> -n cicd-platform-dev
 
 # 查看所有组件日志
-cd ~/k8s/sunmoonai/cicd-platform/harbor/deploy
+cd ~/master/k8s/sunmoonai/cicd-platform/harbor/deploy
 ./deploy-harbor.sh logs
 ```
 
@@ -1437,7 +1437,7 @@ SELECT user_id, username, email FROM harbor_user WHERE username='admin';
 
 或者重新部署 Harbor 以重置密码:
 ```bash
-cd ~/k8s/sunmoonai/cicd-platform/harbor/deploy
+cd ~/master/k8s/sunmoonai/cicd-platform/harbor/deploy
 ./deploy-harbor.sh uninstall
 ./deploy-harbor.sh deploy
 ```
@@ -1486,7 +1486,7 @@ kubectl exec -i -n data-platform-dev postgresql-sunmoonai-0 -- \
 # 1. 备份数据
 # 2. 更新 Chart 或 Values
 # 3. 执行升级
-cd ~/k8s/sunmoonai/cicd-platform/harbor/deploy
+cd ~/master/k8s/sunmoonai/cicd-platform/harbor/deploy
 ./deploy-harbor.sh upgrade
 
 # 4. 验证升级
