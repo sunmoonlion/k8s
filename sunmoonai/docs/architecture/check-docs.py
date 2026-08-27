@@ -17,6 +17,18 @@ from __future__ import annotations
 import argparse, pathlib, re, subprocess, sys
 
 LINK = re.compile(r'\[([^\]]*)\]\(([^)]*)\)')
+FENCE = re.compile(r'^```.*?^```', re.S | re.M)   # 围栏代码块
+INLINE = re.compile(r'`[^`\n]*`')                  # 行内代码
+
+
+def mask_code(text: str) -> str:
+    """把代码区替换成等长空白，使行号与列位置不变，但其中的 `[x]()` 不再被当作链接。
+
+    没有这一步会误报：描述"坏链长什么样"的文档本身会被判为有坏链。
+    """
+    def blank(m: re.Match[str]) -> str:
+        return re.sub(r'[^\n]', ' ', m.group(0))
+    return INLINE.sub(blank, FENCE.sub(blank, text))
 STAMP = re.compile(r'(?:取证时点|最后更新)[：:]\s*(\d{4})-(\d{2})-(\d{2})')
 
 # 不参与检查的子目录，各有理由：
@@ -36,7 +48,7 @@ def check(root: pathlib.Path, repos: pathlib.Path | None):
 
     # --- 1 & 2. 链接 ---
     for p in docs:
-        text = p.read_text(encoding='utf-8')
+        text = mask_code(p.read_text(encoding='utf-8'))
         for m in LINK.finditer(text):
             label, target = m.group(1), m.group(2).strip()
             line = text[:m.start()].count('\n') + 1
