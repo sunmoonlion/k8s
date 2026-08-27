@@ -8,7 +8,7 @@
 >
 > 另有两份与架构描述无关、按需读的流程文档：
 > [`request-lifecycle.md`](request-lifecycle.md)（提开发请求时读）与
-> [`cross-machine-review.md`](cross-machine-review.md)（推送、拉取、跨机审核时读）。
+> [`multi-assistant-workflow.md`](multi-assistant-workflow.md)（多助手并行提案、比较、推送拉取时读）。
 
 ## 按任务找
 
@@ -21,7 +21,9 @@
 | 发版、改部署清单 | [`topics/release.md`](topics/release.md) + [`repos/k8s.md`](repos/k8s.md) |
 | 确认某个能力是否真的接线了 | 对应仓文件的**「已知未实现」**一节 |
 | 知道「当初为什么这么定」 | [`decisions/`](decisions/)（13 条 ADR） |
-| 推送改动、跨机拉取、审核别人的分支 | [`cross-machine-review.md`](cross-machine-review.md) |
+| 让多个助手对同一需求各出方案 | [`multi-assistant-workflow.md`](multi-assistant-workflow.md) §1–§3 |
+| 审核别人的产出 | [`multi-assistant-workflow.md`](multi-assistant-workflow.md) §4 |
+| 推送改动、跨机拉取 | [`multi-assistant-workflow.md`](multi-assistant-workflow.md) §5–§8 |
 | 复核本文档集的某条断言 | [`verify.md`](verify.md) |
 
 ## 目录
@@ -30,7 +32,7 @@
 architecture/
 ├── README.md      本文件
 ├── verify.md      验证方法、本轮实测结果、易腐值真源、明确的盲区
-├── cross-machine-review.md  推送/拉取顺序、跨机审核流程、子模块的坑
+├── multi-assistant-workflow.md  并行提案与隔离、审核两阶段、推送拉取、子模块的坑
 ├── repos/         一仓一文件
 │   ├── tpl-app.md          模板仓：定义标准形态，无领域
 │   ├── info-app.md         资讯域：采集→治理→分发
