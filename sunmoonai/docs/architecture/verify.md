@@ -75,7 +75,7 @@ README 也未提及。裸跑会得到 `ModuleNotFoundError: No module named 'yam
 | RAGFlow `CANCEL` 被当作成功 | 读 `_wait_for_document_parse` | **成立**：`terminal = {"DONE","FAIL","CANCEL"}`，仅 `FAIL` 抛错 |
 | 生产环境 web-interaction 必定 503 | 读 `get_web_interaction_port` + 生产禁 reference 的配置校验 | **成立** |
 | ReferenceAdapter 的 ID 是硬编码常量而非 uuid5 生成 | `grep -rn uuid5 tpl-backend/app/app/` | **成立**：全仓无 `uuid5()` 调用 |
-| 四仓 `<app>-backend/CLAUDE.md` 内容已过期 | 逐条核对其声称的文件是否存在 | **成立**，见 §5 |
+| 四仓 `<app>-backend/CLAUDE.md` 内容曾严重过期 | 逐条核对其声称的文件是否存在 | **成立**，且已于 2026-08-27 重写，见 §5 |
 
 ## 4. 易腐值：本文档集不记，去这里查
 
@@ -87,10 +87,17 @@ README 也未提及。裸跑会得到 `ModuleNotFoundError: No module named 'yam
 | 契约 schema 的 sha256 | 各 consumer 仓的 `*-provider-lock.json`，或 provider 的 `contract-manifest.json` |
 | 集群里实际跑的副本与镜像 | 活集群：`kubectl -n app-platform-dev get deploy -o wide` |
 
-## 5. ⚠ 各组件目录下的 CLAUDE.md 已严重过期
+## 5. 各组件目录下的 CLAUDE.md：曾严重过期，本轮已重写（评审方 qoder 复核）
 
-**这些文件会被 Claude Code 自动注入**，优先级高于任何需要主动去读的文档，
-因此它们的过期危害最大。逐条核对结果：
+**现状**：8 份（四仓 × 后端 / web 前端）已于 2026-08-27 重写为「局部编码规则 +
+指向本文档集的指针」（各子仓提交 `docs: 重写 CLAUDE.md 为与代码一致的局部规则`
+与 `docs: 同步入口指针路径（文档移入 architecture/）`，如 tpl-backend 的
+`c634c99` / `5d572e4`），8 份逐一核过。**本节保留发现时的核对结果作为记录，
+不再描述现状。**
+
+发现时的逐条核对（取证时点 2026-08-27 日间，早于重写）。
+这些文件会被 Claude Code 自动注入，优先级高于任何需要主动去读的文档，
+因此过期危害最大。旧内容声称的：
 
 `<app>-web-frontend/CLAUDE.md`（55 行，四仓各一份）声称的：
 
@@ -109,14 +116,14 @@ README 也未提及。裸跑会得到 `ModuleNotFoundError: No module named 'yam
 | 读 `app/interfaces/endpoints/` 确认路由 | 对实例部分成立，但**漏了模板面 `interfaces/http/`**；tpl-app 根本没有 `endpoints/` |
 | 以 **k8s v5 权威文档 / v5 contracts** 为准 | v5 已被 Architecture v2 取代 |
 
-复核：
+复核（现状：应输出「局部编码规则」开头、含指向 `architecture/` 的指针）：
 ```bash
-cd <repo>/tpl-app/tpl-web-frontend/app
-for p in app/api/auth lib/request.ts store/auth.ts middleware.ts proxy.ts; do
-  [ -e "$p" ] && echo "存在: $p" || echo "不存在: $p"
+for a in tpl info knowledge investment; do
+  for c in backend web-frontend; do
+    head -4 <repo>/$a-app/$a-$c/CLAUDE.md
+    git -C <repo>/$a-app/$a-$c log --oneline -1 -- CLAUDE.md
+  done
 done
-grep -c axios package.json     # 0
-wc -l ../../tpl-backend/app/app/main.py   # 5
 ```
 
 ## 6. 明确未核对的部分（不背书）

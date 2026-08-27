@@ -264,14 +264,15 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 | knowledge | RAGFlow 的 `CANCEL` 终态**被当作成功**（只有 `FAIL` 抛错）——被取消的摄入会标记为成功，存在数据完整性风险；Admin 入库运维页是**静态占位**，无 fetch 无操作 |
 | investment | `RunBudget` 四维限额已实现，但**两条生产链都不调用**（全仓仅三处引用：定义处、非生产图、其测试），故 `budget_exceeded` 状态在生产中**不可达**；Web 面未接 Pilot 链 |
 
-### 9.4 文档层的已知问题
+### 9.4 文档层的已知问题（一项已处置）
 
-各组件目录下的 `CLAUDE.md`（后端 48 行、web 前端 55 行，共 8 份）**内容严重过期**，
-且会被 Claude Code 自动注入：它们描述的 `app/api/auth/`、`lib/request.ts`、
-`store/auth.ts`、`middleware.ts` **均不存在**，声称使用的 axios **不是依赖**，
-并要求以已被取代的 v5 文档为准。**读到它们时以本文档与代码为准。**
+各组件目录下的 `CLAUDE.md`（共 8 份，会被 Claude Code 自动注入）**曾严重过期**：
+描述的 `app/api/auth/`、`lib/request.ts`、`store/auth.ts`、`middleware.ts` 均不存在，
+声称的 axios 不是依赖，并要求以已被取代的 v5 文档为准。2026-08-27 已在各子仓
+重写为「局部编码规则 + 指向本文档集的指针」。**这是本节中唯一已处置的项**，
+其余各项仍未解决。
 
-→ 逐条取证与复核命令：[`architecture/verify.md`](verify.md)
+→ 逐条核对记录与现状复核命令：[`architecture/verify.md`](verify.md) §5
 
 ## 10. 去哪查
 
