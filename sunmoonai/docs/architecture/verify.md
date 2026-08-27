@@ -55,10 +55,10 @@ README 也未提及。裸跑会得到 `ModuleNotFoundError: No module named 'yam
 
 | 文档 | 怎么复核 |
 | --- | --- |
-| [`repos/tpl-app.md`](repos/tpl-app.md) | `cat tpl-backend/app/tests/test_kernel_invariants.py`（5 项全文）；`sed -n '232,236p' tpl-backend/app/app/application/services/web_interaction.py`（默认适配器选择）；`grep -rn uuid5 tpl-backend/app/app/`（应无结果） |
-| [`repos/info-app.md`](repos/info-app.md) | `sed -n '/adapters: dict/,/}/p' info-backend/app/app/application/collectors/registry.py`（采集器表）；`grep -n 'search_backend' info-backend/app/core/config.py`（默认 disabled）；`grep -n 'target_app' info-backend/app/app/application/services/info_crawl_service.py \| sed -n '5p'` |
-| [`repos/knowledge-app.md`](repos/knowledge-app.md) | `sed -n '/terminal = /,/return last_doc/p' knowledge-backend/app/app/infrastructure/external/ragflow.py`（CANCEL 处理）；`sed -n '45,60p' knowledge-backend/app/app/application/services/knowledge_retrieval_service.py`（三重授权） |
-| [`repos/investment-app.md`](repos/investment-app.md) | `grep -rln RunBudget investment-backend/app/app investment-backend/app/tests`（应恰好 3 处）；`sed -n '34,59p' investment-backend/app/app/domain/agent/runtime.py`（状态机） |
+| [`repos/tpl-app.md`](repos/tpl-app.md) | `cat tpl-backend/app/tests/test_kernel_invariants.py`（5 项全文）；`sed -n '/async def get_web_interaction_port/,/return Unavailable/p' tpl-backend/app/app/application/services/web_interaction.py`（默认适配器选择）；`grep -rn uuid5 tpl-backend/app/app/`（应无结果） |
+| [`repos/info-app.md`](repos/info-app.md) | `sed -n '/adapters: dict/,/}/p' info-backend/app/app/application/collectors/registry.py`（采集器表）；`grep -n 'search_backend' info-backend/app/core/config.py`（默认 disabled）；`grep -n 'target_app' info-backend/app/app/application/services/info_crawl_service.py \| grep 1177` |
+| [`repos/knowledge-app.md`](repos/knowledge-app.md) | `sed -n '/terminal = /,/return last_doc/p' knowledge-backend/app/app/infrastructure/external/ragflow.py`（CANCEL 处理）；`sed -n '/requested_datasets = set/,/ForbiddenError("retrieval service relation/p' knowledge-backend/app/app/application/services/knowledge_retrieval_service.py`（三重授权） |
+| [`repos/investment-app.md`](repos/investment-app.md) | `grep -rln RunBudget investment-backend/app/app investment-backend/app/tests`（应恰好 3 处）；`sed -n '/^RUN_STATUS_TRANSITIONS/,/^}/p' investment-backend/app/app/domain/agent/runtime.py`（状态机） |
 | [`repos/k8s.md`](repos/k8s.md) | `awk '/^def apply\(/,/^def drift\(/' sunmoonai/app-platform/info-app/deployment/deploy.py`（apply 真实顺序）；`ls -1d sunmoonai/*/`（平台清单） |
 | [`topics/contracts.md`](topics/contracts.md) | `grep -rn 'citations/' knowledge-app/knowledge-backend/app/app/interfaces/`（只应命中 web 一条） |
 | [`topics/identity.md`](topics/identity.md) | `grep -n 'required_scopes=' tpl-app/tpl-backend/app/core/config.py`（admin/web 不对称） |

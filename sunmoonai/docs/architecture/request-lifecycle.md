@@ -169,7 +169,7 @@ R2 是其中最便宜也最要紧的一条。它不要求任何额外工作量�
 ```bash
 cd <repo>/investment-app/investment-backend/app
 grep -rln RunBudget app tests | grep -v __pycache__   # 应只有 3 处
-sed -n '34,59p' app/domain/agent/runtime.py           # 状态机与终态
+sed -n '/^RUN_STATUS_TRANSITIONS/,/^}/p' app/domain/agent/runtime.py           # 状态机与终态
 ```
 
 八项里六项已实现且有效。**预算账与证据账是仅有的两处真缺口**，

@@ -152,7 +152,7 @@ uv run pytest tests/test_kernel_invariants.py -q      # 6 项
 sed -n '/terminal = /,/return last_doc/p' app/app/infrastructure/external/ragflow.py
 
 # 三重授权
-sed -n '45,60p' app/app/application/services/knowledge_retrieval_service.py
+sed -n '/requested_datasets = set/,/retrieval service relation/p' app/app/application/services/knowledge_retrieval_service.py
 
 # citation 路由实际只有一条，且在 web 前缀下
 grep -rn 'citations/' app/app/interfaces/

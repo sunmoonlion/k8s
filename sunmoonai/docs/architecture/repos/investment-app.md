@@ -161,5 +161,5 @@ uv run python scripts/validate_agent_phase0.py
 grep -rln RunBudget app tests | grep -v __pycache__
 
 # 状态机与终态
-sed -n '34,59p' app/domain/agent/runtime.py
+sed -n '/^RUN_STATUS_TRANSITIONS/,/^}/p' app/domain/agent/runtime.py
 ```
