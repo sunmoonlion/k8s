@@ -1,6 +1,6 @@
 # tpl-app（模板仓）
 
-> 取证时点：2026-08-27 ｜ 总览见 [`../../overall-architecture.md`](../../overall-architecture.md)
+> 取证时点：2026-08-27 ｜ 总览见 [`../overall-architecture.md`](../overall-architecture.md)
 
 ## 1. 定位
 

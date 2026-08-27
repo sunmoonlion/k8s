@@ -5,7 +5,7 @@
 > **本文件是进入这个项目的唯一入口。**读完它，你应当知道：改动落在哪个仓、
 > 那里有什么不可违反的规则、以及去哪里查更细的东西。
 >
-> 它**不**试图覆盖全部细节——细节在 [`architecture/`](architecture/)，每节末尾给出指路。
+> 它**不**试图覆盖全部细节——细节在 [`architecture/`]()，每节末尾给出指路。
 > 与代码冲突时**永远以代码为准**，并请指出本文件需要更新。
 
 ---
@@ -48,7 +48,7 @@ k8s ──构建镜像 / 渲染 bundle / apply──▶ 三个 App 的运行态
 
 契约的规律：**schema 真源放在被调方（provider），锁文件放在调用方（consumer）**。
 
-→ 细节：[`architecture/topics/contracts.md`](architecture/topics/contracts.md)
+→ 细节：[`architecture/topics/contracts.md`](topics/contracts.md)
 
 ## 3. 一个标准 App 长什么样
 
@@ -104,7 +104,7 @@ app/app/
   **token 永不落 localStorage**
 - **OIDC 全部在后端**，前端没有 auth 的 API Route
 
-→ 细节：[`architecture/repos/tpl-app.md`](architecture/repos/tpl-app.md)
+→ 细节：[`architecture/repos/tpl-app.md`](repos/tpl-app.md)
 
 ## 4. 平台层（`k8s/sunmoonai/`）
 
@@ -126,7 +126,7 @@ app/app/
 App 侧实际用到的数据组件只有：PostgreSQL、Redis、object-storage、RabbitMQ、
 Elasticsearch（info 索引，**默认关闭**）。mongodb / neo4j / kibana / logstash 未见 App 引用。
 
-→ 细节：[`architecture/repos/k8s.md`](architecture/repos/k8s.md)
+→ 细节：[`architecture/repos/k8s.md`](repos/k8s.md)
 
 ## 5. 三条主链
 
@@ -180,7 +180,7 @@ RAGFlow / Elasticsearch / 缓存都是**可重建的派生系统，不是权威�
 两个易错点：**网络策略先于迁移**；`server-dry-run` 按 `release.json.resources`
 数组顺序走，**与 apply 的真实顺序不同**。
 
-→ 细节：[`architecture/topics/release.md`](architecture/topics/release.md)
+→ 细节：[`architecture/topics/release.md`](topics/release.md)
 
 ## 6. 身份
 
@@ -201,7 +201,7 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 服务身份校验链：验 audience → subject 必须命中精确绑定表 →
 `token_scopes ⊆ 允许集` 且 `required ⊆ token_scopes`。
 
-→ 细节：[`architecture/topics/identity.md`](architecture/topics/identity.md)
+→ 细节：[`architecture/topics/identity.md`](topics/identity.md)
 
 ## 7. 硬规则来自哪里
 
@@ -270,20 +270,20 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 `store/auth.ts`、`middleware.ts` **均不存在**，声称使用的 axios **不是依赖**，
 并要求以已被取代的 v5 文档为准。**读到它们时以本文档与代码为准。**
 
-→ 逐条取证与复核命令：[`architecture/verify.md`](architecture/verify.md)
+→ 逐条取证与复核命令：[`architecture/verify.md`](verify.md)
 
 ## 10. 去哪查
 
 | 我要做什么 | 读 |
 | --- | --- |
-| 改某个仓的代码 | [`architecture/repos/`](architecture/repos/) 下对应文件 |
-| 加或改跨 App 契约 | [`architecture/topics/contracts.md`](architecture/topics/contracts.md) |
-| 动登录、权限、服务间调用 | [`architecture/topics/identity.md`](architecture/topics/identity.md) |
-| 加表、改迁移 | [`architecture/topics/data.md`](architecture/topics/data.md) |
-| 发版、改部署清单 | [`architecture/topics/release.md`](architecture/topics/release.md) |
-| 想知道"当初为什么这么定" | [`architecture/decisions/`](architecture/decisions/)（ADR，追加不覆写） |
+| 改某个仓的代码 | [`architecture/repos/`](repos/) 下对应文件 |
+| 加或改跨 App 契约 | [`architecture/topics/contracts.md`](topics/contracts.md) |
+| 动登录、权限、服务间调用 | [`architecture/topics/identity.md`](topics/identity.md) |
+| 加表、改迁移 | [`architecture/topics/data.md`](topics/data.md) |
+| 发版、改部署清单 | [`architecture/topics/release.md`](topics/release.md) |
+| 想知道"当初为什么这么定" | [`architecture/decisions/`](decisions/)（ADR，追加不覆写） |
 | 提一个开发请求 | [`request-lifecycle.md`](request-lifecycle.md) |
-| 查当前 digest / 迁移 head 等易变值 | 本文档不记这些值，见 [`architecture/verify.md`](architecture/verify.md) |
+| 查当前 digest / 迁移 head 等易变值 | 本文档不记这些值，见 [`architecture/verify.md`](verify.md) |
 
 **易腐值一律不写进文档正文**（镜像 digest、schema sha256、commit、迁移 head、副本数）——
 它们变化比文档维护快，写进来必然先于文档失效。文档只写规则并指向真源。

@@ -3,7 +3,7 @@
 > ⚠ **本目录不是现状的权威来源。**如本目录末行所述，这些文档"描述长期边界和目标状态"，
 > 即它们写的是**应该怎样**，不保证与代码一致。
 >
-> **项目现状以 [项目总览](../../docs/overall-architecture.md) 与
+> **项目现状以 [项目总览](../../docs/architecture/overall-architecture.md) 与
 > [`docs/architecture/`](../../docs/architecture/) 为准**（那里每条断言都可回代码取证）；
 > 与代码冲突时以代码为准。本目录保留作为设计意图与实现参考。
 >
@@ -12,7 +12,7 @@
 
 ## 总体设计
 
-- **[项目总览（现状权威）](../../docs/overall-architecture.md)**
+- **[项目总览（现状权威）](../../docs/architecture/overall-architecture.md)**
 - [数据所有权](./data-ownership.md)
 - [集成规范](./integration-standards.md)
 - [生产就绪标准](./production-readiness.md)

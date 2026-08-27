@@ -1,9 +1,12 @@
-# 架构细节层
+# 本目录导航
 
 > 取证时点：2026-08-27
 >
-> **入口不在这里**——先读 [`../overall-architecture.md`](../overall-architecture.md)。
-> 本目录是它的下一层：总览回答「去哪看」，这里回答「锚点在哪、规则是什么」。
+> **入口是同目录下的 [`overall-architecture.md`](overall-architecture.md)**，先读它。
+> 本文件只是 `repos/` `topics/` `decisions/` 三个子目录的导航：
+> 总览回答「去哪看」，子目录回答「锚点在哪、规则是什么」。
+>
+> 另有 [`request-lifecycle.md`](request-lifecycle.md)：提开发请求时读，与架构描述无关。
 
 ## 按任务找
 

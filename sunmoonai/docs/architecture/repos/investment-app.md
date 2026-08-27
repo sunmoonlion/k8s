@@ -8,7 +8,7 @@
 消费 knowledge 的 retrieval v1 契约。
 
 **五仓中领域代码最重的一个**：112 个文件 / 8531 行。也是唯一有完整状态机、
-检查点恢复、事件流与副作用记账的仓——[`../../request-lifecycle.md`](../../request-lifecycle.md)
+检查点恢复、事件流与副作用记账的仓——[`../request-lifecycle.md`](../request-lifecycle.md)
 §7 的映射表以本仓为对象。
 
 ## 2. 结构（只列模板之外）
