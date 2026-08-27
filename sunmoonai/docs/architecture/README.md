@@ -6,7 +6,9 @@
 > 本文件只是 `repos/` `topics/` `decisions/` 三个子目录的导航：
 > 总览回答「去哪看」，子目录回答「锚点在哪、规则是什么」。
 >
-> 另有 [`request-lifecycle.md`](request-lifecycle.md)：提开发请求时读，与架构描述无关。
+> 另有两份与架构描述无关、按需读的流程文档：
+> [`request-lifecycle.md`](request-lifecycle.md)（提开发请求时读）与
+> [`cross-machine-review.md`](cross-machine-review.md)（推送、拉取、跨机审核时读）。
 
 ## 按任务找
 
@@ -19,6 +21,7 @@
 | 发版、改部署清单 | [`topics/release.md`](topics/release.md) + [`repos/k8s.md`](repos/k8s.md) |
 | 确认某个能力是否真的接线了 | 对应仓文件的**「已知未实现」**一节 |
 | 知道「当初为什么这么定」 | [`decisions/`](decisions/)（13 条 ADR） |
+| 推送改动、跨机拉取、审核别人的分支 | [`cross-machine-review.md`](cross-machine-review.md) |
 | 复核本文档集的某条断言 | [`verify.md`](verify.md) |
 
 ## 目录
@@ -27,6 +30,7 @@
 architecture/
 ├── README.md      本文件
 ├── verify.md      验证方法、本轮实测结果、易腐值真源、明确的盲区
+├── cross-machine-review.md  推送/拉取顺序、跨机审核流程、子模块的坑
 ├── repos/         一仓一文件
 │   ├── tpl-app.md          模板仓：定义标准形态，无领域
 │   ├── info-app.md         资讯域：采集→治理→分发
