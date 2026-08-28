@@ -55,7 +55,7 @@ git -C k8s show --name-status d7af5c2b | grep '^D'      # 完整删除清单
 | --- | --- |
 | §1 权威排序、§1.1 漂移尺子、§4 维护约定与编辑自检、§6 接手演练 | [`governance.md`](governance.md) |
 | §2 请求闭环、§3 进度单面、§5 评审流程与粒度 | [`request-lifecycle.md`](request-lifecycle.md) |
-| §7 Git 与分支纪律、§8 多助手协作 | [`multi-assistant-workflow.md`](multi-assistant-workflow.md) |
+| §7 Git 与分支纪律、§8 多助手协作 | [`../dev-plan/agent-discipline.md`](../dev-plan/agent-discipline.md) |
 
 ### 3.3 requests/ REQ-001 ~ REQ-010 → 本节即取代记录
 

@@ -7,7 +7,7 @@
 >
 > 承接原 `sunmoonai-architecture/AGENTS.md` 中仍然有效的治理条文；
 > 该文件已随旧文档集删除，其请求流程部分见 [`request-lifecycle.md`](request-lifecycle.md)，
-> 多助手与推送纪律见 [`multi-assistant-workflow.md`](multi-assistant-workflow.md)。
+> 多助手与推送纪律见 [`collaboration.md`](collaboration.md) 与 [`../dev-plan/agent-discipline.md`](../dev-plan/agent-discipline.md)。
 
 ## 1. 权威排序
 

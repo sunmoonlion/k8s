@@ -1,4 +1,4 @@
-# 本目录导航
+# 项目指南 · 导航
 
 > 取证时点：2026-08-28
 >
@@ -6,9 +6,11 @@
 > 本文件只是 `repos/` `topics/` `decisions/` 三个子目录的导航：
 > 总览回答「去哪看」，子目录回答「锚点在哪、规则是什么」。
 >
-> 另有两份与架构描述无关、按需读的流程文档：
-> [`request-lifecycle.md`](request-lifecycle.md)（提开发请求时读）与
-> [`multi-assistant-workflow.md`](multi-assistant-workflow.md)（多助手并行提案、比较、推送拉取时读）。
+> 本目录回答**「项目是什么、怎么做事」**，随代码变化更新。
+> **「接下来建什么」在 [`../dev-plan/`](../dev-plan/)**，随决策变化更新——两者不要混写。
+>
+> 另有两份按需读的流程文档：[`request-lifecycle.md`](request-lifecycle.md)（提开发请求时读）
+> 与 [`collaboration.md`](collaboration.md)（跨机拉取、推送、子模块的坑）。
 
 ## 本集之外：`docs/` 下的其他目录是什么
 
@@ -42,23 +44,22 @@
 | 发版、改部署清单 | [`topics/release.md`](topics/release.md) + [`repos/k8s.md`](repos/k8s.md) |
 | 确认某个能力是否真的接线了 | 对应仓文件的**「已知未实现」**一节 |
 | 知道「当初为什么这么定」 | [`decisions/`](decisions/)（14 条 ADR） |
-| 让多个助手对同一需求各出方案 | [`multi-assistant-workflow.md`](multi-assistant-workflow.md) §1–§3；脚本 [`parallel-proposals.py`](parallel-proposals.py) |
-| 审核别人的产出 | [`multi-assistant-workflow.md`](multi-assistant-workflow.md) §4 |
-| 推送改动、跨机拉取 | [`multi-assistant-workflow.md`](multi-assistant-workflow.md) §5–§8 |
+| 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-plan/agent-discipline.md`](../dev-plan/agent-discipline.md) |
+| 推送改动、跨机拉取、子模块的坑 | [`collaboration.md`](collaboration.md) |
+| 知道接下来要建什么 | [`../dev-plan/`](../dev-plan/) |
 | 复核本文档集的某条断言 | [`verify.md`](verify.md)；机械检查跑 `python3 check-docs.py` |
 | 这套文档怎么来的、取代了什么、有哪些未决事项 | [`origin-record.md`](origin-record.md) |
 
 ## 目录
 
 ```
-architecture/
+project-guide/
 ├── README.md      本文件（导航 + 本集之外的目录定性）
 ├── governance.md  动手前必读：权威排序、漂移尺子、维护与写作约定、编辑自检
 ├── origin-record.md  来历、取代记录、未决事项（只追加）
 ├── check-docs.py  机械检查：坏链/空链接/易腐值/取证时点保鲜
 ├── verify.md      验证方法、本轮实测结果、易腐值真源、明确的盲区
-├── multi-assistant-workflow.md  并行提案与隔离、审核两阶段、推送拉取、子模块的坑
-├── parallel-proposals.py  模式 A 的自动化：N 路隔离实例各出方案
+├── collaboration.md  跨机与多仓协作机制：拉取/推送顺序、子模块的坑
 ├── repos/         一仓一文件
 │   ├── tpl-app.md          模板仓：定义标准形态，无领域
 │   ├── info-app.md         资讯域：采集→治理→分发
@@ -70,7 +71,8 @@ architecture/
 │   ├── identity.md    浏览器身份 vs 服务身份、Casdoor、scope
 │   ├── data.md        主档归属、派生系统、迁移纪律、Outbox
 │   └── release.md     发布单元、digest 纪律、门禁分层
-└── decisions/     14 条 ADR，追加不覆写
+└── decisions/     14 条 ADR，**不再新增**，保留作历史查证
+                （其结论已写入 ../dev-plan/README.md「既有约束」）
 ```
 
 ## 两种修改语义，别混
@@ -79,7 +81,7 @@ architecture/
 | --- | --- | --- |
 | `overall-architecture.md` `repos/` `topics/` `verify.md` | **现状投影** | **覆盖式重写**：直接替换旧条文，只反映当前有效事实；历史由 git 承担 |
 | `decisions/` `origin-record.md` `merge-review/` | **历史记录** | **只追加**：推翻一条要写新的一条并在旧的上标注被取代，不删不改 |
-| `governance.md` `request-lifecycle.md` `multi-assistant-workflow.md` | **规则** | 改动前应有共识；改完要检查依赖它的文档 |
+| `governance.md` `request-lifecycle.md` `collaboration.md` | **规则** | 改动前应有共识；改完要检查依赖它的文档 |
 
 ## 写作约定
 

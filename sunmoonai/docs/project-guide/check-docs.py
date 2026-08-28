@@ -108,12 +108,16 @@ def check(root: pathlib.Path, repos: pathlib.Path | None):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('--root', default='.', help='文档集根目录，默认当前目录')
+    ap.add_argument('--also', action='append', default=[],
+                    help='额外一起检查的目录（如 ../dev-plan），可多次')
     ap.add_argument('--repos', default=None, help='五仓所在父目录，给了才做保鲜检查')
     a = ap.parse_args()
     root = pathlib.Path(a.root).resolve()
     repos = pathlib.Path(a.repos).resolve() if a.repos else None
 
     problems = check(root, repos)
+    for extra in a.also:
+        problems += [f'[{extra}] {x}' for x in check(pathlib.Path(extra).resolve(), repos)]
     if not problems:
         print('✓ 全部通过')
         return 0

@@ -1,10 +1,14 @@
-# 多助手协作流程
+# 智能体运作纪律
 
-> 最后更新：2026-08-28 ｜ git 机制已在"零凭据隔离环境"实测；并行提案脚本已实测隔离与容错
+> 最后更新：2026-08-28
 >
-> 本项目由多个 AI 助手（cursor / kimi / luna / opus / qwen3.8 …）并行工作，
-> 每个助手一条分支。本文件写清楚三件事：怎么让多个助手对同一需求各出方案、
-> 怎么让他们评审并被主方吸收、怎么把改动发出去和拉下来。
+> **这是通用部分的行为规范。**它最初写作"多个 AI 助手怎么协作"，
+> 但那套纪律与"多个智能体怎么协作完成一个任务"是同一件事——
+> 区别只在执行者是助手还是程序。本项目决定按它来建智能体的通用部分。
+>
+> 每一条都来自**真实发生过的失败**，不是设想。
+> 纯粹的 git 操作机制（拉取、推送、子模块）不在本文，
+> 见 [`../project-guide/collaboration.md`](../project-guide/collaboration.md)。
 
 ## 1. 三种模式，别混
 
@@ -16,7 +20,7 @@
 | 闭环 | 比较 → 综合 | 结论交回 | **跑评审方的验收标准，公布结果** |
 | 用途 | 拿到多个独立信号 | 验证工作是否成立 | 让已有产物被外部视角修正 |
 
-**三种模式共用同一套 git 机制（§6–§8），但对"给什么材料"的要求不同。**
+**三种模式共用同一套 git 机制（见 [`../project-guide/collaboration.md`](../project-guide/collaboration.md)），但对"给什么材料"的要求不同。**
 
 C 是 B 的多方版本加上吸收协议。它值得单列，因为**吸收环节是最容易失守的地方**：
 被审方既是接受方又是判定方，不加约束就等于被告当法官（见 §5.3）。
@@ -29,7 +33,7 @@ C 是 B 的多方版本加上吸收协议。它值得单列，因为**吸收环�
 得到的是"对 A 的改写"而不是独立判断。那样问 N 个助手的成本花了，
 拿到的信息量却接近问一个。
 
-同一条逻辑在本文档集内已有先例：`verify.md` §7 要求重写投影时
+同一条逻辑在本文档集内已有先例：`../project-guide/verify.md` §7 要求重写投影时
 "只读代码，禁止读本文档集，否则产出会退化为对旧文本的改写"。
 
 **三个阶段，可见性不同：**
@@ -41,7 +45,7 @@ C 是 B 的多方版本加上吸收协议。它值得单列，因为**吸收环�
 ```
 
 ③ 阶段允许读别人的方案，但**不得直接拼接**——现有方案只作"该核对什么"的
-候选清单，结论仍须回代码取证重写（同 `verify.md` §7）。
+候选清单，结论仍须回代码取证重写（同 `../project-guide/verify.md` §7）。
 
 ## 3. 提案模式：发什么，不发什么
 
@@ -49,9 +53,9 @@ C 是 B 的多方版本加上吸收协议。它值得单列，因为**吸收环�
 
 | 必给 | 说明 |
 | --- | --- |
-| 原始需求 | 用户原话，一字不改（见 [`request-lifecycle.md`](request-lifecycle.md) R1） |
+| 原始需求 | 用户原话，一字不改（见 [`../project-guide/request-lifecycle.md`](../project-guide/request-lifecycle.md) R1） |
 | 验收标准 | 客观、第三方可判定（R5）。这是助手自检的依据 |
-| 上下文入口 | 指向 [`overall-architecture.md`](overall-architecture.md)，让它自己按需深入 |
+| 上下文入口 | 指向 [`../project-guide/overall-architecture.md`](../project-guide/overall-architecture.md)，让它自己按需深入 |
 | 边界 | 含什么 / 不含什么 / 不含的归谁（R3） |
 
 | **不给** | 为什么 |
@@ -78,7 +82,7 @@ python3 parallel-proposals.py --request req.md --n 5 --out ./proposals
 此前同机隔离"只能靠明确指令，机制上拦不住"。
 
 产出的 `manifest.json` 记录每路的模型、耗时、token 与状态，
-是证据账（[`request-lifecycle.md`](request-lifecycle.md) §7）的最小形态。
+是证据账（[`../project-guide/request-lifecycle.md`](../project-guide/request-lifecycle.md) §7）的最小形态。
 
 **已验证到哪一步**（2026-08-28，本机实测）：
 
@@ -118,7 +122,7 @@ python3 parallel-proposals.py --request req.md --n 5 --out ./proposals
 
 多家助手评审主方产出、主方吸收意见。**本项目已实跑过一轮**（2026-08-27，
 qoder 评审 opus 的文档重构），下列规则全部来自那一轮暴露的实际问题，
-记录见 [`merge-review/`](merge-review/) 与 [`origin-record.md`](origin-record.md)。
+记录见 [`../project-guide/merge-review/`](../project-guide/merge-review/) 与 [`../project-guide/origin-record.md`](../project-guide/origin-record.md)。
 
 ### 5.1 为什么值得做
 
@@ -136,7 +140,7 @@ qoder 评审 opus 的文档重构），下列规则全部来自那一轮暴露�
 | **覆盖范围**：看了哪些仓/目录，**没看哪些** | 产生误报，且未覆盖区域会被误当作"已审"。实例：评审只看了 `k8s` 一个仓，对已在 App 子仓修复的问题报了"未处置" |
 | **可判定的验收标准** | 吸收方无从证明自己真的吸收了 |
 
-第二条尤其重要：本文档集要求投影自陈盲区（[`verify.md`](verify.md) §6），
+第二条尤其重要：本文档集要求投影自陈盲区（[`../project-guide/verify.md`](../project-guide/verify.md) §6），
 **评审同样是一种产出，同样要自陈盲区**。
 
 ### 5.3 吸收方必须留处置记录
@@ -181,155 +185,3 @@ qoder 评审 opus 的文档重构），下列规则全部来自那一轮暴露�
 
 因此模式 C 的产出**不构成"已验证"的背书**，只构成"经过一次外部检视"。
 合并记录里应当照此措辞。
-
-## 6. 仓库拓扑：为什么发改动这件事不简单
-
-一次完整同步涉及 **17 个 git 仓**，不是 5 个：
-
-```
-k8s                    单仓，无子模块
-tpl-app                ├── tpl-backend
-                       ├── tpl-admin-frontend      每个 App 父仓
-                       └── tpl-web-frontend        含 3 个子模块
-info-app / knowledge-app / investment-app  （各同上）
-                       = 5 + 12 = 17
-```
-
-两条硬约束：
-
-- **五仓必须并列放在同一父目录**——`k8s` 的 render 脚本按
-  `../tpl-app/k8s-deployment` 的相对路径引用，不并列直接失败。
-- **推送顺序：子仓先，父仓后。**父仓的 gitlink 指向子仓提交，
-  先推父仓会让对方 `submodule update` 拉不到东西。
-
-### 远端
-
-| 层 | origin（规范） | gitee（镜像） |
-| --- | --- | --- |
-| 5 个父仓 / k8s | `git@github.com:sunmoonlion/<仓>.git`（SSH） | `https://gitee.com/sunmoonlion/<仓>.git` |
-| 12 个子仓 | 同上 | 同上 |
-
-**17 个仓在两个远端均为公开**，匿名 HTTPS 可读——**拉取方不需要任何凭据、
-不需要任何特殊配置**。推送才需要凭据。
-
-### 分支
-
-一助手一条分支：`cursor` / `kimi` / `luna` / `opus` / `qwen3.8`，主线 `master`。
-
-**子仓的分支不一定齐全**：只有实际改动过的子仓才有对应分支，
-其余停在父仓 gitlink 钉住的提交上（detached HEAD）。这是正常状态，不必修。
-
-## 7. 拉取
-
-```bash
-mkdir -p ~/work && cd ~/work
-BRANCH=opus
-
-for r in k8s tpl-app info-app knowledge-app investment-app; do
-  git clone -b "$BRANCH" --recurse-submodules \
-    "https://github.com/sunmoonlion/$r.git"
-done
-```
-
-网络不通时把 `github.com` 换成 `gitee.com`，两边内容一致。
-
-更新已有检出：
-
-```bash
-for r in k8s tpl-app info-app knowledge-app investment-app; do
-  git -C "$r" fetch origin
-  git -C "$r" checkout "$BRANCH" && git -C "$r" pull --ff-only
-  git -C "$r" submodule update --init --recursive
-done
-```
-
-比较（§2 的②比较阶段，核心动作）：
-
-```bash
-git -C k8s diff master..opus --stat            # 某助手相对主线改了什么
-git -C k8s diff kimi..opus -- sunmoonai/docs/  # 两个助手的方案差异
-```
-
-## 8. 推送
-
-顺序不能反。子仓只推有该分支的（见 §6）：
-
-```bash
-cd <你的工作区>
-B=$(git -C k8s branch --show-current)
-
-# 1) 子仓（12 个，跳过没有该分支的）
-for a in tpl info knowledge investment; do
-  for c in backend admin-frontend web-frontend; do
-    d="$a-app/$a-$c"
-    git -C "$d" rev-parse --verify -q "$B" >/dev/null 2>&1 || continue
-    git -C "$d" push origin "$B" && git -C "$d" push gitee "$B"
-  done
-done
-
-# 2) 父仓与 k8s
-for r in tpl-app info-app knowledge-app investment-app k8s; do
-  git -C "$r" push origin "$B" && git -C "$r" push gitee "$B"
-done
-```
-
-### 子模块处于 detached HEAD 时
-
-本项目的子模块常处于游离状态。**直接 commit 会产生游离提交，可能丢失。**
-先在**当前 HEAD 处**建分支：
-
-```bash
-git -C "$d" checkout -b "$B"     # 已存在则改用 git checkout "$B"
-```
-
-⚠ 必须在**当前 HEAD** 处建，**不能** `checkout master` 再建——
-部分子仓的 HEAD 不等于 master（父仓钉的是历史提交），从 master 建会丢掉那个点。
-
-## 9. 同机的多个助手
-
-本机 `worktrees/*` 下各分支是同一对象库的 git worktree，
-**提交后立即互相可见，不需要推送**：
-
-```bash
-git -C <主检出>/k8s worktree list      # 有哪些工作区
-git -C <主检出>/k8s log opus           # 直接读别的分支
-```
-
-⚠ 但这也意味着**人工执行时，同机隔离是靠自律的**：一个助手完全可以去读另一个分支的产出。
-提案阶段要保证隔离，只能靠明确指令（"不得读其他分支"），机制上拦不住。
-跨机时隔离是天然的。
-
-**脚本化执行则不然**——[`parallel-proposals.py`](parallel-proposals.py)
-给每路独立进程与独立 `CODEX_HOME`，隔离由机制保证（见 §3.1）。
-
-## 10. 助手没有终端时
-
-网页对话式 AI 跑不了命令。给它：原始需求 + 产物全文或 diff +
-提交方**已跑出的命令原始输出**（贴原文，不是结论）。
-
-**这种参与只能验证逻辑一致性，不能验证事实**——它无法确认某个位置是否真的存在。
-因此它的结论里必须标注"未经实际验证"，不能与跑过命令的结论等同看待。
-
-## 11. 坑
-
-| 坑 | 说明 |
-| --- | --- |
-| 提案阶段泄露了别人的方案 | 得到的是趋同不是独立信号，等于白问（§2） |
-| 审核说明写太全 | 划定了审核范围，看似独立实则锚定（§4） |
-| 评审没声明所审提交号与覆盖范围 | 评审天然滞后；未覆盖区被误当作已审（§5.2） |
-| 吸收方判"误报"却不举证 | 被告当法官。误报判定本身必须可复核（§5.3） |
-| 吸收完不回跑评审方的验收标准 | 循环没闭合，无从证明真的吸收了（§5.4） |
-| 把"经过评审"说成"已验证" | 评审方漏了什么无从得知，不构成背书（§5.6） |
-| 推送顺序反了 | 子仓先、父仓后。反了对方 `submodule update` 失败 |
-| 五仓没并列 | render 脚本按相对路径引用，会失败 |
-| 在 detached HEAD 上直接 commit | 提交游离、可能丢失。先在当前 HEAD 建分支 |
-| 从 master 建分支 | 部分子仓 HEAD ≠ master，会丢掉父仓钉的提交点 |
-| 只推了一个远端 | 两个都要推，否则镜像不一致 |
-| 某机器只能上 Gitee | 配一次重定向（仓库已全部公开，通常不需要）：<br>`git config --global url."https://gitee.com/sunmoonlion/".insteadOf "https://github.com/sunmoonlion/"` |
-| **仓库是公开的** | 提交前确认没有凭据混入。历史一旦公开无法收回 |
-
-## 12. 相关
-
-- 请求怎么提、怎么验收：[`request-lifecycle.md`](request-lifecycle.md)
-- 项目全貌（发给助手的上下文入口）：[`overall-architecture.md`](overall-architecture.md)
-- 验证方法与盲区：[`verify.md`](verify.md)
