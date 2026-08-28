@@ -75,23 +75,43 @@ def check(root: pathlib.Path, repos: pathlib.Path | None):
 
     # --- 4. 保鲜 ---
     if repos:
+        # 只看**代码**的最近提交：文档改动不应让文档自己过期。
+        # 排除文档路径，否则每次改文档都会把全部文档判为过期。
+        # 子模块单独扫：父仓里子模块只是一个 gitlink，纯文档提交也会改动它，
+        # 从父仓看无法区分"子模块改了代码"还是"子模块改了文档"。
+        EXCL = [':(exclude)sunmoonai/docs', ':(exclude)docs', ':(exclude)*.md',
+                ':(exclude)*.mdc', ':(exclude).cursor']
+
+        def submodules(d):
+            try:
+                return subprocess.run(
+                    ['git', '-C', str(d), 'submodule', '--quiet', 'foreach',
+                     '--recursive', 'echo $sm_path'],
+                    capture_output=True, text=True, timeout=60).stdout.split()
+            except Exception:
+                return []
+
+        def last_code_commit(d, subs=()):
+            # 子模块的 gitlink 也要排除：它只是一个指针，子模块自己会被单独扫。
+            excl = EXCL + [f':(exclude){s}' for s in subs]
+            try:
+                return subprocess.run(
+                    ['git', '-C', str(d), 'log', '-1', '--format=%cs', '--', '.'] + excl,
+                    capture_output=True, text=True, timeout=30).stdout.strip()
+            except Exception:
+                return ''
+
         newest = None
         for r in ['k8s', 'tpl-app', 'info-app', 'knowledge-app', 'investment-app']:
             d = repos / r
             if not (d / '.git').exists():
                 continue
-            try:
-                # 只看**代码**的最近提交：文档改动不应让文档自己过期。
-                # `:(exclude)` 排除文档路径，否则每次改文档都会把全部文档判为过期。
-                out = subprocess.run(
-                    ['git', '-C', str(d), 'log', '-1', '--format=%cs', '--',
-                     '.', ':(exclude)sunmoonai/docs', ':(exclude)docs',
-                     ':(exclude)*.md'],
-                    capture_output=True, text=True, timeout=30).stdout.strip()
-                if out:
-                    newest = max(newest, out) if newest else out
-            except Exception:
-                pass
+            subs = submodules(d)
+            cands = [last_code_commit(d, subs)]
+            cands += [last_code_commit(d / s, submodules(d / s)) for s in subs]
+            for c in cands:
+                if c:
+                    newest = max(newest, c) if newest else c
         if newest:
             for p in docs:
                 m = STAMP.search(p.read_text(encoding='utf-8'))

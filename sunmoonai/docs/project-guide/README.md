@@ -30,7 +30,7 @@
 | `docs/` 下其余散落 md | 环境变量、Harbor、Celery 等主题笔记 | 不一 | 参考，未逐条与代码核对 |
 | `app-platform/docs/`（本目录之外） | 14 份目标态设计文档 | — | **已标注为"实现参考，非权威"**——它自陈"描述长期边界和目标状态" |
 
-清理动作本身未做，登记为 [`origin-record.md`](origin-record.md) §4 的 U8。
+清理动作本身未做，登记为 [`../dev-plan/open-issues.md`](../dev-plan/open-issues.md) 的 O8。
 
 ## 按任务找
 
@@ -48,7 +48,8 @@
 | 推送改动、跨机拉取、子模块的坑 | [`collaboration.md`](collaboration.md) |
 | 知道接下来要建什么 | [`../dev-plan/`](../dev-plan/) |
 | 复核本文档集的某条断言 | [`verify.md`](verify.md)；机械检查跑 `python3 check-docs.py` |
-| 这套文档怎么来的、取代了什么、有哪些未决事项 | [`origin-record.md`](origin-record.md) |
+| 这套文档怎么来的、取代了什么 | [`history.md`](history.md) |
+| 已查实但未处置的缺口 | [`../dev-plan/open-issues.md`](../dev-plan/open-issues.md) |
 
 ## 目录
 
@@ -56,7 +57,7 @@
 project-guide/
 ├── README.md      本文件（导航 + 本集之外的目录定性）
 ├── governance.md  动手前必读：权威排序、漂移尺子、维护与写作约定、编辑自检
-├── origin-record.md  来历、取代记录、未决事项（只追加）
+├── history.md     来历与取代记录（归档，只追加）
 ├── check-docs.py  机械检查：坏链/空链接/易腐值/取证时点保鲜
 ├── verify.md      验证方法、本轮实测结果、易腐值真源、明确的盲区
 ├── collaboration.md  跨机与多仓协作机制：拉取/推送顺序、子模块的坑
@@ -80,7 +81,7 @@ project-guide/
 | 目录 | 语义 | 怎么改 |
 | --- | --- | --- |
 | `overall-architecture.md` `repos/` `topics/` `verify.md` | **现状投影** | **覆盖式重写**：直接替换旧条文，只反映当前有效事实；历史由 git 承担 |
-| `decisions/` `origin-record.md` `merge-review/` | **历史记录** | **只追加**：推翻一条要写新的一条并在旧的上标注被取代，不删不改 |
+| `decisions/` `history.md` `merge-review/` | **历史记录** | **只追加**：推翻一条要写新的一条并在旧的上标注被取代，不删不改 |
 | `governance.md` `request-lifecycle.md` `collaboration.md` | **规则** | 改动前应有共识；改完要检查依赖它的文档 |
 
 ## 写作约定
@@ -95,5 +96,5 @@ project-guide/
 - **前端未逐文件深读**：约 570 个 ts/tsx，核到了结构、入口、契约与关键配置层。
 - **前端的 `CLAUDE.md` 是本轮重写的，但前端本身未逐文件深读**——这是本轮
   风险最高的组合，逐条核对见 [`verify.md`](verify.md) §5。
-- **八项未决事项**（版本矛盾、RAGFlow CANCEL、RunBudget 未接线等）
-  尚无去向，见 [`origin-record.md`](origin-record.md) §4。
+- **八项已知缺口**（版本矛盾、RAGFlow CANCEL、RunBudget 未接线等）
+  尚无去向，见 [`../dev-plan/open-issues.md`](../dev-plan/open-issues.md)。

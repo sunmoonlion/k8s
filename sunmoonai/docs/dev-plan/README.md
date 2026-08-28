@@ -110,9 +110,8 @@ harness 并需凭据。
 | U4 | `AgentProfile` 的具体字段 | 专用部分的载体 |
 | U5 | 外部 harness 的部署形态（服务端如何管理其进程与凭据） | 影响 U2 |
 
-另有八项从代码投影中查出的缺口，见
-[`../project-guide/origin-record.md`](../project-guide/origin-record.md) §4，
-其中 **U3（`RunBudget` 未接线）** 与本表的 U3 是同一件事。
+另有八项从代码投影中查出的缺口，见 [`open-issues.md`](open-issues.md)，
+其中 **O3（`RunBudget` 未接线）** 与本表的 U3 是同一件事。
 
 ## 结构化数据问答：归专用，先做最小实现
 

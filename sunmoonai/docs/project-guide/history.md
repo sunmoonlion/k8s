@@ -1,9 +1,13 @@
 # 本文档集的来历与取代记录
 
-> 最后更新：2026-08-27
+> 最后更新：2026-08-28
 >
-> 本文件回答三件事：这套文档怎么来的、取代了什么、留下了哪些未决事项。
-> 它是**一次性的历史记录，只追加不覆写**——与 `repos/` `topics/` 的覆盖式重写语义不同。
+> 本文件回答两件事：这套文档怎么来的、取代了什么。**归档，写完即冻结。**
+> 它只追加不覆写——与 `repos/` `topics/` 的覆盖式重写语义不同。
+>
+> 本轮查出的八项已知缺口原在本文件 §4，已移到
+> [`../dev-plan/open-issues.md`](../dev-plan/open-issues.md)——它们是活的待办，
+> 不该埋在归档里。
 
 ## 1. 参与方与产出
 
@@ -74,22 +78,11 @@ git -C k8s show --name-status d7af5c2b | grep '^D'      # 完整删除清单
 | 009 休眠能力可识别 | PROPOSED，未产出 | 休眠项清单进各 `repos/*.md`「已知未实现」与总览 §9；**其"声明+校验"机制未落地**，见 §4 |
 | 010 REQ 模板完善 | PROPOSED，未落地 | 七段式模板与八条横切规则进 [`request-lifecycle.md`](request-lifecycle.md) §4 §5 |
 
-## 4. 未决事项
+## 4. 未决事项（已移出）
 
-以下是本轮**发现但未处置**的事项。按 [`request-lifecycle.md`](request-lifecycle.md) R6，
-它们不应只存在于描述里——每条要么立请求，要么写一条 ADR 声明"已知并接受"。
-**当前状态：全部待定。**
-
-| # | 事项 | 出处 | 性质 |
-| --- | --- | --- | --- |
-| U1 | 代码层 `2.0.0.dev0` 与部署层 `formal_release: true` 矛盾，且有测试阻止代码层追平 | 总览 §9.1 | 需澄清是有意还是缺陷 |
-| U2 | RAGFlow `CANCEL` 被当作成功，被取消的摄入标记为 succeeded | [`repos/knowledge-app.md`](repos/knowledge-app.md) §7 | 数据完整性风险 |
-| U3 | `RunBudget` 生产未接线，`budget_exceeded` 状态不可达 | [`repos/investment-app.md`](repos/investment-app.md) §4.5 | 已设计未接线 |
-| U4 | 共享 Outbox/Inbox 四仓零业务调用 | 总览 §9.2 | 模板有意留白，倾向"声明接受" |
-| U5 | 四仓均无 `beat_schedule`，Scheduler 空转 | 总览 §9.2 | 同上 |
-| U6 | 契约 `source_href` 与真实路由不匹配，照字面 GET 会 404 | [`topics/contracts.md`](topics/contracts.md) §5 | 契约缺陷 |
-| U7 | REQ-009 的"休眠能力声明+校验"机制未落地 | §3.3 | 机制缺口 |
-| U8 | `docs/` 下并存的历史目录尚未清理 | [`README.md`](README.md) §本集之外 | 见该节 |
+本轮发现但未处置的八项，见
+[`../dev-plan/open-issues.md`](../dev-plan/open-issues.md)（编号改为 O1–O8）。
+本节保留为空壳以免旧引用失效。
 
 ## 5. 本轮的验证边界
 
