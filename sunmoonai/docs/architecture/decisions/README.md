@@ -15,8 +15,9 @@
 
 ## 索引
 
-两批：0001–0006 是领域与集成的奠基决策（2026-06-11）；
-0007–0013 是 Architecture v2 重构期的拓扑收敛决策（2026-08-01）。
+三批：0001–0006 是领域与集成的奠基决策（2026-06-11）；
+0007–0013 是 Architecture v2 重构期的拓扑收敛决策（2026-08-01）；
+0014 起是智能体架构决策（2026-08 起）。
 
 | # | 决策 | 状态 | 相关 |
 | --- | --- | --- | --- |
@@ -33,6 +34,7 @@
 | [0011](0011-backend-runtime-roles.md) | **一个 Backend 代码库按运行角色部署**（API/Worker/Scheduler/Migration） | 已接受 | [总览 §3.1](../overall-architecture.md) |
 | [0012](0012-template-first-adoption.md) | **模板优先**：公共能力先进模板过门禁，再完整同步实例 | 已接受 | [`repos/tpl-app.md`](../repos/tpl-app.md) |
 | [0013](0013-release-artifact-lifecycle.md) | 源码、镜像、部署与数据基线**共同发布**；仅靠 Git 标签不能恢复运行环境 | 已接受 | [`topics/release.md`](../topics/release.md) |
+| [0014](0014-agent-generic-domain-split.md) | **智能体分通用与专用**；执行层租用外部 harness，纪律与四本账自建；v5 降级为历史设计输入 | 已接受 | [`multi-assistant-workflow.md`](../multi-assistant-workflow.md) · [`request-lifecycle.md`](../request-lifecycle.md) |
 
 ## 读的顺序
 
@@ -43,6 +45,7 @@
 - **要理解为什么只有一个 Backend、却有四个进程** → 0007、0011
 - **要理解为什么改公共能力必须先动模板** → 0012
 - **要理解为什么部署只认 digest 不认 tag** → 0013
+- **要理解智能体为什么分通用/专用、执行层为什么租不自建** → 0014
 
 ## 提一条新 ADR
 

@@ -81,8 +81,13 @@ def check(root: pathlib.Path, repos: pathlib.Path | None):
             if not (d / '.git').exists():
                 continue
             try:
-                out = subprocess.run(['git', '-C', str(d), 'log', '-1', '--format=%cs'],
-                                     capture_output=True, text=True, timeout=30).stdout.strip()
+                # 只看**代码**的最近提交：文档改动不应让文档自己过期。
+                # `:(exclude)` 排除文档路径，否则每次改文档都会把全部文档判为过期。
+                out = subprocess.run(
+                    ['git', '-C', str(d), 'log', '-1', '--format=%cs', '--',
+                     '.', ':(exclude)sunmoonai/docs', ':(exclude)docs',
+                     ':(exclude)*.md'],
+                    capture_output=True, text=True, timeout=30).stdout.strip()
                 if out:
                     newest = max(newest, out) if newest else out
             except Exception:

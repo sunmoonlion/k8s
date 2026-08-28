@@ -1,6 +1,6 @@
 # 本目录导航
 
-> 取证时点：2026-08-27
+> 取证时点：2026-08-28
 >
 > **入口是同目录下的 [`overall-architecture.md`](overall-architecture.md)**，先读它。
 > 本文件只是 `repos/` `topics/` `decisions/` 三个子目录的导航：
@@ -23,7 +23,9 @@
 | `mooc-manus-v5/` | v5 架构的契约与脚本（111 文件） | 2026-08 | **已被 Architecture v2 取代**；其 `contracts/` 不在现行三套契约之列（见 [`topics/contracts.md`](topics/contracts.md) §7） |
 | `recursive-architecture/` | 2025-12 的旧设计 | 2025-12 | 历史，已失效 |
 | `ai-tools/` | 工具调研笔记 | 2026-08 | 参考 |
-| `docs/` 下 23 份散落 md | 环境变量、Harbor、Celery 等主题笔记 | 不一 | 参考，未逐条与代码核对 |
+| **`mooc-manus-langgraph-longterm-plan-v5.md`** 及其实施计划、handoff | 上一轮的施工基线 | 2026-07 | **已降级为历史设计输入**（[ADR-0014](decisions/0014-agent-generic-domain-split.md)）。其**前后端对接**部分仍有效且详尽，相应工作启动时可引用；其 §14 多智能体（23 行）不作为智能体架构依据。任务游标停在 `P0-008C = PAUSED_FOR_ARCHITECTURE_REVIEW` |
+| `mooc-manus-langgraph-longterm-plan-v4.md` | v5 的前身 | 2026-07 | 历史。但其 **§20 `AgentProfile` 结构（102 行）比 v5 §14 完整**，经 ADR-0014 重新生效为专用部分的载体 |
+| `docs/` 下其余散落 md | 环境变量、Harbor、Celery 等主题笔记 | 不一 | 参考，未逐条与代码核对 |
 | `app-platform/docs/`（本目录之外） | 14 份目标态设计文档 | — | **已标注为"实现参考，非权威"**——它自陈"描述长期边界和目标状态" |
 
 清理动作本身未做，登记为 [`origin-record.md`](origin-record.md) §4 的 U8。
@@ -39,8 +41,8 @@
 | 加表、改迁移 | [`topics/data.md`](topics/data.md) |
 | 发版、改部署清单 | [`topics/release.md`](topics/release.md) + [`repos/k8s.md`](repos/k8s.md) |
 | 确认某个能力是否真的接线了 | 对应仓文件的**「已知未实现」**一节 |
-| 知道「当初为什么这么定」 | [`decisions/`](decisions/)（13 条 ADR） |
-| 让多个助手对同一需求各出方案 | [`multi-assistant-workflow.md`](multi-assistant-workflow.md) §1–§3 |
+| 知道「当初为什么这么定」 | [`decisions/`](decisions/)（14 条 ADR） |
+| 让多个助手对同一需求各出方案 | [`multi-assistant-workflow.md`](multi-assistant-workflow.md) §1–§3；脚本 [`parallel-proposals.py`](parallel-proposals.py) |
 | 审核别人的产出 | [`multi-assistant-workflow.md`](multi-assistant-workflow.md) §4 |
 | 推送改动、跨机拉取 | [`multi-assistant-workflow.md`](multi-assistant-workflow.md) §5–§8 |
 | 复核本文档集的某条断言 | [`verify.md`](verify.md)；机械检查跑 `python3 check-docs.py` |
@@ -56,6 +58,7 @@ architecture/
 ├── check-docs.py  机械检查：坏链/空链接/易腐值/取证时点保鲜
 ├── verify.md      验证方法、本轮实测结果、易腐值真源、明确的盲区
 ├── multi-assistant-workflow.md  并行提案与隔离、审核两阶段、推送拉取、子模块的坑
+├── parallel-proposals.py  模式 A 的自动化：N 路隔离实例各出方案
 ├── repos/         一仓一文件
 │   ├── tpl-app.md          模板仓：定义标准形态，无领域
 │   ├── info-app.md         资讯域：采集→治理→分发
@@ -67,7 +70,7 @@ architecture/
 │   ├── identity.md    浏览器身份 vs 服务身份、Casdoor、scope
 │   ├── data.md        主档归属、派生系统、迁移纪律、Outbox
 │   └── release.md     发布单元、digest 纪律、门禁分层
-└── decisions/     13 条 ADR，追加不覆写
+└── decisions/     14 条 ADR，追加不覆写
 ```
 
 ## 两种修改语义，别混
