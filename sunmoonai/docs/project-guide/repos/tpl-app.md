@@ -178,22 +178,6 @@ grep -rn "uuid5" tpl-backend/app/app/            # 应无结果
 wc -l tpl-backend/app/app/main.py                # 应为 5
 ```
 
-## 改模板、同步实例时
+---
 
-原 ADR-0012 的模板优先纪律。
-
-- **所有共同能力先在 tpl-app 实现并验收**，再同步实例
-- 模板发布生成 release manifest：commit、tree、镜像 digest、契约版本、测试证据
-- 同步顺序**串行固定**：Info → Knowledge → Investment。**一个实例失败不得推进下一个**
-- 「完整同步」包含：工程、认证、授权、错误、日志、审计、配置、任务、存储、UI 通用能力
-- **实例领域代码通过显式 extension point / overlay 保留，禁止清空覆盖**
-- 每个实例必须生成**模板对齐报告**，把差异分为四类：
-  领域扩展 · 配置 · 暂时兼容 · **违规漂移**
-- 每个实例独立完成静态、单元、契约、配对、KIND、身份与回滚测试
-- 父仓 gitlink 与 release manifest 必须一致
-
-复核同步顺序是否被冻结：
-
-```bash
-python3 tpl-app/verify_template_release.py   # 检查 instance_sync_order 等
-```
+**改模板、同步实例前**，先读 [`../../dev-plan/constraints.md`](../../dev-plan/constraints.md)「发布」——本页只写现状。

@@ -3,7 +3,7 @@
 
 **为什么需要它**：`test_kernel_invariants.py` 管仓内结构，`check-docs.py` 管文档，
 `test_dormant_capabilities.py` 管休眠声明——三者都够不着**跨仓**的规则。
-原 ADR 里能机械判定的六条硬禁令就落在这个缝里，
+这些硬禁令就落在这个缝里，
 于是一直靠人记得（gitlink 与 digest 两条，2026-08-29 之前是手工跑的）。
 
 **用法**
@@ -38,7 +38,7 @@ MANAGED_CREDENTIAL = re.compile(
 
 
 def rule_gitlink_reachable(root: Path, offline: bool) -> list[str]:
-    """父仓不得出现悬空 gitlink（原 ADR-0008）。
+    """父仓不得出现悬空 gitlink（规则 T4）。
 
     子仓提交没推送时，别人克隆父仓会拉不到那个 commit。
     """
@@ -71,7 +71,7 @@ def rule_gitlink_reachable(root: Path, offline: bool) -> list[str]:
 
 
 def rule_bundle_digest_matches_release(root: Path) -> list[str]:
-    """部署 bundle 引用的 digest 必须与发布清单一致（原 ADR-0013）。
+    """部署 bundle 引用的 digest 必须与发布清单一致（规则 R3）。
 
     发布采用 exact-digest-alias：晋级靠打别名，禁止重新构建。
     bundle 若指向别的 digest，说明有人绕过了门禁。
@@ -103,7 +103,7 @@ def rule_bundle_digest_matches_release(root: Path) -> list[str]:
 
 
 def rule_no_implicit_migration_on_startup(root: Path) -> list[str]:
-    """迁移由独立 Job 执行，API/Worker/Scheduler 启动不得隐式升级数据库（原 ADR-0010）。"""
+    """迁移由独立 Job 执行，API/Worker/Scheduler 启动不得隐式升级数据库（规则 D8）。"""
     problems = []
     for app in APPS:
         for role in ("api", "worker", "scheduler"):
@@ -120,7 +120,7 @@ def rule_no_implicit_migration_on_startup(root: Path) -> list[str]:
 
 
 def rule_no_cross_app_tables(root: Path) -> list[str]:
-    """禁止跨 App 直接读表（原 ADR-0007 / 0010）。
+    """禁止跨 App 直接读表（规则 D2）。
 
     判据：某个 App 的 ORM 模型里不得出现别的 App 的表名前缀。
     跨 App 只能走版本化契约、服务身份与 Outbox。
@@ -148,7 +148,7 @@ def rule_no_cross_app_tables(root: Path) -> list[str]:
 
 
 def rule_no_hostpath_exchange(root: Path) -> list[str]:
-    """不以共享宿主机目录作为正式交换协议（原 ADR-0004）。"""
+    """不以共享宿主机目录作为正式交换协议（规则 D4）。"""
     problems = []
     base = root / "k8s/sunmoonai/app-platform"
     if not base.is_dir():
@@ -163,7 +163,7 @@ def rule_no_hostpath_exchange(root: Path) -> list[str]:
 
 
 def rule_managed_credentials_not_shared(root: Path) -> list[str]:
-    """浏览器、服务、数据库凭据禁止复用（原 ADR-0009）。
+    """浏览器、服务、数据库凭据禁止复用（规则 I3）。
 
     镜像拉取凭据不在此列——那不是这三类之一，共用是正常的。
     """

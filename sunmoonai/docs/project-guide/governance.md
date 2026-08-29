@@ -15,15 +15,14 @@
 ## 1. 权威排序
 
 ```
-源代码（各仓） > 约束（../dev-plan/README.md「既有约束」） > 本文档集其余部分
+源代码（各仓） > 规则（../dev-plan/constraints.md） > 本文档集其余部分
 ```
 
 - **代码是现状的唯一真相。**本文档集是帮助理解代码的缓存，与代码冲突时以代码为准。
 - 文档之间矛盾：先比"取证时点/最后更新"的新旧，再比上面的层级，不盲目采信。
-- **约束**（[`../dev-plan/README.md`](../dev-plan/README.md)「既有约束」）是**必须遵守的规则**，
+- **规则**（[`../dev-plan/constraints.md`](../dev-plan/constraints.md)）是**必须遵守的**，
   投影是**现状的描述**。两者冲突时，说明代码违反了约束——该改代码，不是改文档。
-  原 `decisions/`（ADR）目录已删：留着仅作参考的文档不会被执行，
-  其结论已升为约束全文、变成可执行检查，或挂到动作触发点。
+  规则与投影冲突时，说明**代码违反了规则**——该改代码，不是改文档。
 
 ## 2. 接手演练
 
@@ -40,7 +39,7 @@
 | 内容 | 去哪 |
 | --- | --- |
 | 将来要做什么、应该怎样 | 请求记录（见 [`../working/request-lifecycle.md`](../working/request-lifecycle.md)） |
-| 必须遵守的约束 | [`../dev-plan/README.md`](../dev-plan/README.md)「既有约束」 |
+| 必须遵守的规则 | [`../dev-plan/constraints.md`](../dev-plan/constraints.md) |
 | 做到第几步了 | 请求的进度游标；本文档集**一律不写进度** |
 | 镜像 digest、迁移 head 等易变值 | 只指真源，见 [`verify.md`](verify.md) |
 

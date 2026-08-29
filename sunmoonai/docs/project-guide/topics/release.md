@@ -124,13 +124,6 @@ grep -h '^version' */[a-z]*-backend/app/pyproject.toml
 python3 -c "import json;print(json.load(open('k8s/sunmoonai/app-platform/info-app/deployment/bundle/release.json'))['formal_release'])"
 ```
 
-## 清理镜像时的保护范围
+---
 
-原 ADR-0013 的删除纪律。**这些不是建议，是删除前的门禁**：
-
-- Harbor **删除保护** release、live、evidence、rollback 及其 OCI 引用闭包
-- 删除前**重新采集**工作负载现状，执行 **dry-run** 并做**人工审计**；
-  删除后才运行 GC 与配额复核
-- 本地镜像只有在 Harbor 按 digest 可恢复、且 KIND 不再依赖本地候选后才能清理
-- **旧架构资产在观察窗结束前不得删除**（当前 `2.0.0` 观察窗状态见
-  `tpl-app/template-release-manifest.json` 的 `release_policy.observation_window`）
+**动发布、清镜像前**，先读 [`../../dev-plan/constraints.md`](../../dev-plan/constraints.md)「发布」——本页只写现状。

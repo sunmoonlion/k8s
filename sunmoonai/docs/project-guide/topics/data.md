@@ -43,43 +43,10 @@ LOGIN 状态；info 与 knowledge 无此步。
 
 ## 4. 迁移纪律
 
-### 做数据迁移时的七步
+### 做数据迁移时
 
-本节以上是**现状**；这里是**将来动数据时该怎么走**（原 ADR-0010）。
-
-```
-expand → backfill → reconcile → switch read → switch write → observe → contract
-```
-
-- 迁移前先生成清单：表、约束、索引、revision、数据量、所有者、Secret、备份、消费者
-- **旧写路径切换时必须 fail-closed，不得无期限双写**
-- 必要的双写必须有事务 Outbox、幂等、版本与对账，且有明确截止任务
-- 回滚窗结束前保留旧库备份、旧角色定义与恢复演练证据
-
-**六条验收项**，缺一不可：
-
-1. 可恢复备份 + 实际恢复演练
-2. 回填计数、哈希/抽样与业务不变量对账
-3. 新旧读路径结果对比
-4. 旧凭据在切换后被拒绝
-5. `migration current` 只有一个 head
-6. 回滚与重新前滚均通过
-
-
-| 规则 | 由谁保证 | 违反后果 |
-| --- | --- | --- |
-| **单链线性**，无分叉、无 merge revision | 各仓 `test_one_linear_canonical_migration_chain` | CI 失败 |
-| 迁移文件名清单**逐字**匹配测试里的列表 | 同上 | CI 失败 |
-| 恰好一个 `down_revision = None` | 同上 | CI 失败 |
-| 迁移由独立 Job 执行，跑完即删 | 各 `deployment/deploy.py` | — |
-| 迁移失败或超时**阻断整次 apply** | 同上 | `DeployError` |
-| 迁移入口固定 `python -m app.bootstrap.migration` | 各仓 `bootstrap/migration.py` | — |
-
-**改迁移必须同步改 `test_kernel_invariants.py` 里那份文件名清单**，否则 CI 失败。
-那份清单是链顺序的真源。
-
-各仓链长度（不含 `__init__.py`）：tpl 2 · info 6 · knowledge 5 · investment 5。
-迁移 head 是易腐值，本目录不记，查法见 [`../verify.md`](../verify.md)。
+程序（七步、fail-closed、六条验收）是**规则**，不写在投影里：
+见 [`../../dev-plan/constraints.md`](../../dev-plan/constraints.md)「数据」。
 
 ## 5. Outbox：四仓都有表，四仓都没接线
 
