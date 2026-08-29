@@ -59,8 +59,7 @@
 | 推送改动、跨机拉取、子模块的坑 | [`collaboration.md`](collaboration.md) |
 | 知道接下来要建什么 | [`../dev-plan/`](../dev-plan/) |
 | 复核本文档集的某条断言 | [`verify.md`](verify.md)；机械检查跑 `python3 check-docs.py` |
-| 这套文档怎么来的、取代了什么 | [`history.md`](history.md) |
-| 本轮查出的缺口都怎么处置了 | [`history.md`](history.md) §4 |
+| 本轮查出的缺口都怎么处置了 | 结论已在各自投影里；过程 `git log --grep 'O[0-9]'` |
 
 ## 目录
 
@@ -68,7 +67,6 @@
 project-guide/
 ├── README.md      本文件（导航 + 本集之外的目录定性）
 ├── governance.md  动手前必读：权威排序、漂移尺子、维护与写作约定、编辑自检
-├── history.md     来历与取代记录（归档，只追加）
 ├── check-docs.py  机械检查：坏链/空链接/易腐值/取证时点保鲜
 ├── verify.md      验证方法、本轮实测结果、易腐值真源、明确的盲区
 ├── collaboration.md  跨机与多仓协作机制：拉取/推送顺序、子模块的坑
@@ -91,7 +89,7 @@ project-guide/
 | 目录 | 语义 | 怎么改 |
 | --- | --- | --- |
 | `overall-architecture.md` `repos/` `topics/` `verify.md` | **现状投影** | **覆盖式重写**：直接替换旧条文，只反映当前有效事实；历史由 git 承担 |
-| `history.md` `merge-review/` | **历史记录** | **只追加**：推翻一条要写新的一条并在旧的上标注被取代，不删不改 |
+| `merge-review/` | **活的评审材料** | **只追加**；删除条件写在该目录 `README.md` |
 | `governance.md` `request-lifecycle.md` `collaboration.md` | **规则** | 改动前应有共识；改完要检查依赖它的文档 |
 
 ## 写作约定
@@ -107,4 +105,4 @@ project-guide/
 - **前端的 `CLAUDE.md` 是本轮重写的，但前端本身未逐文件深读**——这是本轮
   风险最高的组合，逐条核对见 [`verify.md`](verify.md) §5。
 - 本轮查出的十项缺口**已全部了结**，结论落在各自对应的投影里；
-  处置一览见 [`history.md`](history.md) §4。
+  过程见 `git log --grep 'O[0-9]'`。

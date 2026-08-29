@@ -122,7 +122,7 @@ python3 parallel-proposals.py --request req.md --n 5 --out ./proposals
 
 多家助手评审主方产出、主方吸收意见。**本项目已实跑过一轮**（2026-08-27，
 qoder 评审 opus 的文档重构），下列规则全部来自那一轮暴露的实际问题，
-记录见 [`../project-guide/merge-review/`](../project-guide/merge-review/) 与 [`../project-guide/history.md`](../project-guide/history.md)。
+记录见 [`../project-guide/merge-review/`](../project-guide/merge-review/)。
 
 ### 5.1 为什么值得做
 
