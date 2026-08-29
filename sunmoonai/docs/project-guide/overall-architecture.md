@@ -300,17 +300,11 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | **deployable** | 配置、Secret、profile 与门禁允许部署 |
 | **runtime-verified** | 有对应环境的运行态证据 |
 
-用法示例：
-
-| 能力 | 状态 |
-| --- | --- |
-| web-interaction v1 | **defined，未 wired**（默认适配器返回 503） |
-| 共享 Outbox / Inbox | **defined，未 wired**（业务层零调用） |
-| info 的 delivery outbox | **wired**（`info_crawl_service` 真在调） |
-| C1 / production profile | **未 deployable**（`PROFILE_ENABLED=false`） |
-| 任何运行态断言 | **本文档集一律不标 runtime-verified**——未连集群 |
-
 **"文件存在"只到 defined。**这是本集最容易被误读的地方。
+
+**本文档集一律不标 `runtime-verified`**——未连集群，没有那一层证据。
+
+各能力的实际状态在 §9.2 与 §9.3 标注，本节只定义词，不重复列举。
 
 ## 9. 当前状态与已知缺口
 

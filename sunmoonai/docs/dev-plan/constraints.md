@@ -100,6 +100,7 @@ expand → backfill → reconcile → switch read → switch write → observe �
 | T2 | **每个领域 App 只有一个规范 Backend** | ⚠ 自检 |
 | T3 | **一个 Backend 代码库按运行角色部署**（API / Worker / Scheduler / Migration）；模板组件不定义领域边界，运行角色不等于领域服务 | ⚠ 自检 |
 | T4 | 父仓**不得出现悬空 gitlink**——子仓提交没推，别人克隆父仓会拉不到 | 推送流程的复核步骤，见 `../working/collaboration.md` §3 |
+| T5 | 跨仓改动宣称"已完成"时，**必须带「仓 + 提交号」**——k8s 与四个 App 是并列独立仓，只写提交信息的话，评审方只能猜取证对象，会得出"改动不存在"的结论 | ⚠ 自检 |
 
 ### 什么时候才拆出专用 Worker
 
