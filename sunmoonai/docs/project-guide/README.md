@@ -13,8 +13,9 @@
 > | [`../dev-plan/`](../dev-plan/) | 代码必须符合的规则、接下来建什么 | **代码要跟着改** |
 > | [`../working/`](../working/) | 我们怎么共事：提请求、推送、写文档、评审 | 协作方式变，代码不变 |
 >
-> **规则不写在本目录**——投影只描述现状。看到"必须/禁止"而想知道谁在执行它，
-> 去 [`../dev-plan/constraints.md`](../dev-plan/constraints.md)。
+> **本目录不放规则，也不放脚本**——只描述现状。
+> 规则与其执行脚本在 [`../dev-plan/`](../dev-plan/)，
+> 文档检查脚本在 [`../working/`](../working/)。
 
 ## 本集之外：`docs/` 下的其他目录是什么
 
@@ -62,7 +63,7 @@
 | 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-plan/agent-discipline.md`](../dev-plan/agent-discipline.md) |
 | 推送改动、跨机拉取、子模块的坑 | [`../working/collaboration.md`](../working/collaboration.md) |
 | 知道接下来要建什么 | [`../dev-plan/`](../dev-plan/) |
-| 复核本文档集的某条断言 | [`verify.md`](verify.md)；机械检查跑 `python3 check-docs.py` |
+| 复核本文档集的某条断言 | [`verify.md`](verify.md)；机械检查跑 `python3 ../working/check-docs.py` |
 | 本轮查出的缺口都怎么处置了 | 结论已在各自投影里；过程 `git log --grep 'O[0-9]'` |
 
 ## 目录
@@ -71,7 +72,6 @@
 project-guide/
 ├── README.md      本文件（导航 + 本集之外的目录定性）
 ├── governance.md  动手前必读：权威排序、漂移尺子、维护与写作约定、编辑自检
-├── check-docs.py  机械检查：坏链/空链接/易腐值/取证时点保鲜
 ├── verify.md      验证方法、本轮实测结果、易腐值真源、明确的盲区
 ├── repos/         一仓一文件
 │   ├── tpl-app.md          模板仓：定义标准形态，无领域
@@ -84,7 +84,6 @@ project-guide/
 │   ├── identity.md    浏览器身份 vs 服务身份、Casdoor、scope
 │   ├── data.md        主档归属、派生系统、迁移纪律、Outbox
 │   └── release.md     发布单元、digest 纪律、门禁分层
-└── check-cross-repo.py  跨仓硬规则：gitlink/digest/隐式迁移/跨 App 表/hostPath/凭据复用
 ```
 
 ## 两种修改语义，别混
@@ -103,9 +102,7 @@ project-guide/
 ## 本轮的已知缺口（读之前先知道）
 
 - **未连集群**：所有运行态断言（Pod 状态、NetworkPolicy 实际生效、远程 profile）
-  均未验证，见 [`verify.md`](verify.md) §6。
+  均未验证，见 [`verify.md`](verify.md) §1。
 - **前端未逐文件深读**：约 570 个 ts/tsx，核到了结构、入口、契约与关键配置层。
-- **前端的 `CLAUDE.md` 是本轮重写的，但前端本身未逐文件深读**——这是本轮
-  风险最高的组合，逐条核对见 [`verify.md`](verify.md) §5。
 - 本轮查出的十项缺口**已全部了结**，结论落在各自对应的投影里；
   过程见 `git log --grep 'O[0-9]'`。

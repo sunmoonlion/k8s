@@ -126,15 +126,28 @@ def check(root: pathlib.Path, repos: pathlib.Path | None):
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument('--root', default='.', help='文档集根目录，默认当前目录')
+    ap.add_argument('--root', default=None,
+                    help='要检查的目录。不给则检查 docs/ 下的 project-guide、'
+                         'dev-plan、working 三个目录')
     ap.add_argument('--also', action='append', default=[],
                     help='额外一起检查的目录（如 ../dev-plan），可多次')
     ap.add_argument('--repos', default=None, help='五仓所在父目录，给了才做保鲜检查')
     a = ap.parse_args()
-    root = pathlib.Path(a.root).resolve()
     repos = pathlib.Path(a.repos).resolve() if a.repos else None
+    if a.root:
+        roots = [pathlib.Path(a.root).resolve()]
+    else:
+        # 本脚本住在 docs/working/，默认把同级三个目录一起检查——
+        # 分目录之后最容易出的错就是「只检查了自己那一个」。
+        docs = pathlib.Path(__file__).resolve().parent.parent
+        roots = [docs / d for d in ('project-guide', 'dev-plan', 'working')
+                 if (docs / d).is_dir()]
+    root = roots[0]
 
-    problems = check(root, repos)
+    problems = []
+    for r in roots:
+        tag = '' if len(roots) == 1 else f'[{r.name}] '
+        problems += [f'{tag}{x}' for x in check(r, repos)]
     for extra in a.also:
         problems += [f'[{extra}] {x}' for x in check(pathlib.Path(extra).resolve(), repos)]
     if not problems:

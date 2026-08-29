@@ -10,6 +10,7 @@
 | [`request-lifecycle.md`](request-lifecycle.md) | 要提一个开发请求时 |
 | [`collaboration.md`](collaboration.md) | 拉取、推送、跨机同步时；子模块的坑都在这 |
 | [`doc-conventions.md`](doc-conventions.md) | 改 `../project-guide/` 里任何文档时 |
+| [`check-docs.py`](check-docs.py) | 编辑自检第 4 条要跑的：坏链、空链接、易腐值、取证时点保鲜。**默认三个文档目录一起查** |
 | [`merge-review/`](merge-review/) | 多助手评审与吸收，带删除条件 |
 
 ## 与另外两个目录的分工

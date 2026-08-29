@@ -284,7 +284,7 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 重写为「局部编码规则 + 指向本文档集的指针」。**这是本节中唯一已处置的项**，
 其余各项仍未解决。
 
-→ 逐条核对记录与现状复核命令：[`architecture/verify.md`](verify.md) §5
+→ 复核命令：[`verify.md`](verify.md) §2
 
 
 ## 10. 去哪查

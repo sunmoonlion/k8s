@@ -163,7 +163,7 @@ Calico 集群，否则"测过了"是假的。
 | --- | --- | --- |
 | **指针** | 全部 | 五仓根 `AGENTS.md`、`.cursor/rules/`、八个组件 `CLAUDE.md`（**进目录自动注入**） |
 | **自检** | 全部 | 上面「怎么用」那节 |
-| **检查** | 标了载体的那些 | `../project-guide/check-cross-repo.py`（7 条，约 5 秒）、四仓 `test_kernel_invariants.py`、`check-docs.py` |
+| **检查** | 标了载体的那些 | 同目录 [`check-cross-repo.py`](check-cross-repo.py)（7 条，约 5 秒）、四仓 `test_kernel_invariants.py`、`../working/check-docs.py` |
 
 **只有第三层不依赖人。**前两层是纪律，纪律会被忘——这份文件本身就出过两次
 "规则在眼前却没回头对照"：一次提出了违反 D1 与 I1 的方案，一次把 I4 说反了
@@ -174,5 +174,5 @@ Calico 集群，否则"测过了"是假的。
 推送前跑一次：
 
 ```bash
-python3 k8s/sunmoonai/docs/project-guide/check-cross-repo.py --repos <五仓父目录>
+python3 k8s/sunmoonai/docs/dev-plan/check-cross-repo.py --repos <五仓父目录>
 ```
