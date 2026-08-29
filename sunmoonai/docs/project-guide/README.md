@@ -96,5 +96,5 @@ project-guide/
 - **前端未逐文件深读**：约 570 个 ts/tsx，核到了结构、入口、契约与关键配置层。
 - **前端的 `CLAUDE.md` 是本轮重写的，但前端本身未逐文件深读**——这是本轮
   风险最高的组合，逐条核对见 [`verify.md`](verify.md) §5。
-- **三项已知缺口**尚无去向，见
+- **两项已知缺口**尚无去向，见
   [`../dev-plan/open-issues.md`](../dev-plan/open-issues.md)。

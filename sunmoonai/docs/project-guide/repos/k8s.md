@@ -151,7 +151,7 @@ App 特有：Investment 有 `knowledge_binding`；Knowledge 有 `retrieval_datas
 | `infrastructure/` 含 cert-manager | **无**。该目录只有 steps/utils/deploy-*/docs；TLS 由 Traefik + 各 App `*-tls` Secret 承担 |
 | 对象存储目录叫 minio 或 s3 | 实际是 `data-platform/object-storage/` |
 | 构建脚本推 digest | **推可变 tag**；digest 由 `render.py` 解析后写入 bundle，门禁只认 digest |
-| 构建脚本默认覆盖四个 App | 默认 `APPS="info research knowledge"`——**不含 investment，且仍留已废弃的 research** |
+| 构建脚本可以推发布 tag | **不能**。`1.0.0`/`2.0.0` 是 v1/v2 的发布 tag，脚本会拒绝（`PROTECTED_TAGS`），除非 `ALLOW_PROTECTED_TAG=true`。默认 tag 是 `architecture-v2-dev` |
 | `server-dry-run all` 顺序 = apply 顺序 | 不同，见 §4.2 |
 | auth-app 与三 App 同模型 | auth-app 是 Helm，无 bundle/release.json |
 | R7 终检覆盖网络策略包级行为 | 不覆盖，那是独立脚本 + 独立集群 |

@@ -143,6 +143,12 @@ async def get_web_interaction_port() -> WebInteractionPort:
 
 ## 7. 已知未实现
 
+> **这张表由 `tests/test_dormant_capabilities.py` 守着**：每条休眠声明都有可执行
+> 判据，能力一旦接线、或判据锚点被改名，测试即失败。改这张表前先跑那个测试。
+> 机制说明见该文件的模块 docstring；它的边界是**保证已声明的条目不变陈旧**，
+> 发现不了新出现的休眠能力——新增时手工加一条。
+
+
 模板**有意留白**的（实例继承后自己填，不是缺陷）：
 
 | 项 | 状态 |

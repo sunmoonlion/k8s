@@ -128,6 +128,12 @@ CronJob 跑 `cli/drain_delivery_outbox.py` 兜底。
 
 ## 7. 已知未实现
 
+> **这张表由 `tests/test_dormant_capabilities.py` 守着**：每条休眠声明都有可执行
+> 判据，能力一旦接线、或判据锚点被改名，测试即失败。改这张表前先跑那个测试。
+> 机制说明见该文件的模块 docstring；它的边界是**保证已声明的条目不变陈旧**，
+> 发现不了新出现的休眠能力——新增时手工加一条。
+
+
 | 项 | 实际状态 |
 | --- | --- |
 | Elasticsearch 索引 | 默认 `SEARCH_BACKEND=disabled`，索引任务直接 skip |

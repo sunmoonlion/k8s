@@ -132,6 +132,12 @@ Pilot run 用 `owner_actor_id + idempotency_key`。
 
 ## 7. 已知未实现
 
+> **这张表由 `tests/test_dormant_capabilities.py` 守着**：每条休眠声明都有可执行
+> 判据，能力一旦接线、或判据锚点被改名，测试即失败。改这张表前先跑那个测试。
+> 机制说明见该文件的模块 docstring；它的边界是**保证已声明的条目不变陈旧**，
+> 发现不了新出现的休眠能力——新增时手工加一条。
+
+
 | 项 | 实际状态 |
 | --- | --- |
 | **`RunBudget` 在生产生效** | 未接线，见 §4.5。`budget_exceeded` 生产不可达。现有实现是内存态 pydantic model、随 graph state 传递，**进程一死即失**，结构上满足不了「跨 run／跨进程仍须正确」的判据。载体须换 PG——归入 [`../../dev-plan/README.md`](../../dev-plan/README.md) 的 **U3 四本账**，不是单独接线 |

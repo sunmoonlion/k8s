@@ -147,3 +147,25 @@ done
 4. **实际跑测试**，不满足于静态读码。
 5. 强制产出「已知未实现」一节，主动找占位、未接线、TODO、空实现、被 flag 关掉的东西。
 6. **产出方不自验**：高影响断言由另一方复核。
+
+## 休眠能力的声明与校验
+
+四个后端各有 `app/tests/test_dormant_capabilities.py`，把"代码在、没接线"的能力
+声明成**可执行判据**。每条两个方向都能失败：
+
+| 检查 | 失败的含义 | 该做什么 |
+| --- | --- | --- |
+| `anchor_exists` | 判据锚点没了（改名/删除），**判据已空转** | 先把判据改到新位置 |
+| `still_dormant` | 能力已接线，**声明过期** | 删该条声明，并同步 `repos/*.md` |
+
+```bash
+cd <repo>/<app>-app/<app>-backend/app && uv run pytest tests/test_dormant_capabilities.py -q
+```
+
+**判据必须查真实状态，不能做文本匹配。**这一点是踩出来的：`/api/internal/v1`
+那条最初写成 `"internal" not in routes.py`，而前缀定义在被引入的 endpoints 模块里，
+`routes.py` 里根本没有这个词——判据永远通过。改成查 `create_app()` 的真实路由表后，
+立刻发现 **investment 实际有 5 条 internal 路由**，那条声明本身就是错的。
+
+**机制的边界**：它保证已声明的条目不变陈旧，**发现不了新出现的休眠能力**——
+那要判断"这段代码本该接线却没接"，不可机械判定。新增时手工加一条。
