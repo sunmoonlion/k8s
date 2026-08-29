@@ -13,7 +13,7 @@
 
 ## 2. Casdoor 的位置
 
-由 `auth-app` 以 **Helm 单独部署**，不套 App 模板，**无 `deployment/bundle/release.json`**，
+由 `auth-app` 以 **Helm 单独部署**，**不进入 App bundle / release.json 门禁**（其制品治理由自己的 Helm 链负责），
 因此不受发布链的 digest 纪律约束（见 [`release.md`](release.md)）。
 
 它只做身份提供：管用户 / 组织 / 应用 / OIDC / token。

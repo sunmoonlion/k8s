@@ -11,6 +11,15 @@
 检查点恢复、事件流与副作用记账的仓——[`../../working/request-lifecycle.md`](../../working/request-lifecycle.md)
 §7 的映射表以本仓为对象。
 
+## 1.1 重要点（读代码前先别理解反）
+
+| | |
+| --- | --- |
+| 检索无授权证据 | **失败，不是返回空答案**（`pilot_agent_graph` 抛 `pilot retrieval returned no authorized evidence`） |
+| Run 的四个终态 | `completed` / `failed` / `cancelled` / `budget_exceeded`，`RUN_STATUS_TRANSITIONS` 里**转出集合全为空** |
+| `budget_exceeded` | 状态机里可达，**生产链路不可达**——预算从不被消费，见「已知未实现」 |
+| 两条生产链 | `tasks/agent_graph.py` 与 `tasks/pilot_agent_graph.py`，**都不读 `AgentProfile`** |
+
 ## 2. 结构（只列模板之外）
 
 | 路径 | 装什么 |
@@ -148,6 +157,7 @@ Pilot run 用 `owner_actor_id + idempotency_key`。
 | `first_m1_graph` | 非生产图，仅 tests 与 `scripts/agent_golden.py` |
 | 两个 spike | `execution_identity_spike` / `runtime_selection_spike`，不在生产链 |
 | 失败原因码分流 | 库内已能区分 `dispatch_failed` 与 `resume_dispatch_failed`，但**消费侧无按码分流的重试逻辑** |
+| **`resume_token` 一次性消费** | **未实现**。`resume_run` 只做相等比较后就 dispatch，**不清除、不原子占用**——同一个 token 可重复提交，产生多次 dispatch |
 | 共享 Outbox | 迁移与仓库类在，零业务调用 |
 
 ## 8. 验证

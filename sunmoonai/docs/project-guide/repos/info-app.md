@@ -10,6 +10,16 @@
 后端约 90 个文件、7–8k 行。最大的单文件是 `info_crawl_service.py`（约 1.8k 行），
 整条采集-治理-分发链都在里面。
 
+## 1.1 重要点（读代码前先别理解反）
+
+| | |
+| --- | --- |
+| 去重 | sha256 精确 + `simhash64` 近似，阈值 **0.84**（`info_crawl_service.py` 的 `_NEAR_DUPLICATE_THRESHOLD`） |
+| 可分发的产物 | 只有 `clean_markdown` 与 `text_plain` 两类 artifact |
+| 分发目标 | 硬编码 `knowledge-app`，其余 `target_app` 一律拒绝 |
+| 全文索引 | `SEARCH_BACKEND` 默认 `disabled`，索引任务直接 skip |
+| 爬虫 | **不内嵌** Scrapy / Playwright，采集结果须外部注入 |
+
 ## 2. 结构（只列模板之外）
 
 | 路径 | 装什么 |

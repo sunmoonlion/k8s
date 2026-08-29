@@ -19,12 +19,20 @@
 | 路径 | 装什么 |
 | --- | --- |
 | `tpl-backend/app/core/config.py` | **本仓最大单文件**，Pydantic Settings + 约 35 处生产期硬校验。真正的强制在这里 |
-| `tpl-backend/app/app/bootstrap/` | 四个运行角色入口：`api.py`(173) / `worker.py`(7) / `scheduler.py`(7) / `migration.py`(42) |
-| `tpl-backend/app/app/application/services/` | `auth_service.py`(373)、`web_interaction.py`(235) |
+| `tpl-backend/app/app/bootstrap/` | 四个运行角色入口：`api.py` / `worker.py` / `scheduler.py` / `migration.py` |
+| `tpl-backend/app/app/application/services/` | `auth_service.py`、`web_interaction.py` |
 | `tpl-backend/app/app/application/ports/` | `outbox.py`、`web_interaction.py`——Port 定义 |
-| `tpl-backend/app/app/infrastructure/security/` | `oidc.py`(428)、`service_identity.py`(108) |
+| `tpl-backend/app/app/infrastructure/security/` | `oidc.py`、`service_identity.py` |
 | `tpl-backend/app/app/infrastructure/repositories/outbox.py` | Outbox SQL 实现 |
 | `tpl-backend/app/app/interfaces/http/` | `admin/`（auth、diagnostics）+ `web/`（auth、interactions）+ `middleware/` |
+| `tpl-backend/db-provisioner/` | 建库建角色 |
+| `tpl-backend/db-access-bootstrap/` | 数据库访问自举 |
+| `tpl-backend/search-access-bootstrap/` | Elasticsearch 访问自举 |
+| `tpl-backend/storage-access-bootstrap/` | 对象存储访问自举 |
+
+⚠ **供给脚本有两份,别只看一份**：`k8s/sunmoonai/utils/db-provisioner/` 是**平台侧入口**；
+上面四个在 **Backend 仓内,随模板同步到三个实例**。看仓库拓扑时只列 `app/` 与
+`k8s-deployment/` 会让人以为供给只在 k8s 仓。
 | `tpl-backend/app/alembic/versions/` | 2 个版本（见 §5） |
 | `tpl-admin-frontend/` `tpl-web-frontend/` | 两个 Next.js 前端 |
 | `k8s-deployment/` | `scaffold.py` / `deploy.py` / `deployment_config.py` + 五份 YAML 模板 |

@@ -1,8 +1,19 @@
-# 跨 App 契约
+# 契约
 
 > 取证时点：2026-08-29 ｜ 相关规则见 [`../../dev-plan/constraints.md`](../../dev-plan/constraints.md)「契约」C1–C6
 
-## 1. 三套契约
+## 1. 三套契约：两跨 App，一同 App 共享
+
+分类先说清，否则容易误以为 web-interaction 有一个跨四仓的运行时 provider：
+
+| | 契约 |
+| --- | --- |
+| **跨 App** | artifact v1、retrieval v1 |
+| **模板共享、各实例 App 内消费** | web-interaction v1 |
+
+后者是同 App 内「后端 ↔ Web 前端」，模板发下去四份——这解释了为什么它
+DTO / Port / 前端 zod 都齐全，却仍能在**每个实例里各自未接线**。
+
 
 | 契约 | provider（schema 真源） | consumer（锁文件） | 传输 |
 | --- | --- | --- | --- |
@@ -94,3 +105,14 @@ web-interaction v1 在四个仓里都有完整的 DTO、Port 与前端 zod，
 `k8s/sunmoonai/docs/mooc-manus-v5/contracts/` 下存有 v5 时期的契约
 （`research-agent-web` / `research-runtime` / `web-interaction` / `security`）。
 它们**不在上述三套现行契约之列**，属历史归档；引用前先确认是否仍有效。
+
+## 8. 跨 App 消息里放什么
+
+共享 Outbox 目前 defined 未 wired（见总览 §9.2）。**第一个事件落地前先定下形状**，
+否则最容易发生的事是把 markdown 正文直接塞进消息体：
+
+- 事件只带**稳定 ID、契约版本、必要摘要**；
+- 大对象走 **artifact 引用 + 内容哈希**，不进消息体；
+- 消费方按引用去对象存储取，取不到就是取不到——**不要因此把正文塞回消息**。
+
+理由与"主档只有一份"同源：消息体里的正文是第二份内容，且无版本、无生命周期。

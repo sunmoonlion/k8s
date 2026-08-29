@@ -12,6 +12,16 @@
 构建脚本从 `{SOURCE_ROOT}/{app}-app/` 读源码，render 脚本引用同级的
 `../tpl-app/k8s-deployment`——**因此五仓必须并列放置**。
 
+## 1.1 重要点（读代码前先别理解反）
+
+| | |
+| --- | --- |
+| 迁移失败 | **阻断整次 apply**，不得继续 runtime（`deploy.py` 抛 `DeployError`） |
+| smoke 通过 | **不等于发布完成**。smoke 只覆盖一条路径；发布完成要 bundle 五文件 sha256、digest、副本数、门禁四层全过 |
+| NetworkPolicy | **KIND 默认不执行**（kindnet 不 enforce）。包级验证必须另起 Calico 集群，否则"测过了"是假的 |
+| `deploy-sunmoonai-all` | **只做编排，不拥有领域**——不是改 App 内部所有权的入口 |
+| 部署顺序 | 只满足启动前置，**不代表运行时耦合**（见总览 §4.1） |
+
 ## 2. 结构
 
 `sunmoonai/` 下 **8 个平台 + 3 个非平台**目录：

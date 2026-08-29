@@ -20,8 +20,13 @@
              info-app                  knowledge-app          investment-app
 ```
 
-三个领域 App 形态完全一致，因为它们都从同一个模板实例化；另有一个仓只负责把它们部署到
-Kubernetes。**五个 Git 仓，必须并列放置**（部署脚本按同级相对路径互相引用）。
+三个领域 App **共享同一正式模板骨架**，因为它们都从同一个模板实例化；另有一个仓只负责把它们部署到
+Kubernetes。**五个顶层协作仓，必须并列放置**（部署脚本按同级相对路径互相引用）。
+
+"顶层"不是措辞洁癖：其中四个 App 父仓各自再用 gitlink 引用三个**组件子模块**，
+所以整个项目的 Git 仓不止五个。这个区别直接关系到——推送要**子仓先、父仓后**；
+为什么一个工作树会出现"父仓在、组件源码未初始化"；以及门禁锁的到底是父仓、
+组件 commit 还是二者。
 
 | 仓 | 职责 | 含业务源码 |
 | --- | --- | --- |
@@ -53,7 +58,9 @@ k8s ──构建镜像 / 渲染 bundle / apply──▶ 三个 App 的运行态
 
 ## 3. 一个标准 App 长什么样
 
-四个 App 仓结构完全相同，各含三个 Git 子模块：
+四个 App 仓**共享同一父仓拓扑**——四运行角色、安全边界、发布脚手架都由模板规定；
+**领域目录、路由、迁移、依赖各不相同**，那是受控的扩展点，不是违规漂移
+（判据见 [`repos/tpl-app.md`](repos/tpl-app.md) 的模板同步一节）。各含三个 Git 子模块：
 
 ```
 <app>-app/
@@ -111,16 +118,16 @@ app/app/
 
 **八个平台目录 + 三个非平台目录**：
 
-| 平台 | 装什么 | 命名空间 |
-| --- | --- | --- |
-| `app-platform` | 三个 App 的正式 bundle + auth-app（Casdoor） | `app-platform-dev` |
-| `data-platform` | postgresql、redis、mongodb、neo4j、elasticsearch、kibana、logstash、object-storage | `data-platform-dev` |
-| `messaging-platform` | RabbitMQ（Celery broker） | `messaging-platform-dev` |
-| `ingress-platform` | Traefik，TLS 终止 | `ingress-platform-dev` |
-| `cicd-platform` | Harbor、Jenkins | `cicd-platform-dev` |
-| `ops-platform` | pgAdmin、RedisInsight、Flower 等 | `ops-platform-dev` |
-| `infrastructure` | 远程 kubeadm 分步脚本 | — |
-| `kind-infrastructure` | 本地 KIND 集群定义 | — |
+| 平台 | 装什么 | **明确不负责** | 命名空间 |
+| --- | --- | --- | --- |
+| `app-platform` | 三个 App 的正式 bundle + auth-app（Casdoor） | 不定义领域数据所有权——那在各 App 内 | `app-platform-dev` |
+| `data-platform` | postgresql、redis、mongodb、neo4j、elasticsearch、kibana、logstash、object-storage | **不决定业务表结构**，不拥有任何领域事实 | `data-platform-dev` |
+| `messaging-platform` | RabbitMQ（Celery broker） | 不做投递语义与幂等——那是消费方的事 | `messaging-platform-dev` |
+| `ingress-platform` | Traefik，TLS 终止 | **不做授权**。鉴权在 Backend，网关只路由与终止 TLS | `ingress-platform-dev` |
+| `cicd-platform` | Harbor、Jenkins | **不在已发布业务的同步关键路径上**——它挂掉不应打断在跑的业务 | `cicd-platform-dev` |
+| `ops-platform` | pgAdmin、RedisInsight、Flower 等 | 同上，运维工具不进业务关键路径 | `ops-platform-dev` |
+| `infrastructure` | 远程 kubeadm 分步脚本 | 不含 cert-manager 等组件（常见误解） | — |
+| `kind-infrastructure` | 本地 KIND 集群定义 | **不执行 NetworkPolicy**（kindnet 不 enforce） | — |
 
 非平台：`deploy-sunmoonai-all/`（总控）、`utils/`（跨平台工具）、`docs/`（含本文档）。
 
@@ -128,6 +135,35 @@ App 侧实际用到的数据组件只有：PostgreSQL、Redis、object-storage�
 Elasticsearch（info 索引，**默认关闭**）。mongodb / neo4j / kibana / logstash 未见 App 引用。
 
 → 细节：[`repos/k8s.md`](repos/k8s.md)
+
+### 4.1 平台之间怎么依赖
+
+地图之外还有三条**依赖方向上的禁令**。它们在源码里没有单一符号可 grep，
+只读文件树会系统性漏掉——但它们是搭平台时定下的运行合同：
+
+1. **基础能力向上提供，领域所有权不向下泄漏。**
+   Data / Messaging / Ingress 提供能力，**不拥有** info / knowledge / investment
+   的业务事实。
+2. **部署顺序 ≠ 运行时耦合。**总控按 infra → data → messaging → app → ops 排，
+   那只满足**启动前置**。每个 App 仍必须自备超时、有界重试、幂等、
+   Outbox/Inbox 或对账、readiness 与降级。
+   **CI/CD 或 Ops 挂掉不应立刻打断已发布业务**；Ingress / 数据 / 消息 / 身份
+   挂掉才必须由 SLO 与降级覆盖。
+3. **`deploy-sunmoonai-all` 只做编排，不拥有领域。**它是总控脚本，
+   不是"可以改 App 内部所有权"的入口。
+
+依赖方向有三类，**全部单向**：
+
+```
+模板 ──────────▶ 实例          tpl-app 定形态，三个实例继承
+                               （反向不成立：实例不得改模板以迁就自己）
+
+提供方 ─────────▶ 消费方        info ──artifact──▶ knowledge ──retrieval──▶ investment
+                               （schema 真源在提供方，消费方持锁）
+
+平台 ──能力──▶ App            Data / Messaging / Ingress 提供能力
+                               （所有权不反向泄漏）
+```
 
 ## 5. 三条主链
 
@@ -192,7 +228,10 @@ RAGFlow / Elasticsearch / 缓存都是**可重建的派生系统，不是权威�
 | 浏览器身份 | Casdoor OIDC（授权码 + PKCE）→ 后端会话 cookie |
 | 服务身份 | 签名的 workload JWT，或 OAuth client credentials |
 
-Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/release.json**，
+Casdoor 由 `auth-app` 以 Helm 单独部署，**不进入三个领域 App 的 bundle / release.json 门禁**
+——其 chart、version、image 的固定与晋级由 auth-app 自己的 Helm 发布链负责。
+⚠ 这是"不受那套门禁管"，不是"无需不可变制品治理"；若它当前仍用可变 tag，
+那是**未覆盖风险**，不是架构豁免。
 因此不受发布链的 digest 纪律约束。
 
 **Admin 与 Web 是两个独立的安全边界**（`BrowserSurfaceProfile`，不可变）：
@@ -229,8 +268,49 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 | 契约 schema 在 consumer 仓另建副本 | 产生第二真源；升级必须 provider 先改、双端测试通过后才动锁 |
 | 生产开启 `REFERENCE_INTERACTION_ENABLED` | 启动 `ValueError`（四仓一致） |
 | 生产 `ALLOWED_HOSTS` 用 `*`、`APP_ORIGIN` 非 HTTPS | 启动即失败（后端与前端各自校验） |
+| **把 `research-app` 当成现行仓** | 它不是。投资研究与 Agent 归 `investment-app`；见下 |
 | 先改实例再改模板 | 违反"模板先行"；公共缺陷必须先修模板过门禁再同步实例 |
 | 迁移链分叉 / 与测试清单不一致 | CI 失败 |
+
+### 8.1 `research` 这个词怎么用
+
+三个不同的东西，别混：
+
+| 说的是 | 现状 |
+| --- | --- |
+| 历史 `research-app` | **不是活动 App**。投资研究与 Agent 能力在 `investment-app`。历史文档（v4/v5 计划、handoff、evidence）里大量出现该名，**那是残留，不是现行仓** |
+| investment 内部的"研究" | 业务模块，不是独立 App |
+| 将来若真建 `research-app` | 通用跨领域研究，是**新的有界上下文**：独立仓、身份、库、契约。**不得复用历史身份**，也不得把 investment 的数据自动划过去 |
+
+复核现行部署里已无该 App：
+
+```bash
+grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include='*.json'
+# 应无结果
+```
+
+### 8.2 能力状态：四个词，别用"文件在不在"判断
+
+本文档集描述某项能力时，用这四个词。**它们是递进的**，后一个不蕴含前一个成立以外的东西：
+
+| 状态 | 含义 |
+| --- | --- |
+| **defined** | schema、DTO、Port 或表已存在 |
+| **wired** | 有生产调用方或适配器，主链可达 |
+| **deployable** | 配置、Secret、profile 与门禁允许部署 |
+| **runtime-verified** | 有对应环境的运行态证据 |
+
+用法示例：
+
+| 能力 | 状态 |
+| --- | --- |
+| web-interaction v1 | **defined，未 wired**（默认适配器返回 503） |
+| 共享 Outbox / Inbox | **defined，未 wired**（业务层零调用） |
+| info 的 delivery outbox | **wired**（`info_crawl_service` 真在调） |
+| C1 / production profile | **未 deployable**（`PROFILE_ENABLED=false`） |
+| 任何运行态断言 | **本文档集一律不标 runtime-verified**——未连集群 |
+
+**"文件存在"只到 defined。**这是本集最容易被误读的地方。
 
 ## 9. 当前状态与已知缺口
 
@@ -264,9 +344,9 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 
 | 项 | 实际状态 |
 | --- | --- |
-| **web-interaction 契约** | DTO、Port、前端 zod 齐全，但默认适配器返回 **503**；唯一替代实现是 reference fixture，且**生产禁止开启**。即：生产环境该契约面**必定不可用** |
-| **共享 Outbox/Inbox 原语** | 表、仓库类、Port 全在，业务层**零调用**——模板提供该原语，当前无生产调用，**不构成已上线能力** |
-| **Celery 周期任务** | 四仓都有 Scheduler 入口，**都没有 `beat_schedule` 定义**——进程起得来，无任务可跑 |
+| **web-interaction 契约** | **defined，未 wired**：DTO、Port、前端 zod 齐全，但默认适配器返回 **503**；唯一替代实现是 reference fixture，且**生产禁止开启**。即生产环境该契约面**必定不可用** |
+| **共享 Outbox/Inbox 原语** | **defined，未 wired**：表、仓库类、Port 全在，业务层零调用。模板提供该原语，当前无生产调用 |
+| **Celery 周期任务** | **defined，未 wired**：四仓都有 Scheduler 入口，都没有 `beat_schedule`——进程起得来，无任务可跑 |
 | **`/api/internal/v1` 入站面** | tpl 与 info 只有中间件、无 router 挂载；只有 knowledge 与 investment 真正有内部路由 |
 
 上面两项**是否有意留白、何时重新审视**，代码证明不了——见
