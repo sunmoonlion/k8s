@@ -124,6 +124,60 @@ def check(root: pathlib.Path, repos: pathlib.Path | None):
     return problems
 
 
+
+# 文档里引用的代码路径必须真实存在。
+# 这条检查是踩出来的：ragflow.py 的一段代码被重构删掉后，文档里那条
+# `sed -n '/terminal = /,/p'` 复核命令输出为空，而所有检查都是绿的——
+# 没有任何机制能发现「文档指着的东西没了」。
+CODE_PATH = re.compile(
+    r'`([A-Za-z0-9_./-]+/[A-Za-z0-9_.-]+'
+    r'\.(?:py|ts|tsx|json|yaml|yml|toml|sh|mjs))`')
+
+# 否定语境：文档明确在说「这个不存在」时，不该被当成坏引用。
+NEGATED = re.compile(r'不存在|没有|无此|未创建|已删除|应无|曾经有过|不再')
+
+
+def tracked_files(repos: pathlib.Path) -> list[str]:
+    out = []
+    for r in ('tpl-app', 'info-app', 'knowledge-app', 'investment-app', 'k8s'):
+        d = repos / r
+        if not (d / '.git').exists():
+            continue
+        try:
+            res = subprocess.run(
+                ['git', '-C', str(d), 'ls-files', '--recurse-submodules'],
+                capture_output=True, text=True, timeout=60).stdout.split()
+        except Exception:
+            continue
+        out += [f'{r}/{x}' for x in res]
+    return out
+
+
+def check_code_paths(root: pathlib.Path, files: list[str]) -> list[str]:
+    if not files:
+        return []
+    problems = []
+    for p in sorted(root.rglob('*.md')):
+        if any(part in EXCLUDE_DIRS for part in p.parts):
+            continue
+        raw = p.read_text(encoding='utf-8')
+        # 只屏蔽代码块，**保留行内反引号**——路径正是写在行内代码里的。
+        # （mask_code 连行内一起涂白，用它这条检查会永远通过。）
+        for i, line in enumerate(FENCE.sub(
+                lambda m: '\n' * m.group(0).count('\n'), raw).splitlines(), 1):
+            if NEGATED.search(line):
+                continue
+            for m in CODE_PATH.finditer(line):
+                ref = m.group(1)
+                if ref.startswith('..') or ref.startswith('./'):
+                    continue          # 文档间相对路径，由坏链检查负责
+                if any(f == ref or f.endswith('/' + ref) for f in files):
+                    continue
+                problems.append(
+                    f'路径不存在  {p.relative_to(root)}:{i}  -> {ref}')
+    return problems
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('--root', default=None,
@@ -144,23 +198,32 @@ def main() -> int:
                  if (docs / d).is_dir()]
     root = roots[0]
 
+    files = tracked_files(repos) if repos else []
     problems = []
     for r in roots:
         tag = '' if len(roots) == 1 else f'[{r.name}] '
         problems += [f'{tag}{x}' for x in check(r, repos)]
+        problems += [f'{tag}{x}' for x in check_code_paths(r, files)]
     for extra in a.also:
         problems += [f'[{extra}] {x}' for x in check(pathlib.Path(extra).resolve(), repos)]
     if not problems:
         print('✓ 全部通过')
         return 0
+    def kind_of(line: str) -> str:
+        # 多目录模式下每行前面有 `[目录] ` 前缀，分类时要先剥掉——
+        # 不剥的话 kinds 的键全是目录名，硬失败判定永远为 0。
+        parts = line.split()
+        return parts[1] if parts and parts[0].startswith('[') else parts[0]
+
     kinds: dict[str, int] = {}
     for x in problems:
-        kinds[x.split()[0]] = kinds.get(x.split()[0], 0) + 1
+        k = kind_of(x)
+        kinds[k] = kinds.get(k, 0) + 1
     for x in problems:
         print('  ' + x)
     print('\n' + ' '.join(f'{k}:{v}' for k, v in sorted(kinds.items())))
-    # 保鲜与易腐值是提示，坏链/空链接是硬失败
-    hard = sum(v for k, v in kinds.items() if k in ('坏链', '空链接'))
+    # 保鲜与易腐值是提示；「文档指着不存在的东西」一律是硬失败
+    hard = sum(v for k, v in kinds.items() if k in ('坏链', '空链接', '路径不存在'))
     return 1 if hard else 0
 
 
