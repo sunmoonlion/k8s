@@ -3,9 +3,12 @@
 本目录的 `build-push-app-images.sh` 只做一件事：**在 WSL 本地构建镜像，并直推到指定 Harbor**。
 
 ```text
-info / research / investment / tools / knowledge
-  × admin-backend / admin-frontend / web-backend / web-frontend
+tpl / info / knowledge / investment
+  × backend / admin-frontend / web-frontend
 ```
+
+ADR-0007 把 `admin-backend` 与 `web-backend` 并成了单一 `backend`；`research`
+已退役。共 12 个镜像。
 
 脚本不部署 Kubernetes，也不触发 Harbor 复制。
 
@@ -75,22 +78,30 @@ CLUSTER=C1 ./scripts/build-push-app-images.sh
 CLUSTER=C1 \
 TARGET_REGISTRY="harbor-c1.sunmoonai.com:30443/app-images" \
 BASE_REGISTRY="harbor-c1.sunmoonai.com:30443/k8s-images" \
-TAG="1.0.0" \
+TAG="architecture-v2-dev" \
 ./scripts/build-push-app-images.sh
 ```
 
 ## 常用参数
 
-指定版本：
+指定版本（默认 `architecture-v2-dev`）：
 
 ```bash
-TAG=1.0.1 ./scripts/build-push-app-images.sh
+TAG=my-feature ./scripts/build-push-app-images.sh
+```
+
+⚠ **`1.0.0` 与 `2.0.0` 被拒绝**——它们分别是 v1 与 v2 的正式发布 tag，
+指向已过门禁的 digest；本脚本产出的是未经门禁的本地构建，不该占用它们。
+详见脚本内 `PROTECTED_TAGS` 上方的说明。确需覆盖：
+
+```bash
+ALLOW_PROTECTED_TAG=true TAG=2.0.0 ./scripts/build-push-app-images.sh
 ```
 
 从某个组件继续：
 
 ```bash
-START_FROM="research/admin-backend" ./scripts/build-push-app-images.sh
+START_FROM="knowledge/backend" ./scripts/build-push-app-images.sh
 ```
 
 只打印命令，不执行构建和推送：
@@ -115,7 +126,7 @@ PROGRESS=plain ./scripts/build-push-app-images.sh
 
 ```bash
 APPS="info knowledge" \
-COMPONENTS="admin-backend web-frontend" \
+COMPONENTS="backend web-frontend" \
 ./scripts/build-push-app-images.sh
 ```
 

@@ -37,6 +37,12 @@ render.py 解析出 digest 写入 bundle
 
 即 **tag 只是构建产物的临时把手，进入发布视野的一律是 digest。**
 
+唯一例外是**正式发布别名**：`2.0.0` 由 R7 打给已过门禁的 digest
+（`release_policy.promotion_method: exact-digest-alias`），`1.0.0` 同理属于 v1。
+这两个 tag 是发布制品的名字，不是构建把手——
+`build-push-app-images.sh` 会**拒绝**推到它们上面（`PROTECTED_TAGS`），
+除非显式 `ALLOW_PROTECTED_TAG=true`。本地构建的默认 tag 是 `architecture-v2-dev`。
+
 `.conf` 配置文件**不得覆盖** bundle 里的镜像、副本、origin 等字段，
 值必须与 `release.json` 完全一致，否则 `ConfigError`。这条保证了「配置改不动发布内容」。
 
