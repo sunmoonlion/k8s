@@ -8,7 +8,7 @@
 >
 > 每一条都来自**真实发生过的失败**，不是设想。
 > 纯粹的 git 操作机制（拉取、推送、子模块）不在本文，
-> 见 [`../project-guide/collaboration.md`](../project-guide/collaboration.md)。
+> 见 [`../working/collaboration.md`](../working/collaboration.md)。
 
 ## 1. 三种模式，别混
 
@@ -20,7 +20,7 @@
 | 闭环 | 比较 → 综合 | 结论交回 | **跑评审方的验收标准，公布结果** |
 | 用途 | 拿到多个独立信号 | 验证工作是否成立 | 让已有产物被外部视角修正 |
 
-**三种模式共用同一套 git 机制（见 [`../project-guide/collaboration.md`](../project-guide/collaboration.md)），但对"给什么材料"的要求不同。**
+**三种模式共用同一套 git 机制（见 [`../working/collaboration.md`](../working/collaboration.md)），但对"给什么材料"的要求不同。**
 
 C 是 B 的多方版本加上吸收协议。它值得单列，因为**吸收环节是最容易失守的地方**：
 被审方既是接受方又是判定方，不加约束就等于被告当法官（见 §5.3）。
@@ -53,7 +53,7 @@ C 是 B 的多方版本加上吸收协议。它值得单列，因为**吸收环�
 
 | 必给 | 说明 |
 | --- | --- |
-| 原始需求 | 用户原话，一字不改（见 [`../project-guide/request-lifecycle.md`](../project-guide/request-lifecycle.md) R1） |
+| 原始需求 | 用户原话，一字不改（见 [`../working/request-lifecycle.md`](../working/request-lifecycle.md) R1） |
 | 验收标准 | 客观、第三方可判定（R5）。这是助手自检的依据 |
 | 上下文入口 | 指向 [`../project-guide/overall-architecture.md`](../project-guide/overall-architecture.md)，让它自己按需深入 |
 | 边界 | 含什么 / 不含什么 / 不含的归谁（R3） |
@@ -82,7 +82,7 @@ python3 parallel-proposals.py --request req.md --n 5 --out ./proposals
 此前同机隔离"只能靠明确指令，机制上拦不住"。
 
 产出的 `manifest.json` 记录每路的模型、耗时、token 与状态，
-是证据账（[`../project-guide/request-lifecycle.md`](../project-guide/request-lifecycle.md) §7）的最小形态。
+是证据账（[`../working/request-lifecycle.md`](../working/request-lifecycle.md) §7）的最小形态。
 
 **已验证到哪一步**（2026-08-28，本机实测）：
 
@@ -122,7 +122,7 @@ python3 parallel-proposals.py --request req.md --n 5 --out ./proposals
 
 多家助手评审主方产出、主方吸收意见。**本项目已实跑过一轮**（2026-08-27，
 qoder 评审 opus 的文档重构），下列规则全部来自那一轮暴露的实际问题，
-记录见 [`../project-guide/merge-review/`](../project-guide/merge-review/)。
+记录见 [`../working/merge-review/`](../working/merge-review/)。
 
 ### 5.1 为什么值得做
 

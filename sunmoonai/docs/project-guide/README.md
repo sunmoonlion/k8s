@@ -6,11 +6,15 @@
 > 本文件只是 `repos/` `topics/` 两个子目录的导航：
 > 总览回答「去哪看」，子目录回答「锚点在哪、规则是什么」。
 >
-> 本目录回答**「项目是什么、怎么做事」**，随代码变化更新。
-> **「接下来建什么」在 [`../dev-plan/`](../dev-plan/)**，随决策变化更新——两者不要混写。
+> 本目录只回答**「项目现在是什么样」**，随代码覆盖式重写。另外两处：
 >
-> 另有两份按需读的流程文档：[`request-lifecycle.md`](request-lifecycle.md)（提开发请求时读）
-> 与 [`collaboration.md`](collaboration.md)（跨机拉取、推送、子模块的坑）。
+> | 目录 | 管什么 | 改了之后 |
+> | --- | --- | --- |
+> | [`../dev-plan/`](../dev-plan/) | 代码要符合什么、接下来建什么 | **代码要跟着改** |
+> | [`../working/`](../working/) | 我们怎么共事：提请求、推送、写文档、评审 | 协作方式变，代码不变 |
+>
+> **规则不写在本目录**——投影只描述现状。看到"必须/禁止"而想知道谁在执行它，
+> 去 [`../dev-plan/README.md`](../dev-plan/README.md)「既有约束」。
 
 ## 本集之外：`docs/` 下的其他目录是什么
 
@@ -56,7 +60,7 @@
 | 确认某个能力是否真的接线了 | 对应仓文件的**「已知未实现」**一节 |
 | 知道有哪些**必须遵守的约束** | [`../dev-plan/README.md`](../dev-plan/README.md)「既有约束」（18 条） |
 | 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-plan/agent-discipline.md`](../dev-plan/agent-discipline.md) |
-| 推送改动、跨机拉取、子模块的坑 | [`collaboration.md`](collaboration.md) |
+| 推送改动、跨机拉取、子模块的坑 | [`../working/collaboration.md`](../working/collaboration.md) |
 | 知道接下来要建什么 | [`../dev-plan/`](../dev-plan/) |
 | 复核本文档集的某条断言 | [`verify.md`](verify.md)；机械检查跑 `python3 check-docs.py` |
 | 本轮查出的缺口都怎么处置了 | 结论已在各自投影里；过程 `git log --grep 'O[0-9]'` |
@@ -69,7 +73,6 @@ project-guide/
 ├── governance.md  动手前必读：权威排序、漂移尺子、维护与写作约定、编辑自检
 ├── check-docs.py  机械检查：坏链/空链接/易腐值/取证时点保鲜
 ├── verify.md      验证方法、本轮实测结果、易腐值真源、明确的盲区
-├── collaboration.md  跨机与多仓协作机制：拉取/推送顺序、子模块的坑
 ├── repos/         一仓一文件
 │   ├── tpl-app.md          模板仓：定义标准形态，无领域
 │   ├── info-app.md         资讯域：采集→治理→分发
@@ -89,8 +92,8 @@ project-guide/
 | 目录 | 语义 | 怎么改 |
 | --- | --- | --- |
 | `overall-architecture.md` `repos/` `topics/` `verify.md` | **现状投影** | **覆盖式重写**：直接替换旧条文，只反映当前有效事实；历史由 git 承担 |
-| `merge-review/` | **活的评审材料** | **只追加**；删除条件写在该目录 `README.md` |
-| `governance.md` `request-lifecycle.md` `collaboration.md` | **规则** | 改动前应有共识；改完要检查依赖它的文档 |
+| 协作机制（请求流程、推送、文档约定、评审） | 已移出，见 [`../working/`](../working/) |
+| `governance.md` | **规则** | 改动前应有共识；改完要检查依赖它的文档 |
 
 ## 写作约定
 

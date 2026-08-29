@@ -322,7 +322,7 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 | 加表、改迁移 | [`architecture/topics/data.md`](topics/data.md) |
 | 发版、改部署清单 | [`architecture/topics/release.md`](topics/release.md) |
 | 想知道有哪些**必须遵守的约束** | [`../dev-plan/README.md`](../dev-plan/README.md)「既有约束」 |
-| 提一个开发请求 | [`request-lifecycle.md`](request-lifecycle.md) |
+| 提一个开发请求 | [`../working/request-lifecycle.md`](../working/request-lifecycle.md) |
 | 查当前 digest / 迁移 head 等易变值 | 本文档不记这些值，见 [`architecture/verify.md`](verify.md) |
 
 **易腐值一律不写进文档正文**（镜像 digest、schema sha256、commit、迁移 head、副本数）——

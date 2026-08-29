@@ -26,7 +26,7 @@
     <out>/proposal-<i>.md      各实例的方案
     <out>/manifest.json        执行元数据（模型、耗时、token、状态）
 
-manifest 是证据账的最小形态（request-lifecycle.md §7）：
+manifest 是证据账的最小形态（../working/request-lifecycle.md §7）：
 每份产出可回答"谁跑的、哪个模型、跑了多久、花了多少"。
 """
 from __future__ import annotations

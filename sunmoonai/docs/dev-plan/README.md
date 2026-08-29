@@ -108,6 +108,53 @@ harness 并需凭据。
 
 18. 分通用与专用、纪律两边都要有、四本账落 PG、执行层租用——即本文上一节
 
+### 主题不变量（从投影提取，未来开发同样要遵守）
+
+上面十八条来自**决策**；下面这些来自**代码**——已经这样了，改动不得违反。
+原先散在 `../project-guide/topics/` 的正文里，但**投影没有强制阅读的机制**，
+写在那儿就等于没写。搬到这里，一并纳入「提方案前的自检」。
+
+**「谁在执行」这一栏是重点**：标 ⚠ 的目前没有载体，它只是约定，会漂。
+
+**契约**
+
+| 不变量 | 谁在执行 |
+| --- | --- |
+| schema 真源在 **provider** 仓，consumer 只持锁文件；两处都改会产生第二真源 | 双端 `test_provider_contract_lock_matches_authoritative_schemas` |
+| citation `source_href` 七处同形，改一处必须七处一起改 | `test_citation_source_href_resolves_to_a_real_route` 及 consumer 侧对照 |
+| 契约 DTO `extra=forbid`，未声明字段一律拒收 | Pydantic 模型定义 |
+| 跨仓契约测试**在单仓 CI 里不会自动跑**，必须显式提供 provider 路径 | ⚠ 无载体 |
+
+**身份**
+
+| 不变量 | 谁在执行 |
+| --- | --- |
+| 浏览器身份与服务身份**互不通用**；前端不得持有后端或数据库凭据 | `core/config.py` 启动期校验 |
+| 非安全方法必须同时满足 `Origin ∈ frontend_origins` **且** CSRF token 匹配 | 中间件 |
+| 服务令牌的 subject 必须命中 `service_auth_subject_bindings` 的精确键 | `core/config.py` + 依赖 |
+| `DownstreamServiceClient` 的路径必须命中 allowlist 前缀 | `core/config.py` |
+| 生产期约 35 处配置硬校验：配错**进程起不来**，不是运行期降级 | `core/config.py` |
+
+**数据**
+
+| 不变量 | 谁在执行 |
+| --- | --- |
+| 物理资源可共享，但必须独立逻辑库、角色、Secret | 部署清单 + `check-cross-repo.py` 凭据检查 |
+| 改迁移**必须同步改** `test_kernel_invariants.py` 的文件名清单 | 该测试逐字比对 |
+| 迁移链单链线性，恰好一个 `down_revision = None` | 同上 |
+| 数据迁移走 `expand→backfill→reconcile→switch read→switch write→observe→contract` | ⚠ 无载体，程序见 `../project-guide/topics/data.md` |
+| 旧写路径切换必须 **fail-closed**，不得无期限双写 | ⚠ 无载体 |
+
+**发布**
+
+| 不变量 | 谁在执行 |
+| --- | --- |
+| bundle 只允许 `repo@sha256:<64hex>`，不允许可变 tag | 门禁正则 + `check-cross-repo.py` |
+| `.conf` **不得覆盖** bundle 里的镜像、副本、origin，值须与 `release.json` 完全一致 | `ConfigError` |
+| `1.0.0` / `2.0.0` 是发布 tag，本地构建脚本不得推 | `build-push-app-images.sh` 的 `PROTECTED_TAGS` |
+| **公共缺陷先修模板、过门禁，再同步实例**；不得先改实例 | ⚠ 无载体 |
+| KIND 不执行 NetworkPolicy，包级验证必须另起 Calico 集群 | ⚠ 无载体（是环境事实，不是可测规则） |
+
 ### 原 `decisions/` 的 106 条去哪了
 
 | 去向 | 条数 | 说明 |
@@ -130,15 +177,25 @@ harness 并需凭据。
 
 ### 提方案前的自检
 
-**提任何方案前，先逐条对照上面十四条，并写出对照结果。**违反其中任何一条的
-方案**不进入讨论**——不是"不推荐"，是不提出。
+**提任何方案前，先对照上面两组——十八条约束与主题不变量——并写出对照结果。**
+违反其中任何一条的方案**不进入讨论**——不是"不推荐"，是不提出。
+
+不必每次都过全部。按**你要动什么**取对应的组：
+
+| 你要动 | 至少对照 |
+| --- | --- |
+| 跨 App 接口、契约 | 约束 3、10、16 + 契约不变量 |
+| 登录、权限、服务调用 | 约束 14–17 + 身份不变量 |
+| 表、迁移、存储 | 约束 2、4、6 + 数据不变量 |
+| 部署、发版、镜像 | 约束 12、13 + 发布不变量 |
+| 智能体 | 约束 18 + [`agent-discipline.md`](agent-discipline.md) |
 
 这条来自同一天的两次失败：
 
 1. 讨论 U1 时提出的"web 面自持会话与投影"方案，同时违反第 2 条（第二份 run
    状态就是第二个主档）与第 10 条（按调用方复制了一层应用）
 2. 紧接着又断言"BFF 已被 ADR-0007 取消"——**恰好写反了**，ADR-0007 说的是
-   Next.js 可以做 BFF、只是不能拥有数据（现为第 15 条）
+   Next.js 可以做 BFF、只是不能拥有数据（现为第 14 条）
 
 两次都是"约束就在眼前却没回头对照"。靠记性不行，得有机械动作。
 
