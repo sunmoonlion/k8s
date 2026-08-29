@@ -181,6 +181,38 @@ def rule_managed_credentials_not_shared(root: Path) -> list[str]:
     ]
 
 
+def rule_cross_repo_contract_tests_pass(root: Path) -> list[str]:
+    """双端契约测试必须通过。
+
+    这条规则此前**没有载体**：契约测试住在两个不同的仓里，单仓 CI 只跑自己那半，
+    provider 改了 schema、consumer 的锁没更新，两边各自都是绿的。
+    这里显式把两边一起跑一遍——3 秒的事，但它是唯一能发现"锁漂了"的时机。
+    """
+    pairs = [
+        ("knowledge-app/knowledge-backend/app", "tests/test_knowledge_retrieval.py"),
+        (
+            "investment-app/investment-backend/app",
+            "tests/test_knowledge_retrieval_contract.py",
+        ),
+    ]
+    problems = []
+    for rel, test in pairs:
+        d = root / rel
+        if not (d / test).exists():
+            continue
+        r = subprocess.run(
+            ["uv", "run", "--no-sync", "pytest", test, "-q"],
+            cwd=d,
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
+        if r.returncode != 0:
+            tail = (r.stdout or r.stderr).strip().splitlines()[-3:]
+            problems.append(f"契约测试失败  {rel}::{test}\n      " + "\n      ".join(tail))
+    return problems
+
+
 def _git(repo: Path, *args: str) -> str:
     try:
         return subprocess.run(
@@ -200,6 +232,7 @@ CHECKS = (
     ("无跨 App 直接建表", rule_no_cross_app_tables),
     ("无 hostPath 交换", rule_no_hostpath_exchange),
     ("受管凭据不复用", rule_managed_credentials_not_shared),
+    ("双端契约测试通过", rule_cross_repo_contract_tests_pass),
 )
 
 
@@ -207,11 +240,15 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--repos", type=Path, default=Path("."))
     ap.add_argument("--offline", action="store_true", help="跳过需要连远端的检查")
+    ap.add_argument("--fast", action="store_true", help="跳过要跑测试的检查")
     args = ap.parse_args()
     root = args.repos.resolve()
 
     problems: list[str] = []
     for name, fn in CHECKS:
+        if args.fast and fn is rule_cross_repo_contract_tests_pass:
+            print(f"  - {name}（--fast 跳过）")
+            continue
         found = fn(root, args.offline) if fn is rule_gitlink_reachable else fn(root)
         problems += found
         print(f"  {'✗' if found else '✓'} {name}")
