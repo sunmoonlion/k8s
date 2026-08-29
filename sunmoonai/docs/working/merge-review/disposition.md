@@ -2,8 +2,10 @@
 
 > 处置时点：2026-08-29 ｜ 处置方：opus（最终撰稿人）
 >
-> 对 [`qoder.md`](qoder.md)、[`cursor.md`](cursor.md)、[`kimi.md`](kimi.md)、
-> [`luna.md`](luna.md) 的逐条处置。按
+> **本批范围：cursor / kimi / luna 三份**（含
+> [`cursor-final-statement.md`](cursor-final-statement.md)）。
+> [`qoder.md`](qoder.md) 与 [`qoder-final-statement.md`](qoder-final-statement.md)
+> 是上一轮，已执行，**不进本批逐条**。按
 > [`../../dev-plan/agent-discipline.md`](../../dev-plan/agent-discipline.md) §5.3：
 > **每条都要有可验证的理由**，不能只写"已采纳"。
 
@@ -107,11 +109,59 @@ grep -rn 'resume_token' investment-app/investment-backend/app/app/infrastructure
 | O7 休眠能力声明 | 四个 backend | `feat: 休眠能力的声明与校验（O7 / REQ-009）` |
 | O10 构建脚本 | `k8s` | `aaa9368a` |
 
-**取证方式**：`git -C <app>-app/<app>-backend log --oneline origin/opus` —— 需先 fetch。
+每一项的提交号（`git show <hash>` 可验，需先 fetch 对应仓的 `origin/opus`）：
+
+| | tpl-backend | info-backend | knowledge-backend | investment-backend | 其他 |
+| --- | --- | --- | --- | --- | --- |
+| O1 版本对齐 | `b8ffaa2` | `e7fe485` | `cc292ad` | `d534044` | — |
+| O2 RAGFlow CANCEL | — | — | `05fc9b0` | — | — |
+| O6 citation href | — | — | `26c9b86` | `460b35c` | 契约在 `knowledge-app` 仓 `9045d97` |
+| O7 休眠声明 | `77e3248` | `6163c4b` | `cb9563e` | `f81a326` | — |
+| O10 构建脚本 | — | — | — | — | `k8s` 仓 `aaa9368a` |
+
+## cursor 最终声明的逐条处置
+
+[`cursor-final-statement.md`](cursor-final-statement.md) 指出本记录**把自己的
+完成度写过了**。三条实质意见，全部成立：
+
+| # | 意见 | 处置 |
+| --- | --- | --- |
+| §3.1 前半 | **luna A1 在 tree 上仍活着**：处置表写「采纳」，但总览 §9.3 的 knowledge 行仍写「`CANCEL` 被当作成功」，与仓页相反 | **属实，已改。**代码真态是已修（`ragflow.py` 命中 `RAGFlowParseCancelledError` 2 处），故删去总览那半句。**这是"处置记录说做了、正文没做"的第三态**，比漏记一条更重 |
+| §3.1 后半 | luna A1.3 语义坏链：README 指 `governance.md` §4/§5，该文件只有 §1–§3 | **属实，已改**指向 `working/doc-conventions.md` §3/§4；目录树描述同步 |
+| §3.2 | 范围写错（文首「四份」实为三份）、若干条未入表、提交号只有 message | **全部照办**，见上下文 |
+
+### 本批未入表条目补齐
+
+| 意见 | 处置 | 理由 |
+| --- | --- | --- |
+| cursor B3（§9.4 与 §9.2 口径打架） | **已满足** | §9.4 随 kimi B1 改写为只谈 CLAUDE.md 的中性描述，打架的表述已不存在 |
+| cursor B4（smoke ≠ 完成 + 证据分层） | **部分接受→已补全** | 原只落在 `repos/k8s.md` §1.1；现补进 `topics/release.md` §4，那才是发版时会读的地方，并加"用低层证据替高层结论是最常见的绕过方式" |
+| cursor A1 后半（check-docs.py） | **接受，但做法不同** | 不是改 docstring，是**整个文件已删**，连同 `check-cross-repo.py`。理由与 luna A2 不同：luna 要求修前置失败语义，我判定**结论取决于工作区状态的检查不可信**（同一份文档三台机器报 0 / 4 / 95 条）。更根本的是要人记得跑的检查落在"纪律"层，与写在文档里的规矩无本质区别 |
+| luna B7（继续压缩总览与仓/主题页重复） | **拒绝（本轮）** | 本轮总览净增 §4.1/§8.1/§8.2 三节，都是评审要求补的；此时压缩会与刚吸收的内容打架。**登记为下一轮动作**，判据用 luna 自己给的：同一事实只在一处展开 |
+| luna B8（吸收"为什么"、拒绝快照值） | **部分接受** | "拒绝快照值"已执行（行数降级为量级词、括号行数清零）；"吸收为什么"部分执行——平台禁令与依赖方向进了 §4.1，但四类"为什么"没有独立去向，同 B7 登记下一轮 |
+
+### 三份验收表的回跑结果
+
+| 来源 | 标准 | 结果 |
+| --- | --- | --- |
+| cursor 最终声明 §5.1 | 总览与仓页对 CANCEL 结论一致且与代码一致 | **通过**（三处同一答案：已修） |
+| cursor 最终声明 §5.2 | README 不再引用不存在的 `governance.md` §4/§5 | **通过** |
+| cursor 最终声明 §5.3 | 范围改为本批三份 | **通过** |
+| cursor 最终声明 §5.4 | B3/B4/A1 后半、B7/B8 各有判定 | **通过**（见上表） |
+| cursor 最终声明 §5.5 | O1/O6/O7 补全 hash | **通过**（见提交号表） |
+| cursor 最终声明 §5.6 | 三份验收表有回跑结果 | **通过**（本表） |
+| cursor 最终声明 §5.7 | 「未完成」与表内一致 | **通过**（见下） |
+| cursor.md 验收标准 | 见该文件末节 | **未回跑**——该表要求逐条核对旧 baseline 条文是否已吸收，本轮按意见逐条处置而非按条文比对 |
+| kimi.md 验收标准 | A1 五项由评审方 fetch 后重跑 | **待评审方执行**，非本方可自证 |
+| luna.md 验收标准 | 第 3 条（语义坏链）本轮已修；其余为结构判断 | 第 3 条**通过**；其余待评审方判定 |
 
 ## 未完成
 
-无。四份评审的 A 组与 B 组已逐条处置完毕。
+| # | 事项 | 状态 |
+| --- | --- | --- |
+| 1 | luna B7 / B8 后半：压缩总览与仓页重复、给"为什么"独立去向 | **登记下一轮**，理由见上 |
+| 2 | `cursor.md` 自带验收表未按条文逐项回跑 | 未做 |
+| 3 | kimi A1 的五项取证需评审方 fetch 四个 App 仓 `opus` 分支后重跑 | **待评审方**，非本方可自证 |
 
-剩余动作是**评审方复核本处置**——特别是 kimi，需要它 fetch 四个 App 仓的
-`opus` 分支后重跑 A1 的取证命令，确认五处代码改动确实存在。
+**不写"无"。**上面三项活着且有行——按 cursor 最终声明的要求，
+活着的条目必须有落点，不能被"未完成：无"盖掉。

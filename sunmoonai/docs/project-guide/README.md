@@ -71,7 +71,7 @@
 ```
 project-guide/
 ├── README.md      本文件（导航 + 本集之外的目录定性）
-├── governance.md  动手前必读：权威排序、漂移尺子、维护与写作约定、编辑自检
+├── governance.md  动手前必读：权威排序、接手演练、什么不属于本文档集
 ├── repos/         一仓一文件
 │   ├── tpl-app.md          模板仓：定义标准形态，无领域
 │   ├── info-app.md         资讯域：采集→治理→分发
@@ -95,8 +95,8 @@ project-guide/
 
 ## 写作约定
 
-见 [`governance.md`](governance.md) §4；编辑自检见其 §5。
-本处不复述（同 §3 维护约定第 3 条：引用而非复制）。
+见 [`../working/doc-conventions.md`](../working/doc-conventions.md) §3；编辑自检见其 §4。
+本处不复述——引用而非复制，是那份文件自己的第二条维护约定。
 
 ## 本轮的已知缺口（读之前先知道）
 

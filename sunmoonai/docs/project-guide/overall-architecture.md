@@ -357,7 +357,7 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | App | 缺口 |
 | --- | --- |
 | info | Elasticsearch 索引默认关闭（`SEARCH_BACKEND=disabled`），索引任务直接跳过；分发运行时**只接受 `knowledge-app`** 一个下游 |
-| knowledge | RAGFlow 的 `CANCEL` 终态**被当作成功**（只有 `FAIL` 抛错）——被取消的摄入会标记为成功，存在数据完整性风险；Admin 入库运维页是**静态占位**，无 fetch 无操作 |
+| knowledge | Admin 入库运维页是**静态占位**，无 fetch 无操作 |
 | investment | `RunBudget` 四维限额已实现，但**两条生产链都不调用**（全仓仅三处引用：定义处、非生产图、其测试），故 `budget_exceeded` 状态在生产中**不可达**；Web 面未接 Pilot 链 |
 
 ### 9.4 组件级助手指令

@@ -76,6 +76,11 @@ render.py 解析出 digest 写入 bundle
 | 浏览器：strict TLS + 真实 Casdoor 登录 | `verify_r3_template_browser.mjs` | 是 |
 | 网络：NetworkPolicy 包级 allow/deny | `verify_r3_network_policy_calico.sh` | 是，**另起临时集群** |
 
+**smoke 通过 ≠ 发布完成。**smoke 只覆盖一条路径；上表六层缺一层就不算发过。
+证据也要分层留：静态层留 sha256 与 digest，集群层留副本/迁移 head/Ingress 集，
+浏览器层留真实登录，网络层留另起集群的 allow/deny 结果——
+**用低层证据替高层结论，是这套门禁最常见的绕过方式。**
+
 **不存在一个跑一次就全覆盖的门禁脚本。**尤其是网络策略：KIND 默认 kindnet
 **不执行 NetworkPolicy**，所以包级验证必须另起 Calico 集群；
 `production_network_policy_gate_satisfied` 是门禁脚本的输出字段，不是集群里的持久配置，
