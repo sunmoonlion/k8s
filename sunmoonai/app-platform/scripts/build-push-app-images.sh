@@ -46,7 +46,7 @@ done
 [[ -v ENV_OVERRIDE_TAG ]] && TAG_SET_BY_ENV="true"
 
 CLUSTER="${CLUSTER:-${DEFAULT_CLUSTER:-KIND}}"
-TAG="${TAG:-1.0.0}"
+TAG="${TAG:-architecture-v2-dev}"
 TARGET_REGISTRY="${TARGET_REGISTRY:-harbor.sunmoonai.com:30443/app-images}"
 BASE_REGISTRY="${BASE_REGISTRY:-harbor.sunmoonai.com:30443/k8s-images}"
 PLATFORM="${PLATFORM:-linux/amd64}"
@@ -61,8 +61,10 @@ DEBIAN_SECURITY_MIRROR="${DEBIAN_SECURITY_MIRROR:-http://mirrors.tuna.tsinghua.e
 NPM_REGISTRY="${NPM_REGISTRY:-https://registry.npmmirror.com}"
 SOURCE_ROOT="${SOURCE_ROOT:-${HOME}}"
 
-APPS=(${APPS:-info research knowledge})
-COMPONENTS=(${COMPONENTS:-admin-backend admin-frontend web-backend web-frontend})
+# v2 形态：四个 App，每个三个组件（ADR-0007 把 admin-backend/web-backend
+# 并成了单一 backend；research 已退役）。
+APPS=(${APPS:-tpl info knowledge investment})
+COMPONENTS=(${COMPONENTS:-backend admin-frontend web-frontend})
 
 log() {
     printf '\033[0;34m[INFO]\033[0m %s\n' "$*"
@@ -99,6 +101,40 @@ run() {
     "$@"
 }
 
+# 有两个 tag 不能被本脚本覆盖，它们指向已发布、已验证的制品：
+#
+#   1.0.0  v1 的正式发布。tpl-app/template-release-manifest.json 的
+#          release_policy.overwrite_v1_1_0_0 明确写着 false
+#   2.0.0  v2 的正式发布别名。发布采用 exact-digest-alias（不重建镜像，给已过
+#          R7 门禁的 digest 打别名），所以这个 tag 必须一直指向
+#          docs/architecture-v2/evidence/R7-release/release-manifest.json
+#          里记的那些 digest。本脚本推上去就把它指向了一份未经门禁的本地构建
+#
+# 本脚本是**本地构建直推**工具，产出的镜像没走过任何门禁，不该占用发布 tag。
+PROTECTED_TAGS=(1.0.0 2.0.0)
+
+assert_tag_is_not_protected() {
+    local protected
+    for protected in "${PROTECTED_TAGS[@]}"; do
+        [[ "$TAG" == "$protected" ]] || continue
+        if [[ "${ALLOW_PROTECTED_TAG:-false}" == "true" ]]; then
+            log "已显式放行受保护 tag: ${TAG}"
+            return 0
+        fi
+        cat >&2 <<MSG
+拒绝推送受保护的 tag: ${TAG}
+
+  1.0.0 是 v1 正式发布（manifest 的 overwrite_v1_1_0_0: false）
+  2.0.0 是 v2 正式发布别名，必须指向 R7 门禁通过的 digest
+
+本脚本产出的是未经门禁的本地构建，不该占用发布 tag。
+换一个 tag，例如：TAG=architecture-v2-dev $0
+确需覆盖（你清楚后果）：ALLOW_PROTECTED_TAG=true TAG=${TAG} $0
+MSG
+        exit 1
+    done
+}
+
 build_component() {
     local app="$1"
     local component="$2"
@@ -126,20 +162,14 @@ build_component() {
     [[ "$NO_CACHE" == "true" ]] && args+=(--no-cache)
 
     case "$component" in
-        admin-backend)
+        backend)
             args+=(
                 --build-arg "PYPI_INDEX_URL=${PYPI_INDEX_URL}"
                 --build-arg "DEBIAN_MIRROR=${DEBIAN_MIRROR}"
                 --build-arg "DEBIAN_SECURITY_MIRROR=${DEBIAN_SECURITY_MIRROR}"
             )
             ;;
-        admin-frontend)
-            args+=(--build-arg "NPM_CONFIG_REGISTRY=${NPM_REGISTRY}")
-            ;;
-        web-backend)
-            args+=(--build-arg "NPM_REGISTRY=${NPM_REGISTRY}")
-            ;;
-        web-frontend)
+        admin-frontend | web-frontend)
             args+=(
                 --build-arg "NPM_CONFIG_REGISTRY=${NPM_REGISTRY}"
                 --build-arg "NEXT_PUBLIC_APP_NAME=${app}"
@@ -166,6 +196,7 @@ main() {
     }
 
     apply_cluster_registry_defaults
+    assert_tag_is_not_protected
 
     log "配置文件: ${CONFIG_FILE}"
     log "集群配置: ${CLUSTER}"
