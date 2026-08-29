@@ -23,14 +23,25 @@
 | `architecture-v2/` | Architecture v2 重构（R0–R7）的门禁脚本与 evidence | 2026-08 | **门禁脚本仍在用**（见 [`topics/release.md`](topics/release.md)）；其中的结果文档属过程记录 |
 | `evidence/` | v5 时期的验收 evidence | 2026-08 | 历史留档 |
 | `mooc-manus-v5/` | v5 架构的契约与脚本（111 文件） | 2026-08 | **已被 Architecture v2 取代**；其 `contracts/` 不在现行三套契约之列（见 [`topics/contracts.md`](topics/contracts.md) §7） |
-| `recursive-architecture/` | 2025-12 的旧设计 | 2025-12 | 历史，已失效 |
 | `ai-tools/` | 工具调研笔记 | 2026-08 | 参考 |
 | **`mooc-manus-langgraph-longterm-plan-v5.md`** 及其实施计划、handoff | 上一轮的施工基线 | 2026-07 | **已降级为历史设计输入**（[ADR-0014](decisions/0014-agent-generic-domain-split.md)）。其**前后端对接**部分仍有效且详尽，相应工作启动时可引用；其 §14 多智能体（23 行）不作为智能体架构依据。任务游标停在 `P0-008C = PAUSED_FOR_ARCHITECTURE_REVIEW` |
 | `mooc-manus-langgraph-longterm-plan-v4.md` | v5 的前身 | 2026-07 | 历史。但其 **§20 `AgentProfile` 结构（102 行）比 v5 §14 完整**，经 ADR-0014 重新生效为专用部分的载体 |
-| `docs/` 下其余散落 md | 环境变量、Harbor、Celery 等主题笔记 | 不一 | 参考，未逐条与代码核对 |
+| `docs/` 下其余散落 md | Harbor、Celery、YAML 生成、k8s 连接等主题笔记 | 不一 | **参考，未逐条与代码核对**。主题都还活着，但断言可能已漂移——用之前先回代码验一遍 |
 | `app-platform/docs/`（本目录之外） | 14 份目标态设计文档 | — | **已标注为"实现参考，非权威"**——它自陈"描述长期边界和目标状态" |
 
-清理动作本身未做，登记为 [`../dev-plan/open-issues.md`](../dev-plan/open-issues.md) 的 O8。
+**2026-08-29 已清理一轮**（O8）：删掉 10 项 6989 行，判据是"描述的对象已不存在"——
+
+- 六份环境变量说明写的是 NestJS BFF / Nuxt / Vite 时代；现行八个前端全是
+  Next.js 16，后端全是 FastAPI（ADR-0007 已把 admin/web backend 并成单一 backend）
+- `APP组件开发.md`、`bff-config-differences-analysis.md` 全文以
+  `incubator-app-bff` / `llmops-app-bff` 为例，二者已不是活组件
+- `Dockerfile构建优化-从inboard到标准Python镜像.md`：inboard 时代已过
+- `recursive-architecture/`：2025-12 旧设计，本表原已定性"已失效"
+
+删的都是**活引用为 0** 的。取回：`git log --diff-filter=D -- sunmoonai/docs/<路径>`。
+
+留下的两类：`architecture-v2/` 等发布取证真源；v5 计划及其证据链
+（前后端对接部分仍有效）。主题笔记按上表定性保留。
 
 ## 按任务找
 
@@ -96,5 +107,5 @@ project-guide/
 - **前端未逐文件深读**：约 570 个 ts/tsx，核到了结构、入口、契约与关键配置层。
 - **前端的 `CLAUDE.md` 是本轮重写的，但前端本身未逐文件深读**——这是本轮
   风险最高的组合，逐条核对见 [`verify.md`](verify.md) §5。
-- **两项已知缺口**尚无去向，见
+- **一项已知缺口**尚无去向，见
   [`../dev-plan/open-issues.md`](../dev-plan/open-issues.md)。

@@ -19,14 +19,14 @@ U 是"还没想清楚"，O 是"已经查实、等着处理"。**编号不复用*
 
 | # | 事项 | 出处 | 性质 |
 | --- | --- | --- | --- |
-| O8 | `docs/` 下并存的历史目录尚未清理 | [`README.md`](../project-guide/README.md) §本集之外 | 待整理 |
 | O9 | Harbor 上 `:2.0.0` 别名是否物理存在未核实。`build_r7_release_manifest.py` 的 `tagged_image()` 只拼出该字符串写入清单，仓库内无任何脚本执行 `docker tag` 或等价推送 | [总览](../project-guide/overall-architecture.md) §9.1 | 一条 `curl` 可定，需能访问 Harbor。若缺失则补打别名即可，digest 不变，不影响运行中的负载 |
 
-**O1–O7、O10 已了结**（版本口径、RAGFlow CANCEL、RunBudget、Outbox、
-Scheduler、citation `source_href`、休眠能力声明机制、构建脚本），条目已删，
+**O1–O8、O10 已了结**（版本口径、RAGFlow CANCEL、RunBudget、Outbox、
+Scheduler、citation `source_href`、休眠能力声明机制、历史目录清理、
+构建脚本），条目已删，
 结论分别在：
 总览 §9.1、`repos/knowledge-app.md` 与该仓 `test_knowledge_ingestion.py`、
 [`README.md`](README.md) 的 U3 行、总览 §9.2、`topics/contracts.md` §5、
 `topics/release.md` §2 与 `app-platform/scripts/README.md`、
-`verify.md`「休眠能力的声明与校验」与四仓的 `test_dormant_capabilities.py`。
-过程见 git 历史。
+`verify.md`「休眠能力的声明与校验」与四仓的 `test_dormant_capabilities.py`、
+`../project-guide/README.md`「本集之外」。过程见 git 历史。
