@@ -29,21 +29,15 @@
 - [未来 Research App（尚未创建）](./research-app.md)
 - [未来 Tools App（尚未创建）](./tools-app.md)
 
-## 架构决策（已迁至 `docs/project-guide/decisions/`）
+## 架构决策（已升为约束）
 
-- [ADR-0001：按长期业务领域划分 App](../../docs/project-guide/decisions/0001-domain-boundaries.md)
-- [ADR-0002：每类业务数据只有一个权威主档](../../docs/project-guide/decisions/0002-system-of-record.md)
-- [ADR-0003：同步 API 与异步事件并用](../../docs/project-guide/decisions/0003-sync-and-event-integration.md)
-- [ADR-0004：对象存储按领域拥有和隔离](../../docs/project-guide/decisions/0004-object-storage-ownership.md)
-- [ADR-0005：RAGFlow 定位为可重建的派生系统](../../docs/project-guide/decisions/0005-ragflow-as-derived-system.md)
-- [ADR-0006：模板组件不定义领域边界](../../docs/project-guide/decisions/0006-template-components-and-domain-boundaries.md)
-- [ADR-0007：每个领域 App 只有一个规范 Backend](../../docs/project-guide/decisions/0007-one-canonical-backend-per-app.md)
-- [ADR-0008：Backend 仓库收敛与归档](../../docs/project-guide/decisions/0008-backend-repository-convergence.md)
-- [ADR-0009：Admin、Web 与 Internal 接口及身份分面](../../docs/project-guide/decisions/0009-api-surfaces-and-identity.md)
-- [ADR-0010：每个 App 的数据库与迁移链归并](../../docs/project-guide/decisions/0010-database-convergence.md)
-- [ADR-0011：Backend 运行角色与容量边界](../../docs/project-guide/decisions/0011-backend-runtime-roles.md)
-- [ADR-0012：模板优先与实例完整同步](../../docs/project-guide/decisions/0012-template-first-adoption.md)
-- [ADR-0013：发布 Artifact 生命周期](../../docs/project-guide/decisions/0013-release-artifact-lifecycle.md)
+原 14 条 ADR 已删除。其结论**全文**写在
+[`docs/dev-plan/README.md`](../../docs/dev-plan/README.md) 的「既有约束」一节（18 条），
+其中能机械判定的已变成
+[`docs/project-guide/check-cross-repo.py`](../../docs/project-guide/check-cross-repo.py)
+与各仓 `test_kernel_invariants.py` 里的检查。
+
+理由：留着仅作参考的文档不会被执行。
 
 ## 工程约定
 

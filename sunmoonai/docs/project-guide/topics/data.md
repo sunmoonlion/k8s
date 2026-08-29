@@ -1,7 +1,6 @@
 # 数据与迁移
 
-> 取证时点：2026-08-29 ｜ 决策来由见 [ADR-0002](../decisions/0002-system-of-record.md)、
-> [ADR-0004](../decisions/0004-object-storage-ownership.md)、[ADR-0010](../decisions/0010-database-convergence.md)
+> 取证时点：2026-08-29 ｜ 相关约束见 [`../../dev-plan/README.md`](../../dev-plan/README.md) 第 2、4、6 条
 
 ## 1. 一个 App 一个库，谁的表谁改
 
@@ -20,8 +19,7 @@
 
 ## 2. 派生系统可重建，主档不可
 
-这是 [ADR-0002](../decisions/0002-system-of-record.md) 与
-[ADR-0005](../decisions/0005-ragflow-as-derived-system.md) 的直接后果，
+这是约束第 2 条（单一主档）与第 5 条（RAGFlow 是派生系统）的直接后果，
 代码里有两处可观察的体现：
 
 - info 的索引任务在 `SEARCH_BACKEND=disabled` 时**直接跳过**（默认就是 disabled）
@@ -44,6 +42,29 @@ investment-app 另有一步特殊处理：部署时在跑迁移 Job **之前**�
 LOGIN 状态；info 与 knowledge 无此步。
 
 ## 4. 迁移纪律
+
+### 做数据迁移时的七步
+
+本节以上是**现状**；这里是**将来动数据时该怎么走**（原 ADR-0010）。
+
+```
+expand → backfill → reconcile → switch read → switch write → observe → contract
+```
+
+- 迁移前先生成清单：表、约束、索引、revision、数据量、所有者、Secret、备份、消费者
+- **旧写路径切换时必须 fail-closed，不得无期限双写**
+- 必要的双写必须有事务 Outbox、幂等、版本与对账，且有明确截止任务
+- 回滚窗结束前保留旧库备份、旧角色定义与恢复演练证据
+
+**六条验收项**，缺一不可：
+
+1. 可恢复备份 + 实际恢复演练
+2. 回填计数、哈希/抽样与业务不变量对账
+3. 新旧读路径结果对比
+4. 旧凭据在切换后被拒绝
+5. `migration current` 只有一个 head
+6. 回滚与重新前滚均通过
+
 
 | 规则 | 由谁保证 | 违反后果 |
 | --- | --- | --- |

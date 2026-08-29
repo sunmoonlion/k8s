@@ -286,6 +286,32 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 
 → 逐条核对记录与现状复核命令：[`architecture/verify.md`](verify.md) §5
 
+### 9.5 什么时候该拆出专用 Worker
+
+原 ADR-0011 的判据。**默认每个 App 只有一个通用 Worker**，
+满足下列任一条才拆：
+
+1. 浏览器、GPU、沙箱等依赖**显著扩大攻击面或镜像体积**
+2. 任务时长、重试或取消语义**显著不同**
+3. 需要**独立网络/服务身份**
+4. 有**持续容量指标**支持独立扩缩容
+5. 故障隔离**无法**通过队列和 Pod 边界实现
+
+触发拆分的依据是证据，不是预感：队列延迟、运行时长、资源占用、失败率、权限证据。
+
+各 App 的观测重点不同：
+
+| App | 盯什么 |
+| --- | --- |
+| info | 网络 / 浏览器 / 文件与 Outbox |
+| knowledge | 长摄取、RAGFlow、索引与对账 |
+| investment | LLM、工具、checkpoint、HITL、取消与沙箱 |
+
+### 9.6 接 Outbox 时的消费者要求
+
+原 ADR-0003：消费者必须实现**幂等、死信、重放与周期性对账**。
+事件通过 Transactional Outbox 可靠发布——这四项缺一，Outbox 就只是个表。
+
 ## 10. 去哪查
 
 | 我要做什么 | 读 |
@@ -295,7 +321,7 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 | 动登录、权限、服务间调用 | [`architecture/topics/identity.md`](topics/identity.md) |
 | 加表、改迁移 | [`architecture/topics/data.md`](topics/data.md) |
 | 发版、改部署清单 | [`architecture/topics/release.md`](topics/release.md) |
-| 想知道"当初为什么这么定" | [`architecture/decisions/`](decisions/)（ADR，追加不覆写） |
+| 想知道有哪些**必须遵守的约束** | [`../dev-plan/README.md`](../dev-plan/README.md)「既有约束」 |
 | 提一个开发请求 | [`request-lifecycle.md`](request-lifecycle.md) |
 | 查当前 digest / 迁移 head 等易变值 | 本文档不记这些值，见 [`architecture/verify.md`](verify.md) |
 

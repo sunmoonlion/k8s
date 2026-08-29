@@ -10,7 +10,7 @@
 它是 Info→Knowledge→Investment 链的**中枢**，也是**两套跨仓契约的唯一提供方**——
 `contracts/` 下的 schema 是可编辑真源，另外两个仓只持锁文件。
 
-**RAGFlow 是派生系统**（[ADR-0005](../decisions/0005-ragflow-as-derived-system.md)）：
+**RAGFlow 是派生系统**（约束第 5 条）：
 索引可由摄入链重建，权威记录在本仓的 PostgreSQL。
 
 后端 76 个文件 / 5794 行。

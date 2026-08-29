@@ -3,7 +3,7 @@
 > 取证时点：2026-08-29
 >
 > **入口是同目录下的 [`overall-architecture.md`](overall-architecture.md)**，先读它。
-> 本文件只是 `repos/` `topics/` `decisions/` 三个子目录的导航：
+> 本文件只是 `repos/` `topics/` 两个子目录的导航：
 > 总览回答「去哪看」，子目录回答「锚点在哪、规则是什么」。
 >
 > 本目录回答**「项目是什么、怎么做事」**，随代码变化更新。
@@ -24,7 +24,7 @@
 | `evidence/` | v5 时期的验收 evidence | 2026-08 | 历史留档 |
 | `mooc-manus-v5/` | v5 架构的契约与脚本（111 文件） | 2026-08 | **已被 Architecture v2 取代**；其 `contracts/` 不在现行三套契约之列（见 [`topics/contracts.md`](topics/contracts.md) §7） |
 | `ai-tools/` | 工具调研笔记 | 2026-08 | 参考 |
-| **`mooc-manus-langgraph-longterm-plan-v5.md`** 及其实施计划、handoff | 上一轮的施工基线 | 2026-07 | **已降级为历史设计输入**（[ADR-0014](decisions/0014-agent-generic-domain-split.md)）。其**前后端对接**部分仍有效且详尽，相应工作启动时可引用；其 §14 多智能体（23 行）不作为智能体架构依据。任务游标停在 `P0-008C = PAUSED_FOR_ARCHITECTURE_REVIEW` |
+| **`mooc-manus-langgraph-longterm-plan-v5.md`** 及其实施计划、handoff | 上一轮的施工基线 | 2026-07 | **已降级为历史设计输入**（见 [`../dev-plan/README.md`](../dev-plan/README.md)「这套计划的起点」）。其**前后端对接**部分仍有效且详尽，相应工作启动时可引用；其 §14 多智能体（23 行）不作为智能体架构依据。任务游标停在 `P0-008C = PAUSED_FOR_ARCHITECTURE_REVIEW` |
 | `mooc-manus-langgraph-longterm-plan-v4.md` | v5 的前身 | 2026-07 | 历史。但其 **§20 `AgentProfile` 结构（102 行）比 v5 §14 完整**，经 ADR-0014 重新生效为专用部分的载体 |
 | `docs/` 下其余散落 md | Harbor、Celery、YAML 生成、k8s 连接等主题笔记 | 不一 | **参考，未逐条与代码核对**。主题都还活着，但断言可能已漂移——用之前先回代码验一遍 |
 | `app-platform/docs/`（本目录之外） | 14 份目标态设计文档 | — | **已标注为"实现参考，非权威"**——它自陈"描述长期边界和目标状态" |
@@ -54,7 +54,7 @@
 | 加表、改迁移 | [`topics/data.md`](topics/data.md) |
 | 发版、改部署清单 | [`topics/release.md`](topics/release.md) + [`repos/k8s.md`](repos/k8s.md) |
 | 确认某个能力是否真的接线了 | 对应仓文件的**「已知未实现」**一节 |
-| 知道「当初为什么这么定」 | [`decisions/`](decisions/)（14 条 ADR） |
+| 知道有哪些**必须遵守的约束** | [`../dev-plan/README.md`](../dev-plan/README.md)「既有约束」（18 条） |
 | 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-plan/agent-discipline.md`](../dev-plan/agent-discipline.md) |
 | 推送改动、跨机拉取、子模块的坑 | [`collaboration.md`](collaboration.md) |
 | 知道接下来要建什么 | [`../dev-plan/`](../dev-plan/) |
@@ -83,8 +83,7 @@ project-guide/
 │   ├── identity.md    浏览器身份 vs 服务身份、Casdoor、scope
 │   ├── data.md        主档归属、派生系统、迁移纪律、Outbox
 │   └── release.md     发布单元、digest 纪律、门禁分层
-└── decisions/     14 条 ADR，**不再新增**，保留作历史查证
-                （其结论已写入 ../dev-plan/README.md「既有约束」）
+└── check-cross-repo.py  跨仓硬规则：gitlink/digest/隐式迁移/跨 App 表/hostPath/凭据复用
 ```
 
 ## 两种修改语义，别混
@@ -92,7 +91,7 @@ project-guide/
 | 目录 | 语义 | 怎么改 |
 | --- | --- | --- |
 | `overall-architecture.md` `repos/` `topics/` `verify.md` | **现状投影** | **覆盖式重写**：直接替换旧条文，只反映当前有效事实；历史由 git 承担 |
-| `decisions/` `history.md` `merge-review/` | **历史记录** | **只追加**：推翻一条要写新的一条并在旧的上标注被取代，不删不改 |
+| `history.md` `merge-review/` | **历史记录** | **只追加**：推翻一条要写新的一条并在旧的上标注被取代，不删不改 |
 | `governance.md` `request-lifecycle.md` `collaboration.md` | **规则** | 改动前应有共识；改完要检查依赖它的文档 |
 
 ## 写作约定

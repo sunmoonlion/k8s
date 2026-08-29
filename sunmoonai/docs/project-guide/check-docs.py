@@ -32,7 +32,7 @@ def mask_code(text: str) -> str:
 STAMP = re.compile(r'(?:取证时点|最后更新)[：:]\s*(\d{4})-(\d{2})-(\d{2})')
 
 # 不参与检查的子目录，各有理由：
-#   decisions/   ADR 是只追加的决策记录，不是投影，没有"取证时点"也不需要保鲜
+#   merge-review/ history.md  历史记录，不是投影，没有"取证时点"也不需要保鲜
 #   merge-review/ 外部评审方的记录，本方不得修改（含对本集问题的原文引用）
 EXCLUDE_DIRS = {'decisions', 'merge-review'}
 # 行号锚点：sed -n '12,34p' / :123 结尾的路径引用

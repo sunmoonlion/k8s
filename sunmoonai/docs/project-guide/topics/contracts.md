@@ -1,6 +1,6 @@
 # 跨 App 契约
 
-> 取证时点：2026-08-29 ｜ 决策来由见 [ADR-0003](../decisions/0003-sync-and-event-integration.md)
+> 取证时点：2026-08-29 ｜ 相关约束见 [`../../dev-plan/README.md`](../../dev-plan/README.md) 第 3 条
 
 ## 1. 三套契约
 

@@ -1,6 +1,6 @@
 # 发布与门禁
 
-> 取证时点：2026-08-29 ｜ 决策来由见 [ADR-0013](../decisions/0013-release-artifact-lifecycle.md)
+> 取证时点：2026-08-29 ｜ 相关约束见 [`../../dev-plan/README.md`](../../dev-plan/README.md) 第 12、13 条
 > 逐行位置见 [`../repos/k8s.md`](../repos/k8s.md) §4–§5
 
 ## 1. 发布单元
@@ -88,7 +88,7 @@ render.py 解析出 digest 写入 bundle
 
 **实例同步顺序锁定为 `info → knowledge → investment`。**
 
-变更顺序固定（[ADR-0012](../decisions/0012-template-first-adoption.md)）：
+变更顺序固定（约束第 12 条「模板优先」）：
 
 ```
 模板设计与实现 → 模板过门禁 → 冻结 release manifest
@@ -123,3 +123,14 @@ render.py 解析出 digest 写入 bundle
 grep -h '^version' */[a-z]*-backend/app/pyproject.toml
 python3 -c "import json;print(json.load(open('k8s/sunmoonai/app-platform/info-app/deployment/bundle/release.json'))['formal_release'])"
 ```
+
+## 清理镜像时的保护范围
+
+原 ADR-0013 的删除纪律。**这些不是建议，是删除前的门禁**：
+
+- Harbor **删除保护** release、live、evidence、rollback 及其 OCI 引用闭包
+- 删除前**重新采集**工作负载现状，执行 **dry-run** 并做**人工审计**；
+  删除后才运行 GC 与配额复核
+- 本地镜像只有在 Harbor 按 digest 可恢复、且 KIND 不再依赖本地候选后才能清理
+- **旧架构资产在观察窗结束前不得删除**（当前 `2.0.0` 观察窗状态见
+  `tpl-app/template-release-manifest.json` 的 `release_policy.observation_window`）
