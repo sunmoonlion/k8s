@@ -7,18 +7,23 @@
 > 移到这里因为它们是活的待办。
 >
 > 按 [`../project-guide/request-lifecycle.md`](../project-guide/request-lifecycle.md) R6：
-> 每条要么立请求，要么写一条 ADR 声明"已知并接受"。**当前状态：全部待定。**
+> 每条要么立请求，要么明确"已知并接受"。**不留悬空条目**——悬空的后果很具体：
+> 下一轮做代码投影的人会把它当新缺口再报一遍，然后重新论证一次它是有意的。
+> 本轮就这么浪费过一遍。
 
 编号 O 系列，与 [`README.md`](README.md)「下一步」的 U 系列（智能体设计未决）不同：
 U 是"还没想清楚"，O 是"已经查实、等着处理"。
+
+**状态取值**：待处理 · 已修复 · **已接受（声明）** · **并入 U 系列**。
+后两者不再出现在待办里；投影再看到它们时，看这里即可确认是已决而非遗漏。
 
 | # | 事项 | 出处 | 性质 |
 | --- | --- | --- | --- |
 | ~~O1~~ | ~~代码层 `2.0.0.dev0` 与部署层 `formal_release: true` 矛盾~~ | [总览](../project-guide/overall-architecture.md) §9.1 | **已了结 2026-08-29**，见下 |
 | ~~O2~~ | ~~RAGFlow `CANCEL` 被当作成功，被取消的摄入标记为 succeeded~~ | [`repos/knowledge-app.md`](../project-guide/repos/knowledge-app.md) §7 | **已修复 2026-08-29**，见下 |
-| O3 | `RunBudget` 生产未接线，`budget_exceeded` 状态不可达 | [`repos/investment-app.md`](../project-guide/repos/investment-app.md) §4.5 | 已设计未接线 |
-| O4 | 共享 Outbox/Inbox 四仓零业务调用 | [总览](../project-guide/overall-architecture.md) §9.2 | 模板有意留白，倾向"声明接受" |
-| O5 | 四仓均无 `beat_schedule`，Scheduler 空转 | [总览](../project-guide/overall-architecture.md) §9.2 | 同上 |
+| ~~O3~~ | ~~`RunBudget` 生产未接线，`budget_exceeded` 状态不可达~~ | [`repos/investment-app.md`](../project-guide/repos/investment-app.md) §4.5 | **并入 U3**，见下 |
+| ~~O4~~ | ~~共享 Outbox/Inbox 四仓零业务调用~~ | [总览](../project-guide/overall-architecture.md) §9.2 | **已接受（声明）**，见下 |
+| ~~O5~~ | ~~四仓均无 `beat_schedule`，Scheduler 空转~~ | [总览](../project-guide/overall-architecture.md) §9.2 | **已接受（声明）**，见下 |
 | O6 | 契约 `source_href` 与真实路由不匹配，照字面 GET 会 404 | [`topics/contracts.md`](../project-guide/topics/contracts.md) §5 | 契约缺陷 |
 | O7 | REQ-009 的"休眠能力声明+校验"机制未落地 | [来历记录](../project-guide/history.md) §3.3 | 机制缺口 |
 | O8 | `docs/` 下并存的历史目录尚未清理 | [`README.md`](../project-guide/README.md) §本集之外 | 见该节 |
@@ -110,13 +115,49 @@ knowledge_ingestion_service.py  complete_ragflow_ingestion()
 `timeout_seconds=0`，导致轮询循环一次都不进，新旧实现都走超时分支——**测试是
 空转的**。改为 `timeout_seconds=1` 后才真正区分出新旧行为。
 
+## O3 并入 U3（2026-08-29）
+
+**不是"后期把线接上"，是载体要换。**
+
+现状取证：
+
+| | |
+| --- | --- |
+| `RunBudget` 定义 | `domain/agent/runtime.py`，有 `check()` 与 `consume_*()` |
+| 唯一消费者 | `infrastructure/graph/first_m1_graph.py` |
+| 谁在用这个 graph | **只有 `scripts/agent_golden.py` 与一个 golden 测试** |
+| 生产链路 `pilot_service.py` | 只有一行 `"budget_exceeded": "failed"` 状态映射，**从不构造、也不消费预算** |
+| 数据库 | **`models/` 与全部迁移中无任何 budget 列** |
+
+预算完全活在内存里、随 graph state 传递。按 [`README.md`](README.md) 已定的判据——
+**跨 run、或跨进程死亡仍须正确的不变量，必须由存储承担**——现有 `RunBudget`
+**结构上就满足不了 U3**：它是 pydantic model，进程一死即失；而投资研究跑在多
+worker 上，worker 可被杀。
+
+**因此不再作为独立条目。**做 U3 时：字段可直接沿用 `RunBudget` 的四对
+（steps / tool_calls / llm_calls / input_tokens 的上限与已用量），载体换成 PG，
+并把 `pilot_service` 真正接上。U3 是卡着一切并行工作的那条（没有预算闸门就
+不能 fan-out），所以这件事紧跟 U1，不是"后期"。
+
+## O4 / O5 已接受（声明，2026-08-29）
+
+两者同源：**模板提供原语，实例按需启用。**在没有业务需要之前接上去，等于凭空
+给自己加一块要维护、要监控、要排障的面。
+
+| | 现状 | 重新审视的触发条件 |
+| --- | --- | --- |
+| **O4** 共享 Outbox/Inbox | 表、仓库类、Port 齐全，业务层零调用 | **第一个跨 App 异步事件落地时** |
+| **O5** Scheduler 空转 | 四仓均无 `beat_schedule`，进程起得来但无任务 | **第一个定时任务落地时** |
+
+到那时要一并确认的事：O4 是投递语义与去重键；O5 是 beat 的单实例保证
+（多副本 scheduler 会重复触发）。
+
+**声明的意义在于止损**：这两条此后不再计入待办。投影再报出来，看本节即可
+确认是已决，无须重新论证。
+
 ## 与智能体计划的交叉
 
-**O3 就是 [`README.md`](README.md) 下一步表里的 U3。**同一件事的两面：
-O3 是"投资仓已经有 `RunBudget` 设计但没接线"，U3 是"四本账要落 PG 的表结构未定"。
-做 U3 时直接把 O3 一并了结，不要另起一套预算表。
-
-其余七项与智能体架构无关，可独立处理。
+~~O3~~ 已并入 U3，见上。其余各项与智能体架构无关，可独立处理。
 
 ## 优先级判断
 
@@ -126,5 +167,6 @@ O3 是"投资仓已经有 `RunBudget` 设计但没接线"，U3 是"四本账要�
 
 ~~O1~~ 已了结。O9 是它的尾巴，一条 `curl` 就能定，但要能访问 Harbor。
 
-O4、O5 倾向"声明接受"：模板有意留白，等实例填。按 R6 也应落一条记录，
-否则下一轮投影会再次把它们当成缺口报一遍。
+**剩余待办只有五条**：O6（契约 404）、O7（休眠能力声明机制）、
+O8（历史目录清理）、O9（Harbor 别名核实）、O10（死脚本撞 v1 保护位）。
+~~O1~~ ~~O2~~ 已修复，~~O3~~ 并入 U3，~~O4~~ ~~O5~~ 已接受。

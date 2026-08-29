@@ -1,6 +1,6 @@
 # SunMoonAI 项目总览
 
-> 最后更新：2026-08-29 ｜ 取证时点：2026-08-27（对五仓源码直接取证）
+> 最后更新：2026-08-29 ｜ 取证时点：2026-08-29（对五仓源码直接取证）
 >
 > **本文件是进入这个项目的唯一入口。**读完它，你应当知道：改动落在哪个仓、
 > 那里有什么不可违反的规则、以及去哪里查更细的东西。
@@ -269,8 +269,8 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 | 项 | 实际状态 |
 | --- | --- |
 | **web-interaction 契约** | DTO、Port、前端 zod 齐全，但默认适配器返回 **503**；唯一替代实现是 reference fixture，且**生产禁止开启**。即：生产环境该契约面**必定不可用** |
-| **共享 Outbox/Inbox 原语** | 表、仓库类、Port 全在，业务层**零调用**（模板资产，实例继承但未使用） |
-| **Celery 周期任务** | 四仓都有 Scheduler 入口，**都没有 `beat_schedule` 定义** |
+| **共享 Outbox/Inbox 原语** | 表、仓库类、Port 全在，业务层**零调用**（模板资产，实例继承但未使用）。**已声明接受**——见 [`../dev-plan/open-issues.md`](../dev-plan/open-issues.md) O4；第一个跨 App 异步事件落地时重新审视 |
+| **Celery 周期任务** | 四仓都有 Scheduler 入口，**都没有 `beat_schedule` 定义**。**已声明接受**——见 [`../dev-plan/open-issues.md`](../dev-plan/open-issues.md) O5；第一个定时任务落地时重新审视（届时须解决 beat 的多副本重复触发） |
 | **`/api/internal/v1` 入站面** | tpl 与 info 只有中间件、无 router 挂载；只有 knowledge 与 investment 真正有内部路由 |
 
 ### 9.3 各 App 的具体缺口
