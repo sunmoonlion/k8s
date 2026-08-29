@@ -15,7 +15,7 @@ U 是"还没想清楚"，O 是"已经查实、等着处理"。
 | # | 事项 | 出处 | 性质 |
 | --- | --- | --- | --- |
 | ~~O1~~ | ~~代码层 `2.0.0.dev0` 与部署层 `formal_release: true` 矛盾~~ | [总览](../project-guide/overall-architecture.md) §9.1 | **已了结 2026-08-29**，见下 |
-| O2 | RAGFlow `CANCEL` 被当作成功，被取消的摄入标记为 succeeded | [`repos/knowledge-app.md`](../project-guide/repos/knowledge-app.md) §7 | 数据完整性风险 |
+| ~~O2~~ | ~~RAGFlow `CANCEL` 被当作成功，被取消的摄入标记为 succeeded~~ | [`repos/knowledge-app.md`](../project-guide/repos/knowledge-app.md) §7 | **已修复 2026-08-29**，见下 |
 | O3 | `RunBudget` 生产未接线，`budget_exceeded` 状态不可达 | [`repos/investment-app.md`](../project-guide/repos/investment-app.md) §4.5 | 已设计未接线 |
 | O4 | 共享 Outbox/Inbox 四仓零业务调用 | [总览](../project-guide/overall-architecture.md) §9.2 | 模板有意留白，倾向"声明接受" |
 | O5 | 四仓均无 `beat_schedule`，Scheduler 空转 | [总览](../project-guide/overall-architecture.md) §9.2 | 同上 |
@@ -60,6 +60,56 @@ bundle **9/9 逐字一致**。
   若缺失，补打别名即可，digest 不变，不影响运行中的负载
 - **O10**：构建脚本的默认 tag 与发布口径脱节（详见下表）
 
+## O2 了结记录（2026-08-29）
+
+**影响比原描述更大。**取证链：
+
+```
+ragflow.py       terminal = {DONE, FAIL, CANCEL}，只有 FAIL 抛错
+      ↓          CANCEL 正常 return
+knowledge_ingestion_service.py  complete_ragflow_ingestion()
+      ↓
+  KnowledgeDocumentVersion.status = "indexed"，indexed_at = now
+  job.status = "succeeded"，last_error = None
+```
+
+两处后果：
+
+1. **被取消的文档进入检索候选集**——`knowledge_retrieval_service.py`
+   的 `_eligible_versions` 正是按 `status == "indexed"` 过滤。内容残缺却照常
+   参与检索，下游（investment-app 走 retrieval 契约）完全无感：不报错，
+   只是答案变差
+2. **连补救入口都没有**——`retry_ingestion_job` 明确拒绝 `succeeded`
+   （`succeeded ingestion job cannot be retried`），只能人工改库
+
+**顺带查出两条原描述没有的：**
+
+- **`progress >= 1.0` 是独立的成功条件**，与 `run` 并列。读 RAGFlow
+  `api/db/services/document_service.py`：`progress = 1` 与 `run = DONE`
+  在同一次更新里写入，progress 不会先于 run 到 1——所以这条只有坏处
+- **`run` 在 RAGFlow 库里是数字**（`common/constants.py` 的 `TaskStatus`：
+  `2=CANCEL 3=DONE 4=FAIL`），HTTP 列表端点经 `map_doc_keys()` 映射为文本
+  才返回。本仓只认文本，一旦 RAGFlow 版本改变映射行为，**判定会静默失效**
+  ——所有取值都落不进终态，只会一路轮询到超时
+
+**处置：**
+
+1. 终态逐值判定：`DONE` 返回、`FAIL` 抛 `RAGFlowParseError`、
+   `CANCEL` 抛新增的 `RAGFlowParseCancelledError`
+2. `RAGFlowParseCancelledError` 继承 `RAGFlowParseError`，因此沿用
+   `ragflow_parse_failed` 这个**可重试**状态（它不在 `RETRY_BLOCKED_STATUSES`
+   里）；`error_type` 单独记为 `ragflow_parse_cancelled` 以便区分排查方向
+3. 删掉 `progress >= 1.0` 这条独立成功条件
+4. 数字与文本两种 `run` 取值都接受
+
+**验证：**新增 5 个测试；其中 3 个在旧实现下逐条确认会失败。
+四仓 370 passed / 8 skipped；`ruff format --check app core`（Dockerfile 的实际
+检查范围）四仓全净；pyright 0 errors。
+
+**过程中的一个自查：**`test_progress_alone_does_not_signal_completion` 初版用
+`timeout_seconds=0`，导致轮询循环一次都不进，新旧实现都走超时分支——**测试是
+空转的**。改为 `timeout_seconds=1` 后才真正区分出新旧行为。
+
 ## 与智能体计划的交叉
 
 **O3 就是 [`README.md`](README.md) 下一步表里的 U3。**同一件事的两面：
@@ -70,9 +120,8 @@ O3 是"投资仓已经有 `RunBudget` 设计但没接线"，U3 是"四本账要�
 
 ## 优先级判断
 
-**O2 与 O6 是真缺陷，其余是待澄清或有意留白。**
+**O6 是剩下的真缺陷**（O2 已修复）。
 
-- **O2** 数据完整性：被取消的摄入被标记为 succeeded，下游会把不完整的知识当成完整的用
 - **O6** 契约缺陷：`source_href` 照字面 GET 会 404，任何按契约文档实现的 consumer 都会踩
 
 ~~O1~~ 已了结。O9 是它的尾巴，一条 `curl` 就能定，但要能访问 Harbor。

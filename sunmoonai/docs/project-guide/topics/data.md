@@ -1,6 +1,6 @@
 # 数据与迁移
 
-> 取证时点：2026-08-27 ｜ 决策来由见 [ADR-0002](../decisions/0002-system-of-record.md)、
+> 取证时点：2026-08-29 ｜ 决策来由见 [ADR-0002](../decisions/0002-system-of-record.md)、
 > [ADR-0004](../decisions/0004-object-storage-ownership.md)、[ADR-0010](../decisions/0010-database-convergence.md)
 
 ## 1. 一个 App 一个库，谁的表谁改

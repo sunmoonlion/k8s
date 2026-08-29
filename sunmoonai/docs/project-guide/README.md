@@ -1,6 +1,6 @@
 # 项目指南 · 导航
 
-> 取证时点：2026-08-28
+> 取证时点：2026-08-29
 >
 > **入口是同目录下的 [`overall-architecture.md`](overall-architecture.md)**，先读它。
 > 本文件只是 `repos/` `topics/` `decisions/` 三个子目录的导航：

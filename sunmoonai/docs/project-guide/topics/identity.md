@@ -1,6 +1,6 @@
 # 身份与授权
 
-> 取证时点：2026-08-27 ｜ 决策来由见 [ADR-0009](../decisions/0009-api-surfaces-and-identity.md)
+> 取证时点：2026-08-29 ｜ 决策来由见 [ADR-0009](../decisions/0009-api-surfaces-and-identity.md)
 
 ## 1. 两类身份，互不通用
 

@@ -1,6 +1,6 @@
 # knowledge-app（知识库）
 
-> 取证时点：2026-08-27 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西
+> 取证时点：2026-08-29 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西
 
 ## 1. 定位
 
@@ -131,7 +131,7 @@ settings.retrieval_auth_required_scope in service_principal.scopes  # scope
 
 | 项 | 实际状态 |
 | --- | --- |
-| **RAGFlow `CANCEL` 被当作成功** | 终态集是 `{DONE, FAIL, CANCEL}`，但**只有 `FAIL` 抛错**；`CANCEL` 走成功链路，job 标 `succeeded`。**被取消的摄入会被记为成功——数据完整性风险，建议确认是有意还是缺陷** |
+| ~~RAGFlow `CANCEL` 被当作成功~~ | **已修复 2026-08-29**（O2）。终态改为逐值判定：`DONE` 返回、`FAIL` 抛 `RAGFlowParseError`、`CANCEL` 抛 `RAGFlowParseCancelledError`（继承前者，故沿用可重试分类，`error_type` 区分为 `ragflow_parse_cancelled`）。同时移除 `progress >= 1.0` 这条独立成功条件，并接受数字与文本两种 `run` 取值 |
 | Admin「入库任务」运维页 | **静态占位页**：只列 API 路径文案，无 fetch、无表格、无操作 |
 | 契约 `source_href` 与真实路由不匹配 | citation schema 约束 `^/api/citations/{uuid}/source$`，本仓无该路由；实际路由挂在 web 前缀下。**照字面拼路径去 GET 会 404** |
 | 共享 Outbox | 表与仓库类在，零业务调用 |
@@ -148,8 +148,9 @@ uv run pytest tests/test_kernel_invariants.py -q      # 6 项
 
 复核关键风险：
 ```bash
-# CANCEL 是否被当成功（terminal 集含 CANCEL，但只有 FAIL raise）
-sed -n '/terminal = /,/return last_doc/p' app/app/infrastructure/external/ragflow.py
+# 终态判定：CANCEL 必须抛错，progress 不得单独构成成功条件
+sed -n '/async def _wait_for_document_parse/,/_RUN_ALIASES/p' app/app/infrastructure/external/ragflow.py
+uv run pytest tests/test_knowledge_ingestion.py -k 'cancelled or numeric or progress_alone' -q
 
 # 三重授权
 sed -n '/requested_datasets = set/,/retrieval service relation/p' app/app/application/services/knowledge_retrieval_service.py
