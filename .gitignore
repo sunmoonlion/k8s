@@ -209,3 +209,4 @@ sunmoonai/ops-platform/mongo-express/deploy-mongo-express/secrets/mongo-express-
 sunmoonai/**/deploy-*/secrets/**/*.yaml
 !sunmoonai/**/deploy-*/secrets/**/*.yaml.example
 utils/.k8s-status
+__pycache__/

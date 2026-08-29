@@ -122,7 +122,8 @@ python3 parallel-proposals.py --request req.md --n 5 --out ./proposals
 
 多家助手评审主方产出、主方吸收意见。**本项目已实跑过一轮**（2026-08-27，
 qoder 评审 opus 的文档重构），下列规则全部来自那一轮暴露的实际问题，
-记录见 [`../working/merge-review/`](../working/merge-review/)。
+上一轮的记录（qoder / cursor / kimi / luna 四方评审 + 吸收处置）
+已随 2026-08-29 的 merge 完成并删除，见 git 历史。
 
 ### 5.1 为什么值得做
 
