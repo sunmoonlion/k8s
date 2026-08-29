@@ -6,7 +6,8 @@
 > 是不提出。
 >
 > 项目现在长什么样，见 [`../project-guide/`](../project-guide/)；
-> 接下来要建什么，见 [`README.md`](README.md)。
+> 要建什么见 [`development-plan.md`](development-plan.md)，
+> 现在做什么见 [`implementation-plan.md`](implementation-plan.md)。
 
 ## 怎么用
 

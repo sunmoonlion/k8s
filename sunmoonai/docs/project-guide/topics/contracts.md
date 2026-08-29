@@ -1,6 +1,6 @@
 # 跨 App 契约
 
-> 取证时点：2026-08-29 ｜ 相关约束见 [`../../dev-plan/README.md`](../../dev-plan/README.md) 第 3 条
+> 取证时点：2026-08-29 ｜ 相关规则见 [`../../dev-plan/constraints.md`](../../dev-plan/constraints.md)「契约」C1–C6
 
 ## 1. 三套契约
 

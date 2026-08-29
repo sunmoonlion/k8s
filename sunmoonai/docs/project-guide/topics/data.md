@@ -1,6 +1,6 @@
 # 数据与迁移
 
-> 取证时点：2026-08-29 ｜ 相关约束见 [`../../dev-plan/README.md`](../../dev-plan/README.md) 第 2、4、6 条
+> 取证时点：2026-08-29 ｜ 相关规则见 [`../../dev-plan/constraints.md`](../../dev-plan/constraints.md)「数据」D1–D9
 
 ## 1. 一个 App 一个库，谁的表谁改
 

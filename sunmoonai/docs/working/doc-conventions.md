@@ -4,7 +4,7 @@
 >
 > **本文件管的是「怎么写这套文档」，不是项目本身。**项目现状见
 > [`../project-guide/`](../project-guide/)；代码要遵守的约束见
-> [`../dev-plan/README.md`](../dev-plan/README.md)。
+> [`../dev-plan/constraints.md`](../dev-plan/constraints.md)。
 
 ## 1. 漂移：什么时候必须更新文档
 

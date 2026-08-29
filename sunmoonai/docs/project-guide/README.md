@@ -10,8 +10,7 @@
 >
 > | 目录 | 管什么 | 改了之后 |
 > | --- | --- | --- |
-> | [`../dev-plan/constraints.md`](../dev-plan/constraints.md) | 代码必须符合的规则 | **代码要跟着改** |
-> | [`../dev-plan/`](../dev-plan/) | 接下来建什么 | 计划变 |
+> | [`../dev-plan/`](../dev-plan/) | 代码必须符合的规则、接下来建什么 | **代码要跟着改** |
 > | [`../working/`](../working/) | 我们怎么共事：提请求、推送、写文档、评审 | 协作方式变，代码不变 |
 >
 > **规则不写在本目录**——投影只描述现状。看到"必须/禁止"而想知道谁在执行它，
@@ -29,8 +28,8 @@
 | `evidence/` | v5 时期的验收 evidence | 2026-08 | 历史留档 |
 | `mooc-manus-v5/` | v5 架构的契约与脚本（111 文件） | 2026-08 | **已被 Architecture v2 取代**；其 `contracts/` 不在现行三套契约之列（见 [`topics/contracts.md`](topics/contracts.md) §7） |
 | `ai-tools/` | 工具调研笔记 | 2026-08 | 参考 |
-| **`mooc-manus-langgraph-longterm-plan-v5.md`** 及其实施计划、handoff | 上一轮的施工基线 | 2026-07 | **已降级为历史设计输入**，见 [`../dev-plan/README.md`](../dev-plan/README.md)「这套计划的起点」。其**前后端对接**部分仍有效且详尽，相应工作启动时可引用；其 §14 多智能体（23 行）不作为智能体架构依据。任务游标停在 `P0-008C = PAUSED_FOR_ARCHITECTURE_REVIEW` |
-| `mooc-manus-langgraph-longterm-plan-v4.md` | v5 的前身 | 2026-07 | 历史。但其 **§20 `AgentProfile` 结构（102 行）比 v5 §14 完整**，现重新生效为专用部分的载体，见 [`../dev-plan/README.md`](../dev-plan/README.md) U4 |
+| **`mooc-manus-langgraph-longterm-plan-v5.md`** 及其实施计划、handoff | 上一轮的施工基线 | 2026-07 | **已降级为历史设计输入**，见 [`../dev-plan/development-plan.md`](../dev-plan/development-plan.md)「起点」。其**前后端对接**部分仍有效且详尽，相应工作启动时可引用；其 §14 多智能体（23 行）不作为智能体架构依据。任务游标停在 `P0-008C = PAUSED_FOR_ARCHITECTURE_REVIEW` |
+| `mooc-manus-langgraph-longterm-plan-v4.md` | v5 的前身 | 2026-07 | 历史。但其 **§20 `AgentProfile` 结构（102 行）比 v5 §14 完整**，现重新生效为专用部分的载体，见 [`../dev-plan/implementation-plan.md`](../dev-plan/implementation-plan.md) U4 |
 | `docs/` 下其余散落 md | Harbor、Celery、YAML 生成、k8s 连接等主题笔记 | 不一 | **参考，未逐条与代码核对**。主题都还活着，但断言可能已漂移——用之前先回代码验一遍 |
 | `app-platform/docs/`（本目录之外） | 14 份目标态设计文档 | — | **已标注为"实现参考，非权威"**——它自陈"描述长期边界和目标状态" |
 

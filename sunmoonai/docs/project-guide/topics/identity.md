@@ -1,6 +1,6 @@
 # 身份与授权
 
-> 取证时点：2026-08-29 ｜ 相关约束见 [`../../dev-plan/README.md`](../../dev-plan/README.md) 第 10、14–17 条
+> 取证时点：2026-08-29 ｜ 相关规则见 [`../../dev-plan/constraints.md`](../../dev-plan/constraints.md)「身份」I1–I8
 
 ## 1. 两类身份，互不通用
 
