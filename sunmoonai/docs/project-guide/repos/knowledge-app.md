@@ -13,15 +13,15 @@
 **RAGFlow 是派生系统**（约束第 5 条）：
 索引可由摄入链重建，权威记录在本仓的 PostgreSQL。
 
-后端 76 个文件 / 5794 行。
+后端约 75 个文件、5–6k 行。
 
 ## 2. 结构（只列模板之外）
 
 | 路径 | 装什么 |
 | --- | --- |
-| `application/services/knowledge_ingestion_service.py` | 531 行，摄入编排 |
-| `application/services/knowledge_retrieval_service.py` | 250 行，检索编排 |
-| `application/dto/knowledge.py` / `dto/retrieval.py` | 115 / 144 行，契约 DTO |
+| `application/services/knowledge_ingestion_service.py` | 摄入编排 |
+| `application/services/knowledge_retrieval_service.py` | 检索编排 |
+| `application/dto/knowledge.py` / `dto/retrieval.py` | 契约 DTO |
 | `infrastructure/external/ragflow.py` | RAGFlow 客户端与制品解析 |
 | `infrastructure/security/service_auth.py` | **双关系**服务身份验证器，见 §4.3 |
 | `interfaces/endpoints/knowledge_routes.py` | Admin + Internal 领域路由 |
@@ -160,6 +160,6 @@ uv run pytest tests/test_knowledge_ingestion.py -k 'cancelled or numeric or prog
 sed -n '/requested_datasets = set/,/retrieval service relation/p' app/app/application/services/knowledge_retrieval_service.py
 
 # citation 路由实际只有一条，且在 web 前缀下
-# citation 的 source_href 必须能在真实路由表里找到（O6 的回归护栏）
+# citation 的 source_href 必须能在真实路由表里找到
 uv run pytest tests/test_knowledge_retrieval.py -k resolves_to_a_real_route
 ```

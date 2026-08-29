@@ -7,7 +7,7 @@
 智能体域：以 LangGraph 承载投资研究 run，向 knowledge 取检索证据，经人机交互产出结论。
 消费 knowledge 的 retrieval v1 契约。
 
-**五仓中领域代码最重的一个**：112 个文件 / 8531 行。也是唯一有完整状态机、
+**五仓中领域代码最重的一个**：约 110 个文件、8–9k 行。也是唯一有完整状态机、
 检查点恢复、事件流与副作用记账的仓——[`../../working/request-lifecycle.md`](../../working/request-lifecycle.md)
 §7 的映射表以本仓为对象。
 
@@ -18,8 +18,8 @@
 | `domain/agent/` | `runtime.py`（状态机 + RunBudget）、`models.py`（DomainEvent/UIEvent/RunLineage）、`commands.py`、`knowledge.py`、`tools.py`、`profiles.py`、`memory.py`、`message_upcaster.py` 等 |
 | `application/agent/` | `run_service.py`、`pilot_service.py`、`graph_runtime_service.py`、`side_effect_service.py`、`session_lock.py`、`event_sink.py`、`timeline_projector.py`、`memory_service.py` |
 | `infrastructure/graph/` | `walking_skeleton.py`、`pilot_graph.py`、`first_m1_graph.py`、`langgraph_runtime.py`、`checkpointer.py`、`state.py` + 两个 spike |
-| `tasks/agent_graph.py` | 生产链一（203 行） |
-| `tasks/pilot_agent_graph.py` | 生产链二（271 行） |
+| `tasks/agent_graph.py` | 生产链一 |
+| `tasks/pilot_agent_graph.py` | 生产链二 |
 | `interfaces/endpoints/agent_routes.py` | Admin Agent v4 面（默认关闭） |
 | `interfaces/endpoints/pilot_runtime_routes.py` | Internal Pilot 面 |
 | `contracts/knowledge-retrieval-provider-lock.json` | retrieval 契约**消费锁** |

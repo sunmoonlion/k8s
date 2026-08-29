@@ -14,16 +14,16 @@
 
 ## 2. 结构
 
-后端 65 个 py 文件 / 3478 行（不含 `core/`）。`core/config.py` 另有 518 行。
+后端约 65 个 py 文件、3–4k 行（不含 `core/`）。`core/config.py` 是本仓最大单文件。
 
 | 路径 | 装什么 |
 | --- | --- |
-| `tpl-backend/app/core/config.py` | **518 行**，Pydantic Settings + 约 35 处生产期硬校验。真正的强制在这里 |
+| `tpl-backend/app/core/config.py` | **本仓最大单文件**，Pydantic Settings + 约 35 处生产期硬校验。真正的强制在这里 |
 | `tpl-backend/app/app/bootstrap/` | 四个运行角色入口：`api.py`(173) / `worker.py`(7) / `scheduler.py`(7) / `migration.py`(42) |
 | `tpl-backend/app/app/application/services/` | `auth_service.py`(373)、`web_interaction.py`(235) |
 | `tpl-backend/app/app/application/ports/` | `outbox.py`、`web_interaction.py`——Port 定义 |
 | `tpl-backend/app/app/infrastructure/security/` | `oidc.py`(428)、`service_identity.py`(108) |
-| `tpl-backend/app/app/infrastructure/repositories/outbox.py` | 164 行，Outbox SQL 实现 |
+| `tpl-backend/app/app/infrastructure/repositories/outbox.py` | Outbox SQL 实现 |
 | `tpl-backend/app/app/interfaces/http/` | `admin/`（auth、diagnostics）+ `web/`（auth、interactions）+ `middleware/` |
 | `tpl-backend/app/alembic/versions/` | 2 个版本（见 §5） |
 | `tpl-admin-frontend/` `tpl-web-frontend/` | 两个 Next.js 前端 |
@@ -135,7 +135,7 @@ async def get_web_interaction_port() -> WebInteractionPort:
 | Admin OIDC | `interfaces/http/admin/auth.py` |
 | Web OIDC | `interfaces/http/web/auth.py` |
 | Admin 诊断（Celery ping） | `interfaces/http/admin/diagnostics.py` |
-| Web interaction `/api/web/v1` | `interfaces/http/web/interactions.py`（170 行） |
+| Web interaction `/api/web/v1` | `interfaces/http/web/interactions.py` |
 | 服务身份校验 | `infrastructure/security/service_identity.py` |
 | web-interaction 双端向量 | `contracts/web-interaction-v1.consumer-vectors.json` |
 

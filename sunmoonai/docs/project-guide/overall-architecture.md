@@ -31,8 +31,8 @@ Kubernetes。**五个 Git 仓，必须并列放置**（部署脚本按同级相�
 | `investment-app` | 智能体域：投资研究 run、检索证据、人机交互 | 是 |
 | `k8s` | 部署编排：全部平台的部署声明、发布门禁；本文档也在此 | **否** |
 
-规模（实测）：后端合计约 25.5k 行 Python；八个前端约 570 个 ts/tsx；
-`k8s` 仓约 960 个 yaml、380 个 shell、77 个 python。
+规模（量级）：后端合计 2–3 万行 Python；八个前端约 570 个 ts/tsx；
+`k8s` 仓约 1k 个 yaml，另有数百个 shell 与 python。
 
 ## 2. 依赖方向
 
@@ -49,7 +49,7 @@ k8s ──构建镜像 / 渲染 bundle / apply──▶ 三个 App 的运行态
 
 契约的规律：**schema 真源放在被调方（provider），锁文件放在调用方（consumer）**。
 
-→ 细节：[`architecture/topics/contracts.md`](topics/contracts.md)
+→ 细节：[`topics/contracts.md`](topics/contracts.md)
 
 ## 3. 一个标准 App 长什么样
 
@@ -105,7 +105,7 @@ app/app/
   **token 永不落 localStorage**
 - **OIDC 全部在后端**，前端没有 auth 的 API Route
 
-→ 细节：[`architecture/repos/tpl-app.md`](repos/tpl-app.md)
+→ 细节：[`repos/tpl-app.md`](repos/tpl-app.md)
 
 ## 4. 平台层（`k8s/sunmoonai/`）
 
@@ -127,7 +127,7 @@ app/app/
 App 侧实际用到的数据组件只有：PostgreSQL、Redis、object-storage、RabbitMQ、
 Elasticsearch（info 索引，**默认关闭**）。mongodb / neo4j / kibana / logstash 未见 App 引用。
 
-→ 细节：[`architecture/repos/k8s.md`](repos/k8s.md)
+→ 细节：[`repos/k8s.md`](repos/k8s.md)
 
 ## 5. 三条主链
 
@@ -181,7 +181,7 @@ RAGFlow / Elasticsearch / 缓存都是**可重建的派生系统，不是权威�
 两个易错点：**网络策略先于迁移**；`server-dry-run` 按 `release.json.resources`
 数组顺序走，**与 apply 的真实顺序不同**。
 
-→ 细节：[`architecture/topics/release.md`](topics/release.md)
+→ 细节：[`topics/release.md`](topics/release.md)
 
 ## 6. 身份
 
@@ -202,7 +202,7 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 服务身份校验链：验 audience → subject 必须命中精确绑定表 →
 `token_scopes ⊆ 允许集` 且 `required ⊆ token_scopes`。
 
-→ 细节：[`architecture/topics/identity.md`](topics/identity.md)
+→ 细节：[`topics/identity.md`](topics/identity.md)
 
 ## 7. 硬规则来自哪里
 
@@ -218,7 +218,7 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 （例如"`app.interfaces` 不出现在 application/ 目录"），是结构性冒烟测试，
 **不是深度架构校验**。真正严格的是第二层——配置错了服务直接起不来，不会降级运行。
 
-→ 细节：各仓 `architecture/repos/*.md` 的「硬规则」一节
+→ 细节：各仓 `repos/*.md` 的「硬规则」一节
 
 ## 8. 动手前必知的红线
 
@@ -253,9 +253,10 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 
 两点会绊人，动版本号前须知道：
 
-- **当前运行中的镜像内部仍报 `2.0.0.dev0`**——源码于 2026-08-29 才对齐，
-  未为此重建（`/api/version` 读 `importlib.metadata`）。下次有实质改动
-  重建时自然带上 `2.0.0`
+- **源码版本与已发布镜像不同步**：源码于 2026-08-29 对齐为 `2.0.0`，
+  未为此重建镜像。R7 锁定的 digest 构建自 `2.0.0.dev0` 时期的源码，
+  而 `/api/version` 读 `importlib.metadata`——**下次构建才会带入新版本**。
+  这些镜像当前是否在跑、跑的是哪个 digest，本文档集不断言（未连集群）
 - **改源码版本必须同时改 `uv.lock`**，否则 Dockerfile 的 `uv sync --frozen`
   会在构建阶段失败。`test_package_version_matches_the_formal_release` 会拦
 
@@ -264,9 +265,12 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 | 项 | 实际状态 |
 | --- | --- |
 | **web-interaction 契约** | DTO、Port、前端 zod 齐全，但默认适配器返回 **503**；唯一替代实现是 reference fixture，且**生产禁止开启**。即：生产环境该契约面**必定不可用** |
-| **共享 Outbox/Inbox 原语** | 表、仓库类、Port 全在，业务层**零调用**。**这是有意的**：模板提供原语，实例按需启用；没有业务需要之前接上去等于凭空加一块要维护、要监控、要排障的面。**第一个跨 App 异步事件落地时重新审视**，届时一并定投递语义与去重键 |
-| **Celery 周期任务** | 四仓都有 Scheduler 入口，**都没有 `beat_schedule` 定义**。**这是有意的**，理由同上。**第一个定时任务落地时重新审视**，届时须解决 beat 的多副本重复触发 |
+| **共享 Outbox/Inbox 原语** | 表、仓库类、Port 全在，业务层**零调用**——模板提供该原语，当前无生产调用，**不构成已上线能力** |
+| **Celery 周期任务** | 四仓都有 Scheduler 入口，**都没有 `beat_schedule` 定义**——进程起得来，无任务可跑 |
 | **`/api/internal/v1` 入站面** | tpl 与 info 只有中间件、无 router 挂载；只有 knowledge 与 investment 真正有内部路由 |
+
+上面两项**是否有意留白、何时重新审视**，代码证明不了——见
+[`../dev-plan/development-plan.md`](../dev-plan/development-plan.md)。
 
 ### 9.3 各 App 的具体缺口
 
@@ -276,25 +280,23 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 | knowledge | RAGFlow 的 `CANCEL` 终态**被当作成功**（只有 `FAIL` 抛错）——被取消的摄入会标记为成功，存在数据完整性风险；Admin 入库运维页是**静态占位**，无 fetch 无操作 |
 | investment | `RunBudget` 四维限额已实现，但**两条生产链都不调用**（全仓仅三处引用：定义处、非生产图、其测试），故 `budget_exceeded` 状态在生产中**不可达**；Web 面未接 Pilot 链 |
 
-### 9.4 文档层的已知问题（一项已处置）
+### 9.4 组件级助手指令
 
-各组件目录下的 `CLAUDE.md`（共 8 份，会被 Claude Code 自动注入）**曾严重过期**：
-描述的 `app/api/auth/`、`lib/request.ts`、`store/auth.ts`、`middleware.ts` 均不存在，
-声称的 axios 不是依赖，并要求以已被取代的 v5 文档为准。2026-08-27 已在各子仓
-重写为「局部编码规则 + 指向本文档集的指针」。**这是本节中唯一已处置的项**，
-其余各项仍未解决。
+各组件目录下有 8 份 `CLAUDE.md`（四仓 × 后端/web 前端），**会被 Claude Code
+进入目录时自动注入**。当前内容是「局部编码规则 + 指向本文档集与
+[`../dev-plan/constraints.md`](../dev-plan/constraints.md) 的指针」。
 
-
+⚠ 这类文件自动注入、不易被察觉，**改动组件结构时必须同步检查它们**。
 
 ## 10. 去哪查
 
 | 我要做什么 | 读 |
 | --- | --- |
-| 改某个仓的代码 | [`architecture/repos/`](repos/) 下对应文件 |
-| 加或改跨 App 契约 | [`architecture/topics/contracts.md`](topics/contracts.md) |
-| 动登录、权限、服务间调用 | [`architecture/topics/identity.md`](topics/identity.md) |
-| 加表、改迁移 | [`architecture/topics/data.md`](topics/data.md) |
-| 发版、改部署清单 | [`architecture/topics/release.md`](topics/release.md) |
+| 改某个仓的代码 | [`repos/`](repos/) 下对应文件 |
+| 加或改跨 App 契约 | [`topics/contracts.md`](topics/contracts.md) |
+| 动登录、权限、服务间调用 | [`topics/identity.md`](topics/identity.md) |
+| 加表、改迁移 | [`topics/data.md`](topics/data.md) |
+| 发版、改部署清单 | [`topics/release.md`](topics/release.md) |
 | **动代码前必读的规则** | [`../dev-plan/constraints.md`](../dev-plan/constraints.md)（39 条，按主题分组） |
 | 提一个开发请求 | [`../working/request-lifecycle.md`](../working/request-lifecycle.md) |
 | 查当前 digest / release_id | `k8s/sunmoonai/app-platform/<app>-app/deployment/bundle/release.json` |

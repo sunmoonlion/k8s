@@ -7,7 +7,7 @@
 资讯域：从外部源采集内容 → 抽取 → 去重 → 人工治理 → 把可分发制品送给 knowledge-app。
 它是 knowledge 的**唯一内容上游**。
 
-后端 88 个文件 / 7741 行。最大的单文件是 `info_crawl_service.py`（1789 行），
+后端约 90 个文件、7–8k 行。最大的单文件是 `info_crawl_service.py`（约 1.8k 行），
 整条采集-治理-分发链都在里面。
 
 ## 2. 结构（只列模板之外）
@@ -15,8 +15,8 @@
 | 路径 | 装什么 |
 | --- | --- |
 | `application/collectors/` | 采集器族 + 注册表，见 §4.1 |
-| `application/services/info_crawl_service.py` | **1789 行**，采集/去重/治理/分发编排 |
-| `application/services/delivery_outbox.py` | 338 行，业务 outbox 生命周期 |
+| `application/services/info_crawl_service.py` | **本仓最大单文件**（约 1.8k 行），采集/去重/治理/分发编排 |
+| `application/services/delivery_outbox.py` | 业务 outbox 生命周期 |
 | `interfaces/endpoints/info_routes.py` | 领域路由（模板面在 `interfaces/http/`） |
 | `interfaces/schemas/info.py` | 领域 schema |
 | `tasks/` | `crawl.py` `distribution.py` `search.py` `ping.py` |
@@ -55,7 +55,7 @@
 （rss 与 atom 共用 `RssCollectorAdapter`）：
 
 ```
-rss / atom      → RssCollectorAdapter        (123 行，ElementTree 双格式)
+rss / atom      → RssCollectorAdapter        (ElementTree 双格式)
 api             → ApiCollectorAdapter        (87 行，items_path 点路径 + 字段映射)
 changedetection → ChangeDetectionCollectorAdapter (21 行，需 watch_id)
 scrapy          → ScrapyCollectorAdapter     (23 行)

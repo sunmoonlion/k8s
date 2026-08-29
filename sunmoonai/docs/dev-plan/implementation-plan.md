@@ -38,7 +38,7 @@ P0 / P1 任务必须写明适用层次。
 ## 交付规则
 
 **分支与提交**——子仓先推，父仓后推；父仓不得出现悬空 gitlink（规则 T4）。
-推送前跑 `python3 check-cross-repo.py --repos <五仓父目录>`（本目录下）。
+推送后复核 gitlink 是否可达，见 [`../working/collaboration.md`](../working/collaboration.md) §3。
 
 **证据**——完成的任务在 `docs/evidence/<task-id>/` 留去敏后的：`result.md`、
 测试输出、关键 request/response、migration revision、image digest。

@@ -7,7 +7,7 @@
 五仓中**唯一不含应用源码**的仓：全部平台的部署声明、三个 App 的部署 bundle、
 发布门禁脚本、ADR，以及本文档集。它不拥有任何领域逻辑。
 
-规模：约 960 个 yaml、380 个 shell、77 个 python。
+规模：约 1k 个 yaml、数百个 shell 与 python。
 
 构建脚本从 `{SOURCE_ROOT}/{app}-app/` 读源码，render 脚本引用同级的
 `../tpl-app/k8s-deployment`——**因此五仓必须并列放置**。

@@ -95,6 +95,18 @@ done
 for r in tpl-app info-app knowledge-app investment-app k8s; do
   git -C "$r" push origin "$B" && git -C "$r" push gitee "$B"
 done
+
+# 3) 复核：父仓的 gitlink 必须已在远端存在
+#    忘推子仓时，你这边一切正常，是**别人**克隆时炸，
+#    而且报错（cannot fetch object）离病因很远。
+for a in tpl info knowledge investment; do
+  for c in backend admin-frontend web-frontend; do
+    d="$a-app/$a-$c"; [ -d "$d" ] || continue
+    L=$(git -C "$a-app" rev-parse "HEAD:$a-$c" 2>/dev/null) || continue
+    git -C "$d" merge-base --is-ancestor "$L" "origin/$B" 2>/dev/null \
+      || echo "✗ 悬空 gitlink: $a-app 指向 $a-$c@${L:0:8}，它不在 origin/$B 上"
+  done
+done
 ```
 
 ### 子模块处于 detached HEAD 时

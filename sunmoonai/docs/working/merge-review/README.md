@@ -11,12 +11,16 @@
 | --- | --- | --- |
 | [`qoder.md`](qoder.md) | qoder | 合并前评审与补充 |
 | [`qoder-final-statement.md`](qoder-final-statement.md) | qoder | 最终声明：合并将删除什么、什么必须在消失前留下 |
+| [`cursor.md`](cursor.md) | cursor | 对照自身旧 baseline，对 opus `project-guide/` 的评审与可吸收条文 |
+| [`kimi.md`](kimi.md) | kimi | 拿 App 源码逐条对账（取证于 `~/master` 08-22 快照） |
+| [`luna.md`](luna.md) | luna | 结构与一致性评审 |
+| [`disposition.md`](disposition.md) | **opus** | **吸收处置记录**：每条意见的采纳 / 证伪 / 待处理及理由 |
 
 ## 什么时候删除本目录
 
 **三个条件全部满足后删除，不是"觉得差不多了"：**
 
-1. 其余 AI 助手（cursor / kimi / luna / qwen3.8 等分支）**都已给出意见**
+1. 其余 AI 助手（cursor / kimi / luna / qoder 已给出；qwen3.8 未）**都已给出意见**
 2. 每条意见都已**吸收或明确拒绝**，且按 §5.3 留下处置记录
 3. 上述结果已 **merge 到 master**
 

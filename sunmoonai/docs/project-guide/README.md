@@ -34,7 +34,7 @@
 | `docs/` 下其余散落 md | Harbor、Celery、YAML 生成、k8s 连接等主题笔记 | 不一 | **参考，未逐条与代码核对**。主题都还活着，但断言可能已漂移——用之前先回代码验一遍 |
 | `app-platform/docs/`（本目录之外） | 14 份目标态设计文档 | — | **已标注为"实现参考，非权威"**——它自陈"描述长期边界和目标状态" |
 
-**2026-08-29 已清理一轮**（O8）：删掉 10 项 6989 行，判据是"描述的对象已不存在"——
+**2026-08-29 已清理一轮**：删掉 10 项 6989 行，判据是"描述的对象已不存在"——
 
 - 六份环境变量说明写的是 NestJS BFF / Nuxt / Vite 时代；现行八个前端全是
   Next.js 16，后端全是 FastAPI（admin/web backend 早已并成单一 backend）
@@ -63,7 +63,7 @@
 | 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-plan/agent-discipline.md`](../dev-plan/agent-discipline.md) |
 | 推送改动、跨机拉取、子模块的坑 | [`../working/collaboration.md`](../working/collaboration.md) |
 | 知道接下来要建什么 | [`../dev-plan/`](../dev-plan/) |
-| 复核本文档集的某条断言 | **读代码**。机械检查跑 `python3 ../working/check-docs.py` |
+| 复核本文档集的某条断言 | **读代码**，别的都不算数 |
 | 本轮查出的缺口都怎么处置了 | 结论已在各自投影里；过程 `git log --grep 'O[0-9]'` |
 
 ## 目录
@@ -103,6 +103,6 @@ project-guide/
 - **未连集群**：本文档集不断言运行态（Pod 状态、NetworkPolicy 实际生效、
   远程 profile）——要知道集群里在跑什么，去查集群，不要问文档。
 - **前端未逐文件深读**：约 570 个 ts/tsx，核到了结构、入口、契约与关键配置层。
-- 本轮查出的十项缺口**已全部了结**，结论落在各自对应的投影里；
-  过程见 `git log --grep 'O[0-9]'`。
+- 本文档集**不写进度**。哪些缺口修过、怎么修的，见 git 历史与
+  [`../working/merge-review/`](../working/merge-review/)。
 

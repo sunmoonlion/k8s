@@ -69,20 +69,13 @@ provider 改 schema → 双端（provider + consumer）测试都通过 → 才�
 再用 `dto/pilot_runtime.BrowserCitation` 读回来。两者 pattern 不一致会让
 `model_validate` 在运行时直接抛。
 
-### 曾经的坑（2026-08-29 修复）
-
-契约与三处 DTO 原本写 `/api/citations/{id}/source`，而真实路由挂在
-`/api/web/v1/` 下——**照契约字面拼路径去 GET 一律 404**。同时 investment
-自己的浏览器面 DTO 与前端 zod 早就用的是 `/api/web/v1/`，**同仓内部就不一致**。
-
-它能长期潜伏，是因为三处各自断言"字符串等于某个常量"，**谁也没有和路由表比对过**
-——三处一起错，测试全绿。现已改为拿契约的正则去真实路由表里找：
+### 复核这七处仍然同形
 
 ```bash
-# provider 侧
+# provider 侧：契约正则必须匹配真实路由
 cd knowledge-app/knowledge-backend/app
 uv run pytest tests/test_knowledge_retrieval.py -k resolves_to_a_real_route
-# consumer 侧，并断言两个首尾相接的类同形
+# consumer 侧：两个经事件存储首尾相接的类必须同形
 cd investment-app/investment-backend/app
 uv run pytest tests/test_knowledge_retrieval_contract.py -k matches_investment_own
 ```

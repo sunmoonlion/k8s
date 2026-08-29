@@ -42,13 +42,13 @@
 | # | 规则 | 谁在执行 |
 | --- | --- | --- |
 | D1 | **每类业务数据只有一个权威主档**，其余存储只保存引用、快照或可重建副本 | ⚠ 自检 |
-| D2 | 每个 App 收敛**一个逻辑数据库、一条迁移链**；禁止跨 App 合并数据库或直接读表 | `check-cross-repo.py` 无跨 App 建表 |
-| D3 | 物理资源可共享（同一 PostgreSQL 集群），但必须独立逻辑库、角色、Secret | 部署清单 + 凭据检查 |
-| D4 | 对象存储按领域拥有：Bucket、凭据、生命周期必须隔离；**不以共享宿主机目录作交换协议** | `check-cross-repo.py` 无 hostPath |
+| D2 | 每个 App 收敛**一个逻辑数据库、一条迁移链**；禁止跨 App 合并数据库或直接读表 | ⚠ 自检 |
+| D3 | 物理资源可共享（同一 PostgreSQL 集群），但必须独立逻辑库、角色、Secret | 部署清单 |
+| D4 | 对象存储按领域拥有：Bucket、凭据、生命周期必须隔离；**不以共享宿主机目录作交换协议** | ⚠ 自检 |
 | D5 | **RAGFlow 是可重建的派生系统**，不保存唯一原文 | ⚠ 自检 |
 | D6 | 迁移链单链线性，恰好一个 `down_revision = None` | `test_kernel_invariants.py` |
 | D7 | 改迁移**必须同步改** `test_kernel_invariants.py` 里那份文件名清单 | 该测试逐字比对 |
-| D8 | 迁移由**独立 Job** 执行，API / Worker / Scheduler 启动**不得**隐式升级数据库 | `check-cross-repo.py` 启动不隐式迁移 |
+| D8 | 迁移由**独立 Job** 执行，API / Worker / Scheduler 启动**不得**隐式升级数据库 | ⚠ 自检 |
 | D9 | 前端**不得**持有后端或数据库凭据 | `core/config.py` 启动期校验 |
 
 ### 做数据迁移时
@@ -75,7 +75,7 @@ expand → backfill → reconcile → switch read → switch write → observe �
 | C1 | 即时查询走**版本化同步 API**，长耗时走事件；事件经 Transactional Outbox 发布 | ⚠ 自检 |
 | C2 | 接 Outbox 的消费者必须实现**幂等、死信、重放、周期性对账**——四项缺一，Outbox 只是个表 | ⚠ 自检 |
 | C3 | schema 真源在 **provider** 仓，consumer 只持锁文件。两处都改会产生第二真源 | 双端 `test_provider_contract_lock_matches_authoritative_schemas` |
-| C4 | 改契约必须**双端一起测**——单仓 CI 只跑自己那半，provider 改了、consumer 锁没跟，两边各自都绿 | `check-cross-repo.py` 双端契约测试 |
+| C4 | 改契约必须**双端一起测**——单仓 CI 只跑自己那半，provider 改了、consumer 锁没跟，两边各自都绿 | 双端契约测试（跑 investment 常规套件即带上） |
 | C5 | 契约 DTO `extra=forbid`，未声明字段一律拒收 | Pydantic 模型 |
 | C6 | citation `source_href` 全平台同形 `/api/web/v1/citations/{id}/source`，共七处，改一处必须七处一起改 | 双端路由表比对测试 |
 
@@ -85,7 +85,7 @@ expand → backfill → reconcile → switch read → switch write → observe �
 | --- | --- | --- |
 | I1 | **Admin / Web / Internal 是接口分面，不是三套应用层**——分面在 interfaces 层，共享 application 用例 | ⚠ 自检 |
 | I2 | Internal API 按**提供方能力**命名（`ingestions`、`retrievals`、`citations`），**不按调用方命名** | ⚠ 自检 |
-| I3 | 浏览器身份与服务身份**互不通用**；浏览器、服务、数据库凭据**禁止复用** | `check-cross-repo.py` 受管凭据不复用 |
+| I3 | 浏览器身份与服务身份**互不通用**；浏览器、服务、数据库凭据**禁止复用** | ⚠ 自检 |
 | I4 | Next.js **可以**承担浏览器同源 BFF / session 边界，但**不得成为领域数据所有者** | ⚠ 自检 |
 | I5 | session / BFF 与 FastAPI 的授权分工**必须有显式契约**；Backend 必须自行复核资源所有权、Origin/CSRF、租户与工具权限——**不信任任何上游声明的身份** | ⚠ 自检 |
 | I6 | 非安全方法必须**同时**满足 `Origin ∈ frontend_origins` **且** CSRF token 匹配 | 中间件 |
@@ -99,7 +99,7 @@ expand → backfill → reconcile → switch read → switch write → observe �
 | T1 | 按**长期业务领域**划分 App，不按页面或部署组件划分 | ⚠ 自检 |
 | T2 | **每个领域 App 只有一个规范 Backend** | ⚠ 自检 |
 | T3 | **一个 Backend 代码库按运行角色部署**（API / Worker / Scheduler / Migration）；模板组件不定义领域边界，运行角色不等于领域服务 | ⚠ 自检 |
-| T4 | 父仓**不得出现悬空 gitlink**——子仓提交没推，别人克隆父仓会拉不到 | `check-cross-repo.py` gitlink 可达 |
+| T4 | 父仓**不得出现悬空 gitlink**——子仓提交没推，别人克隆父仓会拉不到 | 推送流程的复核步骤，见 `../working/collaboration.md` §3 |
 
 ### 什么时候才拆出专用 Worker
 
@@ -117,8 +117,8 @@ expand → backfill → reconcile → switch read → switch write → observe �
 | # | 规则 | 谁在执行 |
 | --- | --- | --- |
 | R1 | 源码、镜像、部署与数据基线**共同发布**；仅靠 Git 标签不能恢复运行环境 | ⚠ 自检 |
-| R2 | bundle 只允许 `repo@sha256:<64hex>`，**不允许可变 tag** | 门禁正则 + `check-cross-repo.py` |
-| R3 | 部署 bundle 的 digest 必须与发布清单一致——晋级靠打别名，**禁止重新构建** | `check-cross-repo.py` digest 一致 |
+| R2 | bundle 只允许 `repo@sha256:<64hex>`，**不允许可变 tag** | 部署门禁正则 |
+| R3 | 部署 bundle 的 digest 必须与发布清单一致——晋级靠打别名，**禁止重新构建** | ⚠ 自检（R7 清单与 bundle 手工比对） |
 | R4 | `.conf` **不得覆盖** bundle 里的镜像、副本、origin，值须与 `release.json` 完全一致 | `ConfigError` |
 | R5 | `1.0.0` / `2.0.0` 是发布 tag，本地构建脚本**不得**推上去 | `build-push-app-images.sh` 的 `PROTECTED_TAGS` |
 | R6 | **模板优先**：公共能力先进模板过门禁，再完整同步实例；**不得先改实例** | ⚠ 自检 |
@@ -161,18 +161,17 @@ Calico 集群，否则"测过了"是假的。
 
 | 层 | 覆盖 | 在哪 |
 | --- | --- | --- |
+| **随测试自动跑** | 标了测试载体的那些 | 四仓 `tests/test_kernel_invariants.py`、`tests/test_dormant_capabilities.py`、双端契约测试——**跑 `uv run pytest` 就带上，不需要谁记得** |
 | **指针** | 全部 | 五仓根 `AGENTS.md`、`.cursor/rules/`、八个组件 `CLAUDE.md`（**进目录自动注入**） |
 | **自检** | 全部 | 上面「怎么用」那节 |
-| **检查** | 标了载体的那些 | 同目录 [`check-cross-repo.py`](check-cross-repo.py)（7 条，约 5 秒）、四仓 `test_kernel_invariants.py`、`../working/check-docs.py` |
 
-**只有第三层不依赖人。**前两层是纪律，纪律会被忘——这份文件本身就出过两次
+**只有第一层不依赖人。**后两层是纪律，纪律会被忘——这份文件本身就出过两次
 "规则在眼前却没回头对照"：一次提出了违反 D1 与 I1 的方案，一次把 I4 说反了
 （断言不能用 BFF，实际是可以用、只是不能拥有数据）。
 
-**所以：一条规则如果能机械判定，就别停在文字上。**
+**曾经有过两个独立检查脚本，已删。**理由不是它们没用，而是**要人记得跑的检查
+和写在文档里的规矩没有本质区别**——它们自己就落在"纪律"那层。更糟的是其中一条
+路径检查的结论取决于工作区状态：同一份文档在三台机器上分别报 0 / 4 / 95 条失败
+（子模块是否初始化）。**看起来在把关，其实不牢。**
 
-推送前跑一次：
-
-```bash
-python3 k8s/sunmoonai/docs/dev-plan/check-cross-repo.py --repos <五仓父目录>
-```
+规则要有载体，就做成**跟着测试跑**的；做不成的，老实标 ⚠。
