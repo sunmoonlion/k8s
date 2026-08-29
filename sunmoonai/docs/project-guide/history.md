@@ -5,9 +5,9 @@
 > 本文件回答两件事：这套文档怎么来的、取代了什么。**归档，写完即冻结。**
 > 它只追加不覆写——与 `repos/` `topics/` 的覆盖式重写语义不同。
 >
-> 本轮查出的八项已知缺口原在本文件 §4，已移到
-> [`../dev-plan/open-issues.md`](../dev-plan/open-issues.md)——它们是活的待办，
-> 不该埋在归档里。其中五项此后已了结并从该清单删除，结论落在各自对应的投影里。
+> 本轮查出的八项已知缺口原在本文件 §4，曾移到 `dev-plan/open-issues.md`
+> 单独跟踪。**2026-08-29 全部了结，该文件已删**——结论落在各自对应的投影里，
+> 过程见 git 历史。
 
 ## 1. 参与方与产出
 
@@ -80,10 +80,23 @@ git -C k8s show --name-status d7af5c2b | grep '^D'      # 完整删除清单
 
 ## 4. 未决事项（已移出）
 
-本轮发现但未处置的八项，已移入
-[`../dev-plan/open-issues.md`](../dev-plan/open-issues.md)（编号改为 O1–O8，
-后续新增 O9、O10）。**了结的条目会从该清单删除**，结论落到对应投影里，
-过程留在 git 历史。本节保留为空壳以免旧引用失效。
+本轮发现但未处置的八项，曾移入 `dev-plan/open-issues.md` 单独跟踪
+（编号 O1–O8，后续新增 O9、O10）。**2026-08-29 十项全部了结，该文件已删。**
+
+| 编号 | 事项 | 了结方式 | 结论落在 |
+| --- | --- | --- | --- |
+| O1 | 代码版本 `2.0.0.dev0` 与 `formal_release: true` 矛盾 | 源码对齐 `2.0.0`，护栏反向 | 总览 §9.1 |
+| O2 | RAGFlow `CANCEL` 被当作成功 | 终态逐值判定，新增 `RAGFlowParseCancelledError` | `repos/knowledge-app.md` §8、该仓 `test_knowledge_ingestion.py` |
+| O3 | `RunBudget` 未接线 | 并入 U3 四本账（载体须换 PG，不是接线） | [`../dev-plan/README.md`](../dev-plan/README.md) U3 行 |
+| O4 | 共享 Outbox/Inbox 零调用 | 声明接受，记下重新审视的触发条件 | 总览 §9.2 |
+| O5 | Scheduler 空转 | 同上 | 总览 §9.2 |
+| O6 | citation `source_href` 照字面 GET 会 404 | 七处统一为 `/api/web/v1/…`，双端加路由表比对测试 | [`topics/contracts.md`](topics/contracts.md) §5 |
+| O7 | 休眠能力"声明+校验"机制未落地 | 四仓 `test_dormant_capabilities.py` | [`verify.md`](verify.md)「休眠能力的声明与校验」 |
+| O8 | `docs/` 下历史目录未清理 | 删 10 项 6989 行 | [`README.md`](README.md)「本集之外」 |
+| O9 | Harbor `:2.0.0` 别名是否物理存在 | 已核实存在（`info-backend` 实测） | 总览 §9.1 |
+| O10 | 构建脚本默认 tag 撞 v1 保护位 | 对齐 v2 组件名，加 `PROTECTED_TAGS` 护栏 | [`topics/release.md`](topics/release.md) §2 |
+
+本节保留以免旧引用失效。
 
 ## 5. 本轮的验证边界
 

@@ -60,7 +60,7 @@
 | 知道接下来要建什么 | [`../dev-plan/`](../dev-plan/) |
 | 复核本文档集的某条断言 | [`verify.md`](verify.md)；机械检查跑 `python3 check-docs.py` |
 | 这套文档怎么来的、取代了什么 | [`history.md`](history.md) |
-| 已查实但未处置的缺口 | [`../dev-plan/open-issues.md`](../dev-plan/open-issues.md) |
+| 本轮查出的缺口都怎么处置了 | [`history.md`](history.md) §4 |
 
 ## 目录
 
@@ -107,5 +107,5 @@ project-guide/
 - **前端未逐文件深读**：约 570 个 ts/tsx，核到了结构、入口、契约与关键配置层。
 - **前端的 `CLAUDE.md` 是本轮重写的，但前端本身未逐文件深读**——这是本轮
   风险最高的组合，逐条核对见 [`verify.md`](verify.md) §5。
-- **一项已知缺口**尚无去向，见
-  [`../dev-plan/open-issues.md`](../dev-plan/open-issues.md)。
+- 本轮查出的十项缺口**已全部了结**，结论落在各自对应的投影里；
+  处置一览见 [`history.md`](history.md) §4。
