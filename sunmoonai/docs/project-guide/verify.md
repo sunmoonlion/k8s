@@ -1,13 +1,13 @@
 # 验证
 
-> 取证时点：2026-08-27
+> 取证时点：2026-08-29
 >
 > 本文档集的唯一质量指标是**对代码的保真度**，而保真度只有配上「何时验证过、怎么验的」
 > 才有意义。**复核者不需要信任作者，跑命令即可。**
 
 ## 1. 本轮实际执行的验证
 
-不是静态读码，是真跑。以下结果为 2026-08-27 在 `opus` 分支实测：
+不是静态读码，是真跑。以下结果为 2026-08-29 在 `opus` 分支实测：
 
 ### 1.1 内核不变量（四仓全绿）
 
@@ -63,13 +63,13 @@ README 也未提及。裸跑会得到 `ModuleNotFoundError: No module named 'yam
 | [`topics/contracts.md`](topics/contracts.md) | `grep -rn 'citations/' knowledge-app/knowledge-backend/app/app/interfaces/`（只应命中 web 一条） |
 | [`topics/identity.md`](topics/identity.md) | `grep -n 'required_scopes=' tpl-app/tpl-backend/app/core/config.py`（admin/web 不对称） |
 | [`topics/data.md`](topics/data.md) | 四仓 `ls alembic/versions/`；`grep -rn 'SqlOutbox' <app>-backend/app/app --include='*.py'`（应只命中再导出） |
-| [`topics/release.md`](topics/release.md) | `grep -h '^version' */[a-z]*-backend/app/pyproject.toml`（应全为 2.0.0.dev0） |
+| [`topics/release.md`](topics/release.md) | `grep -h '^version' */[a-z]*-backend/app/pyproject.toml`（应全为 2.0.0） |
 
 ## 3. 本轮复核过的高影响断言
 
 | 断言 | 复核方式 | 结果 |
 | --- | --- | --- |
-| 四后端全部 `2.0.0.dev0`，且被测试强制 | `grep -h '^version' */*-backend/app/pyproject.toml`；读 `test_candidate_does_not_claim_the_formal_release` | **成立**，且与 `release.json` 的 `formal_release: true` 矛盾 |
+| 四后端全部 `2.0.0`，且被测试强制 | `grep -h '^version' */*-backend/app/pyproject.toml`；读 `test_package_version_matches_the_formal_release` | **成立**。2026-08-29 前源码曾是 `2.0.0.dev0` 且测试反向强制，与 `release.json` 矛盾，见总览 §9.1 |
 | `RunBudget` 未在生产链接线 | `grep -rln RunBudget` | **成立**：仅定义处、非生产图 `first_m1_graph.py`、其测试三处 |
 | apply 顺序中网络策略先于迁移 | 读三 App `deploy.py` 的 `apply()` | **成立**，三 App 一致 |
 | RAGFlow `CANCEL` 被当作成功 | 读 `_wait_for_document_parse` | **成立**：`terminal = {"DONE","FAIL","CANCEL"}`，仅 `FAIL` 抛错 |

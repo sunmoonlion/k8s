@@ -1,6 +1,6 @@
 # 发布与门禁
 
-> 取证时点：2026-08-27 ｜ 决策来由见 [ADR-0013](../decisions/0013-release-artifact-lifecycle.md)
+> 取证时点：2026-08-29 ｜ 决策来由见 [ADR-0013](../decisions/0013-release-artifact-lifecycle.md)
 > 逐行位置见 [`../repos/k8s.md`](../repos/k8s.md) §4–§5
 
 ## 1. 发布单元
@@ -106,7 +106,7 @@ render.py 解析出 digest 写入 bundle
 
 | 层 | 声明 |
 | --- | --- |
-| 代码 | 四个后端 `pyproject.toml` 全部 `version = "2.0.0.dev0"`；`test_candidate_does_not_claim_the_formal_release` **主动断言**它不得改成 `2.0.0` |
+| 代码 | 四个后端 `pyproject.toml` 与 `uv.lock` 均 `2.0.0`；八个前端 `package.json` 亦 `2.0.0`；`test_package_version_matches_the_formal_release` **主动断言**须与发布别名一致 |
 | 部署 | 三个 `release.json` 全部 `formal_release: true`；模板 manifest `status: FORMAL_RELEASE`、`template_release: 2.0.0` |
 
 两者取值互相矛盾，且有测试**阻止**代码层追平部署层。

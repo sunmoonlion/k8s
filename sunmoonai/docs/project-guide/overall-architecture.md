@@ -1,6 +1,6 @@
 # SunMoonAI 项目总览
 
-> 最后更新：2026-08-27 ｜ 取证时点：2026-08-27（对五仓源码直接取证）
+> 最后更新：2026-08-29 ｜ 取证时点：2026-08-27（对五仓源码直接取证）
 >
 > **本文件是进入这个项目的唯一入口。**读完它，你应当知道：改动落在哪个仓、
 > 那里有什么不可违反的规则、以及去哪里查更细的东西。
@@ -236,16 +236,33 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 
 **这一节记录的是"看起来做完了、其实没有"的东西**，是新来者最需要先知道的。
 
-### 9.1 一处结构性矛盾
+### 9.1 版本口径（曾是矛盾，2026-08-29 已对齐）
 
-**代码层被强制钉死为候选版本，部署层却宣称正式发布。**
+**当前四层版本全部是 `2.0.0`。**
 
-- 四个后端 `pyproject.toml` 全部 `version = "2.0.0.dev0"`，且
-  `test_candidate_does_not_claim_the_formal_release` **主动断言**它不得改成 `2.0.0`
-- 同时三个 App 的 `release.json` 全部 `formal_release: true`，
-  模板 manifest `status: FORMAL_RELEASE`、`template_release: 2.0.0`
+| 层 | 取值 |
+| --- | --- |
+| 源码 | 四后端 `pyproject.toml` + `uv.lock`、八前端 `package.json` 均 `2.0.0` |
+| 镜像别名 | R7 发布清单给 12 个镜像记为 `:2.0.0` |
+| 部署 | bundle 用 digest 引用，与 R7 清单 **9/9 逐字一致** |
+| 发布记录 | `release.json` `formal_release: true`；manifest `template_release: 2.0.0` |
 
-两者的取值互相矛盾，且有测试阻止代码层追平部署层。**在澄清之前，不要以为本项目已正式发布。**
+**此前的矛盾及其成因**（留档，避免再次误判）：源码曾是 `2.0.0.dev0`，由
+`test_candidate_does_not_claim_the_formal_release` 强制。那是 2026-08-01 重构期
+的护栏，8-13 正式发布后无人回头解除。它从未阻碍发布——`mybuild/Dockerfile`
+只跑 `ruff` + `pyright`，**不跑 pytest**，该测试仅是仓库级护栏。
+
+发布采用 `exact-digest-alias`（manifest `release_policy.promotion_method`）：
+不重建镜像，给已过 R7 门禁的 digest 打 `2.0.0` 别名。因此 Dockerfile 逐字
+`COPY app/`、无版本注入，2026-08-13 那次构建忠实带入了当时源码里的 `dev0`。
+
+**现已解除护栏并对齐源码，但未重建镜像**——正在跑的 digest 经过完整 R7 验证，
+不为一个字符串作废。**当前运行中的镜像内部仍报 `2.0.0.dev0`**（`/api/version`
+读 `importlib.metadata`），下次有实质改动重建时自然带上 `2.0.0`。
+
+⚠ 尚未核实：Harbor 上 `:2.0.0` 别名是否**物理存在**。`build_r7_release_manifest.py`
+的 `tagged_image()` 只拼出该字符串写入清单，仓库内无任何脚本执行 `docker tag`
+或等价推送。需在能访问 Harbor 的机器上确认。
 
 ### 9.2 四仓一致的未接线项
 

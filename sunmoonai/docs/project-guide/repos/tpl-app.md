@@ -1,6 +1,6 @@
 # tpl-app（模板仓）
 
-> 取证时点：2026-08-27 ｜ 总览见 [`../overall-architecture.md`](../overall-architecture.md)
+> 取证时点：2026-08-29 ｜ 总览见 [`../overall-architecture.md`](../overall-architecture.md)
 
 ## 1. 定位
 
@@ -45,7 +45,7 @@
 | `test_interface_partition_and_dependency_direction_are_explicit` | 9 个关键文件存在；且 **`app.interfaces` 字符串不出现在整个 `app/application/` 目录** |
 | `test_one_linear_canonical_migration_chain` | 迁移文件名清单**逐字**匹配；恰好 1 个 `down_revision = None`；第二个的 down_revision 指向第一个 |
 | `test_runtime_image_context_excludes_credentials_and_tests` | `.dockerignore` 含 `app/.env`、`app/.env.*`、`app/tests` |
-| `test_candidate_does_not_claim_the_formal_release` | pyproject **必须**是 `2.0.0.dev0`；`api.py` **不得**含 `version="2.0.0"` |
+| `test_package_version_matches_the_formal_release` | pyproject 与 `uv.lock` **必须**同为 `2.0.0`；`api.py` **不得**硬写 `version="2.0.0"`，须经 `importlib.metadata` |
 
 **注意这批检查的性质**：多为文件存在性与字符串缺席断言，是结构性冒烟测试，
 不是深度架构校验。例如分层检查只 grep 字符串，不做真正的导入图分析。
