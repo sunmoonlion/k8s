@@ -63,7 +63,7 @@
 | 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-plan/agent-discipline.md`](../dev-plan/agent-discipline.md) |
 | 推送改动、跨机拉取、子模块的坑 | [`../working/collaboration.md`](../working/collaboration.md) |
 | 知道接下来要建什么 | [`../dev-plan/`](../dev-plan/) |
-| 复核本文档集的某条断言 | [`verify.md`](verify.md)；机械检查跑 `python3 ../working/check-docs.py` |
+| 复核本文档集的某条断言 | **读代码**。机械检查跑 `python3 ../working/check-docs.py` |
 | 本轮查出的缺口都怎么处置了 | 结论已在各自投影里；过程 `git log --grep 'O[0-9]'` |
 
 ## 目录
@@ -72,7 +72,6 @@
 project-guide/
 ├── README.md      本文件（导航 + 本集之外的目录定性）
 ├── governance.md  动手前必读：权威排序、漂移尺子、维护与写作约定、编辑自检
-├── verify.md      验证方法、本轮实测结果、易腐值真源、明确的盲区
 ├── repos/         一仓一文件
 │   ├── tpl-app.md          模板仓：定义标准形态，无领域
 │   ├── info-app.md         资讯域：采集→治理→分发
@@ -90,7 +89,7 @@ project-guide/
 
 | 目录 | 语义 | 怎么改 |
 | --- | --- | --- |
-| `overall-architecture.md` `repos/` `topics/` `verify.md` | **现状投影** | **覆盖式重写**：直接替换旧条文，只反映当前有效事实；历史由 git 承担 |
+| `overall-architecture.md` `repos/` `topics/` | **现状投影** | **覆盖式重写**：直接替换旧条文，只反映当前有效事实；历史由 git 承担 |
 | 协作机制（请求流程、推送、文档约定、评审） | 已移出，见 [`../working/`](../working/) |
 | `governance.md` | **规则** | 改动前应有共识；改完要检查依赖它的文档 |
 
@@ -101,8 +100,8 @@ project-guide/
 
 ## 本轮的已知缺口（读之前先知道）
 
-- **未连集群**：所有运行态断言（Pod 状态、NetworkPolicy 实际生效、远程 profile）
-  均未验证，见 [`verify.md`](verify.md) §1。
+- **未连集群**：本文档集不断言运行态（Pod 状态、NetworkPolicy 实际生效、
+  远程 profile）——要知道集群里在跑什么，去查集群，不要问文档。
 - **前端未逐文件深读**：约 570 个 ts/tsx，核到了结构、入口、契约与关键配置层。
 - 本轮查出的十项缺口**已全部了结**，结论落在各自对应的投影里；
   过程见 `git log --grep 'O[0-9]'`。

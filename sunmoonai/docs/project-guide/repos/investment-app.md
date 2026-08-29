@@ -163,8 +163,12 @@ uv run python scripts/validate_agent_phase0.py
 
 复核两条最要紧的：
 ```bash
-# RunBudget 未接线：应只有 3 处
-grep -rln RunBudget app tests | grep -v __pycache__
+# RunBudget 未接线：app/ 下只应命中定义处与非生产图，生产链路（tasks/）零命中
+grep -rln RunBudget app | grep -v __pycache__
+#   app/domain/agent/runtime.py            定义
+#   app/infrastructure/graph/first_m1_graph.py  非生产图
+# 这条已有可执行载体，不必手工数：
+uv run pytest tests/test_dormant_capabilities.py -k RunBudget -q
 
 # 状态机与终态
 sed -n '/^RUN_STATUS_TRANSITIONS/,/^}/p' app/domain/agent/runtime.py

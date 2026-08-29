@@ -284,7 +284,6 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 重写为「局部编码规则 + 指向本文档集的指针」。**这是本节中唯一已处置的项**，
 其余各项仍未解决。
 
-→ 复核命令：[`verify.md`](verify.md) §2
 
 
 ## 10. 去哪查
@@ -298,7 +297,10 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 | 发版、改部署清单 | [`architecture/topics/release.md`](topics/release.md) |
 | **动代码前必读的规则** | [`../dev-plan/constraints.md`](../dev-plan/constraints.md)（39 条，按主题分组） |
 | 提一个开发请求 | [`../working/request-lifecycle.md`](../working/request-lifecycle.md) |
-| 查当前 digest / 迁移 head 等易变值 | 本文档不记这些值，见 [`architecture/verify.md`](verify.md) |
+| 查当前 digest / release_id | `k8s/sunmoonai/app-platform/<app>-app/deployment/bundle/release.json` |
+| 查某仓迁移 head | 该仓 `app/alembic/versions/` 里最新的 revision |
+| 查契约 schema 的 sha256 | consumer 仓的 `*-provider-lock.json`，或 provider 的 `contract-manifest.json` |
+| 查集群里实际跑的副本与镜像 | 活集群 `kubectl -n app-platform-dev get deploy -o wide` |
 
 **易腐值一律不写进文档正文**（镜像 digest、schema sha256、commit、迁移 head、副本数）——
 它们变化比文档维护快，写进来必然先于文档失效。文档只写规则并指向真源。

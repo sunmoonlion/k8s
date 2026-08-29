@@ -156,4 +156,3 @@ git -C <主检出>/k8s log opus           # 直接读别的分支
 
 - 请求怎么提、怎么验收：[`request-lifecycle.md`](request-lifecycle.md)
 - 项目全貌（发给助手的上下文入口）：[`overall-architecture.md`](../project-guide/overall-architecture.md)
-- 验证方法与盲区：[`verify.md`](../project-guide/verify.md)

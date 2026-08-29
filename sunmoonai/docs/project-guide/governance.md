@@ -41,5 +41,5 @@
 | 将来要做什么、应该怎样 | 请求记录（见 [`../working/request-lifecycle.md`](../working/request-lifecycle.md)） |
 | 必须遵守的规则 | [`../dev-plan/constraints.md`](../dev-plan/constraints.md) |
 | 做到第几步了 | 请求的进度游标；本文档集**一律不写进度** |
-| 镜像 digest、迁移 head 等易变值 | 只指真源，见 [`verify.md`](verify.md) |
+| 镜像 digest、迁移 head 等易变值 | 只指真源，见 [`overall-architecture.md`](overall-architecture.md) §10 |
 
