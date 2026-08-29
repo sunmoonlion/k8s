@@ -60,7 +60,7 @@ README 也未提及。裸跑会得到 `ModuleNotFoundError: No module named 'yam
 | [`repos/knowledge-app.md`](repos/knowledge-app.md) | `sed -n '/terminal = /,/return last_doc/p' knowledge-backend/app/app/infrastructure/external/ragflow.py`（CANCEL 处理）；`sed -n '/requested_datasets = set/,/ForbiddenError("retrieval service relation/p' knowledge-backend/app/app/application/services/knowledge_retrieval_service.py`（三重授权） |
 | [`repos/investment-app.md`](repos/investment-app.md) | `grep -rln RunBudget investment-backend/app/app investment-backend/app/tests`（应恰好 3 处）；`sed -n '/^RUN_STATUS_TRANSITIONS/,/^}/p' investment-backend/app/app/domain/agent/runtime.py`（状态机） |
 | [`repos/k8s.md`](repos/k8s.md) | `awk '/^def apply\(/,/^def drift\(/' sunmoonai/app-platform/info-app/deployment/deploy.py`（apply 真实顺序）；`ls -1d sunmoonai/*/`（平台清单） |
-| [`topics/contracts.md`](topics/contracts.md) | `grep -rn 'citations/' knowledge-app/knowledge-backend/app/app/interfaces/`（只应命中 web 一条） |
+| [`topics/contracts.md`](topics/contracts.md) | `uv run pytest tests/test_knowledge_retrieval.py -k resolves_to_a_real_route`（契约正则须匹配真实路由） |
 | [`topics/identity.md`](topics/identity.md) | `grep -n 'required_scopes=' tpl-app/tpl-backend/app/core/config.py`（admin/web 不对称） |
 | [`topics/data.md`](topics/data.md) | 四仓 `ls alembic/versions/`；`grep -rn 'SqlOutbox' <app>-backend/app/app --include='*.py'`（应只命中再导出） |
 | [`topics/release.md`](topics/release.md) | `grep -h '^version' */[a-z]*-backend/app/pyproject.toml`（应全为 2.0.0） |

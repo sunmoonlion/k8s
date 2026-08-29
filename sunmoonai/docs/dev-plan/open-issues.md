@@ -19,13 +19,13 @@ U 是"还没想清楚"，O 是"已经查实、等着处理"。**编号不复用*
 
 | # | 事项 | 出处 | 性质 |
 | --- | --- | --- | --- |
-| **O6** | 契约 `source_href` 与真实路由不匹配，照字面 GET 会 404 | [`topics/contracts.md`](../project-guide/topics/contracts.md) §5 | **真缺陷**：任何按契约文档实现的 consumer 都会踩 |
 | O7 | REQ-009 的"休眠能力声明+校验"机制未落地 | [来历记录](../project-guide/history.md) §3.3 | 机制缺口 |
 | O8 | `docs/` 下并存的历史目录尚未清理 | [`README.md`](../project-guide/README.md) §本集之外 | 待整理 |
 | O9 | Harbor 上 `:2.0.0` 别名是否物理存在未核实。`build_r7_release_manifest.py` 的 `tagged_image()` 只拼出该字符串写入清单，仓库内无任何脚本执行 `docker tag` 或等价推送 | [总览](../project-guide/overall-architecture.md) §9.1 | 一条 `curl` 可定，需能访问 Harbor。若缺失则补打别名即可，digest 不变，不影响运行中的负载 |
 | O10 | 构建脚本默认 tag 与发布口径脱节：`build-push-app-images.conf` 默认 `TAG=1.0.0`，与 manifest `overwrite_v1_1_0_0: false` 的 v1 保护位相撞；且该脚本组件名仍是 v1 的 `admin-backend`/`web-backend`（目录已随 ADR-0007 消失） | `k8s:sunmoonai/app-platform/scripts/` | 现为**哑火**——组件名不对，跑起来先失败。修好脚本会立刻兑现覆盖 v1 制品的风险 |
 
-**O1–O5 已了结**（版本口径、RAGFlow CANCEL、RunBudget、Outbox、Scheduler），
-条目已删，结论分别在：总览 §9.1、`repos/knowledge-app.md` 与该仓的
-`test_knowledge_ingestion.py`、[`README.md`](README.md) 的 U3 行、总览 §9.2。
+**O1–O6 已了结**（版本口径、RAGFlow CANCEL、RunBudget、Outbox、Scheduler、
+citation `source_href`），条目已删，结论分别在：总览 §9.1、
+`repos/knowledge-app.md` 与该仓 `test_knowledge_ingestion.py`、
+[`README.md`](README.md) 的 U3 行、总览 §9.2、`topics/contracts.md` §5。
 过程见 git 历史。

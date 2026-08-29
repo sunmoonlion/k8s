@@ -132,7 +132,6 @@ settings.retrieval_auth_required_scope in service_principal.scopes  # scope
 | 项 | 实际状态 |
 | --- | --- |
 | Admin「入库任务」运维页 | **静态占位页**：只列 API 路径文案，无 fetch、无表格、无操作 |
-| 契约 `source_href` 与真实路由不匹配 | citation schema 约束 `^/api/citations/{uuid}/source$`，本仓无该路由；实际路由挂在 web 前缀下。**照字面拼路径去 GET 会 404** |
 | 共享 Outbox | 表与仓库类在，零业务调用 |
 | Web interaction 生产可用 | 同模板：默认 503 |
 | Web 侧检索业务页 | 无，只有 toolkit/common 与可选 reference workspace |
@@ -155,5 +154,6 @@ uv run pytest tests/test_knowledge_ingestion.py -k 'cancelled or numeric or prog
 sed -n '/requested_datasets = set/,/retrieval service relation/p' app/app/application/services/knowledge_retrieval_service.py
 
 # citation 路由实际只有一条，且在 web 前缀下
-grep -rn 'citations/' app/app/interfaces/
+# citation 的 source_href 必须能在真实路由表里找到（O6 的回归护栏）
+uv run pytest tests/test_knowledge_retrieval.py -k resolves_to_a_real_route
 ```

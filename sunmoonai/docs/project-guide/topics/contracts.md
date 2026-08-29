@@ -47,23 +47,44 @@ provider 改 schema → 双端（provider + consumer）测试都通过 → 才�
 所有契约 DTO 是 Pydantic 模型，`extra=forbid`——**未声明的字段一律拒收**。
 前端侧对应为 zod schema。`contract_version` 写在 manifest 与 DTO 两处，须一致，由 §3 的测试保证。
 
-## 5. 一处契约与路由不匹配（读文档时最容易踩的坑）
+## 5. citation 的 `source_href` 只有一个形状
 
-三条相似路径其实是三个不同的东西：
+**全平台统一为 `/api/web/v1/citations/{evidence_id}/source`**，相对路径，
+由消费方在**自己的 origin** 下解析——knowledge 与 investment 各自都有这条路由。
 
-| 路径 | 它是什么 |
+同形的地方共七处，改一处必须七处一起改：
+
+| 位置 | 角色 |
 | --- | --- |
-| `^/api/citations/[0-9a-fA-F-]{36}/source$` | **契约 schema 里的正则约束**，服务间 retrieval 响应用 |
-| `/citations/{evidence_id}/source` | knowledge-app 里**唯一真实存在**的路由，挂在 **web 前缀**下 |
-| `^/api/web/v1/citations/...` | 浏览器面 DTO 的正则约束 |
+| `knowledge-app/contracts/retrieval/v1/citation.schema.json` | 契约真源 |
+| `knowledge:application/dto/retrieval.py` `Citation` | provider 投影 |
+| `knowledge:application/dto/interaction.py` `BrowserCitation` | 浏览器面 |
+| `investment:domain/agent/knowledge.py` `Citation` | consumer 投影 |
+| `investment:application/dto/pilot_runtime.py` `BrowserCitation` | 内部 pilot 面 |
+| `investment:application/dto/interaction.py` `BrowserCitation` | 浏览器面 |
+| `investment-web-frontend:contracts/interaction.ts` | 前端 zod |
 
-即：契约里那个 `/api/citations/...` **在 provider 仓中没有对应的 HTTP 路由**。
-消费方若照字面拼路径去 GET，会 **404**。
+**其中两处经事件存储首尾相接**：`tasks/pilot_agent_graph.py` 用
+`domain/agent/knowledge.Citation` 写 citation 事件，`agent/pilot_service.py`
+再用 `dto/pilot_runtime.BrowserCitation` 读回来。两者 pattern 不一致会让
+`model_validate` 在运行时直接抛。
 
-复核：
+### 曾经的坑（2026-08-29 修复）
+
+契约与三处 DTO 原本写 `/api/citations/{id}/source`，而真实路由挂在
+`/api/web/v1/` 下——**照契约字面拼路径去 GET 一律 404**。同时 investment
+自己的浏览器面 DTO 与前端 zod 早就用的是 `/api/web/v1/`，**同仓内部就不一致**。
+
+它能长期潜伏，是因为三处各自断言"字符串等于某个常量"，**谁也没有和路由表比对过**
+——三处一起错，测试全绿。现已改为拿契约的正则去真实路由表里找：
+
 ```bash
-grep -rn 'citations/' knowledge-app/knowledge-backend/app/app/interfaces/
-# 只会命中 web/interactions.py 一条
+# provider 侧
+cd knowledge-app/knowledge-backend/app
+uv run pytest tests/test_knowledge_retrieval.py -k resolves_to_a_real_route
+# consumer 侧，并断言两个首尾相接的类同形
+cd investment-app/investment-backend/app
+uv run pytest tests/test_knowledge_retrieval_contract.py -k matches_investment_own
 ```
 
 ## 6. 契约定义齐全 ≠ 链路已通
