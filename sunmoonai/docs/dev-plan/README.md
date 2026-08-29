@@ -110,8 +110,7 @@ harness 并需凭据。
 | U4 | `AgentProfile` 的具体字段 | 专用部分的载体 |
 | U5 | 外部 harness 的部署形态（服务端如何管理其进程与凭据） | 影响 U2 |
 
-另有十项从代码投影中查出的缺口，见 [`open-issues.md`](open-issues.md)，
-其中 O3 已并入本表 U3，O4/O5 已声明接受，**剩余待办五条**。
+从代码投影中查出的缺口另见 [`open-issues.md`](open-issues.md)（**剩余五条**）。
 
 ## 结构化数据问答：归专用，先做最小实现
 

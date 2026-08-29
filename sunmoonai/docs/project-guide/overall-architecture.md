@@ -236,9 +236,9 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 
 **这一节记录的是"看起来做完了、其实没有"的东西**，是新来者最需要先知道的。
 
-### 9.1 版本口径（曾是矛盾，2026-08-29 已对齐）
+### 9.1 版本口径
 
-**当前四层版本全部是 `2.0.0`。**
+**四层版本全部是 `2.0.0`。**
 
 | 层 | 取值 |
 | --- | --- |
@@ -247,30 +247,25 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不套 App 模板、无 bundle/
 | 部署 | bundle 用 digest 引用，与 R7 清单 **9/9 逐字一致** |
 | 发布记录 | `release.json` `formal_release: true`；manifest `template_release: 2.0.0` |
 
-**此前的矛盾及其成因**（留档，避免再次误判）：源码曾是 `2.0.0.dev0`，由
-`test_candidate_does_not_claim_the_formal_release` 强制。那是 2026-08-01 重构期
-的护栏，8-13 正式发布后无人回头解除。它从未阻碍发布——`mybuild/Dockerfile`
-只跑 `ruff` + `pyright`，**不跑 pytest**，该测试仅是仓库级护栏。
+**发布采用 `exact-digest-alias`**（manifest `release_policy.promotion_method`）：
+不重建镜像，给已过 R7 门禁的 digest 打 `2.0.0` 别名。Dockerfile 逐字
+`COPY app/`、无版本注入，镜像内的版本字符串来自构建时的源码。
 
-发布采用 `exact-digest-alias`（manifest `release_policy.promotion_method`）：
-不重建镜像，给已过 R7 门禁的 digest 打 `2.0.0` 别名。因此 Dockerfile 逐字
-`COPY app/`、无版本注入，2026-08-13 那次构建忠实带入了当时源码里的 `dev0`。
+两点会绊人，动版本号前须知道：
 
-**现已解除护栏并对齐源码，但未重建镜像**——正在跑的 digest 经过完整 R7 验证，
-不为一个字符串作废。**当前运行中的镜像内部仍报 `2.0.0.dev0`**（`/api/version`
-读 `importlib.metadata`），下次有实质改动重建时自然带上 `2.0.0`。
-
-⚠ 尚未核实：Harbor 上 `:2.0.0` 别名是否**物理存在**。`build_r7_release_manifest.py`
-的 `tagged_image()` 只拼出该字符串写入清单，仓库内无任何脚本执行 `docker tag`
-或等价推送。需在能访问 Harbor 的机器上确认。
+- **当前运行中的镜像内部仍报 `2.0.0.dev0`**——源码于 2026-08-29 才对齐，
+  未为此重建（`/api/version` 读 `importlib.metadata`）。下次有实质改动
+  重建时自然带上 `2.0.0`
+- **改源码版本必须同时改 `uv.lock`**，否则 Dockerfile 的 `uv sync --frozen`
+  会在构建阶段失败。`test_package_version_matches_the_formal_release` 会拦
 
 ### 9.2 四仓一致的未接线项
 
 | 项 | 实际状态 |
 | --- | --- |
 | **web-interaction 契约** | DTO、Port、前端 zod 齐全，但默认适配器返回 **503**；唯一替代实现是 reference fixture，且**生产禁止开启**。即：生产环境该契约面**必定不可用** |
-| **共享 Outbox/Inbox 原语** | 表、仓库类、Port 全在，业务层**零调用**（模板资产，实例继承但未使用）。**已声明接受**——见 [`../dev-plan/open-issues.md`](../dev-plan/open-issues.md) O4；第一个跨 App 异步事件落地时重新审视 |
-| **Celery 周期任务** | 四仓都有 Scheduler 入口，**都没有 `beat_schedule` 定义**。**已声明接受**——见 [`../dev-plan/open-issues.md`](../dev-plan/open-issues.md) O5；第一个定时任务落地时重新审视（届时须解决 beat 的多副本重复触发） |
+| **共享 Outbox/Inbox 原语** | 表、仓库类、Port 全在，业务层**零调用**。**这是有意的**：模板提供原语，实例按需启用；没有业务需要之前接上去等于凭空加一块要维护、要监控、要排障的面。**第一个跨 App 异步事件落地时重新审视**，届时一并定投递语义与去重键 |
+| **Celery 周期任务** | 四仓都有 Scheduler 入口，**都没有 `beat_schedule` 定义**。**这是有意的**，理由同上。**第一个定时任务落地时重新审视**，届时须解决 beat 的多副本重复触发 |
 | **`/api/internal/v1` 入站面** | tpl 与 info 只有中间件、无 router 挂载；只有 knowledge 与 investment 真正有内部路由 |
 
 ### 9.3 各 App 的具体缺口

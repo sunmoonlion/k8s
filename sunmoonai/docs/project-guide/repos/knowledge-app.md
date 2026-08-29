@@ -131,7 +131,6 @@ settings.retrieval_auth_required_scope in service_principal.scopes  # scope
 
 | 项 | 实际状态 |
 | --- | --- |
-| ~~RAGFlow `CANCEL` 被当作成功~~ | **已修复 2026-08-29**（O2）。终态改为逐值判定：`DONE` 返回、`FAIL` 抛 `RAGFlowParseError`、`CANCEL` 抛 `RAGFlowParseCancelledError`（继承前者，故沿用可重试分类，`error_type` 区分为 `ragflow_parse_cancelled`）。同时移除 `progress >= 1.0` 这条独立成功条件，并接受数字与文本两种 `run` 取值 |
 | Admin「入库任务」运维页 | **静态占位页**：只列 API 路径文案，无 fetch、无表格、无操作 |
 | 契约 `source_href` 与真实路由不匹配 | citation schema 约束 `^/api/citations/{uuid}/source$`，本仓无该路由；实际路由挂在 web 前缀下。**照字面拼路径去 GET 会 404** |
 | 共享 Outbox | 表与仓库类在，零业务调用 |

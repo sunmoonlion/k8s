@@ -7,7 +7,7 @@
 >
 > 本轮查出的八项已知缺口原在本文件 §4，已移到
 > [`../dev-plan/open-issues.md`](../dev-plan/open-issues.md)——它们是活的待办，
-> 不该埋在归档里。
+> 不该埋在归档里。其中五项此后已了结并从该清单删除，结论落在各自对应的投影里。
 
 ## 1. 参与方与产出
 
@@ -80,9 +80,10 @@ git -C k8s show --name-status d7af5c2b | grep '^D'      # 完整删除清单
 
 ## 4. 未决事项（已移出）
 
-本轮发现但未处置的八项，见
-[`../dev-plan/open-issues.md`](../dev-plan/open-issues.md)（编号改为 O1–O8）。
-本节保留为空壳以免旧引用失效。
+本轮发现但未处置的八项，已移入
+[`../dev-plan/open-issues.md`](../dev-plan/open-issues.md)（编号改为 O1–O8，
+后续新增 O9、O10）。**了结的条目会从该清单删除**，结论落到对应投影里，
+过程留在 git 历史。本节保留为空壳以免旧引用失效。
 
 ## 5. 本轮的验证边界
 
