@@ -140,7 +140,7 @@ Pilot run 用 `owner_actor_id + idempotency_key`。
 
 | 项 | 实际状态 |
 | --- | --- |
-| **`RunBudget` 在生产生效** | 未接线，见 §4.5。`budget_exceeded` 生产不可达。现有实现是内存态 pydantic model、随 graph state 传递，**进程一死即失**，结构上满足不了「跨 run／跨进程仍须正确」的判据。载体须换 PG——归入 [`../../dev-plan/implementation-plan.md`](../../dev-plan/implementation-plan.md) 的 **U3**，不是单独接线 |
+| **`RunBudget` 在生产生效** | 未接线，见 §4.5。`budget_exceeded` 生产不可达。现有实现是内存态 pydantic model、随 graph state 传递，**进程一死即失**，结构上满足不了「跨 run／跨进程仍须正确」的判据。载体须换 PG——归入 [`../../dev-plan/handoff.md`](../../dev-plan/handoff.md) 的 **U3**，不是单独接线 |
 | **Web 面接了 Agent/Pilot** | **未接**。`/api/web/v1` 默认 `Unavailable` 适配器 503；开 flag 也只是内存 reference 适配器，不调 `AgentRunService` / `PilotService` |
 | Attempt / Invocation 表 | **无 DB 表**，仅 spike 内存类 |
 | `AgentMemoryService` | 类存在，生产无调用方 |

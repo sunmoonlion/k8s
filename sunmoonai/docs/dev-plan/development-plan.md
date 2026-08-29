@@ -2,8 +2,9 @@
 
 > 最后更新：2026-08-29
 >
-> **这里回答"要建什么、为什么这么建"。**具体做哪些事、什么顺序、卡在哪，
-> 见 [`implementation-plan.md`](implementation-plan.md)；
+> **这里回答"要建什么、为什么这么建"。**
+> 具体任务见 [`implementation-plan.md`](implementation-plan.md)，
+> 当前状态见 [`handoff.md`](handoff.md)，
 > 代码必须符合的规则见 [`constraints.md`](constraints.md)。
 
 ## 起点：不延续 v5
