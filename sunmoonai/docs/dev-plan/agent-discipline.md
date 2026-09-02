@@ -8,7 +8,7 @@
 >
 > 每一条都来自**真实发生过的失败**，不是设想。
 > 纯粹的 git 操作机制（拉取、推送、子模块）不在本文，
-> 见 [`../working/collaboration.md`](../working/collaboration.md)。
+> 见 [`working/collaboration.md`](working/collaboration.md)。
 
 ## 1. 三种模式，别混
 
@@ -20,7 +20,7 @@
 | 闭环 | 比较 → 综合 | 结论交回 | **跑评审方的验收标准，公布结果** |
 | 用途 | 拿到多个独立信号 | 验证工作是否成立 | 让已有产物被外部视角修正 |
 
-**三种模式共用同一套 git 机制（见 [`../working/collaboration.md`](../working/collaboration.md)），但对"给什么材料"的要求不同。**
+**三种模式共用同一套 git 机制（见 [`working/collaboration.md`](working/collaboration.md)），但对"给什么材料"的要求不同。**
 
 C 是 B 的多方版本加上吸收协议。它值得单列，因为**吸收环节是最容易失守的地方**：
 被审方既是接受方又是判定方，不加约束就等于被告当法官（见 §5.3）。
@@ -33,7 +33,7 @@ C 是 B 的多方版本加上吸收协议。它值得单列，因为**吸收环�
 得到的是"对 A 的改写"而不是独立判断。那样问 N 个助手的成本花了，
 拿到的信息量却接近问一个。
 
-同一条逻辑已有先例：`../working/doc-conventions.md` 要求重写投影时
+同一条逻辑已有先例：`working/doc-conventions.md` 要求重写投影时
 "只读代码，禁止读本文档集，否则产出会退化为对旧文本的改写"。
 
 **三个阶段，可见性不同：**
@@ -45,7 +45,7 @@ C 是 B 的多方版本加上吸收协议。它值得单列，因为**吸收环�
 ```
 
 ③ 阶段允许读别人的方案，但**不得直接拼接**——现有方案只作"该核对什么"的
-候选清单，结论仍须回代码取证重写（同 `../working/doc-conventions.md`）。
+候选清单，结论仍须回代码取证重写（同 `working/doc-conventions.md`）。
 
 ## 3. 提案模式：发什么，不发什么
 
@@ -53,7 +53,7 @@ C 是 B 的多方版本加上吸收协议。它值得单列，因为**吸收环�
 
 | 必给 | 说明 |
 | --- | --- |
-| 原始需求 | 用户原话，一字不改（见 [`../working/request-lifecycle.md`](../working/request-lifecycle.md) R1） |
+| 原始需求 | 用户原话，一字不改（见 [`working/request-lifecycle.md`](working/request-lifecycle.md) R1） |
 | 验收标准 | 客观、第三方可判定（R5）。这是助手自检的依据 |
 | 上下文入口 | 指向 [`../project-guide/overall-architecture.md`](../project-guide/overall-architecture.md)，让它自己按需深入 |
 | 边界 | 含什么 / 不含什么 / 不含的归谁（R3） |
@@ -82,7 +82,7 @@ python3 parallel-proposals.py --request req.md --n 5 --out ./proposals
 此前同机隔离"只能靠明确指令，机制上拦不住"。
 
 产出的 `manifest.json` 记录每路的模型、耗时、token 与状态，
-是证据账（[`../working/request-lifecycle.md`](../working/request-lifecycle.md) §7）的最小形态。
+是证据账（[`working/request-lifecycle.md`](working/request-lifecycle.md) §7）的最小形态。
 
 **已验证到哪一步**（2026-08-28，本机实测）：
 
@@ -141,7 +141,7 @@ qoder 评审 opus 的文档重构），下列规则全部来自那一轮暴露�
 | **覆盖范围**：看了哪些仓/目录，**没看哪些** | 产生误报，且未覆盖区域会被误当作"已审"。实例：评审只看了 `k8s` 一个仓，对已在 App 子仓修复的问题报了"未处置" |
 | **可判定的验收标准** | 吸收方无从证明自己真的吸收了 |
 
-第二条尤其重要：投影须自陈盲区（[`../working/doc-conventions.md`](../working/doc-conventions.md) 的编辑自检），
+第二条尤其重要：投影须自陈盲区（[`working/doc-conventions.md`](working/doc-conventions.md) 的编辑自检），
 **评审同样是一种产出，同样要自陈盲区**。
 
 ### 5.3 吸收方必须留处置记录
