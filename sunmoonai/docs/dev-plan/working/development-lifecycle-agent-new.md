@@ -366,6 +366,26 @@ publication target + integrator
 
 历史 baseline、候选和聊天记录只作线索；当前实现断言必须回到代码、测试或运行结果取证。
 
+**本项目（Investment App）的范围门禁。**上表是通用路由；本仓另有一组必须追加的核对，
+人和 Agent 同样遵守。本文不复制项目实现，只规定遇到哪类改动必须去哪里验证：
+
+| 改动命中 | 必须追加的核对 |
+| --- | --- |
+| Agent run、状态、恢复、预算、事件或副作用 | `project-guide/repos/investment-app.md` 对应章节、生产链代码与相关测试；**不得由历史设计稿推断现状** |
+| knowledge 检索契约 | 提供方 schema、investment 消费锁和双端契约测试 |
+| Admin/Web/API | 对应面向下的 `AGENTS.md`、认证边界和端到端交互测试 |
+| 数据模型或迁移 | 迁移链、数据库约束、前滚/回滚策略和数据不变量 |
+| 模板共有结构 | 先判断是否属于模板职责；需要同步时按模板与实例门禁处理 |
+| K8s 或发布 | bundle、release 与部署门禁；**App 源码通过不代表发布可用** |
+| 跨仓改动 | 每仓分别固定 commit，并验证 provider/consumer 与子模块 gitlink |
+
+**能力状态只用四级词典**：`defined / wired / deployable / runtime-verified`
+（见 `project-guide/overall-architecture.md` §8.2）。对「已知未实现」的能力，必须先验证
+它**当前仍然未实现**——类、DTO、迁移或测试夹具存在，都不等于生产链已经接线。休眠能力
+优先回跑 `project-guide/repos/investment-app.md` §7 指向的
+`tests/test_dormant_capabilities.py`，同时检查锚点仍存在且能力仍未接线，不由执行者自行
+发明「已实现」的判断口径。
+
 ### 5.3 共同纪律
 
 单路 Agent 和 Agent supervisor 都必须：
@@ -486,6 +506,11 @@ Agent 路径的根仓由后端物化，后续 worktree 由 Agent supervisor 建�
 
 候选绑定不可变 commit，并声明覆盖/未覆盖范围、各仓 commit/gitlink、验证原始输出、假设、
 盲区、缺陷、副作用和关键主张证据。
+
+需要脚本化产生候选时使用 [`../parallel-proposals.py`](../parallel-proposals.py)。
+**它的验证边界要如实标注**：已验证的是独立进程、独立 `CODEX_HOME`、失败隔离与 manifest
+写入；真实模型调用尚未在本项目端到端验证。脚本存在不等于流程已经可用，不得据此声称
+隔离由机制保证。
 
 ### 6.5 角色分离
 
