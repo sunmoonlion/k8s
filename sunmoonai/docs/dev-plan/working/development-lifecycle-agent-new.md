@@ -720,7 +720,7 @@ Artifact bundle 保持可达；“对象暂时还在 reflog”不是保留策略
 | 整合时误拷工作区文件进共享主仓 | integrator 从**选定 commit** 取内容，写进自己的整合 worktree | 把任何人的未提交文件复制进共享主仓 | 从共享主仓撤出该文件，改从 commit cherry-pick / merge；撤出前先确认没有覆盖他人内容 |
 | 只读探索 | 不写；或只写一次性抛弃分支且不推送 | 探索性改动混进实施分支或共享主仓 | 探索提交不进选优，除非任务包事先允许 |
 | 跨机 / 新会话接手 | 只凭分支 + commit 恢复；cwd 必须是自己的 worktree | 凭「上次写在共享目录里」接着写 | 先看 `worktree list` 和 `status`；共享工作区里出现的未跟踪文件先按覆盖事故处理 |
-| master/main 发布 | 仅 integrator 在最终验收后、获授权时更新 | 每个候选直接向 master/main 写文件或 commit | 未经整合的写入撤出发布面，从选定 commit 重走整合与 final gate；不在发布面上就地修补 | 未经整合的写入撤出发布面，从选定 commit 重走整合与 final gate；不在发布面上就地修补 |
+| master/main 发布 | 仅 integrator 在最终验收后、获授权时更新 | 每个候选直接向 master/main 写文件或 commit | 未经整合的写入撤出发布面，从选定 commit 重走整合与 final gate；不在发布面上就地修补 |
 
 ### 7.7 最终路径的发布协议
 
