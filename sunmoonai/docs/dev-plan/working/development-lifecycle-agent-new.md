@@ -366,25 +366,23 @@ publication target + integrator
 
 历史 baseline、候选和聊天记录只作线索；当前实现断言必须回到代码、测试或运行结果取证。
 
-**本项目（Investment App）的范围门禁。**上表是通用路由；本仓另有一组必须追加的核对，
-人和 Agent 同样遵守。本文不复制项目实现，只规定遇到哪类改动必须去哪里验证：
+**本项目（Investment App）的范围门禁。**上表是通用路由，已覆盖跨 App 契约、Admin/Web/API、
+数据模型与迁移、K8s 与发布、跨仓与子模块各面。本文**不复制项目实现，也不铺项目清单**——
+易变的当前事实只放
+[`project-guide/repos/investment-app.md`](../../project-guide/repos/investment-app.md)，那里改了
+本文不必跟着改。本文只固定三条不随实现变动的路由：
 
-| 改动命中 | 必须追加的核对 |
-| --- | --- |
-| Agent run、状态、恢复、预算、事件或副作用 | [`project-guide/repos/investment-app.md`](../../project-guide/repos/investment-app.md) 对应章节、生产链代码与相关测试；**不得由历史设计稿推断现状** |
-| knowledge 检索契约 | 提供方 schema、investment 消费锁和双端契约测试 |
-| Admin/Web/API | 对应面向下的 `AGENTS.md`、认证边界和端到端交互测试 |
-| 数据模型或迁移 | 迁移链、数据库约束、前滚/回滚策略和数据不变量 |
-| 模板共有结构 | 先判断是否属于模板职责；需要同步时按模板与实例门禁处理 |
-| K8s 或发布 | bundle、release 与部署门禁；**App 源码通过不代表发布可用** |
-| 跨仓改动 | 每仓分别固定 commit，并验证 provider/consumer 与子模块 gitlink |
+1. **改动涉及 Investment App 时**，除上表外追加读取该仓的项目指南、生产链代码和相关测试；
+   不得由历史设计稿或旧快照推断现状。
+2. **陈述任何能力状态时只用四级词典**——`defined / wired / deployable / runtime-verified`
+   （见 [`project-guide/overall-architecture.md`](../../project-guide/overall-architecture.md)
+   §8.2）。类、DTO、迁移或测试夹具存在，都不等于生产链已经接线；执行者不得自行发明
+   「已实现」的判断口径。
+3. **涉及已知休眠能力时回跑 dormant 测试**——
+   [`project-guide/repos/investment-app.md`](../../project-guide/repos/investment-app.md) §7
+   指向的 `tests/test_dormant_capabilities.py`，同时确认锚点仍在且能力仍未接线。
 
-**能力状态只用四级词典**：`defined / wired / deployable / runtime-verified`
-（见 [`project-guide/overall-architecture.md`](../../project-guide/overall-architecture.md) §8.2）。对「已知未实现」的能力，必须先验证
-它**当前仍然未实现**——类、DTO、迁移或测试夹具存在，都不等于生产链已经接线。休眠能力
-优先回跑 [`project-guide/repos/investment-app.md`](../../project-guide/repos/investment-app.md) §7 指向的
-`tests/test_dormant_capabilities.py`，同时检查锚点仍存在且能力仍未接线，不由执行者自行
-发明「已实现」的判断口径。
+第 1 条给入口，第 2 条给词汇，第 3 条给可运行的验证动作；三者都不随某一次实现变动而失效。
 
 ### 5.3 共同纪律
 
