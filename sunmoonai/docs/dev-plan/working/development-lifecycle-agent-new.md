@@ -337,6 +337,20 @@ publication target + integrator
 不匹配会改变结果时停止并发起 Interaction；不得在错误仓库、错误分支、过期 commit 或失效
 租约上继续。
 
+**写入前门禁（一票否决）。**动手写任何文件之前，逐条核对，任一不成立则**停，不写任何文件**，
+报 supervisor：
+
+1. `cwd == workspace_path`；
+2. 当前分支 `== exclusive_branch`；
+3. 目标路径不在 `forbidden_write_paths` 内，且解析软链、`..` 和挂载别名后的规范路径仍落在
+   获准的 writable root 内；
+4. 目标路径上没有他人产物；若有，不覆盖——先让对方的内容形成可达 commit 或备份；
+5. 本次不是宽泛写入（批量生成、`>` 重定向、脚本 sweep、先 `rm -rf` 后重建）；确需宽泛写入
+   时收窄到明确路径逐个执行。
+
+这五条不是建议。**宽泛写入和「路径归属不明仍继续写」是覆盖事故的两个主因**，两者都发生在
+写入前，事后恢复（§7.8）代价远高于停一次。
+
 ### 5.2 上下文路由
 
 | 改动面 | 必须追加核对 |
@@ -434,10 +448,16 @@ input_refs, baseline_commits, allowed_context
 expected_output, acceptance, evidence
 permissions, budget, deadline, stop_condition
 dependencies
-branch, worktree, checkpoint_location
+workspace_path, exclusive_branch, forbidden_write_paths
+checkpoint_location
 output_namespace, publication_target, integrator
 result_status
 ```
+
+`workspace_path` 和 `exclusive_branch` 必须在派工时写死，且对每个执行者唯一。
+`forbidden_write_paths` 至少包括：人的主 checkout、其他执行者的 worktree、共享发布面，
+以及非 supervisor 不得写的单写者文件（如 `handoff.md`）。这三个字段不是描述性说明，
+是 §5.1 写入前门禁的判定输入——派工时缺任一字段，执行者不得开始写。
 
 派工只能收窄父 Task。父预算覆盖所有 Work Unit、Attempt、工具、评审和改进。多个 Work Unit
 不得同时权威写同一可变事实；先划分所有权，无法划分则串行。
