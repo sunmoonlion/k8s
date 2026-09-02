@@ -714,7 +714,13 @@ Artifact bundle 保持可达；“对象暂时还在 reflog”不是保留策略
 | 候选迟到 | 标 `STALE`，只读保留；需要时建立新改进单元 | 写入 final path、覆盖已选 commit 或再次执行副作用 | 标 `STALE` 只读保留；需要采用则新开改进单元，源仍是 commit |
 | 失败/取消 | 冻结失败现场和已产出对象，盘点副作用，再按策略回收 | 先删 worktree 导致无法复盘 | 先冻结现场再回收；已删除的现场按证据缺口登记，不补造 |
 | Agent 崩溃 | 新执行者从 manifest/checkpoint 和固定 commit 恢复到新 worktree | 盲接旧进程的半写目录 | 不接管半写目录；从 manifest/checkpoint 和固定 commit 在新 worktree 重建 |
-| master/main 发布 | 仅 integrator 在最终验收后、获授权时更新 | 每个候选直接向 master/main 写文件或 commit | 未经整合的写入撤出发布面，从选定 commit 重走整合与 final gate；不在发布面上就地修补 |
+| 已交卷 commit 需要修改 | 新 commit；旧哈希仍报给评审并记 `supersedes` | `commit --amend` 改写已被他人读过或已交卷的提交 | 原 commit 仍可达则继续作为评审对象；新哈希标为冻结后修订，不静默替换 |
+| 两执行者提交到同一分支 | 不应发生——派工时 `exclusive_branch` 互斥 | 共用 `tmp` / `new` 这类分支名却不拆所有者 | 停写；按 commit 作者和时间拆成两条分支，原分支冻结不再接受提交 |
+| 从共享目录拷走他人未提交稿 | 不拷。交卷只经 supervisor 收集的 commit | 把别人的草稿当自己的起点 | 该路不再计作独立候选；记录污染来源与时间窗口 |
+| 整合时误拷工作区文件进共享主仓 | integrator 从**选定 commit** 取内容，写进自己的整合 worktree | 把任何人的未提交文件复制进共享主仓 | 从共享主仓撤出该文件，改从 commit cherry-pick / merge；撤出前先确认没有覆盖他人内容 |
+| 只读探索 | 不写；或只写一次性抛弃分支且不推送 | 探索性改动混进实施分支或共享主仓 | 探索提交不进选优，除非任务包事先允许 |
+| 跨机 / 新会话接手 | 只凭分支 + commit 恢复；cwd 必须是自己的 worktree | 凭「上次写在共享目录里」接着写 | 先看 `worktree list` 和 `status`；共享工作区里出现的未跟踪文件先按覆盖事故处理 |
+| master/main 发布 | 仅 integrator 在最终验收后、获授权时更新 | 每个候选直接向 master/main 写文件或 commit | 未经整合的写入撤出发布面，从选定 commit 重走整合与 final gate；不在发布面上就地修补 | 未经整合的写入撤出发布面，从选定 commit 重走整合与 final gate；不在发布面上就地修补 |
 
 ### 7.7 最终路径的发布协议
 
