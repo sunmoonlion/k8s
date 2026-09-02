@@ -371,7 +371,7 @@ publication target + integrator
 
 | 改动命中 | 必须追加的核对 |
 | --- | --- |
-| Agent run、状态、恢复、预算、事件或副作用 | `project-guide/repos/investment-app.md` 对应章节、生产链代码与相关测试；**不得由历史设计稿推断现状** |
+| Agent run、状态、恢复、预算、事件或副作用 | [`project-guide/repos/investment-app.md`](../../project-guide/repos/investment-app.md) 对应章节、生产链代码与相关测试；**不得由历史设计稿推断现状** |
 | knowledge 检索契约 | 提供方 schema、investment 消费锁和双端契约测试 |
 | Admin/Web/API | 对应面向下的 `AGENTS.md`、认证边界和端到端交互测试 |
 | 数据模型或迁移 | 迁移链、数据库约束、前滚/回滚策略和数据不变量 |
@@ -380,9 +380,9 @@ publication target + integrator
 | 跨仓改动 | 每仓分别固定 commit，并验证 provider/consumer 与子模块 gitlink |
 
 **能力状态只用四级词典**：`defined / wired / deployable / runtime-verified`
-（见 `project-guide/overall-architecture.md` §8.2）。对「已知未实现」的能力，必须先验证
+（见 [`project-guide/overall-architecture.md`](../../project-guide/overall-architecture.md) §8.2）。对「已知未实现」的能力，必须先验证
 它**当前仍然未实现**——类、DTO、迁移或测试夹具存在，都不等于生产链已经接线。休眠能力
-优先回跑 `project-guide/repos/investment-app.md` §7 指向的
+优先回跑 [`project-guide/repos/investment-app.md`](../../project-guide/repos/investment-app.md) §7 指向的
 `tests/test_dormant_capabilities.py`，同时检查锚点仍存在且能力仍未接线，不由执行者自行
 发明「已实现」的判断口径。
 
@@ -1008,7 +1008,7 @@ Agent 声称完成、subagent 全返回、已有 commit/PR 或候选测试通过
 | 只写分支名，不固定 commit | **项目实例（2026-08-27）**：评审引用了旧提交，而主方已领先三个提交 | §7.5、§8 |
 | 优胜作者独自拒绝改进 | **项目实例（2026-08-27）**：吸收阶段出现误报，且部分接受的边界只能由被审方单方划定 | §6.5、§6.7 |
 | 合并后不在最终 commit 回归 | **项目实例（2026-08-27）**：评审给出的八条验收标准长期无人执行 | §6.7、§10.2 |
-| 只测一端就宣布跨仓契约完成 | **现行硬规则**：`constraints.md` C4——单仓 CI 只跑自己那半，provider 改了、consumer 锁没跟，两边各自都绿 | §5.2 范围门禁 |
+| 只测一端就宣布跨仓契约完成 | **现行硬规则**：[`constraints.md`](../constraints.md) C4——单仓 CI 只跑自己那半，provider 改了、consumer 锁没跟，两边各自都绿 | §5.2 范围门禁 |
 | 候选提前读取其他方案 | 设计风险。机理清楚，但本项目的原始记录出处已不可取得，不作为项目实例引用 | §6.4 |
 | 把历史设计或目标态当成代码现状 | 设计风险（同上）。四级词典与 dormant 回跑是现行控制 | §0.2、§5.2 |
 | 多数票覆盖失败测试 / 全体一致的共同盲区 | 设计风险（同上）。多个相似模型可能共享盲区 | §6.6 |
