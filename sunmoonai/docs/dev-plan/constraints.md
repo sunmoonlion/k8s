@@ -163,7 +163,7 @@ Calico 集群，否则"测过了"是假的。
 | 层 | 覆盖 | 在哪 |
 | --- | --- | --- |
 | **随测试自动跑** | 标了测试载体的那些 | 四仓 `tests/test_kernel_invariants.py`、`tests/test_dormant_capabilities.py`、双端契约测试——**跑 `uv run pytest` 就带上，不需要谁记得** |
-| **随提交自动跑** | 本仓文档的三项机械不变量 | [`doc-gate.py`](doc-gate.py) 经版本化的 `.githooks/pre-commit` 触发——**提交就带上**。装一次 `git config core.hooksPath .githooks` 对全部 worktree 生效（共享同一个 `.git`），装没装用 `doc-gate.py --selfcheck` 判定 |
+| **随提交自动跑** | 本仓文档的三项机械不变量，以及主线独有文档不被合并删除 | [`doc-gate.py`](doc-gate.py) 经版本化的 `.githooks/pre-commit` 触发——**提交就带上**。装一次 `git config core.hooksPath .githooks` 对全部 worktree 生效（共享同一个 `.git`），装没装用 `doc-gate.py --selfcheck` 判定 |
 | **指针** | 全部 | 五仓根 `AGENTS.md`、`.cursor/rules/`、八个组件 `CLAUDE.md`（**进目录自动注入**） |
 | **自检** | 全部 | 上面「怎么用」那节 |
 
@@ -199,6 +199,13 @@ Calico 集群，否则"测过了"是假的。
 4d7942c0 记的那个盲区，但一跑就报 16 处，其中多数是合法的显示约定——文字写可读的
 `project-guide/repos/investment-app.md`，href 写 `../../` 实走法。**这正是本仓付过
 学费的坑，差一点原样重犯。**该盲区仍标 ⚠：改了 href 忘改显示文字，机械检查抓不到。
+
+**主线不变量。**各助手分支不保留 `development-lifecycle-human.md`（人那份，助手用不到）
+与本轮的裁决书、整合记录。git 的语义是：**在分支上删掉主线也有的文件，合并回主线就连
+主线一起删**——这对每个分支都成立，不是某个分支的特殊情况。因此不用「记得别合某个
+分支」兜底（那种规矩正是本节开头判定为「和写在文档里的规矩没有本质区别」的那一层），
+而是由 `doc-gate.py` 的 `MASTER_ONLY` 在主线上核对，`.githooks/pre-merge-commit` 让
+合并提交也走同一门禁。实测：把删了这三份的分支合进主线，合并被拦下、主线文件未动。
 
 **它抓不到什么（老实标 ⚠）**：章节引用**指向存在但语义错误**的那一节。文件还在、
 链接还通、编号也解析得到，只是重编号后指的内容全变了。2026-09-02 重写后
