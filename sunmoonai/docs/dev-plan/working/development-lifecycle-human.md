@@ -87,7 +87,7 @@
 省略任何一步都必须**显式写出“不适用”及理由**。空着与“忘了”无法区分。
 
 **什么时候不能简化**：涉及安全边界、数据迁移、跨 App 契约、不可逆外部动作、
-生产发布——这几类无论多小都走完整流程（同 `development-lifecycle-agent.md` §2）。
+生产发布——这几类无论多小都走完整流程（同 `development-lifecycle-agent.md` §6.1）。
 
 ## 6. 改判三要素
 
@@ -115,7 +115,7 @@
 | --- | --- |
 | 请求写清**边界**：含什么、不含什么、不含的归谁 | agent 会自行扩大范围，或漏掉本该做的 |
 | 给**可判定的验收标准**，不给倾向性结论 | agent 向你的结论收敛，等于白问 |
-| 并行提案时**不泄露其他方案** | 独立信号退化成改写（`development-lifecycle-agent.md` §3.2） |
+| 并行提案时**不泄露其他方案** | 独立信号退化成改写（`development-lifecycle-agent.md` §6.4） |
 | 收到“我不确定”时**不追问到它给出确定答案** | 逼出的确定性是编的 |
 | agent 说“没查过某处”时**当作真话对待** | 声明盲区的动力被消灭，下次它不说了 |
 
@@ -130,7 +130,7 @@
 **委派转移的是执行，不是最终责任。**人向 Agent 或其他人派活时必须给出范围、权限、预算、
 停止条件和可验收输出；对超范围、追加成本、不可逆动作和规范修改及时批准或拒绝；亲自验收，
 或指定未参与实施的验收方。执行过程按
-[`development-lifecycle-agent.md`](development-lifecycle-agent.md) §1；需要并行候选时按该文 §2–§3。
+[`development-lifecycle-agent.md`](development-lifecycle-agent.md) §5；需要并行候选时按该文 §6。
 
 ## 9. 终审与责任归属
 
@@ -150,11 +150,15 @@
 ## 10. 边界
 
 本文不重复 [`development-lifecycle-agent.md`](development-lifecycle-agent.md) 已有的：
-上下文路由、`investment-app` 范围门禁、Git 与 worktree 纪律、证据账结构、
-成本与停止规则、常见失败方式。那些对人同样适用，需要时直接读那一份。
+上下文路由、`investment-app` 范围门禁、Git 与 worktree 纪律、产出物与 commit 的全生命周期、
+证据账结构、成本与停止规则、常见失败方式。那些对人同样适用，需要时直接读那一份。
+
+> **注意：本文对 agent 那份的引用是临时状态。**agent 那份在开发结束后会删除，届时上述
+> 共同内核必须已完整写入本文（见该文 §11.1）。在此之前，本文的章节号引用随该文结构变动
+> 而更新——2026-09-02 的重写已使 §1/§2/§3.2 分别迁移为 §5/§6.1/§6.4。
 
 本文也不定义任何产品语义，不建立第二套状态机。开发侧与产品侧的词汇对照统一放在
-[`development-lifecycle-agent.md`](development-lifecycle-agent.md) 附录，此处不重复一份。
+[`development-lifecycle-agent.md`](development-lifecycle-agent.md) 附录 A，此处不重复一份。
 
 | 文档 | 管什么 | 本文不重复 |
 | --- | --- | --- |
