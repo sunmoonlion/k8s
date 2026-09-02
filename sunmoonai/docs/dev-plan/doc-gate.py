@@ -42,13 +42,12 @@ from pathlib import PurePosixPath
 
 DOC_ROOT = "sunmoonai/docs/"
 
-# 门禁范围：本次提交碰到这些文件时，pre-commit 会拦。范围**故意从小开始**——
+# 门禁范围：本次提交碰到这些文件时，pre-commit 会拦。
 # 一个在合法内容上大面积报错的检查不是门禁，是噪音，上线当天所有人就会 --no-verify。
-# 全仓其余文档用 `--survey` 巡检（只报告、不拦），修完一批再往这里加一批。
-GATED = (
-    "sunmoonai/docs/dev-plan/working/",
-    "sunmoonai/docs/dev-plan/constraints.md",
-)
+# 因此规矩是：**先把范围内清零，再把范围扩进来**。`--survey` 用于巡检（只报不拦）。
+# 2026-09-02：全仓 117 份文档已清零，范围由 dev-plan/working/ 扩到整个 docs/。
+# 扩范围的前提是「扩之前先清零」——带着存量失败上线的门禁会被 --no-verify 掉。
+GATED = ("sunmoonai/docs/",)
 
 # 声明「自足」的文档：§N 引用必须指向**本文件内**的标题。
 # 其他文档（裁决书、整合记录、评审）引用的是别的文档的章节，不适用本项。

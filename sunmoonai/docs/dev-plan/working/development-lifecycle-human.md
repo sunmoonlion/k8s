@@ -792,7 +792,7 @@ verification     # 最终 commit 上的回归结果
 | [`development-lifecycle-agent.md`](development-lifecycle-agent.md) | Agent 路径：FastAPI 受理、sandbox 物化、Agent 运行时 | 那条路径特有的受理与物化细节。**该文为开发期临时文档，删除后本文不受影响** |
 | [`../constraints.md`](../constraints.md) | 代码不得违反的硬规则 | 具体条文；违反者不进入方案比较 |
 | [`handoff.md`](../handoff.md) | 当前阻塞与下一动作 | 不在本文写进度 |
-| [`../project-guide/repos/investment-app.md`](../../project-guide/repos/investment-app.md) | 当前实现与已知缺口 | 不把易腐现状写进合同 |
+| [`../../project-guide/repos/investment-app.md`](../../project-guide/repos/investment-app.md) | 当前实现与已知缺口 | 不把易腐现状写进合同 |
 
 Git、远端、子模块和跨机操作若有现行专门规范，以该规范为具体操作权威；本文固定其中不可
 缺失的不变量（§12）。
