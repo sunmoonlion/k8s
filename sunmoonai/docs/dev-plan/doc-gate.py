@@ -26,10 +26,12 @@
 - L3 Markdown 表格每行列数必须与表头一致。
 
 用法：
-    doc-gate.py <文件>...     # 检查指定文件（hook 传入暂存的文档）
+    doc-gate.py --staged      # hook 用：检查本次提交暂存的文档 + 主线不变量
+    doc-gate.py <文件>...     # 检查指定文件
     doc-gate.py --all         # 检查门禁范围（GATED）内的全部文档
     doc-gate.py --survey      # 巡检全仓 docs/，只报告不拦截（退出码恒 0）
     doc-gate.py --selfcheck   # 只报告 hook 是否已安装
+在主线上还会额外核对 MASTER_ONLY 的文档没有被合并带来的删除抹掉。
 退出码：0 通过，1 有失败，2 用法错误。
 """
 
@@ -54,6 +56,35 @@ GATED = ("sunmoonai/docs/",)
 # 效力」。这类笔记按其性质会引用外部仓的绝对路径作取证出处，用共享文档的链接标准
 # 去卡它，只会逼作者绕过门禁。巡检（--survey）仍然覆盖它。
 EXEMPT = ("sunmoonai/docs/dev-plan/codex-reference/",)
+
+# 只在人的主线保留的文档。各助手分支已删除它们（人那份助手用不到；本轮的裁决书与
+# 整合记录是归档证据）。**但 git 的语义是：在分支上删掉主线也有的文件，合并回主线
+# 就连主线一起删。**这对每个分支都成立，不是某一个分支的特殊情况，所以不能靠「记得
+# 别合某个分支」兜底——那种规矩正是本仓 4d7942c0 判定为「和写在文档里的规矩没有本质
+# 区别」的那一层。改为门禁：主线上的提交（含合并提交）必须仍然带着这些文件。
+MASTER_BRANCH = "master"
+MASTER_ONLY = (
+    "sunmoonai/docs/dev-plan/working/development-lifecycle-human.md",
+    "sunmoonai/docs/dev-plan/working/development-lifecycle-agent-new-decision.md",
+    "sunmoonai/docs/dev-plan/working/development-lifecycle-agent-new-integration.md",
+)
+
+
+def check_master_only(tracked: set[str]) -> list[str]:
+    """主线不得丢失只在主线保留的文档——挡住由分支合并传播过来的删除。"""
+    try:
+        branch = git("rev-parse", "--abbrev-ref", "HEAD").strip()
+    except subprocess.CalledProcessError:
+        return []
+    if branch != MASTER_BRANCH:
+        return []
+    missing = [f for f in MASTER_ONLY if f not in tracked]
+    if not missing:
+        return []
+    out = ["主线缺少只在主线保留的文档（多半是从某个助手分支合并带来的删除）："]
+    out += [f"  缺 {m}" for m in missing]
+    out.append("  恢复：git checkout <删除前的提交> -- <路径>，或在合并时保留主线版本。")
+    return out
 
 # 声明「自足」的文档：§N 引用必须指向**本文件内**的标题。
 # 其他文档（裁决书、整合记录、评审）引用的是别的文档的章节，不适用本项。
@@ -243,6 +274,13 @@ def main(argv: list[str]) -> int:
 
     tracked = tracked_paths()
     survey = argv[0] == "--survey"
+    if argv[0] == "--staged":
+        # hook 用：自己算本次提交暂存的文档。即使一份文档都没动，也仍要跑主线不变量,
+        # 因为「合并把主线独有文档删掉」这件事本身就不体现为对某份文档的修改。
+        staged = git(
+            "diff", "--cached", "--name-only", "--diff-filter=ACMR"
+        ).splitlines()
+        argv = [p for p in staged if p.endswith(".md")] or ["--none"]
     if survey:
         targets = [
             p for p in sorted(tracked) if p.startswith(DOC_ROOT) and p.endswith(".md")
@@ -253,6 +291,8 @@ def main(argv: list[str]) -> int:
             for p in sorted(tracked)
             if p.startswith(GATED) and not p.startswith(EXEMPT) and p.endswith(".md")
         ]
+    elif argv[0] == "--none":
+        targets = []
     else:
         # hook 传入暂存文件；只对门禁范围内的拦截
         targets = [
@@ -273,6 +313,9 @@ def main(argv: list[str]) -> int:
         if path in SELF_CONTAINED:
             problems += check_section_refs(path, text, tracked, heading_cache)
         problems += check_tables(path, text)
+
+    if not survey:
+        problems += check_master_only(tracked)
 
     if problems and survey:
         print(f"doc-gate 巡检: {checked} 份文档，{len(problems)} 处待修（不拦提交）\n")
