@@ -37,7 +37,7 @@ Submission
 | --- | --- |
 | [`request-lifecycle.md`](request-lifecycle.md) | 通用产品对象、状态、幂等、租约、预算、Interaction、Artifact、Event、Delivery |
 | 本文 | 开发 Profile 下的 Task 化、工作区物化和开发执行生命周期 |
-| [`development-lifecycle-human.md`](development-lifecycle-human.md) | Human 路径；最终版必须独立写全，不能把本文当缺失章节 |
+| `development-lifecycle-human.md` | Human 路径。**只放在人的主 checkout**（`~/master/<仓>`），各助手分支不保留——那份是给人看的，助手用不到 |
 | [`../constraints.md`](../constraints.md) | 开发结果不可违反的硬约束 |
 | [`../handoff.md`](../handoff.md) | 当前阻塞和下一动作的交接投影 |
 
@@ -941,7 +941,7 @@ Agent 声称完成、subagent 全返回、已有 commit/PR 或候选测试通过
 由此有两条硬要求：
 
 1. **人那份必须自足。****已完成（2026-09-02）**：
-   [`development-lifecycle-human.md`](development-lifecycle-human.md) 已把共同内核按人的
+   `development-lifecycle-human.md` 已把共同内核按人的
    语境写全（执行内核、协调者 fan-out、产出物与 commit 落地纪律、证据账、成本与停止、
    完成判据、反模式、项目实例、词汇对照），对本文的引用只剩「指出差异」两处，不再取用
    内容。本文删除后人那份仍然完整。
@@ -968,8 +968,8 @@ Agent 声称完成、subagent 全返回、已有 commit/PR 或候选测试通过
 
 | 位置 | 处置 |
 | --- | --- |
-| `AGENTS.md` 第 22 行「开发 Agent 接任务前必须读取」 | 改指 [`development-lifecycle-human.md`](development-lifecycle-human.md)，或整段删除 |
-| [`development-lifecycle-human.md`](development-lifecycle-human.md) 头部与 §18 表格（2 处） | 删除这两处引用；人那份正文不需要改动 |
+| `AGENTS.md` 第 22 行「开发 Agent 接任务前必须读取」 | 改指 `development-lifecycle-human.md`，或整段删除 |
+| `development-lifecycle-human.md` 头部与 §18 表格（2 处） | 删除这两处引用；人那份正文不需要改动 |
 | [`request-lifecycle.md`](request-lifecycle.md) 3 处引用 | 改指人那份，或删除该引用 |
 
 删除前确认：上表全部处置完毕；本文中不打算保留的结论已确认无人依赖；需要保留的已有
