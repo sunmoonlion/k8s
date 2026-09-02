@@ -41,8 +41,10 @@ Submission
 | [`../constraints.md`](../constraints.md) | 开发结果不可违反的硬约束 |
 | [`../handoff.md`](../handoff.md) | 当前阻塞和下一动作的交接投影 |
 
-Git、远端、子模块和跨机操作若有现行专门规范，以该规范为具体操作权威；本文固定其中
-不可缺失的生命周期不变量。
+Git、远端与子模块的纪律以本文 §7 为准。**跨机同步五仓用
+`~/five-repos-sync/sync-five-repos.sh`**：它推送五个父仓，拉取侧自动
+`submodule sync/update` 对齐 gitlink；⚠ 它不推子仓，子仓的提交仍须自己推
+（见 [`../constraints.md`](../constraints.md) T4）。
 
 ### 0.2 事实、目标和执行记录分开
 

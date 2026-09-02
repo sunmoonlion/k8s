@@ -108,7 +108,7 @@
 - **“不能倒退的输入”必须写下来。**已经定过的事，下次不重新讨论——
   这是 `handoff.md` 最有价值的一节；
 - 覆盖与缺口 → 实现矩阵；产品目标 → [`request-lifecycle.md`](request-lifecycle.md)；
-  Git、远端、子模块与跨机操作 → 现行专门规范（若尚未建立，以本文 §12 为准）；
+  Git、远端与子模块纪律 → 本文 §12；跨机同步五仓 → `~/five-repos-sync/sync-five-repos.sh`；
 - 停下来之前，先让 `handoff.md` 能回答：“接手的人一分钟内要知道什么？”
 
 交接投影不是第二真源，不得在 handoff 里复制整张覆盖矩阵。checkpoint 是恢复输入，
@@ -279,7 +279,7 @@ owner / 可写根 / 输出命名空间
 | Admin/Web/API | 目标目录 `AGENTS.md`、认证边界和端到端测试 |
 | 数据模型或迁移 | 迁移链、数据库约束、前滚/回滚和数据不变量 |
 | K8s 或发布 | bundle、release、部署引用与运行门禁 |
-| Git、远端或子模块 | 现行专门规范、各仓 HEAD 和 gitlink |
+| Git、远端或子模块 | 本文 §12、各仓 HEAD 和 gitlink；跨机同步见 `~/five-repos-sync/` |
 
 历史 baseline、候选稿和聊天记录只作线索；**当前实现断言必须回到代码、测试或运行结果
 取证。**
@@ -794,8 +794,10 @@ verification     # 最终 commit 上的回归结果
 | [`handoff.md`](../handoff.md) | 当前阻塞与下一动作 | 不在本文写进度 |
 | [`../../project-guide/repos/investment-app.md`](../../project-guide/repos/investment-app.md) | 当前实现与已知缺口 | 不把易腐现状写进合同 |
 
-Git、远端、子模块和跨机操作若有现行专门规范，以该规范为具体操作权威；本文固定其中不可
-缺失的不变量（§12）。
+Git、远端与子模块的纪律以本文 §12 为准。**跨机同步五仓用
+`~/five-repos-sync/sync-five-repos.sh`**：它推送五个父仓，拉取侧自动
+`submodule sync/update` 对齐 gitlink；⚠ 它不推子仓，子仓的提交仍须自己推
+（见 [`../constraints.md`](../constraints.md) T4）。
 
 ## 附录 词汇对照
 
