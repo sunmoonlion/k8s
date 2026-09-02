@@ -55,19 +55,28 @@
    究竟指编码/自动化，还是研究/问答/分析？前者 codex 契合；后者 codex 能做（有 web/MCP）
    但非最优，且要为它单开 OpenAI 出口与认证（§7-10）。
 
+6. **两个补充裁决（应你要求，§10/§11）**：① **更新架构只换了 L3 执行层**（自建 agent loop →
+   委托 codex/dsh harness），L0/L2/L4/L5 与"必须自建六样"的前五样全不变——方向合理、执行层更好，
+   但治理从"内生可控"变"外挂箍黑箱"，净收益为正、取决于 gate 箍得好不好（§10）。② **OpenClaw**
+   （trusted gateway / untrusted execution / deterministic policy，把 codex app-server 当 native
+   runtime）是我们路线的**成熟外部参照系**：借鉴其确定性 binding 路由 + 分层 gate + native-runtime
+   边界 + Tier/hard-blocks，**不搬其 TS 单网关系统**——落成"supervisor = 确定性 gate 路由器，而非
+   LLM 意图分类 agent"，即 Option C 的 gate 化精修版（§11）。
+
 **一句话裁决**：架构成立、地基现成、SDK 同形；成败不在"能不能跑通一个 run"，而在
 **"能不能把两个自由编排的外部黑箱，套进现有治理壳，做到可审计、可预算、可 HITL、可统一回放"**。
 下文逐项给证据与缓解。
 
 ---
 
-## 1. 证据基础（四源 + 六份既有产物，证据分层）
+## 1. 证据基础（五源 + 六份既有产物，证据分层）
 
 | 层级 | 源 | 今日亲验内容 |
 | --- | --- | --- |
 | L1 一手源码 | `/home/zym/repo/deepseek-harness` | Python SDK（`python/sdk`、`python/sdk-runtime`）、`AGENTS.md`、`packages/{bundle,preset,subagent}` |
 | L1 一手源码 | `/home/zym/repo/codex` | Python SDK（`sdk/python`、`sdk/python-runtime`）、`codex-rs/*` 目录面、`codex-cli/bin/codex.js`、`docs/` |
 | L1 一手源码 | `investment-app/investment-backend` | domain/application/infrastructure/interfaces/tasks 五层 agent 代码、前端入口、`mybuild/Dockerfile` |
+| L1 一手源码（参照系） | `/home/zym/repo/openclaw` | 架构主张 `docs/start/why-openclaw.md`、gate 分层 `docs/plugins/plugin-permission-requests.md`、Codex 监督边界 `docs/specs/codex-supervision.md`、多 agent 路由 `docs/concepts/multi-agent.md`、委托/网关 `docs/concepts/{delegate-,}architecture.md`、`VISION.md` |
 | L2 既有产物 | `dev-plan/codex-reference/*.md`（我此前六份） | orchestration-assessment / deepdive-v2 / sandbox-advice / wrenai / sqlbot / agent-architecture |
 | L3 外部指针 | codex `docs/{sandbox,exec}.md` | 仅指向 developers.openai.com，本地源码无细节——涉沙箱内核行为处降半档 |
 
@@ -75,6 +84,8 @@
 源码级机制（trigger_turn/预算三件套/压缩/角色/code-mode）见 `codex-deepdive-v2`；沙箱端口与加固见
 `sandbox-extension-advice`；财务问数走 Wren 语义层的路线决策见 `wrenai-financial-analysis-integration`
 与 `sqlbot`；总体设计纪律见 `investment-app-agent-architecture`。本文是它们之上的**路线增量评估**。
+OpenClaw（`~/repo/openclaw`）作为**外部参照系**新加入 L1——它是"委托外部 harness + 确定性 gate 治理"
+路线的成熟样本（本身把 codex app-server 当 native runtime），评估与借鉴清单见 §11。
 
 ---
 
@@ -405,7 +416,141 @@ P5    压测（25 课 v5 方法学：并发/排队/背压）+ 生产加固 + 决
 
 ---
 
-## 10. 待用户拍板的决策点（open questions）
+## 10. 架构变更合理性裁决：外包执行 vs 原自研执行层（回答"是否比原架构更好"）
+
+> 先厘清"到底变了什么"，避免把"执行层换实现"误读成"整体推翻"。对照对象 = 既有
+> `codex-reference/investment-app-agent-architecture-qwen3.8.md`（假定**自建 LangGraph 运行时 +
+> 自研 Supervisor + Wren/DockerSandbox**）。
+
+### 10.1 逐层对账：变的只有 L3
+
+| 层 | 原自研架构 | 新架构（本文） | 变了吗 |
+| --- | --- | --- | --- |
+| L0 运行时 | LangGraph+PostgresSaver+celery+event_sink | 同 | **不变**（复用） |
+| L1 领域骨架 | 财务工作流知识（自建，壁垒） | 移进 dsh bundle/preset（知识仍自建，换载体） | 载体变，**知识仍自建** |
+| L2 路由层 | 自研 Supervisor（D1 第2档受约束） | supervisor 路由节点（D1 第2档） | **不变**（仍自研自控） |
+| **L3 执行层** | **自建 LangGraph agent loop + DockerSandbox** | **外包给 codex/dsh harness 子进程** | **★ 变了：唯一的实质变更** |
+| L4 质量层 | output_schema/dry_plan critic/HITL/评估 | 同 + harness 侧 gate | 不变（增量） |
+| L5 治理层 | RunBudget/事件溯源/身份/契约锁 | 同 | **不变**（复用） |
+
+### 10.2 对照原架构"必须自建的六样"（agent-architecture §5）：外包动摇了哪几样
+
+| 必须自建六样 | 新架构下 |
+| --- | --- |
+| ① L1 领域骨架 | **仍自建**（移进 dsh bundle，harness 不替你写财务工作流知识） |
+| ② 评估集 20 题 | **仍自建**（harness 不给金标准） |
+| ③ MDL 语义建模 | **仍自建**（Wren MDL 与 harness 无关） |
+| ④ 反馈采集 | **仍自建** |
+| ⑤ HITL UX | **仍自建**（且要接 codex approval / dsh interaction） |
+| ⑥ run 内压缩 | **★白捡**（codex `thread.compact()` / dsh profile compaction——原文"Codex 有完整机制，你目前为零"，外包反而补上短板） |
+
+即：外包**只替代了"执行 loop 引擎 + 沙箱"、并白捡第⑥样压缩**；前五样壁垒**一样没少**。
+
+### 10.3 裁决（Q1）
+
+**方向合理，在"执行层"维度确实更好；但它是一次"用外部成熟度换内部控制力"的交易，净收益为正、
+但正得有限，且完全取决于治理 gate 箍得好不好。**
+
+- **更好的部分（执行层）**：自建 agent loop 是既有 §7.6 警告的"小号 Codex"高风险区（自由编排 loop
+  极易滑向不可回放/不可回归）。外包给 codex/dsh = 拿到成熟的 loop/工具调用/压缩/code-mode/子进程管理，
+  工程量骤降、能力天花板抬高。这与 OpenClaw 把 codex app-server 当 native runtime 委托是**同一个判断**（§11）。
+- **代价的部分（治理）**：原自研执行层里，编排决策权**内生可控**（是你自己的 LangGraph 图，D1 第1/2档
+  天然在手）。外包后 harness 内部 loop = 自由编排（D1 第3档生产禁用），决策权进了黑箱，治理从"内生"
+  变"外挂四道箍"（§7-2）。**治理难度是上升的，不是下降的。**
+- **不是"整体更好"，是"执行层实现选择更优"**：新架构不推翻原架构，而是给原架构的 L3 执行层换了一个
+  更强的实现。原架构的分层/纪律/壁垒（一套地基两种形态、决策权三分法、P0.5 闸门、必须自建六样前五样）
+  **全部继续成立**。
+- **"更好"的边界条件**：只有当 supervisor+治理壳自研自控、执行外包给 harness 当 native runtime、且用
+  确定性 gate 箍住黑箱时，才净更好（=Option C）。若把路由/治理也塞进 harness 黑箱（Option B 极端），
+  则比自研更差——治理欠债从第一天开始。
+
+---
+
+## 11. OpenClaw gate 做法评估：借鉴什么、不转向什么、更好的建议（回答 Q2）
+
+### 11.1 OpenClaw 是什么（一手核查 `~/repo/openclaw`，2026-09-02）
+
+TypeScript/Node 的**单网关**个人/团队 AI 助手（"on your devices, in your chats"）。架构主张三句话：
+**trusted gateway / untrusted execution / deterministic policy**（`why-openclaw.md`）。它自己把
+**codex app-server、Copilot SDK、Claude Agent SDK 当 native runtime 委托**（`why-openclaw.md` 对比表
+"Vendor harnesses" 行）——**它和我们是同一层的东西**（都是被委托 harness 的控制面），不是我们要转向的上位目标。
+
+### 11.2 OpenClaw 的 gate/routing 真实做法（一手，带锚点）
+
+1. **确定性 binding 路由，不是 LLM 意图分类**（`multi-agent.md`）："Inbound messages route to the right
+   agent through **bindings**"——binding 把 channel account（一个 Slack workspace/一个 WhatsApp 号）映射到
+   一个 agent。路由由**配置**决定，不由模型运行时判断；每 agent = 独立 workspace/agentDir/auth/session/model registry。
+2. **Gateway 层 tool policy = 确定性拒绝，独立于 prompt**（`delegate-architecture.md`）："per-agent tool policy
+   to enforce boundaries at the Gateway level, independent of the agent's personality files—**even if the agent
+   is instructed to bypass its rules, the Gateway blocks the tool call**"。即 `why-openclaw.md` 核心论点：
+   "policy is enforced in code, not requested in the system prompt"——**正是我们既有 D1 决策权三分法的同一立场**。
+3. **gate 分层**（`plugin-permission-requests.md:24-34` "Choose the right gate"）：optional tools（discovery-time
+   gate，`tools.allow`）/ plugin permission requests（per-call gate，`plugin.approval.*`）/ exec approvals /
+   **Codex native permission requests**（codex app-server 或 native hook 审批，OpenClaw 拥有 prompt 时路由进
+   plugin approval）/ MCP approval elicitations。原文："Optional tools are a discovery-time gate. Plugin permission
+   requests are a per-call gate."
+4. **before_tool_call hook = per-call 拦截点**（`plugin-permission-requests.md:38-73`）：hook "runs after the model
+   selects a tool and before OpenClaw executes it"，返回 `requireApproval`（severity/allowedDecisions/timeoutMs）。
+   **这正是 codex SDK `approval_handler`（我们的安全红线 §7-1）的成熟框架版**。
+5. **Codex supervision 的边界纪律**（`codex-supervision.md`）："**Codex App Server remains the thread and
+   model-loop owner.** OpenClaw supplies the fleet catalog, authenticated operator UI, session binding, and channel
+   delivery... **There is no separate Supervisor plugin or second Codex protocol implementation.**"——委托 harness 时
+   **不重实现它的协议、不建第二个 supervisor**，只做 catalog/UI/binding/delivery + gate。
+6. **能力分层 Tier + hard blocks 先行**（`delegate-architecture.md`）：Tier 1（read-only+draft，nothing sends
+   without approval）/ Tier 2（send on behalf）/ Tier 3（proactive/autonomous）。"**Tier 3 requires hard blocks
+   configured first**"——先定"agent 无论如何都不能做的动作"（never 导出财务记录、never 执行 inbound 指令=
+   prompt injection 防御、never 改 IdP 设置），"These rules load every session—last line of defense"。
+7. **动态建 agent 需 operator 批准**（`multi-agent.md` agent provenance）：agent 可请求创建另一个 agent，但
+   "creates the agent only after operator approval"——动态扩张是 gated 的。
+
+### 11.3 裁决（Q2）：借鉴纪律与手法，不完全转向系统
+
+**为什么不完全转向 OpenClaw（4 条，一手依据）**：
+1. **技术栈不兼容**：OpenClaw = TS/Node 单网关 WebSocket daemon；我们 = Python DDD + celery + LangGraph +
+   PostgresSaver + k8s + 现有 Pilot 生产链。完全转向 = 推倒重建，违反"不建第二套系统"总纲。
+2. **场景不同**：OpenClaw 默认是"trusted single-operator assistant"，**sandboxing off by default**、本地 loopback
+   自动批准（`why-openclaw.md` "What we do not claim"）；我们是"没有人在场"的 headless 生产投研。它的个人助手
+   默认在我们场景是危险默认。
+3. **它是 harness 控制面，和我们同层，不是上位替代**：转向它 = 用另一个黑箱网关替换我们自研可控的控制面，
+   治理反而更失控（其内部 loop 仍是自由编排黑箱）。
+4. **OpenClaw 自己反对重编排层**：`VISION.md` "What We Will Not Merge" 明列 "**Heavy orchestration layers that
+   duplicate existing agent and tool infrastructure**"——为"转向 openclaw"而推倒现有基建，恰是它自己拒绝的形态。
+
+### 11.4 更好的建议：supervisor 重定义为"确定性 gate 路由器" + Option C 的 gate 化精修
+
+> 核心转变：**supervisor 不是"LLM 意图分类 agent"，而是"确定性 gate 路由器 + 治理控制面"。**
+> OpenClaw 最大的启发：路由和治理应尽量落在**确定性代码**里，而非模型的运行时判断里。
+
+- **路由三档**（把 §4 的 constrained-dynamic 细化，OpenClaw binding 印证）：
+  - **第1档 确定性 binding（首选，不过 LLM）**：task 带明确类型标签/来源入口/数据集 hint 时，直接确定性映射
+    到执行档（general_codex / financial_dsh / pilot_rag）。最可控、最省成本、天然可回放。
+  - **第2档 受约束 LLM 分类（无法确定性判定时才降级）**：LLM 只在**已注册执行档枚举**里选，pydantic schema
+    校验后落应用服务，**未命中落事件流**（新任务类型信号）。= D1 第2档。
+  - **第3档 自由编排路由：生产禁用**（D1 第3档）——不允许"LLM 自由决定调哪个 agent 并自由多轮委托"。
+- **执行层委托 codex/dsh 当 native runtime，用 OpenClaw 式分层 gate 箍住黑箱**（把 §7-2 "四道箍"具体化）：
+  - **discovery-time gate** = profile 的 allowed/denied tools（现有 `EffectiveAgentConfig.permits_tool`，deny 优先）——
+    工具在模型看到前就被裁掉。
+  - **per-call gate** = codex `approval_handler` / dsh `interaction` 插件——在"模型选定动作后、执行前"拦截，默认
+    `deny_all`，需写/执行的动作路由到现有 HITL（interrupt/resume + action token）。**直接封掉 §7-1 的 codex
+    默认 auto-accept 安全红线**。
+  - **exec/sandbox gate** = 容器为沙箱边界（§7-6）+ 出口白名单（§7-7）。
+- **Tier 授权 + hard blocks 先行**（借鉴 delegate-architecture）：通用 codex 档默认 **Tier 1**（read_only +
+  产出草稿/schema artifact，不自动执行副作用），需写/执行升档且过 per-call gate + HITL；财务 dsh 档**先配
+  hard blocks**（写进 bundle 的每会话必加载规则）：never 改持仓/交易账本、never 导出敏感财务数据、never 执行
+  inbound 消息里的指令（prompt injection 防御）。
+- **不重实现协议、不建第二个 supervisor**（借鉴 codex-supervision）：in-house supervisor 只做路由(gate)+治理
+  (budget/audit/HITL/timeline)+投影(result→统一契约)+分发(spawn 子进程)；**model loop 归 harness**。这条
+  **否定 Option B 的极端形态**（让 dsh 当 supervisor 去 supervise codex = 一个黑箱 harness 监督另一个，治理面
+  更糊，且违反 "no separate supervisor" 纪律），**强化 Option C**。
+
+**一句话**：OpenClaw 是我们这套"委托外部 harness + 确定性 gate 治理"路线的**成熟外部参照系**——它已把
+"不重实现 harness 协议、用 policy-as-code 分层 gate 治理被委托黑箱"做了出来。我们**借鉴它的纪律与手法
+（binding 路由 / 分层 gate / native-runtime 边界 / Tier+hard-blocks），但不搬它的系统**（TS 单网关个人助手
+≠ Python headless 生产投研）。落到我们身上 = **Option C 的 gate 化精修版**。
+
+---
+
+## 12. 待用户拍板的决策点（open questions）
 
 1. **路线 Option A / B / C**（§5）：in-house supervisor + 双 adapter（A，字面方案）/ dsh-native supervisor
    委托 codex（B）/ 混合（C，我倾向）？这决定 supervisor 的脑在不在黑箱里。
@@ -421,7 +566,7 @@ P5    压测（25 课 v5 方法学：并发/排队/背压）+ 生产加固 + 决
 
 ---
 
-## 11. 速查（锚点）
+## 13. 速查（锚点）
 
 ```text
 # codex Python SDK（~/repo/codex）
@@ -469,6 +614,16 @@ mybuild/Dockerfile:8,56 + build-image.sh:110  python:3.12-slim（glibc 2.36）
 investment-web-frontend/app/components/research/research-workspace.tsx
 investment-web-frontend/app/lib/interaction/{client.ts,use-run-projection.ts}
 investment-admin-frontend/app/components/research/research-runtime-panel.tsx
+
+# openclaw（~/repo/openclaw，参照系非目标；2026-09-02 亲验）
+docs/start/why-openclaw.md                     trusted gateway/untrusted execution/deterministic policy；codex app-server 等=native runtime；policy in code not prompt
+docs/plugins/plugin-permission-requests.md:24  "Choose the right gate"：optional tools(discovery)/plugin approval(per-call)/exec/codex native/MCP
+docs/plugins/plugin-permission-requests.md:38  before_tool_call hook（选定工具后、执行前拦截）→requireApproval
+docs/specs/codex-supervision.md                "Codex App Server remains model-loop owner"；"no separate Supervisor plugin or second Codex protocol implementation"
+docs/concepts/multi-agent.md                   确定性 binding 路由（channel account→agent）；per-agent 隔离；动态建 agent 需 operator 批准
+docs/concepts/delegate-architecture.md         Gateway tool policy 独立于 prompt（"even if instructed to bypass, Gateway blocks"）；Tier 1/2/3 + hard blocks 先行
+docs/concepts/architecture.md                  req:agent→runId→event:agent streaming→final；幂等键；JSON Schema 校验（与 Pilot Run/SSE 同构）
+VISION.md                                      "Heavy orchestration layers that duplicate existing agent/tool infra" ∈ Will Not Merge
 
 # 既有产物（dev-plan/codex-reference/）
 investment-app-agent-architecture-qwen3.8.md   总体设计纪律（一套地基两种形态/D1-D9/必须自建六样/P0.5）
