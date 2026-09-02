@@ -49,6 +49,12 @@ DOC_ROOT = "sunmoonai/docs/"
 # 扩范围的前提是「扩之前先清零」——带着存量失败上线的门禁会被 --no-verify 掉。
 GATED = ("sunmoonai/docs/",)
 
+# 例外：codex-reference/ 是**各分支自己**的研究笔记（README.md 第 17 行：各分支只放
+# 自己写的那份），不是共享权威文档；agent 文 §5.2 也定它「只作研究输入，不具规范
+# 效力」。这类笔记按其性质会引用外部仓的绝对路径作取证出处，用共享文档的链接标准
+# 去卡它，只会逼作者绕过门禁。巡检（--survey）仍然覆盖它。
+EXEMPT = ("sunmoonai/docs/dev-plan/codex-reference/",)
+
 # 声明「自足」的文档：§N 引用必须指向**本文件内**的标题。
 # 其他文档（裁决书、整合记录、评审）引用的是别的文档的章节，不适用本项。
 SELF_CONTAINED = (
@@ -242,10 +248,18 @@ def main(argv: list[str]) -> int:
             p for p in sorted(tracked) if p.startswith(DOC_ROOT) and p.endswith(".md")
         ]
     elif argv[0] == "--all":
-        targets = [p for p in sorted(tracked) if p.startswith(GATED) and p.endswith(".md")]
+        targets = [
+            p
+            for p in sorted(tracked)
+            if p.startswith(GATED) and not p.startswith(EXEMPT) and p.endswith(".md")
+        ]
     else:
         # hook 传入暂存文件；只对门禁范围内的拦截
-        targets = [p for p in argv if p.endswith(".md") and p.startswith(GATED)]
+        targets = [
+            p
+            for p in argv
+            if p.endswith(".md") and p.startswith(GATED) and not p.startswith(EXEMPT)
+        ]
 
     problems: list[str] = []
     heading_cache: dict[str, set[str]] = {}
