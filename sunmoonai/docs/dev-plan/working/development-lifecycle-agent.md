@@ -969,7 +969,7 @@ Agent 声称完成、subagent 全返回、已有 commit/PR 或候选测试通过
 | 位置 | 处置 |
 | --- | --- |
 | `AGENTS.md` 第 22 行「开发 Agent 接任务前必须读取」 | 改指 `development-lifecycle-human.md`，或整段删除 |
-| `development-lifecycle-human.md` 头部与 §18 表格（2 处） | 删除这两处引用；人那份正文不需要改动 |
+| `development-lifecycle-human.md` 头部与末节「边界」表（2 处） | 删除这两处引用；人那份正文不需要改动 |
 | [`request-lifecycle.md`](request-lifecycle.md) 3 处引用 | 改指人那份，或删除该引用 |
 
 删除前确认：上表全部处置完毕；本文中不打算保留的结论已确认无人依赖；需要保留的已有

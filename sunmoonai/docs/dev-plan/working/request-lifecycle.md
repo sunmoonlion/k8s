@@ -17,7 +17,7 @@
 本文只约束产品中的 Submission → Task → Attempt → Delivery，以及实现该链路的六方：前端、后端、
 Agent runtime、Profile/验收器、运维、测试与维护者。开发 Agent 与人的工作流程分别由
 [`development-lifecycle-agent.md`](development-lifecycle-agent.md) 和
-[`development-lifecycle-human.md`](development-lifecycle-human.md) 规定。
+`development-lifecycle-human.md` 规定。
 
 一条要求能否进入产品正文，用下面的问题裁决：
 
@@ -47,7 +47,7 @@ Agent runtime、Profile/验收器、运维、测试与维护者。开发 Agent �
 
 这些分别属于 project-guide、具体开发工作单元、现行 Git/协作专门规范、
 [`development-lifecycle-agent.md`](development-lifecycle-agent.md)、
-[`development-lifecycle-human.md`](development-lifecycle-human.md) 和相应 Profile 规范。
+`development-lifecycle-human.md` 和相应 Profile 规范。
 
 ### 0.3 规范用语
 
