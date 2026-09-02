@@ -11,11 +11,11 @@
 > | 目录 | 管什么 | 改了之后 |
 > | --- | --- | --- |
 > | [`../dev-plan/`](../dev-plan/) | 代码必须符合的规则、接下来建什么 | **代码要跟着改** |
-> | [`../working/`](../working/) | 我们怎么共事：提请求、推送、写文档、评审 | 协作方式变，代码不变 |
+> | [`../dev-plan/working/`](../dev-plan/working/) | 我们怎么共事：提请求、推送、写文档、评审 | 协作方式变，代码不变 |
 >
 > **本目录不放规则，也不放脚本**——只描述现状。
 > 规则与其执行脚本在 [`../dev-plan/`](../dev-plan/)，
-> 文档检查脚本在 [`../working/`](../working/)。
+> 文档检查脚本在 [`../dev-plan/working/`](../dev-plan/working/)。
 
 ## 本集之外：`docs/` 下的其他目录是什么
 
@@ -61,7 +61,7 @@
 | 确认某个能力是否真的接线了 | 对应仓文件的**「已知未实现」**一节 |
 | **动代码前必读的规则** | [`../dev-plan/constraints.md`](../dev-plan/constraints.md)（39 条，按主题分组） |
 | 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-plan/agent-discipline.md`](../dev-plan/agent-discipline.md) |
-| 推送改动、跨机拉取、子模块的坑 | [`../working/collaboration.md`](../working/collaboration.md) |
+| 推送改动、跨机拉取、子模块的坑 | [`../dev-plan/working/collaboration.md`](../dev-plan/working/collaboration.md) |
 | 知道接下来要建什么 | [`../dev-plan/`](../dev-plan/) |
 | 复核本文档集的某条断言 | **读代码**，别的都不算数 |
 | 本轮查出的缺口都怎么处置了 | 结论已在各自投影里；过程 `git log --grep 'O[0-9]'` |
@@ -90,12 +90,12 @@ project-guide/
 | 目录 | 语义 | 怎么改 |
 | --- | --- | --- |
 | `overall-architecture.md` `repos/` `topics/` | **现状投影** | **覆盖式重写**：直接替换旧条文，只反映当前有效事实；历史由 git 承担 |
-| 协作机制（请求流程、推送、文档约定、评审） | 已移出，见 [`../working/`](../working/) |
+| 协作机制（请求流程、推送、文档约定、评审） | **已移出** | 见 [`../dev-plan/working/`](../dev-plan/working/) |
 | `governance.md` | **规则** | 改动前应有共识；改完要检查依赖它的文档 |
 
 ## 写作约定
 
-见 [`../working/doc-conventions.md`](../working/doc-conventions.md) §3；编辑自检见其 §4。
+见 [`../dev-plan/working/doc-conventions.md`](../dev-plan/working/doc-conventions.md) §3；编辑自检见其 §4。
 本处不复述——引用而非复制，是那份文件自己的第二条维护约定。
 
 ## 本轮的已知缺口（读之前先知道）
