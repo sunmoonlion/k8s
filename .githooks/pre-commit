@@ -16,8 +16,4 @@ gate="$root/sunmoonai/docs/dev-plan/doc-gate.py"
 
 [ -f "$gate" ] || exit 0
 
-docs=$(git diff --cached --name-only --diff-filter=ACMR -- 'sunmoonai/docs/**/*.md')
-[ -n "$docs" ] || exit 0
-
-# shellcheck disable=SC2086
-python3 "$gate" $docs
+python3 "$gate" --staged
