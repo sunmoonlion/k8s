@@ -1046,7 +1046,32 @@ Agent 声称完成、subagent 全返回、已有 commit/PR 或候选测试通过
 纪律的效力不依赖那次覆盖是否可复核：上面两行已核对事实足以支撑 §0.4、§5.1 和 §7.5 的
 全部要求。**用不可复核的叙述去加强一条本来就成立的规则，只会削弱整份文档的证据标准。**
 
-## 附录 A：开发 Task 持久记录模板
+## 附录 A：词汇对照
+
+产品对象名只在这里对照，**不把产品状态机搬进本文**。Human 路径上没有这些产品对象时，
+用右列的开发侧对应物即可。
+
+| 产品合同用语 | 本文对应物 |
+| --- | --- |
+| 前端 Submission | Agent 路径的原始请求来源；Human 路径由人直接提出或接收（§1） |
+| FastAPI 受理 / Task 化 | 工作仓供给前的任务化；Human 路径由人冻结请求与验收（§2） |
+| Task | 一件有边界的开发工作及其冻结契约（§2.3） |
+| Attempt | 一次实施、候选或修复轮次（§5.4） |
+| Work Unit | supervisor 派出的子工作单元；不是产品子 Task（§6.2） |
+| Artifact | 代码、补丁、报告、测试输出、证据（§7.3） |
+| Interaction | 向有权主体的澄清或批准请求（§9） |
+| Event | 追加式改判与证据记录（§10.1） |
+| Delivery | 最终回复与可重取产物（§10.3） |
+| Handoff | [`../handoff.md`](../handoff.md)；单写者面，只由 supervisor / 主驾驶写（§5.5） |
+| sandbox git | 复杂 Task 由后端物化的工作仓；Human 路径由人建立（§4.1） |
+| worktree | supervisor 为每个可写执行者建立的并行隔离工作区（§6.3） |
+| 命名分支 | 一执行者一分支；commit 的运输通道，**不是评审对象**（§7.5） |
+| 未提交工作区文件 | 仅本地草稿；同一工作区同一路径后写覆盖先写（§7.5） |
+| 人的主 checkout | 如 `~/master/<仓>`；只读参照，**不是投稿箱**（§7.2） |
+| Attempt 租约 / fencing | **产品侧机制**，语义见 [`request-lifecycle.md`](request-lifecycle.md)；开发侧无等价运行时，迟到判定靠冻结 commit 与整合方核对（§8） |
+| 产品 supervisor 拆子 Task | [`request-lifecycle.md`](request-lifecycle.md)，不在本文（§0.1） |
+
+## 附录 B：开发 Task 持久记录模板
 
 ```markdown
 # DEV-<ID>：<短名>
