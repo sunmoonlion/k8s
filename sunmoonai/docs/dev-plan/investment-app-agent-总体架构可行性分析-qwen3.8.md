@@ -11,7 +11,7 @@
 > （REQ-002 纪律）；与代码冲突时以代码为准。四个一手源 + 六份既有产物见 §1。
 > 凡只有外部文档指针（developers.openai.com）支撑、未能在本地源码复核的结论，均降半档标注。
 >
-> **本文与既有 `codex-reference/investment-app-agent-architecture-qwen3.8.md` 的关系**：
+> **本文与既有 `~/codex-reference-archive/qwen3.8/investment-app-agent-architecture-qwen3.8.md` 的关系**：
 > 那份假定的是**自建 LangGraph 运行时 + 自研 Supervisor + Wren/DockerSandbox**；本文评估的是
 > **把执行外包给两个现成 harness（codex/dsh）、supervisor 只做路由分发**的新路线。二者不冲突：
 > 那份的治理纪律（"一套地基两种形态"、决策权三分法、结果契约、预算三件套、"没有人在场"）
@@ -77,7 +77,7 @@
 | L1 一手源码 | `/home/zym/repo/codex` | Python SDK（`sdk/python`、`sdk/python-runtime`）、`codex-rs/*` 目录面、`codex-cli/bin/codex.js`、`docs/` |
 | L1 一手源码 | `investment-app/investment-backend` | domain/application/infrastructure/interfaces/tasks 五层 agent 代码、前端入口、`mybuild/Dockerfile` |
 | L1 一手源码（参照系） | `/home/zym/repo/openclaw` | 架构主张 `docs/start/why-openclaw.md`、gate 分层 `docs/plugins/plugin-permission-requests.md`、Codex 监督边界 `docs/specs/codex-supervision.md`、多 agent 路由 `docs/concepts/multi-agent.md`、委托/网关 `docs/concepts/{delegate-,}architecture.md`、`VISION.md` |
-| L2 既有产物 | `dev-plan/codex-reference/*.md`（我此前六份） | orchestration-assessment / deepdive-v2 / sandbox-advice / wrenai / sqlbot / agent-architecture |
+| L2 既有产物 | `~/codex-reference-archive/`（我此前六份） | orchestration-assessment / deepdive-v2 / sandbox-advice / wrenai / sqlbot / agent-architecture |
 | L3 外部指针 | codex `docs/{sandbox,exec}.md` | 仅指向 developers.openai.com，本地源码无细节——涉沙箱内核行为处降半档 |
 
 六份既有产物的定位（避免重复探索）：编排考证与决策权三分法见 `codex-orchestration-assessment`；
@@ -419,7 +419,7 @@ P5    压测（25 课 v5 方法学：并发/排队/背压）+ 生产加固 + 决
 ## 10. 架构变更合理性裁决：外包执行 vs 原自研执行层（回答"是否比原架构更好"）
 
 > 先厘清"到底变了什么"，避免把"执行层换实现"误读成"整体推翻"。对照对象 = 既有
-> `codex-reference/investment-app-agent-architecture-qwen3.8.md`（假定**自建 LangGraph 运行时 +
+> `~/codex-reference-archive/qwen3.8/investment-app-agent-architecture-qwen3.8.md`（假定**自建 LangGraph 运行时 +
 > 自研 Supervisor + Wren/DockerSandbox**）。
 
 ### 10.1 逐层对账：变的只有 L3
@@ -625,7 +625,7 @@ docs/concepts/delegate-architecture.md         Gateway tool policy 独立于 pro
 docs/concepts/architecture.md                  req:agent→runId→event:agent streaming→final；幂等键；JSON Schema 校验（与 Pilot Run/SSE 同构）
 VISION.md                                      "Heavy orchestration layers that duplicate existing agent/tool infra" ∈ Will Not Merge
 
-# 既有产物（dev-plan/codex-reference/）
+# 既有产物（~/codex-reference-archive/qwen3.8/）
 investment-app-agent-architecture-qwen3.8.md   总体设计纪律（一套地基两种形态/D1-D9/必须自建六样/P0.5）
 codex-orchestration-assessment-qwen3.8.md      决策权三分法/没有人在场/回读攻击面
 codex-deepdive-v2-qwen3.8.md                   trigger_turn/预算三件套/压缩/awaiter 角色/code-mode

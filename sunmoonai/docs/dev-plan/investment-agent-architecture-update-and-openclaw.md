@@ -14,7 +14,7 @@
 > `docs/specs/codex-supervision.md`、`docs/gateway/sandbox-vs-tool-policy-vs-elevated.md`、
 > `docs/tools/acp-agents.md`）；本仓
 > [`development-plan.md`](development-plan.md)、
-> [`codex-reference/investment-app-agent-architecture-cursor.md`](codex-reference/investment-app-agent-architecture-cursor.md)、
+> `~/codex-reference-archive/cursor/investment-app-agent-architecture-cursor.md`、
 > 当前 Pilot / Agent v4 两条链。
 
 ## 0. 先说结论
@@ -51,7 +51,7 @@ Web/Internal PilotService    → celery pilot_agent_graph → 检索 + LLM + HIT
 
 ### 1.2 2026-08-22 总稿（自研引擎、借 Codex 思想）
 
-[`codex-reference/investment-app-agent-architecture-cursor.md`](codex-reference/investment-app-agent-architecture-cursor.md)：
+`~/codex-reference-archive/cursor/investment-app-agent-architecture-cursor.md`：
 
 - 一个 Agent；浏览器入口；服务端控制面；Docker 是 Host
 - 熟路静态图、生路通用循环，**同一套 LangGraph + 同一套 Run**

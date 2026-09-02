@@ -54,7 +54,7 @@
 | Investment Backend | `18d88c7c7dd2c737fb9e7057e5ed46f0fd9a991d` | Pilot/v4 两条链、Run/事件/副作用、Celery、SSE、前端交互契约与迁移 |
 
 同时对读 `~/codex-reference-archive/` 的 28 份历史研究，以及本分支
-[`codex-reference/`](codex-reference/) 的 Codex、Investment、沙箱、SQLBot 和
+`~/codex-reference-archive/` 的 Codex、Investment、沙箱、SQLBot 和
 WrenAI 材料。历史材料用于发现应核对的问题，不替代当前源码证据。
 
 ### 2.2 证据等级

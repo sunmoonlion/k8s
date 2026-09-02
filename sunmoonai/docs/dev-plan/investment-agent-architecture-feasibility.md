@@ -18,7 +18,7 @@
 > | DeepSeek Harness | `~/repo/deepseek-harness` `0.1.2-alpha.3`；Python `deepseek_harness.DeepSeekHarness` |
 > | Codex | `~/repo/codex` @ `7d6f808b97`；Python `openai_codex.Codex` / app-server v2 |
 > | 本仓 agent 域 | `worktrees/cursor/investment-app`：`AgentRunService`、`RunBudget`、`agent_profile_key` |
-> | 本分支调研 | [`codex-reference/`](codex-reference/) |
+> | 本分支调研 | `~/codex-reference-archive/` |
 
 ## 0. 结论
 
@@ -152,7 +152,7 @@ Celery 任务只认识 Port，不 import SDK。
 
 并发槽：**先占后干，计数进 PostgreSQL**，失败回滚。不要抄 Codex 进程内
 `AtomicUsize`。依据见
-[`codex-reference/codex-mechanisms-for-investment-agent-cursor.md`](codex-reference/codex-mechanisms-for-investment-agent-cursor.md)。
+`~/codex-reference-archive/cursor/codex-mechanisms-for-investment-agent-cursor.md`。
 
 ## 4. 路由
 
@@ -195,10 +195,10 @@ jsonl / sqlite 只作排障，禁止当任务态。
 2. 问数：Wren 作为 tool 或 MCP；`strict_mode=True`；我们补 SELECT 白名单；
    `dry_plan` 与 `query` 分开，中间可升到我们的审批
 3. 术语 / few-shot / ChartSpec 按
-   [`codex-reference/sqlbot-cursor.md`](codex-reference/sqlbot-cursor.md) 挂在
+   `~/codex-reference-archive/cursor/sqlbot-cursor.md` 挂在
    这张专用链上，不另开 SQLBot prompt 链
 4. 代码执行：Host 容器即 `ExternalSandbox`，网络默认拒绝。见
-   [`codex-reference/sandbox-extension-advice-cursor.md`](codex-reference/sandbox-extension-advice-cursor.md)
+   `~/codex-reference-archive/cursor/sandbox-extension-advice-cursor.md`
 
 handoff 2026-08-29 写过「SQLBot / WrenAI 不是选型候选」。本文不把它们当成
 **产品**或第三条编排；Wren 是专用 worker 的**工具**。这与「问数是专用智能体的
@@ -269,7 +269,7 @@ LangGraph 可以留下当**控制面状态机**，但不再当通用/专用 agen
 
 1. [`development-plan.md`](development-plan.md) — 为什么租用执行层
 2. 本文 — 两个 SDK 怎么接进控制面
-3. [`codex-reference/investment-app-agent-architecture-cursor.md`](codex-reference/investment-app-agent-architecture-cursor.md) — 一个 Agent、熟路/生路
+3. `~/codex-reference-archive/cursor/investment-app-agent-architecture-cursor.md` — 一个 Agent、熟路/生路
 4. [`working/request-lifecycle.md`](working/request-lifecycle.md) — 产品 Task 合同
 5. [`handoff.md`](handoff.md) — 现在卡在哪（状态，不是论证）
 6. [`investment-agent-architecture-update-and-openclaw.md`](investment-agent-architecture-update-and-openclaw.md) — 相对自研是否更好；OpenClaw Gateway 借什么、不转向什么

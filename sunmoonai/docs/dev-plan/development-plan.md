@@ -121,7 +121,7 @@ BFF / session 边界，但不得成为领域数据所有者；且授权分工必
 基础设施（agent 运行时 / LangGraph checkpoint / outbox / auth），全仓
 `portfolio|holding|ticker|instrument` 命中数为 0。**没有数据就没有问数。**
 
-参考资料在 `codex-reference/`（2026-08-29 核）：
+参考资料在 `~/codex-reference-archive/`（2026-08-29 核）：
 
 | | 现状 |
 | --- | --- |
