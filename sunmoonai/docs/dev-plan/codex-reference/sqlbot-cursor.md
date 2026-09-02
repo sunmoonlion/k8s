@@ -3,8 +3,8 @@
 > 最后更新：2026-08-22
 >
 > 性质：个人决策底稿，非 baseline、非 REQ。
-> 源码事实以 qwen3.8 亲读为准：`worktrees/qwen3.8/codex-reference/sqlbot-qwen3.8.md`
-> （`~/repo/SQLBot`，dataease/SQLBot v1.10.0）。本文只写架构取舍。
+> 源码事实以当时对 `~/repo/SQLBot`（v1.10.0）的阅读为准。本文只写架构取舍。
+> Wren 怎么接、防护缺什么，见同目录 `wrenai-financial-analysis-integration-cursor.md`。
 
 ## 结论
 
