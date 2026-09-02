@@ -16,6 +16,7 @@
 | [`handoff.md`](handoff.md) | **状态与交接**：当前阶段、已就位的、未决项 U1–U5、不能倒退的输入 | 接手时先读 |
 | [`codex-reference/`](codex-reference/) | **本分支自己的调研材料**：Codex 机制、SQLBot、WrenAI、沙箱、现状诊断。各分支只放自己写的那份——并行提案时不该互相看见 | 定 U1–U5 时 |
 | [`agent-discipline.md`](agent-discipline.md) | 多助手协作的行为规范：三种模式、隔离原则、提案包构造、评审两阶段、吸收处置 | 让多个助手并行做事时 |
+| [`doc-gate.py`](doc-gate.py) | **文档不变量门禁**：仓内链接、章节引用、表格列数。由 `.githooks/pre-commit` 自动触发，不需要谁记得跑；`--survey` 巡检全仓、`--selfcheck` 查是否已安装 | 不用主动读；提交文档时它自己会说话 |
 | [`parallel-proposals.py`](parallel-proposals.py) | 上一条的自动化实现，隔离由机制保证 | 同上 |
 
 ## 三份文档的分工，别混写

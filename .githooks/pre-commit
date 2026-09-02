@@ -1,0 +1,23 @@
+#!/bin/sh
+# 文档不变量门禁。装一次即对本仓全部 worktree 生效（它们共享同一个 .git）：
+#     git config core.hooksPath .githooks
+#
+# 只检查本次提交暂存的 sunmoonai/docs/ 下的 markdown，判定基准是 git 索引而不是
+# 文件系统——因此结论不随工作区状态变化。理由见 sunmoonai/docs/dev-plan/doc-gate.py
+# 顶部说明，以及 constraints.md「保证这些被遵守的三层」。
+#
+# 确需绕过时用 git commit --no-verify，但绕过就是把这条降回纪律层，请在提交说明
+# 里写清为什么。
+
+set -e
+
+root=$(git rev-parse --show-toplevel)
+gate="$root/sunmoonai/docs/dev-plan/doc-gate.py"
+
+[ -f "$gate" ] || exit 0
+
+docs=$(git diff --cached --name-only --diff-filter=ACMR -- 'sunmoonai/docs/**/*.md')
+[ -n "$docs" ] || exit 0
+
+# shellcheck disable=SC2086
+python3 "$gate" $docs
