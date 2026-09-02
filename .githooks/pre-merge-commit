@@ -1,0 +1,9 @@
+#!/bin/sh
+# 合并提交同样过门禁。最要紧的是：挡住从助手分支合并过来的、对主线独有文档的删除。
+# 各助手分支不保留 human 那份与本轮归档记录；git 的语义会把这些删除传播到主线，
+# 这对每个分支都成立，因此用门禁挡，不靠「记得别合某个分支」。
+set -e
+root=$(git rev-parse --show-toplevel)
+gate="$root/sunmoonai/docs/dev-plan/doc-gate.py"
+[ -f "$gate" ] || exit 0
+python3 "$gate" --staged
