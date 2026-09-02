@@ -1,0 +1,41 @@
+# REQ-001：架构重构（重写 task handoff 与 implementation）
+
+> 状态：ADOPTED ｜ 提出日期：2026-08-12 ｜ 评审日期：2026-08-12
+
+## ① 原始需求
+
+> 我们现在所看到的都是现状，我们接下来是重构，也就是文档说的先根据目前的
+> mooc-manus-langgraph-longterm-plan-v4.md、mooc-manus-langgraph-longterm-plan-v5.md、
+> mooc-manus-langgraph-v5-handoff-20260712.md、mooc-manus-langgraph-v5-implementation-plan.md
+> 重写 task handoff 和 implementation，变为 v6 版。
+>
+> （补充指令：不要拘泥于之前，我们现在是重写。）
+
+## ② 架构评审
+
+- 结论：**采纳**
+- 理由：
+  - v5 handoff 已于 2026-08-01 记录"暂停实施、重新讨论整体架构"（P0-008C
+    状态 PAUSED_FOR_ARCHITECTURE_REVIEW），v6 重写正是该暂停决议的落地动作；
+  - Architecture v2（R0-R8）已完成对该架构评审的大部分内容，v5 的任务清单与
+    现状已脱节（research-app → investment-app、模板/前端统一已成现状、Phase 0
+    全部 ACCEPTED）；
+  - 四份 v4/v5 文档已于 2026-08-12 全量深读，具备重写输入。
+- 结构决策（用户确认）：基线 1 份 + handoff 1 份 + 按 App 施工清单 4 份
+  （info / knowledge / investment / platform），落 `sunmoonai-architecture/requests/REQ-001-架构重构/`（闭环在 requests/ 内）。
+  v5 的 Phase 0 历史不再保留任务编号，只作"既成现状"一节交代。
+
+## ③ 落地去向
+
+- 基线：`k8s/sunmoonai/docs/sunmoonai-architecture/requests/REQ-001-架构重构/baseline.md`（待写）
+- handoff：`k8s/sunmoonai/docs/sunmoonai-architecture/requests/REQ-001-架构重构/handoff.md`（待写）
+- 施工清单：`k8s/sunmoonai/docs/sunmoonai-architecture/requests/REQ-001-架构重构/plan-{info,knowledge,investment,platform}.md`（待写）
+- 任务编号采用 `SMAI-XXX`（SunMoonAI 缩写），按 AGENTS.md 请求闭环回指本请求。
+
+## ④ 状态流转
+
+| 日期 | 状态 | 说明 |
+| --- | --- | --- |
+| 2026-08-12 | ADOPTED（暂缓执行） | 评审采纳、结构方案经用户确认；待请求集合收敛后启动基线撰写 |
+| 2026-08-13 | ADOPTED（暂缓执行） | 曾拟品牌 sumova：本重构视为新起点（不写演进叙事），文件夹与产物命名迁移至新品牌规范 |
+| 2026-08-13 | ADOPTED（暂缓执行） | 品牌定名 SunMoonAI（sunmoonai 域名已注册）：sumova 迁移撤销，文件夹改 REQ-001-架构重构，产物回归 sunmoonai 命名 |
