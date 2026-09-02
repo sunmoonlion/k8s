@@ -61,7 +61,7 @@
 | 确认某个能力是否真的接线了 | 对应仓文件的**「已知未实现」**一节 |
 | **动代码前必读的规则** | [`../dev-plan/constraints.md`](../dev-plan/constraints.md)（39 条，按主题分组） |
 | 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-plan/agent-discipline.md`](../dev-plan/agent-discipline.md) |
-| 推送改动、跨机拉取、子模块的坑 | [`../dev-plan/working/collaboration.md`](../dev-plan/working/collaboration.md) |
+| 推送改动、跨机拉取、子模块的坑 | [`../dev-plan/constraints.md`](../dev-plan/constraints.md) T4；先推子仓再推父仓 |
 | 知道接下来要建什么 | [`../dev-plan/`](../dev-plan/) |
 | 复核本文档集的某条断言 | **读代码**，别的都不算数 |
 | 本轮查出的缺口都怎么处置了 | 结论已在各自投影里；过程 `git log --grep 'O[0-9]'` |
@@ -95,7 +95,7 @@ project-guide/
 
 ## 写作约定
 
-见 [`../dev-plan/working/doc-conventions.md`](../dev-plan/working/doc-conventions.md) §3；编辑自检见其 §4。
+见 [`../dev-plan/working/development-lifecycle-human.md`](../dev-plan/working/development-lifecycle-human.md) §6（改判三要素）与 §10.3（共同纪律）。
 本处不复述——引用而非复制，是那份文件自己的第二条维护约定。
 
 ## 本轮的已知缺口（读之前先知道）
