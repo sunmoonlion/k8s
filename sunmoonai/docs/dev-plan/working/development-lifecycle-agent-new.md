@@ -638,35 +638,38 @@ Artifact bundle 保持可达；“对象暂时还在 reflog”不是保留策略
 
 ### 7.6 各种并发场景的处置
 
-| 场景 | 必须怎样做 | 禁止做法 |
-| --- | --- | --- |
-| 多 Agent 生成同名文档 | 各自在自己的 branch/worktree 修改相同相对路径；分别 commit | 一起写共享目录的同一个 `.md` |
-| 只能共享物理目录 | 用 `owner_id/work_unit_id` 命名空间，最终路径只读；由 integrator 发布 | 用时间先后或“谁最后保存”决定结果 |
-| 单 Agent 单路任务 | 仍固定 owner、baseline 和 candidate commit；获授权后可由同一人整合 | 在脏的共享 `master` 上直接写未跟踪结果 |
-| Human 与 Agent 混合 | 人和 Agent 各有独占 worktree；supervisor manifest 统一登记 | 默认人的目录可被 Agent 写，或默认 Agent 分支可被人覆盖 |
-| 两个 Work Unit 修改同一文件 | 若目标不同，可在各分支独立改并由 integrator 解冲突；若共同写同一事实，先重划所有权或串行 | 同时共享写，事后仅凭 mtime 猜作者 |
-| 多仓/子模块 | 每仓独立 owner branch/commit；manifest 保存整组映射；子仓对象先可达，再更新父仓 gitlink | 只交父仓 gitlink，不保证子仓 commit 可取得 |
-| 同一 Task 多 Attempt 重试 | 每次新 attempt/worktree/branch；旧结果标失败或 superseded | 在旧 Attempt 的目录原地续写，抹掉失败现场 |
-| 候选修订 | 新 commit + `supersedes`；评审明确采用哪个版本 | 冻结后改 branch 再沿用旧评审 |
-| 重复且内容相同的候选 | 按 digest 去重，可共享内容对象，但保留各自 provenance | 删除一方记录后声称只有一个来源 |
-| 合并冲突 | integrator 在独占整合 worktree 解析，记录冲突双方和裁决依据 | 让候选作者互相覆盖，或按提交时间自动取新 |
-| 一方删除、另一方修改同一文件 | 作为语义冲突交 integrator 依据 Task 裁决，并补回归 | 机械采用 delete/modify 任一侧 |
-| 用户工作树已有脏改动 | 视为用户所有；建立新 worktree/分支或避开，先记录 baseline | stash、reset、checkout 或覆盖用户文件来“清理” |
-| 执行中发现共享路径又被修改 | 立即停写并进入 §7.8；从最新可确认版本建立新整合 Attempt | 继续保存，期待自己的内容最后覆盖回去 |
-| formatter/codegen 同时运行 | 只在 owner worktree 执行，生成物归该 owner commit；固定工具版本 | 对共享目录启用后台自动写入 |
-| 无 Git 的简单 Task | 每个 Attempt 使用独立 Artifact key；以 digest/version 冻结 | 多 Attempt 写同一临时文件或对象存储键 |
-| CI/并行测试 | 每个 job 使用独立输出目录和 Artifact 名；聚合器只读汇总 | 并行 job 写同一 coverage、报告或缓存真源 |
-| 跨 Task 共享缓存 | 缓存按输入摘要寻址、内容不可变、命中可校验；失败可丢弃重建 | 把可变缓存当结果真源或允许任务互相覆盖缓存条目 |
-| 大文件/二进制 | 内容寻址存储，Git 记录摘要、schema、来源和位置 | 多人向同一路径覆盖上传，或把巨大生成物塞入普通 Git |
-| 敏感产出 | 加密/受控存储，最短保留期，日志脱敏 | commit、PR、普通 Artifact 或聊天中保存凭据 |
-| symlink/路径别名 | 写前解析规范路径并确认仍在获准 writable root 内 | 利用软链、`..` 或挂载别名写出 owner 空间 |
-| 外部发布/数据库写入 | 唯一 side-effect owner + 幂等键 + fencing + 回执 | 因代码分支隔离就允许多候选同时写生产系统 |
-| 多执行者推远端 | 每个 owner 推自己的远端 ref；integrator 独占发布 ref | 共推同名远端分支，遇 non-fast-forward 后 force-push |
-| PR 在评审后新增 commit | 原评审绑定旧 commit；新 HEAD 重新触发受影响门禁和评审 | 沿用旧批准声明新 commit 已通过 |
-| 候选迟到 | 标 `STALE`，只读保留；需要时建立新改进单元 | 写入 final path、覆盖已选 commit 或再次执行副作用 |
-| 失败/取消 | 冻结失败现场和已产出对象，盘点副作用，再按策略回收 | 先删 worktree 导致无法复盘 |
-| Agent 崩溃 | 新执行者从 manifest/checkpoint 和固定 commit 恢复到新 worktree | 盲接旧进程的半写目录 |
-| master/main 发布 | 仅 integrator 在最终验收后、获授权时更新 | 每个候选直接向 master/main 写文件或 commit |
+每行四件事：场景、正确落点、禁止做法、**已发生时怎么收**。恢复列给的是该场景的入口动作，
+统一规程见 §7.8；轻量场景走 §7.8 的四步前门，复杂或涉及发布竞争的走完整八步。
+
+| 场景 | 必须怎样做 | 禁止做法 | 已发生时 |
+| --- | --- | --- | --- |
+| 多 Agent 生成同名文档 | 各自在自己的 branch/worktree 修改相同相对路径；分别 commit | 一起写共享目录的同一个 `.md` | 以 commit 认主，不以磁盘最后一版为准；共享路径上的未提交文件视为污染，移到各自 owner namespace 后比对 digest，声明哪些候选已不独立 |
+| 只能共享物理目录 | 用 `owner_id/work_unit_id` 命名空间，最终路径只读；由 integrator 发布 | 用时间先后或“谁最后保存”决定结果 | 停写；把可识别的各版本分流进各自 owner namespace；由 integrator 裁决，不由最后写入者胜出 |
+| 单 Agent 单路任务 | 仍固定 owner、baseline 和 candidate commit；获授权后可由同一人整合 | 在脏的共享 `master` 上直接写未跟踪结果 | 把脏工作区里属于本任务的内容迁到自己的分支并 commit；共享工作区恢复为只读 |
+| Human 与 Agent 混合 | 人和 Agent 各有独占 worktree；supervisor manifest 统一登记 | 默认人的目录可被 Agent 写，或默认 Agent 分支可被人覆盖 | 助手改动撤出人的工作区；**人的未提交改动优先保留**，助手那份只有存在自己 worktree 才算数 |
+| 两个 Work Unit 修改同一文件 | 若目标不同，可在各分支独立改并由 integrator 解冲突；若共同写同一事实，先重划所有权或串行 | 同时共享写，事后仅凭 mtime 猜作者 | 停写，重划所有权或改串行；已产生的双写内容各自成 commit，交 integrator 判定重复/互补/无关 |
+| 多仓/子模块 | 每仓独立 owner branch/commit；manifest 保存整组映射；子仓对象先可达，再更新父仓 gitlink | 只交父仓 gitlink，不保证子仓 commit 可取得 | 补齐每仓 commit 映射；子仓对象不可达的 gitlink 不进入整合 |
+| 同一 Task 多 Attempt 重试 | 每次新 attempt/worktree/branch；旧结果标失败或 superseded | 在旧 Attempt 的目录原地续写，抹掉失败现场 | 旧 Attempt 目录冻结为失败现场，不原地续写；新 Attempt 从固定 commit 重开 |
+| 候选修订 | 新 commit + `supersedes`；评审明确采用哪个版本 | 冻结后改 branch 再沿用旧评审 | 新哈希标为冻结后修订并记 `supersedes`；不进入本轮比较，除非任务包重开 |
+| 重复且内容相同的候选 | 按 digest 去重，可共享内容对象，但保留各自 provenance | 删除一方记录后声称只有一个来源 | 按 digest 合并内容对象，但两份 provenance 都保留；不得删除一方记录后声称只有一个来源 |
+| 合并冲突 | integrator 在独占整合 worktree 解析，记录冲突双方和裁决依据 | 让候选作者互相覆盖，或按提交时间自动取新 | 由 integrator 在独占整合 worktree 重解，记录冲突双方与裁决依据；不按时间自动取新 |
+| 一方删除、另一方修改同一文件 | 作为语义冲突交 integrator 依据 Task 裁决，并补回归 | 机械采用 delete/modify 任一侧 | 作为语义冲突升给 integrator，依 Task 裁决后补回归；不机械取任一侧 |
+| 用户工作树已有脏改动 | 视为用户所有；建立新 worktree/分支或避开，先记录 baseline | stash、reset、checkout 或覆盖用户文件来“清理” | 不 stash、不 reset、不 checkout；先记录 baseline，另建 worktree/分支绕开 |
+| 执行中发现共享路径又被修改 | 立即停写并进入 §7.8；从最新可确认版本建立新整合 Attempt | 继续保存，期待自己的内容最后覆盖回去 | 立即停写，转 §7.8；从最新可确认版本建立新的整合 Attempt |
+| formatter/codegen 同时运行 | 只在 owner worktree 执行，生成物归该 owner commit；固定工具版本 | 对共享目录启用后台自动写入 | 关掉共享目录上的自动写入；受影响文件重新从 owner commit 生成 |
+| 无 Git 的简单 Task | 每个 Attempt 使用独立 Artifact key；以 digest/version 冻结 | 多 Attempt 写同一临时文件或对象存储键 | 已写下的内容迁到产品载体（Artifact + digest）；同键的多次写入按 provenance 拆开 |
+| CI/并行测试 | 每个 job 使用独立输出目录和 Artifact 名；聚合器只读汇总 | 并行 job 写同一 coverage、报告或缓存真源 | 单槽输出作废，重跑到绑 commit 的独立位置；不采信被覆盖过的报告 |
+| 跨 Task 共享缓存 | 缓存按输入摘要寻址、内容不可变、命中可校验；失败可丢弃重建 | 把可变缓存当结果真源或允许任务互相覆盖缓存条目 | 疑似被互相覆盖的缓存条目一律丢弃重建，不尝试修复 |
+| 大文件/二进制 | 内容寻址存储，Git 记录摘要、schema、来源和位置 | 多人向同一路径覆盖上传，或把巨大生成物塞入普通 Git | 以 digest 认主；同路径多次覆盖上传的，取有 provenance 的那份，其余降级为未验证参考 |
+| 敏感产出 | 加密/受控存储，最短保留期，日志脱敏 | commit、PR、普通 Artifact 或聊天中保存凭据 | 按泄露处理：轮换凭据、清理副本与日志、记录暴露窗口；**不能靠删文件了事** |
+| symlink/路径别名 | 写前解析规范路径并确认仍在获准 writable root 内 | 利用软链、`..` 或挂载别名写出 owner 空间 | 核对实际写出的规范路径；越出 writable root 的写入按覆盖事故处理 |
+| 外部发布/数据库写入 | 唯一 side-effect owner + 幂等键 + fencing + 回执 | 因代码分支隔离就允许多候选同时写生产系统 | 查副作用账，按幂等键判定是否重复执行；需要时补偿，不靠重跑覆盖 |
+| 多执行者推远端 | 每个 owner 推自己的远端 ref；integrator 独占发布 ref | 共推同名远端分支，遇 non-fast-forward 后 force-push | **不要强推回滚**。报告有权主体，由其决定 revert 或冻结该 ref |
+| PR 在评审后新增 commit | 原评审绑定旧 commit；新 HEAD 重新触发受影响门禁和评审 | 沿用旧批准声明新 commit 已通过 | 原批准作废，新 HEAD 重新触发受影响门禁与评审；不沿用旧批准 |
+| 候选迟到 | 标 `STALE`，只读保留；需要时建立新改进单元 | 写入 final path、覆盖已选 commit 或再次执行副作用 | 标 `STALE` 只读保留；需要采用则新开改进单元，源仍是 commit |
+| 失败/取消 | 冻结失败现场和已产出对象，盘点副作用，再按策略回收 | 先删 worktree 导致无法复盘 | 先冻结现场再回收；已删除的现场按证据缺口登记，不补造 |
+| Agent 崩溃 | 新执行者从 manifest/checkpoint 和固定 commit 恢复到新 worktree | 盲接旧进程的半写目录 | 不接管半写目录；从 manifest/checkpoint 和固定 commit 在新 worktree 重建 |
+| master/main 发布 | 仅 integrator 在最终验收后、获授权时更新 | 每个候选直接向 master/main 写文件或 commit | 未经整合的写入撤出发布面，从选定 commit 重走整合与 final gate；不在发布面上就地修补 |
 
 ### 7.7 最终路径的发布协议
 
@@ -693,7 +696,25 @@ force-push、无条件覆盖上传或先删后写绕过竞争。发布重试使�
 
 ### 7.8 覆盖或来源不明时的事故处理
 
-发现文件内容、大小、hash、mtime、branch/HEAD 或作者特征与预期不符时，立即执行：
+**后到者赢在任何场景都不成立。**磁盘上的最后一版、时间戳最新的一份、最后推上去的那个
+ref，都不因为「在后面」而获得正确性或所有权。覆盖发生后唯一有效的认主依据是 commit、
+digest 和 provenance。
+
+本节是唯一一套事故规程，分两档入口：
+
+**四步前门（轻量场景）。**单个文件被覆盖、来源基本可判、无外部副作用、无发布竞争时：
+
+1. **保全现场**：停止对该路径的一切写入，先记录，不删除、不 reset、不 checkout；
+2. **恢复归属**：从 Git 对象、reflog、Artifact 或备份取回可识别的各版本，各自恢复为归属者
+   的独立分支或 owner namespace，交还归属者；
+3. **判定关系**：由非当事方判定两份是重复、互补还是无关，据此决定取一、合并或都保留；
+4. **留痕**：把覆盖窗口、受影响对象和恢复依据记入证据账。
+
+任一条不成立——来源不明、涉及发布面或远端、已产生外部副作用、或同一路径反复被改——
+立即升级为下面的八步，不要在四步里硬撑。
+
+**八步完整规程。**发现文件内容、大小、hash、mtime、branch/HEAD 或作者特征与预期不符时，
+立即执行：
 
 1. **停写**：暂停所有可能触及该路径的执行者和自动格式化/生成任务；
 2. **保全**：不删除、不 reset、不 checkout；记录路径、stat、hash、`git status`、HEAD 和进程；
