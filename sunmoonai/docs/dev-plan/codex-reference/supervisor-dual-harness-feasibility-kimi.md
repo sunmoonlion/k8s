@@ -435,4 +435,6 @@ dsh 工具写法：~/repo/deepseek-harness/docs/cookbook/adding-a-tool.md
 治理：constraints.md（A1–A5）、development-plan.md（执行层租用、四本账、三阶段）、
      handoff.md（U1–U5）、agent-discipline.md §3.1（CODEX_HOME 多路实测）
 旧架构收敛：codex-reference/investment-app-agent-architecture-kimi.md（§6 对照表的所有出处）
+后续：codex-reference/architecture-change-and-openclaw-gateway-kimi.md（换架构判定 +
+     OpenClaw 五机制借鉴 B1–B5，对本文 §3.1/§3.3/§3.5/§3.7/§4 R5/§6 的增量修订）
 ```
