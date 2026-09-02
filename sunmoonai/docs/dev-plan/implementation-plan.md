@@ -37,8 +37,9 @@ P0 / P1 任务必须写明适用层次。
 
 ## 交付规则
 
-**分支与提交**——子仓先推，父仓后推；父仓不得出现悬空 gitlink（规则 T4）。
-推送后复核 gitlink 是否可达：子仓先推、父仓后推，再确认父仓记录的每个 gitlink 都已存在于远端。
+**分支与提交**——父仓不得出现悬空 gitlink（规则 T4）。五仓同步用
+`~/five-repos-sync/sync-five-repos.sh`；它只推父仓，子仓的提交仍须自己推，
+否则同步在拉取侧对齐子模块时报错。
 
 **证据**——完成的任务在 `docs/evidence/<task-id>/` 留去敏后的：`result.md`、
 测试输出、关键 request/response、migration revision、image digest。
