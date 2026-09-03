@@ -15,6 +15,7 @@
 | [`implementation-plan.md`](implementation-plan.md) | **任务本体**：每件事怎么做、怎么算做完。条目格式、测试层次、交付规则 | 要动手时 |
 | [`handoff.md`](handoff.md) | **状态与交接**：当前阶段、已就位的、未决项 U1–U5、不能倒退的输入 | 接手时先读 |
 | `~/codex-reference-archive/` | **各助手的历史调研材料**（仓外，按助手分目录：`cursor/` `kimi/` `luna/` `opus/` `qwen3.8/`）：Codex 机制、SQLBot、WrenAI、沙箱、现状诊断。**已归档，可直接读**——不再是提案期的独立材料，引用时注明是谁的稿 | 定 U1–U5 时 |
+| [`round-protocol.md`](round-protocol.md) | **并行评优轮怎么走**：六环节、产物落点、候选冻结与枚举、评审四块、裁决与验收规则、清理顺序 | 开一轮多家并行出稿前 |
 | [`agent-discipline.md`](agent-discipline.md) | 多助手协作的行为规范：三种模式、隔离原则、提案包构造、评审两阶段、吸收处置 | 让多个助手并行做事时 |
 | [`doc-gate.py`](doc-gate.py) | **文档不变量门禁**：仓内链接、章节引用、表格列数。由 `.githooks/pre-commit` 自动触发，不需要谁记得跑；`--survey` 巡检全仓、`--selfcheck` 查是否已安装 | 不用主动读；提交文档时它自己会说话 |
 | [`parallel-proposals.py`](parallel-proposals.py) | 上一条的自动化实现，隔离由机制保证 | 同上 |
