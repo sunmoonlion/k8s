@@ -5,11 +5,73 @@
 > **opus 本轮不参赛**，任评审与整合方：裁决选基座、逐条整合、处理异议。不参与独立验收。
 > 角色划分见 §13。
 >
-> **本文是发给各助手的任务书。**读它的人可能没有此前任何上下文，所以第一部分把背景
-> 讲全；第二部分是要交付的东西。
->
-> **产物位置**：任务书与输入材料看 `master`（本仓 `~/master/k8s`）；
-> **你的产物放你自己的 worktree 目录**（`~/worktrees/<你的名字>/k8s/...`），不要写 master。
+> **本文是发给各助手的任务书，自足。**读它的人可能没有此前任何上下文，
+> 所以 §0 讲怎么开工，第一部分把背景讲全，第二部分是要交付的东西。
+> **除本文外不需要额外指令。**
+
+---
+
+## 0. 开工须知（先读这一节，再往下）
+
+### 0.1 你是谁：看你的工作目录
+
+你的当前工作目录形如 `~/worktrees/<X>/k8s`，**那个 `<X>` 就是你的名字**。
+本文里所有 `<你的名字>` 一律替换成它。
+
+```bash
+pwd     # 应形如 /home/zym/worktrees/luna/k8s
+```
+
+**如果你的工作目录是 `~/master/k8s`，立即停下来问人。**那是主线共享 checkout，
+本轮任何提案方都不得在那里写东西——在主线上动手会破坏整轮。
+
+**如果 `~/worktrees/` 下没有以你命名的目录**，也停下来问人，不要自己创建。
+
+### 0.2 本次只做环节 ①
+
+本轮共五个环节（见 [`round-protocol.md`](round-protocol.md)），**你现在只做第一个**：
+
+> **① 提案**：写出候选，提交，把候选文件的 SHA-256 与 commit 号回报给发起人。
+
+**②互评现在做不了**，因为别人的候选还不存在——你去读只会读到空的或未完成的东西。
+四家都交完①之后，发起人会通知你开始②。**没接到通知就动手写评审，写出来的作废。**
+
+### 0.3 提案期不许读什么
+
+- **不读任何其他 worktree**（`~/worktrees/` 下除你自己以外的目录）；
+- **不读 `~/codex-reference-archive/` 下除 `<你的名字>/` 以外的目录**——
+  那里放着其余四家 2026-09-02 的提案稿，是上一轮的独立信号，
+  提案期读了你的候选就不再独立（理由见 §11）；
+- 看到别人答案之后写的内容属于评审或改进，不再是独立候选。
+
+`~/master/k8s` **可读不可写**——本文、基座、`request-lifecycle.md`、`constraints.md`
+都在那里，读它们是应该的。
+
+### 0.4 做完 ① 交什么
+
+| # | 交付 | 位置（相对你 worktree 的仓根） |
+| --- | --- | --- |
+| 1 | 候选 | `sunmoonai/docs/dev-plan/working/development-lifecycle-agent.md` |
+| 2 | 提交 | 在你自己的分支上提交，**提交后不得再改** |
+| 3 | 回报 | 把候选文件的 SHA-256 与 commit 号回给发起人 |
+
+```bash
+cd ~/worktrees/<你的名字>/k8s
+sha256sum sunmoonai/docs/dev-plan/working/development-lifecycle-agent.md
+git rev-parse HEAD
+```
+
+第 2 份交付物（评审 `working/refact-review-<你的名字>.md`）属于环节 ②，
+**这次不要写**。
+
+### 0.5 读的顺序
+
+1. 本文全文（§1–5 背景，§6–12 任务与验收标准）
+2. [`round-protocol.md`](round-protocol.md) — 本轮流程与纪律
+3. `working/development-lifecycle-agent.md` — **基座，你要重写的就是它**
+4. `working/request-lifecycle.md` — 产品契约，原则层，不动
+5. [`constraints.md`](constraints.md)、[`development-plan.md`](development-plan.md)
+6. `~/codex-reference-archive/<你的名字>/` — 你自己的历史材料
 
 ---
 
