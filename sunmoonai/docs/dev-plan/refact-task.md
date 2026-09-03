@@ -44,15 +44,20 @@ investment-app 是一个多租户投资研究平台。用户在浏览器提出�
    这条架构可行吗？从自研执行体系改成租用，合理吗？比原来更好吗？
 2. `~/repo/openclaw` 的 Gateway 做法，路由与 Supervisor 该借鉴、完全转向，还是另有更好建议？
 
-产出五份，共 3687 行，全部在 `dev-plan/` 下：
+产出五份，共 3687 行。**这些稿子不在仓内**——为守住并行提案的隔离，
+已按助手分目录放在仓外（见 §11）：
 
-| 助手 | 文件 | 行 |
-| --- | --- | --- |
-| luna | [`investment-agent-architecture-luna.md`](investment-agent-architecture-luna.md) | 988 |
-| kimi | [`investment-agent-architecture-kimi.md`](investment-agent-architecture-kimi.md) | 686 |
-| opus | [`investment-agent-architecture-opus.md`](investment-agent-architecture-opus.md) | 804 |
-| qwen3.8 | [`investment-agent-architecture-qwen3.8.md`](investment-agent-architecture-qwen3.8.md) | 635 |
-| cursor | [`investment-agent-architecture-cursor.md`](investment-agent-architecture-cursor.md) | 574 |
+```text
+~/codex-reference-archive/<助手>/investment-agent-architecture-<助手>.md
+```
+
+| 助手 | 行 |
+| --- | --- |
+| luna | 988 |
+| opus | 804 |
+| kimi | 686 |
+| qwen3.8 | 635 |
+| cursor | 574 |
 
 kimi、cursor、opus 三家原本一人多份，2026-09-03 已各自合并成一份，内容未改判。
 
@@ -195,15 +200,15 @@ kimi 的两份提案 09-02 被 `fa88dc72` 按文件名后缀当作「历史调�
 基座通篇**执行器无关**：`harness` 0 次、`deepseek` 0 次、`openclaw` 0 次，
 唯一一处 `codex` 是顺带提 `CODEX_HOME`。它 08-31 起稿时 dsh 还不存在。要补：
 
-| # | 内容 | 主要来源 |
+| # | 内容 | 线索（刻意不点名，见 §11） |
 | --- | --- | --- |
-| 1 | **路线转向**：执行层为什么租不自建；「自研 vs 租用」是假二分，真问题是在哪一层自研；比原体系更好吗（分方向 / 当前成熟度 / 满足门禁后三层判断）；「更好」成立的硬条件 | luna §19、opus 第二部分、kimi、cursor、qwen §10 |
-| 2 | **两个执行 SDK 的核实事实与能力不对称**：逐条带 `file:line` 锚点；能力不对称必须写进 Port，不许假装对称 | kimi §1、opus §5.3、luna §5、qwen §2 |
-| 3 | **统一执行 Port**：签名、通用 DTO、Adapter 职责边界、**能力探针是三态不是布尔**（available / explicit_unsupported / implicit_fallback） | luna §8、opus §15.1⑤、cursor |
-| 4 | **Harness SDK 前置门禁**：要补哪些 wire 方法与 trusted context 字段；必须由 Harness 上游正式实现，不许私自复制协议类型；**门禁未过期间的补法**（杀进程取消 + `submit_result` + 分层审批）及其代价 | luna §9、kimi §4 R1–R3 |
-| 5 | **双 runtime 的部署与进程模型**：运行角色拆分、四条硬阻断、SDK 进程纪律（prefork 后创建、不跨 fork 共享、teardown ladder）、**执行现场快照到对象存储与 restore 续跑**、恢复有界（`max_attempts` + Profile 版本熔断） | opus §4/§6.3、kimi R5/B5、luna §13、qwen §6 |
-| 6 | **门禁、凭据与审批**：三道门正交（Tool Policy / Execution Scope / Approval Policy），deny 优先、allow 非空即默认拒、工具门是硬停；**被拒绝的工具应当不存在而不是存在但被禁**（会话组装层 + 网关层双层）；审批分级四档（`llm-review` 必须落账否则等于自我批准）；审批绑定产物哈希、漂移即作废、超时 fail-closed；**推理经代理，真 key 不下发到 harness 进程**；Attempt 级短 TTL 网关令牌 | kimi B2–B4、opus §15.1③④、cursor §3.3、qwen §11.4 |
-| 7 | **OpenClaw Gateway：借鉴，不转向**：它到底是什么（两层路由都不是语义分类）；该借的机制逐条映射到我们的落点；**为什么不转向**（租户模型、存储、技术栈、`sandboxing off by default` 的危险默认、它自己 `VISION.md` 反对重编排层）；明确不借的清单（含 `elevated` / `full` 逃生门） | kimi 第 2 节 B1–B5、luna §20–21、opus 第三部分、qwen §11、cursor §3.3–3.4 |
+| 1 | **路线转向**：执行层为什么租不自建；「自研 vs 租用」是假二分，真问题是在哪一层自研；比原体系更好吗（分方向 / 当前成熟度 / 满足门禁后三层判断）；「更好」成立的硬条件 | 五份提案稿都答过这一问，分歧在「租用是替代还是补充」 |
+| 2 | **两个执行 SDK 的核实事实与能力不对称**：逐条带 `file:line` 锚点；能力不对称必须写进 Port，不许假装对称 | 四家各自核过两个 SDK，锚点粒度不一，你自己去核一遍 |
+| 3 | **统一执行 Port**：签名、通用 DTO、Adapter 职责边界、**能力探针是三态不是布尔**（available / explicit_unsupported / implicit_fallback） | 三家给过 Port 形状，其中一家指出能力探针不该是布尔 |
+| 4 | **Harness SDK 前置门禁**：要补哪些 wire 方法与 trusted context 字段；必须由 Harness 上游正式实现，不许私自复制协议类型；**门禁未过期间的补法**（杀进程取消 + `submit_result` + 分层审批）及其代价 | 一家列了门禁清单，另一家给了门禁未过期间的补法 |
+| 5 | **双 runtime 的部署与进程模型**：运行角色拆分、四条硬阻断、SDK 进程纪律（prefork 后创建、不跨 fork 共享、teardown ladder）、**执行现场快照到对象存储与 restore 续跑**、恢复有界（`max_attempts` + Profile 版本熔断） | 只有一家核过部署清单；快照恢复与熔断出自另一家 |
+| 6 | **门禁、凭据与审批**：三道门正交（Tool Policy / Execution Scope / Approval Policy），deny 优先、allow 非空即默认拒、工具门是硬停；**被拒绝的工具应当不存在而不是存在但被禁**（会话组装层 + 网关层双层）；审批分级四档（`llm-review` 必须落账否则等于自我批准）；审批绑定产物哈希、漂移即作废、超时 fail-closed；**推理经代理，真 key 不下发到 harness 进程**；Attempt 级短 TTL 网关令牌 | 门禁分层、审批分级、凭据不下发分散在三家 |
+| 7 | **OpenClaw Gateway：借鉴，不转向**：它到底是什么（两层路由都不是语义分类）；该借的机制逐条映射到我们的落点；**为什么不转向**（租户模型、存储、技术栈、`sandboxing off by default` 的危险默认、它自己 `VISION.md` 反对重编排层）；明确不借的清单（含 `elevated` / `full` 逃生门） | 五家都答过，取证深浅差别很大 |
 
 ## 9. 三件必须解掉的结构问题
 
@@ -273,15 +278,23 @@ analyst/checker/awaiter 三角色）。**本轮只留判据，不做决定**，�
 **必读**
 
 ```text
-working/request-lifecycle.md                 产品契约，原则层，不动
-working/development-lifecycle-agent.md       基座
-constraints.md                               A/C/D/I/T/R 规则
-development-plan.md                          方向
-五份提案稿（§2.1 表格里的全部）
+working/request-lifecycle.md              产品契约，原则层，不动
+working/development-lifecycle-agent.md    基座
+constraints.md                            A/C/D/I/T/R 规则
+development-plan.md                       方向
+round-protocol.md                         本轮流程
+~/codex-reference-archive/<你的名字>/      你自己 2026-09-02 的提案稿与历史调研
 ```
 
-**参考**：`~/repo/codex`、`~/repo/deepseek-harness`、`~/repo/openclaw` 源码；
-`~/codex-reference-archive/`（各家历史调研，已归档可直接读，引用时注明是谁的稿）。
+**只读你自己那个目录。**其余四家 2026-09-02 的提案稿就在同级目录里，
+**提案期不要去读**——它们是上一轮的独立信号，读了你的候选就不再独立，
+②互评才是交换的时候。
+
+本文 §4 的八条事实已经是五份稿的蒸馏，该知道的都在那里，不必去翻别家的原稿。
+§8 的「来源线索」也刻意不点名，只说明有几家核过、分歧在哪——**要用就自己去核**，
+不要靠转述。
+
+**参考**：`~/repo/codex`、`~/repo/deepseek-harness`、`~/repo/openclaw` 源码。
 
 ## 12. 验收标准
 
@@ -327,9 +340,8 @@ development-plan.md                          方向
 
 ### 13.1 opus 的利益声明
 
-opus 的 2026-09-02 旧稿
-（[`investment-agent-architecture-opus.md`](investment-agent-architecture-opus.md)）
-是本轮五份输入材料之一。**opus 本轮不出候选、不写评审，但在裁决时会读到自己的旧稿。**
+opus 的 2026-09-02 旧稿（`~/codex-reference-archive/opus/`）是本轮五份材料之一，
+**且裁决方能读到全部五份**——提案方只能读自己那一份。**opus 本轮不出候选、不写评审，但在裁决时会读到自己的旧稿。**
 
 因此额外约束：
 

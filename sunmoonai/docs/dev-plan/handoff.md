@@ -34,7 +34,7 @@
 | # | 未决 | 阶段 | 为什么它卡着别的 |
 | --- | --- | --- | --- |
 | **U1** | **web 面生产适配器的形状**：薄转发（web → internal 面），还是自己持有会话与投影？ | 一 | 决定 v5 §10.2 事务原则与 §10.3 SSE 对账落在哪一层 |
-| U2 | 执行层 Port 的接口形状 | 二 | 决定纪律层怎么被测试。本分支提案见 [`investment-agent-architecture-cursor.md`](investment-agent-architecture-cursor.md) §3 |
+| U2 | 执行层 Port 的接口形状 | 二 | 决定纪律层怎么被测试。cursor 提案见 `~/codex-reference-archive/cursor/investment-agent-architecture-cursor.md` §3 |
 | U3 | **预算账与证据账**落 PG 的表结构与迁移 | 二 | 一切并行工作的前置——没有预算闸门就不能 fan-out |
 | U4 | `AgentProfile` 的具体字段 | 二 | 专用部分的载体 |
 | U5 | 外部 harness 的部署形态（服务端如何管理其进程与凭据） | 二 | 影响 U2。本分支提案见同一可行性文 §2 / §9 |
