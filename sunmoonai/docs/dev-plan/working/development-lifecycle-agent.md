@@ -1,6 +1,6 @@
 # 开发生命周期 · Agent
 
-> 最后更新：2026-09-02
+> 最后更新：2026-09-04（新增 §15 执行器架构；§6 加两层 supervisor 消歧；§11 存续声明重写）
 >
 > **本文定义开发类请求的 Agent 路径：前端用户提出请求，FastAPI 受理并整理成
 > Task；复杂 Task 先在 sandbox 中获得按任务物化的 Git 仓库，再交给 Agent；Agent
@@ -13,6 +13,14 @@
 >
 > 本文是目标流程，不是当前实现清单。文件存在不等于 FastAPI、sandbox provisioner、
 > Agent runtime 或验收链已经实现；能力现状只由代码、迁移、测试和运行证据证明。
+>
+> **执行层是租来的两条腿**（Codex SDK / DeepSeek Harness SDK），不是自建的 agent loop；
+> 怎么租、怎么把它们箍进 §5–§10 的治理壳，见 §15。§15 通篇分开两个轴：**能不能构建专业
+> agent** 与 **能不能接进生产控制面**——前者 dsh 已成立，后者要过 §15.4 门禁，混成一句会得错结论。
+>
+> **本文不是 [`request-lifecycle.md`](request-lifecycle.md) 的投影，也不复制产品状态机。**
+> 看到 Task、Attempt、Interaction、Artifact、Event、Side Effect、Delivery、四本账、I1–I15、
+> AT-01…AT-22 一律以那份为准，本文只引用、不重新定义（对照见附录 A）。
 
 ## 0. 边界和共同模型
 
@@ -37,7 +45,7 @@ Submission
 | --- | --- |
 | [`request-lifecycle.md`](request-lifecycle.md) | 通用产品对象、状态、幂等、租约、预算、Interaction、Artifact、Event、Delivery |
 | 本文 | 开发 Profile 下的 Task 化、工作区物化和开发执行生命周期 |
-| `development-lifecycle-human.md` | Human 路径。**只放在人的主 checkout**（`~/master/<仓>`），各助手分支不保留——那份是给人看的，助手用不到 |
+| `development-lifecycle-human.md` | Human 路径。**长期保存**；各分支保留该文件（见 [`../constraints.md`](../constraints.md)「主线独有文档的删除保护」撤除后的决定），不随本文删除而消失 |
 | [`../constraints.md`](../constraints.md) | 开发结果不可违反的硬约束 |
 | [`../handoff.md`](../handoff.md) | 当前阻塞和下一动作的交接投影 |
 
@@ -451,7 +459,17 @@ checkpoint 是恢复输入，不是第二份代码真源，也不保存凭据。
 - 验收标准腐坏时保留原标准、失败输出和批准记录；
 - 目标态进入事实文档前重新从代码或实物取证。
 
-## 6. Agent 作为 supervisor
+## 6. Agent 作为 Attempt 内协调 supervisor
+
+### 6.0 两层 supervisor 消歧（先读）
+
+本节 §6.1–§6.8 讲的是**内层**：一个 Agent 在**单个 Attempt 内部**拆 Work Unit、派工、收候选、
+选优、整合。它另有**上层**——应用层确定性代码 **Dispatcher（执行调度器）**，在 Attempt **之上**
+建单、路由到执行档、管预算与租约的产品侧投影；五份 2026-09-02 提案稿把它称作「Supervisor」。
+**两层同名不同物，不消歧就会与本节读成互相打脸。**完整定名、关系与「Dispatcher 必须是确定性
+代码、不能是模型」的三条理由见 §15.0。一句话先立住：**上层是代码所以确定，内层是 agent 所以
+要被 §5.1 门禁与 §9 权限公式箍住**；内层 supervisor 只在上层已路由完、权限已收窄之后才存在，
+不能改路由、不能换执行器、不能扩权（§9「supervisor 不因协调职责获得任何有权主体的动作」的延伸）。
 
 ### 6.1 展开条件
 
@@ -956,15 +974,23 @@ Agent 声称完成、subagent 全返回、已有 commit/PR 或候选测试通过
    **仍未完成**：§5.1 写入前门禁、§4.4 物化门禁、§10.2 验收判据——这三项要么依赖尚不
    存在的运行时，要么其失败形态（未提交文件被覆盖、流程步骤被跳过）本身就不经过
    commit，机械载体抓不到。按本项目规则，**做不成的老实标 ⚠**，不假装已门禁化。
+3. **§15 的执行器架构判断不是纯开发期内容。**路线转向（租不自建）、两个执行 SDK 的核实
+   事实与能力不对称、统一执行 Port 与三态能力探针、Harness 门禁、双 runtime 部署与进程
+   模型、门禁/凭据/审批、OpenClaw 借鉴清单——这些是**架构决策**，存续价值超出开发期。
+   本文删除前，§15 必须先移出，或已被 `../development-plan.md` / `../constraints.md` 吸收，
+   否则删本文会连带删掉这些结论唯一的落点（见 §11.2 第 4 条）。
 
 ### 11.2 本文的删除条件与清理清单
 
-本文自带退出条件，避免变成孤儿。**三个条件同时满足**才可删除：
+本文自带退出条件，避免变成孤儿。**四个条件同时满足**才可删除：
 
 1. Agent 路径（前端 → FastAPI 受理 → sandbox 物化 → Agent 执行）的开发结束，本文描述的
    流程不再需要作为执行依据；
 2. 人那份自足——**已满足**，见上；
-3. §11.1 第 2 条完成：本文中仍需生效的纪律已落成代码、测试或门禁，而不只是文字。
+3. §11.1 第 2 条完成：本文中仍需生效的纪律已落成代码、测试或门禁，而不只是文字；
+4. §11.1 第 3 条完成：§15 的执行器架构判断已先移出本文，或已被 `../development-plan.md`
+   / `../constraints.md` 吸收——这些架构决策存续价值超出开发期，删本文不得连带删掉它们
+   唯一的落点。
 
 删除时必须同步清理下列引用，否则会留下悬空链接：
 
@@ -1074,6 +1100,379 @@ Agent 声称完成、subagent 全返回、已有 commit/PR 或候选测试通过
 
 纪律的效力不依赖那次覆盖是否可复核：上面两行已核对事实足以支撑 §0.4、§5.1 和 §7.5 的
 全部要求。**用不可复核的叙述去加强一条本来就成立的规则，只会削弱整份文档的证据标准。**
+
+## 15. 执行器架构：租来的两条腿怎么箍进治理壳
+
+> 本节补基座 08-31 起稿时还不存在的执行器判断——基座通篇执行器无关（`harness` / `deepseek` /
+> `openclaw` 均 0 次，唯一一处 `codex` 是顺带提 `CODEX_HOME`）。本节不重定义 `request-lifecycle.md`
+> 的对象，只回答「怎么把租来的执行器接进 §5–§10 的治理壳」。外部源码锚点一律写行内代码、
+> 不写链接（`~/repo/...` 是绝对路径，写成链接不可移植）。**通篇分开两个轴**，见 §15.0。
+
+### 15.0 两个轴，和两层 supervisor 的消歧
+
+**两个轴（全节通用，不得混成一句）**
+
+| 轴 | 问的是什么 | 现状 | 判据落点 |
+| --- | --- | --- | --- |
+| 轴 A：能不能构建专业 agent | preset / Profile 组合出领域 agent、装工具、跑专业活 | dsh **已成立**（preset 一等公民，一进程多组合） | §15.2 事实①、§15.9 |
+| 轴 B：能不能接进生产控制面 | 我们的状态机能不能管它：取消、恢复、逐 Turn 归属、审批回环、预算 | dsh **当前不足，须过门禁**；Codex 部分可用但默认危险 | §15.2 事实②、§15.4、§15.8 |
+
+一句话钉死：**轴 A 的「能」不等于轴 B 的「能」**。dsh 能建专业 agent（轴 A 成立），不代表
+现在就能接进 Attempt 状态机（轴 B 要过 §15.4 门禁）。把门禁写成「专业路线进入实施前」会被
+读成「专业 agent 建不了」——这是 2026-09-03 那次失败整合栽的坑。
+
+**两层 supervisor（与 §6.0 呼应，此处给完整定名）**
+
+基座 §6 的 supervisor 与五份 2026-09-02 提案稿的「Supervisor」是**两个不同层的东西共用一个
+名字**。定名如下：
+
+| 层 | 定名 | 是什么 | 权威锚点 |
+| --- | --- | --- | --- |
+| 上层 | **Dispatcher（执行调度器）** | 应用层**确定性代码**，在 Attempt **之上**建单、路由到执行档、管预算与租约的产品侧投影 | `request-lifecycle.md` §9：后端负责 `F-DISPATCH-*` 与 `I1`–`I15` 的存储和并发载体 |
+| 内层 | **Attempt 内协调 supervisor** | 一个 Agent 在**单个 Attempt 内部**拆 Work Unit、派工、收候选、选优、整合 | 基座 §6；`request-lifecycle.md` §9：Agent / runtime 负责 `F-EXEC-*` |
+
+关系与纪律：
+
+1. **内层只在上层已路由完、权限已收窄之后才存在**——不能改路由、不能换执行器、不能扩权。
+   这是基座 §9「supervisor 不因协调职责获得任何有权主体的动作」的延伸，对应 `I5`（终态不可
+   转出）与 `I3`（每次读取、工具调用和写入重新校验当前授权）。
+2. **Dispatcher 必须是确定性代码，不能是模型。**这是五份稿里唯一比基座多出来、且五家一致的
+   论断。三条理由：
+   - **路由错的代价不对称**：把专业任务误路由到通用腿（或反之）会静默产出错结果，而分类本身
+     没有验收器兜底；
+   - **不可解释**：模型路由给不出可复跑的判定依据，违反 `I15`（每项义务有稳定 ID、所有者、
+     代码位置和自动测试）；
+   - **分类调用自己也要预算**：而预算账（`RunBudget`）当前在生产休眠（§15.2 事实⑥），用一个
+     未接线的账去管路由等于没有账。
+3. 上层是代码所以**确定**，内层是 agent 所以**要被 §5.1 门禁与 §9 权限公式箍住**。
+
+### 15.1 路线转向：执行层为什么租不自建
+
+- **方向**：执行层**租用不自建**，是硬约束不是偏好——`../constraints.md` A4「执行层租用不自建，
+  依赖边界严格限定在 SDK，不得直接依赖裸协议」；A1「新增业务智能体优先是新增一份 Profile，
+  不是 fork 一套代码」。
+- **「自研 vs 租用」是假二分**：真问题不是要不要自研，而是**在哪一层自研**。执行内核（agent
+  loop、模型协议、工具运行时）租 SDK；治理壳（§5 执行内核门禁、§7 产出物与 commit、§9 权限
+  公式、四本账）自建。A4「依赖边界严格限定在 SDK」正是这条线：不碰裸协议，只碰 SDK 暴露的面。
+- **比原体系更好吗——分三层判断**：
+  - **方向**：更好。租执行内核省下自建 agent loop 的成本，把工程量集中到本项目真正的差异化
+    （治理壳）。
+  - **当前成熟度**：**不足以直接上生产**。轴 B 门禁未过（§15.4）、部署侧四条硬阻断未拆
+    （§15.5）、生产环境现在没有 agent（§15.2 事实⑥）。
+  - **满足门禁后**：更好，但**有硬条件**（下）。
+- **「更好」成立的硬条件**（缺一即退回「只是把自建的风险换成租用的风险」）：
+  1. 轴 B 门禁过（§15.4 G1–G7）；
+  2. 四本账落 PostgreSQL（`../constraints.md` A3），预算 / 幂等 / 副作用 / 证据跨进程死亡仍正确；
+  3. 部署侧四条硬阻断拆掉（§15.5 B1–B4）；
+  4. 财务数据源到位（§15.9 下游线前置）——没有数据，专业 agent 选型再对也无米下锅。
+- **租用是替代还是补充**（五份稿的分歧点）：本文判定为**补充而非全盘替代**——通用腿（Codex）
+  与专业腿（dsh）并存，由 Dispatcher 按 Profile 路由；治理壳自建，执行内核租用。依据：
+  `request-lifecycle.md` §9 已把 `F-EXEC-*` 投影给「Agent / runtime」，而非某一个具体 SDK。
+
+### 15.2 两个执行 SDK 的核实事实与能力不对称
+
+每条带可复跑锚点。
+
+**事实① dsh 能构建专业 agent（轴 A 的最硬理由）**
+
+- preset 是一等公民：一 preset = 一目录一份 `agent.cordis.yml`，按会话组合 tools / prompt /
+  skills / persona，**一个进程可同时跑多个不同组合的 agent**。锚点
+  `~/repo/deepseek-harness/packages/preset/README.md:12`。
+- Codex 无 preset 概念，只有进程级配置（`thread_start(config=...)`，
+  `~/repo/codex/sdk/python/docs/api-reference.md:68`）。
+- 佐证：dsh 自带 `subagent-codex` provider，能反过来把一个真实 Codex 子会话当专业腿的下级委派
+  （`~/repo/deepseek-harness/packages/subagent/subagent-codex/README.md`：`app-server --stdio`、
+  provider「stays dormant until a bound tool calls it」、Profile 选的 `permissionMode` 映射到
+  thread 的 approval / reviewer / sandbox）。
+
+**事实② dsh 当前 SDK 的 wire 控制面不足（轴 B 的门禁来源）**
+
+- 公开 wire 只有三个 client→server 请求：`initialize` / `session/prompt`（durable enqueue
+  receipt）/ `shutdown`。锚点 `~/repo/deepseek-harness/packages/sdk/protocol/README.md:40-42`。
+- 无 cancel / interrupt / steer / abort：`grep -rnE "interrupt|cancel|steer|abort" python/sdk/src/`
+  = **0 命中**。
+- `messageId` 只标识排队的 user message，**不标识 turn ending 或 prompt result**——逐 Turn 结果
+  归属缺失。锚点 `protocol/README.md:52`。
+- server→client 请求是**死能力**（原文「the server never sends one」）——审批回环在 wire 层不可用。
+  锚点 `protocol/README.md:116`。
+- 无 per-session preset 选择、无模型不可篡改的 tenant / actor / policy 绑定、无 `output_schema`
+  对等参数（对比 Codex `run(..., output_schema=...)`，`api-reference.md:153`）。
+- **两个轴别混**：这卡的是轴 B「我们的状态机怎么管它」，不卡轴 A「它能不能干专业活」。
+
+**事实③ dsh 不需要系统 Node.js——一条曾被误判的阻断，已推翻**
+
+- `~/repo/deepseek-harness/python/sdk-runtime/README.md:5`：「SDK use requires no system
+  Node.js」；`platforms.json:2-4` 已发布 `linux-x64 → manylinux_2_28_x86_64` wheel。
+- 仓库另有需系统 Node 22.19+ 的 `runtime/node/` carrier，但 `README.md:13` 明写「never selected
+  automatically and is excluded from wheels and sdists」——别再被它误导。
+- ⚠ **仍未验证**：该 wheel 能否从内网 PyPI 镜像装到，属供应链问题，标 ⚠ 不假装已通。
+
+**事实④ Codex 被钉死在 Responses API**
+
+- 本仓 Codex 已移除 `wire_api = "chat"`：`~/repo/codex/codex-rs/model-provider-info/src/lib.rs:57`
+  （`CHAT_WIRE_API_REMOVED_ERROR` 报错原文）。
+- 后果：通用腿走 OpenAI 系模型零障碍；要跑 DeepSeek 等 Chat Completions 模型必须自建翻译代理，
+  有真实阻抗风险。
+
+**事实⑤ Codex 默认 approval_handler 自动 accept——headless 生产最危险的一处**
+
+- `~/repo/codex/sdk/python/src/openai_codex/client.py:773-778`：`_default_approval_handler` 对命令
+  执行与文件改动一律 `return {"decision": "accept"}`。
+- thread 默认 `ApprovalMode.auto_review`（`api-reference.md:6`），但 auto_review 不等于 deny；
+  `ApprovalMode` 只有 `deny_all` / `auto_review` 两档（`_approval_mode.py:13-17`）。
+- 纪律：**headless 生产必须显式覆盖 approval_handler**，否则等于「没有人在场却自动放行」，直接
+  违反 `I3`（每次动作重新校验授权）。
+
+**事实⑥ 生产环境里现在没有 agent**
+
+- `ToolExecutionPort` 定义在 investment-backend `app/domain/agent/tools.py:40`，但生产层不接线；
+  `RunBudget`（`runtime.py:62`）、`SandboxPort`（`sandbox.py:39`）、`CancelRunCommand`（`commands.py:31`）
+  同样**定义了但生产未接线 / 休眠**。
+- 权威锚点用项目**自己的休眠登记表**（比「引用数为 0」更强、可复跑）：investment-backend
+  `app/tests/test_dormant_capabilities.py`——`:154` RunBudget 休眠（pending，`pilot_service` 从不
+  构造也不消费预算，`budget_exceeded` 生产不可达，载体是内存态 pydantic 跨进程即失，归 A3
+  四本账）；`:182` Attempt / Invocation 未落库（只有 `execution_identity_spike` 内存类）；`:208`
+  `CancelRunCommand` 无 `interfaces/` HTTP 端点。
+- `AGENT_V4_TRAFFIC_ENABLED` 默认 `False`：investment-backend `app/core/config.py:133-134`。
+- **含义**：不存在「模型调工具、看结果、再决定」的循环。§15 全部是**目标态**，能力现状只由
+  代码 / 迁移 / 测试 / 运行证据证明（基座 §5.2 四级能力词典 `defined / wired / deployable /
+  runtime-verified`：这些端口目前停在 `defined`）。
+
+**能力不对称必须写进 Port，不许假装对称**——见 §15.3 三态探针；逐条功能项落哪条腿见 §15.8。
+
+### 15.3 统一执行 Port + 三态能力探针
+
+- **Port 形状**：一个统一执行 Port，通用 DTO 进出，Adapter 把 DTO 翻成各 SDK 的调用。领域概念
+  **不得进入 Port 签名**——`../constraints.md` A5：`run(sql, limit)` 可以，`run_portfolio_query(持仓ID)`
+  不可以。
+- **Adapter 职责边界**：只做「协议翻译 + 能力探针应答」，**不承担治理**（预算 / 幂等 / 副作用 /
+  证据是后端四本账，A3）；不得把裸协议泄漏到 Port 之上（A4）。
+- **能力探针是三态不是布尔**：
+
+| 探针态 | 含义 | 例 |
+| --- | --- | --- |
+| `available` | SDK 原生支持，可直接依赖 | Codex `turn_interrupt` / `turn_steer`（`client.py:641` / `:648`） |
+| `explicit_unsupported` | SDK 明确不支持，Adapter 如实报错，**不静默降级** | dsh wire 无 cancel（`grep -rnE … = 0`）→ 取消只能走 §15.4 补法 |
+| `implicit_fallback` | SDK 无原生能力，Adapter 用更弱机制兜底，**必须登记代价** | dsh 逐 Turn 归属缺失 → 用 `submit_result` 显式提交兜底（§15.4） |
+
+- **为什么不能是布尔**：布尔会把 `explicit_unsupported` 和 `implicit_fallback` 都压成 `false`，掩盖
+  「有的能兜底、有的必须硬失败」的区别。F-EXEC-05（checkpoint 恢复）在 Codex 腿是 `available`
+  （`thread_resume` / `thread_fork`，`api-reference.md:70-71`），在 dsh 腿是 `implicit_fallback`（快照到
+  对象存储 + restore，§15.5）——布尔表达不了这个差。
+- **锚定**：三态探针服务于 `I15`（未实现项显式登记）——`implicit_fallback` 与 `explicit_unsupported`
+  都是显式登记的能力缺口，不允许藏在 Adapter 里当已支持。
+
+### 15.4 Harness SDK 前置门禁 + 门禁未过期间的补法
+
+**轴 B 门禁清单**（必须由 Harness **上游正式实现**；`../constraints.md` A4 不许私自复制协议类型——
+私自复制会造出第二真源，违反 `I13`「一个可变事实只有一个权威写入面」）：
+
+| # | 要补的 wire 方法 / trusted context 字段 | 对应功能项 | 现状锚点 |
+| --- | --- | --- | --- |
+| G1 | `cancel` / `interrupt`（取消在跑的 prompt） | F-EXEC-07、`I14` | protocol 无（`grep -rnE … = 0`） |
+| G2 | session `close` / `resume` / `read`（跨进程恢复） | F-EXEC-05 | `protocol/README.md:40-42` 仅三方法 |
+| G3 | 逐 Turn 结果归属（result 绑定 turn，不只是 messageId） | F-EXEC-02 | `protocol/README.md:52` |
+| G4 | per-session preset 选择（wire 层选定 Profile） | F-EXEC-01 | protocol 无 |
+| G5 | 模型不可篡改的 tenant / actor / policy 绑定（trusted context） | `I3`、`I12`、`I5` | protocol 无 |
+| G6 | `output_schema` 对等参数（结构化产出） | F-EXEC-06 | 对比 Codex `api-reference.md:153` |
+| G7 | server→client 请求复活（审批回环） | F-EXEC-03、F-INTERACT-01 | `protocol/README.md:116` 死能力 |
+
+**门禁未过期间的补法**（每条标代价，对应三态里的 `implicit_fallback`）：
+
+| 缺口 | 补法 | 代价（必须登记） |
+| --- | --- | --- |
+| 无 cancel（G1） | **杀进程取消**：`client.close()` → `proc.terminate()` → `proc.kill()` teardown ladder（dsh `client.py:94` / `:117` / `:124`） | 粗粒度，杀掉整个 session；在跑的 Turn 无法优雅停；副作用可能已发生 → 靠 `I9` 幂等键 + 补偿兜 |
+| 无逐 Turn 归属（G3） | **显式 `submit_result`**：结果不经 wire 自动归属，由 Adapter 调 `run() → RunResult`（dsh `api.py:41` / `:124-130`）显式提交并绑定 Attempt | 未显式提交不算完成（对齐 §15.9「结果必须经显式工具提交」）；多一次落账 |
+| 无审批回环（G7） | **分层审批**：高风险动作在**进 dsh 之前**由后端 Dispatcher 侧审批（不依赖 wire 回环）；dsh 内 `ctx.approval` / `user-approval`（fails closed，`packages/interaction/README.md:30`）只作**进程内**二级兜底 | wire 层无法中途暂停等批准 → 只能前置审批 + 进程内兜底；F-EXEC-03 在 dsh 腿降级为「动作前由后端校验」（见 §15.8） |
+
+- **纪律**：补法是**过渡**不是终态。门禁未过期间用补法，必须把每条代价写进证据账（`I15`），
+  门禁过后移除补法。⚠ 补法本身也未 runtime-verified（生产没有 agent，§15.2 事实⑥），停在
+  `defined`。
+
+### 15.5 双 runtime 的部署与进程模型 + 快照恢复 + 有界恢复
+
+**运行角色拆分**（`../constraints.md` T3：一个 Backend 代码库按运行角色部署 API / Worker /
+Scheduler / Migration）：执行器跑在 **Worker** 角色里，不得跑在 API / Scheduler；迁移由独立
+Job（D8）。
+
+**部署侧四条硬阻断**（每条带可复跑锚点，路径相对 `investment-app/deployment/bundle`）：
+
+| # | 硬阻断 | 锚点（部署 bundle） | 后果 |
+| --- | --- | --- | --- |
+| B1 | worker 无任何 `ipBlock` | `grep -c ipBlock 30-network-policies.yaml` = **0**；worker-egress 只到 in-cluster（data-platform 5432 / 6379 / 5672、casdoor 8000、knowledge backend-api 8000，`30-network-policies.yaml:224-268`） | 两个模型 API 都连不出去 |
+| B2 | `readOnlyRootFilesystem: true` | `20-runtime.yaml:363` | 执行器无处写临时文件；checkpoint 必须落对象存储不能落本地盘 |
+| B3 | 内存上限 768Mi | `20-runtime.yaml:360`（worker limits.memory） | 见下 prefork 教训 |
+| B4 | `AGENT_PILOT_LLM_*` 在 bundle 里根本没配 | `grep -rn AGENT_PILOT_LLM bundle/` = **0 命中** | 模型凭据 / 端点未下发，执行器起不来 |
+
+**SDK 进程纪律**（血泪教训，可复跑锚点）：Celery 在容器中继承节点 CPU 数，默认启动 **12 个
+prefork 子进程**，导致 768Mi Worker **OOMKilled**；修复进入模板提交 `7f2942c`：默认并发显式设为
+**2**，Kubernetes 以水平扩容为主。锚点 `~/master/k8s/sunmoonai/docs/architecture-v2/evidence/R4-investment-result.md:21-22`。
+由此定三条：
+
+1. **prefork 之后再创建 SDK 进程 / 连接**，不在 master 进程里创建后 fork（fork 会复制句柄，跨子
+   进程共享即错）；
+2. **不跨 fork 共享**执行器句柄、模型连接、session；
+3. **teardown ladder** 收尾：`close()` → `terminate()` → `kill()`（dsh `client.py:94` / `:117` / `:124`），
+   对齐 B3 的内存上限——不留孤儿进程吃满 768Mi。
+
+**执行现场快照到对象存储 + restore 续跑**（补 F-EXEC-05 在 dsh 腿的 `implicit_fallback`）：
+
+- 因 B2（readOnlyRootFilesystem）本地盘不可写，checkpoint **必须落对象存储**；`../constraints.md`
+  D4：对象存储按领域拥有，Bucket / 凭据 / 生命周期隔离，**不以共享宿主机目录作交换协议**。
+- 快照内容对齐基座 §5.5 checkpoint 字段清单与判据「把当前会话杀掉，另一个执行者只读持久载体
+  能否接着做」——快照就是那个「持久载体」。
+- restore 续跑 = 新 Attempt 读快照重建现场（`I13`：一个可变事实一个权威写入面；快照是可重建副本
+  不是第二真源，D1）。
+
+**恢复有界**（不许无限重试）：
+
+- `max_attempts`：恢复次数上限，越限进合法失败路径（`I8`：Attempt 失败不自动等于 Task 失败；
+  F-INTERACT-02：留可恢复记录或进合法失败，不悬空）。
+- **Profile 版本熔断**：若 Profile 版本在恢复期间发生漂移，熔断旧 Attempt（`I1`：Profile 版本可追溯
+  不被覆盖；对齐 §15.6 审批绑定产物哈希、漂移即作废）。部署侧对应 R2（bundle 只允许
+  `repo@sha256`，不允许可变 tag）。
+
+### 15.6 门禁、凭据与审批
+
+**三道门正交**（借鉴 OpenClaw「三个控制管三个独立决策」，`~/repo/openclaw/docs/start/why-openclaw.md:97`）：
+
+| 门 | 管什么 | 落点 | 规则 |
+| --- | --- | --- | --- |
+| Tool Policy（工具门） | 哪些工具**存在** | 会话组装层 + 网关层**双层** | **deny 优先**、**allow 非空即默认拒**（allowlist 语义，参 `profiles.py:36-41` `permits_tool`）；工具门是**硬停** |
+| Execution Scope（执行范围门） | 工具**在哪跑**、能碰什么 | sandbox / 运行角色 | 对齐基座 §5.1 写入前门禁五条、§5.2 范围门禁 |
+| Approval Policy（审批门） | 敏感动作**要不要人批** | Dispatcher 侧 + 进程内兜底 | 分级四档，见下 |
+
+**被拒绝的工具应当不存在，而不是存在但被禁**（关键设计）：
+
+- 双层：**会话组装层**根本不把被拒工具装进 session（模型看不到 → 不会试图调）；**网关层**再挡
+  一次（即使被指示绕过也挡）。锚点：OpenClaw `delegate-architecture.md:96`「even if the agent is
+  instructed to bypass its rules, the Gateway blocks the tool call」；`why-openclaw.md:97`「Tool policy
+  decides which tools exist; deny always wins」。
+- 为什么「不存在」优于「存在但被禁」：存在但被禁会诱导模型反复尝试、制造噪音与越权面；不存在
+  则从源头消除该动作（对齐 `I12`：越权原文不进入普通事件 / 日志 / 前端投影）。
+
+**审批分级四档**（`llm-review` 必须落账，否则等于自我批准）：
+
+| 档 | 触发 | 处置 |
+| --- | --- | --- |
+| `auto` | 低风险、只读 | 直接放行，仍记证据账 |
+| `llm-review` | 中风险 | 由**另一个** Agent 复核；**必须落账**——不落账就等于执行者自我批准，违反基座 §9 权限公式（只有有权主体能做该动作）与 `I15` |
+| `human` | 高风险、副作用不可逆 | 投影 Interaction 给有权人批（F-INTERACT-01）；`I3` 每次动作重新校验授权 |
+| `deny` | 禁止动作（hard block） | 硬停，不可被任何指示绕过（OpenClaw `delegate-architecture.md:74` / `:83`：hard blocks configured first、non-negotiable） |
+
+**审批绑定产物哈希、漂移即作废、超时 fail-closed**：
+
+- 审批绑定**产物哈希**：批准的是「这个哈希的产物」，产物变了批准失效（`I13` 单一权威写入面；对齐
+  §15.5 Profile 版本熔断）。
+- **漂移即作废**：Profile 版本 / 产物哈希漂移 → 原审批作废，须重批（`I1`）。
+- **超时 fail-closed**：审批超时按**拒绝**处理，不按放行（对齐 dsh `user-approval`「fails closed
+  without one」，`packages/interaction/README.md:30`）。
+
+**推理经代理，真 key 不下发到 harness 进程**（凭据纪律）：
+
+- `../constraints.md` `I12`：敏感信息、凭据不进入普通事件 / 日志 / 前端投影；D9：前端不得持有后端
+  或数据库凭据；`I3`：浏览器 / 服务 / 数据库凭据禁止复用。
+- 落地：**推理经代理**——harness 进程拿到的是**代理端点**，不是模型真 key；真 key 只在代理侧。
+  **Attempt 级短 TTL 网关令牌**：每个 Attempt 一枚短时效令牌，绑 tenant / actor / scope（`I7`：服务
+  令牌 subject 命中精确绑定、下游路径命中 allowlist 前缀；`I14`：失去租约 / fencing 后不能提交结果
+  或副作用 → 令牌随租约失效）。
+- 为什么：B4 已暴露「凭据在 bundle 里根本没配」——凭据下发是执行器能不能起来的硬前提，且必须按
+  Attempt 粒度收窄，不能进程级长期持有（`I5`：后端自行复核、不信任上游声明身份）。
+
+### 15.7 OpenClaw Gateway：借鉴，不转向
+
+**它到底是什么**：一个**可信网关 + 不可信执行 + 确定性策略 + 版本化状态**的架构
+（`~/repo/openclaw/docs/start/why-openclaw.md:2`）。**两层路由都不是语义分类**：入站消息经 **bindings**
+（channel account → agent 的映射）路由，是配置绑定不是模型分类（`docs/concepts/multi-agent.md:9` /
+`:11`）。→ 这正好印证 §15.0「Dispatcher 必须是确定性代码」：连 OpenClaw 的路由都是确定性 binding，
+不是语义分类。
+
+**该借的机制，逐条映射到我们的落点**：
+
+| OpenClaw 机制 | 锚点 | 我们的落点 |
+| --- | --- | --- |
+| 三个控制正交（sandbox / tool policy / elevated），deny always wins | `why-openclaw.md:97` | §15.6 三道门正交 |
+| 被拒工具「不存在」而非「存在但被禁」，网关层即使被指示绕过也挡 | `delegate-architecture.md:96` | §15.6 双层工具门 |
+| hard blocks 先配、non-negotiable、harden first | `delegate-architecture.md:74` / `:83` / `:290` | §15.6 `deny` 档 |
+| discovery-time gate vs per-call gate 两道门 | `plugin-permission-requests.md:20` / `:32` | §15.6 工具门（组装期）+ 审批门（调用期） |
+| Codex App Server 仍是 model-loop owner，不另起 Supervisor 插件或第二套 Codex 协议 | `docs/specs/codex-supervision.md:17` / `:21` | §15.1 A4 依赖边界限定在 SDK、§15.4 不许私自复制协议类型 |
+| 默认 Docker / Podman profile：no network、read-only root、drop all capabilities、non-root | `why-openclaw.md:83` | §15.5 部署阻断「拆完之后应长这样」的参照 |
+
+**为什么不转向**（逐条，带锚点）：
+
+1. **它自己反对重编排层**：`VISION.md:133`「What We Will Not Merge」、`:141`「Heavy orchestration layers
+   that duplicate existing agent and tool infrastructure」——转向 OpenClaw 等于引入它自己都拒绝的重编排
+   层，且会与基座 §6 内层 supervisor、`request-lifecycle.md` 的 Task / Attempt 状态机重复。
+2. **`sandboxing off by default` 的危险默认**：`why-openclaw.md:29` / `:91`——开箱即用是「一个可信操作
+   者的个人助理，exec 直接跑在 gateway host 上、无提示」。这与本项目多租户、`I12` / `I5`（不信任
+   上游身份、凭据隔离）直接冲突；转向就要把它的默认整个反过来，成本高于借鉴。
+3. **租户模型 / 存储 / 技术栈不匹配**：OpenClaw 是 SQLite-backed per-agent session（`multi-agent.md:9` /
+   `:21`），本项目四本账必须落 PostgreSQL（`../constraints.md` A3）、一个逻辑库一条迁移链（D2）；
+   技术栈是 Node / TS 网关，本项目执行器租 Python SDK（A4）。
+4. **`elevated` / `full` 逃生门**：`why-openclaw.md:97` `tools.elevated` 是 exec-only escape hatch——**明确
+   不借**这类逃生门，因为它与 §15.6 `deny` 档「不可被任何指示绕过」冲突。
+
+**明确不借的清单**：`elevated` / `full` 逃生门、SQLite 存储、bindings 语义（我们用 Dispatcher 按 Profile
+路由，不用 channel-account binding）、重编排层（VISION 自己反对）。
+
+### 15.8 F-EXEC-* / F-INTERACT-* 逐条映射到两条腿
+
+`request-lifecycle.md` §9 责任投影：Agent / runtime 负责 `F-EXEC-*`。现在答案是「租来的 Codex 或 dsh」。
+逐条列两腿落地状态（**已支持 / 当前缺失 / 需补法**），功能项定义见 `request-lifecycle.md` §5.4 / §5.5：
+
+| 功能项 | Codex 腿 | dsh 腿 | 门禁 / 补法 |
+| --- | --- | --- | --- |
+| F-EXEC-01 只用允许的能力 / 数据源 / 工具 | 需补法：默认 auto-accept（`client.py:773`）须覆盖为 deny_all + sandbox | 已支持（进程内）：Profile allowlist（`profiles.py:36-41`）、`tools/pre-execute` allow / deny / ask + `ctx.tools.guard()` 单调 deny（`adding-a-tool.md:59`）；wire 层缺 per-session preset 选择（G4） | G4 |
+| F-EXEC-02 工具 I/O + 版本 + 证据关联 Attempt | 已支持：turn 按 turn ID 路由（`api-reference.md:5`） | 当前缺失：`messageId` 不标识 turn ending（`protocol/README.md:52`）→ 需补法 `submit_result` 显式归属 | G3 |
+| F-EXEC-03 每次高风险动作前重新校验授权 / 批准 | 已支持：per-turn `approval_mode` 覆盖（`api-reference.md:6` / `:153`） | 当前缺失：server→client 死能力（`protocol/README.md:116`）→ 需补法：Dispatcher 侧前置审批 + 进程内 `user-approval` fails closed 兜底（`interaction/README.md:30`） | G7 |
+| F-EXEC-04 持续扣减预算、越限前停 | 需补法（后端责任）：`RunBudget` 生产休眠（`test_dormant_capabilities.py:154`）→ 四本账落 PostgreSQL（A3） | 需补法（同左）：预算是后端四本账，非 SDK 能力 | A3、`I10` |
+| F-EXEC-05 checkpoint 恢复、不依赖进程内记忆 | 已支持：`thread_resume` / `thread_fork`（`api-reference.md:70-71`） | 当前缺失：wire 无 session close / resume / read（G2）→ 需补法：快照到对象存储 + restore（§15.5，受 B2 约束） | G2、D4 |
+| F-EXEC-06 区分事实 / 推断 / 假设 / 缺失 / 不确定性 | 已支持（结构化）：`run(..., output_schema=...)`（`api-reference.md:153`） | 需补法：wire 无 `output_schema` 对等参数（G6）→ 由 validator 在 `submit_result` 时校验 | G6 |
+| F-EXEC-07 无法满足契约时请求输入或明确失败 | 已支持：`turn_steer`（`client.py:648`）、approval ask | 当前缺失：wire 无中途请求输入（server→client 死能力）→ 需补法：进程内 `ask_user_question`（`interaction/README.md:33`）+ 明确失败 | G7 |
+| F-EXEC-08 Plan 只作可选 Artifact；复杂 Task 可要求先批准 | 需补法：Profile 须暴露 plan-only 工具（dry-plan），非 SDK 原生 | 需补法（同左）：preset 组合 plan-only 工具 | §15.9 |
+| F-INTERACT-01 后端把等待问题具体化为可答输入 / 可批动作，投影 Interaction | 后端责任：Codex approval_handler 回调是原始「ask」信号，后端须投影成 Interaction | 后端责任：dsh `ask_user_question` / `user-approval` 是原始信号，wire 不可中途回环 → 后端前置投影 | `I3`、G7 |
+| F-INTERACT-02 消费恢复令牌后投递失败须留可恢复记录 / 合法失败 | 后端责任：恢复令牌 + 四本账幂等（A3、`I9`） | 后端责任（同左） | A3、`I9` |
+
+**读表结论**：dsh 腿的缺口集中在 **F-EXEC-02 / 03 / 05 / 07**（逐 Turn 归属、审批回环、checkpoint
+恢复、中途请求输入）——全部源自 wire 只有三个方法（`protocol/README.md:40-42`）+ server→client 死能力
+（`:116`）。**这就是 §15.4 门禁 G1–G7 的可判定依据**：门禁过 = 这四项从「当前缺失」转「已支持」。
+F-EXEC-04 与 F-INTERACT-01 / 02 是**后端四本账责任**（A3），与选哪条腿无关。
+
+### 15.9 专用 Agent 构建判据（不写字段表）+ 下游线前置
+
+**本节只写判据（怎么建），不写任何具体 Profile 的字段表（建成什么样）**——理由：
+`request-lifecycle.md` §7.2 明写「每个 Profile 的第一项开发工作单元必须用真实输入确认字段，之后才
+发布首个版本」，而业务数据现在是 **0 张表**（投资仓 13 张表全是运行时基础设施，业务数据为 0；
+多家独立核实）。那些工具表从没跑过一次真实输入，**写进开发指南等于把未验证的设计固化成纪律**
+（违反 `I15`：未实现项显式登记，不假装已完成）。
+
+**对任何专用 Profile 都成立的判据**：
+
+1. **专用 Agent = Profile / patch + 插件，不 fork runtime、不改 agent loop**（`../constraints.md` A1：新增
+   业务智能体优先是新增一份 Profile；A4：依赖边界限定在 SDK）。dsh 侧：preset = 一目录一份
+   `agent.cordis.yml`（`preset/README.md:12`），Profile + Bundle + patch 组合。
+2. **工具必须逐条声明安全边界**（每工具的安全边界显式声明，对齐 §15.6 三道门与基座 §5.1 写入前
+   门禁）。
+3. **规划与执行分离**：dry-plan 只出**可审计计划**（F-EXEC-08：Plan 只作可选 Artifact），query 才执行；
+   复杂 Task 可要求 Plan 先经批准。
+4. **结果必须经一个显式工具提交**：未提交不算 Attempt 完成；且**提交成功只产生候选，validator 说了
+   才算**（对齐基座 §7 产出物与 commit、§10.2 验收判据；`I6`：Task 成功前结果和验收证据已持久化）。
+   dsh 侧对应 `run() → RunResult`（`api.py:124-130`）+ §15.4 `submit_result` 补法。
+5. **两条腿凭据互斥**：Codex 腿与 dsh 腿的凭据不复用（`../constraints.md` `I3`：浏览器 / 服务 / 数据库
+   凭据禁止复用；§15.6 真 key 不下发、Attempt 级短 TTL 令牌）。
+
+**明确不做决定（本轮只留判据）**：「用 dsh 具体构建几个专业 agent、每个装什么、角色怎么分」是**下游
+另一条线**的题（已有对立主张：首版只建一个窄 Profile vs 用 preset 白捡 analyst / checker / awaiter 三角色）。
+**本轮不裁决**。
+
+**下游线的前置**（写明，避免下游误以为现在就能建）：
+
+1. **财务数据源到位**——没有数据，专业 agent 选型再对也无米下锅（§15.1 硬条件 4）；
+2. **Gate 0 spike 结果**——轴 B 门禁（§15.4 G1–G7）与部署阻断（§15.5 B1–B4）的验证结果；
+3. 四本账落 PostgreSQL（A3）+ 生产接线 `ToolExecutionPort`（当前休眠，§15.2 事实⑥）。
+
+⚠ 本节全部判据停在 `defined`（基座 §5.2 四级能力词典），未 runtime-verified——生产没有 agent（§15.2
+事实⑥）。做不成的老实标 ⚠（基座 §11.1 立的规矩）。
 
 ## 附录 A：词汇对照
 
