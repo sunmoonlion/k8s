@@ -14,6 +14,17 @@
 >
 > 本文是目标流程，不是当前实现清单。文件存在不等于 FastAPI、sandbox provisioner、
 > Agent runtime 或验收链已经实现；能力现状只由代码、迁移、测试和运行证据证明。
+>
+> **本文不是 [`request-lifecycle.md`](request-lifecycle.md) 的投影。**那份定义**要建成什么**
+> （Task、Attempt、Interaction、Artifact、Event、Side Effect、Delivery、四本账、
+> `I1`–`I15`、`AT-01`…`AT-22`）；本文定义**怎么把它建出来**。凡涉及那些对象，
+> 本文一律引用、不重新定义，冲突时以那份为准。
+>
+> **编号必须写明出处文档。**本仓有两套 `I` 系列且区间重叠：
+> [`../constraints.md`](../constraints.md) 是 `I1`–`I8`（接口分面与身份），
+> `request-lifecycle.md` 是 `I1`–`I15`（产品不变量）。写「constraints I8」「产品 I12」，
+> 不写裸 `I3`。本轮已有候选把产品 `I12` 误标为 `constraints.md` 的条目——
+> **人读上下文能分清，跨文档检索时会混，且混了以后文字仍然通顺。**
 
 ## 0. 边界和共同模型
 
@@ -1328,6 +1339,13 @@ Agent 声称完成、subagent 全返回、已有 commit/PR 或候选测试通过
 内核，也承载执行器边界、双 SDK 能力矩阵、Harness 门禁、部署/恢复与安全审批架构；这些内容
 在产品 Agent 持续演进期间仍是 A1–A5、`F-EXEC-*`、`F-INTERACT-*`、I3/I10/I12/I15 的
 开发依据。`development-lifecycle-human.md` 同样长期保存，两份文档继续各自自足。
+
+⚠ **这一改判与人那份现在的措辞冲突，冲突就在当下，不在将来。**
+`development-lifecycle-human.md` 头部仍写「那份是**开发期临时文档，开发结束后会删除**；
+本文长期保存」，末节「边界」也写「另一份会删除」。本轮不改那些文件（[`refact-task.md`](../refact-task.md)
+§9.3 只要求列清单），但**必须把矛盾登记在这里，不能沉默地留着两处互相打脸的存续声明**。
+处置去向见 §11.2 的清理表：那张表管的是「将来删除时怎么清」，**这条管的是「现在读到
+两份不一致时以谁为准」——以本文为准，人那份的两处措辞待下一次触碰它时同步修正。**
 
 由此有两条硬要求：
 
