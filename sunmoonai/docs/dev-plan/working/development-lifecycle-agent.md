@@ -440,7 +440,29 @@ class AgentExecutorPort(Protocol):
     ) -> AsyncIterator[ExecutionEvent]: ...
     async def inspect(self, binding: ExecutionBinding) -> ExecutionSnapshot: ...
     async def close(self, binding: ExecutionBinding) -> None: ...
+    async def submit_result(
+        self, binding: ExecutionBinding, payload: ResultEnvelope
+    ) -> SubmissionReceipt: ...
 ```
+
+**`submit_result` 在签名里，不是 Adapter 私货。**结果必须经一个显式提交动作进入平台，
+未提交不算 Attempt 完成，且提交成功只产生**候选**——validator 说了才算。它同时是
+Harness 腿门禁未过期间的过渡补法所依赖的原语（§4.8），放进 Adapter 内部会让两条腿
+在“什么算完成”上出现两套语义。**注意：Harness SDK 当前并不存在这个方法**，
+它是我们自建的约定，不是租来的能力。
+
+`capabilities()` 的三态结果同样是签名的一部分——调度要在 dispatch 前读它做硬过滤，
+不能等 Adapter 内部临场降级。
+
+**Port 存在的第一理由是可测性，不是“将来可能换执行器”。**有了它，纪律层可以用
+`FakeAgentWorker` 跑完整状态机、超时、取消与恢复路径，不必每次都真起 runtime、
+真发凭据、真花模型钱；`CodexAgentWorker` 与 `HarnessAgentWorker` 只在集成层出现。
+“将来可能换”是收益，可测性是**现在就成立**的理由——本仓 `ToolExecutionPort` 生产
+引用为 0，正说明没有可测载体时，Port 会停在 `defined`。
+
+`ExecutionBinding` 必须可序列化并落 PostgreSQL：**SDK 侧的 thread/session id 不是
+Task 的真源**（`I13`），进程重启后要能只读持久载体接着做。具体字段在实施时由契约测试
+钉死，本文不列字段表（§4.10）。
 
 通用 DTO 只承载 `attempt_id`、版本化 `profile_ref`、workspace/input Artifact 引用、完成合同引用、
 预算预留引用、trusted security context 引用、deadline，以及 opaque provider session/turn identity；
