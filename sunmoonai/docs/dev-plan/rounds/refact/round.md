@@ -3,13 +3,18 @@
 > 本文件是本轮**唯一**的可变参数来源。不变的流程规则在
 > [`../../round-protocol.md`](../../round-protocol.md)，不在这里重复。
 >
+> ✅ **本轮已于 2026-09-04 发布**：最终稿 1603 行进 master `7fd2bde8`；
+> 全流程产物保留在标签 `refact/{luna,kimi,cursor,qwen,integration,baseline-master}`。
+> 因各分支已重置到发布点，下面的 `arbiter_branch` 指向标签而非分支，
+> 以便 `round-status.py --verify` 事后仍可复算。
+>
 > ⚠ **本轮开始于 `round-protocol` 改造之前**，产物落在旧路径 `working/` 而非
 > `rounds/refact/`；本文件是**回填**的，用于让 `round-status.py` 能判定这一轮。
 > 路径迁移不在本轮做——协议自己规定「任务书冻结后不得中途修改」。
 
 ```toml
 round_id  = "refact"
-status    = "ACTIVE"
+status    = "DONE"
 tier      = "T2"
 final_path = "sunmoonai/docs/dev-plan/working/development-lifecycle-agent.md"
 round_dir  = "sunmoonai/docs/dev-plan/working"
@@ -17,9 +22,10 @@ prefix     = "refact"
 baseline   = "f8bc48e3"
 proposers  = ["luna", "kimi", "cursor", "qwen"]
 arbiter        = "opus"
-arbiter_branch = "refact-integration"
+arbiter_branch = "refact/integration^{commit}"
 acceptor       = "qwen"
 excused_objection = ["kimi"]
+anchor_roots      = ["~/repo/codex", "~/repo/deepseek-harness", "~/repo/openclaw", "."]
 frozen_sections   = ["5.", "7.", "12.", "13.", "14.", "附录 A", "附录 B"]
 mechanical_absent = ["无 Profile 字段表::financial_query|knowledge_retrieve|investment-finance-analysis-v1", "Node 误判不得复活::需要系统 Node(?!.*不得复活)"]
 ```

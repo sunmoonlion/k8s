@@ -205,23 +205,72 @@ def verify(cfg: dict) -> int:
     line("处置记录→提交", not ghosts,
          "记录里的 commit 都存在" if not ghosts else f"不存在的 commit：{ghosts}")
 
-    # 3. 外部仓锚点：路径存在且行号可达
+    # 3. 锚点：路径存在且行号可达
+    #    两种写法都要覆盖——只认 ~/repo/ 全路径会漏掉大半：
+    #    2026-09-04 首版正则只匹配全路径，17 处通过，而短路径形式的 33 处
+    #    （`00-prerequisites.yaml:109`、`protocol/README.md:52`）一处未验，
+    #    是验收方手工核到才暴露的。**覆盖不全的检查比没有检查更危险**，
+    #    因为它会报「通过」。
     text = git("show", f"{arb}:{final_path}")[1]
-    anchors = re.findall(r"~/repo/([A-Za-z0-9_.-]+)/([A-Za-z0-9_./-]+):(\d+)", text)
-    broken = []
-    for repo, rel, ln in anchors:
-        f = Path.home() / "repo" / repo / rel
-        if not f.is_file():
-            broken.append(f"{repo}/{rel} 不存在")
+    # 每个根带一个前缀：`~/repo/codex/lib.rs` 要先剥掉 `~/repo/codex/` 才能
+    # 和该仓 ls-files 的相对路径比对。首版漏了这一步，全路径锚点全部误报「找不到」。
+    roots: list[tuple[Path, str]] = []
+    for r in cfg.get("anchor_roots", []):
+        if r == ".":
+            roots.append((repo_root(), ""))
+        else:
+            roots.append((Path(r.replace("~", str(Path.home()))), r.rstrip("/") + "/"))
+    index: dict[Path, list[str]] = {}
+    for rp, _ in roots:
+        code, out = git("-C", str(rp), "ls-files")
+        index[rp] = out.splitlines() if code == 0 else []
+
+    anchors = set(re.findall(
+        r"(?<![A-Za-z0-9_/.-])((?:~/repo/)?[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*"
+        r"\.(?:py|ts|md|rs|toml|yaml|yml|json|sh))[:：](\d+)", text))
+    ok = miss = amb = out_of_range = 0
+    bad: list[str] = []
+    for rel, ln in sorted(anchors):
+        hits: list[Path] = []
+        for rp, prefix in roots:
+            # 带前缀的锚点只在对应的根里找；短路径按后缀在各根里找
+            # （`protocol/README.md` 命中 `packages/sdk/protocol/README.md`）
+            want = rel[len(prefix):] if prefix and rel.startswith(prefix) else rel
+            if prefix and not rel.startswith(prefix) and rel.startswith("~/repo/"):
+                continue  # 指名了别的仓
+            for f in index[rp]:
+                if f == want or f.endswith("/" + want):
+                    hits.append(rp / f)
+        hits = sorted(set(hits))
+        if not hits:
+            miss += 1; bad.append(f"{rel}:{ln} 找不到")
+        elif len(hits) > 1:
+            amb += 1
         else:
             try:
-                if len(f.read_text(errors="ignore").splitlines()) < int(ln):
-                    broken.append(f"{repo}/{rel}:{ln} 行号越界")
+                n = len(hits[0].read_text(errors="ignore").splitlines())
+                if n < int(ln):
+                    out_of_range += 1; bad.append(f"{rel}:{ln} 越界（共 {n} 行）")
+                else:
+                    ok += 1
             except OSError:
-                broken.append(f"{repo}/{rel} 读不了")
-    line("外部仓锚点", not broken,
-         f"{len(anchors)} 处路径与行号可达" if not broken else f"{broken[:4]}")
+                miss += 1; bad.append(f"{rel}:{ln} 读不了")
+    line("锚点路径与行号", miss == 0 and out_of_range == 0,
+         f"共 {len(anchors)} 处：{ok} 可达、{amb} 路径有歧义交人、"
+         f"{miss} 找不到、{out_of_range} 行号越界"
+         + (f"　{bad[:3]}" if bad else ""))
+    if amb:
+        line("歧义锚点", None, f"{amb} 处短路径在多个根下都能匹配，需人确认指的是哪一个")
     line("锚点语义", None, f"{len(anchors)} 处锚点是否**支持**其断言——机器判不了，抽查交人")
+
+    # 3b. AT-* 锚定计数：区分「用于锚定」与「范围引用」
+    ats = set(re.findall(r"AT-\d{2}", text))
+    rng = set(re.findall(r"AT-(\d{2})`?\s*[…\.]{1,3}\s*`?AT-(\d{2})", text))
+    endpoints = {f"AT-{a}" for a, b in rng} | {f"AT-{b}" for a, b in rng}
+    anchored = ats - endpoints
+    line("AT-* 锚定计数", None,
+         f"全文 {len(ats)} 个不同编号，其中 {len(endpoints)} 个来自范围引用；"
+         f"**用于锚定的 {len(anchored)} 个** —— 是否足够由人判")
 
     # 4. 编号出处：I1–I8 两文档重叠，裸引用有歧义
     bare = len(re.findall(r"(?<![A-Za-z0-9_-])I[1-8](?![0-9])", text))
