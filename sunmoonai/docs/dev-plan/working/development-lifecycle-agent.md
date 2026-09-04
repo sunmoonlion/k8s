@@ -1034,7 +1034,7 @@ Artifact，最后回收 worktree/sandbox。取消与完成只能一个终态胜�
 
 | 功能 ID | Codex 腿 | Harness 腿 | 需补法与验收 |
 | --- | --- | --- | --- |
-| `F-EXEC-01` | `available`：sandbox/approval/tool 面可配置；但 headless 默认 approval handler 会自动 accept | `implicit_fallback`：preset/工具 policy 可组装，但 wire 无可信逐 Task context | Attempt Admission 取 Task/Profile/当前批准的交集；Codex 覆盖默认 handler；Harness 工具网关逐次验权。`AT-05` |
+| `F-EXEC-01` | `available`：sandbox/approval/tool 面可配置；但 headless 默认 approval handler 会自动 accept | `implicit_fallback`：**进程内**工具门是真的——`tools/pre-execute` 的 allow/deny/ask 与 `ctx.tools.guard()` 的单调 deny（`docs/cookbook/adding-a-tool.md:59`），preset 按会话组合 tools/prompt/skills（`packages/preset/README.md:12`）；但 wire 无可信逐 Task context，也无 per-session preset 选择 | Attempt Admission 取 Task/Profile/当前批准的交集；Codex 覆盖默认 handler；Harness 工具网关逐次验权。`AT-05` |
 | `F-EXEC-02` | `available`：thread/turn/event 可关联，仍需归一并写平台账 | **当前缺失（turn 级）**：`sessionId` 挂在每个事件上，Attempt↔session 一对一时 Attempt 级关联成立；但 `SessionPromptResult` 只有 `messageId`，协议明写它不标识 turn 结束或结果（`packages/sdk/protocol/README.md:52`），且事件对 runtime 全量未过滤（`protocol/src/types.ts:66`） | 上游补 turn correlation 与 filtered cursor；未补前只宣称 Attempt 级归属，不宣称逐 Turn 归属。I11/I15 |
 | `F-EXEC-03` | `available`：approval callback 可逐动作接平台复核，默认实现不可用 | `explicit_unsupported`：server→client request 不发生 | 高风险动作只经工具网关；审批绑定动作/产物哈希并落账。`AT-05/07/12` |
 | `F-EXEC-04` | `implicit_fallback`：有 usage，但无 Task 跨 Attempt 总账 | `implicit_fallback`：有进程级 maxTokens，但无 Task 总账 | PostgreSQL 预算预留/扣减/释放；超限先 revoke token/cancel。I10、`AT-13/21` |
