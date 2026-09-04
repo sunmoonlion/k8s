@@ -303,7 +303,7 @@ Attempt 并保存 checkpoint，由后端升级为复杂 workspace；Agent 不得
 复杂度判定必须可审计。不能为省 provisioning 成本把复杂 Task 塞进无状态 Attempt，也不能
 为形式统一给一次只读问数建立空仓库。
 
-## 4. sandbox 与 Git 物化
+## 4. sandbox、Git 物化与执行器接入架构
 
 ### 4.1 谁建立什么
 
@@ -409,7 +409,7 @@ publication target + integrator
 | --- | --- | --- |
 | 1 | 两条腿的事件流能忠实投影进我们的 Event/timeline（`I4`、`F-EXEC-02`），词汇表映射不丢关键归属 | 该腿不得接入产品链路，先补上游或换腿 |
 | 2 | 专业腿（Harness `submit_result` + preset）在金标准上不劣于对照组（Codex 单腿 + `output_schema`） | 专业路线改回 Codex 腿，保留 Port 不变 |
-| 3 | Harness 进程模型在 Celery worker 内稳定：启动失败率、常驻内存、僵尸进程三项达阈值 | 该腿只在独立运行角色内使用，不进 worker |
+| 3 | Harness 进程模型在 Celery worker 内稳定：启动失败率、常驻内存、僵尸进程三项达阈值 | 该腿**不得进入现有通用 Celery worker**；若资源与失败率证据满足 [`../constraints.md`](../constraints.md)「什么时候才拆出专用 Worker」的门槛，则拆专业 Worker/Deployment，**仍属同一 Backend 的运行角色**；否则该腿不进产品链路 |
 
 **失败时的退路是换公开 SDK 路线或走约束变更流程，不是退回自研 loop。**
 自建通用 loop 与 `development-plan.md` 的执行层租用方向冲突，且本仓 `ToolExecutionPort`
@@ -557,7 +557,7 @@ SDK 进程纪律：Celery prefork **之后**按 Attempt 或受控槽创建 SDK c
 核对副作用账`，每步写证据。Codex async 客户端内部把同步调用包装到 worker thread
 （`~/repo/codex/sdk/python/src/openai_codex/async_client.py:161-183,293-295`），并发与 teardown
 必须做负载/故障注入，不能由 `async` 关键字推断安全。两条腿的关闭梯子分别锚到各自 SDK：
-Harness 侧 `close → terminate → kill` 见 `~/repo/deepseek-harness/python/sdk/…/client.py:94/117/124`；
+Harness 侧 `close → terminate → kill` 见 `~/repo/deepseek-harness/python/sdk/src/deepseek_harness/client.py:94/117/124`；
 Codex 侧无 per-turn cancel 之外的进程级梯子，只能落到进程组 TERM/KILL。
 
 可恢复执行现场按 `attempt_id + runtime_version + profile_version + digest` 内容寻址写对象存储，
