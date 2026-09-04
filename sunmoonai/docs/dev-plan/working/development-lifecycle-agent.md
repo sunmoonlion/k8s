@@ -1246,10 +1246,15 @@ Artifact 的内容哈希；执行前重算，任一字节、目标、权限或�
 超时 fail-closed；不得把 Codex 默认 accept（`client.py:773-779`）当任何一档批准，也不得让生成
 候选的同一 Agent 充当 `llm-review`。
 
-**超时是独立一态，不折成 `auto-deny`。**两者的行为后果相同（都不放行），但审计含义不同：
-`auto-deny` 是策略作出了拒绝判断，超时是**没有任何人作出判断**。压成同一个 reason code 会
-污染审计账——事后无法区分「策略拒绝率上升」和「审批链路卡死」。落账时超时写
-`approval_timeout` 并带等待时长与待审对象哈希。这落实 `F-EXEC-03`、I3/I9/I12、`AT-07/12/14`。
+**超时是独立的审计结果与 reason code，不折成 `auto-deny`。**两者的行为后果相同
+（都不放行、都 fail-closed），但审计含义不同：`auto-deny` 是策略作出了拒绝判断，
+超时是**没有任何人作出判断**。压成同一个 reason code 会污染审计账——事后无法区分
+「策略拒绝率上升」和「审批链路卡死」。落账时超时写 `approval_timeout`，
+带等待时长与待审对象哈希。
+
+**这不新增任何状态。**Task 与 Interaction 的状态及合法转换由
+[`request-lifecycle.md`](request-lifecycle.md) 穷举，本文不重定义：超时后仍按 Task Profile
+关闭该 Interaction，并走那份已经规定的合法转换。这落实 `F-EXEC-03`、I3/I9/I12、`AT-07/12/14`。
 
 所有模型推理经平台 egress proxy；真实 provider key 只在代理/Secret 边界，绝不下发 Codex 或
 Harness 进程。Attempt 只拿绑定 `attempt_id + executor + model allowlist + tenant/actor + budget +
