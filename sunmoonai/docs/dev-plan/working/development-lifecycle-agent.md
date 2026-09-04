@@ -346,6 +346,16 @@ publication target + integrator
 
 ### 4.5 执行层路线：租用 loop，自建业务控制面
 
+**先钉住现状：生产环境里现在没有任何 agent 在跑。**本节全部结论按 §5.2 的四级能力词典
+一律处于 `defined`，不是 `wired`，更不是 `runtime-verified`。可复核的登记表在
+`investment-backend/app/tests/test_dormant_capabilities.py`——它按「锚点还在吗 +
+还休眠着吗」两个方向立判据，比 grep 计数稳：`:154` `RunBudget` 生产未接线、
+`:182` Attempt/Invocation 未落库、`:208` `CancelRunCommand` 无 HTTP 端点、
+`:240` `AgentProfile` 只被记录不被执行。开关侧
+`AGENT_V4_TRAFFIC_ENABLED` 与 `AGENT_PILOT_ENABLED` 在 bundle 里都是 `'false'`
+（`00-prerequisites.yaml:111-112`）。**读本节任何一条时都要带着这个前提**，
+不得把目标态写成现状。
+
 “自研还是租用”是假二分。真正的边界是：Investment 自研 Task/Attempt、路由、授权、预算、
 四本账、验收、Delivery 与恢复控制面；通过官方 SDK 租用模型 loop、工具循环和执行 runtime。
 执行器的 Thread/Session 只是 opaque binding，不是业务主档。该边界落实
