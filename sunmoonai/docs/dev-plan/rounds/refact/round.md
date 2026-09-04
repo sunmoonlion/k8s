@@ -20,6 +20,8 @@ arbiter        = "opus"
 arbiter_branch = "refact-integration"
 acceptor       = "qwen"
 excused_objection = ["kimi"]
+frozen_sections   = ["5.", "7.", "12.", "13.", "14.", "附录 A", "附录 B"]
+mechanical_absent = ["无 Profile 字段表::financial_query|knowledge_retrieve|investment-finance-analysis-v1", "Node 误判不得复活::需要系统 Node(?!.*不得复活)"]
 ```
 
 ## 档位裁定

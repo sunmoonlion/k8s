@@ -13,6 +13,7 @@
     round-status.py                # 自动找 status=ACTIVE 的轮次
     round-status.py --round refact # 指定轮次
     round-status.py --json         # 机器可读输出
+    round-status.py --verify       # 机械验收：把 ⑤ 里机器能判的部分判掉
 
 退出码：0 正常；2 用法错误或找不到 ACTIVE 轮次。
 """
@@ -138,10 +139,120 @@ def stage_table(cfg: dict) -> list[dict]:
     return rounds
 
 
+# ---------------------------------------------------------------- 机械验收
+
+def _sections(text: str, keys: list[str]) -> dict[str, str]:
+    """按 '## <key>' 切段。冻结节的标题本身就是冻结的，所以可以按标题定位。"""
+    out: dict[str, str] = {}
+    for key in keys:
+        pat = re.compile(rf"^## {re.escape(key)}.*?(?=^## |\Z)", re.S | re.M)
+        m = pat.search(text)
+        out[key] = m.group(0) if m else ""
+    return out
+
+
+def verify(cfg: dict) -> int:
+    """机械验收：只判机器能判的，判不了的显式交回给人。
+
+    **这不是替代 ⑤ 验收**，是把 ⑤ 里的机械部分从人手里拿走，
+    让验收方只面对真正需要判断的部分。判不了的一律标「人判」，不许默认通过。
+    """
+    import hashlib
+
+    arb = cfg["arbiter_branch"]
+    final_path = cfg["final_path"]
+    disp = f"{cfg['round_dir']}/{cfg['prefix']}-disposition.md"
+    fails = 0
+
+    def line(tag: str, ok: bool | None, msg: str) -> None:
+        nonlocal fails
+        mark = {True: "✅", False: "❌", None: "🔶人判"}[ok]
+        if ok is False:
+            fails += 1
+        print(f"  {mark} {tag}  {msg}")
+
+    print("═══ 机械验收 ═══\n")
+
+    # 1. 冻结区逐字节
+    frozen = cfg.get("frozen_sections", [])
+    if not frozen:
+        line("冻结区", None, "round.md 未声明 frozen_sections，无法判定")
+    else:
+        base = git("show", f"master:{final_path}")[1]
+        head = git("show", f"{arb}:{final_path}")[1]
+        bs, hs = _sections(base, frozen), _sections(head, frozen)
+        bad = [k for k in frozen
+               if not bs[k] or hashlib.sha256(bs[k].encode()).digest()
+               != hashlib.sha256(hs[k].encode()).digest()]
+        line("冻结区逐字节", not bad,
+             f"{len(frozen)} 节全部一致" if not bad else f"不一致：{bad}")
+
+    # 2. 处置记录与提交范围双向对账
+    # 只对账「触及裁决稿」的提交：协议要求「一条主张一个提交」，指的是主张；
+    # 环节通知、裁定记录是另一类产物，不该被要求登记进处置记录。
+    code, log = git("log", "--format=%h %s", f"master..{arb}", "--", final_path)
+    commits = [l.split(" ", 1) for l in log.splitlines()] if code == 0 else []
+    dtext = git("show", f"{arb}:{disp}")[1]
+    unlogged = [f"{h} {t[:28]}" for h, t in commits if h not in dtext]
+    line("提交→处置记录", not unlogged,
+         f"{len(commits)} 个触及裁决稿的提交全部登记" if not unlogged
+         else f"{len(unlogged)} 个提交未登记：{unlogged[:4]}")
+
+    claimed = set(re.findall(r"`([0-9a-f]{7,8})`", dtext))
+    known = {h for h, _ in commits} | {cfg.get("baseline", "")}
+    ghosts = sorted(c for c in claimed if c not in known
+                    and git("cat-file", "-e", c)[0] != 0)
+    line("处置记录→提交", not ghosts,
+         "记录里的 commit 都存在" if not ghosts else f"不存在的 commit：{ghosts}")
+
+    # 3. 外部仓锚点：路径存在且行号可达
+    text = git("show", f"{arb}:{final_path}")[1]
+    anchors = re.findall(r"~/repo/([A-Za-z0-9_.-]+)/([A-Za-z0-9_./-]+):(\d+)", text)
+    broken = []
+    for repo, rel, ln in anchors:
+        f = Path.home() / "repo" / repo / rel
+        if not f.is_file():
+            broken.append(f"{repo}/{rel} 不存在")
+        else:
+            try:
+                if len(f.read_text(errors="ignore").splitlines()) < int(ln):
+                    broken.append(f"{repo}/{rel}:{ln} 行号越界")
+            except OSError:
+                broken.append(f"{repo}/{rel} 读不了")
+    line("外部仓锚点", not broken,
+         f"{len(anchors)} 处路径与行号可达" if not broken else f"{broken[:4]}")
+    line("锚点语义", None, f"{len(anchors)} 处锚点是否**支持**其断言——机器判不了，抽查交人")
+
+    # 4. 编号出处：I1–I8 两文档重叠，裸引用有歧义
+    bare = len(re.findall(r"(?<![A-Za-z0-9_-])I[1-8](?![0-9])", text))
+    line("编号出处", None,
+         f"裸 I1–I8 共 {bare} 处；两套 I 系列区间重叠，逐处是否写明出处文档交人判")
+
+    # 5. 可机械判的验收标准
+    for tag, pat, want in cfg_checks(cfg):
+        hits = len(re.findall(pat, text))
+        line(tag, (hits == 0) if want == "absent" else (hits > 0),
+             f"命中 {hits} 处")
+
+    print()
+    print(f"机械判定失败 {fails} 项；标「人判」的项**不许默认通过**，须由验收方逐项给结论。")
+    return 1 if fails else 0
+
+
+def cfg_checks(cfg: dict) -> list[tuple[str, str, str]]:
+    """round.md 可声明 mechanical_absent：一批「必须零命中」的正则。"""
+    out = []
+    for item in cfg.get("mechanical_absent", []):
+        tag, _, pat = item.partition("::")
+        out.append((tag, pat, "absent"))
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--round")
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--verify", action="store_true")
     args = ap.parse_args()
 
     root = repo_root()
@@ -149,6 +260,9 @@ def main() -> int:
     for req in ("final_path", "round_dir", "prefix"):
         if req not in cfg:
             sys.exit(f"round.md 的 toml 块缺字段：{req}")
+
+    if args.verify:
+        return verify(cfg)
 
     table = stage_table(cfg)
     current = None
