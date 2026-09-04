@@ -1,0 +1,44 @@
+# 各参与方的调用方式登记表。
+#
+# **此文件不含任何凭据**，也不得含——凭据在各 CLI 自己的位置：
+#   luna / kimi  → $CODEX_HOME/auth.json（600 权限，auth_mode=apikey 或 oauth）
+#   cursor       → agent 自身的登录态
+#   qwen         → qoder 自身的登录态
+# 这里只写「怎么调起来」，所以它可以进 git。
+#
+# argv 是数组不是字符串——不经 shell 解析，避免 prompt 里的引号/换行被二次展开。
+# 占位符：{cwd} 工作目录（绝对路径）、{prompt} 要发的话、{home} 家目录。
+#
+# 2026-09-04 四家均已冒烟验通，且是在 `env -u KIMI_API_KEY` 条件下——
+# 不依赖任何环境变量、不需要 source 任何文件。
+
+[meta]
+verified = "2026-09-04"
+# 判「某家是否真的执行了」**只能看产物，不能看退出码**：
+# cursor 未加 --trust 时会拒绝执行并打印提示，但退出码仍是 0。
+success_criterion = "产物出现在约定路径并已提交，而非命令返回 0"
+
+[luna]
+worktree = "{home}/worktrees/luna/k8s"
+argv = ["env", "CODEX_HOME={home}/.codex-official",
+        "codex", "exec", "--skip-git-repo-check", "--cd", "{cwd}", "{prompt}"]
+
+[kimi]
+worktree = "{home}/worktrees/kimi/k8s"
+argv = ["env", "CODEX_HOME={home}/.codex-kimi",
+        "codex", "exec", "--skip-git-repo-check", "--cd", "{cwd}", "{prompt}"]
+# ⚠ kimi 家的入口是 codex + CODEX_HOME，**不是**任何名为 `kimi` 的独立命令。
+# 那个独立 CLI（~/.kimi-code）已于 2026-09-04 删除，正是为了消掉这个混淆源。
+# base_url 是国内站 api.moonshot.cn；key 属该站，换到 .ai 需换 key。
+
+[cursor]
+worktree = "{home}/worktrees/cursor/k8s"
+argv = ["agent", "-p", "{prompt}", "--output-format", "text", "--trust"]
+# --trust 必需：没有它会拒绝在该目录执行，**而且退出码仍为 0**。
+# 工作目录靠进程 cwd 传入，agent 无专用参数。
+
+[qwen]
+worktree = "{home}/worktrees/qwen/k8s"
+argv = ["qoder", "-p", "{prompt}", "-w", "{cwd}"]
+# PATH 里 ~/.qoder/entry/qoder 是个 dispatcher：首参为 `ide` 或已存在的路径时开 IDE，
+# 其余走 qodercli。我们首参是 -p，走 CLI，新旧 shell 行为一致。
