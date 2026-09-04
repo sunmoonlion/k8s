@@ -1228,7 +1228,12 @@ deny-wins 的参考语义见 `~/repo/openclaw/docs/gateway/config-tools.md:127-1
 每份批准绑定 `task/attempt/action/target/policy_version` 与待执行 canonical payload、计划/diff/
 Artifact 的内容哈希；执行前重算，任一字节、目标、权限或版本漂移即作废，重新批准。批准有短 TTL，
 超时 fail-closed；不得把 Codex 默认 accept（`client.py:773-779`）当任何一档批准，也不得让生成
-候选的同一 Agent 充当 `llm-review`。这落实 `F-EXEC-03`、I3/I9/I12、`AT-07/12/14`。
+候选的同一 Agent 充当 `llm-review`。
+
+**超时是独立一态，不折成 `auto-deny`。**两者的行为后果相同（都不放行），但审计含义不同：
+`auto-deny` 是策略作出了拒绝判断，超时是**没有任何人作出判断**。压成同一个 reason code 会
+污染审计账——事后无法区分「策略拒绝率上升」和「审批链路卡死」。落账时超时写
+`approval_timeout` 并带等待时长与待审对象哈希。这落实 `F-EXEC-03`、I3/I9/I12、`AT-07/12/14`。
 
 所有模型推理经平台 egress proxy；真实 provider key 只在代理/Secret 边界，绝不下发 Codex 或
 Harness 进程。Attempt 只拿绑定 `attempt_id + executor + model allowlist + tenant/actor + budget +
@@ -1236,6 +1241,16 @@ deadline` 的短 TTL、可撤销网关令牌；取消、失租、预算耗尽或
 专业数据凭据，专业 worker 不持有 Codex provider 凭据；工具凭据由 host-side gateway 按调用解析，
 不进 prompt、普通环境回显、checkpoint、日志或 Artifact。这是 I3/I12、A3/A4 与 `AT-05/12/13`
 的实现门禁。
+
+**spawn 前必须洗环境。**执行器子进程只继承显式白名单变量，数据库、Redis、消息队列凭据
+一律不下发——沙箱限写不限读，继承全量环境等于把凭据摆在模型能读到的地方（`I12`）。
+白名单本身是配置、要落账、要能被测试断言，不是启动脚本里的口头约定。
+
+**双腿互嵌会打穿凭据互斥，必须在 Adapter 层显式禁止。**Harness 侧自带 `subagent-codex`
+提供方，能把真实 Codex 子会话当作专业腿的下级委派。这条路径存在，就意味着
+「通用腿凭据与专业腿凭据互斥」可以被内部委派绕过：专业 worker 里的 Harness 进程
+再 spawn 一个 Codex 子会话，通用侧凭据就进了专业侧进程。Adapter 必须禁止未经上层
+路由的跨腿委派；确有需要时，只能由调度监督器新建 Attempt，走正常的路由与凭据分配。
 
 ## 10. 证据、验收、交付和清理
 
