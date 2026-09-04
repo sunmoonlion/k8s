@@ -526,12 +526,23 @@ Task 的真源**（`I13`），进程重启后要能只读持久载体接着做�
 | worker 内存上限 768Mi | `sunmoonai/app-platform/investment-app/deployment/bundle/20-runtime.yaml:354-373` | 双 runtime 峰值与 prefork 并发实测后定 requests/limits，锚定 `F-DISPATCH-03`、`F-EXEC-04` |
 | 模型配置/凭据未进 bundle | `sunmoonai/app-platform/investment-app/deployment/bundle/00-prerequisites.yaml:106-119` 且 `rg -n 'AGENT_PILOT_LLM_' sunmoonai/app-platform/investment-app/deployment/bundle` 零命中 | 代理 endpoint、短 TTL token issuer、Secret/ServiceAccount 与启动 fail-closed，锚定 constraints I8、产品 I12 |
 
+⚠ **KIND 默认不执行 NetworkPolicy。**上表第一条阻断的“包级验证”只在生产 Calico 下成立；
+在开发用的 KIND 集群里策略写了也不生效，必须另起 Calico 才能验，否则会误以为出口已经封死。
+
+**这条进程纪律有死者，不是设计洁癖。**Celery worker 默认 prefork 数继承节点 CPU，
+本仓曾因此起了 12 个子进程直接打爆 768Mi 上限；模板已把并发钉成
+`CELERY_WORKER_CONCURRENCY: '2'`（`00-prerequisites.yaml:109`，进程池锚点
+`20-runtime.yaml:283-284`）。在这个内存上限下再往每个子进程里塞一个 SDK runtime，
+是同一个坑的第二次。
+
 SDK 进程纪律：Celery prefork **之后**按 Attempt 或受控槽创建 SDK client/runtime；不得在 parent
 初始化后跨 fork 共享 fd、锁、event loop 或子进程句柄；owner 记录 PID/进程组与 binding。关闭按
 `stop intake → revoke token → SDK cancel/close → 限时 TERM 进程组 → 限时 KILL → reap →
 核对副作用账`，每步写证据。Codex async 客户端内部把同步调用包装到 worker thread
 （`~/repo/codex/sdk/python/src/openai_codex/async_client.py:161-183,293-295`），并发与 teardown
-必须做负载/故障注入，不能由 `async` 关键字推断安全。
+必须做负载/故障注入，不能由 `async` 关键字推断安全。两条腿的关闭梯子分别锚到各自 SDK：
+Harness 侧 `close → terminate → kill` 见 `~/repo/deepseek-harness/python/sdk/…/client.py:94/117/124`；
+Codex 侧无 per-turn cancel 之外的进程级梯子，只能落到进程组 TERM/KILL。
 
 可恢复执行现场按 `attempt_id + runtime_version + profile_version + digest` 内容寻址写对象存储，
 至少包含工作区差异/未提交文件、固定 commit、输入输出 Artifact 引用、opaque binding、事件 cursor、
