@@ -1,8 +1,12 @@
-参与方：opus（裁决方）｜worktree：/home/zym/worktrees/opus/k8s｜环节：③ 裁决稿
+参与方：opus（裁决方）｜worktree：/home/zym/worktrees/opus/k8s｜HEAD：876dd1ea
 
 # 运行时架构：只有一个运行时，开发是它的第一个 Task Profile
 
-> 轮次 `runtime` ③ 裁决稿 ｜ 2026-09-05 ｜ **裁决稿，未经 ⑤ 验收与 ⑥ 确认，不承担规范效力**
+> 轮次 `runtime` ③ 裁决稿 ｜ 2026-09-05 ｜ **本稿经 ⑤ 验收「有条件通过」，条件已补足；未经 ⑥ 确认，不承担规范效力**
+>
+> 首行 `HEAD` 取 ③ 起草时的基线（② 发布点 `876dd1ea`），与五家候选填 ① 基线的惯例一致。
+> ⚠ 本稿在轮内多次修订，**权威的版本钉定是各环节通知的「对象事实」表（行数 + sha256），不是首行的 HEAD**——
+> 这是 ⑤ 验收 `C-2` 指出的形式偏差的实际成因，此处如实说明而非默认。
 >
 > **基座**：fable `f053bd84`（四家推荐）。并入 luna / cursor / kimi / qwen 各家主张 21 条，
 > 逐条出处与理由见同目录 [`runtime-disposition.md`](rounds/runtime/runtime-disposition.md)。
@@ -110,7 +114,7 @@ privacy               文档任务无；财务数据任务另由其 Task Profile
 
 **一条不得外推的边界**：开发的验收**机械且便宜**（测试、门禁、diff），财务分析的验收**判断且昂贵**。
 `dev.change` 只证明对象形状与状态转换跑得通；验收器对「判断且昂贵」那一半不能从它外推，
-必须在财务 Profile 的第一个工作单元里用真实验收用例重证（内核 `:521` 已有同义要求）。
+必须在财务 Profile 的第一个工作单元里用真实验收用例重证（内核 `:516-517` 已有同义要求；⑤ 验收 `E-c` 更正原锚 `:521`——那是空行）。
 
 ### 2.3 五个 Agent Profile：登记表
 
@@ -186,6 +190,36 @@ channel = "inbox+commit"          channel_grade = "shared-credential"    # R2：
 `dispatch = manual` 的执行者、打开其界面于正确 worktree、跑身份判别）记为
 `dispatch_event{mode = manual, agent_profile_id, attempt_id}`。它**必须可数**——
 Q3 的 T0 上界与 Q4 的绕过口径都要数它（§5）；但它不是批准，不占权力表行。
+
+#### 2.4.1 本轮（`runtime`）已发生介入的逐条清单
+
+⑤ 验收 `C-1` 指出：类型级权力表已完整，但缺**本轮已发生介入**的实例级清单（基座候选有，本稿初稿丢了）。补：
+
+| # | 介入（可复核出处） | 唯一状态机的边 | 行 |
+| --- | --- | --- | --- |
+| 1 | 所有者提出四条推翻性判断（`task.md` §1.2） | **不是任何边**：`refact-fable` Task 已 `SUCCEEDED`，终态不可转出 → 建新 Task `runtime`，`supersedes = refact-fable`（内核 `:292-301`） | —（内核规则，非权力） |
+| 2 | `I-01` 解冻 `refact-fable` R1 三处冻结物（`inbox-owner.md`） | `WAITING(APPROVAL) → VALIDATING` | **H6** |
+| 3 | `I-02` 冻结 `task.md` §8 十条，签发 `94558713` | `WAITING(APPROVAL) → VALIDATING → QUEUED` | **H1**（⚠ 与 H2 合并于一次触点，与「T2 = 2」不符，登记观察值） |
+| 4 | `R1` 裁定本轮协议版本 = `runtime/protocol` | `WAITING(INPUT) → VALIDATING` | **H8**（approve option） |
+| 5 | `R2` 接受零强度回执形态，继续 bootstrap 例外 | 同上 | **H3**（更省事方向） |
+| 6 | `R3` 固定投喂指令加指路补丁 | 同上 | **H8** |
+| 7 | `R4` / `R5` 判别命令硬化、删除产品映射句 | **不占权力行**：中性偏严谨，裁决方自裁 | —（记 `rulings.md`） |
+| 8 | `R6` 裁定 §8-4 从属于 §8-7，签发 `023bd75d` | `WAITING(APPROVAL) → QUEUED` | **H6** |
+| 9 | ①②④⑤ 对四家 CLI 的手工投喂 | 各家 Attempt `CREATED → RUNNING`；Task `QUEUED → RUNNING` | —（`dispatch_event{mode = manual}` ×N） |
+| 10 | ① 起对 `ap.fable` 的手工投喂（无 argv） | 同上 | —（`dispatch_event{mode = manual}`，`observability = fs-only`） |
+| 11 | 所有者执行 `publish-*.sh` 把环节产物写入主线（本轮 5 次） | Side Effect：写共享路径 | ⚠ **未经 H5 门**——见下方登记 |
+| 12 | 将来的 ⑥ 确认 | `WAITING(APPROVAL) → QUEUED` → publisher `RUNNING → COMPLETED` → Task `RUNNING → SUCCEEDED` | **H5** |
+
+**第 1 行是「没有边」的正确答案，不是缺项**——它恰好说明「推翻一个已完成的 Task」在内核里的落点是
+`supersedes` 建新 Task，不是 Interaction。
+
+⚠ **第 11 行是本轮暴露的一个真缺口，如实登记**：所有者在本轮五次执行发布脚本、把环节产物写入主线，
+这些都是**写共享路径的 Side Effect**，按权力表属 H5 的管辖范围，但实际未经 H5 门——
+它们被当作 orchestrator 的常规动作处理了。原因是权力表的 H5 只对准「⑦ 发布最终稿」，
+没有区分**最终稿发布**与**轮内产物发布**。两者不可逆性不同（后者可 revert，前者进交付面），
+但都写主线。处置建议：H5 拆为 `H5-final`（最终稿，现有强制点不变）与
+`H5-round`（轮内产物，`auto_policy = 有`，凭据层同一强制点），**本稿不擅自改权力表行数**，
+登记待 ⑥ 或下一轮裁。
 
 **合法转换全集**（内核 `:222-228`，本稿全部边 ⊆ 此集）：
 
@@ -317,13 +351,16 @@ TraceEnvelope = { task_profile_id/version, acceptance_contract_digest, policy_ve
 数据来源可复跑：
 
 ```bash
-git log --format='%h %ad %an' --date=iso -- sunmoonai/docs/dev-plan/refact-fable.md \
-                                            sunmoonai/docs/dev-plan/rounds/refact-fable/
+git log 7e8464c2 --format='%h %ad %an' --date=iso -- sunmoonai/docs/dev-plan/refact-fable.md \
+                                                     sunmoonai/docs/dev-plan/rounds/refact-fable/
 git ls-tree -r --name-only 7e8464c2 -- sunmoonai/docs/dev-plan/rounds/refact-fable/
 ```
 
 第一条**只有一行**：`7e8464c2 2026-09-05 13:05:50 +0800 sunmoonlion`。
-第二条只有九份评审 + 一份 response + `rulings.md`——**没有任何候选文件，没有任何验收产物**。
+⚠ 该命令**必须钉 `7e8464c2`**：不钉 ref 时，在包含本轮工单发布点 `4513bcbd` 的分支上会出两行
+（`4513bcbd` 只新增 `open-questions.md`，非候选/验收产物，结论不变）。此为 ⑤ 验收 `E-a` 的更正。
+第二条共 **10 个文件**：九份 `review-*`（其中一份即 fable 的 disposition response）+ `rulings.md`——
+**没有任何候选文件，没有任何验收产物**。（⑤ 验收 `E-b` 更正：response 本身就是那九份之一，不另计。）
 其余时间来自 `refact-fable.md:5-40` 的修订记录与 `rounds/refact-fable/rulings.md:9-16` 的裁定行。
 
 | seq | layer | subject | from → to | actor | power_row | provenance | evidence_ref |
