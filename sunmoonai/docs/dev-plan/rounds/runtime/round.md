@@ -83,11 +83,18 @@ P3 执行者可观测粒度）与贯穿的必答 Q。
 
 | 动作 | 本轮由谁做 | 阻塞点 |
 | --- | --- | --- |
-| 把环节通知送到 luna / kimi / cursor / qwen | 脚本可生成，执行待定 | `round-dispatch.py` 只生成不执行，且 `status != ACTIVE` 时拒绝生成 |
-| **把环节通知送到 fable** | **只能所有者手工投喂** | **fable 无命令行入口**——它跑在 Cursor 桌面应用里。投喂前须先把应用打开在 `~/worktrees/fable/k8s`（`task.md` §6.1） |
+| 把环节通知送到全部五家 | **所有者手工投喂**（2026-09-05 所有者裁定：本轮不追求自动分发） | 非技术阻塞。`round-dispatch.py` 已能为 luna / kimi / cursor / qwen 生成命令、为 fable 生成人工投喂说明；本轮**选择不用**，与上一轮 refact 做法一致 |
 | fable 的 `agents.toml` 条目 | **写不了 `argv`** | 登记表每条都假定执行者可由 argv 调起，没有「存在但不可自动分发」这一形状（`task.md` §6.4） |
-| cursor 钉 `--model` | **尚未做** | `agents.toml` 只在 `protocol-v2` 分支，该分支有五条待所有者裁定；未钉之前 cursor 走 `auto`，独立性登记不成立（`task.md` §6.2.1） |
+| cursor 钉 `--model` | ✅ 已做（`protocol-v2` `8e552cb6`，`cursor-grok-4.6-high`） | — |
 | fable 的模型登记 | **不可机械核验** | 模型在 GUI 里选，不经任何命令行参数——本轮独立性折算里唯一不可复核的输入 |
+
+**分发是分发，工作区是工作区。**手工投喂只解决前者；fable 仍**必须**在
+`~/worktrees/fable/k8s` 里读写，否则候选混入 cursor 的目录，`git diff` 分不清作者、
+评审枚举会漏、§8 第 10 条身份自证直接判失败。
+
+2026-09-05 已核实：本机是 VM（`hostname` = `VM-0-13-ubuntu`，无 `/mnt`、无 `wslpath`），
+而 `cursor-server`（PID 163524）已运行 9 小时以上——**Cursor 应用正通过 Remote 连着本机**，
+该目录对它是本地路径，`File → Open Folder` 即可。
 
 **空着不等于没有，等于没记。**
 
