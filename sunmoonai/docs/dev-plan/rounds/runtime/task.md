@@ -264,47 +264,82 @@ resume_target
 
 ## 6. 事实与约束（开工前必读）
 
-### 6.1 工作区：五家各自独占，fable 新建
+### 6.1 工作区与调用方式：五家各自独占，fable 是唯一的 GUI
 
-| 参与方 | worktree | 分支 | 基线 |
-| --- | --- | --- | --- |
-| luna | `~/worktrees/luna/k8s` | `luna` | `7e8464c2` |
-| kimi | `~/worktrees/kimi/k8s` | `kimi` | `7e8464c2` |
-| cursor | `~/worktrees/cursor/k8s` | `cursor` | `7e8464c2` |
-| **fable** | `~/worktrees/fable/k8s` | `fable` | `7e8464c2` |
-| qwen | `~/worktrees/qwen/k8s` | `qwen` | `7e8464c2` |
+| 参与方 | worktree | 分支 | 调用方式 | 可被脚本分发 |
+| --- | --- | --- | --- | --- |
+| luna | `~/worktrees/luna/k8s` | `luna` | `codex exec`（`CODEX_HOME=~/.codex-official`） | 是 |
+| kimi | `~/worktrees/kimi/k8s` | `kimi` | `codex exec`（`CODEX_HOME=~/.codex-kimi`） | 是 |
+| cursor | `~/worktrees/cursor/k8s` | `cursor` | `agent -p`（命令行） | 是 |
+| **fable** | `~/worktrees/fable/k8s` | `fable` | **Cursor 桌面应用（GUI）** | **否** |
+| qwen | `~/worktrees/qwen/k8s` | `qwen` | `qoder -p`（命令行） | 是 |
 
 ⚠ **fable 的 worktree 是 2026-09-05 新建的。**上一轮 fable 借用 cursor 的目录起草
 （`refact-fable.md:3`「起草者：fable，**经 Cursor**」），违反 `refact-fable.md` §3.7 的独占前置判据。
 **本轮 fable 不得再写入 `~/worktrees/cursor/`。**
 
-### 6.2 独立性：fable 与 cursor 同组，独立信号数没有增加
+⚠ **fable 是本轮唯一无命令行入口的参与方**，`round-dispatch.py` 分发不到它——
+所有者须在 Cursor 应用里手工投喂，且**必须先把应用打开在 `~/worktrees/fable/k8s`**。
+这是本轮登记在案的自动化欠账，见 `round.md`「待自动化」。
 
-按 `refact-fable.md` §3.2 的分组键 `runtime`：
+### 6.2 身份判别：**你的身份是你的工作目录名，不是你对自己的印象**
+
+本轮有两个参与方来自同一家厂商的两个产品（`cursor` = Cursor CLI，`fable` = Cursor 应用），
+**光凭「我是谁」的自我认知会串号**。所以判别一律机械化：
+
+```bash
+basename "$(git rev-parse --show-toplevel | xargs dirname)"   # 输出即你的参与方名
+```
+
+2026-09-05 实测输出（裁决方复跑，六处全对）：
+
+```text
+~/worktrees/luna/k8s    → luna      ~/worktrees/fable/k8s  → fable
+~/worktrees/kimi/k8s    → kimi      ~/worktrees/qwen/k8s   → qwen
+~/worktrees/cursor/k8s  → cursor    ~/worktrees/opus/k8s   → opus（裁决方）
+~/review/opus           → review    ← 检视面判出非参与方名，正是要的效果
+```
+
+三条纪律：
+
+1. **输出不是你名下的那个词，就停下报告，不要猜。**在别人的 worktree 里交付等同未交付，
+   还会污染那一家的候选。
+2. **不要用模型自称判身份**——`refact-fable.md:3` 记的是「Fable 5.1」，
+   `agent --list-models` 报的字符串是 `claude-fable-5-thinking-*`（Fable **5**），两者已经对不上。
+3. 交付时在候选稿头部写一行 `参与方：<名>｜worktree：<绝对路径>｜HEAD：<commit>`，
+   供裁决方交叉核对。
+
+### 6.2.1 独立性分组：四组，且其中一条边界未验证
+
+按 `refact-fable.md` §3.2 的分组键 `runtime`（同一 harness 的提示词与工具集相同，相关性最高）：
 
 | 组（runtime） | 成员 | provider |
 | --- | --- | --- |
 | codex-cli | luna、kimi | openai、moonshot |
-| cursor-agent | **cursor、fable** | 所有者口述：cursor = grok、fable = Claude Fable 5.1 |
+| cursor-agent（CLI） | cursor | 所有者口述：grok |
+| **cursor-app（GUI）** | **fable** | anthropic（Claude Fable 5.1） |
 | qoder | qwen | — |
 | claude-code | opus（裁决方，不参赛） | anthropic |
 
-**加了 fable，参赛方的独立组数仍是 3。**同组 N 家只计 1——请勿把五份稿当成五个独立信号。
+**参赛方 4 组。**但这个数字有一条未验证的边界，方案与裁决都不得当成硬事实：
 
-⚠ **未验证事实，登记在案**：`agents.toml`（现只在 `protocol-v2` 分支）里 cursor 的 argv **没有
-`--model`**，走默认 `auto`；而 `agent --list-models` 的可选项里包含 `claude-opus-5-*`、
-`claude-sonnet-5-*`、`claude-fable-5-*`。所有者口述 cursor 实际跑 grok，本文按此登记；
-但**上一轮 cursor 用的什么模型没有记录，不能倒推**。两家都应钉死 `--model` 后再开轮。
+⚠ **cursor-agent 与 cursor-app 同厂，共用多少提示词与工具集未知。**
+按分组键字面它们是两组，但若两者共用同一套 harness 内核，实际相关性会远高于「两组」所暗示的。
+**本轮把两者的实质差异程度按观察值登记**，正好为 `refact-fable.md` §3.2 那条
+⚠「分组键该不该改成 `(runtime, model_family)`、或该不该按厂商而非按二进制分组」取值。
 
-⚠ **`--list-models` 报的字符串是 `claude-fable-5-thinking-*`（Fable 5），
-`refact-fable.md:3` 写的是 Fable 5.1**，差异登记，以 CLI 字符串为准。
+⚠ **cursor 的模型未钉死。**`agents.toml`（现只在 `protocol-v2` 分支）里 cursor 的 argv **没有
+`--model`**，走默认 `auto`，而可选项里包含 `claude-opus-5-*`、`claude-sonnet-5-*`、`claude-fable-5-*`——
+`auto` 若路由到 Claude 模型，cursor 与 fable 的独立性归零。所有者口述 cursor 实际跑 grok，
+本文按此登记；**但上一轮 cursor 用的什么模型没有记录，不能倒推**。开轮前应钉死。
 
-⚠ **`claude-fable-5-thinking-high` / `-xhigh` 在模型列表中标注 `NO ZDR`（无零数据保留）。**
-本轮产物是文档，不受影响；但这是登记事实，等以后跑财务数据时是硬约束。
+⚠ **fable 的模型无法机械核验。**它在 GUI 里由所有者选择，不经过任何可登记的命令行参数。
+这一项只能作为口述事实登记，**是本轮独立性折算里唯一不可复核的输入**。
 
-**顺带的收益**：同一 harness 下挂两个不同 provider 的模型，正好为 `refact-fable.md` §3.2
-那条 ⚠「分组键该不该改成 `(runtime, model_family)`」提供观测值。**cursor 与 fable 两份稿的
-实质差异程度，本轮按观察值登记。**
+⚠ **NO ZDR，范围受限的观察**：`agent --list-models`（**CLI**）中
+`claude-fable-5-thinking-high` / `-xhigh` 标注 `NO ZDR`（无零数据保留）。
+fable 实际跑在 **GUI 应用**里，其模型变体是否同为 NO ZDR **未验证**。
+本轮产物是文档，不受影响；但等以后跑财务数据时这是硬约束，须在那之前核实。
 
 ### 6.3 引用与锚定
 
@@ -317,8 +352,13 @@ resume_target
 ### 6.4 `agents.toml` 的落点问题
 
 `agents.toml` **不在 master 上**，只在 `protocol-v2` 分支，而该分支尚有五条待所有者裁定。
-fable 的登记条目、以及 cursor / fable 钉 `--model` 的改动，落点由所有者定；
-在落定之前，本文 §6.1–6.2 的表就是本轮的登记事实。
+fable 的登记条目、以及 cursor 钉 `--model` 的改动，落点由所有者定；
+在落定之前，本文 §6.1–6.2.1 的表就是本轮的登记事实。
+
+⚠ **fable 在 `agents.toml` 里没有 `argv` 可写**——它是 GUI，没有命令行入口。
+这暴露出登记表的一个形状问题：现在 `agents.toml` 的每条都假定执行者可由 argv 调起，
+**无法登记「存在但不可自动分发」的执行者**。方案应处理这一类
+（它正是 §3.3 P3 说的「可观测粒度」的极端情形：连 argv 都没有，运行时只能看见文件系统的前后差异）。
 
 ## 7. `refact-fable.md` §8 九条的处置
 
@@ -356,8 +396,12 @@ fable 的登记条目、以及 cursor / fable 钉 `--model` 的改动，落点�
 8. **锚定**：凡断言现状的句子附 `file:line` 或可复跑命令；休眠代码不得充当能力证据。
 9. **只读输入未被改动**：候选分支相对 `7e8464c2` 的 diff 中，`refact-fable.md` 与
    `working/request-lifecycle.md` 无改动（机械判）。要改它们，把改法写进候选正文，不直接改文件。
+10. **身份自证**：候选稿首行为
+    `参与方：<名>｜worktree：<绝对路径>｜HEAD：<commit>`，且其中的 `<名>`
+    与该候选所在 worktree 的目录名一致（机械判）。本轮有两个参与方来自同一厂商的两个产品，
+    此条防串号（§6.2）。
 
-第 1、2、3、5、6、7、9 条机械可判；第 4、8 条由脚本输出佐证。**没有一条需要「读起来对」。**
+第 1、2、3、5、6、7、9、10 条机械可判；第 4、8 条由脚本输出佐证。**没有一条需要「读起来对」。**
 
 **观察值，不是判据**：cursor 与 fable 两份稿的实质差异程度（为 §6.2 的分组键问题取值）；
 各家对 OP-1/2/3 的推翻数与其是否被采纳；必答 Q 第 2 问所举反例的重合度。
@@ -375,6 +419,9 @@ fable 的登记条目、以及 cursor / fable 钉 `--model` 的改动，落点�
 ## 10. 交付
 
 - **候选**：各家 worktree 的 `sunmoonai/docs/dev-plan/runtime-architecture.md`（与共享最终路径同名）。
+- **候选稿首行必须是身份自证行**（§8 第 10 条）：
+  `参与方：<名>｜worktree：<绝对路径>｜HEAD：<commit>`。
+  先跑 §6.2 那条判别命令拿到 `<名>`，**不要凭印象填**。
 - **评审 / 异议 / 验收**：路径与命名一律按 `round-protocol.md`「产物、路径与命名」，
   **不得自创文件名**——不合命名的文件不进枚举，等同未交付。
 - 提交后在自己分支 commit；**判「是否真的执行了」只看产物落盘并提交，不看退出码。**

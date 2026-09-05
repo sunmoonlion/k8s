@@ -40,6 +40,9 @@ mechanical_absent = [
 - **已知对立**：上一轮的最终稿 `refact-fable.md` 采用「两个 Profile」，本轮前提是它错了——
   其作者 fable 也在参赛方名单内，对立是明确的。
 
+**另注**：本轮参赛方里 fable 无命令行入口（Cursor 桌面应用），
+所以本轮**不可能全自动分发**——这本身是 `task.md` §2.4 那条「开销盈亏线」的一个现实样本。
+
 ## 题目
 
 产出一份方案，落在共享最终路径 `sunmoonai/docs/dev-plan/runtime-architecture.md`，
@@ -80,17 +83,20 @@ P3 执行者可观测粒度）与贯穿的必答 Q。
 
 | 动作 | 本轮由谁做 | 阻塞点 |
 | --- | --- | --- |
-| 把环节通知送到各参与方 | 待定 | 五家均有非交互 CLI；`round-dispatch.py` 只生成不执行，且 `status != ACTIVE` 时拒绝生成 |
-| fable 的调用条目 | **尚未登记** | `agents.toml` 只在 `protocol-v2` 分支，该分支有五条待所有者裁定（`task.md` §6.4） |
-| cursor / fable 钉 `--model` | **尚未做** | 同上；未钉之前 cursor 走 `auto`，独立性登记不成立（`task.md` §6.2） |
+| 把环节通知送到 luna / kimi / cursor / qwen | 脚本可生成，执行待定 | `round-dispatch.py` 只生成不执行，且 `status != ACTIVE` 时拒绝生成 |
+| **把环节通知送到 fable** | **只能所有者手工投喂** | **fable 无命令行入口**——它跑在 Cursor 桌面应用里。投喂前须先把应用打开在 `~/worktrees/fable/k8s`（`task.md` §6.1） |
+| fable 的 `agents.toml` 条目 | **写不了 `argv`** | 登记表每条都假定执行者可由 argv 调起，没有「存在但不可自动分发」这一形状（`task.md` §6.4） |
+| cursor 钉 `--model` | **尚未做** | `agents.toml` 只在 `protocol-v2` 分支，该分支有五条待所有者裁定；未钉之前 cursor 走 `auto`，独立性登记不成立（`task.md` §6.2.1） |
+| fable 的模型登记 | **不可机械核验** | 模型在 GUI 里选，不经任何命令行参数——本轮独立性折算里唯一不可复核的输入 |
 
 **空着不等于没有，等于没记。**
 
 ## 开轮前置（未全部满足不得冻结）
 
 1. fable 的 worktree 已建（✅ 2026-09-05，`~/worktrees/fable/k8s` @ `7e8464c2`）；
-2. cursor 与 fable 的 `--model` 已钉死并登记；
-3. `agents.toml` 的落点已定（`protocol-v2` 或本轮工单写死）；
-4. H1：所有者冻结 `task.md` §8 的 9 条；
-5. `refact-fable.md` §8 第 7 条作废、其余八条的处置，已记入
+2. 身份判别命令已实测六处全对（✅ 2026-09-05，`task.md` §6.2）；
+3. cursor 的 `--model` 已钉死并登记（fable 的钉不了，按口述事实登记）；
+4. `agents.toml` 的落点已定（`protocol-v2` 或本轮工单写死）；
+5. H1：所有者冻结 `task.md` §8 的 10 条；
+6. `refact-fable.md` §8 第 7 条作废、其余八条的处置，已记入
    `rounds/refact-fable/rulings.md`——**未记录的裁定无效**。
