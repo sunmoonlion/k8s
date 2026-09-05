@@ -128,15 +128,30 @@ def main() -> int:
     call_path = f"{cfg['round_dir']}/{cfg['prefix']}-call-<环节>.md"
     print(f"待分发 {len(targets)} 家：{'、'.join(targets)}\n")
     print("─" * 72)
+    manual = []
     for name in targets:
         a = agents[name]
         cwd = a["worktree"].replace("{home}", home)
         prompt = FIXED_INSTRUCTION
+        if "argv" not in a:
+            # 登记表里存在、但没有命令行入口的执行者（例：fable 跑在 Cursor 桌面应用里）。
+            # **不能静默跳过**——跳过就等于漏掉一家，而漏掉一家的代价见
+            # round-protocol「产物、路径与命名」记的那次整轮作废事故。
+            manual.append((name, cwd))
+            print(f"\n# → {name}    工作目录 {cwd}")
+            print(f"# ⚠ 无 argv：此家无命令行入口，**只能人工投喂**。")
+            print(f"#   先把它的界面打开在 {cwd}，再把下面这句发给它：")
+            print(f"#   {prompt}")
+            continue
         argv = [x.replace("{home}", home).replace("{cwd}", cwd)
                  .replace("{prompt}", prompt) for x in a["argv"]]
         print(f"\n# → {name}    工作目录 {cwd}")
         print(f"cd {shlex.quote(cwd)} && {' '.join(shlex.quote(x) for x in argv)}")
     print("\n" + "─" * 72)
+    if manual:
+        print(f"⚠ 上列 {len(manual)} 家无命令行入口，需人工投喂："
+              f"{'、'.join(n for n, _ in manual)}")
+        print("  本轮**不可能全自动分发**；这一项须记进 round.md 的「待自动化」。")
     print(f"""
 说明：
   · 发出去的话是固定的那一句，不逐轮改写；环节通知落在 {call_path}，各家自取。

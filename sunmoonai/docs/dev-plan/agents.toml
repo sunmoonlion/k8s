@@ -17,6 +17,8 @@ verified = "2026-09-04"
 # 判「某家是否真的执行了」**只能看产物，不能看退出码**：
 # cursor 未加 --trust 时会拒绝执行并打印提示，但退出码仍是 0。
 success_criterion = "产物出现在约定路径并已提交，而非命令返回 0"
+# ⚠ 2026-09-05 新增 [fable] 条目与 cursor 的 --model 钉法**未冒烟验证**
+# （所有者明确表示不必跑）。上面 verified = "2026-09-04" 只覆盖当时的四条。
 
 [luna]
 worktree = "{home}/worktrees/luna/k8s"
@@ -33,9 +35,31 @@ argv = ["env", "CODEX_HOME={home}/.codex-kimi",
 
 [cursor]
 worktree = "{home}/worktrees/cursor/k8s"
-argv = ["agent", "-p", "{prompt}", "--output-format", "text", "--trust"]
+argv = ["agent", "-p", "{prompt}", "--output-format", "text", "--trust",
+        "--model", "cursor-grok-4.6-high"]
+# 2026-09-05 钉死 --model。此前没有这个参数，走默认 `auto`，而 `agent --list-models`
+# 的可选项里有 claude-opus-5-* / claude-sonnet-5-* / claude-fable-5-*——
+# auto 若路由到 Claude 模型，cursor 与 fable(见下) 的独立性归零。
+# 值按所有者口述（cursor 实际跑 grok）。⚠ 2026-09-05 之前各轮 cursor 用的什么模型
+# **没有记录，不能倒推**；此前各轮的独立性折算据此存疑。
 # --trust 必需：没有它会拒绝在该目录执行，**而且退出码仍为 0**。
 # 工作目录靠进程 cwd 传入，agent 无专用参数。
+
+[fable]
+worktree = "{home}/worktrees/fable/k8s"
+# ⚠ **本条没有 argv，因为 fable 没有命令行入口**——它跑在 Cursor 桌面应用（GUI）里。
+# 分发只能由所有者手工投喂，且投喂前须先把应用打开在上面那个 worktree。
+# 这暴露出本表的一个形状问题：每条都假定执行者可由 argv 调起，
+# **没有「存在但不可自动分发」这一形状**。补哪个字段（dispatch = "manual"？）
+# 属 runtime 轮 P3 的范围，未定之前先用注释登记，不擅自造字段。
+#
+# 模型：所有者口述 Claude Fable 5.1。⚠ **不可机械核验**——模型在 GUI 里选，
+# 不经任何命令行参数。这是本轮独立性折算里唯一不可复核的输入。
+# ⚠ `agent --list-models`(CLI) 中 claude-fable-5-thinking-high/-xhigh 标注 NO ZDR，
+# 但 fable 实际跑在 GUI 应用里，其变体是否同为 NO ZDR **未验证**。
+#
+# 独立性：与 cursor 同厂不同产品（Cursor 应用 vs agent CLI）。按分组键 runtime
+# 字面是两组，但两者共用多少 harness 内核未知——见 rounds/runtime/task.md §6.2.1。
 
 [qwen]
 worktree = "{home}/worktrees/qwen/k8s"
