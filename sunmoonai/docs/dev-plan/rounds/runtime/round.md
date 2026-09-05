@@ -22,7 +22,7 @@ baseline   = "7e8464c2"
 proposers  = ["luna", "kimi", "cursor", "fable", "qwen"]
 arbiter        = "opus"
 arbiter_branch = "opus"              # ③ 裁决时钉到具体 commit
-acceptor       = ""                  # 按协议「⑤ 验收 与 ⑥ 确认」的规则算出；fable 不得担任
+acceptor       = "qwen"              # 由 ③ 处置表算出（既得利益 2 条，唯一最小）；计算过程见 runtime-disposition.md §I。不得事后更换
 anchor_roots      = ["~/repo/codex", "~/repo/deepseek-harness", "~/repo/openclaw", "."]
 frozen_sections   = []               # 本轮无基座；只读输入见「只读输入」一节
 mechanical_absent = [
@@ -72,7 +72,7 @@ P3 执行者可观测粒度）与贯穿的必答 Q。
 | --- | --- | --- |
 | 提案 / 互评 | luna、kimi、cursor、fable、qwen | `task.md` §9；五家、三个独立组 |
 | 裁决与整合 | opus（不参赛、不写评审、不验收） | `task.md` §9 |
-| 验收 | 按协议规则算出，**fable 不得担任** | 「验收方不得是基座作者」——fable 是被推翻那份稿的作者 |
+| 验收 | **qwen**（③ 处置表算出） | 排除裁决方 opus 与基座作者 fable 后，`接受 + 部分接受` 条数最少者：qwen 2 条、kimi 4、cursor 5、luna 8。**名次与验收资格无关，判据是既得利益** |
 | 确认 | 项目所有者 | 人，手动 |
 
 **裁决方的利益申报**：`task.md` §3.1/§3.2/§3.4 中标为 OP-1 / OP-2 / OP-3 的三样由裁决方提出。
