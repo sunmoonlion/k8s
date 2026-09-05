@@ -235,7 +235,7 @@ grep -rn "create_table(" investment-backend/app/alembic/versions/ | wc -l   # 13
 ### 议题六 · 取证纪律与锚点腐烂
 
 **事实**：本仓已经在用 `file:line` 锚点，效果实在。但 2026-09-04 一次复核就在
-[`refact-task.md`](../dev-plan/refact-task.md) §4 抓到三处措辞漂移（其中一处
+refact 轮任务书「已经查实、不必重新论证的事实」一节 抓到三处措辞漂移（其中一处
 「引用数为 0」实为 2 处，`grep` 一次就能推翻）。**人写的文档尚且如此，AI 生成的漂移更快。**
 
 **候选做法**：
