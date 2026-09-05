@@ -13,7 +13,7 @@
 
 ```toml
 round_id   = "runtime"
-status     = "DRAFT"                 # H1 冻结后改 ACTIVE；见上方缺口说明
+status     = "ACTIVE"           # H1 已冻结，2026-09-05 所有者签发
 tier       = "T2"
 final_path = "sunmoonai/docs/dev-plan/runtime-architecture.md"
 round_dir  = "sunmoonai/docs/dev-plan/rounds/runtime"
