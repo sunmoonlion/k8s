@@ -319,6 +319,12 @@ def main() -> int:
         if r["done"] is None:
             current = r["stage"]
             break
+        if not r["done"]:
+            # 参与方还没指派（例：验收方由规则算出，工单里留空）。
+            # **空集合不是「全部完成」**——all({}) 为真会让当前环节直接跳过这一环，
+            # 那是协议「判据自身的质量」点名的那类错：覆盖不全的检查会报「通过」。
+            current = r["stage"]
+            break
         if not all(r["done"].values()):
             current = r["stage"]
             break
@@ -340,13 +346,20 @@ def main() -> int:
             print(f"  {r['stage']}   —— 人的动作，不可由命令判定")
             continue
         marks = "  ".join(f"{k}{'✅' if v else '⬜'}" for k, v in r["done"].items())
-        state = "完成" if all(r["done"].values()) else "进行中"
+        if not r["done"]:
+            state, marks = "未指派", "⚠ 参与方为空，不可判——不是「完成」"
+        else:
+            state = "完成" if all(r["done"].values()) else "进行中"
         print(f"  {r['stage']}   {state}   {marks}")
     print()
     print(f"当前环节：{current}")
     missing = []
     for r in table:
-        if r["stage"] == current and r["done"]:
+        if r["stage"] != current:
+            continue
+        if r["done"] == {}:
+            print("缺：本环节参与方尚未指派——工单里该字段为空，按协议规则算出后填入")
+        elif r["done"]:
             missing = [k for k, v in r["done"].items() if not v]
     if missing:
         print(f"缺：{'、'.join(missing)}")
