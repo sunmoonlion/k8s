@@ -107,7 +107,7 @@ luna 的三块整体并入（见 G）。
 | 条 | 判定 | 处置 |
 | --- | --- | --- |
 | §8-3 | **不满足** | 三家独立指出并经裁决方复核：§1.6 声明对象是 `refact-fable` 轮，却引用 `refact/luna @ e41e646a`、`refact/kimi @ e33fac68`、`refact/integration @ 36bfa5c2`——这三个标签属于**上上轮 `refact`**（`git for-each-ref 'refs/tags/refact/*'` 可复跑），而 `refact-fable` 轮的归档里候选文件为 **0 个**。**样例的 Attempt 段不采用**；其 Task 状态段与 Artifact 版本段来源正确，保留 |
-| §8-8 | 两处锚点错 | (a) `:271` 把 `input_artifact_versions` 锚在 `:388`，实际在 `:326`（`:388` 是 `F-EXEC-08`）；(b) `refact-fable.md:238` 指「RUNNING 判不了」，实际在 `:220`。**(b) 的责任在裁决方**——`task.md:214` 就是这么写的，kimi 照抄，见 E-1 |
+| §8-8 | 两处锚点错 | (a) `:271` 把 `input_artifact_versions` 锚在 `:388`，实际在 `:326`（`:388` 是 `F-EXEC-08`）；(b) `refact-fable.md @ 7e8464c2:238` 指「RUNNING 判不了」，实际在 `:220`。**(b) 的责任在裁决方**——`task.md:214` 就是这么写的，kimi 照抄，见 E-1 |
 | §8-2 | 部分 | 把 INPUT 类澄清与 amend 排除在权力表外（`:523-526`），而上一轮 R3–R8 六次所有者裁决正属此类。**按 fable 的 H8 补行** |
 | OP / 比对规则 | **全额采纳** | 四条比对规则（白名单、取较粗腿并声明未比对、两边声明权威源、权限归因单列）是五份中最能落成脚本的；`editable_scope` 作入向拒收约束、`response_state_version` 防 stale、`supersedes` 链，三条全收 |
 | 同名物 | **加分** | 指出 `task.md` §3.1「今天的 orchestrator 是人 + shell 脚本」与 `refact-fable.md` §3.9「orchestrator 必须是代码」冲突，是把欠账重命名为组件。**裁决方认错，见 E-2** |
@@ -160,7 +160,7 @@ cursor 自评已承认放弃 H0 导致自己的 T0 上界漏计。**改为 `disp
 
 ### D-4 命名：分组键 `runtime` 一词三义
 
-**裁定：采纳 fable，改名 `harness`。**依据是 `refact-fable.md:253` 该字段注释本来就写「执行 harness」，
+**裁定：采纳 fable，改名 `harness`。**依据是 `refact-fable.md @ 7e8464c2:253` 该字段注释本来就写「执行 harness」，
 证据自洽、零成本。「运行时」此后只指产品运行时；内核「Agent runtime」在修订单元里注一句同义。
 **这是任务书自造的同名物，责任在裁决方**（见 E-5）。
 
@@ -176,7 +176,7 @@ cursor 自评已承认放弃 H0 导致自己的 T0 上界漏计。**改为 `disp
 
 | # | 错误 | 发现者 | 后果 | 处置 |
 | --- | --- | --- | --- | --- |
-| E-1 | `task.md:214` 把「`RUNNING` 目前判不了」锚成 `refact-fable.md:238`，实际在 `:220` | fable（裁决方复核确认） | **kimi 两处照抄了这个错锚**（其 `:22` / `:329`）——错误锚点被下游继承 | 任务书已冻结不得改；裁决稿使用 `:220`，本记录留档。kimi 该处不计其失 |
+| E-1 | `task.md:214` 把「`RUNNING` 目前判不了」锚成 `refact-fable.md @ 7e8464c2:238`，实际在 `:220` | fable（裁决方复核确认） | **kimi 两处照抄了这个错锚**（其 `:22` / `:329`）——错误锚点被下游继承 | 任务书已冻结不得改；裁决稿使用 `:220`，本记录留档。kimi 该处不计其失 |
 | E-2 | `task.md` §3.1 写「今天的 orchestrator 是人 + shell 脚本」，与 `refact-fable.md` §3.9「orchestrator 必须是代码，不得是 agent 角色；人运行脚本是欠账不是角色」冲突 | kimi、cursor（独立） | 把欠账重命名为组件，下一轮会有人对着这个名字设计接口 | 裁决稿统一为「orchestrator = 确定性代码，人是触发通道」。按 §5 加分记两家 |
 | E-3 | ① 期间追加 R4/R5，`rulings.md` 从 20 行变 30 行 | cursor（其取件自证对不上现状） | 各家引用了不同版本的同一份产物，「取件按 commit」在本轮被裁决方自己破坏 | 承认。今后轮次内产物变更须新开条目并在环节通知里公告版本 |
 | E-4 | 裁决方用词汇 Jaccard 先判「cursor 与 fable 实质趋同」 | 裁决方自查（被三家的结构对照推翻） | 代理指标选错，差点把独立性观察值判反 | 本记录 A.1 已按结构对照重述；Jaccard 降为参考 |

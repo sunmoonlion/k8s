@@ -49,7 +49,7 @@
 
 ## 1. 本稿与上一轮的关系
 
-上一轮终稿 `refact-fable.md` 把「持久层 / 执行者 / 通道 / guard / 状态判定」五格**取值**不同的两种部署形态
+上一轮终稿 `refact-fable.md @ 7e8464c2` 把「持久层 / 执行者 / 通道 / guard / 状态判定」五格**取值**不同的两种部署形态
 各叫成一个 Profile。它自己 `:180` 用来杀第三个的理由——五格全同、只差 guard，是档位不是 Profile——
 对那一对同样成立。更糟的是用词：内核 `working/request-lifecycle.md:103-104` 已定义 Task Profile 与
 Agent Profile，上一稿在这两个词之外造了第三义，正是它 §1.2 诊断的「同名物」病。
@@ -58,7 +58,7 @@ Agent Profile，上一稿在这两个词之外造了第三义，正是它 §1.2 
 `enforcement_point`）；3.11「git 验不了事务 / 租约 / fencing」；3.13 三道边界——
 错的只是把最后一样归在「bootstrap 威胁模型」下（§4.4 改正归属）。
 
-**一处归因更正**：`refact-fable.md:220`「`RUNNING` 目前判不了」被归因于 git 载体——归因错了。
+**一处归因更正**：`refact-fable.md @ 7e8464c2:220`「`RUNNING` 目前判不了」被归因于 git 载体——归因错了。
 换成 PostgreSQL 一样判不了 CLI 进程内部；这是**执行者属性**，不是账本载体缺陷（§4.3 第 4 条）。
 ⚠ 本轮任务书 `task.md:214` 把该段错锚成 `:238`（实为 `:220`），并被一份候选照抄——
 错锚会被下游继承，登记在处置记录 E-1。
@@ -79,7 +79,7 @@ Agent Profile，上一稿在这两个词之外造了第三义，正是它 §1.2 
 | *适配层* **principal channel** | 人怎么被叫到、怎么回，**响应者身份如何鉴别** | §4.6 |
 
 **orchestrator 是确定性代码，不是角色。**过渡期由人运行脚本，人是它的**触发通道**，不是这个组件。
-（`refact-fable.md` §3.9 已立此约束；本轮任务书 §3.1 写「今天的 orchestrator 是人 + shell 脚本」是同名物，
+（`refact-fable.md @ 7e8464c2` §3.9 已立此约束；本轮任务书 §3.1 写「今天的 orchestrator 是人 + shell 脚本」是同名物，
 两家独立指出，登记在处置记录 E-2。把欠账重命名为组件，下一轮就会有人对着这个名字设计接口。）
 
 ### 2.2 Task Profile `dev.change` 版本 1
@@ -120,7 +120,7 @@ privacy               文档任务无；财务数据任务另由其 Task Profile
 
 **字段 `harness` 取代上一稿的 `runtime`**——`runtime` 在上一轮任务书里同时指产品运行时、
 内核「Agent runtime」与登记表分组键，一词三义，与 supervisor 三套同名物同形（处置记录 D-4 / E-5）。
-`refact-fable.md:253` 该字段的注释本来就写「执行 harness」，证据自洽。
+`refact-fable.md @ 7e8464c2:253` 该字段的注释本来就写「执行 harness」，证据自洽。
 
 ```toml
 [ap.luna]
@@ -266,7 +266,7 @@ WAITING     → VALIDATING | QUEUED | FAILED | CANCELLED
 | --- | --- | --- | --- |
 | Task 主档 | `rounds/<id>/round.md` toml | `task` 表 | 服务态对 ≥1 个 T0、T1、T2 真实 Task 的轨迹，与手工态同 tier 历史轨迹按 §2.7 比对**全等**，且**每类条目的 `attested` 计数 ≥ 手工态** |
 | Event 日志 | commit 历史 + `rulings.md` + `events.jsonl`（agent 可写面，是投影） | `event` 表（只追加） | 同上；另加 `round-status.py` 与服务态投影对同一历史轮次输出相同状态序列，且新判据首跑先与人工对照 |
-| 并发语义 | **验不了** | `AT-09` 租约 / `AT-14` 取消竞争 / `AT-15` 重启重建 三项通过 | git 载体验不了事务、租约、fencing（`refact-fable.md` §3.11 已登记），本稿不假装换说法就能验 |
+| 并发语义 | **验不了** | `AT-09` 租约 / `AT-14` 取消竞争 / `AT-15` 重启重建 三项通过 | git 载体验不了事务、租约、fencing（`refact-fable.md @ 7e8464c2` §3.11 已登记），本稿不假装换说法就能验 |
 | Interaction | `call-<环节>.md` + `inbox-owner.md` + 裁定行 + 所有者 commit | `interaction` 表 + 鉴别响应者的端点 | **R2 前置**：所有者拥有 agent 够不着的操作面，响应者身份 `attested`。**在此之前不得拆**——服务态若在同一信任域里提供端点，只是把 `reported` 搬了个家 |
 | 派发 / 收集 | `round-dispatch.py` 生成命令 + 人粘贴 | executor adapter | 该 Agent Profile `dispatch = argv` 且 adapter 已对它跑通一次 Attempt。`dispatch = manual` 的**永远由人承担，不是拆除对象而是登记对象** |
 
@@ -361,28 +361,28 @@ git ls-tree -r --name-only 7e8464c2 -- sunmoonai/docs/dev-plan/rounds/refact-fab
 （`4513bcbd` 只新增 `open-questions.md`，非候选/验收产物，结论不变）。此为 ⑤ 验收 `E-a` 的更正。
 第二条共 **10 个文件**：九份 `review-*`（其中一份即 fable 的 disposition response）+ `rulings.md`——
 **没有任何候选文件，没有任何验收产物**。（⑤ 验收 `E-b` 更正：response 本身就是那九份之一，不另计。）
-其余时间来自 `refact-fable.md:5-40` 的修订记录与 `rounds/refact-fable/rulings.md:9-16` 的裁定行。
+其余时间来自 `refact-fable.md @ 7e8464c2:5-40` 的修订记录与 `rounds/refact-fable/rulings.md:9-16` 的裁定行。
 
 | seq | layer | subject | from → to | actor | power_row | provenance | evidence_ref |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | task | refact-fable | — → `RECEIVED` | owner | — | reported | `refact-fable.md:45`；无工单文件 |
+| 1 | task | refact-fable | — → `RECEIVED` | owner | — | reported | `refact-fable.md @ 7e8464c2:45`；无工单文件 |
 | 2 | task | refact-fable | `RECEIVED → VALIDATING → QUEUED` | orchestrator | H1/H2 **缺** | inferred | 无 `round.md`、无冻结验收条 |
-| 3 | task | refact-fable | `QUEUED → RUNNING` | ap.fable | — （`dispatch_event`） | reported | 所有者在 Cursor 里投喂，且在 cursor 的目录（`refact-fable.md:3`） |
+| 3 | task | refact-fable | `QUEUED → RUNNING` | ap.fable | — （`dispatch_event`） | reported | 所有者在 Cursor 里投喂，且在 cursor 的目录（`refact-fable.md @ 7e8464c2:3`） |
 | 4 | attempt | A1 fable proposer | `CREATED → RUNNING → COMPLETED` | ap.fable | — | reported | 产出 v0；**无 commit** |
-| 5 | artifact | refact-fable.md | v0 → v1 | claimed fable / attested none | — | reported | `refact-fable.md:6` |
+| 5 | artifact | refact-fable.md | v0 → v1 | claimed fable / attested none | — | reported | `refact-fable.md @ 7e8464c2:6` |
 | 6 | attempt | A2 opus reviewer | `COMPLETED` | ap.opus | — | reported | **产物未归档** |
 | 7 | attempt | A3 luna reviewer | `COMPLETED` | ap.luna | — | reported | **产物未归档** |
-| 8 | artifact | refact-fable.md | v1 → v2 | claimed fable | — | reported | `refact-fable.md:7` |
+| 8 | artifact | refact-fable.md | v1 → v2 | claimed fable | — | reported | `refact-fable.md @ 7e8464c2:7` |
 | 9 | attempt | A4 kimi / A5 qoder reviewer | `COMPLETED` | ap.kimi / ap.qwen | — | inferred | `reviews/review-refact-fable-{kimi,qoder}.md` 存在 |
-| 10–11 | interaction | R3 / R4 | request → approve（option#4 / 回执仓） | owner | H8 | reported | `rulings.md:11-12`；同 commit、同身份 |
+| 10–11 | interaction | R3 / R4 | request → approve（option#4 / 回执仓） | owner | H8 | reported | `rounds/refact-fable/rulings.md @ 7e8464c2:11-12`；同 commit、同身份 |
 | 12 | task | refact-fable | `RUNNING → WAITING(INPUT) → QUEUED → RUNNING` | orchestrator | H8 | inferred | 由 10–11 推出，**账本无边** |
-| 13 | artifact | refact-fable.md | v2 → v3 | claimed fable | — | reported | `refact-fable.md:13` |
+| 13 | artifact | refact-fable.md | v2 → v3 | claimed fable | — | reported | `refact-fable.md @ 7e8464c2:13` |
 | 14 | attempt | A6 cursor reviewer | `COMPLETED` | ap.cursor | — | inferred | `reviews/review-refact-fable-cursor.md` |
-| 15 | interaction | R5 / R6 | approve（全表锚定）/ **reject**（可逆出口） | owner | H8 | reported | `rulings.md:13-14` |
-| 16 | artifact | refact-fable.md | v3 → v4 | claimed fable | — | reported | `refact-fable.md:19` |
+| 15 | interaction | R5 / R6 | approve（全表锚定）/ **reject**（可逆出口） | owner | H8 | reported | `rounds/refact-fable/rulings.md @ 7e8464c2:13-14` |
+| 16 | artifact | refact-fable.md | v3 → v4 | claimed fable | — | reported | `refact-fable.md @ 7e8464c2:19` |
 | 17 | attempt | A7–A11 五家终审 | `COMPLETED` ×5 | 五家 | — | inferred | `reviews/review-final-*.md` |
-| 18 | interaction | R7 / R8 | approve（「移」/「按 T2」） | owner | H8 | reported | `rulings.md:15-16` |
-| 19 | artifact | refact-fable.md | v4 → v5 | claimed fable | — | reported | `refact-fable.md:24` |
+| 18 | interaction | R7 / R8 | approve（「移」/「按 T2」） | owner | H8 | reported | `rounds/refact-fable/rulings.md @ 7e8464c2:15-16` |
+| 19 | artifact | refact-fable.md | v4 → v5 | claimed fable | — | reported | `refact-fable.md @ 7e8464c2:24` |
 | 20 | attempt | A12 luna（撤销 REQUEST CHANGES） | `COMPLETED` | ap.luna | — | reported | **无产物** |
 | 21 | artifact | refact-fable.md | v5 → v6（927 行） | claimed fable | — | reported | sha256 `89303624bfd9ef27` |
 | 22 | interaction | R1 | request（冻结 §8 九条）→ approve | owner | H1 | **attested**（存在）/ reported（身份） | commit `7e8464c2` |
@@ -732,26 +732,10 @@ H5 必须**折进人本来就要做的那次 push**（凭据在人手里，push 
 
 ---
 
-## 7. 与 `refact-fable.md` §8 处置的对齐
-
-| 条 | `task.md` §7 处置 | 本稿落点 |
-| --- | --- | --- |
-| 1 五词唯一、router / orchestrator 无 agent 实现 | 留 | §2.1；登记表 `roles_allowed` 无此二词 |
-| 2 权力表 ≤10 行、强制点在凭据层或回执仓 | 留且变强 | §2.4 八行；H5 凭据层；**无强制点的行不进表**（H0 已移出） |
-| 3 `RUNNING` 判据留、归因改 | 改 | §4.3 第 4 条 |
-| 4 (a)(b)(c) 只有一套状态机 | (c) 扩为两态共用同一 schema | §2.5 映射表；§2.7 轨迹 schema 两态共用 |
-| 5 T0/T1/T2 = 0/1/2 触点 | 留 | §2.2；⚠ **本轮 H1+H2 实发 1 次触点，与「T2 = 2」不符**，登记为观察值 |
-| 6 判据锚在 credential domain 之外 | 留变强 | §4.6：principal 通道也登记等级 |
-| 7 `migration-map.md` | **作废** | 本稿不画文件树（`task.md` §4 不受理） |
-| 8 新判据首跑与人工对照 | 留 | §2.6 拆除条件 validator 行 |
-| 9 取证栏冻结前重跑 | 留 | §4.5 两则现场证据 |
-
----
-
-## 8. 覆盖声明、盲区与未验证项
+## 7. 覆盖声明、盲区与未验证项
 
 **查了**：五份候选与五份评审全文（按 ② 通知所钉 commit）；`request-lifecycle.md @ 70a7dd50` 全文；
-`refact-fable.md` 全文；`round-protocol.md`（601 行版）；本轮 `task.md` / `round.md` / `rulings.md` /
+`refact-fable.md @ 7e8464c2` 全文；`round-protocol.md`（601 行版）；本轮 `task.md` / `round.md` / `rulings.md` /
 `inbox-owner.md`；`rounds/refact-fable/` 全部产物的存在性、行数与部分 sha256；`refact/*` 标签；
 `constraints.md` 的 A1 / A3；五家候选相对 `7e8464c2` 的只读输入 diff（均为 0）。
 
@@ -776,7 +760,7 @@ luna / kimi 的实际模型（`$CODEX_HOME` 配置未读）；fable 的模型（
 
 ---
 
-## 9. 自检：对照 `task.md` §8 十条
+## 8. 自检：对照 `task.md` §8 十条
 
 | 条 | 自检 |
 | --- | --- |
