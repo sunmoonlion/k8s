@@ -32,6 +32,7 @@ git show runtime/h1:sunmoonai/docs/dev-plan/rounds/runtime/task.md        # 任�
 git show runtime/h1:sunmoonai/docs/dev-plan/rounds/runtime/round.md       # 工单
 git show 7e8464c2:sunmoonai/docs/dev-plan/refact-fable.md                 # 只读输入：上一轮最终稿
 git show 7e8464c2:sunmoonai/docs/dev-plan/working/request-lifecycle.md    # 只读输入：内核
+git show opus:sunmoonai/docs/dev-plan/rounds/runtime/rulings.md           # 本轮裁定（R1-R3，必读）
 git show runtime/protocol:sunmoonai/docs/dev-plan/round-protocol.md       # 流程规则（不在任务书里重复）
 #   ⚠ **不是** 7e8464c2 上那份。master 上的 round-protocol.md 是 165 行的旧版，
 #   本轮据以运行的是 601 行版，只在标签 runtime/protocol（protocol-v2 @ 8da46502）上。
@@ -103,7 +104,18 @@ git show runtime/protocol:sunmoonai/docs/dev-plan/round-status.py > /tmp/rs.py &
 ① 期间**不得读他家候选**，也不得写他家 worktree。互评在 ② 才开始。
 本环节只做属于你的那一份。
 
-## 七、本轮的两条如实声明
+## 七、本轮的三条裁定（`rulings.md`，必读）
+
+| | |
+| --- | --- |
+| `R1` | 本轮程序基础 = 标签 `runtime/protocol`（`protocol-v2` @ `8da46502`），**不是** master 上那份 |
+| `R2` | 回执不可验证，且所有者当前不存在 agent 够不着的操作面——**这是 P3 的极端案例，方案须处理这一层** |
+| `R3` | 固定投喂指令本轮打了指路补丁，因为工具链停在未合并分支上 |
+
+`R2` 尤其要看：任务书 §8 冻结在标签 `runtime/h1` 上，**冻结后不再改**，
+所以这条风险登记在 `rulings.md` 而不在任务书里——这不是遗漏，是冻结在起作用。
+
+## 八、本轮的两条如实声明
 
 1. **回执不可验证**：本机 git 无签名配置、无 GPG 密钥，所有者与各 agent 共用同一 git 身份
    `sunmoonlion <13701819268@163.com>`。H1 那笔签发在账本上与 agent 提交不可区分。
