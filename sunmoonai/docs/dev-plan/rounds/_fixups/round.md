@@ -5,7 +5,7 @@
 
 ```toml
 round_id  = "_fixups"
-status    = "DRAFT"
+status    = "ACTIVE"           # 所有者 2026-09-05 接受追认
 tier      = "bootstrap"
 final_path = "sunmoonai/docs/dev-plan/runtime-architecture.md"
 round_dir  = "sunmoonai/docs/dev-plan/rounds/_fixups"
@@ -13,7 +13,7 @@ prefix     = "_fixups"
 baseline   = "dc5e6127"
 proposers  = []
 arbiter        = ""
-acceptor       = ""          # 待所有者指派；**不得是 opus**
+acceptor       = "cursor"    # 所有者 2026-09-05 指派；非 opus，符合 §1.3 第 2 条
 ```
 
 ## 1. 事由：一次协议违反，由所有者指出
@@ -79,7 +79,7 @@ C2–C4 三次连续返工，每次都由所有者指出方向错误（依赖方
 | 角色 | 谁 |
 | --- | --- |
 | 执行者 | opus（改动已做完，这是追认） |
-| **独立验收方** | **待所有者指派，不得是 opus**。建议 luna 或 cursor（本单元无「出处家」，既得利益一致） |
+| **独立验收方** | **cursor**（所有者 2026-09-05 指派） |
 | 确认 | 项目所有者 |
 
 ## 6. 所有者要裁的两件
