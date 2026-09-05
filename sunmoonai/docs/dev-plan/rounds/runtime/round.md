@@ -13,7 +13,7 @@
 
 ```toml
 round_id   = "runtime"
-status     = "ACTIVE"           # H1 已冻结，2026-09-05 所有者签发
+status     = "DONE"                # ⑦ 已发布
 tier       = "T2"
 final_path = "sunmoonai/docs/dev-plan/runtime-architecture.md"
 round_dir  = "sunmoonai/docs/dev-plan/rounds/runtime"
@@ -21,7 +21,7 @@ prefix     = "runtime"
 baseline   = "7e8464c2"
 proposers  = ["luna", "kimi", "cursor", "fable", "qwen"]
 arbiter        = "opus"
-arbiter_branch = "opus"              # ③ 裁决时钉到具体 commit
+arbiter_branch = "runtime/arbiter^{commit}"   # 分支将重置，锚标签
 acceptor       = "qwen"              # 由 ③ 处置表算出（既得利益 2 条，唯一最小）；计算过程见 runtime-disposition.md §I。不得事后更换
 anchor_roots      = ["~/repo/codex", "~/repo/deepseek-harness", "~/repo/openclaw", "."]
 frozen_sections   = []               # 本轮无基座；只读输入见「只读输入」一节
