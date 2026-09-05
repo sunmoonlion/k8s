@@ -374,14 +374,14 @@ git ls-tree -r --name-only 7e8464c2 -- sunmoonai/docs/dev-plan/rounds/refact-fab
 | 7 | attempt | A3 luna reviewer | `COMPLETED` | ap.luna | — | reported | **产物未归档** |
 | 8 | artifact | refact-fable.md | v1 → v2 | claimed fable | — | reported | `refact-fable.md @ 7e8464c2:7` |
 | 9 | attempt | A4 kimi / A5 qoder reviewer | `COMPLETED` | ap.kimi / ap.qwen | — | inferred | `reviews/review-refact-fable-{kimi,qoder}.md` 存在 |
-| 10–11 | interaction | R3 / R4 | request → approve（option#4 / 回执仓） | owner | H8 | reported | `rulings.md:11-12`；同 commit、同身份 |
+| 10–11 | interaction | R3 / R4 | request → approve（option#4 / 回执仓） | owner | H8 | reported | `rounds/refact-fable/rulings.md @ 7e8464c2:11-12`；同 commit、同身份 |
 | 12 | task | refact-fable | `RUNNING → WAITING(INPUT) → QUEUED → RUNNING` | orchestrator | H8 | inferred | 由 10–11 推出，**账本无边** |
 | 13 | artifact | refact-fable.md | v2 → v3 | claimed fable | — | reported | `refact-fable.md @ 7e8464c2:13` |
 | 14 | attempt | A6 cursor reviewer | `COMPLETED` | ap.cursor | — | inferred | `reviews/review-refact-fable-cursor.md` |
-| 15 | interaction | R5 / R6 | approve（全表锚定）/ **reject**（可逆出口） | owner | H8 | reported | `rulings.md:13-14` |
+| 15 | interaction | R5 / R6 | approve（全表锚定）/ **reject**（可逆出口） | owner | H8 | reported | `rounds/refact-fable/rulings.md @ 7e8464c2:13-14` |
 | 16 | artifact | refact-fable.md | v3 → v4 | claimed fable | — | reported | `refact-fable.md @ 7e8464c2:19` |
 | 17 | attempt | A7–A11 五家终审 | `COMPLETED` ×5 | 五家 | — | inferred | `reviews/review-final-*.md` |
-| 18 | interaction | R7 / R8 | approve（「移」/「按 T2」） | owner | H8 | reported | `rulings.md:15-16` |
+| 18 | interaction | R7 / R8 | approve（「移」/「按 T2」） | owner | H8 | reported | `rounds/refact-fable/rulings.md @ 7e8464c2:15-16` |
 | 19 | artifact | refact-fable.md | v4 → v5 | claimed fable | — | reported | `refact-fable.md @ 7e8464c2:24` |
 | 20 | attempt | A12 luna（撤销 REQUEST CHANGES） | `COMPLETED` | ap.luna | — | reported | **无产物** |
 | 21 | artifact | refact-fable.md | v5 → v6（927 行） | claimed fable | — | reported | sha256 `89303624bfd9ef27` |
