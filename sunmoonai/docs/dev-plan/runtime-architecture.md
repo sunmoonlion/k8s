@@ -235,6 +235,12 @@ WAITING     → VALIDATING | QUEUED | FAILED | CANCELLED
 | 并发语义 | **验不了** | `AT-09` 租约 / `AT-14` 取消竞争 / `AT-15` 重启重建 三项通过 | git 载体验不了事务、租约、fencing（`refact-fable.md` §3.11 已登记），本稿不假装换说法就能验 |
 | Interaction | `call-<环节>.md` + `inbox-owner.md` + 裁定行 + 所有者 commit | `interaction` 表 + 鉴别响应者的端点 | **R2 前置**：所有者拥有 agent 够不着的操作面，响应者身份 `attested`。**在此之前不得拆**——服务态若在同一信任域里提供端点，只是把 `reported` 搬了个家 |
 | 派发 / 收集 | `round-dispatch.py` 生成命令 + 人粘贴 | executor adapter | 该 Agent Profile `dispatch = argv` 且 adapter 已对它跑通一次 Attempt。`dispatch = manual` 的**永远由人承担，不是拆除对象而是登记对象** |
+
+**`dispatch = manual` 的两条硬约束**（④ 采纳 luna `O-L1`）：无命令行入口的执行者，
+**要么**经显式桥接（`dispatch_event{mode = manual}`，产生可审计 Delivery），
+**要么**不得进入**自动路由候选集**——**不得靠不可见的手工粘贴冒充自动分发**。
+两条都不满足时它退出自动路由候选集，但**仍保留在 Agent Profile 登记表里**：
+「登记集合」与「自动路由候选集」是两个集合，前者记「存在」，后者记「可被 router 选中」。
 | validator | `round-status.py --verify` | acceptance runner | 对 `refact` / `refact-fable` / `runtime` 三轮历史产物，两者判定逐条一致 |
 | 工作区供给 | `git worktree add` | provision 服务 | worktree 本身留（属载体侧）；供给**判据**（独占 × 干净 × 基线）进代码并有测试 |
 
@@ -356,7 +362,17 @@ H1 与 H5 由同一 commit 承担，账本分不开；`VALIDATING` 阶段没有�
 有 **28 条**逐主张提交，③④⑤ 每条处置各占一个 commit——同一 Task Profile、同一 orchestrator 实现，
 `attested` 条目数量级不同。**差别不在载体，在纪律是否落成动作。**
 
-⚠ 本表**不得**引用 `refact/*` 标签作为本轮对象——那是上上轮 `refact` 的产物（一份候选稿因此被判 §8-3 不满足）。
+**样例的引用纪律（两条，各对应一种本轮实际发生的失败形态）**：
+
+1. **每个引用对象须先核验其属于所声明的那一轮。**⚠ 本表不得引用 `refact/*` 标签作为本轮对象——
+   那是上上轮 `refact` 的产物。这种失败叫**张冠李戴**：引用对象真实存在、哈希可验，但属于另一轮，
+   只查「对象是否存在」抓不到，必须查「属于哪一轮」。
+2. **无 ⚠ 声明的样例条目一律按「已核验」读，因此凭空构造即为假证据。**另一种失败是
+   **把本轮形状倒灌进历史**——写出账本上根本不存在的对象（如「五份并行候选」「⑤ 验收产物」）
+   而不作任何声明。防法是前一条查不到的：对象压根不存在，所以「属于哪一轮」无从查起，
+   只能靠「无声明即假」。
+
+两条都在本轮有实例，且**防法不同**，不可互相替代。
 
 ---
 
