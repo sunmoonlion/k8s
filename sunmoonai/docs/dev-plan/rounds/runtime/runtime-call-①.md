@@ -6,8 +6,15 @@
 ## 一、你是谁：先跑这条，别凭印象
 
 ```bash
-basename "$(git rev-parse --show-toplevel | xargs dirname)"
+r=$(git rev-parse --show-toplevel 2>/dev/null) \
+  && basename "$(dirname "$r")" \
+  || echo "❌ 不在 git 仓内——先 cd 到 ~/worktrees/<你的名>/k8s"
 ```
+
+⚠ **必须 `cd` 到仓内再跑**（`rulings.md` `R4`）。`~/worktrees/<名>/` 下有多个仓
+（`k8s`、`info-app`、`investment-app` 等），本轮的仓是 **`k8s`**。
+任务书 §6.2 里那版没有 `2>/dev/null` 守卫，在仓外会输出一串 `.` 而不是报错——
+那版已被 H1 冻结不改，**以本节这版为准**。
 
 输出就是你的参与方名（`luna` / `kimi` / `cursor` / `fable` / `qwen`）。
 **输出不是你名下的那个词，就停下报告，不要猜**——本轮有两个参与方来自同一厂商的两个产品
