@@ -81,3 +81,54 @@
 ⚠ **一处我擅自做的、你可以驳回**：`agents.toml` 与 `round-dispatch.py` 的改动落在 `protocol-v2` 分支，
 而那个分支还压着你五条待决。我判断这两项是**增量且正交**（登记事实 + 修一个会 KeyError 的分支），
 不影响那五条。若你认为不该动那个分支，说一声我摘出来。
+
+---
+
+## I-03 ｜ H5 ｜ ⑥ 确认：runtime 轮最终稿发布
+
+| 字段 | 值 |
+| --- | --- |
+| interaction_id | `runtime/I-03` |
+| interaction_class | `APPROVAL_WITH_ARTIFACT` |
+| transition | Task `RUNNING → WAITING(APPROVAL)`；回执成立 → `WAITING → QUEUED` → publisher Attempt → `RUNNING → SUCCEEDED` |
+| 权力表行 | **H5**（不可逆 Side Effect：写共享最终路径 / 推主线） |
+| 方向 | 不可逆。**协议：全流程唯一不可逆的一步，不得由固定指令推进，不得由任何 agent 代行** |
+| subject_artifact_ref | 裁决稿 `runtime-architecture.md` @ `opus`/`e8903566`，792 行，sha256[:16] `1cf51672933be328` |
+| amend_schema | **空**——不可逆动作不接受 amend（裁决稿 §3.4 自己的规矩）。要改就打回 ③ |
+| 允许的 decision | `approve` / `reject` |
+| evidence_grade | `reported`（回执通道 `shared-credential`，见 `R2`；本条回执证据强度仍为零） |
+| 截止判据 | 无超时。等待你的动作 |
+
+### 检视面（协议要求：请求确认前必须已开好并给出路径）
+
+```
+/home/zym/review/opus/sunmoonai/docs/dev-plan/runtime-architecture.md                     792 行  ← 最终稿
+/home/zym/review/opus/sunmoonai/docs/dev-plan/rounds/runtime/runtime-disposition.md       391 行  ← 处置全记录
+/home/zym/review/opus/sunmoonai/docs/dev-plan/rounds/runtime/runtime-acceptance-qwen.md   131 行  ← 验收报告
+```
+
+### 本轮走到这里的账
+
+| 环节 | 结果 |
+| --- | --- |
+| ① 提案 | 五家全交（544 / 538 / 586 / 646 / 441 行） |
+| ② 互评 | 五家全交，含自评；排序高度收敛，三家自排非第一 |
+| ③ 裁决 | 基座 fable，并入四家主张 21 条；**OP-1/2/3 三项全部被改写，无一原样保留** |
+| ④ 异议 | 五家全交；两条实质异议（luna `O-L1`、qwen `O-Q1`）**全部采纳，无驳回**；不触基座结构 |
+| ⑤ 验收 | qwen（由处置表算出，既得利益最小）判**有条件通过**；两条条件已补足、三处勘误已更正 |
+| 裁决方自陈错误 | **十三条**（E-1…E-11 + C-1/C-2 暴露的两处），其中**八条由参与方抓出** |
+
+### 你要做的
+
+**`approve`** → ⑦ 清理与发布：把最终稿写入主线共享最终路径、归档全流程产物、
+公开 `observations-opus.md`、登记观察值、删检视面与临时分支。
+**`reject`** → 回到 ③ 重整合（协议「停止、超时与回退」）。
+
+### 两件请你在批之前看一眼的
+
+1. **§2.4.1 第 11 行**：本轮你五次执行 `publish-*.sh` 写主线，那些都是 H5 管辖的 Side Effect
+   但**没有经过 H5 门**——权力表的 H5 只对准「⑦ 发布最终稿」，没区分最终稿与轮内产物。
+   建议拆 `H5-final` / `H5-round`，但我**没有擅自改权力表行数**。这条要么你现在裁，要么进下一轮。
+2. **本条回执本身的强度是零**（`R2`）：你的 commit 与 agent 的 commit 在账本上不可区分。
+   ⑥ 是全流程唯一不可逆的一步，而它的回执恰恰是最不可验证的——**这个矛盾本轮没有解决**，
+   S1 的前置（agent 够不着的操作面）仍未做。
