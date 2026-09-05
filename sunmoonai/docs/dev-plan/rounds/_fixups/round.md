@@ -5,7 +5,7 @@
 
 ```toml
 round_id  = "_fixups"
-status    = "ACTIVE"           # 所有者 2026-09-05 接受追认
+status    = "DONE"             # 第 2 轮独立验收通过（cursor，七条全满足，无条件）
 tier      = "bootstrap"
 final_path = "sunmoonai/docs/dev-plan/runtime-architecture.md"
 round_dir  = "sunmoonai/docs/dev-plan/rounds/_fixups"
