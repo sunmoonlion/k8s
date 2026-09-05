@@ -751,6 +751,33 @@ acceptance:                  # H5 必填：对每条冻结验收条的结论，�
 
 #### 4.5.1 工作区供给：纯函数，判据是独占与干净
 
+```text
+provision(task_id, source, baseline_commit, write_actors, review_needed, submodule_plan) →
+
+  前置判据（任一不成立即新建，不复用）：
+    现有工作区 owner == task_id 且 == 该执行者      # 独占
+    git status --porcelain 为空                    # 干净；有人的未提交改动时按现文「用户工作树已有脏改动」处理：绕开，不 stash
+    HEAD == baseline_commit                        # 基线一致
+
+  数量规则：
+    |write_actors| = 0   → 不建可写工作区；单文件 git show 即可，整仓只读时开 detached worktree
+    |write_actors| = 1   → 一个独占工作区、一条命名分支
+    |write_actors| = N   → 同一 baseline_commit 上 N 个 worktree、N 条命名分支 + 一个整合 worktree
+    review_needed        → 额外一个 ~/review/<分支> 检视 worktree，用完删（round-protocol「检视面」）
+    submodule_plan       → 多仓时逐仓钉 commit 并记父仓 gitlink（现文《物化步骤》第 3 步；constraints T4）
+```
+
+与所有者思路不同的判断：
+
+- **worktree 的数量看写者数，要不要新建看独占与干净，两者都不看复杂度。**现文《命名空间》的判据是
+  「同一 Task 出现第二名可写执行者时，supervisor 必须先建好各自的 worktree 和命名分支再派活」；
+  luna 补的是「写者数 = 1 也可能撞上别的 Task 或人的脏改动」——所以独占与干净是前置判据。三者都可机械判定，复杂度不可。
+- **「事先创建好的仓库」只能是 `source`，不能是工作区。**无仓任务从 `scratch_template@commit` clone 或开独占分支，
+  Task 结束按清理策略回收（清理属现文《保留与垃圾回收》，不进本函数）。多个 Task 塞进同一个预建仓违反
+  《物化门禁》「workspace 唯一归属本 Task」与《按 Task 塞入材料》「上一 Task 的仓库不得复用给下一 Task」。
+- **来源一律钉 commit，不钉地址或分支。**「直接引用仓库地址」「拉取 master」都要落 `baseline_commit`；
+  现文反模式表「只固定分支名 → 评审对象漂移」。
+
 ### 4.6 R2：principal 通道也有粒度
 
 不只执行者，**人的回执也没有 attested 通道**：所有者与 agent 同机、同 git 身份、无签名，
@@ -831,6 +858,19 @@ GitHub 所有者账户登录态                                ~/.ssh/k8s_ro    
    `~/.docker/config.json`；再对主仓与回执仓各做一次 `git push --dry-run`，**任一成功即失败**。
 
 #### 4.6.3 剩余风险（如实登记）
+
+| 风险 | 说明 | 处置 |
+| --- | --- | --- |
+| 人被 agent 的输出误导而签了错的 commit | 边界防伪造与绕过，不防误签 | 收件箱 `target_commit` / `diff_stat` 必备（3.4）；`acceptance` 内容门（3.13.4）；L3「人抽三样」最后一道 |
+| VM 上的判定代码被改（opus §3） | `round-status.py` / hook 全在 agent 可写面 | 不再是边界：改了也发不起主仓与回执仓的写。判定代码的正确性靠 §8 第 8 条「首跑与人工对照」与 L0 测试，不靠它不可改 |
+| GitHub 不可用 | 信任锚与公钥端点都在外部 | 等。⑥ 本来就「不设逾期默认」；fail-closed。第二锚（自托管 bare 仓，所有者机器持写权限）列为可选 |
+| 所有者账户被盗 | 超出本文范围 | 2FA；通用实践 |
+| 回执仓 / 主仓的 VM 侧 key 漂移成可写 | 配置漂移 | 每轮 ⑦ 用 VM 身份对两仓各 `git push --dry-run`（**统一为 dry-run**，opus 5.1：真 push 一旦成功会永久留下假回执），任一成功即报警停轮 |
+| 所有者把可写 key 复制到 VM「图方便」 | 人为绕过 | `check-no-owner-creds.sh` 的 dry-run 项 |
+| 候选仓与主仓分离后，人在 Windows 多一步 fetch + push | 摩擦 | 与 H5 签名同一会话，不增触点；耗时进观察值 |
+| Windows 本地 agent 在人敲口令的窗口内插入动作 | ③ 的残余 | TTL=0 把窗口缩到单次操作；彻底解决只有 C 档 |
+
+---
 
 ### 4.7 取证纪律与当前事实
 
