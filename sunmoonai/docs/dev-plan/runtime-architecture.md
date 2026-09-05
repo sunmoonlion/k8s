@@ -116,6 +116,84 @@ privacy               文档任务无；财务数据任务另由其 Task Profile
 `dev.change` 只证明对象形状与状态转换跑得通；验收器对「判断且昂贵」那一半不能从它外推，
 必须在财务 Profile 的第一个工作单元里用真实验收用例重证（内核 `:516-517` 已有同义要求；⑤ 验收 `E-c` 更正原锚 `:521`——那是空行）。
 
+#### 2.2.1 工单：一个冻结的 Artifact，一次确认
+
+把 round-protocol 的 `round.md` 一般化为**工单**（Work Order）。**工单是 Artifact，不是 Task 状态。**
+它只有 Artifact 的两个状态词 `DRAFT → FROZEN`（沿用《候选状态机》），Task 自身的状态由产物推导。任何档位都有工单，字段固定：
+
+```toml
+[order]
+id, tier                    # tier 只选 guard 表，不是状态
+artifact_state              # DRAFT | FROZEN
+route_proposal              # 3.5 的输出：模型证据 + 确定性规则结果，含 policy_version（luna D1：建议与决定分开）
+route_effective             # T0：= proposal，由策略放行；T1/T2：H2 回执确认后的值
+route_delta                 # 人相对 proposal 改了哪些字段；空 = 全盘沿用（这是观察值「改动项数」的来源）
+intent_restatement          # 执行者用自己的话复述需求 + 决策点清单 + 标出的歧义
+acceptance = [...]          # 逐条编号，冻结后不改；每条尽量指向一个未来的机械检查；T0 为一个包名
+frozen_sections = [...]
+[executors]
+intake_author               # 起草 intent_restatement / acceptance 的执行者（luna D2）：同票禁任 proposer / arbiter / acceptor，分发前机械拦；
+                            # T2 的题目与验收条可由 owner 直接提供，此时 intake_author = owner
+proposers, arbiter, acceptor, approver
+[workspace]
+source, baseline_commit, write_actors, review_needed, submodule_plan   # 3.7 的输入
+[budget]
+observation_window_rule, max_rounds, max_rollbacks
+```
+
+**档位 = 三张表，不是三套状态。**每个 tier 在 `round-protocol.md` 里对应：
+一张 **guard 表**（哪些转换要过哪些门）、一张**必需产物表**（哪个 Attempt 组要交什么）、一份 **interrupt 策略**
+（H2 能否默认）。T2 是现有七环节；T1 是「出稿 → 独立评审 → 验收 → 确认」；T0 是「做 → 独立验收 → 确认」。
+三者读同一个工单 schema，脚本按 `tier` 取表。
+
+**T0 的定义收紧：验收条只能来自已签策略里的机械门禁**（所有者裁定 2026-09-05，回应 kimi D2 / qoder B2）。
+kimi 与 qoder 同时指出 11:30 版的矛盾：H1「无默认」× 「T0 开工前零触点」× 「T0/T1 一签两用」三者不能同时成立——
+H2 默认放行了，工单却因 H1 无人签而停在 `DRAFT`。解法不是给 H1 加默认，而是让 T0 **不产生需要单独冻结的东西**：
+
+- `policies/tier-defaults.toml` 定义若干**命名任务类包**（cursor C2：扁平门禁列表 + 任意子集会被「合法零件架空意图」——
+  「修登录失败」配 `[lint, doc-gate]` 脚本全绿、意图为空）。每个包三项：
+
+  ```toml
+  [bundle.readiness-docs-typo]
+  paths  = ["sunmoonai/docs/ai-dev-readiness/**/*.md"]   # 允许触及的文件（机械判：完工 diff 的文件集 ⊆ paths）
+  gates  = ["gates/doc-gate", "gates/link-check"]         # 必须通过的门禁（机械判）；门禁脚本集中在 scripts/gates/
+  covers = "仅改 readiness 文档的笔误与链接"               # 人读；策略签名时所有者签的就是这句话
+
+  [bundle.round-scripts-fix]
+  paths  = ["sunmoonai/docs/dev-plan/round-*.py"]         # 不含 doc-gate.py、不含 scripts/gates/
+  gates  = ["gates/unit:round-scripts", "gates/lint"]
+  covers = "仅改已有测试罩住的 round-* 脚本，不新增行为"
+  ```
+
+- **包纪律，加在包定义上、由 `check-policy.py` 在策略签名前校验**（cursor F3 / opus 4.3 / kimi F2 三家同点）：
+  任何 T0 包的 `paths` 展开集**不得覆盖**权威层文件（`doc-gate.py` 的 `SELF_CONTAINED` 元组、`round-protocol.md`、
+  `request-lifecycle.md`、`authority.md`、`lifecycle.md`、本文）、`policies/**`、以及 `scripts/gates/**` 与各 gate 的依赖文件——
+  否则「改门禁」与「被门禁判」落在同一可写面，diff ⊆ paths 照样成立。12:15 版示例 `docs/**/*.md` 把 `constraints.md`、
+  `round-protocol.md` 全包进去了，`covers` 不判等于没挡；示例已收窄。**宽包不许，多个窄包可以**（qoder C2 的「多放宽松包」不采纳）。
+- **两道门，不是一道**（cursor F1：12:15 版把 `diff ⊆ paths` 绑在分发时，而分发时还没有 diff，空集 ⊆ 任何 paths 恒真）：
+
+  | 何时 | 查什么 | 失败则 |
+  | --- | --- | --- |
+  | **开工门**（H2 / 分发） | 包名 ∈ 已签策略；T0 + `decide` 有 `RouteDecision` 落账；T1/T2 有回执仓回执 | 拒发 |
+  | **完工门**（L0 / L1 / H5 前） | 实际 diff 文件集 ⊆ `paths`；`gates` 全过；H5 内容门 | 不进 H5，不判确认 |
+
+- T0 工单的 `acceptance` 必须是**一个包名**，不得自拼门禁子集；
+- **不**做 `covers` 与 `intent_restatement` 的字面匹配——自然语言包含判不了。T0 的诚实定义由此是：
+  「题目能被『改动限于路径 X、通过门禁 Y』完全表达」；表达不了的就不是 T0，升 T1；跨包的题目**升 T1 而不是塞进宽包**；
+- 于是 T0 的 H1 在策略签名时一次完成，不是被默认掉：所有者签的是「这类题目用这组门禁就够」，不是一张可任意挑选的零件清单；
+- 包的增删改按 T2（策略修改本就是 T2）；策略文件首版由所有者签 `policy/1`（§7 风险 5）。
+- 代价是 T0 口径变窄。这是正确方向：不能机械验收的东西本来就不该全自动。
+- **T0 的承诺只是「开工前零触点」**（cursor D5）：它仍是「做 → 独立验收 → 确认」，发布仍要 H5 签名。
+  「可逆、不写共享最终路径、免 H5」的出口是一条新的权力表行、属省事方向，本轮不加，登记 §7 未决，有签名次数数据后再定。
+
+**开工确认（H2）**同时完成所有者思路里的四件事：确认路由、确认（或更换）arbiter
+与参赛者、确认任务 list 与是否 fan-out、确认仓库与 worktree 计划。收件箱按 3.4 的字段分级呈现：
+executors 名单与 tier 留空待人填，workspace 与预算预填默认。这同时也是 `ai-pipeline.md`「意图确认」那一格（AI 复述 + 决策点 + 人确认）。
+
+工单冻结（H1，Artifact 转换）与开工确认（H2，Task 转换）是两个转换，**开工前触点数按档位是 0 / 1 / 2**（luna C4 指出 12:15 版
+「T1/T2 恰好一次」与正文矛盾）：T0 = 0（H1 由已签策略承担，H2 按策略放行）；T1 = 1（H1+H2 合并为一份回执）；
+T2 = 2（H1 与 H2 分离，因为 T2 的验收标准要在参赛者看到题目之前冻结，而参赛者名单本身可能要人再定）。§8 第 5 条随此改。
+
 ### 2.3 五个 Agent Profile：登记表
 
 **字段 `harness` 取代上一稿的 `runtime`**——`runtime` 在上一轮任务书里同时指产品运行时、
@@ -583,6 +661,76 @@ response_grade         attested | reported  响应者身份的证据等级（现
 不是「签名回执威胁模型」的附件，不随 git 脚手架拆除。
 无法外层阻断时必须标 `audit_after`，**不得声称事中拦截**。
 
+
+#### 4.4.1 三道边界的具体形态
+
+| 要防的 | 边界 | 为什么 agent 够不着 | 所有者裁定 |
+| --- | --- | --- | --- |
+| ① 伪造回执 | **回执仓** `<owner>/receipts`：VM 只持只读 deploy key；回执是仓内自己的**签名 commit**（§2.3）；VM 验签用的公钥集**在线取自 GitHub 账户端点**（`https://github.com/<owner>.gpg` / `.keys`），不落本地文件 | 写权限与账户端点都不在 VM；本地脚本可被改，但它改不了「回执仓里有没有那条 commit」 | 2026-09-05 采用 |
+| ② 绕过回执发布 | **主仓写权限移出 VM**：`sunmoonlion/k8s` 对 VM 只读；agent 候选推到**候选仓** `<machine-user>/k8s-candidates`；⑦ 的主线 push 由 Windows 在签 H5 回执的同一动作里执行 | agent 根本发不起对主仓的写；H5 的强制点与签名点合一。不依赖 branch protection / ruleset（私有仓需 Pro） | **2026-09-05 采用**（luna C2 / opus §3；所有者「移」） |
+| ③ 签名被代做 | Windows：gpg-agent `default-cache-ttl 0 / max-cache-ttl 0`；回执仓与主仓的推送**不走** Git Credential Manager，用带口令的专用 SSH key（`IdentitiesOnly yes`，不加进 ssh-agent）；或上 C 档硬件在场 | 每次签名与每次 push 都要人敲一次口令；Windows agent 拿不到 | 采用；C 档为加固 |
+
+可选加固（不是替代）：
+
+| 档 | 内容 | 现状评估 |
+| --- | --- | --- |
+| **A′. 工作仓 ruleset** | GitHub tag / branch ruleset 限定 `main` 与 `confirm/*` 只许所有者写 | **私有仓 ruleset 与 branch protection 都需 Pro 及以上**（官方文档「About rulesets」，已核）。所有者若在 Pro，可加做 |
+| **B. 账户隔离** | 四家 CLI 各自以专用 Unix 用户运行、worktree 归各自用户，agent 用户**不在 `sudo` / `docker` 组** | 12:15 版写「运维改造大：以 root 跑」是基于错误取证。实际四家已是普通用户 `zym`，B 档成本 = 建四个用户 + 改 worktree 归属 + 拆组。仍不是本轮范围，但成本评估要改对（opus 2.2） |
+| **C. 硬件在场** | YubiKey 等，签名与 SSH 认证需物理触碰 | 对 ①②③ 都是加强项 |
+
+#### 4.4.2 回执仓的对象模型：回执是仓内自己的签名 commit，不是跨仓 tag
+
+12:15 版写「在工作仓里 `git tag -s confirm/<id> <commit>` 再 push 到回执仓、回执仓不含工作仓历史、`ls-remote` 读 message」——
+luna C1 给了可复跑证据，三处都不成立：annotated tag 指向 git 对象，push 会把被指向 commit 的**全部可达历史**复制进回执仓；
+`ls-remote` 只返回 OID，读不到 message；要读 message 必须 fetch tag 对象。改为：
+
+```text
+<owner>/receipts（私有；VM 只读 deploy key；Windows 带口令 SSH key 可写）
+└── main（只追加；所有者自律不 force-push，纠错用新回执 supersedes 旧回执）
+    └── receipts/<work_repo_id>/<round>/<seq>-<transitions>.yaml     # 每份回执 = 一个签名 commit（git commit -S）
+        例：receipts/k8s/refact-2/01-H1+H2.yaml
+            receipts/k8s/refact-2/02-H3.yaml
+            receipts/k8s/refact-2/03-H5.yaml
+```
+
+- **每份回执一个签名 commit**，commit 只改动这一个文件；`target_commit` 是 yaml 里的**普通字段**，不是跨仓对象引用，
+  回执仓不含工作仓任何对象。
+- VM 侧：`git fetch receipts main`（只读）→ 读 yaml → 用在线取得的所有者公钥集验证该 commit 签名 →
+  用 `target_commit` 对照本地工作仓对象。三步任一失败、fetch 失败、端点不可达，一律 fail-closed，退出码单列。
+- **按 transition 查找靠字段不靠文件名**：脚本扫该轮目录，`transitions` 字段含 `H3` 的即 H3 回执；组合回执
+  （`[H1, H2]`、`[H5, H3]`）天然可被每个 transition 各自查到——这解决 cursor F2 的命名空间问题，不需要多重 ref。
+- **只增不改**：纠错写新回执并填 `supersedes: <seq>`；旧文件不动，`round-status.py` 取「未被 supersede 的最新」。
+- Windows 侧一次回执的动作：填 yaml（收件箱条目已给全字段，人只填结论）→ `git commit -S` → `git push receipts main`。
+  可用一个本地脚本把「读收件箱 → 生成 yaml 骨架」自动化；签名与 push 两次口令不自动化。
+
+#### 4.4.3 回执 schema
+
+```yaml
+receipt_version: 1
+work_repo: sunmoonlion/k8s
+round: <id>
+transitions: [H1, H2]        # H1 | H2 | H3 | H4 | H5 | H6，可组合；H7（取消）不进回执仓——3.3 表内唯一例外
+target_commit: <sha>         # 工作仓 commit；必须等于收件箱条目里列的 commit
+                             # H3/H4/H6：是新增该条 rulings.md 行的 commit；脚本校验该 commit 的 diff 恰好新增该行
+work_order_digest: <sha256>  # 工单 FROZEN 版本的哈希；H1/H2 必填
+ruling_sha256: <sha256>      # H3/H4/H6 必填：裁定行文本哈希，防 rulings.md 事后被改
+policy_version: <n>          # H2 记按哪版策略；T0 自动放行不产生回执，只落 RouteDecision
+issued_at: <ISO>
+expires: <ISO>               # 缺省 = 收件箱条目的截止判据；条目无截止则 issued_at + 24h（kimi F5 / opus 5.2）
+                             # 只约束「该回执可用于放行的窗口」；放行发生后不追溯，不因过期回滚
+supersedes: <seq>            # 可选；纠错时指向被取代的回执
+acceptance:                  # H5 必填：对每条冻结验收条的结论，编号集合必须等于工单 acceptance 的编号集合
+  A1: pass
+  A2: pass
+  A3: waived <理由>          # waived 是省事方向 = 一条 H3；本回执 transitions 必须含 H3，且 rulings.md 有对应行
+```
+
+缺字段、字段不匹配、签名不在公钥集、过期、`acceptance` 编号集合与冻结集合不等，一律判「无回执」，不判「可疑」——P4。
+
+`acceptance` 块是**内容门**（qoder D3 + kimi D9）：回执存在只证明「所有者做了签名推送动作」，不证明读过；
+把逐条结论写进被签的文件，人至少要对每条验收条各写一个词。它放在回执仓而不放 `rulings.md`，
+是因为 `rulings.md` 在工作仓，agent 能写。
+
 ### 4.5 独占工作区在 CLI / GUI 腿是约定，不是隔离
 
 `provision(...)` 的前置判据（独占 × 干净 × 基线）两边都用，但建好之后的保证不同：
@@ -601,6 +749,8 @@ response_grade         attested | reported  响应者身份的证据等级（现
 其二，同一执行者同一会话内 `id` 先报 `uid=0(root)`（`uid_map: 0 1003 1`）后报 `uid=1003`——
 **身份切换发生在助手自带沙箱里，运行时看不见也没批准过策略。**
 
+#### 4.5.1 工作区供给：纯函数，判据是独占与干净
+
 ### 4.6 R2：principal 通道也有粒度
 
 不只执行者，**人的回执也没有 attested 通道**：所有者与 agent 同机、同 git 身份、无签名，
@@ -616,6 +766,102 @@ H1 签发在账本上与 agent 提交不可区分。故 `[principal.owner]` 登�
 **身份只能来自 worktree 目录名；产品 / 模型 / 界面一律不是证据。**
 
 ---
+
+#### 4.6.1 人的通道：收件箱 + 回执
+
+```text
+sunmoonai/docs/dev-plan/rounds/<id>/inbox-owner.md     ← 引擎写，人读（与 call-<环节>.md 同构）
+                                                          每条必备字段：interaction_id、transition、待决内容、截止判据；
+                                                          凡产生回执仓回执的条目（H1–H6）另加 target_commit、diff_stat；H1/H5 再加冻结验收条编号表
+                                                          （缺任一字段 = 条目无效，round-status.py 机械判）
+签名回执（回执仓 main 上的签名 commit + yaml）           ← 人写，引擎读；rulings.md 只是它的人读缓存（H7 例外）
+```
+
+**字段分级：无默认的字段不得预填**（kimi D3，采纳——P3 说默认值属省事方向，预填等于把盖章做成阻力最小路径）：
+
+| 分级 | 字段 | 规则 |
+| --- | --- | --- |
+| 无默认，必须显式填 | 验收条（H1 本身）、executors 名单（含 arbiter / acceptor）、`tier` | 收件箱留空；回执 target_commit 指向的工单里这三项为空即判无回执 |
+| 可预填默认 | workspace 计划、预算窗、观察窗规则 | 预填值与人改后的值都落账，改动幅度是观察值 |
+
+「T0 按版本化策略自动放行」与「T1/T2 收件箱预填人盖章」是两回事：前者有 `RouteDecision{policy_version, matched_rule}`
+落账，且验收条来自已签策略；后者是默认漂移，禁止。
+
+- 引擎判定「当前转换命中权力表」时，写收件箱并停下（Task `WAITING(APPROVAL)`）；分发脚本对 `kind = human`
+  的条目输出的不是 argv，而是通知（终端提示、桌面通知、或将来的 IM）。**通知丢了不要紧，收件箱文件是真源**
+  （对应产品 `F-DELIVERY-06`：流式通知不是结果唯一载体）。
+- 人的回执**只认落盘**：对话里说「同意」不算，与 round-protocol「异议稿必须冻结提交」同理。
+- 人不回执时的处置按 round-protocol「参与方不可用」：H1、H3–H7 等待，**不设超时默认**（最后一道关卡不默认通过）；
+  只有 H2 在策略明确允许的 T0 场景可以按默认放行，且要落账。
+- **每次 H 回执登记三个观察值**（kimi D7 / qoder D7 / cursor D5，采纳为观察值而非判据）：回执耗时（收件箱落盘 → 回执仓收到 tag）、
+  相对预填值的改动项数、**每票签名次数按 H1/H2/H3–H4/H5/H6 分计**。⑦ 清理时汇总进 `rulings.md`，所有者自己看趋势；
+  **不**由观测值自动触发 H6——H6 是权力，不是告警。签名次数是 C1 全表锚定的直接代价，T0 的主要摩擦预计在 H5 而不在 H2。
+
+产品 Profile 里这一段的对应物已经全部定义好了：Interaction、`WAITING(APPROVAL)`、`resume_token_hash`、`AT-07`。
+开发 Profile 先用文件与 tag 跑通同一形状。
+
+#### 4.6.2 两台机器的身份与凭据分布
+
+```text
+Windows 工作站（人）                                  VM-0-13-ubuntu（agent × 4 + 人经 SSH，全部 uid 1003 zym）
+────────────────────────                              ────────────────────────────────────────────────────
+签名私钥（GPG 或 SSH 签名；仅此一份）                  无签名私钥；无所有者账户凭据
+  · 口令保护；gpg-agent TTL = 0；或硬件密钥            ~/.ssh/candidates_rw   → <machine-user>/k8s-candidates  读写
+GitHub 所有者账户登录态                                ~/.ssh/k8s_ro          → sunmoonlion/k8s              只读
+~/.ssh/owner_push（带口令，IdentitiesOnly，不进 agent） ~/.ssh/receipts_ro     → <owner>/receipts             只读
+  → sunmoonlion/k8s 主线 push                          原 id_rsa（对主仓可写）：**撤销**
+  → <owner>/receipts push
+                                                       round-status.py：
+回执动作：                                               git fetch receipts main → 读 yaml → 在线公钥集验签
+  填 yaml → git commit -S → git push receipts main         → target_commit 对照本地对象 → 成立 / 未确认（fail-closed）
+⑦ 发布动作（H5 回执之后，同一会话）：                   round-dispatch.py 与整合方：
+  git fetch candidates <整合分支>                          只 push 候选仓；对主仓的 push 在凭据层面不可能
+  round-status.py --verify-receipt H5 <sha>              本地 verify 只做参考显示
+  git push origin <sha>:master
+```
+
+三点必须写进规则：
+
+1. **强制点在凭据层，不在脚本层。**VM 上的 `round-status.py`、hook 可以被改，但改了也发不起对主仓与回执仓的写；
+   Windows 上的发布脚本同样可被本地 agent 改，所以发布前的 `--verify-receipt` 也只是便利，真正的门是「push 要人敲口令」。
+2. **Windows 上的本地 agent 同样是威胁。**签名口令不缓存、推送 key 不进 ssh-agent、不用 GCM。任一条不满足，③ 就破了。
+3. **VM 上不得存在所有者账户的任何凭据**：`scripts/check-no-owner-creds.sh`（kimi D10；修改按 T2）。**它是配置卫生检查，不是边界**
+   （qoder C5）——agent 能改它，它防的是人为疏漏。首版覆盖：`~/.ssh/` 全部私钥指纹对照、`~/.git-credentials`、`~/.netrc`、
+   `credential.helper`、`~/.config/gh/hosts.yml`、shell rc 中的 `GH_TOKEN` / `GITHUB_TOKEN`、`~/.vscode-server` 凭据存储、
+   `~/.docker/config.json`；再对主仓与回执仓各做一次 `git push --dry-run`，**任一成功即失败**。
+
+#### 4.6.3 剩余风险（如实登记）
+
+### 4.7 取证纪律与当前事实
+
+**取证声明（先于事实）**
+
+12:15 版（原 §3.13.1）写「本 VM 所有进程都是 root、`/home/zym` 属 root:root」——**错**。opus 与 luna 在同一台机器复核：
+`uid=1003(zym)`，四家 CLI 均以 `zym` 运行。错因已查明：起草者（fable，经 Cursor）在 Cursor 沙箱内执行取证命令，
+`cat /proc/self/uid_map` 输出 `0 1003 1`——沙箱用 user namespace 把宿主 uid 1003 映射为 0，所以沙箱内一切看起来都是 root。
+取证工具自身有边界而未声明，正是 P4 禁止的事。由此立三条规则，也进 §8 第 9 条：
+
+- 取证栏每条注明**主机、执行身份、是否在沙箱 / 容器内**（`hostname; id; cat /proc/self/uid_map`）；
+- S1 的权限测试必须以**与生产 agent 完全相同的 OS 用户与进程环境**复跑，不在任何沙箱内；
+- 边界的表述写成「agent 与人是否共享 credential domain」，不绑定「是不是 root」这个偶然事实。
+
+**现状事实**
+
+| 事实 | 取证 | 后果 |
+| --- | --- | --- |
+| 人的 shell、四家 CLI（`codex`、`claude`、`agent`、`qoder`）、vscode-server **全部以同一普通用户 `zym`（uid 1003）运行** | `id` → `uid=1003(zym)`；`ps -eo user,comm \| rg 'codex\|claude'` 全为 `zym`；`stat -c '%U:%G' /home/zym` → `zym:zym`（opus / luna 复核，宿主 shell） | **同 UID 即同权限**：`~/.gnupg`、`~/.ssh/id_rsa`、gpg-agent 套接字、仓内验证脚本、hook，agent 全部可读可改。结论与 12:15 版相同，理由不同 |
+| `zym` 同时在 `sudo` 与 `docker` 组 | `id` 输出 `27(sudo),988(docker)`（opus 复核） | `docker` 组等价 root（可挂宿主文件系统）。B 档要成立，agent 专用用户必须**不在**这两个组 |
+| 本机**没有 GPG 密钥**；已有 tag 全部未签名 | `gpg --list-secret-keys` 为空；`for-each-ref` 中 `refact/*` 与 `2.0.0` 无签名块 | 从零设计，没有兼容包袱 |
+| `~/.ssh/id_rsa` 对 `git@github.com:sunmoonlion/k8s.git` **有写权限** | `git remote -v`；push 历史 | 任何 agent 都能以本机身份 push 分支与 tag 到主仓——这是要防的第二件事 |
+| 人的第二台机器是 Windows 工作站（Cursor 客户端，经 Remote-SSH 连本 VM） | 会话资产路径 `c:\Users\zymun\...`；`last` 同一公网 IP | Windows 上**也运行 Cursor 本地 agent**，以人的账户运行；Git Credential Manager 若缓存了 GitHub 推送凭据，它不需要口令就能 push（kimi F1） |
+
+> **在本 VM 上，任何本地验证（`git verify-tag`、读某个 pubkey 文件、跑 `round-status.py`、pre-push hook）都不是边界。**
+> agent 能生成一把新钥、把公钥加进任何本地信任列表、改掉验证脚本或 hook、再签一条 tag。
+> 「本地判定通过」只能作为**便利的参考显示**，不得作为任何 `auto_policy = 无` 行的强制点。
+
+⚠ **上表已被 S1 的宿主取证修订**：本机 `zym` 拥有免密 sudo（`(ALL) NOPASSWD: ALL`）且在 docker 组，
+因而**本机一切本地强制点对 agent 无效**——我能 `sudo` 就能改门禁脚本、改验签、改任何 hook。
+只有托管方的 key 作用域与账户公钥端点有效。复跑记录见 `rounds/_spike-sign/forensics.md`，**读本节以该记录为准**。
 
 ## 5. 必答 Q：运行时相对手工直接调用助手的开销盈亏线
 
