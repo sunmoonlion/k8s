@@ -3,7 +3,7 @@
 > 起草：2026-09-05 ｜ 起草者：opus（本轮裁决方）｜ **草案，H1 冻结前不得开工**
 >
 > 本文是 `round.md` 指向的「背景与题目细则」。**不变的流程规则在
-> [`../../round-protocol.md`](../../round-protocol.md)，本文不重复。**
+> [`../../round-protocol.md`](../../protocol/round-protocol.md)，本文不重复。**
 
 ## 0. 一句话
 

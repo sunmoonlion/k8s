@@ -253,7 +253,7 @@ refact 轮任务书「已经查实、不必重新论证的事实」一节 抓到
 ### 议题七 · 并行隔离流程的适用边界
 
 **事实**：四家并行提案 + 互评 + 异议轮 + 独立验收，见
-[`round-protocol.md`](../dev-plan/round-protocol.md)。这套流程确实有效——
+[`round-protocol.md`](../dev-plan/protocol/round-protocol.md)。这套流程确实有效——
 现行的 lifecycle 基座就是它的产物，而 2026-09-03 那次**角色不分**的整合失败
 （整合方即参赛方、无异议轮、无独立验收）反证了流程的每一环都在起作用。
 

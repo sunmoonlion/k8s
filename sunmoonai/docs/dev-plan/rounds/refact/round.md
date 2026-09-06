@@ -1,7 +1,7 @@
 # 轮次 refact：重写 `working/development-lifecycle-agent.md`
 
 > 本文件是本轮**唯一**的可变参数来源。不变的流程规则在
-> [`../../round-protocol.md`](../../round-protocol.md)，不在这里重复。
+> [`../../round-protocol.md`](../../protocol/round-protocol.md)，不在这里重复。
 >
 > ✅ **本轮已于 2026-09-04 发布**：最终稿 1603 行进 master `7fd2bde8`；
 > 全流程产物保留在标签 `refact/{luna,kimi,cursor,qwen,integration,baseline-master}`。

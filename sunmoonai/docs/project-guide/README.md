@@ -60,7 +60,7 @@
 | 发版、改部署清单 | [`topics/release.md`](topics/release.md) + [`repos/k8s.md`](repos/k8s.md) |
 | 确认某个能力是否真的接线了 | 对应仓文件的**「已知未实现」**一节 |
 | **动代码前必读的规则** | [`../dev-plan/constraints.md`](../dev-plan/constraints.md)（39 条，按主题分组） |
-| 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-plan/round-protocol.md`](../dev-plan/round-protocol.md) |
+| 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-plan/round-protocol.md`](../dev-plan/protocol/round-protocol.md) |
 | 推送改动、跨机拉取、子模块的坑 | `~/five-repos-sync/sync-five-repos.sh`；规则见 [`../dev-plan/constraints.md`](../dev-plan/constraints.md) T4 |
 | 知道接下来要建什么 | [`../dev-plan/`](../dev-plan/) |
 | 复核本文档集的某条断言 | **读代码**，别的都不算数 |
