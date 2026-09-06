@@ -223,7 +223,8 @@ def stage_table(cfg: dict, name: str) -> list[dict]:
     #    于是每一轮走完都会跟自己的 status=DONE 打架。人判的是内容，不是有没有落盘。
     pend = pending_rulings(cfg, name)
     if pend is None:
-        rounds.append({"stage": "⑥ 确认", "who": ["human"], "done": None, "skipped": False})
+        rounds.append({"stage": "⑥ 确认", "who": ["human"], "done": None,
+                       "skipped": "⑥" in skip})
     else:
         add("⑥ 确认", ["human"],
             {f"rulings.md 无待确认（{len(pend)} 条待）" if pend else "rulings.md 全部已确认": not pend})
