@@ -322,6 +322,20 @@ validator 先跑机械条，acceptor 再判机器判不了的冻结条；验收�
 - `investment-backend/app/app/tasks/agent_graph.py:106-128` 在同一 thread 配置和 PostgreSQL
   checkpointer 上首次执行或恢复。
 
+⚠ **「原语存在」不等于「端到端已接线」。**同一份代码里，抽象基类
+`graph_runtime_service.py:26-31` 的 `resume` 本身是
+
+```python
+raise NotImplementedError(
+    "Runtime adapters must translate resume input to their graph command type."
+)
+```
+
+也就是说**恢复这一步的适配是留给实现方的空位**，不是现成能力。
+上面四条锚点证明的是「库提供了 `interrupt` / `Command(resume=)` / 同 thread checkpoint」，
+**它们不证明本项目已经把中断恢复跑通**。两件事分开写，是因为把前者读成后者，
+会让一份「已具备」的结论建立在一个 `NotImplementedError` 上。
+
 因此实现应把产品 Interaction 的 `question_or_action / audience / expires_at / resume_token_hash /
 idempotency_key / consumed_at / resume_target` 绑定到这些原语，字段真源仍是
 `request-lifecycle.md @ ed0b5136:247-277`。中断节点返回业务需要的 dict；恢复端鉴别主体、校验
