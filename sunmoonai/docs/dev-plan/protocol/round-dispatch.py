@@ -197,7 +197,7 @@ def main() -> int:
   · 发出去的话是固定的那一句，不逐轮改写；环节通知落在 {call_path}，各家自取。
   · **成功判据是产物出现，不是命令返回 0。**cursor 未加 --trust 时会拒绝执行
     却仍返回 0（已在 argv 里带上 --trust）。核对用：
-        python3 sunmoonai/docs/dev-plan/round/round-status.py
+        python3 sunmoonai/docs/dev-plan/protocol/round-status.py
   · 本脚本只生成不执行（roadmap 第 3 步）。粘贴跑通一轮、确认判定与措辞无误后，
     再开第 4 步的真调用。""")
     return 0

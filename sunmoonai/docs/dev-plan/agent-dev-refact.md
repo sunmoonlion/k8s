@@ -9,7 +9,7 @@
 > `runtime-architecture.md` 三份，并按 2026-09-05/06 的核查结果删除了其中六处被证伪的设计（见 §5.3）。
 >
 > **和那三份现在是什么关系**：本文是**唯一要通读的一份**，三份源稿仍在，各有分工——
-> [`round-protocol.md`](round-protocol.md) 是**流程的操作手册**（环节判定表、脚本调用与退出码、
+> [`round-protocol.md`](protocol/round-protocol.md) 是**流程的操作手册**（环节判定表、脚本调用与退出码、
 > 参与方不可用、立判据的人怎么约束自己），跑轮次时照着它做，本文 §3 只是它的导读；
 > [`runtime-architecture.md`](runtime-architecture.md) 是 `runtime` 轮经正式验收的**架构规格**
 > （逐字段的 Profile 表、trace 样例、逐条自检），要落实现时查它；
