@@ -88,7 +88,13 @@ def git(*args: str) -> str:
 
 def tracked_paths() -> set[str]:
     """git 索引里的全部路径。判定基准是索引，不是文件系统。"""
-    return set(git("ls-files").splitlines())
+    # **必须用 -z**：`git ls-files` 默认开 core.quotepath，非 ASCII 文件名会被输出成
+    # 带引号的八进制转义（"…call-\342\221\241.md"），于是索引集合里那个字符串
+    # 永远匹配不上真实路径。后果是**任何文件名含非 ASCII 的文件在本门眼里都不存在**，
+    # 指向它的链接一律被判死链。2026-09-07 实测：qwen 的评审稿链接 `../call-②.md`
+    # 被拦，而该文件确在索引里（`git ls-files --error-unmatch` 为真）。
+    # 这道门此前一直「正常」，只是因为在此之前没有文档链接过这类文件名。
+    return set(git("ls-files", "-z").split("\0")) - {""}
 
 
 def exists_in_index(norm: str, tracked: set[str]) -> bool:
