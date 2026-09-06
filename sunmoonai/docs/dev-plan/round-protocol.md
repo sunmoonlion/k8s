@@ -431,7 +431,7 @@ git worktree remove ~/review/<分支名>           # 用完删；分支与提交
 | --- | --- |
 | `test_dormant_capabilities.py` 文件头记的坑 | **把「没找到」当成「不存在」** |
 | 被删的两个检查脚本 | 结论取决于工作区状态，同一份文档在三台机器上报 0 / 4 / 95 条失败 |
-| 2026-09-04 `round-status.py --verify` 首版 | 锚点正则只认 `~/repo/` 全路径，短路径形式的一大类**一处未验**，却报「17 处全部可达」 |
+| 2026-09-04 `round/round-status.py --verify` 首版 | 锚点正则只认 `~/repo/` 全路径，短路径形式的一大类**一处未验**，却报「17 处全部可达」 |
 | 2026-09-04 refact 轮清理扫描 | 正则漏了一类文件名，扫出「0 份残留」，实际还剩一份 |
 
 后两条发生在**同一天**，都是本协议自己的工具。因此立三条：
@@ -521,20 +521,19 @@ git worktree remove ~/review/<分支名>           # 用完删；分支与提交
 
 ## 8b. 两个脚本怎么调
 
-都在 `sunmoonai/docs/dev-plan/` 下：`round-status.py`（算环节）、
-`round-dispatch.py`（生成环节通知，**只生成不执行**）、`parallel-proposals.py`（并行发提案，
-见 §9.3）、`agents.toml`（五家登记，不含凭据）。
+都在 `sunmoonai/docs/dev-plan/round/` 下（目录说明见该处 `README.md`）：`round-status.py`（算环节）、
+`round-dispatch.py`（生成环节通知，**只生成不执行**）、`agents.toml`（五家登记，不含凭据）。
 在仓内任一 worktree 的任意目录跑都可以，路径由脚本自己解析。
 
 | 命令 | 作用 |
 | --- | --- |
-| `round-status.py` | 自动找唯一 `status=ACTIVE` 的轮次，算当前环节 |
-| `round-status.py --round runtime` | 指定轮次；值是 `rounds/` 下的目录名 |
-| `round-status.py --json` | 机器可读输出，含 `current` 与 `conflict` |
-| `round-status.py --round runtime --verify` | 机械验收：把 ⑤ 里机器能判的判掉，判不了的标「人判」 |
-| `round-dispatch.py` | 当前环节缺谁，打印给谁的命令 |
-| `round-dispatch.py --stage 4` | 指定环节，接 `4` 或 `④` |
-| `round-dispatch.py --all` | 不管缺不缺，给全部参与方 |
+| `round/round-status.py` | 自动找唯一 `status=ACTIVE` 的轮次，算当前环节 |
+| `round/round-status.py --round runtime` | 指定轮次；值是 `rounds/` 下的目录名 |
+| `round/round-status.py --json` | 机器可读输出，含 `current` 与 `conflict` |
+| `round/round-status.py --round runtime --verify` | 机械验收：把 ⑤ 里机器能判的判掉，判不了的标「人判」 |
+| `round/round-dispatch.py` | 当前环节缺谁，打印给谁的命令 |
+| `round/round-dispatch.py --stage 4` | 指定环节，接 `4` 或 `④`；指不到的环节**报错退 2**，不静默退回当前环节 |
+| `round/round-dispatch.py --all` | 不管缺不缺，给全部参与方 |
 
 **`--stage` 只有 `round-dispatch.py` 有。**`round-status.py` 没有这个参数——
 它的职责是**算出**在第几环，接受一个「指定环节」等于把结论交回给调用者。
@@ -618,35 +617,20 @@ git worktree remove ~/review/<分支名>           # 用完删；分支与提交
 `git show <别家分支>:<路径>`。自动化执行后这条纪律的可靠性会下降，且**无法事后证明
 某一轮真的独立**。在有工作区级隔离或读取留痕之前，本条是本协议最大的已知缺口。
 
-### 9.3 `parallel-proposals.py`：把隔离交给机制
+### 9.3 机制化隔离：曾经有过，已经删掉
 
-同一份工单发给 N 个**互相隔离**的实例，各自出候选，收集产出与执行元数据：
+曾有一份 `parallel-proposals.py`，用 N 个独立进程 + 独立 `CODEX_HOME` 让隔离
+由机制保证而非自律。2026-09-06 删除，理由三条，都不是「它写坏了」：
 
-```bash
-pip install openai-codex        # 自带钉版 CLI 二进制
-python3 parallel-proposals.py --request req.md --n 5 --out ./proposals
-```
+- **三轮一次没用过**——三轮的分发全部是所有者手工投喂；
+- **核心能力从未验证**——它自己的记录写着「真实模型调用 ✗ 未验证，本机未登录、无可用端点」，
+  且依赖的 `openai-codex` 本机未安装；
+- **结构上覆盖不全**——只覆盖 codex 系执行者，五家里两家（`cursor-app`、`qoder`）用不了。
 
-每路一个独立进程 + 独立 `CODEX_HOME`，会话、历史、状态互不可见——
-**隔离由机制保证，不再靠自律**，正面补上一节那个缺口。
-产出的 `manifest.json` 记录每路的模型、耗时、token 与状态。
-
-**已验证到哪一步**（2026-08-28 本机实测，此后未复跑）：
-
-| 项 | 结果 |
-| --- | --- |
-| SDK 安装、JSON-RPC 握手、subprocess 起停 | ✓ |
-| N 路并发，各自独立 `CODEX_HOME` | ✓ 实测 3 路与 5 路，各写入 53 个文件互不干扰 |
-| 用户 `~/.codex` 不被触碰 | ✓ 零文件改动 |
-| 单路失败不拖垮其余、manifest 照常写出 | ✓ |
-| **真实模型调用** | **✗ 未验证**——本机未登录、无可用端点 |
-
-⚠ 它只覆盖 `codex` 系执行者。**无命令行入口的执行者（`dispatch = manual`）用不了它**，
-那几路的隔离仍然只能靠纪律。别把「跑了这个脚本」当成「这一轮是隔离的」。
-
-⚠ 系统已装的 CLI 若版本低于 SDK 所钉版本，`thread_start` 会因响应字段缺失而失败
-（实测 0.125.0 报 `ThreadStartResponse.thread.sessionId Field required`）。
-用 `pip install openai-codex` 自带的二进制即可。
+所以本节现在的结论是上一节那条 ⚠ 的重申，不是补丁：
+**隔离目前靠纪律，不靠机制**，且无法事后证明某一轮真的独立。
+重建时不要照抄那份删掉的实现——它按已废除的「模式 A」组织，
+且覆盖不全的机制比没有机制更危险（§8.1）：它会让人以为这一轮是隔离的。
 
 ## 10. ② 互评：评审文件写什么
 

@@ -83,20 +83,51 @@ def status(round_name: str | None) -> dict:
         cmd += ["--round", round_name]
     p = subprocess.run(cmd, capture_output=True, text=True)
     if p.returncode != 0:
-        sys.exit(p.stdout + p.stderr)
+        # round-status.py 的用法错误一律退 2；这里必须**原样传出去**。
+        # `sys.exit(<字符串>)` 退的是 1，会把「判定失败」伪装成另一种失败，
+        # 而协议「8b · 退出码」写的是 2。同一个坑在 round-status.py 里已修过一次。
+        print(p.stdout + p.stderr, file=sys.stderr)
+        raise SystemExit(2 if p.returncode == 2 else p.returncode or 2)
     return json.loads(p.stdout)
+
+
+CIRCLED = "①②③④⑤⑥⑦"
+
+
+def norm_stage(hint: str) -> str:
+    """`4` 与 `④` 都要认。
+
+    2026-09-06 实测：`--stage 4` 传进来是字符串 `"4"`，而环节名是 `"④ 异议"`，
+    `"④ 异议".startswith("4")` 恒为假 —— 循环走空后**静默退回当前环节**，
+    而帮助文本与协议 §8b 都写着「覆盖自动判定」。
+    文档说它能做的事它做不到，且不报错：这是「判据给假答案」的分发端形态。
+    """
+    hint = hint.strip()
+    # `'④'.isdigit()` 在 Python 里为**真**（圈号带数字属性），但 `int('④')` 抛 ValueError。
+    # 必须先要求 ASCII，否则传圈号进来直接崩在这一行。
+    if hint.isascii() and hint.isdigit() and 1 <= int(hint) <= len(CIRCLED):
+        return CIRCLED[int(hint) - 1]
+    return hint
 
 
 def missing_of(st: dict, stage_hint: str | None) -> tuple[str, list[str]]:
     cur = st["current"]
+    want = norm_stage(stage_hint) if stage_hint else None
     for r in st["stages"]:
-        if stage_hint and not r["stage"].startswith(f"{stage_hint}"):
+        if want and not r["stage"].startswith(want):
             continue
-        if not stage_hint and r["stage"] != cur:
+        if not want and r["stage"] != cur:
             continue
         if r["done"] is None:
             return r["stage"], []
         return r["stage"], [k for k, v in r["done"].items() if not v]
+    if want:
+        # 指名了一个不存在的环节。**不许静默退回当前环节**——
+        # 那会让「我明明指定了 ④」和「④ 恰好就是当前环节」看起来一模一样。
+        print(f"没有匹配 {stage_hint!r}（归一化为 {want!r}）的环节；"
+              f"本轮的环节是：{'、'.join(r['stage'] for r in st['stages'])}",
+              file=sys.stderr)
+        raise SystemExit(2)
     return cur, []
 
 
@@ -166,7 +197,7 @@ def main() -> int:
   · 发出去的话是固定的那一句，不逐轮改写；环节通知落在 {call_path}，各家自取。
   · **成功判据是产物出现，不是命令返回 0。**cursor 未加 --trust 时会拒绝执行
     却仍返回 0（已在 argv 里带上 --trust）。核对用：
-        python3 sunmoonai/docs/dev-plan/round-status.py
+        python3 sunmoonai/docs/dev-plan/round/round-status.py
   · 本脚本只生成不执行（roadmap 第 3 步）。粘贴跑通一轮、确认判定与措辞无误后，
     再开第 4 步的真调用。""")
     return 0
