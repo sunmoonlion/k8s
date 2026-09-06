@@ -72,6 +72,11 @@ worktree = "{home}/worktrees/fable/k8s"
 
 [qwen]
 worktree = "{home}/worktrees/qwen/k8s"
-argv = ["qoder", "-p", "{prompt}", "-w", "{cwd}", "--permission-mode", "dont_ask"]
+argv = ["qoder", "-p", "{prompt}", "-w", "{cwd}", "--permission-mode", "accept_edits"]
+# ⚠ 2026-09-07 由 dont_ask 改为 accept_edits（所有者确认）。
+# **dont_ask 的名字骗人**：它不是「不问就放行」，是**不问也不放行**——
+# 实测 qwen 在该档下 mkdir / touch / 重定向 / Write / python 文件 IO 全部被拒，
+# 且不产生任何批准提示，比默认档更严。评审做完了只留在内存里，进程一退就没了。
+# accept_edits 只自动接受**文件编辑**，不给任意 Bash：写得出产物，提交仍需人代做（R7）。
 # PATH 里 ~/.qoder/entry/qoder 是个 dispatcher：首参为 `ide` 或已存在的路径时开 IDE，
 # 其余走 qodercli。我们首参是 -p，走 CLI，新旧 shell 行为一致。
