@@ -532,7 +532,7 @@ git worktree remove ~/review/<分支名>           # 用完删；分支与提交
 | `protocol/round-status.py --json` | 机器可读输出，含 `current` 与 `conflict` |
 | `protocol/round-status.py --round runtime --verify` | 机械验收：把 ⑤ 里机器能判的判掉，判不了的标「人判」 |
 | `protocol/round-dispatch.py` | 当前环节缺谁，打印给谁的命令 |
-| `protocol/round-dispatch.py --stage 4` | 指定环节，接 `4` 或 `④`；指不到的环节**报错退 2**，不静默退回当前环节 |
+| `protocol/round-dispatch.py --stage 4` | 指定环节，接 `4` 或 `④`；指不到的环节**报错退 2**，不静默退回当前环节。通知路径按**实际存在的那个**报，不硬编码拼法 |
 | `protocol/round-dispatch.py --all` | 不管缺不缺，给全部参与方 |
 
 **`--stage` 只有 `round-dispatch.py` 有。**`round-status.py` 没有这个参数——
