@@ -52,9 +52,11 @@ git show <baseline>:sunmoonai/docs/dev-plan/refact-fable.md
 git show <baseline>:sunmoonai/docs/dev-plan/runtime-architecture.md
 ```
 
-⚠ `investment-app` 是**你 worktree 下的兄弟仓**，不在 k8s 内。
-**fable 的工作区没有这个仓**——取不到就在覆盖声明里如实写「本条未独立复核」，
-不要照抄任务书 §1.1 的结论当作自己的取证，也**不要去别家的 worktree 拿**。
+⚠ `investment-app` 是**你 worktree 下的兄弟仓**，不在 k8s 内，路径
+`~/worktrees/<你的名字>/investment-app`。五家都有，子模块 commit 一致（`18d88c7c`）。
+`investment-backend` 没检出时跑 `git submodule update --init investment-backend`。
+仍取不到就**停下问人**——不要照抄任务书 §1.1 的结论当自己的取证，
+也**不要去别家的 worktree 拿**。
 
 ## 交完之后
 
