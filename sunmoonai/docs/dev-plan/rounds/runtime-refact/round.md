@@ -11,7 +11,7 @@ final_path = "sunmoonai/docs/dev-plan/agent-dev-guide.md"
 round_dir  = "sunmoonai/docs/dev-plan/rounds/runtime-refact"
 prefix     = "runtime-refact"
 baseline   = "ed0b5136"              # 只读输入按这个 commit 取
-proposers  = ["luna", "kimi", "cursor", "fable", "qwen"]
+proposers  = ["luna", "kimi", "cursor", "qwen"]   # R3：fable 于 ① 期间退赛，N 5→4
 arbiter        = "opus"              # R1：所有者 2026-09-06 裁定
 arbiter_branch = "runtime-refact/arbiter"
 acceptor       = ""                  # ③ 之后由处置表算出，不得事后更换
@@ -35,6 +35,7 @@ mechanical_absent = [
 | 编号 | 裁定 | 后果 |
 | --- | --- | --- |
 | **R1** | **opus 任裁决方** | 它同时是参考作品 `agent-dev-refact.md` 的作者，故按 `round-protocol.md` §8.2「起草人回避」声明：候选与该文一致**既不加分也不减分**，冲突且论证扎实的应当更高。⑤ 验收方由处置表算出，**不得是 opus** |
+| **R3** | **fable 退赛，`N` 5 → 4** | ① 环节按 §14.1「该家不出候选，不阻塞其余」。`call-①.md` **不改**（发布后不得再改）。独立性后果见 `rulings.md` 该条下的说明 |
 | **R2** | **五家不得读 `agent-dev-refact.md`** | 该文移出只读输入，任务书 §3.1 改为禁止条款，各家须在覆盖声明里写明是否遵守。⚠ **靠纪律不靠机制**——文件就在各家工作区的主线上，打得开 |
 
 `arbiter` 此前留空是**有意的**（属「无默认，必须显式填」，agent 不得代填），
