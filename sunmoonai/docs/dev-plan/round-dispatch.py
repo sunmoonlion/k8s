@@ -1,0 +1,167 @@
+#!/usr/bin/env python3
+"""分发：算出「现在该叫谁、说什么」，输出可直接执行的命令。
+
+**当前只生成，不执行。**这是 `ai-dev-readiness/automation-roadmap.md` 第 3 步：
+先让人粘贴一轮，验证「判定」与「措辞」都对，再上真调用（第 4 步）。
+理由写在 `round-protocol.md`「判据自身的质量」：一个检查第一次运行时，
+最可能发现的是它自己判错了——分发脚本同理，而它判错的代价是四家同时干错的环节。
+
+状态不自己算，一律调 `round-status.py --json` 取——**单一真源**。
+调用方式不硬编码，从 `agents.toml` 读。
+
+用法：
+    round-dispatch.py                 # 当前环节缺谁，给谁的命令
+    round-dispatch.py --all           # 不管缺不缺，给全部参与方的命令
+    round-dispatch.py --stage 4       # 指定环节（覆盖自动判定）
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import shlex
+import subprocess
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+FIXED_INSTRUCTION = "按 round-protocol 定位当前环节，做你该做的那一步。"
+
+
+def repo_root() -> Path:
+    out = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+                         capture_output=True, text=True, check=True)
+    return Path(out.stdout.strip())
+
+
+def load_agents() -> dict:
+    """极简 TOML 子集解析：够读本文件即可，不引三方依赖。"""
+    text = (HERE / "agents.toml").read_text(encoding="utf-8")
+    cfg: dict[str, dict] = {}
+    sec = None
+    for raw in text.splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if not line:
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            sec = line[1:-1]
+            cfg[sec] = {}
+            continue
+        if sec is None or "=" not in line:
+            continue
+        k, v = (x.strip() for x in line.split("=", 1))
+        if v.startswith("["):
+            # argv 可能跨行；先收集到行尾配平为止
+            buf = v
+            cfg[sec][k] = buf
+        else:
+            cfg[sec][k] = v.strip('"')
+    # argv 跨行的情况单独处理：直接用正则从原文抓
+    for name in cfg:
+        m = re.search(rf"\[{re.escape(name)}\](.*?)(?=\n\[|\Z)", text, re.S)
+        if not m:
+            continue
+        a = re.search(r"argv\s*=\s*\[(.*?)\]", m.group(1), re.S)
+        if a:
+            cfg[name]["argv"] = [s.strip().strip('"')
+                                 for s in re.findall(r'"([^"]*)"', a.group(1))]
+    return cfg
+
+
+def status(round_name: str | None) -> dict:
+    cmd = [sys.executable, str(HERE / "round-status.py"), "--json"]
+    if round_name:
+        cmd += ["--round", round_name]
+    p = subprocess.run(cmd, capture_output=True, text=True)
+    if p.returncode != 0:
+        sys.exit(p.stdout + p.stderr)
+    return json.loads(p.stdout)
+
+
+def missing_of(st: dict, stage_hint: str | None) -> tuple[str, list[str]]:
+    cur = st["current"]
+    for r in st["stages"]:
+        if stage_hint and not r["stage"].startswith(f"{stage_hint}"):
+            continue
+        if not stage_hint and r["stage"] != cur:
+            continue
+        if r["done"] is None:
+            return r["stage"], []
+        return r["stage"], [k for k, v in r["done"].items() if not v]
+    return cur, []
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--round")
+    ap.add_argument("--stage", help="环节序号或名字前缀，如 4 / ④")
+    ap.add_argument("--all", action="store_true", help="给全部参与方，不只缺的")
+    args = ap.parse_args()
+
+    st = status(args.round)
+    cfg = st["cfg"]
+    agents = load_agents()
+    home = str(Path.home())
+    root = repo_root()
+
+    # 已完结的轮次绝不分发——分支重置后候选文件不在了，环节判定会退回 ①，
+    # 照着分发等于把四家全叫起来重做一遍。首跑即撞上这一条。
+    if cfg.get("status") != "ACTIVE":
+        print(f"轮次 {st['round']} 的 status = {cfg.get('status')}，不是 ACTIVE，不分发。")
+        print("已完结轮次的产物在标签里，环节判定会因分支重置而失真——不要据此分发。")
+        return 0
+
+    stage, missing = missing_of(st, args.stage)
+    targets = cfg.get("proposers", []) if args.all else missing
+    # 处置表算出的验收方等角色也可能是目标
+    targets = [t for t in targets if t in agents]
+
+    print(f"轮次 {st['round']}   当前环节 {stage}")
+    if not targets:
+        if missing:
+            print(f"缺：{'、'.join(missing)} —— 但它们不在 agents.toml 里，无法分发")
+        else:
+            print("没有待分发的对象：本环节该交的都交了，或它是人的动作。")
+        return 0
+
+    call_path = f"{cfg['round_dir']}/{cfg['prefix']}-call-<环节>.md"
+    print(f"待分发 {len(targets)} 家：{'、'.join(targets)}\n")
+    print("─" * 72)
+    manual = []
+    for name in targets:
+        a = agents[name]
+        cwd = a["worktree"].replace("{home}", home)
+        prompt = FIXED_INSTRUCTION
+        if "argv" not in a:
+            # 登记表里存在、但没有命令行入口的执行者（例：fable 跑在 Cursor 桌面应用里）。
+            # **不能静默跳过**——跳过就等于漏掉一家，而漏掉一家的代价见
+            # round-protocol「产物、路径与命名」记的那次整轮作废事故。
+            manual.append((name, cwd))
+            print(f"\n# → {name}    工作目录 {cwd}")
+            print(f"# ⚠ 无 argv：此家无命令行入口，**只能人工投喂**。")
+            print(f"#   先把它的界面打开在 {cwd}，再把下面这句发给它：")
+            print(f"#   {prompt}")
+            continue
+        argv = [x.replace("{home}", home).replace("{cwd}", cwd)
+                 .replace("{prompt}", prompt) for x in a["argv"]]
+        print(f"\n# → {name}    工作目录 {cwd}")
+        print(f"cd {shlex.quote(cwd)} && {' '.join(shlex.quote(x) for x in argv)}")
+    print("\n" + "─" * 72)
+    if manual:
+        print(f"⚠ 上列 {len(manual)} 家无命令行入口，需人工投喂："
+              f"{'、'.join(n for n, _ in manual)}")
+        print("  本轮**不可能全自动分发**；这一项须记进 round.md 的「待自动化」。")
+    print(f"""
+说明：
+  · 发出去的话是固定的那一句，不逐轮改写；环节通知落在 {call_path}，各家自取。
+  · **成功判据是产物出现，不是命令返回 0。**cursor 未加 --trust 时会拒绝执行
+    却仍返回 0（已在 argv 里带上 --trust）。核对用：
+        python3 sunmoonai/docs/dev-plan/round-status.py
+  · 本脚本只生成不执行（roadmap 第 3 步）。粘贴跑通一轮、确认判定与措辞无误后，
+    再开第 4 步的真调用。""")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
