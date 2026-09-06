@@ -20,8 +20,10 @@
     1  `--verify` 有失败项（标「人判」的不计入）
     2  用法错误：找不到指定轮次、没有 ACTIVE 轮次、有多个 ACTIVE、round.md 缺字段
 
-配套：`round-dispatch.py`（只生成环节通知，不执行）、`agents.toml`（五家登记）。
-三者的调用方式同时写在 `round-protocol.md`「两个脚本怎么调」一节——
+同目录的配套：`round-dispatch.py`（只生成环节通知，不执行）、`agents.toml`（五家登记）、
+`README.md`（协议条文与本目录文件的对应表）。
+
+调用方式同时写在 `round-protocol.md`「两个脚本怎么调」一节——
 那一节里的每条命令都以能实跑为准，改了参数名必须同步改那一节。
 """
 
@@ -330,9 +332,18 @@ def verify(cfg: dict) -> int:
     commits = [l.split(" ", 1) for l in log.splitlines()] if code == 0 else []
     dtext = git("show", f"{arb}:{disp}")[1]
     unlogged = [f"{h} {t[:28]}" for h, t in commits if h not in dtext]
-    line("提交→处置记录", not unlogged,
-         f"{len(commits)} 个触及裁决稿的提交全部登记" if not unlogged
-         else f"{len(unlogged)} 个提交未登记：{unlogged[:4]}")
+    if cfg.get("status") != "ACTIVE":
+        # ⑦ 发布后 `master..<裁决方>` 不再是「本轮新增的提交」：裁决稿已并入主线，
+        # 剩下的差集是发布方式的产物（squash / cherry-pick），与登记完整性无关。
+        # 这一项**只在 ⑤ 之前有意义**，事后跑会报出与产物无关的失败。
+        # 不静默跳过——标「人判」并说明为什么判不了，见协议 §8.1 第 2 条。
+        line("提交→处置记录", None,
+             f"轮次 status={cfg.get('status')}，非 ACTIVE：发布后该对账失去意义，"
+             f"不判（此刻差集 {len(unlogged)} 个，不构成结论）")
+    else:
+        line("提交→处置记录", not unlogged,
+             f"{len(commits)} 个触及裁决稿的提交全部登记" if not unlogged
+             else f"{len(unlogged)} 个提交未登记：{unlogged[:4]}")
 
     claimed = set(re.findall(r"`([0-9a-f]{7,8})`", dtext))
     known = {h for h, _ in commits} | {cfg.get("baseline", "")}
