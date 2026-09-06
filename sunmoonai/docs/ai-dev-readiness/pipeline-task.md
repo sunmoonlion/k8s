@@ -29,7 +29,7 @@ pwd     # 应形如 /home/zym/worktrees/luna/k8s
 
 ### 0.2 本次只做环节 ①
 
-本轮流程见 [`round-protocol.md`](../dev-plan/round-protocol.md)，**你现在只做第一个环节**：
+本轮流程见 [`round-protocol.md`](../dev-plan/protocol/round-protocol.md)，**你现在只做第一个环节**：
 
 > **① 提案**：写出候选，提交，把候选文件的 SHA-256 与 commit 号回报给发起人。
 
@@ -63,7 +63,7 @@ git rev-parse HEAD
 ### 0.5 读的顺序
 
 1. 本文全文
-2. [`round-protocol.md`](../dev-plan/round-protocol.md) — 本轮流程与纪律
+2. [`round-protocol.md`](../dev-plan/protocol/round-protocol.md) — 本轮流程与纪律
 3. [`constraints.md`](../dev-plan/constraints.md) — 尤其「保证这些被遵守的三层」那节
 4. `working/request-baseline/TEMPLATE.md` 与 `working/request-baseline/REQ-010-REQ模板完善/template-proposed.md` — **PRD 那一格的现状**
 5. [`implementation-plan.md`](../dev-plan/implementation-plan.md)、[`handoff.md`](../dev-plan/handoff.md)、[`development-plan.md`](../dev-plan/development-plan.md)
@@ -315,7 +315,7 @@ grep -rn "create_table(" investment-backend/app/alembic/versions/ | wc -l   # 13
 回答三件事：
 
 1. **出题方与答题方怎么分。** 自己写实现 + 自己写测试 + 自己报告通过 = 三位一体的自证。
-   [`round-protocol.md`](../dev-plan/round-protocol.md) 已经把角色分离想透了，但只用在大轮次上——
+   [`round-protocol.md`](../dev-plan/protocol/round-protocol.md) 已经把角色分离想透了，但只用在大轮次上——
    **要不要下沉到日常任务？成本是否可接受（每个任务至少两个会话）？**
 2. **人的评审审什么。** AI 会产出巨大 diff，"控制 PR 大小"这条纪律撑不住。
    人应当审哪几样、不审哪几样？
@@ -423,7 +423,7 @@ sunmoonai/docs/dev-plan/working/request-lifecycle.md      产品契约，只引�
 
 ## 13. 本轮的角色
 
-**流程本身见 [`round-protocol.md`](../dev-plan/round-protocol.md)**——环节、产物落点、冻结与枚举、
+**流程本身见 [`round-protocol.md`](../dev-plan/protocol/round-protocol.md)**——环节、产物落点、冻结与枚举、
 评审四块、裁决与验收规则、清理顺序，全在那份里，本节不重复。**动手前先读完它。**
 
 | 角色 | 谁 |
@@ -451,5 +451,5 @@ sunmoonai/docs/dev-plan/working/request-lifecycle.md      产品契约，只引�
 3. `ai-pipeline.md` 已知有一处判断被推翻（§11 那条），整合时不得以任何形式复活；
 4. 四家的候选**都不参考 opus 的候选**——本轮 opus 不出候选。
 
-反例记在 [`round-protocol.md`](../dev-plan/round-protocol.md)：2026-09-03 那次失败整合，
+反例记在 [`round-protocol.md`](../dev-plan/protocol/round-protocol.md)：2026-09-03 那次失败整合，
 五条毛病全部源于角色不分。

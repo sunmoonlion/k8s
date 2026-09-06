@@ -22,7 +22,7 @@
 | 1 | [`../project-guide/overall-architecture.md`](../project-guide/overall-architecture.md) | 项目长什么样 |
 | 2 | [`working/request-lifecycle.md`](working/request-lifecycle.md) | **本文的地基**。七个内核对象与两层状态机都在那里定义，本文只引用不重复 |
 | 3 | 本文 | |
-| 4 | [`round-protocol.md`](round-protocol.md) | 只有当你要参与或组织一轮多家并行评优时才需要 |
+| 4 | [`round-protocol.md`](protocol/round-protocol.md) | 只有当你要参与或组织一轮多家并行评优时才需要 |
 
 **只读本文而不读第 2 项，会看不懂本文一半的名词。**这不是本文写得含糊，是分工：
 内核对象的定义只能有一处，重复写一遍就成了第二真源。

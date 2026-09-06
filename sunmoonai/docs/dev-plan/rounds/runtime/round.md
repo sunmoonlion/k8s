@@ -1,7 +1,7 @@
 # 轮次 runtime：只有一个运行时，开发是它的第一个 Task Profile
 
 > 本文件是本轮**唯一**的可变参数来源。不变的流程规则在
-> [`../../round-protocol.md`](../../round-protocol.md)，不在这里重复。
+> [`../../round-protocol.md`](../../protocol/round-protocol.md)，不在这里重复。
 > 背景与题目细则见同目录 [`task.md`](task.md)。
 >
 > ⚠ **本文件尚未冻结。**`status = "DRAFT"` 不在 `round-protocol.md`「本轮定义」
