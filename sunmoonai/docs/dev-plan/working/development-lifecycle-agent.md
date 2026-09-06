@@ -816,7 +816,7 @@ Agent 路径的根仓由后端物化，后续 worktree 由 Agent supervisor 建�
 
 脚本化产生候选**目前没有可用工具**：曾有的 `parallel-proposals.py` 已于 2026-09-06 删除
 （三轮一次没用过、真实模型调用从未验证、只覆盖 codex 系执行者），
-理由与重建时的注意事项见 [`../round-protocol.md`](../round-protocol.md) §9.3。
+理由与重建时的注意事项见 [`../round-protocol.md`](../protocol/round-protocol.md) §9.3。
 在此之前候选的隔离靠纪律，不靠机制，且**无法事后证明某一轮真的独立**。不得据此声称
 隔离由机制保证。
 
