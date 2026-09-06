@@ -108,7 +108,11 @@ def refs_for(cfg: dict, name: str, who: str | None) -> list[str]:
     轮次结束后各家分支会被回收（`runtime/*` 现在一个都不在了），产物归档进主线。
     只认 `<轮次>/<家>` 分支的话，每一轮做完之后都会被自己判成「没做」。
     """
-    refs = ([f"{name}/{who}"] if who else []) + [cfg.get("arbiter_branch", ""), "master", "HEAD"]
+    # `<轮次>/<家>` 与**裸的 `<家>`** 都要认。环节通知说的是「commit 到你自己的分支」，
+    # 各家对此的落法不一致：2026-09-06 runtime-refact ① 实测，luna / cursor 建了
+    # `runtime-refact/<家>`，qwen 直接提交在 `qwen` 上。只认前者会把**照指示做的那家
+    # 判成没交**，进而按逾期处理——判据把合规者判出局，比漏判更危险。
+    refs = ([f"{name}/{who}", who] if who else []) + [cfg.get("arbiter_branch", ""), "master", "HEAD"]
     return [r for r in refs if r]
 
 
@@ -192,9 +196,12 @@ def stage_table(cfg: dict, name: str) -> list[dict]:
     #    归档后在 rounds/<id>/[reviews/]candidate-<名>.md。两处认一处。
     rows = {}
     for w in proposers:
-        live = (committed(f"{name}/{w}", final_path)
-                and blob_lines(f"{name}/{w}", final_path) != blob_lines("master", final_path))
-        rows[w] = bool(live) or locate(cfg, name, "candidate", w) is not None
+        # 候选可能在：该家的任一 ref 上的共享最终路径（进行中），或归档后的 candidate 文件。
+        # **不要只查一个 ref** —— 见 refs_for 的注释。
+        live = any(committed(r, final_path)
+                   and blob_lines(r, final_path) != blob_lines("master", final_path)
+                   for r in refs_for(cfg, name, w))
+        rows[w] = live or locate(cfg, name, "candidate", w) is not None
     add("① 提案", proposers, rows)
 
     # ② 互评
