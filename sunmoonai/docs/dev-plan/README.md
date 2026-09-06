@@ -20,7 +20,7 @@
 | [`anchor-gate.py`](anchor-gate.py) | **锚点门禁**：`doc-gate` 只查 markdown 链接，查不到 `` `文件.md:行` `` 这类纯文本锚点——实测删掉被引文件后 `doc-gate --all` 仍报通过。本脚本补这一类：钉 commit 的锚在该 commit 内解析、裸路径锚对当前索引与外部取证仓解析、`rounds/**` 按归档软判 | 删或改被引用的文档前 |
 | [`scripts/check-no-owner-creds.sh`](scripts/check-no-owner-creds.sh) | **凭据卫生检查**（不是边界——本机 agent 可 `sudo`，能改它）：扫明文凭据、无口令 key、主仓是否对本机可写、提权面 | 边界变更前后 |
 | [`doc-gate.py`](doc-gate.py) | **文档不变量门禁**：仓内链接、章节引用、表格列数。由 `.githooks/pre-commit` 自动触发，不需要谁记得跑；`--survey` 巡检全仓、`--selfcheck` 查是否已安装 | 不用主动读；提交文档时它自己会说话 |
-| [`parallel-proposals.py`](parallel-proposals.py) | 上一条的自动化实现，隔离由机制保证 | 同上 |
+| [`round/`](round/) | **协议的实现**：`round-status.py`（算环节 + 机械验收）、`round-dispatch.py`（生成环节通知，只生成不执行）、`agents.toml`（五家登记，无凭据） | 跑一轮流程时；目录说明见其 `README.md` |
 
 ## 三份文档的分工，别混写
 
