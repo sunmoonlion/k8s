@@ -45,7 +45,7 @@
 
 **状态不记在任何声明里。**没有 `state: reviewing` 这种字段可信——
 声明会和事实漂移。判据一律是「环节判定」那节的命令，对照 git 提交，不看工作区、不看谁说了什么。
-这与 [`doc-gate.py`](doc-gate.py) 同源：结论不取决于工作区状态。
+这与 [`doc-gate.py`](../doc-gate.py) 同源：结论不取决于工作区状态。
 
 ---
 
@@ -358,7 +358,7 @@ git log --oneline master..<裁决分支>       # 看逐条主张（一条主张�
 只说文件路径的引用不算数。
 
 **跨分支产物不得写成 markdown 链接。**本轮产物散在各家分支上，而
-[`doc-gate.py`](doc-gate.py) 按**当前分支的 git 索引**判定链接目标是否存在——
+[`doc-gate.py`](../doc-gate.py) 按**当前分支的 git 索引**判定链接目标是否存在——
 链到别的分支上的文件必然判失败。写成 `<分支>:<路径>` 的纯文本即可，
 这也正好满足上一条「同时给出分支」。
 
@@ -431,7 +431,7 @@ git worktree remove ~/review/<分支名>           # 用完删；分支与提交
 | --- | --- |
 | `test_dormant_capabilities.py` 文件头记的坑 | **把「没找到」当成「不存在」** |
 | 被删的两个检查脚本 | 结论取决于工作区状态，同一份文档在三台机器上报 0 / 4 / 95 条失败 |
-| 2026-09-04 `round/round-status.py --verify` 首版 | 锚点正则只认 `~/repo/` 全路径，短路径形式的一大类**一处未验**，却报「17 处全部可达」 |
+| 2026-09-04 `protocol/round-status.py --verify` 首版 | 锚点正则只认 `~/repo/` 全路径，短路径形式的一大类**一处未验**，却报「17 处全部可达」 |
 | 2026-09-04 refact 轮清理扫描 | 正则漏了一类文件名，扫出「0 份残留」，实际还剩一份 |
 
 后两条发生在**同一天**，都是本协议自己的工具。因此立三条：
@@ -521,19 +521,19 @@ git worktree remove ~/review/<分支名>           # 用完删；分支与提交
 
 ## 8b. 两个脚本怎么调
 
-都在 `sunmoonai/docs/dev-plan/round/` 下（目录说明见该处 `README.md`）：`round-status.py`（算环节）、
+都在 `sunmoonai/docs/dev-plan/protocol/` 下（与本文同一目录）（目录说明见该处 `README.md`）：`round-status.py`（算环节）、
 `round-dispatch.py`（生成环节通知，**只生成不执行**）、`agents.toml`（五家登记，不含凭据）。
 在仓内任一 worktree 的任意目录跑都可以，路径由脚本自己解析。
 
 | 命令 | 作用 |
 | --- | --- |
-| `round/round-status.py` | 自动找唯一 `status=ACTIVE` 的轮次，算当前环节 |
-| `round/round-status.py --round runtime` | 指定轮次；值是 `rounds/` 下的目录名 |
-| `round/round-status.py --json` | 机器可读输出，含 `current` 与 `conflict` |
-| `round/round-status.py --round runtime --verify` | 机械验收：把 ⑤ 里机器能判的判掉，判不了的标「人判」 |
-| `round/round-dispatch.py` | 当前环节缺谁，打印给谁的命令 |
-| `round/round-dispatch.py --stage 4` | 指定环节，接 `4` 或 `④`；指不到的环节**报错退 2**，不静默退回当前环节 |
-| `round/round-dispatch.py --all` | 不管缺不缺，给全部参与方 |
+| `protocol/round-status.py` | 自动找唯一 `status=ACTIVE` 的轮次，算当前环节 |
+| `protocol/round-status.py --round runtime` | 指定轮次；值是 `rounds/` 下的目录名 |
+| `protocol/round-status.py --json` | 机器可读输出，含 `current` 与 `conflict` |
+| `protocol/round-status.py --round runtime --verify` | 机械验收：把 ⑤ 里机器能判的判掉，判不了的标「人判」 |
+| `protocol/round-dispatch.py` | 当前环节缺谁，打印给谁的命令 |
+| `protocol/round-dispatch.py --stage 4` | 指定环节，接 `4` 或 `④`；指不到的环节**报错退 2**，不静默退回当前环节 |
+| `protocol/round-dispatch.py --all` | 不管缺不缺，给全部参与方 |
 
 **`--stage` 只有 `round-dispatch.py` 有。**`round-status.py` 没有这个参数——
 它的职责是**算出**在第几环，接受一个「指定环节」等于把结论交回给调用者。
