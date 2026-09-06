@@ -11,8 +11,16 @@
 
 用法：
     round-dispatch.py                 # 当前环节缺谁，给谁的命令
+    round-dispatch.py --round runtime # 指定轮次（与 round-status.py 同名同义）
     round-dispatch.py --all           # 不管缺不缺，给全部参与方的命令
-    round-dispatch.py --stage 4       # 指定环节（覆盖自动判定）
+    round-dispatch.py --stage 4       # 指定环节，接 4 或 ④（覆盖自动判定）
+
+退出码：
+    0  正常输出了命令
+    2  拒绝分发：轮次不是 ACTIVE，或 round-status.py 判定失败
+
+`--stage` 只在本脚本有；`round-status.py` 没有这个参数（它算环节，不指定环节）。
+两者的调用方式同时写在 `round-protocol.md`「两个脚本怎么调」一节。
 """
 
 from __future__ import annotations
@@ -105,12 +113,13 @@ def main() -> int:
     home = str(Path.home())
     root = repo_root()
 
-    # 已完结的轮次绝不分发——分支重置后候选文件不在了，环节判定会退回 ①，
+    # 已完结的轮次绝不分发——它没有「当前环节」，分发就是把人叫去做已经做完的事。
     # 照着分发等于把四家全叫起来重做一遍。首跑即撞上这一条。
     if cfg.get("status") != "ACTIVE":
-        print(f"轮次 {st['round']} 的 status = {cfg.get('status')}，不是 ACTIVE，不分发。")
-        print("已完结轮次的产物在标签里，环节判定会因分支重置而失真——不要据此分发。")
-        return 0
+        print(f"轮次 {st['round']} 的 status = {cfg.get('status')}，不是 ACTIVE，不分发。",
+              file=sys.stderr)
+        print("要查它走到哪一环，用 round-status.py --round <轮次>。", file=sys.stderr)
+        return 2   # 拒绝执行要有区别于成功的退出码，否则调用方看不出被拒
 
     stage, missing = missing_of(st, args.stage)
     targets = cfg.get("proposers", []) if args.all else missing

@@ -10,12 +10,19 @@
    不看工作区文件。同一个仓库状态在任何机器上给出同一结论。
 
 用法：
-    round-status.py                # 自动找 status=ACTIVE 的轮次
-    round-status.py --round refact # 指定轮次
-    round-status.py --json         # 机器可读输出
-    round-status.py --verify       # 机械验收：把 ⑤ 里机器能判的部分判掉
+    round-status.py                  # 自动找 status=ACTIVE 的轮次
+    round-status.py --round runtime  # 指定轮次（值是 rounds/ 下的目录名）
+    round-status.py --json           # 机器可读输出
+    round-status.py --round runtime --verify   # 机械验收：把 ⑤ 里机器能判的部分判掉
 
-退出码：0 正常；2 用法错误或找不到 ACTIVE 轮次。
+退出码：
+    0  正常；`--verify` 时表示机械判定零失败
+    1  `--verify` 有失败项（标「人判」的不计入）
+    2  用法错误：找不到指定轮次、没有 ACTIVE 轮次、有多个 ACTIVE、round.md 缺字段
+
+配套：`round-dispatch.py`（只生成环节通知，不执行）、`agents.toml`（五家登记）。
+三者的调用方式同时写在 `round-protocol.md`「两个脚本怎么调」一节——
+那一节里的每条命令都以能实跑为准，改了参数名必须同步改那一节。
 """
 
 from __future__ import annotations
@@ -36,14 +43,80 @@ def repo_root() -> Path:
     return Path(out.stdout.strip())
 
 
+def die(msg: str) -> None:
+    """用法错误一律退 2。
+
+    `sys.exit(<字符串>)` 把字符串打到 stderr 之后退的是 **1**，不是 2；
+    本文件的 docstring 一直写着 2。调用方按 2 判分支就会全部落空。
+    """
+    print(msg, file=sys.stderr)
+    raise SystemExit(2)
+
+
 def git(*args: str) -> tuple[int, str]:
     p = subprocess.run(["git", *args], capture_output=True, text=True)
     return p.returncode, p.stdout.strip()
 
 
+_TREE: dict[str, set[str]] = {}
+
+
+def tree(ref: str) -> set[str]:
+    """某个 ref 的全部文件路径。缓存，避免逐文件起 git 进程。"""
+    if ref not in _TREE:
+        code, out = git("ls-tree", "-r", "--name-only", ref)
+        _TREE[ref] = set(out.splitlines()) if code == 0 else set()
+    return _TREE[ref]
+
+
 def committed(branch: str, path: str) -> bool:
-    """该分支的提交里有没有这个文件。不看工作区。"""
-    return git("show", f"{branch}:{path}")[0] == 0
+    """该 ref 的提交里有没有这个文件。不看工作区。
+
+    空字符串直接判否：`git show :<路径>` 取的是**索引**，
+    工单里 arbiter_branch 缺省时会静默地拿暂存区当分支答。
+    """
+    return bool(branch) and path in tree(branch)
+
+
+ARCH_SUBDIRS = ("reviews/", "")
+
+
+def artifact_paths(cfg: dict, kind: str, who: str | None = None) -> list[str]:
+    """一件产物可能落在哪几个路径上。
+
+    协议正文写 `rounds/<id>/<kind>-<名>.md`，但实跑出现过两种变体：
+
+    · 评审/异议/验收归档进 `reviews/` 子目录（`refact-fable`、`runtime` 两轮）。
+      这两处已被**已发布**文档当证据锚引用（`runtime-architecture.md:454/458/461`、
+      `refact-fable.md:23/29/38/43`），改名等于让已发布的证据链失效，所以不改文件、改判据。
+    · 处置记录与环节通知带 `<round-id>-` 前缀（`runtime`、`_fixups` 两轮）。
+
+    四种组合全找过才算缺。2026-09-06 之前只按一个拼法找，把已经走完七环节发布掉的
+    `runtime` 轮判成「当前环节 ①，缺五家」——**覆盖不全的判据会给假答案**，
+    这次的方向是假失败（安全侧），但同一个毛病换个方向就是假通过。
+    """
+    stem = f"{kind}-{who}" if who else kind
+    return [f"{cfg['round_dir']}/{sub}{pre}{stem}.md"
+            for sub in ARCH_SUBDIRS for pre in ("", f"{cfg['prefix']}-")]
+
+
+def refs_for(cfg: dict, name: str, who: str | None) -> list[str]:
+    """一件产物可能提交在哪个 ref 上。
+
+    轮次结束后各家分支会被回收（`runtime/*` 现在一个都不在了），产物归档进主线。
+    只认 `<轮次>/<家>` 分支的话，每一轮做完之后都会被自己判成「没做」。
+    """
+    refs = ([f"{name}/{who}"] if who else []) + [cfg.get("arbiter_branch", ""), "master", "HEAD"]
+    return [r for r in refs if r]
+
+
+def locate(cfg: dict, name: str, kind: str, who: str | None = None) -> tuple[str, str] | None:
+    """产物在哪个 ref 的哪个路径上；找不到返回 None。"""
+    for path in artifact_paths(cfg, kind, who):
+        for ref in refs_for(cfg, name, who):
+            if committed(ref, path):
+                return path, ref
+    return None
 
 
 def blob_lines(branch: str, path: str) -> int:
@@ -76,7 +149,7 @@ def parse_round(md: Path) -> dict:
 def find_active(root: Path, want: str | None) -> tuple[str, dict]:
     base = root / ROUNDS_DIR
     if not base.is_dir():
-        sys.exit(f"没有 {ROUNDS_DIR}/ —— 本仓还没有按 round-protocol 建轮次目录")
+        die(f"没有 {ROUNDS_DIR}/ —— 本仓还没有按 round-protocol 建轮次目录")
     found = []
     for d in sorted(base.iterdir()):
         md = d / "round.md"
@@ -88,55 +161,116 @@ def find_active(root: Path, want: str | None) -> tuple[str, dict]:
         if not want and cfg.get("status") == "ACTIVE":
             found.append((d.name, cfg))
     if want:
-        sys.exit(f"找不到轮次 {want}")
+        die(f"找不到轮次 {want}")
     if not found:
-        sys.exit("没有 status=ACTIVE 的轮次")
+        die("没有 status=ACTIVE 的轮次")
     if len(found) > 1:
-        sys.exit(f"有多个 ACTIVE 轮次：{[n for n, _ in found]} —— 协议规定同时只允许一个")
+        die(f"有多个 ACTIVE 轮次：{[n for n, _ in found]} —— 协议规定同时只允许一个")
     return found[0]
 
 
-def artifact(cfg: dict, stage: str, who: str) -> str:
-    return f"{cfg['round_dir']}/{cfg['prefix']}-{stage}-{who}.md"
+def stage_table(cfg: dict, name: str) -> list[dict]:
+    """每个环节：谁该交、交了没。判据即命令，结论只依赖 git 提交。
 
-
-def stage_table(cfg: dict) -> list[dict]:
-    """每个环节：谁该交、交了没。判据即命令，结论只依赖 git 提交。"""
+    `skip_stages` 是唯一能让一个环节不算数的东西，而且必须**写在工单里**。
+    参与方为空**不等于**该环节完成——`all({})` 为真，会让空环节被静默跳过，
+    那正是协议「判据自身的质量」点名的那类错。要跳过就明写，不许靠空集合默认。
+    """
     proposers = cfg.get("proposers", [])
-    arb = cfg.get("arbiter_branch", "")
+    skip = set(cfg.get("skip_stages", []))
     final_path = cfg["final_path"]
+    arb = cfg.get("arbiter_branch", "")
     rounds: list[dict] = []
 
-    # ① 提案：候选写在共享最终路径同名文件
-    rows = {w: committed(w, final_path) and blob_lines(w, final_path) != blob_lines("master", final_path)
-            for w in proposers}
-    rounds.append({"stage": "① 提案", "who": proposers, "done": rows})
+    def add(tag: str, who: list[str], rows: dict) -> None:
+        rounds.append({"stage": tag, "who": who, "done": rows,
+                       "skipped": tag[0] in skip})
+
+    # ① 提案：轮次进行中，候选在各家分支的共享最终路径上；
+    #    归档后在 rounds/<id>/[reviews/]candidate-<名>.md。两处认一处。
+    rows = {}
+    for w in proposers:
+        live = (committed(f"{name}/{w}", final_path)
+                and blob_lines(f"{name}/{w}", final_path) != blob_lines("master", final_path))
+        rows[w] = bool(live) or locate(cfg, name, "candidate", w) is not None
+    add("① 提案", proposers, rows)
 
     # ② 互评
-    rows = {w: committed(w, artifact(cfg, "review", w)) for w in proposers}
-    rounds.append({"stage": "② 互评", "who": proposers, "done": rows})
+    add("② 互评", proposers,
+        {w: locate(cfg, name, "review", w) is not None for w in proposers})
 
-    # ③ 裁决：裁决稿 + 处置记录都在整合分支上
-    disp = f"{cfg['round_dir']}/{cfg['prefix']}-disposition.md"
-    rows = {"裁决稿": committed(arb, final_path), "处置记录": committed(arb, disp)}
-    rounds.append({"stage": "③ 裁决", "who": [cfg.get("arbiter", "?")], "done": rows})
+    # ③ 裁决：裁决稿 + 处置记录
+    add("③ 裁决", [cfg.get("arbiter", "?")],
+        {"裁决稿": committed(arb, final_path) or committed("master", final_path),
+         "处置记录": locate(cfg, name, "disposition") is not None})
 
     # ④ 异议：只发给被处置到的家；经裁定免除的不计
     excused = cfg.get("excused_objection", [])
     who4 = [w for w in proposers if w not in excused]
-    rows = {w: committed(w, artifact(cfg, "objection", w)) for w in who4}
-    for w in excused:
-        rows[f"{w}(免除)"] = True
-    rounds.append({"stage": "④ 异议", "who": who4, "done": rows})
+    rows = {w: locate(cfg, name, "objection", w) is not None for w in who4}
+    rows.update({f"{w}(免除)": True for w in excused})
+    add("④ 异议", who4, rows)
 
     # ⑤ 验收
     acc = cfg.get("acceptor", "")
-    rows = {acc: committed(acc, artifact(cfg, "acceptance", acc))} if acc else {}
-    rounds.append({"stage": "⑤ 验收", "who": [acc] if acc else [], "done": rows})
+    add("⑤ 验收", [acc] if acc else {},
+        {acc: locate(cfg, name, "acceptance", acc) is not None} if acc else {})
 
-    # ⑥ 确认：人的动作，不可由命令判定
-    rounds.append({"stage": "⑥ 确认", "who": ["human"], "done": None})
+    # ⑥ 确认：人的动作，但**留下的痕迹**是机器可查的。
+    #    这一轮自己的规矩就写在 rulings.md 抬头：「回执只认落盘——对话里说『同意』不算」，
+    #    「人确认 = 是 的行，以所有者 commit 为生效时刻」。那一列就是判据。
+    #    早先把 ⑥ 一律标成「不可由命令判定」，等于让**任何**轮次都到不了 ⑦，
+    #    于是每一轮走完都会跟自己的 status=DONE 打架。人判的是内容，不是有没有落盘。
+    pend = pending_rulings(cfg, name)
+    if pend is None:
+        rounds.append({"stage": "⑥ 确认", "who": ["human"], "done": None, "skipped": False})
+    else:
+        add("⑥ 确认", ["human"],
+            {f"rulings.md 无待确认（{len(pend)} 条待）" if pend else "rulings.md 全部已确认": not pend})
     return rounds
+
+
+def _cells(row: str) -> list[str]:
+    """切一行 markdown 表格。
+
+    **先剥掉行内代码再切**：裁定行里出现过 `... || echo "❌ 不在 git 仓内"`，
+    反引号里的 `||` 会被当成两个空单元格，把后面每一列都推错位——
+    `R4` 的「人确认」因此读成空，看上去像「没确认」。
+    """
+    masked = re.sub(r"`[^`]*`", "◇", row)
+    return [c.strip() for c in masked.strip().strip("|").split("|")]
+
+
+def pending_rulings(cfg: dict, name: str) -> list[str] | None:
+    """rulings.md 里「人确认」尚未落成「是」的裁定编号。
+
+    返回 None = 这一轮没有 rulings.md，机器判不了，交回给人。
+    """
+    hit = locate(cfg, name, "rulings")
+    if not hit:
+        return None
+    text = git("show", f"{hit[1]}:{hit[0]}")[1]
+    lines = text.splitlines()
+    col = None
+    for i, ln in enumerate(lines):
+        cells = _cells(ln)
+        if "人确认" in cells:
+            col = cells.index("人确认")
+            start = i + 2          # 跳过 |---| 分隔行
+            break
+    if col is None:
+        return None
+    pend = []
+    for ln in lines[start:]:
+        if not ln.startswith("|"):
+            break
+        cells = _cells(ln)
+        if len(cells) <= col or not cells[0]:
+            continue
+        val = cells[col].replace("*", "")
+        if not val.startswith("是"):
+            pend.append(cells[0])
+    return pend
 
 
 # ---------------------------------------------------------------- 机械验收
@@ -159,9 +293,10 @@ def verify(cfg: dict) -> int:
     """
     import hashlib
 
-    arb = cfg["arbiter_branch"]
+    arb = cfg.get("arbiter_branch") or "master"
     final_path = cfg["final_path"]
-    disp = f"{cfg['round_dir']}/{cfg['prefix']}-disposition.md"
+    hit = locate(cfg, cfg.get("round_id", ""), "disposition")
+    disp = hit[0] if hit else f"{cfg['round_dir']}/disposition.md"
     fails = 0
 
     def line(tag: str, ok: bool | None, msg: str) -> None:
@@ -308,14 +443,16 @@ def main() -> int:
     name, cfg = find_active(root, args.round)
     for req in ("final_path", "round_dir", "prefix"):
         if req not in cfg:
-            sys.exit(f"round.md 的 toml 块缺字段：{req}")
+            die(f"round.md 的 toml 块缺字段：{req}")
 
     if args.verify:
         return verify(cfg)
 
-    table = stage_table(cfg)
+    table = stage_table(cfg, name)
     current = None
     for r in table:
+        if r["skipped"]:
+            continue                      # 工单明写跳过，才跳过
         if r["done"] is None:
             current = r["stage"]
             break
@@ -331,9 +468,21 @@ def main() -> int:
     if current is None:
         current = "⑦ 清理与发布"
 
+    # 声明 vs 计算。**声明不参与计算**——脚本存在的理由就是不看任何人的声明；
+    # 但两者对不上是个信号，不许静默采信任一方，也不许让声明改掉算出来的结论。
+    declared = cfg.get("status", "?")
+    done = current == "⑦ 清理与发布"
+    conflict = ""
+    if declared == "DONE" and not done:
+        conflict = (f"⚠ round.md 声明 DONE，按产物却算到「{current}」。"
+                    "二者必有一错：要么产物没归档到判据找得到的地方，要么这一轮其实没走完。")
+    elif declared == "ACTIVE" and done:
+        conflict = "⚠ 七个环节的产物都齐了，round.md 却还是 ACTIVE——该走 ⑦ 收尾并改 status。"
+
     if args.json:
         print(json.dumps({"round": name, "cfg": cfg, "stages": table,
-                          "current": current}, ensure_ascii=False, indent=2))
+                          "current": current, "conflict": conflict},
+                          ensure_ascii=False, indent=2))
         return 0
 
     print(f"轮次 {name}   档位 {cfg.get('tier','?')}   状态 {cfg.get('status','?')}")
@@ -342,6 +491,9 @@ def main() -> int:
           f"（{cfg.get('arbiter_branch','?')}）   验收方 {cfg.get('acceptor','未定')}")
     print()
     for r in table:
+        if r["skipped"]:
+            print(f"  {r['stage']}   跳过   —— 工单 skip_stages 明写")
+            continue
         if r["done"] is None:
             print(f"  {r['stage']}   —— 人的动作，不可由命令判定")
             continue
@@ -363,6 +515,9 @@ def main() -> int:
             missing = [k for k, v in r["done"].items() if not v]
     if missing:
         print(f"缺：{'、'.join(missing)}")
+    if conflict:
+        print()
+        print(conflict)
     print()
     print("判据即命令，结论只依赖 git 提交；工作区文件不参与判定。")
     return 0

@@ -267,16 +267,28 @@ sunmoonai/docs/dev-plan/rounds/<round-id>/round.md
 
 ## 6. 产物、路径与命名
 
-| 环节 | 谁 | 产物 | 落点 |
-| --- | --- | --- | --- |
-| ① | 各提案方 | 候选 | 自己 worktree 的**共享最终路径同名文件** |
-| ② | 各提案方 | 评审 | `rounds/<round-id>/review-<名>.md` |
-| ③ | 裁决方 | 裁决稿 + 处置记录 | 裁决稿在共享最终路径；处置记录 `rounds/<round-id>/disposition.md` |
-| ④ | 被处置到的各家 | 异议稿 | `rounds/<round-id>/objection-<名>.md` |
-| ⑤ | 验收方 | 验收稿 | `rounds/<round-id>/acceptance-<名>.md` |
-| ⑦ | 裁决方 | 最终稿 | 主线的共享最终路径 |
-| 每个环节开始时 | 该环节的组织者 | **环节通知** | `rounds/<round-id>/call-<环节>.md` |
-| 任何时候 | 组织者 | **裁定记录** | `rounds/<round-id>/rulings.md`（见「裁量权」） |
+下表的 `R` = `rounds/<round-id>`。
+
+| 环节 | 谁 | 产物 | 落点（进行中） | 落点（归档后） |
+| --- | --- | --- | --- | --- |
+| ① | 各提案方 | 候选 | 自己 worktree 的**共享最终路径同名文件** | `R/reviews/candidate-<名>.md` |
+| ② | 各提案方 | 评审 | `R/reviews/review-<名>.md` | 同左 |
+| ③ | 裁决方 | 裁决稿 + 处置记录 | 裁决稿在共享最终路径；处置记录 `R/disposition.md` | 同左 |
+| ④ | 被处置到的各家 | 异议稿 | `R/reviews/objection-<名>.md` | 同左 |
+| ⑤ | 验收方 | 验收稿 | `R/reviews/acceptance-<名>.md` | 同左 |
+| ⑦ | 裁决方 | 最终稿 | 主线的共享最终路径 | 同左 |
+| 每个环节开始时 | 该环节的组织者 | **环节通知** | `R/call-<环节>.md` | 同左 |
+| 任何时候 | 组织者 | **裁定记录** | `R/rulings.md`（见「裁量权」） | 同左 |
+
+**归档后**指该轮 ⑦ 收尾、各家分支回收之后。候选是唯一换位置的产物：进行中它必须
+占着共享最终路径（`git diff master` 一条命令看清每家改了什么），回收分支前收进 `reviews/`。
+
+> **已存在的两处历史变体**，脚本认，新轮次不要再用：
+> `refact-fable`、`runtime` 两轮的 `R/reviews/` 是对的；但这两轮的**处置记录与环节通知**
+> 带了 `<round-id>-` 前缀（`runtime-disposition.md`、`runtime-call-①.md`），
+> `_fixups` 轮的验收稿则平铺在 `R/` 根下。轮次目录本身已经标明轮次，前缀是冗余。
+> 这些文件**不改名**——`rounds/<id>/reviews/` 已被 `runtime-architecture.md:454/458/461`
+> 与 `refact-fable.md:23/29/38/43` 当证据锚引用，改名会让已发布的证据链失效。
 
 **候选用与主线一致的路径和文件名**：`git diff master` 一条命令看清每家改了什么；
 路径本身标明作者；枚举形状固定，不会漏。
@@ -360,12 +372,24 @@ git worktree remove ~/review/<分支名>           # 用完删；分支与提交
 
 | 判定 | 命令 | 通过条件 |
 | --- | --- | --- |
-| ① 完成 | `ls ~/worktrees/*/k8s/$P` | 命中 `N+1` 份（含裁决方**未改**的基座；无基座时命中 `N` 份）；且各提案方分支该文件已提交、`git status --porcelain -- $P` 为空 |
-| ② 完成 | `git show <分支>:$R/review-<名>.md` | `N` 家全部存在且已提交 |
-| ③ 完成 | 裁决方分支上 `$P` 与 `$R/disposition.md` 均已提交 | 两者都在 |
+| ① 完成 | 各提案方分支上 `$P` 已提交且与 master 不同；或 `$R/reviews/candidate-<名>.md` 已归档 | `N` 家全部满足其一 |
+| ② 完成 | `git show <ref>:$R/reviews/review-<名>.md` | `N` 家全部存在且已提交 |
+| ③ 完成 | 裁决方分支（或主线）上 `$P` 与 `$R/disposition.md` 均已提交 | 两者都在 |
 | ④ 完成 | 每个**被处置到**的家有 `objection-<名>.md`，或在 `disposition.md` 登记「无异议」 | 无缺口 |
-| ⑤ 完成 | `$R/acceptance-<名>.md` 已提交 | 存在 |
-| ⑥ 完成 | 人的确认，**不可由命令判定** | 见「⑤ 验收 与 ⑥ 确认」 |
+| ⑤ 完成 | `$R/reviews/acceptance-<名>.md` 已提交 | 存在 |
+| ⑥ 完成 | `$R/rulings.md` 的「人确认」列**没有一行还是「待」** | 无待确认行 |
+
+`<ref>` 依次试 `<round-id>/<家>` 分支 → 裁决方 ref → `master`。**只认参与方分支是错的**：
+轮次收尾后分支回收，产物归档进主线，判据会把每一轮做完的事都判成没做。
+2026-09-06 实测：已发布的 `runtime` 轮被自己的判据报成「当前环节 ①，缺五家」。
+
+⑥ 的**内容**由人判，⑥ 有没有**落盘**由命令判。`rulings.md` 抬头写的是
+「回执只认落盘——对话里说『同意』不算」，那一列就是判据。把 ⑥ 整个标成
+「不可由命令判定」会让**任何**轮次都到不了 ⑦，于是每轮走完都跟自己的 `status` 打架。
+
+**没有参与方 ≠ 该环节完成。**`all({})` 为真，空集合会让空环节被静默跳过——
+那正是「判据自身的质量」点名的形态。要跳过某环节，必须在 `round.md` 明写
+`skip_stages = ["①", "②", "④"]`；留空字段不算数。
 
 **枚举必须用固定路径形状，不得按印象列文件名。**
 命中数与 `N` 不符时**停下问人**，不要自行猜测哪一份该算数——
@@ -402,6 +426,48 @@ git worktree remove ~/review/<分支名>           # 用完删；分支与提交
 
 **本节由裁量升级而来**：同类问题在一天内出现两次，按「裁量权 · 裁量是规则的孵化器」
 的规定升级为规则。
+
+## 8b. 两个脚本怎么调
+
+三份东西都在 `sunmoonai/docs/dev-plan/` 下：`round-status.py`（算环节）、
+`round-dispatch.py`（生成环节通知，**只生成不执行**）、`agents.toml`（五家登记，不含凭据）。
+在仓内任一 worktree 的任意目录跑都可以，路径由脚本自己解析。
+
+| 命令 | 作用 |
+| --- | --- |
+| `round-status.py` | 自动找唯一 `status=ACTIVE` 的轮次，算当前环节 |
+| `round-status.py --round runtime` | 指定轮次；值是 `rounds/` 下的目录名 |
+| `round-status.py --json` | 机器可读输出，含 `current` 与 `conflict` |
+| `round-status.py --round runtime --verify` | 机械验收：把 ⑤ 里机器能判的判掉，判不了的标「人判」 |
+| `round-dispatch.py` | 当前环节缺谁，打印给谁的命令 |
+| `round-dispatch.py --stage 4` | 指定环节，接 `4` 或 `④` |
+| `round-dispatch.py --all` | 不管缺不缺，给全部参与方 |
+
+**`--stage` 只有 `round-dispatch.py` 有。**`round-status.py` 没有这个参数——
+它的职责是**算出**在第几环，接受一个「指定环节」等于把结论交回给调用者。
+
+### 退出码
+
+| 码 | `round-status.py` | `round-dispatch.py` |
+| --- | --- | --- |
+| 0 | 正常；`--verify` 时表示机械判定零失败 | 正常输出了命令 |
+| 1 | `--verify` 有失败项（标「人判」的不计入） | —— |
+| 2 | 用法错误：找不到该轮次、没有 ACTIVE、有多个 ACTIVE、`round.md` 缺字段 | 拒绝分发：轮次不是 ACTIVE，或 `round-status.py` 判定失败 |
+
+**拒绝要有区别于成功的退出码。**`round-dispatch.py` 早先对已完结轮次打印一行说明后
+退 0，调用方看不出自己被拒了。
+
+### 声明与计算对不上时
+
+`round.md` 的 `status` 是**声明**，环节表是从 git 提交**算出来**的。
+脚本不拿声明改计算——它存在的理由就是不看任何人的声明——但两者不一致会显式报出来：
+
+```
+⚠ round.md 声明 DONE，按产物却算到「⑥ 确认」。
+```
+
+这行出现时，二者必有一错：要么产物没归档到判据找得到的地方，要么这一轮其实没走完。
+**不许靠改 `status` 让它消失。**
 
 ## 9. ① 提案：隔离与冻结
 
