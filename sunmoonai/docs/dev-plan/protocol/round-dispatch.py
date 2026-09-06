@@ -165,7 +165,17 @@ def main() -> int:
             print("没有待分发的对象：本环节该交的都交了，或它是人的动作。")
         return 0
 
-    call_path = f"{cfg['round_dir']}/{cfg['prefix']}-call-<环节>.md"
+    # 通知路径按**实际存在的那个**报，不硬编码一种拼法。
+    # 协议 §6 的规范形式是 `call-<环节>.md`；`<round-id>-call-<环节>.md` 是早期两轮的
+    # 历史变体。硬编码前缀会把参与方指到一个不存在的文件，而他们是照协议去找的。
+    import os
+    stage_ch = stage[0] if stage else "<环节>"
+    cands = [f"{cfg['round_dir']}/call-{stage_ch}.md",
+             f"{cfg['round_dir']}/{cfg['prefix']}-call-{stage_ch}.md"]
+    root = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+                          capture_output=True, text=True).stdout.strip()
+    call_path = next((c for c in cands if os.path.exists(os.path.join(root, c))),
+                     f"{cfg['round_dir']}/call-{stage_ch}.md")
     print(f"待分发 {len(targets)} 家：{'、'.join(targets)}\n")
     print("─" * 72)
     manual = []
