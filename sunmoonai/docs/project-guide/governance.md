@@ -9,7 +9,7 @@
 > 其余原属本文件的内容已按性质移出：
 > 写文档的约定 → [`../dev-plan/working/development-lifecycle-human.md`](../dev-plan/working/development-lifecycle-human.md) §6；
 > 提请求 → [`../dev-plan/working/request-lifecycle.md`](../dev-plan/working/request-lifecycle.md)；
-> 推送与多助手 → [`../dev-plan/agent-discipline.md`](../dev-plan/agent-discipline.md) 与
+> 推送与多助手 → [`../dev-plan/round-protocol.md`](../dev-plan/round-protocol.md) 与
 > [`../dev-plan/working/development-lifecycle-human.md`](../dev-plan/working/development-lifecycle-human.md) §12。
 
 ## 1. 权威排序
