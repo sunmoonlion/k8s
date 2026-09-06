@@ -814,9 +814,10 @@ Agent 路径的根仓由后端物化，后续 worktree 由 Agent supervisor 建�
 候选绑定不可变 commit，并声明覆盖/未覆盖范围、各仓 commit/gitlink、验证原始输出、假设、
 盲区、缺陷、副作用和关键主张证据。
 
-需要脚本化产生候选时使用 [`../parallel-proposals.py`](../parallel-proposals.py)。
-**它的验证边界要如实标注**：已验证的是独立进程、独立 `CODEX_HOME`、失败隔离与 manifest
-写入；真实模型调用尚未在本项目端到端验证。脚本存在不等于流程已经可用，不得据此声称
+脚本化产生候选**目前没有可用工具**：曾有的 `parallel-proposals.py` 已于 2026-09-06 删除
+（三轮一次没用过、真实模型调用从未验证、只覆盖 codex 系执行者），
+理由与重建时的注意事项见 [`../round-protocol.md`](../round-protocol.md) §9.3。
+在此之前候选的隔离靠纪律，不靠机制，且**无法事后证明某一轮真的独立**。不得据此声称
 隔离由机制保证。
 
 ### 6.5 角色分离
