@@ -12,6 +12,10 @@ round_dir  = "sunmoonai/docs/dev-plan/rounds/_fixups"
 prefix     = "_fixups"
 baseline   = "dc5e6127"
 proposers  = []
+# 本轮无提案/互评/异议环节：修的是**已发布**产物的四处硬伤，没有可竞的候选空间。
+# 空的 proposers 不足以让脚本跳过这三环——空集合被当成「全部完成」正是判据给假答案的
+# 典型形态，所以必须在这里明写。2026-09-06 R0 后半段补。
+skip_stages = ["①", "②", "④"]
 arbiter        = ""
 acceptor       = "cursor"    # 所有者 2026-09-05 指派；非 opus，符合 §1.3 第 2 条
 ```
