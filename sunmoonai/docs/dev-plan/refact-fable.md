@@ -37,8 +37,9 @@
 >   与 `intake_author`（luna D1 / D2）；禁词表缩到 supervisor 及中文别名（luna D5）；`_probe` 统一 dry-run（opus 5.1）；
 >   qoder C3「冻结 §8 是循环依赖」不采纳（冻结判据 ≠ 判据已满足）。逐条处置见 `rounds/refact-fable/reviews/review-final-fable-response.md`。
 >
-> **引用钉定**：本文凡写「七环节」「流程档位」「⑥ 确认 / ⑦ 清理」，指的都是 `round-protocol.md@protocol-v2`；
-> `master` 上仍是六环节（确认 = ⑤、清理 = ⑥）、无档位节。R0 合并后本条自动失效。
+> ~~**引用钉定**：本文凡写「七环节」「流程档位」「⑥ 确认 / ⑦ 清理」，指的都是 `round-protocol.md@protocol-v2`；
+> `master` 上仍是六环节（确认 = ⑤、清理 = ⑥）、无档位节。~~
+> **本条已于 2026-09-06 失效**：R0 已合并，主线的 `round-protocol.md` 就是七环节带档位的版本。
 >
 > **冻结状态**：五家终审（`rounds/refact-fable/reviews/review-final-*.md`）于 12:49 全部同意冻结，luna 撤销 REQUEST CHANGES。
 > §8 九条、3.1.1 映射表、3.13 威胁模型的冻结记录在 [`rounds/refact-fable/rulings.md`](rounds/refact-fable/rulings.md) R1，

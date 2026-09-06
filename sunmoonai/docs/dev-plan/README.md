@@ -16,7 +16,7 @@
 | [`handoff.md`](handoff.md) | **状态与交接**：当前阶段、已就位的、未决项 U1–U5、不能倒退的输入 | 接手时先读 |
 | `~/codex-reference-archive/` | **各助手的历史调研材料**（仓外，按助手分目录：`cursor/` `kimi/` `luna/` `opus/` `qwen3.8/`）：Codex 机制、SQLBot、WrenAI、沙箱、现状诊断。**已归档，可直接读**——不再是提案期的独立材料，引用时注明是谁的稿 | 定 U1–U5 时 |
 | [`runtime-architecture.md`](runtime-architecture.md) | **运行时架构**：一个运行时 + 唯一状态机、`dev.change` Task Profile、Agent Profile 与可观测粒度、Interaction 双向带载荷、**三道边界与回执仓模型**、工作区供给、等效判据 | 想知道系统怎么搭时 |
-| [`round-protocol.md`](round-protocol.md) | **并行评优轮怎么走**：⚠ 本文件是 165 行旧版（六环节）；当前实际运行的是 601 行版（七环节 + 档位 + 裁量权），在标签 `runtime/protocol`，尚未并入主线（R0）。七环节、产物落点、候选冻结与枚举、评审四块、裁决与验收规则、清理顺序 | 开一轮多家并行出稿前 |
+| [`round-protocol.md`](round-protocol.md) | **流程的操作手册**：七环节、档位 T0/T1/T2、裁量权与方向不对称、产物落点、候选冻结与枚举、环节判定表、两个脚本怎么调与退出码、参与方不可用、立判据的人怎么约束自己 | 开一轮多家并行出稿前；跑 `round-status.py` / `round-dispatch.py` 前 |
 | [`agent-discipline.md`](agent-discipline.md) | 多助手协作的行为规范：三种模式、隔离原则、提案包构造、评审两阶段、吸收处置 | 让多个助手并行做事时 |
 | [`anchor-gate.py`](anchor-gate.py) | **锚点门禁**：`doc-gate` 只查 markdown 链接，查不到 `` `文件.md:行` `` 这类纯文本锚点——实测删掉被引文件后 `doc-gate --all` 仍报通过。本脚本补这一类：钉 commit 的锚在该 commit 内解析、裸路径锚对当前索引与外部取证仓解析、`rounds/**` 按归档软判 | 删或改被引用的文档前 |
 | [`scripts/check-no-owner-creds.sh`](scripts/check-no-owner-creds.sh) | **凭据卫生检查**（不是边界——本机 agent 可 `sudo`，能改它）：扫明文凭据、无口令 key、主仓是否对本机可写、提权面 | 边界变更前后 |
