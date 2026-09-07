@@ -359,6 +359,21 @@ idempotency_key / consumed_at / resume_target` 绑定到这些原语，字段真
 Task 与状态版本、原子消费令牌，然后把经验证的响应作为 `Command(resume=value)` 送回同一 thread。
 checkpoint 原地续跑时是同一 Attempt 的 `WAITING → RUNNING`，不因“人给了内容”另开 Attempt。
 
+**`dev.change` 的 H8 具体这样接**（五步，缺一步就会长回自造协议）：
+
+1. 需要人时，adapter 调库的 `interrupt(payload)`；**payload 的形状由 Task Profile 的入向约定声明**，
+   不写进内核绑定字段——形状归 Profile，字段归内核，这样扩展不必动内核；
+2. 人的答复经 **principal channel** 到达后，adapter 调 `Command(resume=答复)`，
+   **同一 `thread_id` 原地续跑**；
+3. **这不是新 Attempt，也不建新 Task。**内核 Attempt 状态机走 `WAITING → RUNNING`；
+4. **只有**当答复实质改变了目标、口径、授权范围或 Profile 版本，才按内核建带 `supersedes`
+   的新 Task——**四个条件之外的答复一律回原 Task**；
+5. 过期、异键、跨 Task 的恢复**由库与内核既有校验拒绝**，不在 Profile 层再造一套。
+
+⚠ **「需要载荷」这个需求，是被「恢复必须开新 Attempt」自己造出来的。**
+库的恢复不换 Attempt，载荷就是 `resume` 的那个值。取消掉那个不该有的执行边界，
+围绕它长出来的一整支设计（载荷、schema、过期校验、Task 级暂停）就一并消失。
+
 若未来业务确需结构化编辑，先拿一个真实 Task Profile 的前端 payload、拒收用例和迁移数据立规范修订；
 不要从自由 `resume` 值反推一套平台级 patch/replace 协议。修改目标、授权范围或 Profile 版本仍按产品
 “终态、刷新与重新处理”建立新 Task；普通澄清只恢复原 Task。
