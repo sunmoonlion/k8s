@@ -36,6 +36,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -254,6 +255,19 @@ def main(argv: list[str]) -> int:
             file=sys.stderr,
         )
         return 1
+
+    # **必须在仓根跑。**`git ls-files` 在子目录下只列该子目录的文件，且路径相对子目录，
+    # 于是 `p.startswith(DOC_ROOT)` 全不命中，脚本会安静地报「0 份文档通过」——
+    # 分不出「真的没有文档」和「站错了地方」。零命中必须能区分这两者，故在此拦住。
+    top = git("rev-parse", "--show-toplevel").strip()
+    here = os.path.realpath(os.curdir)
+    if here != os.path.realpath(top):
+        print(
+            f"doc-gate: 必须在仓根运行。当前 {here}\n"
+            f"          请改为：cd {top} && python3 {os.path.relpath(__file__, top)} ...",
+            file=sys.stderr,
+        )
+        return 2
 
     tracked = tracked_paths()
     survey = argv[0] == "--survey"

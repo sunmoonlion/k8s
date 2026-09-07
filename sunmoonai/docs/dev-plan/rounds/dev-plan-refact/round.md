@@ -20,20 +20,32 @@ frozen_sections   = []
 mechanical_absent = [
   'B1 不得在本轮改结论::本轮改正|顺带修正|此处结论有误故改',
   'B5 archive 内容不得引用::archive/development-lifecycle|archive/refact-fable|archive/runtime-architecture',
+  'B7 request-baseline 路径不得变更::request-baseline 移|移入 archive/request-baseline|request-baseline/ →',
 ]
 ```
 
-## 与 `executor-adapter` 轮的排队关系
+## 与 `executor-adapter` 轮的排队关系 —— **已定**
 
-两轮都是 DRAFT，协议只允许一个 ACTIVE。**先后由所有者定**，起草者的看法：
+**所有者 2026-09-07 裁定：先 `dev-plan-refact`，`executor-adapter` 押后。**
+理由（所有者原话）：**「executor-adapter 现在做不了啊，它应该不会改结论」**。
 
-| | 先做的理由 | 后做的代价 |
-| --- | --- | --- |
-| `executor-adapter` | 证据最热（今晚刚测）；且它决定「投喂 vs SDK 是字段还是结构」，**会改动 `agent-dev-guide` 的架构主张** | 若后做，本轮重构完的文档可能又要因它而改 |
-| `dev-plan-refact` | 文档越拖越乱；且它是**组织方式**，不改结论 | 若后做，`executor-adapter` 的产物又多一份无处安放的文档 |
+⚠ **这一条推翻了起草者的建议，如实记录。** 起草者原写：
 
-⚠ **起草者倾向先 `executor-adapter`**：它可能改结论，而本轮明写「不改结论」——
-**先做会改结论的那一轮，再做整理，顺序上更省一次返工**。但这是所有者的权力。
+> ⚠ 起草者倾向先 `executor-adapter`：它可能改结论，而本轮明写「不改结论」——
+> 先做会改结论的那一轮，再做整理，顺序上更省一次返工。
+
+所有者不同意的是其中的**事实前提**，不只是权衡：起草者说「它可能改结论」，
+所有者判「它应该不会改结论」。二者是可证伪的分歧，处理如下：
+
+| | 内容 |
+| --- | --- |
+| 本轮按哪个走 | **按所有者的判定**：`executor-adapter` 不改结论，故本轮重构不必等它 |
+| 前提若被推翻会怎样 | 若 `executor-adapter` 日后确实改了 `agent-dev-guide` 的架构主张，本轮产物需按新结论做一次**定向修订**，不是重做——因为本轮只动组织方式（B1） |
+| 风险落在哪 | 落在**架构对「投喂 / SDK 差异」这一类内容的容纳能力**上。故新架构须能安置一份「执行器适配」类文档，即使现在还没有 |
+
+另有「现在做不了」的事实原因：`executor-adapter` 需要 SDK 侧的实测取证，
+而今晚的测试已证明 CLI 投喂路径答不了审批请求，SDK 路径尚未搭起来。
+**取不到证据的轮次不能开**——这与协议 §8「验收判据先于产出冻结」同源。
 
 ## 本轮的特殊之处
 
