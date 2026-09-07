@@ -69,6 +69,7 @@ Submission
 | [`development-plan.md`](development-plan.md) | 解释通用执行编排与领域能力的分工 | 不记录进度 |
 | [`implementation-plan.md`](implementation-plan.md) | 记录可实施工作单元、依赖、测试和回滚 | 不承担架构真源 |
 | [`handoff.md`](handoff.md) | 只读当前游标、阻塞和不能倒退的结论 | 不从状态反推目标规范 |
+| [`working/request-baseline/`](working/request-baseline/) | **所有者的原始需求档案**：只解释来源，**不覆盖现行合同，也不证明当前能力**（`I1` 在本仓的实物） | 不据它断言现状 |
 | [`archive/`](archive/) 四份历史稿 | **已全部吸收，见 §10**：两份 lifecycle、`refact-fable`、`runtime-architecture` | 不再引用其正文作为规范依据；它们与本文冲突时以本文为准 |
 
 内核的对象和状态以 `request-lifecycle.md @ ed0b5136:92-343` 为准；协作阶段以
@@ -138,6 +139,22 @@ Submission
 `dev.change/1` 跑通只证明开发场景的对象形状、转换和证据链，**没有解决判断且昂贵的那一半**。
 财务 Task Profile 必须以真实输入、输出、renderer 与验收用例重新证明，不能复制本章的便宜验收器。
 这一边界与业务 Task Profile 首版要求相符（`request-lifecycle.md @ ed0b5136:487-518`）。
+
+### 1.5 执行者的共同纪律
+
+不论单路还是并行，不论人还是 agent，八条都成立：
+
+1. **不用计划覆盖原始请求**（`I1`）；
+2. 只在范围、工具、数据、预算和副作用边界内行动；
+3. **区分事实、推断、假设、缺失和未运行验证的结论**——四者不可混写；
+4. 对可中断工作持久化 checkpoint；
+5. 无法满足完成契约时请求输入或**明确失败**，不交半成品；
+6. 在**最终固定版本**上运行与风险相称的验证；
+7. 报告盲区、副作用和残余风险；
+8. 未经授权不推送、合并、发布、删除远端资产或扩大外部影响。
+
+⚠ 第 3 条是 §5.2 采信规则与 §12 三级证据分档的**前提**：分不清事实与推断，
+后面两处的分级就无从谈起。
 
 ## 2. 一个运行时的结构
 
@@ -229,6 +246,13 @@ submodule_plan = "..."
 observation_window_rule = "..."
 max_rollbacks = 2
 ```
+
+⚠ **`acceptance` 里的硬门禁、质量偏好和待定项必须分开列，不得混成一串。**
+硬门禁不过就是不过；质量偏好只用于同分决胜；待定项要么在冻结前定掉，要么显式标为不判。
+三者混写会让「偏好没满足」被当成「门禁没过」，或者反过来。
+工单还应固定 `tenant`、`agent_profile` 或其选择策略、`approval_points`、`deadline`、
+`stop_condition`、`writable_roots`、`output_namespace`、`publication_target` 与 `integrator_id`
+——最后四项是 §3.6 命名空间纪律在工单上的落点。
 
 `intake_author` 若替请求者起草意图与验收，同票不得再任 proposer、arbiter 或 acceptor；请求者直接给出并
 冻结验收时可记 requester。`route_proposal` 保存建议与证据，`route_effective` 保存实际决定，
@@ -434,6 +458,8 @@ provision(task_id, source, baseline_commit, write_actors, review_needed, submodu
 任一失败就新建，不 stash 人的修改。零写者只给只读取件；一名写者一棵独占 worktree；N 名写者在同一
 基线上建 N 棵独占 worktree，另给 integrator 一棵；人需通读时临时开 review worktree，用完删除。
 多仓逐仓钉 commit，并核父仓 gitlink。
+⚠ **父仓推送不带子仓提交**：跨机同步脚本推的是父仓，拉取侧自动 `submodule sync/update` 对齐 gitlink，
+**子仓的提交仍须自己推**（constraints T4）。只交父仓 gitlink 而子仓对象不可达，等于没交。
 
 独占在 CLI/GUI 腿通常只是约定，因为同 OS 用户可能看见整个文件系统；只有 runtime 提供的 namespace、
 文件挂载、凭据裁剪和出网网关才能构成事中限制。`workspace_isolation` 必须登记为 `enforced` 或
@@ -486,6 +512,19 @@ Artifact 可以有草稿、冻结、陈旧、被替代等版本属性；这些�
 
 完整产物命名、候选冻结、处置表和验收方算法只引用 round-protocol。状态脚本从 commit 反推，工作区
 不参与判定；空参与方不是“完成”；脚本首次增加判据时先与人工结论对照，并列出未检查范围。
+
+⚠ **档位是风险轴，「建不建 Git 工作区」是载体轴，两者正交，不可互相推导。**
+载体判据是另一组：不改持久文件、单 Attempt 单会话可完成、不需要 worktree/回滚/diff/固定源码版本、
+外部副作用为零或已有独立副作用账、验收可直接针对结构化结果完成——**全部满足才可不建工作区**；
+多文件改动、跨步骤跨会话跨执行者跨仓、需要 checkpoint/回滚/diff/固定候选、需要 fan-out、
+以代码或可复现实验交付、错误代价要求独立评审——**任一命中就要建**。
+
+⚠ **「不建工作区」只决定载体，不降低授权、证据、预算或验收。**
+载体判定必须可审计：**不能为省供给成本把复杂任务塞进无状态 Attempt，也不能为形式统一
+给一次只读问数建立空仓库**。执行中发现判据不成立时，停止当前 Attempt 并保存 checkpoint 后升级，
+**执行者不得私自在获准工作区之外建仓**。
+
+⚠ 把载体轴写成档位轴，与 §2.5「风险档位不能反过来充当成本证据」是同一种循环。
 
 ### 3.5 交付、清理和恢复
 
@@ -629,6 +668,101 @@ Git object、Artifact、备份）⑥ 裁决（由 integrator 决定选用/合并
 Artifact，最后回收 worktree/sandbox。**取消与完成只能一个终态胜出。**
 产品面的过期写入应由 fencing 拒绝；**开发面（分支、worktree、发布路径）没有等价运行时机制**，
 只能靠条件式发布和整合方核对挡住，因此**开发侧的取消必须显式停止执行者，不能只靠标状态**。
+
+### 3.10 物化门禁与写入前门禁
+
+**两道门，时机不同：物化门禁在第一个 Attempt 启动前，写入前门禁在每次落笔前。**
+
+**物化门禁（首个 Attempt 启动前必须证明）：**
+
+1. Task 契约已可靠持久化；
+2. workspace **唯一归属本 Task**，路径、配额和回收策略明确；
+3. source ref、Artifact 摘要、commit 和 gitlink 可取得；
+4. 初始 `git status` 符合 Profile，预置脏文件均有解释；
+5. 指令范围可由目录层级确定；
+6. 凭据、越权数据和无关材料未进入版本库；
+7. **manifest 与实际文件一致**；
+8. 工具、权限和预算不超过 Task 授权；
+9. owner、独占可写根、候选产出位置和唯一 integrator 已明确；
+10. **共享发布面为只读**，除非当前 Attempt 正是获准的整合 Attempt。
+
+⚠ 失败时**不得把半成品工作区交给执行者「尽量执行」**。重试复用 Task 身份但**建立新
+Attempt**，并隔离或安全清理残留 workspace。
+
+**manifest 证明实际给了什么**（Task 决定该给什么，manifest 证明给了什么）：
+
+```text
+task_id, workspace_id, created_at        run_id, owner_id, work_unit_id, attempt_id
+source repository + commit / gitlink     artifact source + digest + destination + access mode
+generated task package + profile version effective instruction files and scope
+excluded material + reason               secret references (never values)
+initial commit                           writable roots + output namespace
+publication target + integrator
+```
+
+⚠ **材料在工作区内可见，不自动构成使用授权。**有效权限仍由 Task、Profile、工具策略和
+当前批准共同决定（§4.5 的交集公式）。**上一 Task 的工作区不得在未重新受理、授权和物化的
+情况下复用给下一 Task。**
+
+**写入前门禁（一票否决）。**动手写任何文件之前逐条核对，任一不成立则**停，不写任何文件**：
+
+1. `cwd == workspace_path`；
+2. 当前分支 `== exclusive_branch`；
+3. 目标路径不在禁写集内，且**解析软链、`..` 和挂载别名后的规范路径**仍落在获准的
+   writable root 内；
+4. 目标路径上**没有他人产物**；若有，不覆盖——先让对方的内容形成可达 commit 或备份；
+5. 本次**不是宽泛写入**（批量生成、`>` 重定向、脚本 sweep、先 `rm -rf` 后重建）；
+   确需宽泛写入时收窄到明确路径逐个执行。
+
+⚠ **这五条不是建议。宽泛写入和「路径归属不明仍继续写」是覆盖事故的两个主因**，
+两者都发生在**写入前**，而事后恢复（§3.8）代价远高于停一次。
+
+**冷启动核对（每次 Attempt 开始时）：**Task/Attempt ID、租约、fencing、预算与停止条件；
+原始请求、范围、验收、批准点与预期 Artifact；当前目录、仓库根、分支、HEAD、子模块与
+工作树状态；manifest 的输入、摘要、基线与实际文件；生效的 `AGENTS.md` 与目标代码附近测试；
+依赖、权限与外部系统是否仍有效；**哪些判断是事实、推断、假设、缺失或尚未验证**。
+不匹配会改变结果时**停止并发起 Interaction**——不得在错误仓库、错误分支、过期 commit
+或失效租约上继续。
+
+### 3.11 候选状态机
+
+```text
+DRAFT → FROZEN(commit/digest) → SUBMITTED
+      → {SELECTED | REJECTED | STALE | SUPERSEDED}
+      → INTEGRATED（仅被采用部分） → VERIFIED(final commit)
+      → PUBLISHED → RETAINED / GARBAGE_COLLECTED
+```
+
+⚠ **这些是 Artifact 的版本属性，不是 Task/Attempt 状态**（§3.3 末段）。七条纪律：
+
+- `DRAFT` 可改，但只存在于 owner 可写面，**不能被称为候选完成**；
+- `FROZEN` 后**不得原地替换**，修订产生新 commit/digest 并用 `supersedes` 关联；
+- `SELECTED` 只表示进入整合，**不表示已发布**；
+- `INTEGRATED` 必须记录**实际吸收的 commit/patch/Artifact**，不能只写「已吸收」；
+- `VERIFIED` 只针对 final commit；
+- `PUBLISHED` 必须记录发布目标、发布者、版本和时间；
+- 清理前必须证明**所需对象仍有可达 ref 或已进入持久 Artifact**。
+
+### 3.12 完成判据
+
+⚠ **十三条同时满足才叫闭环**，缺一条都不能笼统说「完成」：
+
+1. 受理幂等，原始请求与规范化 Task 可追溯；
+2. 载体路由（是否建 Git 工作区）有依据；复杂 Task 的工作区、Git 与 manifest 可复现；
+3. 范围、验收、权限、预算、批准点和基线已冻结；
+4. 执行者接单核对了工作区、指令、租约和输入（§3.10）；
+5. 按风险执行，角色冲突已处理（§2.2）；
+6. 每个产出有 owner、namespace、状态、provenance 和**唯一** publication target/integrator；
+7. 候选**没有**直接写共享路径或 `master/main`，发布只从独占整合面发生；
+8. publication target 通过**预期 HEAD/version 的原子条件更新**，发布竞争没有变成静默覆盖；
+9. 并行结果绑定 commit，迟到、失败和取消已处置（§3.9）；
+10. final commit 上全部门禁和验收**逐条**通过；
+11. 结果、证据、副作用、盲区和风险已持久化；
+12. 提交唯一终态，请求方可重取结果；
+13. Git 对象和 Artifact 可达、血缘可追溯且无活跃引用后，工作区才清理。
+
+⚠ **缺项时只能称「已受理」「已物化」「候选完成」「本轮选定」「待验收」「交付待重试」
+或「清理待处理」——不能笼统宣称完成。**这条对应 §11 的「『已派工』或『全部返回』当作完成」。
 
 ## 4. 人介入、Interaction 与权力
 
@@ -867,6 +1001,25 @@ Execution Scope 只能落在进程外层，Approval Policy 只能事后审计—
 原始失败输出和改判理由。把结论写进上游文档前**回读代码或实物重新取证**——
 ⚠ **文字改对了、代码里还是旧的，比不改更糟。**
 
+### 4.9 Attempt 内的三条硬禁令
+
+上层路由完、权限收窄之后，Attempt 内还需要**可执行的边界**——抽象声明容易被绕过。
+任一条被突破即为越权，按 `I3`、`I10`、`I15` 与 constraints A2/A4 处理：
+
+| # | 禁令 | 具体形态 |
+| --- | --- | --- |
+| 1 | **不得改路由** | 执行器种类在 Attempt 创建时钉死并落账；不得因为「这个单元更像财务」而在 Attempt 内改投另一条腿 |
+| 2 | **不得换执行器** | 不得在 Attempt 内自行构造新的 runtime 客户端实例绕开已固定的 Adapter；换腿只能由上层**新建 Attempt** |
+| 3 | **不得扩权** | 不得重新注册已被 deny 的工具，**不得把 `human-approval` 降级为执行器默认的自动批准**，不得追加预算 |
+
+⚠ **第 3 条的现实动因见 §2.7**：Codex Python SDK 的默认审批处理器对命令执行与文件改动
+一律返回 `accept`，而**该兜底发生在构造函数里**——
+
+> **「忘了传 handler」与「故意选自动批准」在代码里长得一样。**
+
+所以这条**必须由 Adapter 强制显式传入 handler，不能靠纪律**。这是「机制优于自律」
+在本文里最具体的一处落点。
+
 ## 5. 可观测性、证据与等效
 
 ### 5.1 三个粒度字段
@@ -950,7 +1103,7 @@ CLI 内部发生过哪些工具调用。手工态的价值是先跑通对象形�
 | 层 | 谁 | 判什么 |
 | --- | --- | --- |
 | L0 | CI / pre-commit / validator | 链接、schema、冻结区、hash、diff、测试、角色冲突等机械条 |
-| L1 | 独立 acceptor | 冻结标准中机器判不了的内容；标准过期须交回裁决 |
+| L1 | 独立 acceptor | 冻结标准中机器判不了的内容；标准过期须交回裁决。⚠ **作者自检不能代替独立验收**；没有第二个执行者时由独立验收器或人验收，验收方**只能按冻结标准判定，不能为通过而静默改标准** |
 | L2 | 被处置主张的原作者 | 是否被误读；异议必须带处置条目与可复跑证据 |
 | L3 | principal | 意图是否正确、不可逆项、抽样复算证据真实性 |
 
@@ -1009,6 +1162,36 @@ verification     # 最终 commit 上的回归结果
 ⚠ **任何流程都不得只在聊天中宣称测试通过；另一个人不能恢复和复核的内容视为未持久化。**
 候选 commit 必须来自该候选自己的分支——共享工作区里的未提交文件、从别人路径拷来的稿，
 **不得写入候选清单**。
+
+### 5.8 上下文路由与能力四级词典
+
+**改哪一面，就必须连带读哪些东西**——否则断言的是记忆不是现状：
+
+| 改动面 | 必须追加核对 |
+| --- | --- |
+| 项目总体边界 | 总体架构、`constraints.md` |
+| Task/Attempt/Interaction/Delivery | 内核、生产代码与对应测试 |
+| Agent runtime、恢复、预算、事件、副作用 | 当前事实文档、生产链代码和测试 |
+| 跨 App 契约 | provider schema、consumer lock 和**双端**契约测试 |
+| Admin/Web/API | 目标目录 `AGENTS.md`、认证边界和端到端测试 |
+| 数据模型或迁移 | 迁移链、数据库约束、前滚/回滚和数据不变量 |
+| K8s 或发布 | bundle、release、部署引用与运行门禁 |
+| Git、远端或子模块 | 现行协作规范、各仓 HEAD 和 gitlink |
+
+⚠ **历史 baseline、候选和聊天记录只作线索**；当前实现断言必须回到代码、测试或运行结果取证。
+
+**陈述任何能力状态时只用四级词典**，不得自行发明「已实现」的判断口径：
+
+| 级 | 含义 |
+| --- | --- |
+| `defined` | 有类、DTO、迁移或测试夹具**存在** |
+| `wired` | 生产链**已接线**，会被真实请求走到 |
+| `deployable` | 部署面（bundle、网络、凭据、配额）**已就位** |
+| `runtime-verified` | 在目标环境**实跑验证过** |
+
+⚠ **类、DTO、迁移或测试夹具存在，都不等于生产链已经接线。**
+这是 §12「拿休眠代码当能力证据」那条失败的词汇层防线；配套的可运行验证动作是
+**回跑 dormant 测试**并同时确认「锚点仍在」与「能力仍未接线」两个方向（§2.6）。
 
 ## 6. 什么时候运行时值得用
 
@@ -1303,10 +1486,40 @@ E0–E4 证据等级、T0 成本上界、绕过的覆盖边界、四层验证、
 | 外部仓 | §2.7 表里**其余各行**的锚点（preset README、adding-a-tool、model-provider-info、async_client、openclaw 各文档）**只核了行号可达，未逐字复核内容** | 可当场复跑，只是没跑完 |
 | 部署 | §2.10 四条硬阻断的 bundle 行号**未复跑**，转录自源稿 | 可复跑 |
 | 休眠登记 | §2.6 的 `test_dormant_capabilities.py` 四个行锚**未复跑** | 可复跑 |
-| 判定口径 | §10 中判「已落地」的那些行，**只逐节比对了标题与本文对应节的存在性，未逐行比对正文** | ⚠ **这是本次最大的盲区**——`refact-fable.md` §5.2 承诺过的逐行映射表正是死在这一步 |
+| ~~判定口径~~ | ~~只比对标题与存在性，未逐行比对正文~~ | **已于同日补做，见下** |
 
-⚠ **不能排除**：118 节里判「已落地」的，可能有个别节的落点只覆盖了源节的一部分。
-发现某节其实没落地，**是有效发现，应当登记，不该被这段话挡回去**。
+**正文级抽查（2026-09-07，同日补做）**
+
+⚠ **上面那条盲区不是假设——抽出来 13 处真缺，其中 1 处是落点判错。**
+
+抽查范围：118 行按风险分流为「本次新写 32 行」「判落在既有章节 79 行」「故意不要 7 行」，
+**对 79 行中内容最实的约 20 行逐节读源稿正文并回读本文对应节**。
+
+| # | 源节 | 原判 | 实际 | 处置 |
+| --- | --- | --- | --- | --- |
+| 1 | agent §4.4 物化门禁 | §3.2 复用前置判据 | §3.2 只有 3 条复用判据，**十条门禁全缺** | 补 §3.10 |
+| 2 | agent §5.1 冷启动核对 | §1.3、§3.2 | 两处均无；**「写入前门禁五条（一票否决）」整段缺失** | 补 §3.10 |
+| 3 | agent §4.3 塞入材料 | §3.2 | manifest 字段表与「材料可见 ≠ 使用授权」缺 | 补 §3.10 |
+| 4 | agent §5.2 上下文路由 | §2.5 | §2.5 是**路由成本字段**，与「改哪一面要读什么」不是同一件事 | 补 §5.8 |
+| 5 | agent §5.3 共同纪律 | §3.5、§11 | §11 只有反面形式，**无正面纪律** | 补 §1.5 |
+| 6 | agent §6.9 三条硬禁令 | §4.5、§2.2 | 缺；含「忘了传 handler 与故意自动批准在代码里长得一样」 | 补 §4.9 |
+| 7 | agent §7.4 候选状态机 | §3.3 末段 | 末段只有一句「Artifact 有版本属性」，**八态状态机全缺** | 补 §3.11 |
+| 8 | agent §12 完成判据 | §5.5、§3.5 | 十三条与「缺项只能称…」全缺 | 补 §3.12 |
+| 9 | agent §2.3 Task 契约 | §2.4 | §2.4 字段表**缺一半**；「硬门禁/质量偏好/待定项必须分开」缺 | 补入 §2.4 |
+| 10 | agent §3.1/§3.2 简单与复杂 | §3.4 T0/T2 行 | ⚠ **落点判错**：简单/复杂是**载体轴**，T0/T2 是**风险轴**，两轴正交 | 改落 §3.4 载体轴段 |
+| 11 | agent §0.1 | §0.1 | 跨机同步与「子仓要自己推」缺 | 补入 §3.2 |
+| 12 | agent §0.2 | §1.2、§5.2 | `request-baseline`「只解释来源，不覆盖现行合同」缺 | 补入 §0.1 |
+| 13 | agent §5.4 单路实施 | §3.4 T1 | 「作者自检不能代替独立验收」缺 | 补入 §5.5 L1 |
+
+⚠ **第 10 条最值得记**：把载体轴写成风险轴，与 §2.5 自己警告的「风险档位不能反过来充当
+成本证据」是同一种循环——**我在做落点时犯了本文正文明写禁止的那个错**。
+
+修补后本文由 1659 增至 1858 行，新增 §1.5、§3.10–§3.12、§4.9、§5.8，20 行落点更正。
+
+**仍未抽的**：79 行里其余约 59 行（多为 human 文与 agent 同源的重复节，
+以及 §6.x、§7.x、§10.x、§11.x 等），以及本次新写 32 行的**反向覆盖**
+（本文有没有写进源稿里没有的东西）。⚠ **13 处的命中率说明剩下的很可能还有**——
+发现某行没落地，**是有效发现，应当登记，不该被这段话挡回去**。
 
 ## 10. 四份源稿逐节落点
 
@@ -1399,8 +1612,8 @@ E0–E4 证据等级、T0 成本上界、绕过的覆盖边界、四层验证、
 | runtime-architecture | 7. 覆盖声明、盲区与未验证项 | §7.4、§9 |
 | runtime-architecture | 8. 自检：对照 `task.md` §8 十条 | §1.3、§8、§9、§10 |
 | lifecycle-agent | 0. 边界和共同模型 | §0.1 |
-| lifecycle-agent | 0.1 本文负责什么 | §0.1 |
-| lifecycle-agent | 0.2 事实、目标和执行记录分开 | §1.2、§5.2；「事实/目标/执行记录分开」= 四本账 + 证据等级 |
+| lifecycle-agent | 0.1 本文负责什么 | §0.1；跨机同步与「子仓要自己推」补入 §3.2（**抽查发现原缺**） |
+| lifecycle-agent | 0.2 事实、目标和执行记录分开 | §1.2、§5.2、**§1.5 第 3 条**；`request-baseline` 的地位补入 §0.1（**抽查发现原缺**） |
 | lifecycle-agent | 0.3 两层监督职责与等位原则 | **故意不要**：§0.0 第 2 条判定「supervisor 一词三义」；由 §2.1 五个组件词与 §2.2 内容角色替代，「等位原则」不再需要单独声明 |
 | lifecycle-agent | 0.4 产出物的根本原则：私有地产生，单写者发布 | §3.6 |
 | lifecycle-agent | 1. 两条同构路径 | **故意不要**：§0.0 第 1 条——两条路径的差异只剩「谁按了回车」，撑不起两份文档 |
@@ -1409,15 +1622,15 @@ E0–E4 证据等级、T0 成本上界、绕过的覆盖边界、四层验证、
 | lifecycle-agent | 2. Submission 与 FastAPI 受理 | §3.1 |
 | lifecycle-agent | 2.1 前端提交 | §3.1 第 1 条 |
 | lifecycle-agent | 2.2 FastAPI 建立开发 Task | §3.1 第 1–2 条；⚠ **故意不要框架名**——FastAPI 属实现，不属规范 |
-| lifecycle-agent | 2.3 Task 契约 | §2.4 |
+| lifecycle-agent | 2.3 Task 契约 | §2.4；⚠ **抽查发现原落点缺一半字段**，已补「硬门禁/质量偏好/待定项必须分开」与 8 个字段 |
 | lifecycle-agent | 3. 简单与复杂任务 | **故意不要**该二分：§0.0 第 6 条，由 §3.4 三档取代 |
-| lifecycle-agent | 3.1 简单 Task | §3.4 T0 行 |
-| lifecycle-agent | 3.2 复杂 Task | §3.4 T2 行 |
+| lifecycle-agent | 3.1 简单 Task | §3.4 **载体轴段**；⚠ **原落点判错**——简单/复杂是载体轴，T0/T2 是风险轴，两轴正交，混写即 §2.5 警告的循环 |
+| lifecycle-agent | 3.2 复杂 Task | §3.4 载体轴段；同上 |
 | lifecycle-agent | 4. sandbox、Git 物化与执行器接入架构 | §3.2、§2.6 |
 | lifecycle-agent | 4.1 谁建立什么 | §3.2 |
 | lifecycle-agent | 4.2 物化步骤 | §3.2 |
-| lifecycle-agent | 4.3 按 Task 塞入材料 | §3.2；「上一 Task 的工作区不得复用给下一 Task」并入 |
-| lifecycle-agent | 4.4 物化门禁 | §3.2 复用前置判据 |
+| lifecycle-agent | 4.3 按 Task 塞入材料 | **§3.10** manifest 字段表 + 「材料可见 ≠ 使用授权」（**抽查发现原缺**） |
+| lifecycle-agent | 4.4 物化门禁 | **§3.10** 物化门禁十条；⚠ **原落点 §3.2 只有 3 条复用判据，十条全缺**（抽查发现） |
 | lifecycle-agent | 4.5 执行层路线：租用 loop，自建业务控制面 | §2.6 |
 | lifecycle-agent | 4.6 两个官方 SDK：两个轴、非对称能力 | §2.7 |
 | lifecycle-agent | 4.7 统一执行 Port 与三态能力探针 | §2.8 |
@@ -1426,10 +1639,10 @@ E0–E4 证据等级、T0 成本上界、绕过的覆盖边界、四层验证、
 | lifecycle-agent | 4.10 专用 Agent 的构建方法，不冻结具体 Profile | §3.2 |
 | lifecycle-agent | 4.11 OpenClaw Gateway：借机制，不转向 | §3.2 |
 | lifecycle-agent | 5. Agent 执行内核 | §3 |
-| lifecycle-agent | 5.1 冷启动核对 | §1.3、§3.2 |
-| lifecycle-agent | 5.2 上下文路由 | §2.5 |
-| lifecycle-agent | 5.3 共同纪律 | §3.5、§11 |
-| lifecycle-agent | 5.4 单路实施 | §3.4 T1 行 |
+| lifecycle-agent | 5.1 冷启动核对 | **§3.10** 冷启动七条 + **写入前门禁五条（一票否决）**；⚠ **原落点两处均无此内容**（抽查发现） |
+| lifecycle-agent | 5.2 上下文路由 | **§5.8** 八个改动面 + 能力四级词典；⚠ **原落点 §2.5 是路由成本字段，不是同一件事**（抽查发现） |
+| lifecycle-agent | 5.3 共同纪律 | **§1.5** 八条（**抽查发现原缺**；§11 只有反面形式，无正面纪律） |
+| lifecycle-agent | 5.4 单路实施 | §3.4 T1 行；「作者自检不能代替独立验收」补入 §5.5 L1（**抽查发现原缺**） |
 | lifecycle-agent | 5.5 Checkpoint 与恢复 | §4.3、§2.10 |
 | lifecycle-agent | 5.6 失败、澄清与改判 | §4.8 |
 | lifecycle-agent | 6. Attempt 内的执行监督 Agent | **部分故意不要**：「执行监督 Agent」是 §0.0 第 2 条判掉的同名物；其纪律落 §2.2 与 round-protocol，不保留该角色名 |
@@ -1441,12 +1654,12 @@ E0–E4 证据等级、T0 成本上界、绕过的覆盖边界、四层验证、
 | lifecycle-agent | 6.6 评审、裁决和选优 | §2.2；算法引 round-protocol，不复制 |
 | lifecycle-agent | 6.7 改进、整合和回归 | §3.5、§5.5 |
 | lifecycle-agent | 6.8 停止规则 | §2.4 `budget` |
-| lifecycle-agent | 6.9 内层的三条硬禁令 | §4.5 自我批准禁令、§2.2 |
+| lifecycle-agent | 6.9 内层的三条硬禁令 | **§4.9**（**抽查发现原缺**）；含「忘了传 handler 与故意自动批准在代码里长得一样」 |
 | lifecycle-agent | 7. 产出物与 commit 的全生命周期 | §3.6–§3.9 |
 | lifecycle-agent | 7.1 先确定身份、所有权和发布权 | §3.6 |
 | lifecycle-agent | 7.2 命名空间 | §3.6 |
 | lifecycle-agent | 7.3 产出物分类与载体 | §3.3 末段 Artifact 版本属性 |
-| lifecycle-agent | 7.4 候选状态机 | §3.3 末段 |
+| lifecycle-agent | 7.4 候选状态机 | **§3.11** 八态 + 七条纪律；⚠ **原落点只有一句「Artifact 有版本属性」，状态机全缺**（抽查发现） |
 | lifecycle-agent | 7.5 未提交文件、commit、分支与 worktree 的不同语义 | §3.9、§5.4 |
 | lifecycle-agent | 7.6 各种并发场景的处置 | §3.7 |
 | lifecycle-agent | 7.7 最终路径的发布协议 | §3.5、§5.4 |
@@ -1466,7 +1679,7 @@ E0–E4 证据等级、T0 成本上界、绕过的覆盖边界、四层验证、
 | lifecycle-agent | 11.1 本文的生效边界 | §0.1 |
 | lifecycle-agent | 11.2 本文的删除条件与清理清单 | §7.3 |
 | lifecycle-agent | 11.3 本轮未验证清单 | §7.4、§9.2 |
-| lifecycle-agent | 12. 完成判据 | §5.5、§3.5 |
+| lifecycle-agent | 12. 完成判据 | **§3.12** 十三条 + 「缺项只能称已受理…不能笼统宣称完成」（**抽查发现原缺**） |
 | lifecycle-agent | 13. 反模式 | §11 |
 | lifecycle-agent | 14. 常见失败方式与项目实例 | §12 |
 | lifecycle-agent | 附录 A：词汇对照 | §13 |
@@ -1486,10 +1699,10 @@ E0–E4 证据等级、T0 成本上界、绕过的覆盖边界、四层验证、
 | lifecycle-human | 8.3 委派 | §3.4 |
 | lifecycle-human | 9. 终审与责任归属 | §4.5 责任归属表 |
 | lifecycle-human | 10. 执行内核 | §3（与 agent 文 §5 同源，重合度 0.4–0.85） |
-| lifecycle-human | 10.1 动手前的核对与写入前门禁 | §1.3、§3.2（同 agent §5.1，重合 0.66） |
-| lifecycle-human | 10.2 上下文路由与范围门禁 | §2.5（同 agent §5.2，重合 0.84） |
-| lifecycle-human | 10.3 共同纪律 | §3.5、§11（同 agent §5.3，重合 0.85） |
-| lifecycle-human | 10.4 单路实施与定向审核 | §3.4 T1（同 agent §5.4） |
+| lifecycle-human | 10.1 动手前的核对与写入前门禁 | **§3.10**（同 agent §5.1，重合 0.66；随该行一并更正） |
+| lifecycle-human | 10.2 上下文路由与范围门禁 | **§5.8**（同 agent §5.2，重合 0.84；随该行一并更正） |
+| lifecycle-human | 10.3 共同纪律 | **§1.5**（同 agent §5.3，重合 0.85；随该行一并更正） |
+| lifecycle-human | 10.4 单路实施与定向审核 | §3.4 T1、§5.5 L1（同 agent §5.4） |
 | lifecycle-human | 10.5 冻结、迟到与取消 | §3.9（同 agent §8） |
 | lifecycle-human | 11. 人作为协调者：fan-out | §2.2、§3.4 |
 | lifecycle-human | 11.1 展开条件 | §6.1（同 agent §6.1） |
@@ -1504,14 +1717,14 @@ E0–E4 证据等级、T0 成本上界、绕过的覆盖边界、四层验证、
 | lifecycle-human | 12.1 根本原则：私有地产生，单写者发布 | §3.6（同 agent §0.4，重合 0.64） |
 | lifecycle-human | 12.2 本仓的具体落点 | §3.6 本仓落点表 |
 | lifecycle-human | 12.3 未提交文件、commit、分支与 worktree 的不同语义 | §3.9、§5.4（同 agent §7.5，重合 0.84） |
-| lifecycle-human | 12.4 产出物分类 | §3.3（同 agent §7.3） |
+| lifecycle-human | 12.4 产出物分类 | §3.3、**§3.11**（同 agent §7.3/§7.4） |
 | lifecycle-human | 12.5 各种场景的处置 | §3.7（同 agent §7.6） |
 | lifecycle-human | 12.6 覆盖或来源不明时的事故处理 | §3.8（同 agent §7.8，重合 0.88） |
 | lifecycle-human | 12.7 最终路径的发布协议 | §3.5、§5.4（同 agent §7.7） |
 | lifecycle-human | 12.8 保留与清理 | §3.5（同 agent §7.9） |
 | lifecycle-human | 13. 证据账 | §5.7 |
 | lifecycle-human | 14. 成本与停止规则 | §6 |
-| lifecycle-human | 15. 完成判据 | §5.5、§3.5 |
+| lifecycle-human | 15. 完成判据 | **§3.12**（同 agent §12；随该行一并更正） |
 | lifecycle-human | 16. 反模式 | §11 |
 | lifecycle-human | 17. 常见失败方式与项目实例 | §12 |
 | lifecycle-human | 18. 边界 | §0.1 |
