@@ -89,8 +89,8 @@ def artifact_paths(cfg: dict, kind: str, who: str | None = None) -> list[str]:
     协议正文写 `rounds/<id>/<kind>-<名>.md`，但实跑出现过两种变体：
 
     · 评审/异议/验收归档进 `reviews/` 子目录（`refact-fable`、`runtime` 两轮）。
-      这两处已被**已发布**文档当证据锚引用（`runtime-architecture.md:454/458/461`、
-      `refact-fable.md:23/29/38/43`），改名等于让已发布的证据链失效，所以不改文件、改判据。
+      这两处已被**已发布**文档当证据锚引用（`runtime-architecture.md @ ceb7291c:454/458/461`、
+      `refact-fable.md @ ceb7291c:23/29/38/43`），改名等于让已发布的证据链失效，所以不改文件、改判据。
     · 处置记录与环节通知带 `<round-id>-` 前缀（`runtime`、`_fixups` 两轮）。
 
     四种组合全找过才算缺。2026-09-06 之前只按一个拼法找，把已经走完七环节发布掉的

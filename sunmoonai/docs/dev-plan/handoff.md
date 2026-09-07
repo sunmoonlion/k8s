@@ -121,7 +121,7 @@
 | --- | --- |
 | `refact` | 已发布，最终稿 `working/development-lifecycle-agent.md` |
 | `refact-fable` | 已发布；其架构结论（两个 Profile）后被 `runtime` 轮推翻，原文已迁出并删除，内容在 `7e8464c2` 与 `rounds/refact-fable/` |
-| `runtime` | 已发布，最终稿 `runtime-architecture.md`。裁决方自陈错误十二条，六条由参与方抓出、三条由所有者抓出 |
+| `runtime` | 已发布，最终稿曾为 `runtime-architecture.md`；其 33 节已由 `runtime-refact` 轮全部落点到 `agent-dev-guide.md` §10，原文 2026-09-07 删除，内容在 `@ ceb7291c` 与 `rounds/runtime/`。裁决方自陈错误十二条，六条由参与方抓出、三条由所有者抓出 |
 | `_fixups` | 进行中：追认 `runtime` 发布后四次未走流程的改动，验收方 cursor |
 
 ## 不能倒退的两条（本轮新增）

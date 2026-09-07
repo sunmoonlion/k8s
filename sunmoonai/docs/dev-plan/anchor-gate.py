@@ -3,7 +3,7 @@
 
 **为什么需要它**：`doc-gate.py` 只检查 markdown 链接 `[文本](路径)`。
 2026-09-05 实测：删掉 `refact-fable.md` 后 `doc-gate --all` 报「144 份通过」，
-而当时 `runtime-architecture.md` 里 31 处对它的引用全部是纯文本锚点（`refact-fable.md:220`），
+而当时 `runtime-architecture.md` 里 31 处对它的引用全部是纯文本锚点（`refact-fable.md @ ceb7291c:220`），
 一条也没被发现。**一道门禁的存在理由就是防这件事，它却看不见**——
 这是该轮记录的「判据在边界给假答案」的第六次。
 

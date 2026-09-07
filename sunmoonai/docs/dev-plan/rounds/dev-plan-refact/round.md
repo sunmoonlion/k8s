@@ -6,7 +6,7 @@
 ```toml
 round_id   = "dev-plan-refact"
 status     = "DRAFT"                 # 开轮前须裁定 proposers / arbiter
-tier       = "T2"                    # 权威层（触及内核）+ 不可逆（文档重排）+ 规模 486 节
+tier       = "T2"                    # 权威层（触及内核）+ 不可逆（文档重排）+ 规模 399 节
 final_path = "sunmoonai/docs/dev-plan/dev-plan-architecture.md"
 round_dir  = "sunmoonai/docs/dev-plan/rounds/dev-plan-refact"
 prefix     = "dev-plan-refact"
@@ -21,6 +21,8 @@ mechanical_absent = [
   'B1 不得在本轮改结论::本轮改正|顺带修正|此处结论有误故改',
   'B7 request-baseline 路径不得变更::request-baseline 移|移入 archive/request-baseline|request-baseline/ →',
 ]
+# B8「三份未落点历史稿并入后删除」是**存在性**要求，机械条查不出「缺了什么」，
+# 只能由 M1 落点表覆盖 399 节这一条兜住。见 dev-plan-refact.md §2 一、§4.1 B8。
 ```
 
 ## 与 `executor-adapter` 轮的排队关系 —— **已定**
@@ -48,6 +50,6 @@ mechanical_absent = [
 
 ## 本轮的特殊之处
 
-`runtime-refact` 轮是 64 节，本轮 **486 节**。规模差 7.6 倍，而
+`runtime-refact` 轮是 64 节，本轮 **399 节**。规模差 6.2 倍，而
 「靠一次通读做融合会丢东西，且丢了不会有人发现」这条已经被上一轮证实过一次。
 **落点表因此是交付物而非附赠，且验收会抽查落点是否属实。**

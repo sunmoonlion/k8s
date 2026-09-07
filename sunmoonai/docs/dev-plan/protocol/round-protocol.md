@@ -310,8 +310,8 @@ sunmoonai/docs/dev-plan/rounds/<round-id>/round.md
 > `refact-fable`、`runtime` 两轮的 `R/reviews/` 是对的；但这两轮的**处置记录与环节通知**
 > 带了 `<round-id>-` 前缀（`runtime-disposition.md`、`runtime-call-①.md`），
 > `_fixups` 轮的验收稿则平铺在 `R/` 根下。轮次目录本身已经标明轮次，前缀是冗余。
-> 这些文件**不改名**——`rounds/<id>/reviews/` 已被 `runtime-architecture.md:454/458/461`
-> 与 `refact-fable.md:23/29/38/43` 当证据锚引用，改名会让已发布的证据链失效。
+> 这些文件**不改名**——`rounds/<id>/reviews/` 已被 `runtime-architecture.md @ ceb7291c:454/458/461`
+> 与 `refact-fable.md @ ceb7291c:23/29/38/43` 当证据锚引用，改名会让已发布的证据链失效。
 
 **候选用与主线一致的路径和文件名**：`git diff master` 一条命令看清每家改了什么；
 路径本身标明作者；枚举形状固定，不会漏。

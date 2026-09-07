@@ -8,12 +8,18 @@
 > 最后更新：2026-09-06 ｜ 融合自 `refact-fable.md`、`round-protocol.md`（七环节版）、
 > `runtime-architecture.md` 三份，并按 2026-09-05/06 的核查结果删除了其中六处被证伪的设计（见 §5.3）。
 >
-> **和那三份现在是什么关系**：本文是**唯一要通读的一份**，三份源稿仍在，各有分工——
+> ⚠ **2026-09-07 更新**：三份源稿中的 `refact-fable.md`、`runtime-architecture.md` **已删除**——
+> 它们的 31 + 33 节由 `runtime-refact` 轮全部落点到 [`agent-dev-guide.md`](agent-dev-guide.md) §10，
+> 原文在 `@ ceb7291c` 与 `rounds/refact-fable/`、`rounds/runtime/`。
+> **本文自身也待处置**：其 76 节从未进入任何轮次的输入集（`R2` 曾明令不得读），
+> 由 `dev-plan-refact` 轮并入 `agent-dev-guide.md` 后删除。
+>
+> **和那三份原本是什么关系**（下述描述保留为成文时状态）——
 > [`round-protocol.md`](protocol/round-protocol.md) 是**流程的操作手册**（环节判定表、脚本调用与退出码、
 > 参与方不可用、立判据的人怎么约束自己），跑轮次时照着它做，本文 §3 只是它的导读；
-> [`runtime-architecture.md`](runtime-architecture.md) 是 `runtime` 轮经正式验收的**架构规格**
+> `runtime-architecture.md` 是 `runtime` 轮经正式验收的**架构规格**
 > （逐字段的 Profile 表、trace 样例、逐条自检），要落实现时查它；
-> [`refact-fable.md`](refact-fable.md) 是更早一轮的稿子，**其架构结论已被推翻**（§1.3），
+> `refact-fable.md` 是更早一轮的稿子，**其架构结论已被推翻**（§1.3），
 > 只在追溯来龙去脉时读。**三份里任何一句与本文冲突，以本文为准**，并按 §3 起一个工作单元去改源稿。
 
 ---
