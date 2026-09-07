@@ -27,6 +27,11 @@ success_criterion = "产物出现在约定路径并已提交，而非命令返�
 # ⚠ 2026-09-05 新增 [fable] 条目与 cursor 的 --model 钉法**未冒烟验证**
 # （所有者明确表示不必跑）。上面 verified = "2026-09-04" 只覆盖当时的四条。
 
+# ⚠ 2026-09-07 实测：`codex exec` 会打印 "Reading additional input from stdin..."
+# 并**阻塞等待 stdin 关闭**。在后台/管道里起它而不关 stdin，进程会一直挂着——
+# 实测挂 17 分 29 秒，CPU 时间 00:00:00，一步没跑，而按字节数判据看像「在推进」。
+# **调用方必须显式关 stdin**（`< /dev/null`）。这一条对 luna / kimi 两家都适用。
+
 [luna]
 worktree = "{home}/worktrees/luna/k8s"
 argv = ["env", "CODEX_HOME={home}/.codex-official",
