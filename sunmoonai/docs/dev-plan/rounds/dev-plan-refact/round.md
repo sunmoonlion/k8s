@@ -5,12 +5,12 @@
 
 ```toml
 round_id   = "dev-plan-refact"
-status     = "DRAFT"                 # 待所有者确认 baseline 后翻 ACTIVE
+status     = "ACTIVE"                # 2026-09-07 开轮
 tier       = "T2"                    # 权威层（触及内核）+ 不可逆（文档重排）+ 规模 320 节
 final_path = "sunmoonai/docs/dev-plan/dev-plan-architecture.md"
 round_dir  = "sunmoonai/docs/dev-plan/rounds/dev-plan-refact"
 prefix     = "dev-plan-refact"
-baseline   = ""                      # 开轮时填当前 master
+baseline   = "69234636"           # 开轮时的 master
 
 # 所有者 2026-09-07：「鉴于本轮重要，你们都参加，我是裁决者。到时我指定谁吸收。」
 proposers      = ["opus", "luna", "kimi", "cursor", "qwen"]   # 五家全参赛，含 opus
