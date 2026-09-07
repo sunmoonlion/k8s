@@ -55,3 +55,55 @@ git show <refA>:<文件> | grep … | head | cut | sed  ||  git show <refB>:<文
 它只让归属**可读**，不让归属**可信**（`agent-dev-refact.md` §2.6）。
 ③ 处置记录须写明这一差异，**但不得据此调整评分**——
 可追溯性弱是**组织者的执行条件**造成的，不是候选的质量问题。
+
+## O-4 ｜ 裁决方两处判错：`resume` 已接线；「验不了的三样」已在服务态验过
+
+2026-09-07 所有者提出「设计与实现应同步推进，否则设计完还要返工」。
+据此去产品仓核，**结果推翻了裁决方自己的两处判断**。
+
+### O-4a ｜「抽象层 `resume` 是 `NotImplementedError`，故端到端未接线」——**错**
+
+| 事实 | 取证 |
+| --- | --- |
+| `NotImplementedError` 在**抽象基类**里，是抽象方法的正确写法 | `graph_runtime_service.py:26-31` |
+| **适配器已实现**：`Command(resume=user_input)` + 同 `thread_id` | `langgraph_runtime.py:13-21` |
+| **有端到端测试且通过**：中断 → `resume("continue")` → 原地续跑并产生副作用 | `test_graph_runtime_service.py:18-35`，实跑 **2 passed** |
+
+**怎么错的**：吸收 `C2` 时裁决方**确实打开了文件自验**——但只看了基类那 18 行就停了，
+**没搜谁继承它、没搜谁调用它、没跑测试**。`cursor` 原话是
+「适配器必须把恢复输入翻译成库的命令类型——这是**留给实现方的空位**」，
+说的是**接口契约**，被读成了**功能缺失**。
+
+⚠ **这是「打开文件自验」也会失败的一个实例**：验了，但**验的范围是自己划的**，
+而范围划错了。与本轮其他几次同形态——**凭印象选检查点**。
+
+### O-4b ｜「事务性 / 租约 / fencing 验不了」——**句子对，读法错**
+
+原句「**git 载体**验不了这三样」成立。但整套文档只写了这一句，
+读起来像「本项目至今没验过这三样」。实际产品仓（PostgreSQL 载体）**全有测试且全过**：
+
+| 项 | 测试 |
+| --- | --- |
+| fencing | `test_expected_version_prevents_two_workers_claiming_same_run` |
+| 租约 / 并发 | `test_relational_schema_enforces_identity_and_concurrency_constraints`、`test_same_thread_rejects_second_non_terminal_run` |
+| 副作用恰好一次 | `test_interrupt_resume_executes_side_effect_once`、`test_retry_after_crash_after_commit_does_not_repeat_effect`、`test_tool_side_effect_service_records_once_by_tool_call_id` |
+| 陈旧覆盖被拒 | `test_versioned_reducer_rejects_stale_plan_overwrite` |
+| 取消先于副作用 | `test_cancelled_run_stops_before_side_effect_and_releases_thread` |
+| 恢复用钉定图版本 | `test_waiting_checkpoint_resumes_with_pinned_graph_version` |
+
+全套：**156 passed, 2 skipped, 5.13s**（跳过的两条是跨仓消费者向量，未被请求）。
+
+**后果**：`agent-dev-guide` §6「拆脚手架的条件」把并发语义写成「验不了」，
+读者会以为那是**未来才能做的事**。准确说法是：**服务态那一侧的判据已经有测试在跑**，
+缺的是**手工态与服务态的等效比对**，不是「并发语义没人验」。
+
+### 由此得到的一条方法教训
+
+产品仓最后一次代码提交是 **08-31**，而这六天里我们在文档上给同一批问题标了 ⚠。
+**156 个测试 5 秒跑完，答案一直在那里，没人去问。**
+
+> **设计文档里每写一条「未验证 ⚠」，先问一句：产品仓里有没有测试已经回答了它。**
+> 标 ⚠ 的成本是零，所以它会越积越多；而其中一部分其实是**已验证但没人去看**。
+
+⚠ 本条与 `A-3`（`cursor` 提异议推翻裁决方）合并在 ④ 处置里一次改判，
+**不在 ④ 进行中零敲碎打地改裁决稿**。
