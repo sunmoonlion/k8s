@@ -367,19 +367,20 @@ validator 先跑机械条，acceptor 再判机器判不了的冻结条；验收�
 - `investment-backend/app/app/tasks/agent_graph.py:106-128` 在同一 thread 配置和 PostgreSQL
   checkpointer 上首次执行或恢复。
 
-⚠ **「原语存在」不等于「端到端已接线」。**同一份代码里，抽象基类
-`graph_runtime_service.py:26-31` 的 `resume` 本身是
+**中断恢复在本项目已经端到端跑通**，不只是「库有原语」：
 
-```python
-raise NotImplementedError(
-    "Runtime adapters must translate resume input to their graph command type."
-)
-```
+| 层 | 状态 | 取证 |
+| --- | --- | --- |
+| 抽象基类 `GraphRuntimeService.resume` | `raise NotImplementedError(...)` | `graph_runtime_service.py:26-31`——这是**抽象方法的正确写法**，不是功能缺失 |
+| 适配器 `LangGraphRuntimeService.resume` | **已实现**：`Command(resume=…)` + 同 `thread_id` | `langgraph_runtime.py:13-21` |
+| 端到端 | **通过**：中断 → `resume` → 原地续跑并产生副作用 | `test_graph_runtime_service.py:18-35`，`uv run pytest` → **2 passed** |
 
-也就是说**恢复这一步的适配是留给实现方的空位**，不是现成能力。
-上面四条锚点证明的是「库提供了 `interrupt` / `Command(resume=)` / 同 thread checkpoint」，
-**它们不证明本项目已经把中断恢复跑通**。两件事分开写，是因为把前者读成后者，
-会让一份「已具备」的结论建立在一个 `NotImplementedError` 上。
+⚠ **这一段曾经写反过，教训比结论有用。**先前据抽象基类那行 `NotImplementedError`
+断定「端到端未接线」——**错在只读了基类 18 行就停**，没搜谁继承、没搜谁调用、没跑测试。
+把「留给实现方的空位」（**接口契约**）读成了「功能缺失」。
+
+> **「打开文件自验」也会失败**：验了，但**验的范围是自己划的**，而范围划错了。
+> 这与「没验就下结论」是两种错，**后者好防，前者难防**。
 
 因此实现应把产品 Interaction 的 `question_or_action / audience / expires_at / resume_token_hash /
 idempotency_key / consumed_at / resume_target` 绑定到这些原语，字段真源仍是
@@ -587,6 +588,24 @@ G1 是本轮对旧路线的修正：先验证现有库原语，不先发明字�
 | `git worktree add` | provision service | 独占、干净、基线判据进代码并有测试；worktree 载体可保留 |
 
 事务、租约、fencing 只有服务态验收通过才算实现，不能用轨迹“相似”替代。
+
+⚠ **而服务态那一侧已经验过了，这一栏因此不是「未来才能做的事」。**
+产品仓（PostgreSQL 载体）现有测试全部通过，实跑 **156 passed, 2 skipped in 5.13s**：
+
+| 项 | 测试 |
+| --- | --- |
+| fencing | `test_expected_version_prevents_two_workers_claiming_same_run` |
+| 租约 / 并发 | `test_relational_schema_enforces_identity_and_concurrency_constraints`、`test_same_thread_rejects_second_non_terminal_run` |
+| 副作用恰好一次 | `test_interrupt_resume_executes_side_effect_once`、`test_retry_after_crash_after_commit_does_not_repeat_effect` |
+| 陈旧覆盖被拒 | `test_versioned_reducer_rejects_stale_plan_overwrite` |
+| 取消先于副作用 | `test_cancelled_run_stops_before_side_effect_and_releases_thread` |
+
+**所以缺的不是「并发语义没人验」，是「手工态与服务态的等效比对」还没做。**
+两句话差别很大：前者指向一件未开工的事，后者指向一件已完成一半的事。
+
+⚠ **这一段也曾写偏过。**「**git 载体**验不了这三样」这句本身成立，
+但整份文档只写了这一句，**读起来像「本项目至今没验过」**。
+教训：**「某载体证不了 X」与「X 未被证明」是两件事，不许合写。**
 
 ### 7.3 删除与迁移门
 
