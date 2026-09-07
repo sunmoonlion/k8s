@@ -250,6 +250,17 @@ provision(task_id, source, baseline_commit, write_actors, review_needed, submodu
 | 批准后发布完成 | `WAITING → QUEUED → RUNNING → SUCCEEDED` | publisher `→ RUNNING → COMPLETED` |
 | 已无获准成功路径 | `→ FAILED` | 相关 Attempt 均终态 |
 
+**这张表不是说明，是判据。**「只投影不造新状态」要成立，必须**三件同时满足**，
+缺一条这个主张就没被证明：
+
+1. **没有一个新状态词**——表右两列出现的词全部来自内核合法转换表；
+2. **没有一条内核之外的边**——每一格的转换都能在内核那张表里找到；
+3. **内核的每个状态都有落点**——反过来查：内核有而本表没出现的状态，
+   要么说明流程还没覆盖到，要么说明表漏了。
+
+⚠ **第 3 条最容易被跳过**，因为前两条查「本表有没有越界」是顺着看，
+第 3 条查「内核有没有被漏」要倒着看。**只做前两条会得到一个自洽但不完整的映射。**
+
 Artifact 可以有草稿、冻结、陈旧、被替代等版本属性；这些不是 Task/Attempt 状态。
 评审、裁决、异议和验收均可作为 typed Artifact，由 Attempt 的 `output_artifacts` 引用；若要把它写入
 内核合同，须先按规范修订程序确认这是类型细化而不是对象扩充。
