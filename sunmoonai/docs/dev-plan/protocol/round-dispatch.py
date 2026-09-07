@@ -131,12 +131,114 @@ def missing_of(st: dict, stage_hint: str | None) -> tuple[str, list[str]]:
     return cur, []
 
 
+
+MD_PATH = HERE / "dispatch.md"
+
+
+def md_projection(write: bool) -> int:
+    """把 agents.toml 投影成一份可直接敲的 dispatch.md。
+
+    ⚠ **这是投影，不是真源。**真源是 agents.toml——手改 dispatch.md 会在下次
+    `--check-md` 时被判出来。之所以要这份 md 而不是让人跑脚本：所有者要**自己看着敲**，
+    脚本代跑会把 CLI 的交互吞掉，而 qoder 一类交互多的执行者一旦被吞就只能干等
+    （2026-09-07 实测 `codex exec` 挂 17 分 29 秒、CPU 全 0，从外面看像在推进）。
+
+    ⚠ **一份就够，不按环节分。**投喂的那句话每个环节都一样，
+    所以 ①②④⑤⑦ 共用这一份；「现在是哪个环节」由各家自己读 call-<环节>.md 判定。
+    """
+    home = str(Path.home())
+    cfg = load_agents()
+    lines = [
+        "# 投喂命令 ｜ 直接敲",
+        "",
+        "> ⚠ **本文件由 `round-dispatch.py --write-md` 从 `agents.toml` 生成，不要手改。**",
+        "> 真源是 `agents.toml`；改了那边就重新生成。核对是否漂移：",
+        "> `python3 round-dispatch.py --check-md`",
+        "",
+        "> ⚠ **一份通用，不分环节。**发出去的话每个环节都一样——",
+        "> 「现在该做哪一步」由各家自己读该轮的 `call-<环节>.md` 判定。",
+        "",
+        "> ⚠ **本文件列的是登记表里的全部执行者，不是某一轮的参赛方。**",
+        "> 某一轮投谁，以该轮 `round.md` 的 `proposers` 为准——",
+        "> 多敲一家不会报错，但那一家的产物会让 `round-status.py` 认不出，白跑一次。",
+        "",
+        "## 敲之前知道两件事",
+        "",
+        "1. ⚠ **成功判据是产物出现，不是命令返回 0。**",
+        "   `cursor` 未加 `--trust` 时会拒绝执行**却仍返回 0**；",
+        "   `codex exec` 默认 read-only 时会把活干完但写不进去，退出码同样是 0。",
+        "2. ⚠ **`codex exec` 会阻塞等 stdin**（打印 `Reading additional input from stdin...`）。",
+        "   下面 `luna` / `kimi` 两条末尾的 `< /dev/null` **不能省**——",
+        "   实测省掉后挂 17 分 29 秒、CPU 时间 00:00:00，一步没跑。",
+        "",
+        "## 命令",
+        "",
+    ]
+    manual = []
+    for name, a in cfg.items():
+        if name == "meta":
+            continue
+        cwd = a.get("worktree", "").replace("{home}", home)
+        if "argv" not in a:
+            manual.append((name, cwd))
+            continue
+        argv = [x.replace("{home}", home).replace("{cwd}", cwd)
+                 .replace("{prompt}", FIXED_INSTRUCTION) for x in a["argv"]]
+        redir = " < /dev/null" if str(a.get("close_stdin", "")).lower() == "true" else ""
+        lines += [f"### {name}", "",
+                  "```bash",
+                  f"cd {shlex.quote(cwd)} && {' '.join(shlex.quote(x) for x in argv)}{redir}",
+                  "```", ""]
+    for name, cwd in manual:
+        lines += [f"### {name} —— 无命令行入口", "",
+                  f"⚠ **不能用命令投喂**：它没有一次性命令行入口。",
+                  f"把它的界面/会话打开在 `{cwd}`，然后发这一句：", "",
+                  "```text", FIXED_INSTRUCTION, "```", ""]
+    lines += [
+        "## 敲完之后",
+        "",
+        "```bash",
+        "cd ~/master/k8s && python3 sunmoonai/docs/dev-plan/protocol/round-status.py",
+        "```",
+        "",
+        "看的是**产物出现没有**。要读内容再开检视面：",
+        "",
+        "```bash",
+        "python3 sunmoonai/docs/dev-plan/protocol/round-review.py --round <轮次>",
+        "python3 sunmoonai/docs/dev-plan/protocol/round-review.py --round <轮次> --close",
+        "```",
+        "",
+    ]
+    text = "\n".join(lines)
+    if write:
+        MD_PATH.write_text(text, encoding="utf-8")
+        print(f"已生成 {MD_PATH}（{len(lines)} 行投影）")
+        return 0
+    if not MD_PATH.exists():
+        print(f"✗ {MD_PATH} 不存在——跑一次 --write-md", file=sys.stderr)
+        return 1
+    cur = MD_PATH.read_text(encoding="utf-8")
+    if cur == text:
+        print("✓ dispatch.md 与 agents.toml 一致")
+        return 0
+    print("✗ dispatch.md 已与 agents.toml 漂移——重跑 --write-md", file=sys.stderr)
+    return 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--round")
     ap.add_argument("--stage", help="环节序号或名字前缀，如 4 / ④")
+    ap.add_argument("--write-md", action="store_true",
+                    help="把可直接敲的命令生成为 dispatch.md（投影，非真源）")
+    ap.add_argument("--check-md", action="store_true",
+                    help="核对 dispatch.md 是否仍与 agents.toml 一致；不一致退出 1")
     ap.add_argument("--all", action="store_true", help="给全部参与方，不只缺的")
     args = ap.parse_args()
+
+    if args.write_md or args.check_md:
+        return md_projection(write=args.write_md)
+
 
     st = status(args.round)
     cfg = st["cfg"]
