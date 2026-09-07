@@ -8,11 +8,11 @@
 > 最后更新：2026-09-06 ｜ 融合自 `refact-fable.md`、`round-protocol.md`（七环节版）、
 > `runtime-architecture.md` 三份，并按 2026-09-05/06 的核查结果删除了其中六处被证伪的设计（见 §5.3）。
 >
-> ⚠ **2026-09-07 更新**：三份源稿中的 `refact-fable.md`、`runtime-architecture.md` **已删除**——
-> 它们的 31 + 33 节由 `runtime-refact` 轮全部落点到 [`agent-dev-guide.md`](agent-dev-guide.md) §10，
-> 原文在 `@ ceb7291c` 与 `rounds/refact-fable/`、`rounds/runtime/`。
-> **本文自身也待处置**：其 76 节从未进入任何轮次的输入集（`R2` 曾明令不得读），
-> 由 `dev-plan-refact` 轮并入 `agent-dev-guide.md` 后删除。
+> ⚠ **2026-09-07 更新**：三份源稿中的 `refact-fable.md`、`runtime-architecture.md`
+> **已归档**至 [`archive/`](archive/)——它们的 31 + 33 节由 `runtime-refact` 轮全部落点到
+> [`agent-dev-guide.md`](agent-dev-guide.md) §10，收据齐全，故有归档资格。
+> **本文自身还没有这个资格**：其 76 节从未进入任何轮次的输入集（`R2` 曾明令不得读），
+> 须由 `dev-plan-refact` 轮并入 `agent-dev-guide.md`、补出落点表后，才能一并归档。
 >
 > **和那三份原本是什么关系**（下述描述保留为成文时状态）——
 > [`round-protocol.md`](protocol/round-protocol.md) 是**流程的操作手册**（环节判定表、脚本调用与退出码、

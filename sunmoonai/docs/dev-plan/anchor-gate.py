@@ -54,12 +54,18 @@ B = re.compile(r'`([\w.-]+\.md):(\d+)(?:-(\d+))?`')
 C = re.compile(r'`([\w.-]+\.md)` §([\d.]+)')
 
 def archived(rel):
-    """`rounds/**` 一律按归档：轮次产物是**冻结的历史记录**（工单、通知、裁定、评审、
-    处置、验收），其锚点按成文时的状态解析，不因后续文档变动判失败——
+    """`rounds/**` 与 `dev-plan/archive/**` 按归档：二者都是**冻结的历史记录**
+    （前者是轮次产物：工单、通知、裁定、评审、处置、验收；后者是已被取代、
+    且有逐节落点收据的文档），其锚点按成文时的状态解析，不因后续文档变动判失败——
     冻结物不可改，让门禁对它永久报红只会让人不再看门禁。
     但仍逐条列出供人判：**软判不是不判**。
-    活跃文档集 = dev-plan/ 顶层 + working/ + project-guide/ + ai-dev-readiness/，那些硬判。"""
-    return "/rounds/" in rel
+    活跃文档集 = dev-plan/ 顶层 + working/ + project-guide/ + ai-dev-readiness/，那些硬判。
+
+    ⚠ 2026-09-07 加入 archive/：该目录当天重建，收入两份归档件，其中
+    runtime-architecture.md 带一处指向外部仓的存量失效锚（`task.md:214`，
+    该文件现只有 20 行）。它是成文时可解析、之后外部仓变了——正是本函数
+    要豁免的形状。**豁免的是判失败，不是豁免报出来**。"""
+    return "/rounds/" in rel or "/dev-plan/archive/" in rel
 
 fails=[]; archive_notes=[]; soft=0; okA=okB=0
 for f in sorted(DOCS.rglob("*.md")):
@@ -113,7 +119,7 @@ if archive_notes:
     for x in archive_notes:
         m = _re.search(r'`([\w.-]+\.md)', x)
         agg[m.group(1) if m else "?"] += 1
-    print(f"\n🔶 归档产物（`rounds/**`）中 {len(archive_notes)} 处锚点在当前状态下解析不到——"
+    print(f"\n🔶 归档产物（`rounds/**`、`dev-plan/archive/**`）中 {len(archive_notes)} 处锚点在当前状态下解析不到——"
           f"**软判，不计失败**：归档是冻结的历史记录，锚点按成文时状态解析，不可改也不该改。")
     for name, n in agg.most_common():
         print(f"     {name:<36} {n:>3} 处")
