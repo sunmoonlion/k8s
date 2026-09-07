@@ -466,7 +466,130 @@ impl HookResult { pub fn should_abort_operation(&self) -> bool { … } }
 
 ---
 
-## 10. 未解决 / 下次接着看
+## 10. CLI / SDK / 插件的机制差别：**拦截点在哪**
+
+⚠ **这是本文的核心一节。**前九节都在描述「有哪些面」，本节答「**它们的机制到底哪里不同**」。
+
+### 10.1 先否掉一个直觉答案
+
+直觉答案是「**你的代码跑在 harness 进程外面还是里面**」。**不准确**——
+codex 的 hook handler 有四型（`hook.rs:25-27`）：
+
+```
+Command | McpTool | Prompt | Agent
+```
+
+`Command` 型**是起子进程的**，`McpTool` 可能打到另一个进程，`Agent` 甚至是另一个 agent。
+**所以插件的处理器完全可以在 harness 进程之外。**
+
+### 10.2 准确的差别：**拦截点的位置**
+
+| | **拦截点在哪** | 处理器可以在哪 | 能拦到什么 |
+| --- | --- | --- | --- |
+| **CLI** | ⚠ **只有进程边界的两端**：启动（argv）与退出（exit code） | 调用方进程 | ⚠ **几乎什么都拦不到**——中间发生的事一件也看不见 |
+| **SDK** | ⚠ **进程边界上的消息**（管道上的 JSON） | 调用方进程 | ⚠ **只能拦协议明确暴露的点**——协议没写的，边界上就不会出现 |
+| **插件 / hook** | ⚠⚠ **agent 执行流的内部** | 进程内、子进程、MCP、甚至另一个 agent | ⚠ **协议没暴露的点也能拦**——因为它不受协议边界约束 |
+
+**一句话**：
+
+> **CLI 和 SDK 是在边界上等；插件是在流水线上站。**
+> 边界上只能等到「被设计成要穿过边界」的东西；流水线上站着，凡是流过的都能碰。
+
+### 10.3 硬证据：两个面暴露的点**几乎不重叠**
+
+同一个 codex，两个扩展面：
+
+| app-server 的 server→client 请求（九种） | hook 事件（十二种） |
+| --- | --- |
+| `CommandExecutionRequestApproval` | `PreToolUse` |
+| `FileChangeRequestApproval` | **`PermissionRequest`** |
+| `ToolRequestUserInput` | `PostToolUse` |
+| `McpServerElicitationRequest` | `PreCompact` / `PostCompact` |
+| **`PermissionsRequestApproval`** | `SessionStart` / `SessionEnd` |
+| `DynamicToolCall` | `UserPromptSubmit` |
+| `ChatgptAuthTokensRefresh` | `SubagentStart` / `SubagentStop` |
+| `AttestationGenerate` | `Stop` / `Interrupt` |
+| `CurrentTimeRead` | |
+
+⚠⚠ **交集只有「审批」一项**（`PermissionRequest` ↔ `*RequestApproval`），**其余全部不重叠**。
+
+**这不是巧合，是两种拦截点位置的必然结果：**
+
+- app-server 那九种，形式都是「**我需要你替我做一件事**」——
+  决定（审批）、执行（`DynamicToolCall`）、提供（时间、attestation、token）。
+  ⚠ **它们必须穿过边界，因为 harness 自己做不了。**
+- hook 那十二种，形式都是「**执行流到了这个点**」——
+  工具前后、压缩前后、会话起止、子 agent 起止、停止、中断。
+  ⚠ **它们本来完全不需要穿过边界**，harness 自己就能继续；
+  **暴露它们纯粹是为了让人插进去。**
+
+**所以 `PostToolUse` 不可能出现在 app-server 的请求列表里**——
+工具跑完了，harness 不需要任何人帮忙，它只是**允许**你在那里插一脚。
+反过来 `DynamicToolCall` 不可能是 hook——那是真的需要外面的人干活。
+
+### 10.4 由此推出三条，每条都有工程后果
+
+**① 控制反转的方向相反**
+
+```
+CLI / SDK:   你的代码  ──调用──►  harness        （你是主，它是从）
+插件:        harness  ──回调──►  你的代码        （它是主，你是从）
+```
+
+⚠ **这是「库」与「框架」的经典分野。**后果：SDK 的错误你能捕获并决定下一步；
+插件里抛出的错误由 **harness 决定**怎么处理——codex 给的三值是
+`Success` / `FailedContinue`（继续）/ `FailedAbort`（中止），
+**你只能在这三种里选，不能自定义恢复策略。**
+
+**② 能拦到的点决定了「能不能做某个纪律」，而不是「做得漂不漂亮」**
+
+`agent-dev-guide.md` §5.1 要 `tool.enforced`，判据是「每一次工具调用，且调用先经运行时批准」。
+- **CLI**：办不到——看不见工具调用；
+- **SDK**：⚠ **只能靠 `DynamicToolCall`**，而那要求 harness **主动把工具执行交出来**；
+- **插件**：`PreToolUse` + `FailedAbort` 直接就是这个语义。
+
+⚠ **但插件那条有个致命限定**（§9.3）：hook 配置在**本机**，
+而 guide §4.4 已立「本机一切本地判定都不是边界」。
+**agent 与人同用户时，agent 能改 hook 配置。**
+
+**③ 版本耦合强度递增，而这决定维护成本**
+
+| | 耦合到什么 | 换版本时最容易断的 |
+| --- | --- | --- |
+| CLI | 命令行参数 + 输出格式 | 参数改名、输出格式变 |
+| SDK | 协议版本 | 消息形状变（有 `protocolVersion` 可协商） |
+| **插件** | ⚠ **harness 的内部扩展点** | ⚠ **事件名/时机/语义变，而这些通常不进版本协商** |
+
+### 10.5 ⚠⚠ 对本项目最要紧的一条推论
+
+我们有两个需求，**它们分落边界两侧，不可能用同一个机制满足**：
+
+| 需求 | 属于 | 该用 |
+| --- | --- | --- |
+| **业务控制面**：Task / Attempt / 四本账 / 验收 / 授权 | ⚠ **harness 之外**——它不该知道这些 | **SDK**（从外面驱动） |
+| **`tool.enforced`**：每次工具调用先经批准 | ⚠ **harness 之内**——要改它的执行行为 | **插件**（在流水线上站） |
+
+⚠ `agent-dev-guide.md` §2.6 立的「**租用 loop，自建业务控制面**」**只覆盖了第一行**。
+第二行是**改变 harness 的行为**，而**租用不改变行为**。
+
+**由此得到一条判据**（建议入 guide）：
+
+> ⚠ **CLI 与 SDK 都不能改变 harness 的行为，只能驱动它。要改变行为，必须进到它的执行流里。**
+
+**再叠上 `F-3` 的执行侧轴，才是完整答案：**
+
+| | 用户侧（agent 与我们同凭据域） | provider 侧（进程由我们拥有） |
+| --- | --- | --- |
+| **SDK 驱动** | ✓ 可行，这是现状 | ✓ 可行 |
+| **插件拦截** | ⚠ **协作式**——agent 能改配置，只能记 `tool.reported` | ⚠⚠ **真正的 `tool.enforced`**——配置在 agent 够不着的地方 |
+
+⚠ **所以 `tool.enforced` 需要两件事同时成立：插件（拿到拦截点）+ provider 侧（拿到配置的所有权）。**
+少任何一件都不够——这比 §5.1 现在写的「那是 SDK 腿建成之后才会出现的取值」精确得多，
+**也说明那句归因是错的**（已记 `findings.md` F-3 落点建议第 2 条）。
+
+---
+
+## 11. 未解决 / 下次接着看
 
 | # | 问题 | 为什么现在答不了 |
 | --- | --- | --- |
