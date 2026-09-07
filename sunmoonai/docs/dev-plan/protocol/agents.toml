@@ -90,8 +90,21 @@ argv = ["qoder", "-p", "{prompt}", "-w", "{cwd}", "--permission-mode", "accept_e
 
 [opus]
 worktree = "{home}/worktrees/opus/k8s"
-# **无 argv：opus 跑在一个持续会话里，没有一次性命令行入口。**
-# 投喂 = 在该会话中说那句固定指令。脚本会把它列为「需人工投喂」，
-# 这是对的——它与 fable 当年同属 dispatch = manual，`dispatch_event` 照数。
-# ⚠ 2026-09-07 起 opus 只是 proposer，不再兼 orchestrator：
-# 投喂由所有者执行，opus 不接触任何一家的产物。
+argv = ["claude", "-p", "{prompt}", "--permission-mode", "acceptEdits", "--model", "opus"]
+# ⚠ **2026-09-07 更正：此前本条写「无 argv，opus 没有命令行入口」，是错的。**
+# `claude` 在 /home/zym/.local/bin/claude（2.1.263），有 -p 非交互模式，
+# 与 cursor / qwen 同形；Agent Profile 登记表 `ap.opus` 本来就写着 dispatch = "argv"。
+# 错因：把「我此刻正跑在一个持续会话里」当成了「这个执行者没有一次性入口」——
+# **会话形态不是执行者属性**。这与本仓反复出现的同名物病同形。
+#
+# ⚠ **未冒烟验证**（与 [fable] 条目同）。用前须实跑一次确认：
+#   ① 产物真能落盘（判据是产物，不是退出码）；
+#   ② acceptEdits 够不够——它只自动接受**文件编辑**，git commit 走 Bash 可能仍被挡，
+#      那样就与 qwen 同属「写得出产物、提交需人代做」（R7），代提交按 §8c.2 用 --author。
+#   六档可选：acceptEdits / auto / bypassPermissions / manual / dontAsk / plan。
+#   ⚠ 按「取最小够用的一档」与「放宽容易收紧难」，先试 acceptEdits，不够再往上一档，
+#   **不得直接上 bypassPermissions**。
+#
+# ⚠ **用 CLI 投喂 opus，与在持续会话里投喂，不是同一件事**——见 round.md
+# 「opus 该怎么被投喂」。前者是全新会话、零累积上下文，**机械满足 B14**；
+# 后者带着整轮的上下文，B14 只能靠自律。

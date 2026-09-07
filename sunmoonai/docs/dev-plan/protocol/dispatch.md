@@ -46,19 +46,16 @@ cd /home/zym/worktrees/cursor/k8s && agent -p '按 round-protocol 定位当前�
 cd /home/zym/worktrees/qwen/k8s && qoder -p '按 round-protocol 定位当前环节，做你该做的那一步。' -w /home/zym/worktrees/qwen/k8s --permission-mode accept_edits
 ```
 
+### opus
+
+```bash
+cd /home/zym/worktrees/opus/k8s && claude -p '按 round-protocol 定位当前环节，做你该做的那一步。' --permission-mode acceptEdits --model opus
+```
+
 ### fable —— 无命令行入口
 
 ⚠ **不能用命令投喂**：它没有一次性命令行入口。
 把它的界面/会话打开在 `/home/zym/worktrees/fable/k8s`，然后发这一句：
-
-```text
-按 round-protocol 定位当前环节，做你该做的那一步。
-```
-
-### opus —— 无命令行入口
-
-⚠ **不能用命令投喂**：它没有一次性命令行入口。
-把它的界面/会话打开在 `/home/zym/worktrees/opus/k8s`，然后发这一句：
 
 ```text
 按 round-protocol 定位当前环节，做你该做的那一步。
