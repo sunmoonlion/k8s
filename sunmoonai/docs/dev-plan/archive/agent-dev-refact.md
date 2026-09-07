@@ -9,13 +9,13 @@
 > `runtime-architecture.md` 三份，并按 2026-09-05/06 的核查结果删除了其中六处被证伪的设计（见 §5.3）。
 >
 > ⚠ **2026-09-07 更新**：三份源稿中的 `refact-fable.md`、`runtime-architecture.md`
-> **已归档**至 [`archive/`](archive/)——它们的 31 + 33 节由 `runtime-refact` 轮全部落点到
-> [`agent-dev-guide.md`](agent-dev-guide.md) §10，收据齐全，故有归档资格。
+> **已归档**至 [`archive/`](./)——它们的 31 + 33 节由 `runtime-refact` 轮全部落点到
+> [`agent-dev-guide.md`](../agent-dev-guide.md) §10，收据齐全，故有归档资格。
 > **本文自身还没有这个资格**：其 76 节从未进入任何轮次的输入集（`R2` 曾明令不得读），
 > 须由 `dev-plan-refact` 轮并入 `agent-dev-guide.md`、补出落点表后，才能一并归档。
 >
 > **和那三份原本是什么关系**（下述描述保留为成文时状态）——
-> [`round-protocol.md`](protocol/round-protocol.md) 是**流程的操作手册**（环节判定表、脚本调用与退出码、
+> [`round-protocol.md`](../protocol/round-protocol.md) 是**流程的操作手册**（环节判定表、脚本调用与退出码、
 > 参与方不可用、立判据的人怎么约束自己），跑轮次时照着它做，本文 §3 只是它的导读；
 > `runtime-architecture.md` 是 `runtime` 轮经正式验收的**架构规格**
 > （逐字段的 Profile 表、trace 样例、逐条自检），要落实现时查它；
@@ -39,8 +39,8 @@
 
 | 顺序 | 读什么 | 为什么 |
 | --- | --- | --- |
-| 1 | [`constraints.md`](constraints.md) | 代码必须符合的 39 条规则。**动代码前必读**，违反其中任一条的方案不进入讨论 |
-| 2 | [`working/request-lifecycle.md`](working/request-lifecycle.md) | **本文的地基**。七个内核对象与两层状态机在那里定义，本文只引用不重复 |
+| 1 | [`constraints.md`](../constraints.md) | 代码必须符合的 39 条规则。**动代码前必读**，违反其中任一条的方案不进入讨论 |
+| 2 | [`working/request-lifecycle.md`](../working/request-lifecycle.md) | **本文的地基**。七个内核对象与两层状态机在那里定义，本文只引用不重复 |
 | 3 | 本文 | |
 
 **只读本文而不读第 2 项，会看不懂一半名词。**这不是本文含糊，是分工：
@@ -1315,7 +1315,7 @@ inferred（事后推断）     6 条
 | **R4** | 工单一般化 + 各档的门禁表与必需产物表 + 三值路由 + 状态改推导 | T2 | R1、R3 | 未开 |
 | **R5** | 两份生命周期文档合并；内核边界声明修订；引用清理 | T2 | R1–R4 | 未开 |
 
-**当前进度与卡点见 [`handoff.md`](handoff.md)**，本节只写路线不写状态。
+**当前进度与卡点见 [`handoff.md`](../handoff.md)**，本节只写路线不写状态。
 
 #### 脚手架什么时候可以拆
 

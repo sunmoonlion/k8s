@@ -119,7 +119,7 @@
 
 | 轮 | 结果 |
 | --- | --- |
-| `refact` | 已发布，最终稿 `working/development-lifecycle-agent.md` |
+| `refact` | 已发布，最终稿 `archive/development-lifecycle-agent.md`（2026-09-07 归档）。⚠ 其 §5.2 承诺的逐节映射表 `migration-map.md` **从未产出** |
 | `refact-fable` | 已发布；其架构结论（两个 Profile）后被 `runtime` 轮推翻，原文已迁出并删除，内容在 `7e8464c2` 与 `rounds/refact-fable/` |
 | `runtime` | 已发布，最终稿曾为 `runtime-architecture.md`；其 33 节已由 `runtime-refact` 轮全部落点到 `agent-dev-guide.md` §10，原文 2026-09-07 归档至 [`archive/`](archive/)。裁决方自陈错误十二条，六条由参与方抓出、三条由所有者抓出 |
 | `_fixups` | 进行中：追认 `runtime` 发布后四次未走流程的改动，验收方 cursor |

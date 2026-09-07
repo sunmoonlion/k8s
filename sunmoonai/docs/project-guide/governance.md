@@ -7,10 +7,10 @@
 >
 > 只剩三件事：权威排序、接手演练、什么不属于本文档集。
 > 其余原属本文件的内容已按性质移出：
-> 写文档的约定 → [`../dev-plan/development-lifecycle-human.md`](../dev-plan/development-lifecycle-human.md) §6；
+> 写文档的约定 → [`../dev-plan/development-lifecycle-human.md`](../dev-plan/archive/development-lifecycle-human.md) §6；
 > 提请求 → [`../dev-plan/working/request-lifecycle.md`](../dev-plan/working/request-lifecycle.md)；
 > 推送与多助手 → [`../dev-plan/round-protocol.md`](../dev-plan/protocol/round-protocol.md) 与
-> [`../dev-plan/development-lifecycle-human.md`](../dev-plan/development-lifecycle-human.md) §12。
+> [`../dev-plan/development-lifecycle-human.md`](../dev-plan/archive/development-lifecycle-human.md) §12。
 
 ## 1. 权威排序
 

@@ -1,7 +1,7 @@
 # 开发生命周期 · Agent
 
 > ⚠ **历史档案，不再有规范效力**（`runtime-refact` 轮定稿 `agent-dev-guide.md` 已取代本文）。
-> 现行规范是 [`agent-dev-guide.md`](agent-dev-guide.md)；**本文与它冲突时以它为准**。
+> 现行规范是 [`agent-dev-guide.md`](../agent-dev-guide.md)；**本文与它冲突时以它为准**。
 >
 > **降级不等于作废**：经 2026-09-07 抽样核查，本文有若干节的内容**未被任何现行文档吸收**，
 > 其中 §4.6「两个官方 SDK」等带 `file:line` 锚点的取证尤为要紧。故本文**不删**，
@@ -23,13 +23,13 @@
 > 本文是目标流程，不是当前实现清单。文件存在不等于 FastAPI、sandbox provisioner、
 > Agent runtime 或验收链已经实现；能力现状只由代码、迁移、测试和运行证据证明。
 >
-> **本文不是 [`request-lifecycle.md`](working/request-lifecycle.md) 的投影。**那份定义**要建成什么**
+> **本文不是 [`request-lifecycle.md`](../working/request-lifecycle.md) 的投影。**那份定义**要建成什么**
 > （Task、Attempt、Interaction、Artifact、Event、Side Effect、Delivery、四本账、
 > `I1`–`I15`、`AT-01`…`AT-22`）；本文定义**怎么把它建出来**。凡涉及那些对象，
 > 本文一律引用、不重新定义，冲突时以那份为准。
 >
 > **编号必须写明出处文档。**本仓有两套 `I` 系列且区间重叠：
-> [`../constraints.md`](constraints.md) 是 `I1`–`I8`（接口分面与身份），
+> [`../constraints.md`](../constraints.md) 是 `I1`–`I8`（接口分面与身份），
 > `request-lifecycle.md` 是 `I1`–`I15`（产品不变量）。写「constraints I8」「产品 I12」，
 > 不写裸 `I3`。本轮已有候选把产品 `I12` 误标为 `constraints.md` 的条目——
 > **人读上下文能分清，跨文档检索时会混，且混了以后文字仍然通顺。**
@@ -55,16 +55,16 @@ Submission
 
 | 文档 | 权威范围 |
 | --- | --- |
-| [`request-lifecycle.md`](working/request-lifecycle.md) | 通用产品对象、状态、幂等、租约、预算、Interaction、Artifact、Event、Delivery |
+| [`request-lifecycle.md`](../working/request-lifecycle.md) | 通用产品对象、状态、幂等、租约、预算、Interaction、Artifact、Event、Delivery |
 | 本文 | 开发 Profile 下的 Task 化、工作区物化和开发执行生命周期 |
 | `development-lifecycle-human.md` | Human 路径。**只放在人的主 checkout**（`~/master/<仓>`），各助手分支不保留——那份是给人看的，助手用不到 |
-| [`../constraints.md`](constraints.md) | 开发结果不可违反的硬约束 |
-| [`../handoff.md`](handoff.md) | 当前阻塞和下一动作的交接投影 |
+| [`../constraints.md`](../constraints.md) | 开发结果不可违反的硬约束 |
+| [`../handoff.md`](../handoff.md) | 当前阻塞和下一动作的交接投影 |
 
 Git、远端与子模块的纪律以本文 §7 为准。**跨机同步五仓用
 `~/five-repos-sync/sync-five-repos.sh`**：它推送五个父仓，拉取侧自动
 `submodule sync/update` 对齐 gitlink；⚠ 它不推子仓，子仓的提交仍须自己推
-（见 [`../constraints.md`](constraints.md) T4）。
+（见 [`../constraints.md`](../constraints.md) T4）。
 
 ### 0.2 事实、目标和执行记录分开
 
@@ -111,7 +111,7 @@ v1 不做模型驱动的动态编排，路由表是版本化配置，命中规�
 执行监督 Agent 只在调度监督器已经完成路由、固定执行器、冻结 Profile、收窄权限并预留预算后
 存在；它不能改路由、换执行器、扩大权限或把自己的候选验收为 Task 成功。这是
 `F-DISPATCH-03`、`F-EXEC-01`、`F-EXEC-04`、`I3`、`I10`、`I15` 以及
-[`../constraints.md`](constraints.md) A2/A3/A4 的开发投影。
+[`../constraints.md`](../constraints.md) A2/A3/A4 的开发投影。
 
 为保持既有开发内核逐字稳定，下文冻结小节里未加前缀的 `supervisor` 一律专指**执行监督
 Agent / Human supervisor 这一开发协调角色**；只有写全“调度监督器”时才指上层确定性代码。
@@ -396,7 +396,7 @@ publication target + integrator
 “自研还是租用”是假二分。真正的边界是：Investment 自研 Task/Attempt、路由、授权、预算、
 四本账、验收、Delivery 与恢复控制面；通过官方 SDK 租用模型 loop、工具循环和执行 runtime。
 执行器的 Thread/Session 只是 opaque binding，不是业务主档。该边界落实
-[`../constraints.md`](constraints.md) A1–A5、D1、T2/T3，并锚定 `F-DISPATCH-*`、
+[`../constraints.md`](../constraints.md) A1–A5、D1、T2/T3，并锚定 `F-DISPATCH-*`、
 `F-EXEC-*`、`F-ACCEPT-*`、`I3`、`I9`–`I15`。
 
 判断“新体系更好”必须分三层：
@@ -417,7 +417,7 @@ publication target + integrator
 | --- | --- | --- |
 | 1 | 两条腿的事件流能忠实投影进我们的 Event/timeline（`I4`、`F-EXEC-02`），词汇表映射不丢关键归属 | 该腿不得接入产品链路，先补上游或换腿 |
 | 2 | 专业腿（Harness `submit_result` + preset）在金标准上不劣于对照组（Codex 单腿 + `output_schema`） | 专业路线改回 Codex 腿，保留 Port 不变 |
-| 3 | Harness 进程模型在 Celery worker 内稳定：启动失败率、常驻内存、僵尸进程三项达阈值 | 该腿**不得进入现有通用 Celery worker**；若资源与失败率证据满足 [`../constraints.md`](constraints.md)「什么时候才拆出专用 Worker」的门槛，则拆专业 Worker/Deployment，**仍属同一 Backend 的运行角色**；否则该腿不进产品链路 |
+| 3 | Harness 进程模型在 Celery worker 内稳定：启动失败率、常驻内存、僵尸进程三项达阈值 | 该腿**不得进入现有通用 Celery worker**；若资源与失败率证据满足 [`../constraints.md`](../constraints.md)「什么时候才拆出专用 Worker」的门槛，则拆专业 Worker/Deployment，**仍属同一 Backend 的运行角色**；否则该腿不进产品链路 |
 
 **失败时的退路是换公开 SDK 路线或走约束变更流程，不是退回自研 loop。**
 自建通用 loop 与 `development-plan.md` 的执行层租用方向冲突，且本仓 `ToolExecutionPort`
@@ -675,17 +675,17 @@ PostgreSQL、默认 host 执行、`tools.profile: full`、`elevated`/`full` 逃�
 **本项目（Investment App）的范围门禁。**上表是通用路由，已覆盖跨 App 契约、Admin/Web/API、
 数据模型与迁移、K8s 与发布、跨仓与子模块各面。本文**不复制项目实现，也不铺项目清单**——
 易变的当前事实只放
-[`project-guide/repos/investment-app.md`](../project-guide/repos/investment-app.md)，那里改了
+[`project-guide/repos/investment-app.md`](../../project-guide/repos/investment-app.md)，那里改了
 本文不必跟着改。本文只固定三条不随实现变动的路由：
 
 1. **改动涉及 Investment App 时**，除上表外追加读取该仓的项目指南、生产链代码和相关测试；
    不得由历史设计稿或旧快照推断现状。
 2. **陈述任何能力状态时只用四级词典**——`defined / wired / deployable / runtime-verified`
-   （见 [`project-guide/overall-architecture.md`](../project-guide/overall-architecture.md)
+   （见 [`project-guide/overall-architecture.md`](../../project-guide/overall-architecture.md)
    §8.2）。类、DTO、迁移或测试夹具存在，都不等于生产链已经接线；执行者不得自行发明
    「已实现」的判断口径。
 3. **涉及已知休眠能力时回跑 dormant 测试**——
-   [`project-guide/repos/investment-app.md`](../project-guide/repos/investment-app.md) §7
+   [`project-guide/repos/investment-app.md`](../../project-guide/repos/investment-app.md) §7
    指向的 `tests/test_dormant_capabilities.py`，同时确认锚点仍在且能力仍未接线。
 
 第 1 条给入口，第 2 条给词汇，第 3 条给可运行的验证动作；三者都不随某一次实现变动而失效。
@@ -739,7 +739,7 @@ Git 不承担 Task 状态、预算、授权、Interaction 或副作用账。恢�
 权限、基线、依赖和副作用；不得根据旧会话无条件续跑或重复已记账动作。
 
 **checkpoint 写哪、谁写共享交接面。**执行者的 checkpoint 写进**自己的 worktree**；
-共享的单写者面——[`../handoff.md`](handoff.md)、实现矩阵的权威行——**只有 supervisor
+共享的单写者面——[`../handoff.md`](../handoff.md)、实现矩阵的权威行——**只有 supervisor
 或主驾驶写**，由它把各执行者的 checkpoint 投影上去。共享单写者面的判据不是「内容重要」，
 而是「同一事实只能有一个权威写入者」（§7.1）：多个执行者各自向同一份 handoff 追加进度，
 就是在共享路径上并发写，会互相覆盖并让交接游标失真。
@@ -824,7 +824,7 @@ Agent 路径的根仓由后端物化，后续 worktree 由 Agent supervisor 建�
 
 脚本化产生候选**目前没有可用工具**：曾有的 `parallel-proposals.py` 已于 2026-09-06 删除
 （三轮一次没用过、真实模型调用从未验证、只覆盖 codex 系执行者），
-理由与重建时的注意事项见 [`../round-protocol.md`](protocol/round-protocol.md) §9.3。
+理由与重建时的注意事项见 [`../round-protocol.md`](../protocol/round-protocol.md) §9.3。
 在此之前候选的隔离靠纪律，不靠机制，且**无法事后证明某一轮真的独立**。不得据此声称
 隔离由机制保证。
 
@@ -881,7 +881,7 @@ Agent 路径的根仓由后端物化，后续 worktree 由 Agent supervisor 建�
 
 执行监督 Agent 在上层已经路由完、权限已收窄之后才存在（§0.3）。抽象声明容易被绕过，
 下面三条是它在 Attempt 内的可执行边界，任一条被突破即为越权，按 `I3`、`I10`、`I15`
-与 [`../constraints.md`](constraints.md) A2/A4 处理：
+与 [`../constraints.md`](../constraints.md) A2/A4 处理：
 
 | # | 禁令 | 具体形态 |
 | --- | --- | --- |
@@ -1128,7 +1128,7 @@ Artifact 摘要可校验；副作用已收敛；没有活跃 Attempt 引用；�
 
 | 层 | 判定依据 | 机制在哪 |
 | --- | --- | --- |
-| **产品侧**（Attempt 写回、副作用、终态提交） | Task/Attempt 状态、租约与 fencing token | [`request-lifecycle.md`](working/request-lifecycle.md) 的**目标合同**。本文只引用，不重新定义，也不复制其状态名；该机制是否已接线由代码和运行证据决定，本文不作既成事实的断言 |
+| **产品侧**（Attempt 写回、副作用、终态提交） | Task/Attempt 状态、租约与 fencing token | [`request-lifecycle.md`](../working/request-lifecycle.md) 的**目标合同**。本文只引用，不重新定义，也不复制其状态名；该机制是否已接线由代码和运行证据决定，本文不作既成事实的断言 |
 | **开发侧**（候选、评审、改进、整合） | 冻结 commit、候选状态（§7.4）、冻结时间戳 | 本文。**开发侧没有租约机制**：整合方在吸收前必须显式核对四项——候选状态仍有效（非 `STALE`/`SUPERSEDED`/`REJECTED`）、commit 仍可达、提出方未撤回、基线未失效 |
 
 两层都不依据分支头或“看起来更新”。**核对的对象是 commit 与候选状态，不是分支**——分支是
@@ -1262,7 +1262,7 @@ Artifact 的内容哈希；执行前重算，任一字节、目标、权限或�
 带等待时长与待审对象哈希。
 
 **这不新增任何状态。**Task 与 Interaction 的状态及合法转换由
-[`request-lifecycle.md`](working/request-lifecycle.md) 穷举，本文不重定义：超时后仍按 Task Profile
+[`request-lifecycle.md`](../working/request-lifecycle.md) 穷举，本文不重定义：超时后仍按 Task Profile
 关闭该 Interaction，并走那份已经规定的合法转换。这落实 `F-EXEC-03`、I3/I9/I12、`AT-07/12/14`。
 
 所有模型推理经平台 egress proxy；真实 provider key 只在代理/Secret 边界，绝不下发 Codex 或
@@ -1377,8 +1377,8 @@ Agent 声称完成、subagent 全返回、已有 commit/PR 或候选测试通过
    规则不能只以文字存在于本文或提示词里。§5.1 的
    写入前门禁、§4.4 的物化门禁、§5.2 的范围门禁和 §10.2 的验收判据都属于此类：文档描述
    意图，门禁产生效力。**部分完成（2026-09-02）**：文档的机械不变量（仓内链接、章节
-   引用、表格列数）已由 [`../doc-gate.py`](doc-gate.py) 经 `.githooks/pre-commit`
-   自动执行，见 [`../constraints.md`](constraints.md)「保证这些被遵守的三层」。
+   引用、表格列数）已由 [`../doc-gate.py`](../doc-gate.py) 经 `.githooks/pre-commit`
+   自动执行，见 [`../constraints.md`](../constraints.md)「保证这些被遵守的三层」。
    **仍未完成**：§5.1 写入前门禁、§4.4 物化门禁、§4.7–§4.9 执行器/部署门禁、§9.1–§9.2
    安全门禁、§10.2 验收判据——这些要么依赖尚不存在的运行时，要么其失败形态本身不经过
    commit，机械载体抓不到。按本项目规则，**做不成的老实标 ⚠**，不假装已门禁化。
@@ -1400,7 +1400,7 @@ Agent 声称完成、subagent 全返回、已有 commit/PR 或候选测试通过
 | --- | --- |
 | `AGENTS.md` 第 22 行「开发 Agent 接任务前必须读取」 | 改指获批的替代 Agent 指南；不能改指只覆盖 Human 路径的文档 |
 | `development-lifecycle-human.md` 头部与末节「边界」表（2 处） | 删除或改指替代 Agent 指南；人那份正文不取用本文内容 |
-| [`request-lifecycle.md`](working/request-lifecycle.md) 3 处引用 | 改指替代 Agent 指南，或在不再存在 Agent 开发流程时删除引用 |
+| [`request-lifecycle.md`](../working/request-lifecycle.md) 3 处引用 | 改指替代 Agent 指南，或在不再存在 Agent 开发流程时删除引用 |
 | `development-plan.md` 的“执行层租用”与 A1–A5 相关指针 | 确认已吸收 §4.5–§4.11、§8.1、§9.1–§9.2 的稳定结论，不留下双真源 |
 | 实现矩阵、部署文档与测试 | 保留每个 `F-EXEC-*` / `F-INTERACT-*` 的 owner/code/test/state 与 runtime 门禁证据 |
 
@@ -1507,7 +1507,7 @@ Agent 声称完成、subagent 全返回、已有 commit/PR 或候选测试通过
 | 只写分支名，不固定 commit | **事故报告（2026-08-27）**：当事方记录评审曾引用旧提交而主方已前进。`merge-review/` 原始记录可从 commit `eb38868b^` 取回，但其中**未找到**对应条目，故不升为已核对 | §7.5、§8 |
 | 评审意见的处置边界由被审方单方划定 | **已核对事实（2026-08-27）**：`merge-review/disposition.md`（可从 `eb38868b^` 取回）逐条由被审方判定采纳或拒绝，其中一条门禁因「三台机器分别报 0 / 4 / 95 条失败」被判为误报并删除。**「优胜作者拒绝改进」这一更强的说法未获记录支持，不采用** | §6.5、§6.7 |
 | 评审给出的验收标准无人回跑 | **已核对事实（2026-08-27）**：`merge-review/disposition.md` 末节自记 cursor 那份验收标准「**未回跑**」、kimi 那份「**待评审方执行**」、luna 那份仅第 3 条通过。可从 `eb38868b^` 取回复核 | §6.7、§10.2 |
-| 只测一端就宣布跨仓契约完成 | **现行硬规则**：[`constraints.md`](constraints.md) C4——单仓 CI 只跑自己那半，provider 改了、consumer 锁没跟，两边各自都绿 | §5.2 范围门禁 |
+| 只测一端就宣布跨仓契约完成 | **现行硬规则**：[`constraints.md`](../constraints.md) C4——单仓 CI 只跑自己那半，provider 改了、consumer 锁没跟，两边各自都绿 | §5.2 范围门禁 |
 | 候选提前读取其他方案 | 设计风险。机理清楚，但本项目的原始记录出处已不可取得，不作为项目实例引用 | §6.4 |
 | 把历史设计或目标态当成代码现状 | 设计风险（同上）。四级词典与 dormant 回跑是现行控制 | §0.2、§5.2 |
 | 多数票覆盖失败测试 / 全体一致的共同盲区 | 设计风险（同上）。多个相似模型可能共享盲区 | §6.6 |
@@ -1542,14 +1542,14 @@ Agent 声称完成、subagent 全返回、已有 commit/PR 或候选测试通过
 | Interaction | 向有权主体的澄清或批准请求（§9） |
 | Event | 追加式改判与证据记录（§10.1） |
 | Delivery | 最终回复与可重取产物（§10.3） |
-| Handoff | [`../handoff.md`](handoff.md)；单写者面，只由 supervisor / 主驾驶写（§5.5） |
+| Handoff | [`../handoff.md`](../handoff.md)；单写者面，只由 supervisor / 主驾驶写（§5.5） |
 | sandbox git | 复杂 Task 由后端物化的工作仓；Human 路径由人建立（§4.1） |
 | worktree | supervisor 为每个可写执行者建立的并行隔离工作区（§6.3） |
 | 命名分支 | 一执行者一分支；commit 的运输通道，**不是评审对象**（§7.5） |
 | 未提交工作区文件 | 仅本地草稿；同一工作区同一路径后写覆盖先写（§7.5） |
 | 人的主 checkout | 如 `~/master/<仓>`；只读参照，**不是投稿箱**（§7.2） |
-| Attempt 租约 / fencing | **产品侧机制**，语义见 [`request-lifecycle.md`](working/request-lifecycle.md)；开发侧无等价运行时，迟到判定靠冻结 commit 与整合方核对（§8） |
-| 产品 supervisor 拆子 Task | [`request-lifecycle.md`](working/request-lifecycle.md)，不在本文（§0.1） |
+| Attempt 租约 / fencing | **产品侧机制**，语义见 [`request-lifecycle.md`](../working/request-lifecycle.md)；开发侧无等价运行时，迟到判定靠冻结 commit 与整合方核对（§8） |
+| 产品 supervisor 拆子 Task | [`request-lifecycle.md`](../working/request-lifecycle.md)，不在本文（§0.1） |
 
 ## 附录 B：开发 Task 持久记录模板
 
