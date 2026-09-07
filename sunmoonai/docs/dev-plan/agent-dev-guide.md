@@ -316,6 +316,12 @@ validator 先跑机械条，acceptor 再判机器判不了的冻结条；验收�
 | H7 | 非终态安全收敛到 `CANCELLED` | owner | 无 | 先落取消意图、提高 fencing、盘点副作用 |
 | H8 | 回答本 Task 的 `WAITING(INPUT)` | requester | 无 | interaction service 鉴别主体、Task、状态版本和一次性令牌 |
 
+**H7 是表内唯一不要求仓外锚的行**，这是有意的：取消属**失败安全方向**——
+伪造一条「取消」只会让流程停下来等人，不会让任何东西被发布出去。
+其余各行朝的是「放行」，伪造即造成不可逆后果，所以强制点必须在 agent 够不着的地方。
+⚠ 代价在**恢复**而不在取消本身：不知道已经产生了哪些副作用就不知道要回滚什么，
+所以取消必须附**已产生副作用清单**，缺清单的取消不生效。
+
 表外没有未分类的 APPROVAL。`DEPENDENCY / RESOURCE / EXTERNAL` 按产品 WAITING 规则处理；普通 INPUT
 只有在歧义实质改变结果、权限、成本或风险时才问。H5 批准的是执行 Side Effect，不是把 Task 直接从
 `WAITING` 写成成功；内核没有该捷径。
