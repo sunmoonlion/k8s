@@ -384,7 +384,9 @@ checkpoint 原地续跑时是同一 Attempt 的 `WAITING → RUNNING`，不因�
 - R 层比较同一 Task 的状态/Attempt/Interaction/Artifact 序列，经投影丢掉执行器私有事件和时间戳后逐项判。
 
 每个轨迹条目至少含 `seq, layer, subject_id, from, to, actor, power_row, payload_ref,
-provenance, evidence_ref`；比较上下文另含 Task Profile 版本、验收摘要、策略版本、principal 身份域、
+provenance, evidence_ref`；**比较上下文**（源稿称 `TraceEnvelope`——本文不沿用该名，
+因为它只是这一组字段的包装，另起一个名字会让读者以为多了一个对象）另含
+Task Profile 版本、验收摘要、策略版本、principal 身份域、
 输入摘要、Side Effect 摘要和证据权威摘要。比较规则：
 
 1. 只允许载体、orchestrator 实现、时间和已声明私有事件不同；白名单外差异失败。
