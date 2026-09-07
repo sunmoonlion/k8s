@@ -15,7 +15,7 @@
 | [`implementation-plan.md`](implementation-plan.md) | **任务本体**：每件事怎么做、怎么算做完。条目格式、测试层次、交付规则 | 要动手时 |
 | [`handoff.md`](handoff.md) | **状态与交接**：当前阶段、已就位的、未决项 U1–U5、不能倒退的输入 | 接手时先读 |
 | `~/codex-reference-archive/` | **各助手的历史调研材料**（仓外，按助手分目录：`cursor/` `kimi/` `luna/` `opus/` `qwen3.8/`）：Codex 机制、SQLBot、WrenAI、沙箱、现状诊断。**已归档，可直接读**——不再是提案期的独立材料，引用时注明是谁的稿 | 定 U1–U5 时 |
-| [`agent-dev-guide.md`](agent-dev-guide.md) | **现行开发规范**（`runtime-refact` 轮定稿）：一个产品运行时、一套开发纪律；不可变契约、Task 执行、人介入与权力表、证据与等效判据、何时值得走运行时。§10 是两份源稿的逐节落点表 | 想知道系统怎么搭、怎么干活时 |
+| [`agent-dev-guide.md`](agent-dev-guide.md) | **现行开发规范，这条谱系唯一的活文档**：不可变契约、运行时结构与**执行层/SDK 适配**、Task 执行与**并发处置**、人介入/权力表/**三道门与四档审批**、证据与等效、成本与绕过、演进路线、**反模式与失败实例**、词汇对照、Task 模板。§10 是四份源稿的逐节落点表（182 行） | 想知道系统怎么搭、怎么干活时 |
 | [`archive/`](archive/) | **一条谱系的历史稿**：两份 lifecycle → `refact-fable` → `runtime-architecture` → 分叉为 `agent-dev-refact` 与现行的 `agent-dev-guide`。分两格——甲格已有逐节落点收据，乙格 197 节**还没有**，待 `dev-plan-refact` 轮并入。无规范效力 | 追溯来龙去脉时；`archive/README.md` 有轨迹图 |
 | [`protocol/`](protocol/) | **流程规范 + 它的实现，放在一起**：`round-protocol.md`（七环节、档位 T0/T1/T2、裁量权与方向不对称、产物落点、环节判定、立判据的人怎么约束自己）与 `round-status.py` / `round-dispatch.py` / `agents.toml` | 开一轮多家并行出稿前；跑流程脚本前 |
 | [`anchor-gate.py`](anchor-gate.py) | **锚点门禁**：`doc-gate` 只查 markdown 链接，查不到 `` `文件.md:行` `` 这类纯文本锚点——实测删掉被引文件后 `doc-gate --all` 仍报通过。本脚本补这一类：钉 commit 的锚在该 commit 内解析、裸路径锚对当前索引与外部取证仓解析、`rounds/**` 按归档软判 | 删或改被引用的文档前 |
