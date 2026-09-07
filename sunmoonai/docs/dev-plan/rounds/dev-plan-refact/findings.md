@@ -198,3 +198,42 @@ SDK 给的是 approval callback（能问），不是工具网关（能拦）。*
    后者是执行侧能力（能拦），现在混在一起。
 4. 凡「用户侧 × 宿主机」得出的安全结论，逐条加上适用范围限定（同 §4.4 的写法）。
 5. §2.10 的四条部署阻断**重新归类**：它们不是「待补的门禁」，是**容器这一轴的固有约束**。
+---
+
+## F-4 ｜ 「Harness 不得声称原生 HITL」把包级约束写成了产品级结论
+
+**提出**：起草者 2026-09-07，在为 `executor-adapter` 轮整理 ACP/A2A 时实测发现。
+⚠ **本条晚于本轮基线 `f1d5f8f4`**，五家树内看不到；登记供所有者与后续轮次用。
+
+### 观察
+
+`agent-dev-guide.md` §2.7「交互批准」行判 Harness 为
+「**server→client request 是死能力**」，§5.6 `F-EXEC-03` 行据此判 `explicit_unsupported`，
+结论写成「**Harness 不得声称原生 HITL**」。依据是
+`~/repo/deepseek-harness/packages/sdk/protocol/README.md:116`。
+
+**那句 README 本身没错。**但实测同一个仓有**三个协议面**：
+
+| 面 | 证据 | server→client 请求 |
+| --- | --- | --- |
+| Python SDK wire | `packages/sdk/protocol/README.md:116` 自述 | **死能力** |
+| **ACP 服务端** | 握手 `agentInfo.name = "deepseek-harness-acp"`（`snapshots/acp/handshake/stdout.expected.jsonl`） | ⚠ **可用**：`session/request_permission` 带 `options[]`，**有 `escalation-approved` / `escalation-rejected` 两组快照** |
+| ACP 客户端 | `packages/subagent/subagent-acp/src/index.ts` | 它是调用方 |
+
+### 结论
+
+⚠ **正确表述**：「**Harness 的 Python SDK wire 上没有 server→client 请求**」。
+现有写法把**包级约束**说成了**产品级结论**。
+
+⚠ **这与 §2.7 表格自己立的那条限定纪律同形**——该表已经要求「结论固定在核对提交，
+升级钉版必须重跑」，那是**时间维度**的限定；**本条缺的是范围维度的限定**：
+**结论固定在哪个协议面。**
+
+### 落点建议（**待裁定**）
+
+1. §2.7「交互批准」行的 Harness 侧改为「**该 SDK wire 上不发**」，并**另列 ACP 面**；
+2. §5.6 `F-EXEC-03` 的 `explicit_unsupported` **加范围限定**：对 SDK wire 成立，
+   ⚠ **对 ACP 面未判**——`rounds/executor-adapter/port-design-notes.md` §8.2 已注明
+   「harness 的 ACP 服务端怎么起没查到」，**查清前不得反向声称「走 ACP 就有 HITL」**；
+3. 立一条通则：**凡「某执行者不支持 X」的结论，必须写明是在哪个协议面上不支持**——
+   一个 harness 可以同时有多个面。

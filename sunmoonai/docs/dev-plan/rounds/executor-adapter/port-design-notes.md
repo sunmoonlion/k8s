@@ -225,7 +225,132 @@ Harness 的 server→client「是死能力」。所以 `serve_requests` 在 Harn
 
 ---
 
-## 8. 未解决 / 下次接着看
+## 8. ACP 与 A2A：两个**不同层**的协议，别并列
+
+⚠ **本节证据来源分级，逐条标注**：ACP 的报文形状来自 `~/repo/deepseek-harness/snapshots/acp/`
+的**真实期望输出**（可复跑）；A2A 来自 `~/repo/openclaw/docs/channels/a2a.md`（**文档，未实跑**）。
+
+### 8.1 ACP —— 宿主调 harness，与 app-server **同层**
+
+**Agent Client Protocol**（`agentclientprotocol.com`）。用途见
+`openclaw/docs/tools/acp-agents.md:1-18`：让宿主跑**外部 coding harness**
+（Claude Code、Cursor、Copilot、Gemini CLI、Codex ACP、OpenCode……）。
+
+**真实握手**（`snapshots/acp/handshake/stdout.expected.jsonl`）：
+
+```json
+{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":1,
+ "agentInfo":{"name":"deepseek-harness-acp","version":"0.0.1"},"agentCapabilities":{…}}}
+{"jsonrpc":"2.0","id":2,"result":{"sessionId":"…","configOptions":[…]}}
+```
+
+⚠ **第一处可判差别：ACP 带 `"jsonrpc":"2.0"`，codex app-server 不带**（见 §2）。
+写解析器时**两者不能共用同一个库配置**。
+
+**审批往返是真的**（`snapshots/acp/escalation-approved/`、`escalation-rejected/`）：
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"session/request_permission",
+ "params":{"sessionId":"…","toolCall":{"toolCallId":"call_00_…"},
+           "options":[{"optionId":"allow-once","name":"Allow once","kind":…}]}}
+```
+
+⚠ **第二处差别，而且是设计层的**：
+
+| | codex app-server | ACP |
+| --- | --- | --- |
+| 审批选项 | **协议固定枚举** `ReviewDecision` 八值（§5） | ⚠ **agent 在请求里自带 `options[]`** |
+| 客户端怎么答 | 从八值里挑一个 | 回一个 `optionId` |
+| 后果 | 客户端可以**预先**为八值各写一条策略 | ⚠ **选项在运行时才知道**——策略不能预编译，只能按 `optionId` 字符串匹配或转人 |
+
+**事件流**用 `session/update` 通知，靠 `sessionUpdate` 判别：
+`agent_thought_chunk` / `tool_call` / `tool_call_update` / `agent_message_chunk`；
+`toolCallId` 把权限请求与工具调用关联（对应 codex 的 `call_id`）。
+
+### 8.2 ⚠⚠ 由此更正 guide 的一处结论：**「Harness 没有 HITL」的适用范围被写宽了**
+
+`agent-dev-guide.md` §2.7「交互批准」行与 §5.6 `F-EXEC-03` 行，
+依据是 `packages/sdk/protocol/README.md:116`：
+
+> Server→client requests are a dead capability — the transport supports them,
+> but the server never sends one.
+
+**这句话本身没错，但它说的是 `packages/sdk/protocol` 这一个面。**实测同一个仓有**三个面**：
+
+| 面 | 位置 | server→client 请求 |
+| --- | --- | --- |
+| Python SDK wire | `packages/sdk/protocol/` | ⚠ **死能力**（README 自述） |
+| **ACP 服务端** | 握手自报 `agentInfo.name = "deepseek-harness-acp"` | ⚠ **可用**：`session/request_permission`，**有快照测试** |
+| ACP 客户端 | `packages/subagent/subagent-acp/`（out-of-process ACP subagent backend） | 它是**调用方** |
+
+⚠ **所以正确表述是**：「**Harness 的 Python SDK wire 上没有 server→client 请求**」，
+**不是**「Harness 不得声称原生 HITL」。**后者把包级约束写成了产品级结论。**
+——这正是 §2.7 表格里那条限定纪律（「本表结论固定在核对提交」）在**范围维度**上的同类失误。
+
+⚠ **未核**：harness 的 ACP 服务端**怎么起**（哪条命令）没查到；
+`_default_launch_args`（`python/sdk/client.py:458`）起的是 SDK runtime，**不是 ACP**。
+**在查清之前，不得据本节声称「走 ACP 就能拿到 Harness 的 HITL」。**
+
+### 8.3 A2A —— **不同层**：agent 之间，跨进程跨主机跨信任域
+
+**Agent2Agent**（Linux Foundation，`a2a-protocol.org`）。
+依据 `openclaw/docs/channels/a2a.md`（⚠ **文档，未实跑**）：
+
+> 外部 agent 通过 **public Agent Card** 发现网关，用 **A2A 1.0 JSON-RPC binding**
+> 提交**经认证的**文本任务；OpenClaw 也能向配置好的 peer 发消息。
+> 配置：`advertisedUrl` + **每个 peer 一个 bearer token**。
+
+⚠⚠ **A2A 与前三者不是同一层，把它们并列是错的**：
+
+| | app-server / ACP | **A2A** |
+| --- | --- | --- |
+| 传输 | **stdio 管道** | ⚠ **HTTP(S)** |
+| 进程关系 | **父子**（调用方 `spawn` 它） | ⚠ **无进程关系**——两个独立服务 |
+| 谁拥有对方的生命周期 | 调用方 | ⚠ **谁也不拥有** |
+| 发现 | 路径已知（二进制在哪） | ⚠ **Agent Card**（网络发现） |
+| 认证 | **无**——同机同用户，共享凭据域 | ⚠ **per-peer bearer token** |
+| 信任域 | **同一个** | ⚠ **不同** |
+
+### 8.4 由此得到的分层，和它对本项目的直接后果
+
+```
+第一层  进程内：agent loop 自己
+第二层  同机父子进程 + stdio：app-server / ACP        ← 我们现在全部的实测都在这层
+第三层  跨主机 + HTTP + token：A2A                     ← 一次都没碰过
+```
+
+⚠ **`F-3` 说「本项目全部证据落在三维空间的一个点上」，本节把其中一维说细了**：
+「执行侧：用户侧 → provider 侧」这个迁移，**协议形态上就是从第二层走到第三层**。
+
+**三条直接后果：**
+
+1. **凭据边界的位置变了。**第二层里凭据边界 = 进程边界，而同机同用户**根本没有边界**
+   （guide §4.4：本机一切本地判定都不是边界）。第三层里边界是 **token + 网络**——
+   ⚠ **A2A 是第一个天然跨信任域的形态**，也就是第一个能让 §4.4 那条
+   「强制点必须落在 executor 够不着的地方」**物理上成立**的形态。
+2. **`AgentExecutorPort` 的 `serve_requests`（§7）只覆盖第二层。**第三层里
+   「对端向我发请求」是一个 **HTTP inbound**，不是管道上的一条 JSON——
+   ⚠ **同一个 Port 抽象能不能罩住两层，本文答不了，该轮要裁。**
+3. **`ExecutionBinding` 的含义也变了。**第二层里它至少要能定位一个进程；
+   第三层里没有进程，只有 **peer id + task id**。
+   guide §2.8 写「`ExecutionBinding` 必须可序列化并落 PostgreSQL，SDK 侧的
+   thread/session id 不是 Task 的真源」——⚠ **那句话在第三层反而更成立**，
+   因为压根没有本地进程可依赖。
+
+### 8.5 ⚠ 本节没查的（不得当已知）
+
+| # | 没查 |
+| --- | --- |
+| 1 | A2A 有没有 server→client 请求（即**对端能不能向我要审批**）——⚠ 这决定它能不能做 HITL |
+| 2 | ACP 的方法全集（只见到 `session/request_permission`、`session/update` 与两条握手响应） |
+| 3 | harness 的 ACP 服务端**启动命令** |
+| 4 | ACP 的 `options[].kind` 有哪些取值 |
+| 5 | A2A 的任务生命周期（提交后怎么查、怎么取消） |
+| 6 | ⚠ **本节 A2A 部分全部来自文档，一次报文都没见过** |
+
+---
+
+## 9. 未解决 / 下次接着看
 
 | # | 问题 | 为什么现在答不了 |
 | --- | --- | --- |
