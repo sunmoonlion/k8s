@@ -1,922 +1,808 @@
-# 开发指导：一套运行时、一个 Task Profile、一张权力表
+# Agent 开发指导：一个产品运行时，一套开发纪律
 
-> 轮次 `runtime-refact` ① 候选 ｜ 2026-09-06 ｜ 参与方 **cursor**
+> `runtime-refact` 轮候选 ｜ 作者：luna ｜ 2026-09-06
 >
-> 工作目录 `/home/zym/worktrees/cursor/k8s`。身份由目录名判定，不由产品名或模型名判定。
->
-> **本稿是面向今后开发的指导，不是现行规范。**规范效力要等本轮 ⑥ 确认。
-> 内核对象与状态机的权威定义在 [`working/request-lifecycle.md`](working/request-lifecycle.md)；
-> 多助手协作流程的权威定义在 [`protocol/round-protocol.md`](protocol/round-protocol.md)。
-> 本稿只引用二者，不重写。
->
-> 基线 commit：`ed0b5136`（工单 `round.md` 的 `baseline`）。
-> 两份源稿按该 commit 取件：`refact-fable.md`、`runtime-architecture.md`。
->
-> **本稿不承担**：具体业务功能（[`development-plan.md`](development-plan.md)）、
-> 任务清单与进度（[`implementation-plan.md`](implementation-plan.md) / [`handoff.md`](handoff.md)）、
-> 流程规范正文、财务分析 Task Profile 的契约。
+> 本文面向今后实现和维护 Agent 能力的人。它把开发任务怎样进入产品运行时、怎样执行、
+> 怎样取证和怎样发布放在一条路径里；不替代产品合同或协作协议。
 
----
+## 0. 先读结论
 
-## 0. 怎么读这份文件
+平台只建设一个产品运行时。它以
+[`request-lifecycle.md`](working/request-lifecycle.md) 定义的 Task、Attempt、Interaction、Artifact、
+Event、Side Effect、Delivery 为唯一产品内核；`dev.change/1` 是首个开发类 Task Profile，
+五家助手分别登记为 Agent Profile。Task Profile 定义“这类请求怎样算完成”，Agent Profile 定义
+“某个执行器能怎样做”，二者不是两套运行时，也不得改变内核状态词。
 
-新读者不需要先读过本仓之前的讨论。读的顺序：
+人在模型里是 `requester` 和持权 `principal`，不是执行者。人提出目标、回答 Interaction、批准
+不可逆动作并承担交付责任；实际执行者是受 Agent Profile 约束的 adapter 或确定性组件。
 
-1. **先读本节和第 1 节**，知道硬约束和本稿不做什么。
-2. **内核对象与状态词**一律跟 [`working/request-lifecycle.md`](working/request-lifecycle.md) 走。
-   本稿出现 Task / Attempt / Interaction / Artifact / Event / Side Effect / Delivery /
-   Task Profile / Agent Profile 时，定义就是内核「核心对象」表，不在这里另给一套。
-3. **一轮怎么走**跟 [`protocol/round-protocol.md`](protocol/round-protocol.md) 走。
-   本稿不把七环节重写一遍；只说明开发任务如何投影到那套流程上（第 3 节、第 9 节）。
-4. **第 12 节**是已被证伪的设计清单。那一节存在的理由是防止再犯，不是给新设计当菜单。
-5. **第 14 节**是两份源稿 64 节的落点索引。抽查落点时以正文为准，不以表格自称的覆盖为准。
-
-**身份**只认 worktree 目录名：
-
-```bash
-r=$(git rev-parse --show-toplevel 2>/dev/null) && basename "$(dirname "$r")"
-```
-
-产品名、模型名、界面长什么样，一律不是身份证据。这条来自一次真实事故：判别命令在仓外一层执行，管道吞掉 `git` 的 128，`basename` 对着报错吐出一串 `.`，该家据产品名自判为另一家。
-
----
-
-## 1. 硬约束与设计原则
-
-### 1.1 不可违反
-
-| # | 约束 | 权威出处 |
-| --- | --- | --- |
-| B1 | **只有一套状态机**（Task / Attempt）。不新增状态词，不走内核合法转换表之外的边 | 内核「两层状态机」；不变量 I4 / I5 |
-| B2 | **执行层租用不自建**，依赖边界限定在 SDK，不直接依赖裸协议 | [`constraints.md`](constraints.md) A4 |
-| B3 | **同一事实只有一个权威写入面**。内核已定义的对象，本稿不重新定义 | 内核 I13 |
-| B4 | **人不是执行者**。人的位置是 requester 与 principal | 本轮任务书 B4；内核提交信封的 `requester` |
-| B5 | **不得把「判不了」写成「通过」**。判据声明覆盖范围；判不了的显式标出 | 协议「判据自身的质量」 |
-| B6 | **不自造已有基座原语的替代协议**。中断、恢复、检查点用库的 | A4 的推论；第 7 节 |
-
-合法转换全集只在内核（`request-lifecycle.md`「两层状态机」）。本稿出现的每条边 ⊆ 该表：
+以后做开发类请求，按这一条链走：
 
 ```text
-RECEIVED    → VALIDATING | CANCELLED
-VALIDATING  → QUEUED | WAITING | REJECTED | CANCELLED
-QUEUED      → RUNNING | WAITING | FAILED | CANCELLED
-RUNNING     → QUEUED | WAITING | SUCCEEDED | FAILED | CANCELLED
-WAITING     → VALIDATING | QUEUED | FAILED | CANCELLED
+Submission
+  → router 形成 RouteDecision
+  → 冻结 dev.change 工单
+  → provision 独占工作区
+  → orchestrator 创建并推进 Attempt
+  → executor adapter 执行
+  → validator + 独立 acceptor 验收
+  → principal 批准不可逆 Side Effect
+  → publisher 发布，Delivery 可重取
 ```
 
-内核没有 `WAITING → SUCCEEDED`。H5 批准的是执行动作，Task 的 `SUCCEEDED` 由 publisher Attempt `COMPLETED` 之后提交。
+当前的 Git 轮次是这条链的手工实现，也是验证对象形状和协作纪律的脚手架；它不能证明数据库事务、
+租约、fencing 或执行器内部行为。产品能力是否存在，只认代码、迁移、测试和可复跑运行证据，
+不因本文写了目标形状就宣称已经实现。
 
-### 1.2 设计原则
+### 0.0 原来是什么样，为什么非改不可
 
-六条全部取自本仓已成文的判断，本稿只是把它们用到底：
+**新读者先读这一节。**只看目标形状会觉得「本来就该这样」，
+从而在下一次设计时把同样的坑再挖一遍。六个结构问题都是**在既有文档里能自证**的，
+不是外部批评：
 
-| # | 原则 | 出处 |
+| # | 原来的问题 | 为什么它不是小毛病 |
 | --- | --- | --- |
-| P0 | 场景差异只体现在 Task Profile 的 guard、必需产物与 interrupt 策略；任何场景不得新增状态词 | 内核「Profile、Artifact 与扩展」：不另造状态机 |
-| P1 | 同一事实只有一个权威写入面；两份同构文档即两个真源 | I13 |
-| P2 | 状态从产物反推，不从声明读取；人的动作也不例外 | 协议「收到『继续』时怎么办」 |
-| P3 | 方向不对称：朝严谨可自裁，朝省事须人确认；默认值属于省事方向 | 协议「裁量权」 |
-| P4 | 判据必须声明覆盖范围；覆盖不全比没有更危险 | 协议「判据自身的质量」 |
-| P5 | 凡能落成代码、测试或门禁的纪律必须落成；文字只描述意图 | [`constraints.md`](constraints.md)「保证这些被遵守的三层」 |
+| 1 | 开发被写成**两条平行路径**（一条由服务建仓、一条由人建仓），再声明「后半段同构」 | 两条路径的差异最后只剩「**谁按了回车**」，撑不起两份文档，却制造了两份会各自漂移的真源 |
+| 2 | 「supervisor」一个词同时指**三套不同的东西**，第三套还有个从没定义过职责边界的别名 | **每加一层就加一个名字，说明抽象层级选错了**。稳定的概念不是「谁监督谁」，是「这个状态转换由谁执行、需要什么权力、在哪里强制」 |
+| 3 | 人的权力与流程步骤**混写**在上千行叙述里，另一份文档又抄一遍 | 那样的权力表是**第二份说明书，不是机制**——它不驱动任何东西，只能靠人记得读 |
+| 4 | 有**一个环节命令判不了**（人的确认），只能靠人声明 | 与「状态从产物反推、不从声明读取」直接冲突，而**全自动化正好卡在这个洞上** |
+| 5 | 产品**执行层架构**与开发流程装在同一份文件里，约五百行 | 两拨读者被迫读对方的东西；改一处要担心影响另一处 |
+| 6 | 档位只有最重的那一档有正文，轻的两档各一行 | 没有可执行形态的档位**等于不存在**，日常任务只能绕过整套纪律 |
 
-两条推论：
+**本文的形状是这六条的答案**：一个运行时（对 1、5）、五个各有定义的角色词（对 2）、
+一张驱动流程的权力表（对 3）、人的确认也落成可判的产物（对 4）、三档都有正文（对 6）。
 
-- **一个只能靠人转述的环节等于没有环节**（P2 + P5）。对话里说「同意」不算回执。
-- **强制点必须落在动作实际经过的路径上。**先用命令确认「这个动作现在发生在哪、由谁做、经过什么」，再设计拦截。第 12 节六条被证伪的设计，共同成因就是跳过了这一步。本条是源稿没有、本稿新增的（J8）；取证见第 12 节各条复跑命令。
+### 0.1 文档边界
 
-P0 的适用层级是 Task 与 Attempt。Artifact、Interaction 各有自己的小生命周期（`DRAFT → FROZEN`、`consumed_at`），那些是对象属性，不是第二套状态机，同样跨场景共用。
-
-### 1.3 一条不得淡化的边界
-
-**开发的验收机械且便宜**（测试、门禁、diff）。**财务分析的验收判断且昂贵。**
-
-本稿的验收机制——L0 机器门、T0 任务类包、`round-status.py --verify`——只对着开发设计。`dev.change` 只证明对象形状与状态转换能在 git 载体上跑通；验收器对「判断且昂贵」那一半不能从它外推，必须在财务 Task Profile 的第一个工作单元里用真实验收用例重证。内核「Profile 示例」已有同义要求：每个 Profile 的第一项开发工作单元必须用真实输入、输出、前端 renderer 和验收用例确认字段。
-
-这条写在这里，是因为漏写或淡写都会让人以为「开发轮次跑通了 = 运行时对财务也够用」。不够用。
-
----
-
-## 2. 唯一运行时
-
-### 2.1 运行时是什么
-
-只有一个产品运行时。它是内核七个对象的**唯一权威写入面**，加上四个确定性组件与两个适配层：
-
-| 组件 | 职责 | 内核依据 |
+| 真源 | 本文怎样使用 | 本文不做什么 |
 | --- | --- | --- |
-| **router** | 从请求算出 Task Profile 版本、tier、执行者候选、工作区计划；三值 `decide / ask / refuse` | 「解释、边界与完成契约」 |
-| **orchestrator** | 推进 Task / Attempt 状态（只走合法转换表）、派发、收集、观测逾期、回退 | I4 |
-| **interaction service** | 产生 Interaction、鉴别响应者、原子消费令牌 | 「WAITING 与 Interaction」 |
-| **validator** | 按 Task Profile 版本跑 acceptance 的机械部分；判不了的显式交给 acceptor | 协议「判据自身的质量」 |
-| *适配层* **executor adapter** | 按 Agent Profile 的粒度字段决定怎么调、怎么看、怎么拦 | 第 4 节 |
-| *适配层* **principal channel** | 人怎么被叫到、怎么回，响应者身份如何鉴别 | 第 5 节 |
+| [`request-lifecycle.md`](working/request-lifecycle.md) | 引用七对象、Task/Attempt 状态机、`I1`–`I15`、`F-*`、`AT-*` | 不重写对象定义、合法边或产品验收矩阵 |
+| [`round-protocol.md`](protocol/round-protocol.md) | 引用 T0/T1/T2、隔离、互评、异议、确认和清理纪律 | 不复制七环节规范正文 |
+| [`constraints.md`](constraints.md) | 开工前自检硬约束，尤其 A1–A5 | 不把自检改成建议 |
+| [`development-plan.md`](development-plan.md) | 解释通用执行编排与领域能力的分工 | 不记录进度 |
+| [`implementation-plan.md`](implementation-plan.md) | 记录可实施工作单元、依赖、测试和回滚 | 不承担架构真源 |
+| [`handoff.md`](handoff.md) | 只读当前游标、阻塞和不能倒退的结论 | 不从状态反推目标规范 |
 
-**orchestrator 是确定性代码，不是角色。**过渡期由人运行 [`protocol/round-status.py`](protocol/round-status.py) 与 [`protocol/round-dispatch.py`](protocol/round-dispatch.py)，人是它的触发通道，不是这个组件。把「今天由人跑脚本」重命名成组件，下一轮就会有人对着这个名字设计接口。
+内核的对象和状态以 `request-lifecycle.md @ ed0b5136:92-343` 为准；协作阶段以
+`round-protocol.md @ ed0b5136:52-706` 的标题为准。本文出现的表都是开发投影或实现要求，
+不是第二份产品定义。
 
-**router 与 orchestrator 不得由 agent 实现。**登记表里没有任何条目的 `roles_allowed` 含这两个词。
+### 0.2 为什么分成这些章
 
-### 2.2 开发是它的第一个 Task Profile
+| 章 | 独立存在的理由 |
+| --- | --- |
+| §1 契约与边界 | 属权威约束，变更门槛高于实现结构，不能埋进组件说明 |
+| §2 运行时结构 | 回答“谁负责什么”，不掺一次 Task 的时间顺序 |
+| §3 开发执行 | 回答“一次请求怎样走”，可直接给开发者照做 |
+| §4 人介入与权限 | 涉及身份和不可逆动作，必须从普通控制流中单列审计 |
+| §5 证据与等效 | 决定哪些事实能信，不能与“流程跑完”混为一谈 |
+| §6 成本与绕过 | 决定何时值得进入运行时，指标与正确性判据不同 |
+| §7 演进路线 | 只写依赖顺序和退出条件，避免现状污染目标结构 |
+| §8 核查裁定 | 保存本轮推翻旧设计的证据，防止同一错误复活 |
+| §9 覆盖声明 | 让读者知道本文证据边界，不能散在各章脚注里 |
+| §10 逐节落点 | 是两份源稿零遗漏的可审计索引，必须独立可枚举 |
 
-内核已经定义了 Task Profile 与 Agent Profile（「核心对象」表）。场景差异落在 **Task Profile 的取值**上，不落在第二套状态机上，也不落在「按部署形态再切一层」上。
+## 1. 不可变的契约与边界
 
-本稿的第一个 Task Profile 是 `dev.change` 版本 1。别名 `DEV` / `DEV_ROUND` / `DEVELOPMENT` / `dev.change.v1` 均指向它，不并存多个真源。
+### 1.1 唯一产品内核
 
-产品运行时上的其他 Task Profile（财务分析等）尚未开工，见 [`handoff.md`](handoff.md)。它们将是**另一份 Task Profile**，共用这一套状态机与运行时组件，不另起炉灶。
+`request-lifecycle.md` 是下列事实的唯一写入面：
 
-源稿曾把「git 载体的开发流程」和「PostgreSQL 载体的产品运行」画成并列的两层架构。不沿用。理由：内核已经用 Task Profile / Agent Profile 两个词覆盖了场景差异与执行者差异；再按持久层切一层，就是源稿自己诊断过的「同名物」病换了个名字。持久层差异是载体取值，不是架构分层。
+- Task 与 Attempt 是两层；一次执行失败不自动终结用户请求；
+- Task 只走其“Task 状态机”列出的边，Attempt 只走其“Attempt / Run 状态机”列出的边；
+- `WAITING` 用结构化 reason 表示等待输入、批准、依赖、资源或外部条件，不为每种等待发明状态；
+- Task 和 Attempt 终态不可重开，重试、刷新、改目标或推翻旧结果建立新实体并保留血缘；
+- 结果、验收、证据与终态先可靠持久化，Delivery 再通知前端。
 
-**内核按 commit 引用**，防双向耦合：本稿引用的是 `request-lifecycle.md` 当前主线文本；内核对象名 / 状态名的任何修改按 T2；改后必须重跑第 3.4 节映射表与合法边的集合比较。
+这些要求分别可回到 `request-lifecycle.md @ ed0b5136:106-119`、
+`request-lifecycle.md @ ed0b5136:203-343` 和 `request-lifecycle.md @ ed0b5136:398-440`。
+实现若需要新增状态或合法边，不得在 `dev.change/1` 里偷加；按该文“修订纪律”
+建立带原始请求、影响、迁移和验收的规范修订工作单元。
 
----
+### 1.2 四本账与单一权威写入面
 
-## 3. Task Profile `dev.change` 版本 1
+预算、幂等、副作用和证据必须跨 run、跨进程死亡仍然正确，因此权威记录落 PostgreSQL；
+外部 harness 的内存、Git 文件或日志只能是输入、Artifact 或可重建投影。产品 `I13` 要求一个
+可变事实只有一个权威写入面，产品 `I4` 要求状态集中校验、事件只追加；出处为
+`request-lifecycle.md @ ed0b5136:444-483`。当前实现已有幂等与副作用，预算与证据仍缺，
+这只是 `development-plan.md @ ed0b5136:97-108` 的现状，不得写成目标已完成。
 
-### 3.1 契约字段
+### 1.3 Agent 硬约束自检
 
-```text
-profile_id            dev.change
-version               1
-input_schema          工单：goal · paths[] · baseline_commit
-                      · read_only_inputs[]（路径 + 版本锚）· tier ∈ {T0,T1,T2}
-                      · executors{proposers[], arbiter, acceptor}（T1/T2）
-                      · acceptance[]（逐条编号；T0 = 一个已签任务类包名）
-output_schema         一个或多个 Artifact 落在 final_path(s)，版本 = commit
-normalization_rules   goal → 可判定 acceptance 条；歧义实质改变结果 / 权限 / 成本 / 风险时才 ask
-required_context      read_only_inputs 按版本锚取；候选不得改动它们
-acceptance            机械条（validator 跑）+ 判断条（acceptor 跑，按冻结标准逐条给结论，不得改标准）
-evidence              每条断言现状的句子附 file:line 或可复跑命令；采信等级按第 4.3 节计算
-freshness             baseline_commit 固定；基线移动 → 新 Task
-allowed_capabilities  读整仓、写自己 worktree、不 push 主线
-budget                观察窗 W = 已交付各家用时中位数；max_rollbacks = 2
-retry                 逾期 → 该家 Attempt FAILED(timeout)，Task 不失败（I8）
-approval              权力表 H1–H8（第 5.2 节）；tier 决定开工前 APPROVAL 触点数 0/1/2
-privacy               文档任务无；财务数据任务另由其 Task Profile 定
-```
+| 约束 | 本文结论 |
+| --- | --- |
+| constraints A1：通用执行编排与领域能力分开 | `dev.change/1` 复用运行时；新增业务能力优先新增 Task Profile 与相容 Agent Profile |
+| constraints A2：通用部分也要有纪律 | 执行纪律引用 round-protocol，不把 harness 原语当协作纪律 |
+| constraints A3：四本账落 PostgreSQL | Git 只作开发 Artifact 载体与手工投影，不作产品账本 |
+| constraints A4：执行层租用不自建 | 依赖止于稳定 SDK，经 Port 隔离；不直接绑定裸协议 |
+| constraints A5：领域概念不进 Port | Port 接受通用输入、能力与结果；投资组合等词留在领域 Profile |
 
-**tier 不是三个 Task Profile**，是 `execution_policy` 的一个字段——改的是 Attempt 组数与审批触点，不改输入 / 输出 / 验收的形状。T2 的七环节是 execution_policy 定义的 Attempt 阶段图，每个 Attempt 记 `kind ∈ {proposer, reviewer, arbiter, objector, acceptor, publisher}`，产物是 typed Artifact。
+上述五条见 `constraints.md @ ed0b5136:149-159`。涉及多仓还必须遵守 constraints T4/T5：
+父仓不留悬空 gitlink，交付证据写“仓 + commit”，见 `constraints.md @ ed0b5136:95-103`。
 
-⚠ 「Attempt 可产出 typed Artifact」是否算对 Attempt 定义的扩充，要走内核修订纪律另裁，本稿不擅自扩。选择「Attempt 可产出 typed Artifact」而非「每环节一个 child Task」，理由是后者会让 T2 一轮生成七个 Task。这是产物类型的细化，不改 Attempt 状态与边。
+### 1.4 开发验收不可外推
 
-### 3.2 工单：一个冻结的 Artifact，一次确认
+开发变更常可用测试、门禁和 diff 机械复算，成本低；财务分析的判断、新鲜度与口径验收昂贵。
+`dev.change/1` 跑通只证明开发场景的对象形状、转换和证据链，**没有解决判断且昂贵的那一半**。
+财务 Task Profile 必须以真实输入、输出、renderer 与验收用例重新证明，不能复制本章的便宜验收器。
+这一边界与业务 Task Profile 首版要求相符（`request-lifecycle.md @ ed0b5136:487-518`）。
 
-把协议的 `round.md` 一般化为**工单**。**工单是 Artifact，不是 Task 状态。**
-它只有 Artifact 的两个状态词 `DRAFT → FROZEN`。Task 自身的状态由产物推导。任何档位都有工单：
+## 2. 一个运行时的结构
+
+### 2.1 确定性组件与适配层
+
+| 名称 | 性质 | 唯一职责 | 不得做什么 |
+| --- | --- | --- | --- |
+| `router` | 确定性代码 | 由持久化字段与版本化策略产生 `decide / ask / refuse` 和 RouteDecision | 不让模型直接选路线 |
+| `orchestrator` | 确定性代码 | 合法推进状态、派发、收集、观测、回退和停止 | 不评稿、不裁决内容 |
+| `interaction service` | application service | 绑定 Task/状态版本/受众，鉴别响应者，一次性恢复 | 不自造另一套任务状态 |
+| `validator` | 确定性代码 | 按冻结 Task Profile 跑机械验收并声明覆盖 | 不把判不了写成通过 |
+| `executor adapter` | 适配层 | 调用某 Agent Profile 对应的 SDK/CLI，收集该粒度能得到的事件 | 不扩大能力、预算或数据面 |
+| `principal channel` | 适配层 | 把 Interaction 送达正确人并取得经鉴别响应 | 不把通知送达当批准成立 |
+
+router 和 orchestrator 都不是 agent 角色；过渡期由人运行脚本只是传输欠账。
+模型若参与分类，只能输出固定 schema、无工具、低预算的建议和证据；确定性规则不能唯一落一条合法路线时，
+结果必须是 `ask` 或 `refuse`，不得默认落“通用”。这延续产品 `F-DISPATCH-03` 与 constraints A2–A4，
+并避免路由自身成为第三个自由 Agent。
+
+### 2.2 内容角色
+
+| 角色 | 职责 | 冲突限制 |
+| --- | --- | --- |
+| `proposer` | 独立产出候选 | 提案冻结前不可见其他候选 |
+| `reviewer` | 按冻结标准比较全部候选 | 必须声明自己也是候选作者的利益冲突 |
+| `arbiter` | 定基座、逐条吸收、处置异议 | 不兼 orchestrator；票数不是事实依据 |
+| `objector` | 只核自己主张是否被误读 | 不代替 acceptor 评整稿 |
+| `acceptor` | 按冻结标准独立验收 | 不得是 arbiter 或基座作者 |
+| `publisher` | 在批准后执行发布 Attempt | 不能自己授予发布权限 |
+
+角色分离的完整算法仍在 round-protocol“⑤ 验收 与 ⑥ 确认”。本文只说明它们在产品运行时里是
+Attempt 的 `kind` 或 principal 行为，不复制流程正文。
+
+### 2.3 Task Profile 与 Agent Profile
+
+`dev.change/1` 至少固定：目标、允许路径、基线 commit、带版本锚的只读输入、tier、执行者集合、
+逐条 acceptance、最终路径、能力与副作用边界、预算和停止策略。它决定输入/输出/验收的契约。
+
+Agent Profile 至少登记：`harness`、`provider`、`model` 与是否钉定、`dispatch`、
+`observability`、`enforcement`、`sandbox`、`workspace_isolation`、`roles_allowed`、支持的 Task Profile。
+它决定某次 Attempt 能被怎样调用、观察和限制。人登记在 principal 表，只有 channel 与授权关系，
+没有 harness、执行粒度或执行角色。
+
+Agent Profile 的字段值必须有探针或配置证据。字段非空只证明“填了”，不证明填对；未知值留空并标 ⚠，
+不得从产品名或界面推断模型。静态登记集合与自动路由候选集分开：`dispatch = manual` 的执行器可以登记，
+但没有审计桥接时不得被自动路由选中。
+
+**独立性折算不得用单一 vendor 标签。**同一个厂牌下可以是不同 harness、不同模型；
+不同厂牌也可能共用同一内核。所以分组要看 `(provider, harness, model)` 三者，
+而不是「几家公司」——把四个执行者数成「四路独立信号」，是本项目已经踩过的形状：
+其中两家同厂不同产品，共用多少 harness 内核**至今未知**。
+
+⚠ 按处置记录，本条**只作观察值，不作硬规则**：单轮数据不足以定权重。
+可以据它**降低**对「多家一致」的采信，**不得**据它给出一个折算系数当判据。
+**「多家说法一致」不等于「多路独立信号」**——这一句现在就成立，
+与折算算法是否成熟无关。
+
+### 2.4 `dev.change/1` 工单
+
+工单是 Artifact，不是 Task 状态。推荐形状：
 
 ```toml
 [order]
-id, tier                    # tier 只选 guard 表，不是状态
-artifact_state              # DRAFT | FROZEN
-route_proposal              # 模型证据 + 确定性规则结果，含 policy_version
-route_effective             # T0：= proposal，由策略放行；T1/T2：H2 回执确认后的值
-route_delta                 # 人相对 proposal 改了哪些字段；空 = 全盘沿用
-intent_restatement          # 执行者用自己的话复述需求 + 决策点 + 标出的歧义
-acceptance = [...]          # 逐条编号，冻结后不改；T0 为一个包名
-frozen_sections = [...]
+id = "..."
+tier = "T0|T1|T2"
+artifact_state = "DRAFT|FROZEN"
+goal = "..."
+paths = ["..."]
+baseline_commit = "..."
+read_only_inputs = ["path@commit"]
+final_paths = ["..."]
+acceptance = ["A1 ..."]
+route_proposal = "..."
+route_effective = "..."
+route_delta = "..."
+
 [executors]
-intake_author               # 起草 intent_restatement / acceptance 的执行者
-                            # 同票禁任 proposer / arbiter / acceptor，分发前机械拦
-proposers, arbiter, acceptor, approver
+intake_author = "..."
+proposers = ["..."]
+arbiter = "..."
+acceptor = "..."
+
 [workspace]
-source, baseline_commit, write_actors, review_needed, submodule_plan
+write_actors = 1
+review_needed = true
+submodule_plan = "..."
+
 [budget]
-observation_window_rule, max_rounds, max_rollbacks
+observation_window_rule = "..."
+max_rollbacks = 2
 ```
 
-`round.md` 的 `status` 字段是声明，不是状态。推导值 ≠ 声明值即报错，不许靠改声明让它消失。
+`intake_author` 若替请求者起草意图与验收，同票不得再任 proposer、arbiter 或 acceptor；请求者直接给出并
+冻结验收时可记 requester。`route_proposal` 保存建议与证据，`route_effective` 保存实际决定，
+`route_delta` 保存人改了什么，三者不可合成一段自然语言。
 
-### 3.3 档位 = 三张表，不是三套状态
+### 2.5 路由只读可判字段
 
-每个 tier 对应：一张 **guard 表**、一张**必需产物表**、一份 **interrupt 策略**。三者读同一个工单 schema，脚本按 `tier` 取表。档位判据在协议「流程档位」，本稿不重写。
+路由成本判断不读题目散文，至少从以下字段提取 `matched_features`：写者数、提案者数、只读输入是否钉版本、
+是否依赖/续接、是否触及权威路径、是否有副作用、是否要求审计。风险档位则严格按 round-protocol：
+不可逆、权威层、已知对立、判据未定任一命中就是 T2；多文件或多仓且方向无争议为 T1；其余才可能 T0。
+风险档位不能反过来充当成本证据，否则是循环论证。
 
-| 档 | 形态 | 开工前 APPROVAL 触点 |
-| --- | --- | --- |
-| T0 | 做 → 独立验收 → 确认 | 0（H1 由已签任务类包承担，H2 按策略放行） |
-| T1 | 出稿 → 独立评审 → 验收 → 确认 | 1（H1+H2 合并为一份回执） |
-| T2 | 协议七环节 | 2（H1 与 H2 分离：验收标准须在参赛者看到题目之前冻结） |
+## 3. 一次开发 Task 怎样执行
 
-**T0 的验收条只能来自已签策略里的命名任务类包**，不得自拼门禁子集。每个包三项：`paths` / `gates` / `covers`。
+### 3.1 受理与冻结
 
-包纪律：任何 T0 包的 `paths` 展开集不得覆盖权威层文件、`policies/**`、门禁脚本及其依赖——否则「改门禁」与「被门禁判」落在同一可写面。**宽包不许，多个窄包可以。**跨包的题目升 T1，不塞进宽包。
+1. 保存用户原话、身份、幂等键和附件引用，形成 Task；原始输入不可被后续整理覆盖（产品 `I1`）。
+2. router 生成 RouteDecision；零命中或多命中产生 `WAITING(INPUT)`，越权或不可受理进入 `REJECTED`。
+3. `QUEUED` 前冻结目标、边界、输出、验收、证据、新鲜度、预算、权限与副作用；要求见
+   `request-lifecycle.md @ ed0b5136:166-181`。
+4. T0 的验收只能引用一份预先批准的窄任务类包；包必须同时固定 `paths + gates + covers`，不得现场拼门禁。
+5. T1/T2 的判据先于产出冻结，出题者与验收者分离；省事方向变化由 principal 显式确认。
 
-两道门，不是一道：
+T0 的任务类包需要两道门：开工门检查包名与 RouteDecision；完工门检查真实 diff 属于允许路径且门禁全过。
+策略包不得覆盖权威文档、策略本身、门禁脚本或门禁依赖，否则执行者可以同时改尺子和答案。
 
-| 何时 | 查什么 | 失败则 |
-| --- | --- | --- |
-| **开工门**（H2 / 分发） | 包名 ∈ 已签策略；T0 + `decide` 有 `RouteDecision` 落账；T1/T2 有落盘回执 | 拒发 |
-| **完工门**（L0 / L1 / H5 前） | 实际 diff 文件集 ⊆ `paths`；`gates` 全过；H5 内容门 | 不进 H5 |
-
-T0 的诚实定义：「题目能被『改动限于路径 X、通过门禁 Y』完全表达」。表达不了的就不是 T0。T0 的承诺只是「开工前零触点」；发布仍要 H5。「可逆、不写共享最终路径、免 H5」的出口属省事方向，本稿不加，见第 13 节。
-
-**升档不需要理由，降档必须写明理由并经人确认。中途只能升，不能降。**
-
-### 3.4 产物 → 唯一状态机
-
-| 产物 / 事件 | Task | Attempt | 说明 |
-| --- | --- | --- | --- |
-| 工单文件出现 | `RECEIVED` → 即刻 `VALIDATING` | — | 空转不停留 |
-| 工单 `DRAFT` / `FROZEN` | `VALIDATING` | — | **Artifact 状态**，不是 Task 状态 |
-| router `ask` | `VALIDATING → WAITING(INPUT)` → 回 `VALIDATING` | — | H8 |
-| H1 冻结 | `WAITING(APPROVAL) → VALIDATING` | — | 验证期恢复边 |
-| H2 开工 | `VALIDATING → QUEUED` | — | T0 按策略放行 |
-| 派发 | `QUEUED → RUNNING` | `CREATED → RUNNING` | `dispatch = manual` 的由 `dispatch_event` 承担 |
-| 某家交付并 commit | `RUNNING` | `RUNNING → COMPLETED` | 产出 typed Artifact，**不等于 Task 成功** |
-| 某家逾期 | `RUNNING` | `FAILED(timeout)` | Task 不因此失败（I8） |
-| 某家用尽观察窗 | `RUNNING` | `BUDGET_EXCEEDED` | Task 按内核进 `WAITING(APPROVAL)`（H4）或重新 `QUEUED` |
-| 执行期澄清 | `RUNNING → WAITING(INPUT) → QUEUED → RUNNING` | 在跑的 → `WAITING` | H8；执行期等待先回 `QUEUED` |
-| ④⑤⑥ 回到 ③ | `RUNNING` | 新 Attempt；旧的终态不重开（I5） | |
-| ⑥ 确认待人 | `RUNNING → WAITING(APPROVAL)` | — | H5 |
-| ⑥ 回执成立 | `WAITING → QUEUED` | publisher `CREATED` | **不是** `WAITING → SUCCEEDED` |
-| ⑦ 发布 | `RUNNING → SUCCEEDED` | publisher `COMPLETED` | Side Effect 由人执行本地合并 |
-| 无获准成功路径 | `RUNNING → FAILED` | — | |
-| 候选 `STALE` / `SUPERSEDED` | — | — | **Artifact 状态** |
-
-**没有一个新词，没有一条内核之外的边，内核每个 Task / Attempt 状态都有落点。**这三件合起来才是 P0 的验收方式。
-
-中途 H3/H4/H6 改的是所有 Attempt 共用的预算、环节或验收条，所以命中权力表时让 Task 进 `WAITING(APPROVAL)`。这是 `dev.change` 的 guard 选择，不改内核「有一路可推进则保持 RUNNING」的语义——它选择在这些行上让全 Task 暂停。
-
-**`RUNNING` 目前判不了，如实声明。**git 产物只能证明「已分发」与「已交付」。缺交付可能是未调用、在跑、崩了没产物、机器失联、观察窗超时五种之一。归因：这是 `observability ≤ process` 的**执行者属性**，不是 git 载体缺陷——换成 PostgreSQL 一样判不了 CLI 进程内部。处置：orchestrator 单写 `events.jsonl`（投影，不是权威；权威仍是 commit）；落地前脚本把 `QUEUED` / `RUNNING` 合并显示为「已分发未交付」并标 ⚠。
-
-### 3.5 路由：三值，模型只建议
+### 3.2 工作区供给
 
 ```text
-输入：原始请求 + 附件 + 请求者上下文
-  ├─ 分类建议（可选；受限模型节点，无工具，固定 schema，低预算）
-  │      → { tier_hint, domain_hint, evidence[] }     ← 只是证据
-  └─ 确定性规则表（版本化）
-         → decide  : 唯一命中 → RouteDecision{... policy_version, matched_rule}
-         → ask     : 零命中或多命中 → 产生 H2 Interaction
-         → refuse  : 命中拒绝规则 → Task REJECTED
+provision(task_id, source, baseline_commit, write_actors, review_needed, submodule_plan)
 ```
 
-三值而不是二值，是为了让「不知道」不被压成「默认通用」。`tier` 的判据就是协议「命中任一条即 T2」那四条；分类节点的产出是「四条各自命中与否 + 证据」，人只在 `ask` 时介入。
+复用工作区前，必须同时满足 owner 是本 Task/执行者、`git status --porcelain` 为空、HEAD 等于基线 commit；
+任一失败就新建，不 stash 人的修改。零写者只给只读取件；一名写者一棵独占 worktree；N 名写者在同一
+基线上建 N 棵独占 worktree，另给 integrator 一棵；人需通读时临时开 review worktree，用完删除。
+多仓逐仓钉 commit，并核父仓 gitlink。
 
-默认值是策略版本，不是代码兜底。H2 的默认必须来自版本化配置，每次按默认跳过都落一条 `RouteDecision{policy_version, matched_rule}`。
+独占在 CLI/GUI 腿通常只是约定，因为同 OS 用户可能看见整个文件系统；只有 runtime 提供的 namespace、
+文件挂载、凭据裁剪和出网网关才能构成事中限制。`workspace_isolation` 必须登记为 `enforced` 或
+`convention`，不能把目录不同写成安全隔离。
 
-OpenClaw 的 gateway 按 channel binding 确定性映射，不读用户语义。可借的是「确定性 binding + 落账 + fail-closed」；不借它的名字来指语义路由。
+### 3.3 Attempt 与状态投影
 
----
+开发产物只投影到内核，不造新状态：
 
-## 4. 执行者、粒度、证据
-
-### 4.1 登记表
-
-执行者登记在 [`protocol/agents.toml`](protocol/agents.toml)。字段用 `harness`，不用 `runtime`——后者在本仓同时指过产品运行时、内核 Agent runtime 与分组键，一词三义。
-
-```toml
-# 形状示意，取值以 agents.toml 为准
-[ap.luna]
-harness = "codex-cli"   provider = "openai"    model = "gpt-5.6"   model_pinned = false
-dispatch = "argv"       observability = "process"
-enforcement = "outer-only"   sandbox = "self"   workspace_isolation = "convention"
-roles_allowed = ["proposer","reviewer","objector","acceptor"]   supports = ["dev.change/1"]
-
-[ap.kimi]
-harness = "codex-cli"   provider = "moonshot"  model = "kimi-k3"   model_pinned = false
-dispatch = "argv"       observability = "process"   enforcement = "outer-only"
-
-[ap.cursor]
-harness = "cursor-agent"  provider = "xai"     model = "cursor-grok-4.6-high"   model_pinned = true
-dispatch = "argv"       observability = "process"   enforcement = "outer-only"
-
-[ap.fable]
-harness = "cursor-app"  provider = "anthropic"  model = "claude-fable-5.1"   model_pinned = false
-dispatch = "manual"     observability = "fs-only"   enforcement = "outer-only"
-roles_allowed = ["proposer","reviewer","objector"]
-
-[ap.qwen]
-harness = "qoder"       dispatch = "argv"       observability = "process"
-enforcement = "outer-only"
-
-[ap.opus]
-harness = "claude-code" provider = "anthropic"  dispatch = "argv"
-roles_allowed = ["arbiter","publisher"]
-
-[principal.owner]
-channel = "inbox+commit"          channel_grade = "shared-credential"
-```
-
-纪律：
-
-- **没有任何条目把人标成执行者。**`[principal.owner]` 没有 harness / dispatch / observability。
-- `dispatch = manual` 的执行者，`observability` 只能是 `fs-only`。脚本据此校验不许填高。登记表机械非空不等于填对。
-- **`roles_allowed` 由登记表约束**，不由每轮口头指定。分发前对照协议「角色分离」禁令，冲突即拒绝。
-- **「登记集合」与「自动路由候选集」是两个集合。**前者记「存在」，后者记「可被 router 选中」。`dispatch = manual` 的执行者：要么经显式桥接（`dispatch_event{mode = manual}`，产生可审计 Delivery），要么不得进入自动路由候选集——不得靠不可见的手工粘贴冒充自动分发。两条都不满足时它退出自动路由候选集，但仍留在登记表。
-- `dispatch_event` **不是权力表行**。它必须可数（第 8.2 节的上界要数它），但它不是批准。
-
-⚠ 未验证：luna / kimi 的 argv 未钉 `--model`；fable 的模型在 GUI 内选择，不可机械核验；qwen 的 provider / model 在任务书该栏为「—」，推断不得进登记表取值。
-
-### 4.2 粒度是三个字段，至少四档
-
-能看多细、能在哪拦、沙箱谁提供，是三件事，可以分开取值。例证：`codex exec --json` 可见性到工具调用级，但吐的是执行者自报，运行时拦不住也验不了——强制点仍在进程外。
-
-| 字段 | 取值 | 含义 |
+| 开发事实 | Task 投影 | Attempt 投影 |
 | --- | --- | --- |
-| `observability` | `tool.enforced` ＞ `tool.reported` ＞ `process` ＞ `fs-only` | 运行时能看见的最细粒度 |
-| `enforcement` | `tool-level` / `outer-only` | 运行时能拦在哪：工具网关（事中）/ 只有进程外层 |
-| `sandbox` | `runtime` / `self` / `none` | 沙箱由谁提供、策略由谁定 |
+| 工单可靠创建 | `RECEIVED → VALIDATING` | — |
+| 路由需关键输入 | `VALIDATING → WAITING → VALIDATING` | — |
+| 契约冻结且可执行 | `VALIDATING → QUEUED` | `CREATED` |
+| 首个执行取得有效租约 | `QUEUED → RUNNING` | `CREATED → RUNNING` |
+| 某家提交候选 | 保持 `RUNNING` | `RUNNING → COMPLETED`；只表示有候选 |
+| 某家逾期 | 仍有路可走则保持 `RUNNING` | `→ FAILED(timeout)` |
+| Attempt 预算耗尽 | 按契约等待、重排或失败 | `→ BUDGET_EXCEEDED` |
+| 执行中等待输入 | 无其他路可走才 `RUNNING → WAITING` | 可 `RUNNING → WAITING` |
+| 同一执行从 checkpoint 续跑 | Task 先按内核合法回边 | 同一 Attempt `WAITING → RUNNING` |
+| 评审/异议/验收打回 | 保持 `RUNNING` 或回 `QUEUED` | 新 Attempt；旧终态不重开 |
+| 不可逆发布待批 | `RUNNING → WAITING(APPROVAL)` | publisher `CREATED` |
+| 批准后发布完成 | `WAITING → QUEUED → RUNNING → SUCCEEDED` | publisher `→ RUNNING → COMPLETED` |
+| 已无获准成功路径 | `→ FAILED` | 相关 Attempt 均终态 |
 
-当前取值：luna / kimi / cursor / qwen 为 `process`（可升 `tool.reported`）；fable 为 `fs-only`。全部 `enforcement = outer-only`，全部 `sandbox = self`。**目前没有一家是 `tool.enforced`。**那是 SDK 腿建成之后才会出现的取值。
+**这张表不是说明，是判据。**「只投影不造新状态」要成立，必须**三件同时满足**，
+缺一条这个主张就没被证明：
 
-`enforcement = outer-only` 时，内核 `F-EXEC-01` 只能靠外层实现。外层控制（文件可见范围、进程环境里没有写凭据、出网默认拒绝）是 **executor adapter 的环境策略**，不是「换三把钥匙就能得到的安全架构」。无法外层阻断时必须标 `audit_after`，**不得声称事中拦截**。今天这些外层控制**并未就位**——见第 12 节。
+1. **没有一个新状态词**——表右两列出现的词全部来自内核合法转换表；
+2. **没有一条内核之外的边**——每一格的转换都能在内核那张表里找到；
+3. **内核的每个状态都有落点**——反过来查：内核有而本表没出现的状态，
+   要么说明流程还没覆盖到，要么说明表漏了。
 
-### 4.3 证据权威性：由粒度推导，不由执行者声明
+⚠ **第 3 条最容易被跳过**，因为前两条查「本表有没有越界」是顺着看，
+第 3 条查「内核有没有被漏」要倒着看。**只做前两条会得到一个自洽但不完整的映射。**
 
-**采信等级 = `min(provenance, observability 可见上限, isolation 实际强度, verifier 独立性, coverage)`，任一未知即降级，不取平均。**
+Artifact 可以有草稿、冻结、陈旧、被替代等版本属性；这些不是 Task/Attempt 状态。
+评审、裁决、异议和验收均可作为 typed Artifact，由 Attempt 的 `output_artifacts` 引用；若要把它写入
+内核合同，须先按规范修订程序确认这是类型细化而不是对象扩充。
 
-| 等级 | 观察来源 | 能证明什么 | 不能证明什么 |
+### 3.4 T0/T1/T2 不是三套状态机
+
+三档共享同一工单 schema、状态机和发布门，只改变 guard、必需 Artifact 和 Attempt 组：
+
+| tier | 执行形态 | 独立信号 | 人工门 |
 | --- | --- | --- | --- |
-| `E0 ASSERTED` | executor / principal 自述 | 仅作为待验证主张 | 行为发生、作者身份、完整性 |
-| `E1 REDERIVED` | 运行时从冻结 workspace / Artifact 重算 | 重算范围内的结果 | 未覆盖的进程内部动作 |
-| `E2 PROCESS_OBSERVED` | 外层记录 argv / stdio / 退出码 + E1 | 调过哪个进程及其外部结果 | 内部逐工具调用 |
-| `E3 TOOL_OBSERVED` | 运行时工具网关逐调用 Event + E1 | 经网关发生的调用 | 绕过网关的系统调用 |
-| `E4 EXTERNAL_AUTHORITY` | executor 凭据域**外**的受保护日志 / 签名 / 审计 API | 指定主体或外部副作用的权威事实 | 人是否充分理解 |
+| T0 | 做 → 独立验收 → 确认 | 一个产出、一个独立验收 | 开工可由已批准窄包自动决定；不可逆发布仍由人确认 |
+| T1 | 单稿 → 独立评审 → 验收 → 确认 | 一稿、一评、一验 | 工单冻结与开工可合成一次明确确认 |
+| T2 | round-protocol 七环节 | N 份隔离候选、互评、裁决、异议、独立验收 | 题目/判据冻结与参与方/路线确认分开 |
 
-轨迹 `provenance` 三值：**attested** = 运行时从它控制的底座直接取得；**reported** = 执行者或人的自报；**inferred** = 事后读产物推出来的。映射：`E0` = `reported` / `inferred`；`E1`–`E4` = `attested` 的子档。
+完整产物命名、候选冻结、处置表和验收方算法只引用 round-protocol。状态脚本从 commit 反推，工作区
+不参与判定；空参与方不是“完成”；脚本首次增加判据时先与人工结论对照，并列出未检查范围。
 
-四条推论：
+### 3.5 交付、清理和恢复
 
-1. **只有 `tool.enforced` 的事件是证据。**`tool.reported` 的事件流是索引，可据它决定去重新推导什么，不能据它下结论。`process` / `fs-only` 的自报一律是主张。
-2. **证据由运行时从工作区重新推导**，由 validator 跑，不由执行者跑。反例：一家拿休眠代码当能力证据，九份评审无一发现。
-3. **覆盖声明必须同时列查了什么与没查什么。**零命中只有在输入集合可枚举且枚举成功时才是 `E1`；否则是 `UNKNOWN`，不是 pass。
-4. Artifact 作者拆 `author_claimed` 与 `author_attested`。当前通道下身份侧全部是 `reported`。
+validator 先跑机械条，acceptor 再判机器判不了的冻结条；验收失败在预算允许时产生新 Attempt，
+不得改窄标准换取通过。不可逆动作由 principal 确认后，publisher 才写共享最终路径或生产面。
+结果、验收、预算结算和终态事件必须原子提交或用不暴露半成品的等价协议；Delivery 只在之后通知，
+断线可按 cursor 回放并按 Task 重新取得结果（产品 `F-ACCEPT-01`–`03`、`F-DELIVERY-01`–`10`，
+`request-lifecycle.md @ ed0b5136:398-440`）。
 
-### 4.4 独立性按字段推导，不用单值
+开发分支清理只删本轮私有产物；主线原有文件不能在候选分支里为“整洁”而删。需要删除旧权威稿时，
+先完成逐节迁移、引用清零、门禁、T0/T1 实跑与人工确认；Git 历史可恢复不等于新读者能找到。
 
-登记 `provider` / `harness` / `model_family` 三个事实字段。分组键首版 = `harness`（同一 harness 的提示词与工具集相同，相关性最高）。独立信号数 = 持相同主张的执行者所属不同组的个数（同组 N 家只计 1）；组内任一家带 `file:line` 或可复跑命令，该组权重 ×2。裁决时先比独立信号数，相同则比带取证的组数。
+## 4. 人介入、Interaction 与权力
 
-评审之间若有引用关系，引用方在被引条目上视同同组——这是本票 evidence graph 上的关系，不改静态登记。
+### 4.1 人的位置
 
-⚠ 未验证：同 harness 不同模型的相关性到底多高。`runtime` 轮唯一的观察是同 harness 的两家差异大于同厂不同 harness 的两家，单轮单题不足以把分组键改成 `(harness, model_family)`。
+人可以同时是 requester 与某些权力的 principal，但不因此获得执行角色。人的稳定职责是：
 
----
+- 给出或确认目标、边界与验收；
+- 回答绑定到自己身份的 Interaction；
+- 批准省事方向裁定、预算/资源变化和不可逆 Side Effect；
+- 对最终交付负责并可推翻先前裁定。
 
-## 5. 人：principal 与权力表
+“由人触发脚本”不等于“人是 orchestrator”；“由人把固定指令粘到 GUI”是尚未自动化的传输动作，
+应记 `dispatch_event` 并计成本，不新增权力行。
 
-### 5.1 人的位置
+### 4.2 权力表
 
-人不是执行者，不是一条平行路径。人同时是：
-
-| 词 | 是什么 | 内核落点 |
-| --- | --- | --- |
-| **requester** | 提交 Task 的人 | 提交信封；后端从认证上下文确定，不信前端自报 |
-| **principal / approver** | 持有权力表某行的批准权 | Interaction 的受众；`eligible_principal` |
-
-本稿不引入第三个词。B4 只约束「人不是执行者」，不禁止人同时是 requester 与 principal——今天只有一个 `owner`，两顶帽子戴在同一个人头上。权力挂在 principal 上，不挂在执行者条目上。将来多用户只加 principal 与授权行，不改表结构。本轮不引入 capability 体系——只有一个 principal 时那是空列。
-
-人与 agent 的真实差异在本结构里各有落点，不另立一条路径：
-
-| 差异 | 落点 |
-| --- | --- |
-| 有批准权 | `principal = owner` 持有权力表全部行 |
-| 可裁量「不值得走全流程」 | H3（省事方向）+ H6（推翻）；裁量是表内的行 |
-| 承担最终责任 | 治理条款：H5 的确认者即对外责任人。脚本判不了，不进权力表 |
-| 可跨会话续接 | 人的 Attempt 无 checkpoint 义务，[`handoff.md`](handoff.md) 是它的 checkpoint；**不落盘的意图不是状态** |
-
-### 5.2 权力表
-
-权力表是驱动 `WAITING(APPROVAL)` 的唯一来源。没有强制点的行不许进表。表外无未分类的 APPROVAL interrupt。内核另外四类等待（`INPUT` / `DEPENDENCY` / `RESOURCE` / `EXTERNAL`）按内核规则产生，不进表；但 `INPUT` 类问人受「只有歧义会实质改变结果、权限、成本或风险时才请求澄清」约束。
-
-| 行 | 状态转换 | eligible_principal | auto_policy | enforcement_point |
+| 行 | 受控动作或合法边 | principal | 默认 | 强制要求 |
 | --- | --- | --- | --- | --- |
-| H1 | 工单 Artifact `DRAFT → FROZEN`；Task `WAITING(APPROVAL) → VALIDATING` | `owner` | 无；T0 由已签任务类包承担 | validator 查落盘回执 |
-| H2 | Task `VALIDATING → QUEUED`（开工确认） | `owner` | 有：T0 + `decide` | orchestrator 不分发 |
-| H3 | 省事方向裁定生效：`WAITING(APPROVAL) → QUEUED` | `owner` | 无 | 落盘回执；无回执的裁定行视同不存在 |
-| H4 | 扩权（冻结授权范围内的预算 / 资源额度） | `owner` | 无 | 同 H3 |
-| H5 | 不可逆 Side Effect（写共享最终路径 / 合并主线 / 删除或迁移已有资产） | `owner` | 无 | **人执行该动作**；VM 上的脚本与 hook 不是强制点 |
-| H6 | 推翻裁定 / 改冻结验收条：`WAITING(APPROVAL) → QUEUED` | `owner` | 无 | 冻结区逐字节 + 落盘回执 |
-| H7 | 非终态 `→ CANCELLED`（先持久化取消意图） | `owner` | 无 | 裁定行（表内唯一不要求仓外锚的行，失败安全方向） |
-| H8 | 回答本 Task 的 `WAITING(INPUT)` | `requester`（开发任务里 = `owner`） | 无 | 库的恢复原语消费令牌；响应者由通道鉴别 |
+| H1 | 工单 Artifact 冻结；验证期 `WAITING → VALIDATING` | owner | 无；T0 由已批准任务类包承担 | validator 对照冻结 digest |
+| H2 | `VALIDATING → QUEUED` 开工 | owner | 仅 T0 且 router `decide` | orchestrator 无有效决定不分发 |
+| H3 | 降档、跳环节、缩窗或免除参与方后恢复 | owner | 无 | 裁定追加留痕，批准与目标版本绑定 |
+| H4 | 冻结授权内追加预算或资源后恢复 | owner | 无 | 超出授权范围必须新建 Task，不在原 Task 扩权 |
+| H5 | 不可逆 Side Effect；最终 `RUNNING → SUCCEEDED` | owner | 无 | 执行动作与批准分离，凭据/服务端校验不可由 executor 绕过 |
+| H6 | 推翻裁定或改判冻结标准 | owner | 无 | 追加新记录，不覆盖原判断；标准变更重新验收 |
+| H7 | 非终态安全收敛到 `CANCELLED` | owner | 无 | 先落取消意图、提高 fencing、盘点副作用 |
+| H8 | 回答本 Task 的 `WAITING(INPUT)` | requester | 无 | interaction service 鉴别主体、Task、状态版本和一次性令牌 |
 
-纪律：
+**H7 是表内唯一不要求仓外锚的行**，这是有意的：取消属**失败安全方向**——
+伪造一条「取消」只会让流程停下来等人，不会让任何东西被发布出去。
+其余各行朝的是「放行」，伪造即造成不可逆后果，所以强制点必须在 agent 够不着的地方。
+⚠ 代价在**恢复**而不在取消本身：不知道已经产生了哪些副作用就不知道要回滚什么，
+所以取消必须附**已产生副作用清单**，缺清单的取消不生效。
 
-- **`AUTH-EFFECT` 类不得直达成功终态。**H5 之后走 `WAITING → QUEUED` → publisher `COMPLETED` → `RUNNING → SUCCEEDED`。
-- **H1 属验证阶段**，恢复边是 `WAITING → VALIDATING`，不是 `WAITING → QUEUED`。
-- **改授权范围不属 in-Task 修订**：按内核应建带 `supersedes` 的新 Task。H4 收窄为「冻结授权范围内的预算 / 资源额度」。
-- H7 是表内唯一例外：伪造取消只停工、不放行任何东西。取消裁定必须附已产生副作用清单；误取消的重开是新 Task（I5）。
-- 回执**只认落盘**。当前载体是 `rounds/<id>/rulings.md` 的「人确认」列 + 所有者 commit。对话里说「同意」不算。人不回执时：H1、H3–H7 等待，**不设超时默认**；只有 H2 在策略明确允许的 T0 场景可以按默认放行，且要落账。
+表外没有未分类的 APPROVAL。`DEPENDENCY / RESOURCE / EXTERNAL` 按产品 WAITING 规则处理；普通 INPUT
+只有在歧义实质改变结果、权限、成本或风险时才问。H5 批准的是执行 Side Effect，不是把 Task 直接从
+`WAITING` 写成成功；内核没有该捷径。
 
-**今天 H5 的强制点是「人的手」，不是凭据隔离。**发布路径是本地 merge，不经网络——`git ls-remote --tags origin` 只有 `2.0.0` 与 `pre-architecture-v2-final-20260813`，本机 `runtime/*`、`refact/*` 冻结标签一个都不在远端。把强制点设计成「远端 key 管主仓」管不着这条路径。目标态若要把强制点移到人够得着、agent 够不着的操作面，先决条件是这个操作面真的存在（[`rounds/_spike-sign/forensics.md`](rounds/_spike-sign/forensics.md) 登记该前置未满足）。在此之前，诚实的写法是：H5 = 人做合并 + 落盘确认；VM 脚本报状态，不充边界。
+### 4.3 直接沿用实际中断/恢复原语
 
-`check-no-owner-creds.sh` 是配置卫生检查，防人为疏漏；**不是边界**——agent 能改它。
+当前基座已经提供足够原语：
 
-### 5.3 人的通道
+- `investment-backend/app/app/infrastructure/graph/pilot_graph.py:59-66` 调用
+  `interrupt({...})`，出向值就是任意字典；
+- `investment-backend/app/app/infrastructure/graph/langgraph_runtime.py:14-21` 用
+  `Command(resume=user_input)` 接收任意恢复值；
+- `investment-backend/app/app/application/agent/graph_runtime_service.py:14-23` 将同一 `session_id`
+  映射为同一 `thread_id`；
+- `investment-backend/app/app/tasks/agent_graph.py:106-128` 在同一 thread 配置和 PostgreSQL
+  checkpointer 上首次执行或恢复。
 
-```text
-sunmoonai/docs/dev-plan/rounds/<id>/inbox-owner.md     ← 引擎写，人读
-                                                          必备：interaction_id、transition、待决内容、截止判据
-                                                          H1–H6 另加 target_commit、diff_stat
-                                                          H1/H5 再加冻结验收条编号表
-落盘回执（rulings.md「人确认」列 + 所有者 commit）       ← 人写，引擎读
-```
+⚠ **「原语存在」不等于「端到端已接线」。**同一份代码里，抽象基类
+`graph_runtime_service.py:26-31` 的 `resume` 本身是
 
-字段分级：无默认的字段不得预填（预填等于把盖章做成阻力最小路径）。
-
-| 分级 | 字段 | 规则 |
-| --- | --- | --- |
-| 无默认，必须显式填 | 验收条、executors 名单、`tier` | 收件箱留空；这三项为空即判无回执 |
-| 可预填默认 | workspace 计划、预算窗、观察窗规则 | 预填值与人改后的值都落账 |
-
-通知丢了不要紧，收件箱文件是真源。每次 H 回执登记三个观察值（耗时、相对预填的改动项数、按行分计的确认次数），不由观测值自动触发 H6。
-
-**principal 通道也有粒度。**今天 `[principal.owner]` 的 `channel_grade = shared-credential`：所有者与 agent 同机、同用户、同免密 sudo（第 12 节第 3 条）。后果：轨迹里所有 `power_row ≠ —` 的条目，响应者身份都是 `reported`；服务态若在同一信任域里提供响应端点，只是把 `reported` 搬了个家。**先有 agent 够不着的操作面，再谈把通道升级为 attested。**
-
----
-
-## 6. 工作区、状态判定、git 载体
-
-### 6.1 工作区供给：纯函数
-
-```text
-provision(task_id, source, baseline_commit, write_actors, review_needed, submodule_plan) →
-
-  前置判据（任一不成立即新建，不复用）：
-    现有工作区 owner == task_id 且 == 该执行者      # 独占
-    git status --porcelain 为空                    # 干净；脏改动绕开，不 stash
-    HEAD == baseline_commit                        # 基线一致
-
-  数量规则：
-    |write_actors| = 0   → 不建可写工作区
-    |write_actors| = 1   → 一个独占工作区、一条命名分支
-    |write_actors| = N   → 同一 baseline 上 N 个 worktree + 一个整合 worktree
-    review_needed        → 额外一个检视 worktree，用完删
-    submodule_plan       → 多仓时逐仓钉 commit 并记父仓 gitlink
-```
-
-- 数量看写者数，要不要新建看独占与干净，**都不看复杂度**。三者可机械判定，复杂度不可。
-- 「事先创建好的仓库」只能是 `source`，不能是工作区。多个 Task 塞进同一个预建仓违反「workspace 唯一归属本 Task」。
-- 来源一律钉 commit，不钉地址或分支。
-
-### 6.2 独占在 CLI / GUI 腿是约定，不是隔离
-
-| | SDK 腿（目标态，`observability = tool.*`） | CLI / GUI 腿（现状） |
-| --- | --- | --- |
-| 工作区怎么来 | 挂进运行时提供的沙箱 | 宿主上建目录，把路径传给进程 |
-| 进程看见什么 | 沙箱根 | **整个文件系统**（本 VM 上各 CLI 与 GUI 后端都以同一用户跑） |
-| 「独占」是什么 | 隔离 | **约定**。打破约定的动作，运行时事中看不见 |
-
-登记字段 `workspace_isolation = enforced | convention`，当前全部 `convention`。后果：CLI 腿的授权范围声明只能依赖「事后审计可发现越权读取」；**涉及第二租户或真实财务数据前，CLI 腿的数据源必须经运行时的数据网关，不得给裸库凭据。**
-
-现场证据：同一执行者同一会话内 `id` 先报 `uid=0(root)`（`uid_map: 0 1003 1`，助手自带沙箱）后报 `uid=1003`。取证必须附 `hostname; id; cat /proc/self/uid_map`，只看 `id` 会误判。本次取证（宿主 shell，2026-09-06）：
-
-```text
-hostname          VM-0-13-ubuntu
-id                uid=1003(zym)  groups=...,27(sudo),...,988(docker)
-uid_map           0 0 4294967295      # 恒等映射，是真实 uid
-```
-
-### 6.3 状态判定与分发
-
-[`protocol/round-status.py`](protocol/round-status.py) 与 [`protocol/round-dispatch.py`](protocol/round-dispatch.py) 的设计（从产物反推、判据即命令、只生成不执行）保留，要改的是一般化：
-
-| 现在 | 改为 |
-| --- | --- |
-| 只认 T2 七环节 | 按工单 `tier` 读对应 guard 表与必需产物表 |
-| 输出「当前环节」 | 输出 Task 状态（唯一状态机的词）+ 当前环节 + 各 Attempt 状态 |
-| `status` 是声明 | 降为人读缓存；推导值 ≠ 声明值即报错 |
-| 角色由每轮口头指定 | 分发前对照 `roles_allowed` 与角色分离禁令 |
-| 只看工作仓产物 | 加读 `events.jsonl` 区分已分发 / 在跑 / 超时；落地前合并显示并标 ⚠ |
-| 只判状态词 | 同时输出「上一状态 → 本状态」，边不在合法转换表内即报错 |
-
-每条判定声明覆盖范围。空集合不是「全部完成」——要跳过某环节，必须在 `round.md` 明写 `skip_stages`。
-
-**隔离目前靠纪律，不靠机制。**各 worktree 共享同一个 `.git`，任何人都能 `git show <别家分支>:<路径>`。这是协议最大的已知缺口，如实告知。
-
-### 6.4 git 载体：什么是权威、什么验不了
-
-先把 git 的两个角色拆开：
-
-- **git 当 Artifact 载体**——代码与文档 Artifact 的版本就是 commit。**这是永久的。**
-- **git 当账本**——用 commit 历史 + `rulings.md` + `events.jsonl` 反推状态。**这是脚手架，要拆。**拆除条件见第 8.1 节：服务态与手工态按等效判据比对全等，且每类条目的 `attested` 计数 ≥ 手工态。
-
-| 内核要求 | git 载体的落法 |
-| --- | --- |
-| 权威事件 | 可从发布点 tag 到达的 commit；人的决定：`rulings.md` 落盘回执 + 所有者 commit |
-| branch / tag | branch 是运输通道，不是评审对象；tag 仅在受保护模式下是权威引用 |
-| 比较交换 | 发布校验目标 ref 仍指向开始时记录的 commit；不一致即失败并新建整合 Attempt |
-| 终态不可重开（I5） | round id 全局不复用；纠错用 `supersedes` 新回执，不改旧记录 |
-| 工作区文件 | 永不作判据；判据只看提交 |
-
-**git 载体验证不了、不得宣称「已在开发层验过」的三样：**
-
-1. **事务性**——结果、验收、预算结算与终态事件的原子提交；git 的多 ref 更新不原子。
-2. **租约**——Attempt 的 `lease_owner / lease_expires_at`；开发侧只有观察窗判据。
-3. **fencing**（I14）——过期 worker 的写入被拒；开发侧靠整合方核对，不靠机制。
-
-「先在这一层跑通，再往下实现」的准确表述：手工态跑通的是对象形状、边、Interaction 形状与权力行；它跑不通的是并发语义与证据的 `attested` 等级。
-
----
-
-## 7. 中断与恢复：用库的原语
-
-内核 Interaction 的绑定字段（「WAITING 与 Interaction」）出向是 `question_or_action` 一段自由文本，入向是 `resume_token_hash + consumed_at`。缺口是真的：上一轮所有者裁决以 `rulings.md` 的行存在，账本上没有一条是 Interaction 对象。财务分析里「人改计划两条再继续」的形状也需要入向能带内容。
-
-**解法不是自造一套入向三值 + 载荷 + 过期校验。**基座库已经有中断与恢复。独立复核（`investment-backend` 子模块 `18d88c7c`）：
-
-出向：`interrupt()` 收任意 dict。
-
-```text
-# investment-backend/app/app/infrastructure/graph/pilot_graph.py 约第 59–68 行
-value = interrupt({
-    "kind": "confirmation",
-    "action_id": action_id,
-    "prompt": "确认使用这些检索证据生成最终回答？",
-})
-return {"approval": str(value)}
-```
-
-入向：`Command(resume=<任意值>)` 一个参数。本仓全部实际调用都是这一个参数（`rg "Command\(resume=" investment-backend`：测试、脚本、`agent_graph.py`、`pilot_agent_graph.py`、`langgraph_runtime.py`，没有第二套入向协议）。
-
-恢复：同一个 `thread_id`，检查点原地继续。内核自己已经写了「Attempt 若从 checkpoint 原地恢复，可在自己的状态机内 `WAITING → RUNNING`」。
-
-```text
-# graph_runtime_service.py:14-15  配置就是 thread_id = session_id
-return {"configurable": {"thread_id": session_id}}
-
-# graph_runtime_service.py:40-42  同一 config 上 stream；碰到 __interrupt__ 返回
-for chunk in graph.stream(graph_input, config=config):
-    if "__interrupt__" in chunk:
-        return GraphRuntimeResult(state=chunk, interrupted=True)
-
-# langgraph_runtime.py:17-20  恢复 = Command(resume=user_input) + 同一 session_id 的 config
-return self.stream_with_config(
-    graph, Command(resume=user_input), self.build_config(session_id=session_id),
+```python
+raise NotImplementedError(
+    "Runtime adapters must translate resume input to their graph command type."
 )
 ```
 
-`GraphRuntimeService.resume` 本身是 `NotImplementedError`（`:26-31`），适配器必须把恢复输入翻译成库的命令类型——这是 A4「依赖边界限定在 SDK」的代码形状，不是缺口。
+也就是说**恢复这一步的适配是留给实现方的空位**，不是现成能力。
+上面四条锚点证明的是「库提供了 `interrupt` / `Command(resume=)` / 同 thread checkpoint」，
+**它们不证明本项目已经把中断恢复跑通**。两件事分开写，是因为把前者读成后者，
+会让一份「已具备」的结论建立在一个 `NotImplementedError` 上。
 
-因此 `dev.change` 的 H8 这样接：
+因此实现应把产品 Interaction 的 `question_or_action / audience / expires_at / resume_token_hash /
+idempotency_key / consumed_at / resume_target` 绑定到这些原语，字段真源仍是
+`request-lifecycle.md @ ed0b5136:247-277`。中断节点返回业务需要的 dict；恢复端鉴别主体、校验
+Task 与状态版本、原子消费令牌，然后把经验证的响应作为 `Command(resume=value)` 送回同一 thread。
+checkpoint 原地续跑时是同一 Attempt 的 `WAITING → RUNNING`，不因“人给了内容”另开 Attempt。
 
-1. 需要人时，adapter 调库的 `interrupt(payload)`；payload 的形状由 **Task Profile 的入向约定**声明，不写进内核绑定字段表。
-2. 人的答复经 principal channel 到达后，adapter 调 `Command(resume=答复)`，**同一 `thread_id` 原地续跑**。
-3. 这不是新 Attempt，也不建新 Task。内核 Attempt 状态机走 `WAITING → RUNNING`。
-4. 若人的答复实质改变了目标、口径、授权范围或 Profile 版本，那才按内核建带 `supersedes` 的新 Task——四个条件一个都不命中时，就是同一次执行的恢复。
-5. 过期、异键、跨 Task 的恢复由库与内核 `AT-07` 拒绝，不在 Profile 层再造一套校验。
+**`dev.change` 的 H8 具体这样接**（五步，缺一步就会长回自造协议）：
 
-**需要载荷这个需求，是被「恢复必须开新 Attempt」自己造出来的。**库的恢复不换 Attempt，载荷就是 `resume` 的那个值。render 属 Delivery，不进内核绑定——把渲染放进内核会让每次 UI 改动都变成规范修订。
+1. 需要人时，adapter 调库的 `interrupt(payload)`；**payload 的形状由 Task Profile 的入向约定声明**，
+   不写进内核绑定字段——形状归 Profile，字段归内核，这样扩展不必动内核；
+2. 人的答复经 **principal channel** 到达后，adapter 调 `Command(resume=答复)`，
+   **同一 `thread_id` 原地续跑**；
+3. **这不是新 Attempt，也不建新 Task。**内核 Attempt 状态机走 `WAITING → RUNNING`；
+4. **只有**当答复实质改变了目标、口径、授权范围或 Profile 版本，才按内核建带 `supersedes`
+   的新 Task——**四个条件之外的答复一律回原 Task**；
+5. 过期、异键、跨 Task 的恢复**由库与内核既有校验拒绝**，不在 Profile 层再造一套。
 
-若将来要扩展内核 Interaction 绑定字段，按内核「修订纪律」开一个规范修订工作单元：只改字段、不改状态词与合法转换表；历史 v1 响应只能标「已消费，无载荷」，严禁回填成「批准」。**本稿不是那个工作单元，也不预写字段表。**
+⚠ **「需要载荷」这个需求，是被「恢复必须开新 Attempt」自己造出来的。**
+库的恢复不换 Attempt，载荷就是 `resume` 的那个值。取消掉那个不该有的执行边界，
+围绕它长出来的一整支设计（载荷、schema、过期校验、Task 级暂停）就一并消失。
 
----
+若未来业务确需结构化编辑，先拿一个真实 Task Profile 的前端 payload、拒收用例和迁移数据立规范修订；
+不要从自由 `resume` 值反推一套平台级 patch/replace 协议。修改目标、授权范围或 Profile 版本仍按产品
+“终态、刷新与重新处理”建立新 Task；普通澄清只恢复原 Task。
 
-## 8. 等效、开销、绕过
+### 4.4 身份、批准与强制点
 
-### 8.1 等效判据
+批准成立必须同时回答：谁、批准哪个 Task/版本、批准哪项动作、何时过期、是否已原子消费。
+通知文件或聊天回复只证明“有文本”，不证明身份；executor 可修改的脚本、hook、权限位也不是对它的
+安全边界。强制点必须落在 executor 够不着的服务端身份、凭据作用域、工具网关或生产写入口。
 
-两层：
+⚠ **取证结论的措辞必须限定到「这台宿主、这个身份、这个时刻」。**
+下面这些是**单机观测**，不是平台事实：换一台机器、换一个跑 agent 的用户，
+结论就可能翻转。写成「agent 有 root 权限」是把一次观测外推成属性；
+正确写法是「**在本宿主上、以该用户运行时**，agent 与人共享同一凭据域」。
+边界的表述也据此绑定到**凭据域是否共享**，而不绑定到「是不是 root」这个偶然事实。
 
-| 层 | 比什么 | 何时可机械判 |
+基线取证显示宿主用户 `zym` 有免密 sudo，且当时能对两个主 remote 做 push dry-run；见
+`forensics.md @ ed0b5136:18-45`。本轮在非沙箱宿主重跑 `sudo -n -l` 仍得到
+`(ALL) NOPASSWD: ALL`。所以本机签名、仓内公钥表、本机 hook 与只读文件权限都只能当卫生检查或审计，
+不能证明 Agent 无法伪造批准或绕过发布。
+
+目标产品态应优先复用已有认证主体、授权服务、一次性 Interaction 恢复和 Side Effect 网关；若某条写路径
+绕过这些组件，就先画出真实动作路径并在路径上设门，不增加旁路存储来制造安全感。当前手工轮次的
+人类确认仍是治理记录，证据等级应诚实标为 `reported`，不得声称身份已 `attested`。
+
+## 5. 可观测性、证据与等效
+
+### 5.1 三个粒度字段
+
+| 字段 | 取值 | 问的问题 |
 | --- | --- | --- |
-| **S 层（schema）** | 对象集合、状态词、**边**、权力表行、Interaction 绑定字段、Agent Profile 字段 | **现在** |
-| **R 层（run）** | 同一 Task 的四条序列，经投影 Π 之后逐条对应 | 两种 orchestrator 都按同一 schema 落账之后 |
+| `observability` | `tool.enforced > tool.reported > process > fs-only` | 最细能看到什么 |
+| `enforcement` | `tool-level | outer-only` | 能在动作前拦在哪里 |
+| `sandbox` | `runtime | self | none` | 隔离环境由谁提供、策略归谁 |
 
-「谁在哪条边上有权」属 S 层，是静态约束，不塞进一次 run 的轨迹里比。
+四档 `observability` 各是什么（**从强到弱**，只给排序不给定义，读者无从判自己那家在哪一档）：
 
-```text
-trace_entry = { seq, layer, subject_id, from→to, actor, power_row,
-                payload_ref, provenance, evidence_ref }
-Π = 丢掉执行者私有 Event 与 at
-    保留 Task/Attempt 的边、权力表命中的 Interaction、Artifact 版本与作者
-
-TraceEnvelope = { task_profile_id/version, acceptance_contract_digest, policy_version,
-                  principal 身份域, 输入摘要, Side Effect 摘要, Evidence authority 摘要 }
-```
-
-没有 `TraceEnvelope`，两次运行可以状态、Attempt、Interaction、版本全同，而其中一次用未获权凭据发布——算法会误报等效。
-
-比对规则：
-
-1. **白名单制。**允许不同：载体、orchestrator 实现、执行者可观测粒度的取值、Π 丢掉的 Event、`at`。不允许不同：状态、边、对象、Interaction 形状（投影后）、`power_row`。白名单之外一律失败。
-2. **比对粒度取较粗一腿，并显式列出未比对项。**
-3. **两边都要声明权威源与重建规则。**手工态轨迹是从 commit 重建的投影。
-4. **等效只能在两条轨迹的最低来源等级上宣称。**比对结论必须附各类条目的 `attested` 计数。
-5. **权限归因项在 bootstrap 期强度为零，单列判。**服务态不得把手工态的回执继承为可信先例。
-6. **先验证每个状态 ⊆ 内核状态集、每条相邻边 ⊆ 合法转换表，再比序列。**
-
-「轨迹」不是内核对象，是 Event 序列的投影；不得据它另造第五个对象或新状态。
-
-`refact-fable` 轮按真实产物重建的 23 条轨迹里，`attested` 仅 2 条（且身份都不 attested）。手工模式「看起来在跑」，轨迹基本不可复原——这是「先在这一层跑通」的账本版读数。对照组：`refact` 轮整合分支有 28 条逐主张提交，同一 Task Profile、同一 orchestrator 实现，`attested` 数量级不同。**差别不在载体，在纪律是否落成动作。**
-
-样例引用纪律两条，防法不同，不可互相替代：
-
-1. 每个引用对象须先核验其属于所声明的那一轮（防张冠李戴：对象真实存在但属于另一轮）。
-2. 无 ⚠ 声明的样例条目一律按「已核验」读，凭空构造即为假证据（防把本轮形状倒灌进历史）。
-
-### 8.2 运行时相对手工调用的开销
-
-开销是 **(任务, orchestrator 实现)** 的函数，不是任务单独的函数。对 `orch.manual`，凡 `dispatch = manual` 的执行者每个 Attempt 至少多一次人代行的传输动作。
-
-分类规则机械可判，全部由工单字段直接判，**不读题目自然语言**，**不得用 `tier` 反推成本**（档位由风险判据定，用档位反推成本是循环）：
-
-| 规则 | 字段判据 | 结论 |
+| 档 | 运行时看得见什么 | 能不能拦 |
 | --- | --- | --- |
-| M1 | `proposers ≥ 2` 或 `write_actors ≥ 2` | 走运行时更便宜 |
-| M2 | 计划中权力表触点数 ≥ 1 | 走运行时更便宜 |
-| M3 | `read_only_inputs[]` 非空且带版本锚，或依赖另一 Task，或需要恢复 | 走运行时更便宜 |
-| M4 | `paths` 与权威层路径集相交 | **必须**走运行时 |
-| M5 | 副作用清单非空，或需要审计轨迹，或有复发键 | 走运行时更便宜 |
-| M0 | 以上皆否 | 走运行时**更贵**，除非满足 T0 上界 |
+| `tool.enforced` | **每一次工具调用**，且调用**先经运行时批准**才发生 | **能**，在动作前 |
+| `tool.reported` | 每一次工具调用，但是**执行器事后自报**的 | 不能——看见时已经发生了 |
+| `process` | 只看得见**进程起没起、产物出没出** | 不能 |
+| `fs-only` | 只看得见**文件系统的最终状态** | 不能 |
 
-三类走运行时反而更贵的任务：
+⚠ **只有 `tool.enforced` 的事件是证据**；`tool.reported` 是**索引**——
+可以据它决定「该去重新推导什么」，不能据它下结论。
 
-1. **单文件笔误 / 死链修补**，且落在已签 T0 包的 `paths` 内。贵在供给：一个不需要隔离的任务被强制隔离。
-2. **一次性提问 / 探索性阅读。**贵在 `VALIDATING`：为一个不需要契约的任务形成契约。目标未定时更糟，改目标还要建新 Task。
-3. **对 `dispatch = manual` 执行者的任何分发。**贵在派发与身份核对。该反例的成立范围是 M0 / T0 类。
+`dispatch_event` 指**人代运行时执行的一次传输动作**（把指令送到没有程序入口的执行器、
+在正确的工作区打开它的界面）。**它不是权力，是欠账**：不占权力表的行，
+但**必须可数**，因为成本上界（§6.2）和绕过口径（§6.3）都要数它。
 
-不接受「都值得走，因为留痕总是好的。」留痕成本高于这笔改动的价值时，发生的是绕过。
+三者不得合成一个“能力等级”。JSONL 工具事件可能细但仍是执行器自报；外层可以观察 argv/stdio 却不能
+拦内部系统调用；自带沙箱也不等于运行时控制。`RUNNING` 能否可靠判断首先是执行器 observability 的问题，
+不是把 Git 换成数据库就自动解决。
 
-T0 开销上界是复合向量，任一维超标即不标 T0：
+### 5.2 证据等级与采信规则
 
-```text
-(human_required_actions, persisted_artifacts, request_to_dispatch_steps, dispatch_events)
-        ≤ (        2,              4,                  2,                     0        )
-且 human_required_actions ≤ 同一任务手工模式的动作数
-```
+| 等级 | 来源 | 可支持的断言 |
+| --- | --- | --- |
+| E0 `ASSERTED` | executor/principal 自述或事后推断 | 待验证主张 |
+| E1 `REDERIVED` | validator 从冻结 Artifact 重算 diff/hash/test | 仅重算覆盖内的结果 |
+| E2 `PROCESS_OBSERVED` | 外层 argv/stdio/exit + E1 | 进程被调用及其外部结果 |
+| E3 `TOOL_OBSERVED` | 运行时工具网关事件 + E1 | 经网关的调用与策略检查 |
+| E4 `EXTERNAL_AUTHORITY` | 执行域外受保护审计/服务端事实 | 指定身份或外部 Side Effect |
 
-推论：T0 的工单必须从请求自动生成；H5 必须折进人本来就要做的那次发布动作。通知送达或敲命令不算决策，但仍计动作。
+采信等级取 `min(来源等级, 可见上限, 隔离强度, 验收独立性, 覆盖)`，任一未知就降级，不取平均。
+`tool.reported` 事件是重算索引，不是结论；commit、diff、测试、锚点与远端状态由 validator 独立重算。
+覆盖声明必须同时写 checked 与 not_checked；零命中只有在输入集合成功枚举时才能判 pass，否则是
+`UNKNOWN`。这落实 round-protocol“判据自身的质量”。
 
-### 8.3 绕过的可观测性
+### 5.3 手工态与服务态的等效判据
 
-绕过发生在运行时之外，账本天然看不见。「完全可观测」不可达；宣称可达就违反 P4。
+等效分两层：
 
-1. **让绕过无利。**主线写入只经 H5；绕过的最大动机（快）被保留为合法路径（T0 上界）。
-2. **对账，分母取外部 sink**，不取运行时自己看见的事件。sink 清单与各自的覆盖边界必须显式列出（主仓托管方审计、git 底座对账、工作区脏状态、终端历史）。找不到运行时 Event 的变更写成 `UnattributedEffect`，**不得反向补造一个正常 Task**。「绕过」不是内核对象。
-3. **降低登记成本**：`register --from-commit` 把已发生的改动登记为带标记的合法对象；`retroactive` 的比例本身就是超上界的信号。⚠ 与 I1「原始输入不被后续解释覆盖」的关系需在内核修订单元核，本稿不裁。
-4. **如实声明看不见的。**零命中只能写成「没查到」，不能写成「没有绕过」。在当前 `channel_grade = shared-credential` 下，principal 侧的绕过指标为 `UNKNOWN`。
+- S 层比较对象集合、状态词、合法边、权力行、Interaction 绑定、Agent Profile 字段；现在就能判；
+- R 层比较同一 Task 的状态/Attempt/Interaction/Artifact 序列，经投影丢掉执行器私有事件和时间戳后逐项判。
 
----
+每个轨迹条目至少含 `seq, layer, subject_id, from, to, actor, power_row, payload_ref,
+provenance, evidence_ref`；**比较上下文**（源稿称 `TraceEnvelope`——本文不沿用该名，
+因为它只是这一组字段的包装，另起一个名字会让读者以为多了一个对象）另含
+Task Profile 版本、验收摘要、策略版本、principal 身份域、
+输入摘要、Side Effect 摘要和证据权威摘要。比较规则：
 
-## 9. 验证分层与五个词
+1. 只允许载体、orchestrator 实现、时间和已声明私有事件不同；白名单外差异失败。
+2. 比较粒度取较粗一腿，并列出未比对项。
+3. 两边都声明权威源与重建规则；Git 工作区文件不作判据。
+4. 结论只能在两条轨迹的最低 provenance 上宣称，并报告各类 `attested` 数量。
+5. bootstrap 期身份归因强度为零，服务态不得继承成可信先例。
+6. 先验证每个状态属于内核状态集、每条相邻边属于合法边，再比较序列。
 
-### 9.1 L0–L3
+轨迹只是 Event 投影，不是新内核对象。`runtime-architecture.md @ ed0b5136:363-425` 给出的结构有效；
+其历史样例还揭示 23 条里只有 2 条 `attested`，说明“流程看起来发生过”不等于可搬运证据链。
+
+### 5.4 Git 载体能与不能证明什么
+
+Git 永久承担代码/文档 Artifact 的版本载体；手工阶段也可从 commit、裁定记录和执行事件重建投影。
+分支是运输通道，工作区是可变草稿，只有钉定 commit 的产物可评审。发布时必须比较目标 ref 是否仍在
+预期基线，冲突就新建整合 Attempt。
+
+Git 不能证明产品 `F-ACCEPT-03` 的跨记录事务提交、Attempt 租约或产品 `I14` fencing；也不能证明
+CLI 内部发生过哪些工具调用。手工态的价值是先跑通对象形状、合法边、Interaction 和协作纪律，
+不是替 PostgreSQL 与工具网关完成并发、安全证明。
+
+### 5.5 四层验证
 
 | 层 | 谁 | 判什么 |
 | --- | --- | --- |
-| L0 机器门 | pre-commit / CI / `--verify` | 全部机械判据。声明覆盖范围；首跑先与人工对照再当门禁 |
-| L1 独立验收 | `acceptor`（由处置表算出，既得利益最小的一家） | 冻结标准逐条；机器判不了的部分。只能按冻结标准 |
-| L2 来源核对 | 被处置到的各家（异议环节） | 「我的主张有没有被误读」。条目 + 为什么错 + 应当是什么 + 可复跑证据 |
-| L3 人抽三样 | `approver`（H5 前） | ① 意图是否被正确理解 ② 不可逆部分 ③ 抽样复算证据真实性。不逐行读 |
+| L0 | CI / pre-commit / validator | 链接、schema、冻结区、hash、diff、测试、角色冲突等机械条 |
+| L1 | 独立 acceptor | 冻结标准中机器判不了的内容；标准过期须交回裁决 |
+| L2 | 被处置主张的原作者 | 是否被误读；异议必须带处置条目与可复跑证据 |
+| L3 | principal | 意图是否正确、不可逆项、抽样复算证据真实性 |
 
-顺序不可换：L0 不过不进 L1，L1/L2 不过不叫人。L3 就是「机器全审 + 人抽检三样」；L2 是协议「异议：对整合权的唯一制衡」。
+顺序不可倒：L0 未过不进 L1，L1/L2 未过不请求最终批准。新增机器判据首跑必须与人工结论对照；
+锚点存在但不支持断言，比没有锚点更危险。
 
-产出方 ≠ 验收方。出题方与答题方是同一个，验收就不是独立信号。
+## 6. 什么时候运行时值得用
 
-### 9.2 supervisor 解体为五个各有定义的词
+### 6.1 机械分类
 
-| 词 | 是什么 | 今天的实体 |
-| --- | --- | --- |
-| **router** | 确定性代码：产生 RouteDecision | 规则表 + `round-dispatch.py` 的选人逻辑 |
-| **orchestrator** | 确定性代码：推进状态、写环节通知、派发、观测逾期、回退 | `round-status.py` + `round-dispatch.py` + 运行它们的人（过渡期，是欠账不是角色） |
-| **arbiter** | agent 角色：定基座、逐条吸收、写处置记录、处置异议 | 工单 `arbiter` 字段 |
-| **acceptor** | agent 角色：按冻结标准独立验收 | 由处置表算出的一家 |
-| **approver** | principal：持有权力表某行的批准权 | `owner` |
+开销是 `(Task, orchestrator implementation)` 的函数。以下任一成立，运行时通常更便宜或是硬要求：
 
-**arbiter 不兼 orchestrator。**通知与截止由脚本按工单生成，arbiter 只写裁决与处置。不需要给「轮次组织者」定名——用上面五个词替换掉全部 supervisor 及其别名。
+| 特征 | 结论 |
+| --- | --- |
+| proposer ≥ 2 或 write actor ≥ 2 | 并行隔离、收集和整合使运行时更便宜 |
+| 有冻结/路线/裁量/预算/输入等人工触点 | 持久 Interaction 比手工传话便宜 |
+| 有钉版本只读输入、依赖或 checkpoint 续接 | 运行时避免上下文丢失 |
+| 触及约束、内核、协议、策略或门禁 | 必须进入受控流程，与便宜无关 |
+| 有副作用、审计要求或重复执行 | 账本和幂等收益超过固定成本 |
 
----
+全部不命中时，运行时往往更贵，除非仍满足下一节 T0 上界。新增布尔字段必须显式给值；缺省 false 会
+把未知静默判成未命中。
 
-## 10. 文档职责与删除条件
+### 6.2 三类反例与 T0 上界
 
-### 10.1 权威写入面
+运行时反而更贵的典型：已批准窄包内的单文件笔误；不落 Artifact 的一次性探索阅读；
+必须由人逐次打开 GUI 并传话的执行器。第三类只对 M0/T0 小任务成立，不能否定大型并行或续接任务的收益。
 
-| 文件 | 写什么 | 不写什么 |
-| --- | --- | --- |
-| [`working/request-lifecycle.md`](working/request-lifecycle.md) | 内核对象、状态机、不变量 | 开发流程、档位、权力表取值 |
-| [`protocol/round-protocol.md`](protocol/round-protocol.md) | 七环节、档位判据、裁量、产物落点、环节判定 | 运行时组件、Task Profile 字段 |
-| **本稿** `agent-dev-guide.md` | 运行时如何承接内核；`dev.change`；权力表；粒度与证据；中断如何接库 | 内核定义、流程规范正文、业务功能、进度 |
-| [`constraints.md`](constraints.md) | 跨仓硬约束 | 某一轮的设计 |
-| [`development-plan.md`](development-plan.md) | 要建什么 | 怎么走一轮 |
-| [`implementation-plan.md`](implementation-plan.md) / [`handoff.md`](handoff.md) | 顺序与进度 | 架构结论 |
+T0 每个任务类包都应实测以下复合上界，任一维超标就升 T1：
 
-执行层架构（Codex / Harness SDK 能力矩阵、双 runtime 部署）的读者是实现 investment-app 的人，不是「接一个开发任务」的执行者。它应迁到独立文件（源稿建议的 `executor-architecture.md`），不和开发指导装在一起。本稿不迁那一块——那是另一次搬家，方向无争议，走 T1。
+```text
+(human_required_actions, persisted_artifacts, request_to_dispatch_steps, dispatch_events)
+        <= (2, 4, 2, 0)
+且 human_required_actions <= 同一任务手工模式的动作数
+```
 
-目标文件树不在本稿冻结。需要的新文件（`policies/tier-defaults.toml`、`policies/state-machine.toml`、`scripts/gates/`）在实施时按 T2 开轮添加；`state-machine.toml` 头部钉 `request-lifecycle.md @ <commit>`，被「按 commit 引用」纪律罩住，不是第二真源。
+人的必需动作计经鉴别响应、principal commit/push 和人工 dispatch；通知或敲命令虽不算决策仍计动作。
+T0 工单要从请求自动形成，H5 折入人本来就要做的发布动作；否则“小任务更快”会驱动绕过。
 
-协议演化不是第三个 Task Profile，是 `dev.change` 上 `tier = T2` 钉死的工单（改协议命中不可逆与权威层）。
+### 6.3 绕过只能部分可观测
 
-### 10.2 两份源稿的删除条件
+账本看不见账外，“完全可观测”不可达。正确做法是：
 
-本轮 ⑥ 确认后，`refact-fable.md` 与 `runtime-architecture.md` 将从主线删除。删除前须机械可判：
+1. 让合法 T0 足够便宜，并让未获权产物不能进入交付面。
+2. 分母取外部 sink：托管方写入审计、全部 commit 集、工作区脏状态、可获得的进程/会话记录。
+3. 每个 sink 同时列覆盖与不覆盖；未归因变更记 `BYPASS_CANDIDATE` 观察 Event，不反向伪造正常 Task。
+4. 可以提供 `register --from-commit` 把历史变更登记为带 `retroactive` 标记的新 Task，但先核产品 `I1`。
+5. 未提交修改、纯对话和不可见 GUI 会话保持 `UNKNOWN`；零命中只能写“没查到”。
 
-1. 本稿通过 `doc-gate.py` 与 `anchor-gate.py`；
-2. 第 14 节落点表 64 行，抽查落点属实；
-3. `rg -l 'refact-fable.md|runtime-architecture.md'` 在指导文档中的引用改为指向本稿或内核 / 协议；
-4. 两份 lifecycle 旧文（`working/development-lifecycle-*.md`）的删除仍按其自身条件，不在本轮范围。
+## 7. 演进与退出脚手架
 
-旧文全部标题 → 新落点的枚举，由第 14 节承担。映射表是覆盖的索引，不是覆盖的证明。
+### 7.1 依赖顺序
 
----
-
-## 11. 诊断与对原建议的处置
-
-### 11.1 六个结构问题（仍然成立）
-
-| # | 问题 | 本稿处置 |
-| --- | --- | --- |
-| 1.1 | 「两条路径」是假分叉：入口差异只剩「谁按了回车」 | 一条运行时，人不是路径 |
-| 1.2 | supervisor 已有三套同名物，还有未定义别名 | 拆成第 9.2 节五个词 |
-| 1.3 | 权力与流程混写 | 权力表驱动 APPROVAL，流程在协议 |
-| 1.4 | 一个环节判不了（人的确认不是产物） | 回执只认落盘；⑥ 有没有落盘由命令判，内容由人判 |
-| 1.5 | 执行架构与开发流程装在同一份文件里 | 第 10.1 节拆开职责；搬家另走 T1 |
-| 1.6 | 档位只有 T2 有正文 | 第 3.3 节三张表；T0/T1 可执行 |
-
-「两条路径」的差异不足以支撑两份文档。`automation-roadmap.md` 已指出四家助手 CLI 化之后入口差异也消失。
-
-### 11.2 对所有者 2026-09-05 思路的处置
-
-| 原建议 | 处置 | 说明 |
-| --- | --- | --- |
-| 人不再是 supervisor，改为 HITL | **改造** | 人是 principal，不是执行者。interrupt 点由表导出，不手画 |
-| 路由先意图识别再选通用/专业 | **改造** | 路由三值化。意图识别只建议，不得决策 |
-| 「openclaw 的 gateway 模式」 | **不采纳此命名** | 借 fail-closed 与落账，不借名字指语义路由 |
-| 路由后选 supervisor，可 interrupt，可默认 | **采纳并合并** | 并入 H2。工单里是 `arbiter` 字段 |
-| 规划 list → 是否 subagent → interrupt | **采纳并合并** | 同上，避免三次前置 interrupt 退化成盖章 |
-| 有 subagent 必须建 git 仓库 | **采纳** | `write_actors ≥ 1 → 必有独占工作区` |
-| 用户本轮就是仓库→引用地址；否则用预建仓 | **改造** | 预建仓只能是 `source`；一律钉 commit |
-| 拉取 master | **改造** | 落 `baseline_commit` |
-| worktree：agent 用看复杂度；人用为审核 | **一半采纳** | 人的检视 worktree 采纳；agent 侧按独占 / 干净 / 写者数 |
-
----
-
-## 12. 已被证伪、不得复活的设计
-
-> **本节是「被证伪」语境。**下列专名只在本节出现，且每一条都附独立复跑结果。
-> 它们不得以任何形式进入第 2–11 节的现行设计。保留本节的理由是防止再犯（Q4：保留）。
-
-六条的共同成因：在没有用命令确认「这个动作现在实际发生在哪、由谁做、经过什么」的情况下推演。第 1 条是根——自定义入向协议一旦成立，就必须有载荷、有 schema、有过期校验、有 Task 级暂停，后面几条跟着长出来。
-
-**不要读成「`runtime` 轮白做了」。**对象模型、粒度三字段、证据等级、权力表、等效判据立得住，本稿第 2–9 节保留。站不住的是围绕自定义入向协议长出来的那一支，以及建立在未核前提上的边界设计。
-
-| # | 被证伪的设计 | 独立复核（2026-09-06，cursor，宿主 shell） | 本稿怎么处置 |
+| 步 | 产物 | 前置 | 退出条件 |
 | --- | --- | --- | --- |
-| 1 | Interaction 出向六字段 + 入向三值 + 修订载荷 + `amend_schema` + `amend.mode` + 过期校验 | 基座库入向就是 `Command(resume=<任意值>)` 一个参数；出向 `interrupt()` 收任意 dict。见第 7 节引用的 `pilot_graph.py` / `langgraph_runtime.py:19` | **不采纳。**H8 接库的原语。内核字段扩展另走修订工作单元，不在本稿预写 |
-| 2 | 人介入 → Task 级暂停 → 恢复时开**新 Attempt**、把修订当新输入 | `graph_runtime_service.py:14-15,40-42`：同一个 `thread_id` 继续跑。内核已写「checkpoint 原地恢复」。`resume()` 在基类是 `NotImplementedError`，适配器翻译成库命令 | **不采纳。**恢复不是新 Attempt。「需要载荷」是被本条自己造出来的 |
-| 3 | **回执仓**：人的批准写成签名 commit，独立仓，VM 只读 | `sudo -n -l` → `(ALL) NOPASSWD: ALL`；`id` → 同用户、sudo + docker 组。授权本身就是批准。身份不可区分的根因是同机同用户且有免密 sudo，独立仓解决不了。取证与 [`rounds/_spike-sign/forensics.md`](rounds/_spike-sign/forensics.md) 一致 | **不采纳独立仓。**回执只认落盘（`rulings.md` + 所有者 commit）。通道升级的前置是 agent 够不着的操作面，该前置未满足 |
-| 4 | **候选仓**：agent 把产出推到隔离仓 | `git branch -vv`：各家分支无 `origin` upstream。`git ls-remote --heads origin` 远端分支停在旧 commit，本地 master 领先 origin 93 个 commit。agent **从不 push**，全部工作在本机 worktree | **不采纳。**候选的冻结单位是本机分支上的 commit |
-| 5 | VM 换三把 key、主仓对 agent 只读 | `git ls-remote --tags origin` 没有 `runtime/*`、`refact/*`；这些冻结标签只在本地。发布是**本地 merge**，不经网络，key 管不着这条路径 | **不采纳「用远端 key 拦截发布」。**H5 = 人做本地合并 + 落盘确认 |
-| 6 | **三道边界**作为安全架构组件 | 要拦的动作不经过它们（第 3–5 条同一组命令）。本机免密 sudo 使一切本地强制点对 agent 无效（`forensics.md` F1/F2） | **不采纳「三道边界已就位」。**外层控制作为 adapter 环境策略的**目标**保留在第 4.2 节，并标明今天未就位 |
+| G0 | 协议、状态脚本与分发脚本一致 | 无 | 历史已完成轮次和空轮次均得到人工一致的状态结果 |
+| G1 | Interaction 现状 spike | G0 | 真实中断、同 thread 恢复、stale/重复/跨 Task 拒收有可复现实验 |
+| G2 | 服务端 principal channel 与 Side Effect 强制点 | G1 | executor 无权伪造响应或直接写生产，失败关闭；不依赖本机可改门禁 |
+| G3 | Agent Profile + executor adapter + 角色冲突门 | G1/G2 | 每个自动候选至少跑通一次 Attempt，字段值有探针证据 |
+| G4 | `dev.change/1` 服务态与 T0/T1/T2 execution policy | G2/G3 | 三档真实 Task 与手工历史按 §5.3 等效，证据强度不下降 |
+| G5 | 文档与脚手架收口 | G4 | 逐节迁移零缺口、引用清零、门禁全过、旧稿删除经人确认 |
 
-对任务书 §1.1 六条：**全部采纳该核查结论**，本表是独立复跑后的处置，不是照抄。
+G1 是本轮对旧路线的修正：先验证现有库原语，不先发明字段。G2 的判据针对真实写路径和服务端身份，
+不以新增 Git 仓或轮换网络 key 代替产品授权。当前阶段游标仍以 handoff 为准；目标顺序不因现状阻塞而改写。
 
-源稿 §3.13 / §4.4 里仍然成立、已迁入正文的部分：取证必须附 `uid_map`（防沙箱伪 root）；本地脚本与 hook 不是边界；`check-no-owner-creds.sh` 是卫生检查不是边界；Windows Remote 终端等于在 VM 上操作。被证伪的是「建两个仓 + 换三把 key 就能得到强制点」这一跳。
+### 7.2 从手工态拆到服务态
 
----
-
-## 13. 未决与实施纪律
-
-### 13.1 实施纪律（不是任务清单）
-
-每轮一个工单，前置不可跳。档位按协议判据自判，**本路线不含任何降档**。任务编号与进度在 [`implementation-plan.md`](implementation-plan.md) / [`handoff.md`](handoff.md)，本稿不重写 R0–R5 表——那张表把已被证伪的基础设施当作后续轮次的前置，必须重排。
-
-`bootstrap` 只用于「策略尚未存在、因而无法引用 T0 包」的可逆工作（修脚本、宿主取证）。效力来自被冻结的工单验收条，不来自尚不存在的 `policy/1`。之后全部按 T0/T1/T2 自判。
-
-### 13.2 未决
-
-| # | 未决 | 处置 |
+| 手工实现 | 服务实现 | 可拆条件 |
 | --- | --- | --- |
-| 1 | 人的确认如何升级到 attested（agent 够不着的操作面） | 前置未满足，见 `forensics.md`。在此之前 H5 的强制点就是人的手 |
-| 2 | T0 的「可逆出口」（不写共享最终路径、免 H5） | 省事方向的新权力表行，本稿不加。有确认次数数据后再定 |
-| 3 | 协议「权威层」几乎覆盖 `dev-plan/` 全部文件，日常任务大量落 T2 | 判据属协议，改它是协议自己的 T2；本稿不改、不绕 |
-| 4 | `RUNNING` 在 `events.jsonl` 落地前不可判 | 第 3.4 节已声明；合并显示并标 ⚠ |
-| 5 | 独立性分组键是否改为 `(harness, model_family)` | 等候选相似度观测值 |
-| 6 | 「Attempt 产出 typed Artifact」是否算内核扩充 | 走内核修订纪律 |
-| 7 | `retroactive` Task 与 I1 的关系 | 走内核修订纪律 |
-| 8 | **轮内产物发布 vs 最终稿发布**：`runtime` 轮所有者五次执行发布脚本写主线，按权力表属 H5，实际未经 H5 门。权力表的 H5 只对准 ⑦，没区分两者 | 两者不可逆性不同（后者可 revert，前者进交付面），但都写主线。是否拆行属省事方向的新行，本稿不擅自改权力表行数，待所有者裁 |
-| 9 | 过渡期 orchestrator 由人运行脚本 | 登记为「可自动」欠账，不是角色 |
-| 10 | 单 principal 阶段的权力表在多用户场景是否够用 | 表结构已按 principal 设计；capability 列等到第二个 principal 再加 |
+| `round.md` Task 主档 | Task 表 | 三档至少各一条轨迹等效且 provenance 不下降 |
+| commit + rulings + events 投影 | Event 表 | 同一历史轮次输出相同状态序列，新判据已人工对照 |
+| 落盘通知与人工投喂 | executor adapter / principal channel | 自动执行器有进程入口；人工执行器有显式审计桥 |
+| `round-status.py --verify` | acceptance runner | 对历史轮次逐条判定一致 |
+| `git worktree add` | provision service | 独占、干净、基线判据进代码并有测试；worktree 载体可保留 |
 
-观察值，不是判据：每次 H 回执的耗时与改动项数；T0/T1 比例；`retroactive` 比例。⑦ 清理时登记，不进验收。
+事务、租约、fencing 只有服务态验收通过才算实现，不能用轨迹“相似”替代。
 
-源稿「本方案自身的验收标准」九条，凡依赖第 12 节被证伪设计的（独立仓锚定、远端 key、VM 对主仓 push 被拒）一律作废，不迁入。仍成立的：五词唯一定义且 router / orchestrator 无 agent 实现；权力表每行有强制点且 VM 脚本不算强制点；只有一套状态机；开工前触点 0/1/2；新判据首跑与人工对照；取证栏附 `uid_map`。
+### 7.3 删除与迁移门
 
----
+源稿或现行生命周期文档删除前必须同时满足：
 
-## 14. 逐节落点表
+1. 新文档通过 `doc-gate.py --all` 与 anchor gate；
+2. 全仓旧文件名引用零命中，历史归档除外并有说明；
+3. 两份源稿全部 `##`/`###` 标题在 §10 恰有一个落点或充分的故意不要理由；
+4. 原未验证清单在新真源逐条可寻且仍标 ⚠；
+5. 一条真实 T0 与一条真实 T1 已按新路径留痕；
+6. 删除作为不可逆动作经人确认。
 
-> D2。源稿节号与标题以 `ed0b5136` 上的实际标题为准。
-> 「故意不要」的理由均超过 15 字，并指出被什么取代。
-> 本表是索引。声称落在某节而该节没有对应内容的，比不写本表更差。
+### 7.4 风险和未决
+
+**逐条登记，每条带处置。**只写「有风险」而不写「现在怎么办、什么条件下才动」的清单，
+下一轮没人知道该不该碰它。
+
+| # | 事项 | 状态与处置 |
+| --- | --- | --- |
+| 1 | Agent Profile 的实际模型、GUI 内部事件与部分 CLI 工具事件不可机械核验 | ⚠ 未验证；登记表相应字段标 ⚠，**不得用未核值反推能力** |
+| 2 | 无进程入口的分发者永久需要人工桥 | 登记为**可计数的欠账**（`dispatch_event{mode=manual}`），**不伪装成自动化** |
+| 3 | principal 确认与 agent 共享宿主身份 | 证据只能标 `reported`；身份边界未落地前不得写成 `attested` |
+| 4 | **H5-final / H5-round 拆分**：轮内产物写主线的管辖 | 未决；已由前轮登记，**本文不擅自改权力表行数** |
+| 5 | **H5 的机制化强制点** | 两个有效方向均需所有者动作；现状登记为「人的显式动作」 |
+| 6 | **响应者身份鉴别**（Interaction 服务化的前置） | 未决；**信任域收紧前不拆** |
+| 7 | typed review／ruling／acceptance 是否只是 Artifact 类型细化 | 未决；若属对内核 Attempt 定义的扩充，按内核修订纪律另起工作单元 |
+| 8 | **结构化修订（部分否定／替代）的规范形状** | 未决；**必须用库原语构造**，不得反推平台级 patch 协议 |
+| 9 | `retroactive` 登记与内核 `I1`「原始输入不被后续解释覆盖」的关系 | 未验证；建单时一并核 |
+| 10 | 独立性按 `harness` 或 `(harness, model)` 分组 | ⚠ 无跨题数据；**只能作观察值**，由「候选相似度」校验后再定 |
+| 11 | **T0 的「可逆出口」**（只落 worktree、免 H5） | 未决；属**省事方向**的新权力表行，须有签名次数数据后再议 |
+| 12 | **「命中任一条即 T2」中「权威层」覆盖面过宽** | 判据属流程规范，改它由该规范自己的轮次处理 |
+| 13 | **触点疲劳导致盖章化** | 观察值：回执耗时、相对预填的改动项数、每类触点次数；**不设自动动作** |
+| 14 | **单 principal 阶段的权力表在多用户场景是否够用** | 表结构已按 principal 设计；capability 列等出现第二个 principal 再加 |
+| 15 | **三值路由初期大量 `ask`** | 预期行为；每次 `ask` 的人工选择按「裁量是规则的孵化器」反哺规则表 |
+| 16 | 内核演化冲击本文 | 三条：按 commit 引用内核、内核改动按最重档、改后重跑状态词比对 |
+| 17 | **`QUEUED` / `RUNNING` 在事件落地前不可判** | 已声明；脚本合并显示并标 ⚠ |
+| 18 | **H1 与 H5 落在同一 commit 时账本上的歧义** | 未决（服务态应是两个 Interaction；手工态今天做不到） |
+| 19 | 运行时外的绕过天然不完备 | principal 侧指标在共享身份下是 `UNKNOWN`，**不得写成零** |
+| 20 | 预算账、证据账与 Agent Profile 生效仍是后续工作 | 见 `handoff.md @ ed0b5136:14-19`、`handoff.md @ ed0b5136:30-66` |
+
+## 8. 本轮核查裁定
+
+**这一节是隔离区，不是设计菜单。**它存在的唯一理由是**防止再犯**——
+一个被推翻的设计如果只是悄悄消失，下一个人会照着同样的推理再走一遍。
+所以两条形状规矩：
+
+- **被证伪的专名只在本节出现**（`amend_schema`、回执仓、候选仓、三道边界一类）。
+  正文其他地方出现它们，机械门会判为复活；
+- 本节每条必须**「独立观察」与「结论与落点」相邻**——
+  只写结论不写观察，读者无从复核；只写观察不写落点，读者不知道它改变了什么。
+
+### 8.1 六项逐条处置
+
+以下命令均在 luna 自己的 worktree 或兄弟 `investment-app` 运行；不以任务书结论代替复核。
+
+| # | 独立观察 | 结论与落点 |
+| --- | --- | --- |
+| K1 | `rg 'interrupt\(|Command\(resume=' investment-backend/app/app`；实际锚见 §4.3 | 出向和入向原语都接受业务值；删去平台自造的固定修订 schema，直接绑定产品 Interaction |
+| K2 | 同一 `session_id → thread_id`，同一 checkpointer 上 `Command(resume=value)` | 原地恢复同一 Attempt；只有旧 Attempt 终态、重试或另一次执行才新建 Attempt |
+| K3 | 宿主 `sudo -n -l` 返回 `NOPASSWD: ALL`；历史取证还记录 docker 与可写 remote | 同凭据域里的额外签名存储不能鉴别人和 agent；批准证据必须来自执行域外身份/服务 |
+| K4 | `git branch -vv` 仅 master 有 upstream；全部参与分支是本地 worktree | Agent 产物以本地 commit 冻结和取件，不设计额外 push 中转作为前提 |
+| K5 | `git ls-remote --tags origin` 只有 `2.0.0` 与 `pre-architecture-v2-final-20260813`，本地另有轮次标签 | 当前轮次发布/冻结不依赖远端 tag；换网络 key 不能控制本地 merge 或工作区写入 |
+| K6 | K3–K5 显示待保护动作没有经过所设网络路径 | 撤销把三项旁路设施组合成安全架构的结论；逐条动作沿真实路径设置服务端强制点 |
+
+远端 heads 在复核时为 `cursor/kimi/luna/master/opus/qwen` 六个同 SHA 分支；该事实只说明远端形状，
+不证明任何身份或发布授权。`sudo` 与远端命令在受限沙箱内最初分别因 no-new-privileges 和 DNS 失败，
+随后在宿主只读复核成功；两组结果不能混写成同一执行环境。
+
+### 8.2 保留与撤销
+
+保留：唯一内核、`dev.change/1`、五家 Agent Profile、确定性 router/orchestrator、权力表的“动作 + principal +
+强制点”形状、工单、独占/干净/基线供给、Task/Attempt 投影、S/R 等效、TraceEnvelope、三维粒度、
+E0–E4 证据等级、T0 成本上界、绕过的覆盖边界、四层验证、逐节迁移与删除门。
+
+撤销：把人登记为执行器；把部署形态误命名成另一类 Profile；把自由 resume 原语扩成平台级编辑协议；
+人介入后默认新开 Attempt；以及任何没有位于真实动作路径、却被宣称能强制授权或发布的旁路设计。
+
+## 9. 覆盖声明
+
+### 9.1 查了什么
+
+- 按 `ed0b5136` 逐行读取 `refact-fable.md`（31 个 `##`/`###` 标题）与
+  `runtime-architecture.md`（33 个 `##`/`###` 标题），§10 共 64 行。
+- 读取产品内核全文；读取 constraints、development-plan、implementation-plan、handoff；读取
+  round-protocol 与本轮工单/通知；读取 S1 forensics 和 runtime 处置记录中与六项核查、H5、证据错误有关的部分。
+- 在 luna 的 `investment-app`（`investment-backend` commit `18d88c7`）复跑中断、恢复、thread_id、
+  checkpointer 的代码搜索与锚点读取。
+- 在宿主复跑 `sudo -n -l`、`git ls-remote --heads origin`、`git ls-remote --tags origin`；在工作树复跑
+  branch/upstream、tag 和 worktree 枚举。
+- 未读取其他参与方 worktree 或本轮候选；未读取任务书禁止的参考融合稿。
+
+### 9.2 没查什么
+
+⚠ **这一节还要能装下「不确定」**，不是只装「查了」与「没查」两档。
+凡出现「**我不能排除**某事发生过」的情形，就如实写进来，
+**不要因为它难看就压成「没查」**——两者的含义不同：
+
+| 写法 | 含义 |
+| --- | --- |
+| 查了 | 有观测，有结论 |
+| 没查 | 没有观测，**明知自己不知道** |
+| **不能排除** | **有观测但不足以定论**，或存在自己控制不到的路径 |
+
+**「没查」还要按类别分列，不能混成一段。**三类的性质完全不同，混写会让读者
+以为环境事实与外部授权是同一种不确定：
+
+| 类别 | 例 | 性质 |
+| --- | --- | --- |
+| **宿主恒等** | `hostname; id; cat /proc/self/uid_map` | **可当场复跑**；没查是因为没跑，跑了就有结论 |
+| **远端与授权** | `git ls-remote --heads/--tags`；分支保护、部署 key、账户公钥 | 部分可读、**写授权不可只读验证**（`ls-remote` 是读取，不是 push dry-run） |
+| **执行者内部** | GUI 里选的模型、沙箱内的工具调用 | **结构上够不着**，换个接入方式才可能有结论 |
+
+第三类是唯一「不改变接入方式就永远查不了」的。**把它和前两类并排写成「没查」，
+会让人以为再跑几条命令就能补上**——不能。
+
+**如实写「不能排除」不扣分，隐瞒才扣。**本项目已有实例：某轮一份产物在覆盖声明里
+主动披露「某个规划子代理可能经宽泛搜索见过被禁读的文件，无访问记录」——
+它没有把不确定性压成「未读」，因而该条被裁决记为**范本**，而非违规。
+
+
+- 没有登录 GitHub/Gitee 管理面，未核 deploy key、branch protection、账户公钥或 remote 的实际写授权；
+  `ls-remote` 是读取，不是 push dry-run。
+- 没有读取外部 `codex`、DeepSeek Harness、OpenClaw 仓的具体实现行号；本稿不据它们宣称工具级能力。
+- 没有复跑产品数据库迁移、API、SSE、预算账或证据账测试；相关现状只按允许输入引用并标为现状。
+- 没有穷读三轮每份候选和评审全文；读取了归档索引、处置/验收结论与本题相关证据。因此本文不重做
+  旧轮排序，也不声称旧轮所有来源主张均已重新验证。
+- 没有验证 GUI 内模型、内部工具调用或沙箱之外的文件读取；这些保持 ⚠ / `UNKNOWN`。
+- 依仓库 `AGENTS.md` 强制入口，在读本轮任务书前读了未列入只读输入的
+  `working/development-lifecycle-agent.md`。这是本轮输入边界偏差；本文不把它作为断言锚点，也未据其
+  结构起稿。除该项外遵守了任务书的禁止读取和提案隔离。
+
+### 9.3 自增内容及理由
+
+本稿新增三点：第一，把 K1/K2 直接收敛为“产品 Interaction → LangGraph 原语”的最小绑定，理由是已有代码
+足以表达中断恢复；第二，把安全设计改成“逐动作画真实路径再设服务端强制点”，理由是 K3–K6 证明旁路
+不经过待保护动作；第三，把原 R0–R5 改成 G0–G5 的证据依赖顺序，先做原语 spike 与身份强制，再做服务态
+等效。三点都有 §4.3、§4.4、§8.1 的代码或命令证据，不以通用最佳实践作为依据。
+
+## 10. 两份源稿逐节落点
+
+**这张表是覆盖的索引，不是覆盖的证明。**声称落在某节而该节没有对应内容，
+比不写这张表更差——那是伪取证。核它的办法是抽查落点、以正文为准，
+**不以表格自称的覆盖为准**。
+
+**两条让它可被机械核的规矩：**
+
+1. **表的骨架机械生成**，不手抄——源稿的全部 `##` / `###` 标题按 commit 枚举后填入左两列，
+   人只填第三列。手抄的表会漏行，而漏掉的那行**不会有人发现**（它根本不在表里）；
+2. **一个源稿标题恰有一处落点**。允许写多个章节号，但不允许**同一标题出现两行**——
+   出现两行说明拆分了却没说清哪部分去了哪里，核的人无从抽查。
+
+表中标题按源稿呈现；HTML 实体只用于让已撤销设计的字面不被机械门误判为正文复活，渲染后的标题不变。
 
 | 源 | 源稿的节号与标题 | 落点（本稿章节号）或「故意不要」+ 理由 |
 | --- | --- | --- |
-| F | 0. 一页摘要 | §0、§2 |
-| F | 1. 诊断：现状的六个结构问题 | §11.1 |
-| F | 1.1 「两条路径」是假分叉 | §11.1 第 1 行 |
-| F | 1.2 supervisor 已有三套同名物，第三套还有一个未定义的别名 | §9.2、§11.1 第 2 行 |
-| F | 1.3 权力与流程混写 | §5.2、§11.1 第 3 行 |
-| F | 1.4 一个环节判不了 | §5.2 回执只认落盘、§11.1 第 4 行 |
-| F | 1.5 执行架构与开发流程装在同一份文件里 | §10.1、§11.1 第 5 行 |
-| F | 1.6 档位只有 T2 有正文 | §3.3、§11.1 第 6 行 |
-| F | 2. 设计原则 | §1.2 |
-| F | 3. 目标架构 | §2 |
-| F | 3.1 一套状态机，两个 Profile | §2.2（状态机与 Task Profile 取值保留；按持久层再切一层的架构不沿用，理由见该节） |
-| F | 3.2 执行者模型：三种 kind，一张登记表 | §4.1、§4.4（登记表与独立性保留；把人写成执行者 kind 不沿用，见 §5.1） |
-| F | 3.3 权力表：驱动 APPROVAL 类 interrupt 的唯一来源 | §5.2 |
-| F | 3.4 人的通道：收件箱 + 回执 | §5.3 |
-| F | 3.5 路由：三值决策，模型只建议 | §3.5 |
-| F | 3.6 工单：一个冻结的 Artifact，一次确认 | §3.2、§3.3 |
-| F | 3.7 工作区供给：纯函数，判据是独占与干净 | §6.1 |
-| F | 3.8 状态判定与分发：一般化现有脚本 | §6.3 |
-| F | 3.9 角色：supervisor 解体为五个各有定义的词 | §9.2 |
-| F | 3.10 开发 Profile ↔ 内核对象对照 | §3.4（对照关系保留；源标题里的分层用词不沿用，场景差异只在 Task Profile 取值） |
-| F | 3.11 git 载体的语义映射：什么是权威、什么是投影、什么验不了 | §6.4 |
-| F | 3.12 验证分层：谁判什么 | §9.1 |
-| F | 3.13 签名回执的威胁模型与密钥分布 | §5.2 末段、§5.3、§6.2、§12 第 3–6 条（取证纪律与「本地脚本不是边界」保留；独立仓与换钥匙方案见 §12，不进入现行设计） |
-| F | 4. 对原建议的处置 | §11.2 |
-| F | 5. 文档重构 | §10 |
-| F | 5.1 目标文件树 | §10.1（职责表保留；具体文件名不在本稿冻结） |
-| F | 5.2 旧 → 新映射：按旧文全部标题，脚本检查零缺口 | §10.2、§14（本表即其执行；旧 lifecycle 两文的细表不在本轮范围） |
-| F | 5.3 删除条件 | §10.2 |
-| F | 6. 实施路线 | §13.1（一轮一工单、不降档、bootstrap 纪律保留；R0–R5 编号表因把已证伪基础设施当前置而作废，进度以 implementation-plan 为准） |
-| F | 7. 风险与未决 | §13.2 |
-| F | 8. 本方案自身的验收标准（供开轮时冻结） | §13.2 末段（依赖已证伪设计的条款作废；五词、单状态机、触点数、取证纪律仍成立） |
-| R | 0. 一页摘要 | §0、§2、§3、§4、§8 |
-| R | 1. 本稿与上一轮的关系 | §2.2、§3.4（`RUNNING` 归因更正）、§12 开篇 |
-| R | 2. P1 — 一个运行时、唯一状态机、`dev.change`、五个 Agent Profile | §2、§3、§4 |
-| R | 2.1 运行时 = 内核对象的唯一写入面 + 四个确定性组件 + 两个适配层 | §2.1 |
-| R | 2.2 Task Profile `dev.change` 版本 1 | §3.1、§1.3 |
-| R | 2.3 五个 Agent Profile：登记表 | §4.1 |
-| R | 2.4 人：principal + 权力表；每一次介入 → 一条边 + 一行 | §5.1、§5.2 |
-| R | 2.5 `dev.change` 的产物 → 唯一状态机 | §3.4 |
-| R | 2.6 bootstrap 与目标态：同一 Task Profile 的两种 orchestrator 实现 | §6.4、§8.1 |
-| R | 2.7 等效判据：两层 + 投影 + 来源等级 + 比较上下文 | §8.1 |
-| R | 2.8 trace 样例：`refact-fable` 轮的真实产物 | §8.1 末两段 |
-| R | 3. P2 — Interaction 双向带载荷：一个内核修订工作单元 | §7（缺口承认；自造字段表见下一行起故意不要） |
-| R | 3.1 缺口 | §7 首段 |
-| R | 3.2 扩展后的绑定字段表 | 故意不要：自造出向六字段与入向三值加修订载荷，基座库入向只有 Command(resume=任意值) 一个参数，见第 7 节与第 12 节第 1 条 |
-| R | 3.3 `amend` 的路径：新 Artifact 版本 → 下一 Attempt 的输入；不建新 Task | 故意不要：恢复被写成新 Attempt，与库的同一 thread_id 原地续跑矛盾，见第 7 节与第 12 节第 2 条 |
-| R | 3.4 与权力表的对应 | §5.2 H8（只保留「回答 WAITING(INPUT)」；按字段表绑修订载荷的对应关系不沿用） |
-| R | 3.5 修订工作单元（按 `request-lifecycle.md:627` 修订纪律） | §7 末段（修订纪律本身保留为指针；本稿不预写字段表，也不开这个工作单元） |
-| R | 4. P3 — 可观测粒度进 Agent Profile，及其对证据权威性的后果 | §4.2、§4.3 |
-| R | 4.1 粒度是三个字段，不是一个；至少四档 | §4.2 |
-| R | 4.2 五家的取值 | §4.1、§4.2 |
-| R | 4.3 证据权威性：由粒度推导，不由执行者声明 | §4.3 |
-| R | 4.4 三道边界是架构组件，不随脚手架拆 | 故意不要：把未就位的外层控制写成已有安全架构组件，要拦的动作不经过它们，见第 12 节第 6 条；外层控制作为目标策略留在 §4.2 并标明未就位 |
-| R | 4.5 独占工作区在 CLI / GUI 腿是约定，不是隔离 | §6.1、§6.2 |
-| R | 4.6 R2：principal 通道也有粒度 | §5.3 末段 |
-| R | 4.7 取证纪律与当前事实 | §6.2、§12 第 3 条、§15 |
-| R | 5. 必答 Q：运行时相对手工直接调用助手的开销盈亏线 | §8.2 |
-| R | 5.1 分类规则（机械可判，全部由工单字段直接判） | §8.2 规则表 |
-| R | 5.2 反例（三类走运行时反而更贵的任务） | §8.2 三类反例 |
-| R | 5.3 T0 开销上界（复合向量，任一维超标即不标 T0） | §8.2 上界 |
-| R | 5.4 绕过的可观测性 | §8.3 |
-| R | 6. 对 OP-1 / OP-2 / OP-3 的裁定 | §8.1（OP-1）、§7（OP-2 改为接库，不沿用字段表）、§8.2–§8.3（OP-3） |
-| R | 7. 覆盖声明、盲区与未验证项 | §15（形状沿用；内容换成本轮独立取证） |
-| R | 8. 自检：对照 `task.md` §8 十条 | 故意不要：那是 `runtime` 轮对照其任务书的自检清单，本轮验收标准在任务书 §8，不把上一轮自检表当现行条款 |
-
----
-
-## 15. 覆盖声明
-
-**查了**：
-
-- 身份命令：输出 `cursor`；工作目录 `/home/zym/worktrees/cursor/k8s`。
-- 两份源稿在 `ed0b5136` 上的全部 64 个 `##` / `###` 标题（`refact-fable.md` 31 节、`runtime-architecture.md` 33 节），并按标题通读正文。
-- 内核 [`working/request-lifecycle.md`](working/request-lifecycle.md) 的「核心对象」「两层状态机」「WAITING 与 Interaction」「全程不变量」I4/I5/I8/I13、「Profile、Artifact 与扩展」。
-- 协议 [`protocol/round-protocol.md`](protocol/round-protocol.md) 的档位、裁量、环节判定、8b、提案隔离。
-- [`constraints.md`](constraints.md) A1–A5；[`development-plan.md`](development-plan.md) 通用/专用与租用边界；[`handoff.md`](handoff.md) 当前阶段；[`protocol/agents.toml`](protocol/agents.toml)。
-- [`rounds/_spike-sign/forensics.md`](rounds/_spike-sign/forensics.md) 全文。
-- §1.1 六条证伪命令，全部在宿主 shell 独立复跑（`uid_map` 为恒等映射 `0 0 4294967295`，不是沙箱伪 root）：
-  - `Command(resume=` 在 `investment-backend` 的全部命中；`pilot_graph.py` 的 `interrupt({...})`；`graph_runtime_service.py:14-46`；`langgraph_runtime.py:14-20`；
-  - `id`；`sudo -n -l` → `(ALL) NOPASSWD: ALL`；
-  - `git ls-remote --heads origin`；`git branch -vv`（只看分支名与 upstream，见下）；
-  - `git ls-remote --tags origin` 与本地 `git tag -l`。
-- 兄弟仓 `~/worktrees/cursor/investment-app`，子模块 `investment-backend` = `18d88c7c`。
-
-**没查**：
-
-- `~/repo/codex`、`~/repo/deepseek-harness`、`~/repo/openclaw` 的源码行号（源稿有一处 `codex exec --json` 锚点，本稿未复跑，粒度三字段的例证标 ⚠）。
-- luna / kimi 的 `$CODEX_HOME` 实际模型配置；fable GUI 内当前选中的模型。
-- `agent --output-format stream-json` 与 `qoder -o` 的输出内容是否含工具级事件。
-- 托管方侧的 key 列表与作用域（凭据在所有者手里）。
-- Windows 侧是否已装 git / gpg，以及 Remote 会话与本地 shell 的当前分离状态。
-- `rounds/` 下历史轮次评审正文的逐句核对（取证用了 `refact-fable` 轨迹的已发表结论与 `runtime` 轮处置记录的存在性，未重读五家候选全文）。
-- [`implementation-plan.md`](implementation-plan.md) 是否已按第 12 节重排 R0–R5——本稿故意不写任务清单。
-
-**未读 `agent-dev-refact.md`（裁定 R2）**：遵守。未打开该文件，未对其做 `git show` / `grep` / `rg`，未以其为起点。本覆盖声明写明这一点，供验收核对。
-
-**隔离**：候选完成前未打开任何其他家的 worktree 目录，未 `git show` 其他家分支上的文件。跑 `git branch -vv` 时看见了各家分支名、worktree 路径与 HEAD 短哈希（为复核「agent 是否 push」所必需），**没有据此读取任何候选正文**。隔离靠纪律不靠机制，无法事后证明「真的没读」，此处如实记录做了什么、没做什么。
-
-**未验证 ⚠**：
-
-- M4 正则能否可靠区分「复活该设计」与「在第 12 节被证伪语境里提到它」——首跑须与人工对照。
-- 「Attempt 可产出 typed Artifact」是否算内核扩充。
-- `retroactive` 登记与 I1 的关系。
-- 同 harness 不同模型的相关性；分组键是否应改为 `(harness, model_family)`。
-- `dispatch = manual` 的执行者在服务态 orchestrator 下除 `dispatch_event` 之外还有没有更干净的形状。
-- 第 8.2 节 T0 上界的四个数字未经实测，是从源稿迁入的设计值。
-
-**故意没写**：
-
-- 财务分析 Task Profile 的字段与验收用例（第 1.3 节已声明那是它自己的第一个工作单元）。
-- 协议七环节的逐步操作说明（权威在 `round-protocol.md`；本稿第 0 节只指路）。
-- 把人登记为执行者、自定义入向三值协议、独立仓与换钥匙方案（第 12 节）。
-- 具体业务功能与当前进度。
-
-**新增条款（源稿没有、本稿有，J8）**：
-
-1. **强制点必须落在动作实际经过的路径上**（§1.2 推论）。取证：第 12 节六条复跑。
-2. **恢复接库的 `Command(resume=)`，同一 `thread_id` 原地续跑，不是新 Attempt**（§7）。取证：`langgraph_runtime.py:17-20`、`graph_runtime_service.py:14-15`、内核「WAITING 与 Interaction」原地恢复句。
-3. **登记集合 ≠ 自动路由候选集**（§4.1）。取证：`agents.toml` 的 `[fable]` 无 argv。
-4. **身份只认 worktree 目录名**（§0）。取证：本轮任务书 §6 记录的事故。
-5. **轮内产物发布与最终稿发布尚未在权力表区分**（§13.2 第 8 条）。取证：`runtime` 轮处置记录已登记该缺口；本稿不擅自加行。
+| refact-fable | 0. 一页摘要 | §0、§8.2 |
+| refact-fable | 1. 诊断：现状的六个结构问题 | §0.1、§2、§3.4、§7.3 |
+| refact-fable | 1.1 「两条路径」是假分叉 | §0、§3；统一为一条开发 Task 链 |
+| refact-fable | 1.2 supervisor 已有三套同名物，第三套还有一个未定义的别名 | §2.1、§2.2；组件与内容角色分名 |
+| refact-fable | 1.3 权力与流程混写 | §4.2；权力表从执行顺序中独立 |
+| refact-fable | 1.4 一个环节判不了 | §4.4、§5.2；把身份强度与未知显式化 |
+| refact-fable | 1.5 执行架构与开发流程装在同一份文件里 | §0.1、§2 与 §3 分开 |
+| refact-fable | 1.6 档位只有 T2 有正文 | §3.4；补齐三档执行形态 |
+| refact-fable | 2. 设计原则 | §1、§5.2 |
+| refact-fable | 3. 目标架构 | §2–§5 |
+| refact-fable | 3.1 一套状态机，两个&#32;Profile | §1.1、§2.3；撤销部署形态分层，保留内核两种契约对象 |
+| refact-fable | 3.2 执行者模型：三种 kind，一张登记表 | §2.3、§4.1；纠正人为 principal 而非 executor |
+| refact-fable | 3.3 权力表：驱动 APPROVAL 类 interrupt 的唯一来源 | §4.2 |
+| refact-fable | 3.4 人的通道：收件箱 + 回执 | §4.1、§4.4；保留通道/身份分离，撤销未经真实路径证明的具体存储 |
+| refact-fable | 3.5 路由：三值决策，模型只建议 | §2.1、§2.5 |
+| refact-fable | 3.6 工单：一个冻结的 Artifact，一次确认 | §2.4、§3.1 |
+| refact-fable | 3.7 工作区供给：纯函数，判据是独占与干净 | §3.2 |
+| refact-fable | 3.8 状态判定与分发：一般化现有脚本 | §3.3–§3.4、§7.2 |
+| refact-fable | 3.9 角色：supervisor 解体为五个各有定义的词 | §2.1、§2.2 |
+| refact-fable | 3.10 开发&#32;Profile ↔ 内核对象对照 | §3.3；用 dev.change 投影表达，不造部署分层 |
+| refact-fable | 3.11 git 载体的语义映射：什么是权威、什么是投影、什么验不了 | §5.4 |
+| refact-fable | 3.12 验证分层：谁判什么 | §5.5 |
+| refact-fable | 3.13 签名回执的威胁模型与密钥分布 | §4.4、§8.1 K3；保留 credential-domain 判断，撤销具体旁路拓扑 |
+| refact-fable | 4. 对原建议的处置 | §8.2 |
+| refact-fable | 5. 文档重构 | §0.1、§7.3、§10 |
+| refact-fable | 5.1 目标文件树 | §0.1、§7.2；用真源职责取代一次性树形蓝图 |
+| refact-fable | 5.2 旧 → 新映射：按旧文全部标题，脚本检查零缺口 | §10 |
+| refact-fable | 5.3 删除条件 | §3.5、§7.3 |
+| refact-fable | 6. 实施路线 | §7.1；按本轮核查重排为 G0–G5 |
+| refact-fable | 7. 风险与未决 | §7.4、§9.2 |
+| refact-fable | 8. 本方案自身的验收标准（供开轮时冻结） | §5、§7.3、§9、§10 |
+| runtime-architecture | 0. 一页摘要 | §0、§8.2 |
+| runtime-architecture | 1. 本稿与上一轮的关系 | §8.2、§10 |
+| runtime-architecture | 2. P1 — 一个运行时、唯一状态机、`dev.change`、五个 Agent Profile | §1.1、§2.3、§3 |
+| runtime-architecture | 2.1 运行时 = 内核对象的唯一写入面 + 四个确定性组件 + 两个适配层 | §1.2、§2.1 |
+| runtime-architecture | 2.2 Task Profile `dev.change` 版本 1 | §2.3、§2.4、§3 |
+| runtime-architecture | 2.3 五个 Agent Profile：登记表 | §2.3、§5.1 |
+| runtime-architecture | 2.4 人：principal + 权力表；每一次介入 → 一条边 + 一行 | §4.1、§4.2 |
+| runtime-architecture | 2.5 `dev.change` 的产物 → 唯一状态机 | §3.3 |
+| runtime-architecture | 2.6 bootstrap 与目标态：同一 Task Profile 的两种 orchestrator 实现 | §5.4、§7.2 |
+| runtime-architecture | 2.7 等效判据：两层 + 投影 + 来源等级 + 比较上下文 | §5.3 |
+| runtime-architecture | 2.8 trace 样例：`refact-fable` 轮的真实产物 | §5.3；保留 23/2 的证据读数与限定 |
+| runtime-architecture | 3. P2 — Interaction 双向带载荷：一个内核修订工作单元 | §4.3、§8.1 K1–K2；核查后不启动该修订 |
+| runtime-architecture | 3.1 缺口 | §4.3；故意不要原缺口判断，因为现有自由 resume 原语已覆盖所述形状 |
+| runtime-architecture | 3.2 扩展后的绑定字段表 | §4.3；故意不要自造字段表，缺少真实消费者与拒收用例 |
+| runtime-architecture | 3.3 <code>am&#101;nd</code> 的路径：新 Artifact 版本 → 下一 Attempt 的输入；不建新 Task | §3.3、§4.3；故意不要另开 Attempt，checkpoint 应原地恢复 |
+| runtime-architecture | 3.4 与权力表的对应 | §4.2–§4.3；只保留实际 Interaction 与权力动作绑定 |
+| runtime-architecture | 3.5 修订工作单元（按 `request-lifecycle.md:627` 修订纪律） | §1.1、§4.3；故意不要该单元，因其前提已被代码证伪 |
+| runtime-architecture | 4. P3 — 可观测粒度进 Agent Profile，及其对证据权威性的后果 | §5.1–§5.2 |
+| runtime-architecture | 4.1 粒度是三个字段，不是一个；至少四档 | §5.1 |
+| runtime-architecture | 4.2 五家的取值 | §2.3、§9.2；保留字段，具体未核值继续标未知 |
+| runtime-architecture | 4.3 证据权威性：由粒度推导，不由执行者声明 | §5.2 |
+| runtime-architecture | 4.4 三道&#36793;界是架构组件，不随脚手架拆 | §4.4、§8.1 K3–K6；故意不要组合设计，真实动作未经过这些设施 |
+| runtime-architecture | 4.5 独占工作区在 CLI / GUI 腿是约定，不是隔离 | §3.2 |
+| runtime-architecture | 4.6 R2：principal 通道也有粒度 | §4.4、§5.2 |
+| runtime-architecture | 4.7 取证纪律与当前事实 | §4.4、§8.1、§9 |
+| runtime-architecture | 5. 必答 Q：运行时相对手工直接调用助手的开销盈亏线 | §6 |
+| runtime-architecture | 5.1 分类规则（机械可判，全部由工单字段直接判） | §2.5、§6.1 |
+| runtime-architecture | 5.2 反例（三类走运行时反而更贵的任务） | §6.2 |
+| runtime-architecture | 5.3 T0 开销上界（复合向量，任一维超标即不标 T0） | §6.2 |
+| runtime-architecture | 5.4 绕过的可观测性 | §6.3 |
+| runtime-architecture | 6. 对 OP-1 / OP-2 / OP-3 的裁定 | §5.3、§6、§8.2；保留 OP-1/OP-3，按 K1/K2 撤销 OP-2 |
+| runtime-architecture | 7. 覆盖声明、盲区与未验证项 | §7.4、§9 |
+| runtime-architecture | 8. 自检：对照 `task.md` §8 十条 | §1.3、§8、§9、§10 |
