@@ -350,7 +350,123 @@ Harness 的 server→client「是死能力」。所以 `serve_requests` 在 Harn
 
 ---
 
-## 9. 未解决 / 下次接着看
+## 9. 同一个 codex，**七个接入面**——选哪个决定能力，不是决定风格
+
+⚠ **本节全部来自 `codex --help` 与仓内源码（钉版 `7d6f808b`），未实跑。**
+
+### 9.1 面的清单
+
+`codex --help` 的子命令里，与「被程序驱动」相关的有这些：
+
+| 面 | 起法 | 协议 / 输出 | server→client 请求 |
+| --- | --- | --- | --- |
+| **交互 TUI** | `codex` | 终端文本 on pts | 有（**问的是人**） |
+| **一次性** | `codex exec` | 人读文本 | ⚠ **无** |
+| **一次性 + 结构化** | `codex exec --experimental-json` | JSONL 事件流 | ⚠ **无**（单向） |
+| **app-server** | `codex app-server --listen stdio://` | JSON-RPC（**无 `jsonrpc` 字段**） | ⚠ **九种**（§3） |
+| **MCP 服务端** | `codex mcp-server` | MCP over stdio | 按 MCP 语义 |
+| **MCP 客户端** | `codex mcp add/list/…` | 它去调别人 | — |
+| **插件** | `codex plugin add/list/…` | 进程内扩展（§9.3） | — |
+
+另有 `exec-server`、`remote-control`、`agents`（共享的本地 app-server daemon）、`review`、
+`sandbox`、`apply`、`resume` / `fork` / `queue` —— ⚠ **均未查**。
+
+### 9.2 ⚠⚠ 两个官方 SDK 走的是**两个不同的面**
+
+```
+Python SDK     → codex app-server --listen stdio://    （client.py:252）
+TypeScript SDK → codex exec --experimental-json        （sdk/typescript/src/exec.ts:92）
+```
+
+复核：`rg 'app-server' sdk/typescript/src/` **零命中**；`rg '"exec"' sdk/python/src/` **零命中**。
+**两条路互不相交。**
+
+| | Python SDK | TypeScript SDK |
+| --- | --- | --- |
+| 子命令 | `app-server` | `exec --experimental-json` |
+| 线路 | JSON-RPC，**双向** | JSONL 事件流，**单向** |
+| 能收审批请求吗 | ⚠ **能**（九种） | ⚠ **不能** |
+| 能拦工具调用吗 | 能（`DynamicToolCall`） | 不能 |
+| 体量 | 72 个 `.py` | 24 个 `.ts` |
+
+⚠⚠ **所以「走 SDK 就能接审批」这句话对 Python 成立、对 TypeScript 不成立。**
+两个都是官方 SDK，同一个产品，**能力不同**。
+
+⚠ **这与 `findings.md` F-4 是同一个形状的第二个实例**：
+F-4 是「Harness 没有 HITL」把包级约束写成产品级结论；
+本条是「SDK 有审批」把**某一个 SDK** 的能力写成 **SDK 这个类别**的能力。
+**通则应当是：凡「某执行者支持/不支持 X」，必须写明是在哪个接入面上。**
+
+⚠ **对本项目的直接后果**：`agent-dev-guide.md` §2.7「交互批准」行的 Codex 侧写
+「可由 approval handler 接请求」——**该行未指明是哪个 SDK / 哪个子命令**。
+若将来有人按 TypeScript SDK 实施，会发现接不到，而文档看起来是支持的。
+
+### 9.3 插件：**进程内**的第三条拦截路径
+
+`codex plugin` 管的是**插件市场**（`add` / `list` / `marketplace` / `remove`）。
+插件装的内容，从 `app-server-protocol/src/protocol/v2/plugin.rs` 看是两类：
+**skills** 与 **hooks**（该文件里有 `SkillsList*`、`HooksList*`、`Marketplace*`、`Plugin*`）。
+
+**Hook 的事件全集**（`app-server-protocol/src/protocol/v2/hook.rs:19-21`）：
+
+```
+PreToolUse, PermissionRequest, PostToolUse,
+PreCompact, PostCompact,
+SessionStart, SessionEnd, UserPromptSubmit,
+SubagentStart, SubagentStop, Stop, Interrupt
+```
+
+**Handler 类型**（同文件 `:25-27`）：`Command` / `McpTool` / `Prompt` / `Agent`
+**执行模式**（`:31-35`）：`Sync` / `Async`
+
+⚠ **Hook 能否决**（`codex-rs/hooks/src/types.rs:15-31`）：
+
+```rust
+pub enum HookResult {
+    Success,
+    FailedContinue(..),   // 本 hook 失败，后续 hook 继续，操作继续
+    FailedAbort(..),      // 后续 hook 不执行，⚠ 操作中止
+}
+impl HookResult { pub fn should_abort_operation(&self) -> bool { … } }
+```
+
+⚠⚠ **于是拦截审批有三条路，不是一条：**
+
+| 路径 | 位置 | 能拦吗 | 谁能改配置 |
+| --- | --- | --- | --- |
+| `--permission-mode` / `-s` | 启动参数 | **事前授权**，不是拦截 | 调用方 |
+| **hook `PreToolUse` / `PermissionRequest`** | ⚠ **进程内** | ⚠ **能**（`FailedAbort`） | ⚠ **本机配置** |
+| app-server 的九种 server→client 请求 | ⚠ **进程外**，管道对端 | 能 | 调用方（在管道另一头） |
+
+⚠ **第二条与第三条的安全性质完全不同**，这一点必须写清楚：
+
+- **hook 在同一个进程、配置在本机**——而 guide §4.4 已立
+  「**本机一切本地判定都不是边界**」（`sudo -n -l` = `NOPASSWD: ALL`）。
+  ⚠ **agent 与人同用户时，agent 能改 hook 配置。**
+  所以 hook 给的是**可观测与协作式拦截**，**不是对抗性强制点**；
+- **app-server 的请求在管道另一头**——⚠ 若那一头是**另一个信任域的进程**（F-3 的 provider 侧），
+  它才构成 guide §4.4 要求的「executor 够不着」的强制点。
+
+⚠ **`PreToolUse` + `FailedAbort` 是 `tool.enforced` 的必要条件，不是充分条件。**
+`agent-dev-guide.md` §5.1 说「只有 `tool.enforced` 的事件是证据」；
+本节表明**拦截点存在**（hook），但**它在 agent 可写面上**——
+按 §5.2「采信等级取 `min(…)`，任一未知即降级」，**这样的拦截只能记 `tool.reported`**。
+
+### 9.4 选型结论（**倾向，非裁定**）
+
+| 我们要什么 | 该走哪个面 | 为什么 |
+| --- | --- | --- |
+| 结构化事件流，不要审批 | `exec --experimental-json` 或 TypeScript SDK | 最简单，单向 |
+| **审批往返 + 工具网关** | ⚠ **`app-server`**（Python SDK 或自建协议） | 唯一有九种 server→client 请求的面 |
+| 协作式的本地拦截与观测 | **hook** | 便宜，但**不是边界**（§9.3） |
+| 让别的 agent 调我们 | `mcp-server` / A2A（§8.3） | 未查 |
+
+⚠ **§4 的结论不变**：即使选了 `app-server`，Python SDK 的 reader 线程约束仍在，
+倾向仍是**自建协议**。**选面与选实现是两件事。**
+
+---
+
+## 10. 未解决 / 下次接着看
 
 | # | 问题 | 为什么现在答不了 |
 | --- | --- | --- |
@@ -361,3 +477,9 @@ Harness 的 server→client「是死能力」。所以 `serve_requests` 在 Harn
 | 5 | 三条 pipe 里 **stderr** 那条怎么用（`_start_stderr_drain_thread`） | 只知道有个 drain 线程和 40 行 tail |
 | 6 | 进程 teardown 梯子在两条腿上的差异 | guide §2.10 记了 Harness 侧 `close→terminate→kill` 的锚点，Codex 侧只说「进程组 TERM/KILL」 |
 | 7 | ⚠ **本文全部内容未实跑** | 见文首 |
+| 8 | `exec-server` / `remote-control` / `agents`（共享 daemon）三个面是什么 | 只见到 `--help` 一行 |
+| 9 | `codex mcp-server` 的 MCP 面能不能收审批 | 未查；MCP 有 elicitation，但没核 codex 侧实现 |
+| 10 | 插件的清单格式（怎么写一个插件） | 只看到市场管理命令与协议侧的 `Plugin*` 类型，**没看到 manifest 定义** |
+| 11 | hook 的 `Agent` handler 类型是什么语义 | ⚠ 一个 hook 的处理器可以是**另一个 agent**——这可能是个递归面，没查 |
+| 12 | hook 配置放在哪、谁能写 | ⚠ 直接决定 §9.3 那条「agent 能改 hook 配置」是否成立——**目前是推断，不是取证** |
+| 13 | TypeScript SDK 走 `exec` 是设计选择还是尚未跟进 | 若是后者，本文 §9.2 的结论会随版本失效 |

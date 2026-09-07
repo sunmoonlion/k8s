@@ -237,3 +237,46 @@ SDK 给的是 approval callback（能问），不是工具网关（能拦）。*
    「harness 的 ACP 服务端怎么起没查到」，**查清前不得反向声称「走 ACP 就有 HITL」**；
 3. 立一条通则：**凡「某执行者不支持 X」的结论，必须写明是在哪个协议面上不支持**——
    一个 harness 可以同时有多个面。
+
+---
+
+## F-5 ｜ 「SDK 能接审批」把**某一个 SDK** 的能力写成了 **SDK 这一类**的能力
+
+**提出**：起草者 2026-09-08，为 `executor-adapter` 轮枚举 codex 接入面时实测发现。
+⚠ **本条晚于本轮基线 `f1d5f8f4`**，五家树内看不到。
+
+### 观察
+
+Codex 有**两个官方 SDK，走两个不同的子命令**：
+
+```
+Python SDK     → codex app-server --listen stdio://   （sdk/python/src/openai_codex/client.py:252）
+TypeScript SDK → codex exec --experimental-json       （sdk/typescript/src/exec.ts:92）
+```
+
+复核：`rg 'app-server' sdk/typescript/src/` **零命中**；`rg '"exec"' sdk/python/src/` **零命中**。
+
+| | Python SDK | TypeScript SDK |
+| --- | --- | --- |
+| 线路 | JSON-RPC，**双向** | JSONL 事件流，**单向** |
+| 能收审批请求 | ⚠ **能**（九种 server→client 请求） | ⚠ **不能** |
+
+### 结论
+
+⚠ `agent-dev-guide.md` §2.7「交互批准」行的 Codex 侧写「可由 approval handler 接请求，
+但默认自动接受」——**该行未指明是哪个 SDK / 哪个子命令**。
+若有人按 TypeScript SDK 实施，会发现**接不到**，而文档看起来是支持的。
+
+⚠ **这是 `F-4` 的同形第二例。**F-4：把包级约束写成产品级结论；
+本条：把**某一个 SDK** 的能力写成 **SDK 这一类**的能力。
+
+### 落点建议（**待裁定**）
+
+1. §2.7「交互批准」行的 Codex 侧注明 **`app-server` 面 / Python SDK**；
+2. **立通则**（与 F-4 的建议合并）：⚠ **凡「某执行者支持/不支持 X」的结论，
+   必须写明是在哪个接入面上**——一个产品可以同时有多个面，能力不同。
+   现已知 codex 至少七个面（见 `rounds/executor-adapter/port-design-notes.md` §9.1）；
+3. Agent Profile 的字段随之要能表达「**用的是哪个面**」——
+   这与 `F-1` 的 `entry × mode`、`F-3` 的 `side × env` 是同一组扩展。
+   ⚠ **四个字段可能仍不够，因为「面」比「入口」更细**：
+   同一个 `entry=cli`，`exec` 与 `app-server` 的能力天差地别。
