@@ -14,21 +14,35 @@
 
 [meta]
 verified = "2026-09-04"
+# 2026-09-06 裁定 R6：codex 两家加 -s workspace-write，qwen 加 --permission-mode dont_ask。
+# 起因是 ② 的首次自动分发，四家里三家零产物**且退出码全是 0**：
+#   codex exec 默认 approval:never + sandbox:read-only —— luna 把评审做完却写不进；
+#   qoder 无权限参数 —— 停下来请求批准。
+# 取最小够用的一档：workspace-write 不给网络与全盘；dont_ask 之下更窄的 accept_edits
+# 只覆盖文件编辑，而 qwen 还需 git show / git commit，Bash 仍会被挡，故不够用。
+# **未采用** --full-auto 与 --dangerously-skip-permissions。放宽容易收紧难。
 # 判「某家是否真的执行了」**只能看产物，不能看退出码**：
 # cursor 未加 --trust 时会拒绝执行并打印提示，但退出码仍是 0。
 success_criterion = "产物出现在约定路径并已提交，而非命令返回 0"
 # ⚠ 2026-09-05 新增 [fable] 条目与 cursor 的 --model 钉法**未冒烟验证**
 # （所有者明确表示不必跑）。上面 verified = "2026-09-04" 只覆盖当时的四条。
 
+# ⚠ 2026-09-07 实测：`codex exec` 会打印 "Reading additional input from stdin..."
+# 并**阻塞等待 stdin 关闭**。在后台/管道里起它而不关 stdin，进程会一直挂着——
+# 实测挂 17 分 29 秒，CPU 时间 00:00:00，一步没跑，而按字节数判据看像「在推进」。
+# **调用方必须显式关 stdin**（`< /dev/null`）。这一条对 luna / kimi 两家都适用。
+
 [luna]
 worktree = "{home}/worktrees/luna/k8s"
 argv = ["env", "CODEX_HOME={home}/.codex-official",
-        "codex", "exec", "--skip-git-repo-check", "--cd", "{cwd}", "{prompt}"]
+        "codex", "exec", "--skip-git-repo-check", "-s", "workspace-write",
+        "--cd", "{cwd}", "{prompt}"]
 
 [kimi]
 worktree = "{home}/worktrees/kimi/k8s"
 argv = ["env", "CODEX_HOME={home}/.codex-kimi",
-        "codex", "exec", "--skip-git-repo-check", "--cd", "{cwd}", "{prompt}"]
+        "codex", "exec", "--skip-git-repo-check", "-s", "workspace-write",
+        "--cd", "{cwd}", "{prompt}"]
 # ⚠ kimi 家的入口是 codex + CODEX_HOME，**不是**任何名为 `kimi` 的独立命令。
 # 那个独立 CLI（~/.kimi-code）已于 2026-09-04 删除，正是为了消掉这个混淆源。
 # base_url 是国内站 api.moonshot.cn；key 属该站，换到 .ai 需换 key。
@@ -63,6 +77,11 @@ worktree = "{home}/worktrees/fable/k8s"
 
 [qwen]
 worktree = "{home}/worktrees/qwen/k8s"
-argv = ["qoder", "-p", "{prompt}", "-w", "{cwd}"]
+argv = ["qoder", "-p", "{prompt}", "-w", "{cwd}", "--permission-mode", "accept_edits"]
+# ⚠ 2026-09-07 由 dont_ask 改为 accept_edits（所有者确认）。
+# **dont_ask 的名字骗人**：它不是「不问就放行」，是**不问也不放行**——
+# 实测 qwen 在该档下 mkdir / touch / 重定向 / Write / python 文件 IO 全部被拒，
+# 且不产生任何批准提示，比默认档更严。评审做完了只留在内存里，进程一退就没了。
+# accept_edits 只自动接受**文件编辑**，不给任意 Bash：写得出产物，提交仍需人代做（R7）。
 # PATH 里 ~/.qoder/entry/qoder 是个 dispatcher：首参为 `ide` 或已存在的路径时开 IDE，
 # 其余走 qodercli。我们首参是 -p，走 CLI，新旧 shell 行为一致。

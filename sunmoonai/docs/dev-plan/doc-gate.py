@@ -54,7 +54,14 @@ GATED = ("sunmoonai/docs/",)
 # 自己写的那份），不是共享权威文档；agent 文 §5.2 也定它「只作研究输入，不具规范
 # 效力」。这类笔记按其性质会引用外部仓的绝对路径作取证出处，用共享文档的链接标准
 # 去卡它，只会逼作者绕过门禁。巡检（--survey）仍然覆盖它。
-EXEMPT = ("sunmoonai/docs/dev-plan/codex-reference/",)
+EXEMPT = (
+    "sunmoonai/docs/dev-plan/codex-reference/",
+    # archive/ 是原稿的**逐字节副本**（所有者 2026-09-07 指示保留待转）。
+    # 副本不能改，而它的相对链接从 archive/ 解析必然指不到——两者不可兼得。
+    # 豁免它，但**必须报出豁免了几份**：静默跳过正是本门自己刚栽过的坑
+    # （core.quotepath 让 29 份非 ASCII 文件名的文档从未被检查，门却报「通过」）。
+    "sunmoonai/docs/dev-plan/archive/",
+)
 
 # 声明「自足」的文档：§N 引用必须指向**本文件内**的标题。
 # 其他文档（裁决书、整合记录、评审）引用的是别的文档的章节，不适用本项。
@@ -88,7 +95,13 @@ def git(*args: str) -> str:
 
 def tracked_paths() -> set[str]:
     """git 索引里的全部路径。判定基准是索引，不是文件系统。"""
-    return set(git("ls-files").splitlines())
+    # **必须用 -z**：`git ls-files` 默认开 core.quotepath，非 ASCII 文件名会被输出成
+    # 带引号的八进制转义（"…call-\342\221\241.md"），于是索引集合里那个字符串
+    # 永远匹配不上真实路径。后果是**任何文件名含非 ASCII 的文件在本门眼里都不存在**，
+    # 指向它的链接一律被判死链。2026-09-07 实测：qwen 的评审稿链接 `../call-②.md`
+    # 被拦，而该文件确在索引里（`git ls-files --error-unmatch` 为真）。
+    # 这道门此前一直「正常」，只是因为在此之前没有文档链接过这类文件名。
+    return set(git("ls-files", "-z").split("\0")) - {""}
 
 
 def exists_in_index(norm: str, tracked: set[str]) -> bool:
@@ -261,6 +274,12 @@ def main(argv: list[str]) -> int:
             for p in sorted(tracked)
             if p.startswith(GATED) and not p.startswith(EXEMPT) and p.endswith(".md")
         ]
+        # **豁免必须可见。**只报「N 份通过」而不报「另有 M 份被豁免」，
+        # 读者无从知道门的覆盖范围，那是「覆盖不全比没有更危险」的形态。
+        exempted = [p for p in sorted(tracked)
+                    if p.startswith(GATED) and p.startswith(EXEMPT) and p.endswith(".md")]
+        if exempted:
+            print(f"（另有 {len(exempted)} 份文档在豁免路径内，未检查：{EXEMPT}）")
     elif argv[0] == "--none":
         targets = []
     else:
