@@ -5,7 +5,7 @@
 
 ```toml
 round_id   = "runtime-refact"
-status     = "ACTIVE"                # H-1 / H-2 已裁，见 rulings.md
+status     = "DONE"                  # ⑦ 已发布：runtime-refact/published，定稿 sha256[:16] 6b8f202d3c43eeb7
 tier       = "T2"                    # 权威层 + 已知对立 + 不可逆（两份源稿随后删除）
 final_path = "sunmoonai/docs/dev-plan/agent-dev-guide.md"
 round_dir  = "sunmoonai/docs/dev-plan/rounds/runtime-refact"
