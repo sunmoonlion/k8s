@@ -10,7 +10,7 @@ tier       = "T2"                    # 权威层（触及内核）+ 不可逆（
 final_path = "sunmoonai/docs/dev-plan/dev-plan-architecture.md"
 round_dir  = "sunmoonai/docs/dev-plan/rounds/dev-plan-refact"
 prefix     = "dev-plan-refact"
-baseline   = "dd9d53e5"           # 五家工作区的起点。⚠ **最后一次改动**（所有者 2026-09-07）；此后基线冻结
+baseline   = "c4b60abb"           # ⚠ **2026-09-08 重定**：guide 换版，五家必须读新版
 
 # 所有者 2026-09-07：「鉴于本轮重要，你们都参加，我是裁决者。到时我指定谁吸收。」
 proposers      = ["opus", "luna", "kimi", "cursor", "qwen"]   # 五家全参赛，含 opus
