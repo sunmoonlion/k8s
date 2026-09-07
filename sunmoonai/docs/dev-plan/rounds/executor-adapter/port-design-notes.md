@@ -527,6 +527,74 @@ Command | McpTool | Prompt | Agent
 工具跑完了，harness 不需要任何人帮忙，它只是**允许**你在那里插一脚。
 反过来 `DynamicToolCall` 不可能是 hook——那是真的需要外面的人干活。
 
+### 10.3b ⚠ 第三层差别：**通信机制根本不是同一类**
+
+所有者指出「好像通信机制不同：一个是 jrpc 一个是其他的」。**对，而且这层我前面漏了。**
+
+| 面 | 通信机制 | 有 id 配对 | 多轮 | 双向 | 连接 |
+| --- | --- | --- | --- | --- | --- |
+| `exec` | argv 进，文本出 | — | 否 | 否 | 一次性 |
+| `exec --experimental-json` | argv 进，**JSONL 流**出 | — | 否 | 否 | 一次性 |
+| **app-server** | **JSON-RPC**（无 `jsonrpc` 字段） | **有** | 是 | **是** | 长连接 |
+| **ACP** | **JSON-RPC 2.0**（有 `jsonrpc` 字段） | **有** | 是 | **是** | 长连接 |
+| **MCP** | JSON-RPC 2.0 | 有 | 是 | 是 | 长连接 |
+| ⚠ **hook（`Command` 型）** | ⚠⚠ **stdin 喂一次 JSON，stdout 读一次 JSON** | ⚠ **无** | ⚠ **否** | ⚠ **否** | ⚠ **一次性子进程** |
+| hook（`McpTool` 型） | 走 MCP → JSON-RPC | 有 | 是 | 是 | 长连接 |
+| A2A | JSON-RPC over **HTTP** | 有 | — | — | 请求-响应 |
+
+**`Command` 型 hook 的确切机制**（`hooks/src/engine/command_runner.rs:216-224, 267-268`）：
+
+```rust
+command.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped())
+…
+stdin.write_all(input_json.as_bytes()).await     // 喂一次
+…
+parse_json(stdout)                                // 读一次（engine/output_parser.rs）
+```
+
+⚠⚠ **这不是 RPC，是 CGI 那一类**：起进程 → 灌一次 JSON → 读 stdout → 进程结束。
+**没有请求 id、没有多轮、没有反向请求、没有连接。**
+
+### 10.3c 由此得出一条对开发极其现实的结论
+
+**`PreToolUse` 的输出契约**（`hooks/src/schema.rs:244-265`）：
+
+```jsonc
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "allow" | "deny" | "ask",   // ⚠ 三值，不是布尔
+    "permissionDecisionReason": "…",
+    "updatedInput": { … },                            // ⚠⚠ 可以改写工具输入
+    "additionalContext": "…"
+  }
+}
+```
+
+⚠⚠ **`updatedInput` 意味着 hook 不只能拦，还能改写要执行的工具输入。**
+这是 app-server 那九种请求**做不到**的——审批只能 yes/no/带策略修订，**改不了参数**。
+
+**于是接一条「人在环的工具门」，有两条路，成本天差地别：**
+
+| | **app-server 路** | ⚠ **hook `Command` 路** |
+| --- | --- | --- |
+| 要写什么 | JSON-RPC 客户端：分帧、id 配对、reader 线程、九种请求 handler、进程生命周期 | ⚠ **一个读 stdin 写 stdout 的小程序** |
+| §4 的 reader 线程冻结问题 | ⚠ **存在，必须自建协议绕开** | ⚠ **不存在**——它本来就是一次性进程，阻塞的是它自己 |
+| 能改写工具输入 | ⚠ **不能** | ⚠ **能**（`updatedInput`） |
+| 能拿到的点 | 九种（协议定义） | 十二种（执行流内） |
+| 配置在哪 | 调用方（可以在另一个信任域） | ⚠ **本机**——见 §9.3，**agent 能改** |
+| 会话上下文 | 有（长连接） | ⚠ **无**——每次新进程 |
+
+⚠ **「人在环」的最小实现其实是后者**：一个 `Sync` 模式的 `Command` hook，
+读到 `PreToolUse` 的 JSON → 调我们的 principal channel → **阻塞等人** →
+把 `permissionDecision` 写回 stdout。
+**不需要实现任何协议，也绕开了 §4 那个 reader 线程陷阱。**
+
+⚠ **代价三条，必须同时接受**：
+① 阻塞的是 hook 子进程，但 `Sync` 模式下 **agent 也在等**——等于整个 turn 停住；
+② hook 配置在本机，**对抗性场景下不成立**（§9.3、guide §4.4）；
+③ **没有会话上下文**——每次调用都是新进程，要什么状态得自己从外部取。
+
 ### 10.4 由此推出三条，每条都有工程后果
 
 **① 控制反转的方向相反**
