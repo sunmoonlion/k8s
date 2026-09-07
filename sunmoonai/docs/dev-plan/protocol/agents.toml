@@ -34,12 +34,14 @@ success_criterion = "产物出现在约定路径并已提交，而非命令返�
 
 [luna]
 worktree = "{home}/worktrees/luna/k8s"
+close_stdin = true   # codex exec 阻塞等 stdin，见 [meta] 2026-09-07 那条
 argv = ["env", "CODEX_HOME={home}/.codex-official",
         "codex", "exec", "--skip-git-repo-check", "-s", "workspace-write",
         "--cd", "{cwd}", "{prompt}"]
 
 [kimi]
 worktree = "{home}/worktrees/kimi/k8s"
+close_stdin = true   # 同上
 argv = ["env", "CODEX_HOME={home}/.codex-kimi",
         "codex", "exec", "--skip-git-repo-check", "-s", "workspace-write",
         "--cd", "{cwd}", "{prompt}"]
@@ -85,3 +87,11 @@ argv = ["qoder", "-p", "{prompt}", "-w", "{cwd}", "--permission-mode", "accept_e
 # accept_edits 只自动接受**文件编辑**，不给任意 Bash：写得出产物，提交仍需人代做（R7）。
 # PATH 里 ~/.qoder/entry/qoder 是个 dispatcher：首参为 `ide` 或已存在的路径时开 IDE，
 # 其余走 qodercli。我们首参是 -p，走 CLI，新旧 shell 行为一致。
+
+[opus]
+worktree = "{home}/worktrees/opus/k8s"
+# **无 argv：opus 跑在一个持续会话里，没有一次性命令行入口。**
+# 投喂 = 在该会话中说那句固定指令。脚本会把它列为「需人工投喂」，
+# 这是对的——它与 fable 当年同属 dispatch = manual，`dispatch_event` 照数。
+# ⚠ 2026-09-07 起 opus 只是 proposer，不再兼 orchestrator：
+# 投喂由所有者执行，opus 不接触任何一家的产物。

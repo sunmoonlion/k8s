@@ -195,8 +195,13 @@ def main() -> int:
             continue
         argv = [x.replace("{home}", home).replace("{cwd}", cwd)
                  .replace("{prompt}", prompt) for x in a["argv"]]
+        # close_stdin：codex exec 会打印 "Reading additional input from stdin..."
+        # 并阻塞等 stdin 关闭（实测挂 17 分 29 秒、CPU 00:00:00，一步没跑，
+        # 而按字节数判据看像「在推进」）。**必须由调用方显式关**，argv 里做不到——
+        # argv 不经 shell，重定向不是参数。
+        redir = " < /dev/null" if str(a.get("close_stdin", "")).lower() == "true" else ""
         print(f"\n# → {name}    工作目录 {cwd}")
-        print(f"cd {shlex.quote(cwd)} && {' '.join(shlex.quote(x) for x in argv)}")
+        print(f"cd {shlex.quote(cwd)} && {' '.join(shlex.quote(x) for x in argv)}{redir}")
     print("\n" + "─" * 72)
     if manual:
         print(f"⚠ 上列 {len(manual)} 家无命令行入口，需人工投喂："
