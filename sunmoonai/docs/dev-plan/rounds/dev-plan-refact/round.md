@@ -6,7 +6,7 @@
 ```toml
 round_id   = "dev-plan-refact"
 status     = "DRAFT"                 # 开轮前须裁定 proposers / arbiter
-tier       = "T2"                    # 权威层（触及内核）+ 不可逆（文档重排）+ 规模 365 节
+tier       = "T2"                    # 权威层（触及内核）+ 不可逆（文档重排）+ 规模 486 节
 final_path = "sunmoonai/docs/dev-plan/dev-plan-architecture.md"
 round_dir  = "sunmoonai/docs/dev-plan/rounds/dev-plan-refact"
 prefix     = "dev-plan-refact"
@@ -19,7 +19,6 @@ anchor_roots      = ["~/repo/codex", "~/repo/deepseek-harness", "~/repo/openclaw
 frozen_sections   = []
 mechanical_absent = [
   'B1 不得在本轮改结论::本轮改正|顺带修正|此处结论有误故改',
-  'B5 archive 内容不得引用::archive/development-lifecycle|archive/refact-fable|archive/runtime-architecture',
   'B7 request-baseline 路径不得变更::request-baseline 移|移入 archive/request-baseline|request-baseline/ →',
 ]
 ```
@@ -49,6 +48,6 @@ mechanical_absent = [
 
 ## 本轮的特殊之处
 
-`runtime-refact` 轮是 64 节，本轮 **365 节**。规模差 5.7 倍，而
+`runtime-refact` 轮是 64 节，本轮 **486 节**。规模差 7.6 倍，而
 「靠一次通读做融合会丢东西，且丢了不会有人发现」这条已经被上一轮证实过一次。
 **落点表因此是交付物而非附赠，且验收会抽查落点是否属实。**

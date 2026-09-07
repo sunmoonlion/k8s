@@ -16,7 +16,7 @@
 
 本文只约束产品中的 Submission → Task → Attempt → Delivery，以及实现该链路的六方：前端、后端、
 Agent runtime、Profile/验收器、运维、测试与维护者。开发 Agent 与人的工作流程分别由
-[`development-lifecycle-agent.md`](../archive/development-lifecycle-agent.md) 和
+[`development-lifecycle-agent.md`](../development-lifecycle-agent.md) 和
 `development-lifecycle-human.md` 规定。
 
 一条要求能否进入产品正文，用下面的问题裁决：
@@ -24,7 +24,7 @@ Agent runtime、Profile/验收器、运维、测试与维护者。开发 Agent �
 > **它是否必须落实为前端协议、后端持久化、Agent 执行纪律、运维控制或自动验收？**
 
 答案为“否”的内容不得冒充产品要求。仓库、commit、L1–L7 测试层次、Markdown 栏目、worktree
-选优等开发字段，只能进入开发 Profile 或 [`development-lifecycle-agent.md`](../archive/development-lifecycle-agent.md)。
+选优等开发字段，只能进入开发 Profile 或 [`development-lifecycle-agent.md`](../development-lifecycle-agent.md)。
 
 ### 0.2 本文负责什么
 
@@ -46,7 +46,7 @@ Agent runtime、Profile/验收器、运维、测试与维护者。开发 Agent �
 - 某个业务 Profile 的完整业务算法。
 
 这些分别属于 project-guide、具体开发工作单元、
-[`development-lifecycle-agent.md`](../archive/development-lifecycle-agent.md)、
+[`development-lifecycle-agent.md`](../development-lifecycle-agent.md)、
 `development-lifecycle-human.md` 和相应 Profile 规范。
 
 ### 0.3 规范用语

@@ -55,22 +55,21 @@ GATED = ("sunmoonai/docs/",)
 # 自己写的那份），不是共享权威文档；agent 文 §5.2 也定它「只作研究输入，不具规范
 # 效力」。这类笔记按其性质会引用外部仓的绝对路径作取证出处，用共享文档的链接标准
 # 去卡它，只会逼作者绕过门禁。巡检（--survey）仍然覆盖它。
-EXEMPT = (
-    "sunmoonai/docs/dev-plan/codex-reference/",
-    # archive/ 是原稿的**逐字节副本**（所有者 2026-09-07 指示保留待转）。
-    # 副本不能改，而它的相对链接从 archive/ 解析必然指不到——两者不可兼得。
-    # 豁免它，但**必须报出豁免了几份**：静默跳过正是本门自己刚栽过的坑
-    # （core.quotepath 让 29 份非 ASCII 文件名的文档从未被检查，门却报「通过」）。
-    "sunmoonai/docs/dev-plan/archive/",
-)
+EXEMPT = ("sunmoonai/docs/dev-plan/codex-reference/",)
+# archive/ 曾在此豁免。2026-09-07 该目录已整个撤销：两份逐字节副本经 diff 证明
+# 相对根下同名活文档零独有内容（仅多一行失效链接）故删除，两份 lifecycle 移至
+# dev-plan/ 根下加降级页眉、由 dev-plan-refact 轮定落点。豁免随之取消。
 
 # 声明「自足」的文档：§N 引用必须指向**本文件内**的标题。
 # 其他文档（裁决书、整合记录、评审）引用的是别的文档的章节，不适用本项。
 SELF_CONTAINED = (
-    "sunmoonai/docs/dev-plan/working/development-lifecycle-agent.md",
-    "sunmoonai/docs/dev-plan/working/development-lifecycle-human.md",
     "sunmoonai/docs/dev-plan/working/request-lifecycle.md",
 )
+# 两份 development-lifecycle-*.md 曾在此名单内，2026-09-07 移出：它们已被
+# agent-dev-guide.md 取代、降为历史档案，「自足」是对现行权威文档的要求。
+# 移出时它们各带 1–2 处跨文档 §N 引用（如 §9.3 实指 round-protocol.md），
+# 这些是本门从未检查过的存量——它们此前一直落在 archive/ 豁免里。
+# **不在此处改写历史稿正文**，由 dev-plan-refact 轮定落点时一并处理。
 
 USAGE = "用法: doc-gate.py <文件>... | --all | --survey | --selfcheck"
 
@@ -270,6 +269,20 @@ def main(argv: list[str]) -> int:
         return 2
 
     tracked = tracked_paths()
+
+    # SELF_CONTAINED 是按路径写死的名单。文档一旦改名或移动，名单就静默失去作用，
+    # 门照样报「通过」——和 archive/ 静默跳过、quotepath 静默跳过是同一类病。
+    # 名单里的路径必须在索引中真实存在，否则拒绝运行。
+    missing = [p for p in SELF_CONTAINED if p not in tracked]
+    if missing:
+        print(
+            "doc-gate: SELF_CONTAINED 名单已失效，以下路径不在 git 索引中：\n"
+            + "".join(f"    {m}\n" for m in missing)
+            + "          文档被移动或改名后须同步本名单，否则「自足」一项静默不再检查。",
+            file=sys.stderr,
+        )
+        return 2
+
     survey = argv[0] == "--survey"
     if argv[0] == "--staged":
         # hook 用：自己算本次提交暂存的文档。即使一份文档都没动，也仍要跑主线不变量,

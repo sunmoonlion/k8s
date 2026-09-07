@@ -53,8 +53,8 @@
 > **以所有者 commit 为生效时刻**（H1 是人的动作；回执仓尚未建成，本次按 bootstrap 例外用 `rulings.md` + commit，见 R2）。
 > 冻结后三处只能经 H6 改，其余章节仍可随实施轮修订。
 >
-> 本文是对 [`working/development-lifecycle-agent.md`](archive/development-lifecycle-agent.md)（1603 行）、
-> `working/development-lifecycle-human.md`（823 行）与 [`round-protocol.md`](protocol/round-protocol.md)
+> 本文是对 [`development-lifecycle-agent.md`](development-lifecycle-agent.md)（1603 行）、
+> `development-lifecycle-human.md`（823 行）与 [`round-protocol.md`](protocol/round-protocol.md)
 > 三者关系的重构方案。它回应项目所有者 2026-09-05 提出的调整思路（HITL、前置路由、
 > supervisor 选择、规划→subagent、仓库与 worktree 供给），但**不以那份思路为骨架**；
 > 对它的逐条处置见「对原建议的处置」一节。

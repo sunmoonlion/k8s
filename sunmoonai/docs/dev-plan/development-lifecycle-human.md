@@ -1,5 +1,13 @@
 # 开发生命周期 · 人
 
+> ⚠ **历史档案，不再有规范效力**（`runtime-refact` 轮定稿 `agent-dev-guide.md` 已取代本文）。
+> 现行规范是 [`agent-dev-guide.md`](agent-dev-guide.md)；**本文与它冲突时以它为准**。
+>
+> **降级不等于作废**：经 2026-09-07 抽样核查，本文有若干节的内容**未被任何现行文档吸收**，
+> 例如「改判三要素」一节。故本文**不删**，
+> 由 `dev-plan-refact` 轮逐节定落点（见 `rounds/dev-plan-refact/dev-plan-refact.md`）。
+> 本文 2026-09-07 由 `working/` 经 `archive/` 移至此处，`archive/` 已撤销。
+
 > 最后更新：2026-09-02
 >
 > **本文是人在开发工作中的角色、权力和纪律，并且写全了人执行一件开发工作所需的
@@ -9,7 +17,7 @@
 > 执行者（Agent 路径）。那份是**开发期临时文档，开发结束后会删除**；本文长期保存。
 > 因此本文只可以**指出差异**，不得把共同内核留在那一份里——§1.1 说明为什么。
 >
-> **本文不是 [`request-lifecycle.md`](request-lifecycle.md) 的投影，也不复制产品状态机。**
+> **本文不是 [`request-lifecycle.md`](working/request-lifecycle.md) 的投影，也不复制产品状态机。**
 > 那份是产品契约；实现它的是代码，不是本文。看到 Task、Attempt、Interaction、Delivery
 > 这些词一律以那份为准，本文不重新定义，也不在正文使用产品状态名。
 >
@@ -104,10 +112,10 @@
 判据就一句话：**把今天的记忆抹掉，另一个人只读持久载体能否接着做？**不能，就是没落盘。
 
 - 当前推进哪件事、卡在哪、下一动作，落在
-  [`handoff.md`](../handoff.md)，不落在脑子里；
+  [`handoff.md`](handoff.md)，不落在脑子里；
 - **“不能倒退的输入”必须写下来。**已经定过的事，下次不重新讨论——
   这是 `handoff.md` 最有价值的一节；
-- 覆盖与缺口 → 实现矩阵；产品目标 → [`request-lifecycle.md`](request-lifecycle.md)；
+- 覆盖与缺口 → 实现矩阵；产品目标 → [`request-lifecycle.md`](working/request-lifecycle.md)；
   Git、远端与子模块纪律 → 本文 §12；跨机同步五仓 → `~/five-repos-sync/sync-five-repos.sh`；
 - 停下来之前，先让 `handoff.md` 能回答：“接手的人一分钟内要知道什么？”
 
@@ -272,8 +280,8 @@ owner / 可写根 / 输出命名空间
 
 | 改动面 | 必须追加核对 |
 | --- | --- |
-| 项目总体边界 | 总览架构、[`../constraints.md`](../constraints.md) |
-| 产品 Task/Attempt/Interaction/Delivery 语义 | [`request-lifecycle.md`](request-lifecycle.md)、生产代码与对应测试 |
+| 项目总体边界 | 总览架构、[`../constraints.md`](constraints.md) |
+| 产品 Task/Attempt/Interaction/Delivery 语义 | [`request-lifecycle.md`](working/request-lifecycle.md)、生产代码与对应测试 |
 | Agent 运行时、恢复、预算、事件、副作用 | 当前事实文档、生产链代码和测试 |
 | 跨 App 契约 | provider schema、consumer lock 和双端契约测试 |
 | Admin/Web/API | 目标目录 `AGENTS.md`、认证边界和端到端测试 |
@@ -286,16 +294,16 @@ owner / 可写根 / 输出命名空间
 
 **本项目（Investment App）的范围门禁。**上表是通用路由。本文不复制项目实现，也不铺
 项目清单——易变的当前事实只放
-[`project-guide/repos/investment-app.md`](../../project-guide/repos/investment-app.md)。
+[`project-guide/repos/investment-app.md`](../project-guide/repos/investment-app.md)。
 只固定三条不随实现变动的路由：
 
 1. **改动涉及 Investment App 时**，除上表外追加读取该仓的项目指南、生产链代码和相关
    测试；不得由历史设计稿或旧快照推断现状。
 2. **陈述任何能力状态时只用四级词典**——`defined / wired / deployable / runtime-verified`
-   （见 [`project-guide/overall-architecture.md`](../../project-guide/overall-architecture.md)
+   （见 [`project-guide/overall-architecture.md`](../project-guide/overall-architecture.md)
    §8.2）。类、DTO、迁移或测试夹具存在，都不等于生产链已经接线。
 3. **涉及已知休眠能力时回跑 dormant 测试**——
-   [`project-guide/repos/investment-app.md`](../../project-guide/repos/investment-app.md) §7
+   [`project-guide/repos/investment-app.md`](../project-guide/repos/investment-app.md) §7
    指向的 `tests/test_dormant_capabilities.py`，同时确认锚点仍在且能力仍未接线。
 
 ### 10.3 共同纪律
@@ -341,7 +349,7 @@ commit 回归。
 必须显式核对四项：候选状态仍有效、commit 仍可达、提出方未撤回、基线未失效。
 
 开发侧**没有租约或 fencing 这类运行时机制**——产品侧的对应机制见
-[`request-lifecycle.md`](request-lifecycle.md)，那是目标合同，是否已接线由代码证明。
+[`request-lifecycle.md`](working/request-lifecycle.md)，那是目标合同，是否已接线由代码证明。
 因此开发侧的取消必须**显式停止执行者**，不能只靠标状态。
 
 ## 11. 人作为协调者：fan-out
@@ -413,7 +421,7 @@ checkpoint 位置
 验证和原始输出位置、已知缺陷与假设、盲区、副作用，以及每项关键主张的证据。
 
 脚本化产生候选**目前没有可用工具**：曾有的 `parallel-proposals.py` 已于 2026-09-06 删除，
-理由与重建时的注意事项见 [`../round-protocol.md`](../protocol/round-protocol.md) §9.3。
+理由与重建时的注意事项见 [`../round-protocol.md`](protocol/round-protocol.md) §9.3。
 在此之前候选的隔离靠纪律，不靠机制。**脚本存在不等于流程已经可用**——
 这条教训保留：那份脚本存在了九天，一次也没进过真实轮次。
 
@@ -448,7 +456,7 @@ checkpoint 位置
 | `<ID>` | `<commit>` | `<位置/输出>` | 证实 / 证伪 / 未决 | `<可复核说明>` |
 
 下列任一情况发生，候选**不进入偏好比较**：必须测试失败；违反
-[`../constraints.md`](../constraints.md) 或明确范围边界；存在未解决的阻断级正确性、安全、
+[`../constraints.md`](constraints.md) 或明确范围边界；存在未解决的阻断级正确性、安全、
 数据或迁移风险；commit、子模块对象或验证证据无法取得；提案隔离已被破坏且无法恢复公平
 比较。
 
@@ -771,7 +779,7 @@ verification     # 最终 commit 上的回归结果
 | 评审给出的验收标准无人回跑 | **已核对事实（2026-08-27）**：当轮的 `disposition.md` 末节自记，一份“未回跑”、一份“待评审方执行”、一份仅第 3 条通过 | §11.7、§15 |
 | 评审意见的处置边界由被审方单方划定 | **已核对事实（2026-08-27）**：当轮记录逐条由被审方判定采纳或拒绝，其中一条门禁因“三台机器分别报 0 / 4 / 95 条失败”被判误报并删除。**“优胜作者拒绝改进”这一更强的说法未获记录支持，不采用** | §11.5、§11.7 |
 | 只写分支名，不固定 commit | **事故报告（2026-08-27）**：当事方记录评审曾引用旧提交而主方已前进；原始记录中**未找到**对应条目 | §12.3、§10.5 |
-| 只测一端就宣布跨仓契约完成 | **现行硬规则**：[`../constraints.md`](../constraints.md) C4——单仓 CI 只跑自己那半，provider 改了、consumer 锁没跟，两边各自都绿 | §10.2 |
+| 只测一端就宣布跨仓契约完成 | **现行硬规则**：[`../constraints.md`](constraints.md) C4——单仓 CI 只跑自己那半，provider 改了、consumer 锁没跟，两边各自都绿 | §10.2 |
 | 候选提前读取其他方案 | 设计风险。机理清楚，但本项目的原始记录出处已不可取得 | §11.4 |
 | 把历史设计或目标态当成代码现状 | 设计风险（同上）。四级词典与 dormant 回跑是现行控制 | §10.2 |
 | 多数票覆盖失败测试 / 全体一致的共同盲区 | 设计风险（同上） | §11.6 |
@@ -788,16 +796,16 @@ verification     # 最终 commit 上的回归结果
 
 | 文档 | 管什么 | 本文不重复 |
 | --- | --- | --- |
-| [`request-lifecycle.md`](request-lifecycle.md) | 产品六方契约 | 产品语义一律引它；本文不建立第二套状态机 |
+| [`request-lifecycle.md`](working/request-lifecycle.md) | 产品六方契约 | 产品语义一律引它；本文不建立第二套状态机 |
 | [`development-lifecycle-agent.md`](development-lifecycle-agent.md) | Agent 路径：FastAPI 受理、sandbox 物化、Agent 运行时 | 那条路径特有的受理与物化细节。**该文为开发期临时文档，删除后本文不受影响** |
-| [`../constraints.md`](../constraints.md) | 代码不得违反的硬规则 | 具体条文；违反者不进入方案比较 |
-| [`handoff.md`](../handoff.md) | 当前阻塞与下一动作 | 不在本文写进度 |
-| [`../../project-guide/repos/investment-app.md`](../../project-guide/repos/investment-app.md) | 当前实现与已知缺口 | 不把易腐现状写进合同 |
+| [`../constraints.md`](constraints.md) | 代码不得违反的硬规则 | 具体条文；违反者不进入方案比较 |
+| [`handoff.md`](handoff.md) | 当前阻塞与下一动作 | 不在本文写进度 |
+| [`../../project-guide/repos/investment-app.md`](../project-guide/repos/investment-app.md) | 当前实现与已知缺口 | 不把易腐现状写进合同 |
 
 Git、远端与子模块的纪律以本文 §12 为准。**跨机同步五仓用
 `~/five-repos-sync/sync-five-repos.sh`**：它推送五个父仓，拉取侧自动
 `submodule sync/update` 对齐 gitlink；⚠ 它不推子仓，子仓的提交仍须自己推
-（见 [`../constraints.md`](../constraints.md) T4）。
+（见 [`../constraints.md`](constraints.md) T4）。
 
 ## 附录 词汇对照
 
@@ -814,10 +822,10 @@ Git、远端与子模块的纪律以本文 §12 为准。**跨机同步五仓用
 | Interaction | 向有权主体的澄清或批准请求；人路径上即人自己的决定（§3） |
 | Event | 追加式改判与证据记录（§6、§13） |
 | Delivery | 最终交付物与可达产物（§9） |
-| Handoff | [`handoff.md`](../handoff.md)；单写者面，只由协调者/主驾驶写（§4） |
+| Handoff | [`handoff.md`](handoff.md)；单写者面，只由协调者/主驾驶写（§4） |
 | 工作仓 | 人建立或选择的 Git 仓库（§8.2） |
 | worktree | 协调者为每个可写执行者建立的并行隔离工作区（§11.3） |
 | 命名分支 | 一执行者一分支；commit 的运输通道，**不是评审对象**（§12.3） |
 | 未提交工作区文件 | 仅本地草稿；同一工作区同一路径后写覆盖先写（§12.3） |
 | 人的主 checkout | 如 `~/master/<仓>`；只读参照，**不是投稿箱**（§12.2） |
-| Attempt 租约 / fencing | **产品侧机制**，语义见 [`request-lifecycle.md`](request-lifecycle.md)；开发侧无等价运行时，迟到判定靠冻结 commit 与整合方核对（§10.5） |
+| Attempt 租约 / fencing | **产品侧机制**，语义见 [`request-lifecycle.md`](working/request-lifecycle.md)；开发侧无等价运行时，迟到判定靠冻结 commit 与整合方核对（§10.5） |
