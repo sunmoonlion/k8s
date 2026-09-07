@@ -220,7 +220,7 @@ grep -rn "create_table(" investment-backend/app/alembic/versions/ | wc -l   # 13
 在"跨五个文件的架构演进"上会编造，且编得通顺。
 
 本仓已有一条形状正确的判据，在
-[`development-lifecycle-agent.md`](../dev-plan/working/development-lifecycle-agent.md) §5.5：
+[`development-lifecycle-agent.md`](../dev-plan/archive/development-lifecycle-agent.md) §5.5：
 
 > 把当前会话杀掉，另一个执行者只读持久载体能否接着做？
 
