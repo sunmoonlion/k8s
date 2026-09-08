@@ -4,6 +4,18 @@
 > 题目与验收标准见 [`dev-plan-refact.md`](dev-plan-refact.md)，工单见 [`round.md`](round.md)。
 > ⚠ **本通知在本环节冻结，不再改动。**
 
+## ⚠ 本通知在哪读
+
+**你的工作区里没有这份通知**——它在主线 `~/master/k8s` 上，而你的分支停在自己的 ① 提交。
+
+```bash
+cat ~/master/k8s/sunmoonai/docs/dev-plan/rounds/dev-plan-refact/call-②.md
+```
+
+**不要把 master 合并进你的分支。**两家在 ① 期间按 B3 往 `findings.md` 追加过发现，
+与主线的 F-13 会在同一文件上冲突；而 ② 不需要你的分支含本通知。
+`~/master/k8s` 可读不可写——读通知、跑判定都在那里，产物写回你自己的工作区。
+
 ## 一句话
 
 **读完其余四家的两份候选，写一份评审。四块，缺一块该评审不计入裁决。**
