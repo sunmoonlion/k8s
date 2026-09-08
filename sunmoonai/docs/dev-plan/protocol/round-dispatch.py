@@ -14,6 +14,9 @@
     round-dispatch.py --round runtime # 指定轮次（与 round-status.py 同名同义）
     round-dispatch.py --all           # 不管缺不缺，给全部参与方的命令
     round-dispatch.py --stage 4       # 指定环节，接 4 或 ④（覆盖自动判定）
+    round-dispatch.py --paste         # 交互会话贴的话：当前环节还缺的家
+    round-dispatch.py --paste cursor  # 指名一家（不检查它缺不缺）
+    round-dispatch.py --paste cursor --stale   # 对方报「缺东西」时用（F-17）
 
 退出码：
     0  正常输出了命令
@@ -132,6 +135,48 @@ def missing_of(st: dict, stage_hint: str | None) -> tuple[str, list[str]]:
 
 
 
+PASTE_DIR = HERE / "paste"
+
+
+def paste(st: dict, stage: str, targets: list[str], stale: bool) -> int:
+    """输出交互会话里**直接贴的那句话**，槽位从实况填。
+
+    与 `--write-md` 那条路的区别：那条生成一次性 CLI 命令（`dispatch.md`），
+    这条生成人贴进窗口的文本。取舍写在 `dispatch.md` 开头——
+    交互会话在 agent 卡住时人当场能处理，一次性命令把交互吞掉就只能干等。
+
+    ⚠ **模板里没有「路径」这个槽位，路径一律写死。**
+    见 `rounds/dev-plan-refact/findings.md` F-17：靠人记得写对绝对路径，
+    正是 2026-09-08 那次 ③ 停摆的根因。这里唯一会填错的是家名和环节，
+    而这两样填错对方会立刻报错，不会静默读到旧的还以为是新的。
+
+    用 `.replace()` 不用 `.format()`：模板是给人手改的，
+    里面出现一个孤立的 `{` 不该让脚本崩掉。
+    """
+    tpl = PASTE_DIR / ("过期投影.txt" if stale else "派发.txt")
+    if not tpl.exists():
+        print(f"模板不存在：{tpl}", file=sys.stderr)
+        return 2
+    text = tpl.read_text(encoding="utf-8")
+    stage_ch = stage[0] if stage else "<环节>"
+    for k, v in (("{轮次}", st["round"]), ("{环节}", stage_ch)):
+        text = text.replace(k, v)
+    left = [k for k in ("{轮次}", "{环节}", "{家名}") if k in text]
+
+    for name in targets:
+        print("─" * 72)
+        print(f"# → 贴给 {name}    （轮次 {st['round']}   环节 {stage}）")
+        print("─" * 72)
+        print(text.replace("{家名}", name))
+    print("─" * 72)
+    if left:
+        print(f"⚠ 模板里还有没填上的槽位：{'、'.join(left)} —— 贴之前自己补。")
+    if not stale:
+        print("⚠ 对方若回「缺东西 / 字段是空的 / 没有这个文件」，**先别信它搞错了**：")
+        print("   核实主线上是什么、它分支上是什么。两边不一样就改用 --stale 那一份（F-17）。")
+    return 0
+
+
 MD_PATH = HERE / "dispatch.md"
 
 
@@ -239,6 +284,10 @@ def main() -> int:
     ap.add_argument("--check-md", action="store_true",
                     help="核对 dispatch.md 是否仍与 agents.toml 一致；不一致退出 1")
     ap.add_argument("--all", action="store_true", help="给全部参与方，不只缺的")
+    ap.add_argument("--paste", nargs="?", const="", metavar="家名",
+                    help="输出交互会话里直接贴的话；不带家名则给当前环节还缺的家")
+    ap.add_argument("--stale", action="store_true",
+                    help="与 --paste 连用：用「过期投影」那一份（对方报缺东西时，见 F-17）")
     args = ap.parse_args()
 
     if args.write_md or args.check_md:
@@ -263,6 +312,29 @@ def main() -> int:
     targets = cfg.get("proposers", []) if args.all else missing
     # 处置表算出的验收方等角色也可能是目标
     targets = [t for t in targets if t in agents]
+
+    if args.paste is not None:
+        # 指名一家时**不检查它缺不缺**：F-17 那种情况下对方已经动过，
+        # 但因为读了过期投影而停在原地，此时它不在 missing 里，却正是要贴的对象。
+        # ⚠ 但**必须检查它是不是一家**。两个坑首跑即撞上：
+        #   1. 不指名时 `missing` 装的可能是**产物名**——③ 的 missing 是
+        #      「裁决稿、处置记录」，照贴就会打出「贴给 处置记录」。
+        #   2. 指名一个不存在的家时若不拦，会静默打出一份给虚构对象的话术，
+        #      而人照着贴出去才发现没有这个窗口。协议 §8b：拒绝要有区别于成功的退出码。
+        who = [args.paste] if args.paste else missing
+        bad = [w for w in who if w not in agents]
+        if args.paste and bad:
+            print(f"{args.paste!r} 不在 agents.toml 里；登记的执行者是："
+                  f"{'、'.join(agents)}", file=sys.stderr)
+            return 2
+        who = [w for w in who if w in agents]
+        if not who:
+            print(f"轮次 {st['round']}   当前环节 {stage}", file=sys.stderr)
+            why = ("本环节缺的是产物不是家（%s），无法按家分发" % "、".join(missing)
+                   if missing else "本环节该交的都交了")
+            print(f"{why}；要指名一家就 --paste <家名>。", file=sys.stderr)
+            return 0
+        return paste(st, stage, who, args.stale)
 
     print(f"轮次 {st['round']}   当前环节 {stage}")
     if not targets:

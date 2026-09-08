@@ -1,0 +1,4 @@
+看一下 ~/master/k8s/sunmoonai/docs/dev-plan/GO.md，照做。
+
+⚠ 只认主线那一份。你 worktree 里的同名文件是投影，从 ① 起就不再跟进主线，
+几乎一定是旧的。GO.md 开头有一条 diff 自检，先跑它。不要把主线合并进你的分支。
