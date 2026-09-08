@@ -43,10 +43,21 @@ def round_cfg(name: str) -> dict:
         sys.exit(f"找不到 {f}")
     text = f.read_text(encoding="utf-8")
     cfg: dict[str, object] = {}
-    for k in ("final_path", "baseline", "prefix"):
+    for k in ("baseline", "prefix"):
         m = re.search(rf"^{k}\s*=\s*\"([^\"]*)\"", text, re.M)
         if m:
             cfg[k] = m.group(1)
+    # final_path 可以是字符串，也可以是（可能跨行的）字符串列表——多交付物轮次用后者。
+    # ⚠ 只认字符串形式会让列表形式**静默解析成空**，检视面就报「路径未定」而不报错，
+    #    与 F-7 同型（判据静默退化）。故两种都认，都认不出就报错。
+    m = re.search(r"^final_path\s*=\s*\"([^\"]*)\"", text, re.M)
+    if m:
+        cfg["final_path"] = [m.group(1)]
+    else:
+        m = re.search(r"^final_path\s*=\s*\[(.*?)\]", text, re.M | re.S)
+        if not m:
+            sys.exit(f"{f}: final_path 既不是带引号的字符串，也不是数组——无法确定检视路径")
+        cfg["final_path"] = re.findall(r'"([^"]+)"', m.group(1))
     m = re.search(r"^proposers\s*=\s*\[(.*?)\]", text, re.M | re.S)
     cfg["proposers"] = re.findall(r'"([^"]+)"', m.group(1)) if m else []
     return cfg
@@ -61,7 +72,8 @@ def main() -> int:
 
     cfg = round_cfg(args.round)
     families = cfg["proposers"]
-    rel = args.path or cfg.get("final_path", "")
+    # 逐条报，不是只报第一条：多交付物轮次里「只交了其中一份」恰恰是要看见的形态
+    rels = [args.path] if args.path else list(cfg.get("final_path") or [])
 
     if args.close:
         n = 0
@@ -76,7 +88,8 @@ def main() -> int:
         return 0
 
     REVIEW_ROOT.mkdir(parents=True, exist_ok=True)
-    print(f"轮次 {args.round}   检视路径 {rel or '(未定)'}\n")
+    print(f"轮次 {args.round}   检视路径 " +
+          ("；".join(rels) if rels else "(未定)") + "\n")
     opened, missing = [], []
     for fam in families:
         branch = f"{args.round}/{fam}"
@@ -134,8 +147,10 @@ def main() -> int:
   · **不要往检视面里写**。要改稿在整合面上改，不在这儿；
   · 读完拆掉：`round-review.py --round {args.round} --close`
 
-看内容直接进目录读，或：
-  diff <(cat ~/review/{args.round}-luna/{rel}) <(cat ~/review/{args.round}-kimi/{rel})""")
+看内容直接进目录读，或逐份对比（本轮 {len(rels)} 份交付物）：""")
+    for r in rels:
+        print(f"  diff <(cat ~/review/{args.round}-luna/{r}) "
+              f"<(cat ~/review/{args.round}-kimi/{r})")
     return 0
 
 
