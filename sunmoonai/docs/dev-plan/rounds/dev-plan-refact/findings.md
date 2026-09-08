@@ -391,3 +391,36 @@ mechanical_absent []   ← 工单里明写了 2 条，解析出 0 条
 从未被机械检查。**那两份候选已作废（`rulings.md` R1），所以本轮无需回溯**；
 但 `runtime-refact` 等已 DONE 的轮次是否用过多行 `mechanical_absent`，
 起草者只核了 `round.md` 的解析结果、**没有回溯核查那些轮次的验收记录**。
+
+---
+
+## F-8 ｜ 产品合同仍把已归档的两份 lifecycle 文当作开发流程真源
+
+**提出**：cursor，2026-09-08，在 `dev-plan-refact` ① 安置 `working/request-lifecycle.md` 时。
+
+### 观察
+
+合同 §0.1 / §0.2 三处把「开发 Agent 与人的工作流程」指到：
+
+- [`development-lifecycle-agent.md`](../../archive/development-lifecycle-agent.md)
+- `development-lifecycle-human.md`（同目录归档稿）
+
+可复核：
+
+```bash
+git grep -n 'development-lifecycle-agent.md' -- sunmoonai/docs/dev-plan/working/request-lifecycle.md
+```
+
+现行活文档是 [`agent-dev-guide.md`](../../agent-dev-guide.md)（所有者 2026-09-08 裁定取代前一版；guide 页首自述）。archive 里那两份是历史稿，`README.md` 已写「无规范效力」。
+
+合同自己的入门问题禁止开发流程冒充产品要求，同时又把开发流程的权威写进合同正文——权威指向的是已经降级的文件。
+
+### 结论
+
+这不是「合同条款对不对」，是**真源指针过期**。读者按合同去找开发流程，会读到已被推翻的「两条平行路径」等旧设计（guide §0.0 第 1 条正是为此改的）。
+
+### 落点建议（**待裁定，本轮不改**）
+
+1. 合同 §0.1 / §0.2 的开发流程指针改为 `agent-dev-guide.md`，并保留「开发流程不是产品要求」的过滤器。
+2. 该编辑必须走独立 Change，且按 B2：**不能**为了改指针而让 71 个行号锚无迁移地图地漂移——要么接受一次全量锚点迁移，要么把指针改成不插行的等价替换（若做得到）。
+3. 本轮 ①b 已把合同 42 节全部落在产品合同类型；这条发现不改变归属，只登记指针过期。
