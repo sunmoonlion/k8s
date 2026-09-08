@@ -258,6 +258,9 @@ guide 旧章号与正式栏目（避免第 3/4/7 章号与新动作栏并列）�
 不能直接抄进去当已实现。原 `ai-dev-readiness/` 已按本轮 R1 并入参考 inputs，不恢复
 第二套活流程，胜出 pipeline 才是今后的统一流程入口。
 
+`dev-plan/README.md` 两个源节已迁历史记录；正式切换时必须补根入口指针，指向本稿
+pipeline.md，不能让目录入口空着或继续指向作废说明。
+
 ## 六、决定检索与抽查方法
 
 在仓根运行这一条命令，最后的参数可改为 `verify`、`render agent-dev-guide.md`、
