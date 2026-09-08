@@ -71,6 +71,9 @@ AI 声明 PASS 不是服务端强制点，缺载体不隐写成已自动化。
 当前可复跑的通用工具是 `python3 sunmoonai/docs/dev-plan/doc-gate.py --all`、
 `python3 sunmoonai/docs/dev-plan/anchor-gate.py` 和
 `python3 sunmoonai/docs/dev-plan/protocol/round-status.py`（在 k8s 仓根）。
+**`round-status.py` 只判轮次产物是否作为 git 提交出现**（parse_round 读工单配置、
+stage_table 查候选/评审/裁决稿路径、verify 查冻结区/处置对账/锚点）。它**不能**判
+普通工作单元「目标/实施/测试/验收/回滚」字段齐全，也**不能**判本轮 260 行落点表。
 产品命令必须由工作单元写明仓、cwd、锁定依赖、命令和环境；本稿不编造一个已经存在的
 `make check`，不声称 Jenkins 已接线，也不把“执行命令成功”当作有非空有效测试。
 
