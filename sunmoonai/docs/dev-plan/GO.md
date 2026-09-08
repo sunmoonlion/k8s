@@ -27,10 +27,17 @@ git log -1 --format=%h HEAD        # 短哈希
 ⚠ **通知与任务书里不再硬写哈希**（2026-09-08 起）：硬写的会随重定基线过期，
 而**过期了不会有人发现**——本轮已经发生过一次，是 `luna` 按本文第五节报出来的。
 
+⚠ **① 之后「基线」换了对象。**① 时你的 `HEAD` 就是基线；
+从 ② 起你的 `HEAD` 是**你自己的产物**，而本环节要处理的对象由通知里的
+**冻结表**指定（各家 commit + 行数 + sha256）。**以那张表为准，不以你的 `HEAD` 为准。**
+
 ## 二、现在是哪一轮、哪个环节
 
+⚠ **在主线跑，不在你自己的工作区跑。用绝对路径，不要 `cd`**——
+`cd` 过去就容易忘了回来，然后在主线里提交（第四节第 1 条）。
+
 ```bash
-python3 sunmoonai/docs/dev-plan/protocol/round-status.py
+python3 ~/master/k8s/sunmoonai/docs/dev-plan/protocol/round-status.py
 ```
 
 它按**产物**推导，不看声明。输出里「当前环节：X」那一行就是答案，
@@ -38,18 +45,57 @@ python3 sunmoonai/docs/dev-plan/protocol/round-status.py
 
 ⚠ **判据是产物出现，不是谁说了什么。**你自己那格是 ⬜ 就还没交，✅ 才算交了。
 
+⚠ **为什么必须在主线跑**（2026-09-08 实测，`findings.md` F-13）：
+一个仓的多个 worktree **各有一份脚本副本**，你那份可能是旧的。
+而且这个脚本本身出过一次问题——它的 ref 列表里含 `HEAD`，
+在参赛方自己的工作区里 `HEAD` 就是该家的分支，于是**只要一家交了，五家全绿**：
+
+```text
+同一个 commit、同一条命令
+  在 ~/master/k8s          ① 提案  进行中  opus✅ luna⬜ kimi⬜ cursor⬜ qwen⬜   （对）
+  在 ~/worktrees/opus/k8s  ① 提案  完成    opus✅ luna✅ kimi✅ cursor✅ qwen✅   （错）
+```
+
+主线那份已修。**在别处跑出的判定不作数。**
+
 ## 三、去读该环节的通知，照它做
 
-```
-sunmoonai/docs/dev-plan/rounds/dev-plan-refact/call-<环节>.md
+⚠ **在主线 `~/master/k8s` 读，不在你自己的工作区读。用绝对路径，不要 `cd`。**
+
+```bash
+R=~/master/k8s/sunmoonai/docs/dev-plan/rounds/dev-plan-refact
+cat $R/call-<环节>.md       # 本环节通知
+cat $R/dev-plan-refact.md   # 题目与验收标准
+cat $R/round.md             # 工单
 ```
 
 环节号就是上一步查出来的（`①` `②` `④` `⑤` `⑦`）。**通知里写了交什么、交到哪、判据是什么。**
-本轮的题目与全部验收标准在同目录的 `dev-plan-refact.md`，工单在 `round.md`。
+
+**为什么在主线读**：通知是组织者的产物，写在主线上。你的分支从 ① 起就带着自己的产物、
+不再跟进主线，所以**你的工作区里不会有当前环节的通知**——① 是唯一的例外（开工前刚被
+供给到主线那一点）。
+
+⚠ **不要把主线合并进你的分支**来「拿到通知」。你不需要它在你的分支上，
+而合并会引入真实冲突：2026-09-08 实测，两家在 ① 期间按 `B3` 往 `findings.md` 追加过
+发现，与主线同一份文件上的新增条目直接冲突。
+
+`~/master/k8s` **可读不可写**：读通知、读任务书、跑判定命令都在那里；
+**产物一律写回你自己的工作区**（见下第四节第 1 条）。
 
 ## 四、四条不能违反的
 
 1. ⚠ **只写你自己的工作区。**不写主线、不写别人的 worktree、不写 `~/master/`。
+
+   ⚠⚠ **本文让你读主线、在主线跑判定，但一律用绝对路径，不要 `cd` 过去。**
+   `cd` 过去容易忘了回来，然后在主线里 `git add` —— 那就是写主线。
+   提交也写全路径，不靠当前目录：
+
+   ```bash
+   git -C ~/worktrees/<你的名>/k8s add <产物路径>
+   git -C ~/worktrees/<你的名>/k8s commit -m "..."
+   git -C ~/master/k8s status --porcelain      # 自证没写错地方：应为空
+   ```
+
 2. ⚠ **提案冻结前不得读其他候选**，也不得读发起方倾向。
    看到别人的答案之后产出的东西属于评审或改进，**不再是独立候选**。
 3. ⚠ **交卷 = 你自己分支上的可达 commit。**未提交的工作区文件**不算交卷**——
@@ -72,9 +118,16 @@ sunmoonai/docs/dev-plan/rounds/dev-plan-refact/call-<环节>.md
 ## 六、交卷之后
 
 ```bash
-git add <你的产物路径>
-git commit -m "<环节> dev-plan-refact <产物名>（<你的名>）"
-python3 sunmoonai/docs/dev-plan/protocol/round-status.py   # 确认自己那格变了
+# 提交：写全路径，不靠当前目录 —— 你可能还停在主线（第四节第 1 条）
+W=~/worktrees/<你的名>/k8s
+git -C $W add <你的产物路径>
+git -C $W commit -m "<环节> dev-plan-refact <产物名>（<你的名>）"
+
+# 核验：在主线跑（理由见第二节）
+python3 ~/master/k8s/sunmoonai/docs/dev-plan/protocol/round-status.py
+
+# 自证没写错地方：主线必须是干净的
+git -C ~/master/k8s status --porcelain    # 应为空
 ```
 
 ⚠ **提交后再跑一次状态脚本。**它认不出你的产物（路径不对、分支不对）时，
