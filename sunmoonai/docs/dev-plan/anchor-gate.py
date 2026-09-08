@@ -59,7 +59,9 @@ def archived(rel):
     且有逐节落点收据的文档），其锚点按成文时的状态解析，不因后续文档变动判失败——
     冻结物不可改，让门禁对它永久报红只会让人不再看门禁。
     但仍逐条列出供人判：**软判不是不判**。
-    活跃文档集 = dev-plan/ 顶层 + working/ + project-guide/ + ai-dev-readiness/，那些硬判。
+    活跃文档集 = dev-plan/ 顶层 + working/ + project-guide/，那些硬判。
+    ⚠ 2026-09-08：ai-dev-readiness/ 已整体并入 rounds/dev-plan-refact/inputs/，
+    该目录取消，随之从活跃集移出——移入 rounds/ 即自动转为软判，见首句。
 
     ⚠ 2026-09-07 加入 archive/：该目录当天重建，收入两份归档件，其中
     runtime-architecture.md 带一处指向外部仓的存量失效锚（`task.md:214`，

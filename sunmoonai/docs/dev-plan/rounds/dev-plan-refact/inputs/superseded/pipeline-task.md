@@ -9,6 +9,21 @@
 > 所以 §0 讲怎么开工，第一部分把背景讲全，第二部分是要交付的东西。
 > **除本文外不需要额外指令。**
 
+> ⚠⚠ **本文已被取代（2026-09-08），不要照它开工。**
+>
+> 它是 2026-09-04 立的 `pipeline` 轮任务书，**题目是对的**——§6 交付物要的就是
+> 「一份可直接发布的完整流程定义」，§13.1 也已处理「背景材料全部由 opus 起草」
+> 这个利益冲突。**它没跑完**：判据已密封（`e7e37486`），四家产出从未出现。
+>
+> 2026-09-07 `dev-plan-refact` 轮另起任务书顶替了它，题目被改成「文档组织架构」，
+> 并把 PRD/ADR/TLD 列为扣分项——那是本轮作废重开的直接原因，见
+> [`../../rulings.md`](../../rulings.md) R1。
+>
+> **现行任务书**：[`../../dev-plan-refact.md`](../../dev-plan-refact.md)。
+> 本文只作历史记录保留：它的 §7 七个问题与 §13.1 四条利益约束**已被现行任务书继承**。
+> 文中出现的 `sunmoonai/docs/ai-dev-readiness/` 路径是**成文时的路径**，该目录
+> 2026-09-08 已整体并入本轮 `inputs/`，不再存在。
+
 ---
 
 ## 0. 开工须知（先读这一节，再往下）
@@ -29,7 +44,7 @@ pwd     # 应形如 /home/zym/worktrees/luna/k8s
 
 ### 0.2 本次只做环节 ①
 
-本轮流程见 [`round-protocol.md`](../dev-plan/protocol/round-protocol.md)，**你现在只做第一个环节**：
+本轮流程见 [`round-protocol.md`](../../../../protocol/round-protocol.md)，**你现在只做第一个环节**：
 
 > **① 提案**：写出候选，提交，把候选文件的 SHA-256 与 commit 号回报给发起人。
 
@@ -63,10 +78,10 @@ git rev-parse HEAD
 ### 0.5 读的顺序
 
 1. 本文全文
-2. [`round-protocol.md`](../dev-plan/protocol/round-protocol.md) — 本轮流程与纪律
-3. [`constraints.md`](../dev-plan/constraints.md) — 尤其「保证这些被遵守的三层」那节
+2. [`round-protocol.md`](../../../../protocol/round-protocol.md) — 本轮流程与纪律
+3. [`constraints.md`](../../../../constraints.md) — 尤其「保证这些被遵守的三层」那节
 4. `working/request-baseline/TEMPLATE.md` 与 `working/request-baseline/REQ-010-REQ模板完善/template-proposed.md` — **PRD 那一格的现状**
-5. [`implementation-plan.md`](../dev-plan/implementation-plan.md)、[`handoff.md`](../dev-plan/handoff.md)、[`development-plan.md`](../dev-plan/development-plan.md)
+5. [`implementation-plan.md`](../../../../implementation-plan.md)、[`handoff.md`](../../../../handoff.md)、[`development-plan.md`](../../../../development-plan.md)
 6. `working/request-lifecycle.md` — 产品契约，原则层，不动
 7. 背景材料三份（见 §11），**注意它们各自的性质不同**
 
@@ -105,7 +120,7 @@ investment-app 是一个多租户投资研究平台。用户在浏览器提出�
 这条不是修辞。本项目已经吃过一次亏：2026-09-03 有一次文档整合产出 1100 行自洽的稿子，
 自编一套 8 条不变量与既有的 I1–I15 并存、还漏了三条，而**当时没有任何机器会因此变红**。
 
-本仓自己在 [`constraints.md`](../dev-plan/constraints.md)「保证这些被遵守的三层」里已经把道理写死了：
+本仓自己在 [`constraints.md`](../../../../constraints.md)「保证这些被遵守的三层」里已经把道理写死了：
 
 > **只有第一层不依赖人。**后两层是纪律，纪律会被忘。
 
@@ -147,7 +162,7 @@ pyright / ruff），`uv` 也装了，但**每个新 worktree 需要先 `uv sync`
 
 | 样板 | 位置 | 对在哪 |
 | --- | --- | --- |
-| 文档门禁 | [`doc-gate.py`](../dev-plan/doc-gate.py) + 版本化 `.githooks/pre-commit` | 不靠人记得跑；**结论不取决于工作区状态**（对照 git 索引而非文件系统） |
+| 文档门禁 | [`doc-gate.py`](../../../../doc-gate.py) + 版本化 `.githooks/pre-commit` | 不靠人记得跑；**结论不取决于工作区状态**（对照 git 索引而非文件系统） |
 | 休眠能力登记表 | `investment-backend/app/tests/test_dormant_capabilities.py` | 每条判据**两个方向都能失败**：`anchor_exists`（锚点还在吗）+ `still_dormant`（还休眠着吗） |
 
 两者共同的形状值得单独记住：
@@ -193,8 +208,8 @@ grep -rn "create_table(" investment-backend/app/alembic/versions/ | wc -l   # 13
 | --- | --- | --- |
 | `working/request-lifecycle.md` | **产品契约**：Task/Attempt 对象、两层状态机、I1–I15、四本账、AT-01…AT-22 | **不动，原则层，只引用** |
 | `working/development-lifecycle-agent.md` | **一个开发 Task 内部**怎么执行：受理、工作区物化、写入前门禁、执行内核、产出物与 commit、权限预算、证据验收 | **不动**（另有一轮正在重写它） |
-| [`constraints.md`](../dev-plan/constraints.md) | 代码必须符合的规则 | 不动，只引用规则号 |
-| [`development-plan.md`](../dev-plan/development-plan.md) | 要建什么、为什么 | 不动 |
+| [`constraints.md`](../../../../constraints.md) | 代码必须符合的规则 | 不动，只引用规则号 |
+| [`development-plan.md`](../../../../development-plan.md) | 要建什么、为什么 | 不动 |
 | **本轮要产出的 `pipeline.md`** | **一个需求从提出到上线，经过哪些阶段与门** | **新建** |
 
 用一句话记住分界：
@@ -212,9 +227,9 @@ grep -rn "create_table(" investment-backend/app/alembic/versions/ | wc -l   # 13
 | --- | --- | --- |
 | `working/request-baseline/TEMPLATE.md` + `REQ-010/template-proposed.md` | 39 / 93 | **需求（PRD）**——两份并存 |
 | `working/request-baseline/REQ-001…010/` | 14 份 | 已发生的需求记录（**是状态，不是流程**） |
-| [`implementation-plan.md`](../dev-plan/implementation-plan.md) | 69 | 任务模板（九栏）+ L1–L7 测试层次 |
-| [`handoff.md`](../dev-plan/handoff.md) | 96 | 状态与交接 |
-| [`constraints.md`](../dev-plan/constraints.md) | 214 | 规则 + 三层保证 |
+| [`implementation-plan.md`](../../../../implementation-plan.md) | 69 | 任务模板（九栏）+ L1–L7 测试层次 |
+| [`handoff.md`](../../../../handoff.md) | 96 | 状态与交接 |
+| [`constraints.md`](../../../../constraints.md) | 214 | 规则 + 三层保证 |
 | `working/request-lifecycle.md` | 647 | 产品契约 |
 | `working/development-lifecycle-agent.md` | 1161 | 实现那一格的内部 |
 
@@ -306,7 +321,7 @@ grep -rn "create_table(" investment-backend/app/alembic/versions/ | wc -l   # 13
 准入（可以开工了）与准出（做完了）的定义，落点建议是任务模板的栏位而不是流程文档——
 **放流程文档里没人看，放任务模板里每开一个任务它就出现一次**。
 
-现状：[`implementation-plan.md`](../dev-plan/implementation-plan.md) 的九栏
+现状：[`implementation-plan.md`](../../../../implementation-plan.md) 的九栏
 （类型/仓库/前置/目标/实施/测试/验收/回滚/状态）已经是半个 DoR/DoD，
 但没有区分准入与准出。你要给出具体的两张清单，以及它们落在哪。
 
@@ -315,7 +330,7 @@ grep -rn "create_table(" investment-backend/app/alembic/versions/ | wc -l   # 13
 回答三件事：
 
 1. **出题方与答题方怎么分。** 自己写实现 + 自己写测试 + 自己报告通过 = 三位一体的自证。
-   [`round-protocol.md`](../dev-plan/protocol/round-protocol.md) 已经把角色分离想透了，但只用在大轮次上——
+   [`round-protocol.md`](../../../../protocol/round-protocol.md) 已经把角色分离想透了，但只用在大轮次上——
    **要不要下沉到日常任务？成本是否可接受（每个任务至少两个会话）？**
 2. **人的评审审什么。** AI 会产出巨大 diff，"控制 PR 大小"这条纪律撑不住。
    人应当审哪几样、不审哪几样？
@@ -423,7 +438,7 @@ sunmoonai/docs/dev-plan/working/request-lifecycle.md      产品契约，只引�
 
 ## 13. 本轮的角色
 
-**流程本身见 [`round-protocol.md`](../dev-plan/protocol/round-protocol.md)**——环节、产物落点、冻结与枚举、
+**流程本身见 [`round-protocol.md`](../../../../protocol/round-protocol.md)**——环节、产物落点、冻结与枚举、
 评审四块、裁决与验收规则、清理顺序，全在那份里，本节不重复。**动手前先读完它。**
 
 | 角色 | 谁 |
@@ -451,5 +466,5 @@ sunmoonai/docs/dev-plan/working/request-lifecycle.md      产品契约，只引�
 3. `ai-pipeline.md` 已知有一处判断被推翻（§11 那条），整合时不得以任何形式复活；
 4. 四家的候选**都不参考 opus 的候选**——本轮 opus 不出候选。
 
-反例记在 [`round-protocol.md`](../dev-plan/protocol/round-protocol.md)：2026-09-03 那次失败整合，
+反例记在 [`round-protocol.md`](../../../../protocol/round-protocol.md)：2026-09-03 那次失败整合，
 五条毛病全部源于角色不分。

@@ -109,15 +109,22 @@ def main() -> int:
                     continue
                 print(f"  ↻ {fam:8s} 已刷新 {have[:8]} → {want[:8]}")
         head = sh("git", "-C", str(d), "rev-parse", "--short=8", "HEAD")[1]
-        target = d / rel if rel else None
-        if target and target.exists():
-            lines = sum(1 for _ in target.open(encoding="utf-8", errors="replace"))
-            rc, sha = sh("sha256sum", str(target))
-            print(f"  ✓ {fam:8s} {d}")
-            print(f"      HEAD {head}   {rel} —— {lines} 行   sha256 {sha.split()[0][:16]}")
-        else:
-            print(f"  ⚠ {fam:8s} {d}")
-            print(f"      HEAD {head}   ⚠ **{rel} 不存在**——该家还没交，或交到了别的路径")
+        # ⚠ 逐条报，不是只报第一条：多交付物轮次里「只交了其中一份」
+        # 恰恰是要看见的形态（dev-plan-refact 第一版就是缺 ①a 而通过了）。
+        present = []
+        print(f"  · {fam:8s} {d}")
+        print(f"      HEAD {head}")
+        for r in rels:
+            target = d / r if r else None
+            if target and target.exists():
+                lines = sum(1 for _ in target.open(encoding="utf-8", errors="replace"))
+                rc, sha = sh("sha256sum", str(target))
+                print(f"      ✓ {r} —— {lines} 行   sha256 {sha.split()[0][:16]}")
+                present.append(r)
+            else:
+                print(f"      ⚠ **{r} 不存在**——该家还没交，或交到了别的路径")
+        if rels and len(present) < len(rels):
+            print(f"      ⚠ {fam} 交付不全：{len(present)}/{len(rels)}")
         opened.append(fam)
 
     print(f"\n开了 {len(opened)} 个检视面" + (f"，{len(missing)} 家还没开工" if missing else ""))

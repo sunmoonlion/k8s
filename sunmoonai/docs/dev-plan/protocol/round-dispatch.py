@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """分发：算出「现在该叫谁、说什么」，输出可直接执行的命令。
 
-**当前只生成，不执行。**这是 `ai-dev-readiness/automation-roadmap.md` 第 3 步：
+**当前只生成，不执行。**这是 `rounds/dev-plan-refact/inputs/automation-roadmap.md` 第 3 步：
 先让人粘贴一轮，验证「判定」与「措辞」都对，再上真调用（第 4 步）。
 理由写在 `round-protocol.md`「判据自身的质量」：一个检查第一次运行时，
 最可能发现的是它自己判错了——分发脚本同理，而它判错的代价是四家同时干错的环节。

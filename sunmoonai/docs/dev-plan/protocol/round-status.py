@@ -139,16 +139,45 @@ def parse_round(md: Path) -> dict:
     m = re.search(r"```toml\n(.*?)```", text, re.S)
     if not m:
         return {}
+
+    # ⚠ 2026-09-08 修：原实现逐行处理，**多行数组会被静默吞成空列表**。
+    # `mechanical_absent = [` 那一行取到的 v 是 "["，strip("[]") 后为空串，
+    # 于是整条判据变成 []——而 [] 在下游是「没有机械缺席条」，不报错、不报空。
+    # 实测：dev-plan-refact 第一版工单里写了 2 条 mechanical_absent，解析出 0 条。
+    # 这正是协议「判据自身的质量」点名的形状：判据静默退化成恒真。
+    # 改法：先把跨行的数组折成一行，再逐行解析。
+    body = m.group(1)
+    folded, buf, depth = [], "", 0
+    for raw in body.splitlines():
+        line = raw.split("#", 1)[0].rstrip()
+        if depth == 0 and "=" not in line:
+            if line.strip():
+                folded.append(line)
+            continue
+        buf = (buf + " " + line.strip()).strip() if depth else line.strip()
+        depth += line.count("[") - line.count("]")
+        if depth <= 0:
+            folded.append(buf)
+            buf, depth = "", 0
+    if buf:                       # 数组没闭合——不许当成解析成功
+        die(f"{md}: toml 块里有未闭合的数组：{buf[:60]}")
+
     cfg: dict = {}
-    for line in m.group(1).splitlines():
-        line = line.split("#", 1)[0].strip()
+    for line in folded:
+        line = line.strip()
         if not line or "=" not in line:
             continue
         k, v = (x.strip() for x in line.split("=", 1))
         if v.startswith("["):
-            cfg[k] = [s.strip().strip('"') for s in v.strip("[]").split(",") if s.strip()]
+            if not v.endswith("]"):
+                die(f"{md}: {k} 的数组未闭合")
+            inner = v[1:-1].strip()
+            # 元素可能带单引号（mechanical_absent 用 '...'）或双引号
+            cfg[k] = [s.strip().strip("\"'").rstrip(",").strip().strip("\"'")
+                      for s in re.findall(r"""'[^']*'|"[^"]*"|[^,]+""", inner)
+                      if s.strip().strip(",").strip()]
         else:
-            cfg[k] = v.strip('"')
+            cfg[k] = v.strip('"').strip("'")
     return cfg
 
 
@@ -175,6 +204,23 @@ def find_active(root: Path, want: str | None) -> tuple[str, dict]:
     return found[0]
 
 
+def final_path_list(cfg: dict) -> list[str]:
+    """`final_path` 允许是字符串（单交付物，历史形态）或字符串列表（多交付物）。
+
+    为什么允许列表：dev-plan-refact 第二版有两件交付物——①a 流程结构与 ①b 逐节安置。
+    第一版只有一条 final_path，而「①a 被写没了」正是它作废的形态。**判据要能判出
+    「只交了其中一份」**，所以 ① 的判定对列表取 all()，不是 any()。
+
+    返回值恒为非空列表；空列表或非字符串元素直接 die——判据自身不许静默退化。
+    """
+    v = cfg["final_path"]
+    if isinstance(v, str):
+        v = [v]
+    if not isinstance(v, list) or not v or not all(isinstance(x, str) and x for x in v):
+        die("round.md 的 final_path 必须是非空字符串，或非空的字符串列表")
+    return v
+
+
 def stage_table(cfg: dict, name: str) -> list[dict]:
     """每个环节：谁该交、交了没。判据即命令，结论只依赖 git 提交。
 
@@ -184,7 +230,7 @@ def stage_table(cfg: dict, name: str) -> list[dict]:
     """
     proposers = cfg.get("proposers", [])
     skip = set(cfg.get("skip_stages", []))
-    final_path = cfg["final_path"]
+    final_paths = final_path_list(cfg)
     arb = cfg.get("arbiter_branch", "")
     rounds: list[dict] = []
 
@@ -198,9 +244,13 @@ def stage_table(cfg: dict, name: str) -> list[dict]:
     for w in proposers:
         # 候选可能在：该家的任一 ref 上的共享最终路径（进行中），或归档后的 candidate 文件。
         # **不要只查一个 ref** —— 见 refs_for 的注释。
-        live = any(committed(r, final_path)
-                   and blob_lines(r, final_path) != blob_lines("master", final_path)
-                   for r in refs_for(cfg, name, w))
+        # 多交付物轮次：**每一条**最终路径都要有该家的提交，缺一即未交。
+        # 不用 any() 跨路径——那会让「只交了其中一份」被判成已交。
+        live = all(
+            any(committed(r, fp)
+                and blob_lines(r, fp) != blob_lines("master", fp)
+                for r in refs_for(cfg, name, w))
+            for fp in final_paths)
         rows[w] = live or locate(cfg, name, "candidate", w) is not None
     add("① 提案", proposers, rows)
 
@@ -210,7 +260,8 @@ def stage_table(cfg: dict, name: str) -> list[dict]:
 
     # ③ 裁决：裁决稿 + 处置记录
     add("③ 裁决", [cfg.get("arbiter", "?")],
-        {"裁决稿": committed(arb, final_path) or committed("master", final_path),
+        {"裁决稿": all(committed(arb, fp) or committed("master", fp)
+                       for fp in final_paths),
          "处置记录": locate(cfg, name, "disposition") is not None})
 
     # ④ 异议：只发给被处置到的家；经裁定免除的不计
@@ -304,7 +355,7 @@ def verify(cfg: dict) -> int:
     import hashlib
 
     arb = cfg.get("arbiter_branch") or "master"
-    final_path = cfg["final_path"]
+    final_path = final_path_list(cfg)[0]   # verify 只对首条最终路径做差异核验
     hit = locate(cfg, cfg.get("round_id", ""), "disposition")
     disp = hit[0] if hit else f"{cfg['round_dir']}/disposition.md"
     fails = 0
@@ -505,7 +556,8 @@ def main() -> int:
         return 0
 
     print(f"轮次 {name}   档位 {cfg.get('tier','?')}   状态 {cfg.get('status','?')}")
-    print(f"共享最终路径 {cfg['final_path']}")
+    fps = final_path_list(cfg)
+    print("共享最终路径 " + ("；".join(fps) if len(fps) > 1 else fps[0]))
     print(f"基座 {cfg.get('baseline','无')}   裁决方 {cfg.get('arbiter','?')}"
           f"（{cfg.get('arbiter_branch','?')}）   验收方 {cfg.get('acceptor','未定')}")
     print()

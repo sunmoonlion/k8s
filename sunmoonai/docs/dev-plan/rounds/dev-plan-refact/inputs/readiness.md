@@ -4,8 +4,8 @@
 >
 > **这是讨论稿，不是结论稿。** 每个议题给出「事实 → 候选做法 → 待决问题」，
 > 待决的部分留空等拍板，不替所有者做决定。定下来之后再拆成任务，
-> 那时才写进 [`development-plan.md`](../dev-plan/development-plan.md) 与
-> [`constraints.md`](../dev-plan/constraints.md)。
+> 那时才写进 [`development-plan.md`](../../../development-plan.md) 与
+> [`constraints.md`](../../../constraints.md)。
 >
 > **本文所有现状断言都在 2026-09-04 回源核过**，带 `file:line` 或可复跑命令。
 > 凡未验证的一律标 ⚠。
@@ -33,7 +33,7 @@ AI 助手承担**。
 所以准备工作的主线不是"把规矩写清楚"——那件事本仓已经做得比多数项目好——
 而是**把规矩变成会自己报错的东西**。
 
-本仓已经在 [`constraints.md`](../dev-plan/constraints.md) 的「保证这些被遵守的三层」里
+本仓已经在 [`constraints.md`](../../../constraints.md) 的「保证这些被遵守的三层」里
 把这个道理写死了：
 
 > **只有第一层不依赖人。**后两层是纪律，纪律会被忘——这份文件本身就出过两次
@@ -49,8 +49,8 @@ AI 助手承担**。
 
 | 资产 | 位置 | 为什么它是对的 |
 | --- | --- | --- |
-| 三层理论 | [`constraints.md`](../dev-plan/constraints.md)「保证这些被遵守的三层」 | 明确区分"随测试自动跑 / 随提交自动跑 / 纪律"，并断言只有第一层不依赖人 |
-| 文档门禁 | [`doc-gate.py`](../dev-plan/doc-gate.py) + 版本化 `.githooks/pre-commit` | 两条设计约束正面避开了前两个被删脚本的坑：**不靠人记得跑**、**结论不取决于工作区状态**（对照 git 索引而非文件系统） |
+| 三层理论 | [`constraints.md`](../../../constraints.md)「保证这些被遵守的三层」 | 明确区分"随测试自动跑 / 随提交自动跑 / 纪律"，并断言只有第一层不依赖人 |
+| 文档门禁 | [`doc-gate.py`](../../../doc-gate.py) + 版本化 `.githooks/pre-commit` | 两条设计约束正面避开了前两个被删脚本的坑：**不靠人记得跑**、**结论不取决于工作区状态**（对照 git 索引而非文件系统） |
 | 休眠能力登记表 | `investment-backend/app/tests/test_dormant_capabilities.py` | 每条判据**两个方向都能失败**：`anchor_exists`（锚点还在吗）+ `still_dormant`（还休眠着吗）。文件头点破本项目反复踩的坑：**把"没找到"当成"不存在"** |
 
 这三件事的共同形状值得单独提炼，因为后面每个议题都要用它：
@@ -76,7 +76,7 @@ grep -cE "^\| [ACDITR][0-9]+ \|" constraints.md          # 40 条规则
 
 **缺口二：产品契约的编号一个都没进测试。**
 
-[`request-lifecycle.md`](../dev-plan/working/request-lifecycle.md) 定义了
+[`request-lifecycle.md`](../../../working/request-lifecycle.md) 定义了
 15 条不变量 I1–I15、22 条验收 AT-01…AT-22、10 条功能项 F-EXEC-01…08 / F-INTERACT-01…02，
 共 **47 个编号**。
 
@@ -111,8 +111,8 @@ pytest-asyncio / pyright / ruff，且配了清华源），`uv` 也装了，但**
 
 | 出处 | I3 是什么 |
 | --- | --- |
-| [`constraints.md`](../dev-plan/constraints.md)（`:88`） | 浏览器身份与服务身份互不通用；凭据禁止复用 |
-| [`request-lifecycle.md`](../dev-plan/working/request-lifecycle.md)（`:450`） | 每次读取、工具调用和写入重新校验当前授权 |
+| [`constraints.md`](../../../constraints.md)（`:88`） | 浏览器身份与服务身份互不通用；凭据禁止复用 |
+| [`request-lifecycle.md`](../../../working/request-lifecycle.md)（`:450`） | 每次读取、工具调用和写入重新校验当前授权 |
 
 `I1`–`I8` 两边都有。人读上下文能分清，**AI 跨文档检索时会混**——而且混了以后
 产出的文字仍然通顺。这条在议题六处理。
@@ -211,7 +211,7 @@ grep -rn "create_table(" investment-backend/app/alembic/versions/ | wc -l   # 13
   意味着助手可以提交一个"支持 allowed_tools"的改动，**而没有机制能发现它没接线**。
 - ⚠ 其余位点尚未系统排查，属本议题的第一项工作。
 
-**待决**：这条要不要直接进 [`constraints.md`](../dev-plan/constraints.md) 成为新规则？
+**待决**：这条要不要直接进 [`constraints.md`](../../../constraints.md) 成为新规则？
 若进，归到哪个系列（看起来最接近 T 系列）？
 
 ### 议题五 · 任务粒度与交接判据
@@ -220,7 +220,7 @@ grep -rn "create_table(" investment-backend/app/alembic/versions/ | wc -l   # 13
 在"跨五个文件的架构演进"上会编造，且编得通顺。
 
 本仓已有一条形状正确的判据，在
-[`development-lifecycle-agent.md`](../dev-plan/archive/development-lifecycle-agent.md) §5.5：
+[`development-lifecycle-agent.md`](../../../archive/development-lifecycle-agent.md) §5.5：
 
 > 把当前会话杀掉，另一个执行者只读持久载体能否接着做？
 
@@ -253,7 +253,7 @@ refact 轮任务书「已经查实、不必重新论证的事实」一节 抓到
 ### 议题七 · 并行隔离流程的适用边界
 
 **事实**：四家并行提案 + 互评 + 异议轮 + 独立验收，见
-[`round-protocol.md`](../dev-plan/protocol/round-protocol.md)。这套流程确实有效——
+[`round-protocol.md`](../../../protocol/round-protocol.md)。这套流程确实有效——
 现行的 lifecycle 基座就是它的产物，而 2026-09-03 那次**角色不分**的整合失败
 （整合方即参赛方、无异议轮、无独立验收）反证了流程的每一环都在起作用。
 
@@ -305,8 +305,8 @@ refact 轮任务书「已经查实、不必重新论证的事实」一节 抓到
 2. 47 个契约编号每一条都有明确归类：有测试 / 有前置条件的集成测试 / 显式标 ⚠ 说明为什么不可判定；
 3. `constraints.md` 40 条规则里的 22 条 ⚠ 自检逐条过一遍，同样三分类；
 4. 首批财务金标准落地，数量与来源由议题三确定；
-5. 本文的每个"待决"都有结论，结论落到 [`development-plan.md`](../dev-plan/development-plan.md)
-   或 [`constraints.md`](../dev-plan/constraints.md)，本文降级为背景材料。
+5. 本文的每个"待决"都有结论，结论落到 [`development-plan.md`](../../../development-plan.md)
+   或 [`constraints.md`](../../../constraints.md)，本文降级为背景材料。
 
 ## 6. 待决问题汇总
 
