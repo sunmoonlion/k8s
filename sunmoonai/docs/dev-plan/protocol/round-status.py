@@ -244,12 +244,23 @@ def stage_table(cfg: dict, name: str) -> list[dict]:
     for w in proposers:
         # 候选可能在：该家的任一 ref 上的共享最终路径（进行中），或归档后的 candidate 文件。
         # **不要只查一个 ref** —— 见 refs_for 的注释。
+        # ⚠ 判某一家是否交卷时**不得含 HEAD**。
+        # 候选走的是**共享最终路径**（五家同一个文件名，靠分支区分作者）；
+        # 而 HEAD 在参赛方自己的工作区里就是该家的分支，于是判每一家时都会命中
+        # 同一份产物 —— 五家全绿。
+        # 实测 2026-09-08：同一个 commit、同一条命令，
+        #   在 ~/master/k8s        判「① 进行中，只有 opus 交了」（对）
+        #   在 ~/worktrees/opus/k8s 判「① 完成，五家全交，进入 ②」（错）
+        # 这违反本协议自己的原则：结论只依赖 git 提交，工作区状态不参与判定。
+        # ② 之后的产物走 `<环节>-<名>.md` 的**分家路径**，HEAD 只会命中自己那份，
+        # 不受影响，故只在此处过滤，不动 refs_for 本身（它还要服务 locate 与裁决稿）。
+        refs = [r for r in refs_for(cfg, name, w) if r != "HEAD"]
         # 多交付物轮次：**每一条**最终路径都要有该家的提交，缺一即未交。
         # 不用 any() 跨路径——那会让「只交了其中一份」被判成已交。
         live = all(
             any(committed(r, fp)
                 and blob_lines(r, fp) != blob_lines("master", fp)
-                for r in refs_for(cfg, name, w))
+                for r in refs)
             for fp in final_paths)
         rows[w] = live or locate(cfg, name, "candidate", w) is not None
     add("① 提案", proposers, rows)

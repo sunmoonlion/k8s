@@ -391,3 +391,77 @@ mechanical_absent []   ← 工单里明写了 2 条，解析出 0 条
 从未被机械检查。**那两份候选已作废（`rulings.md` R1），所以本轮无需回溯**；
 但 `runtime-refact` 等已 DONE 的轮次是否用过多行 `mechanical_absent`，
 起草者只核了 `round.md` 的解析结果、**没有回溯核查那些轮次的验收记录**。
+
+---
+
+## F-13 ｜ ⚠ ① 的判定结果取决于在哪个工作区跑——判据把工作区状态放了回去
+
+**登记 2026-09-08 ｜ 由 opus 在交完 ① 候选后按 `GO.md` §5 停下来报出 ｜ 类：判据自身的质量**
+
+### 可复现
+
+同一个 commit、同一条命令：
+
+```text
+在 ~/master/k8s          ① 提案  进行中   opus✅ luna⬜ kimi⬜ cursor⬜ qwen⬜   （对）
+在 ~/worktrees/opus/k8s  ① 提案  完成     opus✅ luna✅ kimi✅ cursor✅ qwen✅   （错）
+                                          当前环节：② 互评
+```
+
+### 根因
+
+`round-status.py` 的 `refs_for()` 返回的 ref 列表末尾含 `"HEAD"`：
+
+```python
+refs = ([f"{name}/{who}", who] if who else []) + [arbiter_branch, "master", "HEAD"]
+```
+
+候选走的是**共享最终路径**（五家同一个文件名，靠分支区分作者）。
+而 `HEAD` 在参赛方自己的工作区里就是**该家的分支**，于是判**每一家**时都会命中
+同一份产物 —— 只要有一家交了，五家全绿。
+
+这与协议自己的原则直接冲突：
+
+> 判据即命令，结论只依赖 git 提交；**工作区文件不参与判定**。
+> （`doc-gate.py` 同源设计：「结论不取决于工作区状态」）
+
+### 为什么之前没暴露
+
+上一版只有一条 `final_path`，且组织者一直在 `~/master/k8s` 跑——那里 `HEAD` = master、
+不含候选，恰好正确。**这是第一次由参赛方在自己的工作区跑**，才翻出来。
+
+⚠ 影响：若所有者在任何一家的工作区跑，会看到「① 完成、当前环节 ②」并据此发 ② 通知，
+而实际可能只有一家交了。**判据会让轮次错误推进。**
+
+### 处置（已做）
+
+只在 ① 的判定处过滤，不动 `refs_for` 本身——它还要服务 `locate()` 与裁决稿判定：
+
+```python
+refs = [r for r in refs_for(cfg, name, w) if r != "HEAD"]
+```
+
+**② 之后不受影响**：那些产物走 `<环节>-<名>.md` 的**分家路径**，
+`HEAD` 只会命中自己那一份。故不作全局改动。
+
+### 反例测试（这条比修复本身重要）
+
+修复当时五家已全部交卷，**正例与反例都会显示全绿**——不做反例就无法证明修好了。
+构造：在一条临时分支上放一个五家分支都没有的探针文件，令其为 `final_path`。
+
+```text
+旧版（含 HEAD）：{opus:True, luna:True, kimi:True, cursor:True, qwen:True}   ← 全部误判
+新版（滤 HEAD）：{opus:False, luna:False, kimi:False, cursor:False, qwen:False}
+```
+
+⚠ **第一次反例测试是无效的**：我在 opus 工作区加载了该工作区自己的
+`round-status.py`——那份还是修复前的旧版（修改只在 master 的工作区，未提交）。
+两版行为自然相同，而我先写下了「反例通过」的结论**才**看输出。
+第二次改为显式加载 master 的脚本才真正跑通。
+
+**推论（与 F-12 同型，建议一并进 `constraints.md`）**：
+
+> 跨 worktree 验证工具改动时，必须显式指明加载的是哪一份脚本；
+> 同一个仓的多个 worktree 各有一份副本，「我刚改过」不等于「这里跑的是改过的」。
+
+探针分支与文件已删除，`git log --all --diff-filter=A -- '*ZZZ-probe.md'` 为 0。
