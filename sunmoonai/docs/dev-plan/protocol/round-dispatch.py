@@ -141,9 +141,12 @@ PASTE_DIR = HERE / "paste"
 def paste(st: dict, stage: str, targets: list[str], stale: bool) -> int:
     """输出交互会话里**直接贴的那句话**，槽位从实况填。
 
-    与 `--write-md` 那条路的区别：那条生成一次性 CLI 命令（`dispatch.md`），
-    这条生成人贴进窗口的文本。取舍写在 `dispatch.md` 开头——
-    交互会话在 agent 卡住时人当场能处理，一次性命令把交互吞掉就只能干等。
+    ⚠ **与 `--write-md` 不是同一件事的两种格式，是两条能力不同的通道。**
+    `--write-md` 生成一次性 CLI 命令：**没有回话通道**，agent 需要一次往返就只能退出。
+    `rounds/executor-adapter/task.md` §1.0 实测：那条路端到端**没走完**，
+    四个决策点全部回落到人；同一个 cursor，`-p` 下三次都不提交，交互式跑一次即提交。
+    所以两条路的**产出不同**，不能互相替代，也不要为「统一入口」并掉
+    （`GO.md` 只服务交互通道，CLI 那条的入口是 `round-protocol.md`）。
 
     ⚠ **模板里没有「路径」这个槽位，路径一律写死。**
     见 `rounds/dev-plan-refact/findings.md` F-17：靠人记得写对绝对路径，
@@ -174,6 +177,9 @@ def paste(st: dict, stage: str, targets: list[str], stale: bool) -> int:
     if not stale:
         print("⚠ 对方若回「缺东西 / 字段是空的 / 没有这个文件」，**先别信它搞错了**：")
         print("   核实主线上是什么、它分支上是什么。两边不一样就改用 --stale 那一份（F-17）。")
+    print("⚠ 这是**贴进交互窗口**的文本，不是命令——人得在场。")
+    print("   一次性命令那条路（--write-md）没有回话通道，agent 卡住即退出，")
+    print("   实测端到端没走完（rounds/executor-adapter/task.md §1.0）。两者不能互相替代。")
     return 0
 
 
@@ -285,7 +291,9 @@ def main() -> int:
                     help="核对 dispatch.md 是否仍与 agents.toml 一致；不一致退出 1")
     ap.add_argument("--all", action="store_true", help="给全部参与方，不只缺的")
     ap.add_argument("--paste", nargs="?", const="", metavar="家名",
-                    help="输出交互会话里直接贴的话；不带家名则给当前环节还缺的家")
+                    help="输出**交互会话**里直接贴的话（≠ --write-md 那条一次性命令，"
+                         "两者能力不同、产出不同，见 executor-adapter §1.0）；"
+                         "不带家名则给当前环节还缺的家")
     ap.add_argument("--stale", action="store_true",
                     help="与 --paste 连用：用「过期投影」那一份（对方报缺东西时，见 F-17）")
     args = ap.parse_args()
