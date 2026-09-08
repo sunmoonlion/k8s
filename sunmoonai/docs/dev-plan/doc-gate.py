@@ -56,6 +56,30 @@ GATED = ("sunmoonai/docs/",)
 # 效力」。这类笔记按其性质会引用外部仓的绝对路径作取证出处，用共享文档的链接标准
 # 去卡它，只会逼作者绕过门禁。巡检（--survey）仍然覆盖它。
 EXEMPT = ("sunmoonai/docs/dev-plan/codex-reference/",)
+
+# ⚠ 2026-09-08 新增：按**路径片段**豁免，而不是按前缀。
+# 只豁免轮次候选的**归档副本**（`rounds/<轮次>/candidates/**`）。
+#
+# 为什么必须豁免：归档副本的唯一价值是**与该家分支上的 commit 逐字节一致**——
+# sha256 对得上，才能证明「裁决方读的和参赛方交的是同一份」。而候选写作时的相对链接
+# 是按它**活着时**的位置（`dev-plan/<产物>.md`）写的，归档到轮目录后深两层，链接失效。
+# 改链接 → 副本不再逐字节一致，README/MANIFEST 的 sha256 变成谎话；豁免 → 副本原样保留。
+# 取后者，与 anchor-gate 对 `rounds/**` 的处理同源：冻结物不可改，
+# 「让门禁对它永久报红只会让人不再看门禁」。
+#
+# ⚠⚠ **不要把整个 `rounds/` 加进来。**2026-09-08 起草者试过，一下豁免 94 份，
+# 把轮目录里**活着的**任务书、通知、裁定、发现登记也放过了——那些的坏链正是
+# doc-gate 一直在 catch 的。豁免的是归档副本，不是轮目录。
+#
+# ⚠ 候选**活着时**在 `dev-plan/` 根下，照常受全部 L1/L2/L3 检查——
+# 那才是链接必须成立的时刻。
+EXEMPT_MARKERS = ("/candidates/",)
+
+
+def exempt(path: str) -> bool:
+    return path.startswith(EXEMPT) or any(m in path for m in EXEMPT_MARKERS)
+
+
 # archive/ 曾在此豁免。2026-09-07 该目录已整个撤销：两份逐字节副本经 diff 证明
 # 相对根下同名活文档零独有内容（仅多一行失效链接）故删除，两份 lifecycle 移至
 # dev-plan/ 根下加降级页眉、由 dev-plan-refact 轮定落点。豁免随之取消。
@@ -299,14 +323,14 @@ def main(argv: list[str]) -> int:
         targets = [
             p
             for p in sorted(tracked)
-            if p.startswith(GATED) and not p.startswith(EXEMPT) and p.endswith(".md")
+            if p.startswith(GATED) and not exempt(p) and p.endswith(".md")
         ]
         # **豁免必须可见。**只报「N 份通过」而不报「另有 M 份被豁免」，
         # 读者无从知道门的覆盖范围，那是「覆盖不全比没有更危险」的形态。
         exempted = [p for p in sorted(tracked)
-                    if p.startswith(GATED) and p.startswith(EXEMPT) and p.endswith(".md")]
+                    if p.startswith(GATED) and exempt(p) and p.endswith(".md")]
         if exempted:
-            print(f"（另有 {len(exempted)} 份文档在豁免路径内，未检查：{EXEMPT}）")
+            print(f"（另有 {len(exempted)} 份在豁免内，未检查：{EXEMPT} + 片段 {EXEMPT_MARKERS}）")
     elif argv[0] == "--none":
         targets = []
     else:
@@ -314,7 +338,7 @@ def main(argv: list[str]) -> int:
         targets = [
             p
             for p in argv
-            if p.endswith(".md") and p.startswith(GATED) and not p.startswith(EXEMPT)
+            if p.endswith(".md") and p.startswith(GATED) and not exempt(p)
         ]
 
     problems: list[str] = []
