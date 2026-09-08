@@ -13,9 +13,17 @@
   2. **检视面不是产物落点。**开出来的是只读参照；任何人不得往里写；
   3. **用完删。**长期挂着的检视 worktree 会被误当成第九个参与方。
 
+**平面对照面（`--flat`）**：检视面是每家一棵完整仓，要对比五家得钻五条五层深的路径。
+人读起来是「散放」。`--flat` 把各家**同一件产物**摆进同一个目录，逐字节复制，
+并写一份 MANIFEST 记录每份来自哪个 commit、多少行、sha256。
+
+⚠ **它是投影，不是第二真源。**权威永远是各家分支上的 commit；对照面可随时删掉重建。
+判定一律以 `round-status.py` 为准，不看这里。
+
 用法：
     round-review.py --round <轮次> [--stage ①] [--path <相对路径>]   # 开
-    round-review.py --round <轮次> --close                          # 拆
+    round-review.py --round <轮次> --flat                           # 开 + 建平面对照面
+    round-review.py --round <轮次> --close                          # 拆（含对照面）
 """
 from __future__ import annotations
 
@@ -43,7 +51,7 @@ def round_cfg(name: str) -> dict:
         sys.exit(f"找不到 {f}")
     text = f.read_text(encoding="utf-8")
     cfg: dict[str, object] = {}
-    for k in ("baseline", "prefix"):
+    for k in ("baseline", "prefix", "round_dir"):
         m = re.search(rf"^{k}\s*=\s*\"([^\"]*)\"", text, re.M)
         if m:
             cfg[k] = m.group(1)
@@ -63,11 +71,73 @@ def round_cfg(name: str) -> dict:
     return cfg
 
 
+def build_flat(round_id: str, families: list, rels: list, cfg: dict) -> None:
+    """把各家同一件产物摆进同一个目录，逐字节复制 + MANIFEST。
+
+    ⚠ **投影，不是第二真源。**权威是各家分支上的 commit。
+    这里的文件是 `git show <分支>:<路径>` 的逐字节副本，改它不改变任何判定。
+
+    为什么需要：检视面是每家一棵完整仓，对比五家要钻五条深路径——
+    agent 可以 `git show` 随便取，人不行。投影的必要性由受众决定（findings F-2）。
+    """
+    import hashlib
+    root = REVIEW_ROOT / round_id
+    if root.is_dir():
+        import shutil
+        shutil.rmtree(root)          # 每次重建，避免上一轮的残留冒充当前产物
+    root.mkdir(parents=True)
+
+    # 要摆的产物 = final_path 各条 + 该家的评审（若已交）
+    rd = cfg.get("round_dir", "")
+    items = [(Path(r).stem, r) for r in rels]
+    if rd:
+        items.append(("review", f"{rd}/reviews/review-<家>.md"))
+
+    lines = [f"# `{round_id}` 平面对照面 · MANIFEST", "",
+             "> ⚠ **本目录是投影，不是第二真源。**权威是各家分支上的 commit；",
+             "> 这里每个文件都是 `git show <分支>:<路径>` 的**逐字节副本**。",
+             "> 判定一律以 `round-status.py` 为准，不看这里。**可随时删掉重建。**", "",
+             "重建：`round-review.py --round " + round_id + " --flat`", "",
+             "| 产物 | 家 | 来源 commit | 源路径 | 行 | sha256 |",
+             "| --- | --- | --- | --- | --- | --- |"]
+    n = 0
+    for label, tmpl in items:
+        d = root / label
+        d.mkdir(exist_ok=True)
+        for fam in families:
+            branch = f"{round_id}/{fam}"
+            rel = tmpl.replace("<家>", fam)
+            rc, blob = sh("git", "show", f"{branch}:{rel}")
+            if rc != 0:
+                continue
+            head = sh("git", "rev-parse", "--short=8", branch)[1]
+            data = blob if blob.endswith("\n") else blob + "\n"
+            (d / f"{fam}.md").write_text(data, encoding="utf-8")
+            sha = hashlib.sha256(data.encode()).hexdigest()[:16]
+            lines.append(f"| {label} | {fam} | `{head}` | `{rel}` | "
+                         f"{len(data.splitlines())} | `{sha}` |")
+            n += 1
+        if not any(d.iterdir()):
+            d.rmdir()
+
+    lines += ["", "⚠ **sha256 是本副本的**。要核它与分支一致，跑：", "",
+              "```bash", "cd ~/master/k8s",
+              'git show "' + round_id + '/<家>:<源路径>" | sha256sum',
+              "```", "",
+              "⚠ 若某家某件产物缺行，是该家还没交，**不是复制失败**——",
+              "以 `round-status.py` 为准。"]
+    (root / "MANIFEST.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"\n  平面对照面 {root}")
+    print(f"      {n} 份产物已按「产物类别 / 家」摆开，MANIFEST.md 记来源与 sha256")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--round", required=True)
     ap.add_argument("--close", action="store_true", help="拆掉本轮全部检视面")
     ap.add_argument("--path", help="只报某个相对路径的存在性；缺省用 round.md 的 final_path")
+    ap.add_argument("--flat", action="store_true",
+                    help="另建平面对照面：各家同一件产物摆在一起，附 MANIFEST")
     args = ap.parse_args()
 
     cfg = round_cfg(args.round)
@@ -84,6 +154,11 @@ def main() -> int:
                 print(f"  {'✓' if rc == 0 else '✗'} 拆 {d}" + ("" if rc == 0 else f"：{out}"))
                 n += rc == 0
         sh("git", "worktree", "prune")
+        flat = REVIEW_ROOT / args.round
+        if flat.is_dir():
+            import shutil
+            shutil.rmtree(flat)
+            print(f"  ✓ 删平面对照面 {flat}")
         print(f"\n拆掉 {n} 个。⚠ 检视面用完就拆，长期挂着会被误当成参与方。")
         return 0
 
@@ -140,6 +215,9 @@ def main() -> int:
             print(f"      ⚠ {fam} 交付不全：{len(present)}/{len(rels)}")
         opened.append(fam)
 
+    if args.flat:
+        build_flat(args.round, families, rels, cfg)
+
     print(f"\n开了 {len(opened)} 个检视面" + (f"，{len(missing)} 家还没开工" if missing else ""))
     print(f"""
 ⚠ 三条（协议 §7.2）：
@@ -147,10 +225,14 @@ def main() -> int:
   · **不要往检视面里写**。要改稿在整合面上改，不在这儿；
   · 读完拆掉：`round-review.py --round {args.round} --close`
 
-看内容直接进目录读，或逐份对比（本轮 {len(rels)} 份交付物）：""")
-    for r in rels:
-        print(f"  diff <(cat ~/review/{args.round}-luna/{r}) "
-              f"<(cat ~/review/{args.round}-kimi/{r})")
+看内容：""")
+    if args.flat:
+        print(f"  · 平面对照面（推荐给人读）：ls ~/review/{args.round}/")
+        print(f"    同一件产物的五家摆在一起，来源与 sha256 见该目录 MANIFEST.md")
+        print(f"    对比两家：diff ~/review/{args.round}/pipeline/{{luna,kimi}}.md")
+    else:
+        print(f"  · 平面对照面（推荐给人读）：加 --flat 重跑一次即可生成")
+    print(f"  · 完整仓（agent 用）：~/review/{args.round}-<家>/")
     return 0
 
 
