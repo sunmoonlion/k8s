@@ -26,7 +26,9 @@ baseline   = "718c7f36"          # 重开后的 master。⚠ 记录性提交晚�
 proposers      = ["opus", "luna", "kimi", "cursor", "qwen"]   # 五家全参赛，含 opus
 arbiter        = "owner"             # ⚠ 由 principal 担任裁决方
 arbiter_branch = ""                  # 所有者不开分支；③ 的产物由 integrator 落盘
-integrator     = ""                  # ③ 之后由所有者指定
+integrator     = "cursor"            # 所有者 2026-09-08 指定，见 rulings.md R4
+                                     # ⚠ 条件：cursor 现推荐基座为 luna。若 ③ 选中 cursor
+                                     #    自己的稿作基座，则整合方＝基座作者，须重议本项
 acceptor       = ""                  # ③ 之后由处置表算出，⚠ 排除 integrator 而非 arbiter
 anchor_roots   = ["~/repo/codex", "~/repo/deepseek-harness", "~/repo/openclaw", "~/master/investment-app", "."]
 frozen_sections = []
