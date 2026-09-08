@@ -2,6 +2,10 @@
 
 > **这份是常驻入口。**所有者在你的窗口里说「看一下 `sunmoonai/docs/dev-plan/GO.md`，照做」，
 > 你就从这里开始。**每个环节都读这一份**，它会把你送到当前该做的那一步。
+>
+> ⚠ **2026-09-08，② 进行中改过一次**：第二节的判定命令由「绝对路径」改为「子壳 `( cd … && … )`」。
+> 原写法在 cwd 不在任何 worktree 内时会 traceback（`round-status.py` 用 cwd 求仓根）。
+> **这是修命令，不是改题目**——本环节要交什么、判据是什么，一个字没动。
 
 ## 一、你是谁
 
@@ -33,12 +37,21 @@ git log -1 --format=%h HEAD        # 短哈希
 
 ## 二、现在是哪一轮、哪个环节
 
-⚠ **在主线跑，不在你自己的工作区跑。用绝对路径，不要 `cd`**——
-`cd` 过去就容易忘了回来，然后在主线里提交（第四节第 1 条）。
+⚠ **在主线跑，不在你自己的工作区跑。用子壳 `( … )` 包起来。**
 
 ```bash
-python3 ~/master/k8s/sunmoonai/docs/dev-plan/protocol/round-status.py
+( cd ~/master/k8s && python3 sunmoonai/docs/dev-plan/protocol/round-status.py )
 ```
+
+⚠ **两个括号不能省**，它们同时解决两件事：
+
+| 不加括号会怎样 | |
+| --- | --- |
+| 直接 `cd ~/master/k8s` | **cd 过去容易忘了回来**，然后在主线里 `git add` —— 那就是写主线（第四节第 1 条） |
+| 只写绝对路径、不 cd | **脚本会崩**。它用**当前目录**求仓根（`git rev-parse --show-toplevel`），你的 cwd 若不在任何 worktree 内（比如停在 `~/worktrees/<名>` 而不是 `~/worktrees/<名>/k8s`），直接 traceback |
+
+子壳里的 `cd` 只在括号内生效，出了括号你还在原地。**且它读的是主线的 `round.md`**——
+你工作区那份从 ① 起就不再跟进主线，可能已经过期。
 
 它按**产物**推导，不看声明。输出里「当前环节：X」那一行就是答案，
 「缺：……」列出还没交的家——**如果里面有你，这一步就是你的**。
@@ -86,8 +99,8 @@ cat $R/round.md             # 工单
 
 1. ⚠ **只写你自己的工作区。**不写主线、不写别人的 worktree、不写 `~/master/`。
 
-   ⚠⚠ **本文让你读主线、在主线跑判定，但一律用绝对路径，不要 `cd` 过去。**
-   `cd` 过去容易忘了回来，然后在主线里 `git add` —— 那就是写主线。
+   ⚠⚠ **本文让你读主线、在主线跑判定。读用绝对路径；跑判定用子壳 `( cd … && … )`。**
+   裸 `cd ~/master/k8s` 容易忘了回来，然后在主线里 `git add` —— 那就是写主线。
    提交也写全路径，不靠当前目录：
 
    ```bash
@@ -123,8 +136,8 @@ W=~/worktrees/<你的名>/k8s
 git -C $W add <你的产物路径>
 git -C $W commit -m "<环节> dev-plan-refact <产物名>（<你的名>）"
 
-# 核验：在主线跑（理由见第二节）
-python3 ~/master/k8s/sunmoonai/docs/dev-plan/protocol/round-status.py
+# 核验：在主线跑，子壳包起来（理由见第二节）
+( cd ~/master/k8s && python3 sunmoonai/docs/dev-plan/protocol/round-status.py )
 
 # 自证没写错地方：主线必须是干净的
 git -C ~/master/k8s status --porcelain    # 应为空
