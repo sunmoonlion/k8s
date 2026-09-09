@@ -22,6 +22,9 @@ final_path = [
 
 baseline   = "718c7f36"          # 重开后的 master。⚠ 记录性提交晚一拍；判据以各家工作区 HEAD 为准
 
+principal      = "owner"             # 发起人。①② 的通知与 R 系列裁定归它；本轮由 opus 代写（R2）
+                                     # ⚠ 组织者不是字段，是**推导值**：见 round-status.py organizer_of()
+
 # 所有者 2026-09-07：「鉴于本轮重要，你们都参加，我是裁决者。到时我指定谁吸收。」
 proposers      = ["opus", "luna", "kimi", "cursor", "qwen"]   # 五家全参赛，含 opus
 arbiter        = "cursor"            # ⚠ 2026-09-08 由 owner 全权委托，见 rulings.md R6
@@ -30,6 +33,10 @@ arbiter_branch = "dev-plan-refact/cursor"   # ③ 产物落在整合方自己的
 #   这是所有者知情后的裁定（R6），不是疏漏。代偿控制有两条，缺一不可：
 #     1. cursor 对自己条目的处置必须打「（自处置）」标记（call-③.md §四）
 #     2. acceptor 必须排除 cursor（§13 规则 1、2 在本轮同时指向它）
+arbiter_is_proposer = true           # ⚠ 显式承认：裁决方同时是参赛方（R6 知情裁定）
+                                     # 它同时废掉 §6.1（通知归属）与 §12（④ 的制衡）；
+                                     # 代偿见上两条，以及 call-④ 改由发起人一侧写（F-21）
+base_author    = "luna"              # 基座作者（R5）。§13 规则 2 靠它执行，缺了这一条规则形同虚设
 integrator     = "cursor"            # 所有者 2026-09-08 指定，见 rulings.md R4
                                      # ⚠ 条件：cursor 现推荐基座为 luna。若 ③ 选中 cursor
                                      #    自己的稿作基座，则整合方＝基座作者，须重议本项

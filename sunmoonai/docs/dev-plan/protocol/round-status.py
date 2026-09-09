@@ -204,6 +204,74 @@ def notice_path(cfg: dict, stage: str) -> tuple[str, bool]:
     return cands[0], False
 
 
+# ── 组织侧角色：**不列表，只推导与检查** ────────────────────────────────
+# §0.0 第 3 条判过：「那样的权力表是第二份说明书，不是机制——它不驱动任何东西，
+# 只能靠人记得读」。所以这里没有角色表。判据只有一条：
+#
+#     **脚本读它，它才是真的。**
+#
+# 2026-09-09 实测这条的代价：`integrator` 在文档里出现 57 处、`principal` 277 处，
+# 而脚本一处都不读 → F-16（R4 这条真实裁定不得不建立在没有依据的类推上）；
+# §13 规则 2 要排除「基座作者」，而 `base_author` 从来不是字段 → 整个 ④⑤ 的制衡
+# 建立在机器看不见的值上。
+
+def organizer_of(cfg: dict, stage: str) -> tuple[str, str]:
+    """该环节的「组织者」是谁——**推导出来的，不是填出来的**。
+
+    协议 §6.1 的规则：①② 的通知由发起人写，③ 之后由裁决方写。
+    ⚠ 该规则有一个**隐含前提：裁决方不是参赛方**。2026-09-08 R6 打破了它
+    （本轮 arbiter == integrator == 参赛方），于是 §12「④ 是对整合权的唯一制衡」
+    与 §6.1 直接冲突：让被制衡方去写制衡规则，制衡即为空。见 findings.md F-21。
+
+    返回 (组织者, 依据)。
+    """
+    ch = stage[0] if stage else ""
+    principal = cfg.get("principal", "") or "principal（未声明）"
+    arb = cfg.get("arbiter", "")
+    if ch in "①②":
+        return principal, "§6.1 ①② 由发起人写"
+    if arb and arb in cfg.get("proposers", []):
+        return principal, "§6.1 遇裁决方即参赛方，回落发起人（F-21）"
+    return arb or principal, "§6.1 ③ 之后由裁决方写"
+
+
+def role_checks(cfg: dict) -> list[str]:
+    """角色配置的一致性。**每次都跑，不一致即拒绝判定。**
+
+    理由：角色配错不是一个环节的错，是整轮作废（R1 就是这么来的）。
+    让它在「已经跑完两个环节」之后才被发现，代价是四家白干。
+    """
+    bad: list[str] = []
+    props = cfg.get("proposers", [])
+    arb, integ = cfg.get("arbiter", ""), cfg.get("integrator", "")
+    acc, base = cfg.get("acceptor", ""), cfg.get("base_author", "")
+
+    if not cfg.get("principal"):
+        bad.append("principal 未声明——①② 的通知归谁写、R 系列裁定由谁作出，都无依据")
+
+    # F-21：裁决方兼参赛方必须**显式承认**，不许默认发生。
+    if arb and arb in props and not cfg.get("arbiter_is_proposer"):
+        bad.append(
+            f"arbiter={arb!r} 同时在 proposers 里，但 arbiter_is_proposer 未声明。"
+            "\n      这不是可以顺手发生的事：它同时废掉 §6.1（通知归属）与 §12（④ 的制衡）。"
+            "\n      确属所有者知情裁定，就在 round.md 写 arbiter_is_proposer = true 并注明裁定号。")
+
+    # F-16：integrator 在文档里被反复引用，却从无约束条款。它整合的是候选，只能是参赛方。
+    if integ and integ not in props:
+        bad.append(f"integrator={integ!r} 不在 proposers 里——它整合的是候选，不能来自局外")
+
+    # §13：验收方的三条排除。base_author 必须是字段，否则第 2 条无法被机器执行。
+    if acc:
+        for who, why in ((arb, "裁决方"), (integ, "整合方"), (base, "基座作者")):
+            if who and acc == who:
+                bad.append(f"acceptor={acc!r} 同时是{why}——违反 §13 排除规则")
+    if arb and not base:
+        bad.append("base_author 未声明——§13 规则 2「不得是基座作者」无法被机器执行")
+    if base and base not in props:
+        bad.append(f"base_author={base!r} 不在 proposers 里")
+    return bad
+
+
 def find_active(root: Path, want: str | None) -> tuple[str, dict]:
     base = root / ROUNDS_DIR
     if not base.is_dir():
@@ -552,6 +620,25 @@ def main() -> int:
     if args.verify:
         return verify(cfg)
 
+    # ⚠ **角色一致性先于一切判定。**角色配错不是一个环节的错，是整轮作废；
+    #    等两个环节跑完才发现，代价是四家白干（R1 即此）。
+    role_bad = role_checks(cfg)
+    if role_bad:
+        active = cfg.get("status") == "ACTIVE"
+        # ACTIVE 轮拒绝判定：角色配错是整轮作废，越早撞见越省。
+        # 非 ACTIVE 轮**照样全文报出来，只是不拦**——那些轮已经走完，配置改不回去了，
+        # 拦住只会让人查不了历史。⚠ 但不许静默跳过：本仓「archive/ 静默跳过」
+        # 就是同一个病，覆盖不全的检查会让人以为查过了。
+        head = ("round.md 角色配置不一致，拒绝判定"
+                if active else "⚠ round.md 角色配置不一致（轮次非 ACTIVE，只报不拦）")
+        print(f"{head}（{len(role_bad)} 项）：\n", file=sys.stderr)
+        for b in role_bad:
+            print(f"    · {b}", file=sys.stderr)
+        print("\n判据只有一条：**脚本读它，它才是真的。**"
+              "写在散文里的角色不驱动任何东西。\n", file=sys.stderr)
+        if active:
+            return 2
+
     table = stage_table(cfg, name)
     current = None
     for r in table:
@@ -610,6 +697,8 @@ def main() -> int:
         print(f"  {r['stage']}   {state}   {marks}")
     print()
     print(f"当前环节：{current}")
+    org, why = organizer_of(cfg, current)
+    print(f"本环节组织者：{org}   （{why}）")
     np, ok = notice_path(cfg, current)
     if ok:
         print(f"本环节通知：{np}")
