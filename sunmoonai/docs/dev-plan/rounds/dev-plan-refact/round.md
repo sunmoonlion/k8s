@@ -33,7 +33,9 @@ arbiter_branch = "dev-plan-refact/cursor"   # ③ 产物落在整合方自己的
 integrator     = "cursor"            # 所有者 2026-09-08 指定，见 rulings.md R4
                                      # ⚠ 条件：cursor 现推荐基座为 luna。若 ③ 选中 cursor
                                      #    自己的稿作基座，则整合方＝基座作者，须重议本项
-acceptor       = ""                  # ③ 之后由处置表算出；本轮 arbiter==integrator，两条规则同时排除 cursor
+acceptor       = "qwen"              # ③ 处置表算出（disposition.md §三），组织者已独立复跑复核一致
+                                     # 排除 cursor（裁决/整合）、luna（基座作者）；
+                                     # 余下 opus 6 / kimi 8 / qwen 4 → 最少 → qwen。无并列
 anchor_roots   = ["~/repo/codex", "~/repo/deepseek-harness", "~/repo/openclaw", "~/master/investment-app", "."]
 frozen_sections = []
 mechanical_absent = [

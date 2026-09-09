@@ -344,9 +344,18 @@ def main(argv: list[str]) -> int:
     problems: list[str] = []
     heading_cache: dict[str, set[str]] = {}
     checked = 0
+    skipped: list[str] = []
     for path in targets:
         text = blob(path)
         if text is None:
+            # **不能静默跳过。**`blob()` 读的是 git 索引，一份还没 `git add` 的新文档
+            # 在这里返回 None；原来直接 continue，`checked` 停在 0，末尾照样打印
+            # 「0 份文档通过」并退出 0 —— **假通过**，而且方向正是本文件开头警告的那个
+            # （「这次的方向是假失败（安全侧），但同一个毛病换个方向就是假通过」）。
+            # 2026-09-09 实测：手动过一份新写的 call-④.md，门报「通过」，一个字没看。
+            # 钩子那条路（--staged）不受影响，暂存的文件必在索引里；受影响的是
+            # **提交前手动过门**，而那恰恰是新文档第一次被检查的时机。
+            skipped.append(path)
             continue
         checked += 1
         problems += check_links(path, text, tracked)
@@ -369,6 +378,16 @@ def main(argv: list[str]) -> int:
             file=sys.stderr,
         )
         return 1
+
+    if skipped:
+        print(
+            f"doc-gate: {len(skipped)} 份指定的文档不在 git 索引中，**一个字都没检查**：\n"
+            + "".join(f"    {p}\n" for p in skipped)
+            + "          判定基准是索引，不是工作区。先 `git add` 再过门。\n"
+            + f"          （另有 {checked} 份已检查并通过）",
+            file=sys.stderr,
+        )
+        return 2
 
     print(f"doc-gate: {checked} 份文档通过")
     return 0
