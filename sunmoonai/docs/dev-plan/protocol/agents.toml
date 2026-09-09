@@ -108,3 +108,22 @@ argv = ["claude", "-p", "{prompt}", "--permission-mode", "acceptEdits", "--model
 # ⚠ **用 CLI 投喂 opus，与在持续会话里投喂，不是同一件事**——见 round.md
 # 「opus 该怎么被投喂」。前者是全新会话、零累积上下文，**机械满足 B14**；
 # 后者带着整轮的上下文，B14 只能靠自律。
+
+[owner]
+# ⚠ **人，不是 agent。**没有 worktree、没有分支、没有 argv——**不能被投喂**。
+# 它出现在这里的唯一理由：`principal` 必须能解析到某个真实存在的东西，
+# 否则 `principal = "banana"` 也会通过（2026-09-09 实测确实通过了）。
+kind = "human"
+git_identity = "sunmoonlion <13701819268@163.com>"
+
+# ⚠ **2026-09-09 之前，这个身份不区分「所有者」与「代写方」。**
+# 主线最近 20 个提交全是这一个身份，其中包含 opus 代写的组织者产物。
+# 于是 `rulings.md` 抬头那条「人确认 = 是 的行，**以所有者 commit 为生效时刻**」
+# **从未被执行过一次**——没有可分辨的「所有者 commit」这种东西。
+#
+# 自 2026-09-09 起按 §8c.2 已有的机制区分（author ≠ committer，git 本来就分）：
+#   · 代写方提交组织者产物 → `git commit --author="opus <opus@agents.local>"`
+#   · 所有者自己提交       → 不加 --author，author == committer == 本条 git_identity
+# ⇒ **author 等于 git_identity 的提交，才是所有者的确认。**
+# ⚠ 此日期之前的提交无法追认，不得据此反推历史确认。
+confirm_rule = "author == git_identity"

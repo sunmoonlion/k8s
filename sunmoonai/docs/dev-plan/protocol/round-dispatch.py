@@ -231,8 +231,15 @@ def md_projection(write: bool) -> int:
         "",
     ]
     manual = []
+    humans = [n for n, a in cfg.items() if a.get("kind") == "human"]
     for name, a in cfg.items():
         if name == "meta":
+            continue
+        if a.get("kind") == "human":
+            # ⚠ **人不能被投喂。**它在 agents.toml 里的唯一理由是让 `principal`
+            #    这个名字能解析到真实存在的东西（见该文件 [owner] 注释）。
+            #    把它列进投喂命令表，等于给一个不存在的窗口发指令。
+            #    **排除必须可见**——静默跳过是本仓反复记过的病。
             continue
         cwd = a.get("worktree", "").replace("{home}", home)
         if "argv" not in a:
@@ -245,6 +252,12 @@ def md_projection(write: bool) -> int:
                   "```bash",
                   f"cd {shlex.quote(cwd)} && {' '.join(shlex.quote(x) for x in argv)}{redir}",
                   "```", ""]
+    if humans:
+        lines += [f"## 不在本表内：{'、'.join(humans)}", "",
+                  "⚠ **人，不是执行者。**没有 worktree、没有命令行入口，**不能投喂**。",
+                  "它登记在 `agents.toml` 里的唯一理由：让 `round.md` 的 `principal`",
+                  "能解析到真实存在的东西——否则 `principal = \"banana\"` 也会通过",
+                  "（2026-09-09 实测确实通过了）。", ""]
     for name, cwd in manual:
         lines += [f"### {name} —— 无命令行入口", "",
                   f"⚠ **不能用命令投喂**：它没有一次性命令行入口。",

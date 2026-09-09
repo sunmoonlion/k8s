@@ -57,6 +57,13 @@ cd /home/zym/worktrees/qwen/k8s && qoder -p '按 round-protocol 定位当前环�
 cd /home/zym/worktrees/opus/k8s && claude -p '按 round-protocol 定位当前环节，做你该做的那一步。' --permission-mode acceptEdits --model opus
 ```
 
+## 不在本表内：owner
+
+⚠ **人，不是执行者。**没有 worktree、没有命令行入口，**不能投喂**。
+它登记在 `agents.toml` 里的唯一理由：让 `round.md` 的 `principal`
+能解析到真实存在的东西——否则 `principal = "banana"` 也会通过
+（2026-09-09 实测确实通过了）。
+
 ### fable —— 无命令行入口
 
 ⚠ **不能用命令投喂**：它没有一次性命令行入口。

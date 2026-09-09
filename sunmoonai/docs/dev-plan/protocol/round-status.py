@@ -215,6 +215,23 @@ def notice_path(cfg: dict, stage: str) -> tuple[str, bool]:
 # §13 规则 2 要排除「基座作者」，而 `base_author` 从来不是字段 → 整个 ④⑤ 的制衡
 # 建立在机器看不见的值上。
 
+def known_agents() -> set[str]:
+    """`agents.toml` 里登记过的名字。解析不了就返回空集——
+
+    ⚠ **返回空集时本检查自动放行**，这是有意的：登记表读不到（文件缺失、
+    tomllib 不可用）时，宁可少查一项，也不要把一个与角色无关的故障
+    伪装成「角色配错」。但**放行必须是安静的少查，不是假装查过**——
+    调用方对空集有显式分支。
+    """
+    try:
+        import tomllib
+        p = repo_root() / "sunmoonai/docs/dev-plan/protocol/agents.toml"
+        d = tomllib.load(open(p, "rb"))
+        return {k for k in d if k != "meta"}
+    except Exception:
+        return set()
+
+
 def organizer_of(cfg: dict, stage: str) -> tuple[str, str]:
     """该环节的「组织者」是谁——**推导出来的，不是填出来的**。
 
@@ -246,8 +263,20 @@ def role_checks(cfg: dict) -> list[str]:
     arb, integ = cfg.get("arbiter", ""), cfg.get("integrator", "")
     acc, base = cfg.get("acceptor", ""), cfg.get("base_author", "")
 
-    if not cfg.get("principal"):
+    # ⚠ **名字必须能解析到真实存在的东西。**只验非空是不够的——
+    #    2026-09-09 实测：`principal = "banana"` 通过了本函数。
+    #    这跟本函数要修的病（词在文档里，不在机器里）是同一个，出现在修法自己身上。
+    known = known_agents()
+    pr = cfg.get("principal", "")
+    if not pr:
         bad.append("principal 未声明——①② 的通知归谁写、R 系列裁定由谁作出，都无依据")
+    elif known and pr not in known:
+        bad.append(f"principal={pr!r} 不在 agents.toml 里——它没有指向任何真实存在的东西。"
+                   f"\n      已登记：{'、'.join(sorted(known))}")
+    for who, field in ((arb, "arbiter"), (integ, "integrator"),
+                       (acc, "acceptor"), (base, "base_author")):
+        if who and known and who not in known:
+            bad.append(f"{field}={who!r} 不在 agents.toml 里")
 
     # F-21：裁决方兼参赛方必须**显式承认**，不许默认发生。
     if arb and arb in props and not cfg.get("arbiter_is_proposer"):
