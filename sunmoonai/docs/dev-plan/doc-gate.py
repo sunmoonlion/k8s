@@ -88,6 +88,11 @@ def exempt(path: str) -> bool:
 # 其他文档（裁决书、整合记录、评审）引用的是别的文档的章节，不适用本项。
 SELF_CONTAINED = (
     "sunmoonai/docs/dev-plan/working/request-lifecycle.md",
+    # 2026-09-09 加入：所有者问「为何不把 GO.md 和 round-protocol.md 合并」。
+    # 查实 GO.md §四 四条规范内容在协议里各有一份，而**没有任何东西保证两份一致**
+    # ——正是 §0.0 第 3 条骂的「第二份说明书」。合并不是修法（见 GO.md §四抬头），
+    # 修法是让它降为**被核对的引用**：四条各注出处 §，本门验那个 § 真的存在。
+    "sunmoonai/docs/dev-plan/GO.md",
 )
 # 两份 development-lifecycle-*.md 曾在此名单内，2026-09-07 移出：它们已被
 # agent-dev-guide.md 取代、降为历史档案，「自足」是对现行权威文档的要求。
@@ -192,8 +197,13 @@ def check_section_refs(
     链接检查器抓不到。因此这里按「同一行点到哪份文档，就查哪份」解析。
     """
     own = headings_of(text)
-    if not own:
-        return []
+    # ⚠ **不要在这里因为 own 为空就早退。**2026-09-09 实测：`GO.md` 的标题是
+    # 「一、二、三」而非阿拉伯数字，`HEADING_RE` 认不出 → `own` 为空 → 整个函数
+    # 当场返回，把它对 `round-protocol.md` 的 §N 引用一条都不查，而门照报「通过」。
+    # 把 §17 改成不存在的 §99，`--all` 仍然 226 份全过——**检查是摆设**。
+    # 跨文档引用恰恰是本函数注释里点名「最容易悄悄失效」的那一类，
+    # 而「本文件自己没有编号标题」与「不必检查它引用别人」毫无关系。
+    # 后面已有 `if not valid: continue` 兜底：确实无处可对照时才跳过那一条引用。
     base = PurePosixPath(path).parent
     problems = []
     lines = text.splitlines()
