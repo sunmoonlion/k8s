@@ -181,6 +181,29 @@ def parse_round(md: Path) -> dict:
     return cfg
 
 
+def notice_path(cfg: dict, stage: str) -> tuple[str, bool]:
+    """当前环节的通知落在哪。返回 (仓内相对路径, 是否真的存在)。
+
+    ⚠ **算状态的东西必须同时算出下一步的指针。**2026-09-08 F-17：
+    本脚本算出了环节，却不说通知在哪；`GO.md` 在另一节里靠人把环节号搬过去、
+    再手工拼路径。整合方没去 `ls`，而是凭「前两轮 ③ 没有通知」推理出本轮也没有，
+    于是停在原地——**推理是对的，前提是旧的**。指针由算出状态的同一处给出，
+    这一步就没有人可推理的余地。
+
+    两种拼法都认：协议正文的 `call-<环节>.md`，与早期两轮的
+    `<round-id>-call-<环节>.md`。只认一种会把人指到不存在的文件上
+    （同一个坑 `artifact_paths` 已经吃过一次）。
+    """
+    ch = stage[0] if stage else ""
+    cands = [f"{cfg['round_dir']}/call-{ch}.md",
+             f"{cfg['round_dir']}/{cfg['prefix']}-call-{ch}.md"]
+    root = repo_root()
+    for c in cands:
+        if (root / c).exists():
+            return c, True
+    return cands[0], False
+
+
 def find_active(root: Path, want: str | None) -> tuple[str, dict]:
     base = root / ROUNDS_DIR
     if not base.is_dir():
@@ -587,6 +610,14 @@ def main() -> int:
         print(f"  {r['stage']}   {state}   {marks}")
     print()
     print(f"当前环节：{current}")
+    np, ok = notice_path(cfg, current)
+    if ok:
+        print(f"本环节通知：{np}")
+        print(f"  读它：cat ~/master/k8s/{np}")
+    else:
+        # 没有通知不等于「不用读通知」。说清是哪一种，别让人去推理。
+        print(f"本环节通知：无（{np} 不存在）")
+        print(f"  确认一下：ls ~/master/k8s/{cfg['round_dir']}/*call-*.md")
     missing = []
     for r in table:
         if r["stage"] != current:
