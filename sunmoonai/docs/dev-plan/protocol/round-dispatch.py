@@ -37,7 +37,16 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-FIXED_INSTRUCTION = "按 round-protocol 定位当前环节，做你该做的那一步。"
+# ⚠ **两条通道说同一句话，指同一份操作手册。**2026-09-09 查实：此前 CLI 这条路
+# 指的是 `round-protocol.md`（法典，944 行），而它里面「你是谁」0 处、
+# 「怎么提交」0 处、「卡住了怎么办」0 处。`executor-adapter` 记的现象正是
+# 「cursor 写出产物但不提交（三次）」——当时归因给工具，但从没测过另一个解释：
+# **它拿到的那份文档从头到尾没提过「提交」两个字。**
+# 通道差异只在 GO.md §五 一处处理，其余五节两条通道通用。
+FIXED_INSTRUCTION = (
+    "看一下 ~/master/k8s/sunmoonai/docs/dev-plan/GO.md，照做。"
+    "只认主线那一份；你 worktree 里的同名文件是旧投影。"
+    "你是被一次性命令行叫起来的，没有人在看你的输出——第五节按「命令行」那一支做。")
 
 
 def repo_root() -> Path:

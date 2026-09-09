@@ -30,31 +30,31 @@
 ### luna
 
 ```bash
-cd /home/zym/worktrees/luna/k8s && env CODEX_HOME=/home/zym/.codex-official codex exec --skip-git-repo-check -s workspace-write --cd /home/zym/worktrees/luna/k8s '按 round-protocol 定位当前环节，做你该做的那一步。' < /dev/null
+cd /home/zym/worktrees/luna/k8s && env CODEX_HOME=/home/zym/.codex-official codex exec --skip-git-repo-check -s workspace-write --cd /home/zym/worktrees/luna/k8s '看一下 ~/master/k8s/sunmoonai/docs/dev-plan/GO.md，照做。只认主线那一份；你 worktree 里的同名文件是旧投影。你是被一次性命令行叫起来的，没有人在看你的输出——第五节按「命令行」那一支做。' < /dev/null
 ```
 
 ### kimi
 
 ```bash
-cd /home/zym/worktrees/kimi/k8s && env CODEX_HOME=/home/zym/.codex-kimi codex exec --skip-git-repo-check -s workspace-write --cd /home/zym/worktrees/kimi/k8s '按 round-protocol 定位当前环节，做你该做的那一步。' < /dev/null
+cd /home/zym/worktrees/kimi/k8s && env CODEX_HOME=/home/zym/.codex-kimi codex exec --skip-git-repo-check -s workspace-write --cd /home/zym/worktrees/kimi/k8s '看一下 ~/master/k8s/sunmoonai/docs/dev-plan/GO.md，照做。只认主线那一份；你 worktree 里的同名文件是旧投影。你是被一次性命令行叫起来的，没有人在看你的输出——第五节按「命令行」那一支做。' < /dev/null
 ```
 
 ### cursor
 
 ```bash
-cd /home/zym/worktrees/cursor/k8s && agent -p '按 round-protocol 定位当前环节，做你该做的那一步。' --output-format text --trust --model cursor-grok-4.6-high
+cd /home/zym/worktrees/cursor/k8s && agent -p '看一下 ~/master/k8s/sunmoonai/docs/dev-plan/GO.md，照做。只认主线那一份；你 worktree 里的同名文件是旧投影。你是被一次性命令行叫起来的，没有人在看你的输出——第五节按「命令行」那一支做。' --output-format text --trust --model cursor-grok-4.6-high
 ```
 
 ### qwen
 
 ```bash
-cd /home/zym/worktrees/qwen/k8s && qoder -p '按 round-protocol 定位当前环节，做你该做的那一步。' -w /home/zym/worktrees/qwen/k8s --permission-mode accept_edits
+cd /home/zym/worktrees/qwen/k8s && qoder -p '看一下 ~/master/k8s/sunmoonai/docs/dev-plan/GO.md，照做。只认主线那一份；你 worktree 里的同名文件是旧投影。你是被一次性命令行叫起来的，没有人在看你的输出——第五节按「命令行」那一支做。' -w /home/zym/worktrees/qwen/k8s --permission-mode accept_edits
 ```
 
 ### opus
 
 ```bash
-cd /home/zym/worktrees/opus/k8s && claude -p '按 round-protocol 定位当前环节，做你该做的那一步。' --permission-mode acceptEdits --model opus
+cd /home/zym/worktrees/opus/k8s && claude -p '看一下 ~/master/k8s/sunmoonai/docs/dev-plan/GO.md，照做。只认主线那一份；你 worktree 里的同名文件是旧投影。你是被一次性命令行叫起来的，没有人在看你的输出——第五节按「命令行」那一支做。' --permission-mode acceptEdits --model opus
 ```
 
 ## 不在本表内：owner
@@ -70,7 +70,7 @@ cd /home/zym/worktrees/opus/k8s && claude -p '按 round-protocol 定位当前环
 把它的界面/会话打开在 `/home/zym/worktrees/fable/k8s`，然后发这一句：
 
 ```text
-按 round-protocol 定位当前环节，做你该做的那一步。
+看一下 ~/master/k8s/sunmoonai/docs/dev-plan/GO.md，照做。只认主线那一份；你 worktree 里的同名文件是旧投影。你是被一次性命令行叫起来的，没有人在看你的输出——第五节按「命令行」那一支做。
 ```
 
 ## 敲完之后
