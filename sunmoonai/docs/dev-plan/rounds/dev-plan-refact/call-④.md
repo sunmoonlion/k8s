@@ -16,14 +16,41 @@ r=$(git rev-parse --show-toplevel 2>/dev/null) && basename "$(dirname "$r")" || 
 
 ## ③ 已完成，取件方式
 
-裁决方兼整合方是 `cursor`（`rulings.md` R4 / R6）。**按 commit 取，不看工作区**：
+裁决方兼整合方是 `cursor`（`rulings.md` R4 / R6）。
+
+### ⚠ 先看这条，否则你的证据会指错文件
+
+`sunmoonai/docs/dev-plan/pipeline.md` 这个路径，**在五个工作区里是五份不同的文件**：
+
+| 你在哪 | 那个路径是什么 | 行数 |
+|---|---|---|
+| 你自己的 worktree | **你自己的 ① 候选** | opus 387 ／ luna 213 ／ kimi 181 ／ qwen 173 |
+| 主线 `~/master/k8s` | **根本不存在**（本轮交付物只在分支上） | — |
+| 裁决稿 | `dev-plan-refact/cursor` 上那份 | **270** |
+
+所以**裸写 `pipeline.md:150` 是无效证据**——它指向什么取决于谁在读。
+
+### 取件：用检视投影，不要用自己的工作区
+
+组织者已开好一份只读投影，钉在 ③ 的提交 `1f2d0651` 上，与分支逐字节对拍一致：
+
+```bash
+R3=~/review/dev-plan-refact-③裁决稿
+
+$R3/sunmoonai/docs/dev-plan/pipeline.md                            # 裁决稿 ①a   270 行
+$R3/sunmoonai/docs/dev-plan/dev-plan-architecture.md               # 裁决稿 ①b   778 行
+$R3/sunmoonai/docs/dev-plan/rounds/dev-plan-refact/disposition.md  # 处置记录    179 行
+```
+
+**这几个是真的文件**，用你惯常的读文件方式打开、带行号、可 `grep`、可反复回看。
+⚠ **只读**：它是 detached 投影，不要在里面改任何东西，改了也不进任何分支。
+
+字节级复核与提交序仍按 commit 取：
 
 ```bash
 B=dev-plan-refact/cursor
-git show $B:sunmoonai/docs/dev-plan/pipeline.md                                   # 裁决稿 ①a
-git show $B:sunmoonai/docs/dev-plan/dev-plan-architecture.md                      # 裁决稿 ①b
-git show $B:sunmoonai/docs/dev-plan/rounds/dev-plan-refact/disposition.md         # 处置记录
-git log --oneline master..$B                                                      # 一条主张一个提交
+git show $B:sunmoonai/docs/dev-plan/pipeline.md | sha256sum   # 应为 c4b315911cbf7a60…
+git log --oneline master..$B                                  # 一条主张一个提交
 ```
 
 ## 你要交什么
@@ -40,7 +67,16 @@ git log --oneline master..$B                                                    
 | **条目** | 指向处置记录 §二 的哪一行（照抄「出处家｜条目」两栏），或 §三 验收方计算 |
 | **为什么错** | 不是「我不同意」，是**它与什么事实冲突** |
 | **应当是什么** | 给出你认为正确的处置 |
-| **可复跑证据** | 一条命令或一处 `file:line`。**没有证据的异议按未提出计** |
+| **可复跑证据** | 一条命令，或一处 `file:line`。**没有证据的异议按未提出计** |
+
+⚠ **`file:line` 必须写成投影下的完整路径**，例如：
+
+```text
+~/review/dev-plan-refact-③裁决稿/sunmoonai/docs/dev-plan/pipeline.md:150
+```
+
+裸写 `pipeline.md:150` **按无证据计**——见上一节，那个路径在五个地方是五份文件。
+引自己 ① 候选时同理，写你自己的 worktree 全路径。
 
 ## ⚠ 范围：只能就**自己那条主张**的处置提异议（协议 §12）
 
