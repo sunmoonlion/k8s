@@ -35,4 +35,4 @@
 
 所有者是人，不参赛，也不被投喂。所有者的确认，以**所有者本人署名的提交**为准：git 作者是 `sunmoonlion <13701819268@163.com>`。
 
-代写方提交组织者文件时，一律用 `--author` 署自己的名（例如 `--author="opus <opus@agents.local>"`），所以两者分得开。
+agent 的一切提交——参赛产物、代写的组织者文件——一律用 `--author` 署自己的名（例如 `--author="opus <opus@agents.local>"`），所以两者分得开。`GO.md` 第六节的提交命令已带上。

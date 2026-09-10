@@ -193,7 +193,7 @@ def notice_path(cfg: dict, stage: str) -> tuple[str, bool]:
     `<round-id>-call-<环节>.md`。只认一种会把人指到不存在的文件上
     （同一个坑 `artifact_paths` 已经吃过一次）。
     """
-    ch = stage[0] if stage else ""
+    ch = stage.split()[0] if stage else ""
     cands = [f"{cfg['round_dir']}/call-{ch}.md",
              f"{cfg['round_dir']}/{cfg['prefix']}-call-{ch}.md"]
     root = repo_root()
@@ -322,6 +322,24 @@ def final_path_list(cfg: dict) -> list[str]:
     return v
 
 
+def objection_disposed(cfg: dict, name: str) -> bool:
+    """④b：裁决方是否已把 ④ 的异议逐条处置并落盘（协议 §12「连同异议原文写进处置记录」）。
+
+    两种先例都认：单独的 disposition-objections.md（runtime-refact 轮），
+    或本轮处置记录里有「④ 异议……处置」一节（runtime 轮 runtime-disposition.md 的 K 节）。
+    """
+    if locate(cfg, name, "disposition-objections") is not None:
+        return True
+    loc = locate(cfg, name, "disposition")
+    if loc is None:
+        return False
+    for ref, path in (loc, loc[::-1]):   # 不依赖 locate 返回的先后次序
+        rc, text = git("show", f"{ref}:{path}")
+        if rc == 0:
+            return re.search(r"(?m)^#+ .*④ ?异议.*处置", text) is not None
+    return False
+
+
 def stage_table(cfg: dict, name: str) -> list[dict]:
     """每个环节：谁该交、交了没。判据即命令，结论只依赖 git 提交。
 
@@ -337,7 +355,7 @@ def stage_table(cfg: dict, name: str) -> list[dict]:
 
     def add(tag: str, who: list[str], rows: dict) -> None:
         rounds.append({"stage": tag, "who": who, "done": rows,
-                       "skipped": tag[0] in skip})
+                       "skipped": tag.split()[0] in skip})
 
     # ① 提案：轮次进行中，候选在各家分支的共享最终路径上；
     #    归档后在 rounds/<id>/[reviews/]candidate-<名>.md。两处认一处。
@@ -382,6 +400,14 @@ def stage_table(cfg: dict, name: str) -> list[dict]:
     rows = {w: locate(cfg, name, "objection", w) is not None for w in who4}
     rows.update({f"{w}(免除)": True for w in excused})
     add("④ 异议", who4, rows)
+
+    # ④b 异议处置：④ 与 ⑤ 之间裁决方逐条处置异议，必须在 ⑤ 之前（协议 §12）。
+    #    格子用裁决方的名字，不用产物名——GO.md 说「缺里有你，这一步就是你的」。
+    #    ④ 被跳过（无人被处置到）时 ④b 一并跳过。
+    arb4 = cfg.get("arbiter", "") or "裁决方"
+    rounds.append({"stage": "④b 异议处置", "who": [arb4],
+                   "done": {arb4: objection_disposed(cfg, name)},
+                   "skipped": ("④" in skip) or ("④b" in skip)})
 
     # ⑤ 验收
     acc = cfg.get("acceptor", "")

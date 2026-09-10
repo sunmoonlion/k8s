@@ -69,10 +69,12 @@ pwd && git rev-parse --abbrev-ref HEAD
 ```bash
 W=~/worktrees/<你的名>/k8s
 git -C $W add <产物路径>
-git -C $W commit -m "<环节> <轮次> <产物名>（<你的名>）"
+git -C $W commit --author="<你的名> <<你的名>@agents.local>" -m "<环节> <轮次> <产物名>（<你的名>）"
 
 ( cd ~/master/k8s && python3 sunmoonai/docs/dev-plan/protocol/round-status.py )   # 你那格应变 ✅
 git -C ~/master/k8s status --porcelain                                              # 应为空
 ```
+
+`--author` 不能省：本机的 git 身份是所有者的，不署自己的名，你的提交会被当成所有者本人的提交。
 
 提交之后一定再跑一次状态。路径或分支不对时，脚本认不出你的产物，但**不会报错**——你会以为交了。
