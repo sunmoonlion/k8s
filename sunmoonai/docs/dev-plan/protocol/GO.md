@@ -1,12 +1,12 @@
 # 现在做什么
 
-所有者在你窗口里说「看一下 `~/master/k8s/sunmoonai/docs/dev-plan/GO.md`，照做」，就从这里开始。每个环节都一样。
+所有者在你窗口里说「看一下 `~/master/k8s/sunmoonai/docs/dev-plan/protocol/GO.md`，照做」，就从这里开始。每个环节都一样。
 
 ⚠ **只认主线这一份。**你 worktree 里也有一份同名文件，但你的分支从 ① 起就不再跟进主线，那份是旧的。先自检：
 
 ```bash
-diff <(git -C ~/master/k8s show master:sunmoonai/docs/dev-plan/GO.md) \
-     sunmoonai/docs/dev-plan/GO.md >/dev/null \
+diff <(git -C ~/master/k8s show master:sunmoonai/docs/dev-plan/protocol/GO.md) \
+     sunmoonai/docs/dev-plan/protocol/GO.md >/dev/null \
   && echo "本地与主线一致" || echo "本地已过期，只读主线这份"
 ```
 
@@ -50,10 +50,10 @@ pwd && git rev-parse --abbrev-ref HEAD
 
 本节只是摘录，规则原文在协议里，两边不一致以协议为准。
 
-1. 只写你自己的工作区，不写主线、不写别家（`protocol/round-protocol.md` §17）。读主线用绝对路径，判定用上面的子壳，提交用 `git -C`。
-2. 提案冻结之前，不读其他家的候选（`protocol/round-protocol.md` §9）。
-3. 交卷 = 你自己分支上已提交的 commit，没提交的不算（`protocol/round-protocol.md` §8）。
-4. 超出本轮输入的断言，附一条可复跑的证据，否则标 ⚠（`protocol/round-protocol.md` §12）。不要写「我之前查过」。
+1. 只写你自己的工作区，不写主线、不写别家（`round-protocol.md` §17）。读主线用绝对路径，判定用上面的子壳，提交用 `git -C`。
+2. 提案冻结之前，不读其他家的候选（`round-protocol.md` §9）。
+3. 交卷 = 你自己分支上已提交的 commit，没提交的不算（`round-protocol.md` §8）。
+4. 超出本轮输入的断言，附一条可复跑的证据，否则标 ⚠（`round-protocol.md` §12）。不要写「我之前查过」。
 
 ## 五、卡住了怎么办
 
