@@ -7,7 +7,7 @@
 ```toml
 round_id   = "dev-plan-refact"
 attempt    = 2                  # 第 1 次 09-07 开、09-08 作废（R1）
-status     = "ACTIVE"
+status     = "DONE"                 # ⑦ 已发布：标签 dev-plan-refact/published；定稿 sha256[:16] pipeline 9a09e828d7c3d61a / architecture 4c8e1326c9d0f574
 tier       = "T2"               # 触及内核 + 不可逆 + 260 节
 round_dir  = "sunmoonai/docs/dev-plan/rounds/dev-plan-refact"
 prefix     = "dev-plan-refact"
@@ -56,3 +56,11 @@ mechanical_absent = [
 
 `pipeline` 轮（2026-09-04 立，四家产出从未出现）不再单独复活。所有者 2026-09-08 明确：那道题就是本轮 ①a。
 材料并入 `inputs/`，`docs/ai-dev-readiness/` 目录取消。
+
+## 结束
+
+- ⑤ 验收：`opus`（R7），按冻结标准通过，见 `reviews/acceptance-opus.md`；
+- ⑥ 确认：所有者本人提交 `fa15d014`（R8）；
+- ⑦ 发布：定稿写入 `sunmoonai/docs/dev-plan/pipeline.md` 与 `dev-plan-architecture.md`；
+  发布时按 R8 修正 `I08-009` 的机器配置，修后 `verify` 在冻结输入的工作区里通过（在主线上跑的限制见 `findings.md` F-25）；
+- 各家分支尖端留底：`dev-plan-refact/candidate-opus` / `candidate-luna` / `candidate-kimi` / `candidate-qwen` / `arbiter-final`。

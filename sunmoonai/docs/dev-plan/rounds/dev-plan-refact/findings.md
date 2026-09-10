@@ -1304,3 +1304,90 @@ CLI 那条路的 agent 拿到的是一部 944 行法典，**没有身份步、�
 「组织者代写 ④ 通知是对的」，而它其实是未登记的偏离）。
 共性：**我先做了一件事，再为它找理由，而理由听起来比事实体面。**
 ⇒ 凡我说「这是有意的」，必须能指出**在哪一次裁定或提交里被决定过**；指不出，就是意外。
+
+---
+
+> ⚠ 以下两条由参赛方在 ① 期间按 B3 登记在**各自分支**的 `findings.md` 里，主线此前没有。
+> ⑦ 按 `rulings.md` R8 原样并入，正文一字未改；出处见每条前的说明。
+
+> 出处：`dev-plan-refact/cursor` 分支（留底标签 `dev-plan-refact/arbiter-final`）。
+
+## F-8 ｜ 产品合同仍把已归档的两份 lifecycle 文当作开发流程真源
+
+**提出**：cursor，2026-09-08，在 `dev-plan-refact` ① 安置 `working/request-lifecycle.md` 时。
+
+### 观察
+
+合同 §0.1 / §0.2 三处把「开发 Agent 与人的工作流程」指到：
+
+- [`development-lifecycle-agent.md`](../../archive/development-lifecycle-agent.md)
+- `development-lifecycle-human.md`（同目录归档稿）
+
+可复核：
+
+```bash
+git grep -n 'development-lifecycle-agent.md' -- sunmoonai/docs/dev-plan/working/request-lifecycle.md
+```
+
+现行活文档是 [`agent-dev-guide.md`](../../agent-dev-guide.md)（所有者 2026-09-08 裁定取代前一版；guide 页首自述）。archive 里那两份是历史稿，`README.md` 已写「无规范效力」。
+
+合同自己的入门问题禁止开发流程冒充产品要求，同时又把开发流程的权威写进合同正文——权威指向的是已经降级的文件。
+
+### 结论
+
+这不是「合同条款对不对」，是**真源指针过期**。读者按合同去找开发流程，会读到已被推翻的「两条平行路径」等旧设计（guide §0.0 第 1 条正是为此改的）。
+
+### 落点建议（**待裁定，本轮不改**）
+
+1. 合同 §0.1 / §0.2 的开发流程指针改为 `agent-dev-guide.md`，并保留「开发流程不是产品要求」的过滤器。
+2. 该编辑必须走独立 Change，且按 B2：**不能**为了改指针而让 71 个行号锚无迁移地图地漂移——要么接受一次全量锚点迁移，要么把指针改成不插行的等价替换（若做得到）。
+3. 本轮 ①b 已把合同 42 节全部落在产品合同类型；这条发现不改变归属，只登记指针过期。
+
+---
+
+> 出处：`dev-plan-refact/luna` 分支（留底标签 `dev-plan-refact/candidate-luna`）。定稿 `dev-plan-architecture.md` 第七节引用了本条。
+
+## F-LUNA-A2-01 ｜ 实施表、入口与现行 guide 的效力说明不同步
+
+**提出**：luna，第二次尝试①；输入冻结于 `baa2885847d5c236dc5cdf5d2273bf55286c775c`。
+
+### 观察
+
+同一冻结版本里，`implementation-plan.md` 的“阶段〇”仍列旧 R0–R5/S1、回执仓和候选仓
+等实施步骤，`handoff.md` 仍保留该路线的旧进度；guide 的 8.3 却已明确该旧路线
+“不采用为现行路线”，目标顺序保留 7.1 的 G0–G5。顶层 README 也仍写 guide 落点表
+182 行、archive 乙格未清，与本轮共同输入的 294 行及其效力说明不符。
+可复跑取件：`git show baa28858:sunmoonai/docs/dev-plan/implementation-plan.md`、
+`git show baa28858:sunmoonai/docs/dev-plan/agent-dev-guide.md`、
+`git show baa28858:sunmoonai/docs/dev-plan/README.md`。本轮 GO 和①通知的基线规则已修复，
+这里没有把那个旧缺陷再次登记为未解决问题。
+
+### 结论
+
+文件仍存在，不代表其中旧路线仍可作为开工授权；手写入口计数也不能替代共同清单。
+整理文档不能据此推断旧路线中的每个技术任务都已完成或应被取消，更不能修改历史作者
+的取证声明来制造一致。本轮不重判技术结论，须保留原文及其不同的时间/效力上下文。
+
+### 落点建议
+
+候选将旧路线及当时进度作为历史记录安置，把 guide 已确定的 G0–G5 保留在现行演进计划，
+原入口说明留作迁移上下文；新的流程入口引用真实阶段产物。正式切换时需按既有结论
+明确计划入口，不以本轮文档组织调整直接执行旧 S1。对未确定的技术事项另建工作单元，
+按 B3 保持原规范正文不动，供本轮裁决处理。
+
+---
+
+## F-25：④b 至 ⑦ 撞到的三个检查缺口
+
+**发现时间**：2026-09-10
+**登记人**：opus（按 R7 执行 ⑤、⑦）
+
+| # | 缺口 | 后果 | 处置 |
+| --- | --- | --- | --- |
+| 1 | `round-status.py` 判 ⑥ 时，`locate()` 按「裁决方分支 → 主线」的顺序找 `rulings.md`，先命中 `dev-plan-refact/cursor` 上的旧稿（没有「人确认」栏） | 所有者的 ⑥ 确认（`fa15d014`，R8 与「人确认登记」表）判不出来，本轮机械上走不到 ⑦ | **已改**：判 ⑥ 先读主线，主线没有这份文件才回落。六个轮次改前改后对比，只有本轮由 ⑥ 变为 ⑦ |
+| 2 | `round-status.py --verify` 的「提交→处置记录」只读 `disposition.md` | ④b 的 4 个改稿提交登记在 `disposition-objections.md`，却被报为未登记 | 未改，列入本轮结束后的清单 |
+| 3 | 定稿内置 `verify` 要求工作区的源文件与冻结输入逐字节相同 | 发布进主线后在主线仓根跑必失败：主线上 `protocol/round-protocol.md`、`protocol/README.md`、`implementation-plan.md`、`README.md` 已在本轮中改动；定稿里「在仓根运行这一条命令」在主线上不成立 | 不改定稿（B1）。复核须在冻结输入的工作区里跑：以 `dev-plan-refact/arbiter-final` 开一个 detached worktree，换上主线的发布版 `dev-plan-architecture.md` 再跑 |
+
+**登记人自陈（第 1 条）**：所有者提交 ⑥ 之前，我模拟过「提交后 ⑥ 能判完成」，结论是能。
+那次模拟是我**重写了一遍判定逻辑**、读的是暂存区，没有调用脚本里的真函数，所以没抓到「脚本读的根本不是这份文件」。
+与 F-18、F-23 同一类：检查本身没有被检查。

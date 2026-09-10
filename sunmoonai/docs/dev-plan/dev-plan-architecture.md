@@ -1,0 +1,787 @@
+# 从开发阶段推导的文档架构与逐节融合
+
+> **③ 裁决稿 ①b** ｜ 整合方 cursor ｜ 基座 luna（`9a2b999c`，architecture sha256 前 16 位 `4d4349400d971a6e`）
+> 输入 `baa2885847d5c236dc5cdf5d2273bf55286c775c`。共同 inventory 虽标 `d121739e`，
+> 其九份源文件与本次输入逐字节相同，260 行安置严格复用共同清单。
+> ⑦ 发布时修正一处（`rounds/dev-plan-refact/rulings.md` R8）：`I08-009` 的机器配置改为与第八节表一致（`implementation-plan.md` / 计划责任和产品工作单元 / S3），修后 `verify` 通过。
+
+推导顺序是七阶段及其门，然后是阶段交接所需产物，最后才是本稿中的路径和栏目。
+必须与 [pipeline.md](pipeline.md) 的①a一起评审。
+
+## 一、先按交接问题确定安置判据
+
+| 阶段交接问题 | 需要的文档及准入条件 | 不应放进来的内容 |
+| --- | --- | --- |
+| S0 → S1：用户原话和要达成的结果是否分清 | 原始需求及 PRD；产品可验收目标、对象、状态和 F/I/AT 属产品合同 | 今日 SDK 实测、某次分发过程，不能冒充产品要求 |
+| S1 → S2：哪个系统设计能履行合同 | TLD 说明边界/责任/取舍；SDD 说明执行器、授权、证据接口怎样落实；限制和反例必须随主张一起走 | 阶段任务状态；未批准的新选择；只有标题相近但不是同一接口的内容 |
+| S2 → S3：怎样把设计交给 AI 实施 | roadmap 排建设依赖；SDP 列具体工作单元、前置、输出/测试/回滚；guide 是共用操作正文，protocol 是横切常驻的协作规程（派工时引用，不并进 IMPL 目录） | 已作废路线不能作为现在任务；协议不能因某张任务表完成而过期 |
+| S3 → S4：执行者怎样受理、供给、执行、交卷 | guide 按动作和失败回路组织；验证计划按判据来源/验证层次/证据解释组织 | 产品状态机不在操作步骤里重新定义；分支名不能充当 principal 身份 |
+| S4 → S5：验过的具体版本能否获准发布 | 验证证据及发布/回滚程序；对象、批准、完成/发布/清理分别可查 | 不能让“测试通过”替代具体发布授权，不能把最后写入者当正确版本 |
+| S5 → S6 → 下一需求：怎么接收、交接并避免重犯 | handoff 只陈述带时间的状态、未决与下一步；记录保存实测/审计/旧路线；当前禁令仍留适用规范 | 不把历史未核项删除，也不把旧读数自动升级为现在能力 |
+
+归属按一段内容**被哪个门消费、该门用它回答什么问题**判断，不按作者或原章号。
+同一规则可以被多个阶段引用，但只有一个展开处；原文中反例、失败条件、证据限制
+跟随对应主张，不能为缩短规范而把这些限制藏到审计附录。
+
+门消费定「放哪份文件」。落到文件之后，再用三问定「哪一类生命周期」（可复算，不绑死九阶段）：
+
+1. **人是否必须对它说过才算数？** 是 → 决定记录（只被取代不被修改）。
+2. **它是否必须随代码同步，改代码不改它就是 bug？** 是 → 规格（TLD/SDD/契约）。
+3. **它是否只解释当时为什么、而不约束今天必须怎样？** 是 → 证据/审计。
+
+三问与门消费冲突时，以门消费定展开处、以三问定维护规则。
+
+跨页出现的内容是**投影**：适用范围和修订规则跟本体走，投影页必须有指向权威展开处的指针。
+历史取证不是全都自描；当前禁令不能随轮次归档失去读点。
+
+产品合同 42 节在 S1 完整保留；S2 的模型/状态设计和 S4/S6 的验收都引用它。
+这是接受 `request-lifecycle≈PRD` 的具体形态：合同含可验收的领域精化（对象/状态/不变量
+是 TLD 渗透节，**标注而不是拆文件**），而不是把它拆成三个都能改状态语义的文件。
+现有“边界→全景→对象/信封→状态→功能→不变量/扩展→责任/反例/验收→修订”顺序符合 S1
+从目标到可判义务的推导，故沿用而不改任何字节。本轮用引用不是复制。
+
+## 二、目标文档与内部结构
+
+下面每个目标文档都有栏目、准入理由及实际源单元；完整目标正文由本稿内置工具
+`render <目标路径>` 即时输出。工具已对全部目标实际运行，按冻结 commit 取全文，
+将每个源节的全部正文按下面的栏目顺序组合，**不是只返回旧标题或一个待建路径**。
+候选交付两份文档，不在①直接替换源文件；预览是具体可复跑的重组产物，正式切换仍须本轮裁定。
+
+所有正文单元以共同 inventory 的“源文件 + 起行”辨认，ID `I02-021` 表示第二份输入
+的第 21 节。这是**本轮安置表的条款级地址**，不是产品合同的章节编码。产品合同条款级稳定
+ID 仍是既有 F/I/AT（如 `I3`、`AT-01`）；章节标题（如 `5.3 排队与可靠投递`）继续作人读坐标。
+不在本轮给内核另立 `REQ-05.3` 这类章节级产品 ID——不是用 `Ixx-xxx` 替代章节级编码，
+是本轮不改内核字节、不增加第三套编号。一个标题单元包括标题后到下个标题前的全部文字、表格和代码；空的章标题
+也保留，不把标题级计数偷偷换成正文段数。
+
+**正式标题是下面各份的栏目名，不是源文件里的旧 `§N`。**原小节号只作**源坐标**
+（`Ixx-xxx` / 源路径+起行）。预览里出现的旧相对链接（「见 §3」「见第 4 章」指向已迁出
+栏目）视为失效自指，改读源坐标，不在本轮改九份源文件的字节。交叉引用一律写
+「落点文件 / 栏目」。render 输出是带来源的重组预览，**不是已发布手册**——不能只交生成器。
+
+guide 旧章号与正式栏目（避免第 3/4/7 章号与新动作栏并列）：
+
+| 源坐标（旧） | 正式栏目 |
+| --- | --- |
+| guide 原「一个运行时的结构」一带 | `design/runtime-tld.md` / 组件责任与派工接口 等 S2 栏目 |
+| guide 原「一次开发 Task 怎样执行」一带 | `agent-dev-guide.md` / 开工自检、私有执行、独立评审 等执行栏 |
+| guide 原「人介入、Interaction 与权力」一带 | `design/authority-sdd.md` / 主体与权力、动作门与审批 |
+| guide 原「可观测性、证据与等效」一带 | `design/evidence-sdd.md` / 观测与采信合同 |
+
+这是先完成组织重构再做正式引用切换的候选形态：预览里每块明确标来源；本轮没有声称
+生成的工作文档已经发布、所有新路径的旧引用已经改好。工具能完整重建源文件，证明
+搬运无损；语义归属仍须按上节判据和后面的正文抽查审议，不由摘要替代。
+
+### working/request-lifecycle.md — PRD / 产品合同（S1→S2/S4/S6）
+
+先界定用户生命周期，再定义可验收对象和状态，最后以 F/I/AT 与责任闭合验证；同一合同整体原位保留。
+
+| 内部栏目（按顺序） | 归属判据 | 实际正文单元 |
+| --- | --- | --- |
+| 产品合同全文 | 凡产品必须实现/验收的对象、状态、约束、要求均在这里；实现细节与开发流程排除。对象到 AT 的原顺序有闭环，保留全部条款与源行号。 | I01-001, I01-002, I01-003, I01-004, I01-005, I01-006, I01-007, I01-008, I01-009, I01-010, I01-011, I01-012, I01-013, I01-014, I01-015, I01-016, I01-017, I01-018, I01-019, I01-020, I01-021, I01-022, I01-023, I01-024, I01-025, I01-026, I01-027, I01-028, I01-029, I01-030, I01-031, I01-032, I01-033, I01-034, I01-035, I01-036, I01-037, I01-038, I01-039, I01-040, I01-041, I01-042 |
+
+### design/runtime-tld.md — TLD（S2）
+
+先立 PRD 与开发场景边界，再定组件/角色/持久责任，再解释开发状态投影，最后列取舍和禁止复活的旧设计；不能从实现方便反推需求。
+
+| 内部栏目（按顺序） | 归属判据 | 实际正文单元 |
+| --- | --- | --- |
+| 目标与共同语言 | S1 结果怎样约束架构、名词怎样保持同义；先读边界再看组件，历史版本说明跟随原主张。 | I02-002, I02-003, I02-004, I02-007, I02-008, I02-013, I02-107 |
+| 组件责任与派工接口 | Task/四账/Profile/路由/角色分工作为架构责任一起定义；SDK 包级调用留 executor SDD，批准强制留 authority SDD。 | I02-015, I02-016, I02-009, I06-003, I06-004, I02-017, I02-018, I02-026, I02-019, I02-020 |
+| 内核在开发场景的投影 | 把已有产品对象映射到开发载体；候选版本不是新 Task 状态。状态脚本只能投影，不另立内核。 | I02-031, I02-032, I02-039, I02-045, I02-046 |
+| 已决定的取舍及其依据 | 哪些旧方案不能重新成为设计菜单；独立观察与结论相邻，撤销项仍可追溯。产品取舍不是某次运行进度。 | I06-002, I06-010, I08-008, I02-091, I02-092, I02-093, I02-094 |
+
+### design/executor-sdd.md — SDD / 执行器（S2→S3/S4）
+
+按租用边界、SDK 能力、Port/门禁、两腿恢复与进程部署、功能矩阵排序；一条能力从接口到验证可以顺读。
+
+| 内部栏目（按顺序） | 归属判据 | 实际正文单元 |
+| --- | --- | --- |
+| 租用边界与版本化能力 | 说明 loop 与控制面责任及 SDK 能力证据；日期/未验前提完整保留，不声称表中读数今天仍成立。 | I02-021, I02-022, I06-005 |
+| Port 与准入门 | 签名、探针与 Harness 过渡路线共同决定能否派工；不将支持的近似能力写成产品已支持。 | I02-023, I02-024 |
+| 进程恢复与功能落实 | 部署/取消/两腿 resume 语义及 F-EXEC 矩阵一起复验；权限授予本体引用 authority SDD。 | I02-025, I02-054, I02-071 |
+
+### design/authority-sdd.md — SDD / 授权（S2→S5）
+
+从谁有权到权限交集，再到真实动作强制点、三门和四档，最后审凭据传播；批准对象发生变化时不能沿用旧结果。
+
+| 内部栏目（按顺序） | 归属判据 | 实际正文单元 |
+| --- | --- | --- |
+| 主体与权力 | 人的身份/权力表和权限公式定义合法动作；人的阅读/响应步骤在 guide。 | I02-051, I02-052, I02-053, I02-056 |
+| 动作门与审批 | 身份鉴别、三门、四档是不同问题而非可合并的一张表；保留 timeout 与拒绝的审计差别。 | I02-055, I02-057, I02-058 |
+| 执行中限制和凭据 | Attempt 禁令与子进程/跨腿令牌约束检验传播路径，不以 SDK 默认值充当批准。 | I02-060, I02-064 |
+
+### design/evidence-sdd.md — SDD / 证据与观测（S2→S4/S6）
+
+先定义看见什么，再定义可采信什么，随后解释载体与等效，最后才能讨论成本与绕过覆盖；计数不先于观测模型。
+
+| 内部栏目（按顺序） | 归属判据 | 实际正文单元 |
+| --- | --- | --- |
+| 观测与采信合同 | 粒度、证据等级、能力四级与历史引用规则限定可以得出何种结论；实际测试执行步骤另入验证计划。 | I02-065, I02-066, I02-067, I02-073, I02-078 |
+| 载体与等效边界 | Git、七载体、手工/服务等效必须在同一观测口径下比较，不把换载体当强度升级。 | I02-069, I02-074, I02-068 |
+| 成本与遗漏观察面 | 机械路由分类、反例、T0 上界和 bypass sinks 要一起看；未归因不是零绕过。 | I02-079, I02-080, I02-081, I02-082 |
+
+### agent-dev-guide.md — 操作手册 / 共用执行正文（S0–S6 常驻面）
+
+真正按一个工作单元的行动顺序重排：受理记录→开工准备→执行/故障→评审批准→发布→续接维护。
+**「每一次怎么执行」在这里；「当前运行时怎么搭」在 TLD/SDD。**技术接口从本手册迁 S2，
+避免把手册当接口第二真源。通行名 PRD/ADR/TLD/SDD 都装不下这份冷启动入口。
+
+| 内部栏目（按顺序） | 归属判据 | 实际正文单元 |
+| --- | --- | --- |
+| 受理与持久任务记录 | 共同纪律、可信受理与完整模板用于保留意图到完成条件的链；实际业务请求留 request-baseline。 | I02-028, I02-012, I02-029, I07-002, I02-108 |
+| 开工自检与工作区供给 | 先查相关硬约束及反例，再建可交付工作区并验证 Git 可写性；拥有路径不等于拥有授权。 | I02-010, I02-103, I02-030, I02-042, I02-048 |
+| 私有执行与失败退出 | 单写者/写前门→并发场景→事故→冻结取消→停止超时，按实际失败回路连接，发布不是这里的隐式副作用。 | I02-034, I02-038, I02-035, I02-036, I02-037, I02-041, I02-050 |
+| 独立评审与具体批准对象 | 先取明确对象再按角色回应/改判，T2 和通知取件作为协作子流程；不修改权力表。 | I02-063, I02-061, I02-059, I02-047, I02-049 |
+| 发布与保留 | 交付规则→三个路径→清理失败处理→显式 GC，不能把交卷、发布和删除混成一步。 | I07-004, I02-043, I02-033, I02-044 |
+| 续接及下一次修订 | checkpoint、删除门与内核修订工作单元为后续维护提供连续性；旧 Task 终态不因清理失败改变。 | I02-088, I02-086, I02-090 |
+
+### delivery/verification.md — 验证计划 / 验收规程（S1→S4/S6）
+
+先立可判完成口径与前提，再选验证层次/证据，随后独立整合，最后检查判据自身和如实披露盲区；将规则和反证相邻。
+T2 轮次工单由 `round-status.py` 从 `round.md` 解析档位与产物路径，缺必需字段即拒绝判定，并按 git 提交（不看声明）推导环节；这不是普通工作单元字段齐全检查，也不是 260 节安置检查。
+
+| 内部栏目（按顺序） | 归属判据 | 实际正文单元 |
+| --- | --- | --- |
+| 判据与完成对象 | 控制面前提、开发不可外推和完成条件先明确；模型输出、候选完成、产品交付不是同一对象。 | I02-014, I02-011, I02-040 |
+| 层次与证据执行 | 适用测试层、四层验证、按档分级的证据账共同决定验证计划，不要求不相关测试凑数量。 | I07-003, I02-070, I02-072 |
+| 独立整合与门禁质量 | 事实裁决、假答案案例与边界测试反证共同构成评审责任；不能把绿灯作为自证。 | I02-075, I02-077, I02-104, I02-105, I02-106 |
+| 覆盖声明与未知 | 查了、没查、不能排除以及三类未知是可复用报告义务，原作者的未核清单随例证保留，不能整节藏入记录。 | I02-097 |
+
+### development-plan.md — 路线图 / SDP 输入（S0/S3）
+
+产品阶段和运行时演进各自按依赖顺序列，不能把某次历史取证当本次开工凭据；架构取向迁 TLD/SDD。
+
+| 内部栏目（按顺序） | 归属判据 | 实际正文单元 |
+| --- | --- | --- |
+| 产品建设顺序 | 先前后端，再 agent，后问数；每阶段原始约束和日期保留，决定过的顺序不由文档重排改变。 | I06-001, I06-006, I06-007, I06-008, I06-009 |
+| 运行时演进与退出门 | 现行 G0–G5 和分组件迁移门描述待交付增量；不能混同本候选 DEV/G0–G6。 | I02-083, I02-084, I02-085 |
+
+### implementation-plan.md — SDP / 具体实施计划（S3）
+
+通用表单与交付规程迁共用附件，本文件保留具体产品任务和依赖；空清单明确表示 U1 未定，不假造已可开工任务。
+
+| 内部栏目（按顺序） | 归属判据 | 实际正文单元 |
+| --- | --- | --- |
+| 计划责任和产品工作单元 | 任务目标、依赖和验收在此；原 R0–R5 表按现行 guide 已有的处置存历史，不重启旧路线。handoff 里「文档面待办」D1/D2 的**任务本体**在此展开，handoff 只留进度和阻塞投影。 | I07-001, I07-006, I07-007, I07-008, I07-009, I08-009 |
+
+### handoff.md — 交接 / 当前工作游标（S6→S0/S3）
+
+先列截至原日期的就位能力和游标，再列未决输入，最后聚合风险与验证债；接手者能知道下一步为何被挡。
+
+| 内部栏目（按顺序） | 归属判据 | 实际正文单元 |
+| --- | --- | --- |
+| 当前观察与游标 | 状态是带时点的观察，不能写成保证现在仍具备的能力；不据此修改 PRD。 | I08-001, I08-002, I08-003, I08-010 |
+| 未决及开工输入 | U1–U5、已知材料、未处置批准问题是待判输入；未决不是自动选了某方案。文档面待办的任务本体在实施计划，这里只留游标和阻塞。 | I08-004, I08-005, I08-006, I08-007, I08-013 |
+| 跨阶段风险与未验证 | 风险表与执行器未验证清单要在派工前可见，不能仅存在于历史审计中。 | I02-087, I02-089 |
+
+### constraints.md — 开发纪律（S0–S6）
+
+按数据/契约/身份/拓扑/发布/Agent 的改动影响面自检；每条执行载体与相关验证程序相邻，整份原位保留。
+
+| 内部栏目（按顺序） | 归属判据 | 实际正文单元 |
+| --- | --- | --- |
+| 规则及执行载体全文 | 限制实现和开发动作；规则 ID、验证方法、门禁盲区同处，计划和进度不在这里新建。 | I05-001, I05-002, I05-003, I05-004, I05-005, I05-006, I05-007, I05-008, I05-009, I05-010, I05-011, I05-012, I05-013, I05-014, I05-015 |
+
+### protocol/round-protocol.md — 横切常驻 / 协作执行规程（S3/S4 调用，不是 IMPL 一章）
+
+先定位定档，再定裁量与角色，接着工单/七环节/取件判据，再到各环节细则和停止清理；与工具共用稳定接口，全文原位保留。
+
+| 内部栏目（按顺序） | 归属判据 | 实际正文单元 |
+| --- | --- | --- |
+| 协作执行规程全文 | 只放不随轮次变化的流程要求；当轮参数和例外留 rounds。此文件是计划**引用**的执行方式（横切常驻），不替代需求的七阶段，也不并进实施计划目录树。 | I03-001, I03-002, I03-003, I03-004, I03-005, I03-006, I03-007, I03-008, I03-009, I03-010, I03-011, I03-012, I03-013, I03-014, I03-015, I03-016, I03-017, I03-018, I03-019, I03-020, I03-021, I03-022, I03-023, I03-024, I03-025, I03-026, I03-027, I03-028, I03-029, I03-030, I03-031, I03-032, I03-033, I03-034, I03-035, I03-036, I03-037, I03-038, I03-039, I03-040, I03-041, I03-042, I03-043, I03-044, I03-045, I03-046, I03-047, I03-048, I03-049, I03-050, I03-051, I03-052, I03-053, I03-054, I03-055, I03-056, I03-057 |
+
+### protocol/README.md — SDP / 工具使用契约（S3/S4 子流程）
+
+规范先于实现，接口约束/单一状态源/不做的能力相邻，防止调用者把缺口当实现；与脚本原位共改。
+
+| 内部栏目（按顺序） | 归属判据 | 实际正文单元 |
+| --- | --- | --- |
+| 工具契约全文 | 脚本能做和不能做的局部必须完整；不能从文档索引生成它的行为契约。 | I04-001, I04-002, I04-003, I04-004 |
+
+### records/development-history.md — ADR 依据 / 审计记录（S2/S4/S6 回溯）
+
+按证据对象分历史取值、旧路线、吸收审计和旧版上下文；当前禁令已在 TLD，通用覆盖义务在验证规程，没有随记录一起退役。
+
+| 内部栏目（按顺序） | 归属判据 | 实际正文单元 |
+| --- | --- | --- |
+| 历史取值与实例 | 五家登记、实际介入及轨迹原读数带日期保留；重构不把旧实验改成新实验。 | I02-027, I02-062, I02-076 |
+| 旧路线及当时进度 | 现行 guide 不采用为现行路线的 R0–R5/S1 表与当时进度一起保存；不删除取证、不推断所有技术任务都已完成。 | I07-005, I08-011, I08-012 |
+| 吸收审计与旧源收据 | 原作者核了什么、补了什么及完整 294 行映射；摘要不能替代语义审计。未核的通用规程经 I02-097 取件。 | I02-095, I02-096, I02-098, I02-099, I02-100, I02-101, I02-102 |
+| 旧版入口与组织上下文 | 旧标题前言、原章节理由/阅读路线及 README 旧计数是迁移证据；不作为新 pipeline 的操作指令。 | I02-001, I02-005, I02-006, I09-001, I09-002 |
+
+
+
+## 三、生命周期由产物的用途决定
+
+| 文档 | 谁能改、何时改 | 冻结/取代与历史 |
+| --- | --- | --- |
+| 原始需求及 PRD | AI 整理，人确认意图/业务取舍；PRD 的变更按现行审批和独立核验 | 原话冻结后追加澄清；PRD 新版本取代旧版本，保留稳定条款 ID，不让实现现状倒改要求 |
+| TLD/SDD | AI 设计者和实现者在工作单元内同步修订，由独立 AI 评审；权威变更走现行 T2 | 已冻设计有显式修订依据；代码改变而适用规格未更新是交付缺陷，旧设计和取舍可回取。契约（provider/consumer）旧版本保留到所有 consumer 锁升级完成，不另立 CONTRACT 类型 |
+| roadmap/SDP/执行附件 | AI 按已批准设计更新计划与依赖；阶段状态按证据更新；规程修改与具体任务进度分开 | 计划完成收口，横切的协作规程继续复用；protocol 改动按现有门，不因其被 SDP 引用而降低效力 |
+| 验证/发布/运行接收 | 判据先冻结，AI 产出及独立复核，人按原权力表批准/接收 | 新提交、新环境不能冒用旧通过；结果、批准和实际发布清单追加保存，不能覆写失败 |
+| ADR/取证/审计/旧路线 | 原作者冻结前整理；冻结后只能追加更正、替代或撤回，不能擦掉原观察 | 决定需范围/依据/效力凭据；既有本地 Git 不因归档而升级为身份鉴别；保留全文及表外更正 |
+| guide/constraints/入口/交接 | 共用规范按现行门变更；入口只指向阶段产物，交接只写事实和阻塞 | 不产生另一份产品/协议真源；历史读数带日期，当前入口不能手填一份会漂移的覆盖总数 |
+
+## 四、拆并代价与不变的取证地基
+
+| 拆并 | 可检验收益 | 引用和维护代价 |
+| --- | --- | --- |
+| guide 的技术设计与执行规程分开 | S2 找到组件/接口及验证限制；S3–S6 按一个任务动作链读规程，不翻 SDK 表后再找发布步骤 | 原 guide 的入链、节号和行号会变；须由本表将旧源坐标映射到新栏目，正式发布前逐个解析引用上下文 |
+| 技术设计分 TLD 和三个 SDD | TLD 回答系统责任；SDK 适配、权限强制、证据等效各有不同接口与复验条件，防止修改一种机制时误改另两种 | 增加三处文件入口；以同一设计工作单元绑定版本，共用对象引用 PRD，不再复制对象定义 |
+| development/implementation/guide 跨源融合 | 四账/租用归 S2；建设顺序归 S3；通用表单与交付纪律归执行附件；空任务清单保留真正的 U1 阻塞 | 同主题旧描述的时间和语义不能假定一致；相邻保留原文和限制，不凭词面重复删句 |
+| 审计与历史路线迁记录 | 日常执行不被数百行吸收收据打断，旧 R0–R5/S1 不会因重排重新成为现行指令 | 审计仍可取，旧 294 行映射不因本轮 260 行齐全而被宣称正文全验；删除源稿仍过原删除门 |
+| 内核、constraints、protocol 两文件原位保全 | 本轮不改内核字节，旧行区间仍对；规则/脚本接口保持同处 | 不追求目录外观整齐。**不拆的理由是本轮预算，以及「拆了更好」未被独立证明**——不是「71 个锚不可保全」。任务书 B2 的 71/40 被描高了一个量级：2026-09-08 在 `~/master/k8s` 复跑，排除 `archive/` 与历史 `rounds/` 后，活文档裸行号锚确认 `agent-dev-guide.md:2765`（`:627`）；本轮 `inputs/readiness.md:339`（`:450`）是第二处。钉 commit 锚不受路径重排影响。以后若要移动，再另交锚保全证据 |
+
+`working/request-baseline/` 原地保留 15 份原始档案，另有 TEMPLATE 表单也不移动。
+`rounds/` 的全部既有路径和归档内部不重排；新决定可检索但不搬成只有结论的薄 ADR。
+正式迁移至少扫描 AGENTS、合同旧指针、现行 guide、development/implementation、handoff、
+矩阵和部署/测试说明中的 Markdown 链接及裸行号。旧行号改钉真实源 commit；章节引用
+必须核正文语义，不只让一个同号标题存在。无法解析的现行引用阻断切换，不靠归档豁免放行。
+
+只读校验命令在后文：verify 对九份输入、inventory 和内核原文核摘要及索引字节；
+内核保持原路径/逐字节，所以任意旧行区间都相同，不是只抽 71 条再声称没漏。
+最终迁移还要按现行 guide 删除门验证真实 T0/T1 和独立验收，本候选不授权删除或改产品仓。
+
+**不吸收 opus ①b 的两行迁移表。**`findings.md` F-15：`readiness.md:339` 所引
+`request-lifecycle.md:450` 是 §6.1 的 `I3`（当前授权），不是 `#4.2 WAITING`。
+迁移表只有两行，错了一半；被指方已自认。锚点分类（钉 commit / 归档软判 / 活跃裸锚）
+可以吸收，错向改写方案不行。
+
+## 五、Q1/Q2/Q3/Q6/Q8/Q9 的直接回答
+
+| 问题 | 在流程中的落点与论证 |
+| --- | --- |
+| Q1 | 42 节全部进入 S1 的 PRD/产品合同；对象、不变量和 AT 是它可判定的展开，供 S2/S4/S6 引用。原地不拆。对象模型等是合同内的 TLD 渗透节，标注而不复制。没有以“它不像 PRD”否定所有者映射 |
+| Q2 | rounds 是 S2/S4 等阶段发生决策时的 ADR 及证据包。rulings 记录决定，工单/评审/异议/验收给出处；完整保留，不把“近似 ADR”误解成只允许一个决定表 |
+| Q3 | protocol 是 SDP **引用**的共用协作执行规程，落实所有者「调用附件」起点；类型上标横切常驻，原目录与工具共处。任务表与规程的更新触发不同。附件不是可以忽略的低级规则，也不是实施计划的一章 |
+| Q6 | 类型来自阶段实际所需产物。PRD、TLD/SDD、ADR、SDP、验证、发布/接收不是任意分类；展开为哪些文件取决于谁在什么阶段需要共同修改，内部栏目逐份说明。低风险小工作允许同一工单按栏目容纳，不为类型数增加审批次数 |
+| Q8 | 三槽，不发明第四袋：轮外工作在 `records/work/<work-id>/`；产品仓已约定的 `docs/evidence/<task-id>/` 原地保留；轮外**拍板**走 DEC（`records/decisions/`）。不采用 `working/traces/`。已有 _r0/_spike-sign 记录不批量搬家 |
+| Q9 | 决定键为 `round:<round-id>:R<n>`，轮外用 `work:<id>:D<n>` 与 `dec:<id>`。检索必须两个方向都能失败：有 ID 无正文行、有正文行无 ID，都算不合格。旧三轮 26 条与**当前轮**条数/ID 都钉在 CONFIG（`current_ruling_count` / `current_ruling_ids`）；只钉旧三轮、对其它裁定只计数不断言，会让「档案→索引」对当前轮恒真。下方命令可检；未命中只表示这次索引没找到，不宣称从未决定。不另建 `rounds/decisions-index.md` |
+
+`project-guide/` 是 S6 之后根据实现证据更新的现状投影，本轮不重构它；PRD/TLD 的目标
+不能直接抄进去当已实现。原 `ai-dev-readiness/` 已按本轮 R1 并入参考 inputs，不恢复
+第二套活流程，胜出 pipeline 才是今后的统一流程入口。
+
+`dev-plan/README.md` 两个源节已迁历史记录；正式切换时必须补根入口指针，指向本稿
+pipeline.md，不能让目录入口空着或继续指向作废说明。
+
+## 六、决定检索与抽查方法
+
+在仓根运行这一条命令，最后的参数可改为 `verify`、`render agent-dev-guide.md`、
+`show I02-097` 或 `decisions round:runtime-refact:R7`：
+
+```bash
+python3 -c 'from pathlib import Path; import sys; p=Path("sunmoonai/docs/dev-plan/dev-plan-architecture.md"); s=p.read_text(); exec(s.split("<!-- RUNNER -->\n```python\n",1)[1].split("\n```\n<!-- END RUNNER -->",1)[0])' decisions 回执
+```
+
+检索按冻结 commit 枚举 `rounds/*/rulings.md`，先报全局键、事由/处置所在行，再给命中文档
+的完整正文；因此 runtime-refact/R7 表外对“独立 clone”的更正不会漏掉。旧三轮的 R1
+保持三个不同 ID。本轮 R1/R2 是新记录，单列加入，不混进任务书所述的旧 26 条分母。
+未命中只表示这次索引没找到，不宣称从未决定。命中也不自动判今天有效：需核对象、
+范围、确认和后续替代，Git 摘要只验证文本，没有升级为不可伪造的人的回执。
+
+未来维护规则：新决定必带对象、范围、依据、处置、方向、确认/证据限制、替代关系；
+已冻决定追加更正，索引从原记录生成。现在工具已实现取件、全文检索、消歧和逐节重组，
+**没有实现批准服务或自动判定裁定效力**。索引检查必须两个方向都能失败：有全局键
+却指不到正文行、有 rulings 行却没有键，都算不合格——与 constraints「检查必须能证明
+还找得到要查的东西」同构。当前轮（非旧三轮）的条数和 ID 集合写在 CONFIG 里与检索器对账；
+只断言 `old == 26` 且全局无重复 ID，删掉或新增一条当前轮裁定行检查仍通过，那不是双向检查。
+
+语义抽查：任取表中 ID，用 show 看完整原文，再 render 看目标栏目。检查它是否回答该
+阶段的交接问题，前后条是否构成一个动作或接口闭环，主张的例外与证据限制是否随行。
+G 表/四账/审批四档即使都含“门”字，也不能按同名合并。机器只核没有漏/重复或改字，
+不会把任意分组判成有机融合。
+
+## 七、主动暴露的争议和范围
+
+本稿采用完整源节组合而非逐句改写：这样能证明限制、表格和失败分支未丢，代价是相邻
+来源可能有重复表述。每个目标栏目先有共同问题和内部顺序，再接入原文；不是按文件
+顺序全堆到 guide。正式去重必须核等价，不能本轮顺手改现有设计。
+
+**预览不等于完成编辑。**预览是带来源的重组正文，尚不是去掉旧坐标后已发布的编辑稿。
+整合已把正式标题钉在 §二栏目列，并把失效自指标成源坐标；正式切换仍须逐条核等价后再改
+引用，不能把 RUNNER 的生成物直接当手册发布。
+
+特别区分两处混合内容：guide 的“没查什么”包含覆盖声明的通用义务，放进验证规程，
+不是整节藏入历史；“本轮核查裁定”包含不可复活的设计禁令，放进 TLD 并保留原观察。
+旧 R0–R5/S1 表按现行 guide 已明确的效力处置留历史，不把旧实施表当自动开工授权。
+这些来自本次冻结源正文，疑点按 B3 登记在 findings 的 F-LUNA-A2-01，不代替所有者重新裁定设计结论。
+
+**有意留白不是待办。**原文明确不先建设的方向取舍，重排时必须保留为已决定的范围边界
+（附 ADR 出处），不得经分类变成新任务。
+
+没有重新声称旧 archive 的 294 行全部正文验过；没有复跑 SDK、业务数据、生产或
+身份/回执实验。所有相关读数仍是原作者、原版本、原环境的输入。两份废稿未作为框架
+或映射来源，本次以共同 inventory 填表；过去上下文不可抹掉，不能把本稿称作零上下文实验。
+
+本次实跑范围：共同清单核验、九源逐字节重建、14 份目标全文生成、10 个正文落点回读、
+全局裁定 ID/关键词和表外更正检索均通过。空检索、未知单元/目标、删除一行映射、
+伪造一处目标均被拒绝。十个正文样例是 I02 的 021/024/036/039/058/071/077/086/097
+以及 I08-006，分别核了执行器前提、恢复、事故、Artifact 状态、审批超时、双腿矩阵、
+假答案、删除门、不能排除、U3 内存态输入。抽查不代表其它 250 节已经独立验收。
+
+## 八、260 节安置表
+
+**人的审阅面是本表，不是文末 RUNNER 里的单行机器清单。**表的每行对应共同 inventory 一行；
+落点是本稿实际可渲染的“目标文件 / 栏目”。阶段表示首次需要该内容的门或其复用阶段，
+不创造第二份规范；零故意丢弃。机器清单可在正式实现阶段分行生成；本轮不以生成器体积
+代替可读映射。
+
+| ID | 源路径 / 起行 | 共同清单原标题 | 消费阶段 | 落点文件 / 栏目 |
+| --- | --- | --- | --- | --- |
+| I01-001 | working/request-lifecycle.md L1 | Request Lifecycle：产品请求生命周期合同 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-002 | working/request-lifecycle.md L13 | 0. 规范边界与条款筛选 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-003 | working/request-lifecycle.md L15 | 0.1 只收产品要求 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-004 | working/request-lifecycle.md L29 | 0.2 本文负责什么 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-005 | working/request-lifecycle.md L52 | 0.3 规范用语 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-006 | working/request-lifecycle.md L58 | 1. 生命周期全景 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-007 | working/request-lifecycle.md L92 | 2. 核心对象 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-008 | working/request-lifecycle.md L106 | 2.1 Task 不等于 Attempt | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-009 | working/request-lifecycle.md L120 | 2.2 Submission 不一定产生 Task | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-010 | working/request-lifecycle.md L127 | 3. Task 契约 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-011 | working/request-lifecycle.md L129 | 3.1 提交信封 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-012 | working/request-lifecycle.md L147 | 3.2 持久化主档 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-013 | working/request-lifecycle.md L166 | 3.3 解释、边界与完成契约 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-014 | working/request-lifecycle.md L183 | 3.4 最终结果信封 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-015 | working/request-lifecycle.md L203 | 4. 两层状态机 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-016 | working/request-lifecycle.md L205 | 4.1 Task 状态机 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-017 | working/request-lifecycle.md L247 | 4.2 WAITING 与 Interaction | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-018 | working/request-lifecycle.md L279 | 4.3 取消意图与终态 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-019 | working/request-lifecycle.md L292 | 4.4 终态、刷新与重新处理 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-020 | working/request-lifecycle.md L304 | 4.5 Attempt / Run 状态机 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-021 | working/request-lifecycle.md L346 | 5. 七阶段产品功能 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-022 | working/request-lifecycle.md L351 | 5.1 提交（前端） | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-023 | working/request-lifecycle.md L360 | 5.2 受理与校验（后端） | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-024 | working/request-lifecycle.md L369 | 5.3 排队与可靠投递 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-025 | working/request-lifecycle.md L377 | 5.4 Agent 执行 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-026 | working/request-lifecycle.md L391 | 5.5 中断、批准与恢复 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-027 | working/request-lifecycle.md L398 | 5.6 验收与完成提交 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-028 | working/request-lifecycle.md L413 | 5.7 返回前端、失败与重试 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-029 | working/request-lifecycle.md L442 | 6. 跨进程纪律与持久化账 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-030 | working/request-lifecycle.md L444 | 6.1 全程不变量 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-031 | working/request-lifecycle.md L467 | 6.2 持久化记录 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-032 | working/request-lifecycle.md L485 | 7. Profile、Artifact 与扩展 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-033 | working/request-lifecycle.md L487 | 7.1 Task Profile 与 Agent Profile | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-034 | working/request-lifecycle.md L508 | 7.2 Profile 示例 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-035 | working/request-lifecycle.md L520 | 8. 子 Task 与依赖编排 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-036 | working/request-lifecycle.md L550 | 9. 前端、后端与 Agent 责任投影 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-037 | working/request-lifecycle.md L566 | 10. 反模式 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-038 | working/request-lifecycle.md L586 | 11. 产品验收矩阵 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-039 | working/request-lifecycle.md L623 | 12. 修订、落地与参考材料 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-040 | working/request-lifecycle.md L625 | 12.1 修订纪律 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-041 | working/request-lifecycle.md L637 | 12.2 参考材料边界 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I01-042 | working/request-lifecycle.md L643 | 12.3 生效边界 | S1 | working/request-lifecycle.md / 产品合同全文 |
+| I02-001 | agent-dev-guide.md L1 | Agent 开发指导：一个产品运行时，一套开发纪律 | S6 | records/development-history.md / 旧版入口与组织上下文 |
+| I02-002 | agent-dev-guide.md L23 | 0. 先读结论 | S2 | design/runtime-tld.md / 目标与共同语言 |
+| I02-003 | agent-dev-guide.md L52 | 0.0 原来是什么样，为什么非改不可 | S2 | design/runtime-tld.md / 目标与共同语言 |
+| I02-004 | agent-dev-guide.md L70 | 0.1 文档边界 | S2 | design/runtime-tld.md / 目标与共同语言 |
+| I02-005 | agent-dev-guide.md L87 | 0.2 为什么分成这些章 | S6 | records/development-history.md / 旧版入口与组织上下文 |
+| I02-006 | agent-dev-guide.md L106 | 0.3 按工作阶段阅读，不按历史版本阅读 | S6 | records/development-history.md / 旧版入口与组织上下文 |
+| I02-007 | agent-dev-guide.md L126 | 1. 不可变的契约与边界 | S2 | design/runtime-tld.md / 目标与共同语言 |
+| I02-008 | agent-dev-guide.md L128 | 1.1 唯一产品内核 | S2 | design/runtime-tld.md / 目标与共同语言 |
+| I02-009 | agent-dev-guide.md L143 | 1.2 四本账与单一权威写入面 | S2 | design/runtime-tld.md / 组件责任与派工接口 |
+| I02-010 | agent-dev-guide.md L151 | 1.3 Agent 硬约束自检 | S3 | agent-dev-guide.md / 开工自检与工作区供给 |
+| I02-011 | agent-dev-guide.md L164 | 1.4 开发验收不可外推 | S1/S4 | delivery/verification.md / 判据与完成对象 |
+| I02-012 | agent-dev-guide.md L171 | 1.5 执行者的共同纪律 | S0/S1 | agent-dev-guide.md / 受理与持久任务记录 |
+| I02-013 | agent-dev-guide.md L187 | 1.6 七条设计原则 | S2 | design/runtime-tld.md / 目标与共同语言 |
+| I02-014 | agent-dev-guide.md L213 | 1.7 先核前提，也核控制面 | S1/S4 | delivery/verification.md / 判据与完成对象 |
+| I02-015 | agent-dev-guide.md L235 | 2. 一个运行时的结构 | S2 | design/runtime-tld.md / 组件责任与派工接口 |
+| I02-016 | agent-dev-guide.md L237 | 2.1 确定性组件与适配层 | S2 | design/runtime-tld.md / 组件责任与派工接口 |
+| I02-017 | agent-dev-guide.md L255 | 2.2 内容角色 | S2 | design/runtime-tld.md / 组件责任与派工接口 |
+| I02-018 | agent-dev-guide.md L269 | 2.3 Task Profile 与 Agent Profile | S2 | design/runtime-tld.md / 组件责任与派工接口 |
+| I02-019 | agent-dev-guide.md L293 | 2.4 dev.change/1 工单 | S2 | design/runtime-tld.md / 组件责任与派工接口 |
+| I02-020 | agent-dev-guide.md L347 | 2.5 路由只读可判字段 | S2 | design/runtime-tld.md / 组件责任与派工接口 |
+| I02-021 | agent-dev-guide.md L354 | 2.6 执行层：租用什么、自建什么 | S2 | design/executor-sdd.md / 租用边界与版本化能力 |
+| I02-022 | agent-dev-guide.md L408 | 2.7 两个官方 SDK：两个轴、非对称能力 | S2 | design/executor-sdd.md / 租用边界与版本化能力 |
+| I02-023 | agent-dev-guide.md L433 | 2.8 统一执行 Port 与三态能力探针 | S2/S3 | design/executor-sdd.md / Port 与准入门 |
+| I02-024 | agent-dev-guide.md L483 | 2.9 Harness 腿的前置门禁与过渡补法 | S2/S3 | design/executor-sdd.md / Port 与准入门 |
+| I02-025 | agent-dev-guide.md L511 | 2.10 双 runtime 的部署、进程与恢复 | S2/S4 | design/executor-sdd.md / 进程恢复与功能落实 |
+| I02-026 | agent-dev-guide.md L548 | 2.11 派工契约、角色补充与隔离的诚实边界 | S2 | design/runtime-tld.md / 组件责任与派工接口 |
+| I02-027 | agent-dev-guide.md L587 | 2.12 五家 Agent Profile 的历史取值示例 | S2/S6 | records/development-history.md / 历史取值与实例 |
+| I02-028 | agent-dev-guide.md L649 | 3. 一次开发 Task 怎样执行 | S0/S1 | agent-dev-guide.md / 受理与持久任务记录 |
+| I02-029 | agent-dev-guide.md L651 | 3.1 受理与冻结 | S0/S1 | agent-dev-guide.md / 受理与持久任务记录 |
+| I02-030 | agent-dev-guide.md L682 | 3.2 工作区供给 | S3 | agent-dev-guide.md / 开工自检与工作区供给 |
+| I02-031 | agent-dev-guide.md L704 | 3.3 Attempt 与状态投影 | S2 | design/runtime-tld.md / 内核在开发场景的投影 |
+| I02-032 | agent-dev-guide.md L741 | 3.4 T0/T1/T2 不是三套状态机 | S2 | design/runtime-tld.md / 内核在开发场景的投影 |
+| I02-033 | agent-dev-guide.md L767 | 3.5 交付、清理和恢复 | S5/S6 | agent-dev-guide.md / 发布与保留 |
+| I02-034 | agent-dev-guide.md L782 | 3.6 私有地产生，单写者发布 | S4 | agent-dev-guide.md / 私有执行与失败退出 |
+| I02-035 | agent-dev-guide.md L822 | 3.7 并发场景处置表 | S4 | agent-dev-guide.md / 私有执行与失败退出 |
+| I02-036 | agent-dev-guide.md L863 | 3.8 覆盖或来源不明时的事故规程 | S4 | agent-dev-guide.md / 私有执行与失败退出 |
+| I02-037 | agent-dev-guide.md L893 | 3.9 冻结、迟到与取消 | S4 | agent-dev-guide.md / 私有执行与失败退出 |
+| I02-038 | agent-dev-guide.md L914 | 3.10 物化门禁与写入前门禁 | S4 | agent-dev-guide.md / 私有执行与失败退出 |
+| I02-039 | agent-dev-guide.md L969 | 3.11 候选状态机 | S2 | design/runtime-tld.md / 内核在开发场景的投影 |
+| I02-040 | agent-dev-guide.md L988 | 3.12 完成判据 | S1/S4 | delivery/verification.md / 判据与完成对象 |
+| I02-041 | agent-dev-guide.md L1009 | 3.13 执行形态、停止规则与成本 | S4 | agent-dev-guide.md / 私有执行与失败退出 |
+| I02-042 | agent-dev-guide.md L1042 | 3.14 建立 worktree 的细则 | S3 | agent-dev-guide.md / 开工自检与工作区供给 |
+| I02-043 | agent-dev-guide.md L1055 | 3.15 发布协议：三个路径不是一个 | S5/S6 | agent-dev-guide.md / 发布与保留 |
+| I02-044 | agent-dev-guide.md L1078 | 3.16 保留与垃圾回收 | S5/S6 | agent-dev-guide.md / 发布与保留 |
+| I02-045 | agent-dev-guide.md L1093 | 3.17 内核对象 ↔ 开发载体对照 | S2 | design/runtime-tld.md / 内核在开发场景的投影 |
+| I02-046 | agent-dev-guide.md L1114 | 3.18 状态脚本的硬要求 | S2 | design/runtime-tld.md / 内核在开发场景的投影 |
+| I02-047 | agent-dev-guide.md L1131 | 3.19 T2 七环节的操作闭环 | S2/S4/S5 | agent-dev-guide.md / 独立评审与具体批准对象 |
+| I02-048 | agent-dev-guide.md L1169 | 3.20 工作区能写，不代表 Git 能提交 | S3 | agent-dev-guide.md / 开工自检与工作区供给 |
+| I02-049 | agent-dev-guide.md L1199 | 3.21 通知、取件与人的检视面 | S2/S4/S5 | agent-dev-guide.md / 独立评审与具体批准对象 |
+| I02-050 | agent-dev-guide.md L1224 | 3.22 停止、超时与回退不能省略 | S4 | agent-dev-guide.md / 私有执行与失败退出 |
+| I02-051 | agent-dev-guide.md L1247 | 4. 人介入、Interaction 与权力 | S2 | design/authority-sdd.md / 主体与权力 |
+| I02-052 | agent-dev-guide.md L1249 | 4.1 人的位置 | S2 | design/authority-sdd.md / 主体与权力 |
+| I02-053 | agent-dev-guide.md L1261 | 4.2 权力表 | S2 | design/authority-sdd.md / 主体与权力 |
+| I02-054 | agent-dev-guide.md L1284 | 4.3 直接沿用实际中断/恢复原语 | S2/S4 | design/executor-sdd.md / 进程恢复与功能落实 |
+| I02-055 | agent-dev-guide.md L1347 | 4.4 身份、批准与强制点 | S2/S5 | design/authority-sdd.md / 动作门与审批 |
+| I02-056 | agent-dev-guide.md L1383 | 4.5 权限公式与只有 principal 能做的动作 | S2 | design/authority-sdd.md / 主体与权力 |
+| I02-057 | agent-dev-guide.md L1430 | 4.6 三道正交门 | S2/S5 | design/authority-sdd.md / 动作门与审批 |
+| I02-058 | agent-dev-guide.md L1452 | 4.7 四档审批 | S2/S5 | design/authority-sdd.md / 动作门与审批 |
+| I02-059 | agent-dev-guide.md L1481 | 4.8 principal 的裁量权与改判纪律 | S2/S4/S5 | agent-dev-guide.md / 独立评审与具体批准对象 |
+| I02-060 | agent-dev-guide.md L1509 | 4.9 Attempt 内的三条硬禁令 | S2/S4 | design/authority-sdd.md / 执行中限制和凭据 |
+| I02-061 | agent-dev-guide.md L1528 | 4.10 人这一侧的义务 | S2/S4/S5 | agent-dev-guide.md / 独立评审与具体批准对象 |
+| I02-062 | agent-dev-guide.md L1549 | 4.11 本轮已发生介入的实例级清单 | S2/S6 | records/development-history.md / 历史取值与实例 |
+| I02-063 | agent-dev-guide.md L1580 | 4.12 人的收件箱：让批准具体、可读、可重取 | S2/S4/S5 | agent-dev-guide.md / 独立评审与具体批准对象 |
+| I02-064 | agent-dev-guide.md L1605 | 4.13 执行器凭据、子进程与跨腿委派 | S2/S4 | design/authority-sdd.md / 执行中限制和凭据 |
+| I02-065 | agent-dev-guide.md L1629 | 5. 可观测性、证据与等效 | S2 | design/evidence-sdd.md / 观测与采信合同 |
+| I02-066 | agent-dev-guide.md L1631 | 5.1 三个粒度字段 | S2 | design/evidence-sdd.md / 观测与采信合同 |
+| I02-067 | agent-dev-guide.md L1659 | 5.2 证据等级与采信规则 | S2 | design/evidence-sdd.md / 观测与采信合同 |
+| I02-068 | agent-dev-guide.md L1674 | 5.3 手工态与服务态的等效判据 | S2/S4 | design/evidence-sdd.md / 载体与等效边界 |
+| I02-069 | agent-dev-guide.md L1699 | 5.4 Git 载体能与不能证明什么 | S2/S4 | design/evidence-sdd.md / 载体与等效边界 |
+| I02-070 | agent-dev-guide.md L1709 | 5.5 四层验证 | S3/S4 | delivery/verification.md / 层次与证据执行 |
+| I02-071 | agent-dev-guide.md L1721 | 5.6 F-EXEC-* / F-INTERACT-* 双腿落地矩阵 | S2/S4 | design/executor-sdd.md / 进程恢复与功能落实 |
+| I02-072 | agent-dev-guide.md L1747 | 5.7 证据账按流程分级 | S3/S4 | delivery/verification.md / 层次与证据执行 |
+| I02-073 | agent-dev-guide.md L1774 | 5.8 上下文路由与能力四级词典 | S2 | design/evidence-sdd.md / 观测与采信合同 |
+| I02-074 | agent-dev-guide.md L1804 | 5.9 七种载体各能证明什么 | S2/S4 | design/evidence-sdd.md / 载体与等效边界 |
+| I02-075 | agent-dev-guide.md L1827 | 5.10 事实裁决表与整合纪律 | S4 | delivery/verification.md / 独立整合与门禁质量 |
+| I02-076 | agent-dev-guide.md L1851 | 5.11 轨迹实测：23 条里 2 条 attested | S2/S6 | records/development-history.md / 历史取值与实例 |
+| I02-077 | agent-dev-guide.md L1899 | 5.12 检查本身也必须接受检查 | S4 | delivery/verification.md / 独立整合与门禁质量 |
+| I02-078 | agent-dev-guide.md L1916 | 5.13 历史取证怎样用于今天的开发 | S2 | design/evidence-sdd.md / 观测与采信合同 |
+| I02-079 | agent-dev-guide.md L1930 | 6. 什么时候运行时值得用 | S2/S6 | design/evidence-sdd.md / 成本与遗漏观察面 |
+| I02-080 | agent-dev-guide.md L1932 | 6.1 机械分类 | S2/S6 | design/evidence-sdd.md / 成本与遗漏观察面 |
+| I02-081 | agent-dev-guide.md L1947 | 6.2 三类反例与 T0 上界 | S2/S6 | design/evidence-sdd.md / 成本与遗漏观察面 |
+| I02-082 | agent-dev-guide.md L1963 | 6.3 绕过只能部分可观测 | S2/S6 | design/evidence-sdd.md / 成本与遗漏观察面 |
+| I02-083 | agent-dev-guide.md L1986 | 7. 演进与退出脚手架 | S3 | development-plan.md / 运行时演进与退出门 |
+| I02-084 | agent-dev-guide.md L1988 | 7.1 依赖顺序 | S3 | development-plan.md / 运行时演进与退出门 |
+| I02-085 | agent-dev-guide.md L2002 | 7.2 从手工态拆到服务态 | S3 | development-plan.md / 运行时演进与退出门 |
+| I02-086 | agent-dev-guide.md L2038 | 7.3 删除与迁移门 | S6→S0 | agent-dev-guide.md / 续接及下一次修订 |
+| I02-087 | agent-dev-guide.md L2073 | 7.4 风险和未决 | S2/S3 | handoff.md / 跨阶段风险与未验证 |
+| I02-088 | agent-dev-guide.md L2104 | 7.5 跨会话续接 | S6→S0 | agent-dev-guide.md / 续接及下一次修订 |
+| I02-089 | agent-dev-guide.md L2140 | 7.6 执行器架构的未验证清单 | S2/S3 | handoff.md / 跨阶段风险与未验证 |
+| I02-090 | agent-dev-guide.md L2159 | 7.7 需要改内核时，提交明确的修订工作单元 | S6→S0 | agent-dev-guide.md / 续接及下一次修订 |
+| I02-091 | agent-dev-guide.md L2178 | 8. 本轮核查裁定 | S2 | design/runtime-tld.md / 已决定的取舍及其依据 |
+| I02-092 | agent-dev-guide.md L2189 | 8.1 六项逐条处置 | S2 | design/runtime-tld.md / 已决定的取舍及其依据 |
+| I02-093 | agent-dev-guide.md L2206 | 8.2 保留与撤销 | S2 | design/runtime-tld.md / 已决定的取舍及其依据 |
+| I02-094 | agent-dev-guide.md L2215 | 8.3 本次补吸收明确不采用的旧主张 | S2 | design/runtime-tld.md / 已决定的取舍及其依据 |
+| I02-095 | agent-dev-guide.md L2235 | 9. 覆盖声明 | S4/S6 | records/development-history.md / 吸收审计与旧源收据 |
+| I02-096 | agent-dev-guide.md L2241 | 9.1 查了什么 | S4/S6 | records/development-history.md / 吸收审计与旧源收据 |
+| I02-097 | agent-dev-guide.md L2253 | 9.2 没查什么 | S4/S6 | delivery/verification.md / 覆盖声明与未知 |
+| I02-098 | agent-dev-guide.md L2299 | 9.3 自增内容及理由（runtime-refact 轮） | S4/S6 | records/development-history.md / 吸收审计与旧源收据 |
+| I02-099 | agent-dev-guide.md L2306 | 9.4 两份 lifecycle 的吸收轮（2026-09-07） | S4/S6 | records/development-history.md / 吸收审计与旧源收据 |
+| I02-100 | agent-dev-guide.md L2448 | 9.5 GPT-6 再吸收记录（2026-09-08） | S4/S6 | records/development-history.md / 吸收审计与旧源收据 |
+| I02-101 | agent-dev-guide.md L2507 | 9.6 取代前 opus 做的核验（2026-09-08） | S4/S6 | records/development-history.md / 吸收审计与旧源收据 |
+| I02-102 | agent-dev-guide.md L2554 | 10. 五份历史正文及目录说明的逐节处置 | S4/S6 | records/development-history.md / 吸收审计与旧源收据 |
+| I02-103 | agent-dev-guide.md L2876 | 11. 反模式 | S3 | agent-dev-guide.md / 开工自检与工作区供给 |
+| I02-104 | agent-dev-guide.md L2924 | 12. 常见失败方式与项目实例 | S4 | delivery/verification.md / 独立整合与门禁质量 |
+| I02-105 | agent-dev-guide.md L2965 | 12.1 七种“检查给出假答案”的回归线索 | S4 | delivery/verification.md / 独立整合与门禁质量 |
+| I02-106 | agent-dev-guide.md L2984 | 12.2 并行评审的收益与盲区 | S4 | delivery/verification.md / 独立整合与门禁质量 |
+| I02-107 | agent-dev-guide.md L3004 | 13. 词汇对照 | S2 | design/runtime-tld.md / 目标与共同语言 |
+| I02-108 | agent-dev-guide.md L3038 | 14. 开发 Task 持久记录模板 | S0/S1 | agent-dev-guide.md / 受理与持久任务记录 |
+| I03-001 | protocol/round-protocol.md L1 | 并行评优轮：流程 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-002 | protocol/round-protocol.md L22 | 0. 收到「继续」时怎么办 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-003 | protocol/round-protocol.md L52 | 1. 流程档位：这件事该走多重的流程 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-004 | protocol/round-protocol.md L64 | 1.0 一套流程，靠参数覆盖三种协作形态 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-005 | protocol/round-protocol.md L85 | 1.1 判据：命中任一条即 T2 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-006 | protocol/round-protocol.md L99 | 1.2 升档随意，降档要理由——这条不对称是有意的 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-007 | protocol/round-protocol.md L111 | 1.3 任何档位都不能省的三条 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-008 | protocol/round-protocol.md L120 | 2. 裁量权：supervisor 可以临机决定什么 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-009 | protocol/round-protocol.md L127 | 2.1 不可裁量的下限 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-010 | protocol/round-protocol.md L138 | 2.2 可裁量的事项 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-011 | protocol/round-protocol.md L143 | 2.3 方向不对称：这是本协议的统一原则 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-012 | protocol/round-protocol.md L159 | 2.4 裁定记录：未记录的裁定无效 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-013 | protocol/round-protocol.md L171 | 2.5 推翻 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-014 | protocol/round-protocol.md L179 | 2.6 裁量是规则的孵化器 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-015 | protocol/round-protocol.md L191 | 3. 执行者与触发方式：两个轴，不要混 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-016 | protocol/round-protocol.md L197 | 3.1 两个轴 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-017 | protocol/round-protocol.md L209 | 3.2 全部动作的归属 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-018 | protocol/round-protocol.md L226 | 3.3 两类「人做」不可互相顶替 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-019 | protocol/round-protocol.md L236 | 4. 七个环节（T2 专用） | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-020 | protocol/round-protocol.md L263 | 5. 本轮定义：round.md | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-021 | protocol/round-protocol.md L291 | 6. 产物、路径与命名 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-022 | protocol/round-protocol.md L323 | 6.1 环节通知：组织者的产物，不是发起人的话术 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-023 | protocol/round-protocol.md L344 | 7. 取件与检视面 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-024 | protocol/round-protocol.md L349 | 7.1 取件：一律按 commit，不看工作区 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-025 | protocol/round-protocol.md L365 | 7.2 检视面：需要人读时开临时 worktree | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-026 | protocol/round-protocol.md L382 | 7.3 每个需要人读的环节都必须先有检视面 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-027 | protocol/round-protocol.md L391 | 8. 环节判定：命令即判据 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-028 | protocol/round-protocol.md L427 | 8.1 判据自身的质量：覆盖不全比没有更危险 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-029 | protocol/round-protocol.md L465 | 8.2 立判据的人怎么约束自己 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-030 | protocol/round-protocol.md L472 | 只写判据，不写答案 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-031 | protocol/round-protocol.md L484 | 立据人的四条自我约束 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-032 | protocol/round-protocol.md L492 | 难点清单：记下来是为了检验发起方 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-033 | protocol/round-protocol.md L501 | 三条通用扣分规则 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-034 | protocol/round-protocol.md L507 | 起草人回避 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-035 | protocol/round-protocol.md L516 | 判据自身的失效条件 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-036 | protocol/round-protocol.md L529 | 一票否决项要事先列 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-037 | protocol/round-protocol.md L534 | 8b. 两个脚本怎么调 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-038 | protocol/round-protocol.md L553 | 退出码 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-039 | protocol/round-protocol.md L564 | 声明与计算对不上时 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-040 | protocol/round-protocol.md L576 | 8c. 组织者的两条纪律 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-041 | protocol/round-protocol.md L581 | 8c.1 环节进行中，组织者不得写入参与方的工作区 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-042 | protocol/round-protocol.md L604 | 8c.2 代提交必须用 --author，且必须登记为欠账 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-043 | protocol/round-protocol.md L619 | 9. ① 提案：隔离与冻结 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-044 | protocol/round-protocol.md L624 | 9.1 隔离为什么是硬要求 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-045 | protocol/round-protocol.md L644 | 9.2 工单发什么、不发什么 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-046 | protocol/round-protocol.md L675 | 9.3 机制化隔离：曾经有过，已经删掉 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-047 | protocol/round-protocol.md L690 | 10. ② 互评：评审文件写什么 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-048 | protocol/round-protocol.md L713 | 11. ③ 裁决：定基座与吸收 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-049 | protocol/round-protocol.md L724 | 12. ④ 异议：对整合权的唯一制衡 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-050 | protocol/round-protocol.md L741 | 13. ⑤ 验收 与 ⑥ 确认 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-051 | protocol/round-protocol.md L760 | 13.1 定向审核分两阶段，防止被产出方锚定 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-052 | protocol/round-protocol.md L780 | 13.2 验收通过意味着什么，不意味着什么 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-053 | protocol/round-protocol.md L789 | 14. 停止、超时与回退 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-054 | protocol/round-protocol.md L803 | 14.1 参与方不可用：逾期、弃权与换人 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-055 | protocol/round-protocol.md L883 | 15. 角色不分会怎样 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-056 | protocol/round-protocol.md L902 | 16. ⑦ 清理与发布 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I03-057 | protocol/round-protocol.md L917 | 17. 通用纪律 | S3/S4 | protocol/round-protocol.md / 协作执行规程全文 |
+| I04-001 | protocol/README.md L1 | protocol/ —— 流程规范与它的实现 | S3/S4 | protocol/README.md / 工具契约全文 |
+| I04-002 | protocol/README.md L23 | 三条设计约束，改这里的代码前先读 | S3/S4 | protocol/README.md / 工具契约全文 |
+| I04-003 | protocol/README.md L33 | 单一真源 | S3/S4 | protocol/README.md / 工具契约全文 |
+| I04-004 | protocol/README.md L39 | 已知不做的事 | S3/S4 | protocol/README.md / 工具契约全文 |
+| I05-001 | constraints.md L1 | 开发必须遵守的规则 | S0–S6 | constraints.md / 规则及执行载体全文 |
+| I05-002 | constraints.md L13 | 怎么用 | S0–S6 | constraints.md / 规则及执行载体全文 |
+| I05-003 | constraints.md L40 | 数据 | S0–S6 | constraints.md / 规则及执行载体全文 |
+| I05-004 | constraints.md L54 | 做数据迁移时 | S0–S6 | constraints.md / 规则及执行载体全文 |
+| I05-005 | constraints.md L71 | 契约 | S0–S6 | constraints.md / 规则及执行载体全文 |
+| I05-006 | constraints.md L82 | 身份 | S0–S6 | constraints.md / 规则及执行载体全文 |
+| I05-007 | constraints.md L95 | 拓扑 | S0–S6 | constraints.md / 规则及执行载体全文 |
+| I05-008 | constraints.md L105 | 什么时候才拆出专用 Worker | S0–S6 | constraints.md / 规则及执行载体全文 |
+| I05-009 | constraints.md L116 | 发布 | S0–S6 | constraints.md / 规则及执行载体全文 |
+| I05-010 | constraints.md L128 | 改模板、同步实例时 | S0–S6 | constraints.md / 规则及执行载体全文 |
+| I05-011 | constraints.md L137 | 清理镜像时 | S0–S6 | constraints.md / 规则及执行载体全文 |
+| I05-012 | constraints.md L144 | 一条环境事实 | S0–S6 | constraints.md / 规则及执行载体全文 |
+| I05-013 | constraints.md L149 | 智能体 | S0–S6 | constraints.md / 规则及执行载体全文 |
+| I05-014 | constraints.md L161 | 保证这些被遵守的三层 | S0–S6 | constraints.md / 规则及执行载体全文 |
+| I05-015 | constraints.md L181 | doc-gate.py 为什么不是第三个被删的脚本 | S0–S6 | constraints.md / 规则及执行载体全文 |
+| I06-001 | development-plan.md L1 | 开发计划 | S0/S3 | development-plan.md / 产品建设顺序 |
+| I06-002 | development-plan.md L10 | 起点：不延续 v5 | S2 | design/runtime-tld.md / 已决定的取舍及其依据 |
+| I06-003 | development-plan.md L24 | 智能体分两部分 | S2 | design/runtime-tld.md / 组件责任与派工接口 |
+| I06-004 | development-plan.md L36 | 四本账是两部分共用的地基 | S2 | design/runtime-tld.md / 组件责任与派工接口 |
+| I06-005 | development-plan.md L44 | 执行层租用，不自建 | S2 | design/executor-sdd.md / 租用边界与版本化能力 |
+| I06-006 | development-plan.md L64 | 三个阶段 | S0/S3 | development-plan.md / 产品建设顺序 |
+| I06-007 | development-plan.md L68 | 一 · 前后端对接 | S0/S3 | development-plan.md / 产品建设顺序 |
+| I06-008 | development-plan.md L97 | 二 · agent 开发 | S0/S3 | development-plan.md / 产品建设顺序 |
+| I06-009 | development-plan.md L110 | 三 · 结构化数据问答（后期） | S0/S3 | development-plan.md / 产品建设顺序 |
+| I06-010 | development-plan.md L134 | 有意留白的两处 | S2 | design/runtime-tld.md / 已决定的取舍及其依据 |
+| I07-001 | implementation-plan.md L1 | 实施计划 | S3 | implementation-plan.md / 计划责任和产品工作单元 |
+| I07-002 | implementation-plan.md L11 | 任务条目格式 | S0/S1 | agent-dev-guide.md / 受理与持久任务记录 |
+| I07-003 | implementation-plan.md L27 | 测试层次 | S3/S4 | delivery/verification.md / 层次与证据执行 |
+| I07-004 | implementation-plan.md L38 | 交付规则 | S5/S6 | agent-dev-guide.md / 发布与保留 |
+| I07-005 | implementation-plan.md L53 | 阶段〇 · 开发框架自身的实施路线（R0–R5） | S3/S6 | records/development-history.md / 旧路线及当时进度 |
+| I07-006 | implementation-plan.md L77 | 阶段一 · 前后端对接 | S3 | implementation-plan.md / 计划责任和产品工作单元 |
+| I07-007 | implementation-plan.md L79 | 任务清单 | S3 | implementation-plan.md / 计划责任和产品工作单元 |
+| I07-008 | implementation-plan.md L86 | 阶段二 · agent 开发 | S3 | implementation-plan.md / 计划责任和产品工作单元 |
+| I07-009 | implementation-plan.md L90 | 阶段三 · 结构化数据问答 | S3 | implementation-plan.md / 计划责任和产品工作单元 |
+| I08-001 | handoff.md L1 | 交接 | S6→S0 | handoff.md / 当前观察与游标 |
+| I08-002 | handoff.md L14 | 当前阶段 | S6→S0 | handoff.md / 当前观察与游标 |
+| I08-003 | handoff.md L21 | 已经就位的（不用再做） | S6→S0 | handoff.md / 当前观察与游标 |
+| I08-004 | handoff.md L30 | 未决项 | S0/S3 | handoff.md / 未决及开工输入 |
+| I08-005 | handoff.md L42 | U1 的已知输入 | S0/S3 | handoff.md / 未决及开工输入 |
+| I08-006 | handoff.md L51 | U3 的已知输入 | S0/S3 | handoff.md / 未决及开工输入 |
+| I08-007 | handoff.md L59 | U4 的已知输入 | S0/S3 | handoff.md / 未决及开工输入 |
+| I08-008 | handoff.md L68 | 不能倒退的输入 | S2 | design/runtime-tld.md / 已决定的取舍及其依据 |
+| I08-009 | handoff.md L80 | 文档面待办 | S3 | implementation-plan.md / 计划责任和产品工作单元 |
+| I08-010 | handoff.md L93 | 任务游标 | S6→S0 | handoff.md / 当前观察与游标 |
+| I08-011 | handoff.md L98 | 开发框架自身（R0–R5 路线）的进度 | S3/S6 | records/development-history.md / 旧路线及当时进度 |
+| I08-012 | handoff.md L118 | 已完成的轮次 | S3/S6 | records/development-history.md / 旧路线及当时进度 |
+| I08-013 | handoff.md L127 | 不能倒退的两条（本轮新增） | S0/S3 | handoff.md / 未决及开工输入 |
+| I09-001 | README.md L1 | dev-plan — 代码要符合什么、接下来建什么 | S6 | records/development-history.md / 旧版入口与组织上下文 |
+| I09-002 | README.md L25 | 各文档的分工，别混写 | S6 | records/development-history.md / 旧版入口与组织上下文 |
+
+
+## 九、复现清单与工具
+
+清单给冻结版本、源摘要及每个目标栏目的明确阅读顺序；工具只读 Git，不执行源文档中
+的命令，不写主线、其它工作区或产品仓。render 可重现候选的正文安置，show 可任意抽查。
+
+<!-- CONFIG -->
+```json
+{"baseline":"baa2885847d5c236dc5cdf5d2273bf55286c775c","prefix":"sunmoonai/docs/dev-plan/","inventory_sha256":"821ee7ebc03718ec96cd0ac1f318e95016bdc2d696ddae3514f6d91dd2e6b2d5","sources":{"working/request-lifecycle.md":{"sha256":"14368715f2ee32cf67d4f278eb67693bbebb240be832a1c63e58dd7590bb37c8","sections":42,"lines":647},"agent-dev-guide.md":{"sha256":"4cfb988c77ecedb874754269ab914b4bfc57132160d9b82b443c01b7e375b8e0","sections":108,"lines":3082},"protocol/round-protocol.md":{"sha256":"1e42ece55ac61f018f673f6fa110681fe682de1d88f704ace86e6108f3f8d3bd","sections":57,"lines":929},"protocol/README.md":{"sha256":"184cd574174ff19f23e3c72f31256d07dece3492439b6951eb8f3ac78c08894f","sections":4,"lines":46},"constraints.md":{"sha256":"fce1377b72e45688895284eeb76fe9b388f83cabd26417c534698dd928df303f","sections":15,"lines":214},"development-plan.md":{"sha256":"f71d01b58a838d8b44b6a2ae83b5f32926415e698f015ae169c6c30ba07ead91","sections":10,"lines":142},"implementation-plan.md":{"sha256":"7c0da00d2c1aaf04d34446ec49c1dfe8d0e809c62d42f81ce9c3108599c26c62","sections":9,"lines":93},"handoff.md":{"sha256":"060b4c10ca55c137fdcfe30dc3f5c4333a65350edce709680811078253f74838","sections":13,"lines":131},"README.md":{"sha256":"3c6bf37a0844baf1783243a17a833b9e5ff09383e4ede03fbf9cd2d9a1bb997e","sections":2,"lines":36}},"docs":[{"path":"working/request-lifecycle.md","stage":"S1→S2/S4/S6","type":"PRD / 产品合同","why":"先界定用户生命周期，再定义可验收对象和状态，最后以 F/I/AT 与责任闭合验证；同一合同整体原位保留。","fixed":true,"groups":[{"name":"产品合同全文","stage":"S1","rule":"凡产品必须实现/验收的对象、状态、约束、要求均在这里；实现细节与开发流程排除。对象到 AT 的原顺序有闭环，保留全部条款与源行号。","ids":["I01-001","I01-002","I01-003","I01-004","I01-005","I01-006","I01-007","I01-008","I01-009","I01-010","I01-011","I01-012","I01-013","I01-014","I01-015","I01-016","I01-017","I01-018","I01-019","I01-020","I01-021","I01-022","I01-023","I01-024","I01-025","I01-026","I01-027","I01-028","I01-029","I01-030","I01-031","I01-032","I01-033","I01-034","I01-035","I01-036","I01-037","I01-038","I01-039","I01-040","I01-041","I01-042"]}]},{"path":"design/runtime-tld.md","stage":"S2","type":"TLD","why":"先立 PRD 与开发场景边界，再定组件/角色/持久责任，再解释开发状态投影，最后列取舍和禁止复活的旧设计；不能从实现方便反推需求。","fixed":false,"groups":[{"name":"目标与共同语言","stage":"S2","rule":"S1 结果怎样约束架构、名词怎样保持同义；先读边界再看组件，历史版本说明跟随原主张。","ids":["I02-002","I02-003","I02-004","I02-007","I02-008","I02-013","I02-107"]},{"name":"组件责任与派工接口","stage":"S2","rule":"Task/四账/Profile/路由/角色分工作为架构责任一起定义；SDK 包级调用留 executor SDD，批准强制留 authority SDD。","ids":["I02-015","I02-016","I02-009","I06-003","I06-004","I02-017","I02-018","I02-026","I02-019","I02-020"]},{"name":"内核在开发场景的投影","stage":"S2","rule":"把已有产品对象映射到开发载体；候选版本不是新 Task 状态。状态脚本只能投影，不另立内核。","ids":["I02-031","I02-032","I02-039","I02-045","I02-046"]},{"name":"已决定的取舍及其依据","stage":"S2","rule":"哪些旧方案不能重新成为设计菜单；独立观察与结论相邻，撤销项仍可追溯。产品取舍不是某次运行进度。","ids":["I06-002","I06-010","I08-008","I02-091","I02-092","I02-093","I02-094"]}]},{"path":"design/executor-sdd.md","stage":"S2→S3/S4","type":"SDD / 执行器","why":"按租用边界、SDK 能力、Port/门禁、两腿恢复与进程部署、功能矩阵排序；一条能力从接口到验证可以顺读。","fixed":false,"groups":[{"name":"租用边界与版本化能力","stage":"S2","rule":"说明 loop 与控制面责任及 SDK 能力证据；日期/未验前提完整保留，不声称表中读数今天仍成立。","ids":["I02-021","I02-022","I06-005"]},{"name":"Port 与准入门","stage":"S2/S3","rule":"签名、探针与 Harness 过渡路线共同决定能否派工；不将支持的近似能力写成产品已支持。","ids":["I02-023","I02-024"]},{"name":"进程恢复与功能落实","stage":"S2/S4","rule":"部署/取消/两腿 resume 语义及 F-EXEC 矩阵一起复验；权限授予本体引用 authority SDD。","ids":["I02-025","I02-054","I02-071"]}]},{"path":"design/authority-sdd.md","stage":"S2→S5","type":"SDD / 授权","why":"从谁有权到权限交集，再到真实动作强制点、三门和四档，最后审凭据传播；批准对象发生变化时不能沿用旧结果。","fixed":false,"groups":[{"name":"主体与权力","stage":"S2","rule":"人的身份/权力表和权限公式定义合法动作；人的阅读/响应步骤在 guide。","ids":["I02-051","I02-052","I02-053","I02-056"]},{"name":"动作门与审批","stage":"S2/S5","rule":"身份鉴别、三门、四档是不同问题而非可合并的一张表；保留 timeout 与拒绝的审计差别。","ids":["I02-055","I02-057","I02-058"]},{"name":"执行中限制和凭据","stage":"S2/S4","rule":"Attempt 禁令与子进程/跨腿令牌约束检验传播路径，不以 SDK 默认值充当批准。","ids":["I02-060","I02-064"]}]},{"path":"design/evidence-sdd.md","stage":"S2→S4/S6","type":"SDD / 证据与观测","why":"先定义看见什么，再定义可采信什么，随后解释载体与等效，最后才能讨论成本与绕过覆盖；计数不先于观测模型。","fixed":false,"groups":[{"name":"观测与采信合同","stage":"S2","rule":"粒度、证据等级、能力四级与历史引用规则限定可以得出何种结论；实际测试执行步骤另入验证计划。","ids":["I02-065","I02-066","I02-067","I02-073","I02-078"]},{"name":"载体与等效边界","stage":"S2/S4","rule":"Git、七载体、手工/服务等效必须在同一观测口径下比较，不把换载体当强度升级。","ids":["I02-069","I02-074","I02-068"]},{"name":"成本与遗漏观察面","stage":"S2/S6","rule":"机械路由分类、反例、T0 上界和 bypass sinks 要一起看；未归因不是零绕过。","ids":["I02-079","I02-080","I02-081","I02-082"]}]},{"path":"agent-dev-guide.md","stage":"S0–S6","type":"SDP / 共用执行附件","why":"真正按一个工作单元的行动顺序重排：受理记录→开工准备→执行/故障→评审批准→发布→续接维护。技术接口从本附件迁 S2，避免把手册当接口第二真源。","fixed":false,"groups":[{"name":"受理与持久任务记录","stage":"S0/S1","rule":"共同纪律、可信受理与完整模板用于保留意图到完成条件的链；实际业务请求留 request-baseline。","ids":["I02-028","I02-012","I02-029","I07-002","I02-108"]},{"name":"开工自检与工作区供给","stage":"S3","rule":"先查相关硬约束及反例，再建可交付工作区并验证 Git 可写性；拥有路径不等于拥有授权。","ids":["I02-010","I02-103","I02-030","I02-042","I02-048"]},{"name":"私有执行与失败退出","stage":"S4","rule":"单写者/写前门→并发场景→事故→冻结取消→停止超时，按实际失败回路连接，发布不是这里的隐式副作用。","ids":["I02-034","I02-038","I02-035","I02-036","I02-037","I02-041","I02-050"]},{"name":"独立评审与具体批准对象","stage":"S2/S4/S5","rule":"先取明确对象再按角色回应/改判，T2 和通知取件作为协作子流程；不修改权力表。","ids":["I02-063","I02-061","I02-059","I02-047","I02-049"]},{"name":"发布与保留","stage":"S5/S6","rule":"交付规则→三个路径→清理失败处理→显式 GC，不能把交卷、发布和删除混成一步。","ids":["I07-004","I02-043","I02-033","I02-044"]},{"name":"续接及下一次修订","stage":"S6→S0","rule":"checkpoint、删除门与内核修订工作单元为后续维护提供连续性；旧 Task 终态不因清理失败改变。","ids":["I02-088","I02-086","I02-090"]}]},{"path":"delivery/verification.md","stage":"S1→S4/S6","type":"验证计划 / 验收规程","why":"先立可判完成口径与前提，再选验证层次/证据，随后独立整合，最后检查判据自身和如实披露盲区；将规则和反证相邻。","fixed":false,"groups":[{"name":"判据与完成对象","stage":"S1/S4","rule":"控制面前提、开发不可外推和完成条件先明确；模型输出、候选完成、产品交付不是同一对象。","ids":["I02-014","I02-011","I02-040"]},{"name":"层次与证据执行","stage":"S3/S4","rule":"适用测试层、四层验证、按档分级的证据账共同决定验证计划，不要求不相关测试凑数量。","ids":["I07-003","I02-070","I02-072"]},{"name":"独立整合与门禁质量","stage":"S4","rule":"事实裁决、假答案案例与边界测试反证共同构成评审责任；不能把绿灯作为自证。","ids":["I02-075","I02-077","I02-104","I02-105","I02-106"]},{"name":"覆盖声明与未知","stage":"S4/S6","rule":"查了、没查、不能排除以及三类未知是可复用报告义务，原作者的未核清单随例证保留，不能整节藏入记录。","ids":["I02-097"]}]},{"path":"development-plan.md","stage":"S0/S3","type":"路线图 / SDP 输入","why":"产品阶段和运行时演进各自按依赖顺序列，不能把某次历史取证当本次开工凭据；架构取向迁 TLD/SDD。","fixed":false,"groups":[{"name":"产品建设顺序","stage":"S0/S3","rule":"先前后端，再 agent，后问数；每阶段原始约束和日期保留，决定过的顺序不由文档重排改变。","ids":["I06-001","I06-006","I06-007","I06-008","I06-009"]},{"name":"运行时演进与退出门","stage":"S3","rule":"现行 G0–G5 和分组件迁移门描述待交付增量；不能混同本候选 DEV/G0–G6。","ids":["I02-083","I02-084","I02-085"]}]},{"path":"implementation-plan.md","stage":"S3","type":"SDP / 具体实施计划","why":"通用表单与交付规程迁共用附件，本文件保留具体产品任务和依赖；空清单明确表示 U1 未定，不假造已可开工任务。","fixed":false,"groups":[{"name":"计划责任和产品工作单元","stage":"S3","rule":"任务目标、依赖和验收在此；原 R0–R5 表按现行 guide 已有的处置存历史，不重启旧路线。","ids":["I07-001","I07-006","I07-007","I07-008","I07-009","I08-009"]}]},{"path":"handoff.md","stage":"S6→S0/S3","type":"交接 / 当前工作游标","why":"先列截至原日期的就位能力和游标，再列未决输入，最后聚合风险与验证债；接手者能知道下一步为何被挡。","fixed":false,"groups":[{"name":"当前观察与游标","stage":"S6→S0","rule":"状态是带时点的观察，不能写成保证现在仍具备的能力；不据此修改 PRD。","ids":["I08-001","I08-002","I08-003","I08-010"]},{"name":"未决及开工输入","stage":"S0/S3","rule":"U1–U5、已知材料、文档待办和未处置批准问题是待判输入；未决不是自动选了某方案。","ids":["I08-004","I08-005","I08-006","I08-007","I08-013"]},{"name":"跨阶段风险与未验证","stage":"S2/S3","rule":"风险表与执行器未验证清单要在派工前可见，不能仅存在于历史审计中。","ids":["I02-087","I02-089"]}]},{"path":"constraints.md","stage":"S0–S6","type":"开发纪律","why":"按数据/契约/身份/拓扑/发布/Agent 的改动影响面自检；每条执行载体与相关验证程序相邻，整份原位保留。","fixed":true,"groups":[{"name":"规则及执行载体全文","stage":"S0–S6","rule":"限制实现和开发动作；规则 ID、验证方法、门禁盲区同处，计划和进度不在这里新建。","ids":["I05-001","I05-002","I05-003","I05-004","I05-005","I05-006","I05-007","I05-008","I05-009","I05-010","I05-011","I05-012","I05-013","I05-014","I05-015"]}]},{"path":"protocol/round-protocol.md","stage":"S3/S4 子流程","type":"SDP / 协作执行附件","why":"先定位定档，再定裁量与角色，接着工单/七环节/取件判据，再到各环节细则和停止清理；与工具共用稳定接口，全文原位保留。","fixed":true,"groups":[{"name":"协作执行规程全文","stage":"S3/S4","rule":"只放不随轮次变化的流程要求；当轮参数和例外留 rounds。此附件是计划的执行方式，不替代需求的七阶段。","ids":["I03-001","I03-002","I03-003","I03-004","I03-005","I03-006","I03-007","I03-008","I03-009","I03-010","I03-011","I03-012","I03-013","I03-014","I03-015","I03-016","I03-017","I03-018","I03-019","I03-020","I03-021","I03-022","I03-023","I03-024","I03-025","I03-026","I03-027","I03-028","I03-029","I03-030","I03-031","I03-032","I03-033","I03-034","I03-035","I03-036","I03-037","I03-038","I03-039","I03-040","I03-041","I03-042","I03-043","I03-044","I03-045","I03-046","I03-047","I03-048","I03-049","I03-050","I03-051","I03-052","I03-053","I03-054","I03-055","I03-056","I03-057"]}]},{"path":"protocol/README.md","stage":"S3/S4 子流程","type":"SDP / 工具使用契约","why":"规范先于实现，接口约束/单一状态源/不做的能力相邻，防止调用者把缺口当实现；与脚本原位共改。","fixed":true,"groups":[{"name":"工具契约全文","stage":"S3/S4","rule":"脚本能做和不能做的局部必须完整；不能从文档索引生成它的行为契约。","ids":["I04-001","I04-002","I04-003","I04-004"]}]},{"path":"records/development-history.md","stage":"S2/S4/S6 回溯","type":"ADR 依据 / 审计记录","why":"按证据对象分历史取值、旧路线、吸收审计和旧版上下文；当前禁令已在 TLD，通用覆盖义务在验证规程，没有随记录一起退役。","fixed":false,"groups":[{"name":"历史取值与实例","stage":"S2/S6","rule":"五家登记、实际介入及轨迹原读数带日期保留；重构不把旧实验改成新实验。","ids":["I02-027","I02-062","I02-076"]},{"name":"旧路线及当时进度","stage":"S3/S6","rule":"现行 guide 不采用为现行路线的 R0–R5/S1 表与当时进度一起保存；不删除取证、不推断所有技术任务都已完成。","ids":["I07-005","I08-011","I08-012"]},{"name":"吸收审计与旧源收据","stage":"S4/S6","rule":"原作者核了什么、补了什么及完整 294 行映射；摘要不能替代语义审计。未核的通用规程经 I02-097 取件。","ids":["I02-095","I02-096","I02-098","I02-099","I02-100","I02-101","I02-102"]},{"name":"旧版入口与组织上下文","stage":"S6","rule":"旧标题前言、原章节理由/阅读路线及 README 旧计数是迁移证据；不作为新 pipeline 的操作指令。","ids":["I02-001","I02-005","I02-006","I09-001","I09-002"]}]}],"units":[{"id":"I01-001","source":"working/request-lifecycle.md","line":1,"end":12,"title":"Request Lifecycle：产品请求生命周期合同","sha256":"e84e95c3e15e6a0008a8b3f207579f0f49f8e3349c3238eed22f4da6acec9485","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-002","source":"working/request-lifecycle.md","line":13,"end":14,"title":"0. 规范边界与条款筛选","sha256":"5cfe419678951f3901640af7eaa1582ed8a0f4c514a49b3b529ada8be10d7de6","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-003","source":"working/request-lifecycle.md","line":15,"end":28,"title":"0.1 只收产品要求","sha256":"211072c0ddfc924c17d9948d62738dd9b1b2e3f92b99129e47b38bbb05a3f16f","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-004","source":"working/request-lifecycle.md","line":29,"end":51,"title":"0.2 本文负责什么","sha256":"958c766beb0890138ae1612e0e1940414ad5f7b472b0a2f3d9915e66561db657","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-005","source":"working/request-lifecycle.md","line":52,"end":57,"title":"0.3 规范用语","sha256":"1af8de7a5036db3453fa433cd82dd811336de189a640438bd05fa8f5c493bf94","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-006","source":"working/request-lifecycle.md","line":58,"end":91,"title":"1. 生命周期全景","sha256":"e5a930a2a455430976e0620e2518d5774a027c797b0e7b8d32a15e22b63e5c76","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-007","source":"working/request-lifecycle.md","line":92,"end":105,"title":"2. 核心对象","sha256":"f6b8bb799c601ff50ed905cac5289a6d8959768314d95f86c9f698db0fbbd21b","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-008","source":"working/request-lifecycle.md","line":106,"end":119,"title":"2.1 Task 不等于 Attempt","sha256":"68de355f80a0ee318a752de42963b3a0bc9afdbbdc8077837195633d4b608ebb","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-009","source":"working/request-lifecycle.md","line":120,"end":126,"title":"2.2 Submission 不一定产生 Task","sha256":"040aaf38d70c36e15992845d5b0b18a52c14f5245c537afce91fe5aaebd965d1","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-010","source":"working/request-lifecycle.md","line":127,"end":128,"title":"3. Task 契约","sha256":"1a565d2cc3e920158817173d07771fa43d7724c583271465ed1771c114f6bd45","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-011","source":"working/request-lifecycle.md","line":129,"end":146,"title":"3.1 提交信封","sha256":"5cf8054fd131bf1557cbbe45a539773ea9eae1cfe1448717bead75bb3460a6ab","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-012","source":"working/request-lifecycle.md","line":147,"end":165,"title":"3.2 持久化主档","sha256":"28d65894c67ce592d5baa1cbef11a9b3109242e55276427df331f039393fb0e1","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-013","source":"working/request-lifecycle.md","line":166,"end":182,"title":"3.3 解释、边界与完成契约","sha256":"e58e503a626c389a71c638addcb011e59c973f734b77618e1c550076091de786","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-014","source":"working/request-lifecycle.md","line":183,"end":202,"title":"3.4 最终结果信封","sha256":"d99e32c277a9a4a7a1fcb4b44003f96b00caf194079ba0ce4b21ec180fcbe11b","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-015","source":"working/request-lifecycle.md","line":203,"end":204,"title":"4. 两层状态机","sha256":"f27a898b5d4f1d89c7f6c176050863d939c622b63f850e5e476b02a177598213","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-016","source":"working/request-lifecycle.md","line":205,"end":246,"title":"4.1 Task 状态机","sha256":"68ddaa272beefc3c2096e2ea006d0ab584daceb15abe57f8cc9b7975e0d63b4f","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-017","source":"working/request-lifecycle.md","line":247,"end":278,"title":"4.2 WAITING 与 Interaction","sha256":"f0db7217254c0abd6ef8fc3f4b43dc2e8df48014e230fc3b31a07068c848446c","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-018","source":"working/request-lifecycle.md","line":279,"end":291,"title":"4.3 取消意图与终态","sha256":"432df1f5f733fbed31794061894e9fcdf0b90dfc041c80b74804a930ad120862","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-019","source":"working/request-lifecycle.md","line":292,"end":303,"title":"4.4 终态、刷新与重新处理","sha256":"d8bdcd4d224aac927a6237d32bae6ce2962d58153cb9bc9a433d23031343a417","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-020","source":"working/request-lifecycle.md","line":304,"end":345,"title":"4.5 Attempt / Run 状态机","sha256":"808297a3b02fda24da5af6cc6c790b3ed1faf33d05472b1e6a6c783da802fea1","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-021","source":"working/request-lifecycle.md","line":346,"end":350,"title":"5. 七阶段产品功能","sha256":"6658f2ea1355a2f23da8ddc6dbe5315c88af64c5c37ed404617e9e55133bcb05","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-022","source":"working/request-lifecycle.md","line":351,"end":359,"title":"5.1 提交（前端）","sha256":"a75d9646a3af809389cc715f170ab52b7a46e07e924382494843c7d9ffe04310","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-023","source":"working/request-lifecycle.md","line":360,"end":368,"title":"5.2 受理与校验（后端）","sha256":"df392b9e69a88a2f9a77f914965bd314d8fbc7a51a43e252cc7c0429b162a670","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-024","source":"working/request-lifecycle.md","line":369,"end":376,"title":"5.3 排队与可靠投递","sha256":"66603ad94db307e83aca7dd419564da869113934d365c3a637968d7419e5ffe0","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-025","source":"working/request-lifecycle.md","line":377,"end":390,"title":"5.4 Agent 执行","sha256":"d9cd4a2113f1d16cff949e6468b336d43e02692d2418b9042920e021d775aeb5","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-026","source":"working/request-lifecycle.md","line":391,"end":397,"title":"5.5 中断、批准与恢复","sha256":"576c123269044622ed1529a8d7f6270461de4f6091cce9a463c37947f76d5526","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-027","source":"working/request-lifecycle.md","line":398,"end":412,"title":"5.6 验收与完成提交","sha256":"1b26545b3839a16d0c9022c1076e4dd5fee7a7168b92e753835521e66396cd80","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-028","source":"working/request-lifecycle.md","line":413,"end":441,"title":"5.7 返回前端、失败与重试","sha256":"7992ed7e8881770b5e3df18484ceaa605c8b5f957d66a0207adf3019353cae47","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-029","source":"working/request-lifecycle.md","line":442,"end":443,"title":"6. 跨进程纪律与持久化账","sha256":"60fe9f1ac3243ca03b5401a6e5039bd5945982e455b0ca126a44e6fa5c7a24d1","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-030","source":"working/request-lifecycle.md","line":444,"end":466,"title":"6.1 全程不变量","sha256":"692226447cb805ee82829f6a302186067620042cd98b25210674fa2db9dd1a33","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-031","source":"working/request-lifecycle.md","line":467,"end":484,"title":"6.2 持久化记录","sha256":"0e4ffe87700ecc51d4a2edde73176bfd2b84644b6dd013917d898ac931fa1b83","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-032","source":"working/request-lifecycle.md","line":485,"end":486,"title":"7. Profile、Artifact 与扩展","sha256":"802122c57f45437e8ec585ed0377e810dc6cf45e54314dffc77e83fcc28a102f","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-033","source":"working/request-lifecycle.md","line":487,"end":507,"title":"7.1 Task Profile 与 Agent Profile","sha256":"5f5ba765e84074b57d255760a180633bf7f7a32e5e178f9ac7fd131461176b81","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-034","source":"working/request-lifecycle.md","line":508,"end":519,"title":"7.2 Profile 示例","sha256":"a33d66afd49cccd4a1de0cbb8a90848a0cd8f264ce5316d3feee855b0f0aee8f","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-035","source":"working/request-lifecycle.md","line":520,"end":549,"title":"8. 子 Task 与依赖编排","sha256":"2deff7b7ad65de9a4b2c0ff16414a8edac15399e9ad25e6970235ffc4c47b752","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-036","source":"working/request-lifecycle.md","line":550,"end":565,"title":"9. 前端、后端与 Agent 责任投影","sha256":"1a2b24b6d0621edee2a82cca7e27f441709cd424ff74eb0749f1b8e93a43e17e","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-037","source":"working/request-lifecycle.md","line":566,"end":585,"title":"10. 反模式","sha256":"098396ef21c4153239f1f6eb31195cb4ee962e56a36d8d839f97f28630bb6d20","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-038","source":"working/request-lifecycle.md","line":586,"end":622,"title":"11. 产品验收矩阵","sha256":"fd899413db5cbb36b02437390e664ed32c9068be790f9323b545b4681af7c82f","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-039","source":"working/request-lifecycle.md","line":623,"end":624,"title":"12. 修订、落地与参考材料","sha256":"8520f5ac1c4f79c848be2656f631947b928c7ce687bcda7df75b5309c34a426b","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-040","source":"working/request-lifecycle.md","line":625,"end":636,"title":"12.1 修订纪律","sha256":"1d9f99c71d9a8c53368a3c9bed88406ee6d174f20b28d55c5e9aba56a9ae830d","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-041","source":"working/request-lifecycle.md","line":637,"end":642,"title":"12.2 参考材料边界","sha256":"941c9fc4553fef1ba75500df8ce50b82aada812bde19ee9a3f66f847beec05c8","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I01-042","source":"working/request-lifecycle.md","line":643,"end":647,"title":"12.3 生效边界","sha256":"33c436a4ad278c3a5e92f891732e405bf0bff846399df438eeaf9b132271df4d","target":"working/request-lifecycle.md","group":"产品合同全文","stage":"S1"},{"id":"I02-001","source":"agent-dev-guide.md","line":1,"end":22,"title":"Agent 开发指导：一个产品运行时，一套开发纪律","sha256":"390918bc145a376746f0eebd929e1b74260a6fe874e567cdabc4c699a69a18b4","target":"records/development-history.md","group":"旧版入口与组织上下文","stage":"S6"},{"id":"I02-002","source":"agent-dev-guide.md","line":23,"end":51,"title":"0. 先读结论","sha256":"44a84cbd2de2a8ada67fd38f0ec3e737f5bcf12145e561cc190e83ce1421c122","target":"design/runtime-tld.md","group":"目标与共同语言","stage":"S2"},{"id":"I02-003","source":"agent-dev-guide.md","line":52,"end":69,"title":"0.0 原来是什么样，为什么非改不可","sha256":"9946601352fc880ddf484049f1d74847d851a79ff5df073f881374e94579713e","target":"design/runtime-tld.md","group":"目标与共同语言","stage":"S2"},{"id":"I02-004","source":"agent-dev-guide.md","line":70,"end":86,"title":"0.1 文档边界","sha256":"e5e1ab2117c5ec746ab76e0f545fefe1e8477e1ad31647dc514df88c4eae6d4e","target":"design/runtime-tld.md","group":"目标与共同语言","stage":"S2"},{"id":"I02-005","source":"agent-dev-guide.md","line":87,"end":105,"title":"0.2 为什么分成这些章","sha256":"f1702dee9a38fff185c71aca821865bbbdd21126c60c133c0c28db989af0fbea","target":"records/development-history.md","group":"旧版入口与组织上下文","stage":"S6"},{"id":"I02-006","source":"agent-dev-guide.md","line":106,"end":125,"title":"0.3 按工作阶段阅读，不按历史版本阅读","sha256":"38acb4925ce92c7f030b712b222c3deb1b1064bb996995fd771c314c4f86ad5b","target":"records/development-history.md","group":"旧版入口与组织上下文","stage":"S6"},{"id":"I02-007","source":"agent-dev-guide.md","line":126,"end":127,"title":"1. 不可变的契约与边界","sha256":"fd773b00e856a9a6579a9674695912ee15f55fa2b63ef60651f821afc3a98db7","target":"design/runtime-tld.md","group":"目标与共同语言","stage":"S2"},{"id":"I02-008","source":"agent-dev-guide.md","line":128,"end":142,"title":"1.1 唯一产品内核","sha256":"be7a7922e6be129918031ead9897db037299d4c4fbc5b8e6408c82c1c0c48003","target":"design/runtime-tld.md","group":"目标与共同语言","stage":"S2"},{"id":"I02-009","source":"agent-dev-guide.md","line":143,"end":150,"title":"1.2 四本账与单一权威写入面","sha256":"c57080db28748eafe1fd3fa8127ac9691474ca808ca05f6480008961b0581d44","target":"design/runtime-tld.md","group":"组件责任与派工接口","stage":"S2"},{"id":"I02-010","source":"agent-dev-guide.md","line":151,"end":163,"title":"1.3 Agent 硬约束自检","sha256":"d35e3c4f53319ad4f40f6760f0f23b226d37555d675d16915aa98ee19aedd820","target":"agent-dev-guide.md","group":"开工自检与工作区供给","stage":"S3"},{"id":"I02-011","source":"agent-dev-guide.md","line":164,"end":170,"title":"1.4 开发验收不可外推","sha256":"754904ef311d2d718d779665de7298d987cc6829b2c50e9957afb254d84f2f7b","target":"delivery/verification.md","group":"判据与完成对象","stage":"S1/S4"},{"id":"I02-012","source":"agent-dev-guide.md","line":171,"end":186,"title":"1.5 执行者的共同纪律","sha256":"ee67b25ecc07b1e3fc56489cde893d6e61930a1974ae41328446f2cf381a64a6","target":"agent-dev-guide.md","group":"受理与持久任务记录","stage":"S0/S1"},{"id":"I02-013","source":"agent-dev-guide.md","line":187,"end":212,"title":"1.6 七条设计原则","sha256":"ffb90d1095ec3ca2b57817132bfc84e073f058c662deca4cd6e60385a7fda406","target":"design/runtime-tld.md","group":"目标与共同语言","stage":"S2"},{"id":"I02-014","source":"agent-dev-guide.md","line":213,"end":234,"title":"1.7 先核前提，也核控制面","sha256":"a76bb2f085b13bbb4d867b4ffbe70d4f34ecefc6712e917127e6840bfdb936c3","target":"delivery/verification.md","group":"判据与完成对象","stage":"S1/S4"},{"id":"I02-015","source":"agent-dev-guide.md","line":235,"end":236,"title":"2. 一个运行时的结构","sha256":"9350e03d2bf45b7f600fbd9be1a44ef63d6fd61c9cf6fe21cc5ad50bbfd262e9","target":"design/runtime-tld.md","group":"组件责任与派工接口","stage":"S2"},{"id":"I02-016","source":"agent-dev-guide.md","line":237,"end":254,"title":"2.1 确定性组件与适配层","sha256":"66e651c3a757505f7fbca46df9264324092db8bdc0601cc2c7b8af2e650efcf1","target":"design/runtime-tld.md","group":"组件责任与派工接口","stage":"S2"},{"id":"I02-017","source":"agent-dev-guide.md","line":255,"end":268,"title":"2.2 内容角色","sha256":"d4fd6175d2bbb992c417d5469299a867e549d69d044e656acf8e23899a4e37b3","target":"design/runtime-tld.md","group":"组件责任与派工接口","stage":"S2"},{"id":"I02-018","source":"agent-dev-guide.md","line":269,"end":292,"title":"2.3 Task Profile 与 Agent Profile","sha256":"f4efd211f757caa6f9109cacc574d9a29844baf1c45a725016dfaad31253d346","target":"design/runtime-tld.md","group":"组件责任与派工接口","stage":"S2"},{"id":"I02-019","source":"agent-dev-guide.md","line":293,"end":346,"title":"2.4 `dev.change/1` 工单","sha256":"c5358a52d7cd89d987be6c449a662d99f28ecbd9734ff00504690cfbf9fc7590","target":"design/runtime-tld.md","group":"组件责任与派工接口","stage":"S2"},{"id":"I02-020","source":"agent-dev-guide.md","line":347,"end":353,"title":"2.5 路由只读可判字段","sha256":"eab2e84cad7e5a721a9da65844b5be76eb9afdfbc9562dfaa00636b879785532","target":"design/runtime-tld.md","group":"组件责任与派工接口","stage":"S2"},{"id":"I02-021","source":"agent-dev-guide.md","line":354,"end":407,"title":"2.6 执行层：租用什么、自建什么","sha256":"560a93f2d895995d98c5d1459b5ad15a61cadff793bf8561e9cd19a0be8f934b","target":"design/executor-sdd.md","group":"租用边界与版本化能力","stage":"S2"},{"id":"I02-022","source":"agent-dev-guide.md","line":408,"end":432,"title":"2.7 两个官方 SDK：两个轴、非对称能力","sha256":"d6e35274097f62492a8b7df4084d45cae005e0e45659c381e3d143a56dcc0c48","target":"design/executor-sdd.md","group":"租用边界与版本化能力","stage":"S2"},{"id":"I02-023","source":"agent-dev-guide.md","line":433,"end":482,"title":"2.8 统一执行 Port 与三态能力探针","sha256":"39308e39f9835449230564aaf4c73abe64c0e169185e88a853e08b16e1fb2abe","target":"design/executor-sdd.md","group":"Port 与准入门","stage":"S2/S3"},{"id":"I02-024","source":"agent-dev-guide.md","line":483,"end":510,"title":"2.9 Harness 腿的前置门禁与过渡补法","sha256":"dc29499e912b2ba60f17e3978fb0580b29e7f05b06f6f0ea8cb8d564a9b23443","target":"design/executor-sdd.md","group":"Port 与准入门","stage":"S2/S3"},{"id":"I02-025","source":"agent-dev-guide.md","line":511,"end":547,"title":"2.10 双 runtime 的部署、进程与恢复","sha256":"08de66f97522bb15be6b6b4575bd75f686ef307b75515c51da6553a05757265f","target":"design/executor-sdd.md","group":"进程恢复与功能落实","stage":"S2/S4"},{"id":"I02-026","source":"agent-dev-guide.md","line":548,"end":586,"title":"2.11 派工契约、角色补充与隔离的诚实边界","sha256":"ca702ff8bddc29ee4b0b3395a511fbafbf969db20d212866bac3c82993c58ee4","target":"design/runtime-tld.md","group":"组件责任与派工接口","stage":"S2"},{"id":"I02-027","source":"agent-dev-guide.md","line":587,"end":648,"title":"2.12 五家 Agent Profile 的历史取值示例","sha256":"4f5fdc34e7d7d17a078d2e4ce8d54022a735ae0b49e2cf5fe13b8ee36264cfba","target":"records/development-history.md","group":"历史取值与实例","stage":"S2/S6"},{"id":"I02-028","source":"agent-dev-guide.md","line":649,"end":650,"title":"3. 一次开发 Task 怎样执行","sha256":"7f1c8bb4a72ff2a2e3fff986199e95eab3dcadd3676deb3240b564416f37167c","target":"agent-dev-guide.md","group":"受理与持久任务记录","stage":"S0/S1"},{"id":"I02-029","source":"agent-dev-guide.md","line":651,"end":681,"title":"3.1 受理与冻结","sha256":"0e94a304664ff0e9747c90bf5b37844ceda387296036ff36750fc5ef8358bf39","target":"agent-dev-guide.md","group":"受理与持久任务记录","stage":"S0/S1"},{"id":"I02-030","source":"agent-dev-guide.md","line":682,"end":703,"title":"3.2 工作区供给","sha256":"2f6020fca14c794bf0c03ccdfd8a6299d77b952f6c954fde02d8116508056d5a","target":"agent-dev-guide.md","group":"开工自检与工作区供给","stage":"S3"},{"id":"I02-031","source":"agent-dev-guide.md","line":704,"end":740,"title":"3.3 Attempt 与状态投影","sha256":"6af778ffbd07bed1ddfebcc113999de3e1a6bfcef77f35c09dc6d895b5989fa3","target":"design/runtime-tld.md","group":"内核在开发场景的投影","stage":"S2"},{"id":"I02-032","source":"agent-dev-guide.md","line":741,"end":766,"title":"3.4 T0/T1/T2 不是三套状态机","sha256":"c2f804993f3cafd33dd851db0a0e9804a0e9cc70a2e0ab01eff2c002e0d1d23e","target":"design/runtime-tld.md","group":"内核在开发场景的投影","stage":"S2"},{"id":"I02-033","source":"agent-dev-guide.md","line":767,"end":781,"title":"3.5 交付、清理和恢复","sha256":"8627c4ddde0c570cfe17bb68388093ac245731bc8910b56be3b3e3b6da6dda53","target":"agent-dev-guide.md","group":"发布与保留","stage":"S5/S6"},{"id":"I02-034","source":"agent-dev-guide.md","line":782,"end":821,"title":"3.6 私有地产生，单写者发布","sha256":"94ec95396cbb2df8acf50a28e4a32cc6f8ec27f2f2e7ffbbd4395cec98ca2d13","target":"agent-dev-guide.md","group":"私有执行与失败退出","stage":"S4"},{"id":"I02-035","source":"agent-dev-guide.md","line":822,"end":862,"title":"3.7 并发场景处置表","sha256":"d978783d7cdd3473f409a694a7bddd1ecfec8fc881d8717e1273f108ced5441f","target":"agent-dev-guide.md","group":"私有执行与失败退出","stage":"S4"},{"id":"I02-036","source":"agent-dev-guide.md","line":863,"end":892,"title":"3.8 覆盖或来源不明时的事故规程","sha256":"ed2f923f74dfcd7b77d60e3d121ea7a3a58b81f3dbedc356ef9d02a27706a26b","target":"agent-dev-guide.md","group":"私有执行与失败退出","stage":"S4"},{"id":"I02-037","source":"agent-dev-guide.md","line":893,"end":913,"title":"3.9 冻结、迟到与取消","sha256":"bb61516bfa712e89efdafac5e0308c04c34edfb2e14239bf2b0ba1e24482154f","target":"agent-dev-guide.md","group":"私有执行与失败退出","stage":"S4"},{"id":"I02-038","source":"agent-dev-guide.md","line":914,"end":968,"title":"3.10 物化门禁与写入前门禁","sha256":"0287133295fd64fc120c868734720e1001ea3b7ef76f0050a210e4514a6d453d","target":"agent-dev-guide.md","group":"私有执行与失败退出","stage":"S4"},{"id":"I02-039","source":"agent-dev-guide.md","line":969,"end":987,"title":"3.11 候选状态机","sha256":"e5748c8ace2b65e23a294b63ccaa5585ff25a9746847ab6a454914cf0d6bb484","target":"design/runtime-tld.md","group":"内核在开发场景的投影","stage":"S2"},{"id":"I02-040","source":"agent-dev-guide.md","line":988,"end":1008,"title":"3.12 完成判据","sha256":"4f741d49d296371394e3dab53fdbccc1849ae2f28efd9d77e9b23b68db599a31","target":"delivery/verification.md","group":"判据与完成对象","stage":"S1/S4"},{"id":"I02-041","source":"agent-dev-guide.md","line":1009,"end":1041,"title":"3.13 执行形态、停止规则与成本","sha256":"16e8e7631c81e3edee54124fdfb72ab85b66a634692ef66dd3ba5ca026814ca7","target":"agent-dev-guide.md","group":"私有执行与失败退出","stage":"S4"},{"id":"I02-042","source":"agent-dev-guide.md","line":1042,"end":1054,"title":"3.14 建立 worktree 的细则","sha256":"f1d246f7a14f983e5a815f6f7b8916e60140cfb99fe19cfc872a6e22f3a8f2b9","target":"agent-dev-guide.md","group":"开工自检与工作区供给","stage":"S3"},{"id":"I02-043","source":"agent-dev-guide.md","line":1055,"end":1077,"title":"3.15 发布协议：三个路径不是一个","sha256":"4f09aeba0065f8045a94dc22065670208adf84af2a6184df0487983daa92334c","target":"agent-dev-guide.md","group":"发布与保留","stage":"S5/S6"},{"id":"I02-044","source":"agent-dev-guide.md","line":1078,"end":1092,"title":"3.16 保留与垃圾回收","sha256":"8a8209e1eadd334cc1899b9a6849716663ec3b4dfff7ea2e45545f71e3a60b5e","target":"agent-dev-guide.md","group":"发布与保留","stage":"S5/S6"},{"id":"I02-045","source":"agent-dev-guide.md","line":1093,"end":1113,"title":"3.17 内核对象 ↔ 开发载体对照","sha256":"7f63cbae59d6107cdc55039fc16ebd21c00dbe48abd56b1fbb33e0bc08316df6","target":"design/runtime-tld.md","group":"内核在开发场景的投影","stage":"S2"},{"id":"I02-046","source":"agent-dev-guide.md","line":1114,"end":1130,"title":"3.18 状态脚本的硬要求","sha256":"4f2f1aded33af1984c612bcbe9e4a0e87e5b1a087a8394dde07bea17a53f4085","target":"design/runtime-tld.md","group":"内核在开发场景的投影","stage":"S2"},{"id":"I02-047","source":"agent-dev-guide.md","line":1131,"end":1168,"title":"3.19 T2 七环节的操作闭环","sha256":"9a75c4f5c2881bf38f7c6be38a7b1d4df0a406c0834a8050f41b68beea14c609","target":"agent-dev-guide.md","group":"独立评审与具体批准对象","stage":"S2/S4/S5"},{"id":"I02-048","source":"agent-dev-guide.md","line":1169,"end":1198,"title":"3.20 工作区能写，不代表 Git 能提交","sha256":"fcb44fe363672dc1e9c8228a92cbeddcb246739f4c43f474933a84c60a981f56","target":"agent-dev-guide.md","group":"开工自检与工作区供给","stage":"S3"},{"id":"I02-049","source":"agent-dev-guide.md","line":1199,"end":1223,"title":"3.21 通知、取件与人的检视面","sha256":"48277b1472368a291220a2328bd092c834e4e957469070a731b5b1a7f363ff58","target":"agent-dev-guide.md","group":"独立评审与具体批准对象","stage":"S2/S4/S5"},{"id":"I02-050","source":"agent-dev-guide.md","line":1224,"end":1246,"title":"3.22 停止、超时与回退不能省略","sha256":"53cd1d043287258748072df7e549de0286b07184d9b762d50215a8262e23873a","target":"agent-dev-guide.md","group":"私有执行与失败退出","stage":"S4"},{"id":"I02-051","source":"agent-dev-guide.md","line":1247,"end":1248,"title":"4. 人介入、Interaction 与权力","sha256":"dfbdc82a34658ab40f4b2fb509d6b1ca23a90a8691af32b189c8b1861f3623b8","target":"design/authority-sdd.md","group":"主体与权力","stage":"S2"},{"id":"I02-052","source":"agent-dev-guide.md","line":1249,"end":1260,"title":"4.1 人的位置","sha256":"fec09b54a2a0f8d403d0b028016a720abc1af1951a26076d2c68ea508e120ad6","target":"design/authority-sdd.md","group":"主体与权力","stage":"S2"},{"id":"I02-053","source":"agent-dev-guide.md","line":1261,"end":1283,"title":"4.2 权力表","sha256":"53723c879ad30a6265dd629513785c7793745cea111c149863b9bf85e3f15548","target":"design/authority-sdd.md","group":"主体与权力","stage":"S2"},{"id":"I02-054","source":"agent-dev-guide.md","line":1284,"end":1346,"title":"4.3 直接沿用实际中断/恢复原语","sha256":"b8cc0007eee3c2a3672220541b65890fcf00bbe140cf2195b9c991b7a727e133","target":"design/executor-sdd.md","group":"进程恢复与功能落实","stage":"S2/S4"},{"id":"I02-055","source":"agent-dev-guide.md","line":1347,"end":1382,"title":"4.4 身份、批准与强制点","sha256":"d1a10a8971a7dfbfd58fe61a977920a23200ab558577eee75539ee7b771bd5ab","target":"design/authority-sdd.md","group":"动作门与审批","stage":"S2/S5"},{"id":"I02-056","source":"agent-dev-guide.md","line":1383,"end":1429,"title":"4.5 权限公式与只有 principal 能做的动作","sha256":"750d96ef703bfae647e5b78da9dd2bb56333c53afed0926b1aaf9da6b28c0a5f","target":"design/authority-sdd.md","group":"主体与权力","stage":"S2"},{"id":"I02-057","source":"agent-dev-guide.md","line":1430,"end":1451,"title":"4.6 三道正交门","sha256":"01aa04c2ad66c62165716539bc7ada4b72dd19996e324e9925258f9ec333cbfb","target":"design/authority-sdd.md","group":"动作门与审批","stage":"S2/S5"},{"id":"I02-058","source":"agent-dev-guide.md","line":1452,"end":1480,"title":"4.7 四档审批","sha256":"fc2ca15040559f54581ea681d9a3e552b9f3fef901a06a8987b82bc984dac8df","target":"design/authority-sdd.md","group":"动作门与审批","stage":"S2/S5"},{"id":"I02-059","source":"agent-dev-guide.md","line":1481,"end":1508,"title":"4.8 principal 的裁量权与改判纪律","sha256":"f4d2a4877ae39fb419899e9b99fda4d254fa67b09bca7d8f847c4ed9fea81ba2","target":"agent-dev-guide.md","group":"独立评审与具体批准对象","stage":"S2/S4/S5"},{"id":"I02-060","source":"agent-dev-guide.md","line":1509,"end":1527,"title":"4.9 Attempt 内的三条硬禁令","sha256":"ac740a5514dccc30da7b603d98de13ef312167097b2500adb386201afc2ea0c9","target":"design/authority-sdd.md","group":"执行中限制和凭据","stage":"S2/S4"},{"id":"I02-061","source":"agent-dev-guide.md","line":1528,"end":1548,"title":"4.10 人这一侧的义务","sha256":"ce0a5dbc876c30cf0becf43ebfc12696912840099a1f68e3db9a117244921002","target":"agent-dev-guide.md","group":"独立评审与具体批准对象","stage":"S2/S4/S5"},{"id":"I02-062","source":"agent-dev-guide.md","line":1549,"end":1579,"title":"4.11 本轮已发生介入的实例级清单","sha256":"87af901ea8b055c7eb1745d73910dd81cbd375708889d0b8f369934fd259492d","target":"records/development-history.md","group":"历史取值与实例","stage":"S2/S6"},{"id":"I02-063","source":"agent-dev-guide.md","line":1580,"end":1604,"title":"4.12 人的收件箱：让批准具体、可读、可重取","sha256":"563da4808b1ebe3b5370f2b2cb9d728cfb24c754e5bb555645c5553059fa4201","target":"agent-dev-guide.md","group":"独立评审与具体批准对象","stage":"S2/S4/S5"},{"id":"I02-064","source":"agent-dev-guide.md","line":1605,"end":1628,"title":"4.13 执行器凭据、子进程与跨腿委派","sha256":"fd5c38c21e39456723fb7a964d49222d46692166e4708c8ce1254232590ad754","target":"design/authority-sdd.md","group":"执行中限制和凭据","stage":"S2/S4"},{"id":"I02-065","source":"agent-dev-guide.md","line":1629,"end":1630,"title":"5. 可观测性、证据与等效","sha256":"a9069639a2d30d430a4be7c39b03a699f022144fc529cc3b9e710075c4a99818","target":"design/evidence-sdd.md","group":"观测与采信合同","stage":"S2"},{"id":"I02-066","source":"agent-dev-guide.md","line":1631,"end":1658,"title":"5.1 三个粒度字段","sha256":"08ea4247069a927b07cc715c5d82e47cdff3f4d2c69d8a42699a9564c38a64c9","target":"design/evidence-sdd.md","group":"观测与采信合同","stage":"S2"},{"id":"I02-067","source":"agent-dev-guide.md","line":1659,"end":1673,"title":"5.2 证据等级与采信规则","sha256":"aa6e6389758187aaa3716d98e2b8b1170dba113db81b58f0eb0669b535986dc5","target":"design/evidence-sdd.md","group":"观测与采信合同","stage":"S2"},{"id":"I02-068","source":"agent-dev-guide.md","line":1674,"end":1698,"title":"5.3 手工态与服务态的等效判据","sha256":"ee5e4116de60848e35a2d19695f81cc00df499e020501105e18c5e62e7de240c","target":"design/evidence-sdd.md","group":"载体与等效边界","stage":"S2/S4"},{"id":"I02-069","source":"agent-dev-guide.md","line":1699,"end":1708,"title":"5.4 Git 载体能与不能证明什么","sha256":"e0c63c56a0cfb4078344cca5a5db1c7047b03ddd332998af99356b554a6c60c9","target":"design/evidence-sdd.md","group":"载体与等效边界","stage":"S2/S4"},{"id":"I02-070","source":"agent-dev-guide.md","line":1709,"end":1720,"title":"5.5 四层验证","sha256":"faeb607e2b006ad8db680a6ad2e1931de71a29b7427ee0af35584ac891588b97","target":"delivery/verification.md","group":"层次与证据执行","stage":"S3/S4"},{"id":"I02-071","source":"agent-dev-guide.md","line":1721,"end":1746,"title":"5.6 `F-EXEC-*` / `F-INTERACT-*` 双腿落地矩阵","sha256":"0e36721939b612bf5fd1379cb29e6761e0d6d5e3c5898d0d86283ef88f7dc718","target":"design/executor-sdd.md","group":"进程恢复与功能落实","stage":"S2/S4"},{"id":"I02-072","source":"agent-dev-guide.md","line":1747,"end":1773,"title":"5.7 证据账按流程分级","sha256":"e6d1a3e5db32cda2fba1238e6706b181a3966981081a9f9e37094eadb12e5df2","target":"delivery/verification.md","group":"层次与证据执行","stage":"S3/S4"},{"id":"I02-073","source":"agent-dev-guide.md","line":1774,"end":1803,"title":"5.8 上下文路由与能力四级词典","sha256":"fb7b5f7f72fb837bc160c6d922310b422606825020fd163faef5f4f62a3f4c12","target":"design/evidence-sdd.md","group":"观测与采信合同","stage":"S2"},{"id":"I02-074","source":"agent-dev-guide.md","line":1804,"end":1826,"title":"5.9 七种载体各能证明什么","sha256":"b2f98196d60e008adf312582374f6a1a229681178f0848feaf131f0de500b451","target":"design/evidence-sdd.md","group":"载体与等效边界","stage":"S2/S4"},{"id":"I02-075","source":"agent-dev-guide.md","line":1827,"end":1850,"title":"5.10 事实裁决表与整合纪律","sha256":"618f6398fc223c75f2be431ef82790c5dfdbb544978a7ff9b644d0fce7fab3f5","target":"delivery/verification.md","group":"独立整合与门禁质量","stage":"S4"},{"id":"I02-076","source":"agent-dev-guide.md","line":1851,"end":1898,"title":"5.11 轨迹实测：23 条里 2 条 attested","sha256":"cc6f48adf2889fce4019719d7b0a141e4d6fbb5076631606701e0ae725d9becd","target":"records/development-history.md","group":"历史取值与实例","stage":"S2/S6"},{"id":"I02-077","source":"agent-dev-guide.md","line":1899,"end":1915,"title":"5.12 检查本身也必须接受检查","sha256":"a166660a821dba3bda24fbe05f896658bd5eb51187f628f8ff9c66f16e8af43a","target":"delivery/verification.md","group":"独立整合与门禁质量","stage":"S4"},{"id":"I02-078","source":"agent-dev-guide.md","line":1916,"end":1929,"title":"5.13 历史取证怎样用于今天的开发","sha256":"96e054592724052db6dbfbca3cc7584e3d0be5caa6101cbe4870f18def5cdd65","target":"design/evidence-sdd.md","group":"观测与采信合同","stage":"S2"},{"id":"I02-079","source":"agent-dev-guide.md","line":1930,"end":1931,"title":"6. 什么时候运行时值得用","sha256":"0ee39124c7630ca61df3c9620bfef940eb5c5f2ef80afc346e09cdf85147fb9e","target":"design/evidence-sdd.md","group":"成本与遗漏观察面","stage":"S2/S6"},{"id":"I02-080","source":"agent-dev-guide.md","line":1932,"end":1946,"title":"6.1 机械分类","sha256":"7ed6716aca071042e7ac9c94cf934790e3edfef71a88151660cfcdc91ae043d7","target":"design/evidence-sdd.md","group":"成本与遗漏观察面","stage":"S2/S6"},{"id":"I02-081","source":"agent-dev-guide.md","line":1947,"end":1962,"title":"6.2 三类反例与 T0 上界","sha256":"c53656f27fcb29a657587cbdf70c8507aa60849f96538cebc0c748362986c640","target":"design/evidence-sdd.md","group":"成本与遗漏观察面","stage":"S2/S6"},{"id":"I02-082","source":"agent-dev-guide.md","line":1963,"end":1985,"title":"6.3 绕过只能部分可观测","sha256":"d4f05037f230c84881d61b08c7ea0570b534959af2701936568eba3e75ed1881","target":"design/evidence-sdd.md","group":"成本与遗漏观察面","stage":"S2/S6"},{"id":"I02-083","source":"agent-dev-guide.md","line":1986,"end":1987,"title":"7. 演进与退出脚手架","sha256":"0b006e66bc53d36fcbc4adb5d25384e7cda2be4893d8270584b37425da7351e6","target":"development-plan.md","group":"运行时演进与退出门","stage":"S3"},{"id":"I02-084","source":"agent-dev-guide.md","line":1988,"end":2001,"title":"7.1 依赖顺序","sha256":"e4a5aa5ce8299f752bb5084d60ed536266b4f817106a69a3282d7ea7d44f1224","target":"development-plan.md","group":"运行时演进与退出门","stage":"S3"},{"id":"I02-085","source":"agent-dev-guide.md","line":2002,"end":2037,"title":"7.2 从手工态拆到服务态","sha256":"b2806934c0490b65fb5bfb64d3b87f0c9220124809f721306055abb304f4664f","target":"development-plan.md","group":"运行时演进与退出门","stage":"S3"},{"id":"I02-086","source":"agent-dev-guide.md","line":2038,"end":2072,"title":"7.3 删除与迁移门","sha256":"b9f02e4e94c70458777df570fec495c65ebf87a6d0bdb8ca34e23cfe9862d607","target":"agent-dev-guide.md","group":"续接及下一次修订","stage":"S6→S0"},{"id":"I02-087","source":"agent-dev-guide.md","line":2073,"end":2103,"title":"7.4 风险和未决","sha256":"f12187998cf5644e487428aee4d2238cae6034c1cdbde1a527ce9e36ee189e0f","target":"handoff.md","group":"跨阶段风险与未验证","stage":"S2/S3"},{"id":"I02-088","source":"agent-dev-guide.md","line":2104,"end":2139,"title":"7.5 跨会话续接","sha256":"fbce68888fc963570a13cafb2503c93bfc0573c2284c556f83d0809a14ba595d","target":"agent-dev-guide.md","group":"续接及下一次修订","stage":"S6→S0"},{"id":"I02-089","source":"agent-dev-guide.md","line":2140,"end":2158,"title":"7.6 执行器架构的未验证清单","sha256":"40cd8311b3b089eaaeac8de530c1aad4d7a84b8b275707189cdd140db49fbeae","target":"handoff.md","group":"跨阶段风险与未验证","stage":"S2/S3"},{"id":"I02-090","source":"agent-dev-guide.md","line":2159,"end":2177,"title":"7.7 需要改内核时，提交明确的修订工作单元","sha256":"bae24dbe9f69e1757ae1eed8598e0b17478d672752b18478ebb8d275865d69e4","target":"agent-dev-guide.md","group":"续接及下一次修订","stage":"S6→S0"},{"id":"I02-091","source":"agent-dev-guide.md","line":2178,"end":2188,"title":"8. 本轮核查裁定","sha256":"e2f855ae31e1f4ccc2ddf1a82ceeda920cd1861fd84b6d3729a3d43e5364e209","target":"design/runtime-tld.md","group":"已决定的取舍及其依据","stage":"S2"},{"id":"I02-092","source":"agent-dev-guide.md","line":2189,"end":2205,"title":"8.1 六项逐条处置","sha256":"2d6f60a73d9fa434c12fa77176735cff452c77745e972642470ef776596553a6","target":"design/runtime-tld.md","group":"已决定的取舍及其依据","stage":"S2"},{"id":"I02-093","source":"agent-dev-guide.md","line":2206,"end":2214,"title":"8.2 保留与撤销","sha256":"e68500042c8476049eec294a651105974524e838be014b011c8265ae51584372","target":"design/runtime-tld.md","group":"已决定的取舍及其依据","stage":"S2"},{"id":"I02-094","source":"agent-dev-guide.md","line":2215,"end":2234,"title":"8.3 本次补吸收明确不采用的旧主张","sha256":"bbcf6fd91a65e2bfe3494eba4b007a61f5152e8061e10e2df8cfb34d7f6a0b39","target":"design/runtime-tld.md","group":"已决定的取舍及其依据","stage":"S2"},{"id":"I02-095","source":"agent-dev-guide.md","line":2235,"end":2240,"title":"9. 覆盖声明","sha256":"87edee33cf73b9cb9178b41a811ac7d6a2694f8d0d0bf2f164ecd80371ff8672","target":"records/development-history.md","group":"吸收审计与旧源收据","stage":"S4/S6"},{"id":"I02-096","source":"agent-dev-guide.md","line":2241,"end":2252,"title":"9.1 查了什么","sha256":"17cff6af355dced4dfce88d8ab8c614e2078428ec8700c2e4a00a0f26c5d8806","target":"records/development-history.md","group":"吸收审计与旧源收据","stage":"S4/S6"},{"id":"I02-097","source":"agent-dev-guide.md","line":2253,"end":2298,"title":"9.2 没查什么","sha256":"0a079a71396c458e46c7745662236aa1fa4f374fd341d85f773d6f5d5690e37f","target":"delivery/verification.md","group":"覆盖声明与未知","stage":"S4/S6"},{"id":"I02-098","source":"agent-dev-guide.md","line":2299,"end":2305,"title":"9.3 自增内容及理由（`runtime-refact` 轮）","sha256":"f3e02e172af585aa01456a65e30637509182a7ab75a4843aa968d57304fdfb6c","target":"records/development-history.md","group":"吸收审计与旧源收据","stage":"S4/S6"},{"id":"I02-099","source":"agent-dev-guide.md","line":2306,"end":2447,"title":"9.4 两份 lifecycle 的吸收轮（2026-09-07）","sha256":"407fef5c1d20a360c4793214ba1ee52fae0f7a3ff7fcde852cabe10d8c81d8dc","target":"records/development-history.md","group":"吸收审计与旧源收据","stage":"S4/S6"},{"id":"I02-100","source":"agent-dev-guide.md","line":2448,"end":2506,"title":"9.5 GPT-6 再吸收记录（2026-09-08）","sha256":"c64255a657627d0237f05a3fe038c380ebb3c7b2ff513bfa6645f64ab0156658","target":"records/development-history.md","group":"吸收审计与旧源收据","stage":"S4/S6"},{"id":"I02-101","source":"agent-dev-guide.md","line":2507,"end":2553,"title":"9.6 取代前 opus 做的核验（2026-09-08）","sha256":"eb2712079c6eeebd1f5e80dba8f8b7624aa5668cba844a8243279ae99aa436fe","target":"records/development-history.md","group":"吸收审计与旧源收据","stage":"S4/S6"},{"id":"I02-102","source":"agent-dev-guide.md","line":2554,"end":2875,"title":"10. 五份历史正文及目录说明的逐节处置","sha256":"0b028b5973ef57fd57dd7f9753605c11d64b421de58dab1c2e58e348cf6ecbe2","target":"records/development-history.md","group":"吸收审计与旧源收据","stage":"S4/S6"},{"id":"I02-103","source":"agent-dev-guide.md","line":2876,"end":2923,"title":"11. 反模式","sha256":"5c4f84af05095fe4b15c3812f5f9d28c0c62eb85dd66fe4c4b064c86fb6f79da","target":"agent-dev-guide.md","group":"开工自检与工作区供给","stage":"S3"},{"id":"I02-104","source":"agent-dev-guide.md","line":2924,"end":2964,"title":"12. 常见失败方式与项目实例","sha256":"6c49a2dacc55dda60bb9e1cfe2805bf595d25509bd7a6c3d98a481613e27d312","target":"delivery/verification.md","group":"独立整合与门禁质量","stage":"S4"},{"id":"I02-105","source":"agent-dev-guide.md","line":2965,"end":2983,"title":"12.1 七种“检查给出假答案”的回归线索","sha256":"b7f6e4d275133d47944344e5ae8cfa701798e94506a0df83a5e8945928bf59ba","target":"delivery/verification.md","group":"独立整合与门禁质量","stage":"S4"},{"id":"I02-106","source":"agent-dev-guide.md","line":2984,"end":3003,"title":"12.2 并行评审的收益与盲区","sha256":"381fb92de6fa781025d41d6c9ec76cdae078e7115f69a62ccc1df1ebe05c2da9","target":"delivery/verification.md","group":"独立整合与门禁质量","stage":"S4"},{"id":"I02-107","source":"agent-dev-guide.md","line":3004,"end":3037,"title":"13. 词汇对照","sha256":"242917fd32677a5e94f62168fa7756e13ddad8e0ae3e69d0f95813e251850e75","target":"design/runtime-tld.md","group":"目标与共同语言","stage":"S2"},{"id":"I02-108","source":"agent-dev-guide.md","line":3038,"end":3082,"title":"14. 开发 Task 持久记录模板","sha256":"7b5384fbaedbe63defae494e1c7783a8a4e86075a75a49bac60a319eebb7dedd","target":"agent-dev-guide.md","group":"受理与持久任务记录","stage":"S0/S1"},{"id":"I03-001","source":"protocol/round-protocol.md","line":1,"end":21,"title":"并行评优轮：流程","sha256":"b2f57cec6aae6e8e9348f9c95f28c419aed60958761f22c63ef71d1edfd4d529","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-002","source":"protocol/round-protocol.md","line":22,"end":51,"title":"0. 收到「继续」时怎么办","sha256":"fd49aa897d45299584a463faa4f3565c917a3c0a0fdf2b09c0d28cc5c7d6de82","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-003","source":"protocol/round-protocol.md","line":52,"end":63,"title":"1. 流程档位：这件事该走多重的流程","sha256":"3eb7fcb7a80fc9b93cf9ed1d569f941b9dae250e5926a2687f57a31b5ea5b9a3","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-004","source":"protocol/round-protocol.md","line":64,"end":84,"title":"1.0 一套流程，靠参数覆盖三种协作形态","sha256":"16cf91b6d52c1396f8b4df2fd90a7aeef325fa9e296e6d9bab7d34bf07b371ce","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-005","source":"protocol/round-protocol.md","line":85,"end":98,"title":"1.1 判据：命中任一条即 T2","sha256":"61e1dddebaa5c80fa3625ca1a8681817e9f3ed6ee59ac8ecf1b847c36dda6205","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-006","source":"protocol/round-protocol.md","line":99,"end":110,"title":"1.2 升档随意，降档要理由——这条不对称是有意的","sha256":"bf735dfab5d65be082040da79f9cff78d4e1d92601f0915f853aef96ac16339d","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-007","source":"protocol/round-protocol.md","line":111,"end":119,"title":"1.3 任何档位都不能省的三条","sha256":"88c336a7e0b3da96b03b3442a92f6882fd9c38fefa0a46f3524e8767381f9aaf","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-008","source":"protocol/round-protocol.md","line":120,"end":126,"title":"2. 裁量权：supervisor 可以临机决定什么","sha256":"80b2c1fbb4ff1317071700c470a2fafc8dca7e6bc77bb544a04cea881f6b697f","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-009","source":"protocol/round-protocol.md","line":127,"end":137,"title":"2.1 不可裁量的下限","sha256":"799cffbcd626c3f6d6fffdeb2d51b005400b4abc42e208bbf8f62e2caeb37aa5","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-010","source":"protocol/round-protocol.md","line":138,"end":142,"title":"2.2 可裁量的事项","sha256":"bf525d4b825a32ec150de9cf594ebc485b738d9929c8a9433b2706445c0f7bea","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-011","source":"protocol/round-protocol.md","line":143,"end":158,"title":"2.3 方向不对称：这是本协议的统一原则","sha256":"976c280c4588abb27dcf7cb7cb7875769c82a468114c828acd10e755ab9aa5ff","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-012","source":"protocol/round-protocol.md","line":159,"end":170,"title":"2.4 裁定记录：未记录的裁定无效","sha256":"40e738ec9f9d718a7a6c2fcab33af94a2a3a0bbb8133e5a53aaa532cdb370160","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-013","source":"protocol/round-protocol.md","line":171,"end":178,"title":"2.5 推翻","sha256":"a89d32d36ea370fb28d3f206afaf11544aa1cbf414a2a3fd3f1b382785cb4e04","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-014","source":"protocol/round-protocol.md","line":179,"end":190,"title":"2.6 裁量是规则的孵化器","sha256":"c366e080a1c9335ad76710a692719e23ce537ca8ddcefdbdc477bba346ee09a6","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-015","source":"protocol/round-protocol.md","line":191,"end":196,"title":"3. 执行者与触发方式：两个轴，不要混","sha256":"7cd5a95773b6a64eede39d5054248766a984c7e56391ac17ceb88ad4910512c2","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-016","source":"protocol/round-protocol.md","line":197,"end":208,"title":"3.1 两个轴","sha256":"83f7b3998c1ea69c7647c60efff769e962387c564ee8c921e7e3906439b8d594","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-017","source":"protocol/round-protocol.md","line":209,"end":225,"title":"3.2 全部动作的归属","sha256":"e05018cdfa78050de41bd0d5340d7210ff67a79d191a448ec9737b22b36f2ec7","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-018","source":"protocol/round-protocol.md","line":226,"end":235,"title":"3.3 两类「人做」不可互相顶替","sha256":"5850ef619f25dad9649661b42f25c7cb20fa3f1e51ea2163e51b4663fc4a05d2","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-019","source":"protocol/round-protocol.md","line":236,"end":262,"title":"4. 七个环节（T2 专用）","sha256":"ca0b9ccaaaaa5124110ec7b11b690ee7b5abe178d0d1004d0a8c34cf964e24b8","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-020","source":"protocol/round-protocol.md","line":263,"end":290,"title":"5. 本轮定义：`round.md`","sha256":"0a2f73141d51fb9be1712cbfc8c63381a4a4bb032e5f5787f5c72ccd8f229273","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-021","source":"protocol/round-protocol.md","line":291,"end":322,"title":"6. 产物、路径与命名","sha256":"1810ea8ba3da1737dce71841407f459af03c710617bb197f61017477ecbb33c8","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-022","source":"protocol/round-protocol.md","line":323,"end":343,"title":"6.1 环节通知：组织者的产物，不是发起人的话术","sha256":"057774ecfb3ac4590bec595b0fa8bf173f9be9c6620a26389d5c1240dc1edbb3","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-023","source":"protocol/round-protocol.md","line":344,"end":348,"title":"7. 取件与检视面","sha256":"8024eaeffd6b4451174e375b5c7d935e9501ae610c465eb402c30e1ca9c479c1","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-024","source":"protocol/round-protocol.md","line":349,"end":364,"title":"7.1 取件：一律按 commit，不看工作区","sha256":"54ee65565f3b4a2e4ec5fcf8dcd85e1a0ff6ce9baa03daaad1658dbfd8527cef","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-025","source":"protocol/round-protocol.md","line":365,"end":381,"title":"7.2 检视面：需要人读时开临时 worktree","sha256":"49546d85b547722a89f66a6a23e6d7c4073f2ce757cd050d4ab9078c127cb578","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-026","source":"protocol/round-protocol.md","line":382,"end":390,"title":"7.3 每个需要人读的环节都必须先有检视面","sha256":"05d4775dfaa5efda5cdba56f33eddeaf04c83df93ecaf1ad9c5ef4739cefbc87","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-027","source":"protocol/round-protocol.md","line":391,"end":426,"title":"8. 环节判定：命令即判据","sha256":"c83a4814637e9e52f6204973353633965e9d4daa1d7ed3030bdb80954b4aea9e","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-028","source":"protocol/round-protocol.md","line":427,"end":464,"title":"8.1 判据自身的质量：覆盖不全比没有更危险","sha256":"d3f07470839960a78f99a960f461aa2555d35ef016d2b8cb72d0619df3bd7bde","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-029","source":"protocol/round-protocol.md","line":465,"end":471,"title":"8.2 立判据的人怎么约束自己","sha256":"7d3eb45f752c059b0ff7b585d0cf722c74e2dbc39e150a9679a116abdaec1b80","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-030","source":"protocol/round-protocol.md","line":472,"end":483,"title":"只写判据，不写答案","sha256":"3f8655d2e77fd875752df6769304d73ecff533e18308aa5b6e59ca000af78447","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-031","source":"protocol/round-protocol.md","line":484,"end":491,"title":"立据人的四条自我约束","sha256":"5aca979658125a9feabfc8aba4846ea84a61ee715bfef28c560694b4ac413729","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-032","source":"protocol/round-protocol.md","line":492,"end":500,"title":"难点清单：记下来是为了检验发起方","sha256":"07dc0d5d662583a460a3a52197ade4351fae3706d61f140bce50683e1bd40b83","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-033","source":"protocol/round-protocol.md","line":501,"end":506,"title":"三条通用扣分规则","sha256":"161b2aec1a7554950c86b805e322169a42e941a0c7aa15009d20eb6e2bbd4e00","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-034","source":"protocol/round-protocol.md","line":507,"end":515,"title":"起草人回避","sha256":"17eae03fd33f59846021d16bb7401717f548e7f4432681432f487545aa69b72d","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-035","source":"protocol/round-protocol.md","line":516,"end":528,"title":"判据自身的失效条件","sha256":"55e27a31479b16af6f785e55fef235521f8ab028b80ba34edd12defc1d0975a9","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-036","source":"protocol/round-protocol.md","line":529,"end":533,"title":"一票否决项要事先列","sha256":"a8f477fe4d70b7e594d205814b48902d78c3d4748c0e539d7c0ef0c48b2576c8","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-037","source":"protocol/round-protocol.md","line":534,"end":552,"title":"8b. 两个脚本怎么调","sha256":"2e5a0d4373a142ad468124aa719c967e1fdf5f4e30fa9757495e0cbc486abbc4","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-038","source":"protocol/round-protocol.md","line":553,"end":563,"title":"退出码","sha256":"0048e80805a07890a31441c3dfd61f3f28a2be41dd091ed0d490d5955a6cea03","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-039","source":"protocol/round-protocol.md","line":564,"end":575,"title":"声明与计算对不上时","sha256":"389ec90e15acf77ad0d986ec0322a19e22a07cac83ee3a84d83570a0e45d56c2","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-040","source":"protocol/round-protocol.md","line":576,"end":580,"title":"8c. 组织者的两条纪律","sha256":"ed7eef2d62055383508e8f0004b5de79f6656c4f6e51dc42dfd4ea2673c26f29","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-041","source":"protocol/round-protocol.md","line":581,"end":603,"title":"8c.1 环节进行中，组织者不得写入参与方的工作区","sha256":"2cbb6c299bb52f5fdf4c6e590bdb04694a109587ff8e5a83fa38a120398e54d7","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-042","source":"protocol/round-protocol.md","line":604,"end":618,"title":"8c.2 代提交必须用 `--author`，且必须登记为欠账","sha256":"ac3dacaeeda4e3710c71e741740ca0017b07a08c6ebe8bac0682b7dcdca20918","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-043","source":"protocol/round-protocol.md","line":619,"end":623,"title":"9. ① 提案：隔离与冻结","sha256":"046b7965313a82fc5b688c1662d82f45077e6ccd58267b72210e33a296fe80b2","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-044","source":"protocol/round-protocol.md","line":624,"end":643,"title":"9.1 隔离为什么是硬要求","sha256":"3f3790ee1ef63d193ce93cfceb8aa0d140865a9a0ce2951c20bee30b8570c42a","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-045","source":"protocol/round-protocol.md","line":644,"end":674,"title":"9.2 工单发什么、不发什么","sha256":"e52e2b9a38ad023a0c688d96b589a34d2ca301997e2486111c18d3111c807ae2","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-046","source":"protocol/round-protocol.md","line":675,"end":689,"title":"9.3 机制化隔离：曾经有过，已经删掉","sha256":"313d76a7dd3a24271a9a9dd5c483291cab6439fffc39d6cdc11b818ff58fa1fc","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-047","source":"protocol/round-protocol.md","line":690,"end":712,"title":"10. ② 互评：评审文件写什么","sha256":"0333dc6b3f3d835f385223506bc1f567f6ecbe2177b0ed9a378fc90c8f82eb1e","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-048","source":"protocol/round-protocol.md","line":713,"end":723,"title":"11. ③ 裁决：定基座与吸收","sha256":"ffefcb865111042c71eec4a1d0d61b6eab0a13429e8d56188a665b86b521e9e4","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-049","source":"protocol/round-protocol.md","line":724,"end":740,"title":"12. ④ 异议：对整合权的唯一制衡","sha256":"a0e351de21d20e1e5183891df29419b0a15e0d5ba006bf964c0475831c17ad5b","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-050","source":"protocol/round-protocol.md","line":741,"end":759,"title":"13. ⑤ 验收 与 ⑥ 确认","sha256":"9630ce23cb1f5deb38d45ccc424485be10f7dff28eeb70f6fb36277bcaaa5805","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-051","source":"protocol/round-protocol.md","line":760,"end":779,"title":"13.1 定向审核分两阶段，防止被产出方锚定","sha256":"7151fe1820f7034fc6cd7e32943a0577fc180e5332418a90111783fe2d7a3cb1","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-052","source":"protocol/round-protocol.md","line":780,"end":788,"title":"13.2 验收通过意味着什么，不意味着什么","sha256":"3495c7a5d802edc325e35301968efca8e5c970ce06b9b74c2f977c7d50afe989","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-053","source":"protocol/round-protocol.md","line":789,"end":802,"title":"14. 停止、超时与回退","sha256":"04e2930c6a7233a513494300f9d42b6acf21e363ae64527b3654138a312dee87","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-054","source":"protocol/round-protocol.md","line":803,"end":882,"title":"14.1 参与方不可用：逾期、弃权与换人","sha256":"f8fc4be2afeb30883e41a21beef559aada5603fb30f1cac0ca5ef2490f687683","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-055","source":"protocol/round-protocol.md","line":883,"end":901,"title":"15. 角色不分会怎样","sha256":"ebd100ea22ee1090a73729b0e7f89a227f22545f0ef14fb4cc0446dda6a59f6b","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-056","source":"protocol/round-protocol.md","line":902,"end":916,"title":"16. ⑦ 清理与发布","sha256":"d87754dac30c4231ce0b2bec8d2fc2c093617fec19df84bba03b8d3807a38a8c","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I03-057","source":"protocol/round-protocol.md","line":917,"end":929,"title":"17. 通用纪律","sha256":"2900fa181f1b50354db85878410a334942c2eb7896820028a74c7a3492c58be9","target":"protocol/round-protocol.md","group":"协作执行规程全文","stage":"S3/S4"},{"id":"I04-001","source":"protocol/README.md","line":1,"end":22,"title":"`protocol/` —— 流程规范与它的实现","sha256":"758978d92e753c343ff2c33bdb8f39cf0c342fb2c54237c92f15c287c1c6aefc","target":"protocol/README.md","group":"工具契约全文","stage":"S3/S4"},{"id":"I04-002","source":"protocol/README.md","line":23,"end":32,"title":"三条设计约束，改这里的代码前先读","sha256":"8dd0ec495565418d52aa031b0b2914dbc96d21b0195e10af76d984646d3f0091","target":"protocol/README.md","group":"工具契约全文","stage":"S3/S4"},{"id":"I04-003","source":"protocol/README.md","line":33,"end":38,"title":"单一真源","sha256":"9a2e394190bc97aa4962cd6bb0125e79604efbc7b749385b29da7be80132fbcd","target":"protocol/README.md","group":"工具契约全文","stage":"S3/S4"},{"id":"I04-004","source":"protocol/README.md","line":39,"end":46,"title":"已知不做的事","sha256":"74ae159d70b850782f7c0e691e8cfdc2fdf00c52ae573051a405e69284eb9639","target":"protocol/README.md","group":"工具契约全文","stage":"S3/S4"},{"id":"I05-001","source":"constraints.md","line":1,"end":12,"title":"开发必须遵守的规则","sha256":"9896de6b95a2017f8b6e0666375be90be732eec1a04471c976c77de7bd85e652","target":"constraints.md","group":"规则及执行载体全文","stage":"S0–S6"},{"id":"I05-002","source":"constraints.md","line":13,"end":39,"title":"怎么用","sha256":"4674596147384aca6c50d62ce32677ea582b7707e2b68001a7bb3d62a952a0f0","target":"constraints.md","group":"规则及执行载体全文","stage":"S0–S6"},{"id":"I05-003","source":"constraints.md","line":40,"end":53,"title":"数据","sha256":"9ce9f390bc6ef3568ea6539869d836ba133e441d6d949e0f3ab7ed8448976e29","target":"constraints.md","group":"规则及执行载体全文","stage":"S0–S6"},{"id":"I05-004","source":"constraints.md","line":54,"end":70,"title":"做数据迁移时","sha256":"d5afc083b2be89498be9d25320c8f3a3a58e9f2b33164ef3d241555bb65e72cc","target":"constraints.md","group":"规则及执行载体全文","stage":"S0–S6"},{"id":"I05-005","source":"constraints.md","line":71,"end":81,"title":"契约","sha256":"15e0860aff2327e677f3dc0dfdb09b2c36f3ef8564646d10d7b152830c420839","target":"constraints.md","group":"规则及执行载体全文","stage":"S0–S6"},{"id":"I05-006","source":"constraints.md","line":82,"end":94,"title":"身份","sha256":"97feffd0ab17a883c57b4514578ce27b3b37b3b4927569e191992c19e62d9621","target":"constraints.md","group":"规则及执行载体全文","stage":"S0–S6"},{"id":"I05-007","source":"constraints.md","line":95,"end":104,"title":"拓扑","sha256":"19a7f1038693761aaf218e36e0b7561034f6e13c26f2336d31a49b161592b6d6","target":"constraints.md","group":"规则及执行载体全文","stage":"S0–S6"},{"id":"I05-008","source":"constraints.md","line":105,"end":115,"title":"什么时候才拆出专用 Worker","sha256":"066c8c3a6899c9c7a9c7ac4385aba08e97da672ee5a5f796243a0abe3f5fd07c","target":"constraints.md","group":"规则及执行载体全文","stage":"S0–S6"},{"id":"I05-009","source":"constraints.md","line":116,"end":127,"title":"发布","sha256":"846b2fd4655535a1369550d87d33331bb8f7797456ab94e8c03fdb7acabafc46","target":"constraints.md","group":"规则及执行载体全文","stage":"S0–S6"},{"id":"I05-010","source":"constraints.md","line":128,"end":136,"title":"改模板、同步实例时","sha256":"e36bcc43b96db28190f13ff1a1c60064d0d973e5a52b755ab7501aae175e0375","target":"constraints.md","group":"规则及执行载体全文","stage":"S0–S6"},{"id":"I05-011","source":"constraints.md","line":137,"end":143,"title":"清理镜像时","sha256":"f76c3eab37fae20a0a28f1fccbe4497c573ef38d2699200bd630eac29996ece3","target":"constraints.md","group":"规则及执行载体全文","stage":"S0–S6"},{"id":"I05-012","source":"constraints.md","line":144,"end":148,"title":"一条环境事实","sha256":"532207857c4c9aeedeb33b812199c41cffb2d0cb13fd3541c9bc4884a66f65b4","target":"constraints.md","group":"规则及执行载体全文","stage":"S0–S6"},{"id":"I05-013","source":"constraints.md","line":149,"end":160,"title":"智能体","sha256":"db4c3025e20d3f9d3fba7bc9152e62bdf7b02ab6d89202e1394275ae4e3d9613","target":"constraints.md","group":"规则及执行载体全文","stage":"S0–S6"},{"id":"I05-014","source":"constraints.md","line":161,"end":180,"title":"保证这些被遵守的三层","sha256":"fdef054a43d01c8040bb9d016de53ae44d0567422bd015324a302ad5b9d5ed09","target":"constraints.md","group":"规则及执行载体全文","stage":"S0–S6"},{"id":"I05-015","source":"constraints.md","line":181,"end":214,"title":"`doc-gate.py` 为什么不是第三个被删的脚本","sha256":"53c976a3d820eb42176bf01def590c0d22a5de4626ea2f88cc169c80666450b6","target":"constraints.md","group":"规则及执行载体全文","stage":"S0–S6"},{"id":"I06-001","source":"development-plan.md","line":1,"end":9,"title":"开发计划","sha256":"8055b3106ed9b6550da0058d9cb9e81602aa43eaf9196b023e2f6b15aef1b2a0","target":"development-plan.md","group":"产品建设顺序","stage":"S0/S3"},{"id":"I06-002","source":"development-plan.md","line":10,"end":23,"title":"起点：不延续 v5","sha256":"0d5bffad5c99a490a12a8e3847eab5a709de2b4242ebad50c2002aac2c087b26","target":"design/runtime-tld.md","group":"已决定的取舍及其依据","stage":"S2"},{"id":"I06-003","source":"development-plan.md","line":24,"end":35,"title":"智能体分两部分","sha256":"1f3498e3a3dea5e5681b639d5280bcb6f285065b60e2dc28db95af55dc9a296a","target":"design/runtime-tld.md","group":"组件责任与派工接口","stage":"S2"},{"id":"I06-004","source":"development-plan.md","line":36,"end":43,"title":"四本账是两部分共用的地基","sha256":"ddf38efb8dd6ffa95ee3ee232c72b2c394395dfb8cee0a4ffc5d225a28332b1e","target":"design/runtime-tld.md","group":"组件责任与派工接口","stage":"S2"},{"id":"I06-005","source":"development-plan.md","line":44,"end":63,"title":"执行层租用，不自建","sha256":"cd79e37cec9704b2717f43cfe493ab5666b161c151e4d28a6fc56e8a00a88628","target":"design/executor-sdd.md","group":"租用边界与版本化能力","stage":"S2"},{"id":"I06-006","source":"development-plan.md","line":64,"end":67,"title":"三个阶段","sha256":"50d3034d4b55f0386612c9fbb787f7d91f85521bf8fd90b1b43defcbeb94da7a","target":"development-plan.md","group":"产品建设顺序","stage":"S0/S3"},{"id":"I06-007","source":"development-plan.md","line":68,"end":96,"title":"一 · 前后端对接","sha256":"e5b2fd6f3530dee79af89b7f91042b0998bf1da6ebbbc63e18aee27e0148deb6","target":"development-plan.md","group":"产品建设顺序","stage":"S0/S3"},{"id":"I06-008","source":"development-plan.md","line":97,"end":109,"title":"二 · agent 开发","sha256":"36a9c3a4830131f870225ebb9687fef4c6f81192261ba6ce9fb37a787f5cf51e","target":"development-plan.md","group":"产品建设顺序","stage":"S0/S3"},{"id":"I06-009","source":"development-plan.md","line":110,"end":133,"title":"三 · 结构化数据问答（后期）","sha256":"66ba02171e4827bee6b9be29a18e7858cbae3125a3343c3f1c4e7ff32dffba06","target":"development-plan.md","group":"产品建设顺序","stage":"S0/S3"},{"id":"I06-010","source":"development-plan.md","line":134,"end":142,"title":"有意留白的两处","sha256":"bb2f1663c7d5fe79bc33f4375c4872b18993976f10c98140e5962554819afef9","target":"design/runtime-tld.md","group":"已决定的取舍及其依据","stage":"S2"},{"id":"I07-001","source":"implementation-plan.md","line":1,"end":10,"title":"实施计划","sha256":"a3210412c57feae15e4f023caeac2a2057775c8b4f3e1a420070aa7c16bf8ffc","target":"implementation-plan.md","group":"计划责任和产品工作单元","stage":"S3"},{"id":"I07-002","source":"implementation-plan.md","line":11,"end":26,"title":"任务条目格式","sha256":"df8f4d171db2e7656dcf23738a203ad88aaca5dc3f1ae8c340680323ca361c56","target":"agent-dev-guide.md","group":"受理与持久任务记录","stage":"S0/S1"},{"id":"I07-003","source":"implementation-plan.md","line":27,"end":37,"title":"测试层次","sha256":"4bfef647952fad541626de7a6e3f6136bf69a1b06d31afc04f4af1df28e7105b","target":"delivery/verification.md","group":"层次与证据执行","stage":"S3/S4"},{"id":"I07-004","source":"implementation-plan.md","line":38,"end":52,"title":"交付规则","sha256":"76c0139479c95502f5a7c9259b4910d46f51f9a97aa4053f9cc09a252c813609","target":"agent-dev-guide.md","group":"发布与保留","stage":"S5/S6"},{"id":"I07-005","source":"implementation-plan.md","line":53,"end":76,"title":"阶段〇 · 开发框架自身的实施路线（R0–R5）","sha256":"6f267053e757d695be8bda0763d4917b9d6d71977cb72b288fae4eb2f532786d","target":"records/development-history.md","group":"旧路线及当时进度","stage":"S3/S6"},{"id":"I07-006","source":"implementation-plan.md","line":77,"end":78,"title":"阶段一 · 前后端对接","sha256":"292e785931b999e1f3895dbea75b888f289a6a6090681198c1354e714c7d1f7a","target":"implementation-plan.md","group":"计划责任和产品工作单元","stage":"S3"},{"id":"I07-007","source":"implementation-plan.md","line":79,"end":85,"title":"任务清单","sha256":"48cf99f4ff8bdd38ae24437d3fcd15160e0e1b5c10d261a449bde365acd42ca4","target":"implementation-plan.md","group":"计划责任和产品工作单元","stage":"S3"},{"id":"I07-008","source":"implementation-plan.md","line":86,"end":89,"title":"阶段二 · agent 开发","sha256":"828e363521485eb77cab504595f18b9fdce7de18ecf5f8b82c6e4c5114911c3a","target":"implementation-plan.md","group":"计划责任和产品工作单元","stage":"S3"},{"id":"I07-009","source":"implementation-plan.md","line":90,"end":93,"title":"阶段三 · 结构化数据问答","sha256":"ae0a101c22b064d01722c78153217cea0fb801e91f28d5d67b9c4858bca463ad","target":"implementation-plan.md","group":"计划责任和产品工作单元","stage":"S3"},{"id":"I08-001","source":"handoff.md","line":1,"end":13,"title":"交接","sha256":"1bea42449cbe09fa22c0db47a2d321f78757b6aba3cea997dcb1931d500fd58c","target":"handoff.md","group":"当前观察与游标","stage":"S6→S0"},{"id":"I08-002","source":"handoff.md","line":14,"end":20,"title":"当前阶段","sha256":"a5f226a4399cd6c7405dd15c0132b9a2013b6455fbb1c11e6f012f3f27339c68","target":"handoff.md","group":"当前观察与游标","stage":"S6→S0"},{"id":"I08-003","source":"handoff.md","line":21,"end":29,"title":"已经就位的（不用再做）","sha256":"34b79d8a45ed5de8fb9833f1e9ca305e1678642fbd54ff6838e4e8e1cdcabc04","target":"handoff.md","group":"当前观察与游标","stage":"S6→S0"},{"id":"I08-004","source":"handoff.md","line":30,"end":41,"title":"未决项","sha256":"c0ed70dcce404cbadcaaa538c29599dd9dda059055c1807b9c5a2055f77ce9a8","target":"handoff.md","group":"未决及开工输入","stage":"S0/S3"},{"id":"I08-005","source":"handoff.md","line":42,"end":50,"title":"U1 的已知输入","sha256":"0ba1033af120563e340701b9d5da301a5ad213fa317abca3be69aa0ec442108b","target":"handoff.md","group":"未决及开工输入","stage":"S0/S3"},{"id":"I08-006","source":"handoff.md","line":51,"end":58,"title":"U3 的已知输入","sha256":"63e1448c2e8619a3342a049743f491e7982d88b04187c712a0c0db5139dfe4c8","target":"handoff.md","group":"未决及开工输入","stage":"S0/S3"},{"id":"I08-007","source":"handoff.md","line":59,"end":67,"title":"U4 的已知输入","sha256":"5512fca05def7601d853e9f3b288074e1b020d3a3e3216051c49bd54f76744c5","target":"handoff.md","group":"未决及开工输入","stage":"S0/S3"},{"id":"I08-008","source":"handoff.md","line":68,"end":79,"title":"不能倒退的输入","sha256":"aabd59897abbb06a7029bfc096f791351356e4ef40599a0522e285ab8940797c","target":"design/runtime-tld.md","group":"已决定的取舍及其依据","stage":"S2"},{"id":"I08-009","source":"handoff.md","line":80,"end":92,"title":"文档面待办","sha256":"af08f3b4ea5e8f67452d866f53d05d58686a1e2849a4e717b7dd2a76a4f5c783","target":"implementation-plan.md","group":"计划责任和产品工作单元","stage":"S3"},{"id":"I08-010","source":"handoff.md","line":93,"end":97,"title":"任务游标","sha256":"ec4a33c74a659f5e6141594410ad6bdb102c96a7b0f79d4189c1cc1f50fced27","target":"handoff.md","group":"当前观察与游标","stage":"S6→S0"},{"id":"I08-011","source":"handoff.md","line":98,"end":117,"title":"开发框架自身（R0–R5 路线）的进度","sha256":"50a2fdbe5c34ee52604e2b5df801f980bd2320a3e89015f5ac336c6f6b085626","target":"records/development-history.md","group":"旧路线及当时进度","stage":"S3/S6"},{"id":"I08-012","source":"handoff.md","line":118,"end":126,"title":"已完成的轮次","sha256":"d5d442bc498e2a0cdaf7097a976c0524825a4002f3e66e5d3a966fabd5eeee1e","target":"records/development-history.md","group":"旧路线及当时进度","stage":"S3/S6"},{"id":"I08-013","source":"handoff.md","line":127,"end":131,"title":"不能倒退的两条（本轮新增）","sha256":"6a5176405320dce09b6f4ed176cd4eb55f67f07a131bbf9339abe9522969cebf","target":"handoff.md","group":"未决及开工输入","stage":"S0/S3"},{"id":"I09-001","source":"README.md","line":1,"end":24,"title":"dev-plan — 代码要符合什么、接下来建什么","sha256":"b740e86ba1173c4df5acba1aa3e5a9648a8ba14831fabd34b8a777c1c2dba2d6","target":"records/development-history.md","group":"旧版入口与组织上下文","stage":"S6"},{"id":"I09-002","source":"README.md","line":25,"end":36,"title":"各文档的分工，别混写","sha256":"8f6f58fa2d02b9cbdd881b09f43e91e2b806e719ba730edd070f19b88b5137e7","target":"records/development-history.md","group":"旧版入口与组织上下文","stage":"S6"}],"protected":{"sunmoonai/docs/dev-plan/working/request-baseline/REQ-001-架构重构/request.md":"018af6fc8132ac23d4806b9ffc3266b62f05f77ed9dfdb822e831e2cb7f03711","sunmoonai/docs/dev-plan/working/request-baseline/REQ-002-基线核对整改/plan-baseline.md":"2dffea66a961dae576c4e718eb0bc46fceb781509a04001398de9df4ca2cca11","sunmoonai/docs/dev-plan/working/request-baseline/REQ-002-基线核对整改/request.md":"697d74c1262cc66fe955bdde9c02243eeb1fea4f07a5affbb0b4b28cd60033f7","sunmoonai/docs/dev-plan/working/request-baseline/REQ-003-文档集结构重组/baseline.md":"92061bffe87d3698aebfd2334e6c47c4f6ba658e7c139f270b2a4438f2691b60","sunmoonai/docs/dev-plan/working/request-baseline/REQ-003-文档集结构重组/request.md":"eb5273ae92c51bbba3b412dfe495fd2a50e170dc58d1450b2676b9fdfa16214d","sunmoonai/docs/dev-plan/working/request-baseline/REQ-004-现有代码投影/baseline.md":"c5d90926953b9e276d938cdfa3207733ab0ca2b6dc26e68a2e04ea5ea1cfed21","sunmoonai/docs/dev-plan/working/request-baseline/REQ-004-现有代码投影/request.md":"c9ca11458a0b2fe886bcf5348efc67c2c36ba2026f8869c17c5dd50dd2c05675","sunmoonai/docs/dev-plan/working/request-baseline/REQ-005-智能体集群开发/request.md":"1a60dde001bb75812e9fd02157cf9ffc49a743ca89fe34cee6f05e24a3e39419","sunmoonai/docs/dev-plan/working/request-baseline/REQ-006-投资研究编排/baseline.md":"3bbd619d43980a24a3d07ca599be3e2ab55fe3ff00262bc6cc76cb58b31bd41a","sunmoonai/docs/dev-plan/working/request-baseline/REQ-006-投资研究编排/request.md":"575f774ba1776a5c03ee22849444fe59ced837815abe57103820d01d3cf6b995","sunmoonai/docs/dev-plan/working/request-baseline/REQ-007-核对流程技能化/request.md":"bd4437248005f24601ebb2ea261e8946334c0dee4faf02615210faf5dbfc4807","sunmoonai/docs/dev-plan/working/request-baseline/REQ-008-五仓投影撰写/request.md":"a98cc31e38c1152864120d1630c91537ea12af86788e02a35f2209e197222eec","sunmoonai/docs/dev-plan/working/request-baseline/REQ-009-休眠能力可识别/request.md":"884712f131e2795959c6a5a5f96bd4c0c5f833bfb02e5d821db2d9dc180928c2","sunmoonai/docs/dev-plan/working/request-baseline/REQ-010-REQ模板完善/request.md":"5834d7d7209b7d2894c0b0b141ddcea635afba0d8cd50a13decc7d054c2ffc79","sunmoonai/docs/dev-plan/working/request-baseline/REQ-010-REQ模板完善/template-proposed.md":"035c4268022d5b648e17182a554020fbb910fec48d3e9c361185e44863d8f32d","sunmoonai/docs/dev-plan/working/request-baseline/TEMPLATE.md":"84f529c3e2d735bbc080251ae9ef5fe0e571b2e478e3d6df1cfe6c9b75b8a5e1"},"rulings":{"sunmoonai/docs/dev-plan/rounds/dev-plan-refact/rulings.md":"67322fef015ec0796b1ad4492a5f3f4d438f822491468fd13832a6ec8dc5801d","sunmoonai/docs/dev-plan/rounds/refact-fable/rulings.md":"f4e0c663a523fc7e4160a185021cacdc0b6ab7e5542e92430defd722c8894812","sunmoonai/docs/dev-plan/rounds/runtime-refact/rulings.md":"b5f57762543cf49c380ff71aabb2dbf134471b1b2d072da8dd2e80d1272a6f05","sunmoonai/docs/dev-plan/rounds/runtime/rulings.md":"8c90937769c44da687a0afa8d9c27cc872f81c31c33640139c6381258843b915"},"current_ruling_count":2,"current_ruling_ids":["round:dev-plan-refact:R1","round:dev-plan-refact:R2"]}
+```
+<!-- END CONFIG -->
+
+<!-- RUNNER -->
+```python
+import re, json, subprocess, hashlib, sys, pathlib, importlib.util
+
+config = json.loads(s.split('<!-- CONFIG -->\n```json\n', 1)[1].split('\n```\n<!-- END CONFIG -->', 1)[0])
+base, prefix = config['baseline'], config['prefix']
+units = {x['id']: x for x in config['units']}
+cache = {}
+
+def git(*args):
+    return subprocess.check_output(['git', *args])
+
+def digest(b):
+    return hashlib.sha256(b).hexdigest()
+
+def source(path):
+    if path not in cache:
+        cache[path] = git('show', base + ':' + prefix + path)
+    return cache[path]
+
+def body(uid):
+    x = units[uid]
+    lines = source(x['source']).decode().splitlines(keepends=True)
+    text = ''.join(lines[x['line'] - 1:x['end']])
+    if digest(text.encode()) != x['sha256']:
+        raise ValueError('源片段与摘要不一致: ' + uid)
+    return text
+
+def show(uid):
+    if uid not in units:
+        raise ValueError('没有该单元: ' + uid)
+    x = units[uid]
+    print(json.dumps(x, ensure_ascii=False, indent=2))
+    print(body(uid), end='')
+
+def render(path):
+    docs = [d for d in config['docs'] if d['path'] == path]
+    if len(docs) != 1:
+        raise ValueError('没有该目标: ' + path)
+    d = docs[0]
+    if d['fixed']:
+        return source(path).decode()
+    out = '# ' + path + '\n\n' + d['type'] + ' / ' + d['stage'] + '\n\n' + d['why'] + '\n\n'
+    out += '这是重组预览：每块的节号、相对链接与实测声明按其注明的冻结源上下文解释，不能冒充新版本实测。\n\n'
+    for g in d['groups']:
+        out += '## ' + g['name'] + '\n\n' + g['rule'] + '\n\n'
+        for uid in g['ids']:
+            x = units[uid]
+            out += '\n来源单元 ' + uid + '；' + base + '；' + x['source'] + '；L' + str(x['line']) + '\n\n'
+            out += body(uid) + '\n'
+    return out
+
+def inventory_rows(text):
+    rows, path = [], None
+    for line in text.splitlines():
+        m = re.match(r'^## \d+\. `([^`]+)`', line)
+        if m:
+            path = m[1]
+        m = re.match(r'^\| (\d+) \| (#{1,4}) \| (.*) \|$', line)
+        if m and path:
+            rows.append((path, int(m[1]), len(m[2]), m[3].replace('\\|', '|')))
+    return rows
+
+def decision_rows(path, text):
+    rid = path.split('/')[-2]
+    rows = []
+    for n, line in enumerate(text.splitlines(), 1):
+        m = re.match(r'^\| `R(\d+)` \|', line) or re.match(r'^## R(\d+)\b', line)
+        if m:
+            rows.append(('round:' + rid + ':R' + m[1], n, line))
+    return rows
+
+def verify():
+    inventory_path = prefix + 'rounds/dev-plan-refact/inventory.md'
+    raw = git('show', base + ':' + inventory_path)
+    assert digest(raw) == config['inventory_sha256']
+    assert pathlib.Path(inventory_path).read_bytes() == raw
+    rows = inventory_rows(raw.decode())
+    assert len(rows) == len(units) == len(config['units']) == 260
+    # Reuse the shared enumerator, including both fence styles; do not invent a new counting rule.
+    module_path = prefix + 'rounds/dev-plan-refact/make-inventory.py'
+    assert pathlib.Path(module_path).read_bytes() == git('show', base + ':' + module_path)
+    spec = importlib.util.spec_from_file_location('shared_inventory', module_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    reconstructed_rows = []
+    for path, info in config['sources'].items():
+        frozen = source(path)
+        assert digest(frozen) == info['sha256']
+        assert pathlib.Path(prefix + path).read_bytes() == frozen
+        assert git('show', ':' + prefix + path) == frozen
+        assert frozen == git('show', 'd121739e:' + prefix + path)
+        actual = module.sections(frozen.decode())
+        reconstructed_rows.extend((path, line, level, title) for line, level, title in actual)
+        us = sorted((x for x in units.values() if x['source'] == path), key=lambda x: x['line'])
+        assert len(actual) == info['sections'] == len(us)
+        assert [(x['line'], x['title']) for x in us] == [(line, title) for line, _, title in actual]
+        assert ''.join(body(x['id']) for x in us).encode() == frozen
+        assert len(frozen.splitlines()) == info['lines']
+    assert reconstructed_rows == rows
+    placed = []
+    for d in config['docs']:
+        assert d['why'] and d['type'] and d['stage']
+        result = render(d['path'])
+        assert result
+        for g in d['groups']:
+            assert g['rule'] and g['ids']
+            for uid in g['ids']:
+                x = units[uid]
+                assert (x['target'], x['group'], x['stage']) == (d['path'], g['name'], g['stage'])
+                assert body(uid) in result
+                placed.append(uid)
+        if d['fixed']:
+            assert result.encode() == source(d['path'])
+    assert len(placed) == len(set(placed)) == 260
+    table = s.split('## 八、260 节安置表', 1)[1].split('## 九、复现清单', 1)[0]
+    table_rows = re.findall(r'^\| (I\d+-\d+) \| (.*?) \| (.*?) \| (.*?) \| (.*?) \|$', table, re.M)
+    assert len(table_rows) == 260 and {x[0] for x in table_rows} == set(units)
+    for uid, src, title, stage, dest in table_rows:
+        x = units[uid]
+        assert src == x['source'] + ' L' + str(x['line'])
+        assert title == x['title'].replace('|', '&#124;').replace('`', '')
+        assert stage == x['stage'] and dest == x['target'] + ' / ' + x['group']
+    for path, sha in config['protected'].items():
+        assert digest(pathlib.Path(path).read_bytes()) == sha
+        assert digest(git('show', base + ':' + path)) == sha
+    old, current, ids = 0, 0, []
+    for path, sha in config['rulings'].items():
+        b = git('show', base + ':' + path)
+        assert digest(b) == sha
+        found = decision_rows(path, b.decode())
+        ids.extend(x[0] for x in found)
+        if path.split('/')[-2] in {'refact-fable', 'runtime', 'runtime-refact'}:
+            old += len(found)
+        else:
+            current += len(found)
+    current_ids = [i for i in ids if i.startswith('round:dev-plan-refact:')]
+    assert old == 26 and len(ids) == len(set(ids))
+    assert current == config['current_ruling_count']
+    assert current_ids == config['current_ruling_ids']
+    print('PASS: 共同 inventory 260 节；9 源 5320 行逐字节重建；260 唯一落点；14 份预览实际含正文；4 份原位全文相同；原始需求目录保护。')
+    print('决定索引：旧三轮', old, '条；其它', current, '条；全局 ID 无冲突。语义正确性和历史实验真实性不由本工具判定。')
+
+def decisions(query):
+    all_docs = {}
+    for path, sha in config['rulings'].items():
+        b = git('show', base + ':' + path)
+        assert digest(b) == sha
+        all_docs[path] = b.decode()
+    keys = {key for path, text in all_docs.items() for key, _, _ in decision_rows(path, text)}
+    count = 0
+    for path, text in all_docs.items():
+        rows = decision_rows(path, text)
+        if query in keys:
+            hit = any(key == query for key, _, _ in rows)
+        else:
+            hit = query.casefold() in text.casefold()
+        if not hit:
+            continue
+        count += 1
+        print('SOURCE', base, path)
+        for key, line, title in rows:
+            print(key, 'L' + str(line), title)
+        print('CONTEXT：以下全文包含表外更正；是否现行有效须按对象、范围和确认判断。')
+        print(text)
+    if not count:
+        print('NO_MATCH：此冻结索引无命中，不代表从未决定。')
+        return 1
+    return 0
+
+if len(sys.argv) == 2 and sys.argv[1] == 'verify':
+    verify()
+elif len(sys.argv) == 3 and sys.argv[1] == 'show':
+    show(sys.argv[2])
+elif len(sys.argv) == 3 and sys.argv[1] == 'render':
+    print(render(sys.argv[2]), end='')
+elif len(sys.argv) == 3 and sys.argv[1] == 'decisions':
+    raise SystemExit(decisions(sys.argv[2]))
+else:
+    raise SystemExit('用法: verify | show I02-097 | render 目标路径 | decisions 关键词或全局ID')
+```
+<!-- END RUNNER -->
