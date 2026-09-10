@@ -17,7 +17,7 @@
 > 不一致**不要合并主线**（见第三节），改去读主线那份就行。
 >
 > ⚠ **所有者视角**：派发那句话不要手打，从模板取——
-> `protocol/paste/`（模板，可手填）／`round-dispatch.py --paste [家名] [--stale]`（自动填）。
+> `protocol/dispatch.md` 第一节（原文，可手填）／`round-dispatch.py --paste [家名] [--stale]`（自动填）。
 > 理由见 `rounds/dev-plan-refact/findings.md` **F-17**：靠人记得写对绝对路径，正是那次停摆的根因。
 >
 > ⚠ **2026-09-08，② 进行中改过一次**：第二节的判定命令由「绝对路径」改为「子壳 `( cd … && … )`」。
