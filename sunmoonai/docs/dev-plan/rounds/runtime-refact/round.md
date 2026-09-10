@@ -5,7 +5,7 @@
 
 ```toml
 round_id   = "runtime-refact"
-status     = "ACTIVE"                # H-1 / H-2 已裁，见 rulings.md
+status     = "DONE"                  # ⑦ 已发布：runtime-refact/published，定稿 sha256[:16] 6b8f202d3c43eeb7
 tier       = "T2"                    # 权威层 + 已知对立 + 不可逆（两份源稿随后删除）
 final_path = "sunmoonai/docs/dev-plan/agent-dev-guide.md"
 round_dir  = "sunmoonai/docs/dev-plan/rounds/runtime-refact"
@@ -14,7 +14,8 @@ baseline   = "ed0b5136"              # 只读输入按这个 commit 取
 proposers  = ["luna", "kimi", "cursor", "qwen"]   # R3：fable 于 ① 期间退赛，N 5→4
 arbiter        = "opus"              # R1：所有者 2026-09-06 裁定
 arbiter_branch = "runtime-refact/arbiter"
-acceptor       = ""                  # ③ 之后由处置表算出，不得事后更换
+acceptor       = "kimi"              # ③ 处置表算出：排除 opus(裁决)、luna(基座)，余下取「接受+部分接受」最少者
+                                     # cursor 8 / qwen 4 / kimi 3 → kimi。计算过程见 disposition.md 三。不得事后更换，不得事后更换
 anchor_roots      = ["~/repo/codex", "~/repo/deepseek-harness", "~/repo/openclaw", "~/master/investment-app", "."]
 frozen_sections   = []               # 本轮无基座；冻结的是任务书 §8，不是最终稿的某一节
 mechanical_absent = [

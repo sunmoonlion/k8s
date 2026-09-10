@@ -156,9 +156,14 @@ Pilot run 用 `owner_actor_id + idempotency_key`。
 | `CancelRunCommand` | 领域命令已定义，无对应 HTTP 端点 |
 | `first_m1_graph` | 非生产图，仅 tests 与 `scripts/agent_golden.py` |
 | 两个 spike | `execution_identity_spike` / `runtime_selection_spike`，不在生产链 |
-| 失败原因码分流 | 库内已能区分 `dispatch_failed` 与 `resume_dispatch_failed`，但**消费侧无按码分流的重试逻辑** |
-| **`resume_token` 一次性消费** | **未实现**。`resume_run` 只做相等比较后就 dispatch，**不清除、不原子占用**——同一个 token 可重复提交，产生多次 dispatch |
-| 共享 Outbox | 迁移与仓库类在，零业务调用 |
+
+### Agent 可靠性代码更新（2026-09-11，待部署）
+
+Agent 创建、恢复、事实/UI 事件和通知已接入事务 Outbox；恢复令牌原子消费，重试复用已落库命令。Worker 通过 PostgreSQL 租约与 epoch 校验写入，结果和 Inbox 回执一起提交，Scheduler 每 5 秒执行 Agent 投递与对账，配套死信与重放。
+
+Phase-0 与 Pilot 均经会话级 AgentExecutorPort 执行；接受的状态保存在 PostgreSQL，每次执行有独立 checkpoint 空间。远程副作用提供意图/未知结果/回执与对账入口；具体 provider 仍须实现目标端 fencing 与幂等，当前测试不能替代真实 provider 集成验收。
+
+代码与故障测试见 investment-backend 的 `docs/agent-reliability-luna.md`、`app/tests/test_agent_reliability_db.py`。这次是源码实现与隔离数据库验证，部署时须停止旧 worker、处理旧在途任务并执行新增迁移；不表示业务环境已经启用。
 
 ## 8. 验证
 

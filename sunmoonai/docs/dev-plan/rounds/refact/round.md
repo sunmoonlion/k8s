@@ -46,7 +46,7 @@ git show eb60ff1c:sunmoonai/docs/dev-plan/refact-task.md
 ```
 
 验收标准是该文 §12 的 11 条，**已冻结**。这一轮的产出经后续几轮吸收，现在的落点是
-[`../../agent-dev-refact.md`](../../agent-dev-refact.md)。
+[`../../agent-dev-refact.md`](../../archive/agent-dev-refact.md)。
 
 ## 角色
 

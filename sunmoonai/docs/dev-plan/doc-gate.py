@@ -36,6 +36,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -56,13 +57,48 @@ GATED = ("sunmoonai/docs/",)
 # 去卡它，只会逼作者绕过门禁。巡检（--survey）仍然覆盖它。
 EXEMPT = ("sunmoonai/docs/dev-plan/codex-reference/",)
 
+# ⚠ 2026-09-08 新增：按**路径片段**豁免，而不是按前缀。
+# 只豁免轮次候选的**归档副本**（`rounds/<轮次>/candidates/**`）。
+#
+# 为什么必须豁免：归档副本的唯一价值是**与该家分支上的 commit 逐字节一致**——
+# sha256 对得上，才能证明「裁决方读的和参赛方交的是同一份」。而候选写作时的相对链接
+# 是按它**活着时**的位置（`dev-plan/<产物>.md`）写的，归档到轮目录后深两层，链接失效。
+# 改链接 → 副本不再逐字节一致，README/MANIFEST 的 sha256 变成谎话；豁免 → 副本原样保留。
+# 取后者，与 anchor-gate 对 `rounds/**` 的处理同源：冻结物不可改，
+# 「让门禁对它永久报红只会让人不再看门禁」。
+#
+# ⚠⚠ **不要把整个 `rounds/` 加进来。**2026-09-08 起草者试过，一下豁免 94 份，
+# 把轮目录里**活着的**任务书、通知、裁定、发现登记也放过了——那些的坏链正是
+# doc-gate 一直在 catch 的。豁免的是归档副本，不是轮目录。
+#
+# ⚠ 候选**活着时**在 `dev-plan/` 根下，照常受全部 L1/L2/L3 检查——
+# 那才是链接必须成立的时刻。
+EXEMPT_MARKERS = ("/candidates/",)
+
+
+def exempt(path: str) -> bool:
+    return path.startswith(EXEMPT) or any(m in path for m in EXEMPT_MARKERS)
+
+
+# archive/ 曾在此豁免。2026-09-07 该目录已整个撤销：两份逐字节副本经 diff 证明
+# 相对根下同名活文档零独有内容（仅多一行失效链接）故删除，两份 lifecycle 移至
+# dev-plan/ 根下加降级页眉、由 dev-plan-refact 轮定落点。豁免随之取消。
+
 # 声明「自足」的文档：§N 引用必须指向**本文件内**的标题。
 # 其他文档（裁决书、整合记录、评审）引用的是别的文档的章节，不适用本项。
 SELF_CONTAINED = (
-    "sunmoonai/docs/dev-plan/working/development-lifecycle-agent.md",
-    "sunmoonai/docs/dev-plan/working/development-lifecycle-human.md",
     "sunmoonai/docs/dev-plan/working/request-lifecycle.md",
+    # 2026-09-09 加入：所有者问「为何不把 GO.md 和 round-protocol.md 合并」。
+    # 查实 GO.md §四 四条规范内容在协议里各有一份，而**没有任何东西保证两份一致**
+    # ——正是 §0.0 第 3 条骂的「第二份说明书」。合并不是修法（见 GO.md §四抬头），
+    # 修法是让它降为**被核对的引用**：四条各注出处 §，本门验那个 § 真的存在。
+    "sunmoonai/docs/dev-plan/protocol/GO.md",
 )
+# 两份 development-lifecycle-*.md 曾在此名单内，2026-09-07 移出：它们已被
+# agent-dev-guide.md 取代、降为历史档案，「自足」是对现行权威文档的要求。
+# 移出时它们各带 1–2 处跨文档 §N 引用（如 §9.3 实指 round-protocol.md），
+# 这些是本门从未检查过的存量——它们此前一直落在 archive/ 豁免里。
+# **不在此处改写历史稿正文**，由 dev-plan-refact 轮定落点时一并处理。
 
 USAGE = "用法: doc-gate.py <文件>... | --all | --survey | --selfcheck"
 
@@ -88,7 +124,13 @@ def git(*args: str) -> str:
 
 def tracked_paths() -> set[str]:
     """git 索引里的全部路径。判定基准是索引，不是文件系统。"""
-    return set(git("ls-files").splitlines())
+    # **必须用 -z**：`git ls-files` 默认开 core.quotepath，非 ASCII 文件名会被输出成
+    # 带引号的八进制转义（"…call-\342\221\241.md"），于是索引集合里那个字符串
+    # 永远匹配不上真实路径。后果是**任何文件名含非 ASCII 的文件在本门眼里都不存在**，
+    # 指向它的链接一律被判死链。2026-09-07 实测：qwen 的评审稿链接 `../call-②.md`
+    # 被拦，而该文件确在索引里（`git ls-files --error-unmatch` 为真）。
+    # 这道门此前一直「正常」，只是因为在此之前没有文档链接过这类文件名。
+    return set(git("ls-files", "-z").split("\0")) - {""}
 
 
 def exists_in_index(norm: str, tracked: set[str]) -> bool:
@@ -155,8 +197,13 @@ def check_section_refs(
     链接检查器抓不到。因此这里按「同一行点到哪份文档，就查哪份」解析。
     """
     own = headings_of(text)
-    if not own:
-        return []
+    # ⚠ **不要在这里因为 own 为空就早退。**2026-09-09 实测：`GO.md` 的标题是
+    # 「一、二、三」而非阿拉伯数字，`HEADING_RE` 认不出 → `own` 为空 → 整个函数
+    # 当场返回，把它对 `round-protocol.md` 的 §N 引用一条都不查，而门照报「通过」。
+    # 把 §17 改成不存在的 §99，`--all` 仍然 226 份全过——**检查是摆设**。
+    # 跨文档引用恰恰是本函数注释里点名「最容易悄悄失效」的那一类，
+    # 而「本文件自己没有编号标题」与「不必检查它引用别人」毫无关系。
+    # 后面已有 `if not valid: continue` 兜底：确实无处可对照时才跳过那一条引用。
     base = PurePosixPath(path).parent
     problems = []
     lines = text.splitlines()
@@ -242,7 +289,34 @@ def main(argv: list[str]) -> int:
         )
         return 1
 
+    # **必须在仓根跑。**`git ls-files` 在子目录下只列该子目录的文件，且路径相对子目录，
+    # 于是 `p.startswith(DOC_ROOT)` 全不命中，脚本会安静地报「0 份文档通过」——
+    # 分不出「真的没有文档」和「站错了地方」。零命中必须能区分这两者，故在此拦住。
+    top = git("rev-parse", "--show-toplevel").strip()
+    here = os.path.realpath(os.curdir)
+    if here != os.path.realpath(top):
+        print(
+            f"doc-gate: 必须在仓根运行。当前 {here}\n"
+            f"          请改为：cd {top} && python3 {os.path.relpath(__file__, top)} ...",
+            file=sys.stderr,
+        )
+        return 2
+
     tracked = tracked_paths()
+
+    # SELF_CONTAINED 是按路径写死的名单。文档一旦改名或移动，名单就静默失去作用，
+    # 门照样报「通过」——和 archive/ 静默跳过、quotepath 静默跳过是同一类病。
+    # 名单里的路径必须在索引中真实存在，否则拒绝运行。
+    missing = [p for p in SELF_CONTAINED if p not in tracked]
+    if missing:
+        print(
+            "doc-gate: SELF_CONTAINED 名单已失效，以下路径不在 git 索引中：\n"
+            + "".join(f"    {m}\n" for m in missing)
+            + "          文档被移动或改名后须同步本名单，否则「自足」一项静默不再检查。",
+            file=sys.stderr,
+        )
+        return 2
+
     survey = argv[0] == "--survey"
     if argv[0] == "--staged":
         # hook 用：自己算本次提交暂存的文档。即使一份文档都没动，也仍要跑主线不变量,
@@ -259,8 +333,14 @@ def main(argv: list[str]) -> int:
         targets = [
             p
             for p in sorted(tracked)
-            if p.startswith(GATED) and not p.startswith(EXEMPT) and p.endswith(".md")
+            if p.startswith(GATED) and not exempt(p) and p.endswith(".md")
         ]
+        # **豁免必须可见。**只报「N 份通过」而不报「另有 M 份被豁免」，
+        # 读者无从知道门的覆盖范围，那是「覆盖不全比没有更危险」的形态。
+        exempted = [p for p in sorted(tracked)
+                    if p.startswith(GATED) and exempt(p) and p.endswith(".md")]
+        if exempted:
+            print(f"（另有 {len(exempted)} 份在豁免内，未检查：{EXEMPT} + 片段 {EXEMPT_MARKERS}）")
     elif argv[0] == "--none":
         targets = []
     else:
@@ -268,15 +348,24 @@ def main(argv: list[str]) -> int:
         targets = [
             p
             for p in argv
-            if p.endswith(".md") and p.startswith(GATED) and not p.startswith(EXEMPT)
+            if p.endswith(".md") and p.startswith(GATED) and not exempt(p)
         ]
 
     problems: list[str] = []
     heading_cache: dict[str, set[str]] = {}
     checked = 0
+    skipped: list[str] = []
     for path in targets:
         text = blob(path)
         if text is None:
+            # **不能静默跳过。**`blob()` 读的是 git 索引，一份还没 `git add` 的新文档
+            # 在这里返回 None；原来直接 continue，`checked` 停在 0，末尾照样打印
+            # 「0 份文档通过」并退出 0 —— **假通过**，而且方向正是本文件开头警告的那个
+            # （「这次的方向是假失败（安全侧），但同一个毛病换个方向就是假通过」）。
+            # 2026-09-09 实测：手动过一份新写的 call-④.md，门报「通过」，一个字没看。
+            # 钩子那条路（--staged）不受影响，暂存的文件必在索引里；受影响的是
+            # **提交前手动过门**，而那恰恰是新文档第一次被检查的时机。
+            skipped.append(path)
             continue
         checked += 1
         problems += check_links(path, text, tracked)
@@ -299,6 +388,16 @@ def main(argv: list[str]) -> int:
             file=sys.stderr,
         )
         return 1
+
+    if skipped:
+        print(
+            f"doc-gate: {len(skipped)} 份指定的文档不在 git 索引中，**一个字都没检查**：\n"
+            + "".join(f"    {p}\n" for p in skipped)
+            + "          判定基准是索引，不是工作区。先 `git add` 再过门。\n"
+            + f"          （另有 {checked} 份已检查并通过）",
+            file=sys.stderr,
+        )
+        return 2
 
     print(f"doc-gate: {checked} 份文档通过")
     return 0

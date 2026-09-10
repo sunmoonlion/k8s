@@ -95,7 +95,7 @@ project-guide/
 
 ## 写作约定
 
-见 [`../dev-plan/working/development-lifecycle-human.md`](../dev-plan/working/development-lifecycle-human.md) §6（改判三要素）与 §10.3（共同纪律）。
+见 [`../dev-plan/development-lifecycle-human.md`](../dev-plan/archive/development-lifecycle-human.md) §6（改判三要素）与 §10.3（共同纪律）。
 本处不复述——引用而非复制，是那份文件自己的第二条维护约定。
 
 ## 本轮的已知缺口（读之前先知道）
