@@ -18,7 +18,7 @@ final_path = [                  # 两份都要交，缺一份即未交
 ]
 baseline   = "718c7f36"         # 重开后的主线
 
-principal      = "owner"        # 所有者，见 agents.toml [owner]；本轮文书由 opus 代写（R2）
+principal      = "owner"        # 所有者（人，不参赛），见 protocol/README.md「所有者的确认」；本轮文书由 opus 代写（R2）
 proposers      = ["opus", "luna", "kimi", "cursor", "qwen"]
 arbiter        = "cursor"       # R6：所有者把裁决权全权委托给 cursor
 arbiter_branch = "dev-plan-refact/cursor"

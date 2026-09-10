@@ -8,7 +8,7 @@
 > 「以所有者 commit 为生效时刻」的表述**从未被执行过一次**。
 >
 > 自 2026-09-09 起按 §8c.2 已有的机制区分（git 本来就分 author 与 committer）：
-> **author 等于 `agents.toml` `[owner].git_identity` 的提交，才是所有者的确认**；
+> **author 等于所有者 git 身份（见 `protocol/README.md`「所有者的确认」）的提交，才是所有者的确认**；
 > 代写方提交一律带 `--author="opus <opus@agents.local>"`。
 > ⚠ **此日期之前的提交无法追认，不得据此反推历史确认。**
 

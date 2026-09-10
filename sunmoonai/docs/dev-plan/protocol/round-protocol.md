@@ -546,8 +546,8 @@ git worktree remove ~/review/<分支名>           # 用完删；分支与提交
 
 ## 8b. 脚本怎么调
 
-`round-status.py` 在 `sunmoonai/docs/dev-plan/protocol/` 下（与本文同一目录，目录说明见该处 `README.md`）；
-执行者与所有者登记在同目录的 `agents.toml`（不含凭据）。在仓内任一 worktree 的任意目录跑都可以，路径由脚本自己解析。
+`round-status.py` 在 `sunmoonai/docs/dev-plan/protocol/` 下（与本文同一目录，目录说明见该处 `README.md`）。
+在仓内任一 worktree 的任意目录跑都可以，路径由脚本自己解析。
 
 | 命令 | 作用 |
 | --- | --- |
