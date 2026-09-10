@@ -1,6 +1,6 @@
 # `protocol/` —— 流程规范
 
-这里放流程规范（`round-protocol.md`、`GO.md`），以及执行规范用的两个脚本。脚本跟着规范改；两边对不上时以规范为准。
+这里放流程规范（`round-protocol.md`、`GO.md`），以及执行规范用的脚本 `round-status.py`。脚本跟着规范改；两边对不上时以规范为准。
 
 目录名 `protocol/` 与 `../rounds/` 只差一个字母：`rounds/` 放每一轮的产物，这里放流程本身。
 
@@ -11,7 +11,6 @@
 | `GO.md` | agent 每个环节的入口：你是谁 → 哪个环节 → 读通知 → 四条禁令 → 卡住怎么办 → 交卷 |
 | `round-protocol.md` | 规范：一轮怎么走，谁能做什么 |
 | `round-status.py` | 从 git 提交推出当前环节、本环节通知在哪、组织者是谁；判定前先查本轮的角色配置；`--verify` 判 ⑤ 里能机器判的部分 |
-| `round-review.py` | 开 / 关检视面：把各家产物挂成 `~/review/` 下的只读 worktree |
 
 调用方式和退出码写在 `round-protocol.md` 的「8b. 脚本怎么调」。改了脚本参数，必须同步改那一节。
 

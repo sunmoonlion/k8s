@@ -544,6 +544,12 @@ def verify(cfg: dict) -> int:
     code, log = git("log", "--format=%h %s", f"master..{arb}", "--", final_path)
     commits = [l.split(" ", 1) for l in log.splitlines()] if code == 0 else []
     dtext = git("show", f"{arb}:{disp}")[1]
+    # ④b 的异议处置记录也是处置记录（协议 §12「连同异议原文写进处置记录」）。
+    # 2026-09-10 dev-plan-refact 实测：④b 的 4 个改稿提交登记在 disposition-objections.md，
+    # 这一项只读 disposition.md，把它们报成未登记（findings.md F-25 第 2 条）。
+    hit_o = locate(cfg, cfg.get("round_id", ""), "disposition-objections")
+    if hit_o:
+        dtext += "\n" + git("show", f"{hit_o[1]}:{hit_o[0]}")[1]
     unlogged = [f"{h} {t[:28]}" for h, t in commits if h not in dtext]
     if cfg.get("status") != "ACTIVE":
         # ⑦ 发布后 `master..<裁决方>` 不再是「本轮新增的提交」：裁决稿已并入主线，

@@ -308,6 +308,7 @@ constraints        ≈ 开发纪律
 cd ~/master/k8s
 python3 sunmoonai/docs/dev-plan/protocol/round-status.py          # ① 逐家逐份
 python3 sunmoonai/docs/dev-plan/protocol/round-review.py dev-plan-refact   # 所有者开检视面
+# ⚠ 2026-09-10 本轮结束后已删除 round-review.py：本轮产物都归档在 rounds/dev-plan-refact/ 下，直接在主线读（本行只加注，原文未改）
 ```
 
 ⚠ `round-status.py` 对两条最终路径取 **all()** 而非 any()——**只交其中一份判为未交**。
