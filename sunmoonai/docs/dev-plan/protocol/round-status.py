@@ -20,7 +20,7 @@
     1  `--verify` 有失败项（标「人判」的不计入）
     2  用法错误：找不到指定轮次、没有 ACTIVE 轮次、有多个 ACTIVE、round.md 缺字段
 
-同目录的配套：`round-dispatch.py`（只生成环节通知，不执行）、`agents.toml`（五家登记）、
+同目录的配套：`agents.toml`（执行者与所有者登记）、
 `README.md`（协议条文与本目录文件的对应表）。
 
 调用方式同时写在 `round-protocol.md`「两个脚本怎么调」一节——

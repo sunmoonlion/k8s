@@ -544,36 +544,37 @@ git worktree remove ~/review/<分支名>           # 用完删；分支与提交
 哪些情形下候选**不进入最终整合的主干**（仍可被摘取局部），必须在判据里事先写明，
 不得在裁决时临时宣布。
 
-## 8b. 两个脚本怎么调
+## 8b. 脚本怎么调
 
-都在 `sunmoonai/docs/dev-plan/protocol/` 下（与本文同一目录）（目录说明见该处 `README.md`）：`round-status.py`（算环节）、
-`round-dispatch.py`（打印所有者要贴进各家窗口的话，**只打印不发送**）、`agents.toml`（执行者与所有者登记，不含凭据）。
-在仓内任一 worktree 的任意目录跑都可以，路径由脚本自己解析。
+`round-status.py` 在 `sunmoonai/docs/dev-plan/protocol/` 下（与本文同一目录，目录说明见该处 `README.md`）；
+执行者与所有者登记在同目录的 `agents.toml`（不含凭据）。在仓内任一 worktree 的任意目录跑都可以，路径由脚本自己解析。
 
 | 命令 | 作用 |
 | --- | --- |
-| `protocol/round-status.py` | 自动找唯一 `status=ACTIVE` 的轮次，算当前环节 |
+| `protocol/round-status.py` | 自动找唯一 `status=ACTIVE` 的轮次，算当前环节、本环节通知在哪、组织者是谁 |
 | `protocol/round-status.py --round runtime` | 指定轮次；值是 `rounds/` 下的目录名 |
 | `protocol/round-status.py --json` | 机器可读输出，含 `current` 与 `conflict` |
 | `protocol/round-status.py --round runtime --verify` | 机械验收：把 ⑤ 里机器能判的判掉，判不了的标「人判」 |
-| `protocol/round-dispatch.py` | 当前环节缺谁，打印要贴给谁的那段话 |
-| `protocol/round-dispatch.py cursor` | 只打印给指名的一家；不是登记的执行者**报错退 2** |
-| `protocol/round-dispatch.py --stage 4` | 按指定环节算缺谁，接 `4` 或 `④`；指不到的环节**报错退 2**，不静默退回当前环节 |
-| `protocol/round-dispatch.py --all` | 不管缺不缺，给全部参与方 |
 
-**`--stage` 只有 `round-dispatch.py` 有。**`round-status.py` 没有这个参数——
-它的职责是**算出**在第几环，接受一个「指定环节」等于把结论交回给调用者。
+`round-status.py` 不接受「指定环节」参数：它的职责是**算出**在第几环，接受指定等于把结论交回给调用者。
+
+**投喂不用脚本。**五家收到的话一字不差，所有者在各家窗口说这一句即可：
+
+```text
+看一下 ~/master/k8s/sunmoonai/docs/dev-plan/GO.md，照做。
+```
+
+路径必须是主线的绝对路径，否则对方会读到自己 worktree 里的旧副本。
 
 ### 退出码
 
-| 码 | `round-status.py` | `round-dispatch.py` |
-| --- | --- | --- |
-| 0 | 正常；`--verify` 时表示机械判定零失败 | 正常打印（或本环节没有要贴的对象） |
-| 1 | `--verify` 有失败项（标「人判」的不计入） | —— |
-| 2 | 用法错误：找不到该轮次、没有 ACTIVE、有多个 ACTIVE、`round.md` 缺字段 | 拒绝：轮次不是 ACTIVE、家名不是登记的执行者、环节不存在，或 `round-status.py` 判定失败 |
+| 码 | `round-status.py` |
+| --- | --- |
+| 0 | 正常；`--verify` 时表示机械判定零失败 |
+| 1 | `--verify` 有失败项（标「人判」的不计入） |
+| 2 | 用法错误：找不到该轮次、没有 ACTIVE、有多个 ACTIVE、`round.md` 缺字段；或 ACTIVE 轮的角色配置不一致 |
 
-**拒绝要有区别于成功的退出码。**`round-dispatch.py` 早先对已完结轮次打印一行说明后
-退 0，调用方看不出自己被拒了。
+**拒绝要有区别于成功的退出码**，否则调用方看不出自己被拒了。
 
 ### 声明与计算对不上时
 
