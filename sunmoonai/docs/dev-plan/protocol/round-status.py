@@ -381,7 +381,13 @@ def stage_table(cfg: dict, name: str) -> list[dict]:
                 and blob_lines(r, fp) != blob_lines("master", fp)
                 for r in refs)
             for fp in final_paths)
-        rows[w] = live or locate(cfg, name, "candidate", w) is not None
+        # 多交付物轮次按目录归档：<round_dir>/candidates/<家>/<最终路径的文件名>（dev-plan-refact 起）。
+        # ⚠ 发布之后只能靠归档判：定稿写进主线后，裁决方分支上的同名文件与主线行数相同，
+        #    上面「与主线不同」的判法会把它判成没交；各家分支重置到发布点后五家都会这样
+        #    （2026-09-10 发布提交 d8caf018 后实测，见 findings.md F-26）。归档在主线上。
+        archived = all(committed("master", f"{cfg['round_dir']}/candidates/{w}/{fp.rsplit('/', 1)[-1]}")
+                       for fp in final_paths)
+        rows[w] = live or archived or locate(cfg, name, "candidate", w) is not None
     add("① 提案", proposers, rows)
 
     # ② 互评
