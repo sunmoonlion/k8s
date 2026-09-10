@@ -547,7 +547,7 @@ git worktree remove ~/review/<分支名>           # 用完删；分支与提交
 ## 8b. 两个脚本怎么调
 
 都在 `sunmoonai/docs/dev-plan/protocol/` 下（与本文同一目录）（目录说明见该处 `README.md`）：`round-status.py`（算环节）、
-`round-dispatch.py`（生成环节通知，**只生成不执行**）、`agents.toml`（五家登记，不含凭据）。
+`round-dispatch.py`（打印所有者要贴进各家窗口的话，**只打印不发送**）、`agents.toml`（执行者与所有者登记，不含凭据）。
 在仓内任一 worktree 的任意目录跑都可以，路径由脚本自己解析。
 
 | 命令 | 作用 |
@@ -556,8 +556,9 @@ git worktree remove ~/review/<分支名>           # 用完删；分支与提交
 | `protocol/round-status.py --round runtime` | 指定轮次；值是 `rounds/` 下的目录名 |
 | `protocol/round-status.py --json` | 机器可读输出，含 `current` 与 `conflict` |
 | `protocol/round-status.py --round runtime --verify` | 机械验收：把 ⑤ 里机器能判的判掉，判不了的标「人判」 |
-| `protocol/round-dispatch.py` | 当前环节缺谁，打印给谁的命令 |
-| `protocol/round-dispatch.py --stage 4` | 指定环节，接 `4` 或 `④`；指不到的环节**报错退 2**，不静默退回当前环节。通知路径按**实际存在的那个**报，不硬编码拼法 |
+| `protocol/round-dispatch.py` | 当前环节缺谁，打印要贴给谁的那段话 |
+| `protocol/round-dispatch.py cursor` | 只打印给指名的一家；不是登记的执行者**报错退 2** |
+| `protocol/round-dispatch.py --stage 4` | 按指定环节算缺谁，接 `4` 或 `④`；指不到的环节**报错退 2**，不静默退回当前环节 |
 | `protocol/round-dispatch.py --all` | 不管缺不缺，给全部参与方 |
 
 **`--stage` 只有 `round-dispatch.py` 有。**`round-status.py` 没有这个参数——
@@ -567,9 +568,9 @@ git worktree remove ~/review/<分支名>           # 用完删；分支与提交
 
 | 码 | `round-status.py` | `round-dispatch.py` |
 | --- | --- | --- |
-| 0 | 正常；`--verify` 时表示机械判定零失败 | 正常输出了命令 |
+| 0 | 正常；`--verify` 时表示机械判定零失败 | 正常打印（或本环节没有要贴的对象） |
 | 1 | `--verify` 有失败项（标「人判」的不计入） | —— |
-| 2 | 用法错误：找不到该轮次、没有 ACTIVE、有多个 ACTIVE、`round.md` 缺字段 | 拒绝分发：轮次不是 ACTIVE，或 `round-status.py` 判定失败 |
+| 2 | 用法错误：找不到该轮次、没有 ACTIVE、有多个 ACTIVE、`round.md` 缺字段 | 拒绝：轮次不是 ACTIVE、家名不是登记的执行者、环节不存在，或 `round-status.py` 判定失败 |
 
 **拒绝要有区别于成功的退出码。**`round-dispatch.py` 早先对已完结轮次打印一行说明后
 退 0，调用方看不出自己被拒了。

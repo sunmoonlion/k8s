@@ -1,28 +1,21 @@
 #!/usr/bin/env python3
-"""分发：算出「现在该叫谁、说什么」，输出可直接执行的命令。
+"""投喂：打印所有者要贴进各家窗口的那段话。只打印，不发送。
 
-**当前只生成，不执行。**这是 `rounds/dev-plan-refact/inputs/automation-roadmap.md` 第 3 步：
-先让人粘贴一轮，验证「判定」与「措辞」都对，再上真调用（第 4 步）。
-理由写在 `round-protocol.md`「判据自身的质量」：一个检查第一次运行时，
-最可能发现的是它自己判错了——分发脚本同理，而它判错的代价是四家同时干错的环节。
-
-状态不自己算，一律调 `round-status.py --json` 取——**单一真源**。
-调用方式不硬编码，从 `agents.toml` 读。
+状态不自己算，一律调 `round-status.py --json` 取。家名对照 `agents.toml` 校验。
 
 用法：
-    round-dispatch.py                 # 当前环节缺谁，给谁的命令
-    round-dispatch.py --round runtime # 指定轮次（与 round-status.py 同名同义）
-    round-dispatch.py --all           # 不管缺不缺，给全部参与方的命令
-    round-dispatch.py --stage 4       # 指定环节，接 4 或 ④（覆盖自动判定）
-    round-dispatch.py --paste         # 交互会话贴的话：当前环节还缺的家
-    round-dispatch.py --paste cursor  # 指名一家（不检查它缺不缺）
+    round-dispatch.py                  # 当前环节还缺谁，就打印给谁的
+    round-dispatch.py cursor           # 只打印给这一家（不检查它缺不缺）
+    round-dispatch.py --all            # 给全部参赛方
+    round-dispatch.py --stage 4        # 按指定环节算缺谁，接 4 或 ④
+    round-dispatch.py --round runtime  # 指定轮次（与 round-status.py 同名同义）
 
 退出码：
-    0  正常输出了命令
-    2  拒绝分发：轮次不是 ACTIVE，或 round-status.py 判定失败
+    0  正常打印（或本环节没有要贴的对象）
+    2  拒绝：轮次不是 ACTIVE、家名不是登记的执行者、指定的环节不存在，或 round-status.py 判定失败
 
-`--stage` 只在本脚本有；`round-status.py` 没有这个参数（它算环节，不指定环节）。
-两者的调用方式同时写在 `round-protocol.md`「两个脚本怎么调」一节。
+不打印命令行一次性投喂的命令：那条路会用权限开关把审批提前答掉，所有者当场批不了，
+2026-09-10 判定不用。各家的命令行形态仍登记在 agents.toml。
 """
 
 from __future__ import annotations
@@ -30,22 +23,11 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import shlex
 import subprocess
 import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-# ⚠ **两条通道说同一句话，指同一份操作手册。**2026-09-09 查实：此前 CLI 这条路
-# 指的是 `round-protocol.md`（法典，944 行），而它里面「你是谁」0 处、
-# 「怎么提交」0 处、「卡住了怎么办」0 处。`executor-adapter` 记的现象正是
-# 「cursor 写出产物但不提交（三次）」——当时归因给工具，但从没测过另一个解释：
-# **它拿到的那份文档从头到尾没提过「提交」两个字。**
-# 通道差异只在 GO.md §五 一处处理，其余五节两条通道通用。
-FIXED_INSTRUCTION = (
-    "看一下 ~/master/k8s/sunmoonai/docs/dev-plan/GO.md，照做。"
-    "只认主线那一份；你 worktree 里的同名文件是旧投影。"
-    "你是被一次性命令行叫起来的，没有人在看你的输出——第五节按「命令行」那一支做。")
 
 
 def repo_root() -> Path:
@@ -143,8 +125,7 @@ def missing_of(st: dict, stage_hint: str | None) -> tuple[str, list[str]]:
 
 
 
-# 交互窗口投喂的两段话术，`--paste` 打印的就是这两段。原文只在这里，别处不再存副本
-# （此前另有 protocol/paste/ 目录和一份生成的投喂页，所有者 2026-09-10 先后判定都不要）。
+# 所有者贴进各家窗口的那段话，本脚本打印的就是它。原文只在这里，别处不存副本。
 PASTE_ROUTINE = r"""看一下 ~/master/k8s/sunmoonai/docs/dev-plan/GO.md，照做。
 
 ⚠ 只认主线那一份。你 worktree 里的同名文件是投影，从 ① 起就不再跟进主线，
@@ -169,118 +150,46 @@ def paste(st: dict, stage: str, targets: list[str]) -> int:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--round")
-    ap.add_argument("--stage", help="环节序号或名字前缀，如 4 / ④")
-    ap.add_argument("--all", action="store_true", help="给全部参与方，不只缺的")
-    ap.add_argument("--paste", nargs="?", const="", metavar="家名",
-                    help="输出**交互会话**里直接贴的话（≠ 不带参数时打印的一次性命令，"
-                         "两者能力不同、产出不同，见 executor-adapter §1.0）；"
-                         "不带家名则给当前环节还缺的家")
+    ap = argparse.ArgumentParser(description="打印所有者要贴进各家窗口的那段话")
+    ap.add_argument("who", nargs="?", metavar="家名",
+                    help="只打印给这一家；省略则给当前环节还缺的每一家")
+    ap.add_argument("--round", help="轮次，即 rounds/ 下的目录名；省略则取唯一 ACTIVE 的那一轮")
+    ap.add_argument("--stage", help="按指定环节算缺谁，接 4 或 ④")
+    ap.add_argument("--all", action="store_true", help="给全部参赛方，不只缺的")
     args = ap.parse_args()
-
-
 
     st = status(args.round)
     cfg = st["cfg"]
     agents = load_agents()
-    home = str(Path.home())
-    root = repo_root()
+    # 能投喂的只有执行者：排除配置段 meta 和人（agents.toml 里 kind = "human" 的 owner）。
+    execs = [n for n, a in agents.items() if n != "meta" and a.get("kind") != "human"]
 
-    # 已完结的轮次绝不分发——它没有「当前环节」，分发就是把人叫去做已经做完的事。
-    # 照着分发等于把四家全叫起来重做一遍。首跑即撞上这一条。
+    # 已完结的轮次不投喂：它没有「当前环节」，照着贴等于把各家叫去重做做完的事。
     if cfg.get("status") != "ACTIVE":
-        print(f"轮次 {st['round']} 的 status = {cfg.get('status')}，不是 ACTIVE，不分发。",
+        print(f"轮次 {st['round']} 的 status = {cfg.get('status')}，不是 ACTIVE，不投喂。",
               file=sys.stderr)
-        print("要查它走到哪一环，用 round-status.py --round <轮次>。", file=sys.stderr)
-        return 2   # 拒绝执行要有区别于成功的退出码，否则调用方看不出被拒
+        return 2
 
     stage, missing = missing_of(st, args.stage)
-    targets = cfg.get("proposers", []) if args.all else missing
-    # 处置表算出的验收方等角色也可能是目标
-    targets = [t for t in targets if t in agents]
 
-    if args.paste is not None:
+    if args.who:
         # 指名一家时不检查它缺不缺：所有者可能要对已交过的一家重贴一次。
-        # ⚠ 但**必须检查它是不是一家**。两个坑首跑即撞上：
-        #   1. 不指名时 `missing` 装的可能是**产物名**——③ 的 missing 是
-        #      「裁决稿、处置记录」，照贴就会打出「贴给 处置记录」。
-        #   2. 指名一个不存在的家时若不拦，会静默打出一份给虚构对象的话术，
-        #      而人照着贴出去才发现没有这个窗口。协议 §8b：拒绝要有区别于成功的退出码。
-        who = [args.paste] if args.paste else missing
-        bad = [w for w in who if w not in agents]
-        if args.paste and bad:
-            print(f"{args.paste!r} 不在 agents.toml 里；登记的执行者是："
-                  f"{'、'.join(agents)}", file=sys.stderr)
+        # 但必须是登记的执行者，否则会打出一段给不存在的窗口的话。
+        if args.who not in execs:
+            print(f"{args.who!r} 不是登记的执行者；可选：{'、'.join(execs)}", file=sys.stderr)
             return 2
-        who = [w for w in who if w in agents]
+        who = [args.who]
+    else:
+        pool = cfg.get("proposers", []) if args.all else missing
+        # ③ 这类环节的 missing 装的是产物名（「裁决稿、处置记录」），不是家名，滤掉。
+        who = [w for w in pool if w in execs]
         if not who:
-            print(f"轮次 {st['round']}   当前环节 {stage}", file=sys.stderr)
-            why = ("本环节缺的是产物不是家（%s），无法按家分发" % "、".join(missing)
-                   if missing else "本环节该交的都交了")
-            print(f"{why}；要指名一家就 --paste <家名>。", file=sys.stderr)
+            why = (f"本环节缺的是产物不是家（{'、'.join(missing)}）" if missing
+                   else "本环节该交的都交了")
+            print(f"轮次 {st['round']}   当前环节 {stage}：{why}，没有要贴的对象。"
+                  f"要指名一家：round-dispatch.py <家名>", file=sys.stderr)
             return 0
-        return paste(st, stage, who)
-
-    print(f"轮次 {st['round']}   当前环节 {stage}")
-    if not targets:
-        if missing:
-            print(f"缺：{'、'.join(missing)} —— 但它们不在 agents.toml 里，无法分发")
-        else:
-            print("没有待分发的对象：本环节该交的都交了，或它是人的动作。")
-        return 0
-
-    # 通知路径按**实际存在的那个**报，不硬编码一种拼法。
-    # 协议 §6 的规范形式是 `call-<环节>.md`；`<round-id>-call-<环节>.md` 是早期两轮的
-    # 历史变体。硬编码前缀会把参与方指到一个不存在的文件，而他们是照协议去找的。
-    import os
-    stage_ch = stage[0] if stage else "<环节>"
-    cands = [f"{cfg['round_dir']}/call-{stage_ch}.md",
-             f"{cfg['round_dir']}/{cfg['prefix']}-call-{stage_ch}.md"]
-    root = subprocess.run(["git", "rev-parse", "--show-toplevel"],
-                          capture_output=True, text=True).stdout.strip()
-    call_path = next((c for c in cands if os.path.exists(os.path.join(root, c))),
-                     f"{cfg['round_dir']}/call-{stage_ch}.md")
-    print(f"待分发 {len(targets)} 家：{'、'.join(targets)}\n")
-    print("─" * 72)
-    manual = []
-    for name in targets:
-        a = agents[name]
-        cwd = a["worktree"].replace("{home}", home)
-        prompt = FIXED_INSTRUCTION
-        if "argv" not in a:
-            # 登记表里存在、但没有命令行入口的执行者（例：fable 跑在 Cursor 桌面应用里）。
-            # **不能静默跳过**——跳过就等于漏掉一家，而漏掉一家的代价见
-            # round-protocol「产物、路径与命名」记的那次整轮作废事故。
-            manual.append((name, cwd))
-            print(f"\n# → {name}    工作目录 {cwd}")
-            print(f"# ⚠ 无 argv：此家无命令行入口，**只能人工投喂**。")
-            print(f"#   先把它的界面打开在 {cwd}，再把下面这句发给它：")
-            print(f"#   {prompt}")
-            continue
-        argv = [x.replace("{home}", home).replace("{cwd}", cwd)
-                 .replace("{prompt}", prompt) for x in a["argv"]]
-        # close_stdin：codex exec 会打印 "Reading additional input from stdin..."
-        # 并阻塞等 stdin 关闭（实测挂 17 分 29 秒、CPU 00:00:00，一步没跑，
-        # 而按字节数判据看像「在推进」）。**必须由调用方显式关**，argv 里做不到——
-        # argv 不经 shell，重定向不是参数。
-        redir = " < /dev/null" if str(a.get("close_stdin", "")).lower() == "true" else ""
-        print(f"\n# → {name}    工作目录 {cwd}")
-        print(f"cd {shlex.quote(cwd)} && {' '.join(shlex.quote(x) for x in argv)}{redir}")
-    print("\n" + "─" * 72)
-    if manual:
-        print(f"⚠ 上列 {len(manual)} 家无命令行入口，需人工投喂："
-              f"{'、'.join(n for n, _ in manual)}")
-        print("  本轮**不可能全自动分发**；这一项须记进 round.md 的「待自动化」。")
-    print(f"""
-说明：
-  · 发出去的话是固定的那一句，不逐轮改写；环节通知落在 {call_path}，各家自取。
-  · **成功判据是产物出现，不是命令返回 0。**cursor 未加 --trust 时会拒绝执行
-    却仍返回 0（已在 argv 里带上 --trust）。核对用：
-        python3 sunmoonai/docs/dev-plan/protocol/round-status.py
-  · 本脚本只生成不执行（roadmap 第 3 步）。粘贴跑通一轮、确认判定与措辞无误后，
-    再开第 4 步的真调用。""")
-    return 0
+    return paste(st, stage, who)
 
 
 if __name__ == "__main__":
