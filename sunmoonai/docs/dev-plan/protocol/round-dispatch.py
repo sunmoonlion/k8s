@@ -224,137 +224,63 @@ MD_PATH = HERE / "dispatch.md"
 
 
 def md_projection(write: bool) -> int:
-    """把 agents.toml 投影成一份可直接敲的 dispatch.md。
+    """生成 dispatch.md：所有者逐窗口投喂时看的那一页。
 
-    ⚠ **这是投影，不是真源。**真源是 agents.toml——手改 dispatch.md 会在下次
-    `--check-md` 时被判出来。之所以要这份 md 而不是让人跑脚本：所有者要**自己看着敲**，
-    脚本代跑会把 CLI 的交互吞掉，而 qoder 一类交互多的执行者一旦被吞就只能干等
-    （2026-09-07 实测 `codex exec` 挂 17 分 29 秒、CPU 全 0，从外面看像在推进）。
-
-    ⚠ **一份就够，不按环节分。**投喂的那句话每个环节都一样，
-    所以 ①②④⑤⑦ 共用这一份；「现在是哪个环节」由各家自己读 call-<环节>.md 判定。
+    ⚠ 这是投影，不是真源。两段话的真源是本文件的 PASTE_ROUTINE / PASTE_STALE；
+    手改 dispatch.md 会在下次 `--check-md` 时被判出来。
+    命令行一次性投喂已判定不用（审批会被权限开关提前答掉，所有者 2026-09-10），
+    本页不再列各家命令；命令行形态仍登记在 agents.toml。
     """
-    home = str(Path.home())
-    cfg = load_agents()
+    S = "python3 sunmoonai/docs/dev-plan/protocol/round-status.py"
+    D = "python3 sunmoonai/docs/dev-plan/protocol/round-dispatch.py"
     lines = [
-        "# 投喂 ｜ 交互窗口贴的话 · 命令行命令",
+        "# 投喂",
         "",
-        "> ⚠ **本文件由 `round-dispatch.py --write-md` 生成，不要手改。**",
-        "> 真源两处：执行者登记在 `agents.toml`；两段话术在 `round-dispatch.py` 的",
-        "> `PASTE_ROUTINE` / `PASTE_STALE`（`--paste` 用的也是这两段，同一份）。",
-        "> 核对是否漂移：`python3 round-dispatch.py --check-md`",
+        "> 本文件由 `round-dispatch.py --write-md` 生成，不要手改；`--check-md` 查它有没有被改过。",
+        "> 两段话的原文在 `round-dispatch.py` 的 `PASTE_ROUTINE` / `PASTE_STALE`。",
         "",
-        "> ⚠ **一份通用，不分环节。**发出去的话每个环节都一样——",
-        "> 「现在该做哪一步」由各家自己跑 `round-status.py` 算出，再读它打出的通知路径。",
+        "## 一、每个环节都贴这一段",
         "",
-        "## 一、交互窗口投喂（当前做法）",
-        "",
-        "所有者把各家开成交互会话，逐窗口贴下面的话。**审批、提问都在窗口里当场处理。**",
-        "",
-        "### 常规派发——整段贴，一个空都不用填",
+        "五个窗口贴同一段，不分环节、不用改字。现在该做哪一步，各家自己算。",
         "",
         "```text",
         *PASTE_ROUTINE.rstrip("\n").split("\n"),
         "```",
         "",
-        "### 对方报「缺东西 / 字段是空的 / 没有这个文件」时",
+        "⚠ 路径必须是 `~/master/k8s/` 开头的绝对路径。写成相对路径，对方会读到自己 worktree 里的旧文件。",
         "",
-        "⚠ **先别信它搞错了。**F-17 那次对方报的四条全对——在它的分支上。",
-        "先核实**主线上**是什么、**它分支上**是什么；两边不一样就贴这段",
-        "（`{轮次}` `{环节}` 两处要填，用 `--paste <家名> --stale` 可自动填）：",
+        "贴完查谁交了：",
+        "",
+        "```bash",
+        f"cd ~/master/k8s && {S}",
+        "```",
+        "",
+        "看「缺」那一行。**以产物出现为准**，不以对方说「做完了」为准。",
+        "",
+        "## 二、对方说「缺东西 / 字段是空的 / 没有这个文件」时",
+        "",
+        "先别判它错。核实一下：主线上有、它分支上没有，就是它读了旧副本——这是供给的问题，不是它的问题。",
+        "这时贴下面这段；`{轮次}` `{环节}` 换成状态输出里的轮次名和当前环节号：",
         "",
         "```text",
         *PASTE_STALE.rstrip("\n").split("\n"),
         "```",
         "",
-        "### 自动填",
+        "## 三、让脚本替你打印",
         "",
         "```bash",
         "cd ~/master/k8s",
-        "python3 sunmoonai/docs/dev-plan/protocol/round-dispatch.py --paste                 # 当前环节还缺的家",
-        "python3 sunmoonai/docs/dev-plan/protocol/round-dispatch.py --paste <家名>          # 指名一家",
-        "python3 sunmoonai/docs/dev-plan/protocol/round-dispatch.py --paste <家名> --stale  # 用上面第二段",
+        f"{D} --paste                 # 当前环节还缺谁，就打印给谁的",
+        f"{D} --paste <家名>          # 只打印给这一家的",
+        f"{D} --paste <家名> --stale  # 打印第二节那段，槽已填好",
         "```",
         "",
-        "`--paste` 是字面开关，照抄；只有 `<家名>` 要换。脚本只打印，不发送。",
+        "`--paste`、`--stale` 照抄，只有 `<家名>` 要换。脚本只打印，不发送。",
         "",
-        "### 为什么路径全是写死的",
+        "## 不用命令行投喂",
         "",
-        "F-17：`GO.md` 早就写着「通知去主线读」，但那句话只在主线那一版上——要读到它，",
-        "得先知道去主线读。**所有者贴的这句话是全系统唯一不经过投影的通道**，",
-        "所以它必须自带绝对路径 `~/master/k8s/…`；相对路径会被解析到参赛方 worktree 里的过期副本。",
-        "",
-        "## 二、命令行命令（当前不用）",
-        "",
-        "> ⚠ **不用的理由：下面每条命令里的权限开关会把审批提前答掉**——",
-        "> 预授权范围内静默同意，超出范围静默拒绝退出，「让人当场批一下」在这条路上结构上不存在。",
-        "> 2026-09-06 实测端到端没走完（`rounds/executor-adapter/task.md` §1.0）。",
-        "> 保留它**只作记录**：这是各执行者确实存在的命令行形态。",
-        "> ⚠ **它不是将来自动化的路。**命令行下审批只能被预先答掉，没有第三种结局。",
-        "> 若要自动化，唯一候选是 SDK 审批回调——审批请求回到调用方、再转给人批，",
-        "> 即「派发自动、审批仍由人」，不是无人值守。**未验证、未建**（`rounds/executor-adapter/`，",
-        "> 仅对 codex 取过证：其默认审批处理器全部自动同意，须改掉；审批挂起期间会话收不到其它事件）。",
-        "",
-        "> ⚠ **列的是登记表里的全部执行者，不是某一轮的参赛方。**",
-        "> 某一轮投谁，以该轮 `round.md` 的 `proposers` 为准——",
-        "> 多敲一家不会报错，但那一家的产物会让 `round-status.py` 认不出，白跑一次。",
-        "",
-        "### 敲之前知道两件事",
-        "",
-        "1. ⚠ **成功判据是产物出现，不是命令返回 0。**",
-        "   `cursor` 未加 `--trust` 时会拒绝执行**却仍返回 0**；",
-        "   `codex exec` 默认 read-only 时会把活干完但写不进去，退出码同样是 0。",
-        "2. ⚠ **`codex exec` 会阻塞等 stdin**（打印 `Reading additional input from stdin...`）。",
-        "   下面 `luna` / `kimi` 两条末尾的 `< /dev/null` **不能省**——",
-        "   实测省掉后挂 17 分 29 秒、CPU 时间 00:00:00，一步没跑。",
-        "",
-    ]
-    manual = []
-    humans = [n for n, a in cfg.items() if a.get("kind") == "human"]
-    for name, a in cfg.items():
-        if name == "meta":
-            continue
-        if a.get("kind") == "human":
-            # ⚠ **人不能被投喂。**它在 agents.toml 里的唯一理由是让 `principal`
-            #    这个名字能解析到真实存在的东西（见该文件 [owner] 注释）。
-            #    把它列进投喂命令表，等于给一个不存在的窗口发指令。
-            #    **排除必须可见**——静默跳过是本仓反复记过的病。
-            continue
-        cwd = a.get("worktree", "").replace("{home}", home)
-        if "argv" not in a:
-            manual.append((name, cwd))
-            continue
-        argv = [x.replace("{home}", home).replace("{cwd}", cwd)
-                 .replace("{prompt}", FIXED_INSTRUCTION) for x in a["argv"]]
-        redir = " < /dev/null" if str(a.get("close_stdin", "")).lower() == "true" else ""
-        lines += [f"### {name}", "",
-                  "```bash",
-                  f"cd {shlex.quote(cwd)} && {' '.join(shlex.quote(x) for x in argv)}{redir}",
-                  "```", ""]
-    if humans:
-        lines += [f"### 不在本表内：{'、'.join(humans)}", "",
-                  "⚠ **人，不是执行者。**没有 worktree、没有命令行入口，**不能投喂**。",
-                  "它登记在 `agents.toml` 里的唯一理由：让 `round.md` 的 `principal`",
-                  "能解析到真实存在的东西——否则 `principal = \"banana\"` 也会通过",
-                  "（2026-09-09 实测确实通过了）。", ""]
-    for name, cwd in manual:
-        lines += [f"### {name} —— 无命令行入口", "",
-                  f"⚠ **不能用命令投喂**：它没有一次性命令行入口。",
-                  f"把它的界面/会话打开在 `{cwd}`，然后发这一句：", "",
-                  "```text", FIXED_INSTRUCTION, "```", ""]
-    lines += [
-        "## 三、贴完 / 敲完之后",
-        "",
-        "```bash",
-        "cd ~/master/k8s && python3 sunmoonai/docs/dev-plan/protocol/round-status.py",
-        "```",
-        "",
-        "看的是**产物出现没有**。要读内容再开检视面：",
-        "",
-        "```bash",
-        "python3 sunmoonai/docs/dev-plan/protocol/round-review.py --round <轮次>",
-        "python3 sunmoonai/docs/dev-plan/protocol/round-review.py --round <轮次> --close",
-        "```",
+        "一次性命令行（`codex exec` / `agent -p` / `qoder -p`）会用权限开关把审批提前答掉，",
+        "所有者当场批不了。2026-09-10 所有者判定不用。各家的命令行形态仍登记在 `agents.toml`。",
         "",
     ]
     text = "\n".join(lines)

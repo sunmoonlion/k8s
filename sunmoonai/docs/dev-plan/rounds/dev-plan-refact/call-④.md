@@ -1,138 +1,65 @@
 # 环节通知 ④ 异议 ｜ `dev-plan-refact` 轮
 
-> 组织者产物。**收到就开工，不需要额外指令。**
-> 发给：`opus` / `luna` / `kimi` / `cursor` / `qwen` —— **五家全部被处置到，五家全部要交。**
+发给：`opus` / `luna` / `kimi` / `cursor` / `qwen`。五家都被处置到，五家都要交。
 
-## 第一件事：确认你是谁
+## 取件
 
-```bash
-r=$(git rev-parse --show-toplevel 2>/dev/null) && basename "$(dirname "$r")" || echo "❌ 不在 git 仓内"
-```
-
-跑不出名字就停下问人。**产品名、模型名、界面一律不是身份证据。**
-
-⚠ **通知、工单、裁定一律去主线读**（`~/master/k8s`）。你 worktree 里那几份是投影，
-从 ① 起就冻结了，**几乎一定是旧的**。不要把主线合并进你的分支。理由见 `findings.md` **F-17**。
-
-## ③ 已完成，取件方式
-
-裁决方兼整合方是 `cursor`（`rulings.md` R4 / R6）。
-
-### ⚠ 先看这条，否则你的证据会指错文件
-
-`sunmoonai/docs/dev-plan/pipeline.md` 这个路径，**在五个工作区里是五份不同的文件**：
-
-| 你在哪 | 那个路径是什么 | 行数 |
-|---|---|---|
-| 你自己的 worktree | **你自己的 ① 候选** | opus 387 ／ luna 213 ／ kimi 181 ／ qwen 173 |
-| 主线 `~/master/k8s` | **根本不存在**（本轮交付物只在分支上） | — |
-| 裁决稿 | `dev-plan-refact/cursor` 上那份 | **270** |
-
-所以**裸写 `pipeline.md:150` 是无效证据**——它指向什么取决于谁在读。
-
-### 取件：用检视投影，不要用自己的工作区
-
-组织者已开好一份只读投影，钉在 ③ 的提交 `1f2d0651` 上，与分支逐字节对拍一致：
+③ 由 `cursor` 裁决并整合（R4 指定整合方，R5 定基座为 `luna`，R6 裁决权全权委托 `cursor`）。
+产物已做成只读检视面，钉在提交 `1f2d0651`：
 
 ```bash
-R3=~/review/dev-plan-refact-③裁决稿
-
-$R3/sunmoonai/docs/dev-plan/pipeline.md                            # 裁决稿 ①a   270 行
-$R3/sunmoonai/docs/dev-plan/dev-plan-architecture.md               # 裁决稿 ①b   778 行
-$R3/sunmoonai/docs/dev-plan/rounds/dev-plan-refact/disposition.md  # 处置记录    179 行
+R3=~/review/dev-plan-refact-③裁决稿/sunmoonai/docs/dev-plan
+$R3/pipeline.md                            # 裁决稿 ①a   270 行
+$R3/dev-plan-architecture.md               # 裁决稿 ①b   778 行
+$R3/rounds/dev-plan-refact/disposition.md  # 处置记录    179 行
 ```
 
-**这几个是真的文件**，用你惯常的读文件方式打开、带行号、可 `grep`、可反复回看。
-⚠ **只读**：它是 detached 投影，不要在里面改任何东西，改了也不进任何分支。
+直接用读文件的方式打开。只读，不要在里面改。要核对字节：
+`git show dev-plan-refact/cursor:sunmoonai/docs/dev-plan/pipeline.md | sha256sum`，应以 `c4b315911cbf7a60` 开头。
 
-字节级复核与提交序仍按 commit 取：
+⚠ 不要读你自己 worktree 里的 `sunmoonai/docs/dev-plan/pipeline.md`——那是你自己的 ① 候选，不是裁决稿。
 
-```bash
-B=dev-plan-refact/cursor
-git show $B:sunmoonai/docs/dev-plan/pipeline.md | sha256sum   # 应为 c4b315911cbf7a60…
-git log --oneline master..$B                                  # 一条主张一个提交
-```
+## 交什么
 
-## 你要交什么
+落点：`sunmoonai/docs/dev-plan/rounds/dev-plan-refact/reviews/objection-<你的名>.md`，提交在你自己的分支上。
 
-落点：`sunmoonai/docs/dev-plan/rounds/dev-plan-refact/reviews/objection-<你的名字>.md`
+**没有异议也要交**，写「无异议」。否则分不出「没人反对」和「没人看过」。
 
-**没有异议也要交**，写明「无异议」。**空回复无法与「还没看」区分**——
-这是本环节唯一能让「没人反对」和「没人看过」分开的办法。
+每条异议写四项，缺一项不予处置：
 
-异议的形状固定四项，**缺一项该条不予处置**：
-
-| 项 | 内容 |
+| 项 | 写什么 |
 | --- | --- |
-| **条目** | 指向处置记录 §二 的哪一行（照抄「出处家｜条目」两栏），或 §三 验收方计算 |
-| **为什么错** | 不是「我不同意」，是**它与什么事实冲突** |
-| **应当是什么** | 给出你认为正确的处置 |
-| **可复跑证据** | 一条命令，或一处 `file:line`。**没有证据的异议按未提出计** |
+| 条目 | 处置记录 §二 的哪一行（照抄「出处家｜条目」），或 §三 验收方计算 |
+| 为什么错 | 它和什么事实冲突，不是「我不同意」 |
+| 应当是什么 | 你认为正确的处置 |
+| 证据 | 一条可复跑的命令，或一处 `file:line` |
 
-⚠ **`file:line` 必须写成投影下的完整路径**，例如：
+`file:line` 必须写完整路径，例如 `~/review/dev-plan-refact-③裁决稿/sunmoonai/docs/dev-plan/pipeline.md:150`。
+只写 `pipeline.md:150` 按无证据计：这个文件名在五个 worktree 里是五份不同的文件。
 
-```text
-~/review/dev-plan-refact-③裁决稿/sunmoonai/docs/dev-plan/pipeline.md:150
-```
+## 你能提异议的条目
 
-裸写 `pipeline.md:150` **按无证据计**——见上一节，那个路径在五个地方是五份文件。
-引自己 ① 候选时同理，写你自己的 worktree 全路径。
+只能就**你自己的主张**被怎么处置提异议（协议 §12）。被「接受」的不算。
 
-## ⚠ 范围：只能就**自己那条主张**的处置提异议（协议 §12）
-
-「接受」的条目不构成异议标的。你能提的就是下面你那一栏：
-
-| 家 | 可提异议的条目数 | 具体 |
+| 家 | 条数 | 条目 |
 | --- | --- | --- |
-| `opus` | **4** | 部分接受：F-9–F-12 判据自身必须先被验证／拒绝：①b 两行迁移表（:450 → WAITING）、本轮物理拆内核、按目录立 ROUND 类型 |
-| `luna` | **1** | 部分接受：Q3 protocol 是 SDP 引用的执行附件 |
-| `kimi` | **4** | 部分接受：protocol 不是实施计划、Q8 落 `docs/evidence/<task-id>/`、决定索引文件／拒绝：S3/S6 归 round-status |
-| `qwen` | **4** | 部分接受：发布后运行反馈与契约旧版并行、稳定落点编码 `REQ-05.3`／拒绝：约束委员会、DoD「已记录或已获授权」析取 |
-| `cursor` | **7**（全部自处置） | 见下节——**这一栏在本环节结构上无人可查** |
+| `opus` | 4 | 部分接受：F-9–F-12 判据自身必须先被验证／拒绝：①b 两行迁移表（:450 → WAITING）、本轮物理拆内核、按目录立 ROUND 类型 |
+| `luna` | 1 | 部分接受：Q3 protocol 是 SDP 引用的执行附件 |
+| `kimi` | 4 | 部分接受：protocol 不是实施计划、Q8 落 `docs/evidence/<task-id>/`、决定索引文件／拒绝：S3/S6 归 round-status |
+| `qwen` | 4 | 部分接受：发布后运行反馈与契约旧版并行、稳定落点编码 `REQ-05.3`／拒绝：约束委员会、DoD「已记录或已获授权」析取 |
+| `cursor` | 7，全是自处置 | 见下「重点 1」 |
 
-## 本环节请重点看的三处
+## 请重点看的三处
 
-### 1 ⚠ `cursor` 的 7 条自处置，④ 结构上查不到
+1. **`cursor` 自己的 7 条，④ 里没人能查。**这 7 条的被处置方就是裁决方本人，自己驳自己没有意义。这是 R6 的已知后果：这 7 条直接进 ⑤，由验收方 `qwen` 重点看。
+2. **验收方是 `qwen`。**排除 `cursor`（裁决兼整合）、`luna`（基座作者）后，取「接受 + 部分接受」最少的一家：`opus` 6 / `kimi` 8 / `qwen` 4。组织者已独立复算，结果一致。要推翻，请指出哪一条的出处或裁定判错了。
+3. **裁决方自己说没查的三处**（处置记录 §五）：`luna` RUNNER 的双向核；`opus` 那组计数命令（58/44/49/10/8）；`doc-gate` 以外的产品仓测试。涉及你的，自己复跑。
 
-R6 把裁决权全权委托给了整合方 `cursor`，而 `cursor` 自己是 ①② 参与方。
-协议 §12 规定异议「只发给被处置到的家」且「只能就自己那条主张」——
-于是 `cursor` 那 7 条的**被处置方就是 `cursor` 自己**，自己对自己提异议没有意义。
+## 约束
 
-**这不是疏漏，是 R6 已登记的机械后果。**代偿控制只剩两条：
-`（自处置）` 标记（已全部打上，组织者核过 12 条一条不漏）、以及验收方排除 `cursor`。
-
-⇒ **这 7 条不经 ④ 直接进 ⑤。**`qwen` 作为验收方，请把它们当本轮覆盖最薄的一处。
-
-### 2 验收方计算 → `qwen`
-
-组织者已**独立复跑**处置表并与 `disposition.md` §三 逐格比对，**结果一致**：
-排除 `cursor`（裁决/整合）、`luna`（基座作者）；余下 `opus` 6 / `kimi` 8 / `qwen` 4 → `qwen`。无并列。
-
-⚠ **条目归属若算错，验收方人选就错了。**要推翻，请给出「哪一条的出处家或裁定判错了」，
-不接受「我觉得不该是 qwen」。
-
-### 3 裁决方自陈的三处「没查」（`disposition.md` §五）
-
-**不是客套，是本轮覆盖的已知边界**：
-
-1. `luna` RUNNER 是否仍能对改过 I08-009 落点后的表做双向核；
-2. `opus` §8 的 58/44/49/10/8 全套命令（只复跑了活文档裸锚这一截）；
-3. `doc-gate.py --all` 以外的产品仓测试。
-
-**谁被这三处影响，谁自己复跑。**裁决方已如实标出，不复跑就等于默认。
-
-## 仍然生效的约束
-
-- **B14 不得照抄 `inputs/`**。④ 不解除。
-- **不得写主线，不得写别家工作区。**异议落在你自己的分支上。
-- 提交后不得再改。
-
-## 取件前先读这四条新裁定
-
-- `R4` 所有者指定 `cursor` 为整合方；
-- `R5` 定基座为 `luna`；
-- `R6` **裁决权全权委托 `cursor`**，及其两条机械后果；
-- `F-17` 过期投影：你 worktree 里的 `GO.md` / `round.md` / `rounds/` 不可信，一律读主线。
+- 只写你自己的工作区；不写主线，不写别家。
+- B14 不得照抄 `inputs/`，在 ④ 仍然有效。
+- 提交后不再改。
 
 ## 交完之后
 
@@ -140,4 +67,4 @@ R6 把裁决权全权委托给了整合方 `cursor`，而 `cursor` 自己是 ①
 ( cd ~/master/k8s && python3 sunmoonai/docs/dev-plan/protocol/round-status.py )
 ```
 
-看到自己那格变 ✅ 即完成。**成功判据是产物出现，不是命令返回 0。**
+你那格变 ✅ 才算交了。
