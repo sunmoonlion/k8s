@@ -144,9 +144,8 @@ def missing_of(st: dict, stage_hint: str | None) -> tuple[str, list[str]]:
 
 
 
-# 交互窗口投喂的两段话术。**原文就在这里**，`--paste` 与 `--write-md` 共用这一份：
-# 2026-09-10 所有者：「没必要这样散开」——此前放在 protocol/paste/ 下三个文件里，
-# 没有任何检查覆盖；搬进来之后 dispatch.md 第一节由它生成，`--check-md` 顺带查漂移。
+# 交互窗口投喂的两段话术，`--paste` 打印的就是这两段。原文只在这里，别处不再存副本
+# （此前另有 protocol/paste/ 目录和一份生成的投喂页，所有者 2026-09-10 先后判定都不要）。
 # ⚠ 必须是原始字符串：过期投影那段有行尾反斜杠（diff 续行），普通字符串会把它吞掉。
 PASTE_ROUTINE = r"""看一下 ~/master/k8s/sunmoonai/docs/dev-plan/GO.md，照做。
 
@@ -181,8 +180,8 @@ PASTE_STALE = r"""你报的那几条我核实过，属实——但都是「在�
 def paste(st: dict, stage: str, targets: list[str], stale: bool) -> int:
     """输出交互会话里**直接贴的那句话**，槽位从实况填。
 
-    ⚠ **与 `--write-md` 不是同一件事的两种格式，是两条能力不同的通道。**
-    `--write-md` 生成一次性 CLI 命令：**没有回话通道**，agent 需要一次往返就只能退出。
+    ⚠ **与不带 `--paste` 时打印的命令行命令，是两条能力不同的通道。**
+    命令行命令是一次性的：**没有回话通道**，agent 需要一次往返就只能退出。
     `rounds/executor-adapter/task.md` §1.0 实测：那条路端到端**没走完**，
     四个决策点全部回落到人；同一个 cursor，`-p` 下三次都不提交，交互式跑一次即提交。
     所以两条路的**产出不同**，不能互相替代。
@@ -215,109 +214,24 @@ def paste(st: dict, stage: str, targets: list[str], stale: bool) -> int:
         print("⚠ 对方若回「缺东西 / 字段是空的 / 没有这个文件」，**先别信它搞错了**：")
         print("   核实主线上是什么、它分支上是什么。两边不一样就改用 --stale 那一份（F-17）。")
     print("⚠ 这是**贴进交互窗口**的文本，不是命令——人得在场。")
-    print("   一次性命令那条路（--write-md）没有回话通道，agent 卡住即退出，")
+    print("   一次性命令那条路（不带 --paste 时打印的）没有回话通道，agent 卡住即退出，")
     print("   实测端到端没走完（rounds/executor-adapter/task.md §1.0）。两者不能互相替代。")
     return 0
-
-
-MD_PATH = HERE / "dispatch.md"
-
-
-def md_projection(write: bool) -> int:
-    """生成 dispatch.md：所有者逐窗口投喂时看的那一页。
-
-    ⚠ 这是投影，不是真源。两段话的真源是本文件的 PASTE_ROUTINE / PASTE_STALE；
-    手改 dispatch.md 会在下次 `--check-md` 时被判出来。
-    命令行一次性投喂已判定不用（审批会被权限开关提前答掉，所有者 2026-09-10），
-    本页不再列各家命令；命令行形态仍登记在 agents.toml。
-    """
-    S = "python3 sunmoonai/docs/dev-plan/protocol/round-status.py"
-    D = "python3 sunmoonai/docs/dev-plan/protocol/round-dispatch.py"
-    lines = [
-        "# 投喂",
-        "",
-        "> 本文件由 `round-dispatch.py --write-md` 生成，不要手改；`--check-md` 查它有没有被改过。",
-        "> 两段话的原文在 `round-dispatch.py` 的 `PASTE_ROUTINE` / `PASTE_STALE`。",
-        "",
-        "## 一、每个环节都贴这一段",
-        "",
-        "五个窗口贴同一段，不分环节、不用改字。现在该做哪一步，各家自己算。",
-        "",
-        "```text",
-        *PASTE_ROUTINE.rstrip("\n").split("\n"),
-        "```",
-        "",
-        "⚠ 路径必须是 `~/master/k8s/` 开头的绝对路径。写成相对路径，对方会读到自己 worktree 里的旧文件。",
-        "",
-        "贴完查谁交了：",
-        "",
-        "```bash",
-        f"cd ~/master/k8s && {S}",
-        "```",
-        "",
-        "看「缺」那一行。**以产物出现为准**，不以对方说「做完了」为准。",
-        "",
-        "## 二、对方说「缺东西 / 字段是空的 / 没有这个文件」时",
-        "",
-        "先别判它错。核实一下：主线上有、它分支上没有，就是它读了旧副本——这是供给的问题，不是它的问题。",
-        "这时贴下面这段；`{轮次}` `{环节}` 换成状态输出里的轮次名和当前环节号：",
-        "",
-        "```text",
-        *PASTE_STALE.rstrip("\n").split("\n"),
-        "```",
-        "",
-        "## 三、让脚本替你打印",
-        "",
-        "```bash",
-        "cd ~/master/k8s",
-        f"{D} --paste                 # 当前环节还缺谁，就打印给谁的",
-        f"{D} --paste <家名>          # 只打印给这一家的",
-        f"{D} --paste <家名> --stale  # 打印第二节那段，槽已填好",
-        "```",
-        "",
-        "`--paste`、`--stale` 照抄，只有 `<家名>` 要换。脚本只打印，不发送。",
-        "",
-        "## 不用命令行投喂",
-        "",
-        "一次性命令行（`codex exec` / `agent -p` / `qoder -p`）会用权限开关把审批提前答掉，",
-        "所有者当场批不了。2026-09-10 所有者判定不用。各家的命令行形态仍登记在 `agents.toml`。",
-        "",
-    ]
-    text = "\n".join(lines)
-    if write:
-        MD_PATH.write_text(text, encoding="utf-8")
-        print(f"已生成 {MD_PATH}（{len(lines)} 行投影）")
-        return 0
-    if not MD_PATH.exists():
-        print(f"✗ {MD_PATH} 不存在——跑一次 --write-md", file=sys.stderr)
-        return 1
-    cur = MD_PATH.read_text(encoding="utf-8")
-    if cur == text:
-        print("✓ dispatch.md 与 agents.toml 一致")
-        return 0
-    print("✗ dispatch.md 已与 agents.toml 漂移——重跑 --write-md", file=sys.stderr)
-    return 1
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--round")
     ap.add_argument("--stage", help="环节序号或名字前缀，如 4 / ④")
-    ap.add_argument("--write-md", action="store_true",
-                    help="把可直接敲的命令生成为 dispatch.md（投影，非真源）")
-    ap.add_argument("--check-md", action="store_true",
-                    help="核对 dispatch.md 是否仍与 agents.toml 一致；不一致退出 1")
     ap.add_argument("--all", action="store_true", help="给全部参与方，不只缺的")
     ap.add_argument("--paste", nargs="?", const="", metavar="家名",
-                    help="输出**交互会话**里直接贴的话（≠ --write-md 那条一次性命令，"
+                    help="输出**交互会话**里直接贴的话（≠ 不带参数时打印的一次性命令，"
                          "两者能力不同、产出不同，见 executor-adapter §1.0）；"
                          "不带家名则给当前环节还缺的家")
     ap.add_argument("--stale", action="store_true",
                     help="与 --paste 连用：用「过期投影」那一份（对方报缺东西时，见 F-17）")
     args = ap.parse_args()
 
-    if args.write_md or args.check_md:
-        return md_projection(write=args.write_md)
 
 
     st = status(args.round)
