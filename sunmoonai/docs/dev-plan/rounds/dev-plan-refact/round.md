@@ -25,7 +25,7 @@ arbiter_branch = "dev-plan-refact/cursor"
 arbiter_is_proposer = true      # 裁决方同时是参赛方，R6 知情裁定，见正文「角色」
 integrator     = "cursor"       # R4
 base_author    = "luna"         # R5
-acceptor       = "qwen"         # 按 §13 从处置表算出，组织者复算一致
+acceptor       = "opus"         # R7：所有者决定由 opus 做完剩余流程；§13 算出的是 qwen，由 R7 推翻「不得事后更换」
 
 anchor_roots   = ["~/repo/codex", "~/repo/deepseek-harness", "~/repo/openclaw", "~/master/investment-app", "."]
 frozen_sections = []
