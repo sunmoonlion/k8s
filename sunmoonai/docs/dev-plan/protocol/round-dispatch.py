@@ -16,7 +16,6 @@
     round-dispatch.py --stage 4       # 指定环节，接 4 或 ④（覆盖自动判定）
     round-dispatch.py --paste         # 交互会话贴的话：当前环节还缺的家
     round-dispatch.py --paste cursor  # 指名一家（不检查它缺不缺）
-    round-dispatch.py --paste cursor --stale   # 对方报「缺东西」时用（F-17）
 
 退出码：
     0  正常输出了命令
@@ -146,76 +145,26 @@ def missing_of(st: dict, stage_hint: str | None) -> tuple[str, list[str]]:
 
 # 交互窗口投喂的两段话术，`--paste` 打印的就是这两段。原文只在这里，别处不再存副本
 # （此前另有 protocol/paste/ 目录和一份生成的投喂页，所有者 2026-09-10 先后判定都不要）。
-# ⚠ 必须是原始字符串：过期投影那段有行尾反斜杠（diff 续行），普通字符串会把它吞掉。
 PASTE_ROUTINE = r"""看一下 ~/master/k8s/sunmoonai/docs/dev-plan/GO.md，照做。
 
 ⚠ 只认主线那一份。你 worktree 里的同名文件是投影，从 ① 起就不再跟进主线，
 几乎一定是旧的。GO.md 开头有一条 diff 自检，先跑它。不要把主线合并进你的分支。
 """
 
-PASTE_STALE = r"""你报的那几条我核实过，属实——但都是「在你的分支上」属实。
-你的分支从 ① 起就冻结了，之后主线上写进去的裁定、工单改动、环节通知，你的工作区里一个都没有。
-这是供给方的错，不是你的错，你的停止判为正确行为，不计任何不利处置。
 
-从现在起，通知、工单、裁定、判定命令**一律去主线读**。**不要把主线合并进你的分支。**
+def paste(st: dict, stage: str, targets: list[str]) -> int:
+    """打印交互窗口里要贴的话，每家一段。只打印，不发送。
 
-先自检，确认你手上那份是旧的：
-
-  diff <(git -C ~/master/k8s show master:sunmoonai/docs/dev-plan/GO.md) \
-       sunmoonai/docs/dev-plan/GO.md >/dev/null \
-    && echo "一致" || echo "⚠ 本地已过期——只认主线那份"
-
-然后从主线重新开始：
-
-  R=~/master/k8s/sunmoonai/docs/dev-plan/rounds/{轮次}
-  cat ~/master/k8s/sunmoonai/docs/dev-plan/GO.md
-  ls $R/*call-*.md         # ⚠ 以这个结果为准，不要凭「哪些环节历史上有通知」推断
-  cat $R/*call-{环节}.md
-  cat $R/round.md
-  cat $R/rulings.md        # ⚠ 裁定可能在你冻结之后才写，这里通常就是你困惑的来源
-  ( cd ~/master/k8s && python3 sunmoonai/docs/dev-plan/protocol/round-status.py )
-"""
-
-
-def paste(st: dict, stage: str, targets: list[str], stale: bool) -> int:
-    """输出交互会话里**直接贴的那句话**，槽位从实况填。
-
-    ⚠ **与不带 `--paste` 时打印的命令行命令，是两条能力不同的通道。**
-    命令行命令是一次性的：**没有回话通道**，agent 需要一次往返就只能退出。
-    `rounds/executor-adapter/task.md` §1.0 实测：那条路端到端**没走完**，
-    四个决策点全部回落到人；同一个 cursor，`-p` 下三次都不提交，交互式跑一次即提交。
-    所以两条路的**产出不同**，不能互相替代。
-    ⚠ 2026-09-09 F-24 起两条路**指同一份 `GO.md`**，差异只在它 §五 一处；
-    此前「CLI 的入口是 `round-protocol.md`」是意外，不是设计。
-
-    ⚠ **模板里没有「路径」这个槽位，路径一律写死。**
-    见 `rounds/dev-plan-refact/findings.md` F-17：靠人记得写对绝对路径，
-    正是 2026-09-08 那次 ③ 停摆的根因。这里唯一会填错的是家名和环节，
-    而这两样填错对方会立刻报错，不会静默读到旧的还以为是新的。
-
-    用 `.replace()` 不用 `.format()`：模板是给人手改的，
-    里面出现一个孤立的 `{` 不该让脚本崩掉。
+    路径在 PASTE_ROUTINE 里写死为主线绝对路径：相对路径会被解析到参赛方
+    worktree 里的旧副本（findings.md F-17）。对方若仍报「缺东西」，是供给出了错，
+    该修的是脚本或文档，不另设给人用的应对话术（所有者 2026-09-10）。
     """
-    text = PASTE_STALE if stale else PASTE_ROUTINE
-    stage_ch = stage[0] if stage else "<环节>"
-    for k, v in (("{轮次}", st["round"]), ("{环节}", stage_ch)):
-        text = text.replace(k, v)
-    left = [k for k in ("{轮次}", "{环节}", "{家名}") if k in text]
-
     for name in targets:
         print("─" * 72)
         print(f"# → 贴给 {name}    （轮次 {st['round']}   环节 {stage}）")
         print("─" * 72)
-        print(text.replace("{家名}", name))
+        print(PASTE_ROUTINE.rstrip("\n"))
     print("─" * 72)
-    if left:
-        print(f"⚠ 模板里还有没填上的槽位：{'、'.join(left)} —— 贴之前自己补。")
-    if not stale:
-        print("⚠ 对方若回「缺东西 / 字段是空的 / 没有这个文件」，**先别信它搞错了**：")
-        print("   核实主线上是什么、它分支上是什么。两边不一样就改用 --stale 那一份（F-17）。")
-    print("⚠ 这是**贴进交互窗口**的文本，不是命令——人得在场。")
-    print("   一次性命令那条路（不带 --paste 时打印的）没有回话通道，agent 卡住即退出，")
-    print("   实测端到端没走完（rounds/executor-adapter/task.md §1.0）。两者不能互相替代。")
     return 0
 
 
@@ -228,8 +177,6 @@ def main() -> int:
                     help="输出**交互会话**里直接贴的话（≠ 不带参数时打印的一次性命令，"
                          "两者能力不同、产出不同，见 executor-adapter §1.0）；"
                          "不带家名则给当前环节还缺的家")
-    ap.add_argument("--stale", action="store_true",
-                    help="与 --paste 连用：用「过期投影」那一份（对方报缺东西时，见 F-17）")
     args = ap.parse_args()
 
 
@@ -254,8 +201,7 @@ def main() -> int:
     targets = [t for t in targets if t in agents]
 
     if args.paste is not None:
-        # 指名一家时**不检查它缺不缺**：F-17 那种情况下对方已经动过，
-        # 但因为读了过期投影而停在原地，此时它不在 missing 里，却正是要贴的对象。
+        # 指名一家时不检查它缺不缺：所有者可能要对已交过的一家重贴一次。
         # ⚠ 但**必须检查它是不是一家**。两个坑首跑即撞上：
         #   1. 不指名时 `missing` 装的可能是**产物名**——③ 的 missing 是
         #      「裁决稿、处置记录」，照贴就会打出「贴给 处置记录」。
@@ -274,7 +220,7 @@ def main() -> int:
                    if missing else "本环节该交的都交了")
             print(f"{why}；要指名一家就 --paste <家名>。", file=sys.stderr)
             return 0
-        return paste(st, stage, who, args.stale)
+        return paste(st, stage, who)
 
     print(f"轮次 {st['round']}   当前环节 {stage}")
     if not targets:

@@ -6,7 +6,7 @@
 | --- | --- |
 | `round-protocol.md` | 规范：一轮怎么走，谁能做什么 |
 | `round-status.py` | 从 git 提交推出当前环节、本环节通知在哪、组织者是谁；`--verify` 判 ⑤ 里能机器判的部分 |
-| `round-dispatch.py` | 打印投喂的话：`--paste [家名]`；对方读了旧副本时加 `--stale` |
+| `round-dispatch.py` | 打印投喂的话：`--paste [家名]`，不带家名则给当前环节还缺的每一家 |
 | `round-review.py` | 开 / 关检视面：把各家产物挂成 `~/review/` 下的只读 worktree |
 | `agents.toml` | 执行者登记（六家）和所有者的 git 身份；不含任何凭据 |
 
