@@ -445,10 +445,21 @@ def pending_rulings(cfg: dict, name: str) -> list[str] | None:
 
     返回 None = 这一轮没有 rulings.md，机器判不了，交回给人。
     """
-    hit = locate(cfg, name, "rulings")
-    if not hit:
-        return None
-    text = git("show", f"{hit[1]}:{hit[0]}")[1]
+    # ⚠ 裁定记录是组织者的产物，真源在主线。裁决方分支上那份是它开工时的旧副本，不跟进主线。
+    #    2026-09-10 实测：所有者的 ⑥ 确认（R8 与「人确认登记」表）只在主线，locate 却先命中
+    #    dev-plan-refact/cursor 上的旧稿（没有「人确认」栏），⑥ 永远判不出来。所以先读主线，
+    #    主线没有这份文件时才回落到原来的查找。
+    text = None
+    for path in artifact_paths(cfg, "rulings"):
+        rc, t = git("show", f"master:{path}")
+        if rc == 0:
+            text = t
+            break
+    if text is None:
+        hit = locate(cfg, name, "rulings")
+        if not hit:
+            return None
+        text = git("show", f"{hit[1]}:{hit[0]}")[1]
     lines = text.splitlines()
     col = None
     for i, ln in enumerate(lines):
