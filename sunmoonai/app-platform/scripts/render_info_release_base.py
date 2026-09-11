@@ -138,7 +138,7 @@ def add_info_storage(container_spec: dict[str, Any]) -> None:
     container_spec.setdefault("volumeMounts", []).append(
         {
             "name": "elasticsearch-ca",
-            "mountPath": "/etc/elasticsearch/ca",
+            "mountPath": "/var/run/secrets/sunmoonai/elasticsearch",
             "readOnly": True,
         }
     )

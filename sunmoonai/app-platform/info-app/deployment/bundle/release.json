@@ -26,7 +26,7 @@
   "sha256": {
     "00-prerequisites.yaml": "4bfd5e67e40baafe9ae87b2c1ab0467a054c95c435175df97a4c987bf5e4cd45",
     "10-migration.yaml": "a831e70ebd0ba858e2fb378c54f65bd18e1a4605beaa61ddf7a95bcf5cb42816",
-    "20-runtime.yaml": "fb15b599741104638e8768f0b8b3ea2665661347372a410b6c6be1683860ca0f",
+    "20-runtime.yaml": "bde3460ccb84de384c80f0566ab70697c161ae17b1e95f9db1c73213c96c2dd9",
     "30-network-policies.yaml": "e16fc0e4a350a598c561c1637a73060d24f5ad9d94162930e2efb5454c3dd539",
     "40-ingress.yaml": "b646e896dec6491ae16bd2a1044682925e51af0850c955dbca8af6ce72b40004"
   },
@@ -127,7 +127,7 @@
   ],
   "contains_credentials": false,
   "renderer_inputs_sha256": {
-    "k8s:sunmoonai/app-platform/scripts/render_info_release_base.py": "04613c1aa28b3186afce2dbae26506590c0f6ee9536a455e205e1675ad15e315",
+    "k8s:sunmoonai/app-platform/scripts/render_info_release_base.py": "ce7e0d5bd6834d0aefaf47b94fceddbf6a5d310af544041a815d5f1496b82e0d",
     "tpl-app:k8s-deployment/scaffold.py": "2f65213916ac338f4126c43b084dacd4a832906735d034b37a247b8507479828",
     "tpl-app:k8s-deployment/templates/00-prerequisites.yaml.tpl": "c87ac75dce8507e9f88732d3e8708945ee18a87418fedfd9dc184423916d32bf",
     "tpl-app:k8s-deployment/templates/10-migration.yaml.tpl": "2a78b9770f61b94cc267f267449b0e0593b147a61a444a7463fe4f3fcc1508f4",

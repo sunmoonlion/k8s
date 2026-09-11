@@ -39,6 +39,11 @@ run_sql() {
     ' sh "$DATABASE_NAME" "$sql"
 }
 
+DELIVERY_TABLE=delivery_outbox_message
+if [[ "$(run_sql "SELECT to_regclass('public.delivery_outbox_message_legacy') IS NOT NULL;")" == "t" ]]; then
+  DELIVERY_TABLE=delivery_outbox_message_legacy
+fi
+
 echo "section=database"
 run_sql "
   SELECT jsonb_build_object(
@@ -215,7 +220,7 @@ if [[ "$DATABASE_NAME" == "info_admin" || "$DATABASE_NAME" == info_r5_restore_* 
         SELECT count(*)
         FROM (
           SELECT topic, idempotency_key
-          FROM delivery_outbox_message
+          FROM $DELIVERY_TABLE
           GROUP BY topic, idempotency_key
           HAVING count(*) > 1
         ) AS duplicates
@@ -234,7 +239,7 @@ if [[ "$DATABASE_NAME" == "info_admin" || "$DATABASE_NAME" == info_r5_restore_* 
     SELECT COALESCE(jsonb_object_agg(state, row_count ORDER BY state), '{}'::jsonb)
     FROM (
       SELECT state, count(*) AS row_count
-      FROM delivery_outbox_message
+      FROM $DELIVERY_TABLE
       GROUP BY state
     ) AS states;
   "
