@@ -1,5 +1,36 @@
 # App 镜像构建与推送
 
+## KIND 开发包部署
+
+开发包沿用各 App 的 `deployment/render.py`、规范 `deployment/bundle/` 和
+`deploy-*-app-all.sh`，不另建部署入口。正式渲染默认值保持不变；只有显式传入
+`--development-input deployment/development-input.json` 才生成
+`formal_release=false`、`deployment_target=KIND` 的开发包。
+
+输入包含 `kind=kind-development-release-input`、`logical_app`、三个 `images`
+digest、`migration_head` 和完整 `development_source_lock`。渲染时校验父仓源码锁、
+三个干净子仓的 commit/tree 和实际 Alembic head；生成后须运行
+`verify-formal-instance.py`，并将输出更新到唯一规范 bundle，同时更新 `.conf`。
+来源锁记录的是源码准备时的事实；实际部署边界由新的 `release.json` 声明。
+
+开发升级仅允许 KIND 的全 App 事务；C1/production、组件单独 apply 均拒绝。
+非 plan 操作还检查节点实际 `providerID`。迁移按以下顺序执行：
+
+1. 静态门禁与 `server-dry-run`，在隔离恢复库完成迁移、数据对账和备份回退演练。
+2. 进入维护窗口，停止旧 API/Worker/Scheduler，等待 Pod 全部退出；确认没有控制器
+   把旧写进程拉起。不得清空队列或伪造完成回执。
+3. 对静止的业务库再备份并实际恢复验证。备份以 0600 保存在 Git 外；回退窗口内保留。
+4. 提供 JSON `--backup-receipt /private/path/receipt.json`：`cluster_uid` 为当前
+   `kube-system` namespace UID，另含 `logical_app`、`release_id`、
+   `restore_verified=true`、`backup_file` 绝对路径、备份 `sha256`。
+   只能在真实恢复成功后生成回执；脚本校验绑定信息、文件摘要和旧进程已退出。
+5. 由既有 deploy 入口执行独立 Migration Job，再恢复规范 runtime 与 ingress，
+   验证 rollout、数据版本、健康检查及 drift。Info → Knowledge → Investment 串行。
+
+备份回执是操作员验证记录，不是密码学证明。临时停副本只是维护步骤，不替代 Git
+中的最终副本声明。存在未确认投递时 downgrade 必须拒绝；应使用已演练的备份恢复，
+不能删除任务以让回退通过。开发包不得改写 `1.0.0` / `2.0.0` 发布别名。
+
 本目录的 `build-push-app-images.sh` 只做一件事：**在 WSL 本地构建镜像，并直推到指定 Harbor**。
 
 ```text

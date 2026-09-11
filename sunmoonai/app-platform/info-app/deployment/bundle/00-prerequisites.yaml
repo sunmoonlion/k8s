@@ -70,7 +70,7 @@ data:
   ENV: production
   LOG_LEVEL: INFO
   SERVICE_NAME: info-backend
-  DEPLOYMENT_ID: v20-info-stable-001
+  DEPLOYMENT_ID: kind-info-dd-20260911
   APP_SLUG: info
   REDIS_HOST: redis-sunmoonai-master.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -110,11 +110,6 @@ data:
   STORAGE_BACKEND: s3
   SEARCH_BACKEND: elasticsearch
   ELASTICSEARCH_INDEX: info-information
-  DELIVERY_OUTBOX_BATCH_SIZE: '50'
-  DELIVERY_OUTBOX_LEASE_SECONDS: '30'
-  DELIVERY_OUTBOX_ACK_TIMEOUT_SECONDS: '300'
-  DELIVERY_OUTBOX_RETRY_BASE_SECONDS: '5'
-  DELIVERY_OUTBOX_RETRY_MAX_SECONDS: '300'
   KNOWLEDGE_APP_INGEST_URL: http://knowledge-backend:8000/api/internal/v1/knowledge/ingestions
   KNOWLEDGE_APP_SERVICE_APPLICATION: sunmoonai-info-knowledge-ingest
   KNOWLEDGE_APP_SERVICE_SCOPE: knowledge:ingest
@@ -133,7 +128,7 @@ data:
   AUTH_APP: info
   APP_ORIGIN: https://info-admin.sunmoonai.com:30443
   BACKEND_INTERNAL_URL: http://info-backend:8000
-  DEPLOYMENT_ID: v20-info-stable-001-admin
+  DEPLOYMENT_ID: kind-info-dd-20260911-admin
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -148,7 +143,7 @@ data:
   AUTH_APP: info
   APP_ORIGIN: https://info.sunmoonai.com:30443
   BACKEND_INTERNAL_URL: http://info-backend:8000
-  DEPLOYMENT_ID: v20-info-stable-001-web
+  DEPLOYMENT_ID: kind-info-dd-20260911-web
   REFERENCE_UI_ENABLED: 'false'
 ---
 apiVersion: v1

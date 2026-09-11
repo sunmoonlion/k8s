@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+import development_release
 
 IMMUTABLE_IMAGE = re.compile(r"^[^\s]+@sha256:[0-9a-f]{64}$")
 
@@ -46,9 +47,11 @@ def load(bundle: Path) -> tuple[dict[str, Any], dict[tuple[str, str], dict[str, 
     release = json.loads(release_path.read_text(encoding="utf-8"))
     if release.get("schema_version") != 2:
         raise GateError("unsupported formal release schema")
-    if release.get("architecture") != "app-platform-v2-formal":
+    if release.get("architecture") == development_release.ARCHITECTURE:
+        development_release.validate(release)
+    elif release.get("architecture") != "app-platform-v2-formal":
         raise GateError("bundle is not an Architecture v2 formal release")
-    if release.get("formal_release") is not True:
+    elif release.get("formal_release") is not True:
         raise GateError("formal_release must be true")
     renderer_inputs = release.get("renderer_inputs_sha256")
     if not isinstance(renderer_inputs, dict) or not renderer_inputs:
@@ -135,6 +138,8 @@ def verify(bundle: Path) -> dict[str, Any]:
     return {
         "task": "app-platform-v2-declarative-instance-gate",
         "result": "passed",
+        "formal_release": release["formal_release"],
+        "deployment_target": release.get("deployment_target", "release-profile"),
         "logical_app": release["logical_app"],
         "resource_app": release["resource_app"],
         "release_id": release["release_id"],

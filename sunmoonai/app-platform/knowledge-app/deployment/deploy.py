@@ -23,6 +23,7 @@ GATE = K8S_ROOT / "sunmoonai/app-platform/scripts/verify-formal-instance.py"
 SCRIPTS = K8S_ROOT / "sunmoonai/app-platform/scripts"
 sys.path.insert(0, str(SCRIPTS))
 import formal_component_deploy as component_deploy
+import development_release
 STEADY_FILES = (
     "00-prerequisites.yaml",
     "20-runtime.yaml",
@@ -316,6 +317,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=("plan", "server-dry-run", "apply", "status", "drift"))
     parser.add_argument("--kubeconfig", type=Path)
+    parser.add_argument("--cluster", choices=("KIND", "C1", "PRODUCTION"))
+    parser.add_argument("--backup-receipt", type=Path)
     parser.add_argument("--kubectl", default="kubectl")
     parser.add_argument("--timeout", type=int, default=300)
     parser.add_argument("--component", choices=component_deploy.COMPONENTS, default="all")
@@ -326,6 +329,7 @@ def main() -> int:
     args = parse_args()
     try:
         data = release()
+        development_release.guard(args, data, run)
         if args.action == "plan":
             print(json.dumps({"result": "passed", "action": "plan", **data}, ensure_ascii=False, indent=2))
         elif args.action == "server-dry-run":

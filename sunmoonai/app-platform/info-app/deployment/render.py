@@ -27,6 +27,7 @@ FILES = (
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument("--development-input", type=Path)
     parser.add_argument("--release-id", default="v20-info-stable-001")
     return parser.parse_args()
 
@@ -386,6 +387,11 @@ def main() -> int:
     (output / "release.json").write_text(
         json.dumps(release, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
+    if args.development_input:
+        sys.path.insert(0, str(k8s_root / "sunmoonai/app-platform/scripts"))
+        import development_release
+        development_release.render(output, args.development_input, k8s_root)
+        release = json.loads((output / "release.json").read_text())
     print(json.dumps({"result": "rendered", **release}, ensure_ascii=False, indent=2))
     return 0
 

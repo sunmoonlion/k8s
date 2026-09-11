@@ -31,6 +31,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--kubeconfig", type=Path)
     parser.add_argument("--timeout", type=int)
     parser.add_argument("--component", default="all")
+    parser.add_argument("--backup-receipt", type=Path)
     parser.add_argument("action", nargs="?", choices=ACTIONS, default="plan")
     parser.add_argument("compatibility", nargs="*")
     return parser.parse_args()
@@ -52,6 +53,8 @@ def main() -> int:
         if not release_path.is_file() or not deploy_script.is_file():
             raise ConfigError("configured bundle or deployment script does not exist")
         release = json.loads(release_path.read_text(encoding="utf-8"))
+        if release.get("formal_release") is False and cluster != "KIND":
+            raise ConfigError("development releases can only use the KIND profile")
         validate_release(base, release)
         if len(args.compatibility) > 4:
             raise ConfigError("too many compatibility positional arguments")
@@ -86,7 +89,10 @@ def main() -> int:
             sys.executable, str(deploy_script), action,
             "--kubeconfig", str(kubeconfig), "--timeout", str(timeout),
             "--component", args.component,
+            "--cluster", cluster,
         ]
+        if args.backup_receipt:
+            command.extend(("--backup-receipt", str(args.backup_receipt.resolve())))
         environment = os.environ.copy()
         environment.pop("DEBUG", None)
         return subprocess.run(command, env=environment, check=False).returncode
