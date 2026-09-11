@@ -59,7 +59,10 @@ data:
     {{- $userSecret := .Values.auth.acl.userSecret -}}
     {{- range .Values.auth.acl.users }}
     {{- $userPassword := .password | default "" }}
-    {{- if $userSecret }}
+    {{- if .existingSecret }}
+    {{- $secretPassword := include "common.secrets.get" (dict "secret" .existingSecret "key" (default "REDIS_PASSWORD" .secretKey) "context" $) | required "ACL user existingSecret/key must exist; reconcile the App credential first" }}
+    user {{ .username }} {{ default "on" .enabled }} #{{ sha256sum $secretPassword }} {{ default "~*" .keys }} {{ default "+@all" .commands }} {{ default "&*" .channels }}
+    {{- else if $userSecret }}
     {{- $secretPassword := include "common.secrets.get" (dict "secret" $userSecret "key" .username "context" $) }}
     user {{ .username }} {{ default "on" .enabled }} {{ if $secretPassword }}#{{ sha256sum $secretPassword }}{{ else }}nopass{{ end }} {{ default "~*" .keys }} {{ default "+@all" .commands }} {{ default "&*" .channels }}
     {{- else }}

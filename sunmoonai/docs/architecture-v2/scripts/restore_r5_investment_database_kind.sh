@@ -61,7 +61,7 @@ drop_restore_database() {
 trap drop_restore_database EXIT INT TERM HUP
 
 drop_restore_database
-postgres_sql "CREATE DATABASE \"$RESTORE_DATABASE\" OWNER research_admin_user_migration;" >/dev/null
+postgres_sql "CREATE DATABASE \"$RESTORE_DATABASE\" OWNER investment_backend_user_migration;" >/dev/null
 
 env -u DEBUG kubectl \
   --kubeconfig "$KUBECONFIG_PATH" \

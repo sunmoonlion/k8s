@@ -5,7 +5,7 @@ set -euo pipefail
 KUBECONFIG_PATH="${KUBECONFIG:-$HOME/.kube/kind-config}"
 POSTGRES_NAMESPACE="${POSTGRES_NAMESPACE:-data-platform-dev}"
 POSTGRES_POD="${POSTGRES_POD:-postgresql-sunmoonai-0}"
-DATABASE_NAME="${1:-research_admin}"
+DATABASE_NAME="${1:-investment_admin}"
 
 case "$DATABASE_NAME" in
   research_admin | investment_admin | investment_r5_restore_*) ;;

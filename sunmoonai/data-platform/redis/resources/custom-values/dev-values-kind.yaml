@@ -23,6 +23,14 @@ auth:
     # 与 app-platform 各应用 db-access-bootstrap/config/redis.k8s.env 中的
     # REDIS_USER/REDIS_PASSWORD 一致；Redis Pod 重建时会从这里生成 users.acl。
     users:
+      # Stable credential mirrored by the existing Investment reconcile helper.
+      - username: investment_backend
+        enabled: "on"
+        existingSecret: investment-redis-credential
+        secretKey: REDIS_PASSWORD
+        keys: "~investment:*"
+        commands: "-@all +@read +@write +@connection +@hash +@string +@list +@set +@sortedset -@dangerous +publish +subscribe +unsubscribe"
+        channels: "resetchannels &investment:*"
       - username: info_admin_backend
         password: InfoAdminRedisAcl_7nR4wP2vK9mL3qX8j
         enabled: "on"

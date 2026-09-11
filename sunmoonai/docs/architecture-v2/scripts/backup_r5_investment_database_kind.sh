@@ -5,15 +5,15 @@ set -euo pipefail
 KUBECONFIG_PATH="${KUBECONFIG:-$HOME/.kube/kind-config}"
 POSTGRES_NAMESPACE="${POSTGRES_NAMESPACE:-data-platform-dev}"
 POSTGRES_POD="${POSTGRES_POD:-postgresql-sunmoonai-0}"
-DATABASE_NAME="${DATABASE_NAME:-research_admin}"
+DATABASE_NAME="${DATABASE_NAME:-investment_admin}"
 STATE_ROOT="${R5_STATE_ROOT:-$HOME/.local/state/sunmoonai/architecture-v2/r5-investment}"
 CAPTURE_ID="${R5_CAPTURE_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
 BACKUP_DIR="$STATE_ROOT/$CAPTURE_ID"
 BACKUP_FILE="$BACKUP_DIR/${DATABASE_NAME}.dump"
 PARTIAL_FILE="$BACKUP_FILE.partial"
 
-if [[ "$DATABASE_NAME" != "research_admin" ]]; then
-  echo "R5 Investment backup only accepts DATABASE_NAME=research_admin" >&2
+if [[ "$DATABASE_NAME" != "investment_admin" ]]; then
+  echo "Investment backup only accepts the canonical DATABASE_NAME=investment_admin" >&2
   exit 2
 fi
 

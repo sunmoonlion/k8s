@@ -70,7 +70,7 @@ data:
   ENV: production
   LOG_LEVEL: INFO
   SERVICE_NAME: investment-backend
-  DEPLOYMENT_ID: v20-investment-001
+  DEPLOYMENT_ID: kind-invest-dd-20260911
   APP_SLUG: investment
   REDIS_HOST: redis-sunmoonai-master.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -131,7 +131,7 @@ data:
   AUTH_APP: investment
   APP_ORIGIN: https://investment-admin.sunmoonai.com:30443
   BACKEND_INTERNAL_URL: http://investment-backend:8000
-  DEPLOYMENT_ID: v20-investment-001-admin
+  DEPLOYMENT_ID: kind-invest-dd-20260911-admin
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -146,7 +146,7 @@ data:
   AUTH_APP: investment
   APP_ORIGIN: https://investment.sunmoonai.com:30443
   BACKEND_INTERNAL_URL: http://investment-backend:8000
-  DEPLOYMENT_ID: v20-investment-001-web
+  DEPLOYMENT_ID: kind-invest-dd-20260911-web
   REFERENCE_UI_ENABLED: 'false'
 ---
 apiVersion: v1
