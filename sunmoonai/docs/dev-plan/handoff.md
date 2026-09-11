@@ -34,7 +34,7 @@
 | # | 未决 | 阶段 | 为什么它卡着别的 |
 | --- | --- | --- | --- |
 | **U1** | **web 面生产适配器的形状**：薄转发（web → internal 面），还是自己持有会话与投影？ | 一 | 决定 v5 §10.2 事务原则与 §10.3 SSE 对账落在哪一层 |
-| U2 | 执行层 Port 的接口形状 | 二 | 决定纪律层怎么被测试。本分支提案见 [`investment-agent-architecture-feasibility.md`](investment-agent-architecture-feasibility.md) §3 |
+| U2 | 执行层 Port 的接口形状 | 二 | 决定纪律层怎么被测试。cursor 提案见 `~/codex-reference-archive/cursor/investment-agent-architecture-cursor.md` §3 |
 | U3 | **预算账与证据账**落 PG 的表结构与迁移 | 二 | 一切并行工作的前置——没有预算闸门就不能 fan-out |
 | U4 | `AgentProfile` 的具体字段 | 二 | 专用部分的载体 |
 | U5 | 外部 harness 的部署形态（服务端如何管理其进程与凭据） | 二 | 影响 U2。本分支提案见同一可行性文 §2 / §9 |
@@ -94,3 +94,38 @@
 
 **阶段一未开工**——U1 未定，[`implementation-plan.md`](implementation-plan.md)
 的任务清单为空。
+
+## 开发框架自身（R0–R5 路线）的进度
+
+> 路线表在 [`implementation-plan.md`](implementation-plan.md)「阶段〇」；本节只记**状态**。
+> 最后更新：2026-09-05。
+
+| 轮 | 状态 |
+| --- | --- |
+| R0 修脚本↔协议不一致 + 合并 `protocol-v2` | **已做**（2026-09-06）。主线 `round-protocol.md` = 七环节版；三个脚本进主线；四处脚本↔协议不一致已修（产物路径、调用方式、退出码、已完成轮次被判成刚开始）。判据与结果见 `rounds/_r0/criteria.md`。产出方 = 验收方（所有者 2026-09-06 裁定不追加外部复验：判据 C1–C9 全是可复跑命令） |
+| R0′ 协议补机器可读块 | 未开（所有者已裁定按 T2） |
+| **S1 边界 spike** | **进行中**。④ `check-no-owner-creds.sh` 与 ⑤ 宿主取证已完成（`rounds/_spike-sign/forensics.md`）；①②③ 待所有者 |
+| R1–R5 | 未开 |
+
+**S1 的两条卡点**：
+
+1. ⚠ **一条路线表未写的前置**：所有者需要**一个 agent 够不着的本地 shell**。
+   Cursor 与 Qoder 均 Remote 连入本 VM，其中的终端就是 VM 的 shell——
+   在那里签名等于把私钥放在 agent 能 `sudo` 读到的地方。见 `rounds/runtime/rulings.md` `R2`。
+2. ⚠ 宿主取证发现 `zym` 有免密 sudo 且在 docker 组，**本机一切本地强制点对 agent 无效**；
+   只有托管方的 key 作用域有效。这使 S1 的 ② 成为唯一真正有效力的一步。
+
+## 已完成的轮次
+
+| 轮 | 结果 |
+| --- | --- |
+| `refact` | 已发布，最终稿 `archive/development-lifecycle-agent.md`（2026-09-07 归档）。其 118 节已于 2026-09-07 吸收进 `agent-dev-guide.md` §10。⚠ `refact-fable` §5.2 承诺的逐节映射表 `migration-map.md` **从未产出**，该欠账至今只清到标题级 |
+| `refact-fable` | 已发布；其架构结论（两个 Profile）后被 `runtime` 轮推翻，原文已迁出并删除，内容在 `7e8464c2` 与 `rounds/refact-fable/` |
+| `runtime` | 已发布，最终稿曾为 `runtime-architecture.md`；其 33 节已由 `runtime-refact` 轮全部落点到 `agent-dev-guide.md` §10，原文 2026-09-07 归档至 [`archive/`](archive/)。裁决方自陈错误十二条，六条由参与方抓出、三条由所有者抓出 |
+| `_fixups` | 进行中：追认 `runtime` 发布后四次未走流程的改动，验收方 cursor |
+
+## 不能倒退的两条（本轮新增）
+
+- **H5 未分层**：所有者五次执行 `publish-*.sh` 写主线，都是 H5 管辖的 Side Effect 但未经 H5 门。
+  建议拆 `H5-final` / `H5-round`，见 `rounds/runtime/runtime-disposition.md` §L.1。
+- **⑥ 确认的回执强度为零**：全流程唯一不可逆的一步，其回执恰恰最不可验证（`rulings.md` `R2`）。

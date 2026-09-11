@@ -26,7 +26,7 @@
 | | 通用部分 | 专用部分 |
 | --- | --- | --- |
 | 内容 | 执行编排：轮次、隔离、中断恢复、审批、工具协议 | 领域：提示、工具绑定、权限、memory policy、领域约束 |
-| 载体 | 执行运行时 + [`agent-discipline.md`](agent-discipline.md) | `AgentProfile` |
+| 载体 | 执行运行时 + [`round-protocol.md`](protocol/round-protocol.md) | `AgentProfile` |
 | 纪律 | 隔离、三阶段、提案包构造、评审协议、重叠分歧判据 | 零证据即失败、citation 只回同源、结论可复现 |
 
 **两部分都必须有纪律**，不存在"通用部分不需要约束"。
@@ -59,7 +59,7 @@ harness 并需凭据。
 
 **harness 只给执行原语，不给运作纪律**：N 路隔离、轮次、中断恢复、审批、工具、
 沙箱它有；三阶段可见性、提案包构造、评审协议、吸收处置记录、重叠分歧判据——
-这些在 [`agent-discipline.md`](agent-discipline.md)，必须自建。
+这些在 [`round-protocol.md`](protocol/round-protocol.md)，必须自建。
 
 ## 三个阶段
 

@@ -564,7 +564,8 @@ CELERY_QUEUE="incubator-queue"
 ### 相关文档
 
 - [YAML生成机制说明.md](./YAML生成机制说明.md)
-- [APP组件开发.md](./APP组件开发.md)
+- `APP组件开发.md` —— **已于 `b97f5c10`（清理已失效的历史材料 O8）删除**。
+  取原文：`git show b97f5c10^:sunmoonai/docs/APP组件开发.md`
 
 ### 相关配置路径
 
