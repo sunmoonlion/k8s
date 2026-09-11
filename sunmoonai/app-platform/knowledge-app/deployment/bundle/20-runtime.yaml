@@ -32,8 +32,9 @@ spec:
         sunmoonai.com/managed-by: app-platform-v2
         sunmoonai.com/internal-provider: 'true'
       annotations:
-        sunmoonai.com/release-id: v20-knowledge-stable-001
-        sunmoonai.com/config-sha256: d8842a161ab2eeacb476a363fd1bcaa4312e6157603b0c1a6a0916f2e0ef2a16
+        sunmoonai.com/release-id: kind-know-dd-20260911
+        sunmoonai.com/config-sha256: 993ff75c6bf19a0b73e07ca13054b0d3075d85e3e5076575132d551e9c19e637
+        sunmoonai.com/source-commit: 72f17d2e81bafaa5818a9a94e735c011720b9baf
     spec:
       serviceAccountName: knowledge-backend-api
       automountServiceAccountToken: false
@@ -57,7 +58,7 @@ spec:
             app.kubernetes.io/component: backend-api
       containers:
       - name: api
-        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:38ef7c29a43e4a47a339ba06c6dd77bd0a31277035d1df31b0fc2ca69cd862c0
+        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:36bc1dd6ac4631339070d29825f16373aa65a1f9fe65385d0f90a4564f87af17
         imagePullPolicy: IfNotPresent
         command:
         - uvicorn
@@ -293,7 +294,8 @@ spec:
         sunmoonai.com/app: knowledge
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/config-sha256: d8842a161ab2eeacb476a363fd1bcaa4312e6157603b0c1a6a0916f2e0ef2a16
+        sunmoonai.com/config-sha256: 993ff75c6bf19a0b73e07ca13054b0d3075d85e3e5076575132d551e9c19e637
+        sunmoonai.com/source-commit: 72f17d2e81bafaa5818a9a94e735c011720b9baf
     spec:
       serviceAccountName: knowledge-backend-worker
       automountServiceAccountToken: false
@@ -309,7 +311,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: worker
-        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:38ef7c29a43e4a47a339ba06c6dd77bd0a31277035d1df31b0fc2ca69cd862c0
+        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:36bc1dd6ac4631339070d29825f16373aa65a1f9fe65385d0f90a4564f87af17
         imagePullPolicy: IfNotPresent
         command:
         - /bin/sh
@@ -501,8 +503,9 @@ spec:
         sunmoonai.com/app: knowledge
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: v20-knowledge-stable-001
-        sunmoonai.com/config-sha256: d8842a161ab2eeacb476a363fd1bcaa4312e6157603b0c1a6a0916f2e0ef2a16
+        sunmoonai.com/release-id: kind-know-dd-20260911
+        sunmoonai.com/config-sha256: 993ff75c6bf19a0b73e07ca13054b0d3075d85e3e5076575132d551e9c19e637
+        sunmoonai.com/source-commit: 72f17d2e81bafaa5818a9a94e735c011720b9baf
     spec:
       serviceAccountName: knowledge-backend-scheduler
       automountServiceAccountToken: false
@@ -518,7 +521,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: scheduler
-        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:38ef7c29a43e4a47a339ba06c6dd77bd0a31277035d1df31b0fc2ca69cd862c0
+        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:36bc1dd6ac4631339070d29825f16373aa65a1f9fe65385d0f90a4564f87af17
         imagePullPolicy: IfNotPresent
         command:
         - celery
@@ -596,8 +599,9 @@ spec:
         sunmoonai.com/app: knowledge
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: v20-knowledge-stable-001
-        sunmoonai.com/config-sha256: 5de662c60d3f4485fd585c0df7cc2bdd5310fb36c6c01d91bad8d29263faaa86
+        sunmoonai.com/release-id: kind-know-dd-20260911
+        sunmoonai.com/config-sha256: 86a2b6cf39dfa04fba23c83bcd499a33d69e5334d38d0a199e9c6c98c2c95baa
+        sunmoonai.com/source-commit: 87c1fe77fc30d8f3b4e5d038012341cd81e571d3
     spec:
       serviceAccountName: knowledge-admin-frontend
       automountServiceAccountToken: false
@@ -621,7 +625,7 @@ spec:
             app.kubernetes.io/component: admin-frontend
       containers:
       - name: admin
-        image: harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:07130d859a89b18842ce043178b5477bbb67a3ab183aadfe18baed039bd0b9c2
+        image: harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:d344c875892559c8ec2d7250195599c314bfbf0b306bd928cbfcff4fa6c1e400
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
@@ -754,8 +758,9 @@ spec:
         sunmoonai.com/app: knowledge
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: v20-knowledge-stable-001
-        sunmoonai.com/config-sha256: 572aa1c095667231bb6aa92a9e11a4987b4b6c8b2601d4f28e5940b5ea9e9b4d
+        sunmoonai.com/release-id: kind-know-dd-20260911
+        sunmoonai.com/config-sha256: 3856ea3c794adf4f69a3dd5cb7bcbe886c6908cb76873cbe94b28b8324977c2a
+        sunmoonai.com/source-commit: c011aec62e063f7731b3b69cf3449da218980594
     spec:
       serviceAccountName: knowledge-web-frontend
       automountServiceAccountToken: false
@@ -779,7 +784,7 @@ spec:
             app.kubernetes.io/component: web-frontend
       containers:
       - name: web
-        image: harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:7bdd329bf24e479d1c8f859ef6ed909958bc1479b7296b3b212c2293c7601148
+        image: harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:b835526bb9ee3e0d5532042e2b79958f6d61348107eecb2730ca0d16a09236be
         imagePullPolicy: IfNotPresent
         ports:
         - name: http

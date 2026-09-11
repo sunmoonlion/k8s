@@ -1,0 +1,38 @@
+{
+  "kind": "kind-development-release-input",
+  "logical_app": "knowledge",
+  "migration_head": "20260911_0006",
+  "development_source_lock": {
+    "schema_version": 1,
+    "kind": "development-source-lock",
+    "repository": "knowledge-app",
+    "formal_release": false,
+    "task": "durable-delivery-luna-20260911",
+    "release_boundary": "Source-only development candidate; historical formal release and deployed images are unchanged.",
+    "components": [
+      {
+        "path": "knowledge-backend",
+        "commit": "72f17d2e81bafaa5818a9a94e735c011720b9baf",
+        "tree": "d6cb0aa72e291b40718d6cee196723eab78ef866",
+        "remote_branch": "origin/master"
+      },
+      {
+        "path": "knowledge-admin-frontend",
+        "commit": "87c1fe77fc30d8f3b4e5d038012341cd81e571d3",
+        "tree": "f5f12b3396ea519331d676db406e951da7e13a34",
+        "remote_branch": "origin/luna/durable-delivery-20260911-local"
+      },
+      {
+        "path": "knowledge-web-frontend",
+        "commit": "c011aec62e063f7731b3b69cf3449da218980594",
+        "tree": "44c716f6aa67a912252ffe3816fcb60b9ac3b2af",
+        "remote_branch": "origin/luna/durable-delivery-20260911-local"
+      }
+    ]
+  },
+  "images": {
+    "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:36bc1dd6ac4631339070d29825f16373aa65a1f9fe65385d0f90a4564f87af17",
+    "admin": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:d344c875892559c8ec2d7250195599c314bfbf0b306bd928cbfcff4fa6c1e400",
+    "web": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:b835526bb9ee3e0d5532042e2b79958f6d61348107eecb2730ca0d16a09236be"
+  }
+}

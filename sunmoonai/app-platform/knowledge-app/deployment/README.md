@@ -1,6 +1,7 @@
-# Knowledge 正式声明式部署
+# Knowledge 声明式部署
 
-本目录是 Knowledge 正式运行拓扑的唯一 Git 真相源。`bundle/` 锁定统一
+本目录是 Knowledge 运行拓扑的唯一 Git 真相源。当前 bundle 为 KIND 专用开发包，
+不代表新的正式版本，历史正式标签保持不变。`bundle/` 锁定统一
 `knowledge-backend` 的 API、Worker、Scheduler、Migration、两个 Next.js 前端、
 NetworkPolicy 与正式 TLS 路由；所有镜像均使用 Harbor digest。
 
@@ -9,7 +10,7 @@ NetworkPolicy 与正式 TLS 路由；所有镜像均使用 Harbor digest。
 ```bash
 ./deploy-knowledge-app-all/deploy-knowledge-app-all.sh plan --cluster KIND
 ./deploy-knowledge-app-all/deploy-knowledge-app-all.sh server-dry-run --cluster KIND
-./deploy-knowledge-app-all/deploy-knowledge-app-all.sh deploy --cluster KIND
+./deploy-knowledge-app-all/deploy-knowledge-app-all.sh deploy --cluster KIND --backup-receipt /private/path/receipt.json
 ./deploy-knowledge-app-all/deploy-knowledge-app-all.sh drift --cluster KIND
 ./deploy-knowledge-app-all/deploy-knowledge-app-all.sh status --cluster KIND
 ```
@@ -30,9 +31,13 @@ RAGFlow 是 Knowledge 之外的受保护 Provider。正式 bundle 仅声明访�
 重新生成必须写到空目录并与已提交 `bundle/` 逐字比较：
 
 ```bash
-python3 deployment/render.py --output-dir /tmp/knowledge-formal
-diff -ru deployment/bundle /tmp/knowledge-formal
+python3 deployment/render.py --output-dir /tmp/knowledge-development \
+  --release-id kind-know-dd-20260911 --development-input deployment/development-input.json
+diff -ru deployment/bundle /tmp/knowledge-development
 ```
 
 v1 声明保留在 Git 历史、`2.0.0` 标签和 R5/R7 证据中，不再复制到活动目录。私有备份、
 手工 `kubectl patch/scale/apply` 或集群当前状态均不能替代本目录。
+
+开发升级只允许全 App 事务，组件入口不可单独 apply。
+停写、备份恢复与回执格式见 [共享部署说明](../../scripts/README.md#kind-开发包部署)。

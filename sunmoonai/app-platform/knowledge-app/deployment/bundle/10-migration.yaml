@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: knowledge-backend-migration-v20-knowledge-stable-001
+  name: knowledge-backend-migration-kind-know-dd-20260911
   namespace: app-platform-dev
   labels:
     app.kubernetes.io/name: knowledge-backend
@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/part-of: knowledge
     sunmoonai.com/app: knowledge
     sunmoonai.com/managed-by: app-platform-v2
-    sunmoonai.com/release-id: v20-knowledge-stable-001
+    sunmoonai.com/release-id: kind-know-dd-20260911
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 300
@@ -22,7 +22,7 @@ spec:
         app.kubernetes.io/part-of: knowledge
         sunmoonai.com/app: knowledge
         sunmoonai.com/managed-by: app-platform-v2
-        sunmoonai.com/release-id: v20-knowledge-stable-001
+        sunmoonai.com/release-id: kind-know-dd-20260911
     spec:
       restartPolicy: Never
       serviceAccountName: knowledge-backend-migration
@@ -38,7 +38,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: migration
-        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:38ef7c29a43e4a47a339ba06c6dd77bd0a31277035d1df31b0fc2ca69cd862c0
+        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:36bc1dd6ac4631339070d29825f16373aa65a1f9fe65385d0f90a4564f87af17
         imagePullPolicy: IfNotPresent
         command:
         - python

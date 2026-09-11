@@ -1,15 +1,15 @@
 {
   "schema_version": 2,
-  "architecture": "app-platform-v2-formal",
+  "architecture": "app-platform-v2-development",
   "logical_app": "knowledge",
   "resource_app": "knowledge",
   "namespace": "app-platform-dev",
-  "release_id": "v20-knowledge-stable-001",
-  "formal_release": true,
+  "release_id": "kind-know-dd-20260911",
+  "formal_release": false,
   "images": {
-    "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:38ef7c29a43e4a47a339ba06c6dd77bd0a31277035d1df31b0fc2ca69cd862c0",
-    "admin": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:07130d859a89b18842ce043178b5477bbb67a3ab183aadfe18baed039bd0b9c2",
-    "web": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:7bdd329bf24e479d1c8f859ef6ed909958bc1479b7296b3b212c2293c7601148"
+    "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:36bc1dd6ac4631339070d29825f16373aa65a1f9fe65385d0f90a4564f87af17",
+    "admin": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:d344c875892559c8ec2d7250195599c314bfbf0b306bd928cbfcff4fa6c1e400",
+    "web": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:b835526bb9ee3e0d5532042e2b79958f6d61348107eecb2730ca0d16a09236be"
   },
   "origins": {
     "admin": "https://knowledge-admin.sunmoonai.com:30443",
@@ -25,9 +25,9 @@
     "40-ingress.yaml"
   ],
   "sha256": {
-    "00-prerequisites.yaml": "590124428d69cbb38224ca77c67a071582eec9a449cb660580592c44592f2bf8",
-    "10-migration.yaml": "c1682df1f479cad782db56934c279a0f62d66d2271ef4da3f82aa0275cc8e678",
-    "20-runtime.yaml": "c736e110adc1e4d1f9f4f5bd5e016ac142238bfe49b61a1d54ba648538ff39aa",
+    "00-prerequisites.yaml": "398821ca1ccbe1cca145a0cfb2444e635501f045e39711a64ea1dc0e9c633939",
+    "10-migration.yaml": "95cda786ad57587f36d042d55824ebd7fdd84ded3e8a1461e8cdf0b2f6d12cdb",
+    "20-runtime.yaml": "64e74d202ea2b0e2e44fe9ccc1692ef1f3357de613556590b90c960c37dca060",
     "30-network-policies.yaml": "b9b749171245e8c5788a7a2aaced8a6b883a13ead69296253fcff39959315f3a",
     "40-ingress.yaml": "628f3391754910a96e5dfda18d5bf5237f7acb31e31a246eef0b6126c08b329d"
   },
@@ -127,6 +127,38 @@
     "tpl-app:k8s-deployment/templates/10-migration.yaml.tpl": "2a78b9770f61b94cc267f267449b0e0593b147a61a444a7463fe4f3fcc1508f4",
     "tpl-app:k8s-deployment/templates/20-runtime.yaml.tpl": "1ca1c9df52705922abccf7906ff96ddd4b2e578c327a5d86502fa07d23de5b42",
     "tpl-app:k8s-deployment/templates/30-network-policies.yaml.tpl": "2eede852d9710c20cba56cfe4a1b9864cb2a9aac907babbf5b9cf2c258f5d3c5",
-    "tpl-app:k8s-deployment/templates/40-ingress.yaml.tpl": "5f79e6a40bdfa8a581b92eeabe1a9f0cbf3a031221f5c9a40708b4682190ce3d"
-  }
+    "tpl-app:k8s-deployment/templates/40-ingress.yaml.tpl": "5f79e6a40bdfa8a581b92eeabe1a9f0cbf3a031221f5c9a40708b4682190ce3d",
+    "development-release-input": "92ca00f198792646d27c4cd06eaf5a46fac8cc519e3513417266bd279f0c21d5",
+    "k8s:sunmoonai/app-platform/scripts/development_release.py": "b1abf57789ba110fecb7d2f402e5b3a01aeaf9d4d8f7f9347c151d6e71883089"
+  },
+  "deployment_target": "KIND",
+  "development_source_lock": {
+    "schema_version": 1,
+    "kind": "development-source-lock",
+    "repository": "knowledge-app",
+    "formal_release": false,
+    "task": "durable-delivery-luna-20260911",
+    "release_boundary": "Source-only development candidate; historical formal release and deployed images are unchanged.",
+    "components": [
+      {
+        "path": "knowledge-backend",
+        "commit": "72f17d2e81bafaa5818a9a94e735c011720b9baf",
+        "tree": "d6cb0aa72e291b40718d6cee196723eab78ef866",
+        "remote_branch": "origin/master"
+      },
+      {
+        "path": "knowledge-admin-frontend",
+        "commit": "87c1fe77fc30d8f3b4e5d038012341cd81e571d3",
+        "tree": "f5f12b3396ea519331d676db406e951da7e13a34",
+        "remote_branch": "origin/luna/durable-delivery-20260911-local"
+      },
+      {
+        "path": "knowledge-web-frontend",
+        "commit": "c011aec62e063f7731b3b69cf3449da218980594",
+        "tree": "44c716f6aa67a912252ffe3816fcb60b9ac3b2af",
+        "remote_branch": "origin/luna/durable-delivery-20260911-local"
+      }
+    ]
+  },
+  "migration_head": "20260911_0006"
 }
