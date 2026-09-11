@@ -1,6 +1,6 @@
 # investment-app（投资研究智能体）
 
-> 取证时点：2026-08-29 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西
+> 取证时点：2026-09-11 开发候选 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西；未部署到业务环境
 
 ## 1. 定位
 
@@ -15,10 +15,10 @@
 
 | | |
 | --- | --- |
-| 检索无授权证据 | **失败，不是返回空答案**（`pilot_agent_graph` 抛 `pilot retrieval returned no authorized evidence`） |
+| 检索无授权证据 | **失败，不是返回空答案**（`agent_delivery.prepare_pilot_input` 拒绝无授权证据） |
 | Run 的四个终态 | `completed` / `failed` / `cancelled` / `budget_exceeded`，`RUN_STATUS_TRANSITIONS` 里**转出集合全为空** |
 | `budget_exceeded` | 状态机里可达，**生产链路不可达**——预算从不被消费，见「已知未实现」 |
-| 两条生产链 | `tasks/agent_graph.py` 与 `tasks/pilot_agent_graph.py`，**都不读 `AgentProfile`** |
+| 两条候选运行链 | Phase-0/Pilot 共用 `tasks/agent_delivery.py` → `AgentExecutionService`，**未执行完整 AgentProfile 配置**；旧直接 graph 任务拒绝执行 |
 
 ## 2. 结构（只列模板之外）
 
@@ -27,8 +27,9 @@
 | `domain/agent/` | `runtime.py`（状态机 + RunBudget）、`models.py`（DomainEvent/UIEvent/RunLineage）、`commands.py`、`knowledge.py`、`tools.py`、`profiles.py`、`memory.py`、`message_upcaster.py` 等 |
 | `application/agent/` | `run_service.py`、`pilot_service.py`、`graph_runtime_service.py`、`side_effect_service.py`、`session_lock.py`、`event_sink.py`、`timeline_projector.py`、`memory_service.py` |
 | `infrastructure/graph/` | `walking_skeleton.py`、`pilot_graph.py`、`first_m1_graph.py`、`langgraph_runtime.py`、`checkpointer.py`、`state.py` + 两个 spike |
-| `tasks/agent_graph.py` | 生产链一 |
-| `tasks/pilot_agent_graph.py` | 生产链二 |
+| `tasks/agent_delivery.py` | Phase-0/Pilot 的持久命令、会话执行入口及传输适配 |
+| `tasks/agent_graph.py` / `tasks/pilot_agent_graph.py` | 旧入口，显式拒绝执行 |
+| `infrastructure/agent/delivery.py` | 公共投递策略的 Agent 会话租约扩展，不另建 publisher/死信真源 |
 | `interfaces/endpoints/agent_routes.py` | Admin Agent v4 面（默认关闭） |
 | `interfaces/endpoints/pilot_runtime_routes.py` | Internal Pilot 面 |
 | `contracts/knowledge-retrieval-provider-lock.json` | retrieval 契约**消费锁** |
@@ -46,7 +47,7 @@
 | Pilot 检索**零证据即失败**，不是空答案 | run `failed` |
 | Pilot Internal API 需 Bearer + 全量 Pilot 配置 | 401/403/503 |
 | resume token 一次性，置位后不可复用 | 再调抛 `ValueError` |
-| 抢会话锁失败即 failed | run 终态 `failed` |
+| PostgreSQL 会话执行租约未取得 | 不执行该命令，等待持有者或过期后对账；不把锁竞争标成领域失败 |
 | `tool_side_effects` 以 `tool_call_id` 为 PK + `ON CONFLICT DO NOTHING` | 重复副作用返回 `inserted=False` |
 | GraphState 禁跨层键与大对象 body | 节点抛 `ValueError` |
 
@@ -68,25 +69,27 @@ completed · failed · cancelled · budget_exceeded  → ∅（四终态，出�
 
 | 链 | 入口 | 面 | 门控 |
 | --- | --- | --- | --- |
-| Walking Skeleton | `tasks/agent_graph.py` | `/api/agent/*` | `AGENT_V4_TRAFFIC_ENABLED`，**默认 false** |
-| Pilot | `tasks/pilot_agent_graph.py` | `/api/internal/v1/investment/*` | dispatch 需 `AGENT_PILOT_ENABLED` |
+| Walking Skeleton | `agent_delivery.execute_command` → GraphExecutor | `/api/agent/*` | `AGENT_V4_TRAFFIC_ENABLED`，**默认 false** |
+| Pilot | 同入口，持久 payload.kind=pilot | `/api/internal/v1/investment/*` | 需 `AGENT_PILOT_ENABLED` |
 
-**Pilot 链步骤**：建 run（`owner_actor_id` + `idempotency_key` 幂等）→ dispatch
+**Pilot 链步骤**：建 run（`owner_actor_id` + `idempotency_key` 幂等）与 Outbox 同事务 → 公共投递
 → HTTP POST knowledge 检索（OAuth client credentials）→ **零证据即失败**
 → `Citation.from_evidence` 逐条写 citation 事件 → LLM 草稿（OpenAI 兼容）
 → graph interrupt 要求 approval，写 `input_required` → resume 原子消费 token
 → summary → `completed`。
 
-**Walking Skeleton 步骤**：加载 run（已完成直接返回）→ 抢 Redis 会话锁（失败即 failed）
-→ 转 `running` → LangGraph stream + Postgres 检查点 → interrupt 写
-`HumanInputRequested` 并转 `waiting` → 副作用记一次 → `RunCompleted` / `RunFailed`。
+**Walking Skeleton 步骤**：持久命令 → PostgreSQL 会话租约/epoch → 加载 run
+（终态只确认命令）→ 转 `running` → Graph Port 与 Postgres 检查点 → interrupt 写
+`HumanInputRequested` 并转 `waiting`；恢复仍是持久命令。接受的状态、事件和 Inbox
+同事务，取消撤销旧 epoch；本地副作用记一次，远程动作须走单独意图/回执协议。
 
 ### 4.3 检查点与恢复
 
 `PostgresSaver.from_conn_string()`（`infrastructure/graph/checkpointer.py:22`），
 asyncpg URL 转 psycopg 同步 URL。四张表 `checkpoints` / `checkpoint_blobs` /
 `checkpoint_writes` / `checkpoint_migrations` 在迁移 `0001` 中建立。
-`thread_id` = `session_id`；两链恢复都用 `Command(resume=...)`。
+当前每次执行使用独立 checkpoint thread，接受的 ExecutionBinding 保存在 agent_runs；
+两条纯节点图从已接受状态恢复，不能读取迟到旧执行者未被接受的 checkpoint。
 
 ### 4.4 事件
 
@@ -95,7 +98,7 @@ asyncpg URL 转 psycopg 同步 URL。四张表 `checkpoints` / `checkpoint_blobs
 | Domain 七种 | `RunStarted` `UserInputReceived` `HumanInputRequested` `ToolCallStarted` `ToolCallCompleted` `RunCompleted` `RunFailed` |
 | Pilot 浏览器六种 | `status` `citation` `input_required` `delta` `completed` `failed` |
 
-`DBEventSink` 同写 PostgreSQL `session_events` 与 Redis 两个 channel。
+`DBEventSink` 在同事务写 PostgreSQL `session_events` 与通知 Outbox；投递器再发 Redis 提示。
 SSE 端点**先订阅 Redis 再读 DB 快照回放**——代码注释明确记录了这样做是为了避免窗口丢事件。
 
 ### 4.5 预算：定义在，门禁不在
@@ -115,7 +118,7 @@ tests/test_agent_runtime_budget.py          ← 其测试
 
 ## 5. 数据
 
-迁移链 5 个版本，线性：
+迁移链 7 个版本，线性：
 
 ```
 20260708_0001_agent_phase0  → 8 张表：checkpoint_migrations / checkpoints /
@@ -123,8 +126,10 @@ tests/test_agent_runtime_budget.py          ← 其测试
                                agent_sessions / agent_runs / session_events / tool_side_effects
 20260712_0002_auth_identity → auth_user；另加 agent_sessions.owner_actor_id
 20260729_0003_agent_pilot   → agent_pilot_requests / agent_pilot_controls
-20260809_0004_outbox_primitives → outbox_message / inbox_message（零调用）
+20260809_0004_outbox_primitives → outbox_message / inbox_message（已接线）
 20260811_0005_uuid_defaults → 无新表
+20260910_0006_agent_reliability → Agent 会话执行租约、旧死信、工具副作用意图/回执
+20260911_0007_durable_delivery → 公共死信与消费租约；旧 Agent 死信改为只读回滚档案
 ```
 
 幂等键两套：Agent run 用 `session_id + idempotency_key`；
@@ -156,9 +161,14 @@ Pilot run 用 `owner_actor_id + idempotency_key`。
 | `CancelRunCommand` | 领域命令已定义，无对应 HTTP 端点 |
 | `first_m1_graph` | 非生产图，仅 tests 与 `scripts/agent_golden.py` |
 | 两个 spike | `execution_identity_spike` / `runtime_selection_spike`，不在生产链 |
-| 失败原因码分流 | 库内已能区分 `dispatch_failed` 与 `resume_dispatch_failed`，但**消费侧无按码分流的重试逻辑** |
-| **`resume_token` 一次性消费** | **未实现**。`resume_run` 只做相等比较后就 dispatch，**不清除、不原子占用**——同一个 token 可重复提交，产生多次 dispatch |
-| 共享 Outbox | 迁移与仓库类在，零业务调用 |
+
+### Agent 可靠性代码更新（2026-09-11，待部署）
+
+Agent 创建、恢复、事实/UI 事件和通知已接入事务 Outbox；恢复令牌原子消费，重试复用已落库命令。Worker 通过 PostgreSQL 租约与 epoch 校验写入，结果和 Inbox 回执一起提交。Scheduler 每 5 秒触发公共投递策略，Agent 只保留会话执行和传输扩展，死信唯一可写真源为 outbox_dead_letter。
+
+Phase-0 与 Pilot 均经会话级 AgentExecutorPort 执行；接受的状态保存在 PostgreSQL，每次执行有独立 checkpoint 空间。远程副作用提供意图/未知结果/回执与对账入口；具体 provider 仍须实现目标端 fencing 与幂等，当前测试不能替代真实 provider 集成验收。
+
+当前代码与故障测试见 investment-backend 的 `docs/durable-delivery-luna.md`、`app/tests/test_agent_reliability_db.py`、`app/tests/test_agent_shared_delivery_db.py`。旧修复记录只代表当时基线。这次是源码实现与隔离数据库验证，部署时须停止旧 worker、处理旧在途任务并执行新增迁移；不表示业务环境已经启用。
 
 ## 8. 验证
 

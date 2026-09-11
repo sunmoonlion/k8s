@@ -1,6 +1,6 @@
 # info-app（资讯采集与治理）
 
-> 取证时点：2026-08-29 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西
+> 可靠投递源码更新：2026-09-11 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西
 
 ## 1. 定位
 
@@ -26,24 +26,25 @@
 | --- | --- |
 | `application/collectors/` | 采集器族 + 注册表，见 §4.1 |
 | `application/services/info_crawl_service.py` | **本仓最大单文件**（约 1.8k 行），采集/去重/治理/分发编排 |
-| `application/services/delivery_outbox.py` | 业务 outbox 生命周期 |
+| `application/services/delivery_outbox.py` | 公共 Outbox 的 Info 分发领域适配 |
 | `interfaces/endpoints/info_routes.py` | 领域路由（模板面在 `interfaces/http/`） |
 | `interfaces/schemas/info.py` | 领域 schema |
-| `tasks/` | `crawl.py` `distribution.py` `search.py` `ping.py` |
+| `infrastructure/messaging/delivery_handlers.py` | 采集、索引、分发的领域 handler 注册 |
+| `tasks/durable_delivery.py` | 公共发布与执行入口；旧业务 Celery 入口拒绝直接投递 |
 | `infrastructure/search/` | ES/OpenSearch 索引适配（**默认关闭**） |
 | `infrastructure/external/knowledge_app.py` | 调 knowledge 摄入的客户端 |
-| `cli/drain_delivery_outbox.py` | CronJob 用的有界单次扫描 |
+| `cli/drain_delivery_outbox.py` | 兼容公共 pump，仅接受批量上限 100 |
 | `contracts/knowledge-provider-lock.json` | artifact 契约的**消费锁** |
 
 ## 3. 硬规则
 
-模板五项不变量原样存在（`tests/test_kernel_invariants.py`，92 行），**额外一项**：
+模板结构不变量仍由 `tests/test_kernel_invariants.py` 检查，额外约束：
 
 | 规则 | 位置 |
 | --- | --- |
-| 业务 outbox 与共享 outbox 必须分表 | `test_business_and_shared_outboxes_remain_distinct`（`:62`） |
+| 旧投递表归档，公共 Outbox 是唯一新投递真源 | `test_legacy_delivery_is_archived_and_shared_outbox_is_authoritative` |
 
-这条存在的原因见 §5——本仓有两套同名不同物的 outbox，容易混。
+旧分发日志只保留迁移/回滚用途，见 §5。
 
 配置层额外的生产校验：`ALLOWED_HOSTS` 禁 `*`、禁 `REFERENCE_INTERACTION_ENABLED`。
 
@@ -82,46 +83,48 @@ playwright      → PlaywrightCollectorAdapter (18 行)
 抓取（httpx，限大小/超时/UA）→ 存 raw 制品 → trafilatura 抽取 markdown + text
 → 按 canonical_url 归并文档 → **sha256 精确去重 + simhash64 近似去重**
 → content_hash 未变则跳过新版本，变了则建 clean/text 制品 + 新 `InfoDocumentVersion`
-→ 索引（Celery 优先，broker 不可用时回落 API 内联；但 `SEARCH_BACKEND=disabled` 时直接跳过）。
+→ 与版本同事务保存索引命令，由公共消费者执行；`SEARCH_BACKEND=disabled` 时跳过。
+
+创建作业时 `enqueue=false` 只建单；`run` 接口持久排队，不在请求内采集。
+索引重建响应 `queued` 表示排队数，`indexed=0` 不宣称后台已完成。
 
 ### 4.3 分发 → knowledge
 
 ```
 校验制品可分发性 → 组装 artifact v1 payload
-  → 同事务写 distribution_record + delivery_outbox_message
-  → Celery dispatch_distribution → POST knowledge 内部摄入端点
+  → 同事务写 distribution_record + outbox_message
+  → 公共 Scheduler 发布 / Worker 消费 → POST knowledge 内部摄入端点
 ```
 
-`delivery_outbox_message` 是**真正在跑**的 outbox，状态机四态：
-
-```
-pending → leased → published → completed
-```
-
-`completed` 表示**业务完成**（下游确认成功），不只是 broker 发布成功。
-broker 发布失败只记录并 release，不抛出——**API 层不因 broker 故障返回 5xx**；
-CronJob 跑 `cli/drain_delivery_outbox.py` 兜底。
+公共消费者使用执行租约、epoch、提交前 fencing 与 Inbox；只有下游确认和本地提交后
+才记录完成回执。Scheduler 每 5 秒发布与对账，有限重试后入死信，可显式重放。
+broker 故障不改变已接受命令；分发重试保持相同下游业务身份。取消和租约丢失不写终态。
 
 ## 5. 数据
 
-迁移链 6 个版本，线性：
+迁移链 7 个版本，线性：
 
 ```
 20260706_0001_info_spider_mvp → 0002_source_governance → 0003_auth_identity
 → 0004_delivery_outbox → 0005_outbox_primitives → 0006_delivery_outbox_uuid_default
+→ 20260911_0007_durable_delivery
 ```
 
 领域表（`infrastructure/models/info.py`，9 张）：
 
 `info_source` · `info_collector` · `crawl_job` · `raw_artifact` · `info_document` ·
-`info_document_version` · `extracted_content` · `distribution_record` · `delivery_outbox_message`
+`info_document_version` · `extracted_content` · `distribution_record` · `delivery_outbox_message_legacy`
 
-**两套 outbox，同名不同物，勿混**：
+**新旧投递记录的归属**：
 
 | 表 | 语义 | 状态 |
 | --- | --- | --- |
-| `delivery_outbox_message` | info 分发专用业务 outbox | **接线并在跑** |
-| `outbox_message` / `inbox_message` | 模板共享原语 | **零业务调用** |
+| `delivery_outbox_message_legacy` | 原分发日志 | 归档；旧表名写入失败 |
+| `outbox_message` / `inbox_message` | 公共命令与完成回执 | 采集、索引、分发已接线 |
+| `outbox_dead_letter` / `outbox_execution` | 公共死信与执行租约 | 有限重试、恢复与 fencing |
+
+迁移保留旧消息 ID 和完成回执；历史 pending 采集需盘点后显式排队，不能猜测 enqueue。
+降级拒绝未排空领域命令；详细切换、备份与回滚见 Info 后端 `docs/durable-delivery-luna.md`。
 
 `info_document.metadata_json` 是治理审计的载体（review_history / audit_log，
 含 correlation_id / actor / reason）。治理动作用 `expected_updated_at` 做乐观并发。
@@ -149,8 +152,6 @@ CronJob 跑 `cli/drain_delivery_outbox.py` 兜底。
 | Elasticsearch 索引 | 默认 `SEARCH_BACKEND=disabled`，索引任务直接 skip |
 | 多下游分发 | 运行时只接受 `knowledge-app` |
 | 内置 Scrapy/Playwright 爬虫 | 不内嵌，须外部注入结果 |
-| 共享 Outbox | 表与仓库类在，业务层零调用 |
-| Celery beat | Scheduler 入口在，无调度定义 |
 | `/api/internal` 入站面 | 无 router |
 | Web interaction 生产可用 | 同模板：默认 503 |
 
@@ -162,7 +163,7 @@ uv sync --frozen && uv run ruff check . && uv run pyright && uv run pytest -q
 uv run pytest tests/test_kernel_invariants.py -q      # 6 项
 
 # 单次 outbox 扫描
-uv run python -m app.cli.drain_delivery_outbox --limit 50
+uv run python -m app.cli.drain_delivery_outbox --limit 100
 ```
 
 复核：

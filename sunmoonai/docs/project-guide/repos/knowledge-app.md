@@ -1,6 +1,6 @@
 # knowledge-app（知识库）
 
-> 取证时点：2026-08-29 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西
+> 取证时点：2026-09-11 开发候选 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西；本轮可靠投递接入仍在验证，未发布
 
 ## 1. 定位
 
@@ -29,6 +29,7 @@
 | 路径 | 装什么 |
 | --- | --- |
 | `application/services/knowledge_ingestion_service.py` | 摄入编排 |
+| `application/services/ragflow_delivery.py` | Provider 操作意图、回执恢复与未知结果阻断 |
 | `application/services/knowledge_retrieval_service.py` | 检索编排 |
 | `application/dto/knowledge.py` / `dto/retrieval.py` | 契约 DTO |
 | `infrastructure/external/ragflow.py` | RAGFlow 客户端与制品解析 |
@@ -63,11 +64,12 @@
 
 ```
 校验 artifact 契约 DTO（extra=forbid）
-  → 按 idempotency_key 幂等建 job（status=accepted）
-  → Celery 可用则投递，否则同步处理
-  → running → 制品解析（见下）→ RAGFlow 上传/parse/轮询
+  → 按 idempotency_key 并发幂等建 job（status=accepted），同事务写公共 Outbox
+  → Scheduler 周期触发公共 pump；Worker 持执行租约读取消息 UUID
+  → running → 制品解析（见下）→ RAGFlow 操作意图/上传回执/parse/轮询
   → 成功：同事务 upsert KnowledgeDocument/Version + job succeeded
   → 失败：分类为 artifact_unreadable / ragflow_parse_failed / ragflow_config_error 等
+  → Provider 结果未知：reconciliation_required，不写 Inbox，不盲目重复远端写入
 ```
 
 **制品解析的安全链**：必须恰好一个 `s3://` 引用 → bucket 在 allowlist、key 在
@@ -76,6 +78,12 @@ content-type → 流式下载限额 → 最后 `hmac.compare_digest` 比对 sha2
 
 **无 RAGFlow 凭据时降级**：摄入止于 `artifact_verified`，**不写** `KnowledgeDocument*`。
 这是"主档已落、派生未建"的合法状态。
+
+创建、重试和 dispatch 都只请求持久排队，不再以 broker 缺失为由进程内执行。相同
+幂等键但不同请求内容拒绝；公共消费者在每次提交前验证租约，防止旧 Worker 迟到覆盖。
+dataset 与 upload/parse 操作先持久化 executing 再访问远端；有回执则继续查询，
+无回执且结果未知则对账，不以单次查无结果证明可以重传。上传认领校验稳定版本文件名、
+dataset、原文件长度与 SHA-256。历史 running 缺失回执标为 legacy_unknown，先调查。
 
 领域身份用 **uuid5 稳定派生**（可跨环境重算），RAGFlow 的 dataset/document/chunk id
 是**私有 provider binding，永不是领域身份**。
@@ -109,17 +117,20 @@ settings.retrieval_auth_required_scope in service_principal.scopes  # scope
 
 ## 5. 数据
 
-迁移链 5 个版本，线性：
+迁移链 6 个版本，线性：
 
 ```
 20260710_0001_knowledge_ingestion → 0002_auth_identity → 0003_retrieval_domain
-→ 0004_outbox_primitives → 0005_uuid_defaults
+→ 0004_outbox_primitives → 0005_uuid_defaults → 20260911_0006_durable_delivery
 ```
 
 三张领域表：`knowledge_ingestion_job`（含 status_history JSONB 与 payload 全量留档）、
 `knowledge_document`、`knowledge_document_version`（含 access_scope 与 provider binding）。
 
-`outbox_message` / `inbox_message` 存在但**零业务调用**（模板继承）。
+`outbox_message` / `inbox_message` 是公共命令及消费回执；新增公共死信/执行租约表。
+`knowledge_provider_operation` 记录外部副作用意图与回执，不取代领域文档主档。
+迁移回填 accepted/running 命令，保留历史 running 的未知上传状态。存在未消费命令
+或 Provider 回执时降级拒绝丢弃；须经排空、对账及已验证的备份恢复流程处置。
 
 ## 6. 对外接口
 
@@ -147,7 +158,6 @@ settings.retrieval_auth_required_scope in service_principal.scopes  # scope
 | 项 | 实际状态 |
 | --- | --- |
 | Admin「入库任务」运维页 | **静态占位页**：只列 API 路径文案，无 fetch、无表格、无操作 |
-| 共享 Outbox | 表与仓库类在，零业务调用 |
 | Web interaction 生产可用 | 同模板：默认 503 |
 | Web 侧检索业务页 | 无，只有 toolkit/common 与可选 reference workspace |
 

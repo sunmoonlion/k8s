@@ -162,10 +162,10 @@ async def get_web_interaction_port() -> WebInteractionPort:
 | 项 | 状态 |
 | --- | --- |
 | 领域层 | `domain/{models,repositories,services}/` 仅空 `__init__.py` |
-| Outbox 消费链路 | Port、DTO、SQL 仓库类齐备，**业务层零调用** |
 | web-interaction 运行时 | 默认 `Unavailable` 适配器，是显式的"未接线"信号 |
 | `/api/internal/v1` | 只有中间件，无 router |
-| Celery 周期任务 | Scheduler 入口在，无 `beat_schedule` |
+
+公共可靠投递已接线：应用服务同事务记录命令，Worker 使用持久租约与 Inbox，Scheduler 每 5 秒投递和对账，提供死信与显式重放。模板不注册领域任务，实例通过 `delivery_handlers.py` 接入。该能力的源码验证不代表既有正式镜像已更新。
 
 ## 8. 验证
 

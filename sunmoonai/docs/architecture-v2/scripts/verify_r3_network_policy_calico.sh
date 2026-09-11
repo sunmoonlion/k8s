@@ -77,7 +77,13 @@ POLICY_PROVIDER_SERVICE="knowledge-admin-backend"
 POLICY_PROVIDER_PORT="8000"
 POLICY_PROVIDER_TARGET_PORT="8000"
 POLICY_PROVIDER_COMPONENT="backend-api"
-if [[ "$APP" == "knowledge-r5" ]]; then
+POLICY_PROVIDER_APP="knowledge-r5"
+# Current Investment policy targets the canonical Knowledge app label; the
+# historical R3/R5 fixtures used knowledge-r5. Do not test a mismatched target.
+if [[ "$APP" == "investment" ]]; then
+  POLICY_PROVIDER_APP="knowledge"
+fi
+if [[ "$APP" == "knowledge" || "$APP" == "knowledge-r5" ]]; then
   POLICY_PROVIDER_SERVICE="ragflow-sunmoonai-api"
   POLICY_PROVIDER_PORT="80"
   POLICY_PROVIDER_TARGET_PORT="9380"
@@ -266,7 +272,7 @@ spec:
     metadata:
       labels:
         app: knowledge-policy-target
-        sunmoonai.com/app: knowledge-r5
+        sunmoonai.com/app: ${POLICY_PROVIDER_APP}
         app.kubernetes.io/component: ${POLICY_PROVIDER_COMPONENT}
         sunmoonai.com/internal-provider: 'true'
         app.kubernetes.io/name: ragflow
@@ -333,7 +339,7 @@ probe r3-policy-worker-knowledge \
   "sunmoonai.com/app=${APP},app.kubernetes.io/component=backend-worker" \
   Succeeded \
   "http://${POLICY_PROVIDER_SERVICE}:${POLICY_PROVIDER_PORT}/"
-if [[ "$APP" == "knowledge-r5" ]]; then
+if [[ "$APP" == "knowledge" || "$APP" == "knowledge-r5" ]]; then
   probe r3-policy-api-knowledge \
     "sunmoonai.com/app=${APP},app.kubernetes.io/component=backend-api" \
     Succeeded \
