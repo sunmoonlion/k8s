@@ -36,6 +36,7 @@
 | `infrastructure/external/crawl_http.py` | 正文、RSS/API discovery 的公网抓取策略；不用于受信内部服务 |
 | `infrastructure/storage/crawl_concurrency.py` | Info 专用跨进程来源准入；独立 PostgreSQL 事务锁 |
 | `domain/info_identity_v1.py` / `cli/identity_preflight.py` | 冻结的 URL 身份策略、迁移前只读冲突核查 |
+| `application/services/artifact_reconciliation.py` / `cli/reconcile_artifacts.py` | Info S3 与 RawArtifact 双向、分页只读对账；无自动清理 |
 | `cli/drain_delivery_outbox.py` | 兼容公共 pump，仅接受批量上限 100 |
 | `contracts/knowledge-provider-lock.json` | artifact 契约的**消费锁** |
 
@@ -102,6 +103,12 @@ upsert，文档行锁覆盖版本号、当前版本和索引意图。旧程序�
 插入会失败；切换必须停写并用独立 Migration Job 升级。只读 `identity_preflight` 输出冲突
 数量/样本 ID，不自动合并数据。上传仍保留原同名版本语义，不代表未来客户工作区文件身份。
 业务库尚未核查或升级，不能直接把源码同步当作部署完成。
+
+B4 源码候选：S3 写后严格按回执 VersionId 核验，拒绝无版本写回执。只读对账分别枚举
+`info/original/` 的全部 S3 版本和已登记 RawArtifact，报告缺失、不一致、未登记与模糊引用；
+未登记候选不等于可删除，原始抓取没有 document_version_id 也受保护。只读 CLI 每次
+最多 100 项，可用 cursor 续扫；不是跨 DB/S3 原子快照，要从头复扫。无新表/迁移，
+未接周期任务或自动回收；实际存储核查、保留策略、权限与部署另验，详见 v5 处置清单。
 
 创建作业时 `enqueue=false` 只建单；`run` 接口持久排队，不在请求内采集。
 索引重建响应 `queued` 表示排队数，`indexed=0` 不宣称后台已完成。
@@ -183,6 +190,10 @@ uv run pytest tests/test_kernel_invariants.py -q      # 6 项
 
 # 单次 outbox 扫描
 uv run python -m app.cli.drain_delivery_outbox --limit 100
+
+# 受权 Info S3/DB 只读配置下运行；报告/cursor 可能含文件名，不公开传播
+uv run python -m app.cli.reconcile_artifacts --mode inventory --limit 50
+uv run python -m app.cli.reconcile_artifacts --mode references --limit 50
 ```
 
 复核：
