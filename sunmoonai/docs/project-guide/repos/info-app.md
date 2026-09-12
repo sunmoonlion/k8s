@@ -1,6 +1,6 @@
 # info-app（资讯采集与治理）
 
-> 可靠投递源码更新：2026-09-11 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西
+> 采集防护源码候选更新：2026-09-12（未部署）｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西
 
 ## 1. 定位
 
@@ -33,6 +33,7 @@
 | `tasks/durable_delivery.py` | 公共发布与执行入口；旧业务 Celery 入口拒绝直接投递 |
 | `infrastructure/search/` | ES/OpenSearch 索引适配（**默认关闭**） |
 | `infrastructure/external/knowledge_app.py` | 调 knowledge 摄入的客户端 |
+| `infrastructure/external/crawl_http.py` | 正文、RSS/API discovery 的公网抓取策略；不用于受信内部服务 |
 | `cli/drain_delivery_outbox.py` | 兼容公共 pump，仅接受批量上限 100 |
 | `contracts/knowledge-provider-lock.json` | artifact 契约的**消费锁** |
 
@@ -84,6 +85,12 @@ playwright      → PlaywrightCollectorAdapter (18 行)
 → 按 canonical_url 归并文档 → **sha256 精确去重 + simhash64 近似去重**
 → content_hash 未变则跳过新版本，变了则建 clean/text 制品 + 新 `InfoDocumentVersion`
 → 与版本同事务保存索引命令，由公共消费者执行；`SEARCH_BACKEND=disabled` 时跳过。
+
+2026-09-12 源码候选：正文与 RSS/API discovery 都经 `fetch_crawl_url`。仅公网 HTTP/80、
+HTTPS/443；解析结果全量校验后固定 IP，保留 TLS 主机校验，逐跳重验且不跨站携带凭据。
+流式读取限额、总 deadline，拒绝非 identity 压缩响应，不隐式使用环境代理。来源并发尚未
+补齐，不能把这项记为旧 M1-102 全部完成。验收与部署边界见
+[`v5 处置清单`](../../v5-backlog-disposition-luna.md)。
 
 创建作业时 `enqueue=false` 只建单；`run` 接口持久排队，不在请求内采集。
 索引重建响应 `queued` 表示排队数，`indexed=0` 不宣称后台已完成。
