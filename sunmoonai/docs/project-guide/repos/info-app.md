@@ -34,6 +34,7 @@
 | `infrastructure/search/` | ES/OpenSearch 索引适配（**默认关闭**） |
 | `infrastructure/external/knowledge_app.py` | 调 knowledge 摄入的客户端 |
 | `infrastructure/external/crawl_http.py` | 正文、RSS/API discovery 的公网抓取策略；不用于受信内部服务 |
+| `infrastructure/storage/crawl_concurrency.py` | Info 专用跨进程来源准入；独立 PostgreSQL 事务锁 |
 | `cli/drain_delivery_outbox.py` | 兼容公共 pump，仅接受批量上限 100 |
 | `contracts/knowledge-provider-lock.json` | artifact 契约的**消费锁** |
 
@@ -88,8 +89,11 @@ playwright      → PlaywrightCollectorAdapter (18 行)
 
 2026-09-12 源码候选：正文与 RSS/API discovery 都经 `fetch_crawl_url`。仅公网 HTTP/80、
 HTTPS/443；解析结果全量校验后固定 IP，保留 TLS 主机校验，逐跳重验且不跨站携带凭据。
-流式读取限额、总 deadline，拒绝非 identity 压缩响应，不隐式使用环境代理。来源并发尚未
-补齐，不能把这项记为旧 M1-102 全部完成。验收与部署边界见
+流式读取限额、总 deadline，拒绝非 identity 压缩响应，不隐式使用环境代理。
+来源准入首版每个来源 ID 一个执行，无 ID 时按规范化目标主机归组；正文与发现共用数据库
+advisory lock，业务中间提交不释放。忙时不抓取、不写终态/Inbox；Worker 复用公共有界
+重排/死信/重放，发现接口返回 409。不同来源 ID 不是同站总限速，不承诺公平等待；
+每个执行额外占用一个数据库连接。源码候选与实际部署分开验收。边界及测试见
 [`v5 处置清单`](../../v5-backlog-disposition-luna.md)。
 
 创建作业时 `enqueue=false` 只建单；`run` 接口持久排队，不在请求内采集。
