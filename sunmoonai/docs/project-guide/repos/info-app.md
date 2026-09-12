@@ -35,6 +35,7 @@
 | `infrastructure/external/knowledge_app.py` | 调 knowledge 摄入的客户端 |
 | `infrastructure/external/crawl_http.py` | 正文、RSS/API discovery 的公网抓取策略；不用于受信内部服务 |
 | `infrastructure/storage/crawl_concurrency.py` | Info 专用跨进程来源准入；独立 PostgreSQL 事务锁 |
+| `domain/info_identity_v1.py` / `cli/identity_preflight.py` | 冻结的 URL 身份策略、迁移前只读冲突核查 |
 | `cli/drain_delivery_outbox.py` | 兼容公共 pump，仅接受批量上限 100 |
 | `contracts/knowledge-provider-lock.json` | artifact 契约的**消费锁** |
 
@@ -83,7 +84,7 @@ playwright      → PlaywrightCollectorAdapter (18 行)
 ### 4.2 采集 → 版本
 
 抓取（httpx，限大小/超时/UA）→ 存 raw 制品 → trafilatura 抽取 markdown + text
-→ 按 canonical_url 归并文档 → **sha256 精确去重 + simhash64 近似去重**
+→ 按 canonical URL 的 v1 派生身份键归并文档 → **sha256 精确去重 + simhash64 近似去重**
 → content_hash 未变则跳过新版本，变了则建 clean/text 制品 + 新 `InfoDocumentVersion`
 → 与版本同事务保存索引命令，由公共消费者执行；`SEARCH_BACKEND=disabled` 时跳过。
 
@@ -95,6 +96,12 @@ advisory lock，业务中间提交不释放。忙时不抓取、不写终态/Inb
 重排/死信/重放，发现接口返回 409。不同来源 ID 不是同站总限速，不承诺公平等待；
 每个执行额外占用一个数据库连接。源码候选与实际部署分开验收。边界及测试见
 [`v5 处置清单`](../../v5-backlog-disposition-luna.md)。
+
+B3 源码候选需要先执行 `20260912_0008`：原 URL 保留，派生身份键唯一；首次创建
+upsert，文档行锁覆盖版本号、当前版本和索引意图。旧程序缺身份键的新文档/缺写协议的新版本
+插入会失败；切换必须停写并用独立 Migration Job 升级。只读 `identity_preflight` 输出冲突
+数量/样本 ID，不自动合并数据。上传仍保留原同名版本语义，不代表未来客户工作区文件身份。
+业务库尚未核查或升级，不能直接把源码同步当作部署完成。
 
 创建作业时 `enqueue=false` 只建单；`run` 接口持久排队，不在请求内采集。
 索引重建响应 `queued` 表示排队数，`indexed=0` 不宣称后台已完成。
@@ -113,12 +120,13 @@ broker 故障不改变已接受命令；分发重试保持相同下游业务身�
 
 ## 5. 数据
 
-迁移链 7 个版本，线性：
+源码迁移链 8 个版本，线性（0008 尚未用于业务库）：
 
 ```
 20260706_0001_info_spider_mvp → 0002_source_governance → 0003_auth_identity
 → 0004_delivery_outbox → 0005_outbox_primitives → 0006_delivery_outbox_uuid_default
 → 20260911_0007_durable_delivery
+→ 20260912_0008_canonical_identity
 ```
 
 领域表（`infrastructure/models/info.py`，9 张）：
