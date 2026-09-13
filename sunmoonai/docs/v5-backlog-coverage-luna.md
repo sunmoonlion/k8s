@@ -1,6 +1,6 @@
 # B7b：存量验收子项核对与 API schema readiness（Luna）
 
-日期：2026-09-13。状态：首轮子项核对已记录；API readiness 源码候选已验证、待集成；B7 整包未完成。
+日期：2026-09-13。状态：首轮子项核对已记录；API readiness 源码已集成并同步两端 master/Luna；未部署，B7 整包未完成。
 单人实施与自测，不宣称独立验收。历史依据为
 [旧实施计划](mooc-manus-langgraph-v5-implementation-plan.md)与
 [旧暂停 handoff](mooc-manus-langgraph-v5-handoff-20260712.md)，不从新版 handoff 反推欠账。
@@ -114,3 +114,22 @@ B7 其余缺口按第 2 节继续，下一源码工作先处理 Info 逻辑交�
 模板父仓部署脚手架额外只读回归：`python3 -m unittest discover -s k8s-deployment/tests -q`
 **8 tests OK**（0.239 秒）。这些是配置、渲染和局部组件选择测试，不是迁移失败注入、
 完整发布或当前集群验收；本轮没有运行带 apply/凭据重建的旧 R7 gate。
+
+## 5. 源码同步与清理回执
+
+| 父仓 | 内容提交（锁定第 4 节后端） |
+| --- | --- |
+| tpl-app | `54877558ae43b41be3d64b1c8388fc8df9f68b7d` |
+| info-app | `2b4f18bd46a46a4ebf848a3fa1dbe6ac2e39d6c4` |
+| knowledge-app | `dd8c7ff5b8b201bd8c3fe1dcf3785d046061b41a` |
+| investment-app | `6d6b0142ec8d541740856ea5f52bbbcca7805044` |
+| k8s 初次内容 | `9f22c7e4513cff0e48e180e27c69420afe25d3fb`（本节另作后续状态回填） |
+
+四后端先推既有 master/Luna ref；父仓在 Luna 提交，再核对本地 master 预期旧 HEAD 和
+干净状态后逐仓快进、更新子模块。五父仓 master/Luna 已推 GitHub/Gitee；五仓脚本
+`remote-pull master` 与 `remote-pull luna` 均完成。初次 k8s 三份文档门禁通过。
+没有新增分支、force/realign；预置两份 general/pro 草案未暂存、修改或传至云端。
+
+一次性 PG/S3/Redis 三容器逐个核对完整 ID 后停止并自动移除，复查无残留；清理的
+只有可重建测试数据。未操作业务库/桶/Secret，未构建镜像、推送 Harbor 或部署。
+下一游标 B7c：Info 逻辑交付去重；指标/角色活性/归档/真实环境门禁及 B8 仍未完成。

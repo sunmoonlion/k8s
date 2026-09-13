@@ -110,9 +110,9 @@ Git 元数据位于可写根之外，提交/集成通过平台权限批准，不
 | B4 Artifact 对账 | 检测源码已集成 | 只读双向对账、可追踪未登记对象、精确版本写后核验已同步两端 master/Luna；278 项通过。自动修复/回收、周期策略交 B7/N4，实际业务存储未扫描 |
 | B5 Dataset 授权 | 源码已集成 | 静态映射、未知目标拒绝、数据面禁建、受理快照及执行/重试/恢复复核已同步两端 master/Luna；173 项及 Info 消费边通过。业务映射/旧任务与一致配置切换未验收 |
 | B6 解析调度 | B6a/B6b 源码已集成 | [公共同步证据](v5-backlog-scheduling-luna.md)；[Knowledge 单次轮询证据](v5-backlog-parse-polling-luna.md)。235 项回归及 Info 消费边通过，已同步两端 master/Luna；日志源码由 B7a 补齐，运行态未验收，不把 M1-203 整项销账 |
-| B7 已有覆盖收口 | B7a 源码已集成；B7b 实施中 | [公共日志证据](v5-backlog-logging-luna.md)；[子项矩阵与健康检查](v5-backlog-coverage-luna.md)。B7b 先修 API schema readiness；Info 逻辑交付去重、投递指标、保留归档和角色活性继续欠账；接 B4～B6 运维/切换；自动修复回收与全引用门禁交 N4；未验证项不销账 |
+| B7 已有覆盖收口 | B7a/B7b 源码已集成；其余未完成 | [公共日志证据](v5-backlog-logging-luna.md)；[子项矩阵与健康检查](v5-backlog-coverage-luna.md)。B7b API schema readiness 四仓 931 项、零跳过，两端 master/Luna 同步；下一 B7c Info 逻辑交付去重；投递指标、保留归档和角色活性继续欠账；接 B4～B6 运维/切换；自动修复回收与全引用门禁交 N4 |
 | B8 后续移交 | 待实施 | N1～N6 建立待迁入清单与原任务关联；新 dev-plan 真正接收后才标已迁入，不以本文件冒充已完成产品开发 |
-| B9 集成与同步 | 实施中 | B1～B6、B7a 本轮源码子项已集成、同步；后续逐包执行，不等全部；子仓先推、父仓 gitlink 后推；master 预期 HEAD 核对、快进/明确合并；再同步两端工作区；不覆写预置草案 |
+| B9 集成与同步 | 实施中 | B1～B6、B7a/B7b 本轮源码子项已集成、同步；后续逐包执行，不等全部；子仓先推、父仓 gitlink 后推；master 预期 HEAD 核对、快进/明确合并；再同步两端工作区；不覆写预置草案 |
 
 每包开工前记录受影响路径、风险/假设、不可变基线、测试与回滚；修改共同底座时
 先 tpl，再 Info→Knowledge→Investment，不并行覆盖。发生新架构选择、存量数据冲突或
@@ -376,3 +376,21 @@ Git 元数据位于可写根之外，提交/集成通过平台权限批准，不
   本地两份预置草案保留，未新建分支、force/realign、修改业务库/Secret、构建/推送镜像或部署。
   下一游标 **B7b 子项矩阵及健康/指标/归档/恢复核验**；源码发现 ready 未校验 schema、
   Worker ping 不充分证明消费活性，仍待处置。B8/N1～N6 新 dev-plan 接收尚未完成。
+- B7b（2026-09-13，所有者“继续”）：重新核对两端 master/Luna 五仓基线一致、云端干净；
+  形成 [验收子项矩阵](v5-backlog-coverage-luna.md)，按开工源码区分已有、缺口和未验收。
+  发现 Info create_knowledge_distribution 每次新建 UUID，稳定下游幂等键不能证明返回
+  同一逻辑交付，此项保留为 B7c；未把存量指标/归档/角色活性偷换为未来产品已完成。
+  本包冻结每后端 4 文件：API 入口、schema_readiness、专项测试、说明；D1/D2/D8 只读
+  本 App 版本表，以镜像迁移链为唯一期望真源，不 stamp/upgrade/提权；R6 模板先行再
+  串行 Info → Knowledge → Investment。2 秒协作式超时、异常和错版本 503、取消传播，
+  live handler 无依赖；版本匹配不证明表完整、DB 身份或业务权限，不覆盖 Worker/Scheduler。
+- B7b 固定回归：tpl-backend@ed8d5dc、info-backend@96e3762、knowledge-backend@40edfc2、
+  investment-backend@85f8cb7，依次 **107/320/262/242 passed，全部零跳过**；Ruff/Pyright
+  通过。每仓 19 新测试，真实 PG 迁移/降级/再升级、SELECT 角色、锁超时与恢复；旧全套
+  含 S3/Redis/契约。脚手架 8 tests OK 不冒充真实部署或迁移失败注入。
+  内容父仓 tpl-app@5487755、info-app@2b4f18b、knowledge-app@dd8c7ff、
+  investment-app@6d6b014；k8s@9f22c7e4（初次文档门禁 3 份），本条是后续状态回填。
+  子仓先推、父仓 master 核预期 HEAD/干净后快进；五父仓 master/Luna 推至 GitHub/Gitee，
+  五仓 remote-pull master / luna 均完成。测试容器按完整 ID 核对后停止、自动移除且复查
+  无残留，仅清理可重建测试数据；业务库/Secret/镜像/部署未动，两份预置草案保留。
+  下一游标 **B7c Info 逻辑交付去重**；其它 B7 子项和 B8/N1～N6 正式接收仍未完成。
