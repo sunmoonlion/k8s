@@ -34,7 +34,7 @@ k8s `5d79cee8`。后端：tpl `553c36b`、Info `f2c4001`、Knowledge `e99a894`�
 | 逻辑交付去重 / M1-104 | B7b 核查时每次新 UUID + INSERT，无版本/Dataset 唯一约束；后续 B7c 补复用、唯一索引和写入护栏 | [B7c 源码验证](v5-backlog-distribution-identity-luna.md)；业务库冲突调查、备份与角色切换仍待验收，下游幂等不能替代本地逻辑身份 |
 | 发布/Inbox/租约 / M1-105、M3-001 | `DurableTasks`、公共 `durable_delivery.py`、Outbox repository、各领域 handler、真实 PG 故障测试 | 已有源码及分包固定提交证据；新版本正式环境 broker 故障/丢回执/kill 仍未验收 |
 | 对账/死信重放 / M1-105 | 5 秒 Beat pump、`cli/durable_delivery.py` reconcile/replay/dead-letters；重放不删 Inbox | 机制已有；实际调度活性、告警到达、权限与运行策略待核 |
-| 保留/归档 / M1-105 | 公共账本未见按批准保留窗归档/回收流程；[B7j](v5-backlog-worker-progress-luna.md) 实测发现 Investment legacy CASCADE 触发语句级只读保护，即使旧归档为空也禁止直接删除 Outbox，已补保护回归 | **未收口**；先明确引用闭包/幂等重放窗、旧归档保护与恢复条件，不执行删除；拒写保护和 gauge 测试不等于保留策略或 GC 落地 |
+| 保留/归档 / M1-105 | [B7k 固定源码审计](v5-backlog-retention-audit-luna.md)核清 FK 之外的去重、恢复读原命令、Provider 跨任务回执与 epoch 依赖，区分两种 legacy；[B7j](v5-backlog-worker-progress-luna.md) 已实测 Investment 空旧归档仍拒绝隐式 Outbox 删除 | **实施未收口**；引用审计和候选实施门禁已成文，批准保留/重放窗口、实际盘点/恢复与旧表退役待完成；未删除、不默认保留天数，也未冒称 B8 已接收 |
 | Provider 意图/未知结果 / M1-202、M3-002 | Knowledge `ragflow_delivery.py`、Investment 副作用账与 adapter 边界 | 已有部分 Provider 实现；不是通用跨 Provider 全覆盖；真实 parse/迟到响应/未知回执处理仍需按 Provider 验收 |
 | 单次 parse / M1-203 | B6a/B6b 持久调度与 B7a 日志源码 | 已有源码；实际长 parse Worker 占用/切换、旧协议调查与回滚未验收 |
 | Run 创建 / M1-302 | Investment `application/agent/run_service.py` 与持久命令、真实 PG 故障测试 | 已有基础；产品 Task/Attempt、浏览器通用/专业入口由 N1/N2 接收 |
