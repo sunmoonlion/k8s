@@ -1,6 +1,6 @@
 # knowledge-app（知识库）
 
-> 取证时点：2026-09-13 B5 源码候选 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西；源码集成不代表已部署
+> 取证时点：2026-09-13 B6b 源码候选 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西；源码集成不代表已部署
 
 ## 1. 定位
 
@@ -30,6 +30,7 @@
 | --- | --- |
 | `application/services/knowledge_ingestion_service.py` | 摄入编排 |
 | `application/services/ragflow_delivery.py` | Provider 操作意图、回执恢复与未知结果阻断 |
+| `application/services/ingestion_execution.py` | 任务拥有的持久轮询游标、受理协议标记及重试代次提交/自动 flush 栅栏 |
 | `application/services/ingestion_authorization.py` / `core/ingestion_policy.py` | 摄入静态映射与受理快照复核；独立于检索白名单 |
 | `application/services/knowledge_retrieval_service.py` | 检索编排 |
 | `application/dto/knowledge.py` / `dto/retrieval.py` | 契约 DTO |
@@ -68,8 +69,9 @@
   → INGESTION_DATASET_BINDINGS 显式准入（空配置全部拒绝）
   → 按 idempotency_key 并发幂等建 job（status=accepted），同事务写公共 Outbox
   → Scheduler 周期触发公共 pump；Worker 持执行租约读取消息 UUID
-  → running → 制品解析（见下）→ RAGFlow 操作意图/上传回执/parse/轮询
-  → 成功：同事务 upsert KnowledgeDocument/Version + job succeeded
+  → running → 制品解析（见下）→ RAGFlow 操作意图/上传回执/parse
+  → 每条 poll 单次查询；未完成则游标 + 后继 Outbox + Inbox 同事务，释放 Worker
+  → 成功：同事务 upsert KnowledgeDocument/Version + job succeeded + Inbox
   → 失败：分类为 artifact_unreadable / ragflow_parse_failed / ragflow_config_error 等
   → Provider 结果未知：reconciliation_required，不写 Inbox，不盲目重复远端写入
 ```
@@ -78,8 +80,9 @@
 prefix allowlist → 手写 SigV4 签名做 HEAD + GET → 双次校验 version-id / Content-Length /
 content-type → 流式下载限额 → 最后 `hmac.compare_digest` 比对 sha256。
 
-**无 RAGFlow 凭据时降级**：摄入止于 `artifact_verified`，**不写** `KnowledgeDocument*`。
-这是"主档已落、派生未建"的合法状态。
+**尚未进入 RAGFlow 时无凭据降级**：摄入止于 `artifact_verified`，**不写** `KnowledgeDocument*`。
+这是"主档已落、派生未建"的合法状态；已确认上传并进入解析的任务不能因凭据被移除而
+退回这个模式，必须恢复配置或调查。
 
 创建、重试和 dispatch 都只请求持久排队，不再以 broker 缺失为由进程内执行。相同
 幂等键但不同请求内容拒绝；公共消费者在每次提交前验证租约，防止旧 Worker 迟到覆盖。
@@ -94,6 +97,15 @@ dispatch/retry/Worker/恢复/最终落库复核，force 不能绕过；旧无快
 dataset 仅查找并核 ID/name，数据面创建入口失败关闭；配置缺目标不能触发自动创建。
 静态配置不是即时撤权：部署必须排空旧 API/Worker、同步一致配置；实际映射、存量任务和
 切换未验收，不能直接无配置部署。详细边界见 [`v5 处置清单`](../../v5-backlog-disposition-luna.md)。
+
+B6b 源码：执行状态在 job.metadata_json 的保留项 ingestion_execution_v1，首条受理历史
+保存服务端协议标记；原请求留在 payload，用户 retry_count 不作为代次。消息携带
+generation/step，与 upload_identity 资源键核对；旧游标/代次不动当前执行，未来/旧格式
+消息失败关闭。已保存验证游标后，poll/显式 retry 无需重读源文件，仍复核 Provider 回执。
+deadline/interval 首次 parse 前按 DB 时钟固定，后续指数退避且最多 60 秒，每次读取受
+剩余 deadline 限制；poll 只查一次文档状态，另查租户身份，无 sleep 或重复 POST。
+旧无协议标记任务不自动迁入；部署前必须一致升级/排空，详细验收见
+[`B6b 证据`](../../v5-backlog-parse-polling-luna.md)。
 
 领域身份用 **uuid5 稳定派生**（可跨环境重算），RAGFlow 的 dataset/document/chunk id
 是**私有 provider binding，永不是领域身份**。
@@ -181,8 +193,9 @@ uv run pytest tests/test_kernel_invariants.py -q      # 6 项
 
 复核关键风险：
 ```bash
-# 终态判定：CANCEL 必须抛错，progress 不得单独构成成功条件
-sed -n '/async def _wait_for_document_parse/,/_RUN_ALIASES/p' app/app/infrastructure/external/ragflow.py
+# 生产链：单次轮询、终态判定、持久 deadline 与故障恢复（需要可丢弃 DB）
+uv run pytest tests/test_ingestion_polling_db.py -q
+# 旧 helper 兼容回归不替代上面的生产链测试
 uv run pytest tests/test_knowledge_ingestion.py -k 'cancelled or numeric or progress_alone' -q
 
 # 三重授权
