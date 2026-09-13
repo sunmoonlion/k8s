@@ -127,6 +127,7 @@ Git 元数据位于可写根之外，提交/集成通过平台权限批准，不
 | B7o 模板数据库角色策略 | 模板本地固定候选通过；领域/业务供给未实施 | [精确表列权限与真实 PostgreSQL 拒绝](v5-backlog-template-database-policy-luna.md)；纯 GRANT 编译、四独立登录/密码，API 意图与 Worker 消费恢复、版本/DDL/跨库拒绝；模板 12 单元+18 真实 PG，平台 30 项通过，测试资源已清理；不接现有账号或部署 |
 | B7p Info 数据库领域策略 | 本地固定候选通过；未供给/部署 | [Info 领域覆盖与独立登录验收](v5-backlog-info-database-policy-luna.md)；模板公共夹具提取后 12 单元+18 PG，Info 精确 15 表清单及 25 PG、平台串行 34 项通过；保留真实上传/审核/分发职责，归档不向运行角色开放；Knowledge/Investment 策略及业务身份切换仍待实施 |
 | B7q Knowledge 数据库领域策略 | 本地固定候选通过；未供给/部署 | [Knowledge 摄入/回执/轮询权限验收](v5-backlog-knowledge-database-policy-luna.md)；模板 12 单元+18 PG→Info 25 PG→Knowledge 27 PG 串行通过，平台 38 项通过；API 不读写 Provider 账，保留原状态/重试职责；Investment 策略、broker 和业务身份切换仍待实施 |
+| B7r Investment 数据库领域策略 | 本地固定候选通过；未供给/部署 | [真实断点、审批恢复、取消和效果回执](v5-backlog-investment-database-policy-luna.md)；四仓串行 18+25+27+24=94 PG 零跳过，平台 42 项通过；API 保留取消撤租约两列，Worker 独立 PostgreSQL Saver；三领域数据库候选已验证，broker/供给/切换仍待实施 |
 | B8 后续移交 | 待实施 | N1～N6 建立待迁入清单与原任务关联；新 dev-plan 真正接收后才标已迁入，不以本文件冒充已完成产品开发 |
 | B9 集成与同步 | 等待本轮剩余处置完成 | B1～B6、B7a～B7e 已集成、同步；按 2026-09-13 最新决定，后续仅在 Luna 开发验证，最终统一执行子仓先推、父仓 gitlink 后推；master 预期 HEAD 核对、快进/明确合并，再同步两端工作区；不覆写预置草案 |
 
@@ -151,6 +152,12 @@ N4 的监控部署/采集/告警送达子项于 2026-09-13 按所有者要求迁
 
 ## 7. 执行日志
 
+- B7r：模板 `9abc39d` 新增 Investment 测试确认域；k8s `15588f3a` 固定 18 表权限
+  策略、两类测试与说明。[证据](v5-backlog-investment-database-policy-luna.md)。模板→Info→
+  Knowledge→Investment 共 94 PG、模板普通 12、平台串行 42 项通过；不使用内存 Saver
+  冒充断点验证，真实 factory 认证为 Worker。API owner/token/取消与 Worker lease/回执
+  原用例可用，但不外推未来统一产品审批已完成。一次性 PG/三卷清理，业务部署/身份/
+  master/gitlink/远端不变；下一游标 broker 精确权限与真实启动/拒绝、受控供给和切换。
 - B7q：模板 `2faa367` 仅新增 Knowledge 测试确认域与说明；k8s `81c990e0` 固定
   Knowledge 领域策略与原用例/拒绝验证。[完整证据](v5-backlog-knowledge-database-policy-luna.md)。
   固定模板 18 PG+12 单元→Info 25 PG→Knowledge 27 PG 严格串行通过，平台 28+7+3
