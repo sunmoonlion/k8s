@@ -1,6 +1,6 @@
 # knowledge-app（知识库）
 
-> 取证时点：2026-09-11 开发候选 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西；本轮可靠投递接入仍在验证，未发布
+> 取证时点：2026-09-13 B5 源码候选 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西；源码集成不代表已部署
 
 ## 1. 定位
 
@@ -30,6 +30,7 @@
 | --- | --- |
 | `application/services/knowledge_ingestion_service.py` | 摄入编排 |
 | `application/services/ragflow_delivery.py` | Provider 操作意图、回执恢复与未知结果阻断 |
+| `application/services/ingestion_authorization.py` / `core/ingestion_policy.py` | 摄入静态映射与受理快照复核；独立于检索白名单 |
 | `application/services/knowledge_retrieval_service.py` | 检索编排 |
 | `application/dto/knowledge.py` / `dto/retrieval.py` | 契约 DTO |
 | `infrastructure/external/ragflow.py` | RAGFlow 客户端与制品解析 |
@@ -64,6 +65,7 @@
 
 ```
 校验 artifact 契约 DTO（extra=forbid）
+  → INGESTION_DATASET_BINDINGS 显式准入（空配置全部拒绝）
   → 按 idempotency_key 并发幂等建 job（status=accepted），同事务写公共 Outbox
   → Scheduler 周期触发公共 pump；Worker 持执行租约读取消息 UUID
   → running → 制品解析（见下）→ RAGFlow 操作意图/上传回执/parse/轮询
@@ -81,9 +83,17 @@ content-type → 流式下载限额 → 最后 `hmac.compare_digest` 比对 sha2
 
 创建、重试和 dispatch 都只请求持久排队，不再以 broker 缺失为由进程内执行。相同
 幂等键但不同请求内容拒绝；公共消费者在每次提交前验证租约，防止旧 Worker 迟到覆盖。
-dataset 与 upload/parse 操作先持久化 executing 再访问远端；有回执则继续查询，
+upload/parse 操作先持久化 executing 再访问远端；有回执则继续查询，
 无回执且结果未知则对账，不以单次查无结果证明可以重传。上传认领校验稳定版本文件名、
 dataset、原文件长度与 SHA-256。历史 running 缺失回执标为 legacy_unknown，先调查。
+
+2026-09-13 B5 源码候选：`INGESTION_DATASET_BINDINGS` 为 key 到既有 dataset_id/name 的
+静态 JSON 映射；不从 RETRIEVAL_DATASET_ALLOWLIST 推导写权限。Admin/Internal 共享
+受理用例，未知 key 返回 403 且不建 job/Outbox。服务端首条 accepted 历史保存绑定快照，
+dispatch/retry/Worker/恢复/最终落库复核，force 不能绕过；旧无快照任务不自动补绑。
+dataset 仅查找并核 ID/name，数据面创建入口失败关闭；配置缺目标不能触发自动创建。
+静态配置不是即时撤权：部署必须排空旧 API/Worker、同步一致配置；实际映射、存量任务和
+切换未验收，不能直接无配置部署。详细边界见 [`v5 处置清单`](../../v5-backlog-disposition-luna.md)。
 
 领域身份用 **uuid5 稳定派生**（可跨环境重算），RAGFlow 的 dataset/document/chunk id
 是**私有 provider binding，永不是领域身份**。
