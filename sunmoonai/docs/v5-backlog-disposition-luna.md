@@ -416,3 +416,11 @@ Git 元数据位于可写根之外，提交/集成通过平台权限批准，不
   两个一次性 PG/S3 容器核完整 ID 后停止并自动移除，确认无残留，仅可重建合成数据；
   业务数据/Secret/镜像/部署未变，两份协议草案未改。下一游标 **B7 指标/角色活性/
   归档与运行门禁**；B7 整体和 B8/N1～N6 新 dev-plan 正式接收仍未完成。
+- B7d（2026-09-13，所有者“继续”）：[冻结范围与证据](v5-backlog-delivery-observation-luna.md)。
+  单人 Luna，模板先行后严格串行 Info→Knowledge→Investment。只读观测既有 Outbox/
+  Inbox/死信/租约，JSON v1 和 Prometheus text gauge；无新表、迁移、HTTP 端点或状态写入。
+  policy/topic 标签仅来自有界代码注册，未知 topic 只计数量；消费映射与执行租约使用实际
+  Delivery 扩展，Investment 单独装配 AgentDelivery，不误用空公共 handler 或公共租约表。
+  REPEATABLE READ/READ ONLY、DB 语句及整体超时；读取失败退出 2，不输出秘密、假零
+  或半份快照。快照时间可识别过时数据，但不证明 Worker/Scheduler 活性。
+  实际 scrape/告警/角色探针与归档仍在 B7，禁止用本包的 CLI 输出冒充已接监控。

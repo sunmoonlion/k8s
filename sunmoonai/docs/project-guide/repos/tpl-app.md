@@ -115,6 +115,14 @@ API readiness（2026-09-13 源码）在 2 秒协作式探测预算内检查 Redi
 这不验证完整表结构/数据，也不覆盖 Worker/Scheduler，见
 [`B7b 子项与证据`](../../v5-backlog-coverage-luna.md)。部署与业务角色权限尚未验收。
 
+投递观测入口 `python -m app.cli.delivery_metrics [--format prometheus]` 从本 App
+账本只读计算 gauge。`delivery_observers.py` 装配实际 delivery policy，实例沿用 handler
+注册，Agent 实例用领域租约扩展；未知 topic 仅报聚合数量，无无限标签或敏感 payload。
+没有新增表、迁移、HTTP 端点或自动 GC；异常不输出假零。CLI/text 输出不等于已接
+Prometheus，也不能证明 Worker/Scheduler 消费正常；后端 `docs/delivery-observation.md`
+说明字段、权限/超时和未完成接线，分包证据见
+[B7d 只读观测](../../v5-backlog-delivery-observation-luna.md)。
+
 公共日志（2026-09-13 源码）：Postgres 固定关闭 SQL echo、隐藏绑定参数；API 与
 Celery Worker/Scheduler 均将 SQLAlchemy engine/pool、httpx/httpcore 限为 WARNING，
 应用 DEBUG 不自动打开 wire 日志。应用审计与 Celery 自身日志保留原级别；不是完整脱敏。
