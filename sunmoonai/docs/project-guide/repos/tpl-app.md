@@ -131,6 +131,14 @@ Worker 消费配置探针 `python -m app.cli.worker_readiness`（B7e 源码，�
 须联合新镜像发布才能启用。它不是消费进展或 Scheduler 心跳，也不作 liveness；
 详见 [B7e 证据与边界](../../v5-backlog-worker-readiness-luna.md)。
 
+Scheduler bootstrap 已选用继承 PersistentScheduler 的活动观察类（B7i 本地源码，
+未部署）。`python -m app.cli.scheduler_activity --schedule <同一文件> --max-age <秒>`
+只在同容器/UID/PID namespace 读临时快照：BOOTTIME 年龄、boot/PID 启动标识及
+进程状态校验；循环返回和发送调用返回/异常分列，不证明 broker 确认或消费完成。
+未接自动重启或 Kubernetes 探针；说明与固定门禁见
+[B7i 活动观测](../../v5-backlog-scheduler-activity-luna.md)。实际监控部署/采集/告警
+按所有者要求进入[未来 N4-OPS-01](../../dev-plan/implementation-plan.md)，尚未实施。
+
 公共日志（2026-09-13 源码）：Postgres 固定关闭 SQL echo、隐藏绑定参数；API 与
 Celery Worker/Scheduler 均将 SQLAlchemy engine/pool、httpx/httpcore 限为 WARNING，
 应用 DEBUG 不自动打开 wire 日志。应用审计与 Celery 自身日志保留原级别；不是完整脱敏。

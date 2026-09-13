@@ -44,14 +44,14 @@ k8s `5d79cee8`。后端：tpl `553c36b`、Info `f2c4001`、Knowledge `e99a894`�
 | 租约/退出 / M1-311 | 公共与 Agent execution lease、epoch、心跳、真实子进程 kill 测试；Pod preStop 声明 | 源码及隔离 kill 已有；实际 SIGTERM drain/Pod eviction/回投窗口待运行验证 |
 | Migration Job / M1-501 | 模板 `deploy.run_migration` 等待独立 Job，失败抛错阻止完整 apply 后续 runtime；bootstrap 无隐式迁移 | 已有编排；当前角色权限、业务备份/恢复、revision/发布关联待验，不凭 Job 完成判所有数据库正确 |
 | API readiness / M1-502 | 四仓 ready 仅 Redis ping/SELECT 1；没有 revision 检查和端点内统一 deadline | **本包修复**：只读精确版本检查及协作式探测超时；不迁移数据库 |
-| Worker/Scheduler / M1-502 | 旧实例 bundle 仍为 `inspect ping`；[B7e](v5-backlog-worker-readiness-luna.md) 补本节点队列/注册检查与模板未来 bundle 接线，修复本机双重校时冲突后四仓原始全量 1205 项零跳过 | B7e 仅源码就绪检查，未部署；真实消费进展、Scheduler 与 startup/live 仍欠账，不能用控制面就绪证明业务进展 |
+| Worker/Scheduler / M1-502 | 旧实例 bundle 仍为 `inspect ping`；[B7e](v5-backlog-worker-readiness-luna.md) 补本节点队列/注册检查；[B7i](v5-backlog-scheduler-activity-luna.md) 补 Scheduler 本机循环/发送活动、启动身份和过期验证，四仓固定提交全量 1520 项零跳过 | 仅源码与隔离进程证据，未部署；真实 Worker 消费进展、Scheduler 运行策略与 startup/live 仍欠账，不用控制面就绪或循环新鲜证明业务进展 |
 | 关联/日志 / M1-503 | API audit context、Outbox/领域 correlation；B7a 公共库降噪 | 部分已有；跨全链 correlation 覆盖、结构化字段与隐私仍需核，不等于全量脱敏 |
-| 指标/告警 / M1-503、M1-105 | [B7d](v5-backlog-delivery-observation-luna.md) 补账本只读 gauge/CLI；[B7h](v5-backlog-metrics-http-luna.md) 补服务身份保护的 HTTP scrape、本进程有界准入、no-store 与故障恢复 | 观测/受保护入口源码已补；实际采集及新鲜度判定、告警到达、broker queue 和角色活性仍在 B7；新 retrieval/run/SSE 产品指标 N4，不算整套观测完成 |
+| 指标/告警 / M1-503、M1-105 | [B7d](v5-backlog-delivery-observation-luna.md) 补账本只读 gauge/CLI；[B7h](v5-backlog-metrics-http-luna.md) 补服务身份保护的 HTTP scrape、本进程有界准入、no-store 与故障恢复 | 观测/受保护入口源码已补；2026-09-13 所有者将实际监控部署、采集/新鲜度/告警到达与 broker queue 采集接线交未来 [N4-OPS-01](dev-plan/implementation-plan.md)，尚未实施；角色活动/消费进展源码仍在 B7，新 retrieval/run/SSE 产品指标仍 N4，不算整套观测完成 |
 | 发布可追踪 / M1-504 | 既有 digest bundle/release manifest/父子仓 gitlink；本轮 B2～B7 仅源码更新 | 底座已有，不可把源码 SHA 当当前 imageID；按源码→镜像→角色→数据统一发布，不能回填历史 release |
 | B4 对账运维 | Info `cli/reconcile_artifacts.py` 只读报告，原文主档不变 | 周期、权限、保留和业务扫描未验；自动修复/GC 与全引用审批门禁 N4 |
 | B5/B6 切换 | Dataset 授权快照、执行协议标记和代次均失败关闭 | 真实绑定、旧任务/回执调查、排空、一致切换和可回滚窗未验，禁止新旧消费者混滚 |
 
-N1～N6 这里只指既有待迁入包；尚未宣称新版 dev-plan 已接收。上表是首轮覆盖核对，
+N1～N6 除 N4-OPS-01 监控子项已被新版实施计划接收外，仍指既有待迁入包。上表是首轮覆盖核对，
 既有测试来源是各包固定提交报告，不把本次只读搜索写成已复跑全部历史运行验收。
 
 ## 3. API readiness 冻结工作单元
