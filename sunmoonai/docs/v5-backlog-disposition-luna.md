@@ -124,6 +124,7 @@ Git 元数据位于可写根之外，提交/集成通过平台权限批准，不
 | B7l 当前运行预检 | 本地 KIND 只读核查完成；升级未实施 | [实际 imageID、九角色数据库身份、旧协议及发布前置](v5-backlog-runtime-preflight-luna.md)；旧镜像/共享运行 principal 已确认，Info 0007 待升 0009，Knowledge 54 条旧标记任务均为当前枚举终态、非在途积压；20 项部署脚本回归和三 bundle 门禁通过，不代替真实切换 |
 | B7m 实例渲染覆盖 | 本地固定源码回归通过；未部署 | [模板角色引用保留与最终产物测试](v5-backlog-runtime-rendering-luna.md)；补 Worker 发布注解，串行修三个实例覆盖及 Secret 依赖清单，保留领域配置；模板 8、部署脚本最终 23 项通过，真实身份/切换仍待验 |
 | B7n 有效权限与供给边界 | 只读工具/九角色目录核查完成；供给未实施 | [实际 ACL、继承/default ACL 与 broker 授权](v5-backlog-runtime-permissions-luna.md)；确认运行角色共有全表 CRUD（含版本表），broker 三角色同用户同权限；新增 7 测试、平台 30 项通过，未创建/撤销凭据或部署；精确权限与隔离拒绝矩阵继续留账 |
+| B7o 模板数据库角色策略 | 模板本地固定候选通过；领域/业务供给未实施 | [精确表列权限与真实 PostgreSQL 拒绝](v5-backlog-template-database-policy-luna.md)；纯 GRANT 编译、四独立登录/密码，API 意图与 Worker 消费恢复、版本/DDL/跨库拒绝；模板 12 单元+18 真实 PG，平台 30 项通过，测试资源已清理；不接现有账号或部署 |
 | B8 后续移交 | 待实施 | N1～N6 建立待迁入清单与原任务关联；新 dev-plan 真正接收后才标已迁入，不以本文件冒充已完成产品开发 |
 | B9 集成与同步 | 等待本轮剩余处置完成 | B1～B6、B7a～B7e 已集成、同步；按 2026-09-13 最新决定，后续仅在 Luna 开发验证，最终统一执行子仓先推、父仓 gitlink 后推；master 预期 HEAD 核对、快进/明确合并，再同步两端工作区；不覆写预置草案 |
 
@@ -148,6 +149,13 @@ N4 的监控部署/采集/告警送达子项于 2026-09-13 按所有者要求迁
 
 ## 7. 执行日志
 
+- B7o：tpl-app `a4d300f` 仅四个部署策略/测试/说明文件，backend gitlink 不变。
+  [本包证据](v5-backlog-template-database-policy-luna.md)：模板 12 单元、18 项真实
+  隔离 PG 用例通过；失败根因是 schema 搜索路径与 fixture OWNER 语法，均定位修复，
+  未放宽拒绝断言；固定模板门禁后重跑平台 Info→Knowledge→Investment 合计 30 项。
+  测试库/角色清零，一次性容器及三匿名卷已删除；无业务凭据/部署/master/同步变更。
+  这是新身份前置下的模板 GRANT 候选，不是现有角色收敛；领域 overlay、broker、
+  Scheduler 实际启动、供给与切换仍留 B7，不能据纯编译器和测试 fixture 销整包。
 - B7n 固定复验：k8s `bbfc2679`；模板 8、平台串行 24+3+3=30 项及 Ruff/三份
   文档门禁通过。UTC 09:17:55～09:18:19 再次对九角色实查全部 collected，版本表
   CRUD/共享角色结果一致；这是只读证据而非供给验收，不更新 master 或同步远端。
