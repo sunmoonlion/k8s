@@ -29,7 +29,7 @@ k8s `5d79cee8`。后端：tpl `553c36b`、Info `f2c4001`、Knowledge `e99a894`�
 | 服务身份 / M1-002 | `infrastructure/security/service_identity.py`、`core/config.py` 的 subject/scope 精确绑定 | 基础已有；真实独立撤销、当前角色凭据和轮换证据需受控运行验收 |
 | Secret / M1-003 | 源码配置校验和部署 Secret 引用不等于全 Git 历史扫描与有效凭据轮换证明 | 当前扫描/轮换/CI 和最小挂载尚未核验；不得输出秘密或自行轮换 |
 | 配置与流量 / M1-004 | 模板 `k8s-deployment/deployment_config.py`、`deploy.py` 及 v2 release/bundle 门禁 | 替代旧 Research traffic-mode；当前 Git/运行态漂移仍待只读核对，不执行 apply 冒充核验 |
-| 网络/容器 / M1-005 | 模板 network policies、runtime 非 root/drop capabilities/read-only FS 声明，旧 Calico 证据 | 声明及旧版本已有；KIND kindnet 不 enforce，当前新源码隔离路径未重验 |
+| 网络/容器 / M1-005 | 模板 network policies、runtime 非 root/drop capabilities/read-only FS 声明；[B7g](v5-backlog-network-gate-luna.md) 已复现旧 DNS 首败、修门禁并在全新 Calico 验证当前 Info 策略六条流向 | 仅 Info 声明与合成目标包级证据；不是业务镜像/其他 App/真实身份全验收；常驻 KIND kindnet 不 enforce |
 | 分发载体 / M1-104 | Info `info_crawl_service._artifact_contract_payload` 有 contract_version、版本/Dataset 稳定幂等键、correlation；公共 Outbox 有 attempts/available_at | 字段与传输基础已有，不要求按旧表名重造第二本账 |
 | 逻辑交付去重 / M1-104 | B7b 核查时每次新 UUID + INSERT，无版本/Dataset 唯一约束；后续 B7c 补复用、唯一索引和写入护栏 | [B7c 源码验证](v5-backlog-distribution-identity-luna.md)；业务库冲突调查、备份与角色切换仍待验收，下游幂等不能替代本地逻辑身份 |
 | 发布/Inbox/租约 / M1-105、M3-001 | `DurableTasks`、公共 `durable_delivery.py`、Outbox repository、各领域 handler、真实 PG 故障测试 | 已有源码及分包固定提交证据；新版本正式环境 broker 故障/丢回执/kill 仍未验收 |

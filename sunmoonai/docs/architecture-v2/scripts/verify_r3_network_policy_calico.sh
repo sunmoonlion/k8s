@@ -7,6 +7,7 @@
 
 set -euo pipefail
 umask 077
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 KIND_BIN="${KIND_BIN:-kind}"
 KUBECTL_BIN="${KUBECTL_BIN:-kubectl}"
@@ -24,6 +25,7 @@ NAMESPACE=""
 APP=""
 BUNDLE=""
 KEEP_CLUSTER=false
+CLUSTER_CREATED=false
 WORK_DIR="$(mktemp -d /tmp/architecture-v2-r3-calico.XXXXXX)"
 KUBECONFIG_PATH="${WORK_DIR}/kubeconfig"
 
@@ -94,8 +96,25 @@ cleanup() {
   local rc=$?
   trap - EXIT INT TERM HUP
   set +e
-  if [[ "$KEEP_CLUSTER" != true ]]; then
-    "$KIND_BIN" delete cluster --name "$CLUSTER_NAME" >/dev/null 2>&1
+  if [[ "$rc" -ne 0 && "$CLUSTER_CREATED" == true ]] && declare -F k >/dev/null; then
+    k get pods,services,endpoints,networkpolicies -n "$NAMESPACE" -o yaml \
+      >"${WORK_DIR}/failure-resources.yaml" 2>"${WORK_DIR}/failure-resources.stderr"
+    k get events -n "$NAMESPACE" --sort-by=.metadata.creationTimestamp \
+      >"${WORK_DIR}/failure-events.txt" 2>"${WORK_DIR}/failure-events.stderr"
+    k get pods -n kube-system -o wide >"${WORK_DIR}/failure-system-pods.txt" 2>&1
+    k logs -n kube-system -l k8s-app=calico-node --all-containers --tail=200 \
+      >"${WORK_DIR}/failure-calico.txt" 2>&1
+    k logs -n kube-system -l k8s-app=kube-dns --all-containers --tail=100 \
+      >"${WORK_DIR}/failure-dns.txt" 2>&1
+  fi
+  # Never delete a pre-existing cluster, or an unowned partial creation. In the
+  # latter case report the retained artifacts for an explicit ownership check.
+  if [[ "$KEEP_CLUSTER" != true && "$CLUSTER_CREATED" == true ]]; then
+    if ! "$KIND_BIN" delete cluster --name "$CLUSTER_NAME" \
+      --kubeconfig "$KUBECONFIG_PATH" >"${WORK_DIR}/cleanup.log" 2>&1; then
+      printf 'owned cluster cleanup failed: %s\n' "$CLUSTER_NAME" >&2
+      [[ "$rc" -ne 0 ]] || rc=1
+    fi
   fi
   if [[ "$rc" -eq 0 && "$KEEP_CLUSTER" != true ]]; then
     rm -rf "$WORK_DIR"
@@ -119,6 +138,7 @@ if "$KIND_BIN" get clusters 2>/dev/null | grep -Fxq "$CLUSTER_NAME"; then
 fi
 
 printf 'R3_POLICY_STAGE=calico_manifest\n'
+printf 'R3_POLICY_DIAGNOSTICS=%s\n' "$WORK_DIR"
 if [[ -f "$CALICO_MANIFEST_CACHE" ]] \
   && printf '%s  %s\n' "$CALICO_SHA256" "$CALICO_MANIFEST_CACHE" \
     | sha256sum --check --status; then
@@ -183,6 +203,7 @@ KUBECONFIG="$KUBECONFIG_PATH" "$KIND_BIN" create cluster \
   --image "$NODE_IMAGE" \
   --config "${WORK_DIR}/kind.yaml" \
   --kubeconfig "$KUBECONFIG_PATH" >/dev/null
+CLUSTER_CREATED=true
 
 mapfile -t kind_nodes < <("$KIND_BIN" get nodes --name "$CLUSTER_NAME")
 all_images=("${calico_images[@]}" "$SERVER_IMAGE" "$CLIENT_IMAGE")
@@ -204,6 +225,7 @@ k apply -f "${WORK_DIR}/calico.yaml" >/dev/null
 k rollout status daemonset/calico-node -n kube-system --timeout=300s >/dev/null
 k rollout status deployment/calico-kube-controllers -n kube-system --timeout=300s >/dev/null
 k wait --for=condition=Ready node --all --timeout=300s >/dev/null
+k rollout status deployment/coredns -n kube-system --timeout=120s >/dev/null
 
 printf 'R3_POLICY_STAGE=policy\n'
 for namespace in "$NAMESPACE" app-platform-dev ingress-platform-dev; do
@@ -307,6 +329,28 @@ EOF
 k rollout status "deployment/${BACKEND_DEPLOYMENT}" -n "$NAMESPACE" --timeout=180s >/dev/null
 k rollout status deployment/knowledge-policy-target -n "$NAMESPACE" --timeout=180s >/dev/null
 
+# Node/HTTP readiness does not prove DNS has observed newly created Services.
+# This is a separate bounded fixture startup gate; never retry a packet assertion.
+printf 'R3_POLICY_STAGE=dns_fixture_ready\n'
+backend_ip="$(k get service "$BACKEND_SERVICE" -n "$NAMESPACE" -o jsonpath='{.spec.clusterIP}')"
+provider_ip="$(k get service "$POLICY_PROVIDER_SERVICE" -n "$NAMESPACE" -o jsonpath='{.spec.clusterIP}')"
+dns_code="$(<"${SCRIPT_DIR}/calico_dns_ready.py")"
+k run r3-policy-dns-ready -n "$NAMESPACE" --restart=Never --image="$SERVER_IMAGE" \
+  --image-pull-policy=Never --labels=sunmoonai.com/r3-probe=dns-fixture \
+  --overrides='{"spec":{"automountServiceAccountToken":false,"activeDeadlineSeconds":45,"terminationGracePeriodSeconds":1}}' \
+  --command -- python -u -c "$dns_code" \
+  "${BACKEND_SERVICE}.${NAMESPACE}.svc.cluster.local.=${backend_ip}" \
+  "${POLICY_PROVIDER_SERVICE}.${NAMESPACE}.svc.cluster.local.=${provider_ip}" >/dev/null
+dns_phase=""
+for _ in $(seq 1 60); do
+  dns_phase="$(k get pod r3-policy-dns-ready -n "$NAMESPACE" -o jsonpath='{.status.phase}')"
+  [[ "$dns_phase" == Succeeded || "$dns_phase" == Failed ]] && break
+  sleep 1
+done
+k logs r3-policy-dns-ready -n "$NAMESPACE" >"${WORK_DIR}/dns-ready.log" 2>&1 || true
+k get pod r3-policy-dns-ready -n "$NAMESPACE" -o json >"${WORK_DIR}/dns-ready.json"
+[[ "$dns_phase" == Succeeded ]] || { printf 'DNS fixture not ready: %s\n' "$WORK_DIR" >&2; exit 1; }
+
 probe() {
   local name="$1" labels="$2" expected="$3" target="${4:-http://${BACKEND_SERVICE}:8000/}" phase=""
   k delete pod "$name" -n "$NAMESPACE" --ignore-not-found=true --wait=true >/dev/null
@@ -323,12 +367,17 @@ probe() {
     [[ "$phase" == Succeeded || "$phase" == Failed ]] && break
     sleep 1
   done
-  k logs "$name" -n "$NAMESPACE" --tail=20 >/dev/null 2>&1 || true
-  k delete pod "$name" -n "$NAMESPACE" --ignore-not-found=true --wait=true >/dev/null
-  [[ "$phase" == "$expected" ]] || {
-    printf 'network probe %s expected=%s actual=%s\n' "$name" "$expected" "$phase" >&2
+  k logs "$name" -n "$NAMESPACE" --tail=100 \
+    >"${WORK_DIR}/${name}.log" 2>"${WORK_DIR}/${name}.log.stderr" || true
+  k get pod "$name" -n "$NAMESPACE" -o json \
+    >"${WORK_DIR}/${name}.json" 2>"${WORK_DIR}/${name}.json.stderr" || true
+  python3 "${SCRIPT_DIR}/calico_probe_result.py" \
+    "${WORK_DIR}/${name}.json" "${WORK_DIR}/${name}.log" "$expected" || {
+    printf 'network probe %s expected=%s actual=%s diagnostics=%s\n' \
+      "$name" "$expected" "$phase" "$WORK_DIR" >&2
     return 1
   }
+  k delete pod "$name" -n "$NAMESPACE" --ignore-not-found=true --wait=true >/dev/null
 }
 
 printf 'R3_POLICY_STAGE=packet_gate\n'

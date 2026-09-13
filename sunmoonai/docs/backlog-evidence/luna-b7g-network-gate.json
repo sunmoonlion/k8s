@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "task": "luna-b7g-network-gate",
+  "network_policy_sha256": "e16fc0e4a350a598c561c1637a73060d24f5ad9d94162930e2efb5454c3dd539",
+  "scope": "Two disposable Calico clusters, Info NetworkPolicy and synthetic services only; not a business deployment",
+  "fixed_packet_gate_result": "passed",
+  "failed_probe": {
+    "name": "r3-policy-internal",
+    "uid": "c7d260ce-a243-4681-9830-fd7c6f059bfa",
+    "phase": "Failed",
+    "termination": {
+      "containerID": "containerd://4a1f999909508c56b6e236fbe947d25d1df28fbcec1af0c65af21e5fced7c3cf",
+      "exitCode": 1,
+      "finishedAt": "2026-09-13T06:22:25Z",
+      "reason": "Error",
+      "startedAt": "2026-09-13T06:22:25Z"
+    },
+    "image_id": "sha256:c6348fa86ba0fb2108c9334f5fe913ddc6d853313e655891f133a0127c30099f",
+    "log": "wget: bad address 'info-backend:8000'\n"
+  },
+  "dns_ready": [
+    {
+      "attempt": 1,
+      "name": "info-backend.app-platform-dev.svc.cluster.local.",
+      "expected": "10.96.248.84",
+      "address": "10.96.248.84",
+      "ready": true
+    },
+    {
+      "attempt": 1,
+      "name": "knowledge-admin-backend.app-platform-dev.svc.cluster.local.",
+      "expected": "10.96.105.213",
+      "address": "10.96.105.213",
+      "ready": true
+    }
+  ],
+  "fixed_probes": [
+    {
+      "name": "r3-policy-internal",
+      "uid": "2285a186-9af4-42ac-bc83-0c647904c62b",
+      "phase": "Succeeded",
+      "termination": {
+        "containerID": "containerd://21ef09c1fbc4d52cf5844ca7f741ae26ae521ea9eef1a4c40c2744075c23c31e",
+        "exitCode": 0,
+        "finishedAt": "2026-09-13T06:31:01Z",
+        "reason": "Completed",
+        "startedAt": "2026-09-13T06:31:01Z"
+      },
+      "image_id": "sha256:c6348fa86ba0fb2108c9334f5fe913ddc6d853313e655891f133a0127c30099f",
+      "log": ""
+    },
+    {
+      "name": "r3-policy-frontend",
+      "uid": "78e2851b-cb03-4ad0-bf4c-49fc00c83af9",
+      "phase": "Succeeded",
+      "termination": {
+        "containerID": "containerd://ef14297ff06588fc3c95c3b96ee54d5e0002b1be8c3c83d6553cc33a8e76c9a4",
+        "exitCode": 0,
+        "finishedAt": "2026-09-13T06:31:03Z",
+        "reason": "Completed",
+        "startedAt": "2026-09-13T06:31:03Z"
+      },
+      "image_id": "sha256:c6348fa86ba0fb2108c9334f5fe913ddc6d853313e655891f133a0127c30099f",
+      "log": ""
+    },
+    {
+      "name": "r3-policy-denied",
+      "uid": "e368bf9a-d2c9-4a30-b71f-913e749377ea",
+      "phase": "Failed",
+      "termination": {
+        "containerID": "containerd://d5596c0584e710408abe6066bac02459980a71c7852e94d6d95c3ced9f4b2dec",
+        "exitCode": 1,
+        "finishedAt": "2026-09-13T06:31:14Z",
+        "reason": "Error",
+        "startedAt": "2026-09-13T06:31:09Z"
+      },
+      "image_id": "sha256:c6348fa86ba0fb2108c9334f5fe913ddc6d853313e655891f133a0127c30099f",
+      "log": "wget: download timed out\n"
+    },
+    {
+      "name": "r3-policy-worker-knowledge",
+      "uid": "8ad36e14-4217-4632-ad49-cb778a5734ce",
+      "phase": "Succeeded",
+      "termination": {
+        "containerID": "containerd://36e31ee24a3a8bf040ec7fe75b57b86c327d3928c57cb8559330a7ccff0ca932",
+        "exitCode": 0,
+        "finishedAt": "2026-09-13T06:31:17Z",
+        "reason": "Completed",
+        "startedAt": "2026-09-13T06:31:17Z"
+      },
+      "image_id": "sha256:c6348fa86ba0fb2108c9334f5fe913ddc6d853313e655891f133a0127c30099f",
+      "log": ""
+    },
+    {
+      "name": "r3-policy-api-knowledge",
+      "uid": "5b5b9450-16a0-433f-89ea-850c00437d1c",
+      "phase": "Failed",
+      "termination": {
+        "containerID": "containerd://6a61fb1be5f0df810a069108582fc25df1038acbeda0699a1b48b19d4fb59c65",
+        "exitCode": 1,
+        "finishedAt": "2026-09-13T06:31:25Z",
+        "reason": "Error",
+        "startedAt": "2026-09-13T06:31:20Z"
+      },
+      "image_id": "sha256:c6348fa86ba0fb2108c9334f5fe913ddc6d853313e655891f133a0127c30099f",
+      "log": "wget: download timed out\n"
+    },
+    {
+      "name": "r3-policy-scheduler-knowledge",
+      "uid": "c50f3b15-b526-4f3a-91d6-858d2d60ddd9",
+      "phase": "Failed",
+      "termination": {
+        "containerID": "containerd://6da75898097eb08d8bbba062d1d260c8fb30c6d641da086afc4b079eb377f307",
+        "exitCode": 1,
+        "finishedAt": "2026-09-13T06:31:33Z",
+        "reason": "Error",
+        "startedAt": "2026-09-13T06:31:28Z"
+      },
+      "image_id": "sha256:c6348fa86ba0fb2108c9334f5fe913ddc6d853313e655891f133a0127c30099f",
+      "log": "wget: download timed out\n"
+    }
+  ]
+}
