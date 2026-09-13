@@ -1,6 +1,6 @@
 # B7a：公共 SQL / HTTP 日志降噪（Luna）
 
-日期：2026-09-13。状态：源码候选已验证，待完成集成同步。单人实施、自测，不宣称独立验收。
+日期：2026-09-13。状态：源码已集成并同步两端 master/Luna；未部署。单人实施、自测，不宣称独立验收。
 
 ## 1. 冻结范围
 
@@ -80,3 +80,21 @@ R6 的新版本 KIND/身份/回滚发布门禁；旧证据只代表其旧版本�
   来完成只读核验，也不得把其 DONE 投影到 B2～B7 新源码的部署状态。
 
 完整 B7b 子项矩阵尚未完成；N1～N6 尚未被新 dev-plan 接收，B8 不提前标完成。
+
+## 5. 源码同步与清理回执
+
+| 父仓 | 内容提交（锁定第 3 节后端） |
+| --- | --- |
+| tpl-app | `9229d6ab075d312ce8c998eee43d050580a42048` |
+| info-app | `2756db48e616a6d7588ccb8c326956ecb38f0b81` |
+| knowledge-app | `deaa49b555291ae996a39323be40ccdcc46b7549` |
+| investment-app | `00e211875c460b698f3bdcf12ce0b2cbeefabe52` |
+| k8s 初次内容 | `733292e7fc5a82175c608e022f30efa686e0a163`（本节另作后续状态回填） |
+
+四后端先推既有 master/Luna ref，父仓在既有 Luna 提交；核对本地 master 预期旧 HEAD、
+干净状态后逐仓快进并更新子模块，五父仓 master/Luna 均推至 GitHub/Gitee。
+五仓脚本 `remote-pull master`、`remote-pull luna` 均成功，未使用 force/realign。
+初次三份 k8s 文档门禁通过；两份预置 general/pro 草案未暂存、修改或传往云端。
+
+一次性 PG/S3/Redis 容器按完整 ID 核对后停止，自动移除且复查无残留；仅清理可重建的
+合成测试数据。没有操作业务数据/Secret、构建镜像、推送 Harbor、部署或切流。
