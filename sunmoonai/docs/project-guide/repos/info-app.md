@@ -170,7 +170,10 @@ B7c 创建按版本、目标 App 和 dataset 复用同一逻辑交付；NULL/空
 | 消费 | knowledge artifact 契约 v1（锁：`contracts/knowledge-provider-lock.json`） |
 | 发出 | `dispatch_distribution` → knowledge 内部摄入端点 |
 
-`interfaces/http/internal/` 只有包说明，**无 router 挂载**。
+`interfaces/http/internal/delivery_metrics.py`（B7h）已挂载
+`GET /api/internal/v1/delivery/metrics`：只读聚合，由签名服务令牌的精确
+subject/audience 绑定与 `delivery:observe` 授权；不接受浏览器 Cookie 代替。
+不默认授权主体，尚未接实际采集器；不是新增资讯业务入站契约。
 
 ## 7. 已知未实现
 
@@ -185,7 +188,6 @@ B7c 创建按版本、目标 App 和 dataset 复用同一逻辑交付；NULL/空
 | Elasticsearch 索引 | 默认 `SEARCH_BACKEND=disabled`，索引任务直接 skip |
 | 多下游分发 | 运行时只接受 `knowledge-app` |
 | 内置 Scrapy/Playwright 爬虫 | 不内嵌，须外部注入结果 |
-| `/api/internal` 入站面 | 无 router |
 | Web interaction 生产可用 | 同模板：默认 503 |
 
 ## 8. 验证

@@ -118,8 +118,10 @@ API readiness（2026-09-13 源码）在 2 秒协作式探测预算内检查 Redi
 投递观测入口 `python -m app.cli.delivery_metrics [--format prometheus]` 从本 App
 账本只读计算 gauge。`delivery_observers.py` 装配实际 delivery policy，实例沿用 handler
 注册，Agent 实例用领域租约扩展；未知 topic 仅报聚合数量，无无限标签或敏感 payload。
-没有新增表、迁移、HTTP 端点或自动 GC；异常不输出假零。CLI/text 输出不等于已接
-Prometheus，也不能证明 Worker/Scheduler 消费正常；后端 `docs/delivery-observation.md`
+没有新增表、迁移或自动 GC；异常不输出假零。B7h 补受服务身份和 `delivery:observe`
+保护的 `GET /api/internal/v1/delivery/metrics`，每进程一个在途只读采集，失败 503，
+不缓存旧值。CLI/HTTP 输出不等于实际接好 Prometheus，也不能证明 Worker/Scheduler
+消费正常；后端 `docs/delivery-observation.md`
 说明字段、权限/超时和未完成接线，分包证据见
 [B7d 只读观测](../../v5-backlog-delivery-observation-luna.md)。
 
@@ -172,7 +174,8 @@ async def get_web_interaction_port() -> WebInteractionPort:
 | 服务身份校验 | `infrastructure/security/service_identity.py` |
 | web-interaction 双端向量 | `contracts/web-interaction-v1.consumer-vectors.json` |
 
-`interfaces/http/internal/__init__.py` 只有一行 docstring——**无 router 挂载**。
+`interfaces/http/internal/delivery_metrics.py` 已挂载只读投递指标，复用现有服务身份
+签名/audience/subject/scope 校验；不默认授予任何主体权限，尚未接实际采集器。
 
 ## 7. 已知未实现
 
@@ -188,7 +191,6 @@ async def get_web_interaction_port() -> WebInteractionPort:
 | --- | --- |
 | 领域层 | `domain/{models,repositories,services}/` 仅空 `__init__.py` |
 | web-interaction 运行时 | 默认 `Unavailable` 适配器，是显式的"未接线"信号 |
-| `/api/internal/v1` | 只有中间件，无 router |
 
 公共可靠投递已接线：应用服务同事务记录命令，Worker 使用持久租约与 Inbox，Scheduler 每 5 秒投递和对账，提供死信与显式重放。模板不注册领域任务，实例通过 `delivery_handlers.py` 接入。该能力的源码验证不代表既有正式镜像已更新。
 

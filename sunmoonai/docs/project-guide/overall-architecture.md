@@ -334,17 +334,20 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 - **改源码版本必须同时改 `uv.lock`**，否则 Dockerfile 的 `uv sync --frozen`
   会在构建阶段失败。`test_package_version_matches_the_formal_release` 会拦
 
-### 9.2 四仓一致的未接线项
+### 9.2 共享能力：源码接线与仍留白项
+
+2026-09-13 按旧账处置更新源码投影；B7h 是本地 Luna 候选，尚未同步或部署。
+下面不以声明/源码存在推断当前镜像已经具备能力。
 
 | 项 | 实际状态 |
 | --- | --- |
 | **web-interaction 契约** | **defined，未 wired**：DTO、Port、前端 zod 齐全，但默认适配器返回 **503**；唯一替代实现是 reference fixture，且**生产禁止开启**。即生产环境该契约面**必定不可用** |
-| **共享 Outbox/Inbox 原语** | **defined，未 wired**：表、仓库类、Port 全在，业务层零调用。模板提供该原语，当前无生产调用 |
-| **Celery 周期任务** | **defined，未 wired**：四仓都有 Scheduler 入口，都没有 `beat_schedule`——进程起得来，无任务可跑 |
-| **`/api/internal/v1` 入站面** | tpl 与 info 只有中间件、无 router 挂载；只有 knowledge 与 investment 真正有内部路由 |
+| **共享 Outbox/Inbox 原语** | 源码已接线：命令与领域事务同提交，Worker 使用持久租约和 Inbox，支持死信/重放/对账；不再是零调用骨架，实际环境验收仍按 B7 |
+| **Celery 周期任务** | 源码已配置每 5 秒可靠投递 pump；Investment 保留领域调度。配置存在不证明 Scheduler 活性或 Worker 消费进展 |
+| **`/api/internal/v1` 入站面** | B7h 四仓共享受保护投递指标入口 `GET /api/internal/v1/delivery/metrics`，需独立服务主体及 `delivery:observe`；Knowledge/Investment 原领域 Internal 路由保留。尚未为指标接实际采集器 |
 
-上面两项**是否有意留白、何时重新审视**，代码证明不了——见
-[`../dev-plan/development-plan.md`](../dev-plan/development-plan.md)。
+产品留白的后续设计见 [`../dev-plan/development-plan.md`](../dev-plan/development-plan.md)；
+旧账源码/运行态边界见 [逐步处置清单](../v5-backlog-disposition-luna.md)。
 
 ### 9.3 各 App 的具体缺口
 

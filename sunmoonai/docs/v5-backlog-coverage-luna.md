@@ -46,7 +46,7 @@ k8s `5d79cee8`。后端：tpl `553c36b`、Info `f2c4001`、Knowledge `e99a894`�
 | API readiness / M1-502 | 四仓 ready 仅 Redis ping/SELECT 1；没有 revision 检查和端点内统一 deadline | **本包修复**：只读精确版本检查及协作式探测超时；不迁移数据库 |
 | Worker/Scheduler / M1-502 | 旧实例 bundle 仍为 `inspect ping`；[B7e](v5-backlog-worker-readiness-luna.md) 补本节点队列/注册检查与模板未来 bundle 接线，修复本机双重校时冲突后四仓原始全量 1205 项零跳过 | B7e 仅源码就绪检查，未部署；真实消费进展、Scheduler 与 startup/live 仍欠账，不能用控制面就绪证明业务进展 |
 | 关联/日志 / M1-503 | API audit context、Outbox/领域 correlation；B7a 公共库降噪 | 部分已有；跨全链 correlation 覆盖、结构化字段与隐私仍需核，不等于全量脱敏 |
-| 指标/告警 / M1-503、M1-105 | B7b 未见领域 exporter；后续 [B7d](v5-backlog-delivery-observation-luna.md) 补现有账本只读 gauge 与 CLI JSON/Prometheus text，按实际 consumer/租约扩展 | 仅观测源码入口已补；受保护 scrape、采集新鲜度、告警到达、broker queue 及角色活性仍在 B7；新 retrieval/run/SSE 产品指标 N4，不能当整套观测已完成 |
+| 指标/告警 / M1-503、M1-105 | [B7d](v5-backlog-delivery-observation-luna.md) 补账本只读 gauge/CLI；[B7h](v5-backlog-metrics-http-luna.md) 补服务身份保护的 HTTP scrape、本进程有界准入、no-store 与故障恢复 | 观测/受保护入口源码已补；实际采集及新鲜度判定、告警到达、broker queue 和角色活性仍在 B7；新 retrieval/run/SSE 产品指标 N4，不算整套观测完成 |
 | 发布可追踪 / M1-504 | 既有 digest bundle/release manifest/父子仓 gitlink；本轮 B2～B7 仅源码更新 | 底座已有，不可把源码 SHA 当当前 imageID；按源码→镜像→角色→数据统一发布，不能回填历史 release |
 | B4 对账运维 | Info `cli/reconcile_artifacts.py` 只读报告，原文主档不变 | 周期、权限、保留和业务扫描未验；自动修复/GC 与全引用审批门禁 N4 |
 | B5/B6 切换 | Dataset 授权快照、执行协议标记和代次均失败关闭 | 真实绑定、旧任务/回执调查、排空、一致切换和可回滚窗未验，禁止新旧消费者混滚 |
@@ -137,5 +137,6 @@ B7 其余缺口按第 2 节继续，下一源码工作先处理 Info 逻辑交�
 门禁及 B8 仍未完成。
 
 B7d 的后续观测与实例对齐见[只读投递观测证据](v5-backlog-delivery-observation-luna.md)。
-该入口无 HTTP 暴露面，无业务写入；没有因只读快照成功就关闭 Worker/Scheduler、
+B7d 当时入口无 HTTP 暴露面；B7h 后续加入专用 scope 保护的 HTTP，仍无业务写入；
+没有因只读快照成功就关闭 Worker/Scheduler、
 告警接线、归档或其它真实环境门禁。
