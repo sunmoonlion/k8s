@@ -43,6 +43,8 @@ Knowledge 未改动固定源码 `40edfc28292964ad18ab5a29d852aa8feeb7043c` 的�
 Provider、身份和外部 HTTP 的受控注入不冒充真实 RAGFlow 或业务授权验收。
 首轮旧抓取并发取消用例 consume 返回 False：单独复跑和随后两次全量均未复现；
 没有改用例或跳过。根因尚未确定，保留为 B7 运行活性复核线索，不能声称已修复。
+以上为 B7c 当时记录；后续 [B7f 确定性复核](v5-backlog-clock-regression-luna.md)
+已在旧生产代码准确重现原断言，修复显式释放后的租约回生缺陷，候选仅保存在本地 Luna。
 新测试初版误用 keyword-only 参数，已修正；备份工具首次缺少容器 TCP 连接参数，
 失败后改用显式 localhost/一次性测试凭据复跑通过，没有改业务配置。
 
