@@ -364,11 +364,10 @@ def main() -> int:
         "external_secrets": [
             "harbor-registry-secret",
             "info-tls",
-            "info-backend-postgresql-conn",
+            "info-backend-runtime",
             "info-backend-migration-postgresql-conn",
             "info-browser-identity",
             "info-backend-redis-conn",
-            "info-backend-broker",
             "info-backend-s3",
             "info-backend-elasticsearch",
             "info-knowledge-ingest-client",

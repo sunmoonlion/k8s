@@ -26,7 +26,7 @@ k8s `5d79cee8`。后端：tpl `553c36b`、Info `f2c4001`、Knowledge `e99a894`�
 | 子项 / 原任务 | 本次核对的载体与结论 | 去向 / 尚缺验收 |
 | --- | --- | --- |
 | 身份分面 / M1-001 | `interfaces/http/routes.py`、auth middleware 与 Admin/Web/Internal 分面、现有 auth tests | 已有基础；新 Task/文件/审批的逐资源授权仍属 N1/N2，不能据分面存在判全覆盖 |
-| 服务身份 / M1-002 | `infrastructure/security/service_identity.py`、`core/config.py` 的 subject/scope 精确绑定；[B7l](v5-backlog-runtime-preflight-luna.md) 九角色真实只读查询确认同 App 的 API/Worker/Scheduler 共用数据库 principal，broker 也共用 Secret 引用 | 角色隔离未收口；实例旧渲染覆盖须核修，真实独立撤销/ACL/轮换仍需受控验收；不同 ServiceAccount 不等于不同凭据 |
+| 服务身份 / M1-002 | `infrastructure/security/service_identity.py`、`core/config.py` 的 subject/scope 精确绑定；[B7l](v5-backlog-runtime-preflight-luna.md) 确认运行身份共用；[B7m](v5-backlog-runtime-rendering-luna.md) 修新渲染对模板角色键的覆盖 | 角色引用源码已修，真实集群仍旧身份；独立 principal/撤销/ACL/轮换仍需受控验收，不同键名不等于不同凭据 |
 | Secret / M1-003 | 源码配置校验和部署 Secret 引用不等于全 Git 历史扫描与有效凭据轮换证明 | 当前扫描/轮换/CI 和最小挂载尚未核验；不得输出秘密或自行轮换 |
 | 配置与流量 / M1-004 | 模板 `k8s-deployment/deployment_config.py`、`deploy.py` 及 v2 release/bundle 门禁 | 替代旧 Research traffic-mode；当前 Git/运行态漂移仍待只读核对，不执行 apply 冒充核验 |
 | 网络/容器 / M1-005 | 模板 network policies、runtime 非 root/drop capabilities/read-only FS 声明；[B7g](v5-backlog-network-gate-luna.md) 已复现旧 DNS 首败、修门禁并在全新 Calico 验证当前 Info 策略六条流向 | 仅 Info 声明与合成目标包级证据；不是业务镜像/其他 App/真实身份全验收；常驻 KIND kindnet 不 enforce |
@@ -47,7 +47,7 @@ k8s `5d79cee8`。后端：tpl `553c36b`、Info `f2c4001`、Knowledge `e99a894`�
 | Worker/Scheduler / M1-502 | 旧实例 bundle 仍为 `inspect ping`；[B7e](v5-backlog-worker-readiness-luna.md) 补本节点队列/注册检查；[B7i](v5-backlog-scheduler-activity-luna.md) 补 Scheduler 本机活动；[B7j](v5-backlog-worker-progress-luna.md) 补匹配 Inbox 回执只读进展及真实 prefork 暂停/恢复/回滚/重复，四仓最终 1569 项零跳过 | 源码与隔离进程证据已补，未部署；实际 Worker 负载/身份、Scheduler 运行策略与 startup/live 仍待验，不把聚合回执当 per-worker 健康或产品成功量 |
 | 关联/日志 / M1-503 | API audit context、Outbox/领域 correlation；B7a 公共库降噪 | 部分已有；跨全链 correlation 覆盖、结构化字段与隐私仍需核，不等于全量脱敏 |
 | 指标/告警 / M1-503、M1-105 | [B7d](v5-backlog-delivery-observation-luna.md) 补只读 gauge/CLI；[B7h](v5-backlog-metrics-http-luna.md) 补受保护 HTTP；[B7j](v5-backlog-worker-progress-luna.md) 补已提交回执聚合及故障恢复 | 观测/受保护入口源码已补；实际监控部署、采集/新鲜度/告警到达与 broker queue 接线已按所有者决定交未来 [N4-OPS-01](dev-plan/implementation-plan.md)，尚未实施；新 retrieval/run/SSE 产品指标仍 N4，不算整套观测完成 |
-| 发布可追踪 / M1-504 | [B7l](v5-backlog-runtime-preflight-luna.md) 核实际 imageID 与三份 9 月 11 日 KIND 开发 bundle 一致，三 bundle 门禁/20 项脚本回归通过；B2～B7 新源码尚未入镜像，Worker release-id 注解缺失 | 底座已有，下一包修最终渲染覆盖/关联；新源码→镜像→角色→数据需统一发布；未验 Harbor 恢复/新备份，不回填历史 release |
+| 发布可追踪 / M1-504 | [B7l](v5-backlog-runtime-preflight-luna.md) 核实际 imageID 仍为旧开发发布；[B7m](v5-backlog-runtime-rendering-luna.md) 补模板 Worker release-id 并验完整渲染/开发 finalizer 保持，最终 23 项脚本测试通过 | 新关联只在源码和临时渲染中，旧 bundle 未改；新源码→镜像→角色→数据仍待统一发布；未验 Harbor 恢复/新备份，不回填历史 release |
 | B4 对账运维 | Info `cli/reconcile_artifacts.py` 只读报告，原文主档不变 | 周期、权限、保留和业务扫描未验；自动修复/GC 与全引用审批门禁 N4 |
 | B5/B6 切换 | Dataset 授权快照、执行协议标记和代次均失败关闭；[B7l](v5-backlog-runtime-preflight-luna.md) 实查 Knowledge API/Worker 无新映射，54 条旧任务无新标记且均为当前枚举终态，5 条旧命令均有 Inbox | 不把历史记录当在途积压或自动补授权；批准绑定/旧任务恢复、真实 Provider 回执、排空、一致切换和回滚窗仍待验，禁止新旧消费者混滚 |
 

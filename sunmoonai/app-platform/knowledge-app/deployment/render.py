@@ -334,9 +334,9 @@ def main() -> int:
         "legacy_deployments": [],
         "external_secrets": [
             "harbor-registry-secret", "knowledge-tls",
-            "knowledge-backend-postgresql-conn", "knowledge-backend-migration-postgresql-conn",
+            "knowledge-backend-runtime", "knowledge-backend-migration-postgresql-conn",
             "knowledge-browser-identity", "knowledge-backend-redis-conn",
-            "knowledge-backend-broker", "knowledge-ragflow-provider",
+            "knowledge-ragflow-provider",
             "knowledge-backend-s3", "knowledge-info-ingest-service-binding",
             "knowledge-investment-retrieval-service-binding",
             "knowledge-active-retrieval-service-binding",

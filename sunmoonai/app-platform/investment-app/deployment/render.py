@@ -367,11 +367,10 @@ def main() -> int:
         "external_secrets": [
             "harbor-registry-secret",
             "investment-tls",
-            "investment-backend-postgresql-conn",
+            "investment-backend-runtime",
             "investment-backend-migration-postgresql-conn",
             "investment-browser-identity",
             "investment-backend-redis-conn",
-            "investment-backend-broker",
             "investment-knowledge-retrieval-client",
         ],
         "knowledge_binding": "knowledge-active-retrieval-service-binding",

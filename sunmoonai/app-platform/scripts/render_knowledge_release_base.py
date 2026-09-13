@@ -256,9 +256,7 @@ def overlay(
     api = common.resource(runtime_docs, "Deployment", "knowledge-r5-backend-api")
     api_container = common.container(api, "api")
     api_container["env"] = [
-        common.env_ref(
-            "DATABASE_URL", "knowledge-backend-postgresql-conn", "DATABASE_URL"
-        ),
+        *common.runtime_role_env(api_container, "api"),
         *redis_env(),
         common.env_ref(
             "ADMIN_CASDOOR_CLIENT_ID",
@@ -280,11 +278,6 @@ def overlay(
             "knowledge-r5-browser-identity",
             "WEB_CLIENT_SECRET",
         ),
-        common.env_ref(
-            "CELERY_BROKER_URL",
-            "celeryworker-knowledge-admin-backend-secret",
-            "CELERY_BROKER_URL",
-        ),
         *provider_env(retrieval_dataset_allowlist),
     ]
     api_container.setdefault("envFrom", []).extend(
@@ -302,20 +295,7 @@ def overlay(
         for item in worker_container.get("env", [])
         if item.get("name") == "POD_NAME"
     ] + [
-        common.env_ref(
-            "DATABASE_URL", "knowledge-backend-postgresql-conn", "DATABASE_URL"
-        ),
-        common.env_ref(
-            "CELERY_BROKER_URL",
-            "celeryworker-knowledge-admin-backend-secret",
-            "CELERY_BROKER_URL",
-        ),
-        common.env_ref(
-            "CELERY_RESULT_BACKEND",
-            "celeryworker-knowledge-admin-backend-secret",
-            "CELERY_RESULT_BACKEND",
-            optional=True,
-        ),
+        *common.runtime_role_env(worker_container, "worker"),
         *provider_env(retrieval_dataset_allowlist),
         *artifact_env(),
     ]
@@ -324,16 +304,8 @@ def overlay(
         runtime_docs, "Deployment", "knowledge-r5-backend-scheduler"
     )
     scheduler["spec"]["replicas"] = 0
-    common.container(scheduler, "scheduler")["env"] = [
-        common.env_ref(
-            "DATABASE_URL", "knowledge-backend-postgresql-conn", "DATABASE_URL"
-        ),
-        common.env_ref(
-            "CELERY_BROKER_URL",
-            "celeryworker-knowledge-admin-backend-secret",
-            "CELERY_BROKER_URL",
-        ),
-    ]
+    scheduler_container = common.container(scheduler, "scheduler")
+    scheduler_container["env"] = common.runtime_role_env(scheduler_container, "scheduler")
     runtime_docs = [
         item
         for item in runtime_docs
@@ -467,7 +439,7 @@ def main() -> int:
         "resources": list(FILES),
         "sha256": hashes,
         "external_secrets": {
-            "runtime_database": "knowledge-backend-postgresql-conn",
+            "runtime_database": "knowledge-r5-backend-runtime",
             "migration_database": "knowledge-backend-migration-postgresql-conn",
             "browser_identity": "knowledge-r5-browser-identity",
             "info_ingest_binding": "knowledge-info-ingest-service-binding",

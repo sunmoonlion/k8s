@@ -3,14 +3,15 @@
 
 The canonical scaffold intentionally models a fresh App.  R5 is different: it
 must run beside the v1 Info workloads in ``app-platform-dev`` and it must reuse
-already prepared, role-specific Secrets without copying credentials into a
-combined Secret.  This renderer keeps the scaffold topology, then applies the
-small, explicit Info migration overlay below.
+the scaffold's role-specific runtime Secret keys. Domain identities and the
+separate migration Secret remain explicit overlays; no credentials are copied.
+Existing committed bundles remain historical release artifacts.
 """
 
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import shutil
@@ -45,6 +46,39 @@ FILES = (
 
 class RenderError(RuntimeError):
     pass
+
+
+def runtime_role_env(item: dict[str, Any], role: str) -> list[dict[str, Any]]:
+    """Preserve canonical runtime references before replacing domain env entries.
+
+    A missing/mismatched scaffold contract must fail rendering, never fall back
+    to the former shared runtime credentials. Distinct keys alone do not prove
+    distinct principals or ACLs; provisioning and live rejection tests must.
+    """
+    if role not in ("api", "worker", "scheduler"):
+        raise RenderError("unknown runtime role")
+    names = ["DATABASE_URL", "CELERY_BROKER_URL"]
+    if role == "worker":
+        names.append("CELERY_RESULT_BACKEND")
+    result = []
+    for name in names:
+        matches = [entry for entry in item.get("env", []) if entry.get("name") == name]
+        if len(matches) != 1:
+            raise RenderError(f"scaffold {role} requires one {name}")
+        entry = matches[0]
+        ref = entry.get("valueFrom", {}).get("secretKeyRef", {})
+        expected = {"name", "key", "optional"} if name == "CELERY_RESULT_BACKEND" else {"name", "key"}
+        if (set(entry) != {"name", "valueFrom"}
+                or set(entry["valueFrom"]) != {"secretKeyRef"}
+                or set(ref) != expected
+                or not str(ref.get("name", "")).endswith("-backend-runtime")
+                or ref.get("key") != f"{role.upper()}_{name}"
+                or (name == "CELERY_RESULT_BACKEND" and ref.get("optional") is not True)):
+            raise RenderError(f"invalid scaffold {role} reference for {name}")
+        result.append(copy.deepcopy(entry))
+    if len({entry["valueFrom"]["secretKeyRef"]["name"] for entry in result}) != 1:
+        raise RenderError(f"inconsistent scaffold {role} Secret references")
+    return result
 
 
 def default_scaffold() -> Path:
@@ -263,7 +297,7 @@ def overlay(output: Path, namespace: str) -> None:
     api = resource(runtime_docs, "Deployment", "info-r5-backend-api")
     api_container = container(api, "api")
     api_container["env"] = [
-        env_ref("DATABASE_URL", "info-backend-postgresql-conn", "DATABASE_URL"),
+        *runtime_role_env(api_container, "api"),
         *redis_env(),
         env_ref(
             "ADMIN_CASDOOR_CLIENT_ID",
@@ -285,11 +319,6 @@ def overlay(output: Path, namespace: str) -> None:
             "info-r5-browser-identity",
             "WEB_CLIENT_SECRET",
         ),
-        env_ref(
-            "CELERY_BROKER_URL",
-            "celeryworker-info-admin-backend-secret",
-            "CELERY_BROKER_URL",
-        ),
     ]
     add_info_storage(api_container)
     api["spec"]["template"]["spec"].setdefault("volumes", []).append(
@@ -308,19 +337,8 @@ def overlay(output: Path, namespace: str) -> None:
     worker_container["env"] = [
         item for item in worker_container.get("env", []) if item.get("name") == "POD_NAME"
     ] + [
-        env_ref("DATABASE_URL", "info-backend-postgresql-conn", "DATABASE_URL"),
+        *runtime_role_env(worker_container, "worker"),
         *redis_env(),
-        env_ref(
-            "CELERY_BROKER_URL",
-            "celeryworker-info-admin-backend-secret",
-            "CELERY_BROKER_URL",
-        ),
-        env_ref(
-            "CELERY_RESULT_BACKEND",
-            "celeryworker-info-admin-backend-secret",
-            "CELERY_RESULT_BACKEND",
-            optional=True,
-        ),
     ]
     worker_container.setdefault("envFrom", []).append(
         {"secretRef": {"name": "info-knowledge-ingest-client"}}
@@ -339,14 +357,7 @@ def overlay(output: Path, namespace: str) -> None:
     scheduler = resource(runtime_docs, "Deployment", "info-r5-backend-scheduler")
     scheduler["spec"]["replicas"] = 0
     scheduler_container = container(scheduler, "scheduler")
-    scheduler_container["env"] = [
-        env_ref("DATABASE_URL", "info-backend-postgresql-conn", "DATABASE_URL"),
-        env_ref(
-            "CELERY_BROKER_URL",
-            "celeryworker-info-admin-backend-secret",
-            "CELERY_BROKER_URL",
-        ),
-    ]
+    scheduler_container["env"] = runtime_role_env(scheduler_container, "scheduler")
     runtime_docs = [
         item
         for item in runtime_docs
@@ -489,7 +500,7 @@ def main() -> int:
         "resources": list(FILES),
         "sha256": hashes,
         "external_secrets": {
-            "runtime_database": "info-backend-postgresql-conn",
+            "runtime_database": "info-r5-backend-runtime",
             "migration_database": "info-backend-migration-postgresql-conn",
             "browser_identity": "info-r5-browser-identity",
             "worker_downstream_identity": "info-knowledge-ingest-client",

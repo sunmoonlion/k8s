@@ -216,9 +216,7 @@ def overlay(output: Path, namespace: str) -> None:
     api = common.resource(runtime_docs, "Deployment", "investment-r5-backend-api")
     api_container = common.container(api, "api")
     api_container["env"] = [
-        common.env_ref(
-            "DATABASE_URL", "investment-backend-postgresql-conn", "DATABASE_URL"
-        ),
+        *common.runtime_role_env(api_container, "api"),
         *redis_env(),
         common.env_ref(
             "ADMIN_CASDOOR_CLIENT_ID",
@@ -240,11 +238,6 @@ def overlay(output: Path, namespace: str) -> None:
             "investment-r5-browser-identity",
             "WEB_CLIENT_SECRET",
         ),
-        common.env_ref(
-            "CELERY_BROKER_URL",
-            "investment-backend-broker",
-            "CELERY_BROKER_URL",
-        ),
     ]
 
     worker = common.resource(runtime_docs, "Deployment", "investment-r5-backend-worker")
@@ -255,20 +248,7 @@ def overlay(output: Path, namespace: str) -> None:
         for item in worker_container.get("env", [])
         if item.get("name") == "POD_NAME"
     ] + [
-        common.env_ref(
-            "DATABASE_URL", "investment-backend-postgresql-conn", "DATABASE_URL"
-        ),
-        common.env_ref(
-            "CELERY_BROKER_URL",
-            "investment-backend-broker",
-            "CELERY_BROKER_URL",
-        ),
-        common.env_ref(
-            "CELERY_RESULT_BACKEND",
-            "investment-backend-broker",
-            "CELERY_RESULT_BACKEND",
-            optional=True,
-        ),
+        *common.runtime_role_env(worker_container, "worker"),
         *redis_env(),
     ]
     worker_container.setdefault("envFrom", []).append(
@@ -279,16 +259,8 @@ def overlay(output: Path, namespace: str) -> None:
         runtime_docs, "Deployment", "investment-r5-backend-scheduler"
     )
     scheduler["spec"]["replicas"] = 0
-    common.container(scheduler, "scheduler")["env"] = [
-        common.env_ref(
-            "DATABASE_URL", "investment-backend-postgresql-conn", "DATABASE_URL"
-        ),
-        common.env_ref(
-            "CELERY_BROKER_URL",
-            "investment-backend-broker",
-            "CELERY_BROKER_URL",
-        ),
-    ]
+    scheduler_container = common.container(scheduler, "scheduler")
+    scheduler_container["env"] = common.runtime_role_env(scheduler_container, "scheduler")
     runtime_docs = [
         item
         for item in runtime_docs
@@ -422,11 +394,11 @@ def main() -> int:
         "resources": list(FILES),
         "sha256": hashes,
         "external_secrets": {
-            "runtime_database": "investment-backend-postgresql-conn",
+            "runtime_database": "investment-r5-backend-runtime",
             "migration_database": "investment-backend-migration-postgresql-conn",
             "browser_identity": "investment-r5-browser-identity",
             "redis": "investment-backend-redis-conn",
-            "broker": "investment-backend-broker",
+            "broker": "investment-r5-backend-runtime",
             "knowledge_retrieval_client": "investment-knowledge-retrieval-client",
         },
         "formal_release": False,
