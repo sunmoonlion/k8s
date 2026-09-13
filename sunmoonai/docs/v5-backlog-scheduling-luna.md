@@ -1,6 +1,6 @@
 # B6a：公共持久定时投递源码验证
 
-2026-09-13，单人 Luna 实施/自测，无独立多家评审；当前定位是源码候选，不是部署验收。
+2026-09-13，单人 Luna 实施/自测，无独立多家评审；源码已集成，不是部署验收。
 任务归属及后续游标见[逐步处置清单](v5-backlog-disposition-luna.md)。
 
 ## 1. 本包解决什么
@@ -89,3 +89,17 @@ Knowledge 将提交解析与轮询拆为有界执行；每条 poll 只做一次�
 结果未知阻断、授权复核和最终领域提交。轮询不得重复读取源文件或盲目再次上传；
 旧消息重放不得重置新代次或新 deadline。沿用公共 Outbox 与 Provider 操作账，避免第二真源。
 这些仍须实现和故障测试，不能因为 B6a 通过就标 M1-203 或 B6 已完成。
+
+## 6. 集成与清理回执
+
+父仓固定为 tpl-app@7ae62d9be3b5ea0bdf1c301fa0f51e6d44f9f1ed、
+info-app@86f0842967b50a77a8cfe473300a6901958c13e5、
+knowledge-app@b15c9d27bbf3dd78fa9e45ead36cfb7494d4b31a、
+investment-app@cb2eefba461e10a528f9d41e11b8f4af8b1c3737。
+本报告内容初次提交 k8s@2a2117f16232226299de7f583825856e298500d7；本节为后续回填。
+后端提交先推可达，父仓既有 master/Luna 推送 GitHub/Gitee，本机 master 快进并对齐
+gitlink；五仓脚本 remote-pull master 和 remote-pull luna 均成功，云端也锁到相同后端。
+没有新建开发分支，没有强制改写历史；本地两份预置协议草案仍未跟踪且未修改。
+
+三个一次性测试容器已按完整 ID 核对、停止并自动移除，随机 schema/测试 bucket/Redis
+测试数据可重建；未清理任何业务数据或用户文件。未构建、推送应用镜像或部署。
