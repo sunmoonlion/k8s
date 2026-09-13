@@ -424,3 +424,15 @@ Git 元数据位于可写根之外，提交/集成通过平台权限批准，不
   REPEATABLE READ/READ ONLY、DB 语句及整体超时；读取失败退出 2，不输出秘密、假零
   或半份快照。快照时间可识别过时数据，但不证明 Worker/Scheduler 活性。
   实际 scrape/告警/角色探针与归档仍在 B7，禁止用本包的 CLI 输出冒充已接监控。
+- B7d 固定后端 tpl-backend@1f8941f、info-backend@9ea1c5e、knowledge-backend@d16fb6c、
+  investment-backend@7113e52，完整依次 **131/375/286/269 passed，全部零跳过**，
+  Ruff/Pyright 通过。新增公共 24 项/仓、Agent 另 3 项；四公共文件 SHA-256 一致，
+  三个父仓各有增量对齐报告。Knowledge 首轮计时边界用例一次失败，诊断重复及同提交
+  两次全量未复现，源码/常规断言未改；根因未定，保留为 B7 活性线索，不冒充已修复。
+  父仓 tpl-app@b0f19c6、info-app@41965dd、knowledge-app@7c9e5aa、investment-app@7874ae1；
+  初次文档内容 k8s@a6b50b4b（4 文档门禁），本条为后续状态回填。
+  子仓先推、父仓 master 核预期 SHA/干净后快进，五父仓 master/Luna 推 GitHub/Gitee；
+  五仓 remote-pull master / luna 均完成，SSH 断言两工作区五父仓/实际后端 SHA 与干净
+  状态正确。三个一次性 PG/S3/Redis 容器核 ID 后停止自动移除、复查无残留；仅合成数据。
+  两份草稿保留，未操作业务库/Secret/镜像/部署。下一游标 **B7 采集接线与运行活性**，
+  随后归档/其余真实环境门禁；B8/N1～N6 正式接收仍未完成。
