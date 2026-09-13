@@ -114,7 +114,7 @@ Git 元数据位于可写根之外，提交/集成通过平台权限批准，不
 | B4 Artifact 对账 | 检测源码已集成 | 只读双向对账、可追踪未登记对象、精确版本写后核验已同步两端 master/Luna；278 项通过。自动修复/回收、周期策略交 B7/N4，实际业务存储未扫描 |
 | B5 Dataset 授权 | 源码已集成 | 静态映射、未知目标拒绝、数据面禁建、受理快照及执行/重试/恢复复核已同步两端 master/Luna；173 项及 Info 消费边通过。业务映射/旧任务与一致配置切换未验收 |
 | B6 解析调度 | B6a/B6b 源码已集成 | [公共同步证据](v5-backlog-scheduling-luna.md)；[Knowledge 单次轮询证据](v5-backlog-parse-polling-luna.md)。235 项回归及 Info 消费边通过，已同步两端 master/Luna；日志源码由 B7a 补齐，运行态未验收，不把 M1-203 整项销账 |
-| B7 已有覆盖收口 | B7a～B7e 已集成；B7f～B7j 本地验证；整包未完成 | [子项矩阵](v5-backlog-coverage-luna.md)；本机双重校时冲突已修复，Scheduler/已提交回执源码与隔离故障由 B7i/B7j 补齐；保留归档及实际环境门禁继续。监控部署/采集/告警按所有者决定由未来 N4-OPS-01 接收，未部署不算运行验收；接 B4～B6 运维/切换，自动修复回收与全引用门禁交 N4 |
+| B7 已有覆盖收口 | B7a～B7e 已集成；B7f～B7u 本地候选/审计；整包未完成 | [子项矩阵](v5-backlog-coverage-luna.md)；本机双重校时冲突已修复，B7i/B7j 补 Scheduler/已提交回执，B7u 补四仓公共投递的独立 DB/broker 联合运行与恢复；身份供给/撤销、保留归档及实际环境门禁继续。监控部署/采集/告警由未来 N4-OPS-01 接收，未部署不算运行验收；接 B4～B6 运维/切换，自动修复回收与全引用门禁交 N4 |
 | B7f 历史投递失败复核 | 本地候选及固定提交复验通过 | [确定性因果与候选](v5-backlog-clock-regression-luna.md)；Info 原取消与 Knowledge 原重放/恢复/轮询失败点在旧代码复现，修复显式状态；四仓全量 1250 项零跳过；独立 Calico 问题由 B7g 处置，不作中间同步 |
 | B7g 旧网络门禁失败 | 本地候选及全新隔离集群通过 | [DNS 首败现场与门禁修复](v5-backlog-network-gate-luna.md)；旧首探针实际复现 DNS 解析失败，补启动前置、真实拒绝判定和清理安全；8 单测及 Info 6 条包级网络断言通过，非业务部署 |
 | B7h 受保护指标入口 | 本地最终固定提交全量通过 | [HTTP 采集及新增失败根因](v5-backlog-metrics-http-luna.md)；四仓服务身份隔离、只读聚合、有界准入；修复旧测试恢复期超时注入泄漏，1,348 项零跳过；实际采集器与告警尚未接线 |
@@ -130,6 +130,7 @@ Git 元数据位于可写根之外，提交/集成通过平台权限批准，不
 | B7r Investment 数据库领域策略 | 本地固定候选通过；未供给/部署 | [真实断点、审批恢复、取消和效果回执](v5-backlog-investment-database-policy-luna.md)；四仓串行 18+25+27+24=94 PG 零跳过，平台 42 项通过；API 保留取消撤租约两列，Worker 独立 PostgreSQL Saver；三领域数据库候选已验证，broker/供给/切换仍待实施 |
 | B7s 模板 broker 权限与预建拓扑 | 模板本地固定候选通过；实例承接 B7t | [真实 RabbitMQ 权限及漏建拒绝](v5-backlog-template-broker-policy-luna.md)；30 项真实 broker + 模板完整 258 项零跳过，父仓普通 16 项通过；不以交换机同名 read 放宽生产者，保留控制/事件/探针；后续联合身份启动/供给/切换仍待实施 |
 | B7t 三实例 broker 拓扑对齐 | 四仓本地固定候选通过；未供给/部署 | [串行对齐及固定提交门禁](v5-backlog-instance-broker-alignment-luna.md)；模板→Info→Knowledge→Investment 完整 Backend 258+503+418+402=1,581 项零跳过，每仓 30 项真实 broker；保留领域代码，共用入口/依赖隔离与清理；下一步联合 DB/broker 身份启动及受控供给切换 |
+| B7u DB/broker 联合运行 | 四仓本地固定候选通过；未供给/部署 | [真实 Worker 事务、ACK 与默认租约恢复](v5-backlog-joint-runtime-identity-luna.md)；每仓三项联合场景、原 30 项 broker 与完整后端串行通过，完整 Backend 合计 1,581 项零跳过；生产源码/权限未放宽，杀进程后等待默认租约恢复；下一步供给/重启一致性、撤销排空与受控切换前置 |
 | B8 后续移交 | 待实施 | N1～N6 建立待迁入清单与原任务关联；新 dev-plan 真正接收后才标已迁入，不以本文件冒充已完成产品开发 |
 | B9 集成与同步 | 等待本轮剩余处置完成 | B1～B6、B7a～B7e 已集成、同步；按 2026-09-13 最新决定，后续仅在 Luna 开发验证，最终统一执行子仓先推、父仓 gitlink 后推；master 预期 HEAD 核对、快进/明确合并，再同步两端工作区；不覆写预置草案 |
 
@@ -154,6 +155,16 @@ N4 的监控部署/采集/告警送达子项于 2026-09-13 按所有者要求迁
 
 ## 7. 执行日志
 
+- B7u：共用测试固定 `tpl-app@9d08dc7`，说明 `669c97d` 仅改 README；四个 Backend
+  保持 B7t 提交不动，模板→Info→Knowledge→Investment 依次外层各 36 项、完整后端
+  258/503/418/402 项通过，均零跳过；四仓 Ruff/Pyright、父仓 18 单测通过。
+  独立数据库身份与窄 broker ACL 联合运行，真实 API 存储、Beat、prefork Worker、
+  原子效果/Inbox、重复屏障、失败 ACK 不算提交、SIGKILL 后默认 60 秒租约/epoch 恢复。
+  测试裸表名 42P01 与管理连接采样滞后均已查清，改精确断言和有界观测，不放宽权限
+  或缩短生产租约。最终 26 容器/29 匿名卷精确清理，原 KIND/旧容器不变；详见
+  [冻结基线、失败与回执](v5-backlog-joint-runtime-identity-luna.md)。不改业务部署/
+  Secret/镜像、父仓 gitlink、master 或远端；预置增量/草案保留。下一游标仍为 B7
+  身份供给/重启一致性、旧连接/权限撤销和切换前置，不提前关闭 B8/B9。
 - B7t：模板父仓 `fb9aee8` 统一选择同级 Backend、创建隔离依赖、沿用模板交互向量真源；
   模板 Backend `44e74fe` 复验后，串行 Info `5fb909b`、Knowledge `e79a712`、Investment
   `68f776e` 同步四文件公共增量。各仓外层 33 项（含 30 项 broker）、完整后端分别
