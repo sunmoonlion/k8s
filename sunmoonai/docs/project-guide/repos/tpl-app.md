@@ -109,6 +109,12 @@ TrustedHost + CORS（仅 frontend origins） · 健康检查 5 个别名
 （`/health/live` `/health` `/api/health` `/health/ready` `/ready`） ·
 `/api/version` 返回 `contractVersion: 1`
 
+API readiness（2026-09-13 源码）在 2 秒协作式探测预算内检查 Redis ping 与数据库
+`alembic_version`；必须恰好一个版本且等于本镜像迁移链的单 head，否则通用 503。
+每次查数据库，不缓存 ready、不自动迁移或提权；live 保持无依赖。
+这不验证完整表结构/数据，也不覆盖 Worker/Scheduler，见
+[`B7b 子项与证据`](../../v5-backlog-coverage-luna.md)。部署与业务角色权限尚未验收。
+
 公共日志（2026-09-13 源码）：Postgres 固定关闭 SQL echo、隐藏绑定参数；API 与
 Celery Worker/Scheduler 均将 SQLAlchemy engine/pool、httpx/httpcore 限为 WARNING，
 应用 DEBUG 不自动打开 wire 日志。应用审计与 Celery 自身日志保留原级别；不是完整脱敏。
