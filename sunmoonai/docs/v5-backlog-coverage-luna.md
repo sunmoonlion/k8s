@@ -31,7 +31,7 @@ k8s `5d79cee8`。后端：tpl `553c36b`、Info `f2c4001`、Knowledge `e99a894`�
 | 配置与流量 / M1-004 | 模板 `k8s-deployment/deployment_config.py`、`deploy.py` 及 v2 release/bundle 门禁 | 替代旧 Research traffic-mode；当前 Git/运行态漂移仍待只读核对，不执行 apply 冒充核验 |
 | 网络/容器 / M1-005 | 模板 network policies、runtime 非 root/drop capabilities/read-only FS 声明，旧 Calico 证据 | 声明及旧版本已有；KIND kindnet 不 enforce，当前新源码隔离路径未重验 |
 | 分发载体 / M1-104 | Info `info_crawl_service._artifact_contract_payload` 有 contract_version、版本/Dataset 稳定幂等键、correlation；公共 Outbox 有 attempts/available_at | 字段与传输基础已有，不要求按旧表名重造第二本账 |
-| 逻辑交付去重 / M1-104 | `create_knowledge_distribution` 每次新 UUID + INSERT；`DistributionRecord` 未见版本/Dataset 唯一约束 | **源码缺口**：下游幂等不等于重复创建返回同一逻辑交付；留在 B7 后续独立修复，先核旧重复/语义与迁移边界 |
+| 逻辑交付去重 / M1-104 | B7b 核查时每次新 UUID + INSERT，无版本/Dataset 唯一约束；后续 B7c 补复用、唯一索引和写入护栏 | [B7c 源码验证](v5-backlog-distribution-identity-luna.md)；业务库冲突调查、备份与角色切换仍待验收，下游幂等不能替代本地逻辑身份 |
 | 发布/Inbox/租约 / M1-105、M3-001 | `DurableTasks`、公共 `durable_delivery.py`、Outbox repository、各领域 handler、真实 PG 故障测试 | 已有源码及分包固定提交证据；新版本正式环境 broker 故障/丢回执/kill 仍未验收 |
 | 对账/死信重放 / M1-105 | 5 秒 Beat pump、`cli/durable_delivery.py` reconcile/replay/dead-letters；重放不删 Inbox | 机制已有；实际调度活性、告警到达、权限与运行策略待核 |
 | 保留/归档 / M1-105 | 公共账本未见按批准保留窗归档/回收流程；旧表改名/拒写不等于保留策略落地 | **未收口**；先明确账本引用闭包/幂等重放窗及恢复条件，不执行删除，不能拿 GC 替代归档 |
@@ -132,4 +132,6 @@ B7 其余缺口按第 2 节继续，下一源码工作先处理 Info 逻辑交�
 
 一次性 PG/S3/Redis 三容器逐个核对完整 ID 后停止并自动移除，复查无残留；清理的
 只有可重建测试数据。未操作业务库/桶/Secret，未构建镜像、推送 Harbor 或部署。
-下一游标 B7c：Info 逻辑交付去重；指标/角色活性/归档/真实环境门禁及 B8 仍未完成。
+上述为 B7b 当时游标。B7c 的后续源码与同步结果见
+[逻辑交付去重证据](v5-backlog-distribution-identity-luna.md)；指标/角色活性/归档/真实环境
+门禁及 B8 仍未完成。

@@ -125,15 +125,22 @@ B4 源码候选：S3 写后严格按回执 VersionId 核验，拒绝无版本写
 才记录完成回执。Scheduler 每 5 秒发布与对账，有限重试后入死信，可显式重放。
 broker 故障不改变已接受命令；分发重试保持相同下游业务身份。取消和租约丢失不写终态。
 
+B7c 创建按版本、目标 App 和 dataset 复用同一逻辑交付；NULL/空串/default 同义。
+重复请求保留原 ID、Artifact 快照、历史和回执；dispatch=True 仅为 pending 确保原代次
+命令，不隐式重试终态或 running。旧失败任务仍走显式 retry；HTTP 201 结构保持兼容。
+数据库唯一索引和不可变身份护栏需要 0009；只读预检 `python -m app.cli.distribution_preflight`
+发现存量重复即报告并阻断迁移，不自动合并/删除。详见后端 `docs/distribution-identity.md`。
+
 ## 5. 数据
 
-源码迁移链 8 个版本，线性（0008 尚未用于业务库）：
+源码迁移链 9 个版本，线性（0008/0009 尚未用于业务库）：
 
 ```
 20260706_0001_info_spider_mvp → 0002_source_governance → 0003_auth_identity
 → 0004_delivery_outbox → 0005_outbox_primitives → 0006_delivery_outbox_uuid_default
 → 20260911_0007_durable_delivery
 → 20260912_0008_canonical_identity
+→ 20260913_0009_distribution_identity
 ```
 
 领域表（`infrastructure/models/info.py`，9 张）：
