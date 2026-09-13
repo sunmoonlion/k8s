@@ -148,6 +148,9 @@ N4 的监控部署/采集/告警送达子项于 2026-09-13 按所有者要求迁
 
 ## 7. 执行日志
 
+- B7n 固定复验：k8s `bbfc2679`；模板 8、平台串行 24+3+3=30 项及 Ruff/三份
+  文档门禁通过。UTC 09:17:55～09:18:19 再次对九角色实查全部 collected，版本表
+  CRUD/共享角色结果一致；这是只读证据而非供给验收，不更新 master 或同步远端。
 - B7n：新增单一平台只读 PostgreSQL 目录工具及 7 项安全测试，实查九角色有效
   ACL/继承/owner/default ACL，并只读核 broker 用户配置与三个 vhost 授权。
   [本包报告](v5-backlog-runtime-permissions-luna.md)记录旧脚本副作用、版本表 CRUD
