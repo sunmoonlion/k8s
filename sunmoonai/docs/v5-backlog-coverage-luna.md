@@ -44,7 +44,7 @@ k8s `5d79cee8`。后端：tpl `553c36b`、Info `f2c4001`、Knowledge `e99a894`�
 | 租约/退出 / M1-311 | 公共与 Agent execution lease、epoch、心跳、真实子进程 kill 测试；Pod preStop 声明 | 源码及隔离 kill 已有；实际 SIGTERM drain/Pod eviction/回投窗口待运行验证 |
 | Migration Job / M1-501 | 模板 `deploy.run_migration` 等待独立 Job，失败抛错阻止完整 apply 后续 runtime；bootstrap 无隐式迁移 | 已有编排；当前角色权限、业务备份/恢复、revision/发布关联待验，不凭 Job 完成判所有数据库正确 |
 | API readiness / M1-502 | 四仓 ready 仅 Redis ping/SELECT 1；没有 revision 检查和端点内统一 deadline | **本包修复**：只读精确版本检查及协作式探测超时；不迁移数据库 |
-| Worker/Scheduler / M1-502 | Worker 声明 `inspect ping`；现有 `scripts/delivery_runtime_probe.py` 是会写合成表/消息的隔离验收，不是只读线上探针 | consumer 队列匹配/消费活性、Scheduler 活性与角色 startup/live 仍待补核；不把 pong 或进程存在当业务消费证明 |
+| Worker/Scheduler / M1-502 | 旧实例 bundle 仍为 `inspect ping`；[B7e](v5-backlog-worker-readiness-luna.md) 补本节点队列/注册检查与模板未来 bundle 接线，修复本机双重校时冲突后四仓原始全量 1205 项零跳过 | B7e 仅源码就绪检查，未部署；真实消费进展、Scheduler 与 startup/live 仍欠账，不能用控制面就绪证明业务进展 |
 | 关联/日志 / M1-503 | API audit context、Outbox/领域 correlation；B7a 公共库降噪 | 部分已有；跨全链 correlation 覆盖、结构化字段与隐私仍需核，不等于全量脱敏 |
 | 指标/告警 / M1-503、M1-105 | B7b 未见领域 exporter；后续 [B7d](v5-backlog-delivery-observation-luna.md) 补现有账本只读 gauge 与 CLI JSON/Prometheus text，按实际 consumer/租约扩展 | 仅观测源码入口已补；受保护 scrape、采集新鲜度、告警到达、broker queue 及角色活性仍在 B7；新 retrieval/run/SSE 产品指标 N4，不能当整套观测已完成 |
 | 发布可追踪 / M1-504 | 既有 digest bundle/release manifest/父子仓 gitlink；本轮 B2～B7 仅源码更新 | 底座已有，不可把源码 SHA 当当前 imageID；按源码→镜像→角色→数据统一发布，不能回填历史 release |

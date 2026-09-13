@@ -123,6 +123,12 @@ Prometheus，也不能证明 Worker/Scheduler 消费正常；后端 `docs/delive
 说明字段、权限/超时和未完成接线，分包证据见
 [B7d 只读观测](../../v5-backlog-delivery-observation-luna.md)。
 
+Worker 消费配置探针 `python -m app.cli.worker_readiness`（B7e 源码，四仓门禁已过，未部署）定向本 POD_NAME，
+校验实际队列/交换机/路由/持久性及本镜像应用任务注册；6 秒子进程预算，失败固定错误，
+无业务任务/数据库操作。模板未来 bundle 已接该命令；实例历史镜像/release 未重写，
+须联合新镜像发布才能启用。它不是消费进展或 Scheduler 心跳，也不作 liveness；
+详见 [B7e 证据与边界](../../v5-backlog-worker-readiness-luna.md)。
+
 公共日志（2026-09-13 源码）：Postgres 固定关闭 SQL echo、隐藏绑定参数；API 与
 Celery Worker/Scheduler 均将 SQLAlchemy engine/pool、httpx/httpcore 限为 WARNING，
 应用 DEBUG 不自动打开 wire 日志。应用审计与 Celery 自身日志保留原级别；不是完整脱敏。
