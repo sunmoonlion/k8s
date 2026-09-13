@@ -49,10 +49,16 @@ retrieval v1 的 provider 元数据目前只允许 ragflow：未来接 WeKnora �
 
 ## 进度
 
-本地候选已实现并验证；Backend 固定提交
+已实现、验证并按所有者“也同步一下，之后暂停”的要求完成代码同步；Backend 固定提交
 `26aa0715f15e2c8df4713559063a9a2e3215a1c8`（18 文件，含原文件拆分/移动和测试）。
-这是本次用户新请求产生的候选，**未推送、未集成 master、未更新父仓 gitlink**；
-此前暂停同步回执仍对应旧基线，不把新候选冒充已同步。B7 旧账游标仍保留在
+2026-09-13 先将 Backend 普通快进推送到 GitHub/Gitee 既有 master，再提交父仓
+gitlink `8f87061b70c2136286941efa58f0b99cc246a405`；k8s 实现说明与权限测试适配
+固定内容提交 `c299c6b59dae7419e993ee9bcbe200615d217eaf`。本地 master 快进后，
+通过 five-repos-sync 完成五父仓 Luna/master 向云端同步及本地 master 最终拉取。
+已逐一核验两处仓库实时 master/luna 引用、本地与云端两工作区五父仓完整 SHA、
+实际子模块及干净状态；本段是核验后的文档回填，随单独回执提交同步。
+没有新建分支、强推、reset/realign、更新其它工位或启动本地 Opus；不构建/推送镜像，
+不部署、不切换 Provider。两份协议草案内容保持不动。B7 旧账游标仍保留在
 [处置清单](v5-backlog-disposition-luna.md)，本包不代替旧账销项。
 
 ## 实现与验证回执
