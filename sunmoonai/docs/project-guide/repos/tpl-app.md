@@ -109,6 +109,11 @@ TrustedHost + CORS（仅 frontend origins） · 健康检查 5 个别名
 （`/health/live` `/health` `/api/health` `/health/ready` `/ready`） ·
 `/api/version` 返回 `contractVersion: 1`
 
+公共日志（2026-09-13 源码）：Postgres 固定关闭 SQL echo、隐藏绑定参数；API 与
+Celery Worker/Scheduler 均将 SQLAlchemy engine/pool、httpx/httpcore 限为 WARNING，
+应用 DEBUG 不自动打开 wire 日志。应用审计与 Celery 自身日志保留原级别；不是完整脱敏。
+实现和验证边界见 [`B7a 证据`](../../v5-backlog-logging-luna.md)，不推定当前部署已生效。
+
 ### 4.4 Web interaction：默认不可用
 
 ```python
