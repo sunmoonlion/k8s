@@ -60,5 +60,14 @@ Provider、身份和外部 HTTP 的受控注入不冒充真实 RAGFlow 或业务
 
 ## 集成游标
 
-后端已固定并完成门禁，进入子仓先推、父仓 gitlink 锁定、master 快进和两端脚本同步。
-同步回执随后回填。下一包核 B7 指标/角色活性/归档与运行门禁，不跳过旧账直接进新功能。
+Info 父仓 `253869fc67d1fae5bc7336863f6781aaf7513647`；初次文档内容
+`k8s@eeb645beb8dc1b311bf3cc4d8e1f7f5300278e42`，4 份文档门禁通过。本节为后续回填。
+后端先推既有 master/Luna 引用，再锁父仓 gitlink；本机 master 逐仓核预期旧 HEAD 与
+干净状态后快进，Info/k8s 父仓 master/Luna 推送 GitHub/Gitee。
+五仓脚本 `remote-pull master` 和 `remote-pull luna` 均退出 0；SSH 再核五父仓干净，
+Info 父仓/实际后端、k8s SHA 与本地一致，其余三 App 未改变。
+
+两个一次性 PG/S3 容器按完整 ID 核对后停止，自动移除并复查无残留，仅清理可重建
+合成数据。未操作业务库/桶/Secret/应用镜像/部署；两份协议草稿保持未跟踪且未修改。
+无新分支、强推或 realign。下一包核 B7 指标/角色活性/归档与运行门禁，不跳过旧账
+直接进新功能；B8/N1～N6 的正式接收仍未完成。

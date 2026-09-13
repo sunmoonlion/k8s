@@ -403,3 +403,16 @@ Git 元数据位于可写根之外，提交/集成通过平台权限批准，不
   固定后端 info-backend@d607d8e90d36ad2f51a006dbb4cec4fda200f1e8（9 文件），
   tree d2ce72e2119d906198cdc73feb27fa925473e020；源码已验证，固定复跑与同步回执另补。
   业务数据库、凭据、应用镜像、部署均未操作；两份未跟踪协议草稿保留。
+- B7c 固定提交复跑 **351 passed / 0 skipped**（38.79 秒），Ruff/Pyright 通过；
+  新增 31 项；Knowledge@40edfc2 配对摄入/授权/投递 **78 passed / 0 skipped**。
+  合成数据实际 pg_dump/pg_restore 后，1 条交付和 2 条 Outbox 保持一致，恢复库
+  升级/降级/再升级及重复创建通过；版本表往返由独立实际 Alembic 测试覆盖。
+  首轮既有抓取并发取消用例一次失败，单独及后续两次全量未复现，根因未定，留 B7
+  活性核查线索；未修改/跳过用例，不宣称该问题已修复。
+  父仓 info-app@253869fc67d1fae5bc7336863f6781aaf7513647，初次内容
+  k8s@eeb645beb8dc1b311bf3cc4d8e1f7f5300278e42（4 文档门禁），此条为后续状态回填。
+  子仓先推、父仓 master 核预期 SHA/干净后快进；父仓 master/Luna 推 GitHub/Gitee，
+  五仓脚本 remote-pull master / luna 均成功，SSH 复核云端五仓干净且受影响 SHA 一致。
+  两个一次性 PG/S3 容器核完整 ID 后停止并自动移除，确认无残留，仅可重建合成数据；
+  业务数据/Secret/镜像/部署未变，两份协议草案未改。下一游标 **B7 指标/角色活性/
+  归档与运行门禁**；B7 整体和 B8/N1～N6 新 dev-plan 正式接收仍未完成。
