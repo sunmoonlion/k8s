@@ -125,6 +125,13 @@ API readiness（2026-09-13 源码）在 2 秒协作式探测预算内检查 Redi
 说明字段、权限/超时和未完成接线，分包证据见
 [B7d 只读观测](../../v5-backlog-delivery-observation-luna.md)。
 
+B7j 本地源码另从同一账本聚合匹配 consumer 的已提交 Inbox 数和最大记录时间，
+由上述 CLI/HTTP 输出，仍是 gauge；不建第二本账。回滚/未提交/重复/错 consumer
+不虚增，无回执 hint 不当作消费回执；非有限时间使整个采集失败。
+记录时间不是提交时间或心跳，数量会随保留/恢复变化，不能证明每个 Worker 或业务结果
+健康。真实共享 prefork 执行链与故障边界见
+[B7j 回执进展](../../v5-backlog-worker-progress-luna.md)，不推定当前业务部署已生效。
+
 Worker 消费配置探针 `python -m app.cli.worker_readiness`（B7e 源码，四仓门禁已过，未部署）定向本 POD_NAME，
 校验实际队列/交换机/路由/持久性及本镜像应用任务注册；6 秒子进程预算，失败固定错误，
 无业务任务/数据库操作。模板未来 bundle 已接该命令；实例历史镜像/release 未重写，

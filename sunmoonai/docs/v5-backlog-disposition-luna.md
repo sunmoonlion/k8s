@@ -114,11 +114,12 @@ Git 元数据位于可写根之外，提交/集成通过平台权限批准，不
 | B4 Artifact 对账 | 检测源码已集成 | 只读双向对账、可追踪未登记对象、精确版本写后核验已同步两端 master/Luna；278 项通过。自动修复/回收、周期策略交 B7/N4，实际业务存储未扫描 |
 | B5 Dataset 授权 | 源码已集成 | 静态映射、未知目标拒绝、数据面禁建、受理快照及执行/重试/恢复复核已同步两端 master/Luna；173 项及 Info 消费边通过。业务映射/旧任务与一致配置切换未验收 |
 | B6 解析调度 | B6a/B6b 源码已集成 | [公共同步证据](v5-backlog-scheduling-luna.md)；[Knowledge 单次轮询证据](v5-backlog-parse-polling-luna.md)。235 项回归及 Info 消费边通过，已同步两端 master/Luna；日志源码由 B7a 补齐，运行态未验收，不把 M1-203 整项销账 |
-| B7 已有覆盖收口 | B7a～B7e 源码已集成；其余未完成 | [子项矩阵](v5-backlog-coverage-luna.md)；[Worker 消费配置检查](v5-backlog-worker-readiness-luna.md)。已定位并修复本机双重校时冲突，四仓原始完整门禁 1205 项零跳过；消费进展、Scheduler、保留归档及实际环境门禁继续；监控部署/采集/告警按所有者决定由未来 N4-OPS-01 接收，未部署不算运行验收；接 B4～B6 运维/切换，自动修复回收与全引用门禁交 N4 |
+| B7 已有覆盖收口 | B7a～B7e 已集成；B7f～B7j 本地验证；整包未完成 | [子项矩阵](v5-backlog-coverage-luna.md)；本机双重校时冲突已修复，Scheduler/已提交回执源码与隔离故障由 B7i/B7j 补齐；保留归档及实际环境门禁继续。监控部署/采集/告警按所有者决定由未来 N4-OPS-01 接收，未部署不算运行验收；接 B4～B6 运维/切换，自动修复回收与全引用门禁交 N4 |
 | B7f 历史投递失败复核 | 本地候选及固定提交复验通过 | [确定性因果与候选](v5-backlog-clock-regression-luna.md)；Info 原取消与 Knowledge 原重放/恢复/轮询失败点在旧代码复现，修复显式状态；四仓全量 1250 项零跳过；独立 Calico 问题由 B7g 处置，不作中间同步 |
 | B7g 旧网络门禁失败 | 本地候选及全新隔离集群通过 | [DNS 首败现场与门禁修复](v5-backlog-network-gate-luna.md)；旧首探针实际复现 DNS 解析失败，补启动前置、真实拒绝判定和清理安全；8 单测及 Info 6 条包级网络断言通过，非业务部署 |
 | B7h 受保护指标入口 | 本地最终固定提交全量通过 | [HTTP 采集及新增失败根因](v5-backlog-metrics-http-luna.md)；四仓服务身份隔离、只读聚合、有界准入；修复旧测试恢复期超时注入泄漏，1,348 项零跳过；实际采集器与告警尚未接线 |
 | B7i Scheduler 活动 | 本地固定提交全量通过 | [活动观测与真实 Beat 故障验证](v5-backlog-scheduler-activity-luna.md)；保留原调度算法，分列循环/发送活动，旧启动/暂停/退出/过期快照拒绝；四仓 1,520 项零跳过，未部署、不接自动重启，不代替 Worker 消费进展 |
+| B7j 已提交回执进展 | 本地最终固定提交全量通过 | [回执聚合、真实 prefork 与失败根因](v5-backlog-worker-progress-luna.md)；匹配 Inbox 的保留数量/记录时间，暂停但 pong 仍通时无回执、恢复后提交、回滚/重复不虚增；归档保护不放宽，1,569 项零跳过；非 per-worker 健康、业务成功量或实际部署验收 |
 | B8 后续移交 | 待实施 | N1～N6 建立待迁入清单与原任务关联；新 dev-plan 真正接收后才标已迁入，不以本文件冒充已完成产品开发 |
 | B9 集成与同步 | 等待本轮剩余处置完成 | B1～B6、B7a～B7e 已集成、同步；按 2026-09-13 最新决定，后续仅在 Luna 开发验证，最终统一执行子仓先推、父仓 gitlink 后推；master 预期 HEAD 核对、快进/明确合并，再同步两端工作区；不覆写预置草案 |
 
@@ -143,6 +144,41 @@ N4 的监控部署/采集/告警送达子项于 2026-09-13 按所有者要求迁
 
 ## 7. 执行日志
 
+- B7j 最终固定提交：模板 a91eb3e / Info 7dafb34 / Knowledge 5df4f17 /
+  Investment 3d9531d；严格串行 255/500/415/399 passed，合计 1,569、零跳过，
+  Ruff/Pyright 全通过；六公共文件 SHA-256 一致，Investment 保留领域测试扩展。
+  失败不搁置：类型绑定/active 预期已查清；混合非有限值确定性复现并修正；
+  Investment 归档只读保护导致的新测试失败从模板修订再全量复验，原保护不动且新增
+  回归确认。固定提交/时间/边界见[本包证据](v5-backlog-worker-progress-luna.md)。
+  当前补齐共享消费回执的源码观测与隔离执行证据，不宣称每个 Worker 或业务部署健康。
+  下一游标 B7 保留/归档引用闭包（含本次发现的 legacy CASCADE/语句级保护）及
+  其余运行/发布/数据切换门禁，再 B8；监控部署/告警仍未来 N4-OPS-01。
+  子仓仅本地提交、三个父仓报告未暂存，gitlink/master/远端未动，仍最终一次性同步。
+  四个 B7j 临时测试容器与四个一次性匿名卷已核归属精确清理，无残留；业务资源、
+  原 KIND、旧容器及镜像未动。两个预置协议草案仍原样未暂存。
+- B7j 固定复验暂停在 Investment：167 passed 后新“保留 gauge 可下降”测试的
+  DELETE Outbox 触发 legacy failure 表 ON DELETE CASCADE；0007 的 FOR EACH
+  STATEMENT 只读触发器即使没有关联旧行也拒绝。公共测试错误假定了全实例可直接
+  删除 Outbox 的清理路径。本包不定义/放开归档删除，保留原触发器与迁移。
+  公共测试改为仅在隔离 schema 移除合成 Inbox 回执验证 gauge 下降，从模板开始重跑
+  固定全量后再串行实例；Investment 补旧归档为空时依然禁止隐式 Outbox 清理的断言。
+  后续 B7 保留/归档设计必须显式处理旧归档引用与只读保护，不能将本包测试当 GC 验收。
+- B7j 开工：冻结后端 ed157e4/0a6675d/937f09f/6a5bff9、k8s f43d02c4。
+  只扩展公共 delivery_observation 的已提交 Inbox 回执只读聚合与说明；新增真实 PG
+  回执语义测试、测试专用 Worker 装配及真实 broker/prefork 故障测试；更新对齐报告和
+  本清单/矩阵/源码投影。保留原 consumer policy（含无回执 hint），不新增业务主档、
+  迁移、默认身份、探针重启策略或发布清单。记录时间沿用 Inbox processed_at，非提交
+  时间/单调序号/存活心跳；保留数量是 gauge，不当全生命周期 counter 或用户任务完成。
+  D1/D2/D8/C2 复用既有每 App 账本、只读；I3 受保护入口不变；R6 模板完整通过后
+  串行三个实例；T4/R1 保留 gitlink/master，不 push/云端同步。
+  验收：未提交/回滚/错误 consumer 不计入、重复不增、旧回执及无回执策略、删除保留
+  数据后 gauge 可下降；真实独立 prefork 子进程暂停时控制面 pong 不代表完成，恢复
+  后原持久 handler 与 Inbox 提交才推进；四仓完整静态/测试，无跳过。测试仅一次性
+  PG/broker/S3/Redis 与随机 schema/队列，不操作业务库。失败暂停后续实例并查根因。
+  回滚仅撤本次聚合字段和测试/文档，无业务数据降级；监控接线仍未来 N4-OPS-01。
+  串行复核的领域验收增量：Investment 在其既有 test_agent_delivery_observation.py
+  增加新字段断言，核真实 agent.executor consumer 与 notification 无回执分支；
+  仅等 Knowledge 全量通过后实施，不把领域测试复制进模板，不改原领域生产代码。
 - B7i 最终源码结果：模板→Info→Knowledge→Investment 固定本地提交
   ed157e4/0a6675d/937f09f/6a5bff9 完整 243/488/403/386 passed，合计 1,520、零跳过；
   Ruff/Pyright 均通过，六文件 SHA-256 四仓一致，模板脚手架另 8 项通过。

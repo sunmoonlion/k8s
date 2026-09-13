@@ -34,7 +34,7 @@ k8s `5d79cee8`。后端：tpl `553c36b`、Info `f2c4001`、Knowledge `e99a894`�
 | 逻辑交付去重 / M1-104 | B7b 核查时每次新 UUID + INSERT，无版本/Dataset 唯一约束；后续 B7c 补复用、唯一索引和写入护栏 | [B7c 源码验证](v5-backlog-distribution-identity-luna.md)；业务库冲突调查、备份与角色切换仍待验收，下游幂等不能替代本地逻辑身份 |
 | 发布/Inbox/租约 / M1-105、M3-001 | `DurableTasks`、公共 `durable_delivery.py`、Outbox repository、各领域 handler、真实 PG 故障测试 | 已有源码及分包固定提交证据；新版本正式环境 broker 故障/丢回执/kill 仍未验收 |
 | 对账/死信重放 / M1-105 | 5 秒 Beat pump、`cli/durable_delivery.py` reconcile/replay/dead-letters；重放不删 Inbox | 机制已有；实际调度活性、告警到达、权限与运行策略待核 |
-| 保留/归档 / M1-105 | 公共账本未见按批准保留窗归档/回收流程；旧表改名/拒写不等于保留策略落地 | **未收口**；先明确账本引用闭包/幂等重放窗及恢复条件，不执行删除，不能拿 GC 替代归档 |
+| 保留/归档 / M1-105 | 公共账本未见按批准保留窗归档/回收流程；[B7j](v5-backlog-worker-progress-luna.md) 实测发现 Investment legacy CASCADE 触发语句级只读保护，即使旧归档为空也禁止直接删除 Outbox，已补保护回归 | **未收口**；先明确引用闭包/幂等重放窗、旧归档保护与恢复条件，不执行删除；拒写保护和 gauge 测试不等于保留策略或 GC 落地 |
 | Provider 意图/未知结果 / M1-202、M3-002 | Knowledge `ragflow_delivery.py`、Investment 副作用账与 adapter 边界 | 已有部分 Provider 实现；不是通用跨 Provider 全覆盖；真实 parse/迟到响应/未知回执处理仍需按 Provider 验收 |
 | 单次 parse / M1-203 | B6a/B6b 持久调度与 B7a 日志源码 | 已有源码；实际长 parse Worker 占用/切换、旧协议调查与回滚未验收 |
 | Run 创建 / M1-302 | Investment `application/agent/run_service.py` 与持久命令、真实 PG 故障测试 | 已有基础；产品 Task/Attempt、浏览器通用/专业入口由 N1/N2 接收 |
@@ -44,9 +44,9 @@ k8s `5d79cee8`。后端：tpl `553c36b`、Info `f2c4001`、Knowledge `e99a894`�
 | 租约/退出 / M1-311 | 公共与 Agent execution lease、epoch、心跳、真实子进程 kill 测试；Pod preStop 声明 | 源码及隔离 kill 已有；实际 SIGTERM drain/Pod eviction/回投窗口待运行验证 |
 | Migration Job / M1-501 | 模板 `deploy.run_migration` 等待独立 Job，失败抛错阻止完整 apply 后续 runtime；bootstrap 无隐式迁移 | 已有编排；当前角色权限、业务备份/恢复、revision/发布关联待验，不凭 Job 完成判所有数据库正确 |
 | API readiness / M1-502 | 四仓 ready 仅 Redis ping/SELECT 1；没有 revision 检查和端点内统一 deadline | **本包修复**：只读精确版本检查及协作式探测超时；不迁移数据库 |
-| Worker/Scheduler / M1-502 | 旧实例 bundle 仍为 `inspect ping`；[B7e](v5-backlog-worker-readiness-luna.md) 补本节点队列/注册检查；[B7i](v5-backlog-scheduler-activity-luna.md) 补 Scheduler 本机循环/发送活动、启动身份和过期验证，四仓固定提交全量 1520 项零跳过 | 仅源码与隔离进程证据，未部署；真实 Worker 消费进展、Scheduler 运行策略与 startup/live 仍欠账，不用控制面就绪或循环新鲜证明业务进展 |
+| Worker/Scheduler / M1-502 | 旧实例 bundle 仍为 `inspect ping`；[B7e](v5-backlog-worker-readiness-luna.md) 补本节点队列/注册检查；[B7i](v5-backlog-scheduler-activity-luna.md) 补 Scheduler 本机活动；[B7j](v5-backlog-worker-progress-luna.md) 补匹配 Inbox 回执只读进展及真实 prefork 暂停/恢复/回滚/重复，四仓最终 1569 项零跳过 | 源码与隔离进程证据已补，未部署；实际 Worker 负载/身份、Scheduler 运行策略与 startup/live 仍待验，不把聚合回执当 per-worker 健康或产品成功量 |
 | 关联/日志 / M1-503 | API audit context、Outbox/领域 correlation；B7a 公共库降噪 | 部分已有；跨全链 correlation 覆盖、结构化字段与隐私仍需核，不等于全量脱敏 |
-| 指标/告警 / M1-503、M1-105 | [B7d](v5-backlog-delivery-observation-luna.md) 补账本只读 gauge/CLI；[B7h](v5-backlog-metrics-http-luna.md) 补服务身份保护的 HTTP scrape、本进程有界准入、no-store 与故障恢复 | 观测/受保护入口源码已补；2026-09-13 所有者将实际监控部署、采集/新鲜度/告警到达与 broker queue 采集接线交未来 [N4-OPS-01](dev-plan/implementation-plan.md)，尚未实施；角色活动/消费进展源码仍在 B7，新 retrieval/run/SSE 产品指标仍 N4，不算整套观测完成 |
+| 指标/告警 / M1-503、M1-105 | [B7d](v5-backlog-delivery-observation-luna.md) 补只读 gauge/CLI；[B7h](v5-backlog-metrics-http-luna.md) 补受保护 HTTP；[B7j](v5-backlog-worker-progress-luna.md) 补已提交回执聚合及故障恢复 | 观测/受保护入口源码已补；实际监控部署、采集/新鲜度/告警到达与 broker queue 接线已按所有者决定交未来 [N4-OPS-01](dev-plan/implementation-plan.md)，尚未实施；新 retrieval/run/SSE 产品指标仍 N4，不算整套观测完成 |
 | 发布可追踪 / M1-504 | 既有 digest bundle/release manifest/父子仓 gitlink；本轮 B2～B7 仅源码更新 | 底座已有，不可把源码 SHA 当当前 imageID；按源码→镜像→角色→数据统一发布，不能回填历史 release |
 | B4 对账运维 | Info `cli/reconcile_artifacts.py` 只读报告，原文主档不变 | 周期、权限、保留和业务扫描未验；自动修复/GC 与全引用审批门禁 N4 |
 | B5/B6 切换 | Dataset 授权快照、执行协议标记和代次均失败关闭 | 真实绑定、旧任务/回执调查、排空、一致切换和可回滚窗未验，禁止新旧消费者混滚 |
