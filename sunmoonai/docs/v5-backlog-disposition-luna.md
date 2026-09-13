@@ -121,6 +121,7 @@ Git 元数据位于可写根之外，提交/集成通过平台权限批准，不
 | B7i Scheduler 活动 | 本地固定提交全量通过 | [活动观测与真实 Beat 故障验证](v5-backlog-scheduler-activity-luna.md)；保留原调度算法，分列循环/发送活动，旧启动/暂停/退出/过期快照拒绝；四仓 1,520 项零跳过，未部署、不接自动重启，不代替 Worker 消费进展 |
 | B7j 已提交回执进展 | 本地最终固定提交全量通过 | [回执聚合、真实 prefork 与失败根因](v5-backlog-worker-progress-luna.md)；匹配 Inbox 的保留数量/记录时间，暂停但 pong 仍通时无回执、恢复后提交、回滚/重复不虚增；归档保护不放宽，1,569 项零跳过；非 per-worker 健康、业务成功量或实际部署验收 |
 | B7k 保留归档引用审计 | 源码审计与前置拆解完成；归档实施未完成 | [四仓依赖、候选方案与验收清单](v5-backlog-retention-audit-luna.md)；核 FK 之外的去重/恢复/Provider 回执/epoch 依赖，区分 Info 与 Investment 旧归档；无删除或保留窗默认值，实际盘点/恢复/退役继续留账，不冒充已迁入 N4 |
+| B7l 当前运行预检 | 本地 KIND 只读核查完成；升级未实施 | [实际 imageID、九角色数据库身份、旧协议及发布前置](v5-backlog-runtime-preflight-luna.md)；旧镜像/共享运行 principal 已确认，Info 0007 待升 0009，Knowledge 54 条旧标记任务均为当前枚举终态、非在途积压；20 项部署脚本回归和三 bundle 门禁通过，不代替真实切换 |
 | B8 后续移交 | 待实施 | N1～N6 建立待迁入清单与原任务关联；新 dev-plan 真正接收后才标已迁入，不以本文件冒充已完成产品开发 |
 | B9 集成与同步 | 等待本轮剩余处置完成 | B1～B6、B7a～B7e 已集成、同步；按 2026-09-13 最新决定，后续仅在 Luna 开发验证，最终统一执行子仓先推、父仓 gitlink 后推；master 预期 HEAD 核对、快进/明确合并，再同步两端工作区；不覆写预置草案 |
 
@@ -145,6 +146,17 @@ N4 的监控部署/采集/告警送达子项于 2026-09-13 按所有者要求迁
 
 ## 7. 执行日志
 
+- B7l：UTC 08:33～08:41 对现有 kind/app-platform-dev 做只读预检，
+  [报告](v5-backlog-runtime-preflight-luna.md)固定集群 UID、实际 imageID/源码锁、
+  九角色数据库 principal/revision 和 Secret 引用。三个 App 后端共 12 Pod Ready，
+  仍是 9 月 11 日镜像；同 App 三运行角色共享数据库用户与 broker 引用，来自旧实例
+  渲染覆盖，非模板缺分角色字段。Info 0007 尚未迁到 0009；Knowledge API/Worker
+  无新摄入映射，54 条历史任务无新标记但均属当前枚举终态，5 条旧命令都有 Inbox。
+  探查 jq/URL 驱动错误已定位修正，人工终态子集计数已弃用并核真实状态；API 上次
+  启动 DNS 错误按取证边界记录，不称所有历史重启已彻查。三 bundle 门禁与 12+8
+  脚本回归通过；未迁移/写业务数据/改凭据/部署/同步，没有新增测试容器。
+  下一源码游标为实例渲染覆盖与对应门禁，再核授权的凭据供给/数据切换；外部操作
+  另列对象与回滚，不直接运行含旧角色 LOGIN/NOLOGIN 副作用的整包部署命令。
 - B7k：固定四后端 a91eb3e/7dafb34/5df4f17/3d9531d 的源码引用审计完成，
   [报告](v5-backlog-retention-audit-luna.md)列出公共 FK/非 FK、Info 旧归档与领域链、
   Knowledge 跨 job 上传身份及未知回执、Investment 恢复直接读取原命令/epoch/旧
