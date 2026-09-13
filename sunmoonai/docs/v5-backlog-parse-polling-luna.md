@@ -85,3 +85,15 @@ tree aae97b4d73950ba3f35ae1e93c84e64d2b880f1b；9 个精确文件。
 Info 固定源码 6a2be5768c524a985ddcde3bec5ae28e01ff0606 的分发/契约回归
 另跑 **6 passed**（0.70 秒）；未改 Info 源码或契约真源。
 部署及 B7 子项保持未验收；下一步仅集成/同步父仓，不执行应用部署。
+
+## 6. 源码同步与清理回执
+
+Knowledge 父仓 c1bde217a89587709a2f8e45db8964cee059951f 锁定上述后端提交；
+本报告内容初次提交 k8s@19fa5b29c0412659f92c76240f38484f52abcb31，文档门禁 3 份通过。
+后端既有 master/Luna ref 先推送，父仓既有 master/Luna 推至 GitHub/Gitee，本机 master
+快进；五仓 remote-pull master / remote-pull luna 均完成。此节是同步后的状态回填。
+没有新分支或 force/realign，其他三个 App 源码未改；两份预置协议草案未修改。
+
+一次性 PostgreSQL 容器已核对完整 ID 后停止并自动移除，只有可重建的测试数据被清理；
+业务库/对象/Secret/应用镜像/部署未改。下一阶段 B7 逐子项核已有覆盖，不能以本轮
+源码同步替代第 4 节的运行态、旧任务及日志门禁。
