@@ -26,7 +26,7 @@ k8s `5d79cee8`。后端：tpl `553c36b`、Info `f2c4001`、Knowledge `e99a894`�
 | 子项 / 原任务 | 本次核对的载体与结论 | 去向 / 尚缺验收 |
 | --- | --- | --- |
 | 身份分面 / M1-001 | `interfaces/http/routes.py`、auth middleware 与 Admin/Web/Internal 分面、现有 auth tests | 已有基础；新 Task/文件/审批的逐资源授权仍属 N1/N2，不能据分面存在判全覆盖 |
-| 服务身份 / M1-002 | `infrastructure/security/service_identity.py`、`core/config.py` 的 subject/scope 精确绑定；[B7l](v5-backlog-runtime-preflight-luna.md) 确认身份共用；[B7m](v5-backlog-runtime-rendering-luna.md) 修角色键；[B7n](v5-backlog-runtime-permissions-luna.md) 实查 ACL/broker；[B7o](v5-backlog-template-database-policy-luna.md) 模板精确表列 GRANT 与 18 项真实 PG 独立身份/拒绝/原用例通过 | 真实集群仍旧身份、版本表 CRUD 与 broker 共用仍未切换；模板候选不收敛旧账号，三领域 overlay/broker/历史权限/供给/撤销/轮换继续受控验收，不同键名不等于不同凭据 |
+| 服务身份 / M1-002 | `infrastructure/security/service_identity.py`、`core/config.py` 的 subject/scope 精确绑定；[B7l](v5-backlog-runtime-preflight-luna.md) 确认身份共用；[B7m](v5-backlog-runtime-rendering-luna.md) 修角色键；[B7n](v5-backlog-runtime-permissions-luna.md) 实查 ACL/broker；[B7o](v5-backlog-template-database-policy-luna.md) 模板精确授权 18 PG；[B7p](v5-backlog-info-database-policy-luna.md) Info 领域独立登录/原用例/拒绝 25 PG 通过 | 真实集群仍旧身份、版本表 CRUD 与 broker 共用仍未切换；模板/Info 加法候选不收敛旧账号，Knowledge/Investment overlay、broker、历史权限/供给/撤销/轮换继续受控验收，不同键名不等于不同凭据 |
 | Secret / M1-003 | 源码配置校验和部署 Secret 引用不等于全 Git 历史扫描与有效凭据轮换证明 | 当前扫描/轮换/CI 和最小挂载尚未核验；不得输出秘密或自行轮换 |
 | 配置与流量 / M1-004 | 模板 `k8s-deployment/deployment_config.py`、`deploy.py` 及 v2 release/bundle 门禁 | 替代旧 Research traffic-mode；当前 Git/运行态漂移仍待只读核对，不执行 apply 冒充核验 |
 | 网络/容器 / M1-005 | 模板 network policies、runtime 非 root/drop capabilities/read-only FS 声明；[B7g](v5-backlog-network-gate-luna.md) 已复现旧 DNS 首败、修门禁并在全新 Calico 验证当前 Info 策略六条流向 | 仅 Info 声明与合成目标包级证据；不是业务镜像/其他 App/真实身份全验收；常驻 KIND kindnet 不 enforce |
