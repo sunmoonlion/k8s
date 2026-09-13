@@ -30,9 +30,10 @@ from app.application.errors.exceptions import ForbiddenError
 from app.application.services import ingestion_execution as execution
 from app.application.services import knowledge_ingestion_service as service
 from app.application.services import knowledge_retrieval_service as retrieval
-from app.application.services import ragflow_delivery as provider
+from app.application.services import provider_delivery as provider
 from app.application.services.durable_tasks import DurableTasks
 from app.infrastructure.external.ragflow import ArtifactContent, RAGFlowRetrievalResult
+from app.infrastructure.external.ragflow_provider import RAGFlowProvider
 from app.infrastructure.messaging.delivery_handlers import get_delivery_handlers
 from app.infrastructure.storage.schema_readiness import verify_schema_revision
 from permission_pg_support import denied, execute, inventory, provision_database
@@ -205,7 +206,7 @@ async def test_provider_receipt_response_loss_recovers_without_duplicate_effect(
     await submit(database)
     mid = await message(database)
     if fault:
-        with pytest.raises(provider.RAGFlowOutcomeUnknown):
+        with pytest.raises(provider.ProviderOutcomeUnknown):
             await runtime(database).consume(mid)
         assert await execute(database, "api", "SELECT count(*) FROM inbox_message") == 0
         assert (
@@ -325,7 +326,7 @@ async def test_worker_operator_receipt_recovery_uses_no_new_remote_write(
     fake = configured(monkeypatch, Provider("upload"))
     job_id = await submit(database)
     mid = await message(database)
-    with pytest.raises(provider.RAGFlowOutcomeUnknown):
+    with pytest.raises(provider.ProviderOutcomeUnknown):
         await runtime(database).consume(mid)
     fake.hide_upload = True
     async with database.sessions["worker"]() as session:
@@ -333,7 +334,7 @@ async def test_worker_operator_receipt_recovery_uses_no_new_remote_write(
         recovered = await provider.recover_upload_receipt(
             session, job=job, settings=service.get_settings(), document_id="document-1"
         )
-    assert recovered["id"] == "document-1"
+    assert recovered.id == "document-1"
     assert (fake.uploads, fake.parses) == (1, 0)
     assert (
         await execute(database, "api", "SELECT status FROM knowledge_ingestion_job")
@@ -469,7 +470,11 @@ async def test_api_retrieval_reads_worker_written_domain_without_journal_access(
         async def close(self):
             pass
 
-    monkeypatch.setattr(retrieval, "RAGFlowClient", lambda *args, **kwargs: Search())
+    monkeypatch.setattr(
+        retrieval,
+        "create_provider",
+        lambda *args, **kwargs: RAGFlowProvider(config, client=Search()),
+    )
     request = _request(filters={})
     async with database.sessions["api"]() as session:
         response = await retrieval.retrieve_knowledge(

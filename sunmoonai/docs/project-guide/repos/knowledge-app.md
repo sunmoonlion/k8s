@@ -29,12 +29,15 @@
 | 路径 | 装什么 |
 | --- | --- |
 | `application/services/knowledge_ingestion_service.py` | 摄入编排 |
-| `application/services/ragflow_delivery.py` | Provider 操作意图、回执恢复与未知结果阻断 |
+| `application/services/provider_delivery.py` | 依赖统一 Port 的操作意图、回执恢复与未知结果阻断 |
 | `application/services/ingestion_execution.py` | 任务拥有的持久轮询游标、受理协议标记及重试代次提交/自动 flush 栅栏 |
 | `application/services/ingestion_authorization.py` / `core/ingestion_policy.py` | 摄入静态映射与受理快照复核；独立于检索白名单 |
 | `application/services/knowledge_retrieval_service.py` | 检索编排 |
 | `application/dto/knowledge.py` / `dto/retrieval.py` | 契约 DTO |
-| `infrastructure/external/ragflow.py` | RAGFlow 客户端与制品解析 |
+| `application/ports/knowledge_provider.py` | 供应商无关的类型化数据面接口与错误语义 |
+| `infrastructure/external/knowledge_provider.py` | 当前 Provider 配置与装配，默认 RAGFlow |
+| `infrastructure/external/ragflow_provider.py`、`ragflow.py` | RAGFlow 适配器与底层 HTTP 客户端 |
+| `infrastructure/external/artifact_content.py` | 独立的不可变 S3 Artifact 校验读取 |
 | `infrastructure/security/service_auth.py` | **双关系**服务身份验证器，见 §4.3 |
 | `interfaces/endpoints/knowledge_routes.py` | Admin + Internal 领域路由 |
 | `contracts/artifact/v1/` | 摄入契约（producer = info-app） |
@@ -186,11 +189,16 @@ settings.retrieval_auth_required_scope in service_principal.scopes  # scope
 
 ### Provider 可替换边界
 
-RAGFlow 是可重建派生系统，不是原文或领域身份的唯一主档，但当前实现尚非可插拔：
-`knowledge_retrieval_service.py`、`ragflow_delivery.py` 直接依赖 `RAGFlowClient`，
-摄入与 binding 也使用 `ragflow` provider 标识。更换服务需在 Knowledge 内做适配、
-重新建索引/绑定及验证回执、未知结果、授权过滤与引用语义，不能只改 base URL。
-对外保持 artifact v1 / retrieval v1 可以限制上游、消费者与前端的变更范围。
+当前源码已将摄入回执编排、恢复与检索接到 `KnowledgeProvider` Port；dataset/document、
+解析状态和检索 chunk 通过统一类型传递。RAGFlow 的 HTTP 字段、run 别名与租户范围
+摘要计算留在适配器，原文读取不再依赖 RAGFlow 模块。事务、授权与 Outbox 仍由应用层持有。
+
+这不是已接入 WeKnora：当前装配只允许 RAGFlow，旧任务/回执键和状态、数据库
+`ragflow_document_id` 以及专用 config-check 接口保留兼容。
+**retrieval v1 的 provider 元数据仍限定 ragflow**，其它 Provider 显式拒绝，不伪装身份。
+将来替换还需实现适配器、扩展契约并做消费者回归、重建索引/绑定及验证引用和未知结果；
+不能只换地址或直接复用旧 Provider 回执。实现及证据见
+[Provider 内部解耦记录](../../knowledge-provider-decoupling-luna.md)。
 
 运行身份隔离使用 Knowledge 自身的表列策略，包含 provider operation journal 的权限
 边界；源码和隔离联合验证不代表业务账号已切换。续作见
