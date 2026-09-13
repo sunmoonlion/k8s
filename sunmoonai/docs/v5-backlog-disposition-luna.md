@@ -128,7 +128,8 @@ Git 元数据位于可写根之外，提交/集成通过平台权限批准，不
 | B7p Info 数据库领域策略 | 本地固定候选通过；未供给/部署 | [Info 领域覆盖与独立登录验收](v5-backlog-info-database-policy-luna.md)；模板公共夹具提取后 12 单元+18 PG，Info 精确 15 表清单及 25 PG、平台串行 34 项通过；保留真实上传/审核/分发职责，归档不向运行角色开放；Knowledge/Investment 策略及业务身份切换仍待实施 |
 | B7q Knowledge 数据库领域策略 | 本地固定候选通过；未供给/部署 | [Knowledge 摄入/回执/轮询权限验收](v5-backlog-knowledge-database-policy-luna.md)；模板 12 单元+18 PG→Info 25 PG→Knowledge 27 PG 串行通过，平台 38 项通过；API 不读写 Provider 账，保留原状态/重试职责；Investment 策略、broker 和业务身份切换仍待实施 |
 | B7r Investment 数据库领域策略 | 本地固定候选通过；未供给/部署 | [真实断点、审批恢复、取消和效果回执](v5-backlog-investment-database-policy-luna.md)；四仓串行 18+25+27+24=94 PG 零跳过，平台 42 项通过；API 保留取消撤租约两列，Worker 独立 PostgreSQL Saver；三领域数据库候选已验证，broker/供给/切换仍待实施 |
-| B7s 模板 broker 权限与预建拓扑 | 模板本地固定候选通过；实例未对齐 | [真实 RabbitMQ 权限及漏建拒绝](v5-backlog-template-broker-policy-luna.md)；30 项真实 broker + 模板完整 258 项零跳过，父仓普通 16 项通过；不以交换机同名 read 放宽生产者，保留控制/事件/探针；下一步串行三实例，再联合身份启动/供给/切换 |
+| B7s 模板 broker 权限与预建拓扑 | 模板本地固定候选通过；实例承接 B7t | [真实 RabbitMQ 权限及漏建拒绝](v5-backlog-template-broker-policy-luna.md)；30 项真实 broker + 模板完整 258 项零跳过，父仓普通 16 项通过；不以交换机同名 read 放宽生产者，保留控制/事件/探针；后续联合身份启动/供给/切换仍待实施 |
+| B7t 三实例 broker 拓扑对齐 | 四仓本地固定候选通过；未供给/部署 | [串行对齐及固定提交门禁](v5-backlog-instance-broker-alignment-luna.md)；模板→Info→Knowledge→Investment 完整 Backend 258+503+418+402=1,581 项零跳过，每仓 30 项真实 broker；保留领域代码，共用入口/依赖隔离与清理；下一步联合 DB/broker 身份启动及受控供给切换 |
 | B8 后续移交 | 待实施 | N1～N6 建立待迁入清单与原任务关联；新 dev-plan 真正接收后才标已迁入，不以本文件冒充已完成产品开发 |
 | B9 集成与同步 | 等待本轮剩余处置完成 | B1～B6、B7a～B7e 已集成、同步；按 2026-09-13 最新决定，后续仅在 Luna 开发验证，最终统一执行子仓先推、父仓 gitlink 后推；master 预期 HEAD 核对、快进/明确合并，再同步两端工作区；不覆写预置草案 |
 
@@ -153,6 +154,14 @@ N4 的监控部署/采集/告警送达子项于 2026-09-13 按所有者要求迁
 
 ## 7. 执行日志
 
+- B7t：模板父仓 `fb9aee8` 统一选择同级 Backend、创建隔离依赖、沿用模板交互向量真源；
+  模板 Backend `44e74fe` 复验后，串行 Info `5fb909b`、Knowledge `e79a712`、Investment
+  `68f776e` 同步四文件公共增量。各仓外层 33 项（含 30 项 broker）、完整后端分别
+  258/503/418/402 项零跳过，三实例 Ruff/Pyright 通过；模板普通 unittest 18 项通过。
+  [证据与未验收边界](v5-backlog-instance-broker-alignment-luna.md)。三父仓独立报告提交，
+  预置旧报告增量保留；最终验收 18 容器及 17 自身卷清理，原 KIND/业务数据未动。
+  未改 gitlink/master、镜像、Secret、业务 definitions 或远端；下一游标联合身份启动/
+  实际处理恢复、受控供给及切换，不能因源码对齐就把业务身份拆分打勾。
 - B7s：模板 Backend `44e74fe` 提供显式预建拓扑及确认/不可路由返回；模板父仓
   `df2893d` 提供纯权限编译器和隔离门禁。[完整证据](v5-backlog-template-broker-policy-luna.md)。
   真实复现旧绑定 read 与消费权限混同；固定提交 30 项 broker、完整 Backend 258 项、
