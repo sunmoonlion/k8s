@@ -1,6 +1,6 @@
 # SunMoonAI 项目总览
 
-> 最后更新：2026-08-29 ｜ 取证时点：2026-08-29（对五仓源码直接取证）
+> 最后更新：2026-09-13 ｜ 本次复核后端、投递、运行身份与发布边界；前端结构沿用原取证。
 >
 > **本文件是进入这个项目的唯一入口。**读完它，你应当知道：改动落在哪个仓、
 > 那里有什么不可违反的规则、以及去哪里查更细的东西。
@@ -71,8 +71,9 @@ k8s ──构建镜像 / 渲染 bundle / apply──▶ 三个 App 的运行态
 
 ### 3.1 一个镜像，四个运行角色
 
-后端**同一个不可变镜像**按不同命令启动四种进程，各有独立 ServiceAccount、
-数据库 principal、消息凭据与扩缩容策略：
+后端**同一个不可变镜像**按不同命令启动四种进程，有独立 ServiceAccount 与部署角色。
+源码渲染已分开数据库/broker Secret 键，独立 principal/ACL 候选也已在隔离环境验证；
+**业务 KIND 的 API/Worker/Scheduler 仍共用旧身份，尚未切换**。不同键不等于不同账号。
 
 | 角色 | 入口 | K8s 形态 |
 | --- | --- | --- |
@@ -182,14 +183,17 @@ Next.js 可以做 SSR 与同源交互，但**最终授权永远在 Backend**。
 ### 5.2 数据链（异步，跨 App）
 
 ```
-info 采集 → 治理/去重 → distribution_record + delivery_outbox_message
-  → Celery dispatch_distribution → POST knowledge 摄入
-  → RAGFlow 索引（派生系统，可重建）
+info 采集 → 治理/去重 → distribution_record + 事务 outbox_message
+  → Beat 发 pump 提示 → Worker 发布/消费命令 → POST knowledge 摄入
+  → knowledge job + Outbox → 上传/解析回执 + 单次持久轮询 → RAGFlow 派生索引
   → investment 检索取证据 → Citation 投影回浏览器
 ```
 
 约束：每一步只写自己 App 的库；跨 App 不用分布式事务；消费方必须幂等；
 RAGFlow / Elasticsearch / 缓存都是**可重建的派生系统，不是权威主档**。
+公共投递由 Outbox/Inbox、执行租约/epoch、死信/重放/对账组成；broker ACK 不等于
+业务事务提交。旧 Info 分发日志已归档；旧直接 Celery 业务入口不再接受新投递。
+Knowledge 保留 Provider 操作意图/回执与未知结果阻断，Investment 保留会话执行扩展。
 
 ### 5.3 发布链
 
@@ -232,7 +236,7 @@ Casdoor 由 `auth-app` 以 Helm 单独部署，**不进入三个领域 App 的 b
 ——其 chart、version、image 的固定与晋级由 auth-app 自己的 Helm 发布链负责。
 ⚠ 这是"不受那套门禁管"，不是"无需不可变制品治理"；若它当前仍用可变 tag，
 那是**未覆盖风险**，不是架构豁免。
-因此不受发布链的 digest 纪律约束。
+不能因此豁免 auth-app 自身的不可变制品治理。
 
 **Admin 与 Web 是两个独立的安全边界**（`BrowserSurfaceProfile`，不可变）：
 各有独立 client、redirect、cookie 名、session namespace、Origin 策略。
@@ -302,7 +306,8 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 
 **"文件存在"只到 defined。**这是本集最容易被误读的地方。
 
-**本文档集一律不标 `runtime-verified`**——未连集群，没有那一层证据。
+`runtime-verified` 必须绑定环境、版本与场景；隔离 PostgreSQL/RabbitMQ/Calico 验证
+不等于业务 KIND 已升级，更不等于生产或完整用户旅程验收。运行快照从 §10 的真源重取。
 
 各能力的实际状态在 §9.2 与 §9.3 标注，本节只定义词，不重复列举。
 
@@ -312,14 +317,14 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 
 ### 9.1 版本口径
 
-**四层版本全部是 `2.0.0`。**
+源码包版本仍为 `2.0.0`；它不是本轮镜像或部署已更新的证明。
 
 | 层 | 取值 |
 | --- | --- |
 | 源码 | 四后端 `pyproject.toml` + `uv.lock`、八前端 `package.json` 均 `2.0.0` |
-| 镜像别名 | R7 发布清单给 12 个镜像记为 `:2.0.0` |
-| 部署 | bundle 用 digest 引用，与 R7 清单 **9/9 逐字一致** |
-| 发布记录 | `release.json` `formal_release: true`；manifest `template_release: 2.0.0` |
+| 镜像别名 | R7 的 `:2.0.0` 是历史正式别名；后续开发镜像不可覆盖它 |
+| 部署 | bundle 固定 digest，但可能落后当前源码；发布锁、bundle 与实际 imageID 分别核验 |
+| 发布记录 | `formal_release` / 模板 manifest 是其锁定发布的声明，不能替后续改动背书 |
 
 **发布采用 `exact-digest-alias`**（manifest `release_policy.promotion_method`）：
 不重建镜像，给已过 R7 门禁的 digest 打 `2.0.0` 别名。Dockerfile 逐字
@@ -330,13 +335,14 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 - **源码版本与已发布镜像不同步**：源码于 2026-08-29 对齐为 `2.0.0`，
   未为此重建镜像。R7 锁定的 digest 构建自 `2.0.0.dev0` 时期的源码，
   而 `/api/version` 读 `importlib.metadata`——**下次构建才会带入新版本**。
-  这些镜像当前是否在跑、跑的是哪个 digest，本文档集不断言（未连集群）
+  后续开发镜像已有单独部署历史；具体 imageID 以现场和运行预检证据为准。
+  本次源码同步没有构建镜像、重渲染 bundle 或更新业务部署
 - **改源码版本必须同时改 `uv.lock`**，否则 Dockerfile 的 `uv sync --frozen`
   会在构建阶段失败。`test_package_version_matches_the_formal_release` 会拦
 
 ### 9.2 共享能力：源码接线与仍留白项
 
-2026-09-13 按旧账处置更新源码投影；B7h 是本地 Luna 候选，尚未同步或部署。
+2026-09-13 按旧账处置更新源码投影；源码集成/暂停同步状态以处置清单为准，业务未部署本批增量。
 下面不以声明/源码存在推断当前镜像已经具备能力。
 
 | 项 | 实际状态 |
@@ -345,6 +351,9 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | **共享 Outbox/Inbox 原语** | 源码已接线：命令与领域事务同提交，Worker 使用持久租约和 Inbox，支持死信/重放/对账；不再是零调用骨架，实际环境验收仍按 B7 |
 | **Celery 周期任务** | 源码已配置每 5 秒可靠投递 pump；Investment 保留领域调度。配置存在不证明 Scheduler 活性或 Worker 消费进展 |
 | **`/api/internal/v1` 入站面** | B7h 四仓共享受保护投递指标入口 `GET /api/internal/v1/delivery/metrics`，需独立服务主体及 `delivery:observe`；Knowledge/Investment 原领域 Internal 路由保留。尚未为指标接实际采集器 |
+| **健康与进展** | API ready 校验本镜像迁移 head；Worker 探针核队列/路由/注册；Beat 活动与已提交 Inbox 进展分别观测，不能互相冒充 |
+| **进程权限** | 四角色 PG 列 ACL、三角色 broker 预建拓扑和联合故障恢复已在隔离环境通过；真实账号供给/撤销及重启一致性仍待验收 |
+| **保留与监控** | 无自动回执/租约墓碑 GC；Prometheus/Alertmanager 安装、采集、告警送达留未来计划，不能将 HTTP 指标存在当接线完成 |
 
 产品留白的后续设计见 [`../dev-plan/development-plan.md`](../dev-plan/development-plan.md)；
 旧账源码/运行态边界见 [逐步处置清单](../v5-backlog-disposition-luna.md)。

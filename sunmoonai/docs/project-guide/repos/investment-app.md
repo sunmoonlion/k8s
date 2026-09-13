@@ -1,6 +1,6 @@
 # investment-app（投资研究智能体）
 
-> 取证时点：2026-09-11 开发候选 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西；未部署到业务环境
+> 取证时点：2026-09-13 后端源码与隔离验证；本轮增量未部署 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西
 
 ## 1. 定位
 
@@ -162,13 +162,18 @@ Pilot run 用 `owner_actor_id + idempotency_key`。
 | `first_m1_graph` | 非生产图，仅 tests 与 `scripts/agent_golden.py` |
 | 两个 spike | `execution_identity_spike` / `runtime_selection_spike`，不在生产链 |
 
-### Agent 可靠性代码更新（2026-09-11，待部署）
+### Agent 可靠性现状（2026-09-13 源码复核）
 
 Agent 创建、恢复、事实/UI 事件和通知已接入事务 Outbox；恢复令牌原子消费，重试复用已落库命令。Worker 通过 PostgreSQL 租约与 epoch 校验写入，结果和 Inbox 回执一起提交。Scheduler 每 5 秒触发公共投递策略，Agent 只保留会话执行和传输扩展，死信唯一可写真源为 outbox_dead_letter。
 
 Phase-0 与 Pilot 均经会话级 AgentExecutorPort 执行；接受的状态保存在 PostgreSQL，每次执行有独立 checkpoint 空间。远程副作用提供意图/未知结果/回执与对账入口；具体 provider 仍须实现目标端 fencing 与幂等，当前测试不能替代真实 provider 集成验收。
 
-当前代码与故障测试见 investment-backend 的 `docs/durable-delivery-luna.md`、`app/tests/test_agent_reliability_db.py`、`app/tests/test_agent_shared_delivery_db.py`。旧修复记录只代表当时基线。这次是源码实现与隔离数据库验证，部署时须停止旧 worker、处理旧在途任务并执行新增迁移；不表示业务环境已经启用。
+当前代码与故障测试见 investment-backend 的 `docs/durable-delivery-luna.md`、`app/tests/test_agent_reliability_db.py`、`app/tests/test_agent_shared_delivery_db.py`。旧修复记录只代表当时基线；本轮后续可靠性增量是源码与隔离验证，不表示业务镜像同步更新。部署前须核对实际迁移 head、处理旧在途任务与进程，不隐式迁移或排空。
+
+本仓使用含 Agent/checkpoint 表的领域权限策略，实际 PostgreSQL Saver、Worker 列级
+权限以及 API 取消/租约相关权限已有隔离验证；不能套用模板空领域权限。共享指标仍不等于
+实际告警接收，账号供给与旧权限撤销尚未落到业务环境，见
+[处置清单](../../v5-backlog-disposition-luna.md)。
 
 ## 8. 验证
 

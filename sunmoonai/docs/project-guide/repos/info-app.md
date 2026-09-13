@@ -1,6 +1,6 @@
 # info-app（资讯采集与治理）
 
-> 采集防护源码候选更新：2026-09-12（未部署）｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西
+> 取证时点：2026-09-13 后端源码与隔离验证；本轮增量未部署 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西
 
 ## 1. 定位
 
@@ -118,11 +118,11 @@ B4 源码候选：S3 写后严格按回执 VersionId 核验，拒绝无版本写
 ```
 校验制品可分发性 → 组装 artifact v1 payload
   → 同事务写 distribution_record + outbox_message
-  → 公共 Scheduler 发布 / Worker 消费 → POST knowledge 内部摄入端点
+  → Scheduler 发布 pump 提示 / Worker 投递与消费 → POST knowledge 内部摄入端点
 ```
 
 公共消费者使用执行租约、epoch、提交前 fencing 与 Inbox；只有下游确认和本地提交后
-才记录完成回执。Scheduler 每 5 秒发布与对账，有限重试后入死信，可显式重放。
+才记录完成回执。Scheduler 每 5 秒发出 pump 提示，Worker 执行数据库投递与对账；有限重试后入死信，可显式重放。
 broker 故障不改变已接受命令；分发重试保持相同下游业务身份。取消和租约丢失不写终态。
 
 B7c 创建按版本、目标 App 和 dataset 复用同一逻辑交付；NULL/空串/default 同义。
@@ -189,6 +189,10 @@ subject/audience 绑定与 `delivery:observe` 授权；不接受浏览器 Cookie
 | 多下游分发 | 运行时只接受 `knowledge-app` |
 | 内置 Scrapy/Playwright 爬虫 | 不内嵌，须外部注入结果 |
 | Web interaction 生产可用 | 同模板：默认 503 |
+
+共享健康、进展指标与身份策略沿用模板。Info 的领域表列权限需用本仓策略，不能照搬
+模板空领域授权；本轮隔离测试已覆盖实际角色运行，但业务库迁移与账号切换未实施。
+最新边界与续作入口见 [处置清单](../../v5-backlog-disposition-luna.md)。
 
 ## 8. 验证
 

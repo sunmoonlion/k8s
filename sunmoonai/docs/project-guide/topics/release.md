@@ -1,6 +1,6 @@
 # 发布与门禁
 
-> 取证时点：2026-08-29 ｜ 相关规则见 [`../../dev-plan/constraints.md`](../../dev-plan/constraints.md)「发布」R1–R7
+> 取证时点：2026-09-13 源码及发布边界复核 ｜ 相关规则见 [`../../dev-plan/constraints.md`](../../dev-plan/constraints.md)「发布」R1–R7
 > 逐行位置见 [`../repos/k8s.md`](../repos/k8s.md) §4–§5
 
 ## 1. 发布单元
@@ -18,7 +18,8 @@
 `release.json` 是这次发布的**不可变输入**：镜像 digest、五文件 sha256、副本数、
 Ingress 路由结构、须预先存在的 Secret 名、禁止出现的字符串、renderer 输入指纹。
 
-**auth-app（Casdoor）不走这套模型**——Helm 部署，无 bundle 与 release.json。
+**auth-app（Casdoor）不走这套 bundle 模型**——Helm 部署，无 bundle 与 release.json；
+这不豁免正式制品的不可变性与可追溯要求。
 
 ## 2. digest 纪律
 
@@ -111,23 +112,33 @@ render.py 解析出 digest 写入 bundle
 
 正式发布也不可经默认入口执行 uninstall / cleanup。
 
-## 7. ⚠ 一处未澄清的矛盾
+## 7. 包版本、源码提交与已部署制品不能混同
 
-**代码层被测试强制钉死为候选版本，部署层却宣称正式发布：**
+以下标识承担不同职责；取值同为 `2.0.0` 不证明最新源码已经发布：
 
 | 层 | 声明 |
 | --- | --- |
 | 代码 | 四个后端 `pyproject.toml` 与 `uv.lock` 均 `2.0.0`；八个前端 `package.json` 亦 `2.0.0`；`test_package_version_matches_the_formal_release` **主动断言**须与发布别名一致 |
 | 部署 | 三个 `release.json` 全部 `formal_release: true`；模板 manifest `status: FORMAL_RELEASE`、`template_release: 2.0.0` |
 
-两者取值互相矛盾，且有测试**阻止**代码层追平部署层。
-**在澄清之前，不要依据任何一侧断言"本项目已正式发布"。**
+包版本与发布别名一致不是矛盾。判断部署必须核对对应提交、构建产物 digest、
+冻结 bundle/manifest 与实际 Pod imageID，并关联该版本的门禁证据。
+历史正式 manifest 不能为了同步开发提交而改写为尚未构建的新 HEAD。
+本次暂停只同步源码与文档，不构建/推送 Harbor 镜像、不更新业务部署。
 
-复核：
+复核包版本和历史发布声明（不能代替 live 核验）：
 ```bash
 grep -h '^version' */[a-z]*-backend/app/pyproject.toml
 python3 -c "import json;print(json.load(open('k8s/sunmoonai/app-platform/info-app/deployment/bundle/release.json'))['formal_release'])"
 ```
+
+## 8. 当前运行身份候选的发布前置
+
+数据库 API/Worker/Scheduler/Migration 权限策略、独立连接键与 broker 预声明拓扑候选
+已有隔离验证，见 [B7 联合运行证据](../../v5-backlog-joint-runtime-identity-luna.md)。
+它们不意味着业务环境已从共享账号切换；不能只翻开预声明开关，或直接重跑旧供给脚本。
+后续必须核验供给与重启时 definitions 一致性、旧 PUBLIC/default ACL、LOGIN 状态、
+存量连接排空与撤权、备份恢复及受控切换。运行探针、指标输出也不等于已接监控告警。
 
 ---
 

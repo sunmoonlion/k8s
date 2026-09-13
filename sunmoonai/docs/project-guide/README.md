@@ -1,6 +1,6 @@
 # 项目指南 · 导航
 
-> 取证时点：2026-08-29
+> 后端/投递/运行身份源码复核：2026-09-13；前端基础结构沿用 2026-08-29 取证。
 >
 > **入口是同目录下的 [`overall-architecture.md`](overall-architecture.md)**，先读它。
 > 本文件只是 `repos/` `topics/` 两个子目录的导航：
@@ -26,6 +26,7 @@
 | 位置 | 是什么 | 最近变动 | 定性 |
 | --- | --- | --- | --- |
 | `architecture-v2/` | Architecture v2 重构（R0–R7）的门禁脚本与 evidence | 2026-08 | **门禁脚本仍在用**（见 [`topics/release.md`](topics/release.md)）；其中的结果文档属过程记录 |
+| `v5-backlog-*.md` | 停工旧账的处置、固定源码测试和运行预检回执 | 2026-09-13 | **当前恢复工作游标与验收证据**，入口是[处置清单](../v5-backlog-disposition-luna.md)；不是新产品功能已完成或已部署的声明 |
 | `evidence/` | v5 时期的验收 evidence | 2026-08 | 历史留档 |
 | `mooc-manus-v5/` | v5 架构的契约与脚本（111 文件） | 2026-08 | **已被 Architecture v2 取代**；其 `contracts/` 不在现行三套契约之列（见 [`topics/contracts.md`](topics/contracts.md) §7） |
 | `ai-tools/` | 工具调研笔记 | 2026-08 | 参考 |
@@ -63,6 +64,7 @@
 | 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-plan/round-protocol.md`](../dev-plan/protocol/round-protocol.md) |
 | 推送改动、跨机拉取、子模块的坑 | `~/five-repos-sync/sync-five-repos.sh`；规则见 [`../dev-plan/constraints.md`](../dev-plan/constraints.md) T4 |
 | 知道接下来要建什么 | [`../dev-plan/`](../dev-plan/) |
+| 从本次暂停继续旧账工作 | [逐步处置清单](../v5-backlog-disposition-luna.md)，先同步再工作；不从历史便签恢复旧技术栈 |
 | 复核本文档集的某条断言 | **读代码**，别的都不算数 |
 | 本轮查出的缺口都怎么处置了 | 结论已在各自投影里；过程 `git log --grep 'O[0-9]'` |
 
@@ -100,8 +102,9 @@ project-guide/
 
 ## 本轮的已知缺口（读之前先知道）
 
-- **未连集群**：本文档集不断言运行态（Pod 状态、NetworkPolicy 实际生效、
-  远程 profile）——要知道集群里在跑什么，去查集群，不要问文档。
+- **源码不等于运行态**：9 月 13 日曾只读核查业务 KIND，另完成独立临时环境测试；
+  具体时点见 [运行预检](../v5-backlog-runtime-preflight-luna.md) 和
+  [联合身份验收](../v5-backlog-joint-runtime-identity-luna.md)。本目录不将这些证据
+  推定为当前业务镜像已升级、权限已切换或 NetworkPolicy 已执行；继续工作时重查。
 - **前端未逐文件深读**：约 570 个 ts/tsx，核到了结构、入口、契约与关键配置层。
 - 本文档集**不写进度**。哪些缺口修过、怎么修的，见 git 历史。
-

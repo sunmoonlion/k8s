@@ -1,6 +1,6 @@
 # 契约
 
-> 取证时点：2026-08-29 ｜ 相关规则见 [`../../dev-plan/constraints.md`](../../dev-plan/constraints.md)「契约」C1–C6
+> 取证时点：2026-09-13 后端接线复核；本次不改契约 ｜ 相关规则见 [`../../dev-plan/constraints.md`](../../dev-plan/constraints.md)「契约」C1–C6
 
 ## 1. 三套契约：两跨 App，一同 App 共享
 
@@ -75,7 +75,7 @@ provider 改 schema → 双端（provider + consumer）测试都通过 → 才�
 | `investment:application/dto/interaction.py` `BrowserCitation` | 浏览器面 |
 | `investment-web-frontend:contracts/interaction.ts` | 前端 zod |
 
-**其中两处经事件存储首尾相接**：`tasks/pilot_agent_graph.py` 用
+**其中两处经事件存储首尾相接**：`tasks/agent_delivery.py` 用
 `domain/agent/knowledge.Citation` 写 citation 事件，`agent/pilot_service.py`
 再用 `dto/pilot_runtime.BrowserCitation` 读回来。两者 pattern 不一致会让
 `model_validate` 在运行时直接抛。
@@ -108,8 +108,8 @@ web-interaction v1 在四个仓里都有完整的 DTO、Port 与前端 zod，
 
 ## 8. 跨 App 消息里放什么
 
-共享 Outbox 目前 defined 未 wired（见总览 §9.2）。**第一个事件落地前先定下形状**，
-否则最容易发生的事是把 markdown 正文直接塞进消息体：
+共享 Outbox 已接线（见总览 §9.2），broker 提示由稳定消息 UUID 定位持久账本；
+跨 App 摄入仍遵循 artifact v1，不因可靠投递而改变主档所有权：
 
 - 事件只带**稳定 ID、契约版本、必要摘要**；
 - 大对象走 **artifact 引用 + 内容哈希**，不进消息体；

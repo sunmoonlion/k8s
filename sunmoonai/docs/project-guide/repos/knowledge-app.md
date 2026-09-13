@@ -1,6 +1,6 @@
 # knowledge-app（知识库）
 
-> 取证时点：2026-09-13 B6b 源码（已集成、未部署） ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西；源码集成不代表已部署
+> 取证时点：2026-09-13 后端源码与隔离验证；本轮增量未部署 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西；源码集成不代表已部署
 
 ## 1. 定位
 
@@ -167,7 +167,8 @@ settings.retrieval_auth_required_scope in service_principal.scopes  # scope
 | `POST /api/internal/v1/knowledge/retrievals` | investment 服务身份调用 |
 | `GET/POST /api/knowledge/ingestions*` | Admin 运维（见 §7 警告） |
 
-本仓与 investment 是**仅有的两个真正挂载了 `/api/internal/v1` router** 的仓。
+四个 Backend 均已挂载受服务身份与 scope 保护的 Internal 投递指标路由；
+本仓另外拥有摄入和检索等领域 Internal 路由，不能把指标接线误当成领域接口全覆盖。
 
 ## 7. 已知未实现与风险
 
@@ -182,6 +183,18 @@ settings.retrieval_auth_required_scope in service_principal.scopes  # scope
 | Admin「入库任务」运维页 | **静态占位页**：只列 API 路径文案，无 fetch、无表格、无操作 |
 | Web interaction 生产可用 | 同模板：默认 503 |
 | Web 侧检索业务页 | 无，只有 toolkit/common 与可选 reference workspace |
+
+### Provider 可替换边界
+
+RAGFlow 是可重建派生系统，不是原文或领域身份的唯一主档，但当前实现尚非可插拔：
+`knowledge_retrieval_service.py`、`ragflow_delivery.py` 直接依赖 `RAGFlowClient`，
+摄入与 binding 也使用 `ragflow` provider 标识。更换服务需在 Knowledge 内做适配、
+重新建索引/绑定及验证回执、未知结果、授权过滤与引用语义，不能只改 base URL。
+对外保持 artifact v1 / retrieval v1 可以限制上游、消费者与前端的变更范围。
+
+运行身份隔离使用 Knowledge 自身的表列策略，包含 provider operation journal 的权限
+边界；源码和隔离联合验证不代表业务账号已切换。续作见
+[处置清单](../../v5-backlog-disposition-luna.md)。
 
 ## 8. 验证
 

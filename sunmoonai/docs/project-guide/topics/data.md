@@ -1,6 +1,6 @@
 # 数据与迁移
 
-> 取证时点：2026-08-29 ｜ 相关规则见 [`../../dev-plan/constraints.md`](../../dev-plan/constraints.md)「数据」D1–D9
+> 源码复核：2026-09-13 ｜ 相关规则见 [`../../dev-plan/constraints.md`](../../dev-plan/constraints.md)「数据」D1–D9
 
 ## 1. 一个 App 一个库，谁的表谁改
 
@@ -29,14 +29,16 @@
 
 RAGFlow / Elasticsearch / 向量 / 缓存**都不能**当作权威业务记录。
 
-## 3. 数据库双角色
+## 3. 数据库运行身份：旧供给与新候选分开
 
-每个 App 在 PG 里有两个角色：运行态用户与迁移用户
-（供给脚本在 `k8s/sunmoonai/utils/db-provisioner/`）。
-
-运行态凭据再按进程角色拆成多个 Secret——migration / API / Worker / Scheduler
-各持最小权限。**前端不得持有后端或数据库凭据。**
-Secret 名清单在各 App 的 `release.json.external_secrets`。
+业务 KIND 最近只读核查仍是运行态共享用户与独立 Migration owner；API/Worker/Scheduler
+不是已完成最小权限拆分。旧 `utils/db-provisioner/` 和实例供给脚本不能冒充新策略。
+当前源码已有四角色候选：API 接受业务意图、Worker 消费/回执、Scheduler CONNECT-only、
+Migration 拥有迁移对象。模板按六张表精确列授权，三个实例各有领域扩展；未知清单拒绝。
+真实登录与联合投递已在临时环境验证，**加法 GRANT 不会撤掉旧 PUBLIC/继承/default ACL**。
+候选真源为 `tpl-app/k8s-deployment/runtime_database_policy.py` 与各实例 deployment 的
+`*_database_policy.py`。角色独立 Secret 键和实际账号权限须一并供给，不可只复制旧 URL。
+**前端不得持有后端或数据库凭据。**Secret 名仍从具体 release 的 external_secrets 查。
 
 investment-app 另有一步特殊处理：部署时在跑迁移 Job **之前**用 SQL 改 PG 角色的
 LOGIN 状态；info 与 knowledge 无此步。
@@ -48,21 +50,21 @@ LOGIN 状态；info 与 knowledge 无此步。
 程序（七步、fail-closed、六条验收）是**规则**，不写在投影里：
 见 [`../../dev-plan/constraints.md`](../../dev-plan/constraints.md)「数据」。
 
-## 5. Outbox：四仓都有表，四仓都没接线
+## 5. 共享可靠投递已接入业务
 
-`outbox_message` 与 `inbox_message` 两张表、SQL 仓库类、两个 Port，
-在四个仓中**结构完全一致且全部存在**，但**业务层零调用点**。
+四仓共享 `outbox_message`、`inbox_message`、`outbox_dead_letter`、`outbox_execution`；
+`application/services/durable_tasks.py` 与 `infrastructure/messaging/durable_delivery.py`
+提供事务意图、有限投递、租约/epoch、提交前 fencing、Inbox、死信、显式重放和对账。
+API 只接受持久意图；Beat 发 pump 提示，数据库 pump/consume 由 Worker 执行。
+Info 采集/索引/分发、Knowledge 摄入/轮询均已接入；Investment 在公共策略上扩展会话
+执行与 Redis 通知，不另建 publisher/死信真源。旧 Info 分发日志和旧 Agent 死信仅保留
+受保护的回滚档案，不再接受新业务写入。
 
-来源可从模板关系推断：这是 tpl-app 的模板资产（迁移 `20260801_0002_outbox_primitives`），
-三个实例各自继承了表与代码，但都没有在自己的领域服务里用起来。
-
-**这属于「模板有意留白」，不是缺陷**——但读代码时极易误认为"事件发布已经做好了"。
-
-**唯一真正在跑的 outbox 是 info-app 的另一张表**：`delivery_outbox_message`，
-状态机 `pending → leased → published → completed`，由 `delivery_outbox.py` 与
-`dispatch_distribution` 任务驱动。它与共享 outbox **同名不同物**，
-info 仓专门有一项不变量测试（`test_business_and_shared_outboxes_remain_distinct`）
-把两者钉开——这项测试的存在本身就是"容易混"的证据。
+broker ACK、控制探针 pong、已提交 Inbox、Provider 业务成功是不同证据。释放租约保留
+epoch 墓碑并显式标失效，立即重排不再依赖墙钟门槛；真实预约/退避仍按 DB 时间执行。
+Knowledge 对未知外部写入结果保留操作账并阻断盲目重传。**不能按固定天数直接删
+Outbox/Inbox/死信/租约**：去重、回滚、Provider 回执和迟到执行者仍可能引用它们。
+来源、验证和未完成保留策略见[归档引用审计](../../v5-backlog-retention-audit-luna.md)。
 
 ## 6. 幂等与副作用
 

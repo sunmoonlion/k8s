@@ -1,6 +1,6 @@
 # 身份与授权
 
-> 取证时点：2026-08-29 ｜ 相关规则见 [`../../dev-plan/constraints.md`](../../dev-plan/constraints.md)「身份」I1–I8
+> 后端身份源码复核：2026-09-13 ｜ 相关规则见 [`../../dev-plan/constraints.md`](../../dev-plan/constraints.md)「身份」I1–I8
 
 ## 1. 两类身份，互不通用
 
@@ -14,7 +14,7 @@
 ## 2. Casdoor 的位置
 
 由 `auth-app` 以 **Helm 单独部署**，**不进入 App bundle / release.json 门禁**（其制品治理由自己的 Helm 链负责），
-因此不受发布链的 digest 纪律约束（见 [`release.md`](release.md)）。
+不可变制品治理由 auth-app 自己的 Helm 链负责，不是豁免（见 [`release.md`](release.md)）。
 
 它只做身份提供：管用户 / 组织 / 应用 / OIDC / token。
 **领域授权在各 App Backend**——Casdoor 不替代任何 App 的资源级授权。
@@ -111,13 +111,24 @@ knowledge 是两条入站关系的提供方，用**两个独立的验证器实�
 前端侧另有一条：`DEPLOYMENT_ENV` / `AUTH_APP` / `APP_ORIGIN` / `BACKEND_INTERNAL_URL` /
 `DEPLOYMENT_ID` 在生产运行时缺任一即 `throw`。
 
-## 6. 未接线处
+## 6. Internal 入站与运行身份
 
-`/api/internal/v1` 的**入站** router 只在两个仓真正挂载：
+四仓都已挂载受保护的 `GET /api/internal/v1/delivery/metrics`：独立服务主体、精确
+audience/subject 绑定及 `delivery:observe`，不接受浏览器 Cookie 替代，不默认授权主体。
 
 | 仓 | 状态 |
 | --- | --- |
-| knowledge-app | 有（ingest + retrieve） |
-| investment-app | 有（Pilot Runtime） |
-| tpl-app | **只有中间件，无 router** |
-| info-app | **只有包说明，无 router** |
+| knowledge-app | 摄入/检索领域面 + 公共投递指标 |
+| investment-app | Pilot Runtime + 公共投递指标 |
+| tpl-app | 公共投递指标，无领域 Internal 用例 |
+| info-app | 公共投递指标，不因此新增资讯领域入站契约 |
+
+数据库/broker 进程身份不同于上述 HTTP 服务身份。源码渲染已使用 API/Worker/Scheduler
+分角色键；隔离环境已验证四角色 PG 与三角色 RabbitMQ ACL，但业务旧账号仍未切换。
+生产者只写预建的精确任务交换机，Worker 保留读写任务及必要控制/事件资源；开关
+`CELERY_TASK_TOPOLOGY_PREDECLARED` 默认关闭，必须先供给 durable 拓扑再启用。
+漏建交换机/队列/绑定必须使发布失败，不得静默丢任务。
+
+这些不是租户/行级/工具或人的审批规则：Worker 的 read 仍允许 purge，pidbox 资源 ACL
+不区分 inspect/shutdown。联合验证范围见[B7u](../../v5-backlog-joint-runtime-identity-luna.md)；
+真实账号供给、旧连接撤销和重启一致性不由配置键名证明。

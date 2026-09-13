@@ -1,6 +1,6 @@
 # tpl-app（模板仓）
 
-> 取证时点：2026-08-29 ｜ 总览见 [`../overall-architecture.md`](../overall-architecture.md)
+> 取证时点：2026-09-13 后端源码复核；不代表部署升级 ｜ 总览见 [`../overall-architecture.md`](../overall-architecture.md)
 
 ## 1. 定位
 
@@ -14,13 +14,13 @@
 
 ## 2. 结构
 
-后端约 65 个 py 文件、3–4k 行（不含 `core/`）。`core/config.py` 是本仓最大单文件。
+后端公共底座已包含可靠投递、角色探针与权限策略；文件规模不作为架构判据。
 
 | 路径 | 装什么 |
 | --- | --- |
 | `tpl-backend/app/core/config.py` | **本仓最大单文件**，Pydantic Settings + 约 35 处生产期硬校验。真正的强制在这里 |
 | `tpl-backend/app/app/bootstrap/` | 四个运行角色入口：`api.py` / `worker.py` / `scheduler.py` / `migration.py` |
-| `tpl-backend/app/app/application/services/` | `auth_service.py`、`web_interaction.py` |
+| `tpl-backend/app/app/application/services/` | 身份、Web interaction、可靠投递与只读观测 |
 | `tpl-backend/app/app/application/ports/` | `outbox.py`、`web_interaction.py`——Port 定义 |
 | `tpl-backend/app/app/infrastructure/security/` | `oidc.py`、`service_identity.py` |
 | `tpl-backend/app/app/infrastructure/repositories/outbox.py` | Outbox SQL 实现 |
@@ -30,15 +30,15 @@
 | `tpl-backend/search-access-bootstrap/` | Elasticsearch 访问自举 |
 | `tpl-backend/storage-access-bootstrap/` | 对象存储访问自举 |
 
-⚠ **供给脚本有两份,别只看一份**：`k8s/sunmoonai/utils/db-provisioner/` 是**平台侧入口**；
-上面四个在 **Backend 仓内,随模板同步到三个实例**。看仓库拓扑时只列 `app/` 与
-`k8s-deployment/` 会让人以为供给只在 k8s 仓。
-| `tpl-backend/app/alembic/versions/` | 2 个版本（见 §5） |
+| `tpl-backend/app/alembic/versions/` | 3 个版本（见 §5） |
 | `tpl-admin-frontend/` `tpl-web-frontend/` | 两个 Next.js 前端 |
 | `k8s-deployment/` | `scaffold.py` / `deploy.py` / `deployment_config.py` + 五份 YAML 模板 |
 | `contracts/web-interaction-v1.consumer-vectors.json` | 双端测试向量（valid + invalid 两组） |
 | `template-release-manifest.json` + `verify_template_release.py` | 模板发布锁与校验 |
 | `init.sh` | 克隆转实例的一次性原地转换 |
+
+⚠ **供给脚本有两份，别只看一份**：`k8s/sunmoonai/utils/db-provisioner/` 是平台侧入口；
+上面四个供给目录在 Backend 仓内，随模板同步实例。旧入口不能冒充新运行角色策略已落地。
 
 `app/main.py` 只有 5 行，注释自陈是 "Backward-compatible ASGI import"，
 真正的进程构造在 `bootstrap/api.py`。
@@ -169,14 +169,18 @@ async def get_web_interaction_port() -> WebInteractionPort:
 
 ## 5. 数据
 
-迁移链 2 个版本，线性：
+迁移链 3 个版本，线性：
 
 ```
 20260726_0001_auth_identity   （down_revision = None）
 20260801_0002_outbox_primitives
+20260911_0003_durable_delivery
 ```
 
-表：`auth_user`（issuer+subject 唯一）、`outbox_message`、`inbox_message`。
+表：`auth_user`（issuer+subject 唯一）、`outbox_message`、`inbox_message`、
+`outbox_dead_letter`、`outbox_execution`，另有 `alembic_version`。
+API/Worker 的冻结表列策略及 Scheduler 无数据库权限已在隔离环境验证；
+生产供给、旧账号撤权及切换仍待处置，见 [数据边界](../topics/data.md)。
 
 ## 6. 对外接口
 
@@ -207,7 +211,7 @@ async def get_web_interaction_port() -> WebInteractionPort:
 | 领域层 | `domain/{models,repositories,services}/` 仅空 `__init__.py` |
 | web-interaction 运行时 | 默认 `Unavailable` 适配器，是显式的"未接线"信号 |
 
-公共可靠投递已接线：应用服务同事务记录命令，Worker 使用持久租约与 Inbox，Scheduler 每 5 秒投递和对账，提供死信与显式重放。模板不注册领域任务，实例通过 `delivery_handlers.py` 接入。该能力的源码验证不代表既有正式镜像已更新。
+公共可靠投递已接线：应用服务同事务记录命令，Worker 使用持久租约与 Inbox；Scheduler 每 5 秒发出 pump 提示，数据库投递与对账由 Worker 执行，提供死信与显式重放。模板不注册领域任务，实例通过 `delivery_handlers.py` 接入。该能力的源码验证不代表既有正式镜像已更新。
 
 ## 8. 验证
 

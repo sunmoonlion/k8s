@@ -1,6 +1,6 @@
 # k8s（部署编排仓）
 
-> 取证时点：2026-08-29 ｜ 总览见 [`../overall-architecture.md`](../overall-architecture.md)
+> 取证时点：2026-09-13 源码与运行门禁边界复核 ｜ 总览见 [`../overall-architecture.md`](../overall-architecture.md)
 
 ## 1. 定位
 
@@ -62,7 +62,7 @@ deployment/
 ```
 
 三个领域 App 同构。**auth-app 例外**：只有 Casdoor 一个组件，Helm 部署，
-**无 `deployment/bundle/release.json`**，因此不受发布链的 digest 纪律约束。
+**无 `deployment/bundle/release.json`**；该结构差异不豁免正式制品不可变与可追溯要求。
 
 ## 4. 发布
 
@@ -166,8 +166,10 @@ App 特有：Investment 有 `knowledge_binding`；Knowledge 有 `retrieval_datas
 | auth-app 与三 App 同模型 | auth-app 是 Helm，无 bundle/release.json |
 | R7 终检覆盖网络策略包级行为 | 不覆盖，那是独立脚本 + 独立集群 |
 
-仓根另有两份历史便签值得注意：`接着做.txt`（2026-07-07 的暂停交接，属历史快照，
-**非现行规则**）与 `密码修改表.md`（其存在本身说明密钥轮换未脚本化）。
+当前续作入口为 [v5 遗留处置清单](../../v5-backlog-disposition-luna.md)，不依赖仓根旧便签。
+运行身份候选已经过隔离数据库/broker/真实进程联合验证，但尚未更新业务环境。
+旧供给入口的角色 LOGIN、默认 ACL 和重启 definitions 可能影响新策略；切换前必须
+按 [发布前置](../topics/release.md) 核验，不能把源码同步当作供给或部署完成。
 
 ## 8. 验证
 
