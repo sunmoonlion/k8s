@@ -122,7 +122,7 @@ Git 元数据位于可写根之外，提交/集成通过平台权限批准，不
 | B7j 已提交回执进展 | 本地最终固定提交全量通过 | [回执聚合、真实 prefork 与失败根因](v5-backlog-worker-progress-luna.md)；匹配 Inbox 的保留数量/记录时间，暂停但 pong 仍通时无回执、恢复后提交、回滚/重复不虚增；归档保护不放宽，1,569 项零跳过；非 per-worker 健康、业务成功量或实际部署验收 |
 | B7k 保留归档引用审计 | 源码审计与前置拆解完成；归档实施未完成 | [四仓依赖、候选方案与验收清单](v5-backlog-retention-audit-luna.md)；核 FK 之外的去重/恢复/Provider 回执/epoch 依赖，区分 Info 与 Investment 旧归档；无删除或保留窗默认值，实际盘点/恢复/退役继续留账，不冒充已迁入 N4 |
 | B7l 当前运行预检 | 本地 KIND 只读核查完成；升级未实施 | [实际 imageID、九角色数据库身份、旧协议及发布前置](v5-backlog-runtime-preflight-luna.md)；旧镜像/共享运行 principal 已确认，Info 0007 待升 0009，Knowledge 54 条旧标记任务均为当前枚举终态、非在途积压；20 项部署脚本回归和三 bundle 门禁通过，不代替真实切换 |
-| B7m 实例渲染覆盖 | 本地源码/工作区回归通过；未部署 | [模板角色引用保留与最终产物测试](v5-backlog-runtime-rendering-luna.md)；补 Worker 发布注解，串行修三个实例覆盖及 Secret 依赖清单，保留领域配置；模板 8、部署脚本最终 23 项通过，真实身份/切换仍待验 |
+| B7m 实例渲染覆盖 | 本地固定源码回归通过；未部署 | [模板角色引用保留与最终产物测试](v5-backlog-runtime-rendering-luna.md)；补 Worker 发布注解，串行修三个实例覆盖及 Secret 依赖清单，保留领域配置；模板 8、部署脚本最终 23 项通过，真实身份/切换仍待验 |
 | B8 后续移交 | 待实施 | N1～N6 建立待迁入清单与原任务关联；新 dev-plan 真正接收后才标已迁入，不以本文件冒充已完成产品开发 |
 | B9 集成与同步 | 等待本轮剩余处置完成 | B1～B6、B7a～B7e 已集成、同步；按 2026-09-13 最新决定，后续仅在 Luna 开发验证，最终统一执行子仓先推、父仓 gitlink 后推；master 预期 HEAD 核对、快进/明确合并，再同步两端工作区；不覆写预置草案 |
 
@@ -147,6 +147,10 @@ N4 的监控部署/采集/告警送达子项于 2026-09-13 按所有者要求迁
 
 ## 7. 执行日志
 
+- B7m 固定复验：tpl-app 10acfdc 的三个脚手架文件本地提交，backend gitlink 不变；
+  k8s 内容 0bd49272，Ruff 通过；模板 8 项，再串行 Info 17 / Knowledge 20 /
+  Investment 23 项通过、零跳过。三份文档门禁通过，详细时间见本包报告。
+  没有修改或生成到旧发布目录、没有真实凭据/集群变更，不作中间同步。
 - B7m：模板补 Worker release-id 后 8 项通过；Info → Knowledge → Investment
   串行保留模板 DB/broker 角色键、修外部 Secret 依赖；共享 runtime_role_env 对
   丢失/重复/错角色/内联/可选化等失败关闭。实际完整渲染及开发 finalizer 验证领域
