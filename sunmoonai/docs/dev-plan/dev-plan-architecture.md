@@ -4,6 +4,7 @@
 > 输入 `baa2885847d5c236dc5cdf5d2273bf55286c775c`。共同 inventory 虽标 `d121739e`，
 > 其九份源文件与本次输入逐字节相同，260 行安置严格复用共同清单。
 > ⑦ 发布时修正一处（`rounds/dev-plan-refact/rulings.md` R8）：`I08-009` 的机器配置改为与第八节表一致（`implementation-plan.md` / 计划责任和产品工作单元 / S3），修后 `verify` 通过。
+> 2026-09-14 修订（所有者让 opus 单独做正式切换）：`verify` 改为只按冻结提交读源，不再要求工作区与冻结输入相同；第八节末补基线之后新增的一节。
 
 推导顺序是七阶段及其门，然后是阶段交接所需产物，最后才是本稿中的路径和栏目。
 必须与 [pipeline.md](pipeline.md) 的①a一起评审。
@@ -592,10 +593,19 @@ G 表/四账/审批四档即使都含“门”字，也不能按同名合并。�
 | I09-002 | README.md L25 | 各文档的分工，别混写 | S6 | records/development-history.md / 旧版入口与组织上下文 |
 
 
+**基线之后源文件的变化（2026-09-14 在 `5b99cc4a` 量）。**上表只覆盖冻结基线的 260 节。
+之后要拆的五份里只有两处变化：`implementation-plan.md` 新增一节「后续运维接收 · N4-OPS-01
+监控采集与告警送达」（`5b99cc4a` L53），是具体产品工作单元，落点为 `implementation-plan.md` /
+计划责任和产品工作单元 / S3；`README.md` 一行去掉已删的 `round-dispatch.py` / `agents.toml`，
+不改落点。原位四份（`round-protocol.md` 的「8b. 两个脚本怎么调」改名「8b. 脚本怎么调」，
+`protocol/README.md` 重写）不迁移，变化不影响切换。切换按当前正文迁移，不回退到冻结版本。
+
 ## 九、复现清单与工具
 
 清单给冻结版本、源摘要及每个目标栏目的明确阅读顺序；工具只读 Git，不执行源文档中
 的命令，不写主线、其它工作区或产品仓。render 可重现候选的正文安置，show 可任意抽查。
+`verify` 只按冻结提交读源（`git show`），不比较工作区：它证明的是这份安置表对冻结基线无损，
+正式切换改动工作区源文件后仍可复跑。
 
 <!-- CONFIG -->
 ```json
@@ -605,7 +615,7 @@ G 表/四账/审批四档即使都含“门”字，也不能按同名合并。�
 
 <!-- RUNNER -->
 ```python
-import re, json, subprocess, hashlib, sys, pathlib, importlib.util
+import re, json, subprocess, hashlib, sys, pathlib, types
 
 config = json.loads(s.split('<!-- CONFIG -->\n```json\n', 1)[1].split('\n```\n<!-- END CONFIG -->', 1)[0])
 base, prefix = config['baseline'], config['prefix']
@@ -679,21 +689,16 @@ def verify():
     inventory_path = prefix + 'rounds/dev-plan-refact/inventory.md'
     raw = git('show', base + ':' + inventory_path)
     assert digest(raw) == config['inventory_sha256']
-    assert pathlib.Path(inventory_path).read_bytes() == raw
     rows = inventory_rows(raw.decode())
     assert len(rows) == len(units) == len(config['units']) == 260
     # Reuse the shared enumerator, including both fence styles; do not invent a new counting rule.
     module_path = prefix + 'rounds/dev-plan-refact/make-inventory.py'
-    assert pathlib.Path(module_path).read_bytes() == git('show', base + ':' + module_path)
-    spec = importlib.util.spec_from_file_location('shared_inventory', module_path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    module = types.ModuleType('shared_inventory')
+    exec(git('show', base + ':' + module_path).decode(), module.__dict__)
     reconstructed_rows = []
     for path, info in config['sources'].items():
         frozen = source(path)
         assert digest(frozen) == info['sha256']
-        assert pathlib.Path(prefix + path).read_bytes() == frozen
-        assert git('show', ':' + prefix + path) == frozen
         assert frozen == git('show', 'd121739e:' + prefix + path)
         actual = module.sections(frozen.decode())
         reconstructed_rows.extend((path, line, level, title) for line, level, title in actual)
