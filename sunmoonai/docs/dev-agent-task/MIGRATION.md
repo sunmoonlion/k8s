@@ -21,13 +21,22 @@
 | F01 / F05 / F07 | `components/frontend/components/` 下对应阶段目录 |
 | P-xxx | `../dev-process/` 下对应阶段（brd / prd / sdd / sdp / uat） |
 | 史 | 留在 dev-plan 作历史，不迁 |
+| 留原处 | 仍在 dev-plan 原位置、继续使用（门禁脚本及其说明） |
 
 ## 去向总表
 
 | 源（切换前） | 节 | 去向 | 说明 |
 | --- | --- | --- | --- |
 | `working/request-lifecycle.md` 全文 | I01-001…042 | T | 整份即 agent 顶层的 composition；不拆 |
-| `constraints.md` 全文 | I05-001…015 | T | 代码规则覆盖前后端五仓，放顶层而不是后端（见待定 1） |
+| constraints 标题与「怎么用」 | I05-001/002 | T | 提方案前按规则自检的用法 |
+| constraints 数据 D1–D9、做数据迁移时 | I05-003/004 | B | 拆：D9「前端不得持有凭据」进 `components/frontend/composition/` |
+| constraints 契约 C1–C6 | I05-005 | T | 前后端及各 App 之间的契约 |
+| constraints 身份 I1–I8 | I05-006 | T | 浏览器、BFF 与后端的身份分工，属前后端交互 |
+| constraints 拓扑 T1–T5、什么时候拆专用 Worker | I05-007/008 | B | 拆：T4/T5（悬空 gitlink、交付带「仓 + 提交号」）进 B06，与交付规则同处 |
+| constraints 发布 R1–R7、改模板同步实例、清理镜像、环境事实 | I05-009…012 | T | 前后端共同的发布与部署，跨阶段 |
+| constraints 智能体 A1–A5 | I05-013 | B | 拆：A4/A5（执行层租用、Port 不含领域概念）进 B04 |
+| constraints 保证这些被遵守的三层 | I05-014 | P（总则） | 规则要有机制与门禁保证，通用 |
+| constraints `doc-gate.py` 为什么留下 | I05-015 | 留原处 | 随门禁脚本 |
 | guide 先读结论、原来是什么样、文档边界、不可变契约、唯一内核 | I02-002/003/004/007/008 | T | 项目总体 |
 | guide 七条设计原则 | I02-013 | T | 本项目的设计原则 |
 | guide 词汇对照 | I02-107 | T | |
@@ -50,7 +59,7 @@
 | guide 受理与冻结 | I02-029 | B02 | |
 | guide 开发 Task 持久记录模板 | I02-108 | B02 | |
 | implementation-plan 任务条目格式 | I07-002 | P-sdp | 通用模板 |
-| guide 硬约束自检 | I02-010 | T | 随 constraints |
+| guide 硬约束自检 | I02-010 | B | 自检表列的是 A1–A5，随智能体规则 |
 | guide 反模式 | I02-103 | B04 | 执行中的做法 |
 | guide 工作区供给、worktree 细则、Git 能否提交 | I02-030/042/048 | B04 | |
 | guide 私有产生单写者发布、物化与写前门禁、并发处置、事故规程、冻结迟到取消、执行形态与停止、停止超时回退 | I02-034/038/035/036/037/041/050 | B04 | |
@@ -58,14 +67,14 @@
 | guide 人这一侧的义务 | I02-061 | P-brd + B05 | 拆：「请求写清边界、给可判定验收」进 P-brd |
 | guide principal 裁量权与改判 | I02-059 | B + P（总则） | 拆：改判三要素是通用纪律 |
 | guide T2 七环节操作闭环、通知取件检视面 | I02-047/049 | B04 | 与 protocol 同处 |
-| `protocol/` 全部（round-protocol、README、GO、round-status.py、草案） | I03-*、I04-* | B04 | 多方协作是执行形态之一（见待定 2） |
+| `protocol/` 全部（round-protocol、README、GO、round-status.py、草案） | I03-*、I04-* | B04 | 多方协作是执行形态之一 |
 | implementation-plan 交付规则 | I07-004 | B06 | |
 | guide 发布三个路径、交付清理恢复、保留与垃圾回收 | I02-043/033/044 | B06 | |
 | guide 跨会话续接 | I02-088 | B04 | checkpoint 属执行 |
-| guide 删除与迁移门 | I02-086 | 史 | 旧文档迁移门，见待定 3 |
+| guide 删除与迁移门 | I02-086 | 史 | 随历史冻结 |
 | guide 修订内核的工作单元 | I02-090 | T | 改的是顶层合同 |
 | guide 先核前提、开发验收不可外推、完成判据 | I02-014/011/040 | B06 + P-uat | 拆：「判据先冻结、验收不可外推」进 P-uat |
-| implementation-plan 测试层次 | I07-003 | P-uat | 通用测试层次（见待定 4） |
+| implementation-plan 测试层次 | I07-003 | T | 本项目的测试层次 |
 | guide 四层验证、证据账分级 | I02-070/072 | B06 | |
 | guide 事实裁决表、七种假答案、常见失败、并行评审盲区 | I02-075/104/105/106 | B06 | |
 | guide 检查本身也须接受检查 | I02-077 | P-uat | 通用 |
@@ -80,16 +89,15 @@
 | 历史取值、旧路线、吸收审计、旧版入口 | I02-027/062/076/095/096/098…102/001/005/006、I07-005、I08-011/012、I09-* | 史 | 吸收审计中的「没查什么」（I02-097）已单列进 P-uat |
 | guide 无正文的章标题（「3. 一次开发 Task 怎样执行」「5. 可观测性、证据与等效」） | I02-028/065 | 不迁 | 只有标题，其下各节已分别归位 |
 | `dev-plan-architecture.md`、`rounds/`、`records/`、`archive/` | — | 史 | |
-| `anchor-gate.py`、`doc-gate.py`、`scripts/` | — | 待定 5 | |
+| `anchor-gate.py`、`doc-gate.py`、`scripts/` | — | 留原处 | 管全仓文档，不属于 agent |
 
-进 `dev-process/` 的一共 10 处，其中 6 处是从一节里拆出的一小段：总则 3 处（共同纪律、改判三要素、pipeline 总流程），
-P-brd 1、P-sdp 1、P-uat 5。
+进 `dev-process/` 的一共 10 处，其中 5 处是从一节里拆出的一小段：总则 4 处（共同纪律、改判三要素、pipeline 总流程、
+规则保证的三层），P-brd 1、P-sdp 1、P-uat 4。
 
-## 待定
+## 已定（所有者 2026-09-14）
 
-1. **constraints 放 T 还是 B。**所有者说这类内容更多放进 backend；但 constraints 的规则覆盖前端和五个仓，
-   按「跨阶段进上一层」应放 T。
-2. **protocol 放 B04 还是 B。**多方协作只在执行（T2）时发生，放 B04；若认为它贯穿受理到验收，放 B。
-3. **删除与迁移门（I02-086）。**它管的是旧文档的删除，这次迁完后是否还需要，还是随历史冻结。
-4. **测试层次（I07-003）。**L1–L7 的分法是否通用；若是本项目专有，改放 T。
-5. **门禁脚本。**doc-gate、anchor-gate 管全仓文档，不属于 agent；放 `dev-process/` 还是留原处。
+1. constraints 按规则类别拆开，各归合适的层（见上表 I05 各行）。
+2. protocol 放 B04。
+3. 删除与迁移门随历史冻结。
+4. 测试层次放 T。
+5. 门禁脚本留原处。
