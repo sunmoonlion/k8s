@@ -17,12 +17,16 @@
 
 `sunmoonai/docs/dev-plan/working/request-lifecycle.md`
 
-开发 Agent 接任务前必须读取：
+一项需求从提出到上线怎么走（七个阶段，每阶段的产物与门）：
 
-`sunmoonai/docs/dev-plan/working/development-lifecycle-agent.md`
+`sunmoonai/docs/dev-plan/pipeline.md`
+
+开发 Agent 接任务前必须读取（一个工作单元怎么做完）：
+
+`sunmoonai/docs/dev-plan/agent-dev-guide.md`
 
 涉及人的批准、裁量或终审时，同时读取：
 
-`sunmoonai/docs/dev-plan/working/development-lifecycle-human.md`
+`sunmoonai/docs/dev-plan/design/authority-sdd.md`
 
 不在此复述其中规则。
