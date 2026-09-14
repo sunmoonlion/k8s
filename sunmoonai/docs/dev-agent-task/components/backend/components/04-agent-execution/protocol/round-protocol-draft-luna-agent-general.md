@@ -34,7 +34,7 @@
 
 ## 2. 权威边界与产品对象
 
-产品对象、Task / Attempt 合法状态、Interaction 原子恢复及结果交付，以 [请求生命周期合同](../working/request-lifecycle.md) 为准；实现与约束按 [开发指导](../agent-dev-guide.md) 和 [constraints](../constraints.md) 处理。
+产品对象、Task / Attempt 合法状态、Interaction 原子恢复及结果交付，以 [请求生命周期合同](../../../../../composition/request-lifecycle.md) 为准；实现与约束按 [开发指导](../../../../../../dev-plan/agent-dev-guide.md) 和 [constraints](../../../../../../dev-plan/constraints.md) 处理。
 
 | 本协议概念 | 对应产品对象或记录 |
 | --- | --- |

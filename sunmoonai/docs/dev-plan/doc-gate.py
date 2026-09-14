@@ -87,12 +87,12 @@ def exempt(path: str) -> bool:
 # 声明「自足」的文档：§N 引用必须指向**本文件内**的标题。
 # 其他文档（裁决书、整合记录、评审）引用的是别的文档的章节，不适用本项。
 SELF_CONTAINED = (
-    "sunmoonai/docs/dev-plan/working/request-lifecycle.md",
+    "sunmoonai/docs/dev-agent-task/composition/request-lifecycle.md",
     # 2026-09-09 加入：所有者问「为何不把 GO.md 和 round-protocol.md 合并」。
     # 查实 GO.md §四 四条规范内容在协议里各有一份，而**没有任何东西保证两份一致**
     # ——正是 §0.0 第 3 条骂的「第二份说明书」。合并不是修法（见 GO.md §四抬头），
     # 修法是让它降为**被核对的引用**：四条各注出处 §，本门验那个 § 真的存在。
-    "sunmoonai/docs/dev-plan/protocol/GO.md",
+    "sunmoonai/docs/dev-agent-task/components/backend/components/04-agent-execution/protocol/GO.md",
 )
 # 两份 development-lifecycle-*.md 曾在此名单内，2026-09-07 移出：它们已被
 # agent-dev-guide.md 取代、降为历史档案，「自足」是对现行权威文档的要求。
