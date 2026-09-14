@@ -5,7 +5,6 @@
 
 - [`01-req/`](01-req/)：开发需求（要什么、为什么）
 - [`02-prd/`](02-prd/)：PRD（需求与验收合同）
-- [`03-tld/`](03-tld/)：TLD（总体设计）
-- [`04-sdd/`](04-sdd/)：SDD（详细设计）
-- [`05-sdp/`](05-sdp/)：SDP（实施计划）
-- [`06-acceptance/`](06-acceptance/)：验收（验证与验收）
+- [`03-design/`](03-design/)：设计（结构层与组成层，原 TLD/SDD）
+- [`04-sdp/`](04-sdp/)：SDP（实施计划）
+- [`05-acceptance/`](05-acceptance/)：验收（验证与验收）
