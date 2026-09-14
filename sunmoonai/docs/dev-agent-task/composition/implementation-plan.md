@@ -7,7 +7,7 @@
 > **这里是任务本体：每件事怎么做、怎么算做完。**
 >
 > 现在到哪了、什么不能倒退，见 [`handoff.md`](../../dev-plan/handoff.md)；
-> 为什么这么建见 [`development-plan.md`](../../dev-plan/development-plan.md)；
+> 为什么这么建见 [`development-plan.md`](../components/backend/composition/development-plan.md)；
 > 代码必须符合的规则见 [`constraints.md`](../../dev-plan/constraints.md)。
 
 ## 测试层次
@@ -56,9 +56,9 @@ U1 一定，本节即刻填充。U1 的已知输入见 [`handoff.md`](../../dev-
 
 ## 阶段二 · agent 开发
 
-未开工。见 [`development-plan.md`](../../dev-plan/development-plan.md)。
+未开工。见 [`development-plan.md`](development-plan.md)。
 
 ## 阶段三 · 结构化数据问答
 
 未开工，且有一个开工前置：投资仓现在没有任何业务数据表。
-见 [`development-plan.md`](../../dev-plan/development-plan.md)。
+见 [`development-plan.md`](development-plan.md)。

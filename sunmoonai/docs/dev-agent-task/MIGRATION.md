@@ -1,6 +1,6 @@
-# 迁移清单：dev-plan → dev-agent-task / dev-process
+# 迁移记录：dev-plan → dev-agent-task / dev-process
 
-> 临时文件，搬完删除。所有者审过再搬。节 ID 同 [dev-plan-architecture.md](../dev-plan/dev-plan-architecture.md)
+> 2026-09-14 已按本表完成迁移；dev-plan 各文件头链接到这里，故保留作记录。节 ID 同 [dev-plan-architecture.md](../dev-plan/dev-plan-architecture.md)
 > 第八节的安置表（源文件 + 起行 + 原标题可在那里查到）。
 
 ## 规则（所有者 2026-09-14）

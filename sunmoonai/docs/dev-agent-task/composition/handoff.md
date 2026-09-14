@@ -6,7 +6,7 @@
 >
 > **接手先读这份。**它回答"现在到哪了、什么不能倒退、卡在哪"。
 >
-> 要建什么见 [`development-plan.md`](../../dev-plan/development-plan.md)；
+> 要建什么见 [`development-plan.md`](development-plan.md)；
 > 具体任务见 [`implementation-plan.md`](../../dev-plan/implementation-plan.md)；
 > 代码必须符合的规则见 [`constraints.md`](../../dev-plan/constraints.md)。
 >
@@ -18,7 +18,7 @@
 **一 · 前后端对接。**
 
 阶段二（agent 开发）与阶段三（问数）尚未开工，见
-[`development-plan.md`](../../dev-plan/development-plan.md)。
+[`development-plan.md`](development-plan.md)。
 
 ## 已经就位的（不用再做）
 

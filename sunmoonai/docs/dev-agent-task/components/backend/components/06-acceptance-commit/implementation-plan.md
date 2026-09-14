@@ -12,7 +12,7 @@
 测试输出、关键 request/response、migration revision、image digest。
 **不得提交 token、Cookie、数据库密码或 API key。**
 
-**单一权威**——架构语义以 [`development-plan.md`](../../../../../dev-plan/development-plan.md) 为准，
+**单一权威**——架构语义以 [`development-plan.md`](../../composition/development-plan.md) 为准，
 本文件只描述执行增量、依赖与验收；API/Schema 以各仓 `contracts/` 发布物为准，
 本文件里的字段只用于解释，不作为机器契约。
 **发现重复且可能漂移的定义时，删副本改引用，禁止两处同步维护。**

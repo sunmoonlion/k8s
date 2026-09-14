@@ -8,7 +8,7 @@
 > 是不提出。
 >
 > 项目现在长什么样，见 [`../project-guide/`](../../project-guide/)；
-> 要建什么见 [`development-plan.md`](../../dev-plan/development-plan.md)，
+> 要建什么见 [`development-plan.md`](development-plan.md)，
 > 具体任务见 [`implementation-plan.md`](../../dev-plan/implementation-plan.md)，
 > 当前状态见 [`handoff.md`](../../dev-plan/handoff.md)。
 

@@ -8,8 +8,8 @@
 > 只剩三件事：权威排序、接手演练、什么不属于本文档集。
 > 其余原属本文件的内容已按性质移出：
 > 写文档的约定 → [`../dev-plan/development-lifecycle-human.md`](../dev-plan/archive/development-lifecycle-human.md) §6；
-> 提请求 → [`../dev-plan/working/request-lifecycle.md`](../dev-plan/working/request-lifecycle.md)；
-> 推送与多助手 → [`../dev-plan/round-protocol.md`](../dev-plan/protocol/round-protocol.md) 与
+> 提请求 → [`../dev-agent-task/composition/request-lifecycle.md`](../dev-agent-task/composition/request-lifecycle.md)；
+> 推送与多助手 → [`../dev-agent-task/components/backend/components/04-agent-execution/protocol/round-protocol.md`](../dev-agent-task/components/backend/components/04-agent-execution/protocol/round-protocol.md) 与
 > [`../dev-plan/development-lifecycle-human.md`](../dev-plan/archive/development-lifecycle-human.md) §12。
 
 ## 1. 权威排序
@@ -38,7 +38,7 @@
 
 | 内容 | 去哪 |
 | --- | --- |
-| 将来要做什么、应该怎样 | 请求记录（见 [`../dev-plan/working/request-lifecycle.md`](../dev-plan/working/request-lifecycle.md)） |
+| 将来要做什么、应该怎样 | 请求记录（见 [`../dev-agent-task/composition/request-lifecycle.md`](../dev-agent-task/composition/request-lifecycle.md)） |
 | 必须遵守的规则 | [`../dev-plan/constraints.md`](../dev-plan/constraints.md) |
 | 做到第几步了 | 请求的进度游标；本文档集**一律不写进度** |
 | 镜像 digest、迁移 head 等易变值 | 只指真源，见 [`overall-architecture.md`](overall-architecture.md) §10 |
