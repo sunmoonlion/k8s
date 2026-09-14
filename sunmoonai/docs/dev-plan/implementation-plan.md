@@ -4,24 +4,9 @@
 >
 > - [`dev-agent-task/components/backend/components/06-acceptance-commit/implementation-plan.md`](../dev-agent-task/components/backend/components/06-acceptance-commit/implementation-plan.md)（1 节）
 > - [`dev-agent-task/composition/implementation-plan.md`](../dev-agent-task/composition/implementation-plan.md)（7 节）
+> - 第 2 步：「任务条目格式」写进 [`dev-process/04-sdp`](../dev-process/04-sdp/README.md)
 >
-> 这里仅剩：历史记录、留在原处的节，以及待拆进 `dev-process/` 的节。节号是原文件的节号。
-
-## 任务条目格式
-
-每条任务固定这几栏，**缺栏视为未定义，不开工**：
-
-| 栏 | 写什么 |
-| --- | --- |
-| 类型/优先级 | `ARCH` / `FEAT` / `FIX` / `OPS` + `P0`–`P2` |
-| 仓库 | 涉及哪几个仓——跨仓任务必须列全，否则漏推 |
-| 前置 | 依赖哪些任务或哪条未决项定了才能开工 |
-| 目标 | 一句话说清做完之后什么变了 |
-| 实施 | 具体动什么。**不写"完善 X"这种没有终点的表述** |
-| 测试 | 适用的测试层次（见下），**不能只写"补测试"** |
-| 验收 | 可判定的条件。做完能一条条对着勾 |
-| 回滚 | 出问题怎么退回去 |
-| 状态 | `NOT_STARTED` / `IN_PROGRESS` / `BLOCKED` / `ACCEPTED` + 日期与证据 |
+> 这里仅剩：历史记录与留在原处的节。节号是原文件的节号。
 
 ## 阶段〇 · 开发框架自身的实施路线（R0–R5）
 

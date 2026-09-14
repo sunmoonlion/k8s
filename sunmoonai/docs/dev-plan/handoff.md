@@ -5,7 +5,7 @@
 > - [`dev-agent-task/components/backend/composition/handoff.md`](../dev-agent-task/components/backend/composition/handoff.md)（1 节）
 > - [`dev-agent-task/composition/handoff.md`](../dev-agent-task/composition/handoff.md)（10 节）
 >
-> 这里仅剩：历史记录、留在原处的节，以及待拆进 `dev-process/` 的节。节号是原文件的节号。
+> 这里仅剩：历史记录与留在原处的节。节号是原文件的节号。
 
 ## 开发框架自身（R0–R5 路线）的进度
 

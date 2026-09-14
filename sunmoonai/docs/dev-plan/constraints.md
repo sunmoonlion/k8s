@@ -4,28 +4,9 @@
 >
 > - [`dev-agent-task/components/backend/composition/constraints.md`](../dev-agent-task/components/backend/composition/constraints.md)（5 节）
 > - [`dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md)（8 节）
+> - 第 2 步：「保证这些被遵守的三层」并入 [`dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md)，通用原则写进 [dev-process 总则](../dev-process/README.md)
 >
-> 这里仅剩：历史记录、留在原处的节，以及待拆进 `dev-process/` 的节。节号是原文件的节号。
-
-## 保证这些被遵守的三层
-
-| 层 | 覆盖 | 在哪 |
-| --- | --- | --- |
-| **随测试自动跑** | 标了测试载体的那些 | 四仓 `tests/test_kernel_invariants.py`、`tests/test_dormant_capabilities.py`、双端契约测试——**跑 `uv run pytest` 就带上，不需要谁记得** |
-| **随提交自动跑** | 本仓文档的三项机械不变量 | [`doc-gate.py`](doc-gate.py) 经版本化的 `.githooks/pre-commit` 触发——**提交就带上**。装一次 `git config core.hooksPath .githooks` 对全部 worktree 生效（共享同一个 `.git`），装没装用 `doc-gate.py --selfcheck` 判定 |
-| **指针** | 全部 | 五仓根 `AGENTS.md`、`.cursor/rules/`、八个组件 `CLAUDE.md`（**进目录自动注入**） |
-| **自检** | 全部 | 上面「怎么用」那节 |
-
-**只有第一层不依赖人。**后两层是纪律，纪律会被忘——这份文件本身就出过两次
-"规则在眼前却没回头对照"：一次提出了违反 D1 与 I1 的方案，一次把 I4 说反了
-（断言不能用 BFF，实际是可以用、只是不能拥有数据）。
-
-**曾经有过两个独立检查脚本，已删。**理由不是它们没用，而是**要人记得跑的检查
-和写在文档里的规矩没有本质区别**——它们自己就落在"纪律"那层。更糟的是其中一条
-路径检查的结论取决于工作区状态：同一份文档在三台机器上分别报 0 / 4 / 95 条失败
-（子模块是否初始化）。**看起来在把关，其实不牢。**
-
-规则要有载体，就做成**跟着测试跑**的；做不成的，老实标 ⚠。
+> 这里仅剩：历史记录与留在原处的节。节号是原文件的节号。
 
 ### `doc-gate.py` 为什么不是第三个被删的脚本
 

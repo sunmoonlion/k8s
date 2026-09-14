@@ -14,7 +14,6 @@
 | D6 | 迁移链单链线性，恰好一个 `down_revision = None` | `test_kernel_invariants.py` |
 | D7 | 改迁移**必须同步改** `test_kernel_invariants.py` 里那份文件名清单 | 该测试逐字比对 |
 | D8 | 迁移由**独立 Job** 执行，API / Worker / Scheduler 启动**不得**隐式升级数据库 | ⚠ 自检 |
-| D9 | 前端**不得**持有后端或数据库凭据 | `core/config.py` 启动期校验 |
 
 ### 做数据迁移时
 
@@ -40,8 +39,6 @@ expand → backfill → reconcile → switch read → switch write → observe �
 | T1 | 按**长期业务领域**划分 App，不按页面或部署组件划分 | ⚠ 自检 |
 | T2 | **每个领域 App 只有一个规范 Backend** | ⚠ 自检 |
 | T3 | **一个 Backend 代码库按运行角色部署**（API / Worker / Scheduler / Migration）；模板组件不定义领域边界，运行角色不等于领域服务 | ⚠ 自检 |
-| T4 | 父仓**不得出现悬空 gitlink**——子仓提交没推，别人克隆父仓会拉不到 | `~/five-repos-sync/sync-five-repos.sh`：它同步五个父仓，拉取侧自动 `submodule update --init --recursive`，子仓提交没推会**当场报错**。⚠ 但它只推父仓不推子仓，子仓的提交仍须自己推 |
-| T5 | 跨仓改动宣称"已完成"时，**必须带「仓 + 提交号」**——k8s 与四个 App 是并列独立仓，只写提交信息的话，评审方只能猜取证对象，会得出"改动不存在"的结论 | ⚠ 自检 |
 
 ### 什么时候才拆出专用 Worker
 
@@ -61,7 +58,5 @@ expand → backfill → reconcile → switch read → switch write → observe �
 | A1 | 分**通用**（执行编排）与**专用**（领域），新增业务智能体优先是新增一份 Profile，不是 fork 一套代码 | ⚠ 自检 |
 | A2 | **两边都要有纪律**，不存在"通用部分不需要约束" | [`round-protocol.md`](../components/04-agent-execution/protocol/round-protocol.md) |
 | A3 | 四本账（预算 / 幂等 / 副作用 / 证据）**必须落 PostgreSQL**——跨 run、跨进程死亡仍须正确的不变量，必须由存储承担 | ⚠ 自检 |
-| A4 | 执行层**租用不自建**，依赖边界严格限定在 SDK，不得直接依赖裸协议 | ⚠ 自检 |
-| A5 | 领域概念**不得进入 Port 签名**（`run(sql, limit)` 可以，`run_portfolio_query(持仓ID)` 不可以） | ⚠ 自检 |
 
 ---
