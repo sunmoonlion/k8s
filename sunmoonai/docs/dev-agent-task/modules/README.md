@@ -1,6 +1,6 @@
 # 模块开发任务
 
-按 [request-lifecycle.md](../../working/request-lifecycle.md) 第 5 节的七个生命周期阶段，每个阶段一个开发任务：
+按 [request-lifecycle.md](../../dev-plan/working/request-lifecycle.md) 第 5 节的七个生命周期阶段，每个阶段一个开发任务：
 
 - [`01-submit/`](01-submit/)：5.1 提交（前端）
 - [`02-intake/`](02-intake/)：5.2 受理与校验（后端）
