@@ -1,6 +1,6 @@
-# 设计
+# SDD：软件设计说明（Software Design Description）
 
-回答「怎样满足 PRD」。原来的 TLD（总体设计）与 SDD（详细设计）合并为这一个阶段：
+回答「怎样满足 PRD」。按 IEEE 1016，SDD 同时覆盖架构设计与详细设计；本阶段不再分 TLD 与 SDD：
 总体还是详细，由这份设计在需求树里的层次决定，不由阶段名决定。
 
 - **结构层**（有子任务的节点，如 [`../../dev-agent-task/architecture/`](../../dev-agent-task/architecture/)）：
