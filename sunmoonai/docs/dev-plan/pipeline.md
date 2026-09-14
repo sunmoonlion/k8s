@@ -1,8 +1,7 @@
 # AI 执行开发流程：以可验收的需求增量贯通交付
 
-> dev-plan-refact 轮定稿 ｜ 整合方 cursor ｜ 基座 luna（`9a2b999c`，pipeline sha256 前 16 位 `781dcc882b9fd80e`）
+> **③ 裁决稿 ①a** ｜ 整合方 cursor ｜ 基座 luna（`9a2b999c`，pipeline sha256 前 16 位 `781dcc882b9fd80e`）
 > 输入固定为 `baa2885847d5c236dc5cdf5d2273bf55286c775c`。⑦ 已写入共享最终路径（`rounds/dev-plan-refact/rulings.md` R8）。
-> 2026-09-14 起文档已按配套 architecture 第八节切换；文中对 `agent-dev-guide.md` 现状的描述指切换前。
 
 本稿先确定需求的推进过程，再推导需要的文档；逐节融合在配套的
 [dev-plan-architecture.md](dev-plan-architecture.md)。
