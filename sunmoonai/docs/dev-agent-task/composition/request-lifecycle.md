@@ -1,6 +1,6 @@
 # Request Lifecycle：产品请求生命周期合同
 
-> 依据的通用规范：[PRD 规范（本文是本任务的 PRD）](../../dev-agent-standards/task/prd/README.md)
+> 依据的通用规范：[PRD 规范（本文是本任务的 PRD）](../../dev-agent-standards/task/prd-template.md)
 
 > 最后更新：2026-08-31
 >
