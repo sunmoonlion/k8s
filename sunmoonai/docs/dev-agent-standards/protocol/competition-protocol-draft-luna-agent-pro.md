@@ -6,7 +6,7 @@
 
 本稿依据用户对自建专业 Agent 的决策制定。它适用于一般专业任务，具体研究、分析或其他领域的方法由版本化 Profile 补充，不把某个领域的节点写死进公共核心。
 
-本稿不是 [原 Luna 轮次草案](round-protocol-draft-luna.md) 的参数副本，也不继承同目录 `round-protocol-draft-luna-agent-general.md` 的多助手人数、助手身份分离或逐阶段人工批准默认值。它借鉴固定判据、产物版本与权力分离原则，重新定义专业执行和评审机制。
+本稿不是 [原 Luna 多方竞争草案](competition-protocol-draft-luna.md) 的参数副本，也不继承同目录 `competition-protocol-draft-luna-agent-general.md` 的多助手人数、助手身份分离或逐阶段人工批准默认值。它借鉴固定判据、产物版本与权力分离原则，重新定义专业执行和评审机制。
 
 ## 1. 架构定位与边界
 
@@ -50,7 +50,7 @@ Task、Attempt、Interaction、Artifact、Event、Side Effect、Delivery 及其�
 首个实质执行步骤前，固定 Task Profile、Agent Profile 及以下协议配置：
 
 ```text
-task_id, evaluation_round_id, protocol_id/version
+task_id, evaluation_id, protocol_id/version
 goal, scope, original_input_ref, input_artifact_versions[]
 domain_profile_id/version, method_version, data_as_of_policy
 required_steps[], prerequisites[], permitted_optional_steps[]
@@ -140,9 +140,9 @@ Profile 可以提供预批准默认值，但必须保存所用版本与授权来
 
 比较时可以匿名化候选标签、随机化呈现顺序、按预算进行顺序互换复核；这些是需验证收益的策略选项，不宣称能消除偏差。来源归属在审计记录中保留。
 
-默认不把作者自评分提供给首轮评审。事实矛盾应通过原始来源或工具核实，不能让评审模型在两个矛盾值之间投票。
+默认不把作者自评分提供给首次评审。事实矛盾应通过原始来源或工具核实，不能让评审模型在两个矛盾值之间投票。
 
-允许结论包括全部不合格、证据不足、存在无法消解的权衡。是否可以交付条件性或部分结果，由开轮合同决定；不能为了结束任务临时降低标准。
+允许结论包括全部不合格、证据不足、存在无法消解的权衡。是否可以交付条件性或部分结果，由开始竞争时的合同决定；不能为了结束任务临时降低标准。
 
 ### 7.5 综合与最终再验收
 
@@ -181,7 +181,7 @@ Profile 可以提供预批准默认值，但必须保存所用版本与授权来
 沿用产品 Interaction 的单次消费和版本校验，再关联：
 
 ```text
-evaluation_round_id, phase, role_instance_id
+evaluation_id, phase, role_instance_id
 artifact_ref/version/digest, upstream_refs[]
 approval_kind, action_digest, target, expected_target_version
 principal, policy_ref/version, environment/workspace
@@ -200,7 +200,7 @@ expires_at, supersedes, response_idempotency_key
 
 | 记录 | 至少包含 |
 | --- | --- |
-| 评审轮次 | 关联 Task、协议 / Profile / 方法版本、模式、判据、预算和固定输入 |
+| 一次评审 | 关联 Task、协议 / Profile / 方法版本、模式、判据、预算和固定输入 |
 | 候选 | 作者角色、Attempt、模型绑定、上下文来源、不可变 Artifact、假设与证据 |
 | 校验 | 检查器版本、具体判据、输入 / 输出引用、通过 / 失败 / 未知、覆盖范围 |
 | 评审 | 评审者配置、候选呈现顺序、每条发现、独立性条件和局限 |
@@ -274,7 +274,7 @@ CLI 不等于 sandbox；设置 cwd 不构成安全隔离。沙箱需约束文件
 | C1–C5 | 版本化同步 / 异步契约、完整 Outbox 语义、提供方 schema 真源和双端测试 |
 | I1–I8 | 云端沿用接口分面、身份、Origin / CSRF 与后端复核；本机新增适配而非绕开授权 |
 | T1–T3、A1、A5 | 专业性放在 Profile 与领域函数；不为每个角色另建 App 或第二套 Backend |
-| A2 | 自建也受纪律约束；本协议独立制定，不复用手工多助手轮次的全部规则 |
+| A2 | 自建也受纪律约束；本协议独立制定，不复用手工多助手竞争的全部规则 |
 | A3 | 云端继续使用 PostgreSQL；本机持久账的等价要求与适用范围必须正式修订、测试 |
 | A4 | 用户已决定专业核心自建，需范围化修订；通用路线的外部智能体接入边界不随之取消 |
 | R6 | 未来公共实现模板先行；领域方法在实例扩展；本次只新增协议草案 |
@@ -333,4 +333,4 @@ CLI 不等于 sandbox；设置 cwd 不构成安全隔离。沙箱需约束文件
 - 综合后的产物重新验收，允许有上限的修订；原手工四环节不是强制骨架。
 - 使用产品账本、Interaction 与适配器，不把 Git 分支、tmux 或人工复制当作运行前提。
 - 云端和本机自始兼容，不等云端完成后再重写核心。
-- 原 `round-protocol-draft-luna.md` 保持不动；本稿未发布、未启用、未提交或推送。
+- 原 `competition-protocol-draft-luna.md` 保持不动；本稿未发布、未启用、未提交或推送。
