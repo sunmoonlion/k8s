@@ -1,7 +1,7 @@
-# 任务规则
+# 通用规则
 
-交给 agent 的每一件事都是一个**任务**。本文写所有 agent 开发任务共同遵守的基本理念与纪律，以及任务怎样随交付长出来、怎样记录、怎样返工。
-每个任务的 `task.md` 按 [PRD 规则](prd/prd-rules.md) 写（模板见 [附录](prd/prd-template.md)），交付物按 [`../deliverables/`](../deliverables/) 的规范验收。其余规范见 [README](../README.md)。
+交给 agent 的每一件事都是一个**任务**。本文写所有 agent 开发任务及其交付共同遵守的基本理念与纪律，以及任务怎样随交付长出来、交付怎样验收、怎样记录、怎样返工。
+每个任务的 `task.md` 按 [PRD 规则](task/prd/prd-rules.md) 写（模板见 [附录](task/prd/prd-template.md)），交付物按 [`deliverables/`](deliverables/) 的规范验收。其余规范见 [README](README.md)。
 
 ## 基本理念
 
@@ -39,7 +39,7 @@
 7. 报告盲区、副作用和残余风险；
 8. 未经授权不推送、合并、发布、删除远端资产或扩大外部影响。
 
-第 3 条是 [UAT](../deliverables/uat/uat-rules.md) 证据采信的前提：分不清事实与推断，采信分级就无从谈起。
+第 3 条是 [UAT](deliverables/uat/uat-rules.md) 证据采信的前提：分不清事实与推断，采信分级就无从谈起。
 
 ## 改判
 
@@ -86,7 +86,7 @@
 
 #### task.md 就是任务书
 
-按 [PRD 规则](prd/prd-rules.md) 写（模板见 [附录](prd/prd-template.md)）。
+按 [PRD 规则](task/prd/prd-rules.md) 写（模板见 [附录](task/prd/prd-template.md)）。
 
 #### log.md 逐行追加，不改旧行
 
@@ -126,7 +126,7 @@
 - **旧版本不覆盖**：返工交回的是新的提交，`log.md` 记「第 n 版取代第 n-1 版」及原因；验收结论永远绑定到具体的一版。
 - **同一项交付物被打回第三次时停下**：不再自动派工，`log.md` 记「停下交人」。由人判断是 PRD 本身有问题、判据写错了，还是要换做法或换执行者；人的裁决记入 `log.md` 后才能继续。
 - 返工上限可以在 `task.md` 里按任务调整；**调高上限须人确认**——多给几次自动重来的机会，就是少一次人的检查。
-- 某项交付物需要多个 agent 各交一份再比较时，按 [多方竞争的轮次协议](../protocol/round-rules.md) 进行；轮次内部的回退不计入本任务的返工次数，轮次最终被打回才计入。
+- 某项交付物需要多个 agent 各交一份再比较时，按 [多方竞争的轮次协议](protocol/round-rules.md) 进行；轮次内部的回退不计入本任务的返工次数，轮次最终被打回才计入。
 
 ## 任务持久记录模板
 

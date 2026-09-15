@@ -8,7 +8,7 @@
 
 | 文件 | 内容 |
 | --- | --- |
-| [`task/task-rules.md`](task/task-rules.md) | 任务规则：基本理念、总则、执行者的共同纪律、改判；任务的生命周期（任务目录、子任务何时建、状态怎么看、返工怎么记）——**先读这一份** |
+| [`general-rules.md`](general-rules.md) | 通用规则：基本理念、总则、执行者的共同纪律、改判；任务的生命周期（任务目录、子任务何时建、状态怎么看、返工怎么记）——**先读这一份** |
 | [`approvals.md`](approvals.md) | 人的批准点：谁批什么、批准怎样成立、权限、审批档位、人这一侧的义务 |
 | [`task/prd/prd-rules.md`](task/prd/prd-rules.md) | PRD（任务书）规则；附录是最严格的一种模板 |
 | [`deliverables/sdd/sdd-rules.md`](deliverables/sdd/sdd-rules.md) | SDD 规则：规划 agent 交回的设计 |

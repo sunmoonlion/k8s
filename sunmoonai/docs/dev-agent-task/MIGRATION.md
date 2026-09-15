@@ -104,6 +104,6 @@ P-prd 1、P-sdp 1、P-uat 4。
 
 - constraints 与本仓的轮次协议、工具（round-protocol、round-operations、GO、README、round-status.py）归平台一级，
   放在 `dev-agent-task/composition/`（`composition/constraints.md`、`composition/protocol/`）。上表中写作 P 的这几项以此为准。
-- `dev-agent-standards/` 写入抽象后的通用规范：总则、`approvals.md`（人的批准点）、`task/task-rules.md`（总则与任务记录模板）、
+- `dev-agent-standards/` 写入抽象后的通用规范：总则、`approvals.md`（人的批准点）、`general-rules.md`（总则与任务记录模板）、
   SDD「设计必须满足」、SDP「执行规范」与「交付、发布与保留」、UAT 的验证与采信原则、`protocol/round-rules.md`（通用轮次协议）。
 - 任务里的原文全部保留，作为具体化；每个具体化的节在标题下链接到它依据的通用规范（共 56 处）。
