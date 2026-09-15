@@ -91,8 +91,8 @@
 | `dev-plan-architecture.md`、`rounds/`、`records/`、`archive/` | — | 史 | |
 | `anchor-gate.py`、`doc-gate.py`、`scripts/` | — | 留原处 | 管全仓文档，不属于 agent |
 
-进 `dev-process/` 的一共 10 处，其中 5 处是从一节里拆出的一小段：总则 4 处（共同纪律、改判三要素、pipeline 总流程、
-规则保证的三层），P-brd 1、P-sdp 1、P-uat 4。
+进 `dev-process/` 的一共 10 处：总则 4 处（共同纪律、改判三要素、pipeline 总流程、规则保证的三层），
+P-brd 1、P-sdp 1、P-uat 4。
 
 拆分的做法：任务侧原文保留，作为具体实例；`dev-process` 只写抽象出来的原则，措辞通用，并链接到实例。
 进 `dev-process` 的 10 处都是抽象后的原则，原文一律保留在任务侧或历史里。
