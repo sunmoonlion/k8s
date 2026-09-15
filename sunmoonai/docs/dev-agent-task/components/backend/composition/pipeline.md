@@ -1,6 +1,6 @@
 # AI 执行开发流程：以可验收的需求增量贯通交付
 
-> 依据的通用规范：[通用规范总则](../../../../dev-agent-standards/principles.md)
+> 依据的通用规范：[通用规范总则](../../../../dev-agent-standards/task/task-rules.md)
 
 > 2026-09-14 移入 agent 任务的后端组成设计：这是 agent 项目的具体开发流程；与项目无关的流程原则见 [dev-agent-standards](../../../../dev-agent-standards/README.md)。
 > **③ 裁决稿 ①a** ｜ 整合方 cursor ｜ 基座 luna（`9a2b999c`，pipeline sha256 前 16 位 `781dcc882b9fd80e`）
