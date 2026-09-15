@@ -1,7 +1,7 @@
 # 通用规则
 
 交给 agent 的每一件事都是一个**任务**。本文写所有 agent 开发任务及其交付共同遵守的基本理念与纪律，以及任务怎样随交付长出来、交付怎样验收、怎样记录、怎样返工。
-每个任务的 `user-message.md` 按 [PRD 规则](task/prd/prd-rules.md) 写（模板见 [附录](task/prd/prd-template.md)），交付物按 [`deliverables/`](deliverables/) 的规范验收。其余规范见 [README](README.md)。
+每个 turn 的 `user-message.md` 按 [PRD 规则](task/prd/prd-rules.md) 写（模板见 [附录](task/prd/prd-template.md)），交付物按 [`deliverables/`](deliverables/) 的规范验收。其余规范见 [README](README.md)。
 
 ## 基本理念
 
