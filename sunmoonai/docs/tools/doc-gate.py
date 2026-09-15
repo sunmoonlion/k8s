@@ -51,38 +51,17 @@ DOC_ROOT = "sunmoonai/docs/"
 # 扩范围的前提是「扩之前先清零」——带着存量失败上线的门禁会被 --no-verify 掉。
 GATED = ("sunmoonai/docs/",)
 
-# 例外：codex-reference/ 是**各分支自己**的研究笔记（README.md 第 17 行：各分支只放
-# 自己写的那份），不是共享权威文档；agent 文 §5.2 也定它「只作研究输入，不具规范
-# 效力」。这类笔记按其性质会引用外部仓的绝对路径作取证出处，用共享文档的链接标准
-# 去卡它，只会逼作者绕过门禁。巡检（--survey）仍然覆盖它。
-EXEMPT = ("sunmoonai/docs/dev-plan/codex-reference/",)
-
-# ⚠ 2026-09-08 新增：按**路径片段**豁免，而不是按前缀。
-# 只豁免轮次候选的**归档副本**（`rounds/<轮次>/candidates/**`）。
-#
-# 为什么必须豁免：归档副本的唯一价值是**与该家分支上的 commit 逐字节一致**——
-# sha256 对得上，才能证明「裁决方读的和参赛方交的是同一份」。而候选写作时的相对链接
-# 是按它**活着时**的位置（`dev-plan/<产物>.md`）写的，归档到轮目录后深两层，链接失效。
-# 改链接 → 副本不再逐字节一致，README/MANIFEST 的 sha256 变成谎话；豁免 → 副本原样保留。
-# 取后者，与 anchor-gate 对 `rounds/**` 的处理同源：冻结物不可改，
-# 「让门禁对它永久报红只会让人不再看门禁」。
-#
-# ⚠⚠ **不要把整个 `rounds/` 加进来。**2026-09-08 起草者试过，一下豁免 94 份，
-# 把轮目录里**活着的**任务书、通知、裁定、发现登记也放过了——那些的坏链正是
-# doc-gate 一直在 catch 的。豁免的是归档副本，不是轮目录。
-#
-# ⚠ 候选**活着时**在 `dev-plan/` 根下，照常受全部 L1/L2/L3 检查——
-# 那才是链接必须成立的时刻。
-EXEMPT_MARKERS = ("/candidates/",)
+# 豁免：按路径前缀（EXEMPT）或路径片段（EXEMPT_MARKERS）跳过的文档；`--all` 会报出豁免了几份。
+# 2026-09-15 前这里豁免 `dev-plan/codex-reference/` 与轮次候选的归档副本（`rounds/<轮次>/candidates/**`），
+# 两者随 dev-plan 删除而不复存在（原配置与理由见 tag `dev-plan-final`）。
+# 新增豁免前先想清楚：豁免的只能是冻结副本，不是活文档——整目录豁免会把活文档的坏链一起放过。
+EXEMPT: tuple[str, ...] = ()
+EXEMPT_MARKERS: tuple[str, ...] = ()
 
 
 def exempt(path: str) -> bool:
     return path.startswith(EXEMPT) or any(m in path for m in EXEMPT_MARKERS)
 
-
-# archive/ 曾在此豁免。2026-09-07 该目录已整个撤销：两份逐字节副本经 diff 证明
-# 相对根下同名活文档零独有内容（仅多一行失效链接）故删除，两份 lifecycle 移至
-# dev-plan/ 根下加降级页眉、由 dev-plan-refact 轮定落点。豁免随之取消。
 
 # 声明「自足」的文档：§N 引用必须指向**本文件内**的标题。
 # 其他文档（裁决书、整合记录、评审）引用的是别的文档的章节，不适用本项。
@@ -94,11 +73,6 @@ SELF_CONTAINED = (
     # 修法是让它降为**被核对的引用**：四条各注出处 §，本门验那个 § 真的存在。
     "sunmoonai/docs/dev-agent-task/composition/protocol/GO.md",
 )
-# 两份 development-lifecycle-*.md 曾在此名单内，2026-09-07 移出：它们已被
-# agent-dev-guide.md 取代、降为历史档案，「自足」是对现行权威文档的要求。
-# 移出时它们各带 1–2 处跨文档 §N 引用（如 §9.3 实指 round-protocol.md），
-# 这些是本门从未检查过的存量——它们此前一直落在 archive/ 豁免里。
-# **不在此处改写历史稿正文**，由 dev-plan-refact 轮定落点时一并处理。
 
 USAGE = "用法: doc-gate.py <文件>... | --all | --survey | --selfcheck"
 
