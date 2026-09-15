@@ -1,7 +1,7 @@
 # SDP：软件开发计划（Software Development Plan）
 
 由**执行 agent** 交付：怎样做出来——拆成哪些单元、先后顺序、实施记录，以及代码与证据。
-多个执行 agent 各交一份候选时，按 [`../../protocol/`](../../protocol/round-rules.md) 的轮次协议比较选定。
+多个执行 agent 各交一份候选时，按 [`../../protocol/`](../../protocol/competition-rules.md) 的多方竞争协议比较选定。
 
 ## 工作单元要说清什么
 

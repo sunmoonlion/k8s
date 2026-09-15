@@ -220,7 +220,7 @@ Artifact 可以有草稿、冻结、陈旧、被替代等版本属性；这些�
 
 ### 3.4 T0/T1/T2 不是三套状态机
 
-> 依据的通用规范：[轮次协议「档位」](../../../../dev-agent-standards/protocol/round-rules.md)
+> 依据的通用规范：[多方竞争协议「档位」](../../../../dev-agent-standards/protocol/competition-rules.md)
 
 三档共享同一工单 schema、状态机和发布门，只改变 guard、必需 Artifact 和 Attempt 组：
 

@@ -14,7 +14,7 @@
 | [`deliverables/sdd/sdd-rules.md`](deliverables/sdd/sdd-rules.md) | SDD 规则：规划 agent 交回的设计 |
 | [`deliverables/sdp/sdp-rules.md`](deliverables/sdp/sdp-rules.md) | SDP 规则：执行 agent 交回的计划、实施与交付 |
 | [`deliverables/uat/uat-rules.md`](deliverables/uat/uat-rules.md) | UAT 规则：验收 agent 的验证与采信 |
-| [`protocol/round-rules.md`](protocol/round-rules.md) | 多方竞争的轮次协议；同目录另有尚未生效的草案 |
+| [`protocol/competition-rules.md`](protocol/competition-rules.md) | 多方竞争协议；同目录另有尚未生效的草案 |
 
 ## 任务与交付物
 
@@ -31,5 +31,5 @@
 
 ## 多方竞争
 
-任何一种交付物（SDD、SDP、UAT）都可能由多个 agent 各交一份，再比较选定。这时按 [`protocol/`](protocol/round-rules.md)
-的轮次协议进行：各自提案、互评、裁决、异议、验收、确认、发布；各任务写明自己的轮次操作做法，状态一律从产物反推，不从声明读取。
+任何一种交付物（SDD、SDP、UAT）都可能由多个 agent 各交一份，再比较选定。这时按 [`protocol/`](protocol/competition-rules.md)
+的多方竞争协议进行：各自提案、互评、裁决、异议、验收、确认、发布；各任务写明自己的操作做法，状态一律从产物反推，不从声明读取。

@@ -1,6 +1,6 @@
 # 并行评优轮：流程
 
-> 依据的通用规范：[多方竞争的轮次协议](../../../dev-agent-standards/protocol/round-rules.md)
+> 依据的通用规范：[多方竞争协议](../../../dev-agent-standards/protocol/competition-rules.md)
 
 > 最后更新：2026-09-04
 >
