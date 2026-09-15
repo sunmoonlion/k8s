@@ -15,7 +15,7 @@
 | 约束 | 本文结论 |
 | --- | --- |
 | constraints A1：通用执行编排与领域能力分开 | `dev.change/1` 复用运行时；新增业务能力优先新增 Task Profile 与相容 Agent Profile |
-| constraints A2：通用部分也要有纪律 | 执行纪律引用 round-protocol，不把 harness 原语当协作纪律 |
+| constraints A2：通用部分也要有纪律 | 执行纪律引用 competition-protocol，不把 harness 原语当协作纪律 |
 | constraints A3：四本账落 PostgreSQL | Git 只作开发 Artifact 载体与手工投影，不作产品账本 |
 | constraints A4：执行层租用不自建 | 依赖止于稳定 SDK，经 Port 隔离；不直接绑定裸协议 |
 | constraints A5：领域概念不进 Port | Port 接受通用输入、能力与结果；投资组合等词留在领域 Profile |
@@ -54,7 +54,7 @@ router 和 orchestrator 都不是 agent 角色；过渡期由人运行脚本只�
 | `acceptor` | 按冻结标准独立验收 | 不得是 arbiter 或基座作者 |
 | `publisher` | 在批准后执行发布 Attempt | 不能自己授予发布权限 |
 
-角色分离以 round-protocol“⑤ 验收 与 ⑥ 确认”为准，本文 [§3.19](../../../composition/protocol/round-operations.md) 给出操作算法。
+角色分离以 competition-protocol“⑤ 验收 与 ⑥ 确认”为准，本文 [§3.19](../../../composition/protocol/competition-operations.md) 给出操作算法。
 这些角色在产品运行时里是 Attempt 的 `kind` 或 principal 行为，不新增内核对象。
 
 ### 2.3 Task Profile 与 Agent Profile
@@ -138,7 +138,7 @@ max_rollbacks = 2
 ### 2.5 路由只读可判字段
 
 路由成本判断不读题目散文，至少从以下字段提取 `matched_features`：写者数、提案者数、只读输入是否钉版本、
-是否依赖/续接、是否触及权威路径、是否有副作用、是否要求审计。风险档位则严格按 round-protocol：
+是否依赖/续接、是否触及权威路径、是否有副作用、是否要求审计。风险档位则严格按 competition-protocol：
 不可逆、权威层、已知对立、判据未定任一命中就是 T2；多文件或多仓且方向无争议为 T1；其余才可能 T0。
 风险档位不能反过来充当成本证据，否则是循环论证。
 
@@ -178,8 +178,8 @@ worktree、共享发布面，以及非协调者不得写的单写者文件（如
 **不再是独立候选**。但——
 
 > **脚本化产生候选目前没有可用工具**（曾有的 `parallel-proposals.py` 已于 2026-09-06 删除：
-> 三轮一次没用过、真实模型调用从未验证、只覆盖 codex 系执行者）。在此之前，
-> **隔离靠纪律，而且无法事后证明某一轮真的独立。不得据此声称隔离由机制保证。**
+> 三次竞争一次没用过、真实模型调用从未验证、只覆盖 codex 系执行者）。在此之前，
+> **隔离靠纪律，而且无法事后证明某一次竞争真的独立。不得据此声称隔离由机制保证。**
 
 ### 3.3 Attempt 与状态投影
 
@@ -228,9 +228,9 @@ Artifact 可以有草稿、冻结、陈旧、被替代等版本属性；这些�
 | --- | --- | --- | --- |
 | T0 | 做 → 独立验收 → 确认 | 一个产出、一个独立验收 | 开工可由已批准窄包自动决定；不可逆发布仍由人确认 |
 | T1 | 单稿 → 独立评审 → 验收 → 确认 | 一稿、一评、一验 | 工单冻结与开工可合成一次明确确认 |
-| T2 | round-protocol 七环节 | N 份隔离候选、互评、裁决、异议、独立验收 | 题目/判据冻结与参与方/路线确认分开 |
+| T2 | competition-protocol 七环节 | N 份隔离候选、互评、裁决、异议、独立验收 | 题目/判据冻结与参与方/路线确认分开 |
 
-产物命名、候选冻结、处置表和验收方算法见 [§3.19](../../../composition/protocol/round-operations.md)–[§3.22](../components/04-agent-execution/agent-dev-guide.md)，来源为现行 round-protocol。状态脚本从 commit 反推，工作区
+产物命名、候选冻结、处置表和验收方算法见 [§3.19](../../../composition/protocol/competition-operations.md)–[§3.22](../components/04-agent-execution/agent-dev-guide.md)，来源为现行 competition-protocol。状态脚本从 commit 反推，工作区
 不参与判定；空参与方不是“完成”；脚本首次增加判据时先与人工结论对照，并列出未检查范围。
 
 ⚠ **档位是风险轴，「建不建 Git 工作区」是载体轴，两者正交，不可互相推导。**
@@ -382,7 +382,7 @@ S 层比对象与边，R 层比一次执行的序列。
 不能证明 Agent 无法伪造批准或绕过发布。
 
 目标产品态应优先复用已有认证主体、授权服务、一次性 Interaction 恢复和 Side Effect 网关；若某条写路径
-绕过这些组件，就先画出真实动作路径并在路径上设门，不增加旁路存储来制造安全感。当前手工轮次的
+绕过这些组件，就先画出真实动作路径并在路径上设门，不增加旁路存储来制造安全感。当前手工进行的多方竞争的
 人类确认仍是治理记录，证据等级应诚实标为 `reported`，不得声称身份已 `attested`。
 
 **威胁模型要同时覆盖三件事**：伪造肯定的批准；没有批准仍能直接写交付面；
@@ -429,7 +429,7 @@ Task B；一次批准的破坏性动作**不构成下次的默许**。批准绑�
 ⚠ **「我看着行」不是依据。依据要能被半年后的自己复核。**
 
 **是否简化流程的裁量权在 principal，不在执行者。**执行者不得自行把完整选优降为单路，
-也不得通过询问自己派出的 subagent 或取得多数同意来制造批准——**自我批准禁令在任何轮次
+也不得通过询问自己派出的 subagent 或取得多数同意来制造批准——**自我批准禁令在任何一次竞争
 都成立**。
 
 责任归属决定了这条禁令的理由：
@@ -540,7 +540,7 @@ Execution Scope 只能落在进程外层，Approval Policy 只能事后审计—
 采信等级取 `min(来源等级, 可见上限, 隔离强度, 验收独立性, 覆盖)`，任一未知就降级，不取平均。
 `tool.reported` 事件是重算索引，不是结论；commit、diff、测试、锚点与远端状态由 validator 独立重算。
 覆盖声明必须同时写 checked 与 not_checked；零命中只有在输入集合成功枚举时才能判 pass，否则是
-`UNKNOWN`。这落实 round-protocol“判据自身的质量”。
+`UNKNOWN`。这落实 competition-protocol“判据自身的质量”。
 
 ### 5.3 手工态与服务态的等效判据
 
@@ -675,7 +675,7 @@ G1 是本轮对旧路线的修正：先验证现有库原语，不先发明字�
 | `round.md` Task 主档 | Task 表 | 三档至少各一条轨迹等效且 provenance 不下降 |
 | commit + rulings + events 投影 | Event 表 | 同一历史轮次输出相同状态序列，新判据已人工对照 |
 | 落盘通知与人工投喂 | executor adapter / principal channel | 自动执行器有进程入口；人工执行器有显式审计桥 |
-| `round-status.py --verify` | acceptance runner | 对历史轮次逐条判定一致 |
+| `competition-status.py --verify` | acceptance runner | 对历史轮次逐条判定一致 |
 | `git worktree add` | provision service | 独占、干净、基线判据进代码并有测试；worktree 载体可保留 |
 
 事务、租约、fencing 只有服务态验收通过才算实现，不能用轨迹“相似”替代。

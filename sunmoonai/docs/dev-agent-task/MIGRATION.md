@@ -59,8 +59,8 @@
 | guide 人的收件箱 | I02-063 | F05 | 人读的 Interaction 投影 |
 | guide 人这一侧的义务 | I02-061 | P-prd + B05 | 拆：「请求写清边界、给可判定验收」进 P-prd（原写 P-brd，BRD 已并入 PRD） |
 | guide principal 裁量权与改判 | I02-059 | B + P（总则） | 拆：改判三要素是通用纪律 |
-| guide T2 七环节操作闭环、通知取件检视面 | I02-047/049 | P-sdd | 随 protocol 移入，文件 `protocol/round-operations.md` |
-| `protocol/` 全部（round-protocol、README、GO、round-status.py、草案） | I03-*、I04-* | P-sdd | 2026-09-15 由 B04 移入 dev-agent-standards（先放 SDD 下，同日提到根下 `dev-agent-standards/protocol/`）：任何交付物多方竞争时的规程 |
+| guide T2 七环节操作闭环、通知取件检视面 | I02-047/049 | P-sdd | 随 protocol 移入，文件 `protocol/competition-operations.md` |
+| `protocol/` 全部（competition-protocol、README、GO、competition-status.py、草案） | I03-*、I04-* | P-sdd | 2026-09-15 由 B04 移入 dev-agent-standards（先放 SDD 下，同日提到根下 `dev-agent-standards/protocol/`）：任何交付物多方竞争时的规程 |
 | implementation-plan 交付规则 | I07-004 | B06 | |
 | guide 发布三个路径、交付清理恢复、保留与垃圾回收 | I02-043/033/044 | B06 | |
 | guide 跨会话续接 | I02-088 | B04 | checkpoint 属执行 |
@@ -102,9 +102,10 @@ P-prd 1、P-sdp 1、P-uat 4。
 
 所有者定原则：`dev-agent-standards/` 只放通用规范；具体任务只放通用规范的具体化与不通用的规范。据此：
 
-- constraints 与本仓的轮次协议、工具（round-protocol、round-operations、GO、README、round-status.py）归平台一级，
+- constraints 与本仓的多方竞争协议、工具（competition-protocol、competition-operations、GO、README、competition-status.py）归平台一级，
   放在 `dev-agent-task/composition/`（`composition/constraints.md`、`composition/protocol/`）。上表中写作 P 的这几项以此为准。
 - `dev-agent-standards/` 写入抽象后的通用规范：总则、`approvals.md`（人的批准点）、`general-rules.md`（总则与任务记录模板）、
   SDD「设计必须满足」、SDP「执行规范」与「交付、发布与保留」、UAT 的验证与采信原则、`protocol/competition-rules.md`（通用多方竞争协议）。
 - 任务里的原文全部保留，作为具体化；每个具体化的节在标题下链接到它依据的通用规范（原 56 处；「状态从产物反推」不再作为通用总则后，backend 指南 §3.18 改为本任务自己的规定，现 55 处）。
 - 「状态」不再作为一般任务的规范（一般任务可能只是一段话）：总则「状态从产物反推」、生命周期「怎么看出做到哪了」一节移出 standards，原文在 backend 指南 §3.18；SDD 设计原则 P2 移出 standards（其后 P3–P6 改号为 P2–P5），原文仍在 `composition/agent-dev-guide.md` §1.6 的 P2。
+- 任务侧协议文件改名：`round-protocol.md` → `competition-protocol.md`、`round-operations.md` → `competition-operations.md`、`round-status.py` → `competition-status.py`（参数 `--competition`，旧名 `--round` 仍可用），「轮次」改称「多方竞争」；历史目录 `rounds/`、工单 `round.md` 与钉在提交上的锚点保留旧名。

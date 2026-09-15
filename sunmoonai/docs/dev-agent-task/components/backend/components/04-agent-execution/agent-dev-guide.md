@@ -2,7 +2,7 @@
 
 > 迁自 [`dev-plan/agent-dev-guide.md`](../../../../../dev-plan/agent-dev-guide.md) 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../../../../MIGRATION.md)。
 >
-> 2026-09-15：§3.19、§3.21 已随 protocol 移到 [`../../../../composition/protocol/round-operations.md`](../../../../composition/protocol/round-operations.md)。
+> 2026-09-15：§3.19、§3.21 已随 protocol 移到 [`../../../../composition/protocol/competition-operations.md`](../../../../composition/protocol/competition-operations.md)。
 
 ### 2.6 执行层：租用什么、自建什么
 
@@ -280,7 +280,7 @@ integrate: task/<task-id>/integrate/<run-id>
 | 两个单元改同一文件 | 目标不同则各分支独立改由 integrator 解冲突；共同写同一事实则重划所有权或串行 | 同时共享写、事后凭 mtime 猜作者 | 停写；双写内容各自成 commit，交 integrator 判重复/互补/无关 |
 | 多仓 / 子模块 | 每仓独立 owner branch/commit；子仓对象先可达再更新父仓 gitlink | 只交父仓 gitlink | 补齐每仓映射；**子仓对象不可达的 gitlink 不进整合** |
 | 同一 Task 多 Attempt 重试 | 每次新 attempt/worktree/branch；旧结果标失败或 superseded | 在旧 Attempt 目录原地续写 | **旧目录冻结为失败现场**，新 Attempt 从固定 commit 重开 |
-| 候选修订 | 新 commit + `supersedes` | 冻结后改 branch 再沿用旧评审 | 新哈希标为冻结后修订并记 `supersedes`，不进本轮比较 |
+| 候选修订 | 新 commit + `supersedes` | 冻结后改 branch 再沿用旧评审 | 新哈希标为冻结后修订并记 `supersedes`，不进本次比较 |
 | 内容相同的重复候选 | 按 digest 去重，可共享内容对象，**保留各自 provenance** | 删一方记录后声称只有一个来源 | 合并内容对象，两份 provenance 都留 |
 | 合并冲突 | integrator 在独占整合 worktree 解析，记冲突双方与裁决依据 | 让候选作者互相覆盖，或按时间自动取新 | 同左；**不按时间自动取新** |
 | 一方删除、一方修改同一文件 | 作为语义冲突交 integrator 依 Task 裁决并补回归 | 机械采用 delete/modify 任一侧 | 升给 integrator，不机械取任一侧 |
@@ -506,10 +506,10 @@ git status --porcelain=v1
 > 依据的通用规范：[SDP「执行形态、停止与成本」](../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
 
 异议采纳且触及结构、验收失败、principal 打回，都回到③，重新冻结与验证；
-同一轮回退超过两次就停止重整合，回到问题和标准本身确认，不无限重试。
+同一次竞争回退超过两次就停止重整合，回到问题和标准本身确认，不无限重试。
 预算停止规则仍见 §3.13；不通过向参与方施加模糊时间压力来换取缺证据的半成品。
 
-逾期使用已冻结的可观测判据。观察窗 `W` 由本轮实际交付用时的中位数得出，
+逾期使用已冻结的可观测判据。观察窗 `W` 由本次竞争实际交付用时的中位数得出，
 不能拿一个临时秒数冒充；数据不足算不出 W 时，记录“不可判”并按已批准的停止规则处理，
 不得自行据时钟宣布弃权。
 
@@ -521,7 +521,7 @@ git status --porcelain=v1
 | 没有足够观测或观察窗无依据 | UNKNOWN，不是弃权、超时通过或同意 |
 
 延长观察窗可记录后执行，缩短须 principal 确认。宣布逾期前实际运行判据并保存观测。
-各环节后果不同：①不交则候选数减少，降到一家时停轮；②评审不计但候选仍在池中；
+各环节后果不同：①不交则候选数减少，降到一家时停下；②评审不计但候选仍在池中；
 ④未响应按协议记弃权，**不是认可**；⑤验收方不可用则按同一算法换人；
 ⑥没有逾期默认，未经确认就不发布。只有冻结协议已允许的缺席处理才能直接执行，
 额外免除参与方仍属 H3，不得把“超时处理”用作绕开授权的理由。
@@ -689,7 +689,7 @@ blocker, next_action, facts_to_revalidate
 | 多数票覆盖失败测试 | 偏好压过事实 |
 | 全体一致的共同盲区 | 多个相似模型可能共享盲区，一致不等于正确 |
 | 只固定分支名 | 评审对象漂移 |
-| 冻结后原地替换，或把迟到 commit 算进本轮 | 比较对象漂移，无法复核 |
+| 冻结后原地替换，或把迟到 commit 算进本次比较 | 比较对象漂移，无法复核 |
 | final commit 不回归 | 整合缺陷未被发现 |
 | 大补丁混合多条主张 | 无法逐条处置，接受与拒绝被绑在一起 |
 | 把会话记忆或人脑当状态账 | 接手者无法恢复现场，决定无痕丢失 |

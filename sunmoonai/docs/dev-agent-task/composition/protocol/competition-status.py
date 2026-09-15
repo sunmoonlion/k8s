@@ -3,26 +3,26 @@
 
 **为什么它不是第三个被删的脚本**（见 `constraints.md`「保证这些被遵守的三层」）：
 
-1. **不靠人记得跑**：它是 `round-protocol.md`「收到『继续』时怎么办」第 4 问的机器化——
+1. **不靠人记得跑**：它是 `competition-protocol.md`「收到『继续』时怎么办」第 4 问的机器化——
    每个执行者收到固定指令后的第一个动作就是跑它。它挂在必经路径上，
    与 `doc-gate.py` 挂在 pre-commit 是同一种做法。
 2. **结论不取决于工作区状态**：一切判定对照 **git 提交**（`git show <分支>:<路径>`），
    不看工作区文件。同一个仓库状态在任何机器上给出同一结论。
 
 用法：
-    round-status.py                  # 自动找 status=ACTIVE 的轮次
-    round-status.py --round runtime  # 指定轮次（值是 rounds/ 下的目录名）
-    round-status.py --json           # 机器可读输出
-    round-status.py --round runtime --verify   # 机械验收：把 ⑤ 里机器能判的部分判掉
+    competition-status.py                  # 自动找 status=ACTIVE 的竞争
+    competition-status.py --competition runtime  # 指定哪次竞争（值是 rounds/ 下的目录名；旧参数名 --round 仍可用）
+    competition-status.py --json           # 机器可读输出
+    competition-status.py --competition runtime --verify   # 机械验收：把 ⑤ 里机器能判的部分判掉
 
 退出码：
     0  正常；`--verify` 时表示机械判定零失败
     1  `--verify` 有失败项（标「人判」的不计入）
-    2  用法错误：找不到指定轮次、没有 ACTIVE 轮次、有多个 ACTIVE、round.md 缺字段
+    2  用法错误：找不到指定的竞争、没有 ACTIVE 的竞争、有多个 ACTIVE、round.md 缺字段
 
 同目录的配套：`README.md`（本目录文件说明、投喂、所有者的确认）。
 
-调用方式同时写在 `round-protocol.md`「8b. 脚本怎么调」一节——
+调用方式同时写在 `competition-protocol.md`「8b. 脚本怎么调」一节——
 那一节里的每条命令都以能实跑为准，改了参数名必须同步改那一节。
 """
 
@@ -87,13 +87,13 @@ def artifact_paths(cfg: dict, kind: str, who: str | None = None) -> list[str]:
 
     协议正文写 `rounds/<id>/<kind>-<名>.md`，但实跑出现过两种变体：
 
-    · 评审/异议/验收归档进 `reviews/` 子目录（`refact-fable`、`runtime` 两轮）。
+    · 评审/异议/验收归档进 `reviews/` 子目录（`refact-fable`、`runtime` 两次竞争）。
       这两处已被**已发布**文档当证据锚引用（`runtime-architecture.md @ ceb7291c:454/458/461`、
       `refact-fable.md @ ceb7291c:23/29/38/43`），改名等于让已发布的证据链失效，所以不改文件、改判据。
-    · 处置记录与环节通知带 `<round-id>-` 前缀（`runtime`、`_fixups` 两轮）。
+    · 处置记录与环节通知带 `<round-id>-` 前缀（`runtime`、`_fixups` 两次竞争）。
 
     四种组合全找过才算缺。2026-09-06 之前只按一个拼法找，把已经走完七环节发布掉的
-    `runtime` 轮判成「当前环节 ①，缺五家」——**覆盖不全的判据会给假答案**，
+    `runtime` 竞争判成「当前环节 ①，缺五家」——**覆盖不全的判据会给假答案**，
     这次的方向是假失败（安全侧），但同一个毛病换个方向就是假通过。
     """
     stem = f"{kind}-{who}" if who else kind
@@ -104,10 +104,10 @@ def artifact_paths(cfg: dict, kind: str, who: str | None = None) -> list[str]:
 def refs_for(cfg: dict, name: str, who: str | None) -> list[str]:
     """一件产物可能提交在哪个 ref 上。
 
-    轮次结束后各家分支会被回收（`runtime/*` 现在一个都不在了），产物归档进主线。
-    只认 `<轮次>/<家>` 分支的话，每一轮做完之后都会被自己判成「没做」。
+    竞争结束后各家分支会被回收（`runtime/*` 现在一个都不在了），产物归档进主线。
+    只认 `<竞争名>/<家>` 分支的话，每次竞争做完之后都会被自己判成「没做」。
     """
-    # `<轮次>/<家>` 与**裸的 `<家>`** 都要认。环节通知说的是「commit 到你自己的分支」，
+    # `<竞争名>/<家>` 与**裸的 `<家>`** 都要认。环节通知说的是「commit 到你自己的分支」，
     # 各家对此的落法不一致：2026-09-06 runtime-refact ① 实测，luna / cursor 建了
     # `runtime-refact/<家>`，qwen 直接提交在 `qwen` 上。只认前者会把**照指示做的那家
     # 判成没交**，进而按逾期处理——判据把合规者判出局，比漏判更危险。
@@ -185,11 +185,11 @@ def notice_path(cfg: dict, stage: str) -> tuple[str, bool]:
 
     ⚠ **算状态的东西必须同时算出下一步的指针。**2026-09-08 F-17：
     本脚本算出了环节，却不说通知在哪；`GO.md` 在另一节里靠人把环节号搬过去、
-    再手工拼路径。整合方没去 `ls`，而是凭「前两轮 ③ 没有通知」推理出本轮也没有，
+    再手工拼路径。整合方没去 `ls`，而是凭「前两次 ③ 没有通知」推理出本次也没有，
     于是停在原地——**推理是对的，前提是旧的**。指针由算出状态的同一处给出，
     这一步就没有人可推理的余地。
 
-    两种拼法都认：协议正文的 `call-<环节>.md`，与早期两轮的
+    两种拼法都认：协议正文的 `call-<环节>.md`，与早期两次竞争的
     `<round-id>-call-<环节>.md`。只认一种会把人指到不存在的文件上
     （同一个坑 `artifact_paths` 已经吃过一次）。
     """
@@ -219,7 +219,7 @@ def organizer_of(cfg: dict, stage: str) -> tuple[str, str]:
 
     协议 §6.1 的规则：①② 的通知由发起人写，③ 之后由裁决方写。
     ⚠ 该规则有一个**隐含前提：裁决方不是参赛方**。2026-09-08 R6 打破了它
-    （本轮 arbiter == integrator == 参赛方），于是 §12「④ 是对整合权的唯一制衡」
+    （本次 arbiter == integrator == 参赛方），于是 §12「④ 是对整合权的唯一制衡」
     与 §6.1 直接冲突：让被制衡方去写制衡规则，制衡即为空。见 findings.md F-21。
 
     返回 (组织者, 依据)。
@@ -237,7 +237,7 @@ def organizer_of(cfg: dict, stage: str) -> tuple[str, str]:
 def role_checks(cfg: dict) -> list[str]:
     """角色配置的一致性。**每次都跑，不一致即拒绝判定。**
 
-    理由：角色配错不是一个环节的错，是整轮作废（R1 就是这么来的）。
+    理由：角色配错不是一个环节的错，是整次竞争作废（R1 就是这么来的）。
     让它在「已经跑完两个环节」之后才被发现，代价是四家白干。
     """
     bad: list[str] = []
@@ -245,7 +245,7 @@ def role_checks(cfg: dict) -> list[str]:
     arb, integ = cfg.get("arbiter", ""), cfg.get("integrator", "")
     acc, base = cfg.get("acceptor", ""), cfg.get("base_author", "")
 
-    # 名字一律对照本轮 round.md 自己核对：参赛名单就是 proposers，正是本脚本读的字段。
+    # 名字一律对照本次的 round.md 自己核对：参赛名单就是 proposers，正是本脚本读的字段。
     # （2026-09-10 前另有 agents.toml 登记表，已按所有者要求删除。）
     pr = cfg.get("principal", "")
     if not pr:
@@ -285,7 +285,7 @@ def role_checks(cfg: dict) -> list[str]:
 def find_active(root: Path, want: str | None) -> tuple[str, dict]:
     base = root / ROUNDS_DIR
     if not base.is_dir():
-        die(f"没有 {ROUNDS_DIR}/ —— 本仓还没有按 round-protocol 建轮次目录")
+        die(f"没有 {ROUNDS_DIR}/ —— 本仓还没有按 competition-protocol 建竞争目录")
     found = []
     for d in sorted(base.iterdir()):
         md = d / "round.md"
@@ -297,11 +297,11 @@ def find_active(root: Path, want: str | None) -> tuple[str, dict]:
         if not want and cfg.get("status") == "ACTIVE":
             found.append((d.name, cfg))
     if want:
-        die(f"找不到轮次 {want}")
+        die(f"找不到竞争 {want}")
     if not found:
-        die("没有 status=ACTIVE 的轮次")
+        die("没有 status=ACTIVE 的竞争")
     if len(found) > 1:
-        die(f"有多个 ACTIVE 轮次：{[n for n, _ in found]} —— 协议规定同时只允许一个")
+        die(f"有多个 ACTIVE 的竞争：{[n for n, _ in found]} —— 协议规定同时只允许一个")
     return found[0]
 
 
@@ -325,8 +325,8 @@ def final_path_list(cfg: dict) -> list[str]:
 def objection_disposed(cfg: dict, name: str) -> bool:
     """④b：裁决方是否已把 ④ 的异议逐条处置并落盘（协议 §12「连同异议原文写进处置记录」）。
 
-    两种先例都认：单独的 disposition-objections.md（runtime-refact 轮），
-    或本轮处置记录里有「④ 异议……处置」一节（runtime 轮 runtime-disposition.md 的 K 节）。
+    两种先例都认：单独的 disposition-objections.md（runtime-refact 竞争），
+    或本次处置记录里有「④ 异议……处置」一节（runtime 竞争 runtime-disposition.md 的 K 节）。
     """
     if locate(cfg, name, "disposition-objections") is not None:
         return True
@@ -357,7 +357,7 @@ def stage_table(cfg: dict, name: str) -> list[dict]:
         rounds.append({"stage": tag, "who": who, "done": rows,
                        "skipped": tag.split()[0] in skip})
 
-    # ① 提案：轮次进行中，候选在各家分支的共享最终路径上；
+    # ① 提案：竞争进行中，候选在各家分支的共享最终路径上；
     #    归档后在 rounds/<id>/[reviews/]candidate-<名>.md。两处认一处。
     rows = {}
     for w in proposers:
@@ -374,14 +374,14 @@ def stage_table(cfg: dict, name: str) -> list[dict]:
         # ② 之后的产物走 `<环节>-<名>.md` 的**分家路径**，HEAD 只会命中自己那份，
         # 不受影响，故只在此处过滤，不动 refs_for 本身（它还要服务 locate 与裁决稿）。
         refs = [r for r in refs_for(cfg, name, w) if r != "HEAD"]
-        # 多交付物轮次：**每一条**最终路径都要有该家的提交，缺一即未交。
+        # 多交付物的竞争：**每一条**最终路径都要有该家的提交，缺一即未交。
         # 不用 any() 跨路径——那会让「只交了其中一份」被判成已交。
         live = all(
             any(committed(r, fp)
                 and blob_lines(r, fp) != blob_lines("master", fp)
                 for r in refs)
             for fp in final_paths)
-        # 多交付物轮次按目录归档：<round_dir>/candidates/<家>/<最终路径的文件名>（dev-plan-refact 起）。
+        # 多交付物的竞争按目录归档：<round_dir>/candidates/<家>/<最终路径的文件名>（dev-plan-refact 起）。
         # ⚠ 发布之后只能靠归档判：定稿写进主线后，裁决方分支上的同名文件与主线行数相同，
         #    上面「与主线不同」的判法会把它判成没交；各家分支重置到发布点后五家都会这样
         #    （2026-09-10 发布提交 d8caf018 后实测，见 findings.md F-26）。归档在主线上。
@@ -421,10 +421,10 @@ def stage_table(cfg: dict, name: str) -> list[dict]:
         {acc: locate(cfg, name, "acceptance", acc) is not None} if acc else {})
 
     # ⑥ 确认：人的动作，但**留下的痕迹**是机器可查的。
-    #    这一轮自己的规矩就写在 rulings.md 抬头：「回执只认落盘——对话里说『同意』不算」，
+    #    这次竞争自己的规矩就写在 rulings.md 抬头：「回执只认落盘——对话里说『同意』不算」，
     #    「人确认 = 是 的行，以所有者 commit 为生效时刻」。那一列就是判据。
-    #    早先把 ⑥ 一律标成「不可由命令判定」，等于让**任何**轮次都到不了 ⑦，
-    #    于是每一轮走完都会跟自己的 status=DONE 打架。人判的是内容，不是有没有落盘。
+    #    早先把 ⑥ 一律标成「不可由命令判定」，等于让**任何**一次竞争都到不了 ⑦，
+    #    于是每次竞争走完都会跟自己的 status=DONE 打架。人判的是内容，不是有没有落盘。
     pend = pending_rulings(cfg, name)
     if pend is None:
         rounds.append({"stage": "⑥ 确认", "who": ["human"], "done": None,
@@ -449,7 +449,7 @@ def _cells(row: str) -> list[str]:
 def pending_rulings(cfg: dict, name: str) -> list[str] | None:
     """rulings.md 里「人确认」尚未落成「是」的裁定编号。
 
-    返回 None = 这一轮没有 rulings.md，机器判不了，交回给人。
+    返回 None = 这次竞争没有 rulings.md，机器判不了，交回给人。
     """
     # ⚠ 裁定记录是组织者的产物，真源在主线。裁决方分支上那份是它开工时的旧副本，不跟进主线。
     #    2026-09-10 实测：所有者的 ⑥ 确认（R8 与「人确认登记」表）只在主线，locate 却先命中
@@ -552,12 +552,12 @@ def verify(cfg: dict) -> int:
         dtext += "\n" + git("show", f"{hit_o[1]}:{hit_o[0]}")[1]
     unlogged = [f"{h} {t[:28]}" for h, t in commits if h not in dtext]
     if cfg.get("status") != "ACTIVE":
-        # ⑦ 发布后 `master..<裁决方>` 不再是「本轮新增的提交」：裁决稿已并入主线，
+        # ⑦ 发布后 `master..<裁决方>` 不再是「本次新增的提交」：裁决稿已并入主线，
         # 剩下的差集是发布方式的产物（squash / cherry-pick），与登记完整性无关。
         # 这一项**只在 ⑤ 之前有意义**，事后跑会报出与产物无关的失败。
         # 不静默跳过——标「人判」并说明为什么判不了，见协议 §8.1 第 2 条。
         line("提交→处置记录", None,
-             f"轮次 status={cfg.get('status')}，非 ACTIVE：发布后该对账失去意义，"
+             f"竞争 status={cfg.get('status')}，非 ACTIVE：发布后该对账失去意义，"
              f"不判（此刻差集 {len(unlogged)} 个，不构成结论）")
     else:
         line("提交→处置记录", not unlogged,
@@ -665,7 +665,7 @@ def cfg_checks(cfg: dict) -> list[tuple[str, str, str]]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--round")
+    ap.add_argument("--competition", "--round", dest="round")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--verify", action="store_true")
     args = ap.parse_args()
@@ -679,17 +679,17 @@ def main() -> int:
     if args.verify:
         return verify(cfg)
 
-    # ⚠ **角色一致性先于一切判定。**角色配错不是一个环节的错，是整轮作废；
+    # ⚠ **角色一致性先于一切判定。**角色配错不是一个环节的错，是整次竞争作废；
     #    等两个环节跑完才发现，代价是四家白干（R1 即此）。
     role_bad = role_checks(cfg)
     if role_bad:
         active = cfg.get("status") == "ACTIVE"
-        # ACTIVE 轮拒绝判定：角色配错是整轮作废，越早撞见越省。
-        # 非 ACTIVE 轮**照样全文报出来，只是不拦**——那些轮已经走完，配置改不回去了，
+        # ACTIVE 的竞争拒绝判定：角色配错是整次竞争作废，越早撞见越省。
+        # 非 ACTIVE 的竞争**照样全文报出来，只是不拦**——那些竞争已经走完，配置改不回去了，
         # 拦住只会让人查不了历史。⚠ 但不许静默跳过：本仓「archive/ 静默跳过」
         # 就是同一个病，覆盖不全的检查会让人以为查过了。
         head = ("round.md 角色配置不一致，拒绝判定"
-                if active else "⚠ round.md 角色配置不一致（轮次非 ACTIVE，只报不拦）")
+                if active else "⚠ round.md 角色配置不一致（竞争非 ACTIVE，只报不拦）")
         print(f"{head}（{len(role_bad)} 项）：\n", file=sys.stderr)
         for b in role_bad:
             print(f"    · {b}", file=sys.stderr)
@@ -725,7 +725,7 @@ def main() -> int:
     conflict = ""
     if declared == "DONE" and not done:
         conflict = (f"⚠ round.md 声明 DONE，按产物却算到「{current}」。"
-                    "二者必有一错：要么产物没归档到判据找得到的地方，要么这一轮其实没走完。")
+                    "二者必有一错：要么产物没归档到判据找得到的地方，要么这次竞争其实没走完。")
     elif declared == "ACTIVE" and done:
         conflict = "⚠ 七个环节的产物都齐了，round.md 却还是 ACTIVE——该走 ⑦ 收尾并改 status。"
 
@@ -735,7 +735,7 @@ def main() -> int:
                           ensure_ascii=False, indent=2))
         return 0
 
-    print(f"轮次 {name}   档位 {cfg.get('tier','?')}   状态 {cfg.get('status','?')}")
+    print(f"竞争 {name}   档位 {cfg.get('tier','?')}   状态 {cfg.get('status','?')}")
     fps = final_path_list(cfg)
     print("共享最终路径 " + ("；".join(fps) if len(fps) > 1 else fps[0]))
     print(f"基座 {cfg.get('baseline','无')}   裁决方 {cfg.get('arbiter','?')}"

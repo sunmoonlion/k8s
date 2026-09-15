@@ -5,7 +5,7 @@
 ### 执行层租用，不自建
 
 通用部分的执行层采用 Codex 的 Python SDK（`openai-codex`，Apache 2.0）：
-不自建轮次生命周期、隔离进程、中断恢复、审批协议、工具与沙箱。
+不自建多方竞争生命周期、隔离进程、中断恢复、审批协议、工具与沙箱。
 
 **依赖边界严格限定在 SDK，不得直接依赖其 app-server 裸协议。**依据实测：
 
@@ -18,6 +18,6 @@
 执行器测试纪律层（隔离是否生效、吸收有没有留处置记录），否则每次测试都要真起
 harness 并需凭据。
 
-**harness 只给执行原语，不给运作纪律**：N 路隔离、轮次、中断恢复、审批、工具、
+**harness 只给执行原语，不给运作纪律**：N 路隔离、多方竞争、中断恢复、审批、工具、
 沙箱它有；三阶段可见性、提案包构造、评审协议、吸收处置记录、重叠分歧判据——
-这些在 [`round-protocol.md`](../../../../composition/protocol/round-protocol.md)，必须自建。
+这些在 [`competition-protocol.md`](../../../../composition/protocol/competition-protocol.md)，必须自建。
