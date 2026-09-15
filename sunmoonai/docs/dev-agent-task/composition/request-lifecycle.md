@@ -17,16 +17,16 @@
 ### 0.1 只收产品要求
 
 本文只约束产品中的 Submission → Task → Attempt → Delivery，以及实现该链路的六方：前端、后端、
-Agent runtime、Profile/验收器、运维、测试与维护者。开发 Agent 与人的工作流程分别由
-[`development-lifecycle-agent.md`](../../dev-plan/archive/development-lifecycle-agent.md) 和
-`development-lifecycle-human.md` 规定。
+Agent runtime、Profile/验收器、运维、测试与维护者。开发 Agent 与人的工作流程由
+[`agent-dev-guide.md`](agent-dev-guide.md) 和 [通用开发规范](../../dev-agent-standards/README.md)
+规定。
 
 一条要求能否进入产品正文，用下面的问题裁决：
 
 > **它是否必须落实为前端协议、后端持久化、Agent 执行纪律、运维控制或自动验收？**
 
 答案为“否”的内容不得冒充产品要求。仓库、commit、L1–L7 测试层次、Markdown 栏目、worktree
-选优等开发字段，只能进入开发 Profile 或 [`development-lifecycle-agent.md`](../../dev-plan/archive/development-lifecycle-agent.md)。
+选优等开发字段，只能进入开发 Profile 或 [`agent-dev-guide.md`](agent-dev-guide.md)。
 
 ### 0.2 本文负责什么
 
@@ -48,8 +48,8 @@ Agent runtime、Profile/验收器、运维、测试与维护者。开发 Agent �
 - 某个业务 Profile 的完整业务算法。
 
 这些分别属于 project-guide、具体开发工作单元、
-[`development-lifecycle-agent.md`](../../dev-plan/archive/development-lifecycle-agent.md)、
-`development-lifecycle-human.md` 和相应 Profile 规范。
+[`agent-dev-guide.md`](agent-dev-guide.md)、
+[通用开发规范](../../dev-agent-standards/README.md) 和相应 Profile 规范。
 
 ### 0.3 规范用语
 
@@ -644,6 +644,6 @@ Profile 协议或终态时，必须说明历史数据和客户端兼容策略。
 
 ### 12.3 生效边界
 
-本文写入 `dev-plan/`，因为改变它意味着代码必须跟着改变。它成为后续实现与验收的目标合同，但不因
+本文写入 `dev-agent-task/`，因为改变它意味着代码必须跟着改变。它成为后续实现与验收的目标合同，但不因
 文件存在就自动证明能力已经落地。矩阵中尚无对应实现或处于 `NOT_ASSESSED / GAP` 的场景，是规范先于
 实现的正常状态，不构成合同缺陷；只有 §11 对应证据完成后，相关能力才可宣称已实现。

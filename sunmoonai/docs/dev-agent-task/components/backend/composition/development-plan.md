@@ -1,6 +1,6 @@
 # 开发计划
 
-> 迁自 [`dev-plan/development-plan.md`](../../../../dev-plan/development-plan.md) 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../../../MIGRATION.md)。
+> 迁自 `dev-plan/development-plan.md`（tag `dev-plan-final`） 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../../../MIGRATION.md)。
 
 ## 起点：不延续 v5
 

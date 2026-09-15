@@ -1,12 +1,12 @@
 # 实施计划
 
-> 迁自 [`dev-plan/implementation-plan.md`](../../dev-plan/implementation-plan.md) 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../MIGRATION.md)。
+> 迁自 `dev-plan/implementation-plan.md`（tag `dev-plan-final`） 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../MIGRATION.md)。
 
 > 最后更新：2026-08-29
 >
 > **这里是任务本体：每件事怎么做、怎么算做完。**
 >
-> 现在到哪了、什么不能倒退，见 [`handoff.md`](../../dev-plan/handoff.md)；
+> 现在到哪了、什么不能倒退，见 [`handoff.md`](handoff.md)；
 > 为什么这么建见 [`development-plan.md`](../components/backend/composition/development-plan.md)；
 > 代码必须符合的规则见 [`constraints.md`](constraints.md)。
 
@@ -70,7 +70,7 @@ P0 / P1 任务必须写明适用层次。
 **空。**U1（web 面生产适配器的形状）未定——薄转发还是自持投影，决定了要写
 什么、测什么、有没有迁移。现在列出来的任何任务都会作废。
 
-U1 一定，本节即刻填充。U1 的已知输入见 [`handoff.md`](../../dev-plan/handoff.md)。
+U1 一定，本节即刻填充。U1 的已知输入见 [`handoff.md`](handoff.md)。
 
 ## 阶段二 · agent 开发
 

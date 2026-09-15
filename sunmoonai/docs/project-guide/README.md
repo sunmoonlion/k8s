@@ -10,12 +10,12 @@
 >
 > | 目录 | 管什么 | 改了之后 |
 > | --- | --- | --- |
-> | [`../dev-plan/`](../dev-plan/) | 代码必须符合的规则、接下来建什么 | **代码要跟着改** |
-> | [`../dev-plan/working/`](../dev-plan/working/) | 我们怎么共事：提请求、推送、写文档、评审 | 协作方式变，代码不变 |
+> | [`../dev-agent-task/`](../dev-agent-task/) | 代码必须符合的规则、接下来建什么（agent 项目） | **代码要跟着改** |
+> | [`../dev-agent-standards/`](../dev-agent-standards/) | 我们怎么共事：任务、交付、多方竞争、人的批准点 | 协作方式变，代码不变 |
 >
 > **本目录不放规则，也不放脚本**——只描述现状。
-> 规则与其执行脚本在 [`../dev-plan/`](../dev-plan/)，
-> 文档检查脚本在 [`../dev-plan/working/`](../dev-plan/working/)。
+> 规则在 [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md)，
+> 文档检查脚本在 [`../tools/`](../tools/)。
 
 ## 本集之外：`docs/` 下的其他目录是什么
 
@@ -31,7 +31,7 @@
 | `mooc-manus-v5/` | v5 架构的契约与脚本（111 文件） | 2026-08 | **已被 Architecture v2 取代**；其 `contracts/` 不在现行三套契约之列（见 [`topics/contracts.md`](topics/contracts.md) §7） |
 | `ai-tools/` | 工具调研笔记 | 2026-08 | 参考 |
 | **`mooc-manus-langgraph-longterm-plan-v5.md`** 及其实施计划、handoff | 上一轮的施工基线 | 2026-07 | **已降级为历史设计输入**，见 [`../dev-agent-task/components/backend/composition/development-plan.md`](../dev-agent-task/components/backend/composition/development-plan.md)「起点」。其**前后端对接**部分仍有效且详尽，相应工作启动时可引用；其 §14 多智能体（23 行）不作为智能体架构依据。任务游标停在 `P0-008C = PAUSED_FOR_ARCHITECTURE_REVIEW` |
-| `mooc-manus-langgraph-longterm-plan-v4.md` | v5 的前身 | 2026-07 | 历史。但其 **§20 `AgentProfile` 结构（102 行）比 v5 §14 完整**，现重新生效为专用部分的载体，见 [`../dev-plan/handoff.md`](../dev-plan/handoff.md) U4 |
+| `mooc-manus-langgraph-longterm-plan-v4.md` | v5 的前身 | 2026-07 | 历史。但其 **§20 `AgentProfile` 结构（102 行）比 v5 §14 完整**，现重新生效为专用部分的载体，见 [`../dev-plan/handoff.md`](../dev-agent-task/composition/handoff.md) U4 |
 | `docs/` 下其余散落 md | Harbor、Celery、YAML 生成、k8s 连接等主题笔记 | 不一 | **参考，未逐条与代码核对**。主题都还活着，但断言可能已漂移——用之前先回代码验一遍 |
 | `app-platform/docs/`（本目录之外） | 14 份目标态设计文档 | — | **已标注为"实现参考，非权威"**——它自陈"描述长期边界和目标状态" |
 
@@ -63,7 +63,7 @@
 | **动代码前必读的规则** | [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md)（39 条，按主题分组） |
 | 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-agent-task/composition/protocol/competition-protocol.md`](../dev-agent-task/composition/protocol/competition-protocol.md) |
 | 推送改动、跨机拉取、子模块的坑 | `~/five-repos-sync/sync-five-repos.sh`；规则见 [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md) T4 |
-| 知道接下来要建什么 | [`../dev-plan/`](../dev-plan/) |
+| 知道接下来要建什么 | [`../dev-agent-task/`](../dev-agent-task/) |
 | 从本次暂停继续旧账工作 | [逐步处置清单](../v5-backlog-disposition-luna.md)，先同步再工作；不从历史便签恢复旧技术栈 |
 | 复核本文档集的某条断言 | **读代码**，别的都不算数 |
 | 本轮查出的缺口都怎么处置了 | 结论已在各自投影里；过程 `git log --grep 'O[0-9]'` |
@@ -92,12 +92,12 @@ project-guide/
 | 目录 | 语义 | 怎么改 |
 | --- | --- | --- |
 | `overall-architecture.md` `repos/` `topics/` | **现状投影** | **覆盖式重写**：直接替换旧条文，只反映当前有效事实；历史由 git 承担 |
-| 协作机制（请求流程、推送、文档约定、评审） | **已移出** | 见 [`../dev-plan/working/`](../dev-plan/working/) |
+| 协作机制（请求流程、推送、文档约定、评审） | **已移出** | 见 [`../dev-agent-standards/`](../dev-agent-standards/) |
 | `governance.md` | **规则** | 改动前应有共识；改完要检查依赖它的文档 |
 
 ## 写作约定
 
-见 [`../dev-plan/development-lifecycle-human.md`](../dev-plan/archive/development-lifecycle-human.md) §6（改判三要素）与 §10.3（共同纪律）。
+见 [通用规则](../dev-agent-standards/general-rules.md)「改判」与「执行者的共同纪律」。
 本处不复述——引用而非复制，是那份文件自己的第二条维护约定。
 
 ## 本轮的已知缺口（读之前先知道）

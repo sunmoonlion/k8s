@@ -1,6 +1,6 @@
 # Agent 开发指导：一个产品运行时，一套开发纪律
 
-> 迁自 [`dev-plan/agent-dev-guide.md`](../../../../dev-plan/agent-dev-guide.md) 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../../../MIGRATION.md)。
+> 迁自 `dev-plan/agent-dev-guide.md`（tag `dev-plan-final`） 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../../../MIGRATION.md)。
 
 ### 1.2 四本账与单一权威写入面
 
@@ -552,7 +552,7 @@ Execution Scope 只能落在进程外层，Approval Policy 只能事后审计—
 每个轨迹条目至少含 `seq, layer, subject_id, from, to, actor, power_row, payload_ref,
 provenance, evidence_ref`；⚠ **Artifact 的作者要拆成 `author_claimed` 与 `author_attested`
 两个字段**——合成一个就没法表达「声称是谁写的」与「能证明是谁写的」之间的差距，
-而目前这两者几乎从不相等（[§2.12](../../../../dev-plan/agent-dev-guide.md) `channel_grade`）。**比较上下文**（源稿称 `TraceEnvelope`——本文不沿用该名，
+而目前这两者几乎从不相等（源稿第 2.12 节（tag `dev-plan-final` 中的 dev-plan/agent-dev-guide.md） `channel_grade`）。**比较上下文**（源稿称 `TraceEnvelope`——本文不沿用该名，
 因为它只是这一组字段的包装，另起一个名字会让读者以为多了一个对象）另含
 Task Profile 版本、验收摘要、策略版本、principal 身份域、
 输入摘要、Side Effect 摘要和证据权威摘要。比较规则：
@@ -565,7 +565,7 @@ Task Profile 版本、验收摘要、策略版本、principal 身份域、
 6. 先验证每个状态属于内核状态集、每条相邻边属于合法边，再比较序列。
 
 轨迹只是 Event 投影，不是新内核对象；结构与比较规则已完整列在本节，执行时无需回读历史稿。
-历史样例及 23 条里仅 2 条 `attested` 的读数见 [§5.11](../../../../dev-plan/agent-dev-guide.md)，说明“流程看起来发生过”不等于可搬运证据链。
+历史样例及 23 条里仅 2 条 `attested` 的读数见 源稿第 5.11 节（tag `dev-plan-final` 中的 dev-plan/agent-dev-guide.md），说明“流程看起来发生过”不等于可搬运证据链。
 
 ### 5.4 Git 载体能与不能证明什么
 
@@ -675,7 +675,7 @@ G1 是本轮对旧路线的修正：先验证现有库原语，不先发明字�
 | `round.md` Task 主档 | Task 表 | 三档至少各一条轨迹等效且 provenance 不下降 |
 | commit + rulings + events 投影 | Event 表 | 同一历史轮次输出相同状态序列，新判据已人工对照 |
 | 落盘通知与人工投喂 | executor adapter / principal channel | 自动执行器有进程入口；人工执行器有显式审计桥 |
-| `competition-status.py --verify` | acceptance runner | 对历史轮次逐条判定一致 |
+| `competition-status.py --verify`（已删除，见 tag `dev-plan-final`） | acceptance runner | 对历史轮次逐条判定一致 |
 | `git worktree add` | provision service | 独占、干净、基线判据进代码并有测试；worktree 载体可保留 |
 
 事务、租约、fencing 只有服务态验收通过才算实现，不能用轨迹“相似”替代。
@@ -711,7 +711,7 @@ acceptance runner 至少对三轮可取得的历史产物逐条对照；每个�
 所以两条形状规矩：
 
 - **被证伪设计的裁定集中在本节，执行规则不得复活它们**（`amend_schema`、回执仓、候选仓、三道边界一类）。
-  [§9](../../../../dev-plan/agent-dev-guide.md) 的历史取证记录与 [§10](../../../../dev-plan/agent-dev-guide.md) 的源标题只作来源辨认，不产生执行效力；词面检查须区分规范与历史引用；
+  源稿第 9 节（tag `dev-plan-final` 中的 dev-plan/agent-dev-guide.md） 的历史取证记录与 源稿第 10 节（tag `dev-plan-final` 中的 dev-plan/agent-dev-guide.md） 的源标题只作来源辨认，不产生执行效力；词面检查须区分规范与历史引用；
 - 本节每条必须**「独立观察」与「结论与落点」相邻**——
   只写结论不写观察，读者无从复核；只写观察不写落点，读者不知道它改变了什么。
 

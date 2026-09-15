@@ -1,6 +1,6 @@
 # Agent 开发指导：一个产品运行时，一套开发纪律
 
-> 迁自 [`dev-plan/agent-dev-guide.md`](../../dev-plan/agent-dev-guide.md) 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../MIGRATION.md)。
+> 迁自 `dev-plan/agent-dev-guide.md`（tag `dev-plan-final`） 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../MIGRATION.md)。
 
 ## 0. 先读结论
 
@@ -57,10 +57,10 @@ Submission
 | [`competition-protocol.md`](protocol/competition-protocol.md) | [§3.19](protocol/competition-operations.md)–[§3.22](../components/backend/components/04-agent-execution/agent-dev-guide.md) 汇总执行所需的阶段、取件、超时规则 | 不另立协议版本；协议改变时同步修订本导读 |
 | [`constraints.md`](constraints.md) | 开工前自检硬约束，尤其 A1–A5 | 不把自检改成建议 |
 | [`development-plan.md`](../components/backend/composition/development-plan.md) | 解释通用执行编排与领域能力的分工 | 不记录进度 |
-| [`implementation-plan.md`](../../dev-plan/implementation-plan.md) | 记录可实施工作单元、依赖、测试和回滚 | 不承担架构真源 |
-| [`handoff.md`](../../dev-plan/handoff.md) | 只读当前游标、阻塞和不能倒退的结论 | 不从状态反推目标规范 |
-| [`working/request-baseline/`](../../dev-plan/working/request-baseline/) | **所有者的原始需求档案**：只解释来源，**不覆盖现行合同，也不证明当前能力**（`I1` 在本仓的实物） | 不据它断言现状 |
-| 历史 archive 五稿及 README | 相容内容在本文正文，取舍与来源见 [§10](../../dev-plan/agent-dev-guide.md)；只用于历史复核 | 不作为开发前置阅读；被撤销主张集中在 [§8](../components/backend/composition/agent-dev-guide.md)，不恢复其规范效力 |
+| [`implementation-plan.md`](implementation-plan.md) | 记录可实施工作单元、依赖、测试和回滚 | 不承担架构真源 |
+| [`handoff.md`](handoff.md) | 只读当前游标、阻塞和不能倒退的结论 | 不从状态反推目标规范 |
+| `working/request-baseline/`（已删除，见 tag `dev-plan-final`） | **所有者的原始需求档案**：只解释来源，**不覆盖现行合同，也不证明当前能力**（`I1` 在本仓的实物） | 不据它断言现状 |
+| 历史 archive 五稿及 README | 相容内容在本文正文，取舍与来源见 源稿第 10 节（tag `dev-plan-final` 中的 dev-plan/agent-dev-guide.md）；只用于历史复核 | 不作为开发前置阅读；被撤销主张集中在 [§8](../components/backend/composition/agent-dev-guide.md)，不恢复其规范效力 |
 
 内核的对象和状态以 `request-lifecycle.md @ ed0b5136:92-343` 为准；协作阶段以
 `round-protocol.md @ ed0b5136:52-706` 的标题为准。本文出现的表都是开发投影或实现要求，
@@ -207,7 +207,7 @@ Submission
 | 未归因效应 | 外部观察到但找不到对应账目的变更；只记录，不伪造事前 Task（[§6.3](../components/backend/components/02-intake/agent-dev-guide.md)） |
 | H1–H8 / T0–T2 / E0–E4 | 权力行 / 风险流程档位 / 证据等级，三个不同维度（[§4.2](../components/backend/composition/agent-dev-guide.md)、[§3.4](../components/backend/composition/agent-dev-guide.md)、[§5.2](../components/backend/composition/agent-dev-guide.md)） |
 | Delivery | 最终回复与可重取产物（[§3.5](../components/backend/components/06-acceptance-commit/agent-dev-guide.md)） |
-| Handoff | [`handoff.md`](../../dev-plan/handoff.md)；**单写者面**（[§7.5](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
+| Handoff | [`handoff.md`](handoff.md)；**单写者面**（[§7.5](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
 | 工作区 / worktree | 每个可写执行者的并行隔离工作区（[§3.2](../components/backend/components/04-agent-execution/agent-dev-guide.md)、[§3.6](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
 | 命名分支 | 一执行者一分支；commit 的**运输通道，不是评审对象**（[§3.9](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
 | 未提交工作区文件 | 仅本地草稿；**同一工作区同一路径后写覆盖先写**（[§3.7](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |

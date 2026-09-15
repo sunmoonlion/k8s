@@ -1,12 +1,12 @@
 # 现在做什么
 
-所有者在你窗口里说「看一下 `~/master/k8s/sunmoonai/docs/dev-plan/protocol/GO.md`，照做」，就从这里开始。每个环节都一样。
+所有者在你窗口里说「看一下 `~/master/k8s/sunmoonai/docs/dev-agent-task/composition/protocol/GO.md`，照做」，就从这里开始。每个环节都一样。
 
 ⚠ **只认主线这一份。**你 worktree 里也有一份同名文件，但你的分支从 ① 起就不再跟进主线，那份是旧的。先自检：
 
 ```bash
-diff <(git -C ~/master/k8s show master:sunmoonai/docs/dev-plan/protocol/GO.md) \
-     sunmoonai/docs/dev-plan/protocol/GO.md >/dev/null \
+diff <(git -C ~/master/k8s show master:sunmoonai/docs/dev-agent-task/composition/protocol/GO.md) \
+     sunmoonai/docs/dev-agent-task/composition/protocol/GO.md >/dev/null \
   && echo "本地与主线一致" || echo "本地已过期，只读主线这份"
 ```
 
@@ -18,31 +18,21 @@ diff <(git -C ~/master/k8s show master:sunmoonai/docs/dev-plan/protocol/GO.md) \
 pwd && git rev-parse --abbrev-ref HEAD
 ```
 
-工作目录是 `~/worktrees/<名>/k8s`，这个 `<名>` 就是你。分支应当是 `<竞争名>/<名>`，竞争名看第二节的输出。对不上就停下来问，不要自己切分支。
+工作目录是 `~/worktrees/<名>/k8s`，这个 `<名>` 就是你。分支应当是 `<竞争名>/<名>`，竞争名看本次竞争的 `round.md`。对不上就停下来问，不要自己切分支。
 
 产品名、模型名、界面上显示的名字，都不算身份依据。
 
 ## 二、现在是哪个环节
 
-```bash
-( cd ~/master/k8s && python3 sunmoonai/docs/dev-agent-task/composition/protocol/competition-status.py )
-```
+按 `competition-protocol.md`「收到『继续』时怎么办」定位。环节按协议「环节判定」一节的判据从 git 提交推出来，不看任何人的说法。
 
-括号不能省：它让命令在主线跑（你那份脚本可能是旧的），跑完你还在原来的目录（不会误写主线）。
-
-输出里看三行：
-
-- `当前环节：` —— 现在进行到哪一步；
-- `本环节通知：` —— 通知在哪，下一行就是读它的命令；
-- `缺：` —— 还没交的家。**里面有你，这一步就是你的。**
-
-环节是从 git 提交推出来的，不看任何人的说法。你那格是 ✅ 才算交了。
+原判定脚本 `competition-status.py` 已删除；按任务目录重写之前，由组织者按上述判据核对，并在本环节通知里写明当前环节和还缺谁。**缺的名单里有你，这一步就是你的。**
 
 ## 三、读通知，照做
 
-照抄第二节输出里「读它：cat …」那条命令。通知写明交什么、交到哪、按什么判。
+读组织者给出的本环节通知。通知写明交什么、交到哪、按什么判。
 
-输出「本环节通知：无」时，用它给的 `ls` 当场确认，不要按以前的竞争推断有没有通知。
+找不到通知时，当场 `ls` 本次竞争的目录确认，不要按以前的竞争推断有没有通知。
 
 同目录下还有工单 `round.md` 和裁定 `rulings.md`，都在主线读。要处理的对象（别家产物、裁决稿）以通知里给的位置和提交为准，不以你自己的 `HEAD` 为准。
 
@@ -50,7 +40,7 @@ pwd && git rev-parse --abbrev-ref HEAD
 
 本节只是摘录，规则原文在协议里，两边不一致以协议为准。
 
-1. 只写你自己的工作区，不写主线、不写别家（`competition-protocol.md` §17）。读主线用绝对路径，判定用上面的子壳，提交用 `git -C`。
+1. 只写你自己的工作区，不写主线、不写别家（`competition-protocol.md` §17）。读主线用绝对路径，提交用 `git -C`。
 2. 提案冻结之前，不读其他家的候选（`competition-protocol.md` §9）。
 3. 交卷 = 你自己分支上已提交的 commit，没提交的不算（`competition-protocol.md` §8）。
 4. 超出本次输入的断言，附一条可复跑的证据，否则标 ⚠（`competition-protocol.md` §12）。不要写「我之前查过」。
@@ -71,10 +61,10 @@ W=~/worktrees/<你的名>/k8s
 git -C $W add <产物路径>
 git -C $W commit --author="<你的名> <<你的名>@agents.local>" -m "<环节> <竞争名> <产物名>（<你的名>）"
 
-( cd ~/master/k8s && python3 sunmoonai/docs/dev-agent-task/composition/protocol/competition-status.py )   # 你那格应变 ✅
+git -C $W show HEAD --stat                                                          # 产物应在这次提交里
 git -C ~/master/k8s status --porcelain                                              # 应为空
 ```
 
 `--author` 不能省：本机的 git 身份是所有者的，不署自己的名，你的提交会被当成所有者本人的提交。
 
-提交之后一定再跑一次状态。路径或分支不对时，脚本认不出你的产物，但**不会报错**——你会以为交了。
+提交之后一定核对一次：产物路径、分支都要和通知一致。路径或分支不对时，组织者认不出你的产物，而**没有任何东西会报错**——你会以为交了。

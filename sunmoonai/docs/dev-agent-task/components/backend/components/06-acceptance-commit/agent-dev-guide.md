@@ -1,6 +1,6 @@
 # Agent 开发指导：一个产品运行时，一套开发纪律
 
-> 迁自 [`dev-plan/agent-dev-guide.md`](../../../../../dev-plan/agent-dev-guide.md) 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../../../../MIGRATION.md)。
+> 迁自 `dev-plan/agent-dev-guide.md`（tag `dev-plan-final`） 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../../../../MIGRATION.md)。
 
 ### 1.4 开发验收不可外推
 
@@ -235,7 +235,7 @@ verification     # 最终 commit 上的回归结果
 主动披露「某个规划子代理可能经宽泛搜索见过被禁读的文件，无访问记录」——
 它没有把不确定性压成「未读」，因而该条被裁决记为**范本**，而非违规。
 
-本节后半是 `runtime-refact` 那次竞争当时的覆盖清单，作为历史记录留在 [dev-plan/agent-dev-guide.md](../../../../../dev-plan/agent-dev-guide.md) §9.2。
+本节后半是 `runtime-refact` 那次竞争当时的覆盖清单，作为历史记录留在 tag `dev-plan-final` 中的 dev-plan/agent-dev-guide.md 第 9.2 节。
 
 ## 12. 常见失败方式与项目实例
 

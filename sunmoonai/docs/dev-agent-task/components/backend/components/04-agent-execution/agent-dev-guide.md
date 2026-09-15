@@ -1,6 +1,6 @@
 # Agent 开发指导：一个产品运行时，一套开发纪律
 
-> 迁自 [`dev-plan/agent-dev-guide.md`](../../../../../dev-plan/agent-dev-guide.md) 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../../../../MIGRATION.md)。
+> 迁自 `dev-plan/agent-dev-guide.md`（tag `dev-plan-final`） 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../../../../MIGRATION.md)。
 >
 > 2026-09-15：§3.19、§3.21 已随 protocol 移到 [`../../../../composition/protocol/competition-operations.md`](../../../../composition/protocol/competition-operations.md)。
 
@@ -603,7 +603,7 @@ RouteDecision/Attempt，经过正常能力、权限、预算和数据门，不�
 
 ⚠ **判据只有一句：把今天的记忆抹掉，另一个人只读持久载体能否接着做？不能，就是没落盘。**
 
-- 当前推进哪件事、卡在哪、下一动作，落在 [`handoff.md`](../../../../../dev-plan/handoff.md)，不落在脑子里；
+- 当前推进哪件事、卡在哪、下一动作，落在 [`handoff.md`](../../../../composition/handoff.md)，不落在脑子里；
 - **「不能倒退的输入」必须写下来**——已经定过的事下次不重新讨论，这是 `handoff.md`
   最有价值的一节；
 - 停下来之前，先让 `handoff.md` 能回答：「接手的人一分钟内要知道什么？」

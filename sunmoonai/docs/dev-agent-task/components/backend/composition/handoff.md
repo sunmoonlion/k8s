@@ -1,6 +1,6 @@
 # 交接
 
-> 迁自 [`dev-plan/handoff.md`](../../../../dev-plan/handoff.md) 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../../../MIGRATION.md)。
+> 迁自 `dev-plan/handoff.md`（tag `dev-plan-final`） 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../../../MIGRATION.md)。
 
 ## 不能倒退的输入
 

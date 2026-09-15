@@ -1,13 +1,13 @@
 # 交接
 
-> 迁自 [`dev-plan/handoff.md`](../../dev-plan/handoff.md) 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../MIGRATION.md)。
+> 迁自 `dev-plan/handoff.md`（tag `dev-plan-final`） 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../MIGRATION.md)。
 
 > 最后更新：2026-08-29
 >
 > **接手先读这份。**它回答"现在到哪了、什么不能倒退、卡在哪"。
 >
 > 要建什么见 [`development-plan.md`](development-plan.md)；
-> 具体任务见 [`implementation-plan.md`](../../dev-plan/implementation-plan.md)；
+> 具体任务见 [`implementation-plan.md`](implementation-plan.md)；
 > 代码必须符合的规则见 [`constraints.md`](constraints.md)。
 >
 > **本文件只写状态。**任何"应该怎样"的论证不写在这里，
@@ -82,7 +82,7 @@
 
 ## 任务游标
 
-**阶段一未开工**——U1 未定，[`implementation-plan.md`](../../dev-plan/implementation-plan.md)
+**阶段一未开工**——U1 未定，[`implementation-plan.md`](implementation-plan.md)
 的任务清单为空。
 
 ## 不能倒退的两条（本轮新增）

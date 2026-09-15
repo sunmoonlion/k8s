@@ -31,8 +31,8 @@
 
 ## 架构决策（已升为约束）
 
-原 14 条 ADR 已删除。其结论**全文**写在
-[`docs/dev-plan/README.md`](../../docs/dev-plan/README.md) 的「既有约束」一节（18 条），
+原 14 条 ADR 已删除。其结论**全文**曾写在 dev-plan/README.md 的「既有约束」一节（18 条；该节在 dev-plan 删除前就已不在，现行规则见
+[`docs/dev-agent-task/composition/constraints.md`](../../docs/dev-agent-task/composition/constraints.md)），
 其中能机械判定的已变成
 [`docs/project-guide/check-cross-repo.py`](../../docs/project-guide/check-cross-repo.py)
 与各仓 `test_kernel_invariants.py` 里的检查。

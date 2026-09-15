@@ -7,15 +7,15 @@
 >
 > 只剩三件事：权威排序、接手演练、什么不属于本文档集。
 > 其余原属本文件的内容已按性质移出：
-> 写文档的约定 → [`../dev-plan/development-lifecycle-human.md`](../dev-plan/archive/development-lifecycle-human.md) §6；
+> 写文档的约定 → [通用规则](../dev-agent-standards/general-rules.md)「改判」；
 > 提请求 → [`../dev-agent-task/composition/request-lifecycle.md`](../dev-agent-task/composition/request-lifecycle.md)；
 > 推送与多助手 → [`../dev-agent-task/composition/protocol/competition-protocol.md`](../dev-agent-task/composition/protocol/competition-protocol.md) 与
-> [`../dev-plan/development-lifecycle-human.md`](../dev-plan/archive/development-lifecycle-human.md) §12。
+> [`constraints.md`](../dev-agent-task/composition/constraints.md) T4。
 
 ## 1. 权威排序
 
 ```
-源代码（各仓） > 规则（../dev-plan/constraints.md） > 本文档集其余部分
+源代码（各仓） > 规则（../dev-agent-task/composition/constraints.md） > 本文档集其余部分
 ```
 
 - **代码是现状的唯一真相。**本文档集是帮助理解代码的缓存，与代码冲突时以代码为准。

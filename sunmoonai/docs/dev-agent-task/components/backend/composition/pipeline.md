@@ -7,7 +7,7 @@
 > 输入固定为 `baa2885847d5c236dc5cdf5d2273bf55286c775c`。⑦ 已写入共享最终路径（`rounds/dev-plan-refact/rulings.md` R8）。
 
 本稿先确定需求的推进过程，再推导需要的文档；逐节融合在配套的
-[dev-plan-architecture.md](../../../../dev-plan/dev-plan-architecture.md)。
+dev-plan-architecture.md（tag `dev-plan-final`）。
 不授权部署，不修改产品合同或现有设计结论。
 
 **流程的主线是一项需求增量，不是一份文档，也不是一次多方竞争。**它必须依次回答：
@@ -36,7 +36,7 @@ A 线空，内容因此全堆进 B 线容器——这就是 `protocol/` 975 行�
 阶段编号 `S0–S6` 与门编号 `DEV/G0–G6` 是开发里程碑，不新增产品 Task/Attempt 状态。
 它们也不是 guide 中运行时演进 G0–G5、执行器 Gate 0 或 T2 七环节的别名。
 
-| 阶段 | AI 在这里完成什么 | 产物与建议落点（相对 dev-plan） | 退出条件 | 未通过时往哪回 |
+| 阶段 | AI 在这里完成什么 | 产物与建议落点（相对任务目录） | 退出条件 | 未通过时往哪回 |
 | --- | --- | --- | --- | --- |
 | S0 受理与定范围 | 保存原话和附件，查已有需求/决定，识别对象、边界、风险与实质歧义；区分调查和交付 | `working/request-baseline/REQ-<id>/request.md` 原始需求；`changes/DEV-<id>/work.md` 受理/授权记录 | DEV/G0：来源可追溯、范围和责任归属可读、允许开展的下一步明确；影响结果/权限的歧义已解决或明确留给有边界的调查任务 | 仅补关键澄清；不为填满模板反复问人。未授权调查或越出范围则停止 |
 | S1 需求与验收合同 | 把用户结果写成正向/反向场景，明确非目标、约束、允许的不确定性及验收口径；复核基线 | `changes/DEV-<id>/prd.md`；共用产品要求引用 `working/request-lifecycle.md` 的 F/I/AT，不复制定义 | DEV/G1：业务目标、输入输出、失败/降级、可验收条件及不可判部分已约定；出题与答题角色分开；冻结验收版本 | 缺事实回 S0 做调查，需求变化产生新版本；不能让实现者完工后偷偷改验收题 |
@@ -66,19 +66,15 @@ AI 声明 PASS 不是服务端强制点，缺载体不隐写成已自动化。
 | DEV/G0 | Git 可取件、摘要和输入文件存在；不能证明是谁授权 | 原话/解释分开、重复请求识别、边界与下一步目的 | 实质歧义及授权范围；已有有效授权沿用，无须重新确认 |
 | DEV/G1 | doc-gate 查文档链接、节引用和表格；不判需求正确 | 场景可证伪、适用 F/I/AT 有对应、未知/排除明确；冻结原版本 | 业务目标、损失容忍及需要人决定的验收取舍 |
 | DEV/G2 | 对应 spike/test 的可复跑结果、契约 schema 检查（前提是该单元已有命令） | 对抗例和失败路线、边界适配、证据不能外推、候选隔离与处置完整 | 权威变更、已知分歧与重大取舍，按现行协议裁定 |
-| DEV/G3 | Git 基线/diff；实际依赖安装和最小测试命令；T2 可用 competition-status 检产物 | 验收者不等于产出者；任务可冷启动；依赖、写路径、预算、停止与回滚明确 | 必须由 principal 提供的权限、预算例外；技术供给可由 AI 完成 |
+| DEV/G3 | Git 基线/diff；实际依赖安装和最小测试命令；T2 按多方竞争协议「环节判定」检产物 | 验收者不等于产出者；任务可冷启动；依赖、写路径、预算、停止与回滚明确 | 必须由 principal 提供的权限、预算例外；技术供给可由 AI 完成 |
 | DEV/G4 | 本工作单元声明的适用测试、doc-gate、必要时 anchor-gate；采集失败不能算通过 | 测试是否覆盖原问题、最终 diff 是否符合合同、负例及未测理由是否可信 | 不替 AI 跑测试；如需改变业务承诺或风险容忍，在这里发起改判 |
 | DEV/G5 | 产物摘要、构建/配置/部署检查能判其各自对象；不把本地 author 当身份签名 | 精确批准对象、源码/镜像/数据一致、批准后不偷换、异常按预案处理 | 不可逆发布及其它 H 表管辖动作的具体授权；不能以“已有凭据”替代 |
 | DEV/G6 | 冻结观察窗口中的可自动测指标和真实链路测试（须有环境及实际执行记录） | 检查观察对象/覆盖/交接完整、记录副作用及未决、更新实现投影 | 产品结果验收、剩余已声明风险的接收或拒绝；不是只签“测试绿了” |
 
-当前可复跑的通用工具是 `python3 sunmoonai/docs/tools/doc-gate.py --all`、
-`python3 sunmoonai/docs/tools/anchor-gate.py` 和
-`python3 sunmoonai/docs/dev-agent-task/composition/protocol/competition-status.py`（在 k8s 仓根）。
-**`competition-status.py` 判的是多方竞争的工单。**parse_round 读 `round.md`，缺 `final_path` /
-`round_dir` / `prefix` 即拒绝判定；stage_table 按工单配置的产物路径查是否作为 git
-提交出现（不看工作区、不看声明）；档位从工单解析留痕。这就是 S3「解析 round.md」和
-S6「落点齐全 / 状态推导」已接线的部分。它**不能**判普通工作单元「目标/实施/测试/
-验收/回滚」字段齐全，也**不能**判本轮 260 行落点表。
+当前可复跑的通用工具是 `python3 sunmoonai/docs/tools/doc-gate.py --all` 和
+`python3 sunmoonai/docs/tools/anchor-gate.py`（在 k8s 仓根）。
+原多方竞争判定脚本 `competition-status.py` 按旧的 `rounds/` 工单判定（S3「解析 round.md」、S6「落点齐全 / 状态推导」），
+2026-09-15 已删除（见 tag `dev-plan-final`），这两处退回「当前纪律、目标机器」档。
 产品命令必须由工作单元写明仓、cwd、锁定依赖、命令和环境；本稿不编造一个已经存在的
 `make check`，不声称 Jenkins 已接线，也不把“执行命令成功”当作有非空有效测试。
 
@@ -95,7 +91,7 @@ command, expected_scope, observed_scope, exit_code, result, evidence_ref, checke
 
 | 档 | 含义 | 本流程的例子 |
 | --- | --- | --- |
-| 机器已能判 | 指定命令对指定对象给出非平凡通过/失败 | `doc-gate.py --all`；`competition-status.py` 判竞争产物是否作为 git 提交出现 |
+| 机器已能判 | 指定命令对指定对象给出非平凡通过/失败 | `doc-gate.py --all`；`anchor-gate.py` 判锚点能否解析 |
 | 当前纪律、目标机器 | 今天靠执行者留记录，声明了将来可接线的对象 | 完整 DEV/G0–G6 聚合器尚未实现 |
 | 只能靠纪律，且必须永远保持 ⚠ | 无产物可查，机器化会假装查到了 | 提案隔离是否在执行者脑子里成立；「语义覆盖了原问题」 |
 

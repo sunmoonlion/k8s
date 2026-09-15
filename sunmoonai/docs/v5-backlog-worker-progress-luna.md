@@ -140,5 +140,5 @@ Redis `bd6016ab78a6…`；四个新匿名卷 `de3056c1424f…`、`ca49525a9e5c�
 四后端最终干净；三个父仓增量对齐报告未暂存，gitlink 仍 B7e 起点；五个本地 master
 仍原 HEAD 且干净。两份预置 general/pro 协议草案未修改、未暂存。
 
-监控实际部署/采集/新鲜度/告警送达继续由[未来 N4-OPS-01](dev-plan/implementation-plan.md)
+监控实际部署/采集/新鲜度/告警送达继续由[未来 N4-OPS-01](dev-agent-task/composition/implementation-plan.md)
 接收，未实施；保留归档、真实运行/发布/数据切换门禁仍由 B7 逐项核验，B8/B9 未完成。
