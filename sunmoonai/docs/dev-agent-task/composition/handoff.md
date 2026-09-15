@@ -8,7 +8,7 @@
 >
 > 要建什么见 [`development-plan.md`](development-plan.md)；
 > 具体任务见 [`implementation-plan.md`](../../dev-plan/implementation-plan.md)；
-> 代码必须符合的规则见 [`constraints.md`](../../dev-agent-standards/constraints.md)。
+> 代码必须符合的规则见 [`constraints.md`](constraints.md)。
 >
 > **本文件只写状态。**任何"应该怎样"的论证不写在这里，
 > 任何任务的实施步骤也不写在这里。

@@ -28,7 +28,7 @@
 | 源（切换前） | 节 | 去向 | 说明 |
 | --- | --- | --- | --- |
 | `working/request-lifecycle.md` 全文 | I01-001…042 | T | 整份即 agent 顶层的 composition；不拆 |
-| constraints 全部规则（「doc-gate 为什么」一节除外） | I05-001…014 | P（constraints） | 先按类别拆到五处；2026-09-15 所有者定合回一张总表 `dev-agent-standards/constraints.md`（原文、原顺序），所有 agent 开发任务共用 |
+| constraints 全部规则（「doc-gate 为什么」一节除外） | I05-001…014 | P（constraints） | 先按类别拆到五处；2026-09-15 所有者定合回一张总表 `dev-agent-task/composition/constraints.md`（原文、原顺序），所有 agent 开发任务共用 |
 | constraints `doc-gate.py` 为什么留下 | I05-015 | 留原处 | 随门禁脚本 |
 | guide 先读结论、原来是什么样、文档边界、不可变契约、唯一内核 | I02-002/003/004/007/008 | T | 项目总体 |
 | guide 七条设计原则 | I02-013 | T | 本项目的设计原则 |
@@ -92,7 +92,7 @@ P-prd 1、P-sdp 1、P-uat 4。
 
 ## 已定（所有者 2026-09-14）
 
-1. constraints 按规则类别拆开，各归合适的层（见上表 I05 各行）。2026-09-15 改为合回一张总表，放 `dev-agent-standards/constraints.md`。
+1. constraints 按规则类别拆开，各归合适的层（见上表 I05 各行）。2026-09-15 改为合回一张总表，放 `dev-agent-task/composition/constraints.md`。
 2. protocol 放 B04；2026-09-15 改为放进 `dev-agent-standards/protocol/`（SDD、SDP、UAT 多方竞争时都用）。
 3. 删除与迁移门随历史冻结。
 4. 测试层次放 T。

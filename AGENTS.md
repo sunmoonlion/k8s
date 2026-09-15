@@ -5,7 +5,7 @@
 
 **动代码前必读**——代码必须符合的规则（39 条，按主题分组）：
 
-`sunmoonai/docs/dev-agent-standards/constraints.md`
+`sunmoonai/docs/dev-agent-task/composition/constraints.md`
 
 违反其中任一条的方案不进入讨论。用法见该文件「怎么用」。
 

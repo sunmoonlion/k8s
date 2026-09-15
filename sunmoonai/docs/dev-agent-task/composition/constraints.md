@@ -1,17 +1,17 @@
 # 开发必须遵守的规则
 
 > 2026-09-15 起位于 agent 开发规范下：本平台上**所有 agent 开发任务**动代码前都要对照。迁自
-> [`dev-plan/constraints.md`](../dev-plan/constraints.md)，原文、原顺序；「`doc-gate.py` 为什么不是第三个被删的脚本」一节随门禁脚本留在 dev-plan。
+> [`dev-plan/constraints.md`](../../dev-plan/constraints.md)，原文、原顺序；「`doc-gate.py` 为什么不是第三个被删的脚本」一节随门禁脚本留在 dev-plan。
 
 > 最后更新：2026-08-29
 >
 > **动代码前先读这里。**违反其中任一条的方案**不进入讨论**——不是"不推荐"，
 > 是不提出。
 >
-> 项目现在长什么样，见 [`../project-guide/`](../project-guide/)；
-> 要建什么见 [`development-plan.md`](../dev-agent-task/composition/development-plan.md)，
-> 具体任务见 [`implementation-plan.md`](../dev-agent-task/composition/implementation-plan.md)，
-> 当前状态见 [`handoff.md`](../dev-agent-task/composition/handoff.md)。
+> 项目现在长什么样，见 [`../project-guide/`](../../project-guide/)；
+> 要建什么见 [`development-plan.md`](development-plan.md)，
+> 具体任务见 [`implementation-plan.md`](implementation-plan.md)，
+> 当前状态见 [`handoff.md`](handoff.md)。
 
 ## 怎么用
 
@@ -166,7 +166,7 @@ Calico 集群，否则"测过了"是假的。
 | 层 | 覆盖 | 在哪 |
 | --- | --- | --- |
 | **随测试自动跑** | 标了测试载体的那些 | 四仓 `tests/test_kernel_invariants.py`、`tests/test_dormant_capabilities.py`、双端契约测试——**跑 `uv run pytest` 就带上，不需要谁记得** |
-| **随提交自动跑** | 本仓文档的三项机械不变量 | [`doc-gate.py`](../dev-plan/doc-gate.py) 经版本化的 `.githooks/pre-commit` 触发——**提交就带上**。装一次 `git config core.hooksPath .githooks` 对全部 worktree 生效（共享同一个 `.git`），装没装用 `doc-gate.py --selfcheck` 判定 |
+| **随提交自动跑** | 本仓文档的三项机械不变量 | [`doc-gate.py`](../../dev-plan/doc-gate.py) 经版本化的 `.githooks/pre-commit` 触发——**提交就带上**。装一次 `git config core.hooksPath .githooks` 对全部 worktree 生效（共享同一个 `.git`），装没装用 `doc-gate.py --selfcheck` 判定 |
 | **指针** | 全部 | 五仓根 `AGENTS.md`、`.cursor/rules/`、八个组件 `CLAUDE.md`（**进目录自动注入**） |
 | **自检** | 全部 | 上面「怎么用」那节 |
 

@@ -2,7 +2,7 @@
 
 > **独立提案，未生效。**作者：Luna，2026-09-10。
 > 基于所有者提供的主工作区 `round-protocol-draft.md` 起草。本文的新增、修改均为 Luna 建议，不代表所有者已经同意。
-> 现行规范仍是 [`round-protocol.md`](round-protocol.md)。本文获批且配套工具通过检查后，才可替换现行规范。
+> 现行规范仍是 [`round-protocol.md`](../../dev-agent-task/composition/protocol/round-protocol.md)。本文获批且配套工具通过检查后，才可替换现行规范。
 
 ## 一、目的与底线
 

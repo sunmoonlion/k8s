@@ -92,7 +92,7 @@ SELF_CONTAINED = (
     # 查实 GO.md §四 四条规范内容在协议里各有一份，而**没有任何东西保证两份一致**
     # ——正是 §0.0 第 3 条骂的「第二份说明书」。合并不是修法（见 GO.md §四抬头），
     # 修法是让它降为**被核对的引用**：四条各注出处 §，本门验那个 § 真的存在。
-    "sunmoonai/docs/dev-agent-standards/protocol/GO.md",
+    "sunmoonai/docs/dev-agent-task/composition/protocol/GO.md",
 )
 # 两份 development-lifecycle-*.md 曾在此名单内，2026-09-07 移出：它们已被
 # agent-dev-guide.md 取代、降为历史档案，「自足」是对现行权威文档的要求。

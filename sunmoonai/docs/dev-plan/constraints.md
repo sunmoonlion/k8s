@@ -1,6 +1,6 @@
 # 开发必须遵守的规则（已迁出）
 
-> **2026-09-14 已迁出**：规则全文现在是一张总表 [`dev-agent-standards/constraints.md`](../dev-agent-standards/constraints.md)（2026-09-15 由五处合回）。
+> **2026-09-14 已迁出**：规则全文现在是一张总表 [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md)（2026-09-15 由五处合回）。
 >
 > 这里仅剩「`doc-gate.py` 为什么不是第三个被删的脚本」一节，随门禁脚本留在原处。
 

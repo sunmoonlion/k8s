@@ -2,7 +2,7 @@
 
 > 迁自 [`dev-plan/agent-dev-guide.md`](../../../../../dev-plan/agent-dev-guide.md) 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../../../../MIGRATION.md)。
 >
-> 2026-09-15：§3.19、§3.21 已随 protocol 移到 [`dev-agent-standards/protocol/round-operations.md`](../../../../../dev-agent-standards/protocol/round-operations.md)。
+> 2026-09-15：§3.19、§3.21 已随 protocol 移到 [`../../../../composition/protocol/round-operations.md`](../../../../composition/protocol/round-operations.md)。
 
 ### 2.6 执行层：租用什么、自建什么
 
