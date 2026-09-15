@@ -1,6 +1,6 @@
 # Agent 开发指导：一个产品运行时，一套开发纪律
 
-> 迁自 `dev-plan/agent-dev-guide.md`（tag `dev-plan-final`） 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../../../../MIGRATION.md)。
+> 迁自 `dev-plan/agent-dev-guide.md`（tag `dev-plan-final`） 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 MIGRATION.md（2026-09-15 删除，原文见提交 `e7ab0e0b`）。
 >
 > 2026-09-15：§3.19、§3.21 已随 protocol 移到 [`../../../../composition/protocol/competition-operations.md`](../../../../composition/protocol/competition-operations.md)。
 

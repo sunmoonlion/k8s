@@ -36,4 +36,4 @@ components/
 | 开发计划：要建什么、为什么 | [`composition/development-plan.md`](composition/development-plan.md) |
 | 与项目无关的通用开发规范 | [`../dev-agent-standards/`](../dev-agent-standards/) |
 
-原 `dev-plan/` 各节的去向见 [MIGRATION.md](MIGRATION.md)；`dev-plan/` 已删除，原样存于 tag `dev-plan-final`；门禁脚本在 [`../tools/`](../tools/)。
+原 `dev-plan/` 各节的去向见 MIGRATION.md（2026-09-15 删除，原文见提交 `e7ab0e0b`）；`dev-plan/` 已删除，原样存于 tag `dev-plan-final`；门禁脚本在 [`../tools/`](../tools/)。
