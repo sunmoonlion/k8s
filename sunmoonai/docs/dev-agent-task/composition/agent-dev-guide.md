@@ -57,7 +57,7 @@ Submission
 | [`competition-protocol.md`](protocol/competition-protocol.md) | [§3.19](protocol/competition-operations.md)–[§3.22](../components/backend/components/04-agent-execution/agent-dev-guide.md) 汇总执行所需的阶段、取件、超时规则 | 不另立协议版本；协议改变时同步修订本导读 |
 | [`constraints.md`](constraints.md) | 开工前自检硬约束，尤其 A1–A5 | 不把自检改成建议 |
 | [`development-plan.md`](../components/backend/composition/development-plan.md) | 解释通用执行编排与领域能力的分工 | 不记录进度 |
-| [`task.md`](../task.md) | 本任务的任务书：背景、范围、验收、约束（含工作单元的写法与不能倒退的决定） | 执行者不改 |
+| 各 turn 的 `task.md` | 每次派工的任务书：写明交回哪一种，以及背景、范围、验收、约束 | 随 turn 冻结，执行者不改 |
 | `turns/` | 每次派工到交回（turn）的发出内容与交回物；进度由任务目录推出 | 交回即冻结，改只能开新 turn |
 | `working/request-baseline/`（已删除，见 tag `dev-plan-final`） | **所有者的原始需求档案**：只解释来源，**不覆盖现行合同，也不证明当前能力**（`I1` 在本仓的实物） | 不据它断言现状 |
 | 历史 archive 五稿及 README | 相容内容在本文正文，取舍与来源见 源稿第 10 节（tag `dev-plan-final` 中的 dev-plan/agent-dev-guide.md）；只用于历史复核 | 不作为开发前置阅读；被撤销主张集中在 [§8](../components/backend/composition/agent-dev-guide.md)，不恢复其规范效力 |
@@ -243,7 +243,7 @@ Submission
 | 未归因效应 | 外部观察到但找不到对应账目的变更；只记录，不伪造事前 Task（[§6.3](../components/backend/components/02-intake/agent-dev-guide.md)） |
 | H1–H8 / T0–T2 / E0–E4 | 权力行 / 风险流程档位 / 证据等级，三个不同维度（[§4.2](../components/backend/composition/agent-dev-guide.md)、[§3.4](../components/backend/composition/agent-dev-guide.md)、[§5.2](../components/backend/composition/agent-dev-guide.md)） |
 | Delivery | 最终回复与可重取产物（[§3.5](../components/backend/components/06-acceptance-commit/agent-dev-guide.md)） |
-| Handoff | 不再单独维护：进度由任务目录（`task.md` 各版本、`turns/`、`composition/`、`components/`）推出，不能倒退的决定写在 [`task.md`](../task.md)「约束」；`task.md` 与 `composition/` 是**单写者面**（[§7.5](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
+| Handoff | 不再单独维护：进度由任务目录（`turns/`、`composition/`、`components/`）推出，不能倒退的决定写在 [`development-plan.md`](development-plan.md)「不能倒退的决定」；`composition/` 与各 turn 的 `task.md` 是**单写者面**（[§7.5](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
 | 工作区 / worktree | 每个可写执行者的并行隔离工作区（[§3.2](../components/backend/components/04-agent-execution/agent-dev-guide.md)、[§3.6](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
 | 命名分支 | 一执行者一分支；commit 的**运输通道，不是评审对象**（[§3.9](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
 | 未提交工作区文件 | 仅本地草稿；**同一工作区同一路径后写覆盖先写**（[§3.7](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |

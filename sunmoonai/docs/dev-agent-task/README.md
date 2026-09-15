@@ -11,8 +11,7 @@
 第一层分前端与后端，Agent / runtime 与验收器归后端（所有者 2026-09-14 定）；责任划分依合同第 9 节。
 
 ```text
-task.md                           任务书（PRD）：初稿，待所有者确认
-turns/                            每次派工到交回（turn）：01–03 为模拟补建
+turns/                            每次派工到交回（turn），各带任务书 task.md：01–03 为模拟补建
 composition/                      SDD：前后端的划分与交互、总体设计
 components/
 ├── frontend/
@@ -32,7 +31,7 @@ components/
 | 代码必须遵守的规则（39 条，本平台所有任务共用） | [`composition/constraints.md`](composition/constraints.md) |
 | agent 项目的开发流程 | [`components/backend/composition/pipeline.md`](components/backend/composition/pipeline.md) |
 | 多方竞争协议（本平台的具体做法） | [`composition/protocol/`](composition/protocol/)；所依据的通用规范见 [`../dev-agent-standards/protocol/`](../dev-agent-standards/protocol/competition-rules.md) |
-| 任务书 | [`task.md`](task.md)（初稿，待所有者确认） |
+| 每次派工的任务书 | 各 turn 的 `task.md`，如 [`turns/01/task.md`](turns/01/task.md) |
 | 开发计划：要建什么、为什么 | [`composition/development-plan.md`](composition/development-plan.md) |
 | 与项目无关的通用开发规范 | [`../dev-agent-standards/`](../dev-agent-standards/) |
 
