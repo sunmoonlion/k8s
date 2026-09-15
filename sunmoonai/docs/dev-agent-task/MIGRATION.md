@@ -19,7 +19,7 @@
 | B | `components/backend/composition/`：后端内部各部分的关系、跨阶段内容 |
 | B02 … B07 | `components/backend/components/` 下对应阶段目录 |
 | F01 / F05 / F07 | `components/frontend/components/` 下对应阶段目录 |
-| P-xxx | `../dev-process/` 下对应阶段（brd / prd / sdd / sdp / uat） |
+| P-xxx | `../dev-process/` 下对应阶段（prd / sdd / sdp / uat；原 brd 已并入 prd） |
 | 史 | 留在 dev-plan 作历史，不迁 |
 | 留原处 | 仍在 dev-plan 原位置、继续使用（门禁脚本及其说明） |
 
@@ -64,7 +64,7 @@
 | guide 工作区供给、worktree 细则、Git 能否提交 | I02-030/042/048 | B04 | |
 | guide 私有产生单写者发布、物化与写前门禁、并发处置、事故规程、冻结迟到取消、执行形态与停止、停止超时回退 | I02-034/038/035/036/037/041/050 | B04 | |
 | guide 人的收件箱 | I02-063 | F05 | 人读的 Interaction 投影 |
-| guide 人这一侧的义务 | I02-061 | P-brd + B05 | 拆：「请求写清边界、给可判定验收」进 P-brd |
+| guide 人这一侧的义务 | I02-061 | P-prd + B05 | 拆：「请求写清边界、给可判定验收」进 P-prd（原写 P-brd，BRD 已并入 PRD） |
 | guide principal 裁量权与改判 | I02-059 | B + P（总则） | 拆：改判三要素是通用纪律 |
 | guide T2 七环节操作闭环、通知取件检视面 | I02-047/049 | B04 | 与 protocol 同处 |
 | `protocol/` 全部（round-protocol、README、GO、round-status.py、草案） | I03-*、I04-* | B04 | 多方协作是执行形态之一 |
@@ -92,7 +92,7 @@
 | `anchor-gate.py`、`doc-gate.py`、`scripts/` | — | 留原处 | 管全仓文档，不属于 agent |
 
 进 `dev-process/` 的一共 10 处：总则 4 处（共同纪律、改判三要素、pipeline 总流程、规则保证的三层），
-P-brd 1、P-sdp 1、P-uat 4。
+P-prd 1、P-sdp 1、P-uat 4。
 
 拆分的做法：任务侧原文保留，作为具体实例；`dev-process` 只写抽象出来的原则，措辞通用，并链接到实例。
 进 `dev-process` 的 10 处都是抽象后的原则，原文一律保留在任务侧或历史里。
