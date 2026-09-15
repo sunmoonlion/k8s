@@ -54,7 +54,7 @@ Submission
 | 真源 | 本文怎样使用 | 本文不做什么 |
 | --- | --- | --- |
 | [`request-lifecycle.md`](request-lifecycle.md) | 引用七对象、Task/Attempt 状态机、`I1`–`I15`、`F-*`、`AT-*` | 不重写对象定义、合法边或产品验收矩阵 |
-| [`round-protocol.md`](../../dev-agent-standards/deliverables/sdd/protocol/round-protocol.md) | [§3.19](../../dev-agent-standards/deliverables/sdd/protocol/round-operations.md)–[§3.22](../components/backend/components/04-agent-execution/agent-dev-guide.md) 汇总执行所需的阶段、取件、超时规则 | 不另立协议版本；协议改变时同步修订本导读 |
+| [`round-protocol.md`](../../dev-agent-standards/protocol/round-protocol.md) | [§3.19](../../dev-agent-standards/protocol/round-operations.md)–[§3.22](../components/backend/components/04-agent-execution/agent-dev-guide.md) 汇总执行所需的阶段、取件、超时规则 | 不另立协议版本；协议改变时同步修订本导读 |
 | [`constraints.md`](../../dev-plan/constraints.md) | 开工前自检硬约束，尤其 A1–A5 | 不把自检改成建议 |
 | [`development-plan.md`](../components/backend/composition/development-plan.md) | 解释通用执行编排与领域能力的分工 | 不记录进度 |
 | [`implementation-plan.md`](../../dev-plan/implementation-plan.md) | 记录可实施工作单元、依赖、测试和回滚 | 不承担架构真源 |

@@ -11,4 +11,4 @@
 
 层次是相对的：一个模块再往下拆时，它自己的设计对子模块就是结构层。
 
-**多个规划 agent 比方案时**，按 [`protocol/`](protocol/) 的轮次协议产出这份 SDD：各自提案、互评、裁决、异议、验收、确认、发布；操作闭环与取件见 [`protocol/round-operations.md`](protocol/round-operations.md)。
+**多个规划 agent 比方案时**，按 [`../../protocol/`](../../protocol/) 的轮次协议产出这份 SDD。

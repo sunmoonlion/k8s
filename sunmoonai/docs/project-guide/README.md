@@ -61,7 +61,7 @@
 | 发版、改部署清单 | [`topics/release.md`](topics/release.md) + [`repos/k8s.md`](repos/k8s.md) |
 | 确认某个能力是否真的接线了 | 对应仓文件的**「已知未实现」**一节 |
 | **动代码前必读的规则** | [`../dev-plan/constraints.md`](../dev-plan/constraints.md)（39 条，按主题分组） |
-| 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-agent-standards/deliverables/sdd/protocol/round-protocol.md`](../dev-agent-standards/deliverables/sdd/protocol/round-protocol.md) |
+| 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-agent-standards/protocol/round-protocol.md`](../dev-agent-standards/protocol/round-protocol.md) |
 | 推送改动、跨机拉取、子模块的坑 | `~/five-repos-sync/sync-five-repos.sh`；规则见 [`../dev-plan/constraints.md`](../dev-plan/constraints.md) T4 |
 | 知道接下来要建什么 | [`../dev-plan/`](../dev-plan/) |
 | 从本次暂停继续旧账工作 | [逐步处置清单](../v5-backlog-disposition-luna.md)，先同步再工作；不从历史便签恢复旧技术栈 |

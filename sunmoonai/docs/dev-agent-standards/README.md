@@ -18,6 +18,12 @@ AI 开发是一问一答：交给 agent 一个**任务**，它交回一个**交�
 这里只放与具体项目无关的原则和纪律，篇幅刻意很少；具体项目怎样落实，写在各任务自己的目录里
 （agent 项目的具体流程见 [pipeline.md](../dev-agent-task/components/backend/composition/pipeline.md)）。
 
+## 多方竞争
+
+任何一种交付物（SDD、SDP、UAT）都可能由多个 agent 各交一份，再比较选定。这时按 [`protocol/`](protocol/)
+的轮次协议进行：各自提案、互评、裁决、异议、验收、确认、发布；操作闭环与取件见
+[`protocol/round-operations.md`](protocol/round-operations.md)，状态由 `protocol/round-status.py` 从提交反推。
+
 ## 总则
 
 1. **每种交付都有三样东西**：交付物、验收条件（门）、没过门时退回哪一种任务。写完文字不等于过门。
