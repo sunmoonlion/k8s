@@ -16,4 +16,6 @@
 | 回滚 | 出问题怎么退回去 |
 | 状态 | `NOT_STARTED` / `IN_PROGRESS` / `BLOCKED` / `ACCEPTED` + 日期与证据 |
 
+agent 项目的原文见 [顶层实施计划](../../dev-agent-task/composition/implementation-plan.md)「任务条目格式」。
+
 其余规范尚未编写。

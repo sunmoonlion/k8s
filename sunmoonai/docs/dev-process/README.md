@@ -38,6 +38,7 @@
 8. 未经授权不推送、合并、发布、删除远端资产或扩大外部影响。
 
 第 3 条是 [UAT](05-uat/README.md) 证据采信的前提：分不清事实与推断，采信分级就无从谈起。
+agent 项目的原文见 [顶层组成设计](../dev-agent-task/composition/agent-dev-guide.md)「1.5 执行者的共同纪律」。
 
 ## 改判
 
