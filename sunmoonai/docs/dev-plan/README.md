@@ -14,7 +14,7 @@
 
 | 文件 | 内容 | 什么时候读 |
 | --- | --- | --- |
-| [`constraints.md`](constraints.md) | **代码必须符合的规则**，39 条按数据/契约/身份/拓扑/发布/智能体分组，每条标注谁在执行 | **动代码前** |
+| [`constraints.md`](../dev-agent-standards/constraints.md) | **代码必须符合的规则**，39 条按数据/契约/身份/拓扑/发布/智能体分组，每条标注谁在执行 | **动代码前** |
 | [`development-plan.md`](development-plan.md) | 要建什么、为什么这么建：起点、智能体通用/专用两分、四本账、执行层租用、三个阶段 | 想知道方向时 |
 | [`implementation-plan.md`](implementation-plan.md) | **任务本体**：每件事怎么做、怎么算做完。条目格式、测试层次、交付规则 | 要动手时 |
 | [`handoff.md`](handoff.md) | **状态与交接**：当前阶段、已就位的、未决项 U1–U5、不能倒退的输入 | 接手时先读 |

@@ -8,7 +8,7 @@
 >
 > 现在到哪了、什么不能倒退，见 [`handoff.md`](../../dev-plan/handoff.md)；
 > 为什么这么建见 [`development-plan.md`](../components/backend/composition/development-plan.md)；
-> 代码必须符合的规则见 [`constraints.md`](../../dev-plan/constraints.md)。
+> 代码必须符合的规则见 [`constraints.md`](../../dev-agent-standards/constraints.md)。
 
 ## 测试层次
 

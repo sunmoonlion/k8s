@@ -1,6 +1,6 @@
 # 身份与授权
 
-> 后端身份源码复核：2026-09-13 ｜ 相关规则见 [`../../dev-plan/constraints.md`](../../dev-plan/constraints.md)「身份」I1–I8
+> 后端身份源码复核：2026-09-13 ｜ 相关规则见 [`../../dev-agent-standards/constraints.md`](../../dev-agent-standards/constraints.md)「身份」I1–I8
 
 ## 1. 两类身份，互不通用
 

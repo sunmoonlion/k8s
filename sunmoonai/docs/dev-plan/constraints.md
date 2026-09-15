@@ -1,12 +1,8 @@
 # 开发必须遵守的规则（已迁出）
 
-> **2026-09-14 已迁出**：本文件按 [MIGRATION.md](../dev-agent-task/MIGRATION.md) 把以下内容迁走——
+> **2026-09-14 已迁出**：规则全文现在是一张总表 [`dev-agent-standards/constraints.md`](../dev-agent-standards/constraints.md)（2026-09-15 由五处合回）。
 >
-> - [`dev-agent-task/components/backend/composition/constraints.md`](../dev-agent-task/components/backend/composition/constraints.md)（5 节）
-> - [`dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md)（8 节）
-> - 第 2 步：「保证这些被遵守的三层」并入 [`dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md)，通用原则写进 [dev-agent-standards 总则](../dev-agent-standards/README.md)
->
-> 这里仅剩：历史记录与留在原处的节。节号是原文件的节号。
+> 这里仅剩「`doc-gate.py` 为什么不是第三个被删的脚本」一节，随门禁脚本留在原处。
 
 ### `doc-gate.py` 为什么不是第三个被删的脚本
 

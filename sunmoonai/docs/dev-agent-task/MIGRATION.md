@@ -28,14 +28,7 @@
 | 源（切换前） | 节 | 去向 | 说明 |
 | --- | --- | --- | --- |
 | `working/request-lifecycle.md` 全文 | I01-001…042 | T | 整份即 agent 顶层的 composition；不拆 |
-| constraints 标题与「怎么用」 | I05-001/002 | T | 提方案前按规则自检的用法 |
-| constraints 数据 D1–D9、做数据迁移时 | I05-003/004 | B | 拆：D9「前端不得持有凭据」进 `components/frontend/composition/` |
-| constraints 契约 C1–C6 | I05-005 | T | 前后端及各 App 之间的契约 |
-| constraints 身份 I1–I8 | I05-006 | T | 浏览器、BFF 与后端的身份分工，属前后端交互 |
-| constraints 拓扑 T1–T5、什么时候拆专用 Worker | I05-007/008 | B | 拆：T4/T5（悬空 gitlink、交付带「仓 + 提交号」）进 B06，与交付规则同处 |
-| constraints 发布 R1–R7、改模板同步实例、清理镜像、环境事实 | I05-009…012 | T | 前后端共同的发布与部署，跨阶段 |
-| constraints 智能体 A1–A5 | I05-013 | B | 拆：A4/A5（执行层租用、Port 不含领域概念）进 B04 |
-| constraints 保证这些被遵守的三层 | I05-014 | T + P（总则） | 拆：原文讲本项目的测试、hook、指针，进 T；「规则要有载体」的原则进总则 |
+| constraints 全部规则（「doc-gate 为什么」一节除外） | I05-001…014 | P（constraints） | 先按类别拆到五处；2026-09-15 所有者定合回一张总表 `dev-agent-standards/constraints.md`（原文、原顺序），所有 agent 开发任务共用 |
 | constraints `doc-gate.py` 为什么留下 | I05-015 | 留原处 | 随门禁脚本 |
 | guide 先读结论、原来是什么样、文档边界、不可变契约、唯一内核 | I02-002/003/004/007/008 | T | 项目总体 |
 | guide 七条设计原则 | I02-013 | T | 本项目的设计原则 |
@@ -99,7 +92,7 @@ P-prd 1、P-sdp 1、P-uat 4。
 
 ## 已定（所有者 2026-09-14）
 
-1. constraints 按规则类别拆开，各归合适的层（见上表 I05 各行）。
+1. constraints 按规则类别拆开，各归合适的层（见上表 I05 各行）。2026-09-15 改为合回一张总表，放 `dev-agent-standards/constraints.md`。
 2. protocol 放 B04；2026-09-15 改为放进 `dev-agent-standards/protocol/`（SDD、SDP、UAT 多方竞争时都用）。
 3. 删除与迁移门随历史冻结。
 4. 测试层次放 T。

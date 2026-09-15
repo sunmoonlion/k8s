@@ -234,4 +234,4 @@ wc -l tpl-backend/app/app/main.py                # 应为 5
 
 ---
 
-**改模板、同步实例前**，先读 [`../../dev-plan/constraints.md`](../../dev-plan/constraints.md)「发布」——本页只写现状。
+**改模板、同步实例前**，先读 [`../../dev-agent-standards/constraints.md`](../../dev-agent-standards/constraints.md)「发布」——本页只写现状。

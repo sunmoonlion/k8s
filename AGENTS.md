@@ -3,12 +3,11 @@
 本仓是 SunMoonAI 平台五个协作仓之一（`tpl-app` / `info-app` / `knowledge-app` /
 `investment-app` / `k8s`，**必须并列放置**）。
 
-**动代码前必读**——代码必须符合的规则（39 条，分放在前端、后端与前后端之间；
-各处清单见 agent 任务入口的「从哪里读起」）：
+**动代码前必读**——代码必须符合的规则（39 条，按主题分组）：
 
-`sunmoonai/docs/dev-agent-task/README.md`
+`sunmoonai/docs/dev-agent-standards/constraints.md`
 
-违反其中任一条的方案不进入讨论。用法见 `sunmoonai/docs/dev-agent-task/composition/constraints.md`「怎么用」。
+违反其中任一条的方案不进入讨论。用法见该文件「怎么用」。
 
 要先了解项目长什么样，读项目总览：
 

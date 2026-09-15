@@ -7,7 +7,7 @@
 > **这里回答"要建什么、为什么这么建"。**
 > 具体任务见 [`implementation-plan.md`](../../dev-plan/implementation-plan.md)，
 > 当前状态见 [`handoff.md`](../../dev-plan/handoff.md)，
-> 代码必须符合的规则见 [`constraints.md`](../../dev-plan/constraints.md)。
+> 代码必须符合的规则见 [`constraints.md`](../../dev-agent-standards/constraints.md)。
 
 ## 三个阶段
 

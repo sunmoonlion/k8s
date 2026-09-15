@@ -1,16 +1,17 @@
 # 开发必须遵守的规则
 
-> 迁自 [`dev-plan/constraints.md`](../../dev-plan/constraints.md) 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../MIGRATION.md)。
+> 2026-09-15 起位于 agent 开发规范下：本平台上**所有 agent 开发任务**动代码前都要对照。迁自
+> [`dev-plan/constraints.md`](../dev-plan/constraints.md)，原文、原顺序；「`doc-gate.py` 为什么不是第三个被删的脚本」一节随门禁脚本留在 dev-plan。
 
 > 最后更新：2026-08-29
 >
 > **动代码前先读这里。**违反其中任一条的方案**不进入讨论**——不是"不推荐"，
 > 是不提出。
 >
-> 项目现在长什么样，见 [`../project-guide/`](../../project-guide/)；
-> 要建什么见 [`development-plan.md`](development-plan.md)，
-> 具体任务见 [`implementation-plan.md`](../../dev-plan/implementation-plan.md)，
-> 当前状态见 [`handoff.md`](../../dev-plan/handoff.md)。
+> 项目现在长什么样，见 [`../project-guide/`](../project-guide/)；
+> 要建什么见 [`development-plan.md`](../dev-agent-task/composition/development-plan.md)，
+> 具体任务见 [`implementation-plan.md`](../dev-agent-task/composition/implementation-plan.md)，
+> 当前状态见 [`handoff.md`](../dev-agent-task/composition/handoff.md)。
 
 ## 怎么用
 
@@ -23,7 +24,7 @@
 | 登录、权限、服务间调用 | [身份](#身份) |
 | 仓库、组件、运行角色 | [拓扑](#拓扑) |
 | 部署、发版、镜像 | [发布](#发布) |
-| 智能体 | [智能体](#智能体) + [`round-protocol.md`](../../dev-agent-standards/protocol/round-protocol.md) |
+| 智能体 | [智能体](#智能体) + [`round-protocol.md`](protocol/round-protocol.md) |
 
 对照结果就是一张小表，两三行即可：
 
@@ -38,6 +39,37 @@
 只能靠这个自检和评审守住。
 
 ---
+
+## 数据
+
+| # | 规则 | 谁在执行 |
+| --- | --- | --- |
+| D1 | **每类业务数据只有一个权威主档**，其余存储只保存引用、快照或可重建副本 | ⚠ 自检 |
+| D2 | 每个 App 收敛**一个逻辑数据库、一条迁移链**；禁止跨 App 合并数据库或直接读表 | ⚠ 自检 |
+| D3 | 物理资源可共享（同一 PostgreSQL 集群），但必须独立逻辑库、角色、Secret | 部署清单 |
+| D4 | 对象存储按领域拥有：Bucket、凭据、生命周期必须隔离；**不以共享宿主机目录作交换协议** | ⚠ 自检 |
+| D5 | **RAGFlow 是可重建的派生系统**，不保存唯一原文 | ⚠ 自检 |
+| D6 | 迁移链单链线性，恰好一个 `down_revision = None` | `test_kernel_invariants.py` |
+| D7 | 改迁移**必须同步改** `test_kernel_invariants.py` 里那份文件名清单 | 该测试逐字比对 |
+| D8 | 迁移由**独立 Job** 执行，API / Worker / Scheduler 启动**不得**隐式升级数据库 | ⚠ 自检 |
+| D9 | 前端**不得**持有后端或数据库凭据 | `core/config.py` 启动期校验 |
+
+### 做数据迁移时
+
+```
+expand → backfill → reconcile → switch read → switch write → observe → contract
+```
+
+- 迁移前先出清单：表、约束、索引、revision、数据量、所有者、Secret、备份、消费者
+- **旧写路径切换必须 fail-closed**，不得无期限双写
+- 必要的双写必须有事务 Outbox、幂等、版本与对账，且有明确截止任务
+- 回滚窗结束前保留旧库备份、旧角色定义与恢复演练证据
+
+六条验收，缺一不可：可恢复备份 + 实际恢复演练 · 回填计数与业务不变量对账 ·
+新旧读路径结果对比 · 旧凭据在切换后被拒绝 · `migration current` 只有一个 head ·
+回滚与重新前滚均通过。
+
+**这一整节 ⚠ 无自动载体**——是程序，静态查不出来。
 
 ## 契约
 
@@ -62,6 +94,27 @@
 | I6 | 非安全方法必须**同时**满足 `Origin ∈ frontend_origins` **且** CSRF token 匹配 | 中间件 |
 | I7 | 服务令牌 subject 必须命中 `service_auth_subject_bindings` 的精确键；下游调用路径必须命中 allowlist 前缀 | `core/config.py` + 依赖 |
 | I8 | 生产期约 35 处配置硬校验：**配错则进程起不来**，不是运行期降级 | `core/config.py` |
+
+## 拓扑
+
+| # | 规则 | 谁在执行 |
+| --- | --- | --- |
+| T1 | 按**长期业务领域**划分 App，不按页面或部署组件划分 | ⚠ 自检 |
+| T2 | **每个领域 App 只有一个规范 Backend** | ⚠ 自检 |
+| T3 | **一个 Backend 代码库按运行角色部署**（API / Worker / Scheduler / Migration）；模板组件不定义领域边界，运行角色不等于领域服务 | ⚠ 自检 |
+| T4 | 父仓**不得出现悬空 gitlink**——子仓提交没推，别人克隆父仓会拉不到 | `~/five-repos-sync/sync-five-repos.sh`：它同步五个父仓，拉取侧自动 `submodule update --init --recursive`，子仓提交没推会**当场报错**。⚠ 但它只推父仓不推子仓，子仓的提交仍须自己推 |
+| T5 | 跨仓改动宣称"已完成"时，**必须带「仓 + 提交号」**——k8s 与四个 App 是并列独立仓，只写提交信息的话，评审方只能猜取证对象，会得出"改动不存在"的结论 | ⚠ 自检 |
+
+### 什么时候才拆出专用 Worker
+
+默认每个 App **只有一个通用 Worker**。满足下列任一条才拆，且要有证据
+（队列延迟、运行时长、资源、失败率、权限证据），不是预感：
+
+1. 浏览器、GPU、沙箱等依赖**显著扩大攻击面或镜像体积**
+2. 任务时长、重试或取消语义**显著不同**
+3. 需要**独立网络 / 服务身份**
+4. 有**持续容量指标**支持独立扩缩容
+5. 故障隔离**无法**通过队列和 Pod 边界实现
 
 ## 发布
 
@@ -96,12 +149,24 @@
 **KIND 默认不执行 NetworkPolicy**（kindnet 不 enforce）。包级验证必须另起
 Calico 集群，否则"测过了"是假的。
 
+## 智能体
+
+| # | 规则 | 谁在执行 |
+| --- | --- | --- |
+| A1 | 分**通用**（执行编排）与**专用**（领域），新增业务智能体优先是新增一份 Profile，不是 fork 一套代码 | ⚠ 自检 |
+| A2 | **两边都要有纪律**，不存在"通用部分不需要约束" | [`round-protocol.md`](protocol/round-protocol.md) |
+| A3 | 四本账（预算 / 幂等 / 副作用 / 证据）**必须落 PostgreSQL**——跨 run、跨进程死亡仍须正确的不变量，必须由存储承担 | ⚠ 自检 |
+| A4 | 执行层**租用不自建**，依赖边界严格限定在 SDK，不得直接依赖裸协议 | ⚠ 自检 |
+| A5 | 领域概念**不得进入 Port 签名**（`run(sql, limit)` 可以，`run_portfolio_query(持仓ID)` 不可以） | ⚠ 自检 |
+
+---
+
 ## 保证这些被遵守的三层
 
 | 层 | 覆盖 | 在哪 |
 | --- | --- | --- |
 | **随测试自动跑** | 标了测试载体的那些 | 四仓 `tests/test_kernel_invariants.py`、`tests/test_dormant_capabilities.py`、双端契约测试——**跑 `uv run pytest` 就带上，不需要谁记得** |
-| **随提交自动跑** | 本仓文档的三项机械不变量 | [`doc-gate.py`](../../dev-plan/doc-gate.py) 经版本化的 `.githooks/pre-commit` 触发——**提交就带上**。装一次 `git config core.hooksPath .githooks` 对全部 worktree 生效（共享同一个 `.git`），装没装用 `doc-gate.py --selfcheck` 判定 |
+| **随提交自动跑** | 本仓文档的三项机械不变量 | [`doc-gate.py`](../dev-plan/doc-gate.py) 经版本化的 `.githooks/pre-commit` 触发——**提交就带上**。装一次 `git config core.hooksPath .githooks` 对全部 worktree 生效（共享同一个 `.git`），装没装用 `doc-gate.py --selfcheck` 判定 |
 | **指针** | 全部 | 五仓根 `AGENTS.md`、`.cursor/rules/`、八个组件 `CLAUDE.md`（**进目录自动注入**） |
 | **自检** | 全部 | 上面「怎么用」那节 |
 
@@ -115,5 +180,3 @@ Calico 集群，否则"测过了"是假的。
 （子模块是否初始化）。**看起来在把关，其实不牢。**
 
 规则要有载体，就做成**跟着测试跑**的；做不成的，老实标 ⚠。
-
-> 与项目无关的原则（规则要有载体）见 [dev-agent-standards 总则](../../dev-agent-standards/README.md)。
