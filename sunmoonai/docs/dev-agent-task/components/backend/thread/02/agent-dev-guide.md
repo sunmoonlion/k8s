@@ -54,7 +54,7 @@ router 和 orchestrator 都不是 agent 角色；过渡期由人运行脚本只�
 | `acceptor` | 按冻结标准独立验收 | 不得是 arbiter 或基座作者 |
 | `publisher` | 在批准后执行发布 Attempt | 不能自己授予发布权限 |
 
-角色分离以 competition-protocol“⑤ 验收 与 ⑥ 确认”为准，本文 [§3.19](../../../composition/protocol/competition-operations.md) 给出操作算法。
+角色分离以 competition-protocol“⑤ 验收 与 ⑥ 确认”为准，本文 [§3.19](../../../../composition/protocol/competition-operations.md) 给出操作算法。
 这些角色在产品运行时里是 Attempt 的 `kind` 或 principal 行为，不新增内核对象。
 
 ### 2.3 Task Profile 与 Agent Profile
@@ -129,7 +129,7 @@ max_rollbacks = 2
 三者混写会让「偏好没满足」被当成「门禁没过」，或者反过来。
 工单还应固定 `tenant`、`agent_profile` 或其选择策略、`approval_points`、`deadline`、
 `stop_condition`、`writable_roots`、`output_namespace`、`publication_target` 与 `integrator_id`
-——最后四项是 [§3.6](../components/04-agent-execution/composition/agent-dev-guide.md) 命名空间纪律在工单上的落点。
+——最后四项是 [§3.6](../../components/04-agent-execution/composition/agent-dev-guide.md) 命名空间纪律在工单上的落点。
 
 `intake_author` 若替请求者起草意图与验收，同票不得再任 proposer、arbiter 或 acceptor；请求者直接给出并
 冻结验收时可记 requester。`route_proposal` 保存建议与证据，`route_effective` 保存实际决定，
@@ -159,7 +159,7 @@ output_namespace, publication_target, integrator            result_status
 ⚠ **`workspace_path`、`exclusive_branch`、`forbidden_write_paths` 必须在派工时写死，
 且对每个执行者唯一。**`forbidden_write_paths` 至少包括：人的主 checkout、其他执行者的
 worktree、共享发布面，以及非协调者不得写的单写者文件（如 `user-message.md`、`composition/`）。
-**这三个字段不是描述性说明，是 [§3.10](../components/04-agent-execution/composition/agent-dev-guide.md) 写入前门禁的判定输入——派工时缺任一字段，
+**这三个字段不是描述性说明，是 [§3.10](../../components/04-agent-execution/composition/agent-dev-guide.md) 写入前门禁的判定输入——派工时缺任一字段，
 执行者不得开始写。**
 
 派工**只能收窄**父 Task。父预算覆盖所有 Work Unit、Attempt、工具、评审和改进。
@@ -220,7 +220,7 @@ Artifact 可以有草稿、冻结、陈旧、被替代等版本属性；这些�
 
 ### 3.4 T0/T1/T2 不是三套状态机
 
-> 依据的通用规范：[多方竞争协议「档位」](../../../../dev-agent-standards/protocol/competition-rules.md)
+> 依据的通用规范：[多方竞争协议「档位」](../../../../../dev-agent-standards/protocol/competition-rules.md)
 
 三档共享同一工单 schema、状态机和发布门，只改变 guard、必需 Artifact 和 Attempt 组：
 
@@ -230,7 +230,7 @@ Artifact 可以有草稿、冻结、陈旧、被替代等版本属性；这些�
 | T1 | 单稿 → 独立评审 → 验收 → 确认 | 一稿、一评、一验 | 工单冻结与开工可合成一次明确确认 |
 | T2 | competition-protocol 七环节 | N 份隔离候选、互评、裁决、异议、独立验收 | 题目/判据冻结与参与方/路线确认分开 |
 
-产物命名、候选冻结、处置表和验收方算法见 [§3.19](../../../composition/protocol/competition-operations.md)–[§3.22](../components/04-agent-execution/composition/agent-dev-guide.md)，来源为现行 competition-protocol。状态脚本从 commit 反推，工作区
+产物命名、候选冻结、处置表和验收方算法见 [§3.19](../../../../composition/protocol/competition-operations.md)–[§3.22](../../components/04-agent-execution/composition/agent-dev-guide.md)，来源为现行 competition-protocol。状态脚本从 commit 反推，工作区
 不参与判定；空参与方不是“完成”；脚本首次增加判据时先与人工结论对照，并列出未检查范围。
 
 ⚠ **档位是风险轴，「建不建 Git 工作区」是载体轴，两者正交，不可互相推导。**
@@ -299,7 +299,7 @@ S 层比对象与边，R 层比一次执行的序列。
 | 每次状态推导**同时输出「上一状态 → 本状态」**；⚠ **边不在内核合法转换表内即报错退出** | 只校验状态点会漏掉非法边——这是真实抓到过的漏检形态（§5.3 规则 6） |
 | 分发前对照 `roles_allowed` 与角色分离禁令，**冲突即拒绝并给 reason** | 角色冲突要到验收时才暴露，那时已经晚了 |
 | ⚠ **每条判定声明覆盖范围**（P4）：输出里「查了什么、没查什么」与结论并列；**零命中要能区分「真的没有」与「没查到」** | 门禁在边界上给假答案，而它看起来是绿的 |
-| 按工单 `tier` 读取对应 guard 表与必需产物表，**不写死某一档** | 轻档位没有可执行形态，等于不存在（[§0.0](../../../composition/agent-dev-guide.md) 第 6 条） |
+| 按工单 `tier` 读取对应 guard 表与必需产物表，**不写死某一档** | 轻档位没有可执行形态，等于不存在（[§0.0](../../../../composition/agent-dev-guide.md) 第 6 条） |
 
 状态推导还须读取 orchestrator 单写的执行事件：产物未出现只能说明“尚无交付”，
 不能区分未派发、执行中、崩溃、失联或超时。无法程序分发的执行器应输出明确投喂说明，
@@ -307,7 +307,7 @@ S 层比对象与边，R 层比一次执行的序列。
 
 #### 任务目录的状态怎么判
 
-任务目录的结构见 [通用规则「任务目录里放什么」](../../../../dev-agent-standards/general-rules.md)。
+任务目录的结构见 [通用规则「任务目录里放什么」](../../../../../dev-agent-standards/general-rules.md)。
 
 状态**从文件和提交推出来，不在任何地方手写**；给人看的进度视图由此生成。
 没有记录或进度文件：状态只从 `thread/`、`composition/`、`components/` 及它们的提交推出。
@@ -334,7 +334,7 @@ S 层比对象与边，R 层比一次执行的序列。
 
 ### 4.2 权力表
 
-> 依据的通用规范：[人的批准点「谁批什么」](../../../../dev-agent-standards/approvals.md)
+> 依据的通用规范：[人的批准点「谁批什么」](../../../../../dev-agent-standards/approvals.md)
 
 | 行 | 受控动作或合法边 | principal | 默认 | 强制要求 |
 | --- | --- | --- | --- | --- |
@@ -359,7 +359,7 @@ S 层比对象与边，R 层比一次执行的序列。
 
 ### 4.4 身份、批准与强制点
 
-> 依据的通用规范：[人的批准点「批准怎样才成立」](../../../../dev-agent-standards/approvals.md)
+> 依据的通用规范：[人的批准点「批准怎样才成立」](../../../../../dev-agent-standards/approvals.md)
 
 批准成立必须同时回答：谁、批准哪个 Task/版本、批准哪项动作、何时过期、是否已原子消费。
 通知文件或聊天回复只证明“有文本”，不证明身份；executor 可修改的脚本、hook、权限位也不是对它的
@@ -397,7 +397,7 @@ S 层比对象与边，R 层比一次执行的序列。
 
 ### 4.5 权限公式与只有 principal 能做的动作
 
-> 依据的通用规范：[人的批准点「权限取交集」](../../../../dev-agent-standards/approvals.md)
+> 依据的通用规范：[人的批准点「权限取交集」](../../../../../dev-agent-standards/approvals.md)
 
 有效权限是交集，不是并集：
 
@@ -446,7 +446,7 @@ Task B；一次批准的破坏性动作**不构成下次的默许**。批准绑�
 
 ### 4.6 三道正交门
 
-> 依据的通用规范：[人的批准点「三道正交门」](../../../../dev-agent-standards/approvals.md)
+> 依据的通用规范：[人的批准点「三道正交门」](../../../../../dev-agent-standards/approvals.md)
 
 运行时的有效能力必须**同时**通过三道独立门；三者不能互相代替：
 
@@ -470,7 +470,7 @@ Execution Scope 只能落在进程外层，Approval Policy 只能事后审计—
 
 ### 4.8 principal 的裁量权与改判纪律
 
-> 依据的通用规范：[人的批准点「裁量权的底线」](../../../../dev-agent-standards/approvals.md)
+> 依据的通用规范：[人的批准点「裁量权的底线」](../../../../../dev-agent-standards/approvals.md)
 
 人可以判断「这件事不值得走全流程」，执行者不可以。但裁量有底线，**五条不因规模而豁免**：
 
@@ -520,7 +520,7 @@ Execution Scope 只能落在进程外层，Approval Policy 只能事后审计—
 
 `dispatch_event` 指**人代运行时执行的一次传输动作**（把指令送到没有程序入口的执行器、
 在正确的工作区打开它的界面）。**它不是权力，是欠账**：不占权力表的行，
-但**必须可数**，因为成本上界（[§6.2](../components/02-intake/composition/agent-dev-guide.md)）和绕过口径（[§6.3](../components/02-intake/composition/agent-dev-guide.md)）都要数它。
+但**必须可数**，因为成本上界（[§6.2](../../components/02-intake/composition/agent-dev-guide.md)）和绕过口径（[§6.3](../../components/02-intake/composition/agent-dev-guide.md)）都要数它。
 
 三者不得合成一个“能力等级”。JSONL 工具事件可能细但仍是执行器自报；外层可以观察 argv/stdio 却不能
 拦内部系统调用；自带沙箱也不等于运行时控制。`RUNNING` 能否可靠判断首先是执行器 observability 的问题，
@@ -528,7 +528,7 @@ Execution Scope 只能落在进程外层，Approval Policy 只能事后审计—
 
 ### 5.2 证据等级与采信规则
 
-> 依据的通用规范：[UAT「证据采信」](../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「证据采信」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 | 等级 | 来源 | 可支持的断言 |
 | --- | --- | --- |
@@ -570,7 +570,7 @@ Task Profile 版本、验收摘要、策略版本、principal 身份域、
 
 ### 5.4 Git 载体能与不能证明什么
 
-> 依据的通用规范：[UAT「载体各能证明什么」](../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「载体各能证明什么」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 Git 永久承担代码/文档 Artifact 的版本载体；手工阶段也可从 commit、裁定记录和执行事件重建投影。
 分支是运输通道，工作区是可变草稿，只有钉定 commit 的产物可评审。发布时必须比较目标 ref 是否仍在
@@ -582,7 +582,7 @@ CLI 内部发生过哪些工具调用。手工态的价值是先跑通对象形�
 
 ### 5.8 上下文路由与能力四级词典
 
-> 依据的通用规范：[UAT「能力状态只用四级」](../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「能力状态只用四级」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 **改哪一面，就必须连带读哪些东西**——否则断言的是记忆不是现状：
 
@@ -609,12 +609,12 @@ CLI 内部发生过哪些工具调用。手工态的价值是先跑通对象形�
 | `runtime-verified` | 在目标环境**实跑验证过** |
 
 ⚠ **类、DTO、迁移或测试夹具存在，都不等于生产链已经接线。**
-这是 [§12](../components/06-acceptance-commit/composition/agent-dev-guide.md)「拿休眠代码当能力证据」那条失败的词汇层防线；配套的可运行验证动作是
-**回跑 dormant 测试**并同时确认「锚点仍在」与「能力仍未接线」两个方向（[§2.6](../components/04-agent-execution/composition/agent-dev-guide.md)）。
+这是 [§12](../../components/06-acceptance-commit/composition/agent-dev-guide.md)「拿休眠代码当能力证据」那条失败的词汇层防线；配套的可运行验证动作是
+**回跑 dormant 测试**并同时确认「锚点仍在」与「能力仍未接线」两个方向（[§2.6](../../components/04-agent-execution/composition/agent-dev-guide.md)）。
 
 ### 5.9 七种载体各能证明什么
 
-> 依据的通用规范：[UAT「载体各能证明什么」](../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「载体各能证明什么」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 ⚠ **隔离靠 worktree + 命名分支，不靠文件名。**`-new`、时间戳、执行者名写进文件名，
 都不能阻止「同一工作区、同一相对路径」被后写覆盖。不同载体的覆盖语义完全不同：
@@ -639,7 +639,7 @@ Artifact bundle 保持可达——⚠ **「对象暂时还在 reflog」不是保
 
 ### 5.13 历史取证怎样用于今天的开发
 
-> 依据的通用规范：[UAT「历史证据怎样用」](../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「历史证据怎样用」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 使用证据前固定 **仓库/SDK commit、配置或策略版本、主机、OS 身份、沙箱/容器上下文、
 命令、退出码、原始输出引用及时间**；敏感字段去敏，不输出凭据本体。
@@ -722,7 +722,7 @@ acceptance runner 至少对三轮可取得的历史产物逐条对照；每个�
 
 | # | 独立观察 | 结论与落点 |
 | --- | --- | --- |
-| K1 | `rg 'interrupt\(|Command\(resume=' investment-backend/app/app`；实际锚见 [§4.3](../components/05-interrupt-resume/composition/agent-dev-guide.md) | 出向和入向原语都接受业务值；删去平台自造的固定修订 schema，直接绑定产品 Interaction |
+| K1 | `rg 'interrupt\(|Command\(resume=' investment-backend/app/app`；实际锚见 [§4.3](../../components/05-interrupt-resume/composition/agent-dev-guide.md) | 出向和入向原语都接受业务值；删去平台自造的固定修订 schema，直接绑定产品 Interaction |
 | K2 | 同一 `session_id → thread_id`，同一 checkpointer 上 `Command(resume=value)` | 原地恢复同一 Attempt；只有旧 Attempt 终态、重试或另一次执行才新建 Attempt |
 | K3 | 宿主 `sudo -n -l` 返回 `NOPASSWD: ALL`；历史取证还记录 docker 与可写 remote | 同凭据域里的额外签名存储不能鉴别人和 agent；批准证据必须来自执行域外身份/服务 |
 | K4 | `git branch -vv` 仅 master 有 upstream；全部参与分支是本地 worktree | Agent 产物以本地 commit 冻结和取件，不设计额外 push 中转作为前提 |
@@ -749,7 +749,7 @@ E0–E4 证据等级、T0 成本上界、绕过的覆盖边界、四层验证、
 | 旧主张 | 本文处置与依据 |
 | --- | --- |
 | `agent-dev-refact`：已有凭据即批准、当前不用建任何边界、单 principal 无需区分 | **不采用**。技术可写不等于动作获批；§4.2 H5、§4.4 的身份与实际写路径强制仍成立 |
-| 人自己写下一版就必须换 Attempt | **不采用这个触发条件**。人的内容归属保留；执行是否延续按 [§4.3](../components/05-interrupt-resume/composition/agent-dev-guide.md) checkpoint 和终态判，不按作者类型判 |
+| 人自己写下一版就必须换 Attempt | **不采用这个触发条件**。人的内容归属保留；执行是否延续按 [§4.3](../../components/05-interrupt-resume/composition/agent-dev-guide.md) checkpoint 和终态判，不按作者类型判 |
 | 旧稿的固定编辑字段表与协议、介入后默认另开执行 | **不采用**。自由中断/恢复原语与产品 Interaction 已有绑定；未经真实需求不另造内核语义 |
 | 把两种部署形式登记成两套 Profile；把人登记为执行器 | **不采用**。唯一产品运行时、Task Profile/Agent Profile 正交；人是 requester/principal 或内容贡献者 |
 | 旧表把 H5 当作直接从等待写成功的边 | **不采用**。批准具体 Side Effect，再经合法排队、执行、验收和终态提交 |

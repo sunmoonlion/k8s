@@ -15,12 +15,13 @@ thread/                           一串 turn；每个 turn 带任务书 user-me
 composition/                      SDD：前后端的划分与交互、总体设计
 components/
 ├── frontend/
-│   ├── composition/
-│   └── components/  05-interaction
+│   ├── thread/      01（模拟补建）
+│   └── composition/
 └── backend/
+    ├── thread/      01–03（模拟补建）
     ├── composition/
     └── components/  02-intake · 04-agent-execution
-                     05-interrupt-resume · 06-acceptance-commit
+                     05-interrupt-resume · 06-acceptance-commit（各有 thread/ 与 composition/）
 ```
 
 ## 从哪里读起

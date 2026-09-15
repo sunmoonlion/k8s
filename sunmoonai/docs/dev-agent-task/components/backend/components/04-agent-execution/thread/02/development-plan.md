@@ -20,4 +20,4 @@ harness 并需凭据。
 
 **harness 只给执行原语，不给运作纪律**：N 路隔离、多方竞争、中断恢复、审批、工具、
 沙箱它有；三阶段可见性、提案包构造、评审协议、吸收处置记录、重叠分歧判据——
-这些在 [`competition-protocol.md`](../../../../composition/protocol/competition-protocol.md)，必须自建。
+这些在 [`competition-protocol.md`](../../../../../../composition/protocol/competition-protocol.md)，必须自建。

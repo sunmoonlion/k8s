@@ -4,7 +4,7 @@
 
 ### 1.4 开发验收不可外推
 
-> 依据的通用规范：[UAT「判据与完成」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「判据与完成」](../../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 开发变更常可用测试、门禁和 diff 机械复算，成本低；财务分析的判断、新鲜度与口径验收昂贵。
 `dev.change/1` 跑通只证明开发场景的对象形状、转换和证据链，**没有解决判断且昂贵的那一半**。
@@ -13,7 +13,7 @@
 
 ### 1.7 先核前提，也核控制面
 
-> 依据的通用规范：[UAT「判据与完成」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「判据与完成」](../../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 设计前留下一个可复核的最小记录：**要保护或自动化的动作 → 实际调用者 → 执行路径 →
 使用的身份/凭据域 → 写入对象 → 现有库原语 → 缺口和反例**。每项附钉定版本的代码、
@@ -37,7 +37,7 @@
 
 ### 3.5 交付、清理和恢复
 
-> 依据的通用规范：[SDP「交付、发布与保留」](../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
+> 依据的通用规范：[SDP「交付、发布与保留」](../../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
 
 validator 先跑机械条，acceptor 再判机器判不了的冻结条；验收失败在预算允许时产生新 Attempt，
 不得改窄标准换取通过。不可逆动作由 principal 确认后，publisher 才写共享最终路径或生产面。
@@ -54,30 +54,30 @@ validator 先跑机械条，acceptor 再判机器判不了的冻结条；验收�
 
 ### 3.12 完成判据
 
-> 依据的通用规范：[UAT「完成判据」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「完成判据」](../../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 ⚠ **十三条同时满足才叫闭环**，缺一条都不能笼统说「完成」：
 
 1. 受理幂等，原始请求与规范化 Task 可追溯；
 2. 载体路由（是否建 Git 工作区）有依据；复杂 Task 的工作区、Git 与 manifest 可复现；
 3. 范围、验收、权限、预算、批准点和基线已冻结；
-4. 执行者接单核对了工作区、指令、租约和输入（[§3.10](../04-agent-execution/agent-dev-guide.md)）；
-5. 按风险执行，角色冲突已处理（[§2.2](../../composition/agent-dev-guide.md)）；
+4. 执行者接单核对了工作区、指令、租约和输入（[§3.10](../../04-agent-execution/composition/agent-dev-guide.md)）；
+5. 按风险执行，角色冲突已处理（[§2.2](../../../composition/agent-dev-guide.md)）；
 6. 每个产出有 owner、namespace、状态、provenance 和**唯一** publication target/integrator；
 7. 候选**没有**直接写共享路径或 `master/main`，发布只从独占整合面发生；
 8. publication target 通过**预期 HEAD/version 的原子条件更新**，发布竞争没有变成静默覆盖；
-9. 并行结果绑定 commit，迟到、失败和取消已处置（[§3.9](../04-agent-execution/agent-dev-guide.md)）；
+9. 并行结果绑定 commit，迟到、失败和取消已处置（[§3.9](../../04-agent-execution/composition/agent-dev-guide.md)）；
 10. final commit 上全部门禁和验收**逐条**通过；
 11. 结果、证据、副作用、盲区和风险已持久化；
 12. 提交唯一终态，请求方可重取结果；
 13. Git 对象和 Artifact 可达、血缘可追溯且无活跃引用后，工作区才清理。
 
 ⚠ **缺项时只能称「已受理」「已物化」「候选完成」「本次选定」「待验收」「交付待重试」
-或「清理待处理」——不能笼统宣称完成。**这条对应 [§11](../04-agent-execution/agent-dev-guide.md) 的「『已派工』或『全部返回』当作完成」。
+或「清理待处理」——不能笼统宣称完成。**这条对应 [§11](../../04-agent-execution/composition/agent-dev-guide.md) 的「『已派工』或『全部返回』当作完成」。
 
 ### 3.15 发布协议：三个路径不是一个
 
-> 依据的通用规范：[SDP「交付、发布与保留」](../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
+> 依据的通用规范：[SDP「交付、发布与保留」](../../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
 
 用户要 `path/to/result.md` 时，必须区分三个东西：
 
@@ -89,7 +89,7 @@ published ref:    final commit / PR / release
 
 候选作者只提交自己的相对路径，**不直接把文件复制到共享 master**。选定或逐项整合后，
 由**唯一 integrator** 从冻结 commit 取内容，在独占整合 worktree 写 publication path，
-跑 final gate，再形成 final commit。是否推主线仍受 [§4.2](../../composition/agent-dev-guide.md) H5 约束。
+跑 final gate，再形成 final commit。是否推主线仍受 [§4.2](../../../composition/agent-dev-guide.md) H5 约束。
 
 ⚠ **发布动作必须带预期版本**：Git 更新校验目标 ref 仍指向 integrator 开始时记录的 commit；
 文件或对象存储用版本号、ETag、generation 或等价 compare-and-swap。目标已变化时
@@ -102,7 +102,7 @@ published ref:    final commit / PR / release
 
 ### 3.16 保留与垃圾回收
 
-> 依据的通用规范：[SDP「交付、发布与保留」](../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
+> 依据的通用规范：[SDP「交付、发布与保留」](../../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
 
 | 状态 | 默认保留 |
 | --- | --- |
@@ -119,7 +119,7 @@ published ref:    final commit / PR / release
 
 ### 5.5 四层验证
 
-> 依据的通用规范：[UAT「验证分层」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「验证分层」](../../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 | 层 | 谁 | 判什么 |
 | --- | --- | --- |
@@ -133,7 +133,7 @@ published ref:    final commit / PR / release
 
 ### 5.7 证据账按流程分级
 
-> 依据的通用规范：[UAT「证据账按流程分级」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「证据账按流程分级」](../../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 ⚠ **不能只有「全套」与「零记录」两档。**
 
@@ -162,7 +162,7 @@ verification     # 最终 commit 上的回归结果
 
 ### 5.10 事实裁决表与整合纪律
 
-> 依据的通用规范：[UAT「先裁决事实，再谈偏好」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「先裁决事实，再谈偏好」](../../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 **评审分两阶段**：先只读原始请求、匿名 commit 和统一标准**独立审**；冻结后再读候选自评、
 盲区和验证记录**对照审**。评审必须写明 commit、覆盖范围、阻断问题、证据，
@@ -188,7 +188,7 @@ verification     # 最终 commit 上的回归结果
 
 ### 5.12 检查本身也必须接受检查
 
-> 依据的通用规范：[UAT「检查本身也必须接受检查」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「检查本身也必须接受检查」](../../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 每个门禁都输出 `PASS / FAIL / UNKNOWN` 的语义及 checked/not_checked。
 缺输入、权限不足、枚举失败不能被吸收为 PASS；聚合器先判输入集合是否完整、非空是否为必需，
@@ -207,7 +207,7 @@ verification     # 最终 commit 上的回归结果
 
 ### 9.2 没查什么
 
-> 依据的通用规范：[UAT「覆盖声明」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「覆盖声明」](../../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 ⚠ **这一节还要能装下「不确定」**，不是只装「查了」与「没查」两档。
 凡出现「**我不能排除**某事发生过」的情形，就如实写进来，
@@ -239,9 +239,9 @@ verification     # 最终 commit 上的回归结果
 
 ## 12. 常见失败方式与项目实例
 
-> 依据的通用规范：[UAT「证据分三级」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「证据分三级」](../../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
-[§11](../04-agent-execution/agent-dev-guide.md) 是机制，本节是**本项目实际遇到过的失败**，按**证据强度**分三级。
+[§11](../../04-agent-execution/composition/agent-dev-guide.md) 是机制，本节是**本项目实际遇到过的失败**，按**证据强度**分三级。
 ⚠ **三级不是修辞差别，是能不能独立复核的差别：**
 
 - **已核对事实**：证据当前仍可独立取得并复核（commit、blob、文件存在性、可重跑命令）；
@@ -249,40 +249,40 @@ verification     # 最终 commit 上的回归结果
 - **设计风险**：机制上成立，但本项目尚未实际踩到，或原始证据出处已不可取得。
 
 ⚠ **三级不可互相升格。**尤其**不得**把「机制上必然如此」当成「此处已核对」——
-这正是 [§3.8](../04-agent-execution/agent-dev-guide.md) 第 4 步要求的态度：**能证明的和推断出来的分开写。**
+这正是 [§3.8](../../04-agent-execution/composition/agent-dev-guide.md) 第 4 步要求的态度：**能证明的和推断出来的分开写。**
 
 | 失败 | 证据性质 | 控制在哪 |
 | --- | --- | --- |
-| **隔离来自 worktree + 命名分支，不来自文件名** | **已核对事实（2026-09-02）**：三方在各自 worktree 与命名分支上持有**同名且不带后缀**的同一文件，内容互不相同且**全部得以保留**，各自 commit 与 blob 可独立复核。故后缀**非必要**；又因同一工作树内两方写同一带后缀的路径照样互相覆盖，后缀亦**非充分** | [§3.6](../04-agent-execution/agent-dev-guide.md)、[§11](../04-agent-execution/agent-dev-guide.md) |
-| **未提交的同路径写入没有任何保护** | **已核对事实**：Git 对未跟踪/未提交文件的同路径写入不提供冲突检测、不留历史、不留作者归属。这是 Git 语义，**可随时复现** | [§3.6](../04-agent-execution/agent-dev-guide.md)、[§3.7](../04-agent-execution/agent-dev-guide.md) |
-| 多执行者写进共享 checkout 造成覆盖 | **事故报告（2026-09-02），现场已灭失**：当事方陈述有产出被后写覆盖。共享路径上的文件事后已被清走，**具体发生过哪一次覆盖、写入顺序和责任人均不可独立复核**，本表不作此断言 | [§3.6](../04-agent-execution/agent-dev-guide.md)、[§3.8](../04-agent-execution/agent-dev-guide.md) |
-| 以工作区最后一版代替 commit 做交卷或比选 | **已核对事实**：磁盘上的「当前文件」不携带作者归属，也不能证明谁先写完 | [§3.7](../04-agent-execution/agent-dev-guide.md) |
-| 只写分支名，不固定 commit | **事故报告（2026-08-27）**：当事方记录评审曾引用旧提交而主方已前进；原始记录可取回，但其中**未找到**对应条目，**故不升为已核对** | [§3.9](../04-agent-execution/agent-dev-guide.md) |
-| 评审意见的处置边界由被审方单方划定 | **已核对事实（2026-08-27）**：处置记录逐条由被审方判定采纳或拒绝，其中一条门禁因「三台机器分别报 0 / 4 / 95 条失败」被判为误报并删除。⚠ **「优胜作者拒绝改进」这一更强的说法未获记录支持，不采用** | [§2.2](../../composition/agent-dev-guide.md)、§5.5 |
+| **隔离来自 worktree + 命名分支，不来自文件名** | **已核对事实（2026-09-02）**：三方在各自 worktree 与命名分支上持有**同名且不带后缀**的同一文件，内容互不相同且**全部得以保留**，各自 commit 与 blob 可独立复核。故后缀**非必要**；又因同一工作树内两方写同一带后缀的路径照样互相覆盖，后缀亦**非充分** | [§3.6](../../04-agent-execution/composition/agent-dev-guide.md)、[§11](../../04-agent-execution/composition/agent-dev-guide.md) |
+| **未提交的同路径写入没有任何保护** | **已核对事实**：Git 对未跟踪/未提交文件的同路径写入不提供冲突检测、不留历史、不留作者归属。这是 Git 语义，**可随时复现** | [§3.6](../../04-agent-execution/composition/agent-dev-guide.md)、[§3.7](../../04-agent-execution/composition/agent-dev-guide.md) |
+| 多执行者写进共享 checkout 造成覆盖 | **事故报告（2026-09-02），现场已灭失**：当事方陈述有产出被后写覆盖。共享路径上的文件事后已被清走，**具体发生过哪一次覆盖、写入顺序和责任人均不可独立复核**，本表不作此断言 | [§3.6](../../04-agent-execution/composition/agent-dev-guide.md)、[§3.8](../../04-agent-execution/composition/agent-dev-guide.md) |
+| 以工作区最后一版代替 commit 做交卷或比选 | **已核对事实**：磁盘上的「当前文件」不携带作者归属，也不能证明谁先写完 | [§3.7](../../04-agent-execution/composition/agent-dev-guide.md) |
+| 只写分支名，不固定 commit | **事故报告（2026-08-27）**：当事方记录评审曾引用旧提交而主方已前进；原始记录可取回，但其中**未找到**对应条目，**故不升为已核对** | [§3.9](../../04-agent-execution/composition/agent-dev-guide.md) |
+| 评审意见的处置边界由被审方单方划定 | **已核对事实（2026-08-27）**：处置记录逐条由被审方判定采纳或拒绝，其中一条门禁因「三台机器分别报 0 / 4 / 95 条失败」被判为误报并删除。⚠ **「优胜作者拒绝改进」这一更强的说法未获记录支持，不采用** | [§2.2](../../../composition/agent-dev-guide.md)、§5.5 |
 | 评审给出的验收标准无人回跑 | **已核对事实（2026-08-27）**：处置记录末节自记一份验收标准「**未回跑**」、一份「**待评审方执行**」、一份仅第 3 条通过 | §5.5 L1 |
-| 只测一端就宣布跨仓契约完成 | **现行硬规则**（constraints C4）：单仓 CI 只跑自己那半，provider 改了、consumer 锁没跟，两边各自都绿 | [§1.3](../../composition/agent-dev-guide.md) |
-| 拿休眠代码当能力证据 | **已核对事实**：一家以本仓休眠的 `AgentProfile.permits_tool` 佐证租用 SDK 的工具门，**九份评审无一发现** | [§2.6](../04-agent-execution/agent-dev-guide.md)、[§5.2](../../composition/agent-dev-guide.md)、[§5.6](../04-agent-execution/agent-dev-guide.md) |
-| 取证工具自身有边界而未声明 | **已核对事实**：在助手自带沙箱内跑取证命令，`/proc/self/uid_map` 为 `0 1003 1`，于是沙箱内一切看起来都是 root，据此写出「本机所有进程都是 root」。⚠ **取证栏必须注明主机、执行身份、是否在沙箱内** | [§4.4](../../composition/agent-dev-guide.md) |
-| 把「某载体证不了 X」写成「X 未被证明」 | **已核对事实**：见 [§7.2](../../composition/agent-dev-guide.md) 的更正 | [§7.2](../../composition/agent-dev-guide.md) |
-| 候选提前读取其他方案 | 设计风险：机理清楚，本项目原始记录出处已不可取得 | [§2.2](../../composition/agent-dev-guide.md) |
-| 多数票覆盖失败测试 / 全体一致的共同盲区 | 设计风险：多个相似模型可能共享盲区 | [§2.3](../../composition/agent-dev-guide.md)、[§11](../04-agent-execution/agent-dev-guide.md) |
-| 候选人互投决定胜负 | 设计风险：结构上「被审方兼任判定方」已出现过，但候选互投这一具体流程尚未实跑 | [§2.2](../../composition/agent-dev-guide.md) |
-| 大补丁混合多条主张 | 设计风险，尚未实跑 | [§11](../04-agent-execution/agent-dev-guide.md) |
-| 整合时拷贝未提交文件进共享主仓 | 设计风险：绕过选定哈希，**主仓变成公共投稿箱** | [§3.6](../04-agent-execution/agent-dev-guide.md)、[§3.7](../04-agent-execution/agent-dev-guide.md) |
+| 只测一端就宣布跨仓契约完成 | **现行硬规则**（constraints C4）：单仓 CI 只跑自己那半，provider 改了、consumer 锁没跟，两边各自都绿 | [§1.3](../../../composition/agent-dev-guide.md) |
+| 拿休眠代码当能力证据 | **已核对事实**：一家以本仓休眠的 `AgentProfile.permits_tool` 佐证租用 SDK 的工具门，**九份评审无一发现** | [§2.6](../../04-agent-execution/composition/agent-dev-guide.md)、[§5.2](../../../composition/agent-dev-guide.md)、[§5.6](../../04-agent-execution/composition/agent-dev-guide.md) |
+| 取证工具自身有边界而未声明 | **已核对事实**：在助手自带沙箱内跑取证命令，`/proc/self/uid_map` 为 `0 1003 1`，于是沙箱内一切看起来都是 root，据此写出「本机所有进程都是 root」。⚠ **取证栏必须注明主机、执行身份、是否在沙箱内** | [§4.4](../../../composition/agent-dev-guide.md) |
+| 把「某载体证不了 X」写成「X 未被证明」 | **已核对事实**：见 [§7.2](../../../composition/agent-dev-guide.md) 的更正 | [§7.2](../../../composition/agent-dev-guide.md) |
+| 候选提前读取其他方案 | 设计风险：机理清楚，本项目原始记录出处已不可取得 | [§2.2](../../../composition/agent-dev-guide.md) |
+| 多数票覆盖失败测试 / 全体一致的共同盲区 | 设计风险：多个相似模型可能共享盲区 | [§2.3](../../../composition/agent-dev-guide.md)、[§11](../../04-agent-execution/composition/agent-dev-guide.md) |
+| 候选人互投决定胜负 | 设计风险：结构上「被审方兼任判定方」已出现过，但候选互投这一具体流程尚未实跑 | [§2.2](../../../composition/agent-dev-guide.md) |
+| 大补丁混合多条主张 | 设计风险，尚未实跑 | [§11](../../04-agent-execution/composition/agent-dev-guide.md) |
+| 整合时拷贝未提交文件进共享主仓 | 设计风险：绕过选定哈希，**主仓变成公共投稿箱** | [§3.6](../../04-agent-execution/composition/agent-dev-guide.md)、[§3.7](../../04-agent-execution/composition/agent-dev-guide.md) |
 | 工作区回收后证据不可达 | 设计风险：工作区是临时供给，**不是档案** | §3.5 |
-| **完整选优流程本身** | **本项目尚未完整实跑**：独立裁判、匿名随机评审和停止规则目前是制度设计，**不得写成既成能力** | [§2.2](../../composition/agent-dev-guide.md)、[§3.4](../../composition/agent-dev-guide.md) |
+| **完整选优流程本身** | **本项目尚未完整实跑**：独立裁判、匿名随机评审和停止规则目前是制度设计，**不得写成既成能力** | [§2.2](../../../composition/agent-dev-guide.md)、[§3.4](../../../composition/agent-dev-guide.md) |
 
 ⚠ **本表的分级本身就是纪律的示范。**2026-09-02 那一例被拆成三行：两行是任何人现在都能
 复核的事实，一行是现场已灭失的事故报告。**不写「谁覆盖了谁」**——后者虽是当事方陈述且
-机制上成立，但现场已被清走，按 [§3.8](../04-agent-execution/agent-dev-guide.md) 第 4 步，mtime 与「最后一版」只是线索，不足以单独证明
+机制上成立，但现场已被清走，按 [§3.8](../../04-agent-execution/composition/agent-dev-guide.md) 第 4 步，mtime 与「最后一版」只是线索，不足以单独证明
 写入顺序或责任人。
 
-纪律的效力不依赖那次覆盖是否可复核：前两行已核对事实足以支撑 [§3.6](../04-agent-execution/agent-dev-guide.md) 的全部要求。
+纪律的效力不依赖那次覆盖是否可复核：前两行已核对事实足以支撑 [§3.6](../../04-agent-execution/composition/agent-dev-guide.md) 的全部要求。
 ⚠ **用不可复核的叙述去加强一条本来就成立的规则，只会削弱整份文档的证据标准。**
 
 ### 12.1 七种“检查给出假答案”的回归线索
 
-> 依据的通用规范：[UAT「检查给出假答案的边界案例」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「检查给出假答案的边界案例」](../../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 以下七例来自历史融合稿的事故汇总，**本次只核其文字与底稿的相容性，未重跑历史现场**。
 数字表示七类边界案例，不据此推断全部事故数量。保留失败机制与修复判据，
@@ -303,7 +303,7 @@ verification     # 最终 commit 上的回归结果
 
 ### 12.2 并行评审的收益与盲区
 
-> 依据的通用规范：[UAT「评审的收益与盲区」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「评审的收益与盲区」](../../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 历史记录显示，评审能发现局部自相矛盾、非法状态边、归属错误和证据不足；
 但共同前提错误或被任务书封死的答案空间，可能通过多轮评审仍不被发现。
