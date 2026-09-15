@@ -1,6 +1,6 @@
 # Request Lifecycle：产品请求生命周期合同
 
-> 依据的通用规范：[PRD 规范（本文是本任务的 PRD）](../../dev-agent-standards/task/prd/prd-rules.md)
+> 依据的通用规范：[SDD 规则](../../dev-agent-standards/deliverables/sdd/sdd-rules.md)（本文是此前各任务交回后由人整理的定稿，属本任务的 `composition/`；本任务的任务书是 [`task.md`](../task.md)）
 
 > 最后更新：2026-08-31
 >
@@ -633,7 +633,7 @@ Profile 协议或终态时，必须说明历史数据和客户端兼容策略。
 功能缺失应建立独立开发工作单元；已实现代码违反本文应按缺陷处理。每项工作独立闭环，不用中央计划维护第二份
 状态。当前覆盖以代码、测试与
 [`../project-guide/repos/investment-app.md`](../../project-guide/repos/investment-app.md) 为准；建立唯一实现矩阵时，
-它必须记录 `要求 ID → 所有者 → 代码位置 → 自动测试 → 当前状态`、迁移映射和待实施工作。`log.md`
+它必须记录 `要求 ID → 所有者 → 代码位置 → 自动测试 → 当前状态`、迁移映射和待实施工作。任务目录（`task.md`、`turns/`）
 只记录派工、交回、验收与阻塞，其他计划文档不得复制覆盖状态；当前缺口和接线状态不进入本文。
 
 ### 12.2 参考材料边界

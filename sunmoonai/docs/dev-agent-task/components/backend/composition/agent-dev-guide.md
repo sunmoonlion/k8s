@@ -158,7 +158,7 @@ output_namespace, publication_target, integrator            result_status
 
 ⚠ **`workspace_path`、`exclusive_branch`、`forbidden_write_paths` 必须在派工时写死，
 且对每个执行者唯一。**`forbidden_write_paths` 至少包括：人的主 checkout、其他执行者的
-worktree、共享发布面，以及非协调者不得写的单写者文件（如 `log.md`）。
+worktree、共享发布面，以及非协调者不得写的单写者文件（如 `task.md`、`composition/`）。
 **这三个字段不是描述性说明，是 [§3.10](../components/04-agent-execution/agent-dev-guide.md) 写入前门禁的判定输入——派工时缺任一字段，
 执行者不得开始写。**
 

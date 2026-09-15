@@ -58,7 +58,7 @@ Submission
 | [`constraints.md`](constraints.md) | 开工前自检硬约束，尤其 A1–A5 | 不把自检改成建议 |
 | [`development-plan.md`](../components/backend/composition/development-plan.md) | 解释通用执行编排与领域能力的分工 | 不记录进度 |
 | [`task.md`](../task.md) | 本任务的任务书：背景、范围、验收、约束（含工作单元的写法与不能倒退的决定） | 执行者不改 |
-| [`log.md`](../log.md) | 派工、交回、验收、返工与人裁决的记录；进度由它推出 | 只由派工的一方追加 |
+| `turns/` | 每次派工到交回（turn）的发出内容与交回物；进度由任务目录推出 | 交回即冻结，改只能开新 turn |
 | `working/request-baseline/`（已删除，见 tag `dev-plan-final`） | **所有者的原始需求档案**：只解释来源，**不覆盖现行合同，也不证明当前能力**（`I1` 在本仓的实物） | 不据它断言现状 |
 | 历史 archive 五稿及 README | 相容内容在本文正文，取舍与来源见 源稿第 10 节（tag `dev-plan-final` 中的 dev-plan/agent-dev-guide.md）；只用于历史复核 | 不作为开发前置阅读；被撤销主张集中在 [§8](../components/backend/composition/agent-dev-guide.md)，不恢复其规范效力 |
 
@@ -243,10 +243,36 @@ Submission
 | 未归因效应 | 外部观察到但找不到对应账目的变更；只记录，不伪造事前 Task（[§6.3](../components/backend/components/02-intake/agent-dev-guide.md)） |
 | H1–H8 / T0–T2 / E0–E4 | 权力行 / 风险流程档位 / 证据等级，三个不同维度（[§4.2](../components/backend/composition/agent-dev-guide.md)、[§3.4](../components/backend/composition/agent-dev-guide.md)、[§5.2](../components/backend/composition/agent-dev-guide.md)） |
 | Delivery | 最终回复与可重取产物（[§3.5](../components/backend/components/06-acceptance-commit/agent-dev-guide.md)） |
-| Handoff | 不再单独维护：进度由 [`log.md`](../log.md) 推出，不能倒退的决定写在 [`task.md`](../task.md)「约束」；`log.md` 是**单写者面**（[§7.5](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
+| Handoff | 不再单独维护：进度由任务目录（`task.md` 各版本、`turns/`、`composition/`、`components/`）推出，不能倒退的决定写在 [`task.md`](../task.md)「约束」；`task.md` 与 `composition/` 是**单写者面**（[§7.5](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
 | 工作区 / worktree | 每个可写执行者的并行隔离工作区（[§3.2](../components/backend/components/04-agent-execution/agent-dev-guide.md)、[§3.6](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
 | 命名分支 | 一执行者一分支；commit 的**运输通道，不是评审对象**（[§3.9](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
 | 未提交工作区文件 | 仅本地草稿；**同一工作区同一路径后写覆盖先写**（[§3.7](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
 | 人的主 checkout | 如 `~/master/<仓>`；**只读参照，不是投稿箱**（[§3.6](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
 | Attempt 租约 / fencing | **产品侧机制**，语义见内核；**开发侧无等价运行时**，迟到判定靠冻结 commit 与整合方核对（[§3.9](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
 | `dispatch_event` | 人代运行时执行的一次传输动作；**不是权力，是可计数的欠账**（[§5.1](../components/backend/composition/agent-dev-guide.md)） |
+
+### 13.1 与 Codex 的对应
+
+执行这一层向 Codex 看齐：本任务的对象在 Codex 里都有对应，模仿它的机制时先查本表。
+事实钉在 Codex `7d6f808b`（2026-08-28），出处路径相对 `~/repo/codex/codex-rs`；**升级钉版必须重核本表，不得沿用结论。**
+对象名先不改（合同、各文档与现有代码已在用），语义以本表对齐。研究材料见 `~/codex-reference-archive/`。
+
+| 本任务的对象 | Codex 对应 | 出处 | 差别 |
+| --- | --- | --- | --- |
+| Submission | `Submission { id, op, parent_turn_id, root_turn_id }`（提交队列） | `protocol/src/protocol.rs:190` | 名称与作用一致 |
+| Task（任务节点） | 云端 `Task`：状态 Pending / Ready / Applied / Error，带结果 diff、是否评审、best-of-N 尝试数；本地 `ThreadGoal`：目标、状态（Active / Paused / Blocked / UsageLimited / BudgetLimited / Complete）、token 预算与已用 | `cloud-tasks-client/src/api.rs:25-56`、`protocol/src/protocol.rs:3941-3967` | 云端 Task 最近：持久、多次尝试、结果要「应用」回来；本任务的 Task 另有冻结的验收契约 |
+| Attempt（一个 turn） | 云端 `TurnAttempt`：turn_id、第几次尝试、状态、diff、messages；本地 `Turn`：Completed / Interrupted / Failed / InProgress | `cloud-tasks-client/src/api.rs:56-67`、`app-server-protocol/src/protocol/v2/thread_data.rs:355` | 一一对应；best-of-N 就是同一 Task 下多个 Attempt |
+| 执行会话 | `Thread`（thread-store 持久化） | `app-server-protocol/src/protocol/v2/thread_data.rs:202` | 执行绑定存 thread id，不作 Task 身份 |
+| Event | `EventMsg` 事件队列；只追加的 `RolloutItem` / `RolloutLine` | `protocol/src/protocol.rs:1335`、`history/src/lib.rs:96` | 本任务要求落 PostgreSQL、状态由其投影；Codex 落本地文件与 SQLite 元数据 |
+| Interaction | 命令执行审批、打补丁审批、权限请求、用户输入、Elicitation 五类请求及对应回复 Op；Guardian 由模型审 | `protocol/src/approvals.rs:245-423`、`protocol/src/request_user_input.rs:55` | Guardian 即 7.4 第 20b 条的 llm-review；⚠ SDK 默认自动批准，不照搬 |
+| Side Effect | 执行命令、MCP 工具、打补丁、动态工具的 Begin / End 成对事件（意图与回执） | `protocol/src/protocol.rs:1335` | Codex 无补偿与幂等账 |
+| Artifact | `TurnDiff`、FileChange、生成图片；云端 diff 摘要 | `protocol/src/protocol.rs:1335`、`cloud-tasks-client/src/api.rs:107` | 本任务要求不可变、内容哈希 |
+| 验收（UAT） | `Op::Review` + `ReviewRequest`、`ReviewTask`、进入 / 退出 review mode | `protocol/src/protocol.rs:3332`、`core/src/tasks/review.rs:45` | review 另起一个任务，恰是「验收 agent 不是执行 agent」 |
+| Delivery | 云端 `ApplyStatus`（把 diff 应用回来）、`TurnComplete` 的最终消息 | `cloud-tasks-client/src/api.rs:78` | Codex 最弱：无可重取、无独立重试的通知 |
+| 预算账 | `RolloutBudget`：一棵根会话树共享计量与提醒阶梯；`TokenCount` 事件 | `core/src/rollout_budget.rs:18` | 研究结论是事后计量加提醒；本任务要求请求前预留、跨进程正确 |
+| 子 Task / 工作单元 | 子 agent 生成、交互、等待、关闭事件；`SubAgentActivity`；agent-graph-store 父子拓扑 | `agent-graph-store/src/lib.rs` | 对应合同第 8 节 |
+| 取消、恢复、检查点 | `Interrupt`、`TurnAborted`、`RecoverTurn`、`SuspendTurnAndShutdown`、`Compact`、`ThreadRollback` | `protocol/src/protocol.rs:573` | 本任务要求取消意图先持久化 |
+| Task Profile / Agent Profile | agent-roles、协作模式模板、`ThreadSettings` / `TurnSettings`、skills | — | ⚠ 字段未核 |
+
+可以照搬的：best-of-N 尝试、review 另起任务、根会话树共享预算与提醒阶梯、Guardian 式自动审批、`parent_turn_id` / `root_turn_id` 串血缘。
+要自建的：交付与重取、四本账的跨进程持久化、副作用补偿；审批不得默认放行。

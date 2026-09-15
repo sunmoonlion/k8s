@@ -6,7 +6,7 @@
 >
 > **这里回答"要建什么、为什么这么建"。**
 > 任务书见 [`task.md`](../task.md)，
-> 进度见 [`log.md`](../log.md)，
+> 进度由任务目录推出，
 > 代码必须符合的规则见 [`constraints.md`](constraints.md)。
 
 ## 三个阶段

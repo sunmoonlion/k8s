@@ -10,7 +10,7 @@
 - **现在的状况**（原 handoff，2026-08-29）：处在阶段一（前后端对接），尚未开工——U1 未定，任务清单为空；阶段二、三未开工。
   代码现状以代码、测试与 [investment-app 现状](../project-guide/repos/investment-app.md) 为准。
 - **尚未决定的事**：U1–U5 等登记在 [agent-dev-guide](composition/agent-dev-guide.md)「7.4 风险和未决」；**每项定下来之前，不要开工依赖它的部分**。
-- **已有的决定**：见下文「约束」与 [log.md](log.md)。
+- **已有的决定**：见下文「约束」。
 
 ## 要什么
 
@@ -104,5 +104,5 @@ P0 / P1 任务必须写明适用层次。
 
 - **交回什么**：SDD（结构层）——前端与后端的划分、彼此的交互与共同约束，放在 [`composition/`](composition/)。只交文本，可改范围限于 `composition/`。
   本任务是规划任务，不交 SDP、UAT；它们由拆出的子任务交付。
-- **已有进展**：第一层分前端与后端，Agent / runtime 与验收器归后端（所有者 2026-09-14 定，见 [log.md](log.md)）。
+- **已有进展**：第一层分前端与后端，Agent / runtime 与验收器归后端（所有者 2026-09-14 定，见 [`composition/`](composition/README.md)）。
 - **需要人批准的动作**：SDD 验收通过（通过后才按拆分建子任务）；修改产品合同（按合同的修订纪律）；其余见 [人的批准点](../dev-agent-standards/approvals.md)。

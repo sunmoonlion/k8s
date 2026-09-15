@@ -10,8 +10,8 @@
 >
 > 项目现在长什么样，见 [`../project-guide/`](../../project-guide/)；
 > 要建什么见 [`development-plan.md`](development-plan.md)，
-> 任务书见 [`task.md`](../task.md)，
-> 进度见 [`log.md`](../log.md)。
+> 任务书见 [`task.md`](../task.md)；
+> 进度由任务目录推出，不另设进度文件。
 
 ## 怎么用
 
