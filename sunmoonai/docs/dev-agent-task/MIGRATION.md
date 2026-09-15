@@ -4,6 +4,8 @@
 > 第八节的安置表（源文件 + 起行 + 原标题可在那里查到）。
 >
 > 2026-09-15：`dev-plan/` 已删除，全部内容原样存于 tag `dev-plan-final`（提交 `6afbb062`）；门禁脚本已移到 [`../tools/`](../tools/)，多方竞争判定脚本 `competition-status.py` 已删除。下表的「史」「留原处」是当时的去向。
+>
+> 2026-09-15 按任务目录结构整理顶层：新增 `task.md`（初稿）与 `log.md`；删除 `composition/handoff.md`、`composition/implementation-plan.md`、`components/backend/composition/handoff.md` 与 4 个空壳子任务，各部分去向见 [log.md](log.md)。
 
 ## 规则（所有者 2026-09-14）
 

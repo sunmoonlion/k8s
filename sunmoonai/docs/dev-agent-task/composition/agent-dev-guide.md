@@ -57,8 +57,8 @@ Submission
 | [`competition-protocol.md`](protocol/competition-protocol.md) | [§3.19](protocol/competition-operations.md)–[§3.22](../components/backend/components/04-agent-execution/agent-dev-guide.md) 汇总执行所需的阶段、取件、超时规则 | 不另立协议版本；协议改变时同步修订本导读 |
 | [`constraints.md`](constraints.md) | 开工前自检硬约束，尤其 A1–A5 | 不把自检改成建议 |
 | [`development-plan.md`](../components/backend/composition/development-plan.md) | 解释通用执行编排与领域能力的分工 | 不记录进度 |
-| [`implementation-plan.md`](implementation-plan.md) | 记录可实施工作单元、依赖、测试和回滚 | 不承担架构真源 |
-| [`handoff.md`](handoff.md) | 只读当前游标、阻塞和不能倒退的结论 | 不从状态反推目标规范 |
+| [`task.md`](../task.md) | 本任务的任务书：背景、范围、验收、约束（含工作单元的写法与不能倒退的决定） | 执行者不改 |
+| [`log.md`](../log.md) | 派工、交回、验收、返工与人裁决的记录；进度由它推出 | 只由派工的一方追加 |
 | `working/request-baseline/`（已删除，见 tag `dev-plan-final`） | **所有者的原始需求档案**：只解释来源，**不覆盖现行合同，也不证明当前能力**（`I1` 在本仓的实物） | 不据它断言现状 |
 | 历史 archive 五稿及 README | 相容内容在本文正文，取舍与来源见 源稿第 10 节（tag `dev-plan-final` 中的 dev-plan/agent-dev-guide.md）；只用于历史复核 | 不作为开发前置阅读；被撤销主张集中在 [§8](../components/backend/composition/agent-dev-guide.md)，不恢复其规范效力 |
 
@@ -139,7 +139,7 @@ Submission
 | 1 | Agent Profile 的实际模型、GUI 内部事件与部分 CLI 工具事件不可机械核验 | ⚠ 未验证；登记表相应字段标 ⚠，**不得用未核值反推能力** |
 | 2 | 无进程入口的分发者永久需要人工桥 | 登记为**可计数的欠账**（`dispatch_event{mode=manual}`），**不伪装成自动化** |
 | 3 | principal 确认与 agent 共享宿主身份 | 证据只能标 `reported`；身份边界未落地前不得写成 `attested` |
-| 4 | **H5-final / H5-round 拆分**：竞争内产物写主线的管辖 | 未决；已由前轮登记，**本文不擅自改权力表行数** |
+| 4 | **H5-final / H5-round 拆分**：竞争内产物写主线的管辖 | 未决；已由前轮登记，**本文不擅自改权力表行数**（原 handoff：所有者五次执行 `publish-*.sh` 写主线，都是 H5 管辖的 Side Effect 但未经 H5 门；见 tag `dev-plan-final` 中 runtime 那次竞争的 runtime-disposition.md「L.1」） |
 | 5 | **H5 的机制化强制点** | 两个有效方向均需所有者动作；现状登记为「人的显式动作」 |
 | 6 | **响应者身份鉴别**（Interaction 服务化的前置） | 未决；**信任域收紧前不拆** |
 | 7 | typed review／ruling／acceptance 是否只是 Artifact 类型细化 | 未决；若属对内核 Attempt 定义的扩充，按内核修订纪律另起工作单元 |
@@ -159,6 +159,42 @@ Submission
 | 20 | 预算账、证据账与 Agent Profile 生效仍是后续工作 | 见 `handoff.md @ ed0b5136:14-19`、`handoff.md @ ed0b5136:30-66` |
 | 21 | 历史产物只在单机的可恢复性 | ⚠ 旧稿报告部分产物/冻结标签只在本机；本次未核当前远端。不外推为“现在仍只有一份”，交付前按 [§3.16](../components/backend/components/06-acceptance-commit/agent-dev-guide.md) 核持久 ref/获准副本及重取能力，不以此擅自 push |
 | 22 | 库的完整 API 面、多次中断与版本兼容 | ⚠ 历史记录只覆盖若干用法；SDK/库升级前按 [§5.13](../components/backend/composition/agent-dev-guide.md) 重核，不把原地恢复样例推广到未经验证的路线 |
+| 23 | **U1 web 面生产适配器的形状**：薄转发（web → internal 面），还是自己持有会话与投影？ | 未决（阶段一）：决定 v5 §10.2 事务原则与 §10.3 SSE 对账落在哪一层；已知输入见下文 |
+| 24 | U2 执行层 Port 的接口形状 | 未决（阶段二）：决定纪律层怎么被测试。cursor 提案见 `~/codex-reference-archive/cursor/investment-agent-architecture-cursor.md` §3 |
+| 25 | U3 **预算账与证据账**落 PG 的表结构与迁移 | 未决（阶段二）：一切并行工作的前置——没有预算闸门就不能 fan-out；已知输入见下文 |
+| 26 | U4 `AgentProfile` 的具体字段 | 未决（阶段二）：专用部分的载体；已知输入见下文 |
+| 27 | U5 外部 harness 的部署形态（服务端如何管理其进程与凭据） | 未决（阶段二）：影响 U2。本分支提案见同一可行性文 §2 / §9 |
+| 28 | **⑥ 确认的回执强度为零**：全流程唯一不可逆的一步，其回执恰恰最不可验证（`rulings.md` `R2`） | 未决；原记于 handoff「不能倒退的两条」 |
+
+#### U1、U3、U4 的已知输入
+
+（原 handoff「未决项」，2026-08-29。）
+
+##### U1 的已知输入
+
+- 规则 **I1**：接口分面共享 application 用例，不是三套应用层
+- 规则 **I4**：Next.js 可做同源 BFF / session 边界，但不得拥有领域数据
+- 规则 **I5**：授权分工必须有显式契约；**不信任任何上游声明的身份**
+- 两扇门的身份不同：internal 面认服务令牌 + `X-Delegated-Actor-ID` 头声明的用户；
+  web 面**不能信浏览器的声明**，必须从会话取
+- 现成参照：`ReferenceWebInteractionAdapter` 的 `_authorize`
+
+##### U3 的已知输入
+
+- 现有 `RunBudget` 在 `domain/agent/runtime.py`，是**内存态 pydantic model**，
+  随 graph state 传递，进程一死即失——**载体要换，不是接线**
+- 唯一消费者 `first_m1_graph` 只被 `scripts/agent_golden.py` 与一个 golden 测试用到
+- 生产链路 `pilot_service` 只有一行 `budget_exceeded → failed` 状态映射
+- 字段可沿用：steps / tool_calls / llm_calls / input_tokens 的上限与已用量
+
+##### U4 的已知输入
+
+- `AgentProfile` 已存在于 `domain/agent/profiles.py`，已有两个实例
+  （`default_research`、`literature_review`）
+- **但 Profile 目前不生效**：`RunService.create_run` 解析并把 key/version 写进
+  run 行，`dispatch_agent_graph` 只传 run_id / user_input / security_context，
+  两条生产图对 `allowed_tools` 等的引用数为 0。**它现在是审计字段，不是约束**
+- `mooc-manus-langgraph-longterm-plan-v4.md` §20 有一份 102 行的结构可作输入
 
 ### 7.7 需要改内核时，提交明确的修订工作单元
 
@@ -207,7 +243,7 @@ Submission
 | 未归因效应 | 外部观察到但找不到对应账目的变更；只记录，不伪造事前 Task（[§6.3](../components/backend/components/02-intake/agent-dev-guide.md)） |
 | H1–H8 / T0–T2 / E0–E4 | 权力行 / 风险流程档位 / 证据等级，三个不同维度（[§4.2](../components/backend/composition/agent-dev-guide.md)、[§3.4](../components/backend/composition/agent-dev-guide.md)、[§5.2](../components/backend/composition/agent-dev-guide.md)） |
 | Delivery | 最终回复与可重取产物（[§3.5](../components/backend/components/06-acceptance-commit/agent-dev-guide.md)） |
-| Handoff | [`handoff.md`](handoff.md)；**单写者面**（[§7.5](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
+| Handoff | 不再单独维护：进度由 [`log.md`](../log.md) 推出，不能倒退的决定写在 [`task.md`](../task.md)「约束」；`log.md` 是**单写者面**（[§7.5](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
 | 工作区 / worktree | 每个可写执行者的并行隔离工作区（[§3.2](../components/backend/components/04-agent-execution/agent-dev-guide.md)、[§3.6](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
 | 命名分支 | 一执行者一分支；commit 的**运输通道，不是评审对象**（[§3.9](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |
 | 未提交工作区文件 | 仅本地草稿；**同一工作区同一路径后写覆盖先写**（[§3.7](../components/backend/components/04-agent-execution/agent-dev-guide.md)） |

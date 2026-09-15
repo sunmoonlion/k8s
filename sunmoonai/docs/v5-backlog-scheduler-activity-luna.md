@@ -96,5 +96,5 @@ Investment 的隔离 PG/Redis 测试；重复公共测试计入各仓数量，�
 启动退出策略、Worker 消费进展仍待相应 B7 子项验收。
 
 监控组件部署、实际采集/告警与通知送达已按所有者本次要求进入
-[未来 N4-OPS-01](dev-agent-task/composition/implementation-plan.md)，状态 NOT_STARTED，不在本包安装。
+[未来 N4-OPS-01](dev-agent-task/log.md)，状态 NOT_STARTED，不在本包安装。
 其他 B7 运维/保留归档/数据切换及 B8 接收仍未完成，不以本包关闭整项。

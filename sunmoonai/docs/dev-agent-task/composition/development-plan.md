@@ -5,8 +5,8 @@
 > 最后更新：2026-08-29
 >
 > **这里回答"要建什么、为什么这么建"。**
-> 具体任务见 [`implementation-plan.md`](implementation-plan.md)，
-> 当前状态见 [`handoff.md`](handoff.md)，
+> 任务书见 [`task.md`](../task.md)，
+> 进度见 [`log.md`](../log.md)，
 > 代码必须符合的规则见 [`constraints.md`](constraints.md)。
 
 ## 三个阶段

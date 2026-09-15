@@ -1,48 +1,28 @@
-# 实施计划
+# 记录
 
-> 迁自 `dev-plan/implementation-plan.md`（tag `dev-plan-final`） 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 [MIGRATION.md](../MIGRATION.md)。
+> 逐行追加，不改旧行；表格各栏与事件见 [通用规则「log.md 逐行追加」](../dev-agent-standards/general-rules.md)。本文件只由派工的一方追加。
+> 2026-09-15 整理目录时补记了此前的行，出处写在「说明」里。
 
-> 最后更新：2026-08-29
->
-> **这里是任务本体：每件事怎么做、怎么算做完。**
->
-> 现在到哪了、什么不能倒退，见 [`handoff.md`](handoff.md)；
-> 为什么这么建见 [`development-plan.md`](../components/backend/composition/development-plan.md)；
-> 代码必须符合的规则见 [`constraints.md`](constraints.md)。
+| 时间 | 事件 | 交付物 | 版本（提交号） | 由谁 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| 2026-08-29 | 人裁决 | — | — | 所有者 | 施工顺序、问数的位置、SQLBot / WrenAI、v5 的地位、四本账现状（原记于后端 handoff「不能倒退的输入」）；已写入 [task.md](task.md)「约束」 |
+| 2026-09-13 | 人裁决 | — | — | 所有者 | 监控采集与告警送达（N4-OPS-01）放进未来计划；属运维，不属本任务。原文暂存于下文附录，放小任务的位置定下后迁出 |
+| 2026-09-14 | 建立 | — | — | 所有者、opus | 由 dev-plan 迁出，建立本任务目录；各节去向见 [MIGRATION.md](MIGRATION.md)（迁移前版本 `49d4ecb7`） |
+| 2026-09-14 | 人裁决 | SDD | — | 所有者 | 第一层分前端与后端，Agent / runtime 与验收器归后端；视为 SDD 中前后端划分获批 |
+| 2026-09-14 | 建立 | — | — | opus | 子任务 frontend、backend 及其下 9 个阶段目录随迁移预先建立，未经 SDD 验收（与「不预先建」不符，如实记录） |
+| 2026-09-15 | 取消 | — | — | 所有者 | 删除只有标题、没有内容的 4 个预建子任务：backend/03-queue-delivery、backend/07-delivery-retry、frontend/01-submit、frontend/07-result |
+| 2026-09-15 | 人裁决 | — | — | 所有者 | 不再维护 handoff：进度由本文件推出；未决项 U1–U5 与「⑥ 确认的回执强度为零」并入 [agent-dev-guide](composition/agent-dev-guide.md)「7.4 风险和未决」，H5 一条补进该表第 4 条；不能倒退的输入写入 task.md「约束」；原 handoff「文档面待办」D1、D2 属 project-guide，不属本任务，未迁入。原文见提交 `9de9c5cb` |
+| 2026-09-15 | 人裁决 | — | — | 所有者 | 顶层是规划任务，不设 SDP：原实施计划的测试层次与任务条目格式写入 task.md「约束」；三个阶段的任务清单都为空，不搬；N4-OPS-01 见附录。原文见提交 `9de9c5cb` |
+| 2026-09-15 | 建立 | PRD | — | opus | [task.md](task.md) 初稿，待所有者修改确认 |
 
-## 测试层次
+## 附：待派任务原文
 
-```
-L1 Unit                    L5 Failure Injection
-L2 Component Integration   L6 Evaluation/Quality
-L3 Contract                L7 Deployment/Operations
-L4 Cross-app E2E
-```
+### N4-OPS-01 监控采集与告警送达
 
-P0 / P1 任务必须写明适用层次。
-
-## 任务条目格式
-
-> 依据的通用规范：[SDP「工作单元要说清什么」](../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
-
-每条任务固定这几栏，**缺栏视为未定义，不开工**：
-
-| 栏 | 写什么 |
-| --- | --- |
-| 类型/优先级 | `ARCH` / `FEAT` / `FIX` / `OPS` + `P0`–`P2` |
-| 仓库 | 涉及哪几个仓——跨仓任务必须列全，否则漏推 |
-| 前置 | 依赖哪些任务或哪条未决项定了才能开工 |
-| 目标 | 一句话说清做完之后什么变了 |
-| 实施 | 具体动什么。**不写"完善 X"这种没有终点的表述** |
-| 测试 | 适用的测试层次（见下），**不能只写"补测试"** |
-| 验收 | 可判定的条件。做完能一条条对着勾 |
-| 回滚 | 出问题怎么退回去 |
-| 状态 | `NOT_STARTED` / `IN_PROGRESS` / `BLOCKED` / `ACCEPTED` + 日期与证据 |
-
-## 后续运维接收 · N4-OPS-01 监控采集与告警送达
+（原实施计划「后续运维接收」一节，原文照录。）
 
 2026-09-13 所有者要求：“那你把它放到未来的dev-plan吧。继续”。本条接收
-[v5 处置清单](../../v5-backlog-disposition-luna.md)中监控部署与告警接线的后续工作，
+[v5 处置清单](../v5-backlog-disposition-luna.md)中监控部署与告警接线的后续工作，
 不代表全部 N4/B8 已接收，也不把未部署能力写成已验收；其余旧任务继续按原清单处置。
 
 | 栏 | 内容 |
@@ -57,26 +37,8 @@ P0 / P1 任务必须写明适用层次。
 | 回滚 | 恢复前版采集/规则/通知路由，或停用本任务新增资源；不删除业务账本或指标历史卷。通知测试前设停止条件与精确静默范围，故障时停止测试通知；不因采集故障自动重启业务角色 |
 | 状态 | NOT_STARTED · 2026-09-13：已接收进入未来计划，尚未部署/接线/送达验收；组件安装和外部通知不在本轮授权内 |
 
-已有输入：[B7d 只读账本指标](../../v5-backlog-delivery-observation-luna.md)、
-[B7h 受保护 HTTP 入口](../../v5-backlog-metrics-http-luna.md)。这些源码和测试证据
+已有输入：[B7d 只读账本指标](../v5-backlog-delivery-observation-luna.md)、
+[B7h 受保护 HTTP 入口](../v5-backlog-metrics-http-luna.md)。这些源码和测试证据
 不等于当前镜像已含修复。Worker 消费进展、Scheduler 本机活动及安全探针语义仍由 B7
 继续补齐，不因本条迁入而销账。监控是部署适配，不将 Kubernetes 或 Prometheus
 变成未来 Electron/本机 Agent 内核的强依赖；云端先交付但架构始终兼容本机。
-
-## 阶段一 · 前后端对接
-
-### 任务清单
-
-**空。**U1（web 面生产适配器的形状）未定——薄转发还是自持投影，决定了要写
-什么、测什么、有没有迁移。现在列出来的任何任务都会作废。
-
-U1 一定，本节即刻填充。U1 的已知输入见 [`handoff.md`](handoff.md)。
-
-## 阶段二 · agent 开发
-
-未开工。见 [`development-plan.md`](development-plan.md)。
-
-## 阶段三 · 结构化数据问答
-
-未开工，且有一个开工前置：投资仓现在没有任何业务数据表。
-见 [`development-plan.md`](development-plan.md)。

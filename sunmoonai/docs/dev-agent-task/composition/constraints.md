@@ -10,8 +10,8 @@
 >
 > 项目现在长什么样，见 [`../project-guide/`](../../project-guide/)；
 > 要建什么见 [`development-plan.md`](development-plan.md)，
-> 具体任务见 [`implementation-plan.md`](implementation-plan.md)，
-> 当前状态见 [`handoff.md`](handoff.md)。
+> 任务书见 [`task.md`](../task.md)，
+> 进度见 [`log.md`](../log.md)。
 
 ## 怎么用
 

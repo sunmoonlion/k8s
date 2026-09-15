@@ -11,15 +11,17 @@
 第一层分前端与后端，Agent / runtime 与验收器归后端（所有者 2026-09-14 定）；责任划分依合同第 9 节。
 
 ```text
-composition/                      前后端的划分与交互、总体设计
+task.md                           任务书（PRD）：初稿，待所有者确认
+log.md                            派工、交回、验收、返工与人裁决的记录
+composition/                      SDD：前后端的划分与交互、总体设计
 components/
 ├── frontend/
 │   ├── composition/
-│   └── components/  01-submit · 05-interaction · 07-result
+│   └── components/  05-interaction
 └── backend/
     ├── composition/
-    └── components/  02-intake · 03-queue-delivery · 04-agent-execution
-                     05-interrupt-resume · 06-acceptance-commit · 07-delivery-retry
+    └── components/  02-intake · 04-agent-execution
+                     05-interrupt-resume · 06-acceptance-commit
 ```
 
 ## 从哪里读起
@@ -30,7 +32,8 @@ components/
 | 代码必须遵守的规则（39 条，本平台所有任务共用） | [`composition/constraints.md`](composition/constraints.md) |
 | agent 项目的开发流程 | [`components/backend/composition/pipeline.md`](components/backend/composition/pipeline.md) |
 | 多方竞争协议（本平台的具体做法） | [`composition/protocol/`](composition/protocol/)；所依据的通用规范见 [`../dev-agent-standards/protocol/`](../dev-agent-standards/protocol/competition-rules.md) |
-| 开发计划、实施计划、交接 | [`composition/development-plan.md`](composition/development-plan.md)、[`composition/implementation-plan.md`](composition/implementation-plan.md)、[`composition/handoff.md`](composition/handoff.md) |
+| 任务书与记录 | [`task.md`](task.md)（初稿，待所有者确认）、[`log.md`](log.md) |
+| 开发计划：要建什么、为什么 | [`composition/development-plan.md`](composition/development-plan.md) |
 | 与项目无关的通用开发规范 | [`../dev-agent-standards/`](../dev-agent-standards/) |
 
 原 `dev-plan/` 各节的去向见 [MIGRATION.md](MIGRATION.md)；`dev-plan/` 已删除，原样存于 tag `dev-plan-final`；门禁脚本在 [`../tools/`](../tools/)。
