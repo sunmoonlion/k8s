@@ -23,7 +23,7 @@
 | 登录、权限、服务间调用 | [身份](#身份) |
 | 仓库、组件、运行角色 | [拓扑](#拓扑) |
 | 部署、发版、镜像 | [发布](#发布) |
-| 智能体 | [智能体](#智能体) + [`round-protocol.md`](../components/backend/components/04-agent-execution/protocol/round-protocol.md) |
+| 智能体 | [智能体](#智能体) + [`round-protocol.md`](../../dev-agent-standards/deliverables/sdd/protocol/round-protocol.md) |
 
 对照结果就是一张小表，两三行即可：
 

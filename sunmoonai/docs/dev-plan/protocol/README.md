@@ -1,3 +1,3 @@
 # README.md（已迁移）
 
-2026-09-14 起 `protocol/` 整体位于 [`dev-agent-task/components/backend/components/04-agent-execution/protocol/README.md`](../../dev-agent-task/components/backend/components/04-agent-execution/protocol/README.md)。
+2026-09-15 起 `protocol/` 整体位于 [`dev-agent-standards/deliverables/sdd/protocol/README.md`](../../dev-agent-standards/deliverables/sdd/protocol/README.md)。

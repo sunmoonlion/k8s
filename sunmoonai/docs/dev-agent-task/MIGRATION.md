@@ -66,8 +66,8 @@
 | guide 人的收件箱 | I02-063 | F05 | 人读的 Interaction 投影 |
 | guide 人这一侧的义务 | I02-061 | P-prd + B05 | 拆：「请求写清边界、给可判定验收」进 P-prd（原写 P-brd，BRD 已并入 PRD） |
 | guide principal 裁量权与改判 | I02-059 | B + P（总则） | 拆：改判三要素是通用纪律 |
-| guide T2 七环节操作闭环、通知取件检视面 | I02-047/049 | B04 | 与 protocol 同处 |
-| `protocol/` 全部（round-protocol、README、GO、round-status.py、草案） | I03-*、I04-* | B04 | 多方协作是执行形态之一 |
+| guide T2 七环节操作闭环、通知取件检视面 | I02-047/049 | P-sdd | 随 protocol 移入，文件 `protocol/round-operations.md` |
+| `protocol/` 全部（round-protocol、README、GO、round-status.py、草案） | I03-*、I04-* | P-sdd | 2026-09-15 由 B04 移到 `dev-agent-standards/deliverables/sdd/protocol/`：多个规划 agent 比方案、产出 SDD 的规程 |
 | implementation-plan 交付规则 | I07-004 | B06 | |
 | guide 发布三个路径、交付清理恢复、保留与垃圾回收 | I02-043/033/044 | B06 | |
 | guide 跨会话续接 | I02-088 | B04 | checkpoint 属执行 |
@@ -100,7 +100,7 @@ P-prd 1、P-sdp 1、P-uat 4。
 ## 已定（所有者 2026-09-14）
 
 1. constraints 按规则类别拆开，各归合适的层（见上表 I05 各行）。
-2. protocol 放 B04。
+2. protocol 放 B04；2026-09-15 改为放进 `dev-agent-standards/deliverables/sdd/protocol/`（属规划一侧）。
 3. 删除与迁移门随历史冻结。
 4. 测试层次放 T。
 5. 门禁脚本留原处。

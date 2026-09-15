@@ -54,7 +54,7 @@ router 和 orchestrator 都不是 agent 角色；过渡期由人运行脚本只�
 | `acceptor` | 按冻结标准独立验收 | 不得是 arbiter 或基座作者 |
 | `publisher` | 在批准后执行发布 Attempt | 不能自己授予发布权限 |
 
-角色分离以 round-protocol“⑤ 验收 与 ⑥ 确认”为准，本文 [§3.19](../components/04-agent-execution/agent-dev-guide.md) 给出操作算法。
+角色分离以 round-protocol“⑤ 验收 与 ⑥ 确认”为准，本文 [§3.19](../../../../dev-agent-standards/deliverables/sdd/protocol/round-operations.md) 给出操作算法。
 这些角色在产品运行时里是 Attempt 的 `kind` 或 principal 行为，不新增内核对象。
 
 ### 2.3 Task Profile 与 Agent Profile
@@ -228,7 +228,7 @@ Artifact 可以有草稿、冻结、陈旧、被替代等版本属性；这些�
 | T1 | 单稿 → 独立评审 → 验收 → 确认 | 一稿、一评、一验 | 工单冻结与开工可合成一次明确确认 |
 | T2 | round-protocol 七环节 | N 份隔离候选、互评、裁决、异议、独立验收 | 题目/判据冻结与参与方/路线确认分开 |
 
-产物命名、候选冻结、处置表和验收方算法见 [§3.19](../components/04-agent-execution/agent-dev-guide.md)–[§3.22](../components/04-agent-execution/agent-dev-guide.md)，来源为现行 round-protocol。状态脚本从 commit 反推，工作区
+产物命名、候选冻结、处置表和验收方算法见 [§3.19](../../../../dev-agent-standards/deliverables/sdd/protocol/round-operations.md)–[§3.22](../components/04-agent-execution/agent-dev-guide.md)，来源为现行 round-protocol。状态脚本从 commit 反推，工作区
 不参与判定；空参与方不是“完成”；脚本首次增加判据时先与人工结论对照，并列出未检查范围。
 
 ⚠ **档位是风险轴，「建不建 Git 工作区」是载体轴，两者正交，不可互相推导。**

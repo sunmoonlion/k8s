@@ -56,7 +56,7 @@ expand → backfill → reconcile → switch read → switch write → observe �
 | # | 规则 | 谁在执行 |
 | --- | --- | --- |
 | A1 | 分**通用**（执行编排）与**专用**（领域），新增业务智能体优先是新增一份 Profile，不是 fork 一套代码 | ⚠ 自检 |
-| A2 | **两边都要有纪律**，不存在"通用部分不需要约束" | [`round-protocol.md`](../components/04-agent-execution/protocol/round-protocol.md) |
+| A2 | **两边都要有纪律**，不存在"通用部分不需要约束" | [`round-protocol.md`](../../../../dev-agent-standards/deliverables/sdd/protocol/round-protocol.md) |
 | A3 | 四本账（预算 / 幂等 / 副作用 / 证据）**必须落 PostgreSQL**——跨 run、跨进程死亡仍须正确的不变量，必须由存储承担 | ⚠ 自检 |
 
 ---
