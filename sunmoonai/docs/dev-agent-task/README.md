@@ -29,7 +29,7 @@ components/
 | 产品请求生命周期合同 | [`composition/request-lifecycle.md`](composition/request-lifecycle.md) |
 | 代码必须遵守的规则（39 条，本平台所有任务共用） | [`composition/constraints.md`](composition/constraints.md) |
 | agent 项目的开发流程 | [`components/backend/composition/pipeline.md`](components/backend/composition/pipeline.md) |
-| 轮次协议与 `round-status.py`（本平台的具体做法） | [`composition/protocol/`](composition/protocol/)；所依据的通用规范见 [`../dev-agent-standards/protocol/`](../dev-agent-standards/protocol/) |
+| 轮次协议与 `round-status.py`（本平台的具体做法） | [`composition/protocol/`](composition/protocol/)；所依据的通用规范见 [`../dev-agent-standards/protocol/`](../dev-agent-standards/protocol/round-rules.md) |
 | 开发计划、实施计划、交接 | [`composition/development-plan.md`](composition/development-plan.md)、[`composition/implementation-plan.md`](composition/implementation-plan.md)、[`composition/handoff.md`](composition/handoff.md) |
 | 与项目无关的通用开发规范 | [`../dev-agent-standards/`](../dev-agent-standards/) |
 

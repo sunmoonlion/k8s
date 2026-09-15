@@ -151,7 +151,7 @@ Calico 集群，否则"测过了"是假的。
 
 ## 智能体
 
-> 依据的通用规范：[SDD「设计必须满足」](../../dev-agent-standards/deliverables/sdd/README.md)
+> 依据的通用规范：[SDD「设计必须满足」](../../dev-agent-standards/deliverables/sdd/sdd-rules.md)
 
 | # | 规则 | 谁在执行 |
 | --- | --- | --- |
@@ -165,7 +165,7 @@ Calico 集群，否则"测过了"是假的。
 
 ## 保证这些被遵守的三层
 
-> 依据的通用规范：[总则「规则要有载体」](../../dev-agent-standards/README.md)
+> 依据的通用规范：[总则「规则要有载体」](../../dev-agent-standards/principles.md)
 
 | 层 | 覆盖 | 在哪 |
 | --- | --- | --- |

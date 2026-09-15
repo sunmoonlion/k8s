@@ -598,7 +598,7 @@ G 表/四账/审批四档即使都含“门”字，也不能按同名合并。�
 监控采集与告警送达」（`5b99cc4a` L53），是具体产品工作单元，落点为 `implementation-plan.md` /
 计划责任和产品工作单元 / S3；`README.md` 一行去掉已删的 `round-dispatch.py` / `agents.toml`，
 不改落点。原位四份（`round-protocol.md` 的「8b. 两个脚本怎么调」改名「8b. 脚本怎么调」，
-`protocol/README.md` 重写）不迁移，变化不影响切换。切换按当前正文迁移，不回退到冻结版本。
+`protocol/round-rules.md` 重写）不迁移，变化不影响切换。切换按当前正文迁移，不回退到冻结版本。
 
 ## 九、复现清单与工具
 

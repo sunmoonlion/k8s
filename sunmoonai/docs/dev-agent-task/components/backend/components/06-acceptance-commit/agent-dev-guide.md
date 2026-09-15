@@ -4,7 +4,7 @@
 
 ### 1.4 开发验收不可外推
 
-> 依据的通用规范：[UAT「判据与完成」](../../../../../dev-agent-standards/deliverables/uat/README.md)
+> 依据的通用规范：[UAT「判据与完成」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 开发变更常可用测试、门禁和 diff 机械复算，成本低；财务分析的判断、新鲜度与口径验收昂贵。
 `dev.change/1` 跑通只证明开发场景的对象形状、转换和证据链，**没有解决判断且昂贵的那一半**。
@@ -13,7 +13,7 @@
 
 ### 1.7 先核前提，也核控制面
 
-> 依据的通用规范：[UAT「判据与完成」](../../../../../dev-agent-standards/deliverables/uat/README.md)
+> 依据的通用规范：[UAT「判据与完成」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 设计前留下一个可复核的最小记录：**要保护或自动化的动作 → 实际调用者 → 执行路径 →
 使用的身份/凭据域 → 写入对象 → 现有库原语 → 缺口和反例**。每项附钉定版本的代码、
@@ -37,7 +37,7 @@
 
 ### 3.5 交付、清理和恢复
 
-> 依据的通用规范：[SDP「交付、发布与保留」](../../../../../dev-agent-standards/deliverables/sdp/README.md)
+> 依据的通用规范：[SDP「交付、发布与保留」](../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
 
 validator 先跑机械条，acceptor 再判机器判不了的冻结条；验收失败在预算允许时产生新 Attempt，
 不得改窄标准换取通过。不可逆动作由 principal 确认后，publisher 才写共享最终路径或生产面。
@@ -54,7 +54,7 @@ validator 先跑机械条，acceptor 再判机器判不了的冻结条；验收�
 
 ### 3.12 完成判据
 
-> 依据的通用规范：[UAT「完成判据」](../../../../../dev-agent-standards/deliverables/uat/README.md)
+> 依据的通用规范：[UAT「完成判据」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 ⚠ **十三条同时满足才叫闭环**，缺一条都不能笼统说「完成」：
 
@@ -77,7 +77,7 @@ validator 先跑机械条，acceptor 再判机器判不了的冻结条；验收�
 
 ### 3.15 发布协议：三个路径不是一个
 
-> 依据的通用规范：[SDP「交付、发布与保留」](../../../../../dev-agent-standards/deliverables/sdp/README.md)
+> 依据的通用规范：[SDP「交付、发布与保留」](../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
 
 用户要 `path/to/result.md` 时，必须区分三个东西：
 
@@ -102,7 +102,7 @@ published ref:    final commit / PR / release
 
 ### 3.16 保留与垃圾回收
 
-> 依据的通用规范：[SDP「交付、发布与保留」](../../../../../dev-agent-standards/deliverables/sdp/README.md)
+> 依据的通用规范：[SDP「交付、发布与保留」](../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
 
 | 状态 | 默认保留 |
 | --- | --- |
@@ -119,7 +119,7 @@ published ref:    final commit / PR / release
 
 ### 5.5 四层验证
 
-> 依据的通用规范：[UAT「验证分层」](../../../../../dev-agent-standards/deliverables/uat/README.md)
+> 依据的通用规范：[UAT「验证分层」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 | 层 | 谁 | 判什么 |
 | --- | --- | --- |
@@ -133,7 +133,7 @@ published ref:    final commit / PR / release
 
 ### 5.7 证据账按流程分级
 
-> 依据的通用规范：[UAT「证据账按流程分级」](../../../../../dev-agent-standards/deliverables/uat/README.md)
+> 依据的通用规范：[UAT「证据账按流程分级」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 ⚠ **不能只有「全套」与「零记录」两档。**
 
@@ -162,7 +162,7 @@ verification     # 最终 commit 上的回归结果
 
 ### 5.10 事实裁决表与整合纪律
 
-> 依据的通用规范：[UAT「先裁决事实，再谈偏好」](../../../../../dev-agent-standards/deliverables/uat/README.md)
+> 依据的通用规范：[UAT「先裁决事实，再谈偏好」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 **评审分两阶段**：先只读原始请求、匿名 commit 和统一标准**独立审**；冻结后再读候选自评、
 盲区和验证记录**对照审**。评审必须写明 commit、覆盖范围、阻断问题、证据，
@@ -188,7 +188,7 @@ verification     # 最终 commit 上的回归结果
 
 ### 5.12 检查本身也必须接受检查
 
-> 依据的通用规范：[UAT「检查本身也必须接受检查」](../../../../../dev-agent-standards/deliverables/uat/README.md)
+> 依据的通用规范：[UAT「检查本身也必须接受检查」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 每个门禁都输出 `PASS / FAIL / UNKNOWN` 的语义及 checked/not_checked。
 缺输入、权限不足、枚举失败不能被吸收为 PASS；聚合器先判输入集合是否完整、非空是否为必需，
@@ -207,7 +207,7 @@ verification     # 最终 commit 上的回归结果
 
 ### 9.2 没查什么
 
-> 依据的通用规范：[UAT「覆盖声明」](../../../../../dev-agent-standards/deliverables/uat/README.md)
+> 依据的通用规范：[UAT「覆盖声明」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 ⚠ **这一节还要能装下「不确定」**，不是只装「查了」与「没查」两档。
 凡出现「**我不能排除**某事发生过」的情形，就如实写进来，
@@ -239,7 +239,7 @@ verification     # 最终 commit 上的回归结果
 
 ## 12. 常见失败方式与项目实例
 
-> 依据的通用规范：[UAT「证据分三级」](../../../../../dev-agent-standards/deliverables/uat/README.md)
+> 依据的通用规范：[UAT「证据分三级」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 [§11](../04-agent-execution/agent-dev-guide.md) 是机制，本节是**本项目实际遇到过的失败**，按**证据强度**分三级。
 ⚠ **三级不是修辞差别，是能不能独立复核的差别：**
@@ -282,7 +282,7 @@ verification     # 最终 commit 上的回归结果
 
 ### 12.1 七种“检查给出假答案”的回归线索
 
-> 依据的通用规范：[UAT「检查给出假答案的边界案例」](../../../../../dev-agent-standards/deliverables/uat/README.md)
+> 依据的通用规范：[UAT「检查给出假答案的边界案例」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 以下七例来自历史融合稿的事故汇总，**本次只核其文字与底稿的相容性，未重跑历史现场**。
 数字表示七类边界案例，不据此推断全部事故数量。保留失败机制与修复判据，
@@ -303,7 +303,7 @@ verification     # 最终 commit 上的回归结果
 
 ### 12.2 并行评审的收益与盲区
 
-> 依据的通用规范：[UAT「评审的收益与盲区」](../../../../../dev-agent-standards/deliverables/uat/README.md)
+> 依据的通用规范：[UAT「评审的收益与盲区」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 历史记录显示，评审能发现局部自相矛盾、非法状态边、归属错误和证据不足；
 但共同前提错误或被任务书封死的答案空间，可能通过多轮评审仍不被发现。

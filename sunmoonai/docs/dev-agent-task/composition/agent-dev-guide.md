@@ -85,7 +85,7 @@ Submission
 
 ### 1.5 执行者的共同纪律
 
-> 依据的通用规范：[总则「执行者的共同纪律」](../../dev-agent-standards/README.md)
+> 依据的通用规范：[总则「执行者的共同纪律」](../../dev-agent-standards/principles.md)
 
 不论单路还是并行，不论人还是 agent，八条都成立：
 
@@ -103,7 +103,7 @@ Submission
 
 ### 1.6 七条设计原则
 
-> 依据的通用规范：[SDD「设计必须满足」](../../dev-agent-standards/deliverables/sdd/README.md)
+> 依据的通用规范：[SDD「设计必须满足」](../../dev-agent-standards/deliverables/sdd/sdd-rules.md)
 
 全文的取舍都回到这七条。它们不是新主张，是把本仓已成文的判断当成设计约束用到底：
 
@@ -162,7 +162,7 @@ Submission
 
 ### 7.7 需要改内核时，提交明确的修订工作单元
 
-> 依据的通用规范：[SDD「修改已冻结的契约」](../../dev-agent-standards/deliverables/sdd/README.md)
+> 依据的通用规范：[SDD「修改已冻结的契约」](../../dev-agent-standards/deliverables/sdd/sdd-rules.md)
 
 开发投影表达不了的能力，先证明是内核缺口，不能在 Profile、Adapter 或文档里偷加语义。
 工作单元至少写清：

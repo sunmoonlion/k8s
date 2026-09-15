@@ -1,6 +1,6 @@
 # `protocol/` —— 流程规范
 
-> 依据的通用规范：[多方竞争的轮次协议](../../../dev-agent-standards/protocol/README.md)
+> 依据的通用规范：[多方竞争的轮次协议](../../../dev-agent-standards/protocol/round-rules.md)
 
 这里放流程规范（`round-protocol.md`、`GO.md`），以及执行规范用的脚本 `round-status.py`。脚本跟着规范改；两边对不上时以规范为准。
 

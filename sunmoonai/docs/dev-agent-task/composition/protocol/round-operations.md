@@ -1,6 +1,6 @@
 # 轮次的操作闭环与取件
 
-> 依据的通用规范：[轮次协议「组织者的纪律」](../../../dev-agent-standards/protocol/README.md)
+> 依据的通用规范：[轮次协议「组织者的纪律」](../../../dev-agent-standards/protocol/round-rules.md)
 
 > 迁自 `dev-plan/agent-dev-guide.md` 的 §3.19、§3.21（2026-09-14 先随迁移放在 [04-agent-execution](../../components/backend/components/04-agent-execution/agent-dev-guide.md)，2026-09-15 随 protocol 移来）。节号沿用原文件。
 
