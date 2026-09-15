@@ -8,7 +8,7 @@ AI 开发是一问一答：交给 agent 一个**任务**，它交回一个**交�
 
 | 目录 | 是什么 | 由谁写 / 交付 | 回答什么 |
 | --- | --- | --- | --- |
-| [`task/prd-template.md`](task/prd-template.md) | **PRD** · Product Requirements Document（产品需求文档）：即任务书——要什么、范围、验收标准、约束 | 人写；子任务的由父任务 SDD 拆出、随 SDD 经人批准 | 要什么、做到什么算满足 |
+| [`task/prd/`](task/prd/prd-rules.md) | **PRD** · Product Requirements Document（产品需求文档）：即任务书——要什么、范围、验收标准、约束 | 人写；子任务的由父任务 SDD 拆出、随 SDD 经人批准 | 要什么、做到什么算满足 |
 | [`deliverables/sdd/`](deliverables/sdd/) | **SDD** · Software Design Description（软件设计说明）：结构层写划分、关系与接口，组成层写内部结构、协议、失败与恢复 | 规划 agent | 设计成什么样 |
 | [`deliverables/sdp/`](deliverables/sdp/) | **SDP** · Software Development Plan（软件开发计划）：拆成可独立交付、验证、回滚的单元，先后顺序，实施记录，代码与证据 | 执行 agent | 怎样做出来 |
 | [`deliverables/uat/`](deliverables/uat/) | **UAT** · User Acceptance Testing（用户验收测试）：按冻结的判据逐条验证，证据按规则采信，写明查了什么、没查什么 | 验收 agent（不是交付 SDP 的执行 agent） | 是否满足、能否接收 |

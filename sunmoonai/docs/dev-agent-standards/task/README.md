@@ -2,7 +2,7 @@
 
 交给 agent 的每一件事都是一个**任务**。任务不是事先排好的：它们随着交付一个个长出来——
 上层任务的设计交回并通过后，才生出下层任务；交付被打回，就在原任务里返工。
-每个任务的 `task.md` 按 [PRD 模板](prd-template.md) 写，交付物按 [`../deliverables/`](../deliverables/) 的规范验收。
+每个任务的 `task.md` 按 [PRD 规则](prd/prd-rules.md) 写（模板见 [附录](prd/prd-template.md)），交付物按 [`../deliverables/`](../deliverables/) 的规范验收。
 
 ## 一个例子
 
@@ -30,7 +30,7 @@
 
 ### task.md 就是任务书
 
-按 [PRD 模板](prd-template.md) 写。
+按 [PRD 规则](prd/prd-rules.md) 写（模板见 [附录](prd/prd-template.md)）。
 
 ### log.md 逐行追加，不改旧行
 
