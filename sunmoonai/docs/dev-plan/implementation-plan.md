@@ -4,7 +4,7 @@
 >
 > - [`dev-agent-task/components/backend/components/06-acceptance-commit/implementation-plan.md`](../dev-agent-task/components/backend/components/06-acceptance-commit/implementation-plan.md)（1 节）
 > - [`dev-agent-task/composition/implementation-plan.md`](../dev-agent-task/composition/implementation-plan.md)（7 节）
-> - 第 2 步：「任务条目格式」写进 [`dev-process/02-dev`](../dev-process/02-dev/README.md)
+> - 第 2 步：「任务条目格式」写进 [`dev-agent-guide/deliverables/sdp`](../dev-agent-guide/deliverables/sdp/README.md)
 >
 > 这里仅剩：历史记录与留在原处的节。节号是原文件的节号。
 

@@ -56,6 +56,6 @@
 
 **如实写「不能排除」不扣分，隐瞒才扣。**
 
-agent 项目的原文与实例见 [06-acceptance-commit](../../dev-agent-task/components/backend/components/06-acceptance-commit/agent-dev-guide.md)「5.12 检查本身也必须接受检查」「9.2 没查什么」。
+agent 项目的原文与实例见 [06-acceptance-commit](../../../dev-agent-task/components/backend/components/06-acceptance-commit/agent-dev-guide.md)「5.12 检查本身也必须接受检查」「9.2 没查什么」。
 
 其余规范尚未编写。

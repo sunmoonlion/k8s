@@ -2,7 +2,7 @@
 
 > 最后更新：2026-08-29
 >
-> **2026-09-14 起本目录为历史。**现行内容已迁出：与项目无关的通用开发规范在 [`../dev-process/`](../dev-process/)，
+> **2026-09-14 起本目录为历史。**现行内容已迁出：与项目无关的通用开发规范在 [`../dev-agent-guide/`](../dev-agent-guide/)，
 > agent 项目在 [`../dev-agent-task/`](../dev-agent-task/)（各节去向见其 [MIGRATION.md](../dev-agent-task/MIGRATION.md)）。
 > 门禁脚本 `doc-gate.py`、`anchor-gate.py` 与 `scripts/` 仍在本目录、继续使用。下文是迁出前的原样。
 

@@ -20,7 +20,7 @@
 
 任何开发任务都要遵守的通用开发规范：
 
-`sunmoonai/docs/dev-process/README.md`
+`sunmoonai/docs/dev-agent-guide/README.md`
 
 开发 Agent 接任务前必须读取 agent 项目的具体开发流程：
 

@@ -116,4 +116,4 @@ Calico 集群，否则"测过了"是假的。
 
 规则要有载体，就做成**跟着测试跑**的；做不成的，老实标 ⚠。
 
-> 与项目无关的原则（规则要有载体）见 [dev-process 总则](../../dev-process/README.md)。
+> 与项目无关的原则（规则要有载体）见 [dev-agent-guide 总则](../../dev-agent-guide/README.md)。
