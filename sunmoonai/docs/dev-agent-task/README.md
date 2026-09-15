@@ -12,7 +12,7 @@
 
 ```text
 task.md                           任务书（PRD）：初稿，待所有者确认
-turns/                            每次派工到交回（turn）；现在还没有
+turns/                            每次派工到交回（turn）：01–03 为模拟补建
 composition/                      SDD：前后端的划分与交互、总体设计
 components/
 ├── frontend/
