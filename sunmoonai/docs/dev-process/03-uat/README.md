@@ -1,5 +1,7 @@
 # UAT：用户验收测试（User Acceptance Testing）
 
+由**验收 agent** 交付；验收 agent 不是交付 SDP 的执行 agent。
+
 ## 判据与完成
 
 - **验收判据先于产出冻结**，出题的人与答题的人分开；实现者完工后不能改验收题。

@@ -9,7 +9,7 @@
 > - [`dev-agent-task/components/backend/composition/agent-dev-guide.md`](../dev-agent-task/components/backend/composition/agent-dev-guide.md)（35 节）
 > - [`dev-agent-task/components/frontend/components/05-interaction/agent-dev-guide.md`](../dev-agent-task/components/frontend/components/05-interaction/agent-dev-guide.md)（1 节）
 > - [`dev-agent-task/composition/agent-dev-guide.md`](../dev-agent-task/composition/agent-dev-guide.md)（9 节）
-> - 第 2 步：「执行者的共同纪律」写进 [dev-process 总则](../dev-process/README.md)；「检查本身也必须接受检查」与「没查什么」的通用部分写进 [`dev-process/04-uat`](../dev-process/04-uat/README.md)
+> - 第 2 步：「执行者的共同纪律」写进 [dev-process 总则](../dev-process/README.md)；「检查本身也必须接受检查」与「没查什么」的通用部分写进 [`dev-process/03-uat`](../dev-process/03-uat/README.md)
 >
 > 这里仅剩：历史记录与留在原处的节。节号是原文件的节号。
 

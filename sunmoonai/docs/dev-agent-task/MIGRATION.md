@@ -19,7 +19,7 @@
 | B | `components/backend/composition/`：后端内部各部分的关系、跨阶段内容 |
 | B02 … B07 | `components/backend/components/` 下对应阶段目录 |
 | F01 / F05 / F07 | `components/frontend/components/` 下对应阶段目录 |
-| P-xxx | `../dev-process/` 下对应阶段（prd / sdd / sdp / uat；原 brd 已并入 prd） |
+| P-xxx | `../dev-process/` 下对应阶段（prd / dev / uat；原 brd 并入 prd，sdd 与 sdp 并为 dev 的两种产物） |
 | 史 | 留在 dev-plan 作历史，不迁 |
 | 留原处 | 仍在 dev-plan 原位置、继续使用（门禁脚本及其说明） |
 
