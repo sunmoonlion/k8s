@@ -4,7 +4,7 @@
 拟议协议标识：`agent-general/0.1-draft`  
 状态：设计草案，未生效；不代表适配器、状态推进器或浏览器审批已经实现。
 
-本稿按用户要求改造 [原 Luna 多方竞争草案](competition-protocol-draft-luna.md)，原文保持不动。改造对象是**产品中通用 Agent 路线的程序化协作**，不是在本次对话中启动一次多方竞争，也不自动取代现行研发协作规范 [competition-protocol.md](../../dev-agent-task/composition/protocol/competition-protocol.md)。
+本稿按用户要求改造 原 Luna 多方竞争草案 `competition-protocol-draft-luna.md`（2026-09-15 已删除，原文见提交 `0fba800d`），原文保持不动。改造对象是**产品中通用 Agent 路线的程序化协作**，不是在本次对话中启动一次多方竞争，也不自动取代现行研发协作规范 [competition-protocol.md](../../dev-agent-task/composition/protocol/competition-protocol.md)。
 
 专业自建路线使用同目录的 `competition-protocol-draft-luna-agent-pro.md`，不继承本稿的参与方数量与逐阶段人工审核默认值。两份协议共享产品基础契约，不是两套产品运行时。
 

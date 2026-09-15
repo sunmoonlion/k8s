@@ -6,7 +6,7 @@
 
 本稿依据用户对自建专业 Agent 的决策制定。它适用于一般专业任务，具体研究、分析或其他领域的方法由版本化 Profile 补充，不把某个领域的节点写死进公共核心。
 
-本稿不是 [原 Luna 多方竞争草案](competition-protocol-draft-luna.md) 的参数副本，也不继承同目录 `competition-protocol-draft-luna-agent-general.md` 的多助手人数、助手身份分离或逐阶段人工批准默认值。它借鉴固定判据、产物版本与权力分离原则，重新定义专业执行和评审机制。
+本稿不是 原 Luna 多方竞争草案 `competition-protocol-draft-luna.md`（2026-09-15 已删除，原文见提交 `0fba800d`） 的参数副本，也不继承同目录 `competition-protocol-draft-luna-agent-general.md` 的多助手人数、助手身份分离或逐阶段人工批准默认值。它借鉴固定判据、产物版本与权力分离原则，重新定义专业执行和评审机制。
 
 ## 1. 架构定位与边界
 
