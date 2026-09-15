@@ -14,7 +14,6 @@ AI 开发是一问一答：交给 agent 一个**任务**，它交回一个**交�
 | [`deliverables/uat/`](deliverables/uat/) | **UAT** · User Acceptance Testing（用户验收测试）：按冻结的判据逐条验证，证据按规则采信，写明查了什么、没查什么 | 验收 agent（不是交付 SDP 的执行 agent） | 是否满足、能否接收 |
 
 先后由任务树决定：父任务交回的结果决定下一步派什么任务；不是每次开发都要把四种都走一遍。
-，但不是每个任务都要走满四个：用哪几个、各写多深，由任务的种类和需要决定。
 
 这里只放与具体项目无关的原则和纪律，篇幅刻意很少；具体项目怎样落实，写在各任务自己的目录里
 （agent 项目的具体流程见 [pipeline.md](../dev-agent-task/components/backend/composition/pipeline.md)）。
