@@ -23,7 +23,7 @@ P0 / P1 任务必须写明适用层次。
 
 ## 任务条目格式
 
-> 依据的通用规范：[SDP「任务条目格式」](../../dev-agent-standards/deliverables/sdp/README.md)
+> 依据的通用规范：[SDP「工作单元要说清什么」](../../dev-agent-standards/deliverables/sdp/README.md)
 
 每条任务固定这几栏，**缺栏视为未定义，不开工**：
 
