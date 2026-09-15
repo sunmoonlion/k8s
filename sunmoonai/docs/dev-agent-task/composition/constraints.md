@@ -10,7 +10,7 @@
 >
 > 项目现在长什么样，见 [`../project-guide/`](../../project-guide/)；
 > 要建什么见 [`development-plan.md`](development-plan.md)，
-> 任务书在各 turn 的 `task.md` 里；
+> 任务书在各 turn 的 `user-message.md` 里；
 > 进度由任务目录推出，不另设进度文件。
 
 ## 怎么用

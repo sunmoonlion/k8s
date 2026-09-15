@@ -1,7 +1,7 @@
 # PRD 规则（任务书）
 
 PRD 就是**任务书**：交给 agent 的那一问。它是**人要完成的内容**——人写清楚要什么、做到什么算满足，agent 按它交付。
-每个 turn 里的 `task.md` 就是一份 PRD：这一次发出去的任务文本。
+每个 turn 里的 `user-message.md` 就是一份 PRD：这一次发出去的任务文本。
 
 ## 写多严，按任务轻重
 
@@ -45,4 +45,4 @@ PRD 就是**任务书**：交给 agent 的那一问。它是**人要完成的内
 
 ## 附录
 
-- [PRD 模板](prd-template.md)：最严格的一种任务书，复制作 turn 里的 `task.md`。
+- [PRD 模板](prd-template.md)：最严格的一种任务书，复制作 turn 里的 `user-message.md`。

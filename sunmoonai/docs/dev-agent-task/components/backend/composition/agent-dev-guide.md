@@ -158,7 +158,7 @@ output_namespace, publication_target, integrator            result_status
 
 ⚠ **`workspace_path`、`exclusive_branch`、`forbidden_write_paths` 必须在派工时写死，
 且对每个执行者唯一。**`forbidden_write_paths` 至少包括：人的主 checkout、其他执行者的
-worktree、共享发布面，以及非协调者不得写的单写者文件（如 `task.md`、`composition/`）。
+worktree、共享发布面，以及非协调者不得写的单写者文件（如 `user-message.md`、`composition/`）。
 **这三个字段不是描述性说明，是 [§3.10](../components/04-agent-execution/agent-dev-guide.md) 写入前门禁的判定输入——派工时缺任一字段，
 执行者不得开始写。**
 
@@ -310,11 +310,11 @@ S 层比对象与边，R 层比一次执行的序列。
 任务目录的结构见 [通用规则「任务目录里放什么」](../../../../dev-agent-standards/general-rules.md)。
 
 状态**从文件和提交推出来，不在任何地方手写**；给人看的进度视图由此生成。
-没有记录或进度文件：状态只从 `turns/`、`composition/`、`components/` 及它们的提交推出。
+没有记录或进度文件：状态只从 `thread/`、`composition/`、`components/` 及它们的提交推出。
 
 | 状态 | 判定依据 |
 | --- | --- |
-| 已建立 | 任务目录与第 01 个 turn 的 `task.md` 已提交 |
+| 已建立 | 任务目录与第 01 个 turn 的 `user-message.md` 已提交 |
 | 已派工 | 有一个 turn 已存入发出的内容，尚无交回 |
 | 已交回 | 该 turn 的交回物（或改动所在的提交）已提交 |
 | 已通过 | 有验收 turn 的 UAT 针对**这个 turn**，结论为通过；设计还须已整理进 `composition/` |

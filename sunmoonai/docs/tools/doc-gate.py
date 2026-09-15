@@ -56,7 +56,9 @@ GATED = ("sunmoonai/docs/",)
 # 两者随 dev-plan 删除而不复存在（原配置与理由见 tag `dev-plan-final`）。
 # 新增豁免前先想清楚：豁免的只能是冻结副本，不是活文档——整目录豁免会把活文档的坏链一起放过。
 EXEMPT: tuple[str, ...] = ()
-EXEMPT_MARKERS: tuple[str, ...] = ()
+# 2026-09-15 所有者定：豁免任务目录下的 `thread/`。turn 交回即冻结，其中的交回物与任务书只对交回那一刻负责；
+# 之后被链接的文件改名或移动，冻结原件里的链接必然断，却不能再改。要看当时的样子，按提交去看。
+EXEMPT_MARKERS: tuple[str, ...] = ("/thread/",)
 
 
 def exempt(path: str) -> bool:
