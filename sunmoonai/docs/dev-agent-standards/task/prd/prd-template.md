@@ -4,6 +4,14 @@
 模型只知道任务里写了的东西，所以要它遵守的一律写进来。需要时复制下面的模板作为 turn 里的 `user-message.md`，尖括号处按说明填写。怎么写、谁来写、怎么改，见 [PRD 规则](prd-rules.md)。
 
 ```markdown
+---
+deliverable: <SDD / SDP / UAT，可以几项>
+agent: <planning / execution / acceptance>
+executor: <具体执行者；未定写 unassigned>
+verifies: <只有 UAT 填：验收的 turn 编号>
+base: <发出时依据的提交>
+sent_at: <发出时间>
+---
 # <任务编号>：<短名>
 
 ## 背景

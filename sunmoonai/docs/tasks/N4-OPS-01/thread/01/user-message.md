@@ -1,3 +1,10 @@
+---
+deliverable: SDP
+agent: execution
+executor: unassigned
+base: pending
+sent_at: pending
+---
 # N4-OPS-01：监控采集与告警送达
 
 > 来源：原 agent 开发任务实施计划「后续运维接收」一节，原文照录。所有者 2026-09-13 要求放进未来计划；

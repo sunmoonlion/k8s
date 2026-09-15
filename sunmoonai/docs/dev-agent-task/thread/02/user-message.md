@@ -1,3 +1,10 @@
+---
+deliverable: SDD
+agent: planning
+executor: unknown
+base: unknown
+sent_at: unknown
+---
 # turn 02：开发必须遵守的规则
 
 > **模拟补建。**这份交回物在历史上是多次交互形成的，当时的派工原话已无法追溯；下面是按交回物内容反推的假设任务文本，只用于演示任务目录的结构。

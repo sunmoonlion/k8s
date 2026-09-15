@@ -11,7 +11,7 @@
 第一层分前端与后端，Agent / runtime 与验收器归后端（所有者 2026-09-14 定）；责任划分依合同第 9 节。
 
 ```text
-thread/                           一串 turn；每个 turn 带任务书 user-message.md 与交回物：01–03 为模拟补建
+thread/                           一串 turn；每个 turn 带任务书 user-message.md、回执 turn.md 与交回物：01–03 为模拟补建
 composition/                      SDD：前后端的划分与交互、总体设计
 components/
 ├── frontend/
