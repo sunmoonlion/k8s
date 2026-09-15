@@ -162,7 +162,7 @@ pyright / ruff），`uv` 也装了，但**每个新 worktree 需要先 `uv sync`
 
 | 样板 | 位置 | 对在哪 |
 | --- | --- | --- |
-| 文档门禁 | [`doc-gate.py`](../../../../doc-gate.py) + 版本化 `.githooks/pre-commit` | 不靠人记得跑；**结论不取决于工作区状态**（对照 git 索引而非文件系统） |
+| 文档门禁 | [`doc-gate.py`](../../../../../tools/doc-gate.py) + 版本化 `.githooks/pre-commit` | 不靠人记得跑；**结论不取决于工作区状态**（对照 git 索引而非文件系统） |
 | 休眠能力登记表 | `investment-backend/app/tests/test_dormant_capabilities.py` | 每条判据**两个方向都能失败**：`anchor_exists`（锚点还在吗）+ `still_dormant`（还休眠着吗） |
 
 两者共同的形状值得单独记住：

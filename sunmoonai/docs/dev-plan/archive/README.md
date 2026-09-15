@@ -144,8 +144,8 @@ lifecycle 吸收进 `agent-dev-guide.md`」）。它们的 118 节全部落点�
 ## 引用它们的锚点
 
 删除或移动被引文档会让 `` `文件.md:行` `` 这类纯文本锚点失效，而
-[`../doc-gate.py`](../doc-gate.py) 只查 markdown 链接，**查不出这一类**——
-[`../anchor-gate.py`](../anchor-gate.py) 就是为此建的。活文档里的 5 处裸路径锚
+[`../doc-gate.py`](../../tools/doc-gate.py) 只查 markdown 链接，**查不出这一类**——
+[`../anchor-gate.py`](../../tools/anchor-gate.py) 就是为此建的。活文档里的 5 处裸路径锚
 已改钉版锚 `@ ceb7291c:<行>`；`rounds/**` 内的 111 处按归档软判，不改。
 `archive/**` 自 2026-09-07 起同样按软判：归档是冻结的历史记录，锚点按成文时状态解析。
 **软判是豁免判失败，不是豁免报出来**——`anchor-gate` 仍逐条列出。

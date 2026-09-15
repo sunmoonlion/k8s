@@ -71,8 +71,8 @@ AI 声明 PASS 不是服务端强制点，缺载体不隐写成已自动化。
 | DEV/G5 | 产物摘要、构建/配置/部署检查能判其各自对象；不把本地 author 当身份签名 | 精确批准对象、源码/镜像/数据一致、批准后不偷换、异常按预案处理 | 不可逆发布及其它 H 表管辖动作的具体授权；不能以“已有凭据”替代 |
 | DEV/G6 | 冻结观察窗口中的可自动测指标和真实链路测试（须有环境及实际执行记录） | 检查观察对象/覆盖/交接完整、记录副作用及未决、更新实现投影 | 产品结果验收、剩余已声明风险的接收或拒绝；不是只签“测试绿了” |
 
-当前可复跑的通用工具是 `python3 sunmoonai/docs/dev-plan/doc-gate.py --all`、
-`python3 sunmoonai/docs/dev-plan/anchor-gate.py` 和
+当前可复跑的通用工具是 `python3 sunmoonai/docs/tools/doc-gate.py --all`、
+`python3 sunmoonai/docs/tools/anchor-gate.py` 和
 `python3 sunmoonai/docs/dev-agent-task/composition/protocol/competition-status.py`（在 k8s 仓根）。
 **`competition-status.py` 判的是多方竞争的工单。**parse_round 读 `round.md`，缺 `final_path` /
 `round_dir` / `prefix` 即拒绝判定；stage_table 按工单配置的产物路径查是否作为 git

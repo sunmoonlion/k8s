@@ -4,6 +4,6 @@
 # 这对每个分支都成立，因此用门禁挡，不靠「记得别合某个分支」。
 set -e
 root=$(git rev-parse --show-toplevel)
-gate="$root/sunmoonai/docs/dev-plan/doc-gate.py"
+gate="$root/sunmoonai/docs/tools/doc-gate.py"
 [ -f "$gate" ] || exit 0
 python3 "$gate" --staged

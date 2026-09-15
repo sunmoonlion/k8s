@@ -170,7 +170,7 @@ Calico 集群，否则"测过了"是假的。
 | 层 | 覆盖 | 在哪 |
 | --- | --- | --- |
 | **随测试自动跑** | 标了测试载体的那些 | 四仓 `tests/test_kernel_invariants.py`、`tests/test_dormant_capabilities.py`、双端契约测试——**跑 `uv run pytest` 就带上，不需要谁记得** |
-| **随提交自动跑** | 本仓文档的三项机械不变量 | [`doc-gate.py`](../../dev-plan/doc-gate.py) 经版本化的 `.githooks/pre-commit` 触发——**提交就带上**。装一次 `git config core.hooksPath .githooks` 对全部 worktree 生效（共享同一个 `.git`），装没装用 `doc-gate.py --selfcheck` 判定 |
+| **随提交自动跑** | 本仓文档的三项机械不变量 | [`doc-gate.py`](../../tools/doc-gate.py) 经版本化的 `.githooks/pre-commit` 触发——**提交就带上**。装一次 `git config core.hooksPath .githooks` 对全部 worktree 生效（共享同一个 `.git`），装没装用 `doc-gate.py --selfcheck` 判定 |
 | **指针** | 全部 | 五仓根 `AGENTS.md`、`.cursor/rules/`、八个组件 `CLAUDE.md`（**进目录自动注入**） |
 | **自检** | 全部 | 上面「怎么用」那节 |
 
