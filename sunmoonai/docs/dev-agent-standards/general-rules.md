@@ -123,6 +123,7 @@
 | `commit` | 交回物或改动所在的提交 |
 | `provider_turn_id` | 执行环境自己的 turn 标识；没有写 `none` |
 | `error` | 只有 `failed` 填：失败原因 |
+| `verdict` | 只有交回 UAT 时填：`pass`、`fail` 或 `undecidable` |
 
 `turn.md` 的正文列出交回物：每个文件是哪一种交付物。不知道的值写 `unknown`，还没发出的写 `pending`，不得空着。
 

@@ -55,10 +55,12 @@ C = re.compile(r'`([\w.-]+\.md)` §([\d.]+)')
 
 # 2026-09-15 删去「归档产物软判」（`rounds/**`、`dev-plan/archive/**` 的锚点只报不拦）：
 # 这两个目录随 dev-plan 删除，现在所有解析不到的锚点一律硬判。旧逻辑见 tag `dev-plan-final`。
-fails=[]; soft=0; okA=okB=0
+fails=[]; soft=0; okA=okB=0; frozen=0
 for f in sorted(DOCS.rglob("*.md")):
     rel = str(f.relative_to(ROOT))
     if rel not in tracked: continue
+    # 2026-09-15：与 doc-gate 一致，任务目录下 thread/ 是冻结原件，只对交回那一刻负责，不查。
+    if "/thread/" in rel: frozen += 1; continue
     text = f.read_text(encoding="utf-8")
     for m in A.finditer(text):
         name,sha,a,b = m.group(1),m.group(2),int(m.group(3)),m.group(4)
@@ -98,7 +100,7 @@ for f in sorted(DOCS.rglob("*.md")):
         else: okB+=1
     soft += len(C.findall(text))
 
-print(f"anchor-gate: 钉 commit 锚 {okA} 通过；裸路径行号锚 {okB} 通过；章节号引用 {soft} 处（软判，交人）")
+print(f"anchor-gate: 钉 commit 锚 {okA} 通过；裸路径行号锚 {okB} 通过；章节号引用 {soft} 处（软判，交人）" + (f"；另有 {frozen} 份在 thread/ 下，冻结原件不查" if frozen else ""))
 for x in fails: print(f"  ❌ {x}")
 if fails: print(f"\n硬判失败 {len(fails)} 项。**裸路径锚在被引文件删除后必然失效，应改为 `文件.md @ <commit>:<行>`。**")
 sys.exit(1 if fails else 0)

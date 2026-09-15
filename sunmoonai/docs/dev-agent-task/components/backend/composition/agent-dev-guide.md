@@ -318,8 +318,8 @@ S 层比对象与边，R 层比一次执行的序列。
 | 已派工 | turn 里有 `user-message.md`，还没有 `turn.md` |
 | 已交回 | `turn.md` 已写，`status` 为 `completed` |
 | 中断或失败 | `turn.md` 的 `status` 为 `interrupted` 或 `failed` |
-| 已通过 | 有 `verifies` 指向**这个 turn** 的验收 turn，其 UAT 结论为通过；设计还须已整理进 `composition/` |
-| 被打回 | `verifies` 指向这个 turn 的最新一份 UAT 结论为不通过 |
+| 已通过 | 有 `verifies` 指向**这个 turn** 的验收 turn，其 `turn.md` 的 `verdict` 为 `pass`；设计还须已整理进 `composition/` |
+| 被打回 | `verifies` 指向这个 turn 的最新一份 UAT，其 `verdict` 为 `fail` |
 | 停下待人 | 同一项交付物被打回的次数达到上限，还没有载有人的裁决的新 turn |
 | 已取消 | 上层定稿写明已取消及原因 |
 | 已完成 | 任务要求交回的每一项都「已通过」，且全部子任务「已完成」或「已取消」 |

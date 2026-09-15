@@ -242,6 +242,148 @@ def check_tables(path: str, text: str) -> list[str]:
     return problems
 
 
+# ── turn 的检查（2026-09-15 所有者定：规则要有载体）──────────────────────────
+# 任务目录下 `thread/<编号>/` 是一个个 turn：`user-message.md`（任务书，带 YAML 头）、
+# `turn.md`（交回时写的回执）与交回物。字段与冻结规则见 dev-agent-standards 通用规则
+# 「turn 的固定字段」。编号与字段每次都查；冻结只在 --staged（提交与合并）时查。
+THREAD_PATH_RE = re.compile(r"^(?P<task>.+)/thread/(?P<turn>[^/]+)/(?P<file>[^/]+)$")
+TURN_ID_RE = re.compile(r"^(?P<num>\d{2})(?P<alt>[a-z]?)$")
+DELIVERABLES = {"SDD", "SDP", "UAT"}
+AGENT_ALLOWS = {"planning": {"SDD"}, "execution": {"SDD", "SDP"}, "acceptance": {"UAT"}}
+STATUSES = {"completed", "interrupted", "failed"}
+VERDICTS = {"pass", "fail", "undecidable"}
+
+
+def front_matter(text: str) -> dict[str, str] | None:
+    """读 `---` 包起的 YAML 头（只认 `键: 值` 一层）；没有或没闭合返回 None。"""
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return None
+    out: dict[str, str] = {}
+    for line in lines[1:]:
+        if line.strip() == "---":
+            return out
+        if ":" in line:
+            k, v = line.split(":", 1)
+            out[k.strip()] = v.strip()
+    return None
+
+
+def kinds_of(value: str) -> set[str]:
+    return {x.strip() for x in value.strip().strip("[]").split(",") if x.strip()}
+
+
+def head_blob(path: str) -> str | None:
+    try:
+        return git("show", f"HEAD:{path}")
+    except subprocess.CalledProcessError:
+        return None
+
+
+def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tuple[list[str], int]:
+    problems: list[str] = []
+    tasks: dict[str, dict[str, set[str]]] = {}
+    for p in tracked:
+        m = THREAD_PATH_RE.match(p)
+        if p.startswith(DOC_ROOT) and m:
+            tasks.setdefault(m["task"], {}).setdefault(m["turn"], set()).add(m["file"])
+    nturns = 0
+    for task, turns in sorted(tasks.items()):
+        nums: dict[int, set[str]] = {}
+        for t in turns:
+            m = TURN_ID_RE.match(t)
+            if not m:
+                problems.append(f"{task}/thread/{t}: turn 编号须为两位数字，并行尝试加小写字母（如 03、03a）")
+                continue
+            nums.setdefault(int(m["num"]), set()).add(m["alt"])
+        if nums:
+            gap = sorted(set(range(1, max(nums) + 1)) - set(nums))
+            if gap:
+                problems.append(f"{task}/thread/: turn 编号不连续，缺 " + "、".join(f"{g:02d}" for g in gap))
+            for n, alts in sorted(nums.items()):
+                if "" in alts and len(alts) > 1:
+                    problems.append(f"{task}/thread/{n:02d}: 同一编号不能既是顺序 turn 又有并行尝试")
+                letters = sorted(a for a in alts if a)
+                if letters and letters != [chr(ord("a") + i) for i in range(len(letters))]:
+                    problems.append(f"{task}/thread/{n:02d}: 并行尝试须从 a 起连续编号，现有 " + "、".join(letters))
+        for t, files in sorted(turns.items()):
+            nturns += 1
+            base = f"{task}/thread/{t}"
+            um = blob(f"{base}/user-message.md") if "user-message.md" in files else None
+            if um is None:
+                problems.append(f"{base}: 缺 user-message.md（任务书）")
+                continue
+            fm = front_matter(um)
+            if fm is None:
+                problems.append(f"{base}/user-message.md: 缺 YAML 头（--- 包起的固定字段）")
+                continue
+            for k in ("deliverable", "agent", "executor", "base", "sent_at"):
+                if not fm.get(k):
+                    problems.append(f"{base}/user-message.md: 缺字段或为空：{k}")
+            kinds = kinds_of(fm.get("deliverable", ""))
+            if kinds - DELIVERABLES:
+                problems.append(f"{base}/user-message.md: deliverable 只能是 SDD、SDP、UAT，现为 {fm.get('deliverable')}")
+            agent = fm.get("agent", "")
+            if agent and agent not in AGENT_ALLOWS:
+                problems.append(f"{base}/user-message.md: agent 只能是 planning、execution、acceptance，现为 {agent}")
+            elif agent and kinds and not kinds <= AGENT_ALLOWS[agent]:
+                problems.append(f"{base}/user-message.md: {agent} agent 不能交 " + "、".join(sorted(kinds - AGENT_ALLOWS[agent])))
+            if "UAT" in kinds:
+                v = fm.get("verifies", "")
+                if not v:
+                    problems.append(f"{base}/user-message.md: 交 UAT 须填 verifies（验收的是哪个 turn）")
+                elif v not in turns:
+                    problems.append(f"{base}/user-message.md: verifies 指向不存在的 turn：{v}")
+            elif fm.get("verifies"):
+                problems.append(f"{base}/user-message.md: 只有交 UAT 的 turn 才填 verifies")
+            if "turn.md" not in files:
+                continue
+            if fm.get("sent_at") == "pending":
+                problems.append(f"{base}: 任务书还未发出（sent_at: pending），不应有 turn.md")
+            tm = front_matter(blob(f"{base}/turn.md") or "")
+            if tm is None:
+                problems.append(f"{base}/turn.md: 缺 YAML 头（--- 包起的固定字段）")
+                continue
+            for k in ("status", "completed_at", "commit", "provider_turn_id"):
+                if not tm.get(k):
+                    problems.append(f"{base}/turn.md: 缺字段或为空：{k}")
+            st = tm.get("status", "")
+            if st and st not in STATUSES:
+                problems.append(f"{base}/turn.md: status 只能是 completed、interrupted、failed，现为 {st}")
+            if (st == "failed") != bool(tm.get("error")):
+                problems.append(f"{base}/turn.md: error 只在 status 为 failed 时填，而且必须填")
+            needs = "UAT" in kinds and st == "completed"
+            if needs and tm.get("verdict") not in VERDICTS:
+                problems.append(f"{base}/turn.md: 交回 UAT 须填 verdict：pass、fail 或 undecidable")
+            if not needs and tm.get("verdict"):
+                problems.append(f"{base}/turn.md: 只有完成的 UAT turn 才填 verdict")
+    if staged is not None:
+        problems += check_frozen(staged)
+    return problems, nturns
+
+
+def check_frozen(staged: list[tuple[str, str]]) -> list[str]:
+    """交回即冻结：HEAD 里已有 turn.md 的 turn 不许改、删、加文件；已发出的任务书不许改、删。"""
+    problems: list[str] = []
+    cache: dict[str, tuple[bool, bool]] = {}
+    for status, path in staged:
+        m = THREAD_PATH_RE.match(path)
+        if not (m and path.startswith(DOC_ROOT)):
+            continue
+        base = f"{m['task']}/thread/{m['turn']}"
+        if base not in cache:
+            um = head_blob(f"{base}/user-message.md")
+            fm = front_matter(um) if um else None
+            cache[base] = (head_blob(f"{base}/turn.md") is not None,
+                           um is not None and not (fm and fm.get("sent_at") == "pending"))
+        returned, sent = cache[base]
+        if returned:
+            problems.append(f"{path}: turn 已交回（有 turn.md），冻结——不改、不删、不加文件；要改就开新的 turn")
+        elif status in ("M", "D") and m["file"] == "user-message.md" and sent:
+            problems.append(f"{path}: 任务书已发出，冻结；要改就开新的 turn")
+    return problems
+
+
 def hook_installed() -> bool:
     try:
         return git("config", "--get", "core.hooksPath").strip() == ".githooks"
@@ -293,6 +435,7 @@ def main(argv: list[str]) -> int:
         )
         return 2
 
+    mode = argv[0]
     survey = argv[0] == "--survey"
     if argv[0] == "--staged":
         # hook 用：自己算本次提交暂存的文档。即使一份文档都没动，也仍要跑主线不变量,
@@ -349,6 +492,13 @@ def main(argv: list[str]) -> int:
             problems += check_section_refs(path, text, tracked, heading_cache)
         problems += check_tables(path, text)
 
+    staged_changes: list[tuple[str, str]] | None = None
+    if mode == "--staged":
+        raw = git("diff", "--cached", "--name-status", "--no-renames", "-z").split("\0")
+        staged_changes = [(raw[i], raw[i + 1]) for i in range(0, len(raw) - 1, 2)]
+    thread_problems, nturns = check_threads(tracked, staged_changes)
+    problems += thread_problems
+
     if problems and survey:
         print(f"doc-gate 巡检: {checked} 份文档，{len(problems)} 处待修（不拦提交）\n")
         for p in problems:
@@ -375,7 +525,8 @@ def main(argv: list[str]) -> int:
         )
         return 2
 
-    print(f"doc-gate: {checked} 份文档通过")
+    what = "编号、字段与冻结" if staged_changes is not None else "编号与字段"
+    print(f"doc-gate: {checked} 份文档通过" + (f"；{nturns} 个 turn 的{what}检查通过" if nturns else ""))
     return 0
 
 
