@@ -1,5 +1,7 @@
 # Request Lifecycle：产品请求生命周期合同
 
+> 依据的通用规范：[PRD 规范（本文是本任务的 PRD）](../../dev-agent-standards/task/prd/README.md)
+
 > 最后更新：2026-08-31
 >
 > **本文是产品目标合同，不是当前能力清单，也不是开发协作流程。**它定义 investment-app 中“前端用户提交 Task，后端受理并

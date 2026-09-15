@@ -85,6 +85,8 @@ Submission
 
 ### 1.5 执行者的共同纪律
 
+> 依据的通用规范：[总则「执行者的共同纪律」](../../dev-agent-standards/README.md)
+
 不论单路还是并行，不论人还是 agent，八条都成立：
 
 1. **不用计划覆盖原始请求**（`I1`）；
@@ -100,6 +102,8 @@ Submission
 后面两处的分级就无从谈起。
 
 ### 1.6 七条设计原则
+
+> 依据的通用规范：[SDD「设计必须满足」](../../dev-agent-standards/deliverables/sdd/README.md)
 
 全文的取舍都回到这七条。它们不是新主张，是把本仓已成文的判断当成设计约束用到底：
 
@@ -157,6 +161,8 @@ Submission
 | 22 | 库的完整 API 面、多次中断与版本兼容 | ⚠ 历史记录只覆盖若干用法；SDK/库升级前按 [§5.13](../components/backend/composition/agent-dev-guide.md) 重核，不把原地恢复样例推广到未经验证的路线 |
 
 ### 7.7 需要改内核时，提交明确的修订工作单元
+
+> 依据的通用规范：[SDD「修改已冻结的契约」](../../dev-agent-standards/deliverables/sdd/README.md)
 
 开发投影表达不了的能力，先证明是内核缺口，不能在 Profile、Adapter 或文档里偷加语义。
 工作单元至少写清：

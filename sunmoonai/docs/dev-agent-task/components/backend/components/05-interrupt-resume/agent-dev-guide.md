@@ -67,6 +67,8 @@ checkpoint 原地续跑时是同一 Attempt 的 `WAITING → RUNNING`，不因�
 
 ### 4.7 四档审批
 
+> 依据的通用规范：[人的批准点「四档审批」](../../../../../dev-agent-standards/approvals.md)
+
 审批策略固定四档，具体动作由 Task/Profile 风险分类映射：
 
 | 档 | 适用 | 决策者 | 纪律 |
@@ -95,6 +97,8 @@ checkpoint 原地续跑时是同一 Attempt 的 `WAITING → RUNNING`，不因�
 ⚠ 它是否可用于任何 `auto_policy = 无` 的行，**本文不裁**，登记 [§7.4](../../../../composition/agent-dev-guide.md) 未决。
 
 ### 4.10 人这一侧的义务
+
+> 依据的通用规范：[人的批准点「人这一侧的义务」](../../../../../dev-agent-standards/approvals.md)
 
 ⚠ **不只是执行者有纪律。人这边同样有，而且被违反时后果更大——因为 agent 会照做。**
 
