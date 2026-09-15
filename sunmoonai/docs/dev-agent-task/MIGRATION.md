@@ -1,4 +1,4 @@
-# 迁移记录：dev-plan → dev-agent-task / dev-agent-guide
+# 迁移记录：dev-plan → dev-agent-task / dev-agent-standards
 
 > 2026-09-14 已按本表完成迁移；dev-plan 各文件头链接到这里，故保留作记录。节 ID 同 [dev-plan-architecture.md](../dev-plan/dev-plan-architecture.md)
 > 第八节的安置表（源文件 + 起行 + 原标题可在那里查到）。
@@ -6,8 +6,8 @@
 ## 规则（所有者 2026-09-14）
 
 1. **默认去 `dev-agent-task/`**：dev-plan 的内容绝大多数是 agent 这个具体项目的。
-2. **`dev-agent-guide/` 只收与项目无关的规范、原则、纪律，篇幅很少。**一节里两种都有时拆开：
-   通用原则进 `dev-agent-guide/`，agent 的做法留在任务里。
+2. **`dev-agent-standards/` 只收与项目无关的规范、原则、纪律，篇幅很少。**一节里两种都有时拆开：
+   通用原则进 `dev-agent-standards/`，agent 的做法留在任务里。
 3. 节点自己的开发文档就在它的 `composition/`；跨阶段的内容进上一层的 `composition/`。
 4. `rounds/`、`records/`、`archive/` 与 dev-plan-refact 轮的产物成为历史，不迁。
 
@@ -19,7 +19,7 @@
 | B | `components/backend/composition/`：后端内部各部分的关系、跨阶段内容 |
 | B02 … B07 | `components/backend/components/` 下对应阶段目录 |
 | F01 / F05 / F07 | `components/frontend/components/` 下对应阶段目录 |
-| P-xxx | `../dev-agent-guide/` 下对应阶段（`task/prd`；`deliverables/sdd`、`sdp`、`uat`。原 brd 并入 prd） |
+| P-xxx | `../dev-agent-standards/` 下对应阶段（`task/prd`；`deliverables/sdd`、`sdp`、`uat`。原 brd 并入 prd） |
 | 史 | 留在 dev-plan 作历史，不迁 |
 | 留原处 | 仍在 dev-plan 原位置、继续使用（门禁脚本及其说明） |
 
@@ -85,17 +85,17 @@
 | handoff 当前阶段、已就位、游标、未决项、U1/U3/U4 输入、不能倒退两条 | I08-001…007/010/013 | T | 顶层交接 |
 | guide 风险和未决 | I02-087 | T | |
 | guide 执行器未验证清单 | I02-089 | B04 | |
-| `pipeline.md` | — | B + P（总流程） | 整份移入 B（agent 项目的具体流程）；流程原则抽象后写进 `dev-agent-guide` 总则 |
+| `pipeline.md` | — | B + P（总流程） | 整份移入 B（agent 项目的具体流程）；流程原则抽象后写进 `dev-agent-standards` 总则 |
 | 历史取值、旧路线、吸收审计、旧版入口 | I02-027/062/076/095/096/098…102/001/005/006、I07-005、I08-011/012、I09-* | 史 | 吸收审计中的「没查什么」（I02-097）已单列进 P-uat |
 | guide 无正文的章标题（「3. 一次开发 Task 怎样执行」「5. 可观测性、证据与等效」） | I02-028/065 | 不迁 | 只有标题，其下各节已分别归位 |
 | `dev-plan-architecture.md`、`rounds/`、`records/`、`archive/` | — | 史 | |
 | `anchor-gate.py`、`doc-gate.py`、`scripts/` | — | 留原处 | 管全仓文档，不属于 agent |
 
-进 `dev-agent-guide/` 的一共 10 处：总则 4 处（共同纪律、改判三要素、pipeline 总流程、规则保证的三层），
+进 `dev-agent-standards/` 的一共 10 处：总则 4 处（共同纪律、改判三要素、pipeline 总流程、规则保证的三层），
 P-prd 1、P-sdp 1、P-uat 4。
 
-拆分的做法：任务侧原文保留，作为具体实例；`dev-agent-guide` 只写抽象出来的原则，措辞通用，并链接到实例。
-进 `dev-agent-guide` 的 10 处都是抽象后的原则，原文一律保留在任务侧或历史里。
+拆分的做法：任务侧原文保留，作为具体实例；`dev-agent-standards` 只写抽象出来的原则，措辞通用，并链接到实例。
+进 `dev-agent-standards` 的 10 处都是抽象后的原则，原文一律保留在任务侧或历史里。
 
 ## 已定（所有者 2026-09-14）
 

@@ -5,7 +5,7 @@
 - `composition/`：本层的组成设计——整体怎么划分、各部分承担什么、彼此怎么交互；
 - `components/`：各组成部分，每个部分是一个子任务，内部递归同一模式；叶子任务没有 `components/`。
 
-任何一层用到哪个开发阶段，按 [`dev-agent-guide/`](../dev-agent-guide/) 的规范写。
+任何一层用到哪个开发阶段，按 [`dev-agent-standards/`](../dev-agent-standards/) 的规范写。
 
 本任务的生命周期见 [request-lifecycle.md](composition/request-lifecycle.md) 第 5 节；叶子目录名保留阶段编号。
 第一层分前端与后端，Agent / runtime 与验收器归后端（所有者 2026-09-14 定）；责任划分依合同第 9 节。
@@ -31,6 +31,6 @@ components/
 | agent 项目的开发流程 | [`components/backend/composition/pipeline.md`](components/backend/composition/pipeline.md) |
 | 多方协作规程与 `round-status.py` | [`components/backend/components/04-agent-execution/protocol/`](components/backend/components/04-agent-execution/protocol/) |
 | 开发计划、实施计划、交接 | [`composition/development-plan.md`](composition/development-plan.md)、[`composition/implementation-plan.md`](composition/implementation-plan.md)、[`composition/handoff.md`](composition/handoff.md) |
-| 与项目无关的通用开发规范 | [`../dev-agent-guide/`](../dev-agent-guide/) |
+| 与项目无关的通用开发规范 | [`../dev-agent-standards/`](../dev-agent-standards/) |
 
 原 `dev-plan/` 各节的去向见 [MIGRATION.md](MIGRATION.md)；`dev-plan/` 现为历史，门禁脚本仍在那里使用。

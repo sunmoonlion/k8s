@@ -4,7 +4,7 @@
 >
 > - [`dev-agent-task/components/backend/composition/constraints.md`](../dev-agent-task/components/backend/composition/constraints.md)（5 节）
 > - [`dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md)（8 节）
-> - 第 2 步：「保证这些被遵守的三层」并入 [`dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md)，通用原则写进 [dev-agent-guide 总则](../dev-agent-guide/README.md)
+> - 第 2 步：「保证这些被遵守的三层」并入 [`dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md)，通用原则写进 [dev-agent-standards 总则](../dev-agent-standards/README.md)
 >
 > 这里仅剩：历史记录与留在原处的节。节号是原文件的节号。
 
