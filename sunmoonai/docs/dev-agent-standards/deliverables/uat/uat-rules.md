@@ -1,6 +1,6 @@
 # UAT：用户验收测试（User Acceptance Testing）
 
-由**验收 agent** 交付；验收 agent 不是交付 SDP 的执行 agent。
+由**验收 agent** 交付，验收 agent 只交 UAT；它不是交付被验这份 SDD 或 SDP 的 agent。
 多个验收 agent 各自验收、需要比对时，按 [`../../protocol/`](../../protocol/competition-rules.md) 的多方竞争协议进行。
 
 ## 判据与完成
