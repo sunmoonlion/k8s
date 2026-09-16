@@ -24,7 +24,7 @@ standards 的用词以本表为准：**同一个意思只用一个词**，「不
 
 ## 交付物
 
-**交付物**指 SDD、SDP、UAT 这三种文档；每一种的规则见 [`deliverables/`](./)。
+**交付物**指 SDD、SDP、UAT 这三种文档；每一种的规则见 [SDD](sdd/sdd-rules.md)、[SDP](sdp/sdp-rules.md)、[UAT](uat/uat-rules.md)。
 
 | 词 | 含义 | 不要用 |
 | --- | --- | --- |
