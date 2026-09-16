@@ -5,4 +5,4 @@
 
 | 任务 | 是什么 | 状态 |
 | --- | --- | --- |
-| [`N4-OPS-01/`](N4-OPS-01/thread/01/user-message.md) | 监控采集与告警送达 | 尚未派工 |
+| [`N4-OPS-01/`](N4-OPS-01/thread/0001/user-message.md) | 监控采集与告警送达 | 尚未派工 |

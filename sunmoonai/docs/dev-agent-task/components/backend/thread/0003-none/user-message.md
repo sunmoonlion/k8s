@@ -1,0 +1,13 @@
+---
+deliverable: SDD
+agent: planning
+executor: unknown
+thread: 0003-none
+base: unknown
+sent_at: unknown
+---
+# turn 0003：AI 执行开发流程：以可验收的需求增量贯通交付
+
+按上层定稿里后端的相应部分，交回后端的设计「AI 执行开发流程：以可验收的需求增量贯通交付」（结构层）。只写设计，不写进度和任务清单；只交回一份文本，不改代码。
+
+**交回：SDD（结构层），由规划 agent交。**

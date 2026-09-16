@@ -13,7 +13,7 @@ import json, os, re, subprocess, sys
 from collections import defaultdict
 
 RE = re.compile(r"^(?P<task>sunmoonai/docs/.+)/thread/(?P<rest>.+)$")
-TURN_DIR_RE = re.compile(r"^(?P<num>\d{2})(?:-.*)?$")      # 01、01-01k8f3m2qz
+TURN_DIR_RE = re.compile(r"^(?P<num>\d{4})(?:-.*)?$")      # 0001、0001-01k8f3m2qz
 ATTEMPT_DIR_RE = re.compile(r"^(?P<alt>[a-z])(?:-.*)?$")   # 并行尝试 a-01k8h2r5bb
 LABEL = {"pass": "已通过", "fail": "被打回", "undecidable": "不可判，交人"}
 
@@ -78,7 +78,7 @@ def main(argv):
             info["attempts"][parts[1]].add(parts[2])
     report = []
     for task in sorted(tasks):
-        # 键是本地号（01、03a）：目录名带执行环境 id，排序与引用都只用本地号
+        # 键是本地号（0001、0003a）：目录名带执行环境 id，排序与引用都只用本地号
         turns = {}
         for tdir in sorted(tasks[task]):
             md = TURN_DIR_RE.match(tdir)
@@ -118,8 +118,8 @@ def main(argv):
                 if r.get("verdict") == "fail":
                     for kk in kinds(verified(turns, u.get("verifies"))[0].get("deliverable")):
                         fails[kk] += 1
-            elif verdicts.get(t) or (len(t) > 2 and verdicts.get(t[:2])):
-                got = verdicts.get(t, []) + (verdicts.get(t[:2], []) if len(t) > 2 else [])
+            elif verdicts.get(t) or (len(t) > 4 and verdicts.get(t[:4])):
+                got = verdicts.get(t, []) + (verdicts.get(t[:4], []) if len(t) > 4 else [])
                 state = LABEL.get(sorted(got)[-1][1], "?")
             else:
                 state = "已交回，待验收"

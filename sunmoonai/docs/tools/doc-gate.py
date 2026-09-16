@@ -241,15 +241,15 @@ def check_tables(path: str, text: str) -> list[str]:
 
 # ── turn 的检查（规则要有载体）──────────────────────────────────────────────
 # 任务目录下 `thread/` 是一个个 turn，目录名为「本地号-执行环境 id」：
-#     thread/01-01k8f3m2qz/        单 turn：user-message.md、turn.md 与交回物
-#     thread/03/a-01k8h2r5bb/      并行：任务书在 turn 目录下只一份，各家各占一个尝试子目录
+#     thread/0001-01k8f3m2qz/      单 turn：user-message.md、turn.md 与交回物
+#     thread/0003/a-01k8h2r5bb/    并行：任务书在 turn 目录下只一份，各家各占一个尝试子目录
 # 本地号管排序与引用，id 后缀管回溯执行环境的原始记录。字段见 dev-agent-standards
 # 「任务的生命周期」的「turn 的固定字段」，命名与编号见 dev-agent-task/thread-numbering.md。
 # 编号与字段每次都查；冻结只在 --staged（提交与合并）时查。
 THREAD_PREFIX_RE = re.compile(r"^(?P<task>.+)/thread/(?P<rest>.+)$")
-TURN_DIR_RE = re.compile(r"^(?P<num>\d{2})(?:-(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*))?$")
+TURN_DIR_RE = re.compile(r"^(?P<num>\d{4})(?:-(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*))?$")
 ATTEMPT_DIR_RE = re.compile(r"^(?P<alt>[a-z])(?:-(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*))?$")
-THREAD_FIELD_RE = re.compile(r"^(?P<num>\d{2})-(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*)$")
+THREAD_FIELD_RE = re.compile(r"^(?P<num>\d{4})-(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*)$")
 DELIVERABLES = {"SDD", "SDP", "UAT"}
 AGENT_ALLOWS = {"planning": {"SDD"}, "execution": {"SDD", "SDP"}, "acceptance": {"UAT"}}
 STATUSES = {"completed", "interrupted", "failed"}
@@ -355,18 +355,18 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
             m = TURN_DIR_RE.match(name)
             if not m:
                 problems.append(
-                    f"{task}/thread/{name}: turn 目录名须是两位数字，或「两位数字-执行环境 id」（如 03、03-01k8f3m2qz）"
+                    f"{task}/thread/{name}: turn 目录名须是四位数字，或「四位数字-执行环境 id」（如 0003、0003-01k8f3m2qz）"
                 )
                 continue
             parsed_turns[name] = (int(m["num"]), m["id"])
             nums.setdefault(int(m["num"]), []).append(name)
         for n, names in sorted(nums.items()):
             if len(names) > 1:
-                problems.append(f"{task}/thread/: 本地号 {n:02d} 对应多个目录：" + "、".join(sorted(names)))
+                problems.append(f"{task}/thread/: 本地号 {n:04d} 对应多个目录：" + "、".join(sorted(names)))
         if nums:
             gap = sorted(set(range(1, max(nums) + 1)) - set(nums))
             if gap:
-                problems.append(f"{task}/thread/: turn 编号不连续，缺 " + "、".join(f"{g:02d}" for g in gap))
+                problems.append(f"{task}/thread/: turn 编号不连续，缺 " + "、".join(f"{g:04d}" for g in gap))
 
         # 二、形态：单 turn 还是并行；并行尝试的字母要从 a 起连续
         alts_of: dict[str, dict[str, tuple[str, str | None]]] = {}
@@ -374,7 +374,7 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
         for name, (num, tid) in sorted(parsed_turns.items()):
             base = f"{task}/thread/{name}"
             info = turns[name]
-            local_ids.add(f"{num:02d}")
+            local_ids.add(f"{num:04d}")
             alts: dict[str, tuple[str, str | None]] = {}
             for aname in sorted(info["attempts"]):
                 ma = ATTEMPT_DIR_RE.match(aname)
@@ -382,7 +382,7 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
                     problems.append(f"{base}/{aname}: 并行尝试的目录名须是「小写字母-执行环境 id」（如 a-01k8h2r5bb）")
                     continue
                 alts[aname] = (ma["alt"], ma["id"])
-                local_ids.add(f"{num:02d}{ma['alt']}")
+                local_ids.add(f"{num:04d}{ma['alt']}")
             alts_of[name] = alts
             letters = sorted(a for a, _ in alts.values())
             if letters and letters != [chr(ord("a") + i) for i in range(len(letters))]:
@@ -420,7 +420,7 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
                     if fm.get(k):
                         problems.append(f"{base}/user-message.md: 并行的一问发给几家，{k} 写在各尝试的 turn.md 里")
             elif fm.get("thread") and not THREAD_FIELD_RE.match(fm["thread"]):
-                problems.append(f"{base}/user-message.md: thread 须写成「两位会话号-执行环境 id」，现为 {fm['thread']}")
+                problems.append(f"{base}/user-message.md: thread 须写成「四位会话号-执行环境 id」，现为 {fm['thread']}")
             elif fm.get("thread"):
                 sessions.setdefault(THREAD_FIELD_RE.match(fm["thread"])["num"], set()).add(
                     THREAD_FIELD_RE.match(fm["thread"])["id"]
@@ -459,7 +459,7 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
                 th = tm.get("thread", "")
                 if parallel and th:
                     if not THREAD_FIELD_RE.match(th):
-                        problems.append(f"{rbase}/turn.md: thread 须写成「两位会话号-执行环境 id」，现为 {th}")
+                        problems.append(f"{rbase}/turn.md: thread 须写成「四位会话号-执行环境 id」，现为 {th}")
                     else:
                         sessions.setdefault(THREAD_FIELD_RE.match(th)["num"], set()).add(THREAD_FIELD_RE.match(th)["id"])
 
