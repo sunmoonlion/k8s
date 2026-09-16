@@ -8,13 +8,12 @@
 
 | 文件 | 内容 |
 | --- | --- |
-| [`general-rules.md`](general-rules.md) | 通用规则：基本理念、总则、执行者的共同纪律——**先读这一份** |
 | [`glossary.md`](glossary.md) | 词汇表：standards 用词的唯一定义；改名须人确认 |
 | [`approvals.md`](approvals.md) | 人的批准点：谁批什么、批准怎样成立、权限、审批档位、人这一侧的义务、改判 |
-| [`prd/prd-rules.md`](prd/prd-rules.md) | 任务书（PRD）规则，以及任务的生命周期：任务目录、turn 与它的字段、定稿与建子任务、返工；附录是最严格的一种模板 |
+| [`prd/prd-rules.md`](prd/prd-rules.md) | **先读这一份**：基本理念与总则、任务书（PRD）规则，以及任务的生命周期——任务目录、turn 与它的字段、定稿与建子任务、返工；附录是最严格的一种模板 |
 | [`deliverables/sdd/sdd-rules.md`](deliverables/sdd/sdd-rules.md) | SDD 规则：规划 agent 交回的设计，以及执行 agent 实现前的设计 |
-| [`deliverables/sdp/sdp-rules.md`](deliverables/sdp/sdp-rules.md) | SDP 规则：执行 agent 交回的计划、实施与交付 |
-| [`deliverables/uat/uat-rules.md`](deliverables/uat/uat-rules.md) | UAT 规则：验收 agent 的验证与采信 |
+| [`deliverables/sdp/sdp-rules.md`](deliverables/sdp/sdp-rules.md) | SDP 规则：执行者的共同纪律，执行 agent 交回的计划、实施与交付 |
+| [`deliverables/uat/uat-rules.md`](deliverables/uat/uat-rules.md) | UAT 规则：开工与完成、门的三档，验收 agent 的验证与采信 |
 | [`protocol/competition-rules.md`](protocol/competition-rules.md) | 多方竞争协议；同目录另有尚未生效的草案 |
 
 ## 任务与交付物

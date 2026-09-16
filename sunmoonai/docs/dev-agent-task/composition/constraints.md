@@ -162,7 +162,7 @@ Calico 集群，否则"测过了"是假的。
 
 ## 保证这些被遵守的三层
 
-> 依据的通用规范：[总则「规则要有载体」](../../dev-agent-standards/general-rules.md)
+> 依据的通用规范：[UAT 规则「规则要有载体」](../../dev-agent-standards/deliverables/uat/uat-rules.md)
 
 | 层 | 覆盖 | 在哪 |
 | --- | --- | --- |

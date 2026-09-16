@@ -81,7 +81,7 @@ Submission
 
 ### 1.5 执行者的共同纪律
 
-> 依据的通用规范：[总则「执行者的共同纪律」](../../../dev-agent-standards/general-rules.md)
+> 依据的通用规范：[SDP 规则「执行者的共同纪律」](../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
 
 不论单路还是并行，不论人还是 agent，八条都成立：
 
