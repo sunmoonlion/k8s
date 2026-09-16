@@ -242,7 +242,7 @@ def check_tables(path: str, text: str) -> list[str]:
 # ── turn 的检查（规则要有载体）──────────────────────────────────────────────
 # 任务目录下 `thread/<编号>/` 是一个个 turn：`user-message.md`（任务书，带 YAML 头）、
 # `turn.md`（交回时写的回执）与交回物。字段与冻结规则见 dev-agent-standards 通用规则
-# PRD 规则「turn 的固定字段」。编号与字段每次都查；冻结只在 --staged（提交与合并）时查。
+# 「任务的生命周期」里的「turn 的固定字段」。编号与字段每次都查；冻结只在 --staged（提交与合并）时查。
 THREAD_PATH_RE = re.compile(r"^(?P<task>.+)/thread/(?P<turn>[^/]+)/(?P<file>[^/]+)$")
 TURN_ID_RE = re.compile(r"^(?P<num>\d{2})(?P<alt>[a-z]?)$")
 DELIVERABLES = {"SDD", "SDP", "UAT"}
