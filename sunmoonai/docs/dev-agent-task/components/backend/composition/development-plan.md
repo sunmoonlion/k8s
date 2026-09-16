@@ -16,7 +16,7 @@
 
 ## 智能体分两部分
 
-> 依据的通用规范：[SDD「设计必须满足」](../../../../dev-agent-standards/deliverables/sdd/sdd-rules.md)
+> 依据的通用规范：[SDD「设计必须满足」](../../../../dev-agent-standards/sdd/sdd-rules.md)
 
 | | 通用部分 | 专用部分 |
 | --- | --- | --- |

@@ -196,7 +196,7 @@ runtime/Profile 兼容性后继续，**不把 executor 本地目录当真源**�
 
 ### 3.2 工作区供给
 
-> 依据的通用规范：[SDP「执行规范 · 工作区」](../../../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
+> 依据的通用规范：[SDP「执行规范 · 工作区」](../../../../../../../dev-agent-standards/sdp/sdp-rules.md)
 
 ```text
 provision(task_id, source, baseline_commit, write_actors, review_needed, submodule_plan)
@@ -220,7 +220,7 @@ provision(task_id, source, baseline_commit, write_actors, review_needed, submodu
 
 ### 3.6 私有地产生，单写者发布
 
-> 依据的通用规范：[SDP「私有地产生，单写者发布」](../../../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
+> 依据的通用规范：[SDP「私有地产生，单写者发布」](../../../../../../../dev-agent-standards/sdp/sdp-rules.md)
 
 **会话隔离、模型隔离和任务名称不同，都不等于文件系统隔离。**
 任何可能并行的执行者都不得把共享路径当自己的草稿纸。
@@ -262,7 +262,7 @@ integrate: task/<task-id>/integrate/<run-id>
 
 ### 3.7 并发场景处置表
 
-> 依据的通用规范：[SDP「并发与事故」](../../../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
+> 依据的通用规范：[SDP「并发与事故」](../../../../../../../dev-agent-standards/sdp/sdp-rules.md)
 
 每行四件事：场景、正确落点、禁止做法、**已发生时怎么收**。
 恢复列给的是入口动作，统一规程见 §3.8。
@@ -305,7 +305,7 @@ integrate: task/<task-id>/integrate/<run-id>
 
 ### 3.8 覆盖或来源不明时的事故规程
 
-> 依据的通用规范：[SDP「并发与事故」](../../../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
+> 依据的通用规范：[SDP「并发与事故」](../../../../../../../dev-agent-standards/sdp/sdp-rules.md)
 
 ⚠ **后到者赢在任何场景都不成立。**磁盘上的最后一版、时间戳最新的一份、最后推上去的那个
 ref，都不因为「在后面」而获得正确性或所有权。**覆盖发生后唯一有效的认主依据是 commit、
@@ -337,7 +337,7 @@ Git object、Artifact、备份）⑥ 裁决（由 integrator 决定选用/合并
 
 ### 3.9 冻结、迟到与取消
 
-> 依据的通用规范：[SDP「冻结、迟到与取消」](../../../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
+> 依据的通用规范：[SDP「冻结、迟到与取消」](../../../../../../../dev-agent-standards/sdp/sdp-rules.md)
 
 候选、评审、改进、最终结果和验收绑定不可变 commit。冻结后替换必须产生新 commit 并登记。
 主线采纳后的在途结果标为 `STALE`，不得覆盖主线、执行副作用或推翻已交付结果。
@@ -360,7 +360,7 @@ Artifact，最后回收 worktree/sandbox。**取消与完成只能一个终态�
 
 ### 3.10 物化门禁与写入前门禁
 
-> 依据的通用规范：[SDP「两道门禁」](../../../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
+> 依据的通用规范：[SDP「两道门禁」](../../../../../../../dev-agent-standards/sdp/sdp-rules.md)
 
 **两道门，时机不同：物化门禁在第一个 Attempt 启动前，写入前门禁在每次落笔前。**
 
@@ -417,7 +417,7 @@ publication target + integrator
 
 ### 3.13 执行形态、停止规则与成本
 
-> 依据的通用规范：[SDP「执行形态、停止与成本」](../../../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
+> 依据的通用规范：[SDP「执行形态、停止与成本」](../../../../../../../dev-agent-standards/sdp/sdp-rules.md)
 
 档位（[§3.4](../../../../composition/agent-dev-guide.md)）定 guard，**执行形态**定这一次实际怎么排人：
 
@@ -452,7 +452,7 @@ publication target + integrator
 
 ### 3.14 建立 worktree 的细则
 
-> 依据的通用规范：[SDP「工作区」](../../../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
+> 依据的通用规范：[SDP「工作区」](../../../../../../../dev-agent-standards/sdp/sdp-rules.md)
 
 - 每个并行单元**独立分支、独立可写 worktree**；候选从同一冻结 commit 开始；
 - ⚠ **同一分支不能被两棵 worktree 同时检出**——Git 会拒绝第二处，这是机制不是约定；
@@ -467,7 +467,7 @@ publication target + integrator
 
 ### 3.20 工作区能写，不代表 Git 能提交
 
-> 依据的通用规范：[SDP「工作区」](../../../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
+> 依据的通用规范：[SDP「工作区」](../../../../../../../dev-agent-standards/sdp/sdp-rules.md)
 
 供给阶段同时检查文件写入面和 Git 元数据写入面。先在获准目录只读执行：
 
@@ -499,7 +499,7 @@ git status --porcelain=v1
 
 ### 3.22 停止、超时与回退不能省略
 
-> 依据的通用规范：[SDP「执行形态、停止与成本」](../../../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
+> 依据的通用规范：[SDP「执行形态、停止与成本」](../../../../../../../dev-agent-standards/sdp/sdp-rules.md)
 
 异议采纳且触及结构、验收失败、principal 打回，都回到③，重新冻结与验证；
 同一次竞争回退超过两次就停止重整合，回到问题和标准本身确认，不无限重试。
@@ -524,7 +524,7 @@ git status --porcelain=v1
 
 ### 4.9 Attempt 内的三条硬禁令
 
-> 依据的通用规范：[SDP「执行中的三条硬禁令」](../../../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
+> 依据的通用规范：[SDP「执行中的三条硬禁令」](../../../../../../../dev-agent-standards/sdp/sdp-rules.md)
 
 上层路由完、权限收窄之后，Attempt 内还需要**可执行的边界**——抽象声明容易被绕过。
 任一条被突破即为越权，按 `I3`、`I10`、`I15` 与 constraints A2/A4 处理：
@@ -595,7 +595,7 @@ RouteDecision/Attempt，经过正常能力、权限、预算和数据门，不�
 
 ### 7.5 跨会话续接
 
-> 依据的通用规范：[SDP「跨会话续接」](../../../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
+> 依据的通用规范：[SDP「跨会话续接」](../../../../../../../dev-agent-standards/sdp/sdp-rules.md)
 
 ⚠ **判据只有一句：把今天的记忆抹掉，另一个人只读持久载体能否接着做？不能，就是没落盘。**
 
@@ -651,7 +651,7 @@ blocker, next_action, facts_to_revalidate
 
 ## 11. 反模式
 
-> 依据的通用规范：[SDP「反模式」](../../../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)
+> 依据的通用规范：[SDP「反模式」](../../../../../../../dev-agent-standards/sdp/sdp-rules.md)
 
 **这一节是机制描述，不是训诫。**每行左边是做法，右边是它**怎样失败**——
 没有失败方式的条目不该进表。与 [§8](../../../../composition/agent-dev-guide.md) 的区别：[§8](../../../../composition/agent-dev-guide.md) 是本项目**已被推翻的设计**，

@@ -525,7 +525,7 @@ Execution Scope 只能落在进程外层，Approval Policy 只能事后审计—
 
 ### 5.2 证据等级与采信规则
 
-> 依据的通用规范：[UAT「证据采信」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「证据采信」](../../../../../dev-agent-standards/uat/uat-rules.md)
 
 | 等级 | 来源 | 可支持的断言 |
 | --- | --- | --- |
@@ -567,7 +567,7 @@ Task Profile 版本、验收摘要、策略版本、principal 身份域、
 
 ### 5.4 Git 载体能与不能证明什么
 
-> 依据的通用规范：[UAT「载体各能证明什么」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「载体各能证明什么」](../../../../../dev-agent-standards/uat/uat-rules.md)
 
 Git 永久承担代码/文档 Artifact 的版本载体；手工阶段也可从 commit、裁定记录和执行事件重建投影。
 分支是运输通道，工作区是可变草稿，只有钉定 commit 的产物可评审。发布时必须比较目标 ref 是否仍在
@@ -579,7 +579,7 @@ CLI 内部发生过哪些工具调用。手工态的价值是先跑通对象形�
 
 ### 5.8 上下文路由与能力四级词典
 
-> 依据的通用规范：[UAT「能力状态只用四级」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「能力状态只用四级」](../../../../../dev-agent-standards/uat/uat-rules.md)
 
 **改哪一面，就必须连带读哪些东西**——否则断言的是记忆不是现状：
 
@@ -611,7 +611,7 @@ CLI 内部发生过哪些工具调用。手工态的价值是先跑通对象形�
 
 ### 5.9 七种载体各能证明什么
 
-> 依据的通用规范：[UAT「载体各能证明什么」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「载体各能证明什么」](../../../../../dev-agent-standards/uat/uat-rules.md)
 
 ⚠ **隔离靠 worktree + 命名分支，不靠文件名。**`-new`、时间戳、执行者名写进文件名，
 都不能阻止「同一工作区、同一相对路径」被后写覆盖。不同载体的覆盖语义完全不同：
@@ -636,7 +636,7 @@ Artifact bundle 保持可达——⚠ **「对象暂时还在 reflog」不是保
 
 ### 5.13 历史取证怎样用于今天的开发
 
-> 依据的通用规范：[UAT「历史证据怎样用」](../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
+> 依据的通用规范：[UAT「历史证据怎样用」](../../../../../dev-agent-standards/uat/uat-rules.md)
 
 使用证据前固定 **仓库/SDK commit、配置或策略版本、主机、OS 身份、沙箱/容器上下文、
 命令、退出码、原始输出引用及时间**；敏感字段去敏，不输出凭据本体。

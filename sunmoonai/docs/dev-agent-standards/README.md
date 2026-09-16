@@ -11,9 +11,9 @@
 | [`lifecycle.md`](lifecycle.md) | **先读这一份**：任务的生命周期——任务目录、turn 与它的固定字段、定稿与建子任务、返工 |
 | [`glossary.md`](glossary.md) | 词汇表：standards 用词的唯一定义；改名须人确认 |
 | [`prd/prd-rules.md`](prd/prd-rules.md) | **PRD** · Product Requirements Document（产品需求文档）：即任务——从入口收到的那段文本，一段话或严格写成的任务书，回答「要什么、做到什么算满足」。人写；由上层设计拆出的，随定稿一起生效。附录是最严格的一种模板 |
-| [`deliverables/sdd/sdd-rules.md`](deliverables/sdd/sdd-rules.md) | **SDD** · Software Design Description（软件设计说明）：结构层写划分、关系与接口，组成层写内部结构、协议、失败与恢复，回答「设计成什么样」。规划 agent 只交 SDD；执行 agent 实现前可以先交，不拆子任务 |
-| [`deliverables/sdp/sdp-rules.md`](deliverables/sdp/sdp-rules.md) | **SDP** · Software Development Plan（软件开发计划）：执行者的共同纪律；拆成可独立交付、验证、回滚的单元，先后顺序，实施记录，代码与证据，回答「怎样做出来」。执行 agent 交 |
-| [`deliverables/uat/uat-rules.md`](deliverables/uat/uat-rules.md) | **UAT** · User Acceptance Testing（用户验收测试）：开工与完成、门的三档；按派工时任务里说清的要求逐条验证，证据按规则采信，写明查了什么、没查什么，回答「是否满足、能否接收」。验收 agent 交，且不是交付被验 SDD 或 SDP 的那一个 |
+| [`deliverables/sdd/sdd-rules.md`](sdd/sdd-rules.md) | **SDD** · Software Design Description（软件设计说明）：结构层写划分、关系与接口，组成层写内部结构、协议、失败与恢复，回答「设计成什么样」。规划 agent 只交 SDD；执行 agent 实现前可以先交，不拆子任务 |
+| [`deliverables/sdp/sdp-rules.md`](sdp/sdp-rules.md) | **SDP** · Software Development Plan（软件开发计划）：执行者的共同纪律；拆成可独立交付、验证、回滚的单元，先后顺序，实施记录，代码与证据，回答「怎样做出来」。执行 agent 交 |
+| [`deliverables/uat/uat-rules.md`](uat/uat-rules.md) | **UAT** · User Acceptance Testing（用户验收测试）：开工与完成、门的三档；按派工时任务里说清的要求逐条验证，证据按规则采信，写明查了什么、没查什么，回答「是否满足、能否接收」。验收 agent 交，且不是交付被验 SDD 或 SDP 的那一个 |
 | [`approvals.md`](approvals.md) | 人的批准点：谁批什么、批准怎样成立、权限、审批档位、人这一侧的义务、改判 |
 | [`protocol/competition-rules.md`](protocol/competition-rules.md) | 多方竞争协议；同目录另有尚未生效的草案 |
 
