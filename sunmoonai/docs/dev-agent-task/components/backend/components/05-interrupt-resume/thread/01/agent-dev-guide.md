@@ -21,8 +21,8 @@
 | 适配器 `LangGraphRuntimeService.resume` | **已实现**：`Command(resume=…)` + 同 `thread_id` | `langgraph_runtime.py:13-21` |
 | 端到端 | **通过**：中断 → `resume` → 原地续跑并产生副作用 | `test_graph_runtime_service.py:18-35`，`uv run pytest` → **2 passed** |
 
-⚠ **这一段曾经写反过，教训比结论有用。**先前据抽象基类那行 `NotImplementedError`
-断定「端到端未接线」——**错在只读了基类 18 行就停**，没搜谁继承、没搜谁调用、没跑测试。
+⚠ **这一段容易写反，教训比结论有用。**只据抽象基类那行 `NotImplementedError`
+断定「端到端未接线」是错的——**错在只读了基类 18 行就停**，没搜谁继承、没搜谁调用、没跑测试。
 把「留给实现方的空位」（**接口契约**）读成了「功能缺失」。
 
 > **「打开文件自验」也会失败**：验了，但**验的范围是自己划的**，而范围划错了。
