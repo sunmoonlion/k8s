@@ -33,6 +33,7 @@ components/
 | agent 项目的开发流程 | [`components/backend/composition/pipeline.md`](components/backend/composition/pipeline.md) |
 | 多方竞争协议（本平台的具体做法） | [`composition/protocol/`](composition/protocol/)；所依据的通用规范见 [`../dev-agent-standards/protocol/`](../dev-agent-standards/detailed-rules/protocol/competition-rules.md) |
 | 每次派工的任务书 | 各 turn 的 `user-message.md`，如 [`thread/01/user-message.md`](thread/01/user-message.md) |
+| thread 与 turn 怎么编号 | [`thread-numbering.md`](thread-numbering.md) |
 | 开发计划：要建什么、为什么 | [`composition/development-plan.md`](composition/development-plan.md) |
 | 与项目无关的通用开发规范 | [`../dev-agent-standards/`](../dev-agent-standards/) |
 
