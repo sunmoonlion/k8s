@@ -56,7 +56,7 @@ Submission
 | [`constraints.md`](constraints.md) | 开工前自检硬约束，尤其 A1–A5 | 不把自检改成建议 |
 | [`development-plan.md`](../components/backend/composition/development-plan.md) | 解释通用执行编排与领域能力的分工 | 不记录进度 |
 | 各 turn 的 `user-message.md` | 每次派工的任务书：写明交回哪一种，以及背景、范围、验收、约束 | 随 turn 冻结，执行者不改 |
-| `thread/` | 每次派工到交回（turn）的发出内容与交回物；进度由任务目录推出 | 交回即冻结，改只能开新 turn |
+| `thread/` | 文档 thread → 文档 turn 两级；每次派工到交回的发出内容与交回物；进度由任务目录推出 | 交回即冻结，改只能开新 turn |
 
 内核的对象和状态以 `request-lifecycle.md @ ed0b5136:92-343` 为准；协作阶段以
 `round-protocol.md @ ed0b5136:52-706` 的标题为准。本文出现的表都是开发投影或实现要求，
@@ -261,9 +261,9 @@ Submission
 | turn 的任务书（`user-message.md`） | `ThreadItem::UserMessage { id, client_id, content: Vec<UserInput> }`；发起 turn 时 `turn/start` 的 `input` | `app-server-protocol/src/protocol/v2/item.rs:236`、`app-server-protocol/src/protocol/v2/turn.rs` | 名称对齐；交回物对应同一 turn 里的 AgentMessage、FileChange 等条目 |
 | turn 的回执（`turn.md`） | `Turn { id, status, error, started_at, completed_at }`；`TurnStatus`：Completed / Interrupted / Failed / InProgress | `app-server-protocol/src/protocol/v2/thread_data.rs:355`、`app-server-protocol/src/protocol/v2/turn.rs:32` | `status` 取 completed / interrupted / failed；InProgress 即还没有 `turn.md` |
 | `turn.md` 的 `reason` | `TurnAbortReason`：Interrupted / Replaced / ReviewEnded / BudgetLimited；云端另有 `AttemptStatus::Cancelled` | `protocol/src/protocol.rs:4118`、`cloud-tasks-client/src/api.rs:56` | 我们的 `status` 只有三格，中止的具体原因记在 `reason` |
-| turn 的本地编号（`0001`、`0002`、`0003a`） | 无对应：Codex 的 thread id 与 turn id 都是 UUID（turn id 为 UUIDv7），thread id 还编进会话记录文件名 `rollout-<时间>-<uuid>.jsonl` | `protocol/src/thread_id.rs:16`、`rollout/src/list.rs:427`、`app-server-protocol/src/protocol/v2/thread_data.rs:355` | 本地号只排先后，它的 id 原样接在目录名后面（`0001-<turn id>`）；会话 id 记在 `thread` 字段，会话记录在哪记 `provider_record` |
-| 并行尝试（`0003a`、`0003b`…） | 云端 `TurnAttempt.attempt_placement`：同一 Task 下的第几个尝试 | `cloud-tasks-client/src/api.rs:67` | 共用一份任务书；各家一个尝试子目录 `a-<turn id>`，各写各的回执 |
-| 执行会话，即任务目录下的 `thread/` | `Thread`（thread-store 持久化） | `app-server-protocol/src/protocol/v2/thread_data.rs:202` | 执行绑定存 thread id，不作 Task 身份 |
+| 本地编号（`0001/0002`） | 无对应：Codex 的 thread id 与 turn id 都是 UUID（turn id 为 UUIDv7），thread id 还编进记录文件名 `rollout-<时间>-<uuid>.jsonl` | `protocol/src/thread_id.rs:16`、`rollout/src/list.rs:427`、`app-server-protocol/src/protocol/v2/thread_data.rs:355` | 本地号只排先后，运行时 id 原样接在目录名后面（文档 thread 接 thread id、文档 turn 接 turn id），两者合起来唯一；记录文件在哪记 `provider_record` |
+| 并行 | 云端 `TurnAttempt.attempt_placement`：同一 Task 下的第几个尝试 | `cloud-tasks-client/src/api.rs:67` | 各家在各自的运行时 thread 里，所以是几个文档 thread 各开一个 turn，任务书各存各的 |
+| 文档 thread，即 `thread/` 下的一个目录 | 运行时 `Thread`（thread-store 持久化） | `app-server-protocol/src/protocol/v2/thread_data.rs:202` | 一对一：运行时换了 thread 就新开一个文档 thread 目录；thread id 不作 Task 身份 |
 | Event | `EventMsg` 事件队列；只追加的 `RolloutItem` / `RolloutLine` | `protocol/src/protocol.rs:1335`、`history/src/lib.rs:96` | 本任务要求落 PostgreSQL、状态由其投影；Codex 落本地文件与 SQLite 元数据 |
 | Interaction | 命令执行审批、打补丁审批、权限请求、用户输入、Elicitation 五类请求及对应回复 Op；Guardian 由模型审 | `protocol/src/approvals.rs:245-423`、`protocol/src/request_user_input.rs:55` | Guardian 即 7.4 第 20b 条的 llm-review；⚠ SDK 默认自动批准，不照搬 |
 | Side Effect | 执行命令、MCP 工具、打补丁、动态工具的 Begin / End 成对事件（意图与回执） | `protocol/src/protocol.rs:1335` | Codex 无补偿与幂等账 |

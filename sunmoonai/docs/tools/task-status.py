@@ -13,8 +13,7 @@ import json, os, re, subprocess, sys
 from collections import defaultdict
 
 RE = re.compile(r"^(?P<task>sunmoonai/docs/.+)/thread/(?P<rest>.+)$")
-TURN_DIR_RE = re.compile(r"^(?P<num>\d{4})(?:-.*)?$")      # 0001、0001-01k8f3m2qz
-ATTEMPT_DIR_RE = re.compile(r"^(?P<alt>[a-z])(?:-.*)?$")   # 并行尝试 a-01k8h2r5bb
+DIR_RE = re.compile(r"^(?P<num>\d{4})(?:-.*)?$")          # 0001、0001-01k8f3m2qz
 LABEL = {"pass": "已通过", "fail": "被打回", "undecidable": "不可判，交人"}
 
 
@@ -43,16 +42,6 @@ def fm(text):
     return {}
 
 
-def verified(turns, ref):
-    """verifies 指的可能是整次派工（03），而并行时交回按尝试分（03a、03b）。"""
-    if ref in turns:
-        return turns[ref]
-    for t, v in turns.items():
-        if ref and t.startswith(ref):
-            return v
-    return ({}, None)
-
-
 def kinds(v):
     return {x.strip() for x in (v or "").strip("[]").split(",") if x.strip()}
 
@@ -63,41 +52,32 @@ def main(argv):
         print(f"task-status: 必须在仓根运行：cd {top} && python3 {os.path.relpath(__file__, top)}", file=sys.stderr)
         return 2
     tracked = set(git("ls-files", "-z").split("\0")) - {""}
-    tasks = defaultdict(dict)
+    tasks = defaultdict(lambda: defaultdict(dict))
     for p in tracked:
         m = RE.match(p)
         if not m:
             continue
         parts = m["rest"].split("/")
-        if len(parts) not in (2, 3):
+        if len(parts) < 3:
             continue
-        info = tasks[m["task"]].setdefault(parts[0], {"files": set(), "attempts": defaultdict(set)})
-        if len(parts) == 2:
-            info["files"].add(parts[1])
-        else:
-            info["attempts"][parts[1]].add(parts[2])
+        tasks[m["task"]][parts[0]].setdefault(parts[1], set()).add("/".join(parts[2:]))
     report = []
     for task in sorted(tasks):
-        # 键是本地号（0001、0003a）：目录名带执行环境 id，排序与引用都只用本地号
+        # 键是本地号「文档 thread/turn」，如 0001/0002：目录名带运行时 id，引用只用本地号
         turns = {}
-        for tdir in sorted(tasks[task]):
-            md = TURN_DIR_RE.match(tdir)
-            if not md:
+        for dt in sorted(tasks[task]):
+            mt = DIR_RE.match(dt)
+            if not mt:
                 continue
-            base = f"{task}/thread/{tdir}"
-            u = fm(blob(f"{base}/user-message.md"))
-            info = tasks[task][tdir]
-            if info["attempts"]:
-                for aname in sorted(info["attempts"]):
-                    ma = ATTEMPT_DIR_RE.match(aname)
-                    if not ma:
-                        continue
-                    files = info["attempts"][aname]
-                    r = fm(blob(f"{base}/{aname}/turn.md")) if "turn.md" in files else None
-                    turns[md["num"] + ma["alt"]] = (u, r)
-            else:
-                r = fm(blob(f"{base}/turn.md")) if "turn.md" in info["files"] else None
-                turns[md["num"]] = (u, r)
+            for du in sorted(tasks[task][dt]):
+                mu = DIR_RE.match(du)
+                if not mu:
+                    continue
+                base = f"{task}/thread/{dt}/{du}"
+                files = tasks[task][dt][du]
+                u = fm(blob(f"{base}/user-message.md"))
+                r = fm(blob(f"{base}/turn.md")) if "turn.md" in files else None
+                turns[f"{mt['num']}/{mu['num']}"] = (u, r)
         turns = dict(sorted(turns.items()))
         verdicts = defaultdict(list)
         for t, (u, r) in turns.items():
@@ -116,15 +96,14 @@ def main(argv):
             elif "UAT" in k:
                 state = f"验收 {u.get('verifies', '?')}：{r.get('verdict', '?')}"
                 if r.get("verdict") == "fail":
-                    for kk in kinds(verified(turns, u.get("verifies"))[0].get("deliverable")):
+                    for kk in kinds(turns.get(u.get("verifies"), ({}, None))[0].get("deliverable")):
                         fails[kk] += 1
-            elif verdicts.get(t) or (len(t) > 4 and verdicts.get(t[:4])):
-                got = verdicts.get(t, []) + (verdicts.get(t[:4], []) if len(t) > 4 else [])
-                state = LABEL.get(sorted(got)[-1][1], "?")
+            elif verdicts.get(t):
+                state = LABEL.get(sorted(verdicts[t])[-1][1], "?")
             else:
                 state = "已交回，待验收"
             rows.append({"turn": t, "deliverable": u.get("deliverable", "?"), "agent": u.get("agent", "?"),
-                         "executor": (r or {}).get("executor") or u.get("executor", "?"), "state": state})
+                         "executor": u.get("executor", "?"), "state": state})
         report.append({"task": task.removeprefix("sunmoonai/docs/"), "turns": rows, "fails": dict(fails),
                        "composition": any(p.startswith(task + "/composition/") for p in tracked),
                        "components": sorted({p[len(task) + 12:].split("/")[0] for p in tracked if p.startswith(task + "/components/")})})
@@ -138,7 +117,7 @@ def main(argv):
             if n >= 3:
                 print(f"   ⚠ {k} 已被打回 {n} 次：须人裁决，裁决写进下一个 turn 的任务书后才能继续")
         for row in r["turns"]:
-            print(f"   turn {row['turn']:<4} {row['deliverable']:<10} {row['agent']:<11} {row['executor']:<12} {row['state']}")
+            print(f"   turn {row['turn']:<10} {row['deliverable']:<10} {row['agent']:<11} {row['executor']:<12} {row['state']}")
     print(f"（投影：{len(report)} 个任务、{sum(len(r['turns']) for r in report)} 个 turn；判定基准是 git 索引）")
     return 0
 

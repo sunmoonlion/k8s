@@ -7,9 +7,8 @@
 ---
 deliverable: <SDD / SDP / UAT，可以几项>
 agent: <planning / execution / acceptance>
-executor: <具体执行者；未定写 unassigned。并行发给几家时改写在各尝试的 turn.md 里>
-verifies: <只有 UAT 填：验收哪个 turn，用本地号，如 0003 或 0003b>
-thread: <会话：本地会话号-执行环境的 thread id，如 0001-01k8f3m2qz>
+executor: <具体执行者；未定写 unassigned>
+verifies: <只有 UAT 填：验收哪个 turn，写「文档 thread 号/turn 号」，如 0001/0002>
 base: <发出时依据的提交>
 sent_at: <发出时间>
 ---

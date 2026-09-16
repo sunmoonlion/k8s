@@ -10,5 +10,5 @@
 | `check-no-owner-creds.sh` | VM 上的凭据卫生检查：查有没有混进所有者的凭据。是卫生检查，不是边界 | `bash sunmoonai/docs/tools/check-no-owner-creds.sh` |
 
 钩子在 `.githooks/`，装一次即对本仓全部 worktree 生效：`git config core.hooksPath .githooks`。
-doc-gate 另查任务目录下的 turn：目录名合乎「四位本地号-执行环境 id」、编号连续不复用、并行尝试的形态、同一会话号只对一个执行环境会话、`user-message.md` 与 `turn.md` 的字段齐全合法，交回即冻结（提交与合并时查）。
+doc-gate 另查任务目录下的 turn：`thread/` 下正好两级（文档 thread、文档 turn），目录名合乎「四位本地号-运行时 id」、编号连续不复用、同一个运行时 id 不出现在两处、交回物只在 `sdd/`、`sdp/`、`uat/` 里且与任务书声明的相符、`user-message.md` 与 `turn.md` 的字段齐全合法，交回即冻结（提交与合并时查）。
 钩子找不到 `doc-gate.py` 时会直接放行，所以移动或改名这个脚本时必须同步改两个钩子。

@@ -593,9 +593,9 @@ RouteDecision/Attempt，经过正常能力、权限、预算和数据门，不�
 `F-EXEC-03` 的 Harness 腿判 `explicit_unsupported`，依据就是 §2.7「交互批准」那一行。
 **升级钉版时两张表必须同时重跑。**
 
-### 7.5 跨会话续接
+### 7.5 跨运行时 thread 续接
 
-> 依据的通用规范：[SDP「跨会话续接」](../../../../../../dev-agent-standards/sdp/sdp-rules.md)
+> 依据的通用规范：[SDP「跨运行时 thread 续接」](../../../../../../dev-agent-standards/sdp/sdp-rules.md)
 
 ⚠ **判据只有一句：把今天的记忆抹掉，另一个人只读持久载体能否接着做？不能，就是没落盘。**
 
