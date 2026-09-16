@@ -19,8 +19,9 @@
 
 ```text
 <任务目录>/
-├── thread/          一串 turn：每个 turn 一个目录，按 01、02… 顺序编号；并行尝试记作 03a、03b…
-│   └── <编号>/      user-message.md（发出去的任务书）、turn.md（交回时写的回执）与交回来的 SDD、SDP 或 UAT
+├── thread/          一串 turn：每个 turn 一个目录，名为「本地号-执行环境 id」，如 01-01k8f3m2qz
+│   └── <turn>/      user-message.md（发出去的任务书）、turn.md（交回时写的回执）与交回来的 SDD、SDP 或 UAT
+│                    同一问并行发给几家时，任务书仍只有一份，各家各占一个尝试子目录 a-…、b-…
 ├── composition/     人读完交回物后整理出的定稿设计（设计定稿后才有）
 └── components/      按定稿设计的拆分建出的子任务，每个子任务是同样结构的目录（定稿后才有）
 ```
@@ -40,12 +41,12 @@
 
 ### turn：一问一答
 
-- 一个 turn 就是一次派工和它的交回。任务目录内按顺序编号，编号不复用。
+- 一个 turn 就是一次派工和它的交回。任务目录内按派出顺序编号，编号不跳、不复用；目录名是**本地号加执行环境的 id**——本地号管排序与引用，id 后缀管回溯执行环境的原始记录，没有 id 的写 `-none`。
 - **发出时就把任务书存进这个 turn 的 `user-message.md`**：发出去的是什么，存的就是什么，包括附带的打回理由。模型只知道这些，判断交回对不对也以此为准。
-- 交回物放进同一个 turn，同时写好 `turn.md`：交回的状态、时间、所在提交和执行环境自己的 turn 标识（字段见下）。
+- 交回物放进同一个 turn，同时写好 `turn.md`：交回的状态、时间与所在提交（字段见下）。写 `turn.md` 时目录名必须已经带上 id 后缀。
 - **turn 交回即冻结**，不改、不删；要改，只能开新的 turn。验收结论永远绑定到具体的一个 turn。
 - 验收也是 turn：验收 agent 交回的 UAT 放在它自己的 turn 里，写明验收的是哪个 turn 的交回。
-- **并行尝试**：同一问同时发给几个执行者时（多方竞争，或多次尝试取最好的一次），编号记作 03a、03b…，共用同一份任务书；定稿写明以哪一个为底。顺序的返工仍用新的编号。
+- **并行尝试**：同一问同时发给几个执行者时（多方竞争，或多次尝试取最好的一次），任务书只有一份，放在 turn 目录下；各家各占一个尝试子目录，字母从 a 起，各写各的 `turn.md`。引用写作 03a、03b；定稿写明以哪一个为底。几家各跑各的，所以并行的 turn 目录本身不带 id。顺序的返工仍用新的 turn 号。
 
 ### turn 的固定字段
 
@@ -55,8 +56,9 @@
 | --- | --- |
 | `deliverable` | 交回哪一种：`SDD`、`SDP`、`UAT`，可以几项 |
 | `agent` | 交给哪类 agent：`planning`、`execution` 或 `acceptance` |
-| `executor` | 具体的执行者；未定写 `unassigned` |
-| `verifies` | 只有 UAT 填：验收的是哪个 turn，如 `03b` |
+| `executor` | 具体的执行者；未定写 `unassigned`。并行时一问几家，改写在各尝试的 `turn.md` 里 |
+| `verifies` | 只有 UAT 填：验收的是哪个 turn，用本地号，如 `03` 或 `03b` |
+| `thread` | 这次派工用的会话：本地会话号加执行环境的 thread id，如 `01-01k8f3m2qz`；换一个干净的上下文重问，会话号加一。并行时同 `executor` |
 | `base` | 发出时依据的提交 |
 | `sent_at` | 发出时间 |
 
@@ -67,15 +69,14 @@
 | `status` | `completed`、`interrupted` 或 `failed` |
 | `completed_at` | 交回时间 |
 | `commit` | 交回物或改动所在的提交 |
-| `provider_turn_id` | 执行环境自己的 turn 标识；没有写 `none` |
-| `provider_thread_id` | 执行环境自己的会话（thread）标识；`provider_turn_id` 不是 `none` 时必填 |
+| `executor`、`thread` | 只有并行的尝试填：这一家是谁、用的哪个会话；单 turn 写在任务书里，两处只填一处 |
 | `provider_record` | 执行环境自己的记录在哪（如会话记录文件、归档提交）；没有写 `none` |
 | `error` | 只有 `failed` 填：失败原因 |
 | `reason` | 只有 `interrupted` 填，且必填：`interrupted`（被人打断）、`replaced`（被新的 turn 替换）、`review-ended`（评审结束）、`budget-limited`（预算耗尽）或 `cancelled`（取消） |
 | `verdict` | 只有交回 UAT 时填：`pass`、`fail` 或 `undecidable` |
 
-**turn 的编号是本地顺序号，不是执行环境的 id。**执行环境自己生成的 thread 与 turn 标识通常是 UUID，既排不出先后，也不便人读；
-两者的对应就记在 `provider_thread_id`、`provider_turn_id` 里，要回溯运行时的原始记录时按它们去查。
+**本地号排先后，id 后缀管回溯。**执行环境自己生成的 thread 与 turn 标识通常是 UUID，既排不出先后，也不便人读，所以名字前半截用本地号；
+后半截原样带上执行环境的 id，**写全不截断**——截断了就对不上它的记录，这个后缀也就白带了。行文引用只用本地号。
 
 `turn.md` 的正文列出交回物：每个文件是哪一种交付物。不知道的值写 `unknown`，还没发出的写 `pending`，不得空着。
 

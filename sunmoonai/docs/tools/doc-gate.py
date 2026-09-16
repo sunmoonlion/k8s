@@ -240,16 +240,23 @@ def check_tables(path: str, text: str) -> list[str]:
 
 
 # ── turn 的检查（规则要有载体）──────────────────────────────────────────────
-# 任务目录下 `thread/<编号>/` 是一个个 turn：`user-message.md`（任务书，带 YAML 头）、
-# `turn.md`（交回时写的回执）与交回物。字段与冻结规则见 dev-agent-standards 通用规则
-# 「任务的生命周期」里的「turn 的固定字段」。编号与字段每次都查；冻结只在 --staged（提交与合并）时查。
-THREAD_PATH_RE = re.compile(r"^(?P<task>.+)/thread/(?P<turn>[^/]+)/(?P<file>[^/]+)$")
-TURN_ID_RE = re.compile(r"^(?P<num>\d{2})(?P<alt>[a-z]?)$")
+# 任务目录下 `thread/` 是一个个 turn，目录名为「本地号-执行环境 id」：
+#     thread/01-01k8f3m2qz/        单 turn：user-message.md、turn.md 与交回物
+#     thread/03/a-01k8h2r5bb/      并行：任务书在 turn 目录下只一份，各家各占一个尝试子目录
+# 本地号管排序与引用，id 后缀管回溯执行环境的原始记录。字段见 dev-agent-standards
+# 「任务的生命周期」的「turn 的固定字段」，命名与编号见 dev-agent-task/thread-numbering.md。
+# 编号与字段每次都查；冻结只在 --staged（提交与合并）时查。
+THREAD_PREFIX_RE = re.compile(r"^(?P<task>.+)/thread/(?P<rest>.+)$")
+TURN_DIR_RE = re.compile(r"^(?P<num>\d{2})(?:-(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*))?$")
+ATTEMPT_DIR_RE = re.compile(r"^(?P<alt>[a-z])(?:-(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*))?$")
+THREAD_FIELD_RE = re.compile(r"^(?P<num>\d{2})-(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*)$")
 DELIVERABLES = {"SDD", "SDP", "UAT"}
 AGENT_ALLOWS = {"planning": {"SDD"}, "execution": {"SDD", "SDP"}, "acceptance": {"UAT"}}
 STATUSES = {"completed", "interrupted", "failed"}
 VERDICTS = {"pass", "fail", "undecidable"}
 REASONS = {"interrupted", "replaced", "review-ended", "budget-limited", "cancelled"}
+# id 在目录名里，回执里不再写一遍：同一件事两处记，对不上时不知道信哪个。
+OBSOLETE_TURN_FIELDS = ("provider_turn_id", "provider_thread_id")
 
 
 def front_matter(text: str) -> dict[str, str] | None:
@@ -278,36 +285,126 @@ def head_blob(path: str) -> str | None:
         return None
 
 
+def parse_thread_path(path: str) -> tuple[str, str, str | None, str] | None:
+    """把 `<任务>/thread/<turn>[/<尝试>]/<文件>` 拆成四段；层数不对返回 None。"""
+    m = THREAD_PREFIX_RE.match(path)
+    if not m:
+        return None
+    parts = m["rest"].split("/")
+    if len(parts) == 2:
+        return m["task"], parts[0], None, parts[1]
+    if len(parts) == 3:
+        return m["task"], parts[0], parts[1], parts[2]
+    return None
+
+
+def check_turn_md(base: str, fm: dict[str, str], kinds: set[str], parallel: bool) -> list[str]:
+    """回执的字段。并行时执行者与会话写在这里（一问几家，任务书里写不下）。"""
+    problems: list[str] = []
+    required = ["status", "completed_at", "commit"] + (["executor", "thread"] if parallel else [])
+    for k in required:
+        if not fm.get(k):
+            problems.append(f"{base}/turn.md: 缺字段或为空：{k}")
+    for k in OBSOLETE_TURN_FIELDS:
+        if fm.get(k):
+            problems.append(f"{base}/turn.md: {k} 不再写——执行环境的 id 在目录名里")
+    if not parallel:
+        for k in ("executor", "thread"):
+            if fm.get(k):
+                problems.append(f"{base}/turn.md: 单 turn 的 {k} 写在 user-message.md 里，不在回执里")
+    st = fm.get("status", "")
+    if st and st not in STATUSES:
+        problems.append(f"{base}/turn.md: status 只能是 completed、interrupted、failed，现为 {st}")
+    if (st == "failed") != bool(fm.get("error")):
+        problems.append(f"{base}/turn.md: error 只在 status 为 failed 时填，而且必须填")
+    if st == "interrupted" and fm.get("reason") not in REASONS:
+        problems.append(f"{base}/turn.md: status 为 interrupted 须填 reason：" + "、".join(sorted(REASONS)))
+    if st != "interrupted" and fm.get("reason"):
+        problems.append(f"{base}/turn.md: 只有 status 为 interrupted 才填 reason")
+    needs = "UAT" in kinds and st == "completed"
+    if needs and fm.get("verdict") not in VERDICTS:
+        problems.append(f"{base}/turn.md: 交回 UAT 须填 verdict：pass、fail 或 undecidable")
+    if not needs and fm.get("verdict"):
+        problems.append(f"{base}/turn.md: 只有完成的 UAT turn 才填 verdict")
+    return problems
+
+
 def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tuple[list[str], int]:
     problems: list[str] = []
-    tasks: dict[str, dict[str, set[str]]] = {}
-    for p in tracked:
-        m = THREAD_PATH_RE.match(p)
-        if p.startswith(DOC_ROOT) and m:
-            tasks.setdefault(m["task"], {}).setdefault(m["turn"], set()).add(m["file"])
+    tasks: dict[str, dict[str, dict]] = {}
+    for p in sorted(tracked):
+        if not (p.startswith(DOC_ROOT) and THREAD_PREFIX_RE.match(p)):
+            continue
+        parsed = parse_thread_path(p)
+        if parsed is None:
+            problems.append(f"{p}: thread 下最多两层——turn 目录，并行时再加一层尝试子目录")
+            continue
+        task, turn, attempt, file = parsed
+        info = tasks.setdefault(task, {}).setdefault(turn, {"files": set(), "attempts": {}})
+        if attempt is None:
+            info["files"].add(file)
+        else:
+            info["attempts"].setdefault(attempt, set()).add(file)
+
     nturns = 0
     for task, turns in sorted(tasks.items()):
-        nums: dict[int, set[str]] = {}
-        for t in turns:
-            m = TURN_ID_RE.match(t)
+        # 一、名字：本地号与 id 后缀
+        parsed_turns: dict[str, tuple[int, str | None]] = {}
+        nums: dict[int, list[str]] = {}
+        for name in sorted(turns):
+            m = TURN_DIR_RE.match(name)
             if not m:
-                problems.append(f"{task}/thread/{t}: turn 编号须为两位数字，并行尝试加小写字母（如 03、03a）")
+                problems.append(
+                    f"{task}/thread/{name}: turn 目录名须是两位数字，或「两位数字-执行环境 id」（如 03、03-01k8f3m2qz）"
+                )
                 continue
-            nums.setdefault(int(m["num"]), set()).add(m["alt"])
+            parsed_turns[name] = (int(m["num"]), m["id"])
+            nums.setdefault(int(m["num"]), []).append(name)
+        for n, names in sorted(nums.items()):
+            if len(names) > 1:
+                problems.append(f"{task}/thread/: 本地号 {n:02d} 对应多个目录：" + "、".join(sorted(names)))
         if nums:
             gap = sorted(set(range(1, max(nums) + 1)) - set(nums))
             if gap:
                 problems.append(f"{task}/thread/: turn 编号不连续，缺 " + "、".join(f"{g:02d}" for g in gap))
-            for n, alts in sorted(nums.items()):
-                if "" in alts and len(alts) > 1:
-                    problems.append(f"{task}/thread/{n:02d}: 同一编号不能既是顺序 turn 又有并行尝试")
-                letters = sorted(a for a in alts if a)
-                if letters and letters != [chr(ord("a") + i) for i in range(len(letters))]:
-                    problems.append(f"{task}/thread/{n:02d}: 并行尝试须从 a 起连续编号，现有 " + "、".join(letters))
-        for t, files in sorted(turns.items()):
-            nturns += 1
-            base = f"{task}/thread/{t}"
-            um = blob(f"{base}/user-message.md") if "user-message.md" in files else None
+
+        # 二、形态：单 turn 还是并行；并行尝试的字母要从 a 起连续
+        alts_of: dict[str, dict[str, tuple[str, str | None]]] = {}
+        local_ids: set[str] = set()
+        for name, (num, tid) in sorted(parsed_turns.items()):
+            base = f"{task}/thread/{name}"
+            info = turns[name]
+            local_ids.add(f"{num:02d}")
+            alts: dict[str, tuple[str, str | None]] = {}
+            for aname in sorted(info["attempts"]):
+                ma = ATTEMPT_DIR_RE.match(aname)
+                if not ma:
+                    problems.append(f"{base}/{aname}: 并行尝试的目录名须是「小写字母-执行环境 id」（如 a-01k8h2r5bb）")
+                    continue
+                alts[aname] = (ma["alt"], ma["id"])
+                local_ids.add(f"{num:02d}{ma['alt']}")
+            alts_of[name] = alts
+            letters = sorted(a for a, _ in alts.values())
+            if letters and letters != [chr(ord("a") + i) for i in range(len(letters))]:
+                problems.append(f"{base}: 并行尝试须从 a 起连续编号，现有 " + "、".join(letters))
+            if info["attempts"]:
+                if tid:
+                    problems.append(f"{base}: 并行 turn 的目录名只有本地号——几家各有自己的 id，落在尝试目录上")
+                extra = info["files"] - {"user-message.md"}
+                if extra:
+                    problems.append(f"{base}: 并行 turn 目录下只放 user-message.md，多出：" + "、".join(sorted(extra)))
+            elif "turn.md" in info["files"] and not tid:
+                problems.append(f"{base}: 已交回（有 turn.md），目录名须带执行环境 id；执行环境不给 id 的写 -none")
+
+        # 三、字段：任务书、回执与会话
+        sessions: dict[str, set[str]] = {}
+        for name, (num, tid) in sorted(parsed_turns.items()):
+            base = f"{task}/thread/{name}"
+            info = turns[name]
+            alts = alts_of[name]
+            parallel = bool(info["attempts"])
+            nturns += len(alts) if parallel else 1
+            um = blob(f"{base}/user-message.md") if "user-message.md" in info["files"] else None
             if um is None:
                 problems.append(f"{base}: 缺 user-message.md（任务书）")
                 continue
@@ -315,9 +412,19 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
             if fm is None:
                 problems.append(f"{base}/user-message.md: 缺 YAML 头（--- 包起的固定字段）")
                 continue
-            for k in ("deliverable", "agent", "executor", "base", "sent_at"):
+            for k in ["deliverable", "agent", "base", "sent_at"] + ([] if parallel else ["executor", "thread"]):
                 if not fm.get(k):
                     problems.append(f"{base}/user-message.md: 缺字段或为空：{k}")
+            if parallel:
+                for k in ("executor", "thread"):
+                    if fm.get(k):
+                        problems.append(f"{base}/user-message.md: 并行的一问发给几家，{k} 写在各尝试的 turn.md 里")
+            elif fm.get("thread") and not THREAD_FIELD_RE.match(fm["thread"]):
+                problems.append(f"{base}/user-message.md: thread 须写成「两位会话号-执行环境 id」，现为 {fm['thread']}")
+            elif fm.get("thread"):
+                sessions.setdefault(THREAD_FIELD_RE.match(fm["thread"])["num"], set()).add(
+                    THREAD_FIELD_RE.match(fm["thread"])["id"]
+                )
             kinds = kinds_of(fm.get("deliverable", ""))
             if kinds - DELIVERABLES:
                 problems.append(f"{base}/user-message.md: deliverable 只能是 SDD、SDP、UAT，现为 {fm.get('deliverable')}")
@@ -330,60 +437,72 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
                 v = fm.get("verifies", "")
                 if not v:
                     problems.append(f"{base}/user-message.md: 交 UAT 须填 verifies（验收的是哪个 turn）")
-                elif v not in turns:
+                elif v not in local_ids:
                     problems.append(f"{base}/user-message.md: verifies 指向不存在的 turn：{v}")
             elif fm.get("verifies"):
                 problems.append(f"{base}/user-message.md: 只有交 UAT 的 turn 才填 verifies")
-            if "turn.md" not in files:
-                continue
-            if fm.get("sent_at") == "pending":
-                problems.append(f"{base}: 任务书还未发出（sent_at: pending），不应有 turn.md")
-            tm = front_matter(blob(f"{base}/turn.md") or "")
-            if tm is None:
-                problems.append(f"{base}/turn.md: 缺 YAML 头（--- 包起的固定字段）")
-                continue
-            for k in ("status", "completed_at", "commit", "provider_turn_id"):
-                if not tm.get(k):
-                    problems.append(f"{base}/turn.md: 缺字段或为空：{k}")
-            st = tm.get("status", "")
-            if st and st not in STATUSES:
-                problems.append(f"{base}/turn.md: status 只能是 completed、interrupted、failed，现为 {st}")
-            if (st == "failed") != bool(tm.get("error")):
-                problems.append(f"{base}/turn.md: error 只在 status 为 failed 时填，而且必须填")
-            if tm.get("provider_turn_id", "none") != "none" and tm.get("provider_thread_id", "none") == "none":
-                problems.append(f"{base}/turn.md: 填了 provider_turn_id 就必须填 provider_thread_id（运行时的会话标识）")
-            if st == "interrupted" and tm.get("reason") not in REASONS:
-                problems.append(f"{base}/turn.md: status 为 interrupted 须填 reason：" + "、".join(sorted(REASONS)))
-            if st != "interrupted" and tm.get("reason"):
-                problems.append(f"{base}/turn.md: 只有 status 为 interrupted 才填 reason")
-            needs = "UAT" in kinds and st == "completed"
-            if needs and tm.get("verdict") not in VERDICTS:
-                problems.append(f"{base}/turn.md: 交回 UAT 须填 verdict：pass、fail 或 undecidable")
-            if not needs and tm.get("verdict"):
-                problems.append(f"{base}/turn.md: 只有完成的 UAT turn 才填 verdict")
+
+            returns = [(base, None)] if not parallel else [(f"{base}/{a}", a) for a in sorted(alts)]
+            for rbase, aname in returns:
+                files = info["files"] if aname is None else info["attempts"][aname]
+                if "turn.md" not in files:
+                    continue
+                if fm.get("sent_at") == "pending":
+                    problems.append(f"{rbase}: 任务书还未发出（sent_at: pending），不应有 turn.md")
+                if aname is not None and not alts.get(aname, ("", None))[1]:
+                    problems.append(f"{rbase}: 已交回（有 turn.md），尝试目录名须带执行环境 id；不给 id 的写 -none")
+                tm = front_matter(blob(f"{rbase}/turn.md") or "")
+                if tm is None:
+                    problems.append(f"{rbase}/turn.md: 缺 YAML 头（--- 包起的固定字段）")
+                    continue
+                problems += check_turn_md(rbase, tm, kinds, parallel)
+                th = tm.get("thread", "")
+                if parallel and th:
+                    if not THREAD_FIELD_RE.match(th):
+                        problems.append(f"{rbase}/turn.md: thread 须写成「两位会话号-执行环境 id」，现为 {th}")
+                    else:
+                        sessions.setdefault(THREAD_FIELD_RE.match(th)["num"], set()).add(THREAD_FIELD_RE.match(th)["id"])
+
+        # 四、会话：同一个本地会话号只对一个 id，一个 id 也只属于一个会话号
+        owner: dict[str, set[str]] = {}
+        for snum, ids in sorted(sessions.items()):
+            real = {i for i in ids if i not in ("none", "pending", "unknown")}
+            if len(real) > 1:
+                problems.append(f"{task}/thread/: 会话 {snum} 对应多个执行环境 id：" + "、".join(sorted(real)))
+            for i in real:
+                owner.setdefault(i, set()).add(snum)
+        for i, snums in sorted(owner.items()):
+            if len(snums) > 1:
+                problems.append(f"{task}/thread/: 同一个执行环境会话 {i} 记在多个会话号下：" + "、".join(sorted(snums)))
+
     if staged is not None:
         problems += check_frozen(staged)
     return problems, nturns
 
 
 def check_frozen(staged: list[tuple[str, str]]) -> list[str]:
-    """交回即冻结：HEAD 里已有 turn.md 的 turn 不许改、删、加文件；已发出的任务书不许改、删。"""
+    """交回即冻结：HEAD 里已有 turn.md 的那一次不许改、删、加文件；已发出的任务书不许改、删。
+    并行时冻结按尝试算——a 交回了，b 还在跑。"""
     problems: list[str] = []
     cache: dict[str, tuple[bool, bool]] = {}
     for status, path in staged:
-        m = THREAD_PATH_RE.match(path)
-        if not (m and path.startswith(DOC_ROOT)):
+        if not path.startswith(DOC_ROOT):
             continue
-        base = f"{m['task']}/thread/{m['turn']}"
-        if base not in cache:
+        parsed = parse_thread_path(path)
+        if parsed is None:
+            continue
+        task, turn, attempt, file = parsed
+        base = f"{task}/thread/{turn}"
+        key = base if attempt is None else f"{base}/{attempt}"
+        if key not in cache:
             um = head_blob(f"{base}/user-message.md")
             fm = front_matter(um) if um else None
-            cache[base] = (head_blob(f"{base}/turn.md") is not None,
-                           um is not None and not (fm and fm.get("sent_at") == "pending"))
-        returned, sent = cache[base]
+            cache[key] = (head_blob(f"{key}/turn.md") is not None,
+                          um is not None and not (fm and fm.get("sent_at") == "pending"))
+        returned, sent = cache[key]
         if returned:
-            problems.append(f"{path}: turn 已交回（有 turn.md），冻结——不改、不删、不加文件；要改就开新的 turn")
-        elif status in ("M", "D") and m["file"] == "user-message.md" and sent:
+            problems.append(f"{path}: 已交回（有 turn.md），冻结——不改、不删、不加文件；要改就开新的 turn")
+        elif status in ("M", "D") and file == "user-message.md" and sent:
             problems.append(f"{path}: 任务书已发出，冻结；要改就开新的 turn")
     return problems
 

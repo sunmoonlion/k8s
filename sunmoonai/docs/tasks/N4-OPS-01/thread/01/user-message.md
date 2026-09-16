@@ -2,6 +2,7 @@
 deliverable: SDP
 agent: execution
 executor: unassigned
+thread: 01-pending
 base: pending
 sent_at: pending
 ---

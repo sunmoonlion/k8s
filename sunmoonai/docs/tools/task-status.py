@@ -12,7 +12,9 @@ verifies 指向它的最新一份 UAT 的 verdict）；中断或失败看 turn.m
 import json, os, re, subprocess, sys
 from collections import defaultdict
 
-RE = re.compile(r"^(?P<task>sunmoonai/docs/.+)/thread/(?P<turn>[^/]+)/(?P<file>[^/]+)$")
+RE = re.compile(r"^(?P<task>sunmoonai/docs/.+)/thread/(?P<rest>.+)$")
+TURN_DIR_RE = re.compile(r"^(?P<num>\d{2})(?:-.*)?$")      # 01、01-01k8f3m2qz
+ATTEMPT_DIR_RE = re.compile(r"^(?P<alt>[a-z])(?:-.*)?$")   # 并行尝试 a-01k8h2r5bb
 LABEL = {"pass": "已通过", "fail": "被打回", "undecidable": "不可判，交人"}
 
 
@@ -41,6 +43,16 @@ def fm(text):
     return {}
 
 
+def verified(turns, ref):
+    """verifies 指的可能是整次派工（03），而并行时交回按尝试分（03a、03b）。"""
+    if ref in turns:
+        return turns[ref]
+    for t, v in turns.items():
+        if ref and t.startswith(ref):
+            return v
+    return ({}, None)
+
+
 def kinds(v):
     return {x.strip() for x in (v or "").strip("[]").split(",") if x.strip()}
 
@@ -54,16 +66,39 @@ def main(argv):
     tasks = defaultdict(dict)
     for p in tracked:
         m = RE.match(p)
-        if m:
-            tasks[m["task"]].setdefault(m["turn"], set()).add(m["file"])
+        if not m:
+            continue
+        parts = m["rest"].split("/")
+        if len(parts) not in (2, 3):
+            continue
+        info = tasks[m["task"]].setdefault(parts[0], {"files": set(), "attempts": defaultdict(set)})
+        if len(parts) == 2:
+            info["files"].add(parts[1])
+        else:
+            info["attempts"][parts[1]].add(parts[2])
     report = []
     for task in sorted(tasks):
+        # 键是本地号（01、03a）：目录名带执行环境 id，排序与引用都只用本地号
         turns = {}
-        for t in sorted(tasks[task]):
-            base = f"{task}/thread/{t}"
+        for tdir in sorted(tasks[task]):
+            md = TURN_DIR_RE.match(tdir)
+            if not md:
+                continue
+            base = f"{task}/thread/{tdir}"
             u = fm(blob(f"{base}/user-message.md"))
-            r = fm(blob(f"{base}/turn.md")) if "turn.md" in tasks[task][t] else None
-            turns[t] = (u, r)
+            info = tasks[task][tdir]
+            if info["attempts"]:
+                for aname in sorted(info["attempts"]):
+                    ma = ATTEMPT_DIR_RE.match(aname)
+                    if not ma:
+                        continue
+                    files = info["attempts"][aname]
+                    r = fm(blob(f"{base}/{aname}/turn.md")) if "turn.md" in files else None
+                    turns[md["num"] + ma["alt"]] = (u, r)
+            else:
+                r = fm(blob(f"{base}/turn.md")) if "turn.md" in info["files"] else None
+                turns[md["num"]] = (u, r)
+        turns = dict(sorted(turns.items()))
         verdicts = defaultdict(list)
         for t, (u, r) in turns.items():
             if u.get("verifies") and r and r.get("status") == "completed":
@@ -81,14 +116,15 @@ def main(argv):
             elif "UAT" in k:
                 state = f"验收 {u.get('verifies', '?')}：{r.get('verdict', '?')}"
                 if r.get("verdict") == "fail":
-                    for kk in kinds(turns.get(u.get("verifies"), ({}, None))[0].get("deliverable")):
+                    for kk in kinds(verified(turns, u.get("verifies"))[0].get("deliverable")):
                         fails[kk] += 1
-            elif verdicts.get(t):
-                state = LABEL.get(sorted(verdicts[t])[-1][1], "?")
+            elif verdicts.get(t) or (len(t) > 2 and verdicts.get(t[:2])):
+                got = verdicts.get(t, []) + (verdicts.get(t[:2], []) if len(t) > 2 else [])
+                state = LABEL.get(sorted(got)[-1][1], "?")
             else:
                 state = "已交回，待验收"
             rows.append({"turn": t, "deliverable": u.get("deliverable", "?"), "agent": u.get("agent", "?"),
-                         "executor": u.get("executor", "?"), "state": state})
+                         "executor": (r or {}).get("executor") or u.get("executor", "?"), "state": state})
         report.append({"task": task.removeprefix("sunmoonai/docs/"), "turns": rows, "fails": dict(fails),
                        "composition": any(p.startswith(task + "/composition/") for p in tracked),
                        "components": sorted({p[len(task) + 12:].split("/")[0] for p in tracked if p.startswith(task + "/components/")})})

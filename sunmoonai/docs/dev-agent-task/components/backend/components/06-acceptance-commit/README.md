@@ -4,4 +4,4 @@
 
 生命周期阶段见 [request-lifecycle.md](../../../../composition/request-lifecycle.md) 5.6 节。
 
-本节点的定稿在 [`composition/`](composition/)：[agent-dev-guide.md](composition/agent-dev-guide.md) 以 turn [01](thread/01/user-message.md) 为底、[implementation-plan.md](composition/implementation-plan.md) 以 turn [02](thread/02/user-message.md) 为底。
+本节点的定稿在 [`composition/`](composition/)：[agent-dev-guide.md](composition/agent-dev-guide.md) 以 turn [01](thread/01-none/user-message.md) 为底、[implementation-plan.md](composition/implementation-plan.md) 以 turn [02](thread/02-none/user-message.md) 为底。
