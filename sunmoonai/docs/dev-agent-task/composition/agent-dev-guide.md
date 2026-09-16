@@ -1,7 +1,5 @@
 # Agent 开发指导：一个产品运行时，一套开发纪律
 
-> 迁自 `dev-plan/agent-dev-guide.md`（tag `dev-plan-final`） 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 MIGRATION.md（2026-09-15 删除，原文见提交 `e7ab0e0b`）。
-
 ## 0. 先读结论
 
 平台只建设一个产品运行时。它以
@@ -59,8 +57,6 @@ Submission
 | [`development-plan.md`](../components/backend/composition/development-plan.md) | 解释通用执行编排与领域能力的分工 | 不记录进度 |
 | 各 turn 的 `user-message.md` | 每次派工的任务书：写明交回哪一种，以及背景、范围、验收、约束 | 随 turn 冻结，执行者不改 |
 | `thread/` | 每次派工到交回（turn）的发出内容与交回物；进度由任务目录推出 | 交回即冻结，改只能开新 turn |
-| `working/request-baseline/`（已删除，见 tag `dev-plan-final`） | **所有者的原始需求档案**：只解释来源，**不覆盖现行合同，也不证明当前能力**（`I1` 在本仓的实物） | 不据它断言现状 |
-| 历史 archive 五稿及 README | 相容内容在本文正文，取舍与来源见 源稿第 10 节（tag `dev-plan-final` 中的 dev-plan/agent-dev-guide.md）；只用于历史复核 | 不作为开发前置阅读；被撤销主张集中在 [§8](../components/backend/composition/agent-dev-guide.md)，不恢复其规范效力 |
 
 内核的对象和状态以 `request-lifecycle.md @ ed0b5136:92-343` 为准；协作阶段以
 `round-protocol.md @ ed0b5136:52-706` 的标题为准。本文出现的表都是开发投影或实现要求，
@@ -139,7 +135,7 @@ Submission
 | 1 | Agent Profile 的实际模型、GUI 内部事件与部分 CLI 工具事件不可机械核验 | ⚠ 未验证；登记表相应字段标 ⚠，**不得用未核值反推能力** |
 | 2 | 无进程入口的分发者永久需要人工桥 | 登记为**可计数的欠账**（`dispatch_event{mode=manual}`），**不伪装成自动化** |
 | 3 | principal 确认与 agent 共享宿主身份 | 证据只能标 `reported`；身份边界未落地前不得写成 `attested` |
-| 4 | **H5-final / H5-round 拆分**：竞争内产物写主线的管辖 | 未决；已由前轮登记，**本文不擅自改权力表行数**（原 handoff：所有者五次执行 `publish-*.sh` 写主线，都是 H5 管辖的 Side Effect 但未经 H5 门；见 tag `dev-plan-final` 中 runtime 那次竞争的 runtime-disposition.md「L.1」） |
+| 4 | **H5-final / H5-round 拆分**：竞争内产物写主线的管辖 | 未决；已登记，**本文不擅自改权力表行数** |
 | 5 | **H5 的机制化强制点** | 两个有效方向均需所有者动作；现状登记为「人的显式动作」 |
 | 6 | **响应者身份鉴别**（Interaction 服务化的前置） | 未决；**信任域收紧前不拆** |
 | 7 | typed review／ruling／acceptance 是否只是 Artifact 类型细化 | 未决；若属对内核 Attempt 定义的扩充，按内核修订纪律另起工作单元 |
@@ -156,7 +152,7 @@ Submission
 | 18 | **H1 与 H5 落在同一 commit 时账本上的歧义** | 未决（服务态应是两个 Interaction；手工态今天做不到） |
 | 19 | 运行时外的绕过天然不完备 | principal 侧指标在共享身份下是 `UNKNOWN`，**不得写成零** |
 | 20b | **`llm-review` 能否用于任何 `auto_policy = 无` 的权力表行** | 未决。[§4.7](../components/backend/components/05-interrupt-resume/composition/agent-dev-guide.md) 立了四档审批，但 `llm-review` 不是 principal 的权力，在 [§4.2](../components/backend/composition/agent-dev-guide.md) 权力表里没有行。⚠ **本文不裁**——它要么是 H 行的一个前置过滤器，要么根本不该出现在需人批准的路径上，两种读法后果不同 |
-| 20 | 预算账、证据账与 Agent Profile 生效仍是后续工作 | 见 `handoff.md @ ed0b5136:14-19`、`handoff.md @ ed0b5136:30-66` |
+| 20 | 预算账、证据账与 Agent Profile 生效仍是后续工作 | 见第 25、26 条 |
 | 21 | 历史产物只在单机的可恢复性 | ⚠ 旧稿报告部分产物/冻结标签只在本机；本次未核当前远端。不外推为“现在仍只有一份”，交付前按 [§3.16](../components/backend/components/06-acceptance-commit/composition/agent-dev-guide.md) 核持久 ref/获准副本及重取能力，不以此擅自 push |
 | 22 | 库的完整 API 面、多次中断与版本兼容 | ⚠ 历史记录只覆盖若干用法；SDK/库升级前按 [§5.13](../components/backend/composition/agent-dev-guide.md) 重核，不把原地恢复样例推广到未经验证的路线 |
 | 23 | **U1 web 面生产适配器的形状**：薄转发（web → internal 面），还是自己持有会话与投影？ | 未决（阶段一）：决定 v5 §10.2 事务原则与 §10.3 SSE 对账落在哪一层；已知输入见下文 |
@@ -164,11 +160,9 @@ Submission
 | 25 | U3 **预算账与证据账**落 PG 的表结构与迁移 | 未决（阶段二）：一切并行工作的前置——没有预算闸门就不能 fan-out；已知输入见下文 |
 | 26 | U4 `AgentProfile` 的具体字段 | 未决（阶段二）：专用部分的载体；已知输入见下文 |
 | 27 | U5 外部 harness 的部署形态（服务端如何管理其进程与凭据） | 未决（阶段二）：影响 U2。本分支提案见同一可行性文 §2 / §9 |
-| 28 | **⑥ 确认的回执强度为零**：全流程唯一不可逆的一步，其回执恰恰最不可验证（`rulings.md` `R2`） | 未决；原记于 handoff「不能倒退的两条」 |
+| 28 | **⑥ 确认的回执强度为零**：全流程唯一不可逆的一步，其回执恰恰最不可验证（`rulings.md` `R2`） | 未决 |
 
 #### U1、U3、U4 的已知输入
-
-（原 handoff「未决项」，2026-08-29。）
 
 ##### U1 的已知输入
 

@@ -2,8 +2,6 @@
 
 > 依据的通用规范：[多方竞争协议「组织者的纪律」](../../../dev-agent-standards/protocol/competition-rules.md)
 
-> 迁自 `dev-plan/agent-dev-guide.md` 的 §3.19、§3.21（2026-09-14 先随迁移放在 [04-agent-execution](../../components/backend/components/04-agent-execution/composition/agent-dev-guide.md)，2026-09-15 随 protocol 移来）。节号沿用原文件。
-
 ### 3.19 T2 七环节的操作闭环
 
 本节承接历史稿的流程导读，并按本次基线的 competition-protocol 校准路径与时序。

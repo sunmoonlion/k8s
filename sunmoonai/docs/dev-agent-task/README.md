@@ -8,17 +8,17 @@
 任何一层用到哪个开发阶段，按 [`dev-agent-standards/`](../dev-agent-standards/) 的规范写。
 
 本任务的生命周期见 [request-lifecycle.md](composition/request-lifecycle.md) 第 5 节；叶子目录名保留阶段编号。
-第一层分前端与后端，Agent / runtime 与验收器归后端（所有者 2026-09-14 定）；责任划分依合同第 9 节。
+第一层分前端与后端，Agent / runtime 与验收器归后端；责任划分依合同第 9 节。
 
 ```text
-thread/                           一串 turn；每个 turn 带任务书 user-message.md、回执 turn.md 与交回物：01–03 为模拟补建
+thread/                           一串 turn；每个 turn 带任务书 user-message.md、回执 turn.md 与交回物
 composition/                      SDD：前后端的划分与交互、总体设计
 components/
 ├── frontend/
-│   ├── thread/      01（模拟补建）
+│   ├── thread/      01
 │   └── composition/
 └── backend/
-    ├── thread/      01–03（模拟补建）
+    ├── thread/      01–03
     ├── composition/
     └── components/  02-intake · 04-agent-execution
                      05-interrupt-resume · 06-acceptance-commit（各有 thread/ 与 composition/）
@@ -36,4 +36,4 @@ components/
 | 开发计划：要建什么、为什么 | [`composition/development-plan.md`](composition/development-plan.md) |
 | 与项目无关的通用开发规范 | [`../dev-agent-standards/`](../dev-agent-standards/) |
 
-原 `dev-plan/` 各节的去向见 MIGRATION.md（2026-09-15 删除，原文见提交 `e7ab0e0b`）；`dev-plan/` 已删除，原样存于 tag `dev-plan-final`；门禁脚本在 [`../tools/`](../tools/)。
+门禁脚本在 [`../tools/`](../tools/)。

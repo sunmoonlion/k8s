@@ -1,7 +1,5 @@
 # 开发计划
 
-> 迁自 `dev-plan/development-plan.md`（tag `dev-plan-final`） 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 MIGRATION.md（2026-09-15 删除，原文见提交 `e7ab0e0b`）。
-
 ### 执行层租用，不自建
 
 通用部分的执行层采用 Codex 的 Python SDK（`openai-codex`，Apache 2.0）：

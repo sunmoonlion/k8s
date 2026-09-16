@@ -47,16 +47,13 @@ DOC_ROOT = "sunmoonai/docs/"
 # 门禁范围：本次提交碰到这些文件时，pre-commit 会拦。
 # 一个在合法内容上大面积报错的检查不是门禁，是噪音，上线当天所有人就会 --no-verify。
 # 因此规矩是：**先把范围内清零，再把范围扩进来**。`--survey` 用于巡检（只报不拦）。
-# 2026-09-02：全仓 117 份文档已清零，范围由 dev-plan/working/ 扩到整个 docs/。
 # 扩范围的前提是「扩之前先清零」——带着存量失败上线的门禁会被 --no-verify 掉。
 GATED = ("sunmoonai/docs/",)
 
 # 豁免：按路径前缀（EXEMPT）或路径片段（EXEMPT_MARKERS）跳过的文档；`--all` 会报出豁免了几份。
-# 2026-09-15 前这里豁免 `dev-plan/codex-reference/` 与轮次候选的归档副本（`rounds/<轮次>/candidates/**`），
-# 两者随 dev-plan 删除而不复存在（原配置与理由见 tag `dev-plan-final`）。
 # 新增豁免前先想清楚：豁免的只能是冻结副本，不是活文档——整目录豁免会把活文档的坏链一起放过。
 EXEMPT: tuple[str, ...] = ()
-# 2026-09-15 所有者定：豁免任务目录下的 `thread/`。turn 交回即冻结，其中的交回物与任务书只对交回那一刻负责；
+# 豁免任务目录下的 `thread/`。turn 交回即冻结，其中的交回物与任务书只对交回那一刻负责；
 # 之后被链接的文件改名或移动，冻结原件里的链接必然断，却不能再改。要看当时的样子，按提交去看。
 EXEMPT_MARKERS: tuple[str, ...] = ("/thread/",)
 
@@ -242,7 +239,7 @@ def check_tables(path: str, text: str) -> list[str]:
     return problems
 
 
-# ── turn 的检查（2026-09-15 所有者定：规则要有载体）──────────────────────────
+# ── turn 的检查（规则要有载体）──────────────────────────────────────────────
 # 任务目录下 `thread/<编号>/` 是一个个 turn：`user-message.md`（任务书，带 YAML 头）、
 # `turn.md`（交回时写的回执）与交回物。字段与冻结规则见 dev-agent-standards 通用规则
 # 「turn 的固定字段」。编号与字段每次都查；冻结只在 --staged（提交与合并）时查。

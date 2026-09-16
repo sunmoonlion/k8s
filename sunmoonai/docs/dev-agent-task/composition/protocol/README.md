@@ -2,9 +2,9 @@
 
 > 依据的通用规范：[多方竞争协议](../../../dev-agent-standards/protocol/competition-rules.md)
 
-这里放流程规范（`competition-protocol.md`、`competition-operations.md`、`GO.md`）。原判定脚本 `competition-status.py` 按旧的 `rounds/` 目录判定，已随 dev-plan 删除（见 tag `dev-plan-final`）；按任务目录重写之前，环节判定由组织者按协议「环节判定」一节的判据核对并留痕。
+这里放流程规范（`competition-protocol.md`、`competition-operations.md`、`GO.md`）。环节判定由组织者按协议「环节判定」一节的判据核对并留痕。
 
-历次竞争的产物已随 dev-plan 删除，原样存于 tag `dev-plan-final` 的 `sunmoonai/docs/dev-plan/rounds/`；以后每次竞争的记录放在所属任务的目录里。
+每次竞争的记录放在所属任务的目录里。
 
 ## 文件
 

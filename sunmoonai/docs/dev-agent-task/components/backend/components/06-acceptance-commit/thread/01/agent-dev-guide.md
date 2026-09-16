@@ -1,7 +1,5 @@
 # Agent 开发指导：一个产品运行时，一套开发纪律
 
-> 迁自 `dev-plan/agent-dev-guide.md`（tag `dev-plan-final`） 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 MIGRATION.md（2026-09-15 删除，原文见提交 `e7ab0e0b`）。
-
 ### 1.4 开发验收不可外推
 
 > 依据的通用规范：[UAT「判据与完成」](../../../../../../../dev-agent-standards/deliverables/uat/uat-rules.md)
@@ -235,7 +233,6 @@ verification     # 最终 commit 上的回归结果
 主动披露「某个规划子代理可能经宽泛搜索见过被禁读的文件，无访问记录」——
 它没有把不确定性压成「未读」，因而该条被裁决记为**范本**，而非违规。
 
-本节后半是 `runtime-refact` 那次竞争当时的覆盖清单，作为历史记录留在 tag `dev-plan-final` 中的 dev-plan/agent-dev-guide.md 第 9.2 节。
 
 ## 12. 常见失败方式与项目实例
 
@@ -253,13 +250,13 @@ verification     # 最终 commit 上的回归结果
 
 | 失败 | 证据性质 | 控制在哪 |
 | --- | --- | --- |
-| **隔离来自 worktree + 命名分支，不来自文件名** | **已核对事实（2026-09-02）**：三方在各自 worktree 与命名分支上持有**同名且不带后缀**的同一文件，内容互不相同且**全部得以保留**，各自 commit 与 blob 可独立复核。故后缀**非必要**；又因同一工作树内两方写同一带后缀的路径照样互相覆盖，后缀亦**非充分** | [§3.6](../../../04-agent-execution/composition/agent-dev-guide.md)、[§11](../../../04-agent-execution/composition/agent-dev-guide.md) |
+| **隔离来自 worktree + 命名分支，不来自文件名** | **已核对事实**：三方在各自 worktree 与命名分支上持有**同名且不带后缀**的同一文件，内容互不相同且**全部得以保留**，各自 commit 与 blob 可独立复核。故后缀**非必要**；又因同一工作树内两方写同一带后缀的路径照样互相覆盖，后缀亦**非充分** | [§3.6](../../../04-agent-execution/composition/agent-dev-guide.md)、[§11](../../../04-agent-execution/composition/agent-dev-guide.md) |
 | **未提交的同路径写入没有任何保护** | **已核对事实**：Git 对未跟踪/未提交文件的同路径写入不提供冲突检测、不留历史、不留作者归属。这是 Git 语义，**可随时复现** | [§3.6](../../../04-agent-execution/composition/agent-dev-guide.md)、[§3.7](../../../04-agent-execution/composition/agent-dev-guide.md) |
-| 多执行者写进共享 checkout 造成覆盖 | **事故报告（2026-09-02），现场已灭失**：当事方陈述有产出被后写覆盖。共享路径上的文件事后已被清走，**具体发生过哪一次覆盖、写入顺序和责任人均不可独立复核**，本表不作此断言 | [§3.6](../../../04-agent-execution/composition/agent-dev-guide.md)、[§3.8](../../../04-agent-execution/composition/agent-dev-guide.md) |
+| 多执行者写进共享 checkout 造成覆盖 | **事故报告，现场已灭失**：当事方陈述有产出被后写覆盖。共享路径上的文件事后已被清走，**具体发生过哪一次覆盖、写入顺序和责任人均不可独立复核**，本表不作此断言 | [§3.6](../../../04-agent-execution/composition/agent-dev-guide.md)、[§3.8](../../../04-agent-execution/composition/agent-dev-guide.md) |
 | 以工作区最后一版代替 commit 做交卷或比选 | **已核对事实**：磁盘上的「当前文件」不携带作者归属，也不能证明谁先写完 | [§3.7](../../../04-agent-execution/composition/agent-dev-guide.md) |
-| 只写分支名，不固定 commit | **事故报告（2026-08-27）**：当事方记录评审曾引用旧提交而主方已前进；原始记录可取回，但其中**未找到**对应条目，**故不升为已核对** | [§3.9](../../../04-agent-execution/composition/agent-dev-guide.md) |
-| 评审意见的处置边界由被审方单方划定 | **已核对事实（2026-08-27）**：处置记录逐条由被审方判定采纳或拒绝，其中一条门禁因「三台机器分别报 0 / 4 / 95 条失败」被判为误报并删除。⚠ **「优胜作者拒绝改进」这一更强的说法未获记录支持，不采用** | [§2.2](../../../../composition/agent-dev-guide.md)、§5.5 |
-| 评审给出的验收标准无人回跑 | **已核对事实（2026-08-27）**：处置记录末节自记一份验收标准「**未回跑**」、一份「**待评审方执行**」、一份仅第 3 条通过 | §5.5 L1 |
+| 只写分支名，不固定 commit | **事故报告**：当事方记录评审曾引用旧提交而主方已前进；原始记录可取回，但其中**未找到**对应条目，**故不升为已核对** | [§3.9](../../../04-agent-execution/composition/agent-dev-guide.md) |
+| 评审意见的处置边界由被审方单方划定 | **已核对事实**：处置记录逐条由被审方判定采纳或拒绝，其中一条门禁因「三台机器分别报 0 / 4 / 95 条失败」被判为误报并删除。⚠ **「优胜作者拒绝改进」这一更强的说法未获记录支持，不采用** | [§2.2](../../../../composition/agent-dev-guide.md)、§5.5 |
+| 评审给出的验收标准无人回跑 | **已核对事实**：处置记录末节自记一份验收标准「**未回跑**」、一份「**待评审方执行**」、一份仅第 3 条通过 | §5.5 L1 |
 | 只测一端就宣布跨仓契约完成 | **现行硬规则**（constraints C4）：单仓 CI 只跑自己那半，provider 改了、consumer 锁没跟，两边各自都绿 | [§1.3](../../../../composition/agent-dev-guide.md) |
 | 拿休眠代码当能力证据 | **已核对事实**：一家以本仓休眠的 `AgentProfile.permits_tool` 佐证租用 SDK 的工具门，**九份评审无一发现** | [§2.6](../../../04-agent-execution/composition/agent-dev-guide.md)、[§5.2](../../../../composition/agent-dev-guide.md)、[§5.6](../../../04-agent-execution/composition/agent-dev-guide.md) |
 | 取证工具自身有边界而未声明 | **已核对事实**：在助手自带沙箱内跑取证命令，`/proc/self/uid_map` 为 `0 1003 1`，于是沙箱内一切看起来都是 root，据此写出「本机所有进程都是 root」。⚠ **取证栏必须注明主机、执行身份、是否在沙箱内** | [§4.4](../../../../composition/agent-dev-guide.md) |
@@ -272,7 +269,7 @@ verification     # 最终 commit 上的回归结果
 | 工作区回收后证据不可达 | 设计风险：工作区是临时供给，**不是档案** | §3.5 |
 | **完整选优流程本身** | **本项目尚未完整实跑**：独立裁判、匿名随机评审和停止规则目前是制度设计，**不得写成既成能力** | [§2.2](../../../../composition/agent-dev-guide.md)、[§3.4](../../../../composition/agent-dev-guide.md) |
 
-⚠ **本表的分级本身就是纪律的示范。**2026-09-02 那一例被拆成三行：两行是任何人现在都能
+⚠ **本表的分级本身就是纪律的示范。**那一例被拆成三行：两行是任何人现在都能
 复核的事实，一行是现场已灭失的事故报告。**不写「谁覆盖了谁」**——后者虽是当事方陈述且
 机制上成立，但现场已被清走，按 [§3.8](../../../04-agent-execution/composition/agent-dev-guide.md) 第 4 步，mtime 与「最后一版」只是线索，不足以单独证明
 写入顺序或责任人。

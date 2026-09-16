@@ -1,7 +1,5 @@
 # 开发计划
 
-> 迁自 `dev-plan/development-plan.md`（tag `dev-plan-final`） 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 MIGRATION.md（2026-09-15 删除，原文见提交 `e7ab0e0b`）。
-
 ## 起点：不延续 v5
 
 `mooc-manus-langgraph-longterm-plan-v5.md` 及其实施计划降级为**历史设计输入**。

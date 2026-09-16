@@ -1,16 +1,13 @@
 # 开发必须遵守的规则
 
-> 2026-09-15 起位于 agent 开发规范下：本平台上**所有 agent 开发任务**动代码前都要对照。迁自
-> `dev-plan/constraints.md`（tag `dev-plan-final`），原文、原顺序；「`doc-gate.py` 为什么不是第三个被删的脚本」一节随门禁脚本留在 dev-plan。
+> 本平台上**所有 agent 开发任务**动代码前都要对照。
 
-> 最后更新：2026-08-29
->
 > **动代码前先读这里。**违反其中任一条的方案**不进入讨论**——不是"不推荐"，
 > 是不提出。
 >
 > 项目现在长什么样，见 [`../project-guide/`](../../../project-guide/)；
 > 要建什么见 [`development-plan.md`](../../composition/development-plan.md)，
-> 任务书在各 turn 的 `task.md` 里；
+> 任务书在各 turn 的 `user-message.md` 里；
 > 进度由任务目录推出，不另设进度文件。
 
 ## 怎么用

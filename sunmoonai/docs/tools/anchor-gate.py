@@ -53,13 +53,11 @@ A = re.compile(r'`([\w.-]+\.md) @ ([0-9a-f]{7,40}):(\d+)(?:-(\d+))?`')
 B = re.compile(r'`([\w.-]+\.md):(\d+)(?:-(\d+))?`')
 C = re.compile(r'`([\w.-]+\.md)` §([\d.]+)')
 
-# 2026-09-15 删去「归档产物软判」（`rounds/**`、`dev-plan/archive/**` 的锚点只报不拦）：
-# 这两个目录随 dev-plan 删除，现在所有解析不到的锚点一律硬判。旧逻辑见 tag `dev-plan-final`。
 fails=[]; soft=0; okA=okB=0; frozen=0
 for f in sorted(DOCS.rglob("*.md")):
     rel = str(f.relative_to(ROOT))
     if rel not in tracked: continue
-    # 2026-09-15：与 doc-gate 一致，任务目录下 thread/ 是冻结原件，只对交回那一刻负责，不查。
+    # 与 doc-gate 一致：任务目录下 thread/ 是冻结原件，只对交回那一刻负责，不查。
     if "/thread/" in rel: frozen += 1; continue
     text = f.read_text(encoding="utf-8")
     for m in A.finditer(text):

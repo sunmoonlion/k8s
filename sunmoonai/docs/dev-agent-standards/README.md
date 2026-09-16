@@ -28,8 +28,6 @@
 
 先后由任务树决定：上层任务交回的结果决定下一步派什么任务；不是每次开发都要把四种都走一遍。
 
-
-
 ## 多方竞争
 
 任何一种交付物（SDD、SDP、UAT）都可能由多个 agent 各交一份，再比较选定。这时按 [`protocol/`](protocol/competition-rules.md)

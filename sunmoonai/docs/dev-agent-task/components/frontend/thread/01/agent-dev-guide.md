@@ -1,7 +1,5 @@
 # Agent 开发指导：一个产品运行时，一套开发纪律
 
-> 迁自 `dev-plan/agent-dev-guide.md`（tag `dev-plan-final`） 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 MIGRATION.md（2026-09-15 删除，原文见提交 `e7ab0e0b`）。
-
 ### 4.12 人的收件箱：让批准具体、可读、可重取
 
 > 依据的通用规范：[人的批准点「待批准事项」](../../../../../dev-agent-standards/approvals.md)

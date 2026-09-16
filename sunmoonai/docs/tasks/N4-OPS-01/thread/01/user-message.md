@@ -7,12 +7,10 @@ sent_at: pending
 ---
 # N4-OPS-01：监控采集与告警送达
 
-> 来源：原 agent 开发任务实施计划「后续运维接收」一节，原文照录。所有者 2026-09-13 要求放进未来计划；
-> 2026-09-15 定为 `tasks/` 下的独立任务（属运维，不属 agent 开发任务）。按新结构，这是准备好的第 01 个 turn 的任务书（`user-message.md`），**尚未派工**，派出时冻结。
 >
 > **交回：SDP，由执行 agent 交**（2026-09-15 按「任务书须写明交回哪一种」补写）。
 
-2026-09-13 所有者要求：“那你把它放到未来的dev-plan吧。继续”。本条接收
+本条接收
 [v5 处置清单](../../../../v5-backlog-disposition-luna.md)中监控部署与告警接线的后续工作，
 不代表全部 N4/B8 已接收，也不把未部署能力写成已验收；其余旧任务继续按原清单处置。
 
@@ -31,5 +29,5 @@ sent_at: pending
 已有输入：[B7d 只读账本指标](../../../../v5-backlog-delivery-observation-luna.md)、
 [B7h 受保护 HTTP 入口](../../../../v5-backlog-metrics-http-luna.md)。这些源码和测试证据
 不等于当前镜像已含修复。Worker 消费进展、Scheduler 本机活动及安全探针语义仍由 B7
-继续补齐，不因本条迁入而销账。监控是部署适配，不将 Kubernetes 或 Prometheus
+继续补齐，不因本条接收而销账。监控是部署适配，不将 Kubernetes 或 Prometheus
 变成未来 Electron/本机 Agent 内核的强依赖；云端先交付但架构始终兼容本机。

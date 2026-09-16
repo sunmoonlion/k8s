@@ -1,7 +1,5 @@
 # 实施计划
 
-> 迁自 `dev-plan/implementation-plan.md`（tag `dev-plan-final`） 的以下各节（`49d4ecb7`，2026-09-14）。节号沿用原文件；原文件其余各节的去向见 MIGRATION.md（2026-09-15 删除，原文见提交 `e7ab0e0b`）。
-
 ## 交付规则
 
 > 依据的通用规范：[SDP「交付、发布与保留」](../../../../../../../dev-agent-standards/deliverables/sdp/sdp-rules.md)

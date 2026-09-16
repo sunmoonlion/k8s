@@ -1,9 +1,7 @@
 # Request Lifecycle：产品请求生命周期合同
 
-> 依据的通用规范：[SDD 规则](../../dev-agent-standards/deliverables/sdd/sdd-rules.md)（本文是此前各任务交回后由人整理的定稿，属本任务的 `composition/`；本任务每次派工的任务书在各 turn 的 `user-message.md` 里）
+> 依据的通用规范：[SDD 规则](../../dev-agent-standards/deliverables/sdd/sdd-rules.md)
 
-> 最后更新：2026-08-31
->
 > **本文是产品目标合同，不是当前能力清单，也不是开发协作流程。**它定义 investment-app 中“前端用户提交 Task，后端受理并
 > 调度 Agent，Agent 完成后，结果可靠返回前端用户”的完整生命周期。后续开发，尤其产品
 > Agent/runtime 能力开发，必须实现本文规定的功能并遵守本文规定的纪律。
