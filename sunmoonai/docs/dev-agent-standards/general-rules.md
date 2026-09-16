@@ -125,6 +125,7 @@
 | `provider_thread_id` | 执行环境自己的会话（thread）标识；`provider_turn_id` 不是 `none` 时必填 |
 | `provider_record` | 执行环境自己的记录在哪（如会话记录文件、归档提交）；没有写 `none` |
 | `error` | 只有 `failed` 填：失败原因 |
+| `reason` | 只有 `interrupted` 填，且必填：`interrupted`（被人打断）、`replaced`（被新的 turn 替换）、`review-ended`（评审结束）、`budget-limited`（预算耗尽）或 `cancelled`（取消） |
 | `verdict` | 只有交回 UAT 时填：`pass`、`fail` 或 `undecidable` |
 
 **turn 的编号是本地顺序号，不是执行环境的 id。**执行环境自己生成的 thread 与 turn 标识通常是 UUID，既排不出先后，也不便人读；

@@ -252,6 +252,7 @@ DELIVERABLES = {"SDD", "SDP", "UAT"}
 AGENT_ALLOWS = {"planning": {"SDD"}, "execution": {"SDD", "SDP"}, "acceptance": {"UAT"}}
 STATUSES = {"completed", "interrupted", "failed"}
 VERDICTS = {"pass", "fail", "undecidable"}
+REASONS = {"interrupted", "replaced", "review-ended", "budget-limited", "cancelled"}
 
 
 def front_matter(text: str) -> dict[str, str] | None:
@@ -354,6 +355,10 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
                 problems.append(f"{base}/turn.md: error 只在 status 为 failed 时填，而且必须填")
             if tm.get("provider_turn_id", "none") != "none" and tm.get("provider_thread_id", "none") == "none":
                 problems.append(f"{base}/turn.md: 填了 provider_turn_id 就必须填 provider_thread_id（运行时的会话标识）")
+            if st == "interrupted" and tm.get("reason") not in REASONS:
+                problems.append(f"{base}/turn.md: status 为 interrupted 须填 reason：" + "、".join(sorted(REASONS)))
+            if st != "interrupted" and tm.get("reason"):
+                problems.append(f"{base}/turn.md: 只有 status 为 interrupted 才填 reason")
             needs = "UAT" in kinds and st == "completed"
             if needs and tm.get("verdict") not in VERDICTS:
                 problems.append(f"{base}/turn.md: 交回 UAT 须填 verdict：pass、fail 或 undecidable")
