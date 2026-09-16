@@ -1,6 +1,6 @@
 # AI 执行开发流程：以可验收的需求增量贯通交付
 
-> 依据的通用规范：[通用开发规范](../../../../dev-agent-standards/README.md)
+> 依据的通用规范：[任务的生命周期](../../../../dev-agent-standards/lifecycle.md)
 
 > 移入 agent 任务的后端组成设计：这是 agent 项目的具体开发流程；与项目无关的流程原则见 [dev-agent-standards](../../../../dev-agent-standards/README.md)。
 本文先确定需求的推进过程，再推导需要的文档。
