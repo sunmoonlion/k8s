@@ -352,6 +352,8 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
                 problems.append(f"{base}/turn.md: status 只能是 completed、interrupted、failed，现为 {st}")
             if (st == "failed") != bool(tm.get("error")):
                 problems.append(f"{base}/turn.md: error 只在 status 为 failed 时填，而且必须填")
+            if tm.get("provider_turn_id", "none") != "none" and tm.get("provider_thread_id", "none") == "none":
+                problems.append(f"{base}/turn.md: 填了 provider_turn_id 就必须填 provider_thread_id（运行时的会话标识）")
             needs = "UAT" in kinds and st == "completed"
             if needs and tm.get("verdict") not in VERDICTS:
                 problems.append(f"{base}/turn.md: 交回 UAT 须填 verdict：pass、fail 或 undecidable")

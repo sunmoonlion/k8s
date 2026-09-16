@@ -122,8 +122,13 @@
 | `completed_at` | 交回时间 |
 | `commit` | 交回物或改动所在的提交 |
 | `provider_turn_id` | 执行环境自己的 turn 标识；没有写 `none` |
+| `provider_thread_id` | 执行环境自己的会话（thread）标识；`provider_turn_id` 不是 `none` 时必填 |
+| `provider_record` | 执行环境自己的记录在哪（如会话记录文件、归档提交）；没有写 `none` |
 | `error` | 只有 `failed` 填：失败原因 |
 | `verdict` | 只有交回 UAT 时填：`pass`、`fail` 或 `undecidable` |
+
+**turn 的编号是本地顺序号，不是执行环境的 id。**执行环境自己生成的 thread 与 turn 标识通常是 UUID，既排不出先后，也不便人读；
+两者的对应就记在 `provider_thread_id`、`provider_turn_id` 里，要回溯运行时的原始记录时按它们去查。
 
 `turn.md` 的正文列出交回物：每个文件是哪一种交付物。不知道的值写 `unknown`，还没发出的写 `pending`，不得空着。
 
