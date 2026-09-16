@@ -14,7 +14,7 @@ standards 的用词以本表为准：**同一个意思只用一个词**，「不
 | `user-message.md` | turn 里的任务书，就是这一次发出去的全文 | turn 里的 `task.md` |
 | `turn.md` | turn 的回执：状态、交回时间、所在提交、执行环境的 turn 标识，交回 UAT 时还有结论；交回时写，写完冻结。没有它就是还没交回 | 状态文件 |
 | 并行尝试 | 同一问同时发给几个执行者，编号记作 03a、03b…，共用同一份任务书 | — |
-| 任务书（PRD） | 发给 agent 的那一问，存为 turn 的 `user-message.md`；须写明交回哪一种交付物、由哪类 agent 交。见 [PRD 规则](task/prd/prd-rules.md) | 需求文档 |
+| 任务书（PRD） | 发给 agent 的那一问，存为 turn 的 `user-message.md`；须写明交回哪一种交付物、由哪类 agent 交。见 [PRD 规则](prd/prd-rules.md) | 需求文档 |
 | 附件 | 与 `user-message.md` 放在一起、随它发出的材料 | — |
 | 派工 | 发出一个 turn | — |
 | 交回物 | 某个 turn 实际交回来的那一份 SDD、SDP 或 UAT（改代码时还有改动所在的提交） | 交付物（指这一份时） |

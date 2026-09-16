@@ -1,7 +1,7 @@
 # 通用规则
 
 交给 agent 的每一件事都是一个**任务**。本文写所有 agent 开发任务及其交付共同遵守的基本理念与纪律，以及任务怎样随交付长出来、交付怎样验收、怎样记录、怎样返工。
-每个 turn 的 `user-message.md` 按 [PRD 规则](task/prd/prd-rules.md) 写（模板见 [附录](task/prd/prd-template.md)），交付物按 [`deliverables/`](deliverables/) 的规范验收。其余规范见 [README](README.md)。
+每个 turn 的 `user-message.md` 按 [PRD 规则](prd/prd-rules.md) 写（模板见 [附录](prd/prd-template.md)），交付物按 [`deliverables/`](deliverables/) 的规范验收。其余规范见 [README](README.md)。
 
 ## 基本理念
 
@@ -88,7 +88,7 @@
 
 #### turn 里的 user-message.md 就是任务书
 
-每个 turn 的 `user-message.md` 就是这次发出去的任务书，按 [PRD 规则](task/prd/prd-rules.md) 写（模板见 [附录](task/prd/prd-template.md)）；可以就是一段自然语言，附件与它放在一起。
+每个 turn 的 `user-message.md` 就是这次发出去的任务书，按 [PRD 规则](prd/prd-rules.md) 写（模板见 [附录](prd/prd-template.md)）；可以就是一段自然语言，附件与它放在一起。
 **必须写明这次要交回哪一种：SDD、SDP 还是 UAT**，由哪类 agent 交——规划 agent 只交 SDD；执行 agent 交 SDP，实现前可以先交 SDD；验收 agent 只交 UAT。
 任务书随 turn 一起冻结；要改，就开新的 turn。
 
