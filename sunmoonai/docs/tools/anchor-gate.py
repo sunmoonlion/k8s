@@ -2,7 +2,7 @@
 """anchor-gate：检查 `文件:行` 形式的锚点是否可解析。
 
 **为什么需要它**：`doc-gate.py` 只检查 markdown 链接 `[文本](路径)`。
-2026-09-05 实测：删掉 `refact-fable.md` 后 `doc-gate --all` 报「144 份通过」，
+实测：删掉 `refact-fable.md` 后 `doc-gate --all` 报「144 份通过」，
 而当时 `runtime-architecture.md` 里 31 处对它的引用全部是纯文本锚点（`refact-fable.md @ ceb7291c:220`），
 一条也没被发现。**一道门禁的存在理由就是防这件事，它却看不见**——
 这是该轮记录的「判据在边界给假答案」的第六次。
@@ -25,7 +25,7 @@ def show(ref):
     return r.stdout.splitlines() if r.returncode==0 else None
 
 # 外部取证仓（round.md 的 anchor_roots）：这类锚点不在本仓索引里，但**可复跑**，
-# 不能判失败。2026-09-05 首版漏了它，对 `adding-a-tool.md:40` 报假失败——
+# 不能判失败。首版漏了它，对 `adding-a-tool.md:40` 报假失败——
 # 而同一文档 :441 就写着全路径 `~/repo/deepseek-harness/docs/cookbook/adding-a-tool.md`。
 EXTERNAL = [pathlib.Path.home()/"repo"/x for x in ("codex","deepseek-harness","openclaw")]
 
