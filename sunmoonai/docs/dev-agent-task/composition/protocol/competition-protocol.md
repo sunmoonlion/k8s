@@ -1,6 +1,6 @@
 # 多方竞争：流程
 
-> 依据的通用规范：[多方竞争协议](../../../dev-agent-standards/protocol/competition-rules.md)
+> 依据的通用规范：[多方竞争协议](../../../dev-agent-standards/detailed-rules/protocol/competition-rules.md)
 
 > **本文定义一次多方竞争「多家并行出稿 → 互评 → 裁决 → 异议 → 验收 → 确认 → 清理」怎么走。**
 > **它是本项目多助手协作的唯一一套流程。**协作的三种形态是同一套流程的三组参数取值，见 §1.0。

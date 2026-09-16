@@ -1,6 +1,6 @@
 # 多方竞争的操作闭环与取件
 
-> 依据的通用规范：[多方竞争协议「组织者的纪律」](../../../dev-agent-standards/protocol/competition-rules.md)
+> 依据的通用规范：[多方竞争协议「组织者的纪律」](../../../dev-agent-standards/detailed-rules/protocol/competition-rules.md)
 
 ### 3.19 T2 七环节的操作闭环
 

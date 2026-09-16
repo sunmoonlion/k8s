@@ -97,7 +97,7 @@ project-guide/
 
 ## 写作约定
 
-见 [人的批准点](../dev-agent-standards/approvals.md)「改判」与 [SDP 规则](../dev-agent-standards/sdp/sdp-rules.md)「执行者的共同纪律」。
+见 [人的批准点](../dev-agent-standards/detailed-rules/approvals.md)「改判」与 [SDP 规则](../dev-agent-standards/sdp/sdp-rules.md)「执行者的共同纪律」。
 本处不复述——引用而非复制，是那份文件自己的第二条维护约定。
 
 ## 本轮的已知缺口（读之前先知道）

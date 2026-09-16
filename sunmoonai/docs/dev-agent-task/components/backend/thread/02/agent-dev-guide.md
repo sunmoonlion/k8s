@@ -217,7 +217,7 @@ Artifact 可以有草稿、冻结、陈旧、被替代等版本属性；这些�
 
 ### 3.4 T0/T1/T2 不是三套状态机
 
-> 依据的通用规范：[多方竞争协议「档位」](../../../../../dev-agent-standards/protocol/competition-rules.md)
+> 依据的通用规范：[多方竞争协议「档位」](../../../../../dev-agent-standards/detailed-rules/protocol/competition-rules.md)
 
 三档共享同一工单 schema、状态机和发布门，只改变 guard、必需 Artifact 和 Attempt 组：
 
@@ -327,11 +327,11 @@ S 层比对象与边，R 层比一次执行的序列。
 
 ### 4.1 人的位置
 
-> 通用部分见 [人的批准点](../../../../../dev-agent-standards/approvals.md)「人的位置」。
+> 通用部分见 [人的批准点](../../../../../dev-agent-standards/detailed-rules/approvals.md)「人的位置」。
 
 ### 4.2 权力表
 
-> 依据的通用规范：[人的批准点「谁批什么」](../../../../../dev-agent-standards/approvals.md)
+> 依据的通用规范：[人的批准点「谁批什么」](../../../../../dev-agent-standards/detailed-rules/approvals.md)
 
 | 行 | 受控动作或合法边 | principal | 默认 | 强制要求 |
 | --- | --- | --- | --- | --- |
@@ -356,7 +356,7 @@ S 层比对象与边，R 层比一次执行的序列。
 
 ### 4.4 身份、批准与强制点
 
-> 依据的通用规范：[人的批准点「批准怎样才成立」](../../../../../dev-agent-standards/approvals.md)
+> 依据的通用规范：[人的批准点「批准怎样才成立」](../../../../../dev-agent-standards/detailed-rules/approvals.md)
 
 批准成立必须同时回答：谁、批准哪个 Task/版本、批准哪项动作、何时过期、是否已原子消费。
 通知文件或聊天回复只证明“有文本”，不证明身份；executor 可修改的脚本、hook、权限位也不是对它的
@@ -394,7 +394,7 @@ S 层比对象与边，R 层比一次执行的序列。
 
 ### 4.5 权限公式与只有 principal 能做的动作
 
-> 依据的通用规范：[人的批准点「权限取交集」](../../../../../dev-agent-standards/approvals.md)
+> 依据的通用规范：[人的批准点「权限取交集」](../../../../../dev-agent-standards/detailed-rules/approvals.md)
 
 有效权限是交集，不是并集：
 
@@ -443,7 +443,7 @@ Task B；一次批准的破坏性动作**不构成下次的默许**。批准绑�
 
 ### 4.6 三道正交门
 
-> 依据的通用规范：[人的批准点「三道正交门」](../../../../../dev-agent-standards/approvals.md)
+> 依据的通用规范：[人的批准点「三道正交门」](../../../../../dev-agent-standards/detailed-rules/approvals.md)
 
 运行时的有效能力必须**同时**通过三道独立门；三者不能互相代替：
 
@@ -467,7 +467,7 @@ Execution Scope 只能落在进程外层，Approval Policy 只能事后审计—
 
 ### 4.8 principal 的裁量权与改判纪律
 
-> 依据的通用规范：[人的批准点「裁量权的底线」](../../../../../dev-agent-standards/approvals.md)
+> 依据的通用规范：[人的批准点「裁量权的底线」](../../../../../dev-agent-standards/detailed-rules/approvals.md)
 
 人可以判断「这件事不值得走全流程」，执行者不可以。但裁量有底线，**五条不因规模而豁免**：
 

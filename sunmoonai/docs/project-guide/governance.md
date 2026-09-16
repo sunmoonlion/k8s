@@ -7,7 +7,7 @@
 >
 > 只剩三件事：权威排序、接手演练、什么不属于本文档集。
 > 其余原属本文件的内容已按性质移出：
-> 写文档的约定 → [人的批准点](../dev-agent-standards/approvals.md)「改判」；
+> 写文档的约定 → [人的批准点](../dev-agent-standards/detailed-rules/approvals.md)「改判」；
 > 提请求 → [`../dev-agent-task/composition/request-lifecycle.md`](../dev-agent-task/composition/request-lifecycle.md)；
 > 推送与多助手 → [`../dev-agent-task/composition/protocol/competition-protocol.md`](../dev-agent-task/composition/protocol/competition-protocol.md) 与
 > [`constraints.md`](../dev-agent-task/composition/constraints.md) T4。

@@ -59,4 +59,4 @@
 
 新增字段以带版本的可选字段引入；旧数据标「旧格式」，**不回填为无法证明的新语义**；新写入方不得回写旧版本语义。
 
-**多个规划 agent 比方案时**，按 [`../../protocol/`](../protocol/competition-rules.md) 的多方竞争协议产出这份 SDD。
+**多个规划 agent 比方案时**，按 [`../../protocol/`](../detailed-rules/protocol/competition-rules.md) 的多方竞争协议产出这份 SDD。

@@ -1,6 +1,6 @@
 # `protocol/` —— 流程规范
 
-> 依据的通用规范：[多方竞争协议](../../../dev-agent-standards/protocol/competition-rules.md)
+> 依据的通用规范：[多方竞争协议](../../../dev-agent-standards/detailed-rules/protocol/competition-rules.md)
 
 这里放流程规范（`competition-protocol.md`、`competition-operations.md`、`GO.md`）。环节判定由组织者按协议「环节判定」一节的判据核对并留痕。
 

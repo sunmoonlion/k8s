@@ -14,12 +14,12 @@
 | [`sdd/sdd-rules.md`](sdd/sdd-rules.md) | **SDD** · Software Design Description（软件设计说明）：结构层写划分、关系与接口，组成层写内部结构、协议、失败与恢复，回答「设计成什么样」。规划 agent 只交 SDD；执行 agent 实现前可以先交，不拆子任务 |
 | [`sdp/sdp-rules.md`](sdp/sdp-rules.md) | **SDP** · Software Development Plan（软件开发计划）：执行者的共同纪律；拆成可独立交付、验证、回滚的单元，先后顺序，实施记录，代码与证据，回答「怎样做出来」。执行 agent 交 |
 | [`uat/uat-rules.md`](uat/uat-rules.md) | **UAT** · User Acceptance Testing（用户验收测试）：开工与完成、门的三档；按派工时任务里说清的要求逐条验证，证据按规则采信，写明查了什么、没查什么，回答「是否满足、能否接收」。验收 agent 交，且不是交付被验 SDD 或 SDP 的那一个 |
-| [`approvals.md`](approvals.md) | 人的批准点：谁批什么、批准怎样成立、权限、审批档位、人这一侧的义务、改判 |
-| [`protocol/competition-rules.md`](protocol/competition-rules.md) | 多方竞争协议；同目录另有尚未生效的草案 |
+| [`detailed-rules/approvals.md`](detailed-rules/approvals.md) | 人的批准点：谁批什么、批准怎样成立、权限、审批档位、人这一侧的义务、改判 |
+| [`detailed-rules/protocol/competition-rules.md`](detailed-rules/protocol/competition-rules.md) | 多方竞争协议；同目录另有尚未生效的草案 |
 
 先后由任务树决定：上层任务交回的结果决定下一步派什么任务；不是每次开发都要把四种都走一遍。
 
 ## 多方竞争
 
-任何一种交付物（SDD、SDP、UAT）都可能由多个 agent 各交一份，再比较选定。这时按 [`protocol/`](protocol/competition-rules.md)
+任何一种交付物（SDD、SDP、UAT）都可能由多个 agent 各交一份，再比较选定。这时按 [`protocol/`](detailed-rules/protocol/competition-rules.md)
 的多方竞争协议进行：各自提案、互评、裁决、异议、验收、确认、发布；各任务写明自己的操作做法，状态一律从产物反推，不从声明读取。

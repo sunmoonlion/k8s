@@ -2,7 +2,7 @@
 
 ### 4.12 人的收件箱：让批准具体、可读、可重取
 
-> 依据的通用规范：[人的批准点「待批准事项」](../../../../../dev-agent-standards/approvals.md)
+> 依据的通用规范：[人的批准点「待批准事项」](../../../../../dev-agent-standards/detailed-rules/approvals.md)
 
 收件箱是 Interaction 的人读投影；产品态以持久 Interaction 为真源，手工态以冻结通知和
 追加的决定记录承载同一形状。终端、桌面或 IM 通知丢失不应丢失待决事项。
