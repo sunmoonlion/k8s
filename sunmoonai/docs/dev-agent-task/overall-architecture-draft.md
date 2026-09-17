@@ -422,6 +422,8 @@ Codex 沙箱
 
 #### 2.5.1 前端（`investment-app/investment-web-frontend`，Next.js 16 + React 19）
 
+⚠ 本节列的是"在 Next.js 上改成桌面客户端"时要动的地方。`investment-web-frontend` 是 `tpl-web-frontend` 模板的实例，受 constraints R6（模板优先）约束，不能单独改；桌面客户端放在哪、用什么框架，见 2.6。
+
 **可以复用**：`components/`、`contracts/`（zod 校验）、`lib/interaction/`（创建 Task、查询、操作）、React Query 数据获取、next-intl 文案、界面组件。
 
 **必须改**（现状取证于该仓代码）：
@@ -497,6 +499,55 @@ Task 级审查（1.7）用独立窗口弹出，这是 Electron 相对浏览器�
 
 不得共用一套提交逻辑：否则云端下发或加载的页面可能借道本机通道批准本地操作，破坏 1.7 的"后端不能替用户批准工具级动作"。
 
+### 2.6 前端框架与模板约束（未决）
+
+#### 2.6.1 框架本身都能用
+
+Electron 的界面是 Chromium 在跑网页，网页上能用的框架与组件库基本都能用：React、Next.js（静态导出）、Vite + React Router、Vue、Svelte、Angular；shadcn/ui、Tailwind、Ant Design、MUI；React Query、zustand、zod；Vitest，Playwright 也能直接驱动 Electron。工程工具另有 electron-vite、Electron Forge（构建与热更新）、electron-builder（安装包与自动更新），Nextron 是 Next.js 与 Electron 的现成组合模板，可作参考。唯一的限制是：框架里依赖服务器运行的功能（服务端渲染、API 路由、Server Actions、中间件）不能用。
+
+#### 2.6.2 Next.js 在 Electron 里重不重
+
+- **运行时不重**：静态导出后就是普通 HTML/JS/CSS，Next 客户端路由多出的 JS 在几十 KB 量级，与 Vite + React 相当；相对 Electron 自带的约 100MB Chromium 可以忽略。
+- **开发与配置有摩擦**：动态路由要预生成或改用查询参数（工作台现用 `?run=<id>`，不受影响）；须用自定义协议加载；`next/image` 优化要关；next-intl 中间件不能用；开发时要同时协调 `next dev` 与 Electron；构建比 Vite 慢。
+- **Vite + React Router 是 Electron 里最省事、最常见的组合**：天然是纯客户端静态产物，动态路径直接可用，electron-vite 一类模板把主进程、preload、页面放在一套构建里。
+- **时机**：`investment-web-frontend` 现在只有登录、工作台、工具页三个页面，选型或迁移的成本此时最低。组件与业务代码两种框架下基本不用动，迁移成本主要在路由、布局、多语言这一层。
+
+#### 2.6.3 模板约束
+
+- **R6 模板优先**：公共能力先进模板、过门禁，再按 Info → Knowledge → Investment 串行同步实例，不得先改实例。`investment-web-frontend` 是 `tpl-web-frontend` 的实例，`tpl-app/frontend-capability-matrix.json` 登记了各前端共用的能力。单独改它的框架或运行方式（包括只改成 Next 静态导出），都属于违规漂移。
+- **I4**（Next.js 可承担浏览器同源 BFF / session 边界）与 **I6**（非安全方法须同时满足 Origin 与 CSRF）是按浏览器写的；桌面客户端的 token 会话要补相应条款，按 constraints 的修订程序走。
+
+#### 2.6.4 两条可选路线
+
+**路线 A：保留网页前端，新建桌面客户端。**
+
+- `investment-web-frontend` 保持 Next.js 网页版，与模板一致，承担 2.5.6 的网页端职责（账号、计费、报告、任务历史、Task 级审查）；
+- 新建桌面客户端（如 `investment-desktop`），一开始就用 Electron + Vite + React Router，不存在迁移；
+- 两边共享的 `contracts/`、交互客户端、通用组件抽成共享包，不靠复制；
+- info、knowledge 的前端完全不受影响。
+- 待定：桌面客户端作为 investment 独有的新组成部分（在模板对齐报告里登记为"领域扩展"），还是先在模板里加一类"桌面端"再同步。
+
+**路线 B：模板与全部实例统一改为 Vite + React Router。**
+
+按 R6 先改 `tpl-app` 的 admin 与 web 两个前端、过门禁，再依次同步 Info → Knowledge → Investment，共八个前端（现均为 Next.js 16）。桌面客户端与它们用同一套技术栈。影响：
+
+| 方面 | 变化 |
+| --- | --- |
+| 部署 | 不再运行 Next standalone 的 Node 服务，改为静态文件（nginx 或对象存储）；K8s 部署模板跟着改 |
+| 登录与会话 | 服务端组件里的登录检查（`lib/server/auth-session.ts`）改为客户端检查；cookie 会话与 CSRF 仍由后端负责（I6 本来就在后端中间件执行） |
+| I4 | 不再有 Next BFF，这条要改写 |
+| CSP | `proxy.ts` 按请求生成 nonce 的做法不可用，改为网关设响应头或基于哈希的 CSP |
+| 多语言 | next-intl 换成 react-i18next 一类方案，文案文件可沿用 |
+| 公开页面 | web 前端的公开首页、`sitemap`、`robots`：纯客户端渲染不利于搜索引擎收录；需要收录时单独做静态官网 |
+| 能力矩阵 | `frontend-capability-matrix.json` 登记的公共能力要在新框架下逐项重新实现并测试 |
+| 可复用 | 组件、shadcn、Tailwind、React Query、zustand、zod、契约、测试基本不动 |
+
+好处：八个前端与桌面客户端技术栈一致，共享代码最方便；模板与实例不会因桌面端另用一套而漂移。代价：改动面覆盖四个仓的前端与部署。
+
+**两条路线的共同点**：页面都按"纯客户端 React + 调后端接口"来写，不依赖任何框架的服务端能力；这样以后无论走哪条路线，页面代码都不用重写。
+
+决策见第 4 节 D10–D12。
+
 ## 3. 对现有文档与代码的重构影响
 
 `mooc-manus-langgraph-longterm-plan-v5.md` 已降为历史输入；`dev-agent-task` 里仍沿用"执行器在后端 worker"前提的内容，按本设计重构：
@@ -511,7 +562,8 @@ Task 级审查（1.7）用独立窗口弹出，这是 Electron 相对浏览器�
 | U5（外部 harness 的部署形态） | 有了答案：在用户电脑上，用用户凭据，由本地 runtime 管理 |
 | U2（执行层 Port） | Port 不变，新增"派往本地 runtime"的 Adapter；① 的消息契约要定 |
 | U3（预算账、证据账落表） | 仍是前置；预算账增加"自报"来源字段 |
-| `components/0002-frontend` | 目标改为 Electron 客户端（2.5.1–2.5.3） |
+| `components/0002-frontend` | 目标加入 Electron 桌面客户端（2.5.1–2.5.3）；与网页前端的关系按 2.6 的路线决定 |
+| `composition/constraints.md` | I4、I6 补桌面端 token 会话条款；若走路线 B，I4 改写、部署相关条款随之修订（2.6.3） |
 | `composition/request-lifecycle.md` | F-ADMIT-04 措辞（修订工作单元） |
 | 新增组成部分 | 本地 runtime（连接、策略、审批、模型配置、执行 Adapter）；知识服务的 MCP 接口 |
 
@@ -519,7 +571,7 @@ Task 级审查（1.7）用独立窗口弹出，这是 Electron 相对浏览器�
 
 | 仓 | 改动方向 |
 | --- | --- |
-| `investment-web-frontend` | 静态导出、客户端登录检查、`api-client` 改 token、Electron 壳、`runtimeClient` |
+| 前端（按 2.6 路线） | 路线 A：`investment-web-frontend` 保持网页版，新建桌面客户端（Electron + Vite + React Router，token 会话、`runtimeClient`），共享包；路线 B：`tpl-app` 前端模板先改，再按 Info → Knowledge → Investment 同步八个前端，部署改为静态文件 |
 | `investment-backend` | LangGraph 作为确定性编排使用，不在后端接模型调用；`RunBudget` 从内存换到 PG；`AgentProfile` 从审计字段变为执行约束；新增设备注册与配对、WSS 派发网关、桌面端 token、工具级审批结论与副作用意图的接收 |
 | `knowledge-app` | 在现有检索接口外包 MCP；按设备 token、限流 |
 | 新仓：本地 runtime | Python；Codex Python SDK；钥匙串；本地转换层（可后做） |
@@ -537,6 +589,9 @@ Task 级审查（1.7）用独立窗口弹出，这是 Electron 相对浏览器�
 | D7 | 界面是否全部打包在本地，还是混合加载 | 起步全部打包 | 更新节奏与安全边界 |
 | D8 | 是否先做"只做远程 MCP"的轻方案验证领域价值 | 视市场节奏决定 | 排期 |
 | D9 | 知识服务（MCP）是否脱离控制面单独提供，如何定价 | 先不单独提供；若提供，按设备或用量计费并限流 | 用户能否绕开控制面；收入结构 |
+| D10 | 前端路线：A（保留网页前端 + 新建桌面客户端）还是 B（模板与八个前端统一改为 Vite + React Router） | 未定；两条路线都要求页面按纯客户端写 | R6 模板同步、部署、I4 |
+| D11 | 若走 B：范围是八个前端全改，还是只改 web、admin 保持 Next.js；web 公开首页是否需要搜索引擎收录 | 未定 | 改动面、是否另做静态官网 |
+| D12 | 顺序：先改模板再同步实例，还是先让 investment 桌面客户端单独起步验证、再回头统一 | 未定；先行验证时须在模板对齐报告里登记 | R6 合规、验证速度 |
 
 ## 5. 未验证事项 ⚠
 
