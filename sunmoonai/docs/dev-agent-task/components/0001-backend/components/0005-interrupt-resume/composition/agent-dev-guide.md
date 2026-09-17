@@ -80,7 +80,7 @@ checkpoint 原地续跑时是同一 Attempt 的 `WAITING → RUNNING`，不因�
 计划/diff/Artifact 的内容哈希；**执行前重算，任一字节、目标、权限或版本漂移即作废**。
 批准有短 TTL，超时 fail-closed。
 
-⚠ **不得把 Codex 默认 accept 当任何一档批准**（`client.py:773-779`，见 [§2.7](../../04-agent-execution/composition/agent-dev-guide.md)），
+⚠ **不得把 Codex 默认 accept 当任何一档批准**（`client.py:773-779`，见 [§2.7](../../0004-agent-execution/composition/agent-dev-guide.md)），
 **也不得让生成候选的同一 Agent 充当 `llm-review`**。
 
 ⚠ **超时是独立的审计结果与 reason code，不折成 `auto-deny`。**两者行为后果相同
@@ -105,7 +105,7 @@ checkpoint 原地续跑时是同一 Attempt 的 `WAITING → RUNNING`，不因�
 | 请求写清**边界**：含什么、不含什么、不含的归谁 | 执行者会自行扩大范围，或漏掉本该做的 |
 | 给**可判定的验收标准**，不给倾向性结论 | 候选向你的结论收敛，**等于白问** |
 | 并行提案时**不泄露其他方案** | 独立信号退化成改写（[§2.11](../../../composition/agent-dev-guide.md)） |
-| 派活前先建好各自的 worktree 和命名分支 | 多个执行者写同一工作区，后写覆盖先写（[§3.6](../../04-agent-execution/composition/agent-dev-guide.md)） |
+| 派活前先建好各自的 worktree 和命名分支 | 多个执行者写同一工作区，后写覆盖先写（[§3.6](../../0004-agent-execution/composition/agent-dev-guide.md)） |
 | 收到「我不确定」时**不追问到它给出确定答案** | **逼出的确定性是编的** |
 | 执行者说「没查过某处」时**当作真话对待** | 声明盲区的动力被消灭，下次它不说了 |
 

@@ -58,18 +58,19 @@
 
 同一问发给几家，就是几个文档 thread 各开一个 turn——各家本来就在各自的运行时 thread 里。任务书各存各的：确实是各发了一次，各自冻结。
 
-## 节点也编号
+## 子任务也编号
 
-节点目录名是「四位号 + 短名」，号在**一棵任务树内统一递增**，根节点是 `0001`，子节点接着往下编，不按层重起：
+子任务目录名是「四位号 + 短名」，号在**一棵任务树内统一递增**，从 `0001` 起，不按层重起。
+树根是项目本身，不编号；它的文档 thread 照样编号。
 
 ```text
-0001-dev-agent-task/
-├── thread/
+dev-agent-task/                 项目，不编号
+├── thread/0001-…/
 ├── composition/
 └── components/
-    ├── 0002-backend/
-    │   └── components/0004-intake/  0005-agent-execution/  0006-interrupt-resume/  0007-acceptance-commit/
-    └── 0003-frontend/
+    ├── 0001-backend/
+    │   └── components/0003-intake/  0004-agent-execution/  0005-interrupt-resume/  0006-acceptance-commit/
+    └── 0002-frontend/
 ```
 
 ## 门禁查这几条
@@ -83,4 +84,4 @@
 | 编号连续 | 文档 thread 号在节点内、文档 turn 号在各文档 thread 内，都从 `0001` 起不跳号、不复用 |
 | 名字唯一 | 同一个本地号只有一个目录；同一个运行时 id 不出现在两处 |
 | 验收指向 | `verifies` 写成 `0001/0002` 且指到存在的 turn |
-| 节点编号 | 节点目录名合乎「四位号-短名」，号在整棵树内连续、不复用 |
+| 子任务编号 | 子任务目录名合乎「四位号-短名」，号在整棵树内从 `0001` 起连续、不复用；树根不编号 |

@@ -250,6 +250,7 @@ def check_tables(path: str, text: str) -> list[str]:
 THREAD_PREFIX_RE = re.compile(r"^(?P<task>.+)/thread/(?P<rest>.+)$")
 DIR_RE = re.compile(r"^(?P<num>\d{4})(?:-(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*))?$")
 VERIFIES_RE = re.compile(r"^\d{4}/\d{4}$")
+NODE_NAME_RE = re.compile(r"^(?P<num>\d{4})-(?P<name>[^/]+)$")
 KIND_DIRS = {"sdd": "SDD", "sdp": "SDP", "uat": "UAT"}
 TURN_FILES = {"user-message.md", "turn.md"}
 DELIVERABLES = {"SDD", "SDP", "UAT"}
@@ -345,6 +346,38 @@ def numbering(where: str, names: list[str], what: str) -> tuple[list[str], dict[
     return problems, parsed
 
 
+def check_nodes(tracked: set[str]) -> list[str]:
+    """子任务目录名是「四位号-短名」，号在整棵任务树内统一递增；树根是项目本身，不编号。"""
+    problems: list[str] = []
+    roots = {p.split("/thread/")[0] for p in tracked
+             if p.startswith(DOC_ROOT) and "/thread/" in p and "/components/" not in p.split("/thread/")[0]}
+    for root in sorted(roots):
+        children: set[str] = set()
+        for p in tracked:
+            if not p.startswith(root + "/components/"):
+                continue
+            rest = p[len(root) + 1:].split("/")
+            for i in range(0, len(rest) - 1, 2):
+                if rest[i] != "components":
+                    break
+                children.add("/".join(rest[: i + 2]))
+        nums: dict[int, list[str]] = {}
+        for c in sorted(children):
+            m = NODE_NAME_RE.match(c.rsplit("/", 1)[1])
+            if not m:
+                problems.append(f"{root}/{c}: 子任务目录名须是「四位号-短名」（如 0003-intake）")
+                continue
+            nums.setdefault(int(m["num"]), []).append(c)
+        for n, same in sorted(nums.items()):
+            if len(same) > 1:
+                problems.append(f"{root}: 子任务号 {n:04d} 对应多个目录：" + "、".join(same))
+        if nums:
+            gap = sorted(set(range(1, max(nums) + 1)) - set(nums))
+            if gap:
+                problems.append(f"{root}: 子任务号在整棵树内不连续，缺 " + "、".join(f"{g:04d}" for g in gap))
+    return problems
+
+
 def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tuple[list[str], int]:
     problems: list[str] = []
     tasks: dict[str, dict[str, dict[str, set[str]]]] = {}
@@ -435,6 +468,7 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
         if len(where) > 1:
             problems.append(f"运行时 id {rid} 出现在多处：" + "、".join(sorted(where)))
 
+    problems += check_nodes(tracked)
     if staged is not None:
         problems += check_frozen(staged)
     return problems, nturns

@@ -23,10 +23,10 @@
 
 开发 Agent 接任务前必须读取 agent 项目的具体开发流程：
 
-`sunmoonai/docs/dev-agent-task/components/backend/composition/pipeline.md`
+`sunmoonai/docs/dev-agent-task/components/0001-backend/composition/pipeline.md`
 
 涉及人的批准、裁量或终审时，同时读取（人介入、权力表、审批档位）：
 
-`sunmoonai/docs/dev-agent-task/components/backend/composition/agent-dev-guide.md`
+`sunmoonai/docs/dev-agent-task/components/0001-backend/composition/agent-dev-guide.md`
 
 不在此复述其中规则。

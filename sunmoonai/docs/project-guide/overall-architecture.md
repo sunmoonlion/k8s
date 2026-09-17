@@ -355,7 +355,7 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | **进程权限** | 四角色 PG 列 ACL、三角色 broker 预建拓扑和联合故障恢复已在隔离环境通过；真实账号供给/撤销及重启一致性仍待验收 |
 | **保留与监控** | 无自动回执/租约墓碑 GC；Prometheus/Alertmanager 安装、采集、告警送达留未来计划，不能将 HTTP 指标存在当接线完成 |
 
-产品留白的后续设计见 [`../dev-agent-task/components/backend/composition/development-plan.md`](../dev-agent-task/components/backend/composition/development-plan.md)；
+产品留白的后续设计见 [`../dev-agent-task/components/0001-backend/composition/development-plan.md`](../dev-agent-task/components/0001-backend/composition/development-plan.md)；
 旧账源码/运行态边界见 [逐步处置清单](../v5-backlog-disposition-luna.md)。
 
 ### 9.3 各 App 的具体缺口

@@ -154,8 +154,8 @@ Adapter 只做公开 SDK 映射、binding 持久化、事件与错误码归一�
 不能原地 resume。相关项探针标 `implicit_fallback`，**不得标 `available`**。
 若完成合同需要保真的原 Attempt 恢复或逐 Turn HITL，该路线保持 `explicit_unsupported`。
 
-⚠ **注意这条与 [§4.3](../../05-interrupt-resume/composition/agent-dev-guide.md) 的关系**：`dev.change` 走的是 LangGraph checkpointer，**原地 resume 可用**
-（[§4.3](../../05-interrupt-resume/composition/agent-dev-guide.md) 已实测）。本节说的是 Harness 腿——**两条腿的恢复语义不同，不可互相外推**。
+⚠ **注意这条与 [§4.3](../../0005-interrupt-resume/composition/agent-dev-guide.md) 的关系**：`dev.change` 走的是 LangGraph checkpointer，**原地 resume 可用**
+（[§4.3](../../0005-interrupt-resume/composition/agent-dev-guide.md) 已实测）。本节说的是 Harness 腿——**两条腿的恢复语义不同，不可互相外推**。
 
 ### 2.10 双 runtime 的部署、进程与恢复
 
@@ -441,7 +441,7 @@ publication target + integrator
 - 单元耗尽预算**不得静默借用**；
 - 协调者退出前留下可恢复 checkpoint。
 
-⚠ **「已派工」「全部返回」「多数一致」都不等于完成**（[§3.12](../../06-acceptance-commit/composition/agent-dev-guide.md)、§11）。
+⚠ **「已派工」「全部返回」「多数一致」都不等于完成**（[§3.12](../../0006-acceptance-commit/composition/agent-dev-guide.md)、§11）。
 
 **成本纪律：**
 

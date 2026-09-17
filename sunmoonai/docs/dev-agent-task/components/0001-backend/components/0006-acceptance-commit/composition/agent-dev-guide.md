@@ -59,19 +59,19 @@ validator 先跑机械条，acceptor 再判机器判不了的冻结条；验收�
 1. 受理幂等，原始请求与规范化 Task 可追溯；
 2. 载体路由（是否建 Git 工作区）有依据；复杂 Task 的工作区、Git 与 manifest 可复现；
 3. 范围、验收、权限、预算、批准点和基线已冻结；
-4. 执行者接单核对了工作区、指令、租约和输入（[§3.10](../../04-agent-execution/composition/agent-dev-guide.md)）；
+4. 执行者接单核对了工作区、指令、租约和输入（[§3.10](../../0004-agent-execution/composition/agent-dev-guide.md)）；
 5. 按风险执行，角色冲突已处理（[§2.2](../../../composition/agent-dev-guide.md)）；
 6. 每个产出有 owner、namespace、状态、provenance 和**唯一** publication target/integrator；
 7. 候选**没有**直接写共享路径或 `master/main`，发布只从独占整合面发生；
 8. publication target 通过**预期 HEAD/version 的原子条件更新**，发布竞争没有变成静默覆盖；
-9. 并行结果绑定 commit，迟到、失败和取消已处置（[§3.9](../../04-agent-execution/composition/agent-dev-guide.md)）；
+9. 并行结果绑定 commit，迟到、失败和取消已处置（[§3.9](../../0004-agent-execution/composition/agent-dev-guide.md)）；
 10. final commit 上全部门禁和验收**逐条**通过；
 11. 结果、证据、副作用、盲区和风险已持久化；
 12. 提交唯一终态，请求方可重取结果；
 13. Git 对象和 Artifact 可达、血缘可追溯且无活跃引用后，工作区才清理。
 
 ⚠ **缺项时只能称「已受理」「已物化」「候选完成」「本次选定」「待验收」「交付待重试」
-或「清理待处理」——不能笼统宣称完成。**这条对应 [§11](../../04-agent-execution/composition/agent-dev-guide.md) 的「『已派工』或『全部返回』当作完成」。
+或「清理待处理」——不能笼统宣称完成。**这条对应 [§11](../../0004-agent-execution/composition/agent-dev-guide.md) 的「『已派工』或『全部返回』当作完成」。
 
 ### 3.15 发布协议：三个路径不是一个
 
@@ -238,7 +238,7 @@ verification     # 最终 commit 上的回归结果
 
 > 依据的通用规范：[UAT「证据分三级」](../../../../../../dev-agent-standards/uat/uat-rules.md)
 
-[§11](../../04-agent-execution/composition/agent-dev-guide.md) 是机制，本节是**本项目实际遇到过的失败**，按**证据强度**分三级。
+[§11](../../0004-agent-execution/composition/agent-dev-guide.md) 是机制，本节是**本项目实际遇到过的失败**，按**证据强度**分三级。
 ⚠ **三级不是修辞差别，是能不能独立复核的差别：**
 
 - **已核对事实**：证据当前仍可独立取得并复核（commit、blob、文件存在性、可重跑命令）；
@@ -246,35 +246,35 @@ verification     # 最终 commit 上的回归结果
 - **设计风险**：机制上成立，但本项目尚未实际踩到，或原始证据出处已不可取得。
 
 ⚠ **三级不可互相升格。**尤其**不得**把「机制上必然如此」当成「此处已核对」——
-这正是 [§3.8](../../04-agent-execution/composition/agent-dev-guide.md) 第 4 步要求的态度：**能证明的和推断出来的分开写。**
+这正是 [§3.8](../../0004-agent-execution/composition/agent-dev-guide.md) 第 4 步要求的态度：**能证明的和推断出来的分开写。**
 
 | 失败 | 证据性质 | 控制在哪 |
 | --- | --- | --- |
-| **隔离来自 worktree + 命名分支，不来自文件名** | **已核对事实**：三方在各自 worktree 与命名分支上持有**同名且不带后缀**的同一文件，内容互不相同且**全部得以保留**，各自 commit 与 blob 可独立复核。故后缀**非必要**；又因同一工作树内两方写同一带后缀的路径照样互相覆盖，后缀亦**非充分** | [§3.6](../../04-agent-execution/composition/agent-dev-guide.md)、[§11](../../04-agent-execution/composition/agent-dev-guide.md) |
-| **未提交的同路径写入没有任何保护** | **已核对事实**：Git 对未跟踪/未提交文件的同路径写入不提供冲突检测、不留历史、不留作者归属。这是 Git 语义，**可随时复现** | [§3.6](../../04-agent-execution/composition/agent-dev-guide.md)、[§3.7](../../04-agent-execution/composition/agent-dev-guide.md) |
-| 多执行者写进共享 checkout 造成覆盖 | **事故报告，现场已灭失**：当事方陈述有产出被后写覆盖。共享路径上的文件事后已被清走，**具体发生过哪一次覆盖、写入顺序和责任人均不可独立复核**，本表不作此断言 | [§3.6](../../04-agent-execution/composition/agent-dev-guide.md)、[§3.8](../../04-agent-execution/composition/agent-dev-guide.md) |
-| 以工作区最后一版代替 commit 做交卷或比选 | **已核对事实**：磁盘上的「当前文件」不携带作者归属，也不能证明谁先写完 | [§3.7](../../04-agent-execution/composition/agent-dev-guide.md) |
-| 只写分支名，不固定 commit | **事故报告**：当事方记录评审曾引用旧提交而主方已前进；原始记录可取回，但其中**未找到**对应条目，**故不升为已核对** | [§3.9](../../04-agent-execution/composition/agent-dev-guide.md) |
+| **隔离来自 worktree + 命名分支，不来自文件名** | **已核对事实**：三方在各自 worktree 与命名分支上持有**同名且不带后缀**的同一文件，内容互不相同且**全部得以保留**，各自 commit 与 blob 可独立复核。故后缀**非必要**；又因同一工作树内两方写同一带后缀的路径照样互相覆盖，后缀亦**非充分** | [§3.6](../../0004-agent-execution/composition/agent-dev-guide.md)、[§11](../../0004-agent-execution/composition/agent-dev-guide.md) |
+| **未提交的同路径写入没有任何保护** | **已核对事实**：Git 对未跟踪/未提交文件的同路径写入不提供冲突检测、不留历史、不留作者归属。这是 Git 语义，**可随时复现** | [§3.6](../../0004-agent-execution/composition/agent-dev-guide.md)、[§3.7](../../0004-agent-execution/composition/agent-dev-guide.md) |
+| 多执行者写进共享 checkout 造成覆盖 | **事故报告，现场已灭失**：当事方陈述有产出被后写覆盖。共享路径上的文件事后已被清走，**具体发生过哪一次覆盖、写入顺序和责任人均不可独立复核**，本表不作此断言 | [§3.6](../../0004-agent-execution/composition/agent-dev-guide.md)、[§3.8](../../0004-agent-execution/composition/agent-dev-guide.md) |
+| 以工作区最后一版代替 commit 做交卷或比选 | **已核对事实**：磁盘上的「当前文件」不携带作者归属，也不能证明谁先写完 | [§3.7](../../0004-agent-execution/composition/agent-dev-guide.md) |
+| 只写分支名，不固定 commit | **事故报告**：当事方记录评审曾引用旧提交而主方已前进；原始记录可取回，但其中**未找到**对应条目，**故不升为已核对** | [§3.9](../../0004-agent-execution/composition/agent-dev-guide.md) |
 | 评审意见的处置边界由被审方单方划定 | **已核对事实**：处置记录逐条由被审方判定采纳或拒绝，其中一条门禁因「三台机器分别报 0 / 4 / 95 条失败」被判为误报并删除。⚠ **「优胜作者拒绝改进」这一更强的说法未获记录支持，不采用** | [§2.2](../../../composition/agent-dev-guide.md)、§5.5 |
 | 评审给出的验收标准无人回跑 | **已核对事实**：处置记录末节自记一份验收标准「**未回跑**」、一份「**待评审方执行**」、一份仅第 3 条通过 | §5.5 L1 |
 | 只测一端就宣布跨仓契约完成 | **现行硬规则**（constraints C4）：单仓 CI 只跑自己那半，provider 改了、consumer 锁没跟，两边各自都绿 | [§1.3](../../../composition/agent-dev-guide.md) |
-| 拿休眠代码当能力证据 | **已核对事实**：一家以本仓休眠的 `AgentProfile.permits_tool` 佐证租用 SDK 的工具门，**九份评审无一发现** | [§2.6](../../04-agent-execution/composition/agent-dev-guide.md)、[§5.2](../../../composition/agent-dev-guide.md)、[§5.6](../../04-agent-execution/composition/agent-dev-guide.md) |
+| 拿休眠代码当能力证据 | **已核对事实**：一家以本仓休眠的 `AgentProfile.permits_tool` 佐证租用 SDK 的工具门，**九份评审无一发现** | [§2.6](../../0004-agent-execution/composition/agent-dev-guide.md)、[§5.2](../../../composition/agent-dev-guide.md)、[§5.6](../../0004-agent-execution/composition/agent-dev-guide.md) |
 | 取证工具自身有边界而未声明 | **已核对事实**：在助手自带沙箱内跑取证命令，`/proc/self/uid_map` 为 `0 1003 1`，于是沙箱内一切看起来都是 root，据此写出「本机所有进程都是 root」。⚠ **取证栏必须注明主机、执行身份、是否在沙箱内** | [§4.4](../../../composition/agent-dev-guide.md) |
 | 把「某载体证不了 X」写成「X 未被证明」 | **已核对事实**：见 [§7.2](../../../composition/agent-dev-guide.md) 的更正 | [§7.2](../../../composition/agent-dev-guide.md) |
 | 候选提前读取其他方案 | 设计风险：机理清楚，本项目原始记录出处已不可取得 | [§2.2](../../../composition/agent-dev-guide.md) |
-| 多数票覆盖失败测试 / 全体一致的共同盲区 | 设计风险：多个相似模型可能共享盲区 | [§2.3](../../../composition/agent-dev-guide.md)、[§11](../../04-agent-execution/composition/agent-dev-guide.md) |
+| 多数票覆盖失败测试 / 全体一致的共同盲区 | 设计风险：多个相似模型可能共享盲区 | [§2.3](../../../composition/agent-dev-guide.md)、[§11](../../0004-agent-execution/composition/agent-dev-guide.md) |
 | 候选人互投决定胜负 | 设计风险：结构上「被审方兼任判定方」已出现过，但候选互投这一具体流程尚未实跑 | [§2.2](../../../composition/agent-dev-guide.md) |
-| 大补丁混合多条主张 | 设计风险，尚未实跑 | [§11](../../04-agent-execution/composition/agent-dev-guide.md) |
-| 整合时拷贝未提交文件进共享主仓 | 设计风险：绕过选定哈希，**主仓变成公共投稿箱** | [§3.6](../../04-agent-execution/composition/agent-dev-guide.md)、[§3.7](../../04-agent-execution/composition/agent-dev-guide.md) |
+| 大补丁混合多条主张 | 设计风险，尚未实跑 | [§11](../../0004-agent-execution/composition/agent-dev-guide.md) |
+| 整合时拷贝未提交文件进共享主仓 | 设计风险：绕过选定哈希，**主仓变成公共投稿箱** | [§3.6](../../0004-agent-execution/composition/agent-dev-guide.md)、[§3.7](../../0004-agent-execution/composition/agent-dev-guide.md) |
 | 工作区回收后证据不可达 | 设计风险：工作区是临时供给，**不是档案** | §3.5 |
 | **完整选优流程本身** | **本项目尚未完整实跑**：独立裁判、匿名随机评审和停止规则目前是制度设计，**不得写成既成能力** | [§2.2](../../../composition/agent-dev-guide.md)、[§3.4](../../../composition/agent-dev-guide.md) |
 
 ⚠ **本表的分级本身就是纪律的示范。**那一例被拆成三行：两行是任何人现在都能
 复核的事实，一行是现场已灭失的事故报告。**不写「谁覆盖了谁」**——后者虽是当事方陈述且
-机制上成立，但现场已被清走，按 [§3.8](../../04-agent-execution/composition/agent-dev-guide.md) 第 4 步，mtime 与「最后一版」只是线索，不足以单独证明
+机制上成立，但现场已被清走，按 [§3.8](../../0004-agent-execution/composition/agent-dev-guide.md) 第 4 步，mtime 与「最后一版」只是线索，不足以单独证明
 写入顺序或责任人。
 
-纪律的效力不依赖那次覆盖是否可复核：前两行已核对事实足以支撑 [§3.6](../../04-agent-execution/composition/agent-dev-guide.md) 的全部要求。
+纪律的效力不依赖那次覆盖是否可复核：前两行已核对事实足以支撑 [§3.6](../../0004-agent-execution/composition/agent-dev-guide.md) 的全部要求。
 ⚠ **用不可复核的叙述去加强一条本来就成立的规则，只会削弱整份文档的证据标准。**
 
 ### 12.1 七种“检查给出假答案”的回归线索

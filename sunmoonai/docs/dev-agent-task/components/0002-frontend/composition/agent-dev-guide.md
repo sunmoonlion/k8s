@@ -17,7 +17,7 @@
 
 **无默认的决定不得预填为已同意。**验收、档位、参与方可展示 proposal 供人判断，
 但 effective 值只能来自明确决定或 H1/H2 明确允许的已批准策略；未作决定仍为空。
-这与 [§2.4](../../backend/composition/agent-dev-guide.md) 保存 route_proposal 不冲突：展示建议不等于提前填好批准。
+这与 [§2.4](../../0001-backend/composition/agent-dev-guide.md) 保存 route_proposal 不冲突：展示建议不等于提前填好批准。
 工作区和预算窗等允许预填的项，也同时保留原值和实际采用值。
 
 H1 冻结标准，H5 批准实际动作；同一次人机触点涉及多条权力时逐条绑定，不能只写一个“同意”。
