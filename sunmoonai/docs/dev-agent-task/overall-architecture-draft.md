@@ -2,33 +2,34 @@
 
 > 性质：设计草案，供之后正式派发开发任务时作参考输入。**不是定稿（composition），不是任务书，也不是现状说明。**
 > 整合自两份讨论纪要（`~/BS_Agent_Local_Runtime_架构讨论纪要.md`、`~/Agent_许可与Supervisor_MCP架构讨论纪要.md`）及 2026-09-17 的讨论，
-> 并对照了 [`composition/request-lifecycle.md`](composition/request-lifecycle.md)、[`composition/constraints.md`](composition/constraints.md)（A1–A5）、
+> 并对照了 [`composition/request-lifecycle.md`](composition/request-lifecycle.md)、[`composition/constraints.md`](composition/constraints.md)、
 > `investment-app` 的现有代码。
 >
 > 标 ⚠ 的是未验证或待实测的前提；第 5 节集中列出。第 4 节是需要人拍板的决策点，正文里的"建议"在拍板前不生效。
 
 ## 0. 结论一览
 
-1. **大模型调用只在用户电脑上发生。**本地 runtime 内置原版 Codex，用用户自己的 key 直连模型厂商；后端不替用户调用模型，也不中转模型请求。
-2. **后端是确定性的控制面。**Task、Attempt、Interaction、四本账都在后端的 PostgreSQL；router、orchestrator、validator 等角色不调用模型，需要推理的环节作为 Attempt 派给本地 Codex。
-3. **知识服务（knowledge-app）以 MCP 对 Codex 提供检索与领域工具。**它的 embedding、rerank 用后端自有模型，与用户的模型调用无关。
-4. **界面用 Electron 桌面应用，不用浏览器页面。**界面与 runtime 同机，runtime 本来就必须安装；改成 Electron 后，本机通道的整套安全问题消失，审批和 key 输入天然留在本地。
-5. **执行层租用、不自建（A4）。**本地 runtime 建议做成 Python 后台进程，经 Codex Python SDK 驱动 Codex，并替换 SDK 默认的"自动同意"审批处理。
-6. **审批分两层。**工具级审批（单条命令、单个文件修改）由本地 runtime 执行并上报；Task 级审批（`WAITING(APPROVAL)`、不可逆动作）按合同在后端落 Interaction、原子消费。
-7. **断线即暂停。**本地执行器离线时不产生新的副作用；重连后按 fencing 校验再决定继续还是开新 Attempt。
-8. **卖点只在知识服务与控制面。**用户拿原版 Codex 自己就能做到的，不算卖点；每项功能都要过这道检验，并用"原版 Codex 对比本产品"的领域评测给出证据（1.15）。
+1. **生成式模型调用只在用户电脑上发生。**本地 runtime 内置原版 Codex，用用户自己的 key 直连模型厂商；后端不替用户调用生成式模型，也不中转模型请求。后端只在知识检索（embedding、rerank）和长期记忆上使用自有模型，与用户的模型调用无关。
+2. **后端是确定性的控制面。**Task、Attempt、Interaction、四本账都在后端的 PostgreSQL；router、orchestrator、validator 等角色不调用生成式模型，需要推理的环节作为 Attempt 派给本地 Codex。
+3. **知识服务（knowledge-app）以 MCP 对 Codex 提供检索与领域工具。**
+4. **界面先用现有网页前端，外加 runtime 自带的本地窗口；网页不直连 runtime。**网页只和后端通信（提交 Task、看进度、Task 级审查）；只能在本机做的事（工具级审批、key 与模型配置、工作区授权、本地 diff）放在 runtime 的本地窗口里。Electron 一体化桌面应用作为后续选项（第 2 节）。
+5. **执行层租用、不自建（A4）。**本地 runtime 建议做成 Python 后台进程，经 Codex Python SDK 驱动 Codex，并替换 SDK 默认的"自动同意"审批处理；审批策略要把所有命令与文件修改都送进回调。
+6. **审批分两层。**工具级审批由本地 runtime 执行并上报；Task 级审批按合同在后端落 Interaction、原子消费。审批分层挡不住"被攻破的后端派发恶意 Attempt"，另需派发签名、本地确认与收紧自动放行范围（1.7）。
+7. **断线即暂停。**失去租约时中断正在跑的 turn，不产生新的副作用；重连后按 fencing 对账，再决定恢复原运行时 thread 还是开新 Attempt（1.12）。
+8. **副作用记账粒度（D6）是本方案能否成立的前置决策。**工作区内可回退的写入按 turn 批量记账，不可逆动作逐条记账（1.12）。
+9. **卖点只在知识服务与控制面。**用户拿原版 Codex 自己就能做到的，不算卖点；每项功能都要过这道检验，并用"原版 Codex 对比本产品"的领域评测给出证据（1.15）。
 
 ## 1. 总体设计
 
 ### 1.1 目标与前提
 
-**目标**：用户在自己电脑上，通过桌面应用提交 Task；后端受理、编排并验收；Agent 在用户电脑上执行，读写本地工作区、调用模型、调用知识服务；结果可靠持久化并可重新取得。完整语义以 `request-lifecycle.md` 为准。
+**目标**：用户在网页上提交 Task；后端受理、编排并验收；Agent 在用户电脑上执行，读写本地工作区、调用模型、调用知识服务；结果可靠持久化并可重新取得。完整语义以 `request-lifecycle.md` 为准。
 
 **前提**：
 
-- 界面与本地 runtime 总在同一台电脑上；后端一般在另一台机器（私有化部署时也可以同机）。
-- 大模型调用只由本地 runtime 负责，用户自带 key；模型选择与配置在 runtime 里做（runtime 由我们分发）。
-- 界面、本地 runtime、后端三方各自直连，互不代劳。
+- 浏览器与本地 runtime 总在同一台电脑上；后端一般在另一台机器（私有化部署时也可以同机）。
+- 生成式模型调用只由本地 runtime 负责，用户自带 key；模型选择与配置在 runtime 里做（runtime 由我们分发）。
+- 浏览器只连后端，runtime 只主动连后端；浏览器与 runtime 之间没有通道。
 
 **必须满足的现行规则**：
 
@@ -39,38 +40,42 @@
 | A3 四本账必须落 PostgreSQL | 四本账只在后端；本地 runtime 只执行与上报，不持有任何账的权威副本（1.12） |
 | A4 执行层租用，只依赖 SDK | 本地 runtime 经 Codex Python SDK 驱动 Codex，不直接依赖 app-server 裸协议（1.6） |
 | A5 领域概念不进 Port 签名 | `AgentExecutorPort` 保持中性；派往本地的 DTO 只含引用与通用字段 |
-| `request-lifecycle` 全文 | 状态机、七阶段、I1–I15、AT-01–AT-22 不变；本设计只决定它们落在哪个部分（1.4） |
+| R6 模板优先 | 网页前端仍走模板流程，只新增页面（2.3） |
+| `request-lifecycle` 全文 | 状态机、七阶段、I1–I15、AT-01–AT-22 不变；本设计只决定它们落在哪个部分（1.4），合同需小修处见 3.1 |
 
 ### 1.2 组成部分
 
 ```text
 用户电脑
-┌──────────────────────────────────────────────────────────────────┐
-│ Electron 桌面应用                                                 │
-│   界面（渲染进程，随应用打包）  ⇄ ③ 进程内通信 ⇄  主进程             │
-│                                                   │ 拉起/监管     │
-│                                                   ▼               │
-│   本地 runtime（Python 后台进程）                                  │
-│     连接层 · 策略层 · 模型配置 · 工具级审批 · 执行 Adapter          │
-│                    │ ② Codex Python SDK（底层 stdio）              │
-│                    ▼                                              │
-│   原版 Codex（唯一真正干活的 agent）── 沙箱 ── 本地工作区            │
-└──────────────┬──────────────────┬───────────────┬────────────────┘
-               │ ④ HTTPS/事件流    │ ① WSS         │ ⑤ HTTPS(MCP)    │ ⑥ HTTPS
-               ▼                  ▼               ▼                 ▼
-          ┌─────────── 后端（investment-backend）──────┐   knowledge-app   模型厂商
-          │ 会话与设备 · 派发网关 · 控制面角色          │   RAG + MCP       OpenAI / 国产 /
-          │ Task/Attempt/Interaction/四本账（PG）       │   自有 embedding  企业网关
-          │ skills 库 · 审计 · 网页端（账号/报告）      │
-          └──────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│ 浏览器：现有网页前端（Next.js，模板实例）                         │
+│   提交 Task · 进度与结果 · Task 级审查 · 设备管理                 │
+│   （不连本机 runtime）                                            │
+│                                                                   │
+│ 本地 runtime（Python 后台进程，常驻，托盘）                        │
+│   连接层 · 策略层 · 模型配置 · 工具级审批 · 执行 Adapter           │
+│   本地窗口（React 页面，由 runtime 自带的轻量壳承载）              │
+│        ⇅ ③ 本机管道                                               │
+│   runtime 核心 ──② Codex Python SDK（底层 stdio）──▶ 原版 Codex    │
+│                                        └── 沙箱 ── 本地工作区      │
+└───────┬───────────────────┬──────────────────┬──────────────────┘
+        │ ④ HTTPS/事件流     │ ① WSS（runtime    │ ⑤ HTTPS(MCP)      │ ⑥ HTTPS
+        │   （浏览器）       │   主动连）        │   （Codex）       │  （Codex）
+        ▼                   ▼                  ▼                   ▼
+   ┌──────────── 后端（investment-backend）────────┐   knowledge-app   模型厂商
+   │ 登录会话 · 设备注册 · 派发网关 · 控制面角色    │   RAG + MCP       OpenAI / 国产 /
+   │ Task/Attempt/Interaction/四本账（PG）          │   自有 embedding  企业网关
+   │ skills 库 · 审计                               │
+   └────────────────────────────────────────────────┘
 ```
 
 | 部分 | 职责 | 不做什么 |
 | --- | --- | --- |
-| **Electron 桌面应用** | 提交 Task、展示状态与结果、Task 级审查窗口（多份待审文档弹出审查）、工具级审批页、模型与 key 配置页、工作区授权 | 不持有领域事实；不自己调用模型 |
-| **本地 runtime** | 主动连后端；接收 Attempt 并驱动 Codex；工具级审批的强制点；模型配置与 key 保管；工作区与沙箱策略；上报事件、用量、副作用意图与结果 | 不持有四本账权威副本；不自行决定 Task 状态 |
-| **Codex** | agent loop：规划、调用工具、读写文件、执行命令、调用模型与 MCP | 不直接连后端；不开网络端口 |
-| **后端** | 身份、会话、设备注册；Task/Attempt/Interaction/Event/Delivery；四本账；router、orchestrator、validator；skills 库；派发网关；审计；网页端 | 不调用用户的模型；不中转模型请求；不接触用户 key |
+| **网页前端** | 提交 Task、展示状态与结果、Task 级审查（收件箱）、设备列表与配对确认、"等设备上线"状态、账号与报告 | 不连本机 runtime；不输入 key；不做工具级审批 |
+| **本地 runtime** | 主动连后端；接收 Attempt 并驱动 Codex；工具级审批的强制点；模型配置与 key 保管；工作区与沙箱策略；上报事件、用量、副作用意图与回执；本地窗口；系统通知 | 不持有四本账权威副本；不自行决定 Task 状态 |
+| **本地窗口**（runtime 的一部分） | 工具级审批、模型与 key 配置、工作区授权、本地 diff、runtime 状态、发起设备配对 | 不承载 Task 级审查；不调用后端的 Task 接口 |
+| **Codex** | agent loop：规划、调用工具、读写文件、执行命令、调用模型与 MCP | 不直接连后端控制面；不开网络端口 |
+| **后端** | 身份与登录会话、设备注册；Task/Attempt/Interaction/Event/Delivery；四本账；router、orchestrator、validator；skills 库；派发网关；审计 | 不替用户调用生成式模型；不中转模型请求；不接触用户 key |
 | **knowledge-app** | 知识库、检索、领域工具，经 MCP 暴露；用自有模型做 embedding/rerank | 不接触用户 key；尽量不整段返回原文（1.9） |
 | **模型厂商** | 推理 | — |
 
@@ -78,37 +83,39 @@
 
 | # | 两端 | 协议 | 内容 | 安全要点 |
 | --- | --- | --- | --- | --- |
-| ① | runtime ⇄ 后端 | WSS，runtime 主动向外连 | 派发 Attempt、取消、事件与进度回传、副作用意图与回执、审批结论上报、用量上报、厂商预设下发 | 设备私钥认证；协议里不设 key 字段 |
+| ① | runtime ⇄ 后端 | WSS，runtime 主动向外连 | 派发 Attempt（带签名，1.7）、取消、续约、事件与进度回传、副作用意图与回执、审批结论上报、用量上报、厂商预设下发、"有待审查"提醒 | 设备私钥认证；协议里不设 key 字段 |
 | ② | runtime ⇄ Codex | Codex Python SDK（底层是子进程 stdio） | 启动/恢复 thread、下发 turn、事件、审批请求、中断 | 仅本机；Codex 不开端口 |
-| ③ | 界面 ⇄ runtime | Electron 进程内通信（渲染进程 → preload → 主进程 → runtime 本地管道） | 工具级审批、模型配置、工作区授权、本地 diff 预览、runtime 状态 | 不开 localhost 端口；preload 只暴露少数具体函数 |
-| ④ | 界面 ⇄ 后端 | HTTPS + 事件流（cursor 续传） | 提交 Task、查询、Task 级审批、取消、结果 | 桌面端 token；每次读取重新授权（F-DELIVERY-09） |
+| ③ | 本地窗口 ⇄ runtime 核心 | 本机管道（进程内或仅本用户可访问的本地套接字） | 工具级审批、模型配置、工作区授权、本地 diff、runtime 状态 | 不开 TCP 端口；窗口页面随 runtime 打包、签名 |
+| ④ | 浏览器 ⇄ 后端 | HTTPS + 事件流（cursor 续传） | 提交 Task、查询、Task 级审查、取消、结果、设备管理 | 现有 cookie 会话 + CSRF（I6）；每次读取重新授权（F-DELIVERY-09） |
 | ⑤ | Codex ⇄ knowledge-app | HTTPS（MCP） | 检索、领域工具、按需取 skill | 按设备发 token、可吊销、限流 |
 | ⑥ | Codex ⇄ 模型厂商 | HTTPS | 推理 | 用户自己的 key，只在本机 |
 
-另有网页端 ⇄ 后端（HTTPS）：账号、计费、报告、任务历史，不涉及本地操作。
+**浏览器与 runtime 之间不设通道。**因此不需要本地端口、Origin 校验、浏览器与 runtime 配对，也不受浏览器对公网页面访问 localhost 的限制。两边的衔接靠后端（同一个 Task 的状态）和"跳转入口"（2.3）。
 
 ### 1.4 生命周期七阶段的落位
 
 | 阶段（`request-lifecycle` §5） | 在哪里执行 | 说明 |
 | --- | --- | --- |
-| 5.1 提交 | Electron 界面 | 幂等键生成与复用、`task_id` 与 event cursor 持久化在应用本地存储 |
-| 5.2 受理与校验 | 后端 | 身份来自桌面端 token 会话；网页端与桌面端共享同一 application use case（F-ADMIT-04 措辞需修订，见 3.2） |
-| 5.3 排队与可靠投递 | 后端 → ① → runtime | outbox 投递到派发网关；设备离线时 Task 保持 `QUEUED`（或 `WAITING(RESOURCE)`），不丢 |
+| 5.1 提交 | 网页前端 | 幂等键生成与复用、`task_id` 与 event cursor 按现有做法保存 |
+| 5.2 受理与校验 | 后端 | 身份来自网页登录会话；router 选执行设备，选不到在线设备时按 5.3 等待 |
+| 5.3 排队与可靠投递 | 后端 → ① → runtime | outbox 投递到派发网关；设备离线时 Task 保持 `QUEUED`（或 `WAITING(RESOURCE)`），网页显示"等设备上线" |
 | 5.4 Agent 执行 | 本地 runtime + Codex | Attempt 的租约与 fencing 由后端签发，runtime 持有；工具、证据、副作用经 ① 关联到 Attempt |
-| 5.5 中断、批准与恢复 | 两层（1.7） | Task 级 Interaction 在后端；工具级审批在本地 |
+| 5.5 中断、批准与恢复 | 两层（1.7） | Task 级 Interaction 在后端、网页上处理；工具级审批在本地窗口 |
 | 5.6 验收与完成提交 | 后端 validator（确定性）+ 本地验收 Attempt（需要语义判断时） | 结果、验收、预算结算与终态在后端原子提交 |
-| 5.7 返回前端 | 后端 → ④ → 界面 | 先持久化后通知；应用重启、断线后按 cursor 回放 |
+| 5.7 返回前端 | 后端 → ④ → 网页 | 先持久化后通知；断线、刷新后按 cursor 回放 |
+
+**设备绑定**：进行中的 Attempt 绑定在一台设备上。这台电脑离线，Task 就停住，不能换一台设备接着跑。合同只保证有权用户换设备后能取回结果（§1 第 3 条），没有要求换设备继续执行，所以不违约，但影响体验；是否支持换设备续跑（在另一台设备上开新 Attempt）由 Profile 决定，前提是工作区在那台设备上也可用。
 
 ### 1.5 后端控制面
 
-控制面不调用模型，只做确定性的事。角色沿用 `agent-dev-guide` 的词：
+控制面不调用生成式模型，只做确定性的事。角色沿用 `agent-dev-guide` 的词：
 
 | 角色 | 做什么 |
 | --- | --- |
 | router | 形成 RouteDecision：选 Task Profile、Agent Profile、执行设备；确定性映射，命中规则与拒绝原因入账 |
 | orchestrator | 创建并推进 Attempt；按流程模板拆步骤；需要临时规划时，先派一个"出计划"的 Attempt，计划作为 Artifact 经批准后再执行 |
 | validator | 按固定 Task Profile 版本做确定性验收：schema、规则、测试结果、MCP 领域校验 |
-| acceptor | 需要语义判断的验收，作为独立的验收 Attempt 派给本地（不同 Agent Profile、不同 Codex thread），结论回到后端 |
+| acceptor | 需要语义判断的验收，作为独立的验收 Attempt 派给本地（不同 Agent Profile、不同运行时 thread），结论回到后端 |
 | publisher | 不可逆副作用经 Task 级批准后执行，Delivery 可重取 |
 
 **控制面承担的领域方法**：
@@ -118,6 +125,8 @@
 - **上下文管理**：跨 Task 记住项目背景、偏好、历史决定（长期记忆的 embedding 在后端，用自有模型）；
 - **审计**：全部 Task、Attempt、审批结论、副作用摘要。
 
+**编排引擎要重新评估**：后端现有 LangGraph 原本服务于"后端调用模型的 agent 图"。控制面不再调用生成式模型后，LangGraph 剩下的价值是带检查点的持久化流程编排；它是否仍比"Task/Attempt 状态机 + outbox + 普通任务队列"更合适，要单独评估（D16）。
+
 **skills 收在后端，不落地到用户电脑**：
 
 - 好处：方法库不分发；改一个 skill 所有用户立即生效；可按客户、行业定制并做灰度和 A/B；由 router/orchestrator 按任务类型和检索结果挑选，比让 Codex 按描述自行匹配更可控。
@@ -125,9 +134,9 @@
   - **随 Attempt 注入**：派发时把选定 skill 拼进指令，适合开工时就能确定方法的场景；
   - **经 MCP 按需取**：提供 `get_skill(name)` 一类工具，适合长任务中途才需要某套方法的情况。
 - 边界：
-  - 注入的文本会进入本地 Codex 会话记录，也会发给模型厂商，不是完全保密。skill 只写"怎么做"的指引，核心规则、算法、数据留在 MCP 工具内部执行，只返回结果；
+  - 注入的文本会进入本地运行时 thread 的记录，也会发给模型厂商，不是完全保密。skill 只写"怎么做"的指引，核心规则、算法、数据留在 MCP 工具内部执行，只返回结果；
   - 一次别注入太多，否则挤占 Codex 的工作上下文；
-  - skill 是提示词资产，要版本化并配评测，改动后做回归。
+  - skill 是提示词资产，要版本化、签名（1.7）并配评测，改动后做回归。
 
 下发给 Codex 的指令质量直接决定结果，领域评测集要尽早建：用来调流程模板、skills、验收规则，也用来对比用户所选模型的效果（1.15）。
 
@@ -141,7 +150,7 @@
 | --- | --- | --- |
 | agent loop | 在后端，要自建或 fork Codex 改工具层，跟进频繁的上游更新 | 不改代码 |
 | 模型调用 | 必须从后端发出，违背前提 | 从本地发出 |
-| 延迟 | 每次工具调用都要后端⇄本地往返，一个任务几十上百次 | 工具调用本地完成 |
+| 延迟 | 每一次工具调用（包括只读的查找、运行测试）都要后端⇄本地往返，一个任务几十上百次 | 工具调用本地完成；只有需要记账的写动作按 1.12 的粒度与后端往返 |
 | 工具格式 | 必须与 Codex 的 shell、apply_patch 一致，效果才不打折 | 原样 |
 | 沙箱、审批 | 要自建（Codex 很依赖执行 shell 命令，只做文件读写不够） | 用 Codex 自带的 |
 | 升级 | 跟上游改代码 | 换钉版二进制 |
@@ -153,41 +162,56 @@
 - 随安装包带上 Codex、锁定版本、负责升级；
 - 设备身份与配对（1.10）；
 - 模型配置与 key 保管（1.8）；
-- 工具级审批的强制点（1.7）；
-- 策略：限定工作区、禁止关闭沙箱、危险操作必须审批、并发上限。
+- 工具级审批的强制点与副作用记账的拦截点（1.7、1.12）；
+- 本地窗口与系统通知（2.3）；
+- 策略：限定工作区、禁止关闭沙箱、危险操作必须审批、并发上限、只接受签名的派发内容。
 
 **用哪个 SDK（A4）**：
 
 | 选项 | 审批 | 与 A4 | 代价 |
 | --- | --- | --- | --- |
-| **Codex Python SDK（`openai-codex`）** | 有审批回调；⚠ 默认对命令执行与文件修改一律返回 accept，必须替换 | 符合 | 应用里要带 Python 运行环境 |
-| Codex TypeScript SDK（`@openai/codex-sdk`） | 包装的是 `codex exec`，只有 `approvalPolicy`（`never`/`on-request`/`on-failure`/`untrusted`），没有审批回调，做不了逐条交人审批 | 符合 | 可直接在 Electron 主进程里用 |
-| 直接用 app-server 协议 | 可以 | **违反** | 裸协议变化快（`04-agent-execution` §2.7 实测） |
+| **Codex Python SDK（`openai-codex`）** | 有审批回调；⚠ 默认对命令执行与文件修改一律返回 accept，必须替换 | 符合 | 安装包里要带 Python 运行环境 |
+| Codex TypeScript SDK（`@openai/codex-sdk`） | 包装的是 `codex exec`，只有 `approvalPolicy`（`never`/`on-request`/`on-failure`/`untrusted`），没有审批回调，做不了逐条交人审批，也拦不到写动作 | 符合 | 可在 Node 进程里用 |
+| 直接用 app-server 协议 | 可以 | **违反** | 裸协议变化快（`0002-agent-execution` §2.7 实测） |
 
-**建议**：runtime 做成独立的 Python 后台进程，经 Python SDK 驱动 Codex；Electron 只当界面壳。理由：满足 A4；审批回调可用；DeepSeek Harness 那条腿也是 Python；后端已有的 `AgentExecutorPort`、Adapter 与 Fake 执行器代码可以复用。
+**建议**：runtime 做成独立的 Python 后台进程，经 Python SDK 驱动 Codex。理由：满足 A4；审批回调可用，既是审批强制点又是记账拦截点；DeepSeek Harness 那条腿也是 Python；后端已有的 `AgentExecutorPort`、Adapter 与 Fake 执行器代码可以复用。
 
 **驱动 Codex 的要求**：
 
 - 不解析终端输出；
 - 钉住 Codex 与 SDK 版本，升级钉版必须重跑锚点；
 - 连接时带 `clientInfo.name` 标识本产品（OpenAI 合规日志用它区分客户端；面向企业客户时，官方建议联系 OpenAI 加入已知客户端列表）；
-- SDK 侧的 thread/session id 不是 Task 的真源：`ExecutionBinding` 经 ① 写回后端（I13）。
+- SDK 侧的 thread id 不是 Task 的真源：`ExecutionBinding` 经 ① 写回后端（I13）。
 
 **这是官方支持的嵌入方式**：OpenAI 的 VS Code 插件和桌面 app 在发布包里带对应平台的 Codex 二进制、锁定版本，作为长驻子进程经 stdio 走 JSON-RPC；JetBrains、Xcode 也嵌入同一套 harness；官方文档把 app-server 定位为产品深度集成接口，自动化与 CI 用 SDK。社区已有 20 多个基于或包装 Codex 的项目。"打包进自家产品、用户完全无感"有多普遍，没有可靠数据。
 
 ### 1.7 审批：两层
 
-| 层 | 例子 | 发起 | 通道 | 决定与记录 |
+| 层 | 例子 | 发起 | 处理界面 | 决定与记录 |
 | --- | --- | --- | --- | --- |
-| **工具级** | 执行某条命令、修改某个文件、联网 | Codex → SDK 审批回调 → runtime | ③ | runtime 按策略自动放行、拒绝或交用户在本地审批页决定；结论经 ① 上报后端存档 |
-| **Task 级** | `WAITING(INPUT/APPROVAL)`、计划批准、不可逆副作用（发布、推送、对外动作）、预算追加 | 后端 | ④ | 后端落 Interaction，按 `request-lifecycle` §4.2 原子消费（F-INTERACT-*） |
+| **工具级** | 执行某条命令、修改某个文件、联网 | Codex → SDK 审批回调 → runtime | 本地窗口（经 ③） | runtime 按策略自动放行、拒绝或交用户在本地窗口决定；结论经 ① 上报后端存档 |
+| **Task 级** | `WAITING(INPUT/APPROVAL)`、计划批准、不可逆副作用（发布、推送、对外动作）、预算追加、待审文档 | 后端 | 网页（经 ④） | 后端落 Interaction，按 `request-lifecycle` §4.2 原子消费（F-INTERACT-*） |
 
-- **强制点在执行者够不着的地方**：runtime 与 Codex 是两个进程，Codex 改不了 runtime 的策略；审批页随应用打包、已签名，后端也改不了。
-- **后端不能替用户批准工具级动作**：runtime 只接受本机界面给出的答复，后端被攻破也无法把 ① 变成远程控制通道。
-- **审批内容尽量不上传**：命令原文、diff、文件路径在本机展示；上报只带摘要与结论。
-- **两层的具体划分**是待定决策（第 4 节 D3）。建议：所有不可逆、对外可见的动作归 Task 级；工作区内可回退的读写和命令归工具级。
+**拦截点**：审批策略必须让所有命令执行与文件修改都进入 SDK 审批回调，哪怕 runtime 随后自动放行。否则 runtime 既拦不到高风险动作，也无法在写动作之前记账（1.12）。⚠ 全量进回调的性能与可行性要实测。
 
-**Task 级审查：把待审文档做成页面弹给用户。**需要人审查时（设计、计划、报告、diff、验收结论等 Artifact），客户端弹出审查窗口，把这些文档渲染成页面供用户逐份审查（窗口形态见 2.5.7）。按 `agent-dev-guide` 4.12「人的收件箱」：
+**强制点**：
+
+- 审批结论只由 runtime 执行，Codex 进程改不了 runtime 的判定。⚠ 但 runtime 与 Codex 以同一个用户身份运行，两个进程之间没有操作系统级隔离；runtime 的策略与配置不被 Codex 改动，全靠 Codex 沙箱把写权限限制在工作区（1.11）。
+- 本地窗口的页面随 runtime 打包、签名，后端改不了；工具级审批结论只从本地窗口来，后端不能替用户点"同意"。
+
+**被攻破的后端仍能下指令**：后端派发的 Attempt 本身就是给 agent 的指令。在工具级"自动放行"的范围内，被攻破的后端可以借一个 Attempt 让本机执行命令；审批页不被篡改挡不住这一点。所以还要：
+
+- **派发内容签名**：Attempt 的 Profile、流程模板、skills 由不在在线派发服务里的密钥签名，runtime 只接受签名有效、且在本地登记过的 Profile 版本；
+- **本地确认新 Task**：runtime 在本地窗口显示将要执行的 Task 摘要（Profile、工作区、能力范围），未经本地确认不开始执行；哪些 Profile 可免确认，由用户在本地设置（D14）；
+- **收紧自动放行**：只自动放行只读动作和工作区内可回退的写入；网络访问、工作区外的写入、任何不可逆动作一律交本地确认或升级为 Task 级。
+
+**审批内容尽量不上传**：命令原文、diff、文件路径在本地窗口展示；上报只带摘要与结论。
+
+**两层的具体划分**是待定决策（D3）。建议：所有不可逆、对外可见的动作归 Task 级；工作区内可回退的读写和命令归工具级，其中只读与可回退写入可自动放行。
+
+#### Task 级审查：把待审文档做成页面给用户审
+
+需要人审查时（设计、计划、报告、diff、验收结论等 Artifact），网页前端的收件箱把这些文档渲染成页面，供用户逐份审查（页面设计见 2.4）。按 `components/0002-frontend/composition/agent-dev-guide.md` §4.12「人的收件箱」：
 
 | 页面必须表达 | 说明 |
 | --- | --- |
@@ -201,16 +225,16 @@
 - **批准绑定具体版本**：任何一份文档的版本或摘要变化，旧批准自动失效，须重新审查。
 - **不预填"同意"**：可以展示建议，结论只能来自用户明确的操作。
 - **多份文档逐份表态**：每份各有批准记录；只有审批策略明确允许时才可批量批准。
-- **可以从网页端审查**：Task 级审查只依赖后端数据，网页端可复用同一套页面，用户不在自己电脑前时也能处理；工具级审批仍只在本地。
+- **不要求在本机**：Task 级审查只依赖后端数据，用户在任何能登录网页的地方都能处理；工具级审批仍只在本地。
 - 每次记录响应耗时、相对建议的修改项数、各类触点次数，供人判断流程摩擦；这些只是观察值，不自动放宽审批。
 
 ### 1.8 模型调用与 key
 
-**配置在 runtime 里做**：
+**配置在 runtime 的本地窗口里做**：
 
-- key 只在本地配置页输入，存进系统钥匙串（macOS Keychain、Windows 凭据管理器、Linux libsecret），不写进配置文件；
+- key 只在本地窗口输入，存进系统钥匙串（macOS Keychain、Windows 凭据管理器、Linux libsecret），不写进配置文件；
 - runtime 启动 Codex 时用环境变量把 key 只传给 Codex 子进程，`config.toml` 里只写环境变量名（`env_key`）；
-- runtime 内置厂商预设（OpenAI、各家国产模型、企业自建网关），只含接口地址、模型名等不涉密字段；后端可经 ① 推送更新这份列表；
+- runtime 内置厂商预设（OpenAI、各家国产模型、企业自建网关），只含接口地址、模型名等不涉密字段；后端可经 ① 推送更新这份列表（带签名）；
 - 企业客户把 `base_url` 指向自己的网关，可自行审计每次调用；
 - 只用 API key，不提供"用 ChatGPT 账号登录"（第三方产品能否这样用，OpenAI 未明确答复）；
 - ① 的协议里没有 key 字段；上报的日志、报错过滤请求头与环境变量。
@@ -220,7 +244,7 @@
 **接国产模型**（不需要 cc-switch，runtime 自己生成配置）：
 
 - Codex 只支持 Responses API（`wire_api="chat"` 明确报错）。只支持 Chat Completions 的厂商，需要 runtime 内置一个本机转换层（类似 LiteLLM）；
-- ⚠ 会话自动压缩后，记录里会带 OpenAI 私有的 compaction 条目，第三方"兼容 Responses"的接口可能不认，导致该会话无法继续；转换层要处理，续接长任务会受影响；
+- ⚠ 会话自动压缩后，记录里会带 OpenAI 私有的 compaction 条目，第三方"兼容 Responses"的接口可能不认，导致该运行时 thread 无法继续；转换层要处理，续接长任务会受影响；
 - ⚠ 有报告称经第三方 Responses 接口时，配置的 reasoning effort 可能没有真正发出；
 - 第三方模式下官方插件、图片生成、远程功能等不保证可用；
 - "能接上"不等于"效果好"：Codex 的提示词与工具格式按 OpenAI 模型调优，换模型要用领域评测集实测。起步阶段可只支持原生提供 Responses API 的厂商，暂不做转换层。
@@ -246,9 +270,9 @@
 - 后端能维护设备在线状态，直接经已有连接派发；
 - 断线自动重连，重连后先对账（1.12）。
 
-**常驻**：runtime 注册为用户级后台服务（Windows 用户态后台程序、macOS LaunchAgent、Linux systemd user service），登录后启动并连后端；关闭窗口后是否继续运行由设置决定（托盘）。
+**常驻**：runtime 注册为用户级后台服务（Windows 用户态后台程序、macOS LaunchAgent、Linux systemd user service），登录后启动并连后端，在托盘显示状态；本地窗口按需打开，关闭窗口不停止 runtime。
 
-**首次安装**：WSS 解决不了"机器上还没有 runtime"，首次仍要引导：下载安装包（Windows `.exe`/`.msi`，macOS `.pkg`/`.dmg`，Linux `.deb`/`.rpm`/AppImage）→ 用户确认安装 → 注册后台服务 → 启动并连接。安装包必须签名：Windows 代码签名（否则会被 SmartScreen 拦截），macOS 公证。
+**首次安装**：WSS 解决不了"机器上还没有 runtime"，首次仍要引导：网页提示"连接本地环境" → 下载安装包（Windows `.exe`/`.msi`，macOS `.pkg`/`.dmg`，Linux `.deb`/`.rpm`/AppImage）→ 用户确认安装 → 注册后台服务 → 启动并连接。安装包必须签名：Windows 代码签名（否则会被 SmartScreen 拦截），macOS 公证。
 
 **绑定账号：一次性配对**。不把浏览器 Cookie、密码或长期 token 塞进 runtime：
 
@@ -256,11 +280,11 @@
 - 后端校验 secret 是否正确、是否过期、是否已用、属于谁；
 - 成功后立即标记已用，secret 失效。
 
-**配对方式建议用 Device Code 流程**（RFC 8628 那一类）：runtime 向后端申请配对码 → 打开系统浏览器（链接带码）→ 用户在已登录的页面确认 → 后端把设备公钥绑定到账号。secret 不需要在浏览器与 runtime 之间传递，三个平台做法一致。不建议把 token 写进安装包参数：会与代码签名冲突。
+**配对方式建议用 Device Code 流程**（RFC 8628 那一类）：runtime 向后端申请配对码 → 打开系统浏览器（链接带码）→ 用户在已登录的网页上确认 → 后端把设备公钥绑定到账号。secret 不需要在浏览器与 runtime 之间传递，三个平台做法一致。不建议把 token 写进安装包参数：会与代码签名冲突。
 
-**长期身份：设备密钥**。runtime 首次启动生成密钥对，私钥只留本机（存系统钥匙串），公钥在配对时上传；之后建立 WSS 时用私钥证明身份，后端用公钥验证。设备可在网页端或应用里吊销。
+**长期身份：设备密钥**。runtime 首次启动生成密钥对，私钥只留本机（存系统钥匙串），公钥在配对时上传；之后建立 WSS 时用私钥证明身份，后端用公钥验证。设备可在网页或本地窗口里吊销。
 
-**一个用户多台设备**：router 选设备时只考虑在线且已授权该工作区的设备；Task 与设备的绑定写入 RouteDecision。
+**一个用户多台设备**：router 选设备时只考虑在线且已授权该工作区的设备；Task 与设备的绑定写入 RouteDecision；网页提交 Task 时可指定设备。
 
 ### 1.11 执行隔离与权限
 
@@ -270,17 +294,18 @@
 
 **桌面场景的取舍**：
 
-- 默认以用户本人身份运行，依靠 Codex 自带的操作系统级沙箱（⚠ macOS Seatbelt、Linux Landlock/seccomp 等，以钉版实测为准）；
+- 默认以用户本人身份运行，依靠 Codex 自带的操作系统级沙箱（⚠ macOS Seatbelt、Linux Landlock/seccomp 等，以钉版实测为准；⚠ Windows 上的沙箱成熟度与 macOS、Linux 不同，要单独评估，不足时 Windows 端默认收紧自动放行范围）；
 - runtime 只把用户授权的工作区暴露给 Codex，禁止关闭沙箱，网络访问按策略开关；
+- ⚠ runtime 与 Codex 同一用户身份：runtime 的配置、策略、已登记 Profile 放在工作区之外，并做签名或完整性校验，启动与派发前核对；key 与设备私钥只放系统钥匙串。沙箱一旦失效，这些措施只能发现篡改，不能阻止；
 - 不默认使用 Docker 容器或专用 UID：Windows/macOS 需要 Docker Desktop（较大企业要付费），创建专用用户需要管理员权限，写出的文件属主不是用户本人会造成权限混乱；
-- 企业或服务器部署可选加固：容器内以非 root UID 运行（镜像里 `USER`，或运行时 `--user`，由容器运行时直接以该 UID 启动进程，不需要先以 root 启动再切换），挂载 `/workspace` 可写、参考资料只读、生产数据不可见。
+- 企业或服务器部署可选加固：Codex 以非 root 专用 UID 运行（容器内用镜像的 `USER` 或运行时 `--user`，由容器运行时直接以该 UID 启动进程，不需要先以 root 启动再切换），挂载 `/workspace` 可写、参考资料只读、生产数据不可见。这样 runtime 与 Codex 之间也有了操作系统级隔离。
 
 **权限链**：
 
 ```text
-后端控制面：RouteDecision、Task 级批准（逻辑控制）
+后端控制面：RouteDecision、Task 级批准、签名的派发内容（逻辑控制）
     ↓ ①
-本地 runtime：工作区白名单、工具级审批、并发与预算上限（执行侧强制点）
+本地 runtime：签名校验、本地确认、工作区白名单、工具级审批、并发与预算上限（执行侧强制点）
     ↓ ②
 Codex 沙箱
     ↓
@@ -293,23 +318,43 @@ Codex 沙箱
 
 ### 1.12 与合同、四本账的衔接
 
-- **Port 不变**：后端的 `AgentExecutorPort`（start/resume/cancel/events/inspect/close/submit_result）增加一个"经 ① 派往本地 runtime"的 Adapter；纪律层继续用 Fake 执行器测试。runtime 内部再用 Codex Python SDK 实现执行。
-- **租约与 fencing**：Attempt 的租约由后端签发，runtime 持有并续约；续约失败（断线、休眠）即视为失去租约，runtime 停止提交结果与副作用；迟到写入被拒（I14）。
-- **断线即暂停**：离线时不产生新的副作用。重连后先对账：租约仍有效且 fencing 一致则继续，否则按合同开新 Attempt，从持久 Artifact 恢复。不允许"离线先在本地记账、之后同步"（违反 A3）。
-- **副作用账**：本地写动作的意图先经 ① 记入后端副作用账，拿到幂等键后执行，回执再上报（I9）。工作区内可回退的普通文件修改可以按 Profile 声明为批量记账，粒度待定。
-- **预算账**：步骤数、耗时、派发次数由后端控制；token 与费用由 runtime 上报，证据等级标"自报"。花的是用户自己的钱，这不构成信任问题，但要写明。
-- **证据账**：citation、来源、时点经 ① 上报后端落表，不只留在事件流里。
-- **可恢复现场**：Codex 本地会话目录不是真源；需要跨 Attempt 恢复时，以后端持久的 Artifact 与快照引用为准。
-- **多方竞争**：N 路并行 Attempt 都在用户电脑上跑，按机器资源限制并发数；各路工作区隔离。dev.change 类 Task 天然适合本地：仓库本来就在用户电脑上。
-- **后端不可用时**：进行中的 Attempt 按"断线即暂停"处理；已在本地展示的审批不因断线自动通过。
+**Port 不变**：后端的 `AgentExecutorPort`（start/resume/cancel/events/inspect/close/submit_result）增加一个"经 ① 派往本地 runtime"的 Adapter；纪律层继续用 Fake 执行器测试。runtime 内部再用 Codex Python SDK 实现执行。
+
+**副作用账（I9）与往返开销**：I9 要求每个外部副作用有幂等键、状态、回执和补偿信息；若每一次本地写入都先到后端记账，就把"本地执行免往返"的好处抵消了。所以记账粒度（D6）是本方案能否成立的前置决策。建议：
+
+| 动作类别 | 记账方式 | 往返 |
+| --- | --- | --- |
+| 只读（查找、读文件、运行不写工作区的测试） | 不是副作用，不记账，只作为工具调用事件上报 | 无 |
+| 工作区内可回退的写入 | **按 turn 批量记账**：turn 开始前 runtime 在后端登记一条"工作区写入"意图（一个幂等键 + 工作区快照引用）；turn 内的写入不再逐条往返；turn 结束后上报变更摘要（文件清单与内容摘要）作为回执；补偿方式是恢复到快照 | 每个 turn 两次 |
+| 工作区外的写入、网络请求、不可逆或对外动作 | **逐条记账**：先登记意图拿到幂等键，执行后上报回执；多数同时需要 Task 级批准（F-EXEC-03 的授权重校验在这一步做） | 每个动作一次，这类动作少 |
+
+批量记账仍满足 I9：每个批次有稳定幂等键（同一 turn 重跑时按键判重）、状态、回执（变更摘要）和补偿信息（快照）。前提是拦截点成立：所有写动作都进入审批回调（1.7），runtime 才能判断它属于哪一类、是否已登记。⚠ 工作区快照的实现（版本库提交、文件系统快照或复制）与大工作区的开销要实测。
+
+**租约与 fencing（I14）**：Attempt 的租约由后端签发，runtime 持有并按固定间隔经 ① 续约；续约失败即视为失去租约，此后不得提交结果、不得登记或执行新的副作用；迟到写入由后端按 fencing 拒绝。
+
+**断线即暂停的机制**：
+
+1. 续约失败（断网、休眠、后端不可用）时，runtime 调 SDK 的 turn 中断，停止当前 turn；
+2. 正在执行的那条工具调用：⚠ 中断能否终止已启动的命令进程要实测；不能终止的，runtime 自己终止其进程组。该调用的结果记为"未知"，runtime 在本地暂存工作区相对快照的差异，作为待上报的回执（本地暂存不是账的权威副本）；
+3. 暂停期间不开始新 turn、不执行新的工具调用；本地窗口里未决的工具级审批作废，不因断线自动通过；
+4. 重连后先对账：上报暂存回执；后端核对租约与 fencing。租约仍有效且 fencing 未变，runtime 用 SDK 恢复原运行时 thread 继续；否则按合同开新 Attempt，从后端持久的 Artifact 与快照引用恢复，原运行时 thread 只作参考，不作真源；
+5. 不允许"离线先在本地记账、之后同步成权威记录"（违反 A3）。
+
+**预算账（F-EXEC-04）**：步骤数、耗时、派发次数由后端控制；token 与费用由 runtime 上报，证据等级标"自报"。花的是用户自己的钱，这不构成信任问题，但要写明。
+
+**证据账**：citation、来源、时点经 ① 上报后端落表，不只留在事件流里。
+
+**可恢复现场**：本地运行时 thread 的记录不是真源；需要跨 Attempt 恢复时，以后端持久的 Artifact 与快照引用为准。
+
+**多方竞争**：N 路并行 Attempt 都在用户电脑上跑，按机器资源限制并发数，派发前由 router 查询设备容量；各路工作区隔离。dev.change 类 Task 天然适合本地：仓库本来就在用户电脑上。
 
 ### 1.13 信任与数据流
 
 | 数据 | 流向 |
 | --- | --- |
 | 用户 key | 只在用户电脑，只发给用户选的模型厂商 |
-| 代码与文件 | 由 Codex 发给用户选的模型厂商；发往后端的只有 MCP 检索与工具调用需要的内容、结果、审批摘要 |
-| 审批细节 | 只在本机展示 |
+| 代码与文件 | 由 Codex 发给用户选的模型厂商；发往后端的只有 MCP 检索与工具调用需要的内容、结果、审批摘要、变更摘要 |
+| 工具级审批细节 | 只在本地窗口展示 |
 
 **让用户能验证，而不只靠承诺**（key 就在 runtime 里，用户会担心它被偷偷发走）：
 
@@ -362,244 +407,241 @@ Codex 沙箱
 **两处容易被绕开的地方**：
 
 - **知识服务可以被单独接走**：用户可以在自己装的 Codex 里直接配置 MCP 地址（1.16），绕过控制面。因此控制面的价值要让用户直接看到（验收结论、返工记录、可追溯的证据），知识服务是否单独售卖、如何定价要单独决定（D9）。
-- **下发的指令会被看到**：skills 与派发的提示词会进入用户本地的 Codex 会话记录。方法里真正的核心（规则、算法、数据）留在 MCP 工具内部执行，只返回结果（1.5、1.9）。
+- **下发的指令会被看到**：skills 与派发的提示词会进入本地运行时 thread 的记录。方法里真正的核心（规则、算法、数据）留在 MCP 工具内部执行，只返回结果（1.5、1.9）。
 
 **风险与应对**：
 
 | 风险 | 应对 |
 | --- | --- |
+| 后端被攻破后借派发的 Attempt 在用户电脑上执行命令 | 派发内容签名、本地确认新 Task、自动放行只限只读与可回退写入（1.7） |
+| runtime 与 Codex 同一用户身份，策略保护依赖沙箱 | 配置与策略放工作区外并校验完整性；Windows 端单独评估；企业部署可用专用 UID（1.11） |
+| 副作用逐条记账抵消本地执行的好处 | 按 turn 批量记账，不可逆动作逐条（1.12，D6） |
 | 强依赖 Codex：协议变化快；OpenAI 在往上做 skills、插件、编排，可能覆盖通用部分 | 控制面与知识服务不绑定 Codex，换执行引擎只改 runtime 里的 Adapter；控制面越贴近行业流程越稳 |
 | 用户自选模型，质量不受控，售后压力落到我们身上 | 维护经评测的推荐模型清单，清单外标"未验证"；公布各模型在领域任务上的评测数据 |
 | 用户自带 key 对非技术用户是门槛（国内申请 OpenAI key 尤其难） | 目标客户以开发团队和企业为主，企业网关作为主要场景设计 |
-| 维护面：runtime、Codex、转换层、三个平台、签名、更新 | 起步只支持原生 Responses API 的厂商；Electron 统一界面层 |
-| 控制面没有模型，自评式验收可靠性低 | 优先确定性验收（测试、规则、MCP 校验）；语义验收用独立 Agent Profile |
+| 维护面：runtime、Codex、转换层、三个平台、签名、更新 | 起步只支持原生 Responses API 的厂商；界面先不上 Electron，前端沿用模板 |
+| 控制面没有生成式模型，自评式验收可靠性低 | 优先确定性验收（测试、规则、MCP 校验）；语义验收用独立 Agent Profile |
 | 多方竞争的并行压在用户电脑上 | runtime 按机器资源设并发上限，派发前由 router 查询设备容量 |
+| Task 绑定单台设备，离线即停 | 网页显示"等设备上线"；Profile 允许时在其他设备开新 Attempt（1.4） |
+| 用户要在网页与本地窗口之间切换 | 系统通知直达本地窗口；网页给出明确的"请在本机完成"入口（2.3） |
 
 ### 1.16 备选：只做远程 MCP
 
 接受用户自己安装 Codex 时，可以不要本地 runtime：用户在 Codex 里配置我们的 MCP 地址，skills 经 MCP 下发。代价是控制面无法主动派发 Attempt，只能由用户在 Codex 里发起；流程与验收要改成 MCP 工具由 Codex 调用，对流程的掌控弱很多，Task/Attempt 合同也难以完整落实。适合面向开发者、先快速验证领域价值；完整产品仍走本设计。两者可以先后做。
 
-## 2. 为什么用 Electron，以及对详细架构的影响
+## 2. 界面形态：先网页 + 本地窗口，Electron 作为后续选项
 
-### 2.1 前提决定了选择
+### 2.1 结论与理由
 
-界面与 runtime 总在同一台电脑，runtime 又必须安装。于是浏览器方案相对 Electron 的唯一结构性优势——"界面与执行不在同一台机器"——用不上；而它的全部额外复杂度都来自"界面在浏览器里、要去访问本机"。
+执行在本地、控制面在后端，和"界面用什么"是两个独立的决定。界面有三种形态：
 
-### 2.2 两种方案对比
+| 形态 | 做法 |
+| --- | --- |
+| **浏览器直连 runtime** | 网页经 localhost 访问本地 runtime，审批、配置都在网页里 |
+| **网页 + 本地窗口（路线 C，建议先用）** | 网页只连后端；本机的事在 runtime 自带的本地窗口里做 |
+| **Electron 一体化桌面应用** | 界面与 runtime 打包成一个应用 |
 
-| 维度 | 浏览器方案（界面由后端提供，runtime 另开本地页面） | Electron 方案（界面随应用打包） |
-| --- | --- | --- |
-| 界面数量 | 两处：后端网页 + 本地审批/配置页，来回跳 | 一个 |
-| 本机通道 | 本地端口、Origin 校验、浏览器与 runtime 配对、防恶意网页 | 进程内通信，不开端口 |
-| 浏览器限制 | ⚠ 各家在收紧公网页面访问 localhost（Chrome 推本地网络访问权限弹窗，Safari 另有限制），企业浏览器策略可能禁用 | 不受影响 |
-| 后端被攻破时 | 后端下发的网页代码可被篡改，替用户点"同意"、读 key，所以审批与 key 输入必须另做本地页面 | 界面代码在本地且已签名，后端改不了 |
-| key 输入 | 必须跳到本地页面 | 应用内，直接进钥匙串 |
-| 系统集成 | 弱：选目录、通知、托盘、开机启动都要 runtime 另做 | 原生支持 |
-| 多标签页 | 多个标签页同时连 runtime，要处理并发与状态同步 | 窗口由应用管理 |
-| 界面更新 | 后端发布即生效 | 随应用升级（可混合，见 2.4） |
-| 跨平台一致性 | 各浏览器行为不同 | Electron 自带 Chromium，一致 |
-| 安装包大小 | runtime + Codex | 再加约 100MB（Electron） |
-| 远程场景 | 天然可扩展 | 要另外设计 |
-| 试用传播 | 可先注册看演示 | 须先下载 |
+浏览器方案的难题——本地端口、Origin 校验、浏览器与 runtime 配对、浏览器对公网页面访问 localhost 的限制、多标签页、后端下发的网页代码不可信——全部来自"网页要直连 runtime"这个前提。路线 C 去掉这个前提，难题随之消失；同时 key 输入与工具级审批放在随 runtime 签名分发的本地窗口里，安全要求不打折。
 
-### 2.3 关键理由
+所以：**网页要直连 runtime 时，Electron 比浏览器省事；网页不直连时，路线 C 的前端改动最小。**建议先走路线 C，把"本地执行 + 后端控制面"这个核心跑通；等确实需要一体化桌面体验时再上 Electron（2.6）。
 
-1. **安全模型**：浏览器方案的核心难点是"后端下发的网页代码不可信"，于是 key 输入与工具级审批必须挪到本地页面，一个产品两个界面不可避免。Electron 里界面代码在本地并签名，这个问题不存在。
-2. **复杂度花在哪**：本地端口、Origin 校验、浏览器配对、localhost 访问限制、多标签页，全是为"界面在浏览器里"付的代价，对产品本身没有价值；先做浏览器版等于花力气做一套注定被丢掉的机制。
-3. **切换成本低**：界面代码（组件、契约、数据获取）基本原样复用，差别只在页面从哪里加载、怎么与本地通信。
+### 2.2 三种形态对比
 
-**框架**：优先 Electron（行为一致、生态成熟，VS Code、Cursor 同路线；包里已有数十 MB 的 Codex，Electron 的体积相对不突出）。在意包大小或团队熟悉 Rust 时可选 Tauri，但它用系统自带网页引擎，三平台差异要多测，Linux 上尤其明显。
+| 维度 | 浏览器直连 runtime | 网页 + 本地窗口（C） | Electron |
+| --- | --- | --- | --- |
+| 本机通道 | 本地端口、Origin 校验、浏览器配对、防恶意网页 | 无（网页不连本机） | 进程内通信 |
+| 浏览器对 localhost 的限制 | ⚠ 受影响 | 不涉及 | 不涉及 |
+| 后端被攻破时的界面风险 | 网页代码可被篡改，替用户点"同意"、读 key | 本地窗口随 runtime 签名，后端改不了 | 界面随应用签名，后端改不了 |
+| 界面数量 | 两处（网页 + 本地页面） | 两处（网页 + 本地窗口） | 一处 |
+| 现有前端改动 | 大（加本地通信） | 小（只加几页，走模板流程） | 大（静态导出、token 会话、R6，见 2.6） |
+| 系统集成（通知、托盘、选目录） | 靠 runtime 另做 | runtime 自带 | 原生 |
+| Task 级审查 | 网页 | 网页（任何地方可处理） | 应用内独立窗口，网页可复用 |
+| 工具级审批 | 网页经 localhost | 本地窗口 + 系统通知 | 应用内 |
+| 界面更新 | 后端发布即生效 | 网页即时；本地窗口随 runtime 升级 | 随应用升级 |
+| 安装包 | runtime + Codex | runtime + Codex + 轻量窗口壳 | 再加约 100MB（Electron） |
+| 远程场景（执行在另一台机器） | 可扩展 | 可扩展（网页本来就不连本机） | 要另外设计 |
 
-**何时改回浏览器**：近期要支持"执行在远程机器、界面在本地浏览器"时。为此保留 2.5.3 的 `runtimeClient` 抽象。
+### 2.3 路线 C 的设计
 
-### 2.4 套壳陷阱与混合做法
+**网页前端**（`investment-web-frontend`，沿用 Next.js 与模板流程）只新增页面，不改运行方式：
 
-只把后端网址塞进 Electron（`loadURL`），得到的仍是浏览器方案，安全问题一个没少；若再给远程页面挂上能调用本地能力的 preload，比浏览器更危险。
+- Task 级审查收件箱（2.4）；
+- 设备列表、Device Code 配对确认页、设备吊销；
+- Task 的"等设备上线"状态与指定执行设备；
+- "请在本机完成"的提示：需要工具级审批、key 配置、工作区授权时，网页说明原因并引导用户打开本地窗口（托盘图标或系统通知）；runtime 未安装时给出下载入口。
 
-需要保留"后端发布即生效"时可以混合：主界面从后端加载但**不挂任何 preload**（或只给只读能力）；工具级审批、key 输入、工作区授权放在随应用打包的独立窗口，由主进程弹出。
+新页面若属于各前端共用的能力，按 R6 先进模板再同步；只属于 investment 的，作为领域扩展登记在模板对齐报告里。登录仍是现有 cookie 会话 + CSRF（I4、I6 不受影响），U1 仍按原问题决定。
 
-### 2.5 对详细架构的影响
+**本地窗口**（runtime 的一部分）：
 
-#### 2.5.1 前端（`investment-app/investment-web-frontend`，Next.js 16 + React 19）
+- 页面用 React 写（与网页同一套组件风格与共享包），由 runtime 自带的轻量壳承载：Python 侧可用 pywebview 一类方案，或一个很小的 Tauri 壳（D15）；不用 Qt 这类原生控件，便于以后并入 Electron；
+- 页面随 runtime 打包、签名；不加载远程页面；与 runtime 核心经 ③ 通信；
+- 内容：工具级审批、模型与 key 配置、工作区授权、本地 diff、runtime 状态与日志摘要、发起设备配对、本地确认新 Task（1.7）、可免确认 Profile 的本地设置；
+- 入口：托盘图标；系统通知（有待工具级审批、有待本地确认的 Task）点击即打开对应页面。
 
-⚠ 本节列的是"在 Next.js 上改成桌面客户端"时要动的地方。`investment-web-frontend` 是 `tpl-web-frontend` 模板的实例，受 constraints R6（模板优先）约束，不能单独改；桌面客户端放在哪、用什么框架，见 2.6。
+**两边的衔接**：
 
-**可以复用**：`components/`、`contracts/`（zod 校验）、`lib/interaction/`（创建 Task、查询、操作）、React Query 数据获取、next-intl 文案、界面组件。
+- runtime 经 ① 收到"有待 Task 级审查"的提醒时，可发系统通知，点击用系统浏览器打开网页收件箱的对应链接；
+- 网页上看到的 Task 状态（含"等待本机审批"）来自后端，runtime 经 ① 上报；
+- 网页与本地窗口不直接传任何数据。
 
-**必须改**（现状取证于该仓代码）：
+### 2.4 Task 级审查页
 
-| 现状 | 为什么在 Electron 里不行 | 改为 |
-| --- | --- | --- |
-| `next.config.ts` 为 `output: 'standalone'`，依赖 Next 服务器 | Electron 里没有 Next 服务器 | `output: 'export'` 静态导出，经自定义协议（如 `app://`）加载；不用 `file://`（绝对路径与路由会出问题） |
-| 工作台页面在服务端用 cookie 调 `/api/auth/web/me` 检查登录（`lib/server/auth-session.ts`），页面 `force-dynamic` | 静态导出不支持服务端读 cookie、动态渲染 | 登录检查挪到客户端；未登录跳登录页 |
-| `proxy.ts` 在服务端生成 CSP nonce 并做多语言路由 | 静态导出没有中间件 | CSP 由 Electron 会话设置响应头；多语言改为不依赖中间件的路由 |
-| `lib/common/api-client.ts` 强制同源 `/api/...`、`credentials: 'same-origin'`，cookie + CSRF | 应用来源不是后端域名，跨站 cookie 基本不可用 | 后端绝对地址 + `Bearer` token；token 认证不需要 CSRF；后端 CORS 放行应用来源 |
-| 登录跳转后端 `/auth/web/login`（Casdoor），用 `return_to` 回到网页 | 桌面应用不能靠网页回跳 | 见 2.5.2 |
+- **形态**：网页里的收件箱页面；页面内的弹窗、确认框、遮罩层照常用 React 组件实现；不用 `window.alert()` / `window.confirm()`。
+- **多份文档**：同一页面内用标签页或左侧列表切换，每份文档旁显示版本、摘要值和各自的表态状态。
+- **渲染**：按 Artifact 类型选择渲染器：Markdown、代码 diff、表格、引用来源。
+- **数据**：用网页登录会话调后端接口取 Artifact、提交结论；不经本地 runtime。
+- **安全**：文档是 agent 生成的，按不可信内容渲染——过滤脚本和内嵌 HTML，不加载远程资源；文档内链接在新标签页打开并加 `rel="noopener noreferrer"`。
+- **提醒**：网页内提醒；runtime 在线时另发系统通知（2.3）。
 
-另外（在不改 Next 运行方式的前提下）也可以在 Electron 里跑 Next standalone 服务器，改动最少，但重新引入本地端口、应用更重，不建议。
-
-**Electron 安全配置**：开启 `contextIsolation`、`sandbox`，关闭 `nodeIntegration`；禁止窗口导航到外部网址（`will-navigate`、`setWindowOpenHandler`）；preload 只经 `contextBridge` 暴露具体函数（如 `approve(id, ok)`、`saveKey(provider, key)`），不暴露"执行任意命令"类通用接口；设置 CSP。这几项没配好，Electron 比浏览器更危险。
-
-**应用本身**：代码签名、公证、自动更新（如 electron-updater）；更新包校验完整性。
-
-#### 2.5.2 登录与会话
-
-- 桌面端用系统浏览器打开 Casdoor 登录页，走 OAuth PKCE；通过自定义协议链接（或本地回调端口）回到应用；
-- token 存系统钥匙串，刷新由应用负责；
-- 后端新增桌面端 token 发放与刷新；网页端的 cookie 会话保留；
-- 设备配对（1.10）复用同一登录态：应用登录后，由应用引导 runtime 完成 Device Code 配对。
-
-#### 2.5.3 本地通信
-
-- 前端所有与 runtime 的交互集中在一个 `runtimeClient` 模块：Electron 实现走 preload → 主进程 → runtime 本地管道；将来若做远程场景，再补一个 HTTP/WS 实现，页面代码不动；
-- 工具级审批、key 输入、工作区授权做成独立页面，不依赖后端数据即可渲染；
-- 浏览器方案里的几种本机连接方式不再需要：localhost HTTP（健康检查）、localhost WebSocket（事件流）、浏览器扩展 + Native Messaging。自定义协议只用于登录回调与"唤起应用"。
-
-#### 2.5.4 runtime 的进程形态
-
-- runtime 是独立的 Python 后台进程，由 Electron 主进程拉起并监管；主进程与 runtime 之间用本机管道（stdio 或仅本用户可访问的本地套接字），不开 TCP 端口；
-- runtime 同时注册为用户级后台服务，窗口关闭后仍可接收派发（由设置决定）；应用启动时连接已在运行的 runtime，而不是再起一个；
-- runtime 打包：带 Python 运行环境与 Codex 钉版二进制，随应用一起签名、一起更新。
-
-#### 2.5.5 后端
-
-- **U1（web 面生产适配器的形状）随之确定**：没有 Next BFF，会话与投影由后端持有；
-- `request-lifecycle` F-ADMIT-04 写的是"浏览器入口…身份来自登录会话"，要改为"客户端入口…身份来自登录会话或桌面端 token 会话"。这是合同改动，按 SDD 规则提修订工作单元；
-- F-DELIVERY 的 cursor 回放、先持久化后通知照旧；AT-16/AT-17 的"前端断线/页面刷新"在桌面端对应"断线/应用重启"；
-- 事件流（SSE 或 WebSocket）对桌面端同样适用，token 认证。
-
-#### 2.5.6 网页端
-
-保留一个轻量网页端：账号、计费、报告、任务历史，以及复用 2.5.7 页面的 Task 级审查；不做任何本地操作，不输入 key，不做工具级审批。
-
-#### 2.5.7 审查窗口
-
-Task 级审查（1.7）用独立窗口弹出，这是 Electron 相对浏览器页面多出的能力：浏览器只能在自己的标签页里弹窗，Electron 可以开独立窗口、置顶、配合系统通知。
-
-- **弹出**：由主进程创建审查窗口。必须先处理才能继续的，做成主窗口的模态子窗口；需要与主界面对照着看的，做成普通窗口。应用在后台时发系统通知，点击后打开或聚焦审查窗口。同一 Interaction 只开一个窗口。
-- **多份文档**：同一窗口内用标签页或左侧列表切换，每份文档旁显示版本、摘要值和各自的表态状态；不为每份文档各开一个窗口。
-- **渲染**：按 Artifact 类型选择渲染器：Markdown、代码 diff、表格、引用来源。页面内的普通弹窗、确认框、遮罩层照常用 React 组件实现（与浏览器一致）；不用 `window.alert()` / `window.confirm()`。
-- **数据**：审查页用桌面端 token 直接调后端接口取 Artifact、提交结论；不经本地 runtime。
-- **安全**：文档是 agent 生成的，按不可信内容渲染——过滤脚本和内嵌 HTML，不加载远程资源；文档内链接交给系统浏览器打开，窗口禁止导航；审查窗口不挂能调用本机能力的 preload（它只需要后端接口）。
-- **复用**：审查页是普通 React 页面，网页端可原样复用（2.5.6）。
-
-**本地触发与云端触发的弹出分开实现。**两类弹出都由主进程开窗口，外观可以统一，但数据来源、提交通道和权限完全分开：
+### 2.5 本地触发与云端触发的界面分开实现
 
 | | 本地 runtime 触发（工具级审批） | 云端触发（Task 级审查） |
 | --- | --- | --- |
-| 审什么 | 单条命令、单个文件修改、联网等 | 设计、计划、报告、diff、验收结论等文档，以及不可逆动作 |
-| 谁发起 | Codex → SDK 审批回调 → runtime → 主进程弹窗 | 后端创建 Interaction → 事件通知客户端 → 主进程弹窗 |
-| 内容从哪来 | runtime 经 ③ 给出的命令原文、diff | 用桌面端 token 从后端接口取的 Artifact |
+| 审什么 | 单条命令、单个文件修改、联网等；待本地确认的新 Task | 设计、计划、报告、diff、验收结论等文档，以及不可逆动作 |
+| 谁发起 | Codex → SDK 审批回调 → runtime；或 runtime 收到新 Attempt | 后端创建 Interaction |
+| 在哪里处理 | 本地窗口 | 网页收件箱 |
+| 内容从哪来 | runtime 经 ③ 给出的命令原文、diff、Task 摘要 | 从后端接口取的 Artifact |
 | 谁做决定 | 只在本地；结论交 runtime 执行 | 后端落 Interaction 并原子消费 |
-| 结论走哪条路 | 界面 → preload → 主进程 → runtime；runtime 再经 ① 上报摘要 | 审查页经 ④ 直接调后端接口 |
-| 本机能力 | 有，preload 只暴露"批准 / 拒绝"这类具体函数 | 无，窗口不挂本机能力的 preload |
-| 网页端能否处理 | 不能 | 能，复用同一套页面 |
-| 断网时 | 照常弹出，但 runtime 已暂停执行，不会产生新的副作用（1.12） | 弹不出，待重连后端后再处理 |
-| 页面载体 | 随应用打包的独立页面 | 普通 React 页面，客户端与网页端共用 |
+| 结论走哪条路 | 本地窗口 → ③ → runtime；runtime 再经 ① 上报摘要 | 网页经 ④ 直接调后端接口 |
+| 本机能力 | 有 | 无 |
+| 能否在别的电脑上处理 | 不能 | 能 |
+| 断网时 | 未决项作废，runtime 已暂停执行，不产生新的副作用（1.12） | 打不开，待网络恢复后处理 |
+| 页面载体 | 随 runtime 打包的本地页面 | 网页前端 |
 
-不得共用一套提交逻辑：否则云端下发或加载的页面可能借道本机通道批准本地操作，破坏 1.7 的"后端不能替用户批准工具级动作"。
+两类界面不得共用一套提交逻辑：否则后端提供的页面可能借道本机通道批准本地操作，破坏 1.7 的"工具级审批结论只从本地窗口来"。
 
-### 2.6 前端框架与模板约束（未决）
+### 2.6 以后上 Electron
 
-#### 2.6.1 框架本身都能用
+#### 2.6.1 何时上
 
-Electron 的界面是 Chromium 在跑网页，网页上能用的框架与组件库基本都能用：React、Next.js（静态导出）、Vite + React Router、Vue、Svelte、Angular；shadcn/ui、Tailwind、Ant Design、MUI；React Query、zustand、zod；Vitest，Playwright 也能直接驱动 Electron。工程工具另有 electron-vite、Electron Forge（构建与热更新）、electron-builder（安装包与自动更新），Nextron 是 Next.js 与 Electron 的现成组合模板，可作参考。唯一的限制是：框架里依赖服务器运行的功能（服务端渲染、API 路由、Server Actions、中间件）不能用。
+- 本地交互变多、变重：频繁的工具级审批、大量本地 diff 审查、浏览工作区文件；
+- 用户（尤其非技术用户）觉得在网页与本地窗口之间切换别扭；
+- 产品定位就是一体化桌面应用。
 
-#### 2.6.2 Next.js 在 Electron 里重不重
+**现在就为它留好路**：网页页面按"纯客户端 React + 调后端接口"写，不依赖框架的服务端能力；本地窗口页面也用 React 写；前端与本机的交互集中在一个 `runtimeClient` 模块。上 Electron 时，把两类页面合进同一个壳，页面代码不用重写。
 
-- **运行时不重**：静态导出后就是普通 HTML/JS/CSS，Next 客户端路由多出的 JS 在几十 KB 量级，与 Vite + React 相当；相对 Electron 自带的约 100MB Chromium 可以忽略。
-- **开发与配置有摩擦**：动态路由要预生成或改用查询参数（工作台现用 `?run=<id>`，不受影响）；须用自定义协议加载；`next/image` 优化要关；next-intl 中间件不能用；开发时要同时协调 `next dev` 与 Electron；构建比 Vite 慢。
-- **Vite + React Router 是 Electron 里最省事、最常见的组合**：天然是纯客户端静态产物，动态路径直接可用，electron-vite 一类模板把主进程、preload、页面放在一套构建里。
-- **时机**：`investment-web-frontend` 现在只有登录、工作台、工具页三个页面，选型或迁移的成本此时最低。组件与业务代码两种框架下基本不用动，迁移成本主要在路由、布局、多语言这一层。
+#### 2.6.2 Electron 的形态与安全
 
-#### 2.6.3 模板约束
+- **界面随应用打包**，不要只把后端网址塞进 Electron（`loadURL`）：那样得到的仍是浏览器方案；若再给远程页面挂上能调用本地能力的 preload，比浏览器更危险。需要保留"后端发布即生效"时可以混合：主界面从后端加载但不挂 preload（或只给只读能力）；工具级审批、key 输入、工作区授权放在随应用打包的独立窗口。
+- **安全配置**：开启 `contextIsolation`、`sandbox`，关闭 `nodeIntegration`；禁止窗口导航到外部网址（`will-navigate`、`setWindowOpenHandler`）；preload 只经 `contextBridge` 暴露具体函数（如 `approve(id, ok)`、`saveKey(provider, key)`），不暴露"执行任意命令"类通用接口；设置 CSP。
+- **本地通信**：`runtimeClient` 的 Electron 实现走 preload → 主进程 → runtime 本机管道；不开 localhost 端口。
+- **runtime**：仍是独立的 Python 后台进程；应用启动时连接已在运行的 runtime，而不是再起一个；runtime 与应用一起签名、一起更新。
+- **Task 级审查**：可在应用内开独立窗口（模态子窗口或普通窗口），配合系统通知；审查窗口不挂本机能力的 preload；网页端仍可复用同一套页面。
+- **登录**：系统浏览器打开 Casdoor 登录页走 OAuth PKCE，经自定义协议链接回到应用；token 存系统钥匙串；后端新增桌面端 token 发放与刷新，网页 cookie 会话保留；此时 U1 变为"后端持有会话与投影"，`request-lifecycle` F-ADMIT-04 的"浏览器入口"要改为"客户端入口"，AT-16/AT-17 补"断线 / 应用重启"场景。
+- **应用本身**：代码签名、公证、自动更新（如 electron-updater），更新包校验完整性。
+- **Electron 与 Tauri**：优先 Electron（自带 Chromium，行为一致，VS Code、Cursor 同路线）；在意包大小或团队熟悉 Rust 时可选 Tauri，但它用系统自带网页引擎，三平台差异要多测，Linux 上尤其明显。
+- **Electron 里弹窗**：页面内弹窗与遮罩层与浏览器一致；另外可用系统原生对话框（选择目录、确认）、置顶的模态窗口、托盘与系统通知，这是浏览器页面做不到的。
 
-- **R6 模板优先**：公共能力先进模板、过门禁，再按 Info → Knowledge → Investment 串行同步实例，不得先改实例。`investment-web-frontend` 是 `tpl-web-frontend` 的实例，`tpl-app/frontend-capability-matrix.json` 登记了各前端共用的能力。单独改它的框架或运行方式（包括只改成 Next 静态导出），都属于违规漂移。
-- **I4**（Next.js 可承担浏览器同源 BFF / session 边界）与 **I6**（非安全方法须同时满足 Origin 与 CSRF）是按浏览器写的；桌面客户端的 token 会话要补相应条款，按 constraints 的修订程序走。
+#### 2.6.3 前端要动的地方（以现有代码为准）
 
-#### 2.6.4 两条可选路线
+**可以复用**：`components/`、`contracts/`（zod 校验）、`lib/interaction/`、React Query、zustand、next-intl 文案、shadcn/Tailwind 组件、Vitest；Playwright 也能驱动 Electron。
 
-**路线 A：保留网页前端，新建桌面客户端。**
+**必须改**（在 Next.js 上改成桌面客户端时）：
 
-- `investment-web-frontend` 保持 Next.js 网页版，与模板一致，承担 2.5.6 的网页端职责（账号、计费、报告、任务历史、Task 级审查）；
-- 新建桌面客户端（如 `investment-desktop`），一开始就用 Electron + Vite + React Router，不存在迁移；
-- 两边共享的 `contracts/`、交互客户端、通用组件抽成共享包，不靠复制；
-- info、knowledge 的前端完全不受影响。
-- 待定：桌面客户端作为 investment 独有的新组成部分（在模板对齐报告里登记为"领域扩展"），还是先在模板里加一类"桌面端"再同步。
+| 现状 | 为什么在 Electron 里不行 | 改为 |
+| --- | --- | --- |
+| `next.config.ts` 为 `output: 'standalone'`，依赖 Next 服务器 | Electron 里没有 Next 服务器 | `output: 'export'` 静态导出，经自定义协议（如 `app://`）加载；不用 `file://` |
+| 工作台页面在服务端用 cookie 调 `/api/auth/web/me` 检查登录（`lib/server/auth-session.ts`），页面 `force-dynamic` | 静态导出不支持服务端读 cookie、动态渲染 | 登录检查挪到客户端 |
+| `proxy.ts` 在服务端生成 CSP nonce 并做多语言路由 | 静态导出没有中间件 | CSP 由 Electron 设置响应头；多语言改为不依赖中间件的路由 |
+| `lib/common/api-client.ts` 强制同源 `/api/...`、`credentials: 'same-origin'`，cookie + CSRF | 应用来源不是后端域名 | 后端绝对地址 + `Bearer` token；后端 CORS 放行应用来源 |
+| 登录跳转后端 `/auth/web/login`（Casdoor），用 `return_to` 回到网页 | 桌面应用不能靠网页回跳 | 见 2.6.2 登录 |
 
-**路线 B：模板与全部实例统一改为 Vite + React Router。**
+也可以在 Electron 里跑 Next standalone 服务器，改动最少，但重新引入本地端口、应用更重，不建议。
 
-按 R6 先改 `tpl-app` 的 admin 与 web 两个前端、过门禁，再依次同步 Info → Knowledge → Investment，共八个前端（现均为 Next.js 16）。桌面客户端与它们用同一套技术栈。影响：
+#### 2.6.4 框架选择
+
+- **框架都能用**：Electron 的界面是 Chromium 在跑网页，React、Next.js（静态导出）、Vite + React Router、Vue、Svelte、Angular 以及 shadcn/ui、Tailwind、Ant Design、MUI 都能用；工程工具有 electron-vite、Electron Forge、electron-builder，Nextron 是 Next.js 与 Electron 的现成组合模板。唯一的限制是框架里依赖服务器运行的功能（服务端渲染、API 路由、Server Actions、中间件）不能用。
+- **Next.js 运行时不重**：静态导出后 Next 客户端路由多出的 JS 在几十 KB 量级，与 Vite + React 相当；**开发与配置有摩擦**：动态路由要预生成或用查询参数（工作台现用 `?run=<id>`，不受影响）、须用自定义协议加载、`next/image` 优化要关、next-intl 中间件不能用、开发时要协调 `next dev` 与 Electron、构建较慢。
+- **Vite + React Router 是 Electron 里最省事的组合**：天然是纯客户端静态产物，动态路径直接可用。页面少时选型或迁移成本最低；组件与业务代码两种框架下基本不用动，迁移成本在路由、布局、多语言这一层。
+
+#### 2.6.5 模板约束与两条路线
+
+- **R6 模板优先**：`investment-web-frontend` 是 `tpl-web-frontend` 的实例，`tpl-app/frontend-capability-matrix.json` 登记了各前端共用的能力。单独改它的框架或运行方式（包括只改成 Next 静态导出）属于违规漂移。
+- **I4**（Next.js 可承担浏览器同源 BFF / session 边界）与 **I6**（非安全方法须同时满足 Origin 与 CSRF）是按浏览器写的；桌面客户端的 token 会话要补相应条款。
+
+**路线 A：保留网页前端，新建桌面客户端。**网页前端保持 Next.js、与模板一致；新建桌面客户端（如 `investment-desktop`），一开始就用 Electron + Vite + React Router；共享的 `contracts/`、交互客户端、通用组件抽成共享包；info、knowledge 不受影响。待定：桌面客户端作为 investment 的领域扩展，还是先在模板里加一类"桌面端"。本地窗口的页面可直接并入。
+
+**路线 B：模板与全部实例统一改为 Vite + React Router。**按 R6 先改 `tpl-app` 的 admin 与 web 两个前端、过门禁，再依次同步 Info → Knowledge → Investment，共八个前端（现均为 Next.js 16）。影响：
 
 | 方面 | 变化 |
 | --- | --- |
 | 部署 | 不再运行 Next standalone 的 Node 服务，改为静态文件（nginx 或对象存储）；K8s 部署模板跟着改 |
-| 登录与会话 | 服务端组件里的登录检查（`lib/server/auth-session.ts`）改为客户端检查；cookie 会话与 CSRF 仍由后端负责（I6 本来就在后端中间件执行） |
+| 登录与会话 | 服务端组件里的登录检查改为客户端检查；cookie 会话与 CSRF 仍由后端负责（I6 本来就在后端中间件执行） |
 | I4 | 不再有 Next BFF，这条要改写 |
 | CSP | `proxy.ts` 按请求生成 nonce 的做法不可用，改为网关设响应头或基于哈希的 CSP |
 | 多语言 | next-intl 换成 react-i18next 一类方案，文案文件可沿用 |
 | 公开页面 | web 前端的公开首页、`sitemap`、`robots`：纯客户端渲染不利于搜索引擎收录；需要收录时单独做静态官网 |
-| 能力矩阵 | `frontend-capability-matrix.json` 登记的公共能力要在新框架下逐项重新实现并测试 |
+| 能力矩阵 | 登记的公共能力要在新框架下逐项重新实现并测试 |
 | 可复用 | 组件、shadcn、Tailwind、React Query、zustand、zod、契约、测试基本不动 |
 
-好处：八个前端与桌面客户端技术栈一致，共享代码最方便；模板与实例不会因桌面端另用一套而漂移。代价：改动面覆盖四个仓的前端与部署。
+好处：所有前端与桌面客户端技术栈一致；代价：改动面覆盖四个仓的前端与部署。
 
-**两条路线的共同点**：页面都按"纯客户端 React + 调后端接口"来写，不依赖任何框架的服务端能力；这样以后无论走哪条路线，页面代码都不用重写。
-
-决策见第 4 节 D10–D12。
+决策见 D10–D12（仅在决定上 Electron 时需要）。
 
 ## 3. 对现有文档与代码的重构影响
 
-`mooc-manus-langgraph-longterm-plan-v5.md` 已降为历史输入；`dev-agent-task` 里仍沿用"执行器在后端 worker"前提的内容，按本设计重构：
+`mooc-manus-langgraph-longterm-plan-v5.md` 已降为历史输入；`dev-agent-task` 里仍沿用"执行器在后端 worker"前提的内容，按本设计重构。
 
 ### 3.1 文档
 
 | 文档 | 要改什么 |
 | --- | --- |
-| `README.md` | "第一层分前端与后端，Agent / runtime 与验收器归后端"：第一层是否改为三部分，见 D1 |
-| `composition/development-plan.md` | 阶段一"前后端对接"的对象换成 Electron 客户端 + 后端 + 本地 runtime；U1 结论 |
+| `README.md` | "第一层分前端与后端，Agent / runtime 与验收器归后端"：第一层是否改为三部分，见 D1；若改，新增子任务按层编号为 `0003-runtime`，现有编号不动 |
+| `composition/development-plan.md` | 阶段一"前后端对接"扩为网页前端 + 后端 + 本地 runtime |
 | `components/0001-backend/components/0002-agent-execution` | §2.6–2.10：执行位置改到本地 runtime；§2.10 的四条部署阻断（worker 无模型出口、根文件系统只读、768Mi 内存、模型凭据未进部署包）对执行器不再适用；Celery 进程纪律只约束派发网关与后端角色 |
+| U1（web 面生产适配器的形状） | 路线 C 下仍按原问题决定；上 Electron 时变为"后端持有会话与投影" |
+| U2（执行层 Port） | Port 不变，新增"派往本地 runtime"的 Adapter；① 的消息契约要定（含签名、续约、批量记账） |
+| U3（预算账、证据账落表） | 仍是前置；预算账增加"自报"来源字段；副作用账增加"按 turn 批量"类型与快照引用 |
 | U5（外部 harness 的部署形态） | 有了答案：在用户电脑上，用用户凭据，由本地 runtime 管理 |
-| U2（执行层 Port） | Port 不变，新增"派往本地 runtime"的 Adapter；① 的消息契约要定 |
-| U3（预算账、证据账落表） | 仍是前置；预算账增加"自报"来源字段 |
-| `components/0002-frontend` | 目标加入 Electron 桌面客户端（2.5.1–2.5.3）；与网页前端的关系按 2.6 的路线决定 |
-| `composition/constraints.md` | I4、I6 补桌面端 token 会话条款；若走路线 B，I4 改写、部署相关条款随之修订（2.6.3） |
-| `composition/request-lifecycle.md` | F-ADMIT-04 措辞（修订工作单元） |
-| 新增组成部分 | 本地 runtime（连接、策略、审批、模型配置、执行 Adapter）；知识服务的 MCP 接口 |
+| `components/0002-frontend` | 新增收件箱、设备管理、等设备状态、本机引导等页面；桌面客户端见 2.6 |
+| `composition/constraints.md` | 新增设备身份条款（① 的认证、派发签名、设备吊销）；A3 的说明补"本地暂存回执不是权威副本"；上 Electron 时 I4、I6 补桌面端条款 |
+| `composition/request-lifecycle.md` | 修订工作单元：正文中的"worker"改为中性的"执行端"（租约、fencing 条款同样约束用户电脑上的执行端）；补一句执行端可能离线、Task 可因此等待；上 Electron 时 F-ADMIT-04 与 AT-16/AT-17 再改（2.6.2） |
+| `components/0002-frontend/composition/agent-dev-guide.md` §4.12 | 收件箱的承载改为网页（1.7） |
+| 新增组成部分 | 本地 runtime（连接、策略、审批、记账拦截、模型配置、本地窗口、执行 Adapter）；知识服务的 MCP 接口 |
+
+本草案正式提交时，按 `dev-agent-standards/lifecycle.md` 放入 `thread/` 下新的文档 thread（作为其第 0001 个 turn 任务书的附件）；交回的 SDD 经人整理后再进 `composition/`。
 
 ### 3.2 代码
 
 | 仓 | 改动方向 |
 | --- | --- |
-| 前端（按 2.6 路线） | 路线 A：`investment-web-frontend` 保持网页版，新建桌面客户端（Electron + Vite + React Router，token 会话、`runtimeClient`），共享包；路线 B：`tpl-app` 前端模板先改，再按 Info → Knowledge → Investment 同步八个前端，部署改为静态文件 |
-| `investment-backend` | LangGraph 作为确定性编排使用，不在后端接模型调用；`RunBudget` 从内存换到 PG；`AgentProfile` 从审计字段变为执行约束；新增设备注册与配对、WSS 派发网关、桌面端 token、工具级审批结论与副作用意图的接收 |
+| `investment-web-frontend` | 走模板流程新增页面（收件箱、设备、等设备状态、本机引导）；页面按纯客户端写 |
+| `investment-backend` | 控制面不在后端接生成式模型；LangGraph 去留待评估（D16）；`RunBudget` 从内存换到 PG；`AgentProfile` 从审计字段变为执行约束；新增设备注册与配对、WSS 派发网关、派发签名、续约与 fencing、批量副作用记账、工具级审批结论与回执接收 |
 | `knowledge-app` | 在现有检索接口外包 MCP；按设备 token、限流 |
-| 新仓：本地 runtime | Python；Codex Python SDK；钥匙串；本地转换层（可后做） |
+| 新仓：本地 runtime | Python；Codex Python SDK；钥匙串；本地窗口（React 页面 + 轻量壳）；签名校验；工作区快照；本地转换层（可后做） |
 
 ## 4. 待定决策
 
 | # | 问题 | 建议 | 影响 |
 | --- | --- | --- | --- |
-| D1 | 第一层分两部分（前端、后端）还是三部分（客户端、本地 runtime、后端） | 三部分：本地 runtime 与后端运行位置、信任域、发布方式都不同 | 子任务划分与责任投影（合同 §9） |
-| D2 | 本地 runtime 的语言与 SDK | Python 后台进程 + Codex Python SDK | A4 合规、审批回调、打包体积 |
-| D3 | 两层审批各管哪些动作 | 不可逆、对外可见的归 Task 级；工作区内可回退的归工具级 | F-EXEC-03、F-INTERACT-* 的落点 |
-| D4 | 断线规则 | 断线即暂停，重连后按 fencing 对账 | I9、I14、AT-09、AT-12 |
-| D5 | U1 | 后端持有会话与投影 | 前端与后端接口 |
-| D6 | 本地文件修改的副作用记账粒度 | 按 Profile 声明，可回退修改批量记账，不可逆动作逐条 | 副作用账表结构 |
-| D7 | 界面是否全部打包在本地，还是混合加载 | 起步全部打包 | 更新节奏与安全边界 |
+| D1 | 第一层分两部分（前端、后端）还是三部分（前端、本地 runtime、后端） | 三部分：本地 runtime 与后端运行位置、信任域、发布方式都不同 | 子任务划分与责任投影（合同 §9） |
+| D2 | 本地 runtime 的语言与 SDK | Python 后台进程 + Codex Python SDK | A4 合规、审批回调与记账拦截、打包体积 |
+| D3 | 两层审批各管哪些动作，哪些可自动放行 | 不可逆、对外可见的归 Task 级；工作区内的归工具级，只读与可回退写入可自动放行 | F-EXEC-03、F-INTERACT-* 的落点；攻击面 |
+| D4 | 断线规则 | 断线即暂停，按 1.12 的五步处理 | I9、I14、AT-09、AT-12 |
+| D5 | 界面形态 | 先走路线 C（网页 + 本地窗口），Electron 作为后续选项 | 前端改动面、R6、U1 |
+| D6 | 副作用记账粒度 | 只读不记；工作区内可回退写入按 turn 批量；其余逐条 | 方案是否可用；副作用账表结构 |
+| D7 | 是否支持换设备续跑 | 按 Profile 决定，默认不支持 | 可用性、工作区同步 |
 | D8 | 是否先做"只做远程 MCP"的轻方案验证领域价值 | 视市场节奏决定 | 排期 |
 | D9 | 知识服务（MCP）是否脱离控制面单独提供，如何定价 | 先不单独提供；若提供，按设备或用量计费并限流 | 用户能否绕开控制面；收入结构 |
-| D10 | 前端路线：A（保留网页前端 + 新建桌面客户端）还是 B（模板与八个前端统一改为 Vite + React Router） | 未定；两条路线都要求页面按纯客户端写 | R6 模板同步、部署、I4 |
-| D11 | 若走 B：范围是八个前端全改，还是只改 web、admin 保持 Next.js；web 公开首页是否需要搜索引擎收录 | 未定 | 改动面、是否另做静态官网 |
-| D12 | 顺序：先改模板再同步实例，还是先让 investment 桌面客户端单独起步验证、再回头统一 | 未定；先行验证时须在模板对齐报告里登记 | R6 合规、验证速度 |
+| D10 | 上 Electron 时的前端路线：A 还是 B | 未定 | R6 模板同步、部署、I4 |
+| D11 | 若走 B：范围与公开首页是否需要搜索引擎收录 | 未定 | 改动面、是否另做静态官网 |
+| D12 | 若上 Electron：先改模板再同步，还是先让 investment 桌面客户端单独起步 | 未定；先行时须在模板对齐报告里登记 | R6 合规、验证速度 |
+| D13 | U1 | 路线 C 下按原问题决定（I4 允许 Next BFF） | 前端与后端接口 |
+| D14 | 本地确认新 Task 的范围：全部确认，还是允许用户为部分 Profile 免确认 | 默认全部确认，用户可在本地设置免确认 | 后端被攻破时的暴露面、体验 |
+| D15 | 本地窗口用什么壳 | pywebview 一类或小型 Tauri 壳，页面用 React | 打包体积、以后并入 Electron 的成本 |
+| D16 | 后端是否保留 LangGraph | 单独评估：只剩持久化流程编排时，与"状态机 + outbox + 任务队列"比较 | 后端复杂度 |
+| D17 | 派发签名的密钥放在哪里、谁能签 | 不放在在线派发服务里；Profile、流程模板、skills 发布时签名 | 后端被攻破时能否伪造派发 |
 
 ## 5. 未验证事项 ⚠
 
-- Codex 自带沙箱在三平台上的实际机制与边界（以钉版实测为准）；
-- Codex Python SDK 默认自动同意审批的行为在当前钉版是否仍成立，替换后的审批回调能否覆盖全部高风险动作；
+- Codex 自带沙箱在三平台上的实际机制与边界，尤其 Windows（以钉版实测为准）；
+- 沙箱能否可靠阻止 Codex 改写工作区外的 runtime 配置与策略；
+- Codex Python SDK 默认自动同意审批的行为在当前钉版是否仍成立；把所有命令与文件修改都送进审批回调的可行性与性能；
+- SDK 的 turn 中断能否终止已启动的命令进程；断线后能否恢复原运行时 thread；
+- 工作区快照的实现方式与大工作区的开销；
 - 第三方 Responses 接口的 compaction 条目兼容性、reasoning effort 是否发出；
-- 各浏览器对公网页面访问 localhost 的限制细节（只影响浏览器方案，是否保留远程场景时再测）；
-- Python 运行环境 + Codex + Electron 的安装包体积与三平台签名流程；
+- 本地窗口的壳（pywebview / Tauri）与 Python 运行环境、Codex 一起打包后的体积与三平台签名流程；
 - 用户电脑上多路并行 Attempt 的资源占用；
 - 断线即暂停对长任务体验的影响；
 - 对比评测与推荐模型清单所需的领域评测集尚不存在，"本产品优于原版 Codex"目前只是目标，没有数据；
