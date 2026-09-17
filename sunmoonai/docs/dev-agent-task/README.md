@@ -4,7 +4,7 @@
 
 - `composition/`：本层的组成设计——整体怎么划分、各部分承担什么、彼此怎么交互；
 - `components/`：各组成部分，每个部分是一个子任务，内部递归同一模式；叶子任务没有 `components/`。
-- 子任务目录名是「四位号-短名」，号在整棵任务树内统一递增；本目录是项目本身，不编号。见 [`thread-numbering.md`](thread-numbering.md)。
+- 子任务目录名是「四位号-短名」，号在同一个父节点下从 `0001` 起递增；本目录是项目本身，不编号。见 [`thread-numbering.md`](thread-numbering.md)。
 
 任何一层用到哪个开发阶段，按 [`dev-agent-standards/`](../dev-agent-standards/) 的规范写。
 
@@ -19,8 +19,8 @@ components/
 ├── 0001-backend/
 │   ├── thread/      0001-none：turn 0001–0003
 │   ├── composition/
-│   └── components/  0003-intake · 0004-agent-execution
-│                    0005-interrupt-resume · 0006-acceptance-commit（各有 thread/ 与 composition/）
+│   └── components/  0001-intake · 0002-agent-execution
+│                    0003-interrupt-resume · 0004-acceptance-commit（各有 thread/ 与 composition/）
 └── 0002-frontend/
     ├── thread/      0001-none：turn 0001
     └── composition/

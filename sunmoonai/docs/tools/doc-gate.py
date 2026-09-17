@@ -347,34 +347,37 @@ def numbering(where: str, names: list[str], what: str) -> tuple[list[str], dict[
 
 
 def check_nodes(tracked: set[str]) -> list[str]:
-    """子任务目录名是「四位号-短名」，号在整棵任务树内统一递增；树根是项目本身，不编号。"""
+    """子任务目录名是「四位号-短名」，号在同一个父节点下从 0001 起递增；项目本身不编号。"""
     problems: list[str] = []
     roots = {p.split("/thread/")[0] for p in tracked
              if p.startswith(DOC_ROOT) and "/thread/" in p and "/components/" not in p.split("/thread/")[0]}
     for root in sorted(roots):
-        children: set[str] = set()
+        children: dict[str, set[str]] = {}   # 父节点 -> 子任务目录名
         for p in tracked:
             if not p.startswith(root + "/components/"):
                 continue
             rest = p[len(root) + 1:].split("/")
+            parent = root
             for i in range(0, len(rest) - 1, 2):
                 if rest[i] != "components":
                     break
-                children.add("/".join(rest[: i + 2]))
-        nums: dict[int, list[str]] = {}
-        for c in sorted(children):
-            m = NODE_NAME_RE.match(c.rsplit("/", 1)[1])
-            if not m:
-                problems.append(f"{root}/{c}: 子任务目录名须是「四位号-短名」（如 0003-intake）")
-                continue
-            nums.setdefault(int(m["num"]), []).append(c)
-        for n, same in sorted(nums.items()):
-            if len(same) > 1:
-                problems.append(f"{root}: 子任务号 {n:04d} 对应多个目录：" + "、".join(same))
-        if nums:
-            gap = sorted(set(range(1, max(nums) + 1)) - set(nums))
-            if gap:
-                problems.append(f"{root}: 子任务号在整棵树内不连续，缺 " + "、".join(f"{g:04d}" for g in gap))
+                children.setdefault(parent, set()).add(rest[i + 1])
+                parent = f"{parent}/components/{rest[i + 1]}"
+        for parent, names in sorted(children.items()):
+            nums: dict[int, list[str]] = {}
+            for name in sorted(names):
+                m = NODE_NAME_RE.match(name)
+                if not m:
+                    problems.append(f"{parent}/components/{name}: 子任务目录名须是「四位号-短名」（如 0001-intake）")
+                    continue
+                nums.setdefault(int(m["num"]), []).append(name)
+            for n, same in sorted(nums.items()):
+                if len(same) > 1:
+                    problems.append(f"{parent}/components/: 子任务号 {n:04d} 对应多个目录：" + "、".join(same))
+            if nums:
+                gap = sorted(set(range(1, max(nums) + 1)) - set(nums))
+                if gap:
+                    problems.append(f"{parent}/components/: 子任务号不连续，缺 " + "、".join(f"{g:04d}" for g in gap))
     return problems
 
 
