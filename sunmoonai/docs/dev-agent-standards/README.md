@@ -4,6 +4,21 @@
 具体任务怎样落实、有哪些只对自己成立的规定，写在任务自己的目录里，并链接到这里所依据的规范；这里不引用任何具体任务。
 **今后每一个 agent 都按这里的规范开发。**
 
+## 交给 agent 的活，八条都成立
+
+不论哪一段、不论单路还是并行、不论人还是 AI：
+
+1. **不用计划覆盖原始需求**；
+2. 只在范围、工具、数据、预算和副作用边界内行动；用户消息没说清边界、而越界会有影响时，先问；
+3. **区分事实、推断、假设、缺失和未运行验证的结论**，不可混写；
+4. 对可中断的工作持久化检查点；
+5. 无法满足完成条件时请求输入或**明确失败**，不交半成品；
+6. 在**最终固定版本**上运行与风险相称的验证；
+7. 报告盲区、副作用和残余风险；
+8. 未经授权不推送、合并、发布、删除远端资产或扩大外部影响。
+
+第 3 条是 [UAT 规则](uat/uat-rules.md) 证据采信的前提：分不清事实与推断，采信分级就无从谈起。
+
 ## 从哪里读起
 
 | 文件 | 内容 |
@@ -17,7 +32,7 @@
 | [`brd/brd-rules.md`](brd/brd-rules.md) | **BRD** · Business Requirements Document（业务需求）：还不知道要做什么时先讨论清楚；可选，定稿成 `PRD/` |
 | [`prd/prd-rules.md`](prd/prd-rules.md) | **PRD** · Product Requirements Document（产品需求）：`PRD/` 目录怎么写——`architecture/` 与 `modules/`；只写要什么，不写怎么做；定稿成 `SDD/` |
 | [`sdd/sdd-rules.md`](sdd/sdd-rules.md) | **SDD** · Software Design Description（软件设计说明）：`SDD/` 目录怎么写——模块之间的结构与关系、各模块内部；设计原则与改契约的修订单；`modules/` 下就是子任务 |
-| [`sdp/sdp-rules.md`](sdp/sdp-rules.md) | **SDP** · Software Development Plan（软件开发计划）：执行者的共同纪律、工作单元、worktree 与两道门禁、并发与事故、交付与保留；产物在 worktree |
+| [`sdp/sdp-rules.md`](sdp/sdp-rules.md) | **SDP** · Software Development Plan（软件开发计划）：一个执行者在自己的 worktree 里动手——工作单元、worktree 与分支、两道门禁、并发与事故、交付与保留 |
 | [`uat/uat-rules.md`](uat/uat-rules.md) | **UAT** · User Acceptance Testing（用户验收测试）：三种结论、门的三档、证据采信与覆盖声明、验证分层；测试写在 worktree 的 `test/` |
 | [`detailed-rules/approvals.md`](detailed-rules/approvals.md) | 人的批准点：谁批什么、批准怎样成立、三道正交门、四档审批、人这一侧的义务、改判 |
 | [`detailed-rules/protocol/competition-rules.md`](detailed-rules/protocol/competition-rules.md) | 多方竞争协议：档位、裁量、七个环节、判据与角色；同目录另有尚未生效的草案 |

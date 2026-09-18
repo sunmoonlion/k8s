@@ -524,7 +524,7 @@ git status --porcelain=v1
 
 ### 4.9 Attempt 内的三条硬禁令
 
-> 依据的通用规范：[SDP「执行中的三条硬禁令」](../../../../../../../../dev-agent-standards/sdp/sdp-rules.md)
+> 依据的通用规范：[产品合同「Attempt 内的三条硬禁令」](../../../../../../../../product/product-contract.md)
 
 上层路由完、权限收窄之后，Attempt 内还需要**可执行的边界**——抽象声明容易被绕过。
 任一条被突破即为越权，按 `I3`、`I10`、`I15` 与 constraints A2/A4 处理：
