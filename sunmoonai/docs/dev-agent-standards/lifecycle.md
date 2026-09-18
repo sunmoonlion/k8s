@@ -107,6 +107,11 @@
 BRD、PRD、SDD 三段的回执只有 `status`：答就在同一个 turn 的 `response.md` 里，它在哪个提交、什么时候交的，git 都记着。
 `interrupted` 或 `failed` 时，把为什么停的写进回执正文一句话。不知道的值写 `unknown`，不得空着。
 
+**`status` 与 `verdict` 问的是两件事**：`status: completed` 说这次验收本身做完了，`verdict` 说被验的那个 turn 过没过；
+两者可以同时是「做完了」和「不通过」。`verdict` 和用户消息里的 `verifies` 成对——一个说验哪个，一个说结论——
+进度投影靠这一对把验收与被验收配起来，算出某一段被打回几次，满三次就提醒须人裁决（见下面「返工怎么做、最多几次」）。
+这条规则的载体就是这两个字段：只写在正文里机器读不了，规则就只剩文字。
+
 ## 定稿
 
 - **读完 response 再定稿**：BRD 的 response 定稿成 `PRD/`，PRD 的 response 定稿成 `SDD/`。定稿时写明以哪个 turn 为底、改了什么。整理即批准；批准怎样才算成立，见 [人的批准点](detailed-rules/approvals.md)。
