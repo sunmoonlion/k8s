@@ -1,7 +1,7 @@
 # 设计层：模块之间的结构与关系
 
 > 依据：[需求层](../../PRD/architecture/README.md) 与 [产品合同](../../../product/product-contract.md)。
-> 本层定稿以 thread [0001/0001](../../thread/0001-sdd-none/0001-none/user-message.md)、[0001/0002](../../thread/0001-sdd-none/0002-none/user-message.md)、[0001/0003](../../thread/0001-sdd-none/0003-none/user-message.md) 的 response 为底。
+> 本层定稿以 thread [0001/0001](../../thread/0001-prd-none/0001-none/user-message.md)、[0001/0002](../../thread/0001-prd-none/0002-none/user-message.md)、[0001/0003](../../thread/0001-prd-none/0003-none/user-message.md) 的 response 为底。
 
 ## 模块
 
