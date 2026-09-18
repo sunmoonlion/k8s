@@ -8,13 +8,13 @@ PRD/
 └── modules/<四位号>-<短名>/  每个模块要满足什么
 ```
 
-**模板**：[任务书](user-message-template.md) · [回执](turn-template.md)。
+**模板**：[用户消息](user-message-template.md) · [回执](turn-template.md)。
 
-## 这一段的任务书
+## 这一段的用户消息
 
 这一段由 discussion agent 答。这一问要写清：以哪一份 `PRD/` 定稿为底、要产出什么、范围三行、
 可判定的验收标准、约束。交回的 `response.md` 要能定稿成 `SDD/`，所以它必须满足上面几节。
-模板见 [任务书](user-message-template.md)；写多严见 [任务的生命周期](../lifecycle.md)「任务书写多严」。
+模板见 [用户消息](user-message-template.md)；写多严见 [任务的生命周期](../lifecycle.md)「用户消息写多严」。
 
 ## `architecture/` 写什么
 

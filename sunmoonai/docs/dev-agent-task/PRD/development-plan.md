@@ -1,7 +1,7 @@
 # 开发计划
 
 > **这里回答"要建什么、为什么这么建"。**
-> 任务书在各 turn 的 `user-message.md` 里，
+> 用户消息在各 turn 的 `user-message.md` 里，
 > 进度由任务目录推出，
 > 代码必须符合的规则见 [`constraints.md`](../SDD/constraints.md)。
 

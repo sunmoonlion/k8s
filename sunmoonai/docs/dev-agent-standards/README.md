@@ -8,7 +8,7 @@
 
 | 文件 | 内容 |
 | --- | --- |
-| [`lifecycle.md`](lifecycle.md) | **先读这一份**：任务的生命周期——五个阶段、任务目录、thread 与 turn 的形状与字段、任务书写多严、定稿、worktree、返工 |
+| [`lifecycle.md`](lifecycle.md) | **先读这一份**：任务的生命周期——五个阶段、任务目录、thread 与 turn 的形状与字段、用户消息写多严、定稿、worktree、返工 |
 | [`human-workflow.md`](human-workflow.md) | human 版：人自己走这套流程时怎么做 |
 | [`agent-workflow.md`](agent-workflow.md) | agent 版：由 supervisor 驱动时怎么做 |
 | [`naming.md`](naming.md) | **命名与编号**：thread、turn 与模块的目录名、编号、与运行时的对应，以及门禁的判据 |
@@ -25,7 +25,7 @@
 
 每一段的目录下各有两份模板，复制即用：
 
-| 阶段 | 任务书 | 回执 |
+| 阶段 | 用户消息 | 回执 |
 | --- | --- | --- |
 | BRD | [`brd/user-message-template.md`](brd/user-message-template.md) | [`brd/turn-template.md`](brd/turn-template.md) |
 | PRD | [`prd/user-message-template.md`](prd/user-message-template.md) | [`prd/turn-template.md`](prd/turn-template.md) |

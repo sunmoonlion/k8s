@@ -715,7 +715,7 @@ acceptance runner 至少对三轮可取得的历史产物逐条对照；每个�
 
 ### 8.1 六项逐条处置
 
-以下命令均在 luna 自己的 worktree 或兄弟 `investment-app` 运行；不以任务书结论代替复核。
+以下命令均在 luna 自己的 worktree 或兄弟 `investment-app` 运行；不以用户消息结论代替复核。
 
 | # | 独立观察 | 结论与落点 |
 | --- | --- | --- |

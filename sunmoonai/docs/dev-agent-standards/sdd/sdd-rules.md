@@ -1,6 +1,6 @@
 # SDD：软件设计说明（Software Design Description）
 
-SDD 阶段回答「怎样满足需求」。问是 turn 里的任务书，答是这个 turn 的 `response.md`；人读完定稿成 `SDD/`：
+SDD 阶段回答「怎样满足需求」。问是 turn 里的用户消息，答是这个 turn 的 `response.md`；人读完定稿成 `SDD/`：
 
 ```text
 SDD/
@@ -13,13 +13,13 @@ SDD/
 - 层次是相对的：一个模块再往下拆时，它自己的 `SDD/architecture/` 对子模块就是结构层。总体还是详细由它在任务树里的层次决定，不由名称决定。
 - `architecture/` 是目录，入口文件 `README.md`，可以再拆多份；编号见 [命名与编号](../naming.md)。
 
-**模板**：[任务书](user-message-template.md) · [回执](turn-template.md)。
+**模板**：[用户消息](user-message-template.md) · [回执](turn-template.md)。
 
-## 这一段的任务书
+## 这一段的用户消息
 
 这一段由规划 agent 答。这一问要写清：以哪一份定稿的哪几节为底、要设计出什么、范围三行、
 可判定的验收标准、不能动的契约。交回的 `response.md` 要能定稿成 `SDD/`，所以它必须满足上面几节。
-模板见 [任务书](user-message-template.md)；写多严见 [任务的生命周期](../lifecycle.md)「任务书写多严」。
+模板见 [用户消息](user-message-template.md)；写多严见 [任务的生命周期](../lifecycle.md)「用户消息写多严」。
 
 ## `architecture/` 写什么
 

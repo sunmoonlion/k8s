@@ -30,7 +30,7 @@ protocol/                          多方竞争协议在本平台的具体做法
 | 代码必须遵守的规则（39 条，本平台所有任务共用） | [`SDD/constraints.md`](SDD/constraints.md) |
 | agent 项目的开发流程 | [`SDD/modules/0001-backend/SDD/pipeline.md`](SDD/modules/0001-backend/SDD/pipeline.md) |
 | 多方竞争协议（本平台的具体做法） | [`protocol/`](protocol/)；所依据的通用规范见 [`../dev-agent-standards/protocol/`](../dev-agent-standards/detailed-rules/protocol/competition-rules.md) |
-| 每次派工的任务书 | 各 turn 的 `user-message.md`，如 [`thread/0001-prd-none/0001-none/user-message.md`](thread/0001-prd-none/0001-none/user-message.md) |
+| 每次派工的用户消息 | 各 turn 的 `user-message.md`，如 [`thread/0001-prd-none/0001-none/user-message.md`](thread/0001-prd-none/0001-none/user-message.md) |
 | thread、turn 与模块怎么编号 | [`../dev-agent-standards/naming.md`](../dev-agent-standards/naming.md) |
 | 开发计划：要建什么、为什么 | [`PRD/development-plan.md`](PRD/development-plan.md) |
 | 与项目无关的通用开发规范 | [`../dev-agent-standards/`](../dev-agent-standards/) |
