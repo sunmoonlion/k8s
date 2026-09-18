@@ -7,7 +7,7 @@ UAT 阶段验证做出来的东西是否满足用户消息。由验收 agent 交
 
 多个验收者各自验收再比对时，按 [多方竞争协议](../detailed-rules/protocol/competition-rules.md) 进行。
 
-建 turn 时复制 [`user-message.template.md`](../user-message.template.md) 与 [`turn.template.md`](../turn.template.md)；正文的写法不设模板，这一段的问要说清什么见下。
+建 turn 时复制 [`user-message.md`](../user-message.md) 与 [`turn.md`](../turn.md)；正文的写法不设模板，这一段的问要说清什么见下。
 
 ## 这一段的用户消息
 

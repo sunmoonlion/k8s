@@ -8,7 +8,7 @@ PRD/
 └── modules/<四位号>-<短名>/  每个模块要满足什么
 ```
 
-建 turn 时复制 [`user-message.template.md`](../user-message.template.md) 与 [`turn.template.md`](../turn.template.md)；正文的写法不设模板，这一段的问要说清什么见下。
+建 turn 时复制 [`user-message.md`](../user-message.md) 与 [`turn.md`](../turn.md)；正文的写法不设模板，这一段的问要说清什么见下。
 
 ## 这一段的用户消息
 
