@@ -8,6 +8,8 @@ PRD/
 └── modules/<四位号>-<短名>/  每个模块要满足什么
 ```
 
+**模板**：[任务书](user-message-template.md) · [回执](turn-template.md)。
+
 ## `architecture/` 写什么
 
 | 部分 | 写什么 |

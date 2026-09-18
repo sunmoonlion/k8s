@@ -24,6 +24,18 @@
 
 先后由任务树决定：上一段定稿的结果决定下一段问什么；不是每件事都要把五段走一遍。
 
+每一段的目录下各有两份模板，复制即用：
+
+| 阶段 | 任务书 | 回执 |
+| --- | --- | --- |
+| BRD | [`brd/user-message-template.md`](brd/user-message-template.md) | [`brd/turn-template.md`](brd/turn-template.md) |
+| PRD | [`prd/user-message-template.md`](prd/user-message-template.md) | [`prd/turn-template.md`](prd/turn-template.md) |
+| SDD | [`sdd/user-message-template.md`](sdd/user-message-template.md) | [`sdd/turn-template.md`](sdd/turn-template.md) |
+| SDP | [`sdp/user-message-template.md`](sdp/user-message-template.md) | [`sdp/turn-template.md`](sdp/turn-template.md) |
+| UAT | [`uat/user-message-template.md`](uat/user-message-template.md) | [`uat/turn-template.md`](uat/turn-template.md) |
+
+[`task-brief-template.md`](task-brief-template.md) 是最严格的一种写法，只有命中 T2 判据的任务才填全。
+
 ## 多方竞争
 
 任何一段的交回都可能由多个 agent 各交一份，再比较选定。这时按 [`protocol/`](detailed-rules/protocol/competition-rules.md)

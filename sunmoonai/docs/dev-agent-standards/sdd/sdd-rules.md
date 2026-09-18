@@ -13,6 +13,8 @@ SDD/
 - 层次是相对的：一个模块再往下拆时，它自己的 `SDD/architecture/` 对子模块就是结构层。总体还是详细由它在任务树里的层次决定，不由名称决定。
 - `architecture/` 是目录，入口文件 `README.md`，可以再拆多份；编号见 [命名与编号](../naming.md)。
 
+**模板**：[任务书](user-message-template.md) · [回执](turn-template.md)。
+
 ## `architecture/` 写什么
 
 | 部分 | 写什么 |

@@ -44,6 +44,7 @@
 - 任务书随 turn 发出即冻结；要改就开新的 turn，按 [人的批准点「改判」](detailed-rules/approvals.md) 写清触发、原判断错在哪、新判断；已交回的交回物按新任务书重新验收。
 - 人这一侧的其余义务见 [人的批准点](detailed-rules/approvals.md)「人这一侧的义务」；任务的目录与返工见 [任务的生命周期](lifecycle.md)。
 
-## 附录
+## 模板
 
-- [任务书模板](task-brief-template.md)：最严格的一种，复制作 turn 里的 `user-message.md`。
+- 按阶段的任务书与回执模板在各自目录下，见 [规范首页](README.md) 的表；平时用它们；
+- [任务书模板](task-brief-template.md)：最严格的一种，只有命中 T2 判据的任务才填全。
