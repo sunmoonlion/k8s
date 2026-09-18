@@ -65,7 +65,7 @@ def exempt(path: str) -> bool:
 # 声明「自足」的文档：§N 引用必须指向**本文件内**的标题。
 # 其他文档（裁决书、整合记录、评审）引用的是别的文档的章节，不适用本项。
 SELF_CONTAINED = (
-    "sunmoonai/docs/dev-agent-task/PRD/product-contract.md",
+    "sunmoonai/docs/product/product-contract.md",
     # 加入：所有者问「为何不把 GO.md 和 round-protocol.md 合并」。
     # 查实 GO.md §四 四条规范内容在协议里各有一份，而**没有任何东西保证两份一致**
     # ——正是 §0.0 第 3 条骂的「第二份说明书」。合并不是修法（见 GO.md §四抬头），

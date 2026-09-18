@@ -9,7 +9,7 @@
 
 ```text
 thread/0001-sdd-none/0001-none/    一问一答：user-message.md · response.md · turn.md · others/
-PRD/                              product-contract.md · development-plan.md
+PRD/                              development-plan.md · architecture/ · modules/
 SDD/
 ├── architecture/                  前后端的划分与交互、总体设计
 ├── constraints.md                 代码必须遵守的规则
@@ -20,13 +20,13 @@ SDD/
 protocol/                          多方竞争协议在本平台的具体做法
 ```
 
-本任务的产品合同见 [PRD/product-contract.md](PRD/product-contract.md)；第一层分前端与后端，Agent 与 runtime、验收器归后端。
+产品合同不在任务目录里：它是[跨节点的权威契约](../product/product-contract.md)，各层走到自己的定稿时，把属于那一层的内容取出来写进定稿，并在合同的「去向」表里登记。第一层分前端与后端，Agent 与 runtime、验收器归后端。
 
 ## 从哪里读起
 
 | 要找什么 | 在哪 |
 | --- | --- |
-| 产品合同 | [`PRD/product-contract.md`](PRD/product-contract.md) |
+| 产品合同 | [`../product/product-contract.md`](../product/product-contract.md) |
 | 代码必须遵守的规则（39 条，本平台所有任务共用） | [`SDD/constraints.md`](SDD/constraints.md) |
 | agent 项目的开发流程 | [`SDD/modules/0001-backend/SDD/pipeline.md`](SDD/modules/0001-backend/SDD/pipeline.md) |
 | 多方竞争协议（本平台的具体做法） | [`protocol/`](protocol/)；所依据的通用规范见 [`../dev-agent-standards/protocol/`](../dev-agent-standards/detailed-rules/protocol/competition-rules.md) |

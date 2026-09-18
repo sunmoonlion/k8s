@@ -15,7 +15,7 @@
 
 产品合同：
 
-`sunmoonai/docs/dev-agent-task/PRD/product-contract.md`
+`sunmoonai/docs/product/product-contract.md`
 
 任何开发任务都要遵守的通用开发规范：
 

@@ -1,6 +1,6 @@
 # 设计层：模块之间的结构与关系
 
-> 依据：[需求层](../../PRD/architecture/README.md) 与 [产品合同](../../PRD/product-contract.md)。
+> 依据：[需求层](../../PRD/architecture/README.md) 与 [产品合同](../../../product/product-contract.md)。
 > 本层定稿以 thread [0001/0001](../../thread/0001-sdd-none/0001-none/user-message.md)、[0001/0002](../../thread/0001-sdd-none/0002-none/user-message.md)、[0001/0003](../../thread/0001-sdd-none/0003-none/user-message.md) 的 response 为底。
 
 ## 模块
@@ -14,14 +14,14 @@
 
 ## 模块之间怎么交互
 
-按 [产品合同](../../PRD/product-contract.md) §2.2 的通道定，设计上只落实这几件事：
+按 [产品合同](../../../product/product-contract.md) 的「通道」一节定，设计上只落实这几件事：
 
 | 交互 | 设计要点 |
 | --- | --- |
 | 提交 | 客户端生成幂等键，后端在可靠边界内建单并写首事件（合同 `F-INTAKE-01`、`F-ADMIT-01`） |
 | 事件与结果 | 先持久化后通知；客户端按 cursor 续传，重复事件幂等（`F-DELIVERY-02` 至 `F-DELIVERY-05`） |
-| 审批与审查 | 工具级只在本机闭环，Task 级经后端 Interaction 原子消费；两条提交逻辑不得共用（§7） |
-| 结果 | 执行端本地检查后加密，后端只存密文与元数据，客户端本机解密（§9.4） |
+| 审批与审查 | 工具级只在本机闭环，Task 级经后端 Interaction 原子消费；两条提交逻辑不得共用（`F-APPROVE-*` 与 `F-REVIEW-*`） |
+| 结果 | 执行端本地检查后加密，后端只存密文与元数据，客户端本机解密（`F-CRYPTO-*`） |
 
 ## 共同约束
 

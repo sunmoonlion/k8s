@@ -27,7 +27,7 @@
 
 ## 2. 与现有产品合同的关系
 
-Task、Attempt、Interaction、Artifact、Event、Side Effect、Delivery 及其合法状态以 [请求生命周期合同](../../../dev-agent-task/PRD/product-contract.md) 为准。本文只增加专业 Profile 的 guard、产物与阶段要求，不另造顶层状态机。
+Task、Attempt、Interaction、Artifact、Event、Side Effect、Delivery 及其合法状态以 [请求生命周期合同](../../../product/product-contract.md) 为准。本文只增加专业 Profile 的 guard、产物与阶段要求，不另造顶层状态机。
 
 一个专业业务 Task 持有总体目标、预算和结果。候选生成、评审、专业子任务可以分别成为子 Task；每个子 Task 的验收范围必须明确，不能用子任务成功代替父任务成功。一个简单的模型调用不必强行包装为独立子 Task，但仍须有执行、预算和证据记录。
 
