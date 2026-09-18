@@ -1,9 +1,9 @@
 # 产品合同：AI 投资研究工具
 
-> 依据的通用规范：[SDD 规则](../dev-agent-standards/sdd/sdd-rules.md)
+> 依据的通用规范：[SDD 规则](../../dev-agent-standards/sdd/sdd-rules.md)
 
 > **本文是产品的唯一权威合同**：定义产品定位、总体架构、请求生命周期、执行纪律与验收。后续开发必须实现本文规定的功能并遵守本文规定的纪律。
-> 本文是目标合同，不是当前能力清单；当前实现事实以代码、迁移、测试、运行结果及 [`../project-guide/repos/investment-app.md`](../project-guide/repos/investment-app.md) 为准。
+> 本文是目标合同，不是当前能力清单；当前实现事实以代码、迁移、测试、运行结果及 [`../project-guide/repos/investment-app.md`](../../project-guide/repos/investment-app.md) 为准。
 > 实现与本文不符时，建立开发工作单元修代码，或按 §16 修订本文，不得把目标要求静默降级成当前实现。
 
 ## 0. 规范边界
@@ -18,7 +18,7 @@
 - Profile、子 Task 和依赖编排的扩展规则；
 - 各组成部分的实现责任与验收矩阵。
 
-本文不负责：当前代码实现到哪里；开发助手或人怎样提出、实施、评审、交付一项开发工作（见 [通用开发规范](../dev-agent-standards/README.md)）；某个业务 Profile 的完整业务算法；代码必须遵守的工程规则（见 [`composition/constraints.md`](composition/constraints.md)）。
+本文不负责：当前代码实现到哪里；开发助手或人怎样提出、实施、评审、交付一项开发工作（见 [通用开发规范](../../dev-agent-standards/README.md)）；某个业务 Profile 的完整业务算法；代码必须遵守的工程规则（见 [`constraints.md`](constraints.md)）。
 
 ### 0.2 条款裁决
 
@@ -332,7 +332,7 @@ Codex 沙箱
 - 现有网页前端不作为产品功能开发；其中的组件、契约、调用后端的客户端抽成共享包复用；
 - 管理后台沿用平台模板的 admin 前端；
 - runtime 独立成仓；后端的执行端口保持中性（领域概念不进签名），新增经 ① 派往 runtime 的适配器；
-- 以上工程决定须符合 [`composition/constraints.md`](composition/constraints.md)；需要改动其条款时按其修订程序进行。
+- 以上工程决定须符合 [`constraints.md`](constraints.md)；需要改动其条款时按其修订程序进行。
 
 ## 3. 核心对象
 
@@ -1016,7 +1016,7 @@ graph_version
 
 修改本文必须通过一个有原始请求、边界、影响分析、迁移方案与验收的规范修订工作单元。修改状态语义、Profile 协议、终态或加密方案时，必须说明历史数据与客户端的兼容策略。修订记录保留旧语义、变更原因与迁移边界。
 
-功能缺失建立独立的开发工作单元；已实现代码违反本文按缺陷处理。当前覆盖以代码、测试与 [`../project-guide/repos/investment-app.md`](../project-guide/repos/investment-app.md) 为准；唯一的实现矩阵记录 `要求 ID → 所有者 → 代码位置 → 自动测试 → 当前状态`。
+功能缺失建立独立的开发工作单元；已实现代码违反本文按缺陷处理。当前覆盖以代码、测试与 [`../project-guide/repos/investment-app.md`](../../project-guide/repos/investment-app.md) 为准；唯一的实现矩阵记录 `要求 ID → 所有者 → 代码位置 → 自动测试 → 当前状态`。
 
 本文写入 `dev-agent-task/`，因为改变它意味着代码必须跟着改变。它是后续实现与验收的目标合同，但不因文件存在就证明能力已经落地；矩阵中尚无实现的场景是规范先于实现的正常状态，只有 §15 对应证据完成后，相关能力才可宣称已实现。附录 B 的前提实测不成立时，按本节修订相关条款。
 
@@ -1107,9 +1107,9 @@ graph_version
 
 | 对象 | 要改什么 |
 | --- | --- |
-| [`README.md`](README.md) | 任务树第一层的划分按 D1 定 |
-| [`composition/development-plan.md`](composition/development-plan.md) | 施工阶段改为桌面客户端、本地 runtime、后端；分期按附录 C |
-| [`composition/constraints.md`](composition/constraints.md) | 「通用/专用分离」改写为「一个执行体，按 Profile 与 workflow 区分任务」；新增设备身份（认证、派发签名、吊销）、推理请求（用途、限额、自报）、结果加密条款；持久化账条款补「执行端本地暂存不是权威副本」；会话与 CSRF 条款补桌面端 token 会话 |
+| [`../README.md`](../README.md) | 任务树第一层的划分按 D1 定 |
+| [`development-plan.md`](development-plan.md) | 施工阶段改为桌面客户端、本地 runtime、后端；分期按附录 C |
+| [`constraints.md`](constraints.md) | 「通用/专用分离」改写为「一个执行体，按 Profile 与 workflow 区分任务」；新增设备身份（认证、派发签名、吊销）、推理请求（用途、限额、自报）、结果加密条款；持久化账条款补「执行端本地暂存不是权威副本」；会话与 CSRF 条款补桌面端 token 会话 |
 | `components/0001-backend` 及其子任务 | 执行位置改到用户电脑上的 runtime；后端只做 supervisor、派发与持久化；执行端口新增派往 runtime 的适配器 |
 | `components/0002-frontend` | 目标改为桌面客户端；用户侧不做网页端；审查收件箱改在桌面应用的审查窗口 |
 | 新增组成部分 | 本地 runtime；桌面客户端；知识服务的 MCP 接口；workflow 清单与分类评测集 |

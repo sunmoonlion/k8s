@@ -3,7 +3,7 @@
 ## 0. 先读结论
 
 平台只建设一个产品运行时。它以
-[`product-contract.md`](../product-contract.md) 定义的 Task、Attempt、Interaction、Artifact、
+[`product-contract.md`](product-contract.md) 定义的 Task、Attempt、Interaction、Artifact、
 Event、Side Effect、Delivery 为唯一产品内核；`dev.change/1` 是首个开发类 Task Profile，
 五家助手分别登记为 Agent Profile。Task Profile 定义“这类请求怎样算完成”，Agent Profile 定义
 “某个执行器能怎样做”，二者不是两套运行时，也不得改变内核状态词。
@@ -51,7 +51,7 @@ Submission
 
 | 真源 | 本文怎样使用 | 本文不做什么 |
 | --- | --- | --- |
-| [`product-contract.md`](../product-contract.md) | 引用七对象、Task/Attempt 状态机、`I1`–`I15`、`F-*`、`AT-*` | 不重写对象定义、合法边或产品验收矩阵 |
+| [`product-contract.md`](product-contract.md) | 引用七对象、Task/Attempt 状态机、`I1`–`I15`、`F-*`、`AT-*` | 不重写对象定义、合法边或产品验收矩阵 |
 | [`competition-protocol.md`](protocol/competition-protocol.md) | [§3.19](protocol/competition-operations.md)–[§3.22](../components/0001-backend/components/0002-agent-execution/composition/agent-dev-guide.md) 汇总执行所需的阶段、取件、超时规则 | 不另立协议版本；协议改变时同步修订本导读 |
 | [`constraints.md`](constraints.md) | 开工前自检硬约束，尤其 A1–A5 | 不把自检改成建议 |
 | [`development-plan.md`](../components/0001-backend/composition/development-plan.md) | 解释通用执行编排与领域能力的分工 | 不记录进度 |
