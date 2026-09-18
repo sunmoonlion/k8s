@@ -100,11 +100,17 @@
 | 字段 | 写什么 |
 | --- | --- |
 | `status` | `completed`、`interrupted` 或 `failed` |
-| `worktree` | 只有 SDP、UAT 填：分支名 |
-| `commit` | 只有 SDP、UAT 填：worktree 分支上的提交 |
+| `worktree` | 交回物所在的分支名 |
+| `commit` | 交回物所在的提交 |
 | `verdict` | 只有交回 UAT 时填：`pass`、`fail` 或 `undecidable` |
 
-BRD、PRD、SDD 三段的回执只有 `status`：答就在同一个 turn 的 `response.md` 里，它在哪个提交、什么时候交的，git 都记着。
+**`worktree` 与 `commit` 什么时候填**：SDP、UAT 两段必填——产物本来就在另一条分支上。
+BRD、PRD、SDD 三段看这一问是在哪里做的：
+
+- **就在当前分支上做**：两个字段都不填。答就是同一个 turn 里的 `response.md`，它在哪个提交、什么时候交的，git 都记着。
+- **另开了分支**：两个都填。一问一答也可能值得单开一条分支——讨论会连带改好几份文档、要和主线隔开、或者同一问并行发给几家各走各的。
+  这时 `response.md` 只存在于那条分支上，**从主线 `git log` 找不到它**，不写下来这一问的答就丢了。
+
 `interrupted` 或 `failed` 时，把为什么停的写进回执正文一句话。不知道的值写 `unknown`，不得空着。
 
 **`status` 与 `verdict` 问的是两件事**：`status: completed` 说这次验收本身做完了，`verdict` 说被验的那个 turn 过没过；

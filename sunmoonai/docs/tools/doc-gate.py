@@ -301,9 +301,8 @@ def check_turn_md(base: str, fm: dict[str, str], stage: str) -> list[str]:
     for k in required:
         if not fm.get(k):
             problems.append(f"{base}/turn.md: 缺字段或为空：{k}")
-    for k in ("worktree", "commit"):
-        if stage in DOC_STAGES and fm.get(k):
-            problems.append(f"{base}/turn.md: 只有 sdp、uat 段填 {k}")
+    if stage in DOC_STAGES and bool(fm.get("worktree")) != bool(fm.get("commit")):
+        problems.append(f"{base}/turn.md: worktree 与 commit 要么都不填（答在当前分支上），要么都填（答在另一条分支上）")
     for k in OBSOLETE_TURN_FIELDS:
         if fm.get(k):
             problems.append(f"{base}/turn.md: 回执里不写 {k}——运行时 id 在目录名里，执行者在用户消息里，时间与提交 git 有，中断或失败的原因写正文")
