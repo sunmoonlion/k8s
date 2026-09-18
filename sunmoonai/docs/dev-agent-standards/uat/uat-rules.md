@@ -2,19 +2,25 @@
 
 UAT 阶段验证做出来的东西是否满足用户消息。由验收 agent 交回，它不是实现这份 SDP 的那一个。
 
-**产物在 worktree 的 `test/`，不在任务目录里。**这一段的 turn 没有 `response.md`；`turn.md` 记分支、提交与结论
+**产物在 worktree 的 `test/`，不在任务目录里。**这一段的 turn 没有 `response.md`；`turn.md` 记分支与提交，
 结论写在回执正文与那条提交里，见 [任务的生命周期](../lifecycle.md)「SDP 与 UAT 的 worktree」。
 
 多个验收者各自验收再比对时，按 [多方竞争协议](../detailed-rules/protocol/competition-rules.md) 进行。
 
-**模板**：[用户消息](user-message-template.md) · [回执](turn-template.md)。
+**回执模板**：[turn-template.md](turn-template.md)。这一段的用户消息没有模板，见下。
 
 ## 这一段的用户消息
 
-YAML 头里填 `verifies`（验收哪个 turn，写「thread 号/turn 号」）。
-这一问要写清：验收对象（turn、分支与提交）、按哪几条判（照抄被验 turn 里已冻结的完成条件，不在这里改）、
-在哪开 worktree、证据要求、范围与约束。执行者不能是实现这份 SDP 的那一个。这一段不交 `response.md`。
-模板见 [用户消息](user-message-template.md)；写多严见 [任务的生命周期](../lifecycle.md)「用户消息写多严」。
+**这一段的问没有模板**，但和 SDP 一样：验收者是另一个进程，只知道消息里写了的东西。YAML 头里填 `verifies`（验收哪个 turn）。
+这几样不写就判不了：
+
+- **验收对象**：哪个 turn、哪条分支上的哪个提交——写完整提交号，分支是会被快进、重置、强推的指针；
+- **按哪几条判**：照抄被验 turn 里已冻结的完成条件，不在这里改、不在这里加；
+- **哪些能机器判、哪些只能靠纪律**：不分档，答会把纪律条目写成「已验证」（见下面「门的三档」）；
+- **可用的证据**：能跑的命令、测试入口、产物位置；够不着的路径要点明，验收才写得出「不能排除」而不是含混的「没查」；
+- **在哪开 worktree**：在被验的 worktree 之上再开一个，不得修改被验的产物。
+
+执行者不能是实现这份 SDP 的那一个。这一段不交 `response.md`。写多严见 [任务的生命周期](../lifecycle.md)「用户消息写多严」。
 
 ## 判据与结论
 

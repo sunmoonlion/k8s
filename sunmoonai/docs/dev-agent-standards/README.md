@@ -28,11 +28,13 @@
 | BRD | 无模板，见 [`brd/brd-rules.md`](brd/brd-rules.md)「这一段的用户消息」 | [`brd/turn-template.md`](brd/turn-template.md) |
 | PRD | 无模板，见 [`prd/prd-rules.md`](prd/prd-rules.md)「这一段的用户消息」 | [`prd/turn-template.md`](prd/turn-template.md) |
 | SDD | 无模板，见 [`sdd/sdd-rules.md`](sdd/sdd-rules.md)「这一段的用户消息」 | [`sdd/turn-template.md`](sdd/turn-template.md) |
-| SDP | [`sdp/user-message-template.md`](sdp/user-message-template.md) | [`sdp/turn-template.md`](sdp/turn-template.md) |
-| UAT | [`uat/user-message-template.md`](uat/user-message-template.md) | [`uat/turn-template.md`](uat/turn-template.md) |
+| SDP | 无模板，见 [`sdp/sdp-rules.md`](sdp/sdp-rules.md)「这一段的用户消息」 | [`sdp/turn-template.md`](sdp/turn-template.md) |
+| UAT | 无模板，见 [`uat/uat-rules.md`](uat/uat-rules.md)「这一段的用户消息」 | [`uat/turn-template.md`](uat/turn-template.md) |
 
-**讨论与设计三段没有用户消息模板**：问是开放的，固定栏目会给答案定骨架，也会把每一问都推向最严格那一档。
-执行与验收两段有：那里的栏目是门禁要核对的事实——工作区、基线、预算、要人批准的动作、被验的提交与判据——填不满就是真漏了。
+**五段都没有用户消息模板**：问是开放的，固定栏目会给答案定骨架，也会把每一问都推向最严格那一档。
+各段最少要说清什么，写在各自规则的「这一段的用户消息」里——讨论与设计段几乎没有必填的，
+执行与验收段要说清的多（工作区、基线、完成条件、预算、要人批准的动作；被验的提交、判据、证据与分档），
+因为执行者与验收者是另一个进程，只知道消息里写了的东西。
 
 ## 多方竞争
 
