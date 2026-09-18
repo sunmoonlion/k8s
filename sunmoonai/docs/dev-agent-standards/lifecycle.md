@@ -1,65 +1,80 @@
 # 任务的生命周期
 
-任务不是事先排好的：它们随着交付一个个长出来——上层任务的设计交回、经人整理定稿之后，才生出下层任务；
-交付被打回，就在原任务里开新的 turn 重做。
+任务不是事先排好的：一段一段问出来、答出来、定稿，再由定稿长出下一段和下一层。
+本文写两版共同的骨架；人做和 agent 做不同的地方，见 [human 版](human-workflow.md) 与 [agent 版](agent-workflow.md)。
+
+## 五个阶段
+
+| 阶段 | 问什么 | 答（response）在哪 | 定稿成什么 |
+| --- | --- | --- | --- |
+| **BRD** 业务需求（可选） | 还不知道要做什么时，先讨论要解决什么问题 | turn 里 | `PRD/` 目录 |
+| **PRD** 产品需求 | 按定稿的需求出设计 | turn 里 | `SDD/` 目录 |
+| **SDD** 设计 | 按定稿的设计实现 | turn 里 | 实现（worktree） |
+| **SDP** 实现 | 做出来 | 各自的 worktree | 审核通过后合并到 master |
+| **UAT** 验收 | 验证是否满足 | worktree 的 `test/` | 验收结论写进回执 |
+
+已经清楚要做什么时，可以直接从 PRD 起；不是每件事都要把五段走一遍。
 
 ## 一个例子
 
-1. 一开始只有一个任务：「开发某个 agent」。第 0001 个 turn 带着任务书（PRD）派出去，写明要规划 agent 交回设计（SDD）。
-2. 规划 agent 交回的设计里说「分前端和后端」。设计通过验收，人读完整理出定稿设计，**这时才**建出「前端」「后端」两个子任务。
-3. 后端的设计又拆出几个部分，同样定稿之后，**这时才**再建出这几个子任务。
-4. 某个子任务的第 0001 个 turn 交给执行 agent 去改代码，写明交回 SDP；第 0002 个 turn 由验收 agent 检查、交回 UAT，判定不通过。打回理由写进第 0003 个 turn 的任务书，执行 agent 重做。
-5. 同一项交付物被打回第三次，就不再自动派工，停下来交给人判断。
-
-下面三节就是把这个过程写成规则。
+1. 一开始只有一句话：「做一个 AI 投资研究工具」。第 `0001` 个 thread 是 BRD：人问、AI 答、人改，几个 turn 之后人把 response 定稿成 `PRD/`。
+2. 第 `0002` 个 thread 是 PRD：拿定稿的需求去问设计，response 定稿成 `SDD/`。`SDD/architecture` 写模块之间的结构与关系，`SDD/modules/` 下每个模块一个目录，就是一个子任务。
+3. 某个子任务开自己的 thread，同样走 BRD、PRD、SDD 三段（需要哪段走哪段），再往下拆。
+4. 要动代码时开 SDP thread：任务书发出去，执行者在自己的 worktree 里做；回执记分支与提交。
+5. UAT thread 派给验收者，测试写在 worktree 的 `test/`，结论写进回执。判定不通过，就在新的 turn 里写明理由重做。
+6. 同一项交付物被打回第三次，停下来交给人判断。
 
 ## 任务目录里放什么
 
-一个任务目录就是一个任务，由一个个 turn 组成；任务目录本身不设任务书，每次派工的任务书在各自的 turn 里：
-
 ```text
 <任务目录>/
-├── thread/          文档 thread：一个目录对一个运行时 thread，名为「本地号-运行时 thread id」
-│   └── <文档 thread>/
-│       └── <文档 turn>/   名为「本地号-运行时 turn id」；里面是 user-message.md（发出去的
-│                          任务书）、turn.md（交回时写的回执），交回物按类型放 sdd/、sdp/、uat/
-├── composition/     人读完交回物后整理出的定稿设计（设计定稿后才有）
-└── components/      按定稿设计的拆分建出的子任务，每个子任务是同样结构的目录（定稿后才有）
+├── thread/
+│   └── <四位号>-<阶段>-<运行时 thread id>/     阶段是 brd、prd、sdd、sdp、uat
+│       └── <四位号>-<运行时 turn id>/
+│           ├── user-message.md   问：这一次发出去的任务书
+│           ├── response.md       答：BRD、PRD、SDD 阶段有；SDP、UAT 没有
+│           ├── turn.md           交回时写的回执
+│           └── others/           可选：人或 supervisor 追加的材料与附件
+├── PRD/                          BRD 的 response 定稿
+│   ├── architecture/             模块之间的结构与关系
+│   └── modules/<四位号>-<短名>/  每个模块要满足什么
+└── SDD/                          PRD 的 response 定稿
+    ├── architecture/
+    └── modules/<四位号>-<短名>/  子任务：内部是同样结构的任务目录
 ```
 
-改动过的代码和文件留在它们本来的位置，turn 里只用提交号引用，不拷进来。
+- `architecture/` 是目录，入口文件 `README.md`，可以再拆多份。
+- `modules/` 与实现时 worktree 里的模块目录**一一对应**；**以定稿为准**：代码结构要变，先改定稿。
+- 同一个模块在 `PRD/modules/` 与 `SDD/modules/` 下用同一个号与短名：前者写它要满足什么，后者是它的子任务目录。
+- 改动过的代码留在 worktree 与它的提交里，不拷进任务目录。
+- **不另写记录或进度文件。**做到哪、谁在做、第几次返工、在等谁，都从这些目录与提交推出来；给人看的进度视图是投影。
+- **目录只是一种载体。**换成数据库、Issue、PR 或事件流承载也可以，但**不能丢失原始请求、边界、验收、基线、证据和改判历史**。
 
-**不另写记录或进度文件。**做到哪、谁在做、第几次返工、在等谁，都从 `thread/`、`composition/`、`components/`
-及它们的提交推出来；给人看的进度视图是这些的投影，不是另一份要维护的文件。
+## thread 与 turn
 
-**目录只是一种载体。**同样可以用数据库、Issue、PR 或事件流承载，换了载体也**不能丢失原始请求、边界、验收、基线、证据和改判历史**。
+- **一个文档 thread 对一个运行时 thread**，目录名是「四位本地号-阶段-运行时 thread id」。运行时换了 thread（resume、fork、上下文压缩后重开），就新开一个文档 thread，接着做什么写在它第 `0001` 个 turn 的任务书里。
+- **本地号在任务目录内统一递增**，不按阶段分段，从 `0001` 起，不跳号、不复用。
+- **一个 turn 就是一问一答**：`user-message.md` 是问，`response.md` 是答。turn 号在所属 thread 内从 `0001` 起递增。
+- **发出时就把任务书存进 `user-message.md`**：发出去的是什么，存的就是什么，包括附带的打回理由。模型只知道这些，判断交回对不对也以此为准。
+- **response 只有一份**，是这一问的答，写成一个文件。它是草稿：定稿时才拆进 `PRD/` 或 `SDD/` 的 `architecture/` 与 `modules/`。
+- SDP、UAT 阶段的 turn **没有 `response.md`**：产物在各自的 worktree 里，UAT 的测试放 worktree 的 `test/`。回执里记分支与提交。
+- **turn 交回即冻结**，不改、不删；要改，只能开新的 turn。
+- **turn 只负责问，不承载审核**。审核意见不写进已有的 turn；要重做就开新 turn，理由写进它的 `user-message.md`。
+- **引用 turn** 写「thread 号/turn 号」，如 `0003/0002`，不带 id 后缀。
+- **并行**：同一问同时发给几个执行者时（多方竞争，或多次尝试取最好的一次），各家在各自的运行时 thread 里，所以是几个文档 thread 各开一个 turn，任务书各存各的；定稿写明以哪一个为底。
 
-### turn 里的 user-message.md 就是任务书
+**本地号排先后，运行时 id 管回溯，两者合起来唯一。**运行时自己生成的标识通常是 UUID，既排不出先后也不便人读，所以名字前半截用本地号；后半截原样带上运行时 id，**写全不截断**，没有 id 的写 `-none`。一次派工在运行时可能跑了好几个 turn（工具往返、自动接着跑、重试），名字里带的是**入口**那一个；运行时 id 不参与任何层级判断。
 
-每个 turn 的 `user-message.md` 就是这次发出去的任务书，按 [PRD 规则](prd/prd-rules.md) 写（模板见 [附录](prd/prd-template.md)）；可以就是一段自然语言，附件与它放在一起。
-**必须写明这次要交回哪一种：SDD、SDP 还是 UAT**，由哪类 agent 交——规划 agent 只交 SDD；执行 agent 交 SDP，实现前可以先交 SDD；验收 agent 只交 UAT。
-任务书随 turn 一起冻结；要改，就开新的 turn。
-
-### turn：一问一答
-
-- 一个 turn 就是一次派工和它的交回。它在所属的文档 thread 内按派出顺序编四位数字，从 `0001` 起，不跳号、不复用；目录名是**本地号加运行时 turn id**——本地号管排序与引用，id 是回溯运行时原始记录的入口，没有 id 的写 `-none`。
-- **文档 thread 一个目录对一个运行时 thread**，同样是「本地号-id」，在任务目录内编号。运行时换了 thread（resume、fork、上下文压缩后重开），就新开一个文档 thread 目录，接着做什么写在它第 `0001` 个 turn 的任务书里。
-- **发出时就把任务书存进这个 turn 的 `user-message.md`**：发出去的是什么，存的就是什么，包括附带的打回理由。模型只知道这些，判断交回对不对也以此为准。
-- 交回物放进同一个 turn，按交付物类型进 `sdd/`、`sdp/` 或 `uat/`，同时写好 `turn.md`：交回的状态、时间与所在提交（字段见下）。写 `turn.md` 时，turn 与文档 thread 的目录名都必须已经带上 id。
-- **turn 交回即冻结**，不改、不删；要改，只能开新的 turn。验收结论永远绑定到具体的一个 turn。
-- 验收也是 turn：验收 agent 交回的 UAT 放在它自己的 turn 里，写明验收的是哪个 turn 的交回。引用 turn 写「文档 thread 号/turn 号」，如 `0001/0002`。
-- **并行**：同一问同时发给几个执行者时（多方竞争，或多次尝试取最好的一次），各家本来就在各自的运行时 thread 里，所以是几个文档 thread 各开一个 turn，任务书各存各的；定稿写明以哪一个为底。顺序的返工仍用新的 turn 号。
-
-### turn 的固定字段
+## turn 的固定字段
 
 `user-message.md` 开头用下面几项（YAML 头），发出时写好，随任务书冻结：
 
 | 字段 | 写什么 |
 | --- | --- |
-| `deliverable` | 交回哪一种：`SDD`、`SDP`、`UAT`，可以几项 |
-| `agent` | 交给哪类 agent：`planning`、`execution` 或 `acceptance` |
+| `deliverable` | 这一问要交回哪一种：`BRD`、`PRD`、`SDD`、`SDP`、`UAT`；与所在 thread 的阶段一致 |
+| `agent` | 交给哪类 agent：`discussion`（BRD、PRD）、`planning`（SDD）、`execution`（SDP）、`acceptance`（UAT） |
 | `executor` | 具体的执行者；未定写 `unassigned` |
-| `verifies` | 只有 UAT 填：验收的是哪个 turn，写「文档 thread 号/turn 号」，如 `0001/0002` |
+| `verifies` | 只有 UAT 填：验收的是哪个 turn，写「thread 号/turn 号」，如 `0004/0001` |
 | `base` | 发出时依据的提交 |
 | `sent_at` | 发出时间 |
 
@@ -69,29 +84,32 @@
 | --- | --- |
 | `status` | `completed`、`interrupted` 或 `failed` |
 | `completed_at` | 交回时间 |
-| `commit` | 交回物或改动所在的提交 |
-| `provider_record` | 运行时自己的记录在哪（如运行时的记录文件、归档提交）；没有写 `none` |
+| `commit` | response 所在的提交；SDP、UAT 填 worktree 分支上的提交 |
+| `worktree` | 只有 SDP、UAT 填：分支名 |
+| `provider_record` | 运行时自己的记录在哪；没有写 `none` |
 | `error` | 只有 `failed` 填：失败原因 |
-| `reason` | 只有 `interrupted` 填，且必填：`interrupted`（被人打断）、`replaced`（被新的 turn 替换）、`review-ended`（评审结束）、`budget-limited`（预算耗尽）或 `cancelled`（取消） |
+| `reason` | 只有 `interrupted` 填，且必填：`interrupted`、`replaced`、`review-ended`、`budget-limited` 或 `cancelled` |
 | `verdict` | 只有交回 UAT 时填：`pass`、`fail` 或 `undecidable` |
 
-**本地号排先后，id 管回溯，两者合起来唯一。**运行时自己生成的 thread 与 turn 标识通常是 UUID，既排不出先后，也不便人读，所以名字前半截用本地号；
-后半截原样带上运行时的 id，**写全不截断**——截断了就对不上它的记录，这个后缀也就白带了。行文引用只用本地号。
-一次派工在运行时可能跑了好几个 turn（工具往返、自动接着跑、重试），名字里带的是**入口**那一个；运行时 id 不参与任何层级判断。
+不知道的值写 `unknown`，还没发出的写 `pending`，不得空着。
 
-`turn.md` 的正文列出交回物：每个文件是哪一种交付物。不知道的值写 `unknown`，还没发出的写 `pending`，不得空着。
+## 定稿
 
-## 人读完交回物之后
+- **读完 response 再定稿**：BRD 的 response 定稿成 `PRD/`，PRD 的 response 定稿成 `SDD/`。定稿时写明以哪个 turn 为底、改了什么。整理即批准；批准怎样才算成立，见 [人的批准点](detailed-rules/approvals.md)。
+- **子任务从 `SDD/modules/` 长出来**：只有定稿设计里拆出的模块才建子任务目录，同时写好它第 `0001` 个 turn 的 `user-message.md`。**不预先建还没派出的子任务。**
+- 定稿改版后拆分变了：新多出来的模块建新目录；不再需要的**不删目录**，由上层定稿写明「第 n 版起取消」及原因，该子任务不再开新的 turn。
+- SDD 的 response 定稿之后就该动代码：这一段的「定稿」是实现本身，走下面的 worktree。
 
-- **定稿设计**：人读完设计的交回物，整理进 `composition/`，写明以哪个 turn 为底、改了什么。整理即批准；批准怎样才算成立，见 [人的批准点](detailed-rules/approvals.md)。
-- **建子任务**：只有定稿设计里拆出的部分才建子任务目录，同时写好它第 0001 个 turn 的 `user-message.md`（内容来自定稿设计的相应一节）。**不预先建还没派出的子任务。**
-- 定稿设计改版后拆分变了：新多出来的部分建新目录；不再需要的子任务**不删目录**，由上层定稿写明「第 n 版起取消」及原因，该子任务不再开新的 turn。
-- 只有规划 agent 的设计会拆出子任务；执行 agent 交回的设计只写它自己要做的部分，不生子任务；只交 SDP 或只交 UAT 的任务也不生子任务。
+## SDP 与 UAT 的 worktree
+
+- 执行者在自己的 git worktree 里实现；验收者在 worktree 的 `test/` 里写测试。
+- 交回时 `turn.md` 记分支与提交；产物不拷进任务目录。
+- 审核者在被审的 worktree 之上再开一个审核 worktree，逐层向上，最后合并到 master。层数、谁审谁、谁清理，两版不同，见 [human 版](human-workflow.md) 与 [agent 版](agent-workflow.md)。
+- **worktree 完成后才清理**；清理前分支或标签必须留下——工作区可以删，提交不能跟着消失。
 
 ## 返工怎么做、最多几次
 
-- **打回就是开新的 turn**：打回理由写进新 turn 的 `user-message.md`——任务里的哪一条要求（或本规范的哪一条）没满足、证据在哪、要求改什么；
-  任务本身没说清、无法判定的，写「不可判」并交给人，不自己发明标准。返工派回给出问题的那一步——设计有问题回设计，实现有问题回实现。
+- **打回就是开新的 turn**：理由写进新 turn 的 `user-message.md`——任务里的哪一条要求（或本规范的哪一条）没满足、证据在哪、要求改什么；任务本身没说清、无法判定的，写「不可判」并交给人，不自己发明标准。返工派回出问题的那一段——设计有问题回设计，实现有问题回实现。
 - 标准或判断变了，写进新 turn 的 `user-message.md`，并写清改判三要素：触发、原判断错在哪、新判断（见 [人的批准点「改判」](detailed-rules/approvals.md)）。
 - **同一项交付物被打回第三次时停下**：不再开新的 turn，由人判断是任务书本身有问题、判据写错了，还是要换做法或换执行者；人的裁决写进下一个 turn 的 `user-message.md` 后才能继续。
 - 返工上限可以在 turn 的 `user-message.md` 里按任务调整；**调高上限须人确认**——多给几次自动重来的机会，就是少一次人的检查。

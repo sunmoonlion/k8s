@@ -1,8 +1,11 @@
 # SDP：软件开发计划（Software Development Plan）
 
-由**执行 agent** 交付：怎样做出来——拆成哪些单元、先后顺序、实施记录，以及代码与证据。
-执行 agent 可以同时交 SDD（先设计后实现），见 [SDD 规则](../sdd/sdd-rules.md)。
-多个执行 agent 各交一份候选时，按 [`../../protocol/`](../detailed-rules/protocol/competition-rules.md) 的多方竞争协议比较选定。
+SDP 阶段把定稿的设计做出来：拆成哪些单元、先后顺序、实施记录，以及代码与证据。
+
+**产物在 worktree，不在任务目录里。**执行者在自己的 git worktree 里实现；这一段的 turn 没有 `response.md`，
+`turn.md` 记分支与提交（见 [任务的生命周期](../lifecycle.md)「SDP 与 UAT 的 worktree」）。实施记录写在 worktree 里，随代码一起提交。
+
+设计见 [SDD 规则](../sdd/sdd-rules.md)。多个执行者各交一份候选时，按 [多方竞争协议](../detailed-rules/protocol/competition-rules.md) 比较选定。
 
 ## 执行者的共同纪律
 

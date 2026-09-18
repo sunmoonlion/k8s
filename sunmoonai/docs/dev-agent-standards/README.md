@@ -8,18 +8,22 @@
 
 | 文件 | 内容 |
 | --- | --- |
-| [`lifecycle.md`](lifecycle.md) | **先读这一份**：任务的生命周期——任务目录、turn 与它的固定字段、定稿与建子任务、返工 |
+| [`lifecycle.md`](lifecycle.md) | **先读这一份**：任务的生命周期——五个阶段、任务目录、thread 与 turn 的形状与字段、定稿、worktree、返工 |
+| [`human-workflow.md`](human-workflow.md) | human 版：人自己走这套流程时怎么做 |
+| [`agent-workflow.md`](agent-workflow.md) | agent 版：由 supervisor 驱动时怎么做 |
 | [`glossary.md`](glossary.md) | 词汇表：standards 用词的唯一定义；改名须人确认 |
-| [`prd/prd-rules.md`](prd/prd-rules.md) | **PRD** · Product Requirements Document（产品需求文档）：即任务——从入口收到的那段文本，一段话或严格写成的任务书，回答「要什么、做到什么算满足」。人写；由上层设计拆出的，随定稿一起生效。附录是最严格的一种模板 |
-| [`sdd/sdd-rules.md`](sdd/sdd-rules.md) | **SDD** · Software Design Description（软件设计说明）：结构层写划分、关系与接口，组成层写内部结构、协议、失败与恢复，回答「设计成什么样」。规划 agent 只交 SDD；执行 agent 实现前可以先交，不拆子任务 |
-| [`sdp/sdp-rules.md`](sdp/sdp-rules.md) | **SDP** · Software Development Plan（软件开发计划）：执行者的共同纪律；拆成可独立交付、验证、回滚的单元，先后顺序，实施记录，代码与证据，回答「怎样做出来」。执行 agent 交 |
-| [`uat/uat-rules.md`](uat/uat-rules.md) | **UAT** · User Acceptance Testing（用户验收测试）：开工与完成、门的三档；按派工时任务里说清的要求逐条验证，证据按规则采信，写明查了什么、没查什么，回答「是否满足、能否接收」。验收 agent 交，且不是交付被验 SDD 或 SDP 的那一个 |
+| [`task-brief-rules.md`](task-brief-rules.md) | **任务书**：每个 turn 的 `user-message.md`——这一问要什么、做到什么算满足。附录是最严格的一种模板 |
+| [`brd/brd-rules.md`](brd/brd-rules.md) | **BRD** · Business Requirements Document（业务需求）：还不知道要做什么时先讨论清楚；可选，定稿成 `PRD/` |
+| [`prd/prd-rules.md`](prd/prd-rules.md) | **PRD** · Product Requirements Document（产品需求）：`PRD/` 目录怎么写——`architecture/` 与 `modules/`；只写要什么，不写怎么做；定稿成 `SDD/` |
+| [`sdd/sdd-rules.md`](sdd/sdd-rules.md) | **SDD** · Software Design Description（软件设计说明）：`SDD/` 目录怎么写——模块之间的结构与关系、各模块内部；`modules/` 下就是子任务 |
+| [`sdp/sdp-rules.md`](sdp/sdp-rules.md) | **SDP** · Software Development Plan（软件开发计划）：执行者的共同纪律、工作单元、实施记录；产物在 worktree |
+| [`uat/uat-rules.md`](uat/uat-rules.md) | **UAT** · User Acceptance Testing（用户验收测试）：开工与完成、门的三档、证据采信；测试写在 worktree 的 `test/` |
 | [`detailed-rules/approvals.md`](detailed-rules/approvals.md) | 人的批准点：谁批什么、批准怎样成立、权限、审批档位、人这一侧的义务、改判 |
 | [`detailed-rules/protocol/competition-rules.md`](detailed-rules/protocol/competition-rules.md) | 多方竞争协议；同目录另有尚未生效的草案 |
 
-先后由任务树决定：上层任务交回的结果决定下一步派什么任务；不是每次开发都要把四种都走一遍。
+先后由任务树决定：上一段定稿的结果决定下一段问什么；不是每件事都要把五段走一遍。
 
 ## 多方竞争
 
-任何一种交付物（SDD、SDP、UAT）都可能由多个 agent 各交一份，再比较选定。这时按 [`protocol/`](detailed-rules/protocol/competition-rules.md)
+任何一段的交回都可能由多个 agent 各交一份，再比较选定。这时按 [`protocol/`](detailed-rules/protocol/competition-rules.md)
 的多方竞争协议进行：各自提案、互评、裁决、异议、验收、确认、发布；各任务写明自己的操作做法，状态一律从产物反推，不从声明读取。

@@ -1,7 +1,11 @@
 # UAT：用户验收测试（User Acceptance Testing）
 
-由**验收 agent** 交付，验收 agent 只交 UAT；它不是交付被验这份 SDD 或 SDP 的 agent。
-多个验收 agent 各自验收、需要比对时，按 [`../../protocol/`](../detailed-rules/protocol/competition-rules.md) 的多方竞争协议进行。
+UAT 阶段验证做出来的东西是否满足任务书。由验收者交付，它不是实现这份 SDP 的那一个。
+
+**产物在 worktree 的 `test/`，不在任务目录里。**这一段的 turn 没有 `response.md`；`turn.md` 记分支、提交与结论
+（`verdict`：`pass`、`fail` 或 `undecidable`），见 [任务的生命周期](../lifecycle.md)「SDP 与 UAT 的 worktree」。
+
+多个验收者各自验收、需要比对时，按 [多方竞争协议](../detailed-rules/protocol/competition-rules.md) 进行。
 
 ## 开工、完成与门
 

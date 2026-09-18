@@ -1,14 +1,14 @@
-# 附录：PRD 模板（最严格的一种任务书）
+# 附录：任务书模板（最严格的一种）
 
-只有命中 T2 判据的任务才需要填全；大多数任务一段话即可，见 [PRD 规则](prd-rules.md)「写多严，按任务轻重」。
-模型只知道任务里写了的东西，所以要它遵守的一律写进来。需要时复制下面的模板作为 turn 里的 `user-message.md`，尖括号处按说明填写。怎么写、谁来写、怎么改，见 [PRD 规则](prd-rules.md)。
+只有命中 T2 判据的任务才需要填全；大多数任务一段话即可，见 [任务书规则](task-brief-rules.md)「写多严，按任务轻重」。
+模型只知道任务里写了的东西，所以要它遵守的一律写进来。需要时复制下面的模板作为 turn 里的 `user-message.md`，尖括号处按说明填写。怎么写、谁来写、怎么改，见 [任务书规则](task-brief-rules.md)。
 
 ```markdown
 ---
-deliverable: <SDD / SDP / UAT，可以几项>
-agent: <planning / execution / acceptance>
+deliverable: <BRD / PRD / SDD / SDP / UAT，与所在 thread 的阶段一致>
+agent: <discussion / planning / execution / acceptance>
 executor: <具体执行者；未定写 unassigned>
-verifies: <只有 UAT 填：验收哪个 turn，写「文档 thread 号/turn 号」，如 0001/0002>
+verifies: <只有 UAT 填：验收哪个 turn，写「thread 号/turn 号」，如 0004/0001>
 base: <发出时依据的提交>
 sent_at: <发出时间>
 ---
