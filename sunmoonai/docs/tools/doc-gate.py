@@ -66,6 +66,7 @@ def exempt(path: str) -> bool:
 # 其他文档（裁决书、整合记录、评审）引用的是别的文档的章节，不适用本项。
 SELF_CONTAINED = (
     "sunmoonai/docs/dev-agent-task/composition/request-lifecycle.md",
+    "sunmoonai/docs/dev-agent-task/product-contract.md",
     # 加入：所有者问「为何不把 GO.md 和 round-protocol.md 合并」。
     # 查实 GO.md §四 四条规范内容在协议里各有一份，而**没有任何东西保证两份一致**
     # ——正是 §0.0 第 3 条骂的「第二份说明书」。合并不是修法（见 GO.md §四抬头），
