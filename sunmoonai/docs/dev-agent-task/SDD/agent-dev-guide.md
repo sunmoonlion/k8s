@@ -81,7 +81,7 @@ Submission
 
 ### 1.5 执行者的共同纪律
 
-> 依据的通用规范：[agent 开发规范「交给 agent 的活，八条都成立」](../../dev-agent-standards/README.md)
+> 依据的通用规范：[任务的生命周期「交给 agent 的活，八条都成立」](../../dev-agent-standards/lifecycle.md)
 
 不论单路还是并行，不论人还是 agent，八条都成立：
 
