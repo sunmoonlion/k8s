@@ -7,7 +7,7 @@ UAT 阶段验证做出来的东西是否满足用户消息。由验收 agent 交
 
 多个验收者各自验收再比对时，按 [多方竞争协议](../detailed-rules/protocol/competition-rules.md) 进行。
 
-**回执模板**：[turn-template.md](turn-template.md)。这一段的用户消息没有模板，见下。
+用户消息与回执都没有模板：字段见 [任务的生命周期](../lifecycle.md)「turn 的固定字段」，这一段的问要说清什么见下。
 
 ## 这一段的用户消息
 

@@ -108,6 +108,25 @@
 | `commit` | 交回物所在的提交；同上 |
 
 **字段集固定，不因阶段增减行**：用不上的写 `无`，不删行、不留空。这样任何一份回执都长一个样，人扫一眼、机器取一个键都不用先判断阶段。
+两个头照抄就行，不另设模板：
+
+```yaml
+# user-message.md
+---
+executor: <派给谁；还没派出去写 unassigned>
+verifies: <只有 UAT 段填「thread 号/turn 号」，其余写 无>
+---
+
+# turn.md
+---
+status: <completed / interrupted / failed>
+worktree: <分支名；就在当前分支上做的写 无>
+commit: <交回物所在的提交；同上>
+---
+```
+
+回执正文写一句话指向交回物：文档段写「答见 `response.md`」，SDP、UAT 段写产物在哪条分支的哪个提交上、
+UAT 再写验的是哪一个 turn、结论是什么。
 
 **`worktree` 与 `commit` 什么时候有值**：SDP、UAT 两段必有——产物本来就在另一条分支上。
 BRD、PRD、SDD 三段看这一问是在哪里做的：
