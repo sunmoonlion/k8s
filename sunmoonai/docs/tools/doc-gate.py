@@ -257,10 +257,9 @@ DOC_STAGES = {"brd", "prd", "sdd"}          # 答在 turn 里
 WORKTREE_STAGES = {"sdp", "uat"}            # 产物在 worktree
 STATUSES = {"completed", "interrupted", "failed"}
 NONE = "无"          # 固定字段集里用不上的那一项
-VERDICTS = {"pass", "fail", "undecidable"}
 # 运行时 id 在目录名里，回执里不再写一遍；执行者与会话写在任务书里。
 OBSOLETE_TURN_FIELDS = ("provider_turn_id", "provider_thread_id", "provider_record",
-                        "thread", "executor", "completed_at", "reason", "error")
+                        "thread", "executor", "completed_at", "reason", "error", "verdict")
 
 
 def front_matter(text: str) -> dict[str, str] | None:
@@ -298,7 +297,7 @@ def parse_thread_path(path: str) -> tuple[str, str, str, str] | None:
 
 def check_turn_md(base: str, fm: dict[str, str], stage: str) -> list[str]:
     problems: list[str] = []
-    for k in ("status", "worktree", "commit", "verdict"):
+    for k in ("status", "worktree", "commit"):
         if not fm.get(k):
             problems.append(f"{base}/turn.md: 缺字段或为空：{k}（用不上写「无」，不删行）")
     on_branch = {k: fm.get(k, "") not in ("", NONE) for k in ("worktree", "commit")}
@@ -312,11 +311,6 @@ def check_turn_md(base: str, fm: dict[str, str], stage: str) -> list[str]:
     st = fm.get("status", "")
     if st and st not in STATUSES:
         problems.append(f"{base}/turn.md: status 只能是 completed、interrupted、failed，现为 {st}")
-    needs = stage == "uat" and st == "completed"
-    if needs and fm.get("verdict") not in VERDICTS:
-        problems.append(f"{base}/turn.md: 交回 UAT 须填 verdict：pass、fail 或 undecidable")
-    if not needs and fm.get("verdict") != NONE:
-        problems.append(f"{base}/turn.md: 只有完成的 UAT turn 才有 verdict，其余写「无」")
     return problems
 
 

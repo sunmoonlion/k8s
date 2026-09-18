@@ -7,7 +7,6 @@
 status: <completed / interrupted / failed>
 worktree: <另开分支做的填分支名；就在当前分支上做的写 无>
 commit: <另开分支做的填 response 所在的提交；否则写 无>
-verdict: 无
 ---
 # turn <四位号> 的回执
 

@@ -42,7 +42,7 @@ verifies: <验收哪个 turn，写「thread 号/turn 号」，如 0004/0001>
 ## 怎么判
 按 `sunmoonai/docs/dev-agent-standards/uat/uat-rules.md`「判据与结论」「门的三档」「证据采信」「覆盖声明：查了、没查、不能排除」。
 
-**交回：测试在 worktree 的 `test/` 里，这个 turn 里不放 `response.md`；交回时在 `turn.md` 记分支、提交与 `verdict`。`fail` 就是打回——开新的 turn，理由写进它的 `user-message.md`。**
+**交回：测试在 worktree 的 `test/` 里，这个 turn 里不放 `response.md`；交回时在 `turn.md` 记分支与提交，结论写进回执正文与那条提交。不通过就是打回——开新的 turn，理由写进它的 `user-message.md`。**
 ```
 
 ## 栏目对着规则的哪一条

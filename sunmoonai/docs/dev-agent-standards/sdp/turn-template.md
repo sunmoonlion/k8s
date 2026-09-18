@@ -8,7 +8,6 @@
 status: <completed / interrupted / failed>
 worktree: <分支名>
 commit: <worktree 分支上的提交>
-verdict: 无
 ---
 # turn <四位号> 的回执
 
