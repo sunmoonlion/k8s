@@ -1,7 +1,9 @@
 # UAT 任务书模板
 
-复制成 turn 里的 `user-message.md`。字段的含义见 [任务的生命周期](../lifecycle.md)「turn 的固定字段」，
-这一问要写清什么见 [任务书规则](../task-brief-rules.md) 与 [UAT 规则](uat-rules.md)。
+复制成 turn 里的 `user-message.md`。
+
+这一问写几块、写多严，见 [任务书规则](../task-brief-rules.md)「完整任务书写这几块」与「写多严，按任务轻重」；字段的含义见 [任务的生命周期](../lifecycle.md)「turn 的固定字段」。
+怎么判、判几种结论见 [UAT 规则](uat-rules.md)「判据与结论」；证据要求见「证据采信」与「覆盖声明：查了、没查、不能排除」。
 
 ```markdown
 ---

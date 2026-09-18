@@ -1,7 +1,9 @@
 # SDP 任务书模板
 
-复制成 turn 里的 `user-message.md`。字段的含义见 [任务的生命周期](../lifecycle.md)「turn 的固定字段」，
-这一问要写清什么见 [任务书规则](../task-brief-rules.md) 与 [SDP 规则](sdp-rules.md)。
+复制成 turn 里的 `user-message.md`。
+
+这一问写几块、写多严，见 [任务书规则](../task-brief-rules.md)「完整任务书写这几块」与「写多严，按任务轻重」；字段的含义见 [任务的生命周期](../lifecycle.md)「turn 的固定字段」。
+执行时要守的纪律见 [SDP 规则](sdp-rules.md)「执行者的共同纪律」；工作单元怎么拆见「工作单元」；工作区与分支见「工作区与分支」。
 
 ```markdown
 ---
