@@ -8,7 +8,7 @@
 > 只剩三件事：权威排序、接手演练、什么不属于本文档集。
 > 其余原属本文件的内容已按性质移出：
 > 写文档的约定 → [人的批准点](../dev-agent-standards/detailed-rules/approvals.md)「改判」；
-> 提请求 → [`../dev-agent-task/composition/request-lifecycle.md`](../dev-agent-task/composition/request-lifecycle.md)；
+> 提请求 → [`../dev-agent-task/product-contract.md`](../dev-agent-task/product-contract.md)；
 > 推送与多助手 → [`../dev-agent-task/composition/protocol/competition-protocol.md`](../dev-agent-task/composition/protocol/competition-protocol.md) 与
 > [`constraints.md`](../dev-agent-task/composition/constraints.md) T4。
 
@@ -38,7 +38,7 @@
 
 | 内容 | 去哪 |
 | --- | --- |
-| 将来要做什么、应该怎样 | 请求记录（见 [`../dev-agent-task/composition/request-lifecycle.md`](../dev-agent-task/composition/request-lifecycle.md)） |
+| 将来要做什么、应该怎样 | 请求记录（见 [`../dev-agent-task/product-contract.md`](../dev-agent-task/product-contract.md)） |
 | 必须遵守的规则 | [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md) |
 | 做到第几步了 | 请求的进度游标；本文档集**一律不写进度** |
 | 镜像 digest、迁移 head 等易变值 | 只指真源，见 [`overall-architecture.md`](overall-architecture.md) §10 |

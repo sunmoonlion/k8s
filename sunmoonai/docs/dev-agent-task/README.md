@@ -8,7 +8,7 @@
 
 任何一层用到哪个开发阶段，按 [`dev-agent-standards/`](../dev-agent-standards/) 的规范写。
 
-本任务的生命周期见 [request-lifecycle.md](composition/request-lifecycle.md) 第 5 节。
+本任务的生命周期见 [产品合同](product-contract.md) §8。
 第一层分前端与后端，Agent / runtime 与验收器归后端；责任划分依合同第 9 节。
 
 ```text
@@ -30,7 +30,7 @@ components/
 
 | 要找什么 | 在哪 |
 | --- | --- |
-| 产品请求生命周期合同 | [`composition/request-lifecycle.md`](composition/request-lifecycle.md) |
+| 产品合同 | [`product-contract.md`](product-contract.md) |
 | 代码必须遵守的规则（39 条，本平台所有任务共用） | [`composition/constraints.md`](composition/constraints.md) |
 | agent 项目的开发流程 | [`components/0001-backend/composition/pipeline.md`](components/0001-backend/composition/pipeline.md) |
 | 多方竞争协议（本平台的具体做法） | [`composition/protocol/`](composition/protocol/)；所依据的通用规范见 [`../dev-agent-standards/protocol/`](../dev-agent-standards/detailed-rules/protocol/competition-rules.md) |

@@ -30,7 +30,7 @@
 
 因此实现应把产品 Interaction 的 `question_or_action / audience / expires_at / resume_token_hash /
 idempotency_key / consumed_at / resume_target` 绑定到这些原语，字段真源仍是
-`request-lifecycle.md @ ed0b5136:247-277`。中断节点返回业务需要的 dict；恢复端鉴别主体、校验
+产品合同 §6.2。中断节点返回业务需要的 dict；恢复端鉴别主体、校验
 Task 与状态版本、原子消费令牌，然后把经验证的响应作为 `Command(resume=value)` 送回同一 thread。
 checkpoint 原地续跑时是同一 Attempt 的 `WAITING → RUNNING`，不因“人给了内容”另开 Attempt。
 

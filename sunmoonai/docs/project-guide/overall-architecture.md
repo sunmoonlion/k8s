@@ -384,7 +384,7 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | 加表、改迁移 | [`topics/data.md`](topics/data.md) |
 | 发版、改部署清单 | [`topics/release.md`](topics/release.md) |
 | **动代码前必读的规则** | [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md)（39 条，按主题分组） |
-| 提一个开发请求 | [`../dev-agent-task/composition/request-lifecycle.md`](../dev-agent-task/composition/request-lifecycle.md) |
+| 提一个开发请求 | [`../dev-agent-task/product-contract.md`](../dev-agent-task/product-contract.md) |
 | 查当前 digest / release_id | `k8s/sunmoonai/app-platform/<app>-app/deployment/bundle/release.json` |
 | 查某仓迁移 head | 该仓 `app/alembic/versions/` 里最新的 revision |
 | 查契约 schema 的 sha256 | consumer 仓的 `*-provider-lock.json`，或 provider 的 `contract-manifest.json` |

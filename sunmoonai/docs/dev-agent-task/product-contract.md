@@ -1103,7 +1103,7 @@ graph_version
 
 ## 附录 E 落地影响
 
-本文取代 [`composition/request-lifecycle.md`](composition/request-lifecycle.md)，引用它的文档改指本文。其余影响：
+产品合同只有本文一份，引用产品要求的文档一律指向本文。落地时要改的地方：
 
 | 对象 | 要改什么 |
 | --- | --- |

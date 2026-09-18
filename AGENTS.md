@@ -13,9 +13,9 @@
 
 `sunmoonai/docs/project-guide/overall-architecture.md`
 
-产品请求生命周期合同：
+产品合同：
 
-`sunmoonai/docs/dev-agent-task/composition/request-lifecycle.md`
+`sunmoonai/docs/dev-agent-task/product-contract.md`
 
 任何开发任务都要遵守的通用开发规范：
 

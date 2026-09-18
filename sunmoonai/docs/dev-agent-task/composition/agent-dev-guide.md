@@ -3,7 +3,7 @@
 ## 0. 先读结论
 
 平台只建设一个产品运行时。它以
-[`request-lifecycle.md`](request-lifecycle.md) 定义的 Task、Attempt、Interaction、Artifact、
+[`product-contract.md`](../product-contract.md) 定义的 Task、Attempt、Interaction、Artifact、
 Event、Side Effect、Delivery 为唯一产品内核；`dev.change/1` 是首个开发类 Task Profile，
 五家助手分别登记为 Agent Profile。Task Profile 定义“这类请求怎样算完成”，Agent Profile 定义
 “某个执行器能怎样做”，二者不是两套运行时，也不得改变内核状态词。
@@ -51,14 +51,14 @@ Submission
 
 | 真源 | 本文怎样使用 | 本文不做什么 |
 | --- | --- | --- |
-| [`request-lifecycle.md`](request-lifecycle.md) | 引用七对象、Task/Attempt 状态机、`I1`–`I15`、`F-*`、`AT-*` | 不重写对象定义、合法边或产品验收矩阵 |
+| [`product-contract.md`](../product-contract.md) | 引用七对象、Task/Attempt 状态机、`I1`–`I15`、`F-*`、`AT-*` | 不重写对象定义、合法边或产品验收矩阵 |
 | [`competition-protocol.md`](protocol/competition-protocol.md) | [§3.19](protocol/competition-operations.md)–[§3.22](../components/0001-backend/components/0002-agent-execution/composition/agent-dev-guide.md) 汇总执行所需的阶段、取件、超时规则 | 不另立协议版本；协议改变时同步修订本导读 |
 | [`constraints.md`](constraints.md) | 开工前自检硬约束，尤其 A1–A5 | 不把自检改成建议 |
 | [`development-plan.md`](../components/0001-backend/composition/development-plan.md) | 解释通用执行编排与领域能力的分工 | 不记录进度 |
 | 各 turn 的 `user-message.md` | 每次派工的任务书：写明交回哪一种，以及背景、范围、验收、约束 | 随 turn 冻结，执行者不改 |
 | `thread/` | 文档 thread → 文档 turn 两级；每次派工到交回的发出内容与交回物；进度由任务目录推出 | 交回即冻结，改只能开新 turn |
 
-内核的对象和状态以 `request-lifecycle.md @ ed0b5136:92-343` 为准；协作阶段以
+内核的对象和状态以 产品合同 §3 至 §6 为准；协作阶段以
 `round-protocol.md @ ed0b5136:52-706` 的标题为准。本文出现的表都是开发投影或实现要求，
 不是第二份产品定义。
 
@@ -66,7 +66,7 @@ Submission
 
 ### 1.1 唯一产品内核
 
-`request-lifecycle.md` 是下列事实的唯一写入面：
+`product-contract.md` 是下列事实的唯一写入面：
 
 - Task 与 Attempt 是两层；一次执行失败不自动终结用户请求；
 - Task 只走其“Task 状态机”列出的边，Attempt 只走其“Attempt / Run 状态机”列出的边；
@@ -74,8 +74,8 @@ Submission
 - Task 和 Attempt 终态不可重开，重试、刷新、改目标或推翻旧结果建立新实体并保留血缘；
 - 结果、验收、证据与终态先可靠持久化，Delivery 再通知前端。
 
-这些要求分别可回到 `request-lifecycle.md @ ed0b5136:106-119`、
-`request-lifecycle.md @ ed0b5136:203-343` 和 `request-lifecycle.md @ ed0b5136:398-440`。
+这些要求分别可回到 产品合同 §3、
+产品合同 §6 和 产品合同 §8.6、§8.7。
 实现若需要新增状态或合法边，不得在 `dev.change/1` 里偷加；按该文“修订纪律”
 建立带原始请求、影响、迁移和验收的规范修订工作单元。
 
