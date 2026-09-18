@@ -257,9 +257,9 @@ DOC_STAGES = {"brd", "prd", "sdd"}          # 答在 turn 里
 WORKTREE_STAGES = {"sdp", "uat"}            # 产物在 worktree
 STATUSES = {"completed", "interrupted", "failed"}
 VERDICTS = {"pass", "fail", "undecidable"}
-REASONS = {"interrupted", "replaced", "review-ended", "budget-limited", "cancelled"}
 # 运行时 id 在目录名里，回执里不再写一遍；执行者与会话写在任务书里。
-OBSOLETE_TURN_FIELDS = ("provider_turn_id", "provider_thread_id", "thread", "executor")
+OBSOLETE_TURN_FIELDS = ("provider_turn_id", "provider_thread_id", "provider_record",
+                        "thread", "executor", "completed_at", "reason", "error")
 
 
 def front_matter(text: str) -> dict[str, str] | None:
@@ -297,24 +297,19 @@ def parse_thread_path(path: str) -> tuple[str, str, str, str] | None:
 
 def check_turn_md(base: str, fm: dict[str, str], stage: str) -> list[str]:
     problems: list[str] = []
-    required = ["status", "completed_at", "commit"] + (["worktree"] if stage in WORKTREE_STAGES else [])
+    required = ["status"] + (["worktree", "commit"] if stage in WORKTREE_STAGES else [])
     for k in required:
         if not fm.get(k):
             problems.append(f"{base}/turn.md: 缺字段或为空：{k}")
-    if stage in DOC_STAGES and fm.get("worktree"):
-        problems.append(f"{base}/turn.md: 只有 sdp、uat 段填 worktree")
+    for k in ("worktree", "commit"):
+        if stage in DOC_STAGES and fm.get(k):
+            problems.append(f"{base}/turn.md: 只有 sdp、uat 段填 {k}")
     for k in OBSOLETE_TURN_FIELDS:
         if fm.get(k):
-            problems.append(f"{base}/turn.md: 回执里不写 {k}——运行时 id 在目录名里，执行者在任务书里")
+            problems.append(f"{base}/turn.md: 回执里不写 {k}——运行时 id 在目录名里，执行者在用户消息里，时间与提交 git 有，中断或失败的原因写正文")
     st = fm.get("status", "")
     if st and st not in STATUSES:
         problems.append(f"{base}/turn.md: status 只能是 completed、interrupted、failed，现为 {st}")
-    if (st == "failed") != bool(fm.get("error")):
-        problems.append(f"{base}/turn.md: error 只在 status 为 failed 时填，而且必须填")
-    if st == "interrupted" and fm.get("reason") not in REASONS:
-        problems.append(f"{base}/turn.md: status 为 interrupted 须填 reason：" + "、".join(sorted(REASONS)))
-    if st != "interrupted" and fm.get("reason"):
-        problems.append(f"{base}/turn.md: 只有 status 为 interrupted 才填 reason")
     needs = stage == "uat" and st == "completed"
     if needs and fm.get("verdict") not in VERDICTS:
         problems.append(f"{base}/turn.md: 交回 UAT 须填 verdict：pass、fail 或 undecidable")

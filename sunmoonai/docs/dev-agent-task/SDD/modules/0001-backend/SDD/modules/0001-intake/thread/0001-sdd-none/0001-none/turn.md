@@ -1,7 +1,5 @@
 ---
 status: completed
-completed_at: unknown
-commit: abc98a43
 ---
 # turn 0001 的回执
 

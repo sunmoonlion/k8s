@@ -100,15 +100,12 @@
 | 字段 | 写什么 |
 | --- | --- |
 | `status` | `completed`、`interrupted` 或 `failed` |
-| `completed_at` | 交回时间 |
-| `commit` | response 所在的提交；SDP、UAT 填 worktree 分支上的提交 |
 | `worktree` | 只有 SDP、UAT 填：分支名 |
-| `provider_record` | 运行时自己的记录在哪；没有写 `none` |
-| `error` | 只有 `failed` 填：失败原因 |
-| `reason` | 只有 `interrupted` 填，且必填：`interrupted`、`replaced`、`review-ended`、`budget-limited` 或 `cancelled` |
+| `commit` | 只有 SDP、UAT 填：worktree 分支上的提交 |
 | `verdict` | 只有交回 UAT 时填：`pass`、`fail` 或 `undecidable` |
 
-不知道的值写 `unknown`，还没发出的写 `pending`，不得空着。
+BRD、PRD、SDD 三段的回执只有 `status`：答就在同一个 turn 的 `response.md` 里，它在哪个提交、什么时候交的，git 都记着。
+`interrupted` 或 `failed` 时，把为什么停的写进回执正文一句话。不知道的值写 `unknown`，不得空着。
 
 ## 定稿
 

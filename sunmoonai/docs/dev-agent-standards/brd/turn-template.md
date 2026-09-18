@@ -5,15 +5,10 @@
 ```markdown
 ---
 status: <completed / interrupted / failed>
-completed_at: <交回时间>
-commit: <response 所在的提交>
-provider_record: <运行时自己的记录在哪；没有写 none>
-reason: <只有 interrupted 填，且必填：interrupted / replaced / review-ended / budget-limited / cancelled>
-error: <只有 failed 填：失败原因>
 ---
 # turn <四位号> 的回执
 
 答见 `response.md`。
 ```
 
-不知道的值写 `unknown`，不得空着；`reason` 与 `error` 不适用时整行删掉。
+`interrupted` 或 `failed` 时，把为什么停的写进正文，接在上面那句后面。
