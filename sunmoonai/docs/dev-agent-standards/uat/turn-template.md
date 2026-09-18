@@ -17,3 +17,6 @@ verdict: <pass / fail / undecidable>
 
 `interrupted` 或 `failed` 时，把为什么停的写进正文。
 `verdict` 是这一段的结论，**`status: completed` 只表示这次验收做完了，不表示被验收的东西通过了**。
+
+**交回之后**：`pass` 则可以走合并与人的批准；`fail` 是打回，开新的 turn 派回出问题的那一段，理由写进它的 `user-message.md`；
+`undecidable` 交给人。同一项交付物被打回第三次时停下（见 [任务的生命周期](../lifecycle.md)「返工怎么做、最多几次」）。
