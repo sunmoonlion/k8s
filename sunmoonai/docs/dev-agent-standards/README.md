@@ -23,15 +23,16 @@
 
 先后由任务树决定：上一段定稿的结果决定下一段问什么；不是每件事都要把五段走一遍。
 
-每一段的目录下各有两份模板，复制即用：
-
 | 阶段 | 用户消息 | 回执 |
 | --- | --- | --- |
-| BRD | [`brd/user-message-template.md`](brd/user-message-template.md) | [`brd/turn-template.md`](brd/turn-template.md) |
-| PRD | [`prd/user-message-template.md`](prd/user-message-template.md) | [`prd/turn-template.md`](prd/turn-template.md) |
-| SDD | [`sdd/user-message-template.md`](sdd/user-message-template.md) | [`sdd/turn-template.md`](sdd/turn-template.md) |
+| BRD | 无模板，见 [`brd/brd-rules.md`](brd/brd-rules.md)「这一段的用户消息」 | [`brd/turn-template.md`](brd/turn-template.md) |
+| PRD | 无模板，见 [`prd/prd-rules.md`](prd/prd-rules.md)「这一段的用户消息」 | [`prd/turn-template.md`](prd/turn-template.md) |
+| SDD | 无模板，见 [`sdd/sdd-rules.md`](sdd/sdd-rules.md)「这一段的用户消息」 | [`sdd/turn-template.md`](sdd/turn-template.md) |
 | SDP | [`sdp/user-message-template.md`](sdp/user-message-template.md) | [`sdp/turn-template.md`](sdp/turn-template.md) |
 | UAT | [`uat/user-message-template.md`](uat/user-message-template.md) | [`uat/turn-template.md`](uat/turn-template.md) |
+
+**讨论与设计三段没有用户消息模板**：问是开放的，固定栏目会给答案定骨架，也会把每一问都推向最严格那一档。
+执行与验收两段有：那里的栏目是门禁要核对的事实——工作区、基线、预算、要人批准的动作、被验的提交与判据——填不满就是真漏了。
 
 ## 多方竞争
 
