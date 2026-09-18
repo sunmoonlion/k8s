@@ -93,7 +93,8 @@ dev-agent-task/                             项目，不编号
 | turn 目录名 | `<四位数字>` 或 `<四位数字>-<运行时 id>`；有 `turn.md` 的，turn 与所在 thread 都必须带 id |
 | 层数 | `thread/` 下正好两层：thread、turn；turn 里只放 `user-message.md`、`response.md`、`turn.md` 与 `others/` |
 | turn 内容 | 必有 `user-message.md`；BRD、PRD、SDD 段有 `turn.md` 时必须有 `response.md`；SDP、UAT 段不得有 `response.md`，`turn.md` 必须有 `worktree` 与 `commit` |
-| 字段 | `deliverable` 与所在 thread 的阶段一致；`agent` 与 `deliverable` 相符；`verifies` 仅 UAT，写「thread 号/turn 号」且指到存在的 turn |
+| 用户消息的字段 | `executor`、`verifies` 两行齐全；`verifies` 仅 UAT 段有值，写「thread 号/turn 号」且指到存在的 turn，其余写「无」 |
+| 回执的字段 | `status`、`worktree`、`commit`、`verdict` 四行齐全；SDP、UAT 段的 `worktree` 与 `commit` 有值，文档段两者同为「无」或同时填；`verdict` 只有完成的 UAT 段有值 |
 | 编号连续 | thread 号在任务目录内、turn 号在各 thread 内，都从 `0001` 起不跳号、不复用 |
 | 名字唯一 | 同一个本地号只有一个目录；同一个运行时 id 不出现在两处 |
 | 模块编号 | 模块目录名合乎「四位号-短名」，在同一个 `modules/` 里从 `0001` 起连续、不复用；同一模块在 PRD 与 SDD 两侧号与短名一致 |

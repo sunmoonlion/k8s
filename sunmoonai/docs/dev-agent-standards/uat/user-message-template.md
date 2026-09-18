@@ -47,7 +47,7 @@ verifies: <验收哪个 turn，写「thread 号/turn 号」，如 0004/0001>
 - 用户消息没有可判定依据的地方判 `undecidable` 交给人，**不自己发明标准**；
 - 不为通过而静默改标准；判定为「标准本身过期」时写明理由交回。
 
-**交回：测试在 worktree 的 `test/` 里，由验收 agent 做，这个 turn 里不放 `response.md`；交回时在 `turn.md` 记分支、提交与 `verdict`。`fail` 就是打回——开新的 turn，理由写进它的 `user-message.md`。**
+**交回：测试在 worktree 的 `test/` 里，这个 turn 里不放 `response.md`；交回时在 `turn.md` 记分支、提交与 `verdict`。`fail` 就是打回——开新的 turn，理由写进它的 `user-message.md`。**
 ```
 
 不适用的栏写「不适用」及理由——空着与「忘了」无法区分。命中 T2 判据的任务每一栏都要填。

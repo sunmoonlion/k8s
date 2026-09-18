@@ -31,7 +31,7 @@ verifies: 无
 ## 怎么答
 按 `sunmoonai/docs/dev-agent-standards/brd/brd-rules.md`「这一段在问什么」与「response 写什么」。
 
-**交回：写成这个 turn 的 `response.md`，由 discussion agent 交，不改代码。人读完定稿成 `PRD/`。**
+**交回：写成这个 turn 的 `response.md`，不改代码。人读完定稿成 `PRD/`。**
 ```
 
 这一段不写验收标准：答得合不合格按 [BRD 规则](brd-rules.md)「response 写什么」判。

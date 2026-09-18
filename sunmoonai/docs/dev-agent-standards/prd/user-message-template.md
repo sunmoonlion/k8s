@@ -33,7 +33,7 @@ verifies: 无
 ## 怎么答
 按 `sunmoonai/docs/dev-agent-standards/prd/prd-rules.md`「`architecture/` 写什么」「`modules/<模块>/` 写什么」与「纪律」。
 
-**交回：写成这个 turn 的 `response.md`，由 discussion agent 交，不改代码。人读完定稿成 `SDD/`。**
+**交回：写成这个 turn 的 `response.md`，不改代码。人读完定稿成 `SDD/`。**
 ```
 
 这一段不写验收标准：答得合不合格看它能不能定稿成 `PRD/`——判据是 [PRD 规则](prd-rules.md)，不是这一问里临时立的条目。

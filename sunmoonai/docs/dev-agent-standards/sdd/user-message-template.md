@@ -33,7 +33,7 @@ verifies: 无
 ## 怎么答
 按 `sunmoonai/docs/dev-agent-standards/sdd/sdd-rules.md`「`architecture/` 写什么」「`modules/<模块>/` 写什么」「设计必须满足」与「设计原则」。
 
-**交回：写成这个 turn 的 `response.md`，由规划 agent 交，不改代码。人读完定稿成 `SDD/`，`modules/` 下拆出的每个模块成为一个子任务。**
+**交回：写成这个 turn 的 `response.md`，不改代码。人读完定稿成 `SDD/`，`modules/` 下拆出的每个模块成为一个子任务。**
 ```
 
 这一段不写验收标准：答得合不合格看它能不能定稿成 `SDD/`——判据是 [SDD 规则](sdd-rules.md)，不是这一问里临时立的条目。

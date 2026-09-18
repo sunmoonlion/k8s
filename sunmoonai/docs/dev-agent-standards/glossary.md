@@ -18,7 +18,7 @@ standards 的用词以本表为准：**同一个意思只用一个词**，「不
 | `others/` | turn 里可选的一个目录：人或 supervisor 追加给模型的材料与附件 | 附件目录 |
 | `turn.md` | 文档 turn 的回执：状态、交回时间、所在提交，交回 UAT 时还有结论；交回时写，写完冻结。没有它就是还没交回 | 状态文件 |
 | 并行 | 同一问同时发给几个执行者：各家在各自的运行时 thread 里，所以是几个文档 thread 各开一个 turn，用户消息各存各的 | 并行尝试 |
-| 用户消息 | 发给 agent 的那一问，存为 turn 的 `user-message.md`；正文须写明这一问要交回什么、由哪类 agent 交。见 [任务的生命周期](lifecycle.md)「用户消息写多严」 | 任务书、工单、PRD（指这一问时）、需求文档 |
+| 用户消息 | 发给 agent 的那一问，存为 turn 的 `user-message.md`；正文须写明这一问要交回什么。见 [任务的生命周期](lifecycle.md)「用户消息写多严」 | 任务书、工单、PRD（指这一问时）、需求文档 |
 | 附件 | 与 `user-message.md` 放在一起、随它发出的材料 | — |
 | 派工 | 发出一个 turn | — |
 | 交回物 | 某个 turn 交回来的东西：BRD、PRD、SDD 阶段是 `response.md`；SDP、UAT 阶段是 worktree 分支上的提交 | 交付物（指这一份时） |
@@ -45,10 +45,10 @@ standards 的用词以本表为准：**同一个意思只用一个词**，「不
 
 | 词 | 含义 | 不要用 |
 | --- | --- | --- |
-| discussion agent | 答 BRD、PRD 两段的问 | — |
-| 规划 agent（planning） | 答 SDD 段的问；定稿之后按 `SDD/modules/` 的拆分建子任务 | — |
-| 执行 agent（execution） | 做 SDP：在自己的 worktree 里实现 | — |
-| 验收 agent（acceptance） | 做 UAT：在 worktree 的 `test/` 里验收；不是实现这份 SDP 的那一个 | — |
+| 讨论 agent | 答 BRD、PRD 两段的问 | — |
+| 规划 agent | 答 SDD 段的问；定稿之后按 `SDD/modules/` 的拆分建子任务 | — |
+| 执行 agent | 做 SDP：在自己的 worktree 里实现 | — |
+| 验收 agent | 做 UAT：在 worktree 的 `test/` 里验收；不是实现这份 SDP 的那一个 | — |
 | supervisor | agent 版里驱动流程的程序：发起 turn、验收、打回、清理 worktree；human 版由人兼这个角色 | — |
 | 人 | 写用户消息、整理定稿、批准、裁决。standards 里不写具体是谁 | 具体人名或角色名 |
 | principal、requester | 持有某项决定权的主体、提出请求的主体；见 [人的批准点](detailed-rules/approvals.md) | — |
