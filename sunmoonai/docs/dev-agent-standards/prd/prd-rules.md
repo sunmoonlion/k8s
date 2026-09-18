@@ -12,8 +12,7 @@ PRD/
 
 ## 这一段的用户消息
 
-这一段由 discussion agent 答。这一问要写清：以哪一份 `PRD/` 定稿为底、要产出什么、范围三行、
-可判定的验收标准、约束。交回的 `response.md` 要能定稿成 `SDD/`，所以它必须满足上面几节。
+这一段由 discussion agent 答。这一问要写清：以哪一份 `PRD/` 定稿为底、要产出什么、范围三行、约束。**不写验收标准**——合不合格看它能不能定稿成 `PRD/`，判据是本规则。交回的 `response.md` 要能定稿成 `SDD/`，所以它必须满足上面几节。
 模板见 [用户消息](user-message-template.md)；写多严见 [任务的生命周期](../lifecycle.md)「用户消息写多严」。
 
 ## `architecture/` 写什么
