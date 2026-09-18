@@ -1,5 +1,6 @@
 ---
 executor: unknown
+verifies: 无
 ---
 # turn 0003：AI 执行开发流程：以可验收的需求增量贯通交付
 

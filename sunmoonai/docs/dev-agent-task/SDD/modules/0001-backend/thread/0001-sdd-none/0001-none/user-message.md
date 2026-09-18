@@ -1,5 +1,6 @@
 ---
 executor: unknown
+verifies: 无
 ---
 # turn 0001：开发计划
 

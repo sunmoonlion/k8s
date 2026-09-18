@@ -1,5 +1,6 @@
 ---
 executor: unknown
+verifies: 无
 ---
 # turn 0003：agent 开发指导
 

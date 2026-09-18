@@ -1,5 +1,6 @@
 ---
 executor: unknown
+verifies: 无
 ---
 # turn 0001：Agent 开发指导：一个产品运行时，一套开发纪律
 

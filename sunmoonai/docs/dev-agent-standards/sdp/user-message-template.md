@@ -8,6 +8,7 @@
 ```markdown
 ---
 executor: <派给谁；还没派出去写 unassigned>
+verifies: 无
 ---
 # turn <四位号>：<短名>
 

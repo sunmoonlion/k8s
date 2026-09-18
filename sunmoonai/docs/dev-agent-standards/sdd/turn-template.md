@@ -5,14 +5,15 @@
 ```markdown
 ---
 status: <completed / interrupted / failed>
-worktree: <只有另开分支做时填：分支名>
-commit: <只有另开分支做时填：response 所在的提交>
+worktree: <另开分支做的填分支名；就在当前分支上做的写 无>
+commit: <另开分支做的填 response 所在的提交；否则写 无>
+verdict: 无
 ---
 # turn <四位号> 的回执
 
 答见 `response.md`。
 ```
 
-就在当前分支上做的，`worktree` 与 `commit` 两行整行删掉——git 自己记着。
-另开分支做的必须填：`response.md` 只在那条分支上，从主线找不到它。
+字段集固定，用不上的写 `无`，不删行。就在当前分支上做的，`worktree` 与 `commit` 都写 `无`——git 自己记着；
+另开分支做的两个都要填：`response.md` 只在那条分支上，从主线找不到它。
 `interrupted` 或 `failed` 时，把为什么停的写进正文，接在上面那句后面。

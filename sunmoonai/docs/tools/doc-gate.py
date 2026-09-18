@@ -256,6 +256,7 @@ TURN_FILES = {"user-message.md", "response.md", "turn.md"}
 DOC_STAGES = {"brd", "prd", "sdd"}          # 答在 turn 里
 WORKTREE_STAGES = {"sdp", "uat"}            # 产物在 worktree
 STATUSES = {"completed", "interrupted", "failed"}
+NONE = "无"          # 固定字段集里用不上的那一项
 VERDICTS = {"pass", "fail", "undecidable"}
 # 运行时 id 在目录名里，回执里不再写一遍；执行者与会话写在任务书里。
 OBSOLETE_TURN_FIELDS = ("provider_turn_id", "provider_thread_id", "provider_record",
@@ -297,12 +298,14 @@ def parse_thread_path(path: str) -> tuple[str, str, str, str] | None:
 
 def check_turn_md(base: str, fm: dict[str, str], stage: str) -> list[str]:
     problems: list[str] = []
-    required = ["status"] + (["worktree", "commit"] if stage in WORKTREE_STAGES else [])
-    for k in required:
+    for k in ("status", "worktree", "commit", "verdict"):
         if not fm.get(k):
-            problems.append(f"{base}/turn.md: 缺字段或为空：{k}")
-    if stage in DOC_STAGES and bool(fm.get("worktree")) != bool(fm.get("commit")):
-        problems.append(f"{base}/turn.md: worktree 与 commit 要么都不填（答在当前分支上），要么都填（答在另一条分支上）")
+            problems.append(f"{base}/turn.md: 缺字段或为空：{k}（用不上写「无」，不删行）")
+    on_branch = {k: fm.get(k, "") not in ("", NONE) for k in ("worktree", "commit")}
+    if stage in WORKTREE_STAGES and not all(on_branch.values()):
+        problems.append(f"{base}/turn.md: {stage} 段的产物在分支上，worktree 与 commit 都要填")
+    if stage in DOC_STAGES and on_branch["worktree"] != on_branch["commit"]:
+        problems.append(f"{base}/turn.md: worktree 与 commit 要么都写「无」（答在当前分支上），要么都填（答在另一条分支上）")
     for k in OBSOLETE_TURN_FIELDS:
         if fm.get(k):
             problems.append(f"{base}/turn.md: 回执里不写 {k}——运行时 id 在目录名里，执行者在用户消息里，时间与提交 git 有，中断或失败的原因写正文")
@@ -312,8 +315,8 @@ def check_turn_md(base: str, fm: dict[str, str], stage: str) -> list[str]:
     needs = stage == "uat" and st == "completed"
     if needs and fm.get("verdict") not in VERDICTS:
         problems.append(f"{base}/turn.md: 交回 UAT 须填 verdict：pass、fail 或 undecidable")
-    if not needs and fm.get("verdict"):
-        problems.append(f"{base}/turn.md: 只有完成的 UAT turn 才填 verdict")
+    if not needs and fm.get("verdict") != NONE:
+        problems.append(f"{base}/turn.md: 只有完成的 UAT turn 才有 verdict，其余写「无」")
     return problems
 
 
@@ -452,18 +455,19 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
                 if fm is None:
                     problems.append(f"{base}/user-message.md: 缺 YAML 头（--- 包起的固定字段）")
                     continue
-                if not fm.get("executor"):
-                    problems.append(f"{base}/user-message.md: 缺字段或为空：executor")
+                for k in ("executor", "verifies"):
+                    if not fm.get(k):
+                        problems.append(f"{base}/user-message.md: 缺字段或为空：{k}（用不上写「无」，不删行）")
                 if stage == "uat":
                     v = fm.get("verifies", "")
-                    if not v:
+                    if v == NONE:
                         problems.append(f"{base}/user-message.md: uat 段须填 verifies（验收的是哪个 turn）")
                     elif not VERIFIES_RE.match(v):
                         problems.append(f"{base}/user-message.md: verifies 写成「thread 号/turn 号」，如 0004/0001，现为 {v}")
                     elif v not in local_ids:
                         problems.append(f"{base}/user-message.md: verifies 指向不存在的 turn：{v}")
-                elif fm.get("verifies"):
-                    problems.append(f"{base}/user-message.md: 只有 uat 段才填 verifies")
+                elif fm.get("verifies") != NONE:
+                    problems.append(f"{base}/user-message.md: 只有 uat 段才填 verifies，其余写「无」")
                 if "turn.md" not in files:
                     continue
                 if fm.get("executor") == "unassigned":

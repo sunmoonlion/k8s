@@ -1,5 +1,6 @@
 ---
 executor: unassigned
+verifies: 无
 ---
 # N4-OPS-01：监控采集与告警送达
 
