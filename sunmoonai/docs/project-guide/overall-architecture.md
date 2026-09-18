@@ -355,7 +355,7 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | **进程权限** | 四角色 PG 列 ACL、三角色 broker 预建拓扑和联合故障恢复已在隔离环境通过；真实账号供给/撤销及重启一致性仍待验收 |
 | **保留与监控** | 无自动回执/租约墓碑 GC；Prometheus/Alertmanager 安装、采集、告警送达留未来计划，不能将 HTTP 指标存在当接线完成 |
 
-产品留白的后续设计见 [`../dev-agent-task/components/0001-backend/composition/development-plan.md`](../dev-agent-task/components/0001-backend/composition/development-plan.md)；
+产品留白的后续设计见 [`../dev-agent-task/components/0001-backend/composition/development-plan.md`](../dev-agent-task/SDD/modules/0001-backend/PRD/development-plan.md)；
 旧账源码/运行态边界见 [逐步处置清单](../v5-backlog-disposition-luna.md)。
 
 ### 9.3 各 App 的具体缺口
@@ -370,7 +370,7 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 
 各组件目录下有 8 份 `CLAUDE.md`（四仓 × 后端/web 前端），**会被 Claude Code
 进入目录时自动注入**。当前内容是「局部编码规则 + 指向本文档集与
-[`../dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md) 的指针」。
+[`../dev-agent-task/composition/constraints.md`](../dev-agent-task/SDD/constraints.md) 的指针」。
 
 ⚠ 这类文件自动注入、不易被察觉，**改动组件结构时必须同步检查它们**。
 
@@ -383,8 +383,8 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | 动登录、权限、服务间调用 | [`topics/identity.md`](topics/identity.md) |
 | 加表、改迁移 | [`topics/data.md`](topics/data.md) |
 | 发版、改部署清单 | [`topics/release.md`](topics/release.md) |
-| **动代码前必读的规则** | [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md)（39 条，按主题分组） |
-| 提一个开发请求 | [`../dev-agent-task/composition/product-contract.md`](../dev-agent-task/composition/product-contract.md) |
+| **动代码前必读的规则** | [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/SDD/constraints.md)（39 条，按主题分组） |
+| 提一个开发请求 | [`../dev-agent-task/composition/product-contract.md`](../dev-agent-task/PRD/product-contract.md) |
 | 查当前 digest / release_id | `k8s/sunmoonai/app-platform/<app>-app/deployment/bundle/release.json` |
 | 查某仓迁移 head | 该仓 `app/alembic/versions/` 里最新的 revision |
 | 查契约 schema 的 sha256 | consumer 仓的 `*-provider-lock.json`，或 provider 的 `contract-manifest.json` |

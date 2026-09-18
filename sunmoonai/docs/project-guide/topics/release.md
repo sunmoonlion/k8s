@@ -1,6 +1,6 @@
 # 发布与门禁
 
-> 取证时点：2026-09-13 源码及发布边界复核 ｜ 相关规则见 [`../../dev-agent-task/composition/constraints.md`](../../dev-agent-task/composition/constraints.md)「发布」R1–R7
+> 取证时点：2026-09-13 源码及发布边界复核 ｜ 相关规则见 [`../../dev-agent-task/composition/constraints.md`](../../dev-agent-task/SDD/constraints.md)「发布」R1–R7
 > 逐行位置见 [`../repos/k8s.md`](../repos/k8s.md) §4–§5
 
 ## 1. 发布单元
@@ -142,4 +142,4 @@ python3 -c "import json;print(json.load(open('k8s/sunmoonai/app-platform/info-ap
 
 ---
 
-**动发布、清镜像前**，先读 [`../../dev-agent-task/composition/constraints.md`](../../dev-agent-task/composition/constraints.md)「发布」——本页只写现状。
+**动发布、清镜像前**，先读 [`../../dev-agent-task/composition/constraints.md`](../../dev-agent-task/SDD/constraints.md)「发布」——本页只写现状。

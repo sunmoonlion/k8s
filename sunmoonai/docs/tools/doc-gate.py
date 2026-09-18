@@ -65,12 +65,12 @@ def exempt(path: str) -> bool:
 # 声明「自足」的文档：§N 引用必须指向**本文件内**的标题。
 # 其他文档（裁决书、整合记录、评审）引用的是别的文档的章节，不适用本项。
 SELF_CONTAINED = (
-    "sunmoonai/docs/dev-agent-task/composition/product-contract.md",
+    "sunmoonai/docs/dev-agent-task/PRD/product-contract.md",
     # 加入：所有者问「为何不把 GO.md 和 round-protocol.md 合并」。
     # 查实 GO.md §四 四条规范内容在协议里各有一份，而**没有任何东西保证两份一致**
     # ——正是 §0.0 第 3 条骂的「第二份说明书」。合并不是修法（见 GO.md §四抬头），
     # 修法是让它降为**被核对的引用**：四条各注出处 §，本门验那个 § 真的存在。
-    "sunmoonai/docs/dev-agent-task/composition/protocol/GO.md",
+    "sunmoonai/docs/dev-agent-task/protocol/GO.md",
 )
 
 USAGE = "用法: doc-gate.py <文件>... | --all | --survey | --selfcheck"
@@ -240,25 +240,27 @@ def check_tables(path: str, text: str) -> list[str]:
 
 
 # ── 文档 thread 与文档 turn 的检查（规则要有载体）──────────────────────────
-# 节点目录下 `thread/` 正好两级，名字都是「四位本地号-运行时 id」：
-#     thread/0001-01k8f3m2qz/                  文档 thread，对一个运行时 thread
-#     thread/0001-01k8f3m2qz/0002-01k8h9t1cc/  文档 turn：user-message.md、turn.md
-#                                              交回物按类型放 sdd/、sdp/、uat/
-# 本地号管排序与引用，id 是回溯运行时原始记录的入口，两者合起来唯一。
-# 字段见 dev-agent-standards「任务的生命周期」，编号与命名见
-# dev-agent-task/thread-numbering.md。编号与字段每次都查；冻结只在 --staged 时查。
+# 任务目录下 `thread/` 正好两级：
+#     thread/0003-sdd-01k8f3m2qz/                  文档 thread，名字带阶段，对一个运行时 thread
+#     thread/0003-sdd-01k8f3m2qz/0002-01k8h9t1cc/  文档 turn：user-message.md、response.md、turn.md、others/
+# BRD、PRD、SDD 段的答是 response.md；SDP、UAT 段的产物在 worktree，turn.md 记分支与提交。
+# 定稿在 PRD/ 与 SDD/ 下（architecture/ 与 modules/）。字段与形状见
+# dev-agent-standards/lifecycle.md 与 dev-agent-task/thread-numbering.md。
 THREAD_PREFIX_RE = re.compile(r"^(?P<task>.+)/thread/(?P<rest>.+)$")
-DIR_RE = re.compile(r"^(?P<num>\d{4})(?:-(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*))?$")
+STAGES = ("brd", "prd", "sdd", "sdp", "uat")
+THREAD_DIR_RE = re.compile(r"^(?P<num>\d{4})-(?P<stage>[a-z]+)(?:-(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*))?$")
+TURN_DIR_RE = re.compile(r"^(?P<num>\d{4})(?:-(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*))?$")
+MODULE_NAME_RE = re.compile(r"^(?P<num>\d{4})-(?P<name>[^/]+)$")
 VERIFIES_RE = re.compile(r"^\d{4}/\d{4}$")
-NODE_NAME_RE = re.compile(r"^(?P<num>\d{4})-(?P<name>[^/]+)$")
-KIND_DIRS = {"sdd": "SDD", "sdp": "SDP", "uat": "UAT"}
-TURN_FILES = {"user-message.md", "turn.md"}
-DELIVERABLES = {"SDD", "SDP", "UAT"}
-AGENT_ALLOWS = {"planning": {"SDD"}, "execution": {"SDD", "SDP"}, "acceptance": {"UAT"}}
+TURN_FILES = {"user-message.md", "response.md", "turn.md"}
+DOC_STAGES = {"brd", "prd", "sdd"}          # 答在 turn 里
+WORKTREE_STAGES = {"sdp", "uat"}            # 产物在 worktree
+AGENT_ALLOWS = {"discussion": {"BRD", "PRD"}, "planning": {"SDD"},
+                "execution": {"SDP"}, "acceptance": {"UAT"}}
 STATUSES = {"completed", "interrupted", "failed"}
 VERDICTS = {"pass", "fail", "undecidable"}
 REASONS = {"interrupted", "replaced", "review-ended", "budget-limited", "cancelled"}
-# 运行时 id 在目录名里，文件里不再写一遍：同一件事两处记，对不上时不知道信哪个。
+# 运行时 id 在目录名里，回执里不再写一遍；执行者与会话写在任务书里。
 OBSOLETE_TURN_FIELDS = ("provider_turn_id", "provider_thread_id", "thread", "executor")
 
 
@@ -289,7 +291,7 @@ def head_blob(path: str) -> str | None:
 
 
 def parse_thread_path(path: str) -> tuple[str, str, str, str] | None:
-    """把 `<节点>/thread/<文档 thread>/<文档 turn>/<其余>` 拆开；层数不对返回 None。"""
+    """把 `<任务目录>/thread/<thread>/<turn>/<其余>` 拆开；层数不对返回 None。"""
     m = THREAD_PREFIX_RE.match(path)
     if not m:
         return None
@@ -299,11 +301,14 @@ def parse_thread_path(path: str) -> tuple[str, str, str, str] | None:
     return m["task"], parts[0], parts[1], "/".join(parts[2:])
 
 
-def check_turn_md(base: str, fm: dict[str, str], kinds: set[str]) -> list[str]:
+def check_turn_md(base: str, fm: dict[str, str], stage: str, kinds: set[str]) -> list[str]:
     problems: list[str] = []
-    for k in ("status", "completed_at", "commit"):
+    required = ["status", "completed_at", "commit"] + (["worktree"] if stage in WORKTREE_STAGES else [])
+    for k in required:
         if not fm.get(k):
             problems.append(f"{base}/turn.md: 缺字段或为空：{k}")
+    if stage in DOC_STAGES and fm.get("worktree"):
+        problems.append(f"{base}/turn.md: 只有 sdp、uat 段填 worktree")
     for k in OBSOLETE_TURN_FIELDS:
         if fm.get(k):
             problems.append(f"{base}/turn.md: 回执里不写 {k}——运行时 id 在目录名里，执行者在任务书里")
@@ -324,60 +329,54 @@ def check_turn_md(base: str, fm: dict[str, str], kinds: set[str]) -> list[str]:
     return problems
 
 
-def numbering(where: str, names: list[str], what: str) -> tuple[list[str], dict[str, tuple[int, str | None]]]:
-    """名字须是「四位号」或「四位号-运行时 id」；号从 0001 起连续、不复用。"""
+def check_modules(tracked: set[str]) -> list[str]:
+    """模块目录名是「四位号-短名」，在同一个 modules/ 里从 0001 起连续；PRD 与 SDD 两侧一致。"""
     problems: list[str] = []
-    parsed: dict[str, tuple[int, str | None]] = {}
-    nums: dict[int, list[str]] = {}
-    for name in sorted(names):
-        m = DIR_RE.match(name)
-        if not m:
-            problems.append(f"{where}/{name}: {what}的目录名须是四位数字，或「四位数字-运行时 id」（如 0002、0002-01k8f3m2qz）")
+    dirs: dict[str, set[str]] = {}          # <任务目录>/<PRD|SDD>/modules -> 模块名
+    have_arch: set[str] = set()             # 有 architecture/ 的 <任务目录>/<PRD|SDD>
+    finals: set[str] = set()                # 出现过的 <任务目录>/<PRD|SDD>
+    for p in sorted(tracked):
+        if not p.startswith(DOC_ROOT):
             continue
-        parsed[name] = (int(m["num"]), m["id"])
-        nums.setdefault(int(m["num"]), []).append(name)
-    for n, same in sorted(nums.items()):
-        if len(same) > 1:
-            problems.append(f"{where}/: 本地号 {n:04d} 对应多个目录：" + "、".join(sorted(same)))
-    if nums:
-        gap = sorted(set(range(1, max(nums) + 1)) - set(nums))
-        if gap:
-            problems.append(f"{where}/: {what} 编号不连续，缺 " + "、".join(f"{g:04d}" for g in gap))
-    return problems, parsed
-
-
-def check_nodes(tracked: set[str]) -> list[str]:
-    """子任务目录名是「四位号-短名」，号在同一个父节点下从 0001 起递增；项目本身不编号。"""
-    problems: list[str] = []
-    roots = {p.split("/thread/")[0] for p in tracked
-             if p.startswith(DOC_ROOT) and "/thread/" in p and "/components/" not in p.split("/thread/")[0]}
-    for root in sorted(roots):
-        children: dict[str, set[str]] = {}   # 父节点 -> 子任务目录名
-        for p in tracked:
-            if not p.startswith(root + "/components/"):
+        m = re.match(r"^(?P<task>.+)/(?P<final>PRD|SDD)/(?P<rest>.+)$", p)
+        if not m:
+            continue
+        finals.add(f"{m['task']}/{m['final']}")
+        rest = m["rest"].split("/")
+        if rest[0] == "architecture":
+            have_arch.add(f"{m['task']}/{m['final']}")
+        elif rest[0] == "modules" and len(rest) > 2:
+            dirs.setdefault(f"{m['task']}/{m['final']}/modules", set()).add(rest[1])
+    with_modules = {w.removesuffix("/modules") for w in dirs}
+    for final in sorted(with_modules):
+        if final not in have_arch:
+            problems.append(f"{final}/: 有 modules/ 就必须有 architecture/")
+    for where, names in sorted(dirs.items()):
+        nums: dict[int, list[str]] = {}
+        for name in sorted(names):
+            mm = MODULE_NAME_RE.match(name)
+            if not mm:
+                problems.append(f"{where}/{name}: 模块目录名须是「四位号-短名」（如 0001-backend）")
                 continue
-            rest = p[len(root) + 1:].split("/")
-            parent = root
-            for i in range(0, len(rest) - 1, 2):
-                if rest[i] != "components":
-                    break
-                children.setdefault(parent, set()).add(rest[i + 1])
-                parent = f"{parent}/components/{rest[i + 1]}"
-        for parent, names in sorted(children.items()):
-            nums: dict[int, list[str]] = {}
-            for name in sorted(names):
-                m = NODE_NAME_RE.match(name)
-                if not m:
-                    problems.append(f"{parent}/components/{name}: 子任务目录名须是「四位号-短名」（如 0001-intake）")
-                    continue
-                nums.setdefault(int(m["num"]), []).append(name)
-            for n, same in sorted(nums.items()):
-                if len(same) > 1:
-                    problems.append(f"{parent}/components/: 子任务号 {n:04d} 对应多个目录：" + "、".join(same))
-            if nums:
-                gap = sorted(set(range(1, max(nums) + 1)) - set(nums))
-                if gap:
-                    problems.append(f"{parent}/components/: 子任务号不连续，缺 " + "、".join(f"{g:04d}" for g in gap))
+            nums.setdefault(int(mm["num"]), []).append(name)
+        for n, same in sorted(nums.items()):
+            if len(same) > 1:
+                problems.append(f"{where}/: 模块号 {n:04d} 对应多个目录：" + "、".join(same))
+        if nums:
+            gap = sorted(set(range(1, max(nums) + 1)) - set(nums))
+            if gap:
+                problems.append(f"{where}/: 模块号不连续，缺 " + "、".join(f"{g:04d}" for g in gap))
+    # 同一模块在 PRD 与 SDD 两侧的号与短名一致（两侧都出现时才比）
+    for where, names in sorted(dirs.items()):
+        if not where.endswith("/SDD/modules"):
+            continue
+        other = dirs.get(where.replace("/SDD/modules", "/PRD/modules"))
+        if other is None:
+            continue
+        only_sdd, only_prd = sorted(names - other), sorted(other - names)
+        if only_sdd or only_prd:
+            problems.append(f"{where.removesuffix('/SDD/modules')}: PRD 与 SDD 的模块不一致——"
+                            f"只在 SDD：{'、'.join(only_sdd) or '无'}；只在 PRD：{'、'.join(only_prd) or '无'}")
     return problems
 
 
@@ -389,7 +388,7 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
             continue
         parsed = parse_thread_path(p)
         if parsed is None:
-            problems.append(f"{p}: thread/ 下正好两级——文档 thread、文档 turn，交回物再往里一层")
+            problems.append(f"{p}: thread/ 下正好两级——文档 thread、文档 turn")
             continue
         task, dthread, dturn, rest = parsed
         tasks.setdefault(task, {}).setdefault(dthread, {}).setdefault(dturn, set()).add(rest)
@@ -397,27 +396,66 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
     nturns = 0
     runtime_ids: dict[str, list[str]] = {}
     for task, dthreads in sorted(tasks.items()):
-        probs, threads = numbering(f"{task}/thread", list(dthreads), "文档 thread")
-        problems += probs
-        for tname, (tnum, tid) in sorted(threads.items()):
+        parsed_threads: dict[str, tuple[int, str, str | None]] = {}
+        nums: dict[int, list[str]] = {}
+        for name in sorted(dthreads):
+            m = THREAD_DIR_RE.match(name)
+            if not m or m["stage"] not in STAGES:
+                problems.append(f"{task}/thread/{name}: thread 目录名须是「四位数字-阶段」或「四位数字-阶段-运行时 id」，"
+                                f"阶段在 " + "、".join(STAGES) + " 之内")
+                continue
+            parsed_threads[name] = (int(m["num"]), m["stage"], m["id"])
+            nums.setdefault(int(m["num"]), []).append(name)
+        for n, same in sorted(nums.items()):
+            if len(same) > 1:
+                problems.append(f"{task}/thread/: 本地号 {n:04d} 对应多个目录：" + "、".join(sorted(same)))
+        if nums:
+            gap = sorted(set(range(1, max(nums) + 1)) - set(nums))
+            if gap:
+                problems.append(f"{task}/thread/: thread 编号不连续，缺 " + "、".join(f"{g:04d}" for g in gap))
+
+        local_ids = set()
+        for tname, (tnum, stage, tid) in sorted(parsed_threads.items()):
+            for uname in dthreads[tname]:
+                mu = TURN_DIR_RE.match(uname)
+                if mu:
+                    local_ids.add(f"{tnum:04d}/{int(mu['num']):04d}")
+
+        for tname, (tnum, stage, tid) in sorted(parsed_threads.items()):
             if tid and tid != "none":
                 runtime_ids.setdefault(tid, []).append(f"{task}/thread/{tname}")
-            probs, turns = numbering(f"{task}/thread/{tname}", list(dthreads[tname]), "文档 turn")
-            problems += probs
-            local_ids = {f"{tnum:04d}/{n:04d}" for n, _ in turns.values()}
-            for uname, (unum, uid) in sorted(turns.items()):
+            turn_nums: dict[int, list[str]] = {}
+            for uname in sorted(dthreads[tname]):
+                mu = TURN_DIR_RE.match(uname)
+                if not mu:
+                    problems.append(f"{task}/thread/{tname}/{uname}: turn 目录名须是四位数字，或「四位数字-运行时 id」")
+                    continue
+                turn_nums.setdefault(int(mu["num"]), []).append(uname)
+            for n, same in sorted(turn_nums.items()):
+                if len(same) > 1:
+                    problems.append(f"{task}/thread/{tname}/: 本地号 {n:04d} 对应多个目录：" + "、".join(same))
+            if turn_nums:
+                gap = sorted(set(range(1, max(turn_nums) + 1)) - set(turn_nums))
+                if gap:
+                    problems.append(f"{task}/thread/{tname}/: turn 编号不连续，缺 " + "、".join(f"{g:04d}" for g in gap))
+
+            for uname in sorted(dthreads[tname]):
+                mu = TURN_DIR_RE.match(uname)
+                if not mu:
+                    continue
                 nturns += 1
                 base = f"{task}/thread/{tname}/{uname}"
+                uid = mu["id"]
                 if uid and uid != "none":
                     runtime_ids.setdefault(uid, []).append(base)
                 files = dthreads[tname][uname]
-                # 交回物在 sdd/、sdp/、uat/ 里；turn 目录本身只放任务书与回执
-                stray = {f for f in files if "/" not in f} - TURN_FILES
+                top = {f.split("/")[0] for f in files}
+                stray = {f for f in top if f not in TURN_FILES and f != "others"}
                 if stray:
-                    problems.append(f"{base}: turn 目录只放 user-message.md 与 turn.md，交回物放 sdd/、sdp/、uat/；多出：" + "、".join(sorted(stray)))
-                bad_kind = {f.split("/")[0] for f in files if "/" in f} - set(KIND_DIRS)
-                if bad_kind:
-                    problems.append(f"{base}: 交回物只能放 sdd/、sdp/、uat/，现有：" + "、".join(sorted(bad_kind)))
+                    problems.append(f"{base}: turn 里只放 user-message.md、response.md、turn.md 与 others/；多出：" + "、".join(sorted(stray)))
+                has_response = "response.md" in files
+                if stage in WORKTREE_STAGES and has_response:
+                    problems.append(f"{base}: {stage} 段的产物在 worktree，turn 里不放 response.md")
                 um = blob(f"{base}/user-message.md") if "user-message.md" in files else None
                 if um is None:
                     problems.append(f"{base}: 缺 user-message.md（任务书）")
@@ -429,49 +467,46 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
                 for k in ("deliverable", "agent", "executor", "base", "sent_at"):
                     if not fm.get(k):
                         problems.append(f"{base}/user-message.md: 缺字段或为空：{k}")
-                if fm.get("thread"):
-                    problems.append(f"{base}/user-message.md: 不写 thread 字段——文档 thread 就是上一级目录")
                 kinds = kinds_of(fm.get("deliverable", ""))
-                if kinds - DELIVERABLES:
-                    problems.append(f"{base}/user-message.md: deliverable 只能是 SDD、SDP、UAT，现为 {fm.get('deliverable')}")
+                if kinds != {stage.upper()}:
+                    problems.append(f"{base}/user-message.md: deliverable 应与 thread 的阶段一致，"
+                                    f"应为 {stage.upper()}，现为 {fm.get('deliverable')}")
                 agent = fm.get("agent", "")
                 if agent and agent not in AGENT_ALLOWS:
-                    problems.append(f"{base}/user-message.md: agent 只能是 planning、execution、acceptance，现为 {agent}")
+                    problems.append(f"{base}/user-message.md: agent 只能是 " + "、".join(AGENT_ALLOWS) + f"，现为 {agent}")
                 elif agent and kinds and not kinds <= AGENT_ALLOWS[agent]:
-                    problems.append(f"{base}/user-message.md: {agent} agent 不能交 " + "、".join(sorted(kinds - AGENT_ALLOWS[agent])))
-                if "UAT" in kinds:
+                    problems.append(f"{base}/user-message.md: {agent} agent 不做 " + "、".join(sorted(kinds - AGENT_ALLOWS[agent])) + " 段")
+                if stage == "uat":
                     v = fm.get("verifies", "")
                     if not v:
-                        problems.append(f"{base}/user-message.md: 交 UAT 须填 verifies（验收的是哪个 turn）")
+                        problems.append(f"{base}/user-message.md: uat 段须填 verifies（验收的是哪个 turn）")
                     elif not VERIFIES_RE.match(v):
-                        problems.append(f"{base}/user-message.md: verifies 写成「文档 thread 号/turn 号」，如 0001/0002，现为 {v}")
+                        problems.append(f"{base}/user-message.md: verifies 写成「thread 号/turn 号」，如 0004/0001，现为 {v}")
                     elif v not in local_ids:
                         problems.append(f"{base}/user-message.md: verifies 指向不存在的 turn：{v}")
                 elif fm.get("verifies"):
-                    problems.append(f"{base}/user-message.md: 只有交 UAT 的 turn 才填 verifies")
-                for kd in sorted({f.split("/")[0] for f in files if "/" in f} & set(KIND_DIRS)):
-                    if KIND_DIRS[kd] not in kinds:
-                        problems.append(f"{base}/{kd}/: 任务书没说要交 {KIND_DIRS[kd]}，却有交回物")
+                    problems.append(f"{base}/user-message.md: 只有 uat 段才填 verifies")
                 if "turn.md" not in files:
                     continue
                 if fm.get("sent_at") == "pending":
                     problems.append(f"{base}: 任务书还未发出（sent_at: pending），不应有 turn.md")
+                if stage in DOC_STAGES and not has_response:
+                    problems.append(f"{base}: 已交回（有 turn.md），{stage} 段必须有 response.md")
                 if not uid:
                     problems.append(f"{base}: 已交回（有 turn.md），目录名须带运行时 turn id；执行环境不给 id 的写 -none")
                 if not tid:
-                    problems.append(f"{task}/thread/{tname}: 其下已有交回的 turn，文档 thread 的目录名须带运行时 thread id")
+                    problems.append(f"{task}/thread/{tname}: 其下已有交回的 turn，thread 目录名须带运行时 thread id")
                 tm = front_matter(blob(f"{base}/turn.md") or "")
                 if tm is None:
                     problems.append(f"{base}/turn.md: 缺 YAML 头（--- 包起的固定字段）")
                     continue
-                problems += check_turn_md(base, tm, kinds)
+                problems += check_turn_md(base, tm, stage, kinds)
 
-    # 一个运行时 id 只对一个文档目录：反向的多对一一般不发生，出现就交人看
     for rid, where in sorted(runtime_ids.items()):
         if len(where) > 1:
             problems.append(f"运行时 id {rid} 出现在多处：" + "、".join(sorted(where)))
 
-    problems += check_nodes(tracked)
+    problems += check_modules(tracked)
     if staged is not None:
         problems += check_frozen(staged)
     return problems, nturns

@@ -8,9 +8,9 @@
 > 只剩三件事：权威排序、接手演练、什么不属于本文档集。
 > 其余原属本文件的内容已按性质移出：
 > 写文档的约定 → [人的批准点](../dev-agent-standards/detailed-rules/approvals.md)「改判」；
-> 提请求 → [`../dev-agent-task/composition/product-contract.md`](../dev-agent-task/composition/product-contract.md)；
-> 推送与多助手 → [`../dev-agent-task/composition/protocol/competition-protocol.md`](../dev-agent-task/composition/protocol/competition-protocol.md) 与
-> [`constraints.md`](../dev-agent-task/composition/constraints.md) T4。
+> 提请求 → [`../dev-agent-task/composition/product-contract.md`](../dev-agent-task/PRD/product-contract.md)；
+> 推送与多助手 → [`../dev-agent-task/composition/protocol/competition-protocol.md`](../dev-agent-task/protocol/competition-protocol.md) 与
+> [`constraints.md`](../dev-agent-task/SDD/constraints.md) T4。
 
 ## 1. 权威排序
 
@@ -20,7 +20,7 @@
 
 - **代码是现状的唯一真相。**本文档集是帮助理解代码的缓存，与代码冲突时以代码为准。
 - 文档之间矛盾：先比"取证时点/最后更新"的新旧，再比上面的层级，不盲目采信。
-- **规则**（[`../dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md)）是**必须遵守的**，
+- **规则**（[`../dev-agent-task/composition/constraints.md`](../dev-agent-task/SDD/constraints.md)）是**必须遵守的**，
   投影是**现状的描述**。两者冲突时，说明代码违反了约束——该改代码，不是改文档。
   规则与投影冲突时，说明**代码违反了规则**——该改代码，不是改文档。
 
@@ -38,8 +38,8 @@
 
 | 内容 | 去哪 |
 | --- | --- |
-| 将来要做什么、应该怎样 | 请求记录（见 [`../dev-agent-task/composition/product-contract.md`](../dev-agent-task/composition/product-contract.md)） |
-| 必须遵守的规则 | [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md) |
+| 将来要做什么、应该怎样 | 请求记录（见 [`../dev-agent-task/composition/product-contract.md`](../dev-agent-task/PRD/product-contract.md)） |
+| 必须遵守的规则 | [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/SDD/constraints.md) |
 | 做到第几步了 | 请求的进度游标；本文档集**一律不写进度** |
 | 镜像 digest、迁移 head 等易变值 | 只指真源，见 [`overall-architecture.md`](overall-architecture.md) §10 |
 

@@ -14,7 +14,7 @@
 > | [`../dev-agent-standards/`](../dev-agent-standards/) | 我们怎么共事：任务、交付、多方竞争、人的批准点 | 协作方式变，代码不变 |
 >
 > **本目录不放规则，也不放脚本**——只描述现状。
-> 规则在 [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md)，
+> 规则在 [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/SDD/constraints.md)，
 > 文档检查脚本在 [`../tools/`](../tools/)。
 
 ## 本集之外：`docs/` 下的其他目录是什么
@@ -30,7 +30,7 @@
 | `evidence/` | v5 时期的验收 evidence | 2026-08 | 历史留档 |
 | `mooc-manus-v5/` | v5 架构的契约与脚本（111 文件） | 2026-08 | **已被 Architecture v2 取代**；其 `contracts/` 不在现行三套契约之列（见 [`topics/contracts.md`](topics/contracts.md) §7） |
 | `ai-tools/` | 工具调研笔记 | 2026-08 | 参考 |
-| **`mooc-manus-langgraph-longterm-plan-v5.md`** 及其实施计划、handoff | 上一轮的施工基线 | 2026-07 | **已降级为历史设计输入**，见 [`../dev-agent-task/components/0001-backend/composition/development-plan.md`](../dev-agent-task/components/0001-backend/composition/development-plan.md)「起点」。其**前后端对接**部分仍有效且详尽，相应工作启动时可引用；其 §14 多智能体（23 行）不作为智能体架构依据。任务游标停在 `P0-008C = PAUSED_FOR_ARCHITECTURE_REVIEW` |
+| **`mooc-manus-langgraph-longterm-plan-v5.md`** 及其实施计划、handoff | 上一轮的施工基线 | 2026-07 | **已降级为历史设计输入**，见 [`../dev-agent-task/components/0001-backend/composition/development-plan.md`](../dev-agent-task/SDD/modules/0001-backend/PRD/development-plan.md)「起点」。其**前后端对接**部分仍有效且详尽，相应工作启动时可引用；其 §14 多智能体（23 行）不作为智能体架构依据。任务游标停在 `P0-008C = PAUSED_FOR_ARCHITECTURE_REVIEW` |
 | `mooc-manus-langgraph-longterm-plan-v4.md` | v5 的前身 | 2026-07 | 历史。但其 **§20 `AgentProfile` 结构（102 行）比 v5 §14 完整**，现重新生效为专用部分的载体，见 dev-agent-task 的 agent-dev-guide「7.4 风险和未决」U4 |
 | `docs/` 下其余散落 md | Harbor、Celery、YAML 生成、k8s 连接等主题笔记 | 不一 | **参考，未逐条与代码核对**。主题都还活着，但断言可能已漂移——用之前先回代码验一遍 |
 | `app-platform/docs/`（本目录之外） | 14 份目标态设计文档 | — | **已标注为"实现参考，非权威"**——它自陈"描述长期边界和目标状态" |
@@ -60,9 +60,9 @@
 | 加表、改迁移 | [`topics/data.md`](topics/data.md) |
 | 发版、改部署清单 | [`topics/release.md`](topics/release.md) + [`repos/k8s.md`](repos/k8s.md) |
 | 确认某个能力是否真的接线了 | 对应仓文件的**「已知未实现」**一节 |
-| **动代码前必读的规则** | [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md)（39 条，按主题分组） |
-| 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-agent-task/composition/protocol/competition-protocol.md`](../dev-agent-task/composition/protocol/competition-protocol.md) |
-| 推送改动、跨机拉取、子模块的坑 | `~/five-repos-sync/sync-five-repos.sh`；规则见 [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/composition/constraints.md) T4 |
+| **动代码前必读的规则** | [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/SDD/constraints.md)（39 条，按主题分组） |
+| 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-agent-task/composition/protocol/competition-protocol.md`](../dev-agent-task/protocol/competition-protocol.md) |
+| 推送改动、跨机拉取、子模块的坑 | `~/five-repos-sync/sync-five-repos.sh`；规则见 [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/SDD/constraints.md) T4 |
 | 知道接下来要建什么 | [`../dev-agent-task/`](../dev-agent-task/) |
 | 从本次暂停继续旧账工作 | [逐步处置清单](../v5-backlog-disposition-luna.md)，先同步再工作；不从历史便签恢复旧技术栈 |
 | 复核本文档集的某条断言 | **读代码**，别的都不算数 |

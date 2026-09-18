@@ -13,7 +13,8 @@ import json, os, re, subprocess, sys
 from collections import defaultdict
 
 RE = re.compile(r"^(?P<task>sunmoonai/docs/.+)/thread/(?P<rest>.+)$")
-DIR_RE = re.compile(r"^(?P<num>\d{4})(?:-.*)?$")          # 0001、0001-01k8f3m2qz
+THREAD_RE = re.compile(r"^(?P<num>\d{4})-(?P<stage>[a-z]+)(?:-.*)?$")   # 0003-sdd-01k8f3m2qz
+TURN_RE = re.compile(r"^(?P<num>\d{4})(?:-.*)?$")                        # 0002-01k8h9t1cc
 LABEL = {"pass": "已通过", "fail": "被打回", "undecidable": "不可判，交人"}
 
 
@@ -66,26 +67,26 @@ def main(argv):
         # 键是本地号「文档 thread/turn」，如 0001/0002：目录名带运行时 id，引用只用本地号
         turns = {}
         for dt in sorted(tasks[task]):
-            mt = DIR_RE.match(dt)
+            mt = THREAD_RE.match(dt)
             if not mt:
                 continue
             for du in sorted(tasks[task][dt]):
-                mu = DIR_RE.match(du)
+                mu = TURN_RE.match(du)
                 if not mu:
                     continue
                 base = f"{task}/thread/{dt}/{du}"
                 files = tasks[task][dt][du]
                 u = fm(blob(f"{base}/user-message.md"))
                 r = fm(blob(f"{base}/turn.md")) if "turn.md" in files else None
-                turns[f"{mt['num']}/{mu['num']}"] = (u, r)
+                turns[f"{mt['num']}/{mu['num']}"] = (u, r, mt["stage"])
         turns = dict(sorted(turns.items()))
         verdicts = defaultdict(list)
-        for t, (u, r) in turns.items():
+        for t, (u, r, _st) in turns.items():
             if u.get("verifies") and r and r.get("status") == "completed":
                 verdicts[u["verifies"]].append((t, r.get("verdict", "?")))
         fails = defaultdict(int)
         rows = []
-        for t, (u, r) in turns.items():
+        for t, (u, r, stage) in turns.items():
             k = kinds(u.get("deliverable"))
             if u.get("sent_at") == "pending":
                 state = "待派"
@@ -96,28 +97,29 @@ def main(argv):
             elif "UAT" in k:
                 state = f"验收 {u.get('verifies', '?')}：{r.get('verdict', '?')}"
                 if r.get("verdict") == "fail":
-                    for kk in kinds(turns.get(u.get("verifies"), ({}, None))[0].get("deliverable")):
+                    for kk in kinds(turns.get(u.get("verifies"), ({}, None, ""))[0].get("deliverable")):
                         fails[kk] += 1
             elif verdicts.get(t):
                 state = LABEL.get(sorted(verdicts[t])[-1][1], "?")
             else:
                 state = "已交回，待验收"
-            rows.append({"turn": t, "deliverable": u.get("deliverable", "?"), "agent": u.get("agent", "?"),
+            rows.append({"turn": t, "stage": stage, "deliverable": u.get("deliverable", "?"), "agent": u.get("agent", "?"),
                          "executor": u.get("executor", "?"), "state": state})
         report.append({"task": task.removeprefix("sunmoonai/docs/"), "turns": rows, "fails": dict(fails),
-                       "composition": any(p.startswith(task + "/composition/") for p in tracked),
-                       "components": sorted({p[len(task) + 12:].split("/")[0] for p in tracked if p.startswith(task + "/components/")})})
+                       "final": sorted({p[len(task) + 1:].split("/")[0] for p in tracked
+                                         if p.startswith(task + "/PRD/") or p.startswith(task + "/SDD/")}),
+                       "modules": sorted({p[len(task) + 13:].split("/")[0] for p in tracked if p.startswith(task + "/SDD/modules/")})})
     if "--json" in argv:
         print(json.dumps(report, ensure_ascii=False, indent=2))
         return 0
     for r in report:
         fail_txt = "、".join(f"{k} 打回 {n} 次" for k, n in sorted(r["fails"].items())) or "无打回"
-        print(f"## {r['task']}   定稿：{'有' if r['composition'] else '无'}   子任务：{len(r['components'])}   {fail_txt}")
+        print(f"## {r['task']}   定稿：{'、'.join(r['final']) or '无'}   子任务：{len(r['modules'])}   {fail_txt}")
         for k, n in sorted(r["fails"].items()):
             if n >= 3:
                 print(f"   ⚠ {k} 已被打回 {n} 次：须人裁决，裁决写进下一个 turn 的任务书后才能继续")
         for row in r["turns"]:
-            print(f"   turn {row['turn']:<10} {row['deliverable']:<10} {row['agent']:<11} {row['executor']:<12} {row['state']}")
+            print(f"   turn {row['turn']:<10} {row['stage']:<5} {row['agent']:<11} {row['executor']:<12} {row['state']}")
     print(f"（投影：{len(report)} 个任务、{sum(len(r['turns']) for r in report)} 个 turn；判定基准是 git 索引）")
     return 0
 

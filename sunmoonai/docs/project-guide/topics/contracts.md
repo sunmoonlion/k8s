@@ -1,6 +1,6 @@
 # 契约
 
-> 取证时点：2026-09-13 后端接线复核；本次不改契约 ｜ 相关规则见 [`../../dev-agent-task/composition/constraints.md`](../../dev-agent-task/composition/constraints.md)「契约」C1–C6
+> 取证时点：2026-09-13 后端接线复核；本次不改契约 ｜ 相关规则见 [`../../dev-agent-task/composition/constraints.md`](../../dev-agent-task/SDD/constraints.md)「契约」C1–C6
 
 ## 1. 三套契约：两跨 App，一同 App 共享
 

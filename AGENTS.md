@@ -5,7 +5,7 @@
 
 **动代码前必读**——代码必须符合的规则（39 条，按主题分组）：
 
-`sunmoonai/docs/dev-agent-task/composition/constraints.md`
+`sunmoonai/docs/dev-agent-task/SDD/constraints.md`
 
 违反其中任一条的方案不进入讨论。用法见该文件「怎么用」。
 
@@ -15,7 +15,7 @@
 
 产品合同：
 
-`sunmoonai/docs/dev-agent-task/composition/product-contract.md`
+`sunmoonai/docs/dev-agent-task/PRD/product-contract.md`
 
 任何开发任务都要遵守的通用开发规范：
 
@@ -23,10 +23,10 @@
 
 开发 Agent 接任务前必须读取 agent 项目的具体开发流程：
 
-`sunmoonai/docs/dev-agent-task/components/0001-backend/composition/pipeline.md`
+`sunmoonai/docs/dev-agent-task/SDD/modules/0001-backend/SDD/pipeline.md`
 
 涉及人的批准、裁量或终审时，同时读取（人介入、权力表、审批档位）：
 
-`sunmoonai/docs/dev-agent-task/components/0001-backend/composition/agent-dev-guide.md`
+`sunmoonai/docs/dev-agent-task/SDD/modules/0001-backend/SDD/agent-dev-guide.md`
 
 不在此复述其中规则。
