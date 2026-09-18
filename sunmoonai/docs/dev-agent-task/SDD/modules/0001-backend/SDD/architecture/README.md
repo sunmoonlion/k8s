@@ -1,6 +1,26 @@
-# 后端的组成设计
+# 后端：设计层的模块结构与关系
 
-后端内部各部分（受理、排队投递、Agent 执行、中断恢复、验收与完成提交、投递重试）之间的关系；Agent / runtime 与验收器在此层。
+> 依据：[后端需求层](../../PRD/architecture/README.md)。
+> 本层定稿以 thread [0001/0001](../../thread/0001-sdd-none/0001-none/user-message.md)、[0001/0002](../../thread/0001-sdd-none/0002-none/user-message.md)、[0001/0003](../../thread/0001-sdd-none/0003-none/user-message.md) 的 response 为底。
 
-[development-plan.md](../../PRD/development-plan.md)、[agent-dev-guide.md](../agent-dev-guide.md)、[pipeline.md](../pipeline.md) 分别以 turn [0001/0001](../../thread/0001-sdd-none/0001-none/user-message.md)、[0001/0002](../../thread/0001-sdd-none/0002-none/user-message.md)、[0001/0003](../../thread/0001-sdd-none/0003-none/user-message.md) 的交回物为底，内容未改。
-子任务 0001-intake、0002-agent-execution、0003-interrupt-resume、0004-acceptance-commit 按产品合同第 5 节的阶段建立。
+## 模块
+
+| 模块 | 设计要点 |
+| --- | --- |
+| [`0001-intake`](../modules/0001-intake/README.md) | 身份与幂等在同一个事务边界内完成；契约固定后才进队列 |
+| [`0002-agent-execution`](../modules/0002-agent-execution/README.md) | outbox 投递；租约与 fencing 随派发下发；事件、副作用与用量按 Attempt 归集 |
+| [`0003-interrupt-resume`](../modules/0003-interrupt-resume/README.md) | Interaction 的令牌在同一并发控制边界内消费；断线后按 fencing 对账 |
+| [`0004-acceptance-commit`](../modules/0004-acceptance-commit/README.md) | 确定性验收与本地内容检查回执核对；终态、结果、预算结算原子提交 |
+
+同层的其他定稿：[`agent-dev-guide.md`](../agent-dev-guide.md) 是开发指导，[`pipeline.md`](../pipeline.md) 是本模块的开发流程。
+
+## 模块之间
+
+- 四个模块共用同一套 Task 与 Attempt 状态机与同一张事件表，状态只由集中的转换规则改写；
+- 传递只经数据库与事件流，不经进程内状态；
+- 持久化账（幂等、预算、副作用、证据）共用，写入面各自明确，同一事实不写两处；
+- 与执行端之间只有一条通道，派发、续约、回传都走它。
+
+## 约束
+
+[代码规则](../../../../constraints.md)、[开发流程](../pipeline.md)，以及产品合同 §9 的不变量。
