@@ -1,9 +1,5 @@
 ---
-deliverable: PRD
-agent: discussion
 executor: unknown
-base: unknown
-sent_at: unknown
 ---
 # turn 0003：agent 开发指导
 

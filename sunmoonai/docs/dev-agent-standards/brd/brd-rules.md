@@ -7,7 +7,7 @@ BRD 阶段用来**把要做什么讨论清楚**。还不知道要什么、或只
 
 ## 这一段的任务书
 
-`deliverable: BRD`，`agent: discussion`。这一问要写清：要讨论什么、已知什么（分清事实、推断与假设）、
+这一段由 discussion agent 答。这一问要写清：要讨论什么、已知什么（分清事实、推断与假设）、
 上面六行里这次要答哪几行、范围与约束。交回一份 `response.md`，不改代码。
 模板见 [任务书](user-message-template.md)；写多严见 [任务的生命周期](../lifecycle.md)「任务书写多严」。
 

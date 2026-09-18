@@ -255,8 +255,6 @@ VERIFIES_RE = re.compile(r"^\d{4}/\d{4}$")
 TURN_FILES = {"user-message.md", "response.md", "turn.md"}
 DOC_STAGES = {"brd", "prd", "sdd"}          # 答在 turn 里
 WORKTREE_STAGES = {"sdp", "uat"}            # 产物在 worktree
-AGENT_ALLOWS = {"discussion": {"BRD", "PRD"}, "planning": {"SDD"},
-                "execution": {"SDP"}, "acceptance": {"UAT"}}
 STATUSES = {"completed", "interrupted", "failed"}
 VERDICTS = {"pass", "fail", "undecidable"}
 REASONS = {"interrupted", "replaced", "review-ended", "budget-limited", "cancelled"}
@@ -279,10 +277,6 @@ def front_matter(text: str) -> dict[str, str] | None:
     return None
 
 
-def kinds_of(value: str) -> set[str]:
-    return {x.strip() for x in value.strip().strip("[]").split(",") if x.strip()}
-
-
 def head_blob(path: str) -> str | None:
     try:
         return git("show", f"HEAD:{path}")
@@ -301,7 +295,7 @@ def parse_thread_path(path: str) -> tuple[str, str, str, str] | None:
     return m["task"], parts[0], parts[1], "/".join(parts[2:])
 
 
-def check_turn_md(base: str, fm: dict[str, str], stage: str, kinds: set[str]) -> list[str]:
+def check_turn_md(base: str, fm: dict[str, str], stage: str) -> list[str]:
     problems: list[str] = []
     required = ["status", "completed_at", "commit"] + (["worktree"] if stage in WORKTREE_STAGES else [])
     for k in required:
@@ -321,7 +315,7 @@ def check_turn_md(base: str, fm: dict[str, str], stage: str, kinds: set[str]) ->
         problems.append(f"{base}/turn.md: status 为 interrupted 须填 reason：" + "、".join(sorted(REASONS)))
     if st != "interrupted" and fm.get("reason"):
         problems.append(f"{base}/turn.md: 只有 status 为 interrupted 才填 reason")
-    needs = "UAT" in kinds and st == "completed"
+    needs = stage == "uat" and st == "completed"
     if needs and fm.get("verdict") not in VERDICTS:
         problems.append(f"{base}/turn.md: 交回 UAT 须填 verdict：pass、fail 或 undecidable")
     if not needs and fm.get("verdict"):
@@ -464,18 +458,8 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
                 if fm is None:
                     problems.append(f"{base}/user-message.md: 缺 YAML 头（--- 包起的固定字段）")
                     continue
-                for k in ("deliverable", "agent", "executor", "base", "sent_at"):
-                    if not fm.get(k):
-                        problems.append(f"{base}/user-message.md: 缺字段或为空：{k}")
-                kinds = kinds_of(fm.get("deliverable", ""))
-                if kinds != {stage.upper()}:
-                    problems.append(f"{base}/user-message.md: deliverable 应与 thread 的阶段一致，"
-                                    f"应为 {stage.upper()}，现为 {fm.get('deliverable')}")
-                agent = fm.get("agent", "")
-                if agent and agent not in AGENT_ALLOWS:
-                    problems.append(f"{base}/user-message.md: agent 只能是 " + "、".join(AGENT_ALLOWS) + f"，现为 {agent}")
-                elif agent and kinds and not kinds <= AGENT_ALLOWS[agent]:
-                    problems.append(f"{base}/user-message.md: {agent} agent 不做 " + "、".join(sorted(kinds - AGENT_ALLOWS[agent])) + " 段")
+                if not fm.get("executor"):
+                    problems.append(f"{base}/user-message.md: 缺字段或为空：executor")
                 if stage == "uat":
                     v = fm.get("verifies", "")
                     if not v:
@@ -488,8 +472,8 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
                     problems.append(f"{base}/user-message.md: 只有 uat 段才填 verifies")
                 if "turn.md" not in files:
                     continue
-                if fm.get("sent_at") == "pending":
-                    problems.append(f"{base}: 任务书还未发出（sent_at: pending），不应有 turn.md")
+                if fm.get("executor") == "unassigned":
+                    problems.append(f"{base}: 还没派出去（executor: unassigned），不应有 turn.md")
                 if stage in DOC_STAGES and not has_response:
                     problems.append(f"{base}: 已交回（有 turn.md），{stage} 段必须有 response.md")
                 if not uid:
@@ -500,7 +484,7 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
                 if tm is None:
                     problems.append(f"{base}/turn.md: 缺 YAML 头（--- 包起的固定字段）")
                     continue
-                problems += check_turn_md(base, tm, stage, kinds)
+                problems += check_turn_md(base, tm, stage)
 
     for rid, where in sorted(runtime_ids.items()):
         if len(where) > 1:

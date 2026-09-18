@@ -7,12 +7,8 @@
 
 ```markdown
 ---
-deliverable: UAT
-agent: acceptance
-executor: <具体执行者；不能是实现这份 SDP 的那一个>
+executor: <派给谁；不能是实现这份 SDP 的那一个>
 verifies: <验收哪个 turn，写「thread 号/turn 号」，如 0004/0001>
-base: <发出时依据的提交>
-sent_at: <发出时间>
 ---
 # turn <四位号>：<短名>
 

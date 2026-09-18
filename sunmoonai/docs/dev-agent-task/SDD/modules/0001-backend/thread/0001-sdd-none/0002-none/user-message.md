@@ -1,9 +1,5 @@
 ---
-deliverable: SDD
-agent: planning
 executor: unknown
-base: unknown
-sent_at: unknown
 ---
 # turn 0002：Agent 开发指导：一个产品运行时，一套开发纪律
 

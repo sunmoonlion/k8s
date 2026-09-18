@@ -1,9 +1,5 @@
 ---
-deliverable: SDP
-agent: execution
 executor: unassigned
-base: pending
-sent_at: pending
 ---
 # N4-OPS-01：监控采集与告警送达
 

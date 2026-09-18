@@ -1,9 +1,5 @@
 ---
-deliverable: PRD
-agent: discussion
 executor: unknown
-base: unknown
-sent_at: unknown
 ---
 # turn 0002：开发必须遵守的规则
 

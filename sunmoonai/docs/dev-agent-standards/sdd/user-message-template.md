@@ -7,11 +7,7 @@
 
 ```markdown
 ---
-deliverable: SDD
-agent: planning
-executor: <具体执行者；未定写 unassigned>
-base: <发出时依据的提交>
-sent_at: <发出时间>
+executor: <派给谁；还没派出去写 unassigned>
 ---
 # turn <四位号>：<短名>
 

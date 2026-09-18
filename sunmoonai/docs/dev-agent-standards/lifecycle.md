@@ -90,12 +90,10 @@
 
 | 字段 | 写什么 |
 | --- | --- |
-| `deliverable` | 这一问要交回哪一种：`BRD`、`PRD`、`SDD`、`SDP`、`UAT`；与所在 thread 的阶段一致 |
-| `agent` | 交给哪类 agent：`discussion`（BRD、PRD）、`planning`（SDD）、`execution`（SDP）、`acceptance`（UAT） |
-| `executor` | 具体的执行者；未定写 `unassigned` |
+| `executor` | 派给谁；**还没派出去写 `unassigned`** |
 | `verifies` | 只有 UAT 填：验收的是哪个 turn，写「thread 号/turn 号」，如 `0004/0001` |
-| `base` | 发出时依据的提交 |
-| `sent_at` | 发出时间 |
+
+阶段不进 YAML 头：它的唯一真源是 thread 目录名（见 [命名与编号](naming.md)），正文里那句「交回什么」把它当面告诉模型。
 
 `turn.md` 交回时写，写完冻结；**没有 `turn.md` 就是还没交回**：
 

@@ -1,9 +1,5 @@
 ---
-deliverable: SDD
-agent: planning
 executor: unknown
-base: unknown
-sent_at: unknown
 ---
 # turn 0002：开发计划
 

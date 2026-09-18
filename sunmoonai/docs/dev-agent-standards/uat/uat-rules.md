@@ -11,7 +11,7 @@ UAT 阶段验证做出来的东西是否满足任务书。由验收 agent 交回
 
 ## 这一段的任务书
 
-`deliverable: UAT`，`agent: acceptance`，并填 `verifies`（验收哪个 turn，写「thread 号/turn 号」）。
+这一段由验收 agent 做，YAML 头里填 `verifies`（验收哪个 turn，写「thread 号/turn 号」）。
 这一问要写清：验收对象（turn、分支与提交）、按哪几条判（照抄被验收 turn 里已冻结的验收标准，不在这里改）、
 在哪开 worktree、证据要求、范围与约束。执行者不能是实现这份 SDP 的那一个。这一段不交 `response.md`。
 模板见 [任务书](user-message-template.md)；写多严见 [任务的生命周期](../lifecycle.md)「任务书写多严」。

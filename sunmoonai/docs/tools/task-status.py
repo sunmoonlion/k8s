@@ -43,10 +43,6 @@ def fm(text):
     return {}
 
 
-def kinds(v):
-    return {x.strip() for x in (v or "").strip("[]").split(",") if x.strip()}
-
-
 def main(argv):
     top = git("rev-parse", "--show-toplevel").strip()
     if os.path.realpath(os.curdir) != os.path.realpath(top):
@@ -87,8 +83,8 @@ def main(argv):
         fails = defaultdict(int)
         rows = []
         for t, (u, r, stage) in turns.items():
-            k = kinds(u.get("deliverable"))
-            if u.get("sent_at") == "pending":
+            k = {stage.upper()}
+            if u.get("executor") == "unassigned" and r is None:
                 state = "待派"
             elif r is None:
                 state = "已派工，未交回"
@@ -97,14 +93,12 @@ def main(argv):
             elif "UAT" in k:
                 state = f"验收 {u.get('verifies', '?')}：{r.get('verdict', '?')}"
                 if r.get("verdict") == "fail":
-                    for kk in kinds(turns.get(u.get("verifies"), ({}, None, ""))[0].get("deliverable")):
-                        fails[kk] += 1
+                    fails[turns.get(u.get("verifies"), ({}, None, "?"))[2].upper()] += 1
             elif verdicts.get(t):
                 state = LABEL.get(sorted(verdicts[t])[-1][1], "?")
             else:
                 state = "已交回，待验收"
-            rows.append({"turn": t, "stage": stage, "deliverable": u.get("deliverable", "?"), "agent": u.get("agent", "?"),
-                         "executor": u.get("executor", "?"), "state": state})
+            rows.append({"turn": t, "stage": stage, "executor": u.get("executor", "?"), "state": state})
         report.append({"task": task.removeprefix("sunmoonai/docs/"), "turns": rows, "fails": dict(fails),
                        "final": sorted({p[len(task) + 1:].split("/")[0] for p in tracked
                                          if p.startswith(task + "/PRD/") or p.startswith(task + "/SDD/")}),
@@ -119,7 +113,7 @@ def main(argv):
             if n >= 3:
                 print(f"   ⚠ {k} 已被打回 {n} 次：须人裁决，裁决写进下一个 turn 的任务书后才能继续")
         for row in r["turns"]:
-            print(f"   turn {row['turn']:<10} {row['stage']:<5} {row['agent']:<11} {row['executor']:<12} {row['state']}")
+            print(f"   turn {row['turn']:<10} {row['stage']:<5} {row['executor']:<14} {row['state']}")
     print(f"（投影：{len(report)} 个任务、{sum(len(r['turns']) for r in report)} 个 turn；判定基准是 git 索引）")
     return 0
 
