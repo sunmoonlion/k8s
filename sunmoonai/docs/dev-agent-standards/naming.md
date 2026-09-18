@@ -1,6 +1,6 @@
-# thread、turn 与模块的编号
+# 命名与编号
 
-> 依据的通用规范：[任务的生命周期](../dev-agent-standards/lifecycle.md)
+thread、turn 与模块的目录名怎么起、号怎么排、与运行时怎么对。生命周期本身见 [任务的生命周期](lifecycle.md)。
 
 只用四个词：**文档 thread**、**文档 turn**（我们的记账单位，就是下面这些目录）、**运行时 thread**、**运行时 turn**（执行环境里的东西，只有 id）。
 
