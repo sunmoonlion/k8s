@@ -2,12 +2,8 @@
 
 UAT 阶段验证做出来的东西是否满足用户消息。由验收 agent 交回，它不是实现这份 SDP 的那一个。
 
-**产物在 worktree 的 `test/`，不在任务目录里。**这一段的 turn 没有 `response.md`；`turn.md` 记分支与提交，
-结论写在 `test/` 的结果与那条提交里，见 [任务的生命周期](../lifecycle.md)「SDP 与 UAT 的 worktree」。
-
-多个验收者各自验收再比对时，按 [多方竞争协议](../detailed-rules/protocol/competition-rules.md) 进行。
-
-建 turn 时复制 [`user-message.md`](../user-message.md) 与 [`turn.md`](../turn.md)；正文的写法不设模板，这一段的问要说清什么见下。
+逐条判定与证据写在 `test/` 里，结论写进那条提交。多个验收者各自验收再比对时，按
+[多方竞争协议](../detailed-rules/protocol/competition-rules.md) 进行。
 
 ## 这一段的用户消息
 

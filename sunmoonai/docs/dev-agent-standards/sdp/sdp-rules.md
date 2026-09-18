@@ -2,13 +2,8 @@
 
 SDP 阶段把定稿的设计做出来：拆成哪些工作单元、先后顺序、实施记录，以及代码与证据。
 
-**产物在 worktree，不在任务目录里。**执行者在自己的 git worktree 里实现；这一段的 turn 没有 `response.md`，
-`turn.md` 记分支与提交（见 [任务的生命周期](../lifecycle.md)「SDP 与 UAT 的 worktree」）。实施记录写在 worktree 里，随代码一起提交。
-
-设计见 [SDD 规则](../sdd/sdd-rules.md)；验收见 [UAT 规则](../uat/uat-rules.md)。多个执行者各交一份候选时，按
-[多方竞争协议](../detailed-rules/protocol/competition-rules.md) 比较选定，档位也在那里定。
-
-建 turn 时复制 [`user-message.md`](../user-message.md) 与 [`turn.md`](../turn.md)；正文的写法不设模板，这一段的问要说清什么见下。
+实施记录写在 worktree 里，随代码一起提交。多个执行者各交一份候选时，按
+[多方竞争协议](../detailed-rules/protocol/competition-rules.md) 比较选定，档位也在那里定；本规则只写单个执行者要守的。
 
 ## 这一段的用户消息
 
