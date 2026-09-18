@@ -277,7 +277,7 @@ Codex 沙箱
 | 角色 | 职责 |
 | --- | --- |
 | router | 形成路由决定：选 Task Profile、Agent Profile、执行设备；类别按本节「任务类别的判定」三层得出；路由规则是版本化配置，变更落事件；依据、规则集版本与拒绝原因入账 |
-| orchestrator | 创建并推进 Attempt；按 workflow 拆步骤、按步派发；需要临时规划时先派一个「出计划」的 Attempt，计划作为 Artifact 经批准后执行 |
+| orchestrator | 创建并推进 Attempt；按 workflow 拆步骤、按步派发，每步按 §5.5 的步骤契约验收与处置；需要临时规划时先派一个「出计划」的 Attempt，计划作为 Artifact 经批准后执行 |
 | validator | 按固定 Task Profile 版本做确定性验收；核对本地内容检查的签名回执（§8.6） |
 | acceptor | 需要语义判断的验收，作为独立的验收 Attempt 派给执行端（不同 Agent Profile、不同运行时 thread） |
 | publisher | 不可逆副作用经 Task 级批准后执行 |
@@ -493,6 +493,26 @@ ciphertext_digest, key_id                 后端可见的元数据
 ```
 
 失败、拒绝或取消结果至少包含稳定错误码、用户可理解的说明、是否允许重新提交、已发生副作用及其状态，以及仅供内部诊断的受限引用。界面文案不得泄露内部异常、路径、凭据或其他用户的信息。
+
+### 5.5 步骤交回物
+
+专业 Task 按 workflow 拆成步骤逐步派发。每个步骤在 Task Profile 的 `step_contract` 里声明：
+
+```text
+step_id, step_version
+input_refs[]          输入，只以 Artifact 版本引用指定
+output_schema         这一步交回物的结构
+acceptance[]          可判定的验收条目
+evidence_rules        这一步必须带的来源、时点与数据版本
+on_reject             不合格的去向：重做本步、回到指定的前一步、或交人
+max_reworks           本步的返工上限
+```
+
+- 步骤交回物是**固定版本的 Artifact**；下一步只以版本引用取用，上一步重做产生新版本，不就地覆盖；
+- 执行端不保证交回物满足 `output_schema`：模型可能不受结构化输出约束、可能没有最终消息、产物也可能是工作区里的文件。**格式合规由验收判定，不由执行端声明**；
+- 每一步按 §8.6 验收：需要读正文的检查在执行端加密前完成并进回执，后端核对回执并按 `acceptance[]` 做确定性判定；
+- 步骤不合格不等于 Task 失败：按 `on_reject` 处置；`max_reworks` 用尽交人；
+- 步骤之间不得靠自然语言转述传递结果；下一步的输入只能是固定版本的 Artifact 与派发内容里的字段。
 
 ## 6. 两层状态机
 
@@ -738,8 +758,8 @@ tool_call_refs, side_effect_refs, evidence_refs, approval_refs
 ### 8.6 验收与完成提交
 
 - **F-ACCEPT-01**：执行输出不等于 Task 完成；验收按固定 Task Profile 版本检查：输出 schema 与未声明字段、每条验收、证据来源、新鲜度与权限、副作用及批准条件、部分结果与不确定性；
-- **F-ACCEPT-02**：**本地内容检查**：对结果正文的检查（含 F-POS-04 的判断拦截与验收条目中需要读正文的部分）在执行端、加密之前完成，生成签名回执；后端核对回执与密文摘要一致；
-- **F-ACCEPT-03**：后端能直接检查的只有元数据与结构；需要语义判断的验收派独立的验收 Attempt；Codex 对自身产出的自评不能单独作为验收依据；
+- **F-ACCEPT-02**：**本地结构与内容检查**：凡是需要读正文的检查——输出 schema 与未声明字段、必填证据字段、F-POS-04 的判断拦截、验收条目中需要读正文的部分——都在执行端、加密之前完成，合成一张签名回执；后端核对回执与密文摘要一致；
+- **F-ACCEPT-03**：后端不读正文，能直接检查的只有元数据与回执；结构是否合格以回执为准，后端不自行判定；需要语义判断的验收派独立的验收 Attempt；Codex 对自身产出的自评不能单独作为验收依据；
 - **F-ACCEPT-04**：验收失败可以在预算和策略允许时产生新 Attempt；禁止静默删改验收标准；
 - **F-ACCEPT-05**：提交 `SUCCEEDED` 时，结果密文、证据、Artifact 关系、验收判定、预算结算与终态事件必须原子提交，或采用可证明不会向客户端暴露半成品的等价协议；
 - **F-ACCEPT-06**：改动合进用户工作区属于独立工作区之外的写入，必须经 Task 级批准并逐条记账。
@@ -873,6 +893,7 @@ allowed_capabilities / data sources
 default budget / retry / approval / privacy policy
 device_policy                         是否允许改派设备
 workflow_ref                          专业 Profile 对应的 workflow
+step_contract                         workflow 各步骤的输入、输出 schema、验收与返工去向（§5.5）
 ```
 
 Agent Profile 声明执行能力：工具绑定、权限边界、自动放行范围、方法、记忆策略与支持的 Task Profile；签名发布（F-GUARD-01）。Task 固定 Task Profile 版本；每次 Attempt 记录所选 Agent Profile 与运行时版本。升级任一 Profile 不得静默改变已受理 Task 的解释或历史结果。
@@ -1037,6 +1058,7 @@ graph_version
 | `AT-36` | 对比评测 | 冻结的任务集上，本产品相对原版 Codex 的指标按 Profile 报告，改动后回归 |
 | `AT-37` | 工具可见性 | Profile 之外的工具不出现在模型上下文；即使被调用也被 runtime 结构性拒绝 |
 | `AT-38` | Profile 熔断 | 同一 Agent Profile 版本连续启动失败达阈值后被熔断，新 Attempt 不再分发到它 |
+| `AT-39` | 步骤交回 | 交回物不满足 `output_schema` 时按 `on_reject` 处置且不使 Task 失败；下一步只取固定版本的 Artifact |
 
 此外必须满足：
 
@@ -1094,6 +1116,7 @@ graph_version
 - SDK 能否容忍审批请求长时间挂起；
 - 钉版 Codex 实际支持的生命周期 hooks 事件范围，以及 hooks 能否阻断工具调用；
 - 独立工作区的实现方式与大工作区的开销；
+- 推荐清单模型对 Responses API 结构化输出（`output_schema`）的实际支持；不支持时退回提示词约束、本地校验与打回的效果；
 - 国产模型直连 Codex 的效果与稳定性，以 Kimi 为第一个样本：上下文压缩后能否续跑、reasoning effort 是否生效、工具调用失败率、投资类任务上的效果；
 - Electron、Python 运行环境、Codex 一起打包后的体积，以及 Windows、macOS 的签名、公证与自动更新流程；
 - 用户电脑上多路并行 Attempt 的资源占用；
