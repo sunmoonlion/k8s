@@ -8,12 +8,11 @@
 
 | 文件 | 内容 |
 | --- | --- |
-| [`lifecycle.md`](lifecycle.md) | **先读这一份**：任务的生命周期——五个阶段、任务目录、thread 与 turn 的形状与字段、定稿、worktree、返工 |
+| [`lifecycle.md`](lifecycle.md) | **先读这一份**：任务的生命周期——五个阶段、任务目录、thread 与 turn 的形状与字段、任务书写多严、定稿、worktree、返工 |
 | [`human-workflow.md`](human-workflow.md) | human 版：人自己走这套流程时怎么做 |
 | [`agent-workflow.md`](agent-workflow.md) | agent 版：由 supervisor 驱动时怎么做 |
 | [`naming.md`](naming.md) | **命名与编号**：thread、turn 与模块的目录名、编号、与运行时的对应，以及门禁的判据 |
 | [`glossary.md`](glossary.md) | 词汇表：standards 用词的唯一定义；改名须人确认 |
-| [`task-brief-rules.md`](task-brief-rules.md) | **任务书**：每个 turn 的 `user-message.md`——这一问要什么、做到什么算满足、写多严 |
 | [`brd/brd-rules.md`](brd/brd-rules.md) | **BRD** · Business Requirements Document（业务需求）：还不知道要做什么时先讨论清楚；可选，定稿成 `PRD/` |
 | [`prd/prd-rules.md`](prd/prd-rules.md) | **PRD** · Product Requirements Document（产品需求）：`PRD/` 目录怎么写——`architecture/` 与 `modules/`；只写要什么，不写怎么做；定稿成 `SDD/` |
 | [`sdd/sdd-rules.md`](sdd/sdd-rules.md) | **SDD** · Software Design Description（软件设计说明）：`SDD/` 目录怎么写——模块之间的结构与关系、各模块内部；设计原则与改契约的修订单；`modules/` 下就是子任务 |

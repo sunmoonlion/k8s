@@ -2,7 +2,7 @@
 
 复制成 turn 里的 `user-message.md`。
 
-这一问写几块、写多严，见 [任务书规则](../task-brief-rules.md)「完整任务书写这几块」与「写多严，按任务轻重」；字段的含义见 [任务的生命周期](../lifecycle.md)「turn 的固定字段」。
+本阶段的任务书要写清什么，见 [BRD 规则](brd-rules.md)「这一段的任务书」；写多严见 [任务的生命周期](../lifecycle.md)「任务书写多严」，字段的含义见同一份的「turn 的固定字段」。
 这一段该问哪几件事，见 [BRD 规则](brd-rules.md)「这一段在问什么」；答要写成什么样，见同一份的「response 写什么」。
 
 ```markdown

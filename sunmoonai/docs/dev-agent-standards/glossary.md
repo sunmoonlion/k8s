@@ -18,7 +18,7 @@ standards 的用词以本表为准：**同一个意思只用一个词**，「不
 | `others/` | turn 里可选的一个目录：人或 supervisor 追加给模型的材料与附件 | 附件目录 |
 | `turn.md` | 文档 turn 的回执：状态、交回时间、所在提交，交回 UAT 时还有结论；交回时写，写完冻结。没有它就是还没交回 | 状态文件 |
 | 并行 | 同一问同时发给几个执行者：各家在各自的运行时 thread 里，所以是几个文档 thread 各开一个 turn，任务书各存各的 | 并行尝试 |
-| 任务书 | 发给 agent 的那一问，存为 turn 的 `user-message.md`；须写明这一问要交回哪一种、由哪类 agent 交。见 [任务书规则](task-brief-rules.md) | PRD（指这一问时）、需求文档 |
+| 任务书 | 发给 agent 的那一问，存为 turn 的 `user-message.md`；须写明这一问要交回哪一种、由哪类 agent 交。见 [任务的生命周期](lifecycle.md)「任务书写多严」 | PRD（指这一问时）、需求文档 |
 | 附件 | 与 `user-message.md` 放在一起、随它发出的材料 | — |
 | 派工 | 发出一个 turn | — |
 | 交回物 | 某个 turn 交回来的东西：BRD、PRD、SDD 阶段是 `response.md`；SDP、UAT 阶段是 worktree 分支上的提交 | 交付物（指这一份时） |
@@ -30,7 +30,7 @@ standards 的用词以本表为准：**同一个意思只用一个词**，「不
 
 ## 阶段与交付物
 
-**阶段**有五个：BRD、PRD、SDD、SDP、UAT，规则见 [BRD](brd/brd-rules.md)、[PRD](prd/prd-rules.md)、[SDD](sdd/sdd-rules.md)、[SDP](sdp/sdp-rules.md)、[UAT](uat/uat-rules.md)。每一问的任务书怎么写，见 [任务书规则](task-brief-rules.md)。
+**阶段**有五个：BRD、PRD、SDD、SDP、UAT，规则见 [BRD](brd/brd-rules.md)、[PRD](prd/prd-rules.md)、[SDD](sdd/sdd-rules.md)、[SDP](sdp/sdp-rules.md)、[UAT](uat/uat-rules.md)。每一问的任务书怎么写，见各阶段规则的「这一段的任务书」与 [任务的生命周期](lifecycle.md)「任务书写多严」。
 
 | 词 | 含义 | 不要用 |
 | --- | --- | --- |

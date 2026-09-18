@@ -2,7 +2,7 @@
 
 复制成 turn 里的 `user-message.md`。
 
-这一问写几块、写多严，见 [任务书规则](../task-brief-rules.md)「完整任务书写这几块」与「写多严，按任务轻重」；字段的含义见 [任务的生命周期](../lifecycle.md)「turn 的固定字段」。
+本阶段的任务书要写清什么，见 [PRD 规则](prd-rules.md)「这一段的任务书」；写多严见 [任务的生命周期](../lifecycle.md)「任务书写多严」，字段的含义见同一份的「turn 的固定字段」。
 交回的 response 要能定稿成 `PRD/`，所以它要满足 [PRD 规则](prd-rules.md)「`architecture/` 写什么」「`modules/<模块>/` 写什么」与「纪律」。
 
 ```markdown
