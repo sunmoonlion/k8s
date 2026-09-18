@@ -35,4 +35,8 @@ protocol/                          多方竞争协议在本平台的具体做法
 | 开发计划：要建什么、为什么 | [`PRD/development-plan.md`](PRD/development-plan.md) |
 | 与项目无关的通用开发规范 | [`../dev-agent-standards/`](../dev-agent-standards/) |
 
+**两边怎么分**：换一个 agent、换一个项目仍然成立的，写进 [`../dev-agent-standards/`](../dev-agent-standards/)；
+本目录只放通用规范在本任务上的具体化，以及只对本任务成立的规定，并链接回所依据的那一条。
+standards 不引用任何具体任务。
+
 门禁脚本在 [`../tools/`](../tools/)。
