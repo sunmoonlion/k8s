@@ -3,7 +3,7 @@
 BRD 阶段用来**把要做什么讨论清楚**。还不知道要什么、或只有一句模糊的想法时，先走这一段：人问、AI 答、人改，几个 turn 之后定稿成 `PRD/`。
 已经清楚要做什么的任务可以跳过这一段，直接从 PRD 起。
 
-两个 YAML 头照抄 [模板](../templates.md)；正文没有模板，这一段的问要说清什么见下。
+建 turn 时复制 [`user-message.template.md`](../user-message.template.md) 与 [`turn.template.md`](../turn.template.md)；正文的写法不设模板，这一段的问要说清什么见下。
 
 ## 这一段的用户消息
 

@@ -108,7 +108,7 @@
 | `commit` | 交回物所在的提交；同上 |
 
 **字段集固定，不因阶段增减行**：用不上的写 `无`，不删行、不留空。这样任何一份回执都长一个样，人扫一眼、机器取一个键都不用先判断阶段。
-两个头照抄 [模板](templates.md)；回执正文写一句话指向交回物，按阶段的写法也在那里。
+建 turn 时直接复制两个模板文件：[`user-message.template.md`](user-message.template.md) 与 [`turn.template.md`](turn.template.md)，把尖括号里的说明换成内容。
 
 **`worktree` 与 `commit` 什么时候有值**：SDP、UAT 两段必有——产物本来就在另一条分支上。
 BRD、PRD、SDD 三段看这一问是在哪里做的：

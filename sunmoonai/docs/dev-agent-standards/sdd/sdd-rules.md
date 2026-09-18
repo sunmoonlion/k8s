@@ -13,7 +13,7 @@ SDD/
 - 层次是相对的：一个模块再往下拆时，它自己的 `SDD/architecture/` 对子模块就是结构层。总体还是详细由它在任务树里的层次决定，不由名称决定。
 - `architecture/` 是目录，入口文件 `README.md`，可以再拆多份；编号见 [命名与编号](../naming.md)。
 
-两个 YAML 头照抄 [模板](../templates.md)；正文没有模板，这一段的问要说清什么见下。
+建 turn 时复制 [`user-message.template.md`](../user-message.template.md) 与 [`turn.template.md`](../turn.template.md)；正文的写法不设模板，这一段的问要说清什么见下。
 
 ## 这一段的用户消息
 

@@ -11,7 +11,7 @@
 | [`lifecycle.md`](lifecycle.md) | **先读这一份**：任务的生命周期——五个阶段、任务目录、thread 与 turn 的形状与字段、用户消息写多严、定稿、worktree、返工 |
 | [`human-workflow.md`](human-workflow.md) | human 版：人自己走这套流程时怎么做 |
 | [`agent-workflow.md`](agent-workflow.md) | agent 版：由 supervisor 驱动时怎么做 |
-| [`templates.md`](templates.md) | 照抄用的两个 YAML 头，以及回执正文按阶段怎么写 |
+| [`user-message.template.md`](user-message.template.md) · [`turn.template.md`](turn.template.md) | 两个模板文件，建 turn 时直接复制 |
 | [`naming.md`](naming.md) | **命名与编号**：thread、turn 与模块的目录名、编号、与运行时的对应，以及门禁的判据 |
 | [`glossary.md`](glossary.md) | 词汇表：standards 用词的唯一定义；改名须人确认 |
 | [`brd/brd-rules.md`](brd/brd-rules.md) | **BRD** · Business Requirements Document（业务需求）：还不知道要做什么时先讨论清楚；可选，定稿成 `PRD/` |
@@ -24,7 +24,7 @@
 
 先后由任务树决定：上一段定稿的结果决定下一段问什么；不是每件事都要把五段走一遍。
 
-**正文没有模板。**问是开放的，固定栏目会给答案定骨架，也会把每一问都推向最严格那一档；要照抄的只有两个 YAML 头，在 [`templates.md`](templates.md) 里。
+**正文没有模板。**问是开放的，固定栏目会给答案定骨架，也会把每一问都推向最严格那一档；要复制的是两个模板文件：[`user-message.template.md`](user-message.template.md) 与 [`turn.template.md`](turn.template.md)。
 各段最少要说清什么，写在各自规则的「这一段的用户消息」里——讨论与设计段几乎没有必填的，
 执行与验收段要说清的多（工作区、基线、完成条件、预算、要人批准的动作；被验的提交、判据、证据与分档），
 因为执行者与验收者是另一个进程，只知道消息里写了的东西。

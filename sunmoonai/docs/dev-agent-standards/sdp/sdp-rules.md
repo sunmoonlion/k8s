@@ -8,7 +8,7 @@ SDP 阶段把定稿的设计做出来：拆成哪些工作单元、先后顺序�
 设计见 [SDD 规则](../sdd/sdd-rules.md)；验收见 [UAT 规则](../uat/uat-rules.md)。多个执行者各交一份候选时，按
 [多方竞争协议](../detailed-rules/protocol/competition-rules.md) 比较选定，档位也在那里定。
 
-两个 YAML 头照抄 [模板](../templates.md)；正文没有模板，这一段的问要说清什么见下。
+建 turn 时复制 [`user-message.template.md`](../user-message.template.md) 与 [`turn.template.md`](../turn.template.md)；正文的写法不设模板，这一段的问要说清什么见下。
 
 ## 这一段的用户消息
 
