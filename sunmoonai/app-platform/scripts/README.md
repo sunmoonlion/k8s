@@ -1,5 +1,8 @@
 # App 镜像构建与推送
 
+可复用的源码拓扑、模板三方同步与 Calico 检查在 [validation/](validation/README.md)。
+旧重构目录已清退，不再从历史 R3/R5/R7 脚本启动开发发布。
+
 ## KIND 开发包部署
 
 开发包沿用各 App 的 `deployment/render.py`、规范 `deployment/bundle/` 和

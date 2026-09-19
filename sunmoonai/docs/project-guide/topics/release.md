@@ -72,10 +72,14 @@ render.py 解析出 digest 写入 bundle
 | --- | --- | --- |
 | 静态：schema / sha256 / digest / 标签 / 禁用标记 | `app-platform/scripts/verify-formal-instance.py` | 否 |
 | 静态：`.conf` 与 `release.json` 逐字段一致 | `deployment_config.py` + `formal_deploy_entry.py` | 否 |
-| 集群态：副本 / digest / 迁移 head / 无残留 Job / Ingress 集 | `verify_r7_release_kind.py` | 是 |
-| 集群态：跨 App 纵切真实链路 | `verify_r6_cross_app_vertical_kind.py` | 是 |
-| 浏览器：strict TLS + 真实 Casdoor 登录 | `verify_r3_template_browser.mjs` | 是 |
-| 网络：NetworkPolicy 包级 allow/deny | `verify_r3_network_policy_calico.sh` | 是，**另起临时集群** |
+| 集群态：副本 / digest / 迁移 head / 无残留 Job / Ingress 集 | 当前 release + 现场核验，未提供覆盖全部项目的新聚合器 | 是 |
+| 集群态：跨 App 纵切真实链路 | 本次发布的真实 Provider 回执与业务结果 | 是 |
+| 浏览器：strict TLS + 真实 Casdoor 登录 | 本次发布的双端真实旅程验收 | 是 |
+| 网络：NetworkPolicy 包级 allow/deny | `app-platform/scripts/validation/verify_r3_network_policy_calico.sh` | 是，**另起临时集群** |
+
+旧 R3/R6/R7 发布脚本随历史目录清退，原版本仍可从 Git 读取；旧 R7 检查写死旧迁移 head
+并要求正式包，不能用于当前 KIND 开发包。不能因工具清退省略上述验收，具体前置见
+[部署清单](../../legacy-backlog/deployment-checklist.md)。工具移动后仅完成离线回归，不冒充真实发布实测。
 
 **smoke 通过 ≠ 发布完成。**smoke 只覆盖一条路径；上表六层缺一层就不算发过。
 证据也要分层留：静态层留 sha256 与 digest，集群层留副本/迁移 head/Ingress 集，
@@ -91,6 +95,8 @@ render.py 解析出 digest 写入 bundle
 
 模板自身有一套独立的发布锁：`tpl-app/template-release-manifest.json`
 （schema 2）+ `verify_template_release.py`，锁定三个组件的 commit / tree / digest。
+该 manifest 原文不随目录清理重写；`test_evidence` 中的旧路径按
+[历史索引](../../legacy-backlog/verification-index.md#architecture-v2-目录清退) 的固定提交查询。
 
 **实例同步顺序锁定为 `info → knowledge → investment`。**
 

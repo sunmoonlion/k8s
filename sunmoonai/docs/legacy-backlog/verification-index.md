@@ -92,15 +92,14 @@ git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/app-platform-ar
 git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/knowledge-provider-decoupling-luna.md
 ```
 
-`evidence/v5/`、冻结 turn 及 `architecture-v2/` 保留原文。它们的历史命令或旧路径
+`evidence/v5/`、冻结 turn 保留原文；`architecture-v2/` 的后续处置见下节。历史命令或旧路径
 按原提交解释；复现需要匹配当时完整源码和依赖，不能只恢复一个脚本就在当前集群执行。
 例如旧 `verify_template_first_plan.py` 依赖已清退的旧计划，
 `verify_architecture_v2_image_lock.py` 依赖旧晋级模块；均不是本批开发发布门禁。
 清退文件不删除 Harbor 镜像、备份、数据库或 Git 历史，也不结束任何运行回滚保护窗口。
 
-`architecture-v2/` 仍含指南引用的发布/网络/回滚验证工具，以及模板发布清单引用的
-证据，本轮保持全部字节不变。后续单独梳理脚本及其依赖，迁到正式工具目录并验证调用后，
-再判断能否清退旧目录；这不是授权直接执行其中的旧 apply/供给脚本。
+第二批清理当时保留了 `architecture-v2/`，之后用户明确要求处理该目录，结果见下节。
+这不是授权直接执行其中的旧 apply/供给脚本。
 
 ### Knowledge Provider 内部解耦
 
@@ -127,3 +126,33 @@ Info 分发帮助函数 6 passed、Investment 检索契约 7 passed；这些是�
 ```sh
 git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/investment清理和改名.md
 ```
+
+### Architecture v2 目录清退
+
+旧目录完整原文固定在 k8s **`82c709705aa92b1b44d9913b4416d4ca505a6665`**。
+301 个受跟踪文件中，7 个可复用工具/测试迁到
+[app-platform/scripts/validation](../../app-platform/scripts/validation/README.md)，
+其余 294 个历史脚本、SQL、锁文件、阶段报告和证据退出当前工作树；不再建备份副本。
+迁移保留 Calico 同目录依赖、环境变量和同步工具 CLI。源码拓扑检查修正对已恢复纯文档
+`dev-to-prod-deploy/` 的误判，仍拒绝脚本、可执行文件和软链接，未放开旧运行拓扑。
+
+旧 R3/R5/R7 候选、供给、切流、退役和固化发布脚本基于当年的身份、schema、镜像和目录；
+不作为本批开发发布工具。特别是 R7 检查要求正式包且写死旧迁移 head，与当前开发包不符。
+旧 capability 清单验证依赖已经退出当前拓扑的双 Backend，也只在历史版本复现。
+当前部署入口、静态 bundle 检查、备份/排空门禁及运行欠账仍在部署清单，不因清理销账。
+
+冻结的 `tpl-app/template-release-manifest.json` **保持逐字不变**：其中 `test_evidence`
+以 `k8s/` 开头的九个旧路径都按此固定 k8s 快照解析（去掉开头的 `k8s/`）。目录项用
+`git ls-tree`，文件项用 `git show`；这是历史证据定位，不承诺它们存在于当前工作树。
+R7 release-manifest、重构前源码/镜像保护锁和 R7.1 退役回执也都保留于该快照：
+
+```sh
+git ls-tree -r --name-only 82c709705aa92b1b44d9913b4416d4ca505a6665 -- sunmoonai/docs/architecture-v2
+git show 82c709705aa92b1b44d9913b4416d4ca505a6665:sunmoonai/docs/architecture-v2/evidence/R7-release/release-manifest.json
+git show 82c709705aa92b1b44d9913b4416d4ca505a6665:sunmoonai/docs/architecture-v2/pre-refactor-image-lock.json
+git show 82c709705aa92b1b44d9913b4416d4ca505a6665:sunmoonai/docs/architecture-v2/R7.1-legacy-retirement-closeout.md
+```
+
+历史证据里的路径、原命令与代码 SHA 按原版本理解，不能把新路径测试结果冒充旧版本重新验收。
+不改发布 digest、清理 Harbor 镜像/缓存、删除业务备份或执行旧退役事务；镜像保护集仍须
+结合最新运行引用与保护锁核对，删除文档不解除保护。

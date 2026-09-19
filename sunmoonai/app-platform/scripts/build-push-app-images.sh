@@ -107,8 +107,8 @@ run() {
 #          release_policy.overwrite_v1_1_0_0 明确写着 false
 #   2.0.0  v2 的正式发布别名。发布采用 exact-digest-alias（不重建镜像，给已过
 #          R7 门禁的 digest 打别名），所以这个 tag 必须一直指向
-#          docs/architecture-v2/evidence/R7-release/release-manifest.json
-#          里记的那些 digest。本脚本推上去就把它指向了一份未经门禁的本地构建
+#          历史 R7 release-manifest.json 里记的那些 digest，固定 Git 查询入口见
+#          docs/legacy-backlog/verification-index.md。本脚本推上去就会覆盖已验收制品
 #
 # 本脚本是**本地构建直推**工具，产出的镜像没走过任何门禁，不该占用发布 tag。
 PROTECTED_TAGS=(1.0.0 2.0.0)

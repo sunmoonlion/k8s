@@ -38,7 +38,7 @@
 | `kind-infrastructure/` | 本地 KIND 集群定义与节点镜像 |
 | `deploy-sunmoonai-all/` | 全平台总控（**非平台**） |
 | `utils/` | 跨平台工具，如 `db-provisioner`（**非平台**） |
-| `docs/` | 本文档集 + `architecture-v2/` 门禁与 evidence（**非平台**） |
+| `docs/` | 本文档集、冻结任务回执与历史索引（**非平台**）；复用验证工具在 `app-platform/scripts/validation/` |
 
 仓根另有 `utils/`（集群参数解析、Secret 占位生成、Harbor 包等）。
 
@@ -130,16 +130,20 @@ App 特有：Investment 有 `knowledge_binding`；Knowledge 有 `retrieval_datas
 | --- | --- | --- |
 | 静态：schema / sha256 / digest / 标签 / 禁用标记 | `app-platform/scripts/verify-formal-instance.py` | 否 |
 | 静态：`.conf` 与 `release.json` 逐字段一致 | `deployment_config.py` + `formal_deploy_entry.py` | 否 |
-| 集群态：副本 / digest / 迁移 head / 无残留 Job / Ingress 集 | `docs/architecture-v2/scripts/verify_r7_release_kind.py` | 是 |
-| 集群态：跨 App 纵切真实链路 | `verify_r6_cross_app_vertical_kind.py` | 是 |
-| 浏览器：strict TLS + 真实 Casdoor 登录 | `verify_r3_template_browser.mjs` | 是 |
-| 网络：NetworkPolicy 包级 allow/deny | `verify_r3_network_policy_calico.sh` | 是，**另起临时 Calico 集群** |
+| 集群态：副本 / digest / 迁移 head / 无残留 Job / Ingress 集 | 按当前 release 和部署清单现场验收；旧 R7 检查已清退，未提供覆盖全部项目的新聚合器 | 是 |
+| 集群态：跨 App 纵切真实链路 | 按本次发布绑定真实 Provider 回执；旧 R6 证据不自动继承 | 是 |
+| 浏览器：strict TLS + 真实 Casdoor 登录 | 按本次发布做双端真实旅程验收；旧 R3 浏览器脚本仅在历史版本保留 | 是 |
+| 网络：NetworkPolicy 包级 allow/deny | `app-platform/scripts/validation/verify_r3_network_policy_calico.sh` | 是，**另起临时 Calico 集群** |
 
 `verify-formal-instance.py` 实际检查（逐条可查）：
-`schema_version == 2` · `architecture == "app-platform-v2-formal"` · `formal_release is True` ·
+`schema_version == 2` · 正式包须 `architecture == "app-platform-v2-formal"` 且 `formal_release is True`；
+显式开发包则由 `development_release.validate` 核验 KIND 和非正式身份 ·
 `renderer_inputs_sha256` · 五文件 sha256 逐份重算比对 ·
 所有资源须带 `sunmoonai.com/managed-by: app-platform-v2` 标签 ·
 镜像须匹配 `^[^\s]+@sha256:[0-9a-f]{64}$` · `forbidden_markers` 全文扫描
+
+旧 R7 验证器写死旧迁移 head 并要求正式包，不适用于当前三个开发 bundle。
+清退旧工具不减少验收项，仍按 [部署清单](../../legacy-backlog/deployment-checklist.md) 补齐。
 
 ## 6. 集群
 

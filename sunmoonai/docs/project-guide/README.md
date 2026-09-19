@@ -25,7 +25,7 @@
 
 | 位置 | 是什么 | 最近变动 | 定性 |
 | --- | --- | --- | --- |
-| `architecture-v2/` | Architecture v2 重构（R0–R7）的门禁脚本与 evidence | 2026-08 | **门禁脚本仍在用**（见 [`topics/release.md`](topics/release.md)）；其中的结果文档属过程记录 |
+| 旧 `architecture-v2/` | 旧重构目录已清退，7 个复用工具/测试迁至 app-platform/scripts/validation | 2026-09-19 | 历史发布证据按 [固定 Git 索引](../legacy-backlog/verification-index.md#architecture-v2-目录清退) 读取；旧 R7 脚本不是当前开发发布门禁 |
 | [`legacy-backlog/`](../legacy-backlog/README.md) | 旧任务、部署清单、精简验证索引三个入口 | 2026-09-19 | 未来旧任务等架构讨论后接收；当前运行欠账单列，源码完成不代表已部署 |
 | [`tasks/B7-B9-closeout/`](../tasks/B7-B9-closeout/thread/0001-imp-none/0002-none/user-message.md) | 逐次请求、固定候选、测试原始输出与回执 | 2026-09-19 | 历史 turn 已冻结，按其提交理解；不把早先断点当当前任务指令 |
 | `evidence/` | v5 时期的验收 evidence | 2026-08 | 历史留档 |
@@ -47,7 +47,8 @@
 
 删的都是**活引用为 0** 的。取回：`git log --diff-filter=D -- sunmoonai/docs/<路径>`。
 
-当前保留 `architecture-v2/` 等仍在使用的发布门禁、冻结的历史证据，以及主题笔记。
+当前复用工具见 [validation](../../app-platform/scripts/validation/README.md)，发布入口仍为
+`app-platform/scripts/` 与各 App 的 `deployment/`。冻结 turn、目录外历史证据及主题笔记保留。
 旧计划的交互目标与 Profile 概念已提取到待接收清单；删除旧散文档不删除代码或 Git 历史。
 
 ## 按任务找
