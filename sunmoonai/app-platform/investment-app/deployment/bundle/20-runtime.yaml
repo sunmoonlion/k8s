@@ -32,9 +32,9 @@ spec:
         sunmoonai.com/managed-by: app-platform-v2
         sunmoonai.com/internal-provider: 'true'
       annotations:
-        sunmoonai.com/release-id: kind-invest-dd-20260911
-        sunmoonai.com/config-sha256: 04831db560f0c4c0b1b6a84e452bb976a4e974b10d699624641f2b5cedaa2154
-        sunmoonai.com/source-commit: 00b1b55cb1d186224e57fe3528998b6734ecb327
+        sunmoonai.com/release-id: kind-b7-20260919
+        sunmoonai.com/config-sha256: 520ead90a4f21eaf7f9d951305d6fc98bb553299e35927709f27961846f686de
+        sunmoonai.com/source-commit: 01d09740d4183d826f625b127c90a2a45bdbf0a9
     spec:
       serviceAccountName: investment-backend-api
       automountServiceAccountToken: false
@@ -58,7 +58,7 @@ spec:
             app.kubernetes.io/component: backend-api
       containers:
       - name: api
-        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:6a30e2d50eb47735ba8cf449fb776a5d1c848d84311c7e4ce69e99ab8719a434
+        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:95ae05e5b425dedac42bf1905aa87f6ff2bba3391746b84df65b950fca324f9e
         imagePullPolicy: IfNotPresent
         command:
         - uvicorn
@@ -79,8 +79,13 @@ spec:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: investment-backend-postgresql-conn
-              key: DATABASE_URL
+              name: investment-backend-runtime
+              key: API_DATABASE_URL
+        - name: CELERY_BROKER_URL
+          valueFrom:
+            secretKeyRef:
+              name: investment-backend-runtime
+              key: API_CELERY_BROKER_URL
         - name: REDIS_HOST
           valueFrom:
             secretKeyRef:
@@ -126,11 +131,6 @@ spec:
             secretKeyRef:
               name: investment-browser-identity
               key: WEB_CLIENT_SECRET
-        - name: CELERY_BROKER_URL
-          valueFrom:
-            secretKeyRef:
-              name: investment-backend-broker
-              key: CELERY_BROKER_URL
         startupProbe:
           httpGet:
             path: /health/live
@@ -259,8 +259,9 @@ spec:
         sunmoonai.com/managed-by: app-platform-v2
         sunmoonai.com/allow-knowledge-internal: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 04831db560f0c4c0b1b6a84e452bb976a4e974b10d699624641f2b5cedaa2154
-        sunmoonai.com/source-commit: 00b1b55cb1d186224e57fe3528998b6734ecb327
+        sunmoonai.com/release-id: kind-b7-20260919
+        sunmoonai.com/config-sha256: 520ead90a4f21eaf7f9d951305d6fc98bb553299e35927709f27961846f686de
+        sunmoonai.com/source-commit: 01d09740d4183d826f625b127c90a2a45bdbf0a9
     spec:
       serviceAccountName: investment-backend-worker
       automountServiceAccountToken: false
@@ -276,7 +277,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: worker
-        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:6a30e2d50eb47735ba8cf449fb776a5d1c848d84311c7e4ce69e99ab8719a434
+        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:95ae05e5b425dedac42bf1905aa87f6ff2bba3391746b84df65b950fca324f9e
         imagePullPolicy: IfNotPresent
         command:
         - /bin/sh
@@ -297,18 +298,18 @@ spec:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: investment-backend-postgresql-conn
-              key: DATABASE_URL
+              name: investment-backend-runtime
+              key: WORKER_DATABASE_URL
         - name: CELERY_BROKER_URL
           valueFrom:
             secretKeyRef:
-              name: investment-backend-broker
-              key: CELERY_BROKER_URL
+              name: investment-backend-runtime
+              key: WORKER_CELERY_BROKER_URL
         - name: CELERY_RESULT_BACKEND
           valueFrom:
             secretKeyRef:
-              name: investment-backend-broker
-              key: CELERY_RESULT_BACKEND
+              name: investment-backend-runtime
+              key: WORKER_CELERY_RESULT_BACKEND
               optional: true
         - name: REDIS_HOST
           valueFrom:
@@ -338,10 +339,9 @@ spec:
         readinessProbe:
           exec:
             command:
-            - /bin/sh
-            - -ec
-            - celery -A app.bootstrap.worker:celery_app inspect ping --destination="celery@${POD_NAME}"
-              --timeout=3 | grep -q pong
+            - python
+            - -m
+            - app.cli.worker_readiness
           initialDelaySeconds: 5
           periodSeconds: 15
           timeoutSeconds: 8
@@ -418,9 +418,9 @@ spec:
         sunmoonai.com/app: investment
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: kind-invest-dd-20260911
-        sunmoonai.com/config-sha256: 04831db560f0c4c0b1b6a84e452bb976a4e974b10d699624641f2b5cedaa2154
-        sunmoonai.com/source-commit: 00b1b55cb1d186224e57fe3528998b6734ecb327
+        sunmoonai.com/release-id: kind-b7-20260919
+        sunmoonai.com/config-sha256: 520ead90a4f21eaf7f9d951305d6fc98bb553299e35927709f27961846f686de
+        sunmoonai.com/source-commit: 01d09740d4183d826f625b127c90a2a45bdbf0a9
     spec:
       serviceAccountName: investment-backend-scheduler
       automountServiceAccountToken: false
@@ -436,7 +436,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: scheduler
-        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:6a30e2d50eb47735ba8cf449fb776a5d1c848d84311c7e4ce69e99ab8719a434
+        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:95ae05e5b425dedac42bf1905aa87f6ff2bba3391746b84df65b950fca324f9e
         imagePullPolicy: IfNotPresent
         command:
         - celery
@@ -453,13 +453,13 @@ spec:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: investment-backend-postgresql-conn
-              key: DATABASE_URL
+              name: investment-backend-runtime
+              key: SCHEDULER_DATABASE_URL
         - name: CELERY_BROKER_URL
           valueFrom:
             secretKeyRef:
-              name: investment-backend-broker
-              key: CELERY_BROKER_URL
+              name: investment-backend-runtime
+              key: SCHEDULER_CELERY_BROKER_URL
         resources:
           requests:
             cpu: 25m
@@ -514,9 +514,9 @@ spec:
         sunmoonai.com/app: investment
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: kind-invest-dd-20260911
-        sunmoonai.com/config-sha256: 5602aaeea6a957e939750e5db21747e266372efabab7c31e4334d9d8c164e730
-        sunmoonai.com/source-commit: 950d9dbf3d788f3491e775b6da64223d5610ce6c
+        sunmoonai.com/release-id: kind-b7-20260919
+        sunmoonai.com/config-sha256: c418b9422ffb5955dcb0bc7f122e77cf90dad77a30173123d5bf4455d85bd716
+        sunmoonai.com/source-commit: 2e1f5c67d583be02b43eb36d1052f5b4ad177f45
     spec:
       serviceAccountName: investment-admin-frontend
       automountServiceAccountToken: false
@@ -540,7 +540,7 @@ spec:
             app.kubernetes.io/component: admin-frontend
       containers:
       - name: admin
-        image: harbor.sunmoonai.com:30443/app-images/investment-admin-frontend@sha256:aec8e23c09c6681f27a343de371f357480c09aae82120e7d456fb23c88dc80d7
+        image: harbor.sunmoonai.com:30443/app-images/investment-admin-frontend@sha256:422e7c1e53d5b61eba14bcd242bf73a8e10428f1799e2a6370c1be95cec1923e
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
@@ -673,9 +673,9 @@ spec:
         sunmoonai.com/app: investment
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: kind-invest-dd-20260911
-        sunmoonai.com/config-sha256: f9c12628d2bf915c39d1b3851d8a1727c00f870593f426874860d38434418741
-        sunmoonai.com/source-commit: 990977fa4f2b2cd54dcb1d2a673be7bd314222c7
+        sunmoonai.com/release-id: kind-b7-20260919
+        sunmoonai.com/config-sha256: 646e86d851eb6447a38729db7cdc7808ea51170ce961d7439e8fb3da50a24410
+        sunmoonai.com/source-commit: 91a892fdb483b6a4364200e258e30766e5e150c4
     spec:
       serviceAccountName: investment-web-frontend
       automountServiceAccountToken: false
@@ -699,7 +699,7 @@ spec:
             app.kubernetes.io/component: web-frontend
       containers:
       - name: web
-        image: harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:e24b03e0fca6bd579ca76eb179e404a88d3676c1a34019c8fc78e86984768b6a
+        image: harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:b6e41f5db947e478bb429b414057a2e7892b8a32590402a744968541d10a9b18
         imagePullPolicy: IfNotPresent
         ports:
         - name: http

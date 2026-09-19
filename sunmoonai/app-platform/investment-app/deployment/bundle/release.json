@@ -4,12 +4,12 @@
   "logical_app": "investment",
   "resource_app": "investment",
   "namespace": "app-platform-dev",
-  "release_id": "kind-invest-dd-20260911",
+  "release_id": "kind-b7-20260919",
   "formal_release": false,
   "images": {
-    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:6a30e2d50eb47735ba8cf449fb776a5d1c848d84311c7e4ce69e99ab8719a434",
-    "admin": "harbor.sunmoonai.com:30443/app-images/investment-admin-frontend@sha256:aec8e23c09c6681f27a343de371f357480c09aae82120e7d456fb23c88dc80d7",
-    "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:e24b03e0fca6bd579ca76eb179e404a88d3676c1a34019c8fc78e86984768b6a"
+    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:95ae05e5b425dedac42bf1905aa87f6ff2bba3391746b84df65b950fca324f9e",
+    "admin": "harbor.sunmoonai.com:30443/app-images/investment-admin-frontend@sha256:422e7c1e53d5b61eba14bcd242bf73a8e10428f1799e2a6370c1be95cec1923e",
+    "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:b6e41f5db947e478bb429b414057a2e7892b8a32590402a744968541d10a9b18"
   },
   "origins": {
     "admin": "https://investment-admin.sunmoonai.com:30443",
@@ -24,9 +24,9 @@
     "40-ingress.yaml"
   ],
   "sha256": {
-    "00-prerequisites.yaml": "c6529f830053fbb6d6be095686e18a8d7b7d0495a1218cf8f5d3df2775b12009",
-    "10-migration.yaml": "25dd7836a730b4fd6d95500ad73cc66b77a7682fb62a46d889e7448f51c4f28a",
-    "20-runtime.yaml": "48081451417a258dcc2c2bd92fd5682f9ee7af46fec0c2e4aa0bb6b0ccaf6303",
+    "00-prerequisites.yaml": "92680d7068e1b9a88391df9e5bccffde58e73800c79dccd3df1e1a2587ed306d",
+    "10-migration.yaml": "2944dbd0fe36354f3e588521ea7d6a6da1beb4f7fcb4782dd3ce0a7a89fc46d3",
+    "20-runtime.yaml": "feb31cd0f533988cd97d281ab03d48787cd4f9f7c28d36e9e14312773176e0d0",
     "30-network-policies.yaml": "0395dfe9576e80ef13b7f9d313d03d1af85a971cf4a1f71e44a3415287e46ff3",
     "40-ingress.yaml": "9f5fa10feb105cf71e9e796d35c1a64044c774b453c39948409d00177bbbeafd"
   },
@@ -111,11 +111,10 @@
   "external_secrets": [
     "harbor-registry-secret",
     "investment-tls",
-    "investment-backend-postgresql-conn",
+    "investment-backend-runtime",
     "investment-backend-migration-postgresql-conn",
     "investment-browser-identity",
     "investment-backend-redis-conn",
-    "investment-backend-broker",
     "investment-knowledge-retrieval-client"
   ],
   "knowledge_binding": "knowledge-active-retrieval-service-binding",
@@ -127,15 +126,15 @@
   ],
   "contains_credentials": false,
   "renderer_inputs_sha256": {
-    "k8s:sunmoonai/app-platform/scripts/render_investment_release_base.py": "6afb8faa2000d5c62378dff0306a9525a65c20b98ae8d3878c4970e42ecb17ea",
+    "k8s:sunmoonai/app-platform/scripts/render_investment_release_base.py": "6cacf92337fe644f2fee1fcfd0a934b23024b3d0dd4832b5d3c96a9cd34b23ec",
     "tpl-app:k8s-deployment/scaffold.py": "2f65213916ac338f4126c43b084dacd4a832906735d034b37a247b8507479828",
     "tpl-app:k8s-deployment/templates/00-prerequisites.yaml.tpl": "c87ac75dce8507e9f88732d3e8708945ee18a87418fedfd9dc184423916d32bf",
     "tpl-app:k8s-deployment/templates/10-migration.yaml.tpl": "2a78b9770f61b94cc267f267449b0e0593b147a61a444a7463fe4f3fcc1508f4",
-    "tpl-app:k8s-deployment/templates/20-runtime.yaml.tpl": "1ca1c9df52705922abccf7906ff96ddd4b2e578c327a5d86502fa07d23de5b42",
+    "tpl-app:k8s-deployment/templates/20-runtime.yaml.tpl": "702236eaf5ffa8f173c5e6f2f9528114e4f7247bf560408a905511a98d00d13b",
     "tpl-app:k8s-deployment/templates/30-network-policies.yaml.tpl": "2eede852d9710c20cba56cfe4a1b9864cb2a9aac907babbf5b9cf2c258f5d3c5",
     "tpl-app:k8s-deployment/templates/40-ingress.yaml.tpl": "5f79e6a40bdfa8a581b92eeabe1a9f0cbf3a031221f5c9a40708b4682190ce3d",
-    "development-release-input": "3da9aebb4b663ce9fe83d2c9ed67d22d6e3d27373abf5f7fdab7f505781c8f62",
-    "k8s:sunmoonai/app-platform/scripts/development_release.py": "b1abf57789ba110fecb7d2f402e5b3a01aeaf9d4d8f7f9347c151d6e71883089"
+    "development-release-input": "2c1b9745b4938a59ce4718dfc249b9feb0334505fcada3385b99c7178e9371a5",
+    "k8s:sunmoonai/app-platform/scripts/development_release.py": "a6fa171413ce3e582b688e3cb3ae689cc4221755418ad42abc0cfc94341a82ec"
   },
   "deployment_target": "KIND",
   "development_source_lock": {
@@ -143,28 +142,29 @@
     "kind": "development-source-lock",
     "repository": "investment-app",
     "formal_release": false,
-    "task": "durable-delivery-luna-20260911",
-    "release_boundary": "Source-only development candidate; historical formal release and deployed images are unchanged.",
+    "task": "B7-B9-closeout-kind-20260919",
+    "release_boundary": "Immutable development candidate source; actual deployment requires the matching KIND release, prepared independent identities, and verified quiescent backup.",
     "components": [
       {
         "path": "investment-backend",
-        "commit": "00b1b55cb1d186224e57fe3528998b6734ecb327",
-        "tree": "3c2aa7ff3bb32c35e785888d8528d3dbc6b4ee59",
-        "remote_branch": "origin/luna/durable-delivery-20260911-local"
+        "commit": "01d09740d4183d826f625b127c90a2a45bdbf0a9",
+        "tree": "9d923f602d22b1452b51437af028c5c8beea0e32",
+        "remote_branch": "origin/master"
       },
       {
         "path": "investment-admin-frontend",
-        "commit": "950d9dbf3d788f3491e775b6da64223d5610ce6c",
-        "tree": "f7be0d2dd679f7f28d6423ef3af802a04cf45838",
-        "remote_branch": "origin/luna/durable-delivery-20260911-local"
+        "commit": "2e1f5c67d583be02b43eb36d1052f5b4ad177f45",
+        "tree": "169fdb79f12ac7748fca55cd1baa1478417c45c8",
+        "remote_branch": "origin/master"
       },
       {
         "path": "investment-web-frontend",
-        "commit": "990977fa4f2b2cd54dcb1d2a673be7bd314222c7",
-        "tree": "0a9a877f2764d5048bff7b1fc8ea0dd168241558",
-        "remote_branch": "origin/luna/durable-delivery-20260911-local"
+        "commit": "91a892fdb483b6a4364200e258e30766e5e150c4",
+        "tree": "ca4f539390886c8020a6fb686f212621d716e56f",
+        "remote_branch": "origin/master"
       }
     ]
   },
-  "migration_head": "20260911_0007"
+  "migration_head": "20260911_0007",
+  "runtime_identity_mode": "independent-v1"
 }

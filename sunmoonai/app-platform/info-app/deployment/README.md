@@ -36,7 +36,7 @@ Migration Job 成功后立即删除。
 
 ```bash
 python3 deployment/render.py --output-dir /tmp/info-development \
-  --release-id kind-info-dd-20260911 --development-input deployment/development-input.json
+  --release-id kind-b7-20260919 --development-input deployment/development-input.json
 diff -ru deployment/bundle /tmp/info-development
 ```
 

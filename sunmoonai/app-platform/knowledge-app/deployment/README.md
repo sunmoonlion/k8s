@@ -32,7 +32,8 @@ RAGFlow 是 Knowledge 之外的受保护 Provider。正式 bundle 仅声明访�
 
 ```bash
 python3 deployment/render.py --output-dir /tmp/knowledge-development \
-  --release-id kind-know-dd-20260911 --development-input deployment/development-input.json
+  --release-id kind-b7-20260919 --development-input deployment/development-input.json \
+  --ingestion-dataset-bindings-file deployment/ingestion-dataset-bindings.kind.json
 diff -ru deployment/bundle /tmp/knowledge-development
 ```
 

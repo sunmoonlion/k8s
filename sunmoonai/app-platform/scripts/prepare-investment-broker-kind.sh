@@ -25,6 +25,10 @@ k() { env -u DEBUG kubectl --kubeconfig "$KUBECONFIG_PATH" "$@"; }
 printf 'PLAN broker=%s/%s user=%s vhost=%s queue=investment.default credentials_printed=false\n' "$APP_NAMESPACE" "$SECRET" "$USER_NAME" "$VHOST"
 [[ "$MODE" == apply ]] || exit 0
 
+# Check before touching the shared Secret, permissions, queues or deployments.
+python3 "$SCRIPT_DIR/guard_legacy_broker.py" --kubeconfig "$KUBECONFIG_PATH" \
+  --namespace "$RABBIT_NAMESPACE" --app-namespace "$APP_NAMESPACE"
+
 # RabbitMQ's loaded definitions are the topology source of truth.  Users that
 # are created only with rabbitmqctl are removed by the definitions reconciler,
 # so update the mounted definition first and import that exact document.

@@ -7,32 +7,33 @@
     "kind": "development-source-lock",
     "repository": "investment-app",
     "formal_release": false,
-    "task": "durable-delivery-luna-20260911",
-    "release_boundary": "Source-only development candidate; historical formal release and deployed images are unchanged.",
+    "task": "B7-B9-closeout-kind-20260919",
+    "release_boundary": "Immutable development candidate source; actual deployment requires the matching KIND release, prepared independent identities, and verified quiescent backup.",
     "components": [
       {
         "path": "investment-backend",
-        "commit": "00b1b55cb1d186224e57fe3528998b6734ecb327",
-        "tree": "3c2aa7ff3bb32c35e785888d8528d3dbc6b4ee59",
-        "remote_branch": "origin/luna/durable-delivery-20260911-local"
+        "commit": "01d09740d4183d826f625b127c90a2a45bdbf0a9",
+        "tree": "9d923f602d22b1452b51437af028c5c8beea0e32",
+        "remote_branch": "origin/master"
       },
       {
         "path": "investment-admin-frontend",
-        "commit": "950d9dbf3d788f3491e775b6da64223d5610ce6c",
-        "tree": "f7be0d2dd679f7f28d6423ef3af802a04cf45838",
-        "remote_branch": "origin/luna/durable-delivery-20260911-local"
+        "commit": "2e1f5c67d583be02b43eb36d1052f5b4ad177f45",
+        "tree": "169fdb79f12ac7748fca55cd1baa1478417c45c8",
+        "remote_branch": "origin/master"
       },
       {
         "path": "investment-web-frontend",
-        "commit": "990977fa4f2b2cd54dcb1d2a673be7bd314222c7",
-        "tree": "0a9a877f2764d5048bff7b1fc8ea0dd168241558",
-        "remote_branch": "origin/luna/durable-delivery-20260911-local"
+        "commit": "91a892fdb483b6a4364200e258e30766e5e150c4",
+        "tree": "ca4f539390886c8020a6fb686f212621d716e56f",
+        "remote_branch": "origin/master"
       }
     ]
   },
   "images": {
-    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:6a30e2d50eb47735ba8cf449fb776a5d1c848d84311c7e4ce69e99ab8719a434",
-    "admin": "harbor.sunmoonai.com:30443/app-images/investment-admin-frontend@sha256:aec8e23c09c6681f27a343de371f357480c09aae82120e7d456fb23c88dc80d7",
-    "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:e24b03e0fca6bd579ca76eb179e404a88d3676c1a34019c8fc78e86984768b6a"
-  }
+    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:95ae05e5b425dedac42bf1905aa87f6ff2bba3391746b84df65b950fca324f9e",
+    "admin": "harbor.sunmoonai.com:30443/app-images/investment-admin-frontend@sha256:422e7c1e53d5b61eba14bcd242bf73a8e10428f1799e2a6370c1be95cec1923e",
+    "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:b6e41f5db947e478bb429b414057a2e7892b8a32590402a744968541d10a9b18"
+  },
+  "runtime_identity_mode": "independent-v1"
 }

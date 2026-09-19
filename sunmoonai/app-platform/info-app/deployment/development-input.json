@@ -1,38 +1,39 @@
 {
   "kind": "kind-development-release-input",
   "logical_app": "info",
-  "migration_head": "20260911_0007",
+  "migration_head": "20260913_0009",
   "development_source_lock": {
     "schema_version": 1,
     "kind": "development-source-lock",
     "repository": "info-app",
     "formal_release": false,
-    "task": "durable-delivery-luna-20260911",
-    "release_boundary": "Source-only development candidate; historical formal release and deployed images are unchanged.",
+    "task": "B7-B9-closeout-kind-20260919",
+    "release_boundary": "Immutable development candidate source; actual deployment requires the matching KIND release, prepared independent identities, and verified quiescent backup.",
     "components": [
       {
         "path": "info-backend",
-        "commit": "8c3b695e3e2b5b4064b5b14ce8d2b6d6767177e2",
-        "tree": "d53d8bd8d953a98326fa2f9325c5303166577433",
-        "remote_branch": "origin/luna/durable-delivery-20260911-local"
+        "commit": "e5156a0bfc0d5ca9118128427dcacb69697a0737",
+        "tree": "49b19f05e2635b3363046929be2a82db70433cf8",
+        "remote_branch": "origin/master"
       },
       {
         "path": "info-admin-frontend",
-        "commit": "04ae25c5503317bf2faab10988710598afe8e6c7",
-        "tree": "8837ee22dba297fef20b39b8a8de5ceb2865660b",
-        "remote_branch": "origin/luna/durable-delivery-20260911-local"
+        "commit": "90e4ab00fc209323d1670743d83ae1369a7b8d82",
+        "tree": "8d2e871b2be1c0e6f83bbeab6a4da54522dcdabd",
+        "remote_branch": "origin/master"
       },
       {
         "path": "info-web-frontend",
-        "commit": "f3ebbc3251ba2501d4e9a4fe87ff59e005d151fa",
-        "tree": "f3e0648a236152b975a384e70026d62889e54f22",
-        "remote_branch": "origin/luna/durable-delivery-20260911-local"
+        "commit": "a07af307c63ee16204d82afa0a0b7b2d3d22bb3c",
+        "tree": "dc3faaa774953855b446266d7f3f2826a78dd360",
+        "remote_branch": "origin/master"
       }
     ]
   },
   "images": {
-    "backend": "harbor.sunmoonai.com:30443/app-images/info-backend@sha256:884dc222c2c7c3fc86787592ec03a5bb306a44a8bf069df10e3c9ed38806f1b9",
-    "admin": "harbor.sunmoonai.com:30443/app-images/info-admin-frontend@sha256:3bb0112c7fa3d7a7c58e12ad813f5fe1f6b7ed05178d8dd910181acbbd83e839",
-    "web": "harbor.sunmoonai.com:30443/app-images/info-web-frontend@sha256:53a70bf136cacece4f38dd33f272be1af2b0507a11df4c6258cb6e56f1d581df"
-  }
+    "backend": "harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ec9e1da89285ec0e85d12ff51e25ce42c713b604989f9f8ba6c7812ff517c4aa",
+    "admin": "harbor.sunmoonai.com:30443/app-images/info-admin-frontend@sha256:8be19c26c8f01b130d10de4ae428102b04eb3e7a5394a7898e5fd6141aa675da",
+    "web": "harbor.sunmoonai.com:30443/app-images/info-web-frontend@sha256:0d836617678e4c924ae2f8e54dc644cd8f1d60172277bfac1326176f33e8d9ee"
+  },
+  "runtime_identity_mode": "independent-v1"
 }

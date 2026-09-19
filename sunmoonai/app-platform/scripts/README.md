@@ -16,6 +16,19 @@ digest、`migration_head` 和完整 `development_source_lock`。渲染时校验�
 `verify-formal-instance.py`，并将输出更新到唯一规范 bundle，同时更新 `.conf`。
 来源锁记录的是源码准备时的事实；实际部署边界由新的 `release.json` 声明。
 
+当前候选 `kind-b7-20260919` 显式声明 `runtime_identity_mode=independent-v1`，
+渲染器据此启用 `CELERY_TASK_TOPOLOGY_PREDECLARED=true`。apply 检查每 App 的
+`<app>-backend-runtime` 六个键：三个角色各自的 `DATABASE_URL` 与 `CELERY_BROKER_URL`，
+必须是不同账号/密码、正确 App 数据库和 vhost；本批不使用 result backend。
+**此检查只核结构，不证明账号存在或权限正确。**供给、真实登录/允许与拒绝探针、
+迁移后授权及旧身份撤销仍须受控完成；不能靠创建一个 Secret 绕过运行验收。
+
+开发 apply 不再隐式重跑 Investment 的旧 broker/Redis 供给或旧账号 LOGIN/NOLOGIN。
+Knowledge/Investment 只读核对已批准的 active retrieval binding，不自动重写或重启。
+旧 broker helper 和旧 RabbitMQ Helm 入口发现接管标记、新 runtime Secret 或启动定义内
+新用户即拒绝，查询错误也拒绝；这是防误覆盖措施，不是阻止管理员绕过的授权边界。
+如需更新共享 RabbitMQ，须走保留非目标条目的新供给流程，不能删除接管标记强行运行旧入口。
+
 Knowledge 摄入授权必须单独显式给出；检索 allowlist 不授权上传。渲染时使用
 `--ingestion-dataset-bindings-file deployment/ingestion-dataset-bindings.kind.json`，
 由 Backend 的同一严格解析器校验并计入 ConfigMap/发布输入摘要。不传该参数时绑定为空，

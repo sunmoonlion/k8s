@@ -70,7 +70,7 @@ data:
   ENV: production
   LOG_LEVEL: INFO
   SERVICE_NAME: knowledge-backend
-  DEPLOYMENT_ID: kind-know-dd-20260911
+  DEPLOYMENT_ID: kind-b7-20260919
   APP_SLUG: knowledge
   REDIS_HOST: redis-sunmoonai-master.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -113,6 +113,7 @@ data:
   RAGFLOW_PARSE_TIMEOUT_SECONDS: '120'
   RETRIEVAL_DEFAULT_TENANT_ID: sunmoonai
   RETRIEVAL_PROVIDER_TIMEOUT_SECONDS: '15'
+  INGESTION_DATASET_BINDINGS: '{"codex-smoke":{"dataset_id":"fee8dcdc7cc611f1a85655b688ac3ca7","dataset_name":"codex-smoke"}}'
   ARTIFACT_ALLOWED_CONTENT_TYPES: text/markdown,text/plain
   ARTIFACT_MAX_SIZE_BYTES: '52428800'
   ARTIFACT_S3_ALLOWED_BUCKETS: development-info-originals
@@ -120,6 +121,7 @@ data:
   S3_ENDPOINT: http://minio.data-platform-dev.svc.cluster.local
   S3_FORCE_PATH_STYLE: 'true'
   S3_REGION: us-east-1
+  CELERY_TASK_TOPOLOGY_PREDECLARED: 'true'
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -134,7 +136,7 @@ data:
   AUTH_APP: knowledge
   APP_ORIGIN: https://knowledge-admin.sunmoonai.com:30443
   BACKEND_INTERNAL_URL: http://knowledge-backend:8000
-  DEPLOYMENT_ID: kind-know-dd-20260911-admin
+  DEPLOYMENT_ID: kind-b7-20260919-admin
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -149,7 +151,7 @@ data:
   AUTH_APP: knowledge
   APP_ORIGIN: https://knowledge.sunmoonai.com:30443
   BACKEND_INTERNAL_URL: http://knowledge-backend:8000
-  DEPLOYMENT_ID: kind-know-dd-20260911-web
+  DEPLOYMENT_ID: kind-b7-20260919-web
   REFERENCE_UI_ENABLED: 'false'
 ---
 apiVersion: v1

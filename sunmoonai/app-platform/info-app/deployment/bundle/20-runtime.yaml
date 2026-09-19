@@ -32,9 +32,9 @@ spec:
         sunmoonai.com/managed-by: app-platform-v2
         sunmoonai.com/internal-provider: 'true'
       annotations:
-        sunmoonai.com/release-id: kind-info-dd-20260911
-        sunmoonai.com/config-sha256: b7575050afe5ec69a048fbd1f8e1fca4c96076d6cbe839a9071a88e9bddfbd98
-        sunmoonai.com/source-commit: 8c3b695e3e2b5b4064b5b14ce8d2b6d6767177e2
+        sunmoonai.com/release-id: kind-b7-20260919
+        sunmoonai.com/config-sha256: 6ad5604f3630a6415078461ea705064a13d2694408daeb503f58b95fffdf34d8
+        sunmoonai.com/source-commit: e5156a0bfc0d5ca9118128427dcacb69697a0737
     spec:
       serviceAccountName: info-backend-api
       automountServiceAccountToken: false
@@ -58,7 +58,7 @@ spec:
             app.kubernetes.io/component: backend-api
       containers:
       - name: api
-        image: harbor.sunmoonai.com:30443/app-images/info-backend@sha256:884dc222c2c7c3fc86787592ec03a5bb306a44a8bf069df10e3c9ed38806f1b9
+        image: harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ec9e1da89285ec0e85d12ff51e25ce42c713b604989f9f8ba6c7812ff517c4aa
         imagePullPolicy: IfNotPresent
         command:
         - uvicorn
@@ -87,8 +87,13 @@ spec:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: info-backend-postgresql-conn
-              key: DATABASE_URL
+              name: info-backend-runtime
+              key: API_DATABASE_URL
+        - name: CELERY_BROKER_URL
+          valueFrom:
+            secretKeyRef:
+              name: info-backend-runtime
+              key: API_CELERY_BROKER_URL
         - name: REDIS_HOST
           valueFrom:
             secretKeyRef:
@@ -134,11 +139,6 @@ spec:
             secretKeyRef:
               name: info-browser-identity
               key: WEB_CLIENT_SECRET
-        - name: CELERY_BROKER_URL
-          valueFrom:
-            secretKeyRef:
-              name: info-backend-broker
-              key: CELERY_BROKER_URL
         startupProbe:
           httpGet:
             path: /health/live
@@ -275,8 +275,9 @@ spec:
         sunmoonai.com/app: info
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/config-sha256: b7575050afe5ec69a048fbd1f8e1fca4c96076d6cbe839a9071a88e9bddfbd98
-        sunmoonai.com/source-commit: 8c3b695e3e2b5b4064b5b14ce8d2b6d6767177e2
+        sunmoonai.com/release-id: kind-b7-20260919
+        sunmoonai.com/config-sha256: 6ad5604f3630a6415078461ea705064a13d2694408daeb503f58b95fffdf34d8
+        sunmoonai.com/source-commit: e5156a0bfc0d5ca9118128427dcacb69697a0737
     spec:
       serviceAccountName: info-backend-worker
       automountServiceAccountToken: false
@@ -292,7 +293,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: worker
-        image: harbor.sunmoonai.com:30443/app-images/info-backend@sha256:884dc222c2c7c3fc86787592ec03a5bb306a44a8bf069df10e3c9ed38806f1b9
+        image: harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ec9e1da89285ec0e85d12ff51e25ce42c713b604989f9f8ba6c7812ff517c4aa
         imagePullPolicy: IfNotPresent
         command:
         - /bin/sh
@@ -321,8 +322,19 @@ spec:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: info-backend-postgresql-conn
-              key: DATABASE_URL
+              name: info-backend-runtime
+              key: WORKER_DATABASE_URL
+        - name: CELERY_BROKER_URL
+          valueFrom:
+            secretKeyRef:
+              name: info-backend-runtime
+              key: WORKER_CELERY_BROKER_URL
+        - name: CELERY_RESULT_BACKEND
+          valueFrom:
+            secretKeyRef:
+              name: info-backend-runtime
+              key: WORKER_CELERY_RESULT_BACKEND
+              optional: true
         - name: REDIS_HOST
           valueFrom:
             secretKeyRef:
@@ -348,24 +360,12 @@ spec:
             secretKeyRef:
               name: info-backend-redis-conn
               key: REDIS_PASSWORD
-        - name: CELERY_BROKER_URL
-          valueFrom:
-            secretKeyRef:
-              name: info-backend-broker
-              key: CELERY_BROKER_URL
-        - name: CELERY_RESULT_BACKEND
-          valueFrom:
-            secretKeyRef:
-              name: info-backend-broker
-              key: CELERY_RESULT_BACKEND
-              optional: true
         readinessProbe:
           exec:
             command:
-            - /bin/sh
-            - -ec
-            - celery -A app.bootstrap.worker:celery_app inspect ping --destination="celery@${POD_NAME}"
-              --timeout=3 | grep -q pong
+            - python
+            - -m
+            - app.cli.worker_readiness
           initialDelaySeconds: 5
           periodSeconds: 15
           timeoutSeconds: 8
@@ -451,9 +451,9 @@ spec:
         sunmoonai.com/app: info
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: kind-info-dd-20260911
-        sunmoonai.com/config-sha256: b7575050afe5ec69a048fbd1f8e1fca4c96076d6cbe839a9071a88e9bddfbd98
-        sunmoonai.com/source-commit: 8c3b695e3e2b5b4064b5b14ce8d2b6d6767177e2
+        sunmoonai.com/release-id: kind-b7-20260919
+        sunmoonai.com/config-sha256: 6ad5604f3630a6415078461ea705064a13d2694408daeb503f58b95fffdf34d8
+        sunmoonai.com/source-commit: e5156a0bfc0d5ca9118128427dcacb69697a0737
     spec:
       serviceAccountName: info-backend-scheduler
       automountServiceAccountToken: false
@@ -469,7 +469,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: scheduler
-        image: harbor.sunmoonai.com:30443/app-images/info-backend@sha256:884dc222c2c7c3fc86787592ec03a5bb306a44a8bf069df10e3c9ed38806f1b9
+        image: harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ec9e1da89285ec0e85d12ff51e25ce42c713b604989f9f8ba6c7812ff517c4aa
         imagePullPolicy: IfNotPresent
         command:
         - celery
@@ -486,13 +486,13 @@ spec:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: info-backend-postgresql-conn
-              key: DATABASE_URL
+              name: info-backend-runtime
+              key: SCHEDULER_DATABASE_URL
         - name: CELERY_BROKER_URL
           valueFrom:
             secretKeyRef:
-              name: info-backend-broker
-              key: CELERY_BROKER_URL
+              name: info-backend-runtime
+              key: SCHEDULER_CELERY_BROKER_URL
         resources:
           requests:
             cpu: 25m
@@ -547,9 +547,9 @@ spec:
         sunmoonai.com/app: info
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: kind-info-dd-20260911
-        sunmoonai.com/config-sha256: a6a88fed6ea64c8f0b4bcec4405714c53834bccda0ebcb00bfca077569931814
-        sunmoonai.com/source-commit: 04ae25c5503317bf2faab10988710598afe8e6c7
+        sunmoonai.com/release-id: kind-b7-20260919
+        sunmoonai.com/config-sha256: 02014ce5f05bccdae8cc561171caa58d914ae51f499d09f1f926e30be6ab40cb
+        sunmoonai.com/source-commit: 90e4ab00fc209323d1670743d83ae1369a7b8d82
     spec:
       serviceAccountName: info-admin-frontend
       automountServiceAccountToken: false
@@ -573,7 +573,7 @@ spec:
             app.kubernetes.io/component: admin-frontend
       containers:
       - name: admin
-        image: harbor.sunmoonai.com:30443/app-images/info-admin-frontend@sha256:3bb0112c7fa3d7a7c58e12ad813f5fe1f6b7ed05178d8dd910181acbbd83e839
+        image: harbor.sunmoonai.com:30443/app-images/info-admin-frontend@sha256:8be19c26c8f01b130d10de4ae428102b04eb3e7a5394a7898e5fd6141aa675da
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
@@ -706,9 +706,9 @@ spec:
         sunmoonai.com/app: info
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: kind-info-dd-20260911
-        sunmoonai.com/config-sha256: 47c73f0728b01741cb192baef8da5cf229b7a6cdb85bb46e495b5e490b75c6c5
-        sunmoonai.com/source-commit: f3ebbc3251ba2501d4e9a4fe87ff59e005d151fa
+        sunmoonai.com/release-id: kind-b7-20260919
+        sunmoonai.com/config-sha256: e3d4f7131d4917267f51069b409f37330c6017b28846824f8d7fd6450efbf8b2
+        sunmoonai.com/source-commit: a07af307c63ee16204d82afa0a0b7b2d3d22bb3c
     spec:
       serviceAccountName: info-web-frontend
       automountServiceAccountToken: false
@@ -732,7 +732,7 @@ spec:
             app.kubernetes.io/component: web-frontend
       containers:
       - name: web
-        image: harbor.sunmoonai.com:30443/app-images/info-web-frontend@sha256:53a70bf136cacece4f38dd33f272be1af2b0507a11df4c6258cb6e56f1d581df
+        image: harbor.sunmoonai.com:30443/app-images/info-web-frontend@sha256:0d836617678e4c924ae2f8e54dc644cd8f1d60172277bfac1326176f33e8d9ee
         imagePullPolicy: IfNotPresent
         ports:
         - name: http

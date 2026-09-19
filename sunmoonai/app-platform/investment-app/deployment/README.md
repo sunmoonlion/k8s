@@ -25,7 +25,7 @@ Research 双 Backend。重新生成必须写入空目录并逐字比较：
 
 ```bash
 python3 deployment/render.py --output-dir /tmp/investment-development \
-  --release-id kind-invest-dd-20260911 --development-input deployment/development-input.json
+  --release-id kind-b7-20260919 --development-input deployment/development-input.json
 diff -ru deployment/bundle /tmp/investment-development
 ```
 
@@ -34,7 +34,10 @@ diff -ru deployment/bundle /tmp/investment-development
 停写、备份恢复与回执格式见 [共享部署说明](../../scripts/README.md#kind-开发包部署)。
 备份脚本默认使用规范 `investment_admin`，不再使用已退役的 `research_admin`。
 
-Redis 身份由现有 `prepare-investment-redis-acl-kind.sh` 幂等收敛，保留原连接密码。
+当前开发 apply 只消费已准备好的 Redis 身份，不自动执行旧供给脚本；它也不重开旧数据库
+账号、不重写共享 broker 或 Knowledge 绑定。缺失/漂移须在维护流程中单独核实，不能
+用正式路径绕过开发门禁。Redis 历史供给入口为 `prepare-investment-redis-acl-kind.sh`，
+其执行涉及共享 ACL 配置，不属于当前开发 apply 的隐含动作。
 受管的 `investment-redis-credential` Secret 在 data namespace 持续保留，供 Redis chart
 通过 `existingSecret` 引用；不写入 Git。KIND values 中的同一 ACL 声明同时用于运行时
 与启动 ConfigMap，仅放行 `investment:*` 键和频道。脚本验证正反向键/PubSub 权限及

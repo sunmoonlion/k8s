@@ -73,7 +73,13 @@ def helper(args: argparse.Namespace, script: str, *items: str) -> None:
     subprocess.run(command_line, check=True, env=env)
 
 
-def reconcile_external_state(args: argparse.Namespace) -> None:
+def reconcile_external_state(args: argparse.Namespace, data: dict[str, Any]) -> None:
+    if data.get("formal_release") is not True:
+        # Prepared identities and existing Redis/retrieval bindings are consumed
+        # unchanged. Never replay legacy whole-broker/ACL/login provisioning.
+        development_release.runtime_secret_gate(args, data, run)
+        development_release.existing_retrieval_binding_gate(args, data, run)
+        return
     helper(args, "prepare-investment-broker-kind.sh", "--apply", "--no-restart")
     helper(args, "prepare-investment-redis-acl-kind.sh", "--apply", "--no-restart")
     helper(
@@ -183,7 +189,8 @@ def run_migration(args: argparse.Namespace, data: dict[str, Any]) -> None:
         "--ignore-not-found=true",
         "--wait=true",
     )
-    set_formal_database_roles(args)
+    if data.get("formal_release") is True:
+        set_formal_database_roles(args)
     apply_file(args, "10-migration.yaml")
     completed = run(
         args,
@@ -202,7 +209,7 @@ def run_migration(args: argparse.Namespace, data: dict[str, Any]) -> None:
 
 
 def apply_component(args: argparse.Namespace, data: dict[str, Any]) -> None:
-    reconcile_external_state(args)
+    reconcile_external_state(args, data)
     external_secret_gate(args, data)
     apply_file(args, "00-prerequisites.yaml")
     if args.component == "prerequisites":
@@ -231,7 +238,7 @@ def apply_component(args: argparse.Namespace, data: dict[str, Any]) -> None:
 
 def apply(args: argparse.Namespace, data: dict[str, Any]) -> None:
     namespace = data["namespace"]
-    reconcile_external_state(args)
+    reconcile_external_state(args, data)
     external_secret_gate(args, data)
     apply_file(args, "00-prerequisites.yaml")
     apply_file(args, "30-network-policies.yaml")

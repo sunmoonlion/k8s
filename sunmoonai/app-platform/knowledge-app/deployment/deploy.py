@@ -122,7 +122,11 @@ def server_dry_run(args: argparse.Namespace, data: dict[str, Any]) -> None:
     print(json.dumps({"result": "passed", "action": "server-dry-run"}))
 
 
-def reconcile_external_state(args: argparse.Namespace) -> None:
+def reconcile_external_state(args: argparse.Namespace, data: dict[str, Any]) -> None:
+    if data.get("formal_release") is not True:
+        development_release.runtime_secret_gate(args, data, run)
+        development_release.existing_retrieval_binding_gate(args, data, run)
+        return
     binding_command = [
         "bash",
         str(SCRIPTS / "reconcile-knowledge-active-retrieval-binding-kind.sh"),
@@ -168,7 +172,7 @@ def run_migration(args: argparse.Namespace, data: dict[str, Any]) -> None:
 
 
 def apply_component(args: argparse.Namespace, data: dict[str, Any]) -> None:
-    reconcile_external_state(args)
+    reconcile_external_state(args, data)
     external_secret_gate(args, data)
     apply_file(args, "00-prerequisites.yaml")
     if args.component == "prerequisites":
@@ -197,7 +201,7 @@ def apply_component(args: argparse.Namespace, data: dict[str, Any]) -> None:
 
 def apply(args: argparse.Namespace, data: dict[str, Any]) -> None:
     namespace = data["namespace"]
-    reconcile_external_state(args)
+    reconcile_external_state(args, data)
     external_secret_gate(args, data)
     apply_file(args, "00-prerequisites.yaml")
     apply_file(args, "30-network-policies.yaml")

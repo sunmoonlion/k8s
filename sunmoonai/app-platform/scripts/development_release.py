@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import ast
+import base64
 import hashlib
 import json
 import re
 import subprocess
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote, urlsplit
 
 import yaml
 
@@ -15,6 +17,8 @@ ARCHITECTURE = "app-platform-v2-development"
 SHA = re.compile(r"[0-9a-f]{40}")
 DIGEST = re.compile(r"[^\s]+@sha256:[0-9a-f]{64}")
 ROLES = {"backend": "backend", "admin": "admin-frontend", "web": "web-frontend"}
+IDENTITY_MODE = "independent-v1"
+RUNTIME_ROLES = ("api", "worker", "scheduler")
 
 
 def validate(release: dict[str, Any]) -> None:
@@ -43,6 +47,85 @@ def validate(release: dict[str, Any]) -> None:
             raise ValueError("development images must be App-owned immutable Harbor digests")
     if not re.fullmatch(r"[0-9]{8}_[0-9]{4}", str(release.get("migration_head", ""))):
         raise ValueError("development release must lock the Alembic head")
+    if release.get("runtime_identity_mode") not in (None, IDENTITY_MODE):
+        raise ValueError("unknown development runtime identity mode")
+
+
+def verify_runtime_secret_contract(secret: dict[str, Any], app: str) -> None:
+    """Structural gate only: live authentication/permission probes are separate.
+
+    Never echo connection strings, passwords, or parsing exception details.
+    This KIND cutover intentionally supports no Celery result backend.
+    """
+    try:
+        if app not in ("info", "knowledge", "investment"):
+            raise ValueError()
+        if (secret["metadata"]["name"] != f"{app}-backend-runtime"
+                or secret["metadata"]["namespace"] != "app-platform-dev"):
+            raise ValueError()
+        data = secret["data"]
+        expected = {f"{role.upper()}_{key}" for role in RUNTIME_ROLES
+                    for key in ("DATABASE_URL", "CELERY_BROKER_URL")}
+        if set(data) != expected:
+            raise ValueError()
+        passwords = set()
+        for role in RUNTIME_ROLES:
+            for key in ("DATABASE_URL", "CELERY_BROKER_URL"):
+                raw = base64.b64decode(data[f"{role.upper()}_{key}"], validate=True).decode()
+                if any(c.isspace() or ord(c) < 32 for c in raw):
+                    raise ValueError()
+                url = urlsplit(raw)
+                database = key == "DATABASE_URL"
+                if (url.scheme not in (("postgresql", "postgresql+asyncpg") if database else ("amqp",))
+                        or url.hostname != ("postgresql-sunmoonai.data-platform-dev.svc.cluster.local" if database
+                                            else "rabbitmq-sunmoonai.messaging-platform-dev.svc.cluster.local")
+                        or url.port != (5432 if database else 5672)
+                        or unquote(url.username or "") != (f"{app}_backend_{role}" if database else f"{app}-backend-{role}-v2")
+                        or unquote(url.path) != (f"/{app}_admin" if database else f"/{app}-development")
+                        or url.query or url.fragment):
+                    raise ValueError()
+                password = unquote(url.password or "")
+                if len(password) < 32 or password in passwords:
+                    raise ValueError()
+                passwords.add(password)
+    except (KeyError, TypeError, ValueError, AttributeError):
+        raise ValueError("independent runtime Secret contract failed; credentials not displayed") from None
+
+
+def runtime_secret_gate(args: Any, release: dict[str, Any], run: Any) -> None:
+    if release.get("runtime_identity_mode") != IDENTITY_MODE:
+        raise ValueError("development apply requires explicit independent-v1 runtime identities")
+    try:
+        result = run(args, "get", "secret", release["logical_app"] + "-backend-runtime",
+                     "-n", release["namespace"], "-o", "json", capture=True)
+        if getattr(result, "returncode", 0):
+            raise ValueError()
+        secret = json.loads(result.stdout)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        raise ValueError("cannot read independent runtime Secret; apply refused") from None
+    verify_runtime_secret_contract(secret, release["logical_app"])
+
+
+def existing_retrieval_binding_gate(args: Any, release: dict[str, Any], run: Any) -> None:
+    """Consume the approved existing binding without reapplying/restarting it."""
+    try:
+        secrets = []
+        for name in ("knowledge-investment-retrieval-service-binding", "knowledge-active-retrieval-service-binding"):
+            result = run(args, "get", "secret", name, "-n", release["namespace"], "-o", "json", capture=True)
+            if getattr(result, "returncode", 0):
+                raise ValueError()
+            secrets.append(json.loads(result.stdout))
+        source, active = secrets
+        required = {"RETRIEVAL_AUTH_" + key for key in (
+            "CASDOOR_APPLICATION", "DISCOVERY_URL", "BACKCHANNEL_ENDPOINT", "AUDIENCE", "SUBJECT_ALLOWLIST", "REQUIRED_SCOPE")}
+        if (not required <= source["data"].keys() or source["data"] != active["data"]
+                or any(not base64.b64decode(source["data"][key], validate=True) for key in required)
+                or active["metadata"]["labels"]["sunmoonai.com/active-caller"] != "investment"
+                or active["metadata"]["annotations"]["architecture.sunmoonai.com/source-secret"]
+                != "knowledge-investment-retrieval-service-binding"):
+            raise ValueError()
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, subprocess.SubprocessError):
+        raise ValueError("existing retrieval binding missing or drifted; no automatic reconciliation") from None
 
 
 def render(output: Path, input_path: Path, k8s_root: Path) -> None:
@@ -80,6 +163,9 @@ def render(output: Path, input_path: Path, k8s_root: Path) -> None:
     release.update(architecture=ARCHITECTURE, formal_release=False, deployment_target="KIND",
                    development_source_lock=source_lock, images=source["images"],
                    migration_head=source["migration_head"])
+    release.pop("runtime_identity_mode", None)
+    if "runtime_identity_mode" in source:
+        release["runtime_identity_mode"] = source["runtime_identity_mode"]
     validate(release)
     replacements = {previous_images[role]: release["images"][role] for role in ROLES}
     for filename in release["resources"]:
@@ -92,6 +178,8 @@ def render(output: Path, input_path: Path, k8s_root: Path) -> None:
                 for key in list(doc.get("data", {})):
                     if key.startswith("DELIVERY_OUTBOX_"):
                         del doc["data"][key]
+                if release.get("runtime_identity_mode") == IDENTITY_MODE:
+                    doc["data"]["CELERY_TASK_TOPOLOGY_PREDECLARED"] = "true"
             template = doc.get("spec", {}).get("template", {})
             for container in template.get("spec", {}).get("containers", []):
                 if container.get("image") in replacements:
@@ -158,3 +246,4 @@ def guard(args: Any, release: dict[str, Any], run: Any) -> None:
         component = pod.get("metadata", {}).get("labels", {}).get("app.kubernetes.io/component", "")
         if component in ("backend-api", "backend-worker", "backend-scheduler"):
             raise ValueError("old backend Pods still exist; wait for complete termination")
+    runtime_secret_gate(args, release, run)

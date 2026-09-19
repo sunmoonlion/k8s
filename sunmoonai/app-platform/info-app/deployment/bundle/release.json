@@ -4,12 +4,12 @@
   "logical_app": "info",
   "resource_app": "info",
   "namespace": "app-platform-dev",
-  "release_id": "kind-info-dd-20260911",
+  "release_id": "kind-b7-20260919",
   "formal_release": false,
   "images": {
-    "backend": "harbor.sunmoonai.com:30443/app-images/info-backend@sha256:884dc222c2c7c3fc86787592ec03a5bb306a44a8bf069df10e3c9ed38806f1b9",
-    "admin": "harbor.sunmoonai.com:30443/app-images/info-admin-frontend@sha256:3bb0112c7fa3d7a7c58e12ad813f5fe1f6b7ed05178d8dd910181acbbd83e839",
-    "web": "harbor.sunmoonai.com:30443/app-images/info-web-frontend@sha256:53a70bf136cacece4f38dd33f272be1af2b0507a11df4c6258cb6e56f1d581df"
+    "backend": "harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ec9e1da89285ec0e85d12ff51e25ce42c713b604989f9f8ba6c7812ff517c4aa",
+    "admin": "harbor.sunmoonai.com:30443/app-images/info-admin-frontend@sha256:8be19c26c8f01b130d10de4ae428102b04eb3e7a5394a7898e5fd6141aa675da",
+    "web": "harbor.sunmoonai.com:30443/app-images/info-web-frontend@sha256:0d836617678e4c924ae2f8e54dc644cd8f1d60172277bfac1326176f33e8d9ee"
   },
   "origins": {
     "admin": "https://info-admin.sunmoonai.com:30443",
@@ -24,9 +24,9 @@
     "40-ingress.yaml"
   ],
   "sha256": {
-    "00-prerequisites.yaml": "4bfd5e67e40baafe9ae87b2c1ab0467a054c95c435175df97a4c987bf5e4cd45",
-    "10-migration.yaml": "a831e70ebd0ba858e2fb378c54f65bd18e1a4605beaa61ddf7a95bcf5cb42816",
-    "20-runtime.yaml": "bde3460ccb84de384c80f0566ab70697c161ae17b1e95f9db1c73213c96c2dd9",
+    "00-prerequisites.yaml": "86854cbccc1d1e85dd3062174a515d5b1cabfc0c24294cc19ae6deea80a85af8",
+    "10-migration.yaml": "e1f2200af36d68ae6ead9c8707509b3c73058b616811f14338d6b293b8bfe577",
+    "20-runtime.yaml": "9937bd0342d21d313e4a197a06dafcea4692b763e869a354de060c447f1c55b0",
     "30-network-policies.yaml": "e16fc0e4a350a598c561c1637a73060d24f5ad9d94162930e2efb5454c3dd539",
     "40-ingress.yaml": "b646e896dec6491ae16bd2a1044682925e51af0850c955dbca8af6ce72b40004"
   },
@@ -111,11 +111,10 @@
   "external_secrets": [
     "harbor-registry-secret",
     "info-tls",
-    "info-backend-postgresql-conn",
+    "info-backend-runtime",
     "info-backend-migration-postgresql-conn",
     "info-browser-identity",
     "info-backend-redis-conn",
-    "info-backend-broker",
     "info-backend-s3",
     "info-backend-elasticsearch",
     "info-knowledge-ingest-client"
@@ -127,15 +126,15 @@
   ],
   "contains_credentials": false,
   "renderer_inputs_sha256": {
-    "k8s:sunmoonai/app-platform/scripts/render_info_release_base.py": "ce7e0d5bd6834d0aefaf47b94fceddbf6a5d310af544041a815d5f1496b82e0d",
+    "k8s:sunmoonai/app-platform/scripts/render_info_release_base.py": "d06d6860ed2e667dba7c5005816997784de283718ad2bd948074a5b25ced0551",
     "tpl-app:k8s-deployment/scaffold.py": "2f65213916ac338f4126c43b084dacd4a832906735d034b37a247b8507479828",
     "tpl-app:k8s-deployment/templates/00-prerequisites.yaml.tpl": "c87ac75dce8507e9f88732d3e8708945ee18a87418fedfd9dc184423916d32bf",
     "tpl-app:k8s-deployment/templates/10-migration.yaml.tpl": "2a78b9770f61b94cc267f267449b0e0593b147a61a444a7463fe4f3fcc1508f4",
-    "tpl-app:k8s-deployment/templates/20-runtime.yaml.tpl": "1ca1c9df52705922abccf7906ff96ddd4b2e578c327a5d86502fa07d23de5b42",
+    "tpl-app:k8s-deployment/templates/20-runtime.yaml.tpl": "702236eaf5ffa8f173c5e6f2f9528114e4f7247bf560408a905511a98d00d13b",
     "tpl-app:k8s-deployment/templates/30-network-policies.yaml.tpl": "2eede852d9710c20cba56cfe4a1b9864cb2a9aac907babbf5b9cf2c258f5d3c5",
     "tpl-app:k8s-deployment/templates/40-ingress.yaml.tpl": "5f79e6a40bdfa8a581b92eeabe1a9f0cbf3a031221f5c9a40708b4682190ce3d",
-    "development-release-input": "a4b45c99f7124937000285e8615896e675a3244894390d6d7c1c12253702e7a7",
-    "k8s:sunmoonai/app-platform/scripts/development_release.py": "b1abf57789ba110fecb7d2f402e5b3a01aeaf9d4d8f7f9347c151d6e71883089"
+    "development-release-input": "9a578127afccea454b54cc78cab162ce5048778a56cde20bf5ec5b45b8bf25df",
+    "k8s:sunmoonai/app-platform/scripts/development_release.py": "a6fa171413ce3e582b688e3cb3ae689cc4221755418ad42abc0cfc94341a82ec"
   },
   "deployment_target": "KIND",
   "development_source_lock": {
@@ -143,28 +142,29 @@
     "kind": "development-source-lock",
     "repository": "info-app",
     "formal_release": false,
-    "task": "durable-delivery-luna-20260911",
-    "release_boundary": "Source-only development candidate; historical formal release and deployed images are unchanged.",
+    "task": "B7-B9-closeout-kind-20260919",
+    "release_boundary": "Immutable development candidate source; actual deployment requires the matching KIND release, prepared independent identities, and verified quiescent backup.",
     "components": [
       {
         "path": "info-backend",
-        "commit": "8c3b695e3e2b5b4064b5b14ce8d2b6d6767177e2",
-        "tree": "d53d8bd8d953a98326fa2f9325c5303166577433",
-        "remote_branch": "origin/luna/durable-delivery-20260911-local"
+        "commit": "e5156a0bfc0d5ca9118128427dcacb69697a0737",
+        "tree": "49b19f05e2635b3363046929be2a82db70433cf8",
+        "remote_branch": "origin/master"
       },
       {
         "path": "info-admin-frontend",
-        "commit": "04ae25c5503317bf2faab10988710598afe8e6c7",
-        "tree": "8837ee22dba297fef20b39b8a8de5ceb2865660b",
-        "remote_branch": "origin/luna/durable-delivery-20260911-local"
+        "commit": "90e4ab00fc209323d1670743d83ae1369a7b8d82",
+        "tree": "8d2e871b2be1c0e6f83bbeab6a4da54522dcdabd",
+        "remote_branch": "origin/master"
       },
       {
         "path": "info-web-frontend",
-        "commit": "f3ebbc3251ba2501d4e9a4fe87ff59e005d151fa",
-        "tree": "f3e0648a236152b975a384e70026d62889e54f22",
-        "remote_branch": "origin/luna/durable-delivery-20260911-local"
+        "commit": "a07af307c63ee16204d82afa0a0b7b2d3d22bb3c",
+        "tree": "dc3faaa774953855b446266d7f3f2826a78dd360",
+        "remote_branch": "origin/master"
       }
     ]
   },
-  "migration_head": "20260911_0007"
+  "migration_head": "20260913_0009",
+  "runtime_identity_mode": "independent-v1"
 }

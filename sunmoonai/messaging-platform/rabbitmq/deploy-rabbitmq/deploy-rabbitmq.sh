@@ -152,6 +152,12 @@ execute_rabbitmq_deployment() {
     log_info "命名空间: $namespace"
     log_info "环境: $environment"
     log_info "干运行: $dry_run"
+
+    # Existing independent identities must never be replaced by the legacy
+    # extraSecrets values, even when the takeover annotation was removed.
+    # Same kubectl environment/context as Helm; query failure is not absence.
+    python3 "$RABBITMQ_SCRIPT_DIR/../../../app-platform/scripts/guard_legacy_broker.py" \
+        --namespace "$namespace"
     
     # 检查命名空间是否存在
     check_namespace "$namespace"

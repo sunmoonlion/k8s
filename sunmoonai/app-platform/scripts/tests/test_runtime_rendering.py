@@ -216,6 +216,7 @@ class RenderingChecks:
                 "migration_head": "20260913_0009",
                 "images": self.release["images"],
                 "development_source_lock": lock,
+                "runtime_identity_mode": development_release.IDENTITY_MODE,
             }
             input_path = root / "input.json"
             input_path.write_text(json.dumps(candidate))
@@ -247,6 +248,11 @@ class RenderingChecks:
                     annotations["sunmoonai.com/release-id"], "b7m-render-test"
                 )
                 self.assertEqual(annotations["sunmoonai.com/source-commit"], "a" * 40)
+            configs = list(yaml.safe_load_all((output / "00-prerequisites.yaml").read_text()))
+            config = common.resource(configs, "ConfigMap", self.app + "-backend-config")
+            self.assertEqual(config["data"]["CELERY_TASK_TOPOLOGY_PREDECLARED"], "true")
+            finalized = json.loads((output / "release.json").read_text())
+            self.assertEqual(finalized["runtime_identity_mode"], development_release.IDENTITY_MODE)
             subprocess.run(
                 [
                     sys.executable,
