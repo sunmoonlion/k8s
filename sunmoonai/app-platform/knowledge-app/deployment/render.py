@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import shutil
 import subprocess
@@ -30,7 +31,29 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--development-input", type=Path)
     parser.add_argument("--release-id", default="v20-knowledge-stable-001")
     parser.add_argument("--retrieval-dataset-allowlist", default="codex-smoke")
+    parser.add_argument("--ingestion-dataset-bindings-file", type=Path)
     return parser.parse_args()
+
+
+def ingestion_bindings(path: Path | None, k8s_root: Path) -> tuple[str, Path]:
+    """Validate explicit write authority with the Backend's single policy parser.
+
+    Retrieval permission never implies ingestion permission. No input means no
+    ingestion authority; IDs/names are public configuration, not credentials.
+    """
+    policy = (k8s_root.parent / "knowledge-app/knowledge-backend/app/core/ingestion_policy.py")
+    spec = importlib.util.spec_from_file_location("knowledge_ingestion_policy", policy)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Knowledge ingestion policy is unavailable")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    raw = "{}" if path is None else path.read_text(encoding="utf-8")
+    bindings = module.parse_bindings(raw)
+    return json.dumps({
+        key: {"dataset_id": value.dataset_id, "dataset_name": value.dataset_name}
+        for key, value in bindings.items()
+    }, sort_keys=True, separators=(",", ":"), ensure_ascii=False), policy
 
 
 def load(path: Path) -> list[dict[str, Any]]:
@@ -135,11 +158,12 @@ def main() -> int:
     args = parse_args()
     if not args.retrieval_dataset_allowlist.strip() or "*" in args.retrieval_dataset_allowlist:
         raise RuntimeError("retrieval dataset allowlist must be explicit and governed")
+    k8s_root = Path(__file__).resolve().parents[4]
+    bindings, binding_policy = ingestion_bindings(args.ingestion_dataset_bindings_file, k8s_root)
     output = args.output_dir.resolve()
     if output.exists() and any(output.iterdir()):
         raise RuntimeError(f"output directory must be absent or empty: {output}")
     output.mkdir(parents=True, exist_ok=True)
-    k8s_root = Path(__file__).resolve().parents[4]
     candidate_renderer = k8s_root / "sunmoonai/app-platform/scripts/render_knowledge_release_base.py"
     scaffold = k8s_root.parent / "tpl-app/k8s-deployment"
 
@@ -180,6 +204,7 @@ def main() -> int:
         "RAGFLOW_PARSE_TIMEOUT_SECONDS": "120",
         "RETRIEVAL_DEFAULT_TENANT_ID": "sunmoonai",
         "RETRIEVAL_PROVIDER_TIMEOUT_SECONDS": "15",
+        "INGESTION_DATASET_BINDINGS": bindings,
         "ARTIFACT_ALLOWED_CONTENT_TYPES": "text/markdown,text/plain",
         "ARTIFACT_MAX_SIZE_BYTES": "52428800",
         "ARTIFACT_S3_ALLOWED_BUCKETS": "development-info-originals",
@@ -270,9 +295,13 @@ def main() -> int:
     dump(output / "40-ingress.yaml", ingress_routes)
 
     renderer_inputs = {
+        "k8s:sunmoonai/app-platform/knowledge-app/deployment/render.py": Path(__file__),
         "k8s:sunmoonai/app-platform/scripts/render_knowledge_release_base.py": candidate_renderer,
         "tpl-app:k8s-deployment/scaffold.py": scaffold / "scaffold.py",
+        "knowledge-app:knowledge-backend/app/core/ingestion_policy.py": binding_policy,
     }
+    if args.ingestion_dataset_bindings_file is not None:
+        renderer_inputs["ingestion-dataset-bindings-input"] = args.ingestion_dataset_bindings_file
     renderer_inputs.update({
         f"tpl-app:k8s-deployment/templates/{path.name}": path
         for path in sorted((scaffold / "templates").glob("*.tpl"))

@@ -16,6 +16,12 @@ digest、`migration_head` 和完整 `development_source_lock`。渲染时校验�
 `verify-formal-instance.py`，并将输出更新到唯一规范 bundle，同时更新 `.conf`。
 来源锁记录的是源码准备时的事实；实际部署边界由新的 `release.json` 声明。
 
+Knowledge 摄入授权必须单独显式给出；检索 allowlist 不授权上传。渲染时使用
+`--ingestion-dataset-bindings-file deployment/ingestion-dataset-bindings.kind.json`，
+由 Backend 的同一严格解析器校验并计入 ConfigMap/发布输入摘要。不传该参数时绑定为空，
+所有新摄入请求仍被拒绝。当前 KIND 配置只获准写入既有 `codex-smoke`；不据此重放旧任务。
+渲染配置或构建镜像不等于已应用到集群。
+
 开发升级仅允许 KIND 的全 App 事务；C1/production、组件单独 apply 均拒绝。
 非 plan 操作还检查节点实际 `providerID`。迁移按以下顺序执行：
 
