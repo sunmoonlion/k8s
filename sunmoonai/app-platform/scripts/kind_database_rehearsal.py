@@ -81,6 +81,66 @@ def verify_kind(args):
         raise RehearsalError("wrong_cluster")
 
 
+def quiescence(args):
+    """Read-only maintenance observation; never scales/terminates anything.
+
+    Exact deployments must exist and be zero. Also inspect unlabelled legacy
+    Pods/Jobs/CronJobs by App name so a missing label cannot hide a writer.
+    Operators must keep the maintenance window exclusive between observations.
+    """
+    if args.app not in APPS:
+        raise RehearsalError("invalid_app")
+    prefix = args.app + "-"
+    expected = {prefix + "backend-" + r for r in ("api", "worker", "scheduler")}
+    def resources(kind):
+        return json.loads(kubectl(args, "-n", "app-platform-dev", "get", kind, "-o", "json"))["items"]
+    deployments = resources("deployments")
+    writers = [d for d in deployments if d["metadata"]["name"].startswith(prefix)
+               and "backend" in d["metadata"]["name"]]
+    if not expected <= {d["metadata"]["name"] for d in writers} or any(
+        d.get("spec", {}).get("replicas", 1) != 0 or any(d.get("status", {}).get(k, 0)
+            for k in ("replicas", "readyReplicas", "availableReplicas", "updatedReplicas")) for d in writers
+    ):
+        raise RehearsalError("maintenance_writers_not_stopped")
+    for pod in resources("pods"):
+        meta = pod["metadata"]
+        if (meta["name"].startswith(prefix) and pod.get("status", {}).get("phase") not in ("Succeeded", "Failed")
+                and not any(meta["name"].startswith(prefix + r + "-frontend-") for r in ("admin", "web"))):
+            raise RehearsalError("maintenance_app_pod_remains")
+    for job in resources("jobs"):
+        if job["metadata"]["name"].startswith(prefix) and job.get("status", {}).get("active", 0):
+            raise RehearsalError("maintenance_app_job_active")
+    for cron in resources("cronjobs"):
+        if cron["metadata"]["name"].startswith(prefix) and (
+                cron.get("spec", {}).get("suspend") is not True or cron.get("status", {}).get("active")):
+            raise RehearsalError("maintenance_app_cron_not_suspended")
+    sql = ("SELECT count(*) FROM pg_stat_activity WHERE usename <> 'postgres' AND "
+           "(datname='" + args.app + "_admin' OR usename LIKE '" + args.app + "\\_%' ESCAPE '\\');")
+    clients = kubectl(args, "-n", "data-platform-dev", "exec", "-i", "postgresql-sunmoonai-0", "-c", "postgresql",
+        "--", "sh", "-c", PG_SHELL, "sh", "psql", "-U", "postgres", "-d", "postgres", "-X", "-qAt",
+        "-v", "ON_ERROR_STOP=1", data=sql.encode())
+    if clients.strip() != b"0":
+        raise RehearsalError("maintenance_database_clients_remain")
+    return sorted(({"name": d["metadata"]["name"], "uid": d["metadata"]["uid"], "spec": d["spec"]}
+                   for d in writers), key=lambda d: d["name"])
+
+
+async def verify_unchanged_snapshot(args, port, password, baseline):
+    import asyncpg
+    conn = await asyncpg.connect(host="127.0.0.1", port=port, user="postgres", password=password,
+                                 database=args.app + "_admin", command_timeout=60)
+    try:
+        async with conn.transaction(isolation="repeatable_read", readonly=True):
+            catalog = {key: json.loads(await conn.fetchval(sql)) for key, sql in CATALOG.items()}
+            if comparable_catalog(catalog) != comparable_catalog(baseline["catalog"]):
+                raise RehearsalError("maintenance_backup_catalog_changed")
+            for name, columns in column_map(catalog).items():
+                if json.loads(await conn.fetchval(row_fingerprint_sql(name, columns))) != baseline["rows"][name]:
+                    raise RehearsalError("maintenance_backup_rows_changed")
+    finally:
+        await conn.close()
+
+
 @contextmanager
 def port_forward(args):
     process = subprocess.Popen([
@@ -332,6 +392,8 @@ def main():
     parser.add_argument("--image", required=True)
     parser.add_argument("--head", required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--cutover-release", type=Path,
+                        help="Emit a cutover receipt only for a stopped, unchanged App and this exact release")
     args = parser.parse_args()
     if not re.fullmatch(r"harbor\.sunmoonai\.com:30443/app-images/" + args.app + r"-backend@sha256:[0-9a-f]{64}", args.image):
         raise RehearsalError("immutable_app_image_required")
@@ -346,6 +408,16 @@ def main():
     args.output.mkdir(mode=0o700)
     ERROR_DIR = args.output
     verify_kind(args)
+    release = None
+    if args.cutover_release is not None:
+        import development_release
+        release = json.loads(args.cutover_release.read_text())
+        development_release.validate(release)
+        if (release["logical_app"] != args.app or release["images"]["backend"] != args.image
+                or release["migration_head"] != args.head):
+            raise RehearsalError("cutover_release_mismatch")
+        stopped = quiescence(args)
+        private_write(args.output / "quiescence-before.private.json", encoded(stopped))
     print(encoded({"stage": "backup_started", "app": args.app, "output": str(args.output)}), flush=True)
     admin = get(args, "data-platform-dev", "secret", "postgresql-auth-secret")
     password = base64.b64decode(admin["data"]["admin_password"]).decode()
@@ -372,6 +444,20 @@ def main():
               "iterations": iterations, "objects_backed_up": False,
               "cutover_backup_receipt": False}
     private_write(args.output / "rehearsal.json", encoded(result))
+    if release is not None:
+        if quiescence(args) != stopped:
+            raise RehearsalError("maintenance_workloads_changed")
+        with port_forward(args) as port:
+            asyncio.run(verify_unchanged_snapshot(args, port, password, baseline))
+        if quiescence(args) != stopped:
+            raise RehearsalError("maintenance_workloads_changed")
+        receipt = {**result, "logical_app": args.app, "release_id": release["release_id"],
+                   "release_content_sha256": development_release.release_content_sha256(release),
+                   "online_preparation_only": False, "cutover_backup_receipt": True,
+                   "restore_verified": True, "stopped_workloads_verified": True,
+                   "rows_unchanged_after_restore": True}
+        private_write(args.output / "cutover-receipt.json", encoded(receipt))
+        print(encoded({"cutover_receipt": str(args.output / "cutover-receipt.json"), "app": args.app}), flush=True)
     print(encoded(result), flush=True)
 
 

@@ -9,7 +9,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import development_release as target
@@ -153,16 +153,24 @@ class DevelopmentReleaseTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "non-KIND"):
             target.guard(argparse.Namespace(cluster="KIND", action="server-dry-run"), candidate(), run)
 
-    def test_apply_requires_matching_restored_backup_and_quiescent_writers(self):
+    @patch("kind_database_rehearsal.quiescence")
+    @patch("kind_database_activation.load_preparation")
+    def test_apply_requires_matching_restored_backup_and_quiescent_writers(self, _preparation, _quiescence):
         with tempfile.TemporaryDirectory() as directory:
             backup = Path(directory) / "database.dump"
             backup.write_bytes(b"test-backup")
             receipt_path = Path(directory) / "receipt.json"
             receipt = {"cluster_uid": "kind-uid", "logical_app": "info", "release_id": "kind-test",
                        "restore_verified": True, "backup_file": str(backup),
+                       "release_content_sha256": target.release_content_sha256(candidate()),
+                       "cutover_backup_receipt": True, "online_preparation_only": False,
+                       "stopped_workloads_verified": True, "rows_unchanged_after_restore": True,
+                       "image": candidate()["images"]["backend"],
+                       "iterations": [{"restore_catalog_equal": True, "restore_all_rows_equal": True,
+                                       "migration_head": candidate()["migration_head"]}] * 2,
                        "sha256": hashlib.sha256(backup.read_bytes()).hexdigest()}
             receipt_path.write_text(json.dumps(receipt))
-            args = argparse.Namespace(cluster="KIND", action="apply", component="all", backup_receipt=receipt_path)
+            args = argparse.Namespace(cluster="KIND", action="apply", component="all", backup_receipt=receipt_path, kubeconfig="synthetic")
             responses = {
                 "nodes": {"items": [{"spec": {"providerID": "kind://docker/kind/node"}}]},
                 "namespace": {"metadata": {"uid": "kind-uid"}},
@@ -180,7 +188,10 @@ class DevelopmentReleaseTest(unittest.TestCase):
             responses["deployments"]["items"][0]["spec"]["replicas"] = 1
             with self.assertRaisesRegex(ValueError, "stop old"):
                 target.guard(args, candidate(), run)
-            for key, value in (("cluster_uid", "another"), ("restore_verified", False), ("sha256", "bad")):
+            for key, value in (("cluster_uid", "another"), ("restore_verified", False), ("sha256", "bad"),
+                               ("cutover_backup_receipt", False), ("online_preparation_only", True),
+                               ("release_content_sha256", "wrong"), ("iterations", []),
+                               ("rows_unchanged_after_restore", False), ("image", "wrong")):
                 broken = copy.deepcopy(receipt)
                 broken[key] = value
                 receipt_path.write_text(json.dumps(broken))

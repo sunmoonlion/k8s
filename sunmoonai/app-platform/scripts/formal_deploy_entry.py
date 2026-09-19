@@ -32,6 +32,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--timeout", type=int)
     parser.add_argument("--component", default="all")
     parser.add_argument("--backup-receipt", type=Path)
+    parser.add_argument("--identity-preparation", type=Path)
     parser.add_argument("action", nargs="?", choices=ACTIONS, default="plan")
     parser.add_argument("compatibility", nargs="*")
     return parser.parse_args()
@@ -93,6 +94,8 @@ def main() -> int:
         ]
         if args.backup_receipt:
             command.extend(("--backup-receipt", str(args.backup_receipt.resolve())))
+        if args.identity_preparation:
+            command.extend(("--identity-preparation", str(args.identity_preparation.resolve())))
         environment = os.environ.copy()
         environment.pop("DEBUG", None)
         return subprocess.run(command, env=environment, check=False).returncode

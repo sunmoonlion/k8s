@@ -131,7 +131,7 @@
     "tpl-app:k8s-deployment/templates/30-network-policies.yaml.tpl": "2eede852d9710c20cba56cfe4a1b9864cb2a9aac907babbf5b9cf2c258f5d3c5",
     "tpl-app:k8s-deployment/templates/40-ingress.yaml.tpl": "5f79e6a40bdfa8a581b92eeabe1a9f0cbf3a031221f5c9a40708b4682190ce3d",
     "development-release-input": "430f597d8b98b69f69ae46970ec86b309474c834e4a0a5ad4105edb24a59e796",
-    "k8s:sunmoonai/app-platform/scripts/development_release.py": "a6fa171413ce3e582b688e3cb3ae689cc4221755418ad42abc0cfc94341a82ec"
+    "k8s:sunmoonai/app-platform/scripts/development_release.py": "49a26804e03f6481e09e45430ccdadf997383c546aacda6202ffb013fd4f16c8"
   },
   "deployment_target": "KIND",
   "development_source_lock": {

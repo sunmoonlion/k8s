@@ -24,6 +24,7 @@ SCRIPTS = K8S_ROOT / "sunmoonai/app-platform/scripts"
 sys.path.insert(0, str(SCRIPTS))
 import formal_component_deploy as component_deploy
 import development_release
+import kind_database_activation
 STEADY_FILES = (
     "00-prerequisites.yaml",
     "20-runtime.yaml",
@@ -208,6 +209,8 @@ def apply(args: argparse.Namespace, data: dict[str, Any]) -> None:
 
     run_migration(args, data)
 
+    kind_database_activation.activate(args, data, run)
+
     apply_file(args, "20-runtime.yaml")
     apply_file(args, "40-ingress.yaml")
     for deployment in data["deployment_replicas"]:
@@ -323,6 +326,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--kubeconfig", type=Path)
     parser.add_argument("--cluster", choices=("KIND", "C1", "PRODUCTION"))
     parser.add_argument("--backup-receipt", type=Path)
+    parser.add_argument("--identity-preparation", type=Path)
     parser.add_argument("--kubectl", default="kubectl")
     parser.add_argument("--timeout", type=int, default=300)
     parser.add_argument("--component", choices=component_deploy.COMPONENTS, default="all")
@@ -348,7 +352,7 @@ def main() -> int:
         else:
             drift(args, data)
         return 0
-    except (DeployError, OSError, ValueError, subprocess.CalledProcessError) as exc:
+    except (DeployError, OSError, ValueError, kind_database_activation.common.RehearsalError, subprocess.CalledProcessError) as exc:
         print(json.dumps({"result": "failed", "error": str(exc)}, ensure_ascii=False), file=sys.stderr)
         return 1
 

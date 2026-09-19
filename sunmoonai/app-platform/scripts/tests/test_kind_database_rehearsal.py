@@ -14,6 +14,30 @@ spec.loader.exec_module(target)
 
 
 class DatabaseRehearsalTest(unittest.TestCase):
+    def test_quiescence_requires_exact_stopped_roles_and_no_hidden_writers(self):
+        args = argparse.Namespace(app="info")
+        deployments = [{"metadata": {"name": "info-backend-" + role, "uid": role},
+                        "spec": {"replicas": 0}, "status": {"replicas": 0}}
+                       for role in ("api", "worker", "scheduler")]
+        def check(changes=None, clients=b"0"):
+            resources = {"deployments": deployments, "pods": [], "jobs": [], "cronjobs": []}
+            resources.update(changes or {})
+            def kubectl(_args, *parts, **kwargs):
+                if "exec" in parts:
+                    return clients
+                return json.dumps({"items": resources[parts[3]]}).encode()
+            with patch.object(target, "kubectl", side_effect=kubectl):
+                return target.quiescence(args)
+        self.assertEqual(len(check()), 3)
+        for resources in ({"deployments": []}, {"deployments": [d | {"spec": {"replicas": 1}} for d in deployments]},
+                          {"pods": [{"metadata": {"name": "info-legacy-unlabelled"}, "status": {"phase": "Running"}}]},
+                          {"jobs": [{"metadata": {"name": "info-scanner"}, "status": {"active": 1}}]},
+                          {"cronjobs": [{"metadata": {"name": "info-scanner"}, "spec": {"suspend": False}}]}):
+            with self.subTest(resources=resources), self.assertRaises(target.RehearsalError):
+                check(resources)
+        with self.assertRaisesRegex(target.RehearsalError, "clients_remain"):
+            check(clients=b"1")
+
     def test_private_exclusive_regular_output(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "backup"

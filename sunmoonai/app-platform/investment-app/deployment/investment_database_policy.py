@@ -14,6 +14,18 @@ TEMPLATE = Path(__file__).resolve().parents[5] / "tpl-app/k8s-deployment"
 sys.path.insert(0, str(TEMPLATE))
 import runtime_database_policy as common
 
+# Exact pg_get_functiondef for the 0007 archive write barrier. This is not a
+# runtime EXECUTE grant and does not disable or replace the archive trigger.
+REVIEWED_DATABASE_FUNCTIONS = {
+    "agent_delivery_archive_readonly": (
+        "CREATE OR REPLACE FUNCTION public.agent_delivery_archive_readonly()\n"
+        " RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n"
+        "        BEGIN\n"
+        "            RAISE EXCEPTION 'Agent delivery archive is read-only; use outbox_dead_letter';\n"
+        "        END;\n        $function$\n"
+    )
+}
+
 
 def _fields(names):
     return frozenset(names.split())

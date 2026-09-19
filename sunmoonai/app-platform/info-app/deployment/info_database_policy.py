@@ -14,6 +14,30 @@ TEMPLATE = Path(__file__).resolve().parents[5] / "tpl-app/k8s-deployment"
 sys.path.insert(0, str(TEMPLATE))
 import runtime_database_policy as common
 
+# Exact PostgreSQL definitions reviewed against migrations 0008/0009. These
+# protect immutable business identities; accepting them does not grant EXECUTE.
+REVIEWED_DATABASE_FUNCTIONS = {
+    "info_guard_canonical_identity_v1": (
+        "CREATE OR REPLACE FUNCTION public.info_guard_canonical_identity_v1()\n"
+        " RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n"
+        "            IF NEW.canonical_url IS DISTINCT FROM OLD.canonical_url\n"
+        "               OR NEW.canonical_identity IS DISTINCT FROM OLD.canonical_identity THEN\n"
+        "                RAISE EXCEPTION 'canonical_identity_is_immutable' USING ERRCODE='23514';\n"
+        "            END IF;\n            RETURN NEW;\n        END $function$\n"
+    ),
+    "info_guard_distribution_identity_v1": (
+        "CREATE OR REPLACE FUNCTION public.info_guard_distribution_identity_v1()\n"
+        " RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n"
+        "            IF NEW.document_id IS DISTINCT FROM OLD.document_id\n"
+        "               OR NEW.document_version_id IS DISTINCT FROM OLD.document_version_id\n"
+        "               OR NEW.target_app IS DISTINCT FROM OLD.target_app\n"
+        "               OR NEW.target_dataset IS DISTINCT FROM OLD.target_dataset\n"
+        "               OR NEW.content_hash IS DISTINCT FROM OLD.content_hash THEN\n"
+        "                RAISE EXCEPTION 'distribution_identity_is_immutable' USING ERRCODE='23514';\n"
+        "            END IF;\n            RETURN NEW;\n        END $function$\n"
+    ),
+}
+
 
 def _columns(names):
     return frozenset(("id created_at updated_at " + names).split())

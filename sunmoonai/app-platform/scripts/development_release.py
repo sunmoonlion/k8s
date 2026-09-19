@@ -21,6 +21,10 @@ IDENTITY_MODE = "independent-v1"
 RUNTIME_ROLES = ("api", "worker", "scheduler")
 
 
+def release_content_sha256(release):
+    return hashlib.sha256(json.dumps(release, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
 def validate(release: dict[str, Any]) -> None:
     if release.get("architecture") != ARCHITECTURE or release.get("formal_release") is not False:
         raise ValueError("development release must explicitly be non-formal")
@@ -221,6 +225,10 @@ def guard(args: Any, release: dict[str, Any], run: Any) -> None:
         return
     if args.component != "all":
         raise ValueError("development upgrades require the complete App transaction")
+    # This release performs a one-time identity bootstrap after migration.
+    # Require a bound, completed broker preparation before any deployment write.
+    from kind_database_activation import load_preparation
+    load_preparation(args, release)
     receipt_path = getattr(args, "backup_receipt", None)
     if not receipt_path:
         raise ValueError("development upgrade requires --backup-receipt after a restore rehearsal")
@@ -229,6 +237,15 @@ def guard(args: Any, release: dict[str, Any], run: Any) -> None:
     if (receipt.get("cluster_uid") != namespace["metadata"]["uid"]
             or receipt.get("logical_app") != release["logical_app"]
             or receipt.get("release_id") != release["release_id"]
+            or receipt.get("release_content_sha256") != release_content_sha256(release)
+            or receipt.get("cutover_backup_receipt") is not True
+            or receipt.get("online_preparation_only") is not False
+            or receipt.get("stopped_workloads_verified") is not True
+            or receipt.get("rows_unchanged_after_restore") is not True
+            or receipt.get("image") != release["images"]["backend"]
+            or len(receipt.get("iterations", [])) != 2
+            or any(r.get("restore_catalog_equal") is not True or r.get("restore_all_rows_equal") is not True
+                   or r.get("migration_head") != release["migration_head"] for r in receipt.get("iterations", []))
             or receipt.get("restore_verified") is not True):
         raise ValueError("backup receipt does not match this App/release/cluster")
     backup = Path(receipt["backup_file"])
@@ -247,3 +264,6 @@ def guard(args: Any, release: dict[str, Any], run: Any) -> None:
         if component in ("backend-api", "backend-worker", "backend-scheduler"):
             raise ValueError("old backend Pods still exist; wait for complete termination")
     runtime_secret_gate(args, release, run)
+    from kind_database_rehearsal import quiescence
+    from types import SimpleNamespace
+    quiescence(SimpleNamespace(app=release["logical_app"], kubeconfig=args.kubeconfig))
