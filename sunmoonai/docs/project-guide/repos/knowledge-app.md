@@ -198,7 +198,8 @@ settings.retrieval_auth_required_scope in service_principal.scopes  # scope
 **retrieval v1 的 provider 元数据仍限定 ragflow**，其它 Provider 显式拒绝，不伪装身份。
 将来替换还需实现适配器、扩展契约并做消费者回归、重建索引/绑定及验证引用和未知结果；
 不能只换地址或直接复用旧 Provider 回执。实现及证据见
-[Provider 内部解耦记录](../../knowledge-provider-decoupling-luna.md)。
+[Provider 内部解耦证据与历史入口](../../legacy-backlog/verification-index.md#knowledge-provider-内部解耦)；
+适配义务与兼容边界由 Knowledge Backend 的 `docs/knowledge-provider.md` 维护。
 
 运行身份隔离使用 Knowledge 自身的表列策略，包含 provider operation journal 的权限
 边界；源码和隔离联合验证不代表业务账号已切换。续作见

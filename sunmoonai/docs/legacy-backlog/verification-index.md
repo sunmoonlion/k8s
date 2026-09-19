@@ -9,7 +9,7 @@
 - [B7v 固定候选、命令和 JUnit](../tasks/B7-B9-closeout/thread/0001-imp-none/0001-none/others/verification.md)：
   tpl-app `09ff4a9268db5006f5d32a2953f58c95b1369819`；四后端各 6 项生命周期实测；
   模板另验 3 联合、30 broker、完整后端 258 项，普通部署单元 18 项；未部署。
-- [Knowledge Provider 解耦](../knowledge-provider-decoupling-luna.md)：
+- [Knowledge Provider 解耦](#knowledge-provider-内部解耦)：
   Backend `26aa0715f15e2c8df4713559063a9a2e3215a1c8`，完整 450 项及独立角色 27 项；
   默认 RAGFlow，未接 WeKnora，未改变跨 App 契约，不是替换供应商运行验收。
 - [KIND 时点快照](../tasks/B7-B9-closeout/thread/0001-imp-none/0001-none/others/kind-cutover-preflight.md)：
@@ -73,7 +73,44 @@ git show 6757974b4084c92c8df62af637b020d998d4a160:sunmoonai/docs/v5-backlog-runt
 | `mooc-manus-langgraph-v5-implementation-plan.md` | 原任务编号与详细条件；N1～N6 保留原编号，设计时可按固定 Git 版本追溯 |
 | `mooc-manus-langgraph-v5-handoff-20260712.md` | 当年停在 P0-008C.5：构建/身份探测不等于部署接受，C6/C7 未完，正式 M1 未启动 |
 
-`mooc-manus-v5/` 的旧 ADR/脚本及 `evidence/v5/` 本轮未删除。特别是
-`mooc-manus-v5/scripts/verify_template_first_plan.py` 是校验旧计划文字的历史脚本，
-其输入随旧计划退出当前工作树；只能在完整历史 checkout 复现，**不是当前发布门禁**。
-当前门禁真源仍为 `architecture-v2/` 与 `app-platform/scripts/`，本轮不改其实现。
+## 第二批清退的历史材料
+
+以下原文在 k8s 固定提交 **`6facaaaad8eded7f96ee54c4c62d20ff37cd234d`** 中可取回：
+
+| 原路径（相对于 `sunmoonai/docs/`） | 处置与必要边界 |
+| --- | --- |
+| `mooc-manus-v5/`（111 个文件） | 旧 ADR、契约和脚本退出当前工作树；没有发现目录外现行代码按路径或脚本名调用它们。旧契约不替代 provider 仓的当前契约，旧部署/清理脚本不迁作新发布工具 |
+| `app-platform-architecture-v2-refactor-plan.md` | 原状态停在 R5 阶段，退出当前施工入口；当前事实看 project-guide，规则看 dev-agent-task/SDD/constraints，运行欠账看部署清单 |
+| `knowledge-provider-decoupling-luna.md` | 实施过程按 Git 保留；适配义务由 Knowledge Backend 的 `docs/knowledge-provider.md` 维护，关键验证与限制见下节 |
+
+例如，在 k8s 仓根读取单文件或列出原目录：
+
+```sh
+git ls-tree -r --name-only 6facaaaad8eded7f96ee54c4c62d20ff37cd234d -- sunmoonai/docs/mooc-manus-v5
+git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/mooc-manus-v5/adr/ADR-001-runtime-selection.md
+git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/app-platform-architecture-v2-refactor-plan.md
+git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/knowledge-provider-decoupling-luna.md
+```
+
+`evidence/v5/`、冻结 turn 及 `architecture-v2/` 保留原文。它们的历史命令或旧路径
+按原提交解释；复现需要匹配当时完整源码和依赖，不能只恢复一个脚本就在当前集群执行。
+例如旧 `verify_template_first_plan.py` 依赖已清退的旧计划，
+`verify_architecture_v2_image_lock.py` 依赖旧晋级模块；均不是本批开发发布门禁。
+清退文件不删除 Harbor 镜像、备份、数据库或 Git 历史，也不结束任何运行回滚保护窗口。
+
+`architecture-v2/` 仍含指南引用的发布/网络/回滚验证工具，以及模板发布清单引用的
+证据，本轮保持全部字节不变。后续单独梳理脚本及其依赖，迁到正式工具目录并验证调用后，
+再判断能否清退旧目录；这不是授权直接执行其中的旧 apply/供给脚本。
+
+### Knowledge Provider 内部解耦
+
+2026-09-13 固定 Backend `26aa0715f15e2c8df4713559063a9a2e3215a1c8`：
+完整后端 450 passed，独立真实 PG 角色 27 passed；Ruff/Pyright 通过。
+Info 分发帮助函数 6 passed、Investment 检索契约 7 passed；这些是历史固定版本结果，
+本轮删除文档没有重跑这些业务测试。原始命令、失败根因与修正经过见上方固定报告。
+
+数据面 `KnowledgeProvider` Port 统一类型与异常；RAGFlowProvider 负责供应商协议转换，
+事务、授权、幂等、未知回执恢复仍在应用层。非 RAGFlow 假实现验证内部边界，不是外部联调。
+默认装配仍只允许 RAGFlow，retrieval v1 的 provider 仍限定 ragflow；旧持久键、状态、
+绑定及 DTO 兼容保留。没有接入 WeKnora、改跨 App 契约、迁移业务数据或部署。
+后续替换需适配器、契约扩展及消费者回归、索引/绑定/引用迁移和真实回执验证，不能只改 URL。

@@ -29,9 +29,10 @@
 | [`legacy-backlog/`](../legacy-backlog/README.md) | 旧任务、部署清单、精简验证索引三个入口 | 2026-09-19 | 未来旧任务等架构讨论后接收；当前运行欠账单列，源码完成不代表已部署 |
 | [`tasks/B7-B9-closeout/`](../tasks/B7-B9-closeout/thread/0001-imp-none/0002-none/user-message.md) | 逐次请求、固定候选、测试原始输出与回执 | 2026-09-19 | 历史 turn 已冻结，按其提交理解；不把早先断点当当前任务指令 |
 | `evidence/` | v5 时期的验收 evidence | 2026-08 | 历史留档 |
-| `mooc-manus-v5/` | v5 架构的契约与脚本（111 文件） | 2026-08 | **已被 Architecture v2 取代**；其 `contracts/` 不在现行三套契约之列（见 [`topics/contracts.md`](topics/contracts.md) §7） |
+| 旧 `mooc-manus-v5/` | 111 份旧 ADR、契约和脚本已退出当前工作树 | 2026-09-19 | 仅按 [固定 Git 历史索引](../legacy-backlog/verification-index.md) 查询，不作现行契约或部署入口 |
 | `ai-tools/` | 工具调研笔记 | 2026-08 | 参考 |
 | 旧 v4/v5 计划、实施计划、handoff 与 24 份旧账散报告 | 已退出当前工作树 | 2026-09-19 | 必要目标/部署约束已收拢，完整原文按 [固定 Git 索引](../legacy-backlog/verification-index.md) 取回，不再另建备份目录 |
+| 旧 Architecture v2 重构计划、Knowledge Provider 解耦报告 | 已退出当前工作树 | 2026-09-19 | 当前架构看本指南，切换前置和解耦证据见 legacy-backlog；完整过程按固定 Git 版本查询 |
 | `docs/` 下其余散落 md | Harbor、Celery、YAML 生成、k8s 连接等主题笔记 | 不一 | **参考，未逐条与代码核对**。主题都还活着，但断言可能已漂移——用之前先回代码验一遍 |
 | `app-platform/docs/`（本目录之外） | 14 份目标态设计文档 | — | **已标注为"实现参考，非权威"**——它自陈"描述长期边界和目标状态" |
 

@@ -7,8 +7,9 @@
 > [`docs/project-guide/`](../../docs/project-guide/) 为准**（那里每条断言都可回代码取证）；
 > 与代码冲突时以代码为准。本目录保留作为设计意图与实现参考。
 >
-> 阶段、门禁和回滚点见
-> [App Platform Architecture v2 重构执行基线](../../docs/app-platform-architecture-v2-refactor-plan.md)。
+> 当前发布门禁见 [发布指南](../../docs/project-guide/topics/release.md)，
+> 本批修复的切换与回滚前置见 [部署清单](../../docs/legacy-backlog/deployment-checklist.md)。
+> 旧重构计划已退出当前目录，原文按 [历史索引](../../docs/legacy-backlog/verification-index.md) 查询。
 
 ## 总体设计
 

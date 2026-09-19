@@ -40,7 +40,7 @@ M1-400/411A/412 中已被技术栈合并、v2 与退役工作替代的旧迁移�
 放弃旧实现不等于放弃等价业务目标；新增浏览器/桌面方案不因旧编号而预先受限。
 
 已有证据入口：[精简验证索引](verification-index.md)、
-[Knowledge Provider 内部解耦](../knowledge-provider-decoupling-luna.md)、
+[Knowledge Provider 内部解耦证据](verification-index.md#knowledge-provider-内部解耦)、
 [B7v 固定验证](../tasks/B7-B9-closeout/thread/0001-imp-none/0001-none/others/verification.md)。
 监控唯一任务入口：[N4-OPS-01](../tasks/N4-OPS-01/thread/0001-imp/0001/user-message.md)，
 尚未安装/验收到达，仍按此前决定留待未来开发。

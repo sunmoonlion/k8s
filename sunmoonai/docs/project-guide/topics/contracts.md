@@ -102,9 +102,10 @@ web-interaction v1 在四个仓里都有完整的 DTO、Port 与前端 zod，
 
 ## 7. 另有一批历史契约
 
-`k8s/sunmoonai/docs/mooc-manus-v5/contracts/` 下存有 v5 时期的契约
-（`research-agent-web` / `research-runtime` / `web-interaction` / `security`）。
-它们**不在上述三套现行契约之列**，属历史归档；引用前先确认是否仍有效。
+旧 v5 契约（`research-agent-web` / `research-runtime` / `web-interaction` / `security`）
+已随旧目录退出当前工作树。它们**不在上述三套现行契约之列**，
+原文按 [历史索引](../../legacy-backlog/verification-index.md) 的固定 Git 版本查询，
+不能用旧 schema 替代 provider 仓的现行契约。
 
 ## 8. 跨 App 消息里放什么
 
