@@ -30,7 +30,7 @@ standards 的用词以本表为准：**同一个意思只用一个词**，「不
 
 ## 阶段与交付物
 
-**阶段**有五个：PRD、SDD、IMP、UAT，以及横跨它们的 ADR，规则见 [PRD](prd/prd-rules.md)、[SDD](sdd/sdd-rules.md)、[IMP](imp/imp-rules.md)、[UAT](uat/uat-rules.md)、[ADR](adr/adr-rules.md)。每一问的用户消息怎么写，见各阶段规则的「这一段的用户消息」与 [任务的生命周期](lifecycle.md)「用户消息写多严」。
+**阶段**有五个：PRD、SDD、IMP、UAT，以及横跨它们的 ADR，规则见 [PRD](prd/prd-rules.md)、[SDD](sdd/sdd-rules.md)、[IMP](imp/imp-rules.md)、[UAT](uat/uat-rules.md)、[ADR](adr/adr-rules.md)。每一段该问什么，见各阶段规则的「这一段该问什么」；写多严见 [任务的生命周期](lifecycle.md)「用户消息写多严」。
 
 | 词 | 含义 | 不要用 |
 | --- | --- | --- |
