@@ -92,7 +92,7 @@ git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/app-platform-ar
 git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/knowledge-provider-decoupling-luna.md
 ```
 
-`evidence/v5/`、冻结 turn 保留原文；`architecture-v2/` 的后续处置见下节。历史命令或旧路径
+冻结 turn 保留原文；`evidence/v5/` 与 `architecture-v2/` 的后续清退见下节。历史命令或旧路径
 按原提交解释；复现需要匹配当时完整源码和依赖，不能只恢复一个脚本就在当前集群执行。
 例如旧 `verify_template_first_plan.py` 依赖已清退的旧计划，
 `verify_architecture_v2_image_lock.py` 依赖旧晋级模块；均不是本批开发发布门禁。
@@ -156,3 +156,17 @@ git show 82c709705aa92b1b44d9913b4416d4ca505a6665:sunmoonai/docs/architecture-v2
 历史证据里的路径、原命令与代码 SHA 按原版本理解，不能把新路径测试结果冒充旧版本重新验收。
 不改发布 digest、清理 Harbor 镜像/缓存、删除业务备份或执行旧退役事务；镜像保护集仍须
 结合最新运行引用与保护锁核对，删除文档不解除保护。
+
+### 旧 evidence 目录清退
+
+用户要求删除现存 `sunmoonai/docs/evidence/`，其中 78 份 v5 历史结果、快照和回执
+已退出当前工作树。原文固定在 k8s **`29f8465312735895544b36b5475c4520881e9a06`**，
+未删除 Git 历史、冻结 turn、本轮测试结果或任何业务/镜像资产。
+
+```sh
+git ls-tree -r --name-only 29f8465312735895544b36b5475c4520881e9a06 -- sunmoonai/docs/evidence
+git show 29f8465312735895544b36b5475c4520881e9a06:sunmoonai/docs/evidence/v5/V5-RELEASE-1.0.0/result.md
+```
+
+这是历史材料清理，不取消未来任务保存验收证据的义务；现有计划中的证据目录约定
+本轮不改。历史结论仅为其固定候选背书，不能用于当前开发包销账。
