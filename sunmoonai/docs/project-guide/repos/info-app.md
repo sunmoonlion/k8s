@@ -96,7 +96,7 @@ HTTPS/443；解析结果全量校验后固定 IP，保留 TLS 主机校验，逐
 advisory lock，业务中间提交不释放。忙时不抓取、不写终态/Inbox；Worker 复用公共有界
 重排/死信/重放，发现接口返回 409。不同来源 ID 不是同站总限速，不承诺公平等待；
 每个执行额外占用一个数据库连接。源码候选与实际部署分开验收。边界及测试见
-[`v5 处置清单`](../../v5-backlog-disposition-luna.md)。
+[部署清单](../../legacy-backlog/deployment-checklist.md)。
 
 B3 源码候选需要先执行 `20260912_0008`：原 URL 保留，派生身份键唯一；首次创建
 upsert，文档行锁覆盖版本号、当前版本和索引意图。旧程序缺身份键的新文档/缺写协议的新版本
@@ -192,7 +192,7 @@ subject/audience 绑定与 `delivery:observe` 授权；不接受浏览器 Cookie
 
 共享健康、进展指标与身份策略沿用模板。Info 的领域表列权限需用本仓策略，不能照搬
 模板空领域授权；本轮隔离测试已覆盖实际角色运行，但业务库迁移与账号切换未实施。
-最新边界与续作入口见 [处置清单](../../v5-backlog-disposition-luna.md)。
+最新边界与续作入口见 [部署清单](../../legacy-backlog/deployment-checklist.md)。
 
 ## 8. 验证
 

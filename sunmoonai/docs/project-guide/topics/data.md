@@ -64,7 +64,7 @@ broker ACK、控制探针 pong、已提交 Inbox、Provider 业务成功是不�
 epoch 墓碑并显式标失效，立即重排不再依赖墙钟门槛；真实预约/退避仍按 DB 时间执行。
 Knowledge 对未知外部写入结果保留操作账并阻断盲目重传。**不能按固定天数直接删
 Outbox/Inbox/死信/租约**：去重、回滚、Provider 回执和迟到执行者仍可能引用它们。
-来源、验证和未完成保留策略见[归档引用审计](../../v5-backlog-retention-audit-luna.md)。
+来源、验证和未完成保留策略见[保留保护条件](../../legacy-backlog/deployment-checklist.md)。
 
 ## 6. 幂等与副作用
 

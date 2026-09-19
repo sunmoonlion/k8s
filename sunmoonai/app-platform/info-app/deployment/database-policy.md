@@ -3,7 +3,7 @@
 `info_database_policy.py` 只返回加法 GRANT，不连接数据库，不供给账号或修改部署。
 依赖五仓并列拓扑中的 `tpl-app/k8s-deployment/runtime_database_policy.py`；公共六表
 授权原样复用，Info 只增加自己的领域授权。完整证据见
-[B7p 验证报告](../../../docs/v5-backlog-info-database-policy-luna.md)。
+[B7p 验证报告](../../../docs/legacy-backlog/verification-index.md)。
 
 前置条件是全新独立角色、可信对象所有者、没有继承/PUBLIC/历史/default ACL 旁路。
 不能将输出用于“收紧”现有宽权限账号；也不替代行级、租户、浏览器或工具权限。

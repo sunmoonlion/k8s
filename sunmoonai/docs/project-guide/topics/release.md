@@ -1,6 +1,6 @@
 # 发布与门禁
 
-> 取证时点：2026-09-13 源码及发布边界复核 ｜ 相关规则见 [`../../dev-agent-task/composition/constraints.md`](../../dev-agent-task/SDD/constraints.md)「发布」R1–R7
+> 更新：2026-09-19，核当前 bundle 的开发发布标志及隔离/业务部署边界 ｜ 相关规则见 [`../../dev-agent-task/SDD/constraints.md`](../../dev-agent-task/SDD/constraints.md)「发布」R1–R7
 > 逐行位置见 [`../repos/k8s.md`](../repos/k8s.md) §4–§5
 
 ## 1. 发布单元
@@ -119,12 +119,14 @@ render.py 解析出 digest 写入 bundle
 | 层 | 声明 |
 | --- | --- |
 | 代码 | 四个后端 `pyproject.toml` 与 `uv.lock` 均 `2.0.0`；八个前端 `package.json` 亦 `2.0.0`；`test_package_version_matches_the_formal_release` **主动断言**须与发布别名一致 |
-| 部署 | 三个 `release.json` 全部 `formal_release: true`；模板 manifest `status: FORMAL_RELEASE`、`template_release: 2.0.0` |
+| 当前开发 bundle | 三个 `release.json` 均 `formal_release: false`、目标 KIND；不把它们误认成 R7 正式发布 |
+| 历史模板发布 | 模板 manifest 的正式发布声明只为其固定 tuple 背书，不能替后续开发提交背书 |
 
 包版本与发布别名一致不是矛盾。判断部署必须核对对应提交、构建产物 digest、
 冻结 bundle/manifest 与实际 Pod imageID，并关联该版本的门禁证据。
 历史正式 manifest 不能为了同步开发提交而改写为尚未构建的新 HEAD。
-本次暂停只同步源码与文档，不构建/推送 Harbor 镜像、不更新业务部署。
+当前先进行源码集成/同步；镜像构建、Harbor 推送、bundle 生成和实际部署各自核验，
+不由 Git 同步自动完成。具体操作范围和前置见 [部署清单](../../legacy-backlog/deployment-checklist.md)。
 
 复核包版本和历史发布声明（不能代替 live 核验）：
 ```bash
@@ -135,7 +137,7 @@ python3 -c "import json;print(json.load(open('k8s/sunmoonai/app-platform/info-ap
 ## 8. 当前运行身份候选的发布前置
 
 数据库 API/Worker/Scheduler/Migration 权限策略、独立连接键与 broker 预声明拓扑候选
-已有隔离验证，见 [B7 联合运行证据](../../v5-backlog-joint-runtime-identity-luna.md)。
+已有联合运行及生命周期隔离验证，见 [精简验证索引](../../legacy-backlog/verification-index.md)。
 它们不意味着业务环境已从共享账号切换；不能只翻开预声明开关，或直接重跑旧供给脚本。
 后续必须核验供给与重启时 definitions 一致性、旧 PUBLIC/default ACL、LOGIN 状态、
 存量连接排空与撤权、备份恢复及受控切换。运行探针、指标输出也不等于已接监控告警。

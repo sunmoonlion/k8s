@@ -58,7 +58,7 @@
 | Admin `/api/knowledge/*` 需 `knowledge:admin` scope | 403 |
 | 检索需 RAGFlow 已配置 | `ServiceUnavailableError` |
 | **检索三重授权**（见 §4.2） | `ForbiddenError` |
-| Artifact 必须恰好 1 个 `s3://` 引用 | `RAGFlowError` |
+| Artifact 必须恰好 1 个 `s3://` 引用 | 供应商无关 `ArtifactError`（属于 `ProviderError`） |
 | bucket / prefix 受 allowlist 约束 | 摄入拒绝 |
 | 内部 ingest / retrieve 需 Bearer + subject allowlist | 401/403/503 |
 | 生产关闭 OpenAPI 与 `/docs` | 无文档端点 |
@@ -99,7 +99,7 @@ dataset、原文件长度与 SHA-256。历史 running 缺失回执标为 legacy_
 dispatch/retry/Worker/恢复/最终落库复核，force 不能绕过；旧无快照任务不自动补绑。
 dataset 仅查找并核 ID/name，数据面创建入口失败关闭；配置缺目标不能触发自动创建。
 静态配置不是即时撤权：部署必须排空旧 API/Worker、同步一致配置；实际映射、存量任务和
-切换未验收，不能直接无配置部署。详细边界见 [`v5 处置清单`](../../v5-backlog-disposition-luna.md)。
+切换未验收，不能直接无配置部署。详细边界见 [部署清单](../../legacy-backlog/deployment-checklist.md)。
 
 B6b 源码：执行状态在 job.metadata_json 的保留项 ingestion_execution_v1，首条受理历史
 保存服务端协议标记；原请求留在 payload，用户 retry_count 不作为代次。消息携带
@@ -108,7 +108,7 @@ generation/step，与 upload_identity 资源键核对；旧游标/代次不动�
 deadline/interval 首次 parse 前按 DB 时钟固定，后续指数退避且最多 60 秒，每次读取受
 剩余 deadline 限制；poll 只查一次文档状态，另查租户身份，无 sleep 或重复 POST。
 旧无协议标记任务不自动迁入；部署前必须一致升级/排空，详细验收见
-[`B6b 证据`](../../v5-backlog-parse-polling-luna.md)。
+[`B6b 证据`](../../legacy-backlog/verification-index.md)。
 
 领域身份用 **uuid5 稳定派生**（可跨环境重算），RAGFlow 的 dataset/document/chunk id
 是**私有 provider binding，永不是领域身份**。
@@ -123,8 +123,8 @@ payload.security_context.tenant_id == retrieval_default_tenant_id   # 租户一�
 settings.retrieval_auth_required_scope in service_principal.scopes  # scope
 ```
 
-通过后：查 `indexed` 且 `provider=ragflow` 的版本 → 按 `tenant:{id}` access_scope 过滤
-→ 调 RAGFlow `/retrieval` → chunk 映射回版本，按 token_budget 逐条扣减并截断
+通过后：查 `indexed` 且匹配当前配置 Provider 的版本 → 按 `tenant:{id}` access_scope 过滤
+→ 调数据面 Port（当前 RAGFlow 适配器调用 `/retrieval`）→ chunk 映射回版本，按 token_budget 逐条扣减并截断
 → evidence_id / chunk_id 用 uuid5 稳定派生 → Citation 由 `Citation.from_evidence` 投影。
 
 ### 4.3 双关系服务身份
@@ -202,7 +202,7 @@ settings.retrieval_auth_required_scope in service_principal.scopes  # scope
 
 运行身份隔离使用 Knowledge 自身的表列策略，包含 provider operation journal 的权限
 边界；源码和隔离联合验证不代表业务账号已切换。续作见
-[处置清单](../../v5-backlog-disposition-luna.md)。
+[部署清单](../../legacy-backlog/deployment-checklist.md)。
 
 ## 8. 验证
 

@@ -7,7 +7,7 @@
 
 - `docs/info-app-spider-architecture.md`（采集与资讯治理）
 - `sunmoonai/docs/mooc-manus-v5/adr/ADR-003-info-knowledge-artifact-contract.md`（Info→Knowledge 分发）
-- `sunmoonai/docs/mooc-manus-langgraph-longterm-plan-v5.md`（App 边界）
+- 历史 v5 App 边界输入已退出当前目录，按 `sunmoonai/docs/legacy-backlog/verification-index.md` 的固定 Git 版本查原文；现状以 project-guide 为准。
 
 ---
 

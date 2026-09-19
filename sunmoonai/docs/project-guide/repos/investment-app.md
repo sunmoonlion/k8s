@@ -173,7 +173,7 @@ Phase-0 与 Pilot 均经会话级 AgentExecutorPort 执行；接受的状态保�
 本仓使用含 Agent/checkpoint 表的领域权限策略，实际 PostgreSQL Saver、Worker 列级
 权限以及 API 取消/租约相关权限已有隔离验证；不能套用模板空领域权限。共享指标仍不等于
 实际告警接收，账号供给与旧权限撤销尚未落到业务环境，见
-[处置清单](../../v5-backlog-disposition-luna.md)。
+[部署清单](../../legacy-backlog/deployment-checklist.md)。
 
 ## 8. 验证
 

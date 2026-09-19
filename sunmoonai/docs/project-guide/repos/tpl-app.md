@@ -113,7 +113,7 @@ API readiness（2026-09-13 源码）在 2 秒协作式探测预算内检查 Redi
 `alembic_version`；必须恰好一个版本且等于本镜像迁移链的单 head，否则通用 503。
 每次查数据库，不缓存 ready、不自动迁移或提权；live 保持无依赖。
 这不验证完整表结构/数据，也不覆盖 Worker/Scheduler，见
-[`B7b 子项与证据`](../../v5-backlog-coverage-luna.md)。部署与业务角色权限尚未验收。
+[`B7b 子项与证据`](../../legacy-backlog/verification-index.md)。部署与业务角色权限尚未验收。
 
 投递观测入口 `python -m app.cli.delivery_metrics [--format prometheus]` 从本 App
 账本只读计算 gauge。`delivery_observers.py` 装配实际 delivery policy，实例沿用 handler
@@ -123,33 +123,33 @@ API readiness（2026-09-13 源码）在 2 秒协作式探测预算内检查 Redi
 不缓存旧值。CLI/HTTP 输出不等于实际接好 Prometheus，也不能证明 Worker/Scheduler
 消费正常；后端 `docs/delivery-observation.md`
 说明字段、权限/超时和未完成接线，分包证据见
-[B7d 只读观测](../../v5-backlog-delivery-observation-luna.md)。
+[B7d 只读观测](../../legacy-backlog/verification-index.md)。
 
 B7j 本地源码另从同一账本聚合匹配 consumer 的已提交 Inbox 数和最大记录时间，
 由上述 CLI/HTTP 输出，仍是 gauge；不建第二本账。回滚/未提交/重复/错 consumer
 不虚增，无回执 hint 不当作消费回执；非有限时间使整个采集失败。
 记录时间不是提交时间或心跳，数量会随保留/恢复变化，不能证明每个 Worker 或业务结果
 健康。真实共享 prefork 执行链与故障边界见
-[B7j 回执进展](../../v5-backlog-worker-progress-luna.md)，不推定当前业务部署已生效。
+[B7j 回执进展](../../legacy-backlog/verification-index.md)，不推定当前业务部署已生效。
 
 Worker 消费配置探针 `python -m app.cli.worker_readiness`（B7e 源码，四仓门禁已过，未部署）定向本 POD_NAME，
 校验实际队列/交换机/路由/持久性及本镜像应用任务注册；6 秒子进程预算，失败固定错误，
 无业务任务/数据库操作。模板未来 bundle 已接该命令；实例历史镜像/release 未重写，
 须联合新镜像发布才能启用。它不是消费进展或 Scheduler 心跳，也不作 liveness；
-详见 [B7e 证据与边界](../../v5-backlog-worker-readiness-luna.md)。
+详见 [B7e 证据与边界](../../legacy-backlog/verification-index.md)。
 
 Scheduler bootstrap 已选用继承 PersistentScheduler 的活动观察类（B7i 本地源码，
 未部署）。`python -m app.cli.scheduler_activity --schedule <同一文件> --max-age <秒>`
 只在同容器/UID/PID namespace 读临时快照：BOOTTIME 年龄、boot/PID 启动标识及
 进程状态校验；循环返回和发送调用返回/异常分列，不证明 broker 确认或消费完成。
 未接自动重启或 Kubernetes 探针；说明与固定门禁见
-[B7i 活动观测](../../v5-backlog-scheduler-activity-luna.md)。实际监控部署/采集/告警
+[B7i 活动观测](../../legacy-backlog/verification-index.md)。实际监控部署/采集/告警
 按所有者要求进入[未来 N4-OPS-01](../../tasks/N4-OPS-01/thread/0001-imp/0001/user-message.md)，尚未实施。
 
 公共日志（2026-09-13 源码）：Postgres 固定关闭 SQL echo、隐藏绑定参数；API 与
 Celery Worker/Scheduler 均将 SQLAlchemy engine/pool、httpx/httpcore 限为 WARNING，
 应用 DEBUG 不自动打开 wire 日志。应用审计与 Celery 自身日志保留原级别；不是完整脱敏。
-实现和验证边界见 [`B7a 证据`](../../v5-backlog-logging-luna.md)，不推定当前部署已生效。
+实现和验证边界见 [`B7a 证据`](../../legacy-backlog/verification-index.md)，不推定当前部署已生效。
 
 ### 4.4 Web interaction：默认不可用
 

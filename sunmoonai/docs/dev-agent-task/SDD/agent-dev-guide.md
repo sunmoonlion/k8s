@@ -188,7 +188,8 @@ Submission
 - **但 Profile 目前不生效**：`RunService.create_run` 解析并把 key/version 写进
   run 行，`dispatch_agent_graph` 只传 run_id / user_input / security_context，
   两条生产图对 `allowed_tools` 等的引用数为 0。**它现在是审计字段，不是约束**
-- `mooc-manus-langgraph-longterm-plan-v4.md` §20 有一份 102 行的结构可作输入
+- 旧 v4 第 20 节的 Profile 概念已提取到 [待接收旧任务](../../legacy-backlog/README.md)；
+  完整原文按该目录验证索引的固定 Git 版本查看，不作为新架构定稿。
 
 ### 7.7 需要改内核时，提交明确的修订工作单元
 

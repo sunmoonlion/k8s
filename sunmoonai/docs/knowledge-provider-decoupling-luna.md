@@ -59,7 +59,7 @@ gitlink `8f87061b70c2136286941efa58f0b99cc246a405`；k8s 实现说明与权限�
 实际子模块及干净状态；本段是核验后的文档回填，随单独回执提交同步。
 没有新建分支、强推、reset/realign、更新其它工位或启动本地 Opus；不构建/推送镜像，
 不部署、不切换 Provider。两份协议草案内容保持不动。B7 旧账游标仍保留在
-[处置清单](v5-backlog-disposition-luna.md)，本包不代替旧账销项。
+[部署清单](legacy-backlog/deployment-checklist.md)，本包不代替旧账销项。
 
 ## 实现与验证回执
 

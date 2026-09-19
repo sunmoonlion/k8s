@@ -1,6 +1,6 @@
 # 项目指南 · 导航
 
-> 后端/投递/运行身份源码复核：2026-09-13；前端基础结构沿用 2026-08-29 取证。
+> 重构与文档入口更新：2026-09-19；后端源码、隔离验证和业务部署分开记录，前端基础结构沿用原取证。
 >
 > **入口是同目录下的 [`overall-architecture.md`](overall-architecture.md)**，先读它。
 > 本文件只是 `repos/` `topics/` 两个子目录的导航：
@@ -26,12 +26,12 @@
 | 位置 | 是什么 | 最近变动 | 定性 |
 | --- | --- | --- | --- |
 | `architecture-v2/` | Architecture v2 重构（R0–R7）的门禁脚本与 evidence | 2026-08 | **门禁脚本仍在用**（见 [`topics/release.md`](topics/release.md)）；其中的结果文档属过程记录 |
-| `v5-backlog-*.md` | 停工旧账的处置、固定源码测试和运行预检回执 | 2026-09-13 | **当前恢复工作游标与验收证据**，入口是[处置清单](../v5-backlog-disposition-luna.md)；不是新产品功能已完成或已部署的声明 |
+| [`legacy-backlog/`](../legacy-backlog/README.md) | 旧任务、部署清单、精简验证索引三个入口 | 2026-09-19 | 未来旧任务等架构讨论后接收；当前运行欠账单列，源码完成不代表已部署 |
+| [`tasks/B7-B9-closeout/`](../tasks/B7-B9-closeout/thread/0001-imp-none/0002-none/user-message.md) | 逐次请求、固定候选、测试原始输出与回执 | 2026-09-19 | 历史 turn 已冻结，按其提交理解；不把早先断点当当前任务指令 |
 | `evidence/` | v5 时期的验收 evidence | 2026-08 | 历史留档 |
 | `mooc-manus-v5/` | v5 架构的契约与脚本（111 文件） | 2026-08 | **已被 Architecture v2 取代**；其 `contracts/` 不在现行三套契约之列（见 [`topics/contracts.md`](topics/contracts.md) §7） |
 | `ai-tools/` | 工具调研笔记 | 2026-08 | 参考 |
-| **`mooc-manus-langgraph-longterm-plan-v5.md`** 及其实施计划、handoff | 上一轮的施工基线 | 2026-07 | **已降级为历史设计输入**，见 [`../dev-agent-task/components/0001-backend/composition/development-plan.md`](../dev-agent-task/SDD/modules/0001-backend/PRD/development-plan.md)「起点」。其**前后端对接**部分仍有效且详尽，相应工作启动时可引用；其 §14 多智能体（23 行）不作为智能体架构依据。任务游标停在 `P0-008C = PAUSED_FOR_ARCHITECTURE_REVIEW` |
-| `mooc-manus-langgraph-longterm-plan-v4.md` | v5 的前身 | 2026-07 | 历史。但其 **§20 `AgentProfile` 结构（102 行）比 v5 §14 完整**，现重新生效为专用部分的载体，见 dev-agent-task 的 agent-dev-guide「7.4 风险和未决」U4 |
+| 旧 v4/v5 计划、实施计划、handoff 与 24 份旧账散报告 | 已退出当前工作树 | 2026-09-19 | 必要目标/部署约束已收拢，完整原文按 [固定 Git 索引](../legacy-backlog/verification-index.md) 取回，不再另建备份目录 |
 | `docs/` 下其余散落 md | Harbor、Celery、YAML 生成、k8s 连接等主题笔记 | 不一 | **参考，未逐条与代码核对**。主题都还活着，但断言可能已漂移——用之前先回代码验一遍 |
 | `app-platform/docs/`（本目录之外） | 14 份目标态设计文档 | — | **已标注为"实现参考，非权威"**——它自陈"描述长期边界和目标状态" |
 
@@ -46,8 +46,8 @@
 
 删的都是**活引用为 0** 的。取回：`git log --diff-filter=D -- sunmoonai/docs/<路径>`。
 
-留下的两类：`architecture-v2/` 等发布取证真源；v5 计划及其证据链
-（前后端对接部分仍有效）。主题笔记按上表定性保留。
+当前保留 `architecture-v2/` 等仍在使用的发布门禁、冻结的历史证据，以及主题笔记。
+旧计划的交互目标与 Profile 概念已提取到待接收清单；删除旧散文档不删除代码或 Git 历史。
 
 ## 按任务找
 
@@ -64,7 +64,9 @@
 | 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-agent-task/composition/protocol/competition-protocol.md`](../dev-agent-task/protocol/competition-protocol.md) |
 | 推送改动、跨机拉取、子模块的坑 | `~/five-repos-sync/sync-five-repos.sh`；规则见 [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/SDD/constraints.md) T4 |
 | 知道接下来要建什么 | [`../dev-agent-task/`](../dev-agent-task/) |
-| 从本次暂停继续旧账工作 | [逐步处置清单](../v5-backlog-disposition-luna.md)，先同步再工作；不从历史便签恢复旧技术栈 |
+| 继续重构的部署工作 | [当前部署清单](../legacy-backlog/deployment-checklist.md)，先同步再工作 |
+| 讨论新架构前找旧需求 | [旧任务待接收清单](../legacy-backlog/README.md)，不提前搬入正式模块树 |
+| 查旧修复的测试或原文 | [验证与历史索引](../legacy-backlog/verification-index.md)，按固定版本取证 |
 | 复核本文档集的某条断言 | **读代码**，别的都不算数 |
 | 本轮查出的缺口都怎么处置了 | 结论已在各自投影里；过程 `git log --grep 'O[0-9]'` |
 
@@ -102,9 +104,9 @@ project-guide/
 
 ## 本轮的已知缺口（读之前先知道）
 
-- **源码不等于运行态**：9 月 13 日曾只读核查业务 KIND，另完成独立临时环境测试；
-  具体时点见 [运行预检](../v5-backlog-runtime-preflight-luna.md) 和
-  [联合身份验收](../v5-backlog-joint-runtime-identity-luna.md)。本目录不将这些证据
+- **源码不等于运行态**：最近的业务 KIND 只读快照与独立临时环境测试分别列在
+  [部署清单](../legacy-backlog/deployment-checklist.md) 和 [验证索引](../legacy-backlog/verification-index.md)。本目录不将这些证据
   推定为当前业务镜像已升级、权限已切换或 NetworkPolicy 已执行；继续工作时重查。
 - **前端未逐文件深读**：约 570 个 ts/tsx，核到了结构、入口、契约与关键配置层。
+- **新架构尚未落代码**：三部分职责划分仍保留 B-S；产品合同与正式任务树将在随后讨论中对齐。
 - 本文档集**不写进度**。哪些缺口修过、怎么修的，见 git 历史。

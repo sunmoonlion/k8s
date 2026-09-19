@@ -1,6 +1,6 @@
 # SunMoonAI 项目总览
 
-> 最后更新：2026-09-13 ｜ 本次复核后端、投递、运行身份与发布边界；前端结构沿用原取证。
+> 最后更新：2026-09-19 ｜ 重构源码、验证/部署边界与文档入口更新；前端结构沿用原取证。
 >
 > **本文件是进入这个项目的唯一入口。**读完它，你应当知道：改动落在哪个仓、
 > 那里有什么不可违反的规则、以及去哪里查更细的东西。
@@ -12,6 +12,17 @@
 ---
 
 ## 1. 这个项目是什么
+
+**先区分现状与目标**：当前源码是 Next.js（Admin/Web）＋单领域 FastAPI Backend，
+共享可靠投递与 Knowledge Provider 内部解耦已落到源码；不再沿用 Vue/Nest 多套主线。
+后端修复及角色策略有隔离验证，业务 KIND 的新镜像/身份/迁移尚待受控切换，不能称
+“重构已部署完毕”。具体前置见 [部署清单](../legacy-backlog/deployment-checklist.md)。
+
+下一阶段按桌面客户端、本地 runtime、后端三部分讨论，**同时保留 B-S 结构**。
+这不是已经实现了桌面端或本地 runtime，也不是取消现有浏览器入口。
+新产品合同与正式任务树的对齐留待架构讨论；本指南只投影现有源码，不据目标合同
+把当前 Investment LangGraph Pilot 描述成已被替换。旧任务独立存于
+[待接收清单](../legacy-backlog/README.md)，不再从 v4/v5 计划恢复工作。
 
 一条内容流水线，加上消费它的智能体：
 
@@ -342,7 +353,7 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 
 ### 9.2 共享能力：源码接线与仍留白项
 
-2026-09-13 按旧账处置更新源码投影；源码集成/暂停同步状态以处置清单为准，业务未部署本批增量。
+2026-09-19 按已固定源码与隔离证据更新；同步/发布结果按各次回执核验，业务未部署本批增量。
 下面不以声明/源码存在推断当前镜像已经具备能力。
 
 | 项 | 实际状态 |
@@ -352,11 +363,12 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | **Celery 周期任务** | 源码已配置每 5 秒可靠投递 pump；Investment 保留领域调度。配置存在不证明 Scheduler 活性或 Worker 消费进展 |
 | **`/api/internal/v1` 入站面** | B7h 四仓共享受保护投递指标入口 `GET /api/internal/v1/delivery/metrics`，需独立服务主体及 `delivery:observe`；Knowledge/Investment 原领域 Internal 路由保留。尚未为指标接实际采集器 |
 | **健康与进展** | API ready 校验本镜像迁移 head；Worker 探针核队列/路由/注册；Beat 活动与已提交 Inbox 进展分别观测，不能互相冒充 |
-| **进程权限** | 四角色 PG 列 ACL、三角色 broker 预建拓扑和联合故障恢复已在隔离环境通过；真实账号供给/撤销及重启一致性仍待验收 |
+| **进程权限** | 四角色 PG 列 ACL、三角色 broker 预建拓扑、联合故障恢复、临时容器重启/撤权及数据库导出恢复已隔离验证；真实业务账号/启动定义/数据切换仍待验收 |
 | **保留与监控** | 无自动回执/租约墓碑 GC；Prometheus/Alertmanager 安装、采集、告警送达留未来计划，不能将 HTTP 指标存在当接线完成 |
 
-产品留白的后续设计见 [`../dev-agent-task/components/0001-backend/composition/development-plan.md`](../dev-agent-task/SDD/modules/0001-backend/PRD/development-plan.md)；
-旧账源码/运行态边界见 [逐步处置清单](../v5-backlog-disposition-luna.md)。
+产品留白先查 [待接收旧任务](../legacy-backlog/README.md) 与 [产品合同](../product/product-contract.md)；
+当前 dev-agent-task 树尚待与最新决定对齐，不将旧模块拆分当新定稿。
+源码/运行态边界见 [部署清单](../legacy-backlog/deployment-checklist.md)。
 
 ### 9.3 各 App 的具体缺口
 

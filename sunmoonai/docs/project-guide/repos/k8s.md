@@ -166,7 +166,7 @@ App 特有：Investment 有 `knowledge_binding`；Knowledge 有 `retrieval_datas
 | auth-app 与三 App 同模型 | auth-app 是 Helm，无 bundle/release.json |
 | R7 终检覆盖网络策略包级行为 | 不覆盖，那是独立脚本 + 独立集群 |
 
-当前续作入口为 [v5 遗留处置清单](../../v5-backlog-disposition-luna.md)，不依赖仓根旧便签。
+当前续作入口为 [当前部署清单](../../legacy-backlog/deployment-checklist.md)，不依赖仓根旧便签。
 运行身份候选已经过隔离数据库/broker/真实进程联合验证，但尚未更新业务环境。
 旧供给入口的角色 LOGIN、默认 ACL 和重启 definitions 可能影响新策略；切换前必须
 按 [发布前置](../topics/release.md) 核验，不能把源码同步当作供给或部署完成。
