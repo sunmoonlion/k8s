@@ -25,6 +25,9 @@ protocol/                          多方竞争协议在本平台的具体做法
 
 ## 从哪里读起
 
+旧开发遗留任务暂存在 [独立待接收清单](../legacy-backlog/README.md)，等新架构讨论后再逐项
+接收。本次没有据此改动下面的正式任务树；三部分职责划分不代表放弃 B-S 结构。
+
 | 要找什么 | 在哪 |
 | --- | --- |
 | 产品合同 | [`../product/product-contract.md`](../product/product-contract.md) |
