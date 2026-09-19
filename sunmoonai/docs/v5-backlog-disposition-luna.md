@@ -2,6 +2,12 @@
 
 日期：2026-09-12。执行者：Luna，单人实施与自测，不宣称独立评审。
 
+2026-09-19 续作入口：[B7～B9 任务回执](tasks/B7-B9-closeout/thread/0001-imp-none/0001-none/user-message.md)。
+B7v 已补四仓身份生命周期隔离演练；[固定版本证据](tasks/B7-B9-closeout/thread/0001-imp-none/0001-none/others/verification.md)
+区分测试、业务部署和正式计划接收。最新产品方向以 [产品合同](product/product-contract.md)
+为准，下文 2026-09-12/13 的架构与暂停记录保留作历史，不覆盖新合同。
+B7 业务切换/保留策略、B8 正式接收、B9 最终集成仍未销账。
+
 ## 1. 请求、边界与完成口径
 
 所有者要求：从旧 v5 handoff 查清当时停工遗留任务；与当前架构冲突的旧做法放弃，
