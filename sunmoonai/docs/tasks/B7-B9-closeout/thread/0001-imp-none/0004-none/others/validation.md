@@ -31,3 +31,27 @@ T4/T5：逐仓固定本地提交；用户明确暂不同步，所有新对象只
 R1/R2/R5：源码与运行态分开，本轮不涉及发布 tag、镜像、迁移、凭据或集群。
 既有架构规则及发布工具不变；architecture-v2 工具与历史材料分离留到单独一轮。
 恢复按固定 Git 快照取指定文件或反向提交，不 reset 其它工作、不恢复旧部署到当前环境。
+
+## 本地固定提交
+
+| 父仓（luna） | 交付提交 |
+| --- | --- |
+| k8s | `74053a1141d495a48363cb0158f2b6fcd7d1e671`（清理与引用正文；本回执随后单独提交） |
+| tpl-app | `1d2995765b9742ad4da31d30e9e746008fff1387` |
+| info-app | `43e0b1e113cbc900c5e18fa4eddb6316e776eb0c` |
+| knowledge-app | `ad96ad07dbebc3e795be2c05f32c4f5111a31a4f` |
+| investment-app | `c33654397b4a47a8a7e7b23c81076a73447ca9b8` |
+
+九个文档子仓的新提交由上述父仓 gitlink 精确锁定；均仅变更 README 或 Provider Markdown。
+五仓提交后工作区干净，实际子模块 HEAD 与 gitlink 一致。无远端推送或 master 合并。
+加入验证附件后再次 `doc-gate.py --all` 通过：136 份活动文档、53 份 thread 豁免。
+
+## 只读远端预检的已知缺口
+
+在用户选择暂不同步之前启动的只读基线检查，于第二个远端因不一致退出，未执行写入。
+复查确认 GitHub `tpl-admin-frontend/master` 为 `3c8727fc827dddab875bfe65e7d46210cd588c66`，
+Gitee 同分支为 `a6b25db7c152cf5e3c1ae9aa0fcddad5fd47ec58`。
+`git rev-list --left-right --count <Gitee>...<GitHub>` 为 `0 3`：Gitee 是祖先，落后三个提交，
+不是分叉或网络失败。本轮仅记录，不补推；其余八个子仓远端尚未逐一核验。
+此前“全量同步已验证”的范围是五父仓分支与两端实际子模块，不应推导成每个子仓的
+GitHub/Gitee master 分支也相等。未来同步先全面核子仓实时引用及权限，再做普通快进推送。
