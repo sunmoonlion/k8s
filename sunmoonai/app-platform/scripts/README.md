@@ -40,6 +40,17 @@ Knowledge 摄入授权必须单独显式给出；检索 allowlist 不授权上�
 中的最终副本声明。存在未确认投递时 downgrade 必须拒绝；应使用已演练的备份恢复，
 不能删除任务以让回退通过。开发包不得改写 `1.0.0` / `2.0.0` 发布别名。
 
+在线备份准备工具（**均不生成可用于部署的停机备份回执**）：
+
+- `kind_database_rehearsal.py --help`：使用对应 Backend 的 venv（asyncpg、SQLAlchemy），
+  显式 kubeconfig/集群 UID/候选镜像 digest/head/新私有目录；导出业务库并在固定 PG
+  镜像的无外网临时容器内两次恢复、迁移、对账。当前固定镜像为本机 PG 17.6；换环境
+  必须重审镜像与范围。角色/Secret/业务数据只落 Git 外 0700/0600 私有目录。
+- `kind_info_object_backup.py --help`：只读读取既有 Info API 配置和文件引用，核对
+  明确版本或未版本化引用的记录摘要、大小，再导出私有 tar。任何缺失都失败，不跳过、
+  不自动寻找别的版本、不改数据库；成功导出也不等于 S3 恢复已验证。
+  `info_object_backup_payload.py` 是其 Pod 内只读载荷，stdout 含私有数据，勿直接打印。
+
 本目录的 `build-push-app-images.sh` 只做一件事：**在 WSL 本地构建镜像，并直推到指定 Harbor**。
 
 ```text
