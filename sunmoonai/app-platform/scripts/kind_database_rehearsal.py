@@ -268,7 +268,7 @@ def isolated_postgres(token):
         run(["docker", "rm", "-f", "-v", container])
 
 
-def restore_and_migrate(args, baseline, roles, config, migration_secret, iteration):
+def restore_and_migrate(args, baseline, roles, config, migration_secret, iteration, post_migration=None):
     from sqlalchemy.engine import make_url
     app = args.app
     db = app + "_admin"
@@ -312,9 +312,15 @@ def restore_and_migrate(args, baseline, roles, config, migration_secret, iterati
             after = json.loads(docker_pg(container, password, db, row_fingerprint_sql(name, cols)))
             if after != before[name]:
                 raise RehearsalError("migration_changed_existing_rows:" + name)
+        extra = post_migration(container, password) if post_migration else {}
+        if post_migration:
+            for name, cols in column_map(restored).items():
+                if name != "alembic_version" and json.loads(docker_pg(container, password, db,
+                        row_fingerprint_sql(name, cols))) != before[name]:
+                    raise RehearsalError("identity_rehearsal_changed_existing_rows:" + name)
         return {"restore_catalog_equal": True, "restore_all_rows_equal": True,
                 "migration_head": args.head, "original_business_columns_preserved": True,
-                "network": "none", "owned_disposable_cleaned_on_exit": True}
+                "network": "none", "owned_disposable_cleaned_on_exit": True, **extra}
 
 
 def main():
