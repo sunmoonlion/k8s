@@ -1,6 +1,6 @@
 # PRD：产品需求（Product Requirements Document）
 
-`PRD/` 是 BRD 阶段的定稿目录，也是 PRD 阶段的输入：**要什么、做到什么算满足**，不写怎么实现。
+`PRD/` 是 PRD 段的定稿目录：**要什么、做到什么算满足**，不写怎么实现。SDD 段拿它当输入。
 
 ```text
 PRD/

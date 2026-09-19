@@ -9,20 +9,20 @@ standards 的用词以本表为准：**同一个意思只用一个词**，「不
 | --- | --- | --- |
 | 任务 | 交给 agent 做的一件事。一个任务目录就是一个任务；在需求树里也叫节点 | 工单、需求（指任务时） |
 | 任务目录 | 一个任务的全部文件：`thread/`、`PRD/`、`SDD/`。目录本身不设用户消息 | — |
-| 文档 thread | 任务目录 `thread/` 下的一个目录，对应一个运行时 thread；名为「本地号-阶段-运行时 thread id」，阶段是 brd、prd、sdd、imp、uat。运行时换了 thread 就新开一个 | 会话、turns、rounds |
+| 文档 thread | 任务目录 `thread/` 下的一个目录，对应一个运行时 thread；名为「本地号-阶段-运行时 thread id」，阶段是 adr、prd、sdd、imp、uat。运行时换了 thread 就新开一个 | 会话、turns、rounds |
 | 运行时 thread | 执行环境自己的 thread，只有 id；与文档 thread 一对一 | 会话 |
 | 运行时 turn | 执行环境自己的 turn，只有 id；一个文档 turn 可能覆盖它好几个 | — |
 | 文档 turn | 一问一答：一次派工和它的交回，是文档 thread 下的一个目录。目录名为「本地号-运行时 turn id」，如 `0002-01k8h9t1cc`；本地号四位数字，在所属文档 thread 内按派出顺序编，不跳、不复用；交回即冻结。行文引用写「文档 thread 号/turn 号」，如 `0001/0002` | 轮、轮次、回合 |
 | `user-message.md` | turn 里的用户消息，就是这一次发出去的全文——这一问 | turn 里的 `task.md` |
-| `response.md` | turn 里的答：这一问的回答，只有一份。BRD、PRD、SDD 阶段有；IMP、UAT 阶段的产物在 worktree 里 | 交回物文件、答复目录 |
+| `response.md` | turn 里的答：这一问的回答，只有一份。ADR、PRD、SDD 阶段有；IMP、UAT 阶段的产物在 worktree 里 | 交回物文件、答复目录 |
 | `others/` | turn 里可选的一个目录：人或 supervisor 追加给模型的材料与附件 | 附件目录 |
 | `turn.md` | 文档 turn 的回执：状态、交回时间、所在提交，交回 UAT 时还有结论；交回时写，写完冻结。没有它就是还没交回 | 状态文件 |
 | 并行 | 同一问同时发给几个执行者：各家在各自的运行时 thread 里，所以是几个文档 thread 各开一个 turn，用户消息各存各的 | 并行尝试 |
 | 用户消息 | 发给 agent 的那一问，存为 turn 的 `user-message.md`；正文须写明这一问要交回什么。见 [任务的生命周期](lifecycle.md)「用户消息写多严」 | 任务书、工单、PRD（指这一问时）、需求文档 |
 | 附件 | 与 `user-message.md` 放在一起、随它发出的材料 | — |
 | 派工 | 发出一个 turn | — |
-| 交回物 | 某个 turn 交回来的东西：BRD、PRD、SDD 阶段是 `response.md`；IMP、UAT 阶段是 worktree 分支上的提交 | 交付物（指这一份时） |
-| 定稿 | 人读完 response 后整理出的结论：BRD 的定稿是 `PRD/`，PRD 的定稿是 `SDD/`；写明以哪个 turn 为底、改了什么；整理即批准 | composition、设计稿、交接文件 |
+| 交回物 | 某个 turn 交回来的东西：ADR、PRD、SDD 阶段是 `response.md`；IMP、UAT 阶段是 worktree 分支上的提交 | 交付物（指这一份时） |
+| 定稿 | 人读完 response 后整理出的那一版：**同一段自己的那份东西**，不换成下一种文档——PRD 段定稿成 `PRD/`，SDD 段成 `SDD/`，ADR 段成 `adr/` 下一份文件；写明以哪个 turn 为底、改了什么；整理即批准 | composition、设计稿、交接文件 |
 | `architecture/` | `PRD/` 与 `SDD/` 下的一个目录：模块之间的结构与关系；入口文件 `README.md` | composition（指这一层时） |
 | `modules/` | `PRD/` 与 `SDD/` 下的一个目录，按「四位号-短名」编号。`PRD/modules/<模块>/` 写这个模块要满足什么；`SDD/modules/<模块>/` 是子任务，内部是同样结构的任务目录。与实现时 worktree 里的模块目录一一对应 | components、子任务目录 |
 | 上层任务 | 其 `SDD/modules/` 拆出了子任务的那个任务 | 父任务 |
@@ -30,12 +30,12 @@ standards 的用词以本表为准：**同一个意思只用一个词**，「不
 
 ## 阶段与交付物
 
-**阶段**有五个：BRD、PRD、SDD、IMP、UAT，规则见 [BRD](brd/brd-rules.md)、[PRD](prd/prd-rules.md)、[SDD](sdd/sdd-rules.md)、[IMP](imp/imp-rules.md)、[UAT](uat/uat-rules.md)。每一问的用户消息怎么写，见各阶段规则的「这一段的用户消息」与 [任务的生命周期](lifecycle.md)「用户消息写多严」。
+**阶段**有五个：PRD、SDD、IMP、UAT，以及横跨它们的 ADR，规则见 [PRD](prd/prd-rules.md)、[SDD](sdd/sdd-rules.md)、[IMP](imp/imp-rules.md)、[UAT](uat/uat-rules.md)、[ADR](adr/adr-rules.md)。每一问的用户消息怎么写，见各阶段规则的「这一段的用户消息」与 [任务的生命周期](lifecycle.md)「用户消息写多严」。
 
 | 词 | 含义 | 不要用 |
 | --- | --- | --- |
-| BRD | 业务需求：要解决谁的什么问题、做成什么样算解决、边界与取舍。可选的第一段，定稿成 `PRD/` | — |
-| PRD | 产品需求：要什么、做到什么算满足，不写怎么实现。`PRD/` 是 BRD 的定稿目录，也是 PRD 阶段的输入；定稿成 `SDD/` | 需求文档（指用户消息时） |
+| ADR | 架构决策记录：某一段里冒出来的一个具体问题的决定。和别的段一样是一段任务，只是粒度是一个问题；定稿成 `adr/` 下一份文件 | BRD |
+| PRD | 产品需求：要什么、做到什么算满足，不写怎么实现。`PRD/` 是 PRD 段的定稿目录，SDD 段拿它当输入 | 需求文档（指用户消息时） |
 | SDD | 软件设计说明：设计成什么样——模块之间的结构与关系、接口、共同约束，以及各模块内部的结构、协议与数据、失败与恢复 | TLD |
 | IMP | 实现：按定稿的设计做出来——工作单元、先后顺序、实施记录、代码与证据 | SDP（那是开工前的项目计划，不是这一段） |
 | 工作单元 | IMP 里可以独立交付、验证、回滚的一块 | 任务（指工作单元时） |
@@ -45,7 +45,7 @@ standards 的用词以本表为准：**同一个意思只用一个词**，「不
 
 | 词 | 含义 | 不要用 |
 | --- | --- | --- |
-| 讨论 agent | 答 BRD、PRD 两段的问 | — |
+| 讨论 agent | 答 ADR、PRD 两段的问 | — |
 | 规划 agent | 答 SDD 段的问；定稿之后按 `SDD/modules/` 的拆分建子任务 | — |
 | 执行 agent | 做 IMP：在自己的 worktree 里实现 | — |
 | 验收 agent | 做 UAT：在 worktree 的 `test/` 里验收；不是实现这份 IMP 的那一个 | — |

@@ -12,7 +12,7 @@ thread、turn 与模块的目录名怎么起、号怎么排、与运行时怎么
 0003-sdd-01k8f3m2qz          0002-01k8h9t1cc
 └┬─┘ └┬┘ └────┬───┘          └┬─┘ └────┬───┘
  │    │       └ 运行时 thread id       └ 运行时 turn id
- │    └ 阶段：brd · prd · sdd · imp · uat
+ │    └ 阶段：adr · prd · sdd · imp · uat
  └ 本地号：排先后、给人引用
 ```
 
@@ -26,7 +26,7 @@ thread、turn 与模块的目录名怎么起、号怎么排、与运行时怎么
 
 ```text
 <任务目录>/thread/
-├── 0001-brd-01k8f3m2qz/            BRD 段
+├── 0001-adr-01k8f3m2qz/            ADR 段
 │   ├── 0001-01k8h2r5bb/
 │   │   ├── user-message.md         问
 │   │   ├── response.md             答
@@ -40,7 +40,7 @@ thread、turn 与模块的目录名怎么起、号怎么排、与运行时怎么
 ```
 
 - **thread 号在任务目录内统一递增**，不按阶段分段；**turn 号在每个 thread 内从 `0001` 重起**。
-- BRD、PRD、SDD 三段：答是 `response.md`，一个 turn 只有一份。
+- ADR、PRD、SDD 三段：答是 `response.md`，一个 turn 只有一份。
 - IMP、UAT 两段：turn 里**不放** `response.md`，`turn.md` 里记 `worktree`（分支名）与 `commit`。
 - 行文引用只用本地号：`turn 0003/0002` 指第 `0003` 个 thread 的第 `0002` 个 turn；验收 turn 的 `verifies` 也这么填。
 
@@ -89,10 +89,10 @@ dev-agent-task/                             项目，不编号
 
 | 查什么 | 判据 |
 | --- | --- |
-| thread 目录名 | `<四位数字>-<阶段>` 或 `<四位数字>-<阶段>-<运行时 id>`，阶段在 brd、prd、sdd、imp、uat 之内 |
+| thread 目录名 | `<四位数字>-<阶段>` 或 `<四位数字>-<阶段>-<运行时 id>`，阶段在 adr、prd、sdd、imp、uat 之内 |
 | turn 目录名 | `<四位数字>` 或 `<四位数字>-<运行时 id>`；有 `turn.md` 的，turn 与所在 thread 都必须带 id |
 | 层数 | `thread/` 下正好两层：thread、turn；turn 里只放 `user-message.md`、`response.md`、`turn.md` 与 `others/` |
-| turn 内容 | 必有 `user-message.md`；BRD、PRD、SDD 段有 `turn.md` 时必须有 `response.md`；IMP、UAT 段不得有 `response.md`，`turn.md` 必须有 `worktree` 与 `commit` |
+| turn 内容 | 必有 `user-message.md`；ADR、PRD、SDD 段有 `turn.md` 时必须有 `response.md`；IMP、UAT 段不得有 `response.md`，`turn.md` 必须有 `worktree` 与 `commit` |
 | 用户消息的字段 | `executor`、`verifies` 两行齐全；`verifies` 仅 UAT 段有值，写「thread 号/turn 号」且指到存在的 turn，其余写「无」 |
 | 回执的字段 | `status`、`worktree`、`commit` 三行齐全；IMP、UAT 段的 `worktree` 与 `commit` 有值，文档段两者同为「无」或同时填 |
 | 编号连续 | thread 号在任务目录内、turn 号在各 thread 内，都从 `0001` 起不跳号、不复用 |

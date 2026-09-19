@@ -243,17 +243,17 @@ def check_tables(path: str, text: str) -> list[str]:
 # 任务目录下 `thread/` 正好两级：
 #     thread/0003-sdd-01k8f3m2qz/                  文档 thread，名字带阶段，对一个运行时 thread
 #     thread/0003-sdd-01k8f3m2qz/0002-01k8h9t1cc/  文档 turn：user-message.md、response.md、turn.md、others/
-# BRD、PRD、SDD 段的答是 response.md；IMP、UAT 段的产物在 worktree，turn.md 记分支与提交。
+# ADR、PRD、SDD 段的答是 response.md；IMP、UAT 段的产物在 worktree，turn.md 记分支与提交。
 # 定稿在 PRD/ 与 SDD/ 下（architecture/ 与 modules/）。字段与形状见
 # dev-agent-standards/lifecycle.md 与 dev-agent-standards/naming.md。
 THREAD_PREFIX_RE = re.compile(r"^(?P<task>.+)/thread/(?P<rest>.+)$")
-STAGES = ("brd", "prd", "sdd", "imp", "uat")
+STAGES = ("adr", "prd", "sdd", "imp", "uat")
 THREAD_DIR_RE = re.compile(r"^(?P<num>\d{4})-(?P<stage>[a-z]+)(?:-(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*))?$")
 TURN_DIR_RE = re.compile(r"^(?P<num>\d{4})(?:-(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*))?$")
 MODULE_NAME_RE = re.compile(r"^(?P<num>\d{4})-(?P<name>[^/]+)$")
 VERIFIES_RE = re.compile(r"^\d{4}/\d{4}$")
 TURN_FILES = {"user-message.md", "response.md", "turn.md"}
-DOC_STAGES = {"brd", "prd", "sdd"}          # 答在 turn 里
+DOC_STAGES = {"adr", "prd", "sdd"}          # 答在 turn 里
 WORKTREE_STAGES = {"imp", "uat"}            # 产物在 worktree
 STATUSES = {"completed", "interrupted", "failed"}
 NONE = "无"          # 固定字段集里用不上的那一项

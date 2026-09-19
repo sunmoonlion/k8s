@@ -10,10 +10,11 @@
 | [`glossary.md`](glossary.md) | 词汇表：用词的唯一定义；改名须人确认 |
 | [`human-workflow.md`](human-workflow.md) | 人自己走这套流程时怎么做 |
 | [`agent-workflow.md`](agent-workflow.md) | 由 supervisor 驱动时怎么做 |
-| [`brd/brd-rules.md`](brd/brd-rules.md) | **BRD** 业务需求：还不知道要做什么时先讨论清楚；可选，定稿成 `PRD/` |
+
 | [`prd/prd-rules.md`](prd/prd-rules.md) | **PRD** 产品需求：`PRD/` 怎么写；只写要什么，不写怎么做；定稿成 `SDD/` |
 | [`sdd/sdd-rules.md`](sdd/sdd-rules.md) | **SDD** 软件设计说明：`SDD/` 怎么写、设计原则、改已冻结契约；`modules/` 下就是子任务 |
 | [`imp/imp-rules.md`](imp/imp-rules.md) | **IMP** 实现：一个执行者在自己的 worktree 里动手 |
 | [`uat/uat-rules.md`](uat/uat-rules.md) | **UAT** 用户验收测试：三种结论、门的三档、证据采信与覆盖声明 |
+| [`adr/adr-rules.md`](adr/adr-rules.md) | **ADR** 架构决策记录：某一段里冒出来的一个具体问题；定稿成 `adr/` 下一份文件 |
 | [`detailed-rules/approvals.md`](detailed-rules/approvals.md) | 人的批准点：谁批什么、批准怎样成立、三道正交门、四档审批、改判 |
 | [`detailed-rules/protocol/competition-rules.md`](detailed-rules/protocol/competition-rules.md) | 多方竞争协议：一种交回物由多家各交一份再比较选定；同目录另有尚未生效的草案 |
