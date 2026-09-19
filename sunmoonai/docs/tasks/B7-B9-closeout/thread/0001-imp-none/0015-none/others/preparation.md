@@ -61,3 +61,33 @@ RabbitMQ 一次性容器集成测试 2 项通过，包含实际密码哈希登�
 业务和新身份验收 → 精确停用旧 DB 登录及旧 vhost 权限。旧账号退役不在授权入口内
 自动执行；实际回滚必须按旧镜像/schema/ACL/Secret/definitions 与外部回执一起核对。
 任何部分失败保留现场，不能把新角色存在或 rollout Ready 当业务验收成功。
+
+## 首次实机准备与隧道故障修复
+
+准备代码提交：tpl-app `5135af9d19f969dc4371d6bd737c6e64c1ca149e`，
+k8s `4c573007cab56a88c77e703c8f668e7938d10558`。均合入 master，五仓脚本
+`to-remote -all` 退出 0；两机各 30 父仓全部干净且等于各自 master，子模块由脚本对齐。
+没有 force、realign、新建分支或启动 Opus 助手。未变化的三 App 父仓分别为
+Info `25959b677b6930de1b6a5c9bbbb7fb77cc90f8d2`、
+Knowledge `b3d5dda05adee2d62df3cc0e6fdb913799a96347`、
+Investment `3b3c9381aa9d204a5e9cf1eb11def667cbac5762`。
+
+Info 上述精确计划已执行：运行 Secret 独占创建、共享定义 CAS、六个定点 PUT 和
+HTTP 读回均成功。首次 AMQP 验证时，API 正登录和未授权 vhost 拒绝均正确，但
+后续 Worker 连接失败。逐层定位发现负例握手导致服务端 reset，kubectl port-forward
+随之退出 1（`read: connection reset by peer; lost connection to pod`）；并非密码错误。
+
+修复为每个角色一条独立隧道，保留真正的拒绝检查。新增显式 `--verify-prepared`：
+核对原摘要、六步意图/成功日志、Secret UID/data、共享启动定义和线上精确权限后，
+仅重做认证验收；不包含任何服务器 PUT/PATCH/CREATE，不重放原计划，不改原日志。
+成功才创建新的私有 `amqp-proof.json` 和 `applied.json`，另记本次验证源码摘要。
+
+实机只读恢复验收已通过：三个新角色各登录成功、各跨 vhost 被拒绝，没有消息操作。
+`database_activated=false`、`old_identities_retired=false` 仍明确保留；旧业务服务未停。
+最终回归：k8s **95 passed / 176 subtests**，模板 **31 passed / 27 subtests**，
+真实隔离 broker 集成 **2 passed**。
+
+同步期间重新读取 Info 对象，`info-objects-04` 仍为 189 引用/56 内容，archive SHA
+`a34ea6117e5e290ab69f89078dcedb469ee8edad92f390ebce7c15130ba6d22a`，
+与已做真实 S3 恢复的 `info-objects-03` 逐字一致。Info 旧 Worker 定点检查
+active/reserved/scheduled 均为 0，只代表该采样，不替代停写后的核验。

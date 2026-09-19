@@ -105,8 +105,8 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         raise common.RehearsalError("broker_redirect_refused")
 
 
-def verify_amqp(args, secret):
-    """Only connection/channel opens on the fixed KIND service; no messages."""
+def _verify_amqp_role(args, secret, role):
+    """One tunnel per role: a denied AMQP handshake can kill port-forward."""
     process = subprocess.Popen(["kubectl", "--kubeconfig", str(args.kubeconfig), "--context", "kind-kind",
         "-n", BROKER_NS, "port-forward", "--address=127.0.0.1", "service/rabbitmq-sunmoonai", "0:5672"],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -116,12 +116,10 @@ def verify_amqp(args, secret):
         match = re.fullmatch(rb"Forwarding from 127\.0\.0\.1:(\d+) -> 5672\n", process.stdout.readline())
         if not match:
             raise common.RehearsalError("amqp_forward_failed")
-        urls = {}
-        for role in development_release.RUNTIME_ROLES:
-            endpoint = urlsplit(base64.b64decode(secret["data"][role.upper() + "_CELERY_BROKER_URL"]).decode())
-            urls[role] = urlunsplit(endpoint._replace(netloc=endpoint.username + ":" + endpoint.password
-                + "@127.0.0.1:" + match[1].decode()))
-        return broker_probe.verify_logins(urls, "/")
+        endpoint = urlsplit(base64.b64decode(secret["data"][role.upper() + "_CELERY_BROKER_URL"]).decode())
+        url = urlunsplit(endpoint._replace(netloc=endpoint.username + ":" + endpoint.password
+            + "@127.0.0.1:" + match[1].decode()))
+        broker_probe.verify_login(url, "/")
     finally:
         process.terminate()
         try:
@@ -129,6 +127,13 @@ def verify_amqp(args, secret):
         except subprocess.TimeoutExpired:
             process.kill()
             process.wait(timeout=5)
+
+
+def verify_amqp(args, secret):
+    """Only connection/channel opens on the fixed KIND service; no messages."""
+    for role in development_release.RUNTIME_ROLES:
+        _verify_amqp_role(args, secret, role)
+    return {"authenticated_roles": 3, "foreign_vhost_denied": 3, "messages_touched": False}
 
 
 @contextmanager
@@ -251,6 +256,63 @@ def execute_saved(args):
     print(common.encoded(summary))
 
 
+def verify_prepared(args):
+    """Explicit recovery of verification only; contains no live write calls.
+
+    Requires the original digest, all six recorded successful writes, and
+    identical live state. Current verifier sources are recorded separately;
+    the original executed plan and journal are never edited or replayed.
+    """
+    root = args.output.absolute()
+    if root != root.resolve() or root.stat().st_mode & 0o077:
+        raise common.RehearsalError("private_plan_directory_required")
+    raw = private_read(root / "plan.private.json")
+    if hashlib.sha256(raw).hexdigest() != args.expected_plan_sha256:
+        raise common.RehearsalError("plan_digest_changed")
+    plan = json.loads(raw)
+    bundle = Path(__file__).resolve().parents[1] / (args.app + "-app/deployment/bundle/release.json")
+    if (plan["app"] != args.app or plan["cluster_uid"] != args.cluster_uid
+            or plan["release_sha256"] != hashlib.sha256(bundle.read_bytes()).hexdigest()):
+        raise common.RehearsalError("plan_target_or_release_changed")
+    if (root / "applied.json").exists():
+        raise common.RehearsalError("preparation_already_verified")
+    private_read(root / "broker-prepared.private.json")
+    for index, operation in enumerate(plan["operations"]):
+        if (json.loads(private_read(root / f"broker-{index}-intent.private.json")) != operation
+                or json.loads(private_read(root / f"broker-{index}-result.private.json")) != {"http_success": True}):
+            raise common.RehearsalError("preparation_journal_incomplete")
+    common.ERROR_DIR = root
+    common.verify_kind(args)
+    require_fresh_database_names(args)
+    secret = common.get(args, NS, "secret", args.app + "-backend-runtime")
+    reserved = json.loads(private_read(root / "reserve-runtime-secret-result.private.json"))
+    if secret["data"] != plan["runtime_secret"]["data"] or secret["metadata"]["uid"] != reserved["metadata"]["uid"]:
+        raise common.RehearsalError("reserved_secret_changed")
+    development_release.verify_runtime_secret_contract(secret, args.app)
+    startup = common.get(args, BROKER_NS, "secret", "rabbitmq-app-definitions")
+    if json.loads(base64.b64decode(startup["data"]["load_definition.json"])) != plan["startup_definitions"]:
+        raise common.RehearsalError("startup_readback_mismatch")
+    with broker_api(args) as api:
+        for operation in plan["operations"]:
+            actual = api("GET", operation["path"])
+            if any(actual.get(key) != value for key, value in operation["body"].items()):
+                raise common.RehearsalError("broker_readback_mismatch")
+        for name in plan["new_names"]:
+            permissions = api("GET", "users/" + quote(name, safe="") + "/permissions")
+            if len(permissions) != 1 or permissions[0]["vhost"] != plan["vhost"]:
+                raise common.RehearsalError("new_user_has_unexpected_vhost_access")
+    proof = verify_amqp(args, secret)
+    # All server observations passed. Exclusive local receipts only, no PUT,
+    # PATCH, Secret creation, database activation, or old identity retirement.
+    common.private_write(root / "amqp-proof.json", encoded(proof))
+    result = {"app": args.app, "plan_sha256": args.expected_plan_sha256, "applied": True,
+              "database_activated": False, "old_identities_retired": False, "queues_changed": False,
+              "live_amqp_login_verified": True, "credentials_printed": False,
+              "recovered_verification_only": True, "verification_sources": source_hashes()}
+    common.private_write(root / "applied.json", encoded(result))
+    print(common.encoded(result))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--app", choices=common.APPS, required=True)
@@ -258,11 +320,15 @@ def main():
     parser.add_argument("--cluster-uid", required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--rehearsal", type=Path)
-    parser.add_argument("--apply", action="store_true")
+    actions = parser.add_mutually_exclusive_group()
+    actions.add_argument("--apply", action="store_true")
+    actions.add_argument("--verify-prepared", action="store_true")
     parser.add_argument("--expected-plan-sha256")
     args = parser.parse_args()
     if args.apply:
         return execute_saved(args)
+    if args.verify_prepared:
+        return verify_prepared(args)
     if args.rehearsal is None or args.expected_plan_sha256 is not None:
         raise common.RehearsalError("plan_requires_rehearsal_not_execution_digest")
     output = args.output.absolute()

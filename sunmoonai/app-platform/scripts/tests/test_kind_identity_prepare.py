@@ -1,18 +1,67 @@
 import base64
+import argparse
 import copy
+import hashlib
 import json
 import os
 from pathlib import Path
 import sys
 import tempfile
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import kind_identity_prepare as target
 
 
 class IdentityPreparationTest(unittest.TestCase):
+    def test_amqp_roles_have_independent_tunnels_and_failure_stops(self):
+        with patch.object(target, "_verify_amqp_role") as role:
+            self.assertEqual(target.verify_amqp(None, {}),
+                {"authenticated_roles": 3, "foreign_vhost_denied": 3, "messages_touched": False})
+            self.assertEqual([c.args[2] for c in role.call_args_list], ["api", "worker", "scheduler"])
+        with patch.object(target, "_verify_amqp_role", side_effect=[None, RuntimeError("closed")]) as role:
+            with self.assertRaises(RuntimeError):
+                target.verify_amqp(None, {})
+            self.assertEqual(role.call_count, 2)
+
+    def test_verification_recovery_has_no_live_writes_and_requires_every_probe(self):
+        bundle = Path(target.__file__).resolve().parents[1] / "info-app/deployment/bundle/release.json"
+        for fails in (False, True):
+            with tempfile.TemporaryDirectory() as folder, self.subTest(fails=fails):
+                root = Path(folder)
+                plan = self.plan() | {"app": "info", "cluster_uid": "approved",
+                    "release_sha256": hashlib.sha256(bundle.read_bytes()).hexdigest()}
+                secret = {"metadata": {"uid": "reserved"}, "data": {}}
+                plan["runtime_secret"] = secret
+                raw = target.encoded(plan)
+                write = lambda name, value: target.common.private_write(root / name, target.encoded(value))
+                target.common.private_write(root / "plan.private.json", raw)
+                write("broker-prepared.private.json", {})
+                for i, operation in enumerate(plan["operations"]):
+                    write(f"broker-{i}-intent.private.json", operation)
+                    write(f"broker-{i}-result.private.json", {"http_success": True})
+                write("reserve-runtime-secret-result.private.json", secret)
+                startup = {"data": {"load_definition.json": target.b64(target.encoded(plan["startup_definitions"]))}}
+                args = argparse.Namespace(app="info", output=root, cluster_uid="approved",
+                    expected_plan_sha256=hashlib.sha256(raw).hexdigest())
+                ports = self.ports(plan)
+                with patch.object(target.common, "verify_kind"), patch.object(target, "require_fresh_database_names"), \
+                     patch.object(target.common, "get", side_effect=[secret, startup]), \
+                     patch.object(target.development_release, "verify_runtime_secret_contract"), \
+                     patch.object(target, "broker_api") as api, \
+                     patch.object(target, "verify_amqp", side_effect=RuntimeError("failed") if fails else None,
+                                  return_value={"authenticated_roles": 3}):
+                    api.return_value.__enter__.return_value = ports["api"]
+                    if fails:
+                        with self.assertRaises(RuntimeError):
+                            target.verify_prepared(args)
+                        self.assertFalse((root / "applied.json").exists())
+                    else:
+                        target.verify_prepared(args)
+                        self.assertTrue(json.loads((root / "applied.json").read_text())["live_amqp_login_verified"])
+                    self.assertTrue(all(call.args[0] == "GET" for call in ports["api"].call_args_list))
+
     def plan(self):
         names = {r: "info-backend-" + r + "-v2" for r in target.development_release.RUNTIME_ROLES}
         users = [{"name": name, "tags": [], "hashing_algorithm": "rabbit_password_hashing_sha256",
