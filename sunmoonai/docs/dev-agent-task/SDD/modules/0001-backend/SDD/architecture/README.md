@@ -12,7 +12,7 @@
 | [`0003-interrupt-resume`](../modules/0003-interrupt-resume/README.md) | Interaction 的令牌在同一并发控制边界内消费；断线后按 fencing 对账 |
 | [`0004-acceptance-commit`](../modules/0004-acceptance-commit/README.md) | 确定性验收与本地内容检查回执核对；终态、结果、预算结算原子提交 |
 
-同层的其他定稿：[`agent-dev-guide.md`](../agent-dev-guide.md) 是开发指导，[`pipeline.md`](../pipeline.md) 是本模块的开发流程。
+同层的其他定稿：[`agent-dev-guide.md`](../agent-dev-guide.md) 是开发指导。
 
 ## 模块之间
 
@@ -23,4 +23,4 @@
 
 ## 约束
 
-[代码规则](../../../../constraints.md)、[开发流程](../pipeline.md)，以及产品合同的不变量 `I1` 至 `I20`。
+[代码规则](../../../../constraints.md)、[IMP 规则](../../../../../../dev-agent-standards/imp/imp-rules.md)，以及产品合同的不变量 `I1` 至 `I20`。

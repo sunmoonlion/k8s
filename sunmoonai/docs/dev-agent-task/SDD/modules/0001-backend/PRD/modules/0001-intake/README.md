@@ -18,4 +18,4 @@
 
 ## 约束
 
-[代码规则](../../../../../constraints.md)、[开发流程](../../../SDD/pipeline.md)，以及合同的不变量。
+[代码规则](../../../../../constraints.md)、[IMP 规则](../../../../../../../dev-agent-standards/imp/imp-rules.md)，以及合同的不变量。

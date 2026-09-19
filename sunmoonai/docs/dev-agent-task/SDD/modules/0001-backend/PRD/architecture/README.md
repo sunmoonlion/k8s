@@ -29,4 +29,4 @@
 
 ## 约束
 
-合同的不变量 `I1` 至 `I20`、[代码规则](../../../../constraints.md)、[开发流程](../../SDD/pipeline.md)。
+合同的不变量 `I1` 至 `I20`、[代码规则](../../../../constraints.md)、[IMP 规则](../../../../../../dev-agent-standards/imp/imp-rules.md)。

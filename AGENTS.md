@@ -21,9 +21,9 @@
 
 `sunmoonai/docs/dev-agent-standards/README.md`
 
-开发 Agent 接任务前必须读取 agent 项目的具体开发流程：
+开发 Agent 接任务前必须读取通用开发规范里自己那一段的规则：
 
-`sunmoonai/docs/dev-agent-task/SDD/modules/0001-backend/SDD/pipeline.md`
+`sunmoonai/docs/dev-agent-standards/`（PRD、SDD、IMP、UAT、ADR 各一份）
 
 涉及人的批准、裁量或终审时，同时读取（人介入、权力表、审批档位）：
 
