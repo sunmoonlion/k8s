@@ -1,6 +1,6 @@
-# SDP：软件开发计划（Software Development Plan）
+# IMP：实现（Implementation）
 
-SDP 阶段按定稿的 `SDD/` 把东西做出来：拆成工作单元，在自己的 worktree 里实现，交回分支与提交。
+IMP 阶段按定稿的 `SDD/` 把东西做出来：拆成工作单元，在自己的 worktree 里实现，交回分支与提交。
 **本规则只讲单个执行者怎么做这件事。**
 
 对每一段都成立的八条纪律见 [任务的生命周期](../lifecycle.md)「交给 agent 的活，八条都成立」。

@@ -35,7 +35,7 @@
 
 ### 3.5 交付、清理和恢复
 
-> 依据的通用规范：[SDP「交付、发布与保留」](../../../../../../../dev-agent-standards/sdp/sdp-rules.md)
+> 依据的通用规范：[IMP「交付、发布与保留」](../../../../../../../dev-agent-standards/imp/imp-rules.md)
 
 validator 先跑机械条，acceptor 再判机器判不了的冻结条；验收失败在预算允许时产生新 Attempt，
 不得改窄标准换取通过。不可逆动作由 principal 确认后，publisher 才写共享最终路径或生产面。
@@ -75,7 +75,7 @@ validator 先跑机械条，acceptor 再判机器判不了的冻结条；验收�
 
 ### 3.15 发布协议：三个路径不是一个
 
-> 依据的通用规范：[SDP「交付、发布与保留」](../../../../../../../dev-agent-standards/sdp/sdp-rules.md)
+> 依据的通用规范：[IMP「交付、发布与保留」](../../../../../../../dev-agent-standards/imp/imp-rules.md)
 
 用户要 `path/to/result.md` 时，必须区分三个东西：
 
@@ -100,7 +100,7 @@ published ref:    final commit / PR / release
 
 ### 3.16 保留与垃圾回收
 
-> 依据的通用规范：[SDP「交付、发布与保留」](../../../../../../../dev-agent-standards/sdp/sdp-rules.md)
+> 依据的通用规范：[IMP「交付、发布与保留」](../../../../../../../dev-agent-standards/imp/imp-rules.md)
 
 | 状态 | 默认保留 |
 | --- | --- |

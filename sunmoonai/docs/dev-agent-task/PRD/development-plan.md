@@ -89,9 +89,9 @@ BFF / session 边界，但不得成为领域数据所有者；且授权分工必
 
 ## 工作单元的写法
 
-> 依据的通用规范：[SDP「工作单元要说清什么」](../../dev-agent-standards/sdp/sdp-rules.md)
+> 依据的通用规范：[IMP「工作单元要说清什么」](../../dev-agent-standards/imp/imp-rules.md)
 
-本任务拆出的所有子任务，SDP 都照此写（原实施计划）。
+本任务拆出的所有子任务，IMP 都照此写（原实施计划）。
 
 测试层次：
 

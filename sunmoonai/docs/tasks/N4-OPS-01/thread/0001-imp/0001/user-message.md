@@ -5,7 +5,7 @@ verifies: 无
 # N4-OPS-01：监控采集与告警送达
 
 >
-> **交回：SDP，由执行 agent 交。**
+> **交回：IMP，由执行 agent 交。**
 
 本条接收
 [v5 处置清单](../../../../v5-backlog-disposition-luna.md)中监控部署与告警接线的后续工作，

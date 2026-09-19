@@ -8,14 +8,14 @@
 
 | 步骤 | 人做什么 |
 | --- | --- |
-| 开一段 thread | 定这一段是哪个阶段（BRD、PRD、SDD、SDP、UAT），建目录、写 `user-message.md` |
+| 开一段 thread | 定这一段是哪个阶段（BRD、PRD、SDD、IMP、UAT），建目录、写 `user-message.md` |
 | 派工 | 把用户消息发给 AI 助手；要补的材料放 `others/` |
 | 收 response | 把回答存成 `response.md`，提交，把提交号写进 `turn.md` |
 | 审核 | 自己读。要改就开新 turn，理由写进新的 `user-message.md`；**不在已交回的 turn 里改任何东西** |
 | 定稿 | 把满意的 response 整理进 `PRD/` 或 `SDD/`，写明以哪个 turn 为底、改了什么 |
 | 建子任务 | 按 `SDD/modules/` 的拆分建目录，并写好各自第 `0001` 个 turn 的用户消息 |
 
-## SDP 与 UAT 的三层 worktree
+## IMP 与 UAT 的三层 worktree
 
 ```text
 助手的 worktree            AI 助手在这里实现，或在 test/ 里写验收
@@ -33,7 +33,7 @@
 ## 人要盯住的几件事
 
 - **用户消息里没写的，模型不会知道**：要它交回什么、能改哪些文件、哪些动作要先问，都写进用户消息。
-- **判据先于产出冻结，但讨论与设计段不写进用户消息**：那三段按各阶段规则判；SDP 段必须写完成条件。出题与答题分开，事后改题等于白问。
+- **判据先于产出冻结，但讨论与设计段不写进用户消息**：那三段按各阶段规则判；IMP 段必须写完成条件。出题与答题分开，事后改题等于白问。
 - **一段只问一件事**：BRD 段问「要解决什么」，PRD 段问「怎么设计」，别混在一个 turn 里。
 - **定稿是人的动作**，不是 AI 的：AI 交的是 response，进 `PRD/`、`SDD/` 的那一版由人负责。
 - 其余义务见 [人的批准点](detailed-rules/approvals.md)。

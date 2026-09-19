@@ -2,7 +2,7 @@
 
 每一层都是同一个任务目录的模式（见 [任务的生命周期](../dev-agent-standards/lifecycle.md)）：
 
-- `thread/`：一段段问答，目录名带阶段（brd、prd、sdd、sdp、uat）；
+- `thread/`：一段段问答，目录名带阶段（brd、prd、sdd、imp、uat）；
 - `PRD/`：BRD 的定稿——`architecture/` 写模块之间的结构与关系，`modules/` 写各模块要满足什么；
 - `SDD/`：PRD 的定稿——`architecture/` 与 `modules/`，其中 `modules/<模块>/` 就是子任务，内部递归同一模式；
 - 子任务目录名是「四位号-短名」，在同一个 `modules/` 里从 `0001` 起编号；本目录是项目本身，不编号。见 [命名与编号](../dev-agent-standards/naming.md)。

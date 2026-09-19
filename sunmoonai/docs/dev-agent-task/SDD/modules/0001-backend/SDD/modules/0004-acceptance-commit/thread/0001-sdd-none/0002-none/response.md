@@ -2,7 +2,7 @@
 
 ## 交付规则
 
-> 依据的通用规范：[SDP「交付、发布与保留」](../../../../../../../dev-agent-standards/sdp/sdp-rules.md)
+> 依据的通用规范：[IMP「交付、发布与保留」](../../../../../../../dev-agent-standards/imp/imp-rules.md)
 
 **分支与提交**——父仓不得出现悬空 gitlink（规则 T4）。五仓同步用
 `~/five-repos-sync/sync-five-repos.sh`；它只推父仓，子仓的提交仍须自己推，

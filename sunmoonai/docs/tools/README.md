@@ -9,5 +9,5 @@
 | `check-no-owner-creds.sh` | VM 上的凭据卫生检查：查有没有混进所有者的凭据。是卫生检查，不是边界 | `bash sunmoonai/docs/tools/check-no-owner-creds.sh` |
 
 钩子在 `.githooks/`，装一次即对本仓全部 worktree 生效：`git config core.hooksPath .githooks`。
-doc-gate 另查任务目录下的 turn：`thread/` 下正好两级（文档 thread、文档 turn），目录名合乎「四位本地号-阶段-运行时 id」与「四位本地号-运行时 id」、编号连续不复用、BRD/PRD/SDD 段有 `response.md` 而 SDP/UAT 段没有（回执里记 worktree 与提交）、`user-message.md` 与 `turn.md` 的字段齐全合法、模块编号在同一个 `modules/` 里连续且 PRD 与 SDD 两侧一致，交回即冻结（提交与合并时查）。判据表见 [`../dev-agent-standards/naming.md`](../dev-agent-standards/naming.md)。
+doc-gate 另查任务目录下的 turn：`thread/` 下正好两级（文档 thread、文档 turn），目录名合乎「四位本地号-阶段-运行时 id」与「四位本地号-运行时 id」、编号连续不复用、BRD/PRD/SDD 段有 `response.md` 而 IMP/UAT 段没有（回执里记 worktree 与提交）、`user-message.md` 与 `turn.md` 的字段齐全合法、模块编号在同一个 `modules/` 里连续且 PRD 与 SDD 两侧一致，交回即冻结（提交与合并时查）。判据表见 [`../dev-agent-standards/naming.md`](../dev-agent-standards/naming.md)。
 钩子找不到 `doc-gate.py` 时会直接放行，所以移动或改名这个脚本时必须同步改两个钩子。
