@@ -50,3 +50,36 @@ Info→Knowledge→Investment 串行启动与旧身份撤销、真实业务和�
 备份 `online_preparation_only` 不能改字段冒充停机回执。现有 SQL/broker 编译器与准备演练
 不能直接称作在线切换器；在该接入完成前不进入维护窗口。
 本记录先提交源码准备；合并/推送/两机各工位同步结果将在本 turn 补充实际提交号。
+
+## 提交、同步和交回检查点
+
+`five-repos-sync/sync-five-repos.sh to-remote -all` 已退出 0；此前本地 master 与五工位
+均经干净状态、分支和祖先校验后逐仓 `merge --ff-only`。没有新建分支、force、reset、
+realign 或启动 Opus 助手；云端只同步 Git，不运行部署。
+
+| 仓 | 本轮源码交付提交 |
+| --- | --- |
+| k8s | 30463b7b48956fc6429022427be7cff2499f4772 |
+| tpl-app | 6e42d9e9603e42af84008169ad8890434a125a55 |
+| info-app | 25959b677b6930de1b6a5c9bbbb7fb77cc90f8d2 |
+| knowledge-app | b3d5dda05adee2d62df3cc0e6fdb913799a96347 |
+| investment-app | 3b3c9381aa9d204a5e9cf1eb11def667cbac5762 |
+
+同步后重新核验 GitHub/Gitee 五仓各六分支，全部精确对应上表；两机各 30 个父仓
+工作树、72 个子模块实例的 HEAD/分支/干净状态全部符合。本节和 turn.md 是随后补充的
+文档回执，将追加同步，不改变上述代码/镜像候选；最终 docs 提交不写成自己的父提交。
+
+本地 master 再跑 k8s 81 tests passed。三 App 的五类候选资源分别执行
+`kubectl --context kind-kind apply --dry-run=server` 全通过；这是 Kubernetes 资源校验，
+不是绕过 deploy.py Secret/备份门禁的实际 apply，也不证明缺失的新账号可登录。
+复核当前各服务副本数全部 ready，仍是旧业务运行态。
+
+Info Worker 后续定点 inspect：active/reserved/scheduled 均为空；未打印任务参数、
+未发业务任务、未清队列。它只说明后续这个采样时刻无任务，不代替切换前再次排空确认。
+Investment 现有独立 Redis 用户 `investment_backend` 使用现有凭据 PING 成功，
+未读写业务键、未重做 Redis ACL 供给。检索绑定与 broker 兼容性结果见上文。
+
+`doc-gate.py --selfcheck` 仍提示 hook 未安装；本轮手动执行 all/staged 门禁，不声称自动
+pre-commit 已生效。源码准备在此落盘；在线身份供给尚未实现完整接入，所以未停旧服务。
+下一轮从新的同步基线接续：先实现并测试窄供给/迁移后授权和真实权限验证流程，
+再按批准维护窗口执行新备份与串行部署；不能直接运行旧供给器或伪造 backup receipt。
