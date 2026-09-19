@@ -1,0 +1,44 @@
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: question-data-transport
+  namespace: app-platform-dev
+  labels:
+    app: question-data
+    sunmoonai.com/app: question-data
+    sunmoonai.com/managed-by: research-demo
+spec:
+  forwardingTimeouts:
+    dialTimeout: 30s
+    responseHeaderTimeout: 300s
+    idleConnTimeout: 300s
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: question-data-route
+  namespace: app-platform-dev
+  labels:
+    app: question-data
+    sunmoonai.com/app: question-data
+    sunmoonai.com/managed-by: research-demo
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`question.sunmoonai.com`) && PathPrefix(`/`)
+      services:
+        - name: question-data
+          port: 8000
+          serversTransport: question-data-transport
+      priority: 20
+    - kind: Rule
+      match: (Host(`127.0.0.1`) || Host(`localhost`)) && PathPrefix(`/`)
+      services:
+        - name: question-data
+          port: 8000
+          serversTransport: question-data-transport
+      priority: 5
+  tls:
+    secretName: info-tls

@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: question-data-config
+  namespace: app-platform-dev
+  labels:
+    app: question-data
+    sunmoonai.com/app: question-data
+    sunmoonai.com/managed-by: research-demo
+data:
+  APP_HOST: "0.0.0.0"
+  APP_PORT: "8000"
+  DEEPSEEK_BASE_URL: "https://api.deepseek.com"
+  DEEPSEEK_DEFAULT_MODEL: "deepseek-v4-flash"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: question-data
+  namespace: app-platform-dev
+  labels:
+    app: question-data
+    sunmoonai.com/app: question-data
+    sunmoonai.com/managed-by: research-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: question-data
+  template:
+    metadata:
+      labels:
+        app: question-data
+        sunmoonai.com/app: question-data
+        sunmoonai.com/managed-by: research-demo
+    spec:
+      containers:
+        - name: question-data
+          image: question-data:demo
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: question-data-config
+            - secretRef:
+                name: question-data-secret
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 6
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: question-data
+  namespace: app-platform-dev
+  labels:
+    app: question-data
+    sunmoonai.com/app: question-data
+    sunmoonai.com/managed-by: research-demo
+spec:
+  selector:
+    app: question-data
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+  type: ClusterIP
