@@ -61,4 +61,5 @@ R4 不拼接模板 Alembic root。每个实例继续保留当前规范数据库�
 - Info：`DONE`，见 `R4-info-result.md` 与 `evidence/R4-info-gate/`；
 - Knowledge：`DONE`，见 `R4-knowledge-result.md` 与 `evidence/R4-knowledge-gate/`；
 - Investment：`NEXT`，以 Research 历史为主体原地改名，必须继续使用
-  `architecture-v2-r3.2-20260808`；见 `../investment清理和改名.md`。
+  `architecture-v2-r3.2-20260808`；原改名方案已退出当前工作树，见
+  [历史索引](../legacy-backlog/verification-index.md#investment-改名历史) 的固定 Git 版本。

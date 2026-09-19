@@ -114,3 +114,16 @@ Info 分发帮助函数 6 passed、Investment 检索契约 7 passed；这些是�
 默认装配仍只允许 RAGFlow，retrieval v1 的 provider 仍限定 ragflow；旧持久键、状态、
 绑定及 DTO 兼容保留。没有接入 WeKnora、改跨 App 契约、迁移业务数据或部署。
 后续替换需适配器、契约扩展及消费者回归、索引/绑定/引用迁移和真实回执验证，不能只改 URL。
+
+### Investment 改名历史
+
+`investment清理和改名.md` 已按用户要求退出当前工作树。其描述的是 Research 保留 Git
+历史、原地迁入 Investment 三组件拓扑的旧实施过程，不是当前发布操作指令。
+`ResearchSession` 等仍可为合法领域术语，不能据历史改名要求全局替换 `research`。
+本次只删文档并修正两处引用，不改仓名、业务数据、运行资源或历史备份。
+现状见 [Investment 指南](../project-guide/repos/investment-app.md)，
+切换前置见 [部署清单](deployment-checklist.md)。原文仍在上述固定 k8s 提交中：
+
+```sh
+git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/investment清理和改名.md
+```
