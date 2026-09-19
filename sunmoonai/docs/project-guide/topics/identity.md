@@ -124,7 +124,9 @@ audience/subject 绑定及 `delivery:observe`，不接受浏览器 Cookie 替代
 | info-app | 公共投递指标，不因此新增资讯领域入站契约 |
 
 数据库/broker 进程身份不同于上述 HTTP 服务身份。源码渲染已使用 API/Worker/Scheduler
-分角色键；隔离环境已验证四角色 PG 与三角色 RabbitMQ ACL，但业务旧账号仍未切换。
+分角色键；2026-09-20 本机 KIND 的三个 App 已切换到独立 PG 与 RabbitMQ 运行身份，
+旧 backend DB 登录和旧 vhost 权限已退出并实测拒绝。详见
+[发布现状与验收边界](release.md#8-当前-kind-切换事实与剩余验收)；这不代表云端部署或生产验收。
 生产者只写预建的精确任务交换机，Worker 保留读写任务及必要控制/事件资源；开关
 `CELERY_TASK_TOPOLOGY_PREDECLARED` 默认关闭，必须先供给 durable 拓扑再启用。
 漏建交换机/队列/绑定必须使发布失败，不得静默丢任务。

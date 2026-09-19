@@ -38,27 +38,40 @@ Knowledge 摄入授权必须单独显式给出；检索 allowlist 不授权上�
 开发升级仅允许 KIND 的全 App 事务；C1/production、组件单独 apply 均拒绝。
 非 plan 操作还检查节点实际 `providerID`。迁移按以下顺序执行：
 
-1. 静态门禁与 `server-dry-run`，在隔离恢复库完成迁移、数据对账和备份回退演练。
-2. 进入维护窗口，停止旧 API/Worker/Scheduler，等待 Pod 全部退出；确认没有控制器
+1. 静态门禁、隔离库迁移/数据对账/授权/回退演练。用 `kind_identity_prepare.py`
+   生成私有计划，审查精确摘要后显式 `--apply --expected-plan-sha256 ...`；它只准备
+   独立运行 Secret、broker 用户和权限，不授权数据库、不退休旧身份。真实 AMQP
+   验收通过后，运行完整 `server-dry-run`。
+2. 进入维护窗口，先停 API/Scheduler、待 Worker 正常排空后再停止，等待 Pod 全部退出；确认没有控制器
    把旧写进程拉起。不得清空队列或伪造完成回执。
 3. 对静止的业务库再备份并实际恢复验证。备份以 0600 保存在 Git 外；回退窗口内保留。
-4. 提供 JSON `--backup-receipt /private/path/receipt.json`：`cluster_uid` 为当前
-   `kube-system` namespace UID，另含 `logical_app`、`release_id`、
-   `restore_verified=true`、`backup_file` 绝对路径、备份 `sha256`。
-   只能在真实恢复成功后生成回执；脚本校验绑定信息、文件摘要和旧进程已退出。
-5. 由既有 deploy 入口执行独立 Migration Job，再恢复规范 runtime 与 ingress，
+4. 使用 `kind_database_rehearsal.py --cutover-release <本 App bundle/release.json>`
+   出具 `cutover-receipt.json`。这会检查停写、两次真实恢复和恢复后原库行/目录未变化，
+   绑定 cluster UID、App、完整 release 内容摘要、候选镜像/head 与备份 SHA；不手写
+   `restore_verified=true` 来冒充真实恢复。Info 对象还须另核对归档与停写库引用一致。
+5. 既有 deploy 入口同时接收 `--backup-receipt <cutover-receipt.json>` 和
+   `--identity-preparation <准备计划目录>`，执行独立 Migration Job，然后在单事务内
+   核对目录并创建/授权数据库新角色，真实认证和权限探针通过才恢复 runtime 与 ingress。
    验证 rollout、数据版本、健康检查及 drift。Info → Knowledge → Investment 串行。
+6. 新运行身份及业务验收后，另行精确撤销旧库登录与旧 vhost 权限；供给和部署入口
+   不会自动执行这一步。禁止把 rollout Ready 当旧身份已失效的证明。
+
+准备出现部分失败时不可重复 `--apply`。仅当六个定点写入均有成功日志且实机状态
+完全一致，可以显式 `--verify-prepared --expected-plan-sha256 ...` 只读重做认证验收；
+此入口不补写、不覆盖、不删除服务器资源，原始计划和日志不变。新计划名字冲突时
+仍拒绝。当前是一次性身份切换流程，不是任意新版本或既有角色的通用权限协调器。
 
 备份回执是操作员验证记录，不是密码学证明。临时停副本只是维护步骤，不替代 Git
 中的最终副本声明。存在未确认投递时 downgrade 必须拒绝；应使用已演练的备份恢复，
 不能删除任务以让回退通过。开发包不得改写 `1.0.0` / `2.0.0` 发布别名。
 
-在线备份准备工具（**均不生成可用于部署的停机备份回执**）：
+备份准备工具（默认在线模式**不生成可用于部署的停机备份回执**）：
 
 - `kind_database_rehearsal.py --help`：使用对应 Backend 的 venv（asyncpg、SQLAlchemy），
   显式 kubeconfig/集群 UID/候选镜像 digest/head/新私有目录；导出业务库并在固定 PG
   镜像的无外网临时容器内两次恢复、迁移、对账。当前固定镜像为本机 PG 17.6；换环境
   必须重审镜像与范围。角色/Secret/业务数据只落 Git 外 0700/0600 私有目录。
+  只有显式 `--cutover-release` 并通过全部停写/恢复检查才额外输出切换回执。
 - `kind_info_object_backup.py --help`：只读读取既有 Info API 配置和文件引用，核对
   明确版本或未版本化引用的记录摘要、大小，再导出私有 tar。任何缺失都失败，不跳过、
   不自动寻找别的版本、不改数据库；成功导出也不等于 S3 恢复已验证。

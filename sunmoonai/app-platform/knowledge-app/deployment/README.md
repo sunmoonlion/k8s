@@ -10,7 +10,9 @@ NetworkPolicy 与正式 TLS 路由；所有镜像均使用 Harbor digest。
 ```bash
 ./deploy-knowledge-app-all/deploy-knowledge-app-all.sh plan --cluster KIND
 ./deploy-knowledge-app-all/deploy-knowledge-app-all.sh server-dry-run --cluster KIND
-./deploy-knowledge-app-all/deploy-knowledge-app-all.sh deploy --cluster KIND --backup-receipt /private/path/receipt.json
+./deploy-knowledge-app-all/deploy-knowledge-app-all.sh deploy --cluster KIND \
+  --backup-receipt /private/path/cutover-receipt.json \
+  --identity-preparation /private/path/identity-preparation
 ./deploy-knowledge-app-all/deploy-knowledge-app-all.sh drift --cluster KIND
 ./deploy-knowledge-app-all/deploy-knowledge-app-all.sh status --cluster KIND
 ```
@@ -20,7 +22,7 @@ NetworkPolicy 与正式 TLS 路由；所有镜像均使用 Harbor digest。
 `deploy-knowledge-admin-frontend/`、`deploy-knowledge-web-frontend/` 和
 `deploy-knowledge-migration/`。它们共享本目录的 digest 锁和部署实现，不维护第二份 YAML。
 
-`deploy` 按 prerequisites/network policy → migration → runtime → ingress 收敛。旧 v1 API、
+`deploy` 按 prerequisites/network policy → migration → 开发身份授权验收 → runtime → ingress 收敛。旧 v1 API、
 Worker 和双 Backend 部署生成器已在 R7 后退役收口中删除；默认入口不会重建它们。它只引用
 预先受管的 Secret，不复制或输出凭据。
 Migration Job 成功后立即删除。

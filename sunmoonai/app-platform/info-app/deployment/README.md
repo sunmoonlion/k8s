@@ -10,7 +10,9 @@
 ```bash
 ./deploy-info-app-all/deploy-info-app-all.sh plan --cluster KIND
 ./deploy-info-app-all/deploy-info-app-all.sh server-dry-run --cluster KIND
-./deploy-info-app-all/deploy-info-app-all.sh deploy --cluster KIND --backup-receipt /private/path/receipt.json
+./deploy-info-app-all/deploy-info-app-all.sh deploy --cluster KIND \
+  --backup-receipt /private/path/cutover-receipt.json \
+  --identity-preparation /private/path/identity-preparation
 ./deploy-info-app-all/deploy-info-app-all.sh drift --cluster KIND
 ./deploy-info-app-all/deploy-info-app-all.sh status --cluster KIND
 ```
@@ -27,7 +29,7 @@
 | `deploy-info-web-frontend/` | Web Next.js |
 | `deploy-info-migration/` | Alembic Migration Job |
 
-`deploy` 按 prerequisites/network policy -> migration -> runtime -> ingress 的顺序收敛。
+`deploy` 按 prerequisites/network policy -> migration -> 开发身份授权验收 -> runtime -> ingress 收敛。
 六个 v1 Deployment 已在 R7 后退役收口中删除；默认入口不会重建它们。它只引用集群中预先
 受管的 Secret，不复制、不输出凭据。
 Migration Job 成功后立即删除。

@@ -1,6 +1,6 @@
 # 发布与门禁
 
-> 更新：2026-09-19，核当前 bundle 的开发发布标志及隔离/业务部署边界 ｜ 相关规则见 [`../../dev-agent-task/SDD/constraints.md`](../../dev-agent-task/SDD/constraints.md)「发布」R1–R7
+> 更新：2026-09-20，本机 KIND 已切换固定开发候选及独立运行身份 ｜ 相关规则见 [`../../dev-agent-task/SDD/constraints.md`](../../dev-agent-task/SDD/constraints.md)「发布」R1–R7
 > 逐行位置见 [`../repos/k8s.md`](../repos/k8s.md) §4–§5
 
 ## 1. 发布单元
@@ -54,6 +54,7 @@ render.py 解析出 digest 写入 bundle
 1  00-prerequisites.yaml
 2  30-network-policies.yaml     ← 网络策略先于迁移
 3  10-migration.yaml            删旧 Job → apply → 等完成 → 删 Job
+   KIND 首次身份切换            核静止备份回执 → 激活独立 DB 身份 → 真实权限探针
 4  20-runtime.yaml
 5  40-ingress.yaml
 6  rollout status（按 deployment_replicas 逐个等）
@@ -131,8 +132,9 @@ render.py 解析出 digest 写入 bundle
 包版本与发布别名一致不是矛盾。判断部署必须核对对应提交、构建产物 digest、
 冻结 bundle/manifest 与实际 Pod imageID，并关联该版本的门禁证据。
 历史正式 manifest 不能为了同步开发提交而改写为尚未构建的新 HEAD。
-当前先进行源码集成/同步；镜像构建、Harbor 推送、bundle 生成和实际部署各自核验，
-不由 Git 同步自动完成。具体操作范围和前置见 [部署清单](../../legacy-backlog/deployment-checklist.md)。
+当前 `kind-b7-20260919` 已按 Harbor digest 部署本机 KIND；云端仅同步源码，未部署。
+镜像构建、Harbor 推送、bundle 生成和实际部署各自核验，不由 Git 同步自动完成。
+具体操作范围和前置见 [部署清单](../../legacy-backlog/deployment-checklist.md)。
 
 复核包版本和历史发布声明（不能代替 live 核验）：
 ```bash
@@ -140,13 +142,24 @@ grep -h '^version' */[a-z]*-backend/app/pyproject.toml
 python3 -c "import json;print(json.load(open('k8s/sunmoonai/app-platform/info-app/deployment/bundle/release.json'))['formal_release'])"
 ```
 
-## 8. 当前运行身份候选的发布前置
+## 8. 当前 KIND 切换事实与剩余验收
 
 数据库 API/Worker/Scheduler/Migration 权限策略、独立连接键与 broker 预声明拓扑候选
-已有联合运行及生命周期隔离验证，见 [精简验证索引](../../legacy-backlog/verification-index.md)。
-它们不意味着业务环境已从共享账号切换；不能只翻开预声明开关，或直接重跑旧供给脚本。
-后续必须核验供给与重启时 definitions 一致性、旧 PUBLIC/default ACL、LOGIN 状态、
-存量连接排空与撤权、备份恢复及受控切换。运行探针、指标输出也不等于已接监控告警。
+已在本机 KIND 完成 Info → Knowledge → Investment 串行切换：停写备份、每 App 两次
+实际隔离恢复、独立迁移、运行身份授权与探针、新服务就绪后精确退出旧身份。
+三个 head 分别为 `20260913_0009`、`20260911_0006`、`20260911_0007`；三个 App
+API 2 / Worker 1 / Scheduler 1 / 两个前端各 2 就绪，drift 无差异。9 个新 DB 登录
+跨 App 数据库的 18 次连接被拒绝；三个旧 DB 登录和旧 broker vhost 访问实际拒绝。
+共享启动 definitions 同步撤权、非目标资源保持不变；未重启共享设施验证重启过程。
+精确载荷摘要、固定提交与私有证据位置见
+[本次切换记录](../../tasks/B7-B9-closeout/thread/0001-imp-none/0015-none/others/preparation.md)。
+
+当前入口是一次性身份 bootstrap，不是既有角色通用协调器。退役后不能盲目重跑准备/
+激活，或恢复旧权限来满足旧目录指纹；后续新版本须显式核对既有身份与新发布回执。
+完整浏览器真实登录、跨 App Provider 回执、故障回滚/前滚和 Calico 包级门禁尚未闭合。
+三 App `/api/version` 的 deploymentId 正确，但 version 为 `0+unknown`：镜像缺少
+已安装的项目 distribution metadata；不能把它解释为 digest 漂移，也不能视为已修复。
+运行探针、指标输出仍不等于已接监控告警；本次没有 production 晋级或云端部署。
 
 ---
 

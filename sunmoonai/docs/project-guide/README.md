@@ -106,9 +106,10 @@ project-guide/
 
 ## 本轮的已知缺口（读之前先知道）
 
-- **源码不等于运行态**：最近的业务 KIND 只读快照与独立临时环境测试分别列在
-  [部署清单](../legacy-backlog/deployment-checklist.md) 和 [验证索引](../legacy-backlog/verification-index.md)。本目录不将这些证据
-  推定为当前业务镜像已升级、权限已切换或 NetworkPolicy 已执行；继续工作时重查。
+- **部署不等于完整验收**：本机 KIND 已部署 `kind-b7-20260919` 并完成独立身份切换，
+  见 [发布现状](topics/release.md#8-当前-kind-切换事实与剩余验收)；完整业务 UAT 与
+  NetworkPolicy 包级验收仍有缺口。独立环境历史证据见
+  [验证索引](../legacy-backlog/verification-index.md)，不自动替当前版本背书；继续工作时重查。
 - **前端未逐文件深读**：约 570 个 ts/tsx，核到了结构、入口、契约与关键配置层。
 - **新架构尚未落代码**：三部分职责划分仍保留 B-S；产品合同与正式任务树将在随后讨论中对齐。
 - 本文档集**不写进度**。哪些缺口修过、怎么修的，见 git 历史。

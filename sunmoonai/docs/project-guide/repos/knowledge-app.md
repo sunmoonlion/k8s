@@ -202,7 +202,8 @@ settings.retrieval_auth_required_scope in service_principal.scopes  # scope
 适配义务与兼容边界由 Knowledge Backend 的 `docs/knowledge-provider.md` 维护。
 
 运行身份隔离使用 Knowledge 自身的表列策略，包含 provider operation journal 的权限
-边界；源码和隔离联合验证不代表业务账号已切换。续作见
+边界；本机 KIND 已迁移至 `20260911_0006`，完成分角色身份切换和旧身份退出；既有
+codex-smoke 摄入绑定已应用，没有重放历史任务，不代表完整 Provider 业务验收。续作见
 [部署清单](../../legacy-backlog/deployment-checklist.md)。
 
 ## 8. 验证

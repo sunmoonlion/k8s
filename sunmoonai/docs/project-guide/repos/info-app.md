@@ -191,7 +191,8 @@ subject/audience 绑定与 `delivery:observe` 授权；不接受浏览器 Cookie
 | Web interaction 生产可用 | 同模板：默认 503 |
 
 共享健康、进展指标与身份策略沿用模板。Info 的领域表列权限需用本仓策略，不能照搬
-模板空领域授权；本轮隔离测试已覆盖实际角色运行，但业务库迁移与账号切换未实施。
+模板空领域授权；本机 KIND 已迁移至 `20260913_0009`，完成分角色身份切换和旧身份退出。
+完整业务 UAT 仍未闭合，详见 [发布现状](../topics/release.md#8-当前-kind-切换事实与剩余验收)。
 最新边界与续作入口见 [部署清单](../../legacy-backlog/deployment-checklist.md)。
 
 ## 8. 验证

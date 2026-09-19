@@ -10,7 +10,9 @@ App 级入口：
 ```bash
 ./deploy-investment-app-all/deploy-investment-app-all.sh plan --cluster KIND
 ./deploy-investment-app-all/deploy-investment-app-all.sh server-dry-run --cluster KIND
-./deploy-investment-app-all/deploy-investment-app-all.sh deploy --cluster KIND --backup-receipt /private/path/receipt.json
+./deploy-investment-app-all/deploy-investment-app-all.sh deploy --cluster KIND \
+  --backup-receipt /private/path/cutover-receipt.json \
+  --identity-preparation /private/path/identity-preparation
 ./deploy-investment-app-all/deploy-investment-app-all.sh drift --cluster KIND
 ./deploy-investment-app-all/deploy-investment-app-all.sh status --cluster KIND
 ```
