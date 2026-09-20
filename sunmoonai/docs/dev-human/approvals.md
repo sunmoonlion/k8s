@@ -8,7 +8,7 @@
 三者不能互相代替：定稿采纳了一份设计，不等于批准了照它动代码。
 
 同一件事交给程序执行时要落成什么机制——权力表与强制点、批准怎样才算成立、三道正交门、四档审批、
-待批准事项的记录——在 agent 侧，见 [后端的人介入与权力](../dev-agent/SDD/modules/0001-backend/rules/agent-dev-guide.md)。
+待批准事项的记录——在 agent 侧，见 [后端的人介入与权力](../dev-agent/SDD/submodules/0001-backend/rules/agent-dev-guide.md)。
 **不在这里复述**：人版没有服务端、没有工具网关、没有 Interaction 对象，那些条款在这边落不了地。
 
 ## 人的位置

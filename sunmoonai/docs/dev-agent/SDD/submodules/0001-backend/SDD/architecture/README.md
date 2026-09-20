@@ -7,12 +7,14 @@
 
 按合同七阶段产品功能的阶段切，每个模块对一段：
 
-| 模块 | 承担什么 | 设计要点 |
+| 模块 | 各自是什么 | 子任务 |
 | --- | --- | --- |
-| [`0001-intake`](../modules/0001-intake/PRD/requirement.md) | 受理与路由：身份、幂等、建单、契约固定、路由决定 | 身份与幂等在同一个事务边界内完成；契约固定后才进队列 |
-| [`0002-agent-execution`](../modules/0002-agent-execution/PRD/requirement.md) | 排队、派发与执行对接：outbox、租约与 fencing、事件与副作用回传 | outbox 投递；租约与 fencing 随派发下发；事件、副作用与用量按 Attempt 归集 |
-| [`0003-interrupt-resume`](../modules/0003-interrupt-resume/PRD/requirement.md) | 中断、批准与恢复：Interaction 的原子消费、断线暂停后的对账 | Interaction 的令牌在同一并发控制边界内消费；断线后按 fencing 对账 |
-| [`0004-acceptance-commit`](../modules/0004-acceptance-commit/PRD/requirement.md) | 验收与完成提交：确定性验收、回执核对、终态原子提交、交付 | 确定性验收与本地内容检查回执核对；终态、结果、预算结算原子提交 |
+| `0001-intake` | [说明](../modules/0001-intake.md) | [子任务](../submodules/0001-intake/PRD/requirement.md) |
+| `0002-agent-execution` | [说明](../modules/0002-agent-execution.md) | [子任务](../submodules/0002-agent-execution/PRD/requirement.md) |
+| `0003-interrupt-resume` | [说明](../modules/0003-interrupt-resume.md) | [子任务](../submodules/0003-interrupt-resume/PRD/requirement.md) |
+| `0004-acceptance-commit` | [说明](../modules/0004-acceptance-commit.md) | [子任务](../submodules/0004-acceptance-commit/PRD/requirement.md) |
+
+**各模块承担什么、不承担什么，写在 [`SDD/modules/`](../modules/) 下各自那一份**，本表只管关系。
 
 同层的其他定稿：[`agent-dev-guide.md`](../../rules/agent-dev-guide.md) 是开发指导。
 

@@ -61,7 +61,7 @@ thread、turn 与模块的目录名怎么起、号怎么排、与运行时怎么
 
 ## 模块也编号
 
-`SDD/modules/` 下的模块目录名是「四位号 + 短名」。**号只在同一个 `modules/` 里递增**，每一层都从 `0001` 起；任务目录本身不编号。模块只在设计侧划，`PRD/` 下没有 `modules/`。
+`SDD/modules/` 下是「四位号-短名.md」（每块是什么），`SDD/submodules/` 下是同名目录（往下的子任务），两边一一对应。**号只在同一个 `modules/` 里递增**，每一层都从 `0001` 起；任务目录本身不编号。模块只在设计侧划，`PRD/` 下没有 `modules/`。
 
 ```text
 dev-agent/                             项目，不编号
@@ -94,5 +94,5 @@ dev-agent/                             项目，不编号
 | 回执的字段 | `status`、`worktree`、`commit` 三行齐全；IMP、UAT 两类的 `worktree` 与 `commit` 有值，PRD、SDD 两类两者同为「无」或同时填 |
 | 编号连续 | thread 号在任务目录内、turn 号在各 thread 内，都从 `0001` 起不跳号、不复用 |
 | 名字唯一 | 同一个本地号只有一个目录；同一个运行时 id 不出现在两处 |
-| 模块编号 | 模块目录名合乎「四位号-短名」，在同一个 `modules/` 里从 `0001` 起连续、不复用 |
+| 模块编号 | 合乎「四位号-短名」，在同一层里从 `0001` 起连续、不复用；`modules/*.md` 与 `submodules/*/` 同号同名一一对应 |
 | 定稿目录 | 有 `SDD/modules/` 就必须有 `SDD/architecture/`；`PRD/` 下不得有 `architecture/` 或 `modules/` |

@@ -20,7 +20,7 @@
 - **F-ADMIT-01**：在可靠边界内完成认证身份绑定、幂等占位、Task 建单与首事件写入；
 - **F-ADMIT-02**：输入不合规不得「尽量执行」；建单后的拒绝进入 `REJECTED`，协议层拒绝按 [`objects.md`](../SDD/architecture/objects.md) 处理；
 - **F-ADMIT-03**：所有客户端入口（桌面应用、受信服务入口）共享同一个应用用例，只在接口层解析身份：桌面应用的身份来自桌面端 token 会话，服务入口使用服务身份与受信委托上下文；不得复制 Task 状态或业务逻辑；
-- **F-ADMIT-04**：路由按「用户所选 → 后端兜底 → 交用户选」进行（[`0001-backend/PRD/routing.md`](../SDD/modules/0001-backend/PRD/routing.md)）；路由规则是版本化配置，变更落事件；路由决定及其依据入账；
+- **F-ADMIT-04**：路由按「用户所选 → 后端兜底 → 交用户选」进行（[`0001-backend/PRD/routing.md`](../SDD/submodules/0001-backend/PRD/routing.md)）；路由规则是版本化配置，变更落事件；路由决定及其依据入账；
 - **F-ADMIT-05**：执行设备只从在线、已授权相应工作区的设备中选择；用户指定设备时校验归属；
 - **F-ADMIT-06**：类别判不出来时创建 Interaction 交用户选，不得默认判为通用，也不得回退到能力更大的 Profile。
 
@@ -42,15 +42,15 @@
 - **F-EXEC-06**：区分事实、推断、假设、缺失与不确定性；
 - **F-EXEC-07**：无法满足完成契约时请求输入或明确失败，不伪造完整结果；
 - **F-EXEC-08**：计划只是可选 Artifact；复杂 Task 可以要求计划先经批准，简单任务不得为走流程而制造空计划；
-- **F-EXEC-09**：每个 Attempt 在独立工作区执行，不直接修改用户正在使用的目录（[`discipline.md`](../SDD/modules/0003-runtime/PRD/discipline.md)）；
-- **F-EXEC-10**：失去租约即暂停（[`discipline.md`](../SDD/modules/0003-runtime/PRD/discipline.md)）；
+- **F-EXEC-09**：每个 Attempt 在独立工作区执行，不直接修改用户正在使用的目录（[`discipline.md`](../SDD/submodules/0003-runtime/PRD/discipline.md)）；
+- **F-EXEC-10**：失去租约即暂停（[`discipline.md`](../SDD/submodules/0003-runtime/PRD/discipline.md)）；
 - **F-EXEC-11**：执行中发现需要领域能力时调用 `escalate`，不自行扩大能力；
 - **F-EXEC-12**：Agent Profile 之外的工具不进入模型上下文（会话组装时就不挂载）；runtime 对未授权的工具调用结构性拒绝，两层不得互相替代；
 - **F-EXEC-13**：研究产出遵守定位约束（F-POS-01 至 F-POS-04）。
 
 ## 中断、批准与恢复
 
-- **F-INTERACT-01**：后端把等待问题具体化为可直接回答的输入或可明确批准的动作，向正确受众投影 Interaction，并按 [`state-machine.md`](../SDD/modules/0001-backend/PRD/state-machine.md)「WAITING 与 Interaction」原子恢复；
+- **F-INTERACT-01**：后端把等待问题具体化为可直接回答的输入或可明确批准的动作，向正确受众投影 Interaction，并按 [`state-machine.md`](../SDD/submodules/0001-backend/PRD/state-machine.md)「WAITING 与 Interaction」原子恢复；
 - **F-INTERACT-02**：恢复令牌消费后若后续投递失败，必须留下可恢复记录或进入合法失败路径，不得悬空；
 - **F-INTERACT-03**：工具级审批与 Task 级审批按 [`approval.md`](../SDD/architecture/approval.md) 分层处理，提交逻辑互不借道。
 

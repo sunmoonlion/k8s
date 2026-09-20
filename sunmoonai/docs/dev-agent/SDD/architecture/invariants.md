@@ -1,6 +1,6 @@
 # 全程不变量与持久化账
 
-> 由产品合同搬入。执行端自己那一份纪律在 [`0003-runtime/PRD/discipline.md`](../modules/0003-runtime/PRD/discipline.md)。
+> 由产品合同搬入。执行端自己那一份纪律在 [`0003-runtime/PRD/discipline.md`](../submodules/0003-runtime/PRD/discipline.md)。
 
 ## 全程不变量
 

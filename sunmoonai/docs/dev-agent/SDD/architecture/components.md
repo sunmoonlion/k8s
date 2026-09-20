@@ -44,11 +44,13 @@
 
 按**运行位置、信任域、发布方式**切——三者都不同就单列：
 
-| 模块 | 对应上表的哪一部分 | 跑在哪 | 内部结构见 |
-| --- | --- | --- | --- |
-| [`0001-backend`](../modules/0001-backend/PRD/requirement.md) | 后端（supervisor） | 服务器 | [设计](../modules/0001-backend/SDD/architecture/README.md) |
-| [`0002-desktop`](../modules/0002-desktop/PRD/requirement.md) | 桌面应用 | 用户电脑 | [设计](../modules/0002-desktop/SDD/architecture/README.md) |
-| [`0003-runtime`](../modules/0003-runtime/PRD/requirement.md) | 本地 runtime 与 Codex | 用户电脑 | 待设计 |
+| 模块 | 对应上表的哪一部分 | 跑在哪 | 各自是什么 | 子任务 |
+| --- | --- | --- | --- | --- |
+| `0001-backend` | 后端（supervisor） | 服务器 | [说明](../modules/0001-backend.md) | [子任务](../submodules/0001-backend/PRD/requirement.md) |
+| `0002-desktop` | 桌面应用 | 用户电脑 | [说明](../modules/0002-desktop.md) | [子任务](../submodules/0002-desktop/PRD/requirement.md) |
+| `0003-runtime` | 本地 runtime 与 Codex | 用户电脑 | [说明](../modules/0003-runtime.md) | [子任务](../submodules/0003-runtime/PRD/requirement.md) |
+
+**各模块承担什么、不承担什么，写在 [`SDD/modules/`](../modules/) 下各自那一份**，本表不复述。
 
 `0002` 与 `0003` 都在用户电脑上，**信任域不同**：runtime 碰得到 key 与结果正文，桌面应用碰不到。
 这是它们分开的唯一理由，也是不能合并的理由。

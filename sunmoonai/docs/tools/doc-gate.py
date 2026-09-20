@@ -315,31 +315,54 @@ def check_turn_md(base: str, fm: dict[str, str], kind: str) -> list[str]:
 
 
 def check_modules(tracked: set[str]) -> list[str]:
-    """模块只在 SDD/ 下划：目录名是「四位号-短名」，在同一个 modules/ 里从 0001 起连续；PRD/ 下不得有 architecture/ 或 modules/。"""
+    """模块只在 SDD/ 下划。modules/<名>.md 说每块是什么，submodules/<名>/ 是它往下的子任务，两边同号同名一一对应；
+    名字合乎「四位号-短名」，从 0001 起连续；PRD/ 下三样都不得有。"""
     problems: list[str] = []
-    dirs: dict[str, set[str]] = {}          # <任务目录>/<PRD|SDD>/modules -> 模块名
+    dirs: dict[str, set[str]] = {}          # <任务目录>/<PRD|SDD>/submodules -> 模块名
+    descs: dict[str, set[str]] = {}         # <任务目录>/<PRD|SDD>/modules -> 说明文件名（去 .md）
     have_arch: set[str] = set()             # 有 architecture/ 的 <任务目录>/<PRD|SDD>
     finals: set[str] = set()                # 出现过的 <任务目录>/<PRD|SDD>
+    # **按路径段逐层扫，不用贪婪正则。**一个路径可能穿过好几层任务目录
+    # （`…/SDD/submodules/X/SDD/submodules/Y/…`），贪婪匹配只认得最后一层，
+    # 于是「文件全在自己 PRD/ 下」的模块在父层就消失了——检查会报假错。
     for p in sorted(tracked):
         if not p.startswith(DOC_ROOT):
             continue
-        m = re.match(r"^(?P<task>.+)/(?P<final>PRD|SDD)/(?P<rest>.+)$", p)
-        if not m:
-            continue
-        finals.add(f"{m['task']}/{m['final']}")
-        rest = m["rest"].split("/")
-        if rest[0] == "architecture":
-            have_arch.add(f"{m['task']}/{m['final']}")
-        elif rest[0] == "modules" and len(rest) > 2:
-            dirs.setdefault(f"{m['task']}/{m['final']}/modules", set()).add(rest[1])
+        seg = p.split("/")
+        for i, part in enumerate(seg[:-1]):
+            if part not in ("PRD", "SDD"):
+                continue
+            final = "/".join(seg[: i + 1])
+            finals.add(final)
+            rest = seg[i + 1 :]
+            if rest[0] == "architecture":
+                have_arch.add(final)
+            elif rest[0] == "submodules" and len(rest) > 2:
+                dirs.setdefault(f"{final}/submodules", set()).add(rest[1])
+            elif rest[0] == "modules" and len(rest) == 2 and rest[1].endswith(".md"):
+                descs.setdefault(f"{final}/modules", set()).add(rest[1][:-3])
     for final in sorted(finals):
-        if final.endswith("/PRD") and (final in have_arch or f"{final}/modules" in dirs):
-            problems.append(f"{final}/: 需求侧不分模块，PRD/ 下不得有 architecture/ 或 modules/"
+        if final.endswith("/PRD") and (final in have_arch
+                                       or f"{final}/modules" in descs
+                                       or f"{final}/submodules" in dirs):
+            problems.append(f"{final}/: 需求侧不分模块，PRD/ 下不得有 architecture/、modules/ 或 submodules/"
                             "（模块只在 SDD/ 下划）")
-    with_modules = {w.removesuffix("/modules") for w in dirs}
+    with_modules = {w.removesuffix("/submodules") for w in dirs}
     for final in sorted(with_modules):
         if final not in have_arch:
-            problems.append(f"{final}/: 有 modules/ 就必须有 architecture/")
+            problems.append(f"{final}/: 有 submodules/ 就必须有 architecture/")
+    # **modules/ 是这一层对每块的说明，submodules/ 是它往下的子任务——同号同名一一对应。**
+    # 少一边就是「分了模块却没说它是什么」或「说了却没有落点」，两种都会让读的人钻错层。
+    for final in sorted(with_modules):
+        d = dirs.get(f"{final}/submodules", set())
+        c = descs.get(f"{final}/modules", set())
+        only_sub, only_desc = sorted(d - c), sorted(c - d)
+        if only_sub:
+            problems.append(f"{final}/: 这些模块有子任务却没有说明——"
+                            f"补 modules/<名>.md：{'、'.join(only_sub)}")
+        if only_desc:
+            problems.append(f"{final}/: 这些模块有说明却没有子任务——"
+                            f"补 submodules/<名>/ 或删说明：{'、'.join(only_desc)}")
     for where, names in sorted(dirs.items()):
         nums: dict[int, list[str]] = {}
         for name in sorted(names):

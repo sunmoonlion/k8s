@@ -37,9 +37,9 @@
 
 | 站 | 谁做 | 本轮范围 |
 | --- | --- | --- |
-| 写 message · 提交 · 交付 | 桌面应用 | [`0002-desktop`](../modules/0002-desktop/PRD/requirement.md) |
-| 受理 · 派发 · 验收 | 后端 | [`0001-backend`](../modules/0001-backend/PRD/requirement.md) |
-| 执行 · 中断 · 封装 | 本地 runtime 驱动 Codex | [`0003-runtime`](../modules/0003-runtime/PRD/requirement.md) |
+| 写 message · 提交 · 交付 | 桌面应用 | [`0002-desktop`](../submodules/0002-desktop/PRD/requirement.md) |
+| 受理 · 派发 · 验收 | 后端 | [`0001-backend`](../submodules/0001-backend/PRD/requirement.md) |
+| 执行 · 中断 · 封装 | 本地 runtime 驱动 Codex | [`0003-runtime`](../submodules/0003-runtime/PRD/requirement.md) |
 | 执行站里的取数 | 知识服务（通道 ⑤）、模型厂商（通道 ⑥） | **范围外**，见 [组成部分与本轮范围](components.md) |
 
 **中断那一站跨两个模块**：工具级审批的界面在 `0002-desktop` 的本地窗口，拦截点在 `0003-runtime`；
