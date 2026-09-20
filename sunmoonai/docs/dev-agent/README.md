@@ -16,7 +16,8 @@ SDD/
 ├── agent-dev-guide.md
 └── modules/
     ├── 0001-backend/              thread/ · PRD/ · SDD/（其 SDD/modules/ 下四个模块）
-    └── 0002-frontend/
+    ├── 0002-desktop/            Electron 桌面应用
+    └── 0003-runtime/            本地 runtime，独立成仓
 ```
 
 产品合同不在任务目录里：它是[跨节点的权威契约](../product/product-contract.md)，各层走到自己的定稿时，把属于那一层的内容取出来写进定稿，并在合同的「去向」表里登记。第一层分前端与后端，Agent 与 runtime、验收器归后端。

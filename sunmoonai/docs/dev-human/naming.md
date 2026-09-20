@@ -72,7 +72,7 @@ dev-agent/                             项目，不编号
     └── modules/
         ├── 0001-backend/                   子任务：内部同样是 thread/ + PRD/ + SDD/
         │   └── SDD/modules/0001-intake/ 0002-agent-execution/ …
-        └── 0002-frontend/
+        └── 0002-desktop/
 ```
 
 - 模块目录与实现时 worktree 里的模块目录一一对应；**以定稿为准**：要改结构，先改这里。

@@ -33,6 +33,18 @@
 
 部件与通道的定义见 [产品合同](../../../product/product-contract.md) 的「组成部分」与「通道」两节。
 
+## 九站落在哪个模块
+
+| 站 | 谁做 | 本轮范围 |
+| --- | --- | --- |
+| 写 message · 提交 · 交付 | 桌面应用 | [`0002-desktop`](../modules/0002-desktop/PRD/requirement.md) |
+| 受理 · 派发 · 验收 | 后端 | [`0001-backend`](../modules/0001-backend/PRD/requirement.md) |
+| 执行 · 中断 · 封装 | 本地 runtime 驱动 Codex | [`0003-runtime`](../modules/0003-runtime/PRD/requirement.md) |
+| 执行站里的取数 | 知识服务（通道 ⑤）、模型厂商（通道 ⑥） | **范围外**，见 [模块表](README.md)「本轮范围外」 |
+
+**中断那一站跨两个模块**：工具级审批的界面在 `0002-desktop` 的本地页面，拦截点在 `0003-runtime`；
+Task 级审查的界面在 `0002-desktop` 的审查窗口，原子消费在 `0001-backend`。这是三方交界处，最容易出错。
+
 ## 每一站算走完了没有
 
 | 站 | 在哪 | 走完的判据 | 条款 |

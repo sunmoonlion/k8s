@@ -408,8 +408,13 @@ Codex 沙箱
 
 ### 2.11 工程落点
 
-- 桌面客户端新建，采用 Electron + Vite + React Router，是唯一的用户界面；
-- 现有网页前端不作为产品功能开发；其中的组件、契约、调用后端的客户端抽成共享包复用；
+- 桌面客户端新建，采用 Electron + Vite + React Router，**是做研究工作的唯一界面**；
+- 现有网页前端**本轮不开发，沿用现状**：四个 app 仓各有 `*-web-frontend/` 与 `*-admin-frontend/`，
+  共八个 Next.js 前端，继续承担官网、下载页与内部管理后台；
+- **界面不共享**：网页前端用 Next.js，桌面应用用 Vite + React Router，各按各自技术栈开发。
+  两者运行模型不同（SSR 与 hydration／Electron 渲染进程与 preload），强行共享组件会让两边都被对方的约束绑住；
+- **接口契约单一真源**：两端调的是同一个后端，接口形状以后端的 OpenAPI / schema 为准，
+  两端各自生成客户端，**不手写第二份**——同一事实只能有一个权威写入面；
 - 管理后台沿用平台模板的 admin 前端；
 - runtime 独立成仓；后端的执行端口保持中性（领域概念不进签名），新增经 ① 派往 runtime 的适配器；
 - 以上工程决定须符合 [`constraints.md`](../dev-agent/SDD/constraints.md)；需要改动其条款时按其修订程序进行。
@@ -1149,7 +1154,6 @@ graph_version
 
 | # | 问题 | 建议 | 影响 |
 | --- | --- | --- | --- |
-| D1 | 任务树第一层分两部分（前端、后端）还是三部分（桌面客户端、本地 runtime、后端） | 三部分：runtime 与后端的运行位置、信任域、发布方式都不同 | 子任务划分与责任投影 |
 | D2 | 两层审批的具体划分与「需要升级」的命令清单 | 不可逆、对外可见的归 Task 级；独立工作区内的归工具级 | F-APPROVE-01、§6.2 |
 | D3 | 本地确认按 Task 还是按 Attempt；哪些 Profile 可免确认 | 默认每个 Attempt 都确认，用户可为部分 Profile 放宽 | 被攻破时的暴露面、体验 |
 | D4 | 允许改派设备的条件 | 默认不允许；Profile 声明且工作区在目标设备可用时允许 | 可用性、工作区同步 |
@@ -1232,11 +1236,10 @@ graph_version
 
 | 对象 | 要改什么 |
 | --- | --- |
-| [`dev-agent/README.md`](../dev-agent/README.md) | 任务树第一层的划分按 D1 定 |
 | [`PRD/development-plan.md`](../dev-agent/PRD/development-plan.md) | 施工阶段改为桌面客户端、本地 runtime、后端；分期按附录 C |
 | [`SDD/constraints.md`](../dev-agent/SDD/constraints.md) | 「通用/专用分离」改写为「一个执行体，按 Profile 与 workflow 区分任务」；新增设备身份（认证、派发签名、吊销）、问题侧明文与资料侧加密的分界条款；持久化账条款补「执行端本地暂存不是权威副本」；会话与 CSRF 条款补桌面端 token 会话 |
 | `SDD/modules/0001-backend` 及其子任务 | 执行位置改到用户电脑上的 runtime；后端只做 supervisor、派发与持久化；执行端口新增派往 runtime 的适配器 |
-| `SDD/modules/0002-frontend` | 目标改为桌面客户端；用户侧不做网页端；审查收件箱改在桌面应用的审查窗口 |
+| `SDD/modules/0002-desktop` | 目标改为桌面客户端；用户侧不做网页端；审查收件箱改在桌面应用的审查窗口 |
 | 新增组成部分 | 本地 runtime；桌面客户端；知识服务的 MCP 接口；workflow 清单与类别判定规则集 |
 | `investment-web-frontend` | 不作为产品功能开发；组件、契约、后端客户端抽成共享包（D7） |
 | `investment-backend` | supervisor 受理判定与路由、workflow、`escalate` 处理；预算账持久化；Agent Profile 成为执行约束；设备注册与配对、WSS 派发网关、派发签名、续约与 fencing、批量副作用记账、工具级审批摘要接收、密文存储；后端不接入生成式模型 |

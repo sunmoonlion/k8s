@@ -1,4 +1,4 @@
-# 0002-frontend：要满足什么
+# 0002-desktop：要满足什么
 
 > 依据：[产品合同](../../../../../product/product-contract.md) 的「责任投影」中的「桌面应用」。
 
