@@ -1,8 +1,6 @@
 # 需求：要满足什么
 
 > 依据：[产品合同](../../product/product-contract.md)。本文只写**要什么**，怎么做见 [设计层](../SDD/architecture/README.md)。
->
-> 同层另一份：[请求生命周期](lifecycle.md)——一条 message 从用户发出到用户看到 response 的完整往返。
 
 ## 目标与范围
 

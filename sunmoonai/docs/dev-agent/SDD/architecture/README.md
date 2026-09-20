@@ -3,6 +3,11 @@
 > 依据：[需求](../../PRD/requirement.md) 与 [产品合同](../../../product/product-contract.md)。
 > 本层定稿以 thread [0001/0001](../../thread/0001-prd-none/0001-none/user-message.md)、[0001/0002](../../thread/0001-prd-none/0002-none/user-message.md)、[0001/0003](../../thread/0001-prd-none/0003-none/user-message.md) 的 response 为底。
 
+## 轮廓
+
+[请求生命周期](lifecycle.md)：一条 message 从用户发出到用户看到 response 的完整往返，九站。
+**先读它**——下面的模块、交互与约束都是这条线上的局部。
+
 ## 模块
 
 | 模块 | 承担什么 | 内部结构见 |
