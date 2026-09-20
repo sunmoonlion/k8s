@@ -14,7 +14,7 @@
 | [`0003-interrupt-resume`](../modules/0003-interrupt-resume/PRD/requirement.md) | 中断、批准与恢复：Interaction 的原子消费、断线暂停后的对账 | Interaction 的令牌在同一并发控制边界内消费；断线后按 fencing 对账 |
 | [`0004-acceptance-commit`](../modules/0004-acceptance-commit/PRD/requirement.md) | 验收与完成提交：确定性验收、回执核对、终态原子提交、交付 | 确定性验收与本地内容检查回执核对；终态、结果、预算结算原子提交 |
 
-同层的其他定稿：[`agent-dev-guide.md`](../agent-dev-guide.md) 是开发指导。
+同层的其他定稿：[`agent-dev-guide.md`](../../rules/agent-dev-guide.md) 是开发指导。
 
 ## 模块之间
 
@@ -25,4 +25,4 @@
 
 ## 约束
 
-[代码规则](../../../../constraints.md)、[IMP 规则](../../../../../../dev-human/imp/message-rules.md)，以及产品合同的不变量 `I1` 至 `I20`。
+[代码规则](../../../../../rules/constraints.md)、[IMP 规则](../../../../../../dev-human/imp/message-rules.md)，以及产品合同的不变量 `I1` 至 `I20`。

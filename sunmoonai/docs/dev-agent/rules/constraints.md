@@ -5,7 +5,7 @@
 > **动代码前先读这里。**违反其中任一条的方案**不进入讨论**——不是"不推荐"，
 > 是不提出。
 >
-> 项目现在长什么样，见 [`../project-guide/`](../../project-guide/)；
+> 项目现在长什么样，见 [`../project-guide/`](../../project-guide)；
 > 要建什么见 [`development-plan.md`](../PRD/development-plan.md)，
 > 用户消息在各 turn 的 `user-message.md` 里；
 > 进度由任务目录推出，不另设进度文件。

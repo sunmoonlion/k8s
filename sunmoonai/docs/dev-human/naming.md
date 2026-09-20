@@ -67,6 +67,7 @@ thread、turn 与模块的目录名怎么起、号怎么排、与运行时怎么
 dev-agent/                             项目，不编号
 ├── thread/
 ├── PRD/requirement.md                           需求：不分模块
+├── rules/                                       可选：约束、纪律与开发提醒
 └── SDD/
     ├── architecture/
     └── modules/

@@ -52,9 +52,9 @@ Submission
 | 真源 | 本文怎样使用 | 本文不做什么 |
 | --- | --- | --- |
 | [`product-contract.md`](../../product/product-contract.md) | 引用七对象、Task/Attempt 状态机、`I1`–`I15`、`F-*`、`AT-*` | 不重写对象定义、合法边或产品验收矩阵 |
-| [`competition-protocol.md`](../../dev-human/protocol/competition-protocol.md) | [§3.19](../../dev-human/protocol/competition-operations.md)–[§3.22](modules/0001-backend/SDD/modules/0002-agent-execution/SDD/agent-dev-guide.md) 汇总执行所需的阶段、取件、超时规则 | 不另立协议版本；协议改变时同步修订本导读 |
+| [`competition-protocol.md`](../../dev-human/protocol/competition-protocol.md) | [§3.19](../../dev-human/protocol/competition-operations.md)–[§3.22](../SDD/modules/0001-backend/SDD/modules/0002-agent-execution/rules/agent-dev-guide.md) 汇总执行所需的阶段、取件、超时规则 | 不另立协议版本；协议改变时同步修订本导读 |
 | [`constraints.md`](constraints.md) | 开工前自检硬约束，尤其 A1–A5 | 不把自检改成建议 |
-| [`development-plan.md`](modules/0001-backend/PRD/development-plan.md) | 解释通用执行编排与领域能力的分工 | 不记录进度 |
+| [`development-plan.md`](../SDD/modules/0001-backend/PRD/development-plan.md) | 解释通用执行编排与领域能力的分工 | 不记录进度 |
 | 各 turn 的 `user-message.md` | 每次派工的用户消息：写明交回哪一种，以及背景、范围、验收、约束 | 随 turn 冻结，执行者不改 |
 | `thread/` | 文档 thread → 文档 turn 两级；每次派工到交回的发出内容与交回物；进度由任务目录推出 | 交回即冻结，改只能开新 turn |
 
@@ -94,7 +94,7 @@ Submission
 7. 报告盲区、副作用和残余风险；
 8. 未经授权不推送、合并、发布、删除远端资产或扩大外部影响。
 
-⚠ 第 3 条是 [§5.2](modules/0001-backend/SDD/agent-dev-guide.md) 采信规则与 [§12](modules/0001-backend/SDD/modules/0004-acceptance-commit/SDD/agent-dev-guide.md) 三级证据分档的**前提**：分不清事实与推断，
+⚠ 第 3 条是 [§5.2](../SDD/modules/0001-backend/rules/agent-dev-guide.md) 采信规则与 [§12](../SDD/modules/0001-backend/SDD/modules/0004-acceptance-commit/rules/agent-dev-guide.md) 三级证据分档的**前提**：分不清事实与推断，
 后面两处的分级就无从谈起。
 
 ### 1.6 七条设计原则
@@ -106,21 +106,21 @@ Submission
 | # | 原则 |
 | --- | --- |
 | **P0** | **只有一套状态机（Task / Attempt）**，场景差异只体现在 Profile 的 guard、必需产物与 interrupt 策略；**任何场景不得新增状态词** |
-| **P1** | **同一事实只有一个权威写入面**；两份同构文档即两个真源（`I13`，[§1.2](modules/0001-backend/SDD/agent-dev-guide.md)） |
+| **P1** | **同一事实只有一个权威写入面**；两份同构文档即两个真源（`I13`，[§1.2](../SDD/modules/0001-backend/rules/agent-dev-guide.md)） |
 | **P2** | **状态从产物反推，不从声明读取**——人的动作也不例外 |
 | **P3** | **方向不对称**：朝严谨可自裁，朝省事须人确认；⚠ **默认值属于省事方向** |
-| **P4** | **判据必须声明覆盖范围**；⚠ **覆盖不全比没有更危险**（[§5.2](modules/0001-backend/SDD/agent-dev-guide.md)） |
+| **P4** | **判据必须声明覆盖范围**；⚠ **覆盖不全比没有更危险**（[§5.2](../SDD/modules/0001-backend/rules/agent-dev-guide.md)） |
 | **P5** | ⚠ **凡能落成代码、测试或门禁的纪律必须落成**；文字只描述意图，不构成机制 |
-| **P6** | **设计机制前，先核实它要处理的动作实际发生在哪里、由谁执行、经过什么路径**；未核前提只能标假设，验证办法见 [§1.7](modules/0001-backend/SDD/modules/0004-acceptance-commit/SDD/agent-dev-guide.md) |
+| **P6** | **设计机制前，先核实它要处理的动作实际发生在哪里、由谁执行、经过什么路径**；未核前提只能标假设，验证办法见 [§1.7](../SDD/modules/0001-backend/SDD/modules/0004-acceptance-commit/rules/agent-dev-guide.md) |
 
 **两条推论：**
 
 ⚠ **一个只能靠人转述的环节等于没有环节**（P2 + P5）。这条决定了本文对人介入的全部设计：
-[§4.2](modules/0001-backend/SDD/agent-dev-guide.md) 的每一行都要有 `enforcement_point`，[§4.4](modules/0001-backend/SDD/agent-dev-guide.md) 要求强制点落在执行者够不着的地方，
+[§4.2](../SDD/modules/0001-backend/rules/agent-dev-guide.md) 的每一行都要有 `enforcement_point`，[§4.4](../SDD/modules/0001-backend/rules/agent-dev-guide.md) 要求强制点落在执行者够不着的地方，
 理由都在这里。
 
 ⚠ **P0 的适用层级是 Task 与 Attempt。**Artifact、Interaction 等对象各有自己的小生命周期
-（[§3.11](modules/0001-backend/SDD/agent-dev-guide.md) 的 `DRAFT → FROZEN → … → PUBLISHED`、内核的 `consumed_at`）——
+（[§3.11](../SDD/modules/0001-backend/rules/agent-dev-guide.md) 的 `DRAFT → FROZEN → … → PUBLISHED`、内核的 `consumed_at`）——
 **那些不是「第二套状态机」，而是对象属性**，并且同样跨场景共用、不得按场景另造。
 把对象属性误认成状态机，会导致每个场景各造一套；把状态机误认成对象属性，
 会导致状态词失控增长。**两边都错，方向相反。**
@@ -151,10 +151,10 @@ Submission
 | 17 | **`QUEUED` / `RUNNING` 在事件落地前不可判** | 已声明；脚本合并显示并标 ⚠ |
 | 18 | **H1 与 H5 落在同一 commit 时账本上的歧义** | 未决（服务态应是两个 Interaction；手工态今天做不到） |
 | 19 | 运行时外的绕过天然不完备 | principal 侧指标在共享身份下是 `UNKNOWN`，**不得写成零** |
-| 20b | **`llm-review` 能否用于任何 `auto_policy = 无` 的权力表行** | 未决。[§4.7](modules/0001-backend/SDD/modules/0003-interrupt-resume/SDD/agent-dev-guide.md) 立了四档审批，但 `llm-review` 不是 principal 的权力，在 [§4.2](modules/0001-backend/SDD/agent-dev-guide.md) 权力表里没有行。⚠ **本文不裁**——它要么是 H 行的一个前置过滤器，要么根本不该出现在需人批准的路径上，两种读法后果不同 |
+| 20b | **`llm-review` 能否用于任何 `auto_policy = 无` 的权力表行** | 未决。[§4.7](../SDD/modules/0001-backend/SDD/modules/0003-interrupt-resume/rules/agent-dev-guide.md) 立了四档审批，但 `llm-review` 不是 principal 的权力，在 [§4.2](../SDD/modules/0001-backend/rules/agent-dev-guide.md) 权力表里没有行。⚠ **本文不裁**——它要么是 H 行的一个前置过滤器，要么根本不该出现在需人批准的路径上，两种读法后果不同 |
 | 20 | 预算账、证据账与 Agent Profile 生效仍是后续工作 | 见第 25、26 条 |
-| 21 | 历史产物只在单机的可恢复性 | ⚠ 旧稿报告部分产物/冻结标签只在本机；本次未核当前远端。不外推为“现在仍只有一份”，交付前按 [§3.16](modules/0001-backend/SDD/modules/0004-acceptance-commit/SDD/agent-dev-guide.md) 核持久 ref/获准副本及重取能力，不以此擅自 push |
-| 22 | 库的完整 API 面、多次中断与版本兼容 | ⚠ 历史记录只覆盖若干用法；SDK/库升级前按 [§5.13](modules/0001-backend/SDD/agent-dev-guide.md) 重核，不把原地恢复样例推广到未经验证的路线 |
+| 21 | 历史产物只在单机的可恢复性 | ⚠ 旧稿报告部分产物/冻结标签只在本机；本次未核当前远端。不外推为“现在仍只有一份”，交付前按 [§3.16](../SDD/modules/0001-backend/SDD/modules/0004-acceptance-commit/rules/agent-dev-guide.md) 核持久 ref/获准副本及重取能力，不以此擅自 push |
+| 22 | 库的完整 API 面、多次中断与版本兼容 | ⚠ 历史记录只覆盖若干用法；SDK/库升级前按 [§5.13](../SDD/modules/0001-backend/rules/agent-dev-guide.md) 重核，不把原地恢复样例推广到未经验证的路线 |
 | 23 | **U1 web 面生产适配器的形状**：薄转发（web → internal 面），还是自己持有会话与投影？ | 未决（阶段一）：决定 v5 §10.2 事务原则与 §10.3 SSE 对账落在哪一层；已知输入见下文 |
 | 24 | U2 执行层 Port 的接口形状 | 未决（阶段二）：决定纪律层怎么被测试。cursor 提案见 `~/codex-reference-archive/cursor/investment-agent-architecture-cursor.md` §3 |
 | 25 | U3 **预算账与证据账**落 PG 的表结构与迁移 | 未决（阶段二）：一切并行工作的前置——没有预算闸门就不能 fan-out；已知输入见下文 |
@@ -221,32 +221,32 @@ Submission
 
 | 内核用语 | 本文对应物 |
 | --- | --- |
-| Submission | 原始请求来源；人直接提出时由人冻结请求与验收（[§3.1](modules/0001-backend/SDD/modules/0001-intake/SDD/agent-dev-guide.md)） |
-| Task | 一件有边界的开发工作及其冻结契约（[§2.4](modules/0001-backend/SDD/agent-dev-guide.md)） |
-| Attempt | 一次实施、候选或修复轮次（[§3.3](modules/0001-backend/SDD/agent-dev-guide.md)） |
+| Submission | 原始请求来源；人直接提出时由人冻结请求与验收（[§3.1](../SDD/modules/0001-backend/SDD/modules/0001-intake/rules/agent-dev-guide.md)） |
+| Task | 一件有边界的开发工作及其冻结契约（[§2.4](../SDD/modules/0001-backend/rules/agent-dev-guide.md)） |
+| Attempt | 一次实施、候选或修复轮次（[§3.3](../SDD/modules/0001-backend/rules/agent-dev-guide.md)） |
 | Work Unit | 派出的子工作单元；**不是产品子 Task** |
-| Artifact | 代码、补丁、报告、测试输出、证据（[§3.6](modules/0001-backend/SDD/modules/0002-agent-execution/SDD/agent-dev-guide.md)） |
-| Interaction | 向 principal 的澄清或批准请求（[§4.3](modules/0001-backend/SDD/modules/0003-interrupt-resume/SDD/agent-dev-guide.md)） |
-| Event | 只追加的事实记录，状态由其投影；可包含改判与证据引用（[§5.7](modules/0001-backend/SDD/modules/0004-acceptance-commit/SDD/agent-dev-guide.md)） |
-| Side Effect | 对外部世界产生作用的动作及其持久意图/回执/补偿；不可逆部分受 H5 控制（[§4.5](modules/0001-backend/SDD/agent-dev-guide.md)） |
-| Task Profile | 这类任务的输入、输出、验收、证据和策略契约，如 dev.change/1（[§2.3](modules/0001-backend/SDD/agent-dev-guide.md)） |
-| Agent Profile | 执行器的能力、调用方式、粒度与边界；不是业务主档（[§2.3](modules/0001-backend/SDD/agent-dev-guide.md)） |
-| principal / requester | 持有某项决定权的主体 / 提出请求的主体；身份与执行器分开（[§4.1](modules/0001-backend/SDD/agent-dev-guide.md)） |
-| harness / executor adapter | 执行外壳（程序、提示词、工具）/ 将其公开 SDK 接到统一 Port 的适配层（[§2.6](modules/0001-backend/SDD/modules/0002-agent-execution/SDD/agent-dev-guide.md)–[§2.8](modules/0001-backend/SDD/modules/0002-agent-execution/SDD/agent-dev-guide.md)） |
-| router / orchestrator | 确定性路由 / 状态推进、派发、收集与停止组件，不是自由 Agent 角色（[§2.1](modules/0001-backend/SDD/agent-dev-guide.md)） |
-| provenance | attested 为可实证归因、reported 为自报、inferred 为推断；具体采信还受覆盖与隔离限制（[§5.2](modules/0001-backend/SDD/agent-dev-guide.md)） |
-| S / R / 投影 Π | 结构等效 / 轨迹等效 / 比较前只丢弃约定私有事件与时间戳（[§5.3](modules/0001-backend/SDD/agent-dev-guide.md)） |
-| 登记集合 / 自动路由候选集 | 知道某执行器存在 / 已具备获准自动调用与审计能力的子集（[§2.3](modules/0001-backend/SDD/agent-dev-guide.md)） |
-| 未归因效应 | 外部观察到但找不到对应账目的变更；只记录，不伪造事前 Task（[§6.3](modules/0001-backend/SDD/modules/0001-intake/SDD/agent-dev-guide.md)） |
-| H1–H8 / T0–T2 / E0–E4 | 权力行 / 风险流程档位 / 证据等级，三个不同维度（[§4.2](modules/0001-backend/SDD/agent-dev-guide.md)、[§3.4](modules/0001-backend/SDD/agent-dev-guide.md)、[§5.2](modules/0001-backend/SDD/agent-dev-guide.md)） |
-| Delivery | 最终回复与可重取产物（[§3.5](modules/0001-backend/SDD/modules/0004-acceptance-commit/SDD/agent-dev-guide.md)） |
-| Handoff | 不再单独维护：进度由任务目录（`thread/`、`composition/`、`components/`）推出，不能倒退的决定写在 [`development-plan.md`](../PRD/development-plan.md)「不能倒退的决定」；`composition/` 与各 turn 的 `user-message.md` 是**单写者面**（[§7.5](modules/0001-backend/SDD/modules/0002-agent-execution/SDD/agent-dev-guide.md)） |
-| 工作区 / worktree | 每个可写执行者的并行隔离工作区（[§3.2](modules/0001-backend/SDD/modules/0002-agent-execution/SDD/agent-dev-guide.md)、[§3.6](modules/0001-backend/SDD/modules/0002-agent-execution/SDD/agent-dev-guide.md)） |
-| 命名分支 | 一执行者一分支；commit 的**运输通道，不是评审对象**（[§3.9](modules/0001-backend/SDD/modules/0002-agent-execution/SDD/agent-dev-guide.md)） |
-| 未提交工作区文件 | 仅本地草稿；**同一工作区同一路径后写覆盖先写**（[§3.7](modules/0001-backend/SDD/modules/0002-agent-execution/SDD/agent-dev-guide.md)） |
-| 人的主 checkout | 如 `~/master/<仓>`；**只读参照，不是投稿箱**（[§3.6](modules/0001-backend/SDD/modules/0002-agent-execution/SDD/agent-dev-guide.md)） |
-| Attempt 租约 / fencing | **产品侧机制**，语义见内核；**开发侧无等价运行时**，迟到判定靠冻结 commit 与整合方核对（[§3.9](modules/0001-backend/SDD/modules/0002-agent-execution/SDD/agent-dev-guide.md)） |
-| `dispatch_event` | 人代运行时执行的一次传输动作；**不是权力，是可计数的欠账**（[§5.1](modules/0001-backend/SDD/agent-dev-guide.md)） |
+| Artifact | 代码、补丁、报告、测试输出、证据（[§3.6](../SDD/modules/0001-backend/SDD/modules/0002-agent-execution/rules/agent-dev-guide.md)） |
+| Interaction | 向 principal 的澄清或批准请求（[§4.3](../SDD/modules/0001-backend/SDD/modules/0003-interrupt-resume/rules/agent-dev-guide.md)） |
+| Event | 只追加的事实记录，状态由其投影；可包含改判与证据引用（[§5.7](../SDD/modules/0001-backend/SDD/modules/0004-acceptance-commit/rules/agent-dev-guide.md)） |
+| Side Effect | 对外部世界产生作用的动作及其持久意图/回执/补偿；不可逆部分受 H5 控制（[§4.5](../SDD/modules/0001-backend/rules/agent-dev-guide.md)） |
+| Task Profile | 这类任务的输入、输出、验收、证据和策略契约，如 dev.change/1（[§2.3](../SDD/modules/0001-backend/rules/agent-dev-guide.md)） |
+| Agent Profile | 执行器的能力、调用方式、粒度与边界；不是业务主档（[§2.3](../SDD/modules/0001-backend/rules/agent-dev-guide.md)） |
+| principal / requester | 持有某项决定权的主体 / 提出请求的主体；身份与执行器分开（[§4.1](../SDD/modules/0001-backend/rules/agent-dev-guide.md)） |
+| harness / executor adapter | 执行外壳（程序、提示词、工具）/ 将其公开 SDK 接到统一 Port 的适配层（[§2.6](../SDD/modules/0001-backend/SDD/modules/0002-agent-execution/rules/agent-dev-guide.md)–[§2.8](../SDD/modules/0001-backend/SDD/modules/0002-agent-execution/rules/agent-dev-guide.md)） |
+| router / orchestrator | 确定性路由 / 状态推进、派发、收集与停止组件，不是自由 Agent 角色（[§2.1](../SDD/modules/0001-backend/rules/agent-dev-guide.md)） |
+| provenance | attested 为可实证归因、reported 为自报、inferred 为推断；具体采信还受覆盖与隔离限制（[§5.2](../SDD/modules/0001-backend/rules/agent-dev-guide.md)） |
+| S / R / 投影 Π | 结构等效 / 轨迹等效 / 比较前只丢弃约定私有事件与时间戳（[§5.3](../SDD/modules/0001-backend/rules/agent-dev-guide.md)） |
+| 登记集合 / 自动路由候选集 | 知道某执行器存在 / 已具备获准自动调用与审计能力的子集（[§2.3](../SDD/modules/0001-backend/rules/agent-dev-guide.md)） |
+| 未归因效应 | 外部观察到但找不到对应账目的变更；只记录，不伪造事前 Task（[§6.3](../SDD/modules/0001-backend/SDD/modules/0001-intake/rules/agent-dev-guide.md)） |
+| H1–H8 / T0–T2 / E0–E4 | 权力行 / 风险流程档位 / 证据等级，三个不同维度（[§4.2](../SDD/modules/0001-backend/rules/agent-dev-guide.md)、[§3.4](../SDD/modules/0001-backend/rules/agent-dev-guide.md)、[§5.2](../SDD/modules/0001-backend/rules/agent-dev-guide.md)） |
+| Delivery | 最终回复与可重取产物（[§3.5](../SDD/modules/0001-backend/SDD/modules/0004-acceptance-commit/rules/agent-dev-guide.md)） |
+| Handoff | 不再单独维护：进度由任务目录（`thread/`、`composition/`、`components/`）推出，不能倒退的决定写在 [`development-plan.md`](../PRD/development-plan.md)「不能倒退的决定」；`composition/` 与各 turn 的 `user-message.md` 是**单写者面**（[§7.5](../SDD/modules/0001-backend/SDD/modules/0002-agent-execution/rules/agent-dev-guide.md)） |
+| 工作区 / worktree | 每个可写执行者的并行隔离工作区（[§3.2](../SDD/modules/0001-backend/SDD/modules/0002-agent-execution/rules/agent-dev-guide.md)、[§3.6](../SDD/modules/0001-backend/SDD/modules/0002-agent-execution/rules/agent-dev-guide.md)） |
+| 命名分支 | 一执行者一分支；commit 的**运输通道，不是评审对象**（[§3.9](../SDD/modules/0001-backend/SDD/modules/0002-agent-execution/rules/agent-dev-guide.md)） |
+| 未提交工作区文件 | 仅本地草稿；**同一工作区同一路径后写覆盖先写**（[§3.7](../SDD/modules/0001-backend/SDD/modules/0002-agent-execution/rules/agent-dev-guide.md)） |
+| 人的主 checkout | 如 `~/master/<仓>`；**只读参照，不是投稿箱**（[§3.6](../SDD/modules/0001-backend/SDD/modules/0002-agent-execution/rules/agent-dev-guide.md)） |
+| Attempt 租约 / fencing | **产品侧机制**，语义见内核；**开发侧无等价运行时**，迟到判定靠冻结 commit 与整合方核对（[§3.9](../SDD/modules/0001-backend/SDD/modules/0002-agent-execution/rules/agent-dev-guide.md)） |
+| `dispatch_event` | 人代运行时执行的一次传输动作；**不是权力，是可计数的欠账**（[§5.1](../SDD/modules/0001-backend/rules/agent-dev-guide.md)） |
 
 ### 13.1 与 Codex 的对应
 

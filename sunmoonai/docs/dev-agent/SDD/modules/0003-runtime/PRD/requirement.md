@@ -43,4 +43,4 @@
 - **key 只在本机**：存系统钥匙串，不写配置文件，不进任何协议字段（`I16`）；
 - 与后端只有一条通道（①），主动外连，用设备私钥认证；
 - 独立成仓；随桌面应用打包分发，但与用户自装的 Codex 隔离；
-- 遵守 [代码规则](../../../constraints.md)、[IMP 规则](../../../../../dev-human/imp/message-rules.md)。
+- 遵守 [代码规则](../../../../rules/constraints.md)、[IMP 规则](../../../../../dev-human/imp/message-rules.md)。

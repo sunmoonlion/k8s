@@ -5,6 +5,7 @@
 - `thread/`：一问一答，目录名带种类（prd、sdd、imp、uat）；
 - `PRD/`：PRD 类的定稿——要什么、做到什么算满足；**不分模块**；
 - `SDD/`：SDD 类的定稿——`architecture/` 划模块，`modules/<模块>/` 就是子任务，内部递归同一模式；
+- `rules/`：这一层的约束、纪律与开发提醒（代码规则、开发指导）——四类都要守，所以与上面三样平级；
 - 子任务目录名是「四位号-短名」，在同一个 `modules/` 里从 `0001` 起编号；本目录是项目本身，不编号。见 [命名与编号](../dev-human/naming.md)。
 
 ```text
@@ -30,7 +31,7 @@ SDD/
 | 要找什么 | 在哪 |
 | --- | --- |
 | 产品合同 | [`../product/product-contract.md`](../product/product-contract.md) |
-| 代码必须遵守的规则（39 条，本平台所有任务共用） | [`SDD/constraints.md`](SDD/constraints.md) |
+| 代码必须遵守的规则（39 条，本平台所有任务共用） | [`SDD/constraints.md`](rules/constraints.md) |
 | 多方竞争：规则与本平台的做法 | 都在人版：[`../dev-human/competition.md`](../dev-human/competition.md) 与 [`../dev-human/protocol/`](../dev-human/protocol/README.md) |
 | 每次派工的用户消息 | 各 turn 的 `user-message.md`，如 [`thread/0001-prd-none/0001-none/user-message.md`](thread/0001-prd-none/0001-none/user-message.md) |
 | thread、turn 与模块怎么编号 | [`../dev-human/naming.md`](../dev-human/naming.md) |

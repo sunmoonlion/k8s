@@ -78,7 +78,7 @@ checkpoint 原地续跑时是同一 Attempt 的 `WAITING → RUNNING`，不因�
 计划/diff/Artifact 的内容哈希；**执行前重算，任一字节、目标、权限或版本漂移即作废**。
 批准有短 TTL，超时 fail-closed。
 
-⚠ **不得把 Codex 默认 accept 当任何一档批准**（`client.py:773-779`，见 [§2.7](../../0002-agent-execution/SDD/agent-dev-guide.md)），
+⚠ **不得把 Codex 默认 accept 当任何一档批准**（`client.py:773-779`，见 [§2.7](../../0002-agent-execution/rules/agent-dev-guide.md)），
 **也不得让生成候选的同一 Agent 充当 `llm-review`**。
 
 ⚠ **超时是独立的审计结果与 reason code，不折成 `auto-deny`。**两者行为后果相同
@@ -87,10 +87,10 @@ checkpoint 原地续跑时是同一 Attempt 的 `WAITING → RUNNING`，不因�
 事后无法区分「策略拒绝率上升」和「审批链路卡死」。落账写 `approval_timeout`，
 带等待时长与待审对象哈希。
 
-⚠ **四档与 [§4.2](../../../agent-dev-guide.md) 权力表是两条正交的轴，不是一张表的两种写法。**权力表回答
+⚠ **四档与 [§4.2](../../../../rules/agent-dev-guide.md) 权力表是两条正交的轴，不是一张表的两种写法。**权力表回答
 「**哪个 principal** 可以走**哪条合法边**」；四档回答「**一次具体动作**经过**什么样的审批
 形态**」。`llm-review` 在权力表里没有行，因为它不是 principal 的权力——
-⚠ 它是否可用于任何 `auto_policy = 无` 的行，**本文不裁**，登记 [§7.4](../../../../../../agent-dev-guide.md) 未决。
+⚠ 它是否可用于任何 `auto_policy = 无` 的行，**本文不裁**，登记 [§7.4](../../../../../../../rules/agent-dev-guide.md) 未决。
 
 ### 4.10 人这一侧的义务
 
@@ -102,8 +102,8 @@ checkpoint 原地续跑时是同一 Attempt 的 `WAITING → RUNNING`，不因�
 | --- | --- |
 | 请求写清**边界**：含什么、不含什么、不含的归谁 | 执行者会自行扩大范围，或漏掉本该做的 |
 | 给**可判定的验收标准**，不给倾向性结论 | 候选向你的结论收敛，**等于白问** |
-| 并行提案时**不泄露其他方案** | 独立信号退化成改写（[§2.11](../../../agent-dev-guide.md)） |
-| 派活前先建好各自的 worktree 和命名分支 | 多个执行者写同一工作区，后写覆盖先写（[§3.6](../../0002-agent-execution/SDD/agent-dev-guide.md)） |
+| 并行提案时**不泄露其他方案** | 独立信号退化成改写（[§2.11](../../../../rules/agent-dev-guide.md)） |
+| 派活前先建好各自的 worktree 和命名分支 | 多个执行者写同一工作区，后写覆盖先写（[§3.6](../../0002-agent-execution/rules/agent-dev-guide.md)） |
 | 收到「我不确定」时**不追问到它给出确定答案** | **逼出的确定性是编的** |
 | 执行者说「没查过某处」时**当作真话对待** | 声明盲区的动力被消灭，下次它不说了 |
 
@@ -113,4 +113,4 @@ checkpoint 原地续跑时是同一 Attempt 的 `WAITING → RUNNING`，不因�
 
 **委派转移的是执行，不是最终责任。**派活时必须给出范围、权限、预算、停止条件和可验收
 输出；对超范围、追加成本、不可逆动作和规范修改及时批准或拒绝；**亲自验收，或指定未参与
-实施的验收方**（[§4.5](../../../agent-dev-guide.md) 责任归属表）。
+实施的验收方**（[§4.5](../../../../rules/agent-dev-guide.md) 责任归属表）。

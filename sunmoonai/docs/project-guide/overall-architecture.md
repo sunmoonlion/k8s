@@ -382,7 +382,7 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 
 各组件目录下有 8 份 `CLAUDE.md`（四仓 × 后端/web 前端），**会被 Claude Code
 进入目录时自动注入**。当前内容是「局部编码规则 + 指向本文档集与
-[`../dev-agent/composition/constraints.md`](../dev-agent/SDD/constraints.md) 的指针」。
+[`../dev-agent/composition/constraints.md`](../dev-agent/rules/constraints.md) 的指针」。
 
 ⚠ 这类文件自动注入、不易被察觉，**改动组件结构时必须同步检查它们**。
 
@@ -395,7 +395,7 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | 动登录、权限、服务间调用 | [`topics/identity.md`](topics/identity.md) |
 | 加表、改迁移 | [`topics/data.md`](topics/data.md) |
 | 发版、改部署清单 | [`topics/release.md`](topics/release.md) |
-| **动代码前必读的规则** | [`../dev-agent/composition/constraints.md`](../dev-agent/SDD/constraints.md)（39 条，按主题分组） |
+| **动代码前必读的规则** | [`../dev-agent/composition/constraints.md`](../dev-agent/rules/constraints.md)（39 条，按主题分组） |
 | 提一个开发请求 | [`../product/product-contract.md`](../product/product-contract.md) |
 | 查当前 digest / release_id | `k8s/sunmoonai/app-platform/<app>-app/deployment/bundle/release.json` |
 | 查某仓迁移 head | 该仓 `app/alembic/versions/` 里最新的 revision |

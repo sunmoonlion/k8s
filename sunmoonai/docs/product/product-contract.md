@@ -17,7 +17,7 @@
 - Profile、子 Task 和依赖编排的扩展规则；
 - 各组成部分的实现责任与验收矩阵。
 
-本文不负责：当前代码实现到哪里；开发助手或人怎样提出、实施、评审、交付一项开发工作（见 [通用开发规范](../dev-human/README.md)）；某个业务 Profile 的完整业务算法；代码必须遵守的工程规则（见 [`constraints.md`](../dev-agent/SDD/constraints.md)）。
+本文不负责：当前代码实现到哪里；开发助手或人怎样提出、实施、评审、交付一项开发工作（见 [通用开发规范](../dev-human/README.md)）；某个业务 Profile 的完整业务算法；代码必须遵守的工程规则（见 [`constraints.md`](../dev-agent/rules/constraints.md)）。
 
 ### 0.2 条款裁决
 
@@ -460,7 +460,7 @@
 | 对象 | 要改什么 |
 | --- | --- |
 | [`PRD/development-plan.md`](../dev-agent/PRD/development-plan.md) | 施工阶段改为桌面客户端、本地 runtime、后端；分期按附录 C |
-| [`SDD/constraints.md`](../dev-agent/SDD/constraints.md) | 「通用/专用分离」改写为「一个执行体，按 Profile 与 workflow 区分任务」；新增设备身份（认证、派发签名、吊销）、问题侧明文与资料侧加密的分界条款；持久化账条款补「执行端本地暂存不是权威副本」；会话与 CSRF 条款补桌面端 token 会话 |
+| [`SDD/constraints.md`](../dev-agent/rules/constraints.md) | 「通用/专用分离」改写为「一个执行体，按 Profile 与 workflow 区分任务」；新增设备身份（认证、派发签名、吊销）、问题侧明文与资料侧加密的分界条款；持久化账条款补「执行端本地暂存不是权威副本」；会话与 CSRF 条款补桌面端 token 会话 |
 | `SDD/modules/0001-backend` 及其子任务 | 执行位置改到用户电脑上的 runtime；后端只做 supervisor、派发与持久化；执行端口新增派往 runtime 的适配器 |
 | `SDD/modules/0002-desktop` | 目标改为桌面客户端；用户侧不做网页端；审查收件箱改在桌面应用的审查窗口 |
 | 新增组成部分 | 本地 runtime；桌面客户端；知识服务的 MCP 接口；workflow 清单与类别判定规则集 |

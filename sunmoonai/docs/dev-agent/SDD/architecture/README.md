@@ -17,6 +17,6 @@
 | [`approval.md`](approval.md) | 审批：工具级与 Task 级怎么分、各走哪条路 |
 | [`invariants.md`](invariants.md) | 全程不变量 `I1`–`I20`、持久化记录、问题侧明文与资料侧加密 |
 
-同层的其他定稿：[`constraints.md`](../constraints.md) 是代码必须遵守的规则，
-[`agent-dev-guide.md`](../agent-dev-guide.md) 是开发指导，
+同层的其他定稿：[`constraints.md`](../../rules/constraints.md) 是代码必须遵守的规则，
+[`agent-dev-guide.md`](../../rules/agent-dev-guide.md) 是开发指导，
 [`protocol/`](../../../dev-human/protocol/README.md) 是多方竞争在本平台的做法。

@@ -11,10 +11,10 @@
   两端各自生成客户端，**不手写第二份**——同一事实只能有一个权威写入面；
 - 管理后台沿用平台模板的 admin 前端；
 - **runtime 独立成仓**；后端的执行端口保持中性（领域概念不进签名），新增经 ① 派往 runtime 的适配器；
-- 以上工程决定须符合 [`constraints.md`](../constraints.md)；需要改动其条款时按其修订程序进行。
+- 以上工程决定须符合 [`constraints.md`](../../rules/constraints.md)；需要改动其条款时按其修订程序进行。
 
-同层的其他定稿：[`constraints.md`](../constraints.md) 是代码必须遵守的规则，
-[`agent-dev-guide.md`](../agent-dev-guide.md) 是开发指导，
+同层的其他定稿：[`constraints.md`](../../rules/constraints.md) 是代码必须遵守的规则，
+[`agent-dev-guide.md`](../../rules/agent-dev-guide.md) 是开发指导，
 [`protocol/`](../../../dev-human/protocol/README.md) 是多方竞争在本平台的做法。
 
 ## 共同约束
