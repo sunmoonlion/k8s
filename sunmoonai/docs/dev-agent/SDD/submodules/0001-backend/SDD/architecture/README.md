@@ -40,8 +40,9 @@ validator、acceptor、publisher）加上「控制面怎么实现」那一段，
 
 - **D10b**：并行 Attempt 的两种含义（冗余择快 / 竞争择优）还没定，它决定 `0003-orchestrator`
   的停止规则与 `0006-acceptance` 的择优逻辑。
-- 六块的子任务**尚未派出**：按「不预先建还没派出的子任务」，`submodules/` 下暂时只有取消的旧四块。
-  各块的设计由它自己的 SDD turn 答；四份旧 `agent-dev-guide.md` 作为来源与已有取证留在旧目录里。
+- 六块的子任务目录与各自第一个 PRD turn 的用户消息已建，**`executor` 都是 `unassigned`**——
+  问已经写好，派给谁待定。用户消息来自本层 [`modules/`](../modules/) 下对应那一份，
+  随本层定稿一起生效，人在定稿前可以改。
 
 ## 约束
 
