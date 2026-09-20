@@ -2,6 +2,15 @@
 
 > 依据：[上层设计](../../../architecture/README.md) 与 [产品合同](../../../../../product/product-contract.md) 的「责任投影」中的「本地 runtime」。
 
+同目录另有四份，由合同搬入：
+
+| 文件 | 内容 |
+| --- | --- |
+| [`codex.md`](codex.md) | 完整打包、驱动方式、控制面的六个入口、可观察面、不可介入的部分 |
+| [`isolation.md`](isolation.md) | 执行隔离：权限链、沙箱、工作区 |
+| [`models-and-keys.md`](models-and-keys.md) | 模型与 key：多厂商、可用模型清单、key 只在本机 |
+| [`device.md`](device.md) | 设备身份、连接、安装与升级 |
+
 ## 职责
 
 跑在用户电脑上的常驻后台进程。主动连后端，接收 Attempt 并驱动 Codex；向 Codex 提供本地 MCP
