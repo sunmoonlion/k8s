@@ -10,11 +10,11 @@
 >
 > | 目录 | 管什么 | 改了之后 |
 > | --- | --- | --- |
-> | [`../dev-agent-task/`](../dev-agent-task/) | 代码必须符合的规则、接下来建什么（agent 项目） | **代码要跟着改** |
-> | [`../dev-agent-standards/`](../dev-agent-standards/) | 我们怎么共事：任务、交付、多方竞争、人的批准点 | 协作方式变，代码不变 |
+> | [`../dev-agent/`](../dev-agent/) | 代码必须符合的规则、接下来建什么（agent 项目） | **代码要跟着改** |
+> | [`../dev-human/`](../dev-human/) | 我们怎么共事：任务、交付、多方竞争、人的批准点 | 协作方式变，代码不变 |
 >
 > **本目录不放规则，也不放脚本**——只描述现状。
-> 规则在 [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/SDD/constraints.md)，
+> 规则在 [`../dev-agent/composition/constraints.md`](../dev-agent/SDD/constraints.md)，
 > 文档检查脚本在 [`../tools/`](../tools/)。
 
 ## 本集之外：`docs/` 下的其他目录是什么
@@ -62,10 +62,10 @@
 | 加表、改迁移 | [`topics/data.md`](topics/data.md) |
 | 发版、改部署清单 | [`topics/release.md`](topics/release.md) + [`repos/k8s.md`](repos/k8s.md) |
 | 确认某个能力是否真的接线了 | 对应仓文件的**「已知未实现」**一节 |
-| **动代码前必读的规则** | [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/SDD/constraints.md)（39 条，按主题分组） |
-| 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-agent-task/composition/protocol/competition-protocol.md`](../dev-agent-task/protocol/competition-protocol.md) |
-| 推送改动、跨机拉取、子模块的坑 | `~/five-repos-sync/sync-five-repos.sh`；规则见 [`../dev-agent-task/composition/constraints.md`](../dev-agent-task/SDD/constraints.md) T4 |
-| 知道接下来要建什么 | [`../dev-agent-task/`](../dev-agent-task/) |
+| **动代码前必读的规则** | [`../dev-agent/composition/constraints.md`](../dev-agent/SDD/constraints.md)（39 条，按主题分组） |
+| 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-human/protocol/competition-protocol.md`](../dev-human/protocol/competition-protocol.md) |
+| 推送改动、跨机拉取、子模块的坑 | `~/five-repos-sync/sync-five-repos.sh`；规则见 [`../dev-agent/composition/constraints.md`](../dev-agent/SDD/constraints.md) T4 |
+| 知道接下来要建什么 | [`../dev-agent/`](../dev-agent/) |
 | 继续重构的部署工作 | [当前部署清单](../legacy-backlog/deployment-checklist.md)，先同步再工作 |
 | 讨论新架构前找旧需求 | [旧任务待接收清单](../legacy-backlog/README.md)，不提前搬入正式模块树 |
 | 查旧修复的测试或原文 | [验证与历史索引](../legacy-backlog/verification-index.md)，按固定版本取证 |
@@ -96,12 +96,12 @@ project-guide/
 | 目录 | 语义 | 怎么改 |
 | --- | --- | --- |
 | `overall-architecture.md` `repos/` `topics/` | **现状投影** | **覆盖式重写**：直接替换旧条文，只反映当前有效事实；历史由 git 承担 |
-| 协作机制（请求流程、推送、文档约定、评审） | **已移出** | 见 [`../dev-agent-standards/`](../dev-agent-standards/) |
+| 协作机制（请求流程、推送、文档约定、评审） | **已移出** | 见 [`../dev-human/`](../dev-human/) |
 | `governance.md` | **规则** | 改动前应有共识；改完要检查依赖它的文档 |
 
 ## 写作约定
 
-见 [人的批准点](../dev-agent-standards/detailed-rules/approvals.md)「改判」与 [任务的生命周期](../dev-agent-standards/lifecycle.md)「交给 agent 的活，八条都成立」。
+见 [人的批准点](../dev-human/approvals.md)「改判」与 [turn 的投影](../dev-human/turn-project.md)「交给 agent 的活，八条都成立」。
 本处不复述——引用而非复制，是那份文件自己的第二条维护约定。
 
 ## 本轮的已知缺口（读之前先知道）

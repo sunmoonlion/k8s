@@ -70,7 +70,7 @@ SELF_CONTAINED = (
     # 查实 GO.md §四 四条规范内容在协议里各有一份，而**没有任何东西保证两份一致**
     # ——正是 §0.0 第 3 条骂的「第二份说明书」。合并不是修法（见 GO.md §四抬头），
     # 修法是让它降为**被核对的引用**：四条各注出处 §，本门验那个 § 真的存在。
-    "sunmoonai/docs/dev-agent-task/protocol/GO.md",
+    "sunmoonai/docs/dev-human/protocol/GO.md",
 )
 
 USAGE = "用法: doc-gate.py <文件>... | --all | --survey | --selfcheck"
@@ -241,20 +241,20 @@ def check_tables(path: str, text: str) -> list[str]:
 
 # ── 文档 thread 与文档 turn 的检查（规则要有载体）──────────────────────────
 # 任务目录下 `thread/` 正好两级：
-#     thread/0003-sdd-01k8f3m2qz/                  文档 thread，名字带阶段，对一个运行时 thread
+#     thread/0003-sdd-01k8f3m2qz/                  文档 thread，名字带种类，对一个运行时 thread
 #     thread/0003-sdd-01k8f3m2qz/0002-01k8h9t1cc/  文档 turn：user-message.md、response.md、turn.md、others/
-# ADR、PRD、SDD 段的答是 response.md；IMP、UAT 段的产物在 worktree，turn.md 记分支与提交。
-# 定稿在 PRD/ 与 SDD/ 下（architecture/ 与 modules/）。字段与形状见
-# dev-agent-standards/lifecycle.md 与 dev-agent-standards/naming.md。
+# PRD、SDD 段的答是 response.md；IMP、UAT 段的产物在 worktree，turn.md 记分支与提交。
+# 定稿在 PRD/（一份需求，不分模块）与 SDD/ 下（architecture/ 与 modules/）。字段与形状见
+# dev-human/turn-project.md 与 dev-human/naming.md。
 THREAD_PREFIX_RE = re.compile(r"^(?P<task>.+)/thread/(?P<rest>.+)$")
-STAGES = ("adr", "prd", "sdd", "imp", "uat")
-THREAD_DIR_RE = re.compile(r"^(?P<num>\d{4})-(?P<stage>[a-z]+)(?:-(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*))?$")
+KINDS = ("prd", "sdd", "imp", "uat")
+THREAD_DIR_RE = re.compile(r"^(?P<num>\d{4})-(?P<kind>[a-z]+)(?:-(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*))?$")
 TURN_DIR_RE = re.compile(r"^(?P<num>\d{4})(?:-(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*))?$")
 MODULE_NAME_RE = re.compile(r"^(?P<num>\d{4})-(?P<name>[^/]+)$")
 VERIFIES_RE = re.compile(r"^\d{4}/\d{4}$")
 TURN_FILES = {"user-message.md", "response.md", "turn.md"}
-DOC_STAGES = {"adr", "prd", "sdd"}          # 答在 turn 里
-WORKTREE_STAGES = {"imp", "uat"}            # 产物在 worktree
+DOC_KINDS = {"prd", "sdd"}                  # 答在 turn 里
+WORKTREE_KINDS = {"imp", "uat"}             # 产物在 worktree
 STATUSES = {"completed", "interrupted", "failed"}
 NONE = "无"          # 固定字段集里用不上的那一项
 # 运行时 id 在目录名里，回执里不再写一遍；执行者与会话写在任务书里。
@@ -295,15 +295,15 @@ def parse_thread_path(path: str) -> tuple[str, str, str, str] | None:
     return m["task"], parts[0], parts[1], "/".join(parts[2:])
 
 
-def check_turn_md(base: str, fm: dict[str, str], stage: str) -> list[str]:
+def check_turn_md(base: str, fm: dict[str, str], kind: str) -> list[str]:
     problems: list[str] = []
     for k in ("status", "worktree", "commit"):
         if not fm.get(k):
             problems.append(f"{base}/turn.md: 缺字段或为空：{k}（用不上写「无」，不删行）")
     on_branch = {k: fm.get(k, "") not in ("", NONE) for k in ("worktree", "commit")}
-    if stage in WORKTREE_STAGES and not all(on_branch.values()):
-        problems.append(f"{base}/turn.md: {stage} 段的产物在分支上，worktree 与 commit 都要填")
-    if stage in DOC_STAGES and on_branch["worktree"] != on_branch["commit"]:
+    if kind in WORKTREE_KINDS and not all(on_branch.values()):
+        problems.append(f"{base}/turn.md: {kind} 类的产物在分支上，worktree 与 commit 都要填")
+    if kind in DOC_KINDS and on_branch["worktree"] != on_branch["commit"]:
         problems.append(f"{base}/turn.md: worktree 与 commit 要么都写「无」（答在当前分支上），要么都填（答在另一条分支上）")
     for k in OBSOLETE_TURN_FIELDS:
         if fm.get(k):
@@ -315,7 +315,7 @@ def check_turn_md(base: str, fm: dict[str, str], stage: str) -> list[str]:
 
 
 def check_modules(tracked: set[str]) -> list[str]:
-    """模块目录名是「四位号-短名」，在同一个 modules/ 里从 0001 起连续；PRD 与 SDD 两侧一致。"""
+    """模块只在 SDD/ 下划：目录名是「四位号-短名」，在同一个 modules/ 里从 0001 起连续；PRD/ 下不得有 architecture/ 或 modules/。"""
     problems: list[str] = []
     dirs: dict[str, set[str]] = {}          # <任务目录>/<PRD|SDD>/modules -> 模块名
     have_arch: set[str] = set()             # 有 architecture/ 的 <任务目录>/<PRD|SDD>
@@ -332,6 +332,10 @@ def check_modules(tracked: set[str]) -> list[str]:
             have_arch.add(f"{m['task']}/{m['final']}")
         elif rest[0] == "modules" and len(rest) > 2:
             dirs.setdefault(f"{m['task']}/{m['final']}/modules", set()).add(rest[1])
+    for final in sorted(finals):
+        if final.endswith("/PRD") and (final in have_arch or f"{final}/modules" in dirs):
+            problems.append(f"{final}/: 需求侧不分模块，PRD/ 下不得有 architecture/ 或 modules/"
+                            "（模块只在 SDD/ 下划）")
     with_modules = {w.removesuffix("/modules") for w in dirs}
     for final in sorted(with_modules):
         if final not in have_arch:
@@ -351,17 +355,6 @@ def check_modules(tracked: set[str]) -> list[str]:
             gap = sorted(set(range(1, max(nums) + 1)) - set(nums))
             if gap:
                 problems.append(f"{where}/: 模块号不连续，缺 " + "、".join(f"{g:04d}" for g in gap))
-    # 同一模块在 PRD 与 SDD 两侧的号与短名一致（两侧都出现时才比）
-    for where, names in sorted(dirs.items()):
-        if not where.endswith("/SDD/modules"):
-            continue
-        other = dirs.get(where.replace("/SDD/modules", "/PRD/modules"))
-        if other is None:
-            continue
-        only_sdd, only_prd = sorted(names - other), sorted(other - names)
-        if only_sdd or only_prd:
-            problems.append(f"{where.removesuffix('/SDD/modules')}: PRD 与 SDD 的模块不一致——"
-                            f"只在 SDD：{'、'.join(only_sdd) or '无'}；只在 PRD：{'、'.join(only_prd) or '无'}")
     return problems
 
 
@@ -385,11 +378,11 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
         nums: dict[int, list[str]] = {}
         for name in sorted(dthreads):
             m = THREAD_DIR_RE.match(name)
-            if not m or m["stage"] not in STAGES:
-                problems.append(f"{task}/thread/{name}: thread 目录名须是「四位数字-阶段」或「四位数字-阶段-运行时 id」，"
-                                f"阶段在 " + "、".join(STAGES) + " 之内")
+            if not m or m["kind"] not in KINDS:
+                problems.append(f"{task}/thread/{name}: thread 目录名须是「四位数字-种类」或「四位数字-种类-运行时 id」，"
+                                f"种类在 " + "、".join(KINDS) + " 之内")
                 continue
-            parsed_threads[name] = (int(m["num"]), m["stage"], m["id"])
+            parsed_threads[name] = (int(m["num"]), m["kind"], m["id"])
             nums.setdefault(int(m["num"]), []).append(name)
         for n, same in sorted(nums.items()):
             if len(same) > 1:
@@ -400,13 +393,13 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
                 problems.append(f"{task}/thread/: thread 编号不连续，缺 " + "、".join(f"{g:04d}" for g in gap))
 
         local_ids = set()
-        for tname, (tnum, stage, tid) in sorted(parsed_threads.items()):
+        for tname, (tnum, kind, tid) in sorted(parsed_threads.items()):
             for uname in dthreads[tname]:
                 mu = TURN_DIR_RE.match(uname)
                 if mu:
                     local_ids.add(f"{tnum:04d}/{int(mu['num']):04d}")
 
-        for tname, (tnum, stage, tid) in sorted(parsed_threads.items()):
+        for tname, (tnum, kind, tid) in sorted(parsed_threads.items()):
             if tid and tid != "none":
                 runtime_ids.setdefault(tid, []).append(f"{task}/thread/{tname}")
             turn_nums: dict[int, list[str]] = {}
@@ -439,8 +432,8 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
                 if stray:
                     problems.append(f"{base}: turn 里只放 user-message.md、response.md、turn.md 与 others/；多出：" + "、".join(sorted(stray)))
                 has_response = "response.md" in files
-                if stage in WORKTREE_STAGES and has_response:
-                    problems.append(f"{base}: {stage} 段的产物在 worktree，turn 里不放 response.md")
+                if kind in WORKTREE_KINDS and has_response:
+                    problems.append(f"{base}: {kind} 类的产物在 worktree，turn 里不放 response.md")
                 um = blob(f"{base}/user-message.md") if "user-message.md" in files else None
                 if um is None:
                     problems.append(f"{base}: 缺 user-message.md（任务书）")
@@ -452,7 +445,7 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
                 for k in ("executor", "verifies"):
                     if not fm.get(k):
                         problems.append(f"{base}/user-message.md: 缺字段或为空：{k}（用不上写「无」，不删行）")
-                if stage == "uat":
+                if kind == "uat":
                     v = fm.get("verifies", "")
                     if v == NONE:
                         problems.append(f"{base}/user-message.md: uat 段须填 verifies（验收的是哪个 turn）")
@@ -466,8 +459,8 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
                     continue
                 if fm.get("executor") == "unassigned":
                     problems.append(f"{base}: 还没派出去（executor: unassigned），不应有 turn.md")
-                if stage in DOC_STAGES and not has_response:
-                    problems.append(f"{base}: 已交回（有 turn.md），{stage} 段必须有 response.md")
+                if kind in DOC_KINDS and not has_response:
+                    problems.append(f"{base}: 已交回（有 turn.md），{kind} 类必须有 response.md")
                 if not uid:
                     problems.append(f"{base}: 已交回（有 turn.md），目录名须带运行时 turn id；执行环境不给 id 的写 -none")
                 if not tid:
@@ -476,7 +469,7 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
                 if tm is None:
                     problems.append(f"{base}/turn.md: 缺 YAML 头（--- 包起的固定字段）")
                     continue
-                problems += check_turn_md(base, tm, stage)
+                problems += check_turn_md(base, tm, kind)
 
     for rid, where in sorted(runtime_ids.items()):
         if len(where) > 1:
@@ -488,13 +481,23 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
     return problems, nturns
 
 
-def check_frozen(staged: list[tuple[str, str]]) -> list[str]:
-    """交回即冻结：HEAD 里已有 turn.md 的那个 turn 不许改、删、加文件；已发出的任务书不许改、删。"""
+def check_frozen(staged: list[tuple[str, str, str | None]]) -> list[str]:
+    """交回即冻结：HEAD 里已有 turn.md 的那个 turn 不许改、删、加文件；已发出的任务书不许改、删。
+
+    **冻结的是内容与归属，不是路径。**整棵子树改名时，turn 只是跟着上层走，内容零改动——
+    这不是篡改。放行的判据很窄：`R100`（字节完全相同）**且** thread 名、turn 名、文件名三者都没变，
+    只有上层任务目录不同。turn 内部改名（`response.md` → 别的名字）、跨 turn 搬运、
+    相似度不足 100% 的改名，一律照旧拦住；搬完之后再改内容，下一次提交会以 `M` 被拦。
+    """
     problems: list[str] = []
     cache: dict[str, tuple[bool, bool]] = {}
-    for status, path in staged:
+    for status, path, old_path in staged:
         if not path.startswith(DOC_ROOT):
             continue
+        if status == "R100" and old_path is not None:
+            was, now = parse_thread_path(old_path), parse_thread_path(path)
+            if was and now and was[1:] == now[1:]:
+                continue  # 整体搬迁：thread、turn、文件名都没变，只是上层目录搬了
         parsed = parse_thread_path(path)
         if parsed is None:
             continue
@@ -623,8 +626,19 @@ def main(argv: list[str]) -> int:
 
     staged_changes: list[tuple[str, str]] | None = None
     if mode == "--staged":
-        raw = git("diff", "--cached", "--name-status", "--no-renames", "-z").split("\0")
-        staged_changes = [(raw[i], raw[i + 1]) for i in range(0, len(raw) - 1, 2)]
+        # **开启改名识别**：冻结的是内容与归属，不是路径。整棵子树搬家时，已交回的 turn
+        # 会以 R100（字节完全相同）出现；`--no-renames` 会把它拆成删+增，从源头抹掉区分的可能。
+        raw = git("diff", "--cached", "--name-status", "-M100%", "-z").split("\0")
+        staged_changes = []
+        i = 0
+        while i + 1 < len(raw) and raw[i]:
+            st = raw[i]
+            if st[0] in ("R", "C"):
+                staged_changes.append((st, raw[i + 2], raw[i + 1]))
+                i += 3
+            else:
+                staged_changes.append((st, raw[i + 1], None))
+                i += 2
     thread_problems, nturns = check_threads(tracked, staged_changes)
     problems += thread_problems
 

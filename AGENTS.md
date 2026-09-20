@@ -5,7 +5,7 @@
 
 **动代码前必读**——代码必须符合的规则（39 条，按主题分组）：
 
-`sunmoonai/docs/dev-agent-task/SDD/constraints.md`
+`sunmoonai/docs/dev-agent/SDD/constraints.md`
 
 违反其中任一条的方案不进入讨论。用法见该文件「怎么用」。
 
@@ -19,14 +19,14 @@
 
 任何开发任务都要遵守的通用开发规范：
 
-`sunmoonai/docs/dev-agent-standards/README.md`
+`sunmoonai/docs/dev-human/README.md`
 
-开发 Agent 接任务前必须读取通用开发规范里自己那一段的规则：
+开发 Agent 接任务前必须读取通用开发规范里自己那一类的规则：
 
-`sunmoonai/docs/dev-agent-standards/`（PRD、SDD、IMP、UAT、ADR 各一份）
+`sunmoonai/docs/dev-human/`（PRD、SDD、IMP、UAT 各一份）
 
 涉及人的批准、裁量或终审时，同时读取（人介入、权力表、审批档位）：
 
-`sunmoonai/docs/dev-agent-task/SDD/modules/0001-backend/SDD/agent-dev-guide.md`
+`sunmoonai/docs/dev-agent/SDD/modules/0001-backend/SDD/agent-dev-guide.md`
 
 不在此复述其中规则。

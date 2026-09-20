@@ -59,7 +59,7 @@ git show 6757974b4084c92c8df62af637b020d998d4a160:sunmoonai/docs/v5-backlog-runt
 ```
 
 这里删除的是文档工作树文件，不删除实现、测试、迁移、制品或 Git 历史。
-已冻结的 `tasks/**/thread/` 与 `dev-agent-task/**/thread/` 原文不改；其中旧相对链接应按
+已冻结的 `tasks/**/thread/` 与 `dev-agent/**/thread/` 原文不改；其中旧相对链接应按
 其原提交或上面的固定快照解释，不是假装在当前工作树仍有效。
 
 ## 退出当前目录的四份旧计划
@@ -80,7 +80,7 @@ git show 6757974b4084c92c8df62af637b020d998d4a160:sunmoonai/docs/v5-backlog-runt
 | 原路径（相对于 `sunmoonai/docs/`） | 处置与必要边界 |
 | --- | --- |
 | `mooc-manus-v5/`（111 个文件） | 旧 ADR、契约和脚本退出当前工作树；没有发现目录外现行代码按路径或脚本名调用它们。旧契约不替代 provider 仓的当前契约，旧部署/清理脚本不迁作新发布工具 |
-| `app-platform-architecture-v2-refactor-plan.md` | 原状态停在 R5 阶段，退出当前施工入口；当前事实看 project-guide，规则看 dev-agent-task/SDD/constraints，运行欠账看部署清单 |
+| `app-platform-architecture-v2-refactor-plan.md` | 原状态停在 R5 阶段，退出当前施工入口；当前事实看 project-guide，规则看 dev-agent/SDD/constraints，运行欠账看部署清单 |
 | `knowledge-provider-decoupling-luna.md` | 实施过程按 Git 保留；适配义务由 Knowledge Backend 的 `docs/knowledge-provider.md` 维护，关键验证与限制见下节 |
 
 例如，在 k8s 仓根读取单文件或列出原目录：
