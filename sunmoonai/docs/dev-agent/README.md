@@ -11,7 +11,7 @@
 thread/0001-prd-none/0001-none/    一问一答：user-message.md · response.md · turn.md · others/
 PRD/                              requirement.md（要什么）· development-plan.md
 SDD/
-├── architecture/                  lifecycle.md（轮廓）· 前后端的划分与交互
+├── architecture/                  lifecycle.md（轮廓）· components · channels · trust · engineering
 ├── constraints.md                 代码必须遵守的规则
 ├── agent-dev-guide.md
 └── modules/

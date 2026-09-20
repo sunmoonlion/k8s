@@ -1081,7 +1081,7 @@ graph_version
 
 | 原内容 | 搬到哪 | 什么时候 |
 | --- | --- | --- |
-| 组成部分 · 通道 · 数据流与信任边界 · 工程落点 | [`dev-agent/SDD/architecture/README.md`](../dev-agent/SDD/architecture/README.md)——与生命周期合成一份，不再分处三份复述 | 2026-09-20 |
+| 组成部分 · 通道 · 数据流与信任边界 · 工程落点 | [`dev-agent/SDD/architecture/`](../dev-agent/SDD/architecture/README.md) 下的 `components.md`、`channels.md`、`trust.md`、`engineering.md` | 2026-09-20 |
 | 生命周期全景（端到端九站、终点四条） | [`dev-agent/SDD/architecture/lifecycle.md`](../dev-agent/SDD/architecture/lifecycle.md)——它是设计层的**轮廓**，`§2` 里还没归位的细节按本表一点一点跟过去 | 2026-09-20 |
 
 搬空之后本文剩下的应当是真正跨层的部分：定位与边界、风险、验收矩阵、修订规则与附录。
