@@ -107,7 +107,7 @@ IMP 里发现设计不对要回 SDD，子任务各走各的。四类不是四个
 - **一个文档 thread 对一个运行时 thread**：运行时换了 thread（resume、fork、上下文压缩后重开），就新开一个文档 thread，接着做什么写在它第一个 turn 的用户消息里。
 - **一个 turn 就是一问一答**：`user-message.md` 是问，`response.md` 是答。
 - **发出时就把用户消息存进 `user-message.md`**：发出去的是什么，存的就是什么，包括附带的打回理由。模型只知道这些，判断交回对不对也以此为准。
-- **response 只有一份**，是这一问的答，写成一个文件。它是草稿：定稿时才拆进 `PRD/` 或 `SDD/` 的 `architecture/` 与 `modules/`。
+- **response 只有一份**，是这一问的答，写成一个文件。它是草稿：定稿时才拆进 `PRD/` 或 `SDD/` 的 `architecture/`、`modules/` 与 `submodules/`。
 - IMP、UAT 两类的 turn **没有 `response.md`**：产物在各自的 worktree 里，UAT 的测试放 worktree 的 `test/`。回执里记分支与提交。
 - **turn 交回即冻结**，不改、不删；要改，只能开新的 turn。
 - **turn 只负责问，不承载对答的判断**。意见不写进已有的 turn；要重做就开新 turn，理由写进它的 `user-message.md`。

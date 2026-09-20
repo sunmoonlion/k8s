@@ -10,7 +10,7 @@ PRD/
 └── requirement.md            入口；长了按主题再拆几份，由它索引
 ```
 
-**`PRD/` 不分模块**：分成哪几个模块是怎样满足，属于 [SDD](../sdd/finalize.md)，`architecture/` 与 `modules/` 只在 `SDD/` 下。
+**`PRD/` 不分模块**：分成哪几个模块是怎样满足，属于 [SDD](../sdd/finalize.md)，`architecture/`、`modules/` 与 `submodules/` 只在 `SDD/` 下。
 需求真要分块，按**场景或能力域**分成几份文件——不按模块分，因为模块是设计切出来的，需求不该先认那个切法。
 
 ## 定稿时对照看什么

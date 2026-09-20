@@ -14,7 +14,7 @@
 | 派工 | 把用户消息发给 AI 助手；要补的材料放 `others/` |
 | 收 response | 把回答存成 `response.md`，提交，把提交号写进 `turn.md` |
 | 定稿 | 读完 response，取舍，整理进 `PRD/` 或 `SDD/`，写明以哪个 turn 为底、改了什么。不满意就开新 turn，**不在已交回的 turn 里改任何东西**。见 [定稿](finalize.md) |
-| 建子任务 | 按 `SDD/modules/` 的拆分建目录，并写好各自第 `0001` 个 turn 的用户消息 |
+| 建子任务 | 按 `SDD/submodules/` 的拆分建目录，并写好各自第 `0001` 个 turn 的用户消息 |
 
 ## IMP 与 UAT 的三层 worktree
 

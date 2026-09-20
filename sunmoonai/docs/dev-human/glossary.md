@@ -24,8 +24,9 @@ standards 的用词以本表为准：**同一个意思只用一个词**，「不
 | 交回物 | 某个 turn 交回来的东西：PRD、SDD 两类是 `response.md`；IMP、UAT 两类是 worktree 分支上的提交 | 交付物（指这一份时） |
 | 定稿 | **人对答的采纳**：读完 response 取舍整理出的那一版，**同一类自己的那份东西**，不换成下一种文档——PRD 类定稿成 `PRD/`，SDD 类成 `SDD/`；写明以哪个 turn 为底、改了什么。见 [定稿](finalize.md)。**不等于批准，也不等于验收** | composition、设计稿、交接文件、审核（指这件事时） |
 | `architecture/` | `PRD/` 与 `SDD/` 下的一个目录：模块之间的结构与关系；入口文件 `README.md` | composition（指这一层时） |
-| `modules/` | **只在 `SDD/` 下**：按「四位号-短名」编号，`SDD/modules/<模块>/` 是子任务，内部是同样结构的任务目录。与实现时 worktree 里的模块目录一一对应；需求侧不分模块 | components、子任务目录 |
-| 上层任务 | 其 `SDD/modules/` 拆出了子任务的那个任务 | 父任务 |
+| `modules/` | **只在 `SDD/` 下**：`SDD/modules/<模块>.md` 写**这一层对这块的说明**——承担什么、不承担什么、边界在哪 | components |
+| `submodules/` | **只在 `SDD/` 下**：`SDD/submodules/<模块>/` 是**子任务**，内部是同样结构的任务目录。与 `modules/` 同号同名一一对应，也与实现时 worktree 里的模块目录一一对应；需求侧不分模块 | 子任务目录 |
+| 上层任务 | 其 `SDD/submodules/` 拆出了子任务的那个任务 | 父任务 |
 | worktree | 开发侧的 git worktree：IMP 在里面实现，UAT 的测试在它的 `test/`；审核者在被审的 worktree 之上再开一个 | 工作区（指产品运行时的工作区时） |
 
 ## 种类与交付物
@@ -46,7 +47,7 @@ thread 的**种类**有四个：PRD、SDD、IMP、UAT，规则见 [PRD](prd/fina
 | 词 | 含义 | 不要用 |
 | --- | --- | --- |
 | 讨论 agent | 答 PRD 类的问 | — |
-| 规划 agent | 答 SDD 类的问；定稿之后按 `SDD/modules/` 的拆分建子任务 | — |
+| 规划 agent | 答 SDD 类的问；定稿之后按 `SDD/submodules/` 的拆分建子任务 | — |
 | 执行 agent | 做 IMP：在自己的 worktree 里实现 | — |
 | 验收 agent | 做 UAT：在 worktree 的 `test/` 里验收；不是实现这份 IMP 的那一个 | — |
 | 驱动方 | 驱动这套流程的角色：发起 turn、验收、打回、清理 worktree。**现在由人充当**；交给程序是待开发的能力。不要和产品的后端 supervisor 混——那是程序，而且不调用生成式模型 | supervisor（指这个角色时） |
