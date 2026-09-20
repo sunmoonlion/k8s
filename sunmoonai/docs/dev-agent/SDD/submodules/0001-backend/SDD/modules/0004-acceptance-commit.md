@@ -1,12 +1,12 @@
-# 0004-acceptance-commit：验收与完成提交
+# 0004-acceptance-commit：验收与完成提交（已取消）
 
-**承担**：确定性验收、本地内容检查回执核对、终态与结果与预算结算的原子提交、交付。
-合同 `F-ACCEPT-*`、`F-DELIVERY-*` 的后端侧。
+**本版起取消。**责任分两处：
 
-**不承担**：不判"需求满没满足"那种语义结论——需要语义判断就另派 Attempt；
-也不解密结果，它只存密文与元数据。
+- 确定性验收、语义验收派 Attempt、交付取件 → [`0010-acceptance`](0010-acceptance.md)
+- 终态、结果、预算结算的**原子提交** → [`0005-kernel`](0005-kernel.md)
 
-**边界要点**：**终态、结果、预算结算必须原子提交**；事件先持久化后通知，
-客户端按 cursor 续传、重复事件幂等。
+**为什么分**：原子提交要同时写状态、结果与预算账，那是内核的事。留在验收块里，就等于
+验收块自己写状态机——原子性靠它一家保证，而预算在派发时已经被另一块扣过了。
 
-**要满足什么**见子任务 [`submodules/0004-acceptance-commit/`](../submodules/0004-acceptance-commit/PRD/requirement.md)。
+**目录不删**：[`../submodules/0004-acceptance-commit/`](../submodules/0004-acceptance-commit/) 下的
+turn 已交回并冻结，留着；该子任务不再开新的 turn。

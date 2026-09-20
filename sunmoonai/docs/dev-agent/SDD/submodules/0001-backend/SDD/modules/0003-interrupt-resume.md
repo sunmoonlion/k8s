@@ -1,10 +1,12 @@
-# 0003-interrupt-resume：中断、批准与恢复
+# 0003-interrupt-resume：中断、批准与恢复（已取消）
 
-**承担**：Interaction 的原子消费、断线暂停后的对账。合同 `F-INTERACT-*`、`F-APPROVE-*` 的后端侧。
+**本版起取消。**责任分两处：
 
-**不承担**：不做工具级审批——那在本机闭环，后端只收摘要与结论；两条提交逻辑**不得共用**。
+- Interaction 的创建与原子消费、两层审批的后端侧 → [`0009-interaction`](0009-interaction.md)
+- 断线暂停后的对账、租约与 fencing → [`0008-gateway`](0008-gateway.md)
 
-**边界要点**：Interaction 的令牌在**同一并发控制边界**内消费，只能消费一次；
-断线后按 fencing 对账，拒绝旧执行端的迟到写入。
+**为什么分**：「等人」和「等设备」是两回事，原来混在一块。前者的对手是人与批准对象，
+后者的对手是连接与租约；它们的失败方式、重试策略、超时含义都不同。
 
-**要满足什么**见子任务 [`submodules/0003-interrupt-resume/`](../submodules/0003-interrupt-resume/PRD/requirement.md)。
+**目录不删**：[`../submodules/0003-interrupt-resume/`](../submodules/0003-interrupt-resume/) 下的
+turn 已交回并冻结，留着；该子任务不再开新的 turn。

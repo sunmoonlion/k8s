@@ -1,31 +1,49 @@
 # 后端：设计层的模块结构与关系
 
 > 依据：[后端要满足什么](../../PRD/requirement.md)。
-> 本层定稿以 thread [0001/0001](../../thread/0001-sdd-none/0001-none/user-message.md)、[0001/0002](../../thread/0001-sdd-none/0002-none/user-message.md)、[0001/0003](../../thread/0001-sdd-none/0003-none/user-message.md) 的 response 为底。
+> 本层定稿以 thread [0001/0001](../../thread/0001-sdd-none/0001-none/user-message.md)、[0001/0002](../../thread/0001-sdd-none/0002-none/user-message.md)、[0001/0003](../../thread/0001-sdd-none/0003-none/user-message.md) 的 response 为底；
+> 模块划分本版重切，见下。
 
-## 模块
+## 怎么切的
 
-按合同七阶段产品功能的阶段切，每个模块对一段：
+按 [`control-plane.md`](../../PRD/control-plane.md) 已经命名的五个角色（router、orchestrator、
+validator、acceptor、publisher）加上「控制面怎么实现」那一段，切成六块：**中心独立，其余各对一侧**。
 
-| 模块 | 各自是什么 | 子任务 |
+| 模块 | 拥有什么 | 朝哪一侧 |
 | --- | --- | --- |
-| `0001-intake` | [说明](../modules/0001-intake.md) | [子任务](../submodules/0001-intake/PRD/requirement.md) |
-| `0002-agent-execution` | [说明](../modules/0002-agent-execution.md) | [子任务](../submodules/0002-agent-execution/PRD/requirement.md) |
-| `0003-interrupt-resume` | [说明](../modules/0003-interrupt-resume.md) | [子任务](../submodules/0003-interrupt-resume/PRD/requirement.md) |
-| `0004-acceptance-commit` | [说明](../modules/0004-acceptance-commit.md) | [子任务](../submodules/0004-acceptance-commit/PRD/requirement.md) |
+| [`0005-kernel`](../modules/0005-kernel.md) | 状态机与唯一转换函数、事件表、四本账、outbox 与投递器、任务队列、重启恢复 | **不朝外**，其余五块经它 |
+| [`0006-router`](../modules/0006-router.md) | 身份、幂等、建单、契约固定、类别三层判定、Profile 与设备选择 | 客户端 ④ |
+| [`0007-orchestrator`](../modules/0007-orchestrator.md) | workflow 游标、按步拆与派发、步骤契约、`escalate` 裁决、方法库与按步工具面 | 内部（经 kernel 与 gateway） |
+| [`0008-gateway`](../modules/0008-gateway.md) | WSS 连接、设备身份、租约与 fencing、投递与回传 | runtime ① |
+| [`0009-interaction`](../modules/0009-interaction.md) | Interaction 的创建与原子消费、两层审批后端侧、批准后执行副作用 | 人（经 ④） |
+| [`0010-acceptance`](../modules/0010-acceptance.md) | 确定性验收、语义验收派 Attempt、终态提交的发起、事件流投影与结果取件 | 客户端 ④ |
 
-**各模块承担什么、不承担什么，写在 [`SDD/modules/`](../modules/) 下各自那一份**，本表只管关系。
+**各模块承担什么、不承担什么，在 [`SDD/modules/`](../modules/) 下各自那一份**，本表只管关系。
 
-`SDD/` 下的同层：[`modules/`](../modules/)（每块是什么）、[`submodules/`](../submodules/)（子任务）。
-再上一层是本模块自己的任务目录：`PRD/` 写它要满足什么，`rules/` 放开发指导。
+**旧的四块（`0001`–`0004`）本版起取消**，目录与已冻结的 turn 留在原处不删，
+各自那份说明写了责任去了哪。原因：旧划分按合同七阶段切，而**阶段是时间、不是模块**——
+状态机与四本账横穿四块却不归任何一块，P1 只能靠纪律守；新增一种 workflow 步骤类型
+要连派发一起改。
 
 ## 模块之间
 
-- 四个模块共用同一套 Task 与 Attempt 状态机与同一张事件表，不各造一套（合同「两层状态机」）；状态只由集中的转换规则改写，事件只追加（I4）；
-- 传递只经数据库与事件流，不经进程内状态；
-- 持久化账（幂等、预算、副作用、证据）共用，写入面各自明确，同一事实不写两处；谁写哪一部分见合同「持久化记录」一节；
-- 与执行端之间只有一条通道，派发、续约、回传都走它。
+- **只有 `0005-kernel` 能改状态与写账。**其余五块都是「请求内核做一次转换」，不自己写表。
+  所有入口共用同一个转换函数，以状态版本比较交换；派发与状态改在同一事务里落 outbox。
+- 传递只经数据库与事件流，**不经进程内状态**；后端不驻留内存状态，重启扫非终态恢复。
+- **`0007` 决定、`0008` 投递**：前者产出「下一步是什么」，后者负责送达与租约。分开是为了让
+  「workflow 的步骤类型是开放集合」这句守得住。
+- **方法工具经 `0008` 的 ① 通道代理回 `0007` 执行**：清单随派发下发、随换步失效，
+  回来时由 `0007` 二次校验。Codex 到头到尾只跟 runtime 说话，「Codex 不直接连后端」没破。
+- 与执行端之间只有一条通道，派发、续约、回传、工具调用都走它。
+
+## 未决
+
+- **D10b**：并行 Attempt 的两种含义（冗余择快 / 竞争择优）还没定，它决定 `0007-orchestrator`
+  的停止规则与 `0010-acceptance` 的择优逻辑。
+- 六块的子任务**尚未派出**：按「不预先建还没派出的子任务」，`submodules/` 下暂时只有取消的旧四块。
+  各块的设计由它自己的 SDD turn 答；四份旧 `agent-dev-guide.md` 作为来源与已有取证留在旧目录里。
 
 ## 约束
 
-[代码规则](../../../../../rules/constraints.md)、[IMP 规则](../../../../../../dev-human/imp/message-rules.md)，以及产品合同的不变量 `I1` 至 `I20`。
+[代码规则](../../../../../rules/constraints.md)、[IMP 规则](../../../../../../dev-human/imp/message-rules.md)，
+以及上一层的 [不变量](../../../../architecture/invariants.md)。

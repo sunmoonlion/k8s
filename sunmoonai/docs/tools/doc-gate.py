@@ -315,7 +315,7 @@ def check_turn_md(base: str, fm: dict[str, str], kind: str) -> list[str]:
 
 
 def check_modules(tracked: set[str]) -> list[str]:
-    """模块只在 SDD/ 下划。modules/<名>.md 说每块是什么，submodules/<名>/ 是它往下的子任务，两边同号同名一一对应；
+    """模块只在 SDD/ 下划。modules/<名>.md 说每块是什么，submodules/<名>/ 是它往下的子任务；有子任务必须有说明（反之不强制）；
     名字合乎「四位号-短名」，从 0001 起连续；PRD/ 下三样都不得有。"""
     problems: list[str] = []
     dirs: dict[str, set[str]] = {}          # <任务目录>/<PRD|SDD>/submodules -> 模块名
@@ -356,13 +356,13 @@ def check_modules(tracked: set[str]) -> list[str]:
     for final in sorted(with_modules):
         d = dirs.get(f"{final}/submodules", set())
         c = descs.get(f"{final}/modules", set())
-        only_sub, only_desc = sorted(d - c), sorted(c - d)
+        # **单向**：有子任务就必须先说清它是什么；反过来不强制——
+        # 划分定下来时先写说明、子任务等真要派工时再建，是正常的中间态
+        # （`turn-project.md`：不预先建还没派出的子任务）。
+        only_sub = sorted(d - c)
         if only_sub:
             problems.append(f"{final}/: 这些模块有子任务却没有说明——"
                             f"补 modules/<名>.md：{'、'.join(only_sub)}")
-        if only_desc:
-            problems.append(f"{final}/: 这些模块有说明却没有子任务——"
-                            f"补 submodules/<名>/ 或删说明：{'、'.join(only_desc)}")
     for where, names in sorted(dirs.items()):
         nums: dict[int, list[str]] = {}
         for name in sorted(names):

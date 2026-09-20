@@ -96,4 +96,4 @@ dev-agent/                             项目，不编号
 | 编号连续 | thread 号在任务目录内、turn 号在各 thread 内，都从 `0001` 起不跳号、不复用 |
 | 名字唯一 | 同一个本地号只有一个目录；同一个运行时 id 不出现在两处 |
 | 模块编号 | 合乎「四位号-短名」，在同一层里从 `0001` 起连续、不复用；`modules/*.md` 与 `submodules/*/` 同号同名一一对应 |
-| 定稿目录 | 有 `SDD/submodules/` 就必须有 `SDD/architecture/`；`modules/*.md` 与 `submodules/*/` 同号同名一一对应；`PRD/` 下三样都不得有 |
+| 定稿目录 | 有 `SDD/submodules/` 就必须有 `SDD/architecture/`；有 `submodules/<X>/` 就必须有 `modules/<X>.md`（反之不强制——可以先定划分、后派子任务）；`PRD/` 下三样都不得有 |

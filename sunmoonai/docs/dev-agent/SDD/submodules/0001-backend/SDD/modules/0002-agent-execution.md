@@ -1,11 +1,13 @@
-# 0002-agent-execution：排队、派发与执行对接
+# 0002-agent-execution：排队、派发与执行对接（已取消）
 
-**承担**：outbox 投递、租约与 fencing、事件与副作用回传、用量归集。合同 `F-DISPATCH-*`、`F-EXEC-*` 的后端侧。
+**本版起取消。**责任拆成三处：
 
-**不承担**：不做受理判定（那是 `0001-intake`），不做验收（那是 `0004-acceptance-commit`）；
-执行本身在用户电脑上，这里只负责把它派出去并接住回传。
+- 「下一步派什么」→ [`0007-orchestrator`](0007-orchestrator.md)
+- 「怎么送出去、设备在不在」→ [`0008-gateway`](0008-gateway.md)
+- outbox 与任务队列本身 → [`0005-kernel`](0005-kernel.md)
 
-**边界要点**：租约与 fencing **随派发下发**；事件、副作用与用量**按 Attempt 归集**；
-设备离线则等待，不丢派发。
+**为什么拆**：原来这一块把「决定」和「投递」捆在一起。新增一种 workflow 步骤类型本该只动
+编排，捆着就得连派发一起改——`control-plane.md` 那句「步骤类型是开放集合」在这种结构下守不住。
 
-**要满足什么**见子任务 [`submodules/0002-agent-execution/`](../submodules/0002-agent-execution/PRD/requirement.md)。
+**目录不删**：[`../submodules/0002-agent-execution/`](../submodules/0002-agent-execution/) 下的
+turn 已交回并冻结，留着；该子任务不再开新的 turn。
