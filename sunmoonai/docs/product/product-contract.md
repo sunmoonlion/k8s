@@ -393,6 +393,9 @@ Codex 沙箱
 - 桌面应用在配置时引导用户开通、粘贴后当场测试可用与余额；
 - 提交前显示预估费用；用户可设单任务与每月上限；完成后显示实际花费（自报，只作展示）；
 - 模型费用由用户直接付给厂商；我们收取编排、知识服务与数据的服务费；runtime 上报的用量不作计费依据；
+- **可以配多个厂商的 key**：runtime 据此维护一份本机**可用模型清单**（厂商、模型名、是否测通），经 ① 上报；
+  派发内容里写明这次用哪个模型与哪个 provider，runtime 按它启动运行时 thread，不自行改投（§9.3 的硬禁令第一条）；
+- **并行竞争按份计费**：同一问发给几家就是几份模型费用，提交前的预估与完成后的实际花费都按总额显示；
 - **模型接入**：Codex 只支持 Responses API。推荐清单只收能直接连接的厂商（如 Kimi 的 OpenAI 兼容接口），runtime 只生成配置，不带转换层；换模型必须用领域评测集实测，结果决定推荐清单与默认推荐（⚠ 第三方接口下的上下文压缩续跑、reasoning effort、工具调用稳定性）；清单外的模型标「未验证」。
 
 ### 2.10 设备身份、连接与安装
@@ -675,6 +678,7 @@ Attempt 至少记录：
 
 ```text
 attempt_id, task_id, device_id, runtime_version, codex_version
+model, model_provider                  这一份是哪个模型做的
 task_profile_version, agent_profile_id, agent_profile_version
 input_artifact_versions, workspace_ref
 execution_binding                     运行时 thread 标识
@@ -883,7 +887,7 @@ tool_call_refs, side_effect_refs, evidence_refs, approval_refs
 | --- | --- |
 | Task / Event | 身份、契约、状态事件、因果与关联 ID、主体、时间、schema 版本 |
 | Attempt | 设备、Profile 与运行时版本、租约、输入输出引用、失败码、消耗 |
-| 路由决定 | 依据类型（用户所选、本地预填经确认、后端规则）、规则集版本、命中的规则、置信度与理由（有则记）、所选设备、改判记录 |
+| 路由决定 | 依据类型（用户所选、本地预填经确认、后端规则）、规则集版本、命中的规则、置信度与理由（有则记）、所选设备、**所选模型（多方竞争时是模型清单与各家的分配）**、改判记录 |
 | 幂等账 | 作用域、键、请求摘要、Task、首次与重复响应 |
 | 预算账 | Task 总额、预留、已用、释放、追加批准与拒绝原因；步骤数、耗时、派发次数由后端控制；token 与费用标「自报」 |
 | 副作用账 | 幂等键、目标、意图、执行状态、回执、补偿状态；批量记录标注批次与「补偿依赖本地」 |
