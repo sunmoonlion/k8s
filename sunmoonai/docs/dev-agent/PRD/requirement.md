@@ -2,6 +2,8 @@
 
 > 依据：[产品合同](../../product/product-contract.md)。本文只写**要什么**，怎么做见 [设计层](../SDD/architecture/README.md)。
 
+同目录另有：[`functions.md`](functions.md)（七阶段产品功能，全部 `F-*`）、[`development-plan.md`](development-plan.md)。
+
 ## 目标与范围
 
 把产品合同要求的东西做出来：用户在桌面应用里提交 Task，后端受理、路由、编排并验收，Agent 在用户电脑上执行，结果端到端加密后可靠取回。
