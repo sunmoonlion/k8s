@@ -2,6 +2,14 @@
 
 > 依据：[上层设计](../../../architecture/README.md) 与 [产品合同](../../../../../product/product-contract.md) 的「责任投影」中的「后端 supervisor」与「运维与管理后台」。
 
+同目录另有三份，由合同搬入：
+
+| 文件 | 内容 |
+| --- | --- |
+| [`control-plane.md`](control-plane.md) | 控制面怎么实现（状态机 + outbox + 任务队列，不引入图执行框架）、workflow 的步骤类型是开放集合、一个执行体、编排留在后端 |
+| [`routing.md`](routing.md) | 任务类别的三层判定与路由 |
+| [`methods.md`](methods.md) | 方法库的两种形态、口径与计算做成服务端 MCP 工具、按敏感度分档、跨 Task 上下文 |
+
 ## 职责
 
 做产品的控制面：受理用户提交的 Task，路由到 Profile 与设备，按 workflow 编排并派发 Attempt，验收结果，维护持久化账与审计；自己不调用生成式模型。

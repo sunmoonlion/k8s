@@ -46,11 +46,11 @@
 
 | 事实 | 落点 |
 | --- | --- |
-| 用户的资料与研究成果在用户电脑上 | 本地知识库（§2.8）；结果端到端加密（§8.4） |
+| 用户的资料与研究成果在用户电脑上 | 本地知识库（§2）；结果端到端加密（§8.4） |
 | 执行在用户电脑上，由用户发起和主导 | 执行端（[`0003-runtime/PRD/codex.md`](../dev-agent/SDD/modules/0003-runtime/PRD/codex.md)） |
 | 模型由用户自选、开通、付费 | [`0003-runtime/PRD/models-and-keys.md`](../dev-agent/SDD/modules/0003-runtime/PRD/models-and-keys.md) |
-| 我们提供的是数据，不是观点 | 自有数据（§2.8） |
-| 我们的编排与方法库只写方法，不写判断规则 | supervisor 与方法库（§2.7） |
+| 我们提供的是数据，不是观点 | 自有数据（§2） |
+| 我们的编排与方法库只写方法，不写判断规则 | supervisor 与方法库（[`control-plane.md`](../dev-agent/SDD/modules/0001-backend/PRD/control-plane.md)、[`methods.md`](../dev-agent/SDD/modules/0001-backend/PRD/methods.md)） |
 | 系统不替用户下判断 | 输出检查（§7.6） |
 
 定位约束：
@@ -108,96 +108,7 @@
 
 **让用户能验证**：runtime 应该开源；二进制必须签名，应该可复现构建；必须公开 runtime 与 Codex 会连接的全部域名，以及 ① 与 ⑤ 的协议文档，证明不存在上传 key 与资料的途径。后端对仍能看到的内容（查询、元数据）以服务条款、隐私政策与数据处理协议约束。
 
-## 2. 总体架构
-
-组成部分、通道、数据流与信任边界、工程落点**已搬至**
-[`dev-agent/SDD/architecture/`](../dev-agent/SDD/architecture/README.md)（见 §16 去向）。
-本节剩下的是各部件的内部要求，将随各自模块的落点陆续搬走。
-
-### 2.7 后端 supervisor
-
-后端是 supervisor：以 workflow 为主，按规则确定性地推进；**不调用生成式模型**，也不请执行端代为判断；需要语义判断的环节派 Attempt 交给执行端。
-
-| 角色 | 职责 |
-| --- | --- |
-| router | 形成路由决定：选 Task Profile、Agent Profile、执行设备；类别按本节「任务类别的判定」三层得出；路由规则是版本化配置，变更落事件；依据、规则集版本与拒绝原因入账 |
-| orchestrator | 创建并推进 Attempt；按 workflow 拆步骤、按步派发，每步按 §4.5 的步骤契约验收与处置；需要临时规划时先派一个「出计划」的 Attempt，计划作为 Artifact 经批准后执行 |
-| validator | 按固定 Task Profile 版本做确定性验收；核对本地内容检查的签名回执（§7.6） |
-| acceptor | 需要语义判断的验收，作为独立的验收 Attempt 派给执行端（不同 Agent Profile、不同运行时 thread） |
-| publisher | 不可逆副作用经 Task 级批准后执行 |
-
-**控制面怎么实现**：状态机加 outbox 加任务队列，**不引入图执行框架**。状态与账只有一份，在后端自己的库里：
-所有入口共用同一个转换函数并以状态版本比较交换；派发与状态改在同一个事务里落 outbox，投递器另跑；
-后端不驻留内存状态，重启后扫非终态对象即可恢复。引入图框架会多出一份 checkpoint 状态，与本文的
-状态机成为两个真源（I13），而结果、验收、预算结算与终态的原子提交（`F-ACCEPT-05`）在框架自管事务下做不干净。
-
-- 只有当后端出现**多步、带流式、需要回溯调试**的模型编排时，才重新评估；那种形态与「需要语义判断的环节派 Attempt」冲突，须先按 §15 修订本文。
-- 云端执行形态（后置）不构成理由：它对后端是**多一种设备**，走同一套设备身份与 ① 通道；agent loop 在那个新服务里，不与 Task 控制面共用状态机。
-
-**workflow 的步骤类型是开放集合**：一步是确定性规则、派 Attempt、人介入三者之一。
-新增类型（例如受理判定改用模型，D11）只加一个适配器，**不新增状态词、不改状态机**。
-
-**一个执行体**：执行体只有 Codex，任务之间的区别只在 Profile 与 workflow。
-
-| 任务 | 怎么派 | Profile |
-| --- | --- | --- |
-| 通用 | 直接派一个 Attempt | 通用 Profile：能力收紧，只自动放行只读动作与独立工作区内的写入，不开领域工具 |
-| 专业 | 按 workflow 拆步骤，逐步派 Attempt，经验收 | 对应的专业 Profile：领域工具、方法、验收规则 |
-
-- 「专业」定义为命中某个已有 workflow；类别在有限清单里选一项，外加「都不是」「拿不准」。清单边界必须写清（每项写明适用与不适用的例子），重点控制**专业被判为通用**的比例，阈值偏向升级；
-- **`escalate`**：runtime 以本地 MCP 工具向 Codex 提供 `escalate(原因, 建议类别)`，经 ① 转交 supervisor；调用后当前 Attempt 以「已升级」结束，由 supervisor 裁决是否改走 workflow，改判入账；参数结构化；
-- 不得让 Codex 在开工前自判类别再转回。
-
-**任务类别的判定**：分三层，每一层都在它信息最全的地方判断；后端不为此调用模型。
-
-| 层 | 在哪 | 依据 | 结论怎么算数 |
-| --- | --- | --- | --- |
-| 用户所选 | 桌面应用 | 用户指定的类别，或产品入口、模板自带的类别 | 直接作为 `profile_id` 提交 |
-| 本地预填 | 桌面应用 | 本机文件与任务文本的确定性规则：扩展名、表头、首页关键词、历史选择 | 必须经用户确认或改正才提交；未经确认的预填不算数 |
-| 后端兜底 | 后端 | 只有任务文本，按版本化规则与清单匹配 | 命中则入账；判不出来创建 Interaction 交用户选 |
-
-- 本地预填只在用户电脑上读文件；**文件内容、文件名以及由它们派生的任何特征都不上传**，上报的只有类别；
-- 判不出来时进入 `WAITING(INPUT)`，**不得默认判为通用，也不得回退到能力更大的 Profile**；界面上以一行候选呈现，不做成表单；
-- 类别决定怎么做，**不授予任何数据权限**（F-GUARD-04）；
-- 判定器的实现可替换（规则、检索或模型），替换不改交回的结构与入账字段；换成模型时先要有标注集与评测（D11）。
-- 设备离线时不可用，后端此时只按规则判断；
-- runtime 用单次调用客户端直连用户所选厂商，不借用 Codex。
-
-**编排留在后端**：supervisor 按步派发，每步只下发这一步需要的指令，完整流程不下发；核心计算与规则放在 MCP 工具内部执行，只返回结果。
-
-**方法库**：方法收在后端，不落地到用户电脑，**不是发给用户安装的 skill 包**。它有两种形态：
-
-| 形态 | 怎么用 | 序列保不保得住 | 对应哪类任务 |
-| --- | --- | --- | --- |
-| **直发** | 整包随 Attempt 注入，Codex 在一次执行里自己走完 | 不——注入那一次就全暴露 | 通用任务 |
-| **编排** | 后端按 workflow 逐步派 Attempt，每步只注入这一步要的部分 | 是——用户任何时刻只看到当前这一步 | 专业任务 |
-
-**不论哪种形态，口径与计算都做成 MCP 工具留在服务端**，不写进注入文本：注入的文本会进入用户本地的
-运行时 thread 记录并发给模型厂商，**不视为保密**。两种形态的差别只在序列保不保得住，不在内容能不能保密。
-
-**方法按敏感度分档**：
-
-| 档 | 形态 | 注入面里有什么 |
-| --- | --- | --- |
-| 普通 | 直发 | 整份方法 |
-| **核心** | **只走编排** | 只有「这一步做什么」与工具调用 |
-
-核心方法另加四条：
-
-- **「知道怎么做就能自己做」的步骤必须做成 MCP 工具**留在服务端——模型只看到调用与结果，
-  用户即使拼出全部序列，拿到的也只是一串工具名；
-- **判据、阈值、为什么留后端**，不进注入面；
-- 注入文本**不得出现下一步的线索**（「接下来我们会……」这类）；
-- 必要时对每台设备的注入文本**加水印**，泄露可溯源。
-
-编排形态提高的是复制成本，**不构成保密**：每一步的文本在下发那一次仍然可见，重复观察可以重建序列。
-真正抄不走的是数据、服务端的计算与口径、以及评测闭环。
-
-方法必须版本化、签名、配评测，改动后回归；只写方法不写判断规则（F-POS-02）；一次注入的量必须受控。
-
-**跨 Task 上下文**：项目背景、偏好、历史决定由后端记住；长期记忆的 embedding 用自有模型，只基于元数据与用户明确保存的内容。
-
-### 2.8 资料与知识服务
+## 2. 资料与知识服务
 
 | 资料 | 存放 | 如何给 Codex |
 | --- | --- | --- |
@@ -564,7 +475,7 @@ tool_call_refs, side_effect_refs, evidence_refs, approval_refs
 - **F-ADMIT-01**：在可靠边界内完成认证身份绑定、幂等占位、Task 建单与首事件写入；
 - **F-ADMIT-02**：输入不合规不得「尽量执行」；建单后的拒绝进入 `REJECTED`，协议层拒绝按 §3 处理；
 - **F-ADMIT-03**：所有客户端入口（桌面应用、受信服务入口）共享同一个应用用例，只在接口层解析身份：桌面应用的身份来自桌面端 token 会话，服务入口使用服务身份与受信委托上下文；不得复制 Task 状态或业务逻辑；
-- **F-ADMIT-04**：路由按「用户所选 → 后端兜底 → 交用户选」进行（§2.7）；路由规则是版本化配置，变更落事件；路由决定及其依据入账；
+- **F-ADMIT-04**：路由按「用户所选 → 后端兜底 → 交用户选」进行（[`0001-backend/PRD/routing.md`](../dev-agent/SDD/modules/0001-backend/PRD/routing.md)）；路由规则是版本化配置，变更落事件；路由决定及其依据入账；
 - **F-ADMIT-05**：执行设备只从在线、已授权相应工作区的设备中选择；用户指定设备时校验归属；
 - **F-ADMIT-06**：类别判不出来时创建 Interaction 交用户选，不得默认判为通用，也不得回退到能力更大的 Profile。
 
@@ -798,8 +709,8 @@ graph_version
 | --- | --- |
 | 桌面应用 | `F-INTAKE-*`；`F-APPROVE-02`、`F-APPROVE-05` 的界面；`F-REVIEW-*`；`F-DELIVERY-*` 的订阅、回放、解密与展示侧；`F-CRYPTO-03`、`F-CRYPTO-04`、`F-CRYPTO-05` 的界面；[`0002-desktop/PRD/security.md`](../dev-agent/SDD/modules/0002-desktop/PRD/security.md) 的安全与登录 |
 | 本地 runtime | `F-EXEC-*`；`F-APPROVE-01`、`F-APPROVE-03`、`F-APPROVE-04`；§6.2；`F-GUARD-01`、`F-GUARD-02` 的执行侧、`F-EXEC-12` 的执行侧；`F-ACCEPT-02` 的检查与回执；`F-CRYPTO-01`；§8.3；I14、I16、I18、I19、I20 的执行侧；[`0003-runtime/PRD/`](../dev-agent/SDD/modules/0003-runtime/PRD/requirement.md) 下的 `codex.md`、`isolation.md`、`models-and-keys.md`、`device.md` |
-| 后端 supervisor | `F-ADMIT-*`；`F-DISPATCH-*`；`F-INTERACT-*`；`F-ACCEPT-01`、`F-ACCEPT-03` 至 `F-ACCEPT-06`；`F-DELIVERY-*` 的服务端；`F-CRYPTO-02`；`F-GUARD-01` 的签名发布、`F-GUARD-04`、`F-GUARD-05`；§2.7；I1 至 I15 与 I17 的存储与并发载体 |
-| 知识服务 | §2.8 的自有数据、按上下文下发与防批量抓取；`F-GUARD-04` 的取数侧；`F-POS-01` |
+| 后端 supervisor | `F-ADMIT-*`；`F-DISPATCH-*`；`F-INTERACT-*`；`F-ACCEPT-01`、`F-ACCEPT-03` 至 `F-ACCEPT-06`；`F-DELIVERY-*` 的服务端；`F-CRYPTO-02`；`F-GUARD-01` 的签名发布、`F-GUARD-04`、`F-GUARD-05`；[`0001-backend/PRD/`](../dev-agent/SDD/modules/0001-backend/PRD/requirement.md) 下的 `control-plane.md`、`routing.md`、`methods.md`；I1 至 I15 与 I17 的存储与并发载体 |
+| 知识服务 | §2 的自有数据、按上下文下发与防批量抓取；`F-GUARD-04` 的取数侧；`F-POS-01` |
 | 验收器与 Profile | `F-ACCEPT-*` 的规则；Profile schema 与版本；内容检查规则；`F-POS-02` 至 `F-POS-04` 的规则 |
 | 运维与管理后台 | 非终态 Task、过期租约、离线设备、悬空投递与失败 Delivery 的扫描与告警；Profile、失败码、Attempt、设备与预算的可观测性；设备吊销；只见元数据 |
 | 产品与合规 | `F-POS-05`；定位的法务确认；推荐模型清单与对比评测（§1.4） |
@@ -938,6 +849,7 @@ graph_version
 | 原内容 | 搬到哪 | 什么时候 |
 | --- | --- | --- |
 | 组成部分 · 通道 · 数据流与信任边界 · 工程落点 | [`dev-agent/SDD/architecture/`](../dev-agent/SDD/architecture/README.md) 下的 `components.md`、`channels.md`、`trust.md`、`engineering.md` | 2026-09-20 |
+| 后端 supervisor：控制面与执行体 · 任务类别判定与路由 · 方法库 | [`0001-backend/PRD/`](../dev-agent/SDD/modules/0001-backend/PRD/requirement.md) 下的 `control-plane.md`、`routing.md`、`methods.md` | 2026-09-20 |
 | 桌面应用：窗口组成与能力边界 · 安全与登录 | [`0002-desktop/PRD/`](../dev-agent/SDD/modules/0002-desktop/PRD/requirement.md) 下的 `windows.md`、`security.md`；其中「官网与管理后台」一段归 [`architecture/components.md`](../dev-agent/SDD/architecture/components.md) | 2026-09-20 |
 | 本地 runtime：驱动 Codex · 执行隔离 · 模型与 key · 设备身份连接安装升级 | [`0003-runtime/PRD/`](../dev-agent/SDD/modules/0003-runtime/PRD/requirement.md) 下的 `codex.md`、`isolation.md`、`models-and-keys.md`、`device.md` | 2026-09-20 |
 | 生命周期全景（端到端九站、终点四条） | [`dev-agent/SDD/architecture/lifecycle.md`](../dev-agent/SDD/architecture/lifecycle.md)——它是设计层的**轮廓**，`§2` 里还没归位的细节按本表一点一点跟过去 | 2026-09-20 |
