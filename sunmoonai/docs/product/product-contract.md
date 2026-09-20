@@ -504,6 +504,7 @@ task_profile_id, task_profile_version
 original_input_ref, normalized_goal
 route_decision_ref, bound_device_id
 state, state_version, created_at, updated_at
+workflow_version, current_step         用哪一版步骤表、走到第几步；通用任务恒为单步
 acceptance_contract, execution_policy
 active_attempt_ids, terminal_result_ref
 parent_task_id, coordination_task_id
@@ -572,6 +573,26 @@ max_reworks           本步的返工上限
 - 步骤之间不得靠自然语言转述传递结果；下一步的输入只能是固定版本的 Artifact 与派发内容里的字段。
 
 ## 6. 两层状态机
+
+**状态机与 workflow 的分工**：状态机管纵向——这个 Task 现在算什么；workflow 管横向——走到第几步。
+
+**步骤推进不是状态迁移。**走到第 3 步还是第 5 步，Task 都是 `RUNNING`；步骤前进只动游标，不动状态词。
+workflow **不得自己定义状态**（P0：任何场景不得新增状态词）——否则每个领域方法都会长出一套
+「已取数」「已分析」「待复核」，状态词立刻失控。
+
+两者的交点只有四处：
+
+| 时机 | 状态机做什么 | workflow 做什么 |
+| --- | --- | --- |
+| 派发 | `QUEUED` → `RUNNING` | 读游标，取这一步的 `step_contract` |
+| 交回且通过 | 不动 | 游标 +1；没有下一步时才让状态机走向 `SUCCEEDED` |
+| 交回不合格 | 要交人时才进 `WAITING` | 按 `on_reject` 定去向：重做本步、回到前一步、或交人 |
+| 等待 | 等设备、等批准、等依赖一律由 `WAITING` 的原因码表达 | 不参与——**失败与等待归状态机，去向归 workflow** |
+
+**通用任务是长度为 1 的 workflow**：派一个 Attempt、通过即成功，游标从 0 到 1。两类任务共用同一条推进逻辑。
+
+谁能写什么：步骤表与 `step_contract` 是 Task Profile 的一部分，版本化并签名（`F-GUARD-01`）；
+游标是 Task 主档上的字段，**只能由 orchestrator 在改状态的同一个事务里改**。
 
 ### 6.1 Task 状态机
 
@@ -1171,6 +1192,7 @@ graph_version
 | D7 | 桌面客户端先在模板里加一类「桌面端」再同步，还是作为领域扩展单独起步；现有网页前端原样保留还是精简 | 单独起步时在模板对齐报告里登记 | 模板合规、验证速度 |
 | D9 | 派发签名密钥的保管与签发权 | 不放在在线派发服务里；Profile、workflow、方法在发布时签名 | 被攻破时能否伪造派发 |
 | D10 | 独立工作区的改动怎样合进用户工作区 | 版本库场景开分支、由用户合并或经批准后合并；其他场景生成补丁 | 交付体验、冲突处理 |
+| D10b | 并行 Attempt 分两种：冗余（容错提速，首个通过即停其余）与竞争（择优，全部做完再比）。§6.5 第 4 条现在只写了前者，与 §1.4「多方竞争择优」和 §2.9「按份计费」指向的后者冲突 | 分成两种，各有各的停止规则；默认单路，升到竞争形态要用户明确同意（钱是用户出的） | 停止规则、计费、择优由谁做 |
 | D11 | 受理判定的实现与升级时机 | v1 只用确定性规则加交用户选；积累足够标注后再评估检索或模型 | 打扰率、类别准确率 |
 | D12 | workflow 清单与「专业」的边界 | 每项写清适用与不适用的例子；随实际选择数据迭代 | 类别准确率 |
 | D13 | key 开通引导与费用展示的细节 | 按厂商图文引导、默认推荐一家、当场测 key | 用户对费用的信任 |
