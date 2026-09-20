@@ -10,6 +10,7 @@
 | [`isolation.md`](isolation.md) | 执行隔离：权限链、沙箱、工作区 |
 | [`models-and-keys.md`](models-and-keys.md) | 模型与 key：多厂商、可用模型清单、key 只在本机 |
 | [`device.md`](device.md) | 设备身份、连接、安装与升级 |
+| [`discipline.md`](discipline.md) | 执行端纪律：租约与断线即暂停、重连对账、工作区与证据 |
 
 ## 职责
 

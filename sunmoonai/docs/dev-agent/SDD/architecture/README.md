@@ -12,6 +12,10 @@
 | [`channels.md`](channels.md) | 七条通道：两端、协议、内容、安全要点；以及交互上要落实的几件事 |
 | [`trust.md`](trust.md) | 哪类数据流到哪、到哪为止——信任边界 |
 | [`engineering.md`](engineering.md) | 工程落点（技术栈、独立成仓、界面不共享、契约单一真源）与各模块共同的约束 |
+| [`objects.md`](objects.md) | 核心对象：Task、Attempt、Interaction、Artifact、Event、Side Effect、Delivery 与设备——三方共用的词 |
+| [`task-contract.md`](task-contract.md) | Task 契约：提交信封、持久化主档、解释与完成契约、最终结果信封 |
+| [`approval.md`](approval.md) | 审批：工具级与 Task 级怎么分、各走哪条路 |
+| [`invariants.md`](invariants.md) | 全程不变量 `I1`–`I20`、持久化记录、问题侧明文与资料侧加密 |
 
 同层的其他定稿：[`constraints.md`](../constraints.md) 是代码必须遵守的规则，
 [`agent-dev-guide.md`](../agent-dev-guide.md) 是开发指导，

@@ -46,7 +46,7 @@
 
 | 事实 | 落点 |
 | --- | --- |
-| 用户的资料与研究成果在用户电脑上 | 本地知识库（§2）；结果端到端加密（§8.4） |
+| 用户的资料与研究成果在用户电脑上 | 本地知识库（§2）；结果端到端加密（[`invariants.md`](../dev-agent/SDD/architecture/invariants.md)「问题侧明文，资料侧加密」） |
 | 执行在用户电脑上，由用户发起和主导 | 执行端（[`0003-runtime/PRD/codex.md`](../dev-agent/SDD/modules/0003-runtime/PRD/codex.md)） |
 | 模型由用户自选、开通、付费 | [`0003-runtime/PRD/models-and-keys.md`](../dev-agent/SDD/modules/0003-runtime/PRD/models-and-keys.md) |
 | 我们提供的是数据，不是观点 | 自有数据（§2） |
@@ -123,187 +123,6 @@
 - **防批量抓取**：按设备发 token，可吊销，随设备配对签发；限流并监控异常调用；只返回所需字段与片段，不返回原文全文；必要时加水印；
 - 核心检索与领域计算做成 MCP 工具；需要严格步骤的领域流程封装在工具内部，用固定逻辑执行。
 
-## 3. 核心对象
-
-| 对象 | 定义 | 必须保持的边界 |
-| --- | --- | --- |
-| **Task** | 用户提交并等待业务结果的持久请求 | 跨连接、进程、设备与多次 Attempt 存在 |
-| **Attempt** | 为完成一个 Task 在某台设备上发起的一次执行 | 一个 Task 可以有零到多次 Attempt；每次绑定一台设备与一个独立工作区 |
-| **Interaction** | 向用户或授权角色请求输入、批准，以及对方的响应 | 绑定 Task、一次性恢复、不可串请求 |
-| **Artifact** | 输入、计划、中间结果、研究底稿、最终结果等稳定产物 | 有类型、版本、所有者和来源；正文加密存放 |
-| **Event** | Task 与 Attempt 已发生事实的追加记录 | 只追加；状态与进度由它投影；不含结果正文 |
-| **Side Effect** | 对文件、外部系统、消息等的写动作 | 幂等、可审计、必要时可补偿 |
-| **Delivery** | 向桌面应用呈现状态、事件和持久化结果 | 可重放；失败不污染 Task 终态 |
-| **Device** | 经配对绑定到用户的执行端（一台装有桌面应用与 runtime 的电脑） | 以设备密钥证明身份；可吊销 |
-| **Task Profile** | 某类 Task 的输入、输出、验收、证据和策略契约 | 可版本化；不另造状态机 |
-| **Agent Profile** | 执行某类 Task 的能力、工具、权限、自动放行范围与方法 | Attempt 固定所用版本；签名发布 |
-
-**Task 不等于 Attempt**：一次派发失败、执行端离线、模型超时或验收不通过，只结束对应 Attempt。只有不存在获准的成功路径、重试策略耗尽，或完成契约已不可能满足时，Task 才进入 `FAILED`。
-
-```text
-Task T1
-├── Attempt A1（设备 D1）→ FAILED(retryable)
-├── Attempt A2（设备 D1）→ BUDGET_EXCEEDED
-└── Attempt A3（设备 D1）→ COMPLETED → 验收通过 → Task SUCCEEDED
-```
-
-**Submission 不一定产生 Task**：未认证、无法解析或在分配 `task_id` 前即被协议层拒绝的提交，只产生安全的协议错误，不进入 Task 生命周期。后端一旦分配 `task_id` 并提交首个事件，后续业务或政策拒绝必须形成可审计的 `REJECTED` Task。
-
-## 4. Task 契约
-
-### 4.1 提交信封
-
-桌面应用提交至少包含：
-
-```text
-idempotency_key       调用者作用域内稳定
-profile_id            Task Profile 标识（用户所选，或本地预填经用户确认；缺省留给路由）
-profile_version       可请求；最终版本由后端固定
-original_input        用户原始文本与结构化输入（明文；不含本地资料正文）
-local_refs[]          本地资料与工作区的稳定句柄（不上传内容，不含文件名）
-target_device_id      可选；缺省由路由选择
-client_context        locale、timezone、展示能力等非授权上下文
-requested_deadline    可选
-budget_limit          可选；用户设定的费用上限
-```
-
-后端必须从认证上下文确定 `requester`、`tenant`、角色和数据作用域，不信任客户端自报身份。幂等唯一性至少包含 `tenant + requester + profile + idempotency_key`。同一键重复且请求摘要相同时返回原 `task_id`；同一键不同摘要时必须返回幂等冲突，不能静默复用或另建 Task。
-
-### 4.2 持久化主档
-
-Task 至少持久化：
-
-```text
-task_id, requester, tenant, idempotency_key, request_digest
-task_profile_id, task_profile_version
-original_input_ref, normalized_goal
-route_decision_ref, bound_device_id
-state, state_version, created_at, updated_at
-workflow_version, current_step         用哪一版步骤表、走到第几步；通用任务恒为单步
-acceptance_contract, execution_policy
-active_attempt_ids, terminal_result_ref
-parent_task_id, coordination_task_id
-retry_of, refresh_of, supersedes
-waiting_reason, active_interaction_id
-cancel_requested_at, cancel_requested_by
-```
-
-`state` 是事件流的受约束投影；`state_version` 用于比较交换，防止两个入口同时完成、取消或恢复 Task。原始输入是问题侧内容，明文持久化；`local_refs` 只有句柄，本地资料的内容与文件名不上传。结果正文按 §8.4 只存密文。
-
-### 4.3 解释、边界与完成契约
-
-Task 进入 `QUEUED` 前必须固定：
-
-- 归一化目标：用户真正要什么结果；由已确认的类别与 Task Profile 模板确定性生成，只用任务文本，不得写入本地资料内容；
-- 包含什么、不包含什么、不包含部分由谁处理；
-- 输出 schema（研究底稿的结构，含由用户填写的结论栏）与客户端渲染契约；
-- 可判定的验收条目；
-- 新鲜度、证据与引用要求；
-- 预算、deadline、重试、停止与取消策略；
-- 允许的能力、数据源、自动放行范围与外部副作用；
-- 必须由用户或授权角色批准的动作；
-- 不确定性、降级与部分结果是否允许。
-
-简单 Task 可以由固定 Profile 自动生成契约。只有歧义会实质改变结果、权限、成本或风险时才请求澄清，不得为填满栏目反复追问用户。
-
-### 4.4 最终结果信封
-
-成功结果至少包含（正文部分加密存放，§8.4）：
-
-```text
-task_id, task_profile_id, task_profile_version
-result_id, result_version, result_type
-structured_result, human_summary          研究底稿；结论栏由用户填写或标为用户草稿
-evidence[] / citations[]                  每条带来源、时点、数据版本
-limitations[] / uncertainty
-data_as_of
-artifacts[]
-side_effect_summary[]
-content_check_receipt                     本地内容检查的签名回执
-accepted_attempt_id, device_id
-completed_at
-ciphertext_digest, key_id                 后端可见的元数据
-```
-
-失败、拒绝或取消结果至少包含稳定错误码、用户可理解的说明、是否允许重新提交、已发生副作用及其状态，以及仅供内部诊断的受限引用。界面文案不得泄露内部异常、路径、凭据或其他用户的信息。
-
-### 4.5 步骤交回物
-
-专业 Task 按 workflow 拆成步骤逐步派发。每个步骤在 Task Profile 的 `step_contract` 里声明：
-
-```text
-step_id, step_version
-input_refs[]          输入，只以 Artifact 版本引用指定
-output_schema         这一步交回物的结构
-acceptance[]          可判定的验收条目
-evidence_rules        这一步必须带的来源、时点与数据版本
-on_reject             不合格的去向：重做本步、回到指定的前一步、或交人
-max_reworks           本步的返工上限
-```
-
-- 步骤交回物是**固定版本的 Artifact**；下一步只以版本引用取用，上一步重做产生新版本，不就地覆盖；
-- 执行端不保证交回物满足 `output_schema`：模型可能不受结构化输出约束、可能没有最终消息、产物也可能是工作区里的文件。**格式合规由验收判定，不由执行端声明**；
-- 每一步按 §7.6 验收：需要读正文的检查在执行端加密前完成并进回执，后端核对回执并按 `acceptance[]` 做确定性判定；
-- 步骤不合格不等于 Task 失败：按 `on_reject` 处置；`max_reworks` 用尽交人；
-- 步骤之间不得靠自然语言转述传递结果；下一步的输入只能是固定版本的 Artifact 与派发内容里的字段。
-
-## 6. 审批
-
-### 6.1 两层审批
-
-| 层 | 对象 | 发起 | 处理处 | 决定与记录 |
-| --- | --- | --- | --- | --- |
-| **工具级** | 单条命令、单个文件修改、联网 | Codex → 审批回调 → runtime | 桌面应用本地窗口 | runtime 按策略自动放行、拒绝或交用户决定；结论摘要经 ① 上报存档 |
-| **Task 级** | 澄清输入、计划批准、不可逆或对外动作、合并到用户工作区、预算追加、待审文档 | 后端 | 桌面应用审查窗口 | 后端落 Interaction，按 [`state-machine.md`](../dev-agent/SDD/modules/0001-backend/PRD/state-machine.md)「WAITING 与 Interaction」原子消费 |
-
-- **F-APPROVE-01**：所有命令执行与文件修改必须进入审批回调；自动放行只限只读动作与独立工作区内的写入；网络访问、独立工作区外的写入、任何不可逆动作必须交用户确认或升级为 Task 级；
-- **F-APPROVE-02**：工具级审批结论只能来自本地窗口或本地策略；后端不能替用户作出工具级批准；
-- **F-APPROVE-03**：审批内容（命令原文、改动、路径）只在本地展示，上报只含摘要与结论；
-- **F-APPROVE-04**：断线时未决的工具级审批作废，不自动通过；
-- **F-APPROVE-05**：审批页面以业务语言呈现，按策略能决定的不打扰用户。
-
-### 6.2 工具级请求升级为 Task 级
-
-不可逆命令、需要云端决定的网络访问等，执行上仍是 Codex 发出的一条审批请求，但结论由后端给出：
-
-1. runtime 按清单识别这类请求，暂不回答，令其挂起；
-2. runtime 经 ① 登记副作用意图，请后端创建 Interaction；Task 进入 `WAITING(APPROVAL)`；
-3. 用户在审查窗口批准或拒绝；后端原子消费，经 ① 下发结论与幂等键；
-4. runtime 核对结论对应的正是挂起的那条请求（请求摘要一致、租约与 fencing 有效）后回答 Codex；拒绝即回答拒绝；
-5. 等待期间 runtime 照常续约，不开始新的工具调用；超时或断线时挂起的请求作废，恢复后由 Codex 重新发起。
-
-⚠ 审批请求能否长时间挂起取决于 SDK；不能时先中断运行时 turn，批准后在同一运行时 thread 中开新的运行时 turn 继续。
-
-### 6.3 Task 级审查
-
-审查窗口必须表达：
-
-| 要素 | 内容 |
-| --- | --- |
-| 问询定位 | Interaction、Task、适用的权力与合法转换、被询问的主体 |
-| 待决内容 | 要决定什么、各选项的后果、证据等级与未知项 |
-| 决定对象 | 每份文档的版本与摘要值、改动摘要；有验收条时附冻结的验收条与结论 |
-| 时效 | 截止时间与目标状态版本；过期不等于拒绝，也不等于同意 |
-| 决定记录 | 经鉴别的主体、响应、实际生效值、原建议与改动 |
-
-- **F-REVIEW-01**：内容与结论以后端为准：窗口按 Interaction 取回密文，本机解密后渲染；结论经 ④ 提交；
-- **F-REVIEW-02**：批准绑定具体版本；任何一份文档的版本或摘要变化，旧批准自动失效；
-- **F-REVIEW-03**：不预填同意；可以展示建议，结论只能来自审批人明确的操作；
-- **F-REVIEW-04**：多份文档逐份表态；只有审批策略明确允许时才可批量批准；
-- **F-REVIEW-05**：文档按不可信内容渲染：过滤脚本与内嵌 HTML，不加载远程资源，链接交系统浏览器打开，窗口禁止导航；
-- **F-REVIEW-06**：Task 级审批可以指派给提交人以外的人（团队协作启用后），同样绑定版本、不预填同意、全程留痕；结果密钥以对方公钥加密后分享；
-- 窗口由主进程创建：必须先处理才能继续的作为模态子窗口；应用在后台时发系统通知；同一 Interaction 只开一个窗口；每次记录响应耗时与修改项数，只作观察，不自动放宽审批。
-
-### 6.4 被攻破的后端
-
-后端派发的 Attempt 本身就是给 agent 的指令，被攻破的后端可以在自动放行范围内借 Attempt 让用户电脑执行命令。因此：
-
-- **F-GUARD-01**：Agent Profile、workflow 与方法由不在在线派发服务里的密钥签名；runtime 只接受签名有效且本地已登记的版本；
-- **F-GUARD-02**：执行前必须在本地确认要执行的内容摘要（Task、Profile、工作区、能力范围）；确认粒度与免确认范围由用户在本地设置；
-- **F-GUARD-03**：按 Profile 限定能力与自动放行范围是主防线：运行中生成的指令无法预先签名，Profile 没授权的工具、目录、网络，指令写什么都用不上；
-- **F-GUARD-04**：任务类别与 Profile 不授予数据权限：自有数据、领域工具与知识服务的访问由授权与订阅独立判定，自报的类别不能扩大可取数据的范围；
-- **F-GUARD-05**：厂商预设与取数工具规则的更新必须带签名。
-
 ## 7. 七阶段产品功能
 
 本节为可独立实现和验收的功能义务分配稳定 ID。ID 一经发布不得复用或因章节移动而重排；废止的要求保留 ID 并记录替代项。§11 只投影这些 ID 的所有者，不复制第二套要求。
@@ -321,7 +140,7 @@ max_reworks           本步的返工上限
 ### 7.2 受理与路由（后端）
 
 - **F-ADMIT-01**：在可靠边界内完成认证身份绑定、幂等占位、Task 建单与首事件写入；
-- **F-ADMIT-02**：输入不合规不得「尽量执行」；建单后的拒绝进入 `REJECTED`，协议层拒绝按 §3 处理；
+- **F-ADMIT-02**：输入不合规不得「尽量执行」；建单后的拒绝进入 `REJECTED`，协议层拒绝按 [`objects.md`](../dev-agent/SDD/architecture/objects.md) 处理；
 - **F-ADMIT-03**：所有客户端入口（桌面应用、受信服务入口）共享同一个应用用例，只在接口层解析身份：桌面应用的身份来自桌面端 token 会话，服务入口使用服务身份与受信委托上下文；不得复制 Task 状态或业务逻辑；
 - **F-ADMIT-04**：路由按「用户所选 → 后端兜底 → 交用户选」进行（[`0001-backend/PRD/routing.md`](../dev-agent/SDD/modules/0001-backend/PRD/routing.md)）；路由规则是版本化配置，变更落事件；路由决定及其依据入账；
 - **F-ADMIT-05**：执行设备只从在线、已授权相应工作区的设备中选择；用户指定设备时校验归属；
@@ -345,8 +164,8 @@ max_reworks           本步的返工上限
 - **F-EXEC-06**：区分事实、推断、假设、缺失与不确定性；
 - **F-EXEC-07**：无法满足完成契约时请求输入或明确失败，不伪造完整结果；
 - **F-EXEC-08**：计划只是可选 Artifact；复杂 Task 可以要求计划先经批准，简单任务不得为走流程而制造空计划；
-- **F-EXEC-09**：每个 Attempt 在独立工作区执行，不直接修改用户正在使用的目录（§8.3）；
-- **F-EXEC-10**：失去租约即暂停（§8.3）；
+- **F-EXEC-09**：每个 Attempt 在独立工作区执行，不直接修改用户正在使用的目录（[`discipline.md`](../dev-agent/SDD/modules/0003-runtime/PRD/discipline.md)）；
+- **F-EXEC-10**：失去租约即暂停（[`discipline.md`](../dev-agent/SDD/modules/0003-runtime/PRD/discipline.md)）；
 - **F-EXEC-11**：执行中发现需要领域能力时调用 `escalate`，不自行扩大能力；
 - **F-EXEC-12**：Agent Profile 之外的工具不进入模型上下文（会话组装时就不挂载）；runtime 对未授权的工具调用结构性拒绝，两层不得互相替代；
 - **F-EXEC-13**：研究产出遵守定位约束（F-POS-01 至 F-POS-04）。
@@ -355,7 +174,7 @@ max_reworks           本步的返工上限
 
 - **F-INTERACT-01**：后端把等待问题具体化为可直接回答的输入或可明确批准的动作，向正确受众投影 Interaction，并按 [`state-machine.md`](../dev-agent/SDD/modules/0001-backend/PRD/state-machine.md)「WAITING 与 Interaction」原子恢复；
 - **F-INTERACT-02**：恢复令牌消费后若后续投递失败，必须留下可恢复记录或进入合法失败路径，不得悬空；
-- **F-INTERACT-03**：工具级审批与 Task 级审批按 §6 分层处理，提交逻辑互不借道。
+- **F-INTERACT-03**：工具级审批与 Task 级审批按 [`approval.md`](../dev-agent/SDD/architecture/approval.md) 分层处理，提交逻辑互不借道。
 
 ### 7.6 验收与完成提交
 
@@ -394,108 +213,14 @@ max_reworks           本步的返工上限
 | `BUDGET` | 预算耗尽 | 追加批准、换策略或失败 |
 | `CANCEL` | 用户或系统取消 | 安全收敛后 `CANCELLED` |
 
-## 8. 纪律与持久化账
-
-### 8.1 全程不变量
-
-| ID | 必须成立 | 防止的失败 |
-| --- | --- | --- |
-| I1 | 原始输入、调用者、受理时间与 Profile 版本可追溯，不被后续解释覆盖 | 意图漂白 |
-| I2 | 相同幂等作用域、键与摘要只对应一个 Task；异摘要冲突 | 重复建单或误复用 |
-| I3 | 每次读取、工具调用与写入重新校验当前授权 | 撤权后继续访问、越权泄漏 |
-| I4 | 状态转换集中校验，事件只追加；状态与进度是事件投影 | 状态多头、覆写历史 |
-| I5 | Task 与 Attempt 终态不可转出；重新处理建立新实体 | 终态失真 |
-| I6 | Task 成功前结果密文与验收证据已持久化且可重新获取 | 完成即丢失 |
-| I7 | 通知与连接失败不改变 Task 业务终态 | 交付故障误判成业务失败 |
-| I8 | Attempt 失败不自动等于 Task 失败 | 过早终结用户任务 |
-| I9 | 每个副作用有稳定幂等键、状态、回执与补偿信息（批量记账见 §8.3） | 恢复或重试时重复动作 |
-| I10 | 预算覆盖 Task 的全部 Attempt、子 Task 与工具调用 | 放大后无限额 |
-| I11 | 结论与数值按 Profile 关联来源、时点、转换与执行者 | 证据幻觉、口径漂移 |
-| I12 | 敏感信息、凭据与越权原文不进入事件、日志与界面投影 | 泄密 |
-| I13 | 一个可变事实只有一个权威写入面，其他视图均可重建；运行时 thread 记录不是真源 | 副本漂移 |
-| I14 | 执行端失去租约或 fencing 后不能提交结果或副作用 | 迟到写入覆盖新结果 |
-| I15 | 每项可独立实现的义务有稳定 ID、所有者、代码位置与自动测试；未实现项显式登记 | 规范成为口号 |
-| I16 | 用户 key 与设备私钥不离开用户电脑，任何协议不设相应字段 | 凭据外泄 |
-| I17 | 后端只保存结果密文与元数据，没有解密能力 | 内容外泄、定位失守 |
-| I18 | 工具级审批结论只来自本地 | 远程代批 |
-| I19 | 执行端离线时不产生新的副作用；不得在离线时形成权威记账再同步 | 离线记账冲突 |
-| I20 | 用户资料、文件名与本地知识库内容不上传；明文字段只容纳来自任务文本的内容 | 资料外泄 |
-
-这些纪律必须由事务、唯一约束、状态版本、租约、fencing、签名、加密、持久化账与常规自动测试保证，不能只依赖提示词、执行者自律或临时脚本。
-
-### 8.2 持久化记录
-
-所有持久化账都在后端数据库；执行端只执行与上报，不持有权威副本。
-
-| 记录 | 最低内容 |
-| --- | --- |
-| Task / Event | 身份、契约、状态事件、因果与关联 ID、主体、时间、schema 版本 |
-| Attempt | 设备、Profile 与运行时版本、租约、输入输出引用、失败码、消耗 |
-| 路由决定 | 依据类型（用户所选、本地预填经确认、后端规则）、规则集版本、命中的规则、置信度与理由（有则记）、所选设备、**所选模型（多方竞争时是模型清单与各家的分配）**、改判记录 |
-| 幂等账 | 作用域、键、请求摘要、Task、首次与重复响应 |
-| 预算账 | Task 总额、预留、已用、释放、追加批准与拒绝原因；步骤数、耗时、派发次数由后端控制；token 与费用标「自报」 |
-| 副作用账 | 幂等键、目标、意图、执行状态、回执、补偿状态；批量记录标注批次与「补偿依赖本地」 |
-| 证据账 | 主张、来源、时点、数据版本、转换、生成者、Attempt 与验收者；**执行内容的指纹**（这一步实际跑了什么）与所用口径表的版本 |
-| Interaction | 等待问题或动作、受众、待决对象摘要、令牌、状态版本、消费结果 |
-| 工具级审批 | 摘要、结论、决定来源（策略或用户）、时间 |
-| 设备 | 公钥、归属、配对记录、在线状态、吊销状态 |
-| 结果 | 密文、密文摘要、密钥标识、本地内容检查回执 |
-| Delivery | 目标用户与通道、cursor、尝试、确认或失败；不保存第二份结果 |
-
-### 8.3 执行端纪律
-
-**独立工作区**：每个 Attempt 在独立工作区执行（版本库用 worktree，其他用副本），不直接修改用户正在使用的目录；补偿就是丢弃独立工作区；改动经 Task 级批准后才合进用户工作区。独立工作区只在用户电脑上，后端只保存引用与变更摘要，这类补偿记录标注「补偿依赖本地」。
-
-**副作用记账粒度**：
-
-| 动作类别 | 记账方式 | 往返 |
-| --- | --- | --- |
-| 只读（查找、读文件、不写工作区的计算） | 不是副作用，不记账，只作为工具调用事件上报 | 无 |
-| 独立工作区内的写入 | 按运行时 turn 批量记账：开始前登记一条工作区写入意图（幂等键 + 独立工作区起点引用）；运行时 turn 内的写入不再逐条往返；结束后上报变更摘要（文件清单与内容摘要）作为回执 | 每个运行时 turn 两次 |
-| 独立工作区外的写入（含合进用户工作区）、网络请求、不可逆或对外动作 | 逐条记账：先登记意图拿幂等键，执行后上报回执；多数需要 Task 级批准 | 每个动作一次 |
-
-批量记账满足 I9：每批有稳定幂等键（同一运行时 turn 重跑时判重）、状态、回执与补偿信息。前提是所有写动作都进入审批回调（F-APPROVE-01）。
-
-**Attempt 内的三条硬禁令**：
-
-| # | 禁令 | 具体形态 |
-| --- | --- | --- |
-| 1 | 不得改派工 | 执行者种类在 Attempt 创建时钉死并落账，不在 Attempt 内改投 |
-| 2 | 不得换执行通道 | 不在 Attempt 内另建客户端绕开已固定的适配层；换只能由 supervisor 新建 Attempt |
-| 3 | 不得扩权 | 不重新注册已被拒绝的工具，**不把人的批准降级为自动批准**，不追加预算 |
-
-「忘了传审批处理器」与「故意选自动批准」在代码里可能长得一样，所以第 3 条必须由适配层强制显式传入，不能靠纪律（F-APPROVE-01）。
-
-**租约与断线即暂停**：租约由后端签发，执行端按固定间隔经 ① 续约。续约失败（断网、休眠、后端不可用）时：
-
-1. runtime 中断当前运行时 turn；
-2. 正在执行的工具调用：中断无法终止的，runtime 终止其进程组；该调用结果记为「未知」；runtime 在本地暂存独立工作区相对起点的差异，作为待上报的回执（本地暂存不是权威记录）；
-3. 暂停期间不开始新的运行时 turn，不执行新的工具调用；未决的工具级审批与挂起的升级请求作废；
-4. 重连后先对账：上报暂存回执；后端核对租约与 fencing；仍有效时在原运行时 thread 中继续，否则开新 Attempt，从后端持久的 Artifact 与独立工作区引用恢复，原运行时 thread 只作参考；
-5. 不得在离线时形成权威记账再同步（I19）。
-
-**多方竞争**：并行 Attempt 都在用户电脑上执行，各在独立工作区；并发数按设备资源限制，派发前由 router 查询设备容量。
-
-### 8.4 问题侧明文，资料侧加密
-
-分界：**用户提出的问题明文，用户的资料与结果加密**。任务文本、归一化目标与已确认的类别明文存到后端，供受理判定、路由与编排使用；本地资料与文件名根本不上传；研究结果**端到端加密**后存到后端，密钥只在用户手里。
-
-- **F-CRYPTO-01**：结果密钥在用户设备上生成，存系统钥匙串；加密在执行端完成，发生在本地内容检查之后；
-- **F-CRYPTO-02**：后端只保存密文与元数据（状态、时间、用量、审计摘要、密文摘要、密钥标识），不具备解密能力；
-- **F-CRYPTO-03**：结果只在桌面应用内解密查看；基于正文的功能（全文搜索、预览）只在用户设备上完成；
-- **F-CRYPTO-04**：换设备时，用户可以通过恢复码或已登录设备之间的迁移取得密钥；
-- **F-CRYPTO-05**：密钥丢失即无法恢复结果，没有后门；必须事先明确告知用户并引导保存恢复码；
-- **F-CRYPTO-06**：结果需要他人复核时，以对方公钥加密结果密钥后分享；
-- **F-CRYPTO-07**：问题侧的明文字段只容纳来自任务文本的内容；把本地资料内容、文件名或其派生特征写入任何明文字段都是违规，字段 schema 必须能拦住。
-
 ## 11. 责任投影
 
-本节是所有者索引，不产生第二套规范；实现矩阵以 §1、§6、§7、§8 的稳定 ID 与 §14 的验收 ID 为键。
+本节是所有者索引，不产生第二套规范；实现矩阵以 §1、§7 与 [`approval.md`](../dev-agent/SDD/architecture/approval.md)、[`invariants.md`](../dev-agent/SDD/architecture/invariants.md) 的稳定 ID，以及 §14 的验收 ID 为键。
 
 | 所有者 | 负责的要求 |
 | --- | --- |
 | 桌面应用 | `F-INTAKE-*`；`F-APPROVE-02`、`F-APPROVE-05` 的界面；`F-REVIEW-*`；`F-DELIVERY-*` 的订阅、回放、解密与展示侧；`F-CRYPTO-03`、`F-CRYPTO-04`、`F-CRYPTO-05` 的界面；[`0002-desktop/PRD/security.md`](../dev-agent/SDD/modules/0002-desktop/PRD/security.md) 的安全与登录 |
-| 本地 runtime | `F-EXEC-*`；`F-APPROVE-01`、`F-APPROVE-03`、`F-APPROVE-04`；§6.2；`F-GUARD-01`、`F-GUARD-02` 的执行侧、`F-EXEC-12` 的执行侧；`F-ACCEPT-02` 的检查与回执；`F-CRYPTO-01`；§8.3；I14、I16、I18、I19、I20 的执行侧；[`0003-runtime/PRD/`](../dev-agent/SDD/modules/0003-runtime/PRD/requirement.md) 下的 `codex.md`、`isolation.md`、`models-and-keys.md`、`device.md` |
+| 本地 runtime | `F-EXEC-*`；`F-APPROVE-01`、`F-APPROVE-03`、`F-APPROVE-04`；[`approval.md`](../dev-agent/SDD/architecture/approval.md)「两层审批」；`F-GUARD-01`、`F-GUARD-02` 的执行侧、`F-EXEC-12` 的执行侧；`F-ACCEPT-02` 的检查与回执；`F-CRYPTO-01`；[`discipline.md`](../dev-agent/SDD/modules/0003-runtime/PRD/discipline.md)；I14、I16、I18、I19、I20 的执行侧；[`0003-runtime/PRD/`](../dev-agent/SDD/modules/0003-runtime/PRD/requirement.md) 下的 `codex.md`、`isolation.md`、`models-and-keys.md`、`device.md` |
 | 后端 supervisor | `F-ADMIT-*`；`F-DISPATCH-*`；`F-INTERACT-*`；`F-ACCEPT-01`、`F-ACCEPT-03` 至 `F-ACCEPT-06`；`F-DELIVERY-*` 的服务端；`F-CRYPTO-02`；`F-GUARD-01` 的签名发布、`F-GUARD-04`、`F-GUARD-05`；[`0001-backend/PRD/`](../dev-agent/SDD/modules/0001-backend/PRD/requirement.md) 下的 `control-plane.md`、`routing.md`、`methods.md`；I1 至 I15 与 I17 的存储与并发载体 |
 | 知识服务 | §2 的自有数据、按上下文下发与防批量抓取；`F-GUARD-04` 的取数侧；`F-POS-01` |
 | 验收器与 Profile | `F-ACCEPT-*` 的规则；Profile schema 与版本；内容检查规则；`F-POS-02` 至 `F-POS-04` 的规则 |
@@ -510,7 +235,7 @@ max_reworks           本步的返工上限
 | 风险 | 应对 |
 | --- | --- |
 | 被认定为提供投资分析（大模型输出易带观点） | 定位约束 F-POS-01 至 F-POS-05；法务确认 |
-| 被攻破的后端借 Attempt 在用户电脑上执行命令 | 按 Profile 限定能力与自动放行（主防线）；派发签名与本地确认（§6.4） |
+| 被攻破的后端借 Attempt 在用户电脑上执行命令 | 按 Profile 限定能力与自动放行（主防线）；派发签名与本地确认（[`approval.md`](../dev-agent/SDD/architecture/approval.md)） |
 | runtime 与 Codex 同一用户身份，策略保护依赖沙箱 | 配置与策略放工作区外并校验完整性；Windows 默认 elevated 沙箱；沙箱实测通过才上线 |
 | Windows 沙箱设置被杀毒软件或 IT 策略拦截 | 实测主流杀毒软件；代码签名与厂商报备；拦截时退回 unelevated 并收紧自动放行 |
 | 与用户自己安装的 Codex 互相干扰 | 独立二进制路径与 `CODEX_HOME` |
@@ -636,6 +361,8 @@ max_reworks           本步的返工上限
 | 原内容 | 搬到哪 | 什么时候 |
 | --- | --- | --- |
 | 组成部分 · 通道 · 数据流与信任边界 · 工程落点 | [`dev-agent/SDD/architecture/`](../dev-agent/SDD/architecture/README.md) 下的 `components.md`、`channels.md`、`trust.md`、`engineering.md` | 2026-09-20 |
+| 核心对象 · Task 契约 · 审批 | [`architecture/`](../dev-agent/SDD/architecture/README.md) 下的 `objects.md`、`task-contract.md`、`approval.md` | 2026-09-20 |
+| 全程不变量与持久化账 | [`architecture/invariants.md`](../dev-agent/SDD/architecture/invariants.md)；其中「执行端纪律」归 [`0003-runtime/PRD/discipline.md`](../dev-agent/SDD/modules/0003-runtime/PRD/discipline.md) | 2026-09-20 |
 | 两层状态机 · Profile 与扩展 · 子 Task 与依赖编排 | [`0001-backend/PRD/`](../dev-agent/SDD/modules/0001-backend/PRD/requirement.md) 下的 `state-machine.md`、`profile.md`、`subtask.md` | 2026-09-20 |
 | 后端 supervisor：控制面与执行体 · 任务类别判定与路由 · 方法库 | [`0001-backend/PRD/`](../dev-agent/SDD/modules/0001-backend/PRD/requirement.md) 下的 `control-plane.md`、`routing.md`、`methods.md` | 2026-09-20 |
 | 桌面应用：窗口组成与能力边界 · 安全与登录 | [`0002-desktop/PRD/`](../dev-agent/SDD/modules/0002-desktop/PRD/requirement.md) 下的 `windows.md`、`security.md`；其中「官网与管理后台」一段归 [`architecture/components.md`](../dev-agent/SDD/architecture/components.md) | 2026-09-20 |
@@ -650,7 +377,7 @@ max_reworks           本步的返工上限
 
 | # | 问题 | 建议 | 影响 |
 | --- | --- | --- | --- |
-| D2 | 两层审批的具体划分与「需要升级」的命令清单 | 不可逆、对外可见的归 Task 级；独立工作区内的归工具级 | F-APPROVE-01、§6.2 |
+| D2 | 两层审批的具体划分与「需要升级」的命令清单 | 不可逆、对外可见的归 Task 级；独立工作区内的归工具级 | F-APPROVE-01、[`approval.md`](../dev-agent/SDD/architecture/approval.md)「两层审批」 |
 | D3 | 本地确认按 Task 还是按 Attempt；哪些 Profile 可免确认 | 默认每个 Attempt 都确认，用户可为部分 Profile 放宽 | 被攻破时的暴露面、体验 |
 | D4 | 允许改派设备的条件 | 默认不允许；Profile 声明且工作区在目标设备可用时允许 | 可用性、工作区同步 |
 | D5 | 是否先做「只接远程 MCP」的轻方案验证领域价值 | 视市场节奏决定 | 排期 |
@@ -714,7 +441,7 @@ max_reworks           本步的返工上限
 | --- | --- | --- | --- |
 | 第一期 | 验证能跑通 | 桌面客户端：登录、提交、进度、查看结果、工具级审批、key 配置；runtime：连后端、驱动 Codex、审批、最简本地知识库；后端：派发与设备配对；知识服务 MCP；**一到两份领域方法（不用核心方法：第一期只有直发形态，整包注入等于一次性交出去）**；结果先只存本地，后端只存元数据 | 2–3 人约 6–8 周 |
 | 第二期 | 可靠性 | 独立工作区、批量记账、租约与断线暂停；预算账与证据账；supervisor 的 workflow 与路由 | 按第一期结果定 |
-| 第三期 | 产品化 | 结果加密存放与跨设备（§8.4）；审查窗口；计费；签名、公证与自动更新；杀毒软件报备 | 按第二期结果定 |
+| 第三期 | 产品化 | 结果加密存放与跨设备（[`invariants.md`](../dev-agent/SDD/architecture/invariants.md)）；审查窗口；计费；签名、公证与自动更新；杀毒软件报备 | 按第二期结果定 |
 
 第一期结束后交给几位投资经理试用，验证「本地 Codex + 自有数据 + 领域方法」的价值，再决定后续投入——**方法必须进第一期**：没有它，那次试用验的是裸 Codex 加一点数据；编排（workflow 与路由）在第二期，不在验证范围内。Windows 实测从第一期开始。
 
