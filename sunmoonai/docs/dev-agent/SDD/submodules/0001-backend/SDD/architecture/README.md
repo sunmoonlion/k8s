@@ -16,7 +16,8 @@
 
 **各模块承担什么、不承担什么，写在 [`SDD/modules/`](../modules/) 下各自那一份**，本表只管关系。
 
-同层的其他定稿：[`agent-dev-guide.md`](../../rules/agent-dev-guide.md) 是开发指导。
+`SDD/` 下的同层：[`modules/`](../modules/)（每块是什么）、[`submodules/`](../submodules/)（子任务）。
+再上一层是本模块自己的任务目录：`PRD/` 写它要满足什么，`rules/` 放开发指导。
 
 ## 模块之间
 

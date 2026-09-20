@@ -275,13 +275,13 @@
 
 | 原内容 | 搬到哪 | 什么时候 |
 | --- | --- | --- |
-| 组成部分 · 通道 · 数据流与信任边界 · 工程落点 | [`dev-agent/SDD/architecture/`](../dev-agent/SDD/architecture/README.md) 下的 `components.md`、`channels.md`、`trust.md`、`engineering.md` | 2026-09-20 |
+| 组成部分 · 通道 · 数据流与信任边界 · 工程落点 | [`dev-agent/SDD/architecture/`](../dev-agent/SDD/architecture/README.md) 下的 `lifecycle.md`、`channels.md`、`trust.md`、`engineering.md` | 2026-09-20 |
 | 七阶段产品功能（`F-*`） | [`dev-agent/PRD/functions.md`](../dev-agent/PRD/functions.md)——跨三个模块，所以放共同上层的 PRD | 2026-09-20 |
 | 核心对象 · Task 契约 · 审批 | [`architecture/`](../dev-agent/SDD/architecture/README.md) 下的 `objects.md`、`task-contract.md`、`approval.md` | 2026-09-20 |
 | 全程不变量与持久化账 | [`architecture/invariants.md`](../dev-agent/SDD/architecture/invariants.md)；其中「执行端纪律」归 [`0003-runtime/PRD/discipline.md`](../dev-agent/SDD/submodules/0003-runtime/PRD/discipline.md) | 2026-09-20 |
 | 两层状态机 · Profile 与扩展 · 子 Task 与依赖编排 | [`0001-backend/PRD/`](../dev-agent/SDD/submodules/0001-backend/PRD/requirement.md) 下的 `state-machine.md`、`profile.md`、`subtask.md` | 2026-09-20 |
 | 后端 supervisor：控制面与执行体 · 任务类别判定与路由 · 方法库 | [`0001-backend/PRD/`](../dev-agent/SDD/submodules/0001-backend/PRD/requirement.md) 下的 `control-plane.md`、`routing.md`、`methods.md` | 2026-09-20 |
-| 桌面应用：窗口组成与能力边界 · 安全与登录 | [`0002-desktop/PRD/`](../dev-agent/SDD/submodules/0002-desktop/PRD/requirement.md) 下的 `windows.md`、`security.md`；其中「官网与管理后台」一段归 [`architecture/components.md`](../dev-agent/SDD/architecture/components.md) | 2026-09-20 |
+| 桌面应用：窗口组成与能力边界 · 安全与登录 | [`0002-desktop/PRD/`](../dev-agent/SDD/submodules/0002-desktop/PRD/requirement.md) 下的 `windows.md`、`security.md`；其中「官网与管理后台」一段归 [`architecture/components.md`](../dev-agent/SDD/architecture/lifecycle.md) | 2026-09-20 |
 | 本地 runtime：驱动 Codex · 执行隔离 · 模型与 key · 设备身份连接安装升级 | [`0003-runtime/PRD/`](../dev-agent/SDD/submodules/0003-runtime/PRD/requirement.md) 下的 `codex.md`、`isolation.md`、`models-and-keys.md`、`device.md` | 2026-09-20 |
 | 生命周期全景（端到端九站、终点四条） | [`dev-agent/SDD/architecture/lifecycle.md`](../dev-agent/SDD/architecture/lifecycle.md)——它是设计层的**轮廓**，`§2` 里还没归位的细节按本表一点一点跟过去 | 2026-09-20 |
 
