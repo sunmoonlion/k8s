@@ -1,9 +1,8 @@
 # Agent 开发指导：一个产品运行时，一套开发纪律
 
-> ⚠ **本文按旧的四块划分组织**（受理路由 / 排队派发 / 中断恢复 / 验收提交）。
-> 新划分见 [`SDD/modules/`](../../../modules/)：内核、受理与路由、编排、派发网关、人介入、验收与交付。
-> 本文的内容不机械搬进新块——新划分是按「谁拥有什么」重切的，`0005-kernel` 以前不存在；
-> 各块的设计由它自己的 SDD turn 重新答，本文作为**来源与已有取证**留在这里。
+> ⚠ **旧划分的设计取证。**本文按已取消的四块（受理路由 / 排队派发 / 中断恢复 / 验收提交）组织，
+> 新划分见 [`SDD/modules/`](../SDD/modules/)。**不机械搬进新块**——新划分按「谁拥有什么」重切，
+> `0001-kernel` 以前不存在；各块的设计由它自己的 SDD turn 答。本文留作**来源与已核对的取证**。
 
 ### 2.6 执行层：租用什么、自建什么
 
@@ -19,7 +18,7 @@ Task/Attempt/四本账/验收/授权是本平台的，不 fork runtime、不改 
 `:154` `RunBudget` 生产未接线、`:182` Attempt/Invocation 未落库、
 `:208` `CancelRunCommand` 无 HTTP 端点、`:240` `AgentProfile` 只被记录不被执行。
 开关 `AGENT_V4_TRAFFIC_ENABLED` 与 `AGENT_PILOT_ENABLED` 在 bundle 里都是 `'false'`。
-**读本节任何一条都要带着这个前提，不得把目标态写成现状**——这正是 [§5.2](../../../../rules/agent-dev-guide.md) 推论 2
+**读本节任何一条都要带着这个前提，不得把目标态写成现状**——这正是 [§5.2](agent-dev-guide.md) 推论 2
 「拿休眠代码当能力证据」那个错误的机制来源。
 
 **专用 Agent 的构建方法固定，具体 Profile 不冻结**：Profile/patch + 插件组合；
@@ -48,7 +47,7 @@ cell，主档是 SQLite 不是共享 PostgreSQL，本身是 TypeScript/Node CLI�
 
 **执行路线是否更好，分三层判断**：架构分工合理、当前生产成熟、目标门禁通过，是三种结论。
 第一种不能替后两种背书。执行器接入的 Gate 0 至少须逐条验证下面三项；
-这是执行器 spike，**不是 [§7.1](../../../../rules/agent-dev-guide.md) 的 G0 协议修复步骤**。
+这是执行器 spike，**不是 [§7.1](agent-dev-guide.md) 的 G0 协议修复步骤**。
 
 | Gate 0 条件 | 验收与证据 | 失败后的退路 |
 | --- | --- | --- |
@@ -159,8 +158,8 @@ Adapter 只做公开 SDK 映射、binding 持久化、事件与错误码归一�
 不能原地 resume。相关项探针标 `implicit_fallback`，**不得标 `available`**。
 若完成合同需要保真的原 Attempt 恢复或逐 Turn HITL，该路线保持 `explicit_unsupported`。
 
-⚠ **注意这条与 [§4.3](../../0003-interrupt-resume/rules/agent-dev-guide.md) 的关系**：`dev.change` 走的是 LangGraph checkpointer，**原地 resume 可用**
-（[§4.3](../../0003-interrupt-resume/rules/agent-dev-guide.md) 已实测）。本节说的是 Harness 腿——**两条腿的恢复语义不同，不可互相外推**。
+⚠ **注意这条与 [§4.3](0003-interrupt-resume-notes.md) 的关系**：`dev.change` 走的是 LangGraph checkpointer，**原地 resume 可用**
+（[§4.3](0003-interrupt-resume-notes.md) 已实测）。本节说的是 Harness 腿——**两条腿的恢复语义不同，不可互相外推**。
 
 ### 2.10 双 runtime 的部署、进程与恢复
 
@@ -201,7 +200,7 @@ runtime/Profile 兼容性后继续，**不把 executor 本地目录当真源**�
 
 ### 3.2 工作区供给
 
-> 依据的通用规范：[IMP「执行规范 · 工作区」](../../../../../../../../dev-human/imp/message-rules.md)
+> 依据的通用规范：[IMP「执行规范 · 工作区」](../../../../../dev-human/imp/message-rules.md)
 
 ```text
 provision(task_id, source, baseline_commit, write_actors, review_needed, submodule_plan)
@@ -225,7 +224,7 @@ provision(task_id, source, baseline_commit, write_actors, review_needed, submodu
 
 ### 3.6 私有地产生，单写者发布
 
-> 依据的通用规范：[IMP「私有地产生，单写者发布」](../../../../../../../../dev-human/imp/finalize.md)
+> 依据的通用规范：[IMP「私有地产生，单写者发布」](../../../../../dev-human/imp/finalize.md)
 
 **会话隔离、模型隔离和任务名称不同，都不等于文件系统隔离。**
 任何可能并行的执行者都不得把共享路径当自己的草稿纸。
@@ -267,7 +266,7 @@ integrate: task/<task-id>/integrate/<run-id>
 
 ### 3.7 并发场景处置表
 
-> 依据的通用规范：[IMP「并发与事故」](../../../../../../../../dev-human/imp/message-rules.md)
+> 依据的通用规范：[IMP「并发与事故」](../../../../../dev-human/imp/message-rules.md)
 
 每行四件事：场景、正确落点、禁止做法、**已发生时怎么收**。
 恢复列给的是入口动作，统一规程见 §3.8。
@@ -310,7 +309,7 @@ integrate: task/<task-id>/integrate/<run-id>
 
 ### 3.8 覆盖或来源不明时的事故规程
 
-> 依据的通用规范：[IMP「并发与事故」](../../../../../../../../dev-human/imp/message-rules.md)
+> 依据的通用规范：[IMP「并发与事故」](../../../../../dev-human/imp/message-rules.md)
 
 ⚠ **后到者赢在任何场景都不成立。**磁盘上的最后一版、时间戳最新的一份、最后推上去的那个
 ref，都不因为「在后面」而获得正确性或所有权。**覆盖发生后唯一有效的认主依据是 commit、
@@ -342,7 +341,7 @@ Git object、Artifact、备份）⑥ 裁决（由 integrator 决定选用/合并
 
 ### 3.9 冻结、迟到与取消
 
-> 依据的通用规范：[IMP「冻结、迟到与取消」](../../../../../../../../dev-human/imp/message-rules.md)
+> 依据的通用规范：[IMP「冻结、迟到与取消」](../../../../../dev-human/imp/message-rules.md)
 
 候选、评审、改进、最终结果和验收绑定不可变 commit。冻结后替换必须产生新 commit 并登记。
 主线采纳后的在途结果标为 `STALE`，不得覆盖主线、执行副作用或推翻已交付结果。
@@ -365,7 +364,7 @@ Artifact，最后回收 worktree/sandbox。**取消与完成只能一个终态�
 
 ### 3.10 物化门禁与写入前门禁
 
-> 依据的通用规范：[IMP「两道门禁」](../../../../../../../../dev-human/imp/message-rules.md)
+> 依据的通用规范：[IMP「两道门禁」](../../../../../dev-human/imp/message-rules.md)
 
 **两道门，时机不同：物化门禁在第一个 Attempt 启动前，写入前门禁在每次落笔前。**
 
@@ -397,7 +396,7 @@ publication target + integrator
 ```
 
 ⚠ **材料在工作区内可见，不自动构成使用授权。**有效权限仍由 Task、Profile、工具策略和
-当前批准共同决定（[§4.5](../../../../rules/agent-dev-guide.md) 的交集公式）。**上一 Task 的工作区不得在未重新受理、授权和物化的
+当前批准共同决定（[§4.5](agent-dev-guide.md) 的交集公式）。**上一 Task 的工作区不得在未重新受理、授权和物化的
 情况下复用给下一 Task。**
 
 **写入前门禁（一票否决）。**动手写任何文件之前逐条核对，任一不成立则**停，不写任何文件**：
@@ -422,9 +421,9 @@ publication target + integrator
 
 ### 3.13 执行形态、停止规则与成本
 
-> 依据的通用规范：[IMP「执行形态、停止与成本」](../../../../../../../../dev-human/imp/message-rules.md)
+> 依据的通用规范：[IMP「执行形态、停止与成本」](../../../../../dev-human/imp/message-rules.md)
 
-档位（[§3.4](../../../../rules/agent-dev-guide.md)）定 guard，**执行形态**定这一次实际怎么排人：
+档位（[§3.4](agent-dev-guide.md)）定 guard，**执行形态**定这一次实际怎么排人：
 
 | 形态 | 适用条件 |
 | --- | --- |
@@ -446,7 +445,7 @@ publication target + integrator
 - 单元耗尽预算**不得静默借用**；
 - 协调者退出前留下可恢复 checkpoint。
 
-⚠ **「已派工」「全部返回」「多数一致」都不等于完成**（[§3.12](../../0004-acceptance-commit/rules/agent-dev-guide.md)、§11）。
+⚠ **「已派工」「全部返回」「多数一致」都不等于完成**（[§3.12](0004-acceptance-commit-notes.md)、§11）。
 
 **成本纪律：**
 
@@ -457,7 +456,7 @@ publication target + integrator
 
 ### 3.14 建立 worktree 的细则
 
-> 依据的通用规范：[IMP「工作区」](../../../../../../../../dev-human/imp/message-rules.md)
+> 依据的通用规范：[IMP「工作区」](../../../../../dev-human/imp/message-rules.md)
 
 - 每个并行单元**独立分支、独立可写 worktree**；候选从同一冻结 commit 开始；
 - ⚠ **同一分支不能被两棵 worktree 同时检出**——Git 会拒绝第二处，这是机制不是约定；
@@ -472,7 +471,7 @@ publication target + integrator
 
 ### 3.20 工作区能写，不代表 Git 能提交
 
-> 依据的通用规范：[IMP「工作区」](../../../../../../../../dev-human/imp/message-rules.md)
+> 依据的通用规范：[IMP「工作区」](../../../../../dev-human/imp/message-rules.md)
 
 供给阶段同时检查文件写入面和 Git 元数据写入面。先在获准目录只读执行：
 
@@ -504,7 +503,7 @@ git status --porcelain=v1
 
 ### 3.22 停止、超时与回退不能省略
 
-> 依据的通用规范：[IMP「执行形态、停止与成本」](../../../../../../../../dev-human/imp/message-rules.md)
+> 依据的通用规范：[IMP「执行形态、停止与成本」](../../../../../dev-human/imp/message-rules.md)
 
 异议采纳且触及结构、验收失败、principal 打回，都回到③，重新冻结与验证；
 同一次竞争回退超过两次就停止重整合，回到问题和标准本身确认，不无限重试。
@@ -529,7 +528,7 @@ git status --porcelain=v1
 
 ### 4.9 Attempt 内的三条硬禁令
 
-> 依据的通用规范：[产品合同「Attempt 内的三条硬禁令」](../../../../../../../../product/product-contract.md)
+> 依据的通用规范：[产品合同「Attempt 内的三条硬禁令」](../../../../../product/product-contract.md)
 
 上层路由完、权限收窄之后，Attempt 内还需要**可执行的边界**——抽象声明容易被绕过。
 任一条被突破即为越权，按 `I3`、`I10`、`I15` 与 constraints A2/A4 处理：
@@ -557,7 +556,7 @@ git status --porcelain=v1
 
 工具凭据由 host-side gateway 按实际调用解析，不进入 prompt、普通环境回显、checkpoint、
 日志或 Artifact。通用 worker 不持有专业数据凭据，专业 worker 不持有通用 provider 凭据。
-这落实 [§4.6](../../../../rules/agent-dev-guide.md) 的 Scope 与 Policy；**只写“两类 worker 互斥”而不管子进程继承，边界仍会漏**。
+这落实 [§4.6](agent-dev-guide.md) 的 Scope 与 Policy；**只写“两类 worker 互斥”而不管子进程继承，边界仍会漏**。
 
 **spawn 前洗环境。**执行器子进程只继承明确白名单变量，数据库、Redis、消息队列凭据不下发；
 白名单是版本化配置，要落账并由测试断言。限写不等于限读，继承父进程全量环境会把业务凭据
@@ -600,12 +599,12 @@ RouteDecision/Attempt，经过正常能力、权限、预算和数据门，不�
 
 ### 7.5 跨运行时 thread 续接
 
-> 依据的通用规范：[IMP「跨运行时 thread 续接」](../../../../../../../../dev-human/imp/message-rules.md)
+> 依据的通用规范：[IMP「跨运行时 thread 续接」](../../../../../dev-human/imp/message-rules.md)
 
 ⚠ **判据只有一句：把今天的记忆抹掉，另一个人只读持久载体能否接着做？不能，就是没落盘。**
 
 - 当前推进哪件事、卡在哪、下一动作，由任务目录（`thread/`、`composition/`、`components/`）推出，不落在脑子里；
-- **「不能倒退的输入」必须写下来**——已经定过的事下次不重新讨论，写进定稿（[`composition/`](../../../../../../architecture/README.md)），派工时写进 turn 的 `user-message.md`；
+- **「不能倒退的输入」必须写下来**——已经定过的事下次不重新讨论，写进定稿（[`composition/`](../../../architecture/README.md)），派工时写进 turn 的 `user-message.md`；
 - 停下来之前，先让任务目录能回答：「接手的人一分钟内要知道什么？」
 
 ⚠ **交接投影不是第二真源**，不得在 `user-message.md` 或 turn 里复制整张覆盖矩阵。
@@ -613,7 +612,7 @@ checkpoint 是恢复输入，不是第二份代码真源，**也不保存凭据*
 
 ⚠ **`composition/` 与各 turn 的 `user-message.md` 是单写者面。**多名执行者并行时只有派工的一方（协调者）写它们，各执行者只交回到自己的 turn，
 进度写在**自己的 worktree** 里。判据不是「内容重不重要」，而是
-「同一事实只能有一个权威写入者」（`I13`，[§1.2](../../../../rules/agent-dev-guide.md)）——**多人各自往同一份定稿 追加，
+「同一事实只能有一个权威写入者」（`I13`，[§1.2](agent-dev-guide.md)）——**多人各自往同一份定稿 追加，
 就是在共享路径上并发写**。
 
 同一判据对 agent 与人都成立，只是理由不同：**agent 是记不住，人是记得但传不出去。**
@@ -637,7 +636,7 @@ blocker, next_action, facts_to_revalidate
 
 ### 7.6 执行器架构的未验证清单
 
-⚠ **§2.6–§2.10 描述的执行层，在本清单清空之前一律按 `defined` 对待**（[§5.8](../../../../rules/agent-dev-guide.md) 四级词典）。
+⚠ **§2.6–§2.10 描述的执行层，在本清单清空之前一律按 `defined` 对待**（[§5.8](agent-dev-guide.md) 四级词典）。
 本节只登记「未验证」；「已知不支持」在 §5.6 矩阵里，两者不可混。
 
 | # | 未验证的事 | 位置 | 验证方式 |
@@ -656,10 +655,10 @@ blocker, next_action, facts_to_revalidate
 
 ## 11. 反模式
 
-> 依据的通用规范：[IMP「反模式」](../../../../../../../../dev-human/imp/message-rules.md)
+> 依据的通用规范：[IMP「反模式」](../../../../../dev-human/imp/message-rules.md)
 
 **这一节是机制描述，不是训诫。**每行左边是做法，右边是它**怎样失败**——
-没有失败方式的条目不该进表。与 [§8](../../../../rules/agent-dev-guide.md) 的区别：[§8](../../../../rules/agent-dev-guide.md) 是本项目**已被推翻的设计**，
+没有失败方式的条目不该进表。与 [§8](agent-dev-guide.md) 的区别：[§8](agent-dev-guide.md) 是本项目**已被推翻的设计**，
 本节是**任何项目都会踩的做法**。
 
 | 反模式 | 失败方式 |

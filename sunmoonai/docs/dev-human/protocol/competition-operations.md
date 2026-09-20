@@ -16,7 +16,7 @@
 | ④ 异议 | 被处置到的来源方核自己主张；提交条目、为什么错、应当是什么、可复跑证据 | 无异议明确记录；异议不是否决权，裁决方须逐条回应；实质改结构回到 ③ |
 | ⑤ 验收 | 独立 acceptor 对冻结最终版本逐条验收 | 标准疑似过期则附理由交裁决/请求者处理；不自行改标准；不通过回 ③ |
 | ⑥ 确认 | principal 读取可检视的最终对象，批准具体不可逆动作或打回 | 显式批准并绑定版本，不能由“继续”或逾期默认代替；打回回 ③ |
-| ⑦ 清理发布 | 指定单写者按 [§3.15](../../dev-agent/SDD/submodules/0001-backend/SDD/submodules/0004-acceptance-commit/rules/agent-dev-guide.md)–[§3.16](../../dev-agent/SDD/submodules/0001-backend/SDD/submodules/0004-acceptance-commit/rules/agent-dev-guide.md) 收存证据、清理本次私有产物，再发布 | 目标版本比较通过、批准仍有效；只清理获准对象，不清空他家工作区 |
+| ⑦ 清理发布 | 指定单写者按 [§3.15](../../dev-agent/SDD/submodules/0001-backend/rules/0004-acceptance-commit-notes.md)–[§3.16](../../dev-agent/SDD/submodules/0001-backend/rules/0004-acceptance-commit-notes.md) 收存证据、清理本次私有产物，再发布 | 目标版本比较通过、批准仍有效；只清理获准对象，不清空他家工作区 |
 
 **L0/L1/L2/L3 是验证职责，不是环节编号。**T2 的来源核对 L2 在④发生，必须先于⑤的 L1；
 涉及正文改动后重跑 L0，随后独立验收。L1/L2 都完成才请求最终 L3。

@@ -1,5 +1,9 @@
 # Agent 开发指导：一个产品运行时，一套开发纪律
 
+> ⚠ **旧划分的设计取证。**本文按已取消的四块（受理路由 / 排队派发 / 中断恢复 / 验收提交）组织，
+> 新划分见 [`SDD/modules/`](../SDD/modules/)。**不机械搬进新块**——新划分按「谁拥有什么」重切，
+> `0001-kernel` 以前不存在；各块的设计由它自己的 SDD turn 答。本文留作**来源与已核对的取证**。
+
 ### 4.3 直接沿用实际中断/恢复原语
 
 当前基座已经提供足够原语：
@@ -30,7 +34,7 @@
 
 因此实现应把产品 Interaction 的 `question_or_action / audience / expires_at / resume_token_hash /
 idempotency_key / consumed_at / resume_target` 绑定到这些原语，字段真源仍是
-`request-lifecycle.md @ ed0b5136:247-277`。中断节点返回业务需要的 dict；恢复端鉴别主体、校验
+产品合同「WAITING 与 Interaction」一节。中断节点返回业务需要的 dict；恢复端鉴别主体、校验
 Task 与状态版本、原子消费令牌，然后把经验证的响应作为 `Command(resume=value)` 送回同一 thread。
 checkpoint 原地续跑时是同一 Attempt 的 `WAITING → RUNNING`，不因“人给了内容”另开 Attempt。
 
@@ -65,8 +69,6 @@ checkpoint 原地续跑时是同一 Attempt 的 `WAITING → RUNNING`，不因�
 
 ### 4.7 四档审批
 
-> 依据的通用规范：[人的批准点「四档审批」](../../../../../../../dev-agent-standards/detailed-rules/approvals.md)
-
 审批策略固定四档，具体动作由 Task/Profile 风险分类映射：
 
 | 档 | 适用 | 决策者 | 纪律 |
@@ -80,7 +82,7 @@ checkpoint 原地续跑时是同一 Attempt 的 `WAITING → RUNNING`，不因�
 计划/diff/Artifact 的内容哈希；**执行前重算，任一字节、目标、权限或版本漂移即作废**。
 批准有短 TTL，超时 fail-closed。
 
-⚠ **不得把 Codex 默认 accept 当任何一档批准**（`client.py:773-779`，见 [§2.7](../../../04-agent-execution/composition/agent-dev-guide.md)），
+⚠ **不得把 Codex 默认 accept 当任何一档批准**（`client.py:773-779`，见 [§2.7](0002-agent-execution-notes.md)），
 **也不得让生成候选的同一 Agent 充当 `llm-review`**。
 
 ⚠ **超时是独立的审计结果与 reason code，不折成 `auto-deny`。**两者行为后果相同
@@ -89,14 +91,14 @@ checkpoint 原地续跑时是同一 Attempt 的 `WAITING → RUNNING`，不因�
 事后无法区分「策略拒绝率上升」和「审批链路卡死」。落账写 `approval_timeout`，
 带等待时长与待审对象哈希。
 
-⚠ **四档与 [§4.2](../../../../composition/agent-dev-guide.md) 权力表是两条正交的轴，不是一张表的两种写法。**权力表回答
+⚠ **四档与 [§4.2](agent-dev-guide.md) 权力表是两条正交的轴，不是一张表的两种写法。**权力表回答
 「**哪个 principal** 可以走**哪条合法边**」；四档回答「**一次具体动作**经过**什么样的审批
 形态**」。`llm-review` 在权力表里没有行，因为它不是 principal 的权力——
-⚠ 它是否可用于任何 `auto_policy = 无` 的行，**本文不裁**，登记 [§7.4](../../../../../../composition/agent-dev-guide.md) 未决。
+⚠ 它是否可用于任何 `auto_policy = 无` 的行，**本文不裁**，登记 [§7.4](../../../../rules/agent-dev-guide.md) 未决。
 
 ### 4.10 人这一侧的义务
 
-> 依据的通用规范：[人的批准点「人这一侧的义务」](../../../../../../../dev-agent-standards/detailed-rules/approvals.md)
+> 人版的对应做法：[人的批准点「人这一侧的义务」](../../../../../dev-human/approvals.md)。
 
 ⚠ **不只是执行者有纪律。人这边同样有，而且被违反时后果更大——因为 agent 会照做。**
 
@@ -104,15 +106,15 @@ checkpoint 原地续跑时是同一 Attempt 的 `WAITING → RUNNING`，不因�
 | --- | --- |
 | 请求写清**边界**：含什么、不含什么、不含的归谁 | 执行者会自行扩大范围，或漏掉本该做的 |
 | 给**可判定的验收标准**，不给倾向性结论 | 候选向你的结论收敛，**等于白问** |
-| 并行提案时**不泄露其他方案** | 独立信号退化成改写（[§2.11](../../../../composition/agent-dev-guide.md)） |
-| 派活前先建好各自的 worktree 和命名分支 | 多个执行者写同一工作区，后写覆盖先写（[§3.6](../../../04-agent-execution/composition/agent-dev-guide.md)） |
+| 并行提案时**不泄露其他方案** | 独立信号退化成改写（[§2.11](agent-dev-guide.md)） |
+| 派活前先建好各自的 worktree 和命名分支 | 多个执行者写同一工作区，后写覆盖先写（[§3.6](0002-agent-execution-notes.md)） |
 | 收到「我不确定」时**不追问到它给出确定答案** | **逼出的确定性是编的** |
 | 执行者说「没查过某处」时**当作真话对待** | 声明盲区的动力被消灭，下次它不说了 |
 
 ⚠ **最后一条最容易被忽略：盲区声明是自愿的，只要说了就受罚，很快就没人说了。**
-这与 [§9.2](../../../../../../../dev-agent-standards/uat/uat-rules.md)「如实写『不能排除』不扣分，隐瞒才扣」是同一条规则的两侧——
+这与 [§9.2](../../../../../dev-human/uat/verify-rules.md)「如实写『不能排除』不扣分，隐瞒才扣」是同一条规则的两侧——
 一侧约束写的人，一侧约束读的人。
 
 **委派转移的是执行，不是最终责任。**派活时必须给出范围、权限、预算、停止条件和可验收
 输出；对超范围、追加成本、不可逆动作和规范修改及时批准或拒绝；**亲自验收，或指定未参与
-实施的验收方**（[§4.5](../../../../composition/agent-dev-guide.md) 责任归属表）。
+实施的验收方**（[§4.5](agent-dev-guide.md) 责任归属表）。

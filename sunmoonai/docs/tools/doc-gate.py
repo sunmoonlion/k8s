@@ -277,6 +277,15 @@ def front_matter(text: str) -> dict[str, str] | None:
     return None
 
 
+def head_files(prefix: str) -> set[str]:
+    """HEAD 里该前缀下的全部被跟踪文件。用于判断一棵任务子树是不是被整体删除。"""
+    try:
+        out = git("ls-tree", "-r", "--name-only", "HEAD", "--", prefix)
+    except subprocess.CalledProcessError:
+        return set()
+    return {ln for ln in out.splitlines() if ln}
+
+
 def head_blob(path: str) -> str | None:
     try:
         return git("show", f"HEAD:{path}")
@@ -514,6 +523,10 @@ def check_frozen(staged: list[tuple[str, str, str | None]]) -> list[str]:
     """
     problems: list[str] = []
     cache: dict[str, tuple[bool, bool]] = {}
+    deleted = {p for st, p, _ in staged if st == "D"}
+    touched = {p for st, p, _ in staged if st != "D"}
+    retired: set[str] = set()
+    checked_retire: set[str] = set()
     for status, path, old_path in staged:
         if not path.startswith(DOC_ROOT):
             continue
@@ -525,6 +538,17 @@ def check_frozen(staged: list[tuple[str, str, str | None]]) -> list[str]:
         if parsed is None:
             continue
         task, dthread, dturn, rest = parsed
+        if task in retired:
+            continue
+        if status == "D" and task not in checked_retire:
+            checked_retire.add(task)
+            # **整棵任务目录退役**：该目录下 HEAD 里的每个文件本次都被删除，且只删不改。
+            # 冻结防的是篡改——抽掉一个不利的 turn、或改写当时的问答；整棵树不再生长
+            # 是另一回事。判据必须同时成立，单独删一个 turn 或只删一部分照旧拦。
+            head = head_files(task + "/")
+            if head and head <= deleted and not (head & touched):
+                retired.add(task)
+                continue
         base = f"{task}/thread/{dthread}/{dturn}"
         if base not in cache:
             um = head_blob(f"{base}/user-message.md")

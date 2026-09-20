@@ -73,13 +73,13 @@ dev-agent/                             项目，不编号
     ├── modules/0001-backend.md  0002-desktop.md  0003-runtime.md   每块是什么
     └── submodules/
         ├── 0001-backend/                   子任务：内部同样是 thread/ + PRD/ + SDD/ + rules/
-        │   └── SDD/submodules/0001-intake/ 0002-agent-execution/ …
+        │   └── SDD/submodules/0001-kernel/ 0002-router/ …
         └── 0002-desktop/
 ```
 
 - 模块目录与实现时 worktree 里的模块目录一一对应；**以定稿为准**：要改结构，先改这里。
 - **不在整棵树里统一编号**：那样要有一处统一取号，几个分支同时建模块就会抢号；子树挪了位置，号也跟着失效。
-- 跨节点引用时前面带上模块路径，如 `0001-backend/0002-agent-execution` 的 `0003/0002`。
+- 跨节点引用时前面带上模块路径，如 `0001-backend/0002-router` 的 `0003/0002`。
 
 ## 门禁查这几条
 

@@ -11,23 +11,23 @@ validator、acceptor、publisher）加上「控制面怎么实现」那一段，
 
 | 模块 | 拥有什么 | 朝哪一侧 |
 | --- | --- | --- |
-| [`0005-kernel`](../modules/0005-kernel.md) | 状态机与唯一转换函数、事件表、四本账、outbox 与投递器、任务队列、重启恢复 | **不朝外**，其余五块经它 |
-| [`0006-router`](../modules/0006-router.md) | 身份、幂等、建单、契约固定、类别三层判定、Profile 与设备选择 | 客户端 ④ |
-| [`0007-orchestrator`](../modules/0007-orchestrator.md) | workflow 游标、按步拆与派发、步骤契约、`escalate` 裁决、方法库与按步工具面 | 内部（经 kernel 与 gateway） |
-| [`0008-gateway`](../modules/0008-gateway.md) | WSS 连接、设备身份、租约与 fencing、投递与回传 | runtime ① |
-| [`0009-interaction`](../modules/0009-interaction.md) | Interaction 的创建与原子消费、两层审批后端侧、批准后执行副作用 | 人（经 ④） |
-| [`0010-acceptance`](../modules/0010-acceptance.md) | 确定性验收、语义验收派 Attempt、终态提交的发起、事件流投影与结果取件 | 客户端 ④ |
+| [`0001-kernel`](../modules/0001-kernel.md) | 状态机与唯一转换函数、事件表、四本账、outbox 与投递器、任务队列、重启恢复 | **不朝外**，其余五块经它 |
+| [`0002-router`](../modules/0002-router.md) | 身份、幂等、建单、契约固定、类别三层判定、Profile 与设备选择 | 客户端 ④ |
+| [`0003-orchestrator`](../modules/0003-orchestrator.md) | workflow 游标、按步拆与派发、步骤契约、`escalate` 裁决、方法库与按步工具面 | 内部（经 kernel 与 gateway） |
+| [`0004-gateway`](../modules/0004-gateway.md) | WSS 连接、设备身份、租约与 fencing、投递与回传 | runtime ① |
+| [`0005-interaction`](../modules/0005-interaction.md) | Interaction 的创建与原子消费、两层审批后端侧、批准后执行副作用 | 人（经 ④） |
+| [`0006-acceptance`](../modules/0006-acceptance.md) | 确定性验收、语义验收派 Attempt、终态提交的发起、事件流投影与结果取件 | 客户端 ④ |
 
 **各模块承担什么、不承担什么，在 [`SDD/modules/`](../modules/) 下各自那一份**，本表只管关系。
 
-**旧的四块（`0001`–`0004`）本版起取消**，目录与已冻结的 turn 留在原处不删，
-各自那份说明写了责任去了哪。原因：旧划分按合同七阶段切，而**阶段是时间、不是模块**——
+**本版是重切**，不是在旧划分上加减。旧划分按合同七阶段切，而**阶段是时间、不是模块**——
 状态机与四本账横穿四块却不归任何一块，P1 只能靠纪律守；新增一种 workflow 步骤类型
-要连派发一起改。
+要连派发一起改。旧四块的设计取证留在 [`rules/`](../../rules/) 下的四份 `*-notes.md` 里，
+本层两份 guide 仍在引用它们。
 
 ## 模块之间
 
-- **只有 `0005-kernel` 能改状态与写账。**其余五块都是「请求内核做一次转换」，不自己写表。
+- **只有 `0001-kernel` 能改状态与写账。**其余五块都是「请求内核做一次转换」，不自己写表。
   所有入口共用同一个转换函数，以状态版本比较交换；派发与状态改在同一事务里落 outbox。
 - 传递只经数据库与事件流，**不经进程内状态**；后端不驻留内存状态，重启扫非终态恢复。
 - **`0007` 决定、`0008` 投递**：前者产出「下一步是什么」，后者负责送达与租约。分开是为了让
@@ -38,8 +38,8 @@ validator、acceptor、publisher）加上「控制面怎么实现」那一段，
 
 ## 未决
 
-- **D10b**：并行 Attempt 的两种含义（冗余择快 / 竞争择优）还没定，它决定 `0007-orchestrator`
-  的停止规则与 `0010-acceptance` 的择优逻辑。
+- **D10b**：并行 Attempt 的两种含义（冗余择快 / 竞争择优）还没定，它决定 `0003-orchestrator`
+  的停止规则与 `0006-acceptance` 的择优逻辑。
 - 六块的子任务**尚未派出**：按「不预先建还没派出的子任务」，`submodules/` 下暂时只有取消的旧四块。
   各块的设计由它自己的 SDD turn 答；四份旧 `agent-dev-guide.md` 作为来源与已有取证留在旧目录里。
 
