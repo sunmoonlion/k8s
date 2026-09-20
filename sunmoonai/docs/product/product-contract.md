@@ -247,158 +247,6 @@ max_reworks           本步的返工上限
 - 步骤不合格不等于 Task 失败：按 `on_reject` 处置；`max_reworks` 用尽交人；
 - 步骤之间不得靠自然语言转述传递结果；下一步的输入只能是固定版本的 Artifact 与派发内容里的字段。
 
-## 5. 两层状态机
-
-**状态机与 workflow 的分工**：状态机管纵向——这个 Task 现在算什么；workflow 管横向——走到第几步。
-
-**步骤推进不是状态迁移。**走到第 3 步还是第 5 步，Task 都是 `RUNNING`；步骤前进只动游标，不动状态词。
-workflow **不得自己定义状态**（P0：任何场景不得新增状态词）——否则每个领域方法都会长出一套
-「已取数」「已分析」「待复核」，状态词立刻失控。
-
-两者的交点只有四处：
-
-| 时机 | 状态机做什么 | workflow 做什么 |
-| --- | --- | --- |
-| 派发 | `QUEUED` → `RUNNING` | 读游标，取这一步的 `step_contract` |
-| 交回且通过 | 不动 | 游标 +1；没有下一步时才让状态机走向 `SUCCEEDED` |
-| 交回不合格 | 要交人时才进 `WAITING` | 按 `on_reject` 定去向：重做本步、回到前一步、或交人 |
-| 等待 | 等设备、等批准、等依赖一律由 `WAITING` 的原因码表达 | 不参与——**失败与等待归状态机，去向归 workflow** |
-
-**通用任务是长度为 1 的 workflow**：派一个 Attempt、通过即成功，游标从 0 到 1。两类任务共用同一条推进逻辑。
-
-谁能写什么：步骤表与 `step_contract` 是 Task Profile 的一部分，版本化并签名（`F-GUARD-01`）；
-游标是 Task 主档上的字段，**只能由 orchestrator 在改状态的同一个事务里改**。
-
-### 5.1 Task 状态机
-
-```text
-RECEIVED → VALIDATING → QUEUED → RUNNING ──────────────→ SUCCEEDED ●
-               │          ▲        │
-               │          │        ├→ QUEUED       可重试 Attempt 结束
-               │          │        ├→ WAITING
-               │          │        ├→ FAILED ●
-               │          │        └→ CANCELLED ●
-               │          │
-               ├→ WAITING ┘
-               └→ REJECTED ●
-
-非终态收到取消意图后，经安全收敛进入 CANCELLED ●
-● = Task 终态，不可转出
-```
-
-合法转换只有：
-
-- `RECEIVED → VALIDATING | CANCELLED`
-- `VALIDATING → QUEUED | WAITING | REJECTED | CANCELLED`
-- `QUEUED → RUNNING | WAITING | FAILED | CANCELLED`
-- `RUNNING → QUEUED | WAITING | SUCCEEDED | FAILED | CANCELLED`
-- `WAITING → VALIDATING | QUEUED | FAILED | CANCELLED`
-
-任何入口——客户端接口、派发网关、调度器、超时扫描器、管理后台——都必须调用同一转换规则。
-
-| 状态 | 产品语义 | 进入门禁 |
-| --- | --- | --- |
-| `RECEIVED` | 后端已可靠建单 | 身份、原始输入、幂等记录和首事件已提交 |
-| `VALIDATING` | 正在解释目标、路由并检查契约、权限和政策 | Profile 候选与授权上下文存在 |
-| `QUEUED` | 已可执行，等待设备、资源或可靠投递 | 完成契约、执行策略、预算、路由决定已持久化 |
-| `RUNNING` | 至少一个有效 Attempt 正在推进 | Attempt 在绑定设备上持有效租约，输入版本固定 |
-| `WAITING` | 当前没有 Attempt 能推进，等待已知条件 | 原因、问题或条件、恢复方式、超时策略 |
-| `SUCCEEDED` | 用户结果完成并可重新获取 | 结果密文先持久化；验收逐条通过；本地内容检查回执有效；证据合规 |
-| `REJECTED` | 已建单但不予执行 | 安全的政策、范围、能力或业务理由已记录 |
-| `FAILED` | 已无获准的成功路径 | 失败码、重试判定、Attempt 与副作用记录完整 |
-| `CANCELLED` | 有权主体已终止 Task | 取消意图、fencing、Attempt 处置和副作用状态完整 |
-
-`VALIDATING` 与 `QUEUED` 是否分开展示由客户端投影决定，但持久化语义不得合并到无法区分「尚未形成契约」和「已可执行但未获资源」。
-
-### 5.2 WAITING 与 Interaction
-
-等待原因使用结构化码，不为每种等待另造状态：
-
-- `INPUT`：等待用户补充关键输入，含路由拿不准时请用户选择类别；
-- `APPROVAL`：等待用户或授权角色批准，含工具级请求升级（§6.2）、计划批准、合并到用户工作区、预算追加；
-- `DEVICE`：等待绑定设备上线；
-- `DEPENDENCY`：等待另一 Task 或依赖条件；
-- `RESOURCE`：等待配额、设备容量、锁或计划时间；
-- `EXTERNAL`：等待外部系统或现实事件。
-
-Interaction 必须绑定：
-
-```text
-task_id, interaction_id, expected_state_version
-question_or_action, audience, expires_at
-subject_digest                          待决对象（文档、请求）的版本与摘要值
-resume_token_hash, idempotency_key, consumed_at
-resume_target
-```
-
-恢复必须在同一并发控制边界内完成：校验主体与 Task、校验当前等待动作与待决对象摘要、检查过期与过时动作、按幂等键判断重复、原子标记消费、安排后续投递。重复、过期、异键、跨用户、跨 Task 或摘要不符的恢复必须拒绝。
-
-验证阶段等待后回 `VALIDATING`；执行阶段等待后先回 `QUEUED`，只有 Attempt 获得有效租约才重新进入 `RUNNING`。Attempt 若在原运行时 thread 中原地恢复，可在自己的状态机内 `WAITING → RUNNING`。
-
-Interaction 到期不得无事件消失：Task Profile 必须规定超时后关闭该 Interaction，并使 Task 进入 `FAILED`、重新 `QUEUED`、回 `VALIDATING` 或按已批准政策 `CANCELLED`；自动选择必须追加事件并保留超时原因。过期不等于拒绝，也不等于同意。
-
-只有没有任何 Attempt 能继续推进时，Task 才进入 `WAITING`；并行 Attempt 仍有一路可推进时，Task 保持 `RUNNING`，等待记录在对应 Attempt。
-
-### 5.3 取消意图与终态
-
-用户取消时，后端必须先持久化取消意图，而不是直接写 `CANCELLED`：
-
-1. 校验主体、Task 版本和当前状态；
-2. 写入取消意图并阻止新 Attempt；
-3. 撤销租约或提高 fencing，经 ① 通知执行端中断，拒绝旧执行端的迟到写入；
-4. 检查已发生副作用，丢弃独立工作区或执行约定的补偿，登记不可补偿的结果；
-5. 以比较交换提交唯一的 `CANCELLED` 终态。
-
-执行端离线时，第 3 步以提高 fencing 完成；执行端重连后按 §8.3 对账，不得提交任何结果或副作用。完成与取消并发时只能有一个终态提交成功。客户端可以把已记录的取消意图投影为「正在取消」，但这不是第二套 Task 状态。
-
-### 5.4 终态与重新处理
-
-`SUCCEEDED`、`REJECTED`、`FAILED`、`CANCELLED` 不可转出。以下情况建立新 Task：刷新到新的数据时点；修改目标、口径、授权范围或 Profile 版本；重新处理失败、取消或拒绝的 Task；要求另一个方案。新 Task 用 `retry_of`、`refresh_of` 或 `supersedes` 连接旧 Task；旧结果保持当时输入、数据时点、策略与 Profile 版本下的语义。
-
-### 5.5 Attempt 状态机
-
-Task 层与 Attempt 层必须分开。跨层引用使用 `task.state` 与 `attempt.status`；事件分字段携带两者，日志与客户端投影不得只写一个不带层级的 `status`。
-
-```text
-CREATED → RUNNING ⇄ WAITING
-   │         │         │
-   │         │         └→ PAUSED（失去租约）→ RUNNING | ABANDONED ●
-   │         ├→ COMPLETED ●
-   ├─────────┼→ FAILED ●
-   ├─────────┼→ ESCALATED ●
-   └─────────┼→ CANCELLED ●
-             └→ BUDGET_EXCEEDED ●
-```
-
-Attempt 至少记录：
-
-```text
-attempt_id, task_id, device_id, runtime_version, codex_version
-model, model_provider                  这一份是哪个模型做的
-task_profile_version, agent_profile_id, agent_profile_version
-input_artifact_versions, workspace_ref
-execution_binding                     运行时 thread 标识
-lease_owner, lease_expires_at, fencing_token
-status, started_at, ended_at
-budget_allocated, budget_consumed     token 与费用为自报
-failure_code, retryable
-output_artifacts, content_check_receipt
-tool_call_refs, side_effect_refs, evidence_refs, approval_refs
-```
-
-必须满足：
-
-1. 执行端只有持有效租约和 fencing token 才能写入；过期执行端的迟到结果被拒绝；
-2. Attempt 终态不可重开；重试创建新 Attempt；
-3. 同一 Task 是否允许并行 Attempt 由执行策略明确；并行数受设备容量限制；
-4. 首个通过验收的结果胜出后，其余 Attempt 停止或降为无副作用的只读探索；
-5. `COMPLETED` 只表示 Attempt 产出了候选结果，不自动使 Task `SUCCEEDED`；
-6. 恢复不得重复已经记账的副作用；
-7. `BUDGET_EXCEEDED` 是 Attempt 终态；Task 随后按契约进入 `WAITING(APPROVAL)`、重新 `QUEUED` 或 `FAILED`；
-8. `ESCALATED` 表示执行中调用了 `escalate`；Task 回到 `VALIDATING` 由 supervisor 重新路由，改判入账；
-9. `PAUSED` 表示执行端失去租约（§8.3）；租约恢复且 fencing 未变时回 `RUNNING`，否则 `ABANDONED`，由新 Attempt 接续；
-10. 同一 Agent Profile 版本连续若干个 Attempt 启动即失败时，熔断该版本并落事件，新 Attempt 不再分发到它，直到人解除。
-
 ## 6. 审批
 
 ### 6.1 两层审批
@@ -406,7 +254,7 @@ tool_call_refs, side_effect_refs, evidence_refs, approval_refs
 | 层 | 对象 | 发起 | 处理处 | 决定与记录 |
 | --- | --- | --- | --- | --- |
 | **工具级** | 单条命令、单个文件修改、联网 | Codex → 审批回调 → runtime | 桌面应用本地窗口 | runtime 按策略自动放行、拒绝或交用户决定；结论摘要经 ① 上报存档 |
-| **Task 级** | 澄清输入、计划批准、不可逆或对外动作、合并到用户工作区、预算追加、待审文档 | 后端 | 桌面应用审查窗口 | 后端落 Interaction，按 §5.2 原子消费 |
+| **Task 级** | 澄清输入、计划批准、不可逆或对外动作、合并到用户工作区、预算追加、待审文档 | 后端 | 桌面应用审查窗口 | 后端落 Interaction，按 [`state-machine.md`](../dev-agent/SDD/modules/0001-backend/PRD/state-machine.md)「WAITING 与 Interaction」原子消费 |
 
 - **F-APPROVE-01**：所有命令执行与文件修改必须进入审批回调；自动放行只限只读动作与独立工作区内的写入；网络访问、独立工作区外的写入、任何不可逆动作必须交用户确认或升级为 Task 级；
 - **F-APPROVE-02**：工具级审批结论只能来自本地窗口或本地策略；后端不能替用户作出工具级批准；
@@ -505,7 +353,7 @@ tool_call_refs, side_effect_refs, evidence_refs, approval_refs
 
 ### 7.5 中断、批准与恢复
 
-- **F-INTERACT-01**：后端把等待问题具体化为可直接回答的输入或可明确批准的动作，向正确受众投影 Interaction，并按 §5.2 原子恢复；
+- **F-INTERACT-01**：后端把等待问题具体化为可直接回答的输入或可明确批准的动作，向正确受众投影 Interaction，并按 [`state-machine.md`](../dev-agent/SDD/modules/0001-backend/PRD/state-machine.md)「WAITING 与 Interaction」原子恢复；
 - **F-INTERACT-02**：恢复令牌消费后若后续投递失败，必须留下可恢复记录或进入合法失败路径，不得悬空；
 - **F-INTERACT-03**：工具级审批与 Task 级审批按 §6 分层处理，提交逻辑互不借道。
 
@@ -639,67 +487,6 @@ tool_call_refs, side_effect_refs, evidence_refs, approval_refs
 - **F-CRYPTO-05**：密钥丢失即无法恢复结果，没有后门；必须事先明确告知用户并引导保存恢复码；
 - **F-CRYPTO-06**：结果需要他人复核时，以对方公钥加密结果密钥后分享；
 - **F-CRYPTO-07**：问题侧的明文字段只容纳来自任务文本的内容；把本地资料内容、文件名或其派生特征写入任何明文字段都是违规，字段 schema 必须能拦住。
-
-## 9. Profile、Artifact 与扩展
-
-### 9.1 Task Profile 与 Agent Profile
-
-Task Profile 是版本化产品契约：
-
-```text
-profile_id + version
-input_schema / output_schema / client_renderer_contract
-normalization_rules
-required_context / artifacts
-acceptance / evidence / freshness rules
-content_check_rules                   本地内容检查规则（含 F-POS-04）
-allowed_capabilities / data sources
-default budget / retry / approval / privacy policy
-device_policy                         是否允许改派设备
-workflow_ref                          专业 Profile 对应的 workflow
-step_contract                         workflow 各步骤的输入、输出 schema、验收与返工去向（§4.5）
-```
-
-Agent Profile 声明执行能力：工具绑定、权限边界、自动放行范围、方法、记忆策略与支持的 Task Profile；签名发布（F-GUARD-01）。Task 固定 Task Profile 版本；每次 Attempt 记录所选 Agent Profile 与运行时版本。升级任一 Profile 不得静默改变已受理 Task 的解释或历史结果。
-
-新增领域应新增 Task Profile、相容的 Agent Profile 与 workflow，不修改通用状态语义。确需改变通用骨架时，必须先通过有证据与迁移方案的规范修订（§15）。
-
-### 9.2 通用与专业 Profile
-
-- **通用 Profile**：能力收紧；只自动放行只读动作与独立工作区内的写入；不开领域工具；
-- **专业 Profile**：对应一个 workflow，带领域工具、方法、验收与内容检查规则。
-
-### 9.3 Profile 示例
-
-| Profile | 至少固定 |
-| --- | --- |
-| `DATA_QUERY` | 对象范围、指标口径、单位、币种、复权、时间区间、频率、时区、截至时点、数据源、缺失规则、结果形态、查询与转换链、引用 |
-| `RESEARCH` | 研究问题、资料范围（本地资料、自有数据、公开资料）、时间边界、证据等级、反证、覆盖要求、不确定性、引用格式、研究底稿结构与结论栏 |
-| `ACTION` | 目标、授权主体、预期副作用、动作幂等键、批准点、回执、补偿与不可逆声明 |
-
-这些是示例，不是已冻结的业务契约；每个 Profile 的第一项开发工作单元必须用真实输入、输出、渲染与验收用例确认字段，之后才发布首个版本。
-
-## 10. 子 Task 与依赖编排
-
-派生子 Task 必须满足：
-
-- 父 Task 的完成标准仍是用户业务目标，不能以「已经拆出子 Task」冒充完成；
-- 父级预算覆盖全部子 Task，子级预算是预留，不是凭空新增；
-- 子 Task 的授权只能收窄；扩大权限必须重新批准；
-- 子 Task 各自有 Task Profile、Attempt、结果与验收；
-- 父 Task 汇总结果时保留来源与子 Task 血缘。
-
-多个 Task 的依赖图由一个有边界的 `COORDINATION` Task 管理：
-
-```text
-managed_task_ids[]
-edges[] = from → to + 依据 + 可判定的满足条件
-parallel_groups[]
-ownership[]
-graph_version
-```
-
-协调 Task 是边的唯一权威；被协调 Task 只保存 `coordination_task_id`。同时只能有一个现行协调视图。协调 Task 验收：节点存在、每条边有依据与解除条件、阻塞图无环、工作有责任归属、同一事实无第二写入面。协调 Task 在图建立并验收后即 `SUCCEEDED`，不等待被协调 Task 完成；依赖实质变化时建立 `supersedes` 旧图的新协调 Task。对子结果的等待发生在依赖这些节点的业务 Task：它进入 `WAITING(DEPENDENCY)`，条件满足后按 §5.2 恢复。
 
 ## 11. 责任投影
 
@@ -849,6 +636,7 @@ graph_version
 | 原内容 | 搬到哪 | 什么时候 |
 | --- | --- | --- |
 | 组成部分 · 通道 · 数据流与信任边界 · 工程落点 | [`dev-agent/SDD/architecture/`](../dev-agent/SDD/architecture/README.md) 下的 `components.md`、`channels.md`、`trust.md`、`engineering.md` | 2026-09-20 |
+| 两层状态机 · Profile 与扩展 · 子 Task 与依赖编排 | [`0001-backend/PRD/`](../dev-agent/SDD/modules/0001-backend/PRD/requirement.md) 下的 `state-machine.md`、`profile.md`、`subtask.md` | 2026-09-20 |
 | 后端 supervisor：控制面与执行体 · 任务类别判定与路由 · 方法库 | [`0001-backend/PRD/`](../dev-agent/SDD/modules/0001-backend/PRD/requirement.md) 下的 `control-plane.md`、`routing.md`、`methods.md` | 2026-09-20 |
 | 桌面应用：窗口组成与能力边界 · 安全与登录 | [`0002-desktop/PRD/`](../dev-agent/SDD/modules/0002-desktop/PRD/requirement.md) 下的 `windows.md`、`security.md`；其中「官网与管理后台」一段归 [`architecture/components.md`](../dev-agent/SDD/architecture/components.md) | 2026-09-20 |
 | 本地 runtime：驱动 Codex · 执行隔离 · 模型与 key · 设备身份连接安装升级 | [`0003-runtime/PRD/`](../dev-agent/SDD/modules/0003-runtime/PRD/requirement.md) 下的 `codex.md`、`isolation.md`、`models-and-keys.md`、`device.md` | 2026-09-20 |
@@ -870,7 +658,7 @@ graph_version
 | D7 | 桌面客户端先在模板里加一类「桌面端」再同步，还是作为领域扩展单独起步；现有网页前端原样保留还是精简 | 单独起步时在模板对齐报告里登记 | 模板合规、验证速度 |
 | D9 | 派发签名密钥的保管与签发权 | 不放在在线派发服务里；Profile、workflow、方法在发布时签名 | 被攻破时能否伪造派发 |
 | D10 | 独立工作区的改动怎样合进用户工作区 | 版本库场景开分支、由用户合并或经批准后合并；其他场景生成补丁 | 交付体验、冲突处理 |
-| D10b | 并行 Attempt 分两种：冗余（容错提速，首个通过即停其余）与竞争（择优，全部做完再比）。§5.5 第 4 条现在只写了前者，与 §1.4「多方竞争择优」和 [`models-and-keys.md`](../dev-agent/SDD/modules/0003-runtime/PRD/models-and-keys.md)「按份计费」指向的后者冲突 | 分成两种，各有各的停止规则；默认单路，升到竞争形态要用户明确同意（钱是用户出的） | 停止规则、计费、择优由谁做 |
+| D10b | 并行 Attempt 分两种：冗余（容错提速，首个通过即停其余）与竞争（择优，全部做完再比）。[`state-machine.md`](../dev-agent/SDD/modules/0001-backend/PRD/state-machine.md)「Attempt 状态机」第 4 条现在只写了前者，与 §1.4「多方竞争择优」和 [`models-and-keys.md`](../dev-agent/SDD/modules/0003-runtime/PRD/models-and-keys.md)「按份计费」指向的后者冲突 | 分成两种，各有各的停止规则；默认单路，升到竞争形态要用户明确同意（钱是用户出的） | 停止规则、计费、择优由谁做 |
 | D11 | 受理判定的实现与升级时机 | v1 只用确定性规则加交用户选；积累足够标注后再评估检索或模型 | 打扰率、类别准确率 |
 | D12 | workflow 清单与「专业」的边界 | 每项写清适用与不适用的例子；随实际选择数据迭代 | 类别准确率 |
 | D13 | key 开通引导与费用展示的细节 | 按厂商图文引导、默认推荐一家、当场测 key | 用户对费用的信任 |

@@ -9,6 +9,9 @@
 | [`control-plane.md`](control-plane.md) | 控制面怎么实现（状态机 + outbox + 任务队列，不引入图执行框架）、workflow 的步骤类型是开放集合、一个执行体、编排留在后端 |
 | [`routing.md`](routing.md) | 任务类别的三层判定与路由 |
 | [`methods.md`](methods.md) | 方法库的两种形态、口径与计算做成服务端 MCP 工具、按敏感度分档、跨 Task 上下文 |
+| [`state-machine.md`](state-machine.md) | 两层状态机：Task 与 Attempt 的状态、合法边、`WAITING` 与 Interaction、取消意图与终态 |
+| [`profile.md`](profile.md) | Task Profile 与 Agent Profile、通用与专业、示例 |
+| [`subtask.md`](subtask.md) | 子 Task 与依赖编排 |
 
 ## 职责
 
