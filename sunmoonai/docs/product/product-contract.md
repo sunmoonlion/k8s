@@ -114,52 +114,6 @@
 [`dev-agent/SDD/architecture/`](../dev-agent/SDD/architecture/README.md)（见 §16 去向）。
 本节剩下的是各部件的内部要求，将随各自模块的落点陆续搬走。
 
-### 2.4 桌面应用
-
-**组成**：
-
-- **主进程**：窗口管理；**拉起 runtime 并确保它在跑**（连接已在运行的实例，不重复启动）——
-  但**进程存活与崩溃重启归系统的服务管理器**（macOS launchd、Windows 服务恢复策略），不由桌面应用负责：
-  关掉窗口后 runtime 仍按用户设置继续接收派发，那时没有桌面应用在场；托盘、系统通知、开机启动；自定义协议（登录回调、唤起应用）；外部链接只交给系统浏览器，且只放行产品域名（域名随应用签名分发，不由后端下发）；
-- **主窗口**：提交 Task（提交按钮旁给出任务类别：本机规则预填，用户可改）、进度与结果、任务历史、「等设备上线」状态、本地知识库管理、研究底稿查看与编辑；
-- **本地窗口**（随应用打包）：工具级审批、本地确认、key 与模型配置、工作区授权、结果预览、runtime 状态与日志摘要；
-- **审查窗口**：Task 级审查（§6.3）。
-
-**三者都是独立窗口**，各自是一个 webContents——能力按窗口授予，所以窗口就是能力边界。
-不是同一个窗口里的几个路由：一个窗口挂一套 preload，合用就等于把最宽的那套能力给了所有界面。
-
-**安全**（必须）：
-
-- 界面随应用打包，不从后端加载主界面（不用 `loadURL` 指向后端网址）；
-- 开启 `contextIsolation`、`sandbox`，关闭 `nodeIntegration`；禁止窗口导航到外部网址；设置 CSP；
-- preload 只经 `contextBridge` 暴露具体函数（如 `approve(id, ok)`、`saveKey(provider, key)`），不暴露通用执行接口；
-- 本机能力分窗口授予：只有本地窗口挂能调用 runtime 的 preload；主窗口只挂只读能力与结果解密所需的具体函数；审查窗口只挂解密所需的具体函数，不挂任何写本机或调用执行的能力；
-- 页面与 runtime 的交互集中在 `runtimeClient` 模块；
-- 代码签名（Windows 优先 EV 证书）、macOS 公证、自动更新，更新包校验完整性。
-
-**登录与会话**：
-
-- 系统浏览器打开认证服务（Casdoor）的登录页，走 OAuth PKCE，经自定义协议回到应用；
-- token 存系统钥匙串，刷新由应用负责；后端持有会话与投影；
-- 设备配对复用同一登录态（[`0003-runtime/PRD/device.md`](../dev-agent/SDD/modules/0003-runtime/PRD/device.md)）。
-
-**本地触发与云端触发分开实现**：
-
-| | 本地触发（工具级审批、本地确认） | 云端触发（Task 级审查） |
-| --- | --- | --- |
-| 谁发起 | Codex → SDK 审批回调 → runtime → 主进程；或 runtime 收到新 Attempt | 后端创建 Interaction → ④ 提醒 → 主进程 |
-| 内容从哪来 | runtime 经 ③ 给出 | 经 ④ 取回密文，本机解密 |
-| 谁做决定 | 只在本地；结论交 runtime 执行 | 后端落 Interaction 并原子消费 |
-| 结论走哪条路 | 本地窗口 → preload → 主进程 → runtime；runtime 经 ① 上报摘要 | 审查窗口经 ④ 调后端 |
-| 能否在别的电脑上处理 | 不能 | 能：任何装了桌面应用、已登录并有结果密钥的电脑 |
-| 断网时 | 未决项作废，执行已暂停 | 待网络恢复后处理 |
-
-两类界面**不得**共用提交逻辑，后端提供的内容不得借道本机通道批准本地操作。
-
-**官网与管理后台**：注册与登录经认证服务的页面，支付经支付渠道的页面；官网只做产品介绍与下载；管理后台供内部人员使用，只见元数据。官网与桌面应用都必须写明「key 只在桌面应用里输入」。
-
-**界面文字**：命令、diff、工作区、合并等开发概念不直接出现，按业务语言呈现（如「将读取你的持仓表」「将生成一份报告」「生成结果 → 确认后保存」）。
-
 ### 2.7 后端 supervisor
 
 后端是 supervisor：以 workflow 为主，按规则确定性地推进；**不调用生成式模型**，也不请执行端代为判断；需要语义判断的环节派 Attempt 交给执行端。
@@ -842,7 +796,7 @@ graph_version
 
 | 所有者 | 负责的要求 |
 | --- | --- |
-| 桌面应用 | `F-INTAKE-*`；`F-APPROVE-02`、`F-APPROVE-05` 的界面；`F-REVIEW-*`；`F-DELIVERY-*` 的订阅、回放、解密与展示侧；`F-CRYPTO-03`、`F-CRYPTO-04`、`F-CRYPTO-05` 的界面；§2.4 的安全与登录 |
+| 桌面应用 | `F-INTAKE-*`；`F-APPROVE-02`、`F-APPROVE-05` 的界面；`F-REVIEW-*`；`F-DELIVERY-*` 的订阅、回放、解密与展示侧；`F-CRYPTO-03`、`F-CRYPTO-04`、`F-CRYPTO-05` 的界面；[`0002-desktop/PRD/security.md`](../dev-agent/SDD/modules/0002-desktop/PRD/security.md) 的安全与登录 |
 | 本地 runtime | `F-EXEC-*`；`F-APPROVE-01`、`F-APPROVE-03`、`F-APPROVE-04`；§6.2；`F-GUARD-01`、`F-GUARD-02` 的执行侧、`F-EXEC-12` 的执行侧；`F-ACCEPT-02` 的检查与回执；`F-CRYPTO-01`；§8.3；I14、I16、I18、I19、I20 的执行侧；[`0003-runtime/PRD/`](../dev-agent/SDD/modules/0003-runtime/PRD/requirement.md) 下的 `codex.md`、`isolation.md`、`models-and-keys.md`、`device.md` |
 | 后端 supervisor | `F-ADMIT-*`；`F-DISPATCH-*`；`F-INTERACT-*`；`F-ACCEPT-01`、`F-ACCEPT-03` 至 `F-ACCEPT-06`；`F-DELIVERY-*` 的服务端；`F-CRYPTO-02`；`F-GUARD-01` 的签名发布、`F-GUARD-04`、`F-GUARD-05`；§2.7；I1 至 I15 与 I17 的存储与并发载体 |
 | 知识服务 | §2.8 的自有数据、按上下文下发与防批量抓取；`F-GUARD-04` 的取数侧；`F-POS-01` |
@@ -984,6 +938,7 @@ graph_version
 | 原内容 | 搬到哪 | 什么时候 |
 | --- | --- | --- |
 | 组成部分 · 通道 · 数据流与信任边界 · 工程落点 | [`dev-agent/SDD/architecture/`](../dev-agent/SDD/architecture/README.md) 下的 `components.md`、`channels.md`、`trust.md`、`engineering.md` | 2026-09-20 |
+| 桌面应用：窗口组成与能力边界 · 安全与登录 | [`0002-desktop/PRD/`](../dev-agent/SDD/modules/0002-desktop/PRD/requirement.md) 下的 `windows.md`、`security.md`；其中「官网与管理后台」一段归 [`architecture/components.md`](../dev-agent/SDD/architecture/components.md) | 2026-09-20 |
 | 本地 runtime：驱动 Codex · 执行隔离 · 模型与 key · 设备身份连接安装升级 | [`0003-runtime/PRD/`](../dev-agent/SDD/modules/0003-runtime/PRD/requirement.md) 下的 `codex.md`、`isolation.md`、`models-and-keys.md`、`device.md` | 2026-09-20 |
 | 生命周期全景（端到端九站、终点四条） | [`dev-agent/SDD/architecture/lifecycle.md`](../dev-agent/SDD/architecture/lifecycle.md)——它是设计层的**轮廓**，`§2` 里还没归位的细节按本表一点一点跟过去 | 2026-09-20 |
 
