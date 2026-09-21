@@ -155,12 +155,12 @@ Submission
 | 20 | 预算账、证据账与 Agent Profile 生效仍是后续工作 | 见第 25、26 条 |
 | 21 | 历史产物只在单机的可恢复性 | ⚠ 旧稿报告部分产物/冻结标签只在本机；本次未核当前远端。不外推为“现在仍只有一份”，交付前按 [§3.16](../SDD/submodules/0001-backend/rules/0004-acceptance-commit-notes.md) 核持久 ref/获准副本及重取能力，不以此擅自 push |
 | 22 | 库的完整 API 面、多次中断与版本兼容 | ⚠ 历史记录只覆盖若干用法；SDK/库升级前按 [§5.13](../SDD/submodules/0001-backend/rules/agent-dev-guide.md) 重核，不把原地恢复样例推广到未经验证的路线 |
-| 23 | **U1 web 面生产适配器的形状**：薄转发（web → internal 面），还是自己持有会话与投影？ | 未决（阶段一）：决定 v5 §10.2 事务原则与 §10.3 SSE 对账落在哪一层；已知输入见下文 |
-| 24 | U2 执行层 Port 的接口形状 | 未决（阶段二）：决定纪律层怎么被测试。cursor 提案见 `~/codex-reference-archive/cursor/investment-agent-architecture-cursor.md` §3 |
-| 25 | U3 **预算账与证据账**落 PG 的表结构与迁移 | 未决（阶段二）：一切并行工作的前置——没有预算闸门就不能 fan-out；已知输入见下文 |
-| 26 | U4 `AgentProfile` 的具体字段 | 未决（阶段二）：专用部分的载体；已知输入见下文 |
-| 27 | U5 外部 harness 的部署形态（服务端如何管理其进程与凭据） | 未决（阶段二）：影响 U2。本分支提案见同一可行性文 §2 / §9 |
-| 28 | **⑥ 确认的回执强度为零**：全流程唯一不可逆的一步，其回执恰恰最不可验证（`rulings.md` `R2`） | 未决 |
+| 23 | **U1 web 面生产适配器的形状**：薄转发（web → internal 面），还是自己持有会话与投影？ | **范围已变**：研究工作归桌面应用，web 面只剩官网、下载页与内部管理后台（[`engineering.md`](../SDD/architecture/engineering.md)）。仍未决，但只对管理后台成立；不再决定 §10.3 SSE 对账落在哪一层；已知输入见下文 |
+| 24 | U2 执行层 Port 的接口形状 | **已答**：见 `D28` 与 [`engine-adapter.md`](../SDD/submodules/0003-runtime/PRD/engine-adapter.md)——核心保持引擎中立，能力探针探行为不探接口形状，取消是三态。原始材料：cursor 提案见 `~/codex-reference-archive/cursor/investment-agent-architecture-cursor.md` §3 |
+| 25 | U3 **预算账与证据账**落 PG 的表结构与迁移 | 未决（**第二期**，合同附录 C）：一切并行工作的前置——没有预算闸门就不能 fan-out；已知输入见下文 |
+| 26 | U4 `AgentProfile` 的具体字段 | 未决（**第二期**）：一个执行体下区分任务的载体（`A1`）；已知输入见下文 |
+| 27 | ~~U5 外部 harness 的部署形态（服务端如何管理其进程与凭据）~~ | **作废**：执行体跑在用户电脑上的 runtime 里，**后端不管 agent 进程、不持有其凭据**（key 只在本机，`I16`）。这条问的是一个新架构里不存在的东西 |
+| 28 | **多方竞争的「⑥ 确认」回执强度为零**：全流程唯一不可逆的一步，其回执恰恰最不可验证（`rulings.md` `R2`）。⚠ 这里的 ⑥ 是 [`competition.md`](../../dev-human/competition.md) 的第六步，**不是 [`channels.md`](../SDD/architecture/channels.md) 的通道 ⑥** | 未决 |
 
 #### U1、U3、U4 的已知输入
 
