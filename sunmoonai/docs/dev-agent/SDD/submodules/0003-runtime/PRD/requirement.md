@@ -12,6 +12,7 @@
 | [`device.md`](device.md) | 设备身份、连接、安装与升级 |
 | [`discipline.md`](discipline.md) | 执行端纪律：租约与断线即暂停、重连对账、工作区与证据 |
 | [`engine-adapter.md`](engine-adapter.md) | 引擎适配边界：语言、中立核心、三态取消、能力探针、首个适配器 |
+| [`functions.md`](functions.md) | 本地 runtime 必须做到的 `F-*`（ID 不变，跨模块的留在上层） |
 
 ## 职责
 

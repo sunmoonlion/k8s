@@ -7,6 +7,12 @@
 - 审查投影：把等待具体化为可直接回答的输入或可明确批准的动作，向正确受众投影；
 - **publisher**：不可逆副作用经 Task 级批准后执行。
 
+**必须做到**（定义原在 `PRD/functions.md`，ID 不变）：
+
+- **F-INTERACT-01**：后端把等待问题具体化为可直接回答的输入或可明确批准的动作，向正确受众投影 Interaction，并按 [`state-machine.md`](../../../../architecture/state-machine.md)「WAITING 与 Interaction」原子恢复；
+- **F-INTERACT-02**：恢复令牌消费后若后续投递失败，必须留下可恢复记录或进入合法失败路径，不得悬空；
+- **F-INTERACT-03**：工具级审批与 Task 级审批按 [`approval.md`](../../../../architecture/approval.md) 分层处理，提交逻辑互不借道。
+
 **不承担**：
 
 - 不替用户作工具级批准（`F-APPROVE-02`）；

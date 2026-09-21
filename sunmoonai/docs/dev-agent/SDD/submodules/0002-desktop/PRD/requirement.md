@@ -8,6 +8,7 @@
 | --- | --- |
 | [`windows.md`](windows.md) | 主进程与三扇独立窗口、各自的能力边界；本地触发与云端触发分开实现；界面文字 |
 | [`security.md`](security.md) | 界面随应用打包、contextIsolation、preload 只暴露具体函数、代码签名；登录与会话 |
+| [`functions.md`](functions.md) | 桌面应用必须做到的 `F-*`（ID 不变，跨模块的留在上层） |
 
 ## 职责
 

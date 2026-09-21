@@ -1,11 +1,19 @@
 # 0006-acceptance：验收
 
-**承担**：合同 `control-plane.md` 里 **validator 与 acceptor 两个角色**。
+**承担**：验收——`F-ACCEPT-01`、`F-ACCEPT-03` 至 `F-ACCEPT-06`（`F-ACCEPT-02` 的本地检查侧在 runtime）。
 
 - **validator**：按固定 Task Profile 版本做确定性验收；核对本地内容检查的签名回执；
 - **acceptor**：需要语义判断的验收，作为**独立的验收 Attempt** 派出去（不同 Agent Profile、
   不同运行时 thread），**不自己判**；
 - 终态提交的发起：终态、结果、预算结算**原子提交**——由 [`0001-ledger`](0001-ledger.md) 一次转换完成。
+
+**必须做到**（定义原在 `PRD/functions.md`，ID 不变）：
+
+- **F-ACCEPT-01**：执行输出不等于 Task 完成；验收按固定 Task Profile 版本检查：输出 schema 与未声明字段、每条验收、证据来源、新鲜度与权限、副作用及批准条件、部分结果与不确定性；
+- **F-ACCEPT-03**：后端不读正文，能直接检查的只有元数据与回执；结构是否合格以回执为准，后端不自行判定；需要语义判断的验收派独立的验收 Attempt；Codex 对自身产出的自评不能单独作为验收依据；
+- **F-ACCEPT-04**：验收失败可以在预算和策略允许时产生新 Attempt；禁止静默删改验收标准；
+- **F-ACCEPT-05**：提交 `SUCCEEDED` 时，结果密文、证据、Artifact 关系、验收判定、预算结算与终态事件必须原子提交，或采用可证明不会向客户端暴露半成品的等价协议；
+- **F-ACCEPT-06**：改动合进用户工作区属于独立工作区之外的写入，必须经 Task 级批准并逐条记账。
 
 **不承担**：
 

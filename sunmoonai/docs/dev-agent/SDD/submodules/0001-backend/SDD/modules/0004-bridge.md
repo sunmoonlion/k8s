@@ -14,6 +14,12 @@
 - 回传：事件与进度、副作用意图与回执、工具级审批结论摘要、用量、**方法工具的调用**；
 - 派发内容**带签名**。
 
+**必须做到**（定义原在 `PRD/functions.md`，ID 不变）：
+
+- **F-DISPATCH-01**：Task 进入 `QUEUED` 与执行端收到派发之间不得有不可恢复的丢失窗口；必须使用事务 outbox、可证明等价的队列事务或未投递 Task 扫描；
+- **F-DISPATCH-02**：重复派发按 `task_id + attempt_id` 幂等处理；
+- **F-DISPATCH-04**：绑定设备离线时 Task 进入 `WAITING(DEVICE)`（或保持 `QUEUED`），客户端显示「等设备上线」；设备上线后按 outbox 补投；是否允许改派到另一台设备由 Profile 决定，默认不允许；
+
 **不承担**：
 
 - 不决定派什么——那是 `0003-orchestrator`；
