@@ -542,6 +542,10 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
 def check_frozen(staged: list[tuple[str, str, str | None]]) -> list[str]:
     """交回即冻结：HEAD 里已有 turn.md 的那个 turn 不许改、删、加文件；已发出的任务书不许改、删。
 
+    两处例外都是「整体退役」，判据窄且必须同时成立：整棵任务目录、或整条 thread——
+    其下 HEAD 里的每个文件本次都被删除，且只删不改。抽掉一个 turn、只删一部分、
+    边删边改，一律照旧拦住。
+
     **冻结的是内容与归属，不是路径。**整棵子树改名时，turn 只是跟着上层走，内容零改动——
     这不是篡改。放行的判据很窄：`R100`（字节完全相同）**且** thread 名、turn 名、文件名三者都没变，
     只有上层任务目录不同。turn 内部改名（`response.md` → 别的名字）、跨 turn 搬运、
@@ -553,6 +557,8 @@ def check_frozen(staged: list[tuple[str, str, str | None]]) -> list[str]:
     touched = {p for st, p, _ in staged if st != "D"}
     retired: set[str] = set()
     checked_retire: set[str] = set()
+    retired_thread: set[str] = set()
+    checked_thread: set[str] = set()
     for status, path, old_path in staged:
         if not path.startswith(DOC_ROOT):
             continue
@@ -574,6 +580,20 @@ def check_frozen(staged: list[tuple[str, str, str | None]]) -> list[str]:
             head = head_files(task + "/")
             if head and head <= deleted and not (head & touched):
                 retired.add(task)
+                continue
+        thread_dir = f"{task}/thread/{dthread}"
+        if thread_dir in retired_thread:
+            continue
+        if status == "D" and thread_dir not in checked_thread:
+            checked_thread.add(thread_dir)
+            # **整条 thread 退役**：这条 thread 下 HEAD 里的每个文件本次都被删除，且只删不改。
+            # 用途是「这条 thread 不作数，定稿就是定稿」——所有者明确选择不保留推导过程时。
+            # 与上面的「整棵任务目录退役」对称，判据同样必须同时成立：
+            # 抽掉其中一个 turn、只删一部分、或边删边改，一律照旧拦住。
+            # ⚠ 删之前打标签留档：内容只在 git 历史里，文件系统上不再有。
+            head = head_files(thread_dir + "/")
+            if head and head <= deleted and not (head & touched):
+                retired_thread.add(thread_dir)
                 continue
         base = f"{task}/thread/{dthread}/{dturn}"
         if base not in cache:

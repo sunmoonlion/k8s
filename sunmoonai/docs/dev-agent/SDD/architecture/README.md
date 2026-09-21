@@ -5,7 +5,6 @@
 每个模块**各自是什么**不在这里，在同层的 [`modules/`](../modules/)；往下的子任务在 [`submodules/`](../submodules/)。
 
 > 依据：[需求](../../PRD/requirement.md) 与 [产品合同](../../../product/product-contract.md)。
-> 本层定稿以 thread [0001/0001](../../thread/0001-prd-none/0001-none/user-message.md)、[0001/0002](../../thread/0001-prd-none/0002-none/user-message.md)、[0001/0003](../../thread/0001-prd-none/0003-none/user-message.md) 的 response 为底。
 
 | 文件 | 内容 |
 | --- | --- |

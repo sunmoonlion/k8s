@@ -12,9 +12,8 @@
 见 [命名与编号](../dev-human/naming.md)。
 
 ```text
-thread/0001-prd-none/0001-none/   一问一答：user-message.md · response.md · turn.md · others/
-PRD/                              requirement.md（要什么）· functions.md（七阶段 F-*）· development-plan.md
-rules/                            constraints.md（代码规则 39 条）· agent-dev-guide.md
+PRD/                              requirement.md（要什么）· functions.md（全部 F-*）
+rules/                            constraints.md（代码规则，按主题分组）· agent-dev-guide.md
 SDD/
 ├── architecture/                 lifecycle.md（先读：系统长什么样、一条请求怎么走完）
 │                                 channels · trust · engineering · objects · task-contract · approval · invariants
