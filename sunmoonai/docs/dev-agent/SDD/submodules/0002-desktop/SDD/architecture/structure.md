@@ -6,7 +6,7 @@
 
 | 部分 | 现状 |
 | --- | --- |
-| 交互响应 | 已有设计：见 同层 [`rules/agent-dev-guide.md`](../../rules/agent-dev-guide.md)，负责合同 `F-INTERACT-*` 的用户操作与 `F-REVIEW-*` 的审查页 |
+| 交互响应（审查窗口） | 已有设计：窗口要表达什么见上层 [`approval.md`](../../../../architecture/approval.md)「Task 级审查」，义务见 [`PRD/functions.md`](../../PRD/functions.md) 的 `F-REVIEW-*` |
 | 提交与进度 | 待设计 |
 | 结果查看与研究底稿编辑 | 待设计；涉及本机解密（合同 `F-CRYPTO-*`） |
 | 本地窗口（工具级审批、key 与模型配置、工作区授权） | 待设计；本机能力分窗口授予（合同「桌面应用」一节） |
