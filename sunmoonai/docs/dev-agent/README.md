@@ -14,17 +14,16 @@
 ```text
 PRD/                              requirement.md（要什么）· functions.md（全部 F-*）
 rules/                            constraints.md（代码规则，按主题分组）· agent-dev-guide.md
+workflow.md                       开发交给程序驱动时的 workflow（待开发的目标态）
 SDD/
 ├── architecture/                 lifecycle.md（先读：系统长什么样、一条请求怎么走完）
 │                                 channels · trust · engineering · objects · task-contract · approval · invariants
 ├── modules/                      0001-backend.md · 0002-desktop.md · 0003-runtime.md
-├── submodules/
-│   ├── 0001-backend/             其 SDD/ 下再切七块：ledger · router · orchestrator
-│   │                             bridge · interrupt · acceptance · delivery
-│   ├── 0002-desktop/             内部划分未定，见其 SDD/architecture/ 的未决
-│   └── 0003-runtime/             还没开过 SDD turn
-├── rules/                        constraints.md · agent-dev-guide.md
-└── dev-workflow.md               开发这件事交给程序驱动时的 workflow（待开发的目标态）
+└── submodules/
+    ├── 0001-backend/             其 SDD/ 下再切七块：ledger · router · orchestrator
+    │                             bridge · interrupt · acceptance · delivery
+    ├── 0002-desktop/             内部划分未定，见其 SDD/architecture/ 的未决
+    └── 0003-runtime/             还没开过 SDD turn
 ```
 
 **第一层三块**，按运行位置、信任域、发布方式切：后端（服务器）、桌面应用与本地 runtime（都在用户电脑上，

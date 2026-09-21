@@ -18,6 +18,6 @@
 | [`invariants.md`](invariants.md) | 全程不变量 `I1`–`I20`、持久化记录、问题侧明文与资料侧加密 |
 
 `SDD/` 下的同层：[`modules/`](../modules/)（每块是什么）、[`submodules/`](../submodules/)（子任务）、
-[`dev-workflow.md`](../dev-workflow.md)（开发这件事交给程序驱动时的 workflow）。
+[`workflow.md`](../../workflow.md)（开发这件事交给程序驱动时的 workflow）。
 
 再上一层是 [`dev-agent/`](../../README.md)：`PRD/` 写要什么，`rules/` 放代码规则与开发指导。

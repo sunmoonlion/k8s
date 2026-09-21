@@ -18,7 +18,7 @@
 
 **人版的投影载体就是 git 里的目录与文件**；换成数据库、Issue、PR 或事件流承载也可以，
 但不能丢失原始请求、边界、验收、基线、证据和改判历史。agent 版的真源会移进记录里，
-目录到那时才成为真正的投影——那一版还没建，见 [agent 版的 workflow](../dev-agent/SDD/dev-workflow.md)。
+目录到那时才成为真正的投影——那一版还没建，见 [agent 版的 workflow](../dev-agent/workflow.md)。
 
 现在怎么执行见 [怎么走这套流程](workflow.md)。
 
