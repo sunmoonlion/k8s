@@ -13,7 +13,7 @@
 
 - 不决定派什么——那是 `0003-orchestrator`；
 - 不执行方法工具——转给 orchestrator 执行；
-- 不写账，经 `0001-kernel`。
+- 不写账，经 `0001-state`。
 
 **为什么与 orchestrator 分开**：一个管「下一步是什么」，一个管「怎么送出去、设备在不在」。
 新增一种 workflow 步骤类型只动 orchestrator；换连接方式、改租约策略只动这里。

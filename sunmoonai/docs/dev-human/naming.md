@@ -73,7 +73,7 @@ dev-agent/                             项目，不编号
     ├── modules/0001-backend.md  0002-desktop.md  0003-runtime.md   每块是什么
     └── submodules/
         ├── 0001-backend/                   子任务：内部同样是 thread/ + PRD/ + SDD/ + rules/
-        │   └── SDD/submodules/0001-kernel/ 0002-router/ …
+        │   └── SDD/submodules/0001-state/ 0002-router/ …
         └── 0002-desktop/
 ```
 

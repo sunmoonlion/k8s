@@ -2,9 +2,9 @@
 executor: unassigned
 verifies: 无
 ---
-# turn 0001：内核要满足什么
+# turn 0001：状态与账要满足什么
 
-上一层的设计把后端切成六块，分给这一块的是**内核**：状态机与唯一转换函数、事件表、四本账、outbox 与投递器、任务队列、重启恢复。
+上一层的设计把后端切成六块，分给这一块的是**状态与账**：状态机与唯一转换函数、事件表、四本账、outbox 与投递器、任务队列、重启恢复。
 边界（承担什么、不承担什么、为什么这么切）见 [`SDD/modules/0001-kernel.md`](../../../../../modules/0001-kernel.md)，
 六块之间的关系见 [`SDD/architecture/README.md`](../../../../../architecture/README.md)。
 
