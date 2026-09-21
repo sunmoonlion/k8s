@@ -20,8 +20,8 @@ SDD/
 │                                 channels · trust · engineering · objects · task-contract · approval · invariants
 ├── modules/                      0001-backend.md · 0002-desktop.md · 0003-runtime.md
 ├── submodules/
-│   ├── 0001-backend/             其 SDD/ 下再切六块：kernel · router · orchestrator
-│   │                             gateway · interaction · acceptance
+│   ├── 0001-backend/             其 SDD/ 下再切七块：ledger · router · orchestrator
+│   │                             bridge · interrupt · acceptance · delivery
 │   ├── 0002-desktop/             内部划分未定，见其 SDD/architecture/ 的未决
 │   └── 0003-runtime/             还没开过 SDD turn
 └── dev-workflow.md               开发这件事交给程序驱动时的 workflow（待开发的目标态）
