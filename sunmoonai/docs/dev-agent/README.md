@@ -34,4 +34,4 @@ SDD/
 
 两个子任务的内部关系各在自己那一层：
 [后端七块](SDD/submodules/0001-backend/SDD/architecture/blocks.md)、
-[桌面应用](SDD/submodules/0002-desktop/SDD/architecture/README.md)（内部划分未定）。
+[桌面应用](SDD/submodules/0002-desktop/SDD/architecture/structure.md)（内部划分未定）。
