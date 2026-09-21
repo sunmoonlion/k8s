@@ -55,11 +55,37 @@ GATED = ("sunmoonai/docs/",)
 EXEMPT: tuple[str, ...] = ()
 # 豁免任务目录下的 `thread/`。turn 交回即冻结，其中的交回物与任务书只对交回那一刻负责；
 # 之后被链接的文件改名或移动，冻结原件里的链接必然断，却不能再改。要看当时的样子，按提交去看。
+#
+# ⚠ **豁免只到「冻结件」为止，且只豁免字段与格式。**原来整片 `/thread/` 连链接一起放过，
+# 于是**还没发出的任务书**——它每天都在改，链接也随时能修——的坏链一条都查不到。
+# 实测代价：后端模块重切后改名，七份任务书里三份的模块链接指向改名前的
+# `0001-kernel.md` / `0004-gateway.md` / `0005-interaction.md`，全是死链，`--all` 照报通过。
+# 任务书里的链接恰恰大量指向模块文件，而模块文件正是最常改名的东西。
+# 现在：未冻结的 turn 文件**查链接**（见 `thread_live`），字段与格式仍走 turn 专用检查。
 EXEMPT_MARKERS: tuple[str, ...] = ("/thread/",)
 
 
 def exempt(path: str) -> bool:
     return path.startswith(EXEMPT) or any(m in path for m in EXEMPT_MARKERS)
+
+
+def thread_live(path: str) -> bool:
+    """turn 文件里还没冻结的那些——链接仍改得动，因此仍要查链接。
+
+    判据与 `check_frozen` 同源，避免「门说冻结、这里说没冻」两套尺子：
+    本 turn 已有 `turn.md`（已交回）则整个 turn 冻结；未交回时，`user-message.md`
+    以 `executor` 是否还是 `unassigned` 判是否已发出，同 turn 的其余文件未冻结。
+    冻结件的链接改不了，查出来也只是死账，所以照旧不查。
+    """
+    parsed = parse_thread_path(path)
+    if parsed is None:
+        return False
+    task, dthread, dturn, rest = parsed
+    if blob(f"{task}/thread/{dthread}/{dturn}/turn.md") is not None:
+        return False
+    if rest == "user-message.md":
+        return (front_matter(blob(path) or "") or {}).get("executor") == "unassigned"
+    return True
 
 
 # 声明「自足」的文档：§N 引用必须指向**本文件内**的标题。
@@ -626,36 +652,51 @@ def main(argv: list[str]) -> int:
             "diff", "--cached", "--name-only", "--diff-filter=ACMR"
         ).splitlines()
         argv = [p for p in staged if p.endswith(".md")] or ["--none"]
+    link_targets: list[str] = []
     if survey:
         targets = [
             p for p in sorted(tracked) if p.startswith(DOC_ROOT) and p.endswith(".md")
         ]
+        link_targets = [p for p in sorted(tracked)
+                        if p.startswith(GATED) and exempt(p) and p.endswith(".md")
+                        and thread_live(p)]
     elif argv[0] == "--all":
         targets = [
             p
             for p in sorted(tracked)
             if p.startswith(GATED) and not exempt(p) and p.endswith(".md")
         ]
-        # **豁免必须可见。**只报「N 份通过」而不报「另有 M 份被豁免」，
-        # 读者无从知道门的覆盖范围，那是「覆盖不全比没有更危险」的形态。
         exempted = [p for p in sorted(tracked)
                     if p.startswith(GATED) and exempt(p) and p.endswith(".md")]
-        if exempted:
-            print(f"（另有 {len(exempted)} 份在豁免内，未检查：{EXEMPT} + 片段 {EXEMPT_MARKERS}）")
+        link_targets = [p for p in exempted if thread_live(p)]
+        # **豁免必须可见。**只报「N 份通过」而不报「另有 M 份被豁免」，
+        # 读者无从知道门的覆盖范围，那是「覆盖不全比没有更危险」的形态。
+        rest = len(exempted) - len(link_targets)
+        if rest:
+            print(f"（另有 {rest} 份冻结件在豁免内，未检查：{EXEMPT} + 片段 {EXEMPT_MARKERS}）")
     elif argv[0] == "--none":
         targets = []
     else:
         # hook 传入暂存文件；只对门禁范围内的拦截
-        targets = [
-            p
-            for p in argv
-            if p.endswith(".md") and p.startswith(GATED) and not exempt(p)
-        ]
+        inrange = [p for p in argv if p.endswith(".md") and p.startswith(GATED)]
+        targets = [p for p in inrange if not exempt(p)]
+        link_targets = [p for p in inrange if exempt(p) and thread_live(p)]
 
     problems: list[str] = []
     heading_cache: dict[str, set[str]] = {}
     checked = 0
     skipped: list[str] = []
+    # 未冻结的 turn 文件只查链接：字段与格式归 `check_threads` 的 turn 专用检查管，
+    # 拿正文文档那套（自足 §N、表格）去套任务书只会误报。
+    link_only = set(link_targets)
+    nlinks = 0
+    for path in sorted(link_only):
+        text = blob(path)
+        if text is None:
+            skipped.append(path)
+            continue
+        nlinks += 1
+        problems += check_links(path, text, tracked)
     for path in targets:
         text = blob(path)
         if text is None:
@@ -719,7 +760,9 @@ def main(argv: list[str]) -> int:
         return 2
 
     what = "编号、字段与冻结" if staged_changes is not None else "编号与字段"
-    print(f"doc-gate: {checked} 份文档通过" + (f"；{nturns} 个 turn 的{what}检查通过" if nturns else ""))
+    print(f"doc-gate: {checked} 份文档通过"
+          + (f"（另有 {nlinks} 份未冻结的 turn 文件查了链接）" if nlinks else "")
+          + (f"；{nturns} 个 turn 的{what}检查通过" if nturns else ""))
     return 0
 
 
