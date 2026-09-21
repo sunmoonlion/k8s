@@ -239,6 +239,58 @@ def check_section_refs(
     return problems
 
 
+
+def check_readme_names(path: str, text: str, tracked: set[str]) -> list[str]:
+    """L3：README 里点名的 `*.md` 必须真实存在。
+
+    **为什么单给 README 加这一条。**README 的职责是说明目录里有哪些文件，所以它天然
+    要复述文件名——而复述出来的名字**门禁原来查不到**：`check_links` 只查
+    `[文字](路径)` 形式的链接，反引号里的 `foo.md`、以及 ```text 树状图里的文件名
+    都不是链接。实测代价：一天里删掉七八份文件，每次链接都改对了，两份 README 的
+    树却同时留着 `functions.md`、`agent-dev-guide.md` 两个已删文件，还漏列了
+    architecture/ 下新增的四份。新人照树去找，找不到。
+
+    判据：README 的**目录树代码块**与**文件说明表首列**里形如 `<名字>.md` 的点名，
+    必须在**该 README 所在目录或其子目录**下存在。
+
+    ⚠ **判据的边界**：同名文件在子树里**任何位置**存在就算数。所以「本目录的
+    `functions.md` 删了，但子模块下还有同名的」这一类漏得掉。要抓那一类得按
+    完整相对路径比对，而 README 的树状图本来就不写完整路径——代价大于收益，不做。只查 README，且只查这两处——正文散提的文件名可能是
+    运行时才产生的（竞争实例的 `round.md`、任务目录的 `response.md`），按存在性查会误报。
+    """
+    if PurePosixPath(path).name != "README.md":
+        return []
+    # 范围是**这份 README 所在目录及其子目录**——它说明的就是这些。
+    # 放到全仓找会漏：同名文件在别的模块下还存在时（`functions.md` 就是），
+    # 本目录删掉了也查不出来。
+    base = str(PurePosixPath(path).parent) + "/"
+    here = {PurePosixPath(q).name for q in tracked
+            if q.startswith(base) and q.endswith(".md")}
+    # **只查两处点名**：代码块里的目录树，和「文件 | 内容」这类说明表的首列。
+    # README 正文里还会提到运行时才产生的文件（每次竞争实例里的 `round.md`、
+    # 任务目录里的 `response.md`），那些不是仓里的固定文件，按存在性查会误报。
+    problems, seen, in_code = [], set(), False
+    for lineno, line in enumerate(text.splitlines(), 1):
+        if line.lstrip().startswith("```"):
+            in_code = not in_code
+            continue
+        is_table_head = line.startswith("| ") and line.count("|") >= 3
+        if not (in_code or is_table_head):
+            continue
+        if is_table_head:
+            line = line.split("|")[1]   # 只看首列
+        for m in re.finditer(r'(?<![\w/.-])([A-Za-z0-9][\w.-]*\.md)(?![\w/])', line):
+            name = m.group(1)
+            if name in seen or name in here:
+                continue
+            # 链接形式由 check_links 负责；这里只管没做成链接的点名
+            if f"]({name}" in line or f"/{name}" in line:
+                continue
+            seen.add(name)
+            problems.append(f"{path}:{lineno}: README 点名了不存在的文件: {name}")
+    return problems
+
+
 def check_tables(path: str, text: str) -> list[str]:
     """L3：表格每行列数与表头一致。"""
     problems = []
@@ -734,6 +786,7 @@ def main(argv: list[str]) -> int:
         if path in SELF_CONTAINED:
             problems += check_section_refs(path, text, tracked, heading_cache)
         problems += check_tables(path, text)
+        problems += check_readme_names(path, text, tracked)
 
     staged_changes: list[tuple[str, str]] | None = None
     if mode == "--staged":
