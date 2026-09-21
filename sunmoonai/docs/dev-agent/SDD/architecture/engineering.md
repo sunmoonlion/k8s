@@ -14,7 +14,7 @@
 - 以上工程决定须符合 [`constraints.md`](../../rules/constraints.md)；需要改动其条款时按其修订程序进行。
 
 同层的其他定稿：[`constraints.md`](../../rules/constraints.md) 是代码必须遵守的规则，
-[`agent-dev-guide.md`](../../rules/agent-dev-guide.md) 是开发指导，
+[`constraints.md`](../../rules/constraints.md) 的「设计原则」是设计取舍的依据，
 [`protocol/`](../../../dev-human/protocol/README.md) 是多方竞争在本平台的做法。
 
 ## 共同约束

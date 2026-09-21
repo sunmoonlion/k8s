@@ -94,7 +94,7 @@ checkpoint 原地续跑时是同一 Attempt 的 `WAITING → RUNNING`，不因�
 ⚠ **四档与 [§4.2](agent-dev-guide.md) 权力表是两条正交的轴，不是一张表的两种写法。**权力表回答
 「**哪个 principal** 可以走**哪条合法边**」；四档回答「**一次具体动作**经过**什么样的审批
 形态**」。`llm-review` 在权力表里没有行，因为它不是 principal 的权力——
-⚠ 它是否可用于任何 `auto_policy = 无` 的行，**本文不裁**，登记 [§7.4](../../../../rules/agent-dev-guide.md) 未决。
+⚠ 它是否可用于任何 `auto_policy = 无` 的行，**本文不裁**，登记 [风险与未决登记](agent-dev-guide.md) 未决。
 
 ### 4.10 人这一侧的义务
 
