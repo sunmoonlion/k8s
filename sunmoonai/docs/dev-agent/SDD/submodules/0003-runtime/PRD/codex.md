@@ -4,12 +4,17 @@
 
 **完整打包**：Codex 整体随应用打包在用户电脑上运行；不在后端运行 agent loop，不自建或改写 Codex 的工具层。agent 行为只经本节「控制面」列出的入口影响。
 
-**驱动方式**：runtime 是独立的 Python 后台进程，经 Codex Python SDK 驱动 Codex，不直接依赖 app-server 裸协议，不解析终端输出。
+**驱动方式**：runtime 是独立的 **Node 后台进程**，经 **`codex app-server`** 的 stdio JSON-RPC 驱动 Codex，
+用官方生成的 TypeScript 类型与 JSON Schema，不自行逆向报文，不解析终端输出，不为它新增本地 TCP 端口。
+边界见 [`engine-adapter.md`](engine-adapter.md)（`D28`）。
+
+⚠ **本文件下面「控制面的六个入口」是按 Codex Python SDK 的 API 面写的，尚未按 app-server 协议重写。**
+以本节的驱动方式为准；六个入口另开 turn 整份重写。
 
 runtime 必须：
 
-- 替换 SDK 默认的审批处理（默认对命令执行与文件修改一律同意），并让所有命令执行与文件修改都进入审批回调，哪怕随后自动放行（⚠ 性能与可行性）；
-- 钉住 Codex 与 SDK 版本，升级钉版必须重跑锚点；
+- 让所有命令执行与文件修改都经过审批判定，哪怕随后自动放行（⚠ 性能与可行性）。协议层的审批是显式的 `ExecCommandApproval` / `ApplyPatchApproval` 请求与响应，**没有「默认同意」这回事**——那是 Python SDK 的行为。⚠ **待验**：不应答时协议怎么表现（阻塞？超时？），须实机确认；
+- 钉住 Codex 与 **app-server 协议**版本，升级钉版必须重跑锚点；
 - 连接时带 `clientInfo.name` 标识本产品；
 - 把运行时 thread 标识作为执行绑定经 ① 写回后端，不作为 Task 的真源；
 - 与用户自己安装的 Codex 完全隔开：使用自己的二进制路径与独立的 `CODEX_HOME`，不读取、不改写用户自己的 Codex 配置与记录；

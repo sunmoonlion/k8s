@@ -316,14 +316,15 @@
 | D22 | 独立工作区的实现方式（worktree、副本、写时复制） | 实测后定 | 性能、磁盘占用 |
 | D23 | 服务费的定价与计费方式 | 订阅制 | 收入结构 |
 | D24 | 支持的 Windows 版本与沙箱策略细节 | Windows 11 为主，Windows 10 1809+ 视实测决定；默认 elevated | 覆盖面、测试量、安装流程 |
+| D28 | runtime 的语言与引擎适配边界 | runtime 用 TypeScript，独立后台进程，不依附桌面窗口生命周期；核心保持引擎中立，首个适配器经 stdio 接入钉版 `codex app-server`；细则见 [`engine-adapter.md`](../dev-agent/SDD/submodules/0003-runtime/PRD/engine-adapter.md) | 执行体可替换性、分发与安装、`0003-runtime` 全部设计 |
 
 ## 附录 B 未验证事项 ⚠
 
 - **（上线前提）**Codex 在 Windows 上的实测：Windows 11 与 Windows 10 1809+ 的原生运行；elevated 与 unelevated 两种沙箱模式的实际隔离效果；安装包内一次完成管理员授权；创建沙箱用户、修改 ACL 与防火墙规则是否被主流杀毒软件拦截；与用户自装 Codex 并存是否互不干扰。macOS 其次；
 - 沙箱能否可靠阻止 Codex 改写工作区外的 runtime 配置与策略；
-- Codex Python SDK 默认自动同意审批的行为在当前钉版是否仍成立；所有命令与文件修改进入审批回调的可行性与性能；
-- SDK 的运行时 turn 中断能否终止已启动的命令进程；断线后能否恢复原运行时 thread；
-- SDK 能否容忍审批请求长时间挂起；
+- `app-server` 协议层**不应答审批请求时的表现**（阻塞？超时？有无默认放行）——「默认自动同意」是 Python SDK 的行为，协议层是显式请求与响应；所有命令与文件修改进入审批判定的可行性与性能；
+- 取消能否终止**已启动的命令进程与子进程**（三态里的第三态，见 [`engine-adapter.md`](../dev-agent/SDD/submodules/0003-runtime/PRD/engine-adapter.md)）；断线后能否恢复原运行时 thread；
+- `app-server` 能否容忍审批请求长时间挂起；
 - 钉版 Codex 实际支持的生命周期 hooks 事件范围，以及 hooks 能否阻断工具调用；
 - 独立工作区的实现方式与大工作区的开销；
 - 推荐清单模型对 Responses API 结构化输出（`output_schema`）的实际支持；不支持时退回提示词约束、本地校验与打回的效果；

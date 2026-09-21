@@ -193,6 +193,11 @@ goose 的 goosed 和 AionUi 的 AionCore 都是 Rust——虽然你们本来就�
 
 这条和你们自己的栈也一致：runtime 是「经 **Codex Python SDK** 驱动 Codex」，也不是 Rust。
 
+> ⚠ **已被 `D28` 取代**：runtime 改为 TypeScript，经 `codex app-server` 的 stdio JSON-RPC 驱动。
+> 当时的推导「A4 禁裸协议 + 只有 Python SDK 能拦审批 = 必须 Python」**前提错了**——
+> `app-server` 是带版本、带 JSON Schema、带官方生成 TS 类型的**公开接口**，不是裸协议。
+> 见 [`engine-adapter.md`](../SDD/submodules/0003-runtime/PRD/engine-adapter.md)。
+
 ### 二、窗口边界：它趟过坑，但不是「一窗一份能力」
 
 `0002-desktop.md` 写着：

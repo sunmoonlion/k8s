@@ -2,7 +2,7 @@
 
 > 依据：[上层设计](../../../architecture/README.md) 与 [产品合同](../../../../../product/product-contract.md) 的「责任投影」中的「本地 runtime」。
 
-同目录另有四份，由合同搬入：
+同目录另有五份：前四份由合同搬入，[`engine-adapter.md`](engine-adapter.md) 由 `D28` 定。
 
 | 文件 | 内容 |
 | --- | --- |
@@ -11,6 +11,7 @@
 | [`models-and-keys.md`](models-and-keys.md) | 模型与 key：多厂商、可用模型清单、key 只在本机 |
 | [`device.md`](device.md) | 设备身份、连接、安装与升级 |
 | [`discipline.md`](discipline.md) | 执行端纪律：租约与断线即暂停、重连对账、工作区与证据 |
+| [`engine-adapter.md`](engine-adapter.md) | 引擎适配边界：语言、中立核心、三态取消、能力探针、首个适配器 |
 
 ## 职责
 
