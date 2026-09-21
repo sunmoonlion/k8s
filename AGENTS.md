@@ -27,6 +27,6 @@
 
 涉及人的批准、裁量或终审时，同时读取（人介入、权力表、审批档位）：
 
-`sunmoonai/docs/dev-agent/SDD/modules/0001-backend/rules/agent-dev-guide.md`
+`sunmoonai/docs/dev-agent/SDD/submodules/0001-backend/rules/agent-dev-guide.md`
 
 不在此复述其中规则。
