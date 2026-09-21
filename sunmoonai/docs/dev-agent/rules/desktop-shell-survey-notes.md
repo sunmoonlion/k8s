@@ -4,7 +4,10 @@ SunMoonAI 的桌面应用（[`0002-desktop`](../SDD/modules/0002-desktop.md)）�
 （[`0003-runtime`](../SDD/modules/0003-runtime.md)）是否可以不自建，以及执行体是否可以不用 Codex。
 2026-09-21 取证。
 
-这是**取证记录**，不是规范：留在 `rules/` 下是为了让 D16、D17 的依据可复核，
+⚠ **编号已更正**：早期版本用 D16/D17/D18，与合同里已有的三条（研究底稿呈现、
+定位的法律边界、自有数据下发上限）撞号。现改为 **D25/D26/D27**，接在合同当前最大号 D24 之后。
+
+这是**取证记录**，不是规范：留在 `rules/` 下是为了让 D25、D26 的依据可复核，
 用法同后端旧划分的四份 `*-notes.md`。结论一旦落进合同或约束，以那边为准。
 
 ---
@@ -24,11 +27,11 @@ SunMoonAI 的桌面应用（[`0002-desktop`](../SDD/modules/0002-desktop.md)）�
 
 三条待落的决定：
 
-- **D16 执行体是谁**——Codex / dsh / 双腿经 `AgentExecutorPort`
-- **D17 桌面外壳从哪来**——建议 Orca
-- **D18 Electron 还是 Tauri**——已定 Electron，应写进 `rules/constraints.md` 而非待决表
+- **D25 执行体是谁**——Codex / dsh / 双腿经 `AgentExecutorPort`
+- **D26 桌面外壳从哪来**——**不 fork 任何仓**；新建薄壳（Electron Forge / electron-vite 工具链），定点移植 Orca、goose 的小模块
+- **D27 Electron 还是 Tauri**——已定 Electron，应写进 `rules/constraints.md` 而非待决表
 
-**D17 与 D16 不耦合**：基座只负责壳与通道，执行体协议归 D16。避免以后有人拿
+**D26 与 D25 不耦合**：基座只负责壳与通道，执行体协议归 D25。避免以后有人拿
 「Orca 用 PTY 不用 SDK」来反对选它当壳——那一层你们全要自己写（§五之三）。
 
 ---
@@ -101,7 +104,7 @@ dsh 自己就是一个 agent harness——agent loop、LLM 适配、工具注册
 - 全仓 README 搜不到 encrypt——没有结果端到端加密
 - `SAFETY.md`：未经安全审计、不可当生产、「**不要把它当作唯一的安全控制**」
 
-**建议**：作为**专业腿的执行体**评估（D16），不作为 runtime 或桌面的替代。
+**建议**：作为**专业腿的执行体**评估（D25），不作为 runtime 或桌面的替代。
 上了 dsh 之后 runtime **更必要**——取消、审批、完成归属三个洞只能在 runtime 补。
 
 ---
@@ -123,7 +126,7 @@ dsh 自己就是一个 agent harness——agent loop、LLM 适配、工具注册
 | `sandbox: true` | **✅ 12 个窗口里 7 个** | ❌ | ❌ | — |
 | 按窗口隔离 | **✅ `partition` + session 隔离策略** | ❌ 共用一份 preload | ✅ 四份 preload（但总线不按窗口鉴权） | — |
 | 桌面↔守护进程 | **✅ stdio + ipc 管道** | ❌ `ws://127.0.0.1:port/acp?token=` | ❌ `http://127.0.0.1:port` | — |
-| 守护进程常驻 | ✅ relay-daemon | ❌ 每窗口一个，窗口关了就清 | ✅ 单实例，带崩溃恢复 | ❌ 无 sidecar |
+| 守护进程常驻 | ✅ relay-daemon | ⚠ **两条路径**：桌面自管的那条每窗口一个、关窗即清；但 `createExternal()` **可连已在跑的外部后端**，退出时只释放连接、不停后端 | ✅ 单实例，带崩溃恢复 | ❌ 无 sidecar |
 | 驱动 agent | PTY + spawn，**无协议** | ACP over WebSocket | ACP（`@agentclientprotocol/sdk`） | git worktree |
 | 换 sidecar 的接缝 | provider 适配层 | `GOOSE_BINARY` 环境变量 | `AIONUI_BACKEND_BIN` 环境变量 | — |
 
@@ -325,6 +328,16 @@ Tauri 生态里的 AI agent 桌面应用很薄，没有可当基座的成品：
    另两家只做了构建与单测，**没有通读主进程**。它们的 `attachMainWindowServices` 一类入口
    有没有同样把产品服务焊死在壳上，**不能排除**。
 3. **「抄那几份文件」的实际工作量**。要抄的文件还没点名列出、没数行数（§六）。
+
+### 2026-09-21 第二轮订正（codex 读源码）
+
+| 本备忘原写 | 实际 | 依据 |
+|---|---|---|
+| goose「每窗口一个后端，窗口关了就清」 | **不完整**。还有 `createExternal()` 一条：连已在跑的外部后端，退出清理**不停后端**。所以「退出桌面仍继续执行」**不能用来排除 goose** | `ui/desktop/src/main.ts`、`gooseServeLeaseRegistry.ts` |
+| 决定项编号 D16/D17/D18 | **撞号**。合同里这三个已是研究底稿呈现、定位法律边界、自有数据下发上限。现改 D25/D26/D27 | `product-contract.md` 附录 A |
+| 「抄 Orca 几份文件」 | 方向对，但**基座应是自己新建的薄工程**（Electron Forge 或 electron-vite 工具链），Orca/goose/AionUi 都只作定点移植来源 | codex 通读三仓的窗口启动、preload/IPC、后台进程生命周期与退出清理 |
+
+⚠ Electron Forge 的 Vite 插件官方仍标 **experimental**，选它要锁版本并先验 Windows 打包与 Python 服务安装。
 
 ### 这一轮改了什么
 
