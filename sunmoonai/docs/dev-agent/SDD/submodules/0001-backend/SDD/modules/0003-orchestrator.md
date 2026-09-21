@@ -21,5 +21,11 @@ runtime 经通道 ① 转回后端 → 这里**二次校验**（是不是这个 
 二次校验不可省：runtime 在用户电脑上，清单可能被改。这与 `approval.md` 三道门里
 「工具网关收到伪造名称再 deny 一次」是同一条道理。
 
+**为什么不用协议原生的动态工具**：`codex app-server` 有客户端注册、服务端回调的机制
+（`DynamicToolSpec` → `item/tool/call`），看上去比 MCP 代理直接。但它**只能在 `thread/start`
+下发，没有 turn 级覆盖，也没有注册与注销方法**，且标着 `#[experimental]`——**满足不了
+「清单随换步失效」**。走 MCP 代理，换步时用 `config/mcpServer/reload` 重载清单。
+详见 [`codex.md`](../../../0003-runtime/PRD/codex.md)。
+
 **边界要点**：workflow 的**步骤类型是开放集合**——确定性规则、派 Attempt、人介入三者之一；
 新增类型只加一个适配器，**不改状态机**。

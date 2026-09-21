@@ -8,9 +8,6 @@
 用官方生成的 TypeScript 类型与 JSON Schema，不自行逆向报文，不解析终端输出，不为它新增本地 TCP 端口。
 边界见 [`engine-adapter.md`](engine-adapter.md)（`D28`）。
 
-⚠ **本文件下面「控制面的六个入口」是按 Codex Python SDK 的 API 面写的，尚未按 app-server 协议重写。**
-以本节的驱动方式为准；六个入口另开 turn 整份重写。
-
 runtime 必须：
 
 - 让所有命令执行与文件修改都经过审批判定，哪怕随后自动放行（⚠ 性能与可行性）。协议层的审批是显式的 `ExecCommandApproval` / `ApplyPatchApproval` 请求与响应，**没有「默认同意」这回事**——那是 Python SDK 的行为。⚠ **待验**：不应答时协议怎么表现（阻塞？超时？），须实机确认；
@@ -24,20 +21,47 @@ runtime 必须：
 - 把需要云端决定的工具级请求升级为 Task 级审批（§6.2）；
 - 执行策略：限定工作区、禁止关闭沙箱、危险操作必须审批、并发上限、只接受签名的派发内容。
 
-**控制面**：runtime 只能经以下六个入口影响 Codex 的行为；任何对 agent 行为的要求最终都必须落到其中之一，不得另辟通路。
+**控制面**：runtime 只能经 **app-server 协议**影响 Codex 的行为，**不得另辟通路**。协议的客户端方法
+约一百个，下面按职能列出产品要用的那些；完整清单以钉版的 `ClientRequest` 为准。
 
-| 入口 | 经什么下达 | 管得到什么 |
+| 职能 | 方法 | 管得到什么 |
 | --- | --- | --- |
-| 会话与轮次参数 | thread 与 turn 的启动参数 | 模型与 provider、推理档与摘要档、工作目录、沙箱模式与细则、审批策略与审批路由、约束最终回答的 JSON Schema、是否落盘 |
-| 基础与开发者指令 | `baseInstructions`、`developerInstructions`、`personality` | 整段替换基础系统提示词、追加开发者指令、语气 |
-| 工程侧指令文件 | 工作区内的 `AGENTS.md` | 工作区一级的约定 |
-| 配置覆盖 | thread 启动参数里的 `config` | MCP server 登记、执行策略、生命周期 hooks、模型 provider 等全部配置项 |
-| 审批回调 | 替换后的 SDK 审批处理 | 每一次命令执行与文件修改批不批；同时是副作用台账的采集点（§8.3） |
-| 轮次干预 | 运行时 turn 的中断与插话 | 终止本轮、中途改方向 |
+| 会话与轮次 | `thread/start`、`thread/resume`、`thread/fork`、`turn/start` | 模型与 provider、推理档与摘要档、工作目录、沙箱模式与细则、审批策略、约束最终回答的 JSON Schema |
+| 基础与开发者指令 | `thread/start` 的指令参数与 `Personality` | 整段替换基础系统提示词、追加开发者指令、语气 |
+| 工程侧指令文件 | 工作区内的 `AGENTS.md` | 工作区一级的约定（**与协议无关**，走文件系统） |
+| 配置 | `config/read`、`config/value/write`、`config/batchWrite`、`config/mcpServer/reload` | MCP server 登记、执行策略、生命周期 hooks、模型 provider 等全部配置项。**是一组运行中可读写的方法，不是启动参数** |
+| 轮次干预 | `turn/interrupt`、`turn/steer` | 终止本轮、中途改方向 |
+| 进程干预 | `command/exec/terminate`、`command/exec/write`、`command/exec/resize` | 终止已启动的命令进程；向其写入 |
+| 沙箱（Windows） | `windowsSandbox/readiness`、`windowsSandbox/setupStart` | 沙箱就绪检查与安装流程 |
+| 审批应答 | 对 `ServerRequest` 的响应，见下 | 每一次请求批不批 |
 
-生命周期 hooks 是外部命令，可用事件与其阻断能力以钉版实测为准（⚠）。并行 Attempt 可以用运行时 thread 的分叉建立，也可以各起一个运行时 thread；选哪种由 §2.6 的工作区隔离要求决定。
+**审批是服务端发起的请求，共五种**——`ServerRequest` 里的 `item/commandExecution/requestApproval`、
+`item/fileChange/requestApproval`、`item/permissions/requestApproval`、`item/tool/requestUserInput`、
+`mcpServer/elicitation/request`。runtime 必须**全部接住**，它们同时是副作用台账的采集点（§8.3）。
+协议层没有「默认同意」这回事——那是 Python SDK 的行为。
 
-**可观察面**：SDK 的通知流覆盖推理摘要与正文、计划更新、命令输出、文件补丁、MCP 工具调用、token 用量、上下文压缩、错误与警告。runtime 据此产出进度投影与执行证据（§8.3）。通知是只读的，一切拦截走审批回调。
+**方法工具不走 `DynamicTool`。**协议有客户端注册、服务端回调的动态工具（`DynamicToolSpec` →
+`item/tool/call`），但它**只能在 `thread/start` 下发、没有 turn 级覆盖、没有注册与注销方法**，
+且标着 `#[experimental]`；满足不了「清单随派发下发、**随换步失效**」。方法工具按
+[`0003-orchestrator`](../../0001-backend/SDD/modules/0003-orchestrator.md) 的设计走 MCP 代理，
+换步时用 `config/mcpServer/reload` 重载。
 
-**不可介入**：agent loop 的决策、提示词组装与上下文裁剪、上下文压缩的内部逻辑、内置命令执行与补丁工具的实现、模型线路格式、沙箱实现本身。产品不得设计依赖这些内部行为的机制。钉版升级时，锚点必须覆盖本节的六个入口与可观察面。
+生命周期 hooks 是外部命令，可用事件与其阻断能力以钉版实测为准（⚠）；协议侧有
+`hooks/list` 与 `hook/started`、`hook/completed` 两个通知。并行 Attempt 可以用 `thread/fork`
+建立，也可以各起一个 thread；选哪种由 §2.6 的工作区隔离要求决定。
+
+**可观察面**：`ServerNotification` 约八十条，覆盖推理摘要与正文（`item/reasoning/*`）、
+计划更新（`turn/plan/updated`）、命令输出（`item/commandExecution/outputDelta`）、
+文件补丁（`item/fileChange/patchUpdated`）、MCP 工具调用进度、token 用量
+（`thread/tokenUsage/updated`）、上下文压缩（`thread/compacted`）、错误与警告。runtime 据此
+产出进度投影与执行证据（§8.3）。**通知是只读的，一切拦截走审批请求的应答。**
+
+两条对本产品特别要紧：
+
+| 通知 | 为什么要紧 |
+| --- | --- |
+| `turn/started` / `turn/completed` | **逐 turn 的完成归属**——Attempt 的终态判定据此，不靠猜 |
+| `process/exited` | **子进程退出的直接观测点**——「取消是否真的停止副作用」那条待验项（附录 B）靠它验，不能只看 `turn/interrupt` 返回了 |
+
+**不可介入**：agent loop 的决策、提示词组装与上下文裁剪、上下文压缩的内部逻辑、内置命令执行与补丁工具的实现、模型线路格式、沙箱实现本身。产品不得设计依赖这些内部行为的机制。钉版升级时，锚点必须覆盖本节列出的方法、五种审批请求与可观察面。
 

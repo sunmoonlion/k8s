@@ -321,9 +321,9 @@
 ## 附录 B 未验证事项 ⚠
 
 - **（上线前提）**Codex 在 Windows 上的实测：Windows 11 与 Windows 10 1809+ 的原生运行；elevated 与 unelevated 两种沙箱模式的实际隔离效果；安装包内一次完成管理员授权；创建沙箱用户、修改 ACL 与防火墙规则是否被主流杀毒软件拦截；与用户自装 Codex 并存是否互不干扰。macOS 其次；
-- 沙箱能否可靠阻止 Codex 改写工作区外的 runtime 配置与策略；
+- 沙箱能否可靠阻止 Codex 改写工作区外的 runtime 配置与策略；Windows 沙箱的就绪与安装走协议的 `windowsSandbox/readiness` 与 `windowsSandbox/setupStart`，须实测；
 - `app-server` 协议层**不应答审批请求时的表现**（阻塞？超时？有无默认放行）——「默认自动同意」是 Python SDK 的行为，协议层是显式请求与响应；所有命令与文件修改进入审批判定的可行性与性能；
-- 取消能否终止**已启动的命令进程与子进程**（三态里的第三态，见 [`engine-adapter.md`](../dev-agent/SDD/submodules/0003-runtime/PRD/engine-adapter.md)）；断线后能否恢复原运行时 thread；
+- `turn/interrupt` 与 `command/exec/terminate` 之后，**已启动的命令进程与子进程是否真的都停了**（三态里的第三态，见 [`engine-adapter.md`](../dev-agent/SDD/submodules/0003-runtime/PRD/engine-adapter.md)）——协议有 `process/exited` 通知可作观测点，不能只看方法返回；断线后能否恢复原运行时 thread；
 - `app-server` 能否容忍审批请求长时间挂起；
 - 钉版 Codex 实际支持的生命周期 hooks 事件范围，以及 hooks 能否阻断工具调用；
 - 独立工作区的实现方式与大工作区的开销；
