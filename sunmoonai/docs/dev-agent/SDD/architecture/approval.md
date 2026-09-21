@@ -7,7 +7,7 @@
 | 层 | 对象 | 发起 | 处理处 | 决定与记录 |
 | --- | --- | --- | --- | --- |
 | **工具级** | 单条命令、单个文件修改、联网 | Codex → 审批回调 → runtime | 桌面应用本地窗口 | runtime 按策略自动放行、拒绝或交用户决定；结论摘要经 ① 上报存档 |
-| **Task 级** | 澄清输入、计划批准、不可逆或对外动作、合并到用户工作区、预算追加、待审文档 | 后端 | 桌面应用审查窗口 | 后端落 Interaction，按 [`state-machine.md`](../submodules/0001-backend/PRD/state-machine.md)「WAITING 与 Interaction」原子消费 |
+| **Task 级** | 澄清输入、计划批准、不可逆或对外动作、合并到用户工作区、预算追加、待审文档 | 后端 | 桌面应用审查窗口 | 后端落 Interaction，按 [`state-machine.md`](state-machine.md)「WAITING 与 Interaction」原子消费 |
 
 两层各自的功能义务 `F-APPROVE-*` 在 [`functions.md`](../../PRD/functions.md)「工具级与 Task 级审批」。
 

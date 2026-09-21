@@ -1,6 +1,7 @@
 # 两层状态机
 
-> 由产品合同搬入（合同「去向」表登记）。本模块要满足什么见 [requirement.md](requirement.md)。
+> Task 与 Attempt 两层状态机：状态词、合法转换、`WAITING` 与 Interaction、取消与终态。
+**三方共用**——后端实现转换，runtime 要懂暂停与恢复语义，桌面按它渲染进度。
 
 **状态机与 workflow 的分工**：状态机管纵向——这个 Task 现在算什么；workflow 管横向——走到第几步。
 

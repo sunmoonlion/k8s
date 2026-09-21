@@ -1,6 +1,7 @@
 # 子 Task 与依赖编排
 
-> 由产品合同搬入（合同「去向」表登记）。本模块要满足什么见 [requirement.md](requirement.md)。
+> 子 Task 的派生规则与多 Task 依赖编排。编排归 [`0003-orchestrator`](../modules/0003-orchestrator.md)，
+> 状态与账照旧经 [`0001-ledger`](../modules/0001-ledger.md)。
 
 派生子 Task 必须满足：
 

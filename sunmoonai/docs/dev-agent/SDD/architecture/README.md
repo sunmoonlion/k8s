@@ -14,6 +14,9 @@
 | [`engineering.md`](engineering.md) | 工程落点（技术栈、独立成仓、界面不共享、契约单一真源）与各模块共同的约束 |
 | [`objects.md`](objects.md) | 核心对象：Task、Attempt、Interaction、Artifact、Event、Side Effect、Delivery 与设备——三方共用的词 |
 | [`task-contract.md`](task-contract.md) | Task 契约：提交信封、持久化主档、解释与完成契约、最终结果信封 |
+| [`state-machine.md`](state-machine.md) | Task 与 Attempt 两层状态机：状态词、合法转换、`WAITING` 与 Interaction、取消与终态 |
+| [`routing.md`](routing.md) | 任务类别的三层判定与路由——三层分别落在桌面应用、runtime、后端 |
+| [`profile.md`](profile.md) | Task Profile 与 Agent Profile 的契约：后端定，runtime 按它限定能力 |
 | [`approval.md`](approval.md) | 审批：工具级与 Task 级怎么分、各走哪条路 |
 | [`invariants.md`](invariants.md) | 全程不变量 `I1`–`I20`、持久化记录、问题侧明文与资料侧加密 |
 

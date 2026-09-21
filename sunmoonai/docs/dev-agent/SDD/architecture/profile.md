@@ -1,6 +1,6 @@
 # Profile、Artifact 与扩展
 
-> 由产品合同搬入（合同「去向」表登记）。本模块要满足什么见 [requirement.md](requirement.md)。
+> Task Profile 与 Agent Profile 的契约。**后端定、runtime 按它限定能力**（`F-EXEC-12`）、桌面按它渲染。
 
 ## Task Profile 与 Agent Profile
 

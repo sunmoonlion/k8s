@@ -55,7 +55,7 @@
 | 执行在用户电脑上，由用户发起和主导 | 执行端（[`0003-runtime/PRD/codex.md`](../dev-agent/SDD/submodules/0003-runtime/PRD/codex.md)） |
 | 模型由用户自选、开通、付费 | [`0003-runtime/PRD/models-and-keys.md`](../dev-agent/SDD/submodules/0003-runtime/PRD/models-and-keys.md) |
 | 我们提供的是数据，不是观点 | 自有数据（§2） |
-| 我们的编排与方法库只写方法，不写判断规则 | supervisor 与方法库（[`control-plane.md`](../dev-agent/SDD/submodules/0001-backend/PRD/control-plane.md)、[`methods.md`](../dev-agent/SDD/submodules/0001-backend/PRD/methods.md)） |
+| 我们的编排与方法库只写方法，不写判断规则 | supervisor 与方法库（[`control-plane.md`](../dev-agent/SDD/submodules/0001-backend/SDD/architecture/orchestration-boundary.md)、[`methods.md`](../dev-agent/SDD/submodules/0001-backend/SDD/architecture/methods.md)） |
 | 系统不替用户下判断 | 输出检查（[`functions.md`](../dev-agent/PRD/functions.md)「交付与留存」） |
 
 定位约束：
@@ -301,7 +301,7 @@
 | D7 | 桌面客户端先在模板里加一类「桌面端」再同步，还是作为领域扩展单独起步；现有网页前端原样保留还是精简 | 单独起步时在模板对齐报告里登记 | 模板合规、验证速度 |
 | D9 | 派发签名密钥的保管与签发权 | 不放在在线派发服务里；Profile、workflow、方法在发布时签名 | 被攻破时能否伪造派发 |
 | D10 | 独立工作区的改动怎样合进用户工作区 | 版本库场景开分支、由用户合并或经批准后合并；其他场景生成补丁 | 交付体验、冲突处理 |
-| D10b | 并行 Attempt 分两种：冗余（容错提速，首个通过即停其余）与竞争（择优，全部做完再比）。[`state-machine.md`](../dev-agent/SDD/submodules/0001-backend/PRD/state-machine.md)「Attempt 状态机」第 4 条现在只写了前者，与 §1.4「多方竞争择优」和 [`models-and-keys.md`](../dev-agent/SDD/submodules/0003-runtime/PRD/models-and-keys.md)「按份计费」指向的后者冲突 | 分成两种，各有各的停止规则；默认单路，升到竞争形态要用户明确同意（钱是用户出的） | 停止规则、计费、择优由谁做 |
+| D10b | 并行 Attempt 分两种：冗余（容错提速，首个通过即停其余）与竞争（择优，全部做完再比）。[`state-machine.md`](../dev-agent/SDD/architecture/state-machine.md)「Attempt 状态机」第 4 条现在只写了前者，与 §1.4「多方竞争择优」和 [`models-and-keys.md`](../dev-agent/SDD/submodules/0003-runtime/PRD/models-and-keys.md)「按份计费」指向的后者冲突 | 分成两种，各有各的停止规则；默认单路，升到竞争形态要用户明确同意（钱是用户出的） | 停止规则、计费、择优由谁做 |
 | D11 | 受理判定的实现与升级时机 | v1 只用确定性规则加交用户选；积累足够标注后再评估检索或模型 | 打扰率、类别准确率 |
 | D12 | workflow 清单与「专业」的边界 | 每项写清适用与不适用的例子；随实际选择数据迭代 | 类别准确率 |
 | D13 | key 开通引导与费用展示的细节 | 按厂商图文引导、默认推荐一家、当场测 key | 用户对费用的信任 |

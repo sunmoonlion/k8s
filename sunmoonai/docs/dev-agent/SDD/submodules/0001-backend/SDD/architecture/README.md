@@ -6,7 +6,7 @@
 
 ## 怎么切的
 
-按 [`control-plane.md`](../../PRD/control-plane.md) 已经命名的五个角色（router、orchestrator、
+按 [`control-plane.md`](orchestration-boundary.md) 已经命名的五个角色（router、orchestrator、
 validator、acceptor、publisher）加上「控制面怎么实现」那一段，切成七块：**中心与内部判断不朝外，其余各对一侧**。
 
 | 模块 | 拥有什么 | 朝哪一侧 |
@@ -20,6 +20,17 @@ validator、acceptor、publisher）加上「控制面怎么实现」那一段，
 | [`0007-delivery`](../modules/0007-delivery.md) | 交付：事件流投影与 cursor 续传、结果密文存取、通知 | 客户端 ④ |
 
 **各模块承担什么、不承担什么，在 [`SDD/modules/`](../modules/) 下各自那一份**，本表只管关系。
+
+## 同目录另有三份
+
+| 文件 | 内容 |
+| --- | --- |
+| [`orchestration-boundary.md`](orchestration-boundary.md) | workflow 的步骤类型是开放集合；编排留在后端、按步下发 |
+| [`methods.md`](methods.md) | 方法库的形态与按敏感度分档；跨 Task 上下文 |
+| [`subtask.md`](subtask.md) | 子 Task 的派生规则与 `COORDINATION` 依赖编排 |
+
+三方共用的契约（状态机、路由、Profile）不在这一层，在
+[上层 `architecture/`](../../../../architecture/README.md)。
 
 ## 这七块对着九站的哪几站
 

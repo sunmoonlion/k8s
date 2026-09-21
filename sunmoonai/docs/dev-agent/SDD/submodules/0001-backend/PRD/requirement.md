@@ -2,16 +2,17 @@
 
 > 依据：[上层设计](../../../architecture/README.md) 与 [产品合同](../../../../../product/product-contract.md) 的「责任投影」中的「后端 supervisor」与「运维与管理后台」。
 
-同目录另有三份，由合同搬入：
+本目录只有这一份——它回答「后端要满足什么」。原来同目录那六份是**契约**与**设计**，
+已各归其位：
 
-| 文件 | 内容 |
+| 原文件 | 现在在哪 |
 | --- | --- |
-| [`control-plane.md`](control-plane.md) | 控制面怎么实现（状态机 + outbox + 任务队列，不引入图执行框架）、workflow 的步骤类型是开放集合、一个执行体、编排留在后端 |
-| [`routing.md`](routing.md) | 任务类别的三层判定与路由 |
-| [`methods.md`](methods.md) | 方法库的两种形态、口径与计算做成服务端 MCP 工具、按敏感度分档、跨 Task 上下文 |
-| [`state-machine.md`](state-machine.md) | 两层状态机：Task 与 Attempt 的状态、合法边、`WAITING` 与 Interaction、取消意图与终态 |
-| [`profile.md`](profile.md) | Task Profile 与 Agent Profile、通用与专业、示例 |
-| [`subtask.md`](subtask.md) | 子 Task 与依赖编排 |
+| `state-machine.md` | [上层 `architecture/`](../../../architecture/state-machine.md)——三方共用的状态语义 |
+| `routing.md` | [上层 `architecture/`](../../../architecture/routing.md)——三层判定分落三个模块 |
+| `profile.md` | [上层 `architecture/`](../../../architecture/profile.md)——后端定、runtime 按它限能力 |
+| `subtask.md` | [后端 `SDD/architecture/`](../SDD/architecture/subtask.md) |
+| `methods.md` | [后端 `SDD/architecture/`](../SDD/architecture/methods.md)，重复段删去 |
+| `control-plane.md` | 拆解：编排边界存为 [`orchestration-boundary.md`](../SDD/architecture/orchestration-boundary.md)，其余因重复删去 |
 
 ## 职责
 
