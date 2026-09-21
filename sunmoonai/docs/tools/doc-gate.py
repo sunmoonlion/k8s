@@ -553,8 +553,11 @@ def check_frozen(staged: list[tuple[str, str, str | None]]) -> list[str]:
         if base not in cache:
             um = head_blob(f"{base}/user-message.md")
             fm = front_matter(um) if um else None
+            # **「发出」的标记是 `executor`**：还没派出去写 `unassigned`（见用户消息模板）。
+            # 早先用的 `sent_at: pending` 随字段集精简去掉了，这里跟着改——否则任何提交过的
+            # 用户消息都算已发出，连没派出去的也改不了。
             cache[base] = (head_blob(f"{base}/turn.md") is not None,
-                           um is not None and not (fm and fm.get("sent_at") == "pending"))
+                           um is not None and (fm or {}).get("executor") != "unassigned")
         returned, sent = cache[base]
         if returned:
             problems.append(f"{path}: 已交回（有 turn.md），冻结——不改、不删、不加文件；要改就开新的 turn")

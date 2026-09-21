@@ -7,7 +7,7 @@
 ## 怎么切的
 
 按 [`control-plane.md`](../../PRD/control-plane.md) 已经命名的五个角色（router、orchestrator、
-validator、acceptor、publisher）加上「控制面怎么实现」那一段，切成六块：**中心独立，其余各对一侧**。
+validator、acceptor、publisher）加上「控制面怎么实现」那一段，切成七块：**中心与内部判断不朝外，其余各对一侧**。
 
 | 模块 | 拥有什么 | 朝哪一侧 |
 | --- | --- | --- |
@@ -16,7 +16,8 @@ validator、acceptor、publisher）加上「控制面怎么实现」那一段，
 | [`0003-orchestrator`](../modules/0003-orchestrator.md) | workflow 游标、按步拆与派发、步骤契约、`escalate` 裁决、方法库与按步工具面 | 内部（经 kernel 与 gateway） |
 | [`0004-bridge`](../modules/0004-bridge.md) | 执行端对接：WSS 连接、设备身份与吊销、租约与 fencing、投递器、回传接收 | runtime ① |
 | [`0005-interrupt`](../modules/0005-interrupt.md) | 中断与批准：Interaction 的创建与原子消费、两层审批后端侧、批准后执行副作用 | 人（经 ④） |
-| [`0006-acceptance`](../modules/0006-acceptance.md) | 确定性验收、语义验收派 Attempt、终态提交的发起、事件流投影与结果取件 | 客户端 ④ |
+| [`0006-acceptance`](../modules/0006-acceptance.md) | 验收：确定性验收、语义验收派 Attempt、终态提交的发起 | **不朝外** |
+| [`0007-delivery`](../modules/0007-delivery.md) | 交付：事件流投影与 cursor 续传、结果密文存取、通知 | 客户端 ④ |
 
 **各模块承担什么、不承担什么，在 [`SDD/modules/`](../modules/) 下各自那一份**，本表只管关系。
 
@@ -46,7 +47,7 @@ validator、acceptor、publisher）加上「控制面怎么实现」那一段，
 
 - **D10b**：并行 Attempt 的两种含义（冗余择快 / 竞争择优）还没定，它决定 `0003-orchestrator`
   的停止规则与 `0006-acceptance` 的择优逻辑。
-- 六块的子任务目录与各自第一个 PRD turn 的用户消息已建，**`executor` 都是 `unassigned`**——
+- 七块的子任务目录与各自第一个 PRD turn 的用户消息已建，**`executor` 都是 `unassigned`**——
   问已经写好，派给谁待定。用户消息来自本层 [`modules/`](../modules/) 下对应那一份，
   随本层定稿一起生效，人在定稿前可以改。
 
