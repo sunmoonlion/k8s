@@ -24,6 +24,7 @@ SDD/
 │   │                             bridge · interrupt · acceptance · delivery
 │   ├── 0002-desktop/             内部划分未定，见其 SDD/architecture/ 的未决
 │   └── 0003-runtime/             还没开过 SDD turn
+├── rules/                        constraints.md · agent-dev-guide.md · desktop-shell-survey-notes.md（调研取证）
 └── dev-workflow.md               开发这件事交给程序驱动时的 workflow（待开发的目标态）
 ```
 
@@ -33,3 +34,7 @@ SDD/
 
 产品合同不在任务树里：它是[跨节点的权威契约](../product/product-contract.md)，各层走到自己的定稿时，
 把属于那一层的内容搬进定稿，并在合同的「去向」表里登记。搬走即从合同删除，一条内容只有一处。
+
+两个子任务的内部关系各在自己那一层：
+[后端七块](SDD/submodules/0001-backend/SDD/architecture/README.md)、
+[桌面应用](SDD/submodules/0002-desktop/SDD/architecture/README.md)（内部划分未定）。

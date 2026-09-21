@@ -316,6 +316,9 @@
 | D22 | 独立工作区的实现方式（worktree、副本、写时复制） | 实测后定 | 性能、磁盘占用 |
 | D23 | 服务费的定价与计费方式 | 订阅制 | 收入结构 |
 | D24 | 支持的 Windows 版本与沙箱策略细节 | Windows 11 为主，Windows 10 1809+ 视实测决定；默认 elevated | 覆盖面、测试量、安装流程 |
+| D25 | 执行体是谁 | 维持 Codex 单腿；dsh 列为未来候选，按 `A7` 的能力探针准入，不现在开第二个适配器。取证见 [调研备忘](../dev-agent/rules/desktop-shell-survey-notes.md) | `0003-runtime` 的适配器数量、`A4` 的依赖边界 |
+| D26 | 桌面外壳从哪来 | **不 fork 任何仓**：新建薄壳（Electron Forge 或 electron-vite 工具链），定点移植 Orca、goose 的小模块并保留来源与许可声明。取证见 [调研备忘](../dev-agent/rules/desktop-shell-survey-notes.md) | `0002-desktop` 的工程起点、第一期工作量 |
+| D27 | Electron 还是 Tauri | **已定 Electron**，理由是团队不做 Rust；Tauri v2 的能力模型更严但生态里没有可当基座的成品。约束落在 [`engineering.md`](../dev-agent/SDD/architecture/engineering.md) | 桌面全部技术选型 |
 | D28 | runtime 的语言与引擎适配边界 | runtime 用 TypeScript，独立后台进程，不依附桌面窗口生命周期；核心保持引擎中立，首个适配器经 stdio 接入钉版 `codex app-server`；细则见 [`engine-adapter.md`](../dev-agent/SDD/submodules/0003-runtime/PRD/engine-adapter.md) | 执行体可替换性、分发与安装、`0003-runtime` 全部设计 |
 
 ## 附录 B 未验证事项 ⚠
