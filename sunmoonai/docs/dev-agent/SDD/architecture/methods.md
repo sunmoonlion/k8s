@@ -1,6 +1,7 @@
 # 方法库
 
-> 由产品合同搬入。谁来编排见 [控制面与执行体](orchestration-boundary.md)。
+> **跨模块**：方法收在后端（[`0003-orchestrator`](../submodules/0001-backend/SDD/modules/0003-orchestrator.md) 管），
+> runtime 只把调用**代理**回来，执行体经 ⑤ 按需取方法。谁来编排见那一份。
 
 **方法库**：方法收在后端，不落地到用户电脑，**不是发给用户安装的 skill 包**。它有两种形态：
 

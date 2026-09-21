@@ -55,7 +55,7 @@
 | 执行在用户电脑上，由用户发起和主导 | 执行端（[`0003-runtime/PRD/codex.md`](../dev-agent/SDD/submodules/0003-runtime/PRD/codex.md)） |
 | 模型由用户自选、开通、付费 | [`0003-runtime/PRD/models-and-keys.md`](../dev-agent/SDD/submodules/0003-runtime/PRD/models-and-keys.md) |
 | 我们提供的是数据，不是观点 | 自有数据（§2） |
-| 我们的编排与方法库只写方法，不写判断规则 | supervisor 与方法库（[`control-plane.md`](../dev-agent/SDD/submodules/0001-backend/SDD/architecture/orchestration-boundary.md)、[`methods.md`](../dev-agent/SDD/submodules/0001-backend/SDD/architecture/methods.md)） |
+| 我们的编排与方法库只写方法，不写判断规则 | supervisor 与方法库（[`control-plane.md`](../dev-agent/SDD/submodules/0001-backend/SDD/modules/0003-orchestrator.md)、[`methods.md`](../dev-agent/SDD/architecture/methods.md)） |
 | 系统不替用户下判断 | 输出检查（[`0007-delivery`](../dev-agent/SDD/submodules/0001-backend/SDD/modules/0007-delivery.md) 与 [runtime 的本地检查](../dev-agent/SDD/submodules/0003-runtime/PRD/functions.md)） |
 
 定位约束：

@@ -23,17 +23,6 @@
 
 **各模块承担什么、不承担什么，在 [`SDD/modules/`](../modules/) 下各自那一份**，本表只管关系。
 
-## 同目录另有三份
-
-| 文件 | 内容 |
-| --- | --- |
-| [`orchestration-boundary.md`](orchestration-boundary.md) | workflow 的步骤类型是开放集合；编排留在后端、按步下发 |
-| [`methods.md`](methods.md) | 方法库的形态与按敏感度分档；跨 Task 上下文 |
-| [`subtask.md`](subtask.md) | 子 Task 的派生规则与 `COORDINATION` 依赖编排 |
-
-三方共用的契约（状态机、路由、Profile）不在这一层，在
-[上层 `architecture/`](../../../../architecture/README.md)。
-
 ## 这七块对着九站的哪几站
 
 上一层的 [请求生命周期](../../../../architecture/lifecycle.md) 把一条请求分成九站。

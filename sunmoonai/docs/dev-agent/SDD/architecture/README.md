@@ -17,6 +17,7 @@
 | [`state-machine.md`](state-machine.md) | Task 与 Attempt 两层状态机：状态词、合法转换、`WAITING` 与 Interaction、取消与终态 |
 | [`routing.md`](routing.md) | 任务类别的三层判定与路由——三层分别落在桌面应用、runtime、后端 |
 | [`profile.md`](profile.md) | Task Profile 与 Agent Profile 的契约：后端定，runtime 按它限定能力 |
+| [`methods.md`](methods.md) | 方法库：两种形态、按敏感度分档、什么必须做成服务端 MCP 工具 |
 | [`approval.md`](approval.md) | 审批：工具级与 Task 级怎么分、各走哪条路 |
 | [`invariants.md`](invariants.md) | 全程不变量 `I1`–`I20`、持久化记录、问题侧明文与资料侧加密 |
 
