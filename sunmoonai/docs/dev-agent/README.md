@@ -14,7 +14,6 @@
 ```text
 PRD/                              requirement.md（要什么）· functions.md（全部 F-*）
 rules/                            constraints.md（代码规则，按主题分组）· agent-dev-guide.md
-workflow.md                       开发交给程序驱动时的 workflow（待开发的目标态）
 SDD/
 ├── architecture/                 lifecycle.md（先读：系统长什么样、一条请求怎么走完）
 │                                 channels · trust · engineering · objects · task-contract · approval · invariants
