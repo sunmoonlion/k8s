@@ -23,7 +23,7 @@ standards 的用词以本表为准：**同一个意思只用一个词**，「不
 | 派工 | 发出一个 turn | — |
 | 交回物 | 某个 turn 交回来的东西：PRD、SDD 两类是 `response.md`；IMP、UAT 两类是 worktree 分支上的提交 | 交付物（指这一份时） |
 | 定稿 | **人对答的采纳**：读完 response 取舍整理出的那一版，**同一类自己的那份东西**，不换成下一种文档——PRD 类定稿成 `PRD/`，SDD 类成 `SDD/`；写明以哪个 turn 为底、改了什么。见 [定稿](finalize.md)。**不等于批准，也不等于验收** | composition、设计稿、交接文件、审核（指这件事时） |
-| `architecture/` | `PRD/` 与 `SDD/` 下的一个目录：模块之间的结构与关系；入口文件 `README.md` | composition（指这一层时） |
+| `architecture/` | **只在 `SDD/` 下**：模块之间的关系——接口、共同约束、取舍；入口文件 `README.md`，可以再拆多份。需求侧不分模块，`PRD/` 下不得有 | 总体设计（指这一份时） |
 | `modules/` | **只在 `SDD/` 下**：`SDD/modules/<模块>.md` 写**这一层对这块的说明**——承担什么、不承担什么、边界在哪 | components |
 | `submodules/` | **只在 `SDD/` 下**：`SDD/submodules/<模块>/` 是**子任务**，内部是同样结构的任务目录。与 `modules/` 同号同名一一对应，也与实现时 worktree 里的模块目录一一对应；需求侧不分模块 | 子任务目录 |
 | 上层任务 | 其 `SDD/submodules/` 拆出了子任务的那个任务 | 父任务 |

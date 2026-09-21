@@ -163,4 +163,4 @@ API 2 / Worker 1 / Scheduler 1 / 两个前端各 2 就绪，drift 无差异。9 
 
 ---
 
-**动发布、清镜像前**，先读 [`../../dev-agent/composition/constraints.md`](../../dev-agent/rules/constraints.md)「发布」——本页只写现状。
+**动发布、清镜像前**，先读 [`../../dev-agent/rules/constraints.md`](../../dev-agent/rules/constraints.md)「发布」——本页只写现状。
