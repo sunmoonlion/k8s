@@ -4,9 +4,9 @@ verifies: 无
 ---
 # turn 0001：验收要满足什么
 
-上一层的设计把后端切成六块，分给这一块的是**验收**：确定性验收、语义验收派 Attempt、终态提交的发起。
+上一层的设计把后端切成七块，分给这一块的是**验收**：确定性验收、语义验收派 Attempt、终态提交的发起。
 边界（承担什么、不承担什么、为什么这么切）见 [`SDD/modules/0006-acceptance.md`](../../../../../modules/0006-acceptance.md)，
-六块之间的关系见 [`SDD/architecture/README.md`](../../../../../architecture/README.md)。
+七块之间的关系见 [`SDD/architecture/README.md`](../../../../../architecture/README.md)。
 
 这一问要的是：**这一块具体要满足什么、什么算满足**。
 

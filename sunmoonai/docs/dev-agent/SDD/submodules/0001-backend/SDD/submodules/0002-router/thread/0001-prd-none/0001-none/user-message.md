@@ -4,9 +4,9 @@ verifies: 无
 ---
 # turn 0001：受理与路由要满足什么
 
-上一层的设计把后端切成六块，分给这一块的是**受理与路由**：身份、幂等、建单、契约固定、类别三层判定、Profile 与设备选择。
+上一层的设计把后端切成七块，分给这一块的是**受理与路由**：身份、幂等、建单、契约固定、类别三层判定、Profile 与设备选择。
 边界（承担什么、不承担什么、为什么这么切）见 [`SDD/modules/0002-router.md`](../../../../../modules/0002-router.md)，
-六块之间的关系见 [`SDD/architecture/README.md`](../../../../../architecture/README.md)。
+七块之间的关系见 [`SDD/architecture/README.md`](../../../../../architecture/README.md)。
 
 这一问要的是：**这一块具体要满足什么、什么算满足**。
 
