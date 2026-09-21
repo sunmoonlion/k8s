@@ -54,7 +54,8 @@ Submission
 | [`product-contract.md`](../../product/product-contract.md) | 引用七对象、Task/Attempt 状态机、`I1`–`I15`、`F-*`、`AT-*` | 不重写对象定义、合法边或产品验收矩阵 |
 | [`competition-protocol.md`](../../dev-human/protocol/competition-protocol.md) | [§3.19](../../dev-human/protocol/competition-operations.md)–[§3.22](../SDD/submodules/0001-backend/rules/0002-agent-execution-notes.md) 汇总执行所需的阶段、取件、超时规则 | 不另立协议版本；协议改变时同步修订本导读 |
 | [`constraints.md`](constraints.md) | 开工前自检硬约束，尤其 A1–A5 | 不把自检改成建议 |
-| [`development-plan.md`](../PRD/development-plan.md) | 三期按合同附录 C：验证能跑通 → 可靠性 → 产品化 | 不记录进度；不另立分期 |
+| [`requirement.md`](../PRD/requirement.md) | 要建什么；分期以合同附录 C 为准（验证能跑通 → 可靠性 → 产品化） | 不记录进度；不另立分期 |
+| [`work-unit.md`](work-unit.md) | 工作单元固定九栏与七个测试层次；**缺栏视为未定义，不开工** | 不省栏 |
 | 各 turn 的 `user-message.md` | 每次派工的用户消息：写明交回哪一种，以及背景、范围、验收、约束 | 随 turn 冻结，执行者不改 |
 | `thread/` | 文档 thread → 文档 turn 两级；每次派工到交回的发出内容与交回物；进度由任务目录推出 | 交回即冻结，改只能开新 turn |
 
@@ -240,7 +241,7 @@ Submission
 | 未归因效应 | 外部观察到但找不到对应账目的变更；只记录，不伪造事前 Task（[§6.3](../SDD/submodules/0001-backend/rules/0001-intake-notes.md)） |
 | H1–H8 / T0–T2 / E0–E4 | 权力行 / 风险流程档位 / 证据等级，三个不同维度（[§4.2](../SDD/submodules/0001-backend/rules/agent-dev-guide.md)、[§3.4](../SDD/submodules/0001-backend/rules/agent-dev-guide.md)、[§5.2](../SDD/submodules/0001-backend/rules/agent-dev-guide.md)） |
 | Delivery | 最终回复与可重取产物（[§3.5](../SDD/submodules/0001-backend/rules/0004-acceptance-commit-notes.md)） |
-| Handoff | 不再单独维护：进度由任务目录（`thread/`、`composition/`、`components/`）推出，不能倒退的决定写在 [`development-plan.md`](../PRD/development-plan.md)「不能倒退的决定」；`composition/` 与各 turn 的 `user-message.md` 是**单写者面**（[§7.5](../SDD/submodules/0001-backend/rules/0002-agent-execution-notes.md)） |
+| Handoff | 不再单独维护：进度由任务目录（`thread/`、`PRD/`、`SDD/`）推出；已定的结论各归其位——约束在 [`constraints.md`](constraints.md)，待决在 [产品合同附录 A](../../product/product-contract.md)，分期在其附录 C。定稿目录与各 turn 的 `user-message.md` 是**单写者面**（[§7.5](../SDD/submodules/0001-backend/rules/0002-agent-execution-notes.md)） |
 | 工作区 / worktree | 每个可写执行者的并行隔离工作区（[§3.2](../SDD/submodules/0001-backend/rules/0002-agent-execution-notes.md)、[§3.6](../SDD/submodules/0001-backend/rules/0002-agent-execution-notes.md)） |
 | 命名分支 | 一执行者一分支；commit 的**运输通道，不是评审对象**（[§3.9](../SDD/submodules/0001-backend/rules/0002-agent-execution-notes.md)） |
 | 未提交工作区文件 | 仅本地草稿；**同一工作区同一路径后写覆盖先写**（[§3.7](../SDD/submodules/0001-backend/rules/0002-agent-execution-notes.md)） |

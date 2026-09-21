@@ -156,7 +156,7 @@ output_namespace, publication_target, integrator            result_status
 
 ⚠ **`workspace_path`、`exclusive_branch`、`forbidden_write_paths` 必须在派工时写死，
 且对每个执行者唯一。**`forbidden_write_paths` 至少包括：人的主 checkout、其他执行者的
-worktree、共享发布面，以及非协调者不得写的单写者文件（如 `user-message.md`、`composition/`）。
+worktree、共享发布面，以及非协调者不得写的单写者文件（如 `user-message.md`、定稿目录 `PRD/` 与 `SDD/`）。
 **这三个字段不是描述性说明，是 [§3.10](0002-agent-execution-notes.md) 写入前门禁的判定输入——派工时缺任一字段，
 执行者不得开始写。**
 
@@ -307,7 +307,7 @@ S 层比对象与边，R 层比一次执行的序列。
 > 依据的通用规范：[任务的生命周期「任务目录里放什么」](../../../../../dev-human/turn-project.md)
 
 状态**从文件和提交推出来，不在任何地方手写**；给人看的进度视图由此生成。
-没有记录或进度文件：状态只从 `thread/`、`composition/`、`components/` 及它们的提交推出。
+没有记录或进度文件：状态只从 `thread/`、`PRD/`、`SDD/` 及它们的提交推出。
 
 | 状态 | 判定依据 |
 | --- | --- |
@@ -315,7 +315,7 @@ S 层比对象与边，R 层比一次执行的序列。
 | 已派工 | turn 里有 `user-message.md`，还没有 `turn.md` |
 | 已交回 | `turn.md` 已写，`status` 为 `completed` |
 | 中断或失败 | `turn.md` 的 `status` 为 `interrupted` 或 `failed` |
-| 已通过 | 有 `verifies` 指向**这个 turn** 的验收 turn，其 `turn.md` 的 `verdict` 为 `pass`；设计还须已整理进 `composition/` |
+| 已通过 | 有 `verifies` 指向**这个 turn** 的验收 turn，其 `turn.md` 的 `verdict` 为 `pass`；设计还须已整理进定稿目录（`SDD/architecture/`、`SDD/modules/`） |
 | 被打回 | `verifies` 指向这个 turn 的最新一份 UAT，其 `verdict` 为 `fail` |
 | 停下待人 | 同一项交付物被打回的次数达到上限，还没有载有人的裁决的新 turn |
 | 已取消 | 上层定稿写明已取消及原因 |
