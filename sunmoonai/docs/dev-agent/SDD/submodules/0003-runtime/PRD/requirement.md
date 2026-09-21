@@ -44,7 +44,7 @@
 
 - `F-EXEC-*`；`F-APPROVE-01` 至 `F-APPROVE-04`；`F-INTAKE-07` 的预填侧；
   `F-GUARD-01` 至 `F-GUARD-03`、`F-GUARD-05`，以及 `F-EXEC-12` 的执行侧；
-  `F-ACCEPT-02` 的检查与回执；`F-CRYPTO-01`。定义见 [`functions.md`](../../../../PRD/functions.md)；
+  `F-ACCEPT-02` 的检查与回执；`F-CRYPTO-01`；`F-DELIVERY-11`。定义见同目录 [`functions.md`](functions.md)；
 - 不变量 `I14`、`I16`、`I18`、`I19`、`I20` 的执行侧成立；
 - 合同验收矩阵中涉及执行端的场景可复现。
 

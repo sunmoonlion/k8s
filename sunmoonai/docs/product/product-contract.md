@@ -56,7 +56,7 @@
 | 模型由用户自选、开通、付费 | [`0003-runtime/PRD/models-and-keys.md`](../dev-agent/SDD/submodules/0003-runtime/PRD/models-and-keys.md) |
 | 我们提供的是数据，不是观点 | 自有数据（§2） |
 | 我们的编排与方法库只写方法，不写判断规则 | supervisor 与方法库（[`control-plane.md`](../dev-agent/SDD/submodules/0001-backend/SDD/architecture/orchestration-boundary.md)、[`methods.md`](../dev-agent/SDD/submodules/0001-backend/SDD/architecture/methods.md)） |
-| 系统不替用户下判断 | 输出检查（[`functions.md`](../dev-agent/PRD/functions.md)「交付与留存」） |
+| 系统不替用户下判断 | 输出检查（[`0007-delivery`](../dev-agent/SDD/submodules/0001-backend/SDD/modules/0007-delivery.md) 与 [runtime 的本地检查](../dev-agent/SDD/submodules/0003-runtime/PRD/functions.md)） |
 
 定位约束：
 
@@ -130,7 +130,7 @@
 
 ## 3. 责任投影
 
-本节是所有者索引，不产生第二套规范；实现矩阵以 §1、[`functions.md`](../dev-agent/PRD/functions.md) 与 [`approval.md`](../dev-agent/SDD/architecture/approval.md)、[`invariants.md`](../dev-agent/SDD/architecture/invariants.md) 的稳定 ID，以及 §6 的验收 ID 为键。
+本节是所有者索引，不产生第二套规范；实现矩阵以 §1、各模块的 `functions.md` 与 [`approval.md`](../dev-agent/SDD/architecture/approval.md)、[`invariants.md`](../dev-agent/SDD/architecture/invariants.md) 的稳定 ID，以及 §6 的验收 ID 为键。
 
 | 所有者 | 负责的要求 |
 | --- | --- |
@@ -276,7 +276,7 @@
 | 原内容 | 搬到哪 | 什么时候 |
 | --- | --- | --- |
 | 组成部分 · 通道 · 数据流与信任边界 · 工程落点 | [`dev-agent/SDD/architecture/`](../dev-agent/SDD/architecture/README.md) 下的 `lifecycle.md`、`channels.md`、`trust.md`、`engineering.md` | 2026-09-20 |
-| 七阶段产品功能（`F-*`） | [`dev-agent/PRD/functions.md`](../dev-agent/PRD/functions.md)——跨三个模块，所以放共同上层的 PRD | 2026-09-20 |
+| 产品功能 `F-*` | **按模块拆开**：[桌面应用](../dev-agent/SDD/submodules/0002-desktop/PRD/functions.md)、[本地 runtime](../dev-agent/SDD/submodules/0003-runtime/PRD/functions.md)、后端七块各在 [`SDD/modules/`](../dev-agent/SDD/submodules/0001-backend/SDD/modules/) 下自己那一份。ID 全局唯一、跨文件不复用、不因搬动而重排 | 2026-09-20 |
 | 核心对象 · Task 契约 · 审批 | [`architecture/`](../dev-agent/SDD/architecture/README.md) 下的 `objects.md`、`task-contract.md`、`approval.md` | 2026-09-20 |
 | 全程不变量与持久化账 | [`architecture/invariants.md`](../dev-agent/SDD/architecture/invariants.md)；其中「执行端纪律」归 [`0003-runtime/PRD/discipline.md`](../dev-agent/SDD/submodules/0003-runtime/PRD/discipline.md) | 2026-09-20 |
 | 两层状态机 · Profile 与扩展 · 子 Task 与依赖编排 | [`0001-backend/PRD/`](../dev-agent/SDD/submodules/0001-backend/PRD/requirement.md) 下的 `state-machine.md`、`profile.md`、`subtask.md` | 2026-09-20 |

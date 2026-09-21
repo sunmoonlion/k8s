@@ -2,7 +2,7 @@
 
 > 依据：[产品合同](../../product/product-contract.md)。本文只写**要什么**，怎么做见 [设计层](../SDD/architecture/README.md)。
 
-同目录另有 [`functions.md`](functions.md)——**只装跨模块的功能义务**；单模块的义务在各自模块里，`F-*` 的 ID 全局唯一、不因搬动而重排。
+**功能义务 `F-*` 不在这一层**，各归其模块：[桌面应用](../SDD/submodules/0002-desktop/PRD/functions.md)、[本地 runtime](../SDD/submodules/0003-runtime/PRD/functions.md)、后端七块各在 [`SDD/modules/`](../SDD/submodules/0001-backend/SDD/modules/) 下自己那一份。`F-*` 的 ID 全局唯一、跨文件不复用、不因搬动而重排，合同的 `AT-*` 按这些 ID 勾。
 **分期不在这一层**：三期与人周以 [产品合同附录 C](../../product/product-contract.md) 为准，本目录不另立。
 
 ## 目标与范围

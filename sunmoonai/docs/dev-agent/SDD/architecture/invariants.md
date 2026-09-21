@@ -52,4 +52,4 @@
 
 分界：**用户提出的问题明文，用户的资料与结果加密**。任务文本、归一化目标与已确认的类别明文存到后端，供受理判定、路由与编排使用；本地资料与文件名根本不上传；研究结果**端到端加密**后存到后端，密钥只在用户手里。
 
-这条分界的功能义务 `F-CRYPTO-*` 在 [`functions.md`](../../PRD/functions.md)「结果加密」。
+这条分界的功能义务 `F-CRYPTO-*` 在 [runtime 的 `functions.md`](../submodules/0003-runtime/PRD/functions.md)。

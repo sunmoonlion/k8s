@@ -9,7 +9,7 @@
 | **工具级** | 单条命令、单个文件修改、联网 | Codex → 审批回调 → runtime | 桌面应用本地窗口 | runtime 按策略自动放行、拒绝或交用户决定；结论摘要经 ① 上报存档 |
 | **Task 级** | 澄清输入、计划批准、不可逆或对外动作、合并到用户工作区、预算追加、待审文档 | 后端 | 桌面应用审查窗口 | 后端落 Interaction，按 [`state-machine.md`](state-machine.md)「WAITING 与 Interaction」原子消费 |
 
-两层各自的功能义务 `F-APPROVE-*` 在 [`functions.md`](../../PRD/functions.md)「工具级与 Task 级审批」。
+两层各自的功能义务 `F-APPROVE-*` 在 [runtime](../submodules/0003-runtime/PRD/functions.md) 与 [桌面应用](../submodules/0002-desktop/PRD/functions.md) 各自的 `functions.md`。
 
 ## 工具级请求升级为 Task 级
 
@@ -37,10 +37,10 @@
 
 - 窗口由主进程创建：必须先处理才能继续的作为模态子窗口；应用在后台时发系统通知；同一 Interaction 只开一个窗口；每次记录响应耗时与修改项数，只作观察，不自动放宽审批。
 
-审查窗口的功能义务 `F-REVIEW-*` 在 [`functions.md`](../../PRD/functions.md)「Task 级审查」。
+审查窗口的功能义务 `F-REVIEW-*` 在 [桌面应用的 `functions.md`](../submodules/0002-desktop/PRD/functions.md)。
 
 ## 被攻破的后端
 
 后端派发的 Attempt 本身就是给 agent 的指令，被攻破的后端可以在自动放行范围内借 Attempt 让用户电脑执行命令。因此：
 
-这一段的功能义务 `F-GUARD-*` 在 [`functions.md`](../../PRD/functions.md)「后端被攻破时仍要成立的」。
+这一段的功能义务 `F-GUARD-*` 在 [runtime 的 `functions.md`](../submodules/0003-runtime/PRD/functions.md) 与 [`0002-router`](../submodules/0001-backend/SDD/modules/0002-router.md)。

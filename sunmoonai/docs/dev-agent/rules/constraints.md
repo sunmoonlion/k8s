@@ -6,7 +6,7 @@
 > 是不提出。
 >
 > 项目现在长什么样，见 [`../project-guide/`](../../project-guide)；
-> 要建什么见 [`requirement.md`](../PRD/requirement.md) 与 [`functions.md`](../PRD/functions.md)，分期见 [产品合同附录 C](../../product/product-contract.md)，
+> 要建什么见 [`requirement.md`](../PRD/requirement.md)，功能义务 `F-*` 在各模块自己的文档里，分期见 [产品合同附录 C](../../product/product-contract.md)，
 > 用户消息在各 turn 的 `user-message.md` 里；
 > 进度由任务目录推出，不另设进度文件。
 
