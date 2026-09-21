@@ -6,7 +6,7 @@ verifies: 无
 
 上一层的设计把后端切成七块，分给这一块的是**编排**：workflow 游标、按步拆与派发、步骤契约、`escalate` 裁决、方法库与按步工具面。
 边界（承担什么、不承担什么、为什么这么切）见 [`SDD/modules/0003-orchestrator.md`](../../../../../modules/0003-orchestrator.md)，
-七块之间的关系见 [`SDD/architecture/README.md`](../../../../../architecture/README.md)。
+七块之间的关系见 [`SDD/architecture/blocks.md`](../../../../../architecture/blocks.md)。
 
 这一问要的是：**这一块具体要满足什么、什么算满足**。
 

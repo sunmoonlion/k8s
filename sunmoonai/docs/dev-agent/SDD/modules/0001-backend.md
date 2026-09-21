@@ -15,7 +15,7 @@
 **内部切七块**：`ledger` · `router` · `orchestrator` · `bridge` · `interrupt` ·
 `acceptance` · `delivery`。中心与内部判断不朝外，其余各对一侧；只有 `ledger` 能改状态与写账。
 关系与它们对着九站哪几站，见
-[子任务的 `SDD/architecture/`](../submodules/0001-backend/SDD/architecture/README.md)。
+[后端的七块](../submodules/0001-backend/SDD/architecture/blocks.md)。
 
 **怎么建**：状态机加 outbox，**不引入图执行框架**——那会多出一份 checkpoint 状态，
 与这里的状态机成为两个真源（`I13`）。后端不驻留内存状态，重启扫非终态对象即可恢复。

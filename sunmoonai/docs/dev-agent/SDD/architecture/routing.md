@@ -1,6 +1,6 @@
 # 任务类别的判定与路由
 
-> 由产品合同搬入。控制面怎么实现见 [控制面与执行体](../submodules/0001-backend/SDD/architecture/README.md)。
+> 由产品合同搬入。控制面怎么实现见 [控制面与执行体](../submodules/0001-backend/SDD/architecture/blocks.md)。
 
 **任务类别的判定**：分三层，每一层都在它信息最全的地方判断；后端不为此调用模型。
 

@@ -6,7 +6,7 @@ verifies: 无
 
 上一层的设计把后端切成七块，分给这一块的是**执行端对接**：WSS 连接、设备身份、租约与 fencing、投递与回传。
 边界（承担什么、不承担什么、为什么这么切）见 [`SDD/modules/0004-bridge.md`](../../../../../modules/0004-bridge.md)，
-七块之间的关系见 [`SDD/architecture/README.md`](../../../../../architecture/README.md)。
+七块之间的关系见 [`SDD/architecture/blocks.md`](../../../../../architecture/blocks.md)。
 
 这一问要的是：**这一块具体要满足什么、什么算满足**。
 

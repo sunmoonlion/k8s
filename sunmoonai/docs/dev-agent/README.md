@@ -33,5 +33,5 @@ SDD/
 把属于那一层的内容搬进定稿，并在合同的「去向」表里登记。搬走即从合同删除，一条内容只有一处。
 
 两个子任务的内部关系各在自己那一层：
-[后端七块](SDD/submodules/0001-backend/SDD/architecture/README.md)、
+[后端七块](SDD/submodules/0001-backend/SDD/architecture/blocks.md)、
 [桌面应用](SDD/submodules/0002-desktop/SDD/architecture/README.md)（内部划分未定）。
