@@ -24,7 +24,7 @@ SDD/
 │   │                             bridge · interrupt · acceptance · delivery
 │   ├── 0002-desktop/             内部划分未定，见其 SDD/architecture/ 的未决
 │   └── 0003-runtime/             还没开过 SDD turn
-├── rules/                        constraints.md · agent-dev-guide.md · work-unit.md
+├── rules/                        constraints.md · agent-dev-guide.md
 └── dev-workflow.md               开发这件事交给程序驱动时的 workflow（待开发的目标态）
 ```
 

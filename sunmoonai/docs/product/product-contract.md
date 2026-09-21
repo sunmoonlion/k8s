@@ -379,7 +379,7 @@
 
 | 对象 | 要改什么 |
 | --- | --- |
-| `dev-agent/PRD/` 下的施工阶段 | **已办**：旧的「前后端对接 → agent → 问数」整份删除；分期以本文附录 C 为准，任务树不另立。工作单元的写法移到 [`rules/work-unit.md`](../dev-agent/rules/work-unit.md) |
+| `dev-agent/PRD/` 下的施工阶段 | **已办**：旧的「前后端对接 → agent → 问数」整份删除；分期以本文附录 C 为准，任务树不另立。工作单元的写法并回通用规范 [`imp/message-rules.md`](../dev-human/imp/message-rules.md)（含 L1–L7 测试层次） |
 | [`SDD/constraints.md`](../dev-agent/rules/constraints.md) | 「通用/专用分离」改写为「一个执行体，按 Profile 与 workflow 区分任务」；新增设备身份（认证、派发签名、吊销）、问题侧明文与资料侧加密的分界条款；持久化账条款补「执行端本地暂存不是权威副本」；会话与 CSRF 条款补桌面端 token 会话 |
 | `SDD/modules/0001-backend` 及其子任务 | 执行位置改到用户电脑上的 runtime；后端只做 supervisor、派发与持久化；执行端口新增派往 runtime 的适配器 |
 | `SDD/modules/0002-desktop` | 目标改为桌面客户端；用户侧不做网页端；审查收件箱改在桌面应用的审查窗口 |
