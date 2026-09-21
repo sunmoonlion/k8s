@@ -174,21 +174,21 @@ Calico 集群，否则"测过了"是假的。
 | # | 原则 |
 | --- | --- |
 | **P0** | **只有一套状态机（Task / Attempt）**，场景差异只体现在 Profile 的 guard、必需产物与 interrupt 策略；**任何场景不得新增状态词** |
-| **P1** | **同一事实只有一个权威写入面**；两份同构文档即两个真源（`I13`，[§1.2](../SDD/submodules/0001-backend/rules/agent-dev-guide.md)） |
+| **P1** | **同一事实只有一个权威写入面**；两份同构文档即两个真源（`I13`，（已随标签 `backend-rules-archive` 归档）） |
 | **P2** | **状态从产物反推，不从声明读取**——人的动作也不例外 |
 | **P3** | **方向不对称**：朝严谨可自裁，朝省事须人确认；⚠ **默认值属于省事方向** |
-| **P4** | **判据必须声明覆盖范围**；⚠ **覆盖不全比没有更危险**（[§5.2](../SDD/submodules/0001-backend/rules/agent-dev-guide.md)） |
+| **P4** | **判据必须声明覆盖范围**；⚠ **覆盖不全比没有更危险**（[证据与采信](../../dev-human/uat/verify-rules.md)） |
 | **P5** | ⚠ **凡能落成代码、测试或门禁的纪律必须落成**；文字只描述意图，不构成机制 |
-| **P6** | **设计机制前，先核实它要处理的动作实际发生在哪里、由谁执行、经过什么路径**；未核前提只能标假设，验证办法见 [§1.7](../SDD/submodules/0001-backend/rules/0004-acceptance-commit-notes.md) |
+| **P6** | **设计机制前，先核实它要处理的动作实际发生在哪里、由谁执行、经过什么路径**；未核前提只能标假设，验证办法见 （已随标签 `backend-rules-archive` 归档） |
 
 **两条推论：**
 
 ⚠ **一个只能靠人转述的环节等于没有环节**（P2 + P5）。这条决定了本文对人介入的全部设计：
-[§4.2](../SDD/submodules/0001-backend/rules/agent-dev-guide.md) 的每一行都要有 `enforcement_point`，[§4.4](../SDD/submodules/0001-backend/rules/agent-dev-guide.md) 要求强制点落在执行者够不着的地方，
+[权力表与强制点](../../dev-human/approvals.md) 的每一行都要有 `enforcement_point`，[权力表与强制点](../../dev-human/approvals.md) 要求强制点落在执行者够不着的地方，
 理由都在这里。
 
 ⚠ **P0 的适用层级是 Task 与 Attempt。**Artifact、Interaction 等对象各有自己的小生命周期
-（[§3.11](../SDD/submodules/0001-backend/rules/agent-dev-guide.md) 的 `DRAFT → FROZEN → … → PUBLISHED`、内核的 `consumed_at`）——
+（（已随标签 `backend-rules-archive` 归档） 的 `DRAFT → FROZEN → … → PUBLISHED`、内核的 `consumed_at`）——
 **那些不是「第二套状态机」，而是对象属性**，并且同样跨场景共用、不得按场景另造。
 把对象属性误认成状态机，会导致每个场景各造一套；把状态机误认成对象属性，
 会导致状态词失控增长。**两边都错，方向相反。**
