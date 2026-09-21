@@ -54,7 +54,7 @@ Submission
 | [`product-contract.md`](../../product/product-contract.md) | 引用七对象、Task/Attempt 状态机、`I1`–`I15`、`F-*`、`AT-*` | 不重写对象定义、合法边或产品验收矩阵 |
 | [`competition-protocol.md`](../../dev-human/protocol/competition-protocol.md) | [§3.19](../../dev-human/protocol/competition-operations.md)–[§3.22](../SDD/submodules/0001-backend/rules/0002-agent-execution-notes.md) 汇总执行所需的阶段、取件、超时规则 | 不另立协议版本；协议改变时同步修订本导读 |
 | [`constraints.md`](constraints.md) | 开工前自检硬约束，尤其 A1–A5 | 不把自检改成建议 |
-| [`development-plan.md`](../SDD/submodules/0001-backend/PRD/development-plan.md) | 解释通用执行编排与领域能力的分工 | 不记录进度 |
+| [`development-plan.md`](../PRD/development-plan.md) | 三期按合同附录 C：验证能跑通 → 可靠性 → 产品化 | 不记录进度；不另立分期 |
 | 各 turn 的 `user-message.md` | 每次派工的用户消息：写明交回哪一种，以及背景、范围、验收、约束 | 随 turn 冻结，执行者不改 |
 | `thread/` | 文档 thread → 文档 turn 两级；每次派工到交回的发出内容与交回物；进度由任务目录推出 | 交回即冻结，改只能开新 turn |
 
