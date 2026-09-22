@@ -39,7 +39,7 @@ waiting_reason, active_interaction_id
 cancel_requested_at, cancel_requested_by
 ```
 
-`state` 是事件流的受约束投影；`state_version` 用于比较交换，防止两个入口同时完成、取消或恢复 Task。原始输入是问题侧内容，明文持久化；`local_refs` 只有句柄，本地资料的内容与文件名不上传。结果正文按 §8.4 只存密文。
+`state` 是事件流的受约束投影；`state_version` 用于比较交换，防止两个入口同时完成、取消或恢复 Task。原始输入是问题侧内容，明文持久化；`local_refs` 只有句柄，本地资料的内容与文件名不上传。结果正文按 [问题侧明文，资料侧加密](invariants.md) 只存密文。
 
 ## 解释、边界与完成契约
 
@@ -59,7 +59,7 @@ Task 进入 `QUEUED` 前必须固定：
 
 ## 最终结果信封
 
-成功结果至少包含（正文部分加密存放，§8.4）：
+成功结果至少包含（正文部分加密存放，[问题侧明文，资料侧加密](invariants.md)）：
 
 ```text
 task_id, task_profile_id, task_profile_version
@@ -94,7 +94,7 @@ max_reworks           本步的返工上限
 
 - 步骤交回物是**固定版本的 Artifact**；下一步只以版本引用取用，上一步重做产生新版本，不就地覆盖；
 - 执行端不保证交回物满足 `output_schema`：模型可能不受结构化输出约束、可能没有最终消息、产物也可能是工作区里的文件。**格式合规由验收判定，不由执行端声明**；
-- 每一步按 §7.6 验收：需要读正文的检查在执行端加密前完成并进回执，后端核对回执并按 `acceptance[]` 做确定性判定；
+- 每一步按 [本地检查](../submodules/0003-runtime/PRD/functions.md) 验收：需要读正文的检查在执行端加密前完成并进回执，后端核对回执并按 `acceptance[]` 做确定性判定；
 - 步骤不合格不等于 Task 失败：按 `on_reject` 处置；`max_reworks` 用尽交人；
 - 步骤之间不得靠自然语言转述传递结果；下一步的输入只能是固定版本的 Artifact 与派发内容里的字段。
 

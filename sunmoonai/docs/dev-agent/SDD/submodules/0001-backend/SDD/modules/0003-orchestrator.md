@@ -62,4 +62,4 @@ ownership[]
 graph_version
 ```
 
-协调 Task 是边的唯一权威；被协调 Task 只保存 `coordination_task_id`。同时只能有一个现行协调视图。协调 Task 验收：节点存在、每条边有依据与解除条件、阻塞图无环、工作有责任归属、同一事实无第二写入面。协调 Task 在图建立并验收后即 `SUCCEEDED`，不等待被协调 Task 完成；依赖实质变化时建立 `supersedes` 旧图的新协调 Task。对子结果的等待发生在依赖这些节点的业务 Task：它进入 `WAITING(DEPENDENCY)`，条件满足后按 §5.2 恢复。
+协调 Task 是边的唯一权威；被协调 Task 只保存 `coordination_task_id`。同时只能有一个现行协调视图。协调 Task 验收：节点存在、每条边有依据与解除条件、阻塞图无环、工作有责任归属、同一事实无第二写入面。协调 Task 在图建立并验收后即 `SUCCEEDED`，不等待被协调 Task 完成；依赖实质变化时建立 `supersedes` 旧图的新协调 Task。对子结果的等待发生在依赖这些节点的业务 Task：它进入 `WAITING(DEPENDENCY)`，条件满足后按 [重连对账](../../../0003-runtime/PRD/discipline.md) 恢复。

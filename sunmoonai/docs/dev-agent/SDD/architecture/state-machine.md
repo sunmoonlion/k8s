@@ -69,7 +69,7 @@ RECEIVED → VALIDATING → QUEUED → RUNNING ───────────
 等待原因使用结构化码，不为每种等待另造状态：
 
 - `INPUT`：等待用户补充关键输入，含路由拿不准时请用户选择类别；
-- `APPROVAL`：等待用户或授权角色批准，含工具级请求升级（§6.2）、计划批准、合并到用户工作区、预算追加；
+- `APPROVAL`：等待用户或授权角色批准，含工具级请求升级（[工具级请求升级为 Task 级](approval.md)）、计划批准、合并到用户工作区、预算追加；
 - `DEVICE`：等待绑定设备上线；
 - `DEPENDENCY`：等待另一 Task 或依赖条件；
 - `RESOURCE`：等待配额、设备容量、锁或计划时间；
@@ -103,7 +103,7 @@ Interaction 到期不得无事件消失：Task Profile 必须规定超时后关�
 4. 检查已发生副作用，丢弃独立工作区或执行约定的补偿，登记不可补偿的结果；
 5. 以比较交换提交唯一的 `CANCELLED` 终态。
 
-执行端离线时，第 3 步以提高 fencing 完成；执行端重连后按 §8.3 对账，不得提交任何结果或副作用。完成与取消并发时只能有一个终态提交成功。客户端可以把已记录的取消意图投影为「正在取消」，但这不是第二套 Task 状态。
+执行端离线时，第 3 步以提高 fencing 完成；执行端重连后按 [执行端纪律](../submodules/0003-runtime/PRD/discipline.md) 对账，不得提交任何结果或副作用。完成与取消并发时只能有一个终态提交成功。客户端可以把已记录的取消意图投影为「正在取消」，但这不是第二套 Task 状态。
 
 ## 终态与重新处理
 
@@ -150,6 +150,6 @@ tool_call_refs, side_effect_refs, evidence_refs, approval_refs
 6. 恢复不得重复已经记账的副作用；
 7. `BUDGET_EXCEEDED` 是 Attempt 终态；Task 随后按契约进入 `WAITING(APPROVAL)`、重新 `QUEUED` 或 `FAILED`；
 8. `ESCALATED` 表示执行中调用了 `escalate`；Task 回到 `VALIDATING` 由 supervisor 重新路由，改判入账；
-9. `PAUSED` 表示执行端失去租约（§8.3）；租约恢复且 fencing 未变时回 `RUNNING`，否则 `ABANDONED`，由新 Attempt 接续；
+9. `PAUSED` 表示执行端失去租约（[执行端纪律](../submodules/0003-runtime/PRD/discipline.md)）；租约恢复且 fencing 未变时回 `RUNNING`，否则 `ABANDONED`，由新 Attempt 接续；
 10. 同一 Agent Profile 版本连续若干个 Attempt 启动即失败时，熔断该版本并落事件，新 Attempt 不再分发到它，直到人解除。
 

@@ -17,7 +17,7 @@ allowed_capabilities / data sources
 default budget / retry / approval / privacy policy
 device_policy                         是否允许改派设备
 workflow_ref                          专业 Profile 对应的 workflow
-step_contract                         workflow 各步骤的输入、输出 schema、验收与返工去向（§4.5）
+step_contract                         workflow 各步骤的输入、输出 schema、验收与返工去向（[步骤契约](../submodules/0001-backend/SDD/modules/0003-orchestrator.md)）
 ```
 
 Agent Profile 声明执行能力：工具绑定、权限边界、自动放行范围、方法、记忆策略与支持的 Task Profile；签名发布（F-GUARD-01）。Task 固定 Task Profile 版本；每次 Attempt 记录所选 Agent Profile 与运行时版本。升级任一 Profile 不得静默改变已受理 Task 的解释或历史结果。

@@ -15,10 +15,10 @@ runtime 必须：
 - 连接时带 `clientInfo.name` 标识本产品；
 - 把运行时 thread 标识作为执行绑定经 ① 写回后端，不作为 Task 的真源；
 - 与用户自己安装的 Codex 完全隔开：使用自己的二进制路径与独立的 `CODEX_HOME`，不读取、不改写用户自己的 Codex 配置与记录；
-- 主动外连后端，维护设备身份（§2.10）；
-- 保管 key（§2.9）；
-- 为每个 Attempt 建立独立工作区，并在批准后把改动合进用户工作区（§8.3）；
-- 把需要云端决定的工具级请求升级为 Task 级审批（§6.2）；
+- 主动外连后端，维护设备身份（[设备身份、连接、安装与升级](device.md)）；
+- 保管 key（[模型与 key](models-and-keys.md)）；
+- 为每个 Attempt 建立独立工作区，并在批准后把改动合进用户工作区（[执行端纪律](discipline.md)）；
+- 把需要云端决定的工具级请求升级为 Task 级审批（[工具级请求升级为 Task 级](../../../architecture/approval.md)）；
 - 执行策略：限定工作区、禁止关闭沙箱、危险操作必须审批、并发上限、只接受签名的派发内容。
 
 **控制面**：runtime 只能经 **app-server 协议**影响 Codex 的行为，**不得另辟通路**。协议的客户端方法
@@ -37,7 +37,7 @@ runtime 必须：
 
 **审批是服务端发起的请求，共五种**——`ServerRequest` 里的 `item/commandExecution/requestApproval`、
 `item/fileChange/requestApproval`、`item/permissions/requestApproval`、`item/tool/requestUserInput`、
-`mcpServer/elicitation/request`。runtime 必须**全部接住**，它们同时是副作用台账的采集点（§8.3）。
+`mcpServer/elicitation/request`。runtime 必须**全部接住**，它们同时是副作用台账的采集点（[执行端纪律](discipline.md)）。
 协议层没有「默认同意」这回事——那是 Python SDK 的行为。
 
 **方法工具不走 `DynamicTool`。**协议有客户端注册、服务端回调的动态工具（`DynamicToolSpec` →
@@ -48,13 +48,13 @@ runtime 必须：
 
 生命周期 hooks 是外部命令，可用事件与其阻断能力以钉版实测为准（⚠）；协议侧有
 `hooks/list` 与 `hook/started`、`hook/completed` 两个通知。并行 Attempt 可以用 `thread/fork`
-建立，也可以各起一个 thread；选哪种由 §2.6 的工作区隔离要求决定。
+建立，也可以各起一个 thread；选哪种由 [执行隔离](isolation.md) 的工作区隔离要求决定。
 
 **可观察面**：`ServerNotification` 约八十条，覆盖推理摘要与正文（`item/reasoning/*`）、
 计划更新（`turn/plan/updated`）、命令输出（`item/commandExecution/outputDelta`）、
 文件补丁（`item/fileChange/patchUpdated`）、MCP 工具调用进度、token 用量
 （`thread/tokenUsage/updated`）、上下文压缩（`thread/compacted`）、错误与警告。runtime 据此
-产出进度投影与执行证据（§8.3）。**通知是只读的，一切拦截走审批请求的应答。**
+产出进度投影与执行证据（[执行端纪律](discipline.md)）。**通知是只读的，一切拦截走审批请求的应答。**
 
 两条对本产品特别要紧：
 
