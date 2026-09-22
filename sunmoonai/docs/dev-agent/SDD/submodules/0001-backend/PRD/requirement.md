@@ -11,7 +11,7 @@
 | `routing.md` | [上层 `architecture/`](../../../architecture/routing.md)——三层判定分落三个模块 |
 | `profile.md` | [上层 `architecture/`](../../../architecture/profile.md)——后端定、runtime 按它限能力 |
 | `subtask.md` | 并入 [`0003-orchestrator`](../SDD/modules/0003-orchestrator.md)——子 Task 与依赖编排就是它的活 |
-| `methods.md` | 上移 [顶层 `architecture/`](../../../architecture/methods.md)——方法收在后端、runtime 代理、执行体经 ⑤ 取，是跨模块的 |
+| `methods.md` | 上移 [顶层 `architecture/`](../../../architecture/methods.md)——方法收在后端、经 ① 由 runtime 代理，是跨模块的 |
 | `control-plane.md` | 拆解：编排边界并入 [`0003-orchestrator`](../SDD/modules/0003-orchestrator.md)，其余因重复删去 |
 
 ## 职责

@@ -9,7 +9,7 @@
 | ② | runtime ⇄ Codex | `codex app-server`（子进程 stdio，JSON-RPC；不开 TCP 端口） | 启动或恢复运行时 thread、下发运行时 turn、事件、审批请求、中断 | 仅本机；Codex 不开端口 |
 | ③ | 桌面应用 ⇄ runtime | 渲染进程 → preload → 主进程 → 本机管道（stdio 或仅本用户可访问的本地套接字） | 工具级审批、本地确认、key 与模型配置、工作区授权、本地知识库、结果解密与预览、runtime 状态、类别预填 | 不开 TCP 端口；只有随应用打包的本地窗口挂这类 preload（它是独立窗口，不与主窗口共用 webContents） |
 | ④ | 桌面应用 ⇄ 后端 | HTTPS + 事件流（cursor 续传） | 提交、查询、取消、Task 级审查、结果密文、设备与计费、「有待审查」提醒 | 桌面端 token；每次读取重新授权 |
-| ⑤ | Codex ⇄ 知识服务 | HTTPS（MCP） | 检索、领域工具、按需取方法 | 按设备发 token、可吊销、限流 |
+| ⑤ | Codex ⇄ 知识服务 | HTTPS（MCP） | 检索、领域工具。⚠ **不取方法**——方法工具只走 ①（见 [方法库](methods.md)） | 按设备发 token、可吊销、限流 |
 | ⑥ | Codex ⇄ 模型厂商 | HTTPS | 推理 | 用户自己的 key，只在本机 |
 | ⑦ | 管理后台 ⇄ 后端 | HTTPS | 运营、客服、审计查询 | cookie 会话 + CSRF；内部人员权限；只见元数据 |
 
