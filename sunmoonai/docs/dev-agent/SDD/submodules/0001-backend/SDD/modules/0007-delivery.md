@@ -9,6 +9,7 @@
 **必须做到**（定义原在 `PRD/functions.md`，ID 不变）：
 
 - **F-DELIVERY-01**：客户端可按 `task_id` 获取当前状态与稳定版本的结果密文，在本机解密；
+- **F-DELIVERY-12**：通用任务的**领域识别结论**（命中领域、依据、置信度）随结果下发，作为元数据，不进结果密文；下发的只有结论，**不含自有数据内容**；
 - **F-DELIVERY-02**：每个事件有稳定 `event_id`、Task 内单调 `sequence_no`、`payload_schema_version`、时间、主体与可见级别；
 - **F-DELIVERY-03**：先持久化事件再推送；
 - **F-DELIVERY-04**：事件流使用 cursor 续传，重复事件对客户端幂等；
