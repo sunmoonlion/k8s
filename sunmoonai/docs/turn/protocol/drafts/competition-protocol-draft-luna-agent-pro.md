@@ -27,7 +27,7 @@
 
 ## 2. 与现有产品合同的关系
 
-Task、Attempt、Interaction、Artifact、Event、Side Effect、Delivery 及其合法状态以 [核心对象与状态机](../../../tree/SDD/architecture/objects.md) 为准。本文只增加专业 Profile 的 guard、产物与阶段要求，不另造顶层状态机。
+Task、Attempt、Interaction、Artifact、Event、Side Effect、Delivery 及其合法状态以 [核心对象与状态机](../../../tree-build/SDD/architecture/objects.md) 为准。本文只增加专业 Profile 的 guard、产物与阶段要求，不另造顶层状态机。
 
 一个专业业务 Task 持有总体目标、预算和结果。候选生成、评审、专业子任务可以分别成为子 Task；每个子 Task 的验收范围必须明确，不能用子任务成功代替父任务成功。一个简单的模型调用不必强行包装为独立子 Task，但仍须有执行、预算和证据记录。
 
@@ -279,9 +279,9 @@ CLI 不等于 sandbox；设置 cwd 不构成安全隔离。沙箱需约束文件
 | A4 | 用户已决定专业核心自建，需范围化修订；通用路线的外部智能体接入边界不随之取消 |
 | R6 | 未来公共实现模板先行；领域方法在实例扩展；本次只新增协议草案 |
 
-约束原文见 [constraints](../../../tree/rules/constraints.md)。本稿记录决策与拟议规则，不直接修改现行规范，不声称冲突已通过实现解决。
+约束原文见 [constraints](../../../tree-build/rules/constraints.md)。本稿记录决策与拟议规则，不直接修改现行规范，不声称冲突已通过实现解决。
 
-与 [开发指导](../../../tree/rules/constraints.md) 中租用执行层、现有人工门或状态映射有关的差异，必须在启用新 Profile 前明确修订范围与回退方式。不得以“专业特殊”为理由改变产品 Task 状态或跳过其成功条件。
+与 [开发指导](../../../tree-build/rules/constraints.md) 中租用执行层、现有人工门或状态映射有关的差异，必须在启用新 Profile 前明确修订范围与回退方式。不得以“专业特殊”为理由改变产品 Task 状态或跳过其成功条件。
 
 ## 14. 效果评估：评优必须证明有用
 

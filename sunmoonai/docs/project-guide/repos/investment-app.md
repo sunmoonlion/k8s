@@ -8,7 +8,7 @@
 消费 knowledge 的 retrieval v1 契约。
 
 **五仓中领域代码最重的一个**：约 110 个文件、8–9k 行。也是唯一有完整状态机、
-检查点恢复、事件流与副作用记账的仓——[`tree/PRD/requirement.md`](../../tree/PRD/requirement.md)
+检查点恢复、事件流与副作用记账的仓——[`tree-build/PRD/requirement.md`](../../tree-build/PRD/requirement.md)
 §7 的映射表以本仓为对象。
 
 ## 1.1 重要点（读代码前先别理解反）
@@ -154,7 +154,7 @@ Pilot run 用 `owner_actor_id + idempotency_key`。
 
 | 项 | 实际状态 |
 | --- | --- |
-| **`RunBudget` 在生产生效** | 未接线，见 §4.5。`budget_exceeded` 生产不可达。现有实现是内存态 pydantic model、随 graph state 传递，**进程一死即失**，结构上满足不了「跨 run／跨进程仍须正确」的判据。载体须换 PG——见 [`constraints.md`](../../tree/rules/constraints.md)「智能体」`C-A3`（四本账必须落 PostgreSQL），不是单独接线 |
+| **`RunBudget` 在生产生效** | 未接线，见 §4.5。`budget_exceeded` 生产不可达。现有实现是内存态 pydantic model、随 graph state 传递，**进程一死即失**，结构上满足不了「跨 run／跨进程仍须正确」的判据。载体须换 PG——见 [`constraints.md`](../../tree-build/rules/constraints.md)「智能体」`C-A3`（四本账必须落 PostgreSQL），不是单独接线 |
 | **Web 面接了 Agent/Pilot** | **未接**。`/api/web/v1` 默认 `Unavailable` 适配器 503；开 flag 也只是内存 reference 适配器，不调 `AgentRunService` / `PilotService` |
 | Attempt / Invocation 表 | **无 DB 表**，仅 spike 内存类 |
 | `AgentMemoryService` | 类存在，生产无调用方 |

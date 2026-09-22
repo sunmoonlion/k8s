@@ -5,7 +5,7 @@
 
 **动代码前必读**——代码必须符合的规则（按主题分组）：
 
-`sunmoonai/docs/tree/rules/constraints.md`
+`sunmoonai/docs/tree-build/rules/constraints.md`
 
 违反其中任一条的方案不进入讨论。用法见该文件「怎么用」。
 
@@ -15,7 +15,7 @@
 
 要建什么（需求的真源）：
 
-`sunmoonai/docs/tree/PRD/requirement.md`
+`sunmoonai/docs/tree-build/PRD/requirement.md`
 
 任何开发任务都要遵守的通用开发规范：
 

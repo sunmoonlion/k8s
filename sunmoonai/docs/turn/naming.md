@@ -80,7 +80,7 @@ grep -rin '<新名>' --include='*.md' sunmoonai/docs
 `SDD/modules/` 下是「四位号-短名.md」（每块是什么），`SDD/submodules/` 下是同名目录（往下的子任务），两边一一对应。**号只在同一个 `modules/` 里递增**，每一层都从 `0001` 起；任务目录本身不编号。模块只在设计侧划，`PRD/` 下没有 `modules/`。
 
 ```text
-tree/                             项目，不编号
+tree-build/                             项目，不编号
 ├── thread/
 ├── PRD/requirement.md                           需求：不分模块
 ├── rules/                                       可选：约束、纪律与开发提醒

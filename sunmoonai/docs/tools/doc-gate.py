@@ -98,8 +98,8 @@ SELF_CONTAINED = (
     # 名单留着是为了：将来谁再往这两处写 §N，当场判失败。
     "sunmoonai/docs/turn/protocol/GO.md",
 )
-# 产品合同已拆散（需求进 tree/PRD/，责任投影进 SDD/architecture/ownership.md，
-# 决策与欠账进 tree/decisions.md），原条目随之移除——**这道自检当场报了名单失效**，
+# 产品合同已拆散（需求进 tree-build/PRD/，责任投影进 SDD/architecture/ownership.md，
+# 决策与欠账进 tree-build/decisions.md），原条目随之移除——**这道自检当场报了名单失效**，
 # 说明它有用：名单按路径写死，文档一改名或删除就静默失去作用。
 
 USAGE = "用法: doc-gate.py <文件>... | --all | --frozen | --survey | --selfcheck"

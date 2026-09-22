@@ -1,11 +1,11 @@
 # v5 重构历史索引
 
 本文只负责定位已经退出工作树的 v4/v5 计划、Luna 旧账报告、Architecture v2 和历史证据，
-不产生当前需求、任务或部署状态。当前产品目标以 [`tree/`](../../tree/README.md)
+不产生当前需求、任务或部署状态。当前产品目标以 [`tree-build/`](../../tree-build/README.md)
 为准，当前源码与运行事实以[项目指南](../README.md)为准。
 
-旧 N1～N6 已完成接收裁定：交互、执行、Profile、子任务与验收目标进入现行 [需求](../../tree/PRD/requirement.md) 和
-`tree/`；知识生命周期回到 Knowledge 现行职责；发布缺口进入本指南“发布与门禁”；
+旧 N1～N6 已完成接收裁定：交互、执行、Profile、子任务与验收目标进入现行 [需求](../../tree-build/PRD/requirement.md) 和
+`tree-build/`；知识生命周期回到 Knowledge 现行职责；发布缺口进入本指南“发布与门禁”；
 监控告警的现状与接线判据并入 [`repos/k8s.md`](../repos/k8s.md)「监控与告警」，不单独立任务；按需扩展没有触发条件时不建任务。旧编号不再构成待办。
 
 `tasks/B7-B9-closeout/` 已在 `547a8f6d83cc296a86a7604697057465620c7edc` 完成最后一次
@@ -79,7 +79,7 @@ git show 6757974b4084c92c8df62af637b020d998d4a160:sunmoonai/docs/v5-backlog-runt
 
 | 原文件 | 留存位置与用途 |
 | --- | --- |
-| `mooc-manus-langgraph-longterm-plan-v4.md` | 历史方案；Profile 的有效概念已进入现行 `tree/`，不恢复旧 Graph/ModelGateway 技术前提 |
+| `mooc-manus-langgraph-longterm-plan-v4.md` | 历史方案；Profile 的有效概念已进入现行 `tree-build/`，不恢复旧 Graph/ModelGateway 技术前提 |
 | `mooc-manus-langgraph-longterm-plan-v5.md` | 历史阶段划分与需求来源，不再是当前架构依据 |
 | `mooc-manus-langgraph-v5-implementation-plan.md` | 原任务编号与详细条件；N1～N6 只作历史追溯，不构成当前待办 |
 | `mooc-manus-langgraph-v5-handoff-20260712.md` | 当年停在 P0-008C.5：构建/身份探测不等于部署接受，C6/C7 未完，正式 M1 未启动 |
@@ -91,7 +91,7 @@ git show 6757974b4084c92c8df62af637b020d998d4a160:sunmoonai/docs/v5-backlog-runt
 | 原路径（相对于 `sunmoonai/docs/`） | 处置与必要边界 |
 | --- | --- |
 | `mooc-manus-v5/`（111 个文件） | 旧 ADR、契约和脚本退出当前工作树；没有发现目录外现行代码按路径或脚本名调用它们。旧契约不替代 provider 仓的当前契约，旧部署/清理脚本不迁作新发布工具 |
-| `app-platform-architecture-v2-refactor-plan.md` | 原状态停在 R5 阶段，退出当前施工入口；当前事实看 project-guide，规则看 `tree/`，发布缺口看“发布与门禁” |
+| `app-platform-architecture-v2-refactor-plan.md` | 原状态停在 R5 阶段，退出当前施工入口；当前事实看 project-guide，规则看 `tree-build/`，发布缺口看“发布与门禁” |
 | `knowledge-provider-decoupling-luna.md` | 实施过程按 Git 保留；适配义务由 Knowledge Backend 的 `docs/knowledge-provider.md` 维护，关键验证与限制见下节 |
 
 例如，在 k8s 仓根读取单文件或列出原目录：

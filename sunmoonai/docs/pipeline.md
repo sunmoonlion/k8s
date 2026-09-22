@@ -1,7 +1,7 @@
 # 一次 turn 的九站
 
 **一问从发出到拿到可用的答的完整往返。**这是主干:
-[`turn/`](turn/README.md) 讲每一站怎么走,[`tree/`](tree/README.md) 讲这个项目
+[`turn/`](turn/README.md) 讲每一站怎么走,[`tree-build/`](tree-build/README.md) 讲这个项目
 怎么把每一站建出来,两边都指这一份。
 
 ## 只有一条流程,区别是每一站谁做
@@ -56,7 +56,7 @@
 
 状态与账、进度与「下一步是什么」——这两样横穿全部九站,**不属于任何一格**。
 摊进去,同一事实就会有多个写入面(`P1`)。后端把它们单列成两块,见
-[后端的七块](tree/SDD/submodules/0001-backend/SDD/architecture/blocks.md)。
+[后端的七块](tree-build/SDD/submodules/0001-backend/SDD/architecture/blocks.md)。
 
 ⚠ 横穿的东西**必须不朝外**:一旦有外部面,它就成了绕过站序的第二个入口。
 
@@ -68,7 +68,7 @@
 ```text
 一次 turn 怎么走      ← turn/：跨项目通用的规矩
    ↓ 用它，每格 4 次 turn
-把某一格改成脚本      ← tree/：这个项目的任务树
+把某一格改成脚本      ← tree-build/：这个项目的任务树
    ↓ 九格改完
 这条链自己就能跑一次 turn
 ```
