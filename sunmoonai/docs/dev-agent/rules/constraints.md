@@ -8,7 +8,7 @@
 > 项目现在长什么样，见 [`../project-guide/`](../../project-guide)；
 > 要建什么见 [`requirement.md`](../PRD/requirement.md)，功能义务 `F-*` 在各模块自己的文档里，分期见 [产品合同附录 C](../../product/product-contract.md)，
 > 用户消息在各 turn 的 `user-message.md` 里；
-> 进度由任务目录推出，不另设进度文件。
+> 进度由任务目录推出，**任务目录里**不另设进度文件（IMP 在代码分支上的 `CHECKPOINT.md` 不在此列，见 [IMP 规则](../../dev-human/imp/message-rules.md)「跨运行时 thread 续接」）。
 
 ## 怎么用
 
