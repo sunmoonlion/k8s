@@ -23,7 +23,7 @@ PRD/
 └── acceptance.md                 产品验收矩阵 AT-*
 rules/constraints.md              代码规则，按主题分组；另有风险与应对、反模式
 SDD/
-├── architecture/                 lifecycle.md 先读：系统长什么样、一条请求怎么走完
+├── architecture/                 components.md 先读：系统由哪几部分组成、本轮建哪三块
 │                                 另有 channels · trust · engineering · objects · task-contract
 │                                 · approval · invariants · state-machine · routing · profile
 │                                 · methods · ownership（谁负责哪些 F-*/I-*/AT-*）
@@ -38,7 +38,7 @@ SDD/
 
 **第一层三块**，按运行位置、信任域、发布方式切：后端（服务器）、桌面应用与本地 runtime（都在用户电脑上，
 但 runtime 独持模型 key、桌面应用独持结果私钥，见 [数据流与信任边界](SDD/architecture/trust.md)）。官网、管理后台、知识服务与八个既有 Next.js 前端
-本轮不开发，见 [本轮范围外](SDD/architecture/lifecycle.md)。
+本轮不开发，见 [本轮范围外](SDD/architecture/components.md)。
 
 **需求的真源是 [`PRD/requirement.md`](PRD/requirement.md)**，不另设跨层的产品契约：
 一条内容只有一处，要什么就去 `PRD/`，谁负责去 [`SDD/architecture/ownership.md`](SDD/architecture/ownership.md)，

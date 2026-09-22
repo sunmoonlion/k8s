@@ -8,7 +8,7 @@
 
 | 文件 | 内容 |
 | --- | --- |
-| [`lifecycle.md`](lifecycle.md) | **先读这一份**：系统由哪几部分组成、本轮建哪三块、哪些沿用现状不开发；一条 message 从用户发出到用户看到 response 的完整往返（九站与完成判据）；终点在哪；未决 |
+| [`components.md`](components.md) | **先读这一份**：系统由哪几部分组成、本轮建哪三块、哪些沿用现状不开发；未决。⚠ 一条 message 怎么走完九站**不在这里**，在 [九站](../../../pipeline.md) |
 | [`channels.md`](channels.md) | 七条通道：两端、协议、内容、安全要点；以及交互上要落实的几件事 |
 | [`trust.md`](trust.md) | 哪类数据流到哪、到哪为止——信任边界 |
 | [`engineering.md`](engineering.md) | 工程落点（技术栈、独立成仓、界面不共享、契约单一真源）与各模块共同的约束 |
