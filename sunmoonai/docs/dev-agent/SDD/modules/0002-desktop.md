@@ -22,7 +22,7 @@
 | 本地窗口 | 工具级审批、本地确认、key 与模型配置、工作区授权、runtime 状态 |
 | **审查窗口** | Task 级审查。**装的是来自后端的外来内容，因此不挂任何本机能力** |
 
-**怎么建**：**Electron + Vite + React Router**，新建薄壳，**不 fork 任何现成产品仓**
+**怎么建**：**Electron + Vite + React Router**，在新仓 `desktop-app` 里新建薄壳，**不 fork 任何现成产品仓**
 （`D26`、`D27`）；窗口隔离与本机通道可定点移植开源实现，须保留来源、版本与许可声明。
 与网页前端**界面不共享**，接口契约以后端 schema 为单一真源、两端各自生成客户端
 （[`engineering.md`](../architecture/engineering.md)）。

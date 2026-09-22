@@ -102,7 +102,10 @@ expand → backfill → reconcile → switch read → switch write → observe �
 | C-T2 | **每个领域 App 只有一个规范 Backend** | ⚠ 自检 |
 | C-T3 | **一个 Backend 代码库按运行角色部署**（API / Worker / Scheduler / Migration）；模板组件不定义领域边界，运行角色不等于领域服务 | ⚠ 自检 |
 | C-T4 | 父仓**不得出现悬空 gitlink**——子仓提交没推，别人克隆父仓会拉不到 | `~/five-repos-sync/sync-five-repos.sh`：它同步五个父仓，拉取侧自动 `submodule update --init --recursive`，子仓提交没推会**当场报错**。⚠ 但它只推父仓不推子仓，子仓的提交仍须自己推 |
-| C-T5 | 跨仓改动宣称"已完成"时，**必须带「仓 + 提交号」**——k8s 与四个 App 是并列独立仓，只写提交信息的话，评审方只能猜取证对象，会得出"改动不存在"的结论 | ⚠ 自检 |
+| C-T5 | 跨仓改动宣称"已完成"时，**必须带「仓 + 提交号」**——**全部仓都是并列独立仓**，只写提交信息的话，评审方只能猜取证对象，会得出"改动不存在"的结论 | ⚠ 自检 |
+| C-T6 | 仓分两组，**组的成员不得混写**：**平台五仓**（`tpl-app`、`info-app`、`knowledge-app`、`investment-app`、`k8s`）必须并列放置，因为部署脚本按同级相对路径互相引用；**客户端仓**（`runtime`、`desktop-app`）不参与 k8s 部署，**没有并列要求** | ⚠ 自检 |
+| C-T7 | **`runtime` 单独成仓且开源**（合同「让用户能验证」）：二进制签名、可复现构建、公开会连接的全部域名。**不得与 `desktop-app` 合仓**——混仓则这条承诺兑现不了 | ⚠ 自检 |
+| C-T8 | 三个版本必须在发布清单里**一起钉住**：`runtime` 版、**① 协议版**、`desktop-app` 版。runtime 随桌面应用打包分发，但两仓各自发版，版本配对只能由清单保证 | ⚠ 自检 |
 
 ### 什么时候才拆出专用 Worker
 
@@ -201,7 +204,7 @@ Calico 集群，否则"测过了"是假的。
 | --- | --- | --- |
 | **随测试自动跑** | 标了测试载体的那些 | 四仓 `tests/test_kernel_invariants.py`、`tests/test_dormant_capabilities.py`、双端契约测试——**跑 `uv run pytest` 就带上，不需要谁记得** |
 | **随提交自动跑** | 本仓文档的机械不变量：链接、字段、编号、冻结区、`文件.md:行` 锚点 | [`doc-gate.py`](../../tools/doc-gate.py) 与 [`anchor-gate.py`](../../tools/anchor-gate.py)，都经版本化的 `.githooks/pre-commit`、`pre-merge-commit` 触发——**提交就带上**。装一次 `git config core.hooksPath .githooks` 对全部 worktree 生效（共享同一个 `.git`），装没装用 `doc-gate.py --selfcheck` 判定。⚠ 钩子找不到脚本时**判失败**，不放行——静默放行等于门不存在 |
-| **指针** | 全部 | 五仓根 `AGENTS.md`、`.cursor/rules/`、八个组件 `CLAUDE.md`（**进目录自动注入**） |
+| **指针** | 全部 | 平台五仓根 `AGENTS.md`、`.cursor/rules/`、八个组件 `CLAUDE.md`（**进目录自动注入**）。⚠ 两个客户端仓建起来后同样要放 `AGENTS.md` |
 | **自检** | 全部 | 上面「怎么用」那节 |
 
 **只有第一层不依赖人。**后两层是纪律，纪律会被忘——这份文件本身就出过两次
