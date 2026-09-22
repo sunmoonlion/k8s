@@ -13,9 +13,9 @@
 
 `sunmoonai/docs/project-guide/overall-architecture.md`
 
-产品合同：
+要建什么（需求的真源）：
 
-`sunmoonai/docs/product/product-contract.md`
+`sunmoonai/docs/dev-agent/PRD/requirement.md`
 
 任何开发任务都要遵守的通用开发规范：
 

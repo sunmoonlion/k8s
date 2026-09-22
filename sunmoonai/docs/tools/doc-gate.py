@@ -180,6 +180,30 @@ def check_links(path: str, text: str, tracked: set[str]) -> list[str]:
     return problems
 
 
+ENTRY_FILES = ("AGENTS.md", "CLAUDE.md")
+ENTRY_PATH_RE = re.compile(r"`(sunmoonai/docs/[A-Za-z0-9/._-]+)`")
+
+
+def check_entry_pointers(tracked: set[str]) -> list[str]:
+    """仓根入口文件里的纯文本路径必须存在。
+
+    **为什么单列一条**：`AGENTS.md` 是每个 agent 进仓读的第一份文件，而它
+    ①不在 `sunmoonai/docs/` 下，门禁范围够不着；②写的是反引号裹的纯路径，
+    不是 markdown 链接，`LINK_RE` 也匹配不上。**两层都漏，指针死了没人知道。**
+    实测：产品合同拆散后，`AGENTS.md` 指着它的那一行死了一整天没被发现。
+    """
+    problems = []
+    for name in ENTRY_FILES:
+        text = blob(name)
+        if text is None:
+            continue
+        for lineno, line in enumerate(text.splitlines(), 1):
+            for target in ENTRY_PATH_RE.findall(line):
+                if not exists_in_index(target.rstrip("/"), tracked):
+                    problems.append(f"{name}:{lineno}: 入口指针已失效: {target}")
+    return problems
+
+
 def frozen_link_survey(paths: list[str], tracked: set[str]) -> tuple[int, list[str]]:
     """冻结原件的链接旁路检查：只报「指向当前索引里没有的路径」的那些，不判失败。
 
@@ -837,7 +861,7 @@ def main(argv: list[str]) -> int:
         targets = [p for p in inrange if not exempt(p)]
         link_targets = [p for p in inrange if exempt(p) and thread_live(p)]
 
-    problems: list[str] = []
+    problems: list[str] = check_entry_pointers(tracked)
     heading_cache: dict[str, set[str]] = {}
     checked = 0
     skipped: list[str] = []
