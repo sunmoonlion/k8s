@@ -95,15 +95,19 @@ git log --oneline <基座commit>..<整合commit>
 
 ## 所有者的确认
 
-所有者是人，不参赛，也不被投喂。所有者的确认，以**所有者本人署名的提交**为准。
+所有者是人，不参赛，也不被投喂。
 
-**怎么认**：agent 的一切提交——参赛产物、代写的组织者文件——一律用 `--author` 署自己的名，
-地址一律 `<名>@agents.local`（例如 `--author="opus <opus@agents.local>"`）。
-所以判据是机械的：**作者地址以 `@agents.local` 结尾的，都不是所有者的确认。**
-`GO.md` 第六节的提交命令已带上 `--author`。
+⚠ **不得用 git 的 `author` 字段判定「这是所有者做的」。**本机各身份共用一个 git 身份、
+无签名、`author` 可随意填；且 agent 有免密 sudo 与 docker，本机一切检查对它都可改写。
+**⑥ 确认的判据在托管方**，见 [`competition-protocol.md`](competition-protocol.md)
+「⑥ 的强制点在托管方，不在本机」。
 
-所有者的 git 作者名是 `sunmoonlion`；确切地址不写在文档里，要核对就从主线上已有的提交读：
+`--author` 仍然要写，但它只让归属**可读**，不让归属**可信**——两件事不许混：
 
-```bash
-git -C ${M} log -1 --format='%an <%ae>' master   # M 见 competition-protocol.md「产物、路径与命名」
-```
+| 用途 | 成立吗 |
+| --- | --- |
+| 看一条提交**大概是谁写的**（读日志、分派责任、统计代提交欠账） | 成立 |
+| 证明**某条提交是所有者本人做的**，据此放行不可逆动作 | **不成立** |
+
+agent 的一切提交一律用 `--author` 署自己的名，地址一律 `<名>@agents.local`
+（例如 `--author="opus <opus@agents.local>"`）；`GO.md` 第六节的提交命令已带上。
