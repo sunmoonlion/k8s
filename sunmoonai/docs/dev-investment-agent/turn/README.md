@@ -22,8 +22,8 @@
 | [`sdd/message-rules.md`](sdd/message-rules.md) | **SDD** 怎样满足、问到能开工为止 |
 | [`imp/message-rules.md`](imp/message-rules.md) | **IMP** 工作区、工作单元、交回与证据 |
 | [`uat/message-rules.md`](uat/message-rules.md) | **UAT** 验哪个提交、按哪几条判 |
-| [`competition.md`](competition.md) | 一问派几家:多方竞争的规则 |
-| [`protocol/`](protocol/README.md) | 多方竞争在本平台怎么做:规范本体、各环节入口、操作闭环 |
+| [`competition.md`](competition.md) | **先看这一份**:要不要开一次竞争(档位判据),44 行 |
+| [`protocol/`](protocol/README.md) | ⚠ **只有 T2 才要读**:规范本体 1052 行 + 操作闭环。**T0/T1 不必读**——`competition.md` 那张表判完档位就够了 |
 
 ⚠ 四种 message 是**四个问题**,不是四份模板:委托什么(PRD)、分几步做(SDD)、
 怎么做(IMP)、做的对不对(UAT)。**一个 turn 只问一件事。**
@@ -37,6 +37,14 @@
 | [`naming.md`](naming.md) | 命名与编号:目录名、编号、与运行时的对应,以及门禁的判据 |
 
 ⚠ **载体就是投影**——做到哪、谁在做、第几次返工,一律从这些目录与提交读出来,不另写进度文件。
+
+⚠ **`thread/` 里已交回的 turn 是冻结原件,它们的链接大多是断的**——那些相对路径按当时的目录结构写,
+目录后来改过。**原件不许回改**,所以断着是对的。要顺着某一条读:
+
+```bash
+python3 sunmoonai/docs/dev-investment-agent/tools/doc-gate.py --frozen   # 列出全部
+git log --all --follow --format='%h %ad %s' --date=short -- '**/<文件名>' # 按文件名找历史
+```
 
 ### 三、看投影:读答、把关、定稿
 

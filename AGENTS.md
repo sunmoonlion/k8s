@@ -3,6 +3,14 @@
 本仓是 SunMoonAI 平台五个协作仓之一（`tpl-app` / `info-app` / `knowledge-app` /
 `investment-app` / `k8s`，**必须并列放置**）。
 
+**先读这一份**——我们在建什么、做到哪了：
+
+`sunmoonai/docs/dev-investment-agent/pipeline.md`
+
+一次 turn 的九站，以及**每一站现在谁做**（人还是脚本）。这个项目在做的事，
+就是把那张表里的格子一个一个从「人」改成「脚本」；你接的活是其中哪一格，
+从那张表上认。
+
 **动代码前必读**——代码必须符合的规则（按主题分组）：
 
 `sunmoonai/docs/dev-investment-agent/tree-build/rules/constraints.md`
