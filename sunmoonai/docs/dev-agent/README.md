@@ -5,7 +5,7 @@
 
 每一层都是同一个模式（见 [turn 的投影](../dev-human/turn-project.md)）：
 
-- `thread/`：一问一答，目录名带种类（prd、sdd、imp、uat）；
+- `thread/`：**一串同种类的一问一答**，目录名带种类（prd、sdd、imp、uat）；一问一答是它下面的一个 **turn**；
 - `PRD/`：PRD 类的定稿——要什么、做到什么算满足；**不分模块**；
 - `SDD/`：SDD 类的定稿，**三样**——`architecture/` 管模块之间的关系，`modules/<模块>.md` 说每块本身是什么，
   `submodules/<模块>/` 是它往下的子任务，内部递归同一模式；

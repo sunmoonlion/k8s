@@ -70,7 +70,7 @@ IMP 里发现设计不对要回 SDD，子任务各走各的。四类不是四个
 ## 一个例子
 
 1. 一开始只有一句话：「做一个 AI 投资研究工具」。第 `0001` 个 thread 是 PRD：人问、AI 答、人改，几个 turn 之后人把 response 定稿成 `PRD/`。
-2. 第 `0002` 个 thread 是 PRD：拿定稿的需求去问设计，response 定稿成 `SDD/`。`SDD/architecture` 写模块之间的结构与关系，`SDD/modules/` 下每个模块一个目录，就是一个子任务。
+2. 第 `0002` 个 thread 是 **SDD**：拿定稿的需求去问怎么做，response 定稿成 `SDD/`。`SDD/architecture/` 写模块之间的结构与关系，`SDD/modules/<号>-<短名>.md` **一个模块一份文件**说它是什么；往下的子任务目录在 `SDD/submodules/<号>-<短名>/`。
 3. 某个子任务开自己的 thread，同样走 PRD、SDD 两类（需要哪类走哪类），再往下拆。
 4. 要动代码时开 IMP thread：用户消息发出去，执行者在自己的 worktree 里做；回执记分支与提交。
 5. UAT thread 派给验收者，测试写在 worktree 的 `test/`，**结论写进那条提交的说明**（回执只有三个字段）。判定不通过，就在新的 turn 里写明理由重做。

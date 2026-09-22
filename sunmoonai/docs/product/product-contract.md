@@ -55,7 +55,7 @@
 | 执行在用户电脑上，由用户发起和主导 | 执行端（[`0003-runtime/PRD/codex.md`](../dev-agent/SDD/submodules/0003-runtime/PRD/codex.md)） |
 | 模型由用户自选、开通、付费 | [`0003-runtime/PRD/models-and-keys.md`](../dev-agent/SDD/submodules/0003-runtime/PRD/models-and-keys.md) |
 | 我们提供的是数据，不是观点 | 自有数据（§2） |
-| 我们的编排与方法库只写方法，不写判断规则 | supervisor 与方法库（[`control-plane.md`](../dev-agent/SDD/submodules/0001-backend/SDD/modules/0003-orchestrator.md)、[`methods.md`](../dev-agent/SDD/architecture/methods.md)） |
+| 我们的编排与方法库只写方法，不写判断规则 | supervisor 与方法库（[`0003-orchestrator.md`](../dev-agent/SDD/submodules/0001-backend/SDD/modules/0003-orchestrator.md)、[`methods.md`](../dev-agent/SDD/architecture/methods.md)） |
 | 系统不替用户下判断 | 输出检查（[`0007-delivery`](../dev-agent/SDD/submodules/0001-backend/SDD/modules/0007-delivery.md) 与 [runtime 的本地检查](../dev-agent/SDD/submodules/0003-runtime/PRD/functions.md)） |
 
 定位约束：
@@ -136,7 +136,7 @@
 | --- | --- |
 | 桌面应用 | `F-INTAKE-*`；`F-APPROVE-02`、`F-APPROVE-05` 的界面；`F-REVIEW-*`；`F-DELIVERY-*` 的订阅、回放、解密与展示侧；`F-CRYPTO-03`、`F-CRYPTO-04`、`F-CRYPTO-05` 的界面；[`0002-desktop/PRD/security.md`](../dev-agent/SDD/submodules/0002-desktop/PRD/security.md) 的安全与登录 |
 | 本地 runtime | `F-EXEC-*`；`F-APPROVE-01`、`F-APPROVE-03`、`F-APPROVE-04`；[`approval.md`](../dev-agent/SDD/architecture/approval.md)「两层审批」；`F-GUARD-01`、`F-GUARD-02` 的执行侧、`F-EXEC-12` 的执行侧；`F-ACCEPT-02` 的检查与回执；`F-CRYPTO-01`；[`discipline.md`](../dev-agent/SDD/submodules/0003-runtime/PRD/discipline.md)；I14、I16、I18、I19、I20 的执行侧；[`0003-runtime/PRD/`](../dev-agent/SDD/submodules/0003-runtime/PRD/requirement.md) 下的 `codex.md`、`isolation.md`、`models-and-keys.md`、`device.md` |
-| 后端 supervisor | `F-ADMIT-*`；`F-DISPATCH-*`；`F-INTERACT-*`；`F-ACCEPT-01`、`F-ACCEPT-03` 至 `F-ACCEPT-06`；`F-DELIVERY-*` 的服务端；`F-CRYPTO-02`；`F-GUARD-01` 的签名发布、`F-GUARD-04`、`F-GUARD-05`；[`0001-backend/PRD/`](../dev-agent/SDD/submodules/0001-backend/PRD/requirement.md) 下的 `control-plane.md`、`routing.md`、`methods.md`；I1 至 I15 与 I17 的存储与并发载体 |
+| 后端 supervisor | `F-ADMIT-*`；`F-DISPATCH-*`；`F-INTERACT-*`；`F-ACCEPT-01`、`F-ACCEPT-03` 至 `F-ACCEPT-06`；`F-DELIVERY-*` 的服务端；`F-CRYPTO-02`；`F-GUARD-01` 的签名发布、`F-GUARD-04`、`F-GUARD-05`；[`0001-backend/SDD/architecture/blocks.md`](../dev-agent/SDD/submodules/0001-backend/SDD/architecture/blocks.md) 与 [`SDD/modules/`](../dev-agent/SDD/submodules/0001-backend/SDD/modules/) 下的七块；[`architecture/routing.md`](../dev-agent/SDD/architecture/routing.md)、[`architecture/methods.md`](../dev-agent/SDD/architecture/methods.md) 的服务端落地；I1 至 I15 与 I17 的存储与并发载体 |
 | 知识服务 | §2 的自有数据、按上下文下发与防批量抓取；`F-GUARD-04` 的取数侧；`F-POS-01` |
 | 验收器与 Profile | `F-ACCEPT-*` 的规则；Profile schema 与版本；内容检查规则；`F-POS-02` 至 `F-POS-04` 的规则 |
 | 运维与管理后台 | 非终态 Task、过期租约、离线设备、悬空投递与失败 Delivery 的扫描与告警；Profile、失败码、Attempt、设备与预算的可观测性；设备吊销；只见元数据 |
@@ -279,8 +279,10 @@
 | 产品功能 `F-*` | **按模块拆开**：[桌面应用](../dev-agent/SDD/submodules/0002-desktop/PRD/functions.md)、[本地 runtime](../dev-agent/SDD/submodules/0003-runtime/PRD/functions.md)、后端七块各在 [`SDD/modules/`](../dev-agent/SDD/submodules/0001-backend/SDD/modules/) 下自己那一份。ID 全局唯一、跨文件不复用、不因搬动而重排 | 2026-09-20 |
 | 核心对象 · Task 契约 · 审批 | [`architecture/`](../dev-agent/SDD/architecture/README.md) 下的 `objects.md`、`task-contract.md`、`approval.md` | 2026-09-20 |
 | 全程不变量与持久化账 | [`architecture/invariants.md`](../dev-agent/SDD/architecture/invariants.md)；其中「执行端纪律」归 [`0003-runtime/PRD/discipline.md`](../dev-agent/SDD/submodules/0003-runtime/PRD/discipline.md) | 2026-09-20 |
-| 两层状态机 · Profile 与扩展 · 子 Task 与依赖编排 | [`0001-backend/PRD/`](../dev-agent/SDD/submodules/0001-backend/PRD/requirement.md) 下的 `state-machine.md`、`profile.md`、`subtask.md` | 2026-09-20 |
-| 后端 supervisor：控制面与执行体 · 任务类别判定与路由 · 方法库 | [`0001-backend/PRD/`](../dev-agent/SDD/submodules/0001-backend/PRD/requirement.md) 下的 `control-plane.md`、`routing.md`、`methods.md` | 2026-09-20 |
+| 两层状态机 · Profile 与扩展 | [`architecture/state-machine.md`](../dev-agent/SDD/architecture/state-machine.md)、[`architecture/profile.md`](../dev-agent/SDD/architecture/profile.md)——两者跨模块，归设计层 | 2026-09-20 |
+| 子 Task 与依赖编排 | [`0001-backend/SDD/modules/0003-orchestrator.md`](../dev-agent/SDD/submodules/0001-backend/SDD/modules/0003-orchestrator.md) | 2026-09-21 |
+| 后端 supervisor：控制面与执行体 | 按朝向切成七块：[`0001-backend/SDD/architecture/blocks.md`](../dev-agent/SDD/submodules/0001-backend/SDD/architecture/blocks.md) 给结构，[`SDD/modules/`](../dev-agent/SDD/submodules/0001-backend/SDD/modules/) 下七份各说一块 | 2026-09-21 |
+| 任务类别判定与路由 · 方法库 | [`architecture/routing.md`](../dev-agent/SDD/architecture/routing.md)、[`architecture/methods.md`](../dev-agent/SDD/architecture/methods.md)——两者跨模块，归设计层 | 2026-09-20 |
 | 桌面应用：窗口组成与能力边界 · 安全与登录 | [`0002-desktop/PRD/`](../dev-agent/SDD/submodules/0002-desktop/PRD/requirement.md) 下的 `windows.md`、`security.md`；其中「官网与管理后台」一段归 [`architecture/lifecycle.md`](../dev-agent/SDD/architecture/lifecycle.md)「本轮范围外」 | 2026-09-20 |
 | 本地 runtime：驱动 Codex · 执行隔离 · 模型与 key · 设备身份连接安装升级 | [`0003-runtime/PRD/`](../dev-agent/SDD/submodules/0003-runtime/PRD/requirement.md) 下的 `codex.md`、`isolation.md`、`models-and-keys.md`、`device.md` | 2026-09-20 |
 | 生命周期全景（端到端九站、终点四条） | [`dev-agent/SDD/architecture/lifecycle.md`](../dev-agent/SDD/architecture/lifecycle.md)——它是设计层的**轮廓**，`§2` 里还没归位的细节按本表一点一点跟过去 | 2026-09-20 |

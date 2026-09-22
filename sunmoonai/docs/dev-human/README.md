@@ -15,7 +15,7 @@
 | [`finalize.md`](finalize.md) | 定稿：人怎么采纳 response——与批准、验收是三件事 |
 | [`approvals.md`](approvals.md) | 人的批准点：对**动作**的放行——谁负责什么、批准绑定什么、裁量底线、人这一侧的义务、改判 |
 | [`competition.md`](competition.md) | 多方竞争：一种交回物由多家各交一份再比较选定 |
-| [`protocol/`](protocol/README.md) | 多方竞争在本平台怎么做：`GO.md` 是各家每个环节的入口；另有操作闭环与两份未生效草案 |
+| [`protocol/`](protocol/README.md) | 多方竞争在本平台怎么做：`competition-protocol.md` 是规范本体，`GO.md` 是各家每个环节的入口；另有操作闭环与两份未生效草案 |
 
 四个种类各两份：**用户消息怎么写**（规范不规定答；要规范答就在这一问里提）与**怎么定稿**（人把关时对照什么）。
 

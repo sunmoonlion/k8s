@@ -40,10 +40,10 @@ pwd && git rev-parse --abbrev-ref HEAD
 
 本节只是摘录，规则原文在协议里，两边不一致以协议为准。
 
-1. 只写你自己的工作区，不写主线、不写别家（`competition-protocol.md` §17）。读主线用绝对路径，提交用 `git -C`。
-2. 提案冻结之前，不读其他家的候选（`competition-protocol.md` §9）。
-3. 交卷 = 你自己分支上已提交的 commit，没提交的不算（`competition-protocol.md` §8）。
-4. 超出本次输入的断言，附一条可复跑的证据，否则标 ⚠（`competition-protocol.md` §12）。不要写「我之前查过」。
+1. 只写你自己的工作区，不写主线、不写别家（`competition-protocol.md`「通用纪律」）。读主线用绝对路径，提交用 `git -C`。
+2. 提案冻结之前，不读其他家的候选（`competition-protocol.md`「① 提案：隔离与冻结」）。
+3. 交卷 = 你自己分支上已提交的 commit，没提交的不算（`competition-protocol.md`「取件：一律按 commit，不看工作区」）。
+4. 超出本次输入的断言，附一条可复跑的证据，否则标 ⚠（`competition-protocol.md`「通用纪律」）。不要写「我之前查过」。
 
 ## 五、卡住了怎么办
 
