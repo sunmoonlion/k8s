@@ -146,7 +146,7 @@ Scheduler bootstrap 已选用继承 PersistentScheduler 的活动观察类（B7i
 进程状态校验；循环返回和发送调用返回/异常分列，不证明 broker 确认或消费完成。
 未接自动重启或 Kubernetes 探针；说明与固定门禁见
 [v5 索引中的 B7i](../topics/v5-history.md#被收拢的-24-份旧账报告)。实际监控部署/采集/告警
-按所有者要求进入[未来 N4-OPS-01](../../tasks/N4-OPS-01/thread/0001-imp/0001/user-message.md)，尚未实施。
+的现状与接线判据见 [`k8s.md`](k8s.md)「监控与告警」，尚未实施。
 
 公共日志（2026-09-13 源码）：Postgres 固定关闭 SQL echo、隐藏绑定参数；API 与
 Celery Worker/Scheduler 均将 SQLAlchemy engine/pool、httpx/httpcore 限为 WARNING，

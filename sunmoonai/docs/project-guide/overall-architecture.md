@@ -442,7 +442,7 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | 位置 | 是什么 | 最近变动 | 定性 |
 | --- | --- | --- | --- |
 | 旧 `architecture-v2/` | 旧重构目录已清退，7 个复用工具/测试迁至 app-platform/scripts/validation | 2026-09-19 | 历史发布证据按 [v5 历史索引](topics/v5-history.md#architecture-v2-目录清退) 读取；旧 R7 脚本不是当前开发发布门禁 |
-| 旧 `legacy-backlog/`、`tasks/B7-B9-closeout/` | 架构接收与本机 KIND 收尾已完成，活动目录退役 | 2026-09-22 | 当前目标看 [需求](../dev-agent/PRD/requirement.md) 与 dev-agent，当前发布事实看发布页，历史原文按 [v5 索引](topics/v5-history.md) 的固定提交读取 |
+| 旧 `legacy-backlog/`、`tasks/` | 架构接收与本机 KIND 收尾已完成，最后一项（监控接线）已并入 [`repos/k8s.md`](repos/k8s.md)「已知未实现或易误解」，整个目录退役 | 2026-09-22 | 当前目标看 [需求](../dev-agent/PRD/requirement.md) 与 dev-agent，当前发布事实看发布页，历史原文按 [v5 索引](topics/v5-history.md) 的固定提交读取 |
 | 旧 `evidence/` | 78 份 v5 历史验收材料已退出当前工作树 | 2026-09-19 | 原文按 [v5 历史索引](topics/v5-history.md#旧-evidence-目录清退) 查询，不代表当前版本已验收 |
 | 旧 `mooc-manus-v5/` | 111 份旧 ADR、契约和脚本已退出当前工作树 | 2026-09-19 | 仅按 [v5 历史索引](topics/v5-history.md) 查询，不作现行契约或部署入口 |
 | `ai-tools/` | 工具调研笔记 | 2026-08 | 参考 |
