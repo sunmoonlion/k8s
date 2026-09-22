@@ -14,6 +14,20 @@ set -e
 root=$(git rev-parse --show-toplevel)
 gate="$root/sunmoonai/docs/tools/doc-gate.py"
 
-[ -f "$gate" ] || exit 0
+# ⚠ 首版是 `[ -f "$gate" ] || exit 0`——脚本被移动或改名后，门**静默失效**，
+# 提交照过、没有任何提示。这正是 constraints「判据必须声明覆盖范围」点名的那类错。
+# 改为缺脚本即判失败；确需绕过用 git commit --no-verify。
+if [ ! -f "$gate" ]; then
+  echo "门禁脚本不在：$gate" >&2
+  echo "移动或改名了就同步改 .githooks/；确需绕过用 --no-verify 并在提交说明写清理由。" >&2
+  exit 1
+fi
 
 python3 "$gate" --staged
+
+anchor="$root/sunmoonai/docs/tools/anchor-gate.py"
+if [ ! -f "$anchor" ]; then
+  echo "门禁脚本不在：$anchor" >&2
+  exit 1
+fi
+python3 "$anchor"

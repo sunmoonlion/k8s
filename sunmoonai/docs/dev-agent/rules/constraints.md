@@ -200,7 +200,7 @@ Calico 集群，否则"测过了"是假的。
 | 层 | 覆盖 | 在哪 |
 | --- | --- | --- |
 | **随测试自动跑** | 标了测试载体的那些 | 四仓 `tests/test_kernel_invariants.py`、`tests/test_dormant_capabilities.py`、双端契约测试——**跑 `uv run pytest` 就带上，不需要谁记得** |
-| **随提交自动跑** | 本仓文档的三项机械不变量 | [`doc-gate.py`](../../tools/doc-gate.py) 经版本化的 `.githooks/pre-commit` 触发——**提交就带上**。装一次 `git config core.hooksPath .githooks` 对全部 worktree 生效（共享同一个 `.git`），装没装用 `doc-gate.py --selfcheck` 判定 |
+| **随提交自动跑** | 本仓文档的机械不变量：链接、字段、编号、冻结区、`文件.md:行` 锚点 | [`doc-gate.py`](../../tools/doc-gate.py) 与 [`anchor-gate.py`](../../tools/anchor-gate.py)，都经版本化的 `.githooks/pre-commit`、`pre-merge-commit` 触发——**提交就带上**。装一次 `git config core.hooksPath .githooks` 对全部 worktree 生效（共享同一个 `.git`），装没装用 `doc-gate.py --selfcheck` 判定。⚠ 钩子找不到脚本时**判失败**，不放行——静默放行等于门不存在 |
 | **指针** | 全部 | 五仓根 `AGENTS.md`、`.cursor/rules/`、八个组件 `CLAUDE.md`（**进目录自动注入**） |
 | **自检** | 全部 | 上面「怎么用」那节 |
 
@@ -208,7 +208,9 @@ Calico 集群，否则"测过了"是假的。
 "规则在眼前却没回头对照"：一次提出了违反 C-D1 与 C-I1 的方案，一次把 C-I4 说反了
 （断言不能用 BFF，实际是可以用、只是不能拥有数据）。
 
-**不设要人记得跑的独立检查脚本。**理由不是这类检查没用，而是**要人记得跑的检查
+**不设要人记得跑的独立检查脚本。**⚠ `anchor-gate.py` 一度就是这样一个脚本：写出来了，
+没有任何地方规定要跑，于是它报「0 处锚点」而文中有 8 处，没人发现。**已接进钩子。**
+理由不是这类检查没用，而是**要人记得跑的检查
 和写在文档里的规矩没有本质区别**——它们自己就落在"纪律"那层。更糟的是这类检查的
 结论可能取决于工作区状态：同一份文档在三台机器上分别报 0 / 4 / 95 条失败
 （子模块是否初始化）。**看起来在把关，其实不牢。**

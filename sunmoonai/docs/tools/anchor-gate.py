@@ -49,9 +49,18 @@ def resolve(name, ref_rel):
     near=[t for t in hits if t.startswith(d.rsplit("/",1)[0]+"/")]
     return near[0] if len(near)==1 else None
 
-A = re.compile(r'`([\w.-]+\.md) @ ([0-9a-f]{7,40}):(\d+)(?:-(\d+))?`')
-B = re.compile(r'`([\w.-]+\.md):(\d+)(?:-(\d+))?`')
+# ⚠ 首版把行号写成 `(\d+)(?:-(\d+))?`，只认单行与 `a-b` 区间。实跑中协议里写的是
+# `runtime-architecture.md @ ceb7291c:454/458/461`——**斜杠列表一条也没被匹配**，
+# 门报「0 处锚点」而文中有 8 处。这正是本门存在的理由在本门自己身上又犯一次：
+# 判据覆盖不全，比没有判据更危险，因为它报「通过」。
+LINES = r'(\d+(?:[-/]\d+)*)'
+A = re.compile(r'`([\w.-]+\.md) @ ([0-9a-f]{7,40}):' + LINES + r'`')
+B = re.compile(r'`([\w.-]+\.md):' + LINES + r'`')
 C = re.compile(r'`([\w.-]+\.md)` §([\d.]+)')
+
+def hi_of(spec):
+    """`454/458/461` 或 `23-29` 或 `40` → 需要存在的最大行号。"""
+    return max(int(x) for x in re.split(r'[-/]', spec))
 
 fails=[]; soft=0; okA=okB=0; frozen=0
 for f in sorted(DOCS.rglob("*.md")):
@@ -61,7 +70,7 @@ for f in sorted(DOCS.rglob("*.md")):
     if "/thread/" in rel: frozen += 1; continue
     text = f.read_text(encoding="utf-8")
     for m in A.finditer(text):
-        name,sha,a,b = m.group(1),m.group(2),int(m.group(3)),m.group(4)
+        name,sha,spec = m.group(1),m.group(2),m.group(3)
         # **在那个 commit 里解析路径**，不在当前索引里——否则文件一删，
         # 连正确的钉 commit 锚也会报失败。这正是钉 commit 的意义所在。
         at = subprocess.run(["git","ls-tree","-r","--name-only",sha],cwd=ROOT,
@@ -76,25 +85,22 @@ for f in sorted(DOCS.rglob("*.md")):
         p = cand[0]
         lines = show(f"{sha}:{p}")
         if lines is None: fails.append(f"{rel}: `{name} @ {sha}` 该 commit 取不到 {p}"); continue
-        hi = int(b) if b else a
-        if hi > len(lines): fails.append(f"{rel}: `{name} @ {sha}:{a}{'-'+b if b else ''}` 超出该版本行数 {len(lines)}")
+        if hi_of(spec) > len(lines): fails.append(f"{rel}: `{name} @ {sha}:{spec}` 超出该版本行数 {len(lines)}")
         else: okA+=1
     for m in B.finditer(text):
-        name,a,b = m.group(1),int(m.group(2)),m.group(3)
+        name,spec = m.group(1),m.group(2)
         p = resolve(name, rel)
         if not p:
             ext = resolve_external(name)
             if ext:
                 n = len(ext.read_text(encoding="utf-8", errors="replace").splitlines())
-                hi = int(b) if b else a
-                if hi <= n: okB += 1
+                if hi_of(spec) <= n: okB += 1
                 else: fails.append(
-                    f"{rel}: `{name}:{a}` 外部仓 {ext} 只有 {n} 行")
+                    f"{rel}: `{name}:{spec}` 外部仓 {ext} 只有 {n} 行")
                 continue
-            fails.append(f"{rel}: `{name}:{a}` **裸路径锚，目标不在 git 索引里**（文件已删/改名，或同名多份无法消歧）"); continue
+            fails.append(f"{rel}: `{name}:{spec}` **裸路径锚，目标不在 git 索引里**（文件已删/改名，或同名多份无法消歧）"); continue
         lines = (pathlib.Path(ROOT)/p).read_text(encoding="utf-8").splitlines()
-        hi = int(b) if b else a
-        if hi > len(lines): fails.append(f"{rel}: `{name}:{a}{'-'+b if b else ''}` 超出当前行数 {len(lines)}")
+        if hi_of(spec) > len(lines): fails.append(f"{rel}: `{name}:{spec}` 超出当前行数 {len(lines)}")
         else: okB+=1
     soft += len(C.findall(text))
 
