@@ -85,7 +85,7 @@ thread 的**种类**有四个：PRD、SDD、IMP、UAT，规则见 [PRD](prd/fina
 | **必须** | 缺失即不符合本规范 |
 | **应该** | 默认要求；偏离时必须记录理由、风险和等价控制 |
 | **可以** | 合法选项，不构成统一实现要求 |
-| **⚠** | 依赖尚未实测的前提，必须写明验证办法（`C-P6`）；记在 [待定决策与未验证事项](../dev-agent/decisions.md) |
+| **⚠** | 依赖尚未实测的前提，必须写明验证办法（`P6`）；记在 [待定决策与未验证事项](../dev-agent/decisions.md) |
 
 ## 仓的两组
 
@@ -107,7 +107,8 @@ thread 的**种类**有四个：PRD、SDD、IMP、UAT，规则见 [PRD](prd/fina
 | `I1`–`I20` | 产品不变量 | `dev-agent/SDD/architecture/invariants.md` |
 | `D2`–`D28` | 待定决策点 | `dev-agent/decisions.md` |
 | `AT-*` | 产品验收 | `dev-agent/PRD/acceptance.md` |
-| `C-D*` `C-C*` `C-I*` `C-T*` `C-R*` `C-A*` `C-P*` | 代码必须符合的规则，按组分字母（数据/契约/身份/拓扑/发布/智能体/设计原则） | `dev-agent/rules/constraints.md` |
+| `P0`–`P6` | **设计原则**，跨项目通用 | `dev-human/sdd/finalize.md`「设计原则」 |
+| `C-D*` `C-C*` `C-I*` `C-T*` `C-R*` `C-A*` | 代码必须符合的规则，按组分字母（数据/契约/身份/拓扑/发布/智能体） | `dev-agent/rules/constraints.md` |
 | `T0` `T1` `T2` | 流程档位 | 本表「过程」与 `competition.md` |
 | `V0`–`V3` | 验证职责 | `protocol/competition-operations.md` |
 | `L1`–`L7` | 测试层次 | `imp/message-rules.md` |
