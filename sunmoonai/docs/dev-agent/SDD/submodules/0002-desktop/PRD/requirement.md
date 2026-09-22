@@ -1,6 +1,6 @@
 # 0002-desktop：要满足什么
 
-> 依据：[产品合同](../../../../../product/product-contract.md) 的「责任投影」中的「桌面应用」。
+> 依据：[责任投影](../../../architecture/ownership.md) 里的「桌面应用」。
 
 同目录另有两份，由合同搬入：
 

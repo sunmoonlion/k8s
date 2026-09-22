@@ -1,6 +1,6 @@
 # 后端：要满足什么
 
-> 依据：[上层设计](../../../architecture/README.md) 与 [产品合同](../../../../../product/product-contract.md) 的「责任投影」中的「后端 supervisor」与「运维与管理后台」。
+> 依据：[上层设计](../../../architecture/README.md) 与 [责任投影](../../../architecture/ownership.md) 里的「后端 supervisor」与「运维与管理后台」。
 
 本目录只有这一份——它回答「后端要满足什么」。原来同目录那六份是**契约**与**设计**，
 已各归其位：

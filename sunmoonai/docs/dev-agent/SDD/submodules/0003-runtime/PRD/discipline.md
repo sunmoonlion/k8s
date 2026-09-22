@@ -1,6 +1,6 @@
 # 执行端纪律
 
-> 由产品合同搬入。跨模块的不变量与持久化账在 [`architecture/invariants.md`](../../../architecture/invariants.md)。
+> 跨模块的不变量与持久化账在 [`architecture/invariants.md`](../../../architecture/invariants.md)。
 
 ## 执行端纪律
 

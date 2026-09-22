@@ -8,7 +8,7 @@
 > 只剩三件事：权威排序、接手演练、什么不属于本文档集。
 > 其余原属本文件的内容已按性质移出：
 > 写文档的约定 → [人的批准点](../dev-human/approvals.md)「改判」；
-> 提请求 → [`../product/product-contract.md`](../product/product-contract.md)；
+> 提请求 → [`../dev-agent/PRD/requirement.md`](../dev-agent/PRD/requirement.md)；
 > 推送与多助手 → [`../dev-human/protocol/competition-protocol.md`](../dev-human/protocol/competition-protocol.md) 与
 > [`constraints.md`](../dev-agent/rules/constraints.md) C-T4。
 
@@ -38,7 +38,7 @@
 
 | 内容 | 去哪 |
 | --- | --- |
-| 将来要做什么、应该怎样 | 请求记录（见 [`../product/product-contract.md`](../product/product-contract.md)） |
+| 将来要做什么、应该怎样 | [需求](../dev-agent/PRD/requirement.md) 与 [待定决策](../dev-agent/decisions.md) |
 | 必须遵守的规则 | [`../dev-agent/rules/constraints.md`](../dev-agent/rules/constraints.md) |
 | 做到第几步了 | 请求的进度游标；本文档集**一律不写进度** |
 | 镜像 digest、迁移 head 等易变值 | 只指真源，见 [`overall-architecture.md`](overall-architecture.md) §10 |

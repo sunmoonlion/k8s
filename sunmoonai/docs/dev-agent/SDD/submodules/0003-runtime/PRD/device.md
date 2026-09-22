@@ -1,6 +1,6 @@
 # 设备身份、连接、安装与升级
 
-> 由产品合同搬入（合同「去向」表登记）。本模块要满足什么见 [requirement.md](requirement.md)。
+> 本模块要满足什么见 [requirement.md](requirement.md)。
 
 - **连接**：runtime 主动向后端建立 WSS，用户电脑不开放入站端口；后端维护设备在线状态，经已有连接派发；断线自动重连，重连后先对账（[执行端纪律](discipline.md)）；
 - **常驻**：runtime 注册为用户级后台服务（Windows 用户态后台程序、macOS LaunchAgent），登录系统后启动并连接；关闭窗口后是否继续接收派发由用户设置；

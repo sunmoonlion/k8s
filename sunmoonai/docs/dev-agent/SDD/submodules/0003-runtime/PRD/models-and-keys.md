@@ -1,6 +1,6 @@
 # 模型与 key
 
-> 由产品合同搬入（合同「去向」表登记）。本模块要满足什么见 [requirement.md](requirement.md)。
+> 本模块要满足什么见 [requirement.md](requirement.md)。
 
 - key 只在桌面应用的本地窗口输入，经 ③ 交给 runtime，存入系统钥匙串，不写入配置文件；
 - runtime 启动 Codex 时只通过环境变量把 key 传给 Codex 子进程，配置文件里只写环境变量名。

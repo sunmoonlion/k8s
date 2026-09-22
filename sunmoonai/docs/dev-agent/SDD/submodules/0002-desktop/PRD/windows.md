@@ -1,6 +1,6 @@
 # 窗口组成与能力边界
 
-> 由产品合同搬入（合同「去向」表登记）。本模块要满足什么见 [requirement.md](requirement.md)。
+> 本模块要满足什么见 [requirement.md](requirement.md)。
 
 **组成**：
 

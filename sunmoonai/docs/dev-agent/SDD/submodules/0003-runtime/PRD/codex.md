@@ -1,6 +1,6 @@
 # 驱动 Codex
 
-> 由产品合同搬入（合同「去向」表登记）。本模块要满足什么见 [requirement.md](requirement.md)。
+> 本模块要满足什么见 [requirement.md](requirement.md)。
 
 **完整打包**：Codex 整体随应用打包在用户电脑上运行；不在后端运行 agent loop，不自建或改写 Codex 的工具层。agent 行为只经本节「控制面」列出的入口影响。
 

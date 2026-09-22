@@ -4,7 +4,7 @@
 
 每个模块**各自是什么**不在这里，在同层的 [`modules/`](../modules/)；往下的子任务在 [`submodules/`](../submodules/)。
 
-> 依据：[需求](../../PRD/requirement.md) 与 [产品合同](../../../product/product-contract.md)。
+> 依据：[需求](../../PRD/requirement.md)。
 
 | 文件 | 内容 |
 | --- | --- |

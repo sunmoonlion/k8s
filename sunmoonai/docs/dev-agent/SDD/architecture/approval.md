@@ -1,6 +1,6 @@
 # 审批
 
-> 由产品合同搬入。工具级在 runtime 与桌面应用之间闭环，Task 级经后端 Interaction——拆开写三份必然漂。
+> 工具级在 runtime 与桌面应用之间闭环，Task 级经后端 Interaction——拆开写三份必然漂。
 
 ## 两层审批
 

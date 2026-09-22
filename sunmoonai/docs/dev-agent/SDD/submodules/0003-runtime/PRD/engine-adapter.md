@@ -1,6 +1,6 @@
 # 引擎适配边界
 
-> 依据：产品合同附录 A 的 `D28`。驱动方式见 [`codex.md`](codex.md)，通道见
+> 依据：[待定决策](../../../../decisions.md) 的 `D28`。驱动方式见 [`codex.md`](codex.md)，通道见
 > [`channels.md`](../../../architecture/channels.md)。
 
 **runtime 用 TypeScript**，作为独立后台进程运行，**不依附桌面窗口生命周期**。

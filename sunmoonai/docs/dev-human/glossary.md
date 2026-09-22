@@ -32,7 +32,7 @@
 ## 种类与交付物
 
 thread 的**种类**有四个：PRD、SDD、IMP、UAT，规则见 [PRD](prd/finalize.md)、[SDD](sdd/finalize.md)、[IMP](imp/message-rules.md)、[UAT](uat/message-rules.md)。每一类该问什么，见各类规则的「这一类该问什么」；写多严见 [turn 的投影](turn-project.md)「用户消息写多严」。
-**不要和产品侧的「任务类别」（通用 / 专业）混用**：那是产品合同里客户任务的分类，与 thread 的种类无关。
+**不要和产品侧的「任务类别」（通用 / 专业）混用**：那是[任务类别判定与路由](../dev-agent/SDD/architecture/routing.md)里客户任务的分类，与 thread 的种类无关。
 
 | 词 | 含义 | 不要用 |
 | --- | --- | --- |
@@ -76,6 +76,17 @@ thread 的**种类**有四个：PRD、SDD、IMP、UAT，规则见 [PRD](prd/fina
 3. 与具体产品、执行环境的名字怎样对应，写在任务自己的目录里；本表不出现具体产品名。
 4. **编号也是词。**起一套新编号之前先查下表；一个字母只归一套编号。
 
+## 规范用语
+
+写规范时这四个词是硬性的，不是语气：
+
+| 词 | 含义 |
+| --- | --- |
+| **必须** | 缺失即不符合本规范 |
+| **应该** | 默认要求；偏离时必须记录理由、风险和等价控制 |
+| **可以** | 合法选项，不构成统一实现要求 |
+| **⚠** | 依赖尚未实测的前提，必须写明验证办法（`C-P6`）；记在 [待定决策与未验证事项](../dev-agent/decisions.md) |
+
 ## 仓的两组
 
 | 组 | 成员 | 并列放置 |
@@ -94,8 +105,8 @@ thread 的**种类**有四个：PRD、SDD、IMP、UAT，规则见 [PRD](prd/fina
 | --- | --- | --- |
 | `F-*` | 产品功能义务 | 各模块的 `functions.md` |
 | `I1`–`I20` | 产品不变量 | `dev-agent/SDD/architecture/invariants.md` |
-| `D2`–`D28` | 合同决策点 | `product/product-contract.md` 附录 A |
-| `AT-*` | 产品验收 | `product/product-contract.md` |
+| `D2`–`D28` | 待定决策点 | `dev-agent/decisions.md` |
+| `AT-*` | 产品验收 | `dev-agent/PRD/acceptance.md` |
 | `C-D*` `C-C*` `C-I*` `C-T*` `C-R*` `C-A*` `C-P*` | 代码必须符合的规则，按组分字母（数据/契约/身份/拓扑/发布/智能体/设计原则） | `dev-agent/rules/constraints.md` |
 | `T0` `T1` `T2` | 流程档位 | 本表「过程」与 `competition.md` |
 | `V0`–`V3` | 验证职责 | `protocol/competition-operations.md` |

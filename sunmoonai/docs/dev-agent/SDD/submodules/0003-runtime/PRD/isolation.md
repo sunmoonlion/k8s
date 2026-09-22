@@ -1,6 +1,6 @@
 # 执行隔离
 
-> 由产品合同搬入（合同「去向」表登记）。本模块要满足什么见 [requirement.md](requirement.md)。
+> 本模块要满足什么见 [requirement.md](requirement.md)。
 
 - 依靠 Codex 自带的操作系统级沙箱：macOS 用 Seatbelt；Windows 用原生沙箱；Linux 用 bubblewrap（后置）。均以钉版实测为准；
 - runtime 只把用户授权的工作区暴露给 Codex；禁止关闭沙箱；禁止使用「完全访问」模式；网络访问按策略开关；
