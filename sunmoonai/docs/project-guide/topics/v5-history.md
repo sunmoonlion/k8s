@@ -1,10 +1,10 @@
 # v5 重构历史索引
 
 本文只负责定位已经退出工作树的 v4/v5 计划、Luna 旧账报告、Architecture v2 和历史证据，
-不产生当前需求、任务或部署状态。当前产品目标以 [`tree-build/`](../../tree-build/README.md)
+不产生当前需求、任务或部署状态。当前产品目标以 [`tree-build/`](../../dev-investment-agent/tree-build/README.md)
 为准，当前源码与运行事实以[项目指南](../README.md)为准。
 
-旧 N1～N6 已完成接收裁定：交互、执行、Profile、子任务与验收目标进入现行 [需求](../../tree-build/PRD/requirement.md) 和
+旧 N1～N6 已完成接收裁定：交互、执行、Profile、子任务与验收目标进入现行 [需求](../../dev-investment-agent/tree-build/PRD/requirement.md) 和
 `tree-build/`；知识生命周期回到 Knowledge 现行职责；发布缺口进入本指南“发布与门禁”；
 监控告警的现状与接线判据并入 [`repos/k8s.md`](../repos/k8s.md)「监控与告警」，不单独立任务；按需扩展没有触发条件时不建任务。旧编号不再构成待办。
 

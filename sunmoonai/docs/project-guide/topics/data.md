@@ -1,6 +1,6 @@
 # 数据与迁移
 
-> 源码复核：2026-09-13 ｜ 相关规则见 [`../../tree-build/rules/constraints.md`](../../tree-build/rules/constraints.md)「数据」C-D1–C-D9
+> 源码复核：2026-09-13 ｜ 相关规则见 [`../../dev-investment-agent/tree-build/rules/constraints.md`](../../dev-investment-agent/tree-build/rules/constraints.md)「数据」C-D1–C-D9
 
 ## 1. 一个 App 一个库，谁的表谁改
 
@@ -50,7 +50,7 @@ LOGIN 状态；info 与 knowledge 无此步。
 ### 做数据迁移时
 
 程序（七步、fail-closed、六条验收）是**规则**，不写在投影里：
-见 [`../../tree-build/rules/constraints.md`](../../tree-build/rules/constraints.md)「数据」。
+见 [`../../dev-investment-agent/tree-build/rules/constraints.md`](../../dev-investment-agent/tree-build/rules/constraints.md)「数据」。
 
 ## 5. 共享可靠投递已接入业务
 

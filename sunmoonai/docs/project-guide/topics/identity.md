@@ -1,6 +1,6 @@
 # 身份与授权
 
-> 后端身份源码复核：2026-09-13 ｜ 相关规则见 [`../../tree-build/rules/constraints.md`](../../tree-build/rules/constraints.md)「身份」C-I1–C-I8
+> 后端身份源码复核：2026-09-13 ｜ 相关规则见 [`../../dev-investment-agent/tree-build/rules/constraints.md`](../../dev-investment-agent/tree-build/rules/constraints.md)「身份」C-I1–C-I8
 
 ## 1. 两类身份，互不通用
 

@@ -19,8 +19,8 @@
 该开发候选完成受控切换，不代表 production 晋级或完整产品 UAT。当前边界见
 [发布与门禁](topics/release.md#8-当前-kind-切换事实与剩余验收)。
 
-**架构讨论已经结束**，目标态定在 [需求](../tree-build/PRD/requirement.md) 与
-[`tree-build/`](../tree-build/)：桌面客户端（Electron + Vite + React Router）是做研究工作的
+**架构讨论已经结束**，目标态定在 [需求](../dev-investment-agent/tree-build/PRD/requirement.md) 与
+[`tree-build/`](../dev-investment-agent/tree-build/)：桌面客户端（Electron + Vite + React Router）是做研究工作的
 **唯一界面**，本地 runtime 常驻，后端是确定性控制面（七块）。现有 Next.js 前端**保留**，
 承担官网、下载页与内部管理后台——所以浏览器入口没有取消，是**换了职责**。
 
@@ -373,7 +373,7 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | **进程权限** | 四角色 PG 列 ACL、三角色 broker 预建拓扑、联合故障恢复及数据库恢复已验证；本机 KIND 已完成真实业务账号、启动 definitions 与数据切换，云端及后续 release 仍须重验 |
 | **保留与监控** | 无自动回执/租约墓碑 GC；Prometheus/Alertmanager 安装、采集、告警送达留未来计划，不能将 HTTP 指标存在当接线完成 |
 
-产品留白先查[需求](../tree-build/PRD/requirement.md)与 [`tree-build/`](../tree-build/README.md)；
+产品留白先查[需求](../dev-investment-agent/tree-build/PRD/requirement.md)与 [`tree-build/`](../dev-investment-agent/tree-build/README.md)；
 旧 N1～N6 已完成接收裁定，不再用 v5 清单补需求。源码/运行态边界见
 [发布与门禁](topics/release.md)。
 
@@ -389,7 +389,7 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 
 各组件目录下有 8 份 `CLAUDE.md`（四仓 × 后端/web 前端），**会被 Claude Code
 进入目录时自动注入**。当前内容是「局部编码规则 + 指向本文档集与
-[`../tree-build/rules/constraints.md`](../tree-build/rules/constraints.md) 的指针」。
+[`../dev-investment-agent/tree-build/rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md) 的指针」。
 
 ⚠ 这类文件自动注入、不易被察觉，**改动组件结构时必须同步检查它们**。
 
@@ -402,8 +402,8 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | 动登录、权限、服务间调用 | [`topics/identity.md`](topics/identity.md) |
 | 加表、改迁移 | [`topics/data.md`](topics/data.md) |
 | 发版、改部署清单 | [`topics/release.md`](topics/release.md) |
-| **动代码前必读的规则** | [`../tree-build/rules/constraints.md`](../tree-build/rules/constraints.md)（39 条，按主题分组） |
-| 提一个开发请求 | [`../tree-build/PRD/requirement.md`](../tree-build/PRD/requirement.md) |
+| **动代码前必读的规则** | [`../dev-investment-agent/tree-build/rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md)（39 条，按主题分组） |
+| 提一个开发请求 | [`../dev-investment-agent/tree-build/PRD/requirement.md`](../dev-investment-agent/tree-build/PRD/requirement.md) |
 | 查当前 digest / release_id | `k8s/sunmoonai/app-platform/<app>-app/deployment/bundle/release.json` |
 | 查某仓迁移 head | 该仓 `app/alembic/versions/` 里最新的 revision |
 | 查契约 schema 的 sha256 | consumer 仓的 `*-provider-lock.json`，或 provider 的 `contract-manifest.json` |
@@ -423,12 +423,12 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | 加表、改迁移 | [`topics/data.md`](topics/data.md) |
 | 发版、改部署清单 | [`topics/release.md`](topics/release.md) + [`repos/k8s.md`](repos/k8s.md) |
 | 确认某个能力是否真的接线了 | 对应仓文件的**「已知未实现」**一节 |
-| **动代码前必读的规则** | [`../tree-build/rules/constraints.md`](../tree-build/rules/constraints.md)（39 条，按主题分组） |
-| 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../turn/protocol/competition-protocol.md`](../turn/protocol/competition-protocol.md) |
-| 推送改动、跨机拉取、子模块的坑 | `~/five-repos-sync/sync-five-repos.sh`；规则见 [`../tree-build/rules/constraints.md`](../tree-build/rules/constraints.md) C-T4 |
-| 知道接下来要建什么 | [`../tree-build/`](../tree-build/) |
+| **动代码前必读的规则** | [`../dev-investment-agent/tree-build/rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md)（39 条，按主题分组） |
+| 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-investment-agent/turn/protocol/competition-protocol.md`](../dev-investment-agent/turn/protocol/competition-protocol.md) |
+| 推送改动、跨机拉取、子模块的坑 | `~/five-repos-sync/sync-five-repos.sh`；规则见 [`../dev-investment-agent/tree-build/rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md) C-T4 |
+| 知道接下来要建什么 | [`../dev-investment-agent/tree-build/`](../dev-investment-agent/tree-build/) |
 | 继续发布与运行验收 | [发布与门禁](topics/release.md)，按当前 release 和现场事实工作 |
-| 确认目标产品还要建什么 | [需求](../tree-build/PRD/requirement.md)与 [`tree-build/`](../tree-build/README.md) |
+| 确认目标产品还要建什么 | [需求](../dev-investment-agent/tree-build/PRD/requirement.md)与 [`tree-build/`](../dev-investment-agent/tree-build/README.md) |
 | 查旧修复的测试或原文 | [v5 历史索引](topics/v5-history.md)，按固定版本取证 |
 | 复核本文档集的某条断言 | **读代码**，别的都不算数 |
 | 本轮查出的缺口都怎么处置了 | 结论已在各自投影里；过程 `git log --grep 'O[0-9]'` |
@@ -442,7 +442,7 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | 位置 | 是什么 | 最近变动 | 定性 |
 | --- | --- | --- | --- |
 | 旧 `architecture-v2/` | 旧重构目录已清退，7 个复用工具/测试迁至 app-platform/scripts/validation | 2026-09-19 | 历史发布证据按 [v5 历史索引](topics/v5-history.md#architecture-v2-目录清退) 读取；旧 R7 脚本不是当前开发发布门禁 |
-| 旧 `legacy-backlog/`、`tasks/` | 架构接收与本机 KIND 收尾已完成，最后一项（监控接线）已并入 [`repos/k8s.md`](repos/k8s.md)「已知未实现或易误解」，整个目录退役 | 2026-09-22 | 当前目标看 [需求](../tree-build/PRD/requirement.md) 与 `tree-build/`，当前发布事实看发布页，历史原文按 [v5 索引](topics/v5-history.md) 的固定提交读取 |
+| 旧 `legacy-backlog/`、`tasks/` | 架构接收与本机 KIND 收尾已完成，最后一项（监控接线）已并入 [`repos/k8s.md`](repos/k8s.md)「已知未实现或易误解」，整个目录退役 | 2026-09-22 | 当前目标看 [需求](../dev-investment-agent/tree-build/PRD/requirement.md) 与 `tree-build/`，当前发布事实看发布页，历史原文按 [v5 索引](topics/v5-history.md) 的固定提交读取 |
 | 旧 `evidence/` | 78 份 v5 历史验收材料已退出当前工作树 | 2026-09-19 | 原文按 [v5 历史索引](topics/v5-history.md#旧-evidence-目录清退) 查询，不代表当前版本已验收 |
 | 旧 `mooc-manus-v5/` | 111 份旧 ADR、契约和脚本已退出当前工作树 | 2026-09-19 | 仅按 [v5 历史索引](topics/v5-history.md) 查询，不作现行契约或部署入口 |
 | `ai-tools/` | 工具调研笔记 | 2026-08 | 参考 |
@@ -464,7 +464,7 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 
 当前复用工具见 [validation](../../app-platform/scripts/validation/README.md)，发布入口仍为
 `app-platform/scripts/` 与各 App 的 `deployment/`。冻结 turn 及主题笔记保留；旧 evidence 已转 Git 历史查询。
-旧计划中仍有效的交互目标与 Profile 概念已接收入 [需求](../tree-build/PRD/requirement.md) 和 `tree-build/`；
+旧计划中仍有效的交互目标与 Profile 概念已接收入 [需求](../dev-investment-agent/tree-build/PRD/requirement.md) 和 `tree-build/`；
 删除旧散文档不删除代码或 Git 历史。
 
 ## 两种修改语义，别混
@@ -472,12 +472,12 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | 目录 | 语义 | 怎么改 |
 | --- | --- | --- |
 | `overall-architecture.md` `repos/` `topics/` | **现状投影** | **覆盖式重写**：直接替换旧条文，只反映当前有效事实；历史由 git 承担 |
-| 协作机制（请求流程、推送、文档约定、评审） | **已移出** | 见 [`../turn/`](../turn/) |
+| 协作机制（请求流程、推送、文档约定、评审） | **已移出** | 见 [`../dev-investment-agent/turn/`](../dev-investment-agent/turn/) |
 | `governance.md` | **规则** | 改动前应有共识；改完要检查依赖它的文档 |
 
 ## 写作约定
 
-见 [人的批准点](../turn/approvals.md)「改判」与 [turn 的投影](../turn/turn-project.md)「交给 agent 的活，八条都成立」。
+见 [人的批准点](../dev-investment-agent/turn/approvals.md)「改判」与 [turn 的投影](../dev-investment-agent/turn/turn-project.md)「交给 agent 的活，八条都成立」。
 本处不复述——引用而非复制，是那份文件自己的第二条维护约定。
 
 ## 已知缺口

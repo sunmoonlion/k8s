@@ -66,7 +66,7 @@ SDD/
 
 **需求的真源是 [`PRD/requirement.md`](PRD/requirement.md)**，不另设跨层的产品契约：
 一条内容只有一处，要什么就去 `PRD/`，谁负责去 [`SDD/architecture/ownership.md`](SDD/architecture/ownership.md)，
-还没定与还没验去 [`decisions.md`](decisions.md)，分期与许可在 [`project-guide/`](../project-guide/staging.md)。
+还没定与还没验去 [`decisions.md`](decisions.md)，分期与许可在 [`project-guide/`](../../project-guide/staging.md)。
 
 两个子任务的内部关系各在自己那一层：
 [后端七块](SDD/submodules/0001-backend/SDD/architecture/blocks.md)、

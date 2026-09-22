@@ -96,7 +96,7 @@ SELF_CONTAINED = (
     # 合并不是修法，修法是让它降为**被核对的引用**：四条各注出处，本门验那个出处真的存在。
     # ⚠ 那四条现已改成**按标题引用**（协议「通用纪律」要求），所以本项对它已无实际拦截力；
     # 名单留着是为了：将来谁再往这两处写 §N，当场判失败。
-    "sunmoonai/docs/turn/protocol/GO.md",
+    "sunmoonai/docs/dev-investment-agent/turn/protocol/GO.md",
 )
 # 产品合同已拆散（需求进 tree-build/PRD/，责任投影进 SDD/architecture/ownership.md，
 # 决策与欠账进 tree-build/decisions.md），原条目随之移除——**这道自检当场报了名单失效**，

@@ -13,4 +13,4 @@
 | 产品与合规 | `F-POS-05`；定位的法务确认；推荐模型清单与对比评测（[核心价值与价值检验](../../PRD/value.md)） |
 | 测试与维护者 | `AT-*`；实现矩阵；无法自动验证条款的人工门禁及理由 |
 
-当前覆盖状态只记录在实现矩阵或 [project-guide](../../../project-guide/overall-architecture.md)，不写回本文。
+当前覆盖状态只记录在实现矩阵或 [project-guide](../../../../project-guide/overall-architecture.md)，不写回本文。

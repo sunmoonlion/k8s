@@ -4,7 +4,7 @@
 # 这对每个分支都成立，因此用门禁挡，不靠「记得别合某个分支」。
 set -e
 root=$(git rev-parse --show-toplevel)
-gate="$root/sunmoonai/docs/tools/doc-gate.py"
+gate="$root/sunmoonai/docs/dev-investment-agent/tools/doc-gate.py"
 # ⚠ 首版是 `[ -f "$gate" ] || exit 0`——脚本被移动或改名后，门**静默失效**，
 # 提交照过、没有任何提示。这正是 constraints「判据必须声明覆盖范围」点名的那类错。
 # 改为缺脚本即判失败；确需绕过用 git commit --no-verify。
@@ -15,7 +15,7 @@ if [ ! -f "$gate" ]; then
 fi
 python3 "$gate" --staged
 
-anchor="$root/sunmoonai/docs/tools/anchor-gate.py"
+anchor="$root/sunmoonai/docs/dev-investment-agent/tools/anchor-gate.py"
 if [ ! -f "$anchor" ]; then
   echo "门禁脚本不在：$anchor" >&2
   exit 1

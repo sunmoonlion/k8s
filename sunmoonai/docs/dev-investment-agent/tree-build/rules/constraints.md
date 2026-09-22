@@ -5,8 +5,8 @@
 > **动代码前先读这里。**违反其中任一条的方案**不进入讨论**——不是"不推荐"，
 > 是不提出。
 >
-> 项目现在长什么样，见 [`../project-guide/`](../../project-guide)；
-> 要建什么见 [`requirement.md`](../PRD/requirement.md)，功能义务 `F-*` 在各模块自己的文档里，分期见 [分期与工作量](../../project-guide/staging.md)，
+> 项目现在长什么样，见 [`../../project-guide/`](../../../project-guide)；
+> 要建什么见 [`requirement.md`](../PRD/requirement.md)，功能义务 `F-*` 在各模块自己的文档里，分期见 [分期与工作量](../../../project-guide/staging.md)，
 > 用户消息在各 turn 的 `user-message.md` 里；
 > 进度由任务目录推出，**任务目录里**不另设进度文件（IMP 在代码分支上的 `CHECKPOINT.md` 不在此列，见 [IMP 规则](../../turn/imp/message-rules.md)「跨运行时 thread 续接」）。
 

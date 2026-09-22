@@ -237,4 +237,4 @@ wc -l tpl-backend/app/app/main.py                # 应为 5
 
 ---
 
-**改模板、同步实例前**，先读 [`../../tree-build/rules/constraints.md`](../../tree-build/rules/constraints.md)「发布」——本页只写现状。
+**改模板、同步实例前**，先读 [`../../dev-investment-agent/tree-build/rules/constraints.md`](../../dev-investment-agent/tree-build/rules/constraints.md)「发布」——本页只写现状。
