@@ -97,9 +97,12 @@
 
 ## 多方竞争挂在第 4 格
 
-多方竞争不是另一条流程,它是**派发**那一格的一种形态:同一问发给几家,
-多出互评、裁决、异议三个环节,到**交付**重新合流。
-规则见 [多方竞争](turn/competition.md),本平台怎么做见 [protocol/](turn/protocol/README.md)。
+多方竞争不是另一条流程,它**从派发那一格分出去,到验收重新合流**:同一问发给几家,
+多出互评、裁决、异议三个环节。因为横穿两站,产品侧单列成一块
+（[`0008-competition`](tree-build/SDD/submodules/0001-backend/SDD/modules/0008-competition.md)）。
+
+规则见 [多方竞争](turn/competition.md);**这一格现在由人做**时的操作细则见
+[protocol/](turn/protocol/README.md)——那几份随这一格被脚本化而退役。
 
 ## 终点在哪
 
