@@ -1,6 +1,6 @@
 # 数据与迁移
 
-> 源码复核：2026-09-13 ｜ 相关规则见 [`../../dev-agent/rules/constraints.md`](../../dev-agent/rules/constraints.md)「数据」D1–D9
+> 源码复核：2026-09-13 ｜ 相关规则见 [`../../dev-agent/rules/constraints.md`](../../dev-agent/rules/constraints.md)「数据」C-D1–C-D9
 
 ## 1. 一个 App 一个库，谁的表谁改
 

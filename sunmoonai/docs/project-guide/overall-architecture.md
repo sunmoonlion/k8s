@@ -422,7 +422,7 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | 确认某个能力是否真的接线了 | 对应仓文件的**「已知未实现」**一节 |
 | **动代码前必读的规则** | [`../dev-agent/rules/constraints.md`](../dev-agent/rules/constraints.md)（39 条，按主题分组） |
 | 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-human/protocol/competition-protocol.md`](../dev-human/protocol/competition-protocol.md) |
-| 推送改动、跨机拉取、子模块的坑 | `~/five-repos-sync/sync-five-repos.sh`；规则见 [`../dev-agent/rules/constraints.md`](../dev-agent/rules/constraints.md) T4 |
+| 推送改动、跨机拉取、子模块的坑 | `~/five-repos-sync/sync-five-repos.sh`；规则见 [`../dev-agent/rules/constraints.md`](../dev-agent/rules/constraints.md) C-T4 |
 | 知道接下来要建什么 | [`../dev-agent/`](../dev-agent/) |
 | 继续重构的部署工作 | [当前部署清单](../legacy-backlog/deployment-checklist.md)，先同步再工作 |
 | 讨论新架构前找旧需求 | [旧任务待接收清单](../legacy-backlog/README.md)，不提前搬入正式模块树 |

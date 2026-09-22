@@ -73,3 +73,19 @@ thread 的**种类**有四个：PRD、SDD、IMP、UAT，规则见 [PRD](prd/fina
 1. 同一个意思只用一个词；新词先进本表再用。
 2. **改名须人确认**，按 [改判](approvals.md) 的三要素写清为什么改，并且一次改遍全仓、跑完检查，不留新旧两名并存。
 3. 与具体产品、执行环境的名字怎样对应，写在任务自己的目录里；本表不出现具体产品名。
+4. **编号也是词。**起一套新编号之前先查下表；一个字母只归一套编号。
+
+## 编号的归属
+
+引用时写编号本身即可，不带章节号——章节会移动，编号不会。
+
+| 编号 | 归谁 | 定义在 |
+| --- | --- | --- |
+| `F-*` | 产品功能义务 | 各模块的 `functions.md` |
+| `I1`–`I20` | 产品不变量 | `dev-agent/SDD/architecture/invariants.md` |
+| `D2`–`D28` | 合同决策点 | `product/product-contract.md` 附录 A |
+| `AT-*` | 产品验收 | `product/product-contract.md` |
+| `C-D*` `C-C*` `C-I*` `C-T*` `C-R*` `C-A*` `C-P*` | 代码必须符合的规则，按组分字母（数据/契约/身份/拓扑/发布/智能体/设计原则） | `dev-agent/rules/constraints.md` |
+| `T0` `T1` `T2` | 流程档位 | 本表「过程」与 `competition.md` |
+| `V0`–`V3` | 验证职责 | `protocol/competition-operations.md` |
+| `L1`–`L7` | 测试层次 | `imp/message-rules.md` |

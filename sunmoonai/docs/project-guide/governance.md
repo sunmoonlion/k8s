@@ -10,7 +10,7 @@
 > 写文档的约定 → [人的批准点](../dev-human/approvals.md)「改判」；
 > 提请求 → [`../product/product-contract.md`](../product/product-contract.md)；
 > 推送与多助手 → [`../dev-human/protocol/competition-protocol.md`](../dev-human/protocol/competition-protocol.md) 与
-> [`constraints.md`](../dev-agent/rules/constraints.md) T4。
+> [`constraints.md`](../dev-agent/rules/constraints.md) C-T4。
 
 ## 1. 权威排序
 

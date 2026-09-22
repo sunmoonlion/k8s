@@ -1,6 +1,6 @@
 # 发布与门禁
 
-> 更新：2026-09-20，本机 KIND 已切换固定开发候选及独立运行身份 ｜ 相关规则见 [`../../dev-agent/SDD/constraints.md`](../../dev-agent/rules/constraints.md)「发布」R1–R7
+> 更新：2026-09-20，本机 KIND 已切换固定开发候选及独立运行身份 ｜ 相关规则见 [`../../dev-agent/rules/constraints.md`](../../dev-agent/rules/constraints.md)「发布」C-R1–C-R7
 > 逐行位置见 [`../repos/k8s.md`](../repos/k8s.md) §4–§5
 
 ## 1. 发布单元
