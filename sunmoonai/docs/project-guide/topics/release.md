@@ -79,8 +79,8 @@ render.py 解析出 digest 写入 bundle
 | 网络：NetworkPolicy 包级 allow/deny | `app-platform/scripts/validation/verify_r3_network_policy_calico.sh` | 是，**另起临时集群** |
 
 旧 R3/R6/R7 发布脚本随历史目录清退，原版本仍可从 Git 读取；旧 R7 检查写死旧迁移 head
-并要求正式包，不能用于当前 KIND 开发包。不能因工具清退省略上述验收，具体前置见
-[部署清单](../../legacy-backlog/deployment-checklist.md)。工具移动后仅完成离线回归，不冒充真实发布实测。
+并要求正式包，不能用于当前 KIND 开发包。不能因工具清退省略上述验收；工具移动后仅完成
+离线回归，不冒充真实发布实测。
 
 **smoke 通过 ≠ 发布完成。**smoke 只覆盖一条路径；上表六层缺一层就不算发过。
 证据也要分层留：静态层留 sha256 与 digest，集群层留副本/迁移 head/Ingress 集，
@@ -97,7 +97,7 @@ render.py 解析出 digest 写入 bundle
 模板自身有一套独立的发布锁：`tpl-app/template-release-manifest.json`
 （schema 2）+ `verify_template_release.py`，锁定三个组件的 commit / tree / digest。
 该 manifest 原文不随目录清理重写；`test_evidence` 中的旧路径按
-[历史索引](../../legacy-backlog/verification-index.md#architecture-v2-目录清退) 的固定提交查询。
+[v5 历史索引](v5-history.md#architecture-v2-目录清退) 的固定提交查询。
 
 **实例同步顺序锁定为 `info → knowledge → investment`。**
 
@@ -134,7 +134,6 @@ render.py 解析出 digest 写入 bundle
 历史正式 manifest 不能为了同步开发提交而改写为尚未构建的新 HEAD。
 当前 `kind-b7-20260919` 已按 Harbor digest 部署本机 KIND；云端仅同步源码，未部署。
 镜像构建、Harbor 推送、bundle 生成和实际部署各自核验，不由 Git 同步自动完成。
-具体操作范围和前置见 [部署清单](../../legacy-backlog/deployment-checklist.md)。
 
 复核包版本和历史发布声明（不能代替 live 核验）：
 ```bash
@@ -151,8 +150,10 @@ python3 -c "import json;print(json.load(open('k8s/sunmoonai/app-platform/info-ap
 API 2 / Worker 1 / Scheduler 1 / 两个前端各 2 就绪，drift 无差异。9 个新 DB 登录
 跨 App 数据库的 18 次连接被拒绝；三个旧 DB 登录和旧 broker vhost 访问实际拒绝。
 共享启动 definitions 同步撤权、非目标资源保持不变；未重启共享设施验证重启过程。
-精确载荷摘要、固定提交与私有证据位置见
-[本次切换记录](../../tasks/B7-B9-closeout/thread/0001-imp-none/0015-none/others/preparation.md)。
+精确载荷摘要、固定提交与私有证据位置保存在 k8s
+`547a8f6d83cc296a86a7604697057465620c7edc` 的
+`sunmoonai/docs/tasks/B7-B9-closeout/thread/0001-imp-none/0015-none/others/preparation.md`；
+它是历史切换回执，不是当前操作指令。
 
 当前入口是一次性身份 bootstrap，不是既有角色通用协调器。退役后不能盲目重跑准备/
 激活，或恢复旧权限来满足旧目录指纹；后续新版本须显式核对既有身份与新发布回执。

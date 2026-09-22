@@ -1,6 +1,6 @@
 # SunMoonAI 项目总览
 
-> 最后更新：2026-09-21 ｜ 目标态一节按已结束的架构讨论改写；源码投影部分沿用 2026-09-19 取证。
+> 最后更新：2026-09-22 ｜ 目标态按已结束的架构讨论改写；运行投影补入 2026-09-20 本机 KIND 切换事实。
 >
 > **本文件是进入这个项目的唯一入口。**读完它，你应当知道：改动落在哪个仓、
 > 那里有什么不可违反的规则、以及去哪里查更细的东西。
@@ -15,8 +15,9 @@
 
 **先区分现状与目标**：当前源码是 Next.js（Admin/Web）＋单领域 FastAPI Backend，
 共享可靠投递与 Knowledge Provider 内部解耦已落到源码；不再沿用 Vue/Nest 多套主线。
-后端修复及角色策略有隔离验证，业务 KIND 的新镜像/身份/迁移尚待受控切换，不能称
-“重构已部署完毕”。具体前置见 [部署清单](../legacy-backlog/deployment-checklist.md)。
+本机 KIND 已切换 `kind-b7-20260919` 固定候选、独立数据库与 broker 运行身份；这只证明
+该开发候选完成受控切换，不代表 production 晋级或完整产品 UAT。当前边界见
+[发布与门禁](topics/release.md#8-当前-kind-切换事实与剩余验收)。
 
 **架构讨论已经结束**，目标态定在 [产品合同](../product/product-contract.md) 与
 [`dev-agent/`](../dev-agent/)：桌面客户端（Electron + Vite + React Router）是做研究工作的
@@ -25,8 +26,9 @@
 
 **但这些都还没有源码。**本指南只投影现有源码：当前仍是 Next.js ＋ 单领域 FastAPI，
 Investment LangGraph Pilot 仍在跑，桌面端与本地 runtime 一行都还没有。
-**不得据目标合同把现状描述成已完成。**旧任务独立存于
-[待接收清单](../legacy-backlog/README.md)，不再从 v4/v5 计划恢复工作。
+**不得据目标合同把现状描述成已完成。**旧 v5 的 N1～N6 已按当前合同完成接收裁定，
+不再形成单独待办，也不从旧计划恢复技术方案；历史来源只按
+[v5 索引](topics/v5-history.md)取证。
 
 一条内容流水线，加上消费它的智能体：
 
@@ -87,8 +89,9 @@ k8s ──构建镜像 / 渲染 bundle / apply──▶ 三个 App 的运行态
 ### 3.1 一个镜像，四个运行角色
 
 后端**同一个不可变镜像**按不同命令启动四种进程，有独立 ServiceAccount 与部署角色。
-源码渲染已分开数据库/broker Secret 键，独立 principal/ACL 候选也已在隔离环境验证；
-**业务 KIND 的 API/Worker/Scheduler 仍共用旧身份，尚未切换**。不同键不等于不同账号。
+源码渲染已分开数据库/broker Secret 键；2026-09-20 本机 KIND 的 API/Worker/Scheduler
+已经切换为独立 principal/ACL，旧数据库登录与旧 broker vhost 权限已实测拒绝。
+这不替云端或后续版本背书，具体版本与剩余验收见[发布与门禁](topics/release.md)。
 
 | 角色 | 入口 | K8s 形态 |
 | --- | --- | --- |
@@ -357,22 +360,22 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 
 ### 9.2 共享能力：源码接线与仍留白项
 
-2026-09-19 按已固定源码与隔离证据更新；同步/发布结果按各次回执核验，业务未部署本批增量。
-下面不以声明/源码存在推断当前镜像已经具备能力。
+源码能力按固定提交与测试记录，运行能力按 2026-09-20 本机 KIND 固定候选更新；
+下面不以声明或源码存在向其他环境外推。
 
 | 项 | 实际状态 |
 | --- | --- |
 | **web-interaction 契约** | **defined，未 wired**：DTO、Port、前端 zod 齐全，但默认适配器返回 **503**；唯一替代实现是 reference fixture，且**生产禁止开启**。即生产环境该契约面**必定不可用** |
-| **共享 Outbox/Inbox 原语** | 源码已接线：命令与领域事务同提交，Worker 使用持久租约和 Inbox，支持死信/重放/对账；不再是零调用骨架，实际环境验收仍按 B7 |
+| **共享 Outbox/Inbox 原语** | 源码已接线：命令与领域事务同提交，Worker 使用持久租约和 Inbox，支持死信/重放/对账；不再是零调用骨架，后续环境仍按具体 release 验收 |
 | **Celery 周期任务** | 源码已配置每 5 秒可靠投递 pump；Investment 保留领域调度。配置存在不证明 Scheduler 活性或 Worker 消费进展 |
 | **`/api/internal/v1` 入站面** | B7h 四仓共享受保护投递指标入口 `GET /api/internal/v1/delivery/metrics`，需独立服务主体及 `delivery:observe`；Knowledge/Investment 原领域 Internal 路由保留。尚未为指标接实际采集器 |
 | **健康与进展** | API ready 校验本镜像迁移 head；Worker 探针核队列/路由/注册；Beat 活动与已提交 Inbox 进展分别观测，不能互相冒充 |
-| **进程权限** | 四角色 PG 列 ACL、三角色 broker 预建拓扑、联合故障恢复、临时容器重启/撤权及数据库导出恢复已隔离验证；真实业务账号/启动定义/数据切换仍待验收 |
+| **进程权限** | 四角色 PG 列 ACL、三角色 broker 预建拓扑、联合故障恢复及数据库恢复已验证；本机 KIND 已完成真实业务账号、启动 definitions 与数据切换，云端及后续 release 仍须重验 |
 | **保留与监控** | 无自动回执/租约墓碑 GC；Prometheus/Alertmanager 安装、采集、告警送达留未来计划，不能将 HTTP 指标存在当接线完成 |
 
-产品留白先查 [待接收旧任务](../legacy-backlog/README.md) 与 [产品合同](../product/product-contract.md)；
-当前 dev-agent 树尚待与最新决定对齐，不将旧模块拆分当新定稿。
-源码/运行态边界见 [部署清单](../legacy-backlog/deployment-checklist.md)。
+产品留白先查[产品合同](../product/product-contract.md)与 [`dev-agent/`](../dev-agent/README.md)；
+旧 N1～N6 已完成接收裁定，不再用 v5 清单补需求。源码/运行态边界见
+[发布与门禁](topics/release.md)。
 
 ### 9.3 各 App 的具体缺口
 
@@ -424,9 +427,9 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-human/protocol/competition-protocol.md`](../dev-human/protocol/competition-protocol.md) |
 | 推送改动、跨机拉取、子模块的坑 | `~/five-repos-sync/sync-five-repos.sh`；规则见 [`../dev-agent/rules/constraints.md`](../dev-agent/rules/constraints.md) C-T4 |
 | 知道接下来要建什么 | [`../dev-agent/`](../dev-agent/) |
-| 继续重构的部署工作 | [当前部署清单](../legacy-backlog/deployment-checklist.md)，先同步再工作 |
-| 讨论新架构前找旧需求 | [旧任务待接收清单](../legacy-backlog/README.md)，不提前搬入正式模块树 |
-| 查旧修复的测试或原文 | [验证与历史索引](../legacy-backlog/verification-index.md)，按固定版本取证 |
+| 继续发布与运行验收 | [发布与门禁](topics/release.md)，按当前 release 和现场事实工作 |
+| 确认目标产品还要建什么 | [产品合同](../product/product-contract.md)与 [`dev-agent/`](../dev-agent/README.md) |
+| 查旧修复的测试或原文 | [v5 历史索引](topics/v5-history.md)，按固定版本取证 |
 | 复核本文档集的某条断言 | **读代码**，别的都不算数 |
 | 本轮查出的缺口都怎么处置了 | 结论已在各自投影里；过程 `git log --grep 'O[0-9]'` |
 
@@ -438,14 +441,13 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 
 | 位置 | 是什么 | 最近变动 | 定性 |
 | --- | --- | --- | --- |
-| 旧 `architecture-v2/` | 旧重构目录已清退，7 个复用工具/测试迁至 app-platform/scripts/validation | 2026-09-19 | 历史发布证据按 [固定 Git 索引](../legacy-backlog/verification-index.md#architecture-v2-目录清退) 读取；旧 R7 脚本不是当前开发发布门禁 |
-| [`legacy-backlog/`](../legacy-backlog/backlog.md) | 旧任务、部署清单、精简验证索引三个入口 | 2026-09-19 | 未来旧任务等架构讨论后接收；当前运行欠账单列，源码完成不代表已部署 |
-| [`tasks/B7-B9-closeout/`](../tasks/B7-B9-closeout/thread/0001-imp-none/0002-none/user-message.md) | 逐次请求、固定候选、测试原始输出与回执 | 2026-09-19 | 历史 turn 已冻结，按其提交理解；不把早先断点当当前任务指令 |
-| 旧 `evidence/` | 78 份 v5 历史验收材料已退出当前工作树 | 2026-09-19 | 原文按 [固定 Git 历史索引](../legacy-backlog/verification-index.md#旧-evidence-目录清退) 查询，不代表当前版本已验收 |
-| 旧 `mooc-manus-v5/` | 111 份旧 ADR、契约和脚本已退出当前工作树 | 2026-09-19 | 仅按 [固定 Git 历史索引](../legacy-backlog/verification-index.md) 查询，不作现行契约或部署入口 |
+| 旧 `architecture-v2/` | 旧重构目录已清退，7 个复用工具/测试迁至 app-platform/scripts/validation | 2026-09-19 | 历史发布证据按 [v5 历史索引](topics/v5-history.md#architecture-v2-目录清退) 读取；旧 R7 脚本不是当前开发发布门禁 |
+| 旧 `legacy-backlog/`、`tasks/B7-B9-closeout/` | 架构接收与本机 KIND 收尾已完成，活动目录退役 | 2026-09-22 | 当前目标看产品合同与 dev-agent，当前发布事实看发布页，历史原文按 [v5 索引](topics/v5-history.md) 的固定提交读取 |
+| 旧 `evidence/` | 78 份 v5 历史验收材料已退出当前工作树 | 2026-09-19 | 原文按 [v5 历史索引](topics/v5-history.md#旧-evidence-目录清退) 查询，不代表当前版本已验收 |
+| 旧 `mooc-manus-v5/` | 111 份旧 ADR、契约和脚本已退出当前工作树 | 2026-09-19 | 仅按 [v5 历史索引](topics/v5-history.md) 查询，不作现行契约或部署入口 |
 | `ai-tools/` | 工具调研笔记 | 2026-08 | 参考 |
-| 旧 v4/v5 计划、实施计划、handoff 与 24 份旧账散报告 | 已退出当前工作树 | 2026-09-19 | 必要目标/部署约束已收拢，完整原文按 [固定 Git 索引](../legacy-backlog/verification-index.md) 取回，不再另建备份目录 |
-| 旧 Architecture v2 重构计划、Knowledge Provider 解耦报告 | 已退出当前工作树 | 2026-09-19 | 当前架构看本指南，切换前置和解耦证据见 legacy-backlog；完整过程按固定 Git 版本查询 |
+| 旧 v4/v5 计划、实施计划、handoff 与 24 份旧账散报告 | 已退出当前工作树 | 2026-09-19 | 旧目标已完成接收裁定，完整原文按 [v5 历史索引](topics/v5-history.md) 取回，不再另建备份目录 |
+| 旧 Architecture v2 重构计划、Knowledge Provider 解耦报告 | 已退出当前工作树 | 2026-09-19 | 当前架构看本指南，完整过程按 [v5 历史索引](topics/v5-history.md) 的固定 Git 版本查询 |
 | `docs/` 下其余散落 md | Harbor、Celery、YAML 生成、k8s 连接等主题笔记 | 不一 | **参考，未逐条与代码核对**。主题都还活着，但断言可能已漂移——用之前先回代码验一遍 |
 | `app-platform/docs/`（本目录之外） | 14 份目标态设计文档 | — | **已标注为"实现参考，非权威"**——它自陈"描述长期边界和目标状态" |
 
@@ -462,7 +464,8 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 
 当前复用工具见 [validation](../../app-platform/scripts/validation/README.md)，发布入口仍为
 `app-platform/scripts/` 与各 App 的 `deployment/`。冻结 turn 及主题笔记保留；旧 evidence 已转 Git 历史查询。
-旧计划的交互目标与 Profile 概念已提取到待接收清单；删除旧散文档不删除代码或 Git 历史。
+旧计划中仍有效的交互目标与 Profile 概念已接收入产品合同和 `dev-agent/`；
+删除旧散文档不删除代码或 Git 历史。
 
 ## 两种修改语义，别混
 
@@ -482,6 +485,6 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 - **部署不等于完整验收**：本机 KIND 已部署 `kind-b7-20260919` 并完成独立身份切换，
   见 [发布现状](topics/release.md#8-当前-kind-切换事实与剩余验收)；完整业务 UAT 与
   NetworkPolicy 包级验收仍有缺口。独立环境历史证据见
-  [验证索引](../legacy-backlog/verification-index.md)，不自动替当前版本背书；继续工作时重查。
+  [v5 历史索引](topics/v5-history.md)，不自动替当前版本背书；继续工作时重查。
 - **前端未逐文件深读**：约 570 个 ts/tsx，核到了结构、入口、契约与关键配置层。
 - 本文档集**不写进度**。哪些缺口修过、怎么修的，见 git 历史。

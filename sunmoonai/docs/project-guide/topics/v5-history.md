@@ -1,18 +1,30 @@
-# 重构验证与历史索引
+# v5 重构历史索引
 
-这是精简索引，不是新一轮测试报告，也不是部署验收。
-当前入口：[待接收任务](README.md)、[部署清单](deployment-checklist.md)、
-[项目指南](../project-guide/README.md)。历史原文通过 Git 获取，不另建备份/归档目录。
+本文只负责定位已经退出工作树的 v4/v5 计划、Luna 旧账报告、Architecture v2 和历史证据，
+不产生当前需求、任务或部署状态。当前产品目标以 [`dev-agent/`](../../dev-agent/README.md)
+为准，当前源码与运行事实以[项目指南](../README.md)为准。
+
+旧 N1～N6 已完成接收裁定：交互、执行、Profile、子任务与验收目标进入现行产品合同和
+`dev-agent/`；知识生命周期回到 Knowledge 现行职责；发布缺口进入本指南“发布与门禁”；
+监控告警只保留 `N4-OPS-01`；按需扩展没有触发条件时不建任务。旧编号不再构成待办。
+
+`tasks/B7-B9-closeout/` 已在 `547a8f6d83cc296a86a7604697057465620c7edc` 完成最后一次
+本机 KIND 切换回执，随后整体退出活动工作树。需要复核时按该提交读取，不恢复成当前任务：
+
+```sh
+git show 547a8f6d83cc296a86a7604697057465620c7edc:sunmoonai/docs/tasks/B7-B9-closeout/thread/0001-imp-none/0015-none/others/preparation.md
+git ls-tree -r --name-only 547a8f6d83cc296a86a7604697057465620c7edc -- sunmoonai/docs/tasks/B7-B9-closeout
+```
 
 ## 可直接复核的近期证据
 
-- [B7v 固定候选、命令和 JUnit](../tasks/B7-B9-closeout/thread/0001-imp-none/0001-none/others/verification.md)：
+- B7v 固定候选、命令和 JUnit（按上方 `547a8f6d…` 提交读取）：
   tpl-app `09ff4a9268db5006f5d32a2953f58c95b1369819`；四后端各 6 项生命周期实测；
   模板另验 3 联合、30 broker、完整后端 258 项，普通部署单元 18 项；未部署。
 - [Knowledge Provider 解耦](#knowledge-provider-内部解耦)：
   Backend `26aa0715f15e2c8df4713559063a9a2e3215a1c8`，完整 450 项及独立角色 27 项；
   默认 RAGFlow，未接 WeKnora，未改变跨 App 契约，不是替换供应商运行验收。
-- [KIND 时点快照](../tasks/B7-B9-closeout/thread/0001-imp-none/0001-none/others/kind-cutover-preflight.md)：
+- KIND 时点快照（按上方 `547a8f6d…` 提交读取）：
   2026-09-19 只读 UID、镜像及 Secret 引用，不读取凭据值；部署前须重取。
 
 上列测试数字各自对应固定版本/范围，不相加为“全部产品通过”。四后端固定源码与
@@ -26,7 +38,7 @@
 
 | 原短名 | 原范围 / 保留的结论 |
 | --- | --- |
-| disposition | B1～B9 处置与原任务映射；未来目标转待接收清单，运行欠账转部署清单 |
+| disposition | B1～B9 当时的处置与原任务映射；旧接收清单和部署清单现已关闭 |
 | coverage | B7b 覆盖矩阵与 API schema readiness；代码接线不等于部署完成 |
 | scheduling | B6a 持久 available_at 与预约、并发/重放语义 |
 | parse-polling | B6b Knowledge 单次持久轮询、协议标记、代次、deadline；旧任务不能自动升级 |
@@ -59,8 +71,7 @@ git show 6757974b4084c92c8df62af637b020d998d4a160:sunmoonai/docs/v5-backlog-runt
 ```
 
 这里删除的是文档工作树文件，不删除实现、测试、迁移、制品或 Git 历史。
-已冻结的 `tasks/**/thread/` 与 `dev-agent/**/thread/` 原文不改；其中旧相对链接应按
-其原提交或上面的固定快照解释，不是假装在当前工作树仍有效。
+仍在工作树的冻结 turn 原文不改；已经整体退役的 B7-B9 turn 按上方固定提交解释。
 
 ## 退出当前目录的四份旧计划
 
@@ -68,9 +79,9 @@ git show 6757974b4084c92c8df62af637b020d998d4a160:sunmoonai/docs/v5-backlog-runt
 
 | 原文件 | 留存位置与用途 |
 | --- | --- |
-| `mooc-manus-langgraph-longterm-plan-v4.md` | 历史方案；第 20 节 Profile 的可复用概念已摘要到待接收清单，不恢复旧 Graph/ModelGateway 技术前提 |
+| `mooc-manus-langgraph-longterm-plan-v4.md` | 历史方案；Profile 的有效概念已进入现行 `dev-agent`，不恢复旧 Graph/ModelGateway 技术前提 |
 | `mooc-manus-langgraph-longterm-plan-v5.md` | 历史阶段划分与需求来源，不再是当前架构依据 |
-| `mooc-manus-langgraph-v5-implementation-plan.md` | 原任务编号与详细条件；N1～N6 保留原编号，设计时可按固定 Git 版本追溯 |
+| `mooc-manus-langgraph-v5-implementation-plan.md` | 原任务编号与详细条件；N1～N6 只作历史追溯，不构成当前待办 |
 | `mooc-manus-langgraph-v5-handoff-20260712.md` | 当年停在 P0-008C.5：构建/身份探测不等于部署接受，C6/C7 未完，正式 M1 未启动 |
 
 ## 第二批清退的历史材料
@@ -80,7 +91,7 @@ git show 6757974b4084c92c8df62af637b020d998d4a160:sunmoonai/docs/v5-backlog-runt
 | 原路径（相对于 `sunmoonai/docs/`） | 处置与必要边界 |
 | --- | --- |
 | `mooc-manus-v5/`（111 个文件） | 旧 ADR、契约和脚本退出当前工作树；没有发现目录外现行代码按路径或脚本名调用它们。旧契约不替代 provider 仓的当前契约，旧部署/清理脚本不迁作新发布工具 |
-| `app-platform-architecture-v2-refactor-plan.md` | 原状态停在 R5 阶段，退出当前施工入口；当前事实看 project-guide，规则看 dev-agent/SDD/constraints，运行欠账看部署清单 |
+| `app-platform-architecture-v2-refactor-plan.md` | 原状态停在 R5 阶段，退出当前施工入口；当前事实看 project-guide，规则看 dev-agent，发布缺口看“发布与门禁” |
 | `knowledge-provider-decoupling-luna.md` | 实施过程按 Git 保留；适配义务由 Knowledge Backend 的 `docs/knowledge-provider.md` 维护，关键验证与限制见下节 |
 
 例如，在 k8s 仓根读取单文件或列出原目录：
@@ -120,8 +131,8 @@ Info 分发帮助函数 6 passed、Investment 检索契约 7 passed；这些是�
 历史、原地迁入 Investment 三组件拓扑的旧实施过程，不是当前发布操作指令。
 `ResearchSession` 等仍可为合法领域术语，不能据历史改名要求全局替换 `research`。
 本次只删文档并修正两处引用，不改仓名、业务数据、运行资源或历史备份。
-现状见 [Investment 指南](../project-guide/repos/investment-app.md)，
-切换前置见 [部署清单](deployment-checklist.md)。原文仍在上述固定 k8s 提交中：
+现状见 [Investment 指南](../repos/investment-app.md)，当前发布边界见[发布与门禁](release.md)。
+原文仍在上述固定 k8s 提交中：
 
 ```sh
 git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/investment清理和改名.md
@@ -131,7 +142,7 @@ git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/investment清�
 
 旧目录完整原文固定在 k8s **`82c709705aa92b1b44d9913b4416d4ca505a6665`**。
 301 个受跟踪文件中，7 个可复用工具/测试迁到
-[app-platform/scripts/validation](../../app-platform/scripts/validation/README.md)，
+[app-platform/scripts/validation](../../../app-platform/scripts/validation/README.md)，
 其余 294 个历史脚本、SQL、锁文件、阶段报告和证据退出当前工作树；不再建备份副本。
 迁移保留 Calico 同目录依赖、环境变量和同步工具 CLI。源码拓扑检查修正对已恢复纯文档
 `dev-to-prod-deploy/` 的误判，仍拒绝脚本、可执行文件和软链接，未放开旧运行拓扑。
@@ -139,7 +150,7 @@ git show 6facaaaad8eded7f96ee54c4c62d20ff37cd234d:sunmoonai/docs/investment清�
 旧 R3/R5/R7 候选、供给、切流、退役和固化发布脚本基于当年的身份、schema、镜像和目录；
 不作为本批开发发布工具。特别是 R7 检查要求正式包且写死旧迁移 head，与当前开发包不符。
 旧 capability 清单验证依赖已经退出当前拓扑的双 Backend，也只在历史版本复现。
-当前部署入口、静态 bundle 检查、备份/排空门禁及运行欠账仍在部署清单，不因清理销账。
+当前部署入口、静态 bundle 检查与剩余验收见[发布与门禁](release.md)，不因清理销账。
 
 冻结的 `tpl-app/template-release-manifest.json` **保持逐字不变**：其中 `test_evidence`
 以 `k8s/` 开头的九个旧路径都按此固定 k8s 快照解析（去掉开头的 `k8s/`）。目录项用

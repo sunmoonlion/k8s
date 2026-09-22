@@ -7,9 +7,8 @@ verifies: 无
 >
 > **交回：IMP，由执行 agent 交。**
 
-本条接收
-[v5 处置清单 disposition](../../../../../legacy-backlog/verification-index.md)中监控部署与告警接线的后续工作，
-不代表全部 N4/B8 已接收，也不把未部署能力写成已验收；其余旧任务继续按原清单处置。
+本条是旧 v5 N4 接收后唯一仍单独保留的实施任务：监控部署与告警接线。
+旧 N1～N6 已完成接收裁定，不再依赖旧清单，也不把未部署能力写成已验收。
 
 | 栏 | 内容 |
 | --- | --- |
@@ -23,8 +22,8 @@ verifies: 无
 | 回滚 | 恢复前版采集/规则/通知路由，或停用本任务新增资源；不删除业务账本或指标历史卷。通知测试前设停止条件与精确静默范围，故障时停止测试通知；不因采集故障自动重启业务角色 |
 | 状态 | NOT_STARTED：尚未部署、接线与送达验收；组件安装和外部通知不在授权内 |
 
-已有输入：[B7d 只读账本指标 delivery-observation](../../../../../legacy-backlog/verification-index.md)、
-[B7h 受保护 HTTP 入口 metrics-http](../../../../../legacy-backlog/verification-index.md)。这些源码和测试证据
-不等于当前镜像已含修复。Worker 消费进展、Scheduler 本机活动及安全探针语义仍由 B7
-继续补齐，不因本条接收而销账。监控是部署适配，不将 Kubernetes 或 Prometheus
+已有输入：[v5 历史索引](../../../../../project-guide/topics/v5-history.md#被收拢的-24-份旧账报告)
+中的 B7d 只读账本指标与 B7h 受保护 HTTP 入口，以及当前项目指南记录的运行事实。
+固定历史测试不替当前镜像背书；实施前须重验 Worker 消费进展、Scheduler 活动与探针语义。
+监控是部署适配，不将 Kubernetes 或 Prometheus
 变成未来 Electron/本机 Agent 内核的强依赖；云端先交付但架构始终兼容本机。

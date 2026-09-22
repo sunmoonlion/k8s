@@ -132,5 +132,6 @@ audience/subject 绑定及 `delivery:observe`，不接受浏览器 Cookie 替代
 漏建交换机/队列/绑定必须使发布失败，不得静默丢任务。
 
 这些不是租户/行级/工具或人的审批规则：Worker 的 read 仍允许 purge，pidbox 资源 ACL
-不区分 inspect/shutdown。联合验证范围见[B7u](../../legacy-backlog/verification-index.md)；
+不区分 inspect/shutdown。联合验证的历史范围见
+[v5 索引](v5-history.md#被收拢的-24-份旧账报告)中的 B7u；
 真实账号供给、旧连接撤销和重启一致性不由配置键名证明。

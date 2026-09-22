@@ -29,15 +29,17 @@
 
 RAGFlow / Elasticsearch / 向量 / 缓存**都不能**当作权威业务记录。
 
-## 3. 数据库运行身份：旧供给与新候选分开
+## 3. 数据库运行身份
 
-业务 KIND 最近只读核查仍是运行态共享用户与独立 Migration owner；API/Worker/Scheduler
-不是已完成最小权限拆分。旧 `utils/db-provisioner/` 和实例供给脚本不能冒充新策略。
-当前源码已有四角色候选：API 接受业务意图、Worker 消费/回执、Scheduler CONNECT-only、
-Migration 拥有迁移对象。模板按六张表精确列授权，三个实例各有领域扩展；未知清单拒绝。
-真实登录与联合投递已在临时环境验证，**加法 GRANT 不会撤掉旧 PUBLIC/继承/default ACL**。
-候选真源为 `tpl-app/k8s-deployment/runtime_database_policy.py` 与各实例 deployment 的
-`*_database_policy.py`。角色独立 Secret 键和实际账号权限须一并供给，不可只复制旧 URL。
+2026-09-20 本机 KIND 已将三个 App 的 API/Worker/Scheduler/Migration 切换到独立数据库
+身份，跨 App 的 18 次连接尝试和三个旧登录均实测拒绝。该结果只为固定开发候选
+`kind-b7-20260919` 背书，不自动覆盖云端、production 或后续 release。
+
+策略真源为 `tpl-app/k8s-deployment/runtime_database_policy.py` 与各实例 deployment 的
+`*_database_policy.py`：API 接受业务意图、Worker 消费/回执、Scheduler CONNECT-only、
+Migration 拥有迁移对象；未知清单拒绝。角色独立 Secret 键和实际账号权限须一并供给，
+不可只复制旧 URL。后续发布仍须核 PUBLIC、继承、default ACL 与真实拒绝；加法 GRANT
+不会自动撤销旧权限。
 **前端不得持有后端或数据库凭据。**Secret 名仍从具体 release 的 external_secrets 查。
 
 investment-app 另有一步特殊处理：部署时在跑迁移 Job **之前**用 SQL 改 PG 角色的
@@ -64,7 +66,8 @@ broker ACK、控制探针 pong、已提交 Inbox、Provider 业务成功是不�
 epoch 墓碑并显式标失效，立即重排不再依赖墙钟门槛；真实预约/退避仍按 DB 时间执行。
 Knowledge 对未知外部写入结果保留操作账并阻断盲目重传。**不能按固定天数直接删
 Outbox/Inbox/死信/租约**：去重、回滚、Provider 回执和迟到执行者仍可能引用它们。
-来源、验证和未完成保留策略见[保留保护条件](../../legacy-backlog/deployment-checklist.md)。
+归档或删除前必须先冻结重试/恢复/调查保护窗口，盘点全部逻辑引用，关闭新增引用并发，
+验证归档读取与隔离恢复；未知外部写、权限不足或归档损坏一律保留保护。
 
 ## 6. 幂等与副作用
 

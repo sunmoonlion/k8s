@@ -143,7 +143,7 @@ App 特有：Investment 有 `knowledge_binding`；Knowledge 有 `retrieval_datas
 镜像须匹配 `^[^\s]+@sha256:[0-9a-f]{64}$` · `forbidden_markers` 全文扫描
 
 旧 R7 验证器写死旧迁移 head 并要求正式包，不适用于当前三个开发 bundle。
-清退旧工具不减少验收项，仍按 [部署清单](../../legacy-backlog/deployment-checklist.md) 补齐。
+清退旧工具不减少验收项，仍按[发布与门禁](../topics/release.md)逐层补齐。
 
 ## 6. 集群
 
@@ -170,10 +170,10 @@ App 特有：Investment 有 `knowledge_binding`；Knowledge 有 `retrieval_datas
 | auth-app 与三 App 同模型 | auth-app 是 Helm，无 bundle/release.json |
 | R7 终检覆盖网络策略包级行为 | 不覆盖，那是独立脚本 + 独立集群 |
 
-当前续作入口为 [当前部署清单](../../legacy-backlog/deployment-checklist.md)，不依赖仓根旧便签。
-运行身份候选已经过隔离数据库/broker/真实进程联合验证，但尚未更新业务环境。
-旧供给入口的角色 LOGIN、默认 ACL 和重启 definitions 可能影响新策略；切换前必须
-按 [发布前置](../topics/release.md) 核验，不能把源码同步当作供给或部署完成。
+当前续作入口为[发布与门禁](../topics/release.md)，不依赖仓根旧便签。
+本机 KIND 已完成独立数据库/broker 身份切换，旧登录与旧 vhost 权限已实测拒绝；
+云端、production 和后续 release 仍须重新核角色 LOGIN、默认 ACL、启动 definitions 与
+真实回执，不能把一次开发候选的结果外推。
 
 ## 8. 验证
 

@@ -1,6 +1,6 @@
 # knowledge-app（知识库）
 
-> 取证时点：2026-09-13 后端源码与隔离验证；本轮增量未部署 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西；源码集成不代表已部署
+> 源码取证：2026-09-13；运行状态补至 2026-09-20 本机 KIND 固定候选 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西
 
 ## 1. 定位
 
@@ -98,8 +98,8 @@ dataset、原文件长度与 SHA-256。历史 running 缺失回执标为 legacy_
 受理用例，未知 key 返回 403 且不建 job/Outbox。服务端首条 accepted 历史保存绑定快照，
 dispatch/retry/Worker/恢复/最终落库复核，force 不能绕过；旧无快照任务不自动补绑。
 dataset 仅查找并核 ID/name，数据面创建入口失败关闭；配置缺目标不能触发自动创建。
-静态配置不是即时撤权：部署必须排空旧 API/Worker、同步一致配置；实际映射、存量任务和
-切换未验收，不能直接无配置部署。详细边界见 [部署清单](../../legacy-backlog/deployment-checklist.md)。
+静态配置不是即时撤权：部署必须排空旧 API/Worker、同步一致配置。本机 KIND 的固定候选
+已完成映射、身份切换和旧身份退出；其他环境仍不能直接无配置部署，见[发布与门禁](../topics/release.md)。
 
 B6b 源码：执行状态在 job.metadata_json 的保留项 ingestion_execution_v1，首条受理历史
 保存服务端协议标记；原请求留在 payload，用户 retry_count 不作为代次。消息携带
@@ -108,7 +108,7 @@ generation/step，与 upload_identity 资源键核对；旧游标/代次不动�
 deadline/interval 首次 parse 前按 DB 时钟固定，后续指数退避且最多 60 秒，每次读取受
 剩余 deadline 限制；poll 只查一次文档状态，另查租户身份，无 sleep 或重复 POST。
 旧无协议标记任务不自动迁入；部署前必须一致升级/排空，详细验收见
-[`B6b 证据`](../../legacy-backlog/verification-index.md)。
+[v5 历史索引中的 B6b](../topics/v5-history.md#被收拢的-24-份旧账报告)。
 
 领域身份用 **uuid5 稳定派生**（可跨环境重算），RAGFlow 的 dataset/document/chunk id
 是**私有 provider binding，永不是领域身份**。
@@ -198,13 +198,13 @@ settings.retrieval_auth_required_scope in service_principal.scopes  # scope
 **retrieval v1 的 provider 元数据仍限定 ragflow**，其它 Provider 显式拒绝，不伪装身份。
 将来替换还需实现适配器、扩展契约并做消费者回归、重建索引/绑定及验证引用和未知结果；
 不能只换地址或直接复用旧 Provider 回执。实现及证据见
-[Provider 内部解耦证据与历史入口](../../legacy-backlog/verification-index.md#knowledge-provider-内部解耦)；
+[Provider 内部解耦证据与历史入口](../topics/v5-history.md#knowledge-provider-内部解耦)；
 适配义务与兼容边界由 Knowledge Backend 的 `docs/knowledge-provider.md` 维护。
 
 运行身份隔离使用 Knowledge 自身的表列策略，包含 provider operation journal 的权限
 边界；本机 KIND 已迁移至 `20260911_0006`，完成分角色身份切换和旧身份退出；既有
 codex-smoke 摄入绑定已应用，没有重放历史任务，不代表完整 Provider 业务验收。续作见
-[部署清单](../../legacy-backlog/deployment-checklist.md)。
+[发布与门禁](../topics/release.md)。
 
 ## 8. 验证
 

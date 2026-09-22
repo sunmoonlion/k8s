@@ -1,6 +1,6 @@
 # investment-app（投资研究智能体）
 
-> 取证时点：2026-09-13 后端源码与隔离验证；本轮增量未部署 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西
+> 源码取证：2026-09-13；运行状态补至 2026-09-20 本机 KIND 固定候选 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西
 
 ## 1. 定位
 
@@ -171,9 +171,9 @@ Phase-0 与 Pilot 均经会话级 AgentExecutorPort 执行；接受的状态保�
 当前代码与故障测试见 investment-backend 的 `docs/durable-delivery-luna.md`、`app/tests/test_agent_reliability_db.py`、`app/tests/test_agent_shared_delivery_db.py`。旧修复记录只代表当时基线；本轮后续可靠性增量是源码与隔离验证，不表示业务镜像同步更新。部署前须核对实际迁移 head、处理旧在途任务与进程，不隐式迁移或排空。
 
 本仓使用含 Agent/checkpoint 表的领域权限策略，实际 PostgreSQL Saver、Worker 列级
-权限以及 API 取消/租约相关权限已有隔离验证；不能套用模板空领域权限。共享指标仍不等于
-实际告警接收，账号供给与旧权限撤销尚未落到业务环境，见
-[部署清单](../../legacy-backlog/deployment-checklist.md)。
+权限以及 API 取消/租约相关权限已有隔离验证；不能套用模板空领域权限。本机 KIND 已完成
+账号供给和旧权限撤销；共享指标仍不等于实际告警接收，当前边界见
+[发布与门禁](../topics/release.md)。
 
 ## 8. 验证
 
