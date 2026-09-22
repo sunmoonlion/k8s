@@ -1,6 +1,6 @@
 # 发布与门禁
 
-> 更新：2026-09-20，本机 KIND 已切换固定开发候选及独立运行身份 ｜ 相关规则见 [`../../dev-agent/rules/constraints.md`](../../dev-agent/rules/constraints.md)「发布」C-R1–C-R7
+> 更新：2026-09-20，本机 KIND 已切换固定开发候选及独立运行身份 ｜ 相关规则见 [`../../tree/rules/constraints.md`](../../tree/rules/constraints.md)「发布」C-R1–C-R7
 > 逐行位置见 [`../repos/k8s.md`](../repos/k8s.md) §4–§5
 
 ## 1. 发布单元
@@ -164,4 +164,4 @@ API 2 / Worker 1 / Scheduler 1 / 两个前端各 2 就绪，drift 无差异。9 
 
 ---
 
-**动发布、清镜像前**，先读 [`../../dev-agent/rules/constraints.md`](../../dev-agent/rules/constraints.md)「发布」——本页只写现状。
+**动发布、清镜像前**，先读 [`../../tree/rules/constraints.md`](../../tree/rules/constraints.md)「发布」——本页只写现状。

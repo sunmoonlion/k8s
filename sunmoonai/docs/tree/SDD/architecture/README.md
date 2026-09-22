@@ -23,4 +23,4 @@
 
 `SDD/` 下的同层：[`modules/`](../modules/)（每块是什么）、[`submodules/`](../submodules/)（子任务）。
 
-再上一层是 [`dev-agent/`](../../README.md)：`PRD/` 写要什么，`rules/` 放代码规则。
+再上一层是 [`tree/`](../../README.md)：`PRD/` 写要什么，`rules/` 放代码规则。

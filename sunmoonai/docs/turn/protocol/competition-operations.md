@@ -82,7 +82,7 @@ git log --oneline <基座commit>..<整合commit>
 每个环节，所有者在各参赛方的窗口里说同一句话，各家一字不差：
 
 ```text
-看一下 <主线>/sunmoonai/docs/dev-human/protocol/GO.md，照做。
+看一下 <主线>/sunmoonai/docs/turn/protocol/GO.md，照做。
 ```
 
 - **`<主线>` 换成本机的主线检出绝对路径**（见 [`competition-protocol.md`](competition-protocol.md)「产物、路径与命名」的 `M`；本机是 `~/master/k8s`）。**必须是绝对路径**：参赛方的分支从 ① 起不再跟进主线，写成相对路径，对方会读到自己 worktree 里的旧 `GO.md`。

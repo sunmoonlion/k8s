@@ -62,4 +62,4 @@
   这一层不调模型（D11 未定之前）；未经用户确认的预填不算数（`AT-32`）；
 - 与后端只有一条通道（①），主动外连，用设备私钥认证；
 - **独立成仓（仓名 `runtime`）且开源**：二进制签名、可复现构建、公开会连接的全部域名（`C-T7`；合同「让用户能验证」）。随 `desktop-app` 打包分发，但两仓各自发版——版本配对靠发布清单一起钉住 runtime 版、① 协议版、desktop 版（`C-T8`）；与用户自装的 Codex 隔离；
-- 遵守 [代码规则](../../../../rules/constraints.md)、[IMP 规则](../../../../../dev-human/imp/message-rules.md)。
+- 遵守 [代码规则](../../../../rules/constraints.md)、[IMP 规则](../../../../../turn/imp/message-rules.md)。

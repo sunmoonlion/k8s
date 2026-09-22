@@ -1,7 +1,7 @@
 # 一次 turn 的九站
 
 **一问从发出到拿到可用的答的完整往返。**这是主干:
-[`dev-human/`](dev-human/README.md) 讲每一站怎么走,[`dev-agent/`](dev-agent/README.md) 讲这个项目
+[`turn/`](turn/README.md) 讲每一站怎么走,[`tree/`](tree/README.md) 讲这个项目
 怎么把每一站建出来,两边都指这一份。
 
 ## 只有一条流程,区别是每一站谁做
@@ -56,7 +56,7 @@
 
 状态与账、进度与「下一步是什么」——这两样横穿全部九站,**不属于任何一格**。
 摊进去,同一事实就会有多个写入面(`P1`)。后端把它们单列成两块,见
-[后端的七块](dev-agent/SDD/submodules/0001-backend/SDD/architecture/blocks.md)。
+[后端的七块](tree/SDD/submodules/0001-backend/SDD/architecture/blocks.md)。
 
 ⚠ 横穿的东西**必须不朝外**:一旦有外部面,它就成了绕过站序的第二个入口。
 
@@ -66,9 +66,9 @@
 **而这四问本身,仍然用「其余格子还是人」的状态来完成。**
 
 ```text
-一次 turn 怎么走      ← dev-human/：跨项目通用的规矩
+一次 turn 怎么走      ← turn/：跨项目通用的规矩
    ↓ 用它，每格 4 次 turn
-把某一格改成脚本      ← dev-agent/：这个项目的任务树
+把某一格改成脚本      ← tree/：这个项目的任务树
    ↓ 九格改完
 这条链自己就能跑一次 turn
 ```
@@ -92,14 +92,14 @@
 | 非交互一次性(`codex exec` / `agent -p` / `qoder -p`) | **不可用**:权限开关把审批预先答掉 |
 | 走产品通道派发 | 待开发 |
 
-**自动化的是传输,不是决定。**细则见 [操作闭环](dev-human/protocol/competition-operations.md)「投喂」,
-批准点见 [人的批准点](dev-human/approvals.md)。
+**自动化的是传输,不是决定。**细则见 [操作闭环](turn/protocol/competition-operations.md)「投喂」,
+批准点见 [人的批准点](turn/approvals.md)。
 
 ## 多方竞争挂在第 4 格
 
 多方竞争不是另一条流程,它是**派发**那一格的一种形态:同一问发给几家,
 多出互评、裁决、异议三个环节,到**交付**重新合流。
-规则见 [多方竞争](dev-human/competition.md),本平台怎么做见 [protocol/](dev-human/protocol/README.md)。
+规则见 [多方竞争](turn/competition.md),本平台怎么做见 [protocol/](turn/protocol/README.md)。
 
 ## 终点在哪
 
@@ -117,7 +117,7 @@
 
 已经挡住一半:不设逾期默认、人不确认就不发布、确认前必须有检视面。
 **挡不住的是「看了但没真看」**。补法是让人的注意力有落点——
-验收结论必须点名最该看的三处,见 [UAT 把关](dev-human/uat/finalize.md)。
+验收结论必须点名最该看的三处,见 [UAT 把关](turn/uat/finalize.md)。
 
 **二、难度地图和直觉是反的。**
 

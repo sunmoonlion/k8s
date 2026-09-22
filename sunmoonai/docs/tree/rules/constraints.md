@@ -8,7 +8,7 @@
 > 项目现在长什么样，见 [`../project-guide/`](../../project-guide)；
 > 要建什么见 [`requirement.md`](../PRD/requirement.md)，功能义务 `F-*` 在各模块自己的文档里，分期见 [分期与工作量](../../project-guide/staging.md)，
 > 用户消息在各 turn 的 `user-message.md` 里；
-> 进度由任务目录推出，**任务目录里**不另设进度文件（IMP 在代码分支上的 `CHECKPOINT.md` 不在此列，见 [IMP 规则](../../dev-human/imp/message-rules.md)「跨运行时 thread 续接」）。
+> 进度由任务目录推出，**任务目录里**不另设进度文件（IMP 在代码分支上的 `CHECKPOINT.md` 不在此列，见 [IMP 规则](../../turn/imp/message-rules.md)「跨运行时 thread 续接」）。
 
 ## 怎么用
 
@@ -21,7 +21,7 @@
 | 登录、权限、服务间调用 | [身份](#身份) |
 | 仓库、组件、运行角色 | [拓扑](#拓扑) |
 | 部署、发版、镜像 | [发布](#发布) |
-| 智能体 | [智能体](#智能体) + [`competition-protocol.md`](../../dev-human/protocol/competition-protocol.md) |
+| 智能体 | [智能体](#智能体) + [`competition-protocol.md`](../../turn/protocol/competition-protocol.md) |
 
 对照结果就是一张小表，两三行即可：
 
@@ -153,12 +153,12 @@ Calico 集群，否则"测过了"是假的。
 
 ## 智能体
 
-> 依据的通用规范：[SDD「设计必须满足」](../../dev-human/sdd/finalize.md)
+> 依据的通用规范：[SDD「设计必须满足」](../../turn/sdd/finalize.md)
 
 | # | 规则 | 谁在执行 |
 | --- | --- | --- |
 | C-A1 | **一个执行体**，任务之间的区别只在 **Profile 与 workflow**；新增业务智能体是新增一份 Profile，**不是 fork 一套代码**，也不是另造一套 harness | ⚠ 自检 |
-| C-A2 | **两边都要有纪律**，不存在"通用部分不需要约束" | [`competition-protocol.md`](../../dev-human/protocol/competition-protocol.md) |
+| C-A2 | **两边都要有纪律**，不存在"通用部分不需要约束" | [`competition-protocol.md`](../../turn/protocol/competition-protocol.md) |
 | C-A3 | 四本账（预算 / 幂等 / 副作用 / 证据）**必须落 PostgreSQL**——跨 run、跨进程死亡仍须正确的不变量，必须由存储承担。**执行端的本地暂存不是权威副本**：重启或重连后以后端的账为准，本地记录只是待上报的材料 | ⚠ 自检 |
 | C-A4 | 执行引擎**租用不自建**；只经**经审定的官方 SDK 或公开集成协议**接入，依赖集中封装在适配器内。禁止依赖内部实现，禁止**解析终端显示内容** | ⚠ 自检 |
 | C-A5 | 领域概念**不得进入 Port 签名**（`run(sql, limit)` 可以，`run_portfolio_query(持仓ID)` 不可以） | ⚠ 自检 |
@@ -170,7 +170,7 @@ Calico 集群，否则"测过了"是假的。
 
 ## 设计原则的具体化
 
-> **原则本身不在这里**：`P0`–`P6` 的真源是 [SDD「设计必须满足」](../../dev-human/sdd/finalize.md)「设计原则」，
+> **原则本身不在这里**：`P0`–`P6` 的真源是 [SDD「设计必须满足」](../../turn/sdd/finalize.md)「设计原则」，
 > 跨项目通用。**引用一律写 `P0`–`P6`**，本文不复述。
 
 下面只写它们在本项目里的**具体取值**：
@@ -180,7 +180,7 @@ Calico 集群，否则"测过了"是假的。
 | `P0` | 那一套状态机是 **Task / Attempt** 两层；场景差异只体现在 **Profile 的 guard、必需产物与 interrupt 策略**。⚠ **适用层级到 Task 与 Attempt 为止**——Artifact、Interaction 等对象各有自己的小生命周期（候选稿的 `DRAFT → FROZEN → … → PUBLISHED`、Interaction 的 `consumed_at`），那些是**对象属性**，同样跨场景共用、不得按场景另造 |
 | `P1` | 对应不变量 `I13`（见 [不变量](../SDD/architecture/invariants.md)）；后端把横穿所有站的东西单列成 [`0001-ledger` 与 `0003-orchestrator`](../SDD/submodules/0001-backend/SDD/architecture/blocks.md) 就是这条的实例 |
 | `P5` | 本仓的落成层次见下面「保证这些被遵守的三层」 |
-| `P6` | 未核前提记在 [待定决策与未验证事项](../decisions.md)，并按 [词汇表](../../dev-human/glossary.md)「规范用语」标 ⚠ |
+| `P6` | 未核前提记在 [待定决策与未验证事项](../decisions.md)，并按 [词汇表](../../turn/glossary.md)「规范用语」标 ⚠ |
 
 ## 风险与应对
 
@@ -248,7 +248,7 @@ Calico 集群，否则"测过了"是假的。
 
 ## 保证这些被遵守的三层
 
-> 依据的通用规范：[UAT 规则「规则要有载体」](../../dev-human/uat/verify-rules.md)
+> 依据的通用规范：[UAT 规则「规则要有载体」](../../turn/uat/verify-rules.md)
 
 | 层 | 覆盖 | 在哪 |
 | --- | --- | --- |

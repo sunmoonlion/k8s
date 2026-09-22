@@ -1,6 +1,6 @@
 # 现在做什么
 
-所有者在你窗口里说「看一下 `<主线>/sunmoonai/docs/dev-human/protocol/GO.md`，照做」，就从这里开始。每个环节都一样。
+所有者在你窗口里说「看一下 `<主线>/sunmoonai/docs/turn/protocol/GO.md`，照做」，就从这里开始。每个环节都一样。
 
 **先把两个位置取到变量里**，下面的命令都用它们（本机取值见 `competition-protocol.md`「产物、路径与命名」；换了机器问所有者要）：
 
@@ -13,8 +13,8 @@ W=~/worktrees/<你的名>/k8s   # 你的工作目录，只有这里你能写
 ⚠ **只认主线这一份。**你 worktree 里也有一份同名文件，但你的分支从 ① 起就不再跟进主线，那份是旧的。先自检：
 
 ```bash
-diff <(git -C ${M} show master:sunmoonai/docs/dev-human/protocol/GO.md) \
-     ${W}/sunmoonai/docs/dev-human/protocol/GO.md >/dev/null \
+diff <(git -C ${M} show master:sunmoonai/docs/turn/protocol/GO.md) \
+     ${W}/sunmoonai/docs/turn/protocol/GO.md >/dev/null \
   && echo "本地与主线一致" || echo "本地已过期，只读主线这份"
 ```
 

@@ -45,4 +45,4 @@
 - 不调用生成式模型，也不请执行端代为判断；需要语义判断的环节派 Attempt（合同「后端 supervisor」一节）；
 - 不接触用户 key，不中转模型请求，看不到结果正文（合同 I16、I17）；
 - 四本账都在数据库里，执行端不持有权威副本（I13）；
-- 合同的不变量 `I1` 至 `I20`、[代码规则](../../../../rules/constraints.md)、[IMP 规则](../../../../../dev-human/imp/message-rules.md)。
+- 合同的不变量 `I1` 至 `I20`、[代码规则](../../../../rules/constraints.md)、[IMP 规则](../../../../../turn/imp/message-rules.md)。

@@ -76,5 +76,5 @@
 
 ## 约束
 
-[代码规则](../../../../../rules/constraints.md)、[IMP 规则](../../../../../../dev-human/imp/message-rules.md)，
+[代码规则](../../../../../rules/constraints.md)、[IMP 规则](../../../../../../turn/imp/message-rules.md)，
 以及上一层的 [不变量](../../../../architecture/invariants.md)。

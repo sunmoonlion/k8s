@@ -96,10 +96,10 @@ SELF_CONTAINED = (
     # 合并不是修法，修法是让它降为**被核对的引用**：四条各注出处，本门验那个出处真的存在。
     # ⚠ 那四条现已改成**按标题引用**（协议「通用纪律」要求），所以本项对它已无实际拦截力；
     # 名单留着是为了：将来谁再往这两处写 §N，当场判失败。
-    "sunmoonai/docs/dev-human/protocol/GO.md",
+    "sunmoonai/docs/turn/protocol/GO.md",
 )
-# 产品合同已拆散（需求进 dev-agent/PRD/，责任投影进 SDD/architecture/ownership.md，
-# 决策与欠账进 dev-agent/decisions.md），原条目随之移除——**这道自检当场报了名单失效**，
+# 产品合同已拆散（需求进 tree/PRD/，责任投影进 SDD/architecture/ownership.md，
+# 决策与欠账进 tree/decisions.md），原条目随之移除——**这道自检当场报了名单失效**，
 # 说明它有用：名单按路径写死，文档一改名或删除就静默失去作用。
 
 USAGE = "用法: doc-gate.py <文件>... | --all | --frozen | --survey | --selfcheck"
@@ -383,7 +383,7 @@ def check_tables(path: str, text: str) -> list[str]:
 #     thread/0003-sdd-01k8f3m2qz/0002-01k8h9t1cc/  文档 turn：user-message.md、response.md、turn.md、others/
 # PRD、SDD 段的答是 response.md；IMP、UAT 段的产物在 worktree，turn.md 记分支与提交。
 # 定稿在 PRD/（一份需求，不分模块）与 SDD/ 下（architecture/ 与 modules/）。字段与形状见
-# dev-human/turn-project.md 与 dev-human/naming.md。
+# turn/turn-project.md 与 turn/naming.md。
 THREAD_PREFIX_RE = re.compile(r"^(?P<task>.+)/thread/(?P<rest>.+)$")
 KINDS = ("prd", "sdd", "imp", "uat")
 THREAD_DIR_RE = re.compile(r"^(?P<num>\d{4})-(?P<kind>[a-z]+)(?:-(?P<id>[A-Za-z0-9][A-Za-z0-9._-]*))?$")
@@ -543,7 +543,13 @@ def check_modules(tracked: set[str]) -> list[str]:
 
 def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tuple[list[str], int]:
     problems: list[str] = []
-    staged_paths = None if staged is None else {c[1] for c in staged}
+    # ⚠ **R100 不算「新写」**：字节完全相同的改名，内容一个字没动。
+    # 整棵子树搬家时（dev-human → turn、dev-agent → tree），已冻结的 turn 会以 R100
+    # 出现；把它们当成新写，就会要求冻结原件改用新字段名——而原件正是不许回改的。
+    # 首版漏了这一条，`git mv` 之后当场 4 处假失败。
+    staged_paths = None if staged is None else {
+        c[1] for c in staged if not (c[0] == "R100")
+    }
     tasks: dict[str, dict[str, dict[str, set[str]]]] = {}
     for p in sorted(tracked):
         if not (p.startswith(DOC_ROOT) and THREAD_PREFIX_RE.match(p)):

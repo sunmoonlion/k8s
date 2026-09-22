@@ -17,12 +17,12 @@
 
 同层的其他定稿：[`constraints.md`](../../rules/constraints.md) 是代码必须遵守的规则，
 [`constraints.md`](../../rules/constraints.md) 的「设计原则」是设计取舍的依据，
-[`protocol/`](../../../dev-human/protocol/README.md) 是多方竞争在本平台的做法。
+[`protocol/`](../../../turn/protocol/README.md) 是多方竞争在本平台的做法。
 
 ## 共同约束
 
 
-- 状态机只有一套，场景差异只体现在 Profile 与 workflow（[SDD 规则](../../../dev-human/sdd/finalize.md) P0）；
+- 状态机只有一套，场景差异只体现在 Profile 与 workflow（[SDD 规则](../../../turn/sdd/finalize.md) P0）；
 - 同一事实只有一个权威写入面（P1）；
 - 跨进程仍须正确的不变量由持久存储承担，不放在执行进程本地；
 - 执行层租用不自建，领域概念不进执行端口的签名。

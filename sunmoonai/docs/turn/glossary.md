@@ -11,6 +11,7 @@
 | 任务目录 | 一个任务的全部文件：`thread/`、`PRD/`、`SDD/`。目录本身不设用户消息 | — |
 | 文档 thread | 任务目录 `thread/` 下的一个目录，对应一个运行时 thread；名为「本地号-种类-运行时 thread id」，种类是 prd、sdd、imp、uat。运行时换了 thread 就新开一个 | 会话、turns、rounds |
 | 运行时 thread | 执行环境自己的 thread，只有 id；与文档 thread 一对一 | 会话 |
+| `turn/` 目录 | 本目录——**一次一问一答怎么走完**的规矩，跨项目通用。它是目录名，不是某个具体的 turn | — |
 | 运行时 turn | 执行环境自己的 turn，只有 id；一个文档 turn 可能覆盖它好几个 | — |
 | 文档 turn | 一问一答：一次派工和它的交回，是文档 thread 下的一个目录。目录名为「本地号-运行时 turn id」，如 `0002-01k8h9t1cc`；本地号四位数字，在所属文档 thread 内按派出顺序编，不跳、不复用；交回即冻结。行文引用写「文档 thread 号/turn 号」，如 `0001/0002` | 轮、轮次、回合 |
 | `user-message.md` | turn 里的用户消息，就是这一次发出去的全文——这一问 | turn 里的 `task.md` |
@@ -32,7 +33,7 @@
 ## 种类与交付物
 
 thread 的**种类**有四个：PRD、SDD、IMP、UAT，规则见 [PRD](prd/finalize.md)、[SDD](sdd/finalize.md)、[IMP](imp/message-rules.md)、[UAT](uat/message-rules.md)。每一类该问什么，见各类规则的「这一类该问什么」；写多严见 [turn 的投影](turn-project.md)「用户消息写多严」。
-**不要和产品侧的「任务类别」（通用 / 专业）混用**：那是[任务类别判定与路由](../dev-agent/SDD/architecture/routing.md)里客户任务的分类，与 thread 的种类无关。
+**不要和产品侧的「任务类别」（通用 / 专业）混用**：那是[任务类别判定与路由](../tree/SDD/architecture/routing.md)里客户任务的分类，与 thread 的种类无关。
 
 | 词 | 含义 | 不要用 |
 | --- | --- | --- |
@@ -85,7 +86,7 @@ thread 的**种类**有四个：PRD、SDD、IMP、UAT，规则见 [PRD](prd/fina
 | **必须** | 缺失即不符合本规范 |
 | **应该** | 默认要求；偏离时必须记录理由、风险和等价控制 |
 | **可以** | 合法选项，不构成统一实现要求 |
-| **⚠** | 依赖尚未实测的前提，必须写明验证办法（`P6`）；记在 [待定决策与未验证事项](../dev-agent/decisions.md) |
+| **⚠** | 依赖尚未实测的前提，必须写明验证办法（`P6`）；记在 [待定决策与未验证事项](../tree/decisions.md) |
 
 ## 仓的两组
 
@@ -95,7 +96,7 @@ thread 的**种类**有四个：PRD、SDD、IMP、UAT，规则见 [PRD](prd/fina
 | **客户端仓** | `runtime`（开源）、`desktop-app` | 不要求——不参与 k8s 部署 |
 
 说「五仓」时指的是**平台五仓**，不含客户端仓；要指全部时写「全部仓」。
-规则见 [`constraints.md`](../dev-agent/rules/constraints.md)「拓扑」`C-T6` 至 `C-T8`。
+规则见 [`constraints.md`](../tree/rules/constraints.md)「拓扑」`C-T6` 至 `C-T8`。
 
 ## 编号的归属
 
@@ -104,11 +105,11 @@ thread 的**种类**有四个：PRD、SDD、IMP、UAT，规则见 [PRD](prd/fina
 | 编号 | 归谁 | 定义在 |
 | --- | --- | --- |
 | `F-*` | 产品功能义务 | 各模块的 `functions.md` |
-| `I1`–`I20` | 产品不变量 | `dev-agent/SDD/architecture/invariants.md` |
-| `D2`–`D28` | 待定决策点 | `dev-agent/decisions.md` |
-| `AT-*` | 产品验收 | `dev-agent/PRD/acceptance.md` |
-| `P0`–`P6` | **设计原则**，跨项目通用 | `dev-human/sdd/finalize.md`「设计原则」 |
-| `C-D*` `C-C*` `C-I*` `C-T*` `C-R*` `C-A*` | 代码必须符合的规则，按组分字母（数据/契约/身份/拓扑/发布/智能体） | `dev-agent/rules/constraints.md` |
+| `I1`–`I20` | 产品不变量 | `tree/SDD/architecture/invariants.md` |
+| `D2`–`D28` | 待定决策点 | `tree/decisions.md` |
+| `AT-*` | 产品验收 | `tree/PRD/acceptance.md` |
+| `P0`–`P6` | **设计原则**，跨项目通用 | `turn/sdd/finalize.md`「设计原则」 |
+| `C-D*` `C-C*` `C-I*` `C-T*` `C-R*` `C-A*` | 代码必须符合的规则，按组分字母（数据/契约/身份/拓扑/发布/智能体） | `tree/rules/constraints.md` |
 | `T0` `T1` `T2` | 流程档位 | 本表「过程」与 `competition.md` |
 | `V0`–`V3` | 验证职责 | `protocol/competition-operations.md` |
 | `L1`–`L7` | 测试层次 | `imp/message-rules.md` |

@@ -1,7 +1,7 @@
-# `dev-agent/` 目录
+# `tree/` 目录
 
 **这个项目的任务树**——把 [九站](../pipeline.md) 一格一格改成脚本,每改一格是树上一个节点。
-一次一问一答**怎么走**在 [`../dev-human/`](../dev-human/README.md),**新人先读那边**。
+一次一问一答**怎么走**在 [`../turn/`](../turn/README.md),**新人先读那边**。
 
 这里的内容**本项目专有**;那边的规矩跨项目通用。
 
@@ -26,7 +26,7 @@
 
 ## 每一层都是同一个模式
 
-见 [turn 的投影](../dev-human/turn-project.md):
+见 [turn 的投影](../turn/turn-project.md):
 
 - `thread/`：**一串同种类的一问一答**，目录名带种类（prd、sdd、imp、uat）；一问一答是它下面的一个 **turn**；
 - `PRD/`：PRD 类的定稿——要什么、做到什么算满足；**不分模块**；
@@ -35,7 +35,7 @@
 - `rules/`：这一层的代码约束——四类都要守，所以与上面三样平级。
 
 模块名是「四位号-短名」，在同一层里从 `0001` 起连续、不复用；`modules/*.md` 与 `submodules/*/` 同号同名。
-见 [命名与编号](../dev-human/naming.md)。
+见 [命名与编号](../turn/naming.md)。
 
 ```text
 decisions.md                      还没定的决策点 D*、还没验的事项 ⚠

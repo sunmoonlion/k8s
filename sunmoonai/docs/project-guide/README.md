@@ -11,5 +11,8 @@
 | [`licensing.md`](licensing.md) | 第三方许可与本产品的关系 |
 | [`topics/`](topics/) | 跨仓主题：[契约](topics/contracts.md) · [数据](topics/data.md) · [身份](topics/identity.md) · [发布](topics/release.md)；[v5 历史索引](topics/v5-history.md)只用于取回退役材料，不是当前任务入口 |
 
-另外两处：规则与要建什么在 [`../dev-agent/`](../dev-agent/)（**代码要跟着改**），
-怎么共事在 [`../dev-human/`](../dev-human/)（协作方式变，代码不变）。
+另外三处：
+
+- [`../pipeline.md`](../pipeline.md)——一次 turn 的九站，以及**每一站现在谁做**（人还是脚本）。⚠ 人机分工的现状只记在那里，本目录不另记；
+- [`../turn/`](../turn/README.md)——一次一问一答怎么走完，**跨项目通用**；
+- [`../tree/`](../tree/README.md)——这个项目把九站建成了什么，**本项目专有**。

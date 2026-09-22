@@ -22,7 +22,7 @@ step_contract                         workflow 各步骤的输入、输出 schem
 
 Agent Profile 声明执行能力：工具绑定、权限边界、自动放行范围、方法、记忆策略与支持的 Task Profile；签名发布（F-GUARD-01）。Task 固定 Task Profile 版本；每次 Attempt 记录所选 Agent Profile 与运行时版本。升级任一 Profile 不得静默改变已受理 Task 的解释或历史结果。
 
-新增领域应新增 Task Profile、相容的 Agent Profile 与 workflow，不修改通用状态语义。确需改变通用骨架时，必须先通过有证据与迁移方案的规范修订（见 [改判](../../../dev-human/approvals.md)）。
+新增领域应新增 Task Profile、相容的 Agent Profile 与 workflow，不修改通用状态语义。确需改变通用骨架时，必须先通过有证据与迁移方案的规范修订（见 [改判](../../../turn/approvals.md)）。
 
 ## 通用与专业 Profile
 
