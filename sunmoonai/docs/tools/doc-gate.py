@@ -415,16 +415,29 @@ def parse_thread_path(path: str) -> tuple[str, str, str, str] | None:
     return m["task"], parts[0], parts[1], "/".join(parts[2:])
 
 
-def check_turn_md(base: str, fm: dict[str, str], kind: str) -> list[str]:
+def check_turn_md(base: str, fm: dict[str, str], kind: str, strict: bool = False) -> list[str]:
+    """`strict` = 这份 turn.md 正在本次提交里被写入（hook 的 --staged）。
+
+    字段名从 `worktree` 改成 `branch`：它装的一直是**分支名**，不是 worktree 路径，
+    而路径、worktree、branch、commit 是四种不同对象，名字错位让自动化没法可靠定位交回物。
+    **已冻结的 turn.md 不回改**，所以旧名必须继续收；但新写的一律用 `branch`——
+    这个边界由 `strict` 机械划开，不靠谁记得。
+    """
     problems: list[str] = []
-    for k in ("status", "worktree", "commit"):
+    has_new, has_old = "branch" in fm, "worktree" in fm
+    if has_new and has_old:
+        problems.append(f"{base}/turn.md: `branch` 与旧名 `worktree` 不得并存，只留 `branch`")
+    if strict and has_old and not has_new:
+        problems.append(f"{base}/turn.md: 字段名是 `branch`（它填的是分支名）；`worktree` 是旧名，只有已冻结的原件才保留")
+    key = "branch" if has_new else "worktree"
+    for k in ("status", key, "commit"):
         if not fm.get(k):
             problems.append(f"{base}/turn.md: 缺字段或为空：{k}（用不上写「无」，不删行）")
-    on_branch = {k: fm.get(k, "") not in ("", NONE) for k in ("worktree", "commit")}
+    on_branch = {k: fm.get(k, "") not in ("", NONE) for k in (key, "commit")}
     if kind in WORKTREE_KINDS and not all(on_branch.values()):
-        problems.append(f"{base}/turn.md: {kind} 类的产物在分支上，worktree 与 commit 都要填")
-    if kind in DOC_KINDS and on_branch["worktree"] != on_branch["commit"]:
-        problems.append(f"{base}/turn.md: worktree 与 commit 要么都写「无」（答在当前分支上），要么都填（答在另一条分支上）")
+        problems.append(f"{base}/turn.md: {kind} 类的产物在分支上，{key} 与 commit 都要填")
+    if kind in DOC_KINDS and on_branch[key] != on_branch["commit"]:
+        problems.append(f"{base}/turn.md: {key} 与 commit 要么都写「无」（答在当前分支上），要么都填（答在另一条分支上）")
     for k in OBSOLETE_TURN_FIELDS:
         if fm.get(k):
             problems.append(f"{base}/turn.md: 回执里不写 {k}——运行时 id 在目录名里，执行者在用户消息里，时间与提交 git 有，中断或失败的原因写正文")
@@ -503,6 +516,7 @@ def check_modules(tracked: set[str]) -> list[str]:
 
 def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tuple[list[str], int]:
     problems: list[str] = []
+    staged_paths = None if staged is None else {c[1] for c in staged}
     tasks: dict[str, dict[str, dict[str, set[str]]]] = {}
     for p in sorted(tracked):
         if not (p.startswith(DOC_ROOT) and THREAD_PREFIX_RE.match(p)):
@@ -612,7 +626,14 @@ def check_threads(tracked: set[str], staged: list[tuple[str, str]] | None) -> tu
                 if tm is None:
                     problems.append(f"{base}/turn.md: 缺 YAML 头（--- 包起的固定字段）")
                     continue
-                problems += check_turn_md(base, tm, kind)
+                # ⚠ strict 必须**按文件**判，不能按模式判：`--staged` 模式下
+                # check_threads 仍遍历全树，按模式传会把每一份已冻结的原件都判失败
+                # （首版就是这么写的，当场 19 处假失败）。只有本次提交真正写入的
+                # 那几份才算「新写」。
+                problems += check_turn_md(
+                    base, tm, kind,
+                    strict=staged_paths is not None and f"{base}/turn.md" in staged_paths,
+                )
 
     for rid, where in sorted(runtime_ids.items()):
         if len(where) > 1:
