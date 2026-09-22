@@ -61,7 +61,36 @@ runtime 必须：
 | 通知 | 为什么要紧 |
 | --- | --- |
 | `turn/started` / `turn/completed` | **逐 turn 的完成归属**——Attempt 的终态判定据此，不靠猜 |
-| `process/exited` | **子进程退出的直接观测点**——「取消是否真的停止副作用」那条待验项（附录 B）靠它验，不能只看 `turn/interrupt` 返回了 |
+| `item/completed` 带 `CommandExecution` / `FileChange` | **turn 内命令与文件改动的终态**（`status: InProgress｜Completed｜Failed｜Declined`）。取消后判「副作用执行已停止」的第一条依据 |
+| `process/exited` | **只覆盖客户端自己 `process/spawn` 起的独立进程**，按自给的 `processHandle` 配对。⚠ **不是 turn 内所有命令子进程的统一退出事件**——见下 |
+
+⚠ **`process/exited` 证明不了「取消已停止副作用」。**源码写明它是
+`process/spawn` 的终止通知，参数里那个 `processHandle` 是**客户端自己在 spawn 时给的**，
+而 `process/spawn` 本身是「起一个不经 Codex 沙箱的独立进程」。
+turn 内部的命令执行没有这个 handle，根本不产生这个通知；
+它们的终态在 `item/completed` 的 `CommandExecution.status` 上，
+而那上面的 `process_id` 是 `Option`（注释：`when available`），**连进程号都不保证有**。
+
+副作用按「谁能看见」分面，各有各的观测法：
+
+| 副作用类别 | 看得见吗 | 观测法 |
+| --- | --- | --- |
+| turn 内命令执行、文件改动 | 只看得见 **item 终态**，看不到进程树 | `item/completed` 的 `CommandExecution.status` / `FileChange` |
+| 客户端发起的 one-off 命令 | 看得见，且可主动终止 | `command/exec` + `command/exec/terminate`（按自给的 `processId`） |
+| 独立 `process/spawn` | 看得见，且可主动终止 | `process/exited`（按自给的 `processHandle`） |
+| 经我们工具网关的方法调用 | 看得见 | 网关自己就是服务端，见 [`0003-orchestrator`](../../0001-backend/SDD/modules/0003-orchestrator.md) 的二次校验 |
+| Codex 内部的模型 API 请求 | **看不见** | — |
+| 命令自己 fork 出去的后台进程 | 协议**看不见** | 只能由 OS 层看，见下 |
+
+**第三态（「副作用执行已停止」，见 [`engine-adapter.md`](engine-adapter.md)）成立要两条同时成立：**
+
+1. 本 turn 全部 `CommandExecution` 与 `FileChange` item 已到 `Completed｜Failed｜Declined`；
+2. **Codex 所在进程组已空**——runtime 把 Codex 起在自己的进程组里
+   （Windows job object；Linux/macOS 进程组或 cgroup），取消后核实该组无存活进程。
+   这一条**不依赖协议**，因而覆盖得到协议看不见的 fork 后台进程。
+
+⚠ **模型 API 请求已经发出去的那一批，两条都覆盖不到——报「无法确认」，不报「已停止」。**
+`turn/interrupt` 能让 turn 结束为 interrupted，但协议**没有承诺**已发出的外部副作用因此停止。
 
 **不可介入**：agent loop 的决策、提示词组装与上下文裁剪、上下文压缩的内部逻辑、内置命令执行与补丁工具的实现、模型线路格式、沙箱实现本身。产品不得设计依赖这些内部行为的机制。钉版升级时，锚点必须覆盖本节列出的方法、五种审批请求与可观察面。
 
