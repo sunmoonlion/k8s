@@ -2,7 +2,7 @@
 
 > 依据：[上层设计](../../../architecture/README.md) 与 [产品合同](../../../../../product/product-contract.md) 的「责任投影」中的「本地 runtime」。
 
-同目录另有五份：前四份由合同搬入，[`engine-adapter.md`](engine-adapter.md) 由 `D28` 定。
+同目录各份的分工见下表。[`engine-adapter.md`](engine-adapter.md) 由 `D28` 定，其余由合同搬入。
 
 | 文件 | 内容 |
 | --- | --- |

@@ -99,7 +99,7 @@ SELF_CONTAINED = (
     "sunmoonai/docs/dev-human/protocol/GO.md",
 )
 
-USAGE = "用法: doc-gate.py <文件>... | --all | --survey | --selfcheck"
+USAGE = "用法: doc-gate.py <文件>... | --all | --frozen | --survey | --selfcheck"
 
 LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
 SECTION_REF_RE = re.compile(r"§(\d+(?:\.\d+)*)")
@@ -175,6 +175,39 @@ def check_links(path: str, text: str, tracked: set[str]) -> list[str]:
             if not exists_in_index(norm, tracked):
                 problems.append(f"{path}:{lineno}: 链接目标不在 git 索引里: {target}")
     return problems
+
+
+def frozen_link_survey(paths: list[str], tracked: set[str]) -> tuple[int, list[str]]:
+    """冻结原件的链接旁路检查：只报「指向当前索引里没有的路径」的那些，不判失败。
+
+    **为什么要旁路。**`/thread/` 下的交回物冻结后不许回改，于是原来整片豁免、
+    链接一条不查。但「不可修改」不等于「不检查」，也不等于「仍然有效」。
+
+    **为什么只报、不判。**原件不许回改，判失败会让门永久拦住每一次提交。
+
+    ⚠ **本函数刻意不去断言这些链接「当初是好的」还是「当初就坏」。**
+    试过两次，两次都得出假结论：
+      一版用 `git log -1` 取「冻结提交」——取到的是**目录重排的搬运提交**，
+      它的树里早没有旧目录，于是每条链接都被判成「冻结时即坏链」；
+      二版改成遍历该文件全部历史，仍然错——这些链接是按文件**原来的路径**
+      写的相对路径，而我一直用它**现在的路径**去解析，`../../../../../` 落点根本不同。
+    要判准就得同时跟踪路径重命名并逐版本换基准解析，成本远超收益。
+    **所以这里只报「今天解析不到」这个事实**，剩下的交给下面那条命令。
+    """
+    dangling: list[str] = []
+    total = 0
+    for path in paths:
+        text = blob(path) or ""
+        base = PurePosixPath(path).parent
+        for lineno, line in enumerate(text.splitlines(), 1):
+            for target in LINK_RE.findall(line):
+                target = target.split("#", 1)[0].split(" ", 1)[0].strip()
+                if not target or target.startswith(SKIP_LINK_PREFIXES) or target.startswith("/"):
+                    continue
+                total += 1
+                if not exists_in_index(normalize(base, target), tracked):
+                    dangling.append(f"{path}:{lineno}: {target}")
+    return total, dangling
 
 
 def headings_of(text: str) -> set[str]:
@@ -743,9 +776,35 @@ def main(argv: list[str]) -> int:
         link_targets = [p for p in exempted if thread_live(p)]
         # **豁免必须可见。**只报「N 份通过」而不报「另有 M 份被豁免」，
         # 读者无从知道门的覆盖范围，那是「覆盖不全比没有更危险」的形态。
-        rest = len(exempted) - len(link_targets)
-        if rest:
-            print(f"（另有 {rest} 份冻结件在豁免内，未检查：{EXEMPT} + 片段 {EXEMPT_MARKERS}）")
+        frozen_only = [p for p in exempted if not thread_live(p)]
+        if frozen_only:
+            total, dangling = frozen_link_survey(frozen_only, tracked)
+            print(f"冻结原件：{len(frozen_only)} 份，**不查字段与格式**；"
+                  f"其中 {total} 条仓内链接里，{total - len(dangling)} 条目标现存，"
+                  f"{len(dangling)} 条指向当前索引里没有的路径")
+            if dangling:
+                print("    这些是按旧目录结构写的相对路径。**原件不许回改**——"
+                      "要顺着它们读，按文件名在历史里找：")
+                print("        git log --all --follow --format='%h %ad %s' --date=short -- '**/<文件名>'")
+                print("    ⚠ 它们既不算通过，也不算失败；**不在门的覆盖范围内**。")
+                for d in dangling[:6]:
+                    print(f"        {d}")
+                if len(dangling) > 6:
+                    print(f"        …… 还有 {len(dangling) - 6} 条，全部清单用 `doc-gate.py --frozen`")
+    elif argv[0] == "--frozen":
+        # 只报冻结原件的链接清单。单独一个模式，因为它是**覆盖范围之外**的材料，
+        # 不该混在「通过」里，也不该每次 --all 都刷几十行。
+        frozen_only = [p for p in sorted(tracked)
+                       if p.startswith(GATED) and exempt(p) and p.endswith(".md")
+                       and not thread_live(p)]
+        total, dangling = frozen_link_survey(frozen_only, tracked)
+        print(f"冻结原件 {len(frozen_only)} 份，仓内链接 {total} 条，"
+              f"其中 {len(dangling)} 条指向当前索引里没有的路径：")
+        for d in dangling:
+            print(f"    {d}")
+        print("\n原件不许回改。要顺着某一条读，按文件名在历史里找：")
+        print("    git log --all --follow --format='%h %ad %s' --date=short -- '**/<文件名>'")
+        return 0
     elif argv[0] == "--none":
         targets = []
     else:
@@ -833,8 +892,10 @@ def main(argv: list[str]) -> int:
         return 2
 
     what = "编号、字段与冻结" if staged_changes is not None else "编号与字段"
-    print(f"doc-gate: {checked} 份文档通过"
-          + (f"（另有 {nlinks} 份未冻结的 turn 文件查了链接）" if nlinks else "")
+    # ⚠ **「通过」必须带覆盖范围。**只报通过数，读者会把「门是绿的」读成「全都验过了」，
+    # 而豁免的那些一个字没查。检查过的和没覆盖的分两行报，不混在一句里。
+    print(f"doc-gate: 活文档 {checked} 份检查通过"
+          + (f"；另有 {nlinks} 份未冻结的 turn 文件**只查了链接**" if nlinks else "")
           + (f"；{nturns} 个 turn 的{what}检查通过" if nturns else ""))
     return 0
 

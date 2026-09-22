@@ -4,8 +4,8 @@
 
 - 依靠 Codex 自带的操作系统级沙箱：macOS 用 Seatbelt；Windows 用原生沙箱；Linux 用 bubblewrap（后置）。均以钉版实测为准；
 - runtime 只把用户授权的工作区暴露给 Codex；禁止关闭沙箱；禁止使用「完全访问」模式；网络访问按策略开关；
-- runtime 与 Codex 以同一用户身份运行，两者之间没有操作系统级隔离：runtime 的配置、策略、已登记 Profile 必须放在工作区之外并做完整性校验，启动与派发前核对；key 与设备私钥只放系统钥匙串。沙箱失效时这些措施只能发现篡改，不能阻止（⚠）；
-- 不另用容器，也不由我们创建专用系统用户。
+- runtime 与 Codex **在同一个操作系统用户下运行**（Windows elevated 模式除外，见下表：那里 Codex 跑在专用低权限沙箱用户里），两者之间没有 runtime 与 Codex 互隔的操作系统边界：runtime 的配置、策略、已登记 Profile 必须放在工作区之外并做完整性校验，启动与派发前核对；key 与设备私钥只放系统钥匙串。沙箱失效时这些措施只能发现篡改，不能阻止（⚠）；
+- 不另用容器。**除 Windows elevated 模式外不创建专用系统用户**——elevated 是 Windows 的默认模式，它由安装时的管理员授权创建本地沙箱用户（见下表）。
 
 **Windows**（主平台）：Codex 官方原生支持 Windows，默认使用原生 Windows 沙箱，不需要 Linux 或 WSL2。
 

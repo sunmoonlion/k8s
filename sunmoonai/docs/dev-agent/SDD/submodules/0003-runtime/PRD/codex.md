@@ -10,7 +10,7 @@
 
 runtime 必须：
 
-- 让所有命令执行与文件修改都经过审批判定，哪怕随后自动放行（⚠ 性能与可行性）。协议层的审批是显式的 `ExecCommandApproval` / `ApplyPatchApproval` 请求与响应，**没有「默认同意」这回事**——那是 Python SDK 的行为。⚠ **待验**：不应答时协议怎么表现（阻塞？超时？），须实机确认；
+- 让命令执行与文件修改经过审批判定，哪怕随后自动放行（⚠ 性能与可行性）。⚠ **「所有」是假设**：见 [`functions.md`](functions.md) 的 `F-APPROVE-01`，须由能力探针逐类核实。协议层的审批是显式的 `ExecCommandApproval` / `ApplyPatchApproval` 请求与响应，**没有「默认同意」这回事**——那是 Python SDK 的行为。⚠ **待验**：不应答时协议怎么表现（阻塞？超时？），须实机确认；
 - 钉住 Codex 与 **app-server 协议**版本，升级钉版必须重跑锚点；
 - 连接时带 `clientInfo.name` 标识本产品；
 - 把运行时 thread 标识作为执行绑定经 ① 写回后端，不作为 Task 的真源；

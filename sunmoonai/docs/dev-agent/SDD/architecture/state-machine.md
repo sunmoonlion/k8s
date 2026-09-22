@@ -116,7 +116,7 @@ Task 层与 Attempt 层必须分开。跨层引用使用 `task.state` 与 `attem
 ```text
 CREATED → RUNNING ⇄ WAITING
    │         │         │
-   │         │         └→ PAUSED（失去租约）→ RUNNING | ABANDONED ●
+   │         ├─────────┴→ PAUSED（失去租约）→ RUNNING | ABANDONED ●
    │         ├→ COMPLETED ●
    ├─────────┼→ FAILED ●
    ├─────────┼→ ESCALATED ●

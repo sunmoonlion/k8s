@@ -4,7 +4,7 @@
 
 | 文件 | 作用 | 怎么跑（在仓根） |
 | --- | --- | --- |
-| `doc-gate.py` | 检查 `sunmoonai/docs/` 下 markdown 的链接、表格、turn 形状与冻结区；`§N` 只对 `SELF_CONTAINED` 名单里的文档查，且只查**本文件内**有没有那个标题——**跨文件的 `§` 引用它看不见**，所以协议要求引用按标题 | `python3 sunmoonai/docs/tools/doc-gate.py --all`（钩子用 `--staged`） |
+| `doc-gate.py` | 检查 `sunmoonai/docs/` 下 markdown 的链接、表格、turn 形状与冻结区；`§N` 只对 `SELF_CONTAINED` 名单里的文档查，且只查**本文件内**有没有那个标题——**跨文件的 `§` 引用它看不见**，所以协议要求引用按标题。`--all` 的输出把「活文档检查通过」「只查了链接」「冻结原件不在覆盖范围内」分开报，不混成一句「通过」 | `python3 sunmoonai/docs/tools/doc-gate.py --all`（钩子用 `--staged`；冻结原件的链接清单用 `--frozen`） |
 | `anchor-gate.py` | 检查 `文件.md:行` 与 `文件.md @ <提交>:行` 形式的锚点能否解析；行号支持 `40`、`23-29`、`454/458/461` 三种写法 | `python3 sunmoonai/docs/tools/anchor-gate.py` |
 | `check-no-owner-creds.sh` | VM 上的凭据卫生检查：查有没有混进所有者的凭据。是卫生检查，不是边界 | `bash sunmoonai/docs/tools/check-no-owner-creds.sh` |
 

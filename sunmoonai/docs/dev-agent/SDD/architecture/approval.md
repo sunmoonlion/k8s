@@ -16,7 +16,11 @@
 不可逆命令、需要云端决定的网络访问等，执行上仍是 Codex 发出的一条审批请求，但结论由后端给出：
 
 1. runtime 按清单识别这类请求，暂不回答，令其挂起；
-2. runtime 经 ① 登记副作用意图，请后端创建 Interaction；Task 进入 `WAITING(APPROVAL)`；
+2. runtime 经 ① 登记副作用意图，请后端创建 Interaction。**挂起的是这一条工具调用，因而是它所在的那个 Attempt**；
+   Task 是否进入 `WAITING(APPROVAL)`，按 [状态机](state-machine.md)「只有没有任何 Attempt 能继续推进时 Task 才进入 `WAITING`」判——
+   并行 Attempt 仍有一路可推进时，Task 保持 `RUNNING`，等待记录在对应 Attempt 上；
+   ⚠ 创建 Interaction、登记副作用意图与状态转换**必须在同一个提交边界内**，否则崩溃后会出现
+   「等待状态没有待决 Interaction」或「Interaction 已在而 Task 仍显示运行」；
 3. 用户在审查窗口批准或拒绝；后端原子消费，经 ① 下发结论与幂等键；
 4. runtime 核对结论对应的正是挂起的那条请求（请求摘要一致、租约与 fencing 有效）后回答 Codex；拒绝即回答拒绝；
 5. 等待期间 runtime 照常续约，不开始新的工具调用；超时或断线时挂起的请求作废，恢复后由 Codex 重新发起。
