@@ -41,7 +41,7 @@
 
 按顺序，每个都有可证伪的判据，结果落 `runtime/probe/`：
 
-1. **本地上限**：exec-server 侧配置能否拒绝 harness 的 `danger-full-access` 与白名单外的根（`D5`）；
+1. **本地上限**：~~exec-server 侧配置能否拒绝 harness 的要求~~ 已验：不能，代理自己挡（`security.md`）；
 2. **BYOK**：`OPENAI_API_KEY` 与一个国产厂商 key 各跑一遍现有探针；
 3. **会合点透传**：两端各出站、中间一个哑透传，一次工具调用的耗时；
 4. **断线恢复**：25 秒内重连接回原会话；超窗行为；

@@ -25,7 +25,17 @@
 | 根目录 | 白名单 | 加目录（本机确认） |
 | 网络 | 沙箱内禁网 | 放开（本机确认） |
 
-由谁挡是 `D5`：优先用 Codex 执行端自己的本地配置层；行为不满足时代理自己在协议层过滤。第一段第一个探针就是它。
+**由谁挡已定（探针 2026-09-23，`runtime/probe/REPORT-2026-09-23-local-ceiling.md`）：exec-server 自己不挡，本地代理必须挡。**
+执行端的 `config.toml`（`sandbox_mode="read-only"`）与 `requirements.toml`（`allowed_sandbox_modes=["read-only"]`）对编排端的要求毫无作用：
+编排端要 `danger-full-access` 就能写 `$HOME`，要 `workspace-write` 就能写 cwd，cwd 放在声明根之外照样执行。沙箱策略、cwd、workspace roots 全部由编排端随每个 `process/start` 下发，执行端只负责实施。
+所以本地代理要做两层：
+
+| 层 | 做什么 | 守什么 |
+| --- | --- | --- |
+| 外沙箱（OS 级） | 代理把 exec-server 进程本身放进一个只能写白名单目录、按策略限网的 OS 沙箱（Linux bwrap/landlock，macOS sandbox-exec） | 硬上限：不依赖协议解析，Codex 升版也不失效；`fs/*`、`http/request`、`process/*` 一并盖住 |
+| 协议过滤（桥内） | 出站桥解析 exec-server JSON-RPC：`process/start` 的沙箱意图高于上限、cwd 或 roots 在白名单外、`fs/*` 路径在白名单外、`http/request` 与 `network/policyRequest` 越出策略 → 直接回错误，不转发 | 干净的拒绝与可观测（`AT-09`）；抬高上限的弹窗就挂在这里 |
+
+推论：不能用 Codex 自带的 `--remote`/noise 加密注册模式让沙箱直连执行端（桥看不见协议就过滤不了）；③ 在桥内是明文 JSON-RPC，加密由④⑤的 WSS 承担。
 
 ## key 的走向
 

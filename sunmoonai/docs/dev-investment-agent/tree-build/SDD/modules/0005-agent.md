@@ -35,11 +35,11 @@
 
 ## 本地上限由谁挡
 
-`D5`：优先 Codex 执行端自己的本地配置层（源码里有执行端本地配置与 managed requirements）；行为不满足时代理在协议层过滤 `environment` 相关请求。第一段第一个探针。
+已定（探针 2026-09-23）：exec-server 不挡，代理挡，两层：OS 级外沙箱包住 exec-server 进程，加出站桥内的协议过滤。细节见 [安全](../architecture/security.md)「本地上限」。
 
 ## 探针已知
 
-exec-server 可远端执行、可改本地文件、沙箱在 executor 侧生效、审批请求带 `environmentId`、stdin 关闭即退出（须 `setsid … < /dev/null`）、listen 模式无认证。见 `runtime/probe/REPORT-2026-09-23-remote-exec.md`。
+本地上限：执行端 `config.toml`/`requirements.toml` 不限制编排端要求（`probe/REPORT-2026-09-23-local-ceiling.md`）。exec-server 可远端执行、可改本地文件、沙箱在 executor 侧生效、审批请求带 `environmentId`、stdin 关闭即退出（须 `setsid … < /dev/null`）、listen 模式无认证。见 `runtime/probe/REPORT-2026-09-23-remote-exec.md`。
 
 ## 不做
 
