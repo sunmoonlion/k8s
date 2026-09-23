@@ -50,22 +50,22 @@ done
 ⚠ 五仓同步脚本**只推拉父仓，不推拉子仓**。子仓（`investment-backend`、`knowledge-backend`）的 `fable` 分支要单独
 `git -C ~/worktrees/fable/<父仓>/<子仓> pull --ff-only origin fable`。我每次请你跑测试时，会写明父仓和子仓各在哪个提交号，你先对。
 
-### 2.2 两个新仓（客户端仓）
+### 2.2 一个新仓（客户端仓）
 
-`runtime`（本地 runtime，TypeScript）和 `desktop-app`（Electron 壳）是新仓，不参与 k8s 部署，没有并列放置要求。
-远程已按同一布局放在 `~/master/<仓>`（`master`）与 `~/worktrees/fable/<仓>`（`fable`），并登记进 `mb` 的 `repos.conf`。
-GitHub 仓已建好并推上去了（`sunmoonlion/runtime`、`sunmoonlion/desktop-app`，各有 `master` 与 `fable`）。你这边：
+`runtime`（本地代理：包 `codex exec-server` + 出站桥 + 本地上限 + 弹窗）是新仓，不参与 k8s 部署，没有并列放置要求。
+远程已按同一布局放在 `~/master/runtime`（`master`）与 `~/worktrees/fable/runtime`（`fable`），并登记进 `mb` 的 `repos.conf`。
+GitHub 仓 `sunmoonlion/runtime` 有 `master` 与 `fable`。你这边：
 
 ```bash
-for r in runtime desktop-app; do
-  git clone git@github.com:sunmoonlion/$r.git ~/master/$r
-  printf '%s\n' "\$HOME/master/$r" >> ~/toolboxes/Vlinux/utils/set-up-tools/model-switch/repos.conf
-done
+git clone git@github.com:sunmoonlion/runtime.git ~/master/runtime
+printf '%s\n' '$HOME/master/runtime' >> ~/toolboxes/Vlinux/utils/set-up-tools/model-switch/repos.conf
 mb worktree add fable runtime
-mb worktree add fable desktop-app
 ```
 
-五仓同步脚本的 `REPOS` 列表要不要加这两个，由所有者定；没加之前它们用上面的 `git pull` 手动同步。
+⚠ **`desktop-app` 已退役**（2026-09-23 下午架构改判：界面回到网页，不做 Electron）。远程已删本地副本与 `repos.conf` 条目；
+GitHub 仓由所有者删。你那边如果已经克隆过，删掉即可，不要再挂工位。
+
+五仓同步脚本的 `REPOS` 列表要不要加 `runtime`，由所有者定；没加之前它用 `git pull` 手动同步。
 
 ### 2.3 工具
 
@@ -73,12 +73,12 @@ mb worktree add fable desktop-app
 | --- | --- | --- | --- |
 | Python | 3.10 以上 | 后端 | `python3 -V` |
 | uv | 任意近期版 | 后端依赖与测试 | `uv --version` |
-| Node.js | 20 以上 | runtime、desktop-app | `node --version` |
+| Node.js | 20 以上 | runtime（本地代理） | `node --version` |
 | pnpm | 9 以上 | 同上 | `pnpm --version` |
 | Docker | 任意近期版 | Postgres 容器、KIND | `docker --version` |
 | kind + kubectl | 现有 | 集群相关测试（第一段用不到） | `kind --version` |
-| Codex CLI | **0.155.1**，与远程同版 | 三方联调时驱动 Codex | `codex --version` |
-| Electron 运行依赖 | 视系统 | 桌面壳 | 第三段给脚本时再核 |
+| Codex CLI | **0.155.1**，与远程同版 | 探针与联调：`codex app-server`（云端角色）与 `codex exec-server`（用户机器角色） | `codex --version` |
+| Python `websockets` | 17 | 探针里的会合点与两侧出站桥（`runtime/.venv`，`uv venv .venv && uv pip install --python .venv/bin/python websockets`） | `.venv/bin/python -c 'import websockets'` |
 
 Codex 要**单独一个 `CODEX_HOME`** 给测试用，与你自己或所有者日常用的隔离：
 
@@ -142,14 +142,43 @@ uv run pytest -q 2>&1 | tail -5
 
 4. 界面类的检查我会给**编号的点击步骤和每一步该看到的文字**，你按步骤做，报在第几步和预期不一样、屏幕上实际是什么。
 
-## 四、四段里各会请你跑什么
+## 四、各段会请你跑什么
+
+架构在 2026-09-23 下午改判（`tree-build/` 已重写）：Codex 的模型循环在我们的沙箱里跑，工具在用户机器上经 `codex exec-server` 执行，界面是网页，本地只装一个小代理。分段随之改：
 
 | 段 | 我在远程做什么 | 会请你跑的 |
 | --- | --- | --- |
-| 一 设计 + 探针 | 重写 PRD 树根、architecture、① 协议规格；`codex app-server` 探针 | 基本不用你。探针在远程能跑 |
-| 二 后端 + runtime | 两仓各自分支、带测试、用假对端联调 | 后端全套测试（远程也能跑，你那边跑一遍作独立复核）；runtime 的类型检查与单元测试；**runtime 接真 Codex 走一个 Task**（远程内存吃紧时） |
-| 三 桌面壳 + 三方联调 | Electron 壳 | **全部在你那边**：构建、启动、按步骤点、把三方联调走通一个 Task |
-| 四 评测 + 演示 | 把第 24 课评测搬过来 | 跑「顾问驾驶 vs 裸 Codex」二十题，贴分段结果 |
+| 一 探针 | 五个探针，四个远程已跑完（本地上限、BYOK/Kimi、会合点透传、断线恢复；报告在 `runtime/probe/REPORT-2026-09-23-*.md`） | **两件现在就能做**，见「四之二」：Windows 上的 exec-server；两台机器之间的真实延迟 |
+| 二 代理 + 沙箱最小对 | `runtime` 代理（exec-server 封装、出站桥、本地上限、弹窗）；沙箱镜像；哑会合点 | 代理在你机器上装、连远程会合点、走一个 turn |
+| 三 工作台 + 网页 | 会话与方向盘、账房收窄、app-server 客户端；网页页面 | 后端全套测试复核；浏览器按步骤点 |
+| 四 评测 + 演示 | 问数专家包 + MCP + 二十题 | 跑「顾问驾驶 vs 裸 Codex」二十题，贴分段结果 |
+
+## 四之二、现在就请你做的两件（第一段剩下的探针）
+
+**A. Windows 上的 exec-server（`D11`）**。在 Windows 机器上（或所有者指定的那台）：
+
+```powershell
+codex --version                                   # 要 0.155.1
+$env:CODEX_HOME="$HOME\.codex-probe-exec"; mkdir $env:CODEX_HOME -Force
+codex exec-server --listen ws://127.0.0.1:47001   # 起得来吗？杀毒拦不拦？
+```
+
+然后在同一台机器上用 `runtime/probe/probe_local_ceiling.py` 的 L2 与 L3 案例（编排端 `CODEX_HOME` 用有登录态的那个）看：
+`workspace-write` 下写 cwd 之外是否被拒（Windows 有没有沙箱实现，还是报 `sandbox intent cannot be enforced on this executor`）。
+贴：三值结论 + 整份输出 + Windows 版本 + 杀毒软件名。
+
+**B. 两台机器之间的真实延迟**。远程（`43.153.135.74`）起会合点与沙箱侧，你本地起 exec-server 与代理侧：
+
+```bash
+# 远程（我来起）：relay_dumb.py 监听 0.0.0.0:47100（探针期间临时开放端口）；sandbox_bridge.py 47002 → ws://127.0.0.1:47100/sandbox?user=luna
+# 本地（你）：
+cd ~/worktrees/fable/runtime && uv venv -q .venv && uv pip install -q --python .venv/bin/python websockets
+setsid env CODEX_HOME=$HOME/.codex-probe-exec codex exec-server --listen ws://127.0.0.1:47001 > probe/es-luna.log 2>&1 < /dev/null &
+.venv/bin/python probe/agent_bridge.py ws://43.153.135.74:47100 luna ws://127.0.0.1:47001
+```
+
+我在远程跑 `probe_relay_passthrough.py`，桥会打印每种 JSON-RPC 方法的 RTT 表；对照回环的表（`bridge-relay.log`）就是公网的真实数字。
+这一条要所有者先同意临时开 47100 端口；不同意就等会合点正式版上边缘再测。
 
 ## 五、我这边的纪律，你可以据此核我
 
@@ -164,9 +193,10 @@ uv run pytest -q 2>&1 | tail -5
 | k8s | 远程与 GitHub 都有 | 含 turn/ 机制重构与本文 |
 | info-app、investment-app、knowledge-app、tpl-app | 远程与 GitHub 都有 | 与 master 相同，还没改动 |
 | investment-backend、knowledge-backend（子仓） | 只在远程 | 与父仓 gitlink 相同，还没改动、还没推 |
-| runtime、desktop-app | 远程与 GitHub 都有 | `master` 与 `fable` 都已推 |
+| runtime | 远程与 GitHub 都有 | `master` 与 `fable` 都已推；`fable` 上有四份探针报告与原型脚本 |
+| ~~desktop-app~~ | 已退役 | 远程本地副本已删；GitHub 仓由所有者删 |
 
 远程上 cursor、fable、kimi、luna、qwen 五个工位 × 七个仓已用 `mb` 挂出（opus 工位已按「换模型不换分支」收掉，`layout.conf` 里也去了）；
 除 `fable` 外都是从 `master` 新建、没有推到 GitHub——你那边的同名工位按所有者平时的 `to-remote <工位>` 流程对齐，不由远程先推。
 
-第一段开始前所有者会定稿 PRD 树根，那之前不会有东西请你跑。配环境可以先做。
+树根已重写并推送（k8s `fable`）。现在请你做的是「四之二」的两件；之后每一段的请求走「三」的格式。
