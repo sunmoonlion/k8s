@@ -37,8 +37,7 @@
 
 ## 未验证事项 ⚠
 
-- **BYOK 跑通**：探针用的是 ChatGPT 登录态；用 `OPENAI_API_KEY` 与国产厂商 key 配 `model_provider` 重跑探针；
-- **国产模型直连 Codex**：Kimi 为首个样本，工具调用与 `apply_patch` 是否正常；
+- **OpenAI 的 API key 路径**：所有者只有订阅没有 key，未验；BYOK 与国产直连已由 Kimi 验过（`runtime/probe/REPORT-2026-09-23-byok-kimi.md`）；其他国产厂商（DeepSeek、Qwen、GLM）的 responses 兼容度未验；
 - **Windows 上的 exec-server**；
 - **断线恢复**：25 秒恢复窗口内重连能否接回原会话与原进程；
 - **一个 exec-server 服务多个 app-server 会话**；

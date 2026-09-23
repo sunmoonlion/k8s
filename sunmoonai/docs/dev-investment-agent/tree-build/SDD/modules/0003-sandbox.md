@@ -33,4 +33,4 @@ pod（每用户）
 
 ## 探针已知
 
-app-server 134 MB 常驻（本机测）；`environment/add` 与 `environment/status` 可用；25 秒恢复窗。未验：多会话共用一个 exec-server、冷启动时间。
+BYOK：key 以 `CODEX_HOME/auth.json`（`auth_mode="apikey"`）或 `OPENAI_API_KEY` 注入即可，Kimi K3 经 `model_providers.kimi`（`wire_api="responses"`）跑通远端环境、`apply_patch`、审批；每 turn 有 `thread/tokenUsage` 可入预算账。app-server 134 MB 常驻（本机测）；`environment/add` 与 `environment/status` 可用；25 秒恢复窗。未验：多会话共用一个 exec-server、冷启动时间。
