@@ -54,7 +54,7 @@ done
 
 `runtime`（本地 runtime，TypeScript）和 `desktop-app`（Electron 壳）是新仓，不参与 k8s 部署，没有并列放置要求。
 远程已按同一布局放在 `~/master/<仓>`（`master`）与 `~/worktrees/claude/<仓>`（`claude`），并登记进 `mb` 的 `repos.conf`。
-**GitHub 上的仓要所有者先建**：`sunmoonlion/runtime`、`sunmoonlion/desktop-app`。建好、远程推上去之后，你这边：
+GitHub 仓已建好并推上去了（`sunmoonlion/runtime`、`sunmoonlion/desktop-app`，各有 `master` 与 `claude`）。你这边：
 
 ```bash
 for r in runtime desktop-app; do
@@ -151,6 +151,9 @@ uv run pytest -q 2>&1 | tail -5
 | k8s | 远程与 GitHub 都有 | 含 turn/ 机制重构与本文 |
 | info-app、investment-app、knowledge-app、tpl-app | 远程与 GitHub 都有 | 与 master 相同，还没改动 |
 | investment-backend、knowledge-backend（子仓） | 只在远程 | 与父仓 gitlink 相同，还没改动、还没推 |
-| runtime、desktop-app | 只在远程 | GitHub 仓待建 |
+| runtime、desktop-app | 远程与 GitHub 都有 | `master` 与 `claude` 都已推 |
+
+远程上六个工位（claude、cursor、kimi、luna、opus、qwen）× 七个仓都已用 `mb worktree add --all --all` 挂出；
+除 `claude` 外都是从 `master` 新建、没有推到 GitHub——你那边的同名工位按所有者平时的 `to-remote <工位>` 流程对齐，不由远程先推。
 
 第一段开始前所有者会定稿 PRD 树根，那之前不会有东西请你跑。配环境可以先做。
