@@ -9,7 +9,7 @@
 
 **五仓中领域代码最重的一个**：约 110 个文件、8–9k 行。也是唯一有完整状态机、
 检查点恢复、事件流与副作用记账的仓——[`tree-build/PRD/requirement.md`](../../dev-investment-agent/tree-build/PRD/requirement.md)
-§7 的映射表以本仓为对象。
+§四 的映射表以本仓为对象。
 
 ## 1.1 重要点（读代码前先别理解反）
 

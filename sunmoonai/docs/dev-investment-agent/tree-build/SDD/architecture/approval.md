@@ -1,50 +1,42 @@
 # 审批
 
-> 工具级在 runtime 与桌面应用之间闭环，Task 级经后端 Interaction——拆开写三份必然漂。
+> 三条路：工具级、Task 级、本地上限。拆开写三份必然漂，所以合在这里。
 
-## 两层审批
+## 三条路
 
-| 层 | 对象 | 发起 | 处理处 | 决定与记录 |
-| --- | --- | --- | --- | --- |
-| **工具级** | 单条命令、单个文件修改、联网 | Codex → 审批回调 → runtime | 桌面应用本地窗口 | runtime 按策略自动放行、拒绝或交用户决定；结论摘要经 ① 上报存档 |
-| **Task 级** | 澄清输入、计划批准、不可逆或对外动作、合并到用户工作区、预算追加、待审文档 | 后端 | 桌面应用审查窗口 | 后端落 Interaction，按 [`state-machine.md`](state-machine.md)「WAITING 与 Interaction」原子消费 |
+| 路 | 对象 | 从哪发起 | 谁决定 | 在哪决定 | 记录 |
+| --- | --- | --- | --- | --- | --- |
+| **工具级** | 单条命令、单个文件修改、联网 | app-server 的 `item/*/requestApproval`（②） | 方向盘持有者：用户自驾时是用户；顾问驾驶时按专家包策略，越出策略转 Task 级 | 网页 | 摘要、结论、决定来源（策略或用户）、时间 |
+| **Task 级** | 澄清、外发范围、外部副作用、预算追加、改目标、步骤交人 | 工作台 | 用户 | 网页审查 | Interaction，原子消费 |
+| **本地上限** | 沙箱模式提升、新增根目录、放开网络 | 本地代理（exec-server 拒绝了沙箱的要求） | 用户，且只能在这台机器上 | 本地代理弹窗（⑧） | 上限变更记录，带请求摘要 |
 
-两层各自的功能义务 `F-APPROVE-*` 在 [runtime](../submodules/0003-runtime/PRD/functions.md) 与 [桌面应用](../submodules/0002-desktop/PRD/functions.md) 各自的 `functions.md`。
+**本地上限不是审批的一个等级，是另一条路。**云端任何一方都不能改它；它只能在用户机器上被用户抬高，抬高也只对当前项目、当前会话有效（[安全](security.md)）。
 
-## 工具级请求升级为 Task 级
+## 顾问驾驶时的工具级审批
 
-不可逆命令、需要云端决定的网络访问等，执行上仍是 Codex 发出的一条审批请求，但结论由后端给出：
+1. app-server 发出审批请求，带 `environmentId`、命令或 patch 摘要；
+2. 工作台按专家包的 `auto_allow` 策略判：只读、项目目录内的写 → `accept`；其余 → 挂起这条请求，创建 Interaction，Task 进 `WAITING(APPROVAL)`（同一提交边界，`AT-18`）；
+3. 用户在网页批准或拒绝；工作台原子消费后回答 app-server；
+4. 断线或超时时挂起的请求作废；恢复后由 Codex 重新发起。
 
-1. runtime 按清单识别这类请求，暂不回答，令其挂起；
-2. runtime 经 ① 登记副作用意图，请后端创建 Interaction。**挂起的是这一条工具调用，因而是它所在的那个 Attempt**；
-   Task 是否进入 `WAITING(APPROVAL)`，按 [状态机](state-machine.md)「只有没有任何 Attempt 能继续推进时 Task 才进入 `WAITING`」判——
-   并行 Attempt 仍有一路可推进时，Task 保持 `RUNNING`，等待记录在对应 Attempt 上；
-   ⚠ 创建 Interaction、登记副作用意图与状态转换**必须在同一个提交边界内**，否则崩溃后会出现
-   「等待状态没有待决 Interaction」或「Interaction 已在而 Task 仍显示运行」；
-3. 用户在审查窗口批准或拒绝；后端原子消费，经 ① 下发结论与幂等键；
-4. runtime 核对结论对应的正是挂起的那条请求（请求摘要一致、租约与 fencing 有效）后回答 Codex；拒绝即回答拒绝；
-5. 等待期间 runtime 照常续约，不开始新的工具调用；超时或断线时挂起的请求作废，恢复后由 Codex 重新发起。
+审批请求能否长时间挂起取决于 Codex；不能时先 `turn/interrupt`，批准后在同一 thread 开新 turn 继续。
 
-⚠ 审批请求能否长时间挂起取决于 SDK；不能时先中断运行时 turn，批准后在同一运行时 thread 中开新的运行时 turn 继续。
+## 用户自驾时的工具级审批
 
-## Task 级审查
+请求经工作台原样转到网页，用户当面答；工作台只记录，不按专家包策略自动放行（第一层没有专家包）。用户可以设自己的 `approvalPolicy`（`never`、`on-request`、`on-failure`、`unless-trusted`），落在 thread 上。
 
-审查窗口必须表达：
+## Task 级审查必须表达
 
 | 要素 | 内容 |
 | --- | --- |
-| 问询定位 | Interaction、Task、适用的权力与合法转换、被询问的主体 |
+| 问询定位 | Interaction、Task、被询问的主体 |
 | 待决内容 | 要决定什么、各选项的后果、证据等级与未知项 |
 | 决定对象 | 每份文档的版本与摘要值、改动摘要；有验收条时附冻结的验收条与结论 |
 | 时效 | 截止时间与目标状态版本；过期不等于拒绝，也不等于同意 |
 | 决定记录 | 经鉴别的主体、响应、实际生效值、原建议与改动 |
 
-- 窗口由主进程创建：必须先处理才能继续的作为模态子窗口；应用在后台时发系统通知；同一 Interaction 只开一个窗口；每次记录响应耗时与修改项数，只作观察，不自动放宽审批。
+同一 Interaction 只开一个审查面；记录响应耗时与修改项数，只作观察，不自动放宽审批。
 
-审查窗口的功能义务 `F-REVIEW-*` 在 [桌面应用的 `functions.md`](../submodules/0002-desktop/PRD/functions.md)。
+## 粒度
 
-## 被攻破的后端
-
-后端派发的 Attempt 本身就是给 agent 的指令，被攻破的后端可以在自动放行范围内借 Attempt 让用户电脑执行命令。因此：
-
-这一段的功能义务 `F-GUARD-*` 在 [runtime 的 `functions.md`](../submodules/0003-runtime/PRD/functions.md) 与 [`0002-router`](../submodules/0001-backend/SDD/modules/0002-router.md)。
+按次整包（`D8`）：用户交出方向盘时一次授予专家包声明的自动放行范围；扩大外发范围、加预算、外部副作用、改目标时再授权。

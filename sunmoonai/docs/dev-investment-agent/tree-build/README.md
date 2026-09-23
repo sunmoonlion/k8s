@@ -1,74 +1,34 @@
-# `tree-build/` 目录
+# `tree-build/`
 
-**把 [九站](../pipeline.md) 一格一格改成脚本的那棵树**——每改一格是树上一个节点,
-节点的定稿拼起来就是那条链。
-一次一问一答**怎么走**在 [`../turn/`](../turn/README.md),**新人先读那边**。
+**这个项目要建什么、切成哪些块、每块的定稿与委托记录。**
+一条求助怎么走完九站见 [`../pipeline.md`](../pipeline.md)；一问一答怎么走见 [`../turn/`](../turn/README.md)。
 
-这里的内容**本项目专有**;那边的规矩跨项目通用。
+> 2026-09-23 从头重写。上一棵树在 [`../tree-build-v1/`](../tree-build-v1/README.md)（tag `tree-build-v1-retired-2026-09-23`），只作取证，不再维护。
+> 重写依据：[合并稿](human-ai-turn/prd/discussion-final.md) §一到§五，以及 §六 的三项改判（架构 C、隐私不作约束、界面回到网页）。
 
-## 树上每个 turn 的题目
-
-⚠ **只能是两种之一:**
-
-| 可以问 | 例子 |
+| | 是什么 |
 | --- | --- |
-| **某一环节怎么脚本化** | 「受理这一环节怎么建」→ `0002-router`;「交付这一环节怎么建」→ `0007-delivery` |
-| **某一环节需要什么料** | 知识服务、方法库、自有数据——它们不是环节,是给「执行」那一格供的料 |
+| [`PRD/requirement.md`](PRD/requirement.md) | **先读这一份**：产品是什么、两层决策权、六条前提、整体功能、切块、在什么基础上开发 |
+| [`PRD/value.md`](PRD/value.md) | 三元组、四臂检验、卖点与入口分开、评测一等公民、`F-POS-*`、第一切口 |
+| [`PRD/knowledge.md`](PRD/knowledge.md) | 数据与用户资料 |
+| [`PRD/acceptance.md`](PRD/acceptance.md) | 产品验收矩阵 `AT-01`–`AT-28` |
+| [`decisions.md`](decisions.md) | 待定决策 `D1`–`D16` 与未验证事项 |
+| [`rules/constraints.md`](rules/constraints.md) | 动代码前必读的规则 `C-*` |
+| [`SDD/architecture/`](SDD/architecture/README.md) | 模块之间怎么连：组成、拓扑、通道、对象、方向盘、契约、状态机、审批、工作区、安全、方法、Profile、不变量、责任、工程 |
+| [`SDD/modules/`](SDD/modules/) | 七块各自是什么：`0001-workbench`、`0002-web`、`0003-sandbox`、`0004-relay`、`0005-agent`、`0006-knowledge`、`0007-eval` |
+| [`human-ai-turn/`](human-ai-turn/prd/discussion-final.md) | 值得留档的讨论：合并稿、四家评审、luna 本地环境 |
 
-**不能问**「某个领域的业务怎么做」。投资研究怎么做,是这条链**跑起来之后**处理的东西,
-不是造它的题目。领域约束(定位、`F-POS-*`、范围)写在树根的 [`PRD/`](PRD/requirement.md),
-横向作用于所有节点,但**不是任何一个节点的题目**。
+## 一句话
 
-⚠ **造这些 turn 的时候,多数环节还是人在做。**九站里只有「执行」那一格自动化了,
-其余都是人。所以:
+用户在网页里用自己的 Codex 做研究；做不好时把方向盘交给顾问，顾问按方法驾驶同一个 Codex，把可验收的底稿交回，结果就在用户的工作区里。循环在我们的沙箱，工具在用户机器，界面是网页，公网只有薄边缘。
 
-- **写用户消息时不得假设还不存在的自动化**——不能写「系统会自动验收」,验收那一格现在是人;
-- **每改完一格,后续 turn 的写法要跟着变**——派发自动化之后,再写 turn 就不用交代投喂了。
+## 建的顺序
 
-## 每一层都是同一个模式
+1. **探针**（[工程](SDD/architecture/engineering.md)「第一段的探针」）：本地上限、BYOK、透传、断线、Windows；
+2. `0005-agent` 与 `0003-sandbox` 的最小对：一台用户机器、一个沙箱、一个哑会合点；
+3. `0001-workbench` 的会话与方向盘、账房收窄；`0002-web` 的对话与求助页；
+4. 问数专家包 + `0006` 的 MCP + `0007` 的二十题；
+5. `0004-relay` 正式版；边缘部署；
+6. 勾稽切口。
 
-见 [turn 的投影](../turn/turn-project.md):
-
-- `human-ai-turn/`：**可选**——只有值得持久化的那一问才建，里面是 `user-message.md`（或按 prd、sdd、imp、uat 分子目录各一份）。
-  ⚠ **绝大多数问答不建目录**：在入口里直接问、直接改、看 diff、提交；
-- `PRD/`：PRD 类的定稿——要什么、做到什么算满足；**不分模块**；
-- `SDD/`：SDD 类的定稿，**三样**——`architecture/` 管模块之间的关系，`modules/<模块>.md` 说每块本身是什么，
-  `submodules/<模块>/` 是它往下的子任务，内部递归同一模式；
-- `rules/`：这一层的代码约束——四类都要守，所以与上面三样平级。
-
-模块名是「四位号-短名」，在同一层里从 `0001` 起连续、不复用；`modules/*.md` 与 `submodules/*/` 同号同名。
-见 [命名与编号](../turn/naming.md)。
-
-```text
-decisions.md                      还没定的决策点 D*、还没验的事项 ⚠
-PRD/
-├── requirement.md                要什么、做到什么算满足；定位与 F-POS-*
-├── value.md                      核心价值与价值检验、评测集的最小形状
-├── knowledge.md                  资料与知识服务（本轮范围外）
-└── acceptance.md                 产品验收矩阵 AT-*
-rules/constraints.md              代码规则，按主题分组；另有风险与应对、反模式
-SDD/
-├── architecture/                 components.md 先读：系统由哪几部分组成、本轮建哪三块
-│                                 另有 channels · trust · engineering · objects · task-contract
-│                                 · approval · invariants · state-machine · routing · profile
-│                                 · methods · ownership（谁负责哪些 F-*/I-*/AT-*）
-├── modules/                      0001-backend.md · 0002-desktop.md · 0003-runtime.md
-└── submodules/
-    ├── 0001-backend/             PRD/ · SDD/（内部切八块）· 旧 thread/ 原件
-    ├── 0002-desktop/             PRD/ · SDD/ · 旧 thread/ 原件；内部划分待定
-    └── 0003-runtime/             PRD/；还没问过任何一问
-```
-
-**功能义务 `F-*` 不在这一层**：单模块的在各自模块里，跨两模块的定义放主要承担方那一份。
-
-**第一层三块**，按运行位置、信任域、发布方式切：后端（服务器）、桌面应用与本地 runtime（都在用户电脑上，
-但 runtime 独持模型 key、桌面应用独持结果私钥，见 [数据流与信任边界](SDD/architecture/trust.md)）。官网、管理后台、知识服务与八个既有 Next.js 前端
-本轮不开发，见 [本轮范围外](SDD/architecture/components.md)。
-
-**需求的真源是 [`PRD/requirement.md`](PRD/requirement.md)**，不另设跨层的产品契约：
-一条内容只有一处，要什么就去 `PRD/`，谁负责去 [`SDD/architecture/ownership.md`](SDD/architecture/ownership.md)，
-还没定与还没验去 [`decisions.md`](decisions.md)，分期与许可在 [`project-guide/`](../../project-guide/staging.md)。
-
-两个子任务的内部关系各在自己那一层：
-[后端七块](SDD/submodules/0001-backend/SDD/architecture/blocks.md)、
-[桌面应用](SDD/submodules/0002-desktop/SDD/architecture/structure.md)（内部划分待定，那份里逐项标了现状）。
+每一步是一次或几次委托，走 [`../turn/`](../turn/README.md)。

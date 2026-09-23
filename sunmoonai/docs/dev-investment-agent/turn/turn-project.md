@@ -96,7 +96,7 @@
 | 验收的对象与证据 | 完整提交号写在 UAT 的 `user-message.md`；逐条判定在 worktree 的 `test/` |
 | 基线 | 提交号 |
 
-交给程序驱动之后，真源移到控制面（[账房](../tree-build/SDD/submodules/0001-backend/SDD/modules/0001-ledger.md)），目录只剩投影。
+交给程序驱动之后，真源移到控制面（[工作台后端的账房](../tree-build/SDD/modules/0001-workbench.md)），目录只剩投影。
 **不得直接编辑投影**：改目录不改记录，等于同一事实有两个权威写入面（`P1`）。
 
 ## 四个种类

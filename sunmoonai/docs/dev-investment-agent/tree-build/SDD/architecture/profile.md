@@ -1,41 +1,36 @@
-# Profile、Artifact 与扩展
+# Profile 与扩展
 
-> Task Profile 与 Agent Profile 的契约。**后端定、runtime 按它限定能力**（`F-EXEC-12`）、桌面按它渲染。
+> Task Profile 是委托的产品契约；专家包是执行它的方法（[方法](methods.md)）。工作台定，网页按它渲染，沙箱按它限定能力。
 
-## Task Profile 与 Agent Profile
-
-Task Profile 是版本化产品契约：
+## Task Profile
 
 ```text
 profile_id + version
-input_schema / output_schema / client_renderer_contract
+input_schema / output_schema / renderer_contract
 normalization_rules
-required_context / artifacts
+required_context / attachments
 acceptance / evidence / freshness rules
-content_check_rules                   本地内容检查规则（含 F-POS-04）
+positioning_check_rules              F-POS-04 的确定性检查
 allowed_capabilities / data sources
-default budget / retry / approval / privacy policy
-device_policy                         是否允许改派设备
-workflow_ref                          专业 Profile 对应的 workflow
-step_contract                         workflow 各步骤的输入、输出 schema、验收与返工去向（[步骤契约](../submodules/0001-backend/SDD/modules/0003-orchestrator.md)）
+default budget / retry / approval policy
+sandbox_policy                       顾问驾驶时要求的沙箱模式（不得高于本地上限）
+expert_pack_ref                      执行它的专家包
 ```
 
-Agent Profile 声明执行能力：工具绑定、权限边界、自动放行范围、方法、记忆策略与支持的 Task Profile；签名发布（F-GUARD-01）。Task 固定 Task Profile 版本；每次 Attempt 记录所选 Agent Profile 与运行时版本。升级任一 Profile 不得静默改变已受理 Task 的解释或历史结果。
+Task 固定 Task Profile 版本与专家包版本；每次 Attempt 记录 Codex 版本与代理版本。升级任一版本不得静默改变已受理 Task 的解释或历史结果（`AT-17`）。
 
-新增领域应新增 Task Profile、相容的 Agent Profile 与 workflow，不修改通用状态语义。确需改变通用骨架时，必须先通过有证据与迁移方案的规范修订（见 [改判](../../../turn/approvals.md)）。
+新增领域是新增 Task Profile 与专家包，不修改通用状态语义。确需改变通用骨架时，先过有证据与迁移方案的规范修订（[改判](../../../turn/approvals.md)）。
 
-## 通用与专业 Profile
+## 第一层没有 Profile
 
-- **通用 Profile**：能力收紧；只自动放行只读动作与独立工作区内的写入；不开领域工具；
-- **专业 Profile**：对应一个 workflow，带领域工具、方法、验收与内容检查规则。
+用户自驾不建单、不走 Profile。第一层的配置是 thread 级：模型、`approvalPolicy`、沙箱模式（不高于本地上限）。
 
 ## Profile 示例
 
 | Profile | 至少固定 |
 | --- | --- |
-| `DATA_QUERY` | 对象范围、指标口径、单位、币种、复权、时间区间、频率、时区、截至时点、数据源、缺失规则、结果形态、查询与转换链、引用 |
-| `RESEARCH` | 研究问题、资料范围（本地资料、自有数据、公开资料）、时间边界、证据等级、反证、覆盖要求、不确定性、引用格式、研究底稿结构与结论栏 |
-| `ACTION` | 目标、授权主体、预期副作用、动作幂等键、批准点、回执、补偿与不可逆声明 |
+| `DATA_QUERY`（最小实例） | 数据集、指标口径、时间区间、结果形态、查询链、`truth_queries` 格式 |
+| `RECONCILE`（第一切口） | 公司与报告期、附注表清单、三大表版本、勾稽规则集版本、差异清单 schema、引用格式、结论栏留空 |
+| `RESEARCH` | 研究问题、资料范围、时间边界、证据等级、覆盖要求、底稿结构与结论栏 |
 
-这些是示例，不是已冻结的业务契约；每个 Profile 的第一项开发工作单元必须用真实输入、输出、渲染与验收用例确认字段，之后才发布首个版本。
-
+示例不是冻结契约；每个 Profile 的第一项开发工作单元必须用真实输入、输出、渲染与验收用例确认字段，之后才发布首个版本。

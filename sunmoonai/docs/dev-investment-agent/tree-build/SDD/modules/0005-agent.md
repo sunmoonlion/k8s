@@ -1,0 +1,46 @@
+# `0005-agent` 本地代理
+
+> 用户机器上唯一要装的东西。映射 `runtime` 仓。包 `codex exec-server`，出站连会合点，守本地上限。不跑模型循环，不接触 key。
+
+## 一个代理里有什么
+
+```text
+本地代理（常驻，签名分发）
+├── codex exec-server --listen ws://127.0.0.1:PORT（钉版，随包带）
+│     executor 侧沙箱（Linux: codex-linux-sandbox；macOS: seatbelt）
+│     本地配置：沙箱模式上限、根目录白名单、网络
+├── 出站桥：WSS 到会合点；把隧道流量转到 127.0.0.1:PORT
+├── 弹窗：本地上限变更的当面确认；结论经⑧回工作台
+├── 登录：一次浏览器 OIDC 取代理令牌；之后自动续签
+└── 状态：托盘或菜单栏；白名单管理；版本
+```
+
+## 功能义务
+
+| ID | 义务 |
+| --- | --- |
+| `F-AGENT-01` | exec-server 只绑 `127.0.0.1`；唯一入口是出站桥 |
+| `F-AGENT-02` | 根目录白名单由用户在本机维护；工作台只读它的摘要 |
+| `F-AGENT-03` | 本地上限：沙箱要求高于上限的模式、白名单外的根、放开网络，一律拒绝并上报（`I13`、`AT-09`） |
+| `F-AGENT-04` | 抬高上限只经本机弹窗，仅当前 Session 有效；变更带请求摘要上报 |
+| `F-AGENT-05` | 版本成对：`hello` 带 Codex 版与代理版；不匹配时提示用户更新，不静默降级 |
+| `F-AGENT-06` | 断连自动重连；重连在 Codex 恢复窗内则接回原进程 |
+| `F-AGENT-07` | 不持有、不转发、不缓存用户 key（`I8`） |
+| `F-AGENT-08` | 勾选上送：用户勾选的文件上送知识服务（第一期显式） |
+| `F-AGENT-09` | 关掉界面仍在跑；开机自启可选 |
+
+## 平台
+
+第一期 Linux 与 macOS。Windows 随 spike（`D11`）：exec-server 有没有沙箱、装不装得上、杀毒拦不拦。
+
+## 本地上限由谁挡
+
+`D5`：优先 Codex 执行端自己的本地配置层（源码里有执行端本地配置与 managed requirements）；行为不满足时代理在协议层过滤 `environment` 相关请求。第一段第一个探针。
+
+## 探针已知
+
+exec-server 可远端执行、可改本地文件、沙箱在 executor 侧生效、审批请求带 `environmentId`、stdin 关闭即退出（须 `setsid … < /dev/null`）、listen 模式无认证。见 `runtime/probe/REPORT-2026-09-23-remote-exec.md`。
+
+## 不做
+
+驱动完整 Codex；本地知识库；加密；设备密钥；桌面窗口以外的任何界面。

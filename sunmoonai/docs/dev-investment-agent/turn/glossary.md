@@ -34,7 +34,7 @@
 ## 种类与交付物
 
 一问的**种类**有四个：PRD、SDD、IMP、UAT，规则见 [PRD](prd/finalize.md)、[SDD](sdd/finalize.md)、[IMP](imp/message-rules.md)、[UAT](uat/message-rules.md)。每一类该问什么，见各类规则的「这一类该问什么」；写多严见 [turn 的投影](turn-project.md)「用户消息写多严」。
-**不要和产品侧的「任务类别」（通用 / 专业）混用**：那是[任务类别判定与路由](../tree-build/SDD/architecture/routing.md)里客户任务的分类，与一问的种类无关。
+**不要和产品侧的「任务类别」（通用 / 专业）混用**：那是产品侧按 [Profile](../tree-build/SDD/architecture/profile.md) 与专家包对客户委托的分类，与一问的种类无关。
 
 | 词 | 含义 | 不要用 |
 | --- | --- | --- |
@@ -94,10 +94,10 @@
 | 组 | 成员 | 并列放置 |
 | --- | --- | --- |
 | **平台五仓** | `tpl-app`、`info-app`、`knowledge-app`、`investment-app`、`k8s` | **必须**——部署脚本按同级相对路径互相引用 |
-| **客户端仓** | `runtime`（开源）、`desktop-app` | 不要求——不参与 k8s 部署 |
+| **客户端仓** | `runtime`（本地代理）；`desktop-app` 已退役 | 不要求——不参与 k8s 部署 |
 
 说「五仓」时指的是**平台五仓**，不含客户端仓；要指全部时写「全部仓」。
-规则见 [`constraints.md`](../tree-build/rules/constraints.md)「拓扑」`C-T6` 至 `C-T8`。
+规则见 [`constraints.md`](../tree-build/rules/constraints.md)「拓扑」`C-T6` 至 `C-T9`。
 
 ## 编号的归属
 
@@ -105,9 +105,9 @@
 
 | 编号 | 归谁 | 定义在 |
 | --- | --- | --- |
-| `F-*` | 产品功能义务 | 各模块的 `functions.md` |
-| `I1`–`I20` | 产品不变量 | `tree-build/SDD/architecture/invariants.md` |
-| `D2`–`D28` | 待定决策点 | `tree-build/decisions.md` |
+| `F-*` | 产品功能义务 | `tree-build/SDD/modules/` 各模块文档 |
+| `I1`–`I14` | 产品不变量 | `tree-build/SDD/architecture/invariants.md` |
+| `D1`–`D16` | 待定决策点 | `tree-build/decisions.md` |
 | `AT-*` | 产品验收 | `tree-build/PRD/acceptance.md` |
 | `P0`–`P6` | **设计原则**，跨项目通用 | `turn/sdd/finalize.md`「设计原则」 |
 | `C-D*` `C-C*` `C-I*` `C-T*` `C-R*` `C-A*` | 代码必须符合的规则，按组分字母（数据/契约/身份/拓扑/发布/智能体） | `tree-build/rules/constraints.md` |

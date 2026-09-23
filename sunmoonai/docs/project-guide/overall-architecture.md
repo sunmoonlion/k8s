@@ -20,12 +20,12 @@
 [发布与门禁](topics/release.md#8-当前-kind-切换事实与剩余验收)。
 
 **架构讨论已经结束**，目标态定在 [需求](../dev-investment-agent/tree-build/PRD/requirement.md) 与
-[`tree-build/`](../dev-investment-agent/tree-build/)：桌面客户端（Electron + Vite + React Router）是做研究工作的
-**唯一界面**，本地 runtime 常驻，后端是确定性控制面（七块）。现有 Next.js 前端**保留**，
-承担官网、下载页与内部管理后台——所以浏览器入口没有取消，是**换了职责**。
+[`tree-build/`](../dev-investment-agent/tree-build/)（2026-09-23 重写）：网页是产品界面，本地只装一个小代理
+（`codex exec-server` + 出站桥 + 本地上限），Codex 的模型循环跑在我们内网的沙箱里（用户自己的 key），
+工作台后端是确定性控制面；公网只有薄边缘。现有 Next.js 前端**改回产品界面**；Electron 与 `desktop-app` 退役。
 
 **但这些都还没有源码。**本指南只投影现有源码：当前仍是 Next.js ＋ 单领域 FastAPI，
-Investment LangGraph Pilot 仍在跑，桌面端与本地 runtime 一行都还没有。
+Investment LangGraph Pilot 仍在跑，沙箱池、会合点、本地代理一行都还没有。
 **不得据目标合同把现状描述成已完成。**旧 v5 的 N1～N6 已按当前合同完成接收裁定，
 不再形成单独待办，也不从旧计划恢复技术方案；历史来源只按
 [v5 索引](topics/v5-history.md)取证。
@@ -402,7 +402,7 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | 动登录、权限、服务间调用 | [`topics/identity.md`](topics/identity.md) |
 | 加表、改迁移 | [`topics/data.md`](topics/data.md) |
 | 发版、改部署清单 | [`topics/release.md`](topics/release.md) |
-| **动代码前必读的规则** | [`../dev-investment-agent/tree-build/rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md)（39 条，按主题分组） |
+| **动代码前必读的规则** | [`../dev-investment-agent/tree-build/rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md)（按主题分组） |
 | 提一个开发请求 | [`../dev-investment-agent/tree-build/PRD/requirement.md`](../dev-investment-agent/tree-build/PRD/requirement.md) |
 | 查当前 digest / release_id | `k8s/sunmoonai/app-platform/<app>-app/deployment/bundle/release.json` |
 | 查某仓迁移 head | 该仓 `app/alembic/versions/` 里最新的 revision |
@@ -423,7 +423,7 @@ grep -rl 'research-app' k8s/sunmoonai/app-platform --include='*.yaml' --include=
 | 加表、改迁移 | [`topics/data.md`](topics/data.md) |
 | 发版、改部署清单 | [`topics/release.md`](topics/release.md) + [`repos/k8s.md`](repos/k8s.md) |
 | 确认某个能力是否真的接线了 | 对应仓文件的**「已知未实现」**一节 |
-| **动代码前必读的规则** | [`../dev-investment-agent/tree-build/rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md)（39 条，按主题分组） |
+| **动代码前必读的规则** | [`../dev-investment-agent/tree-build/rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md)（按主题分组） |
 | 让多个助手/智能体对同一需求各出方案、审核、吸收 | [`../dev-investment-agent/turn/protocol/competition-protocol.md`](../dev-investment-agent/turn/protocol/competition-protocol.md) |
 | 推送改动、跨机拉取、子模块的坑 | `~/five-repos-sync/sync-five-repos.sh`；规则见 [`../dev-investment-agent/tree-build/rules/constraints.md`](../dev-investment-agent/tree-build/rules/constraints.md) C-T4 |
 | 知道接下来要建什么 | [`../dev-investment-agent/tree-build/`](../dev-investment-agent/tree-build/) |

@@ -10,6 +10,7 @@
 | [`pipeline.md`](pipeline.md) | **主干**:九站、每一站现在谁做(人还是脚本)、走完的判据。两边都指它 |
 | [`turn/`](turn/README.md) | **一次一问一答怎么走完**:问什么、怎么答、怎么定稿、怎么验、谁批、派几家 |
 | [`tree-build/`](tree-build/README.md) | **把九站一格一格改成脚本的那棵树**:要建什么、切成哪些块、每块的定稿与委托记录 |
+| [`tree-build-v1/`](tree-build-v1/README.md) | 上一棵树,2026-09-23 退役(tag `tree-build-v1-retired-2026-09-23`),只作取证 |
 | [`tools/`](tools/README.md) | 门禁脚本,由 `.githooks/` 在提交与合并前调用 |
 | [`switch-test/`](switch-test/README.md) | **换机测试**:远程写代码、本地跑测试的约定与模板;输出落 `scripts/results/` 进 git,不贴对话 |
 
