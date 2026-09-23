@@ -9,7 +9,7 @@
 ## 一、你的角色
 
 - **跑，不改。**我给脚本，你跑脚本，把整份输出贴回给所有者。代码有问题我在远程改，你不改代码、不提交、不推送。
-  例外只有一种：所有者明确让你改。那时你在自己的工位（`luna`）上改，不动 `claude` 工位。
+  例外只有一种：所有者明确让你改。那时你在自己的工位（`luna`）上改，不动 `fable` 工位。
 - **整份贴，不挑着贴。**失败信息常在你觉得不重要的那几行里。
 - **先探环境再跑正事。**每个脚本开头会打印主机、时间、内存、磁盘、各仓提交号；输出一贴回来我先看这一段。
 
@@ -18,51 +18,51 @@
 ### 2.1 工位
 
 所有者的工位约定（`~/toolboxes/Vlinux/utils/set-up-tools/model-switch/layout.conf`）：主目录 `~/master/<仓>` 停在 `master`，
-工位 `~/worktrees/<名字>/<仓>`，**工位名 = 目录名 = 分支名**。我的工位叫 `claude`，代码都在分支 `claude` 上。
+工位 `~/worktrees/<名字>/<仓>`，**工位名 = 目录名 = 分支名**。我的工位叫 `fable`，代码都在分支 `fable` 上。
 
 本地要做三件事：
 
 ```bash
-# 1. layout.conf 的 LAYOUT_WORKSPACES 加上 claude（远程已加）
-sed -i 's/^LAYOUT_WORKSPACES=(cursor kimi luna opus qwen)$/LAYOUT_WORKSPACES=(claude cursor kimi luna opus qwen)/' \
+# 1. layout.conf 的 LAYOUT_WORKSPACES 加上 fable（远程已加）
+sed -i 's/^LAYOUT_WORKSPACES=(cursor kimi luna opus qwen)$/LAYOUT_WORKSPACES=(cursor fable kimi luna opus qwen)/' \
   ~/toolboxes/Vlinux/utils/set-up-tools/model-switch/layout.conf
 grep LAYOUT_WORKSPACES= ~/toolboxes/Vlinux/utils/set-up-tools/model-switch/layout.conf
 
-# 2. 从 Git 仓库取 claude 分支到本地五仓，再挂出工位
-for r in k8s info-app investment-app knowledge-app tpl-app; do git -C ~/master/$r fetch origin claude:claude; done
-mb worktree add claude
+# 2. 从 Git 仓库取 fable 分支到本地五仓，再挂出工位
+for r in k8s info-app investment-app knowledge-app tpl-app; do git -C ~/master/$r fetch origin fable:fable; done
+mb worktree add fable
 
 # 3. 之后每次同步（远程推完之后）
-~/five-repos-sync/sync-five-repos.sh from-remote claude
+~/five-repos-sync/sync-five-repos.sh from-remote fable
 ```
 
-`mb worktree add` 只挂父仓，**子模块不会自动初始化**。后端代码在子模块里，要手动初始化并切到 `claude` 分支：
+`mb worktree add` 只挂父仓，**子模块不会自动初始化**。后端代码在子模块里，要手动初始化并切到 `fable` 分支：
 
 ```bash
 for p in investment-app knowledge-app; do
   s=${p%-app}-backend
-  git -C ~/worktrees/claude/$p submodule update --init --recursive -- $s
-  git -C ~/worktrees/claude/$p/$s fetch origin claude:claude 2>/dev/null || true
-  git -C ~/worktrees/claude/$p/$s checkout claude
+  git -C ~/worktrees/fable/$p submodule update --init --recursive -- $s
+  git -C ~/worktrees/fable/$p/$s fetch origin fable:fable 2>/dev/null || true
+  git -C ~/worktrees/fable/$p/$s checkout fable
 done
 ```
 
-⚠ 五仓同步脚本**只推拉父仓，不推拉子仓**。子仓（`investment-backend`、`knowledge-backend`）的 `claude` 分支要单独
-`git -C ~/worktrees/claude/<父仓>/<子仓> pull --ff-only origin claude`。我每次请你跑测试时，会写明父仓和子仓各在哪个提交号，你先对。
+⚠ 五仓同步脚本**只推拉父仓，不推拉子仓**。子仓（`investment-backend`、`knowledge-backend`）的 `fable` 分支要单独
+`git -C ~/worktrees/fable/<父仓>/<子仓> pull --ff-only origin fable`。我每次请你跑测试时，会写明父仓和子仓各在哪个提交号，你先对。
 
 ### 2.2 两个新仓（客户端仓）
 
 `runtime`（本地 runtime，TypeScript）和 `desktop-app`（Electron 壳）是新仓，不参与 k8s 部署，没有并列放置要求。
-远程已按同一布局放在 `~/master/<仓>`（`master`）与 `~/worktrees/claude/<仓>`（`claude`），并登记进 `mb` 的 `repos.conf`。
-GitHub 仓已建好并推上去了（`sunmoonlion/runtime`、`sunmoonlion/desktop-app`，各有 `master` 与 `claude`）。你这边：
+远程已按同一布局放在 `~/master/<仓>`（`master`）与 `~/worktrees/fable/<仓>`（`fable`），并登记进 `mb` 的 `repos.conf`。
+GitHub 仓已建好并推上去了（`sunmoonlion/runtime`、`sunmoonlion/desktop-app`，各有 `master` 与 `fable`）。你这边：
 
 ```bash
 for r in runtime desktop-app; do
   git clone git@github.com:sunmoonlion/$r.git ~/master/$r
   printf '%s\n' "\$HOME/master/$r" >> ~/toolboxes/Vlinux/utils/set-up-tools/model-switch/repos.conf
 done
-mb worktree add claude runtime
-mb worktree add claude desktop-app
+mb worktree add fable runtime
+mb worktree add fable desktop-app
 ```
 
 五仓同步脚本的 `REPOS` 列表要不要加这两个，由所有者定；没加之前它们用上面的 `git pull` 手动同步。
@@ -99,7 +99,7 @@ docker exec pgtest psql -U t -c 'CREATE DATABASE agent_tests;' -c 'CREATE DATABA
 ### 2.4 配好之后跑一遍冒烟，贴回来
 
 ```bash
-cd ~/worktrees/claude/investment-app/investment-backend/app
+cd ~/worktrees/fable/investment-app/investment-backend/app
 uv sync --frozen && uv run ruff check . && uv run pyright && \
 AGENT_TEST_DATABASE_URL=postgresql://t:t@127.0.0.1:55432/agent_tests \
 DELIVERY_TEST_DATABASE_URL=postgresql://t:t@127.0.0.1:55432/delivery_tests \
@@ -108,16 +108,30 @@ uv run pytest -q 2>&1 | tail -5
 
 远程上这一套的结果是：ruff 通过、pyright 通过、pytest 全部通过（含数据库的 94 个）。你那边不一致就整份贴。
 
+## 二之二、换模型接力时工位怎么跟
+
+所有者可能在一段做完后换模型继续（例如 Fable 做完第一段，换 Opus 做第二段），**工位也跟着换**：
+新模型在自己的工位（如 `opus`）上接着做，分支从上一位的分支快进过来，不从 master 重长。
+
+```bash
+# 以 fable → opus 为例，父仓与子仓各做一次
+git -C ~/worktrees/opus/<父仓> merge --ff-only fable
+git -C ~/worktrees/opus/<父仓>/<子仓> merge --ff-only fable
+```
+
+接力的依据是分支上的 `CHECKPOINT.md`（IMP 规则），不靠对话记忆。换回来时反向快进即可。
+**对你的影响只有一条**：所有者会告诉你「现在的工位是 `<名字>`」，你把上面所有命令里的 `fable` 换成那个名字。
+
 ## 三、每一轮怎么跑
 
 1. 我推完代码，所有者告诉你「跑 `<仓>/scripts/<脚本名>.sh`，父仓在 `<提交号>`，子仓在 `<提交号>`」。
 2. 你先同步并核提交号：
 
    ```bash
-   ~/five-repos-sync/sync-five-repos.sh from-remote claude
-   git -C ~/worktrees/claude/<父仓>/<子仓> pull --ff-only origin claude
-   git -C ~/worktrees/claude/<父仓> rev-parse --short HEAD
-   git -C ~/worktrees/claude/<父仓>/<子仓> rev-parse --short HEAD
+   ~/five-repos-sync/sync-five-repos.sh from-remote fable
+   git -C ~/worktrees/fable/<父仓>/<子仓> pull --ff-only origin fable
+   git -C ~/worktrees/fable/<父仓> rev-parse --short HEAD
+   git -C ~/worktrees/fable/<父仓>/<子仓> rev-parse --short HEAD
    ```
 
    对不上就停，贴出来，不要猜着跑。
@@ -146,14 +160,14 @@ uv run pytest -q 2>&1 | tail -5
 
 ## 六、现在的状态（2026-09-23）
 
-| 仓 | `claude` 分支在哪 | 备注 |
+| 仓 | `fable` 分支在哪 | 备注 |
 | --- | --- | --- |
 | k8s | 远程与 GitHub 都有 | 含 turn/ 机制重构与本文 |
 | info-app、investment-app、knowledge-app、tpl-app | 远程与 GitHub 都有 | 与 master 相同，还没改动 |
 | investment-backend、knowledge-backend（子仓） | 只在远程 | 与父仓 gitlink 相同，还没改动、还没推 |
-| runtime、desktop-app | 远程与 GitHub 都有 | `master` 与 `claude` 都已推 |
+| runtime、desktop-app | 远程与 GitHub 都有 | `master` 与 `fable` 都已推 |
 
-远程上六个工位（claude、cursor、kimi、luna、opus、qwen）× 七个仓都已用 `mb worktree add --all --all` 挂出；
-除 `claude` 外都是从 `master` 新建、没有推到 GitHub——你那边的同名工位按所有者平时的 `to-remote <工位>` 流程对齐，不由远程先推。
+远程上六个工位（cursor、fable、kimi、luna、opus、qwen）× 七个仓都已用 `mb worktree add --all --all` 挂出；
+除 `fable` 外都是从 `master` 新建、没有推到 GitHub——你那边的同名工位按所有者平时的 `to-remote <工位>` 流程对齐，不由远程先推。
 
 第一段开始前所有者会定稿 PRD 树根，那之前不会有东西请你跑。配环境可以先做。
