@@ -9,5 +9,6 @@
 | `check-no-owner-creds.sh` | VM 上的凭据卫生检查：查有没有混进所有者的凭据。是卫生检查，不是边界 | `bash sunmoonai/docs/tools/check-no-owner-creds.sh` |
 
 钩子在 `.githooks/`，装一次即对本仓全部 worktree 生效：`git config core.hooksPath .githooks`。**两个钩子都调 `doc-gate.py --staged` 和 `anchor-gate.py`**。
-doc-gate 另查任务目录下的 turn：`thread/` 下正好两级（文档 thread、文档 turn），目录名合乎「四位本地号-种类-运行时 id」与「四位本地号-运行时 id」、编号连续不复用、PRD/SDD 两类有 `response.md` 而 IMP/UAT 两类没有（回执里记 worktree 与提交）、`user-message.md` 与 `turn.md` 的字段齐全合法、模块编号在同一个 `modules/` 里连续且 PRD 与 SDD 两侧一致，交回即冻结（提交与合并时查）。判据表见 [`../turn/naming.md`](../turn/naming.md)。
+⚠ 下面这段 turn 检查**只对上一版遗留的 `thread/` 原件生效**——它们已退役、冻结、不再新增，查它们只为防篡改历史。新机制的 `human-ai-turn/` 是普通目录，**不查形状，只查链接**（见 [`../turn/turn-project.md`](../turn/turn-project.md)）。
+doc-gate 另查任务目录下的旧 turn：`thread/` 下正好两级（文档 thread、文档 turn），目录名合乎「四位本地号-种类-运行时 id」与「四位本地号-运行时 id」、编号连续不复用、PRD/SDD 两类有 `response.md` 而 IMP/UAT 两类没有（回执里记 worktree 与提交）、`user-message.md` 与 `turn.md` 的字段齐全合法、模块编号在同一个 `modules/` 里连续且 PRD 与 SDD 两侧一致，交回即冻结（提交与合并时查）。判据表见 [`../turn/naming.md`](../turn/naming.md)。
 ⚠ 钩子找不到脚本时**判失败**（原先是直接放行，门会静默失效）。移动或改名脚本时必须同步改两个钩子；确需绕过用 `git commit --no-verify`，并在提交说明里写清理由。

@@ -1,30 +1,10 @@
 # 命名与编号
 
-thread、turn 与模块的目录名怎么起、号怎么排、与运行时怎么对。生命周期本身见 [turn 的投影](turn-project.md)。
-
-只用四个词：**文档 thread**、**文档 turn**（我们的记账单位，就是下面这些目录）、**运行时 thread**、**运行时 turn**（执行环境里的东西，只有 id）。
-
-## 名字
-
-**thread 目录名 = 四位本地号 + 种类 + 运行时 id；turn 目录名 = 四位本地号 + 运行时 id。**
-
-```text
-0003-sdd-01k8f3m2qz          0002-01k8h9t1cc
-└┬─┘ └┬┘ └────┬───┘          └┬─┘ └────┬───┘
- │    │       └ 运行时 thread id       └ 运行时 turn id
- │    └ 种类：prd · sdd · imp · uat
- └ 本地号：排先后、给人引用
-```
-
-- 本地号与运行时 id 合起来唯一——这是唯一性的全部来源。
-- 本地号四位数字，按派出顺序递增，从 `0001` 起，**不跳号、不复用**；中断、失败、被替换的照样占住自己的号。
-- id **写全不截断**；执行环境不给 id 的写 `-none`。
-- 派出时可以先不带 id；**写 `turn.md` 时必须已经带上**，turn 与它所在的 thread 都要带。
-- 改名只发生在交回之前。带了 `turn.md` 的目录连同名字一起冻结。
+起名字之前先查；模块怎么编号；门禁查什么。一问一答本身**不编号**——见 [turn 的投影](turn-project.md)。
 
 ## 起新名之前
 
-**先全仓 `grep` 一遍，撞了就换。**短名、字段名、对象名都算。
+**先全仓 `grep` 一遍，撞了就换。**短名、字段名、对象名、目录名都算。
 
 ```sh
 grep -rin '<新名>' --include='*.md' sunmoonai/docs
@@ -38,79 +18,45 @@ grep -rin '<新名>' --include='*.md' sunmoonai/docs
   文件名、目录名、所有引用、门禁脚本里的常量，一次提交改完。分两次改，中间那一版必然有坏链。
 - 改完再全仓 `grep` 一遍旧名，剩零个才算改完。
 
-## 形状
+## `human-ai-turn/` 不编号
 
-```text
-<任务目录>/thread/
-├── 0001-prd-01k8f3m2qz/
-│   ├── 0001-01k8h2r5bb/
-│   │   ├── user-message.md         问
-│   │   ├── response.md             答
-│   │   ├── turn.md                 回执
-│   │   └── others/                 可选：追加的材料与附件
-│   └── 0002-01k8h9t1cc/
-├── 0002-sdd-01k8q1q1q1/
-├── 0003-imp-01k8r5r5r5/            turn 里没有 response.md，产物在 worktree
-└── 0004-uat-01k8s7s7s7/            测试在 worktree 的 test/
-```
+值得留的那一问放在 `human-ai-turn/` 下，名字是约定不是规则，里面只有 `user-message.md`（或按 prd、sdd、imp、uat 分子目录各一份）。
+**没有本地号、没有运行时 id、没有回执。**引用一问时指文件路径与提交号，不指编号。
 
-- **thread 号在任务目录内统一递增**，不按种类分开；**turn 号在每个 thread 内从 `0001` 重起**。
-- PRD、SDD 两类：答是 `response.md`，一个 turn 只有一份。
-- IMP、UAT 两类：turn 里**不放** `response.md`，`turn.md` 里记 `worktree`（分支名）与 `commit`。
-- 行文引用只用本地号：`turn 0003/0002` 指第 `0003` 个 thread 的第 `0002` 个 turn；验收 turn 的 `verifies` 也这么填。
+## 模块编号
 
-## 与运行时怎么对
-
-| 方向 | 关系 |
-| --- | --- |
-| 一个文档 thread → 运行时 thread | 一对一：一个目录对一个运行时 thread |
-| 一个文档 turn → 运行时 turn | 一对多：工具往返、自动接着跑、重试都算这一次派工；名字里带的是**入口**那个 |
-| 反过来 | 一般不发生；真出现就是异常，交人看 |
-
-**运行时换了 thread，就新开一个文档 thread 目录**：resume、fork、上下文压缩后重开各是一个新的运行时 thread。接着做什么，写在新 thread 第 `0001` 个 turn 的用户消息里。
-
-运行时 id **不参与任何层级判断**，只作回溯锚点：层级由本地号定。
-
-## 并行
-
-同一问发给几家，就是几个文档 thread 各开一个 turn——各家本来就在各自的运行时 thread 里。几个 thread 种类相同、号各自往下排，用户消息各存各的：确实是各发了一次，各自冻结。定稿写明以哪一家为底。
-
-## 模块也编号
-
-`SDD/modules/` 下是「四位号-短名.md」（每块是什么），`SDD/submodules/` 下是同名目录（往下的子任务），两边一一对应。**号只在同一个 `modules/` 里递增**，每一层都从 `0001` 起；任务目录本身不编号。模块只在设计侧划，`PRD/` 下没有 `modules/`。
+`SDD/modules/` 下是「四位号-短名.md」（每块是什么），`SDD/submodules/` 下是同名目录（往下的子任务），两边一一对应。
+**号只在同一个 `modules/` 里递增**，每一层都从 `0001` 起，不跳号、不复用；任务目录本身不编号。模块只在设计侧划，`PRD/` 下没有 `modules/`。
 
 ```text
 tree-build/                             项目，不编号
-├── thread/
-├── PRD/requirement.md                           需求：不分模块
-├── rules/                                       可选：约束、纪律与开发提醒
+├── human-ai-turn/                      可选
+├── PRD/requirement.md                  需求：不分模块
+├── rules/                              可选：约束、纪律与开发提醒
 └── SDD/
     ├── architecture/
     ├── modules/0001-backend.md  0002-desktop.md  0003-runtime.md   每块是什么
     └── submodules/
-        ├── 0001-backend/                   子任务：内部同样是 thread/ + PRD/ + SDD/ + rules/
+        ├── 0001-backend/                   子任务：内部同样是 PRD/ + SDD/ + rules/（+ 可选 human-ai-turn/）
         │   └── SDD/submodules/0001-ledger/ 0002-router/ …
         └── 0002-desktop/
 ```
 
 - 模块目录与实现时 worktree 里的模块目录一一对应；**以定稿为准**：要改结构，先改这里。
 - **不在整棵树里统一编号**：那样要有一处统一取号，几个分支同时建模块就会抢号；子树挪了位置，号也跟着失效。
-- 跨节点引用时前面带上模块路径，如 `0001-backend/0002-router` 的 `0003/0002`。
+- 跨节点引用时前面带上模块路径，如 `0001-backend/0002-router`。
 
 ## 门禁查这几条
 
-编号与形状要能被机器判，[`../tools/doc-gate.py`](../tools/doc-gate.py) 查：
+[`../tools/doc-gate.py`](../tools/doc-gate.py) 随提交跑，查：
 
 | 查什么 | 判据 |
 | --- | --- |
-| thread 目录名 | `<四位数字>-<种类>` 或 `<四位数字>-<种类>-<运行时 id>`，种类在 prd、sdd、imp、uat 之内 |
-| turn 目录名 | `<四位数字>` 或 `<四位数字>-<运行时 id>`；有 `turn.md` 的，turn 与所在 thread 都必须带 id |
-| 层数 | `thread/` 下正好两层：thread、turn；turn 里只放 `user-message.md`、`response.md`、`turn.md` 与 `others/` |
-| turn 内容 | 必有 `user-message.md`；PRD、SDD 两类有 `turn.md` 时必须有 `response.md`；IMP、UAT 两类不得有 `response.md`，`turn.md` 必须有 `worktree` 与 `commit` |
-| 用户消息的字段 | `executor`、`verifies` 两行齐全；`verifies` 仅 UAT 类有值，写「thread 号/turn 号」且指到存在的 turn，其余写「无」 |
-| 回执的字段 | `status`、`worktree`、`commit` 三行齐全；IMP、UAT 两类的 `worktree` 与 `commit` 有值，PRD、SDD 两类两者同为「无」或同时填 |
-| 编号连续 | thread 号在任务目录内、turn 号在各 thread 内，都从 `0001` 起不跳号、不复用 |
-| 名字唯一 | 同一个本地号只有一个目录；同一个运行时 id 不出现在两处 |
 | 模块编号 | 合乎「四位号-短名」，在同一层里从 `0001` 起连续、不复用；`modules/*.md` 与 `submodules/*/` 同号同名一一对应 |
-| 链接 | 仓内相对链接的目标必须在 git 索引里；**未冻结的 turn 文件也查**——已交回（有 `turn.md`）的、以及已发出的任务书，链接改不动，才不查 |
-| 定稿目录 | 有 `SDD/submodules/` 就必须有 `SDD/architecture/`；有 `submodules/<X>/` 就必须有 `modules/<X>.md`（反之不强制——可以先定划分、后派子任务）；`PRD/` 下三样都不得有 |
+| 链接 | 仓内相对链接的目标必须在 git 索引里。`human-ai-turn/` 下的文件同样查——目录能随手删，死链风险反而更大 |
+| 定稿目录 | 有 `SDD/submodules/` 就必须有 `SDD/architecture/`；有 `submodules/<X>/` 就必须有 `modules/<X>.md`（反之不强制）；`PRD/` 下三样都不得有 |
+
+**不查 `human-ai-turn/` 的形状**：它是普通目录。
+
+⚠ 上一版的 `thread/` 原件（编号、字段、冻结）门禁仍按旧规则查，只为防篡改历史——那些目录已退役、不再新增，
+见 [`README.md`](README.md)「上一版留下的东西」。

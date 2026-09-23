@@ -29,7 +29,8 @@
 
 见 [turn 的投影](../turn/turn-project.md):
 
-- `thread/`：**一串同种类的一问一答**，目录名带种类（prd、sdd、imp、uat）；一问一答是它下面的一个 **turn**；
+- `human-ai-turn/`：**可选**——只有值得持久化的那一问才建，里面是 `user-message.md`（或按 prd、sdd、imp、uat 分子目录各一份）。
+  ⚠ **绝大多数问答不建目录**：在入口里直接问、直接改、看 diff、提交；
 - `PRD/`：PRD 类的定稿——要什么、做到什么算满足；**不分模块**；
 - `SDD/`：SDD 类的定稿，**三样**——`architecture/` 管模块之间的关系，`modules/<模块>.md` 说每块本身是什么，
   `submodules/<模块>/` 是它往下的子任务，内部递归同一模式；
@@ -53,9 +54,9 @@ SDD/
 │                                 · methods · ownership（谁负责哪些 F-*/I-*/AT-*）
 ├── modules/                      0001-backend.md · 0002-desktop.md · 0003-runtime.md
 └── submodules/
-    ├── 0001-backend/             PRD/ · SDD/（内部切七块）· thread/
-    ├── 0002-desktop/             PRD/ · SDD/ · thread/；内部划分待定
-    └── 0003-runtime/             PRD/；还没开过任何 turn
+    ├── 0001-backend/             PRD/ · SDD/（内部切八块）· 旧 thread/ 原件
+    ├── 0002-desktop/             PRD/ · SDD/ · 旧 thread/ 原件；内部划分待定
+    └── 0003-runtime/             PRD/；还没问过任何一问
 ```
 
 **功能义务 `F-*` 不在这一层**：单模块的在各自模块里，跨两模块的定义放主要承担方那一份。
