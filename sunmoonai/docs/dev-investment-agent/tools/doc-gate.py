@@ -474,6 +474,35 @@ def check_turn_md(base: str, fm: dict[str, str], kind: str, strict: bool = False
     return problems
 
 
+SCRATCH_MARKER = "/human-ai-turn/"
+
+
+def check_master_scratch(tracked: set[str]) -> list[str]:
+    """`human-ai-turn/` 只活在工位分支上，**不进 master**。
+
+    它是值得留的一问一答的临时目录（见 turn/turn-project.md）：分支上可提交、可推送，
+    历史里能取回；但所有者裁定（2026-09-23）主线只收定稿——PRD/、SDD/、规范与工具，
+    不收问答材料。合并前由分支所有者删掉；漏了的由这里拦住。
+    ⚠ 只有产生提交的合并（--no-ff 或有冲突）才会触发 pre-merge-commit 钩子；
+    快进合并不触发，所以合并进 master 请用 `git merge --no-ff`。
+    """
+    try:
+        branch = git("symbolic-ref", "--short", "-q", "HEAD").strip()
+    except subprocess.CalledProcessError:
+        return []
+    if branch != "master":
+        return []
+    hits = sorted(p for p in tracked if SCRATCH_MARKER in p)
+    if not hits:
+        return []
+    shown = hits[:8]
+    more = f"  …… 还有 {len(hits) - 8} 个" if len(hits) > 8 else ""
+    return [
+        "master 上不得有 human-ai-turn/（它只活在工位分支上；合并前在分支上 git rm，历史里仍可取回）：\n"
+        + "".join(f"    {h}\n" for h in shown) + more
+    ]
+
+
 def check_modules(tracked: set[str]) -> list[str]:
     """模块只在 SDD/ 下划。modules/<名>.md 说每块是什么，submodules/<名>/ 是它往下的子任务；有子任务必须有说明（反之不强制）；
     名字合乎「四位号-短名」，从 0001 起连续；PRD/ 下三样都不得有。"""
@@ -918,6 +947,8 @@ def main(argv: list[str]) -> int:
                 i += 2
     thread_problems, nturns = check_threads(tracked, staged_changes)
     problems += thread_problems
+    if mode == "--staged":
+        problems += check_master_scratch(tracked)
 
     if problems and survey:
         print(f"doc-gate 巡检: {checked} 份文档，{len(problems)} 处待修（不拦提交）\n")
