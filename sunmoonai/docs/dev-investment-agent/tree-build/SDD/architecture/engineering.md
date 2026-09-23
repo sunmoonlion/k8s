@@ -43,7 +43,7 @@
 
 1. **本地上限**：~~exec-server 侧配置能否拒绝 harness 的要求~~ 已验：不能，代理自己挡（`security.md`）；
 2. **BYOK**：~~`OPENAI_API_KEY` 与一个国产厂商 key~~ 已验：Kimi K3 经 `model_provider` 直连，远端环境、`apply_patch`、审批全过（`REPORT-2026-09-23-byok-kimi.md`）；OpenAI key 路径待有 key 再补；
-3. **会合点透传**：两端各出站、中间一个哑透传，一次工具调用的耗时；
+3. **会合点透传**：~~两端各出站、中间一个哑透传~~ 回环已验成立（`REPORT-2026-09-23-relay-passthrough.md`）；每 turn 约 45 个串行来回，公网数字要两台机器测（luna）；
 4. **断线恢复**：25 秒内重连接回原会话；超窗行为；
 5. **Windows exec-server**（luna，本地）。
 

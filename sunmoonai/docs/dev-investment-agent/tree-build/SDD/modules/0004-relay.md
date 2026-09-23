@@ -37,6 +37,10 @@
 
 边缘 VM 上与 Traefik 同机；无卷。第一期单实例；水平扩展靠无状态。
 
+## 探针已知
+
+回环透传成立（`runtime/probe/REPORT-2026-09-23-relay-passthrough.md`；原型 `relay_dumb.py`、`agent_bridge.py`、`sandbox_bridge.py`）。每 turn 约 45 个串行 JSON-RPC 来回，九成是 `fs/getMetadata`，所以**边缘必须与用户同区域**；跨境边缘不成立。Codex 自带一套 rendezvous（`exec-server --remote`，HTTP 注册 + protobuf 多路复用 + 续传 + noise 加密），第一期不兼容（`D17`）。
+
 ## 待定
 
-`D10` 令牌形制与吊销；`D16` 仓位置。透传延迟未验。
+`D10` 令牌形制与吊销；`D16` 仓位置；`D17` 兼容 Codex rendezvous。公网延迟未验。
