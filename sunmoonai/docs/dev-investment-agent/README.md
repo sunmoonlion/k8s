@@ -11,6 +11,7 @@
 | [`turn/`](turn/README.md) | **一次一问一答怎么走完**:问什么、怎么答、怎么定稿、怎么验、谁批、派几家 |
 | [`tree-build/`](tree-build/README.md) | **把九站一格一格改成脚本的那棵树**:要建什么、切成哪些块、每块的定稿与委托记录 |
 | [`tools/`](tools/README.md) | 门禁脚本,由 `.githooks/` 在提交与合并前调用 |
+| [`switch-test/`](switch-test/README.md) | **换机测试**:远程写代码、本地跑测试的约定与模板;输出落 `scripts/results/` 进 git,不贴对话 |
 
 ⚠ **本目录之外的不归这里**:平台现状(五个仓)在 [`../project-guide/`](../project-guide/README.md),
 运维笔记散在 `docs/` 根下。
