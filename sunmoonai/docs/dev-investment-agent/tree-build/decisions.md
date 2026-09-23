@@ -40,7 +40,7 @@
 
 - **OpenAI 的 API key 路径**：所有者只有订阅没有 key，未验；BYOK 与国产直连已由 Kimi 验过（`runtime/probe/REPORT-2026-09-23-byok-kimi.md`）；其他国产厂商（DeepSeek、Qwen、GLM）的 responses 兼容度未验；
 - **Windows 上的 exec-server**；
-- **断线恢复**：25 秒恢复窗口内重连能否接回原会话与原进程；
+- **断线恢复已验**（`runtime/probe/REPORT-2026-09-23-reconnect.md`）：25 秒内重连接回原会话、进程与输出无损；超窗与代理重启会话丢，但环境回来后 app-server 自动重连，新 turn 正常。未验：真实公网抖动时长分布；
 - **一个 exec-server 服务多个 app-server 会话**；
 - **MCP 与 skills 在远端环境里的解析**：方法工具挂在哪一端；
 - **会合点透传的公网延迟**：回环已验透传成立、开销可忽略（`runtime/probe/REPORT-2026-09-23-relay-passthrough.md`）；每 turn 约 45 个串行来回（九成是 `fs/getMetadata`），公网 RTT × 45 才是真实数字，要在 luna 本地与这台远程之间测；`--concurrent-requests` 与 metadata 缓存能否减少来回未验；

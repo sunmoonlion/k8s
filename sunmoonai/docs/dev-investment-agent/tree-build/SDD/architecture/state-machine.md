@@ -99,7 +99,7 @@ tool_call_refs, side_effect_refs, evidence_refs, approval_refs
 2. 第一期一个 Task 同时只有一个非终态 Attempt；并行与竞争择优不做（`C-A10`）；
 3. `COMPLETED` 只表示产出了候选结果，不自动使 Task `SUCCEEDED`；
 4. `BUDGET_EXCEEDED` 是终态；Task 随后进 `WAITING(RESOURCE)`；
-5. `SUSPENDED` 表示执行环境断开（`thread/environment/disconnected`）；在 Codex 恢复窗内重连回 `RUNNING`，超窗 `ABANDONED`，Task 进 `WAITING(ENVIRONMENT)`，恢复后由新 Attempt 接续；
+5. `SUSPENDED` 表示执行环境断开（`thread/environment/disconnected`）；Codex 恢复窗 25 秒内重连（`connected` 事件）回 `RUNNING`，执行端进程与输出无损；超窗或本地代理重启则 turn 带错误结束，Attempt `ABANDONED`，Task 进 `WAITING(ENVIRONMENT)`；环境回来后 app-server 自动重连，工作台看到 `environment/status = ready` 即可开新 Attempt 接续（探针 `runtime/probe/REPORT-2026-09-23-reconnect.md`）；
 6. 恢复不得重复已经记账的副作用；工作区内的文件改动以 Codex 协议记录的 patch 为准；
 7. 同一专家包版本连续若干个 Attempt 启动即失败时熔断该版本并落事件，直到人解除；
 8. 验收 Attempt 与执行 Attempt 分开：独立验收由另一个 turn 承担，记 `role=acceptance`，不得读执行 Attempt 的推理过程，只读交回物。
