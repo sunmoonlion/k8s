@@ -108,19 +108,21 @@ uv run pytest -q 2>&1 | tail -5
 
 远程上这一套的结果是：ruff 通过、pyright 通过、pytest 全部通过（含数据库的 94 个）。你那边不一致就整份贴。
 
-## 二之二、换模型接力时工位怎么跟
+## 二之二、换模型接力：换模型不换分支
 
-所有者可能在一段做完后换模型继续（例如 Fable 做完第一段，换 Opus 做第二段），**工位也跟着换**：
-新模型在自己的工位（如 `opus`）上接着做，分支从上一位的分支快进过来，不从 master 重长。
+所有者可能中途换模型继续（例如 Fable 额度用完，换 Opus 或换你）。**接手的模型直接在 `fable` 工位、`fable` 分支上继续**，
+不另开工位、不快进合并。作者归属看每条提交的 `Co-Authored-By`，不看分支名。
 
-```bash
-# 以 fable → opus 为例，父仓与子仓各做一次
-git -C ~/worktrees/opus/<父仓> merge --ff-only fable
-git -C ~/worktrees/opus/<父仓>/<子仓> merge --ff-only fable
-```
+接手的一方知道什么、不知道什么：
 
-接力的依据是分支上的 `CHECKPOINT.md`（IMP 规则），不靠对话记忆。换回来时反向快进即可。
-**对你的影响只有一条**：所有者会告诉你「现在的工位是 `<名字>`」，你把上面所有命令里的 `fable` 换成那个名字。
+| 怎么接 | 能看到 |
+| --- | --- |
+| 同一个 Claude Code 会话里切模型 | 之前的对话全部还在 |
+| 远程机上新开 Claude Code 会话 | 对话看不见；能读远程机上的项目记忆、分支上的 `CHECKPOINT.md`、代码与文档 |
+| **你（luna），或别的工具、别的机器** | 对话和记忆都看不见；**只有分支上落盘的东西** |
+
+所以我每次停下都把状态写进分支上的 `CHECKPOINT.md`（IMP 规则），你接手时一切以它为准。
+对你的影响：工位名始终是 `fable`，上面的命令不用改。
 
 ## 三、每一轮怎么跑
 
@@ -167,7 +169,7 @@ git -C ~/worktrees/opus/<父仓>/<子仓> merge --ff-only fable
 | investment-backend、knowledge-backend（子仓） | 只在远程 | 与父仓 gitlink 相同，还没改动、还没推 |
 | runtime、desktop-app | 远程与 GitHub 都有 | `master` 与 `fable` 都已推 |
 
-远程上六个工位（cursor、fable、kimi、luna、opus、qwen）× 七个仓都已用 `mb worktree add --all --all` 挂出；
+远程上 cursor、fable、kimi、luna、qwen 五个工位 × 七个仓已用 `mb` 挂出（opus 工位已按「换模型不换分支」收掉，`layout.conf` 里也去了）；
 除 `fable` 外都是从 `master` 新建、没有推到 GitHub——你那边的同名工位按所有者平时的 `to-remote <工位>` 流程对齐，不由远程先推。
 
 第一段开始前所有者会定稿 PRD 树根，那之前不会有东西请你跑。配环境可以先做。
