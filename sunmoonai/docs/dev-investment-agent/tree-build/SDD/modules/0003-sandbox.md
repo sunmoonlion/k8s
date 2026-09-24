@@ -43,4 +43,4 @@ BYOK：key 以 `CODEX_HOME/auth.json`（`auth_mode="apikey"`）或 `OPENAI_API_K
 
 ## 实现状态（2026-09-25，按需拉起）
 
-`sandbox-platform/provisioner/`：供给器（FastAPI，直接调 API server，RBAC 限 sandbox-pool）；`PUT/GET/DELETE /sandboxes/{user}`，一用户一个沙箱，Secret 含厂商 key、会合点令牌、能力令牌、知识 MCP 令牌，PVC 保留（D18 先"不删"），Secret 摘要进 pod 注解只在变化时滚动。工作台 `POST /api/workbench/sandboxes/provision` 把设置页登记的 key 解密后经内网送到供给器（所有者 2026-09-25 点头）。镜像基础改为平台钉版 node 24.18.0 alpine。未做：配额、按需缩容、CODEX_HOME 备份、按用户签发知识 MCP 令牌（D10，现共用）。
+`sandbox-platform/provisioner/`：供给器（FastAPI，直接调 API server，RBAC 限 sandbox-pool）；`PUT/GET/DELETE /sandboxes/{user}`，一用户一个沙箱，Secret 含厂商 key、会合点令牌、能力令牌、知识 MCP 令牌，PVC 保留（D18 先"不删"），Secret 摘要进 pod 注解只在变化时滚动。工作台 `POST /api/workbench/sandboxes/provision` 把设置页登记的 key 解密后经内网送到供给器（所有者 2026-09-25 点头）。镜像基础改为平台钉版 node 24.18.0 alpine。按用户签发的知识 MCP 令牌与会合点令牌都是工作台 JWT（D10，2026-09-25），随 spec 进 Secret；`KNOWLEDGE_MCP_SHARED_TOKEN` 只剩没配签名密钥时的退路。未做：配额、按需缩容、CODEX_HOME 备份。

@@ -25,7 +25,7 @@ def hello(role, user, token, codex="0.155.1", conn=None, proto=1):
 
 class RelayTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.relay = relay_mod.Relay(tokens=TOKENS)
+        self.relay = relay_mod.Relay(tokens={u: dict(e) for u, e in TOKENS.items()})  # 每个测试自己的一份表
         self.server = await serve(self.relay.handler, "127.0.0.1", 0, max_size=None, process_request=self.relay.process_request)
         self.port = self.server.sockets[0].getsockname()[1]
         self.url = f"ws://127.0.0.1:{self.port}"
@@ -170,6 +170,116 @@ class RelayTests(unittest.IsolatedAsyncioTestCase):
             relay.admin_apply({"type": "set_tokens", "user": "dyn", "agent": "a" * 20, "sandbox": "b" * 20})
             loaded = relay_mod.load_tokens(None, path)
             self.assertEqual(loaded["dyn"]["agent"], "a" * 20)
+
+
+
+# ---- D10：工作台签发的 ES256 JWT，公钥就地验 ----
+def _keypair():
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+    priv = ec.generate_private_key(ec.SECP256R1())
+    pem = priv.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo).decode()
+    return priv, pem
+
+
+def _mint(priv, claims):
+    import base64
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
+    b64 = lambda b: base64.urlsafe_b64encode(b).rstrip(b"=").decode()  # noqa: E731
+    base = {"iss": "wb-test", "aud": "relay", "exp": 4102444800, "jti": "j-" + claims.get("role", "x")}
+    signing = b64(json.dumps({"alg": "ES256", "typ": "JWT"}).encode()) + "." + b64(json.dumps({**base, **claims}).encode())
+    r, s_ = decode_dss_signature(priv.sign(signing.encode(), ec.ECDSA(hashes.SHA256())))
+    return signing + "." + b64(r.to_bytes(32, "big") + s_.to_bytes(32, "big"))
+
+
+class RelayJwtTests(RelayTests):
+    """同一套配对测试跑在 JWT 令牌上，外加 JWT 专属的拒绝与吊销。"""
+
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
+        self.priv, pem = _keypair()
+        self.relay.public_key_pem = pem
+        self.relay.jwt_issuer = "wb-test"
+        self.jwt = {u: {r: _mint(self.priv, {"sub": u, "role": r, "jti": f"{u}-{r}"}) for r in ("agent", "sandbox")} for u in ("u1", "u2")}
+        # 父类的 A1/S1/A2/S2 都换成 JWT；静态表仍在（两种令牌共存）但这些 JWT 不在表里，只能靠验签
+        self.translate = {"A1": self.jwt["u1"]["agent"], "S1": self.jwt["u1"]["sandbox"], "A2": self.jwt["u2"]["agent"], "S2": self.jwt["u2"]["sandbox"]}
+
+    def token(self, user, role):
+        return self.jwt[user][role]
+
+    async def agent(self, user="u1", token="A1", codex="0.155.1"):
+        return await super().agent(user, self.translate.get(token, token), codex)
+
+    async def open_data_on_request(self, ctrl, user="u1", token="A1", codex="0.155.1"):
+        return await super().open_data_on_request(ctrl, user, self.translate.get(token, token), codex)
+
+    async def sandbox(self, user="u1", token="S1", codex="0.155.1"):
+        return await super().sandbox(user, self.translate.get(token, token), codex)
+
+    async def test_jwt_rejections(self):
+        priv2, _ = _keypair()
+        bad = {
+            "wrong key": _mint(priv2, {"sub": "u1", "role": "agent"}),
+            "wrong aud": _mint(self.priv, {"sub": "u1", "role": "agent", "aud": "knowledge"}),
+            "wrong role": _mint(self.priv, {"sub": "u1", "role": "sandbox"}),
+            "wrong sub": _mint(self.priv, {"sub": "u2", "role": "agent"}),
+            "expired": _mint(self.priv, {"sub": "u1", "role": "agent", "exp": 1}),
+            "wrong iss": _mint(self.priv, {"sub": "u1", "role": "agent", "iss": "other"}),
+            "not a jwt": "not-a-jwt-and-not-in-the-static-table",
+        }
+        for why, tok in bad.items():
+            ws = await connect(self.url + "/agent"); self.open_ws.append(ws)
+            await ws.send(hello("agent", "u1", tok))
+            self.assertEqual(json.loads(await ws.recv())["type"], "reject", why)
+        self.assertEqual(len(self.relay.agents), 0)
+
+    async def test_jwt_revocation_by_jti_and_user_and_state_round_trip(self):
+        import tempfile
+        self.relay.admin_token = "ADMIN-SECRET-0123456789"
+        admin = await connect(self.url + "/admin"); self.open_ws.append(admin)
+        await admin.send(json.dumps({"type": "hello", "role": "admin", "token": "ADMIN-SECRET-0123456789"}))
+        await admin.recv()
+        a, first = await self.agent("u1", self.token("u1", "agent"))
+        self.assertEqual(first["type"], "welcome")
+        # 按 jti 吊销：下一次 hello 被拒；在线的不强制断（到期或撤换时工作台另发 revoke）
+        await admin.send(json.dumps({"type": "revoke_jti", "jtis": ["u1-agent"]}))
+        self.assertEqual(json.loads(await admin.recv())["type"], "ok")
+        ws = await connect(self.url + "/agent"); self.open_ws.append(ws)
+        await ws.send(hello("agent", "u1", self.token("u1", "agent")))
+        self.assertEqual(json.loads(await ws.recv())["reason"], "token revoked")
+        # 按用户吊销：关在线代理，u2 的 JWT 也拒，直到重新 set_tokens
+        a2, _ = await self.agent("u2", self.token("u2", "agent"))
+        await admin.send(json.dumps({"type": "revoke", "user": "u2"}))
+        self.assertEqual(json.loads(await admin.recv())["type"], "ok")
+        with self.assertRaises(Exception):
+            await asyncio.wait_for(a2.recv(), 3)
+        ws = await connect(self.url + "/agent"); self.open_ws.append(ws)
+        await ws.send(hello("agent", "u2", self.token("u2", "agent")))
+        self.assertEqual(json.loads(await ws.recv())["reason"], "token revoked")
+        await admin.send(json.dumps({"type": "set_tokens", "user": "u2", "agent": self.token("u2", "agent"), "sandbox": self.token("u2", "sandbox")}))
+        self.assertEqual(json.loads(await admin.recv())["type"], "ok")
+        a3, first = await self.agent("u2", self.token("u2", "agent"))
+        self.assertEqual(first["type"], "welcome")
+        # 公钥经管理通道推送并落状态文件；坏钥被拒且不覆盖
+        await admin.send(json.dumps({"type": "set_public_key", "pem": "garbage"}))
+        self.assertEqual(json.loads(await admin.recv())["type"], "error")
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "state.json")
+            self.relay.state_path = path
+            await admin.send(json.dumps({"type": "set_public_key", "pem": self.relay.public_key_pem}))
+            self.assertEqual(json.loads(await admin.recv())["type"], "ok")
+            fresh = relay_mod.Relay(tokens={}, state_path=path)
+            fresh.load_state()
+            self.assertEqual(fresh.public_key_pem, self.relay.public_key_pem)
+            self.assertIn("u1-agent", fresh.revoked_jtis)
+            self.assertEqual(fresh.tokens["u2"]["agent"], self.token("u2", "agent"))
+            self.assertNotIn("u2", fresh.revoked_users)
+            with self.assertRaises(relay_mod.Reject):
+                fresh.check({"type": "hello", "proto": 1, "role": "agent", "user": "u1", "token": self.token("u1", "agent"), "codex": "x"}, "agent")
+            self.assertEqual(fresh.check({"type": "hello", "proto": 1, "role": "sandbox", "user": "u1", "token": self.token("u1", "sandbox"), "codex": "x"}, "sandbox"), "u1")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -70,3 +70,5 @@
 ## 实现状态（2026-09-25，沙箱按需拉起）
 
 加了 `application/workbench/provisioning.py` 与迁移 `20260925_0010`：每用户一份会合点身份（令牌密文入库，代理令牌只在签发时回给用户一次）、`POST /sandboxes/provision`（取活跃凭据解密 → 登记会合点 → 供给器 → 沙箱行）、`GET/DELETE /sandboxes/provisioned`、`app.cli.workbench_register`（手工登记）。测试 476。
+
+D10（2026-09-25）：`application/workbench/tokens.py` 签发 ES256 JWT（代理/沙箱 `aud=relay`，知识 `aud=knowledge`；`iss`、`kid`、`jti`、90 天），私钥 `WORKBENCH_TOKEN_SIGNING_KEY`（`app.cli.workbench_token_keys` 生成）；`GET /api/workbench/token-keys` 给 JWKS；拉起时先把公钥推到会合点再登记；`POST /sandboxes/relay-identity/rotate` 撤换——旧 `jti` 推到会合点吊销、签新一对、沙箱在线则用新沙箱令牌与新 MCP 令牌滚动、新代理令牌只回一次；设置页多一个「换代理令牌」。没配私钥时一切照旧（随机不透明令牌）。

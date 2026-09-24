@@ -235,6 +235,8 @@ def overlay(
                 "a1764f1defa673670bb1e4df9e3223a82cdc6d2b66365370617c6be509a04cf5"
             ),
             "KNOWLEDGE_MCP_RATE_PER_MINUTE": "120",
+            # D10：工作台签发的 MCP 令牌（JWT）的 iss；公钥在 Secret knowledge-mcp-tokens/jwt-public-key.pem
+            "KNOWLEDGE_MCP_JWT_ISSUER": "sunmoon-workbench",
         }
     )
     for surface in ("admin", "web"):
@@ -294,6 +296,13 @@ def overlay(
             "KNOWLEDGE_MCP_TOKENS_JSON",
             "knowledge-mcp-tokens",
             "tokens.json",
+            optional=True,
+        ),
+        # D10：验工作台签发的 JWT 用的公钥；缺失时只认静态表
+        common.env_ref(
+            "KNOWLEDGE_MCP_JWT_PUBLIC_KEY",
+            "knowledge-mcp-tokens",
+            "jwt-public-key.pem",
             optional=True,
         ),
     ]

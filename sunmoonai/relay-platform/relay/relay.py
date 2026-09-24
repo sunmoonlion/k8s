@@ -6,9 +6,12 @@
   /sandbox             沙箱数据流。第一帧 hello；配对到同一 user 的代理，之后逐消息透传
   /admin               工作台的管理通道（内网出站到边缘）。第一帧 hello role=admin + RELAY_ADMIN_TOKEN；之后
                        {"type":"set_tokens","user":U,"agent":A,"sandbox":S} / {"type":"revoke","user":U} / {"type":"list"}
+                       / {"type":"set_public_key","pem":PEM} / {"type":"revoke_jti","jtis":[...]}
   GET /healthz         健康
-认证：第一期是静态令牌表（TOKENS_FILE：{"user": {"agent": "...", "sandbox": "..."}}）加管理通道动态登记；
-      动态登记可写到 RELAY_TOKENS_STATE 文件，重启后回读；用公钥验 JWT 留给 D10。
+认证（D10）：令牌是 JWT（三段）且会合点有工作台公钥（RELAY_JWT_PUBLIC_KEY / 管理通道推来）时就地验签：
+      ES256、aud=relay、sub=hello.user、role=路径角色、exp 未过、jti 不在吊销表、iss 匹配（配了 RELAY_JWT_ISSUER 时）。
+      不验签的退路：静态令牌表（TOKENS_FILE：{"user": {"agent": "...", "sandbox": "..."}}）加管理通道动态登记。
+      登记、公钥、吊销表都写 RELAY_TOKENS_STATE 文件，重启后回读。吊销只按 jti 与用户，不回源。
 版本成对：agent 与 sandbox 的 hello.codex 必须相同，否则拒绝配对（AT-28）。
 协议版本：hello.proto 必须等于 RELAY_PROTOCOL。
 """
@@ -35,12 +38,67 @@ OPEN_TIMEOUT = float(os.environ.get("RELAY_OPEN_TIMEOUT", "15"))
 MAX_STREAMS_PER_USER = int(os.environ.get("RELAY_MAX_STREAMS_PER_USER", "8"))
 ADMIN_TOKEN = os.environ.get("RELAY_ADMIN_TOKEN", "")
 TOKENS_STATE = os.environ.get("RELAY_TOKENS_STATE", "")
+JWT_PUBLIC_KEY = os.environ.get("RELAY_JWT_PUBLIC_KEY", "")
+JWT_ISSUER = os.environ.get("RELAY_JWT_ISSUER", "")
 USER_RE = __import__("re").compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
 log = logging.getLogger("relay")
 
 
 class Reject(Exception):
     pass
+
+
+# ---- D10：就地验工作台签发的 ES256 JWT（只依赖 cryptography；没装就只走静态表）----
+def _b64url_decode(part: str) -> bytes:
+    import base64
+    return base64.urlsafe_b64decode(part + "=" * (-len(part) % 4))
+
+
+def looks_like_jwt(token: str) -> bool:
+    return token.count(".") == 2 and all(token.split("."))
+
+
+def load_public_key(pem: str):
+    from cryptography.hazmat.primitives import serialization
+    key = serialization.load_pem_public_key(pem.encode())
+    from cryptography.hazmat.primitives.asymmetric import ec
+    if not isinstance(key, ec.EllipticCurvePublicKey):
+        raise ValueError("relay only accepts EC P-256 public keys")
+    return key
+
+
+def verify_jwt(token: str, public_key, *, issuer: str = "") -> dict:
+    """返回 claims；任何不符都 raise Reject。不做 aud/role/sub 的业务判断（调用方做）。"""
+    from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
+
+    try:
+        h, p, sig = token.split(".")
+        header = json.loads(_b64url_decode(h))
+        claims = json.loads(_b64url_decode(p))
+        raw = _b64url_decode(sig)
+    except (ValueError, TypeError):
+        raise Reject("malformed jwt")
+    if not isinstance(header, dict) or header.get("alg") != "ES256" or not isinstance(claims, dict):
+        raise Reject("jwt alg not ES256")
+    if len(raw) != 64:
+        raise Reject("jwt signature length")
+    r, s_ = int.from_bytes(raw[:32], "big"), int.from_bytes(raw[32:], "big")
+    try:
+        public_key.verify(encode_dss_signature(r, s_), f"{h}.{p}".encode(), ec.ECDSA(hashes.SHA256()))
+    except InvalidSignature:
+        raise Reject("jwt signature")
+    try:
+        exp = int(claims.get("exp", 0))
+    except (TypeError, ValueError):
+        raise Reject("jwt exp")
+    if exp <= int(time.time()):
+        raise Reject("jwt expired")
+    if issuer and claims.get("iss") != issuer:
+        raise Reject("jwt issuer")
+    return claims
 
 
 @dataclass
@@ -59,6 +117,16 @@ class Relay:
     stats: dict[str, int] = field(default_factory=lambda: {"paired": 0, "rejected": 0, "agent_up": 0})
     admin_token: str = ADMIN_TOKEN
     state_path: str = TOKENS_STATE
+    public_key_pem: str = JWT_PUBLIC_KEY
+    jwt_issuer: str = JWT_ISSUER
+    revoked_jtis: set = field(default_factory=set)
+    revoked_users: set = field(default_factory=set)
+    _public_key: object = field(default=None, repr=False)
+
+    def public_key(self):
+        if self._public_key is None and self.public_key_pem:
+            self._public_key = load_public_key(self.public_key_pem)
+        return self._public_key
 
     # ---- 认证 ----
     def check(self, hello: dict, role: str) -> str:
@@ -70,9 +138,18 @@ class Relay:
             raise Reject(f"role {hello.get('role')} on {role} path")
         user = str(hello.get("user") or "")
         token = str(hello.get("token") or "")
-        expected = self.tokens.get(user, {}).get(role)
-        if not user or not expected or not secrets.compare_digest(expected, token):
+        if not user:
             raise Reject("bad token")
+        if looks_like_jwt(token) and self.public_key() is not None:
+            claims = verify_jwt(token, self.public_key(), issuer=self.jwt_issuer)
+            if claims.get("aud") != "relay" or claims.get("sub") != user or claims.get("role") != role:
+                raise Reject("jwt claims")
+            if str(claims.get("jti") or "") in self.revoked_jtis or user in self.revoked_users:
+                raise Reject("token revoked")
+        else:
+            expected = self.tokens.get(user, {}).get(role)
+            if not expected or not secrets.compare_digest(expected, token):
+                raise Reject("bad token")
         if not hello.get("codex"):
             raise Reject("missing codex version")
         return user
@@ -198,7 +275,28 @@ class Relay:
     def admin_apply(self, message: dict) -> dict:
         kind = message.get("type")
         if kind == "list":
-            return {"type": "tokens", "users": sorted(self.tokens)}
+            return {"type": "tokens", "users": sorted(self.tokens), "revoked_jtis": len(self.revoked_jtis),
+                    "public_key": bool(self.public_key_pem)}
+        if kind == "set_public_key":
+            pem = message.get("pem")
+            if not isinstance(pem, str) or "BEGIN PUBLIC KEY" not in pem:
+                return {"type": "error", "reason": "pem must be a PEM public key"}
+            try:
+                self._public_key = load_public_key(pem)
+            except Exception as exc:  # 坏钥不覆盖旧钥
+                return {"type": "error", "reason": f"public key rejected: {type(exc).__name__}"}
+            self.public_key_pem = pem
+            self.persist_tokens()
+            log.info("admin set public key")
+            return {"type": "ok"}
+        if kind == "revoke_jti":
+            jtis = message.get("jtis")
+            if not isinstance(jtis, list) or not all(isinstance(j, str) and j for j in jtis):
+                return {"type": "error", "reason": "jtis must be a list of strings"}
+            self.revoked_jtis.update(jtis)
+            self.persist_tokens()
+            log.info("admin revoke jti count=%d", len(jtis))
+            return {"type": "ok", "revoked": len(jtis)}
         user = str(message.get("user") or "")
         if not USER_RE.match(user):
             return {"type": "error", "reason": "bad user"}
@@ -207,11 +305,13 @@ class Relay:
             if not (isinstance(agent, str) and isinstance(sandbox, str) and len(agent) >= 16 and len(sandbox) >= 16 and agent != sandbox):
                 return {"type": "error", "reason": "tokens must be two distinct strings of at least 16 chars"}
             self.tokens[user] = {"agent": agent, "sandbox": sandbox}
+            self.revoked_users.discard(user)
             self.persist_tokens()
             log.info("admin set tokens user=%s", user)
             return {"type": "ok", "user": user}
         if kind == "revoke":
             self.tokens.pop(user, None)
+            self.revoked_users.add(user)  # JWT 不查表，靠这个拒到重新登记为止
             agent = self.agents.pop(user, None)
             self.persist_tokens()
             log.info("admin revoke user=%s agent_online=%s", user, agent is not None)
@@ -225,8 +325,26 @@ class Relay:
             return
         tmp = self.state_path + ".tmp"
         with open(tmp, "w") as f:
-            json.dump(self.tokens, f)
+            json.dump({"tokens": self.tokens, "revoked_jtis": sorted(self.revoked_jtis),
+                       "revoked_users": sorted(self.revoked_users), "public_key_pem": self.public_key_pem}, f)
         os.replace(tmp, self.state_path)
+
+    def load_state(self) -> None:
+        """重启回读管理通道登记过的东西（令牌、吊销表、公钥）；静态表里的同名用户以静态为准。"""
+        if not self.state_path or not os.path.exists(self.state_path):
+            return
+        with open(self.state_path) as f:
+            state = json.load(f)
+        if not isinstance(state, dict):
+            return
+        if "tokens" not in state:  # 旧格式：整个文件就是令牌表
+            state = {"tokens": state}
+        for user, entry in (state.get("tokens") or {}).items():
+            self.tokens.setdefault(user, entry)
+        self.revoked_jtis.update(state.get("revoked_jtis") or [])
+        self.revoked_users.update(state.get("revoked_users") or [])
+        if not self.public_key_pem and state.get("public_key_pem"):
+            self.public_key_pem = state["public_key_pem"]
 
     async def handle_admin(self, ws: ServerConnection) -> None:
         hello = await self._hello(ws)
@@ -260,10 +378,10 @@ def load_tokens(path: str | None, state_path: str | None = None) -> dict[str, di
         with open(path) as f:
             tokens = json.load(f)
     # 管理通道登记过的令牌（重启后回读）；静态表里的同名用户以静态为准
-    if state_path and os.path.exists(state_path):
-        with open(state_path) as f:
-            for user, entry in json.load(f).items():
-                tokens.setdefault(user, entry)
+    if state_path:
+        relay = Relay(tokens=tokens, state_path=state_path)
+        relay.load_state()
+        tokens = relay.tokens
     return tokens
 
 
@@ -271,7 +389,11 @@ async def main():
     logging.basicConfig(level=os.environ.get("RELAY_LOG", "INFO"), format="%(asctime)s %(levelname)s %(message)s")
     host = os.environ.get("RELAY_HOST", "127.0.0.1")
     port = int(os.environ.get("RELAY_PORT", "47100"))
-    relay = Relay(tokens=load_tokens(os.environ.get("RELAY_TOKENS_FILE"), TOKENS_STATE or None))
+    relay = Relay(tokens=load_tokens(os.environ.get("RELAY_TOKENS_FILE")))
+    relay.load_state()  # 管理通道登记过的令牌、公钥、吊销表
+    if relay.public_key_pem:
+        relay.public_key()  # 坏钥在启动时就报
+        log.info("jwt verification enabled issuer=%s", relay.jwt_issuer or "(any)")
     if not relay.tokens and not relay.admin_token:
         log.warning("no tokens configured and no admin token: every hello will be rejected")
     stop = asyncio.get_running_loop().create_future()

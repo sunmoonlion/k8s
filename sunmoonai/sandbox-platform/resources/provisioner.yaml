@@ -1,6 +1,6 @@
 # 沙箱供给器（0003 D9）：在 sandbox-pool 里按用户拉起/更新/回收沙箱。工作台经内网调它。
 # 先建 Secret：kubectl -n sandbox-pool create secret generic sandbox-provisioner --from-literal=token=<与工作台共享的令牌>
-#           以及（可选）knowledge 共用令牌：--from-literal=knowledge-token=<KNOWLEDGE_MCP 令牌>（D10 之前共用）
+#           以及（可选）knowledge 共用令牌：--from-literal=knowledge-token=<KNOWLEDGE_MCP 令牌>——只在工作台没配签名密钥时用；配了就按用户签 JWT（D10）
 apiVersion: v1
 kind: ServiceAccount
 metadata:

@@ -31,6 +31,10 @@ spec:
             - { name: RELAY_TOKENS_STATE, value: "/state/tokens.json" }
             - name: RELAY_ADMIN_TOKEN
               valueFrom: { secretKeyRef: { name: relay-admin, key: token, optional: true } }
+            # D10：工作台验签公钥（ES256）。可从 Secret 给，也可由工作台经 /admin set_public_key 推来（落 /state）
+            - name: RELAY_JWT_PUBLIC_KEY
+              valueFrom: { secretKeyRef: { name: relay-jwt, key: public.pem, optional: true } }
+            - { name: RELAY_JWT_ISSUER, value: "sunmoon-workbench" }
           ports:
             - { name: ws, containerPort: 47100 }
           volumeMounts:

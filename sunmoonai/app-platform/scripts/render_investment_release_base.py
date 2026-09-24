@@ -228,6 +228,8 @@ def overlay(output: Path, namespace: str) -> None:
             "WORKBENCH_SANDBOX_MODEL_PROVIDER": "kimi",
             "WORKBENCH_SANDBOX_MODEL": "kimi-k3",
             "WORKBENCH_SANDBOX_PROVIDER_BASE_URL": "https://api.moonshot.cn/v1",
+            # D10：工作台签发令牌的 iss；私钥在 Secret investment-workbench/WORKBENCH_TOKEN_SIGNING_KEY
+            "WORKBENCH_TOKEN_ISSUER": "sunmoon-workbench",
         }
     )
     for surface in ("admin", "web"):
@@ -298,6 +300,13 @@ def overlay(output: Path, namespace: str) -> None:
             "WORKBENCH_RELAY_ADMIN_TOKEN",
             "investment-workbench",
             "WORKBENCH_RELAY_ADMIN_TOKEN",
+            optional=True,
+        ),
+        # D10 token signing key (ES256 private PEM); absent → opaque random tokens, relay pairs by its table
+        common.env_ref(
+            "WORKBENCH_TOKEN_SIGNING_KEY",
+            "investment-workbench",
+            "WORKBENCH_TOKEN_SIGNING_KEY",
             optional=True,
         ),
     ]
