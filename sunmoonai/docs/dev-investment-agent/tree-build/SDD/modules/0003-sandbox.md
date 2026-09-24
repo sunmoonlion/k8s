@@ -15,6 +15,8 @@ pod（每用户）
 
 `environments.toml` 由工作台在 Session 建立时写入或经 `environment/add` 注册；`default` 指向该用户的环境；`include_local=false`。
 
+沙箱 `CODEX_HOME` 里我们控制的还有：`config.toml` 的 `[mcp_servers.sunmoon]`（知识服务，token 经环境变量注入）与 `skills/sunmoon-data/`（怎么用我们的数据）。这两样随镜像版本发，入口脚本生成，不手改；用户的模型与审批偏好也写在这里，来源是网页设置页（`methods.md`「MCP 与 skills」）。
+
 ## 功能义务
 
 | ID | 义务 |

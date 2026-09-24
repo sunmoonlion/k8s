@@ -43,7 +43,8 @@
 - **Windows 上本地上限的外沙箱怎么做**：exec-server 本身在 Windows 上已验可用（`runtime/probe/REPORT-2026-09-24-windows-exec-server.md`，需 `codex sandbox setup --elevated` 一次性提权初始化）；我们能否把 exec-server 进程包进同一套受限令牌机制，做 Windows 版时再探；
 - **断线恢复已验**（`runtime/probe/REPORT-2026-09-23-reconnect.md`）：25 秒内重连接回原会话、进程与输出无损；超窗与代理重启会话丢，但环境回来后 app-server 自动重连，新 turn 正常。未验：真实公网抖动时长分布；
 - **一个 exec-server 服务多个 app-server 会话**；
-- **MCP 与 skills 在远端环境里的解析**：方法工具挂在哪一端；
+- **stdio 型 MCP 在远端环境下跑在哪一端**：HTTP 型已验由编排端从执行端配置读取并生效；skills 已验（`runtime/probe/REPORT-2026-09-24-skills-mcp-resolution.md`）：项目 `.agents/skills` 与沙箱 `CODEX_HOME/skills` 可见，用户机器上的全局 `~/.codex/skills` 不可见；
+- **换步后 MCP 工具列表是否重取**：现在的设计不依赖它（服务端按 token 范围逐调用鉴权），若可靠重取可再做按步换清单；
 - **会合点透传的公网延迟**：回环已验透传成立、开销可忽略（`runtime/probe/REPORT-2026-09-23-relay-passthrough.md`）；每 turn 约 45 个串行来回（九成是 `fs/getMetadata`），公网 RTT × 45 才是真实数字，要在 luna 本地与这台远程之间测；`--concurrent-requests` 与 metadata 缓存能否减少来回未验；
 - **Codex 实验性接口的稳定性**：`environment/*` 与 exec-server 均标 experimental；升版必须重跑探针；
 - **沙箱池的内存与冷启动**：每用户 app-server 的常驻成本；
