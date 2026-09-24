@@ -1,0 +1,107 @@
+# 第一期：一个演示用户的常驻沙箱 pod（0003-sandbox，D9 先常驻）。手工清单；正式版按需拉起。
+# 用法：先建两个 Secret（见 README），再 kubectl apply -f demo-user.yaml -n sandbox-pool
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sandbox-pool
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sandbox-demo-codex-home
+  namespace: sandbox-pool
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sandbox-demo
+  namespace: sandbox-pool
+  labels: { app: sandbox, user: demo }
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app: sandbox, user: demo }
+  template:
+    metadata:
+      labels: { app: sandbox, user: demo }
+    spec:
+      securityContext: { runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001 }
+      containers:
+        - name: codex
+          image: harbor.sunmoonai.com:30443/app-images/sandbox@sha256:REPLACE_WITH_BUILT_DIGEST
+          env:
+            - { name: RELAY_URL, value: "wss://edge.sunmoonai.com/relay" }
+            - { name: RELAY_USER, value: "demo" }
+            - { name: ENVIRONMENT_ID, value: "user-pc" }
+            - { name: APP_SERVER_TOKEN_FILE, value: "/secrets/app-server/token" }
+            - name: RELAY_TOKEN
+              valueFrom: { secretKeyRef: { name: sandbox-demo-relay, key: token } }
+            - name: OPENAI_API_KEY
+              valueFrom: { secretKeyRef: { name: sandbox-demo-model-key, key: key } }
+            # 国产厂商（例：Kimi）——不填则用 OpenAI 默认
+            - { name: MODEL_PROVIDER, value: "kimi" }
+            - { name: MODEL, value: "kimi-k3" }
+            - { name: PROVIDER_BASE_URL, value: "https://api.moonshot.cn/v1" }
+          ports:
+            - { name: app-server, containerPort: 47800 }
+          volumeMounts:
+            - { name: codex-home, mountPath: /data/codex }
+            - { name: app-server-token, mountPath: /secrets/app-server, readOnly: true }
+          resources:
+            requests: { cpu: "100m", memory: "256Mi" }
+            limits: { cpu: "1", memory: "1Gi" }
+          readinessProbe:
+            tcpSocket: { port: 47800 }
+            initialDelaySeconds: 3
+      volumes:
+        - name: codex-home
+          persistentVolumeClaim: { claimName: sandbox-demo-codex-home }
+        - name: app-server-token
+          secret: { secretName: sandbox-demo-app-server, defaultMode: 0400 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sandbox-demo
+  namespace: sandbox-pool
+spec:
+  selector: { app: sandbox, user: demo }
+  ports:
+    - { name: app-server, port: 47800, targetPort: 47800 }
+---
+# 深处只出站（C-T7）：只放行工作台进来的 app-server 连接；出站只允许 DNS、会合点/模型厂商（443）、知识服务
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sandbox-demo
+  namespace: sandbox-pool
+spec:
+  podSelector:
+    matchLabels: { app: sandbox, user: demo }
+  policyTypes: ["Ingress", "Egress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: app-platform-dev }
+      ports:
+        - { protocol: TCP, port: 47800 }
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector: { matchLabels: { k8s-app: kube-dns } }
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+    - ports:
+        - { protocol: TCP, port: 443 }
+    - to:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: app-platform-dev }
+      ports:
+        - { protocol: TCP, port: 8000 }
