@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# 所有者在本地机上跑的：把全部仓和副本同步到远程助手推上来的最新状态，并列出待办。
+# 所有者在本地机上跑的（拉）：把全部仓和副本同步到远程助手推上来的最新状态，并列出待办。跑完之后的推回见 human-remote.sh。
 # 跑完后对本地助手说一句「请看 inbox」。本地助手自己不同步，只看、只跑。
-# 用法：bash ~/switch-test/human-do.sh    （没有参数，总是同步全部：五仓 + 两个子仓 + runtime）
+# 用法：bash ~/switch-test/human-local.sh    （没有参数，总是同步全部：五仓 + 两个子仓 + runtime）
 # ~/switch-test 是副本，不在 git 里，不会自己更新：本脚本同步完仓之后，切换到仓里的最新版继续跑，
 # 由它重建副本。所以副本里的这份即使旧了也没关系，只要它还能同步 k8s。
 set -uo pipefail
@@ -29,8 +29,8 @@ fi
 
 # 同步完成后，把控制权交给仓里的最新版（自己可能是旧副本）
 if [ "${1:-}" != "--after-sync" ]; then
-  [ -f "$ST/human-do.sh" ] || { echo "✗ 仓里没有 $ST/human-do.sh"; exit 1; }
-  exec bash "$ST/human-do.sh" --after-sync
+  [ -f "$ST/human-local.sh" ] || { echo "✗ 仓里没有 $ST/human-local.sh"; exit 1; }
+  exec bash "$ST/human-local.sh" --after-sync
 fi
 
 echo "===== 2. 刷新副本 ~/switch-test（用仓里的最新版覆盖）"

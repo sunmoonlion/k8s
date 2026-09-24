@@ -7,5 +7,5 @@
 预计：5 分钟；要联网（模型调用）；要 Codex 0.155.1 与登录态；不要 Docker
 看什么：1) exec-server 在 Windows 上起得来、监听 47001；2) workspace-write 沙箱生效：VERDICT L2 与 L3 都 True 为 pass，出现 "sandbox intent cannot be enforced" 为 fail；环境段里要有杀毒软件名
 前提：无
-回传：scripts/results/probe-windows-exec-server.<时间>.txt；在被测仓提交并 git push origin fable
+回传：scripts/results/probe-windows-exec-server.<时间>.txt（写下即可，提交与推回由所有者做）
 ```

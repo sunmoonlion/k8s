@@ -7,5 +7,5 @@
 预计：10 分钟内结束；要联网；要 Codex 0.155.1（执行端不要登录态）；不要 Docker
 看什么：本地侧连上会合点并桥接，输出末行 pass；RTT 表在远程侧，由远程对照回环数据出结论
 前提：所有者同意远程临时开放 47100，且远程已起 probe-two-machine-latency-remote.sh 并说「起好了」；没这句不要跑
-回传：scripts/results/probe-two-machine-latency.<时间>.txt；在被测仓提交并 git push origin fable
+回传：scripts/results/probe-two-machine-latency.<时间>.txt（写下即可，提交与推回由所有者做）
 ```
