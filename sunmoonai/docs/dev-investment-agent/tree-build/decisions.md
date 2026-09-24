@@ -38,6 +38,7 @@
 ## 未验证事项 ⚠
 
 - **OpenAI 的 API key 路径**：所有者只有订阅没有 key，未验；BYOK 与国产直连已由 Kimi 验过（`runtime/probe/REPORT-2026-09-23-byok-kimi.md`）；其他国产厂商（DeepSeek、Qwen、GLM）的 responses 兼容度未验；
+- **macOS 上外沙箱的嵌套**：sandbox-exec 外层 + Codex seatbelt 内层，预期可叠加，未验；Linux 已验（`runtime/probe/REPORT-2026-09-24-outer-sandbox.md`）；
 - **Windows 上本地上限的外沙箱怎么做**：exec-server 本身在 Windows 上已验可用（`runtime/probe/REPORT-2026-09-24-windows-exec-server.md`，需 `codex sandbox setup --elevated` 一次性提权初始化）；我们能否把 exec-server 进程包进同一套受限令牌机制，做 Windows 版时再探；
 - **断线恢复已验**（`runtime/probe/REPORT-2026-09-23-reconnect.md`）：25 秒内重连接回原会话、进程与输出无损；超窗与代理重启会话丢，但环境回来后 app-server 自动重连，新 turn 正常。未验：真实公网抖动时长分布；
 - **一个 exec-server 服务多个 app-server 会话**；

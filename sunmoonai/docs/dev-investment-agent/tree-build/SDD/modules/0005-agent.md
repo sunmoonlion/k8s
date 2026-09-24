@@ -6,9 +6,10 @@
 
 ```text
 本地代理（常驻，签名分发）
-├── codex exec-server --listen ws://127.0.0.1:PORT（钉版，随包带）
-│     executor 侧沙箱（Linux: codex-linux-sandbox；macOS: seatbelt）
-│     本地配置：沙箱模式上限、根目录白名单、网络
+├── 外沙箱（Linux：随包带的 bwrap，`--ro-bind / /` + 白名单根可写 + `/tmp` 私有；macOS：sandbox-exec，未验）
+│   └── codex exec-server --listen ws://127.0.0.1:PORT（钉版，随包带）
+│         内层 Codex 沙箱照常（Linux: bwrap+seccomp；macOS: seatbelt）
+│     白名单变更 = 重启 exec-server（bind 在启动时定）
 ├── 出站桥：WSS 到会合点；把隧道流量转到 127.0.0.1:PORT
 ├── 弹窗：本地上限变更的当面确认；结论经⑧回工作台
 ├── 登录：一次浏览器 OIDC 取代理令牌；之后自动续签

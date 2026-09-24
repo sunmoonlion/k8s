@@ -32,7 +32,7 @@
 
 | 层 | 做什么 | 守什么 |
 | --- | --- | --- |
-| 外沙箱（OS 级） | 代理把 exec-server 进程本身放进一个只能写白名单目录、按策略限网的 OS 沙箱（Linux bwrap/landlock，macOS sandbox-exec，Windows 待探：Codex 自己用受限令牌加独立沙箱账号，需一次提权初始化） | 硬上限：不依赖协议解析，Codex 升版也不失效；`fs/*`、`http/request`、`process/*` 一并盖住 |
+| 外沙箱（OS 级） | 代理把 exec-server 进程本身放进一个只能写白名单目录的 OS 沙箱。**Linux 已验**：用 Codex 包里自带的 bwrap 做外层（`--ro-bind / /`，白名单根与 `CODEX_HOME` 可写，`/tmp` 私有，不分离网络），内层 Codex 沙箱照常工作；不能用系统 `/usr/bin/bwrap`（Ubuntu 的 AppArmor 配置禁止其子进程再建命名空间），也不能用 Landlock（它禁止内层 mount）。见 `runtime/probe/REPORT-2026-09-24-outer-sandbox.md`。macOS 用 sandbox-exec（未验）；Windows 待探（Codex 用受限令牌加独立沙箱账号，需一次提权初始化） | 硬上限：不依赖协议解析，Codex 升版也不失效；`fs/*`、`http/request`、`process/*` 一并盖住 |
 | 协议过滤（桥内） | 出站桥解析 exec-server JSON-RPC：`process/start` 的沙箱意图高于上限、cwd 或 roots 在白名单外、`fs/*` 路径在白名单外、`http/request` 与 `network/policyRequest` 越出策略 → 直接回错误，不转发 | 干净的拒绝与可观测（`AT-09`）；抬高上限的弹窗就挂在这里 |
 
 推论：不能用 Codex 自带的 `--remote`/noise 加密注册模式让沙箱直连执行端（桥看不见协议就过滤不了）；③ 在桥内是明文 JSON-RPC，加密由④⑤的 WSS 承担。
