@@ -96,7 +96,7 @@ WORKBENCH_COLUMNS = {
         "target_state_version expires_at status response consumed_at responded_by created_at"
     ),
     "workbench_sandboxes": _fields(
-        "id owner_actor_id app_server_url token_ref codex_version status created_at updated_at"
+        "id owner_actor_id app_server_url token_ref codex_version status created_at updated_at relay_user provisioned"
     ),
     "workbench_session_events": _fields(
         "id session_id cursor kind event_type payload task_id attempt_id schema_version created_at"
@@ -113,6 +113,10 @@ WORKBENCH_COLUMNS = {
         "cancel_requested_at cancel_requested_by created_at updated_at"
     ),
     "workbench_user_prefs": _fields("owner_actor_id model approval_policy updated_at"),
+    "workbench_relay_identities": _fields(
+        "owner_actor_id relay_user agent_token_ciphertext sandbox_token_ciphertext created_at registered_at"
+    ),
+    "workbench_sandbox_leases": _fields("sandbox_id runner_id expires_at acquired_at updated_at"),
 }
 TABLE_COLUMNS = {**common.TABLE_COLUMNS, **DOMAIN_COLUMNS, **WORKBENCH_COLUMNS}
 # Immutable identity/audit columns the api never rewrites. Every other column of a
@@ -120,7 +124,7 @@ TABLE_COLUMNS = {**common.TABLE_COLUMNS, **DOMAIN_COLUMNS, **WORKBENCH_COLUMNS}
 # no updatable columns at all).
 WORKBENCH_UPDATES = {
     "workbench_environments": "name agent_version codex_version roots ceiling status last_seen_at updated_at",
-    "workbench_sandboxes": "app_server_url token_ref codex_version status updated_at",
+    "workbench_sandboxes": "app_server_url token_ref codex_version status updated_at relay_user provisioned",
     "workbench_sessions": "thread_id wheel state_version active_task_id thread_settings last_active_at",
     "workbench_tasks": (
         "profile_version expert_pack_version normalized_goal thread_id environment_id project_root state "
@@ -136,6 +140,8 @@ WORKBENCH_UPDATES = {
     "workbench_credentials": "sandbox_id ciphertext hint status revoked_at",
     "workbench_commands": "status claimed_by claimed_at finished_at error",
     "workbench_user_prefs": "model approval_policy updated_at",
+    "workbench_relay_identities": "agent_token_ciphertext sandbox_token_ciphertext registered_at",
+    "workbench_sandbox_leases": "runner_id expires_at acquired_at updated_at",
 }
 API_READS = (
     "agent_sessions",

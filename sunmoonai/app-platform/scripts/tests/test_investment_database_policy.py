@@ -29,7 +29,7 @@ class InvestmentDatabasePolicyTests(unittest.TestCase):
         )
         statements = self.compile()
         self.assertEqual(statements[: len(base)], base)
-        self.assertEqual(len(policy.TABLE_COLUMNS), 31)
+        self.assertEqual(len(policy.TABLE_COLUMNS), 33)
         for sql in statements[len(base) :]:
             for forbidden in (
                 "DELETE",
