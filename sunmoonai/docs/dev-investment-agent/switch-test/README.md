@@ -31,11 +31,11 @@ git -C ~/worktrees/fable/runtime pull --ff-only origin fable
 # 2. 看待办：一个文件一条，没有文件就没有待办
 ls ~/worktrees/fable/k8s/sunmoonai/docs/dev-investment-agent/switch-test/inbox/
 
-# 3. 逐条做（每条文件里写了 跑什么 / 仓与提交 / 预计 / 看什么 / 前提 / 回传）
-#    3a 核提交号，对不上就停，贴出来
-git -C ~/worktrees/fable/<仓> rev-parse --short HEAD
+# 3. 逐条做（每条文件里写了 被测仓 / 跑什么 / 仓与提交 / 预计 / 看什么 / 前提 / 回传）
+#    3a 进被测仓，核提交号，对不上就停，贴出来
+cd ~/worktrees/fable/<被测仓> && git rev-parse --short HEAD
 #    3b 跑，整份输出落 results/，文件名带时间
-cd ~/worktrees/fable/<仓> && mkdir -p scripts/results
+mkdir -p scripts/results
 out=scripts/results/<脚本名>.$(date +%Y%m%d-%H%M%S).txt
 bash scripts/<脚本名>.sh > "$out" 2>&1; echo "exit=$?" >> "$out"; tail -3 "$out"
 #    3c 提交、推回
@@ -51,16 +51,19 @@ Windows 上跑 `.ps1`：`powershell -ExecutionPolicy Bypass -File scripts\<脚�
 
 ## 二、一条待办长什么样
 
-文件名 `inbox/<日期>-<序号>-<脚本名>.md`，内容固定六项，缺一项本地助手先问：
+文件名 `inbox/<日期>-<序号>-<脚本名>.md`，内容固定七项，缺一项本地助手先问：
 
 ```text
-跑：<仓>/scripts/<脚本名>.sh   （或 .ps1）
-仓与提交：<仓> <提交号>；<子仓> <提交号>（跨仓时逐仓列）
+被测仓：<仓名>，本地路径 ~/worktrees/fable/<仓名>（子仓写到子仓：~/worktrees/fable/<父仓>/<子仓>）
+跑：cd 到被测仓后执行的命令，如 bash scripts/<脚本名>.sh（或 .ps1）
+仓与提交：<被测仓> <提交号>；<子仓> <提交号>（跨仓时逐仓列）
 预计：<多久>；要不要联网；要不要 Docker / Codex 登录态
 看什么：<这次要判的一两件事，以及怎么算 pass / fail>
 前提：<要所有者先做的事，没有写「无」>
-回传：<结果文件路径>；提交并推回哪个仓
+回传：<被测仓>/scripts/results/<脚本名>.<时间>.txt；提交并推回被测仓
 ```
+
+「被测仓」决定三件事：在哪个目录跑、核哪个仓的提交号、结果推回哪个仓。跨仓联调的被测仓是 `k8s`（脚本在 `sunmoonai/scripts/local-integration/`）。
 
 界面类的检查没有脚本：待办里给编号步骤，每步写「做什么」和「应该看到什么」；本地助手报**做到第几步和预期不一样、屏幕上实际是什么**，写成 markdown 放同一个 `results/`。
 
