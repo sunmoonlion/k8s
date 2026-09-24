@@ -43,7 +43,7 @@
 
 ## 与 app-server 的客户端
 
-一个用户一条 WebSocket 到其沙箱的 app-server。要处理的事件：`thread/started`、`turn/started`、`turn/completed`、`item/*`、`item/commandExecution/requestApproval`、`item/fileChange/requestApproval`、`thread/environment/connected|disconnected`、`error`。连接断开时按 Codex 的恢复语义重连；超窗按状态机 `SUSPENDED → ABANDONED`。
+一个用户一条 WebSocket 到其沙箱的 app-server。要处理的事件：`thread/started`、`turn/started`、`turn/completed`、`thread/tokenUsage/updated`、`item/*`、`item/commandExecution/requestApproval`、`item/fileChange/requestApproval`、**`mcpServer/elicitation/request`**（Codex 0.155 调任何 MCP 工具前向客户端要一次 user-verification 确认；不答则工具调用作废——第四段实测。表单式按 schema 默认值答 accept，url 式拒绝）、`thread/environment/connected|disconnected`、`error`。连接断开时按 Codex 的恢复语义重连；超窗按状态机 `SUSPENDED → ABANDONED`。
 
 ## 留好位置、第一期不做
 
@@ -62,4 +62,8 @@
 已落在 `investment-backend/app`：迁移 `20260924_0008_workbench`；`domain/workbench`（状态表、对象、专家包 `SMOKE`/`DATA_QUERY`）；`infrastructure/workbench`（仓储、app-server 客户端）；`application/workbench`（账本、会话服务、runner、顾问、验收）；`interfaces/endpoints/workbench_routes.py`（`/api/workbench`）；第五个进程角色 `runner`。测试 457 通过；本机真链 14 项 pass（`k8s/sunmoonai/scripts/local-integration/workbench-chain.sh`）。
 
 未做：`F-LEDGER-02` 只重建命令队列，runner 重启丢未决工具审批；runner 多实例分片；`DATA_QUERY` 需知识 MCP（第四段）；`F-SIGNAL-01`；`D10` 令牌签发。
+
+## 实现状态（2026-09-24，第四段）
+
+加了：`mcpServer/elicitation/request` 处理（否则 MCP 工具一律失败）；设置面接口 `/prefs`、`/credentials`（Fernet 密文、永不回显、可撤销；`WORKBENCH_CREDENTIAL_KEY` 未配置即 503）；底稿接口 `/tasks/{id}/artifacts`（带内容）与 `PUT /tasks/{id}/conclusion`（`kind=user_draft`）；新会话默认带用户偏好；迁移 `20260924_0009_workbench_prefs`。`DATA_QUERY` 专家包经知识 MCP 真跑通（`eval/reports/`）。测试 472。未做项同上，另加：凭据只登记未注入沙箱（沙箱按需拉起时用，第五段）。
 
