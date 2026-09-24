@@ -18,7 +18,7 @@
 ⚠ 本文的「本地」指**所有者的本地机**，不是产品文档里的「用户机器 / 本地代理」。做探针时本地机**扮演**用户机器，远程机**扮演**我们的云端。
 
 本目录：`README.md`（本文，约定）、`inbox/`（**待办，一个文件一条，远程助手写、本地助手做**）、`done/`（已办）。测试脚本不放这里，放被测仓。
-`~/switch-test/` 是本目录在两台机上的副本，以仓里为准。本地机的一次性环境配置见 [`local-setup.md`](../tree-build/human-ai-turn/imp/local-setup.md)。
+`~/switch-test/` 是本目录在两台机上的副本，以仓里为准。本地机要装什么见「六、固定事实」。
 
 ## 一、本地助手（在本地机上）：只做这一个循环
 
@@ -96,6 +96,16 @@ Windows 上跑 `.ps1`：`powershell -ExecutionPolicy Bypass -File scripts\<脚�
 远程机跑得动的，本地机可以再跑一遍作独立复核，那是验收的事，不是必须。
 
 ## 六、固定事实
+
+本地机要有的工具（脚本的环境段会打印，缺了脚本自己会报）：
+
+| 工具 | 版本 | 用在哪 |
+| --- | --- | --- |
+| Codex CLI | **0.155.1**，与远程机同版 | 探针与联调：`codex app-server`（云端角色）、`codex exec-server`（用户机器角色） |
+| Python 3.10+、uv | 近期版 | 后端测试；探针的 `websockets` venv（`uv venv .venv && uv pip install --python .venv/bin/python websockets`） |
+| Node.js 20+、pnpm 9+ | 近期版 | `runtime` 仓 |
+| Docker | 近期版 | Postgres 容器：`docker run -d --rm --name pgtest -e POSTGRES_PASSWORD=t -e POSTGRES_USER=t -p 127.0.0.1:55432:5432 postgres:16-alpine` |
+| kind + kubectl | 现有 | 集群相关测试 |
 
 - 两台机上远程助手的工位名都是 `fable`（工位名 = 目录名 = 分支名，`~/worktrees/fable/<仓>`）；换模型、换助手都不换工位，改名时所有者会说；本地助手在这个工位里只跑不改；
 - 测试用的 Codex 走独立 `CODEX_HOME`：编排端 `~/.codex-probe`（有登录态），执行端 `~/.codex-probe-exec`（无登录态）；与日常用的隔离；
