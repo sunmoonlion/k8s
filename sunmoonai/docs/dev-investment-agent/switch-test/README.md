@@ -3,10 +3,26 @@
 这台开发机磁盘与内存都小（3.6 GB 内存、2 核），**只用来写代码和文档**，不跑集群、不跑重服务。
 需要真跑的测试在本地机器上做，输出进 git 回来。
 
-本文只放**怎么测的约定与模板**，长期有效。某一轮具体要什么环境、哪个工位、各段请本地跑什么，
-在 `../tree-build/human-ai-turn/imp/luna-local-setup.md`。
+本文放**怎么测的约定与模板**，长期有效。一次性的环境配置在 `../tree-build/human-ai-turn/imp/luna-local-setup.md`。
+**现在要跑什么，只看 [`inbox/`](inbox/README.md)**：一个文件一条待办，没有文件就没有待办。
 
 **以仓里这份为准**：`~/switch-test/README.md` 是它的副本，两边同内容。改了仓里的就覆盖副本。
+
+## 本地助手：从这里开始
+
+每次被叫到，只做这一个循环：
+
+```bash
+# 1. 同步（k8s 带着 inbox 一起来）
+~/five-repos-sync/sync-five-repos.sh from-remote fable
+for p in investment-app knowledge-app; do git -C ~/worktrees/fable/$p/${p%-app}-backend pull --ff-only origin fable; done
+git -C ~/worktrees/fable/runtime pull --ff-only origin fable
+# 2. 看待办
+ls ~/worktrees/fable/k8s/sunmoonai/docs/dev-investment-agent/switch-test/inbox/
+# 3. 逐个打开，按里面的四行做：核提交号 → 跑 → 输出进 results/ → 提交推回；「前提」没满足的先问
+```
+
+待办文件里写清了跑什么、在哪个提交、要什么、看什么。做完的文件由远程移到 `done/`，你不动它。
 
 ## 哪边跑什么
 
@@ -61,8 +77,8 @@ git push origin fable                                       # 子仓、runtime �
 看什么：<这次要判的一两件事>
 ```
 
-**请求本身也进 git**：写在被测仓的 `scripts/requests/<日期>-<脚本名>.md`，与脚本同一次提交推上去；本地同步后就能看到，对话里只需说一句「有新请求」。
-`luna` 这类只看得见分支的助手，靠的就是这个文件。
+**请求本身也进 git**：一条一个文件，放本目录 `inbox/<日期>-<序号>-<脚本名>.md`，随 k8s 推上去；本地同步后就看到了，对话里只需说一句「有新请求」。
+`luna` 这类只看得见分支的助手，靠的就是这个目录。远程发之前要保证：脚本已推到被测仓、`仓与提交` 填的是那个提交号。
 
 跑之前先核提交号，对不上就停，贴出来：
 
@@ -87,7 +103,7 @@ git -C ~/worktrees/fable/<父仓>/<子仓> rev-parse --short HEAD
 | 跨仓联调（代理 + 沙箱 + 工作台） | `k8s` 仓 `sunmoonai/scripts/local-integration/`——只有它已经按相对路径引用全部仓 |
 | 界面点击步骤 | 不是脚本，是文档：随请求给，见「界面类检查」 |
 
-本目录不放任何具体测试。
+本目录不放测试脚本；只放约定、`inbox/`（待办）与 `done/`（已办）。
 
 ## 脚本开头的环境探测
 
@@ -162,7 +178,7 @@ echo "===== 开始 ====="
 ## 约定
 
 - 测试脚本放**被测仓**的 `scripts/`（跨仓的放 `k8s` 仓 `sunmoonai/scripts/local-integration/`），输出放同级 `results/`，都跟代码一起走 git，不放本目录；
-- 本目录只放**怎么测**的约定与模板，不放具体某次测试；某一轮的具体项在 `../tree-build/human-ai-turn/imp/luna-local-setup.md`；
+- 本目录放**怎么测**的约定与模板，待办在 `inbox/`，已办在 `done/`；一次性环境配置在 `../tree-build/human-ai-turn/imp/luna-local-setup.md`；
 - 换模型不换工位：接手的模型继续用同一个工位名，所有者改名时会说；本文里 `fable` 按当时的名字替换；
 - 测试用的 Codex 走独立的 `CODEX_HOME`（编排端 `~/.codex-probe` 有登录态；执行端 `~/.codex-probe-exec` 无登录态），与日常用的隔离；Postgres 用容器不装系统里；
 - Windows 上没有 bash 的脚本用 PowerShell（`.ps1`），环境探测段等价，输出同样落 `scripts/results/`。
