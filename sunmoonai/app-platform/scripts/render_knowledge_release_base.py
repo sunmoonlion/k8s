@@ -225,6 +225,16 @@ def overlay(
             "WEB_AUTH_POLICY_VERSION": "knowledge-web-v2",
             "CELERY_QUEUE": "knowledge.r5.candidate",
             "AUTH_ALLOWED_ALGORITHMS": "RS256,ES256",
+            # 0006 知识 MCP：数据集从对象存储按 sha256 钉版取到 /tmp；令牌表走 Secret
+            "KNOWLEDGE_DATASET_PATH": "/tmp/datasets/lesson23_business_analysis.sqlite",
+            "KNOWLEDGE_DATASET_ID": "lesson23-business-analysis",
+            "KNOWLEDGE_DATASET_OBJECT": (
+                "s3://development-knowledge-datasets/lesson23/lesson23_business_analysis.sqlite"
+            ),
+            "KNOWLEDGE_DATASET_SHA256": (
+                "a1764f1defa673670bb1e4df9e3223a82cdc6d2b66365370617c6be509a04cf5"
+            ),
+            "KNOWLEDGE_MCP_RATE_PER_MINUTE": "120",
         }
     )
     for surface in ("admin", "web"):
@@ -279,6 +289,13 @@ def overlay(
             "WEB_CLIENT_SECRET",
         ),
         *provider_env(retrieval_dataset_allowlist),
+        # MCP 令牌表（F-KNOW-03，第一期静态）；缺失时 MCP 对所有令牌返回 401，其它接口不受影响
+        common.env_ref(
+            "KNOWLEDGE_MCP_TOKENS_JSON",
+            "knowledge-mcp-tokens",
+            "tokens.json",
+            optional=True,
+        ),
     ]
     api_container.setdefault("envFrom", []).extend(
         [
@@ -332,7 +349,8 @@ def overlay(
             runtime_policy(
                 "knowledge-r5-backend-api-egress",
                 "backend-api",
-                [data_egress(5432, 6379, 5672), casdoor_egress(), ragflow_egress()],
+                # 80 = 对象存储（MinIO）：api 取数据集对象
+                [data_egress(5432, 6379, 5672, 80), casdoor_egress(), ragflow_egress()],
                 namespace,
             ),
             runtime_policy(

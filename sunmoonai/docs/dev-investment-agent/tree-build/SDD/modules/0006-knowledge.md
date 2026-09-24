@@ -30,5 +30,7 @@ A 股非金融三大表与附注：入库的三大表、附注表提取工具、
 
 已落在 `knowledge-app/knowledge-backend/app`：`application/services/dataset_query.py`（只读 SQLite 数据集：单条 SELECT/WITH、禁 ATTACH/PRAGMA、超时中断、200 行封顶，每个结果带 `citation{dataset_id,data_version,as_of,query_digest}`）；`interfaces/mcp/knowledge_mcp.py`（Streamable HTTP JSON-RPC：`initialize`/`tools/list`/`tools/call`/`ping`；Bearer 令牌表，按令牌过滤工具清单、每分钟限流、越权计数）；`bootstrap/mcp.py`（只挂 MCP 的最小应用，联调与评测用）；主路由同挂。三个工具 `describe_schema`、`metric_definitions`、`run_sql`；数据集 = 第 23 课库（`datasets/`，不进 git）。沙箱镜像入口按 `KNOWLEDGE_MCP_URL`/`KNOWLEDGE_MCP_TOKEN` 写 `[mcp_servers.sunmoon_knowledge]`（`bearer_token_env_var`）。Codex 0.155.1 实测能列出并调用（`k8s/sunmoonai/scripts/local-integration/workbench-dataquery.sh`）。15 测试。
 
+数据集来源（2026-09-25）：本地路径优先；容器里从对象存储按 `s3://bucket/key` 加 sha256 钉版取到 `/tmp`（`dataset_store.py`），第一次工具调用时取，不匹配不用。KIND 开发包：ConfigMap 五个 `KNOWLEDGE_DATASET_*`/`KNOWLEDGE_MCP_RATE_PER_MINUTE` 键、api 容器可选引用 Secret `knowledge-mcp-tokens`、api 出站加 80（MinIO）；桶 `development-knowledge-datasets` 只读进 `storage-access-bootstrap/config/access.json`。
+
 未做：`F-KNOW-03` 令牌仍是静态表（随 `D10`）；`F-KNOW-04` 用户资料入库；检索与领域工具（第一切口）；异常调用上报只到日志与计数。
 
