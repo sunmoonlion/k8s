@@ -1,0 +1,9 @@
+# 同源合并：/api 走工作台后端，其余走 Next。Host 头保持 localhost:3000，后端 ALLOWED_HOSTS 里有 localhost。
+:3000 {
+	handle /api/* {
+		reverse_proxy backend-api:8000
+	}
+	handle {
+		reverse_proxy frontend:3000
+	}
+}
