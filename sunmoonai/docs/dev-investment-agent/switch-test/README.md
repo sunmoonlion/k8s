@@ -27,7 +27,7 @@
 | 步 | 谁 | 做什么 |
 | --- | --- | --- |
 | 1 | 远程助手 | 推脚本、推待办（见「三」），对所有者说「有新待办」 |
-| 2 | **所有者** | 在本地机跑 `bash ~/switch-test/human-do.sh [仓 ...]`：同步仓、刷新副本、列出待办。不带参数同步全部（五仓 + 子仓 + runtime）；带仓名只同步那几个（`k8s` 总会同步，待办在它里面；写父仓连带子仓），如 `human-do.sh runtime`。远程助手说「有新待办」时会说要同步哪几个仓。然后对本地助手说：**「请看 inbox」** |
+| 2 | **所有者** | 在本地机跑 `bash ~/switch-test/human-do.sh`：同步全部仓（五仓 + 子仓 + runtime），刷新副本，列出待办。然后对本地助手说：**「请看 inbox」** |
 | 3 | 本地助手 | 看 `inbox/`，逐条做，结果推回。**不自己同步**：同步是所有者那一步，本地助手看到的就是所有者同步后的状态 |
 
 副本还没有的第一次，所有者用仓里的那份：`bash ~/worktrees/fable/k8s/sunmoonai/docs/dev-investment-agent/switch-test/human-do.sh`。
@@ -80,7 +80,7 @@ Windows 上跑 `.ps1`：`powershell -ExecutionPolicy Bypass -File scripts\<脚�
 2. 脚本放哪：单仓的放该仓 `scripts/`（后端在 `app/scripts/`）；跨仓联调放 `k8s` 仓 `sunmoonai/scripts/local-integration/`；
 3. 脚本怎么写：开头打印环境段（下面模板）；每条命令查退出码，失败要响，不吞进管道；一个脚本只测「看什么」那一两件事；没有 bash 的 Windows 用 `.ps1`，环境段等价；
 4. 待办文件随 k8s 推上去；**推之前远程工位必须干净**（同步脚本要求两端干净，否则本地 `to-remote` 会停在远程拉取那一步）；
-5. 对话里只说一句「有新待办，同步 <仓名…>」——所有者据此决定 `human-do.sh` 带哪些仓名。
+5. 对话里只说一句「有新待办」。
 
 收到结果后：`git -C ~/worktrees/fable/<仓> pull --ff-only origin fable`，读 `results/`，把待办文件移到 `done/`。
 
