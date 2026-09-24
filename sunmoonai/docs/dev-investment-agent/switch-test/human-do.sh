@@ -2,6 +2,8 @@
 # 所有者在本地机上跑的：把全部仓和副本同步到远程助手推上来的最新状态，并列出待办。
 # 跑完后对本地助手说一句「请看 inbox」。本地助手自己不同步，只看、只跑。
 # 用法：bash ~/switch-test/human-do.sh    （没有参数，总是同步全部：五仓 + 两个子仓 + runtime）
+# ~/switch-test 是副本，不在 git 里，不会自己更新：本脚本同步完仓之后，切换到仓里的最新版继续跑，
+# 由它重建副本。所以副本里的这份即使旧了也没关系，只要它还能同步 k8s。
 set -uo pipefail
 WS="${WS:-fable}"
 K8S="$HOME/worktrees/$WS/k8s"; ST="$K8S/sunmoonai/docs/dev-investment-agent/switch-test"
@@ -12,6 +14,7 @@ pull() { # 仓目录 标签
   git -C "$1" pull -q --ff-only origin "$WS" && printf "  %-28s %s\n" "$2" "$(git -C "$1" rev-parse --short HEAD)" || { echo "✗ $2 拉取失败（工作区有改动？分支不对？）"; return 1; }
 }
 
+if [ "${1:-}" != "--after-sync" ]; then
 echo "===== 1. 同步全部（工位 $WS）"
 if [ -x "$HOME/five-repos-sync/sync-five-repos.sh" ]; then
   "$HOME/five-repos-sync/sync-five-repos.sh" from-remote "$WS" || { echo "五仓同步失败，停在这里，把上面的输出贴给远程助手"; exit 1; }
@@ -22,8 +25,15 @@ fi
 pull "$HOME/worktrees/$WS/investment-app/investment-backend" "investment-app/investment-backend" || true
 pull "$HOME/worktrees/$WS/knowledge-app/knowledge-backend" "knowledge-app/knowledge-backend" || true
 pull "$HOME/worktrees/$WS/runtime" runtime || true
+fi
 
-echo "===== 2. 刷新副本 ~/switch-test"
+# 同步完成后，把控制权交给仓里的最新版（自己可能是旧副本）
+if [ "${1:-}" != "--after-sync" ]; then
+  [ -f "$ST/human-do.sh" ] || { echo "✗ 仓里没有 $ST/human-do.sh"; exit 1; }
+  exec bash "$ST/human-do.sh" --after-sync
+fi
+
+echo "===== 2. 刷新副本 ~/switch-test（用仓里的最新版覆盖）"
 rm -rf "$HOME/switch-test" && cp -r "$ST" "$HOME/switch-test"
 
 echo "===== 3. 待办（$ST/inbox）"
