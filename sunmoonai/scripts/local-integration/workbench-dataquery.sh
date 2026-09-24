@@ -50,7 +50,7 @@ unset MODEL_KEY
 for i in $(seq 1 40); do ss -ltn | grep -q ":$APP_PORT " && docker logs sandbox-dq 2>&1 | grep -q "listening on" && break; sleep 0.5; done; sleep 1
 docker exec sandbox-dq sh -c 'grep -A3 "mcp_servers.sunmoon_knowledge" "$CODEX_HOME/config.toml" 2>/dev/null || grep -A3 sunmoon_knowledge /data/codex/config.toml' | sed 's/^/  config: /'
 echo "--- 4. 评测"
-(cd "$BACKEND" && AGENT_TEST_DATABASE_URL="$DB_URL" APP_SERVER_URL="ws://127.0.0.1:$APP_PORT" APP_SERVER_TOKEN="$APP_TOKEN" ROOT="$ROOT" EVAL_DATASET="$DATASET" timeout 3600 uv run python -m eval.run_eval "$@" 2>&1 | grep -v "sk-")
+(cd "$BACKEND" && AGENT_TEST_DATABASE_URL="$DB_URL" APP_SERVER_URL="ws://127.0.0.1:$APP_PORT" APP_SERVER_TOKEN="$APP_TOKEN" ROOT="$ROOT" EVAL_DATASET="$DATASET" timeout 3600 uv run python -m eval.run_eval "$@" 2>&1 | grep --line-buffered -v "sk-")
 rc=${PIPESTATUS[0]}
 echo "--- 日志尾部"; echo "[mcp]"; grep -v "sk-" "$HERE/results/.mcp.log" | tail -5 | cut -c1-200; echo "[sandbox]"; docker logs sandbox-dq 2>&1 | grep -v "sk-" | tail -4 | cut -c1-200
 rm -f "$HERE/results/.relay.log" "$HERE/results/.agent.log" "$HERE/results/.mcp.log"
