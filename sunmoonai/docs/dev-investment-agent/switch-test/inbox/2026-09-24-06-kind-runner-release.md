@@ -5,7 +5,7 @@
 跑：按下面 A 段的编号步骤做（每步一条命令），B 段等所有者定
 仓与提交：k8s 本条待办所在的 fable 头；tpl-app 74ff0c5；investment-app a50e939（子仓 investment-backend 5f0a037、investment-web-frontend f11cb56、investment-admin-frontend 2e1f5c6）
 预计：A 段 30 到 45 分钟（建两个镜像各 10 分钟、渲染 1 分钟）；要联网；要 Docker 与 KIND 内 Harbor 可推；不要模型 key
-看什么：A6 的 diff 只应有三类变化——镜像 digest、runner 相关资源（Deployment/PDB/ServiceAccount/NetworkPolicy）与 ConfigMap 里的 WORKBENCH_* 四个键、release.json 里的锁与哈希；A7 门禁 rc=0；A8 单测全过
+看什么：A6 的 diff 只应有四类变化——镜像 digest、runner 相关资源（Deployment/PDB/ServiceAccount/NetworkPolicy）与 ConfigMap 里的 WORKBENCH_* 四个键、api 容器里对 investment-workbench Secret 的可选引用、release.json 里的锁与哈希；A7 门禁 rc=0；A8 单测里 investment 与 info 过，knowledge 那条已知红（knowledge-backend 源码已前进而其开发包未重渲染，属第四步）
 前提：本地 human-local.sh 已同步到上面的提交；三个子仓工作区干净；KIND 起着；Harbor 登录凭据在本地（build-push 脚本自己读）
 回传：k8s/sunmoonai/scripts/results/kind-runner-release.<时间>.md（写下即可；A6 生成的 bundle、development-input.json、development-source-lock.json 一并留在工作区由所有者提交）
 ```
@@ -18,6 +18,7 @@
 4. 更新 `~/worktrees/fable/k8s/sunmoonai/app-platform/investment-app/deployment/development-input.json`：`images.backend` 与 `images.web` 换成第 2 步的 digest；`migration_head` 改成 `20260924_0009`；`development_source_lock` 整段与第 3 步的文件完全一致。
 5. 渲染到空目录：`cd ~/worktrees/fable/k8s/sunmoonai/app-platform/investment-app && python3 -B deployment/render.py --output-dir /tmp/investment-dev --release-id kind-wb-20260925 --development-input deployment/development-input.json`。应该以 `"result": "rendered"` 结束。
 6. `diff -ru deployment/bundle /tmp/investment-dev | less`：只看「看什么」里列的三类变化。确认后 `rm -rf deployment/bundle && cp -r /tmp/investment-dev deployment/bundle`。
+6b. 同步部署声明（README 要求「更新 .conf」，先前漏写）：`deploy-investment-app-all/deploy-investment-app-all.conf` 里 `RELEASE_ID=kind-wb-20260925`，`BACKEND_IMAGE` 与 `WEB_IMAGE` 换成第 2 步的 digest 全名，`ADMIN_IMAGE` 不变，`RUNNER_REPLICAS=1` 已在。
 7. 门禁：`python3 -B ../scripts/verify-formal-instance.py --bundle deployment/bundle`，rc 应为 0。
 8. 单测：`cd ../scripts && python3 -m unittest tests.test_committed_development_candidates tests.test_investment_runner_role tests.test_formal_component_deploy tests.test_development_release tests.test_deployment_config`；应全过（committed 那条会真的重渲染三个 App 并逐字比对）。
 9. `./deploy-investment-app-all/deploy-investment-app-all.sh plan --cluster KIND`（在 investment-app 目录）：只读，应通过。把输出贴进回传。
