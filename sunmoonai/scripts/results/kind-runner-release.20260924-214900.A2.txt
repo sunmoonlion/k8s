@@ -1,0 +1,7 @@
+time=2026-09-24T21:50:37.307766+08:00
+cwd=/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/investment-app
+command=['docker', 'inspect', '--format', '{{index .RepoDigests 0}}', 'harbor.sunmoonai.com:30443/app-images/investment-backend:architecture-v2-dev', 'harbor.sunmoonai.com:30443/app-images/investment-web-frontend:architecture-v2-dev']
+harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:0736b1ee1fccff329c38b8e894c59a7ab847e55c332d3b4f5a47bf75d755e2ed
+harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:3bf04caa667e9f96181b63aa0c0c6222d6e467631e5b115125377e33f12c2554
+
+exit=0

@@ -1,0 +1,8 @@
+time=2026-09-24T21:54:38.620305+08:00
+cwd=/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/investment-app
+command=['/usr/bin/python3', '-c', "from pathlib import Path\nimport json,shutil\napp=Path('/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/investment-app')\nold=app/'deployment/bundle'\nnew=Path('/tmp/investment-dev')\nbackup=Path('/tmp/inbox06-original-bundle-20260924-214900')\nassert json.loads((new/'release.json').read_text())['release_id']=='kind-wb-20260925'\nassert json.loads((old/'release.json').read_text())['release_id']=='kind-b7-20260919'\nshutil.copytree(old,backup)\nshutil.rmtree(old)\nshutil.copytree(new,old)\nprint('Approved A6 extra difference: optional WORKBENCH_CREDENTIAL_KEY Secret reference.')\nprint('Previous bundle backup:',backup)\nprint('Updated bundle:',old)\n"]
+Approved A6 extra difference: optional WORKBENCH_CREDENTIAL_KEY Secret reference.
+Previous bundle backup: /tmp/inbox06-original-bundle-20260924-214900
+Updated bundle: /home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/investment-app/deployment/bundle
+
+exit=0

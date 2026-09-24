@@ -1,4 +1,34 @@
+time=2026-09-24T21:58:19.410526+08:00
+cwd=/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/investment-app
+command=['./deploy-investment-app-all/deploy-investment-app-all.sh', 'plan', '--cluster', 'KIND']
 {
+  "task": "app-platform-v2-declarative-instance-gate",
+  "result": "passed",
+  "formal_release": false,
+  "deployment_target": "KIND",
+  "logical_app": "investment",
+  "resource_app": "investment",
+  "release_id": "kind-wb-20260925",
+  "deployments": {
+    "investment-backend-api": 2,
+    "investment-backend-worker": 1,
+    "investment-backend-scheduler": 1,
+    "investment-backend-runner": 1,
+    "investment-admin-frontend": 2,
+    "investment-web-frontend": 2
+  },
+  "ingress_routes": [
+    "investment-admin-api-route",
+    "investment-admin-route",
+    "investment-web-api-route",
+    "investment-web-route"
+  ],
+  "legacy_deployments_in_bundle": [],
+  "credentials_in_release": false
+}
+{
+  "result": "passed",
+  "action": "plan",
   "schema_version": 2,
   "architecture": "app-platform-v2-development",
   "logical_app": "investment",
@@ -169,3 +199,5 @@
   "migration_head": "20260924_0009",
   "runtime_identity_mode": "independent-v1"
 }
+
+exit=0

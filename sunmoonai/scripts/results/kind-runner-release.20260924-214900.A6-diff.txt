@@ -1,0 +1,495 @@
+time=2026-09-24T21:51:42.128603+08:00
+cwd=/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/investment-app
+command=['diff', '-ru', 'deployment/bundle', '/tmp/investment-dev']
+diff -ru deployment/bundle/00-prerequisites.yaml /tmp/investment-dev/00-prerequisites.yaml
+--- deployment/bundle/00-prerequisites.yaml	2026-09-23 14:36:47.623255704 +0800
++++ /tmp/investment-dev/00-prerequisites.yaml	2026-09-24 21:51:24.876122469 +0800
+@@ -31,6 +31,16 @@
+ apiVersion: v1
+ kind: ServiceAccount
+ metadata:
++  name: investment-backend-runner
++  namespace: app-platform-dev
++  labels:
++    sunmoonai.com/app: investment
++    sunmoonai.com/managed-by: app-platform-v2
++automountServiceAccountToken: false
++---
++apiVersion: v1
++kind: ServiceAccount
++metadata:
+   name: investment-backend-migration
+   namespace: app-platform-dev
+   labels:
+@@ -70,7 +80,7 @@
+   ENV: production
+   LOG_LEVEL: INFO
+   SERVICE_NAME: investment-backend
+-  DEPLOYMENT_ID: kind-b7-20260919
++  DEPLOYMENT_ID: kind-wb-20260925
+   APP_SLUG: investment
+   REDIS_HOST: redis-sunmoonai-master.data-platform-dev.svc.cluster.local
+   REDIS_PORT: '6379'
+@@ -117,6 +127,10 @@
+   KNOWLEDGE_RETRIEVAL_SERVICE_BACKCHANNEL_ENDPOINT: http://casdoor-sunmoonai.app-platform-dev.svc.cluster.local:8000
+   KNOWLEDGE_RETRIEVAL_SERVICE_SCOPE: knowledge:retrieve
+   KNOWLEDGE_RETRIEVAL_TIMEOUT_SECONDS: '20'
++  WORKBENCH_ENABLED: 'true'
++  WORKBENCH_REDIS_KEY_PREFIX: investment:workbench
++  WORKBENCH_ENVIRONMENT_KEY: user-pc
++  WORKBENCH_POLL_SECONDS: '1.0'
+   CELERY_TASK_TOPOLOGY_PREDECLARED: 'true'
+ ---
+ apiVersion: v1
+@@ -132,7 +146,7 @@
+   AUTH_APP: investment
+   APP_ORIGIN: https://investment-admin.sunmoonai.com:30443
+   BACKEND_INTERNAL_URL: http://investment-backend:8000
+-  DEPLOYMENT_ID: kind-b7-20260919-admin
++  DEPLOYMENT_ID: kind-wb-20260925-admin
+ ---
+ apiVersion: v1
+ kind: ConfigMap
+@@ -147,7 +161,7 @@
+   AUTH_APP: investment
+   APP_ORIGIN: https://investment.sunmoonai.com:30443
+   BACKEND_INTERNAL_URL: http://investment-backend:8000
+-  DEPLOYMENT_ID: kind-b7-20260919-web
++  DEPLOYMENT_ID: kind-wb-20260925-web
+   REFERENCE_UI_ENABLED: 'false'
+ ---
+ apiVersion: v1
+diff -ru deployment/bundle/10-migration.yaml /tmp/investment-dev/10-migration.yaml
+--- deployment/bundle/10-migration.yaml	2026-09-23 14:36:47.623255704 +0800
++++ /tmp/investment-dev/10-migration.yaml	2026-09-24 21:51:24.880122149 +0800
+@@ -1,7 +1,7 @@
+ apiVersion: batch/v1
+ kind: Job
+ metadata:
+-  name: investment-backend-migration-kind-b7-20260919
++  name: investment-backend-migration-kind-wb-20260925
+   namespace: app-platform-dev
+   labels:
+     app.kubernetes.io/name: investment-backend
+@@ -9,7 +9,7 @@
+     app.kubernetes.io/part-of: investment
+     sunmoonai.com/app: investment
+     sunmoonai.com/managed-by: app-platform-v2
+-    sunmoonai.com/release-id: kind-b7-20260919
++    sunmoonai.com/release-id: kind-wb-20260925
+ spec:
+   backoffLimit: 0
+   activeDeadlineSeconds: 300
+@@ -22,7 +22,7 @@
+         app.kubernetes.io/part-of: investment
+         sunmoonai.com/app: investment
+         sunmoonai.com/managed-by: app-platform-v2
+-        sunmoonai.com/release-id: kind-b7-20260919
++        sunmoonai.com/release-id: kind-wb-20260925
+     spec:
+       restartPolicy: Never
+       serviceAccountName: investment-backend-migration
+@@ -38,7 +38,7 @@
+           type: RuntimeDefault
+       containers:
+       - name: migration
+-        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:95ae05e5b425dedac42bf1905aa87f6ff2bba3391746b84df65b950fca324f9e
++        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:0736b1ee1fccff329c38b8e894c59a7ab847e55c332d3b4f5a47bf75d755e2ed
+         imagePullPolicy: IfNotPresent
+         command:
+         - python
+diff -ru deployment/bundle/20-runtime.yaml /tmp/investment-dev/20-runtime.yaml
+--- deployment/bundle/20-runtime.yaml	2026-09-23 14:36:47.623255704 +0800
++++ /tmp/investment-dev/20-runtime.yaml	2026-09-24 21:51:24.988113507 +0800
+@@ -32,9 +32,9 @@
+         sunmoonai.com/managed-by: app-platform-v2
+         sunmoonai.com/internal-provider: 'true'
+       annotations:
+-        sunmoonai.com/release-id: kind-b7-20260919
+-        sunmoonai.com/config-sha256: 520ead90a4f21eaf7f9d951305d6fc98bb553299e35927709f27961846f686de
+-        sunmoonai.com/source-commit: 01d09740d4183d826f625b127c90a2a45bdbf0a9
++        sunmoonai.com/release-id: kind-wb-20260925
++        sunmoonai.com/config-sha256: 070a9ac42b2579b5fe2410f4a360962908299e550c610a210be6ecd0ee3eab67
++        sunmoonai.com/source-commit: e5084f8b6a525e8f41334c76c1b8081ab3f9fdeb
+     spec:
+       serviceAccountName: investment-backend-api
+       automountServiceAccountToken: false
+@@ -58,7 +58,7 @@
+             app.kubernetes.io/component: backend-api
+       containers:
+       - name: api
+-        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:95ae05e5b425dedac42bf1905aa87f6ff2bba3391746b84df65b950fca324f9e
++        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:0736b1ee1fccff329c38b8e894c59a7ab847e55c332d3b4f5a47bf75d755e2ed
+         imagePullPolicy: IfNotPresent
+         command:
+         - uvicorn
+@@ -131,6 +131,12 @@
+             secretKeyRef:
+               name: investment-browser-identity
+               key: WEB_CLIENT_SECRET
++        - name: WORKBENCH_CREDENTIAL_KEY
++          valueFrom:
++            secretKeyRef:
++              name: investment-workbench
++              key: WORKBENCH_CREDENTIAL_KEY
++              optional: true
+         startupProbe:
+           httpGet:
+             path: /health/live
+@@ -259,9 +265,9 @@
+         sunmoonai.com/managed-by: app-platform-v2
+         sunmoonai.com/allow-knowledge-internal: 'true'
+       annotations:
+-        sunmoonai.com/release-id: kind-b7-20260919
+-        sunmoonai.com/config-sha256: 520ead90a4f21eaf7f9d951305d6fc98bb553299e35927709f27961846f686de
+-        sunmoonai.com/source-commit: 01d09740d4183d826f625b127c90a2a45bdbf0a9
++        sunmoonai.com/release-id: kind-wb-20260925
++        sunmoonai.com/config-sha256: 070a9ac42b2579b5fe2410f4a360962908299e550c610a210be6ecd0ee3eab67
++        sunmoonai.com/source-commit: e5084f8b6a525e8f41334c76c1b8081ab3f9fdeb
+     spec:
+       serviceAccountName: investment-backend-worker
+       automountServiceAccountToken: false
+@@ -277,7 +283,7 @@
+           type: RuntimeDefault
+       containers:
+       - name: worker
+-        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:95ae05e5b425dedac42bf1905aa87f6ff2bba3391746b84df65b950fca324f9e
++        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:0736b1ee1fccff329c38b8e894c59a7ab847e55c332d3b4f5a47bf75d755e2ed
+         imagePullPolicy: IfNotPresent
+         command:
+         - /bin/sh
+@@ -418,9 +424,9 @@
+         sunmoonai.com/app: investment
+         sunmoonai.com/managed-by: app-platform-v2
+       annotations:
+-        sunmoonai.com/release-id: kind-b7-20260919
+-        sunmoonai.com/config-sha256: 520ead90a4f21eaf7f9d951305d6fc98bb553299e35927709f27961846f686de
+-        sunmoonai.com/source-commit: 01d09740d4183d826f625b127c90a2a45bdbf0a9
++        sunmoonai.com/release-id: kind-wb-20260925
++        sunmoonai.com/config-sha256: 070a9ac42b2579b5fe2410f4a360962908299e550c610a210be6ecd0ee3eab67
++        sunmoonai.com/source-commit: e5084f8b6a525e8f41334c76c1b8081ab3f9fdeb
+     spec:
+       serviceAccountName: investment-backend-scheduler
+       automountServiceAccountToken: false
+@@ -436,7 +442,7 @@
+           type: RuntimeDefault
+       containers:
+       - name: scheduler
+-        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:95ae05e5b425dedac42bf1905aa87f6ff2bba3391746b84df65b950fca324f9e
++        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:0736b1ee1fccff329c38b8e894c59a7ab847e55c332d3b4f5a47bf75d755e2ed
+         imagePullPolicy: IfNotPresent
+         command:
+         - celery
+@@ -484,6 +490,142 @@
+ apiVersion: apps/v1
+ kind: Deployment
+ metadata:
++  name: investment-backend-runner
++  namespace: app-platform-dev
++  labels:
++    app.kubernetes.io/name: investment-backend
++    app.kubernetes.io/component: backend-runner
++    app.kubernetes.io/part-of: investment
++    sunmoonai.com/app: investment
++    sunmoonai.com/managed-by: app-platform-v2
++spec:
++  replicas: 1
++  revisionHistoryLimit: 3
++  strategy:
++    type: Recreate
++  selector:
++    matchLabels:
++      sunmoonai.com/app: investment
++      app.kubernetes.io/component: backend-runner
++  template:
++    metadata:
++      labels:
++        app.kubernetes.io/name: investment-backend
++        app.kubernetes.io/component: backend-runner
++        app.kubernetes.io/part-of: investment
++        sunmoonai.com/app: investment
++        sunmoonai.com/managed-by: app-platform-v2
++      annotations:
++        sunmoonai.com/release-id: kind-wb-20260925
++        sunmoonai.com/config-sha256: 070a9ac42b2579b5fe2410f4a360962908299e550c610a210be6ecd0ee3eab67
++        sunmoonai.com/source-commit: e5084f8b6a525e8f41334c76c1b8081ab3f9fdeb
++    spec:
++      serviceAccountName: investment-backend-runner
++      automountServiceAccountToken: false
++      terminationGracePeriodSeconds: 60
++      imagePullSecrets:
++      - name: harbor-registry-secret
++      securityContext:
++        runAsNonRoot: true
++        runAsUser: 1001
++        runAsGroup: 1001
++        fsGroup: 1001
++        seccompProfile:
++          type: RuntimeDefault
++      containers:
++      - name: runner
++        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:0736b1ee1fccff329c38b8e894c59a7ab847e55c332d3b4f5a47bf75d755e2ed
++        imagePullPolicy: IfNotPresent
++        command:
++        - python
++        - -m
++        - app.bootstrap.runner
++        envFrom:
++        - configMapRef:
++            name: investment-backend-config
++        env:
++        - name: POD_NAME
++          valueFrom:
++            fieldRef:
++              fieldPath: metadata.name
++        - name: WORKBENCH_RUNNER_ID
++          valueFrom:
++            fieldRef:
++              fieldPath: metadata.name
++        - name: DATABASE_URL
++          valueFrom:
++            secretKeyRef:
++              name: investment-backend-runtime
++              key: API_DATABASE_URL
++        - name: CELERY_BROKER_URL
++          valueFrom:
++            secretKeyRef:
++              name: investment-backend-runtime
++              key: API_CELERY_BROKER_URL
++        - name: REDIS_HOST
++          valueFrom:
++            secretKeyRef:
++              name: investment-backend-redis-conn
++              key: REDIS_HOST
++        - name: REDIS_PORT
++          valueFrom:
++            secretKeyRef:
++              name: investment-backend-redis-conn
++              key: REDIS_PORT
++        - name: REDIS_DB
++          valueFrom:
++            secretKeyRef:
++              name: investment-backend-redis-conn
++              key: REDIS_DB
++        - name: REDIS_USER
++          valueFrom:
++            secretKeyRef:
++              name: investment-backend-redis-conn
++              key: REDIS_USER
++        - name: REDIS_PASSWORD
++          valueFrom:
++            secretKeyRef:
++              name: investment-backend-redis-conn
++              key: REDIS_PASSWORD
++        resources:
++          requests:
++            cpu: 50m
++            memory: 128Mi
++          limits:
++            cpu: 500m
++            memory: 512Mi
++        securityContext:
++          allowPrivilegeEscalation: false
++          readOnlyRootFilesystem: true
++          capabilities:
++            drop:
++            - ALL
++        volumeMounts:
++        - name: tmp
++          mountPath: /tmp
++      volumes:
++      - name: tmp
++        emptyDir:
++          sizeLimit: 64Mi
++---
++apiVersion: policy/v1
++kind: PodDisruptionBudget
++metadata:
++  name: investment-backend-runner
++  namespace: app-platform-dev
++  labels:
++    sunmoonai.com/app: investment
++    sunmoonai.com/managed-by: app-platform-v2
++spec:
++  maxUnavailable: 1
++  selector:
++    matchLabels:
++      sunmoonai.com/app: investment
++      app.kubernetes.io/component: backend-runner
++---
++apiVersion: apps/v1
++kind: Deployment
++metadata:
+   name: investment-admin-frontend
+   namespace: app-platform-dev
+   labels:
+@@ -514,8 +656,8 @@
+         sunmoonai.com/app: investment
+         sunmoonai.com/managed-by: app-platform-v2
+       annotations:
+-        sunmoonai.com/release-id: kind-b7-20260919
+-        sunmoonai.com/config-sha256: c418b9422ffb5955dcb0bc7f122e77cf90dad77a30173123d5bf4455d85bd716
++        sunmoonai.com/release-id: kind-wb-20260925
++        sunmoonai.com/config-sha256: 00134421f0f90b6cf982641f908ef144982793826ad1e1ed18124f299cd6ea7a
+         sunmoonai.com/source-commit: 2e1f5c67d583be02b43eb36d1052f5b4ad177f45
+     spec:
+       serviceAccountName: investment-admin-frontend
+@@ -673,9 +815,9 @@
+         sunmoonai.com/app: investment
+         sunmoonai.com/managed-by: app-platform-v2
+       annotations:
+-        sunmoonai.com/release-id: kind-b7-20260919
+-        sunmoonai.com/config-sha256: 646e86d851eb6447a38729db7cdc7808ea51170ce961d7439e8fb3da50a24410
+-        sunmoonai.com/source-commit: 91a892fdb483b6a4364200e258e30766e5e150c4
++        sunmoonai.com/release-id: kind-wb-20260925
++        sunmoonai.com/config-sha256: 33212950b11416a920d3314e87f42fbac83597b2aa1a66ed1ec7410b9ffd9884
++        sunmoonai.com/source-commit: f11cb56cd1ee0fc390435873676bd8edec59242d
+     spec:
+       serviceAccountName: investment-web-frontend
+       automountServiceAccountToken: false
+@@ -699,7 +841,7 @@
+             app.kubernetes.io/component: web-frontend
+       containers:
+       - name: web
+-        image: harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:b6e41f5db947e478bb429b414057a2e7892b8a32590402a744968541d10a9b18
++        image: harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:3bf04caa667e9f96181b63aa0c0c6222d6e467631e5b115125377e33f12c2554
+         imagePullPolicy: IfNotPresent
+         ports:
+         - name: http
+diff -ru deployment/bundle/30-network-policies.yaml /tmp/investment-dev/30-network-policies.yaml
+--- deployment/bundle/30-network-policies.yaml	2026-09-23 14:36:47.623255704 +0800
++++ /tmp/investment-dev/30-network-policies.yaml	2026-09-24 21:51:24.932117987 +0800
+@@ -294,3 +294,36 @@
+       port: 6379
+     - protocol: TCP
+       port: 5672
++---
++apiVersion: networking.k8s.io/v1
++kind: NetworkPolicy
++metadata:
++  name: investment-backend-runner-egress
++  namespace: app-platform-dev
++  labels:
++    sunmoonai.com/app: investment
++    sunmoonai.com/managed-by: app-platform-v2
++spec:
++  podSelector:
++    matchLabels:
++      sunmoonai.com/app: investment
++      app.kubernetes.io/component: backend-runner
++  policyTypes:
++  - Egress
++  egress:
++  - to:
++    - namespaceSelector:
++        matchLabels:
++          sunmoonai.com/data-platform: 'true'
++    ports:
++    - protocol: TCP
++      port: 5432
++    - protocol: TCP
++      port: 6379
++  - to:
++    - namespaceSelector:
++        matchLabels:
++          sunmoonai.com/sandbox-pool: 'true'
++    ports:
++    - protocol: TCP
++      port: 47800
+diff -ru deployment/bundle/release.json /tmp/investment-dev/release.json
+--- deployment/bundle/release.json	2026-09-23 14:36:47.627255413 +0800
++++ /tmp/investment-dev/release.json	2026-09-24 21:51:24.992113186 +0800
+@@ -4,12 +4,12 @@
+   "logical_app": "investment",
+   "resource_app": "investment",
+   "namespace": "app-platform-dev",
+-  "release_id": "kind-b7-20260919",
++  "release_id": "kind-wb-20260925",
+   "formal_release": false,
+   "images": {
+-    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:95ae05e5b425dedac42bf1905aa87f6ff2bba3391746b84df65b950fca324f9e",
++    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:0736b1ee1fccff329c38b8e894c59a7ab847e55c332d3b4f5a47bf75d755e2ed",
+     "admin": "harbor.sunmoonai.com:30443/app-images/investment-admin-frontend@sha256:422e7c1e53d5b61eba14bcd242bf73a8e10428f1799e2a6370c1be95cec1923e",
+-    "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:b6e41f5db947e478bb429b414057a2e7892b8a32590402a744968541d10a9b18"
++    "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:3bf04caa667e9f96181b63aa0c0c6222d6e467631e5b115125377e33f12c2554"
+   },
+   "origins": {
+     "admin": "https://investment-admin.sunmoonai.com:30443",
+@@ -24,16 +24,17 @@
+     "40-ingress.yaml"
+   ],
+   "sha256": {
+-    "00-prerequisites.yaml": "92680d7068e1b9a88391df9e5bccffde58e73800c79dccd3df1e1a2587ed306d",
+-    "10-migration.yaml": "2944dbd0fe36354f3e588521ea7d6a6da1beb4f7fcb4782dd3ce0a7a89fc46d3",
+-    "20-runtime.yaml": "feb31cd0f533988cd97d281ab03d48787cd4f9f7c28d36e9e14312773176e0d0",
+-    "30-network-policies.yaml": "0395dfe9576e80ef13b7f9d313d03d1af85a971cf4a1f71e44a3415287e46ff3",
++    "00-prerequisites.yaml": "39ca243764459756c4353d268fac1b29ce37e8674582696cb2d2d859726737e2",
++    "10-migration.yaml": "c13d433c07b8fa253213e098a4850b267715697ab54d223cde4b9fb877489615",
++    "20-runtime.yaml": "aeb43ba5a1503643b8b1c9edb5c553734e0fc5cadebf5495b57ff7f6a97bf725",
++    "30-network-policies.yaml": "59c129390e4460ee438f28ceda67c9b767c7183bbfa538cde33227ac0836cb9c",
+     "40-ingress.yaml": "9f5fa10feb105cf71e9e796d35c1a64044c774b453c39948409d00177bbbeafd"
+   },
+   "deployment_replicas": {
+     "investment-backend-api": 2,
+     "investment-backend-worker": 1,
+     "investment-backend-scheduler": 1,
++    "investment-backend-runner": 1,
+     "investment-admin-frontend": 2,
+     "investment-web-frontend": 2
+   },
+@@ -126,14 +127,14 @@
+   ],
+   "contains_credentials": false,
+   "renderer_inputs_sha256": {
+-    "k8s:sunmoonai/app-platform/scripts/render_investment_release_base.py": "6cacf92337fe644f2fee1fcfd0a934b23024b3d0dd4832b5d3c96a9cd34b23ec",
+-    "tpl-app:k8s-deployment/scaffold.py": "2f65213916ac338f4126c43b084dacd4a832906735d034b37a247b8507479828",
+-    "tpl-app:k8s-deployment/templates/00-prerequisites.yaml.tpl": "c87ac75dce8507e9f88732d3e8708945ee18a87418fedfd9dc184423916d32bf",
++    "k8s:sunmoonai/app-platform/scripts/render_investment_release_base.py": "24daad848830c9836c635b7ba8f8813d7e5bbac4cb4b06923fbba0d47bb01bfa",
++    "tpl-app:k8s-deployment/scaffold.py": "eb625d86f9a3b75111d8b2605c23152b759e7b2e04eb9d8661bb1a67def90c33",
++    "tpl-app:k8s-deployment/templates/00-prerequisites.yaml.tpl": "31bdecaf21010840bb5b00fefdbd6f59f804b9c7dadfb606bcb429b7f4418334",
+     "tpl-app:k8s-deployment/templates/10-migration.yaml.tpl": "2a78b9770f61b94cc267f267449b0e0593b147a61a444a7463fe4f3fcc1508f4",
+-    "tpl-app:k8s-deployment/templates/20-runtime.yaml.tpl": "702236eaf5ffa8f173c5e6f2f9528114e4f7247bf560408a905511a98d00d13b",
+-    "tpl-app:k8s-deployment/templates/30-network-policies.yaml.tpl": "2eede852d9710c20cba56cfe4a1b9864cb2a9aac907babbf5b9cf2c258f5d3c5",
++    "tpl-app:k8s-deployment/templates/20-runtime.yaml.tpl": "93bade1d5c9e96a0a4708bd76e88f90e15fa7a7c54a9a118adb993c492eb866e",
++    "tpl-app:k8s-deployment/templates/30-network-policies.yaml.tpl": "b8018d309f7e7d9ec5c72fd463d0b44f8a091e197fa1b47a9a110f36ae59261d",
+     "tpl-app:k8s-deployment/templates/40-ingress.yaml.tpl": "5f79e6a40bdfa8a581b92eeabe1a9f0cbf3a031221f5c9a40708b4682190ce3d",
+-    "development-release-input": "2c1b9745b4938a59ce4718dfc249b9feb0334505fcada3385b99c7178e9371a5",
++    "development-release-input": "e0f581a6fd2e2b63387af67872ac36821d3ea16f38aa9b911fc666a57a0be780",
+     "k8s:sunmoonai/app-platform/scripts/development_release.py": "49a26804e03f6481e09e45430ccdadf997383c546aacda6202ffb013fd4f16c8"
+   },
+   "deployment_target": "KIND",
+@@ -142,13 +143,13 @@
+     "kind": "development-source-lock",
+     "repository": "investment-app",
+     "formal_release": false,
+-    "task": "B7-B9-closeout-kind-20260919",
++    "task": "workbench-runner-kind-20260925",
+     "release_boundary": "Immutable development candidate source; actual deployment requires the matching KIND release, prepared independent identities, and verified quiescent backup.",
+     "components": [
+       {
+         "path": "investment-backend",
+-        "commit": "01d09740d4183d826f625b127c90a2a45bdbf0a9",
+-        "tree": "9d923f602d22b1452b51437af028c5c8beea0e32",
++        "commit": "e5084f8b6a525e8f41334c76c1b8081ab3f9fdeb",
++        "tree": "4b86416abeefa5c085dad5317107d5df1e4dec87",
+         "remote_branch": "origin/master"
+       },
+       {
+@@ -159,12 +160,12 @@
+       },
+       {
+         "path": "investment-web-frontend",
+-        "commit": "91a892fdb483b6a4364200e258e30766e5e150c4",
+-        "tree": "ca4f539390886c8020a6fb686f212621d716e56f",
++        "commit": "f11cb56cd1ee0fc390435873676bd8edec59242d",
++        "tree": "e6ca30745beddc81d507f4e27c9d94489fc5e8b4",
+         "remote_branch": "origin/master"
+       }
+     ]
+   },
+-  "migration_head": "20260911_0007",
++  "migration_head": "20260924_0009",
+   "runtime_identity_mode": "independent-v1"
+ }
+
+exit=1

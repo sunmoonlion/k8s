@@ -1,0 +1,207 @@
+time=2026-09-24T21:30:14.953825+08:00
+cwd=/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/scripts
+command=['env', 'CLUSTER=KIND', 'APPS=investment', 'COMPONENTS=backend web-frontend', 'SOURCE_ROOT=/home/zymun/worktrees/fable', 'bash', 'build-push-app-images.sh']
+[0;34m[INFO][0m 配置文件: /home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/scripts/build-push-app-images.conf
+[0;34m[INFO][0m 集群配置: KIND
+[0;34m[INFO][0m 镜像版本: architecture-v2-dev
+[0;34m[INFO][0m 目标仓库: harbor.sunmoonai.com:30443/app-images
+[0;34m[INFO][0m 基础镜像仓库: harbor.sunmoonai.com:30443/k8s-images
+[0;34m[INFO][0m 源码根目录: /home/zymun/worktrees/fable
+[0;34m[INFO][0m 应用列表: investment
+[0;34m[INFO][0m 组件列表: backend web-frontend
+[0;34m[INFO][0m ===== investment/backend -> harbor.sunmoonai.com:30443/app-images/investment-backend:architecture-v2-dev =====
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 2.91kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for harbor.sunmoonai.com:30443/k8s-images/python:3.12-slim
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 182B done
+#3 DONE 0.0s
+
+#4 [type-check 2/8] WORKDIR /app
+#4 CACHED
+
+#5 [type-check 1/8] FROM harbor.sunmoonai.com:30443/k8s-images/python:3.12-slim@sha256:cd4b90006d24bf02d61ff4dca29587b911552e9f0c8ac933db8b1c536c289379
+#5 resolve harbor.sunmoonai.com:30443/k8s-images/python:3.12-slim@sha256:cd4b90006d24bf02d61ff4dca29587b911552e9f0c8ac933db8b1c536c289379 0.0s done
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 1.32MB 0.0s done
+#6 DONE 0.1s
+
+#7 [run 2/5] RUN groupadd --system --gid 1001 appgroup     && useradd --system --uid 1001 --gid appgroup        --home-dir /app --shell /usr/sbin/nologin appuser
+#7 0.355 useradd warning: appuser's uid 1001 is greater than SYS_UID_MAX 999
+#7 DONE 0.4s
+
+#8 [run 3/5] WORKDIR /app
+#8 DONE 0.1s
+
+#9 [type-check 3/8] RUN sed -i       -e "s|http://deb.debian.org/debian-security|http://mirrors.tuna.tsinghua.edu.cn/debian-security|g"       -e "s|http://deb.debian.org/debian|http://mirrors.tuna.tsinghua.edu.cn/debian|g"       /etc/apt/sources.list.d/debian.sources     && apt-get update     && apt-get install -y --no-install-recommends libatomic1 nodejs     && rm -rf /var/lib/apt/lists/*
+#9 ...
+
+#10 [run 4/5] COPY --chown=appuser:appgroup app/ ./
+#10 DONE 0.1s
+
+#9 [type-check 3/8] RUN sed -i       -e "s|http://deb.debian.org/debian-security|http://mirrors.tuna.tsinghua.edu.cn/debian-security|g"       -e "s|http://deb.debian.org/debian|http://mirrors.tuna.tsinghua.edu.cn/debian|g"       /etc/apt/sources.list.d/debian.sources     && apt-get update     && apt-get install -y --no-install-recommends libatomic1 nodejs     && rm -rf /var/lib/apt/lists/*
+#9 2.437 Get:1 http://mirrors.tuna.tsinghua.edu.cn/debian trixie InRelease [140 kB]
+#9 4.387 Get:2 http://mirrors.tuna.tsinghua.edu.cn/debian trixie-updates InRelease [47.3 kB]
+#9 5.784 Get:3 http://mirrors.tuna.tsinghua.edu.cn/debian-security trixie-security InRelease [43.4 kB]
+#9 7.526 Get:4 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 Packages [9678 kB]
+#9 66.62 Get:5 http://mirrors.tuna.tsinghua.edu.cn/debian trixie-updates/main amd64 Packages [4412 B]
+#9 67.43 Get:6 http://mirrors.tuna.tsinghua.edu.cn/debian-security trixie-security/main amd64 Packages [263 kB]
+#9 69.17 Fetched 10.2 MB in 1min 9s (148 kB/s)
+#9 69.17 Reading package lists...
+#9 69.57 Reading package lists...
+#9 69.94 Building dependency tree...
+#9 70.09 Reading state information...
+#9 70.22 The following additional packages will be installed:
+#9 70.22   libbrotli1 libcares2 libicu76 libnghttp2-14 libnode115 libuv1t64 node-acorn
+#9 70.22   node-balanced-match node-brace-expansion node-cjs-module-lexer node-corepack
+#9 70.22   node-minimatch node-undici node-xtend
+#9 70.22 Suggested packages:
+#9 70.22   npm
+#9 70.22 Recommended packages:
+#9 70.22   nodejs-doc
+#9 70.27 The following NEW packages will be installed:
+#9 70.27   libatomic1 libbrotli1 libcares2 libicu76 libnghttp2-14 libnode115 libuv1t64
+#9 70.27   node-acorn node-balanced-match node-brace-expansion node-cjs-module-lexer
+#9 70.27   node-corepack node-minimatch node-undici node-xtend nodejs
+#9 100.6 0 upgraded, 16 newly installed, 0 to remove and 28 not upgraded.
+#9 100.6 Need to get 24.1 MB of archives.
+#9 100.6 After this operation, 105 MB of additional disk space will be used.
+#9 100.6 Ign:1 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libatomic1 amd64 14.2.0-19
+#9 100.6 Ign:2 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libbrotli1 amd64 1.1.0-2+b7
+#9 100.6 Ign:3 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libcares2 amd64 1.34.5-1+deb13u1
+#9 100.6 Ign:4 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libicu76 amd64 76.1-4
+#9 100.6 Ign:5 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libnghttp2-14 amd64 1.64.0-1.1+deb13u1
+#9 100.6 Ign:6 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libuv1t64 amd64 1.50.0-2
+#9 100.6 Ign:7 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-xtend all 4.0.2-3
+#9 100.6 Ign:8 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-corepack all 0.24.0-5
+#9 100.6 Ign:9 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 nodejs amd64 20.19.2+dfsg-1+deb13u2
+#9 100.6 Ign:10 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-acorn all 8.8.1+ds+~cs25.17.7-2
+#9 100.6 Ign:11 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-cjs-module-lexer all 1.2.3+dfsg-1
+#9 101.6 Ign:11 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-cjs-module-lexer all 1.2.3+dfsg-1
+#9 101.6 Ign:10 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-acorn all 8.8.1+ds+~cs25.17.7-2
+#9 101.6 Ign:9 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 nodejs amd64 20.19.2+dfsg-1+deb13u2
+#9 101.6 Ign:8 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-corepack all 0.24.0-5
+#9 101.6 Ign:7 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-xtend all 4.0.2-3
+#9 101.6 Ign:6 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libuv1t64 amd64 1.50.0-2
+#9 101.6 Ign:5 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libnghttp2-14 amd64 1.64.0-1.1+deb13u1
+#9 101.6 Ign:4 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libicu76 amd64 76.1-4
+#9 101.6 Ign:3 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libcares2 amd64 1.34.5-1+deb13u1
+#9 101.6 Ign:2 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libbrotli1 amd64 1.1.0-2+b7
+#9 101.6 Ign:1 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libatomic1 amd64 14.2.0-19
+#9 103.6 Ign:1 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libatomic1 amd64 14.2.0-19
+#9 103.6 Ign:2 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libbrotli1 amd64 1.1.0-2+b7
+#9 103.6 Ign:3 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libcares2 amd64 1.34.5-1+deb13u1
+#9 103.6 Ign:4 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libicu76 amd64 76.1-4
+#9 103.6 Ign:5 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libnghttp2-14 amd64 1.64.0-1.1+deb13u1
+#9 103.6 Ign:6 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libuv1t64 amd64 1.50.0-2
+#9 103.6 Ign:7 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-xtend all 4.0.2-3
+#9 103.6 Ign:8 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-corepack all 0.24.0-5
+#9 103.6 Ign:9 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 nodejs amd64 20.19.2+dfsg-1+deb13u2
+#9 103.6 Ign:10 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-acorn all 8.8.1+ds+~cs25.17.7-2
+#9 103.6 Ign:11 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-cjs-module-lexer all 1.2.3+dfsg-1
+#9 107.6 Err:11 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-cjs-module-lexer all 1.2.3+dfsg-1
+#9 107.6   Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 107.6 Err:10 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-acorn all 8.8.1+ds+~cs25.17.7-2
+#9 107.6   Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 107.6 Ign:9 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 nodejs amd64 20.19.2+dfsg-1+deb13u2
+#9 107.6 Err:8 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-corepack all 0.24.0-5
+#9 107.6   Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 107.6 Err:7 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-xtend all 4.0.2-3
+#9 107.6   Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 107.6 Err:6 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libuv1t64 amd64 1.50.0-2
+#9 107.6   Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 107.6 Ign:5 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libnghttp2-14 amd64 1.64.0-1.1+deb13u1
+#9 107.6 Err:4 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libicu76 amd64 76.1-4
+#9 107.6   Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 107.6 Ign:3 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libcares2 amd64 1.34.5-1+deb13u1
+#9 107.6 Err:2 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libbrotli1 amd64 1.1.0-2+b7
+#9 107.6   Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 107.6 Err:1 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libatomic1 amd64 14.2.0-19
+#9 107.6   Could not connect to mirrors.tuna.tsinghua.edu.cn:80 (198.18.0.26), connection timed out
+#9 107.6   Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 107.6 Ign:12 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-balanced-match all 2.0.0-1
+#9 107.6 Ign:13 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-brace-expansion all 2.0.1+~1.1.0-2
+#9 107.6 Err:9 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 nodejs amd64 20.19.2+dfsg-1+deb13u2
+#9 107.6   Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 107.6 Ign:14 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-minimatch all 9.0.3-6
+#9 107.6 Ign:15 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-undici all 7.3.0+dfsg1+~cs24.12.11-1
+#9 107.6 Ign:16 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libnode115 amd64 20.19.2+dfsg-1+deb13u2
+#9 107.6 Err:5 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libnghttp2-14 amd64 1.64.0-1.1+deb13u1
+#9 107.6   Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 107.6 Err:3 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libcares2 amd64 1.34.5-1+deb13u1
+#9 107.6   Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 108.6 Ign:16 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libnode115 amd64 20.19.2+dfsg-1+deb13u2
+#9 108.6 Ign:15 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-undici all 7.3.0+dfsg1+~cs24.12.11-1
+#9 108.6 Ign:14 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-minimatch all 9.0.3-6
+#9 108.6 Ign:13 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-brace-expansion all 2.0.1+~1.1.0-2
+#9 108.6 Ign:12 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-balanced-match all 2.0.0-1
+#9 110.6 Ign:12 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-balanced-match all 2.0.0-1
+#9 110.6 Ign:13 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-brace-expansion all 2.0.1+~1.1.0-2
+#9 110.6 Ign:14 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-minimatch all 9.0.3-6
+#9 110.6 Ign:15 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-undici all 7.3.0+dfsg1+~cs24.12.11-1
+#9 110.6 Ign:16 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libnode115 amd64 20.19.2+dfsg-1+deb13u2
+#9 114.6 Ign:16 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libnode115 amd64 20.19.2+dfsg-1+deb13u2
+#9 114.6 Err:15 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-undici all 7.3.0+dfsg1+~cs24.12.11-1
+#9 114.6   Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 Err:14 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-minimatch all 9.0.3-6
+#9 114.6   Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 Err:13 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-brace-expansion all 2.0.1+~1.1.0-2
+#9 114.6   Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 Err:12 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-balanced-match all 2.0.0-1
+#9 114.6   Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 Err:16 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libnode115 amd64 20.19.2+dfsg-1+deb13u2
+#9 114.6   Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/g/gcc-14/libatomic1_14.2.0-19_amd64.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/b/brotli/libbrotli1_1.1.0-2%2bb7_amd64.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian-security/pool/updates/main/c/c-ares/libcares2_1.34.5-1%2bdeb13u1_amd64.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/i/icu/libicu76_76.1-4_amd64.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian-security/pool/updates/main/n/nghttp2/libnghttp2-14_1.64.0-1.1%2bdeb13u1_amd64.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/libu/libuv1/libuv1t64_1.50.0-2_amd64.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/n/node-xtend/node-xtend_4.0.2-3_all.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/n/node-corepack/node-corepack_0.24.0-5_all.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian-security/pool/updates/main/n/nodejs/nodejs_20.19.2%2bdfsg-1%2bdeb13u2_amd64.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/a/acorn/node-acorn_8.8.1%2bds%2b%7ecs25.17.7-2_all.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/n/node-cjs-module-lexer/node-cjs-module-lexer_1.2.3%2bdfsg-1_all.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/n/node-balanced-match/node-balanced-match_2.0.0-1_all.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/n/node-brace-expansion/node-brace-expansion_2.0.1%2b%7e1.1.0-2_all.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/n/node-minimatch/node-minimatch_9.0.3-6_all.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/n/node-undici/node-undici_7.3.0%2bdfsg1%2b%7ecs24.12.11-1_all.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian-security/pool/updates/main/n/nodejs/libnode115_20.19.2%2bdfsg-1%2bdeb13u2_amd64.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+#9 114.6 E: Unable to fetch some archives, maybe run apt-get update or try with --fix-missing?
+#9 ERROR: process "/bin/sh -c sed -i       -e \"s|http://deb.debian.org/debian-security|${DEBIAN_SECURITY_MIRROR}|g\"       -e \"s|http://deb.debian.org/debian|${DEBIAN_MIRROR}|g\"       /etc/apt/sources.list.d/debian.sources     && apt-get update     && apt-get install -y --no-install-recommends libatomic1 nodejs     && rm -rf /var/lib/apt/lists/*" did not complete successfully: exit code: 100
+------
+ > [type-check 3/8] RUN sed -i       -e "s|http://deb.debian.org/debian-security|http://mirrors.tuna.tsinghua.edu.cn/debian-security|g"       -e "s|http://deb.debian.org/debian|http://mirrors.tuna.tsinghua.edu.cn/debian|g"       /etc/apt/sources.list.d/debian.sources     && apt-get update     && apt-get install -y --no-install-recommends libatomic1 nodejs     && rm -rf /var/lib/apt/lists/*:
+114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/n/node-corepack/node-corepack_0.24.0-5_all.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian-security/pool/updates/main/n/nodejs/nodejs_20.19.2%2bdfsg-1%2bdeb13u2_amd64.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/a/acorn/node-acorn_8.8.1%2bds%2b%7ecs25.17.7-2_all.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/n/node-cjs-module-lexer/node-cjs-module-lexer_1.2.3%2bdfsg-1_all.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/n/node-balanced-match/node-balanced-match_2.0.0-1_all.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/n/node-brace-expansion/node-brace-expansion_2.0.1%2b%7e1.1.0-2_all.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/n/node-minimatch/node-minimatch_9.0.3-6_all.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian/pool/main/n/node-undici/node-undici_7.3.0%2bdfsg1%2b%7ecs24.12.11-1_all.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+114.6 E: Failed to fetch http://mirrors.tuna.tsinghua.edu.cn/debian-security/pool/updates/main/n/nodejs/libnode115_20.19.2%2bdfsg-1%2bdeb13u2_amd64.deb  Unable to connect to mirrors.tuna.tsinghua.edu.cn:http:
+114.6 E: Unable to fetch some archives, maybe run apt-get update or try with --fix-missing?
+------
+Dockerfile:20
+--------------------
+  19 |     
+  20 | >>> RUN sed -i \
+  21 | >>>       -e "s|http://deb.debian.org/debian-security|${DEBIAN_SECURITY_MIRROR}|g" \
+  22 | >>>       -e "s|http://deb.debian.org/debian|${DEBIAN_MIRROR}|g" \
+  23 | >>>       /etc/apt/sources.list.d/debian.sources \
+  24 | >>>     && apt-get update \
+  25 | >>>     && apt-get install -y --no-install-recommends libatomic1 nodejs \
+  26 | >>>     && rm -rf /var/lib/apt/lists/*
+  27 |     RUN --mount=type=cache,target=/root/.cache/pip \
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c sed -i       -e \"s|http://deb.debian.org/debian-security|${DEBIAN_SECURITY_MIRROR}|g\"       -e \"s|http://deb.debian.org/debian|${DEBIAN_MIRROR}|g\"       /etc/apt/sources.list.d/debian.sources     && apt-get update     && apt-get install -y --no-install-recommends libatomic1 nodejs     && rm -rf /var/lib/apt/lists/*" did not complete successfully: exit code: 100
+
+exit=1

@@ -1,4 +1,8 @@
+time=2026-09-24T21:51:24.474337+08:00
+cwd=/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/investment-app
+command=['python3', '-B', 'deployment/render.py', '--output-dir', '/tmp/investment-dev', '--release-id', 'kind-wb-20260925', '--development-input', 'deployment/development-input.json']
 {
+  "result": "rendered",
   "schema_version": 2,
   "architecture": "app-platform-v2-development",
   "logical_app": "investment",
@@ -169,3 +173,5 @@
   "migration_head": "20260924_0009",
   "runtime_identity_mode": "independent-v1"
 }
+
+exit=0

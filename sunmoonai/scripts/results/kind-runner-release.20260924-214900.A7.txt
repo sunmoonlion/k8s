@@ -1,0 +1,30 @@
+time=2026-09-24T21:54:38.663381+08:00
+cwd=/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/investment-app
+command=['python3', '-B', '../scripts/verify-formal-instance.py', '--bundle', 'deployment/bundle']
+{
+  "task": "app-platform-v2-declarative-instance-gate",
+  "result": "passed",
+  "formal_release": false,
+  "deployment_target": "KIND",
+  "logical_app": "investment",
+  "resource_app": "investment",
+  "release_id": "kind-wb-20260925",
+  "deployments": {
+    "investment-backend-api": 2,
+    "investment-backend-worker": 1,
+    "investment-backend-scheduler": 1,
+    "investment-backend-runner": 1,
+    "investment-admin-frontend": 2,
+    "investment-web-frontend": 2
+  },
+  "ingress_routes": [
+    "investment-admin-api-route",
+    "investment-admin-route",
+    "investment-web-api-route",
+    "investment-web-route"
+  ],
+  "legacy_deployments_in_bundle": [],
+  "credentials_in_release": false
+}
+
+exit=0

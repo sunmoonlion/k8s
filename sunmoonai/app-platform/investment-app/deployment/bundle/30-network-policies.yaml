@@ -294,3 +294,36 @@ spec:
       port: 6379
     - protocol: TCP
       port: 5672
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: investment-backend-runner-egress
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: investment
+    sunmoonai.com/managed-by: app-platform-v2
+spec:
+  podSelector:
+    matchLabels:
+      sunmoonai.com/app: investment
+      app.kubernetes.io/component: backend-runner
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          sunmoonai.com/data-platform: 'true'
+    ports:
+    - protocol: TCP
+      port: 5432
+    - protocol: TCP
+      port: 6379
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          sunmoonai.com/sandbox-pool: 'true'
+    ports:
+    - protocol: TCP
+      port: 47800

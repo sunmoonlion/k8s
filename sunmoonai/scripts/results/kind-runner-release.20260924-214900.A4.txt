@@ -1,3 +1,7 @@
+time=2026-09-24T21:51:23.924383+08:00
+cwd=/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/investment-app
+command=['python3', '/tmp/inbox06-update-inputs.py', 'A4', '--backend', 'harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:0736b1ee1fccff329c38b8e894c59a7ab847e55c332d3b4f5a47bf75d755e2ed', '--web', 'harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:3bf04caa667e9f96181b63aa0c0c6222d6e467631e5b115125377e33f12c2554']
+/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/investment-app/deployment/development-input.json
 {
   "kind": "kind-development-release-input",
   "logical_app": "investment",
@@ -37,3 +41,5 @@
   },
   "runtime_identity_mode": "independent-v1"
 }
+
+exit=0

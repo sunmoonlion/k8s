@@ -31,6 +31,16 @@ automountServiceAccountToken: false
 apiVersion: v1
 kind: ServiceAccount
 metadata:
+  name: investment-backend-runner
+  namespace: app-platform-dev
+  labels:
+    sunmoonai.com/app: investment
+    sunmoonai.com/managed-by: app-platform-v2
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
   name: investment-backend-migration
   namespace: app-platform-dev
   labels:
@@ -70,7 +80,7 @@ data:
   ENV: production
   LOG_LEVEL: INFO
   SERVICE_NAME: investment-backend
-  DEPLOYMENT_ID: kind-b7-20260919
+  DEPLOYMENT_ID: kind-wb-20260925
   APP_SLUG: investment
   REDIS_HOST: redis-sunmoonai-master.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -117,6 +127,10 @@ data:
   KNOWLEDGE_RETRIEVAL_SERVICE_BACKCHANNEL_ENDPOINT: http://casdoor-sunmoonai.app-platform-dev.svc.cluster.local:8000
   KNOWLEDGE_RETRIEVAL_SERVICE_SCOPE: knowledge:retrieve
   KNOWLEDGE_RETRIEVAL_TIMEOUT_SECONDS: '20'
+  WORKBENCH_ENABLED: 'true'
+  WORKBENCH_REDIS_KEY_PREFIX: investment:workbench
+  WORKBENCH_ENVIRONMENT_KEY: user-pc
+  WORKBENCH_POLL_SECONDS: '1.0'
   CELERY_TASK_TOPOLOGY_PREDECLARED: 'true'
 ---
 apiVersion: v1
@@ -132,7 +146,7 @@ data:
   AUTH_APP: investment
   APP_ORIGIN: https://investment-admin.sunmoonai.com:30443
   BACKEND_INTERNAL_URL: http://investment-backend:8000
-  DEPLOYMENT_ID: kind-b7-20260919-admin
+  DEPLOYMENT_ID: kind-wb-20260925-admin
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -147,7 +161,7 @@ data:
   AUTH_APP: investment
   APP_ORIGIN: https://investment.sunmoonai.com:30443
   BACKEND_INTERNAL_URL: http://investment-backend:8000
-  DEPLOYMENT_ID: kind-b7-20260919-web
+  DEPLOYMENT_ID: kind-wb-20260925-web
   REFERENCE_UI_ENABLED: 'false'
 ---
 apiVersion: v1

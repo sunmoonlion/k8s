@@ -1,0 +1,30 @@
+time=2026-09-24T21:54:38.778899+08:00
+cwd=/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/scripts
+command=['python3', '-m', 'unittest', 'tests.test_committed_development_candidates', 'tests.test_investment_runner_role', 'tests.test_formal_component_deploy', 'tests.test_development_release', 'tests.test_deployment_config']
+EE.................
+======================================================================
+ERROR: test_all_bundles_reproduce_and_match_declarations (tests.test_committed_development_candidates.CommittedCandidatesTest.test_all_bundles_reproduce_and_match_declarations) (app='knowledge')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/scripts/tests/test_committed_development_candidates.py", line 35, in test_all_bundles_reproduce_and_match_declarations
+    subprocess.run(command, check=True, capture_output=True, text=True, timeout=30)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/usr/bin/python3', '-B', '/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/knowledge-app/deployment/render.py', '--output-dir', '/tmp/committed-release-066z7vik/bundle', '--release-id', 'kind-b7-20260919', '--development-input', '/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/knowledge-app/deployment/development-input.json', '--ingestion-dataset-bindings-file', '/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/knowledge-app/deployment/ingestion-dataset-bindings.kind.json']' returned non-zero exit status 1.
+
+======================================================================
+ERROR: test_all_bundles_reproduce_and_match_declarations (tests.test_committed_development_candidates.CommittedCandidatesTest.test_all_bundles_reproduce_and_match_declarations) (app='investment')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/scripts/tests/test_committed_development_candidates.py", line 29, in test_all_bundles_reproduce_and_match_declarations
+    deployment_config.validate_release(declaration, release)
+  File "/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/scripts/deployment_config.py", line 147, in validate_release
+    raise ConfigError(
+deployment_config.ConfigError: deployment config differs from the immutable release; render and gate a new release instead of overriding it at runtime: {"RELEASE_ID": {"config": "kind-b7-20260919", "release": "kind-wb-20260925"}, "BACKEND_IMAGE": {"config": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:95ae05e5b425dedac42bf1905aa87f6ff2bba3391746b84df65b950fca324f9e", "release": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:0736b1ee1fccff329c38b8e894c59a7ab847e55c332d3b4f5a47bf75d755e2ed"}, "WEB_IMAGE": {"config": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:b6e41f5db947e478bb429b414057a2e7892b8a32590402a744968541d10a9b18", "release": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:3bf04caa667e9f96181b63aa0c0c6222d6e467631e5b115125377e33f12c2554"}}
+
+----------------------------------------------------------------------
+Ran 18 tests in 1.213s
+
+FAILED (errors=2)
+
+exit=1

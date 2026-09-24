@@ -1,0 +1,6 @@
+time=2026-09-24T21:54:40.110166+08:00
+cwd=/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/investment-app
+command=['./deploy-investment-app-all/deploy-investment-app-all.sh', 'plan', '--cluster', 'KIND']
+{"result": "failed", "error": "deployment config differs from the immutable release; render and gate a new release instead of overriding it at runtime: {\"RELEASE_ID\": {\"config\": \"kind-b7-20260919\", \"release\": \"kind-wb-20260925\"}, \"BACKEND_IMAGE\": {\"config\": \"harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:95ae05e5b425dedac42bf1905aa87f6ff2bba3391746b84df65b950fca324f9e\", \"release\": \"harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:0736b1ee1fccff329c38b8e894c59a7ab847e55c332d3b4f5a47bf75d755e2ed\"}, \"WEB_IMAGE\": {\"config\": \"harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:b6e41f5db947e478bb429b414057a2e7892b8a32590402a744968541d10a9b18\", \"release\": \"harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:3bf04caa667e9f96181b63aa0c0c6222d6e467631e5b115125377e33f12c2554\"}}"}
+
+exit=2

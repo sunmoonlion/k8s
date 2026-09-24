@@ -1,0 +1,10 @@
+time=2026-09-24T21:57:31.322725+08:00
+cwd=/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/investment-app
+command=['python3', '/tmp/inbox06-update-declaration.py']
+Owner-authorized omitted declaration update: /home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/investment-app/deploy-investment-app-all/deploy-investment-app-all.conf
+RELEASE_ID=kind-wb-20260925
+BACKEND_IMAGE=harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:0736b1ee1fccff329c38b8e894c59a7ab847e55c332d3b4f5a47bf75d755e2ed
+WEB_IMAGE=harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:3bf04caa667e9f96181b63aa0c0c6222d6e467631e5b115125377e33f12c2554
+ADMIN_IMAGE unchanged
+
+exit=0
