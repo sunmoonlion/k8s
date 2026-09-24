@@ -28,7 +28,9 @@ pod
 
 ```bash
 cd sunmoonai/sandbox-platform
-docker build -t harbor.sunmoonai.com:30443/app-images/sandbox:0.155.1-r1 -f image/Dockerfile .
+docker build --build-arg NODE_IMAGE=harbor.sunmoonai.com:30443/k8s-images/node:24.18.0-alpine@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc \
+  -t harbor.sunmoonai.com:30443/app-images/sandbox:0.155.1-r1 -f image/Dockerfile .
+# 基础镜像与平台其它镜像同一钉版（node 24.18.0 alpine，Harbor 里的 k8s-images 镜像）；外网机器不传 --build-arg 即从 Docker Hub 拉同一 tag
 docker push harbor.sunmoonai.com:30443/app-images/sandbox:0.155.1-r1        # 取 digest 填进 demo-user.yaml（C-R2 只允许 digest）
 kubectl create ns sandbox-pool
 kubectl -n sandbox-pool create secret generic sandbox-demo-relay --from-literal=token=<会合点给该用户沙箱的令牌>
