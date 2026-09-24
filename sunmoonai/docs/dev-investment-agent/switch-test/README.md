@@ -14,10 +14,10 @@
 
 | 在这台机跑 | 回本地跑 |
 | --- | --- |
-| 文档门禁、ruff、pyright（峰值 740 MB） | Electron 的构建、运行和一切界面 |
-| 后端 pytest 全套，含数据库那部分（Postgres 容器实际 45 MB） | 桌面 + runtime + 后端三方联调 |
+| 文档门禁、ruff、pyright（峰值 740 MB） | 浏览器里的一切界面检查 |
+| 后端 pytest 全套，含数据库那部分（Postgres 容器实际 45 MB） | 本地代理 + 沙箱 + 工作台的真机联调；Windows 上的 exec-server |
 | TypeScript 类型检查与单元测试 | KIND 上的任何东西、压测 |
-| codex app-server 探针（模型调用在远端） | 要真机内存的：runtime 接真 Codex 跑长任务 |
+| codex app-server / exec-server 探针（一台机扮两端，模型调用在远端） | 两台机器之间的公网延迟；要真机内存的长任务 |
 
 一次只跑一样。这台机跑得动的，本地可以再跑一遍作**独立复核**，那是验收的事，不是必须。
 
@@ -31,7 +31,7 @@
 for p in investment-app knowledge-app; do
   git -C ~/worktrees/fable/$p/${p%-app}-backend pull --ff-only origin fable
 done
-for r in runtime desktop-app; do git -C ~/worktrees/fable/$r pull --ff-only origin fable; done   # 两个客户端仓不在同步脚本里
+git -C ~/worktrees/fable/runtime pull --ff-only origin fable        # 客户端仓不在同步脚本里（desktop-app 已退役）
 
 # 2. 跑测试脚本，整份输出落到脚本旁边的 results/，文件名带时间，不覆盖上一次
 cd ~/worktrees/fable/<仓>            # 子仓、跨仓的按「脚本放哪」进对应目录
@@ -42,7 +42,7 @@ bash scripts/<脚本名>.sh > "$out" 2>&1; echo "exit=$?" >> "$out"; tail -3 "$o
 # 3. 提交、推回。不贴对话——原件进 git，远程 pull 就看到
 git add scripts/results && git commit -m "test(local): <脚本名> $(tail -1 "$out")"
 ~/five-repos-sync/sync-five-repos.sh to-remote fable        # 父仓与 k8s
-git push origin fable                                       # 子仓、runtime、desktop-app 要自己推
+git push origin fable                                       # 子仓、runtime 要自己推
 ```
 
 **不删、不改、不截输出**——失败信息常在你觉得不重要的那几行里。对话里只需一句「跑完了，`<仓>` `<提交号>`」。
@@ -81,7 +81,7 @@ git -C ~/worktrees/fable/<父仓>/<子仓> rev-parse --short HEAD
 | 测什么 | 脚本在哪 |
 | --- | --- |
 | 单个仓自己的 | 被测仓的 `scripts/`（后端在 `app/scripts/`） |
-| 跨仓联调（桌面 + runtime + 后端） | `k8s` 仓 `sunmoonai/scripts/local-integration/`——只有它已经按相对路径引用全部仓 |
+| 跨仓联调（代理 + 沙箱 + 工作台） | `k8s` 仓 `sunmoonai/scripts/local-integration/`——只有它已经按相对路径引用全部仓 |
 | 界面点击步骤 | 不是脚本，是文档：随请求给，见「界面类检查」 |
 
 本目录不放任何具体测试。
@@ -106,7 +106,7 @@ echo "Node        $(node --version 2>/dev/null || echo '无')"
 echo "Docker      $(docker --version 2>/dev/null || echo '无')"
 echo "kind        $(kind --version 2>/dev/null || echo '无')"
 echo "Codex       $(codex --version 2>/dev/null || echo '无')  CODEX_HOME=${CODEX_HOME:-未设}"
-for r in k8s info-app investment-app knowledge-app tpl-app runtime desktop-app; do
+for r in k8s info-app investment-app knowledge-app tpl-app runtime; do
   d="${HOME}/worktrees/${WS}/${r}"
   [ -d "${d}/.git" ] || [ -f "${d}/.git" ] || continue
   printf "%-22s %s  %s\n" "${r}" "$(git -C "${d}" rev-parse --short HEAD)" "$(git -C "${d}" branch --show-current)"
@@ -161,4 +161,5 @@ echo "===== 开始 ====="
 - 测试脚本放**被测仓**的 `scripts/`（跨仓的放 `k8s` 仓 `sunmoonai/scripts/local-integration/`），输出放同级 `results/`，都跟代码一起走 git，不放本目录；
 - 本目录只放**怎么测**的约定与模板，不放具体某次测试；某一轮的具体项在 `../tree-build/human-ai-turn/imp/luna-local-setup.md`；
 - 换模型不换工位：接手的模型继续用同一个工位名，所有者改名时会说；本文里 `fable` 按当时的名字替换；
-- 测试用的 Codex 走独立的 `CODEX_HOME`（`~/.codex-probe`），与日常用的隔离；Postgres 用容器不装系统里。
+- 测试用的 Codex 走独立的 `CODEX_HOME`（编排端 `~/.codex-probe` 有登录态；执行端 `~/.codex-probe-exec` 无登录态），与日常用的隔离；Postgres 用容器不装系统里；
+- Windows 上没有 bash 的脚本用 PowerShell（`.ps1`），环境探测段等价，输出同样落 `scripts/results/`。
