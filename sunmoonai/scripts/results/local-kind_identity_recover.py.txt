@@ -1,0 +1,210 @@
+"""Reconstruct a KIND identity-preparation receipt from live, tested state.
+
+This performs only reads and authentication/permission probes. It never changes
+Kubernetes, PostgreSQL, RabbitMQ, or application data. Receipts are written only
+after every live check succeeds, into a new private directory outside Git.
+"""
+from __future__ import annotations
+
+import argparse
+import base64
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import sys
+from types import SimpleNamespace
+
+
+def load_modules(script_dir: Path):
+    sys.path.insert(0, str(script_dir))
+    import development_release
+    import kind_database_activation as activation
+    import kind_database_rehearsal as common
+    import kind_identity_prepare as preparation
+    return development_release, activation, common, preparation
+
+
+def encoded(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+
+
+def ensure_private_output(path: Path):
+    path = path.expanduser().absolute()
+    if path.exists():
+        raise RuntimeError("output_already_exists")
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if path.parent.resolve() != path.parent or path.parent.stat().st_mode & 0o077:
+        raise RuntimeError("private_parent_permissions_invalid")
+    probe = path.parent
+    while probe != probe.parent:
+        if (probe / ".git").exists():
+            raise RuntimeError("output_inside_git")
+        probe = probe.parent
+    path.mkdir(mode=0o700)
+    if path.stat().st_mode & 0o077 or path.is_symlink():
+        raise RuntimeError("private_output_permissions_invalid")
+    return path
+
+
+def role_passwords(secret, app, development_release):
+    development_release.verify_runtime_secret_contract(secret, app)
+    result = {}
+    for role in development_release.RUNTIME_ROLES:
+        url = base64.b64decode(secret["data"][role.upper() + "_DATABASE_URL"], validate=True).decode()
+        from urllib.parse import unquote, urlsplit
+        result[role] = unquote(urlsplit(url).password or "")
+    return result
+
+
+def validate_database_roles(inventory, app):
+    roles = {item["name"]: item for item in inventory["roles"]}
+    expected = {app + "_backend_" + role for role in ("api", "worker", "scheduler")}
+    old_name = app + "_backend_user"
+    migration_name = app + "_backend_user_migration"
+    if set(roles) != expected | {old_name, migration_name}:
+        raise ValueError("live_database_role_inventory_mismatch")
+    old = roles[old_name]
+    runtime = [roles[app + "_backend_" + role] for role in ("api", "worker", "scheduler")]
+    elevated = ("super", "create_db", "create_role", "replication", "bypass_rls")
+    if old["login"] or any(not row["login"] or row.get("inherit", True)
+                            or any(row[key] for key in elevated) for row in runtime):
+        raise ValueError("live_database_runtime_role_state_mismatch")
+    if any(roles[migration_name][key] for key in elevated):
+        raise ValueError("live_database_migration_role_state_mismatch")
+    if inventory["memberships"]:
+        raise ValueError("live_database_role_membership_unexpected")
+    return {"runtime_roles_login": 3, "old_login_disabled": True}
+
+
+def verify_live(args, modules):
+    development_release, activation, common, preparation = modules
+    if args.app != "investment":
+        raise common.RehearsalError("recovery_scope_is_investment_only")
+    context = SimpleNamespace(kubeconfig=args.kubeconfig, cluster_uid=args.cluster_uid)
+    common.verify_kind(context)
+    secret = common.get(context, preparation.NS, "secret", args.app + "-backend-runtime")
+    metadata = secret.get("metadata", {})
+    release_id = metadata.get("annotations", {}).get("sunmoonai.com/release-id")
+    if (metadata.get("uid") is None or metadata.get("labels", {}).get("sunmoonai.com/app") != args.app
+            or release_id != args.prepared_release_id
+            or metadata.get("annotations", {}).get(preparation.MARKER) !=
+            "prepared-not-database-activated"):
+        raise common.RehearsalError("runtime_secret_live_identity_mismatch")
+    passwords = role_passwords(secret, args.app, development_release)
+    raw_inventory = activation.admin_sql(context, args.app, activation.inventory_sql(args.app))
+    inventory = json.loads(raw_inventory)
+    current_bundle = (preparation.WORKSPACE / "k8s/sunmoonai/app-platform" /
+                      (args.app + "-app/deployment/bundle"))
+    release = json.loads((current_bundle / "release.json").read_text())
+    if release.get("logical_app") != args.app:
+        raise common.RehearsalError("current_bundle_app_mismatch")
+
+    # The full cutover compiler intentionally requires quiescence. Recovery is
+    # read-only and may run while the App is serving traffic, so validate only
+    # identity state here; real role permissions are checked by live probes.
+    role_evidence = validate_database_roles(inventory, args.app)
+    # Require the newly cut over role set to be the one named by the installed
+    # Secret, including the expected live release annotation.
+    common.ERROR_DIR = args.output.expanduser().absolute()
+    pg_probe_count = activation.verify_logins(context, args.app, passwords)
+    amqp_proof = preparation.verify_amqp(context, secret)
+    return {
+        "secret": secret,
+        "release_id": release_id,
+        "secret_uid": metadata["uid"],
+        "release": release,
+        "inventory": inventory,
+        "role_evidence": role_evidence,
+        "pg_probe_count": pg_probe_count,
+        "amqp_proof": amqp_proof,
+    }
+
+
+def write_receipts(output: Path, args, observed, modules):
+    development_release, activation, common, preparation = modules
+    secret = observed["secret"]
+    plan = {
+        "app": args.app,
+        "cluster_uid": args.cluster_uid,
+        "release_id": observed["release_id"],
+        "source_sha256": preparation.source_hashes(),
+        "release_sha256": hashlib.sha256(encoded(observed["release"])).hexdigest(),
+        "vhost": args.app + "-development",
+        "new_names": [args.app + "-backend-" + role + "-v2"
+                      for role in development_release.RUNTIME_ROLES],
+        "runtime_secret": secret,
+        "database_activated": True,
+        "recovered_from_live": True,
+        "recovery_evidence": {
+            "secret_uid": observed["secret_uid"],
+            "database_revision": observed["inventory"]["revisions"],
+            **observed["role_evidence"],
+            "database_permission_probe_count": observed["pg_probe_count"],
+            "amqp_authenticated_roles": observed["amqp_proof"]["authenticated_roles"],
+            "amqp_foreign_vhost_denied": observed["amqp_proof"]["foreign_vhost_denied"],
+            "messages_touched": False,
+        },
+    }
+    plan_raw = encoded(plan)
+    digest = hashlib.sha256(plan_raw).hexdigest()
+    common.private_write(output / "plan.private.json", plan_raw)
+    common.private_write(output / "applied.json", common.encoded({
+        "app": args.app, "plan_sha256": digest, "applied": True,
+        "database_activated": True, "database_old_login_disabled": True,
+        "live_amqp_login_verified": True, "credentials_printed": False,
+        "recovered_from_live": True,
+    }))
+    activation_dir = output / "database-activation"
+    activation_dir.mkdir(mode=0o700)
+    common.private_write(activation_dir / "complete.json", common.encoded({
+        "release_id": observed["release_id"],
+        "plan_sha256": digest,
+        "recovered_from_live": True,
+        "database_revision": observed["inventory"]["revisions"],
+        **observed["role_evidence"],
+        "permission_probe_count": observed["pg_probe_count"],
+        "amqp_proof": observed["amqp_proof"],
+    }))
+    common.private_write(output / "recovery-summary.json", common.encoded({
+        "result": "passed", "app": args.app, "release_id": observed["release_id"],
+        "plan_sha256": digest, "recovered_from_live": True,
+        "secret_uid": observed["secret_uid"],
+        "database_revision": observed["inventory"]["revisions"],
+        "database_permission_probe_count": observed["pg_probe_count"],
+        "amqp_authenticated_roles": observed["amqp_proof"]["authenticated_roles"],
+        "amqp_foreign_vhost_denied": observed["amqp_proof"]["foreign_vhost_denied"],
+        "credentials_printed": False,
+    }))
+    return digest
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--app", choices=("investment",), default="investment")
+    parser.add_argument("--kubeconfig", type=Path, required=True)
+    parser.add_argument("--cluster-uid", required=True)
+    parser.add_argument("--prepared-release-id", default="kind-b7-20260919")
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args(argv)
+    modules = load_modules(Path(__file__).resolve().parent)
+    common = modules[2]
+    output = ensure_private_output(args.output)
+    args.output = output
+    try:
+        observed = verify_live(args, modules)
+        digest = write_receipts(output, args, observed, modules)
+        print(json.dumps({"result": "passed", "recovered_from_live": True,
+                          "plan_sha256": digest, "output": str(output),
+                          "credentials_printed": False}, sort_keys=True))
+        return 0
+    except Exception as exc:
+        reason = str(exc) if isinstance(exc, common.RehearsalError) else type(exc).__name__
+        print(json.dumps({"result": "failed", "reason": reason,
+                          "receipts_written": False}, sort_keys=True))
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
