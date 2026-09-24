@@ -29,6 +29,7 @@
 | `F-AGENT-07` | 不持有、不转发、不缓存用户 key（`I8`） |
 | `F-AGENT-08` | 勾选上送：用户勾选的文件上送知识服务（第一期显式） |
 | `F-AGENT-09` | 关掉界面仍在跑；开机自启可选 |
+| `F-AGENT-10` | 执行端 `CODEX_HOME` 是代理自己的 `~/.sunmoon-agent/codex-home`，与用户的 `~/.codex` 隔离，**不含任何凭据**（外沙箱把它挂成可写，云端能读到里面的一切）；从用户 `~/.codex/config.toml` 只合并 `[mcp_servers]` 里 HTTP 型的条目，合并前本机确认并列出条目；模型、审批、沙箱偏好、全局 skills 一概不读（探针 `REPORT-2026-09-24-skills-mcp-resolution.md`） |
 
 ## 实现状态（2026-09-24）
 
@@ -37,6 +38,10 @@
 ## 平台
 
 第一期 Linux 与 macOS。Windows 第二期，已探明可做（`runtime/probe/REPORT-2026-09-24-windows-exec-server.md`）：exec-server 原生可跑、`workspace-write` 挡得住；安装器要含一次 UAC 提权跑 `codex sandbox setup --elevated --current-user`；随包带原生 exe 而不是 npm 垫片；回环端口动态选（47001 会被 Cursor 之类占）；Defender + 火绒样本未拦。Windows 上外沙箱的实现待探。
+
+## 三份 Codex，一个程序
+
+`codex` 是一个二进制，子命令决定角色。用户机器上可能有他自己装的 `codex`（任意版本，家 `~/.codex`，与我们无关）和我们随代理带的 `codex exec-server`（0.155.1，家 `~/.sunmoon-agent/codex-home`，只执行、无凭据）；沙箱里是同版本的 `codex app-server`（家 `/data/codex`，用户的 key、我们的 skill 与 MCP 配置、thread 记录）。产品说的"同一实例"指沙箱里的同一个 thread。exec-server 只从家里读 `[mcp_servers]`，别的配置对它无效。
 
 ## 本地上限由谁挡
 
