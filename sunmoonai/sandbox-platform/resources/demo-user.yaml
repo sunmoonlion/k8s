@@ -4,6 +4,8 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: sandbox-pool
+  labels:
+    sunmoonai.com/sandbox-pool: "true"   # 工作台 runner 的出站策略按这个标签放行 47800
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -36,7 +38,8 @@ spec:
         - name: codex
           image: harbor.sunmoonai.com:30443/app-images/sandbox@sha256:REPLACE_WITH_BUILT_DIGEST
           env:
-            - { name: RELAY_URL, value: "wss://edge.sunmoonai.com/relay" }
+            # 边缘正式拓扑：wss://edge.sunmoonai.com/relay；KIND 开发：集群内的会合点
+            - { name: RELAY_URL, value: "ws://relay.edge.svc.cluster.local:47100" }
             - { name: RELAY_USER, value: "demo" }
             - { name: ENVIRONMENT_ID, value: "user-pc" }
             - { name: APP_SERVER_TOKEN_FILE, value: "/secrets/app-server/token" }
@@ -48,6 +51,10 @@ spec:
             - { name: MODEL_PROVIDER, value: "kimi" }
             - { name: MODEL, value: "kimi-k3" }
             - { name: PROVIDER_BASE_URL, value: "https://api.moonshot.cn/v1" }
+            # 知识服务 MCP（0006）：挂在 knowledge-backend 主应用；令牌来自 Secret
+            - { name: KNOWLEDGE_MCP_URL, value: "http://knowledge-backend.app-platform-dev.svc.cluster.local:8000/api/mcp/knowledge" }
+            - name: KNOWLEDGE_MCP_TOKEN
+              valueFrom: { secretKeyRef: { name: sandbox-demo-knowledge, key: token, optional: true } }
           ports:
             - { name: app-server, containerPort: 47800 }
           volumeMounts:
@@ -105,3 +112,9 @@ spec:
             matchLabels: { kubernetes.io/metadata.name: app-platform-dev }
       ports:
         - { protocol: TCP, port: 8000 }
+    # 集群内会合点（KIND 开发；边缘拓扑下走 443 那条）
+    - to:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: edge }
+      ports:
+        - { protocol: TCP, port: 47100 }

@@ -275,6 +275,13 @@ def overlay(output: Path, namespace: str) -> None:
     ] + [
         *common.runtime_role_env(runner_container, "api"),
         *redis_env(),
+        # 第一期演示沙箱的能力令牌（sandbox_platform 的同一个值也放进 app-platform-dev）；缺失只影响那台沙箱
+        common.env_ref(
+            "SANDBOX_DEMO_APP_SERVER_TOKEN",
+            "sandbox-demo-app-server",
+            "token",
+            optional=True,
+        ),
     ]
 
     worker = common.resource(runtime_docs, "Deployment", "investment-r5-backend-worker")
