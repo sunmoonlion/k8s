@@ -25,7 +25,7 @@
 
 ## B 段：部署到 KIND（所有者已定：只换镜像的升级门，身份准备复用、备份回执按本次 release 新出）
 
-前提：仓已同步到 tpl-app 3317c84、investment-app 同步时的 fable 头（子仓 investment-backend 与 investment-web-frontend 取父仓 gitlink：含 0008 改 UUID、0010 会合点身份、0011 runner 租约、沙箱拉起接口，所以后端与网页镜像都要重建）、k8s 本条待办所在的 fable 头。
+前提（2026-09-26 起）：本地那轮按 0009 建的镜像与 bundle 作废，B 段从第 0 步重做；后端与网页镜像用 investment-app 30fece4（子仓 investment-backend e44dc1f、investment-web-frontend 9eb4c01）或更新的 fable 头建一次，就同时满足 06、09、10 三条待办，不用再建。仓已同步到 tpl-app 3317c84、investment-app 同步时的 fable 头（子仓 investment-backend 与 investment-web-frontend 取父仓 gitlink：含 0008 改 UUID、0010 会合点身份、0011 runner 租约、沙箱拉起接口，所以后端与网页镜像都要重建）、k8s 本条待办所在的 fable 头。
 
 0. B7 的私有身份准备目录已丢（原在 `~/worktrees/luna/.local/kind-cutover-20260919`，工作区重建时没了）。先从集群现状重建一份，放在工作区之外：
    `mkdir -p ~/private && cd ~/worktrees/fable/k8s/sunmoonai/app-platform/scripts && python3 kind_identity_recover.py --app investment --kubeconfig ~/.kube/kind-config --cluster-uid $(kubectl --kubeconfig ~/.kube/kind-config get ns kube-system -o jsonpath='{.metadata.uid}') --prepared-release-id kind-b7-20260919 --output ~/private/investment-identity-recovered-20260925`

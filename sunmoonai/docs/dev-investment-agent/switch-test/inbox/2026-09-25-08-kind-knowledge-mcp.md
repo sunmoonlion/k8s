@@ -3,7 +3,7 @@
 ```text
 被测仓：k8s，本地路径 ~/worktrees/fable/k8s（还要 knowledge-app 含子仓 knowledge-backend）
 跑：按下面编号步骤做
-仓与提交：k8s 本条待办所在的 fable 头；knowledge-app e18a56e（子仓 knowledge-backend 76765a2）
+仓与提交：k8s 本条待办所在的 fable 头；knowledge-app 26b34bb（子仓 knowledge-backend 4d9804c，已含 D10 的 JWT 令牌表，这样 10 不用再建知识镜像）
 预计：60 分钟（建 knowledge-backend 镜像 10 分钟、准备记录重建 5 分钟、回执与部署 20 分钟）；要联网；要 Docker、KIND、Harbor
 看什么：第 3 步对象在桶里且 sha256 一致；第 9 步 rollout 全 ok；第 10 步用令牌调 MCP 三个工具都返回带 data_version 的结果
 前提：07 已过（沙箱 pod 在跑，它的 KNOWLEDGE_MCP_TOKEN Secret 在这一步才建）；kind_identity_recover 对 knowledge 也要跑一次（B7 的 knowledge 准备目录同样丢了）

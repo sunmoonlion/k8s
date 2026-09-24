@@ -12,7 +12,7 @@
 
 ## 步骤
 
-1. 三个镜像重建并推（后端多了 tokens 与 rotate；会合点多了验签；知识多了 JWT 表）：按 06 B 段的方式重渲染并部署 investment-app 与 knowledge-app（只换镜像的升级门 `runtime_identity_upgrade`；迁移头仍是 0011，不需要迁移）；会合点 `cd ~/worktrees/fable/k8s/sunmoonai/relay-platform/relay && docker build -t harbor.sunmoonai.com:30443/app-images/relay:v1-r3 . && docker push …`，digest 填 `resources/relay.yaml`。
+1. 镜像：06 B 段与 08 若已按 investment-backend e44dc1f / knowledge-backend 4d9804c 或更新的头建过，后端、网页、知识镜像都不用重建；否则按 06 B 段的方式重渲染并部署（只换镜像的升级门 `runtime_identity_upgrade`；迁移头仍是 0011）。会合点必须重建： `cd ~/worktrees/fable/k8s/sunmoonai/relay-platform/relay && docker build -t harbor.sunmoonai.com:30443/app-images/relay:v1-r3 . && docker push …`，digest 填 `resources/relay.yaml`。
 2. 签名钥对（不进 git、不回传；私钥只在本地机 `~/private/`）：
    ```bash
    cd ~/worktrees/fable/investment-app/investment-backend/app
