@@ -22,9 +22,9 @@ if [ -x "$HOME/five-repos-sync/sync-five-repos.sh" ]; then
 else
   for r in $FIVE; do pull "$HOME/worktrees/$WS/$r" "$r" || exit 1; done
 fi
-pull "$HOME/worktrees/$WS/investment-app/investment-backend" "investment-app/investment-backend" || true
-pull "$HOME/worktrees/$WS/knowledge-app/knowledge-backend" "knowledge-app/knowledge-backend" || true
-pull "$HOME/worktrees/$WS/runtime" runtime || true
+pull "$HOME/worktrees/$WS/investment-app/investment-backend" "investment-app/investment-backend" || exit 1
+pull "$HOME/worktrees/$WS/knowledge-app/knowledge-backend" "knowledge-app/knowledge-backend" || exit 1
+pull "$HOME/worktrees/$WS/runtime" runtime || exit 1
 fi
 
 # 同步完成后，把控制权交给仓里的最新版（自己可能是旧副本）

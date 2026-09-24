@@ -29,10 +29,13 @@
 | 1 | 远程助手 | 推脚本、推待办（见「三」），对所有者说「有新待办」 |
 | 2 | **所有者** | 在本地机跑 `bash ~/switch-test/human-local.sh`（拉）：同步全部仓，刷新副本，列出待办。然后对本地助手说：**「请看 inbox」** |
 | 3 | 本地助手 | 看 `inbox/`，逐条做，结果写进被测仓的 `scripts/results/`。**不同步、不提交、不推**。做完说：**「跑完了」** |
-| 4 | **所有者** | 在本地机跑 `bash ~/switch-test/human-remote.sh`（推）：把本地助手写下的结果和其它改动提交，五仓 `to-remote`，子仓与 runtime `push`。把它最后打印的那一句「本地回来了；仓 提交号…」告诉远程助手 |
+| 4 | **所有者** | 在本地机跑 `bash ~/switch-test/human-remote.sh`（推）：先提交并推送子仓与 runtime，再提交父仓（含更新后的 gitlink）并 `to-remote`。把它最后打印的那一句「本地回来了；仓 提交号…」告诉远程助手 |
 | 5 | 远程助手 | `pull`，读 `results/`，把待办移到 `done/` |
 
 副本还没有的第一次，所有者用仓里的那份：`bash ~/worktrees/fable/k8s/sunmoonai/docs/dev-investment-agent/switch-test/human-local.sh`。
+
+子模块在同步后可以处于 detached HEAD；回传明确推送 `HEAD:refs/heads/$WS`，不依赖本地同名分支。
+检出其他命名分支时停止，避免误推；拉取、提交或推送任一步失败均非零退出，不打印完成话术。
 
 ### 本地助手：听到「请看 inbox」之后
 
