@@ -17,19 +17,17 @@
 
 ⚠ 本文的「本地」指**所有者的本地机**，不是产品文档里的「用户机器 / 本地代理」。做探针时本地机**扮演**用户机器，远程机**扮演**我们的云端。
 
-本目录：`README.md`（本文，约定）、`inbox/`（**待办，一个文件一条，远程助手写、本地助手做**）、`done/`（已办）。测试脚本不放这里，放被测仓。
-`~/switch-test/` 是本目录在两台机上的副本，以仓里为准。本地机要装什么见「六、固定事实」。
+本目录：`README.md`（本文，约定）、`inbox.sh`（**本地助手的入口：先同步再列待办**）、`inbox/`（待办，一个文件一条，远程助手写、本地助手做）、`done/`（已办）。测试脚本不放这里，放被测仓。
+`~/switch-test/` 是本目录在两台机上的副本，`inbox.sh` 每次跑完自动刷新它；以仓里为准。本地机要装什么见「六、固定事实」。
 
 ## 一、本地助手（在本地机上）：只做这一个循环
 
-```bash
-# 1. 同步
-~/five-repos-sync/sync-five-repos.sh from-remote fable
-for p in investment-app knowledge-app; do git -C ~/worktrees/fable/$p/${p%-app}-backend pull --ff-only origin fable; done
-git -C ~/worktrees/fable/runtime pull --ff-only origin fable
+**永远从 `bash ~/switch-test/inbox.sh` 开始。**它先同步（五仓、子仓、runtime），再刷新副本，再把 `inbox/` 里的待办整份打印出来。
+不同步就看不到新待办，所以同步不靠人提醒，写在脚本里。副本还没有的第一次，用仓里的：`bash ~/worktrees/fable/k8s/sunmoonai/docs/dev-investment-agent/switch-test/inbox.sh`。
 
-# 2. 看待办：一个文件一条，没有文件就没有待办
-ls ~/worktrees/fable/k8s/sunmoonai/docs/dev-investment-agent/switch-test/inbox/
+```bash
+# 1 + 2. 同步并列待办
+bash ~/switch-test/inbox.sh
 
 # 3. 逐条做（每条文件里写了 被测仓 / 跑什么 / 仓与提交 / 预计 / 看什么 / 前提 / 回传）
 #    3a 进被测仓，核提交号，对不上就停，贴出来

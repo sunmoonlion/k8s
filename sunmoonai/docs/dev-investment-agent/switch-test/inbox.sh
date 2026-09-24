@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# 本地助手的入口：先同步，再列待办。每次都从这里开始，不用人提醒同步。
+# 用法：bash ~/switch-test/inbox.sh        （~/switch-test 是副本；本脚本跑完会把副本刷新成仓里的最新版）
+set -uo pipefail
+WS="${WS:-fable}"
+K8S="$HOME/worktrees/$WS/k8s"; ST="$K8S/sunmoonai/docs/dev-investment-agent/switch-test"
+
+echo "===== 1. 同步（工位 $WS）"
+if [ -x "$HOME/five-repos-sync/sync-five-repos.sh" ]; then
+  "$HOME/five-repos-sync/sync-five-repos.sh" from-remote "$WS" || { echo "同步失败，停在这里，把上面的输出贴给所有者"; exit 1; }
+else
+  for r in k8s info-app investment-app knowledge-app tpl-app; do
+    [ -e "$HOME/worktrees/$WS/$r/.git" ] && { git -C "$HOME/worktrees/$WS/$r" pull -q --ff-only origin "$WS" || { echo "$r 拉取失败，停"; exit 1; }; }
+  done
+fi
+for p in investment-app knowledge-app; do
+  d="$HOME/worktrees/$WS/$p/${p%-app}-backend"; [ -e "$d/.git" ] && { git -C "$d" pull -q --ff-only origin "$WS" || echo "⚠ $p 子仓拉取失败"; }
+done
+[ -e "$HOME/worktrees/$WS/runtime/.git" ] && { git -C "$HOME/worktrees/$WS/runtime" pull -q --ff-only origin "$WS" || echo "⚠ runtime 拉取失败"; }
+for r in k8s runtime; do d="$HOME/worktrees/$WS/$r"; [ -e "$d/.git" ] && printf "%-10s %s\n" "$r" "$(git -C "$d" rev-parse --short HEAD)"; done
+
+echo "===== 2. 刷新副本 ~/switch-test"
+rm -rf "$HOME/switch-test" && cp -r "$ST" "$HOME/switch-test"
+
+echo "===== 3. 待办（$ST/inbox）"
+n=0
+for f in "$ST"/inbox/2*.md; do
+  [ -e "$f" ] || continue; n=$((n+1))
+  echo; echo "----- $(basename "$f")"; cat "$f"
+done
+[ "$n" = 0 ] && echo "没有待办。"
+echo; echo "===== 每条按 README「一」的 3a–3c 做；「前提」没满足先问。"
