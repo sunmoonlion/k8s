@@ -34,6 +34,7 @@
 
 副本还没有的第一次，所有者用仓里的那份：`bash ~/worktrees/fable/k8s/sunmoonai/docs/dev-investment-agent/switch-test/human-local.sh`。
 
+`human-remote.sh` 推之前每个仓先 fetch：远程助手这期间推了新提交的话，本地提交 rebase 到它上面再推，冲突就停；所以回传前不必再跑一次 `human-local.sh`。
 子模块在同步后可以处于 detached HEAD；回传明确推送 `HEAD:refs/heads/$WS`，不依赖本地同名分支。
 检出其他命名分支时停止，避免误推；拉取、提交或推送任一步失败均非零退出，不打印完成话术。
 

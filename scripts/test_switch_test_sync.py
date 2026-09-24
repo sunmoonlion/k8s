@@ -74,6 +74,23 @@ class PublishTests(unittest.TestCase):
             self.assertNotIn("本地回来了", result.stdout)
         return result
 
+    def test_publish_rebases_onto_new_origin_commits(self):
+        # 远程助手在本地跑测试期间又推了提交：回传要先叠上去再推，不应被非快进拒绝
+        parent = self.worktrees / "k8s"
+        other = self.root / "other-k8s"
+        run("git", "clone", "-q", "-b", "fable", str(self.origins["k8s"]), str(other))
+        git(other, "config", "user.name", "Remote"); git(other, "config", "user.email", "remote@example.invalid")
+        git(other, "config", "commit.gpgsign", "false")
+        (other / "remote-note.txt").write_text("from remote\n")
+        git(other, "add", "remote-note.txt"); git(other, "commit", "-q", "-m", "remote pushed meanwhile"); git(other, "push", "-q", "origin", "fable")
+        (parent / "scripts").mkdir(exist_ok=True)
+        (parent / "scripts" / "results.txt").write_text("local result\n")
+        self.publish()
+        head = git(parent, "rev-parse", "HEAD")
+        self.assertEqual(git(parent, "ls-remote", "origin", "refs/heads/fable").split()[0], head)
+        self.assertIn("remote pushed meanwhile", git(parent, "log", "--oneline", "-3"))
+        self.assertTrue((parent / "remote-note.txt").exists())
+
     def test_detached_children_without_local_fable(self):
         self.publish()
         for child in CHILDREN:
