@@ -13,6 +13,7 @@ RUNTIME_COMPONENTS = {
     "backend-api",
     "backend-worker",
     "backend-scheduler",
+    "backend-runner",
     "admin-frontend",
     "web-frontend",
 }

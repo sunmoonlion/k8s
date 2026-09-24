@@ -219,6 +219,7 @@ def main() -> int:
         "investment-r5-backend-api": 2,
         "investment-r5-backend-worker": 1,
         "investment-r5-backend-scheduler": 1,
+        "investment-r5-backend-runner": 1,
         "investment-r5-admin-frontend": 2,
         "investment-r5-web-frontend": 2,
     }
@@ -228,6 +229,7 @@ def main() -> int:
         "investment-r5-backend-api": images["backend"],
         "investment-r5-backend-worker": images["backend"],
         "investment-r5-backend-scheduler": images["backend"],
+        "investment-r5-backend-runner": images["backend"],
         "investment-r5-admin-frontend": images["admin"],
         "investment-r5-web-frontend": images["web"],
     }
@@ -235,6 +237,7 @@ def main() -> int:
         "investment-r5-backend-api": "investment-r5-backend-config",
         "investment-r5-backend-worker": "investment-r5-backend-config",
         "investment-r5-backend-scheduler": "investment-r5-backend-config",
+        "investment-r5-backend-runner": "investment-r5-backend-config",
         "investment-r5-admin-frontend": "investment-r5-admin-frontend-config",
         "investment-r5-web-frontend": "investment-r5-web-frontend-config",
     }
@@ -318,6 +321,7 @@ def main() -> int:
         "investment-backend-api": "investment-backend-config",
         "investment-backend-worker": "investment-backend-config",
         "investment-backend-scheduler": "investment-backend-config",
+        "investment-backend-runner": "investment-backend-config",
         "investment-admin-frontend": "investment-admin-frontend-config",
         "investment-web-frontend": "investment-web-frontend-config",
     }

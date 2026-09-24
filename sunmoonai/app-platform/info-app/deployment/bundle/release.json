@@ -127,11 +127,11 @@
   "contains_credentials": false,
   "renderer_inputs_sha256": {
     "k8s:sunmoonai/app-platform/scripts/render_info_release_base.py": "d06d6860ed2e667dba7c5005816997784de283718ad2bd948074a5b25ced0551",
-    "tpl-app:k8s-deployment/scaffold.py": "2f65213916ac338f4126c43b084dacd4a832906735d034b37a247b8507479828",
-    "tpl-app:k8s-deployment/templates/00-prerequisites.yaml.tpl": "c87ac75dce8507e9f88732d3e8708945ee18a87418fedfd9dc184423916d32bf",
+    "tpl-app:k8s-deployment/scaffold.py": "eb625d86f9a3b75111d8b2605c23152b759e7b2e04eb9d8661bb1a67def90c33",
+    "tpl-app:k8s-deployment/templates/00-prerequisites.yaml.tpl": "31bdecaf21010840bb5b00fefdbd6f59f804b9c7dadfb606bcb429b7f4418334",
     "tpl-app:k8s-deployment/templates/10-migration.yaml.tpl": "2a78b9770f61b94cc267f267449b0e0593b147a61a444a7463fe4f3fcc1508f4",
-    "tpl-app:k8s-deployment/templates/20-runtime.yaml.tpl": "702236eaf5ffa8f173c5e6f2f9528114e4f7247bf560408a905511a98d00d13b",
-    "tpl-app:k8s-deployment/templates/30-network-policies.yaml.tpl": "2eede852d9710c20cba56cfe4a1b9864cb2a9aac907babbf5b9cf2c258f5d3c5",
+    "tpl-app:k8s-deployment/templates/20-runtime.yaml.tpl": "93bade1d5c9e96a0a4708bd76e88f90e15fa7a7c54a9a118adb993c492eb866e",
+    "tpl-app:k8s-deployment/templates/30-network-policies.yaml.tpl": "b8018d309f7e7d9ec5c72fd463d0b44f8a091e197fa1b47a9a110f36ae59261d",
     "tpl-app:k8s-deployment/templates/40-ingress.yaml.tpl": "5f79e6a40bdfa8a581b92eeabe1a9f0cbf3a031221f5c9a40708b4682190ce3d",
     "development-release-input": "9a578127afccea454b54cc78cab162ce5048778a56cde20bf5ec5b45b8bf25df",
     "k8s:sunmoonai/app-platform/scripts/development_release.py": "49a26804e03f6481e09e45430ccdadf997383c546aacda6202ffb013fd4f16c8"

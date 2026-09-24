@@ -124,6 +124,20 @@ def knowledge_egress(namespace: str) -> dict[str, Any]:
     }
 
 
+def sandbox_egress() -> dict[str, Any]:
+    """0003-sandbox: the runner is each user's app-server's only client (port 47800)."""
+    return {
+        "to": [
+            {
+                "namespaceSelector": {
+                    "matchLabels": {"sunmoonai.com/sandbox-pool": "true"}
+                }
+            }
+        ],
+        "ports": [{"protocol": "TCP", "port": 47800}],
+    }
+
+
 def runtime_policy(
     name: str, component: str, egress: list[dict[str, Any]], namespace: str
 ) -> dict[str, Any]:
@@ -185,6 +199,11 @@ def overlay(output: Path, namespace: str) -> None:
             ),
             "KNOWLEDGE_RETRIEVAL_SERVICE_SCOPE": "knowledge:retrieve",
             "KNOWLEDGE_RETRIEVAL_TIMEOUT_SECONDS": "20",
+            # 0001-workbench: web routes on the api, runner role as the app-server client
+            "WORKBENCH_ENABLED": "true",
+            "WORKBENCH_REDIS_KEY_PREFIX": "investment:workbench",
+            "WORKBENCH_ENVIRONMENT_KEY": "user-pc",
+            "WORKBENCH_POLL_SECONDS": "1.0",
         }
     )
     for surface in ("admin", "web"):
@@ -238,6 +257,24 @@ def overlay(output: Path, namespace: str) -> None:
             "investment-r5-browser-identity",
             "WEB_CLIENT_SECRET",
         ),
+        # BYOK credential registry key (settings page); optional: absent → 503 on that route only
+        common.env_ref(
+            "WORKBENCH_CREDENTIAL_KEY",
+            "investment-workbench",
+            "WORKBENCH_CREDENTIAL_KEY",
+            optional=True,
+        ),
+    ]
+
+    runner = common.resource(runtime_docs, "Deployment", "investment-r5-backend-runner")
+    runner_container = common.container(runner, "runner")
+    runner_container["env"] = [
+        item
+        for item in runner_container.get("env", [])
+        if item.get("name") in ("POD_NAME", "WORKBENCH_RUNNER_ID")
+    ] + [
+        *common.runtime_role_env(runner_container, "api"),
+        *redis_env(),
     ]
 
     worker = common.resource(runtime_docs, "Deployment", "investment-r5-backend-worker")
@@ -277,6 +314,7 @@ def overlay(output: Path, namespace: str) -> None:
         "investment-r5-backend-api-egress",
         "investment-r5-backend-worker-egress",
         "investment-r5-backend-scheduler-egress",
+        "investment-r5-backend-runner-egress",
     }
     policies = [
         item for item in policies
@@ -304,6 +342,12 @@ def overlay(output: Path, namespace: str) -> None:
                 "investment-r5-backend-scheduler-egress",
                 "backend-scheduler",
                 [data_egress(5432, 6379, 5672)],
+                namespace,
+            ),
+            runtime_policy(
+                "investment-r5-backend-runner-egress",
+                "backend-runner",
+                [data_egress(5432, 6379), sandbox_egress()],
                 namespace,
             ),
         ]
@@ -363,6 +407,8 @@ def main() -> int:
             "sunmoonai-investment-r5-admin",
             "--web-application",
             "sunmoonai-investment-r5-web",
+            "--runner-replicas",
+            "1",
             "--output-dir",
             str(base),
         ]
