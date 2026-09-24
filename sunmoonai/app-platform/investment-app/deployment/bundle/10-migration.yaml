@@ -38,7 +38,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: migration
-        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:0736b1ee1fccff329c38b8e894c59a7ab847e55c332d3b4f5a47bf75d755e2ed
+        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:d9df1752d5ceb6c085bb8ba00c3b9ca84e41a800b2f4a2dc1e17b087e2e6d2ad
         imagePullPolicy: IfNotPresent
         command:
         - python

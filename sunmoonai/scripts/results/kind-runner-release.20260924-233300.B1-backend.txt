@@ -1,0 +1,401 @@
+time=2026-09-24T23:33:49.546903+08:00
+cwd=/home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/scripts
+command=['python3', '/tmp/inbox06-b1-backend-build-with-proxy.py']
+B1: build and push only investment-backend from the synced fable source.
+Same Docker daemon confirmed; temporary proxy config; global config and source files unchanged.
+[0;34m[INFO][0m 配置文件: /home/zymun/worktrees/fable/k8s/sunmoonai/app-platform/scripts/build-push-app-images.conf
+[0;34m[INFO][0m 集群配置: KIND
+[0;34m[INFO][0m 镜像版本: architecture-v2-dev
+[0;34m[INFO][0m 目标仓库: harbor.sunmoonai.com:30443/app-images
+[0;34m[INFO][0m 基础镜像仓库: harbor.sunmoonai.com:30443/k8s-images
+[0;34m[INFO][0m 源码根目录: /home/zymun/worktrees/fable
+[0;34m[INFO][0m 应用列表: investment
+[0;34m[INFO][0m 组件列表: backend
+[0;34m[INFO][0m ===== investment/backend -> harbor.sunmoonai.com:30443/app-images/investment-backend:architecture-v2-dev =====
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 2.91kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for harbor.sunmoonai.com:30443/k8s-images/python:3.12-slim
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 182B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [type-check 1/8] FROM harbor.sunmoonai.com:30443/k8s-images/python:3.12-slim@sha256:cd4b90006d24bf02d61ff4dca29587b911552e9f0c8ac933db8b1c536c289379
+#5 resolve harbor.sunmoonai.com:30443/k8s-images/python:3.12-slim@sha256:cd4b90006d24bf02d61ff4dca29587b911552e9f0c8ac933db8b1c536c289379 0.0s done
+#5 CACHED
+
+#6 [type-check 2/8] WORKDIR /app
+#6 CACHED
+
+#4 [internal] load build context
+#4 transferring context: 1.32MB 0.0s done
+#4 DONE 0.1s
+
+#7 [run 2/5] RUN groupadd --system --gid 1001 appgroup     && useradd --system --uid 1001 --gid appgroup        --home-dir /app --shell /usr/sbin/nologin appuser
+#7 0.273 useradd warning: appuser's uid 1001 is greater than SYS_UID_MAX 999
+#7 DONE 0.3s
+
+#8 [run 3/5] WORKDIR /app
+#8 DONE 0.1s
+
+#9 [type-check 3/8] RUN sed -i       -e "s|http://deb.debian.org/debian-security|http://mirrors.tuna.tsinghua.edu.cn/debian-security|g"       -e "s|http://deb.debian.org/debian|http://mirrors.tuna.tsinghua.edu.cn/debian|g"       /etc/apt/sources.list.d/debian.sources     && apt-get update     && apt-get install -y --no-install-recommends libatomic1 nodejs     && rm -rf /var/lib/apt/lists/*
+#9 0.367 Get:1 http://mirrors.tuna.tsinghua.edu.cn/debian trixie InRelease [140 kB]
+#9 ...
+
+#10 [run 4/5] COPY --chown=appuser:appgroup app/ ./
+#10 DONE 0.1s
+
+#9 [type-check 3/8] RUN sed -i       -e "s|http://deb.debian.org/debian-security|http://mirrors.tuna.tsinghua.edu.cn/debian-security|g"       -e "s|http://deb.debian.org/debian|http://mirrors.tuna.tsinghua.edu.cn/debian|g"       /etc/apt/sources.list.d/debian.sources     && apt-get update     && apt-get install -y --no-install-recommends libatomic1 nodejs     && rm -rf /var/lib/apt/lists/*
+#9 0.604 Get:2 http://mirrors.tuna.tsinghua.edu.cn/debian trixie-updates InRelease [47.3 kB]
+#9 0.732 Get:3 http://mirrors.tuna.tsinghua.edu.cn/debian-security trixie-security InRelease [43.4 kB]
+#9 0.882 Get:4 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 Packages [9678 kB]
+#9 1.873 Get:5 http://mirrors.tuna.tsinghua.edu.cn/debian trixie-updates/main amd64 Packages [4412 B]
+#9 1.939 Get:6 http://mirrors.tuna.tsinghua.edu.cn/debian-security trixie-security/main amd64 Packages [263 kB]
+#9 2.355 Fetched 10.2 MB in 2s (4869 kB/s)
+#9 2.355 Reading package lists...
+#9 2.960 Reading package lists...
+#9 3.498 Building dependency tree...
+#9 3.711 Reading state information...
+#9 3.911 The following additional packages will be installed:
+#9 3.912   libbrotli1 libcares2 libicu76 libnghttp2-14 libnode115 libuv1t64 node-acorn
+#9 3.912   node-balanced-match node-brace-expansion node-cjs-module-lexer node-corepack
+#9 3.913   node-minimatch node-undici node-xtend
+#9 3.915 Suggested packages:
+#9 3.915   npm
+#9 3.915 Recommended packages:
+#9 3.915   nodejs-doc
+#9 3.981 The following NEW packages will be installed:
+#9 3.982   libatomic1 libbrotli1 libcares2 libicu76 libnghttp2-14 libnode115 libuv1t64
+#9 3.982   node-acorn node-balanced-match node-brace-expansion node-cjs-module-lexer
+#9 3.982   node-corepack node-minimatch node-undici node-xtend nodejs
+#9 4.069 0 upgraded, 16 newly installed, 0 to remove and 28 not upgraded.
+#9 4.069 Need to get 24.1 MB of archives.
+#9 4.069 After this operation, 105 MB of additional disk space will be used.
+#9 4.069 Get:1 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libatomic1 amd64 14.2.0-19 [9308 B]
+#9 4.145 Get:2 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libbrotli1 amd64 1.1.0-2+b7 [307 kB]
+#9 4.515 Get:3 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libcares2 amd64 1.34.5-1+deb13u1 [98.3 kB]
+#9 4.732 Get:4 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libicu76 amd64 76.1-4 [9722 kB]
+#9 8.047 Get:5 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libnghttp2-14 amd64 1.64.0-1.1+deb13u1 [76.2 kB]
+#9 8.198 Get:6 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libuv1t64 amd64 1.50.0-2 [154 kB]
+#9 8.510 Get:7 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-xtend all 4.0.2-3 [3932 B]
+#9 8.569 Get:8 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-corepack all 0.24.0-5 [712 kB]
+#9 8.948 Get:9 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 nodejs amd64 20.19.2+dfsg-1+deb13u2 [353 kB]
+#9 9.275 Get:10 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-acorn all 8.8.1+ds+~cs25.17.7-2 [128 kB]
+#9 9.586 Get:11 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-cjs-module-lexer all 1.2.3+dfsg-1 [30.6 kB]
+#9 9.700 Get:12 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-balanced-match all 2.0.0-1 [4872 B]
+#9 9.767 Get:13 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-brace-expansion all 2.0.1+~1.1.0-2 [8012 B]
+#9 9.836 Get:14 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-minimatch all 9.0.3-6 [76.8 kB]
+#9 9.987 Get:15 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 node-undici all 7.3.0+dfsg1+~cs24.12.11-1 [333 kB]
+#9 10.31 Get:16 http://mirrors.tuna.tsinghua.edu.cn/debian trixie/main amd64 libnode115 amd64 20.19.2+dfsg-1+deb13u2 [12.1 MB]
+#9 12.33 debconf: unable to initialize frontend: Dialog
+#9 12.33 debconf: (TERM is not set, so the dialog frontend is not usable.)
+#9 12.33 debconf: falling back to frontend: Readline
+#9 12.33 debconf: unable to initialize frontend: Readline
+#9 12.33 debconf: (Can't locate Term/ReadLine.pm in @INC (you may need to install the Term::ReadLine module) (@INC entries checked: /etc/perl /usr/local/lib/x86_64-linux-gnu/perl/5.40.1 /usr/local/share/perl/5.40.1 /usr/lib/x86_64-linux-gnu/perl5/5.40 /usr/share/perl5 /usr/lib/x86_64-linux-gnu/perl-base /usr/lib/x86_64-linux-gnu/perl/5.40 /usr/share/perl/5.40 /usr/local/lib/site_perl) at /usr/share/perl5/Debconf/FrontEnd/Readline.pm line 8, <STDIN> line 16.)
+#9 12.33 debconf: falling back to frontend: Teletype
+#9 12.33 debconf: unable to initialize frontend: Teletype
+#9 12.33 debconf: (This frontend requires a controlling tty.)
+#9 12.33 debconf: falling back to frontend: Noninteractive
+#9 12.81 Fetched 24.1 MB in 8s (2941 kB/s)
+#9 12.83 Selecting previously unselected package libatomic1:amd64.
+#9 12.83 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 5645 files and directories currently installed.)
+#9 12.83 Preparing to unpack .../00-libatomic1_14.2.0-19_amd64.deb ...
+#9 12.84 Unpacking libatomic1:amd64 (14.2.0-19) ...
+#9 12.87 Selecting previously unselected package libbrotli1:amd64.
+#9 12.87 Preparing to unpack .../01-libbrotli1_1.1.0-2+b7_amd64.deb ...
+#9 12.88 Unpacking libbrotli1:amd64 (1.1.0-2+b7) ...
+#9 12.92 Selecting previously unselected package libcares2:amd64.
+#9 12.92 Preparing to unpack .../02-libcares2_1.34.5-1+deb13u1_amd64.deb ...
+#9 12.92 Unpacking libcares2:amd64 (1.34.5-1+deb13u1) ...
+#9 12.95 Selecting previously unselected package libicu76:amd64.
+#9 12.95 Preparing to unpack .../03-libicu76_76.1-4_amd64.deb ...
+#9 12.96 Unpacking libicu76:amd64 (76.1-4) ...
+#9 13.21 Selecting previously unselected package libnghttp2-14:amd64.
+#9 13.21 Preparing to unpack .../04-libnghttp2-14_1.64.0-1.1+deb13u1_amd64.deb ...
+#9 13.21 Unpacking libnghttp2-14:amd64 (1.64.0-1.1+deb13u1) ...
+#9 13.25 Selecting previously unselected package libuv1t64:amd64.
+#9 13.25 Preparing to unpack .../05-libuv1t64_1.50.0-2_amd64.deb ...
+#9 13.25 Unpacking libuv1t64:amd64 (1.50.0-2) ...
+#9 13.28 Selecting previously unselected package node-xtend.
+#9 13.28 Preparing to unpack .../06-node-xtend_4.0.2-3_all.deb ...
+#9 13.28 Unpacking node-xtend (4.0.2-3) ...
+#9 13.31 Selecting previously unselected package node-corepack.
+#9 13.31 Preparing to unpack .../07-node-corepack_0.24.0-5_all.deb ...
+#9 13.31 Unpacking node-corepack (0.24.0-5) ...
+#9 13.37 Selecting previously unselected package nodejs.
+#9 13.37 Preparing to unpack .../08-nodejs_20.19.2+dfsg-1+deb13u2_amd64.deb ...
+#9 13.37 Unpacking nodejs (20.19.2+dfsg-1+deb13u2) ...
+#9 13.41 Selecting previously unselected package node-acorn.
+#9 13.41 Preparing to unpack .../09-node-acorn_8.8.1+ds+~cs25.17.7-2_all.deb ...
+#9 13.42 Unpacking node-acorn (8.8.1+ds+~cs25.17.7-2) ...
+#9 13.46 Selecting previously unselected package node-cjs-module-lexer.
+#9 13.46 Preparing to unpack .../10-node-cjs-module-lexer_1.2.3+dfsg-1_all.deb ...
+#9 13.46 Unpacking node-cjs-module-lexer (1.2.3+dfsg-1) ...
+#9 13.49 Selecting previously unselected package node-balanced-match.
+#9 13.49 Preparing to unpack .../11-node-balanced-match_2.0.0-1_all.deb ...
+#9 13.50 Unpacking node-balanced-match (2.0.0-1) ...
+#9 13.52 Selecting previously unselected package node-brace-expansion.
+#9 13.52 Preparing to unpack .../12-node-brace-expansion_2.0.1+~1.1.0-2_all.deb ...
+#9 13.53 Unpacking node-brace-expansion (2.0.1+~1.1.0-2) ...
+#9 13.56 Selecting previously unselected package node-minimatch.
+#9 13.56 Preparing to unpack .../13-node-minimatch_9.0.3-6_all.deb ...
+#9 13.56 Unpacking node-minimatch (9.0.3-6) ...
+#9 13.60 Selecting previously unselected package node-undici.
+#9 13.60 Preparing to unpack .../14-node-undici_7.3.0+dfsg1+~cs24.12.11-1_all.deb ...
+#9 13.61 Unpacking node-undici (7.3.0+dfsg1+~cs24.12.11-1) ...
+#9 13.67 Selecting previously unselected package libnode115:amd64.
+#9 13.67 Preparing to unpack .../15-libnode115_20.19.2+dfsg-1+deb13u2_amd64.deb ...
+#9 13.67 Unpacking libnode115:amd64 (20.19.2+dfsg-1+deb13u2) ...
+#9 13.96 Setting up libbrotli1:amd64 (1.1.0-2+b7) ...
+#9 13.96 Setting up libuv1t64:amd64 (1.50.0-2) ...
+#9 13.97 Setting up libnghttp2-14:amd64 (1.64.0-1.1+deb13u1) ...
+#9 13.98 Setting up node-cjs-module-lexer (1.2.3+dfsg-1) ...
+#9 13.99 Setting up node-balanced-match (2.0.0-1) ...
+#9 14.00 Setting up node-brace-expansion (2.0.1+~1.1.0-2) ...
+#9 14.01 Setting up libcares2:amd64 (1.34.5-1+deb13u1) ...
+#9 14.02 Setting up libatomic1:amd64 (14.2.0-19) ...
+#9 14.03 Setting up node-undici (7.3.0+dfsg1+~cs24.12.11-1) ...
+#9 14.05 Setting up libicu76:amd64 (76.1-4) ...
+#9 14.06 Setting up node-minimatch (9.0.3-6) ...
+#9 14.07 Setting up node-xtend (4.0.2-3) ...
+#9 14.08 Setting up node-acorn (8.8.1+ds+~cs25.17.7-2) ...
+#9 14.09 Setting up node-corepack (0.24.0-5) ...
+#9 14.10 Setting up libnode115:amd64 (20.19.2+dfsg-1+deb13u2) ...
+#9 14.11 Setting up nodejs (20.19.2+dfsg-1+deb13u2) ...
+#9 14.12 update-alternatives: using /usr/bin/nodejs to provide /usr/bin/js (js) in auto mode
+#9 14.12 update-alternatives: warning: skip creation of /usr/share/man/man1/js.1.gz because associated file /usr/share/man/man1/nodejs.1.gz (of link group js) doesn't exist
+#9 14.13 Processing triggers for libc-bin (2.41-12+deb13u2) ...
+#9 DONE 14.3s
+
+#11 [type-check 4/8] RUN --mount=type=cache,target=/root/.cache/pip     pip install "uv==0.11.32"
+#11 1.072 Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+#11 2.180 Collecting uv==0.11.32
+#11 2.251   Downloading https://pypi.tuna.tsinghua.edu.cn/packages/90/b0/114463d056b6b328d45557001e848b8ab15539bd8f4fa7a457ccb83e2b5d/uv-0.11.32-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (27.0 MB)
+#11 5.123      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 27.0/27.0 MB 9.5 MB/s eta 0:00:00
+#11 5.147 Installing collected packages: uv
+#11 5.393 Successfully installed uv-0.11.32
+#11 5.393 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+#11 5.703 
+#11 5.703 [notice] A new release of pip is available: 25.0.1 -> 26.2.1
+#11 5.703 [notice] To update, run: pip install --upgrade pip
+#11 DONE 5.9s
+
+#12 [type-check 5/8] COPY app/pyproject.toml app/uv.lock ./
+#12 DONE 0.0s
+
+#13 [type-check 6/8] RUN --mount=type=cache,target=/root/.cache/uv     uv sync --frozen
+#13 0.322 Using CPython 3.12.13 interpreter at: /usr/local/bin/python3
+#13 0.322 Creating virtual environment at: .venv
+#13 0.537 Downloading psycopg-binary (4.9MiB)
+#13 0.537 Downloading asyncpg (3.4MiB)
+#13 0.537 Downloading ruff (10.9MiB)
+#13 0.537 Downloading zstandard (5.3MiB)
+#13 0.537 Downloading cryptography (4.5MiB)
+#13 0.537 Downloading uvloop (4.2MiB)
+#13 0.537 Downloading pyright (6.1MiB)
+#13 0.537 Downloading sqlalchemy (3.2MiB)
+#13 0.537 Downloading pydantic-core (2.0MiB)
+#13 0.537 Downloading pygments (1.2MiB)
+#13 3.369  Downloaded pydantic-core
+#13 3.411  Downloaded pygments
+#13 4.709  Downloaded sqlalchemy
+#13 4.947  Downloaded asyncpg
+#13 5.308  Downloaded psycopg-binary
+#13 5.405  Downloaded uvloop
+#13 5.604  Downloaded cryptography
+#13 5.658  Downloaded zstandard
+#13 5.749  Downloaded pyright
+#13 6.091  Downloaded ruff
+#13 6.091 Prepared 82 packages in 5.76s
+#13 7.145 Installed 82 packages in 1.05s
+#13 7.145  + alembic==1.18.4
+#13 7.145  + amqp==5.3.1
+#13 7.145  + annotated-doc==0.0.4
+#13 7.145  + annotated-types==0.7.0
+#13 7.145  + anyio==4.13.0
+#13 7.145  + asyncpg==0.31.0
+#13 7.145  + billiard==4.2.4
+#13 7.145  + celery==5.6.3
+#13 7.145  + certifi==2026.2.25
+#13 7.145  + cffi==2.1.0
+#13 7.145  + charset-normalizer==3.4.9
+#13 7.145  + click==8.3.2
+#13 7.145  + click-didyoumean==0.3.1
+#13 7.145  + click-plugins==1.1.1.2
+#13 7.145  + click-repl==0.3.0
+#13 7.145  + cryptography==49.0.0
+#13 7.145  + distro==1.9.0
+#13 7.145  + fastapi==0.135.3
+#13 7.145  + greenlet==3.3.2
+#13 7.145  + h11==0.16.0
+#13 7.145  + httpcore==1.0.9
+#13 7.145  + httptools==0.7.1
+#13 7.145  + httpx==0.28.1
+#13 7.145  + idna==3.11
+#13 7.145  + iniconfig==2.3.0
+#13 7.145  + joserfc==1.7.4
+#13 7.145  + jsonpatch==1.33
+#13 7.145  + jsonpointer==3.1.1
+#13 7.145  + kombu==5.6.2
+#13 7.145  + langchain-core==1.4.8
+#13 7.145  + langchain-protocol==0.0.18
+#13 7.145  + langgraph==1.2.8
+#13 7.145  + langgraph-checkpoint==4.1.1
+#13 7.145  + langgraph-checkpoint-postgres==3.1.0
+#13 7.145  + langgraph-prebuilt==1.1.0
+#13 7.145  + langgraph-sdk==0.4.2
+#13 7.145  + langsmith==0.9.8
+#13 7.145  + mako==1.3.10
+#13 7.145  + markupsafe==3.0.3
+#13 7.145  + nodeenv==1.10.0
+#13 7.145  + orjson==3.11.9
+#13 7.145  + ormsgpack==1.12.2
+#13 7.145  + packaging==26.0
+#13 7.145  + pluggy==1.6.0
+#13 7.145  + prompt-toolkit==3.0.52
+#13 7.145  + psycopg==3.3.4
+#13 7.145  + psycopg-binary==3.3.4
+#13 7.145  + psycopg-pool==3.3.1
+#13 7.145  + pycparser==3.0
+#13 7.145  + pydantic==2.12.5
+#13 7.145  + pydantic-core==2.41.5
+#13 7.145  + pydantic-settings==2.13.1
+#13 7.145  + pygments==2.20.0
+#13 7.145  + pyright==1.1.409
+#13 7.145  + pytest==9.0.3
+#13 7.145  + pytest-asyncio==1.3.0
+#13 7.145  + python-dateutil==2.9.0.post0
+#13 7.145  + python-dotenv==1.2.2
+#13 7.145  + pyyaml==6.0.3
+#13 7.145  + redis==7.4.0
+#13 7.145  + requests==2.34.2
+#13 7.145  + requests-toolbelt==1.0.0
+#13 7.145  + ruff==0.16.0
+#13 7.145  + six==1.17.0
+#13 7.145  + sniffio==1.3.1
+#13 7.145  + sqlalchemy==2.0.49
+#13 7.145  + starlette==1.0.0
+#13 7.145  + tenacity==9.1.4
+#13 7.146  + typing-extensions==4.15.0
+#13 7.146  + typing-inspection==0.4.2
+#13 7.146  + tzdata==2026.2
+#13 7.146  + tzlocal==5.3.1
+#13 7.146  + urllib3==2.7.0
+#13 7.146  + uuid-utils==0.16.2
+#13 7.146  + uvicorn==0.44.0
+#13 7.146  + uvloop==0.22.1
+#13 7.146  + vine==5.1.0
+#13 7.146  + watchfiles==1.1.1
+#13 7.146  + wcwidth==0.7.0
+#13 7.146  + websockets==15.0.1
+#13 7.146  + xxhash==3.8.1
+#13 7.146  + zstandard==0.25.0
+#13 DONE 7.8s
+
+#14 [type-check 7/8] COPY app/ .
+#14 DONE 0.1s
+
+#15 [type-check 8/8] RUN uv run ruff check app core     && uv run ruff format --check app core     && uv run pyright
+#15 0.287 All checks passed!
+#15 0.341 153 files already formatted
+#15 9.627 0 errors, 0 warnings, 0 informations
+#15 DONE 9.7s
+
+#16 [builder 1/1] RUN --mount=type=cache,target=/root/.cache/uv     uv sync --no-dev --frozen
+#16 0.736 Uninstalled 8 packages in 379ms
+#16 0.736  - iniconfig==2.3.0
+#16 0.736  - nodeenv==1.10.0
+#16 0.736  - pluggy==1.6.0
+#16 0.736  - pygments==2.20.0
+#16 0.736  - pyright==1.1.409
+#16 0.736  - pytest==9.0.3
+#16 0.736  - pytest-asyncio==1.3.0
+#16 0.736  - ruff==0.16.0
+#16 DONE 0.8s
+
+#17 [run 5/5] COPY --from=builder --chown=appuser:appgroup /app/.venv ./.venv
+#17 DONE 0.6s
+
+#18 exporting to image
+#18 exporting layers
+#18 exporting layers 3.3s done
+#18 exporting manifest sha256:4a687813f9ef8b4355799e3b5182ffde23aa802ed43194b3c71abaa7aab29d92 0.0s done
+#18 exporting config sha256:2fc4f15e9d083b44f04009e47f63d9759f81c4d50abe78bb959bfd23ccac876b 0.0s done
+#18 exporting attestation manifest sha256:cad2dad9755ef65eadb9b8f7ba2db712a01b1d148b92f3177f6cb3ce8d897a34 0.0s done
+#18 exporting manifest list sha256:d9df1752d5ceb6c085bb8ba00c3b9ca84e41a800b2f4a2dc1e17b087e2e6d2ad 0.0s done
+#18 naming to harbor.sunmoonai.com:30443/app-images/investment-backend:architecture-v2-dev done
+#18 unpacking to harbor.sunmoonai.com:30443/app-images/investment-backend:architecture-v2-dev
+#18 unpacking to harbor.sunmoonai.com:30443/app-images/investment-backend:architecture-v2-dev 1.2s done
+#18 DONE 4.6s
+The push refers to repository [harbor.sunmoonai.com:30443/app-images/investment-backend]
+88adf96e3269: Waiting
+60e70dddd9ea: Waiting
+1b9ade8c8459: Waiting
+55ae106bd30c: Waiting
+77f40e2a06dd: Waiting
+aef35ccac815: Waiting
+6111dea902c6: Waiting
+23648ecf9819: Waiting
+e048ec8b8707: Waiting
+88adf96e3269: Waiting
+60e70dddd9ea: Waiting
+1b9ade8c8459: Waiting
+55ae106bd30c: Waiting
+77f40e2a06dd: Waiting
+aef35ccac815: Waiting
+6111dea902c6: Waiting
+23648ecf9819: Waiting
+e048ec8b8707: Waiting
+6111dea902c6: Waiting
+23648ecf9819: Waiting
+e048ec8b8707: Waiting
+88adf96e3269: Waiting
+60e70dddd9ea: Layer already exists
+1b9ade8c8459: Layer already exists
+55ae106bd30c: Waiting
+77f40e2a06dd: Waiting
+aef35ccac815: Waiting
+55ae106bd30c: Waiting
+77f40e2a06dd: Waiting
+aef35ccac815: Waiting
+6111dea902c6: Waiting
+23648ecf9819: Waiting
+e048ec8b8707: Waiting
+88adf96e3269: Waiting
+88adf96e3269: Waiting
+55ae106bd30c: Waiting
+77f40e2a06dd: Waiting
+aef35ccac815: Waiting
+6111dea902c6: Waiting
+23648ecf9819: Waiting
+e048ec8b8707: Waiting
+88adf96e3269: Waiting
+55ae106bd30c: Waiting
+77f40e2a06dd: Waiting
+aef35ccac815: Waiting
+6111dea902c6: Waiting
+23648ecf9819: Waiting
+e048ec8b8707: Waiting
+23648ecf9819: Waiting
+88adf96e3269: Waiting
+55ae106bd30c: Layer already exists
+77f40e2a06dd: Waiting
+23648ecf9819: Layer already exists
+6111dea902c6: Pushed
+e048ec8b8707: Pushed
+77f40e2a06dd: Pushed
+aef35ccac815: Pushed
+88adf96e3269: Pushed
+architecture-v2-dev: digest: sha256:d9df1752d5ceb6c085bb8ba00c3b9ca84e41a800b2f4a2dc1e17b087e2e6d2ad size: 856
+[0;32m[SUCCESS][0m harbor.sunmoonai.com:30443/app-images/investment-backend:architecture-v2-dev
+[0;32m[SUCCESS][0m 1 个 App 镜像处理完成，版本: architecture-v2-dev
+
+exit=0

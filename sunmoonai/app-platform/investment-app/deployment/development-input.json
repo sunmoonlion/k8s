@@ -12,8 +12,8 @@
     "components": [
       {
         "path": "investment-backend",
-        "commit": "e5084f8b6a525e8f41334c76c1b8081ab3f9fdeb",
-        "tree": "4b86416abeefa5c085dad5317107d5df1e4dec87",
+        "commit": "923bc0ab6da7d478101542dce9a62b93756c8318",
+        "tree": "40557a914472e10e0b7a2bb14c9b0a051199e9bb",
         "remote_branch": "origin/master"
       },
       {
@@ -31,9 +31,13 @@
     ]
   },
   "images": {
-    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:0736b1ee1fccff329c38b8e894c59a7ab847e55c332d3b4f5a47bf75d755e2ed",
+    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:d9df1752d5ceb6c085bb8ba00c3b9ca84e41a800b2f4a2dc1e17b087e2e6d2ad",
     "admin": "harbor.sunmoonai.com:30443/app-images/investment-admin-frontend@sha256:422e7c1e53d5b61eba14bcd242bf73a8e10428f1799e2a6370c1be95cec1923e",
     "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:3bf04caa667e9f96181b63aa0c0c6222d6e467631e5b115125377e33f12c2554"
   },
-  "runtime_identity_mode": "independent-v1"
+  "runtime_identity_mode": "independent-v1",
+  "runtime_identity_upgrade": {
+    "prepared_release_id": "kind-b7-20260919",
+    "preparation_plan_sha256": "81070ec30f9acc068005e3710aa2829956c3cbb7cd01f3028bd97ca282549d0e"
+  }
 }

@@ -1,0 +1,14 @@
+time=2026-09-24T23:37:01.751065+08:00
+cwd=/home/zymun/worktrees/fable/k8s
+command=['python3', '/tmp/inbox06-b2-update-source-input.py']
+Traceback (most recent call last):
+  File "/tmp/inbox06-b2-update-source-input.py", line 20, in <module>
+    shutil.copy2(path, Path('/tmp') / f'inbox06-b2-{stamp}-{path.name}.bak')
+  File "/usr/lib/python3.12/shutil.py", line 475, in copy2
+    copyfile(src, dst, follow_symlinks=follow_symlinks)
+  File "/usr/lib/python3.12/shutil.py", line 260, in copyfile
+    with open(src, 'rb') as fsrc:
+         ^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/home/zymun/worktrees/fable/investment-app/deploy-investment-app-all/deploy-investment-app-all.conf'
+
+exit=1

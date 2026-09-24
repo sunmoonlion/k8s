@@ -1,0 +1,9 @@
+time=2026-09-24T23:37:24.444202+08:00
+cwd=/home/zymun/worktrees/fable/k8s
+command=['python3', '/tmp/inbox06-b2-update-source-input.py']
+Updated backend source lock: commit=923bc0ab6da7d478101542dce9a62b93756c8318 tree=40557a914472e10e0b7a2bb14c9b0a051199e9bb
+Updated development input and deployment config backend digest: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:d9df1752d5ceb6c085bb8ba00c3b9ca84e41a800b2f4a2dc1e17b087e2e6d2ad
+WEB_IMAGE, ADMIN_IMAGE, other source locks and release metadata left as they were.
+Backups stored under /tmp/inbox06-b2-20260924-233700-*.bak
+
+exit=0
