@@ -1,0 +1,44 @@
+===== 环境 =====
+主机        VM-0-13-ubuntu
+时间        2026-09-24T14:53:46+08:00
+工位        /home/zym/worktrees/fable
+系统        Linux 6.8.0-88-generic x86_64
+内存        3.6Gi 总 / 1.7Gi 可用
+磁盘        21G 可用 / 64% 已用
+Python      Python 3.13.9
+Node        v25.2.1
+uv          uv 0.11.7 (x86_64-unknown-linux-gnu)
+Codex       codex-cli 0.155.1  CODEX_HOME=未设
+===== 开始 =====
+--- 依赖
+--- 1. 会合点
+--- 2. 本地代理（白名单 /home/zym/worktrees/fable/runtime/probe/user-ws）
+--- 3. 沙箱容器
+--- 4. 工作台驱动整条链
+--- 1. 登记环境、沙箱，建会话
+  VERDICT thread/start 经 ws+令牌成功，thread_id 落库                        pass 01a0d231-2923-7ec3-877c-923eca733764
+--- 2. 用户自驾：在白名单目录写文件（命令在本机执行）
+  VERDICT turn/completed 事件到达                                        pass 
+  VERDICT 文件出现在本机白名单目录                                               pass 
+  VERDICT 事件里有 item/completed 且没有 delta                              pass 
+--- 3. 用户自驾：写白名单外 → Codex 请求审批 → 工作台开 Interaction → 我们批准 → 本地上限仍然拒绝
+  VERDICT 审批请求变成 tool_approval Interaction                           pass 
+  VERDICT 批准后的 turn 结束                                               pass 
+  VERDICT 白名单外文件没有出现（本地上限兜底）                                         pass 
+  VERDICT 审批留痕 decision=accept source=user                           pass [('accept', 'user')]
+--- 4. 交出方向盘：用户 turn 被拒；取消后交回
+  VERDICT advisor 持方向盘时用户 turn 被拒                                    pass 
+  VERDICT 取消后 Task CANCELLED、方向盘交回                                   pass 
+结论：pass
+--- 日志尾部
+[agent]
+{"t":"2026-09-24T06:53:48.403Z","level":"info","msg":"status endpoint","url":"http://127.0.0.1:44125/"}
+{"t":"2026-09-24T06:53:48.412Z","level":"info","msg":"relay connected","relay":"relay-v1"}
+{"t":"2026-09-24T06:53:52.310Z","level":"info","msg":"stream bridged","conn":"25b0a403","local":"ws://127.0.0.1:41391"}
+{"t":"2026-09-24T06:54:27.236Z","level":"warn","msg":"denied by local ceiling","method":"process/start","reason":"sandbox mode danger-full-access exceeds local ceiling workspace-write"}
+[sandbox]
+2026-09-24 06:53:52,295 INFO connection open
+2026-09-24 06:53:52,296 INFO app-server connected; dialing ws://host.docker.internal:47100/sandbox
+2026-09-24 06:53:52,315 INFO paired conn=25b0a403
+[2m2026-09-24T06:54:27.238085Z[0m [31mERROR[0m [2mcodex_core::tools::router[0m[2m:[0m [3merror[0m[2m=[0mexec_command failed: CreateProcess { message: "Rejected(\"Failed to create unified e
+exit=0
