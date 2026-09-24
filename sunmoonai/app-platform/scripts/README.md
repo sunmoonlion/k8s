@@ -35,6 +35,16 @@ Knowledge 摄入授权必须单独显式给出；检索 allowlist 不授权上�
 所有新摄入请求仍被拒绝。当前 KIND 配置只获准写入既有 `codex-smoke`；不据此重放旧任务。
 渲染配置或构建镜像不等于已应用到集群。
 
+**只换镜像的升级**（2026-09-24 起）：运行身份不变、只换镜像并跑新迁移时，开发输入可声明
+`runtime_identity_upgrade = {prepared_release_id, preparation_plan_sha256}`，指向已应用、已激活的
+上一份身份准备（其 `applied.json` 的 `plan_sha256`）。apply 时 `--identity-preparation` 仍指向那份准备
+目录；`--backup-receipt` 仍必须是本次 release 的新回执（第 2 到 4 步照做：停写、静止库备份、两次恢复
+演练）。迁移后不再重建身份，而是在同一事务里核对目录（`validate_upgrade`：三个运行身份必须已存在、
+无成员关系、关系全归迁移角色、无外来 grantee、客户端为零）并只重放评审过的 GRANT
+（`upgrade_sql`：无 CREATE ROLE、无密码、无默认 ACL 变更、无撤销），再做真实登录与权限探针。
+记录落在准备目录下 `database-upgrade-<release_id>/`。新表必须先进入该 App 的 `*_database_policy.py`
+评审清单，否则编译拒绝；序列不在评审范围，新表主键一律用 UUID 默认值。
+
 开发升级仅允许 KIND 的全 App 事务；C1/production、组件单独 apply 均拒绝。
 非 plan 操作还检查节点实际 `providerID`。迁移按以下顺序执行：
 

@@ -3,6 +3,10 @@
 Fresh names only. A partial/uncertain activation is retained for inspection, not
 automatically repaired. Successful same-release retries authenticate again and
 compare the complete saved permission catalog. Old logins are NOT retired here.
+
+Image-only upgrades (release declares ``runtime_identity_upgrade``) reuse the
+applied preparation of the earlier release and run a grants-only transaction for
+the existing identities after the new migration; see ``upgrade_identities``.
 """
 from __future__ import annotations
 
@@ -154,6 +158,19 @@ def load_preparation(args, release):
     plan = json.loads(plan_raw)
     applied = json.loads(preparation.private_read(root / "applied.json"))
     app = release["logical_app"]
+    upgrade = release.get("runtime_identity_upgrade")
+    if upgrade is not None:
+        # The preparation belongs to the earlier release named in the bundle; the
+        # plan digest is pinned in Git, so the moved bundle digest is not compared.
+        activated = root / "database-activation" / "complete.json"
+        if (plan["app"] != app or plan["release_id"] != upgrade["prepared_release_id"]
+                or applied.get("applied") is not True or applied.get("live_amqp_login_verified") is not True
+                or applied["plan_sha256"] != hashlib.sha256(plan_raw).hexdigest()
+                or applied["plan_sha256"] != upgrade["preparation_plan_sha256"]
+                or not activated.is_file()
+                or json.loads(preparation.private_read(activated)).get("release_id") != upgrade["prepared_release_id"]):
+            raise common.RehearsalError("identity_preparation_release_mismatch")
+        return root, plan, applied
     bundle = Path(__file__).resolve().parents[1] / (app + "-app/deployment/bundle/release.json")
     if (plan["app"] != app or plan["release_id"] != release["release_id"] or applied.get("applied") is not True
             or applied.get("live_amqp_login_verified") is not True
@@ -161,6 +178,65 @@ def load_preparation(args, release):
             or plan["release_sha256"] != hashlib.sha256(bundle.read_bytes()).hexdigest()):
         raise common.RehearsalError("identity_preparation_release_mismatch")
     return root, plan, applied
+
+
+def compile_upgrade(app, head, inventory):
+    """Grants-only transaction for existing runtime identities after a new migration."""
+    path = Path(__file__).resolve().parents[1] / (app + "-app/deployment/" + app + "_database_policy.py")
+    spec = importlib.util.spec_from_file_location("upgrade_domain_policy", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    principals = {role: app + "_backend_" + role for role in ("api", "worker", "scheduler")}
+    principals["migration"] = app + "_backend_user_migration"
+    old = app + "_backend_user"
+    legacy = {old}
+    for row in inventory["default_acl"]:
+        for acl in row["acl"]:
+            name = acl.split("=", 1)[0]
+            if name and name != row["creator"]:
+                legacy.add(name)
+    if any(not re.fullmatch(app + r"_(backend|admin|web)_user", name) for name in legacy):
+        raise common.RehearsalError("unreviewed_legacy_grantee")
+    validation.validate_upgrade(inventory, database=app + "_admin", head=head,
+        principals=principals, old_login=old, legacy_grantees=legacy,
+        function_owners={app + "_admin_user_migration", "postgres"},
+        reviewed_functions=getattr(module, "REVIEWED_DATABASE_FUNCTIONS", {}))
+    columns = {name: frozenset(cols) for name, cols in common.column_map(inventory).items()}
+    grants = getattr(module, app + "_grants")(schema="public", principals=principals, columns=columns)
+    sql = cutover.upgrade_sql(database=app + "_admin", principals=principals, grant_statements=grants)
+    tables = ",".join('public.' + common.quote_identifier(name) for name in sorted(columns))
+    return sql, tables
+
+
+def upgrade_identities(context, root, applied, release, app, passwords, raw, current):
+    folder = root / ("database-upgrade-" + release["release_id"])
+    completed = folder / "complete.json"
+    if completed.is_file():
+        common.ERROR_DIR = folder
+        intent = json.loads(preparation.private_read(folder / "intent.json"))
+        if intent["source_sha256"] != activation_sources(app) or intent["plan_sha256"] != applied["plan_sha256"]:
+            raise common.RehearsalError("upgrade_source_or_plan_changed")
+        previous = json.loads(preparation.private_read(folder / "catalog-after.private.json"))
+        if permission_fingerprint(current) != permission_fingerprint(previous):
+            raise common.RehearsalError("upgraded_catalog_drifted")
+        verify_logins(context, app, passwords)
+        return
+    folder.mkdir(mode=0o700)  # Existing incomplete attempt refuses automatic retry.
+    common.ERROR_DIR = folder
+    sql, tables = compile_upgrade(app, release["migration_head"], current)
+    guarded = guarded_transaction(app, raw, sql, tables)
+    common.private_write(folder / "catalog-before.private.json", preparation.encoded(current))
+    common.private_write(folder / "transaction.private.sql", guarded)
+    common.private_write(folder / "intent.json", preparation.encoded({"release_id": release["release_id"],
+        "upgrade_of": release["runtime_identity_upgrade"]["prepared_release_id"],
+        "plan_sha256": applied["plan_sha256"], "transaction_sha256": hashlib.sha256(guarded.encode()).hexdigest(),
+        "source_sha256": activation_sources(app)}))
+    admin_sql(context, app, guarded)
+    after = json.loads(admin_sql(context, app, inventory_sql(app)))
+    common.private_write(folder / "catalog-after.private.json", preparation.encoded(after))
+    probes = verify_logins(context, app, passwords)
+    common.private_write(completed, preparation.encoded({"probes": probes, "old_logins_retired": False,
+                                                        "release_id": release["release_id"], "grants_only": True}))
 
 
 def activation_sources(app):
@@ -188,11 +264,14 @@ def activate(args, release, run):
     development_release.verify_runtime_secret_contract(secret, app)
     passwords = {role: unquote(urlsplit(base64.b64decode(secret["data"][role.upper() + "_DATABASE_URL"]).decode()).password)
                  for role in development_release.RUNTIME_ROLES}
-    folder = root / "database-activation"
-    completed = folder / "complete.json"
     common.ERROR_DIR = root
     raw = admin_sql(context, app, inventory_sql(app))
     current = json.loads(raw)
+    if release.get("runtime_identity_upgrade") is not None:
+        upgrade_identities(context, root, applied, release, app, passwords, raw, current)
+        return
+    folder = root / "database-activation"
+    completed = folder / "complete.json"
     if completed.is_file():
         common.ERROR_DIR = folder
         intent = json.loads(preparation.private_read(folder / "intent.json"))

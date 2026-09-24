@@ -23,10 +23,24 @@
 8. 单测：`cd ../scripts && python3 -m unittest tests.test_committed_development_candidates tests.test_investment_runner_role tests.test_formal_component_deploy tests.test_development_release tests.test_deployment_config`；应全过（committed 那条会真的重渲染三个 App 并逐字比对）。
 9. `./deploy-investment-app-all/deploy-investment-app-all.sh plan --cluster KIND`（在 investment-app 目录）：只读，应通过。把输出贴进回传。
 
-## B 段：部署到 KIND（等所有者定流程后再做）
+## B 段：部署到 KIND（所有者已定：只换镜像的升级门，身份准备复用、备份回执按本次 release 新出）
 
-正式路的 apply 要 `--backup-receipt` 与 `--identity-preparation`，两者都绑定本次 release 的内容摘要（见 `app-platform/scripts/README.md`「KIND 开发包部署」1 到 5 步）。是每次都走完整流程，还是给"只换镜像、身份不变"的升级定一条更轻的路，由所有者定，定了再补这一段。
+前提：仓已同步到 tpl-app 5e717cf、investment-app cf8bcf2（子仓 investment-backend 923bc0a：0008 迁移改了预算账 id 为 UUID，所以后端镜像要重建）、k8s 本条待办所在的 fable 头。找到 B7 那次切换用的**私有身份准备目录**（`kind_identity_prepare.py --output` 的那个，含 `plan.private.json`、`applied.json`、`database-activation/complete.json`）。
+
+1. 重做 A1（只 backend：`COMPONENTS=backend`）、A2（取新 backend digest）、A3（锁：investment-backend 的 commit/tree 换成 923bc0a 对应值）。
+2. 改 `development-input.json`：`images.backend` 换新 digest；加一段
+   `"runtime_identity_upgrade": {"prepared_release_id": "kind-b7-20260919", "preparation_plan_sha256": "<准备目录 applied.json 里的 plan_sha256>"}`；`migration_head` 仍是 `20260924_0009`。
+3. 重做 A5 到 A9（渲染到空目录、diff、替换 bundle、门禁、单测、plan）。diff 里新增的只应有：backend digest、release.json 里的 `runtime_identity_upgrade`。A8 里 `test_runtime_rendering` 与 `test_committed_development_candidates` 的 investment/info 两条这次应该过。conf 里 `BACKEND_IMAGE` 跟着换。
+4. 维护窗口（README 第 2 步）：`kubectl -n app-platform-dev scale deploy investment-backend-api investment-backend-worker investment-backend-scheduler --replicas=0`，等 `kubectl -n app-platform-dev get pods -l sunmoonai.com/app=investment` 里 backend 三类 Pod 全部消失。前端可以不停。
+5. 备份回执（README 第 3、4 步，一条命令）：
+   `python3 kind_database_rehearsal.py --app investment --kubeconfig ~/.kube/kind-config --cluster-uid $(kubectl get ns kube-system -o jsonpath='{.metadata.uid}') --image <新 backend digest 全名> --head 20260924_0009 --output <git 之外的私有目录，如 ~/private/investment-wb-20260925> --cutover-release ../investment-app/deployment/bundle/release.json`（在 `app-platform/scripts` 下跑）。应该以 `cutover_receipt` 一行结束，目录里有 `cutover-receipt.json` 与 `database.dump`。要 Docker（它起一次性 Postgres 做两次恢复演练）。
+6. `./deploy-investment-app-all/deploy-investment-app-all.sh server-dry-run --cluster KIND`，应通过。
+7. `./deploy-investment-app-all/deploy-investment-app-all.sh deploy --cluster KIND --backup-receipt <私有目录>/cutover-receipt.json --identity-preparation <B7 身份准备目录>`。应该看到：迁移 Job 完成；`database-upgrade-kind-wb-20260925/complete.json` 出现在准备目录里（`grants_only: true`）；六个 Deployment 的 rollout 都 ok（含 `investment-backend-runner`）；末尾 JSON `"result": "passed"`。
+8. 看：`kubectl -n app-platform-dev get pods -l sunmoonai.com/app=investment`（runner 1/1 Running）；`kubectl -n app-platform-dev logs deploy/investment-backend-runner --tail=20`（应是在轮询命令，没有异常）；浏览器登录 `https://investment.sunmoonai.com:30443` 后打开 `/zh-CN/workbench`，应看到「工作台」页，机器与沙箱下拉为空（沙箱与会合点是下一步）。
+9. `./deploy-investment-app-all/deploy-investment-app-all.sh drift --cluster KIND` 与 `status --cluster KIND`。
+
+失败就停在那一步，把命令输出原样写进回传（过滤含密码、含 `sk-` 的行）。第 7 步失败后**不要重跑**：迁移与激活各自留有记录，把准备目录里新出现的文件名列出来即可。
 
 ## 回传里要有
 
-每步做到没有、屏幕上是什么；第 2 步的两个 digest；第 6 步 diff 里 `20-runtime.yaml` 与 `release.json` 的变化摘要；第 8、9 步的完整输出。
+A 段每步的结果；B 段第 3 步的 diff 摘要、第 5 步的末行、第 7 步的完整输出、第 8 步的三项截图或文字、第 9 步的输出。

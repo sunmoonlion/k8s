@@ -53,6 +53,16 @@ def validate(release: dict[str, Any]) -> None:
         raise ValueError("development release must lock the Alembic head")
     if release.get("runtime_identity_mode") not in (None, IDENTITY_MODE):
         raise ValueError("unknown development runtime identity mode")
+    upgrade = release.get("runtime_identity_upgrade")
+    if upgrade is not None:
+        # Image-only upgrade: reuse the applied identity preparation of an earlier
+        # release (declared and pinned here); the backup receipt is still per release.
+        if (release.get("runtime_identity_mode") != IDENTITY_MODE or not isinstance(upgrade, dict)
+                or set(upgrade) != {"prepared_release_id", "preparation_plan_sha256"}
+                or not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", str(upgrade["prepared_release_id"]))
+                or upgrade["prepared_release_id"] == release.get("release_id")
+                or not re.fullmatch(r"[0-9a-f]{64}", str(upgrade["preparation_plan_sha256"]))):
+            raise ValueError("invalid runtime identity upgrade declaration")
 
 
 def verify_runtime_secret_contract(secret: dict[str, Any], app: str) -> None:
@@ -170,6 +180,9 @@ def render(output: Path, input_path: Path, k8s_root: Path) -> None:
     release.pop("runtime_identity_mode", None)
     if "runtime_identity_mode" in source:
         release["runtime_identity_mode"] = source["runtime_identity_mode"]
+    release.pop("runtime_identity_upgrade", None)
+    if "runtime_identity_upgrade" in source:
+        release["runtime_identity_upgrade"] = source["runtime_identity_upgrade"]
     validate(release)
     replacements = {previous_images[role]: release["images"][role] for role in ROLES}
     for filename in release["resources"]:

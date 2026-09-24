@@ -29,7 +29,7 @@ class InvestmentDatabasePolicyTests(unittest.TestCase):
         )
         statements = self.compile()
         self.assertEqual(statements[: len(base)], base)
-        self.assertEqual(len(policy.TABLE_COLUMNS), 18)
+        self.assertEqual(len(policy.TABLE_COLUMNS), 31)
         for sql in statements[len(base) :]:
             for forbidden in (
                 "DELETE",
@@ -40,7 +40,7 @@ class InvestmentDatabasePolicyTests(unittest.TestCase):
                 "legacy",
             ):
                 self.assertNotIn(forbidden, sql)
-            self.assertTrue(any(f'."{t}" ' in sql for t in policy.DOMAIN_COLUMNS))
+            self.assertTrue(any(f'."{t}" ' in sql for t in {**policy.DOMAIN_COLUMNS, **policy.WORKBENCH_COLUMNS}))
             if sql.startswith(("GRANT INSERT", "GRANT UPDATE")):
                 self.assertIn(" (", sql)
 

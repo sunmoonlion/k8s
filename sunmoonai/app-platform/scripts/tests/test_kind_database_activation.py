@@ -90,3 +90,95 @@ class ActivationTest(unittest.TestCase):
                         entry.apply(argparse.Namespace(timeout=1), data)
                         self.assertLess(events.index("migration"), events.index("activation"))
                         self.assertLess(events.index("activation"), events.index("20-runtime.yaml"))
+
+
+class UpgradeTest(unittest.TestCase):
+    def upgrade_release(self):
+        bundle = SCRIPTS.parent / "info-app/deployment/bundle/release.json"
+        release = json.loads(bundle.read_bytes())
+        release["release_id"] = "kind-next"
+        release["migration_head"] = "20260924_0009"
+        return release
+
+    def preparation(self, folder, *, activated=True):
+        root = Path(folder)
+        plan = {"app": "info", "release_id": "kind-b7-20260919", "release_sha256": "moved"}
+        raw = target.preparation.encoded(plan)
+        digest = hashlib.sha256(raw).hexdigest()
+        target.common.private_write(root / "plan.private.json", raw)
+        target.common.private_write(root / "applied.json", target.preparation.encoded(
+            {"applied": True, "live_amqp_login_verified": True, "plan_sha256": digest}))
+        if activated:
+            (root / "database-activation").mkdir(mode=0o700)
+            target.common.private_write(root / "database-activation" / "complete.json",
+                                        target.preparation.encoded({"release_id": "kind-b7-20260919"}))
+        return root, digest
+
+    def test_upgrade_reuses_the_applied_preparation_of_the_named_release(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root, digest = self.preparation(folder)
+            release = self.upgrade_release()
+            release["runtime_identity_upgrade"] = {"prepared_release_id": "kind-b7-20260919",
+                                                   "preparation_plan_sha256": digest}
+            target.development_release.validate(release)
+            args = argparse.Namespace(identity_preparation=root)
+            self.assertEqual(target.load_preparation(args, release)[1]["release_id"], "kind-b7-20260919")
+            for broken in ({"prepared_release_id": "kind-other", "preparation_plan_sha256": digest},
+                           {"prepared_release_id": "kind-b7-20260919", "preparation_plan_sha256": "0" * 64}):
+                with self.subTest(broken=broken), self.assertRaisesRegex(target.common.RehearsalError, "release_mismatch"):
+                    target.load_preparation(args, release | {"runtime_identity_upgrade": broken})
+            # without the upgrade declaration the moved bundle digest is refused as before
+            with self.assertRaisesRegex(target.common.RehearsalError, "release_mismatch"):
+                target.load_preparation(args, self.upgrade_release())
+        with tempfile.TemporaryDirectory() as folder:
+            root, digest = self.preparation(folder, activated=False)
+            release = self.upgrade_release()
+            release["runtime_identity_upgrade"] = {"prepared_release_id": "kind-b7-20260919",
+                                                   "preparation_plan_sha256": digest}
+            with self.assertRaisesRegex(target.common.RehearsalError, "release_mismatch"):
+                target.load_preparation(argparse.Namespace(identity_preparation=root), release)
+
+    def test_upgrade_declaration_is_validated(self):
+        release = self.upgrade_release()
+        for bad in ({"prepared_release_id": "kind-next", "preparation_plan_sha256": "a" * 64},
+                    {"prepared_release_id": "kind-b7", "preparation_plan_sha256": "short"},
+                    {"prepared_release_id": "kind-b7"}, "kind-b7"):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                target.development_release.validate(release | {"runtime_identity_upgrade": bad})
+        release["runtime_identity_upgrade"] = {"prepared_release_id": "kind-b7", "preparation_plan_sha256": "a" * 64}
+        target.development_release.validate(release)
+        with self.assertRaises(ValueError):
+            target.development_release.validate({k: v for k, v in release.items() if k != "runtime_identity_mode"})
+
+    def test_upgrade_runs_grants_only_and_records_intent(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root, digest = self.preparation(folder)
+            release = self.upgrade_release()
+            release["runtime_identity_upgrade"] = {"prepared_release_id": "kind-b7-20260919",
+                                                   "preparation_plan_sha256": digest}
+            applied = {"plan_sha256": digest}
+            inventory = {"marker": 1, "activity": []}
+            calls = []
+            sql = "BEGIN;\nSET LOCAL search_path=pg_catalog;\nGRANT SELECT ON TABLE public.x TO info_backend_api;\nCOMMIT;\n"
+            with patch.object(target, "compile_upgrade", return_value=(sql, 'public."x"')) as compile_, \
+                 patch.object(target, "admin_sql", side_effect=lambda ctx, app, text: calls.append(text) or json.dumps(inventory)), \
+                 patch.object(target, "verify_logins", return_value=7) as logins, \
+                 patch.object(target, "activation_sources", return_value={"s": "1"}):
+                target.upgrade_identities(None, root, applied, release, "info", {"api": "x" * 48},
+                                          json.dumps(inventory), inventory)
+                compile_.assert_called_once_with("info", "20260924_0009", inventory)
+                self.assertNotIn("CREATE ROLE", calls[0])
+                self.assertLess(calls[0].index("LOCK TABLE"), calls[0].index("GRANT "))
+                logins.assert_called_once()
+                complete = json.loads((root / "database-upgrade-kind-next" / "complete.json").read_text())
+                self.assertTrue(complete["grants_only"])
+                intent = json.loads((root / "database-upgrade-kind-next" / "intent.json").read_text())
+                self.assertEqual(intent["upgrade_of"], "kind-b7-20260919")
+                # a second run re-probes only when nothing changed
+                target.upgrade_identities(None, root, applied, release, "info", {"api": "x" * 48},
+                                          json.dumps(inventory), inventory)
+                self.assertEqual(logins.call_count, 2)
+                self.assertEqual(len(calls), 2)  # transaction + catalog-after, no second transaction
+                with self.assertRaisesRegex(target.common.RehearsalError, "drifted"):
+                    target.upgrade_identities(None, root, applied, release, "info", {"api": "x" * 48},
+                                              "{}", {"marker": 2, "activity": []})

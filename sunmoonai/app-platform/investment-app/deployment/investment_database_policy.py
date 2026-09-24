@@ -64,7 +64,79 @@ DOMAIN_COLUMNS = {
         "message_id error_code failed_at replayed_at"
     ),
 }
-TABLE_COLUMNS = {**common.TABLE_COLUMNS, **DOMAIN_COLUMNS}
+# 0001-workbench (migrations 20260924_0008/0009). The api process and the runner
+# (same identity) own these tables; the worker never touches them.
+WORKBENCH_COLUMNS = {
+    "workbench_approval_log": _fields(
+        "id session_id task_id request_id method summary decision source interaction_id created_at"
+    ),
+    "workbench_artifacts": _fields(
+        "id task_id attempt_id name version kind content content_ref digest workspace_path created_at"
+    ),
+    "workbench_attempts": _fields(
+        "id task_id session_id thread_id environment_id role arm step_id step_version "
+        "input_artifact_versions turn_ids status codex_version agent_version model model_provider "
+        "budget_allocated budget_consumed failure_code retryable output_artifacts refs started_at "
+        "ended_at created_at updated_at"
+    ),
+    "workbench_budget_ledger": _fields(
+        "id task_id attempt_id entry amount tokens note actor_id created_at"
+    ),
+    "workbench_commands": _fields(
+        "id session_id sandbox_id kind payload status claimed_by claimed_at finished_at error created_at"
+    ),
+    "workbench_credentials": _fields(
+        "id owner_actor_id sandbox_id provider ciphertext hint status created_at revoked_at"
+    ),
+    "workbench_environments": _fields(
+        "id owner_actor_id name agent_version codex_version roots ceiling status last_seen_at created_at updated_at"
+    ),
+    "workbench_interactions": _fields(
+        "id session_id task_id attempt_id kind audience prompt subject_digest token_hash "
+        "target_state_version expires_at status response consumed_at responded_by created_at"
+    ),
+    "workbench_sandboxes": _fields(
+        "id owner_actor_id app_server_url token_ref codex_version status created_at updated_at"
+    ),
+    "workbench_session_events": _fields(
+        "id session_id cursor kind event_type payload task_id attempt_id schema_version created_at"
+    ),
+    "workbench_sessions": _fields(
+        "id owner_actor_id environment_id sandbox_id project_root thread_id wheel state_version "
+        "active_task_id thread_settings created_at last_active_at"
+    ),
+    "workbench_tasks": _fields(
+        "id session_id owner_actor_id tenant idempotency_key request_digest profile_id profile_version "
+        "expert_pack_version original_input normalized_goal thread_id environment_id project_root state "
+        "state_version workflow_version current_step acceptance_contract execution_policy budget "
+        "active_attempt_id terminal_result_ref waiting_reason active_interaction_id rejection "
+        "cancel_requested_at cancel_requested_by created_at updated_at"
+    ),
+    "workbench_user_prefs": _fields("owner_actor_id model approval_policy updated_at"),
+}
+TABLE_COLUMNS = {**common.TABLE_COLUMNS, **DOMAIN_COLUMNS, **WORKBENCH_COLUMNS}
+# Immutable identity/audit columns the api never rewrites. Every other column of a
+# workbench table is insertable and updatable by the api (append-only tables list
+# no updatable columns at all).
+WORKBENCH_UPDATES = {
+    "workbench_environments": "name agent_version codex_version roots ceiling status last_seen_at updated_at",
+    "workbench_sandboxes": "app_server_url token_ref codex_version status updated_at",
+    "workbench_sessions": "thread_id wheel state_version active_task_id thread_settings last_active_at",
+    "workbench_tasks": (
+        "profile_version expert_pack_version normalized_goal thread_id environment_id project_root state "
+        "state_version workflow_version current_step acceptance_contract execution_policy budget "
+        "active_attempt_id terminal_result_ref waiting_reason active_interaction_id rejection "
+        "cancel_requested_at cancel_requested_by updated_at"
+    ),
+    "workbench_attempts": (
+        "turn_ids status codex_version agent_version model model_provider budget_allocated budget_consumed "
+        "failure_code retryable output_artifacts refs started_at ended_at updated_at"
+    ),
+    "workbench_interactions": "status response consumed_at responded_by",
+    "workbench_credentials": "sandbox_id ciphertext hint status revoked_at",
+    "workbench_commands": "status claimed_by claimed_at finished_at error",
+    "workbench_user_prefs": "model approval_policy updated_at",
+}
 API_READS = (
     "agent_sessions",
     "agent_runs",
@@ -144,5 +216,11 @@ def investment_grants(*, schema, principals, columns):
             grant(role, table, "INSERT", names)
         for table, names in updates.items():
             grant(role, table, "UPDATE", names)
+    # Workbench: api reads, inserts and updates its own tables; worker has nothing.
+    for table, names in WORKBENCH_COLUMNS.items():
+        grant("api", table, "SELECT")
+        grant("api", table, "INSERT", " ".join(sorted(names)))
+        if table in WORKBENCH_UPDATES:
+            grant("api", table, "UPDATE", WORKBENCH_UPDATES[table])
     # No runtime access to the checkpoint migration ledger or legacy failures.
     return tuple(statements)
