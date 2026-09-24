@@ -25,13 +25,13 @@
 
 ## B 段：部署到 KIND（所有者已定：只换镜像的升级门，身份准备复用、备份回执按本次 release 新出）
 
-前提：仓已同步到 tpl-app 3317c84、investment-app cf8bcf2（子仓 investment-backend 923bc0a：0008 迁移改了预算账 id 为 UUID，所以后端镜像要重建）、k8s 本条待办所在的 fable 头。
+前提：仓已同步到 tpl-app 3317c84、investment-app 84c6a08（子仓 investment-backend 4bcd58f：含 0008 迁移改 UUID 与 workbench_register 命令，所以后端镜像要重建）、k8s 本条待办所在的 fable 头。
 
 0. B7 的私有身份准备目录已丢（原在 `~/worktrees/luna/.local/kind-cutover-20260919`，工作区重建时没了）。先从集群现状重建一份，放在工作区之外：
    `mkdir -p ~/private && cd ~/worktrees/fable/k8s/sunmoonai/app-platform/scripts && python3 kind_identity_recover.py --app investment --kubeconfig ~/.kube/kind-config --cluster-uid $(kubectl --kubeconfig ~/.kube/kind-config get ns kube-system -o jsonpath='{.metadata.uid}') --prepared-release-id kind-b7-20260919 --output ~/private/investment-identity-recovered-20260925`
    应该以一行 JSON 结束，含 `plan_sha256`、`database_probes`（18）、`amqp.authenticated_roles`（3）、`old_identities_retired: true`。它不写集群不写库。这个 `plan_sha256` 就是第 2 步要填的 `preparation_plan_sha256`；第 7 步 `--identity-preparation` 指向这个新目录。
 
-1. 重做 A1（只 backend：`COMPONENTS=backend`）、A2（取新 backend digest）、A3（锁：investment-backend 的 commit/tree 换成 923bc0a 对应值）。
+1. 重做 A1（只 backend：`COMPONENTS=backend`）、A2（取新 backend digest）、A3（锁：investment-backend 的 commit/tree 换成 4bcd58f 对应值）。
 2. 改 `development-input.json`：`images.backend` 换新 digest；加一段
    `"runtime_identity_upgrade": {"prepared_release_id": "kind-b7-20260919", "preparation_plan_sha256": "<第 0 步输出的 plan_sha256>"}`；`migration_head` 仍是 `20260924_0009`。
 3. 重做 A5 到 A9（渲染到空目录、diff、替换 bundle、门禁、单测、plan）。diff 里新增的只应有：backend digest、release.json 里的 `runtime_identity_upgrade`。A8 里 `test_runtime_rendering` 与 `test_committed_development_candidates` 的 investment/info 两条这次应该过。conf 里 `BACKEND_IMAGE` 跟着换。
