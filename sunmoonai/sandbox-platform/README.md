@@ -7,7 +7,8 @@
 | --- | --- |
 | `image/` | `Dockerfile`（node 22 + python3 + `@openai/codex@0.155.1`）、`entrypoint.sh`（生成 `config.toml`/`environments.toml`，起桥，前台起 app-server） |
 | `bridge/` | `sandbox_bridge.py`：回环 `ws://127.0.0.1:47002` ↔ 会合点 `/sandbox`，第一帧 hello |
-| `resources/` | `demo-user.yaml`：第一期演示用户的常驻 pod（Deployment + PVC + Service + NetworkPolicy） |
+| `provisioner/` | `provisioner.py`：沙箱供给器（FastAPI）——按用户建/查/删沙箱，直接调 API server；`tests/` 对假 API server 验 |
+| `resources/` | `demo-user.yaml`：手工演示用户的常驻 pod；`provisioner.yaml`：供给器（SA/Role/Deployment/Service/NetworkPolicy） |
 
 ## 进程与端口
 
@@ -50,8 +51,23 @@ docker run --rm -e RELAY_URL=ws://host.docker.internal:47100 -e RELAY_USER=local
   harbor.sunmoonai.com:30443/app-images/sandbox:0.155.1-r1
 ```
 
+## 按需拉起（供给器）
+
+工作台 `POST /api/workbench/sandboxes/provision`：取用户设置页登记的 key → 签发该用户的会合点身份并经 `/admin` 登记到会合点 →
+`PUT sandbox-provisioner:8080/sandboxes/<relay_user>`（Bearer 共享令牌）→ 供给器建 Secret（key、会合点令牌、能力令牌）、PVC、
+Deployment、Service、NetworkPolicy → 工作台把 `app_server_url` 与能力令牌登记为该用户的沙箱。再次调用是更新（换 key），
+能力令牌不变，PVC 不动；`DELETE` 回收运行资源，PVC 保留（`?purge=1` 才删）。一用户一个沙箱。
+
+```bash
+cd sunmoonai/sandbox-platform/provisioner
+docker build -t harbor.sunmoonai.com:30443/app-images/sandbox-provisioner:v1-r1 . && docker push …   # 取 digest 填 resources/provisioner.yaml
+kubectl -n sandbox-pool create secret generic sandbox-provisioner --from-literal=token=<共享令牌> [--from-literal=knowledge-token=<共用 MCP 令牌>]
+kubectl apply -f resources/provisioner.yaml
+.venv/bin/python -m pytest tests -q        # 供给器单测
+```
+
 ## 已知与待办
 
 - 版本成对：镜像里的 Codex 版与本地代理随包带的版必须一致，会合点在 hello 里核对（`AT-28`）；
-- `D9`：常驻还是按需拉起、`CODEX_HOME` 用 PVC 还是对象存储；
+- `D9`：按需拉起已由供给器实现（一用户一个，PVC 保留）；`CODEX_HOME` 备份（D18）与配额未做；
 - 多会话共用一个 exec-server 未验；冷启动时间未测。

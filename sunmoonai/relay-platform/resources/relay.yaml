@@ -27,10 +27,15 @@ spec:
             - { name: RELAY_PORT, value: "47100" }
             - { name: RELAY_NAME, value: "edge-1" }
             - { name: RELAY_TOKENS_FILE, value: "/secrets/tokens.json" }
+            # 工作台经 /admin 动态登记每用户令牌（0004 第一期）；登记结果落 emptyDir，pod 重启内保留
+            - { name: RELAY_TOKENS_STATE, value: "/state/tokens.json" }
+            - name: RELAY_ADMIN_TOKEN
+              valueFrom: { secretKeyRef: { name: relay-admin, key: token, optional: true } }
           ports:
             - { name: ws, containerPort: 47100 }
           volumeMounts:
             - { name: tokens, mountPath: /secrets, readOnly: true }
+            - { name: state, mountPath: /state }
           readinessProbe:
             httpGet: { path: /healthz, port: 47100 }
             initialDelaySeconds: 2
@@ -40,6 +45,8 @@ spec:
       volumes:
         - name: tokens
           secret: { secretName: relay-tokens, defaultMode: 0400 }
+        - name: state
+          emptyDir: { sizeLimit: 8Mi }
 ---
 apiVersion: v1
 kind: Service

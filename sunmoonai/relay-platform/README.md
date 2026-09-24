@@ -22,6 +22,13 @@
 会合点回 `{"type":"welcome",...}` 或 `{"type":"reject","reason":...}`；沙箱连上时会合点向代理控制通道发 `{"type":"open","conn":ID}`，代理开 `/agent-data?conn=ID`，配对后逐消息透传。
 拒绝条件：坏令牌、协议版本不符、代理离线、**两端 Codex 版本不一致**、代理没在 15 秒内开流、每用户流数超限。
 
+## 管理通道（工作台动态登记）
+
+`/admin`：第一帧 `{"type":"hello","role":"admin","token":<RELAY_ADMIN_TOKEN>}`，通过后发
+`{"type":"set_tokens","user":U,"agent":A,"sandbox":S}`、`{"type":"revoke","user":U}`、`{"type":"list"}`；每条回 `ok|error|tokens`。
+撤销会关掉该用户在线的代理。登记结果写 `RELAY_TOKENS_STATE`（emptyDir），重启回读；静态表里的同名用户以静态为准。
+工作台在每次拉起沙箱时重新登记，会合点换机器也能收敛。
+
 ## 令牌（第一期）
 
 静态令牌表，环境变量 `RELAY_TOKENS_JSON` 或文件 `RELAY_TOKENS_FILE`：

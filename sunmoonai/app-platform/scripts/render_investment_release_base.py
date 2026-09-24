@@ -124,6 +124,23 @@ def knowledge_egress(namespace: str) -> dict[str, Any]:
     }
 
 
+def provisioner_egress() -> dict[str, Any]:
+    """api → 沙箱供给器（sandbox-pool:8080）与会合点管理通道（edge:47100）。"""
+    return {
+        "to": [
+            {"namespaceSelector": {"matchLabels": {"sunmoonai.com/sandbox-pool": "true"}}},
+        ],
+        "ports": [{"protocol": "TCP", "port": 8080}],
+    }
+
+
+def relay_admin_egress() -> dict[str, Any]:
+    return {
+        "to": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "edge"}}}],
+        "ports": [{"protocol": "TCP", "port": 47100}],
+    }
+
+
 def sandbox_egress() -> dict[str, Any]:
     """0003-sandbox: the runner is each user's app-server's only client (port 47800)."""
     return {
@@ -204,6 +221,13 @@ def overlay(output: Path, namespace: str) -> None:
             "WORKBENCH_REDIS_KEY_PREFIX": "investment:workbench",
             "WORKBENCH_ENVIRONMENT_KEY": "user-pc",
             "WORKBENCH_POLL_SECONDS": "1.0",
+            # 沙箱按需拉起（0003 D9）：供给器与会合点管理通道都在集群内；令牌走可选 Secret
+            "WORKBENCH_PROVISIONER_URL": "http://sandbox-provisioner.sandbox-pool.svc.cluster.local:8080",
+            "WORKBENCH_RELAY_ADMIN_URL": "ws://relay.edge.svc.cluster.local:47100",
+            "WORKBENCH_RELAY_PUBLIC_URL": "ws://relay.edge.svc.cluster.local:47100",
+            "WORKBENCH_SANDBOX_MODEL_PROVIDER": "kimi",
+            "WORKBENCH_SANDBOX_MODEL": "kimi-k3",
+            "WORKBENCH_SANDBOX_PROVIDER_BASE_URL": "https://api.moonshot.cn/v1",
         }
     )
     for surface in ("admin", "web"):
@@ -262,6 +286,18 @@ def overlay(output: Path, namespace: str) -> None:
             "WORKBENCH_CREDENTIAL_KEY",
             "investment-workbench",
             "WORKBENCH_CREDENTIAL_KEY",
+            optional=True,
+        ),
+        common.env_ref(
+            "WORKBENCH_PROVISIONER_TOKEN",
+            "investment-workbench",
+            "WORKBENCH_PROVISIONER_TOKEN",
+            optional=True,
+        ),
+        common.env_ref(
+            "WORKBENCH_RELAY_ADMIN_TOKEN",
+            "investment-workbench",
+            "WORKBENCH_RELAY_ADMIN_TOKEN",
             optional=True,
         ),
     ]
@@ -332,7 +368,7 @@ def overlay(output: Path, namespace: str) -> None:
             runtime_policy(
                 "investment-r5-backend-api-egress",
                 "backend-api",
-                [data_egress(5432, 6379, 5672), casdoor_egress()],
+                [data_egress(5432, 6379, 5672), casdoor_egress(), provisioner_egress(), relay_admin_egress()],
                 namespace,
             ),
             runtime_policy(

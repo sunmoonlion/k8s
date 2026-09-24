@@ -4,8 +4,11 @@
   /agent               代理控制通道。第一帧 hello；通过则 welcome，之后会合点用 {"type":"open","conn":ID} 让代理开数据流
   /agent-data?conn=ID  代理数据流。第一帧 hello（带 conn）
   /sandbox             沙箱数据流。第一帧 hello；配对到同一 user 的代理，之后逐消息透传
+  /admin               工作台的管理通道（内网出站到边缘）。第一帧 hello role=admin + RELAY_ADMIN_TOKEN；之后
+                       {"type":"set_tokens","user":U,"agent":A,"sandbox":S} / {"type":"revoke","user":U} / {"type":"list"}
   GET /healthz         健康
-认证：第一期是静态令牌表（TOKENS_FILE：{"user": {"agent": "...", "sandbox": "..."}}），用公钥验 JWT 留给 D10。
+认证：第一期是静态令牌表（TOKENS_FILE：{"user": {"agent": "...", "sandbox": "..."}}）加管理通道动态登记；
+      动态登记可写到 RELAY_TOKENS_STATE 文件，重启后回读；用公钥验 JWT 留给 D10。
 版本成对：agent 与 sandbox 的 hello.codex 必须相同，否则拒绝配对（AT-28）。
 协议版本：hello.proto 必须等于 RELAY_PROTOCOL。
 """
@@ -30,6 +33,9 @@ RELAY_NAME = os.environ.get("RELAY_NAME", "relay-v1")
 HELLO_TIMEOUT = float(os.environ.get("RELAY_HELLO_TIMEOUT", "10"))
 OPEN_TIMEOUT = float(os.environ.get("RELAY_OPEN_TIMEOUT", "15"))
 MAX_STREAMS_PER_USER = int(os.environ.get("RELAY_MAX_STREAMS_PER_USER", "8"))
+ADMIN_TOKEN = os.environ.get("RELAY_ADMIN_TOKEN", "")
+TOKENS_STATE = os.environ.get("RELAY_TOKENS_STATE", "")
+USER_RE = __import__("re").compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
 log = logging.getLogger("relay")
 
 
@@ -51,6 +57,8 @@ class Relay:
     agents: dict[str, Agent] = field(default_factory=dict)
     waiting: dict[str, tuple[str, asyncio.Future]] = field(default_factory=dict)
     stats: dict[str, int] = field(default_factory=lambda: {"paired": 0, "rejected": 0, "agent_up": 0})
+    admin_token: str = ADMIN_TOKEN
+    state_path: str = TOKENS_STATE
 
     # ---- 认证 ----
     def check(self, hello: dict, role: str) -> str:
@@ -181,8 +189,61 @@ class Relay:
             await self.agent_data(ws, conn)
         elif u.path == "/sandbox":
             await self.sandbox(ws)
+        elif u.path == "/admin":
+            await self.handle_admin(ws)
         else:
             await ws.close(code=1008, reason="unknown path")
+
+    # ---- 管理通道（工作台 → 会合点，动态登记每用户令牌）----
+    def admin_apply(self, message: dict) -> dict:
+        kind = message.get("type")
+        if kind == "list":
+            return {"type": "tokens", "users": sorted(self.tokens)}
+        user = str(message.get("user") or "")
+        if not USER_RE.match(user):
+            return {"type": "error", "reason": "bad user"}
+        if kind == "set_tokens":
+            agent, sandbox = message.get("agent"), message.get("sandbox")
+            if not (isinstance(agent, str) and isinstance(sandbox, str) and len(agent) >= 16 and len(sandbox) >= 16 and agent != sandbox):
+                return {"type": "error", "reason": "tokens must be two distinct strings of at least 16 chars"}
+            self.tokens[user] = {"agent": agent, "sandbox": sandbox}
+            self.persist_tokens()
+            log.info("admin set tokens user=%s", user)
+            return {"type": "ok", "user": user}
+        if kind == "revoke":
+            self.tokens.pop(user, None)
+            agent = self.agents.pop(user, None)
+            self.persist_tokens()
+            log.info("admin revoke user=%s agent_online=%s", user, agent is not None)
+            if agent is not None:
+                asyncio.get_running_loop().create_task(agent.ws.close(code=4003, reason="revoked"))
+            return {"type": "ok", "user": user}
+        return {"type": "error", "reason": f"unknown admin message {kind}"}
+
+    def persist_tokens(self) -> None:
+        if not self.state_path:
+            return
+        tmp = self.state_path + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(self.tokens, f)
+        os.replace(tmp, self.state_path)
+
+    async def handle_admin(self, ws: ServerConnection) -> None:
+        hello = await self._hello(ws)
+        if hello.get("type") != "hello" or hello.get("role") != "admin" or not self.admin_token or not secrets.compare_digest(str(hello.get("token") or ""), self.admin_token):
+            self.stats["rejected"] += 1
+            await ws.send(json.dumps({"type": "reject", "reason": "admin auth failed"}))
+            await ws.close(code=4001, reason="admin auth failed")
+            return
+        await ws.send(json.dumps({"type": "welcome", "relay": RELAY_NAME, "proto": RELAY_PROTOCOL, "role": "admin"}))
+        async for raw in ws:
+            try:
+                message = json.loads(raw)
+            except (TypeError, ValueError):
+                await ws.send(json.dumps({"type": "error", "reason": "not json"}))
+                continue
+            reply = self.admin_apply(message if isinstance(message, dict) else {})
+            await ws.send(json.dumps(reply))
 
     def process_request(self, connection, request):
         if request.path == "/healthz":
@@ -191,21 +252,28 @@ class Relay:
         return None
 
 
-def load_tokens(path: str | None) -> dict[str, dict[str, str]]:
+def load_tokens(path: str | None, state_path: str | None = None) -> dict[str, dict[str, str]]:
     if not path:
         raw = os.environ.get("RELAY_TOKENS_JSON", "{}")
-        return json.loads(raw)
-    with open(path) as f:
-        return json.load(f)
+        tokens = json.loads(raw)
+    else:
+        with open(path) as f:
+            tokens = json.load(f)
+    # 管理通道登记过的令牌（重启后回读）；静态表里的同名用户以静态为准
+    if state_path and os.path.exists(state_path):
+        with open(state_path) as f:
+            for user, entry in json.load(f).items():
+                tokens.setdefault(user, entry)
+    return tokens
 
 
 async def main():
     logging.basicConfig(level=os.environ.get("RELAY_LOG", "INFO"), format="%(asctime)s %(levelname)s %(message)s")
     host = os.environ.get("RELAY_HOST", "127.0.0.1")
     port = int(os.environ.get("RELAY_PORT", "47100"))
-    relay = Relay(tokens=load_tokens(os.environ.get("RELAY_TOKENS_FILE")))
-    if not relay.tokens:
-        log.warning("no tokens configured: every hello will be rejected")
+    relay = Relay(tokens=load_tokens(os.environ.get("RELAY_TOKENS_FILE"), TOKENS_STATE or None))
+    if not relay.tokens and not relay.admin_token:
+        log.warning("no tokens configured and no admin token: every hello will be rejected")
     stop = asyncio.get_running_loop().create_future()
     for s in (signal.SIGINT, signal.SIGTERM):
         asyncio.get_running_loop().add_signal_handler(s, lambda: stop.done() or stop.set_result(None))

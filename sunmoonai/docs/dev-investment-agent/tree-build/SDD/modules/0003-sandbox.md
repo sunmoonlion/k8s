@@ -40,3 +40,7 @@ pod（每用户）
 ## 探针已知
 
 BYOK：key 以 `CODEX_HOME/auth.json`（`auth_mode="apikey"`）或 `OPENAI_API_KEY` 注入即可，Kimi K3 经 `model_providers.kimi`（`wire_api="responses"`）跑通远端环境、`apply_patch`、审批；每 turn 有 `thread/tokenUsage` 可入预算账。app-server 134 MB 常驻（本机测）；`environment/add` 与 `environment/status` 可用；25 秒恢复窗。未验：多会话共用一个 exec-server、冷启动时间。
+
+## 实现状态（2026-09-25，按需拉起）
+
+`sandbox-platform/provisioner/`：供给器（FastAPI，直接调 API server，RBAC 限 sandbox-pool）；`PUT/GET/DELETE /sandboxes/{user}`，一用户一个沙箱，Secret 含厂商 key、会合点令牌、能力令牌、知识 MCP 令牌，PVC 保留（D18 先"不删"），Secret 摘要进 pod 注解只在变化时滚动。工作台 `POST /api/workbench/sandboxes/provision` 把设置页登记的 key 解密后经内网送到供给器（所有者 2026-09-25 点头）。镜像基础改为平台钉版 node 24.18.0 alpine。未做：配额、按需缩容、CODEX_HOME 备份、按用户签发知识 MCP 令牌（D10，现共用）。

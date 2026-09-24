@@ -124,5 +124,52 @@ class RelayTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(j["ok"]); self.assertEqual(j["agents"], 1)
 
 
+    async def test_admin_channel_registers_and_revokes_users(self):
+        self.relay.admin_token = "ADMIN-SECRET-0123456789"
+        # bad admin token
+        ws = await connect(self.url + "/admin"); self.open_ws.append(ws)
+        await ws.send(json.dumps({"type": "hello", "role": "admin", "token": "wrong"}))
+        self.assertEqual(json.loads(await ws.recv())["type"], "reject")
+        # good admin token: set tokens for a new user, then the agent can connect
+        admin = await connect(self.url + "/admin"); self.open_ws.append(admin)
+        await admin.send(json.dumps({"type": "hello", "role": "admin", "token": "ADMIN-SECRET-0123456789"}))
+        self.assertEqual(json.loads(await admin.recv())["role"], "admin")
+        await admin.send(json.dumps({"type": "set_tokens", "user": "u3", "agent": "A3-" + "x" * 16, "sandbox": "S3-" + "y" * 16}))
+        self.assertEqual(json.loads(await admin.recv())["type"], "ok")
+        a, first = await self.agent("u3", "A3-" + "x" * 16)
+        self.assertEqual(first["type"], "welcome")
+        self.assertEqual(len(self.relay.agents), 1)
+        await admin.send(json.dumps({"type": "list"}))
+        self.assertIn("u3", json.loads(await admin.recv())["users"])
+        # invalid registrations are refused
+        for bad in ({"type": "set_tokens", "user": "Bad User", "agent": "a" * 20, "sandbox": "b" * 20},
+                    {"type": "set_tokens", "user": "u4", "agent": "short", "sandbox": "b" * 20},
+                    {"type": "set_tokens", "user": "u4", "agent": "a" * 20, "sandbox": "a" * 20}):
+            await admin.send(json.dumps(bad))
+            self.assertEqual(json.loads(await admin.recv())["type"], "error")
+        # revoke closes the online agent and forgets the tokens
+        await admin.send(json.dumps({"type": "revoke", "user": "u3"}))
+        self.assertEqual(json.loads(await admin.recv())["type"], "ok")
+        with self.assertRaises(Exception):
+            await asyncio.wait_for(a.recv(), 3)
+        self.assertNotIn("u3", self.relay.tokens)
+        ws2 = await connect(self.url + "/agent"); self.open_ws.append(ws2)
+        await ws2.send(hello("agent", "u3", "A3-" + "x" * 16))
+        self.assertEqual(json.loads(await ws2.recv())["type"], "reject")
+
+    async def test_admin_channel_disabled_without_token(self):
+        ws = await connect(self.url + "/admin"); self.open_ws.append(ws)
+        await ws.send(json.dumps({"type": "hello", "role": "admin", "token": ""}))
+        self.assertEqual(json.loads(await ws.recv())["type"], "reject")
+
+    def test_state_file_round_trip(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "state.json")
+            relay = relay_mod.Relay(tokens={"u1": TOKENS["u1"]}, state_path=path)
+            relay.admin_apply({"type": "set_tokens", "user": "dyn", "agent": "a" * 20, "sandbox": "b" * 20})
+            loaded = relay_mod.load_tokens(None, path)
+            self.assertEqual(loaded["dyn"]["agent"], "a" * 20)
+
 if __name__ == "__main__":
     unittest.main()

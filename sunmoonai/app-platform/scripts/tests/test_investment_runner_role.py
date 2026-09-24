@@ -48,6 +48,12 @@ class InvestmentRunnerRoleTest(unittest.TestCase):
             self.assertTrue(any(d["kind"] == "ServiceAccount"
                                 and d["metadata"]["name"] == "investment-r5-backend-runner" for d in prerequisites))
 
+            self.assertTrue(api_env["WORKBENCH_PROVISIONER_TOKEN"]["valueFrom"]["secretKeyRef"]["optional"])
+            self.assertEqual(config["WORKBENCH_PROVISIONER_URL"], "http://sandbox-provisioner.sandbox-pool.svc.cluster.local:8080")
+            api_policy = next(d for d in [d for d in yaml.safe_load_all((output / "30-network-policies.yaml").read_text()) if d]
+                              if d["metadata"]["name"] == "investment-r5-backend-api-egress")
+            api_ports = {p["port"] for rule in api_policy["spec"]["egress"] for p in rule["ports"]}
+            self.assertTrue({8080, 47100} <= api_ports)
             policies = [d for d in yaml.safe_load_all((output / "30-network-policies.yaml").read_text()) if d]
             runner_policy = next(d for d in policies if d["metadata"]["name"] == "investment-r5-backend-runner-egress")
             ports = {p["port"] for rule in runner_policy["spec"]["egress"] for p in rule["ports"]}

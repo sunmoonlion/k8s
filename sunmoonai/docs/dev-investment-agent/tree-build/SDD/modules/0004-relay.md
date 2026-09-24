@@ -48,3 +48,7 @@ v1 在 `k8s/sunmoonai/relay-platform/relay/relay.py`：hello、静态令牌表�
 ## 待定
 
 `D10` 令牌形制与吊销；`D16` 仓位置；`D17` 兼容 Codex rendezvous。公网延迟未验。
+
+## 实现状态（2026-09-25）
+
+`/admin` 管理通道：工作台用 `RELAY_ADMIN_TOKEN` 登记每用户的代理与沙箱令牌（`set_tokens`/`revoke`/`list`），登记结果落 `RELAY_TOKENS_STATE` 重启回读；撤销关掉在线代理。KIND 里加了 NodePort 30471 给宿主机上的代理。两机公网延迟已测（`runtime/probe/REPORT-2026-09-24-two-machine-latency.md`）：境外单跳每请求约 420 ms，边缘必须同区。未做：D10 的 JWT、限带宽。

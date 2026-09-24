@@ -67,3 +67,6 @@
 
 加了：`mcpServer/elicitation/request` 处理（否则 MCP 工具一律失败）；设置面接口 `/prefs`、`/credentials`（Fernet 密文、永不回显、可撤销；`WORKBENCH_CREDENTIAL_KEY` 未配置即 503）；底稿接口 `/tasks/{id}/artifacts`（带内容）与 `PUT /tasks/{id}/conclusion`（`kind=user_draft`）；新会话默认带用户偏好；迁移 `20260924_0009_workbench_prefs`。`DATA_QUERY` 专家包经知识 MCP 真跑通（`eval/reports/`）。测试 472。未做项同上，另加：凭据只登记未注入沙箱（沙箱按需拉起时用，第五段）。
 
+## 实现状态（2026-09-25，沙箱按需拉起）
+
+加了 `application/workbench/provisioning.py` 与迁移 `20260925_0010`：每用户一份会合点身份（令牌密文入库，代理令牌只在签发时回给用户一次）、`POST /sandboxes/provision`（取活跃凭据解密 → 登记会合点 → 供给器 → 沙箱行）、`GET/DELETE /sandboxes/provisioned`、`app.cli.workbench_register`（手工登记）。测试 476。

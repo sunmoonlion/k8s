@@ -1,0 +1,110 @@
+# 沙箱供给器（0003 D9）：在 sandbox-pool 里按用户拉起/更新/回收沙箱。工作台经内网调它。
+# 先建 Secret：kubectl -n sandbox-pool create secret generic sandbox-provisioner --from-literal=token=<与工作台共享的令牌>
+#           以及（可选）knowledge 共用令牌：--from-literal=knowledge-token=<KNOWLEDGE_MCP 令牌>（D10 之前共用）
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sandbox-provisioner
+  namespace: sandbox-pool
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sandbox-provisioner
+  namespace: sandbox-pool
+rules:
+  - apiGroups: [""]
+    resources: ["secrets", "persistentvolumeclaims", "services"]
+    verbs: ["get", "list", "create", "update", "delete"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "create", "update", "delete"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "create", "update", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sandbox-provisioner
+  namespace: sandbox-pool
+roleRef: { apiGroup: rbac.authorization.k8s.io, kind: Role, name: sandbox-provisioner }
+subjects:
+  - { kind: ServiceAccount, name: sandbox-provisioner, namespace: sandbox-pool }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sandbox-provisioner
+  namespace: sandbox-pool
+  labels: { app: sandbox-provisioner }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: sandbox-provisioner }
+  template:
+    metadata:
+      labels: { app: sandbox-provisioner }
+    spec:
+      serviceAccountName: sandbox-provisioner
+      securityContext: { runAsUser: 10003, runAsGroup: 10003, runAsNonRoot: true }
+      containers:
+        - name: provisioner
+          image: harbor.sunmoonai.com:30443/app-images/sandbox-provisioner@sha256:REPLACE_WITH_BUILT_DIGEST
+          env:
+            - { name: SANDBOX_NAMESPACE, value: "sandbox-pool" }
+            - { name: SANDBOX_IMAGE, value: "harbor.sunmoonai.com:30443/app-images/sandbox@sha256:REPLACE_WITH_BUILT_DIGEST" }
+            - { name: RELAY_URL, value: "ws://relay.edge.svc.cluster.local:47100" }
+            - { name: KNOWLEDGE_MCP_URL, value: "http://knowledge-backend.app-platform-dev.svc.cluster.local:8000/api/mcp/knowledge" }
+            - name: PROVISIONER_TOKEN
+              valueFrom: { secretKeyRef: { name: sandbox-provisioner, key: token } }
+            - name: KNOWLEDGE_MCP_SHARED_TOKEN
+              valueFrom: { secretKeyRef: { name: sandbox-provisioner, key: knowledge-token, optional: true } }
+          ports:
+            - { name: http, containerPort: 8080 }
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 2
+          resources:
+            requests: { cpu: "50m", memory: "64Mi" }
+            limits: { cpu: "500m", memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sandbox-provisioner
+  namespace: sandbox-pool
+spec:
+  selector: { app: sandbox-provisioner }
+  ports:
+    - { name: http, port: 8080, targetPort: 8080 }
+---
+# 只让工作台（app-platform-dev）进来；出站只到 API server 与 DNS
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sandbox-provisioner
+  namespace: sandbox-pool
+spec:
+  podSelector:
+    matchLabels: { app: sandbox-provisioner }
+  policyTypes: ["Ingress", "Egress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: app-platform-dev }
+      ports:
+        - { protocol: TCP, port: 8080 }
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector: { matchLabels: { k8s-app: kube-dns } }
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+    - ports:
+        - { protocol: TCP, port: 443 }
+        - { protocol: TCP, port: 6443 }
