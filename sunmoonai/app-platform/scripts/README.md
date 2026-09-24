@@ -45,6 +45,12 @@ Knowledge 摄入授权必须单独显式给出；检索 allowlist 不授权上�
 记录落在准备目录下 `database-upgrade-<release_id>/`。新表必须先进入该 App 的 `*_database_policy.py`
 评审清单，否则编译拒绝；序列不在评审范围，新表主键一律用 UUID 默认值。
 
+原准备目录丢失时用 `kind_identity_recover.py --app <app> --kubeconfig … --cluster-uid … --prepared-release-id <当时的 release>
+--output <git 之外的新私有目录>` 从集群现状重建记录：只读线上运行 Secret（核对 release 注解与契约）与数据库目录
+（三个运行身份已存在、旧登录已退役），当场做真实 DB 与 AMQP 登录正反例探针，全部通过才写出
+`plan.private.json`/`applied.json`/`database-activation/complete.json`（标 `recovered_from_live`）。它不写集群、不写库；
+产出的 `plan_sha256` 就是升级声明里的 `preparation_plan_sha256`。私有目录放在任何工作区之外，避免随工作区重建丢失。
+
 开发升级仅允许 KIND 的全 App 事务；C1/production、组件单独 apply 均拒绝。
 非 plan 操作还检查节点实际 `providerID`。迁移按以下顺序执行：
 
