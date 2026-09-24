@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# 本地助手的入口：先同步，再列待办。每次都从这里开始，不用人提醒同步。
-# 用法：bash ~/switch-test/inbox.sh        （~/switch-test 是副本；本脚本跑完会把副本刷新成仓里的最新版）
+# 所有者在本地机上跑的：把仓和副本同步到远程助手推上来的最新状态，并列出待办。
+# 跑完后对本地助手说一句「请看 inbox」。本地助手自己不同步，只看、只跑。
+# 用法：bash ~/switch-test/human-do.sh     （~/switch-test 是副本；本脚本跑完会把副本刷新成仓里的最新版）
 set -uo pipefail
 WS="${WS:-fable}"
 K8S="$HOME/worktrees/$WS/k8s"; ST="$K8S/sunmoonai/docs/dev-investment-agent/switch-test"
@@ -29,4 +30,4 @@ for f in "$ST"/inbox/2*.md; do
   echo; echo "----- $(basename "$f")"; cat "$f"
 done
 [ "$n" = 0 ] && echo "没有待办。"
-echo; echo "===== 每条按 README「一」的 3a–3c 做；「前提」没满足先问。"
+echo; echo "===== 同步完成。现在对本地助手说：请看 inbox。"
