@@ -10,7 +10,7 @@
 | `0001-workbench` | `D4`（方向盘交接的粒度）、`D8`（Task 级审批按次整包还是逐步） |
 | `0003-sandbox` | `D9`（沙箱池的资源模型：常驻还是按需，`CODEX_HOME` 落哪） |
 | `0004-relay` | `D10`（令牌形制与吊销）、`D16`（仓位置） |
-| `0005-agent` | `D11`（Windows 上的 exec-server）；`D5` 已定：本地代理自己挡（[安全](SDD/architecture/security.md)「本地上限」） |
+| `0005-agent` | `D5` 已定（代理自己挡）、`D11` 已定（Windows 可做，装机要一次提权初始化）；剩 Windows 上外沙箱的实现（未验证事项） |
 | `0006-knowledge` | `D2`（数据盘点）、`D7`（用户资料的量与同步） |
 | `0007-eval` | `D6`（负责人、预算行、时间表） |
 | 整个产品 | **`D1`** 法律边界、**`D3`** 客户画像 |
@@ -28,7 +28,6 @@
 | D8 | Task 级审批的粒度：按次授予整包步骤的驾驶权，还是逐步确认 | 按次整包；扩大外发范围、加预算、外部副作用、改目标时再授权 | 打扰率、安全 |
 | D9 | 沙箱池的资源模型：每用户常驻还是按需拉起；`CODEX_HOME` 用 PVC 还是对象存储 | 第一期常驻一个演示用户；正式版按需拉起、PVC | 内网资源、冷启动 |
 | D10 | 会合点令牌：按用户、按站点签发，公钥就地验；吊销传播方式 | JWT + 短期 + 吊销列表推送 | 边缘安全 |
-| D11 | Windows 上的 exec-server：有没有沙箱、装不装得上、杀毒拦不拦 | luna 本地 spike | Windows 覆盖 |
 | D12 | 计费：第一层订阅、第二层按次还是按包 | 两层各一种；不做 token 包干 | 收入结构 |
 | D13 | 离线模式（云端不可达时循环在本地跑）什么时候做 | 第二期 | 可用性 |
 | D14 | `runtime` 仓是否开源 | "让用户能验证"已退役，开源变成单纯的工程选择；未定 | 分发与信誉 |
@@ -39,7 +38,7 @@
 ## 未验证事项 ⚠
 
 - **OpenAI 的 API key 路径**：所有者只有订阅没有 key，未验；BYOK 与国产直连已由 Kimi 验过（`runtime/probe/REPORT-2026-09-23-byok-kimi.md`）；其他国产厂商（DeepSeek、Qwen、GLM）的 responses 兼容度未验；
-- **Windows 上的 exec-server**；
+- **Windows 上本地上限的外沙箱怎么做**：exec-server 本身在 Windows 上已验可用（`runtime/probe/REPORT-2026-09-24-windows-exec-server.md`，需 `codex sandbox setup --elevated` 一次性提权初始化）；我们能否把 exec-server 进程包进同一套受限令牌机制，做 Windows 版时再探；
 - **断线恢复已验**（`runtime/probe/REPORT-2026-09-23-reconnect.md`）：25 秒内重连接回原会话、进程与输出无损；超窗与代理重启会话丢，但环境回来后 app-server 自动重连，新 turn 正常。未验：真实公网抖动时长分布；
 - **一个 exec-server 服务多个 app-server 会话**；
 - **MCP 与 skills 在远端环境里的解析**：方法工具挂在哪一端；

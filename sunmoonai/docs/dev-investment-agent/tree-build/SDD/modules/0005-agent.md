@@ -31,7 +31,7 @@
 
 ## 平台
 
-第一期 Linux 与 macOS。Windows 随 spike（`D11`）：exec-server 有没有沙箱、装不装得上、杀毒拦不拦。
+第一期 Linux 与 macOS。Windows 第二期，已探明可做（`runtime/probe/REPORT-2026-09-24-windows-exec-server.md`）：exec-server 原生可跑、`workspace-write` 挡得住；安装器要含一次 UAC 提权跑 `codex sandbox setup --elevated --current-user`；随包带原生 exe 而不是 npm 垫片；回环端口动态选（47001 会被 Cursor 之类占）；Defender + 火绒样本未拦。Windows 上外沙箱的实现待探。
 
 ## 本地上限由谁挡
 

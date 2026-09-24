@@ -9,3 +9,6 @@
 前提：第一次回传（runtime 98b58d8，结论 undecidable）查明 Windows 机上没有 Codex、Node、可用的 Python，也没有有登录态的 ORCH_HOME。所有者先在 Windows 机上装 Node 20+、`npm i -g @openai/codex@0.155.1`、Python 3.10+，并在 `%USERPROFILE%\.codex-probe` 登录一次 Codex；装好后再跑。本地助手不装软件、不复制凭据
 回传：scripts/results/probe-windows-exec-server.<时间>.txt（写下即可，提交与推回由所有者做）
 ```
+
+---
+已办 2026-09-24：三次运行，最终 **pass**（runtime 55532a9，`scripts/results/probe-windows-exec-server.20260924-113849.*`）。结论与设计影响见 `runtime/probe/REPORT-2026-09-24-windows-exec-server.md`。

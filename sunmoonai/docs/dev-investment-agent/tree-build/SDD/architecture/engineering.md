@@ -45,6 +45,6 @@
 2. **BYOK**：~~`OPENAI_API_KEY` 与一个国产厂商 key~~ 已验：Kimi K3 经 `model_provider` 直连，远端环境、`apply_patch`、审批全过（`REPORT-2026-09-23-byok-kimi.md`）；OpenAI key 路径待有 key 再补；
 3. **会合点透传**：~~两端各出站、中间一个哑透传~~ 回环已验成立（`REPORT-2026-09-23-relay-passthrough.md`）；每 turn 约 45 个串行来回，公网数字要两台机器测（luna）；
 4. **断线恢复**：~~25 秒内重连接回原会话；超窗行为~~ 已验（`REPORT-2026-09-23-reconnect.md`）：窗内无损，超窗或代理重启丢会话但自动重连，新 Attempt 可接续；
-5. **Windows exec-server**（luna，本地）。
+5. **Windows exec-server**：~~本地 spike~~ 已验 pass（`REPORT-2026-09-24-windows-exec-server.md`）：原生可跑、沙箱挡得住；要一次性管理员初始化、端口不能写死、npm 垫片不能当进程起。
 
 任一失败都改设计，不改判据。
