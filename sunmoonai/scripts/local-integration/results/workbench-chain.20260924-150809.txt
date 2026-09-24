@@ -1,0 +1,53 @@
+===== 环境 =====
+主机        VM-0-13-ubuntu
+时间        2026-09-24T15:08:09+08:00
+工位        /home/zym/worktrees/fable
+系统        Linux 6.8.0-88-generic x86_64
+内存        3.6Gi 总 / 1.8Gi 可用
+磁盘        21G 可用 / 64% 已用
+Python      Python 3.13.9
+Node        v25.2.1
+uv          uv 0.11.7 (x86_64-unknown-linux-gnu)
+Codex       codex-cli 0.155.1  CODEX_HOME=未设
+===== 开始 =====
+--- 依赖
+--- 1. 会合点
+--- 2. 本地代理（白名单 /home/zym/worktrees/fable/runtime/probe/user-ws）
+--- 3. 沙箱容器
+--- 4. 工作台驱动整条链
+--- 1. 登记环境、沙箱，建会话
+  VERDICT thread/start 经 ws+令牌成功，thread_id 落库                        pass 01a0d23e-516c-7010-8d4d-e2d38a477b3c
+--- 2. 用户自驾：在白名单目录写文件（命令在本机执行）
+  VERDICT turn/completed 事件到达                                        pass 
+  VERDICT 文件出现在本机白名单目录                                               pass 
+  VERDICT 事件里有 item/completed 且没有 delta                              pass 
+--- 3. 用户自驾：写白名单外 → Codex 请求审批 → 工作台开 Interaction → 我们批准 → 本地上限仍然拒绝
+  VERDICT 审批请求变成 tool_approval Interaction                           pass 
+  VERDICT 批准后的 turn 结束                                               fail 
+  VERDICT 白名单外文件没有出现（本地上限兜底）                                         pass 
+  VERDICT 审批留痕 decision=accept source=user                           pass [('accept', 'user')]
+--- 4. 交出方向盘，顾问按 SMOKE 专家包驾驶同一个 thread（两步、验收、预算、交回）
+  task state: SUCCEEDED step: 2 budget: {'used': '0', 'limit': '5', 'currency': 'CNY', 'reserved': '0.000000'}
+  attempts: [('plan', 'COMPLETED', None), ('answer', 'COMPLETED', None)]
+  artifacts: [('answer', 1), ('handback', 1), ('plan', 1)]
+  answer: {'answer': "The project directory (/home/zym/worktrees/fable/runtime/probe/user-ws) contains two regular files. (1) MARKER.txt — a 25-byte text file whose entire contents are the single line 'SECRET-MARKER-1790172385' (MARKER.txt). (2) PROBE_WB_1790233694.txt — a 14-byte text file whose entire conte
+  VERDICT 顾问驾驶到 SUCCEEDED（真沙箱、Kimi、本机执行）                             pass SUCCEEDED
+  VERDICT 产物 plan/answer/handback 各至少一版                              pass 
+  VERDICT 预算有扣减（token 记账）                                            fail 0
+  VERDICT 终态后方向盘交回用户                                                 pass 
+--- 5. 再次交出方向盘：用户 turn 被拒；取消后交回
+  VERDICT advisor 持方向盘时用户 turn 被拒                                    pass 
+  VERDICT 取消后 Task CANCELLED、方向盘交回                                   pass 
+结论：fail (2)
+--- 日志尾部
+[agent]
+{"t":"2026-09-24T07:08:11.187Z","level":"info","msg":"status endpoint","url":"http://127.0.0.1:36917/"}
+{"t":"2026-09-24T07:08:11.196Z","level":"info","msg":"relay connected","relay":"relay-v1"}
+{"t":"2026-09-24T07:08:14.597Z","level":"info","msg":"stream bridged","conn":"947fb656","local":"ws://127.0.0.1:44681"}
+{"t":"2026-09-24T07:08:59.739Z","level":"warn","msg":"denied by local ceiling","method":"process/start","reason":"sandbox mode danger-full-access exceeds local ceiling workspace-write"}
+[sandbox]
+2026-09-24 07:08:14,578 INFO connection open
+2026-09-24 07:08:14,579 INFO app-server connected; dialing ws://host.docker.internal:47100/sandbox
+2026-09-24 07:08:14,600 INFO paired conn=947fb656
+[2m2026-09-24T07:08:59.741387Z[0m [31mERROR[0m [2mcodex_core::tools::router[0m[2m:[0m [3merror[0m[2m=[0mexec_command failed: CreateProcess { message: "Rejected(\"Failed to create unified e
+exit=1
