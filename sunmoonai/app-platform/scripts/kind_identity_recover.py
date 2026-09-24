@@ -54,6 +54,9 @@ def recover(args):
     annotations = secret.get("metadata", {}).get("annotations", {})
     if annotations.get("sunmoonai.com/release-id") != args.prepared_release_id:
         raise common.RehearsalError("runtime_secret_release_mismatch")
+    # the Secret must be the one the preparation reserved (marker set by kind_identity_prepare), never a hand-made one
+    if annotations.get(preparation.MARKER) != "prepared-not-database-activated":
+        raise common.RehearsalError("runtime_secret_marker_mismatch")
     development_release.verify_runtime_secret_contract(secret, app)
     context = SimpleNamespace(kubeconfig=args.kubeconfig, cluster_uid=args.cluster_uid)
     inventory = json.loads(activation.admin_sql(context, app, activation.inventory_sql(app)))

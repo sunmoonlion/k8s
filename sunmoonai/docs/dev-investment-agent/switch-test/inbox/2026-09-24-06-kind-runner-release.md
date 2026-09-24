@@ -25,6 +25,13 @@
 
 ## B 段：部署到 KIND（所有者已定：只换镜像的升级门，身份准备复用、备份回执按本次 release 新出）
 
+**先做 B5 诊断，做完停下等远程看（2026-09-26）**：上一轮 B5 停在 `restored_catalog_mismatch`，隔离恢复后的目录与静止库目录不一致；原因在两份私有目录快照的差异里，只含表名、列、约束、索引、ACL 条目（角色名），没有行数据。跑：
+```bash
+cd ~/worktrees/fable/k8s/sunmoonai/app-platform/scripts
+~/worktrees/fable/investment-app/investment-backend/app/.venv/bin/python catalog_diff.py ~/private/investment-wb-20260925/baseline.private.json ~/private/investment-wb-20260925/restore-1-catalog.private.json > ~/worktrees/fable/k8s/sunmoonai/scripts/results/kind-runner-release.$(date +%Y%m%d-%H%M%S).B5-catalog-diff.json; echo exit=$?
+```
+把结果文件回传（内容就是差异本身，可以进 git），然后停下，不要重做 B 段；远程看过差异后决定是给 `comparable_catalog` 加一条已证明的归一化，还是库里有需要先修的东西。远程的猜测（待差异证实）：B7 之后对旧登录角色做过 REVOKE/GRANT，某些表的 relacl 变成"显式但等于默认"，pg_dump 不导出与默认相同的 ACL，恢复后成了 NULL——若差异只在 `acl`/`default_acl` 且形如 `baseline=[owner=arwdDxt/owner]`、`restored=null`，就是这个。
+
 前提（2026-09-26 起）：本地那轮按 0009 建的镜像与 bundle 作废，B 段从第 0 步重做；后端与网页镜像用 investment-app 30fece4（子仓 investment-backend e44dc1f、investment-web-frontend 9eb4c01）或更新的 fable 头建一次，就同时满足 06、09、10 三条待办，不用再建。仓已同步到 tpl-app 3317c84、investment-app 同步时的 fable 头（子仓 investment-backend 与 investment-web-frontend 取父仓 gitlink：含 0008 改 UUID、0010 会合点身份、0011 runner 租约、沙箱拉起接口，所以后端与网页镜像都要重建）、k8s 本条待办所在的 fable 头。
 
 0. B7 的私有身份准备目录已丢（原在 `~/worktrees/luna/.local/kind-cutover-20260919`，工作区重建时没了）。先从集群现状重建一份，放在工作区之外：

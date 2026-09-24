@@ -30,7 +30,14 @@ def runtime_secret(app="info"):
 def live_secret(app="info", release_id="kind-b7-20260919"):
     secret = runtime_secret(app)
     secret["metadata"]["uid"] = "secret-uid-1"
-    secret["metadata"]["annotations"] = {"sunmoonai.com/release-id": release_id}
+    secret["metadata"]["annotations"] = {"sunmoonai.com/release-id": release_id,
+                                         target.preparation.MARKER: "prepared-not-database-activated"}
+    return secret
+
+
+def unmarked_secret():
+    secret = live_secret()
+    del secret["metadata"]["annotations"][target.preparation.MARKER]
     return secret
 
 
@@ -83,6 +90,7 @@ class RecoverTest(unittest.TestCase):
     def test_refuses_wrong_release_missing_identities_git_dir_and_writes_nothing(self):
         cases = [
             ("secret", live_secret(release_id="kind-other"), inventory(), "release_mismatch"),
+            ("secret", unmarked_secret(), inventory(), "marker_mismatch"),
             ("inventory", live_secret(), inventory(runtime_login=False), "cannot_login"),
             ("inventory", live_secret(), {**inventory(), "roles": inventory()["roles"][3:]}, "not_activated"),
         ]
