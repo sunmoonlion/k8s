@@ -85,6 +85,7 @@ attempt_id, task_id, session_id, thread_id, environment_id
 codex_version, agent_version, model, model_provider
 task_profile_version, expert_pack_version
 step_id, step_version, input_artifact_versions
+role, arm                             execute | acceptance | competitor | judge；臂号（第一期恒 0）
 turn_ids[]                            这段执行在 thread 上发了哪些 turn
 status, started_at, ended_at
 budget_allocated, budget_consumed     token 与费用为厂商回报
@@ -96,7 +97,7 @@ tool_call_refs, side_effect_refs, evidence_refs, approval_refs
 必须满足：
 
 1. Attempt 终态不可重开；重试创建新 Attempt；
-2. 第一期一个 Task 同时只有一个非终态 Attempt；并行与竞争择优不做（`C-A10`）；
+2. 第一期一个 Task 同时只有一个非终态 Attempt；并行与竞争择优不做（`C-A10`）。**位置留好**：`Attempt.role ∈ {execute, acceptance, competitor, judge}`，`Attempt.arm`（臂号）与 `Attempt.model/model_provider` 已在字段里；`execution_policy.arms` 第一期恒为 1；开多臂时同一 Task 并存多个 `competitor` Attempt，各自绑不同 thread（同一沙箱里另开 thread，或按模型另开沙箱），由 `judge` Attempt 或确定性验收择优，事件名预留 `attempt/compared`、`attempt/judged`、`attempt/objected`。状态词不增；
 3. `COMPLETED` 只表示产出了候选结果，不自动使 Task `SUCCEEDED`；
 4. `BUDGET_EXCEEDED` 是终态；Task 随后进 `WAITING(RESOURCE)`；
 5. `SUSPENDED` 表示执行环境断开（`thread/environment/disconnected`）；Codex 恢复窗 25 秒内重连（`connected` 事件）回 `RUNNING`，执行端进程与输出无损；超窗或本地代理重启则 turn 带错误结束，Attempt `ABANDONED`，Task 进 `WAITING(ENVIRONMENT)`；环境回来后 app-server 自动重连，工作台看到 `environment/status = ready` 即可开新 Attempt 接续（探针 `runtime/probe/REPORT-2026-09-23-reconnect.md`）；

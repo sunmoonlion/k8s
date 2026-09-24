@@ -19,6 +19,7 @@
 | [`methods.md`](methods.md) | 方法与专家包：怎么下发、什么留服务端 |
 | [`profile.md`](profile.md) | Task Profile 与专家包的契约 |
 | [`invariants.md`](invariants.md) | 全程不变量 `I1`–`I14` 与持久化账 |
+| [`persistence.md`](persistence.md) | 持久化：七类数据各存哪、谁是真源、留多久；第一层会话怎么落；备份 |
 | [`ownership.md`](ownership.md) | 责任投影：每个 `F-*`、`I*`、`AT-*` 归谁 |
 | [`engineering.md`](engineering.md) | 工程落点：仓、技术栈、版本配对、第一期切法 |
 

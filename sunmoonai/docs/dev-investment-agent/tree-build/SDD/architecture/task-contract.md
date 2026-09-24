@@ -75,6 +75,8 @@ acceptance[]
 evidence_rules
 on_reject             重做本步、回到指定前一步、或交人
 max_reworks
+mode                  single | compete（第一期只允许 single；compete 时下面两项生效）
+compete               { arms: 模型清单, judge: deterministic | acceptance_turn, objection: bool }
 ```
 
 - 交回物是固定版本的 Artifact；重做产生新版本，不就地覆盖；
