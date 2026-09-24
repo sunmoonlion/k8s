@@ -41,5 +41,6 @@ CODEX_VERSION="$(codex --version | awk '{print $2}')" RELAY_URL="$RELAY_URL" REL
   python3 /opt/sandbox/sandbox_bridge.py &
 BRIDGE_PID=$!
 trap 'kill $BRIDGE_PID 2>/dev/null' EXIT
+for i in $(seq 1 40); do python3 -c "import socket;socket.create_connection(('127.0.0.1',${BRIDGE_PORT:-47002}),1).close()" 2>/dev/null && break; sleep 0.25; done
 unset RELAY_TOKEN
 exec codex app-server --listen "ws://0.0.0.0:${APP_SERVER_PORT:-47800}" --ws-auth capability-token --ws-token-file "$APP_SERVER_TOKEN_FILE"

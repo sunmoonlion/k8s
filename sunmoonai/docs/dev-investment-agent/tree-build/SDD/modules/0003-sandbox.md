@@ -27,6 +27,10 @@ pod（每用户）
 | `F-SBX-06` | 资源限额：内存与 CPU 上限；超限 OOM 时工作台看到断连并进 `SUSPENDED` |
 | `F-SBX-07` | 沙箱不存 Task 真源；会话记录只作执行绑定与调试 |
 
+## 实现状态（2026-09-24）
+
+镜像 `k8s/sunmoonai/sandbox-platform/image/`（node 22 + `@openai/codex@0.155.1` + 桥），入口脚本生成 `config.toml`/`environments.toml`、把 `OPENAI_API_KEY` 落成 `auth.json` 后 unset、起桥、前台起 `app-server --listen ws://0.0.0.0:47800 --ws-auth capability-token`；桥 `bridge/sandbox_bridge.py`；演示用户清单 `resources/demo-user.yaml`（Deployment + PVC + NetworkPolicy）。容器形态联调 pass：工作台角色经 ws + 令牌连入，turn 经会合点到本机代理执行（`runtime/scripts/integration-sandbox-image.sh`）。镜像 1.38 GB，待瘦身。
+
 ## 第一期
 
 一个演示用户的常驻 pod，手工部署清单。正式版按需拉起、PVC、配额（`D9`）。

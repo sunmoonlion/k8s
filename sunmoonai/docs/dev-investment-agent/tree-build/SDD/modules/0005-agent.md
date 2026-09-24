@@ -30,6 +30,10 @@
 | `F-AGENT-08` | 勾选上送：用户勾选的文件上送知识服务（第一期显式） |
 | `F-AGENT-09` | 关掉界面仍在跑；开机自启可选 |
 
+## 实现状态（2026-09-24）
+
+`runtime/agent/`（`@sunmoon/agent` 0.1.0，TypeScript）：exec-server 守护（Linux 外沙箱 = 随包 bwrap）、出站桥（会合点协议 v1）、协议过滤（`process/start`、fs 写、`http/request`）、CLI `init|roots|ceiling|start|status`；27 个单元测试；一机与容器形态联调 pass。未做见 `runtime/CHECKPOINT.md`：弹窗、令牌签发、macOS 外沙箱、Windows 启动、勾选上送、网络硬禁。
+
 ## 平台
 
 第一期 Linux 与 macOS。Windows 第二期，已探明可做（`runtime/probe/REPORT-2026-09-24-windows-exec-server.md`）：exec-server 原生可跑、`workspace-write` 挡得住；安装器要含一次 UAC 提权跑 `codex sandbox setup --elevated --current-user`；随包带原生 exe 而不是 npm 垫片；回环端口动态选（47001 会被 Cursor 之类占）；Defender + 火绒样本未拦。Windows 上外沙箱的实现待探。

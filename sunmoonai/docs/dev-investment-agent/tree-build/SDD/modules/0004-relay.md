@@ -37,6 +37,10 @@
 
 边缘 VM 上与 Traefik 同机；无卷。第一期单实例；水平扩展靠无状态。
 
+## 实现状态（2026-09-24）
+
+v1 在 `k8s/sunmoonai/relay-platform/relay/relay.py`：hello、静态令牌表、协议版本、两端 Codex 版本成对、按用户配对、逐消息透传、`/healthz`；10 个行为测试；Dockerfile 与边缘清单 `resources/relay.yaml`。一机与容器形态联调 pass（`runtime/scripts/results/integration-*.txt`）。未做：`D10` JWT、按用户限带宽、多站点。
+
 ## 探针已知
 
 回环透传成立（`runtime/probe/REPORT-2026-09-23-relay-passthrough.md`；原型 `relay_dumb.py`、`agent_bridge.py`、`sandbox_bridge.py`）。每 turn 约 45 个串行 JSON-RPC 来回，九成是 `fs/getMetadata`，所以**边缘必须与用户同区域**；跨境边缘不成立。Codex 自带一套 rendezvous（`exec-server --remote`，HTTP 注册 + protobuf 多路复用 + 续传 + noise 加密），第一期不兼容（`D17`）。
