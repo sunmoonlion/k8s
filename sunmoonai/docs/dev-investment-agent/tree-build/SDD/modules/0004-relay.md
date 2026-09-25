@@ -54,4 +54,6 @@ v1 在 `k8s/sunmoonai/relay-platform/relay/relay.py`：hello、静态令牌表�
 
 `/admin` 管理通道：工作台用 `RELAY_ADMIN_TOKEN` 登记每用户的代理与沙箱令牌（`set_tokens`/`revoke`/`list`），登记结果落 `RELAY_TOKENS_STATE` 重启回读；撤销关掉在线代理。KIND 里加了 NodePort 30471 给宿主机上的代理。两机公网延迟已测（`runtime/probe/REPORT-2026-09-24-two-machine-latency.md`）：境外单跳每请求约 420 ms，边缘必须同区。
 
+**状态持久（2026-09-26，KIND 实测）**：换镜像时 pod 重建，存在临时卷里的公钥、登记表、吊销表全丢——代理令牌验不过被拒，已吊销的令牌反而重新有效。改为：公钥以 Secret `relay-jwt` 为准（启动即加载），状态文件放持久卷 `relay-state`（Deployment 用 Recreate）。仍欠：工作台定期补推公钥与吊销表（会合点换机器、多实例时靠它收敛），吊销表要在工作台库里留一份作真源。
+
 **D10 已做（2026-09-25）**：令牌是三段式且会合点有工作台公钥（`RELAY_JWT_PUBLIC_KEY` 或管理通道 `set_public_key` 推来、落状态文件）时就地验签（ES256、`aud=relay`、`sub=hello.user`、`role=` 路径角色、`exp`、可选 `iss`），不回源不查表（`F-RELAY-01`）；吊销按 `jti`（`revoke_jti`）与按用户（`revoke`）内存持有并落状态文件（`F-RELAY-06`）。静态表与登记表仍是没公钥时的退路，两种令牌共存。只多一个依赖 `cryptography`。测试 28（14 个配对测试在 JWT 上再跑一遍 + 拒绝矩阵 + 吊销与状态回读）。未做：限带宽、多站点（`F-RELAY-07`）。

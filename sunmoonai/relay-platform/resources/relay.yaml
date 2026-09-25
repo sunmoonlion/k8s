@@ -11,6 +11,7 @@ metadata:
   namespace: edge
   labels: { app: relay }
 spec:
+  strategy: { type: Recreate }  # 单个 RWO 持久卷：先停旧的再起新的
   replicas: 1
   selector:
     matchLabels: { app: relay }
@@ -27,11 +28,12 @@ spec:
             - { name: RELAY_PORT, value: "47100" }
             - { name: RELAY_NAME, value: "edge-1" }
             - { name: RELAY_TOKENS_FILE, value: "/secrets/tokens.json" }
-            # 工作台经 /admin 动态登记每用户令牌（0004 第一期）；登记结果落 emptyDir，pod 重启内保留
+            # 工作台经 /admin 动态登记的令牌、推来的公钥、吊销表都落这个文件；放持久卷，pod 重建不丢
+            #（2026-09-26 KIND：emptyDir 在换镜像时丢了公钥与吊销表，代理被拒、已吊销的令牌会重新有效）
             - { name: RELAY_TOKENS_STATE, value: "/state/tokens.json" }
             - name: RELAY_ADMIN_TOKEN
               valueFrom: { secretKeyRef: { name: relay-admin, key: token, optional: true } }
-            # D10：工作台验签公钥（ES256）。可从 Secret 给，也可由工作台经 /admin set_public_key 推来（落 /state）
+            # D10：工作台验签公钥（ES256）。以 Secret relay-jwt 为准（重启即有）；工作台经 /admin 推来的只是补充
             - name: RELAY_JWT_PUBLIC_KEY
               valueFrom: { secretKeyRef: { name: relay-jwt, key: public.pem, optional: true } }
             - { name: RELAY_JWT_ISSUER, value: "sunmoon-workbench" }
@@ -50,7 +52,7 @@ spec:
         - name: tokens
           secret: { secretName: relay-tokens, defaultMode: 0440 }
         - name: state
-          emptyDir: { sizeLimit: 8Mi }
+          persistentVolumeClaim: { claimName: relay-state }
 ---
 apiVersion: v1
 kind: Service
@@ -73,3 +75,11 @@ spec:
   selector: { app: relay }
   ports:
     - { name: ws, port: 47100, targetPort: 47100, nodePort: 30471 }
+---
+# 会合点状态（登记表、公钥、吊销表）的持久卷；单实例。多实例时改为共享存储，见 engineering.md「走向企业级」三
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: { name: relay-state, namespace: edge }
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: { requests: { storage: 64Mi } }
