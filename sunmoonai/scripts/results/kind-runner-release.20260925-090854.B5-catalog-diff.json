@@ -1,0 +1,46 @@
+{
+  "detail": {
+    "acl": {
+      "changed": {
+        "agent_delivery_failures_legacy_0006": {
+          "baseline": {
+            "acl": [
+              "investment_backend_user_migration=arwdDxtm/investment_backend_user_migration"
+            ],
+            "owner": "investment_backend_user_migration",
+            "relkind": "r",
+            "relname": "agent_delivery_failures_legacy_0006"
+          },
+          "restored": {
+            "acl": null,
+            "owner": "investment_backend_user_migration",
+            "relkind": "r",
+            "relname": "agent_delivery_failures_legacy_0006"
+          }
+        },
+        "checkpoint_migrations": {
+          "baseline": {
+            "acl": [
+              "investment_backend_user_migration=arwdDxtm/investment_backend_user_migration"
+            ],
+            "owner": "investment_backend_user_migration",
+            "relkind": "r",
+            "relname": "checkpoint_migrations"
+          },
+          "restored": {
+            "acl": null,
+            "owner": "investment_backend_user_migration",
+            "relkind": "r",
+            "relname": "checkpoint_migrations"
+          }
+        }
+      },
+      "only_in_baseline": {},
+      "only_in_restored": {}
+    }
+  },
+  "differs": true,
+  "kinds": [
+    "acl"
+  ]
+}
