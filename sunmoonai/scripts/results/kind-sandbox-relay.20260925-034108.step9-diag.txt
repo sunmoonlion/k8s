@@ -1,0 +1,189 @@
+KIND Workbench step 9 read-only diagnostics
+UTC: 2026-09-25 03:42:58
+== 1 pods
+NAME                                            READY   STATUS    RESTARTS   AGE    IP            NODE           NOMINATED NODE   READINESS GATES
+investment-admin-frontend-cdf8f7bbc-gpbnz       1/1     Running   0          126m   10.244.1.30   kind-worker    <none>           <none>
+investment-admin-frontend-cdf8f7bbc-xj6tm       1/1     Running   0          126m   10.244.2.32   kind-worker2   <none>           <none>
+investment-backend-api-5c5cf6f7f8-kc54v         1/1     Running   0          126m   10.244.1.29   kind-worker    <none>           <none>
+investment-backend-api-5c5cf6f7f8-qkf59         1/1     Running   0          126m   10.244.2.27   kind-worker2   <none>           <none>
+investment-backend-runner-698c4996c-qdwmn       1/1     Running   0          93m    10.244.2.42   kind-worker2   <none>           <none>
+investment-backend-scheduler-688dd77d68-ghqmb   1/1     Running   0          126m   10.244.2.29   kind-worker2   <none>           <none>
+investment-backend-worker-f4bb86fb7-qrdz2       1/1     Running   0          126m   10.244.2.28   kind-worker2   <none>           <none>
+investment-web-frontend-7976ff4d77-8d7zm        1/1     Running   0          126m   10.244.1.31   kind-worker    <none>           <none>
+investment-web-frontend-7976ff4d77-nnnbm        1/1     Running   0          126m   10.244.2.31   kind-worker2   <none>           <none>
+NAME                            READY   STATUS    RESTARTS   AGE   IP            NODE           NOMINATED NODE   READINESS GATES
+sandbox-demo-769f957cfd-btscw   1/1     Running   0          95m   10.244.2.41   kind-worker2   <none>           <none>
+NAME                     READY   STATUS    RESTARTS   AGE    IP            NODE           NOMINATED NODE   READINESS GATES
+relay-66f9d78657-7nlg9   1/1     Running   0          100m   10.244.2.37   kind-worker2   <none>           <none>
+== 2 runner log
+2026-09-25 02:09:59 - root - INFO - 日志系统初始化完成
+2026-09-25 02:10:00 - app.infrastructure.storage.redis - INFO - Redis初始化成功
+2026-09-25 02:10:00 - app.infrastructure.storage.postgres - INFO - 正在初始化Postgres连接...
+2026-09-25 02:10:00 - app.infrastructure.storage.postgres - INFO - Postgres初始化成功
+2026-09-25 02:10:00 - __main__ - INFO - service_starting service=investment-backend role=runner
+2026-09-25 02:10:00 - app.application.workbench.runner - INFO - workbench runner starting id=investment-backend-runner-698c4996c-qdwmn
+2026-09-25 03:36:01 - app.application.workbench.runner - INFO - took over sandbox=ce3fe8da-f055-4bf3-acaf-2c7aaa2331ff expired_approvals=0
+2026-09-25 03:36:01 - app.application.workbench.runner - INFO - sandbox link up sandbox=ce3fe8da-f055-4bf3-acaf-2c7aaa2331ff url=ws://sandbox-demo.sandbox-pool.svc:47800
+== 3 api log
+Found 2 pods, using pod/investment-backend-api-5c5cf6f7f8-qkf59
+2026-09-25 01:37:55 - app.interfaces.errors.exception_handlers - WARNING - application_error status=401 code=auth_required path=/api/auth/web/me
+2026-09-25 03:02:48 - app.interfaces.errors.exception_handlers - WARNING - application_error status=401 code=auth_required path=/api/auth/web/me
+2026-09-25 03:37:26 - app.bootstrap.api - INFO - audit_mutation method=POST path=/api/workbench/sessions/d6a9d709-21e3-42dd-9ae3-8ec0e05e0b4c/turns status=202 actor_id=- correlation_id=0b771c52-c8e9-42c5-be13-5b85adfd986f operation_id=- reason_present=False
+== 4 sandbox log
+2026-09-25 02:59:26,022 INFO connection open
+2026-09-25 02:59:26,022 INFO app-server connected; dialing ws://relay.edge.svc.cluster.local:47100/sandbox
+2026-09-25 02:59:26,027 ERROR relay refused: agent offline
+2026-09-25 02:59:26,027 INFO connection closed
+2026-09-25 02:59:26,130 INFO connection open
+2026-09-25 02:59:26,130 INFO app-server connected; dialing ws://relay.edge.svc.cluster.local:47100/sandbox
+2026-09-25 02:59:26,135 ERROR relay refused: agent offline
+2026-09-25 02:59:26,135 INFO connection closed
+2026-09-25 02:59:26,238 INFO connection open
+2026-09-25 02:59:26,238 INFO app-server connected; dialing ws://relay.edge.svc.cluster.local:47100/sandbox
+2026-09-25 02:59:26,243 ERROR relay refused: agent offline
+2026-09-25 02:59:26,243 INFO connection closed
+2026-09-25 02:59:26,346 INFO connection open
+2026-09-25 02:59:26,346 INFO app-server connected; dialing ws://relay.edge.svc.cluster.local:47100/sandbox
+2026-09-25 02:59:26,351 ERROR relay refused: agent offline
+2026-09-25 02:59:26,352 INFO connection closed
+2026-09-25 02:59:26,454 INFO connection open
+2026-09-25 02:59:26,454 INFO app-server connected; dialing ws://relay.edge.svc.cluster.local:47100/sandbox
+2026-09-25 02:59:26,459 ERROR relay refused: agent offline
+2026-09-25 02:59:26,459 INFO connection closed
+2026-09-25 02:59:26,561 INFO connection open
+2026-09-25 02:59:26,562 INFO app-server connected; dialing ws://relay.edge.svc.cluster.local:47100/sandbox
+2026-09-25 02:59:26,566 ERROR relay refused: agent offline
+2026-09-25 02:59:26,566 INFO connection closed
+2026-09-25 02:59:26,669 INFO connection open
+2026-09-25 02:59:26,669 INFO app-server connected; dialing ws://relay.edge.svc.cluster.local:47100/sandbox
+2026-09-25 02:59:26,673 ERROR relay refused: agent offline
+2026-09-25 02:59:26,674 INFO connection closed
+2026-09-25 02:59:26,776 INFO connection open
+2026-09-25 02:59:26,777 INFO app-server connected; dialing ws://relay.edge.svc.cluster.local:47100/sandbox
+2026-09-25 02:59:26,781 ERROR relay refused: agent offline
+2026-09-25 02:59:26,782 INFO connection closed
+2026-09-25 02:59:26,884 INFO connection open
+2026-09-25 02:59:26,884 INFO app-server connected; dialing ws://relay.edge.svc.cluster.local:47100/sandbox
+2026-09-25 02:59:26,888 ERROR relay refused: agent offline
+2026-09-25 02:59:26,889 INFO connection closed
+2026-09-25 02:59:26,991 INFO connection open
+2026-09-25 02:59:26,992 INFO app-server connected; dialing ws://relay.edge.svc.cluster.local:47100/sandbox
+2026-09-25 02:59:26,996 ERROR relay refused: agent offline
+2026-09-25 02:59:26,997 INFO connection closed
+2026-09-25 02:59:27,099 INFO connection open
+2026-09-25 02:59:27,100 INFO app-server connected; dialing ws://relay.edge.svc.cluster.local:47100/sandbox
+2026-09-25 02:59:27,104 ERROR relay refused: agent offline
+2026-09-25 02:59:27,104 INFO connection closed
+2026-09-25 02:59:27,207 INFO connection open
+2026-09-25 02:59:27,207 INFO app-server connected; dialing ws://relay.edge.svc.cluster.local:47100/sandbox
+2026-09-25 02:59:27,211 ERROR relay refused: agent offline
+2026-09-25 02:59:27,212 INFO connection closed
+2026-09-25 02:59:27,314 INFO connection open
+2026-09-25 02:59:27,314 INFO app-server connected; dialing ws://relay.edge.svc.cluster.local:47100/sandbox
+2026-09-25 02:59:27,319 ERROR relay refused: agent offline
+2026-09-25 02:59:27,319 INFO connection closed
+2026-09-25 02:59:27,422 INFO connection open
+2026-09-25 02:59:27,422 INFO app-server connected; dialing ws://relay.edge.svc.cluster.local:47100/sandbox
+2026-09-25 02:59:27,432 INFO paired conn=6d09bb10
+2026-09-25 02:59:27,435 INFO connection closed
+2026-09-25 02:59:27,436 INFO stream closed
+2026-09-25 03:36:01,366 INFO connection open
+2026-09-25 03:36:01,366 INFO app-server connected; dialing ws://relay.edge.svc.cluster.local:47100/sandbox
+2026-09-25 03:36:01,374 INFO paired conn=216be9ff
+== 5 relay log
+2026-09-25 03:39:40,122 INFO HTTP response sent (200 OK)
+2026-09-25 03:39:40,122 INFO connection closed
+2026-09-25 03:39:50,123 INFO HTTP response sent (200 OK)
+2026-09-25 03:39:50,123 INFO connection closed
+2026-09-25 03:40:00,123 INFO HTTP response sent (200 OK)
+2026-09-25 03:40:00,123 INFO connection closed
+2026-09-25 03:40:10,123 INFO HTTP response sent (200 OK)
+2026-09-25 03:40:10,123 INFO connection closed
+2026-09-25 03:40:20,123 INFO HTTP response sent (200 OK)
+2026-09-25 03:40:20,123 INFO connection closed
+2026-09-25 03:40:30,122 INFO HTTP response sent (200 OK)
+2026-09-25 03:40:30,123 INFO connection closed
+2026-09-25 03:40:40,122 INFO HTTP response sent (200 OK)
+2026-09-25 03:40:40,122 INFO connection closed
+2026-09-25 03:40:50,122 INFO HTTP response sent (200 OK)
+2026-09-25 03:40:50,122 INFO connection closed
+2026-09-25 03:41:00,122 INFO HTTP response sent (200 OK)
+2026-09-25 03:41:00,122 INFO connection closed
+2026-09-25 03:41:10,122 INFO HTTP response sent (200 OK)
+2026-09-25 03:41:10,123 INFO connection closed
+2026-09-25 03:41:20,122 INFO HTTP response sent (200 OK)
+2026-09-25 03:41:20,122 INFO connection closed
+2026-09-25 03:41:30,122 INFO HTTP response sent (200 OK)
+2026-09-25 03:41:30,122 INFO connection closed
+2026-09-25 03:41:40,122 INFO HTTP response sent (200 OK)
+2026-09-25 03:41:40,122 INFO connection closed
+2026-09-25 03:41:50,122 INFO HTTP response sent (200 OK)
+2026-09-25 03:41:50,122 INFO connection closed
+2026-09-25 03:42:00,122 INFO HTTP response sent (200 OK)
+2026-09-25 03:42:00,122 INFO connection closed
+2026-09-25 03:42:10,122 INFO HTTP response sent (200 OK)
+2026-09-25 03:42:10,122 INFO connection closed
+2026-09-25 03:42:20,123 INFO HTTP response sent (200 OK)
+2026-09-25 03:42:20,123 INFO connection closed
+2026-09-25 03:42:30,121 INFO HTTP response sent (200 OK)
+2026-09-25 03:42:30,122 INFO connection closed
+2026-09-25 03:42:40,122 INFO HTTP response sent (200 OK)
+2026-09-25 03:42:40,123 INFO connection closed
+2026-09-25 03:42:50,123 INFO HTTP response sent (200 OK)
+2026-09-25 03:42:50,123 INFO connection closed
+== 6 runner env names
+WORKBENCH_ENABLED
+WORKBENCH_ENVIRONMENT_KEY
+WORKBENCH_POLL_SECONDS
+WORKBENCH_PROVISIONER_URL
+WORKBENCH_REDIS_KEY_PREFIX
+WORKBENCH_RELAY_ADMIN_URL
+WORKBENCH_RELAY_PUBLIC_URL
+WORKBENCH_RUNNER_ID
+WORKBENCH_SANDBOX_MODEL
+WORKBENCH_SANDBOX_MODEL_PROVIDER
+WORKBENCH_SANDBOX_PROVIDER_BASE_URL
+== 7 sessions
+                  id                  |              sandbox_id              |        project_root         |              thread_id               | wheel |          created_at           
+--------------------------------------+--------------------------------------+-----------------------------+--------------------------------------+-------+-------------------------------
+ d6a9d709-21e3-42dd-9ae3-8ec0e05e0b4c | ce3fe8da-f055-4bf3-acaf-2c7aaa2331ff | /home/zymun/research/smoke1 | 01a0d6a2-6253-78a0-8c78-e0d2203a0b91 | user  | 2026-09-25 03:36:01.171733+00
+(1 row)
+
+== 8 commands
+         kind         | status |                claimed_by                 |          claimed_at           |          finished_at          | error 
+----------------------+--------+-------------------------------------------+-------------------------------+-------------------------------+-------
+ turn.start           | done   | investment-backend-runner-698c4996c-qdwmn | 2026-09-25 03:37:27.121759+00 | 2026-09-25 03:37:27.20014+00  | 
+ session.start_thread | done   | investment-backend-runner-698c4996c-qdwmn | 2026-09-25 03:36:01.338667+00 | 2026-09-25 03:36:01.517484+00 | 
+(2 rows)
+
+== 9 events
+ cursor |  kind  |           event_type            |          created_at           
+--------+--------+---------------------------------+-------------------------------
+     66 | turn   | turn/completed                  | 2026-09-25 03:37:43.341188+00
+     65 | thread | thread/status/changed           | 2026-09-25 03:37:43.336193+00
+     64 | turn   | turn/diff/updated               | 2026-09-25 03:37:43.331494+00
+     62 | item   | item/completed                  | 2026-09-25 03:37:43.317694+00
+     61 | item   | item/started                    | 2026-09-25 03:37:42.976413+00
+     60 | item   | item/completed                  | 2026-09-25 03:37:42.971867+00
+     59 | item   | item/reasoning/summaryPartAdded | 2026-09-25 03:37:42.966683+00
+     58 | item   | item/started                    | 2026-09-25 03:37:42.960535+00
+     57 | turn   | turn/diff/updated               | 2026-09-25 03:37:38.515715+00
+     55 | item   | item/completed                  | 2026-09-25 03:37:38.497613+00
+     54 | item   | item/started                    | 2026-09-25 03:37:38.492894+00
+     53 | item   | item/completed                  | 2026-09-25 03:37:38.412539+00
+     52 | item   | item/reasoning/summaryPartAdded | 2026-09-25 03:37:38.407824+00
+(15 rows)
+
+== 10 sandboxes/leases
+                  id                  |              app_server_url              | env_ref |   status   
+--------------------------------------+------------------------------------------+---------+------------
+ ce3fe8da-f055-4bf3-acaf-2c7aaa2331ff | ws://sandbox-demo.sandbox-pool.svc:47800 | t       | registered
+(1 row)
+
+              sandbox_id              |                 runner_id                 | live 
+--------------------------------------+-------------------------------------------+------
+ ce3fe8da-f055-4bf3-acaf-2c7aaa2331ff | investment-backend-runner-698c4996c-qdwmn | t
+(1 row)
+
+== 11 agent log
+代理日志不在默认位置，贴出代理终端最后 30 行
