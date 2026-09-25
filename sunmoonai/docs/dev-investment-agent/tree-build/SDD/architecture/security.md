@@ -69,13 +69,19 @@
 | 闸 | 定法 | Casdoor 3.42 里怎么落 |
 | --- | --- | --- |
 | 邀请码 | 注册必须填；码由所有者在 Casdoor 后台发，每个码设可用次数（`quota`），可绑定到某个邮箱；用尽或停用即失效 | 应用的注册项 `Invitation code` 设为必填；`invitation` 对象（`code`、`quota`、`usedCount`、`application`、可选 `email`、`state`） |
-| 邮箱验证 | 注册时向邮箱发验证码，填对才建号；登录可用用户名或邮箱（Casdoor 按用户名、邮箱、手机号依次匹配，已核源码） | 注册项 `Email` 设为必填、规则为发验证码（非 `No verification`）；应用挂一个邮件（SMTP）提供方（`D20`） |
+| 邮箱验证 | 注册时向邮箱发验证码，填对才建号；登录可用用户名或邮箱（Casdoor 按用户名、邮箱、手机号依次匹配，已核源码）。同一地址 60 秒内只发一次（Casdoor 自带） | 注册项 `Email` 设为必填、规则为发验证码（非 `No verification`）；应用挂一个邮件（SMTP）提供方。当前用腾讯云邮件推送的 SMTP，企业邮箱走同一接口（`D20` 已定） |
 | 手机号（留接口） | 第一期不收；合规若要求实名（手机号）再开，不改代码 | 注册项 `Phone` 现在隐藏；开时设为必填、规则为发验证码，应用挂短信提供方（需企业短信签名） |
-| 人机校验 | 注册页图形验证码 | 注册项或应用的验证码提供方 |
+| 人机校验 | 从公网来的请求要过图形验证码（登录与发验证码都是）；内网与本机来的不要，免得挡住集群内的测试脚本 | 应用挂 Casdoor 自带的 `provider_captcha_default`，规则 `Internet-Only`（可配成 `Always`）。上边缘后 Casdoor 看到的客户端地址取决于转发头，上线前要核 |
 
-配套的资源闸在工作台，不在 Casdoor：一人一个沙箱（已做，`F-SBX-01`）；**全局沙箱上限**（`F-SBX-08`）；登记了模型 key 才能拉起沙箱（已做）。
+另外关掉 Casdoor 自带应用 `app-built-in` 的注册：它默认开着，任何人都能注册进 `built-in` 组织，也就是 Casdoor 自己的管理组织。
 
-这些都写进平台的 Casdoor 初始化脚本 `k8s/sunmoonai/app-platform/auth-app/casdoor/deploy-casdoor/post-deploy-setup.sh` 与其配置，不在后台手点；SMTP 口令进 Secret，不进 git。
+配套的资源闸在工作台，不在 Casdoor：一人一个沙箱（已做，`F-SBX-01`）；**全局沙箱上限**（`F-SBX-08`，已做，默认 20）；登记了模型 key 才能拉起沙箱（已做）。
+
+这些都写进平台的 Casdoor 初始化脚本，不在后台手点；SMTP 口令进 Secret，不进 git。
+
+**实现状态（2026-09-26）**：`auth-app/casdoor/deploy-casdoor/signup-setup.sh`，由 `post-deploy-setup.sh` 第六步调用；配置项见 `post-deploy-setup.local.conf.example` 的「自助注册」段。**没配邮件服务时注册保持关闭**（邮箱要验证码，开着只会让人卡在发码那一步）。在本机用真实的 Casdoor 3.42.0 + PostgreSQL + 本地收信服务（TLS）跑通：缺邀请码、错邀请码、缺邮箱码、错邮箱码都被拒；验证码邮件按配置的发信人、标题、正文送达；正确注册后账号进 `sunmoonai`、邮箱标记已验证、邀请码计数；额度用尽后拒绝（"Invitation code exhausted"）；用大小写混写的邮箱能登录；经 `app-built-in` 注册被拒；重跑不清零已用次数；手机号开关与各种错配置都有明确报错。没有用真实的腾讯云邮件推送发过信（服务未开通）。
+
+发现（未处理）：本脚本用 SQL 直接建的应用没有 `signin_methods`，Casdoor 会拒绝这些应用的密码登录（"login with password is not enabled"）。KIND 里的投资网页能登录，说明那里的应用另有来源；在新环境里用本脚本从零建应用时，要补上登录方式，上线前核。
 
 ## 不再守的
 

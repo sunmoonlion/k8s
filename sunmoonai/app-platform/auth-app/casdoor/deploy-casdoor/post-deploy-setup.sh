@@ -7,6 +7,8 @@
 #   2. 幂等创建 Casdoor Organizations
 #   3. 幂等创建 Casdoor Applications（本地配置可声明 authorization_code/client_credentials）
 #   4. 按 ORG_* 在各业务组织下幂等创建用户 admin（密码同 ADMIN_PASSWORD）
+#   5. 自助注册（signup-setup.sh）：只给 SIGNUP_APP 开注册，邀请码必填、邮箱验证码、人机校验；
+#      邮件服务未配时注册保持关闭；关闭 Casdoor 自带 app-built-in 的注册
 #
 # 用法：
 #   bash post-deploy-setup.sh [namespace] [--cluster C1|C2]
@@ -492,6 +494,10 @@ setup_admin_password() {
     fi
 }
 
+# ─────────────────────────── 第六步：自助注册 ───────────────────────────
+# shellcheck source=signup-setup.sh
+source "$POST_DEPLOY_SCRIPT_DIR/signup-setup.sh"
+
 # ─────────────────────────── 主流程 ───────────────────────────
 
 main() {
@@ -515,6 +521,10 @@ main() {
     setup_applications
     ensure_org_admin_users
     setup_admin_password
+    setup_signup || {
+        log_error "自助注册设置失败；其它步骤已完成，修好配置后重跑本脚本"
+        exit 1
+    }
 
     echo ""
     echo "═══════════ Casdoor 访问信息 ═══════════"

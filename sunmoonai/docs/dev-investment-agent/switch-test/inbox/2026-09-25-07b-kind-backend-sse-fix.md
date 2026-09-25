@@ -3,7 +3,7 @@
 ```text
 被测仓：k8s，本地路径 ~/worktrees/fable/k8s（还要 investment-app）
 跑：按下面编号步骤做（就是 06 B 段的只换镜像升级，只换 backend 一个镜像）
-仓与提交：investment-app c38e616（子仓 investment-backend e1312c0）；k8s 本条待办所在的 fable 头
+仓与提交：investment-app c38e616（子仓 investment-backend e1312c0）或更新的 fable 头（345728b / 7a245ed 另含全局沙箱上限 F-SBX-08，默认值在代码里，第 4 步的 diff 仍只有 backend 镜像与锁）；k8s 本条待办所在的 fable 头
 预计：40 分钟；要 Docker、KIND、Harbor
 看什么：第 9 步网页发一句话后，不刷新页面，「过程」里实时出现命令与回答
 前提：07 已做完（第 8、9 步可以靠刷新页面看结果先过）；06 的私有身份准备目录 ~/private/investment-identity-recovered-20260926 还在
@@ -20,7 +20,7 @@
 
 0. 不用重建身份准备：沿用 `~/private/investment-identity-recovered-20260926`，它的 `plan_sha256` 与 `development-input.json` 里现有的 `runtime_identity_upgrade` 一致，不动那一段。
 1. 只建 backend：`cd ~/worktrees/fable/k8s/sunmoonai/app-platform/scripts && CLUSTER=KIND APPS=investment COMPONENTS="backend" SOURCE_ROOT=$HOME/worktrees/fable bash build-push-app-images.sh`；取新 backend digest。
-2. 锁：`~/worktrees/fable/investment-app/development-source-lock.json` 里只有 backend 那个 component 的 `commit`/`tree` 换成 `e1312c0…` 的全长值（`git -C ~/worktrees/fable/investment-app/investment-backend rev-parse HEAD` 与 `rev-parse 'HEAD^{tree}'`）；web 与 admin 不动。
+2. 锁：`~/worktrees/fable/investment-app/development-source-lock.json` 里只有 backend 那个 component 的 `commit`/`tree` 换成本地检出的实际值（`git -C ~/worktrees/fable/investment-app/investment-backend rev-parse HEAD` 与 `rev-parse 'HEAD^{tree}'`）；web 与 admin 不动。
 3. `development-input.json`：只换 `images.backend` 与 `development_source_lock` 里 backend 那段；`migration_head` 仍是 `20260925_0011`（没有新迁移）。
 4. 渲染到空目录（`--release-id kind-wb-20260926-sse`），`diff -ru deployment/bundle <新目录>`：**只应有** backend 镜像 digest（api、worker、scheduler、runner、迁移 Job）、backend 源码锁与注解、派生哈希、release id。别的变化就停，贴 diff。然后替换 bundle，跑 A7 门禁、A8 单测、A9 plan（同 06）。
 5. 维护窗口：这次 **runner 也要停**：`kubectl -n app-platform-dev scale deploy investment-backend-api investment-backend-worker investment-backend-scheduler investment-backend-runner --replicas=0`，等四类 Pod 全部消失。

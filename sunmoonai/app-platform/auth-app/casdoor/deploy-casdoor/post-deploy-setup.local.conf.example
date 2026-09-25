@@ -19,3 +19,34 @@ APP_8="sunmoonai-investment-web|SunMoon Investment Web|${CASDOOR_INVESTMENT_WEB_
 
 # Info distribution worker -> Knowledge ingestion。无浏览器 redirect，且只允许 client_credentials。
 APP_9="sunmoonai-info-knowledge-ingest|SunMoon Info to Knowledge Ingest|${CASDOOR_INFO_KNOWLEDGE_CLIENT_ID:?set CASDOOR_INFO_KNOWLEDGE_CLIENT_ID}|${CASDOOR_INFO_KNOWLEDGE_CLIENT_SECRET:?set CASDOOR_INFO_KNOWLEDGE_CLIENT_SECRET}|sunmoonai|[]|false|[\"client_credentials\"]"
+
+# ── 自助注册（security.md「账号与注册」）──────────────────────────────────────
+# 只给投资网页开注册：邀请码必填、邮箱验证码、人机校验（公网来的要）。上面 APP_8 的 enable_sign_up
+# 保持 false 即可，由这一步按邮件服务是否配好来开或关。
+SIGNUP_APP="sunmoonai-investment-web"
+SIGNUP_ORG="sunmoonai"
+# SIGNUP_CAPTCHA_RULE="Internet-Only"      # Internet-Only（默认）/ Always / Dynamic / None
+# SIGNUP_CLOSE_BUILTIN="true"              # 关掉 Casdoor 自带 app-built-in 的注册（默认 true）
+#
+# 邮件服务（SMTP）。不配这几项，注册保持关闭。两种都是 SMTP，同一个接口：
+#   腾讯云邮件推送（当前用）：主机 smtp.qcloudmail.com，端口 465，用户名是控制台里建的发信地址，
+#     口令是该发信地址的 SMTP 密码；发信域名要在控制台验证并配好 SPF/DKIM
+#   企业邮箱（以后可换）：如腾讯企业邮 smtp.exmail.qq.com:465，用户名是邮箱地址，口令是客户端专用密码
+# SIGNUP_SMTP_HOST="smtp.qcloudmail.com"
+# SIGNUP_SMTP_PORT="465"
+# SIGNUP_SMTP_SSL_MODE="Enable"
+# SIGNUP_SMTP_USER="noreply@mail.example.com"
+# SIGNUP_SMTP_PASSWORD="${SIGNUP_SMTP_PASSWORD:?从 Secret 管理器注入}"
+# SIGNUP_SMTP_FROM="noreply@mail.example.com"
+# SIGNUP_SMTP_FROM_NAME="SunMoon AI"
+# SIGNUP_EMAIL_TITLE="SunMoon AI 注册验证码"
+# SIGNUP_EMAIL_CONTENT="你的注册验证码是 %s，5 分钟内有效。如果不是你本人操作，请忽略这封邮件。"
+#
+# 手机号（接口，默认关）：法务要求实名或产品要手机号时，先在 Casdoor 建短信提供方，再打开
+# SIGNUP_PHONE_ENABLED="false"
+# SIGNUP_SMS_PROVIDER="provider_sms_xxx"
+#
+# 首个邀请码（可选；之后在 Casdoor 后台「邀请」里发，每个码设次数，可绑定邮箱）
+# SIGNUP_INVITATION_CODE="${SIGNUP_INVITATION_CODE:?从 Secret 管理器注入}"
+# SIGNUP_INVITATION_QUOTA="10"
+# SIGNUP_INVITATION_EMAIL=""
