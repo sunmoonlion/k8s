@@ -62,6 +62,21 @@
 **形制（`D10`，2026-09-25 定）**：ES256（P-256）签名，`iss=sunmoon-workbench`，`kid` 为公钥指纹；私钥只在工作台 Secret（`WORKBENCH_TOKEN_SIGNING_KEY`），公钥经 `GET /api/workbench/token-keys`（JWKS）与管理通道 `set_public_key` 到边缘、经 Secret 到知识服务。有效期 90 天——不是浏览器会话，是设备/沙箱级凭据，撤换靠吊销不靠短期。没配私钥时退回不透明随机令牌（会合点靠登记表配对）。
 **吊销传播**：工作台在撤换时把旧 `jti` 经管理通道推到会合点（`revoke_jti`），会合点内存持有并落状态文件；按用户吊销（`revoke`）对 JWT 同样生效直到重新登记。推送失败时令牌到期自然失效（`F-RELAY-06`）。知识服务不收吊销推送：撤换会重签 MCP 令牌并滚动沙箱，旧的随沙箱一起消失。
 
+## 账号与注册（2026-09-26 所有者定）
+
+真实用户**自助注册**，第一期加三道闸；配额与计费就绪后去掉邀请码即全开。账号在 Casdoor 的 `sunmoonai` 组织里，只有投资网页（`sunmoonai-investment-web`）开注册；管理端与 info、knowledge 各应用照旧关闭。
+
+| 闸 | 定法 | Casdoor 3.42 里怎么落 |
+| --- | --- | --- |
+| 邀请码 | 注册必须填；码由所有者在 Casdoor 后台发，每个码设可用次数（`quota`），可绑定到某个邮箱；用尽或停用即失效 | 应用的注册项 `Invitation code` 设为必填；`invitation` 对象（`code`、`quota`、`usedCount`、`application`、可选 `email`、`state`） |
+| 邮箱验证 | 注册时向邮箱发验证码，填对才建号；登录可用用户名或邮箱（Casdoor 按用户名、邮箱、手机号依次匹配，已核源码） | 注册项 `Email` 设为必填、规则为发验证码（非 `No verification`）；应用挂一个邮件（SMTP）提供方（`D20`） |
+| 手机号（留接口） | 第一期不收；合规若要求实名（手机号）再开，不改代码 | 注册项 `Phone` 现在隐藏；开时设为必填、规则为发验证码，应用挂短信提供方（需企业短信签名） |
+| 人机校验 | 注册页图形验证码 | 注册项或应用的验证码提供方 |
+
+配套的资源闸在工作台，不在 Casdoor：一人一个沙箱（已做，`F-SBX-01`）；**全局沙箱上限**（`F-SBX-08`）；登记了模型 key 才能拉起沙箱（已做）。
+
+这些都写进平台的 Casdoor 初始化脚本 `k8s/sunmoonai/app-platform/auth-app/casdoor/deploy-casdoor/post-deploy-setup.sh` 与其配置，不在后台手点；SMTP 口令进 Secret，不进 git。
+
 ## 不再守的
 
 资料保密、结果保密、后端不可读、设备身份证明、"让用户能验证"。这些是隐私约束的产物，随约束一起退役。

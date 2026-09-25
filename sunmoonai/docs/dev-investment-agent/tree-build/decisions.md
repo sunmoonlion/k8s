@@ -31,6 +31,7 @@
 | D13 | 离线模式（云端不可达时循环在本地跑）什么时候做 | 第二期 | 可用性 |
 | D14 | `runtime` 仓是否开源 | "让用户能验证"已退役，开源变成单纯的工程选择；未定 | 分发与信誉 |
 | D19 | 公网边缘放哪、域名与证书：云厂商与区域（必须与用户同区域，实测跨境单跳约 420 ms）、域名、证书来源（ACME 自动签还是自备） | 国内同区域云 VM；ACME（Traefik 自带）；一个主域名 | 上云时间、延迟、备案 |
+| D20 | 注册邮件从哪发：SMTP 服务商与发信域名（验证码邮件要能进国内邮箱收件箱，不进垃圾箱） | 用主域名的企业邮箱或国内云厂商的邮件推送；发信域名配 SPF/DKIM | 自助注册能否开 |
 | D15 | 内网站点的上行链路与冗余：专线、UPS、双路 | 上线前的硬门，与监控告警一起 | 可用性 |
 | D18 | 沙箱会话记录（PVC 里的 Codex thread）要不要备份、备多久 | 第一期不备：会话可丢，账不可丢。已做的一半：回收沙箱默认保留 PVC（`?purge=1` 才删） | 用户换沙箱后能否接着聊 |
 | D17 | 会合点要不要兼容 Codex 自带的 rendezvous 协议（`exec-server --remote`：HTTP 注册 + protobuf 多路复用帧 + 序号续传 + noise 端到端加密） | 第一期不兼容，自研哑透传；续传需求出现时再评估；加密下协议过滤失效是硬伤 | 会合点复杂度、过滤层 |
@@ -41,6 +42,7 @@
 - **OpenAI 的 API key 路径**：所有者只有订阅没有 key，未验；BYOK 与国产直连已由 Kimi 验过（`runtime/probe/REPORT-2026-09-23-byok-kimi.md`）；其他国产厂商（DeepSeek、Qwen、GLM）的 responses 兼容度未验；
 - **macOS 上外沙箱的嵌套**：sandbox-exec 外层 + Codex seatbelt 内层，预期可叠加，未验；Linux 已验（`runtime/probe/REPORT-2026-09-24-outer-sandbox.md`）；
 - **Windows 上本地上限的外沙箱怎么做**（Windows 已提为第一期，这条是上线门）：exec-server 本身在 Windows 上已验可用（`runtime/probe/REPORT-2026-09-24-windows-exec-server.md`，需 `codex sandbox setup --elevated` 一次性提权初始化）；能否把 exec-server 进程包进同一套受限令牌机制，Windows 开工前先探；
+- **面向公众的注册是否必须手机号实名**：国内生成式 AI 服务与互联网信息服务可能要求真实身份信息（常见做法是手机号验证），未经法务确认；第一期用邀请码 + 邮箱验证，手机号验证已留接口（`security.md`「账号与注册」），法务确认要实名就开；
 - **没有管理员权限的 Windows 办公机能不能装**（上线门）：Codex 非提权沙箱模式能否在执行端挡住白名单外写入，未验；挡得住给免提权安装路径，挡不住就写明"需要 IT 装一次"，不降级放行（见 0005「平台」）；
 - **断线恢复已验**（`runtime/probe/REPORT-2026-09-23-reconnect.md`）：25 秒内重连接回原会话、进程与输出无损；超窗与代理重启会话丢，但环境回来后 app-server 自动重连，新 turn 正常。未验：真实公网抖动时长分布；
 - **一个 exec-server 服务多个 app-server 会话**；
