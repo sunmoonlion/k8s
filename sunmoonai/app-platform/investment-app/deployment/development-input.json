@@ -7,31 +7,31 @@
     "kind": "development-source-lock",
     "repository": "investment-app",
     "formal_release": false,
-    "task": "workbench-runner-kind-20260925",
+    "task": "workbench-sse-kind-20260925",
     "release_boundary": "Immutable development candidate source; actual deployment requires the matching KIND release, prepared independent identities, and verified quiescent backup.",
     "components": [
       {
         "path": "investment-backend",
-        "commit": "e44dc1ff1397c6ddb6a7c5d9fc265fb10b6d6b0b",
-        "tree": "ed2996f2d3f888d3bafc57f54693ebdbad6232a1",
-        "remote_branch": "origin/master"
+        "commit": "f7c7404380f8dc281c1c2dacca51c8091b63baf1",
+        "tree": "e6ab1273d934d8d7a886e4d3c9a8fdc9d4bb9968",
+        "remote_branch": "origin/fable"
       },
       {
         "path": "investment-admin-frontend",
         "commit": "2e1f5c67d583be02b43eb36d1052f5b4ad177f45",
         "tree": "169fdb79f12ac7748fca55cd1baa1478417c45c8",
-        "remote_branch": "origin/master"
+        "remote_branch": "origin/fable"
       },
       {
         "path": "investment-web-frontend",
         "commit": "9eb4c0155c482af43a063f0e169753475d11a22f",
         "tree": "73e17e78a387037b67113930eea3436b654015e1",
-        "remote_branch": "origin/master"
+        "remote_branch": "origin/fable"
       }
     ]
   },
   "images": {
-    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:e853345914a3f8814d3baf775deb58b18fe40d976070c15d756e452403feee4d",
+    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:100504a9734e225a01496d5ded731710b16b6ce8872d2606649cd05ac89a1af8",
     "admin": "harbor.sunmoonai.com:30443/app-images/investment-admin-frontend@sha256:422e7c1e53d5b61eba14bcd242bf73a8e10428f1799e2a6370c1be95cec1923e",
     "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:412b8820a889014959a61a26199965525786c36f6b761babdf3ed16d13a0c85e"
   },
