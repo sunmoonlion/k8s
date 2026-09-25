@@ -21,6 +21,8 @@ Known issue carried to 07b: new events do not appear in the timeline until the p
 - Runner log: sandbox link up at `03:36:01`; advisor task `72dedd8a-c929-4cbb-9222-10b63d8f8742` stopped in `SUCCEEDED` at `03:54:48`.
 - Local agent terminal: `stream bridged conn=216be9ff local=ws://127.0.0.1:45231`.
 - Latest relay log tail contained health-check responses only.
+
+Final sanitized tails captured after the browser smoke: sandbox paired conn `216be9ff`; runner reports sandbox link up and the SMOKE advisor stopped `SUCCEEDED` (2 steps; browser-reported cost 1.000240 CNY); relay tail shows health-check responses. The local agent terminal reported `stream bridged conn=216be9ff local=ws://127.0.0.1:45231`.
 - Sanitized diagnostic capture: `kind-sandbox-relay.20260925-034108.step9-diag.txt`. Output lines containing `sk-`, `token`, or `password` were filtered.
 
 ## Identity ownership correction reported after initial registration
