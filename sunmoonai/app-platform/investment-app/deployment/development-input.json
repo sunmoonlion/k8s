@@ -12,8 +12,8 @@
     "components": [
       {
         "path": "investment-backend",
-        "commit": "f7c7404380f8dc281c1c2dacca51c8091b63baf1",
-        "tree": "e6ab1273d934d8d7a886e4d3c9a8fdc9d4bb9968",
+        "commit": "a14b070a97ab893376bdfe29609ec82b7b8b7c34",
+        "tree": "7d61f6cd152a51e24e89cc0de2eb368b63651105",
         "remote_branch": "origin/fable"
       },
       {
@@ -24,16 +24,16 @@
       },
       {
         "path": "investment-web-frontend",
-        "commit": "9eb4c0155c482af43a063f0e169753475d11a22f",
-        "tree": "73e17e78a387037b67113930eea3436b654015e1",
+        "commit": "a48043371c259e15a723f950a34ba2a30eded5ce",
+        "tree": "f6f280c09e26a4374df6574201f57c4e86304e1c",
         "remote_branch": "origin/fable"
       }
     ]
   },
   "images": {
-    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:100504a9734e225a01496d5ded731710b16b6ce8872d2606649cd05ac89a1af8",
+    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:ab1288a41a90bd85069eed2e07ccba00616942f549f9f9c36d93aa98e29fd75b",
     "admin": "harbor.sunmoonai.com:30443/app-images/investment-admin-frontend@sha256:422e7c1e53d5b61eba14bcd242bf73a8e10428f1799e2a6370c1be95cec1923e",
-    "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:412b8820a889014959a61a26199965525786c36f6b761babdf3ed16d13a0c85e"
+    "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:3be96b51f2503de4ea5d742ea0ce062b13f86d06c57d577c487bb64a8fdea97b"
   },
   "runtime_identity_mode": "independent-v1",
   "runtime_identity_upgrade": {

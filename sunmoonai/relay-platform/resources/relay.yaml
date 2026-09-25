@@ -21,7 +21,7 @@ spec:
       securityContext: { runAsUser: 10002, runAsGroup: 10002, runAsNonRoot: true, fsGroup: 10002 }
       containers:
         - name: relay
-          image: harbor.sunmoonai.com:30443/app-images/relay@sha256:dfc4d0e08fc83f846ceb1d3024a7f944b688f1283f886a89fb0c8c5b0702b647
+          image: harbor.sunmoonai.com:30443/app-images/relay@sha256:5ccedf04bcd3ad124f22c346ea89b8af4e89c550bf48b109292cd0c1110fb184
           env:
             - { name: RELAY_HOST, value: "0.0.0.0" }
             - { name: RELAY_PORT, value: "47100" }
