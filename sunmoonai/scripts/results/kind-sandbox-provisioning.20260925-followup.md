@@ -14,3 +14,12 @@
 
 No token, password, or agent-init command is recorded here.
 - A prior attempt initialized `~/.sunmoon-agent-kind2` and briefly reported `relay=connected`, but the requested process inventory now finds no live CLI process. Step 7 is therefore not counted complete; repeat init/start and verify the live process after the sandbox has been refreshed and is Running.
+
+## Owner refreshed sandbox; agent and machine registration
+
+- Owner clicked “更新沙箱”. The replacement `sandbox-u-a63d03b16693` pod reached `Running` 1/1. Filtered pod logs report `server listening` and the app-server listening on port 47800.
+- Fast-forwarded the clean fable runtime checkout to `d6d9d7c` and rebuilt `agent/dist` with the already-installed TypeScript compiler. The requested `start --help` fix is present in this build.
+- Read `~/private/agent-init.txt` without printing it. Initialized the `kind2` agent with relay `ws://172.18.0.3:30471` and root `/home/zymun/research`; no credential value was recorded.
+- Duplicate agents initially caused repeated close-4000 replacements. Stopped the non-demo processes by exact PID, preserving `~/.sunmoon-agent-kind`. Started one detached kind2 agent. After 30 seconds: exactly one live kind2 process; its status is `connected`; its private log has one `relay connected`; relay logs since the restart show one `agent up` for this user and no subsequent `agent down` or `agent replaced`.
+- Ran `workbench_register` in the Investment API for the user-provided email, environment `this-pc`, root `/home/zymun/research`, and the refreshed sandbox service URL. The environment was newly registered; the already provisioned sandbox record was reused. No token was written to this report.
+- Browser step 8 (create session and run SMOKE) remains pending. Once the owner confirms it passed, perform step 9's update/reclaim verification; do not reclaim before SMOKE.
