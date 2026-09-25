@@ -273,16 +273,21 @@ create_org() {
     local sql
     # languages：Casdoor 登录页 Languages 区块会执行 languages.length；列为 NULL 时整页白板
     #（TypeError: Cannot read properties of null (reading 'length')）
+    # account_items：后台「用户」编辑表单按它生成；NULL 时 Add 按钮报 null.filter 没反应（KIND 实测），
+    #   抄 Casdoor 自带 built-in 组织的；已有组织只在为空时补
+    # password_type：bcrypt（Casdoor 默认）。以前是 plain = 口令明文入库，自助注册的用户也会明文。
+    #   改 bcrypt 后旧用户不受影响：Casdoor 登录成功时发现用户的类型与组织不同，会按组织类型重新哈希（3.42 源码 CheckPassword）
+    local builtin_account_items="(SELECT account_items FROM organization WHERE owner = 'admin' AND name = 'built-in')"
     sql="INSERT INTO organization (
         owner, name, created_time,
         display_name, default_application,
         password_type, country_codes, init_score, is_profile_public,
-        languages
+        languages, account_items
     ) VALUES (
         'admin', '$name', '$now',
         '$display_name', '$default_app',
-        'plain', '[\"CN\"]', 2000, false,
-        '[\"en\",\"zh\"]'
+        'bcrypt', '[\"CN\"]', 2000, false,
+        '[\"en\",\"zh\"]', $builtin_account_items
     ) ON CONFLICT (owner, name) DO UPDATE SET
         display_name = EXCLUDED.display_name,
         default_application = EXCLUDED.default_application,
@@ -290,7 +295,9 @@ create_org() {
         country_codes = EXCLUDED.country_codes,
         init_score = EXCLUDED.init_score,
         is_profile_public = EXCLUDED.is_profile_public,
-        languages = EXCLUDED.languages;"
+        languages = EXCLUDED.languages,
+        account_items = CASE WHEN coalesce(btrim(organization.account_items), '') IN ('', 'null', '[]')
+            THEN EXCLUDED.account_items ELSE organization.account_items END;"
 
     if run_sql "$sql"; then
         log_ok "Organization 就绪: $name"
@@ -448,9 +455,11 @@ ensure_org_admin_users() {
         app_safe="$(sql_escape_single "$default_app")"
         email_safe="$(sql_escape_single "admin@${org_name}.local")"
 
+        # 口令以明文写入并标 password_type=plain：组织是 bcrypt，Casdoor 首次登录成功时按组织类型重新哈希。
+        # 不标的话 password_type 为空会按组织的 bcrypt 去比对明文，登录失败
         sql="INSERT INTO \"user\" (
             owner, name, created_time, updated_time,
-            id, type, password, password_salt,
+            id, type, password, password_type, password_salt,
             display_name, avatar, email, phone,
             score, karma, ranking,
             is_default_avatar, is_online,
@@ -461,7 +470,7 @@ ensure_org_admin_users() {
             signin_wrong_times
         ) VALUES (
             '${org_safe}', 'admin', '${now}', '${now}',
-            gen_random_uuid()::text, 'normal-user', '${safe_pwd}', '',
+            gen_random_uuid()::text, 'normal-user', '${safe_pwd}', 'plain', '',
             'Admin', 'https://cdn.casbin.org/img/casbin.svg', '${email_safe}', '',
             2000, 0, 1,
             false, false,
@@ -472,6 +481,7 @@ ensure_org_admin_users() {
             0
         ) ON CONFLICT (owner, name) DO UPDATE SET
             password = EXCLUDED.password,
+            password_type = EXCLUDED.password_type,
             updated_time = EXCLUDED.updated_time,
             signup_application = EXCLUDED.signup_application,
             is_admin = EXCLUDED.is_admin;"
