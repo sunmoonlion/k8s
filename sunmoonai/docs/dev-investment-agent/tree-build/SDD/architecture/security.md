@@ -64,7 +64,7 @@
 
 ## 账号与注册（2026-09-26 所有者定）
 
-真实用户**自助注册**，第一期加三道闸；配额与计费就绪后去掉邀请码即全开。账号在 Casdoor 的 `sunmoonai` 组织里，只有投资网页（`sunmoonai-investment-web`）开注册；管理端与 info、knowledge 各应用照旧关闭。
+（Casdoor 的"组织"只是账号分组，不等于我们的租户，见 `D21`。）真实用户**自助注册**，第一期加三道闸；配额与计费就绪后去掉邀请码即全开。账号在 Casdoor 的 `sunmoonai` 组织里，只有投资网页（`sunmoonai-investment-web`）开注册；管理端与 info、knowledge 各应用照旧关闭。
 
 | 闸 | 定法 | Casdoor 3.42 里怎么落 |
 | --- | --- | --- |
