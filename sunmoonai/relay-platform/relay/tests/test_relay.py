@@ -243,9 +243,13 @@ class RelayJwtTests(RelayTests):
         await admin.recv()
         a, first = await self.agent("u1", self.token("u1", "agent"))
         self.assertEqual(first["type"], "welcome")
-        # 按 jti 吊销：下一次 hello 被拒；在线的不强制断（到期或撤换时工作台另发 revoke）
+        # 按 jti 吊销：用这个令牌在线的代理当场断开（4003），之后同一令牌的 hello 被拒
         await admin.send(json.dumps({"type": "revoke_jti", "jtis": ["u1-agent"]}))
-        self.assertEqual(json.loads(await admin.recv())["type"], "ok")
+        reply = json.loads(await admin.recv())
+        self.assertEqual(reply["type"], "ok"); self.assertEqual(reply["closed_agents"], 1)
+        await asyncio.wait_for(a.wait_closed(), 3)
+        self.assertEqual(a.close_code, 4003)
+        self.assertNotIn("u1", self.relay.agents)
         ws = await connect(self.url + "/agent"); self.open_ws.append(ws)
         await ws.send(hello("agent", "u1", self.token("u1", "agent")))
         self.assertEqual(json.loads(await ws.recv())["reason"], "token revoked")

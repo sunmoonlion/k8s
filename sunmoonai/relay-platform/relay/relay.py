@@ -67,6 +67,17 @@ def load_public_key(pem: str):
     return key
 
 
+def jwt_jti(token: str) -> str:
+    """不验签地取 jti（只在 check() 已验过签之后用）；非 JWT 返回空串。"""
+    if not looks_like_jwt(token):
+        return ""
+    try:
+        claims = json.loads(_b64url_decode(token.split(".")[1]))
+    except (ValueError, TypeError):
+        return ""
+    return str(claims.get("jti") or "") if isinstance(claims, dict) else ""
+
+
 def verify_jwt(token: str, public_key, *, issuer: str = "") -> dict:
     """返回 claims；任何不符都 raise Reject。不做 aud/role/sub 的业务判断（调用方做）。"""
     from cryptography.exceptions import InvalidSignature
@@ -107,6 +118,7 @@ class Agent:
     codex: str
     software: str
     streams: int = 0
+    jti: str = ""  # JWT 令牌的 jti（静态表令牌为空）；按 jti 吊销时据此断开在线代理
 
 
 @dataclass
@@ -166,7 +178,8 @@ class Relay:
             log.info("agent replaced user=%s", user)
             try: await old.ws.close(code=4000, reason="replaced by a newer agent")
             except Exception: pass
-        agent = Agent(ws=ws, codex=str(hello["codex"]), software=str(hello.get("software", "")))
+        agent = Agent(ws=ws, codex=str(hello["codex"]), software=str(hello.get("software", "")),
+                      jti=jwt_jti(str(hello.get("token") or "")) if self.public_key() is not None else "")
         self.agents[user] = agent
         self.stats["agent_up"] += 1
         await ws.send(json.dumps({"type": "welcome", "relay": RELAY_NAME, "proto": RELAY_PROTOCOL}))
@@ -295,8 +308,13 @@ class Relay:
                 return {"type": "error", "reason": "jtis must be a list of strings"}
             self.revoked_jtis.update(jtis)
             self.persist_tokens()
-            log.info("admin revoke jti count=%d", len(jtis))
-            return {"type": "ok", "revoked": len(jtis)}
+            # 撤换令牌要立刻生效：用被吊销令牌在线的代理当场断开（4003，代理收到后不再重连）
+            closed = [u for u, a in self.agents.items() if a.jti and a.jti in self.revoked_jtis]
+            for u in closed:
+                agent = self.agents.pop(u)
+                asyncio.get_running_loop().create_task(agent.ws.close(code=4003, reason="token revoked"))
+            log.info("admin revoke jti count=%d closed_agents=%d", len(jtis), len(closed))
+            return {"type": "ok", "revoked": len(jtis), "closed_agents": len(closed)}
         user = str(message.get("user") or "")
         if not USER_RE.match(user):
             return {"type": "error", "reason": "bad user"}

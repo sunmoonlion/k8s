@@ -27,7 +27,7 @@
 `/admin`：第一帧 `{"type":"hello","role":"admin","token":<RELAY_ADMIN_TOKEN>}`，通过后发
 `{"type":"set_tokens","user":U,"agent":A,"sandbox":S}`、`{"type":"revoke","user":U}`、`{"type":"list"}`、
 `{"type":"set_public_key","pem":PEM}`、`{"type":"revoke_jti","jtis":[...]}`；每条回 `ok|error|tokens`。
-撤销会关掉该用户在线的代理，且对该用户的 JWT 也拒到重新 `set_tokens` 为止。登记、公钥、吊销表都写 `RELAY_TOKENS_STATE`（emptyDir），重启回读；静态表里的同名用户以静态为准。
+撤销会关掉该用户在线的代理，且对该用户的 JWT 也拒到重新 `set_tokens` 为止；`revoke_jti` 会当场断开用被吊销令牌在线的代理（4003，代理收到后不再重连）。登记、公钥、吊销表都写 `RELAY_TOKENS_STATE`（emptyDir），重启回读；静态表里的同名用户以静态为准。
 工作台在每次拉起沙箱时先推公钥再重新登记，会合点换机器也能收敛。
 
 ## 令牌（D10）
