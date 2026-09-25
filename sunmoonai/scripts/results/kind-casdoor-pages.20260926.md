@@ -16,3 +16,8 @@
 - Step 4 read-only query confirmed `sunmoonai-investment-r5-web` exists in organization `sunmoonai` and registration was disabled.
 - `SIGNUP_APP=sunmoonai-investment-r5-web bash kind-apply-signup.sh` passed. It reported the page title `SunMoon AI 投研`, text-only logo, Chinese-only organization language, Casdoor built-in app registration disabled, and `sunmoonai-investment-r5-web` registration=false because SMTP is not configured.
 - Step 5 visual browser check and login confirmation remain pending owner verification; no browser control is available in this session.
+
+## Step 5 — browser acceptance (owner-reported)
+
+- The owner reports that the Casdoor login page is Chinese, the header reads “SunMoon AI 投研”, and login succeeds.
+- This is recorded as owner-reported browser acceptance; no screenshot was supplied.
