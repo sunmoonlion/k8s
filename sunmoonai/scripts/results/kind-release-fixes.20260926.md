@@ -18,3 +18,10 @@
 - Deployed once. Migration Job completed and was cleaned up; all six Deployments rolled out successfully. Identity upgrade record `database-upgrade-kind-wb-20260926-fixes/complete.json` reports `grants_only=true`.
 - Built and pushed relay v1-r4 digest `sha256:5ccedf04bcd3ad124f22c346ea89b8af4e89c550bf48b109292cd0c1110fb184`; applied the manifest and relay rollout succeeded.
 - **Stopped at step 6:** after the relay restart, the kind2 agent did not reconnect. Its status is `rejected`; the relay logged `reject: agent offline` and only the `demo` user came back up. Exactly one kind2 process remains, but it is not connected. Steps 7–10 were not run. No tokens or passwords are recorded here.
+
+## Step 6b recovery attempt from the updated inbox
+
+- Applied `edge/relay-jwt` from the existing local public-key file without printing its contents; the Secret exposes only the expected `public.pem` key name.
+- Applied the synchronized manifest with the unchanged v1-r4 digest. Relay rollout succeeded and PVC `relay-state` is Bound (64 MiB, RWO).
+- The required startup log `jwt verification enabled` was absent. Sanitized logs repeatedly showed `reject: agent offline`; kind2 remains one running process with relay status `rejected`.
+- Stopped at step 6b as instructed. Did not kill/restart the agent or proceed to steps 7–10. No credential values are recorded.
