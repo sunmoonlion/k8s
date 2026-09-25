@@ -33,3 +33,8 @@ No token, password, or agent-init command is recorded here.
 
 - Owner reported the browser SMOKE passed: delegation card, `委托 … → SUCCEEDED` rows, expert plan, and answer appeared without refreshing; 2 steps, reported cost 0.5256 yuan.
 - Final settings-page “更新沙箱” and “回收沙箱” actions remain unverified. This session has no controllable browser process/debug endpoint. Do not substitute a direct Deployment deletion for the product reclaim flow; after the owner completes the UI actions, verify the sandbox Deployment is absent and its PVC remains.
+
+## Post-SMOKE update/reclaim verification
+
+- Owner reports completing both settings-page actions, “更新沙箱” and “回收沙箱”.
+- Read-only cluster verification does not yet satisfy the documented reclaim postcondition: `sandbox-u-a63d03b16693` Deployment is still present and 1/1 Ready (creation timestamp `2026-09-25T14:45:36Z`); PVC `sandbox-u-a63d03b16693-codex-home` remains Bound (2 GiB). Recent events show pod replacements, but no Deployment deletion. Therefore update/reclaim is not counted complete until the Deployment is absent and PVC remains Bound.

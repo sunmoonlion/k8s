@@ -53,3 +53,5 @@
 
 - Owner reported the Workbench browser check passed without refreshing: the delegation card, each `委托 … → SUCCEEDED` timeline row, the expert plan, and the expert answer appeared automatically. SMOKE completed in 2 steps at a reported cost of 0.5256 yuan.
 - This verifies the event-stream behavior in step 9. The separate 09 settings-page sandbox update/reclaim flow is still pending browser interaction; its required postcondition is Deployment absent with the PVC retained.
+
+- Owner reports that the post-SMOKE settings-page sandbox update and reclaim actions were completed. The immediate read-only cluster check still finds `sandbox-u-a63d03b16693` Deployment 1/1 Ready and its home PVC Bound; recent events show pod recreation but no Deployment deletion. The release browser test passed, but the separate 09 reclaim criterion remains unverified/not met until the Deployment is absent while the PVC remains Bound.
