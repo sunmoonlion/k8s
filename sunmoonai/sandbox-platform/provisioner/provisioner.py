@@ -185,6 +185,8 @@ def render(user: str, spec: SandboxSpec, app_server_token: str) -> dict[str, dic
             "template": {
                 "metadata": {"labels": labels(user), "annotations": {"sunmoonai.com/secret-sha256": digest}},
                 "spec": {
+                    # 非 root 跑：Secret 文件 0440 + fsGroup 才读得到；PVC 挂在 /data（入口在其下建 codex/ 并 chmod 700，
+                    # 挂载点本身属 root，不能直接当 CODEX_HOME）——KIND 07 实测修正，与 resources/demo-user.yaml 一致
                     "securityContext": {"runAsUser": 10001, "runAsGroup": 10001, "fsGroup": 10001},
                     "containers": [
                         {
@@ -193,7 +195,7 @@ def render(user: str, spec: SandboxSpec, app_server_token: str) -> dict[str, dic
                             "env": env,
                             "ports": [{"name": "app-server", "containerPort": 47800}],
                             "volumeMounts": [
-                                {"name": "codex-home", "mountPath": "/data/codex"},
+                                {"name": "codex-home", "mountPath": "/data"},
                                 {"name": "app-server-token", "mountPath": "/secrets/app-server", "readOnly": True},
                             ],
                             "resources": {"requests": {"cpu": "100m", "memory": "256Mi"}, "limits": {"cpu": "1", "memory": "1Gi"}},
@@ -204,7 +206,7 @@ def render(user: str, spec: SandboxSpec, app_server_token: str) -> dict[str, dic
                         {"name": "codex-home", "persistentVolumeClaim": {"claimName": f"{name}-codex-home"}},
                         {
                             "name": "app-server-token",
-                            "secret": {"secretName": name, "items": [{"key": "app-server-token", "path": "token"}], "defaultMode": 0o400},
+                            "secret": {"secretName": name, "items": [{"key": "app-server-token", "path": "token"}], "defaultMode": 0o440},
                         },
                     ],
                 },

@@ -140,3 +140,21 @@ def test_secret_digest_rolls_the_pod_only_when_secret_changes():
     ann = lambda d: d["deployment"]["spec"]["template"]["metadata"]["annotations"]["sunmoonai.com/secret-sha256"]  # noqa: E731
     assert ann(a) == ann(b) != ann(c)
     assert "sk-" not in json.dumps(a["deployment"])
+
+
+def test_pod_template_is_readable_by_the_non_root_user():
+    """KIND 07：Secret 0400 读不到、PVC 直接当 CODEX_HOME 时 chmod 失败。模板必须 0440 + fsGroup，PVC 挂 /data。"""
+    import provisioner as p
+
+    spec = p.SandboxSpec(
+        model_provider="kimi", model="kimi-k3", provider_base_url="https://api.moonshot.cn/v1",
+        model_key="sk-test-0123456789abcdef", relay_token="relay-token-0123456789", relay_user="u-abc",
+    )
+    docs = p.render("u-abc", spec, "cap-token-0123456789")
+    dep = next(d for d in docs.values() if d.get("kind") == "Deployment")
+    pod = dep["spec"]["template"]["spec"]
+    assert pod["securityContext"]["fsGroup"] == 10001
+    mounts = {m["name"]: m["mountPath"] for m in pod["containers"][0]["volumeMounts"]}
+    assert mounts["codex-home"] == "/data"
+    secret_vols = [v["secret"] for v in pod["volumes"] if "secret" in v]
+    assert secret_vols and all(v["defaultMode"] == 0o440 for v in secret_vols)
