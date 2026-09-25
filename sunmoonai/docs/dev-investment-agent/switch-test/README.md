@@ -17,19 +17,19 @@
 
 ⚠ 本文的「本地」指**所有者的本地机**，不是产品文档里的「用户机器 / 本地代理」。做探针时本地机**扮演**用户机器，远程机**扮演**我们的云端。
 
-本目录：`README.md`（本文，约定）、`human-local.sh`（**所有者在本地机上跑，拉：同步仓与副本，列出待办**）、`human-remote.sh`（**所有者在本地机上跑，推：提交本地助手的结果，同步回远程**）、`inbox/`（待办，一个文件一条，远程助手写、本地助手做）、`done/`（已办）。测试脚本不放这里，放被测仓。
+本目录：`README.md`（本文，约定）、`human-local.sh`（**所有者在本地机上跑，拉：同步仓与副本，列出待办**）、`human-remote.sh`（**所有者在本地机上跑，推：把本地助手已提交的结果推回远程，顺带补提交漏掉的改动与父仓 gitlink**）、`inbox/`（待办，一个文件一条，远程助手写、本地助手做）、`done/`（已办）。测试脚本不放这里，放被测仓。
 `~/switch-test/` 是本目录在两台机上的副本，**不在 git 里，不会自己更新**：`human-local.sh` 同步完仓后会切到仓里的最新版继续跑，并用它重建副本，所以副本里的脚本旧了也没关系。以仓里为准。本地机要装什么见「六、固定事实」。
 
 ## 一、每一轮怎么走：所有者拉、本地助手跑、所有者推
 
-一轮五步，git 的进出都由所有者的两个脚本管，两个助手只写不推：
+一轮五步。本地助手做完一条就在本地提交；拉和推由所有者的两个脚本管，两个助手都不推（2026-09-26 所有者改）：
 
 | 步 | 谁 | 做什么 |
 | --- | --- | --- |
 | 1 | 远程助手 | 推脚本、推待办（见「三」），对所有者说「有新待办」 |
 | 2 | **所有者** | 在本地机跑 `bash ~/switch-test/human-local.sh`（拉）：同步全部仓，刷新副本，列出待办。然后对本地助手说：**「请看 inbox」** |
-| 3 | 本地助手 | 看 `inbox/`，逐条做，结果写进被测仓的 `scripts/results/`。**不同步、不提交、不推**。做完说：**「跑完了」** |
-| 4 | **所有者** | 在本地机跑 `bash ~/switch-test/human-remote.sh`（推）：先提交并推送子仓与 runtime，再提交父仓（含更新后的 gitlink）并 `to-remote`。把它最后打印的那一句「本地回来了；仓 提交号…」告诉远程助手 |
+| 3 | 本地助手 | 看 `inbox/`，逐条做，结果写进被测仓的 `scripts/results/`；**每条做完就在被测仓提交**（见下「3c」）。**不同步、不推**。做完说：**「跑完了」** |
+| 4 | **所有者** | 在本地机跑 `bash ~/switch-test/human-remote.sh`（推）：推送子仓与 runtime（还有没提交的改动会先补提交），再提交父仓的 gitlink 并 `to-remote`。把它最后打印的那一句「本地回来了；仓 提交号…」告诉远程助手 |
 | 5 | 远程助手 | `pull`，读 `results/`，把待办移到 `done/` |
 
 副本还没有的第一次，所有者用仓里的那份：`bash ~/worktrees/fable/k8s/sunmoonai/docs/dev-investment-agent/switch-test/human-local.sh`。
@@ -51,12 +51,18 @@ cd ~/worktrees/fable/<被测仓> && git rev-parse --short HEAD
 mkdir -p scripts/results
 out=scripts/results/<脚本名>.$(date +%Y%m%d-%H%M%S).txt
 bash scripts/<脚本名>.sh > "$out" 2>&1; echo "exit=$?" >> "$out"; tail -3 "$out"
-#    3c 不提交、不推——留给所有者的 human-remote.sh
+#    3c 在被测仓提交这一条的结果，不推（推回是所有者的 human-remote.sh）
+#       先看 git status：只应有 results/ 下的新文件，以及待办明确让改的文件（如 06 的 lock、input、bundle）；
+#       多出别的改动就停，贴出 git status，不提交
+git status --short
+git add scripts/results/ <待办让改的文件>
+git commit -m "test(local): <待办文件名> 结果"
+#       被测仓是子仓（如 investment-app/investment-backend）时只在子仓提交；父仓的 gitlink 由 human-remote.sh 提交
 
 # 4. 对话里一句：「跑完了」
 ```
 
-规矩：**「前提」没满足先问**，不猜着跑；**不删、不改、不截输出**；不改代码、不改判据，脚本有问题报出来由远程改；`done/` 里的不动；**不碰 git**（提交与推回是所有者那一步）。
+规矩：**「前提」没满足先问**，不猜着跑；**不删、不改、不截输出**；不改代码、不改判据，脚本有问题报出来由远程改；`done/` 里的不动；**git 只做 3c 的本地提交**：不 pull、不 fetch、不 rebase、不推、不改分支（同步与推回是所有者那两步）。
 Windows 上跑 `.ps1`：`powershell -ExecutionPolicy Bypass -File scripts\<脚本名>.ps1 *> scripts\results\<脚本名>.<时间>.txt`，其余同上。
 
 ## 二、一条待办长什么样
@@ -70,7 +76,7 @@ Windows 上跑 `.ps1`：`powershell -ExecutionPolicy Bypass -File scripts\<脚�
 预计：<多久>；要不要联网；要不要 Docker / Codex 登录态
 看什么：<这次要判的一两件事，以及怎么算 pass / fail>
 前提：<要所有者先做的事，没有写「无」>
-回传：<被测仓>/scripts/results/<脚本名>.<时间>.txt（写下即可，提交与推回由所有者的 human-remote.sh 做）
+回传：<被测仓>/scripts/results/<脚本名>.<时间>.txt（本地助手写下后在被测仓提交；推回由所有者的 human-remote.sh 做）
 ```
 
 「被测仓」决定三件事：在哪个目录跑、核哪个仓的提交号、结果写进哪个仓。跨仓联调的被测仓是 `k8s`（脚本在 `sunmoonai/scripts/local-integration/`）。
