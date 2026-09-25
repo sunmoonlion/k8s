@@ -55,7 +55,7 @@ spec:
       securityContext: { runAsUser: 10003, runAsGroup: 10003, runAsNonRoot: true }
       containers:
         - name: provisioner
-          image: harbor.sunmoonai.com:30443/app-images/sandbox-provisioner@sha256:d8aa2a3951bae9b64f67cb3845de4a84ecb09a22cac1fc197eb5df1f8fe81b0b
+          image: harbor.sunmoonai.com:30443/app-images/sandbox-provisioner@sha256:9df0db43168977ac389f311c30e20cb43c3790059efa537d3b64da06b51677ec
           env:
             - { name: SANDBOX_NAMESPACE, value: "sandbox-pool" }
             - { name: SANDBOX_IMAGE, value: "harbor.sunmoonai.com:30443/app-images/sandbox@sha256:ba14b8d3f69e4359a4b13dc78c1078b2ef2ec1498e54eeda8dd62e100c219a2f" }
