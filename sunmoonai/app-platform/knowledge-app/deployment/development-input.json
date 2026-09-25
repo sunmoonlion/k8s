@@ -7,13 +7,13 @@
     "kind": "development-source-lock",
     "repository": "knowledge-app",
     "formal_release": false,
-    "task": "B7-B9-closeout-kind-20260919",
+    "task": "knowledge-mcp-kind-20260925",
     "release_boundary": "Immutable development candidate source; actual deployment requires the matching KIND release, prepared independent identities, and verified quiescent backup.",
     "components": [
       {
         "path": "knowledge-backend",
-        "commit": "2b4ee8c92b6372edcaacb0e5e27f00bed9338e43",
-        "tree": "25cd746f02f7f70c47c8e0da8321e535007fd618",
+        "commit": "4d9804c3d5f4084b83bdb00ba49cbf0f8b5cbb55",
+        "tree": "cdcc93c8d8656b8c379277ecf5e8b5791cd117b3",
         "remote_branch": "origin/master"
       },
       {
@@ -31,9 +31,13 @@
     ]
   },
   "images": {
-    "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:e072c3873c197abe89aab73d52326f29585a06e63a13c74811cd90012b100213",
+    "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:67028600d4a128d2a6d9700d88a337ad403e0924db57aef03eb1a76937076e23",
     "admin": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:4f8fb2c69c47005215f2c5b45430ec555d347ea67f96549e3662813daab75e15",
     "web": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:be296c49924af1ed1598a1d95d917901edf149bcf86ac91cb519f53a34e71197"
   },
-  "runtime_identity_mode": "independent-v1"
+  "runtime_identity_mode": "independent-v1",
+  "runtime_identity_upgrade": {
+    "prepared_release_id": "kind-b7-20260919",
+    "preparation_plan_sha256": "f72dbfad14983d331a3e93b6bc523436cee2ac8a1e4163b0b7bba2ce5bb56ac5"
+  }
 }

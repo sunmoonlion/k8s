@@ -305,6 +305,20 @@ def overlay(
             "jwt-public-key.pem",
             optional=True,
         ),
+        # Dataset tools fetch their pinned SQLite object from S3 on first use.
+        # Keep the rest of the API available when object storage is not provisioned.
+        common.env_ref(
+            "S3_ACCESS_KEY_ID",
+            "knowledge-admin-backend-s3",
+            "S3_ACCESS_KEY_ID",
+            optional=True,
+        ),
+        common.env_ref(
+            "S3_SECRET_ACCESS_KEY",
+            "knowledge-admin-backend-s3",
+            "S3_SECRET_ACCESS_KEY",
+            optional=True,
+        ),
     ]
     api_container.setdefault("envFrom", []).extend(
         [

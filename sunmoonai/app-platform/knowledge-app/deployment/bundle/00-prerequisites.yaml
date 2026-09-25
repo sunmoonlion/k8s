@@ -70,7 +70,7 @@ data:
   ENV: production
   LOG_LEVEL: INFO
   SERVICE_NAME: knowledge-backend
-  DEPLOYMENT_ID: kind-b7-20260919
+  DEPLOYMENT_ID: know-mcp-0925-r2
   APP_SLUG: knowledge
   REDIS_HOST: redis-sunmoonai-master.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -108,6 +108,12 @@ data:
   CELERY_QUEUE: knowledge.admin.default
   CELERY_WORKER_CONCURRENCY: '2'
   AUTH_ALLOWED_ALGORITHMS: RS256,ES256
+  KNOWLEDGE_DATASET_PATH: /tmp/datasets/lesson23_business_analysis.sqlite
+  KNOWLEDGE_DATASET_ID: lesson23-business-analysis
+  KNOWLEDGE_DATASET_OBJECT: s3://development-knowledge-datasets/lesson23/lesson23_business_analysis.sqlite
+  KNOWLEDGE_DATASET_SHA256: a1764f1defa673670bb1e4df9e3223a82cdc6d2b66365370617c6be509a04cf5
+  KNOWLEDGE_MCP_RATE_PER_MINUTE: '120'
+  KNOWLEDGE_MCP_JWT_ISSUER: sunmoon-workbench
   RAGFLOW_API_BASE: http://ragflow-sunmoonai-api:80
   RAGFLOW_PARSE_POLL_INTERVAL_SECONDS: '1.0'
   RAGFLOW_PARSE_TIMEOUT_SECONDS: '120'
@@ -136,7 +142,7 @@ data:
   AUTH_APP: knowledge
   APP_ORIGIN: https://knowledge-admin.sunmoonai.com:30443
   BACKEND_INTERNAL_URL: http://knowledge-backend:8000
-  DEPLOYMENT_ID: kind-b7-20260919-admin
+  DEPLOYMENT_ID: know-mcp-0925-r2-admin
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -151,7 +157,7 @@ data:
   AUTH_APP: knowledge
   APP_ORIGIN: https://knowledge.sunmoonai.com:30443
   BACKEND_INTERNAL_URL: http://knowledge-backend:8000
-  DEPLOYMENT_ID: kind-b7-20260919-web
+  DEPLOYMENT_ID: know-mcp-0925-r2-web
   REFERENCE_UI_ENABLED: 'false'
 ---
 apiVersion: v1

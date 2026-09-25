@@ -6,6 +6,8 @@ kind: ServiceAccount
 metadata:
   name: sandbox-provisioner
   namespace: sandbox-pool
+imagePullSecrets:
+  - name: harbor-registry-secret
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -53,10 +55,10 @@ spec:
       securityContext: { runAsUser: 10003, runAsGroup: 10003, runAsNonRoot: true }
       containers:
         - name: provisioner
-          image: harbor.sunmoonai.com:30443/app-images/sandbox-provisioner@sha256:REPLACE_WITH_BUILT_DIGEST
+          image: harbor.sunmoonai.com:30443/app-images/sandbox-provisioner@sha256:d8aa2a3951bae9b64f67cb3845de4a84ecb09a22cac1fc197eb5df1f8fe81b0b
           env:
             - { name: SANDBOX_NAMESPACE, value: "sandbox-pool" }
-            - { name: SANDBOX_IMAGE, value: "harbor.sunmoonai.com:30443/app-images/sandbox@sha256:REPLACE_WITH_BUILT_DIGEST" }
+            - { name: SANDBOX_IMAGE, value: "harbor.sunmoonai.com:30443/app-images/sandbox@sha256:ba14b8d3f69e4359a4b13dc78c1078b2ef2ec1498e54eeda8dd62e100c219a2f" }
             - { name: RELAY_URL, value: "ws://relay.edge.svc.cluster.local:47100" }
             - { name: KNOWLEDGE_MCP_URL, value: "http://knowledge-backend.app-platform-dev.svc.cluster.local:8000/api/mcp/knowledge" }
             - name: PROVISIONER_TOKEN

@@ -119,6 +119,11 @@ class RenderingChecks:
         refs = []
         for role in ("api", "worker", "scheduler"):
             with self.subTest(role=role):
+                role_credential_names = set(credential_names)
+                if self.app == "knowledge" and role == "api":
+                    role_credential_names.update(
+                        {"S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"}
+                    )
                 name = f"{self.app}-backend-{role}"
                 deployment = common.resource(self.runtime, "Deployment", name)
                 item = common.container(deployment, role)
@@ -130,8 +135,8 @@ class RenderingChecks:
                     self.assertEqual(ref["name"], f"{self.app}-backend-runtime")
                     refs.append((ref["name"], ref["key"]))
                 self.assertEqual(
-                    [e for e in item["env"] if e["name"] not in credential_names],
-                    [e for e in prior["env"] if e["name"] not in credential_names],
+                    [e for e in item["env"] if e["name"] not in role_credential_names],
+                    [e for e in prior["env"] if e["name"] not in role_credential_names],
                 )
                 for field in ("envFrom", "volumeMounts"):
                     self.assertEqual(item.get(field), prior.get(field))
@@ -272,6 +277,17 @@ class InfoRenderingTest(RenderingChecks, unittest.TestCase):
 
 class KnowledgeRenderingTest(RenderingChecks, unittest.TestCase):
     app = "knowledge"
+
+    def test_mcp_api_receives_optional_dataset_store_credentials(self):
+        api = common.resource(self.runtime, "Deployment", "knowledge-backend-api")
+        env = common.container(api, "api")["env"]
+        for name in ("S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"):
+            with self.subTest(name=name):
+                entry = next(item for item in env if item["name"] == name)
+                ref = entry["valueFrom"]["secretKeyRef"]
+                self.assertEqual(ref["name"], "knowledge-backend-s3")
+                self.assertEqual(ref["key"], name)
+                self.assertIs(ref["optional"], True)
 
 
 class InvestmentRenderingTest(RenderingChecks, unittest.TestCase):
