@@ -34,9 +34,10 @@
    kubectl apply -f ~/worktrees/fable/k8s/sunmoonai/relay-platform/resources/relay.yaml
    kubectl -n edge rollout status deploy/relay --timeout=180s
    kubectl -n edge get pvc relay-state
-   kubectl -n edge logs deploy/relay --tail=10 | grep -i "jwt verification enabled"
+   kubectl -n edge logs deploy/relay | grep -iE "jwt verification enabled|listening" | head -5
+   kubectl -n edge exec deploy/relay -- sh -c 'env | cut -d= -f1 | grep ^RELAY_JWT'
    ```
-   最后一条应有 `jwt verification enabled`。然后按家目录找到 kind2 的代理 PID，`kill` 它，再按 09 的方式后台 `start`（不重新 init），确认 `relay connected`、会合点里 u-a63d03b16693 一次 agent up。之后继续第 7 步。
+   前一条应有 `jwt verification enabled`（不要加 `--tail`：会合点每 10 秒记一条健康检查，启动那行很快被挤出去）；后一条应列出 `RELAY_JWT_PUBLIC_KEY` 与 `RELAY_JWT_ISSUER`。然后按家目录找到 kind2 的代理 PID，`kill` 它，再按 09 的方式后台 `start`（不重新 init），确认 `relay connected`、会合点里 u-a63d03b16693 一次 agent up。之后继续第 7 步。
    （注意：旧会合点吊销过的令牌记录已随临时卷丢失；第 8 步会重新换一次令牌，之后吊销表存在持久卷里，不会再丢。）
 7. 本地代理用新版：`cd ~/worktrees/fable/runtime/agent && node node_modules/typescript/bin/tsc -p tsconfig.json`；按家目录找到 kind2 的代理 PID，`kill` 它，再按 09 的方式在后台起一个（不重新 init），确认只有 1 个、会合点里该用户只有一次 agent up。
 8. 浏览器（所有者，同一个登录过的标签页）：
