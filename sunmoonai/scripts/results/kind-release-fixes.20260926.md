@@ -48,3 +48,8 @@
 - Reinitialized kind2 from the private replacement command, adapting the relay endpoint to the already-used local NodePort `ws://172.18.0.3:30471` and project root `/home/zymun/research`; token was passed directly from the private file without printing it.
 - Started one background kind2 agent. Final status reports PID 3606403, relay `connected`, root `/home/zymun/research`; process inventory shows one kind2 agent and the separate demo agent. Relay logged one `agent up` for `u-a63d03b16693` after the rotation.
 - Step 9 is ready for browser verification: create a session with `this-pc` and `sandbox-u-a63d03b16693`, send a message and run SMOKE; verify the event timeline and delegation status appear without refreshing.
+
+## Step 9 browser verification
+
+- Owner reported the Workbench browser check passed without refreshing: the delegation card, each `委托 … → SUCCEEDED` timeline row, the expert plan, and the expert answer appeared automatically. SMOKE completed in 2 steps at a reported cost of 0.5256 yuan.
+- This verifies the event-stream behavior in step 9. The separate 09 settings-page sandbox update/reclaim flow is still pending browser interaction; its required postcondition is Deployment absent with the PVC retained.

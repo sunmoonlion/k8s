@@ -28,3 +28,8 @@ No token, password, or agent-init command is recorded here.
 
 - Owner reports that the 09 browser SMOKE passed.
 - The post-SMOKE settings-page “更新沙箱” and “回收沙箱” actions have not yet been performed from this session; no browser process or browser-control endpoint is available here. Verify the final reclaim state only after those UI actions: Deployment absent, PVC retained.
+
+## Browser SMOKE and final lifecycle actions
+
+- Owner reported the browser SMOKE passed: delegation card, `委托 … → SUCCEEDED` rows, expert plan, and answer appeared without refreshing; 2 steps, reported cost 0.5256 yuan.
+- Final settings-page “更新沙箱” and “回收沙箱” actions remain unverified. This session has no controllable browser process/debug endpoint. Do not substitute a direct Deployment deletion for the product reclaim flow; after the owner completes the UI actions, verify the sandbox Deployment is absent and its PVC remains.
