@@ -100,6 +100,18 @@ class DatabaseRehearsalTest(unittest.TestCase):
         self.assertNotEqual(target.comparable_catalog(a), target.comparable_catalog(b))
         self.assertEqual(target.comparable_catalog(a)["acl"], a["acl"])
 
+    def test_owner_default_table_acl_equals_null_but_nothing_else_does(self):
+        def acl(value, owner="m", relkind="r"):
+            return {"acl": [{"relname": "t", "relkind": relkind, "owner": owner, "acl": value}]}
+        restored = acl(None)
+        for same in (["m=arwdDxtm/m"], ["m=arwdDxt/m"]):
+            self.assertEqual(target.comparable_catalog(acl(same)), target.comparable_catalog(restored))
+        for different in (["m=arwd/m"], ["m=arwdDxtm/m", "api=r/m"], ["x=arwdDxtm/x"], ["m=arwdDxtm/other"]):
+            with self.subTest(acl=different):
+                self.assertNotEqual(target.comparable_catalog(acl(different)), target.comparable_catalog(restored))
+        self.assertNotEqual(target.comparable_catalog(acl(["m=arwdDxtm/m"], relkind="S")),
+                            target.comparable_catalog(acl(None, relkind="S")))
+
 
 if __name__ == "__main__":
     unittest.main()

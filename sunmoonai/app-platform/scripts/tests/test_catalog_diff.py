@@ -23,10 +23,12 @@ def catalog(acl=None, default=("x=r/o",)):
 class Test(unittest.TestCase):
     def test_identical_is_empty_and_acl_change_is_named(self):
         self.assertEqual(target.diff(catalog(), catalog()), {})
-        result = target.diff({"catalog": catalog(acl=["o=arwdDxt/o"])}["catalog"], catalog(acl=None))
+        # owner-default ACL vs NULL is normalized away (pg_dump restores it as NULL)
+        self.assertEqual(target.diff(catalog(acl=["o=arwdDxtm/o"]), catalog(acl=None)), {})
+        result = target.diff(catalog(acl=["o=arwdDxtm/o", "api=r/o"]), catalog(acl=None))
         self.assertEqual(sorted(result), ["acl"])
         self.assertEqual(result["acl"]["changed"]["t"]["restored"]["acl"], None)
-        self.assertEqual(result["acl"]["changed"]["t"]["baseline"]["acl"], ["o=arwdDxt/o"])
+        self.assertEqual(result["acl"]["changed"]["t"]["baseline"]["acl"], ["o=arwdDxtm/o", "api=r/o"])
 
     def test_cli_reads_baseline_wrapper_and_exit_codes(self):
         with tempfile.TemporaryDirectory() as d:

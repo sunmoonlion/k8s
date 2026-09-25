@@ -195,16 +195,29 @@ CATALOG = {"tables": TABLES, "columns": COLUMNS, "constraints": CONSTRAINTS,
            "indexes": INDEXES, "triggers": TRIGGERS, "acl": ACL, "default_acl": DEFAULT_ACL}
 
 
-def comparable_catalog(catalog):
-    """Only normalize PG's proven varchar-literal-array -> text[] rewrite.
+# A table ACL that holds exactly the owner's default privileges is the same as NULL (acldefault).
+# pg_dump does not emit it, so a restore yields NULL. Proven on KIND 2026-09-25 (B5 catalog diff:
+# two tables, baseline [owner=arwdDxtm/owner], restored null). "arwdDxt" is the pre-PG17 default.
+OWNER_DEFAULT_TABLE_PRIVILEGES = ("arwdDxtm", "arwdDxt")
 
-    ACL arrays are sorted by SQL, not dropped. Unknown expression rewrites keep
-    failing. Original catalogs remain saved for review, never overwritten.
+
+def comparable_catalog(catalog):
+    """Only normalize proven rewrites: PG's varchar-literal-array -> text[] rewrite, and a table
+    ACL equal to the owner's default privileges (-> NULL, which is what pg_dump restores).
+
+    ACL arrays are sorted by SQL, not dropped; any grant to another role, or a partial owner grant,
+    keeps failing. Unknown expression rewrites keep failing. Original catalogs remain saved for
+    review, never overwritten.
     """
     result = copy.deepcopy(catalog)
+    for entry in result.get("acl", []):
+        owner, acl = entry.get("owner"), entry.get("acl")
+        if (entry.get("relkind") in ("r", "p") and owner and isinstance(acl, list) and len(acl) == 1
+                and acl[0] in {f"{owner}={p}/{owner}" for p in OWNER_DEFAULT_TABLE_PRIVILEGES}):
+            entry["acl"] = None
     literal = r"'[a-z_]+'::character varying"
     pattern = re.compile(r"\(ARRAY\[(" + literal + r"(?:, " + literal + r")*)\]\)::text\[\]")
-    for constraint in result["constraints"]:
+    for constraint in result.get("constraints", []):
         constraint["definition"] = pattern.sub(
             lambda match: "ARRAY[" + ", ".join("(" + part + ")::text" for part in match[1].split(", ")) + "]",
             constraint["definition"],

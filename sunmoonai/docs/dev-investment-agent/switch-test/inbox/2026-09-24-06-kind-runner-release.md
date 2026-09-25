@@ -25,17 +25,12 @@
 
 ## B 段：部署到 KIND（所有者已定：只换镜像的升级门，身份准备复用、备份回执按本次 release 新出）
 
-**先做 B5 诊断，做完停下等远程看（2026-09-26）**：上一轮 B5 停在 `restored_catalog_mismatch`，隔离恢复后的目录与静止库目录不一致；原因在两份私有目录快照的差异里，只含表名、列、约束、索引、ACL 条目（角色名），没有行数据。跑：
-```bash
-cd ~/worktrees/fable/k8s/sunmoonai/app-platform/scripts
-~/worktrees/fable/investment-app/investment-backend/app/.venv/bin/python catalog_diff.py ~/private/investment-wb-20260925/baseline.private.json ~/private/investment-wb-20260925/restore-1-catalog.private.json > ~/worktrees/fable/k8s/sunmoonai/scripts/results/kind-runner-release.$(date +%Y%m%d-%H%M%S).B5-catalog-diff.json; echo exit=$?
-```
-把结果文件回传（内容就是差异本身，可以进 git），然后停下，不要重做 B 段；远程看过差异后决定是给 `comparable_catalog` 加一条已证明的归一化，还是库里有需要先修的东西。远程的猜测（待差异证实）：B7 之后对旧登录角色做过 REVOKE/GRANT，某些表的 relacl 变成"显式但等于默认"，pg_dump 不导出与默认相同的 ACL，恢复后成了 NULL——若差异只在 `acl`/`default_acl` 且形如 `baseline=[owner=arwdDxt/owner]`、`restored=null`，就是这个。
+**B5 诊断已结（2026-09-26）**：差异只有两张表（`agent_delivery_failures_legacy_0006`、`checkpoint_migrations`）的 ACL，原库是 `[owner=arwdDxtm/owner]`，恢复后是 NULL。两者权限等价：NULL 就是属主的默认全权，pg_dump 不导出与默认相同的 ACL。比对已加一条只认这种情形的归一化（`kind_database_rehearsal.comparable_catalog`，别的授权或部分授权仍然失败）。按下面从第 0 步整段重做 B 段；私有目录全用新名字（后缀 `-20260926`），旧目录留着别删。
 
 前提（2026-09-26 起）：本地那轮按 0009 建的镜像与 bundle 作废，B 段从第 0 步重做；后端与网页镜像用 investment-app 30fece4（子仓 investment-backend e44dc1f、investment-web-frontend 9eb4c01）或更新的 fable 头建一次，就同时满足 06、09、10 三条待办，不用再建。仓已同步到 tpl-app 3317c84、investment-app 同步时的 fable 头（子仓 investment-backend 与 investment-web-frontend 取父仓 gitlink：含 0008 改 UUID、0010 会合点身份、0011 runner 租约、沙箱拉起接口，所以后端与网页镜像都要重建）、k8s 本条待办所在的 fable 头。
 
 0. B7 的私有身份准备目录已丢（原在 `~/worktrees/luna/.local/kind-cutover-20260919`，工作区重建时没了）。先从集群现状重建一份，放在工作区之外：
-   `mkdir -p ~/private && cd ~/worktrees/fable/k8s/sunmoonai/app-platform/scripts && python3 kind_identity_recover.py --app investment --kubeconfig ~/.kube/kind-config --cluster-uid $(kubectl --kubeconfig ~/.kube/kind-config get ns kube-system -o jsonpath='{.metadata.uid}') --prepared-release-id kind-b7-20260919 --output ~/private/investment-identity-recovered-20260925`
+   `mkdir -p ~/private && cd ~/worktrees/fable/k8s/sunmoonai/app-platform/scripts && python3 kind_identity_recover.py --app investment --kubeconfig ~/.kube/kind-config --cluster-uid $(kubectl --kubeconfig ~/.kube/kind-config get ns kube-system -o jsonpath='{.metadata.uid}') --prepared-release-id kind-b7-20260919 --output ~/private/investment-identity-recovered-20260926`
    应该以一行 JSON 结束，含 `plan_sha256`、`database_probes`（18）、`amqp.authenticated_roles`（3）、`old_identities_retired: true`。它不写集群不写库。这个 `plan_sha256` 就是第 2 步要填的 `preparation_plan_sha256`；第 7 步 `--identity-preparation` 指向这个新目录。
 
 1. 重做 A1（backend 与 web-frontend：`COMPONENTS="backend web-frontend"`）、A2（取新 backend digest）、A3（锁：三个子仓 commit/tree 换成本地检出的实际值）。
@@ -44,9 +39,9 @@ cd ~/worktrees/fable/k8s/sunmoonai/app-platform/scripts
 3. 重做 A5 到 A9（渲染到空目录、diff、替换 bundle、门禁、单测、plan）。diff 里新增的只应有：backend digest、release.json 里的 `runtime_identity_upgrade`。A8 里 `test_runtime_rendering` 与 `test_committed_development_candidates` 的 investment/info 两条这次应该过。conf 里 `BACKEND_IMAGE` 跟着换。
 4. 维护窗口（README 第 2 步）：`kubectl -n app-platform-dev scale deploy investment-backend-api investment-backend-worker investment-backend-scheduler --replicas=0`，等 `kubectl -n app-platform-dev get pods -l sunmoonai.com/app=investment` 里 backend 三类 Pod 全部消失。前端可以不停。
 5. 备份回执（README 第 3、4 步，一条命令）：
-   `python3 kind_database_rehearsal.py --app investment --kubeconfig ~/.kube/kind-config --cluster-uid $(kubectl get ns kube-system -o jsonpath='{.metadata.uid}') --image <新 backend digest 全名> --head 20260925_0011 --output <git 之外的私有目录，如 ~/private/investment-wb-20260925> --cutover-release ../investment-app/deployment/bundle/release.json`（在 `app-platform/scripts` 下跑）。应该以 `cutover_receipt` 一行结束，目录里有 `cutover-receipt.json` 与 `database.dump`。要 Docker（它起一次性 Postgres 做两次恢复演练）。
+   `python3 kind_database_rehearsal.py --app investment --kubeconfig ~/.kube/kind-config --cluster-uid $(kubectl get ns kube-system -o jsonpath='{.metadata.uid}') --image <新 backend digest 全名> --head 20260925_0011 --output <git 之外的私有目录，如 ~/private/investment-wb-20260926> --cutover-release ../investment-app/deployment/bundle/release.json`（在 `app-platform/scripts` 下跑）。应该以 `cutover_receipt` 一行结束，目录里有 `cutover-receipt.json` 与 `database.dump`。要 Docker（它起一次性 Postgres 做两次恢复演练）。
 6. `./deploy-investment-app-all/deploy-investment-app-all.sh server-dry-run --cluster KIND`，应通过。
-7. `./deploy-investment-app-all/deploy-investment-app-all.sh deploy --cluster KIND --backup-receipt <私有目录>/cutover-receipt.json --identity-preparation ~/private/investment-identity-recovered-20260925`。应该看到：迁移 Job 完成；`database-upgrade-kind-wb-20260925/complete.json` 出现在准备目录里（`grants_only: true`）；六个 Deployment 的 rollout 都 ok（含 `investment-backend-runner`）；末尾 JSON `"result": "passed"`。
+7. `./deploy-investment-app-all/deploy-investment-app-all.sh deploy --cluster KIND --backup-receipt <私有目录>/cutover-receipt.json --identity-preparation ~/private/investment-identity-recovered-20260926`。应该看到：迁移 Job 完成；`database-upgrade-kind-wb-20260925/complete.json` 出现在准备目录里（`grants_only: true`）；六个 Deployment 的 rollout 都 ok（含 `investment-backend-runner`）；末尾 JSON `"result": "passed"`。
 8. 看：`kubectl -n app-platform-dev get pods -l sunmoonai.com/app=investment`（runner 1/1 Running）；`kubectl -n app-platform-dev logs deploy/investment-backend-runner --tail=20`（应是在轮询命令，没有异常）；浏览器登录 `https://investment.sunmoonai.com:30443` 后打开 `/zh-CN/workbench`，应看到「工作台」页，机器与沙箱下拉为空（沙箱与会合点是下一步）。
 9. `./deploy-investment-app-all/deploy-investment-app-all.sh drift --cluster KIND` 与 `status --cluster KIND`。
 
