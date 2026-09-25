@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 所有者在本地机上跑的（拉）：把全部仓和副本同步到远程助手推上来的最新状态，并列出待办。跑完之后的推回见 human-remote.sh。
-# 跑完后对本地助手说一句「请看 inbox」。本地助手自己不同步，只看、只跑。
+# 跑完后对本地助手说一句「请看 inbox」。本地助手不同步、不推；每条做完自己在被测仓本地提交（README「3c」）。
 # 用法：bash ~/switch-test/human-local.sh    （没有参数，总是同步全部：五仓 + 两个子仓 + runtime）
 # ~/switch-test 是副本，不在 git 里，不会自己更新：本脚本同步完仓之后，切换到仓里的最新版继续跑，
 # 由它重建副本。所以副本里的这份即使旧了也没关系，只要它还能同步 k8s。
@@ -43,4 +43,4 @@ for f in "$ST"/inbox/2*.md; do
   echo; echo "----- $(basename "$f")"; cat "$f"
 done
 [ "$n" = 0 ] && echo "没有待办。"
-echo; echo "===== 同步完成。现在对本地助手说：请看 inbox。"
+echo; echo "===== 同步完成。现在对本地助手说：请看 inbox。（它每条做完自己本地提交；推回用 human-remote.sh）"
