@@ -1,4 +1,4 @@
-# KIND sandbox relay 07 — partial result (2026-09-25)
+# KIND sandbox relay 07 — passed (2026-09-25)
 
 ## Completed
 
@@ -9,9 +9,19 @@
 - Registered the existing Workbench user `admin@sunmoonai.local` without sending email. Environment `this-pc`: `3c306437-b499-4830-b85f-3209f78700f7`; sandbox: `ce3fe8da-f055-4bf3-acaf-2c7aaa2331ff`.
 - Initialized and started the local agent under `/home/zymun/.sunmoon-agent-kind`; startup log reports `relay connected` to edge-1. Agent remains running for follow-up.
 
-## Stopped at browser smoke test
+## Browser acceptance
 
-Step 8 onward is not verified: this session has no interactive browser control, and no local Chromium/Firefox or Playwright/Puppeteer installation was found. No Workbench session or SMOKE delegation was created, and no UI success is claimed. Continue by opening the Workbench in an authenticated browser, selecting `this-pc` and the registered sandbox, then completing the hello.txt and SMOKE checks in inbox item 07.
+The user reports browser steps 8–9 passed: a Workbench session was created with `this-pc` and the sandbox; sending “在当前目录写一个 hello.txt，内容 hello，然后 cat 它” returned `hello`; SMOKE delegation reached `SUCCEEDED` in 2 steps at a cost of 1.000240 CNY; “打开底稿” showed the result and conclusion draft. Session: `d6a9d709-21e3-42dd-9ae3-8ec0e05e0b4c`; task: `72dedd8a-c929-4cbb-9222-10b63d8f8742`. I independently read `/home/zymun/research/smoke1/hello.txt`; its content is `hello`.
+
+Known issue carried to 07b: new events do not appear in the timeline until the page is refreshed. The backend command/event records show the turn completed; the SSE/browser delivery path is being fixed separately.
+
+## Final runtime evidence
+
+- Sandbox log: app-server paired at connection `216be9ff`; an earlier tail also showed the app-server listening on port 47800.
+- Runner log: sandbox link up at `03:36:01`; advisor task `72dedd8a-c929-4cbb-9222-10b63d8f8742` stopped in `SUCCEEDED` at `03:54:48`.
+- Local agent terminal: `stream bridged conn=216be9ff local=ws://127.0.0.1:45231`.
+- Latest relay log tail contained health-check responses only.
+- Sanitized diagnostic capture: `kind-sandbox-relay.20260925-034108.step9-diag.txt`. Output lines containing `sk-`, `token`, or `password` were filtered.
 
 ## Identity ownership correction reported after initial registration
 
