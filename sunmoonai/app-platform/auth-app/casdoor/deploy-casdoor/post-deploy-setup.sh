@@ -287,7 +287,7 @@ create_org() {
         'admin', '$name', '$now',
         '$display_name', '$default_app',
         'bcrypt', '[\"CN\"]', 2000, false,
-        '[\"en\",\"zh\"]', $builtin_account_items
+        '[\"zh\"]', $builtin_account_items
     ) ON CONFLICT (owner, name) DO UPDATE SET
         display_name = EXCLUDED.display_name,
         default_application = EXCLUDED.default_application,
@@ -322,7 +322,7 @@ setup_organizations() {
 # 已用旧脚本写入的组织可能没有 languages，补上以免 OAuth 登录页崩溃
 patch_organization_languages() {
     log_info "校验所有 Organization.languages，并建立数据库不变量（修复登录页白板根因）..."
-    run_sql "UPDATE organization SET languages = '[\"en\",\"zh\"]' WHERE languages IS NULL OR btrim(languages) = '' OR lower(btrim(languages)) = 'null';" \
+    run_sql "UPDATE organization SET languages = '[\"zh\"]' WHERE languages IS NULL OR btrim(languages) = '' OR lower(btrim(languages)) = 'null';" \
         || return 1
     run_sql "ALTER TABLE organization DROP CONSTRAINT IF EXISTS sunmoonai_org_languages_json_array;" \
         || return 1

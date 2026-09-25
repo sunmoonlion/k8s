@@ -87,6 +87,10 @@ configmap:
         copyrequestbody = true
         logPostOnly = true
         staticBaseUrl = "."
+        # 登录、注册等 Casdoor 页面默认中文（直接打开注册链接也是中文）
+        defaultLanguage = "zh"
+        # 强制中文：Casdoor 镜像自带配置是 forceLanguage = "en"，会压过 defaultLanguage（本机实测）
+        forceLanguage = "zh"
         aiAssistantUrl = ""
 
 persistence:
