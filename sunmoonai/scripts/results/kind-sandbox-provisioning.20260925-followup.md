@@ -38,3 +38,5 @@ No token, password, or agent-init command is recorded here.
 
 - Owner reports completing both settings-page actions, “更新沙箱” and “回收沙箱”.
 - Read-only cluster verification does not yet satisfy the documented reclaim postcondition: `sandbox-u-a63d03b16693` Deployment is still present and 1/1 Ready (creation timestamp `2026-09-25T14:45:36Z`); PVC `sandbox-u-a63d03b16693-codex-home` remains Bound (2 GiB). Recent events show pod replacements, but no Deployment deletion. Therefore update/reclaim is not counted complete until the Deployment is absent and PVC remains Bound.
+
+- Rechecked after the owner confirmed the settings-page confirmation: Deployment `sandbox-u-a63d03b16693` is NotFound; PVC `sandbox-u-a63d03b16693-codex-home` remains Bound to `pvc-7fdb9035-f4d0-4471-9109-769a9edb9f2c` (2 GiB). The 09 reclaim criterion passes. No matching sandbox Pod is present while reclaimed.

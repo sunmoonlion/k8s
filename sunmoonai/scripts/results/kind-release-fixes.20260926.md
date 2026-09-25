@@ -55,3 +55,5 @@
 - This verifies the event-stream behavior in step 9. The separate 09 settings-page sandbox update/reclaim flow is still pending browser interaction; its required postcondition is Deployment absent with the PVC retained.
 
 - Owner reports that the post-SMOKE settings-page sandbox update and reclaim actions were completed. The immediate read-only cluster check still finds `sandbox-u-a63d03b16693` Deployment 1/1 Ready and its home PVC Bound; recent events show pod recreation but no Deployment deletion. The release browser test passed, but the separate 09 reclaim criterion remains unverified/not met until the Deployment is absent while the PVC remains Bound.
+
+- Follow-up after the owner confirmed the settings-page “确定回收”: the sandbox Deployment is NotFound and its home PVC remains Bound (2 GiB). The prior check had raced ahead of the completed UI action; the 09 reclaim criterion now passes.
