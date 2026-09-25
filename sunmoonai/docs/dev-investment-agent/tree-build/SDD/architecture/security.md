@@ -81,7 +81,7 @@
 
 **实现状态（2026-09-26）**：`auth-app/casdoor/deploy-casdoor/signup-setup.sh`，由 `post-deploy-setup.sh` 第六步调用；配置项见 `post-deploy-setup.local.conf.example` 的「自助注册」段。**没配邮件服务时注册保持关闭**（邮箱要验证码，开着只会让人卡在发码那一步）。在本机用真实的 Casdoor 3.42.0 + PostgreSQL + 本地收信服务（TLS）跑通：缺邀请码、错邀请码、缺邮箱码、错邮箱码都被拒；验证码邮件按配置的发信人、标题、正文送达；正确注册后账号进 `sunmoonai`、邮箱标记已验证、邀请码计数；额度用尽后拒绝（"Invitation code exhausted"）；用大小写混写的邮箱能登录；经 `app-built-in` 注册被拒；重跑不清零已用次数；手机号开关与各种错配置都有明确报错。没有用真实的腾讯云邮件推送发过信（服务未开通）。
 
-发现（未处理）：本脚本用 SQL 直接建的应用没有 `signin_methods`，Casdoor 会拒绝这些应用的密码登录（"login with password is not enabled"）。KIND 里的投资网页能登录，说明那里的应用另有来源；在新环境里用本脚本从零建应用时，要补上登录方式，上线前核。
+登录方式（2026-09-26 修）：初始化脚本以前用 SQL 建的应用没有登录方式，Casdoor 3.42 会拒绝这些应用的密码登录（它只认 `signin_methods` 里有 Password，或该列为空时的 `enable_password`）。现在 `create_app` 新建应用时写入"只开密码登录"（用户名或邮箱都行），登录页布局抄 Casdoor 自带应用；已有应用只在这两列为空时补，运维手改过的保留。在全新的 Casdoor 3.42 上实测：用户名、邮箱都能登录，错密码被拒；手改的登录方式重跑后不变；登录方式为空的旧应用重跑后能登录。
 
 ## 不再守的
 

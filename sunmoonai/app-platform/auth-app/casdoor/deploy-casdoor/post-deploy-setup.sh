@@ -353,20 +353,33 @@ create_app() {
     safe_uris="${redirect_uris//\'/\'\'}"
     safe_grant_types="${grant_types//\'/\'\'}"
 
+    # 登录方式：Casdoor 3.42 只在 signin_methods 含 Password（或该列为空且 enable_password 为真）时
+    # 允许密码登录。只开密码登录（用户名或邮箱都行）；登录页布局 signin_items 抄 Casdoor 自带应用。
+    # 已有应用只在这两列为空时补，不覆盖运维手工改过的登录方式。
+    local signin_methods='[{"name":"Password","displayName":"Password","rule":"All"}]'
+    local builtin_signin_items="(SELECT signin_items FROM application WHERE owner = 'admin' AND name = 'app-built-in')"
+
     local sql
     sql="INSERT INTO application (
         owner, name, created_time,
         display_name, client_id, client_secret,
         redirect_uris, cert, grant_types,
         organization, enable_sign_up,
-        token_format, expire_in_hours, refresh_expire_in_hours
+        token_format, expire_in_hours, refresh_expire_in_hours,
+        enable_password, signin_methods, signin_items
     ) VALUES (
         'admin', '$safe_name', '$now',
         '$safe_display_name', '$safe_client_id', '$safe_client_secret',
         '$safe_uris', 'cert-built-in', '$safe_grant_types',
         '$safe_org', $enable_signup,
-        'JWT', 168, 336
+        'JWT', 168, 336,
+        true, '$signin_methods', $builtin_signin_items
     ) ON CONFLICT (owner, name) DO UPDATE SET
+        enable_password = true,
+        signin_methods = CASE WHEN coalesce(btrim(application.signin_methods), '') IN ('', 'null', '[]')
+            THEN EXCLUDED.signin_methods ELSE application.signin_methods END,
+        signin_items = CASE WHEN coalesce(btrim(application.signin_items), '') IN ('', 'null', '[]')
+            THEN EXCLUDED.signin_items ELSE application.signin_items END,
         display_name = EXCLUDED.display_name,
         client_id = EXCLUDED.client_id,
         client_secret = EXCLUDED.client_secret,
