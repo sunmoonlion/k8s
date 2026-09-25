@@ -36,7 +36,7 @@ spec:
       securityContext: { runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001 }
       containers:
         - name: codex
-          image: harbor.sunmoonai.com:30443/app-images/sandbox@sha256:REPLACE_WITH_BUILT_DIGEST
+          image: harbor.sunmoonai.com:30443/app-images/sandbox@sha256:ba14b8d3f69e4359a4b13dc78c1078b2ef2ec1498e54eeda8dd62e100c219a2f
           env:
             # 边缘正式拓扑：wss://edge.sunmoonai.com/relay；KIND 开发：集群内的会合点
             - { name: RELAY_URL, value: "ws://relay.edge.svc.cluster.local:47100" }
@@ -58,7 +58,7 @@ spec:
           ports:
             - { name: app-server, containerPort: 47800 }
           volumeMounts:
-            - { name: codex-home, mountPath: /data/codex }
+            - { name: codex-home, mountPath: /data }
             - { name: app-server-token, mountPath: /secrets/app-server, readOnly: true }
           resources:
             requests: { cpu: "100m", memory: "256Mi" }
@@ -70,7 +70,7 @@ spec:
         - name: codex-home
           persistentVolumeClaim: { claimName: sandbox-demo-codex-home }
         - name: app-server-token
-          secret: { secretName: sandbox-demo-app-server, defaultMode: 0400 }
+          secret: { secretName: sandbox-demo-app-server, defaultMode: 0440 }
 ---
 apiVersion: v1
 kind: Service

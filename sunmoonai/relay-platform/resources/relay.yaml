@@ -18,10 +18,10 @@ spec:
     metadata:
       labels: { app: relay }
     spec:
-      securityContext: { runAsUser: 10002, runAsGroup: 10002, runAsNonRoot: true }
+      securityContext: { runAsUser: 10002, runAsGroup: 10002, runAsNonRoot: true, fsGroup: 10002 }
       containers:
         - name: relay
-          image: harbor.sunmoonai.com:30443/app-images/relay@sha256:REPLACE_WITH_BUILT_DIGEST
+          image: harbor.sunmoonai.com:30443/app-images/relay@sha256:9a155338849e57d0e4e3b9ba075783de71fe4d19053d9f2602b695da85476806
           env:
             - { name: RELAY_HOST, value: "0.0.0.0" }
             - { name: RELAY_PORT, value: "47100" }
@@ -48,7 +48,7 @@ spec:
             limits: { cpu: "500m", memory: "256Mi" }
       volumes:
         - name: tokens
-          secret: { secretName: relay-tokens, defaultMode: 0400 }
+          secret: { secretName: relay-tokens, defaultMode: 0440 }
         - name: state
           emptyDir: { sizeLimit: 8Mi }
 ---
@@ -73,4 +73,3 @@ spec:
   selector: { app: relay }
   ports:
     - { name: ws, port: 47100, targetPort: 47100, nodePort: 30471 }
-
