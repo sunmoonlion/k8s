@@ -25,3 +25,17 @@
 - Applied the synchronized manifest with the unchanged v1-r4 digest. Relay rollout succeeded and PVC `relay-state` is Bound (64 MiB, RWO).
 - The required startup log `jwt verification enabled` was absent. Sanitized logs repeatedly showed `reject: agent offline`; kind2 remains one running process with relay status `rejected`.
 - Stopped at step 6b as instructed. Did not kill/restart the agent or proceed to steps 7–10. No credential values are recorded.
+
+## Step 6b corrected verification and step 7
+
+- The inbox command used `kubectl ... logs deploy/relay --tail=10 | grep -iE "jwt verification enabled|listening"`. This was inadequate because relay emits a health-check line every 10 seconds, so the startup line can fall outside the last 10 lines.
+- Corrected command, preserving the same pass criteria:
+  `KUBECONFIG=~/.kube/kind-config kubectl -n edge logs deploy/relay | grep -iE "jwt verification enabled|listening" | head -5`
+  It returned `jwt verification enabled issuer=sunmoon-workbench`, `server listening...`, and `listening ws...`.
+- Corrected environment-name check:
+  `KUBECONFIG=~/.kube/kind-config kubectl -n edge exec deploy/relay -- sh -c 'env | cut -d= -f1 | grep ^RELAY_JWT'`
+  It returned `RELAY_JWT_PUBLIC_KEY` and `RELAY_JWT_ISSUER`, meeting the stated criteria.
+- Restarted the existing kind2 agent without re-initializing. The first check found an old rejected PID (3212994) as well as the newly connected PID (3569964); stopped only the stale PID. Thereafter exactly one kind2 agent remained, and its log showed `relay connected`; relay showed one `agent up` and no replacement/down event.
+- Step 7 TypeScript compile passed: `node node_modules/typescript/bin/tsc -p tsconfig.json`.
+- Restarted the single kind2 agent for step 7. After 30 seconds exactly one process remained (PID 3582175), and its log showed `relay connected`. No credential values were written here.
+- Paused at step 8 for the owner’s browser verification and token-rotation confirmation.
