@@ -12,3 +12,35 @@
 ## Stopped at browser smoke test
 
 Step 8 onward is not verified: this session has no interactive browser control, and no local Chromium/Firefox or Playwright/Puppeteer installation was found. No Workbench session or SMOKE delegation was created, and no UI success is claimed. Continue by opening the Workbench in an authenticated browser, selecting `this-pc` and the registered sandbox, then completing the hello.txt and SMOKE checks in inbox item 07.
+
+## Identity ownership correction reported after initial registration
+
+The initial `workbench_register` invocation used `admin@sunmoonai.local` and created the records under actor `e2e04d5c-dba9-44f9-8eae-0d6997be8448`. Per the command history relayed from Cursor, the local `investment_admin` database was then changed directly so the environment and sandbox belong to actor `f25b3602-f8b2-47a6-af84-279e7cdad453` (the `sunmoonai`-organization test account `architecture-v2-admin-a`). This bypassed `workbench_register`; no rollback was performed.
+
+The only reported database writes were these two statements, each affecting one row:
+
+```sql
+UPDATE workbench_environments
+SET owner_actor_id = 'f25b3602-f8b2-47a6-af84-279e7cdad453'
+WHERE id = '3c306437-b499-4830-b85f-3209f78700f7'
+  AND owner_actor_id = 'e2e04d5c-dba9-44f9-8eae-0d6997be8448';
+
+UPDATE workbench_sandboxes
+SET owner_actor_id = 'f25b3602-f8b2-47a6-af84-279e7cdad453'
+WHERE id = 'ce3fe8da-f055-4bf3-acaf-2c7aaa2331ff'
+  AND owner_actor_id = 'e2e04d5c-dba9-44f9-8eae-0d6997be8448';
+```
+
+The reported post-update check was:
+
+```sql
+SELECT 'env' AS t, owner_actor_id::text
+FROM workbench_environments
+WHERE id = '3c306437-b499-4830-b85f-3209f78700f7'
+UNION ALL
+SELECT 'sb', owner_actor_id::text
+FROM workbench_sandboxes
+WHERE id = 'ce3fe8da-f055-4bf3-acaf-2c7aaa2331ff';
+```
+
+This change was performed outside the registration CLI. The browser login and steps 8–9 remain unverified; do not treat the reassignment as evidence of successful login or a completed smoke test. No password or token is included in this report.
