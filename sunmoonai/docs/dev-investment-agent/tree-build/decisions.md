@@ -11,7 +11,7 @@
 | `0003-sandbox` | `D18`（PVC 里的会话记录备不备；`D9` 已定：按需拉起、PVC，见 0003「实现状态」） |
 | 公网边缘与 frp 隧道（`topology.md`「边缘到内网」） | `D19`（边缘放哪、域名与证书）、`D15`（内网上行） |
 | `0004-relay` | `D16`（仓位置）；`D10` 已定：ES256 JWT、长期、按 jti/用户吊销推送，见 0004「实现状态」与 `security.md`「令牌」 |
-| `0005-agent` | `D5` 已定（代理自己挡）、`D11` 已定（Windows 可做，装机要一次提权初始化）；剩 Windows 上外沙箱的实现（未验证事项） |
+| `0005-agent` | `D5` 已定（代理自己挡）、`D11` 已定（Windows 可做，装机要一次提权初始化）；**Windows 提为第一期首个用户平台（2026-09-26）**；卡着它的是两条未验证事项：无管理员权限的办公机、Windows 外沙箱 |
 | `0006-knowledge` | `D2`（数据盘点）、`D7`（用户资料的量与同步） |
 | `0007-eval` | `D6`（负责人、预算行、时间表） |
 | 整个产品 | **`D1`** 法律边界、**`D3`** 客户画像 |
@@ -40,7 +40,8 @@
 
 - **OpenAI 的 API key 路径**：所有者只有订阅没有 key，未验；BYOK 与国产直连已由 Kimi 验过（`runtime/probe/REPORT-2026-09-23-byok-kimi.md`）；其他国产厂商（DeepSeek、Qwen、GLM）的 responses 兼容度未验；
 - **macOS 上外沙箱的嵌套**：sandbox-exec 外层 + Codex seatbelt 内层，预期可叠加，未验；Linux 已验（`runtime/probe/REPORT-2026-09-24-outer-sandbox.md`）；
-- **Windows 上本地上限的外沙箱怎么做**：exec-server 本身在 Windows 上已验可用（`runtime/probe/REPORT-2026-09-24-windows-exec-server.md`，需 `codex sandbox setup --elevated` 一次性提权初始化）；我们能否把 exec-server 进程包进同一套受限令牌机制，做 Windows 版时再探；
+- **Windows 上本地上限的外沙箱怎么做**（Windows 已提为第一期，这条是上线门）：exec-server 本身在 Windows 上已验可用（`runtime/probe/REPORT-2026-09-24-windows-exec-server.md`，需 `codex sandbox setup --elevated` 一次性提权初始化）；能否把 exec-server 进程包进同一套受限令牌机制，Windows 开工前先探；
+- **没有管理员权限的 Windows 办公机能不能装**（上线门）：Codex 非提权沙箱模式能否在执行端挡住白名单外写入，未验；挡得住给免提权安装路径，挡不住就写明"需要 IT 装一次"，不降级放行（见 0005「平台」）；
 - **断线恢复已验**（`runtime/probe/REPORT-2026-09-23-reconnect.md`）：25 秒内重连接回原会话、进程与输出无损；超窗与代理重启会话丢，但环境回来后 app-server 自动重连，新 turn 正常。未验：真实公网抖动时长分布；
 - **一个 exec-server 服务多个 app-server 会话**；
 - **stdio 型 MCP 在远端环境下跑在哪一端**：HTTP 型已验由编排端从执行端配置读取并生效；skills 已验（`runtime/probe/REPORT-2026-09-24-skills-mcp-resolution.md`）：项目 `.agents/skills` 与沙箱 `CODEX_HOME/skills` 可见，用户机器上的全局 `~/.codex/skills` 不可见；
