@@ -11,3 +11,9 @@
 ## Browser work pending
 
 The settings-page “更新沙箱”/“换代理令牌” actions and Workbench SMOKE/DATA_QUERY delegations have not been performed. After the 09 browser launch, verify the relay receives the public key; rotate the proxy token, confirm the old agent is rejected, initialize/start the new agent privately, then run SMOKE and DATA_QUERY if 08 remains available. Do not paste JWTs or agent-init commands into chat or Git.
+
+## Live D10 readiness check
+
+- Workbench JWKS returns one EC P-256 public key and no private `d` member. Relay logs confirm the public key was received through its management channel.
+- The user sandbox's Knowledge credential is in three-segment JWT format; a read-only `describe_schema` MCP call from that sandbox passed and returned data version `lesson23-analysis-b7ad59fddab30331`.
+- The post-SMOKE relay-token rotation, revoked-old-agent rejection, and replacement-agent check are still pending the settings-page “换代理令牌” action and its one-time command. No credential value is recorded here.

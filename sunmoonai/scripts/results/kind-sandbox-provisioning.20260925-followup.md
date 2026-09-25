@@ -23,3 +23,8 @@ No token, password, or agent-init command is recorded here.
 - Duplicate agents initially caused repeated close-4000 replacements. Stopped the non-demo processes by exact PID, preserving `~/.sunmoon-agent-kind`. Started one detached kind2 agent. After 30 seconds: exactly one live kind2 process; its status is `connected`; its private log has one `relay connected`; relay logs since the restart show one `agent up` for this user and no subsequent `agent down` or `agent replaced`.
 - Ran `workbench_register` in the Investment API for the user-provided email, environment `this-pc`, root `/home/zymun/research`, and the refreshed sandbox service URL. The environment was newly registered; the already provisioned sandbox record was reused. No token was written to this report.
 - Browser step 8 (create session and run SMOKE) remains pending. Once the owner confirms it passed, perform step 9's update/reclaim verification; do not reclaim before SMOKE.
+
+## Browser report and final UI cleanup pending
+
+- Owner reports that the 09 browser SMOKE passed.
+- The post-SMOKE settings-page “更新沙箱” and “回收沙箱” actions have not yet been performed from this session; no browser process or browser-control endpoint is available here. Verify the final reclaim state only after those UI actions: Deployment absent, PVC retained.

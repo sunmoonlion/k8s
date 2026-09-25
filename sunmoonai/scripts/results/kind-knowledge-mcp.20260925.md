@@ -16,3 +16,8 @@
 The corrected bundle also carries the optional D10 JWT public-key reference/issuer and API S3 credential references. The public-key fields remain dormant until D10 settings-page provisioning.
 
 No credential or token values are recorded here. Private backup and identity records remain outside Git under `/home/zymun/private/`.
+
+## Per-user sandbox check
+
+- After the 09 sandbox refresh, verified that the provisioned sandbox config references `sunmoon_knowledge` and its app-server process has the credential environment set (the secret value was not printed).
+- A read-only MCP probe from the live user sandbox using that in-process credential passed `initialize`, `tools/list`, and `describe_schema`: three tools, nine tables, data version `lesson23-analysis-b7ad59fddab30331`. This is a server-side probe; the browser Workbench prompt is still pending.
