@@ -364,6 +364,8 @@ create_app() {
     # 允许密码登录。只开密码登录（用户名或邮箱都行）；登录页布局 signin_items 抄 Casdoor 自带应用。
     # 已有应用只在这两列为空时补，不覆盖运维手工改过的登录方式。
     local signin_methods='[{"name":"Password","displayName":"Password","rule":"All"}]'
+    # providers / scopes / tags / token_fields 为 NULL 时 Casdoor 后台编辑属于本应用的用户会整页空白
+    #（前端 null.filter，KIND 实测、本机 Casdoor 3.42 + 无头浏览器复现）。新建给空列表，已有的只补 NULL
     local builtin_signin_items="(SELECT signin_items FROM application WHERE owner = 'admin' AND name = 'app-built-in')"
 
     local sql
@@ -373,15 +375,21 @@ create_app() {
         redirect_uris, cert, grant_types,
         organization, enable_sign_up,
         token_format, expire_in_hours, refresh_expire_in_hours,
-        enable_password, signin_methods, signin_items
+        enable_password, signin_methods, signin_items,
+        providers, scopes, tags, token_fields
     ) VALUES (
         'admin', '$safe_name', '$now',
         '$safe_display_name', '$safe_client_id', '$safe_client_secret',
         '$safe_uris', 'cert-built-in', '$safe_grant_types',
         '$safe_org', $enable_signup,
         'JWT', 168, 336,
-        true, '$signin_methods', $builtin_signin_items
+        true, '$signin_methods', $builtin_signin_items,
+        '[]', '[]', '[]', '[]'
     ) ON CONFLICT (owner, name) DO UPDATE SET
+        providers = coalesce(application.providers, EXCLUDED.providers),
+        scopes = coalesce(application.scopes, EXCLUDED.scopes),
+        tags = coalesce(application.tags, EXCLUDED.tags),
+        token_fields = coalesce(application.token_fields, EXCLUDED.token_fields),
         enable_password = true,
         signin_methods = CASE WHEN coalesce(btrim(application.signin_methods), '') IN ('', 'null', '[]')
             THEN EXCLUDED.signin_methods ELSE application.signin_methods END,
