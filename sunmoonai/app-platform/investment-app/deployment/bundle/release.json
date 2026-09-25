@@ -7,9 +7,9 @@
   "release_id": "kind-wb-20260925",
   "formal_release": false,
   "images": {
-    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:d9df1752d5ceb6c085bb8ba00c3b9ca84e41a800b2f4a2dc1e17b087e2e6d2ad",
+    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:e853345914a3f8814d3baf775deb58b18fe40d976070c15d756e452403feee4d",
     "admin": "harbor.sunmoonai.com:30443/app-images/investment-admin-frontend@sha256:422e7c1e53d5b61eba14bcd242bf73a8e10428f1799e2a6370c1be95cec1923e",
-    "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:3bf04caa667e9f96181b63aa0c0c6222d6e467631e5b115125377e33f12c2554"
+    "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:412b8820a889014959a61a26199965525786c36f6b761babdf3ed16d13a0c85e"
   },
   "origins": {
     "admin": "https://investment-admin.sunmoonai.com:30443",
@@ -24,10 +24,10 @@
     "40-ingress.yaml"
   ],
   "sha256": {
-    "00-prerequisites.yaml": "39ca243764459756c4353d268fac1b29ce37e8674582696cb2d2d859726737e2",
-    "10-migration.yaml": "dcef6b14239a95f3d85fe2b6246cc1f790060c3204e91c025f9a552ce5deb664",
-    "20-runtime.yaml": "bd6f1b44339b1c05427208676592f9bbc5608b73d7f55a606968feab7877d868",
-    "30-network-policies.yaml": "59c129390e4460ee438f28ceda67c9b767c7183bbfa538cde33227ac0836cb9c",
+    "00-prerequisites.yaml": "b1d345bb639715ec75e54205164d898d8fee9c1bb8f13287c270960c71b21ef1",
+    "10-migration.yaml": "e593481eb2c87560f0bd92b3b9d2dcdf4333df3c3321f6981009fbec18a603f6",
+    "20-runtime.yaml": "0357a8151ffab7e7bcd064566bd23e53176333c31f7daa644310479caaf7a7bb",
+    "30-network-policies.yaml": "f105b29f31789456d84b87a12a6293ef5e5c7a4c8b99af54596dadbf1e611975",
     "40-ingress.yaml": "9f5fa10feb105cf71e9e796d35c1a64044c774b453c39948409d00177bbbeafd"
   },
   "deployment_replicas": {
@@ -127,14 +127,14 @@
   ],
   "contains_credentials": false,
   "renderer_inputs_sha256": {
-    "k8s:sunmoonai/app-platform/scripts/render_investment_release_base.py": "24daad848830c9836c635b7ba8f8813d7e5bbac4cb4b06923fbba0d47bb01bfa",
+    "k8s:sunmoonai/app-platform/scripts/render_investment_release_base.py": "d99c943c4ee334109410c168424d9a416386dbefd562dffb0a5c776b892d1f3e",
     "tpl-app:k8s-deployment/scaffold.py": "eb625d86f9a3b75111d8b2605c23152b759e7b2e04eb9d8661bb1a67def90c33",
     "tpl-app:k8s-deployment/templates/00-prerequisites.yaml.tpl": "31bdecaf21010840bb5b00fefdbd6f59f804b9c7dadfb606bcb429b7f4418334",
     "tpl-app:k8s-deployment/templates/10-migration.yaml.tpl": "2a78b9770f61b94cc267f267449b0e0593b147a61a444a7463fe4f3fcc1508f4",
     "tpl-app:k8s-deployment/templates/20-runtime.yaml.tpl": "93bade1d5c9e96a0a4708bd76e88f90e15fa7a7c54a9a118adb993c492eb866e",
     "tpl-app:k8s-deployment/templates/30-network-policies.yaml.tpl": "b8018d309f7e7d9ec5c72fd463d0b44f8a091e197fa1b47a9a110f36ae59261d",
     "tpl-app:k8s-deployment/templates/40-ingress.yaml.tpl": "5f79e6a40bdfa8a581b92eeabe1a9f0cbf3a031221f5c9a40708b4682190ce3d",
-    "development-release-input": "9967247bd0bbd5d166c2bc694c285b31d41898cafac7bb0d0241f63c6a24bef1",
+    "development-release-input": "465b6376a4796b41cdbe3387d74ec1e5597fcff326465e45682a7cc9d0c0ddb5",
     "k8s:sunmoonai/app-platform/scripts/development_release.py": "0db0b896ebc0681094f3ec41b3ad2dd9036391ce8e07ef5e585f68a0decb1ff3"
   },
   "deployment_target": "KIND",
@@ -148,8 +148,8 @@
     "components": [
       {
         "path": "investment-backend",
-        "commit": "923bc0ab6da7d478101542dce9a62b93756c8318",
-        "tree": "40557a914472e10e0b7a2bb14c9b0a051199e9bb",
+        "commit": "e44dc1ff1397c6ddb6a7c5d9fc265fb10b6d6b0b",
+        "tree": "ed2996f2d3f888d3bafc57f54693ebdbad6232a1",
         "remote_branch": "origin/master"
       },
       {
@@ -160,16 +160,16 @@
       },
       {
         "path": "investment-web-frontend",
-        "commit": "f11cb56cd1ee0fc390435873676bd8edec59242d",
-        "tree": "e6ca30745beddc81d507f4e27c9d94489fc5e8b4",
+        "commit": "9eb4c0155c482af43a063f0e169753475d11a22f",
+        "tree": "73e17e78a387037b67113930eea3436b654015e1",
         "remote_branch": "origin/master"
       }
     ]
   },
-  "migration_head": "20260924_0009",
+  "migration_head": "20260925_0011",
   "runtime_identity_mode": "independent-v1",
   "runtime_identity_upgrade": {
     "prepared_release_id": "kind-b7-20260919",
-    "preparation_plan_sha256": "81070ec30f9acc068005e3710aa2829956c3cbb7cd01f3028bd97ca282549d0e"
+    "preparation_plan_sha256": "787744b8adea7cd0998a949ad8f10cbd9e2b434420ad360e7ab226e57d1882ba"
   }
 }

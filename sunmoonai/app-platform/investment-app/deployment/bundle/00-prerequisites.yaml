@@ -131,6 +131,13 @@ data:
   WORKBENCH_REDIS_KEY_PREFIX: investment:workbench
   WORKBENCH_ENVIRONMENT_KEY: user-pc
   WORKBENCH_POLL_SECONDS: '1.0'
+  WORKBENCH_PROVISIONER_URL: http://sandbox-provisioner.sandbox-pool.svc.cluster.local:8080
+  WORKBENCH_RELAY_ADMIN_URL: ws://relay.edge.svc.cluster.local:47100
+  WORKBENCH_RELAY_PUBLIC_URL: ws://relay.edge.svc.cluster.local:47100
+  WORKBENCH_SANDBOX_MODEL_PROVIDER: kimi
+  WORKBENCH_SANDBOX_MODEL: kimi-k3
+  WORKBENCH_SANDBOX_PROVIDER_BASE_URL: https://api.moonshot.cn/v1
+  WORKBENCH_TOKEN_ISSUER: sunmoon-workbench
   CELERY_TASK_TOPOLOGY_PREDECLARED: 'true'
 ---
 apiVersion: v1

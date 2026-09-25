@@ -1,7 +1,7 @@
 {
   "kind": "kind-development-release-input",
   "logical_app": "investment",
-  "migration_head": "20260924_0009",
+  "migration_head": "20260925_0011",
   "development_source_lock": {
     "schema_version": 1,
     "kind": "development-source-lock",
@@ -12,8 +12,8 @@
     "components": [
       {
         "path": "investment-backend",
-        "commit": "923bc0ab6da7d478101542dce9a62b93756c8318",
-        "tree": "40557a914472e10e0b7a2bb14c9b0a051199e9bb",
+        "commit": "e44dc1ff1397c6ddb6a7c5d9fc265fb10b6d6b0b",
+        "tree": "ed2996f2d3f888d3bafc57f54693ebdbad6232a1",
         "remote_branch": "origin/master"
       },
       {
@@ -24,20 +24,20 @@
       },
       {
         "path": "investment-web-frontend",
-        "commit": "f11cb56cd1ee0fc390435873676bd8edec59242d",
-        "tree": "e6ca30745beddc81d507f4e27c9d94489fc5e8b4",
+        "commit": "9eb4c0155c482af43a063f0e169753475d11a22f",
+        "tree": "73e17e78a387037b67113930eea3436b654015e1",
         "remote_branch": "origin/master"
       }
     ]
   },
   "images": {
-    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:d9df1752d5ceb6c085bb8ba00c3b9ca84e41a800b2f4a2dc1e17b087e2e6d2ad",
+    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:e853345914a3f8814d3baf775deb58b18fe40d976070c15d756e452403feee4d",
     "admin": "harbor.sunmoonai.com:30443/app-images/investment-admin-frontend@sha256:422e7c1e53d5b61eba14bcd242bf73a8e10428f1799e2a6370c1be95cec1923e",
-    "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:3bf04caa667e9f96181b63aa0c0c6222d6e467631e5b115125377e33f12c2554"
+    "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:412b8820a889014959a61a26199965525786c36f6b761babdf3ed16d13a0c85e"
   },
   "runtime_identity_mode": "independent-v1",
   "runtime_identity_upgrade": {
     "prepared_release_id": "kind-b7-20260919",
-    "preparation_plan_sha256": "81070ec30f9acc068005e3710aa2829956c3cbb7cd01f3028bd97ca282549d0e"
+    "preparation_plan_sha256": "787744b8adea7cd0998a949ad8f10cbd9e2b434420ad360e7ab226e57d1882ba"
   }
 }
