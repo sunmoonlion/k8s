@@ -17,3 +17,4 @@ The settings-page “更新沙箱”/“换代理令牌” actions and Workbench
 - Workbench JWKS returns one EC P-256 public key and no private `d` member. Relay logs confirm the public key was received through its management channel.
 - The user sandbox's Knowledge credential is in three-segment JWT format; a read-only `describe_schema` MCP call from that sandbox passed and returned data version `lesson23-analysis-b7ad59fddab30331`.
 - The post-SMOKE relay-token rotation, revoked-old-agent rejection, and replacement-agent check are still pending the settings-page “换代理令牌” action and its one-time command. No credential value is recorded here.
+- Follow-up read-only probe from the live user sandbox called `run_sql` with its app-server-only Knowledge credential and received 26,387 rows plus the expected data version. This validates the existing per-user MCP JWT; the Workbench proxy-token rotation, old-agent rejection, and browser DATA_QUERY delegation remain pending.

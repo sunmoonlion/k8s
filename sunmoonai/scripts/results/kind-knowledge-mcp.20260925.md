@@ -21,3 +21,4 @@ No credential or token values are recorded here. Private backup and identity rec
 
 - After the 09 sandbox refresh, verified that the provisioned sandbox config references `sunmoon_knowledge` and its app-server process has the credential environment set (the secret value was not printed).
 - A read-only MCP probe from the live user sandbox using that in-process credential passed `initialize`, `tools/list`, and `describe_schema`: three tools, nine tables, data version `lesson23-analysis-b7ad59fddab30331`. This is a server-side probe; the browser Workbench prompt is still pending.
+- Follow-up read-only `run_sql` from the live user sandbox using its app-server-only credential returned 26,387 `order_performance` rows with data version `lesson23-analysis-b7ad59fddab30331`. This confirms the per-user JWT can query Knowledge directly; it does not replace the Workbench browser DATA_QUERY delegation, which remains to be verified after relay-token rotation.
