@@ -16,7 +16,7 @@ requested_deadline    可选
 client_context        locale、timezone 等非授权上下文
 ```
 
-工作台从会话确定 `requester`、`tenant`、角色与数据作用域，不信任客户端自报。`tenant` 指付费客户单位，不是 Casdoor 的"组织"（后者只是账号分组）；第一期一律 `default`，隔离按个人，怎么落见 `D21`。幂等唯一性至少包含 `tenant + requester + profile + idempotency_key`；同键同摘要返回原 `task_id`，同键异摘要返回冲突。
+工作台从会话确定 `requester`、`tenant`、角色与数据作用域，不信任客户端自报。`tenant` 指付费客户单位，不是 Casdoor 的"组织"（后者只是账号分组）；落为 `sunmoonai` 组织下的顶层 Casdoor 群组，从登录令牌的 `groups` 映射（`D21`）；第一期一律 `default`，隔离按个人。幂等唯一性至少包含 `tenant + requester + profile + idempotency_key`；同键同摘要返回原 `task_id`，同键异摘要返回冲突。
 
 ## 持久化主档
 
