@@ -36,7 +36,12 @@
 1. 重做 A1（backend 与 web-frontend：`COMPONENTS="backend web-frontend"`）、A2（取新 backend digest）、A3（锁：三个子仓 commit/tree 换成本地检出的实际值）。
 2. 改 `development-input.json`：`images.backend` 换新 digest；加一段
    `"runtime_identity_upgrade": {"prepared_release_id": "kind-b7-20260919", "preparation_plan_sha256": "<第 0 步输出的 plan_sha256>"}`；`migration_head` 改成 `20260925_0011`。
-3. 重做 A5 到 A9（渲染到空目录、diff、替换 bundle、门禁、单测、plan）。diff 里新增的只应有：backend digest、release.json 里的 `runtime_identity_upgrade`。A8 里 `test_runtime_rendering` 与 `test_committed_development_candidates` 的 investment/info 两条这次应该过。conf 里 `BACKEND_IMAGE` 跟着换。
+3. 重做 A5 到 A9（渲染到空目录、diff、替换 bundle、门禁、单测、plan）。**A6 的 diff 以这里为准，不用 A 段那句「三类」**（2026-09-26 更正：已提交的 bundle 是 0009 那轮渲的，之后 07/09/10 的渲染改动都会一起进来，本来就该进，06 一次部署带上）。应有、且只应有：
+   - 镜像：backend 与 web 两个 digest；源码锁与注解、派生哈希；release.json 的 `runtime_identity_upgrade` 与 `migration_head` `20260925_0011`；
+   - ConfigMap 新键：`WORKBENCH_PROVISIONER_URL`、`WORKBENCH_RELAY_ADMIN_URL`、`WORKBENCH_RELAY_PUBLIC_URL`、`WORKBENCH_SANDBOX_MODEL_PROVIDER`（kimi）、`WORKBENCH_SANDBOX_MODEL`、`WORKBENCH_SANDBOX_PROVIDER_BASE_URL`、`WORKBENCH_TOKEN_ISSUER`；
+   - api 容器对 Secret `investment-workbench` 的可选引用：`WORKBENCH_CREDENTIAL_KEY`、`WORKBENCH_PROVISIONER_TOKEN`、`WORKBENCH_RELAY_ADMIN_TOKEN`、`WORKBENCH_TOKEN_SIGNING_KEY`（都带 `optional: true`）；runner 对 `sandbox-demo-app-server` 的可选引用；
+   - NetworkPolicy：api 出站到带 `sunmoonai.com/sandbox-pool=true` 标签的命名空间 8080、到 `edge` 命名空间 47100；runner 出站到 sandbox-pool 47800。
+   这些都是惰性的：Secret 缺就是没有这个环境变量，对应接口回 503；出站规则只放行不打开任何东西。上面之外还有别的变化就停，贴 diff。A8 里 `test_runtime_rendering` 与 `test_committed_development_candidates` 的 investment/info 两条这次应该过。conf 里 `BACKEND_IMAGE` 跟着换。
 4. 维护窗口（README 第 2 步）：`kubectl -n app-platform-dev scale deploy investment-backend-api investment-backend-worker investment-backend-scheduler --replicas=0`，等 `kubectl -n app-platform-dev get pods -l sunmoonai.com/app=investment` 里 backend 三类 Pod 全部消失。前端可以不停。
 5. 备份回执（README 第 3、4 步，一条命令）：
    `python3 kind_database_rehearsal.py --app investment --kubeconfig ~/.kube/kind-config --cluster-uid $(kubectl get ns kube-system -o jsonpath='{.metadata.uid}') --image <新 backend digest 全名> --head 20260925_0011 --output <git 之外的私有目录，如 ~/private/investment-wb-20260926> --cutover-release ../investment-app/deployment/bundle/release.json`（在 `app-platform/scripts` 下跑）。应该以 `cutover_receipt` 一行结束，目录里有 `cutover-receipt.json` 与 `database.dump`。要 Docker（它起一次性 Postgres 做两次恢复演练）。
