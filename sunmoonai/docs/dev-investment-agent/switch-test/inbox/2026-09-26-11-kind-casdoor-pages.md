@@ -5,7 +5,7 @@
 跑：按下面编号步骤做
 仓与提交：k8s 本条待办所在的 fable 头
 预计：20 分钟；要 KIND、helm、kubectl
-看什么：第 3 步 Casdoor 下发给页面的配置里 defaultLanguage、forceLanguage 都是 zh；第 5 步登录页是中文、顶部是「SunMoon AI 投研」、页脚「© SunMoon AI」
+看什么：第 5 步登录页是中文、顶部是「SunMoon AI 投研」、页脚「© SunMoon AI」
 前提：08、09、10 的后台部分已做（不依赖浏览器那几步）；不需要发信服务，也不需要 post-deploy-setup.local.conf
 回传：k8s/sunmoonai/scripts/results/kind-casdoor-pages.<时间>.md（写下后在被测仓提交）
 ```
@@ -15,6 +15,8 @@
 远程已在 k8s 改好（设计见 `tree-build/SDD/architecture/security.md`「账号与注册」）：Casdoor 的 Helm 配置 `app.conf` 加了 `defaultLanguage = "zh"` 与 `forceLanguage = "zh"`（镜像自带配置强制英文）；`signup-setup.sh` 管注册页、登录页的文字标题、中文提示、字段顺序、页脚，并关掉 Casdoor 自带应用 `app-built-in` 的注册（它默认开着，任何人能注册进 Casdoor 自己的管理组织）。远程已在本机 Casdoor 3.42 上用无头浏览器截图核过；这一条是让 KIND 也生效。
 
 ## 步骤
+
+**2026-09-26 更正：第 1–3 步先跳过，直接从第 4 步做。** 第 2 步的 Casdoor 升级要两个操作员口令（`PG_ADMIN_PASSWORD`、`APP_DB_PASSWORD`，后者必须与 Casdoor 现用的数据库口令一致，给错会让 Casdoor 连不上自己的库），本地助手按规矩停住是对的。登录页变中文靠的是第 4 步把组织语言设成只有中文（Casdoor 登录页在只列一种语言时强制用它），不依赖 Helm；`app.conf` 的中文设置只影响"直接打开注册链接"，而 KIND 里注册在发信服务配好前一直关着。所以 Casdoor 重新部署留到开注册那一条再做，届时由所有者在自己的终端里注入这两个口令后执行。
 
 1. 看现状（只读）：`cd ~/worktrees/fable/k8s/sunmoonai/app-platform/auth-app && ./deploy-auth-app-all/deploy-auth-app-all.sh --cluster KIND status`，把输出记下。
 2. 重新部署 Casdoor（Helm 升级，带上新的 app.conf）：`cd casdoor/deploy-casdoor && bash deploy-casdoor.sh --cluster KIND upgrade`。它会走数据库 bootstrap、Secret、Helm、Ingress 四步，都是幂等的；若报缺 Secret 文件或配置，**停下**把报错写进回传，不要手工补。完成后 `kubectl --kubeconfig ~/.kube/kind-config -n app-platform-dev rollout status deploy -l app.kubernetes.io/name=casdoor --timeout=180s`（选择器对不上就用 `get deploy | grep -i casdoor` 找名字）。
