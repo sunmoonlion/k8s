@@ -3,7 +3,7 @@
 ```text
 被测仓：k8s，本地路径 ~/worktrees/fable/k8s（还要 investment-app、runtime）
 跑：按下面编号步骤做（投资后端 + 网页走 06/07b 那套只换镜像的正式升级；会合点单独重建）
-仓与提交：investment-app 6f1822f（子仓 investment-backend a14b070、investment-web-frontend f8a6e71）；runtime d6d9d7c；k8s 本条待办所在的 fable 头
+仓与提交：investment-app d1ee4e0（子仓 investment-backend a14b070、investment-web-frontend a480433）；runtime d6d9d7c；k8s 本条待办所在的 fable 头
 预计：60 分钟；要 Docker、KIND、Harbor
 看什么：第 8 步设置页能看到 key 列表（尾号 dDK6 一条生效）；按钮点了有文字反馈；换令牌要先确认、确认后旧代理当场被断开；第 9 步委托卡片与状态不刷新就出现
 前提：08 的 DATA_QUERY 先做完（它不依赖这些修复）；10 的"换代理令牌"那一步放到本条第 8 步里做
@@ -13,7 +13,7 @@
 ## 这次发的是什么（都已在远程测过，KIND 里还没生效）
 
 - 后端：事件流改为"数据库定顺序、Redis 只唤醒"——委托状态、专家步骤、你发的话都能实时到，不会漏；空闲保活（a14b070 及之前的 a14b070）；凭据列表字段的契约测试。
-- 网页：设置页 key 列表能显示（之前严格校验拒收了创建时间、撤销时间两个字段）；沙箱各按钮有"正在…"与完成后的说明；换令牌、回收先确认；沙箱满了有中文提示（f8a6e71）。
+- 网页：设置页 key 列表能显示（之前严格校验拒收了创建时间、撤销时间两个字段）；沙箱各按钮有"正在…"与完成后的说明；换令牌、回收先确认；沙箱满了有中文提示；一次性接入命令带「复制命令」按钮（a480433）。
 - 会合点：按 jti 吊销时当场断开用旧令牌在线的代理（4003）。
 - 本地代理（runtime d6d9d7c）：被顶掉（4000）或令牌被吊销（4003）时停下、不再重连；`<子命令> --help` 只打印帮助。
 
@@ -28,7 +28,7 @@
 7. 本地代理用新版：`cd ~/worktrees/fable/runtime/agent && node node_modules/typescript/bin/tsc -p tsconfig.json`；按家目录找到 kind2 的代理 PID，`kill` 它，再按 09 的方式在后台起一个（不重新 init），确认只有 1 个、会合点里该用户只有一次 agent up。
 8. 浏览器（所有者，同一个登录过的标签页）：
    - 设置页：模型 key 列表里有 dDK6（生效）和四条已撤销；点「更新沙箱」，按钮先显示"正在更新…"，完了出现一行绿色说明。
-   - 点「换代理令牌」：先出现确认框写明后果；点「确定更换」后出现新的接入命令和一行说明。把新命令存到 `~/private/agent-init.txt`（覆盖，0600，方法同 09），交给本地助手。
+   - 点「换代理令牌」：先出现确认框写明后果；点「确定更换」后出现新的接入命令和一行说明；点「复制命令」应显示"已复制"。把新命令存到 `~/private/agent-init.txt`（覆盖，0600，方法同 09），交给本地助手。
    - 本地助手看：kind2 代理的日志里出现 "token revoked" 且进程停下、不再重连；`kubectl -n edge logs deploy/relay --tail=20` 有 `admin revoke jti count=2 closed_agents=1`。然后用新命令 init（家目录 kind2）并后台 start，确认 agent up。（这就是 10 的撤换那一步。）
 9. 会话页：新建会话（this-pc、sandbox-u-a63d03b16693），发一句话，再问专家 SMOKE。**不刷新**：你发的话、委托卡片、"委托 RECEIVED → …"这些行都应自己出现。
 10. 回传：每步结果与屏幕上看到的；`drift`/`status`；过滤含 sk-、token=、password 的行。
