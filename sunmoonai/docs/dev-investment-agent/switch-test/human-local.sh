@@ -15,6 +15,21 @@ pull() { # 仓目录 标签
 }
 
 if [ "${1:-}" != "--after-sync" ]; then
+echo "===== 0. 先看本地有没有没推回的东西"
+# 本地助手的提交还没推回、或者还在做（有未提交改动）时，拉取只会报 git 的分叉错误；这里先说人话再停
+blocked=0
+for r in $FIVE investment-app/investment-backend knowledge-app/knowledge-backend runtime; do
+  d="$HOME/worktrees/$WS/$r"; [ -e "$d/.git" ] || continue
+  dirty=$(git -C "$d" status --porcelain --ignore-submodules=all | head -1)
+  ahead=$(git -C "$d" rev-list --count "origin/$WS..HEAD" 2>/dev/null || echo 0)
+  [ -n "$dirty" ] && { echo "  ✗ $r 有没提交的改动（本地助手还在做？）"; blocked=1; }
+  [ "$ahead" != 0 ] && { echo "  ✗ $r 有 $ahead 个本地提交还没推回"; blocked=1; }
+done
+if [ "$blocked" = 1 ]; then
+  echo; echo "现在不能拉。等本地助手说「跑完了」，跑 bash ~/switch-test/human-remote.sh 推回（它会自动接上远程的新提交），推完再跑本脚本。"
+  exit 2
+fi
+echo "  干净，可以拉"
 echo "===== 1. 同步全部（工位 $WS）"
 if [ -x "$HOME/five-repos-sync/sync-five-repos.sh" ]; then
   "$HOME/five-repos-sync/sync-five-repos.sh" from-remote "$WS" || { echo "五仓同步失败，停在这里，把上面的输出贴给远程助手"; exit 1; }
