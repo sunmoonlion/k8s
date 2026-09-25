@@ -4,6 +4,14 @@
 > 这是一份**开发**任务，和 inbox 的"只跑不改"不同：这里允许写代码、写清单、写脚本。其余规矩照旧（见下「规矩」）。
 > 顺序固定：一 → 二 → 三。每一件做到它的「停点」就停下，写结果、本地提交，等所有者回传给远程看过再做下一件。
 
+## 在哪做：luna 工位、luna 分支（所有者 2026-09-26 定）
+
+- 开发全在 `~/worktrees/luna/<仓>`（`luna` 分支）里做；子仓（如 `investment-app/investment-web-frontend`）也在 luna 工位的子仓里提交。`fable` 工位只用来跑 inbox 待办，不在那里写这份任务的代码。
+- 2026-09-26 远程已把各父仓的 `luna` 分支快进到当时的 `fable` 头（含这两天所有修复与本文件）。子仓还没有 `luna` 分支，第一次回传时会建。
+- 开工前所有者先把本地 luna 工位拉到最新：`~/five-repos-sync/sync-five-repos.sh from-remote luna`（**不要**用 `WS=luna human-local.sh`，它会用 luna 分支的内容覆盖 `~/switch-test`）。拉完核一下子仓检出是否等于父仓记录（`git -C ~/worktrees/luna/investment-app submodule status` 前面没有 `+`）。
+- 回传：所有者跑 `WS=luna bash ~/switch-test/human-remote.sh`（先推子仓到 `luna`，再推父仓）。
+- 远程看过、所有者同意后，由远程把 `luna` 合进 `fable`。
+
 ## 分工：谁动哪些文件
 
 远程助手在你做这三件期间**不碰**下面这些位置；你也只在这些位置里新建或修改。要改别处（产品代码、现有部署脚本、门禁）先停下，写进结果说明为什么，等所有者定。
@@ -19,10 +27,10 @@
 
 ## 规矩
 
-- 所有代码与结果都在 `~/worktrees/fable/<仓>` 的 `fable` 分支上；子仓在子仓里提交。**只本地提交，不 fetch / pull / rebase / push**，同步和推回是所有者的 `human-local.sh` / `human-remote.sh`。
+- 这份任务的代码与结果都在 `~/worktrees/luna/<仓>` 的 `luna` 分支上；子仓在子仓里提交。**只本地提交，不 fetch / pull / rebase / push**，同步和推回是所有者的 `human-local.sh` / `human-remote.sh`。
 - 密钥、口令、令牌、cookie、模型 key 一律不进 git、不进结果、不进对话；放 `~/private/`（0600），用文件路径或环境变量引用。
 - 不绕过、不放宽任何现有门禁（发版门禁、数据库授权策略、网络策略、`doc-gate`）。
-- 每件做完在 `k8s/sunmoonai/scripts/results/luna-<件名>.<时间>.md` 写结果：做了什么、改了哪些文件、怎么跑、跑出来什么、还差什么、需要所有者或远程定的事。
+- 每件做完在 luna 工位的 `k8s/sunmoonai/scripts/results/luna-<件名>.<时间>.md` 写结果：做了什么、改了哪些文件、怎么跑、跑出来什么、还差什么、需要所有者或远程定的事。
 
 ---
 
@@ -88,4 +96,5 @@
 - 建测试账号 `e2e-runner`，口令写进 `~/private/e2e.env`。
 - 给一把测试专用的 Kimi key，写进同一个文件。
 - 定 `D22`、`D23`（或同意用默认）。
-- 每件停点后跑 `human-remote.sh` 回传，远程看过再继续。
+- 每件停点后跑 `WS=luna bash ~/switch-test/human-remote.sh` 回传，远程看过再继续。
+- 第 12 条发版先做完（端到端测试要跑在修好的版本上）。
