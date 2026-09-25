@@ -32,7 +32,8 @@ if [[ -n "${SIGNUP_ENV:-}" ]]; then
   # shellcheck disable=SC1090
   set -a; source "$SIGNUP_ENV"; set +a
 fi
-export SIGNUP_APP="${SIGNUP_APP:-sunmoonai-investment-web}" SIGNUP_ORG="${SIGNUP_ORG:-sunmoonai}"
+# KIND 的投资网页应用名是 sunmoonai-investment-r5-web（由身份供给流程建，不是 post-deploy-setup 的 APP_8 名）
+export SIGNUP_APP="${SIGNUP_APP:-sunmoonai-investment-r5-web}" SIGNUP_ORG="${SIGNUP_ORG:-sunmoonai}"
 
 run_sql "SELECT 1;" >/dev/null || { log_error "连不上 Casdoor 数据库（kubectl / pod / 口令文件）"; exit 1; }
 # shellcheck source=signup-setup.sh

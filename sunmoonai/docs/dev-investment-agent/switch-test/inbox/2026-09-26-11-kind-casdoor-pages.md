@@ -23,10 +23,15 @@
    curl -sk -c - https://casdoor.sunmoonai.com:30443/login | grep jsonWebConfig | sed 's/%22/"/g; s/%2C/,/g; s/%3A/:/g'
    ```
    里面应有 `"defaultLanguage":"zh"` 与 `"forceLanguage":"zh"`。不是 zh 就停下，贴出这一行。
-4. 注册页、登录页的设置（不需要发信服务；没配发信服务时注册保持关闭，这是设计）：
+4. 注册页、登录页的设置（不需要发信服务；没配发信服务时注册保持关闭，这是设计）。
+   KIND 里投资网页在 Casdoor 的应用名是 `sunmoonai-investment-r5-web`（不是脚本默认的 `sunmoonai-investment-web`，2026-09-26 Cursor 排查时查明），先只读核一下：
+   ```bash
+   kubectl --kubeconfig ~/.kube/kind-config -n data-platform-dev exec -i postgresql-sunmoonai-0 -c postgresql -- sh -c 'PGPASSWORD="$(cat "$POSTGRES_POSTGRES_PASSWORD_FILE")" psql -h 127.0.0.1 -U postgres -d casdoor -Atc "select name, organization, enable_sign_up from application where organization = '"'"'sunmoonai'"'"' order by 1"'
+   ```
+   列表里应有 `sunmoonai-investment-r5-web`。然后：
    ```bash
    cd ~/worktrees/fable/k8s/sunmoonai/app-platform/auth-app/casdoor/deploy-casdoor
-   bash kind-apply-signup.sh
+   SIGNUP_APP=sunmoonai-investment-r5-web bash kind-apply-signup.sh
    ```
    应看到几行 `[OK]`：「页面品牌：标题「SunMoon AI 投研」，标志=文字，只用中文」「已关闭 Casdoor 自带应用 app-built-in 的注册」，最后一行含「注册=false」。
 5. 浏览器（所有者，换一个无痕窗口免得旧的语言设置干扰）：打开投资网页 `https://investment.sunmoonai.com:30443` 点登录，跳到 Casdoor 登录页。应该看到：中文界面（"登 录""忘记密码？"），顶部一行字「SunMoon AI 投研」（没有破图标），页脚「© SunMoon AI」，没有右上角的语言地球图标；此时**没有**"立即注册"链接（注册还关着）。用你的账号登录一次，确认照常能进。
