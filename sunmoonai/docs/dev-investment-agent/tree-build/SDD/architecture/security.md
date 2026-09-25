@@ -56,7 +56,7 @@
 | 浏览器会话 | 用户 | Casdoor OIDC | 工作台 |
 | 代理令牌 | 用户 | JWT：`aud=relay`、`sub`（会合点用户名）、`role=agent`、`jti`、`exp` | 会合点用工作台公钥就地验；工作台签发 |
 | 沙箱令牌 | 用户 + 沙箱 | JWT：`aud=relay`、`sub`、`role=sandbox`、`sandbox`、`jti`、`exp` | 同上 |
-| 站点令牌 | 内网站点 | `site_id`、到期 | 同上（第一期单站点，未签发） |
+| frp 令牌 | 内网站点的 frpc | 共享密钥，≥32 字符，TLS 内传输 | 边缘 frps；边缘在 systemd 环境文件（0600），内网在 Secret；定期换（topology「边缘到内网」） |
 | MCP token | 用户 + 沙箱 | JWT：`aud=knowledge`、`sub`、`sandbox`、可选 `tools`、`jti`、`exp` | 知识服务用同一把公钥就地验 |
 
 **形制（`D10`，2026-09-25 定）**：ES256（P-256）签名，`iss=sunmoon-workbench`，`kid` 为公钥指纹；私钥只在工作台 Secret（`WORKBENCH_TOKEN_SIGNING_KEY`），公钥经 `GET /api/workbench/token-keys`（JWKS）与管理通道 `set_public_key` 到边缘、经 Secret 到知识服务。有效期 90 天——不是浏览器会话，是设备/沙箱级凭据，撤换靠吊销不靠短期。没配私钥时退回不透明随机令牌（会合点靠登记表配对）。
