@@ -39,3 +39,12 @@
 - Step 7 TypeScript compile passed: `node node_modules/typescript/bin/tsc -p tsconfig.json`.
 - Restarted the single kind2 agent for step 7. After 30 seconds exactly one process remained (PID 3582175), and its log showed `relay connected`. No credential values were written here.
 - Paused at step 8 for the owner’s browser verification and token-rotation confirmation.
+
+## Step 8 token rotation and agent re-enrollment
+
+- The owner confirmed the browser key list, sandbox refresh feedback, token-rotation confirmation, and copied replacement command. The replacement command is stored in `/home/zymun/private/agent-init.txt` (0600); its contents and token were not recorded.
+- Verified the previous kind2 agent log contained `token revoked`; relay logged `admin revoke jti count=2 closed_agents=1`.
+- The old process inventory command pattern `pgrep -f '[a]gent/dist/cli.js start'` did not match this checkout’s actual argv, `node dist/cli.js start`. Corrected the inventory by enumerating `pgrep -f 'node dist/cli.js start'` matches and reading each `/proc/<PID>/environ` `SUNMOON_AGENT_HOME`. This found stale kind2 PID 3582175 alongside new PID 3606403; both were explicitly confirmed to use `/home/zymun/.sunmoon-agent-kind2`. Stopped only stale PID 3582175; demo PID 450664 (`/home/zymun/.sunmoon-agent-kind`) was preserved.
+- Reinitialized kind2 from the private replacement command, adapting the relay endpoint to the already-used local NodePort `ws://172.18.0.3:30471` and project root `/home/zymun/research`; token was passed directly from the private file without printing it.
+- Started one background kind2 agent. Final status reports PID 3606403, relay `connected`, root `/home/zymun/research`; process inventory shows one kind2 agent and the separate demo agent. Relay logged one `agent up` for `u-a63d03b16693` after the rotation.
+- Step 9 is ready for browser verification: create a session with `this-pc` and `sandbox-u-a63d03b16693`, send a message and run SMOKE; verify the event timeline and delegation status appear without refreshing.
