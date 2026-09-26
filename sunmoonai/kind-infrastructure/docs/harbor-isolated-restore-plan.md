@@ -61,6 +61,8 @@
 
 仅在新节点 `sunmoon-kind-136-worker2` 增加临时域名到 `10.97.60.20` 的解析，以及该 `host:18443` 对应的 containerd CA 配置；事先保存原文件与校验值。不修改 WSL 全局 hosts、Docker daemon、旧节点或旧 registry 域名的解析。凭据通过新 namespace 内限定到临时 registry 的 imagePullSecret 提供，不放在命令行。
 
+**有效配置核对发现，该新节点的 `io.containerd.cri.v1.images.registry.config_path` 为空。**仅写 CA 文件不足以保证 CRI 使用它。本单元还包括：在该节点把 registry config_path 显式设为 `/etc/containerd/certs.d`，保留其余有效配置；用 `containerd --config <候选文件> config dump` 检查实际值和解析结果，通过后替换并仅重启该节点 containerd。原磁盘配置是 version 2，有效配置迁移为 version 4，必须基于实际解析结果生成候选，不能混用旧插件字段。结束时恢复原配置并再次重启该节点 containerd，核对节点 Ready/CNI 正常。影响限于新验证节点的容器运行时，可能短暂 NotReady；旧集群、WSL/Docker daemon 和另两个新节点不重启。
+
 选用现有 `k8s-images/node@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc` 做实际拉取验证；已只读确认 worker2 当前无此摘要缓存。验证 Pod 使用新 registry 名称、固定 digest 和 `imagePullPolicy: Always`，从 worker2 跨节点拉取。实施时再次核对缓存与镜像来源，不把预先导入业务镜像当作拉取验证。
 
 ## 5. 实施顺序（确认后执行）
@@ -72,7 +74,7 @@
 5. 应用 0 副本清单；先启动 PostgreSQL/Redis，再 registry/core/portal/Trivy 和临时 TLS 网关。jobservice 保持 0。新库恢复原快照中的 read_only=true，先确认这一状态再开放验证访问。
 6. 通过仅绑定回环的 port-forward 验证 TLS、认证和完整目录；对比所有项目/仓库、tag/digest、子清单和附件。API 请求使用原认证输入，目标只允许本机临时端口，不泄露凭据或重写全局登录配置。
 7. 按第 4.3 节完成 worker2 的真实镜像拉取与容器启动；记录镜像摘要、Pod 事件和来源。验证持久化及网络拒绝：从副本 Pod 到旧 Harbor/旧云端地址的访问应失败，内部服务正常；旧 Harbor 从 WSL 仍可正常访问，避免把目标本身不可达当成策略通过。
-8. 留下恢复结果与证据；完成后停止临时 port-forward，将本轮验证 Pod 和副本工作负载停到 0，数据、PV/PVC 与备份保留。恢复 worker2 临时域名/信任配置，只删除本轮新增且校验未变化的配置项；不做全局清理。
+8. 留下恢复结果与证据；完成后停止临时 port-forward，删除本轮精确名称的临时验证 Pod（仅临时 Pod），将副本工作负载停到 0，数据、PV/PVC 与备份保留。恢复 worker2 临时域名/信任与 containerd 原配置，按上述方式重启其 containerd；只删除本轮新增且校验未变化的配置项，不做全局清理。
 
 ## 6. 网络边界与失败处置
 

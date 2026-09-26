@@ -36,6 +36,8 @@ Harbor 结果：`sunmoonai/scripts/results/luna-harbor-cold-backup.20260926.json
 
 临时入口 `harbor-restore.sunmoonai.com:18443`，Service `10.97.60.20`（实施前复核未占用），WSL 只监听 localhost port-forward。证书覆盖该域名，来自已有私有 TLS 备份；worker2 做跨节点真实拉取，本次检查目标 Node 镜像摘要未缓存。修改 worker2 临时 DNS/CA 属于待批准范围，结束恢复原配置。旧环境继续保持运行，不清理旧数据。
 
+额外只读核对发现 worker2 的有效 containerd `io.containerd.cri.v1.images.registry.config_path` 为空。方案已补充该新节点配置目录启用、候选 config dump 校验、containerd 重启及结束恢复原配置/再次重启；这也是待批准的明确影响，不能只放 CA 文件就宣称 TLS 拉取已配置。磁盘 config 为 version 2，有效 dump 为 version 4；按实际迁移结果生成候选，勿混用旧插件字段。尚未修改或重启节点。
+
 现场发现并已纳入方案：core/jobservice 原 hostAliases 指向 `101.126.151.0`，已在新清单删除；原有两条手动复制策略和两个清理类定时任务。首轮 jobservice 保持 0，只验证数据/镜像读取链路，不能宣称后台任务或全套 health 通过。出站限定本 namespace 和 DNS，registry upload purge 关闭，Trivy 禁联网更新。
 
 恢复渲染发现原资源备份遗漏动态 Trivy PVC/PV 的元数据（instance 标签不一致），但其数据已归档校验。已按原绑定补读到 `preparation/private/storage-addendum.json`，校验与原因在 `preparation/storage-addendum.json`；renderer 已纳入。`harbor_prepare.py` 改为沿真实 Pod 的 PVC 引用补全元数据，未重跑冷备份。不要改写历史备份时点的事实。
