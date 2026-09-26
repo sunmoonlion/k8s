@@ -1,0 +1,331 @@
+{
+  "scope": "render only; no cluster changes",
+  "namespace": "harbor-restore-20260926",
+  "node": "sunmoon-kind-136-worker",
+  "kubeconfig": "~/.kube/sunmoon-kind-136.config",
+  "endpoint": "https://harbor-restore.sunmoonai.com:18443",
+  "gateway_cluster_ip": "10.97.60.20",
+  "host_access": "127.0.0.1:18443 via kubectl port-forward",
+  "storage_root": "/var/local-path-provisioner/harbor-restore-20260926",
+  "claims": {
+    "harbor-sunmoonai-registry-dev-pvc": "registry",
+    "harbor-sunmoonai-database-dev-pvc": "database",
+    "harbor-sunmoonai-redis-dev-pvc": "redis",
+    "harbor-sunmoonai-jobservice-dev-pvc": "jobservice",
+    "harbor-sunmoonai-trivy-dev-pvc": "trivy",
+    "data-sunmoonai-harbor-trivy-0": "trivy-active"
+  },
+  "images": {
+    "docker.io/bitnami/harbor-core:2.13.2-debian-12-r3": "docker.io/bitnami/harbor-core@sha256:6e43a1f465caff0893e94e629b0a70f858c4946f490200482b18fe50028cee2d",
+    "docker.io/bitnami/harbor-jobservice:2.13.2-debian-12-r3": "docker.io/bitnami/harbor-jobservice@sha256:569c73524015fa6a0022f3ba56c5b4625ae1851a4e9b4aed875233021a555f18",
+    "docker.io/bitnami/postgresql:17.6.0-debian-12-r4": "docker.io/bitnami/postgresql@sha256:dbd371582fbbb100b22b891e485f4559187362348c1d4b5d0a2191134807516b",
+    "docker.io/bitnami/redis:8.2.1-debian-12-r0": "docker.io/bitnami/redis@sha256:0d2c5324b7373522e1fce60d657d60c851aa2921b211fd795f20c8515bee429e",
+    "docker.io/bitnami/harbor-registry:2.13.2-debian-12-r2": "docker.io/bitnami/harbor-registry@sha256:8c784e6d375db0ed063016807ce918dcc403f431061949b30a539dcb42972c7e",
+    "docker.io/bitnami/harbor-registryctl:2.13.2-debian-12-r3": "docker.io/bitnami/harbor-registryctl@sha256:ba680ce3c8bd726f62021b6723c719b385e4f9171ff120793d10c45600f98283",
+    "docker.io/bitnami/harbor-portal:2.13.2-debian-12-r1": "docker.io/bitnami/harbor-portal@sha256:16588af202d83668a43eec4d0010ea9c6a3455fbf4668d164569af474bf794ba",
+    "docker.io/bitnami/harbor-adapter-trivy:2.13.2-debian-12-r2": "docker.io/bitnami/harbor-adapter-trivy@sha256:7c973faed0944ae77350605ea85d5a9d592fd1258e5bd0ad6f3feb701f826d1e"
+  },
+  "changes": [
+    {
+      "resource": "sunmoonai-harbor-core",
+      "change": "zero replicas; independent node; remove old hostAliases; pin amd64 image; Never pull"
+    },
+    {
+      "resource": "sunmoonai-harbor-jobservice",
+      "change": "zero replicas; independent node; remove old hostAliases; pin amd64 image; Never pull"
+    },
+    {
+      "resource": "sunmoonai-harbor-portal",
+      "change": "zero replicas; independent node; remove old hostAliases; pin amd64 image; Never pull"
+    },
+    {
+      "resource": "sunmoonai-harbor-registry",
+      "change": "zero replicas; independent node; remove old hostAliases; pin amd64 image; Never pull"
+    },
+    {
+      "resource": "sunmoonai-harbor-postgresql",
+      "change": "zero replicas; independent node; remove old hostAliases; pin amd64 image; Never pull"
+    },
+    {
+      "resource": "sunmoonai-harbor-redis-master",
+      "change": "zero replicas; independent node; remove old hostAliases; pin amd64 image; Never pull"
+    },
+    {
+      "resource": "sunmoonai-harbor-trivy",
+      "change": "zero replicas; independent node; remove old hostAliases; pin amd64 image; Never pull"
+    },
+    {
+      "resource": "sunmoonai-harbor-core-envvars",
+      "field": "_REDIS_URL_CORE",
+      "change": "internal endpoint rewrite; secret value omitted"
+    },
+    {
+      "resource": "sunmoonai-harbor-core-envvars",
+      "field": "_REDIS_URL_REG",
+      "change": "internal endpoint rewrite; secret value omitted"
+    },
+    {
+      "resource": "sunmoonai-harbor-jobservice-envvars",
+      "field": "JOB_SERVICE_POOL_REDIS_URL",
+      "change": "internal endpoint rewrite; secret value omitted"
+    },
+    {
+      "resource": "sunmoonai-harbor-trivy-envvars",
+      "field": "SCANNER_JOB_QUEUE_REDIS_URL",
+      "change": "internal endpoint rewrite; secret value omitted"
+    },
+    {
+      "resource": "sunmoonai-harbor-trivy-envvars",
+      "field": "SCANNER_REDIS_URL",
+      "change": "internal endpoint rewrite; secret value omitted"
+    },
+    {
+      "resource": "sunmoonai-harbor-trivy-envvars",
+      "field": "SCANNER_STORE_REDIS_URL",
+      "change": "internal endpoint rewrite; secret value omitted"
+    }
+  ],
+  "resources": [
+    {
+      "kind": "Namespace",
+      "name": "harbor-restore-20260926"
+    },
+    {
+      "kind": "NetworkPolicy",
+      "name": "restore-isolation"
+    },
+    {
+      "kind": "NetworkPolicy",
+      "name": "restore-gateway-node-access"
+    },
+    {
+      "kind": "Deployment",
+      "name": "sunmoonai-harbor-core"
+    },
+    {
+      "kind": "Deployment",
+      "name": "sunmoonai-harbor-jobservice"
+    },
+    {
+      "kind": "Deployment",
+      "name": "sunmoonai-harbor-portal"
+    },
+    {
+      "kind": "Deployment",
+      "name": "sunmoonai-harbor-registry"
+    },
+    {
+      "kind": "StatefulSet",
+      "name": "sunmoonai-harbor-postgresql"
+    },
+    {
+      "kind": "StatefulSet",
+      "name": "sunmoonai-harbor-redis-master"
+    },
+    {
+      "kind": "StatefulSet",
+      "name": "sunmoonai-harbor-trivy"
+    },
+    {
+      "kind": "Service",
+      "name": "sunmoonai-harbor-core"
+    },
+    {
+      "kind": "Service",
+      "name": "sunmoonai-harbor-jobservice"
+    },
+    {
+      "kind": "Service",
+      "name": "sunmoonai-harbor-portal"
+    },
+    {
+      "kind": "Service",
+      "name": "sunmoonai-harbor-postgresql"
+    },
+    {
+      "kind": "Service",
+      "name": "sunmoonai-harbor-postgresql-hl"
+    },
+    {
+      "kind": "Service",
+      "name": "sunmoonai-harbor-redis-headless"
+    },
+    {
+      "kind": "Service",
+      "name": "sunmoonai-harbor-redis-master"
+    },
+    {
+      "kind": "Service",
+      "name": "sunmoonai-harbor-registry"
+    },
+    {
+      "kind": "Service",
+      "name": "sunmoonai-harbor-trivy"
+    },
+    {
+      "kind": "ConfigMap",
+      "name": "sunmoonai-harbor-core"
+    },
+    {
+      "kind": "ConfigMap",
+      "name": "sunmoonai-harbor-core-envvars"
+    },
+    {
+      "kind": "ConfigMap",
+      "name": "sunmoonai-harbor-jobservice-config"
+    },
+    {
+      "kind": "ConfigMap",
+      "name": "sunmoonai-harbor-jobservice-envvars"
+    },
+    {
+      "kind": "ConfigMap",
+      "name": "sunmoonai-harbor-portal"
+    },
+    {
+      "kind": "ConfigMap",
+      "name": "sunmoonai-harbor-postgresql-extended-configuration"
+    },
+    {
+      "kind": "ConfigMap",
+      "name": "sunmoonai-harbor-postgresql-init-scripts"
+    },
+    {
+      "kind": "ConfigMap",
+      "name": "sunmoonai-harbor-redis-configuration"
+    },
+    {
+      "kind": "ConfigMap",
+      "name": "sunmoonai-harbor-redis-health"
+    },
+    {
+      "kind": "ConfigMap",
+      "name": "sunmoonai-harbor-redis-scripts"
+    },
+    {
+      "kind": "ConfigMap",
+      "name": "sunmoonai-harbor-registry"
+    },
+    {
+      "kind": "ConfigMap",
+      "name": "sunmoonai-harbor-trivy-envvars"
+    },
+    {
+      "kind": "Secret",
+      "name": "sunmoonai-harbor-core"
+    },
+    {
+      "kind": "Secret",
+      "name": "sunmoonai-harbor-core-envvars"
+    },
+    {
+      "kind": "Secret",
+      "name": "sunmoonai-harbor-jobservice"
+    },
+    {
+      "kind": "Secret",
+      "name": "sunmoonai-harbor-jobservice-envvars"
+    },
+    {
+      "kind": "Secret",
+      "name": "sunmoonai-harbor-postgresql"
+    },
+    {
+      "kind": "Secret",
+      "name": "sunmoonai-harbor-registry"
+    },
+    {
+      "kind": "Secret",
+      "name": "sunmoonai-harbor-trivy-envvars"
+    },
+    {
+      "kind": "ServiceAccount",
+      "name": "sunmoonai-harbor-postgresql"
+    },
+    {
+      "kind": "ServiceAccount",
+      "name": "sunmoonai-harbor-redis-master"
+    },
+    {
+      "kind": "ServiceAccount",
+      "name": "sunmoonai-harbor-registry"
+    },
+    {
+      "kind": "PersistentVolume",
+      "name": "harbor-restore-20260926-database"
+    },
+    {
+      "kind": "PersistentVolumeClaim",
+      "name": "harbor-sunmoonai-database-dev-pvc"
+    },
+    {
+      "kind": "PersistentVolume",
+      "name": "harbor-restore-20260926-jobservice"
+    },
+    {
+      "kind": "PersistentVolumeClaim",
+      "name": "harbor-sunmoonai-jobservice-dev-pvc"
+    },
+    {
+      "kind": "PersistentVolume",
+      "name": "harbor-restore-20260926-redis"
+    },
+    {
+      "kind": "PersistentVolumeClaim",
+      "name": "harbor-sunmoonai-redis-dev-pvc"
+    },
+    {
+      "kind": "PersistentVolume",
+      "name": "harbor-restore-20260926-registry"
+    },
+    {
+      "kind": "PersistentVolumeClaim",
+      "name": "harbor-sunmoonai-registry-dev-pvc"
+    },
+    {
+      "kind": "PersistentVolume",
+      "name": "harbor-restore-20260926-trivy"
+    },
+    {
+      "kind": "PersistentVolumeClaim",
+      "name": "harbor-sunmoonai-trivy-dev-pvc"
+    },
+    {
+      "kind": "Secret",
+      "name": "harbor-secret"
+    },
+    {
+      "kind": "ServiceAccount",
+      "name": "default"
+    },
+    {
+      "kind": "PersistentVolume",
+      "name": "harbor-restore-20260926-trivy-active"
+    },
+    {
+      "kind": "PersistentVolumeClaim",
+      "name": "data-sunmoonai-harbor-trivy-0"
+    },
+    {
+      "kind": "Secret",
+      "name": "restore-serving-tls"
+    },
+    {
+      "kind": "ConfigMap",
+      "name": "restore-gateway"
+    },
+    {
+      "kind": "Deployment",
+      "name": "restore-gateway"
+    },
+    {
+      "kind": "Service",
+      "name": "restore-gateway"
+    }
+  ],
+  "initial_replicas": 0,
+  "jobservice_during_first_validation": 0,
+  "backup_verification_sha256": "d1eb514df536323a15efa33bd2e92b5baddd128daf703cd909aca7d79140a359",
+  "storage_addendum_sha256": "11b576bff0dbd460181a36dbd46061e15b5c9b94f1fbeb26c740710a11a4802c",
+  "private_manifests_sha256": "3aef6e503b50786915931ab7b70da819de7f428bdee09a686e71ab44d17f0239"
+}

@@ -27,9 +27,12 @@ sunmoon-network run -- python3 materials.py packages
 | `harbor_cold_backup.py --output <获准批次新目录>` | **会停止旧 Harbor**；必须事先确认停服窗口；固定本机目标，不支持任意传入集群 |
 | `harbor_cold_backup.py --resume-services <已有备份目录>` | 根据持久化状态恢复精确控制器副本与原只读值；不覆盖源数据 |
 | `harbor_verify_backup.py <备份目录>` | 核对归档散列和内部 registry blob/manifest 依赖；不等于隔离恢复通过 |
+| `harbor_restore_plan.py --output <新目录>` | 从备份生成独立 namespace/存储/镜像摘要/TLS/网络策略清单，全部控制器为 0 副本；不连接集群或实施恢复 |
 
 冷备份的失败/中断恢复命令也写入备份目录 `RECOVER-SERVICES.txt`。整个批次使用文件锁防止并发冷备份或重复恢复。不会强制删除 Pod，不清理数据，不改变 Harbor 版本。
 
 `harbor_prepare.py` 导出的是命名空间内恢复输入；实际 TLS 入口可能在别处。本次已另外保存 Traefik 默认 TLSStore、`ingress-platform-dev/traefik-tls-secret` 与客户端 CA，索引在私有批次 `preparation/tls-addendum.json`。将来重新执行时必须重新定位并纳入这类跨命名空间依赖，不能认为仅执行准备脚本就覆盖完整入口。
 
 脚本依赖 Python 3.12、kubectl、helm、Docker/节点 ctr、节点 tar；具体运行证据和未完成项写入检查点和方案。私有备份不能提交 Git、推送公开物料中转服务器，或把 Secret 内容复制到终端日志。
+
+本次隔离恢复见 [具体方案](../../kind-infrastructure/docs/harbor-isolated-restore-plan.md)。动态 Trivy PVC/PV 元数据已补读至 `preparation/private/storage-addendum.json`（数据本来已归档）；准备脚本现沿 Pod PVC 引用补全存储，避免依赖不一致的 instance 标签。恢复生成器使用补充清单及散列；这个一次性兼容输入不能当成任意备份批次的通用自动发现逻辑。

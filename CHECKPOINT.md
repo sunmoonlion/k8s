@@ -32,7 +32,13 @@ Harbor 结果：`sunmoonai/scripts/results/luna-harbor-cold-backup.20260926.json
 
 服务恢复于 2026-09-26 14:59:57 UTC，7 个控制器均恢复 1/1 Ready、Harbor healthy、read_only=false，前后目录含空项目/仓库比对一致，无恢复警告。六份卷是停服后复制；输入和归档私有配置未入 Git。入口 TLS 额外依赖 `ingress-platform-dev/traefik-tls-secret`，已在 `preparation/private/` 保存，清单 `preparation/tls-addendum.json`。本机备份与源数据同磁盘，不是独立介质灾备。
 
-下一步：提出可审阅的新集群隔离恢复 manifests 和差异，明确独立 namespace/PV/PVC/路径、临时 TLS 入口、原版本组件、阻断副本访问旧服务及公网的网络策略；确认后恢复并从新集群实际拉取镜像。在此之前保留所有旧 Harbor 数据。备份/恢复脚本入口见 `sunmoonai/cicd-platform/materials/README.md`。
+下一步的具体方案已完成：`sunmoonai/kind-infrastructure/docs/harbor-isolated-restore-plan.md`，生成入口 `materials/harbor_restore_plan.py`。私有 59 资源清单在备份批次 `restore-plan-20260926/manifests-private.json`，SHA256 `3aef6e503b50786915931ab7b70da819de7f428bdee09a686e71ab44d17f0239`；脱敏清单 `sunmoonai/scripts/results/luna-harbor-restore-plan.20260926.json`。尚未部署，待本单元确认。目标新 namespace `harbor-restore-20260926`、worker 上独立 `/var/local-path-provisioner/harbor-restore-20260926/` 六目录，8 个固定 amd64 自举镜像，初始全为 0 副本。
+
+临时入口 `harbor-restore.sunmoonai.com:18443`，Service `10.97.60.20`（实施前复核未占用），WSL 只监听 localhost port-forward。证书覆盖该域名，来自已有私有 TLS 备份；worker2 做跨节点真实拉取，本次检查目标 Node 镜像摘要未缓存。修改 worker2 临时 DNS/CA 属于待批准范围，结束恢复原配置。旧环境继续保持运行，不清理旧数据。
+
+现场发现并已纳入方案：core/jobservice 原 hostAliases 指向 `101.126.151.0`，已在新清单删除；原有两条手动复制策略和两个清理类定时任务。首轮 jobservice 保持 0，只验证数据/镜像读取链路，不能宣称后台任务或全套 health 通过。出站限定本 namespace 和 DNS，registry upload purge 关闭，Trivy 禁联网更新。
+
+恢复渲染发现原资源备份遗漏动态 Trivy PVC/PV 的元数据（instance 标签不一致），但其数据已归档校验。已按原绑定补读到 `preparation/private/storage-addendum.json`，校验与原因在 `preparation/storage-addendum.json`；renderer 已纳入。`harbor_prepare.py` 改为沿真实 Pod 的 PVC 引用补全元数据，未重跑冷备份。不要改写历史备份时点的事实。
 
 构建物料试验批次：`~/packages-to-be-installed/releases/build-template-20260926-linux-amd64`；入口在 `sunmoonai/cicd-platform/materials/`。已通过东京主机取得并以 rsync 回传 6 份公开工具文件，62,737,201 字节，复核 pnpm SRI/PyPI SHA256/Node 校验清单并登记 `preparation.json`。Node 24.18.0、pnpm 10.24.0、uv 0.11.32、Python 3.12.13 在实际基镜像的无网络非 root 临时容器中运行通过。远程磁盘阈值已改为 8 GiB，私有源码未上传。
 

@@ -40,6 +40,7 @@ def main():
         return (m.get('labels', {}).get('app.kubernetes.io/instance') == RELEASE
                 or m['name'].startswith(('sunmoonai-harbor', 'harbor-sunmoonai', 'sh.helm.release.v1.sunmoonai-harbor.')))
     selected = [obj for obj in resources if owned(obj)]
+    pods = json.loads(run(KUBE + ['-n', NS, 'get', 'pods', '-o', 'json']))['items']
     names = set()
     def references(obj):
         if isinstance(obj, dict):
@@ -50,11 +51,13 @@ def main():
                     names.add(value.get('name', value.get('secretName', '')))
                 if key == 'imagePullSecrets':
                     names.update(v['name'] for v in value)
+                if key == 'persistentVolumeClaim' and isinstance(value, dict):
+                    names.add(value['claimName'])
                 references(value)
         elif isinstance(obj, list):
             for value in obj: references(value)
     while True:
-        references(selected)
+        references(selected + [pod for pod in pods if owned(pod)])
         extra = [obj for obj in resources if obj['metadata']['name'] in names and obj not in selected]
         if not extra: break
         selected.extend(extra)
@@ -69,7 +72,6 @@ def main():
     chart = Path(__file__).resolve().parents[1] / 'harbor/resources/harbor'
     with tarfile.open(root / 'charts/harbor-27.0.3-source.tar', 'w') as archive:
         archive.add(chart, arcname='harbor', recursive=True)
-    pods = json.loads(run(KUBE + ['-n', NS, 'get', 'pods', '-o', 'json']))['items']
     images, seen = {}, set()
     for pod in pods:
         if not owned(pod): continue
