@@ -1,0 +1,174 @@
+{
+  "observed_at": "2026-09-26T14:39:45.203159+00:00",
+  "scope": "Harbor storage metadata only; no backup performed",
+  "claims": [
+    {
+      "name": "data-sunmoonai-harbor-trivy-0",
+      "pv": "pvc-c0fef3d5-b9e0-46fb-8cc2-d380423897e9",
+      "capacity": {
+        "storage": "5Gi"
+      },
+      "reclaim": "Delete",
+      "node_host_path": "/var/local-path-provisioner/pvc-c0fef3d5-b9e0-46fb-8cc2-d380423897e9_cicd-platform-dev_data-sunmoonai-harbor-trivy-0",
+      "local_path": null
+    },
+    {
+      "name": "harbor-sunmoonai-database-dev-pvc",
+      "pv": "harbor-sunmoonai-database-dev-pv",
+      "capacity": {
+        "storage": "5Gi"
+      },
+      "reclaim": "Retain",
+      "node_host_path": "/data/kind-local-storage/harbor/database",
+      "local_path": null
+    },
+    {
+      "name": "harbor-sunmoonai-jobservice-dev-pvc",
+      "pv": "harbor-sunmoonai-jobservice-dev-pv",
+      "capacity": {
+        "storage": "1Gi"
+      },
+      "reclaim": "Retain",
+      "node_host_path": "/data/kind-local-storage/harbor/jobservice",
+      "local_path": null
+    },
+    {
+      "name": "harbor-sunmoonai-redis-dev-pvc",
+      "pv": "harbor-sunmoonai-redis-dev-pv",
+      "capacity": {
+        "storage": "1Gi"
+      },
+      "reclaim": "Retain",
+      "node_host_path": "/data/kind-local-storage/harbor/redis",
+      "local_path": null
+    },
+    {
+      "name": "harbor-sunmoonai-registry-dev-pvc",
+      "pv": "harbor-sunmoonai-registry-dev-pv",
+      "capacity": {
+        "storage": "20Gi"
+      },
+      "reclaim": "Retain",
+      "node_host_path": "/data/kind-local-storage/harbor/registry",
+      "local_path": null
+    },
+    {
+      "name": "harbor-sunmoonai-trivy-dev-pvc",
+      "pv": "harbor-sunmoonai-trivy-dev-pv",
+      "capacity": {
+        "storage": "5Gi"
+      },
+      "reclaim": "Retain",
+      "node_host_path": "/data/kind-local-storage/harbor/trivy",
+      "local_path": null
+    }
+  ],
+  "pods": [
+    {
+      "name": "sunmoonai-harbor-core-b8fff66c4-pbmwt",
+      "node": "kind-worker",
+      "claims": [],
+      "secrets": [
+        "sunmoonai-harbor-core",
+        "sunmoonai-harbor-core"
+      ],
+      "images": [
+        {
+          "name": "core",
+          "image": "docker.io/bitnami/harbor-core:2.13.2-debian-12-r3"
+        }
+      ]
+    },
+    {
+      "name": "sunmoonai-harbor-jobservice-5784bb844f-dr4dc",
+      "node": "kind-worker",
+      "claims": [
+        "harbor-sunmoonai-jobservice-dev-pvc"
+      ],
+      "secrets": [],
+      "images": [
+        {
+          "name": "jobservice",
+          "image": "docker.io/bitnami/harbor-jobservice:2.13.2-debian-12-r3"
+        }
+      ]
+    },
+    {
+      "name": "sunmoonai-harbor-portal-98b547d54-vh74n",
+      "node": "kind-worker2",
+      "claims": [],
+      "secrets": [],
+      "images": [
+        {
+          "name": "portal",
+          "image": "docker.io/bitnami/harbor-portal:2.13.2-debian-12-r1"
+        }
+      ]
+    },
+    {
+      "name": "sunmoonai-harbor-postgresql-0",
+      "node": "kind-worker",
+      "claims": [
+        "harbor-sunmoonai-database-dev-pvc"
+      ],
+      "secrets": [
+        "sunmoonai-harbor-postgresql"
+      ],
+      "images": [
+        {
+          "name": "postgresql",
+          "image": "docker.io/bitnami/postgresql:17.6.0-debian-12-r4"
+        }
+      ]
+    },
+    {
+      "name": "sunmoonai-harbor-redis-master-0",
+      "node": "kind-worker",
+      "claims": [
+        "harbor-sunmoonai-redis-dev-pvc"
+      ],
+      "secrets": [],
+      "images": [
+        {
+          "name": "redis",
+          "image": "docker.io/bitnami/redis:8.2.1-debian-12-r0"
+        }
+      ]
+    },
+    {
+      "name": "sunmoonai-harbor-registry-66cc967bcf-kgw6n",
+      "node": "kind-worker",
+      "claims": [
+        "harbor-sunmoonai-registry-dev-pvc"
+      ],
+      "secrets": [
+        "sunmoonai-harbor-registry",
+        "sunmoonai-harbor-core"
+      ],
+      "images": [
+        {
+          "name": "registry",
+          "image": "docker.io/bitnami/harbor-registry:2.13.2-debian-12-r2"
+        },
+        {
+          "name": "registryctl",
+          "image": "docker.io/bitnami/harbor-registryctl:2.13.2-debian-12-r3"
+        }
+      ]
+    },
+    {
+      "name": "sunmoonai-harbor-trivy-0",
+      "node": "kind-worker2",
+      "claims": [
+        "data-sunmoonai-harbor-trivy-0"
+      ],
+      "secrets": [],
+      "images": [
+        {
+          "name": "trivy",
+          "image": "docker.io/bitnami/harbor-adapter-trivy:2.13.2-debian-12-r2"
+        }
+      ]
+    }
+  ]
+}
