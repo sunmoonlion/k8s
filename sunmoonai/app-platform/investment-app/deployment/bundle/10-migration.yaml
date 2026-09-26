@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: investment-backend-migration-kind-wb-20260926-fixes
+  name: investment-backend-migration-kind-wb-20260926-r13
   namespace: app-platform-dev
   labels:
     app.kubernetes.io/name: investment-backend
@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/part-of: investment
     sunmoonai.com/app: investment
     sunmoonai.com/managed-by: app-platform-v2
-    sunmoonai.com/release-id: kind-wb-20260926-fixes
+    sunmoonai.com/release-id: kind-wb-20260926-r13
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 300
@@ -22,7 +22,7 @@ spec:
         app.kubernetes.io/part-of: investment
         sunmoonai.com/app: investment
         sunmoonai.com/managed-by: app-platform-v2
-        sunmoonai.com/release-id: kind-wb-20260926-fixes
+        sunmoonai.com/release-id: kind-wb-20260926-r13
     spec:
       restartPolicy: Never
       serviceAccountName: investment-backend-migration
@@ -38,7 +38,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: migration
-        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:ab1288a41a90bd85069eed2e07ccba00616942f549f9f9c36d93aa98e29fd75b
+        image: harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:dfbe3d0331ee230fe5b23a258d76490e79cdf2baf4e934613911e523b03e947f
         imagePullPolicy: IfNotPresent
         command:
         - python

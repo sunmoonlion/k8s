@@ -4,10 +4,10 @@
   "logical_app": "knowledge",
   "resource_app": "knowledge",
   "namespace": "app-platform-dev",
-  "release_id": "know-mcp-0925-r2",
+  "release_id": "know-0926-metric",
   "formal_release": false,
   "images": {
-    "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:67028600d4a128d2a6d9700d88a337ad403e0924db57aef03eb1a76937076e23",
+    "backend": "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:01b694bb1ada41bbcbaf3ac76c85914827c74219fe6d3ce7ce77e84f26b17b61",
     "admin": "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:4f8fb2c69c47005215f2c5b45430ec555d347ea67f96549e3662813daab75e15",
     "web": "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:be296c49924af1ed1598a1d95d917901edf149bcf86ac91cb519f53a34e71197"
   },
@@ -25,9 +25,9 @@
     "40-ingress.yaml"
   ],
   "sha256": {
-    "00-prerequisites.yaml": "2784929ec4f3700e779bc3f1e20698d3ce803b2140e6d4bbfa142ae66dc8e31c",
-    "10-migration.yaml": "d1e9992aec820241ff93c57de8df943e37ef1689527ead9212709861c052c7fa",
-    "20-runtime.yaml": "b4ced4fe859efa23925a1d871f68eac7c0c7dad966006d9a8b98d6c6086961a7",
+    "00-prerequisites.yaml": "763f79074da8ab8c4d19fa812f8421f188bb48b8681b151c611e155efd773a19",
+    "10-migration.yaml": "53e99f3683306af34cb683db4fd9a639ff5bb27dd7883d50b3cf606a9e6fd8a5",
+    "20-runtime.yaml": "1476e45d089a23da866f326af22f91cd7b275dfc7d584072753ba2ff088f1942",
     "30-network-policies.yaml": "b418ff9a85afbc360058c7d28213306a2d4d960b4ef42950afe965be7c0f451e",
     "40-ingress.yaml": "628f3391754910a96e5dfda18d5bf5237f7acb31e31a246eef0b6126c08b329d"
   },
@@ -130,7 +130,7 @@
     "tpl-app:k8s-deployment/templates/20-runtime.yaml.tpl": "93bade1d5c9e96a0a4708bd76e88f90e15fa7a7c54a9a118adb993c492eb866e",
     "tpl-app:k8s-deployment/templates/30-network-policies.yaml.tpl": "b8018d309f7e7d9ec5c72fd463d0b44f8a091e197fa1b47a9a110f36ae59261d",
     "tpl-app:k8s-deployment/templates/40-ingress.yaml.tpl": "5f79e6a40bdfa8a581b92eeabe1a9f0cbf3a031221f5c9a40708b4682190ce3d",
-    "development-release-input": "bc6f0ce72679e19284ecaac9deffa06aadd48a7c9564485073a57dc98c5a8315",
+    "development-release-input": "37893188b4b449f254734f567936aa93358ffe745f761b3300430257423154fd",
     "k8s:sunmoonai/app-platform/scripts/development_release.py": "0db0b896ebc0681094f3ec41b3ad2dd9036391ce8e07ef5e585f68a0decb1ff3"
   },
   "deployment_target": "KIND",
@@ -139,14 +139,14 @@
     "kind": "development-source-lock",
     "repository": "knowledge-app",
     "formal_release": false,
-    "task": "knowledge-mcp-kind-20260925",
+    "task": "knowledge-metric-kind-20260926",
     "release_boundary": "Immutable development candidate source; actual deployment requires the matching KIND release, prepared independent identities, and verified quiescent backup.",
     "components": [
       {
         "path": "knowledge-backend",
-        "commit": "4d9804c3d5f4084b83bdb00ba49cbf0f8b5cbb55",
-        "tree": "cdcc93c8d8656b8c379277ecf5e8b5791cd117b3",
-        "remote_branch": "origin/master"
+        "commit": "dd68e6d9042768b2362b3f757bf545529c7eef25",
+        "tree": "3056e57e66231fc2caf0aae6df3daf2e5e19ddaf",
+        "remote_branch": "origin/fable"
       },
       {
         "path": "knowledge-admin-frontend",

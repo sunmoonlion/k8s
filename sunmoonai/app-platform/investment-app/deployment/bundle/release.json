@@ -4,12 +4,12 @@
   "logical_app": "investment",
   "resource_app": "investment",
   "namespace": "app-platform-dev",
-  "release_id": "kind-wb-20260926-fixes",
+  "release_id": "kind-wb-20260926-r13",
   "formal_release": false,
   "images": {
-    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:ab1288a41a90bd85069eed2e07ccba00616942f549f9f9c36d93aa98e29fd75b",
+    "backend": "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:dfbe3d0331ee230fe5b23a258d76490e79cdf2baf4e934613911e523b03e947f",
     "admin": "harbor.sunmoonai.com:30443/app-images/investment-admin-frontend@sha256:422e7c1e53d5b61eba14bcd242bf73a8e10428f1799e2a6370c1be95cec1923e",
-    "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:3be96b51f2503de4ea5d742ea0ce062b13f86d06c57d577c487bb64a8fdea97b"
+    "web": "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:0e9263bd7da9810fa7268891e51b86f91b8a962798dab56497daec7df70dedcd"
   },
   "origins": {
     "admin": "https://investment-admin.sunmoonai.com:30443",
@@ -24,9 +24,9 @@
     "40-ingress.yaml"
   ],
   "sha256": {
-    "00-prerequisites.yaml": "ec33dc225a3c7d6e073cb0b1e2c59a34586757129aaa476897badc7e1b0423b3",
-    "10-migration.yaml": "1596617a5329cac067fe620a8ba5bd27058621e9d14c9a5860eab9872647aa93",
-    "20-runtime.yaml": "e7970dec06f42290e76798df58788325a474a815449622eb607d8fd67a19a34c",
+    "00-prerequisites.yaml": "211fb804b45cee13ecfde1db5efd779bd30d2723e571395e4f943c321ddce2c4",
+    "10-migration.yaml": "7149152c4df54c4ca8e02bfe6215a73a1b20d02f513de55a574c398cbdec11e9",
+    "20-runtime.yaml": "8875ea1875abee7f900fad3032dc99304411403bd6ada90a11e4f2b064948cbb",
     "30-network-policies.yaml": "f105b29f31789456d84b87a12a6293ef5e5c7a4c8b99af54596dadbf1e611975",
     "40-ingress.yaml": "9f5fa10feb105cf71e9e796d35c1a64044c774b453c39948409d00177bbbeafd"
   },
@@ -134,7 +134,7 @@
     "tpl-app:k8s-deployment/templates/20-runtime.yaml.tpl": "93bade1d5c9e96a0a4708bd76e88f90e15fa7a7c54a9a118adb993c492eb866e",
     "tpl-app:k8s-deployment/templates/30-network-policies.yaml.tpl": "b8018d309f7e7d9ec5c72fd463d0b44f8a091e197fa1b47a9a110f36ae59261d",
     "tpl-app:k8s-deployment/templates/40-ingress.yaml.tpl": "5f79e6a40bdfa8a581b92eeabe1a9f0cbf3a031221f5c9a40708b4682190ce3d",
-    "development-release-input": "9cbe7f86792c220d213be88f0afef94718606e9b316f6286085a80b609b7ff31",
+    "development-release-input": "e84833958ce5279a32c89908dd764eb07289da8a9750ae0fba027e88a6c45b8a",
     "k8s:sunmoonai/app-platform/scripts/development_release.py": "0db0b896ebc0681094f3ec41b3ad2dd9036391ce8e07ef5e585f68a0decb1ff3"
   },
   "deployment_target": "KIND",
@@ -143,13 +143,13 @@
     "kind": "development-source-lock",
     "repository": "investment-app",
     "formal_release": false,
-    "task": "workbench-sse-kind-20260925",
+    "task": "runner-token-kind-20260926",
     "release_boundary": "Immutable development candidate source; actual deployment requires the matching KIND release, prepared independent identities, and verified quiescent backup.",
     "components": [
       {
         "path": "investment-backend",
-        "commit": "a14b070a97ab893376bdfe29609ec82b7b8b7c34",
-        "tree": "7d61f6cd152a51e24e89cc0de2eb368b63651105",
+        "commit": "23d321b9b1ed38394b355b33c6001c9f8c7d38e2",
+        "tree": "69c04ba144a33a76b861a9ea644578e095792de7",
         "remote_branch": "origin/fable"
       },
       {
@@ -160,8 +160,8 @@
       },
       {
         "path": "investment-web-frontend",
-        "commit": "a48043371c259e15a723f950a34ba2a30eded5ce",
-        "tree": "f6f280c09e26a4374df6574201f57c4e86304e1c",
+        "commit": "319258d6fe58a731e1405688668aa1d2b8241189",
+        "tree": "9ea308431944c7ecfbe1334e3c675f44fa2ebbdd",
         "remote_branch": "origin/fable"
       }
     ]

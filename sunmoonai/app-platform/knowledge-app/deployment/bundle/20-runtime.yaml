@@ -32,9 +32,9 @@ spec:
         sunmoonai.com/managed-by: app-platform-v2
         sunmoonai.com/internal-provider: 'true'
       annotations:
-        sunmoonai.com/release-id: know-mcp-0925-r2
-        sunmoonai.com/config-sha256: 8c01fe3fdc9c5102893c1c4e6f32e46e507ed9ebe694aaacc985cd85e68009bf
-        sunmoonai.com/source-commit: 4d9804c3d5f4084b83bdb00ba49cbf0f8b5cbb55
+        sunmoonai.com/release-id: know-0926-metric
+        sunmoonai.com/config-sha256: 1edc6f2a2d81ef13c6e3078b5d0f235ba698637f2b1c26d3c139d2840d1cdff4
+        sunmoonai.com/source-commit: dd68e6d9042768b2362b3f757bf545529c7eef25
     spec:
       serviceAccountName: knowledge-backend-api
       automountServiceAccountToken: false
@@ -58,7 +58,7 @@ spec:
             app.kubernetes.io/component: backend-api
       containers:
       - name: api
-        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:67028600d4a128d2a6d9700d88a337ad403e0924db57aef03eb1a76937076e23
+        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:01b694bb1ada41bbcbaf3ac76c85914827c74219fe6d3ce7ce77e84f26b17b61
         imagePullPolicy: IfNotPresent
         command:
         - uvicorn
@@ -318,9 +318,9 @@ spec:
         sunmoonai.com/app: knowledge
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: know-mcp-0925-r2
-        sunmoonai.com/config-sha256: 8c01fe3fdc9c5102893c1c4e6f32e46e507ed9ebe694aaacc985cd85e68009bf
-        sunmoonai.com/source-commit: 4d9804c3d5f4084b83bdb00ba49cbf0f8b5cbb55
+        sunmoonai.com/release-id: know-0926-metric
+        sunmoonai.com/config-sha256: 1edc6f2a2d81ef13c6e3078b5d0f235ba698637f2b1c26d3c139d2840d1cdff4
+        sunmoonai.com/source-commit: dd68e6d9042768b2362b3f757bf545529c7eef25
     spec:
       serviceAccountName: knowledge-backend-worker
       automountServiceAccountToken: false
@@ -336,7 +336,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: worker
-        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:67028600d4a128d2a6d9700d88a337ad403e0924db57aef03eb1a76937076e23
+        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:01b694bb1ada41bbcbaf3ac76c85914827c74219fe6d3ce7ce77e84f26b17b61
         imagePullPolicy: IfNotPresent
         command:
         - /bin/sh
@@ -527,9 +527,9 @@ spec:
         sunmoonai.com/app: knowledge
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: know-mcp-0925-r2
-        sunmoonai.com/config-sha256: 8c01fe3fdc9c5102893c1c4e6f32e46e507ed9ebe694aaacc985cd85e68009bf
-        sunmoonai.com/source-commit: 4d9804c3d5f4084b83bdb00ba49cbf0f8b5cbb55
+        sunmoonai.com/release-id: know-0926-metric
+        sunmoonai.com/config-sha256: 1edc6f2a2d81ef13c6e3078b5d0f235ba698637f2b1c26d3c139d2840d1cdff4
+        sunmoonai.com/source-commit: dd68e6d9042768b2362b3f757bf545529c7eef25
     spec:
       serviceAccountName: knowledge-backend-scheduler
       automountServiceAccountToken: false
@@ -545,7 +545,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: scheduler
-        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:67028600d4a128d2a6d9700d88a337ad403e0924db57aef03eb1a76937076e23
+        image: harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:01b694bb1ada41bbcbaf3ac76c85914827c74219fe6d3ce7ce77e84f26b17b61
         imagePullPolicy: IfNotPresent
         command:
         - celery
@@ -623,8 +623,8 @@ spec:
         sunmoonai.com/app: knowledge
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: know-mcp-0925-r2
-        sunmoonai.com/config-sha256: ad70f5cd351efca32a63ead85b9b525ddedf51aa31832cae77e848e5e78e6f8f
+        sunmoonai.com/release-id: know-0926-metric
+        sunmoonai.com/config-sha256: f0ee1472aefbfaed93aecece220eda10a0dd6d97f1e53ac1caff843b42bf53a1
         sunmoonai.com/source-commit: 6634a4c64e297c0dbbd2d0c8fa82c1195d068f67
     spec:
       serviceAccountName: knowledge-admin-frontend
@@ -782,8 +782,8 @@ spec:
         sunmoonai.com/app: knowledge
         sunmoonai.com/managed-by: app-platform-v2
       annotations:
-        sunmoonai.com/release-id: know-mcp-0925-r2
-        sunmoonai.com/config-sha256: d69039e3f204ae9a72c5f42331d5f9cf5cc9beae522d0635719f2110de7b2f08
+        sunmoonai.com/release-id: know-0926-metric
+        sunmoonai.com/config-sha256: e3541f167fb5245407a34709161028b0b77afacad6a9ef96842e0e0c12877863
         sunmoonai.com/source-commit: 8e8d016b4cea7239ae6a13130036924132c63d75
     spec:
       serviceAccountName: knowledge-web-frontend
