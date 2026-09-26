@@ -36,7 +36,7 @@ spec:
       securityContext: { runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001 }
       containers:
         - name: codex
-          image: harbor.sunmoonai.com:30443/app-images/sandbox@sha256:ba14b8d3f69e4359a4b13dc78c1078b2ef2ec1498e54eeda8dd62e100c219a2f
+          image: harbor.sunmoonai.com:30443/app-images/sandbox@sha256:dbafbcd4eba426fe2a8aa89545214a90b80ae38d508bf1bcee55dda7d41502af
           env:
             # 边缘正式拓扑：wss://edge.sunmoonai.com/relay；KIND 开发：集群内的会合点
             - { name: RELAY_URL, value: "ws://relay.edge.svc.cluster.local:47100" }
