@@ -1,0 +1,82 @@
+{
+  "scope": "Harbor cold backup and source service recovery; isolated restore not performed",
+  "backup_directory": "/home/zymun/packages-to-be-installed/releases/harbor-preserve-20260926/backup-20260926T145600Z",
+  "started_at": "2026-09-26T14:54:48.378802+00:00",
+  "source_services_restored_at": "2026-09-26T14:59:57.962770+00:00",
+  "original_read_only": false,
+  "services_restored": true,
+  "catalog_unchanged": true,
+  "catalog_check_includes_empty_projects_and_repositories": true,
+  "backup_bytes": 18092441600,
+  "archives": [
+    {
+      "name": "registry",
+      "node": "kind-worker",
+      "source": "/data/kind-local-storage/harbor/registry",
+      "path": "volumes/registry.tar",
+      "bytes": 17868021760,
+      "sha256": "94aad564812c2af543d1e7bd5f76fcf0f564205a2f0b101b628702a84cf6fb16",
+      "tar_members": 10127
+    },
+    {
+      "name": "database",
+      "node": "kind-worker",
+      "source": "/data/kind-local-storage/harbor/database",
+      "path": "volumes/database.tar",
+      "bytes": 195020800,
+      "sha256": "d6eaee7507f5393613fe253298813c24627ff248162237d1c02b76847f1ae59d",
+      "tar_members": 1623
+    },
+    {
+      "name": "redis",
+      "node": "kind-worker",
+      "source": "/data/kind-local-storage/harbor/redis",
+      "path": "volumes/redis.tar",
+      "bytes": 29368320,
+      "sha256": "d1b12dbe2c92898cc88b03874db99dcb9a5fe75accd7eeadfa574fa76da3e0f0",
+      "tar_members": 5
+    },
+    {
+      "name": "jobservice",
+      "node": "kind-worker",
+      "source": "/data/kind-local-storage/harbor/jobservice",
+      "path": "volumes/jobservice.tar",
+      "bytes": 10240,
+      "sha256": "268cb5eac5835dea352ed5f71890a70834310d88dacd2f5d82c311d6e4b6f658",
+      "tar_members": 1
+    },
+    {
+      "name": "trivy",
+      "node": "kind-worker",
+      "source": "/data/kind-local-storage/harbor/trivy",
+      "path": "volumes/trivy.tar",
+      "bytes": 10240,
+      "sha256": "f732814f331d30f32dc6240af485a464c08e094fdd6b086866fed581056b996e",
+      "tar_members": 1
+    },
+    {
+      "name": "trivy-active",
+      "node": "kind-worker2",
+      "source": "/var/local-path-provisioner/pvc-c0fef3d5-b9e0-46fb-8cc2-d380423897e9_cicd-platform-dev_data-sunmoonai-harbor-trivy-0",
+      "path": "volumes/trivy-active.tar",
+      "bytes": 10240,
+      "sha256": "fd8051c67c43a7cf0bcb9d6a9735b01a9acbed863c5f96ce404719cedf2afcf7",
+      "tar_members": 3
+    }
+  ],
+  "input_artifact_bytes": 946003515,
+  "file_checks_passed": true,
+  "registry_blobs_verified": 1509,
+  "catalog_manifest_digests_present": 429,
+  "descriptor_digests_present": 1211,
+  "isolated_restore_verified": false,
+  "verification_sha256": "d1eb514df536323a15efa33bd2e92b5baddd128daf703cd909aca7d79140a359",
+  "backup_script_sha256": "ff6b867a9fc6d3f7b9079ae1c1d38edbb342199657fd422aa03f3a2af7059132",
+  "state_sha256": "535e36f50fd240b65a5aaacc59b8a3c762eace28c73dfcd53ab19b95aab4b51f",
+  "full_catalog_comparison": "Projects, repositories (including empty), digest/tag pairs and child manifests compared again with hardened catalog_identity; passed",
+  "limitations": [
+    "Backup resides on same WSL filesystem as source",
+    "No isolated restoration or new-cluster image pull proof yet",
+    "No old data deleted; no endpoint cutover"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "batch": "build-template-20260926-linux-amd64",
+  "platform": "linux/amd64",
+  "root": "~/packages-to-be-installed/releases/build-template-20260926-linux-amd64",
+  "source_root": "~/worktrees/luna",
+  "max_bytes": 32212254720,
+  "repositories": [
+    {"path": "tpl-app", "commit": "3317c84d984fdd6dbeb4ab490685f9fcdff569a3"},
+    {"path": "tpl-app/tpl-backend", "commit": "6674125cd1c14d9700c707b0b0f4b5d422d42f05"},
+    {"path": "tpl-app/tpl-web-frontend", "commit": "45ceed1a147cadb6dfd1b8a72b79ff5a266854bd"},
+    {"path": "tpl-app/tpl-admin-frontend", "commit": "ee1f542220386e15c8f97c6e40e317caf3c2e9e7"}
+  ],
+  "images": {
+    "node": "harbor.sunmoonai.com:30443/k8s-images/node@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc",
+    "python": "harbor.sunmoonai.com:30443/k8s-images/python@sha256:cd4b90006d24bf02d61ff4dca29587b911552e9f0c8ac933db8b1c536c289379"
+  },
+  "pnpm": "10.24.0",
+  "uv": "0.11.32",
+  "node": "24.18.0"
+}
