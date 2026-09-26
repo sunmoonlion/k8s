@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "profile_sha256": "f41fafcdfa692a76c5928a4c8e3ad6f6632f9d6175f5a9d711cc84081c96ebdb",
+  "images": [
+    {
+      "id": "node",
+      "source": "docker.io/kindest/node:v1.36.4",
+      "index_digest": "sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed",
+      "platform_digest": "sha256:597367624b4748b74b98e4fe2d661cd78063d02ecdaca702fd90572375b83e67",
+      "reference": "docker.io/kindest/node@sha256:597367624b4748b74b98e4fe2d661cd78063d02ecdaca702fd90572375b83e67",
+      "archive_tag": "sunmoon-offline/node:597367624b4748b7",
+      "path": "images/node-linux-amd64.tar",
+      "docker_image_id": "sha256:597367624b4748b74b98e4fe2d661cd78063d02ecdaca702fd90572375b83e67",
+      "sha256": "76a18452a25c24105d1c864bc1680fdb1e13ae274efcd58fe310a6eb9b86a774"
+    },
+    {
+      "id": "calico-cni",
+      "source": "quay.io/calico/cni:v3.32.2",
+      "index_digest": "sha256:0ef740bc587f25565905adf1d1f61a7faff0d571c449c6bdd789feed743d3ef7",
+      "platform_digest": "sha256:8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a",
+      "reference": "quay.io/calico/cni@sha256:8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a",
+      "archive_tag": "sunmoon-offline/calico-cni:8de23af2a36514e5",
+      "path": "images/calico-cni-linux-amd64.tar",
+      "docker_image_id": "sha256:8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a",
+      "sha256": "431f4527245e2a0845537125cab0825070c1e99ea6e099a4a45f5e461378b435"
+    },
+    {
+      "id": "calico-node",
+      "source": "quay.io/calico/node:v3.32.2",
+      "index_digest": "sha256:99b03fe91e8bfbcb153ae65ef4b701b24ce541ffdd74ff314eb041096008f7fd",
+      "platform_digest": "sha256:d7a9b58573b165caa8128d2735a19b788434547064b2b4af2abf68cea24f7ec3",
+      "reference": "quay.io/calico/node@sha256:d7a9b58573b165caa8128d2735a19b788434547064b2b4af2abf68cea24f7ec3",
+      "archive_tag": "sunmoon-offline/calico-node:d7a9b58573b165ca",
+      "path": "images/calico-node-linux-amd64.tar",
+      "docker_image_id": "sha256:d7a9b58573b165caa8128d2735a19b788434547064b2b4af2abf68cea24f7ec3",
+      "sha256": "bfde5f35df29f29c0322a199f9b990b30b303223e8abbc894c1209ea0767889c"
+    },
+    {
+      "id": "calico-controllers",
+      "source": "quay.io/calico/kube-controllers:v3.32.2",
+      "index_digest": "sha256:7870b67ebb13fabc3005252b44fe6e78b21635649bd3072b80afa1684b6565d0",
+      "platform_digest": "sha256:f241490840083743e747389af8d5067c961370bd5e2e2af6538db2f7e183f60b",
+      "reference": "quay.io/calico/kube-controllers@sha256:f241490840083743e747389af8d5067c961370bd5e2e2af6538db2f7e183f60b",
+      "archive_tag": "sunmoon-offline/calico-controllers:f241490840083743",
+      "path": "images/calico-controllers-linux-amd64.tar",
+      "docker_image_id": "sha256:f241490840083743e747389af8d5067c961370bd5e2e2af6538db2f7e183f60b",
+      "sha256": "c5913c71b51a45f51ce555b3f64446ef3151b65adc757dacfdf130a07a10ff14"
+    },
+    {
+      "id": "probe",
+      "source": "docker.io/library/busybox:1.36.1",
+      "index_digest": "sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662",
+      "platform_digest": "sha256:b7f3d86d6e84fc17718c48bcde1450807faa2d56704205c697b4bd5df7b9e29f",
+      "reference": "docker.io/library/busybox@sha256:b7f3d86d6e84fc17718c48bcde1450807faa2d56704205c697b4bd5df7b9e29f",
+      "archive_tag": "sunmoon-offline/probe:b7f3d86d6e84fc17",
+      "path": "images/probe-linux-amd64.tar",
+      "docker_image_id": "sha256:b7f3d86d6e84fc17718c48bcde1450807faa2d56704205c697b4bd5df7b9e29f",
+      "sha256": "c202ff4ca00fde9f6d03aec13ef8b8f4ca0b04eb57b9200635be2649256ef7aa"
+    }
+  ],
+  "files": [
+    {
+      "path": "bin/kind",
+      "url": "https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64",
+      "sha256": "aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d",
+      "executable": true
+    },
+    {
+      "path": "bin/kubectl",
+      "url": "https://dl.k8s.io/release/v1.36.4/bin/linux/amd64/kubectl",
+      "sha256": "8b8f088da2dab964f853b38464033b1be15ede2839eca751482357c45abdd05a",
+      "executable": true
+    },
+    {
+      "path": "charts/calico-upstream.yaml",
+      "url": "https://raw.githubusercontent.com/projectcalico/calico/v3.32.2/manifests/calico.yaml",
+      "sha256": "a8c828a06a87c629a282ebbc424895b77f3a030251993e41ea400a743675bb02",
+      "executable": false
+    }
+  ],
+  "prepared_at": "2026-09-26T21:45:31.083761+08:00",
+  "generated": [
+    {
+      "path": "kind.yaml",
+      "sha256": "d94ac73d0dadb3e3f78570bb9b3d13e3bdaa5e80e07921fd4be2c56a6b29d91e"
+    },
+    {
+      "path": "charts/calico.yaml",
+      "sha256": "3e237264ba91741d36fa15bc159cdbf85e0efdc20cd4bb850e6311fdca4dde59"
+    }
+  ],
+  "render_revision": {
+    "reason": "VXLAN backend must not probe disabled BIRD; keep Felix liveness/readiness",
+    "previous_manifest_sha256": "072bed156cadebe13fdcc05963a36d054a5724c6300a63bf45425ad9d910c336",
+    "updated_at": "2026-09-26T22:00:37.334085+08:00"
+  }
+}

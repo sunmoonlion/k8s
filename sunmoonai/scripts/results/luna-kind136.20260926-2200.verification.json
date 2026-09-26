@@ -1,0 +1,78 @@
+{
+  "started": "2026-09-26T22:03:35.126792+08:00",
+  "profile_sha256": "f41fafcdfa692a76c5928a4c8e3ad6f6632f9d6175f5a9d711cc84081c96ebdb",
+  "manifest_sha256": "e44650c170ca010769233f7bbf642f9dc58dc95826336758edd10391b5729586",
+  "checks": [
+    {
+      "name": "three-ready-nodes-at-locked-version",
+      "passed": true,
+      "detail": {
+        "sunmoon-kind-136-control-plane": "containerd://2.3.4",
+        "sunmoon-kind-136-worker": "containerd://2.3.4",
+        "sunmoon-kind-136-worker2": "containerd://2.3.4"
+      }
+    },
+    {
+      "name": "calico-ready-and-images-pinned",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "calico-stable-for-120-seconds",
+      "passed": true,
+      "detail": {
+        "7f585783-62e8-4669-a40e-ec047bce7469": {
+          "calico-node": 0
+        },
+        "66b56070-9114-4c40-ad2b-30acb055a91b": {
+          "calico-node": 0
+        },
+        "eae2c445-53a6-40c6-9897-e1ad42306183": {
+          "calico-node": 0
+        }
+      }
+    },
+    {
+      "name": "cross-node-pod-and-service-connectivity-before-policy",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "cluster-dns",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "test-pods-have-no-proxy",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "default-deny-blocks-both-working-clients",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "exact-allow-restores-selected-client-only",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "pvc-data-survives-test-pod-replacement",
+      "passed": true,
+      "detail": "local-path on one worker; not node-failure HA"
+    },
+    {
+      "name": "old-cluster-identity-ports-kubeconfig-storage-unchanged",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "old-three-nodes-still-ready",
+      "passed": true,
+      "detail": "Used the old control-plane node kubectl to avoid client/server version skew"
+    }
+  ],
+  "passed": true,
+  "completed": "2026-09-26T22:06:32.206623+08:00"
+}
