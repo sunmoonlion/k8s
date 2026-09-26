@@ -1,0 +1,898 @@
+{
+  "workloads": [
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "casdoor-sunmoonai",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/k8s-images/casdoor:3.42.0",
+        "harbor.sunmoonai.com:30443/k8s-images/casdoor:3.42.0"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "info-admin-frontend",
+      "desired": 2,
+      "ready": 2,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/info-admin-frontend@sha256:8be19c26c8f01b130d10de4ae428102b04eb3e7a5394a7898e5fd6141aa675da"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "info-backend-api",
+      "desired": 2,
+      "ready": 2,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ec9e1da89285ec0e85d12ff51e25ce42c713b604989f9f8ba6c7812ff517c4aa"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "info-backend-scheduler",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ec9e1da89285ec0e85d12ff51e25ce42c713b604989f9f8ba6c7812ff517c4aa"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "info-backend-worker",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/info-backend@sha256:ec9e1da89285ec0e85d12ff51e25ce42c713b604989f9f8ba6c7812ff517c4aa"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "info-web-frontend",
+      "desired": 2,
+      "ready": 2,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/info-web-frontend@sha256:0d836617678e4c924ae2f8e54dc644cd8f1d60172277bfac1326176f33e8d9ee"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "investment-admin-frontend",
+      "desired": 2,
+      "ready": 2,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/investment-admin-frontend@sha256:422e7c1e53d5b61eba14bcd242bf73a8e10428f1799e2a6370c1be95cec1923e"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "investment-backend-api",
+      "desired": 2,
+      "ready": 2,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:b5336cfbf2b4ef487525f8aa2b65a73af5b771cb1b7f59b6a14af986bd4266e3"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "investment-backend-runner",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:b5336cfbf2b4ef487525f8aa2b65a73af5b771cb1b7f59b6a14af986bd4266e3"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "investment-backend-scheduler",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:b5336cfbf2b4ef487525f8aa2b65a73af5b771cb1b7f59b6a14af986bd4266e3"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "investment-backend-worker",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/investment-backend@sha256:b5336cfbf2b4ef487525f8aa2b65a73af5b771cb1b7f59b6a14af986bd4266e3"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "investment-web-frontend",
+      "desired": 2,
+      "ready": 2,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/investment-web-frontend@sha256:0e9263bd7da9810fa7268891e51b86f91b8a962798dab56497daec7df70dedcd"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "knowledge-admin-frontend",
+      "desired": 2,
+      "ready": 2,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/knowledge-admin-frontend@sha256:4f8fb2c69c47005215f2c5b45430ec555d347ea67f96549e3662813daab75e15"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "knowledge-backend-api",
+      "desired": 2,
+      "ready": 2,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:01b694bb1ada41bbcbaf3ac76c85914827c74219fe6d3ce7ce77e84f26b17b61"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "knowledge-backend-scheduler",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:01b694bb1ada41bbcbaf3ac76c85914827c74219fe6d3ce7ce77e84f26b17b61"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "knowledge-backend-worker",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:01b694bb1ada41bbcbaf3ac76c85914827c74219fe6d3ce7ce77e84f26b17b61"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "knowledge-web-frontend",
+      "desired": 2,
+      "ready": 2,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/knowledge-web-frontend@sha256:be296c49924af1ed1598a1d95d917901edf149bcf86ac91cb519f53a34e71197"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "question-data",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "question-data:demo"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "Deployment",
+      "name": "ragflow-sunmoonai",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/ragflow:v0.25.4-sunmoonai.1"
+      ]
+    },
+    {
+      "namespace": "cicd-platform-dev",
+      "kind": "Deployment",
+      "name": "sunmoonai-harbor-core",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "docker.io/bitnami/harbor-core:2.13.2-debian-12-r3",
+        "docker.io/bitnami/harbor-core:2.13.2-debian-12-r3"
+      ]
+    },
+    {
+      "namespace": "cicd-platform-dev",
+      "kind": "Deployment",
+      "name": "sunmoonai-harbor-jobservice",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "docker.io/bitnami/harbor-jobservice:2.13.2-debian-12-r3",
+        "docker.io/bitnami/harbor-jobservice:2.13.2-debian-12-r3"
+      ]
+    },
+    {
+      "namespace": "cicd-platform-dev",
+      "kind": "Deployment",
+      "name": "sunmoonai-harbor-portal",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "docker.io/bitnami/harbor-portal:2.13.2-debian-12-r1",
+        "docker.io/bitnami/harbor-portal:2.13.2-debian-12-r1"
+      ]
+    },
+    {
+      "namespace": "cicd-platform-dev",
+      "kind": "Deployment",
+      "name": "sunmoonai-harbor-registry",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "docker.io/bitnami/harbor-registry:2.13.2-debian-12-r2",
+        "docker.io/bitnami/harbor-registryctl:2.13.2-debian-12-r3",
+        "docker.io/bitnami/harbor-registry:2.13.2-debian-12-r2",
+        "docker.io/bitnami/harbor-registry:2.13.2-debian-12-r2",
+        "docker.io/bitnami/harbor-registryctl:2.13.2-debian-12-r3"
+      ]
+    },
+    {
+      "namespace": "data-platform-dev",
+      "kind": "Deployment",
+      "name": "kibana-sunmoonai",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/k8s-images/kibana:9.1.2-debian-12-r0",
+        "harbor.sunmoonai.com:30443/k8s-images/kibana:9.1.2-debian-12-r0"
+      ]
+    },
+    {
+      "namespace": "data-platform-dev",
+      "kind": "Deployment",
+      "name": "object-store-operator",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/k8s-images/minio/aistor/operator:RELEASE.2026-06-10T05-02-21Z"
+      ]
+    },
+    {
+      "namespace": "data-platform-dev",
+      "kind": "Deployment",
+      "name": "object-store-webhook",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/k8s-images/minio/aistor/operator:RELEASE.2026-06-10T05-02-21Z"
+      ]
+    },
+    {
+      "namespace": "edge",
+      "kind": "Deployment",
+      "name": "relay",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/relay@sha256:5ccedf04bcd3ad124f22c346ea89b8af4e89c550bf48b109292cd0c1110fb184"
+      ]
+    },
+    {
+      "namespace": "ingress-platform-dev",
+      "kind": "Deployment",
+      "name": "traefik-sunmoonai",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "docker.io/traefik:v3.5.2"
+      ]
+    },
+    {
+      "namespace": "kube-system",
+      "kind": "Deployment",
+      "name": "coredns",
+      "desired": 2,
+      "ready": 2,
+      "images": [
+        "registry.k8s.io/coredns/coredns:v1.10.1"
+      ]
+    },
+    {
+      "namespace": "local-path-storage",
+      "kind": "Deployment",
+      "name": "local-path-provisioner",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "docker.io/kindest/local-path-provisioner:v20230511-dc714da8"
+      ]
+    },
+    {
+      "namespace": "ops-platform-dev",
+      "kind": "Deployment",
+      "name": "flower-sunmoonai",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/k8s-images/flower:2.0.1"
+      ]
+    },
+    {
+      "namespace": "ops-platform-dev",
+      "kind": "Deployment",
+      "name": "pgadmin-sunmoonai-pgadmin4",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/k8s-images/pgadmin4:8.4",
+        "harbor.sunmoonai.com:30443/k8s-images/pgadmin4:8.4"
+      ]
+    },
+    {
+      "namespace": "ops-platform-dev",
+      "kind": "Deployment",
+      "name": "redisinsight-sunmoonai",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/k8s-images/redisinsight:2.70"
+      ]
+    },
+    {
+      "namespace": "sandbox-pool",
+      "kind": "Deployment",
+      "name": "sandbox-demo",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/sandbox@sha256:ba14b8d3f69e4359a4b13dc78c1078b2ef2ec1498e54eeda8dd62e100c219a2f"
+      ]
+    },
+    {
+      "namespace": "sandbox-pool",
+      "kind": "Deployment",
+      "name": "sandbox-provisioner",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/sandbox-provisioner@sha256:9df0db43168977ac389f311c30e20cb43c3790059efa537d3b64da06b51677ec"
+      ]
+    },
+    {
+      "namespace": "sandbox-pool",
+      "kind": "Deployment",
+      "name": "sandbox-u-a63d03b16693",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/sandbox@sha256:dbafbcd4eba426fe2a8aa89545214a90b80ae38d508bf1bcee55dda7d41502af"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "StatefulSet",
+      "name": "ragflow-sunmoonai-es",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/alpine:latest",
+        "harbor.sunmoonai.com:30443/app-images/busybox:latest",
+        "harbor.sunmoonai.com:30443/app-images/elasticsearch:8.11.3"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "StatefulSet",
+      "name": "ragflow-sunmoonai-minio",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/minio:RELEASE.2026-03-25T00-00-00Z"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "StatefulSet",
+      "name": "ragflow-sunmoonai-mysql",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/mysql:8.0.39"
+      ]
+    },
+    {
+      "namespace": "app-platform-dev",
+      "kind": "StatefulSet",
+      "name": "ragflow-sunmoonai-redis",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/app-images/valkey:8"
+      ]
+    },
+    {
+      "namespace": "cicd-platform-dev",
+      "kind": "StatefulSet",
+      "name": "sunmoonai-harbor-postgresql",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "docker.io/bitnami/postgresql:17.6.0-debian-12-r4",
+        "docker.io/bitnami/postgresql:17.6.0-debian-12-r4"
+      ]
+    },
+    {
+      "namespace": "cicd-platform-dev",
+      "kind": "StatefulSet",
+      "name": "sunmoonai-harbor-redis-master",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "docker.io/bitnami/redis:8.2.1-debian-12-r0",
+        "docker.io/bitnami/redis:8.2.1-debian-12-r0"
+      ]
+    },
+    {
+      "namespace": "cicd-platform-dev",
+      "kind": "StatefulSet",
+      "name": "sunmoonai-harbor-trivy",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "docker.io/bitnami/harbor-adapter-trivy:2.13.2-debian-12-r2",
+        "docker.io/bitnami/harbor-adapter-trivy:2.13.2-debian-12-r2"
+      ]
+    },
+    {
+      "namespace": "data-platform-dev",
+      "kind": "StatefulSet",
+      "name": "elasticsearch-sunmoonai-master",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/k8s-images/os-shell:12-debian-12-r51",
+        "harbor.sunmoonai.com:30443/k8s-images/os-shell:12-debian-12-r51",
+        "harbor.sunmoonai.com:30443/k8s-images/elasticsearch:9.1.2-debian-12-r0",
+        "harbor.sunmoonai.com:30443/k8s-images/elasticsearch:9.1.2-debian-12-r0"
+      ]
+    },
+    {
+      "namespace": "data-platform-dev",
+      "kind": "StatefulSet",
+      "name": "logstash-sunmoonai",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/k8s-images/logstash:9.1.2-debian-12-r0"
+      ]
+    },
+    {
+      "namespace": "data-platform-dev",
+      "kind": "StatefulSet",
+      "name": "platform-object-storage-pool-0",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/k8s-images/minio/aistor/minio-sidecar:RELEASE.2026-06-09T23-40-36Z",
+        "harbor.sunmoonai.com:30443/k8s-images/minio/aistor/minio:RELEASE.2026-05-28T20-50-32Z",
+        "harbor.sunmoonai.com:30443/k8s-images/minio/aistor/minio-sidecar:RELEASE.2026-06-09T23-40-36Z"
+      ]
+    },
+    {
+      "namespace": "data-platform-dev",
+      "kind": "StatefulSet",
+      "name": "postgresql-sunmoonai",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/k8s-images/os-shell:12-debian-12-r51",
+        "harbor.sunmoonai.com:30443/k8s-images/postgresql:17.6.0-debian-12-r4"
+      ]
+    },
+    {
+      "namespace": "data-platform-dev",
+      "kind": "StatefulSet",
+      "name": "redis-nodebull-master",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/k8s-images/os-shell:12-debian-12-r51",
+        "harbor.sunmoonai.com:30443/k8s-images/redis:8.2.1-debian-12-r0"
+      ]
+    },
+    {
+      "namespace": "data-platform-dev",
+      "kind": "StatefulSet",
+      "name": "redis-nodebull-replicas",
+      "desired": 0,
+      "ready": 0,
+      "images": [
+        "harbor.sunmoonai.com:30443/k8s-images/os-shell:12-debian-12-r51",
+        "harbor.sunmoonai.com:30443/k8s-images/redis:8.2.1-debian-12-r0"
+      ]
+    },
+    {
+      "namespace": "data-platform-dev",
+      "kind": "StatefulSet",
+      "name": "redis-sunmoonai-master",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/k8s-images/os-shell:12-debian-12-r51",
+        "harbor.sunmoonai.com:30443/k8s-images/redis:8.2.1-debian-12-r0"
+      ]
+    },
+    {
+      "namespace": "data-platform-dev",
+      "kind": "StatefulSet",
+      "name": "redis-sunmoonai-replicas",
+      "desired": 0,
+      "ready": 0,
+      "images": [
+        "harbor.sunmoonai.com:30443/k8s-images/os-shell:12-debian-12-r51",
+        "harbor.sunmoonai.com:30443/k8s-images/redis:8.2.1-debian-12-r0"
+      ]
+    },
+    {
+      "namespace": "messaging-platform-dev",
+      "kind": "StatefulSet",
+      "name": "rabbitmq-sunmoonai",
+      "desired": 1,
+      "ready": 1,
+      "images": [
+        "harbor.sunmoonai.com:30443/k8s-images/rabbitmq:4.1.3-debian-12-r1",
+        "harbor.sunmoonai.com:30443/k8s-images/rabbitmq:4.1.3-debian-12-r1"
+      ]
+    },
+    {
+      "namespace": "kube-system",
+      "kind": "DaemonSet",
+      "name": "kindnet",
+      "desired": 3,
+      "ready": 3,
+      "images": [
+        "docker.io/kindest/kindnetd:v20230511-dc714da8"
+      ]
+    },
+    {
+      "namespace": "kube-system",
+      "kind": "DaemonSet",
+      "name": "kube-proxy",
+      "desired": 3,
+      "ready": 3,
+      "images": [
+        "registry.k8s.io/kube-proxy:v1.27.3"
+      ]
+    }
+  ],
+  "claims": [
+    {
+      "namespace": "app-platform-dev",
+      "name": "casdoor-sunmoonai-dev-pvc",
+      "class": "",
+      "size": "1Gi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "app-platform-dev",
+      "name": "ragflow-sunmoonai-es-data",
+      "class": "local-path",
+      "size": "20Gi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "app-platform-dev",
+      "name": "ragflow-sunmoonai-minio",
+      "class": "local-path",
+      "size": "20Gi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "app-platform-dev",
+      "name": "ragflow-sunmoonai-mysql",
+      "class": "local-path",
+      "size": "10Gi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "app-platform-dev",
+      "name": "redis-data-ragflow-sunmoonai-redis-0",
+      "class": "local-path",
+      "size": "5Gi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "cicd-platform-dev",
+      "name": "data-sunmoonai-harbor-trivy-0",
+      "class": "standard",
+      "size": "5Gi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "cicd-platform-dev",
+      "name": "harbor-sunmoonai-database-dev-pvc",
+      "class": "",
+      "size": "5Gi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "cicd-platform-dev",
+      "name": "harbor-sunmoonai-jobservice-dev-pvc",
+      "class": "",
+      "size": "1Gi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "cicd-platform-dev",
+      "name": "harbor-sunmoonai-redis-dev-pvc",
+      "class": "",
+      "size": "1Gi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "cicd-platform-dev",
+      "name": "harbor-sunmoonai-registry-dev-pvc",
+      "class": "",
+      "size": "20Gi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "cicd-platform-dev",
+      "name": "harbor-sunmoonai-trivy-dev-pvc",
+      "class": "",
+      "size": "5Gi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "data-platform-dev",
+      "name": "data-elasticsearch-sunmoonai-master-0",
+      "class": "local-path",
+      "size": "8Gi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "data-platform-dev",
+      "name": "data0-platform-object-storage-pool-0-0",
+      "class": "object-storage-kind-static",
+      "size": "10Gi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "data-platform-dev",
+      "name": "postgresql-sunmoonai-dev-pvc",
+      "class": "",
+      "size": "8Gi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "data-platform-dev",
+      "name": "redis-nodebull-dev-pvc",
+      "class": "",
+      "size": "5Gi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "data-platform-dev",
+      "name": "redis-sunmoonai-dev-pvc",
+      "class": "",
+      "size": "5Gi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "edge",
+      "name": "relay-state",
+      "class": "standard",
+      "size": "64Mi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "ingress-platform-dev",
+      "name": "traefik-sunmoonai",
+      "class": "local-path",
+      "size": "1Gi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "sandbox-pool",
+      "name": "sandbox-demo-codex-home",
+      "class": "standard",
+      "size": "2Gi",
+      "status": "Bound"
+    },
+    {
+      "namespace": "sandbox-pool",
+      "name": "sandbox-u-a63d03b16693-codex-home",
+      "class": "standard",
+      "size": "2Gi",
+      "status": "Bound"
+    }
+  ],
+  "crds": [
+    {
+      "name": "accesscontrolpolicies.hub.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "aiservices.hub.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "apiauths.hub.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "apibundles.hub.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "apicatalogitems.hub.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "apiplans.hub.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "apiportalauths.hub.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "apiportals.hub.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "apiratelimits.hub.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "apis.hub.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "apiversions.hub.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "gatewayclasses.gateway.networking.k8s.io",
+      "served_versions": [
+        "v1",
+        "v1beta1"
+      ]
+    },
+    {
+      "name": "gateways.gateway.networking.k8s.io",
+      "served_versions": [
+        "v1",
+        "v1beta1"
+      ]
+    },
+    {
+      "name": "grpcroutes.gateway.networking.k8s.io",
+      "served_versions": [
+        "v1"
+      ]
+    },
+    {
+      "name": "httproutes.gateway.networking.k8s.io",
+      "served_versions": [
+        "v1",
+        "v1beta1"
+      ]
+    },
+    {
+      "name": "ingressroutes.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "ingressroutetcps.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "ingressrouteudps.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "managedapplications.hub.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "managedsubscriptions.hub.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "middlewares.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "middlewaretcps.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "objectstores.aistor.min.io",
+      "served_versions": [
+        "v1"
+      ]
+    },
+    {
+      "name": "policybindings.sts.min.io",
+      "served_versions": [
+        "v1alpha1",
+        "v1beta1"
+      ]
+    },
+    {
+      "name": "referencegrants.gateway.networking.k8s.io",
+      "served_versions": [
+        "v1beta1"
+      ]
+    },
+    {
+      "name": "serverstransports.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "serverstransporttcps.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "tlsoptions.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "tlsstores.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    },
+    {
+      "name": "traefikservices.traefik.io",
+      "served_versions": [
+        "v1alpha1"
+      ]
+    }
+  ]
+}

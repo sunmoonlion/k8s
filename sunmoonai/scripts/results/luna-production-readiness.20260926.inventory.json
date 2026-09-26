@@ -1,0 +1,337 @@
+{
+  "repositories": [
+    {
+      "name": "k8s",
+      "commit": "5a1c1f994a05df814b0fec974925838dce422447",
+      "changed_entries": 0
+    },
+    {
+      "name": "tpl-app",
+      "commit": "3317c84d984fdd6dbeb4ab490685f9fcdff569a3",
+      "changed_entries": 0
+    },
+    {
+      "name": "info-app",
+      "commit": "244f724dce91d373bd6dd35362d471c565ebf7a9",
+      "changed_entries": 0
+    },
+    {
+      "name": "knowledge-app",
+      "commit": "6a485074f82925aedaaec666998dc6626f5345df",
+      "changed_entries": 0
+    },
+    {
+      "name": "investment-app",
+      "commit": "8bdb3285f9c6f53a89106a883f361193116e1ce9",
+      "changed_entries": 0
+    },
+    {
+      "name": "runtime",
+      "commit": "5645e63ce725fb08ac1e1d2054dfa59d2cc41ce1",
+      "changed_entries": 0
+    }
+  ],
+  "javascript": [
+    {
+      "path": "investment-app/investment-web-frontend/app/package.json",
+      "package_manager": "pnpm@10.24.0",
+      "engines": {
+        "node": ">=24.18.0 <25",
+        "pnpm": "10.24.x"
+      },
+      "scripts": [
+        "build",
+        "check",
+        "check:i18n",
+        "dev",
+        "format",
+        "lint",
+        "prepare:standalone",
+        "start",
+        "test",
+        "test:e2e",
+        "test:e2e:build",
+        "test:watch",
+        "typecheck"
+      ],
+      "dependency_count": 35,
+      "pnpm_lock": true,
+      "npm_lock": false
+    },
+    {
+      "path": "info-app/info-web-frontend/app/package.json",
+      "package_manager": "pnpm@10.24.0",
+      "engines": {
+        "node": ">=24.18.0 <25",
+        "pnpm": "10.24.x"
+      },
+      "scripts": [
+        "build",
+        "check",
+        "check:i18n",
+        "dev",
+        "format",
+        "lint",
+        "prepare:standalone",
+        "start",
+        "test",
+        "test:e2e",
+        "test:e2e:build",
+        "test:watch",
+        "typecheck"
+      ],
+      "dependency_count": 35,
+      "pnpm_lock": true,
+      "npm_lock": false
+    },
+    {
+      "path": "tpl-app/tpl-web-frontend/app/package.json",
+      "package_manager": "pnpm@10.24.0",
+      "engines": {
+        "node": ">=24.18.0 <25",
+        "pnpm": "10.24.x"
+      },
+      "scripts": [
+        "build",
+        "check",
+        "check:i18n",
+        "dev",
+        "format",
+        "lint",
+        "prepare:standalone",
+        "start",
+        "test",
+        "test:e2e",
+        "test:e2e:build",
+        "test:watch",
+        "typecheck"
+      ],
+      "dependency_count": 35,
+      "pnpm_lock": true,
+      "npm_lock": false
+    },
+    {
+      "path": "runtime/agent/package.json",
+      "package_manager": null,
+      "engines": {
+        "node": ">=20"
+      },
+      "scripts": [
+        "build",
+        "start",
+        "test",
+        "typecheck"
+      ],
+      "dependency_count": 6,
+      "pnpm_lock": true,
+      "npm_lock": false
+    },
+    {
+      "path": "tpl-app/tpl-admin-frontend/app/package.json",
+      "package_manager": "pnpm@10.24.0",
+      "engines": {
+        "node": ">=24.18.0 <25",
+        "pnpm": "10.24.x"
+      },
+      "scripts": [
+        "build",
+        "check",
+        "check:i18n",
+        "dev",
+        "format",
+        "lint",
+        "prepare:standalone",
+        "start",
+        "test",
+        "test:e2e",
+        "test:e2e:build",
+        "test:watch",
+        "typecheck"
+      ],
+      "dependency_count": 35,
+      "pnpm_lock": true,
+      "npm_lock": false
+    },
+    {
+      "path": "knowledge-app/knowledge-admin-frontend/app/package.json",
+      "package_manager": "pnpm@10.24.0",
+      "engines": {
+        "node": ">=24.18.0 <25",
+        "pnpm": "10.24.x"
+      },
+      "scripts": [
+        "build",
+        "check",
+        "check:i18n",
+        "dev",
+        "format",
+        "lint",
+        "prepare:standalone",
+        "start",
+        "test",
+        "test:e2e",
+        "test:e2e:build",
+        "test:watch",
+        "typecheck"
+      ],
+      "dependency_count": 35,
+      "pnpm_lock": true,
+      "npm_lock": false
+    },
+    {
+      "path": "knowledge-app/knowledge-web-frontend/app/package.json",
+      "package_manager": "pnpm@10.24.0",
+      "engines": {
+        "node": ">=24.18.0 <25",
+        "pnpm": "10.24.x"
+      },
+      "scripts": [
+        "build",
+        "check",
+        "check:i18n",
+        "dev",
+        "format",
+        "lint",
+        "prepare:standalone",
+        "start",
+        "test",
+        "test:e2e",
+        "test:e2e:build",
+        "test:watch",
+        "typecheck"
+      ],
+      "dependency_count": 35,
+      "pnpm_lock": true,
+      "npm_lock": false
+    },
+    {
+      "path": "info-app/info-admin-frontend/app/package.json",
+      "package_manager": "pnpm@10.24.0",
+      "engines": {
+        "node": ">=24.18.0 <25",
+        "pnpm": "10.24.x"
+      },
+      "scripts": [
+        "build",
+        "check",
+        "check:i18n",
+        "dev",
+        "format",
+        "lint",
+        "prepare:standalone",
+        "start",
+        "test",
+        "test:e2e",
+        "test:e2e:build",
+        "test:watch",
+        "typecheck"
+      ],
+      "dependency_count": 35,
+      "pnpm_lock": true,
+      "npm_lock": false
+    },
+    {
+      "path": "investment-app/investment-admin-frontend/app/package.json",
+      "package_manager": "pnpm@10.24.0",
+      "engines": {
+        "node": ">=24.18.0 <25",
+        "pnpm": "10.24.x"
+      },
+      "scripts": [
+        "build",
+        "check",
+        "check:i18n",
+        "dev",
+        "format",
+        "lint",
+        "prepare:standalone",
+        "start",
+        "test",
+        "test:e2e",
+        "test:e2e:build",
+        "test:watch",
+        "typecheck"
+      ],
+      "dependency_count": 35,
+      "pnpm_lock": true,
+      "npm_lock": false
+    }
+  ],
+  "python": [
+    {
+      "path": "knowledge-app/knowledge-backend/app/uv.lock",
+      "package_count": 64,
+      "artifact_hosts": {
+        "pypi.tuna.tsinghua.edu.cn": 721
+      },
+      "registry_hosts": [
+        "pypi.tuna.tsinghua.edu.cn"
+      ]
+    },
+    {
+      "path": "info-app/info-backend/app/uv.lock",
+      "package_count": 82,
+      "artifact_hosts": {
+        "pypi.tuna.tsinghua.edu.cn": 959
+      },
+      "registry_hosts": [
+        "pypi.tuna.tsinghua.edu.cn"
+      ]
+    },
+    {
+      "path": "investment-app/investment-backend/app/uv.lock",
+      "package_count": 84,
+      "artifact_hosts": {
+        "pypi.tuna.tsinghua.edu.cn": 1025
+      },
+      "registry_hosts": [
+        "pypi.tuna.tsinghua.edu.cn"
+      ]
+    },
+    {
+      "path": "tpl-app/tpl-backend/app/uv.lock",
+      "package_count": 59,
+      "artifact_hosts": {
+        "pypi.tuna.tsinghua.edu.cn": 624
+      },
+      "registry_hosts": [
+        "pypi.tuna.tsinghua.edu.cn"
+      ]
+    }
+  ],
+  "submodule_files": [
+    {
+      "path": "investment-app/.gitmodules",
+      "paths": [
+        "investment-backend",
+        "investment-admin-frontend",
+        "investment-web-frontend"
+      ]
+    },
+    {
+      "path": "info-app/.gitmodules",
+      "paths": [
+        "info-admin-frontend",
+        "info-web-frontend",
+        "info-backend"
+      ]
+    },
+    {
+      "path": "knowledge-app/.gitmodules",
+      "paths": [
+        "knowledge-admin-frontend",
+        "knowledge-web-frontend",
+        "knowledge-backend"
+      ]
+    },
+    {
+      "path": "tpl-app/.gitmodules",
+      "paths": [
+        "tpl-web-frontend",
+        "tpl-backend",
+        "tpl-admin-frontend"
+      ]
+    }
+  ],
+  "lfs_attribute_files": []
+}
