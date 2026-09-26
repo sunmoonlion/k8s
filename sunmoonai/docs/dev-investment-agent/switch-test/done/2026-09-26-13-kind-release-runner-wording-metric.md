@@ -67,3 +67,11 @@
 13. 回传：每步结果与屏幕上看到的；`drift`/`status`；过滤含 sk-、kmcp-、token=、password 的行。
 
 失败停在那步。
+
+---
+
+## 归档说明（远程，2026-09-26）
+
+- 结果：`scripts/results/kind-release-13.20260926-102034.md`。发版成功；第 4、11 步 pass；第 12 步 fail：回收再拉起后 401 没有复现，改报 `turn/start: thread not found`。
+- 第 4 步命令的更正：集群 `ALLOWED_HOSTS` 不含 `127.0.0.1`，直接对 `http://127.0.0.1:8000` 发请求会被 400 `Invalid host header`。本地助手加了请求头 `Host: knowledge-backend` 后通过。以后在 pod 里探 API 一律带这个头。
+- 第 12 步的原因与修复另开待办。
