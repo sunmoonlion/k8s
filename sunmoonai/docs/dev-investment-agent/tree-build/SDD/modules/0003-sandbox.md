@@ -45,3 +45,5 @@ BYOK：key 以 `CODEX_HOME/auth.json`（`auth_mode="apikey"`）或 `OPENAI_API_K
 ## 实现状态（2026-09-25，按需拉起）
 
 `sandbox-platform/provisioner/`：供给器（FastAPI，直接调 API server，RBAC 限 sandbox-pool）；`PUT/GET/DELETE /sandboxes/{user}`，一用户一个沙箱，Secret 含厂商 key、会合点令牌、能力令牌、知识 MCP 令牌，PVC 保留（D18 先"不删"），Secret 摘要进 pod 注解只在变化时滚动。工作台 `POST /api/workbench/sandboxes/provision` 把设置页登记的 key 解密后经内网送到供给器（所有者 2026-09-25 点头）。镜像基础改为平台钉版 node 24.18.0 alpine。按用户签发的知识 MCP 令牌与会合点令牌都是工作台 JWT（D10，2026-09-25），随 spec 进 Secret；`KNOWLEDGE_MCP_SHARED_TOKEN` 只剩没配签名密钥时的退路。未做：配额、按需缩容、CODEX_HOME 备份。
+
+**2026-09-26 修正（KIND 15、16 轮查明）**：沙箱镜像曾声明 `VOLUME ["/data/codex"]`，containerd 按它在 `/data/codex` 挂一个随容器生灭的匿名卷，盖住 PVC（挂在 `/data`）里的同名子目录；线程 rollout 全写在匿名卷里，回收再拉起就没了，`thread/resume` 报 `no rollout found`。已去掉该声明；入口脚本发现 `CODEX_HOME` 不可写就明确退出（退出码 4），不再静默。规矩：**镜像里不声明任何 VOLUME，持久化只由 Pod 规格的 PVC 挂载表达**；构建后用 `docker inspect --format '{{json .Config.Volumes}}'` 核对为 `null`。工作台侧配套：runner 重连后先 `thread/resume`，rollout 真没了才另起线程（`investment-backend` c89d8fe、6f45b33）。
