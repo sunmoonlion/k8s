@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "created": {
+    "route": "e72793c2876696290c1cd8af8eea90ed2dd4abc3fedd0b73df50903ed45d7f87",
+    "scanner": "d217ee2ce08230ef2a7546a9d6ea28cc6a4e13aab65c49ed1cbb7c3445b7e666"
+  },
+  "images": {
+    "route": "sha256:8f84ed99befc3891b8f329c5c202785278a2cfb7c25107d57fb2a134a3117433",
+    "scanner": "sha256:215c07b71c37fc7fc16e02d9185d936dcb8884a80e810817c2cd058bbd7c4e98"
+  },
+  "completed": true,
+  "formal_admission": false,
+  "harbor_jobservice_verified": false,
+  "scan_id": "52053d10350baa7b0d7fc9a6",
+  "harbor_core_version": "2.13.2",
+  "scanner_image": "sha256:215c07b71c37fc7fc16e02d9185d936dcb8884a80e810817c2cd058bbd7c4e98",
+  "scanner": {
+    "name": "Trivy",
+    "vendor": "Aqua Security",
+    "version": "v0.72.0"
+  },
+  "adapter_version": "dev",
+  "repository": "k8s-images/nginx",
+  "digest": "sha256:c97ddadf7d610991aded1178ca552543d835f1c4e28284caf46c9f98f66c4a7a",
+  "db_lock_sha256": "eb4a458976d50357c844edc9b5cf87f6eee5fe24a5cf288cc7e5530b25e5bf16",
+  "private_image_anonymous_denied": true,
+  "tls_verification_enabled": true,
+  "administrator_credential_not_sent_to_scanner": true,
+  "offline_settings_verified": true,
+  "network_internal": true,
+  "published_ports": [],
+  "report_sha256": "e0751a14780e61437ec38ac6cf5b34b5787d09816d9321c84005247cb298841c",
+  "vulnerability_occurrences_by_severity": {
+    "High": 38,
+    "Medium": 65,
+    "Low": 45,
+    "Unknown": 2
+  },
+  "entry_switched": false,
+  "push_verified": false,
+  "stop_errors": [],
+  "stopped_and_retained": true,
+  "first_attempt": {
+    "root": "/home/zymun/packages-to-be-installed/releases/trivy-adapter-trial-20260927",
+    "failure": "HTTP415 retrieving report: verifier requested unsupported media type",
+    "stopped_and_retained": true
+  }
+}

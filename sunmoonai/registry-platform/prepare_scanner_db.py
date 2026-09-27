@@ -27,10 +27,12 @@ def sha(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
-def request(url, token='', target=None, maximum=1024**2):
+def request(url, token='', target=None, maximum=1024**2, accept='application/vnd.oci.image.manifest.v1+json'):
     if not url.startswith('https://ghcr.io/'):
         raise ValueError('Only the official GHCR endpoint is admitted')
-    headers = 'header = "Accept: application/vnd.oci.image.manifest.v1+json"\n'
+    if not re.fullmatch(r'[a-zA-Z0-9./+, -]+', accept):
+        raise ValueError('Invalid public registry Accept header')
+    headers = 'header = "Accept: ' + accept + '"\n'
     if token:
         if not re.fullmatch(r'[A-Za-z0-9_.=/+-]+', token):
             raise ValueError('Unexpected anonymous token encoding')

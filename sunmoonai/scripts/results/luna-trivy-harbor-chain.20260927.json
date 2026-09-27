@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "batch": "trivy-harbor-chain-20260927-v3",
+  "completed": true,
+  "core_version": "2.13.2",
+  "jobservice_version": "2.13.2",
+  "trivy_version": "0.72.0",
+  "adapter_reported_version": "dev",
+  "scanner_manifest": "sha256:215c07b71c37fc7fc16e02d9185d936dcb8884a80e810817c2cd058bbd7c4e98",
+  "target": "k8s-images/nginx@sha256:c97ddadf7d610991aded1178ca552543d835f1c4e28284caf46c9f98f66c4a7a",
+  "scan_status": "Success",
+  "same_findings_as_adapter": true,
+  "report_sha256": "0b78d4e444ce205fd41159a195449511d16cd120ee44908d41ad826c77e657ff",
+  "database_before_sha256": "a71c73677ac15e451fd5636cb505c7abf9b537909b5d8ee8840fa5cd6c595e82",
+  "occurrences": {
+    "High": 38,
+    "Medium": 65,
+    "Low": 45,
+    "Unknown": 2
+  },
+  "registry_storage_read_only": true,
+  "tls_verification_enabled": true,
+  "temporary_scanner_removed": true,
+  "metadata_read_only_restored": true,
+  "stopped_and_retained": true,
+  "permanent_scanner_registration": false,
+  "formal_admission": false,
+  "entry_switched": false,
+  "push_verified": false,
+  "volume_count": 46,
+  "system_free_bytes": 509658574848,
+  "data_free_bytes": 30347182080
+}

@@ -1,0 +1,206 @@
+{
+  "schema": 1,
+  "container": "sunmoon-trivy-stable-offline-20260927",
+  "container_id": "74f63ec4241857ad7396eea466b7ec4be2ab6bf9e1f3c18a92b315ebe7d315eb",
+  "image": "sha256:215c07b71c37fc7fc16e02d9185d936dcb8884a80e810817c2cd058bbd7c4e98",
+  "db_lock_sha256": "eb4a458976d50357c844edc9b5cf87f6eee5fe24a5cf288cc7e5530b25e5bf16",
+  "network": "none",
+  "target": "scanner public image rootfs",
+  "artifact_type": "filesystem",
+  "report_sha256": "80144060cb2b8e58991e156e07f35e831f674adaad1961369899c33be16d7d9a",
+  "package_count": 487,
+  "vulnerability_occurrences_by_severity": {
+    "CRITICAL": 17,
+    "HIGH": 82,
+    "MEDIUM": 21,
+    "LOW": 7,
+    "UNKNOWN": 1
+  },
+  "offline_scan_passed": true,
+  "harbor_jobservice_verified": false,
+  "java_archive_verified": true,
+  "java_scan_verified": false,
+  "database_verification": {
+    "schema": 1,
+    "lock_sha256": "eb4a458976d50357c844edc9b5cf87f6eee5fe24a5cf288cc7e5530b25e5bf16",
+    "checked_at": "2026-09-27T13:07:25.196900+00:00",
+    "archives": {
+      "db": {
+        "members": {
+          "trivy.db": {
+            "bytes": 1448931328,
+            "sha256": "41fbf7b3a54777919084a8afc6cf0954760c0286298fd3cd2a6c29d668d2d643"
+          },
+          "metadata.json": {
+            "bytes": 143,
+            "sha256": "f5051ba56a34eb05fec34f4c7c9608cedff85fbd4c95e0828326f0b62a097b2b"
+          }
+        },
+        "uncompressed_bytes": 1448931471,
+        "metadata": {
+          "Version": 2,
+          "NextUpdate": "2026-09-28T07:04:17.756799482Z",
+          "UpdatedAt": "2026-09-27T07:04:17.756799612Z",
+          "DownloadedAt": "0001-01-01T00:00:00Z"
+        },
+        "age_seconds": 21787,
+        "maximum_age_seconds": 172800
+      },
+      "java-db": {
+        "members": {
+          "trivy-java.db": {
+            "bytes": 1537712128,
+            "sha256": "e99e2d1212f4f1ef8281f95ffa72b667ce3fb8d00db0c4b2ddfcc3283b87612c"
+          },
+          "metadata.json": {
+            "bytes": 143,
+            "sha256": "f730c0616742e306095594ef51359f81cd05e48cff224112a59c8fbd68449e31"
+          }
+        },
+        "uncompressed_bytes": 1537712271,
+        "metadata": {
+          "Version": 1,
+          "NextUpdate": "2026-09-30T01:08:08.997213636Z",
+          "UpdatedAt": "2026-09-27T01:08:08.997214067Z",
+          "DownloadedAt": "0001-01-01T00:00:00Z"
+        },
+        "age_seconds": 43156,
+        "maximum_age_seconds": 604800
+      }
+    },
+    "extracted": false,
+    "scan_verified": false
+  },
+  "critical_findings": [
+    {
+      "target": "74f63ec42418 (photon 5.0)",
+      "package": "curl",
+      "id": "CVE-2026-11564",
+      "version": "8.20.0-1.ph5",
+      "fixed": "8.21.0-0.0.1.ph5"
+    },
+    {
+      "target": "74f63ec42418 (photon 5.0)",
+      "package": "curl",
+      "id": "CVE-2026-11856",
+      "version": "8.20.0-1.ph5",
+      "fixed": "8.21.0-1.ph5"
+    },
+    {
+      "target": "74f63ec42418 (photon 5.0)",
+      "package": "curl",
+      "id": "CVE-2026-18924",
+      "version": "8.20.0-1.ph5",
+      "fixed": "8.22.0-1.ph5"
+    },
+    {
+      "target": "74f63ec42418 (photon 5.0)",
+      "package": "curl",
+      "id": "CVE-2026-19931",
+      "version": "8.20.0-1.ph5",
+      "fixed": "8.22.0-1.ph5"
+    },
+    {
+      "target": "74f63ec42418 (photon 5.0)",
+      "package": "curl",
+      "id": "CVE-2026-8925",
+      "version": "8.20.0-1.ph5",
+      "fixed": "8.21.0-0.0.1.ph5"
+    },
+    {
+      "target": "74f63ec42418 (photon 5.0)",
+      "package": "curl",
+      "id": "CVE-2026-8926",
+      "version": "8.20.0-1.ph5",
+      "fixed": "8.21.0-0.0.1.ph5"
+    },
+    {
+      "target": "74f63ec42418 (photon 5.0)",
+      "package": "curl",
+      "id": "CVE-2026-9079",
+      "version": "8.20.0-1.ph5",
+      "fixed": "8.21.0-0.0.1.ph5"
+    },
+    {
+      "target": "74f63ec42418 (photon 5.0)",
+      "package": "curl-libs",
+      "id": "CVE-2026-11564",
+      "version": "8.20.0-1.ph5",
+      "fixed": "8.21.0-0.0.1.ph5"
+    },
+    {
+      "target": "74f63ec42418 (photon 5.0)",
+      "package": "curl-libs",
+      "id": "CVE-2026-11856",
+      "version": "8.20.0-1.ph5",
+      "fixed": "8.21.0-1.ph5"
+    },
+    {
+      "target": "74f63ec42418 (photon 5.0)",
+      "package": "curl-libs",
+      "id": "CVE-2026-18924",
+      "version": "8.20.0-1.ph5",
+      "fixed": "8.22.0-1.ph5"
+    },
+    {
+      "target": "74f63ec42418 (photon 5.0)",
+      "package": "curl-libs",
+      "id": "CVE-2026-19931",
+      "version": "8.20.0-1.ph5",
+      "fixed": "8.22.0-1.ph5"
+    },
+    {
+      "target": "74f63ec42418 (photon 5.0)",
+      "package": "curl-libs",
+      "id": "CVE-2026-8925",
+      "version": "8.20.0-1.ph5",
+      "fixed": "8.21.0-0.0.1.ph5"
+    },
+    {
+      "target": "74f63ec42418 (photon 5.0)",
+      "package": "curl-libs",
+      "id": "CVE-2026-8926",
+      "version": "8.20.0-1.ph5",
+      "fixed": "8.21.0-0.0.1.ph5"
+    },
+    {
+      "target": "74f63ec42418 (photon 5.0)",
+      "package": "curl-libs",
+      "id": "CVE-2026-9079",
+      "version": "8.20.0-1.ph5",
+      "fixed": "8.21.0-0.0.1.ph5"
+    },
+    {
+      "target": "74f63ec42418 (photon 5.0)",
+      "package": "nss-libs",
+      "id": "CVE-2026-16389",
+      "version": "3.78-12.ph5",
+      "fixed": "3.78-13.ph5"
+    },
+    {
+      "target": "74f63ec42418 (photon 5.0)",
+      "package": "openssl",
+      "id": "CVE-2026-63073",
+      "version": "3.5.7-2.ph5",
+      "fixed": "3.5.8-0.1.ph5"
+    },
+    {
+      "target": "74f63ec42418 (photon 5.0)",
+      "package": "openssl-libs",
+      "id": "CVE-2026-63073",
+      "version": "3.5.7-2.ph5",
+      "fixed": "3.5.8-0.1.ph5"
+    }
+  ],
+  "unique_critical_cves": 9,
+  "image_trivy_version_env": "v0.72.0",
+  "expected_adapter_version": "0.38.0",
+  "expected_trivy_version": "0.72.0",
+  "harbor_core_version_unchanged": "2.13.2",
+  "formal_admission": false,
+  "container_stopped": true,
+  "managed_volumes": 0,
+  "docker_volume_count_observed": 46,
+  "old_harbor_modified": false,
+  "cleanup_executed": false
+}

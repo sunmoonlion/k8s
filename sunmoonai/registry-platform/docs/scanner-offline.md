@@ -1,6 +1,54 @@
-# Trivy 原版本迁移与离线数据库
+# Trivy 镜像、离线数据库与接入验收
 
-本次复用原 Harbor 扫描器程序，另行更新漏洞数据库。范围仅为扫描器物料与隔离验收；**尚未将 Trivy 接入新宿主 Harbor，不能据此认为 Jobservice、扫描登记或 CI/CD 已恢复。**
+先对原 Harbor 扫描器程序与更新后的漏洞数据库做隔离验收，随后按所有者授权准备维护中的新版扫描器；两批镜像分别保留。**独立扫描通过不表示新宿主 Harbor 的 Jobservice、扫描登记或 CI/CD 已恢复。**Harbor主服务仍按2.13.2迁移，后续升级单独进行，见[版本决策](harbor-version-reassessment.md)。
+
+## 新版扫描器候选（2026-09-27）
+
+官方稳定镜像`ghcr.io/goharbor/trivy-adapter-photon:v2.15.2`，amd64 manifest为`sha256:215c07b71c37fc7fc16e02d9185d936dcb8884a80e810817c2cd058bbd7c4e98`。官方构建使用adapter0.38.0和Trivy0.72.0；不能将包装tag误写成Trivy2.15.2，也不能据此说Harbor主服务已升级。[固定清单](../scanner-stable.lock.json)。
+
+`prepare_scanner_candidate.py`默认只打印，`--root <新批次目录> --apply`通过官方GHCR下载固定manifest/config/8层并逐字节验SHA，6GiB空闲门槛、压缩层总量512MiB上限、有界重试、失败保留。东京执行目录`/home/zym/sunmoon-scanner-stable-20260927-v1/materials`，无远程Docker或部署；回传唯一物料根`~/packages-to-be-installed/releases/harbor-scanner-stable-v2.15.2-linux-amd64`。归档164,341,760字节，SHA`c17bf77f9a57a2751fdf5aa40e936e91fafd78f17e4041f86a7af9c024d2f2a5`；回传后全OCI图复核并导入本机。发布者签名尚未独立验证。
+
+实际执行`scanner_verify.py --profile stable --batch /home/zymun/packages-to-be-installed/releases/trivy-db-20260927-v1 --apply`，容器`sunmoon-trivy-stable-offline-20260927`在无网络、无端口、UID10000、只读根和专用可写数据库副本中扫描自身rootfs，退出0，识别487包。报告SHA`80144060cb2b8e58991e156e07f35e831f674adaad1961369899c33be16d7d9a`，17条CRITICAL（9个不同CVE）、82条HIGH、21条MEDIUM、7条LOW、1条UNKNOWN。严重发现涉及Photon5.0 curl/curl-libs、nss-libs及openssl/openssl-libs，完整脱敏记录见[证据](../../scripts/results/luna-trivy-stable-offline.20260927.json)。
+
+**功能通过，正式安全准入仍为false。**不能因“最新稳定版”忽略安全发现，也不能直接把检测条目全认定成可利用漏洞。Java数据库归档已核，没有Java样本扫描。旧、新系统包组成与扫描器版本不同，不用漏洞数量相减宣称风险下降。试验容器已停止保留，缓存约2.8GiB，仅列最后清理候选。
+
+## 私有镜像标准接口验收
+
+`scanner_adapter_verify.py`默认打印计划；实际动作仅针对已准备的本地只读宿主副本，云上未经实机验证。独立缓存校验同一批数据库，在受管internal网络增加扫描器及TLS直通容器：内部canonical域名30443只转该副本proxy8443，不发布宿主端口、不改系统DNS、不挂TLS私钥。扫描器只接收一个仓库的pull令牌，管理员凭据留在宿主验收进程。
+
+固定目标为`k8s-images/nginx@sha256:c97ddadf7d610991aded1178ca552543d835f1c4e28284caf46c9f98f66c4a7a`。先验证匿名拒绝、manifest摘要与TLS；随后按标准`/api/v1/scan`入队、轮询报告，检查目标摘要及扫描器身份。Redis使用独立DB5命名空间，任务TTL1h；原备份、镜像数据只读，不刷新令牌。结束停止并保留新容器和宿主副本；私有日志、报告、env及回执只落Git外0700试验目录。默认不启动Jobservice，不把adapter直调等同于完整Harbor扫描验收。
+
+```bash
+python3 -B sunmoonai/registry-platform/scanner_adapter_verify.py \
+  --config sunmoonai/registry-platform/config/harbor-main-local.json \
+  --batch /home/zymun/packages-to-be-installed/releases/trivy-db-20260927-v1
+# 实际验收另加 --docker-credentials /home/zymun/.docker/config.json --apply，并使用sudo。
+```
+
+## 完整 Harbor 扫描链路验收（2026-09-27 已通过）
+
+在宿主隔离副本上实际执行 `scanner_adapter_verify.py`，追加 `--harbor-jobservice --docker-credentials /home/zymun/.docker/config.json --apply`（sudo），批次为 `releases/trivy-harbor-chain-20260927-v3`。Harbor Core/Jobservice **2.13.2** → 官方固定扫描器镜像（包装标签 **2.15.2**，实际 Trivy **0.72.0**）→ 离线数据库 → 私有镜像扫描 → Harbor 取回报告，最终 **Success**。与 adapter 直调的 150 条发现逐项一致：High 38、Medium 65、Low 45、Unknown 2。adapter 自报版本为 `dev`，因此以镜像摘要和实际 Trivy 版本记录身份，不把预期源码版本冒充运行时版本。
+
+本次实际验证了这组版本的扫描接口可配合，不代表所有功能或正式配置均验完。报告 SHA256 为 `0b78d4e444ce205fd41159a195449511d16cd120ee44908d41ad826c77e657ff`，见[脱敏回执](../../scripts/results/luna-trivy-harbor-chain.20260927.json)。镜像层目录始终只读；验收前导出候选数据库；仅临时开放候选 API 元数据写入，用于登记扫描器、设默认和提交任务。新 Jobservice 容器使用独立且初始为空的 Redis 队列命名空间，保留前次任务记录。登记已经撤销、API 只读已经恢复、候选及三个试验容器均已停止保留。正式入口未切换，永久扫描器登记、推送、机器人令牌、CI/CD、Java 样本及安全准入仍待完成。
+
+### 前几次未通过的真实原因
+
+| 批次 | 原因 | 修正 |
+|---|---|---|
+| adapter 首轮 | 验收代码请求了不支持的报告 media type，HTTP 415 | 按接口声明使用 `application/vnd.security.vulnerability.report; version=1.1` |
+| 完整链路首轮 | Harbor 已报告 Success，但验收代码按 adapter 原始结构查顶层 artifact | 按 Harbor 原生结构核 artifact API、报告 ID、scanner 和每条发现的 artifact_digests |
+| 完整链路 v2 | Jobservice 镜像声明 `/var/log/jobs/`，与允许的 `/var/log/jobs` 被当成不同路径 | 规范化尾斜杠，继续拒绝其他未批准卷 |
+| 完整链路 v3 | 完整检查通过 | 保留回执和停止状态 |
+
+这些失败不能归因于版本不兼容。所有失败目录及容器保留，到最终清理时统一处理。首轮启动原候选 Jobservice 后留下 26 个 Redis 键；后续使用独立命名空间，没有 flush 或删除旧队列。普通启动检查 `metadata_acceptance_open`，若临时写入窗口被中断，必须先核实恢复状态。
+
+### 扫描器自身的安全问题另行处理
+
+自身镜像的 17 条 CRITICAL 并非上述私有 nginx 镜像的扫描结果。原始严重级别保留，不能当成 17 个已经证实可利用的漏洞，也不能忽略。尚未批准正式运行。
+
+已核两主程序 ELF 均无 PT_INTERP/PT_DYNAMIC：Trivy SHA256 `0e69edd134a3c338baa1a6806920773615d682b18cbc6a0cba2a3b658ef9b63e`，adapter SHA256 `86b6fe7108d66f9c4b5d31b14d2adc68019a2f8550bc2435719ea5ee553cfa1c`。这仅表明两者没有常规 ELF 动态链接，不能排除调用其他程序。镜像继承的健康检查会执行 curl，其备用 HTTPS 探针带 `-k`；它与已验证严格 TLS 的镜像拉取客户端不同，正式配置还需调整探针。
+
+后续按上游适用条件核实 curl、NSS、OpenSSL 发现，优先采用有明确修复的官方镜像；否则评估固定安全补丁构建并重新扫描，不在部署时临时全量更新包或批量忽略 CVE。上游依据：[curl CVE-2026-11564](https://curl.se/docs/CVE-2026-11564.html)、[curl CVE-2026-19931](https://curl.se/docs/CVE-2026-19931.html)、[OpenSSL 2026-08-25 公告](https://openssl-library.org/news/secadv/20260825.txt)、[Mozilla NSS 公告](https://www.mozilla.org/en-US/security/advisories/mfsa2026-68/#CVE-2026-16389)。功能兼容通过与安全准入必须分别记录。
 
 ## 为什么可以复用旧镜像
 

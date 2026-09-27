@@ -1,3 +1,14 @@
+## 最新续接：2026-09-27 新 Trivy 与 Harbor 完整扫描链路通过，正式准入未完
+
+基线7ca58af1083901ea242bc8b8fbc94b3cc2d5f192；本地luna、不push。本单元交付为包含本段的提交。用户决定先完成Harbor2.13.2迁移，再独立升级；PG17.6/Redis8.2.1不变。最新问反复卡住是否版本不匹配：本次实际完整链路Success，前几次为验收代码问题，不能归因于版本不兼容。
+
+- 新候选官方trivy-adapter-photon:v2.15.2，manifest215c07b71c37fc7fc16e02d9185d936dcb8884a80e810817c2cd058bbd7c4e98，实际Trivy0.72.0、adapter自报dev。东京仅下载公开物料，回本机唯一物料根全图摘要验证；没有云部署。独立rootfs扫描487包，CRITICAL17/HIGH82，formal_admission=false，详见scanner-offline文档与脱敏证据。
+- adapter-v2直调私有nginx固定摘要成功。完整链路v1 Harbor已Success，但验收报告结构判断错；v2 Jobservice卷尾斜杠判断错；已修正，v3完整通过。首轮还修了报告media type造成的415。失败均留痕；不删除试验容器、缓存、Redis键。
+- 完整成功批次releases/trivy-harbor-chain-20260927-v3，Core/Jobservice2.13.2→Trivy0.72.0，150条发现与直调一致。registry数据始终RO；候选API临时开放元数据写入，事前pg_dump，结束移除临时登记、恢复readonly。新Jobservice采用独立空队列命名空间，原试验26键保留。metadata_acceptance_open持久标记阻止中断后普通启动。永久登记仍false，不把临时兼容验收当正式接线完成。
+- v3三个辅助容器和main9容器全exited；旧kind三个节点仍running；Docker卷46。最终只读盘点系统盘可用509658574848B，数据盘30347182080B。无后台任务；无入口切换/推送/旧节点清理。试验目录最终清理仍必做。
+- 新prepare_scanner_candidate/scanner_adapter_verify/scanner_jobservice_verify及stable锁；复用数据库stage函数，HTTP Accept可显式指定；host_runtime加入未闭合元数据窗口启动保护。完整链路回执scripts/results/luna-trivy-harbor-chain.20260927.json；README、唯一物料手册、扫描器文档及Harbor版本决策均已同步。
+- 下一步优先解决扫描器候选自身curl/NSS/OpenSSL发现，核适用性/固定修复及健康探针（继承curl备用-k），再永久登记/认证推拉/机器人/CI-CD、数据库定时更新及Java样本。完整安装/正式main双挂载/重建独立性、云只打印闭包、自启、正式30443维护窗口继续未完。不得跳过最终清理；保护旧节点/卷/唯一备份。整体尚未完成，inbox仍旧kind/原kubeconfig/匹配kubectl1.27.3，不能通知luna做完了。
+
 ## 最新续接：2026-09-27 Trivy原镜像与离线数据库、隔离扫描已核，正式版本待安全评估
 
 基线8ff8b4968cbdbfd1f044e2cc1adfed2a9d490560；本地luna、不push，起始干净。用户继续推进，中途问旧镜像可否使用；已回答先复用隔离验证，实际发现严重问题后明确不能直接作为长期正式版本。交付为含本段的提交，整体迁移未完。
