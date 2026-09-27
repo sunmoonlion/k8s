@@ -118,6 +118,8 @@ check_step_script(){
 execute_step(){
     local step="$1"
     local description="$2"
+    local -a step_args=()
+    case "$step" in step01_os_baseline.sh|step02_runtime.sh|step03_k8s_binaries.sh) step_args=(--apply) ;; esac
     
     log_info "开始执行: $description"
     log_info "脚本: $STEPS_DIR/$step"
@@ -126,7 +128,7 @@ execute_step(){
         return 1
     fi
     
-    if bash "$STEPS_DIR/$step"; then
+    if bash "$STEPS_DIR/$step" "${step_args[@]}"; then
         log_success "$description 执行完成"
         return 0
     else
@@ -236,9 +238,9 @@ deploy_all(){
         fi
         
         if [[ -n "$sync_script" ]]; then
-            log_info "执行离线包同步（all）..."
+            log_info "执行锁定集群物料精确同步..."
             # 确保 CLUSTER 环境变量被传递到包同步脚本
-            if ! CLUSTER="$CLUSTER" bash "$sync_script" sync-packages-to-all-nodes all; then
+            if ! CLUSTER="$CLUSTER" bash "$sync_script" sync-cluster-materials --apply; then
                 log_error "离线包同步失败，停止部署"
                 return 1
             fi
@@ -265,7 +267,7 @@ deploy_all(){
         if [[ "${!step_enabled_var:-true}" == "true" ]]; then
             echo ""
             log_info "执行步骤: $step_desc"
-            if ! bash "$STEPS_DIR/$step_name.sh"; then
+            if ! execute_step "$step_name.sh" "$step_desc"; then
                 log_error "步骤执行失败: $step_desc"
                 log_error "请检查错误信息并手动修复后重新运行"
                 return 1

@@ -1,5 +1,18 @@
 # Luna 工作检查点
 
+## 最新续接：2026-09-27 step01–03 统一节点安装接线
+
+基线 `18e5d9f5`，交付为包含本段的本地 luna 提交，不 push。本段优先于下面的历史待办。
+
+- step01/02/03 旧实现替换为默认只打印的短入口 → utils/node-step.sh → materials/node_control.py。原通配符选nerdctl-full、固定旧deb、在线补装和错误忽略从这三步移除。
+- node_control实际分支要求完整锁、配置版本、全126文件SHA、预先登记的 EXPECTED_HOSTNAME/MACHINE_ID；严格SSH/sudo stdin JSON只发布8个公开程序/锁到root拥有的内容摘要目录、0444文件、Python -B -E -s，不传私有代码/配置。远端再次核机器和物料。**此实际分支未执行**。
+- 新os_install实现专用新Ubuntu24.04离线APT：可信签名核验、root物料副本、空sources/隔离配置、模拟计划只允许锁内版本；拒绝降级/删除/未完成dpkg/多架构/竞争NTP/启用swap，记录日志，不自动修复/重试。写专用内核模块和sysctl，要求nft/NTP同步；不会改hostname/hosts/fstab。目标须预装发行版自举Python/rsync/APT/gpgv/keyring。
+- runtime/kubernetes必须有同机器、同主锁、同OS锁的complete.json；kubernetes另要求runtime完成。代码为新节点首次部署，不做现有集群原地升级。
+- 总控已改精确 sync-cluster-materials --apply，并向三个新步骤显式传--apply。整个变更仍被closure_complete=false和旧配置1.30.4不匹配拒绝；不能放开跑后续旧steps。后续平台物料同步仍未统一。
+- 静态证据 `sunmoonai/scripts/results/luna-node-adapters.20260927.json`：5Shell逐个bash-n/ShellCheck零提示，3Python及远端payload AST；C1/C2各三阶段共6组只打印全部通过，无SSH；各3节点，身份尚未配置、版本尚不符。OS独立计划及总控计划通过；不是实机安装验收。
+- 方法和首次云上核对清单 `infrastructure/docs/fresh-node-bootstrap.md`。主锁pending更新为OS实机验收、Calico镜像消费、节点离线部署验收。平台版本、现场服务、旧数据、inbox目标未变；全部回收留最后且必须完成。
+- 下一步：读/改step04–06，准备kubeadm v1beta4 init/join、控制面镜像摘要导入与Calico共享清单；其后统一Harbor正式生命周期/入口/平台/CI/CD/备份。云端只代码和静态，未经实机验证；当前无后台任务，整体目标未完成。
+
 ## 最新续接：2026-09-27 Ubuntu 离线依赖准备与独立签名核验
 
 基线 `709f76837ff1a47111f934ed1a5c9949379ebbbe`，本地 luna，不 push；本段优先于历史记录。

@@ -34,7 +34,7 @@ def run(args):
     return subprocess.run(args, check=True, capture_output=True, text=True, timeout=90).stdout
 
 
-def host_preflight(args):
+def host_preflight(args, baseline_ready=True):
     if os.geteuid() != 0 or platform.machine() != 'x86_64' or platform.system() != 'Linux':
         raise ValueError('Root on Linux amd64 is required')
     if 'microsoft' in platform.release().lower() or Path('/.dockerenv').exists():
@@ -50,12 +50,13 @@ def host_preflight(args):
         raise ValueError('systemd and cgroup v2 required')
     if shutil.which('docker') or Path('/var/lib/docker').exists() or Path('/data/harbor').exists():
         raise ValueError('Docker/Harbor host refused')
-    for command in ('ip', 'iptables', 'conntrack', 'socat', 'modprobe', 'sysctl', 'systemctl'):
-        if not shutil.which(command): raise ValueError('Missing preinstalled OS dependency: '+command)
-    if len(Path('/proc/swaps').read_text().splitlines()) > 1:
-        raise ValueError('Swap must be disabled by the explicit OS baseline stage')
-    if run(['sysctl', '-n', 'net.ipv4.ip_forward']).strip() != '1':
-        raise ValueError('OS baseline ip_forward is not ready')
+    if baseline_ready:
+        for command in ('ip', 'iptables', 'conntrack', 'socat', 'modprobe', 'sysctl', 'systemctl'):
+            if not shutil.which(command): raise ValueError('Missing preinstalled OS dependency: '+command)
+        if len(Path('/proc/swaps').read_text().splitlines()) > 1:
+            raise ValueError('Swap must be disabled by the explicit OS baseline stage')
+        if run(['sysctl', '-n', 'net.ipv4.ip_forward']).strip() != '1':
+            raise ValueError('OS baseline ip_forward is not ready')
     for name in ('/etc/kubernetes', '/var/lib/kubelet', '/var/lib/etcd'):
         path = Path(name)
         if path.exists() and (not path.is_dir() or any(path.iterdir())):
@@ -121,7 +122,7 @@ def main():
                           'pending': data['pending'], 'file_install': list(CONFIG_TARGETS[a.phase].values()),
                           'binary_directory': '/usr/local/bin', 'host_identity_required': True,
                           'operations': ['verify complete closure and all material SHA256',
-                                         'fresh dedicated host preflight', 'check all existing destinations',
+                                         'fresh dedicated host and completed OS baseline', 'check all existing destinations',
                                          'exclusive file creation with journal', 'verify binary versions',
                                          'daemon-reload; enable runtime or kubelet',
                                          'start containerd only in runtime phase; kubelet waits for kubeadm'],
@@ -131,6 +132,16 @@ def main():
         raise ValueError('Material/deployment closure incomplete; installation refused before host mutation')
     verify(root, entries)
     host_preflight(a)
+    os_lock_sha = data['os_dependency_lock']['sha256']
+    os_journal = Path('/var/lib/sunmoon/bootstrap')/(data['batch']+'-os-'+os_lock_sha[:16])/'complete.json'
+    no_symlink(os_journal)
+    baseline = json.loads(os_journal.read_text())
+    if (os_journal.stat().st_uid != 0 or os_journal.stat().st_mode & 0o022
+            or baseline.get('state') != 'complete' or baseline.get('hostname') != a.hostname
+            or baseline.get('machine_id') != a.machine_id
+            or baseline.get('manifest_sha256') != sha256(a.manifest)
+            or baseline.get('os_lock_sha256') != os_lock_sha):
+        raise ValueError('Matching completed OS baseline is required')
     if a.phase == 'kubernetes':
         runtime_journal = Path('/var/lib/sunmoon/bootstrap')/(data['batch']+'-runtime.json')
         no_symlink(runtime_journal)

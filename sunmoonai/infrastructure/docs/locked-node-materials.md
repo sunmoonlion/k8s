@@ -2,7 +2,7 @@
 
 只有一套部署代码、两种建群方式。本文实现集群层的配置读取、物料消费和独立节点安装程序；平台服务版本保持原样。
 
-**云上未经实机验证。** 当前完成代码、静态检查、东京公开备料、本地文件校验和只打印预演。没有连接 C1/C2、没有安装或重启运行时、没有部署集群。常规 step02/03 尚待接到新安装程序；OS 依赖包已备齐，其安装适配和 kubeadm/Calico 后续步骤未完成，不能运行旧步骤绕过总控准入。
+**云上未经实机验证。** 当前完成代码、静态检查、东京公开备料、本地文件校验和只打印预演。没有连接 C1/C2、没有安装或重启运行时、没有部署集群。step01–03 已接到新程序，见 [新节点入口](fresh-node-bootstrap.md)；真实安装和 kubeadm/Calico 后续步骤未验收，不能绕过总控准入。
 
 ## 1. 现在使用哪些真源
 
@@ -90,7 +90,7 @@ python3 sunmoonai/infrastructure/materials/node_install.py --phase runtime
 python3 sunmoonai/infrastructure/materials/node_install.py --phase kubernetes
 ```
 
-默认只打印。程序的实际安装分支已实现，但仍因闭包未完成而禁止使用；没有在本机或东京执行 `--apply`。它用于**全新专用 kubeadm 节点**，不负责旧集群原地升级。
+默认只打印。step01–03 经共用控制器调用，实际安装分支已实现，但仍因闭包未完成而禁止使用；没有在本机或东京执行 `--apply`。它用于**全新专用 kubeadm 节点**，不负责旧集群原地升级。
 
 安装前检查：完整物料闭包与 SHA、明确的 hostname/machine-id、Linux amd64、Ubuntu 24.04、systemd、cgroup v2、OS 所需命令、swap/ip_forward 状态。发现 WSL、容器、Docker、Harbor 或已有集群状态就拒绝，不自动清残留。其他 OS 需另备明确依赖配置，不把旧 deb 勉强装上去。
 
@@ -103,7 +103,7 @@ python3 sunmoonai/infrastructure/materials/node_install.py --phase kubernetes
 5. kubernetes 阶段要求同机器、同清单的 runtime 完成日志，安装三件工具、核版本、只 enable kubelet，等待后续 kubeadm 配置后启动。
 6. 没有 apt/curl/wget、容器删除、镜像 prune、卷删除、cluster reset 或旧服务重启。
 
-**仍未完成**：实际 step02/03 的远端控制文件发布与调用接线；OS deb 离线安装适配；control-plane 镜像按摘要导入及精确名称；kubeadm init/join、共享 Calico；统一平台与独立 Harbor 生命周期。云端第一台机器必须按审查文档的首次上云清单逐项验收。
+**仍未完成**：OS/运行时/工具的实机验收；control-plane 镜像按摘要导入及精确名称；kubeadm init/join、共享 Calico；统一平台与独立 Harbor 生命周期。云端第一台机器必须按审查文档的首次上云清单逐项验收。
 
 ## 6. 本次检查与下一步
 
@@ -111,4 +111,4 @@ python3 sunmoonai/infrastructure/materials/node_install.py --phase kubernetes
 
 预演首次失败原因：脚本自身默认路径带 `..`，被严格路径检查拒绝。默认入口路径已规范化，外部软链接/路径逃逸仍拒绝，复核通过；没有为了通过而取消完整性检查。
 
-下一步补齐目标 OS 的离线依赖集并接入 step01–06；统一版本时保留平台原版本。最终清理依然在迁移验收之后，且必须执行批准清单并记录实际释放量。
+OS 物料及 step01–03 已继续完成代码接线，见 [新节点入口](fresh-node-bootstrap.md)。下一步改 step04–06 镜像/init/join/Calico，统一版本时保留平台原版本。最终清理依然在迁移验收之后，且必须执行批准清单并记录实际释放量。

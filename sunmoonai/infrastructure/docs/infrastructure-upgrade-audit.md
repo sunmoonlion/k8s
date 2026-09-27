@@ -267,3 +267,11 @@ step13 → 目录外 ingress-platform 总控
 | C-D1 | 保留原 Harbor 权威数据与冷备份；恢复副本不自动切为正式仓库 |
 | C-R1/C-R2 | 物料版本、源码基线和摘要成套记录；不把 tag 存在当摘要验收 |
 | C-T5 | 交付本地 luna 提交，明确仅代码/静态通过及未验范围 |
+
+## 2026-09-27 后续实施：OS 物料与 step01–03
+
+- 94 个 Ubuntu24.04 依赖包及 9 个签名/索引完成东京准备、本机独立验签；根锁现在126文件824488560字节，SHA通过。
+- step01–03 已替换为同一 node-step / node_control 入口，默认只打印；真实调用要求锁完整、版本和主机身份匹配。公开控制代码固定内容摘要、root目录和只读文件，节点再次核验物料。
+- OS离线模拟/安装代码已实现，拒绝降级、删包、在线补装、自动dpkg修复；运行时/工具阶段要求匹配OS完成记录。总控精确同步和显式apply接线完成。
+- 5个Shell bash-n/ShellCheck、3个Python及远端payload AST、C1/C2三阶段共6组只打印通过；没有云部署。方法 [fresh-node-bootstrap.md](fresh-node-bootstrap.md)，证据 [luna-node-adapters.20260927.json](../../scripts/results/luna-node-adapters.20260927.json)。
+- 下文/上文初始审查中的step01–03问题属于实施前基线；这些入口现已替换。其他步骤的未决风险继续有效。云上仍未经实机验证，主锁closure_complete=false；旧1.30.4配置尚未成套切换，不允许绕过门禁。

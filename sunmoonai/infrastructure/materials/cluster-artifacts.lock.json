@@ -12,7 +12,7 @@
   },
   "closure_complete": false,
   "pending": [
-    "Offline OS installation adapter and target-host dependency preflight",
+    "Target-host offline OS installation acceptance (adapter prepared; cloud unverified)",
     "Calico shared manifest and image consumer adapter",
     "node installer and offline deployment acceptance"
   ],

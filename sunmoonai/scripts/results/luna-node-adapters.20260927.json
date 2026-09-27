@@ -1,0 +1,133 @@
+{
+  "schema": 1,
+  "unit": "fresh-node-adapters",
+  "baseline": "18e5d9f5",
+  "checks": {
+    "sunmoonai/infrastructure/utils/node-step.sh": {
+      "bash_n": "pass",
+      "shellcheck": "pass",
+      "sha256": "29649cbac8c3073f425870a7df8ab0fdf379f8334632e14fcb69c72ff163bace"
+    },
+    "sunmoonai/infrastructure/steps/step01_os_baseline.sh": {
+      "bash_n": "pass",
+      "shellcheck": "pass",
+      "sha256": "f47325956a44682ceeb182556718efbb5c6fb67e8a538523eca6274ee0147727"
+    },
+    "sunmoonai/infrastructure/steps/step02_runtime.sh": {
+      "bash_n": "pass",
+      "shellcheck": "pass",
+      "sha256": "441ff671ad3eb9ee48f28471f2be4c1a5cffe3b603378b9deb8ea6bd171ea4dc"
+    },
+    "sunmoonai/infrastructure/steps/step03_k8s_binaries.sh": {
+      "bash_n": "pass",
+      "shellcheck": "pass",
+      "sha256": "f8d8c174a0c1f216491559e61aeea03ccc4b96aa620869cd209c79475c1efbd0"
+    },
+    "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh": {
+      "bash_n": "pass",
+      "shellcheck": "pass",
+      "sha256": "c86aadcbb23b73b1c4333026cac6b43543216b96416f12086206fb8607877651"
+    },
+    "sunmoonai/infrastructure/materials/node_control.py": {
+      "ast": "pass",
+      "sha256": "c65747567b0f0d49e8fd7f5e67464039e4d71ff6e8ea2dfc5c5844deb1786716"
+    },
+    "sunmoonai/infrastructure/materials/node_install.py": {
+      "ast": "pass",
+      "sha256": "6c8565d3980beabd8d364137fbb9379fe4ddc3f518604f858ad6c7a67dedd290"
+    },
+    "sunmoonai/infrastructure/materials/os_install.py": {
+      "ast": "pass",
+      "sha256": "8defb55c998d63db45fef1e10e300549cc4fbb1cf44af6f24cfb2c76fc52a7b1"
+    }
+  },
+  "step_plans": [
+    {
+      "cluster": "C1",
+      "step": "step01_os_baseline.sh",
+      "nodes": 3,
+      "all_dry_run": true,
+      "ssh_started": false,
+      "machine_identities_configured": 0,
+      "version_match": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step02_runtime.sh",
+      "nodes": 3,
+      "all_dry_run": true,
+      "ssh_started": false,
+      "machine_identities_configured": 0,
+      "version_match": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step03_k8s_binaries.sh",
+      "nodes": 3,
+      "all_dry_run": true,
+      "ssh_started": false,
+      "machine_identities_configured": 0,
+      "version_match": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step01_os_baseline.sh",
+      "nodes": 3,
+      "all_dry_run": true,
+      "ssh_started": false,
+      "machine_identities_configured": 0,
+      "version_match": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step02_runtime.sh",
+      "nodes": 3,
+      "all_dry_run": true,
+      "ssh_started": false,
+      "machine_identities_configured": 0,
+      "version_match": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step03_k8s_binaries.sh",
+      "nodes": 3,
+      "all_dry_run": true,
+      "ssh_started": false,
+      "machine_identities_configured": 0,
+      "version_match": false
+    }
+  ],
+  "os_install_plan": {
+    "dry_run": true,
+    "cloud_status": "未经实机验证",
+    "profile": "ubuntu-24.04-amd64",
+    "packages": 94,
+    "closure_complete": false,
+    "configurations": {
+      "/etc/modules-load.d/90-sunmoon-kubernetes.conf": "overlay\nbr_netfilter\n",
+      "/etc/sysctl.d/90-sunmoon-kubernetes.conf": "net.ipv4.ip_forward = 1\nnet.bridge.bridge-nf-call-iptables = 1\nnet.bridge.bridge-nf-call-ip6tables = 1\n"
+    },
+    "download": false,
+    "order": [
+      "identity/OS/locks/signatures",
+      "no swap or competing clock daemon",
+      "root-owned verified package stage",
+      "offline apt simulation/no downgrade or removal",
+      "offline install",
+      "kernel parameters and NTP",
+      "journal"
+    ]
+  },
+  "controller_plan": "pass",
+  "cloud_install_executed": false,
+  "services_changed": false,
+  "old_data_changed": false,
+  "closure_complete": false,
+  "remaining": [
+    "kubeadm init/join and imported image identity",
+    "Calico adapter",
+    "Harbor/platform lifecycle",
+    "real cloud acceptance when a host exists",
+    "final approved cleanup"
+  ]
+}
