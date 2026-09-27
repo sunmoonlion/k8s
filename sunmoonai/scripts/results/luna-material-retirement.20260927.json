@@ -1,0 +1,781 @@
+{
+  "schema": 1,
+  "checked_at": "2026-09-27T05:26:57.577431+00:00",
+  "root": "/home/zymun/packages-to-be-installed",
+  "readonly": true,
+  "deleted": false,
+  "released_bytes": 0,
+  "complete_regular_file_inventory": true,
+  "errors": [],
+  "symlinks_not_followed": 5088,
+  "symlink_examples": [
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@asamuzakjp+css-color@3.2.0/node_modules/lru-cache",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@asamuzakjp+css-color@3.2.0/node_modules/@csstools/css-calc",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@asamuzakjp+css-color@3.2.0/node_modules/@csstools/css-color-parser",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@asamuzakjp+css-color@3.2.0/node_modules/@csstools/css-parser-algorithms",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@asamuzakjp+css-color@3.2.0/node_modules/@csstools/css-tokenizer",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@babel+code-frame@7.29.0/node_modules/js-tokens",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@babel+code-frame@7.29.0/node_modules/picocolors",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@babel+code-frame@7.29.0/node_modules/@babel/helper-validator-identifier",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@babel+core@7.29.0/node_modules/convert-source-map",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@babel+core@7.29.0/node_modules/debug",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@babel+core@7.29.0/node_modules/gensync",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@babel+core@7.29.0/node_modules/json5",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@babel+core@7.29.0/node_modules/semver",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@babel+core@7.29.0/node_modules/@babel/code-frame",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@babel+core@7.29.0/node_modules/@babel/generator",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@babel+core@7.29.0/node_modules/@babel/helper-compilation-targets",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@babel+core@7.29.0/node_modules/@babel/helper-module-transforms",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@babel+core@7.29.0/node_modules/@babel/helpers",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@babel+core@7.29.0/node_modules/@babel/parser",
+    "releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080/node_modules/.pnpm/@babel+core@7.29.0/node_modules/@babel/template"
+  ],
+  "allocation_scope": "Unique regular files and directories; symlink allocations and filesystem metadata excluded",
+  "groups": {
+    "charts": {
+      "files": 2,
+      "logical_bytes": 160260,
+      "allocated_unique_bytes": 167936
+    },
+    "debs": {
+      "files": 13,
+      "logical_bytes": 105703604,
+      "allocated_unique_bytes": 105734144
+    },
+    "images": {
+      "files": 65,
+      "logical_bytes": 16481738875,
+      "allocated_unique_bytes": 16481935360
+    },
+    "releases": {
+      "files": 0,
+      "logical_bytes": 0,
+      "allocated_unique_bytes": 4096
+    },
+    "tar": {
+      "files": 0,
+      "logical_bytes": 0,
+      "allocated_unique_bytes": 4096
+    },
+    "tars": {
+      "files": 2,
+      "logical_bytes": 283688959,
+      "allocated_unique_bytes": 283701248
+    },
+    "work": {
+      "files": 0,
+      "logical_bytes": 0,
+      "allocated_unique_bytes": 4096
+    },
+    "releases/.local-attempt-20260926T215120": {
+      "files": 37,
+      "logical_bytes": 363524,
+      "allocated_unique_bytes": 503808
+    },
+    "releases/build-template-20260926-linux-amd64": {
+      "files": 169651,
+      "logical_bytes": 4255347619,
+      "allocated_unique_bytes": 4809478144
+    },
+    "releases/harbor-preserve-20260926": {
+      "files": 443,
+      "logical_bytes": 19984922662,
+      "allocated_unique_bytes": 19986444288
+    },
+    "releases/kind-1.36.4-calico-3.32.2-linux-amd64": {
+      "files": 453,
+      "logical_bytes": 717568859,
+      "allocated_unique_bytes": 719200256
+    },
+    "releases/kubeadm-1.36.4-linux-amd64": {
+      "files": 24,
+      "logical_bytes": 711196011,
+      "allocated_unique_bytes": 711270400
+    },
+    "releases/kubectl-1.27.3-existing-kind-linux-amd64": {
+      "files": 2,
+      "logical_bytes": 49254628,
+      "allocated_unique_bytes": 49266688
+    },
+    "releases/registry-platform-2.13.2-linux-amd64": {
+      "files": 3,
+      "logical_bytes": 670694985,
+      "allocated_unique_bytes": 670707712
+    }
+  },
+  "allocated_unique_bytes": 43818422272,
+  "candidate_totals": {
+    "old_cluster_material": {
+      "files": 25,
+      "allocated_bytes_upper_bound": 1016045568
+    },
+    "superseded_new_download": {
+      "files": 1,
+      "allocated_bytes_upper_bound": 287174656
+    }
+  },
+  "candidates": [
+    {
+      "path": "charts/tigera-operator-v3.28.2.tgz",
+      "bytes": 155408,
+      "allocated_bytes": 155648,
+      "sha256": "0463faa39d1273e96c5c034a188be29fd9e097d25b62e7de1192e71246e8a7f0",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "Shared Calico 3.32.2 adapter; old operator path must first be retired",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "debs/cri-tools_1.30.1-1.1_amd64.deb",
+      "bytes": 21271060,
+      "allocated_bytes": 21274624,
+      "sha256": "eafabc6630e343ede3281e1667707afc67d6828d022513eedfe6d79b022193e9",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "crictl v1.36.0",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "debs/kubeadm_1.30.4-1.1_amd64.deb",
+      "bytes": 10380296,
+      "allocated_bytes": 10383360,
+      "sha256": "5cb72d00ea4427cc17366147007f2ea2c3da7250b422836c212d6ac3d9c51a17",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "Pinned 1.36.4 binary plus explicit systemd units and OS dependency closure",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "debs/kubectl_1.30.4-1.1_amd64.deb",
+      "bytes": 10776364,
+      "allocated_bytes": 10776576,
+      "sha256": "193ee75595f7ca778df0beee07877b2e0615c38792f8ba3c5f1a22bd6f63771e",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "Pinned 1.36.4 binary plus explicit systemd units and OS dependency closure",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "debs/kubelet_1.30.4-1.1_amd64.deb",
+      "bytes": 18101080,
+      "allocated_bytes": 18104320,
+      "sha256": "ccf084e8ce403345ca3119e59eb901e29b79d8cf89fb1fb459de9369414ec069",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "Pinned 1.36.4 binary plus explicit systemd units and OS dependency closure",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "debs/kubernetes-cni_1.2.0-00_amd64.deb",
+      "bytes": 27586224,
+      "allocated_bytes": 27586560,
+      "sha256": "0c2be3775ea591dee9ce45121341dd16b3c752763c6898adc35ce12927c977c1",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "Calico 3.32.2 CNI; bootstrap binaries/dependencies still need closure",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "images/calico-v3.28.2.yaml",
+      "bytes": 253923,
+      "allocated_bytes": 253952,
+      "sha256": "be59408bf990e96276f631d2f9285c2a0f9802194c0ad1cecdb6d9c52623a1c8",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "Calico 3.32.2 manifest and its exact image set",
+      "delete_eligible_now": false,
+      "literal_code_references": [
+        "sunmoonai/app-platform/scripts/validation/verify_r3_network_policy_calico.sh:21"
+      ]
+    },
+    {
+      "path": "images/calico_apiserver_v3.28.2.tar",
+      "bytes": 98057216,
+      "allocated_bytes": 98058240,
+      "sha256": "4bc3d9d3078782ae02968dfe8ce1518cc9d19de9018ed8350471a50328bd0a73",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "Calico 3.32.2 manifest and its exact image set",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "images/calico_cni_v3.28.2.tar",
+      "bytes": 94707200,
+      "allocated_bytes": 94707712,
+      "sha256": "0b88b65ca4ea6716c5158604a1cdd8a471d184bff08ed65ca4535f172ded49a1",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "Calico 3.32.2 manifest and its exact image set",
+      "delete_eligible_now": false,
+      "literal_code_references": [
+        "sunmoonai/app-platform/scripts/validation/verify_r3_network_policy_calico.sh:165"
+      ]
+    },
+    {
+      "path": "images/calico_csi_v3.28.2.tar",
+      "bytes": 9143296,
+      "allocated_bytes": 9146368,
+      "sha256": "8b2cf911b5f434a0f8907ca3d695940c36d62227961fd0bedec9970669b42739",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "Calico 3.32.2 manifest and its exact image set",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "images/calico_kube-controllers_v3.28.2.tar",
+      "bytes": 34864640,
+      "allocated_bytes": 34869248,
+      "sha256": "cd28db6133635b548dcbc0afaed89ab18e70b32a01f826727f2a3301927722f3",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "Calico 3.32.2 manifest and its exact image set",
+      "delete_eligible_now": false,
+      "literal_code_references": [
+        "sunmoonai/app-platform/scripts/validation/verify_r3_network_policy_calico.sh:167"
+      ]
+    },
+    {
+      "path": "images/calico_node-driver-registrar_v3.28.2.tar",
+      "bytes": 14414336,
+      "allocated_bytes": 14417920,
+      "sha256": "6da8f6727c4efb47a29b5a9fab69c8cbbe109bb6f9bd3194cd8f758ff6b36799",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "Calico 3.32.2 manifest and its exact image set",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "images/calico_node_v3.28.2.tar",
+      "bytes": 119836672,
+      "allocated_bytes": 119836672,
+      "sha256": "9cb46940b8c426d1fe329358b315207885b3054bc8f5d62b2d405f16daf0addd",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "Calico 3.32.2 manifest and its exact image set",
+      "delete_eligible_now": false,
+      "literal_code_references": [
+        "sunmoonai/app-platform/scripts/validation/verify_r3_network_policy_calico.sh:166"
+      ]
+    },
+    {
+      "path": "images/calico_pod2daemon-flexvol_v3.28.2.tar",
+      "bytes": 6643200,
+      "allocated_bytes": 6643712,
+      "sha256": "77279c1f59e5d067160335915820dc6f3f7e210011dc241b499ed73e5822e47c",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "Calico 3.32.2 manifest and its exact image set",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "images/calico_typha_v3.28.2.tar",
+      "bytes": 30950912,
+      "allocated_bytes": 30953472,
+      "sha256": "e0135acbaa1a05d48574f6cf8601e15a930e6de01e7145c349e3d02bd01ce5f0",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "Calico 3.32.2 manifest and its exact image set",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "images/quay.io_tigera_operator_v1.3.5.tar",
+      "bytes": 47036416,
+      "allocated_bytes": 47038464,
+      "sha256": "aa255644e28d0f4d4af292e7b5a73c4a3b7d13805a44d465a447a5f62d103c50",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "Review retirement of old operator when shared Calico manifest adapter is complete",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "images/registry.k8s.io_coredns_coredns_v1.11.1.tar",
+      "bytes": 18199040,
+      "allocated_bytes": 18202624,
+      "sha256": "d5ff5d4868a9dbcdbd81c495fc78dfd2959763447c241adbf4acb5f3409110de",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "kubeadm 1.36.4: CoreDNS v1.14.2",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "images/registry.k8s.io_etcd_3.5.12-0.tar",
+      "bytes": 57253888,
+      "allocated_bytes": 57253888,
+      "sha256": "53ebbb2b8a2ff874d0caf94db7c50b7ffcfecde710c816dc6b2e8f0384479442",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "kubeadm 1.36.4: etcd 3.6.8-0",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "images/registry.k8s.io_kube-apiserver_v1.30.4.tar",
+      "bytes": 32787968,
+      "allocated_bytes": 32788480,
+      "sha256": "e8a6b6c5977ccb9f26cb6faa5ece117803a922d88571bfdcca4cf7455c6e33af",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "kubeadm 1.36.4 required control-plane images",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "images/registry.k8s.io_kube-controller-manager_v1.30.4.tar",
+      "bytes": 31162880,
+      "allocated_bytes": 31166464,
+      "sha256": "6c56ad175623cc0c8b6ff9e9728a34f30c3ca4a30ba1dc28657b06757dba6d93",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "kubeadm 1.36.4 required control-plane images",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "images/registry.k8s.io_kube-proxy_v1.30.4.tar",
+      "bytes": 29045248,
+      "allocated_bytes": 29048832,
+      "sha256": "5d1af125621205764c4861e60f4f9ea6f41ba759a27a68e57d926580520f8887",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "kubeadm 1.36.4 required control-plane images",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "images/registry.k8s.io_kube-scheduler_v1.30.4.tar",
+      "bytes": 19348992,
+      "allocated_bytes": 19349504,
+      "sha256": "34ccc8bcc58d3ee91b490bf91c3b1052f87a6158e8c91db6733ad764b250adc8",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "kubeadm 1.36.4 required control-plane images",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "images/registry.k8s.io_pause_3.9.tar",
+      "bytes": 329728,
+      "allocated_bytes": 331776,
+      "sha256": "8bef34458d538c2b765e4642e440c5910e69a10b55dbc83c7bcd8296a5058314",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "kubeadm 1.36.4: pause 3.10.2",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "releases/kubeadm-1.36.4-linux-amd64/tars/nerdctl-full-2.3.5-linux-amd64.tar.gz",
+      "bytes": 287167169,
+      "allocated_bytes": 287174656,
+      "sha256": "b697295c623639734aaab737523c808fd3cc8d3046039fd94fff1744e4c317aa",
+      "hardlinks": 1,
+      "category": "superseded_new_download",
+      "replacement": "Separately pinned containerd 2.3.4/runc 1.4.3; minimal nerdctl 2.3.5",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "tars/crictl-v1.30.0-linux-amd64.tar.gz",
+      "bytes": 25707674,
+      "allocated_bytes": 25710592,
+      "sha256": "3dd03954565808eaeb3a7ffc0e8cb7886a64a9aa94b2bfdfbdc6e2ed94842e49",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "crictl v1.36.0",
+      "delete_eligible_now": false,
+      "literal_code_references": []
+    },
+    {
+      "path": "tars/nerdctl-full-2.1.3-linux-amd64.tar.gz",
+      "bytes": 257981285,
+      "allocated_bytes": 257986560,
+      "sha256": "e4750ba025c1a9b3d365285f800e683287ee782f0a878bc8c395f28d7bc194ba",
+      "hardlinks": 1,
+      "category": "old_cluster_material",
+      "replacement": "nerdctl 2.3.5 + containerd 2.3.4 + runc 1.4.3; CNI closure separately required",
+      "delete_eligible_now": false,
+      "literal_code_references": [
+        "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf:218"
+      ]
+    }
+  ],
+  "preserved_top_level_materials": [
+    {
+      "path": "charts/nfs-subdir-external-provisioner-4.0.2.tgz",
+      "allocated_bytes": 8192,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "debs/conntrack_1%3a1.4.8-1ubuntu1_amd64.deb",
+      "allocated_bytes": 40960,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "debs/helm_3.15.0-1_amd64.deb",
+      "allocated_bytes": 16609280,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "debs/keyutils_1.6.3-3build1_amd64.deb",
+      "allocated_bytes": 57344,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "debs/libnfsidmap1_1%3a2.6.4-3ubuntu5.1_amd64.deb",
+      "allocated_bytes": 49152,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "debs/nfs-common_1%3a2.6.4-3ubuntu5.1_amd64.deb",
+      "allocated_bytes": 249856,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "debs/nfs-kernel-server_1%3a2.6.4-3ubuntu5.1_amd64.deb",
+      "allocated_bytes": 172032,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "debs/rpcbind_1.2.6-7ubuntu2_amd64.deb",
+      "allocated_bytes": 49152,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "debs/socat_1.8.0.0-4build3_amd64.deb",
+      "allocated_bytes": 376832,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/aistor-image-files.sha256",
+      "allocated_bytes": 4096,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/aistor-image-files.txt",
+      "allocated_bytes": 4096,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_elasticsearch-exporter_1.9.0-debian-12-r16.tar",
+      "allocated_bytes": 153165824,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_elasticsearch_9.1.2-debian-12-r0.tar",
+      "allocated_bytes": 1552367616,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_harbor-adapter-trivy_2.13.2-debian-12-r2.tar",
+      "allocated_bytes": 97976320,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_harbor-core_2.13.2-debian-12-r3.tar",
+      "allocated_bytes": 68980736,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_harbor-exporter_2.13.2-debian-12-r2.tar",
+      "allocated_bytes": 55820288,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_harbor-jobservice_2.13.2-debian-12-r3.tar",
+      "allocated_bytes": 66752512,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_harbor-portal_2.13.2-debian-12-r1.tar",
+      "allocated_bytes": 69472256,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_harbor-registry_2.13.2-debian-12-r2.tar",
+      "allocated_bytes": 52658176,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_harbor-registryctl_2.13.2-debian-12-r3.tar",
+      "allocated_bytes": 66502656,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_jenkins-agent_0.3327.0-debian-12-r1.tar",
+      "allocated_bytes": 351334400,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_jenkins_2.516.2-debian-12-r0.tar",
+      "allocated_bytes": 518438912,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_kibana_9.1.2-debian-12-r0.tar",
+      "allocated_bytes": 1368641536,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_logstash_9.1.2-debian-12-r0.tar",
+      "allocated_bytes": 824193024,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_mongodb_8.0.13-debian-12-r0.tar",
+      "allocated_bytes": 856825856,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_neo4j_5.26.11-debian-12-r0.tar",
+      "allocated_bytes": 231235584,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_nginx_1.29.1-debian-12-r0.tar",
+      "allocated_bytes": 67317760,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_os-shell_12-debian-12-r51.tar",
+      "allocated_bytes": 169943040,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_postgres-exporter_0.17.1-debian-12-r16.tar",
+      "allocated_bytes": 51077120,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_postgresql_17.6.0-debian-12-r4.tar",
+      "allocated_bytes": 351842304,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnami_redis_8.2.1-debian-12-r0.tar",
+      "allocated_bytes": 168357888,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/bitnamilegacy_rabbitmq_4.1.3-debian-12-r1.tar",
+      "allocated_bytes": 348319744,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/casbin_casdoor_3.42.0.tar",
+      "allocated_bytes": 220975104,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/dpage_pgadmin4_8.4.tar",
+      "allocated_bytes": 491184128,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/elasticsearch_8.11.3.tar",
+      "allocated_bytes": 675700736,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/ghcr.io_br3ndonland_inboard_fastapi-0.68-python3.11.tar",
+      "allocated_bytes": 451358720,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/infiniflow_ragflow_v0.25.4.tar",
+      "allocated_bytes": 3680878592,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/mher_flower_2.0.1.tar",
+      "allocated_bytes": 91418624,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/mongo-express_1.0.2.tar",
+      "allocated_bytes": 193454080,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/mysql_8.0.39.tar",
+      "allocated_bytes": 167149568,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/nginx_1.20.2-alpine.tar",
+      "allocated_bytes": 24735744,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/node_18.20.0-alpine.tar",
+      "allocated_bytes": 45584384,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/node_20.18.0-alpine.tar",
+      "allocated_bytes": 135335936,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/node_20.18.0.tar",
+      "allocated_bytes": 1120448512,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/pgsty_minio_RELEASE.2026-03-25T00-00-00Z.tar",
+      "allocated_bytes": 55529472,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/python_3.12.13-slim.tar",
+      "allocated_bytes": 123301888,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/quay.io_minio_aistor_mc_RELEASE.2026-04-21T04-26-49Z.tar",
+      "allocated_bytes": 37867520,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/quay.io_minio_aistor_minio-sidecar_RELEASE.2026-06-09T23-40-36Z.tar",
+      "allocated_bytes": 16719872,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/quay.io_minio_aistor_minio_RELEASE.2026-05-28T20-50-32Z.tar",
+      "allocated_bytes": 124870656,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/quay.io_minio_aistor_operator_RELEASE.2026-06-10T05-02-21Z.tar",
+      "allocated_bytes": 30662656,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/ragflow-v0.25.4-image-files.sha256",
+      "allocated_bytes": 4096,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/ragflow-v0.25.4-image-files.txt",
+      "allocated_bytes": 4096,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/rancher_local-path-provisioner_v0.0.32.tar",
+      "allocated_bytes": 63295488,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/redis_redisinsight_2.70.tar",
+      "allocated_bytes": 329474048,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/registry.k8s.io_sig-storage_nfs-subdir-external-provisioner_v4.0.2.tar",
+      "allocated_bytes": 45088768,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/traefik_v3.5.2.tar",
+      "allocated_bytes": 178589696,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    },
+    {
+      "path": "images/valkey_valkey_8.tar",
+      "allocated_bytes": 42999808,
+      "reason": "Platform/app version unchanged or dependency not proven obsolete"
+    }
+  ],
+  "broad_path_code_references": [
+    "sunmoonai/app-platform/scripts/validation/verify_r3_network_policy_calico.sh:20",
+    "sunmoonai/cicd-platform/harbor/utils/harbor-image-management/harbor-image.conf:24",
+    "sunmoonai/cicd-platform/harbor/utils/harbor-image-management/harbor-image.conf:35",
+    "sunmoonai/cicd-platform/harbor/utils/harbor-image-management/harbor-image.sh:302",
+    "sunmoonai/cicd-platform/harbor/utils/harbor-image-management/harbor-image.sh:308",
+    "sunmoonai/cicd-platform/harbor/utils/harbor-image-management/harbor-image.sh:310",
+    "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf:108",
+    "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf:121",
+    "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf:134",
+    "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf:149",
+    "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf:162",
+    "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf:175",
+    "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf:270",
+    "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf:349",
+    "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf:505",
+    "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf:506",
+    "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf:552",
+    "sunmoonai/infrastructure/steps/step01_os_baseline.sh:25",
+    "sunmoonai/infrastructure/steps/step02_runtime.sh:15",
+    "sunmoonai/infrastructure/steps/step02_runtime.sh:36",
+    "sunmoonai/infrastructure/steps/step02_runtime.sh:49",
+    "sunmoonai/infrastructure/steps/step02_runtime.sh:82",
+    "sunmoonai/infrastructure/steps/step03_k8s_binaries.sh:162",
+    "sunmoonai/infrastructure/steps/step03_k8s_binaries.sh:164",
+    "sunmoonai/infrastructure/steps/step03_k8s_binaries.sh:17",
+    "sunmoonai/infrastructure/steps/step03_k8s_binaries.sh:173",
+    "sunmoonai/infrastructure/steps/step03_k8s_binaries.sh:175",
+    "sunmoonai/infrastructure/steps/step03_k8s_binaries.sh:179",
+    "sunmoonai/infrastructure/steps/step03_k8s_binaries.sh:229",
+    "sunmoonai/infrastructure/steps/step05_cni_install.sh:19",
+    "sunmoonai/infrastructure/steps/step05_cni_install.sh:48",
+    "sunmoonai/infrastructure/steps/step06_join_nodes.sh:149",
+    "sunmoonai/infrastructure/steps/step09_storage.sh:32",
+    "sunmoonai/infrastructure/steps/step09_storage.sh:357",
+    "sunmoonai/infrastructure/steps/step09_storage.sh:391",
+    "sunmoonai/infrastructure/steps/step09_storage.sh:540",
+    "sunmoonai/infrastructure/steps/step09_storage.sh:603",
+    "sunmoonai/infrastructure/steps/step10_k8s_nodes_management.sh:41",
+    "sunmoonai/infrastructure/steps/step11_load-initial-images.sh:39",
+    "sunmoonai/infrastructure/steps/step11_load-initial-images.sh:882",
+    "sunmoonai/infrastructure/utils/common.sh:251",
+    "sunmoonai/infrastructure/utils/common.sh:52",
+    "sunmoonai/infrastructure/utils/image-cleanup/image-cleanup.sh:144",
+    "sunmoonai/infrastructure/utils/image-cleanup/image-cleanup.sh:146",
+    "sunmoonai/infrastructure/utils/image-cleanup/image-cleanup.sh:282",
+    "sunmoonai/infrastructure/utils/package-preparation/package-sync.conf:15",
+    "sunmoonai/infrastructure/utils/package-preparation/package-sync.conf:30",
+    "sunmoonai/infrastructure/utils/package-preparation/package-sync.conf:43",
+    "sunmoonai/infrastructure/utils/package-preparation/package-sync.conf:56",
+    "sunmoonai/infrastructure/utils/package-preparation/package-sync.conf:72",
+    "sunmoonai/infrastructure/utils/package-preparation/package-sync.conf:8",
+    "sunmoonai/infrastructure/utils/package-preparation/package-sync.conf:85",
+    "sunmoonai/infrastructure/utils/package-preparation/package-sync.conf:98",
+    "sunmoonai/infrastructure/utils/package-preparation/package-sync.sh:335",
+    "sunmoonai/infrastructure/utils/package-preparation/package-sync.sh:338",
+    "sunmoonai/kind-infrastructure/deploy-kind/build-kind-node-image/build-kind-node-image.sh:189",
+    "sunmoonai/kind-infrastructure/deploy-kind/deploy-kind.conf:105",
+    "sunmoonai/kind-infrastructure/push-to-harbor/push-images-to-harbor.conf:16",
+    "sunmoonai/registry-platform/prepare-artifacts.py:26",
+    "sunmoonai/registry-platform/prepare-artifacts.py:36",
+    "sunmoonai/registry-platform/prepare-artifacts.py:38",
+    "sunmoonai/registry-platform/recovery_candidate.py:25",
+    "sunmoonai/registry-platform/recovery_candidate.py:27"
+  ],
+  "reference_limit": "Literal locations and broad path indicators only; dynamic references require adapter review. Empty references do not authorize deletion.",
+  "cluster_closure_complete": false,
+  "cluster_closure_pending": [
+    "OS dependency closure",
+    "Calico shared manifest and image reuse",
+    "systemd service/drop-in files"
+  ],
+  "gates": [
+    "finish migration acceptance and rollback observation",
+    "validate complete replacement materials and deployment adapters",
+    "check retained release/backup references and exact hashes before final cleanup",
+    "preserve Harbor cold backups, platform/app versions, old client and containers/volumes"
+  ],
+  "physical_space_limit": "File allocation estimates; C: space return requires owner-operated WSL shutdown/compaction."
+}

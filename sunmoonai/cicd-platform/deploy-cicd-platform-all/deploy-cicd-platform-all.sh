@@ -91,12 +91,12 @@ deploy_sub_components_by_priority() {
     
     local components=()
     
-    # 检查 Harbor
-    if [[ "${harbor_enabled:-false}" == "true" ]]; then
-        local priority="${harbor_priority:-1000}"
-        components+=("$priority:harbor:$PROJECT_ROOT/harbor/deploy-harbor/deploy-harbor.sh")
+    # All cluster profiles consume the independent registry. Never install it here.
+    if [[ "${harbor_enabled:-false}" != "false" ]]; then
+        log_error "Harbor must be managed by registry-platform outside the cluster"
+        return 1
     fi
-    
+
     # 检查 Jenkins
     if [[ "${jenkins_enabled:-false}" == "true" ]]; then
         local priority="${jenkins_priority:-100}"

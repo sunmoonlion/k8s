@@ -1,4 +1,5 @@
 #!/bin/bash
+# 历史路径，云上新路径实机验证前不删。新部署使用 sunmoonai/registry-platform。
 
 # Harbor 递归部署脚本
 # 基于递归架构设计原则的两级部署逻辑

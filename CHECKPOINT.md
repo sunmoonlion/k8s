@@ -1,5 +1,24 @@
 # Luna 工作检查点
 
+## 最新续接：2026-09-27 宿主 Harbor 只读验收通过，整套集群物料继续准备
+
+基线 `4f55b537182fc2bad2299d9522b7cda8c0eec0b8`，本地 luna，不 push。以下优先于历史“待审/未恢复”描述。
+
+- 所有者授权助手实现目标并同步升级 infrastructure 云端代码（仅静态/dry-run，未经实机验证）。升级限 Kubernetes、网络、运行时、kubeadm 工具和对应镜像/依赖；平台服务保持原版本，例外须有1.36实际失败证据。东京只下载公开物料，不部署云集群。
+- 物料根仍为 `~/packages-to-be-installed`，新版放 releases 独立批次；部署脚本须同步精确选包。不能只换工具不配控制面/网络镜像；不能把“新目录存在”当作旧脚本已经升级。
+- 宿主 Harbor2.13.2只读恢复完成，PG17.6/Redis8.2.1保留：49表/10364行等一致；4400个registry文件全量摘要通过；3项目/64仓库/429含子清单制品/164tags及元数据一致，429个HTTP清单摘要、匿名拒绝、121690112字节层读取通过。11新容器停止保留、无匿名卷、Docker43卷不变、旧30443healthy，未切入口。证据 `sunmoonai/scripts/results/luna-host-harbor-readonly-recovery.20260927.json`。
+- 私有状态 `/data/harbor/candidates/harbor-2.13.2-20260927/recovery/run-state.json` completed=true。不要再次 run/resume。`recovery_run.py stop --apply` 只停登记容器、不删。修复涉及root.crt挂载、原Redis认证、proxy前端网桥、core创建时env、registry目录权限，全部只作用新副本，原输入不改。详情 `registry-platform/docs/host-recovery-plan.md`。
+- `recovery_candidate.py` 新准备 apply 暂时明确拒绝：正式可复用渲染器须吸收上述修复；旧临时Compose不能直接用作正式安装。jobservice/推送/扫描、正式入口、正式KIND重建独立性、CI/CD尚未验收。
+- 云端7工具已东京下载→回传→本机SHA通过，共270598928字节：K8s1.36.4、containerd2.3.4、runc1.4.3（与实际新KIND对齐）、nerdctl2.3.5、crictl1.36.0。证据 `luna-cloud-cluster-tools-aligned.20260927.json`。先取得的nerdctl-full2.3.5已退出活动清单、文件留最终清理。
+- `infrastructure/materials/cluster-artifacts.lock.json` closure_complete=false，OS依赖/systemd/控制面归档/Calico共享接线尚待补齐。`prepare_images.py` 在东京准备7镜像（K8s4个1.36.4、CoreDNS1.14.2、pause3.10.2、etcd3.6.8-0），仅pull/tag/save；远程 `/home/zym/.cache/sunmoon-artifacts/kubeadm-1.36.4-linux-amd64/kubeadm-images.lock.json` 为状态。完成后rsync回同名本地releases并重新SHA验证。
+- 物料只读盘点约40.81GiB；25旧集群文件0.946GiB和1个已替代新整合包0.267GiB，共候选1.214GiB，实际释放0。Harbor保留批次18.61GiB、原平台/应用镜像、旧1.27客户端继续保留。`materials/inventory.py` 可重算盘点；`kind-infrastructure/docs/cluster-material-retirement.md` 已并入最终清理与唯一物料手册。
+- 当前仅CI/CD四集群Harbor开关关闭、总控拒绝集群内Harbor、step13仅入口、旧Harbor脚本/chart标历史；cloud steps02–05等多数仍旧版本。接下来仍要完成精确选包/安装适配、宿主仓库生命周期、总控/推拉/信任/CI/CD/备份恢复接线。不能宣称整体升级完成。
+- 最终清理仍必须做且放验收后；任何容器/卷、旧kind-worker2继续保护。5年证书续签未执行、CA未变；Windows开机附盘/WSL关闭压缩由所有者操作。没有云实机部署。
+
+补充：7控制面配套镜像已完成东京导出、本机回传及tar/config双摘要校验，共153397248字节；锁 `infrastructure/materials/kubeadm-images.lock.json`，证据 `luna-cloud-cluster-images.20260927.json`。主锁已登记其SHA；Calico清单与3归档也已重新核验并登记共享路径。没有仍运行的下载/验收会话。静态检查：Python AST、bash -n、step13/config.sh shellcheck、step13无副作用dry-run、git diff --check通过。shellcheck不在PATH，使用 `/tmp/luna-shellcheck-package/extracted/usr/bin/shellcheck`。
+
+下一步：补齐OS依赖与systemd，继续统一选包/部署代码；随后入口维护窗口和正式KIND、业务/CI/CD、必做清理与手册复盘。无预算上限指定。
+
 **最新单元（2026-09-27 04:30 UTC）：官方 Harbor 配置准备完成。** `registry-platform/harbor_inputs.py` 已向 `/data/harbor/candidates/harbor-2.13.2-20260927` 写入原密钥/TLS/凭据；`official_prepare.py` 生成配置并复核。第一次在镜像 User 空串/null 比较处退出，修正后通过显式 `--resume-import` 继续；已完成目录不可重跑。生成器已停止，无网络/端口/匿名卷，43 卷不变、旧 Harbor healthy。官方 Compose 尚未准入运行，不可直接 up。下一步准备具体恢复运行配置、registry 层复制与逻辑数据库导入、全目录摘要验收；未启动宿主 Harbor，未切入口或清理。代码基线 a6e299d84efca31c6c017d2a792f6e0e1e593f96，交付为包含本记录的本地 luna 提交。详细步骤及失败记录见 `sunmoonai/registry-platform/docs/config-preparation.md`。用户询问内部证书 5 年有效期，已确认现叶证书到 2027-06-22、根 CA 到 2036-05-07；建议迁移核对后统一续签，未签发/替换或旋转 CA。下面为此前单元记录。
 
 **当前单元（2026-09-27）：所有者批准“你执行”，PostgreSQL 17.6 冷备份逻辑恢复演练已完成。** 49 表/10,364 行、结构/权限/角色口令哈希/序列/扩展/large objects 一致；3 个新容器停止并保留，旧 7 容器/43 卷未变，旧 Harbor healthy。新盘副本占 182,140,928 字节，私有 dump/角色文件不入 Git。证据 `sunmoonai/scripts/results/luna-registry-database-rehearsal.20260927.json`，执行卡同模块 docs 下。不要重新执行已有批次。下一步准备官方 Harbor 2.13.2 的配置/密钥映射、registry 数据恢复和完整摘要验收；尚未安装 Harbor/切入口/改云接线。剩余清理最终必须做，禁止容器/卷清理仍有效。下文为历史记录。

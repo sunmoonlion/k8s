@@ -1,0 +1,548 @@
+{
+  "checked_at": "2026-09-27T04:57:12.949720+00:00",
+  "root": "/home/zymun/packages-to-be-installed",
+  "readonly": true,
+  "deleted": false,
+  "groups": {
+    "images": {
+      "allocated_bytes": 16481931264,
+      "logical_bytes": 16481738875,
+      "files": 65
+    },
+    "debs": {
+      "allocated_bytes": 105730048,
+      "logical_bytes": 105703604,
+      "files": 13
+    },
+    "charts": {
+      "allocated_bytes": 163840,
+      "logical_bytes": 160260,
+      "files": 2
+    },
+    "tars": {
+      "allocated_bytes": 283697152,
+      "logical_bytes": 283688959,
+      "files": 2
+    },
+    "releases/build-template-20260926-linux-amd64": {
+      "allocated_bytes": 4726996992,
+      "logical_bytes": 4255347619,
+      "files": 169651
+    },
+    "releases/harbor-preserve-20260926": {
+      "allocated_bytes": 19986382848,
+      "logical_bytes": 19984922662,
+      "files": 443
+    },
+    "releases/.local-attempt-20260926T215120": {
+      "allocated_bytes": 475136,
+      "logical_bytes": 363524,
+      "files": 37
+    },
+    "releases/kubectl-1.27.3-existing-kind-linux-amd64": {
+      "allocated_bytes": 49258496,
+      "logical_bytes": 49254628,
+      "files": 2
+    },
+    "releases/registry-platform-2.13.2-linux-amd64": {
+      "allocated_bytes": 670703616,
+      "logical_bytes": 670694985,
+      "files": 3
+    },
+    "releases/kind-1.36.4-calico-3.32.2-linux-amd64": {
+      "allocated_bytes": 719134720,
+      "logical_bytes": 717568859,
+      "files": 453
+    }
+  },
+  "top_level_materials": [
+    {
+      "path": "images/registry.k8s.io_sig-storage_nfs-subdir-external-provisioner_v4.0.2.tar",
+      "bytes": 45086208,
+      "allocated_bytes": 45088768
+    },
+    {
+      "path": "images/node_20.18.0-alpine.tar",
+      "bytes": 135333888,
+      "allocated_bytes": 135335936
+    },
+    {
+      "path": "images/bitnami_harbor-exporter_2.13.2-debian-12-r2.tar",
+      "bytes": 55818240,
+      "allocated_bytes": 55820288
+    },
+    {
+      "path": "images/calico_kube-controllers_v3.28.2.tar",
+      "bytes": 34864640,
+      "allocated_bytes": 34869248
+    },
+    {
+      "path": "images/bitnami_elasticsearch-exporter_1.9.0-debian-12-r16.tar",
+      "bytes": 153159680,
+      "allocated_bytes": 153165824
+    },
+    {
+      "path": "images/elasticsearch_8.11.3.tar",
+      "bytes": 675693056,
+      "allocated_bytes": 675700736
+    },
+    {
+      "path": "images/quay.io_minio_aistor_minio-sidecar_RELEASE.2026-06-09T23-40-36Z.tar",
+      "bytes": 16717312,
+      "allocated_bytes": 16719872
+    },
+    {
+      "path": "images/bitnami_jenkins_2.516.2-debian-12-r0.tar",
+      "bytes": 518431744,
+      "allocated_bytes": 518438912
+    },
+    {
+      "path": "images/bitnami_harbor-core_2.13.2-debian-12-r3.tar",
+      "bytes": 68980224,
+      "allocated_bytes": 68980736
+    },
+    {
+      "path": "images/calico_cni_v3.28.2.tar",
+      "bytes": 94707200,
+      "allocated_bytes": 94707712
+    },
+    {
+      "path": "images/calico_node_v3.28.2.tar",
+      "bytes": 119836672,
+      "allocated_bytes": 119836672
+    },
+    {
+      "path": "images/bitnami_elasticsearch_9.1.2-debian-12-r0.tar",
+      "bytes": 1552363520,
+      "allocated_bytes": 1552367616
+    },
+    {
+      "path": "images/mysql_8.0.39.tar",
+      "bytes": 167148032,
+      "allocated_bytes": 167149568
+    },
+    {
+      "path": "images/calico-v3.28.2.yaml",
+      "bytes": 253923,
+      "allocated_bytes": 253952
+    },
+    {
+      "path": "images/ragflow-v0.25.4-image-files.sha256",
+      "bytes": 688,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "images/calico_node-driver-registrar_v3.28.2.tar",
+      "bytes": 14414336,
+      "allocated_bytes": 14417920
+    },
+    {
+      "path": "images/ghcr.io_br3ndonland_inboard_fastapi-0.68-python3.11.tar",
+      "bytes": 451353600,
+      "allocated_bytes": 451358720
+    },
+    {
+      "path": "images/calico_typha_v3.28.2.tar",
+      "bytes": 30950912,
+      "allocated_bytes": 30953472
+    },
+    {
+      "path": "images/mher_flower_2.0.1.tar",
+      "bytes": 91415040,
+      "allocated_bytes": 91418624
+    },
+    {
+      "path": "images/bitnami_harbor-portal_2.13.2-debian-12-r1.tar",
+      "bytes": 69471232,
+      "allocated_bytes": 69472256
+    },
+    {
+      "path": "images/registry.k8s.io_kube-apiserver_v1.30.4.tar",
+      "bytes": 32787968,
+      "allocated_bytes": 32788480
+    },
+    {
+      "path": "images/redis_redisinsight_2.70.tar",
+      "bytes": 329472000,
+      "allocated_bytes": 329474048
+    },
+    {
+      "path": "images/bitnami_harbor-jobservice_2.13.2-debian-12-r3.tar",
+      "bytes": 66750464,
+      "allocated_bytes": 66752512
+    },
+    {
+      "path": "images/bitnami_harbor-registry_2.13.2-debian-12-r2.tar",
+      "bytes": 52651008,
+      "allocated_bytes": 52658176
+    },
+    {
+      "path": "images/bitnami_redis_8.2.1-debian-12-r0.tar",
+      "bytes": 168355328,
+      "allocated_bytes": 168357888
+    },
+    {
+      "path": "images/rancher_local-path-provisioner_v0.0.32.tar",
+      "bytes": 63292928,
+      "allocated_bytes": 63295488
+    },
+    {
+      "path": "images/nginx_1.20.2-alpine.tar",
+      "bytes": 24733696,
+      "allocated_bytes": 24735744
+    },
+    {
+      "path": "images/bitnami_jenkins-agent_0.3327.0-debian-12-r1.tar",
+      "bytes": 351334400,
+      "allocated_bytes": 351334400
+    },
+    {
+      "path": "images/quay.io_minio_aistor_minio_RELEASE.2026-05-28T20-50-32Z.tar",
+      "bytes": 124866048,
+      "allocated_bytes": 124870656
+    },
+    {
+      "path": "images/python_3.12.13-slim.tar",
+      "bytes": 123296768,
+      "allocated_bytes": 123301888
+    },
+    {
+      "path": "images/bitnami_harbor-registryctl_2.13.2-debian-12-r3.tar",
+      "bytes": 66501632,
+      "allocated_bytes": 66502656
+    },
+    {
+      "path": "images/calico_csi_v3.28.2.tar",
+      "bytes": 9143296,
+      "allocated_bytes": 9146368
+    },
+    {
+      "path": "images/node_18.20.0-alpine.tar",
+      "bytes": 45581312,
+      "allocated_bytes": 45584384
+    },
+    {
+      "path": "images/traefik_v3.5.2.tar",
+      "bytes": 178587136,
+      "allocated_bytes": 178589696
+    },
+    {
+      "path": "images/casbin_casdoor_3.42.0.tar",
+      "bytes": 220974592,
+      "allocated_bytes": 220975104
+    },
+    {
+      "path": "images/registry.k8s.io_coredns_coredns_v1.11.1.tar",
+      "bytes": 18199040,
+      "allocated_bytes": 18202624
+    },
+    {
+      "path": "images/infiniflow_ragflow_v0.25.4.tar",
+      "bytes": 3680874496,
+      "allocated_bytes": 3680878592
+    },
+    {
+      "path": "images/registry.k8s.io_kube-proxy_v1.30.4.tar",
+      "bytes": 29045248,
+      "allocated_bytes": 29048832
+    },
+    {
+      "path": "images/registry.k8s.io_kube-scheduler_v1.30.4.tar",
+      "bytes": 19348992,
+      "allocated_bytes": 19349504
+    },
+    {
+      "path": "images/bitnami_harbor-adapter-trivy_2.13.2-debian-12-r2.tar",
+      "bytes": 97974784,
+      "allocated_bytes": 97976320
+    },
+    {
+      "path": "images/mongo-express_1.0.2.tar",
+      "bytes": 193451520,
+      "allocated_bytes": 193454080
+    },
+    {
+      "path": "images/quay.io_minio_aistor_mc_RELEASE.2026-04-21T04-26-49Z.tar",
+      "bytes": 37862912,
+      "allocated_bytes": 37867520
+    },
+    {
+      "path": "images/dpage_pgadmin4_8.4.tar",
+      "bytes": 491180032,
+      "allocated_bytes": 491184128
+    },
+    {
+      "path": "images/bitnami_postgres-exporter_0.17.1-debian-12-r16.tar",
+      "bytes": 51075584,
+      "allocated_bytes": 51077120
+    },
+    {
+      "path": "images/registry.k8s.io_kube-controller-manager_v1.30.4.tar",
+      "bytes": 31162880,
+      "allocated_bytes": 31166464
+    },
+    {
+      "path": "images/bitnami_mongodb_8.0.13-debian-12-r0.tar",
+      "bytes": 856820224,
+      "allocated_bytes": 856825856
+    },
+    {
+      "path": "images/calico_apiserver_v3.28.2.tar",
+      "bytes": 98057216,
+      "allocated_bytes": 98058240
+    },
+    {
+      "path": "images/bitnamilegacy_rabbitmq_4.1.3-debian-12-r1.tar",
+      "bytes": 348317696,
+      "allocated_bytes": 348319744
+    },
+    {
+      "path": "images/valkey_valkey_8.tar",
+      "bytes": 42999808,
+      "allocated_bytes": 42999808
+    },
+    {
+      "path": "images/quay.io_tigera_operator_v1.3.5.tar",
+      "bytes": 47036416,
+      "allocated_bytes": 47038464
+    },
+    {
+      "path": "images/bitnami_logstash_9.1.2-debian-12-r0.tar",
+      "bytes": 824188928,
+      "allocated_bytes": 824193024
+    },
+    {
+      "path": "images/bitnami_postgresql_17.6.0-debian-12-r4.tar",
+      "bytes": 351835648,
+      "allocated_bytes": 351842304
+    },
+    {
+      "path": "images/aistor-image-files.txt",
+      "bytes": 232,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "images/quay.io_minio_aistor_operator_RELEASE.2026-06-10T05-02-21Z.tar",
+      "bytes": 30660096,
+      "allocated_bytes": 30662656
+    },
+    {
+      "path": "images/pgsty_minio_RELEASE.2026-03-25T00-00-00Z.tar",
+      "bytes": 55527936,
+      "allocated_bytes": 55529472
+    },
+    {
+      "path": "images/bitnami_kibana_9.1.2-debian-12-r0.tar",
+      "bytes": 1368637440,
+      "allocated_bytes": 1368641536
+    },
+    {
+      "path": "images/bitnami_neo4j_5.26.11-debian-12-r0.tar",
+      "bytes": 231234560,
+      "allocated_bytes": 231235584
+    },
+    {
+      "path": "images/node_20.18.0.tar",
+      "bytes": 1120441344,
+      "allocated_bytes": 1120448512
+    },
+    {
+      "path": "images/registry.k8s.io_pause_3.9.tar",
+      "bytes": 329728,
+      "allocated_bytes": 331776
+    },
+    {
+      "path": "images/ragflow-v0.25.4-image-files.txt",
+      "bytes": 256,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "images/bitnami_os-shell_12-debian-12-r51.tar",
+      "bytes": 169935360,
+      "allocated_bytes": 169943040
+    },
+    {
+      "path": "images/aistor-image-files.sha256",
+      "bytes": 512,
+      "allocated_bytes": 4096
+    },
+    {
+      "path": "images/registry.k8s.io_etcd_3.5.12-0.tar",
+      "bytes": 57253888,
+      "allocated_bytes": 57253888
+    },
+    {
+      "path": "images/calico_pod2daemon-flexvol_v3.28.2.tar",
+      "bytes": 6643200,
+      "allocated_bytes": 6643712
+    },
+    {
+      "path": "images/bitnami_nginx_1.29.1-debian-12-r0.tar",
+      "bytes": 67314176,
+      "allocated_bytes": 67317760
+    },
+    {
+      "path": "debs/libnfsidmap1_1%3a2.6.4-3ubuntu5.1_amd64.deb",
+      "bytes": 48314,
+      "allocated_bytes": 49152
+    },
+    {
+      "path": "debs/kubernetes-cni_1.2.0-00_amd64.deb",
+      "bytes": 27586224,
+      "allocated_bytes": 27586560
+    },
+    {
+      "path": "debs/kubeadm_1.30.4-1.1_amd64.deb",
+      "bytes": 10380296,
+      "allocated_bytes": 10383360
+    },
+    {
+      "path": "debs/conntrack_1%3a1.4.8-1ubuntu1_amd64.deb",
+      "bytes": 37856,
+      "allocated_bytes": 40960
+    },
+    {
+      "path": "debs/nfs-common_1%3a2.6.4-3ubuntu5.1_amd64.deb",
+      "bytes": 248148,
+      "allocated_bytes": 249856
+    },
+    {
+      "path": "debs/nfs-kernel-server_1%3a2.6.4-3ubuntu5.1_amd64.deb",
+      "bytes": 169308,
+      "allocated_bytes": 172032
+    },
+    {
+      "path": "debs/kubelet_1.30.4-1.1_amd64.deb",
+      "bytes": 18101080,
+      "allocated_bytes": 18104320
+    },
+    {
+      "path": "debs/cri-tools_1.30.1-1.1_amd64.deb",
+      "bytes": 21271060,
+      "allocated_bytes": 21274624
+    },
+    {
+      "path": "debs/keyutils_1.6.3-3build1_amd64.deb",
+      "bytes": 56766,
+      "allocated_bytes": 57344
+    },
+    {
+      "path": "debs/socat_1.8.0.0-4build3_amd64.deb",
+      "bytes": 373594,
+      "allocated_bytes": 376832
+    },
+    {
+      "path": "debs/helm_3.15.0-1_amd64.deb",
+      "bytes": 16608122,
+      "allocated_bytes": 16609280
+    },
+    {
+      "path": "debs/kubectl_1.30.4-1.1_amd64.deb",
+      "bytes": 10776364,
+      "allocated_bytes": 10776576
+    },
+    {
+      "path": "debs/rpcbind_1.2.6-7ubuntu2_amd64.deb",
+      "bytes": 46472,
+      "allocated_bytes": 49152
+    },
+    {
+      "path": "charts/nfs-subdir-external-provisioner-4.0.2.tgz",
+      "bytes": 4852,
+      "allocated_bytes": 8192
+    },
+    {
+      "path": "charts/tigera-operator-v3.28.2.tgz",
+      "bytes": 155408,
+      "allocated_bytes": 155648
+    },
+    {
+      "path": "tars/crictl-v1.30.0-linux-amd64.tar.gz",
+      "bytes": 25707674,
+      "allocated_bytes": 25710592
+    },
+    {
+      "path": "tars/nerdctl-full-2.1.3-linux-amd64.tar.gz",
+      "bytes": 257981285,
+      "allocated_bytes": 257986560
+    }
+  ],
+  "large_files": [
+    {
+      "path": "releases/harbor-preserve-20260926/backup-20260926T145600Z/volumes/registry.tar",
+      "bytes": 17868021760
+    },
+    {
+      "path": "images/infiniflow_ragflow_v0.25.4.tar",
+      "bytes": 3680874496
+    },
+    {
+      "path": "images/bitnami_elasticsearch_9.1.2-debian-12-r0.tar",
+      "bytes": 1552363520
+    },
+    {
+      "path": "images/bitnami_kibana_9.1.2-debian-12-r0.tar",
+      "bytes": 1368637440
+    },
+    {
+      "path": "images/node_20.18.0.tar",
+      "bytes": 1120441344
+    },
+    {
+      "path": "images/bitnami_mongodb_8.0.13-debian-12-r0.tar",
+      "bytes": 856820224
+    },
+    {
+      "path": "images/bitnami_logstash_9.1.2-debian-12-r0.tar",
+      "bytes": 824188928
+    },
+    {
+      "path": "releases/harbor-preserve-20260926/restore-run-20260926/kind-worker-harbor-amd64.tar",
+      "bytes": 775045120
+    },
+    {
+      "path": "releases/harbor-preserve-20260926/preparation/images/kind-worker-harbor-amd64.tar",
+      "bytes": 775042560
+    },
+    {
+      "path": "images/elasticsearch_8.11.3.tar",
+      "bytes": 675693056
+    },
+    {
+      "path": "releases/registry-platform-2.13.2-linux-amd64/harbor-offline-installer-v2.13.2.tgz",
+      "bytes": 670694110
+    },
+    {
+      "path": "images/bitnami_jenkins_2.516.2-debian-12-r0.tar",
+      "bytes": 518431744
+    },
+    {
+      "path": "images/dpage_pgadmin4_8.4.tar",
+      "bytes": 491180032
+    },
+    {
+      "path": "images/ghcr.io_br3ndonland_inboard_fastapi-0.68-python3.11.tar",
+      "bytes": 451353600
+    },
+    {
+      "path": "releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/node-linux-amd64.tar",
+      "bytes": 384779776
+    },
+    {
+      "path": "images/bitnami_postgresql_17.6.0-debian-12-r4.tar",
+      "bytes": 351835648
+    },
+    {
+      "path": "images/bitnami_jenkins-agent_0.3327.0-debian-12-r1.tar",
+      "bytes": 351334400
+    },
+    {
+      "path": "images/bitnamilegacy_rabbitmq_4.1.3-debian-12-r1.tar",
+      "bytes": 348317696
+    },
+    {
+      "path": "images/redis_redisinsight_2.70.tar",
+      "bytes": 329472000
+    }
+  ]
+}

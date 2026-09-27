@@ -1,0 +1,39 @@
+{
+  "date": "2026-09-27",
+  "scope": "local isolated read-only recovery; not production cutover",
+  "completed": true,
+  "database_reconciled": true,
+  "versions": {"postgresql": "17.6", "redis": "8.2.1", "harbor": "2.13.2"},
+  "database_tables": 49,
+  "database_rows": 10364,
+  "catalog": {
+    "projects": 3, "repositories": 64, "listed_artifacts": 165,
+    "reachable_artifacts": 429, "tags": 164, "untagged": 292,
+    "indexes": 132, "accessories": 0
+  },
+  "registry_http": {
+    "manifest_count": 429,
+    "all_manifest_bytes_verified": true,
+    "anonymous_manifest_denied": true,
+    "sample_layer": {
+      "digest": "sha256:ba9916be9d18f219a90a7eedd7d6a179dd9aecd3b38dc87d5ea85fbac2e18a2a",
+      "bytes": 121690112
+    },
+    "tls_verified": true,
+    "production_token_realm_preserved": true,
+    "credentials_sent_only_to_candidate": true
+  },
+  "registry_copy": {
+    "files": 4400, "bytes": 17850816895, "all_copied_file_sha256_match": true
+  },
+  "stop_errors": [],
+  "retained_containers": 11,
+  "all_candidate_containers_stopped": true,
+  "candidate_anonymous_volumes": 0,
+  "docker_volume_count": 43,
+  "entry_switched": false,
+  "old_harbor_health": "healthy",
+  "private_evidence_root": "/data/harbor/candidates/harbor-2.13.2-20260927/recovery",
+  "not_verified": ["production cutover and writes", "jobservice and scanning",
+    "Harbor survival through formal KIND destruction/recreation", "final CI/CD", "cloud deployment"]
+}

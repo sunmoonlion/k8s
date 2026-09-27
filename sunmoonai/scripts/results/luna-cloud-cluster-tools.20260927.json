@@ -1,0 +1,35 @@
+{
+  "batch": "kubeadm-1.36.4-linux-amd64",
+  "source": "approved Tokyo public cache",
+  "files": [
+    {
+      "path": "bin/kubeadm",
+      "bytes": 73040034,
+      "sha256": "10d054585907f2c8bb823c84f6a66b3bd2a474c3d795475f04e9a44f78650fe6"
+    },
+    {
+      "path": "bin/kubelet",
+      "bytes": 60166409,
+      "sha256": "cf2562db46c48ab84cc3791540778ee7fb1a0a008529adbb434723dd02ed8b4b"
+    },
+    {
+      "path": "bin/kubectl",
+      "bytes": 59572386,
+      "sha256": "8b8f088da2dab964f853b38464033b1be15ede2839eca751482357c45abdd05a"
+    },
+    {
+      "path": "tars/nerdctl-full-2.3.5-linux-amd64.tar.gz",
+      "bytes": 287167169,
+      "sha256": "b697295c623639734aaab737523c808fd3cc8d3046039fd94fff1744e4c317aa"
+    },
+    {
+      "path": "tars/crictl-v1.36.0-linux-amd64.tar.gz",
+      "bytes": 19263420,
+      "sha256": "83855e114566a8a8c44c548d515670f51de3a5e1da8b2effb59870e2f10c25a3"
+    }
+  ],
+  "local_hashes_passed": true,
+  "bytes": 499209418,
+  "installed": false,
+  "closure_complete": false
+}

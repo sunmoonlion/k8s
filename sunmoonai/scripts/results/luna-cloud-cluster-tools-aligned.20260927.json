@@ -1,0 +1,59 @@
+{
+  "checked_at": "2026-09-27T05:15:11.496172+00:00",
+  "batch": "kubeadm-1.36.4-linux-amd64",
+  "versions": {
+    "kubernetes": "1.36.4",
+    "calico": "3.32.2",
+    "nerdctl": "2.3.5",
+    "containerd": "2.3.4",
+    "runc": "1.4.3",
+    "crictl": "1.36.0"
+  },
+  "files": [
+    {
+      "path": "bin/kubeadm",
+      "bytes": 73040034,
+      "sha256": "10d054585907f2c8bb823c84f6a66b3bd2a474c3d795475f04e9a44f78650fe6"
+    },
+    {
+      "path": "bin/kubelet",
+      "bytes": 60166409,
+      "sha256": "cf2562db46c48ab84cc3791540778ee7fb1a0a008529adbb434723dd02ed8b4b"
+    },
+    {
+      "path": "bin/kubectl",
+      "bytes": 59572386,
+      "sha256": "8b8f088da2dab964f853b38464033b1be15ede2839eca751482357c45abdd05a"
+    },
+    {
+      "path": "tars/crictl-v1.36.0-linux-amd64.tar.gz",
+      "bytes": 19263420,
+      "sha256": "83855e114566a8a8c44c548d515670f51de3a5e1da8b2effb59870e2f10c25a3"
+    },
+    {
+      "path": "tars/nerdctl-2.3.5-linux-amd64.tar.gz",
+      "bytes": 11744522,
+      "sha256": "de3206aeb7cbd5f20f5fb1f55c1e3bf2db1be567812a8a3f5e65eba2488347ee"
+    },
+    {
+      "path": "tars/containerd-2.3.4-linux-amd64.tar.gz",
+      "bytes": 34566765,
+      "sha256": "9d68969855fbf676cdb8ed758e420fb048d61f984f61de3e53eddfebe484d168"
+    },
+    {
+      "path": "bin/runc-1.4.3.amd64",
+      "bytes": 12245392,
+      "sha256": "f6ae8efc0fa40079e1475e97cbe9d1bd3f106a28d6af78a11d9f1bd565515e60"
+    }
+  ],
+  "local_hashes_passed": true,
+  "bytes": 270598928,
+  "installed": false,
+  "closure_complete": false,
+  "pending": [
+    "OS dependency closure",
+    "kubeadm control plane image set",
+    "Calico shared manifest and image reuse",
+    "systemd service/drop-in files"
+  ]
+}

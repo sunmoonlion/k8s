@@ -1,0 +1,138 @@
+{
+  "schema": 1,
+  "batch": "kubeadm-1.36.4-linux-amd64",
+  "scope": "cluster tools only; platform services unchanged",
+  "versions": {
+    "kubernetes": "1.36.4",
+    "calico": "3.32.2",
+    "nerdctl": "2.3.5",
+    "containerd": "2.3.4",
+    "runc": "1.4.3",
+    "crictl": "1.36.0"
+  },
+  "closure_complete": false,
+  "pending": [
+    "OS dependency closure",
+    "Calico shared manifest and image reuse",
+    "systemd service/drop-in files"
+  ],
+  "provenance": [
+    "https://github.com/containerd/nerdctl/releases/tag/v2.3.5",
+    "https://containerd.io/releases/",
+    "https://github.com/kubernetes-sigs/cri-tools/releases/tag/v1.36.0",
+    "https://docs.tigera.io/calico/latest/getting-started/kubernetes/requirements"
+  ],
+  "files": [
+    {
+      "path": "bin/kubeadm",
+      "url": "https://dl.k8s.io/release/v1.36.4/bin/linux/amd64/kubeadm",
+      "sha256": "10d054585907f2c8bb823c84f6a66b3bd2a474c3d795475f04e9a44f78650fe6"
+    },
+    {
+      "path": "bin/kubelet",
+      "url": "https://dl.k8s.io/release/v1.36.4/bin/linux/amd64/kubelet",
+      "sha256": "cf2562db46c48ab84cc3791540778ee7fb1a0a008529adbb434723dd02ed8b4b"
+    },
+    {
+      "path": "bin/kubectl",
+      "url": "https://dl.k8s.io/release/v1.36.4/bin/linux/amd64/kubectl",
+      "sha256": "8b8f088da2dab964f853b38464033b1be15ede2839eca751482357c45abdd05a"
+    },
+    {
+      "path": "tars/crictl-v1.36.0-linux-amd64.tar.gz",
+      "url": "https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.36.0/crictl-v1.36.0-linux-amd64.tar.gz",
+      "sha256": "83855e114566a8a8c44c548d515670f51de3a5e1da8b2effb59870e2f10c25a3",
+      "bytes": 19263420
+    },
+    {
+      "path": "tars/nerdctl-2.3.5-linux-amd64.tar.gz",
+      "url": "https://github.com/containerd/nerdctl/releases/download/v2.3.5/nerdctl-2.3.5-linux-amd64.tar.gz",
+      "bytes": 11744522,
+      "sha256": "de3206aeb7cbd5f20f5fb1f55c1e3bf2db1be567812a8a3f5e65eba2488347ee"
+    },
+    {
+      "path": "tars/containerd-2.3.4-linux-amd64.tar.gz",
+      "url": "https://github.com/containerd/containerd/releases/download/v2.3.4/containerd-2.3.4-linux-amd64.tar.gz",
+      "bytes": 34566765,
+      "sha256": "9d68969855fbf676cdb8ed758e420fb048d61f984f61de3e53eddfebe484d168"
+    },
+    {
+      "path": "bin/runc-1.4.3.amd64",
+      "url": "https://github.com/opencontainers/runc/releases/download/v1.4.3/runc.amd64",
+      "bytes": 12245392,
+      "sha256": "f6ae8efc0fa40079e1475e97cbe9d1bd3f106a28d6af78a11d9f1bd565515e60"
+    }
+  ],
+  "superseded_downloads": [
+    {
+      "path": "tars/nerdctl-full-2.3.5-linux-amd64.tar.gz",
+      "url": "https://github.com/containerd/nerdctl/releases/download/v2.3.5/nerdctl-full-2.3.5-linux-amd64.tar.gz",
+      "sha256": "b697295c623639734aaab737523c808fd3cc8d3046039fd94fff1744e4c317aa",
+      "bytes": 287167169,
+      "reason": "KIND uses containerd 2.3.4 and runc 1.4.3; use separately pinned components; retain until final cleanup"
+    }
+  ],
+  "kubeadm_images": [
+    "registry.k8s.io/kube-apiserver:v1.36.4",
+    "registry.k8s.io/kube-controller-manager:v1.36.4",
+    "registry.k8s.io/kube-scheduler:v1.36.4",
+    "registry.k8s.io/kube-proxy:v1.36.4",
+    "registry.k8s.io/coredns/coredns:v1.14.2",
+    "registry.k8s.io/pause:3.10.2",
+    "registry.k8s.io/etcd:3.6.8-0"
+  ],
+  "runtime_alignment_evidence": "Existing sunmoon-kind-136-worker containerd --version=v2.3.4 and runc --version=1.4.3; Calico installs CNI binaries v3.32.2",
+  "shared_calico_materials": [
+    {
+      "path": "charts/calico-upstream.yaml",
+      "url": "https://raw.githubusercontent.com/projectcalico/calico/v3.32.2/manifests/calico.yaml",
+      "sha256": "a8c828a06a87c629a282ebbc424895b77f3a030251993e41ea400a743675bb02",
+      "executable": false,
+      "material_root_relative_path": "releases/kind-1.36.4-calico-3.32.2-linux-amd64/charts/calico-upstream.yaml",
+      "bytes": 350324
+    },
+    {
+      "id": "calico-cni",
+      "source": "quay.io/calico/cni:v3.32.2",
+      "index_digest": "sha256:0ef740bc587f25565905adf1d1f61a7faff0d571c449c6bdd789feed743d3ef7",
+      "platform_digest": "sha256:8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a",
+      "reference": "quay.io/calico/cni@sha256:8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a",
+      "archive_tag": "sunmoon-offline/calico-cni:8de23af2a36514e5",
+      "path": "images/calico-cni-linux-amd64.tar",
+      "docker_image_id": "sha256:8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a",
+      "sha256": "431f4527245e2a0845537125cab0825070c1e99ea6e099a4a45f5e461378b435",
+      "material_root_relative_path": "releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-cni-linux-amd64.tar",
+      "bytes": 69878784
+    },
+    {
+      "id": "calico-node",
+      "source": "quay.io/calico/node:v3.32.2",
+      "index_digest": "sha256:99b03fe91e8bfbcb153ae65ef4b701b24ce541ffdd74ff314eb041096008f7fd",
+      "platform_digest": "sha256:d7a9b58573b165caa8128d2735a19b788434547064b2b4af2abf68cea24f7ec3",
+      "reference": "quay.io/calico/node@sha256:d7a9b58573b165caa8128d2735a19b788434547064b2b4af2abf68cea24f7ec3",
+      "archive_tag": "sunmoon-offline/calico-node:d7a9b58573b165ca",
+      "path": "images/calico-node-linux-amd64.tar",
+      "docker_image_id": "sha256:d7a9b58573b165caa8128d2735a19b788434547064b2b4af2abf68cea24f7ec3",
+      "sha256": "bfde5f35df29f29c0322a199f9b990b30b303223e8abbc894c1209ea0767889c",
+      "material_root_relative_path": "releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-node-linux-amd64.tar",
+      "bytes": 123398656
+    },
+    {
+      "id": "calico-controllers",
+      "source": "quay.io/calico/kube-controllers:v3.32.2",
+      "index_digest": "sha256:7870b67ebb13fabc3005252b44fe6e78b21635649bd3072b80afa1684b6565d0",
+      "platform_digest": "sha256:f241490840083743e747389af8d5067c961370bd5e2e2af6538db2f7e183f60b",
+      "reference": "quay.io/calico/kube-controllers@sha256:f241490840083743e747389af8d5067c961370bd5e2e2af6538db2f7e183f60b",
+      "archive_tag": "sunmoon-offline/calico-controllers:f241490840083743",
+      "path": "images/calico-controllers-linux-amd64.tar",
+      "docker_image_id": "sha256:f241490840083743e747389af8d5067c961370bd5e2e2af6538db2f7e183f60b",
+      "sha256": "c5913c71b51a45f51ce555b3f64446ef3151b65adc757dacfdf130a07a10ff14",
+      "material_root_relative_path": "releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-controllers-linux-amd64.tar",
+      "bytes": 63201280
+    }
+  ],
+  "kubeadm_image_archive_lock": {
+    "path": "kubeadm-images.lock.json",
+    "sha256": "daf944a8c0604336e5c546831494d8aefcafc1b4299def74a844cf5123fd789c"
+  }
+}

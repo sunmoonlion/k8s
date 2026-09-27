@@ -1,3 +1,4 @@
+# 历史路径，云上新路径实机验证前不删。新部署使用 sunmoonai/registry-platform。
 annotations:
   category: Infrastructure
   images: |
