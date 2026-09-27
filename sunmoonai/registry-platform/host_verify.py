@@ -28,14 +28,17 @@ from harbor_cold_backup import catalog_identity
 
 def client(instance, credentials, deadline):
     site = instance.config['runtime']
-    if (site['platform'], site['bind_address'], site['https_port']) != ('wsl', '127.0.0.1', 18443):
-        raise ValueError('This local acceptance adapter requires loopback18443; no implicit cloud target')
-    addresses = {row[4][0] for row in socket.getaddrinfo('harbor.sunmoonai.com', 18443, type=socket.SOCK_STREAM)}
-    if not addresses or not addresses <= {'127.0.0.1', '::1'}:
-        raise ValueError('Canonical local hostname must resolve only to loopback')
+    # validate_site (load) binds WSL to loopback18443 and cloud to one explicitly
+    # configured private IPv4:30443. The cloud branch is 未经实机验证.
+    from runtime_config import validate_site
+    validate_site(site)
+    allowed = {'127.0.0.1', '::1'} if site['platform'] == 'wsl' else {site['bind_address']}
+    addresses = {row[4][0] for row in socket.getaddrinfo('harbor.sunmoonai.com', site['https_port'], type=socket.SOCK_STREAM)}
+    if not addresses or not addresses <= allowed:
+        raise ValueError('Canonical registry hostname differs from the explicit host target')
     context = ssl.create_default_context(cafile=str(instance.root / 'ca-download/ca.crt'))
     expected = ssl.PEM_cert_to_DER_cert(read(instance.root / 'tls/server.crt').decode())
-    with socket.create_connection(('127.0.0.1', 18443), timeout=10) as plain:
+    with socket.create_connection((site['bind_address'], site['https_port']), timeout=10) as plain:
         with context.wrap_socket(plain, server_hostname='harbor.sunmoonai.com') as tls:
             if hashlib.sha256(tls.getpeercert(binary_form=True)).digest() != hashlib.sha256(expected).digest():
                 raise ValueError('Live Harbor TLS leaf differs from the prepared five-year certificate')
@@ -46,7 +49,7 @@ def client(instance, credentials, deadline):
     if not auth:
         raise ValueError('Existing owner Docker credential required; no authentication changes made')
     c = Catalog.__new__(Catalog)
-    c.auth = auth; c.base = 'https://harbor.sunmoonai.com:18443/api/v2.0'
+    c.auth = auth; c.base = 'https://harbor.sunmoonai.com:' + str(site['https_port']) + '/api/v2.0'
     c.client = http.build_opener(http.ProxyHandler({}), NoRedirect(), http.HTTPSHandler(context=context))
     c.calls = 0; c.deadline = deadline
     return c

@@ -99,3 +99,9 @@ python3 -B sunmoonai/registry-platform/host_backup.py backup \
 实际执行还需显式私有凭据路径与 `--apply`。清理时按inode引用计算释放量，不能把两个硬链接都计为能释放约17GB。所有旧备份继续保留。
 
 新增受管扫描器备份 `host-scanner-20260927-v1` 已完成（registry归档复用、runtime全新归档），独立恢复尚未执行，详见[实测结果与空间门槛](host-scanner.md#本次实测收尾2026-09-27)。不得把旧布局 restore_verified=true 沿用到新备份。
+
+## 受管模式和系统盘备份根
+
+新增[host_mode.py backup](host-mode.md)负责停服前容量准入、切到只读、调用本冷备份、恢复原模式/运行状态。底层cold_backup对可写或未闭合转换拒绝执行。runtime归档包含writer-v1与scanner；恢复默认只读，重写新部署的两套Compose路径与身份，统一create创建两套停止容器。
+
+WSL允许显式选择 `/var/backups/sunmoon-harbor/host-*`，用于100GiB数据盘保留演练副本时的新完整备份。必须另核C物理空间，预留数据盘长满100GiB的增长量、备份量及2GiB额外量，C剩余不得低于50GiB；路径不用于云默认值。该备份仍在同一物理盘，不是机器外灾备。先前备份和恢复记录保留，新writer布局恢复不能宣称已验收。

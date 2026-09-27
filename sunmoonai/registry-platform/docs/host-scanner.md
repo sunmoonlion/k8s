@@ -29,7 +29,7 @@ python3 -B sunmoonai/registry-platform/host_runtime.py stop \
   --config sunmoonai/registry-platform/config/harbor-main-local.json
 ```
 
-普通 start 仍用于只读核对，启动扫描器但不启动任务服务；明确 `--with-jobs` 才启动已验收的受管任务服务。stop 统一停止任务服务、扫描器、内部路由和基础服务，保留所有容器和数据。镜像仓可写转换另做，本步骤不等于能推送镜像或入口已切换。
+只读模式的普通 start 用于只读核对，启动扫描器但不启动任务服务；明确 `--with-jobs` 才启动已验收的受管任务服务。新增[受管可写模式](host-mode.md)的普通 start 会自动启动受管任务服务。stop 统一停止任务服务、扫描器、内部路由和基础服务，保留所有容器和数据。镜像仓可写转换另做，本步骤不等于能推送镜像或入口已切换。
 
 ## 登记与验收
 

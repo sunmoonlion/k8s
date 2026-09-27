@@ -29,12 +29,14 @@ from runtime_config import OWNER, PG_BIN, validate_site
 from runtime_inspect import read
 
 BASE = Path('/data/harbor/backups')
+SYSTEM_BASE = Path('/var/backups/sunmoon-harbor')
 MUTABLE = ('core-data', 'job-logs', 'redis')
 
 
 def mutable_paths(instance):
     # Scanner cache and managed job logs live on the same admitted data disk.
-    return (*MUTABLE, 'scanner') if instance.prep.get('scanner') else MUTABLE
+    return (*MUTABLE, *(('scanner',) if instance.prep.get('scanner') else ()),
+            *(('writer-v1',) if instance.prep.get('writer') else ()))
 
 MANIFEST_LIMIT = 64 * 1024**2
 
@@ -60,10 +62,47 @@ def sha(path):
 
 def backup_path(path):
     path = path.absolute()
-    if (path.resolve() != path or path.parent != BASE
+    if (path.resolve() != path or path.parent not in (BASE, SYSTEM_BASE)
             or not re.fullmatch(r'host-[a-z0-9-]{1,60}', path.name)):
-        raise ValueError('Backup needs one new explicit /data/harbor/backups/host-* directory')
+        raise ValueError('Backup needs one new explicit host-* directory in an admitted backup root')
     return path
+
+
+def admit_capacity(config, destination, content_bytes):
+    """Read-only admission; account for physical C space, not just WSL ext4 free."""
+    destination = backup_path(destination)
+    location = destination.parent
+    while not location.exists():
+        location = location.parent
+    if location.resolve() != location:
+        raise ValueError('Backup storage path is symlinked')
+    required = content_bytes + 22 * 1024**3
+    capacity = os.statvfs(location)
+    free = capacity.f_bavail * capacity.f_frsize
+    if free < required:
+        raise ValueError('Complete frozen backup lacks filesystem space; no mode/service change performed')
+    result = {'filesystem_free_bytes':free, 'required_filesystem_bytes':required,
+              'backup_root':str(destination.parent)}
+    if destination.parent == SYSTEM_BASE:
+        if config['runtime']['platform'] != 'wsl' or location.stat().st_dev != Path('/').stat().st_dev:
+            raise ValueError('System-disk backup adapter is WSL-only and requires the expected root filesystem')
+        command = ("$ErrorActionPreference='Stop'; $d=Get-PSDrive -Name C; "
+            "$v=Get-Item -LiteralPath 'C:\\wsl-disks\\sunmoon-data.vhdx'; "
+            "[pscustomobject]@{CFreeBytes=$d.Free;DataVhdLength=$v.Length} | ConvertTo-Json -Compress")
+        query = subprocess.run(['/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
+            '-NoProfile','-NonInteractive','-Command',command],capture_output=True,timeout=30)
+        if query.returncode:
+            raise ValueError('Physical Windows free-space read failed; no fallback to virtual free space')
+        physical = json.loads(query.stdout.decode('utf-8-sig'))
+        if any(type(physical.get(n)) is not int or physical[n] < 0 for n in ('CFreeBytes','DataVhdLength')):
+            raise ValueError('Physical capacity probe schema differs')
+        future_growth = max(0,100 * 1024**3 - physical['DataVhdLength'])
+        after = physical['CFreeBytes'] - future_growth - content_bytes - 2 * 1024**3
+        if after < 50 * 1024**3:
+            raise ValueError('Backup plus full 100GiB data disk would violate the physical C reserve')
+        result.update(physical, projected_c_free_after_backup_and_full_data_disk=after,
+                      minimum_physical_c_free=50 * 1024**3)
+    return result
 
 
 def members(root, names):
@@ -143,6 +182,8 @@ def verify_tar(path, record):
 
 
 def cold_backup(instance, root, credentials, registry_from=None):
+    if instance.mode() != 'read-only' or instance.state.get('mode_transition_open'):
+        raise ValueError('Freeze to verified readonly mode before cold backup')
     storage(instance.config, minimum_gib=20)
     instance.immutable()
     if not instance.state.get('read_only_acceptance', {}).get('completed'):
@@ -151,7 +192,7 @@ def cold_backup(instance, root, credentials, registry_from=None):
         raise ValueError('This adapter requires source initially stopped; no implicit production freeze')
     if root.exists():
         raise ValueError('Existing backup retained; choose a new backup batch')
-    for path in (BASE,):
+    for path in (root.parent,):
         if path.resolve() != path:
             raise ValueError('Symlink backup parent refused')
         if not path.exists():
@@ -163,14 +204,13 @@ def cold_backup(instance, root, credentials, registry_from=None):
         raise ValueError('Registry reuse requires an independently restored backup')
     backup_names = mutable_paths(instance) if reused is not None else ('registry', *mutable_paths(instance))
     source_bytes = sum(i.st_size for _, i in members(instance.root, backup_names) if stat.S_ISREG(i.st_mode))
-    capacity = os.statvfs(BASE)
-    if capacity.f_bavail * capacity.f_frsize < source_bytes + 22 * 1024**3:
-        raise ValueError('Backup must leave 20 GiB plus 2 GiB database/metadata allowance')
+    capacity_receipt = admit_capacity(instance.config, root, source_bytes)
     directory(root); directory(root / 'database'); directory(root / 'volumes')
     state = {'schema': 1, 'complete': False, 'source': instance.project,
              'source_runtime': instance.config['runtime'], 'storage_uuid': instance.config['storage_uuid'],
              'harbor_version': '2.13.2', 'database_version': '17.6', 'redis_version': '8.2.1',
-             'source_started_stopped_for_catalog': False, 'logical_export_complete': False}
+             'source_started_stopped_for_catalog': False, 'logical_export_complete': False,
+             'capacity_admission': capacity_receipt}
     save_manifest(root / 'backup.json', state)
     try:
         instance.start()
@@ -360,6 +400,30 @@ def restore_prepare(root, deployment):
     prep = json.loads(read(root / 'source-preparation.json'))
     prep = copy.deepcopy(prep); prep.update(runtime=config['runtime'], registry=registry,
         database_restored=False, containers_created=False, services_started=False, restored_from=str(root))
+    if prep.get('writer'):
+        writer_path = target / prep['writer']['compose']
+        writer = yaml.safe_load(read(writer_path))
+        writer_project = deployment + '-writer-v1'
+        writer['name'] = writer_project
+        for role, service in writer['services'].items():
+            service['container_name'] = writer_project + '-' + role
+            service['labels'][OWNER] = deployment
+            for mount in service['volumes']:
+                source = Path(mount['source'])
+                if not source.is_relative_to(old_root):
+                    raise ValueError('Writer backup mount outside source instance')
+                mount['source'] = str(target / source.relative_to(old_root))
+            for entry in service.get('env_file', []):
+                source = Path(entry['path'])
+                if not source.is_relative_to(old_root):
+                    raise ValueError('Writer backup env outside source instance')
+                entry['path'] = str(target / source.relative_to(old_root))
+        writer['networks']['harbor']['name'] = deployment + '-backend'
+        write(writer_path.with_name('compose-from-backup.yaml'), read(writer_path))
+        write(writer_path.with_name('compose-restored.new'), yaml.safe_dump(writer, sort_keys=False).encode())
+        os.replace(writer_path.with_name('compose-restored.new'), writer_path)
+        prep['writer']['project'] = writer_project
+        prep['immutable_files'][prep['writer']['compose']] = sha(writer_path)
     prep['immutable_files']['compose.yaml'] = sha(target / 'compose.yaml')
     prep['immutable_files']['host-config.json'] = sha(target / 'host-config.json')
     for name, digest in prep['immutable_files'].items():

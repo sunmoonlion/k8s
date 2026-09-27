@@ -1,0 +1,140 @@
+{
+  "schema": 1,
+  "date": "2026-09-27",
+  "deployment": "sunmoon-harbor-main-20260927",
+  "mode": "read-only",
+  "mode_transition_open": false,
+  "configuration_transition_open": false,
+  "mode_lifecycle": {
+    "passed": true,
+    "mode": "writable",
+    "entry_switched": false,
+    "start": {
+      "started": [
+        "postgresql",
+        "redis",
+        "registry",
+        "registryctl",
+        "core",
+        "portal",
+        "proxy",
+        "registry-route",
+        "trivy",
+        "scan-jobs"
+      ],
+      "health_verified": false,
+      "write_enabled": true,
+      "entry_switched": false,
+      "managed_jobservice_started": true
+    },
+    "active_writer_running": {
+      "core": true,
+      "registry": true,
+      "registryctl": true
+    },
+    "retained_readonly_stopped": true,
+    "jobs_running": true,
+    "all_generations_stopped": true
+  },
+  "final_read_only": {
+    "create_preserved_all_container_ids": true,
+    "cloud_executed": false,
+    "shared_local_client_tls_and_api_verified": true,
+    "read_only_mode": true,
+    "all_generations_stopped": true
+  },
+  "capacity_check": {
+    "data_disk_rejected_before_downtime": true,
+    "container_states_unchanged": true,
+    "state_sha_unchanged": true,
+    "source_content_bytes": 20845429722,
+    "system_backup_admission": {
+      "filesystem_free_bytes": 506620198912,
+      "required_filesystem_bytes": 44467749850,
+      "backup_root": "/var/backups/sunmoon-harbor",
+      "CFreeBytes": 119238344704,
+      "DataVhdLength": 84628471808,
+      "projected_c_free_after_backup_and_full_data_disk": 73499720742,
+      "minimum_physical_c_free": 53687091200
+    }
+  },
+  "backup": {
+    "complete": true,
+    "restore_verified": false,
+    "table_count": 49,
+    "row_count": 11216,
+    "catalog_summary": {
+      "projects": 5,
+      "repositories": 66,
+      "listed_artifacts": 167,
+      "reachable_artifacts": 431,
+      "tags": 166,
+      "untagged": 292,
+      "indexes": 132,
+      "accessories": 0
+    },
+    "capacity_admission": {
+      "filesystem_free_bytes": 506618904576,
+      "required_filesystem_bytes": 44468981886,
+      "backup_root": "/var/backups/sunmoon-harbor",
+      "CFreeBytes": 119238340608,
+      "DataVhdLength": 84628471808,
+      "projected_c_free_after_backup_and_full_data_disk": 73498484610,
+      "minimum_physical_c_free": 53687091200
+    },
+    "path": "/var/backups/sunmoon-harbor/host-managed-20260927-v1",
+    "manifest_sha256": "75ad11988835c82dfd635da5d649eafa7c650fb23df5c8138680e4ea46da6b8e",
+    "registry_files": 4416,
+    "registry": {
+      "bytes": 17868113920,
+      "sha256": "051b720a7def2b6aa41c2969e175011d5c4eed7302586688c7a3112070cbabc1",
+      "content_bytes": 17850818515
+    },
+    "runtime": {
+      "bytes": 2996203520,
+      "sha256": "5ce7edca297ec028d3da31ccfe81393f52fccf6b7bd1d728cc82dbe4ebd26454",
+      "content_bytes": 2996019441
+    },
+    "database_dump": {
+      "sha256": "6aa4e2605495790eb7a76b794848bef7e7288cec9eb51481e7eb64c0327b74e5",
+      "bytes": 611539
+    }
+  },
+  "backup_mode_restore": {
+    "backup": {
+      "complete": true,
+      "backup": "/var/backups/sunmoon-harbor/host-managed-20260927-v1",
+      "registry_files": 4416,
+      "registry_bytes": 17850818515,
+      "tables": 49,
+      "rows": 11216,
+      "source_stopped": true,
+      "restore_verified": false
+    },
+    "original_mode_restored": "writable",
+    "previous_running_state_restored": false,
+    "destination": "/var/backups/sunmoon-harbor/host-managed-20260927-v1"
+  },
+  "running_containers": [
+    "sunmoon-kind-136-control-plane",
+    "sunmoon-kind-136-worker2",
+    "sunmoon-kind-136-worker",
+    "kind-control-plane",
+    "kind-worker2",
+    "kind-worker"
+  ],
+  "volume_count": 46,
+  "free_bytes": {
+    "/": 485748375552,
+    "/data/harbor": 24355438592
+  },
+  "physical_space_after": {
+    "CFreeBytes": 98056019968,
+    "DataVhdLength": 84628471808,
+    "projected_c_free_after_full_data_disk": 75310309376
+  },
+  "cloud_executed": false,
+  "entry_switched": false,
+  "cleanup_performed": false,
+  "formal_cluster_created": false
+}

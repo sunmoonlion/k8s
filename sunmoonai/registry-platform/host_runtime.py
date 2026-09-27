@@ -47,7 +47,24 @@ class Instance:
             raise ValueError('Runtime journal belongs to another instance')
         self.compose = ['compose', '-p', self.project, '-f', str(self.root / 'compose.yaml'), '--profile', '*']
 
-    def immutable(self):
+    def mode(self):
+        mode = self.state.get('service_mode', 'read-only')
+        if mode not in ('read-only', 'writable'):
+            raise ValueError('Unknown persisted service mode')
+        return mode
+
+    def identity(self, role, mode=None):
+        mode = self.mode() if mode is None else mode
+        if mode not in ('read-only', 'writable'):
+            raise ValueError('Explicit service mode required')
+        if mode == 'writable' and role in ('registry', 'registryctl', 'core'):
+            writer = self.prep.get('writer')
+            if not writer or not writer.get('prepared'):
+                raise ValueError('Prepared writer generation required')
+            return writer['project'], self.state.get('writer_created', {})
+        return self.project, self.state['created']
+
+    def immutable(self, mode=None):
         for name, digest in self.prep['immutable_files'].items():
             path = self.root / name
             if (path.resolve() != path or not path.is_relative_to(self.root) or sha(path) != digest
@@ -56,19 +73,28 @@ class Instance:
         if docker('compose', 'version', '--short').decode().strip() != '5.1.3':
             raise ValueError('Compose version differs from preparation')
         verify_images(self.prep['images'])
-        return json.loads(docker(*self.compose, 'config', '--format', 'json'))
+        spec = json.loads(docker(*self.compose, 'config', '--format', 'json'))
+        if (self.mode() if mode is None else mode) == 'writable':
+            project, _ = self.identity('core', 'writable')
+            writer = json.loads(docker('compose', '-p', project, '-f',
+                str(self.root / self.prep['writer']['compose']), 'config', '--format', 'json'))
+            if set(writer['services']) != {'registry', 'registryctl', 'core'}:
+                raise ValueError('Writer service set differs')
+            spec['services'].update(writer['services'])
+        return spec
 
     def persist(self):
         save(self.path, self.state)
 
-    def inspect(self, role, spec=None):
-        name = self.project + '-' + role
+    def inspect(self, role, spec=None, *, mode=None):
+        project, created = self.identity(role, mode)
+        name = project + '-' + role
         result = json.loads(docker('inspect', name))[0]
         labels = result['Config'].get('Labels') or {}
         if (labels.get(OWNER) != self.project or labels.get('sunmoonai.registry.role') != role
-                or labels.get('com.docker.compose.project') != self.project
+                or labels.get('com.docker.compose.project') != project
                 or result['Image'] != self.prep['images'][role]['id']
-                or (role in self.state['created'] and result['Id'] != self.state['created'][role])):
+                or (role in created and result['Id'] != created[role])):
             raise ValueError('Container identity/ownership differs: ' + role)
         host = result['HostConfig']
         if host['Privileged'] or host['RestartPolicy']['Name'] != 'no' or any(m['Type'] == 'volume' for m in result['Mounts']):
@@ -101,17 +127,24 @@ class Instance:
         names = set(docker('ps', '-a', '--format', '{{.Names}}').decode().splitlines())
         result = {}
         for role, service in spec['services'].items():
-            if self.project + '-' + role not in names:
+            if self.identity(role)[0] + '-' + role not in names:
                 result[role] = 'absent'
             else:
                 info = self.inspect(role, service)
                 result[role] = info['State']['Status']
+        if self.prep.get('writer'):
+            inactive = 'read-only' if self.mode() == 'writable' else 'writable'
+            other = self.immutable(inactive)
+            for role in ('registry', 'registryctl', 'core'):
+                name = self.identity(role, inactive)[0] + '-' + role
+                result['retained/' + role] = ('absent' if name not in names else
+                    self.inspect(role, other['services'][role], mode=inactive)['State']['Status'])
         return result
 
     def create(self):
         storage(self.config, minimum_gib=20)
         spec = self.immutable()
-        if self.state.get('configuration_transition_open'):
+        if self.state.get('configuration_transition_open') or self.mode() != 'read-only':
             raise ValueError('Incomplete configuration transition requires review')
         status = self.check()
         if any(s not in ('absent', 'created', 'exited') for s in status.values()):
@@ -131,6 +164,9 @@ class Instance:
                 raise ValueError('Creation unexpectedly started a service')
             self.state['created'][role] = info['Id']; self.persist()
         self.state['creation_complete'] = True; self.persist()
+        if self.prep.get('writer'):
+            from host_mode import create as create_writer
+            create_writer(self)
         return self.check()
 
     def stop(self):
@@ -139,14 +175,21 @@ class Instance:
         for role in ['scan-jobs', 'trivy', 'registry-route', 'proxy', 'portal', 'core', 'jobservice', 'registryctl', 'registry', 'redis', 'postgresql']:
             if role not in self.state['created']:
                 continue
-            try:
-                info = self.inspect(role)
-                if info['State']['Running']:
-                    docker('stop', '--time', '60', info['Id'], timeout=75)
-                if self.inspect(role)['State']['Running']:
-                    raise ValueError('Service did not stop')
-            except Exception:
-                errors.append(role)
+            modes = [self.mode()]
+            if self.prep.get('writer') and role in ('registry', 'registryctl', 'core'):
+                modes.append('read-only' if self.mode() == 'writable' else 'writable')
+            for mode in modes:
+                _, recorded = self.identity(role, mode)
+                if role not in recorded:
+                    continue
+                try:
+                    info = self.inspect(role, mode=mode)
+                    if info['State']['Running']:
+                        docker('stop', '--time', '60', info['Id'], timeout=75)
+                    if self.inspect(role, mode=mode)['State']['Running']:
+                        raise ValueError('Service did not stop')
+                except Exception:
+                    errors.append(mode + '/' + role)
         if self.state.get('init_id'):
             try:
                 init = json.loads(docker('inspect', self.state['init_id']))[0]
@@ -165,9 +208,23 @@ class Instance:
             raise ValueError('Owned services could not be stopped: ' + ','.join(errors))
         return {'stopped_and_retained': sorted(self.state['created'])}
 
-    def start(self, with_jobs=False):
+    def start(self, with_jobs=None, *, allow_mode_transition=False):
         storage(self.config, minimum_gib=20)
+        if with_jobs is None:
+            with_jobs = self.mode() == 'writable'
         spec = self.immutable()
+        if self.state.get('mode_transition_open') and not allow_mode_transition:
+            raise ValueError('Incomplete service mode transition requires explicit recovery')
+        if self.mode() == 'writable':
+            if set(self.state.get('writer_created', {})) != {'registry', 'registryctl', 'core'}:
+                raise ValueError('Writer generation container identities incomplete')
+            for role in ('registry', 'registryctl', 'core'):
+                if self.inspect(role, mode='read-only')['State']['Running']:
+                    raise ValueError('Retained read-only generation must be stopped')
+        elif self.prep.get('writer'):
+            for role in self.state.get('writer_created', {}):
+                if self.inspect(role, mode='writable')['State']['Running']:
+                    raise ValueError('Retained writable generation must be stopped')
         if (not self.state.get('creation_complete') or self.state.get('stop_errors')
                 or self.state.get('metadata_acceptance_open') or self.state.get('write_acceptance_open')
                 or self.state.get('configuration_transition_open')
@@ -213,7 +270,7 @@ class Instance:
             self.state['started'] = True; self.persist()
         except Exception:
             self.stop(); raise
-        return {'started': started, 'health_verified': False, 'write_enabled': False, 'entry_switched': False,
+        return {'started': started, 'health_verified': False, 'write_enabled': self.mode() == 'writable', 'entry_switched': False,
                 'managed_jobservice_started': with_jobs}
 
 
@@ -222,7 +279,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('action', choices=('create', 'check', 'start', 'stop'))
     p.add_argument('--config', type=Path, required=True); p.add_argument('--apply', action='store_true')
-    p.add_argument('--with-jobs', action='store_true', help='Start accepted managed Jobservice with the host stack')
+    p.add_argument('--with-jobs', action='store_true', default=None, help='Start accepted managed Jobservice with the host stack')
     args = p.parse_args(); config = load(args.config.absolute())
     if args.with_jobs and args.action != 'start':
         raise ValueError('--with-jobs is only valid for start')

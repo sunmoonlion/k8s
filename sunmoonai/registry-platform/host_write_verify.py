@@ -8,7 +8,6 @@ Cloud 未经实机验证. This is acceptance, not permanent write promotion.
 """
 import argparse
 import base64
-import copy
 import fcntl
 import gzip
 import hashlib
@@ -23,12 +22,10 @@ import urllib.error
 import urllib.parse as url
 import urllib.request as http
 
-import yaml
-from host_prepare import directory, docker, load, storage, write
+from host_prepare import docker, load, storage, write
 from host_runtime import Instance, save
 from host_verify import artifact_records, catalog_identity, client
 from host_scanner_verify import baseline, ready
-from runtime_files import env
 from runtime_inspect import read
 from runtime_config import OWNER
 
@@ -48,7 +45,12 @@ def exchange(c, path, method='GET', raw=None, headers=None):
     # All requests, including token and upload Location, stay on the candidate.
     if not path.startswith('/') or path.startswith('//'):
         raise ValueError('Only explicit candidate paths allowed')
-    req = http.Request(BASE + path, data=raw, method=method, headers=headers or {})
+    endpoint = url.urlsplit(c.base)
+    if (endpoint.scheme != 'https' or endpoint.hostname != 'harbor.sunmoonai.com'
+            or endpoint.port not in (18443,30443) or endpoint.path != '/api/v2.0'
+            or endpoint.query or endpoint.fragment or endpoint.username or endpoint.password):
+        raise ValueError('Unexpected configured registry API target')
+    req = http.Request(c.base.removesuffix('/api/v2.0') + path, data=raw, method=method, headers=headers or {})
     try:
         response = c.client.open(req, timeout=30)
     except urllib.error.HTTPError as error:
@@ -146,49 +148,8 @@ def transport(c, auth, pull_auth):
 
 
 def prepare(instance, target):
-    spec = instance.immutable(); project = instance.project + '-write-' + ATTEMPT
-    directory(target); directory(target / 'registry', 10000, 0o750)
-    for source in (instance.root / 'config/registry').iterdir():
-        if not source.is_file() or source.resolve() != source:
-            raise ValueError('Unexpected registry configuration entry')
-        write(target / 'registry' / source.name, read(source), uid=10000, mode=0o640)
-    path = target / 'registry/config.yml'; registry = yaml.safe_load(read(path))
-    if (registry['storage']['maintenance']['readonly']['enabled'] is not True
-            or registry['storage']['maintenance']['uploadpurging']['enabled'] is not False
-            or registry['storage']['delete']['enabled'] is not False):
-        raise ValueError('Original registry protections differ')
-    registry['storage']['maintenance']['readonly']['enabled'] = False
-    # Preserve the initial copy as evidence; publish the changed copy atomically.
-    path.rename(target / 'registry-config-before.yml')
-    write(path, yaml.safe_dump(registry, sort_keys=False).encode(), uid=10000, mode=0o640)
-    write(target / 'core.env', env(read(instance.root / 'config/core/env'), {'READ_ONLY': 'false'}), uid=10000, mode=0o640)
-    services = {}
-    for role in ROLES:
-        item = copy.deepcopy(spec['services'][role]); item.pop('environment', None)
-        # Use original env_file definitions; parsed Compose contains secrets only in memory.
-        original = yaml.safe_load(read(instance.root / 'compose.yaml'))['services'][role]
-        item['env_file'] = copy.deepcopy(original.get('env_file', []))
-        if original.get('environment'):
-            item['environment'] = copy.deepcopy(original['environment'])
-        if role == 'core':
-            item['env_file'] = [{'path': str(target / 'core.env'), 'format': 'raw'}]
-        item['container_name'] = project + '-' + role
-        item['networks'] = {'harbor': {'aliases': [role]}}
-        for bind in item['volumes']:
-            if bind['target'] == '/storage':
-                bind['read_only'] = False
-            elif bind['target'] == '/etc/registry':
-                bind['source'] = str(target / 'registry')
-        services[role] = item
-    compose = {'name': project, 'services': services, 'networks': {'harbor': {
-        'name': instance.project + '-backend', 'external': True}}}
-    write(target / 'compose.yaml', yaml.safe_dump(compose, sort_keys=False).encode())
-    args = ['compose', '-p', project, '-f', str(target / 'compose.yaml')]
-    parsed = json.loads(docker(*args, 'config', '--format', 'json'))
-    names = set(docker('ps', '-a', '--format', '{{.Names}}').decode().splitlines())
-    if any(s['container_name'] in names for s in services.values()):
-        raise ValueError('Write trial container collision')
-    return project, args, parsed
+    from writer_config import prepare as render_writer
+    return render_writer(instance, target, instance.project + '-write-' + ATTEMPT)
 
 
 def inspect(instance, project, role, service):
@@ -212,7 +173,8 @@ def inspect(instance, project, role, service):
 
 def verify(instance, credentials, backup):
     storage(instance.config, minimum_gib=20)
-    if (not instance.state.get('scanner_acceptance', {}).get('passed') or instance.state.get('write_acceptance_open')
+    if (instance.mode() != 'read-only' or not instance.state.get('scanner_acceptance', {}).get('passed')
+            or instance.state.get('write_acceptance_open')
             or any(v not in ('created', 'exited') for v in instance.check().values())):
         raise ValueError('Stopped accepted candidate required; interrupted write windows need review')
     from host_backup import backup_path, read_manifest

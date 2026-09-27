@@ -1,3 +1,16 @@
+## 最新续接：2026-09-27 持续读写模式、冻结备份与系统盘完整归档通过
+
+基线f0affe960ec940ba05e8612f64c0f696dd480c0c；本地luna、不push。新host_mode.py、writer_config.py；修改host_runtime/host_backup/host_verify/host_write_verify及操作文档。未改平台版本、未打扫描器镜像补丁。
+
+- writer_config抽出试验/受管共用配置生成；main/writer-v1内新固定三个writer容器，共用同一数据目录，原readonly三个停止保留。原host-config.runtime.write_enabled=false为创建/恢复策略，运行模式以runtime-state.service_mode为唯一状态；identity/immutable/check/start/stop均选择对应容器，stop包含两套。普通writable start自动带scan-jobs。转换有mode_transition_open标记，未闭合拒普通启动；失败可显式read-only恢复，不丢弃已写数据。
+- 实测prepare、RO→RW、普通start/stop、RW→RO通过。统一create再次执行原/writer全部ID未变。本地共用TLS客户端严格证书/地址核验成功；云分支改用明确私网IPv4:30443并核DNS一致，共用代码但未经实机验证、无远端动作。最终main两套+扫描器全部停止、mode=read-only，配置/模式转换标记false，无后台会话。旧/136六节点running、卷46未变。
+- host_mode backup先容量准入再冻结，完成/失败后恢复原模式/运行状态；底层cold_backup拒绝writable。writer-v1和scanner纳入runtime，restore_prepare改写两套Compose新路径/身份，create创建两套停止容器；新增布局完整恢复仍未执行，不能承接旧布局restore_verified=true。
+- 数据盘原Harbor占79640641536B：candidate18915119104，旧backup-restore实例17965412352，main21711003648，备份20866928640等。余22.68GiB不足完整新归档+20GiB保留；负例在停服前拒绝，容器状态/状态文件SHA相同。按既有保留/最后清理要求没有删除或搬移任何副本。
+- 新支持WSL系统盘/var/backups/sunmoon-harbor/host-*（root私有），实时PowerShell读Cfree与dataVHDX Length；扣新备份+2GiB余量+data盘增长至100GiB后须C≥50GiB，不能拿WSL虚拟free代替C。系统备份和数据盘仍同物理盘，无机器外灾备。默认云不使用该系统盘适配器。
+- 实际完整备份/var/backups/sunmoon-harbor/host-managed-20260927-v1完成：4416文件17.8508GB；49表11216行；5项目66仓库431reachable/166tags（含v1/v2验收项目）。registry.tar17868113920B SHA051b720a7def2b6aa41c2969e175011d5c4eed7302586688c7a3112070cbabc1；runtime.tar2996203520B SHA5ce7edca297ec028d3da31ccfe81393f52fccf6b7bd1d728cc82dbe4ebd26454；manifestSHA75ad11988835c82dfd635da5d649eafa7c650fb23df5c8138680e4ea46da6b8e。全tar和逐成员SHA核过，restore_verified=false。流程起始writable stopped→冻结→备份→恢复writable stopped通过，再主动RO收尾；运行中备份并恢复运行分支未实测。
+- 公共scripts/results/luna-harbor-managed-mode.20260927.json，私有writer-v1/{lifecycle-verification,read-only-final,backup-capacity}.json、mode-*.json/dump、backup-run-*.json。最终Cfree98056019968B，dataVHDX84628471808B，data满100GiB后预计C余75310309376B；datafree24355438592B，rootfree485748375552B。没有清理、WSL压缩、入口切换、云操作或新main。AST/defaultplan/gitdiffcheck通过，无应用套件。
+- 下一步：新完整备份独立恢复仍受容量安排约束，不能盲目降门槛；Docker实际推拉/CI、最终旧写端冻结同步、正式SNI窗口（旧控制面停服具体授权尚未取得）、main三节点双挂载及重建Harbor独立性；云SSH前置/离线工具闭包/自启继续未完。发现旧deploy-kind.conf仍1.27.3+RECREATE=true，kind-up已有绑定kubectl/UID历史保护；正式main绝不能走这个历史配置，需新正式入口接统一平台流程。inbox仍旧kind/原kubeconfig/匹配1.27.3工具。最终清理必做，旧节点/卷/唯一备份保护，不通知“luna做完了”。
+
 ## 最新续接：2026-09-27 宿主候选镜像推拉、权限负例与只读重启读取通过
 
 基线d90762d3ed8dfe6443acb3c23100848eaa231266（受管scanner/备份单元已提交）；本地luna、不push。本单元新增host_write_verify.py与操作文档，host_runtime普通start增加write_acceptance_open保护。
