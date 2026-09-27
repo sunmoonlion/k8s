@@ -85,3 +85,8 @@ git diff --name-status 7896b339..luna
 ## 7. 数据盘实操后的挂载空间修正（2026-09-27）
 
 所有者已创建 100 GiB ext4 VHDX，UUID `a28de356-4ba1-4a21-93f5-744b9b9d8be0`。v1 三个挂载只在管理员 WSL 会话空间，PID 1/Docker 不可见。v2 发布目录独立保留，按所有者操作卡第 1、2a 节修复；助手只读检查已复现并记录，尚未替所有者执行挂载。不要重跑创建，不注册旧 v1 任务，不往未挂载路径恢复 Harbor。官方 Harbor 包已核验，registry-platform 当前只实现物料准备。业务 inbox 仍按第 1 节旧 kind；迁移未完成，剩余清理仍必须最后做。
+
+
+## 8. 数据盘挂载已复核通过（2026-09-27）
+
+所有者执行 v2 后，助手从当前 WSL 会话使用已发布脚本 `--require-service-visibility` 只读复核，退出 0。PID 1/Docker 同一挂载空间，三处挂载正确，旧路径设备/inode 与原结果一致。证据 `../../scripts/results/luna-data-storage-v2-mounted.20260927.json`。此结果替代前节“待修复”状态；不覆盖历史失败证据。计划任务/重启验收待办，Harbor 尚未安装恢复，业务 inbox 目标不变，剩余清理继续留到最终验收。

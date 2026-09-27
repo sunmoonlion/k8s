@@ -1,6 +1,6 @@
 # 所有者操作：创建并挂载 100 GiB 数据盘
 
-状态（2026-09-27）：**所有者已创建并格式化 100 GiB 数据盘**，UUID `a28de356-4ba1-4a21-93f5-744b9b9d8be0`。首次检查在管理员会话通过，但只读复核发现挂载仅在该会话空间，PID 1/Docker 尚不可见。当前执行第 1 节发布 v2，再执行第 2a 节修复；**不要重跑第 2 节创建**，暂不注册第 3 节任务。没有写入 Harbor/启动新服务。创建前 C 盘剩余 232.54 GiB；容量门禁仍为 172 GiB。
+状态（2026-09-27）：**所有者已完成 100 GiB 数据盘创建及 v2 挂载修复，助手从当前 WSL 会话复核通过**。UUID `a28de356-4ba1-4a21-93f5-744b9b9d8be0`；PID 1 与 Docker 可见性通过，可用约 96.86 GiB，旧路径设备/inode 未变。第 1、2、2a 节本机已完成，**不要再次创建/格式化**。计划任务、重启验收待后续安排，当前不用重复执行。没有恢复 Harbor 或启动新服务。创建前 C 盘剩余 232.54 GiB；首次创建容量门禁为 172 GiB。
 
 本文件对应已确定的[主方案](storage-and-harbor-placement-decision.md)。整块虚拟盘为 ext4，同一物理 C 盘不能防硬件故障。旧 `/data/kind-local-storage` 不被挂载、卸载或改写。
 
@@ -68,7 +68,7 @@ v1 的 Linux `mount` 运行在调用者空间，Windows 管理员和普通 WSL �
 
 v2 使用 `nsenter --target 1 --mount --`，只进入挂载空间，不修改传播属性，不停止服务。Linux helper 拒绝在非 PID 1 空间写挂载；检查还比对 PID 1 和运行中 Docker 的三个精确挂载及设备/inode。v1 发布目录原样保留。此修复属于已批准挂载单元，由所有者本人执行。
 
-**完成第 1 节 v2 发布后，继续同一管理员窗口执行下面代码，并回传结果。** 不执行第 2 节，也暂不执行第 3 节。
+**本机本节已执行并复核通过，以下保留为故障续接记录，当前不用重复执行。** 首次遇到同样问题时，完成第 1 节 v2 发布，再在同一管理员窗口执行以下代码；不执行第 2 节。
 
 ```powershell
 $DataUuid = (Get-Content -LiteralPath 'C:\wsl-disks\sunmoon-data.uuid' -Raw).Trim()
@@ -121,4 +121,6 @@ Interactive 任务在未登录时不保证运行，登录触发兜底；要登�
 
 [只读证据](../../scripts/results/luna-data-storage-preparation.20260927.json)：三个 PowerShell 文件 Parser 语法通过；两个 shell 文件 bash -n 与 ShellCheck 0.9.0 通过；Python AST 通过；Linux 默认 setup 只打印、缺盘明确失败、旧 native 只读检查通过。
 
-所有者已执行 Windows 创建/附盘/格式化，v1 管理员会话检查通过；服务挂载空间检查未通过，v2 修复待所有者执行。未注册计划任务、未做重启验收。UNC 默认执行被 RemoteSigned 拒绝，未修改/绕过策略；所有者使用 Windows 本地发布副本已实际运行。ShellCheck 仅在临时目录解包，没有系统安装。v2 静态与只读证据见 `../../scripts/results/luna-data-storage-v2-preparation.20260927.json`。
+所有者已执行 Windows 创建/附盘/格式化，v1 管理员会话检查通过；原服务空间检查未通过；现已由所有者执行 v2，助手普通 WSL 会话复核通过。计划任务注册尚未回传/核实，未做重启验收。UNC 默认执行被 RemoteSigned 拒绝，未修改/绕过策略；所有者使用 Windows 本地发布副本已实际运行。ShellCheck 仅在临时目录解包，没有系统安装。v2 静态与只读证据见 `../../scripts/results/luna-data-storage-v2-preparation.20260927.json`。
+
+最终挂载复核：[v2 实测结果](../../scripts/results/luna-data-storage-v2-mounted.20260927.json)。包含正确 UUID/ext4/rw、两条 bind 的设备/inode、旧路径身份和 systemd/Docker 可见性。历史失败记录保留在 `luna-data-storage-mounted.20260927.json`，不覆盖为成功。

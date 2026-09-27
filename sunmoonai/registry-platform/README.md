@@ -17,6 +17,8 @@ python3 sunmoonai/registry-platform/prepare-artifacts.py --apply
 
 本次 670,694,110 字节安装包经过两次超时续传，第三次完成并核验；证据 [luna-registry-artifacts.20260927.json](../scripts/results/luna-registry-artifacts.20260927.json)。下载成功不代表家庭网络长期稳定。
 
+随后只读遍历内嵌镜像归档，确认包含 12 个 `goharbor/*:v2.13.2` 镜像，均为 linux/amd64；[清单](../scripts/results/luna-registry-installer-inventory.20260927.json)。未执行 Docker 导入或安装。镜像环境字段没有披露内置 PostgreSQL 的主版本，因此不能据此宣称其可接收现有 PostgreSQL 17.6 的逻辑备份；该兼容性仍需准入核实。
+
 ## 后续准入与实施
 
 1. 数据盘需在 PID 1 与 Docker 的挂载空间检查通过；管理员会话单独成功不够。见 [数据盘操作卡](../kind-infrastructure/docs/owner-data-disk-100g.md)。

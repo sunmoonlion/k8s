@@ -1,0 +1,104 @@
+{
+  "at": "2026-09-27T03:50:57.996443+00:00",
+  "read_only_archive_inspection": true,
+  "installer": "/home/zymun/packages-to-be-installed/releases/registry-platform-2.13.2-linux-amd64/harbor-offline-installer-v2.13.2.tgz",
+  "images": [
+    {
+      "tags": [
+        "goharbor/prepare:v2.13.2"
+      ],
+      "architecture": "amd64",
+      "os": "linux",
+      "postgres_version_fields": []
+    },
+    {
+      "tags": [
+        "goharbor/harbor-core:v2.13.2"
+      ],
+      "architecture": "amd64",
+      "os": "linux",
+      "postgres_version_fields": []
+    },
+    {
+      "tags": [
+        "goharbor/harbor-db:v2.13.2"
+      ],
+      "architecture": "amd64",
+      "os": "linux",
+      "postgres_version_fields": []
+    },
+    {
+      "tags": [
+        "goharbor/harbor-jobservice:v2.13.2"
+      ],
+      "architecture": "amd64",
+      "os": "linux",
+      "postgres_version_fields": []
+    },
+    {
+      "tags": [
+        "goharbor/harbor-exporter:v2.13.2"
+      ],
+      "architecture": "amd64",
+      "os": "linux",
+      "postgres_version_fields": []
+    },
+    {
+      "tags": [
+        "goharbor/harbor-portal:v2.13.2"
+      ],
+      "architecture": "amd64",
+      "os": "linux",
+      "postgres_version_fields": []
+    },
+    {
+      "tags": [
+        "goharbor/harbor-log:v2.13.2"
+      ],
+      "architecture": "amd64",
+      "os": "linux",
+      "postgres_version_fields": []
+    },
+    {
+      "tags": [
+        "goharbor/harbor-registryctl:v2.13.2"
+      ],
+      "architecture": "amd64",
+      "os": "linux",
+      "postgres_version_fields": []
+    },
+    {
+      "tags": [
+        "goharbor/redis-photon:v2.13.2"
+      ],
+      "architecture": "amd64",
+      "os": "linux",
+      "postgres_version_fields": []
+    },
+    {
+      "tags": [
+        "goharbor/nginx-photon:v2.13.2"
+      ],
+      "architecture": "amd64",
+      "os": "linux",
+      "postgres_version_fields": []
+    },
+    {
+      "tags": [
+        "goharbor/registry-photon:v2.13.2"
+      ],
+      "architecture": "amd64",
+      "os": "linux",
+      "postgres_version_fields": []
+    },
+    {
+      "tags": [
+        "goharbor/trivy-adapter-photon:v2.13.2"
+      ],
+      "architecture": "amd64",
+      "os": "linux",
+      "postgres_version_fields": []
+    }
+  ],
+  "docker_load_performed": false
+}

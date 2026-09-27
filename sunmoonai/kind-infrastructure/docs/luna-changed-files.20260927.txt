@@ -53,6 +53,7 @@ sunmoonai/scripts/results/luna-data-disk-capacity.20260927.json
 sunmoonai/scripts/results/luna-data-disk-sizing.20260927.json
 sunmoonai/scripts/results/luna-data-storage-mounted.20260927.json
 sunmoonai/scripts/results/luna-data-storage-preparation.20260927.json
+sunmoonai/scripts/results/luna-data-storage-v2-mounted.20260927.json
 sunmoonai/scripts/results/luna-data-storage-v2-preparation.20260927.json
 sunmoonai/scripts/results/luna-docker-space-inventory.20260927.json
 sunmoonai/scripts/results/luna-duplicate-materials-candidates.20260927.json
@@ -85,5 +86,6 @@ sunmoonai/scripts/results/luna-reclaim-r4.20260927.json
 sunmoonai/scripts/results/luna-reclaim-r4.20260927.preflight.json
 sunmoonai/scripts/results/luna-reclaim-summary.20260927.json
 sunmoonai/scripts/results/luna-registry-artifacts.20260927.json
+sunmoonai/scripts/results/luna-registry-installer-inventory.20260927.json
 sunmoonai/scripts/results/luna-storage-entry-inspection.20260927.json
 sunmoonai/scripts/results/luna-wsl-space-inventory.20260927.json

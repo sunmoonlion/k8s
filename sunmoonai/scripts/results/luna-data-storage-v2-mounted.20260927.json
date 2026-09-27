@@ -1,0 +1,84 @@
+{
+  "at": "2026-09-27T03:49:32.760729+00:00",
+  "read_only": true,
+  "performed_by": "assistant after owner v2 apply",
+  "command": [
+    "sudo",
+    "-n",
+    "bash",
+    "/opt/sunmoon/admin/storage/storage-20260927-v2/check-storage-mounts.sh",
+    "--layout",
+    "sunmoon-data",
+    "--expected-uuid",
+    "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+    "--require-service-visibility"
+  ],
+  "exit": 0,
+  "result": {
+    "layout": "SUNMOON_DATA_LAYOUT_V1",
+    "expected_uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+    "root": {
+      "target": "/mnt/sunmoon-data",
+      "source": "/dev/sde",
+      "fstype": "ext4",
+      "uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+      "options": "rw,relatime",
+      "maj:min": "8:64",
+      "fsroot": "/"
+    },
+    "binds": [
+      {
+        "target": "/data/kind-clusters",
+        "source": "/mnt/sunmoon-data/kind-clusters",
+        "identity": [
+          2112,
+          4718593
+        ]
+      },
+      {
+        "target": "/data/harbor",
+        "source": "/mnt/sunmoon-data/harbor",
+        "identity": [
+          2112,
+          524289
+        ]
+      }
+    ],
+    "legacy_storage": {
+      "inode": [
+        2096,
+        33554434
+      ],
+      "mount": {
+        "target": "/",
+        "source": "/dev/sdd",
+        "fstype": "ext4",
+        "uuid": "693faed3-cebb-473e-81ae-fd88f1fc76b4",
+        "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+        "maj:min": "8:48",
+        "fsroot": "/"
+      }
+    },
+    "available_bytes": 103998709760,
+    "mount_namespace": "mnt:[4026532219]",
+    "service_visibility": {
+      "docker_running": true,
+      "views": [
+        {
+          "service": "systemd",
+          "pid": 1,
+          "mount_namespace": "mnt:[4026532219]"
+        },
+        {
+          "service": "docker",
+          "pid": 329,
+          "mount_namespace": "mnt:[4026532219]"
+        }
+      ]
+    }
+  },
+  "scheduled_task_registration": "not reported or independently verified",
+  "reboot_verified": false,
+  "harbor_installed": false,
+  "remaining_cleanup": "mandatory after migration acceptance"
+}

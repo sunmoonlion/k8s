@@ -2,7 +2,7 @@
 
 > **统一目标：以后只有一套部署代码，加上两种建集群的方式。本地把平台和应用跑通，云上除了建集群那一步，其余走的是同一条路。**
 
-版本 0.6，2026-09-27。**所有者已创建 100 GiB 数据盘，但 v1 挂载仅管理员会话可见；v2 服务空间修复待本人执行。** registry-platform 已有官方 2.13.2 安装包锁与断点下载入口，包已核验；部署/恢复/SSH 模块尚未实现。未改部署开关、未安装/迁移/停服/建群，未连接云主机。R1/R4 历史回收见第 8 节，剩余清理留到最终验收。
+版本 0.7，2026-09-27。**100 GiB 数据盘已创建，所有者执行 v2 修复后，助手独立复核 PID 1/Docker 的挂载可见性通过。** registry-platform 已有官方 2.13.2 安装包锁与断点下载入口，包已核验；部署/恢复/SSH 模块尚未实现。未改部署开关、未安装/迁移/停服/建群，未连接云主机。R1/R4 历史回收见第 8 节，剩余清理留到最终验收。
 
 ## 1. 已确定的目标与顺序
 
@@ -144,9 +144,9 @@ C:\wsl-disks\sunmoon-data.vhdx
 
 完整、可直接粘贴的命令统一维护在 [所有者 100 GiB 数据盘操作卡](owner-data-disk-100g.md)，包含固定版本脚本发布及 SHA256、首次创建/格式化/挂载、计划任务和中断续接。旧的内联创建/fstab 命令由该卡替代，避免两套实现漂移。
 
-执行顺序：先发布四个固定脚本到 Windows 和 root 所有的 `/opt/sunmoon/admin/storage/storage-20260927-v2`，首次才运行创建脚本。本机已有 VHDX，当前仅按操作卡第 2a 节修复：在 PID 1 挂载空间执行附盘检查，并核对 Docker 可见性；不要再次创建/格式化。正确后再注册附盘任务。任何哈希/容量/UUID/挂载冲突都停止。现有 RemoteSigned 拒绝直接执行 UNC 未签名脚本，因此卡中先本地发布；不调整系统执行策略，仍被拒绝时由所有者处理签名。
+执行顺序：先发布四个固定脚本到 Windows 和 root 所有的 `/opt/sunmoon/admin/storage/storage-20260927-v2`，首次才运行创建脚本。本机已有 VHDX，第 2a 节修复已执行并复核通过：在 PID 1 挂载空间执行附盘检查，并核对 Docker 可见性；不要再次创建/格式化。正确后再注册附盘任务。任何哈希/容量/UUID/挂载冲突都停止。现有 RemoteSigned 拒绝直接执行 UNC 未签名脚本，因此卡中先本地发布；不调整系统执行策略，仍被拒绝时由所有者处理签名。
 
-本轮完成 PowerShell Parser、bash -n、ShellCheck、Python AST，以及 Linux 只打印/缺盘拒绝/旧 native 检查；[只读证据](../../scripts/results/luna-data-storage-preparation.20260927.json)。**数据 VHDX 尚不存在，Windows 创建/附盘/格式化和重启均未实操，管理员步骤由所有者本人执行。**新 Harbor/KIND 启动服务与挂载门禁的集成尚待后续单元，不把检查脚本存在等同于服务已受保护。
+本轮完成 PowerShell Parser、bash -n、ShellCheck、Python AST，以及 Linux 只打印/缺盘拒绝/旧 native 检查；[只读证据](../../scripts/results/luna-data-storage-preparation.20260927.json)。**所有者已执行创建/格式化及 v2 挂载修复，助手从普通 WSL 会话复核通过；[实测结果](../../scripts/results/luna-data-storage-v2-mounted.20260927.json)。计划任务和重启验收未完成。**新 Harbor/KIND 启动服务与挂载门禁的集成尚待后续单元，不把检查脚本存在等同于服务已受保护。
 
 首次管理员附盘依据 [Microsoft WSL 文档](https://learn.microsoft.com/en-us/windows/wsl/wsl2-mount-disk)。自动任务用发行版所属用户，登录前执行不保证；旧任务如仍引用旧脚本须先审查。重启验收与手动压缩并入入口切换窗口，当前不关闭 WSL。旧路径不得叠挂新盘；机器外备份落点仍待所有者决定。
 
