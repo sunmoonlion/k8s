@@ -32,6 +32,7 @@
 | [`0005-agent`](../modules/0005-agent.md) 本地代理 | 用户机器 | 启动 `codex exec-server`；出站桥；根目录白名单；本地上限；审批弹窗；版本配对 | 不跑模型循环；不接触 key | `runtime` 仓 |
 | [`0006-knowledge`](../modules/0006-knowledge.md) 知识服务 | 内网 | 自有数据与用户资料的检索、领域工具、口径与计算，经 MCP | 不装观点；不整批下发 | `knowledge-app`（+ `info-app` 采集） |
 | [`0007-eval`](../modules/0007-eval.md) 评测 | 内网 | 金标准、三道门、四臂对比、样本沉淀 | 不参与在线路径 | 新，先落 `investment-backend` |
+| [`0008-info`](../modules/0008-info.md) 数据源平台 | 内网 | 公开数据的采集、原文留存、口径与时点标注、质量检查、产出数据集交给知识服务；我们自建的数据 | 不提供检索与 MCP（那是知识服务）；不调模型 | `info-app` |
 
 **Casdoor**、**PostgreSQL**、**对象存储**沿用平台现状，不占模块（[项目总览](../../../../project-guide/overall-architecture.md)）。
 

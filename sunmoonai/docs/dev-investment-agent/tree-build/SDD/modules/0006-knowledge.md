@@ -34,3 +34,6 @@ A 股非金融三大表与附注：入库的三大表、附注表提取工具、
 
 令牌（2026-09-25，D10）：配了 `KNOWLEDGE_MCP_JWT_PUBLIC_KEY`（Secret `knowledge-mcp-tokens/jwt-public-key.pem`）时，三段式令牌按 ES256 验签，`aud=knowledge`、`exp`、可选 `iss`，`sub`/`sandbox`/`tools` 即授权；静态表共存。工作台每次拉起或撤换沙箱都按用户签一枚，经供给器进沙箱 Secret（`F-KNOW-03` 完成）。未做：`F-KNOW-04` 用户资料入库；检索与领域工具（第一切口）；异常调用上报只到日志与计数。
 
+## 待做（2026-09-27，最小可行产品）
+
+支持多个数据集：登记表、内部登记接口、三个工具的可选参数 `dataset`、新工具 `list_datasets`。设计见 [`0008-info`](0008-info.md)「段三」。
