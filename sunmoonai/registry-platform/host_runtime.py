@@ -18,6 +18,7 @@ from host_prepare import docker, load, storage, write, verify_images
 from harbor_inputs import sha
 from runtime_inspect import read
 from runtime_config import OWNER
+from rehearsal_retirement import assert_active
 
 ORDER = ['postgresql', 'redis', 'registry', 'registryctl', 'core', 'portal', 'proxy']
 
@@ -209,6 +210,7 @@ class Instance:
         return {'stopped_and_retained': sorted(self.state['created'])}
 
     def start(self, with_jobs=None, *, allow_mode_transition=False):
+        assert_active(self.root)
         storage(self.config, minimum_gib=20)
         if with_jobs is None:
             with_jobs = self.mode() == 'writable'

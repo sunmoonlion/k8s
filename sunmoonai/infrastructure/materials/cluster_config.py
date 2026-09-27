@@ -108,8 +108,17 @@ def kubeadm_patches(images):
 
 def calico_objects(profile, data, root):
     # Rendering happens on the management machine, never on the remote node.
-    import yaml
     validate(profile)
+    return calico_for_network(profile['pod_cidr'], profile['cluster'], data, root)
+
+
+def calico_for_network(pod_cidr, cluster, data, root, detection='kubernetes-internal-ip'):
+    """Shared cloud/KIND Calico renderer; adapters supply network/identity only."""
+    import yaml
+    network = ipaddress.IPv4Network(pod_cidr, strict=True)
+    if (not 8 <= network.prefixlen <= 24 or not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,62}', cluster)
+            or detection not in ('kubernetes-internal-ip', 'interface=eth0')):
+        raise ValueError('Unsupported shared Calico network/identity/detection')
     record = next(x for x in data['shared_calico_materials'] if 'source' not in x)
     path = below(root, record['material_root_relative_path'])
     if sha256(path) != record['sha256']:
@@ -118,7 +127,7 @@ def calico_objects(profile, data, root):
     images = {x['source']: x['reference'] for x in data['shared_calico_materials'] if 'source' in x}
     seen = set()
     for obj in objects:
-        obj.setdefault('metadata', {}).setdefault('labels', {})['sunmoonai.com/cluster-bootstrap'] = profile['cluster']
+        obj.setdefault('metadata', {}).setdefault('labels', {})['sunmoonai.com/cluster-bootstrap'] = cluster
         if obj['kind'] == 'ConfigMap' and obj['metadata']['name'] == 'calico-config':
             obj['data']['calico_backend'] = 'vxlan'
         if obj['kind'] not in ('DaemonSet', 'Deployment'):
@@ -131,9 +140,9 @@ def calico_objects(profile, data, root):
             container['image'] = images[container['image']]
             container['imagePullPolicy'] = 'Never'
             if container['name'] == 'calico-node':
-                values = {'CALICO_IPV4POOL_CIDR': profile['pod_cidr'], 'CALICO_IPV4POOL_IPIP': 'Never',
+                values = {'CALICO_IPV4POOL_CIDR': pod_cidr, 'CALICO_IPV4POOL_IPIP': 'Never',
                           'CALICO_IPV4POOL_VXLAN': 'Always', 'CLUSTER_TYPE': 'k8s', 'FELIX_BPFENABLED': 'false',
-                          'IP_AUTODETECTION_METHOD': 'kubernetes-internal-ip'}
+                          'IP_AUTODETECTION_METHOD': detection}
                 container['env'] = [e for e in container['env'] if e['name'] not in values]
                 container['env'] += [{'name': k, 'value': v} for k, v in values.items()]
                 container['readinessProbe']['exec']['command'] = ['/bin/calico-node', '-felix-ready']

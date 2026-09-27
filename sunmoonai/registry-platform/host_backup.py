@@ -475,10 +475,17 @@ def main():
                         name: record['files']['database/' + name]['sha256'] for name in ('registry.dump', 'globals.sql')}
                     or not instance.state.get('database_reconciled')
                     or not instance.state.get('read_only_acceptance', {}).get('completed')
+                    or (instance.prep.get('scanner') and not instance.state.get('scanner_acceptance', {}).get('passed'))
+                    or (instance.prep.get('writer') and set(instance.state.get('writer_created', {})) != {'registry', 'registryctl', 'core'})
                     or any(v not in ('created', 'exited') for v in instance.check().values())):
                 raise ValueError('An independently restored, reconciled, accepted, stopped instance is required')
             record.update(restore_verified=True, restore_instance=instance.project,
                           restore_acceptance=instance.state['read_only_acceptance'])
+            if instance.prep.get('scanner'):
+                record['restore_scanner_acceptance'] = instance.state['scanner_acceptance']
+            if instance.prep.get('writer'):
+                record['restore_writer_layout_verified'] = True
+                record['restore_writer_push_verified'] = False
             save_manifest(root / 'backup.json', record)
             result = {'restore_verified': True, 'instance': instance.project}
         else:

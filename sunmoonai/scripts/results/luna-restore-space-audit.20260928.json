@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "observed_at": "2026-09-27T16:12:37.703081+00:00",
+  "read_only": true,
+  "backup": "/data/harbor/backups/host-main-20260927-v1",
+  "backup_manifest_sha256": "bb9e360b87eea50acc5f48ab75830c18cd3d13b29033e9d50f3622937b07d349",
+  "backup_fully_verified": true,
+  "backup_independently_restored": true,
+  "candidates": [
+    {
+      "path": "/data/harbor/candidates/harbor-2.13.2-20260927/recovery/registry",
+      "files": 4400,
+      "content_bytes": 17850816895,
+      "allocated_bytes": 17890091008,
+      "full_content_matches_backup": true,
+      "consumers": [
+        {
+          "name": "sunmoon-harbor-recovery-20260927-registryctl",
+          "id": "c91b774664952f88ab27b09424609fd6fcd85bf05033187dd118e335be5ec6cb",
+          "running": false,
+          "restart": "no"
+        },
+        {
+          "name": "sunmoon-harbor-recovery-20260927-registry",
+          "id": "df2dddb14f50a7951fe23ce9ba38f0569fb5f5c1ee0ceba94c462796bb50e81a",
+          "running": false,
+          "restart": "no"
+        }
+      ]
+    },
+    {
+      "path": "/data/harbor/instances/sunmoon-harbor-backup-20260927/registry",
+      "files": 4400,
+      "content_bytes": 17850816895,
+      "allocated_bytes": 17890082816,
+      "full_content_matches_backup": true,
+      "consumers": [
+        {
+          "name": "sunmoon-harbor-backup-20260927-registry",
+          "id": "7883f21f4e5b7553a40ca9a5cf8e485831556b6cc86b5f4b45c4a85403bd2b7e",
+          "running": false,
+          "restart": "no"
+        },
+        {
+          "name": "sunmoon-harbor-backup-20260927-registryctl",
+          "id": "bf3646a94c87b5e0be7968c8920027f2b6342d817d4b25df12a00f002444328d",
+          "running": false,
+          "restart": "no"
+        }
+      ]
+    }
+  ],
+  "allocated_release_estimate_bytes": 35780173824,
+  "data_free_bytes": 24355348480,
+  "new_restore_required_bytes_including_reserve": 44469158084,
+  "current_shortfall_bytes": 20113809604,
+  "projected_free_after_reclaim_and_restore_budget_bytes": 15666364220,
+  "minimum_retained_data_reserve_bytes": 21474836480,
+  "owner_exception_required": true,
+  "reclaim_executed": false,
+  "impact": "The listed historical rehearsal containers must remain stopped; future rehearsals need fresh restoration.",
+  "preserved": [
+    "old KIND nodes and volumes",
+    "old /data/kind-local-storage",
+    "all backup archives",
+    "current main Harbor",
+    "candidate source config/private/generated files"
+  ],
+  "not_claimed": [
+    "immediate Windows C disk release",
+    "hardware-failure protection",
+    "new backup restored"
+  ]
+}

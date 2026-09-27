@@ -17,6 +17,7 @@ import time
 
 from harbor_inputs import sha, write_new
 from recovery_candidate import RUN, PROJECT, PG, PG_RUN, SERVICES, BACKUP
+from rehearsal_retirement import assert_active
 
 MATERIALS=Path(__file__).resolve().parents[1]/'cicd-platform/materials'
 sys.path.insert(0,str(MATERIALS))
@@ -33,6 +34,8 @@ END=None
 
 
 def cmd(argv,stdin=None,timeout=120):
+    if argv[:2] not in (['docker', 'inspect'], ['docker', 'ps'], ['docker', 'stop']):
+        assert_active(RUN)
     if END is not None:
         timeout=min(timeout,END-time.monotonic())
         if timeout<=0: raise RuntimeError('Recovery deadline exceeded')
@@ -92,6 +95,7 @@ def stop(state):
 
 def run():
     global END
+    assert_active(RUN)
     if os.geteuid()!=0 or RUN.resolve()!=RUN: raise RuntimeError('Root and exact candidate path required')
     if STATE.exists(): raise RuntimeError('Run already exists; use stop, never recreate containers')
     prep=json.loads((RUN/'preparation.json').read_text())
@@ -190,6 +194,7 @@ def verify_application(state):
 
 
 def resume():
+    assert_active(RUN)
     global END
     if os.geteuid()!=0: raise RuntimeError('Root required')
     state=json.loads(STATE.read_text())

@@ -2,7 +2,7 @@
 
 目标仍是：一套平台和应用部署代码，KIND / kubeadm 两种建群方式。
 
-`prepare.py` 当前实现 **plan / render / check**，没有 create、delete 或 apply 动作。它为 `sunmoon-kind-main` 准备建群参数、复核本地物料和现场条件；**不能把本单元当作正式建群完成**。旧 `deploy-kind/deploy-kind.conf` / `kind-cluster.yaml` 是 1.27.3 历史路径，不用于新正式集群。
+`prepare.py` 实现 **plan / render / check**；`cluster.py` 新增 **create / install-cni / preflight**，创建/安装默认只打印，实际分支尚未执行。它们为 `sunmoon-kind-main` 准备建群参数、复核本地物料和现场条件；**不能把本单元当作正式建群完成**。旧 `deploy-kind/deploy-kind.conf` / `kind-cluster.yaml` 是 1.27.3 历史路径，不用于新正式集群。
 
 ## 固定输入
 
@@ -41,7 +41,27 @@ sudo -n python3 -B sunmoonai/kind-infrastructure/formal/prepare.py check
 
 容量同时读 Windows C 实际 free 和数据 VHDX Length。初始建群暂计系统盘 10 GiB、元数据 2 GiB、新数据盘 2 GiB；扣除数据 VHDX 长满 100 GiB 的潜在增长后 C 必须余 50 GiB，数据盘必须余 20 GiB。**这是初始建群预算，不包含独立 Harbor 恢复副本或业务数据库增长，也不是磁盘配额**。后续执行器需在动作前复核并追踪实际增量。
 
-退出码：0 为计划/渲染成功；1 为输入、物料或现场读取失败；2 为检查已完成但尚不准建群。目前创建器和 P3 尚未完成，`ready_for_creation` 明确为 false，不可用参数跳过。现场检查要求旧/验证控制面仍运行；P3 停旧控制面后须使用维护前快照与容器身份核对的后续创建器，不能为通过检查重启占端口的旧控制面。
+`prepare.py` 退出码：0 为计划/渲染成功；1 为输入、物料或现场读取失败；2 为检查已完成但尚不准建群。P3及创建器实机验收尚未完成，`ready_for_creation` 明确为 false，不可用参数跳过。此准备检查要求旧/验证控制面仍运行；P3 停旧控制面后使用下面的创建器核对维护前快照与容器身份，不能为通过准备检查重启占端口的旧控制面。
+
+## 正式创建器（代码已实现，尚未实机建群）
+
+```sh
+# 默认仅打印，两个命令不需要 root、不执行 Docker/API。
+python3 -B sunmoonai/kind-infrastructure/formal/cluster.py create
+python3 -B sunmoonai/kind-infrastructure/formal/cluster.py install-cni
+
+# 只读准入。实际入口 profile 必须显式传入，不能用38443候选替代。
+# 当前使用最终preview仅检查拒绝路径，不表示该代理已经部署。
+sudo -n python3 -B sunmoonai/kind-infrastructure/formal/cluster.py preflight --entry-config sunmoonai/registry-platform/config/sni-local-formal.preview.json
+```
+
+`create --apply --entry-config <已接管30443的profile>` 的前置条件：系统盘 managed 完整备份 `restore_verified=true` 并重新校验全部归档/成员；宿主实例处于已对账只读模式、无未闭合转换、基础服务运行；公开30443的代理必须有准确受管ID/配置/镜像，严格TLS指向新叶且realm不变；旧控制面已经由另一个获准维护操作停止，两个旧worker运行且三节点ID/镜像/挂载/端口与快照一致；新目录/kubeconfig/节点不存在，端口/路由/真实容量满足预算。脚本不会代替维护操作停旧节点，也不将一个布尔批准参数当作验收证据。
+
+实际创建路径在独立盘创建六个空目录与0700的 `.state`，用锁定归档导入官方节点镜像并核真实ID，再用精确KIND工具创建；使用 `--retain`，失败不自动删除、不原地重建。新节点在创建返回或常规异常收尾时设 `restart=no`，记录精确ID、显式kubeconfig摘要和首次kube-system UID。**进程被强杀/断电时不保证 finally 收尾，重启后必须检查未完成状态和新节点restart策略；存储门禁自动启动/这种中断恢复尚未实现，不可视为生产启动验收完成。**已存在半成品拒绝重跑create，需先人工检查其状态，不清理现有卷。
+
+`install-cni --apply` 只接受已登记三个新节点/同镜像/实际六挂载/停止自动重启，以及未漂移的kubeconfig/UID和1.36.4客户端服务端。固定Calico镜像离线导入，复用 `infrastructure/materials/cluster_config.py` 的共用渲染（KIND只传eth0探测参数），系统预载镜像设置Never；等待节点Ready和4个系统控制器 rollout。它不部署平台、不改inbox，不等于静态PV/真实镜像拉取或业务验收。
+
+本轮：AST与两默认计划通过，共用Calico云端输入在重构前后输出一致；生成38个正式KIND Calico对象。只读preflight实际以“managed备份独立恢复未通过”拒绝，未建任何新目录/容器。证据见[执行器检查](../../scripts/results/luna-formal-kind-executor.20260928.json)。云上仍未经实机验证。
 
 ## 本轮实际结果与未完成项
 
@@ -52,7 +72,7 @@ sudo -n python3 -B sunmoonai/kind-infrastructure/formal/prepare.py check
 1. 新 managed Harbor 完整备份的独立恢复演练（旧布局验收不能代替）；当前容量不足，保留门槛。
 2. P3 [维护步骤](../../registry-platform/docs/entry-maintenance.md)、所有者 WSL 压缩与旧控制面停机窗口；38443过渡候选已验，正式切换执行器尚待实现，入口故障须能恢复旧控制面。
 3. 正式 30443 SNI / Harbor 的 TLS、认证推拉与回退验收。
-4. 带存储门禁的正式创建/启动入口、CNI 导入与现有共享平台模块接线。不得直接运行历史自动重建入口，也不得直接运行裸 `kind create` 跳过门禁。
+4. 正式创建器/CNI实机验收、存储门禁启动入口及现有共享平台模块接线。不得直接运行历史自动重建入口，也不得直接运行裸 `kind create` 跳过门禁。
 
 建群后记录真实 UID，验六条实际 Docker mount、静态 PV、仓库信任与真实拉取，再部署平台。重建集群不影响 Harbor 数据必须实测。业务 inbox 仍用旧 `kind` 和原 kubeconfig / 1.27.3 kubectl。**最终清理仍是必须完成的收尾项，目前不执行。**
 

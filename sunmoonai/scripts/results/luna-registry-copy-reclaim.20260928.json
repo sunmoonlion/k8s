@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "approved_audit_sha256": "3c466a57985d3ff484826bce00e2ecc5cfa8ca6e11ce957f8128d7a865909d44",
+  "completed": true,
+  "before_free_bytes": 24355348480,
+  "physical_admission": {
+    "CFreeBytes": 92685406208,
+    "DataVhdLength": 84628471808,
+    "remaining_data_growth_bytes": 22745710592,
+    "initial_node_budget_bytes": 10737418240,
+    "metadata_margin_bytes": 2147483648,
+    "projected_c_free_bytes": 57054793728,
+    "minimum_c_free_bytes": 53687091200
+  },
+  "targets": [
+    "/data/harbor/candidates/harbor-2.13.2-20260927/recovery/registry",
+    "/data/harbor/instances/sunmoon-harbor-backup-20260927/registry"
+  ],
+  "target_measurements": {
+    "/data/harbor/candidates/harbor-2.13.2-20260927/recovery/registry": {
+      "before_free_bytes": 24355319808,
+      "after_free_bytes": 42245406720,
+      "net_free_increase_bytes": 17890086912,
+      "empty_root_retained": true
+    },
+    "/data/harbor/instances/sunmoon-harbor-backup-20260927/registry": {
+      "before_free_bytes": 42245406720,
+      "after_free_bytes": 60135485440,
+      "net_free_increase_bytes": 17890078720,
+      "empty_root_retained": true
+    }
+  },
+  "after_free_bytes": 60135485440,
+  "containers_deleted": false,
+  "volumes_deleted": false,
+  "backups_deleted": false,
+  "main_harbor_changed": false,
+  "retirement_markers_written": true,
+  "net_free_increase_bytes": 35780136960,
+  "owner_authorization": "同意，仅这两处提前回收",
+  "remaining_cleanup_deferred": true
+}

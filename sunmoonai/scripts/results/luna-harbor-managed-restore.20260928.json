@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "backup": "/var/backups/sunmoon-harbor/host-managed-20260927-v1",
+  "instance": "sunmoon-harbor-managed-restore-20260928",
+  "restore_verified": true,
+  "backup_manifest_sha256": "a7ca029de19eb28c3de7bda8b3a7e91ae6e7fafd15d6588e826e7ae7ca07f94e",
+  "backup_registry_sha256": "051b720a7def2b6aa41c2969e175011d5c4eed7302586688c7a3112070cbabc1",
+  "backup_runtime_sha256": "5ce7edca297ec028d3da31ccfe81393f52fccf6b7bd1d728cc82dbe4ebd26454",
+  "registry_reconciliation": {
+    "files": 4416,
+    "bytes": 17850818515,
+    "all_file_sha256_match": true
+  },
+  "database_reconciliation": {
+    "tables": 49,
+    "rows": 11216,
+    "server_version_num": "170006"
+  },
+  "read_only_acceptance": {
+    "completed": true,
+    "catalog": {
+      "projects": 5,
+      "repositories": 66,
+      "listed_artifacts": 167,
+      "reachable_artifacts": 431,
+      "tags": 166,
+      "untagged": 292,
+      "indexes": 132,
+      "accessories": 0
+    },
+    "registry_http": {
+      "manifest_count": 431,
+      "all_manifest_bytes_verified": true,
+      "anonymous_manifest_denied": true,
+      "sample_layer": {
+        "digest": "sha256:ba9916be9d18f219a90a7eedd7d6a179dd9aecd3b38dc87d5ea85fbac2e18a2a",
+        "bytes": 121690112
+      },
+      "tls_verified": true,
+      "production_token_realm_preserved": true,
+      "credentials_sent_only_to_candidate": true
+    },
+    "five_year_leaf_live_verified": true,
+    "read_only": true,
+    "entry_switched": false,
+    "push_or_jobservice_verified": false,
+    "references_compared_as_complete_relationship_multisets": true
+  },
+  "scanner": {
+    "passed": true,
+    "registration_uuid": "07d3f625-ba80-11f1-b91d-a6673bbf47a3",
+    "restored_registration_verified": true,
+    "projects_verified": 5,
+    "survives_core_restart": true,
+    "scan_status": "Success",
+    "report_sha256": "6b6f232042c8abe69f748c35b791068012ca3609565115305bbfb7a4291d578b",
+    "vulnerability_occurrences": 150,
+    "metadata_read_only_restored": true,
+    "original_jobservice_stayed_stopped": true
+  },
+  "writer_layout_verified": true,
+  "writer_push_verified": false,
+  "services": {
+    "core": "exited",
+    "jobservice": "created",
+    "portal": "exited",
+    "postgresql": "exited",
+    "proxy": "exited",
+    "redis": "exited",
+    "registry": "exited",
+    "registry-route": "exited",
+    "registryctl": "exited",
+    "scan-jobs": "exited",
+    "trivy": "exited",
+    "retained/registry": "created",
+    "retained/registryctl": "created",
+    "retained/core": "created"
+  },
+  "main_mode": "read-only",
+  "main_services": {
+    "core": "exited",
+    "jobservice": "exited",
+    "portal": "exited",
+    "postgresql": "exited",
+    "proxy": "exited",
+    "redis": "exited",
+    "registry": "exited",
+    "registry-route": "exited",
+    "registryctl": "exited",
+    "scan-jobs": "exited",
+    "trivy": "exited",
+    "retained/registry": "exited",
+    "retained/registryctl": "exited",
+    "retained/core": "exited"
+  },
+  "retired_rehearsals": [
+    {
+      "root": "/data/harbor/candidates/harbor-2.13.2-20260927/recovery",
+      "startup_guard_refuses": true,
+      "registry_empty": true
+    },
+    {
+      "root": "/data/harbor/instances/sunmoon-harbor-backup-20260927",
+      "startup_guard_refuses": true,
+      "registry_empty": true
+    }
+  ],
+  "protected_old_nodes": [
+    {
+      "name": "kind-control-plane",
+      "id": "790e27b223e82424a27bb52329ebb60e8a5d9b264395ca779e352876cd22af3e",
+      "running": true,
+      "mounts_ports_unchanged": true
+    },
+    {
+      "name": "kind-worker",
+      "id": "6b0fef2472aef24a0ff86a2f01654b2b4da3a23dbd3895c84058b1c3e74d038f",
+      "running": true,
+      "mounts_ports_unchanged": true
+    },
+    {
+      "name": "kind-worker2",
+      "id": "7d5e66507c8f84136f9052e7ff43e512e836ec58dc740d637ca97c3634736b37",
+      "running": true,
+      "mounts_ports_unchanged": true
+    }
+  ],
+  "running_containers": [
+    "sunmoon-kind-136-control-plane",
+    "sunmoon-kind-136-worker2",
+    "sunmoon-kind-136-worker",
+    "kind-control-plane",
+    "kind-worker2",
+    "kind-worker"
+  ],
+  "docker_volume_count": 46,
+  "data_free_bytes": 39172280320,
+  "public_entry_switched": false,
+  "formal_cluster_created": false,
+  "application_tests_run": false,
+  "cloud_execution": false
+}

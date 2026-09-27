@@ -1,6 +1,6 @@
 # 宿主 Harbor 的备份与独立恢复
 
-本地与云上使用同一份Harbor运行配置，集群只是使用方。本入口先覆盖本次本地**已对账、只读、起始停止**的宿主实例。生产可写仓库的冻结/恢复写入、定时备份、远程SSH、云端实机均未在此入口实现，不能拿它直接停线上写库。
+本地与云上使用同一份Harbor运行配置，集群只是使用方。本底层入口处理本次本地**已对账、只读、起始停止**的宿主实例。受管读写模式的冻结/恢复另由[host_mode](host-mode.md)调用；定时备份、远程SSH和云端实机尚未在此入口验收，不能拿它直接停线上写库。
 
 ## 备什么、如何保持一致
 
@@ -50,9 +50,11 @@ sudo -n python3 -B sunmoonai/registry-platform/host_backup.py record-restore \
   --config /data/harbor/instances/sunmoon-harbor-backup-20260927/host-config.json --apply
 ```
 
-`record-restore`要求恢复实例确实引用同一备份、PG已对账、全目录及HTTP摘要验收已通过、所有容器再次停止，才记录`restore_verified=true`。此记录不表示重启WSL、重建KIND、Jobservice、push、CI/CD或云上已验收。
+`record-restore`要求恢复实例确实引用同一备份、PG已对账、全目录及HTTP摘要验收已通过、所有容器再次停止，才记录`restore_verified=true`。带scanner的备份还必须在恢复实例运行`host_scanner_verify.py --existing-registration`通过；带writer的备份须三只可写容器均已创建且两套配置/身份/挂载核对通过。writer布局核验不等于恢复后push成功，回执分别记录。此记录不表示重启WSL、重建KIND、真实CI/CD或云上已验收。
 
 两个本地宿主副本都使用回环18443，必须逐个操作，不得同时启动。失败保留新目标供分析，停止仅针对受管容器ID；原备份和源实例不覆盖。磁盘空间不足时停止动作仍可执行。强制杀进程/断电可能跳过finally，恢复后先check/stop核对源和目标，不做任何容器/卷清理。
+
+**2026-09-28历史实例停用：** 上面2026-09-27示例中的`sunmoon-harbor-backup-20260927`及最初candidate/recovery的重复registry内容，已按所有者明确例外回收，容器/配置/备份全部保留，受管启动被停用标记阻止。不得再次照旧示例启动，也不得删标记绕过；恢复使用新的实例名。[具体范围与实际释放量](restore-space-exception.md)。
 
 ## 容量和保留
 
@@ -105,3 +107,25 @@ python3 -B sunmoonai/registry-platform/host_backup.py backup \
 新增[host_mode.py backup](host-mode.md)负责停服前容量准入、切到只读、调用本冷备份、恢复原模式/运行状态。底层cold_backup对可写或未闭合转换拒绝执行。runtime归档包含writer-v1与scanner；恢复默认只读，重写新部署的两套Compose路径与身份，统一create创建两套停止容器。
 
 WSL允许显式选择 `/var/backups/sunmoon-harbor/host-*`，用于100GiB数据盘保留演练副本时的新完整备份。必须另核C物理空间，预留数据盘长满100GiB的增长量、备份量及2GiB额外量，C剩余不得低于50GiB；路径不用于云默认值。该备份仍在同一物理盘，不是机器外灾备。先前备份和恢复记录保留，新writer布局恢复不能宣称已验收。
+
+## 新 managed 布局独立恢复通过（2026-09-28）
+
+上段“新writer布局恢复未验”为此前状态，本次已完成。备份`/var/backups/sunmoon-harbor/host-managed-20260927-v1`，全新实例`sunmoon-harbor-managed-restore-20260928`；没有复用已清空的历史实例。完整结果见[脱敏回执](../../scripts/results/luna-harbor-managed-restore.20260928.json)。
+
+1. `restore-prepare`完整核归档及每个成员SHA，再写入新目录并独立重读4416个镜像文件；17,850,818,515B全部一致。私钥、加密/签名密钥和证书随私有runtime恢复，未重新生成；registry及runtime归档原SHA不变。
+2. `host_runtime create`创建11只只读/辅助容器及3只受管writer容器，均停止；所有新挂载和网络身份指向新实例。`host_restore`以同版PG17.6恢复49表11216行，全部表/角色/结构/序列等库存与导出逐项相同，初始化器停止保留。
+3. `host_verify`在18443暂启新副本；5项目66仓库、167顶层/431可达制品、166tags完整一致。431份manifest原始字节SHA全过；流式层121,690,112B摘要一致；匿名拒绝、原CA和五年叶严格TLS、规范30443认证realm均通过。
+4. `host_scanner_verify --existing-registration`验证原登记UUID`07d3f625-ba80-11f1-b91d-a6673bbf47a3`及5项目映射；真实任务Success/150条发现，Core重启保留。原恢复队列27键未清空；扫描后恢复只读并停止所有新服务。不对官方镜像打补丁，扫描发现按既定已知项处理。
+5. `record-restore`再次核全部备份和恢复实例，写`restore_verified=true`。manifest因追加验收回执更新为`a7ca029de19eb28c3de7bda8b3a7e91ae6e7fafd15d6588e826e7ae7ca07f94e`；数据归档不改。三只writer配置/身份/挂载通过，**本恢复副本未再做push**，`restore_writer_push_verified=false`。
+
+执行顺序沿用上面命令，更换为本节backup/deployment路径；在`host_verify`之后、`record-restore`之前加入：
+
+```sh
+sudo -n python3 -B sunmoonai/registry-platform/host_scanner_verify.py \
+  --config /data/harbor/instances/sunmoon-harbor-managed-restore-20260928/host-config.json \
+  --docker-credentials /home/zymun/.docker/config.json --existing-registration --apply
+```
+
+这些路径是本次完成记录，不是允许覆盖重跑的目标。下一次恢复必须使用新名字和重新通过的容量准入。最终主副本和恢复副本均只读、停止；只有旧/136六个节点运行，卷仍46，旧三节点ID/挂载/端口复核相同，datafree39,172,280,320B（约36.48GiB）。收尾只读汇总首次采用挂载列表顺序比较失败，重新逐项核对路径/卷/权限/端口无差异，改为按Destination排序比较完整列表，未忽略挂载属性。
+
+此次解决的是新版备份实际可恢复性。旧源尚未冻结、正式30443尚未接管、main集群尚未创建；Docker/真实CI推拉、重建Harbor独立性和最终其余清理仍待完成。

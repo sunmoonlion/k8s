@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "python_ast": "pass",
+  "cloud_calico_before_after_equal": true,
+  "cloud_input": "local rendering fixture; no cloud execution",
+  "formal_calico_objects": 38,
+  "formal_create_plan": "pass",
+  "formal_cni_plan": "pass",
+  "preflight_live_result": "refused: managed Harbor backup independent restoration has not passed",
+  "cluster_created": false,
+  "cni_installed": false,
+  "cloud_execution": false,
+  "application_test_suite_run": false
+}

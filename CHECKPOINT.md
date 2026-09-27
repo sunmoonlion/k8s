@@ -1,3 +1,16 @@
+## 最新续接：2026-09-28 限定空间回收与新managed备份独立恢复通过
+
+基线5248faaebb8462465452b62f15db98caed2ea38c；本地luna、不push。本单元先新增正式KIND创建/CNI代码，现场只读准入因新版备份未独立恢复拒绝；随后所有者明确批准“同意，仅这两处提前回收”，这个例外覆盖仅两处历史registry内容，其他清理仍最后且必须做。
+
+- formal/cluster.py默认计划，create/install-cni必须--apply。创建要求新版备份独立恢复、受管正式30443已服务新只读Harbor、旧CP已由另行获准维护停下、固定旧三节点身份和全新main目录/端口/容量。三节点六挂载、记录工具/镜像/SHA/UID/kubeconfig，--retain不自动删除，finally仅新节点restart=no。CNI复用infrastructure/materials/cluster_config.py提取的calico_for_network，导入锁定3镜像，客户端/服务端1.36.4核对，等待节点与控制器Ready。创建/CNI仍未实机执行；异常崩溃可能越过finally，自动启动/中断续接尚待实现。云renderer前后fixture一致38对象，无云操作。公开luna-formal-kind-executor.20260928.json保留此前预检拒绝事实。
+- restore_space.py完整复核旧host-main备份及2×4400文件、精确容器ID/停止/restart=no、物理C门槛后，只删除/data/harbor/candidates/harbor-2.13.2-20260927/recovery/registry与/data/harbor/instances/sunmoon-harbor-backup-20260927/registry内已核验内容，空目录保留。各净释放17890086912/17890078720B，扣新增收据整次净35780136960B（33.32GiB）。已保留私有可续接日志/data/harbor/reclaim-history/registry-copies-20260928-v1。两个旧演练root留下retired-registry-copy.json；host_runtime与recovery启动均拒绝，不删除标记直接重启。全部备份/数据库/密钥/配置、当前main、旧节点/卷和candidate输入保留。
+- 审批清单SHA3c466a57985d3ff484826bce00e2ecc5cfa8ca6e11ce957f8128d7a865909d44；公共luna-restore-space-audit与luna-registry-copy-reclaim.20260928.json，docs/restore-space-exception.md。执行前Cfree92685406208B/dataVHD84628471808B，扣满100GiB增长+节点10GiB+2GiB后C57054793728B，过50GiB。没有压缩，不声称C物理立即释放33GiB。
+- /var/backups/sunmoon-harbor/host-managed-20260927-v1在全新sunmoon-harbor-managed-restore-20260928恢复：4416文件17850818515B全SHA；PG17.6逻辑恢复49表11216行库存全同；严格CA/五年叶TLS、5项目66仓库167顶层/431可达/166tags一致，431manifest原始SHA与121690112B层通过，匿名拒绝和原30443realm保持。新runtime scanner/writer布局全部恢复，11基础/辅助+3writer容器及初始化器均保留。
+- 恢复实例existing-registration实测：UUID07d3f625-ba80-11f1-b91d-a6673bbf47a3、5项目映射、真实Success/150发现、Core重启保留、恢复队列27键未清。reportSHA6b6f232042c8abe69f748c35b791068012ca3609565115305bbfb7a4291d578b。结束恢复只读且停止。record-restore新增scanner通过与writer三容器/挂载核对门槛，记录restore_verified=true/restore_writer_layout_verified=true/restore_writer_push_verified=false。未在恢复副本做push，不继承源实例结果。
+- backup.json追加验收后SHAa7ca029de19eb28c3de7bda8b3a7e91ae6e7fafd15d6588e826e7ae7ca07f94e；registry/runtime归档SHA051b720a7def2b6aa41c2969e175011d5c4eed7302586688c7a3112070cbabc1和5ce7edca297ec028d3da31ccfe81393f52fccf6b7bd1d728cc82dbe4ebd26454不变。公开luna-harbor-managed-restore.20260928.json；私有详细回执在新实例scanner/recovery-verification-v1及runtime-state.json，源备份不含新增凭据外传。
+- 收尾辅助脚本首次按Docker挂载列表顺序比较断言失败；复查三节点路径/卷/权限/端口相同，按Destination排序完整列表重核通过，formal保护比较同样修正，不忽略字段。最终main和恢复副本全部停止、main mode=read-only，仅旧/136六节点running，卷46，旧三节点ID/挂载/端口相同，datafree39172280320B（36.48GiB）。没有旧CP停服、入口切换、main创建、云部署或应用测试套件。
+- 本单元8个Python AST、默认plan及git diff --check通过；上述备份/恢复是已授权实际迁移验收。唯一物料手册与备份/入口文档已更新。旧演练示例被明确标记退役，不可继续直接运行；新恢复实例占用保留，不自动再清。剩余正式入口执行器/源端冻结同步/自启、main集群与共享平台、真实Docker/CI推拉、重建Harbor独立性、云闭包与最终其余清理继续。旧控制面具体维护窗口尚未批准，WSL压缩仍由所有者合并入口窗口操作。inbox仍旧kind、~/.kube/kind-config、匹配1.27.3工具。不要通知“luna做完了”。
+
 ## 最新续接：2026-09-27 旧入口身份盘点和38443过渡候选实测通过
 
 基线94c16285a3876ac354db5de8f8bc1173bad7dd59；本地luna、不push，开始工作树干净。本单元补P3前置实际证据；正式创建器/正式切换执行器仍未实现，不能误报本轮完成建群。
