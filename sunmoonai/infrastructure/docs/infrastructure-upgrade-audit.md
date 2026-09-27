@@ -275,3 +275,7 @@ step13 → 目录外 ingress-platform 总控
 - OS离线模拟/安装代码已实现，拒绝降级、删包、在线补装、自动dpkg修复；运行时/工具阶段要求匹配OS完成记录。总控精确同步和显式apply接线完成。
 - 5个Shell bash-n/ShellCheck、3个Python及远端payload AST、C1/C2三阶段共6组只打印通过；没有云部署。方法 [fresh-node-bootstrap.md](fresh-node-bootstrap.md)，证据 [luna-node-adapters.20260927.json](../../scripts/results/luna-node-adapters.20260927.json)。
 - 下文/上文初始审查中的step01–03问题属于实施前基线；这些入口现已替换。其他步骤的未决风险继续有效。云上仍未经实机验证，主锁closure_complete=false；旧1.30.4配置尚未成套切换，不允许绕过门禁。
+
+## 2026-09-27 后续实施：step04–06
+
+三个旧步骤已由固定镜像/kubeadm v1beta4/Calico控制程序替换，详细方法与首次上云边界见 [cluster-bootstrap.md](cluster-bootstrap.md)。总配置集群层已对齐1.36.4/3.32.2/iptables，其他行不变。10镜像归档完整内容验证、配置校验和静态预演通过；没有真实云操作，不能当成运行验收。发布门禁仍因step07–13和独立仓库/平台接线未完成而关闭；实机状态单列not_run。证据 [luna-cluster-adapters.20260927.json](../../scripts/results/luna-cluster-adapters.20260927.json)。

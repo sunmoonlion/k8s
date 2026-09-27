@@ -22,7 +22,7 @@ CLUSTER=C1 bash sunmoonai/infrastructure/steps/step03_k8s_binaries.sh --dry-run
 
 三个脚本省略参数也只打印。真实执行必须显式 `--apply`；总控正式 deploy 在完整物料门禁通过后才传入该参数。总控已改为 `sync-cluster-materials --apply` 精确同步，旧全目录同步不再是集群层入口；平台物料同步仍待统一，不能宣布整个总控已可部署。
 
-旧 step01–03 的通配符选包、在线补装、忽略错误、自动生成 containerd 默认配置、沿用旧 deb 版本的实现已替换。当前云配置仍1.30.4、主锁1.36.4，版本不符会拒绝真实执行；后续 init/join/Calico 适配完成时再成套切配置。
+旧 step01–03 的通配符选包、在线补装、忽略错误、自动生成 containerd 默认配置、沿用旧 deb 版本的实现已替换。当前云配置与主锁已对齐1.36.4/Calico3.32.2/iptables，step04–06已补代码，见 [集群入口](cluster-bootstrap.md)。step07–13/独立仓库与平台接线仍待完成，整体发布门禁关闭，云上仍未实机验证。
 
 ## 身份与控制文件
 

@@ -34,7 +34,7 @@ def run(args):
     return subprocess.run(args, check=True, capture_output=True, text=True, timeout=90).stdout
 
 
-def host_preflight(args, baseline_ready=True):
+def host_preflight(args, baseline_ready=True, allow_owned_cluster=False):
     if os.geteuid() != 0 or platform.machine() != 'x86_64' or platform.system() != 'Linux':
         raise ValueError('Root on Linux amd64 is required')
     if 'microsoft' in platform.release().lower() or Path('/.dockerenv').exists():
@@ -57,7 +57,7 @@ def host_preflight(args, baseline_ready=True):
             raise ValueError('Swap must be disabled by the explicit OS baseline stage')
         if run(['sysctl', '-n', 'net.ipv4.ip_forward']).strip() != '1':
             raise ValueError('OS baseline ip_forward is not ready')
-    for name in ('/etc/kubernetes', '/var/lib/kubelet', '/var/lib/etcd'):
+    for name in (() if allow_owned_cluster else ('/etc/kubernetes', '/var/lib/kubelet', '/var/lib/etcd')):
         path = Path(name)
         if path.exists() and (not path.is_dir() or any(path.iterdir())):
             raise ValueError('Existing cluster state refused; no reset attempted')

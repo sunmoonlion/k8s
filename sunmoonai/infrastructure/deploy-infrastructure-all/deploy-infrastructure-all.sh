@@ -119,7 +119,10 @@ execute_step(){
     local step="$1"
     local description="$2"
     local -a step_args=()
-    case "$step" in step01_os_baseline.sh|step02_runtime.sh|step03_k8s_binaries.sh) step_args=(--apply) ;; esac
+    case "$step" in
+        step01_os_baseline.sh|step02_runtime.sh|step03_k8s_binaries.sh|step04_kubeadm_init.sh|step05_cni_install.sh|step06_join_nodes.sh)
+            step_args=(--apply) ;;
+    esac
     
     log_info "开始执行: $description"
     log_info "脚本: $STEPS_DIR/$step"

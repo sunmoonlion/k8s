@@ -1,5 +1,21 @@
 # Luna 工作检查点
 
+## 最新续接：2026-09-27 step04–06、固定镜像与 kubeadm/Calico 接线
+
+基线 `4c3e17319aa23aa743a922f9492630f9b10f00d0`，交付为包含本段的本地 luna 提交，不 push。本节覆盖下文历史“配置仍1.30.4/step04–06待写”的状态。
+
+- step04/05/06 已替换为短入口→utils/cluster-step.sh→materials/cluster_control.py→严格SSH公开代码发布→cluster_node.py。默认只打印，未发起真实SSH。原自动reset/删目录/强杀/在线补装/忽略预检/失败后另跑init等从三步移除。
+- 新 cluster_config.py 生成v1beta4、显式节点IP/endpoint/SAN、iptables；Calico同一锁定3.32.2 YAML→38 JSON对象，VXLAN、InternalIP检测、3镜像摘要/Never。四静态核心Pod和CoreDNS生成摘要/Never补丁；kube-proxy init后API补丁，运行效果尚未实机验证。
+- image_import.py完整核10归档的架构manifest/config/layer，104内容引用/72独立blob全部本地SHA通过。实际分支生成root私有OCI传输副本，ctr k8s.io精确导入、拒绝同名不同摘要，核目标manifest与CRI标签/摘要解析。**没有实际导入**。
+- 集群控制程序：全节点预检/预装镜像→单master init→Calico→顺序worker join；仅支持当前单控制面IPv4设计，多控制面明确拒绝。验证节点IP实际归属、至少4GiB空间和时钟。身份、安装日志、二进制/配置与锁都匹配才执行。
+- 新云集群记录将存/var/lib/sunmoon/clusters/cN，核kube-system UID和CA公钥摘要，未登记/半初始化状态拒绝自动恢复。admin.conf保持root0600，不覆盖本机配置。token10分钟，通过SSH内存协议和root私有文件，终端/argv/Git不含令牌；每worker核machine-id/IP/version/Ready，最终撤销本轮token，撤销失败不报完成。
+- node_control发布白名单现11文件，含3个新节点模块；初始OS/runtime/tool操作仍拒绝已有集群，集群后续动作由匹配的私有记录准入。node_install新增allow_owned_cluster仅由新集群程序在身份核对后使用，第一阶段默认仍拒绝。
+- 总conf只改3个集群层字段：CLUSTER_VERSION=1.36.4、STEP05_CALICO_CHART_VERSION=3.32.2、STEP04_KUBE_PROXY_MODE=iptables。其余行逐行比对未变，包括平台版本/凭据；不要打印全conf/diff。旧字段名保留兼容，新Calico不再走Helm。
+- 主锁126文件824488560字节全SHA通过；closure_complete仍false，pending为step07–13与独立仓库/平台接线。实机验收单列validation_status=node/cloud not_run，发布准入与实机验收分开，避免首次上云的循环门禁。
+- 证据 sunmoonai/scripts/results/luna-cluster-adapters.20260927.json：6Python及远端payload AST、5Shell逐个bash-n/ShellCheck、C1/C2各3阶段共6组只打印、既有step01–03与总控只打印通过。精确1.36.4工具C1/C2 init/join格式校验通过，7核心image list完全匹配。首次Join严格解码发现tlsBootstrapToken误放根级，已移到discovery后复核通过；只用公开无效示例token，未创建真实令牌。
+- 文档 infrastructure/docs/cluster-bootstrap.md 含方法/边界/首次上云清单。未执行真实云操作、OCI导入、kubeadm init/join、Calico apply、证书替换或清理；新云代码均未经实机验证。
+- 下一步：完整改step07–13与统一平台/存储、独立Harbor主机配置和入口、推拉/信任/CI/CD/备份接口。旧KIND inbox仍~/.kube/kind-config + releases/kubectl-1.27.3-existing-kind-linux-amd64/bin/kubectl；旧Harbor30443不变，新main未建。最终清理和物料/网络手册复盘仍必做。当前无后台任务，不能通知luna做完了。
+
 ## 最新续接：2026-09-27 step01–03 统一节点安装接线
 
 基线 `18e5d9f5`，交付为包含本段的本地 luna 提交，不 push。本段优先于下面的历史待办。

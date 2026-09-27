@@ -12,9 +12,7 @@
   },
   "closure_complete": false,
   "pending": [
-    "Target-host offline OS installation acceptance (adapter prepared; cloud unverified)",
-    "Calico shared manifest and image consumer adapter",
-    "node installer and offline deployment acceptance"
+    "Remaining infrastructure steps07-13 and external registry/platform integration"
   ],
   "provenance": [
     "https://github.com/containerd/nerdctl/releases/tag/v2.3.5",
@@ -176,5 +174,11 @@
   "os_dependency_lock": {
     "path": "os-dependencies.lock.json",
     "sha256": "7a017c76700180469f17c8d20f07dbdc012ee22db873acb05adc1645beee326d"
+  },
+  "validation_status": {
+    "material_checksums": "passed",
+    "kubeadm_configuration": "passed",
+    "node_side_execution": "not_run",
+    "cloud_execution": "not_run"
   }
 }

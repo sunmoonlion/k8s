@@ -2,7 +2,7 @@
 
 只有一套部署代码、两种建群方式。本文实现集群层的配置读取、物料消费和独立节点安装程序；平台服务版本保持原样。
 
-**云上未经实机验证。** 当前完成代码、静态检查、东京公开备料、本地文件校验和只打印预演。没有连接 C1/C2、没有安装或重启运行时、没有部署集群。step01–03 已接到新程序，见 [新节点入口](fresh-node-bootstrap.md)；真实安装和 kubeadm/Calico 后续步骤未验收，不能绕过总控准入。
+**云上未经实机验证。** 当前完成代码、静态检查、东京公开备料、本地文件校验和只打印预演。没有连接 C1/C2、没有安装或重启运行时、没有部署集群。step01–06 已接到新程序，见 [新节点入口](fresh-node-bootstrap.md) 和 [集群入口](cluster-bootstrap.md)；真实安装尚未验收，不能绕过总控准入。
 
 ## 1. 现在使用哪些真源
 
@@ -40,7 +40,7 @@ python3 sunmoonai/infrastructure/materials/bundle.py verify
 - `--expected-kubernetes` 检查部署配置版本；`--require-complete` 额外要求 `closure_complete=true` 且 `pending` 为空。
 - 当前 `closure_complete=false`。126 文件校验通过**不等于安装适配和离线验收都已完成**。
 
-总控 `materials` 可执行同一只读校验。实际 deploy 或单步变更先经过“版本匹配 + 完整闭包”门禁，随后才可能做远端操作。当前旧配置仍为 1.30.4，门禁会拒绝其消费 1.36.4 物料；后续整套安装适配完成时再成套切换配置。总控拒绝 step00 reset。
+总控 `materials` 可执行同一只读校验。实际 deploy 或单步变更先经过“版本匹配 + 完整闭包”门禁，随后才可能做远端操作。当前集群层配置已对齐1.36.4/Calico3.32.2/iptables；step07–13和独立仓库/平台接线未完成，完整发布门禁仍关闭。实机验收单独记录为not_run。总控拒绝 step00 reset。
 
 ## 3. systemd 和运行时配置物料
 
@@ -111,4 +111,4 @@ python3 sunmoonai/infrastructure/materials/node_install.py --phase kubernetes
 
 预演首次失败原因：脚本自身默认路径带 `..`，被严格路径检查拒绝。默认入口路径已规范化，外部软链接/路径逃逸仍拒绝，复核通过；没有为了通过而取消完整性检查。
 
-OS 物料及 step01–03 已继续完成代码接线，见 [新节点入口](fresh-node-bootstrap.md)。下一步改 step04–06 镜像/init/join/Calico，统一版本时保留平台原版本。最终清理依然在迁移验收之后，且必须执行批准清单并记录实际释放量。
+OS 物料及 step01–06 已完成代码接线，见 [新节点入口](fresh-node-bootstrap.md)、[集群入口](cluster-bootstrap.md)。下一步改 step07–13 与独立仓库/平台接口，保留平台原版本。最终清理依然在迁移验收之后，且必须执行批准清单并记录实际释放量。

@@ -1,0 +1,343 @@
+{
+  "schema": 1,
+  "baseline": "4c3e1731",
+  "unit": "kubeadm-calico-adapters",
+  "static": {
+    "sunmoonai/infrastructure/materials/cluster_config.py": {
+      "ast": "pass",
+      "sha256": "246c1bff0f09006fe3bd692fca5db2a2f9c2598381e09eb2d58a00c948363c39"
+    },
+    "sunmoonai/infrastructure/materials/cluster_control.py": {
+      "ast": "pass",
+      "sha256": "4328d1c422f25018246170a1dbf070853c035db4bd0b33071e7050e95bb01334"
+    },
+    "sunmoonai/infrastructure/materials/cluster_node.py": {
+      "ast": "pass",
+      "sha256": "a7fc0cd7724c8659ed8bd4d393c45dc2686903e6994577bac9ff6343ab0437e7"
+    },
+    "sunmoonai/infrastructure/materials/image_import.py": {
+      "ast": "pass",
+      "sha256": "0a3de881b1730f8f93be820c27617b1f7ec205b13123177334733aa84bc04ddf"
+    },
+    "sunmoonai/infrastructure/materials/node_control.py": {
+      "ast": "pass",
+      "sha256": "5687c7ea41ab69c3be5ed7deef685de5a045e88812e612483d240ca6c8063310"
+    },
+    "sunmoonai/infrastructure/materials/node_install.py": {
+      "ast": "pass",
+      "sha256": "81d40d4ea4e5f435b54016ed2e0d28ea826ee4f42b6a19876842552917557c50"
+    },
+    "sunmoonai/infrastructure/utils/cluster-step.sh": {
+      "bash_n": "pass",
+      "shellcheck": "pass",
+      "sha256": "e0b39f2ad961523208b3c0829c39bb105d6dd0f6ce45aaeec703a08bf287b724"
+    },
+    "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh": {
+      "bash_n": "pass",
+      "shellcheck": "pass",
+      "sha256": "9e56d56abfaec874b07a8ce40711156bdc0ddf5d409b8d04247c41e21d0062cf"
+    },
+    "sunmoonai/infrastructure/steps/step04_kubeadm_init.sh": {
+      "bash_n": "pass",
+      "shellcheck": "pass",
+      "sha256": "a5d7dbd6f0b387d086f1e4d7111a85499b7867049f082fa06e2202a6ce7b884e"
+    },
+    "sunmoonai/infrastructure/steps/step05_cni_install.sh": {
+      "bash_n": "pass",
+      "shellcheck": "pass",
+      "sha256": "f6d98ef641e36381becb2925b0df3d3f5cacb72248ef066e33dce1d416109d34"
+    },
+    "sunmoonai/infrastructure/steps/step06_join_nodes.sh": {
+      "bash_n": "pass",
+      "shellcheck": "pass",
+      "sha256": "73974fefcd8b79bdf8cbf37ea9b730fa9e038d343326e952adcab65bfa703e29"
+    }
+  },
+  "plans": [
+    {
+      "cluster": "C1",
+      "step": "step04_kubeadm_init.sh",
+      "nodes": 3,
+      "configured_version": "1.36.4",
+      "configured_calico": "3.32.2",
+      "objects": 38,
+      "ssh_started": false,
+      "dry_run": true
+    },
+    {
+      "cluster": "C1",
+      "step": "step05_cni_install.sh",
+      "nodes": 3,
+      "configured_version": "1.36.4",
+      "configured_calico": "3.32.2",
+      "objects": 38,
+      "ssh_started": false,
+      "dry_run": true
+    },
+    {
+      "cluster": "C1",
+      "step": "step06_join_nodes.sh",
+      "nodes": 3,
+      "configured_version": "1.36.4",
+      "configured_calico": "3.32.2",
+      "objects": 38,
+      "ssh_started": false,
+      "dry_run": true
+    },
+    {
+      "cluster": "C2",
+      "step": "step04_kubeadm_init.sh",
+      "nodes": 3,
+      "configured_version": "1.36.4",
+      "configured_calico": "3.32.2",
+      "objects": 38,
+      "ssh_started": false,
+      "dry_run": true
+    },
+    {
+      "cluster": "C2",
+      "step": "step05_cni_install.sh",
+      "nodes": 3,
+      "configured_version": "1.36.4",
+      "configured_calico": "3.32.2",
+      "objects": 38,
+      "ssh_started": false,
+      "dry_run": true
+    },
+    {
+      "cluster": "C2",
+      "step": "step06_join_nodes.sh",
+      "nodes": 3,
+      "configured_version": "1.36.4",
+      "configured_calico": "3.32.2",
+      "objects": 38,
+      "ssh_started": false,
+      "dry_run": true
+    }
+  ],
+  "kubeadm_config_validation": {
+    "init": "passed C1 and C2",
+    "join": "passed C1 and C2 using non-working public example token",
+    "image_list": "exact match of seven locked references",
+    "first_join_attempt": "strict decoder rejected misplaced tlsBootstrapToken; moved under discovery, then passed"
+  },
+  "core_patches": 5,
+  "proxy_patch": "generated, not applied",
+  "calico_objects": 38,
+  "archives": [
+    {
+      "source": "registry.k8s.io/kube-apiserver:v1.36.4",
+      "platform_digest": "sha256:feb6509b541379d76b37cf6e7a5c1e3767458f7468288525f75574672fee1b18",
+      "config_digest": "sha256:b0f70fa6ec47eb5682e7030c5799ea8ba42e52f5e7ea24f0f46bd9e8170b183c",
+      "manifest_media_type": "application/vnd.docker.distribution.manifest.v2+json",
+      "blobs": {
+        "blobs/sha256/feb6509b541379d76b37cf6e7a5c1e3767458f7468288525f75574672fee1b18": 3444,
+        "blobs/sha256/b0f70fa6ec47eb5682e7030c5799ea8ba42e52f5e7ea24f0f46bd9e8170b183c": 3894,
+        "blobs/sha256/875ea9878944f3daf508d0e1b87b39ebc1ecce3ccaf3ed11a3cc59f1852a540a": 83867,
+        "blobs/sha256/990a9c434e5e0f11549a8d4a41a1991e621b04e30cd63269adbc97b1dc38fd7e": 12481,
+        "blobs/sha256/39dc083afc39bd8dc43d456fe7ff7d39292e593bb2769972c11bb2e5f9119386": 445709,
+        "blobs/sha256/bf7a4185f01524837d19abde915ffde84e64368b250f5b5e9f6f75aea62a11d4": 29005,
+        "blobs/sha256/2780920e5dbfbe103d03a583ed75345306e572ec5a48cb10361f046767d9f29a": 67,
+        "blobs/sha256/7c12895b777bcaa8ccae0605b4de635b68fc32d60fa08f421dc3818bf55ee212": 188,
+        "blobs/sha256/3214acf345c0cc6bbdb56b698a41ccdefc624a09d6beb0d38b5de0b2303ecaf4": 123,
+        "blobs/sha256/52630fc75a18675c530ed9eba5f55eca09b03e91bd5bc15307918bbc1a7e7296": 162,
+        "blobs/sha256/dd64bf2dd177757451a98fcdc999a339c35dee5d9872d8f4dc69c8f3c4dd0112": 80,
+        "blobs/sha256/b839dfae01f66e15c6a8b63520557ed315bdfe036342fa7a0c537259f10d7a9a": 351,
+        "blobs/sha256/dcaa5a89b0ccda4b283e16d0b4d0891cd93d5fe05c6798f7806781a6a2d84354": 314,
+        "blobs/sha256/069d1e267530c2e681fbd4d481553b4d05f98082b18fafac86e7f12996dddd0b": 131915,
+        "blobs/sha256/6f8073426e26488c0aa1a18164f95acea066d84430f5b790abbc43d15c1f7443": 908109,
+        "blobs/sha256/523f1c6373b0fc8dfa36f85f53af43c2fd0b621debf60ac93bcc2930fe83db33": 26788836,
+        "blobs/sha256/bb438836618339c2cd4d462c51ad69c0bbd589c547182a695eaf27c32de63983": 1395968
+      },
+      "layers": 15
+    },
+    {
+      "source": "registry.k8s.io/kube-controller-manager:v1.36.4",
+      "platform_digest": "sha256:ff4b86d6ed3cb2a8ef22c2fea31054bdc16099e583c343aabf3d54d212480c8e",
+      "config_digest": "sha256:c27613cea70f9808cc25955886c764ad38de589a9faeb2a8341cb27af6714684",
+      "manifest_media_type": "application/vnd.docker.distribution.manifest.v2+json",
+      "blobs": {
+        "blobs/sha256/ff4b86d6ed3cb2a8ef22c2fea31054bdc16099e583c343aabf3d54d212480c8e": 3444,
+        "blobs/sha256/c27613cea70f9808cc25955886c764ad38de589a9faeb2a8341cb27af6714684": 3741,
+        "blobs/sha256/875ea9878944f3daf508d0e1b87b39ebc1ecce3ccaf3ed11a3cc59f1852a540a": 83867,
+        "blobs/sha256/990a9c434e5e0f11549a8d4a41a1991e621b04e30cd63269adbc97b1dc38fd7e": 12481,
+        "blobs/sha256/39dc083afc39bd8dc43d456fe7ff7d39292e593bb2769972c11bb2e5f9119386": 445709,
+        "blobs/sha256/bf7a4185f01524837d19abde915ffde84e64368b250f5b5e9f6f75aea62a11d4": 29005,
+        "blobs/sha256/2780920e5dbfbe103d03a583ed75345306e572ec5a48cb10361f046767d9f29a": 67,
+        "blobs/sha256/7c12895b777bcaa8ccae0605b4de635b68fc32d60fa08f421dc3818bf55ee212": 188,
+        "blobs/sha256/3214acf345c0cc6bbdb56b698a41ccdefc624a09d6beb0d38b5de0b2303ecaf4": 123,
+        "blobs/sha256/52630fc75a18675c530ed9eba5f55eca09b03e91bd5bc15307918bbc1a7e7296": 162,
+        "blobs/sha256/dd64bf2dd177757451a98fcdc999a339c35dee5d9872d8f4dc69c8f3c4dd0112": 80,
+        "blobs/sha256/b839dfae01f66e15c6a8b63520557ed315bdfe036342fa7a0c537259f10d7a9a": 351,
+        "blobs/sha256/dcaa5a89b0ccda4b283e16d0b4d0891cd93d5fe05c6798f7806781a6a2d84354": 314,
+        "blobs/sha256/069d1e267530c2e681fbd4d481553b4d05f98082b18fafac86e7f12996dddd0b": 131915,
+        "blobs/sha256/6f8073426e26488c0aa1a18164f95acea066d84430f5b790abbc43d15c1f7443": 908109,
+        "blobs/sha256/08a7806306757b3080a7e23614003e1034179b869e3126ac7e93c55a138d986d": 23457348,
+        "blobs/sha256/bb438836618339c2cd4d462c51ad69c0bbd589c547182a695eaf27c32de63983": 1395968
+      },
+      "layers": 15
+    },
+    {
+      "source": "registry.k8s.io/kube-scheduler:v1.36.4",
+      "platform_digest": "sha256:883d4d505bf015f73cea8bfead8b9d9d1ec3a9f19bcad6c004f929d666102c2a",
+      "config_digest": "sha256:11ce0d8bbc73b7c08c30bb040fac58fac8ba3405b92b85451b643ee1c08dcd9f",
+      "manifest_media_type": "application/vnd.docker.distribution.manifest.v2+json",
+      "blobs": {
+        "blobs/sha256/883d4d505bf015f73cea8bfead8b9d9d1ec3a9f19bcad6c004f929d666102c2a": 3444,
+        "blobs/sha256/11ce0d8bbc73b7c08c30bb040fac58fac8ba3405b92b85451b643ee1c08dcd9f": 3741,
+        "blobs/sha256/875ea9878944f3daf508d0e1b87b39ebc1ecce3ccaf3ed11a3cc59f1852a540a": 83867,
+        "blobs/sha256/990a9c434e5e0f11549a8d4a41a1991e621b04e30cd63269adbc97b1dc38fd7e": 12481,
+        "blobs/sha256/39dc083afc39bd8dc43d456fe7ff7d39292e593bb2769972c11bb2e5f9119386": 445709,
+        "blobs/sha256/bf7a4185f01524837d19abde915ffde84e64368b250f5b5e9f6f75aea62a11d4": 29005,
+        "blobs/sha256/2780920e5dbfbe103d03a583ed75345306e572ec5a48cb10361f046767d9f29a": 67,
+        "blobs/sha256/7c12895b777bcaa8ccae0605b4de635b68fc32d60fa08f421dc3818bf55ee212": 188,
+        "blobs/sha256/3214acf345c0cc6bbdb56b698a41ccdefc624a09d6beb0d38b5de0b2303ecaf4": 123,
+        "blobs/sha256/52630fc75a18675c530ed9eba5f55eca09b03e91bd5bc15307918bbc1a7e7296": 162,
+        "blobs/sha256/dd64bf2dd177757451a98fcdc999a339c35dee5d9872d8f4dc69c8f3c4dd0112": 80,
+        "blobs/sha256/b839dfae01f66e15c6a8b63520557ed315bdfe036342fa7a0c537259f10d7a9a": 351,
+        "blobs/sha256/dcaa5a89b0ccda4b283e16d0b4d0891cd93d5fe05c6798f7806781a6a2d84354": 314,
+        "blobs/sha256/069d1e267530c2e681fbd4d481553b4d05f98082b18fafac86e7f12996dddd0b": 131915,
+        "blobs/sha256/6f8073426e26488c0aa1a18164f95acea066d84430f5b790abbc43d15c1f7443": 908109,
+        "blobs/sha256/9341b040afb091857ff752680fa4f383c6e5bd04c0e5c7e4bc8cf3978fdaa5e0": 17481161,
+        "blobs/sha256/bb438836618339c2cd4d462c51ad69c0bbd589c547182a695eaf27c32de63983": 1395968
+      },
+      "layers": 15
+    },
+    {
+      "source": "registry.k8s.io/kube-proxy:v1.36.4",
+      "platform_digest": "sha256:70f5e02ebce27a7a3b1bc9b164f64e1982acf46f4ed68348c9a7b94a43d6d014",
+      "config_digest": "sha256:a5280d36e1aa3602794efd60dc157d55bbd1bed8f755b5c12e0a6ca5dce9d3bd",
+      "manifest_media_type": "application/vnd.docker.distribution.manifest.v2+json",
+      "blobs": {
+        "blobs/sha256/70f5e02ebce27a7a3b1bc9b164f64e1982acf46f4ed68348c9a7b94a43d6d014": 952,
+        "blobs/sha256/a5280d36e1aa3602794efd60dc157d55bbd1bed8f755b5c12e0a6ca5dce9d3bd": 1021,
+        "blobs/sha256/2d0c9e06c3ea870f3a967f2a3440c45d93d46f16dee676915662063255ae764b": 12726103,
+        "blobs/sha256/443d6222271698b3cad8e2ebc1a91f740d2360801549f20a962c479a57d36045": 15929374,
+        "blobs/sha256/bb438836618339c2cd4d462c51ad69c0bbd589c547182a695eaf27c32de63983": 1395968
+      },
+      "layers": 3
+    },
+    {
+      "source": "registry.k8s.io/coredns/coredns:v1.14.2",
+      "platform_digest": "sha256:fd5079792b93909db3adefa91e41c3995455013394f0197c7346786ae19079fc",
+      "config_digest": "sha256:38667dd9be96c17227adde456e33ad701bdbdc5c6db0272a1d33a929bd8e62d6",
+      "manifest_media_type": "application/vnd.docker.distribution.manifest.v2+json",
+      "blobs": {
+        "blobs/sha256/fd5079792b93909db3adefa91e41c3995455013394f0197c7346786ae19079fc": 3023,
+        "blobs/sha256/38667dd9be96c17227adde456e33ad701bdbdc5c6db0272a1d33a929bd8e62d6": 3070,
+        "blobs/sha256/03c9b64681eef07f903b45cfbe5c064db1f1c7f682863b895104ac2680a271a7": 84728,
+        "blobs/sha256/2e4cf50eeb92ac3a7afe75e15d96a26dee99449f86b46c75b5d95f4418a5bca0": 12579,
+        "blobs/sha256/56ce5a7a0a8cc3aded9e8cab00fd85f0a1c50376aa9f2318c4e66beb03eadf8f": 458603,
+        "blobs/sha256/e1089d61b200106053b1717881bf0c1c47551478f01569d9224d33cccf3e4692": 28389,
+        "blobs/sha256/0f8b424aa0b96c1c388a5fd4d90735604459256336853082afb61733438872b5": 75,
+        "blobs/sha256/d557676654e572af3e3173c90e7874644207fda32cd87e9d3d66b5d7b98a7b21": 193,
+        "blobs/sha256/d82bc7a76a838c9a4a6025192429c2fed58f73742ef1fb9c8bb7b995fc3b7213": 130,
+        "blobs/sha256/68e4cd60e60fed4486d5b4b40b079e57781e828d93d80a7411e8760dcccfbbf7": 168,
+        "blobs/sha256/0783a66ae7492bb16937c7723c534e431404aa3ebbdcaaed65d264a95a266b9e": 84,
+        "blobs/sha256/efae86a3fb38e05e6e2584bc2f48534a0d82f8d9e9a4163d04885d5c65423105": 358,
+        "blobs/sha256/6b72b81ed96620b324f40ade069bbd3fcee69d62182bb03681c3976b6909eec4": 320,
+        "blobs/sha256/6cdd517ba90571b01009637268b5fddb4e3eea409bb6dae0bf40ed8ad9e33ef4": 130874,
+        "blobs/sha256/7bae8e7097d7983932f15870289838ba42ce97e13c38fda26cbdd9ba09d17e87": 22532938
+      },
+      "layers": 13
+    },
+    {
+      "source": "registry.k8s.io/pause:3.10.2",
+      "platform_digest": "sha256:412c4a7219cb8a299a37337f3d87810c5340095322e15594a1637785adad0f17",
+      "config_digest": "sha256:4a83b15d3ecfe0d916b2d0a7991bc2854a629b8097017c2ee1ff65b30ae4c07c",
+      "manifest_media_type": "application/vnd.docker.distribution.manifest.v2+json",
+      "blobs": {
+        "blobs/sha256/412c4a7219cb8a299a37337f3d87810c5340095322e15594a1637785adad0f17": 501,
+        "blobs/sha256/4a83b15d3ecfe0d916b2d0a7991bc2854a629b8097017c2ee1ff65b30ae4c07c": 892,
+        "blobs/sha256/81ede36234b06d9a16771d804ef81ea888e29f8c425a5269e3d55d34a1b128a8": 316650
+      },
+      "layers": 1
+    },
+    {
+      "source": "registry.k8s.io/etcd:3.6.8-0",
+      "platform_digest": "sha256:aa2b41e3f99c9a337b82f687875a63c5119e6d39bc43fc76b6c40a96f55cf391",
+      "config_digest": "sha256:ee85eb1f0edd27fd11e3bed20f21a4001ad63107eb2f8d489429648a799c0e86",
+      "manifest_media_type": "application/vnd.docker.distribution.manifest.v2+json",
+      "blobs": {
+        "blobs/sha256/aa2b41e3f99c9a337b82f687875a63c5119e6d39bc43fc76b6c40a96f55cf391": 3650,
+        "blobs/sha256/ee85eb1f0edd27fd11e3bed20f21a4001ad63107eb2f8d489429648a799c0e86": 2930,
+        "blobs/sha256/688513194d7a0f0d77e4a3692748d21c4ccd1af6a5ff9012f18f053ed9573c13": 104238,
+        "blobs/sha256/bfb59b82a9b65e47d485e53b3e815bca3b3e21a095bd0cb88ced9ac0b48062bf": 13356,
+        "blobs/sha256/efa9d1d5d3a286c60a7261496166fdf31cec2284dafe7eef7cda89eba2f675d6": 541994,
+        "blobs/sha256/b6824ed73363f94b3b2b44084c51c31bc32af77a96861d49e16f91e3ab6bed71": 67,
+        "blobs/sha256/7c12895b777bcaa8ccae0605b4de635b68fc32d60fa08f421dc3818bf55ee212": 188,
+        "blobs/sha256/3214acf345c0cc6bbdb56b698a41ccdefc624a09d6beb0d38b5de0b2303ecaf4": 123,
+        "blobs/sha256/5664b15f108bf9436ce3312090a767300800edbbfd4511aa1a6d64357024d5dd": 168,
+        "blobs/sha256/27be814a09ebd97fac6fb7b82d19f117185e90601009df3fbab6f442f85cd6b3": 93,
+        "blobs/sha256/4aa0ea1413d37a58615488592a0b827ea4b2e48fa5a77cf707d0e35f025e613f": 385,
+        "blobs/sha256/da7816fa955ea24533c388143c78804c28682eef99b4ee3723b548c70148bba6": 321,
+        "blobs/sha256/9aee425378d2c16cd44177dc54a274b312897f5860a8e78fdfda555a0d79dd71": 130495,
+        "blobs/sha256/a00667e02fadf9b1abd2bee47eb52ed370b74c0f373fc901d2154955521a26b0": 9529127,
+        "blobs/sha256/f097e84ccdedac935d1bf8ac375ab35cdb5bc7aae58ec7b692d539f5b5e21dcb": 6282284,
+        "blobs/sha256/c39cffd75ba2756c8ae7a24a92a5e4371e6f937c8068d4b43d126ee9193a4fad": 6274771,
+        "blobs/sha256/4c78bfe854226b178fdd1e9c39bc77c48d47e9ae1d45fcc18d7c09460cd27cea": 111,
+        "blobs/sha256/8c02b6f8ac46c3042e40b910c4c40cb2559dd7eac715318ab1bc150b685d2cbd": 131
+      },
+      "layers": 16
+    },
+    {
+      "source": "quay.io/calico/cni:v3.32.2",
+      "platform_digest": "sha256:8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a",
+      "config_digest": "sha256:cf5fc378d71fb69befb3fb1ac6ffb3f24354ee45a1b8504e415937e46ffb98ab",
+      "manifest_media_type": "application/vnd.docker.distribution.manifest.v2+json",
+      "blobs": {
+        "blobs/sha256/8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a": 946,
+        "blobs/sha256/cf5fc378d71fb69befb3fb1ac6ffb3f24354ee45a1b8504e415937e46ffb98ab": 4651,
+        "blobs/sha256/2a8473b5734622afcf06255aae942f983e5674cddb4f19782fb726f6b3eb2ebc": 2952097,
+        "blobs/sha256/379f795c3615b0c7686c35e941eb1e104ab558a836376f5da5a340064128cbcf": 66912159,
+        "blobs/sha256/4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1": 32
+      },
+      "layers": 3
+    },
+    {
+      "source": "quay.io/calico/node:v3.32.2",
+      "platform_digest": "sha256:d7a9b58573b165caa8128d2735a19b788434547064b2b4af2abf68cea24f7ec3",
+      "config_digest": "sha256:c5f89ea6b7611095794794d81aef1b36e0cb7c322800cf707be2f42e45a3b7e1",
+      "manifest_media_type": "application/vnd.docker.distribution.manifest.v2+json",
+      "blobs": {
+        "blobs/sha256/d7a9b58573b165caa8128d2735a19b788434547064b2b4af2abf68cea24f7ec3": 530,
+        "blobs/sha256/c5f89ea6b7611095794794d81aef1b36e0cb7c322800cf707be2f42e45a3b7e1": 3988,
+        "blobs/sha256/ca503247ce4a875c37168c26ba59c57b6e8320a77fd8af32a8602e8d6c717073": 123386474
+      },
+      "layers": 1
+    },
+    {
+      "source": "quay.io/calico/kube-controllers:v3.32.2",
+      "platform_digest": "sha256:f241490840083743e747389af8d5067c961370bd5e2e2af6538db2f7e183f60b",
+      "config_digest": "sha256:81a30a7a240377576c569956df911285a92366ade3dd19e4ea5e73cf868d29db",
+      "manifest_media_type": "application/vnd.docker.distribution.manifest.v2+json",
+      "blobs": {
+        "blobs/sha256/f241490840083743e747389af8d5067c961370bd5e2e2af6538db2f7e183f60b": 740,
+        "blobs/sha256/81a30a7a240377576c569956df911285a92366ade3dd19e4ea5e73cf868d29db": 4539,
+        "blobs/sha256/2a8473b5734622afcf06255aae942f983e5674cddb4f19782fb726f6b3eb2ebc": 2952097,
+        "blobs/sha256/3c380ff203c2e982beff07954f6f5c41350de49a276346890f1ebd6d81912507": 60235797
+      },
+      "layers": 2
+    }
+  ],
+  "blob_references": 104,
+  "unique_blobs": 72,
+  "bundle": {
+    "files": 126,
+    "bytes": 824488560,
+    "closure_complete": false
+  },
+  "configuration_changed_keys": [
+    "CLUSTER_VERSION",
+    "STEP04_KUBE_PROXY_MODE",
+    "STEP05_CALICO_CHART_VERSION"
+  ],
+  "all_other_config_lines_unchanged": true,
+  "existing_step01_to_03_plans": "pass",
+  "controller_plan": "pass",
+  "actual_ssh": false,
+  "actual_image_import": false,
+  "actual_cluster_operation": false,
+  "cloud_validated": false,
+  "cleanup": false
+}

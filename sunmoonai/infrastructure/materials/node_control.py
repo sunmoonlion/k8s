@@ -18,10 +18,11 @@ import sys
 from bundle import resolve, verify
 
 PUBLIC_FILES = ("node_install.py", "os_install.py", "verify_os.py", "prepare_os.py",
-                "bundle.py", "cluster-artifacts.lock.json", "kubeadm-images.lock.json", "os-dependencies.lock.json")
+                "bundle.py", "cluster_config.py", "cluster_node.py", "image_import.py",
+                "cluster-artifacts.lock.json", "kubeadm-images.lock.json", "os-dependencies.lock.json")
 
 REMOTE = r'''
-import base64,hashlib,json,os,pwd,re,socket,stat,sys
+import base64,hashlib,json,os,pwd,re,socket,stat,sys,time
 from pathlib import Path
 p=json.load(sys.stdin)
 if os.geteuid()!=0 or sys.version_info<(3,11): raise SystemExit('Root and Python >=3.11 required')
@@ -29,7 +30,11 @@ if socket.gethostname()!=p['hostname'] or Path('/etc/machine-id').read_text().st
     raise SystemExit('Recorded machine identity differs; no control files published')
 if 'microsoft' in os.uname().release.lower() or Path('/.dockerenv').exists():
     raise SystemExit('WSL/container is not a fresh cloud node')
-for value in ('/var/lib/docker','/data/harbor','/etc/kubernetes','/var/lib/kubelet','/var/lib/etcd'):
+cluster_phases={'preflight','images','init','cni','ticket','join','status','revoke'}
+if p['phase'] not in cluster_phases|{'os','runtime','kubernetes'}: raise SystemExit('Unknown node phase')
+protected=['/var/lib/docker','/data/harbor']
+if p['phase'] not in cluster_phases: protected+=['/etc/kubernetes','/var/lib/kubelet','/var/lib/etcd']
+for value in protected:
     path=Path(value)
     if path.exists() and (value in ('/var/lib/docker','/data/harbor') or not path.is_dir() or any(path.iterdir())):
         raise SystemExit('Existing service or cluster state refused')
@@ -38,6 +43,7 @@ if not root.is_absolute(): root=Path(pwd.getpwnam(p['user']).pw_dir)/root
 if root.resolve()!=root or root.name!='packages-to-be-installed' or not root.is_dir():
     raise SystemExit('Invalid/missing remote material root')
 expected={'node_install.py','os_install.py','verify_os.py','prepare_os.py','bundle.py',
+          'cluster_config.py','cluster_node.py','image_import.py',
           'cluster-artifacts.lock.json','kubeadm-images.lock.json','os-dependencies.lock.json'}
 if set(p['files'])!=expected: raise SystemExit('Unexpected public control file set')
 contents={}
@@ -68,13 +74,24 @@ for name,raw in contents.items():
         fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o444)
         with os.fdopen(fd,'wb') as f:
             f.write(raw);f.flush();os.fchmod(f.fileno(),0o444);os.fsync(f.fileno())
-if p['phase'] not in ('os','runtime','kubernetes'): raise SystemExit('Invalid installation phase')
-entry='os_install.py' if p['phase']=='os' else 'node_install.py'
+entry='cluster_node.py' if p['phase'] in cluster_phases else ('os_install.py' if p['phase']=='os' else 'node_install.py')
 argv=['/usr/bin/python3','-B','-E','-s',str(destination/entry),
       '--manifest',str(destination/'cluster-artifacts.lock.json'),'--root',str(root),
       '--hostname',p['hostname'],'--machine-id',p['machine_id'],'--apply']
 if p['phase']!='os': argv+=['--phase',p['phase']]
-print(json.dumps({'public_release':release,'phase':p['phase'],'identity_checked':True}),flush=True)
+if p['phase'] in cluster_phases:
+    request_dir=Path('/var/lib/sunmoon/requests')/release
+    for directory in reversed((request_dir,*request_dir.parents)):
+        if directory.resolve()!=directory: raise SystemExit('Symlinked request directory')
+        if not directory.exists(): directory.mkdir(mode=0o700)
+        st=directory.stat()
+        if not directory.is_dir() or st.st_uid!=0 or st.st_mode & 0o022: raise SystemExit('Unsafe request directory')
+    request=request_dir/('request-'+str(time.time_ns())+'.json')
+    fd=os.open(request,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+    with os.fdopen(fd,'w') as f: json.dump(p['request'],f)
+    argv+=['--request',str(request)]
+else:
+    print(json.dumps({'public_release':release,'phase':p['phase'],'identity_checked':True}),flush=True)
 os.execve(argv[0],argv,{'PATH':'/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
                        'LC_ALL':'C','PYTHONDONTWRITEBYTECODE':'1'})
 '''
