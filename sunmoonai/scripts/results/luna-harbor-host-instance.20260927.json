@@ -1,0 +1,184 @@
+{
+  "baseline": "cf246d4794771ba47b936bf48ae8adbd32f5f15c",
+  "date": "2026-09-27",
+  "deployment": "sunmoon-harbor-main-20260927",
+  "data_root": "/data/harbor/instances/sunmoon-harbor-main-20260927",
+  "registry": {
+    "files": 4400,
+    "bytes": 17850816895,
+    "all_file_sha256_match": true
+  },
+  "images": {
+    "core": {
+      "reference": "goharbor/harbor-core:v2.13.2",
+      "id": "sha256:cf08b8a632e7cbd6e7cd618411c89522154fab588796bd23cb1bd5fb15245944",
+      "volumes": [],
+      "architecture": "amd64",
+      "os": "linux",
+      "source_config_sha256": "a754b7d40a2abf91bce852af52b2f69f614b11e51b1fddfd250a4754125e1501"
+    },
+    "registry": {
+      "reference": "goharbor/registry-photon:v2.13.2",
+      "id": "sha256:a88052cc85288377c675aae2b60da788ed3c6f5b1c7a5a3b69da0bd6af0240b1",
+      "volumes": [
+        "/storage"
+      ],
+      "architecture": "amd64",
+      "os": "linux",
+      "source_config_sha256": "a0a146d033c4302bc590507e4035386a71d2d57089d94d6b54b87947b10f0873"
+    },
+    "registryctl": {
+      "reference": "goharbor/harbor-registryctl:v2.13.2",
+      "id": "sha256:e8ed45cc8bf1a602f08c107b5b24f725c15c59e6fcd5e3e9505af491c0931497",
+      "volumes": [
+        "/var/lib/registry"
+      ],
+      "architecture": "amd64",
+      "os": "linux",
+      "source_config_sha256": "af207ccbe6db8d976fb060488607275c55e8e8893449152d917bfc8f2e7e4e9e"
+    },
+    "portal": {
+      "reference": "goharbor/harbor-portal:v2.13.2",
+      "id": "sha256:1f13d723da4831761824a080430f881710fef52ae2dd8a515431de925bfe4f76",
+      "volumes": [
+        "/run",
+        "/var/cache/nginx",
+        "/var/log/nginx"
+      ],
+      "architecture": "amd64",
+      "os": "linux",
+      "source_config_sha256": "2cdbbbaec69504894bb94cd4bebe6520a6df6bacd6c93e936eb7ec690b07d46c"
+    },
+    "proxy": {
+      "reference": "goharbor/nginx-photon:v2.13.2",
+      "id": "sha256:6433238f4a0b2828cef217629a82ad3e51d8ddaddb1eb9f2a5ddd5652734bb7b",
+      "volumes": [
+        "/run",
+        "/var/cache/nginx",
+        "/var/log/nginx"
+      ],
+      "architecture": "amd64",
+      "os": "linux",
+      "source_config_sha256": "aa191f956a23c6e3e8ffb31720c9c41460bc5e91ebca70db2a12a643d3e42cd8"
+    },
+    "jobservice": {
+      "reference": "goharbor/harbor-jobservice:v2.13.2",
+      "id": "sha256:81f8f5d9ba7d0aa330754f95cefbb4c6e9126fc401d26a5e9643705e11075487",
+      "volumes": [
+        "/var/log/jobs/"
+      ],
+      "architecture": "amd64",
+      "os": "linux",
+      "source_config_sha256": "7678c8e2cc6edcff244bf4a47491864a2fba39cf6f00d2d905db93b7823185d9"
+    },
+    "postgresql": {
+      "reference": "bitnami/postgresql@sha256:dbd371582fbbb100b22b891e485f4559187362348c1d4b5d0a2191134807516b",
+      "id": "sha256:dbd371582fbbb100b22b891e485f4559187362348c1d4b5d0a2191134807516b",
+      "volumes": [
+        "/bitnami/postgresql",
+        "/docker-entrypoint-initdb.d",
+        "/docker-entrypoint-preinitdb.d"
+      ],
+      "architecture": "amd64",
+      "os": "linux"
+    },
+    "redis": {
+      "reference": "bitnami/redis@sha256:0d2c5324b7373522e1fce60d657d60c851aa2921b211fd795f20c8515bee429e",
+      "id": "sha256:0d2c5324b7373522e1fce60d657d60c851aa2921b211fd795f20c8515bee429e",
+      "volumes": [],
+      "architecture": "amd64",
+      "os": "linux"
+    }
+  },
+  "effective_env_preserved": true,
+  "database": {
+    "tables": 49,
+    "rows": 10364,
+    "server_version_num": "170006"
+  },
+  "database_reconciled": true,
+  "acceptance": {
+    "completed": true,
+    "catalog": {
+      "projects": 3,
+      "repositories": 64,
+      "listed_artifacts": 165,
+      "reachable_artifacts": 429,
+      "tags": 164,
+      "untagged": 292,
+      "indexes": 132,
+      "accessories": 0
+    },
+    "registry_http": {
+      "manifest_count": 429,
+      "all_manifest_bytes_verified": true,
+      "anonymous_manifest_denied": true,
+      "sample_layer": {
+        "digest": "sha256:ba9916be9d18f219a90a7eedd7d6a179dd9aecd3b38dc87d5ea85fbac2e18a2a",
+        "bytes": 121690112
+      },
+      "tls_verified": true,
+      "production_token_realm_preserved": true,
+      "credentials_sent_only_to_candidate": true
+    },
+    "five_year_leaf_live_verified": true,
+    "read_only": true,
+    "entry_switched": false,
+    "push_or_jobservice_verified": false,
+    "references_compared_as_complete_relationship_multisets": true
+  },
+  "current_container_states": {
+    "core": "exited",
+    "jobservice": "created",
+    "portal": "exited",
+    "postgresql": "exited",
+    "proxy": "exited",
+    "redis": "exited",
+    "registry": "exited",
+    "registryctl": "exited"
+  },
+  "initializer_stopped": true,
+  "docker_volume_count": 43,
+  "old_nodes": [
+    "sunmoon-kind-136-control-plane running",
+    "sunmoon-kind-136-worker2 running",
+    "sunmoon-kind-136-worker running",
+    "kind-control-plane running",
+    "kind-worker2 running",
+    "kind-worker running"
+  ],
+  "old_recovery_containers": [
+    "sunmoon-harbor-recovery-20260927-core-auth exited",
+    "sunmoon-harbor-recovery-20260927-redis-821-auth exited",
+    "sunmoon-harbor-recovery-20260927-redis-821 exited",
+    "sunmoon-harbor-recovery-20260927-portal exited",
+    "sunmoon-harbor-recovery-20260927-core exited",
+    "sunmoon-harbor-recovery-20260927-redis exited",
+    "sunmoon-harbor-recovery-20260927-registryctl exited",
+    "sunmoon-harbor-recovery-20260927-postgresql exited",
+    "sunmoon-harbor-recovery-20260927-proxy exited",
+    "sunmoon-harbor-recovery-20260927-registry exited",
+    "sunmoon-harbor-recovery-20260927-init exited"
+  ],
+  "old_harbor_health": "healthy",
+  "new_instance_stopped": true,
+  "entry_switched": false,
+  "cleanup_performed": false,
+  "cloud_execution": "\u672a\u7ecf\u5b9e\u673a\u9a8c\u8bc1",
+  "mechanical_checks": {
+    "python_ast": [
+      "host_prepare.py",
+      "host_runtime.py",
+      "host_restore.py",
+      "host_verify.py",
+      "runtime_config.py",
+      "runtime_inspect.py"
+    ],
+    "default_print_only_plans": 7,
+    "test_suites_added_or_run": false
+  },
+  "failure_diagnostics": {
+    "image_identity": "official archive config digest differs from Docker OCI manifest image ID; both now retained and content-linked",
+    "catalog": "97 reference arrays differed only in order; all fields and multiplicities identical; original manifest bytes verified separately"
+  }
+}

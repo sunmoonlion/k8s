@@ -47,11 +47,14 @@ def bind(source, target, writable=False):
 
 
 def image_id(record, reference):
-    if (set(record) != {'reference', 'id', 'volumes', 'architecture', 'os'} or record['reference'] != reference
+    if (set(record) not in ({'reference', 'id', 'volumes', 'architecture', 'os'},
+                            {'reference', 'id', 'volumes', 'architecture', 'os', 'source_config_sha256'}) or record['reference'] != reference
             or not re.fullmatch(r'sha256:[a-f0-9]{64}', record['id'])
             or record['architecture'] != 'amd64' or record['os'] != 'linux'
             or not isinstance(record['volumes'], list) or len(record['volumes']) != len(set(record['volumes']))):
         raise ValueError('Runtime image differs from its admitted offline identity/platform')
+    if 'source_config_sha256' in record and not re.fullmatch(r'[a-f0-9]{64}', record['source_config_sha256']):
+        raise ValueError('Original image config digest missing')
     for volume in record['volumes']:
         path = PurePosixPath(volume)
         if not path.is_absolute() or '..' in path.parts:

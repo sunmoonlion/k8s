@@ -1,3 +1,18 @@
+## 最新续接：2026-09-27 新宿主实例已恢复并通过只读启停验收
+
+基线 `cf246d4794771ba47b936bf48ae8adbd32f5f15c`，本地 luna，不 push，开始工作树干净。交付为包含本段的提交；没有把整体迁移写成完成。
+
+- 当前实例sunmoon-harbor-main-20260927，/data/harbor/instances/sunmoon-harbor-main-20260927，公开config/harbor-main-local.json。Harbor2.13.2/PG17.6/Redis8.2.1版本不变；五年叶用于本实例18443，原30443仍旧Harbor。
+- host_prepare.py实际完成新目录私有配置、raw env逐字比对、固定官方镜像导入/身份核对、registry复制；4400文件17850816895B逐文件重读SHA与blob路径一致。独立盘UUID/PID1/Docker可见性及预留空间通过；原演练/旧数据不改。runtime_inspect抽inputs复用同校验，runtime_config增加source_config_sha256字段区分归档config与运行ID。
+- 首次准备失败点：镜像load成功后，用archive config ID去Docker inspect失败；本机Docker image ID实际是OCI manifest摘要。保留6官方别名和748544000B runtime-import.tar；只读moby内容读取核manifest SHA→原config SHA、config SHA及diff_ids后，固定真实运行ID。为排查重放过一次load，未启动容器。--resume-before-copy只对同配置/未创建容器/registry空/未prepared的中断点，全部私有文件字节/权限复核，旧Compose和host-config保存，再仅修正ID并续接。当前准备完成不可重复执行。
+- host_runtime.py create/check/start/stop：默认只打印，受管标签+容器ID、配置SHA、精确mount/端口/网络/env、restart=no、无匿名卷；create8角色均停止。start要求数据库与层已核对且Jobservice停止，PG和Redis认证探针就绪才启动后续；stop停止保留含初始化器，不down/rm/prune。低磁盘容量不阻止stop；尚无systemd自动启动/离线工具安装/写入晋升。
+- host_restore.py在空目标initdb并导入固定globals/registry.dump，复用原数据库库存helper，全表/行/序列/角色/结构/扩展等与逻辑备份逐项一致：49表10364行170006。完成后全部停止，原源数据未改。9新容器=8服务+database-init；状态与所有权记在私有runtime-state.json。
+- host_verify.py实际启动7角色只读，五年叶与预备文件DER完全一致、CA严格校验、原凭据仅发18443；全目录3projects/64repos/429reachable/164tags。429manifest原始字节及响应digest全核，121690112B layer sha256:ba9916be9d18f219a90a7eedd7d6a179dd9aecd3b38dc87d5ea85fbac2e18a2a匹配，匿名私有manifest拒绝。结束stop并保留，Jobservice未启动、push未验。
+- 目录验收前两次拒绝；保存快照后查明97个references仅排列不同，制品没有增删且所有字段/内容/重复次数一致。仅references最外层按完整JSON比较多重集合，嵌套数组/manifest/层原始字节不变；旧失败快照/差异统计保留。官方2.13.2 API Reference定义已查，未伪称上游承诺排序。修改比较器后完整HTTP验收通过。
+- 收尾现场：新8服务+init全部停止、旧11recovery全部exited、旧/验证6节点running，Docker卷仍43，旧30443健康healthy。无入口切换/数据删除/云SSH/清理；root实例中receipt和日志私有不入Git。公开证据scripts/results/luna-harbor-host-instance.20260927.json；方法registry-platform/docs/host-instance.md。6Python AST、7默认plan、git diff --check，未跑测试套件。
+- 仍欠：新空主机官方配置生成/完整Compose等工具物料、只读到可写与最新停写备份、Jobservice/认证push/CI-CD、通用备份恢复/自动启动、SNI30443→18443/19443、KIND main静态动态卷/本地适配和重建独立性、云SSH与step11前置整链（未经实机验证）。本次用旧冻结备份不代表后续新写入已同步。
+- 最终清理必须最后做；本次runtime-import.tar可再生缓存仅登记候选，保护原备份/旧节点/卷/新实例数据。inbox仍旧kind/~/.kube/kind-config/匹配1.27.3kubectl，main未建，不能通知luna做完了。无后台任务/用户预算限制。
+
 ## 最新续接：2026-09-27 独立 Harbor 共用运行配置渲染
 
 基线 `1bb77594f24b11459af1c9bf34ad5dedb06b1f07`，本地 luna，不 push，开始工作树干净。交付为包含本段的提交。

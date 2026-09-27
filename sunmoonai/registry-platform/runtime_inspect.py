@@ -84,7 +84,8 @@ def read(path):
     return path.read_bytes()
 
 
-def inspect(args):
+def inputs(args):
+    """Load validated original identities and TLS; caller never prints returned bytes."""
     source, tls = args.source, args.tls_batch
     for path in (source, tls):
         if not path or not path.is_absolute() or path.resolve() != path or not path.is_dir() or path.stat().st_mode & 0o077:
@@ -115,6 +116,12 @@ def inspect(args):
             raise ValueError('Symlink in generated configuration')
         if path.is_file():
             generated[str(path.relative_to(source / 'generated-config'))] = read(path)
+    return upstream, generated, preserved, {'certificate': certificate, 'key': key, 'ca': ca}, records, manifest
+
+
+def inspect(args):
+    upstream, generated, preserved, tls, records, manifest = inputs(args)
+    source = args.source
     results = []
     # Ephemeral credential only validates byte mapping, never persists or replaces
     # a credential. Real preparation must generate once into its private batch.
@@ -129,7 +136,7 @@ def inspect(args):
                     'root': '/data/harbor/instances/sunmoon-harbor-main-20260927',
                     'platform': platform, 'bind_address': ip, 'https_port': port, 'write_enabled': write_enabled}
             compose = render(upstream, site, records)
-            files = render_files(generated, preserved, {'certificate': certificate, 'key': key, 'ca': ca}, password, write_enabled)
+            files = render_files(generated, preserved, tls, password, write_enabled)
             for name, original in [('signing/secretkey', 'core_key'), ('signing/private_key.pem', 'token_key'),
                                    ('signing/root.crt', 'token_cert'), ('config/registry/passwd', 'registry_htpasswd')]:
                 if files[name] != preserved[original]:
@@ -153,7 +160,9 @@ def inspect(args):
             'leaf_sha256': manifest['leaves']['harbor']['certificate_sha256'],
             'services_started': False, 'files_written': False, 'registry_or_database_copied': False,
             'compose_version': compose_version, 'compose_config_parsed_without_env_resolution': True,
-            'docker_compose_runtime_checked': False, 'cloud_execution': '未经实机验证'}
+            'docker_compose_runtime_checked': False,
+            'official_image_id_kind': 'archive config SHA256 for rendering only; host_prepare resolves Docker runtime identity',
+            'cloud_execution': '未经实机验证'}
 
 
 def main():

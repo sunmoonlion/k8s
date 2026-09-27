@@ -2,6 +2,8 @@
 
 本地和云上共用 `runtime_config.py`（Compose）与 `runtime_files.py`（私有文件）两部分，输入是官方 Harbor 2.13.2 生成结果、原加密/认证材料、已验证叶证书和固定镜像标识。**这一步是配置准备，不是安装和启停完成。**云上未经实机验证。
 
+后续进展：新实例已使用本生成器完成实际准备、逻辑恢复和只读运行验收，见[宿主实例](host-instance.md)。下文保留纯渲染单元当时的范围；官方归档config摘要与Docker运行ID的区别及修复也见该文。
+
 ## 已核对范围
 
 2026-09-27 使用本机官方生成结果，在内存中生成本地/云端、只读/可写四组配置；当前 Compose 5.1.3 已用 `config --no-env-resolution` 解析四组输出。原配置和演练目录未改，未创建文件/容器、未启动服务、未 SSH。结果：[公开证据](../../scripts/results/luna-registry-runtime-render.20260927.json)。

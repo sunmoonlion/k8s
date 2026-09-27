@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "runtime": {
+    "schema": 1,
+    "deployment": "sunmoon-harbor-main-20260927",
+    "root": "/data/harbor/instances/sunmoon-harbor-main-20260927",
+    "platform": "wsl",
+    "bind_address": "127.0.0.1",
+    "https_port": 18443,
+    "write_enabled": false
+  },
+  "storage_uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+  "source": "/data/harbor/candidates/harbor-2.13.2-20260927",
+  "tls_batch": "/home/zymun/private/registry-platform/tls-20260927-five-year",
+  "ca_sha256": "30fe0e56df354899ccf7e66d5d730b87946b8010db21852a2e4520997a51b0ec",
+  "installer": "/home/zymun/packages-to-be-installed/releases/registry-platform-2.13.2-linux-amd64/harbor-offline-installer-v2.13.2.tgz",
+  "registry_archive": "/home/zymun/packages-to-be-installed/releases/harbor-preserve-20260926/backup-20260926T145600Z/volumes/registry.tar",
+  "registry_sha256": "94aad564812c2af543d1e7bd5f76fcf0f564205a2f0b101b628702a84cf6fb16",
+  "registry_bytes": 17868021760,
+  "logical_export": "/data/harbor/rehearsals/pg17-20260927T040000Z",
+  "logical_sha256": {
+    "registry.dump": "8690de0139c8e97d6f885b46023ea834c26b246b6f3d27077d7932d2ec8535a4",
+    "globals.sql": "db88e2684931daccddc3f5a252b14cdb1d6d5c5ca8ba33eec1608a9bff8d34e1"
+  },
+  "docker_content_socket": "/run/containerd/containerd.sock"
+}
