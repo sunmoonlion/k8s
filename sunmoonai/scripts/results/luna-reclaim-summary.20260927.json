@@ -1,0 +1,53 @@
+{
+  "date": "2026-09-27",
+  "r1": {
+    "authorized_candidate_count": 854,
+    "removed_count": 375,
+    "removed_api_bytes": 6386095842,
+    "remaining_candidate_count": 479,
+    "remaining_api_bytes": 25479778416,
+    "retention_reason": "195 parent records LastUsedAt advanced during BuildKit pruning; their ancestor closure is all 479 retained IDs; age filter unchanged",
+    "filesystem_used_decrease_bytes": 6384316416
+  },
+  "r4": {
+    "removed_count": 7,
+    "unlinked_allocated_bytes": 587493376,
+    "filesystem_used_decrease_bytes": 587403264
+  },
+  "total_filesystem_used_decrease_bytes": 6965342208,
+  "protected_unchanged": true,
+  "disk_before": {
+    "at": "2026-09-27T02:51:00.723764+00:00",
+    "root_used_bytes": 492870619136,
+    "root_available_bytes": 533238202368,
+    "windows": {
+      "C_TotalBytes": 992541478912,
+      "C_FreeBytes": 248955207680,
+      "WSL_VHDX_FileLength": 515879469056
+    }
+  },
+  "disk_after": {
+    "at": "2026-09-27T02:54:19.135595+00:00",
+    "root_used_bytes": 485905276928,
+    "root_available_bytes": 540203544576,
+    "windows": {
+      "C_TotalBytes": 992541478912,
+      "C_FreeBytes": 248957067264,
+      "WSL_VHDX_FileLength": 515879469056
+    }
+  },
+  "r2_a_count": 105,
+  "r2_a_cache_count": 244,
+  "r2_a_estimate_bytes": 37059010560,
+  "r2_b": {
+    "count": 100,
+    "harbor_exact": 20,
+    "archive_exact": 32,
+    "at_least_one_verified_source": 35,
+    "no_verified_source": 65
+  },
+  "r3": "cancelled",
+  "r2_applied": false,
+  "compaction_applied": false,
+  "data_vhdx_max_gib_owner_decision": 100
+}

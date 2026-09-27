@@ -1,0 +1,2094 @@
+{
+  "at": "2026-09-27T03:02:46.976565+00:00",
+  "read_only": true,
+  "archives_examined": [
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_elasticsearch-exporter_1.9.0-debian-12-r16.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_elasticsearch_9.1.2-debian-12-r0.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_harbor-adapter-trivy_2.13.2-debian-12-r2.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_harbor-core_2.13.2-debian-12-r3.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_harbor-exporter_2.13.2-debian-12-r2.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_harbor-jobservice_2.13.2-debian-12-r3.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_harbor-portal_2.13.2-debian-12-r1.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_harbor-registry_2.13.2-debian-12-r2.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_harbor-registryctl_2.13.2-debian-12-r3.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_jenkins-agent_0.3327.0-debian-12-r1.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_jenkins_2.516.2-debian-12-r0.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_kibana_9.1.2-debian-12-r0.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_logstash_9.1.2-debian-12-r0.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_mongodb_8.0.13-debian-12-r0.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_neo4j_5.26.11-debian-12-r0.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_nginx_1.29.1-debian-12-r0.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_os-shell_12-debian-12-r51.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_postgres-exporter_0.17.1-debian-12-r16.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_postgresql_17.6.0-debian-12-r4.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnami_redis_8.2.1-debian-12-r0.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/bitnamilegacy_rabbitmq_4.1.3-debian-12-r1.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/calico_apiserver_v3.28.2.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/calico_cni_v3.28.2.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/calico_csi_v3.28.2.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/calico_kube-controllers_v3.28.2.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/calico_node-driver-registrar_v3.28.2.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/calico_node_v3.28.2.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/calico_pod2daemon-flexvol_v3.28.2.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/calico_typha_v3.28.2.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/casbin_casdoor_3.42.0.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/dpage_pgadmin4_8.4.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/elasticsearch_8.11.3.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/ghcr.io_br3ndonland_inboard_fastapi-0.68-python3.11.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/infiniflow_ragflow_v0.25.4.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/mher_flower_2.0.1.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/mongo-express_1.0.2.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/mysql_8.0.39.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/nginx_1.20.2-alpine.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/node_18.20.0-alpine.tar",
+      "matching_image_count": 2
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/node_20.18.0-alpine.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/node_20.18.0.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/pgsty_minio_RELEASE.2026-03-25T00-00-00Z.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/python_3.12.13-slim.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/quay.io_minio_aistor_mc_RELEASE.2026-04-21T04-26-49Z.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/quay.io_minio_aistor_minio-sidecar_RELEASE.2026-06-09T23-40-36Z.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/quay.io_minio_aistor_minio_RELEASE.2026-05-28T20-50-32Z.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/quay.io_minio_aistor_operator_RELEASE.2026-06-10T05-02-21Z.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/quay.io_tigera_operator_v1.3.5.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/rancher_local-path-provisioner_v0.0.32.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/redis_redisinsight_2.70.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/registry.k8s.io_coredns_coredns_v1.11.1.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/registry.k8s.io_etcd_3.5.12-0.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/registry.k8s.io_kube-apiserver_v1.30.4.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/registry.k8s.io_kube-controller-manager_v1.30.4.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/registry.k8s.io_kube-proxy_v1.30.4.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/registry.k8s.io_kube-scheduler_v1.30.4.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/registry.k8s.io_pause_3.9.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/registry.k8s.io_sig-storage_nfs-subdir-external-provisioner_v4.0.2.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/traefik_v3.5.2.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/images/valkey_valkey_8.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-cni-linux-amd64.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-controllers-linux-amd64.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-node-linux-amd64.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/node-linux-amd64.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/probe-linux-amd64.tar",
+      "matching_image_count": 0
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/images/node.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/images/python.tar",
+      "matching_image_count": 1
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/releases/harbor-preserve-20260926/preparation/images/kind-worker-harbor-amd64.tar",
+      "matching_image_count": 2
+    },
+    {
+      "archive": "/home/zymun/packages-to-be-installed/releases/harbor-preserve-20260926/preparation/images/kind-worker2-harbor-amd64.tar",
+      "matching_image_count": 0
+    }
+  ],
+  "images": [
+    {
+      "Id": "sha256:04bd5d80c32a8751f3f4694fef04a50f20c4fed5e4e8b7c7cce752c79702baf3",
+      "RepoTags": [
+        "calico/cni:v3.28.2"
+      ],
+      "RepoDigests": [
+        "calico/cni@sha256:04bd5d80c32a8751f3f4694fef04a50f20c4fed5e4e8b7c7cce752c79702baf3"
+      ],
+      "Size": 303968794,
+      "SharedSize": 3739648,
+      "Containers": 0,
+      "descriptor_digest": "sha256:04bd5d80c32a8751f3f4694fef04a50f20c4fed5e4e8b7c7cce752c79702baf3",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/calico_cni_v3.28.2.tar",
+          "verified_descriptor": "sha256:04bd5d80c32a8751f3f4694fef04a50f20c4fed5e4e8b7c7cce752c79702baf3",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:0676f7a36c6b8b44bae0ab9332236e4af72dc4f9592ba995dbe7639df7fc3d84",
+      "RepoTags": [
+        "bitnami/elasticsearch-exporter:1.9.0-debian-12-r16",
+        "harbor.sunmoonai.com:30443/k8s-images/elasticsearch-exporter:1.9.0-debian-12-r16"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/elasticsearch-exporter@sha256:0676f7a36c6b8b44bae0ab9332236e4af72dc4f9592ba995dbe7639df7fc3d84"
+      ],
+      "Size": 319159798,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:0676f7a36c6b8b44bae0ab9332236e4af72dc4f9592ba995dbe7639df7fc3d84",
+      "harbor_exact_matches": [
+        "k8s-images/elasticsearch-exporter@sha256:0676f7a36c6b8b44bae0ab9332236e4af72dc4f9592ba995dbe7639df7fc3d84"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/bitnami_elasticsearch-exporter_1.9.0-debian-12-r16.tar",
+          "verified_descriptor": "sha256:0676f7a36c6b8b44bae0ab9332236e4af72dc4f9592ba995dbe7639df7fc3d84",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:090ba77e2958f6af52a5341f788b50b032dd4ca28377d2893dcf1ecbdfdfe203",
+      "RepoTags": [
+        "python:3.12-slim",
+        "docker.m.daocloud.io/library/python:3.12-slim"
+      ],
+      "RepoDigests": [
+        "docker.m.daocloud.io/library/python@sha256:090ba77e2958f6af52a5341f788b50b032dd4ca28377d2893dcf1ecbdfdfe203"
+      ],
+      "Size": 179104133,
+      "SharedSize": 133738496,
+      "Containers": 0,
+      "descriptor_digest": "sha256:090ba77e2958f6af52a5341f788b50b032dd4ca28377d2893dcf1ecbdfdfe203",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:0d2c5324b7373522e1fce60d657d60c851aa2921b211fd795f20c8515bee429e",
+      "RepoTags": [
+        "bitnami/redis:8.2.1-debian-12-r0",
+        "harbor.sunmoonai.com:30443/k8s-images/redis:8.2.1-debian-12-r0"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/redis@sha256:0d2c5324b7373522e1fce60d657d60c851aa2921b211fd795f20c8515bee429e"
+      ],
+      "Size": 349666269,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:0d2c5324b7373522e1fce60d657d60c851aa2921b211fd795f20c8515bee429e",
+      "harbor_exact_matches": [
+        "k8s-images/redis@sha256:0d2c5324b7373522e1fce60d657d60c851aa2921b211fd795f20c8515bee429e"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/bitnami_redis_8.2.1-debian-12-r0.tar",
+          "verified_descriptor": "sha256:0d2c5324b7373522e1fce60d657d60c851aa2921b211fd795f20c8515bee429e",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        },
+        {
+          "archive": "/home/zymun/packages-to-be-installed/releases/harbor-preserve-20260926/preparation/images/kind-worker-harbor-amd64.tar",
+          "verified_descriptor": "sha256:0d2c5324b7373522e1fce60d657d60c851aa2921b211fd795f20c8515bee429e",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:0ee87c4f90c111926d3a76963aa5c02e5c2363cd1e83bd4d3e9d6a2427efc2ff",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 357102064,
+      "SharedSize": 133734400,
+      "Containers": 0,
+      "descriptor_digest": "sha256:0ee87c4f90c111926d3a76963aa5c02e5c2363cd1e83bd4d3e9d6a2427efc2ff",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:0f1cdf790a7dc4dde462ba13aafbcfb238e24371c8f2236575f2d4f494449598",
+      "RepoTags": [
+        "luna-info-delivery:20260911-final"
+      ],
+      "RepoDigests": [
+        "luna-info-delivery@sha256:0f1cdf790a7dc4dde462ba13aafbcfb238e24371c8f2236575f2d4f494449598"
+      ],
+      "Size": 424625262,
+      "SharedSize": 133787648,
+      "Containers": 0,
+      "descriptor_digest": "sha256:0f1cdf790a7dc4dde462ba13aafbcfb238e24371c8f2236575f2d4f494449598",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:1106c9d49645a4ce9dc3700d572352fde11893704f8121a4ca3d1fa2f5fff997",
+      "RepoTags": [
+        "investment-backend:architecture-v2-r4.2-candidate"
+      ],
+      "RepoDigests": [
+        "investment-backend@sha256:1106c9d49645a4ce9dc3700d572352fde11893704f8121a4ca3d1fa2f5fff997"
+      ],
+      "Size": 452534889,
+      "SharedSize": 133775360,
+      "Containers": 0,
+      "descriptor_digest": "sha256:1106c9d49645a4ce9dc3700d572352fde11893704f8121a4ca3d1fa2f5fff997",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:13ef4c38ba9ff3b8fc0dae99dfe2f47e2afcff61097d890becef8a1361da68da",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 239980732,
+      "SharedSize": 141959168,
+      "Containers": 0,
+      "descriptor_digest": "sha256:13ef4c38ba9ff3b8fc0dae99dfe2f47e2afcff61097d890becef8a1361da68da",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:14d7c4620d833cf01a43a7beb650317cb2e64df8be4b94514ae1b5fcb4d26ca0",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 357063158,
+      "SharedSize": 133734400,
+      "Containers": 0,
+      "descriptor_digest": "sha256:14d7c4620d833cf01a43a7beb650317cb2e64df8be4b94514ae1b5fcb4d26ca0",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:15993bf259ed7e5ba80327daa7c9cdd38e737c4ca4934cf6c3b6b03a6f0651ca",
+      "RepoTags": [
+        "sunmoon-network-build-check:20260926"
+      ],
+      "RepoDigests": [
+        "sunmoon-network-build-check@sha256:15993bf259ed7e5ba80327daa7c9cdd38e737c4ca4934cf6c3b6b03a6f0651ca"
+      ],
+      "Size": 179294825,
+      "SharedSize": 133738496,
+      "Containers": 0,
+      "descriptor_digest": "sha256:15993bf259ed7e5ba80327daa7c9cdd38e737c4ca4934cf6c3b6b03a6f0651ca",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:1a5fd97fba877917e7232f5a6161488489dc5db30c9c6b867ceaa1e15a083e47",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 795921400,
+      "SharedSize": 519909376,
+      "Containers": 0,
+      "descriptor_digest": "sha256:1a5fd97fba877917e7232f5a6161488489dc5db30c9c6b867ceaa1e15a083e47",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:1abc6081ae02900744b9f86aeaeb4eeb2a49663fd0d897ee10ad5e7cfe384b57",
+      "RepoTags": [
+        "harbor.sunmoonai.com:30443/app-images/knowledge-backend:2.0.1-r7.1-20260813"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/app-images/knowledge-backend@sha256:1abc6081ae02900744b9f86aeaeb4eeb2a49663fd0d897ee10ad5e7cfe384b57"
+      ],
+      "Size": 342117496,
+      "SharedSize": 133787648,
+      "Containers": 0,
+      "descriptor_digest": "sha256:1abc6081ae02900744b9f86aeaeb4eeb2a49663fd0d897ee10ad5e7cfe384b57",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:221a422e974308dcc0b6553d366470e613181a040c67fe4b910cbe94e13c272f",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 357063443,
+      "SharedSize": 133734400,
+      "Containers": 0,
+      "descriptor_digest": "sha256:221a422e974308dcc0b6553d366470e613181a040c67fe4b910cbe94e13c272f",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:253b5ff7dd0918b08633a9aee5928815545cdd768426c0765640c8dc630af358",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 357022953,
+      "SharedSize": 133734400,
+      "Containers": 0,
+      "descriptor_digest": "sha256:253b5ff7dd0918b08633a9aee5928815545cdd768426c0765640c8dc630af358",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:2c2da7be53cf02245a3d16aeb01e6500576ff6ea65ed7275db2459331c53c78f",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 239980417,
+      "SharedSize": 141959168,
+      "Containers": 0,
+      "descriptor_digest": "sha256:2c2da7be53cf02245a3d16aeb01e6500576ff6ea65ed7275db2459331c53c78f",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:2df8f7422bb8e7a97c3bfc7560b5f44f4ceabaec4a946853e877c9ec17ff7470",
+      "RepoTags": [
+        "harbor.sunmoonai.com:30443/k8s-images/minio/aistor/minio:RELEASE.2026-05-28T20-50-32Z",
+        "quay.io/minio/aistor/minio:RELEASE.2026-05-28T20-50-32Z"
+      ],
+      "RepoDigests": [
+        "quay.io/minio/aistor/minio@sha256:2df8f7422bb8e7a97c3bfc7560b5f44f4ceabaec4a946853e877c9ec17ff7470"
+      ],
+      "Size": 540373644,
+      "SharedSize": 25407488,
+      "Containers": 0,
+      "descriptor_digest": "sha256:2df8f7422bb8e7a97c3bfc7560b5f44f4ceabaec4a946853e877c9ec17ff7470",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/quay.io_minio_aistor_minio_RELEASE.2026-05-28T20-50-32Z.tar",
+          "verified_descriptor": "sha256:2df8f7422bb8e7a97c3bfc7560b5f44f4ceabaec4a946853e877c9ec17ff7470",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:2f7e75057e1477b1ffc9c2d52fea74e5ad28fee6c00d0a2ad46e6b8209f6e791",
+      "RepoTags": [
+        "bitnamilegacy/neo4j:5.26.11-debian-12-r0",
+        "harbor.sunmoonai.com:30443/k8s-images/neo4j:5.26.11-debian-12-r0"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/neo4j@sha256:2f7e75057e1477b1ffc9c2d52fea74e5ad28fee6c00d0a2ad46e6b8209f6e791"
+      ],
+      "Size": 700041980,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:2f7e75057e1477b1ffc9c2d52fea74e5ad28fee6c00d0a2ad46e6b8209f6e791",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/bitnami_neo4j_5.26.11-debian-12-r0.tar",
+          "verified_descriptor": "sha256:2f7e75057e1477b1ffc9c2d52fea74e5ad28fee6c00d0a2ad46e6b8209f6e791",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:307c2ad4ef62cd1491b2b45e5f216464f08e87578c6e3d8f4060edd461c82756",
+      "RepoTags": [
+        "knowledge-backend:architecture-v2-r4.2-candidate"
+      ],
+      "RepoDigests": [
+        "knowledge-backend@sha256:307c2ad4ef62cd1491b2b45e5f216464f08e87578c6e3d8f4060edd461c82756"
+      ],
+      "Size": 379175238,
+      "SharedSize": 133775360,
+      "Containers": 0,
+      "descriptor_digest": "sha256:307c2ad4ef62cd1491b2b45e5f216464f08e87578c6e3d8f4060edd461c82756",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:32c4d1904f951bbaccdcc1eed3d14da6cabd55580bdf70227c90e3bd16cb5aab",
+      "RepoTags": [
+        "bitnami/mongodb:8.0.13-debian-12-r0",
+        "harbor.sunmoonai.com:30443/k8s-images/mongodb:8.0.13-debian-12-r0"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/mongodb@sha256:32c4d1904f951bbaccdcc1eed3d14da6cabd55580bdf70227c90e3bd16cb5aab"
+      ],
+      "Size": 1727046009,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:32c4d1904f951bbaccdcc1eed3d14da6cabd55580bdf70227c90e3bd16cb5aab",
+      "harbor_exact_matches": [
+        "k8s-images/mongodb@sha256:32c4d1904f951bbaccdcc1eed3d14da6cabd55580bdf70227c90e3bd16cb5aab"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/bitnami_mongodb_8.0.13-debian-12-r0.tar",
+          "verified_descriptor": "sha256:32c4d1904f951bbaccdcc1eed3d14da6cabd55580bdf70227c90e3bd16cb5aab",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:35eca01caaef8ad9c1c2f43ee10b2022ce4bdc3d0c7832adf718b0a803d2c28c",
+      "RepoTags": [
+        "llm-web-frontend:1.0.0"
+      ],
+      "RepoDigests": [
+        "llm-web-frontend@sha256:35eca01caaef8ad9c1c2f43ee10b2022ce4bdc3d0c7832adf718b0a803d2c28c"
+      ],
+      "Size": 239980423,
+      "SharedSize": 141991936,
+      "Containers": 0,
+      "descriptor_digest": "sha256:35eca01caaef8ad9c1c2f43ee10b2022ce4bdc3d0c7832adf718b0a803d2c28c",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:36c4d4f96febbe240ec7c0b979b90c427b0bf239e40259989f04bc7f790ca0cf",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 95462963,
+      "SharedSize": 66637824,
+      "Containers": 0,
+      "descriptor_digest": "sha256:36c4d4f96febbe240ec7c0b979b90c427b0bf239e40259989f04bc7f790ca0cf",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:372ae0802c1a6eab52291abebb0180dc4a683ba0d212ebac987807ed059483d7",
+      "RepoTags": [
+        "redis/redisinsight:2.70",
+        "harbor.sunmoonai.com:30443/k8s-images/redisinsight:2.70"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/redisinsight@sha256:372ae0802c1a6eab52291abebb0180dc4a683ba0d212ebac987807ed059483d7"
+      ],
+      "Size": 734603384,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:372ae0802c1a6eab52291abebb0180dc4a683ba0d212ebac987807ed059483d7",
+      "harbor_exact_matches": [
+        "k8s-images/redisinsight@sha256:372ae0802c1a6eab52291abebb0180dc4a683ba0d212ebac987807ed059483d7"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/redis_redisinsight_2.70.tar",
+          "verified_descriptor": "sha256:372ae0802c1a6eab52291abebb0180dc4a683ba0d212ebac987807ed059483d7",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:378905baa9b163def764e318c4d91b525d90c32af4cf3cce4e3a434c1166b677",
+      "RepoTags": [
+        "luna-investment-delivery:20260911-verified"
+      ],
+      "RepoDigests": [
+        "luna-investment-delivery@sha256:378905baa9b163def764e318c4d91b525d90c32af4cf3cce4e3a434c1166b677"
+      ],
+      "Size": 452591717,
+      "SharedSize": 133775360,
+      "Containers": 0,
+      "descriptor_digest": "sha256:378905baa9b163def764e318c4d91b525d90c32af4cf3cce4e3a434c1166b677",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:38d74939f28c16f6c35566596b97657be33701d31accbab5c015948d73808751",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 357102040,
+      "SharedSize": 133734400,
+      "Containers": 0,
+      "descriptor_digest": "sha256:38d74939f28c16f6c35566596b97657be33701d31accbab5c015948d73808751",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:3dcb7fecd85492cbb67000f7ba0a0f8d2a117f1fc40797e1a7fccf53f9d4db94",
+      "RepoTags": [
+        "luna-investment-delivery:20260911"
+      ],
+      "RepoDigests": [
+        "luna-investment-delivery@sha256:3dcb7fecd85492cbb67000f7ba0a0f8d2a117f1fc40797e1a7fccf53f9d4db94"
+      ],
+      "Size": 452587232,
+      "SharedSize": 133775360,
+      "Containers": 0,
+      "descriptor_digest": "sha256:3dcb7fecd85492cbb67000f7ba0a0f8d2a117f1fc40797e1a7fccf53f9d4db94",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:4146f1e9cb8500cedbfe62559875640c235288a4b93eaff1ef289906712b55b2",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 357068411,
+      "SharedSize": 133734400,
+      "Containers": 0,
+      "descriptor_digest": "sha256:4146f1e9cb8500cedbfe62559875640c235288a4b93eaff1ef289906712b55b2",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:42686b3045302270c29be4edd6d52f7b7cb1e8a0264554636cb3f9c53cf8726c",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 357068589,
+      "SharedSize": 133734400,
+      "Containers": 0,
+      "descriptor_digest": "sha256:42686b3045302270c29be4edd6d52f7b7cb1e8a0264554636cb3f9c53cf8726c",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:43a4e388c99c559c2f11b8e9e4ec63b0f719ad139533b1fd6ff08874f0610e06",
+      "RepoTags": [
+        "harbor.sunmoonai.com:30443/k8s-images/minio/aistor/kes:RELEASE.2026-04-13T20-11-36Z",
+        "quay.io/minio/aistor/kes:RELEASE.2026-04-13T20-11-36Z"
+      ],
+      "RepoDigests": [
+        "quay.io/minio/aistor/kes@sha256:43a4e388c99c559c2f11b8e9e4ec63b0f719ad139533b1fd6ff08874f0610e06"
+      ],
+      "Size": 61914019,
+      "SharedSize": 25419776,
+      "Containers": 0,
+      "descriptor_digest": "sha256:43a4e388c99c559c2f11b8e9e4ec63b0f719ad139533b1fd6ff08874f0610e06",
+      "harbor_exact_matches": [
+        "k8s-images/minio/aistor/kes@sha256:43a4e388c99c559c2f11b8e9e4ec63b0f719ad139533b1fd6ff08874f0610e06"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:44b4d3791139ead9c99b9c3a99145b0d6da33f84fdb7c65f6f43a181408b209d",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 95444717,
+      "SharedSize": 66637824,
+      "Containers": 0,
+      "descriptor_digest": "sha256:44b4d3791139ead9c99b9c3a99145b0d6da33f84fdb7c65f6f43a181408b209d",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:470554d6494904439bd2c3a369088f55042ad6a1c4fc6a5ce705fa7eeb562b92",
+      "RepoTags": [
+        "tpl-backend:architecture-v2-r4.2-candidate"
+      ],
+      "RepoDigests": [
+        "tpl-backend@sha256:470554d6494904439bd2c3a369088f55042ad6a1c4fc6a5ce705fa7eeb562b92"
+      ],
+      "Size": 378960936,
+      "SharedSize": 230780928,
+      "Containers": 0,
+      "descriptor_digest": "sha256:470554d6494904439bd2c3a369088f55042ad6a1c4fc6a5ce705fa7eeb562b92",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:47834eadc1d660e114cb1e84d856c968e037b196359b68e436cada6a24eb2cec",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 481919534,
+      "SharedSize": 133734400,
+      "Containers": 0,
+      "descriptor_digest": "sha256:47834eadc1d660e114cb1e84d856c968e037b196359b68e436cada6a24eb2cec",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:49fce8bdc1480b11ffd18b2007670d2f8d75bd624ade7f1e3e6b5ee76a4b945b",
+      "RepoTags": [
+        "luna-info-delivery:20260911"
+      ],
+      "RepoDigests": [
+        "luna-info-delivery@sha256:49fce8bdc1480b11ffd18b2007670d2f8d75bd624ade7f1e3e6b5ee76a4b945b"
+      ],
+      "Size": 477843389,
+      "SharedSize": 133787648,
+      "Containers": 0,
+      "descriptor_digest": "sha256:49fce8bdc1480b11ffd18b2007670d2f8d75bd624ade7f1e3e6b5ee76a4b945b",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc",
+      "RepoTags": [
+        "harbor.sunmoonai.com:30443/k8s-images/node@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/node@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc"
+      ],
+      "Size": 231111603,
+      "SharedSize": 173469696,
+      "Containers": 0,
+      "descriptor_digest": "sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc",
+      "harbor_exact_matches": [
+        "k8s-images/node@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/images/node.tar",
+          "verified_descriptor": "sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:543ac286dfd0eea3c3d57782beb2da3aa3b8bad3460eca6db718b425bc0cf402",
+      "RepoTags": [
+        "sunmoon/sandbox:dev"
+      ],
+      "RepoDigests": [
+        "sunmoon/sandbox@sha256:543ac286dfd0eea3c3d57782beb2da3aa3b8bad3460eca6db718b425bc0cf402"
+      ],
+      "Size": 1154112484,
+      "SharedSize": 781533184,
+      "Containers": 0,
+      "descriptor_digest": "sha256:543ac286dfd0eea3c3d57782beb2da3aa3b8bad3460eca6db718b425bc0cf402",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:543b03956d718cdfb57c8fc4af2fd81252ceecb7ee544cf858802d552bafc20a",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 481919586,
+      "SharedSize": 133734400,
+      "Containers": 0,
+      "descriptor_digest": "sha256:543b03956d718cdfb57c8fc4af2fd81252ceecb7ee544cf858802d552bafc20a",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:55697b93481c9f6b5e754c209ee3fee3c8316d5b9ddbb088df9cc887e1b26287",
+      "RepoTags": [
+        "tpl-admin-frontend:arch-v2-r2-20260801"
+      ],
+      "RepoDigests": [
+        "tpl-admin-frontend@sha256:55697b93481c9f6b5e754c209ee3fee3c8316d5b9ddbb088df9cc887e1b26287"
+      ],
+      "Size": 308934074,
+      "SharedSize": 173551616,
+      "Containers": 0,
+      "descriptor_digest": "sha256:55697b93481c9f6b5e754c209ee3fee3c8316d5b9ddbb088df9cc887e1b26287",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:58a3a280935d830215802322e9a0373faaacdfd646477aa7e718939c2f29292a",
+      "RepoTags": [
+        "elasticsearch:8.11.3",
+        "harbor.sunmoonai.com:30443/app-images/elasticsearch:8.11.3",
+        "harbor.sunmoonai.com:30443/ragflow/elasticsearch:8.11.3"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/ragflow/elasticsearch@sha256:58a3a280935d830215802322e9a0373faaacdfd646477aa7e718939c2f29292a"
+      ],
+      "Size": 2098496620,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:58a3a280935d830215802322e9a0373faaacdfd646477aa7e718939c2f29292a",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/elasticsearch_8.11.3.tar",
+          "verified_descriptor": "sha256:58a3a280935d830215802322e9a0373faaacdfd646477aa7e718939c2f29292a",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:5e23090353324d887c48ad5e5c56d294eab81588df9605b07d1afe895f9cc8f8",
+      "RepoTags": [
+        "hello-world:latest"
+      ],
+      "RepoDigests": [
+        "hello-world@sha256:5e23090353324d887c48ad5e5c56d294eab81588df9605b07d1afe895f9cc8f8"
+      ],
+      "Size": 25874,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:5e23090353324d887c48ad5e5c56d294eab81588df9605b07d1afe895f9cc8f8",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:5f979dcfed4ce6461873f087e8c980d6e29b084b9e8776d9704a7e989b5f4898",
+      "RepoTags": [
+        "nginx:stable-alpine",
+        "docker.m.daocloud.io/library/nginx:stable-alpine"
+      ],
+      "RepoDigests": [
+        "docker.m.daocloud.io/library/nginx@sha256:5f979dcfed4ce6461873f087e8c980d6e29b084b9e8776d9704a7e989b5f4898"
+      ],
+      "Size": 93573256,
+      "SharedSize": 9109504,
+      "Containers": 0,
+      "descriptor_digest": "sha256:5f979dcfed4ce6461873f087e8c980d6e29b084b9e8776d9704a7e989b5f4898",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:62ce0df0c57930a42a9f6025b33f165c73217159dcf7681148ecee10c32337b0",
+      "RepoTags": [
+        "harbor.sunmoonai.com:30443/k8s-images/node:18.20.0-alpine"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/node@sha256:62ce0df0c57930a42a9f6025b33f165c73217159dcf7681148ecee10c32337b0"
+      ],
+      "Size": 184440640,
+      "SharedSize": 138870784,
+      "Containers": 0,
+      "descriptor_digest": "sha256:62ce0df0c57930a42a9f6025b33f165c73217159dcf7681148ecee10c32337b0",
+      "harbor_exact_matches": [
+        "k8s-images/node@sha256:62ce0df0c57930a42a9f6025b33f165c73217159dcf7681148ecee10c32337b0"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/node_18.20.0-alpine.tar",
+          "verified_descriptor": "sha256:62ce0df0c57930a42a9f6025b33f165c73217159dcf7681148ecee10c32337b0",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:6499edcf396cb75dd73d17f89e4c8c7ba9cab7a6e7abeb289009f9210e6762b0",
+      "RepoTags": [
+        "bitnami/postgres-exporter:0.17.1-debian-12-r16",
+        "harbor.sunmoonai.com:30443/k8s-images/postgres-exporter:0.17.1-debian-12-r16"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/postgres-exporter@sha256:6499edcf396cb75dd73d17f89e4c8c7ba9cab7a6e7abeb289009f9210e6762b0"
+      ],
+      "Size": 214849936,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:6499edcf396cb75dd73d17f89e4c8c7ba9cab7a6e7abeb289009f9210e6762b0",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/bitnami_postgres-exporter_0.17.1-debian-12-r16.tar",
+          "verified_descriptor": "sha256:6499edcf396cb75dd73d17f89e4c8c7ba9cab7a6e7abeb289009f9210e6762b0",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:6619cba7535bb4e755a33c04da3ef79394eb2f0efd1fc92be4029e119dd38e99",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 357068319,
+      "SharedSize": 133734400,
+      "Containers": 0,
+      "descriptor_digest": "sha256:6619cba7535bb4e755a33c04da3ef79394eb2f0efd1fc92be4029e119dd38e99",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:69976cfabb98bbf36659aba5a93e59144af93c65f282a27e6d4f86391c144b40",
+      "RepoTags": [
+        "llm-web-backend:1.0.0"
+      ],
+      "RepoDigests": [
+        "llm-web-backend@sha256:69976cfabb98bbf36659aba5a93e59144af93c65f282a27e6d4f86391c144b40"
+      ],
+      "Size": 795909997,
+      "SharedSize": 620818432,
+      "Containers": 0,
+      "descriptor_digest": "sha256:69976cfabb98bbf36659aba5a93e59144af93c65f282a27e6d4f86391c144b40",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:6f4753eaf4d765bfb12979cb430820ee1017b688fb948e7e88390c76af1cddf5",
+      "RepoTags": [
+        "bitnami/os-shell:12-debian-12-r51",
+        "harbor.sunmoonai.com:30443/k8s-images/os-shell:12-debian-12-r51"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/os-shell@sha256:6f4753eaf4d765bfb12979cb430820ee1017b688fb948e7e88390c76af1cddf5"
+      ],
+      "Size": 353195963,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:6f4753eaf4d765bfb12979cb430820ee1017b688fb948e7e88390c76af1cddf5",
+      "harbor_exact_matches": [
+        "k8s-images/os-shell@sha256:6f4753eaf4d765bfb12979cb430820ee1017b688fb948e7e88390c76af1cddf5"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/bitnami_os-shell_12-debian-12-r51.tar",
+          "verified_descriptor": "sha256:6f4753eaf4d765bfb12979cb430820ee1017b688fb948e7e88390c76af1cddf5",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:71300be01c39e17887c825cacb5d93912524e30c300ba20314e0f18d67a6562b",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 795909997,
+      "SharedSize": 620818432,
+      "Containers": 0,
+      "descriptor_digest": "sha256:71300be01c39e17887c825cacb5d93912524e30c300ba20314e0f18d67a6562b",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea",
+      "RepoTags": [
+        "docker.m.daocloud.io/library/postgres:16-alpine"
+      ],
+      "RepoDigests": [
+        "docker.m.daocloud.io/library/postgres@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea"
+      ],
+      "Size": 419715444,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662",
+      "RepoTags": [
+        "busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662",
+        "sunmoon-network-acceptance:20260926"
+      ],
+      "RepoDigests": [
+        "sunmoon-network-acceptance@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662"
+      ],
+      "Size": 6760879,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:775139a7f800cde2091e614d7494471c1d845c69d96669fff37113c6e218b9be",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 357102102,
+      "SharedSize": 133734400,
+      "Containers": 0,
+      "descriptor_digest": "sha256:775139a7f800cde2091e614d7494471c1d845c69d96669fff37113c6e218b9be",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:781ad7b20c8dd81a999090771724fbaab100f7fb8d13c965962985b597d3af3e",
+      "RepoTags": [
+        "llm-admin-backend:1.0.0"
+      ],
+      "RepoDigests": [
+        "llm-admin-backend@sha256:781ad7b20c8dd81a999090771724fbaab100f7fb8d13c965962985b597d3af3e"
+      ],
+      "Size": 357021512,
+      "SharedSize": 133734400,
+      "Containers": 0,
+      "descriptor_digest": "sha256:781ad7b20c8dd81a999090771724fbaab100f7fb8d13c965962985b597d3af3e",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:7b3a5a6a58d631f2ccfe0d9852b484dbae768ea6e7117ce997fd7a2f736b9b55",
+      "RepoTags": [
+        "mongo-express:1.0.2",
+        "harbor.sunmoonai.com:30443/k8s-images/mongo-express:1.0.2"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/mongo-express@sha256:7b3a5a6a58d631f2ccfe0d9852b484dbae768ea6e7117ce997fd7a2f736b9b55"
+      ],
+      "Size": 420403738,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:7b3a5a6a58d631f2ccfe0d9852b484dbae768ea6e7117ce997fd7a2f736b9b55",
+      "harbor_exact_matches": [
+        "k8s-images/mongo-express@sha256:7b3a5a6a58d631f2ccfe0d9852b484dbae768ea6e7117ce997fd7a2f736b9b55"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/mongo-express_1.0.2.tar",
+          "verified_descriptor": "sha256:7b3a5a6a58d631f2ccfe0d9852b484dbae768ea6e7117ce997fd7a2f736b9b55",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:7dbe64f818ea003033cbf902dbd9d2597c858f349141de85968e83dcd918919e",
+      "RepoTags": [
+        "harbor.sunmoonai.com:30443/k8s-images/minio/aistor/kes-sidecar:RELEASE.2026-06-10T04-53-14Z",
+        "quay.io/minio/aistor/kes-sidecar:RELEASE.2026-06-10T04-53-14Z"
+      ],
+      "RepoDigests": [
+        "quay.io/minio/aistor/kes-sidecar@sha256:7dbe64f818ea003033cbf902dbd9d2597c858f349141de85968e83dcd918919e"
+      ],
+      "Size": 70378863,
+      "SharedSize": 25407488,
+      "Containers": 0,
+      "descriptor_digest": "sha256:7dbe64f818ea003033cbf902dbd9d2597c858f349141de85968e83dcd918919e",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:7de855fcbff8650712de6baad464a9a634e8901e521adff2f04301ad82d7c009",
+      "RepoTags": [
+        "calico/kube-controllers:v3.28.2"
+      ],
+      "RepoDigests": [
+        "calico/kube-controllers@sha256:7de855fcbff8650712de6baad464a9a634e8901e521adff2f04301ad82d7c009"
+      ],
+      "Size": 113915264,
+      "SharedSize": 3739648,
+      "Containers": 0,
+      "descriptor_digest": "sha256:7de855fcbff8650712de6baad464a9a634e8901e521adff2f04301ad82d7c009",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/calico_kube-controllers_v3.28.2.tar",
+          "verified_descriptor": "sha256:7de855fcbff8650712de6baad464a9a634e8901e521adff2f04301ad82d7c009",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:7f9c349c0651f5d9b69eb345c56610c0ef225fb238a954984327e325e22867ae",
+      "RepoTags": [
+        "luna-investment-delivery:20260911-final"
+      ],
+      "RepoDigests": [
+        "luna-investment-delivery@sha256:7f9c349c0651f5d9b69eb345c56610c0ef225fb238a954984327e325e22867ae"
+      ],
+      "Size": 452587469,
+      "SharedSize": 133775360,
+      "Containers": 0,
+      "descriptor_digest": "sha256:7f9c349c0651f5d9b69eb345c56610c0ef225fb238a954984327e325e22867ae",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:80ab44955b28c6df3a629cde2e4f3c525cea37f4f0fcd92ecc9707af863beef9",
+      "RepoTags": [
+        "tpl-web-frontend:arch-v2-r2-20260801"
+      ],
+      "RepoDigests": [
+        "tpl-web-frontend@sha256:80ab44955b28c6df3a629cde2e4f3c525cea37f4f0fcd92ecc9707af863beef9"
+      ],
+      "Size": 309396790,
+      "SharedSize": 173551616,
+      "Containers": 0,
+      "descriptor_digest": "sha256:80ab44955b28c6df3a629cde2e4f3c525cea37f4f0fcd92ecc9707af863beef9",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:8373da5d7b38976f02d393c0d9dc96fa1428ff1d336eac2a42a5c4a7f3904198",
+      "RepoTags": [
+        "info-backend:architecture-v2-r4.2-candidate"
+      ],
+      "RepoDigests": [
+        "info-backend@sha256:8373da5d7b38976f02d393c0d9dc96fa1428ff1d336eac2a42a5c4a7f3904198"
+      ],
+      "Size": 504744664,
+      "SharedSize": 133775360,
+      "Containers": 0,
+      "descriptor_digest": "sha256:8373da5d7b38976f02d393c0d9dc96fa1428ff1d336eac2a42a5c4a7f3904198",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:84ad7bbbe0a84e6b0b18a014b37d181ba32b10802c96405c12f08e26ded2f102",
+      "RepoTags": [
+        "casbin/casdoor:3.42.0",
+        "harbor.sunmoonai.com:30443/k8s-images/casdoor:3.42.0"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/casdoor@sha256:84ad7bbbe0a84e6b0b18a014b37d181ba32b10802c96405c12f08e26ded2f102"
+      ],
+      "Size": 444309383,
+      "SharedSize": 9109504,
+      "Containers": 0,
+      "descriptor_digest": "sha256:84ad7bbbe0a84e6b0b18a014b37d181ba32b10802c96405c12f08e26ded2f102",
+      "harbor_exact_matches": [
+        "k8s-images/casdoor@sha256:84ad7bbbe0a84e6b0b18a014b37d181ba32b10802c96405c12f08e26ded2f102"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/casbin_casdoor_3.42.0.tar",
+          "verified_descriptor": "sha256:84ad7bbbe0a84e6b0b18a014b37d181ba32b10802c96405c12f08e26ded2f102",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:856ac0c261160e7bb967ab43b31598fa89633b33eb2ee292e17384272d929e22",
+      "RepoTags": [
+        "calico/node:v3.28.2"
+      ],
+      "RepoDigests": [
+        "calico/node@sha256:856ac0c261160e7bb967ab43b31598fa89633b33eb2ee292e17384272d929e22"
+      ],
+      "Size": 499014333,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:856ac0c261160e7bb967ab43b31598fa89633b33eb2ee292e17384272d929e22",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/calico_node_v3.28.2.tar",
+          "verified_descriptor": "sha256:856ac0c261160e7bb967ab43b31598fa89633b33eb2ee292e17384272d929e22",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:8b4062adc07a07f7f010df64114d1a1ee09ca5f0837975da954fa6b91c54eba9",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 795920673,
+      "SharedSize": 519909376,
+      "Containers": 0,
+      "descriptor_digest": "sha256:8b4062adc07a07f7f010df64114d1a1ee09ca5f0837975da954fa6b91c54eba9",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a",
+      "RepoTags": [
+        "sunmoon-offline/calico-cni:8de23af2a36514e5",
+        "quay.io/calico/cni@sha256:8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a"
+      ],
+      "RepoDigests": [
+        "quay.io/calico/cni@sha256:8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a"
+      ],
+      "Size": 230510909,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-cni-linux-amd64.tar",
+          "verified_descriptor": "sha256:8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:935e69a17b114493185c74c347e67c5ce14491bb0fb4b3bc1eb43ae3b8b38b75",
+      "RepoTags": [
+        "bitnami/logstash:9.1.2-debian-12-r0",
+        "harbor.sunmoonai.com:30443/k8s-images/logstash:9.1.2-debian-12-r0"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/logstash@sha256:935e69a17b114493185c74c347e67c5ce14491bb0fb4b3bc1eb43ae3b8b38b75"
+      ],
+      "Size": 1689368413,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:935e69a17b114493185c74c347e67c5ce14491bb0fb4b3bc1eb43ae3b8b38b75",
+      "harbor_exact_matches": [
+        "k8s-images/logstash@sha256:935e69a17b114493185c74c347e67c5ce14491bb0fb4b3bc1eb43ae3b8b38b75"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/bitnami_logstash_9.1.2-debian-12-r0.tar",
+          "verified_descriptor": "sha256:935e69a17b114493185c74c347e67c5ce14491bb0fb4b3bc1eb43ae3b8b38b75",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:9917e842cfc3220e4ac3e819eb98a975cc171eff5e532c79cb75558030eb9078",
+      "RepoTags": [
+        "valkey/valkey:8",
+        "harbor.sunmoonai.com:30443/app-images/valkey:8",
+        "harbor.sunmoonai.com:30443/ragflow/valkey/valkey:8"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/ragflow/valkey/valkey@sha256:9917e842cfc3220e4ac3e819eb98a975cc171eff5e532c79cb75558030eb9078"
+      ],
+      "Size": 163185647,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:9917e842cfc3220e4ac3e819eb98a975cc171eff5e532c79cb75558030eb9078",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/valkey_valkey_8.tar",
+          "verified_descriptor": "sha256:9917e842cfc3220e4ac3e819eb98a975cc171eff5e532c79cb75558030eb9078",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:9bc030858d1f28c2ac210d436cea717f0aad6b05cadd9625875a868bd07e2a99",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 795911896,
+      "SharedSize": 620818432,
+      "Containers": 0,
+      "descriptor_digest": "sha256:9bc030858d1f28c2ac210d436cea717f0aad6b05cadd9625875a868bd07e2a99",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:9fa858b4b9bd7c77f432f21bee7b5476bd3ad06cce0623ba3d76179540161e32",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 745795962,
+      "SharedSize": 519909376,
+      "Containers": 0,
+      "descriptor_digest": "sha256:9fa858b4b9bd7c77f432f21bee7b5476bd3ad06cce0623ba3d76179540161e32",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd",
+      "RepoTags": [
+        "node:24.18.0-alpine",
+        "harbor.sunmoonai.com:30443/k8s-images/node:24.18.0-alpine"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/node@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd"
+      ],
+      "Size": 231131347,
+      "SharedSize": 173469696,
+      "Containers": 0,
+      "descriptor_digest": "sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:a1d39fe127e43881c6770abf2f0843c955607fb56eb9b45bf6f103c992c5442a",
+      "RepoTags": [
+        "harbor.sunmoonai.com:30443/k8s-images/node:20.18.0-alpine"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/node@sha256:a1d39fe127e43881c6770abf2f0843c955607fb56eb9b45bf6f103c992c5442a"
+      ],
+      "Size": 189586068,
+      "SharedSize": 141950976,
+      "Containers": 0,
+      "descriptor_digest": "sha256:a1d39fe127e43881c6770abf2f0843c955607fb56eb9b45bf6f103c992c5442a",
+      "harbor_exact_matches": [
+        "k8s-images/node@sha256:a1d39fe127e43881c6770abf2f0843c955607fb56eb9b45bf6f103c992c5442a"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:a27b08cf64990b011857d854f1c592fdc72622c0b6749307c9d29665614ae7c1",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 95444402,
+      "SharedSize": 66637824,
+      "Containers": 0,
+      "descriptor_digest": "sha256:a27b08cf64990b011857d854f1c592fdc72622c0b6749307c9d29665614ae7c1",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:a2d49ea686c2adfe3c992e47dc3b5e7fa6e6b5055609400dc2acaeb241c829f4",
+      "RepoTags": [
+        "alpine:latest",
+        "harbor.sunmoonai.com:30443/app-images/alpine:latest",
+        "m.daocloud.io/docker.io/library/alpine:latest"
+      ],
+      "RepoDigests": [
+        "m.daocloud.io/docker.io/library/alpine@sha256:a2d49ea686c2adfe3c992e47dc3b5e7fa6e6b5055609400dc2acaeb241c829f4"
+      ],
+      "Size": 13068376,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:a2d49ea686c2adfe3c992e47dc3b5e7fa6e6b5055609400dc2acaeb241c829f4",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:a72bf37c235a83a73890d2a46c5b36801fed61c335175e0396070bf84a8bbb98",
+      "RepoTags": [
+        "pgsty/minio:RELEASE.2026-03-25T00-00-00Z",
+        "harbor.sunmoonai.com:30443/app-images/minio:RELEASE.2026-03-25T00-00-00Z",
+        "harbor.sunmoonai.com:30443/ragflow/pgsty/minio:RELEASE.2026-03-25T00-00-00Z"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/ragflow/pgsty/minio@sha256:a72bf37c235a83a73890d2a46c5b36801fed61c335175e0396070bf84a8bbb98"
+      ],
+      "Size": 222915194,
+      "SharedSize": 25419776,
+      "Containers": 0,
+      "descriptor_digest": "sha256:a72bf37c235a83a73890d2a46c5b36801fed61c335175e0396070bf84a8bbb98",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/pgsty_minio_RELEASE.2026-03-25T00-00-00Z.tar",
+          "verified_descriptor": "sha256:a72bf37c235a83a73890d2a46c5b36801fed61c335175e0396070bf84a8bbb98",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:a7a3b7ec6de4b11bb2d673b31de9d28c6da09c557ee65453672c8e4f754c23fc",
+      "RepoTags": [
+        "harbor.sunmoonai.com:30443/k8s-images/node:20.18.0",
+        "m.daocloud.io/docker.io/library/node:20.18.0"
+      ],
+      "RepoDigests": [
+        "m.daocloud.io/docker.io/library/node@sha256:a7a3b7ec6de4b11bb2d673b31de9d28c6da09c557ee65453672c8e4f754c23fc"
+      ],
+      "Size": 1592742424,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:a7a3b7ec6de4b11bb2d673b31de9d28c6da09c557ee65453672c8e4f754c23fc",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:a7ded9d1eb3f983ea4c67cf7e9c804ee8e48ceb86845e0de20367a77f57e7b9f",
+      "RepoTags": [
+        "mher/flower:2.0.1",
+        "harbor.sunmoonai.com:30443/k8s-images/flower:2.0.1"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/flower@sha256:a7ded9d1eb3f983ea4c67cf7e9c804ee8e48ceb86845e0de20367a77f57e7b9f"
+      ],
+      "Size": 196697521,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:a7ded9d1eb3f983ea4c67cf7e9c804ee8e48ceb86845e0de20367a77f57e7b9f",
+      "harbor_exact_matches": [
+        "k8s-images/flower@sha256:a7ded9d1eb3f983ea4c67cf7e9c804ee8e48ceb86845e0de20367a77f57e7b9f"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/mher_flower_2.0.1.tar",
+          "verified_descriptor": "sha256:a7ded9d1eb3f983ea4c67cf7e9c804ee8e48ceb86845e0de20367a77f57e7b9f",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:ac50065275476a99c573db18d50c5897ad0a2e3a2aed8575c8dee30db89caedd",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 482635741,
+      "SharedSize": 133746688,
+      "Containers": 0,
+      "descriptor_digest": "sha256:ac50065275476a99c573db18d50c5897ad0a2e3a2aed8575c8dee30db89caedd",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:b1e0880c3af955867bc2f1944b49d20187beb7afa3f30173e15a97149ab7f5f1",
+      "RepoTags": [
+        "node:20.18.0-alpine",
+        "docker.m.daocloud.io/library/node:20.18.0-alpine",
+        "m.daocloud.io/docker.io/library/node:20.18.0-alpine"
+      ],
+      "RepoDigests": [
+        "m.daocloud.io/docker.io/library/node@sha256:b1e0880c3af955867bc2f1944b49d20187beb7afa3f30173e15a97149ab7f5f1"
+      ],
+      "Size": 189979896,
+      "SharedSize": 141950976,
+      "Containers": 0,
+      "descriptor_digest": "sha256:b1e0880c3af955867bc2f1944b49d20187beb7afa3f30173e15a97149ab7f5f1",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:b5515687963ddb816c5b3605bf79c6e3714e0c599a2324ccab0f45fc24a3b26a",
+      "RepoTags": [
+        "luna-knowledge-delivery:20260911"
+      ],
+      "RepoDigests": [
+        "luna-knowledge-delivery@sha256:b5515687963ddb816c5b3605bf79c6e3714e0c599a2324ccab0f45fc24a3b26a"
+      ],
+      "Size": 299125239,
+      "SharedSize": 133787648,
+      "Containers": 0,
+      "descriptor_digest": "sha256:b5515687963ddb816c5b3605bf79c6e3714e0c599a2324ccab0f45fc24a3b26a",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:b9471d545858f126e437aadfbf81f5e0663cf64ad7a598fa2f4fcdcaf7e88495",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 795916596,
+      "SharedSize": 141950976,
+      "Containers": 0,
+      "descriptor_digest": "sha256:b9471d545858f126e437aadfbf81f5e0663cf64ad7a598fa2f4fcdcaf7e88495",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:b97f7970df2129d3a14632bb023dff91d8d007b2ef2e9d4590a683af851f87ec",
+      "RepoTags": [
+        "llm-admin-frontend:1.0.0"
+      ],
+      "RepoDigests": [
+        "llm-admin-frontend@sha256:b97f7970df2129d3a14632bb023dff91d8d007b2ef2e9d4590a683af851f87ec"
+      ],
+      "Size": 95444327,
+      "SharedSize": 66637824,
+      "Containers": 0,
+      "descriptor_digest": "sha256:b97f7970df2129d3a14632bb023dff91d8d007b2ef2e9d4590a683af851f87ec",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:ba5b2f7e0b69c61b6b43e8ffd39a9541a0052d064798d652719851a900c3bada",
+      "RepoTags": [
+        "bitnami/elasticsearch:9.1.2-debian-12-r0",
+        "harbor.sunmoonai.com:30443/k8s-images/elasticsearch:9.1.2-debian-12-r0"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/elasticsearch@sha256:ba5b2f7e0b69c61b6b43e8ffd39a9541a0052d064798d652719851a900c3bada"
+      ],
+      "Size": 3124000547,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:ba5b2f7e0b69c61b6b43e8ffd39a9541a0052d064798d652719851a900c3bada",
+      "harbor_exact_matches": [
+        "k8s-images/elasticsearch@sha256:ba5b2f7e0b69c61b6b43e8ffd39a9541a0052d064798d652719851a900c3bada"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/bitnami_elasticsearch_9.1.2-debian-12-r0.tar",
+          "verified_descriptor": "sha256:ba5b2f7e0b69c61b6b43e8ffd39a9541a0052d064798d652719851a900c3bada",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:bb08133f4ba7a89a4a2bdc059c21169d18ad5cdba20a9aae26d393d66e0ac673",
+      "RepoTags": [
+        "bitnami/kibana:9.1.2-debian-12-r0",
+        "harbor.sunmoonai.com:30443/k8s-images/kibana:9.1.2-debian-12-r0"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/kibana@sha256:bb08133f4ba7a89a4a2bdc059c21169d18ad5cdba20a9aae26d393d66e0ac673"
+      ],
+      "Size": 3000358492,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:bb08133f4ba7a89a4a2bdc059c21169d18ad5cdba20a9aae26d393d66e0ac673",
+      "harbor_exact_matches": [
+        "k8s-images/kibana@sha256:bb08133f4ba7a89a4a2bdc059c21169d18ad5cdba20a9aae26d393d66e0ac673"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/bitnami_kibana_9.1.2-debian-12-r0.tar",
+          "verified_descriptor": "sha256:bb08133f4ba7a89a4a2bdc059c21169d18ad5cdba20a9aae26d393d66e0ac673",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:bb19ecd66a59de01d4105b471ea9f10c88b02565fcc404378b975a7b51c3095a",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 95445675,
+      "SharedSize": 66637824,
+      "Containers": 0,
+      "descriptor_digest": "sha256:bb19ecd66a59de01d4105b471ea9f10c88b02565fcc404378b975a7b51c3095a",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:c2b6fd88eef14318e5ca4b4d33841b84a6b21e6073e3f608c217e3efcad1b0bb",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 357023237,
+      "SharedSize": 133734400,
+      "Containers": 0,
+      "descriptor_digest": "sha256:c2b6fd88eef14318e5ca4b4d33841b84a6b21e6073e3f608c217e3efcad1b0bb",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:c698ffe060d198dcc6647be78ea1683363f12d5d507dc5ec9855f1c55966ffdd",
+      "RepoTags": [
+        "node:18.20.0-alpine",
+        "docker.m.daocloud.io/library/node:18.20.0-alpine",
+        "m.daocloud.io/docker.io/library/node:18.20.0-alpine"
+      ],
+      "RepoDigests": [
+        "m.daocloud.io/docker.io/library/node@sha256:c698ffe060d198dcc6647be78ea1683363f12d5d507dc5ec9855f1c55966ffdd"
+      ],
+      "Size": 184440640,
+      "SharedSize": 138870784,
+      "Containers": 0,
+      "descriptor_digest": "sha256:c698ffe060d198dcc6647be78ea1683363f12d5d507dc5ec9855f1c55966ffdd",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/node_18.20.0-alpine.tar",
+          "verified_descriptor": "sha256:c698ffe060d198dcc6647be78ea1683363f12d5d507dc5ec9855f1c55966ffdd",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:c814314d2a7ddf29aed2f5ba1c00072d5207d5f158cf95dd85c03e7254d7d271",
+      "RepoTags": [
+        "question-data:demo"
+      ],
+      "RepoDigests": [
+        "question-data@sha256:c814314d2a7ddf29aed2f5ba1c00072d5207d5f158cf95dd85c03e7254d7d271"
+      ],
+      "Size": 478600491,
+      "SharedSize": 133734400,
+      "Containers": 0,
+      "descriptor_digest": "sha256:c814314d2a7ddf29aed2f5ba1c00072d5207d5f158cf95dd85c03e7254d7d271",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:c819f83c54b0361f5557601bf5eb4943d09360e7a7fdf426afc466570f45874d",
+      "RepoTags": [
+        "m.daocloud.io/docker.io/library/nginx:stable-alpine"
+      ],
+      "RepoDigests": [
+        "m.daocloud.io/docker.io/library/nginx@sha256:c819f83c54b0361f5557601bf5eb4943d09360e7a7fdf426afc466570f45874d"
+      ],
+      "Size": 93577433,
+      "SharedSize": 66637824,
+      "Containers": 0,
+      "descriptor_digest": "sha256:c819f83c54b0361f5557601bf5eb4943d09360e7a7fdf426afc466570f45874d",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:c97ddadf7d610991aded1178ca552543d835f1c4e28284caf46c9f98f66c4a7a",
+      "RepoTags": [
+        "harbor.sunmoonai.com:30443/k8s-images/nginx:stable-alpine"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/nginx@sha256:c97ddadf7d610991aded1178ca552543d835f1c4e28284caf46c9f98f66c4a7a"
+      ],
+      "Size": 92672589,
+      "SharedSize": 66637824,
+      "Containers": 0,
+      "descriptor_digest": "sha256:c97ddadf7d610991aded1178ca552543d835f1c4e28284caf46c9f98f66c4a7a",
+      "harbor_exact_matches": [
+        "k8s-images/nginx@sha256:c97ddadf7d610991aded1178ca552543d835f1c4e28284caf46c9f98f66c4a7a"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:ca8f93042b5e2f78cd15f55ee7c05cf7c67c768b5244d1aa4c4c75389b112a31",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 357102143,
+      "SharedSize": 133734400,
+      "Containers": 0,
+      "descriptor_digest": "sha256:ca8f93042b5e2f78cd15f55ee7c05cf7c67c768b5244d1aa4c4c75389b112a31",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:ccb8f749bb5e59f9f8f03bf7282c7ef27a93a1814a24f0a8a926fb4e19b7fb97",
+      "RepoTags": [
+        "mysql:8.0.39",
+        "harbor.sunmoonai.com:30443/app-images/mysql:8.0.39",
+        "harbor.sunmoonai.com:30443/ragflow/mysql:8.0.39"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/ragflow/mysql@sha256:ccb8f749bb5e59f9f8f03bf7282c7ef27a93a1814a24f0a8a926fb4e19b7fb97"
+      ],
+      "Size": 785441267,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:ccb8f749bb5e59f9f8f03bf7282c7ef27a93a1814a24f0a8a926fb4e19b7fb97",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/mysql_8.0.39.tar",
+          "verified_descriptor": "sha256:ccb8f749bb5e59f9f8f03bf7282c7ef27a93a1814a24f0a8a926fb4e19b7fb97",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:cd4b90006d24bf02d61ff4dca29587b911552e9f0c8ac933db8b1c536c289379",
+      "RepoTags": [
+        "harbor.sunmoonai.com:30443/k8s-images/python:3.12-slim"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/python@sha256:cd4b90006d24bf02d61ff4dca29587b911552e9f0c8ac933db8b1c536c289379"
+      ],
+      "Size": 257006957,
+      "SharedSize": 133726208,
+      "Containers": 0,
+      "descriptor_digest": "sha256:cd4b90006d24bf02d61ff4dca29587b911552e9f0c8ac933db8b1c536c289379",
+      "harbor_exact_matches": [
+        "k8s-images/python@sha256:cd4b90006d24bf02d61ff4dca29587b911552e9f0c8ac933db8b1c536c289379"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/python_3.12.13-slim.tar",
+          "verified_descriptor": "sha256:cd4b90006d24bf02d61ff4dca29587b911552e9f0c8ac933db8b1c536c289379",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        },
+        {
+          "archive": "/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/images/python.tar",
+          "verified_descriptor": "sha256:cd4b90006d24bf02d61ff4dca29587b911552e9f0c8ac933db8b1c536c289379",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:d1b8d681c8eddc309a193536f73a20211cdb3578ca31f0a88c657fbcf2ea8c28",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 378742864,
+      "SharedSize": 230576128,
+      "Containers": 0,
+      "descriptor_digest": "sha256:d1b8d681c8eddc309a193536f73a20211cdb3578ca31f0a88c657fbcf2ea8c28",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:d38cdb2c7f29faa235268d649b5aa0f4a05c7e12b058f835b691487c25de6d1b",
+      "RepoTags": [
+        "tpl-backend:arch-v2-r2-20260801"
+      ],
+      "RepoDigests": [
+        "tpl-backend@sha256:d38cdb2c7f29faa235268d649b5aa0f4a05c7e12b058f835b691487c25de6d1b"
+      ],
+      "Size": 341815358,
+      "SharedSize": 133787648,
+      "Containers": 0,
+      "descriptor_digest": "sha256:d38cdb2c7f29faa235268d649b5aa0f4a05c7e12b058f835b691487c25de6d1b",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:d979e228c236298f63b4da4fe46a1b1000ad78c4e8616c33acdf38656c6b5951",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 745796781,
+      "SharedSize": 519909376,
+      "Containers": 0,
+      "descriptor_digest": "sha256:d979e228c236298f63b4da4fe46a1b1000ad78c4e8616c33acdf38656c6b5951",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:dbd371582fbbb100b22b891e485f4559187362348c1d4b5d0a2191134807516b",
+      "RepoTags": [
+        "bitnami/postgresql:17.6.0-debian-12-r4",
+        "harbor.sunmoonai.com:30443/k8s-images/postgresql:17.6.0-debian-12-r4"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/postgresql@sha256:dbd371582fbbb100b22b891e485f4559187362348c1d4b5d0a2191134807516b"
+      ],
+      "Size": 723913625,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:dbd371582fbbb100b22b891e485f4559187362348c1d4b5d0a2191134807516b",
+      "harbor_exact_matches": [
+        "k8s-images/postgresql@sha256:dbd371582fbbb100b22b891e485f4559187362348c1d4b5d0a2191134807516b"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/bitnami_postgresql_17.6.0-debian-12-r4.tar",
+          "verified_descriptor": "sha256:dbd371582fbbb100b22b891e485f4559187362348c1d4b5d0a2191134807516b",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        },
+        {
+          "archive": "/home/zymun/packages-to-be-installed/releases/harbor-preserve-20260926/preparation/images/kind-worker-harbor-amd64.tar",
+          "verified_descriptor": "sha256:dbd371582fbbb100b22b891e485f4559187362348c1d4b5d0a2191134807516b",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:dc989fab1ef240d57ee88c6b7553cde0538679c367d0fa6ded0401db082599c4",
+      "RepoTags": [
+        "dpage/pgadmin4:8.4",
+        "harbor.sunmoonai.com:30443/k8s-images/pgadmin4:8.4"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/pgadmin4@sha256:dc989fab1ef240d57ee88c6b7553cde0538679c367d0fa6ded0401db082599c4"
+      ],
+      "Size": 1031879809,
+      "SharedSize": 8065024,
+      "Containers": 0,
+      "descriptor_digest": "sha256:dc989fab1ef240d57ee88c6b7553cde0538679c367d0fa6ded0401db082599c4",
+      "harbor_exact_matches": [
+        "k8s-images/pgadmin4@sha256:dc989fab1ef240d57ee88c6b7553cde0538679c367d0fa6ded0401db082599c4"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/dpage_pgadmin4_8.4.tar",
+          "verified_descriptor": "sha256:dc989fab1ef240d57ee88c6b7553cde0538679c367d0fa6ded0401db082599c4",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:dec9595cd8463d49833570c5978a9d735ddffcfca0cd99e0ccb9dd5dad9837cf",
+      "RepoTags": [
+        "harbor.sunmoonai.com:30443/k8s-images/minio/aistor/minio-sidecar:RELEASE.2026-06-09T23-40-36Z",
+        "quay.io/minio/aistor/minio-sidecar:RELEASE.2026-06-09T23-40-36Z"
+      ],
+      "RepoDigests": [
+        "quay.io/minio/aistor/minio-sidecar@sha256:dec9595cd8463d49833570c5978a9d735ddffcfca0cd99e0ccb9dd5dad9837cf"
+      ],
+      "Size": 70371825,
+      "SharedSize": 25407488,
+      "Containers": 0,
+      "descriptor_digest": "sha256:dec9595cd8463d49833570c5978a9d735ddffcfca0cd99e0ccb9dd5dad9837cf",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/quay.io_minio_aistor_minio-sidecar_RELEASE.2026-06-09T23-40-36Z.tar",
+          "verified_descriptor": "sha256:dec9595cd8463d49833570c5978a9d735ddffcfca0cd99e0ccb9dd5dad9837cf",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:e4bf2a82ad0a4037d28035ae71529873c069b13eb0455466ae0bc13363826e34",
+      "RepoTags": [
+        "node:22.22.0-alpine",
+        "tpl-node:22.22.0-alpine"
+      ],
+      "RepoDigests": [
+        "tpl-node@sha256:e4bf2a82ad0a4037d28035ae71529873c069b13eb0455466ae0bc13363826e34"
+      ],
+      "Size": 229720776,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:e4bf2a82ad0a4037d28035ae71529873c069b13eb0455466ae0bc13363826e34",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:ee10eb35bee296808f458c828ef7f581c15e4f18bcaf621742938b0897fcf718",
+      "RepoTags": [
+        "bitnamilegacy/rabbitmq:4.1.3-debian-12-r1",
+        "harbor.sunmoonai.com:30443/k8s-images/rabbitmq:4.1.3-debian-12-r1"
+      ],
+      "RepoDigests": [
+        "harbor.sunmoonai.com:30443/k8s-images/rabbitmq@sha256:ee10eb35bee296808f458c828ef7f581c15e4f18bcaf621742938b0897fcf718"
+      ],
+      "Size": 718069352,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:ee10eb35bee296808f458c828ef7f581c15e4f18bcaf621742938b0897fcf718",
+      "harbor_exact_matches": [
+        "k8s-images/rabbitmq@sha256:ee10eb35bee296808f458c828ef7f581c15e4f18bcaf621742938b0897fcf718"
+      ],
+      "source_status": "Harbor exact manifest/index digest",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/bitnamilegacy_rabbitmq_4.1.3-debian-12-r1.tar",
+          "verified_descriptor": "sha256:ee10eb35bee296808f458c828ef7f581c15e4f18bcaf621742938b0897fcf718",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:f0c0a5c5986cd448512322a6a2bb837d464ddf697879a761051f3a6f35316663",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 481914918,
+      "SharedSize": 133734400,
+      "Containers": 0,
+      "descriptor_digest": "sha256:f0c0a5c5986cd448512322a6a2bb837d464ddf697879a761051f3a6f35316663",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:f4ba2b4c196ed231fca5c6868cb8f9428b50af6f0a10c655ffd763846182d919",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 308312591,
+      "SharedSize": 173551616,
+      "Containers": 0,
+      "descriptor_digest": "sha256:f4ba2b4c196ed231fca5c6868cb8f9428b50af6f0a10c655ffd763846182d919",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:f64dffaac8800bbfae4fdbb53195359034ebbb8859c7a33df561af4ccf4069ec",
+      "RepoTags": [
+        "harbor.sunmoonai.com:30443/k8s-images/minio/aistor/mc:RELEASE.2026-04-21T04-26-49Z",
+        "quay.io/minio/aistor/mc:RELEASE.2026-04-21T04-26-49Z"
+      ],
+      "RepoDigests": [
+        "quay.io/minio/aistor/mc@sha256:f64dffaac8800bbfae4fdbb53195359034ebbb8859c7a33df561af4ccf4069ec"
+      ],
+      "Size": 171255841,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:f64dffaac8800bbfae4fdbb53195359034ebbb8859c7a33df561af4ccf4069ec",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/quay.io_minio_aistor_mc_RELEASE.2026-04-21T04-26-49Z.tar",
+          "verified_descriptor": "sha256:f64dffaac8800bbfae4fdbb53195359034ebbb8859c7a33df561af4ccf4069ec",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:f7283048f52d8006340b72b07799f9858fa01985dd49b2af953fa876d9d9ed27",
+      "RepoTags": [
+        "harbor.sunmoonai.com:30443/k8s-images/minio/aistor/operator:RELEASE.2026-06-10T05-02-21Z",
+        "quay.io/minio/aistor/operator:RELEASE.2026-06-10T05-02-21Z"
+      ],
+      "RepoDigests": [
+        "quay.io/minio/aistor/operator@sha256:f7283048f52d8006340b72b07799f9858fa01985dd49b2af953fa876d9d9ed27"
+      ],
+      "Size": 134011277,
+      "SharedSize": 25407488,
+      "Containers": 0,
+      "descriptor_digest": "sha256:f7283048f52d8006340b72b07799f9858fa01985dd49b2af953fa876d9d9ed27",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": [
+        {
+          "archive": "/home/zymun/packages-to-be-installed/images/quay.io_minio_aistor_operator_RELEASE.2026-06-10T05-02-21Z.tar",
+          "verified_descriptor": "sha256:f7283048f52d8006340b72b07799f9858fa01985dd49b2af953fa876d9d9ed27",
+          "platform": "linux/amd64",
+          "method": "SHA256 of exact OCI descriptor and all required platform config/layer blobs; no load"
+        }
+      ]
+    },
+    {
+      "Id": "sha256:f975147041f72895c1c7c2bf662e8578e385b295d5b8d744edc2ebb15db3c141",
+      "RepoTags": null,
+      "RepoDigests": null,
+      "Size": 357022770,
+      "SharedSize": 133734400,
+      "Containers": 0,
+      "descriptor_digest": "sha256:f975147041f72895c1c7c2bf662e8578e385b295d5b8d744edc2ebb15db3c141",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    },
+    {
+      "Id": "sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d",
+      "RepoTags": [
+        "busybox:latest",
+        "harbor.sunmoonai.com:30443/app-images/busybox:latest",
+        "m.daocloud.io/docker.io/library/busybox:latest"
+      ],
+      "RepoDigests": [
+        "m.daocloud.io/docker.io/library/busybox@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d"
+      ],
+      "Size": 6809476,
+      "SharedSize": 0,
+      "Containers": 0,
+      "descriptor_digest": "sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d",
+      "harbor_exact_matches": [],
+      "source_status": "no verified local recovery source; keep",
+      "verified_archive_sources": []
+    }
+  ],
+  "summary": {
+    "count": 100,
+    "harbor_exact": 20,
+    "archive_exact": 32,
+    "at_least_one_verified_source": 35,
+    "no_verified_source": 65
+  }
+}
