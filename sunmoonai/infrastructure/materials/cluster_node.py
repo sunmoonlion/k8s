@@ -22,15 +22,16 @@ from cluster_config import init_documents, join_document, multi_json, validate, 
 from image_import import import_images, inspect_archive, records
 from node_install import host_preflight
 from os_install import safe_directory, exact_file
+from cluster_resources import execute as resource_execute, identity as resource_identity
 
 
 def run(argv, timeout=90, content=None):
     return subprocess.run(argv, input=content, check=True, capture_output=True, timeout=timeout).stdout
 
 
-def kub(*args, timeout=90):
+def kub(*args, timeout=90, content=None):
     return run(['/usr/local/bin/kubectl', '--kubeconfig=/etc/kubernetes/admin.conf',
-                '--request-timeout=30s', *args], timeout=timeout)
+                '--request-timeout=30s', *args], timeout=timeout, content=content)
 
 
 def private_json(path, value):
@@ -84,7 +85,7 @@ def main():
     parser.add_argument('--root', type=Path, required=True)
     parser.add_argument('--hostname', required=True)
     parser.add_argument('--machine-id', required=True)
-    parser.add_argument('--phase', choices=('preflight', 'images', 'init', 'cni', 'ticket', 'join', 'status', 'revoke'), required=True)
+    parser.add_argument('--phase', choices=('preflight', 'images', 'init', 'cni', 'ticket', 'join', 'status', 'revoke', 'resources'), required=True)
     parser.add_argument('--apply', action='store_true')
     args = parser.parse_args()
     if not args.apply:
@@ -196,6 +197,35 @@ def main():
     receipt = current_cluster(work)
     if request.get('expected_uid') and request['expected_uid'] != receipt['uid']:
         raise ValueError('Controller expected UID differs')
+    if args.phase == 'resources':
+        if request.get('expected_uid') != receipt['uid']:
+            raise ValueError('Resource operations require an explicit expected cluster UID')
+        spec = request['spec']
+        expected = spec['expected']
+        if (expected['version'] != 'v' + data['versions']['kubernetes']
+                or [{k: n[k] for k in ('name', 'ip', 'role')} for n in expected['nodes']] != profile['nodes']
+                or any(not re.fullmatch(r'[0-9a-f]{32}', n['machine_id']) for n in expected['nodes'])):
+            raise ValueError('Resource node/version identities differ from the initialization profile')
+        def guarded_kub(*argv, **kwargs):
+            current_cluster(work)
+            return kub(*argv, **kwargs)
+        log = work / ('resources-' + str(time.time_ns()) + '.json')
+        try:
+            resource_identity(guarded_kub, expected)
+            result = resource_execute(guarded_kub, request['action'], spec, receipt['uid'])
+            current_cluster(work)
+        except (OSError, ValueError, KeyError, StopIteration, subprocess.SubprocessError) as error:
+            # Kubectl diagnostics may contain private data. Keep them on the
+            # target in 0600 files, never forward raw SSH/subprocess output.
+            diagnostic = getattr(error, 'stderr', b'') or b''
+            if isinstance(diagnostic, bytes):
+                diagnostic = diagnostic.decode(errors='replace')
+            private_json(log, {'action': request['action'], 'uid': receipt['uid'],
+                              'state': 'failed', 'error_type': type(error).__name__,
+                              'reason': str(error) if isinstance(error, ValueError) else '', 'stderr': diagnostic})
+            raise
+        private_json(log, {'action': request['action'], 'uid': receipt['uid'], 'state': 'complete', 'result': result})
+        print(json.dumps(result)); return
     if args.phase == 'ticket':
         cni = json.loads((work / 'cni-complete.json').read_text())
         if cni['uid'] != receipt['uid']:

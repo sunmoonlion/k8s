@@ -1,0 +1,253 @@
+{
+  "schema": 1,
+  "date": "2026-09-27",
+  "baseline": "6c96233676a18846bf850eb854bc2032e2eb7716",
+  "scope": "step07/08/10 shared resource engine and local namespace adapter",
+  "cloud_status": "未经实机验证",
+  "ssh_executed": false,
+  "cluster_api_calls": false,
+  "services_changed": false,
+  "tests_added_or_run": false,
+  "checks": [
+    {
+      "file": "sunmoonai/infrastructure/materials/cluster_resources.py",
+      "python_ast": "passed",
+      "sha256": "f4969e4282040578e289e25ba2781b379f63d66517b4962c1d5dfaa10b52f418"
+    },
+    {
+      "file": "sunmoonai/infrastructure/materials/cluster_control.py",
+      "python_ast": "passed",
+      "sha256": "8a6da1f93b149e1e3903d2527212bc45188296eec3e6e01cd117d4adadd561d0"
+    },
+    {
+      "file": "sunmoonai/infrastructure/materials/cluster_node.py",
+      "python_ast": "passed",
+      "sha256": "61bab90b1d5725aa898aebb793739376223b5342c4a4b815d4437c09abf9cbb1"
+    },
+    {
+      "file": "sunmoonai/infrastructure/materials/node_control.py",
+      "python_ast": "passed",
+      "sha256": "778a8fef86a681cb9524589834214f5b9391a215063943db9d0012b03d177165"
+    },
+    {
+      "file": "sunmoonai/infrastructure/materials/resources_local.py",
+      "python_ast": "passed",
+      "sha256": "b6dd8b520d5bcc2387b05e4d198e14fa4a4a389afcd5b4a0c95bc38fd45003e5"
+    },
+    {
+      "file": "sunmoonai/infrastructure/steps/step07_create_namespaces.sh",
+      "bash_n": "passed",
+      "shellcheck": "passed",
+      "diagnostics": 0,
+      "sha256": "381ff58685017b332e7f7bfc6cb1f19b2a8e19cbf02c99497700910263c35707"
+    },
+    {
+      "file": "sunmoonai/infrastructure/steps/step08_validate.sh",
+      "bash_n": "passed",
+      "shellcheck": "passed",
+      "diagnostics": 0,
+      "sha256": "b6981fb405402be82b18f6b862b6421a4ba86e8008158f0e20a091de22cfb8df"
+    },
+    {
+      "file": "sunmoonai/infrastructure/steps/step10_k8s_nodes_management.sh",
+      "bash_n": "passed",
+      "shellcheck": "passed",
+      "diagnostics": 0,
+      "sha256": "b2ede26c78d4b95862d53b924cc85b71b05b2c0eea10ac84ad37d73501cee9ca"
+    },
+    {
+      "file": "sunmoonai/infrastructure/utils/cluster-step.sh",
+      "bash_n": "passed",
+      "shellcheck": "passed",
+      "diagnostics": 0,
+      "sha256": "cbf76380f794b361a4cd6a6c7f95a0301ce89c84adbaee4d57c7072b540e5ef7"
+    },
+    {
+      "file": "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh",
+      "bash_n": "passed",
+      "shellcheck": "passed",
+      "diagnostics": 0,
+      "sha256": "c48c09333c343447aaca3b2f50b7771f1c2aca7752174b3547cd713bc14128d9"
+    },
+    {
+      "file": "sunmoonai/kind-infrastructure/apply-namespaces-existing-cluster.sh",
+      "bash_n": "passed",
+      "shellcheck": "passed",
+      "diagnostics": 0,
+      "sha256": "d70a4b243b7f435202543f73b79777a73df9e4957e5543e35b49d48b491cb368"
+    },
+    {
+      "file": "sunmoonai/kind-infrastructure/kind-up.sh",
+      "bash_n": "passed",
+      "shellcheck": "passed",
+      "diagnostics": 0,
+      "sha256": "de2713fd7d198bbf88a0fb48dd048bc42c3a706227bf9e833eeeb2932fa27c15"
+    }
+  ],
+  "remote_payload": {
+    "ast": "passed",
+    "public_files_consistent": true,
+    "count": 12
+  },
+  "configuration": {
+    "only_changes": [
+      "namespace policy placeholder now false",
+      "obsolete step10 independent kubectl version removed"
+    ],
+    "all_other_bytes_unchanged": true,
+    "bash_n": "passed"
+  },
+  "plans": [
+    {
+      "cluster": "C1",
+      "step": "step01_os_baseline",
+      "passed": true,
+      "plans": 3,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step02_runtime",
+      "passed": true,
+      "plans": 3,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step03_k8s_binaries",
+      "passed": true,
+      "plans": 3,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step04_kubeadm_init",
+      "passed": true,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step05_cni_install",
+      "passed": true,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step06_join_nodes",
+      "passed": true,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step07_create_namespaces",
+      "passed": true,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step08_validate",
+      "passed": true,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step10_k8s_nodes_management",
+      "passed": true,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step01_os_baseline",
+      "passed": true,
+      "plans": 3,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step02_runtime",
+      "passed": true,
+      "plans": 3,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step03_k8s_binaries",
+      "passed": true,
+      "plans": 3,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step04_kubeadm_init",
+      "passed": true,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step05_cni_install",
+      "passed": true,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step06_join_nodes",
+      "passed": true,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step07_create_namespaces",
+      "passed": true,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step08_validate",
+      "passed": true,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step10_k8s_nodes_management",
+      "passed": true,
+      "plans": 1,
+      "ssh_started": false
+    }
+  ],
+  "local_plan": {
+    "passed": true,
+    "api_calls": false,
+    "namespaces": 14,
+    "matches_cloud_render": true
+  },
+  "materials": {
+    "files": 126,
+    "bytes": 824488560,
+    "sha256": "passed",
+    "closure_complete": false,
+    "pending": [
+      "Remaining infrastructure step09/11/12/13 and external registry/platform integration"
+    ]
+  },
+  "limitations": [
+    "No real cloud/KIND resource execution",
+    "No storage/registry/ingress/application/E2E acceptance",
+    "Legacy kind-up is not the formal main creator",
+    "Final cleanup remains required and deferred"
+  ],
+  "observed_static_issue": {
+    "initial_kind_up_shellcheck": "SC1091 source lookup",
+    "resolution": "source annotation aligned to existing external-source convention; final check zero diagnostics"
+  }
+}

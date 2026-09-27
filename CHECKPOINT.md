@@ -1,5 +1,20 @@
 # Luna 工作检查点
 
+## 最新续接：2026-09-27 step07/08/10 共用资源入口
+
+基线 `6c96233676a18846bf850eb854bc2032e2eb7716`，本地 luna；交付为包含本段的提交，不 push。工作树在本单元开始时干净。本段优先于下面历史待办。
+
+- 新 `infrastructure/materials/cluster_resources.py` 是共享资源实现：命名空间只创建缺项，已有标签/UID不符拒绝接管；等待Active；污点仅补NoSchedule/PreferNoSchedule，全部冲突预检、RV条件patch、保留已有，无覆盖/删除/驱逐。空配置无patch。Step08核精确节点集合/machine-id/IP/工具及API版本、Ready/压力/cordon、核心Deployment/DaemonSet rollout、kube-system Pod及4个静态mirror Pod；失败阻止后续，基础就绪不等于平台验收。
+- 云端07/08/10改短包装→既有cluster-step/control/node→resources；默认只打印，总控显式--apply。仅root0600 admin.conf，每次API前核建群记录UID/CA；资源结果/异常root0600日志。公共SSH发布白名单现在12文件，增加cluster_resources.py，未真实执行SSH。
+- 本地 `resources_local.py` + `kind-infrastructure/apply-namespaces-existing-cluster.sh` 使用同一命名空间实现/配置；显式绝对路径kubectl SHA、0600 kubeconfig、已登记UID、TLS和1.36.4版本；默认只打印。移出原脚本附带StorageClass创建，交后续存储步骤。支持私有配置和KIND_命名空间字段覆盖，不导出整份配置。
+- 历史 kind-up 调用改显式参数，并在任何原有主机操作前要求SUNMOON_KUBECTL/SUNMOON_EXPECTED_CLUSTER_UID。它不适用本次正式新建群，不能伪造预先未知UID绕过；新main创建→登记身份→共用平台的入口尚待接通。其他旧kind-up逻辑未审改，本单元未运行它。
+- 总conf仅两项修正：原NAMESPACE_PLATFORM_APPLY_POLICIES=true是纯日志占位，现false，设true明确报无策略清单；删除独立STEP10_KUBECTL_VERSION=1.30.4，实际读锁定工具。其他字节精确比对未变，不打印含凭据的整个conf/diff。没有删除实际集群策略，真实隔离/配额还须清单与验收。
+- 证据 `sunmoonai/scripts/results/luna-post-bootstrap-resources.20260927.json`：5Python和远端payload AST；7Shell逐个bash-n/ShellCheck零提示；C1/C2的01–08和10共18组只打印、命名空间本地14对象与云端render一致；126文件824488560B全部SHA复核。初次kind-up SC1091来源注释已修正，终检零提示。没加/跑测试套件，没连API，没操作云部署。
+- 主锁closure_complete=false保留；pending具体为step09/11/12/13 + 外部registry/platform接线。节点安装日志绑定整锁，未来修改锁须在首次部署前定稿；目前云端从未安装，无已装节点被此次锁变化影响。
+- 方法/边界/首次实机清单 `infrastructure/docs/post-bootstrap-resources.md`；审查索引、bootstrap、materials与历史kind文档已更新。C-D1/C-R1/R2适用，本单元无平台版本或镜像变更。
+- 下一步继续完整改step09（自动清理namespace/SC、online fallback、静态路径与新版物料）、11/12/13和独立Harbor正式生命周期/入口/信任/推拉/CI/CD/备份；本轮只重读step09开头与危险调用定位，其1470行全读基线见早期audit，不声称新存储适配完成。
+- 旧KIND、Harbor30443、inbox目标、数据和物料保持；宿主Harbor候选11容器仍按之前记录停止，本轮未复核现场。新main未建。最终清理必须做且放迁移验收后，禁止容器/卷清理。无后台任务；整体目标未完成，不能通知luna做完了。未设预算。
+
 ## 最新续接：2026-09-27 step04–06、固定镜像与 kubeadm/Calico 接线
 
 基线 `4c3e17319aa23aa743a922f9492630f9b10f00d0`，交付为包含本段的本地 luna 提交，不 push。本节覆盖下文历史“配置仍1.30.4/step04–06待写”的状态。

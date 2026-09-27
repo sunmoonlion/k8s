@@ -17,7 +17,7 @@ CLUSTER=C1 bash sunmoonai/infrastructure/steps/step06_join_nodes.sh --dry-run
 
 支持当前配置的单控制面、IPv4、iptables kube-proxy、Calico VXLAN；拒绝多控制面或自定义旧 CNI 模式，不能把现有三节点设计称为控制面高可用。以后多控制面要另补负载均衡、证书分发和加入验证，不静默当作普通 worker。
 
-总配置只更新三个字段：Kubernetes1.36.4、Calico3.32.2、iptables。`STEP03_K8S_VERSION` 空值继续继承 `CLUSTER_VERSION`；`STEP05_CALICO_CHART_VERSION` 暂留旧字段名，但新路径用固定 manifest，不再装旧 operator chart。其他配置字节保持，未改平台版本或凭据。
+step04–06 单元中总配置只更新三个字段：Kubernetes1.36.4、Calico3.32.2、iptables。`STEP03_K8S_VERSION` 空值继续继承 `CLUSTER_VERSION`；`STEP05_CALICO_CHART_VERSION` 暂留旧字段名，但新路径用固定 manifest，不再装旧 operator chart。该单元其他配置字节保持，未改平台版本或凭据。后续 step07/08/10 的两项配置修正见 [共用资源入口](post-bootstrap-resources.md)。
 
 管理机需要 Python≥3.11、PyYAML（沿用现有 KIND 工具环境）、SSH/rsync；云节点只用标准库和已锁二进制，不在线安装 Python 模块。
 
@@ -67,6 +67,6 @@ Calico 从同一份3.32.2锁定 YAML 在管理机渲染为38个 JSON 对象。�
 5. 检查日志/终端无凭据输出、令牌撤销和过期行为；对中断场景按记录人工判断，不自动reset。
 6. 实机证据齐全后才改“未经实机验证”标记；多控制面、双栈、网络差异不能外推本次结果。
 
-主锁 `closure_complete` 是物料与部署代码的发布门禁，真实验收状态另记 `validation_status`，避免以后首次上云陷入“尚未安装却必须先实机验收”的循环。当前仍false，原因是step07–13及独立Harbor/平台接线未完成；不能跳过这些审查就手工放开完整总控。
+主锁 `closure_complete` 是物料与部署代码的发布门禁，真实验收状态另记 `validation_status`，避免以后首次上云陷入“尚未安装却必须先实机验收”的循环。当前仍false，原因是step09/11/12/13及独立Harbor/平台接线未完成；step07/08/10已接线但未实机验证；不能跳过这些审查就手工放开完整总控。
 
 本地 inbox 仍在旧 KIND：`~/.kube/kind-config`，kubectl为 `~/packages-to-be-installed/releases/kubectl-1.27.3-existing-kind-linux-amd64/bin/kubectl`。本轮没有切换集群、入口或数据，也未执行最终清理。

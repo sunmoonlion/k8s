@@ -12,7 +12,7 @@
   },
   "closure_complete": false,
   "pending": [
-    "Remaining infrastructure steps07-13 and external registry/platform integration"
+    "Remaining infrastructure step09/11/12/13 and external registry/platform integration"
   ],
   "provenance": [
     "https://github.com/containerd/nerdctl/releases/tag/v2.3.5",

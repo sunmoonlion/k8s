@@ -189,11 +189,11 @@ kubectl get storageclass
 | 脚本/目录 | 说明 |
 |-----------|------|
 | **`deploy-kind/`** | 一键部署：`deploy-kind.sh`（按顺序调用本目录各脚本）、`deploy-kind.conf`（配置）、`deploy-kind.md`（本文档）。 |
-| **`kind-up.sh`** | 创建集群 + 命名空间 + NFS（被 deploy-kind.sh 调用或单独使用）。 |
+| **`kind-up.sh`** | 历史建群入口；新增显式工具/UID门禁，不用于本次 sunmoon-kind-main 创建，详见下方共用资源说明。 |
 | **`ensure-kind-ca.sh`** | 在 WSL 本地生成本地根 CA（与远程 Step12 同用途），供 Traefik/Harbor 等后续部署签发证书；若已存在则跳过。 |
 | **`apply-kind-registry-config.sh`** | 在 Kind 各节点内写入 containerd `/etc/containerd/certs.d/`（与远程 Step02 对齐）；一键部署时在 kind-up 之后、load-initial-images 之前执行。 |
 | `load-images/load-kind-images.sh` | 等效远程 Step11：在宿主机 docker pull 后 kind load，将 Traefik/Harbor 等镜像预加载到集群；支持 conf 与多列表文件。 |
-| `apply-namespaces-existing-cluster.sh` | 被 kind-up.sh 调用。对现成集群按配置创建命名空间（与 Step07 同源）。 |
+| `apply-namespaces-existing-cluster.sh` | 本地/云端 Step07 共用实现；默认只打印，实际需 --apply、明确 kubectl/kubeconfig/已登记 UID；不再顺带创建 StorageClass。 |
 | `apply-nfs-existing-cluster.sh` | 被 kind-up.sh 调用；需 WSL 上已跑过 wsl-setup-nfs-server.sh。 |
 | `wsl-setup-nfs-server.sh` | 在 WSL 中安装 nfs-kernel-server 并导出 `/data/kind-nfs`（一次性）。 |
 | `apply-kind-node-harbor-hosts.sh` | 在 Kind 节点内维护 Harbor hosts 解析，默认指向 Docker 网关，供 containerd/kubelet 拉取 Harbor 镜像。 |
@@ -205,3 +205,7 @@ kubectl get storageclass
 
 - 日常使用与故障排除：《kind使用指南.md》
 - 配置与 deploy-infrastructure-all 同源：k8s-admin.conf、deploy-infrastructure-all.conf（如《kind使用指南.md》第 5.7 节）。本目录为 Kind 部署唯一说明入口，上级目录无 README。
+
+## 2026-09-27 共用资源入口更新
+
+新命名空间入口的参数、归属检查和静态证据见 [建群后共用资源](../../infrastructure/docs/post-bootstrap-resources.md)。本文上方历史部署链尚未全部升级，不能直接用于正式迁移。旧 kind-up 要求 SUNMOON_KUBECTL 与 SUNMOON_EXPECTED_CLUSTER_UID，缺参数在原有主机操作前拒绝；新正式建群入口另行接线。当前没有执行任何建群或资源变更。

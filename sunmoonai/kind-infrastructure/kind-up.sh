@@ -6,6 +6,10 @@
 # 使用 k8s-admin.conf 中 [KIND] 的 cluster_name、kubeconfig；集群配置固定使用 deploy-kind/kind-cluster.yaml。
 #
 set -euo pipefail
+# Historical creator is not the sunmoon-kind-main entry. Reject an unbound
+# namespace target before its existing storage/runtime code can do any work.
+: "${SUNMOON_KUBECTL:?Provide an absolute locked kubectl path; use the new formal creator when available}"
+: "${SUNMOON_EXPECTED_CLUSTER_UID:?Provide the previously recorded target UID; no automatic adoption}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 K8S_ADMIN_CONF="${SCRIPT_DIR}/../../utils/k8s-admin.conf"
@@ -16,7 +20,7 @@ log_success() { echo "✅ $*"; }
 log_warn() { echo "⚠️  $*"; }
 log_error() { echo "❌ $*"; }
 
-# shellcheck source=kind-cli.sh
+# shellcheck source=/dev/null
 source "${SCRIPT_DIR}/kind-cli.sh"
 
 ensure_kind_cli() {
@@ -314,7 +318,9 @@ export KUBECONFIG="$KIND_KUBECONFIG"
 log_info "2/3 KUBECONFIG=$KUBECONFIG"
 
 log_info "3/3 平台初始化：命名空间"
-"$SCRIPT_DIR/apply-namespaces-existing-cluster.sh"
+"$SCRIPT_DIR/apply-namespaces-existing-cluster.sh" --apply \
+    --kubectl "$SUNMOON_KUBECTL" --kubeconfig "$KIND_KUBECONFIG" \
+    --expected-uid "$SUNMOON_EXPECTED_CLUSTER_UID"
 
 log_success "Kind 已就绪，可直接部署应用（本终端已设置 KUBECONFIG）"
 log_info "新开终端时请先运行连接管理器或: export KUBECONFIG=$KIND_KUBECONFIG"

@@ -18,6 +18,41 @@ import sys
 from bundle import resolve, verify
 from cluster_config import validate, init_documents, calico_objects, multi_json
 from node_control import PUBLIC_FILES, REMOTE
+from cluster_resources import namespaces, taints
+
+
+def resource_spec(phase, profile, connections, data):
+    step = {'namespaces': '07', 'health': '08', 'taints': '10'}[phase]
+    enabled = os.environ.get(f'SM_STEP{step}_ENABLED')
+    if enabled not in ('true', 'false'):
+        raise ValueError('Explicit resource step enable/disable required')
+    if os.environ.get(f'SM_STEP{step}_TARGET') != 'master':
+        raise ValueError('Resource operations must run on the declared master')
+    if os.environ.get(f'SM_STEP{step}_REMOTE_KUBECONFIG') not in ('', '/etc/kubernetes/admin.conf'):
+        raise ValueError('Resources require the root-private initialization kubeconfig')
+    timeout = int(os.environ.get('SM_RESOURCE_TIMEOUT', '300'))
+    if not 1 <= timeout <= 600:
+        raise ValueError('Readiness timeout must be 1..600 seconds')
+    expected_count = os.environ.get('SM_EXPECTED_NODE_COUNT')
+    if expected_count and int(expected_count) != len(profile['nodes']):
+        raise ValueError('Expected node count differs from declared topology')
+    expected = {'version': 'v' + data['versions']['kubernetes'], 'nodes': [
+        {**n, 'machine_id': connections[n['name']]['machine_id']} for n in profile['nodes']]}
+    spec = {'timeout': timeout, 'expected': expected}
+    if phase == 'namespaces':
+        flags = [os.environ.get('SM_NAMESPACE_ENABLED'), os.environ.get('SM_NAMESPACE_POLICIES')]
+        if any(v not in ('true', 'false') for v in flags):
+            raise ValueError('Explicit namespace booleans required')
+        enabled = 'true' if enabled == 'true' and flags[0] == 'true' else 'false'
+        spec.update(environments=os.environ['SM_NAMESPACE_ENVIRONMENTS'],
+                    platforms=os.environ['SM_NAMESPACE_PLATFORMS'], policies=flags[1] == 'true')
+        namespaces(spec['environments'], spec['platforms'], spec['policies'])
+    if phase == 'taints':
+        indices = os.environ['SM_NODE_INDICES'].split()
+        spec['taints'] = {n['name']: os.environ.get(f'SM_NODE_{i}_TAINTS', '') for i, n in zip(indices, profile['nodes'])}
+        for value in spec['taints'].values():
+            taints(value)
+    return enabled == 'true', spec
 
 
 def inputs():
@@ -91,7 +126,7 @@ def call(c, files, release, phase, request):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--phase', choices=('init', 'cni', 'join'), required=True)
+    parser.add_argument('--phase', choices=('init', 'cni', 'join', 'namespaces', 'health', 'taints'), required=True)
     parser.add_argument('--apply', action='store_true')
     args = parser.parse_args()
     directory = Path(__file__).resolve().parent
@@ -103,10 +138,15 @@ def main():
     master = next(n for n in profile['nodes'] if n['role'] == 'master')
     configured_version = os.environ.get('SM_KUBERNETES', '').removeprefix('v')
     configured_calico = os.environ.get('SM_CALICO', '').removeprefix('v')
+    resource = args.phase in ('namespaces', 'health', 'taints')
+    enabled, spec = resource_spec(args.phase, profile, connections, data) if resource else (True, None)
     order = {'init': ['all node preflight', 'all node exact image import', 'single master init'],
              'cni': ['master UID check', 'owned Calico resources only', 'Calico rollouts'],
              'join': ['master UID check', 'ten-minute pinned-CA ticket', 'sequential worker joins',
-                      'node machine-id/IP/version/Ready check', 'revoke ticket']}[args.phase]
+                      'node machine-id/IP/version/Ready check', 'revoke ticket'],
+             'namespaces': ['pinned UID/CA and all node identities', 'check all namespace owners', 'create missing only', 'verify Active'],
+             'health': ['pinned UID/CA', 'all node identities/Ready', 'core controller rollouts and system Pod readiness'],
+             'taints': ['pinned UID/CA and all node identities', 'preflight all taint conflicts', 'resourceVersion conditional patch', 'verify']}[args.phase]
     if not args.apply:
         print(json.dumps({'dry_run': True, 'phase': args.phase, 'cloud_status': '未经实机验证',
                           'profile': profile, 'kubeadm_configuration': init_documents(profile, data),
@@ -115,7 +155,10 @@ def main():
                           'configured_proxy_mode': os.environ.get('SM_PROXY_MODE', ''),
                           'closure_complete': data['closure_complete'], 'calico_objects': len(calico['items']),
                           'machine_identities_configured': all(c['hostname'] and c['machine_id'] for c in connections.values()),
+                          'enabled': enabled, 'resource_spec': spec,
                           'order': order, 'ssh_started': False}, ensure_ascii=False, indent=2)); return
+    if not enabled:
+        print(json.dumps({'phase': args.phase, 'skipped': True, 'reason': 'explicit configuration', 'ssh_started': False})); return
     if data.get('closure_complete') is not True or data.get('pending'):
         raise ValueError('Deployment closure incomplete; no SSH started')
     if configured_version != data['versions']['kubernetes'] or configured_calico != data['versions']['calico']:
@@ -142,6 +185,9 @@ def main():
         print(json.dumps({'phase': 'init', **receipt})); return
     status = invoke(master['name'], 'status')
     uid = status['uid']
+    if resource:
+        result = invoke(master['name'], 'resources', {'expected_uid': uid, 'action': args.phase, 'spec': spec})
+        print(json.dumps({'phase': args.phase, 'uid': uid, **result})); return
     if args.phase == 'cni':
         print(json.dumps(invoke(master['name'], 'cni', {'expected_uid': uid, 'calico': calico}))); return
     for n in profile['nodes']:
