@@ -2,7 +2,7 @@
 
 目标：一套部署代码，两种建集群方式；本地与云上均使用集群外 Harbor，统一地址 `harbor.sunmoonai.com:30443`。具体部署/迁移约束见 [主方案](../kind-infrastructure/docs/storage-and-harbor-placement-decision.md)。
 
-当前已完成官方2.13.2物料准备、原候选恢复，以及独立新宿主实例的准备/逻辑恢复/只读启停验收；新实例的五年证书已实际握手通过。[新实例操作与结果](docs/host-instance.md)是当前入口，早期[恢复演练记录](docs/host-recovery-plan.md)保留。两套副本均停止保留，旧30443未切换；本地SNI候选代理也已通过只读验收并停止，见[入口操作](docs/sni-entry.md)；正式写入、30443切换、Jobservice/CI-CD推拉、完整备份恢复接口与自动启动仍待完成。
+当前已完成官方2.13.2物料准备、原候选恢复，以及独立新宿主实例的准备/逻辑恢复/只读启停验收；新实例的五年证书已实际握手通过。[新实例操作与结果](docs/host-instance.md)是当前入口，早期[恢复演练记录](docs/host-recovery-plan.md)保留。两套副本均停止保留，旧30443未切换；本地SNI候选代理也已通过只读验收并停止，见[入口操作](docs/sni-entry.md)；正式写入、30443切换、Jobservice/CI-CD推拉、生产可写备份冻结与自动启动仍待完成。[宿主只读实例备份/独立恢复](docs/host-backup.md)已实测通过；发现扫描器登记未被隔离副本保留，正式迁移须先补齐。
 
 云端 step11 已接入本模块 `lib/config.sh` 的独立主机配置，只处理节点信任、解析和原版本入口镜像；方法及首次上云清单见 [使用方](../infrastructure/docs/registry-consumer.md)。云端仓库主机安装与前置步骤仍待接通，**未经实机验证**；主闭包门禁继续关闭。下文早期准备记录保留其当时范围。
 

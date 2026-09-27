@@ -1,0 +1,264 @@
+{
+  "date": "2026-09-27",
+  "backup": "/data/harbor/backups/host-main-20260927-v1",
+  "complete": true,
+  "restore_verified": true,
+  "restore_instance": "sunmoon-harbor-backup-20260927",
+  "backup_receipt_sha256": "bb9e360b87eea50acc5f48ab75830c18cd3d13b29033e9d50f3622937b07d349",
+  "archive": {
+    "registry": {
+      "sha256": "db2fad362a3e9b5d205e55764dc3ad8a675025e7a666ec759e53a5e8c9fbea3c",
+      "bytes": 17868021760,
+      "content_bytes": 17850816895
+    },
+    "runtime": {
+      "sha256": "886b76caa15fa15412050ce8d001effc67e8665aee387eb2df01f4cf06ffc738",
+      "bytes": 1116160,
+      "content_bytes": 1023323
+    }
+  },
+  "registry_files": 4400,
+  "runtime_files": 32,
+  "logical_database": {
+    "tables": 49,
+    "rows": 10792,
+    "version": "17.6"
+  },
+  "logical_files": {
+    "database/globals.sql": {
+      "sha256": "87e4062147d6f78387d6716672a468f18a502f79f74c0d9a4b5aecf7517e9cf8",
+      "bytes": 671
+    },
+    "database/state.json": {
+      "sha256": "8d79874c8316bd5aa24c6c8d45b2f3063b00a22b0e3308e2d326456efc205104",
+      "bytes": 77
+    },
+    "database/inventory.json": {
+      "sha256": "bf9800fdd737df566465026faf49ee859072b8fbfd932e6fd84cb29df33fd468",
+      "bytes": 24487
+    },
+    "database/registry.dump": {
+      "sha256": "a9856b52465c950ce7c078b022cea21720f2031cb1a5142539d09fcaed41604b",
+      "bytes": 563646
+    }
+  },
+  "acceptance": {
+    "completed": true,
+    "catalog": {
+      "projects": 3,
+      "repositories": 64,
+      "listed_artifacts": 165,
+      "reachable_artifacts": 429,
+      "tags": 164,
+      "untagged": 292,
+      "indexes": 132,
+      "accessories": 0
+    },
+    "registry_http": {
+      "manifest_count": 429,
+      "all_manifest_bytes_verified": true,
+      "anonymous_manifest_denied": true,
+      "sample_layer": {
+        "digest": "sha256:ba9916be9d18f219a90a7eedd7d6a179dd9aecd3b38dc87d5ea85fbac2e18a2a",
+        "bytes": 121690112
+      },
+      "tls_verified": true,
+      "production_token_realm_preserved": true,
+      "credentials_sent_only_to_candidate": true
+    },
+    "five_year_leaf_live_verified": true,
+    "read_only": true,
+    "entry_switched": false,
+    "push_or_jobservice_verified": false,
+    "references_compared_as_complete_relationship_multisets": true
+  },
+  "containers": [
+    {
+      "name": "sunmoon-harbor-backup-20260927-database-init",
+      "id": "81e889cbb888ccb7695b60410fd1eb65b5b1cc152a8760a33be3ac2e09c19106",
+      "state": "exited",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-harbor-backup-20260927-redis",
+      "id": "a032cabcc94dbd626b8257a68ae90441ba0db7c6ce564eb00a6534adef7adc46",
+      "state": "exited",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-harbor-backup-20260927-postgresql",
+      "id": "940b7025c6d15b6091e9ae6c39e710df5af4b7f1322b118168e649a827f6ff73",
+      "state": "exited",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-harbor-backup-20260927-registry",
+      "id": "7883f21f4e5b7553a40ca9a5cf8e485831556b6cc86b5f4b45c4a85403bd2b7e",
+      "state": "exited",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-harbor-backup-20260927-core",
+      "id": "d896838e88b3ca29f754614a7b6aef7e51cd03bb4a6d4edcea6cbf07a155a679",
+      "state": "exited",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-harbor-backup-20260927-registryctl",
+      "id": "bf3646a94c87b5e0be7968c8920027f2b6342d817d4b25df12a00f002444328d",
+      "state": "exited",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-harbor-backup-20260927-jobservice",
+      "id": "78ddfb1c41107669a7296885031cc5b119380e13cc40caddca3eaacd35d7a285",
+      "state": "created",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-harbor-backup-20260927-portal",
+      "id": "3ee3646594a644c1d84ce1832b776c9ef665e6bd625fd2756c1ed4c4f6ecf6f6",
+      "state": "exited",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-harbor-backup-20260927-proxy",
+      "id": "eb50625836470965b8dd077460db31cffcecf3427785493fc861e6ae180b50d5",
+      "state": "exited",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-sni-candidate-20260927",
+      "id": "7141d1a57800e2b54aaffeebc4592d605c0d5a86d18ebdf780298bbf5bf45300",
+      "state": "exited",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-harbor-main-20260927-database-init",
+      "id": "7c89e77d0a5aa0a68053452477165d9567aad645be5ad37e458ec04fea576cae",
+      "state": "exited",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-harbor-main-20260927-registry",
+      "id": "7ac565612c37d8df92b27715cf7cb08e413bc3e3b0cf1e7bd5240974c154724e",
+      "state": "exited",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-harbor-main-20260927-proxy",
+      "id": "c506d5766ec73f3a08c214e1bf8e521ce27df14fd4d9dcab14affb2237ada573",
+      "state": "exited",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-harbor-main-20260927-core",
+      "id": "9fa934910ec1b40c0ef1e391a05a1f870dc3bf2d049538d288db4b7262eac51e",
+      "state": "exited",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-harbor-main-20260927-redis",
+      "id": "41075d63084b4021782f6060db62968b40603ca946b5810f89c4a8781e3bc892",
+      "state": "exited",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-harbor-main-20260927-postgresql",
+      "id": "8dc226c06996c3c9cc1778efc640b8e4ca7466717278273c31510fcbc6315216",
+      "state": "exited",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-harbor-main-20260927-portal",
+      "id": "aa6dc04579b3cae50f5f4362a769986d32f519df4fca02db87c1b29074f71213",
+      "state": "exited",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-harbor-main-20260927-jobservice",
+      "id": "dcf4c43a3a4ade4fc340bca6b3abb54e1e2a23b4c26299fb385c5dfd06b54f7b",
+      "state": "created",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-harbor-main-20260927-registryctl",
+      "id": "25088eff40c6eec303e048e18d74abedbacb5558f431a7242e44288656a97f11",
+      "state": "exited",
+      "volume_mounts": 0
+    },
+    {
+      "name": "sunmoon-kind-136-control-plane",
+      "id": "02ecfafdd8b74ad0c370b8cc77e49f65dcffb8556433049b99045319a54db592",
+      "state": "running",
+      "volume_mounts": 1
+    },
+    {
+      "name": "sunmoon-kind-136-worker2",
+      "id": "9d0a3b8d64e80c0c42c22f673ee9f1ff3a3ce422d0f74f8b0c8e6f2b0631c95b",
+      "state": "running",
+      "volume_mounts": 1
+    },
+    {
+      "name": "sunmoon-kind-136-worker",
+      "id": "06149c97983ea9f4b4e02d1e7f0138e6dabd08ca155dc571fc24525870e3a153",
+      "state": "running",
+      "volume_mounts": 1
+    },
+    {
+      "name": "kind-control-plane",
+      "id": "790e27b223e82424a27bb52329ebb60e8a5d9b264395ca779e352876cd22af3e",
+      "state": "running",
+      "volume_mounts": 1
+    },
+    {
+      "name": "kind-worker2",
+      "id": "7d5e66507c8f84136f9052e7ff43e512e836ec58dc740d637ca97c3634736b37",
+      "state": "running",
+      "volume_mounts": 1
+    },
+    {
+      "name": "kind-worker",
+      "id": "6b0fef2472aef24a0ff86a2f01654b2b4da3a23dbd3895c84058b1c3e74d038f",
+      "state": "running",
+      "volume_mounts": 1
+    }
+  ],
+  "docker_volume_count": 46,
+  "data_disk_available_bytes": 30350438400,
+  "source_baseline_changes": {
+    "audit_log_ext": [
+      3478,
+      3907
+    ],
+    "scanner_registration": [
+      1,
+      0
+    ]
+  },
+  "old_harbor": {
+    "health": "healthy",
+    "scanner": {
+      "name": "Trivy",
+      "disabled": false,
+      "is_default": true,
+      "url": "http://sunmoonai-harbor-trivy:8080",
+      "runtime_health_not_checked": true
+    }
+  },
+  "formal_migration_blockers": [
+    "preserve and map old scanner registration/configuration",
+    "latest frozen source data",
+    "write/Jobservice/push/CI-CD acceptance",
+    "formal SNI/main/cluster-rebuild isolation",
+    "offline host tools/cloud adapter",
+    "final required cleanup"
+  ],
+  "mechanical": {
+    "python_AST": true,
+    "four_default_plans": true,
+    "test_suite_run": false
+  },
+  "cleanup_performed": false,
+  "off_machine_copied": false
+}

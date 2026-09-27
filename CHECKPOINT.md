@@ -1,3 +1,17 @@
+## 最新续接：2026-09-27 宿主只读实例备份/独立恢复已验收，发现扫描器迁移缺项
+
+基线53a7fffa（SNI候选已提交），本地luna、不push；本单元起始干净。交付为含本段的提交。用户本轮补充东京空间已腾出，实测22,092,984,320B=20.58GiB，超过原8GiB pull门槛，后续可拉取导出；不重复下载已验NGINX。
+
+- 新host_backup.py默认计划，backup/verify/restore-prepare/record-restore；只接受已对账/验收、起始停止的只读源。本机UUID/PID1/Docker、主机生命周期锁、精确容器/镜像/配置、空间门禁；取得新catalog后停源，仅开PG17.6逻辑导出/前后全表等对账，再全停归档registry+明确私有runtime/身份/Redis/joblogs。只普通文件/目录、UID/GID/mode、全tar SHA+逐成员SHA/blob路径；备份root0700/files0600。失败保留、无cleanup/旧生产停写/外传/云执行。
+- 实际备份/data/harbor/backups/host-main-20260927-v1，registry.tar17,868,021,760B SHA db2fad362a3e9b5d205e55764dc3ad8a675025e7a666ec759e53a5e8c9fbea3c；4400文件17,850,816,895B。runtime.tar1,116,160B SHA886b76caa15fa15412050ce8d001effc67e8665aee387eb2df01f4cf06ffc738。private backup.json约1.45MB，含逐文件目录，公共证据记录其最终SHA。
+- restore-prepare新root/data/harbor/instances/sunmoon-harbor-backup-20260927；从备份私有runtime直接复用，Compose只改project/container/network和host路径前缀，保留原compose/host-config文件。源密钥/CA/叶不再生成；新registry完全复制重读SHA，PG目录空。target config就在root/host-config.json。复用host_runtime create、host_restore、host_verify，9容器均stop/retain。
+- 实际PG17.6恢复49表10,792行及结构/角色/行SHA/序列等完全等于新备份；Harbor TLS五年叶、3projects/64repos/429reachable/164tags目录通过，429manifest原始字节SHA及匿名拒绝、121,690,112B层SHA ba9916be9d18f219a90a7eedd7d6a179dd9aecd3b38dc87d5ea85fbac2e18a2a通过。record-restore全备份重核，restore_verified=true；不表示正式生产备份或写入验收。
+- 重要新发现：新主副本较最初旧快照恢复基线，audit_log_ext3478→3907(+429)，scanner_registration1→0，总10364→10792。实际新core/env仅白名单读到WITH_TRIVY=False。官方v2.13.2 src/core/main.go registerScanners在WithTrivy=false时移除不可变Trivy登记。此前全表一致是Core启动前，不能说启动后所有DB配置仍旧一致。
+- 已只读查询旧30443：healthy；Trivy URL http://sunmoonai-harbor-trivy:8080，disabled=false/is_default=true，API未给adapter/version/health，不能推断扫描器Pod健康。旧源和最初备份未改。正式写入前必须核旧scanner精确镜像/配置并同版迁移/映射，补扫描/Jobservice验收；当前禁Trivy的8服务副本不得直接晋升。没有用SQL补回或掩盖差异。
+- 现场：源main9+恢复backup9容器均停止（jobservice created），SNI候选停止；旧/验证6KIND节点running，旧Harborhealthy。卷仍46，本单元0新卷；SNI最初3个误建检查卷仍保留。数据盘可用30,350,438,400B≈28.27GiB，不能盲目再复制整套17GB；后续写入生命周期需考虑复用数据并保留受管旧容器，不能以空间为由清节点/卷/唯一备份。无后台任务。
+- 证据scripts/results/luna-harbor-host-backup.20260927.json；方法registry-platform/docs/host-backup.md；README/host-instance/唯一物料手册已补。1PythonAST、4默认plan、git diff --check；未测试套件。外部传输目的地仍待所有者选，只有目录接口，没有外传。云端未经实机验证。
+- 下一步优先核原Trivy实际部署与离线物料，修正式配置保存原scanner/其他非镜像配置；可写/Jobservice/认证推拉/CI-CD、通用全新主机安装/工具闭包/挂盘自启动/云SSH前置继续未完。然后正式SNI维护卡（旧controlplane停止会影响API/80/30444–30446，窗口未批准）、main双挂载/共享平台/独立性重建验收。业务E2E最后，最终清理仍必做且最后，不删容器/卷。inbox仍旧kind/原kubeconfig/1.27.3kubectl，不能通知luna做完了。
+
 ## 最新续接：2026-09-27 本地 SNI 候选已验收，正式入口未切换
 
 基线59b94f7d0b42376500636f74de6d3d95c26facac，本地luna，不push；起始工作树干净。交付为包含本段的提交。
