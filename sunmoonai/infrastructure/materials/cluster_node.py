@@ -7,6 +7,7 @@ Join credentials stay in root-private files and the controller's SSH pipe.
 """
 import argparse
 import hashlib
+import http.client
 import json
 import os
 from pathlib import Path
@@ -25,6 +26,7 @@ from os_install import safe_directory, exact_file
 from cluster_resources import execute as resource_execute, identity as resource_identity
 from storage_resources import execute as storage_execute, images as storage_images
 from storage_host import execute as storage_host_execute
+from registry_consumer import execute as registry_execute
 
 
 def run(argv, timeout=90, content=None):
@@ -87,7 +89,7 @@ def main():
     parser.add_argument('--root', type=Path, required=True)
     parser.add_argument('--hostname', required=True)
     parser.add_argument('--machine-id', required=True)
-    parser.add_argument('--phase', choices=('preflight', 'images', 'init', 'cni', 'ticket', 'join', 'status', 'revoke', 'resources', 'storage-check', 'storage-host'), required=True)
+    parser.add_argument('--phase', choices=('preflight', 'images', 'init', 'cni', 'ticket', 'join', 'status', 'revoke', 'resources', 'storage-check', 'storage-host', 'registry-check', 'registry-apply', 'registry-verify'), required=True)
     parser.add_argument('--apply', action='store_true')
     args = parser.parse_args()
     if not args.apply:
@@ -149,6 +151,20 @@ def main():
             raise ValueError('Storage preparation requires matching cluster UID/CA')
         result = storage_host_execute(root, args.manifest, data, work, request['spec'], node['name'],
                                       receipt['uid'], apply=args.phase == 'storage-host')
+        print(json.dumps(result)); return
+    if args.phase.startswith('registry-'):
+        record = work / ('init-complete.json' if node['role'] == 'master' else 'join-complete.json')
+        receipt = json.loads(record.read_text())
+        if receipt['uid'] != request.get('expected_uid') or ca_pin() != receipt['ca_pin']:
+            raise ValueError('Registry consumption requires matching cluster UID/CA')
+        log = work / ('registry-' + str(time.time_ns()) + '.json')
+        try:
+            result = registry_execute(root, args.manifest, data, work, request['registry'], args.phase)
+        except (OSError, ValueError, KeyError, http.client.HTTPException, subprocess.SubprocessError) as error:
+            private_json(log, {'phase': args.phase, 'uid': receipt['uid'], 'state': 'failed',
+                              'error_type': type(error).__name__})
+            raise
+        private_json(log, {'phase': args.phase, 'uid': receipt['uid'], 'state': 'complete', 'result': result})
         print(json.dumps(result)); return
     if args.phase == 'init':
         if node['role'] != 'master':
@@ -228,7 +244,7 @@ def main():
             else:
                 result = resource_execute(guarded_kub, request['action'], spec, receipt['uid'])
             current_cluster(work)
-        except (OSError, ValueError, KeyError, StopIteration, subprocess.SubprocessError) as error:
+        except (OSError, ValueError, KeyError, StopIteration, http.client.HTTPException, subprocess.SubprocessError) as error:
             # Kubectl diagnostics may contain private data. Keep them on the
             # target in 0600 files, never forward raw SSH/subprocess output.
             diagnostic = getattr(error, 'stderr', b'') or b''
@@ -293,7 +309,7 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except (OSError, ValueError, KeyError, StopIteration, subprocess.SubprocessError) as error:
+    except (OSError, ValueError, KeyError, StopIteration, http.client.HTTPException, subprocess.SubprocessError) as error:
         # Do not stringify subprocess exceptions or captured kubeadm output.
         message = str(error) if isinstance(error, ValueError) else type(error).__name__
         print('Cluster node stopped: ' + message, file=sys.stderr)

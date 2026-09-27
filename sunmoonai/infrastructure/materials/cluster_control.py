@@ -20,6 +20,7 @@ from cluster_config import validate, init_documents, calico_objects, multi_json
 from node_control import PUBLIC_FILES, REMOTE
 from cluster_resources import namespaces, taints
 from storage_resources import validate as validate_storage
+from registry_consumer import profile_from_environment as registry_profile
 
 
 def resource_spec(phase, profile, connections, data):
@@ -147,9 +148,13 @@ def call(c, files, release, phase, request):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--phase', choices=('init', 'cni', 'join', 'namespaces', 'health', 'storage', 'taints'), required=True)
-    parser.add_argument('--apply', action='store_true')
+    parser.add_argument('--phase', choices=('init', 'cni', 'join', 'namespaces', 'health', 'storage', 'taints', 'registry'), required=True)
+    action = parser.add_mutually_exclusive_group()
+    action.add_argument('--apply', action='store_true')
+    action.add_argument('--verify', action='store_true', help='Registry inspection; no trust/hosts/image repairs')
     args = parser.parse_args()
+    if args.verify and args.phase != 'registry':
+        raise ValueError('--verify is only supported for registry consumers')
     directory = Path(__file__).resolve().parent
     manifest = directory / 'cluster-artifacts.lock.json'
     data, entries = resolve(manifest)
@@ -161,7 +166,18 @@ def main():
     configured_calico = os.environ.get('SM_CALICO', '').removeprefix('v')
     resource = args.phase in ('namespaces', 'health', 'storage', 'taints')
     enabled, spec = resource_spec(args.phase, profile, connections, data) if resource else (True, None)
-    order = {'init': ['all node preflight', 'all node exact image import', 'single master init'],
+    registry = None
+    if args.phase == 'registry':
+        if os.environ.get('SM_STEP11_ENABLED') not in ('true', 'false') or os.environ.get('SM_STEP11_TARGET') != 'all':
+            raise ValueError('Registry consumer requires explicit enable/disable and all-node target')
+        enabled = os.environ['SM_STEP11_ENABLED'] == 'true'
+        registry = registry_profile(profile['nodes'], connections)
+    order = {'registry': ['independent registry host profile and pinned public CA',
+                          'master cluster UID/CA and all node identities',
+                          'all node trust/hosts/image conflicts and direct TLS preflight',
+                          'add missing exact CA/hosts mapping and offline Traefik only',
+                          'all node read-only verification; authenticated pull acceptance separate'],
+             'init': ['all node preflight', 'all node exact image import', 'single master init'],
              'cni': ['master UID check', 'owned Calico resources only', 'Calico rollouts'],
              'join': ['master UID check', 'ten-minute pinned-CA ticket', 'sequential worker joins',
                       'node machine-id/IP/version/Ready check', 'revoke ticket'],
@@ -171,7 +187,7 @@ def main():
                          'prepare only owned paths and import exact storage images', 'create missing storage objects',
                          'verify controller and Retain class; data IO acceptance separate'],
              'taints': ['pinned UID/CA and all node identities', 'preflight all taint conflicts', 'resourceVersion conditional patch', 'verify']}[args.phase]
-    if not args.apply:
+    if not (args.apply or args.verify):
         print(json.dumps({'dry_run': True, 'phase': args.phase, 'cloud_status': '未经实机验证',
                           'profile': profile, 'kubeadm_configuration': init_documents(profile, data),
                           'configured_kubernetes': configured_version, 'locked_kubernetes': data['versions']['kubernetes'],
@@ -179,7 +195,7 @@ def main():
                           'configured_proxy_mode': os.environ.get('SM_PROXY_MODE', ''),
                           'closure_complete': data['closure_complete'], 'calico_objects': len(calico['items']),
                           'machine_identities_configured': all(c['hostname'] and c['machine_id'] for c in connections.values()),
-                          'enabled': enabled, 'resource_spec': spec,
+                          'enabled': enabled, 'resource_spec': spec, 'registry_profile': registry,
                           'order': order, 'ssh_started': False}, ensure_ascii=False, indent=2)); return
     if not enabled:
         print(json.dumps({'phase': args.phase, 'skipped': True, 'reason': 'explicit configuration', 'ssh_started': False})); return
@@ -201,6 +217,8 @@ def main():
     if args.phase == 'storage' and any(p['enabled'] and not re.fullmatch(
             r'[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}', p['uuid']) for p in spec['paths'].values()):
         raise ValueError('Every eligible cloud node needs a pre-recorded data filesystem UUID; no SSH started')
+    if args.phase == 'registry':
+        registry = registry_profile(profile['nodes'], connections, apply=True)
     files, release = controls(directory)
     invoke = lambda name, phase, extra=None: call(connections[name], files, release, phase, {'profile': profile, **(extra or {})})
     if args.phase == 'init':
@@ -212,6 +230,24 @@ def main():
         print(json.dumps({'phase': 'init', **receipt})); return
     status = invoke(master['name'], 'status')
     uid = status['uid']
+    if args.phase == 'registry':
+        actual = {n['name']: n for n in status['nodes']}
+        if len(actual) != len(status['nodes']) or set(actual) != {n['name'] for n in profile['nodes']}:
+            raise ValueError('Registry consumer node membership differs')
+        for n in profile['nodes']:
+            found = actual[n['name']]
+            if (found['machine_id'] != connections[n['name']]['machine_id'] or found['ips'] != [n['ip']]
+                    or not found['ready'] or found['kubelet_version'] != 'v' + data['versions']['kubernetes']):
+                raise ValueError('Registry consumer node identity/version/readiness differs')
+        extra = {'expected_uid': uid, 'registry': registry}
+        phases = ('registry-verify',) if args.verify else ('registry-check', 'registry-apply', 'registry-verify')
+        results = {}
+        for phase in phases:
+            for n in profile['nodes']:
+                results[n['name']] = invoke(n['name'], phase, extra)
+        print(json.dumps({'phase': 'registry', 'action': 'verify' if args.verify else 'apply',
+                          'uid': uid, 'address': registry['address'], 'nodes': results,
+                          'registry_host_live_identity_verified': False})); return
     if resource:
         if args.phase == 'storage':
             invoke(master['name'], 'resources', {'expected_uid': uid, 'action': 'storage-preflight', 'spec': spec})

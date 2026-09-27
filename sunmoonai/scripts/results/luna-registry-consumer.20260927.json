@@ -1,0 +1,319 @@
+{
+  "schema": 1,
+  "date": "2026-09-27",
+  "baseline": "14e1cae361f1f944014016bae92f9faeca62c78a",
+  "scope": "external registry cloud consumer and existing ingress offline archive",
+  "cloud_status": "未经实机验证",
+  "ssh_executed": false,
+  "cluster_api_calls": false,
+  "service_changes": false,
+  "new_downloads": false,
+  "cleanup": false,
+  "tests_added_or_run": false,
+  "checks": [
+    {
+      "file": "sunmoonai/infrastructure/materials/bundle.py",
+      "python_ast": "passed",
+      "sha256": "f75ea4c96486315a85e64531b9ec786155379bbf7419314b41e8ceb44ca467ce"
+    },
+    {
+      "file": "sunmoonai/infrastructure/materials/cluster_control.py",
+      "python_ast": "passed",
+      "sha256": "0ca00aafe8fd47e20ad03415c3dcdf6d016296d6aca569584048499ab16df0c3"
+    },
+    {
+      "file": "sunmoonai/infrastructure/materials/cluster_node.py",
+      "python_ast": "passed",
+      "sha256": "64427e6cd095187c65481070a68de5b29c45310074984b37f121585a7bf16882"
+    },
+    {
+      "file": "sunmoonai/infrastructure/materials/node_control.py",
+      "python_ast": "passed",
+      "sha256": "006cc9bb055b210cedfff14ecc4703a511f33d4c6ecef6efa0fdca13dfd44dc2"
+    },
+    {
+      "file": "sunmoonai/infrastructure/materials/registry_consumer.py",
+      "python_ast": "passed",
+      "sha256": "29ae3f08eb8d1585b5bb85a557dca9e13e2c743e11967d222ba222b16e695542"
+    },
+    {
+      "file": "sunmoonai/infrastructure/utils/cluster-step.sh",
+      "bash_n": "passed",
+      "shellcheck": "passed",
+      "sha256": "ae3ec1697c8b96f4d5518b03939168f3f22f7441e6f4e235d0314d7a2029d8da"
+    },
+    {
+      "file": "sunmoonai/infrastructure/steps/step11_load-initial-images.sh",
+      "bash_n": "passed",
+      "shellcheck": "passed",
+      "sha256": "16ff9ce371614fa00b9e19e9d60b426314a0fd1c77fb726f8d68e1a66b2d2198"
+    },
+    {
+      "file": "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh",
+      "bash_n": "passed",
+      "shellcheck": "passed",
+      "sha256": "0c04987b5fe870c1f1be4fb1898134349495bdbebab55452aca69c31bc450571"
+    },
+    {
+      "file": "sunmoonai/registry-platform/lib/config.sh",
+      "bash_n": "passed",
+      "shellcheck": "passed",
+      "sha256": "061e60efc7d373a7c44052173ca1d7afec21635506aa65ea939223c6e5397c3c"
+    },
+    {
+      "file": "sunmoonai/registry-platform/config/cloud.example.conf",
+      "bash_n": "passed",
+      "shellcheck": "passed",
+      "sha256": "6dbabfafce0b559df4adba8b27b521a5a0131326f05e3e30a0dad2c82bb230f1"
+    }
+  ],
+  "public_control_files": [
+    "node_install.py",
+    "os_install.py",
+    "verify_os.py",
+    "prepare_os.py",
+    "bundle.py",
+    "cluster_config.py",
+    "cluster_node.py",
+    "image_import.py",
+    "cluster_resources.py",
+    "storage_resources.py",
+    "storage_host.py",
+    "storage-images.lock.json",
+    "registry_consumer.py",
+    "ingress-images.lock.json",
+    "cluster-artifacts.lock.json",
+    "kubeadm-images.lock.json",
+    "os-dependencies.lock.json"
+  ],
+  "remote_payload_ast": "passed",
+  "main_config": {
+    "outside_step11_bytes": "unchanged",
+    "historical_shared_fields": "unchanged",
+    "bash_n": "passed",
+    "full_config_or_diff_recorded": false
+  },
+  "dry_runs": [
+    {
+      "cluster": "C1",
+      "step": "step01_os_baseline.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step02_runtime.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step03_k8s_binaries.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step04_kubeadm_init.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step05_cni_install.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step06_join_nodes.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step07_create_namespaces.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step08_validate.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step09_storage.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step10_k8s_nodes_management.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step11_load-initial-images.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false,
+      "registry_profile": {
+        "address": "harbor.sunmoonai.com:30443",
+        "version": "2.13.2",
+        "transport": "ssh",
+        "ip": "",
+        "machine_id": "",
+        "ssh_host": "",
+        "ca_sha256": "",
+        "sni_proxy": "false"
+      },
+      "order": [
+        "independent registry host profile and pinned public CA",
+        "master cluster UID/CA and all node identities",
+        "all node trust/hosts/image conflicts and direct TLS preflight",
+        "add missing exact CA/hosts mapping and offline Traefik only",
+        "all node read-only verification; authenticated pull acceptance separate"
+      ]
+    },
+    {
+      "cluster": "C2",
+      "step": "step01_os_baseline.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step02_runtime.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step03_k8s_binaries.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step04_kubeadm_init.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step05_cni_install.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step06_join_nodes.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step07_create_namespaces.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step08_validate.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step09_storage.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step10_k8s_nodes_management.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step11_load-initial-images.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false,
+      "registry_profile": {
+        "address": "harbor.sunmoonai.com:30443",
+        "version": "2.13.2",
+        "transport": "ssh",
+        "ip": "",
+        "machine_id": "",
+        "ssh_host": "",
+        "ca_sha256": "",
+        "sni_proxy": "false"
+      },
+      "order": [
+        "independent registry host profile and pinned public CA",
+        "master cluster UID/CA and all node identities",
+        "all node trust/hosts/image conflicts and direct TLS preflight",
+        "add missing exact CA/hosts mapping and offline Traefik only",
+        "all node read-only verification; authenticated pull acceptance separate"
+      ]
+    }
+  ],
+  "materials": {
+    "files": 129,
+    "bytes": 1236303984,
+    "sha256": "all passed",
+    "closure_complete": false,
+    "pending": [
+      "Remaining infrastructure step12/13, KIND storage adapter and external registry host lifecycle/pre-step11/platform integration"
+    ],
+    "root_lock_sha256": "c23806127216fe7c4cd80f84c8090d65a2201297cda2dccbdfc7163eb54cf667"
+  },
+  "ingress_archives": [
+    {
+      "archive": "images/traefik_v3.5.2.tar",
+      "bytes": 178587136,
+      "archive_sha256": "d793cb1eedc662511704ba94f63cbc5e6278bf01e6e70ef21797e38328e08742",
+      "reference": "docker.io/sunmoon-offline/traefik@sha256:c79033e751afa9c322db0cf83cd5d866c0a300b37960e923bdb28c49d0a46eee",
+      "version": "v3.5.2",
+      "blobs_verified": 6,
+      "layers_verified": 4,
+      "public_registry_digest_claimed": false
+    }
+  ],
+  "review_harness_issue": "First evidence collector expected one JSON object per step; step01-03 emit one per node. Updated collector to parse each JSON object; no deployment operation performed.",
+  "initial_static_issue": "ShellCheck configuration file had no shell directive and unused sourced-variable diagnostics; added shell=bash and SC2034 configuration annotation, final checks clean.",
+  "not_verified": [
+    "cloud installation/SSH",
+    "live registry host machine identity",
+    "node TLS endpoint and trust execution",
+    "authenticated push/pull",
+    "Traefik Pod consumption (step13 pending)",
+    "Harbor formal lifecycle and pre-step11 host step",
+    "local KIND adapter and rebuild preservation"
+  ]
+}

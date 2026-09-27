@@ -1,5 +1,18 @@
 # Luna 工作检查点
 
+## 最新续接：2026-09-27 step11 独立仓库使用方
+
+基线 `14e1cae361f1f944014016bae92f9faeca62c78a`，本地 luna，不 push；本段优先于旧 step11 尚未改写的记录。交付为包含本段的提交。
+
+- 原1004行step11替换为短入口→cluster-step/control/node→registry_consumer.py。默认只打印，--apply明确变更，--verify只检查受管配置/镜像不修复；远端管理代码/请求/审计记录仍写入，文档明确并非全主机零写。新分支未经实机验证。
+- 从registry-platform/lib/config.sh读取独立云主机profile，固定Harbor2.13.2和harbor.sunmoonai.com:30443；公网/master回退删去，CA绝对路径/无symlink/PEM证书only/SHA必须明确，私钥/密码不传。cloud.example加machine-id/CA SHA字段，云SNI=false。只核登记的独立身份，实际仓库主机身份/版本待主机生命周期步骤核，结果保留live_identity_verified=false。
+- 控制顺序：主机/锁/物料→masterUID/CA/全节点identity/IP/version/Ready→全节点只读预检→逐节点补缺信任/hosts/Traefik→全节点复核。信任root0644且精确一致，underscore高优先目录/额外文件/冲突拒绝。hosts精确匹配+描述符锁追加、不删除。TLS直连私IP、规范SNI/Host，401/registry2/realm检查不带凭据、不表示登录推拉通过。无Docker/Harbor生命周期/服务重启。
+- 复用原images/traefik_v3.5.2.tar，178587136B SHA d793cb1eedc662511704ba94f63cbc5e6278bf01e6e70ef21797e38328e08742；新ingress-images.lock.json被主锁SHA引用，bundle新增ingress范围、精确同步覆盖。OCI未压缩manifest不是公共registrydigest；alias docker.io/sunmoon-offline/traefik@sha256:c79033e751afa9c322db0cf83cd5d866c0a300b37960e923bdb28c49d0a46eee。step13仍须消费alias/Never，不声称Pod已可启动。旧Harbor启动包仍保留，平台版本没升。
+- 主配置仅Step11区域修改，其他区域和历史共享字段私下逐字节核对相同；不输出完整conf/diff。移除旧STEP_IMAGE_*和旧DNS/文件名猜测字段；总控对11显式--apply。主锁false保持，pending改为12/13、KIND存储、独立仓库主机前置步骤/平台接线。公共SSH程序白名单17文件，含新module+lock。
+- 证据scripts/results/luna-registry-consumer.20260927.json：5Python+远端AST，5Shell bash-n/ShellCheck与主conf bash-n，C1/C2共22组01–11计划全通过；129文件1236303984B全SHA、Traefik6blob核过。最初conf ShellCheck缺shell/外部变量注释已修；证据采集最初误当step01只输出一个JSON，已改逐节点解析。无测试套件/SSH/API/镜像导入/服务操作/下载/清理。方法infrastructure/docs/registry-consumer.md。
+- 本轮续读step12全部278行：仍调用旧unified证书入口，force可删CA、verify缺参数/SSH失败会跳过成功；旧client还有Docker重启路径（README所述），未执行。step13仅入口脚本已去Harbor，但下游ingress/traefik还须完整审改；此次只读step13全部及ingress总控前145行，不声称下游完成。接下来证书应复用原CA、Harbor五年叶证书归仓库模块，集群不得借安装隐式轮换CA。
+- 尚未完成仓库主机正式入口、总控step11前调用主机模块、step12/13、KIND使用方；不得把本单元当整个Harbor迁移完成。新main未建，旧Harbor30443、inbox和容器/卷保持，本轮未复核现场。最终清理必须做且最后。本单元下一步为证书与入口步骤、正式Harbor/CI/CD/备份，不能通知luna做完了；没有预算上限/后台任务。
+
 ## 最新续接：2026-09-27 step09 存储适配与现有物料保护
 
 基线 `f253d203498c5783f368e129e827ed669ef2bf20`，本地 luna，交付为包含本段的提交，不 push；开工工作树干净。此节优先于旧“step09尚未写”的记录。

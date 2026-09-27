@@ -10,9 +10,19 @@ cluster_step_main() {
     shift
     for argument in "$@"; do
         [[ $# -eq 1 ]] || { log_error 'Specify one action only'; return 1; }
-        case "$argument" in --apply|--dry-run) action="$argument" ;; *) log_error 'Expected --dry-run or --apply'; return 1 ;; esac
+        case "$argument" in --apply|--dry-run|--verify) action="$argument" ;; *) log_error 'Expected --dry-run, --apply or --verify'; return 1 ;; esac
     done
+    if [[ "$action" == --verify && "$phase" != registry ]]; then
+        log_error '--verify is only supported by the registry consumer'; return 1
+    fi
     load_config_file || return 1
+    if [[ "$phase" == registry ]]; then
+        # shellcheck source=/dev/null
+        source "$PROJECT_ROOT/../registry-platform/lib/config.sh"
+        # Empty example permits planning only; actual use requires explicit host fields.
+        REGISTRY_CONFIG_FILE="${REGISTRY_CONFIG_FILE:-$PROJECT_ROOT/../registry-platform/config/cloud.example.conf}"
+        registry_export_consumer || return 1
+    fi
     # Only these topology fields enter Python; never export the whole config.
     while IFS= read -r name; do unset "$name"; done < <(compgen -v SM_NODE_)
     SM_NODE_INDICES="$(get_defined_server_indices)"
@@ -47,7 +57,7 @@ cluster_step_main() {
     local resource_timeout="${STEP08_WAIT_TIMEOUT:-300}"
     [[ "$phase" != storage ]] || resource_timeout="${STEP09_WAIT_TIMEOUT:-300}"
     export SM_RESOURCE_TIMEOUT="$resource_timeout" SM_EXPECTED_NODE_COUNT="${STEP08_EXPECTED_NODE_COUNT:-}"
-    for idx in 07 08 09 10; do
+    for idx in 07 08 09 10 11; do
         for field in ENABLED TARGET REMOTE_KUBECONFIG; do
             name="STEP${idx}_${field}"
             export "SM_${name}=${!name:-}"
@@ -58,6 +68,6 @@ cluster_step_main() {
         export "SM_STORAGE_${field}=${!name:-}"
     done
     local -a args=(--phase "$phase")
-    [[ "$action" != --apply ]] || args+=(--apply)
+    [[ "$action" == --dry-run ]] || args+=("$action")
     python3 "$PROJECT_ROOT/materials/cluster_control.py" "${args[@]}"
 }

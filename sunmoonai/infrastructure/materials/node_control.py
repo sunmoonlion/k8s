@@ -20,6 +20,7 @@ from bundle import resolve, verify
 PUBLIC_FILES = ("node_install.py", "os_install.py", "verify_os.py", "prepare_os.py",
                 "bundle.py", "cluster_config.py", "cluster_node.py", "image_import.py", "cluster_resources.py",
                 "storage_resources.py", "storage_host.py", "storage-images.lock.json",
+                "registry_consumer.py", "ingress-images.lock.json",
                 "cluster-artifacts.lock.json", "kubeadm-images.lock.json", "os-dependencies.lock.json")
 
 REMOTE = r'''
@@ -31,7 +32,7 @@ if socket.gethostname()!=p['hostname'] or Path('/etc/machine-id').read_text().st
     raise SystemExit('Recorded machine identity differs; no control files published')
 if 'microsoft' in os.uname().release.lower() or Path('/.dockerenv').exists():
     raise SystemExit('WSL/container is not a fresh cloud node')
-cluster_phases={'preflight','images','init','cni','ticket','join','status','revoke','resources','storage-check','storage-host'}
+cluster_phases={'preflight','images','init','cni','ticket','join','status','revoke','resources','storage-check','storage-host','registry-check','registry-apply','registry-verify'}
 if p['phase'] not in cluster_phases|{'os','runtime','kubernetes'}: raise SystemExit('Unknown node phase')
 protected=['/var/lib/docker','/data/harbor']
 if p['phase'] not in cluster_phases: protected+=['/etc/kubernetes','/var/lib/kubelet','/var/lib/etcd']
@@ -46,6 +47,7 @@ if root.resolve()!=root or root.name!='packages-to-be-installed' or not root.is_
 expected={'node_install.py','os_install.py','verify_os.py','prepare_os.py','bundle.py',
           'cluster_config.py','cluster_node.py','image_import.py','cluster_resources.py',
           'storage_resources.py','storage_host.py','storage-images.lock.json',
+          'registry_consumer.py','ingress-images.lock.json',
           'cluster-artifacts.lock.json','kubeadm-images.lock.json','os-dependencies.lock.json'}
 if set(p['files'])!=expected: raise SystemExit('Unexpected public control file set')
 contents={}

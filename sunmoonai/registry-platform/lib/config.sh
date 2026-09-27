@@ -6,12 +6,12 @@ registry_load_config() {
     module_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
     profile="${REGISTRY_CONFIG_FILE:-}"
     if [[ -z "$profile" ]]; then
-        case "${CLUSTER:-KIND}" in
+        case "${CLUSTER:-}" in
             KIND|kind) profile="$module_dir/config/local-wsl.conf" ;;
             *) echo 'REGISTRY_CONFIG_FILE must name the independent cloud registry configuration' >&2; return 1 ;;
         esac
     fi
-    if [[ ! -f "$profile" ]]; then
+    if [[ ! -f "$profile" || -L "$profile" ]]; then
         echo 'Registry configuration file is missing' >&2; return 1
     fi
     # Trusted, owner-managed configuration; never accept a downloaded arbitrary script.
@@ -33,8 +33,19 @@ registry_load_config() {
 }
 
 registry_require_cloud_host() {
-    [[ -n "${REGISTRY_PRIVATE_IP:-}" && -n "${REGISTRY_SSH_HOST:-}" ]] || {
+    [[ "${REGISTRY_TRANSPORT:-}" == ssh && -n "${REGISTRY_PRIVATE_IP:-}" && -n "${REGISTRY_SSH_HOST:-}" && -n "${REGISTRY_MACHINE_ID:-}" ]] || {
         echo 'Independent registry private IP and SSH host are required; refusing master-IP fallback' >&2
         return 1
     }
+}
+
+# Allowlisted public consumer fields only. Installation credentials, signing
+# keys, registry passwords and the full configuration must not be exported.
+registry_export_consumer() {
+    registry_load_config || return 1
+    export SM_REGISTRY_ADDRESS="$REGISTRY_ADDRESS" SM_REGISTRY_VERSION="$REGISTRY_VERSION"
+    export SM_REGISTRY_TRANSPORT="$REGISTRY_TRANSPORT" SM_REGISTRY_IP="${REGISTRY_PRIVATE_IP:-}"
+    export SM_REGISTRY_CA_FILE="$REGISTRY_CA_FILE" SM_REGISTRY_CA_SHA256="${REGISTRY_CA_SHA256:-}"
+    export SM_REGISTRY_MACHINE_ID="${REGISTRY_MACHINE_ID:-}" SM_REGISTRY_SSH_HOST="${REGISTRY_SSH_HOST:-}"
+    export SM_REGISTRY_SNI_PROXY="${REGISTRY_LOCAL_SNI_PROXY:-}"
 }
