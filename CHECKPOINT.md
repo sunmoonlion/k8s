@@ -1,3 +1,14 @@
+## 最新续接：2026-09-27 宿主候选镜像推拉、权限负例与只读重启读取通过
+
+基线d90762d3ed8dfe6443acb3c23100848eaa231266（受管scanner/备份单元已提交）；本地luna、不push。本单元新增host_write_verify.py与操作文档，host_runtime普通start增加write_acceptance_open保护。
+
+- 新脚本只接受已停止且scanner验收完成、同实例完整备份、独立盘20GiB余量；原8服务/官方镜像不改。独立write-acceptance-v1/v2中生成三个临时registry/registryctl/core可写容器，共用候选数据目录；原对应容器停留。每轮预备PG17.6逻辑dump，API写窗口有持久journal；旧30443与节点完全未改。
+- 首轮真正推拉成功，但负例误以为请求scope=pull会缩小已有写入账号权限；官方2.13.2 repositoryFilter直接按账号授权重设Actions，实际允许写。因此v1失败，账号6禁用、APIreadonly/停止恢复通过。不得将该问题说成版本不兼容或私有权限完全失效。v2独立项目/账号7写入、8只读，权限分离后真实上传/摘要拉取与匿名拒绝/只读拒写均通过；原项目目录完整一致。两账号结束均禁用。
+- 新manifest sha256:a32ee319d77cd79e4d3973d5514315daf5b5f563d4aa320c4b87018fe931cd2b，config/layer/manifest782B。随后以原只读容器启动、管理员鉴权拉取三个对象全SHA相同后停止，证明宿主数据保留；不是KIND重建验收。v1/v2三个额外容器全部停止保留，main12容器停止，运行仅旧/136六节点，卷46，数据盘free24359378944B。无后台任务、无清理/入口变更。
+- 私有结果main/write-acceptance-v2/result.json和read-only-restart.json；公共scripts/results/luna-harbor-write-acceptance.20260927.json。读回引用规范30443，实流量只经18443，不表示旧仓已有验收镜像。最后配置检查补了Docker CAP_前缀归一，全部六个停止容器配置核对通过。AST/defaultplan/gitdiffcheck通过；未跑应用套件。
+- 备份host-scanner-20260927-v1保持原字节且新布局独立恢复尚未完成；当前registry新增两个canary项目，下一份备份不能盲目复用旧registry.tar。数据盘22.69GiB余量不允许完整新副本同时保留20GiB，不私自清理/降低门槛。旧布局恢复已验不代表新布局已验。
+- 继续主线：永久可写生命周期与冻结备份、Docker/真实CI、正式30443窗口（旧控制面停机尚须具体授权）、main三节点双挂载及重建Harbor独立性、云统一代码/离线闭包/自启。尚未建main或切换；inbox仍旧kind/原kubeconfig/匹配kubectl1.27.3。最终清理强制保留，所有旧节点/卷/唯一备份保护，不通知“luna做完了”。
+
 ## 最新续接：2026-09-27 受管官方扫描器、统一启停与完整备份已通过
 
 基线cee60c87e7c3cd281735d6d661b8e3ce8d3451f5；本地luna、不push。遵照所有者不做自制补丁镜像、优先集群迁移；官方scanner镜像不变。新host_scanner/host_scanner_verify将trivy、内部registry-route和独立队列scan-jobs纳入宿主Compose、启停和备份；原8容器不重建，旧jobservice停止保留。

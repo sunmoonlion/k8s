@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "passed": true,
+  "entry_switched": false,
+  "original_configs_unchanged": true,
+  "robot_disabled": true,
+  "read_only_restored": true,
+  "containers_stopped": true,
+  "database_before_sha256": "93d4b5f6b2ba299284b57455c561cac519ac37d981b25fa53f6bdce278cd1454",
+  "robot_ids": [
+    7,
+    8
+  ],
+  "transport": {
+    "reference": "harbor.sunmoonai.com:30443/migration-canary-20260927-v2/transport-v2@sha256:a32ee319d77cd79e4d3973d5514315daf5b5f563d4aa320c4b87018fe931cd2b",
+    "manifest_digest": "sha256:a32ee319d77cd79e4d3973d5514315daf5b5f563d4aa320c4b87018fe931cd2b",
+    "layer_digest": "sha256:da63cce588664a14ec3ce69e6de82feaabdbccbfe778d5d3f52c5a56309c7f2b",
+    "config_digest": "sha256:b26fa455c07b0aec93881099886b462a148c2bac84378e74209155e7fbc73159",
+    "pushed_bytes": 782,
+    "all_pulled_bytes_equal": true,
+    "anonymous_pull_denied": true,
+    "pull_only_robot_push_denied": true
+  },
+  "original_catalog_preserved": true,
+  "recovery_errors": [],
+  "read_only_restart": {
+    "passed": true,
+    "uses_original_read_only_containers": true,
+    "entry_switched": false,
+    "manifest_digest": "sha256:a32ee319d77cd79e4d3973d5514315daf5b5f563d4aa320c4b87018fe931cd2b",
+    "all_three_digests_verified": true,
+    "services_stopped": true
+  },
+  "date": "2026-09-27",
+  "trial": "v2",
+  "first_attempt": {
+    "passed": false,
+    "reason": "Requested pull scope does not narrow Harbor2.13.2 account grants",
+    "robot_disabled": true,
+    "read_only_restored": true,
+    "containers_stopped": true
+  },
+  "active_containers": [
+    "sunmoon-kind-136-control-plane",
+    "sunmoon-kind-136-worker2",
+    "sunmoon-kind-136-worker",
+    "kind-control-plane",
+    "kind-worker2",
+    "kind-worker"
+  ],
+  "docker_volume_count": 46,
+  "data_free_bytes": 24359378944,
+  "startup_write_guard_closed": true,
+  "permanent_write_promotion": false,
+  "docker_engine_push_pull_verified": false,
+  "cicd_job_verified": false
+}

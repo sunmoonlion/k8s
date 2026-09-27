@@ -169,7 +169,8 @@ class Instance:
         storage(self.config, minimum_gib=20)
         spec = self.immutable()
         if (not self.state.get('creation_complete') or self.state.get('stop_errors')
-                or self.state.get('metadata_acceptance_open') or self.state.get('configuration_transition_open')
+                or self.state.get('metadata_acceptance_open') or self.state.get('write_acceptance_open')
+                or self.state.get('configuration_transition_open')
                 or not self.state.get('database_reconciled') or not self.prep['registry'].get('all_file_sha256_match')):
             raise ValueError('Reconciled database and registry content required before Harbor startup')
         for role in spec['services']:
