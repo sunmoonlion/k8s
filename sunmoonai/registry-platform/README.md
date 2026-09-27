@@ -2,7 +2,7 @@
 
 目标：一套部署代码，两种建集群方式；本地与云上均使用集群外 Harbor，统一地址 `harbor.sunmoonai.com:30443`。具体部署/迁移约束见 [主方案](../kind-infrastructure/docs/storage-and-harbor-placement-decision.md)。
 
-当前已完成官方2.13.2物料准备、原候选恢复，以及独立新宿主实例的准备/逻辑恢复/只读启停验收；新实例的五年证书已实际握手通过。[新实例操作与结果](docs/host-instance.md)是当前入口，早期[恢复演练记录](docs/host-recovery-plan.md)保留。两套副本均停止保留，旧30443未切换；本地SNI候选代理也已通过只读验收并停止，见[入口操作](docs/sni-entry.md)；正式写入、30443切换、Jobservice/CI-CD推拉、生产可写备份冻结与自动启动仍待完成。[宿主只读实例备份/独立恢复](docs/host-backup.md)已实测通过；发现扫描器登记未被隔离副本保留，正式迁移须先补齐。
+当前已完成官方2.13.2物料准备、原候选恢复，以及独立新宿主实例的准备/逻辑恢复/只读启停验收；新实例的五年证书已实际握手通过。[新实例操作与结果](docs/host-instance.md)是当前入口，早期[恢复演练记录](docs/host-recovery-plan.md)保留。两套副本均停止保留，旧30443未切换；本地SNI候选代理也已通过只读验收并停止，见[入口操作](docs/sni-entry.md)；正式写入、30443切换、CI-CD推拉、生产可写备份冻结与自动启动仍待完成。[宿主只读实例备份/独立恢复](docs/host-backup.md)已实测通过；此前发现的扫描器登记缺项已通过受管登记修复并验证重启保留；包含扫描器的新备份已完成，其独立恢复仍待验证。
 
 云端 step11 已接入本模块 `lib/config.sh` 的独立主机配置，只处理节点信任、解析和原版本入口镜像；方法及首次上云清单见 [使用方](../infrastructure/docs/registry-consumer.md)。云端仓库主机安装与前置步骤仍待接通，**未经实机验证**；主闭包门禁继续关闭。下文早期准备记录保留其当时范围。
 
@@ -10,13 +10,17 @@
 
 [正式配置生成与已核对范围](docs/runtime-rendering.md)：本地/云端共用官方2.13.2输出转换，固定PG17.6/Redis8.2.1，纳入Jobservice认证及显式数据挂载。四组配置通过只读渲染/Compose解析；随后已完成[本地新实例](docs/host-instance.md)的数据复制和只读生命周期验收；全新主机安装、正式写入与云端SSH仍需继续。
 
+## 受管扫描器
+
+[固定扫描器接线与生命周期](docs/host-scanner.md)已实测：官方原镜像加入同一份宿主配置，默认登记映射到三个项目，完整扫描成功且 Core 重启后仍保留。统一 stop 包含扫描任务服务，start 可显式带 `--with-jobs`；备份同时纳入扫描器数据。镜像仓目前仍只读，推送/CI-CD及30443切换尚未完成。
+
 ## 服务证书
 
 [五年证书与消费方法](docs/certificates.md)：原 CA 保持，Harbor/入口分别用新叶密钥，有效期至 2031-09-27。批次保存在 Git 外私有目录，仅公有摘要入库。新宿主实例已使用新证书短暂运行并验收后停止；原30443服务证书不变，云端仍未经实机验证。
 
 ## 物料准备
 
-Trivy 镜像与漏洞数据库分开准备，见[扫描器离线物料与实际验收](docs/scanner-offline.md)。原镜像 Trivy0.64.1 与新版候选0.72.0均做了隔离扫描；新版已通过 Harbor2.13.2 Core/Jobservice 的私有镜像完整扫描链路，报告 Success。仅临时登记验证，正式扫描器接线、推送及 CI/CD 仍未完成。按所有者最新决定，不制作扫描器补丁镜像；已核当前扫描进程的静态链接和运行库使用，系统包告警作为已知项随官方例行升级处理，健康探针调用另行记录。Harbor 主服务先完成2.13.2迁移，升级另做，见[版本决策](docs/harbor-version-reassessment.md)。
+Trivy 镜像与漏洞数据库分开准备，见[扫描器离线物料与实际验收](docs/scanner-offline.md)。原镜像 Trivy0.64.1 与新版候选0.72.0均做了隔离扫描；新版已通过 Harbor2.13.2 Core/Jobservice 的私有镜像完整扫描链路，报告 Success。已完成受管默认登记和重启保留验证，推送及 CI/CD 仍未完成。按所有者最新决定，不制作扫描器补丁镜像；已核当前扫描进程的静态链接和运行库使用，系统包告警作为已知项随官方例行升级处理，健康探针调用另行记录。Harbor 主服务先完成2.13.2迁移，升级另做，见[版本决策](docs/harbor-version-reassessment.md)。
 
 ```bash
 python3 sunmoonai/registry-platform/prepare-artifacts.py

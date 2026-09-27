@@ -84,6 +84,13 @@ class Instance:
             expected_networks = {self.project + ('-backend' if n == 'harbor' else '-frontend') for n in spec['networks']}
             if set(result['NetworkSettings']['Networks']) != expected_networks:
                 raise ValueError('Container networks differ: ' + role)
+            if role in ('trivy', 'registry-route', 'scan-jobs'):
+                if (result['Config'].get('User') != spec['user'] or host.get('CapDrop') != ['ALL']
+                        or host.get('CapAdd') or result['Config'].get('Entrypoint') != spec['entrypoint']
+                        or (result['Config'].get('Cmd') or []) != (spec.get('command') or [])
+                        or (role == 'trivy' and result['Config'].get('Healthcheck', {}).get('Test')
+                            != spec['healthcheck']['test'])):
+                    raise ValueError('Managed scanner execution contract differs: ' + role)
             values = dict(v.split('=', 1) for v in (result['Config'].get('Env') or []))
             if any(values.get(k) != str(v) for k, v in spec.get('environment', {}).items()):
                 raise ValueError('Container environment differs; details withheld')
@@ -104,6 +111,8 @@ class Instance:
     def create(self):
         storage(self.config, minimum_gib=20)
         spec = self.immutable()
+        if self.state.get('configuration_transition_open'):
+            raise ValueError('Incomplete configuration transition requires review')
         status = self.check()
         if any(s not in ('absent', 'created', 'exited') for s in status.values()):
             raise ValueError('Creation requires all owned existing containers stopped')
@@ -127,7 +136,7 @@ class Instance:
     def stop(self):
         # Stop remains possible with low disk space; no storage capacity gate.
         errors = []
-        for role in ['proxy', 'portal', 'core', 'jobservice', 'registryctl', 'registry', 'redis', 'postgresql']:
+        for role in ['scan-jobs', 'trivy', 'registry-route', 'proxy', 'portal', 'core', 'jobservice', 'registryctl', 'registry', 'redis', 'postgresql']:
             if role not in self.state['created']:
                 continue
             try:
@@ -156,20 +165,27 @@ class Instance:
             raise ValueError('Owned services could not be stopped: ' + ','.join(errors))
         return {'stopped_and_retained': sorted(self.state['created'])}
 
-    def start(self):
+    def start(self, with_jobs=False):
         storage(self.config, minimum_gib=20)
         spec = self.immutable()
         if (not self.state.get('creation_complete') or self.state.get('stop_errors')
-                or self.state.get('metadata_acceptance_open')
+                or self.state.get('metadata_acceptance_open') or self.state.get('configuration_transition_open')
                 or not self.state.get('database_reconciled') or not self.prep['registry'].get('all_file_sha256_match')):
             raise ValueError('Reconciled database and registry content required before Harbor startup')
         for role in spec['services']:
             self.inspect(role, spec['services'][role])
         if self.inspect('jobservice')['State']['Running']:
             raise ValueError('Jobservice must stay stopped during read-only acceptance')
+        if with_jobs and (not self.prep.get('scanner') or not self.state.get('scanner_acceptance', {}).get('passed')):
+            raise ValueError('Managed Jobservice requires completed scanner acceptance')
+        if 'scan-jobs' in spec['services'] and not with_jobs and self.inspect('scan-jobs')['State']['Running']:
+            raise ValueError('Managed jobs must stay stopped during read-only startup')
         started = []
         try:
-            for role in ORDER:
+            order = ORDER + (['registry-route', 'trivy'] if self.prep.get('scanner') else [])
+            if with_jobs:
+                order.append('scan-jobs')
+            for role in order:
                 info = self.inspect(role, spec['services'][role])
                 if not info['State']['Running']:
                     docker('start', info['Id']); started.append(role)
@@ -196,7 +212,8 @@ class Instance:
             self.state['started'] = True; self.persist()
         except Exception:
             self.stop(); raise
-        return {'started': started, 'health_verified': False, 'write_enabled': False, 'entry_switched': False}
+        return {'started': started, 'health_verified': False, 'write_enabled': False, 'entry_switched': False,
+                'managed_jobservice_started': with_jobs}
 
 
 def main():
@@ -204,17 +221,20 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('action', choices=('create', 'check', 'start', 'stop'))
     p.add_argument('--config', type=Path, required=True); p.add_argument('--apply', action='store_true')
+    p.add_argument('--with-jobs', action='store_true', help='Start accepted managed Jobservice with the host stack')
     args = p.parse_args(); config = load(args.config.absolute())
+    if args.with_jobs and args.action != 'start':
+        raise ValueError('--with-jobs is only valid for start')
     if not args.apply:
         print(json.dumps({'dry_run': True, 'action': args.action, 'deployment': config['runtime']['deployment'],
-                          'start_requires_reconciliation': True, 'delete': False, 'entry_switch': False})); return
+                          'start_requires_reconciliation': True, 'with_jobs': args.with_jobs, 'delete': False, 'entry_switch': False})); return
     fd = os.open('/data/harbor/.instance-preparation.lock', os.O_RDWR | os.O_NOFOLLOW)
     with os.fdopen(fd, 'rb+') as lock:
         if os.fstat(lock.fileno()).st_uid != 0 or stat.S_IMODE(os.fstat(lock.fileno()).st_mode) != 0o600:
             raise ValueError('Unsafe lifecycle lock')
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         instance = Instance(config)
-        result = getattr(instance, args.action)()
+        result = instance.start(with_jobs=args.with_jobs) if args.action == 'start' else getattr(instance, args.action)()
         print(json.dumps({'action': args.action, 'deployment': instance.project, 'result': result}, indent=2))
 
 

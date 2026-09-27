@@ -82,3 +82,20 @@ PG17.6逻辑恢复49表10,792行与这份备份逐项一致。随后实际Harbor
 源/恢复各9个容器均停止（含initializer；jobservice为created），候选SNI也停止；旧/验证6个KIND节点继续运行、旧Harbor健康，Docker卷仍46（包含此前SNI模块检查新增3卷，本单元未新增卷）。独立盘可用30,350,438,400B，约28.27GiB；后续不得盲目再复制一整套镜像数据挤破预留空间。备份与恢复副本保留，不清理。
 
 一个Python文件AST、4个默认计划及git diff --check通过；没有新增/执行测试套件，以上是本次已授权真实备份恢复验收。脱敏证据：`sunmoonai/scripts/results/luna-harbor-host-backup.20260927.json`。没有机器外备份、云操作、30443切换、KIND重建或最终清理。
+
+## 扫描器接入后的备份范围
+
+带受管扫描器的实例，runtime归档增加整个 `scanner/`：配置、离线数据库、任务日志、登记验收收据及其变更前逻辑导出。主数据库的新逻辑导出包含受管默认登记；完整恢复沿用同一代码转换Compose宿主路径，服务内别名不变。此代码变更不等于已经再次完成整套独立恢复，具体批次必须以 `restore_verified` 为准。
+
+可选 `--registry-from-backup` 仅接收已经完整核验并独立恢复过的备份。源全停后重新计算全部镜像文件SHA、大小、所有权与权限，与旧归档清单完全相同才硬链接旧的完整 `registry.tar`。不会链接运行目录；新备份中仍有完整文件入口，可按普通文件整份外传。数据库/runtime始终新建备份，任何镜像内容变化则拒绝复用。空间预检按新增实际内容计算，仍保留20GiB及2GiB数据库/元数据预留；不得降低门槛以绕过失败。
+
+```bash
+python3 -B sunmoonai/registry-platform/host_backup.py backup \
+  --backup /data/harbor/backups/host-scanner-20260927-v1 \
+  --config sunmoonai/registry-platform/config/harbor-main-local.json \
+  --registry-from-backup /data/harbor/backups/host-main-20260927-v1
+```
+
+实际执行还需显式私有凭据路径与 `--apply`。清理时按inode引用计算释放量，不能把两个硬链接都计为能释放约17GB。所有旧备份继续保留。
+
+新增受管扫描器备份 `host-scanner-20260927-v1` 已完成（registry归档复用、runtime全新归档），独立恢复尚未执行，详见[实测结果与空间门槛](host-scanner.md#本次实测收尾2026-09-27)。不得把旧布局 restore_verified=true 沿用到新备份。

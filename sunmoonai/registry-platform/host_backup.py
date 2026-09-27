@@ -30,6 +30,12 @@ from runtime_inspect import read
 
 BASE = Path('/data/harbor/backups')
 MUTABLE = ('core-data', 'job-logs', 'redis')
+
+
+def mutable_paths(instance):
+    # Scanner cache and managed job logs live on the same admitted data disk.
+    return (*MUTABLE, 'scanner') if instance.prep.get('scanner') else MUTABLE
+
 MANIFEST_LIMIT = 64 * 1024**2
 
 
@@ -136,7 +142,7 @@ def verify_tar(path, record):
         raise ValueError('Backup file set differs')
 
 
-def cold_backup(instance, root, credentials):
+def cold_backup(instance, root, credentials, registry_from=None):
     storage(instance.config, minimum_gib=20)
     instance.immutable()
     if not instance.state.get('read_only_acceptance', {}).get('completed'):
@@ -152,7 +158,11 @@ def cold_backup(instance, root, credentials):
             directory(path)
         if path.stat().st_uid != 0 or path.stat().st_mode & 0o077:
             raise ValueError('Private root-owned backup parent required')
-    source_bytes = sum(i.st_size for _, i in members(instance.root, ('registry', *MUTABLE)) if stat.S_ISREG(i.st_mode))
+    reused = verify_backup(registry_from) if registry_from is not None else None
+    if reused is not None and not reused.get('restore_verified'):
+        raise ValueError('Registry reuse requires an independently restored backup')
+    backup_names = mutable_paths(instance) if reused is not None else ('registry', *mutable_paths(instance))
+    source_bytes = sum(i.st_size for _, i in members(instance.root, backup_names) if stat.S_ISREG(i.st_mode))
     capacity = os.statvfs(BASE)
     if capacity.f_bavail * capacity.f_frsize < source_bytes + 22 * 1024**3:
         raise ValueError('Backup must leave 20 GiB plus 2 GiB database/metadata allowance')
@@ -213,8 +223,30 @@ def cold_backup(instance, root, credentials):
     # Registry tar entries must be relative to the registry root (same restore format).
     registry_root = instance.root / 'registry'
     print('Source fully stopped; copying registry and private runtime, then rereading all archive content', flush=True)
-    state['registry'] = archive_tree(registry_root, [p.name for p in registry_root.iterdir()], root / 'volumes/registry.tar')
-    names = set(instance.prep['immutable_files']) | set(MUTABLE)
+    if reused is None:
+        state['registry'] = archive_tree(registry_root, [p.name for p in registry_root.iterdir()], root / 'volumes/registry.tar')
+    else:
+        # Only immutable, fully revalidated archive bytes may share an inode.
+        # The live registry never shares an inode with a backup archive.
+        source_archive = registry_from / 'volumes/registry.tar'
+        expected = reused['registry']; actual = {}
+        for path, info in members(registry_root, [p.name for p in registry_root.iterdir()]):
+            if stat.S_ISREG(info.st_mode):
+                actual[str(path.relative_to(registry_root))] = {
+                    'bytes': info.st_size, 'sha256': sha(path), 'uid': info.st_uid,
+                    'gid': info.st_gid, 'mode': stat.S_IMODE(info.st_mode)}
+        if actual != expected['files']:
+            raise ValueError('Live registry differs; cannot reuse frozen archive')
+        if (source_archive.resolve() != source_archive or not source_archive.is_file()
+                or source_archive.stat().st_dev != (root / 'volumes').stat().st_dev
+                or sha(source_archive) != expected['sha256']):
+            raise ValueError('Registry archive identity/filesystem changed')
+        os.link(source_archive, root / 'volumes/registry.tar', follow_symlinks=False)
+        state['registry'] = copy.deepcopy(expected)
+        state['registry_archive_reused_from'] = str(registry_from)
+        state['registry_reuse_kind'] = 'Full self-contained immutable tar; hardlink, not live data'
+
+    names = set(instance.prep['immutable_files']) | set(mutable_paths(instance))
     names.update(('config/core/certificates', 'config/shared/trust-certificates'))
     state['runtime'] = archive_tree(instance.root, names, root / 'runtime.tar')
     state['files'] = {str(p.relative_to(root)): {'sha256': sha(p), 'bytes': p.stat().st_size}
@@ -346,11 +378,13 @@ def main():
     p.add_argument('action', choices=('backup', 'verify', 'restore-prepare', 'record-restore'))
     p.add_argument('--backup', required=True, type=Path); p.add_argument('--config', type=Path)
     p.add_argument('--docker-credentials', type=Path); p.add_argument('--deployment')
+    p.add_argument('--registry-from-backup', type=Path, help='Reuse identical immutable registry tar from verified/restored backup')
     p.add_argument('--apply', action='store_true'); args = p.parse_args()
     root = backup_path(args.backup)
     if not args.apply:
         print(json.dumps({'dry_run': True, 'action': args.action, 'backup': str(root),
-                          'read_only_stopped_source_only': True, 'delete': False, 'off_machine_copy': False})); return
+                          'read_only_stopped_source_only': True, 'delete': False, 'off_machine_copy': False,
+                          'registry_from_backup': str(args.registry_from_backup) if args.registry_from_backup else None})); return
     fd = os.open('/data/harbor/.instance-preparation.lock', os.O_RDWR | os.O_NOFOLLOW)
     with os.fdopen(fd, 'rb+') as lock:
         if os.fstat(lock.fileno()).st_uid != 0 or stat.S_IMODE(os.fstat(lock.fileno()).st_mode) != 0o600:
@@ -359,7 +393,8 @@ def main():
         if args.action == 'backup':
             if not args.config or not args.docker_credentials:
                 raise ValueError('Explicit source config and private existing credentials required')
-            result = cold_backup(Instance(load(args.config.absolute())), root, args.docker_credentials.absolute())
+            result = cold_backup(Instance(load(args.config.absolute())), root, args.docker_credentials.absolute(),
+                                 backup_path(args.registry_from_backup) if args.registry_from_backup else None)
         elif args.action == 'restore-prepare':
             if not args.deployment:
                 raise ValueError('Explicit new deployment name required')

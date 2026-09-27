@@ -1,3 +1,13 @@
+## 最新续接：2026-09-27 受管官方扫描器、统一启停与完整备份已通过
+
+基线cee60c87e7c3cd281735d6d661b8e3ce8d3451f5；本地luna、不push。遵照所有者不做自制补丁镜像、优先集群迁移；官方scanner镜像不变。新host_scanner/host_scanner_verify将trivy、内部registry-route和独立队列scan-jobs纳入宿主Compose、启停和备份；原8容器不重建，旧jobservice停止保留。
+
+- 默认登记sunmoon-trivy，UUID07d3f625-ba80-11f1-b91d-a6673bbf47a3；实际扫描150发现Success、3项目映射相同，Core重启仍保留。报告SHA8246529b6a40832f270a8dabd173736b5a08512121adf96ab35e239310396f49。第一次登记名含空格触发Trivy凭据列表按空格拆分，v2更名保留UUID通过；v1失败与私有日志保留。prepare首轮公开锁误走私有权限读取失败，严格复核旧配置/缓存后续接。均非版本不兼容。
+- 统一start --with-jobs真实通过，之后统一stop；main11服务+初始化器停止，旧kind/136六节点running，卷仍46。五年证书严格验证，registry物理RO、APIreadonly恢复；30443仍旧生产。没有推镜像或清理。无后台任务。
+- 新冷备份/data/harbor/backups/host-scanner-20260927-v1 complete=true；49表11156行；4400镜像文件17.85GB逐文件一致后硬链接已独立恢复的旧备份完整registry.tar，非链接实时数据。runtime新归档2.993GB含scanner/全目录。新备份restore_verified=false，另行独立恢复未做，--existing-registration分支仅静态/默认计划。数据盘可用24361865216B，不能在当前余量内再复制完整恢复实例并留20GiB；不可偷降门槛/提前清理。归档硬链接清理不能重复计回收量。
+- 新部署preparation.scanner中registration_managed=false是准备时旧字段，不代表已登记失败；实际登记状态以runtime-state.scanner_acceptance与v2回执为准。后续代码改为registration_separate_step，不改写旧备份。
+- 公共结果scripts/results/luna-harbor-managed-scanner.20260927.json；docs/host-scanner.md含失败修正与边界。下一步可写迁移/推拉CI-CD、正式入口窗口、main双挂载及重建独立性、云共享代码闭包和自启。最后清理仍必做，旧节点/卷/唯一备份保护。inbox仍旧kind/原kubeconfig/kubectl1.27.3，不通知整体做完。
+
 ## 最新续接：2026-09-27 所有者停止自制扫描器补丁，运行观察与身份迁移核对完成
 
 基线af0149c091d7a45b1b7c49a1bb73d78f0aeb588c；本地luna、不push。所有者最新要求：不要自行打扫描器系统包补丁/自制镜像，核运行调用，未用于当前路径的问题作为已知项随官方升级，优先集群迁移。此决定覆盖前段“先安全补丁再迁移”的自定顺序；不要继续那条路线，也不要要求零CVE。

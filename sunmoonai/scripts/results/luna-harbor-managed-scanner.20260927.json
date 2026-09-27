@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "date": "2026-09-27",
+  "deployment": "sunmoon-harbor-main-20260927",
+  "scanner": {
+    "official_image_unchanged": true,
+    "manifest": "sha256:215c07b71c37fc7fc16e02d9185d936dcb8884a80e810817c2cd058bbd7c4e98",
+    "name": "sunmoon-trivy",
+    "registration_uuid": "07d3f625-ba80-11f1-b91d-a6673bbf47a3",
+    "projects_verified": 3,
+    "survives_core_restart": true,
+    "scan_status": "Success",
+    "vulnerability_occurrences": 150,
+    "report_sha256": "8246529b6a40832f270a8dabd173736b5a08512121adf96ab35e239310396f49"
+  },
+  "lifecycle": {
+    "start_with_jobs_passed": true,
+    "all_owned_services_stopped": true,
+    "old_kind_nodes_running": true,
+    "docker_volume_count": 46
+  },
+  "backup": {
+    "path": "/data/harbor/backups/host-scanner-20260927-v1",
+    "complete": true,
+    "restore_verified": false,
+    "manifest_sha256": "99ee05f6d99187b3c973153f42d4ee96541c94fc2092a2c7a6090b18ad415995",
+    "registry_files": 4400,
+    "registry_archive_bytes": 17868021760,
+    "registry_archive_sha256": "db2fad362a3e9b5d205e55764dc3ad8a675025e7a666ec759e53a5e8c9fbea3c",
+    "registry_archive_hardlinks": 2,
+    "runtime_archive_bytes": 2993111040,
+    "runtime_archive_sha256": "07802eacf951e6fb69790227d75bdd2abda755d9435f9cf04da83b6e6776931b",
+    "tables": 49,
+    "rows": 11156,
+    "database_dump_sha256": "36e55949675738c6c67c38c2ba36f6a4d7ae6ada922e3117e1aabb9eb8a4ba2b"
+  },
+  "data_free_bytes": 24361865216,
+  "registry_write_enabled": false,
+  "entry_switched": false,
+  "cleanup_performed": false,
+  "cloud_verified": false
+}
