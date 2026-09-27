@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "complete": true,
+  "chart_version": "41.6.0",
+  "traefik_version": "v3.7.13",
+  "kubernetes_version": "1.36.4",
+  "preparation": {
+    "helm_version": "v3.19.0+g3d8990f",
+    "helm_sha256": "e4722a77de9df824214aaf19d43687c49f7cbcf3b107905acea002173777d486",
+    "yaml_version": "6.0.1",
+    "source_files": [
+      {
+        "path": "sunmoonai/ingress-platform/bootstrap/render.py",
+        "sha256": "c84ff84bfbf645cbd8dfc7cb56bc1a251974886eee6dcd5584342267630b7259"
+      },
+      {
+        "path": "sunmoonai/ingress-platform/bootstrap/values.json",
+        "sha256": "2a66b8688d010388cda1773b988d02ac64dcf363402b06f4227f3bb9a139d240"
+      },
+      {
+        "path": "sunmoonai/infrastructure/materials/ingress-images.lock.json",
+        "sha256": "5d559edbb81761d69277d9a6cee4a6c433e689c26efb01feff91ac2c3c0ed08c"
+      },
+      {
+        "path": "sunmoonai/ingress-platform/bootstrap/sources.lock.json",
+        "sha256": "b3ae66957b9a245740988f59f36c87de7e736670e42004481d5ffe32e805b1e9"
+      }
+    ],
+    "chart_sha256": "cd7254ea853da73bdb88edc896f079b88d43ffa0bfe699fdbf21081361eac365",
+    "api_calls": false
+  },
+  "archives": [
+    {
+      "material_path": "releases/traefik-3.7.13-chart-41.6.0-linux-amd64/charts/traefik-41.6.0.tgz",
+      "bytes": 266558,
+      "sha256": "cd7254ea853da73bdb88edc896f079b88d43ffa0bfe699fdbf21081361eac365"
+    }
+  ],
+  "files": [
+    {
+      "name": "crds.json",
+      "material_path": "releases/traefik-3.7.13-chart-41.6.0-linux-amd64/rendered/crds.json",
+      "bytes": 301011,
+      "sha256": "c761fcc5d11732fc8d2494e7afc9666e738ecabfacb44c806e205bcf09aea75d",
+      "objects": 10
+    },
+    {
+      "name": "dev.json",
+      "material_path": "releases/traefik-3.7.13-chart-41.6.0-linux-amd64/rendered/dev.json",
+      "bytes": 16429,
+      "sha256": "6b693a14091a5eeffda87d097b03a458b06b028415ad9dd8d2a620945756f2dd",
+      "objects": 8
+    },
+    {
+      "name": "prod.json",
+      "material_path": "releases/traefik-3.7.13-chart-41.6.0-linux-amd64/rendered/prod.json",
+      "bytes": 16453,
+      "sha256": "682f7cf63ace4f02c3657901bcafd1f2188ec5a4e606a1748c3939986fe1aac4",
+      "objects": 8
+    }
+  ]
+}

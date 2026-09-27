@@ -1,0 +1,176 @@
+{
+  "image": {
+    "registry": "docker.io",
+    "repository": "library/traefik",
+    "tag": "v3.7.13",
+    "pullPolicy": "Never"
+  },
+  "global": {
+    "checkNewVersion": false,
+    "sendAnonymousUsage": false
+  },
+  "deployment": {
+    "kind": "Deployment",
+    "replicas": 1
+  },
+  "service": {
+    "type": "NodePort",
+    "spec": {
+      "externalTrafficPolicy": "Cluster"
+    }
+  },
+  "ports": {
+    "traefik": {
+      "port": 8080,
+      "expose": {
+        "default": false
+      }
+    },
+    "metrics": {
+      "port": 9100,
+      "expose": {
+        "default": false
+      }
+    },
+    "web": {
+      "port": 8081,
+      "expose": {
+        "default": true
+      },
+      "exposedPort": 80,
+      "nodePort": 30080,
+      "http": {
+        "sanitizePath": true
+      }
+    },
+    "websecure": {
+      "port": 8443,
+      "expose": {
+        "default": true
+      },
+      "exposedPort": 443,
+      "nodePort": 30443,
+      "http": {
+        "sanitizePath": true
+      }
+    },
+    "postgresql": {
+      "port": 5432,
+      "expose": {
+        "default": true
+      },
+      "exposedPort": 30444,
+      "nodePort": 30444,
+      "protocol": "TCP"
+    },
+    "mongodb": {
+      "port": 27017,
+      "expose": {
+        "default": true
+      },
+      "exposedPort": 30445,
+      "nodePort": 30445,
+      "protocol": "TCP"
+    },
+    "redis": {
+      "port": 6379,
+      "expose": {
+        "default": true
+      },
+      "exposedPort": 30446,
+      "nodePort": 30446,
+      "protocol": "TCP"
+    }
+  },
+  "ingressRoute": {
+    "dashboard": {
+      "enabled": false
+    }
+  },
+  "ingressClass": {
+    "enabled": true,
+    "name": "traefik",
+    "isDefaultClass": true
+  },
+  "persistence": {
+    "enabled": false
+  },
+  "certificatesResolvers": {},
+  "hostNetwork": false,
+  "nodeSelector": {},
+  "tolerations": [],
+  "providers": {
+    "kubernetesCRD": {
+      "enabled": true,
+      "allowCrossNamespace": false,
+      "allowExternalNameServices": false
+    },
+    "kubernetesIngress": {
+      "enabled": true,
+      "allowExternalNameServices": false
+    },
+    "kubernetesGateway": {
+      "enabled": false
+    },
+    "kubernetesIngressNGINX": {
+      "enabled": false
+    }
+  },
+  "tlsStore": {
+    "default": {
+      "defaultCertificate": {
+        "secretName": "traefik-tls-secret"
+      }
+    }
+  },
+  "resources": {
+    "requests": {
+      "cpu": "50m",
+      "memory": "64Mi",
+      "ephemeral-storage": "128Mi"
+    },
+    "limits": {
+      "cpu": "200m",
+      "memory": "256Mi",
+      "ephemeral-storage": "4Gi"
+    }
+  },
+  "securityContext": {
+    "allowPrivilegeEscalation": false,
+    "capabilities": {
+      "drop": [
+        "ALL"
+      ]
+    },
+    "readOnlyRootFilesystem": true
+  },
+  "podSecurityContext": {
+    "runAsUser": 65532,
+    "runAsGroup": 65532,
+    "runAsNonRoot": true,
+    "seccompProfile": {
+      "type": "RuntimeDefault"
+    }
+  },
+  "additionalArguments": [
+    "--entrypoints.web.transport.respondingTimeouts.readTimeout=3600s",
+    "--entrypoints.web.transport.respondingTimeouts.writeTimeout=3600s",
+    "--entrypoints.web.transport.respondingTimeouts.idleTimeout=3600s",
+    "--entrypoints.websecure.transport.respondingTimeouts.readTimeout=3600s",
+    "--entrypoints.websecure.transport.respondingTimeouts.writeTimeout=3600s",
+    "--entrypoints.websecure.transport.respondingTimeouts.idleTimeout=3600s"
+  ],
+  "versionOverride": "v3.7.13",
+  "core": {
+    "strictTLSOptions": true
+  },
+  "log": {
+    "format": "json",
+    "level": "INFO"
+  },
+  "accessLog": {
+    "enabled": true,
+    "format": "json",
+    "bufferingSize": 100
+  }
+}

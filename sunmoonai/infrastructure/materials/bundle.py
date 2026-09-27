@@ -105,6 +105,18 @@ def resolve(manifest):
             raise ValueError('Ingress image lock incomplete or unsupported')
         for record in ingress['images']:
             add('ingress', record, record['material_path'])
+    if 'ingress_resource_lock' in data:
+        child = data['ingress_resource_lock']
+        resources = read_lock(below(manifest.parent, child['path']), child['sha256'])
+        if (resources.get('schema') != 1 or resources.get('complete') is not True
+                or resources.get('traefik_version') != 'v' + data['versions']['traefik']
+                or resources.get('chart_version') != data['versions']['traefik_chart']
+                or resources.get('kubernetes_version') != data['versions']['kubernetes']):
+            raise ValueError('Ingress resource versions differ from root lock')
+        if {r['name'] for r in resources['files']} != {'crds.json', 'dev.json', 'prod.json'}:
+            raise ValueError('Expected CRDs and both ingress profiles')
+        for record in resources['files'] + resources['archives']:
+            add('ingress', record, record['material_path'])
     if "os_dependency_lock" in data:
         child = data["os_dependency_lock"]
         if not HEX.fullmatch(child["sha256"]):

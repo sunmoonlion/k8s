@@ -25,7 +25,7 @@ from tls_resources import load_bundle as load_tls_bundle
 
 
 def resource_spec(phase, profile, connections, data):
-    step = {'namespaces': '07', 'health': '08', 'storage': '09', 'taints': '10', 'certificates': '12'}[phase]
+    step = {'namespaces': '07', 'health': '08', 'storage': '09', 'taints': '10', 'certificates': '12', 'ingress': '13'}[phase]
     enabled = os.environ.get(f'SM_STEP{step}_ENABLED')
     if enabled not in ('true', 'false'):
         raise ValueError('Explicit resource step enable/disable required')
@@ -60,6 +60,10 @@ def resource_spec(phase, profile, connections, data):
                 or os.environ.get('SM_TLS_ADDITIONAL_CLUSTERS')):
             raise ValueError('Cluster bootstrap cannot regenerate CA or distribute to additional clusters')
         spec['bundle_configured'] = bool(os.environ.get('SM_TLS_BUNDLE_FILE'))
+    if phase == 'ingress':
+        spec['profile'] = os.environ.get('SM_INGRESS_PROFILE', '')
+        if spec['profile'] not in ('dev', 'prod'):
+            raise ValueError('Explicit ingress dev/prod profile required')
     if phase == 'storage':
         def flag(key):
             value = os.environ.get('SM_STORAGE_' + key)
@@ -154,13 +158,13 @@ def call(c, files, release, phase, request):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--phase', choices=('init', 'cni', 'join', 'namespaces', 'health', 'storage', 'taints', 'registry', 'certificates'), required=True)
+    parser.add_argument('--phase', choices=('init', 'cni', 'join', 'namespaces', 'health', 'storage', 'taints', 'registry', 'certificates', 'ingress'), required=True)
     action = parser.add_mutually_exclusive_group()
     action.add_argument('--apply', action='store_true')
     action.add_argument('--verify', action='store_true', help='Inspect registry or TLS resources without repairs')
     args = parser.parse_args()
-    if args.verify and args.phase not in ('registry', 'certificates'):
-        raise ValueError('--verify is only supported for registry/certificate consumers')
+    if args.verify and args.phase not in ('registry', 'certificates', 'ingress'):
+        raise ValueError('--verify is only supported for registry/certificate/ingress consumers')
     directory = Path(__file__).resolve().parent
     manifest = directory / 'cluster-artifacts.lock.json'
     data, entries = resolve(manifest)
@@ -170,7 +174,7 @@ def main():
     master = next(n for n in profile['nodes'] if n['role'] == 'master')
     configured_version = os.environ.get('SM_KUBERNETES', '').removeprefix('v')
     configured_calico = os.environ.get('SM_CALICO', '').removeprefix('v')
-    resource = args.phase in ('namespaces', 'health', 'storage', 'taints', 'certificates')
+    resource = args.phase in ('namespaces', 'health', 'storage', 'taints', 'certificates', 'ingress')
     enabled, spec = resource_spec(args.phase, profile, connections, data) if resource else (True, None)
     registry = None
     if args.phase == 'registry':
@@ -178,9 +182,14 @@ def main():
             raise ValueError('Registry consumer requires explicit enable/disable and all-node target')
         enabled = os.environ['SM_STEP11_ENABLED'] == 'true'
         registry = registry_profile(profile['nodes'], connections)
-    if args.phase == 'certificates':
+    if args.phase in ('certificates', 'ingress'):
         registry = registry_profile(profile['nodes'], connections)
-    order = {'certificates': ['explicit private TLS input descriptor and public CA pin',
+    order = {'ingress': ['locked chart/CRDs/image and explicit dev/prod profile',
+                         'pinned cluster UID and active owned namespace/TLS Secret',
+                         'all resource ownership and NodePort/default-class conflicts',
+                         'create missing CRDs, wait Established, create missing resources only',
+                         'Deployment readiness; actual HTTP/TCP/TLS acceptance separate'],
+             'certificates': ['explicit private TLS input descriptor and public CA pin',
                               'verify chain, SANs, lifetime and matching private key on management and target hosts',
                               'pinned cluster identity and all namespace/Secret conflicts',
                               'create missing TLS Secrets only; never regenerate CA or overwrite',
@@ -230,11 +239,13 @@ def main():
     if args.phase == 'storage' and any(p['enabled'] and not re.fullmatch(
             r'[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}', p['uuid']) for p in spec['paths'].values()):
         raise ValueError('Every eligible cloud node needs a pre-recorded data filesystem UUID; no SSH started')
-    if args.phase in ('registry', 'certificates'):
+    if args.phase in ('registry', 'certificates', 'ingress'):
         registry = registry_profile(profile['nodes'], connections, apply=True)
     if args.phase == 'certificates':
         spec['tls'] = load_tls_bundle(os.environ.get('SM_TLS_BUNDLE_FILE', ''), registry)
         spec['verify_only'] = args.verify
+    if args.phase == 'ingress':
+        spec.update(registry=registry, verify_only=args.verify)
     files, release = controls(directory)
     invoke = lambda name, phase, extra=None: call(connections[name], files, release, phase, {'profile': profile, **(extra or {})})
     if args.phase == 'init':

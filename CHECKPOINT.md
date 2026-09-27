@@ -1,3 +1,18 @@
+## 最新续接：2026-09-27 Traefik 3.7.13 物料与 step13 共用入口
+
+基线 `a8a1a87f4052cf2031033e25e3e75b1439440020`，本地 luna，不 push。开始时 bootstrap/render.py、values.json 是本助手未提交原3.5.2试作，Harbor方案是此前确认范围的文档修改；均纳入本单元，未覆盖他人工作。交付为包含本段的提交。
+
+- 所有者明确批准 Traefik3.7.13/chart41.6.0；随后将版本冻结范围收窄为数据库/数据引擎，其他组件按必要性评估。Harbor从Bitnami改宿主官方方式，应用版本实际仍2.13.2；PG17.6、Redis8.2.1不变。不要误报Harbor已升级或已正式切换。
+- 官方chart索引固定SHA，经东京下载266558B包；DockerHub固定index/amd64manifest/config后拉取导出55225344B。公开下载目录东京 /home/zym/sunmoon-traefik-20260927-v1；只传公开下载脚本/源清单。回传唯一物料根 releases/traefik-3.7.13-chart-41.6.0-linux-amd64/；6blobs/4layers本机全核验。原3.5.2包/旧chart均保留，本轮无清理。
+- 失败留痕：远端zsh未引号的=https展开失败；Docker把docker.io/library/traefik@digest缩写成traefik@digest，修正规范等价化但不放宽摘要；第二次重复pull碰8GiB余量门禁，改先复用已有完全同摘要镜像，不抬低门槛，export仍留6GiB。v1/v2/v3公开脚本均留远端，无容器启动、无云安装。
+- 新bootstrap/sources.lock.json + values.json + render.py：只读固定官方chart离线生成10 Proxy CRDs、dev/prod各8资源；Helm3.19.0/PyYAML只作为现有准备工具，其自身离线供给未闭包。新版日志和HTTP结构、原生image.digest、默认TLS namespace、strictTLSOptions、有限crossProviderNamespaces已接。prod3副本/dev1，NodePort30080/30443/30444–30446；不含PVC/ACME/hostNetwork/Hub/Gateway。实际业务兼容验收未做。
+- ingress-images/resources两份子锁由主锁SHA绑定，bundle ingress范围含5文件。step11消费新版本，registry_consumer不再硬写3.5.2。主锁共133文件1113542643B全SHA核过，closure_complete=false保留，pending为KIND存储/TLS/镜像及正式建群、独立Harbor主机生命周期/pre-step11/平台接线。
+- ingress_resources.py是本地/云共用实现；显式UID、受管Active namespace、已安装TLS Secret再核crypto、全节点Ready、端口/defaultClass及资源归属全预检；缺项create，CRDEstablished后再查自定义资源并创建；等待Deployment代际和全部副本就绪。无接管/更新/删除/Helm卸载/宿主iptables/Harbor动作。verify不补建，真实路由/TLS握手结果明确false；Secret私钥只读内存，TLS诊断不打印。
+- 云step13改短包装→cluster-step/control/node；公共SSH控制白名单20文件，含ingress模块/子锁；默认只打印，总控显式--apply。总配置只改Step13段，其他字节终检与基线精确比对不变。云上未经实机验证。
+- ingress_local.py需要显式锁定kubectl、0600 kubeconfig、expectedUID、CA路径/SHA，核TLS/API版本，每次API前核UID；受closure门禁。平台总入口按--cluster KIND/C1/C2选择适配器，旧deploy-traefik入口exec转发，历史正文不执行。旧平台conf/values不再控制新版清单；C3暂无此适配器。KIND节点镜像导入、存储/TLS适配和正式main建群尚未接通，不宣称本地已部署。
+- 证据scripts/results/luna-ingress-bootstrap.20260927.json：9Python+远端payload AST、4改动Shell bash-n/ShellCheck、主conf及历史兼容脚本bash-n；C1/C2共26个steps计划加6个平台/旧入口计划；133SHA与OCI图、两份18资源加载检查。仅静态/物料/只打印，未加跑测试套件、未连接集群API、未切换入口。复用方法docs/ingress-bootstrap.md，唯一物料手册已补本批。
+- 下一步继续正式Harbor可复用生命周期/五年叶证书/主机前置步骤、KIND适配与SNI/main、推拉认证/CI-CD/备份/重建独立性。旧Harbor30443与inbox保持，未新核现场健康；main未建。最终清理必须做且最后，旧节点/卷继续保护；整体未完成，不能通知“luna做完了”。无后台任务，无用户指定预算。
+
 # Luna 工作检查点
 
 ## 最新续接：2026-09-27 step12 已签发入口证书消费

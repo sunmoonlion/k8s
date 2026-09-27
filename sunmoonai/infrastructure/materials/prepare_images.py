@@ -49,8 +49,21 @@ def raw_manifest(root, reference, expected):
     raise RuntimeError('Registry manifest bytes differ from descriptor')
 
 
-def prepare(root, manifest):
-    state_path = root / 'kubeadm-images.lock.json'
+def canonical_reference(value):
+    """Docker abbreviates docker.io/library; preserve the exact digest."""
+    repository, separator, digest = value.partition('@')
+    if not separator or not re.fullmatch(r'sha256:[0-9a-f]{64}', digest):
+        raise RuntimeError('Expected a repository with exact SHA256 digest')
+    first = repository.split('/', 1)[0]
+    if '/' not in repository or ('.' not in first and ':' not in first and first != 'localhost'):
+        repository = 'docker.io/' + repository
+    if repository.startswith('docker.io/') and repository.count('/') == 1:
+        repository = 'docker.io/library/' + repository.split('/', 1)[1]
+    return repository + '@' + digest
+
+
+def prepare(root, manifest, state_name='kubeadm-images.lock.json'):
+    state_path = root / state_name
     state = json.loads(state_path.read_text()) if state_path.exists() else {
         'schema': 1, 'batch': manifest['batch'], 'sources': manifest['kubeadm_images'],
         'platform': 'linux/amd64', 'images': [], 'complete': False,
@@ -92,12 +105,16 @@ def prepare(root, manifest):
         # First interrupted preparation called this config digest docker_image_id.
         if 'config_digest' not in item:
             item['config_digest'] = item['docker_image_id']
-        run(root, ['docker', 'pull', '--platform', 'linux/amd64', item['reference']], timeout=600)
+        local = subprocess.run(['docker', 'image', 'inspect', item['reference']],
+                               capture_output=True, timeout=30)
+        if local.returncode:
+            run(root, ['docker', 'pull', '--platform', 'linux/amd64', item['reference']], timeout=600)
         actual = json.loads(run(root, ['docker', 'image', 'inspect', item['reference']]))[0]
         # Classic Docker exposes the config digest as ID; containerd image store
         # exposes the platform manifest digest. Verify both identities explicitly.
         if (actual['Id'] not in {item['config_digest'], item['platform_digest']}
-                or item['reference'] not in actual.get('RepoDigests', [])
+                or canonical_reference(item['reference']) not in {
+                    canonical_reference(ref) for ref in actual.get('RepoDigests', [])}
                 or actual['Architecture'] != 'amd64' or actual['Os'] != 'linux'):
             raise RuntimeError('Pulled image config/platform differs from locked manifest')
         item['docker_image_id'] = actual['Id']
@@ -131,10 +148,19 @@ def main():
     parser.add_argument('--manifest', type=Path, required=True)
     parser.add_argument('--root', type=Path, required=True)
     parser.add_argument('--apply', action='store_true')
+    parser.add_argument('--profile', choices=('kubeadm', 'traefik'), default='kubeadm')
     args = parser.parse_args()
     manifest = json.loads(args.manifest.read_text())
-    if not manifest['kubeadm_images'] or any(not re.fullmatch(r'registry\.k8s\.io/[a-z0-9/_-]+:[a-zA-Z0-9.-]+', i)
-                                           for i in manifest['kubeadm_images']):
+    state_name = 'kubeadm-images.lock.json'
+    if args.profile == 'traefik':
+        if (manifest.get('public_images') != ['docker.io/library/traefik:v3.7.13']
+                or manifest.get('batch') != 'traefik-3.7.13-chart-41.6.0-linux-amd64'):
+            raise RuntimeError('Expected explicitly approved Traefik public image batch')
+        manifest = {**manifest, 'kubeadm_images': manifest['public_images']}
+        state_name = 'traefik-images.lock.json'
+    if not manifest['kubeadm_images'] or (args.profile == 'kubeadm' and any(
+            not re.fullmatch(r'registry\.k8s\.io/[a-z0-9/_-]+:[a-zA-Z0-9.-]+', i)
+            for i in manifest['kubeadm_images'])):
         raise RuntimeError('Only explicit public kubeadm image references accepted')
     root = args.root.expanduser().absolute()
     if root.resolve() != root:
@@ -152,7 +178,7 @@ def main():
         raise RuntimeError('Symlink lock refused')
     with lock.open('a') as stream:
         fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        prepare(root, manifest)
+        prepare(root, manifest, state_name)
 
 
 if __name__ == '__main__':

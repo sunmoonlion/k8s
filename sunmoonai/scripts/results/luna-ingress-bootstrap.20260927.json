@@ -1,0 +1,1202 @@
+{
+  "date": "2026-09-27",
+  "base": "a8a1a87f4052cf2031033e25e3e75b1439440020",
+  "unit": "Traefik3.7.13 material and common ingress step13",
+  "scope": "Static, offline material and print-only plans; no test suite or runtime deployment",
+  "versions": {
+    "kubernetes": "1.36.4",
+    "calico": "3.32.2",
+    "nerdctl": "2.3.5",
+    "containerd": "2.3.4",
+    "runc": "1.4.3",
+    "crictl": "1.36.0",
+    "traefik": "3.7.13",
+    "traefik_chart": "41.6.0"
+  },
+  "cloud_status": "未经实机验证",
+  "closure_complete": false,
+  "files": [
+    {
+      "scope": "tools",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/bin/kubeadm",
+      "sha256": "10d054585907f2c8bb823c84f6a66b3bd2a474c3d795475f04e9a44f78650fe6",
+      "bytes": 73040034
+    },
+    {
+      "scope": "tools",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/bin/kubelet",
+      "sha256": "cf2562db46c48ab84cc3791540778ee7fb1a0a008529adbb434723dd02ed8b4b",
+      "bytes": 60166409
+    },
+    {
+      "scope": "tools",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/bin/kubectl",
+      "sha256": "8b8f088da2dab964f853b38464033b1be15ede2839eca751482357c45abdd05a",
+      "bytes": 59572386
+    },
+    {
+      "scope": "tools",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/tars/crictl-v1.36.0-linux-amd64.tar.gz",
+      "sha256": "83855e114566a8a8c44c548d515670f51de3a5e1da8b2effb59870e2f10c25a3",
+      "bytes": 19263420
+    },
+    {
+      "scope": "tools",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/tars/nerdctl-2.3.5-linux-amd64.tar.gz",
+      "sha256": "de3206aeb7cbd5f20f5fb1f55c1e3bf2db1be567812a8a3f5e65eba2488347ee",
+      "bytes": 11744522
+    },
+    {
+      "scope": "tools",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/tars/containerd-2.3.4-linux-amd64.tar.gz",
+      "sha256": "9d68969855fbf676cdb8ed758e420fb048d61f984f61de3e53eddfebe484d168",
+      "bytes": 34566765
+    },
+    {
+      "scope": "tools",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/bin/runc-1.4.3.amd64",
+      "sha256": "f6ae8efc0fa40079e1475e97cbe9d1bd3f106a28d6af78a11d9f1bd565515e60",
+      "bytes": 12245392
+    },
+    {
+      "scope": "images",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/images/kube-apiserver-linux-amd64.tar",
+      "sha256": "2294af8927d0a086fdd760f66c45d7799929f14ced3b0d73598c18d90bf11a59",
+      "bytes": 29823488
+    },
+    {
+      "scope": "images",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/images/kube-controller-manager-linux-amd64.tar",
+      "sha256": "3cdec30d23943afd17ed3f65cda95886342157c3c54e0b8f2474d13d4749d92c",
+      "bytes": 26492416
+    },
+    {
+      "scope": "images",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/images/kube-scheduler-linux-amd64.tar",
+      "sha256": "8b267dd83a27ba284ccaac239fed4494b0bf52555d7451a3a403218f0ef75a3d",
+      "bytes": 20515840
+    },
+    {
+      "scope": "images",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/images/kube-proxy-linux-amd64.tar",
+      "sha256": "c64f759b5e9abcbacabe951d54fd93e0acc238207ad6e42410b99df7bbc474dd",
+      "bytes": 30062080
+    },
+    {
+      "scope": "images",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/images/coredns-linux-amd64.tar",
+      "sha256": "6b34bf73b17a760a2e3af5bd36d2e858c028250877d3235cc06dbb29a58cf308",
+      "bytes": 23272960
+    },
+    {
+      "scope": "images",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/images/pause-linux-amd64.tar",
+      "sha256": "c759798a47dcad1027d2de2fc1f18729fe104a0bdd5368c8a51dbd1675c98667",
+      "bytes": 325120
+    },
+    {
+      "scope": "images",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/images/etcd-linux-amd64.tar",
+      "sha256": "30fe1aca6a05dcd1fde9250430b7bd6ea5ae321554ce8efc66c3bc35e7c80695",
+      "bytes": 22905344
+    },
+    {
+      "scope": "calico",
+      "path": "releases/kind-1.36.4-calico-3.32.2-linux-amd64/charts/calico-upstream.yaml",
+      "sha256": "a8c828a06a87c629a282ebbc424895b77f3a030251993e41ea400a743675bb02",
+      "bytes": 350324
+    },
+    {
+      "scope": "calico",
+      "path": "releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-cni-linux-amd64.tar",
+      "sha256": "431f4527245e2a0845537125cab0825070c1e99ea6e099a4a45f5e461378b435",
+      "bytes": 69878784
+    },
+    {
+      "scope": "calico",
+      "path": "releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-node-linux-amd64.tar",
+      "sha256": "bfde5f35df29f29c0322a199f9b990b30b303223e8abbc894c1209ea0767889c",
+      "bytes": 123398656
+    },
+    {
+      "scope": "calico",
+      "path": "releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-controllers-linux-amd64.tar",
+      "sha256": "c5913c71b51a45f51ce555b3f64446ef3151b65adc757dacfdf130a07a10ff14",
+      "bytes": 63201280
+    },
+    {
+      "scope": "configuration",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/configuration/containerd.toml",
+      "sha256": "1e6ced7e7ff158259a1159f966a83d3b19c91b2869f3d15e41d1feb7610a93a7",
+      "bytes": 1038
+    },
+    {
+      "scope": "configuration",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/configuration/containerd.service",
+      "sha256": "23b28b41af1aa1714e1a6df94f5a79d522f53e7702b113a299c28a6d0053c4db",
+      "bytes": 517
+    },
+    {
+      "scope": "configuration",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/configuration/kubelet.service",
+      "sha256": "ce6ac47be54b601a3c2aded062946d955023e039d1ccb019cd7f692535eafb05",
+      "bytes": 373
+    },
+    {
+      "scope": "configuration",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/configuration/10-kubeadm.conf",
+      "sha256": "df0f548ec01e8a041069b17e2f01f83af811452104b9e3cd9d8f6d42b401ff84",
+      "bytes": 615
+    },
+    {
+      "scope": "configuration",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/configuration/crictl.yaml",
+      "sha256": "3f7c438ac3f1beb3c76017eee043a270752c51272b5410a975d07ce3593605cf",
+      "bytes": 137
+    },
+    {
+      "scope": "storage",
+      "path": "images/rancher_local-path-provisioner_v0.0.32.tar",
+      "sha256": "a00ed2010cdd94198bb4fba10de70a9dcc3bb0bbb18a4bca2477653dd7c2bf07",
+      "bytes": 63292928
+    },
+    {
+      "scope": "storage",
+      "path": "images/bitnami_os-shell_12-debian-12-r51.tar",
+      "sha256": "c73073c3bd8b0dc278ab56e54c2a750ff08cb415f10e1c57ed9a9d7290de770e",
+      "bytes": 169935360
+    },
+    {
+      "scope": "ingress",
+      "path": "releases/traefik-3.7.13-chart-41.6.0-linux-amd64/images/traefik-linux-amd64.tar",
+      "sha256": "f2ac4906393fa1fa0dd40c3b664a192c838c0c84f0a75e744c575b526f4be50d",
+      "bytes": 55225344
+    },
+    {
+      "scope": "ingress",
+      "path": "releases/traefik-3.7.13-chart-41.6.0-linux-amd64/rendered/crds.json",
+      "sha256": "c761fcc5d11732fc8d2494e7afc9666e738ecabfacb44c806e205bcf09aea75d",
+      "bytes": 301011
+    },
+    {
+      "scope": "ingress",
+      "path": "releases/traefik-3.7.13-chart-41.6.0-linux-amd64/rendered/dev.json",
+      "sha256": "6b693a14091a5eeffda87d097b03a458b06b028415ad9dd8d2a620945756f2dd",
+      "bytes": 16429
+    },
+    {
+      "scope": "ingress",
+      "path": "releases/traefik-3.7.13-chart-41.6.0-linux-amd64/rendered/prod.json",
+      "sha256": "682f7cf63ace4f02c3657901bcafd1f2188ec5a4e606a1748c3939986fe1aac4",
+      "bytes": 16453
+    },
+    {
+      "scope": "ingress",
+      "path": "releases/traefik-3.7.13-chart-41.6.0-linux-amd64/charts/traefik-41.6.0.tgz",
+      "sha256": "cd7254ea853da73bdb88edc896f079b88d43ffa0bfe699fdbf21081361eac365",
+      "bytes": 266558
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/ca-certificates_20260601~24.04.1_all.deb",
+      "sha256": "6bac2a01979e210d9eac1d4d56747ec709ea60654744d66705dc3c36e7629e50",
+      "bytes": 139430
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/conntrack_1%3a1.4.8-1ubuntu1_amd64.deb",
+      "sha256": "60b9d00b3382fab1d71b7f1ec0a33b21bee6f3a5fbd875fd1aa6e0bf7608fc19",
+      "bytes": 37856
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/debconf_1.5.86ubuntu1_all.deb",
+      "sha256": "bb390da466a7461bfc87aa3e6b7cd145dae84af3e26bf437f2c0c218ba226294",
+      "bytes": 124096
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/dpkg_1.22.6ubuntu6.6_amd64.deb",
+      "sha256": "ceb6aa4da59fbcb8a3b0549b4280c60b7d849b519859797c8668bdfbe378fb3b",
+      "bytes": 1282284
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/ethtool_1%3a6.7-1build1_amd64.deb",
+      "sha256": "b0f36f1da7a0438aac6e537453dc1a3c817b1b88e49230ed25943a94b73aa226",
+      "bytes": 228510
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/gcc-14-base_14.2.0-4ubuntu2~24.04.1_amd64.deb",
+      "sha256": "b95c172411a7fdae70307cf33a9f5320ba5e056b556454543dd5b679d5ce1c4f",
+      "bytes": 51014
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/gzip_1.12-1ubuntu3.2_amd64.deb",
+      "sha256": "4067522fbffe22672e4cf683bfc32e4a304bc872cf76f10049ab36d1a9eedb91",
+      "bytes": 99204
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/init-system-helpers_1.66ubuntu1_all.deb",
+      "sha256": "8eb801f9ce084dab9bf4cbc3ec0ee5ac75516a4cc1f25e3f92298c632e75b700",
+      "bytes": 39402
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/iproute2_6.1.0-1ubuntu6.4_amd64.deb",
+      "sha256": "f6c91ec6dba02f8965c88f901205c7db72bc8bf38ef1fdfaaee51030dfa145ea",
+      "bytes": 1119922
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/iptables_1.8.10-3ubuntu2_amd64.deb",
+      "sha256": "d341e8ffc42ca035f5aa0fd9a798c8d2b2edb019225dc11f4dac16edf9c57840",
+      "bytes": 381328
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/jq_1.7.1-3ubuntu0.24.04.2_amd64.deb",
+      "sha256": "f59183392f84fe67b407b494d8ba6185e9b0e4a106ffcb369490bd20a83fd40e",
+      "bytes": 65694
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/kmod_31+20240202-2ubuntu7.2_amd64.deb",
+      "sha256": "687693dfad23c96570d96a1c7cc1b8709d31a93f82ac765a11b2bd9130f1dfae",
+      "bytes": 101742
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libacl1_2.3.2-1build1.1_amd64.deb",
+      "sha256": "f2bfd3f8f00413d5f1f04fc723063803c56ac0f1e0efae3bc41f2d7276972ec3",
+      "bytes": 16792
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libapparmor1_4.0.1really4.0.1-0ubuntu0.24.04.8_amd64.deb",
+      "sha256": "9c9ab793bcf772315fc754abb9b9a9f1ef4f828bd5d1c0a40c6e192624f3e86e",
+      "bytes": 51408
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libargon2-1_0~20190702+dfsg-4build1_amd64.deb",
+      "sha256": "e2c50cb5c50ca598585397f4d4ce43e6f0b5e3ddc212c23b30bdb34ca4a61f66",
+      "bytes": 20824
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libaudit-common_1%3a3.1.2-2.1ubuntu0.1_all.deb",
+      "sha256": "b1b6fca3f7ed86db971c073352a6741f1f60f4a94eeb2c1eb0aca8a7e4b11660",
+      "bytes": 5948
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libaudit1_1%3a3.1.2-2.1ubuntu0.1_amd64.deb",
+      "sha256": "326a55fce45a620f12b98baf581fb037eb0fcea1ab3969c54cf177f51be8abfe",
+      "bytes": 47082
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libblkid1_2.39.3-9ubuntu6.6_amd64.deb",
+      "sha256": "3bcf169cd65e2539059b2287924090fc629f9bf90f595fc25465a7efe950ee82",
+      "bytes": 124124
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libbpf1_1%3a1.3.0-2build2_amd64.deb",
+      "sha256": "5654cbb145c2b299472cd208dd06c7dc09bf06cad4c4663fc42a865a51a0d96f",
+      "bytes": 165734
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libbz2-1.0_1.0.8-5.1ubuntu0.1_amd64.deb",
+      "sha256": "36ee08b00b1ee5018b2fce02881b7d2d73c9b4e32990bde3388400d86c48126a",
+      "bytes": 34562
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libc6_2.39-0ubuntu8.9_amd64.deb",
+      "sha256": "ff5557d99b51f761c4b7c92368b9cc45565eda17df9bf9eb4b134d09825008be",
+      "bytes": 3264314
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libcap-ng0_0.8.4-2build2_amd64.deb",
+      "sha256": "cf1e9437ac7ddf6539dbe87b68858cbdef84d78c6aac243ab3b6e564a52ed930",
+      "bytes": 15180
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libcap2-bin_1%3a2.66-5ubuntu2.4_amd64.deb",
+      "sha256": "a8c875e1711a7a101e995814e6500c826cb658551660ef967ec15fbda79a3997",
+      "bytes": 34134
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libcap2_1%3a2.66-5ubuntu2.4_amd64.deb",
+      "sha256": "23c627c77c66552a658e62852f244f4946dc543898e0ec5428d5dc6bffde2d6a",
+      "bytes": 30500
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libcrypt1_1%3a4.4.36-4build1_amd64.deb",
+      "sha256": "9474785cd6f398512bf8c305c3901dbb111569dccb6f5832002373c0a8ac5832",
+      "bytes": 82302
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libcryptsetup12_2%3a2.7.0-1ubuntu4.2_amd64.deb",
+      "sha256": "f6f6a7f35104da711997b52c92ab91ce1f47dd039d276d5beb797d713447c9f2",
+      "bytes": 266122
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libdb5.3t64_5.3.28+dfsg2-7_amd64.deb",
+      "sha256": "a78a25c8fad8fdd0b7bc6b297da5d5685579be1e57732aa47870830e4a13161e",
+      "bytes": 734100
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libdevmapper1.02.1_2%3a1.02.185-3ubuntu3.2_amd64.deb",
+      "sha256": "0d43a02b9030a50edbc49c9580f88f01eef2b043baad1c6200672c39643c0efe",
+      "bytes": 139194
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libelf1t64_0.190-1.1ubuntu0.1_amd64.deb",
+      "sha256": "b4aee123a37472d213647594b4f7d4a0d13615b0ca2a6fd33926b768d6b232c2",
+      "bytes": 57810
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libexpat1_2.6.1-2ubuntu0.6_amd64.deb",
+      "sha256": "494b8e672f722130c6bca6a7bc4cc31a43ca891a31d60d868bfdd699a3c20b13",
+      "bytes": 98940
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libfdisk1_2.39.3-9ubuntu6.6_amd64.deb",
+      "sha256": "7f67b127d239f51218c1eb63c3b0c219bbf26f450349bed9ad5d9f10a6b80c1b",
+      "bytes": 146344
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libffi8_3.4.6-1build1_amd64.deb",
+      "sha256": "637e6a7744de08cd331a41f4efd0d24e6ea9064843dea9d1c6ca87bdb5f038a2",
+      "bytes": 24718
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libgcc-s1_14.2.0-4ubuntu2~24.04.1_amd64.deb",
+      "sha256": "aa7fadbe33b78bcf99885318040601c550c208929565b179891d9a3cc2aa68cd",
+      "bytes": 78392
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libgcrypt20_1.10.3-2ubuntu0.2_amd64.deb",
+      "sha256": "957b9eeaa83cf6f2d5d5d76dbb8aa31d3297e6781d8a02fa08dcc897ae650a0b",
+      "bytes": 536494
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libgpg-error0_1.47-3build2.1_amd64.deb",
+      "sha256": "93654ee8180a73a0363f25c51dc673d67cbabcbecd164187b8a2deb54d007aef",
+      "bytes": 70092
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libip4tc2_1.8.10-3ubuntu2_amd64.deb",
+      "sha256": "eb381f8ff0469534df3f1b146c3eb8baa6e36f8cfcdf2e3e039398322930d0a4",
+      "bytes": 23342
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libip6tc2_1.8.10-3ubuntu2_amd64.deb",
+      "sha256": "b98b88eb6aa14a902ea1aebc3b12ddd140572545ae1fc6428cb0868c31671d05",
+      "bytes": 23732
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libjq1_1.7.1-3ubuntu0.24.04.2_amd64.deb",
+      "sha256": "078fbf38b2e7c3f24cc5dc894d1bb03b617894b887a6e13d5943e13818e724f3",
+      "bytes": 141902
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libjson-c5_0.17-1build1_amd64.deb",
+      "sha256": "3ac608d78e9e981e14ba7ceb141a46e3dd3ae8d6dbb3a7ecafd2698fe9930584",
+      "bytes": 35340
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libkmod2_31+20240202-2ubuntu7.2_amd64.deb",
+      "sha256": "a9cbdc424bc0a5c8af3d6445488a48de76df5ff4d76b7dab8aaf88f712358bbc",
+      "bytes": 51830
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/liblz4-1_1.9.4-1build1.1_amd64.deb",
+      "sha256": "319331270d5cc52d5ebffe51c941d7b01b432bc402c2924b557209a64d4ecbad",
+      "bytes": 63062
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/liblzma5_5.6.1+really5.4.5-1ubuntu0.3_amd64.deb",
+      "sha256": "d2eabd41ca77d2c2dd9d5d4ef478cccb64ffde6279c47cf4699a857d46785a52",
+      "bytes": 127352
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libmd0_1.1.0-2build1.1_amd64.deb",
+      "sha256": "e5ba01d3c41f256aaf57ec59aa0554857162e3e7f97cdfbff1ed2c0e8d720ee7",
+      "bytes": 26976
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libmnl0_1.0.5-2build1_amd64.deb",
+      "sha256": "5170658bf0eaf54a8c7d53061ca6b47a6cf33a83543a75fa521de7046cb7197a",
+      "bytes": 12272
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libmount1_2.39.3-9ubuntu6.6_amd64.deb",
+      "sha256": "8f2c25589f187dacfdc5bb6be2af0aee6c2ba7b4d2edd1ca4b26753469f07aae",
+      "bytes": 134082
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libncursesw6_6.4+20240113-1ubuntu2.2_amd64.deb",
+      "sha256": "579c9488755d1ddd70f66480cafd2f68776f68314d15d9cf4b5449d0de0fc968",
+      "bytes": 147816
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libnetfilter-conntrack3_1.0.9-6build1_amd64.deb",
+      "sha256": "6d32a4c4618eb7d6c0d989591d28637a9acdfa86dfe22e42e9ac9cc25d882a97",
+      "bytes": 45218
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libnfnetlink0_1.0.2-2build1_amd64.deb",
+      "sha256": "f557a287af2ca00df5dbf632c6b77d77479139ffb51c83e3de9766eb609b5d63",
+      "bytes": 14810
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libnftnl11_1.2.6-2build1_amd64.deb",
+      "sha256": "e5bde5c9cbb95082700011f0b7ef2c0a41900b0a9fd7434f6e90448e2a7b4e50",
+      "bytes": 65986
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libonig5_6.9.9-1build1_amd64.deb",
+      "sha256": "605f42287d2bcb6c84f5a02377c7cd777090c5e857259a4030a571989f19dde2",
+      "bytes": 172336
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libpam0g_1.5.3-5ubuntu5.7_amd64.deb",
+      "sha256": "1d7f54e77f0455ab5e607cd5e78b576801d8efdc66115e02cf3c6e708d093667",
+      "bytes": 68124
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libpcre2-8-0_10.42-4ubuntu2.1_amd64.deb",
+      "sha256": "110a797a57673d3ee497a141cf988199258058c57525799c63194d81822529a0",
+      "bytes": 226662
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libpopt0_1.19+dfsg-1build1_amd64.deb",
+      "sha256": "b3e7ea5192e57c847b77c527d51f5b8d4bce47988d2ba326a5c3193f6d173ded",
+      "bytes": 28562
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libproc2-0_2%3a4.0.4-4ubuntu3.3_amd64.deb",
+      "sha256": "8a73e2656ddcdb078e06e20abb5a92b182145e12376a9a9282db8374da34d228",
+      "bytes": 58876
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libpython3-stdlib_3.12.3-0ubuntu2.1_amd64.deb",
+      "sha256": "57ebb378c59d2f9ef479bee0abc933c560878cc10e2c3af8e05d6fdb2ed63da4",
+      "bytes": 10080
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libpython3.12-minimal_3.12.3-1ubuntu0.17_amd64.deb",
+      "sha256": "d646ad7112b5adec21ba0e1af015f04ae8ca7f5efdc619622547dd6673c4c14b",
+      "bytes": 838536
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libpython3.12-stdlib_3.12.3-1ubuntu0.17_amd64.deb",
+      "sha256": "45d3f530ba1f9d6e879ad46b92046fabab13fe50a82450e4f65557a3bbad1489",
+      "bytes": 2070530
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libreadline8t64_8.2-4build1_amd64.deb",
+      "sha256": "563977a16df03b611f5239cc1e9a0426e86479fcc616b5c9e200ea32063119e5",
+      "bytes": 152856
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libseccomp2_2.5.5-1ubuntu3.1_amd64.deb",
+      "sha256": "33fc96f1e008d27c042a3db9bcd16f7f4d49e866f7a3141b758a799328dbdc3f",
+      "bytes": 50424
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libselinux1_3.5-2ubuntu2.1_amd64.deb",
+      "sha256": "6abaa6c26f46ef17764c4a753e0e84de1cdadde5634fd2987621fdc617988d19",
+      "bytes": 79660
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libsmartcols1_2.39.3-9ubuntu6.6_amd64.deb",
+      "sha256": "84f33a780d27cce20a2cd925e7ce8498daba2dbc614d433548a19fbb2c5dac18",
+      "bytes": 66282
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libsqlite3-0_3.45.1-1ubuntu2.8_amd64.deb",
+      "sha256": "b1190bb72359f5fcc47406aa46065eaf4f1ca208085c51224a52b04bedc0b4bb",
+      "bytes": 701602
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libssl3t64_3.0.13-0ubuntu3.15_amd64.deb",
+      "sha256": "3d0955bc049bbcca0f4c3e78a3a8b994593d96db7d84f4320217224433844534",
+      "bytes": 1944134
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libsystemd-shared_255.4-1ubuntu8.17_amd64.deb",
+      "sha256": "8722a69d99c1a7e6f72c5389e9c6d8053d95d2f5f4fede5dc83118f735812518",
+      "bytes": 2077458
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libsystemd0_255.4-1ubuntu8.17_amd64.deb",
+      "sha256": "4776d2ac7e21efe2ae31f3f7955a7ccd97277225eecf36910a26faf4544979ae",
+      "bytes": 431784
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libtinfo6_6.4+20240113-1ubuntu2.2_amd64.deb",
+      "sha256": "b67a6df2bdab61d273eabebd208bb6a3fb12618a390a067e1ee305a409ff03d9",
+      "bytes": 108086
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libudev1_255.4-1ubuntu8.17_amd64.deb",
+      "sha256": "6efea3770f738db2fd43ebdaed3d91ef0cde8aa8387b4803080af473326ebdb0",
+      "bytes": 177608
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libuuid1_2.39.3-9ubuntu6.6_amd64.deb",
+      "sha256": "7e2992d3a79fc05514dc5966558ee9c66a7214a47edf2a36017b9e2777528665",
+      "bytes": 36596
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libwrap0_7.6.q-33_amd64.deb",
+      "sha256": "36118b862539868408ee056411d6e470068d14c46e5296b29bfb744770f5d2ce",
+      "bytes": 47874
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libxtables12_1.8.10-3ubuntu2_amd64.deb",
+      "sha256": "c94063499d1b0b336f39607107efb7de95d52a5d4e7e6a9368a5f7308f05b714",
+      "bytes": 35704
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libxxhash0_0.8.2-2build1_amd64.deb",
+      "sha256": "75de256c2d162dfc541beb69a83f025742cd13329262af9059eff3ca42a53239",
+      "bytes": 24056
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/libzstd1_1.5.5+dfsg2-2build1.1_amd64.deb",
+      "sha256": "dfcf25061e07aad7efd3f4f880ba5ad4d4d09ebe7fc8cc77ab6b8a161d6d4727",
+      "bytes": 299472
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/lsb-base_11.6_all.deb",
+      "sha256": "08a563e3c1984acdb295f12b77b4ec18d2ccf52fd03280a5bea29e506a3350ee",
+      "bytes": 4606
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/media-types_10.1.0_all.deb",
+      "sha256": "31bfb7eec55ab6d34a50ba995150e1498d4cb897714085d8025e330d3b529747",
+      "bytes": 27474
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/mount_2.39.3-9ubuntu6.6_amd64.deb",
+      "sha256": "09e929ceb9fc5d11757f28429b3151601c44db4c96e0bc5ad46c501c8d56f4f9",
+      "bytes": 118192
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/netbase_6.4_all.deb",
+      "sha256": "8cdbc9c3dca01e660759bf9d840f72e45ac72faf5d19ca1faecacaf6a60c1a87",
+      "bytes": 13112
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/openssl_3.0.13-0ubuntu3.15_amd64.deb",
+      "sha256": "1f2401db59a0beffde6cc47bea3664965ab8fa206b7a5ac8f1cc649cfeeb056b",
+      "bytes": 1002938
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/procps_2%3a4.0.4-4ubuntu3.3_amd64.deb",
+      "sha256": "08d7baeff0285804178a8ed99b49514f210d38881bd118157cd9e222646c17a5",
+      "bytes": 707170
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/python3-minimal_3.12.3-0ubuntu2.1_amd64.deb",
+      "sha256": "9ba5dd55cdcf6121c147dc5cb87403169b5933e3a56da0de57774f2ce819cf06",
+      "bytes": 27442
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/python3.12-minimal_3.12.3-1ubuntu0.17_amd64.deb",
+      "sha256": "d452689b9660845345a4c3e05e4ad82c082d5474e04031b7aa47f1a6d5610a6e",
+      "bytes": 2334634
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/python3.12_3.12.3-1ubuntu0.17_amd64.deb",
+      "sha256": "6745c9463432e619d7402b117ad4ac86c31dcd3999ba20daa9e395f6f9909d86",
+      "bytes": 650732
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/python3_3.12.3-0ubuntu2.1_amd64.deb",
+      "sha256": "e691b9cc40841c41bbdc50bd794c876cb1b1801306ea27b06e9a1458180df1e9",
+      "bytes": 23004
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/readline-common_8.2-4build1_all.deb",
+      "sha256": "879bfd7f8a9bc4c0f7cdc777cdd8bc6de5f8c4a2ac80c060322a1b22f13504bb",
+      "bytes": 56484
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/rsync_3.2.7-1ubuntu1.5_amd64.deb",
+      "sha256": "8f952895697d19a6f1caa71f17c7d4e8c1f1fb485eb824ffe3e4c77dd587b338",
+      "bytes": 442954
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/socat_1.8.0.0-4ubuntu0.1_amd64.deb",
+      "sha256": "46e854289b6b1c97e28be5d9293bea61e8633d00d6a65d9513f019c7232696fe",
+      "bytes": 374324
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/systemd-dev_255.4-1ubuntu8.17_all.deb",
+      "sha256": "70b863bd1188f49a3ba0ccde5355abd6611a8a5dcd8b92addf25c8036f22556d",
+      "bytes": 106892
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/systemd-sysv_255.4-1ubuntu8.17_amd64.deb",
+      "sha256": "000c90facb7f0f33a3c771ac8cf58221f80239184fb9e24fe78086ffea6e2cf9",
+      "bytes": 11890
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/systemd-timesyncd_255.4-1ubuntu8.17_amd64.deb",
+      "sha256": "cf41200d368dddbe13629cf07783663fce3a44a13a80e2c669de1d56678fa5b7",
+      "bytes": 35290
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/systemd_255.4-1ubuntu8.17_amd64.deb",
+      "sha256": "250345b73e42a97ee71cae7c1e470897dfad3c639eb0a7aafe4f9a3a29871cb2",
+      "bytes": 3475000
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/sysvinit-utils_3.08-6ubuntu3_amd64.deb",
+      "sha256": "03cf5c9c28a5d186fb7f5214e464f831ff28177695cbb61e66083237267a047e",
+      "bytes": 34170
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/tar_1.35+dfsg-3ubuntu0.4_amd64.deb",
+      "sha256": "fdf41a87936824e50c8ac11b0b22d1395aeb0754feef2dae5575b5d5a93793ec",
+      "bytes": 256392
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/tzdata_2026c-0ubuntu0.24.04.1_all.deb",
+      "sha256": "ef12c9ef81905b5ac558504b2f8c20da9be5f28861020b3fb5e8b15fb3fae2f6",
+      "bytes": 279816
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/util-linux_2.39.3-9ubuntu6.6_amd64.deb",
+      "sha256": "08eb17ba3b83378ed1e73d8335d0ce03b429c0bbeb07e374f536234edab02465",
+      "bytes": 1128326
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/cache/archives/zlib1g_1%3a1.3.dfsg-3.1ubuntu2.2_amd64.deb",
+      "sha256": "84b9cf5752b29c9f92c27cd4c4ba9bbcc70b5ccf9b1b515421a28ae23212e273",
+      "bytes": 62988
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/state/lists/snapshot.ubuntu.com_ubuntu_20260927T000000Z_dists_noble-security_InRelease",
+      "sha256": "e46a62c5a5d44a49262e24db7154483696238e42b706c72d1879273b059ae982",
+      "bytes": 126127
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/state/lists/snapshot.ubuntu.com_ubuntu_20260927T000000Z_dists_noble-security_main_binary-amd64_Packages",
+      "sha256": "207e1d251ecfc9215516c8db3a71c23cc6039298803c56bc5c2bca8c35bb4c55",
+      "bytes": 5721326
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/state/lists/snapshot.ubuntu.com_ubuntu_20260927T000000Z_dists_noble-security_universe_binary-amd64_Packages",
+      "sha256": "69ef69e72ed3bd48f7e5feddbf114d32f45046a6fb4cefa43e2b394a550d9bf2",
+      "bytes": 7666073
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/state/lists/snapshot.ubuntu.com_ubuntu_20260927T000000Z_dists_noble-updates_InRelease",
+      "sha256": "1734d445584d0b6bedd39dcd239bb4914f1ac0a8e6c37e0f8d4e42c28a7ad19e",
+      "bytes": 126125
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/state/lists/snapshot.ubuntu.com_ubuntu_20260927T000000Z_dists_noble-updates_main_binary-amd64_Packages",
+      "sha256": "148824cbdabebf3c49c6fb2e70cd9514e277237767fa9c1ac499a8bf8feb8c92",
+      "bytes": 7120015
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/state/lists/snapshot.ubuntu.com_ubuntu_20260927T000000Z_dists_noble-updates_universe_binary-amd64_Packages",
+      "sha256": "c212d627114207a88ac0807cc359a14eb37b4e7e3ca316c2f591c9c21042d29b",
+      "bytes": 10590489
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/state/lists/snapshot.ubuntu.com_ubuntu_20260927T000000Z_dists_noble_InRelease",
+      "sha256": "cdb2f31d809f589719a53c6ad15f255b27569c4059542ada282aaa21b8e164b0",
+      "bytes": 255850
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/state/lists/snapshot.ubuntu.com_ubuntu_20260927T000000Z_dists_noble_main_binary-amd64_Packages",
+      "sha256": "8f6f71ae839c8cba390a7643fcbbdacddb0bc7d12c1583a2dd80a1f8443a30e5",
+      "bytes": 7165069
+    },
+    {
+      "scope": "os",
+      "path": "releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/state/lists/snapshot.ubuntu.com_ubuntu_20260927T000000Z_dists_noble_universe_binary-amd64_Packages",
+      "sha256": "687ffc969e7700137677b9cfe2f614ee2d638052a91a7c9bf31f3f6a3040a99a",
+      "bytes": 73379142
+    }
+  ],
+  "image_graphs": [
+    {
+      "source": "docker.io/library/traefik:v3.7.13",
+      "platform_digest": "sha256:3429c14149401de2ac82fc72ddc6a92642332b90deb3012301ff211b9d2d0f18",
+      "config_digest": "sha256:f9309349d2c1477b15d04728f38882ba2e9a50b7f76729541121a7ee60d53490",
+      "manifest_media_type": "application/vnd.oci.image.manifest.v1+json",
+      "blobs": {
+        "blobs/sha256/3429c14149401de2ac82fc72ddc6a92642332b90deb3012301ff211b9d2d0f18": 1729,
+        "blobs/sha256/f9309349d2c1477b15d04728f38882ba2e9a50b7f76729541121a7ee60d53490": 3226,
+        "blobs/sha256/e2de96513ba9eb53b431787ec8a65cdde380ac4772a3e4c4b714dcfde2a102b5": 3849738,
+        "blobs/sha256/b686a4f73445245e29da397cb3d70292a2823b9d4fa77af427efb28c9ae678b0": 416269,
+        "blobs/sha256/78cb21c375ca987df064a7ae1cb1c68a0cfa2e90fa0dc11d3fdbf3b5b14e7cbe": 50943596,
+        "blobs/sha256/acb2f33459b107ea4496685bfcd991865848b063d6b449e113f361c8aa667e0f": 370
+      },
+      "layers": 4
+    }
+  ],
+  "prepared_profiles": {
+    "dev": {
+      "objects": 18,
+      "crds": 10,
+      "deployment_replicas": 1
+    },
+    "prod": {
+      "objects": 18,
+      "crds": 10,
+      "deployment_replicas": 3
+    }
+  },
+  "plans": [
+    {
+      "cluster": "C1",
+      "step": 1,
+      "exit_code": 0,
+      "plans": 3,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": 2,
+      "exit_code": 0,
+      "plans": 3,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": 3,
+      "exit_code": 0,
+      "plans": 3,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": 4,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": 5,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": 6,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": 7,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": 8,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": 9,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": 10,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": 11,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": 12,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": 13,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": 1,
+      "exit_code": 0,
+      "plans": 3,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": 2,
+      "exit_code": 0,
+      "plans": 3,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": 3,
+      "exit_code": 0,
+      "plans": 3,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": 4,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": 5,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": 6,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": 7,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": 8,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": 9,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": 10,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": 11,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": 12,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": 13,
+      "exit_code": 0,
+      "plans": 1,
+      "ssh_started": false
+    },
+    {
+      "entry": "sunmoonai/ingress-platform/deploy-ingress-platform-all/deploy-ingress-platform-all.sh",
+      "cluster": "KIND",
+      "exit_code": 0,
+      "dry_run": true
+    },
+    {
+      "entry": "sunmoonai/ingress-platform/deploy-ingress-platform-all/deploy-ingress-platform-all.sh",
+      "cluster": "C1",
+      "exit_code": 0,
+      "dry_run": true
+    },
+    {
+      "entry": "sunmoonai/ingress-platform/deploy-ingress-platform-all/deploy-ingress-platform-all.sh",
+      "cluster": "C2",
+      "exit_code": 0,
+      "dry_run": true
+    },
+    {
+      "entry": "sunmoonai/ingress-platform/traefik/deploy-traefik/deploy-traefik.sh",
+      "cluster": "KIND",
+      "exit_code": 0,
+      "dry_run": true
+    },
+    {
+      "entry": "sunmoonai/ingress-platform/traefik/deploy-traefik/deploy-traefik.sh",
+      "cluster": "C1",
+      "exit_code": 0,
+      "dry_run": true
+    },
+    {
+      "entry": "sunmoonai/ingress-platform/traefik/deploy-traefik/deploy-traefik.sh",
+      "cluster": "C2",
+      "exit_code": 0,
+      "dry_run": true
+    }
+  ],
+  "python_ast_files": 9,
+  "remote_python_payload_ast": true,
+  "shell": [
+    {
+      "command": [
+        "bash",
+        "-n",
+        "sunmoonai/infrastructure/utils/cluster-step.sh"
+      ],
+      "exit_code": 0,
+      "diagnostics": ""
+    },
+    {
+      "command": [
+        "/tmp/luna-shellcheck-package/extracted/usr/bin/shellcheck",
+        "-x",
+        "sunmoonai/infrastructure/utils/cluster-step.sh"
+      ],
+      "exit_code": 0,
+      "diagnostics": ""
+    },
+    {
+      "command": [
+        "bash",
+        "-n",
+        "sunmoonai/infrastructure/steps/step13_ingress_and_harbor.sh"
+      ],
+      "exit_code": 0,
+      "diagnostics": ""
+    },
+    {
+      "command": [
+        "/tmp/luna-shellcheck-package/extracted/usr/bin/shellcheck",
+        "-x",
+        "sunmoonai/infrastructure/steps/step13_ingress_and_harbor.sh"
+      ],
+      "exit_code": 0,
+      "diagnostics": ""
+    },
+    {
+      "command": [
+        "bash",
+        "-n",
+        "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh"
+      ],
+      "exit_code": 0,
+      "diagnostics": ""
+    },
+    {
+      "command": [
+        "/tmp/luna-shellcheck-package/extracted/usr/bin/shellcheck",
+        "-x",
+        "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh"
+      ],
+      "exit_code": 0,
+      "diagnostics": ""
+    },
+    {
+      "command": [
+        "bash",
+        "-n",
+        "sunmoonai/ingress-platform/deploy-ingress-platform-all/deploy-ingress-platform-all.sh"
+      ],
+      "exit_code": 0,
+      "diagnostics": ""
+    },
+    {
+      "command": [
+        "/tmp/luna-shellcheck-package/extracted/usr/bin/shellcheck",
+        "-x",
+        "sunmoonai/ingress-platform/deploy-ingress-platform-all/deploy-ingress-platform-all.sh"
+      ],
+      "exit_code": 0,
+      "diagnostics": ""
+    },
+    {
+      "command": [
+        "bash",
+        "-n",
+        "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "bash",
+        "-n",
+        "sunmoonai/ingress-platform/traefik/deploy-traefik/deploy-traefik.sh"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "changes_applied_to_cluster": false,
+  "harbor_changed": false,
+  "cleanup_performed": false,
+  "remaining": [
+    "KIND storage/TLS and formal cluster integration",
+    "Host Harbor lifecycle and five-year leaf certificate",
+    "SNI cutover and routing/TLS/database TCP/WebSocket acceptance",
+    "CI/CD, backup and mandatory final cleanup"
+  ],
+  "download_failures": [
+    "Remote zsh unquoted =https expansion; corrected quoted argument",
+    "Docker Hub shorthand RepoDigest rejected; exact canonical repository normalization fixed",
+    "Repeated pull encountered 8GiB headroom guard; reused already present SHA-pinned image and preserved export 6GiB guard"
+  ],
+  "download_host": "txy-tokyo",
+  "archive_relay": "strict SSH; rsync --partial --append-verify; full local SHA and OCI graph validation",
+  "final_code_sha256": {
+    "sunmoonai/infrastructure/materials/node_install.py": "81d40d4ea4e5f435b54016ed2e0d28ea826ee4f42b6a19876842552917557c50",
+    "sunmoonai/infrastructure/materials/os_install.py": "8defb55c998d63db45fef1e10e300549cc4fbb1cf44af6f24cfb2c76fc52a7b1",
+    "sunmoonai/infrastructure/materials/verify_os.py": "4e97f26576e0b18c48be423d15e4689ae9d7822d6942136b3c78a06170f8a868",
+    "sunmoonai/infrastructure/materials/prepare_os.py": "7ffca9d4b91431866cc5e8f87782cccc07ca24d037fa553115c83182e16ee779",
+    "sunmoonai/infrastructure/materials/bundle.py": "5ae66be3cfc1c2f38c8483cc595a7a83a32538d00f9822f62ddd50fd846bb6ca",
+    "sunmoonai/infrastructure/materials/cluster_config.py": "246c1bff0f09006fe3bd692fca5db2a2f9c2598381e09eb2d58a00c948363c39",
+    "sunmoonai/infrastructure/materials/cluster_node.py": "9bc35747d3f3049028bd07573e3ce0e5054cecb71808e0fa6acefe6bfd4bdb06",
+    "sunmoonai/infrastructure/materials/image_import.py": "47657a45c93ef43c4da277adcb4e990a01b0e84399abec0552c1e2502bce7496",
+    "sunmoonai/infrastructure/materials/cluster_resources.py": "f4969e4282040578e289e25ba2781b379f63d66517b4962c1d5dfaa10b52f418",
+    "sunmoonai/infrastructure/materials/storage_resources.py": "e87ee2f7bda1b030d3275b297dd8b38aa64609e92b2272a6d0adcfabc081c860",
+    "sunmoonai/infrastructure/materials/storage_host.py": "485658223806e69ae4b2b16b339bd002219647065ca3521a165ec9f4179b19a6",
+    "sunmoonai/infrastructure/materials/storage-images.lock.json": "e55efc5e7edcfe5db7250ea1c539f06c4cc4e2d10c61813dc9fc37c759400a39",
+    "sunmoonai/infrastructure/materials/registry_consumer.py": "45932ac99b24fa7f5b730a1356b194719a08603ca5f309feea9c0e1111eb1196",
+    "sunmoonai/infrastructure/materials/tls_resources.py": "93102cae193314bead78a6b054d5a92fbf4162569e94730d678c5c93be5f82f5",
+    "sunmoonai/infrastructure/materials/ingress-images.lock.json": "5d559edbb81761d69277d9a6cee4a6c433e689c26efb01feff91ac2c3c0ed08c",
+    "sunmoonai/infrastructure/materials/ingress_resources.py": "0f1a080dbb852562879444ad7126b3c4951954d9be3930086db4e7394c7b3fe9",
+    "sunmoonai/infrastructure/materials/ingress-resources.lock.json": "6db4627bff734a963b6c2714be868d1508aeb024ecd3b301768f62bf1bf5c178",
+    "sunmoonai/infrastructure/materials/cluster-artifacts.lock.json": "49dec73490958e010f4ffd8c514118eb09cfc1f2c45365fd7fa6e82e244b6743",
+    "sunmoonai/infrastructure/materials/kubeadm-images.lock.json": "daf944a8c0604336e5c546831494d8aefcafc1b4299def74a844cf5123fd789c",
+    "sunmoonai/infrastructure/materials/os-dependencies.lock.json": "7a017c76700180469f17c8d20f07dbdc012ee22db873acb05adc1645beee326d",
+    "sunmoonai/infrastructure/materials/cluster_control.py": "3f0ef0cf1a93dbb2c7ebcfd68783cbf56fbf660c3bd211cb6cd9b7b64e1a09f1",
+    "sunmoonai/infrastructure/materials/ingress_local.py": "2160ff22284055522e8356d6c27205ab659c6cca363aeda3c7e05b374f83477e",
+    "sunmoonai/infrastructure/materials/prepare_images.py": "6251d078b7f861aab0cf4262a3b1cd2d561c644f8a5d47b5cd9a4b1e912d1911"
+  },
+  "configuration_outside_step13_unchanged": true,
+  "render_source_hashes_verified": true
+}

@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# Unified ingress entry. Legacy implementation below is retained for review only.
+# Cloud path 未经实机验证. No default deployment/uninstall/host networking changes.
+TRAEFIK_ENTRY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec bash "$TRAEFIK_ENTRY_DIR/../../deploy-ingress-platform-all/deploy-ingress-platform-all.sh" "$@"
+# HISTORICAL PATH BELOW: unreachable; retained until migration review/acceptance.
 
 # =============================================================================
 # Traefik 部署脚本

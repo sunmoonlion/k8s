@@ -1,18 +1,20 @@
 {
   "schema": 1,
   "batch": "kubeadm-1.36.4-linux-amd64",
-  "scope": "cluster tools only; platform services unchanged",
+  "scope": "Cluster layer aligned; approved Traefik upgrade; database/data engine versions unchanged",
   "versions": {
     "kubernetes": "1.36.4",
     "calico": "3.32.2",
     "nerdctl": "2.3.5",
     "containerd": "2.3.4",
     "runc": "1.4.3",
-    "crictl": "1.36.0"
+    "crictl": "1.36.0",
+    "traefik": "3.7.13",
+    "traefik_chart": "41.6.0"
   },
   "closure_complete": false,
   "pending": [
-    "Remaining infrastructure step13, KIND storage/TLS adapters and external registry host lifecycle/pre-step11/platform integration"
+    "KIND storage/TLS/image adapters and formal cluster integration; external registry host lifecycle/pre-step11/platform integration"
   ],
   "provenance": [
     "https://github.com/containerd/nerdctl/releases/tag/v2.3.5",
@@ -187,6 +189,10 @@
   },
   "ingress_image_lock": {
     "path": "ingress-images.lock.json",
-    "sha256": "d136b05dd3500446c5158818b20a161f911404ab2deb81c5a224dd8b54cd744c"
+    "sha256": "5d559edbb81761d69277d9a6cee4a6c433e689c26efb01feff91ac2c3c0ed08c"
+  },
+  "ingress_resource_lock": {
+    "path": "ingress-resources.lock.json",
+    "sha256": "6db4627bff734a963b6c2714be868d1508aeb024ecd3b301768f62bf1bf5c178"
   }
 }

@@ -2,19 +2,22 @@
   "schema": 1,
   "complete": true,
   "platform": "linux/amd64",
-  "provenance": "Existing owner archive; saved OCI manifest digest is not a public registry digest. No platform version upgrade. Offline alias only.",
+  "provenance": "Official Docker Hub library/traefik; registry index, amd64 manifest, config and archive SHA256 separately recorded. Tokyo public download; no container started.",
   "images": [
     {
+      "source": "docker.io/library/traefik:v3.7.13",
+      "index_digest": "sha256:24841fe2de7304c149343d877d2923b4c8800a38ba015dea9174c23b20e344a0",
+      "platform_digest": "sha256:3429c14149401de2ac82fc72ddc6a92642332b90deb3012301ff211b9d2d0f18",
+      "reference": "docker.io/library/traefik@sha256:3429c14149401de2ac82fc72ddc6a92642332b90deb3012301ff211b9d2d0f18",
+      "config_digest": "sha256:f9309349d2c1477b15d04728f38882ba2e9a50b7f76729541121a7ee60d53490",
+      "archive_tag": "sunmoon-offline/traefik:3429c14149401de2",
+      "path": "images/traefik-linux-amd64.tar",
+      "docker_image_id": "sha256:3429c14149401de2ac82fc72ddc6a92642332b90deb3012301ff211b9d2d0f18",
+      "sha256": "f2ac4906393fa1fa0dd40c3b664a192c838c0c84f0a75e744c575b526f4be50d",
+      "bytes": 55225344,
       "name": "traefik",
-      "version": "v3.5.2",
-      "original_tag": "traefik:v3.5.2",
-      "source": "docker.io/sunmoon-offline/traefik:v3.5.2",
-      "reference": "docker.io/sunmoon-offline/traefik@sha256:c79033e751afa9c322db0cf83cd5d866c0a300b37960e923bdb28c49d0a46eee",
-      "platform_digest": "sha256:c79033e751afa9c322db0cf83cd5d866c0a300b37960e923bdb28c49d0a46eee",
-      "config_digest": "sha256:72fe7ceeba1174ea926c08d03b8163a6a3908b12ce68ed4fde3fb9cb4f3f60bb",
-      "material_path": "images/traefik_v3.5.2.tar",
-      "bytes": 178587136,
-      "sha256": "d793cb1eedc662511704ba94f63cbc5e6278bf01e6e70ef21797e38328e08742"
+      "version": "v3.7.13",
+      "material_path": "releases/traefik-3.7.13-chart-41.6.0-linux-amd64/images/traefik-linux-amd64.tar"
     }
   ]
 }

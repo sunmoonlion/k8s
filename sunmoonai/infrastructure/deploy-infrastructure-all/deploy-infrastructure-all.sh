@@ -120,7 +120,7 @@ execute_step(){
     local description="$2"
     local -a step_args=()
     case "$step" in
-        step01_os_baseline.sh|step02_runtime.sh|step03_k8s_binaries.sh|step04_kubeadm_init.sh|step05_cni_install.sh|step06_join_nodes.sh|step07_create_namespaces.sh|step08_validate.sh|step09_storage.sh|step10_k8s_nodes_management.sh|step11_load-initial-images.sh|step12_ca_generation.sh)
+        step01_os_baseline.sh|step02_runtime.sh|step03_k8s_binaries.sh|step04_kubeadm_init.sh|step05_cni_install.sh|step06_join_nodes.sh|step07_create_namespaces.sh|step08_validate.sh|step09_storage.sh|step10_k8s_nodes_management.sh|step11_load-initial-images.sh|step12_ca_generation.sh|step13_ingress_and_harbor.sh)
             step_args=(--apply) ;;
     esac
     

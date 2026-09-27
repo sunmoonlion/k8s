@@ -1,14 +1,14 @@
 # 集群层离线物料
 
-物料总根保持 `~/packages-to-be-installed`，新批次为 `releases/kubeadm-1.36.4-linux-amd64/`。这是新 kubeadm 适配器的输入，**旧 steps 尚未全部接线，不能直接运行旧总控安装新版**。云端安装未经实机验证。
+物料总根保持 `~/packages-to-be-installed`，新批次为 `releases/kubeadm-1.36.4-linux-amd64/`。这是新 kubeadm 适配器的输入，**仓库主机前置步骤及 KIND 接线尚未完成，不能绕过闭包门禁安装**。云端安装未经实机验证。
 
-版本与范围真源是 `cluster-artifacts.lock.json`。平台服务版本保持原样；KIND 使用 `kind-infrastructure/isolated/profile.json` 和既有批次。Calico归档在共享批次只保留一份，锁中 `shared_calico_materials` 的路径相对物料总根解析，不能清理其唯一副本。
+版本与范围真源是 `cluster-artifacts.lock.json`。数据库及数据引擎版本保持原样；Traefik 已获准升级至 3.7.13 / chart 41.6.0；KIND 使用 `kind-infrastructure/isolated/profile.json` 和既有批次。Calico归档在共享批次只保留一份，锁中 `shared_calico_materials` 的路径相对物料总根解析，不能清理其唯一副本。
 
 ## 部署方消费入口（2026-09-27）
 
 新增的 `bundle.py` 统一解析和验证精确清单，`sync.py` 默认只打印、显式 apply 才通过严格 SSH 传输并在远端重新校验；`stage_configuration.py` 把锁定的五个节点配置放进离线批次；`os_install.py` / `node_install.py` 提供专用新节点的 OS/运行时/工具安装分支。step01–03 已经由 `node_control.py` 接入，全部默认只打印，真实云安装未经验证，见 [新节点入口](../docs/fresh-node-bootstrap.md)。
 
-现在 129 文件、本地全量 SHA 通过（含两份复用的现有存储镜像与原 Traefik v3.5.2，见 [存储适配](../docs/storage-bootstrap.md)）；其中 OS 依赖 94 包及 9 个签名/索引已在东京下载、本机独立验签。step01–12 已完成云端代码接线，见 [集群入口](../docs/cluster-bootstrap.md) 与 [共用资源入口](../docs/post-bootstrap-resources.md)；新增 [独立仓库使用方](../docs/registry-consumer.md) 与 [已签发入口证书消费](../docs/tls-consumer.md)；仓库主机前置步骤及剩余平台/仓库入口未完成，主锁仍 `closure_complete=false`，总控实际变更被版本/闭包门禁阻止。详细命令、配置来源和未验边界见 [固定物料与节点入口](../docs/locked-node-materials.md)、[OS 依赖准备](../docs/offline-os-materials.md)。
+现在 133 文件、本地全量 SHA 通过（含两份复用的现有存储镜像与Traefik 3.7.13 镜像、chart 与离线清单，见 [存储适配](../docs/storage-bootstrap.md)）；其中 OS 依赖 94 包及 9 个签名/索引已在东京下载、本机独立验签。step01–13 已完成云端代码接线，见 [集群入口](../docs/cluster-bootstrap.md) 与 [共用资源入口](../docs/post-bootstrap-resources.md)；新增 [独立仓库使用方](../docs/registry-consumer.md) 与 [已签发入口证书消费](../docs/tls-consumer.md)；仓库主机前置步骤及剩余平台/仓库入口未完成，主锁仍 `closure_complete=false`，总控实际变更被版本/闭包门禁阻止。详细命令、配置来源和未验边界见 [固定物料与节点入口](../docs/locked-node-materials.md)、[OS 依赖准备](../docs/offline-os-materials.md)。
 
 ## 下载与回传
 
@@ -50,3 +50,5 @@ python3 sunmoonai/infrastructure/materials/inventory.py \
 ```
 
 执行顺序与容量见 [集群升级物料对应与最终清理](../../kind-infrastructure/docs/cluster-material-retirement.md)。所有者要求最后一起清理且必须清理；新物料未齐、引用未切、迁移未验收时，旧包保留。平台/应用镜像、Harbor冷备、旧集群客户端与受保护节点/卷不属于按版本批量删除范围。
+
+新版入口及复用方法见 [共用 Traefik 入口](../docs/ingress-bootstrap.md)。平台入口与本地/云端适配器共用资源实现，实际运行和业务路由验收仍未完成。

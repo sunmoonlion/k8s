@@ -32,8 +32,9 @@ def image_records(manifest, data):
     lock = read_lock(below(manifest.parent, child['path']), child['sha256'])
     result = lock['images']
     if (lock.get('complete') is not True or lock.get('platform') != 'linux/amd64' or len(result) != 1
-            or result[0]['name'] != 'traefik' or result[0]['version'] != 'v3.5.2'):
-        raise ValueError('Expected the existing Traefik v3.5.2 offline image only')
+            or result[0]['name'] != 'traefik'
+            or result[0]['version'] != 'v' + data['versions']['traefik']):
+        raise ValueError('Expected the root-locked Traefik offline image only')
     return result
 
 

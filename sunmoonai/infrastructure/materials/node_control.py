@@ -21,6 +21,7 @@ PUBLIC_FILES = ("node_install.py", "os_install.py", "verify_os.py", "prepare_os.
                 "bundle.py", "cluster_config.py", "cluster_node.py", "image_import.py", "cluster_resources.py",
                 "storage_resources.py", "storage_host.py", "storage-images.lock.json",
                 "registry_consumer.py", "tls_resources.py", "ingress-images.lock.json",
+                "ingress_resources.py", "ingress-resources.lock.json",
                 "cluster-artifacts.lock.json", "kubeadm-images.lock.json", "os-dependencies.lock.json")
 
 REMOTE = r'''
@@ -48,6 +49,7 @@ expected={'node_install.py','os_install.py','verify_os.py','prepare_os.py','bund
           'cluster_config.py','cluster_node.py','image_import.py','cluster_resources.py',
           'storage_resources.py','storage_host.py','storage-images.lock.json',
           'registry_consumer.py','tls_resources.py','ingress-images.lock.json',
+          'ingress_resources.py','ingress-resources.lock.json',
           'cluster-artifacts.lock.json','kubeadm-images.lock.json','os-dependencies.lock.json'}
 if set(p['files'])!=expected: raise SystemExit('Unexpected public control file set')
 contents={}

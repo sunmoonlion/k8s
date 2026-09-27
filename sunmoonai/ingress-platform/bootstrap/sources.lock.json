@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "batch": "traefik-3.7.13-chart-41.6.0-linux-amd64",
+  "traefik_version": "v3.7.13",
+  "chart_version": "41.6.0",
+  "kubernetes_version": "1.36.4",
+  "public_images": [
+    "docker.io/library/traefik:v3.7.13"
+  ],
+  "provenance": {
+    "index_url": "https://traefik.github.io/charts/index.yaml",
+    "index_sha256": "02c182a0eb5de7afd94db76c7095f0ea71622dad0135c225d9c75778546023f8",
+    "observed_at": "2026-09-27",
+    "authenticity": "Official HTTPS chart index SHA256; no detached chart signature verified"
+  },
+  "files": [
+    {
+      "path": "charts/traefik-41.6.0.tgz",
+      "url": "https://traefik.github.io/charts/traefik/traefik-41.6.0.tgz",
+      "sha256": "cd7254ea853da73bdb88edc896f079b88d43ffa0bfe699fdbf21081361eac365"
+    }
+  ]
+}
