@@ -96,7 +96,7 @@ def base_args(name, network, memory='256m'):
             '--log-driver', 'local', '--log-opt', 'max-size=10m', '--log-opt', 'max-file=2']
 
 
-def run(config, credentials, batch, harbor_jobservice=False):
+def run(config, credentials, batch, harbor_jobservice=False, observe_runtime=False):
     instance = Instance(config)
     if (config['runtime']['deployment'] != 'sunmoon-harbor-main-20260927'
             or config['runtime']['platform'] != 'wsl' or config['runtime']['write_enabled']
@@ -157,7 +157,7 @@ stream { server { listen 30443; proxy_connect_timeout 5s; proxy_timeout 600s; pr
     state = {'schema': 1, 'created': {}, 'images': {}, 'completed': False,
              'formal_admission': False, 'harbor_jobservice_verified': False}
     save(ROOT / 'state.json', state)
-    result = None
+    result = None; observer = None
     try:
         instance.start()
         ready = time.monotonic() + 180
@@ -189,6 +189,9 @@ stream { server { listen 30443; proxy_connect_timeout 5s; proxy_timeout 600s; pr
         args += ['--entrypoint', '/home/scanner/bin/scanner-trivy', MANIFEST]
         create(state, 'scanner', args, MANIFEST, network)
         info = json.loads(docker('inspect', state['created']['scanner']))[0]
+        if observe_runtime:
+            from scanner_runtime_observe import Observation
+            observer = Observation(info['State']['Pid'])
         address = info['NetworkSettings']['Networks'][network]['IPAddress']
         if not ipaddress.ip_address(address).is_private:
             raise ValueError('Scanner IP must be on the inspected private bridge')
@@ -259,6 +262,13 @@ stream { server { listen 30443; proxy_connect_timeout 5s; proxy_timeout 600s; pr
         state.update(result)
     finally:
         errors = []
+        if observer is not None:
+            try:
+                observed = observer.finish()
+                save(ROOT / 'runtime-observation.json', observed)
+                state['runtime_observation'] = observed
+            except Exception:
+                errors.append('runtime-observer')
         for role in ('jobservice', 'scanner', 'route'):
             identity = state['created'].get(role)
             if identity:
@@ -343,12 +353,18 @@ def main():
     parser.add_argument('--batch', type=Path, required=True)
     parser.add_argument('--docker-credentials', type=Path)
     parser.add_argument('--apply', action='store_true')
+    parser.add_argument('--observe-runtime', action='store_true', help='Read-only /proc sampling; no credentials read')
     parser.add_argument('--harbor-jobservice', action='store_true',
                         help='Separate trial: bounded candidate metadata writes and owned Jobservice scan')
     args = parser.parse_args(); config = load(args.config.absolute())
     if args.harbor_jobservice:
         ROOT = ROOT.parent / 'trivy-harbor-chain-20260927-v3'
         PREFIX = 'sunmoon-trivy-harbor-chain-20260927-v3'
+    if args.observe_runtime:
+        if not args.harbor_jobservice:
+            raise ValueError('Runtime observation requires the complete Harbor trial')
+        ROOT = ROOT.parent / 'trivy-harbor-runtime-20260927-v1'
+        PREFIX = 'sunmoon-trivy-harbor-runtime-20260927-v1'
     if not args.apply:
         print(json.dumps({'dry_run': True, 'root': str(ROOT), 'harbor': config['runtime']['deployment'],
                           'image': MANIFEST, 'target': REPOSITORY + '@' + DIGEST,
@@ -356,13 +372,13 @@ def main():
                           'jobservice_start': args.harbor_jobservice,
                           'candidate_metadata_writes': args.harbor_jobservice,
                           'registry_storage_stays_read_only': True,
-                          'entry_switch': False, 'retains_all_containers': True})); return
+                          'entry_switch': False, 'observe_runtime': args.observe_runtime, 'retains_all_containers': True})); return
     if args.docker_credentials is None:
         raise ValueError('Explicit existing owner credential file required')
     descriptor = os.open('/data/harbor/.instance-preparation.lock', os.O_RDWR | os.O_NOFOLLOW)
     with os.fdopen(descriptor, 'rb+') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        print(json.dumps(run(config, args.docker_credentials.absolute(), args.batch.absolute(), args.harbor_jobservice), indent=2))
+        print(json.dumps(run(config, args.docker_credentials.absolute(), args.batch.absolute(), args.harbor_jobservice, args.observe_runtime), indent=2))
 
 
 if __name__ == '__main__':

@@ -2,6 +2,29 @@
 
 先对原 Harbor 扫描器程序与更新后的漏洞数据库做隔离验收，随后按所有者授权准备维护中的新版扫描器；两批镜像分别保留。**独立扫描通过不表示新宿主 Harbor 的 Jobservice、扫描登记或 CI/CD 已恢复。**Harbor主服务仍按2.13.2迁移，后续升级单独进行，见[版本决策](harbor-version-reassessment.md)。
 
+## 当前处理决定：优先迁移，系统包问题随官方版本处理
+
+所有者在 2026-09-27 明确要求：**不自行打系统补丁或制作扫描器镜像**。先核实运行依赖；未用于当前扫描路径的问题记录为已知项，随官方修复版本例行升级。保留官方扫描器的原始摘要，不将“所有扫描告警清零”作为本次集群迁移目标。下文早期候选评估和 `formal_admission=false` 是当时状态；正式接线仍需完成，不表示必须先制作补丁镜像。
+
+### 本次运行观察
+
+同一官方扫描器再次通过完整 Harbor 私有镜像扫描，期间每 50ms 只读采样进程树的 executable 与 maps，8.32秒共164次，无读取错误。观察到 `/home/scanner/bin/scanner-trivy` 和 `/usr/local/bin/trivy`，两者的共享库映射均为空。结合上文 ELF 无 PT_INTERP/PT_DYNAMIC，以及官方 adapter0.38.0 的 `pkg/trivy/wrapper.go` 直接执行 Trivy 的源码，可支持“本次扫描主流程没有显示出依赖 curl/OpenSSL/NSS 动态库”的结论。
+
+采样不是完整系统调用追踪，可能遗漏短暂程序；不能扩大成所有输入、扫描模式都不会调用系统组件。未读取命令参数、环境变量或凭据。证据见[运行观察](../../scripts/results/luna-trivy-runtime-observation.20260927.json)。源码依据：[固定版本 wrapper](https://github.com/goharbor/harbor-scanner-trivy/blob/v0.38.0/pkg/trivy/wrapper.go)；镜像 adapter 自报 `dev`，源码只作为辅助依据，不能代替二进制身份核验。
+
+| 范围 | 结论与处理 |
+| --- | --- |
+| 扫描主流程的系统动态库 | 本次未观察到加载；原始漏洞报告保留为已知问题，随官方镜像升级复核 |
+| 镜像内 curl 健康检查 | 确实配置了 curl 调用，不能归为“从不使用”；目标是固定容器回环健康端点，备用 HTTPS 带 `-k`。正式部署覆盖为固定回环 HTTP 探针，保留严格镜像仓 TLS 校验；无需修改镜像 |
+| Trivy/adapter 内嵌 Go 依赖 | 与系统包问题分开记录；静态链接不能证明内嵌依赖无漏洞，不作 blanket 豁免。后续官方版本升级时复核 |
+| 未覆盖的短暂 helper、其他输入和扫描模式 | 明确未证实，不写成“不受影响” |
+
+### 已终止的补丁准备
+
+在收到上述决定前，已从东京下载十个官方 RPM，共6,655,410字节，本机复核摘要；只保留为最终清理候选。独立构建容器在第一个 RPM 的签名输出格式判断处退出（脚本误用了大小写敏感匹配），**尚未执行安装事务，也没有生成候选镜像**。容器 `sunmoon-scanner-os-patch-build-20260927-v1` 已退出；补丁构建脚本已撤回，不继续修复或重试该路线。旧节点、Harbor数据和正式入口均未变。
+
+本机物料为 `releases/scanner-patches-20260927-v1`、失败工作目录 `releases/harbor-scanner-osfix-20260927-v1`，东京为 `/home/zym/sunmoon-scanner-patches-20260927-v1`。原始签名检查显示 OK；失败不代表官方签名有问题。
+
 ## 新版扫描器候选（2026-09-27）
 
 官方稳定镜像`ghcr.io/goharbor/trivy-adapter-photon:v2.15.2`，amd64 manifest为`sha256:215c07b71c37fc7fc16e02d9185d936dcb8884a80e810817c2cd058bbd7c4e98`。官方构建使用adapter0.38.0和Trivy0.72.0；不能将包装tag误写成Trivy2.15.2，也不能据此说Harbor主服务已升级。[固定清单](../scanner-stable.lock.json)。
@@ -48,7 +71,7 @@ python3 -B sunmoonai/registry-platform/scanner_adapter_verify.py \
 
 已核两主程序 ELF 均无 PT_INTERP/PT_DYNAMIC：Trivy SHA256 `0e69edd134a3c338baa1a6806920773615d682b18cbc6a0cba2a3b658ef9b63e`，adapter SHA256 `86b6fe7108d66f9c4b5d31b14d2adc68019a2f8550bc2435719ea5ee553cfa1c`。这仅表明两者没有常规 ELF 动态链接，不能排除调用其他程序。镜像继承的健康检查会执行 curl，其备用 HTTPS 探针带 `-k`；它与已验证严格 TLS 的镜像拉取客户端不同，正式配置还需调整探针。
 
-后续按上游适用条件核实 curl、NSS、OpenSSL 发现，优先采用有明确修复的官方镜像；否则评估固定安全补丁构建并重新扫描，不在部署时临时全量更新包或批量忽略 CVE。上游依据：[curl CVE-2026-11564](https://curl.se/docs/CVE-2026-11564.html)、[curl CVE-2026-19931](https://curl.se/docs/CVE-2026-19931.html)、[OpenSSL 2026-08-25 公告](https://openssl-library.org/news/secadv/20260825.txt)、[Mozilla NSS 公告](https://www.mozilla.org/en-US/security/advisories/mfsa2026-68/#CVE-2026-16389)。功能兼容通过与安全准入必须分别记录。
+按上方所有者最新决定，系统包问题记录为已知项并跟随官方修复版本，不自行制作补丁镜像。保留适用条件和来源，不批量忽略 CVE。上游依据：[curl CVE-2026-11564](https://curl.se/docs/CVE-2026-11564.html)、[curl CVE-2026-19931](https://curl.se/docs/CVE-2026-19931.html)、[OpenSSL 2026-08-25 公告](https://openssl-library.org/news/secadv/20260825.txt)、[Mozilla NSS 公告](https://www.mozilla.org/en-US/security/advisories/mfsa2026-68/#CVE-2026-16389)。功能兼容通过与安全准入必须分别记录。
 
 ## 为什么可以复用旧镜像
 

@@ -1,3 +1,14 @@
+## 最新续接：2026-09-27 所有者停止自制扫描器补丁，运行观察与身份迁移核对完成
+
+基线af0149c091d7a45b1b7c49a1bb73d78f0aeb588c；本地luna、不push。所有者最新要求：不要自行打扫描器系统包补丁/自制镜像，核运行调用，未用于当前路径的问题作为已知项随官方升级，优先集群迁移。此决定覆盖前段“先安全补丁再迁移”的自定顺序；不要继续那条路线，也不要要求零CVE。
+
+- 决定到达前东京已下载10个固定Photon官方RPM，共6655410B，primary SHA758424263d80240594fbb648ee1f7d04c865bbccb40560b8cbffd07c12c5ea97，锁SHA57638e3d18b22914d22ea14979d65fc655d4074e02ae363065b09662595d499b。本机releases/scanner-patches-20260927-v1；远端/home/zym/sunmoon-scanner-patches-20260927-v1。构建容器sunmoon-scanner-os-patch-build-20260927-v1退出1，首RPM签名实际OK，但脚本大小写匹配失败，未执行RPM安装、没有commit/export镜像。工作目录releases/harbor-scanner-osfix-20260927-v1保留，两个未提交补丁脚本已撤回。只列最终清理候选，不重试。
+- 新scanner_runtime_observe.py只读/proc exe/maps/线程children，不读参数环境凭据；scanner_adapter_verify新增--observe-runtime，固定新批次releases/trivy-harbor-runtime-20260927-v1。原官方manifest215c07...未变，完整Harbor扫描再次Success，报告SHA8f4547a6f5b26336684c7f362e3b1dd037d35a6c889a96bb286a38274a892fd9；临时登记撤销/APIreadonly恢复，全部试验及候选容器停止。
+- 运行8.32秒164次50ms采样，观察/home/scanner/bin/scanner-trivy和/usr/local/bin/trivy，两者共享库映射为空、无采样错误。结合已核ELF及官方v0.38.0 wrapper直接exec Trivy，支持本次扫描主流程未用这些系统动态库；不声称所有helper/输入均排除。Dockerhealthcheck不是子树采样对象，配置确实使用curl回环探针且fallback-k；正式配置覆盖为单一固定回环HTTP，registryTLS仍严格，不改镜像。Go内嵌依赖问题另记，不以静态链接宣称无漏洞。公有源码仅下载到/tmp/luna-adapter-v0.38.0-source.tar.gz，未执行。
+- 新host_identity_verify.py GET核对旧30443/新18443管理员认证、用户/robot权限/项目成员/metadata/指定配置。v1因scan_all_policy为直接对象不是value项而KeyError退出并停源，v2按官方schema修正后通过。3项目、3成员，users/robots列表都0；不代表admin不存在，/users/current确认sysadmin。无普通用户/机器人令牌实际登录，未修改账号/口令/权限/正式扫描器。
+- 证据luna-trivy-runtime-observation.20260927.json与luna-harbor-identity.20260927.json；README/扫描器/实例/唯一物料手册已更新。本轮无新镜像、无入口切换、无清理、无云部署；无后台任务。最终清理旧节点/卷保护仍有效。
+- 下一步回迁移主线：将已验证官方扫描器变成受管永久服务/默认登记，并纳入启停/备份；推进可写推拉及CI-CD，再准备正式SNI切换窗口、main双挂载建群/重建独立性。旧controlplane停止影响API/80/30444–30446，具体窗口仍未批准。云共享代码/离线工具闭包/自启继续未完；inbox仍旧kind/原kubeconfig/kubectl1.27.3，不通知luna做完了。
+
 ## 最新续接：2026-09-27 新 Trivy 与 Harbor 完整扫描链路通过，正式准入未完
 
 基线7ca58af1083901ea242bc8b8fbc94b3cc2d5f192；本地luna、不push。本单元交付为包含本段的提交。用户决定先完成Harbor2.13.2迁移，再独立升级；PG17.6/Redis8.2.1不变。最新问反复卡住是否版本不匹配：本次实际完整链路Success，前几次为验收代码问题，不能归因于版本不兼容。

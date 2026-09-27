@@ -16,7 +16,7 @@
 
 ## 物料准备
 
-Trivy 镜像与漏洞数据库分开准备，见[扫描器离线物料与实际验收](docs/scanner-offline.md)。原镜像 Trivy0.64.1 与新版候选0.72.0均做了隔离扫描；新版已通过 Harbor2.13.2 Core/Jobservice 的私有镜像完整扫描链路，报告 Success。仅临时登记验证，正式扫描器、安全修复、推送及 CI/CD 仍未完成。Harbor 主服务先完成2.13.2迁移，升级另做，见[版本决策](docs/harbor-version-reassessment.md)。
+Trivy 镜像与漏洞数据库分开准备，见[扫描器离线物料与实际验收](docs/scanner-offline.md)。原镜像 Trivy0.64.1 与新版候选0.72.0均做了隔离扫描；新版已通过 Harbor2.13.2 Core/Jobservice 的私有镜像完整扫描链路，报告 Success。仅临时登记验证，正式扫描器接线、推送及 CI/CD 仍未完成。按所有者最新决定，不制作扫描器补丁镜像；已核当前扫描进程的静态链接和运行库使用，系统包告警作为已知项随官方例行升级处理，健康探针调用另行记录。Harbor 主服务先完成2.13.2迁移，升级另做，见[版本决策](docs/harbor-version-reassessment.md)。
 
 ```bash
 python3 sunmoonai/registry-platform/prepare-artifacts.py

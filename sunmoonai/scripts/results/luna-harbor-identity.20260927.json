@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "identity_settings_equal": true,
+  "different_sections": [],
+  "source_counts": {
+    "users": 0,
+    "robots": 0,
+    "projects": 3,
+    "project_members": 3
+  },
+  "target_counts": {
+    "users": 0,
+    "robots": 0,
+    "projects": 3,
+    "project_members": 3
+  },
+  "compared_fields": {
+    "users": [
+      "user_id",
+      "username",
+      "sysadmin_flag",
+      "admin_role",
+      "deleted"
+    ],
+    "robots": [
+      "id",
+      "name",
+      "level",
+      "disable",
+      "duration",
+      "expires_at",
+      "permissions"
+    ],
+    "project_members": [
+      "id",
+      "project_id",
+      "entity_id",
+      "entity_name",
+      "entity_type",
+      "role_id",
+      "role_name"
+    ],
+    "settings": [
+      "auth_mode",
+      "project_creation_restriction",
+      "self_registration",
+      "token_expiration",
+      "robot_name_prefix",
+      "robot_token_duration",
+      "scan_all_policy",
+      "with_notary"
+    ]
+  },
+  "existing_admin_auth_verified_at_both": true,
+  "robot_token_auth_verified": false,
+  "ordinary_user_login_verified": false,
+  "scanner_registration_included": false,
+  "credentials_changed": false,
+  "entry_switched": false,
+  "push_verified": false,
+  "consistency": "Live GET comparison; source is not write-frozen",
+  "candidate_stopped_and_retained": true
+}

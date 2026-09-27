@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "official_image_manifest": "sha256:215c07b71c37fc7fc16e02d9185d936dcb8884a80e810817c2cd058bbd7c4e98",
+  "batch": "trivy-harbor-runtime-20260927-v1",
+  "method": "50ms /proc executable and mapped-library sampling",
+  "elapsed_seconds": 8.32,
+  "samples": 164,
+  "errors": [],
+  "executables": [
+    {
+      "path": "/home/scanner/bin/scanner-trivy",
+      "mapped_shared_libraries": []
+    },
+    {
+      "path": "/usr/local/bin/trivy",
+      "mapped_shared_libraries": []
+    }
+  ],
+  "scan_status": "Success",
+  "harbor_report_sha256": "8f4547a6f5b26336684c7f362e3b1dd037d35a6c889a96bb286a38274a892fd9",
+  "same_findings_as_adapter": true,
+  "all_helper_execution_excluded": false,
+  "docker_healthcheck_observed": false,
+  "healthcheck_config_invokes_curl": true,
+  "limitations": [
+    "Short-lived processes may be missed",
+    "Docker healthcheck executes outside the sampled process tree",
+    "Does not cover other scan modes or all input formats"
+  ],
+  "owner_decision": "No custom scanner OS-patch image; record applicable known issues and follow official releases; prioritize cluster migration",
+  "aborted_patch_attempt": {
+    "container": "sunmoon-scanner-os-patch-build-20260927-v1",
+    "running": false,
+    "exit_code": 1,
+    "rpm_transaction_executed": false,
+    "image_created": false,
+    "reason": "Case-sensitive signature-output parsing failed before installation"
+  }
+}
