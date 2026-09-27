@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "harbor_version": "2.13.2",
+  "platform": "linux/amd64",
+  "source": "https://api.github.com/repos/goharbor/harbor/releases/tags/v2.13.2",
+  "published_at": "2025-07-31T09:49:59Z",
+  "scope": "official installer only; PostgreSQL, Compose and local proxy still need separate admission",
+  "artifacts": [
+    {
+      "name": "harbor-offline-installer-v2.13.2.tgz",
+      "url": "https://github.com/goharbor/harbor/releases/download/v2.13.2/harbor-offline-installer-v2.13.2.tgz",
+      "bytes": 670694110,
+      "sha256": "198bcefa594007186a265cf2513a4ec5f9419c6995e3a02bc81cac8fa17dede3",
+      "digest_source": "GitHub release asset SHA256 over authenticated HTTPS"
+    }
+  ]
+}

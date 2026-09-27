@@ -1,4 +1,5 @@
 # SUNMOON_DATA_LAYOUT_V1
+# Mount/check in PID 1 namespace; WSL elevated sessions may have private mounts.
 # Local WSL; owner-run admin operation. Default: print plan only.
 # No shutdown, formatting, unmount, Docker restart, or legacy-path modification.
 [CmdletBinding()]
@@ -37,8 +38,8 @@ if ($LASTEXITCODE -ne 0) {
     & wsl.exe --mount --vhd $VhdPath --bare
     if ($LASTEXITCODE -ne 0) { throw 'VHD attach failed; investigate, do not blindly unmount/retry' }
 }
-& wsl.exe -d $Distro -u root -- python3 $StorageScript mount --expected-uuid $ExpectedUuid --apply
+& wsl.exe -d $Distro -u root -- nsenter --target 1 --mount -- python3 $StorageScript mount --expected-uuid $ExpectedUuid --apply
 if ($LASTEXITCODE -ne 0) { throw 'Mount validation failed; do not start Harbor/KIND' }
-& wsl.exe -d $Distro -u root -- bash $CheckScript --layout sunmoon-data --expected-uuid $ExpectedUuid
+& wsl.exe -d $Distro -u root -- nsenter --target 1 --mount -- bash $CheckScript --layout sunmoon-data --expected-uuid $ExpectedUuid --require-service-visibility
 if ($LASTEXITCODE -ne 0) { throw 'Final storage guard failed; do not start Harbor/KIND' }
 Write-Output 'SUNMOON_DATA_LAYOUT_V1 mount check passed. No services were started.'

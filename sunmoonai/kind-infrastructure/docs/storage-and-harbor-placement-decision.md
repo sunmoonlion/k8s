@@ -2,7 +2,7 @@
 
 > **统一目标：以后只有一套部署代码，加上两种建集群的方式。本地把平台和应用跑通，云上除了建集群那一步，其余走的是同一条路。**
 
-版本 0.5，2026-09-27。**所有者总体同意方案并补充 100 GiB 上限与回收调整；部署、迁移、数据盘创建和入口切换仍按方案待实施。已单独获批并执行的 R1/R4 回收见第 8 节。** 本轮按“继续”进入准备代码阶段，已完成新数据盘脚本与所有者执行卡；未新建 registry-platform、未改部署开关、未安装/迁移/停服/建群，未连接云主机。
+版本 0.6，2026-09-27。**所有者已创建 100 GiB 数据盘，但 v1 挂载仅管理员会话可见；v2 服务空间修复待本人执行。** registry-platform 已有官方 2.13.2 安装包锁与断点下载入口，包已核验；部署/恢复/SSH 模块尚未实现。未改部署开关、未安装/迁移/停服/建群，未连接云主机。R1/R4 历史回收见第 8 节，剩余清理留到最终验收。
 
 ## 1. 已确定的目标与顺序
 
@@ -88,7 +88,7 @@ nodes:
 
 系统 VHDX 位于 `C:\Users\zymun\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu_79rhkp1fndgsc\LocalState\ext4.vhdx`。文件 Length 不是精确 NTFS 实际分配量，未据此声称完成了稀疏占用测量；C 盘 free 是本轮容量上限判断的依据。
 
-新盘固定为 `C:\wsl-disks\sunmoon-data.vhdx`，动态扩展、**上限 100 GiB（所有者本轮明确决定）**，ext4，整盘文件系统；UUID 在本人创建后记录，不提前猜 `/dev/sde`。
+新盘固定为 `C:\wsl-disks\sunmoon-data.vhdx`，动态扩展、**上限 100 GiB（所有者本轮明确决定）**，ext4，整盘文件系统；所有者已创建，UUID `a28de356-4ba1-4a21-93f5-744b9b9d8be0`；运行时按 UUID 定位，不绑定 `/dev/sde`。
 
 ```text
 C:\wsl-disks\sunmoon-data.vhdx
@@ -144,7 +144,7 @@ C:\wsl-disks\sunmoon-data.vhdx
 
 完整、可直接粘贴的命令统一维护在 [所有者 100 GiB 数据盘操作卡](owner-data-disk-100g.md)，包含固定版本脚本发布及 SHA256、首次创建/格式化/挂载、计划任务和中断续接。旧的内联创建/fstab 命令由该卡替代，避免两套实现漂移。
 
-执行顺序：先发布四个固定脚本到 Windows 和 root 所有的 `/opt/sunmoon/admin/storage/storage-20260927-v1`，再由所有者管理员窗口显式运行创建脚本 `-Apply`，读取 UUID，跑新布局检查；正确后才注册附盘任务。任何哈希/容量/UUID/挂载冲突都停止。现有 RemoteSigned 拒绝直接执行 UNC 未签名脚本，因此卡中先本地发布；不调整系统执行策略，仍被拒绝时由所有者处理签名。
+执行顺序：先发布四个固定脚本到 Windows 和 root 所有的 `/opt/sunmoon/admin/storage/storage-20260927-v2`，首次才运行创建脚本。本机已有 VHDX，当前仅按操作卡第 2a 节修复：在 PID 1 挂载空间执行附盘检查，并核对 Docker 可见性；不要再次创建/格式化。正确后再注册附盘任务。任何哈希/容量/UUID/挂载冲突都停止。现有 RemoteSigned 拒绝直接执行 UNC 未签名脚本，因此卡中先本地发布；不调整系统执行策略，仍被拒绝时由所有者处理签名。
 
 本轮完成 PowerShell Parser、bash -n、ShellCheck、Python AST，以及 Linux 只打印/缺盘拒绝/旧 native 检查；[只读证据](../../scripts/results/luna-data-storage-preparation.20260927.json)。**数据 VHDX 尚不存在，Windows 创建/附盘/格式化和重启均未实操，管理员步骤由所有者本人执行。**新 Harbor/KIND 启动服务与挂载门禁的集成尚待后续单元，不把检查脚本存在等同于服务已受保护。
 

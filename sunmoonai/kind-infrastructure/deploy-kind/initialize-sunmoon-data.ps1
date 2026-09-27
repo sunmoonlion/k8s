@@ -61,8 +61,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Formatting failed; retain disk and inspect, ne
 $Uuid = (& wsl.exe -d $Distro -u root -- blkid -s UUID -o value $Device).Trim()
 if ($LASTEXITCODE -ne 0 -or $Uuid -notmatch '^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$') { throw 'No valid UUID after formatting' }
 $Uuid | Set-Content -LiteralPath $UuidFile -Encoding Ascii
-& wsl.exe -d $Distro -u root -- python3 $Helper setup --expected-uuid $Uuid --apply
+& wsl.exe -d $Distro -u root -- nsenter --target 1 --mount -- python3 $Helper setup --expected-uuid $Uuid --apply
 if ($LASTEXITCODE -ne 0) { throw 'Linux setup incomplete. UUID receipt retained; resume setup, never recreate the disk.' }
-& wsl.exe -d $Distro -u root -- bash "$LinuxScriptDirectory/check-storage-mounts.sh" --layout sunmoon-data --expected-uuid $Uuid
+& wsl.exe -d $Distro -u root -- nsenter --target 1 --mount -- bash "$LinuxScriptDirectory/check-storage-mounts.sh" --layout sunmoon-data --expected-uuid $Uuid --require-service-visibility
 if ($LASTEXITCODE -ne 0) { throw 'Final guard failed; do not start new services' }
 [pscustomobject]@{Vhd=$Vhd;MaximumGiB=100;Uuid=$Uuid;Distro=$Distro;State='mounted; no services started'} | ConvertTo-Json

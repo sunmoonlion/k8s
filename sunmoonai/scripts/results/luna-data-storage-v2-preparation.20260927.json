@@ -1,0 +1,78 @@
+{
+  "at": "2026-09-27T03:41:20.254143+00:00",
+  "read_only": true,
+  "powershell": {
+    "Parsed": [
+      "\\\\wsl.localhost\\Ubuntu\\home\\zymun\\worktrees\\luna\\k8s\\sunmoonai\\kind-infrastructure\\deploy-kind\\attach-vhds.ps1",
+      "\\\\wsl.localhost\\Ubuntu\\home\\zymun\\worktrees\\luna\\k8s\\sunmoonai\\kind-infrastructure\\deploy-kind\\initialize-sunmoon-data.ps1",
+      "\\\\wsl.localhost\\Ubuntu\\home\\zymun\\worktrees\\luna\\k8s\\sunmoonai\\kind-infrastructure\\mount\\attach-vhds.ps1"
+    ],
+    "RunbookBlocks": 4,
+    "ExecutionPolicy": "\r\n        Scope ExecutionPolicy\r\n        ----- ---------------\r\nMachinePolicy       Undefined\r\n   UserPolicy       Undefined\r\n      Process       Undefined\r\n  CurrentUser    RemoteSigned\r\n LocalMachine       Undefined\r\n\r\n\r\n",
+    "PowerShellPlanExecution": "not run: unsigned UNC scripts blocked by existing policy; policy unchanged",
+    "CFreeBytes": 247402942464,
+    "DataVhdExists": true
+  },
+  "checks": [
+    {
+      "command": [
+        "bash",
+        "-n",
+        "/home/zymun/worktrees/luna/k8s/sunmoonai/kind-infrastructure/deploy-kind/check-storage-mounts.sh",
+        "/home/zymun/worktrees/luna/k8s/sunmoonai/kind-infrastructure/mount/check-storage-mounts.sh"
+      ],
+      "expected_exit": 0,
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/luna-shellcheck-package/extracted/usr/bin/shellcheck",
+        "/home/zymun/worktrees/luna/k8s/sunmoonai/kind-infrastructure/deploy-kind/check-storage-mounts.sh",
+        "/home/zymun/worktrees/luna/k8s/sunmoonai/kind-infrastructure/mount/check-storage-mounts.sh"
+      ],
+      "expected_exit": 0,
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "/home/zymun/worktrees/luna/k8s/sunmoonai/kind-infrastructure/deploy-kind/sunmoon-data-storage.py",
+        "setup",
+        "--expected-uuid",
+        "00000000-0000-0000-0000-000000000000"
+      ],
+      "expected_exit": 0,
+      "exit": 0,
+      "stdout": "{\"dry_run\": true, \"action\": \"setup\", \"fstab_rows\": [\"UUID=00000000-0000-0000-0000-000000000000 /mnt/sunmoon-data ext4 defaults,nofail,x-systemd.device-timeout=10s 0 2\", \"/mnt/sunmoon-data/kind-clusters /data/kind-clusters none bind,nofail,x-systemd.requires=/mnt/sunmoon-data 0 0\", \"/mnt/sunmoon-data/harbor /data/harbor none bind,nofail,x-systemd.requires=/mnt/sunmoon-data 0 0\"], \"expected_disk_gib\": 100, \"min_free_gib\": 10, \"legacy_path\": \"protected; never mounted/unmounted/modified\"}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "bash",
+        "/home/zymun/worktrees/luna/k8s/sunmoonai/kind-infrastructure/deploy-kind/check-storage-mounts.sh",
+        "--layout",
+        "sunmoon-data",
+        "--expected-uuid",
+        "00000000-0000-0000-0000-000000000000"
+      ],
+      "expected_exit": 1,
+      "exit": 1,
+      "stdout": "",
+      "stderr": "[sunmoon-data] FAIL: Data mount absent or wrong ext4 UUID; do not fall back to system disk\n"
+    },
+    {
+      "command": [
+        "bash",
+        "/home/zymun/worktrees/luna/k8s/sunmoonai/kind-infrastructure/deploy-kind/check-storage-mounts.sh"
+      ],
+      "expected_exit": 0,
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

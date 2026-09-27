@@ -69,7 +69,27 @@ def check_root(uuid, minimum):
     return info
 
 
-def check(uuid, minimum):
+def service_visibility():
+    if os.geteuid() != 0:
+        raise RuntimeError('Service visibility check requires root')
+    pids = {'systemd': 1}
+    docker_pid = int(run('systemctl', 'show', 'docker.service', '--property=MainPID', '--value'))
+    if docker_pid:
+        pids['docker'] = docker_pid
+    result = {'docker_running': bool(docker_pid), 'views': []}
+    for name, pid in pids.items():
+        proc = Path(f'/proc/{pid}')
+        rows = [line.split() for line in (proc / 'mountinfo').read_text().splitlines()]
+        for path in [ROOT, *BINDS]:
+            matches = [row for row in rows if row[4] == str(path)]
+            if len(matches) != 1 or identity(proc / 'root' / str(path).lstrip('/')) != identity(path):
+                raise RuntimeError(f'{name} cannot see the same exact data mount: {path}')
+        result['views'].append({'service': name, 'pid': pid,
+                                'mount_namespace': os.readlink(proc / 'ns/mnt')})
+    return result
+
+
+def check(uuid, minimum, require_services=False):
     result = {'layout': 'SUNMOON_DATA_LAYOUT_V1', 'expected_uuid': uuid,
               'root': check_root(uuid, minimum), 'binds': []}
     for target, source in BINDS.items():
@@ -85,6 +105,9 @@ def check(uuid, minimum):
         result['binds'].append({'target': str(target), 'source': str(source), 'identity': identity(source)})
     result['legacy_storage'] = legacy_identity()
     result['available_bytes'] = os.statvfs(ROOT).f_bavail*os.statvfs(ROOT).f_frsize
+    result['mount_namespace'] = os.readlink('/proc/self/ns/mnt')
+    if require_services:
+        result['service_visibility'] = service_visibility()
     return result
 
 
@@ -118,6 +141,8 @@ def ensure_empty_unmounted(path):
 def apply(action, uuid, minimum):
     if os.geteuid() != 0:
         raise RuntimeError('Owner must run setup/mount as root through the approved PowerShell workflow')
+    if os.readlink('/proc/self/ns/mnt') != os.readlink('/proc/1/ns/mnt'):
+        raise RuntimeError('Run setup/mount through nsenter --target 1 --mount -- in the systemd namespace')
     with open('/run/lock/sunmoon-data.lock', 'a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         old = legacy_identity()
@@ -179,7 +204,7 @@ def apply(action, uuid, minimum):
                 run('mount', str(target))
         if legacy_identity() != old:
             raise RuntimeError('Legacy path identity drifted; stop, do not unmount anything automatically')
-        return check(uuid, minimum)
+        return check(uuid, minimum, require_services=True)
 
 
 def main():
@@ -188,6 +213,7 @@ def main():
     parser.add_argument('--expected-uuid', required=True)
     parser.add_argument('--min-free-gib', type=int, default=10)
     parser.add_argument('--apply', action='store_true')
+    parser.add_argument('--require-service-visibility', action='store_true')
     args = parser.parse_args()
     uuid = args.expected_uuid.lower()
     if not re.fullmatch(r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}', uuid) or args.min_free_gib < 1:
@@ -197,7 +223,7 @@ def main():
                           'expected_disk_gib': 100, 'min_free_gib': args.min_free_gib,
                           'legacy_path': 'protected; never mounted/unmounted/modified'}))
         return
-    result = check(uuid, args.min_free_gib) if args.action == 'check' else apply(args.action, uuid, args.min_free_gib)
+    result = check(uuid, args.min_free_gib, args.require_service_visibility) if args.action == 'check' else apply(args.action, uuid, args.min_free_gib)
     print(json.dumps(result, indent=2))
 
 

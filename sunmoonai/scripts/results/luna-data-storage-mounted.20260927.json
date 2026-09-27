@@ -1,0 +1,39 @@
+{
+  "at": "2026-09-27T03:41:44.888311+00:00",
+  "read_only": true,
+  "disk_created_by_owner": true,
+  "uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+  "maximum_gib": 100,
+  "owner_namespace": "mnt:[4026537444]",
+  "systemd_and_docker_namespace": "mnt:[4026532219]",
+  "owner_namespace_local_check": {
+    "exit": 0,
+    "available_bytes": 103998709760,
+    "bind_identities": {
+      "/data/kind-clusters": [
+        2112,
+        4718593
+      ],
+      "/data/harbor": [
+        2112,
+        524289
+      ]
+    },
+    "legacy_identity": [
+      2096,
+      33554434
+    ]
+  },
+  "service_namespace_check": {
+    "exit": 1,
+    "error": "Data mount absent or wrong ext4 UUID; do not fall back to system disk"
+  },
+  "owner_namespace_service_guard": {
+    "exit": 1,
+    "error": "systemd cannot see the same exact data mount: /mnt/sunmoon-data"
+  },
+  "service_mount_ready": false,
+  "v2_repair_applied": false,
+  "scheduled_task_registered": false,
+  "new_services_started": false
+}

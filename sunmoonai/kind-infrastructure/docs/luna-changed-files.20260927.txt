@@ -1,7 +1,6 @@
 Luna changes relative to 7896b33941206f55db18a73adf63849cd8136fad (includes this delivery)
 Only k8s repository paths; host documents/materials are described in the handoff.
 
-"sunmoonai/kind-infrastructure/docs/\347\211\251\346\226\231\346\217\220\344\272\244\345\244\207\351\275\220\346\226\271\346\241\210\345\222\214\346\226\271\346\263\225.md"
 CHECKPOINT.md
 sunmoonai/cicd-platform/materials/.gitignore
 sunmoonai/cicd-platform/materials/README.md
@@ -35,6 +34,7 @@ sunmoonai/kind-infrastructure/docs/owner-data-disk-100g.md
 sunmoonai/kind-infrastructure/docs/production-readiness-next-plan.md
 sunmoonai/kind-infrastructure/docs/storage-and-harbor-placement-decision.md
 sunmoonai/kind-infrastructure/docs/wsl-space-reclamation-plan.md
+sunmoonai/kind-infrastructure/docs/物料提交备齐方案和方法.md
 sunmoonai/kind-infrastructure/isolated/.gitignore
 sunmoonai/kind-infrastructure/isolated/README.md
 sunmoonai/kind-infrastructure/isolated/artifacts.lock.json
@@ -45,10 +45,15 @@ sunmoonai/kind-infrastructure/isolated/test_cluster.py
 sunmoonai/kind-infrastructure/isolated/verify.py
 sunmoonai/kind-infrastructure/mount/attach-vhds.ps1
 sunmoonai/kind-infrastructure/mount/check-storage-mounts.sh
+sunmoonai/registry-platform/README.md
+sunmoonai/registry-platform/artifacts.lock.json
+sunmoonai/registry-platform/prepare-artifacts.py
 sunmoonai/scripts/results/luna-build-cache-candidates.20260927.json
 sunmoonai/scripts/results/luna-data-disk-capacity.20260927.json
 sunmoonai/scripts/results/luna-data-disk-sizing.20260927.json
+sunmoonai/scripts/results/luna-data-storage-mounted.20260927.json
 sunmoonai/scripts/results/luna-data-storage-preparation.20260927.json
+sunmoonai/scripts/results/luna-data-storage-v2-preparation.20260927.json
 sunmoonai/scripts/results/luna-docker-space-inventory.20260927.json
 sunmoonai/scripts/results/luna-duplicate-materials-candidates.20260927.json
 sunmoonai/scripts/results/luna-handoff-clusters.20260927.json
@@ -79,5 +84,6 @@ sunmoonai/scripts/results/luna-reclaim-r4.20260927.journal.jsonl
 sunmoonai/scripts/results/luna-reclaim-r4.20260927.json
 sunmoonai/scripts/results/luna-reclaim-r4.20260927.preflight.json
 sunmoonai/scripts/results/luna-reclaim-summary.20260927.json
+sunmoonai/scripts/results/luna-registry-artifacts.20260927.json
 sunmoonai/scripts/results/luna-storage-entry-inspection.20260927.json
 sunmoonai/scripts/results/luna-wsl-space-inventory.20260927.json

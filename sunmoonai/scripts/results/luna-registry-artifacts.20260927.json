@@ -1,0 +1,37 @@
+{
+  "started_at": "2026-09-27T03:30:31.257029+00:00",
+  "manifest_sha256": "d1134f8b14bac87d03a2d647c7c88d9c407ef56fcb534cc6140ae1864026ca1f",
+  "attempts": [
+    {
+      "artifact": "harbor-offline-installer-v2.13.2.tgz",
+      "attempt": 1,
+      "exit_code": 28,
+      "partial_bytes": 344144859
+    },
+    {
+      "artifact": "harbor-offline-installer-v2.13.2.tgz",
+      "attempt": 2,
+      "exit_code": 28,
+      "partial_bytes": 650640945
+    },
+    {
+      "artifact": "harbor-offline-installer-v2.13.2.tgz",
+      "attempt": 3,
+      "exit_code": 0,
+      "partial_bytes": 670694110
+    }
+  ],
+  "complete": true,
+  "completed_at": "2026-09-27T03:36:45.600502+00:00",
+  "artifacts": [
+    {
+      "name": "harbor-offline-installer-v2.13.2.tgz",
+      "bytes": 670694110,
+      "sha256": "198bcefa594007186a265cf2513a4ec5f9419c6995e3a02bc81cac8fa17dede3"
+    }
+  ],
+  "installer_only": true,
+  "images_loaded": false,
+  "installed": false,
+  "source_receipt": "/home/zymun/packages-to-be-installed/releases/registry-platform-2.13.2-linux-amd64/verified-20260927T033645984444Z.json"
+}
