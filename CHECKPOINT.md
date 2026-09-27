@@ -1,3 +1,15 @@
+## 最新续接：2026-09-27 原 CA 五年证书与统一消费入口
+
+基线 `66a6a83b9bfe8bbe6b93d7cad746ceaa5f2a3266`，本地 luna，不 push。开始时只有本助手本单元新 certificates.py，未覆盖他人工作。交付为包含本段的提交。
+
+- 所有者五年证书已实际签发：原 CA 路径 ~/master/k8s/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/ca/{ca.crt,ca.key}，CA 公有 SHA30fe0e56df354899ccf7e66d5d730b87946b8010db21852a2e4520997a51b0ec，到期2036-05-07。签发前后原证书/私钥字节相同，未复制/分发CA私钥。
+- 新独立批次 ~/private/registry-platform/tls-20260927-five-year，parent/batch0700、文件0600，Git外；Harbor SAN harbor.sunmoonai.com；入口SAN sunmoonai.com及*.sunmoonai.com；独立RSA4096密钥，均到期2031-09-27T10:05:21Z。公有证书SHA e2700dc171e2e0a2d9f028d7d4fcab35e1af717e67ac19d71414af41e7be5b03 / b5a2ef29f1c4eeb68c9dd1865c32b5dca8cb969a3b5e1e14c02e663fdfd081ea。未安装在线服务、没换CA/令牌签名/加密密钥。
+- certificates.py 默认只打印，issue --apply只允许新私有批次；rootCA显式SHA/配对/剩余期、SAN/EKU/KU/有效期/独立密钥、OpenSSL完整链/域名核对；check只读且不需CA私钥，默认90天续期门槛。输出ingress-bundle兼容step12。签发初次utcnow弃用警告已用明确UTC表达修正，没有重复签发。管理机cryptography41.0.7/Python/OpenSSL尚未构成新机离线工具闭包。
+- config/local-wsl.conf已引用新批次/CA SHA/服务叶路径；cloud.example保留显式空输入，无自动拷贝。deploy-certificates.sh按KIND/C1/C2走相同tls_resources.execute，cloud STEP12优先、profile TLS_BUNDLE次之；不轮换、不覆盖已有Secret。KIND tls_local接线，入口ingress_local抽共用local_cluster连接：固定tool/私有kubeconfig每次重核，HTTPS静态凭据、每次API前UID、版本。根closure=false仍阻止实际API；未把适配代码就绪说成Secret安装成功。
+- 证据scripts/results/luna-five-year-certificates.20260927.json：4Python AST、4shell bash-n/ShellCheck、KIND/C1/C2证书与入口共6只打印计划；真实新叶证书check、step12 load_bundle密码学检查通过。无测试套件、集群API/SSH/服务/下载/清理。方法registry-platform/docs/certificates.md；仍需真实客户端握手/证书安装/到期定时任务。
+- 本单元Docker只读核到11恢复容器均exited、旧/验证6节点running，未再查询旧Harbor健康。所有恢复副本保持停止；正式Harbor生命周期/主机前置模块、SNI/main、KIND存储/镜像、推拉认证/CI-CD/备份/重建独立性继续待完成。本次先补齐证书和消费接线，不能通知“luna做完了”。
+- 现场入口30443/inbox不切换，main未建；仅证书私有目录新增。最终清理必须做且最后，旧节点/卷/唯一备份继续保护，无后台任务/用户预算限制。
+
 ## 最新续接：2026-09-27 Traefik 3.7.13 物料与 step13 共用入口
 
 基线 `a8a1a87f4052cf2031033e25e3e75b1439440020`，本地 luna，不 push。开始时 bootstrap/render.py、values.json 是本助手未提交原3.5.2试作，Harbor方案是此前确认范围的文档修改；均纳入本单元，未覆盖他人工作。交付为包含本段的提交。

@@ -1,0 +1,87 @@
+{
+  "date": "2026-09-27",
+  "baseline": "66a6a83b9bfe8bbe6b93d7cad746ceaa5f2a3266",
+  "certificate_batch": "/home/zymun/private/registry-platform/tls-20260927-five-year",
+  "certificate_validation": {
+    "verified": true,
+    "ca_sha256": "30fe0e56df354899ccf7e66d5d730b87946b8010db21852a2e4520997a51b0ec",
+    "leaves": {
+      "harbor": {
+        "dns_names": [
+          "harbor.sunmoonai.com"
+        ],
+        "certificate_sha256": "e2700dc171e2e0a2d9f028d7d4fcab35e1af717e67ac19d71414af41e7be5b03",
+        "expires_utc": "2031-09-27T10:05:21Z",
+        "remaining_days": 1825
+      },
+      "ingress": {
+        "dns_names": [
+          "sunmoonai.com",
+          "*.sunmoonai.com"
+        ],
+        "certificate_sha256": "b5a2ef29f1c4eeb68c9dd1865c32b5dca8cb969a3b5e1e14c02e663fdfd081ea",
+        "expires_utc": "2031-09-27T10:05:21Z",
+        "remaining_days": 1825
+      }
+    },
+    "installed": false
+  },
+  "original_ca_unchanged": true,
+  "ast_files": [
+    "sunmoonai/registry-platform/certificates.py",
+    "sunmoonai/infrastructure/materials/local_cluster.py",
+    "sunmoonai/infrastructure/materials/tls_local.py",
+    "sunmoonai/infrastructure/materials/ingress_local.py"
+  ],
+  "bash_n_and_shellcheck_files": [
+    "sunmoonai/registry-platform/deploy-certificates.sh",
+    "sunmoonai/registry-platform/config/local-wsl.conf",
+    "sunmoonai/registry-platform/config/cloud.example.conf",
+    "sunmoonai/infrastructure/utils/cluster-step.sh"
+  ],
+  "print_only_plans": [
+    {
+      "cluster": "KIND",
+      "entry": "registry-platform/deploy-certificates.sh",
+      "exit_code": 0
+    },
+    {
+      "cluster": "C1",
+      "entry": "registry-platform/deploy-certificates.sh",
+      "exit_code": 0
+    },
+    {
+      "cluster": "C2",
+      "entry": "registry-platform/deploy-certificates.sh",
+      "exit_code": 0
+    },
+    {
+      "cluster": "KIND",
+      "entry": "ingress-platform/deploy-ingress-platform-all",
+      "exit_code": 0
+    },
+    {
+      "cluster": "C1",
+      "entry": "ingress-platform/deploy-ingress-platform-all",
+      "exit_code": 0
+    },
+    {
+      "cluster": "C2",
+      "entry": "ingress-platform/deploy-ingress-platform-all",
+      "exit_code": 0
+    }
+  ],
+  "shared_tls_bundle_crypto_check": {
+    "passed": true,
+    "targets": [
+      "ingress-platform-dev/traefik-tls-secret",
+      "ingress-platform-prod/traefik-tls-secret"
+    ],
+    "api_calls": false
+  },
+  "services_restarted": false,
+  "entry_switched": false,
+  "cloud_execution": "\u672a\u7ecf\u5b9e\u673a\u9a8c\u8bc1",
+  "tests_added_or_run": false,
+  "cleanup_performed": false
+}

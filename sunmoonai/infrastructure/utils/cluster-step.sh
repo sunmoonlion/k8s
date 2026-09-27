@@ -69,7 +69,7 @@ cluster_step_main() {
         name="STEP09_${field}"
         export "SM_STORAGE_${field}=${!name:-}"
     done
-    export SM_TLS_BUNDLE_FILE="${STEP12_TLS_BUNDLE_FILE:-}"
+    export SM_TLS_BUNDLE_FILE="${STEP12_TLS_BUNDLE_FILE:-${REGISTRY_TLS_BUNDLE_FILE:-}}"
     export SM_TLS_FORCE="${STEP12_FORCE_REGENERATE:-false}" SM_TLS_ROTATE="${STEP12_CA_ROTATE:-false}"
     export SM_TLS_ADDITIONAL_CLUSTERS="${STEP12_ADDITIONAL_CLUSTERS:-}"
     local -a args=(--phase "$phase")

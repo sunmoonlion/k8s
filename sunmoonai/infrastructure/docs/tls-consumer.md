@@ -78,3 +78,7 @@ CLUSTER=C2 bash sunmoonai/infrastructure/steps/step12_ca_generation.sh --dry-run
 主配置仅 Step12 尾部改动，其前所有字节私下比较相同。平台版本、物料、现场服务、旧节点及卷不变。本轮没有需要恢复的服务变更；代码回退不能用于绕开闭包门禁运行旧 force 路径。后续实际创建中断时，保留已创建 Secret，只有同输入/同归属才能续行。
 
 规则核对：C-I8 配错拒绝；C-D1 不重建/覆盖现有证书真源；C-R1 代码、物料锁、公开证书摘要与明确集群身份共同约束执行。主锁继续关闭，step13、仓库正式生命周期及前置步骤、KIND/平台接线与最终验收仍待完成；最终清理照旧最后执行。
+
+## 五年签发与本地适配更新（2026-09-27）
+
+已签发的私有批次通过本模块 `load_bundle` 的实际密码学校验，但尚未访问集群或创建 Secret。[证书手册](../../registry-platform/docs/certificates.md) 是签发/管理路径说明。统一 `registry-platform/deploy-certificates.sh` 按 KIND/C1/C2 调用本地/云端适配器，Secret 实现仍共用本模块；云端输入优先读 STEP12_TLS_BUNDLE_FILE，其次仓库 profile 的 REGISTRY_TLS_BUNDLE_FILE。KIND 的连接与入口适配共用 local_cluster.py；物料闭包门禁仍关闭。
