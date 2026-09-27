@@ -2,7 +2,7 @@
 
 目标：一套部署代码，两种建集群方式；本地与云上均使用集群外 Harbor，统一地址 `harbor.sunmoonai.com:30443`。具体部署/迁移约束见 [主方案](../kind-infrastructure/docs/storage-and-harbor-placement-decision.md)。
 
-当前只实现 **Harbor 官方 2.13.2 离线安装包准备**。本地部署、SSH 执行、备份恢复与入口代理尚未实现，云上未经实机验证。本目录存在不代表仓库已部署。
+当前实现 **Harbor 官方 2.13.2 离线安装包准备**，并备好本机冷备份的 PostgreSQL 17.6 逻辑恢复演练脚本（实际恢复未执行）。本地 Harbor 部署、SSH 执行、仓库完整备份恢复与入口代理尚未实现，云上未经实机验证。本目录存在不代表仓库已部署。
 
 ## 物料准备
 
@@ -26,6 +26,12 @@ python3 sunmoonai/registry-platform/prepare-artifacts.py --apply
 3. 保留原 Harbor 2.13.2 版本，逻辑导出/导入数据库、复制镜像层、带走加密密钥与原证书。全目录摘要一致后才具备后续切换条件。
 4. 本地/SSH 共用部署实现；云端只做打印命令的演练与静态检查，标注未经实机验证并附首次上云清单。
 5. 清理统一放到迁移验收后，按已批准类别重新复核；禁止容器/卷清理，不删除旧节点及冷备份。
+
+## 数据库恢复演练
+
+入口 `database-rehearsal.py` 的 `run`/`stop` 默认只打印，`check` 只读；明确批准后才用 `--apply` 创建独立数据库副本和三个专属容器。具体命令、固定输入、验收与恢复见 [执行卡](docs/database-rehearsal-plan.md)。
+
+新盘/固定镜像/归档 SHA256 与 PG_VERSION 预检通过；[准备证据](../scripts/results/luna-registry-database-rehearsal-preparation.20260927.json)。脚本覆盖镜像的自动建卷目录，使用 `--network=none`、无端口、只读根文件系统，结束只停止并保留本次容器。源备份不挂入容器，旧 Harbor 和原 Kubernetes 恢复副本不变。冷备份演练通过也不代表最新数据已经迁移。
 
 ## 规则核对
 

@@ -1,0 +1,100 @@
+{
+  "at": "2026-09-27T04:02:18.769649+00:00",
+  "python_ast": "pass",
+  "plan": {
+    "dry_run": true,
+    "action": "run",
+    "run_dir": "/data/harbor/rehearsals/pg17-20260927T040000Z",
+    "backup": "/home/zymun/packages-to-be-installed/releases/harbor-preserve-20260926/backup-20260926T145600Z",
+    "image": "bitnami/postgresql@sha256:dbd371582fbbb100b22b891e485f4559187362348c1d4b5d0a2191134807516b",
+    "archive_sha256": "d6eaee7507f5393613fe253298813c24627ff248162237d1c02b76847f1ae59d",
+    "containers": 3,
+    "network": "none",
+    "published_ports": [],
+    "delete": false,
+    "source_cluster_contact": false,
+    "cloud_status": "未经实机验证；本入口仅本地冷备份数据库演练"
+  },
+  "script_sha256": "43e1c8d9443caa58ef45e8c19feccd8405d3b9a98115a78948e139642612f0bb",
+  "execution_performed": false,
+  "readonly_preflight": {
+    "read_only": true,
+    "storage": {
+      "layout": "SUNMOON_DATA_LAYOUT_V1",
+      "expected_uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+      "root": {
+        "target": "/mnt/sunmoon-data",
+        "source": "/dev/sde",
+        "fstype": "ext4",
+        "uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+        "options": "rw,relatime",
+        "maj:min": "8:64",
+        "fsroot": "/"
+      },
+      "binds": [
+        {
+          "target": "/data/kind-clusters",
+          "source": "/mnt/sunmoon-data/kind-clusters",
+          "identity": [
+            2112,
+            4718593
+          ]
+        },
+        {
+          "target": "/data/harbor",
+          "source": "/mnt/sunmoon-data/harbor",
+          "identity": [
+            2112,
+            524289
+          ]
+        }
+      ],
+      "legacy_storage": {
+        "inode": [
+          2096,
+          33554434
+        ],
+        "mount": {
+          "target": "/",
+          "source": "/dev/sdd",
+          "fstype": "ext4",
+          "uuid": "693faed3-cebb-473e-81ae-fd88f1fc76b4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "maj:min": "8:48",
+          "fsroot": "/"
+        }
+      },
+      "available_bytes": 103998709760,
+      "mount_namespace": "mnt:[4026532219]",
+      "service_visibility": {
+        "docker_running": true,
+        "views": [
+          {
+            "service": "systemd",
+            "pid": 1,
+            "mount_namespace": "mnt:[4026532219]"
+          },
+          {
+            "service": "docker",
+            "pid": 329,
+            "mount_namespace": "mnt:[4026532219]"
+          }
+        ]
+      }
+    },
+    "image": {
+      "reference": "bitnami/postgresql@sha256:dbd371582fbbb100b22b891e485f4559187362348c1d4b5d0a2191134807516b",
+      "id": "sha256:dbd371582fbbb100b22b891e485f4559187362348c1d4b5d0a2191134807516b",
+      "platform": "linux/amd64"
+    },
+    "archive_verified": true,
+    "archive_bytes": 195020800,
+    "archive_sha256": "d6eaee7507f5393613fe253298813c24627ff248162237d1c02b76847f1ae59d",
+    "pgdata_major": "17"
+  },
+  "runtime_archive_inspection": {
+    "uid_1001_passwd_entry": false,
+    "nss_wrapper_declared": "/opt/bitnami/common/lib/libnss_wrapper.so",
+    "implementation": "explicit private passwd/group and LD_PRELOAD; no image modification"
+  }
+}

@@ -90,3 +90,8 @@ git diff --name-status 7896b339..luna
 ## 8. 数据盘挂载已复核通过（2026-09-27）
 
 所有者执行 v2 后，助手从当前 WSL 会话使用已发布脚本 `--require-service-visibility` 只读复核，退出 0。PID 1/Docker 同一挂载空间，三处挂载正确，旧路径设备/inode 与原结果一致。证据 `../../scripts/results/luna-data-storage-v2-mounted.20260927.json`。此结果替代前节“待修复”状态；不覆盖历史失败证据。计划任务/重启验收待办，Harbor 尚未安装恢复，业务 inbox 目标不变，剩余清理继续留到最终验收。
+
+
+## 9. 宿主 Harbor 数据库恢复准备（2026-09-27）
+
+新增 `registry-platform/database-rehearsal.py` 与同模块 `docs/database-rehearsal-plan.md`。默认只打印，check 只读；固定冷备份归档、PG17.6 镜像和新盘 UUID，实际 run --apply 待所有者确认。作用是从冷备份建立临时源库，再逻辑导出/导入独立空目标并核对，3 个新容器无网络/端口，不触及旧 Harbor 或原隔离恢复副本；不作为正式最新数据迁移。预检通过，实际数据库演练尚未执行；inbox 仍用旧 kind，云端未操作。镜像三个 VOLUME 已在候选代码显式覆盖，运行前还会拒绝匿名卷。

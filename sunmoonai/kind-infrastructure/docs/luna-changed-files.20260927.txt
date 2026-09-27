@@ -47,6 +47,8 @@ sunmoonai/kind-infrastructure/mount/attach-vhds.ps1
 sunmoonai/kind-infrastructure/mount/check-storage-mounts.sh
 sunmoonai/registry-platform/README.md
 sunmoonai/registry-platform/artifacts.lock.json
+sunmoonai/registry-platform/database-rehearsal.py
+sunmoonai/registry-platform/docs/database-rehearsal-plan.md
 sunmoonai/registry-platform/prepare-artifacts.py
 sunmoonai/scripts/results/luna-build-cache-candidates.20260927.json
 sunmoonai/scripts/results/luna-data-disk-capacity.20260927.json
@@ -86,6 +88,7 @@ sunmoonai/scripts/results/luna-reclaim-r4.20260927.json
 sunmoonai/scripts/results/luna-reclaim-r4.20260927.preflight.json
 sunmoonai/scripts/results/luna-reclaim-summary.20260927.json
 sunmoonai/scripts/results/luna-registry-artifacts.20260927.json
+sunmoonai/scripts/results/luna-registry-database-rehearsal-preparation.20260927.json
 sunmoonai/scripts/results/luna-registry-installer-inventory.20260927.json
 sunmoonai/scripts/results/luna-storage-entry-inspection.20260927.json
 sunmoonai/scripts/results/luna-wsl-space-inventory.20260927.json
