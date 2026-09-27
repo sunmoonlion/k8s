@@ -1,0 +1,180 @@
+{
+  "read_only": true,
+  "installer_sha256": "198bcefa594007186a265cf2513a4ec5f9419c6995e3a02bc81cac8fa17dede3",
+  "images": {
+    "core": {
+      "reference": "goharbor/harbor-core:v2.13.2",
+      "id": "sha256:a754b7d40a2abf91bce852af52b2f69f614b11e51b1fddfd250a4754125e1501",
+      "volumes": [],
+      "architecture": "amd64",
+      "os": "linux"
+    },
+    "registry": {
+      "reference": "goharbor/registry-photon:v2.13.2",
+      "id": "sha256:a0a146d033c4302bc590507e4035386a71d2d57089d94d6b54b87947b10f0873",
+      "volumes": [
+        "/storage"
+      ],
+      "architecture": "amd64",
+      "os": "linux"
+    },
+    "registryctl": {
+      "reference": "goharbor/harbor-registryctl:v2.13.2",
+      "id": "sha256:af207ccbe6db8d976fb060488607275c55e8e8893449152d917bfc8f2e7e4e9e",
+      "volumes": [
+        "/var/lib/registry"
+      ],
+      "architecture": "amd64",
+      "os": "linux"
+    },
+    "portal": {
+      "reference": "goharbor/harbor-portal:v2.13.2",
+      "id": "sha256:2cdbbbaec69504894bb94cd4bebe6520a6df6bacd6c93e936eb7ec690b07d46c",
+      "volumes": [
+        "/run",
+        "/var/cache/nginx",
+        "/var/log/nginx"
+      ],
+      "architecture": "amd64",
+      "os": "linux"
+    },
+    "proxy": {
+      "reference": "goharbor/nginx-photon:v2.13.2",
+      "id": "sha256:aa191f956a23c6e3e8ffb31720c9c41460bc5e91ebca70db2a12a643d3e42cd8",
+      "volumes": [
+        "/run",
+        "/var/cache/nginx",
+        "/var/log/nginx"
+      ],
+      "architecture": "amd64",
+      "os": "linux"
+    },
+    "jobservice": {
+      "reference": "goharbor/harbor-jobservice:v2.13.2",
+      "id": "sha256:7678c8e2cc6edcff244bf4a47491864a2fba39cf6f00d2d905db93b7823185d9",
+      "volumes": [
+        "/var/log/jobs/"
+      ],
+      "architecture": "amd64",
+      "os": "linux"
+    },
+    "postgresql": {
+      "reference": "bitnami/postgresql@sha256:dbd371582fbbb100b22b891e485f4559187362348c1d4b5d0a2191134807516b",
+      "id": "sha256:dbd371582fbbb100b22b891e485f4559187362348c1d4b5d0a2191134807516b",
+      "volumes": [
+        "/bitnami/postgresql",
+        "/docker-entrypoint-initdb.d",
+        "/docker-entrypoint-preinitdb.d"
+      ],
+      "architecture": "amd64",
+      "os": "linux"
+    },
+    "redis": {
+      "reference": "bitnami/redis@sha256:0d2c5324b7373522e1fce60d657d60c851aa2921b211fd795f20c8515bee429e",
+      "id": "sha256:0d2c5324b7373522e1fce60d657d60c851aa2921b211fd795f20c8515bee429e",
+      "volumes": [],
+      "architecture": "amd64",
+      "os": "linux"
+    }
+  },
+  "in_memory_renderings": [
+    {
+      "platform": "wsl",
+      "write_enabled": false,
+      "services": [
+        "core",
+        "jobservice",
+        "portal",
+        "postgresql",
+        "proxy",
+        "redis",
+        "registry",
+        "registryctl"
+      ],
+      "private_file_count": 27,
+      "original_identities_preserved": true,
+      "jobs_default_enabled": false
+    },
+    {
+      "platform": "wsl",
+      "write_enabled": true,
+      "services": [
+        "core",
+        "jobservice",
+        "portal",
+        "postgresql",
+        "proxy",
+        "redis",
+        "registry",
+        "registryctl"
+      ],
+      "private_file_count": 27,
+      "original_identities_preserved": true,
+      "jobs_default_enabled": true
+    },
+    {
+      "platform": "cloud",
+      "write_enabled": false,
+      "services": [
+        "core",
+        "jobservice",
+        "portal",
+        "postgresql",
+        "proxy",
+        "redis",
+        "registry",
+        "registryctl"
+      ],
+      "private_file_count": 27,
+      "original_identities_preserved": true,
+      "jobs_default_enabled": false
+    },
+    {
+      "platform": "cloud",
+      "write_enabled": true,
+      "services": [
+        "core",
+        "jobservice",
+        "portal",
+        "postgresql",
+        "proxy",
+        "redis",
+        "registry",
+        "registryctl"
+      ],
+      "private_file_count": 27,
+      "original_identities_preserved": true,
+      "jobs_default_enabled": true
+    }
+  ],
+  "ca_sha256": "30fe0e56df354899ccf7e66d5d730b87946b8010db21852a2e4520997a51b0ec",
+  "leaf_sha256": "e2700dc171e2e0a2d9f028d7d4fcab35e1af717e67ac19d71414af41e7be5b03",
+  "services_started": false,
+  "files_written": false,
+  "registry_or_database_copied": false,
+  "compose_version": "5.1.3",
+  "compose_config_parsed_without_env_resolution": true,
+  "docker_compose_runtime_checked": false,
+  "cloud_execution": "未经实机验证",
+  "baseline": "1bb77594f24b11459af1c9bf34ad5dedb06b1f07",
+  "date": "2026-09-27",
+  "ast_files": [
+    "runtime_config.py",
+    "runtime_files.py",
+    "runtime_inspect.py"
+  ],
+  "not_performed": [
+    "runtime installation",
+    "container or volume creation",
+    "data restore or full-directory reconciliation",
+    "service startup",
+    "SSH",
+    "ingress cutover",
+    "cleanup",
+    "test suites"
+  ],
+  "initial_findings": [
+    "Docker archive config Volumes=null normalized to empty metadata list; no image semantics changed",
+    "Generated Redis URLs preserve idle_timeout_seconds=30 and database indices 0/1/2"
+  ]
+}

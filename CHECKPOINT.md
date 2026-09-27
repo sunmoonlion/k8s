@@ -1,3 +1,15 @@
+## 最新续接：2026-09-27 独立 Harbor 共用运行配置渲染
+
+基线 `1bb77594f24b11459af1c9bf34ad5dedb06b1f07`，本地 luna，不 push，开始工作树干净。交付为包含本段的提交。
+
+- runtime_config.py纯函数消费官方2.13.2原Compose和显式site/镜像元数据，产生8角色：6官方+原PG17.6/Redis8.2.1。每实例/data/harbor/instances/<deployment>，唯一project/labels，restart=no，明确bind/create_host_path=false和tmpfs覆盖镜像隐式卷；不自动沿用upstream任意权限/端口字段。本地loopback18443、云privateIP30443；内网backend+仅proxy前端无masquerade。
+- runtime_files.py纯函数把原core加密/令牌签名/共享凭据/registry认证映射到新文件，HTTPS接五年Harbor叶；Redis认证同时接core/registry/jobservice，保留DB0/1/2与idle_timeout_seconds=30，AOF/everysec。只读模式禁Jobservice默认profile/registry数据RO；可写参数仅渲染，尚未部署或改写状态。GC/出站任务配置/自动启动仍待完整生命周期，不能称生产功能已齐备。
+- runtime_inspect.py默认只打印；--check只读原root私有输入、installer全SHA、6官方configSHA、原PG/Redis本机digest、TLS配对/链。4组wsl/cloud+只读/可写各27私有文件在内存生成，原4类核心身份逐字节比对。Compose5.1.3从stdin解析，--no-env-resolution不访问未创建实例的env文件，未做有效env值/服务运行验收。云IP10.50.0.5仅内存例子，未SSH。
+- 失败留痕：最初一次性元数据读取对Volumes=null直接list失败，正式读取器规范为null/空集合等价；首次渲染拒绝Redis查询参数，只读核到三URL都是idle_timeout_seconds=30后窄化白名单并原样保留。没删除失败副本、没放宽TLS/摘要检查。
+- 证据scripts/results/luna-registry-runtime-render.20260927.json含8固定镜像ID与4组通过结果，3Python AST及默认计划通过；未测试套件/落盘私有配置/创建容器/复制DB或层/启动服务/切30443/清理。使用方法registry-platform/docs/runtime-rendering.md。
+- 下一步：把这两纯函数接新实例准备与生命周期；固定Compose与Jobservice等物料、存储UUID/空目标与权限检查、完整env校验、同版逻辑恢复/全目录SHA、start/stop/backup/storage-gated unit；云前置SSH只演练。原配置生成器仍固定历史候选批次，不能把这三新模块说成通用安装已完成。
+- 五年证书提交已完成且未在线安装；main仍未创建，恢复11容器保持停止、旧节点/卷/入口/inbox保护。旧Harbor近期健康未新核。最终清理不可遗漏且最后。整体任务未完成，不发luna做完了。无后台任务/预算上限。
+
 ## 最新续接：2026-09-27 原 CA 五年证书与统一消费入口
 
 基线 `66a6a83b9bfe8bbe6b93d7cad746ceaa5f2a3266`，本地 luna，不 push。开始时只有本助手本单元新 certificates.py，未覆盖他人工作。交付为包含本段的提交。
