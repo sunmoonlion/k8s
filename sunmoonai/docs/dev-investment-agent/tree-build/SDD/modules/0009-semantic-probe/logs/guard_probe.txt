@@ -1,0 +1,48 @@
+Failed to create logical plan: Error during planning: table function 'read_text' not found
+Failed to create logical plan: Error during planning: table function 'read_csv' not found
+Failed to create logical plan: Error during planning: table function 'read_csv' not found
+Failed to create logical plan: Error during planning: table function 'duckdb_secrets' not found
+Failed to create logical plan: Error during planning: table 'wren.public.metric_dictionary' not found
+
+#### 模式：默认
+- 正常查询             | 符合预期     | 放行 rows=1 first=[{'region': '华东', 'net': Decimal('6979000000')}] | 200ms
+- 带 CTE 的查询        | 符合预期     | 放行 rows=1 first=[{'region': '华东', 'n': 26387}] | 19ms
+- 删除               | 符合预期     | 拦截 code=ErrorCode.BLOCKED_STATEMENT phase=ErrorPhase.SQL_POLICY_CHECK msg=[BLOCKED_STATEMENT] 'DELETE' is not a read-only query. Only read-only SELECT statements are accepted. phase=SQ | 0ms
+- 插入               | 符合预期     | 拦截 code=ErrorCode.BLOCKED_STATEMENT phase=ErrorPhase.SQL_POLICY_CHECK msg=[BLOCKED_STATEMENT] 'INSERT' is not a read-only query. Only read-only SELECT statements are accepted. phase=SQ | 0ms
+- 建表               | 符合预期     | 拦截 code=ErrorCode.BLOCKED_STATEMENT phase=ErrorPhase.SQL_POLICY_CHECK msg=[BLOCKED_STATEMENT] 'CREATE' is not a read-only query. Only read-only SELECT statements are accepted. phase=SQ | 0ms
+- 多条语句             | 符合预期     | 拦截 code=ErrorCode.BLOCKED_STATEMENT phase=ErrorPhase.SQL_POLICY_CHECK msg=[BLOCKED_STATEMENT] 'BLOCK' is not a read-only query. Only read-only SELECT statements are accepted. phase=SQL | 0ms
+- 挂载别的库            | 符合预期     | 拦截 code=ErrorCode.BLOCKED_STATEMENT phase=ErrorPhase.SQL_POLICY_CHECK msg=[BLOCKED_STATEMENT] 'ATTACH' is not a read-only query. Only read-only SELECT statements are accepted. phase=SQ | 0ms
+- PRAGMA           | 符合预期     | 拦截 code=ErrorCode.BLOCKED_STATEMENT phase=ErrorPhase.SQL_POLICY_CHECK msg=[BLOCKED_STATEMENT] 'PRAGMA' is not a read-only query. Only read-only SELECT statements are accepted. phase=SQ | 0ms
+- 读本地文件 read_text  | 符合预期     | 拦截 code=ErrorCode.INVALID_SQL phase=ErrorPhase.SQL_PLANNING msg=[INVALID_SQL] Error during planning: table function 'read_text' not found phase=SQL_PLANNING | 10ms
+- 读本地文件 read_csv   | 符合预期     | 拦截 code=ErrorCode.INVALID_SQL phase=ErrorPhase.SQL_PLANNING msg=[INVALID_SQL] Error during planning: table function 'read_csv' not found phase=SQL_PLANNING | 3ms
+- 读系统文件            | 符合预期     | 拦截 code=ErrorCode.INVALID_SQL phase=ErrorPhase.SQL_PLANNING msg=[INVALID_SQL] Error during planning: table function 'read_csv' not found phase=SQL_PLANNING | 3ms
+- 绕过语义层直查物理表       | !! 不符合预期 | 放行 rows=1 first=[{'n': 26387}] | 10ms
+- 查系统目录            | !! 不符合预期 | 放行 rows=3 first=[{'table_name': 'funnel_daily'}] | 6ms
+- 列出密钥函数           | 符合预期     | 拦截 code=ErrorCode.INVALID_SQL phase=ErrorPhase.SQL_PLANNING msg=[INVALID_SQL] Error during planning: table function 'duckdb_secrets' not found phase=SQL_PLANNING | 3ms
+- 语义模型外的表          | 符合预期     | 拦截 code=ErrorCode.INVALID_SQL phase=ErrorPhase.SQL_PLANNING msg=[INVALID_SQL] Error during planning: table 'wren.public.metric_dictionary' not found phase=SQL_PLANNING | 2ms
+- 导出文件 COPY        | 符合预期     | 拦截 code=ErrorCode.BLOCKED_STATEMENT phase=ErrorPhase.SQL_POLICY_CHECK msg=[BLOCKED_STATEMENT] 'COPY' is not a read-only query. Only read-only SELECT statements are accepted. phase=SQL_ | 0ms
+- 装扩展              | 符合预期     | 拦截 code=ErrorCode.BLOCKED_STATEMENT phase=ErrorPhase.SQL_POLICY_CHECK msg=[BLOCKED_STATEMENT] 'INSTALL' is not a read-only query. Only read-only SELECT statements are accepted. phase=S | 0ms
+
+#### 模式：严格
+- 正常查询             | 符合预期     | 放行 rows=1 first=[{'region': '华东', 'net': Decimal('6979000000')}] | 490ms
+- 带 CTE 的查询        | 符合预期     | 放行 rows=1 first=[{'region': '华东', 'n': 26387}] | 13ms
+- 删除               | 符合预期     | 拦截 code=ErrorCode.BLOCKED_STATEMENT phase=ErrorPhase.SQL_POLICY_CHECK msg=[BLOCKED_STATEMENT] 'DELETE' is not a read-only query. Only read-only SELECT statements are accepted. phase=SQ | 0ms
+- 插入               | 符合预期     | 拦截 code=ErrorCode.BLOCKED_STATEMENT phase=ErrorPhase.SQL_POLICY_CHECK msg=[BLOCKED_STATEMENT] 'INSERT' is not a read-only query. Only read-only SELECT statements are accepted. phase=SQ | 0ms
+- 建表               | 符合预期     | 拦截 code=ErrorCode.BLOCKED_STATEMENT phase=ErrorPhase.SQL_POLICY_CHECK msg=[BLOCKED_STATEMENT] 'CREATE' is not a read-only query. Only read-only SELECT statements are accepted. phase=SQ | 0ms
+- 多条语句             | 符合预期     | 拦截 code=ErrorCode.BLOCKED_STATEMENT phase=ErrorPhase.SQL_POLICY_CHECK msg=[BLOCKED_STATEMENT] 'BLOCK' is not a read-only query. Only read-only SELECT statements are accepted. phase=SQL | 0ms
+- 挂载别的库            | 符合预期     | 拦截 code=ErrorCode.BLOCKED_STATEMENT phase=ErrorPhase.SQL_POLICY_CHECK msg=[BLOCKED_STATEMENT] 'ATTACH' is not a read-only query. Only read-only SELECT statements are accepted. phase=SQ | 0ms
+- PRAGMA           | 符合预期     | 拦截 code=ErrorCode.BLOCKED_STATEMENT phase=ErrorPhase.SQL_POLICY_CHECK msg=[BLOCKED_STATEMENT] 'PRAGMA' is not a read-only query. Only read-only SELECT statements are accepted. phase=SQ | 0ms
+- 读本地文件 read_text  | 符合预期     | 拦截 code=ErrorCode.MODEL_NOT_FOUND phase=ErrorPhase.SQL_POLICY_CHECK msg=[MODEL_NOT_FOUND] Data-reading function 'read_text' is not allowed. In strict mode, reading data outside the M | 0ms
+- 读本地文件 read_csv   | 符合预期     | 拦截 code=ErrorCode.MODEL_NOT_FOUND phase=ErrorPhase.SQL_POLICY_CHECK msg=[MODEL_NOT_FOUND] Data-reading function 'readcsv' is not allowed. In strict mode, reading data outside the MDL | 0ms
+- 读系统文件            | 符合预期     | 拦截 code=ErrorCode.MODEL_NOT_FOUND phase=ErrorPhase.SQL_POLICY_CHECK msg=[MODEL_NOT_FOUND] Data-reading function 'readcsv' is not allowed. In strict mode, reading data outside the MDL | 1ms
+- 绕过语义层直查物理表       | !! 不符合预期 | 放行 rows=1 first=[{'n': 26387}] | 12ms
+- 查系统目录            | 符合预期     | 拦截 code=ErrorCode.MODEL_NOT_FOUND phase=ErrorPhase.SQL_POLICY_CHECK msg=[MODEL_NOT_FOUND] Table 'tables' is not defined in the MDL manifest. In strict mode, all table references must | 0ms
+- 列出密钥函数           | 符合预期     | 拦截 code=ErrorCode.MODEL_NOT_FOUND phase=ErrorPhase.SQL_POLICY_CHECK msg=[MODEL_NOT_FOUND] Table-valued function 'DUCKDB_SECRETS()' is not allowed. In strict mode, all table reference | 1ms
+- 语义模型外的表          | 符合预期     | 拦截 code=ErrorCode.MODEL_NOT_FOUND phase=ErrorPhase.SQL_POLICY_CHECK msg=[MODEL_NOT_FOUND] Table 'metric_dictionary' is not defined in the MDL manifest. In strict mode, all table refe | 0ms
+- 导出文件 COPY        | 符合预期     | 拦截 code=ErrorCode.BLOCKED_STATEMENT phase=ErrorPhase.SQL_POLICY_CHECK msg=[BLOCKED_STATEMENT] 'COPY' is not a read-only query. Only read-only SELECT statements are accepted. phase=SQL_ | 0ms
+- 装扩展              | 符合预期     | 拦截 code=ErrorCode.BLOCKED_STATEMENT phase=ErrorPhase.SQL_POLICY_CHECK msg=[BLOCKED_STATEMENT] 'INSTALL' is not a read-only query. Only read-only SELECT statements are accepted. phase=S | 0ms
+
+默认模式不符合预期： ['绕过语义层直查物理表', '查系统目录']
+严格模式不符合预期： ['绕过语义层直查物理表']
+进程内存峰值 MB： 198
+导出文件是否被写出： False

@@ -1,0 +1,45 @@
+
+#### 默认, fallback=开
+- 经模型查已暴露字段              | 符合预期 | 放行 [{'v': Decimal('6979000000')}]
+- 经模型查未暴露字段              | 符合预期 | 拦截 [GENERIC_USER_ERROR] Binder Error: Referenced column "cogs_cents" not found in FROM clause!
+Candidate bindings: "1"
+
+LIN
+- SELECT * 是否带出未暴露字段     | 符合预期 | 返回 18 个字段，含 cogs_cents=False
+- 物理表全名查未暴露字段            | 符合预期 | 拦截 [INVALID_SQL] Error during planning: table 'lesson23.main.order_performance' not found phase=SQL_PLANNING
+- 物理表带 schema 查未暴露字段     | 符合预期 | 拦截 [INVALID_SQL] Error during planning: table 'wren.main.order_performance' not found phase=SQL_PLANNING
+- 物理表裸名查未暴露字段            | 符合预期 | 拦截 [INVALID_SQL] Error during planning: table 'wren.public.order_performance' not found phase=SQL_PLANNING
+- 子查询里藏物理表               | 符合预期 | 拦截 [INVALID_SQL] Error during planning: table 'lesson23.main.order_performance' not found phase=SQL_PLANNING
+- CTE 里藏物理表              | 符合预期 | 拦截 [INVALID_SQL] Error during planning: table 'lesson23.main.order_performance' not found phase=SQL_PLANNING
+- 别的物理表                  | 符合预期 | 拦截 [INVALID_SQL] Error during planning: table 'lesson23.main.funnel_daily' not found phase=SQL_PLANNING
+  dry_plan(物理表全名) 拦截： [INVALID_SQL] Error during planning: table 'lesson23.main.order_performance' not found phase=SQL_PLANNING
+
+#### 严格, fallback=开
+- 经模型查已暴露字段              | 符合预期 | 放行 [{'v': Decimal('6979000000')}]
+- 经模型查未暴露字段              | 符合预期 | 拦截 [GENERIC_USER_ERROR] Binder Error: Referenced column "cogs_cents" not found in FROM clause!
+Candidate bindings: "1"
+
+LIN
+- SELECT * 是否带出未暴露字段     | 符合预期 | 返回 18 个字段，含 cogs_cents=False
+- 物理表全名查未暴露字段            | 符合预期 | 拦截 [MODEL_NOT_FOUND] Table 'order_performance' is not defined in the MDL manifest. In strict mode, all table references mus
+- 物理表带 schema 查未暴露字段     | 符合预期 | 拦截 [MODEL_NOT_FOUND] Table 'order_performance' is not defined in the MDL manifest. In strict mode, all table references mus
+- 物理表裸名查未暴露字段            | 符合预期 | 拦截 [MODEL_NOT_FOUND] Table 'order_performance' is not defined in the MDL manifest. In strict mode, all table references mus
+- 子查询里藏物理表               | 符合预期 | 拦截 [MODEL_NOT_FOUND] Table 'order_performance' is not defined in the MDL manifest. In strict mode, all table references mus
+- CTE 里藏物理表              | 符合预期 | 拦截 [MODEL_NOT_FOUND] Table 'order_performance' is not defined in the MDL manifest. In strict mode, all table references mus
+- 别的物理表                  | 符合预期 | 拦截 [MODEL_NOT_FOUND] Table 'funnel_daily' is not defined in the MDL manifest. In strict mode, all table references must cor
+  dry_plan(物理表全名) 拦截： [MODEL_NOT_FOUND] Table 'order_performance' is not defined in the MDL manifest. In strict mode, all table references must correspond to MDL 
+
+#### 严格, fallback=关
+- 经模型查已暴露字段              | 符合预期 | 放行 [{'v': Decimal('6979000000')}]
+- 经模型查未暴露字段              | 符合预期 | 拦截 [GENERIC_USER_ERROR] Binder Error: Referenced column "cogs_cents" not found in FROM clause!
+Candidate bindings: "1"
+
+LIN
+- SELECT * 是否带出未暴露字段     | 符合预期 | 返回 18 个字段，含 cogs_cents=False
+- 物理表全名查未暴露字段            | 符合预期 | 拦截 [MODEL_NOT_FOUND] Table 'order_performance' is not defined in the MDL manifest. In strict mode, all table references mus
+- 物理表带 schema 查未暴露字段     | 符合预期 | 拦截 [MODEL_NOT_FOUND] Table 'order_performance' is not defined in the MDL manifest. In strict mode, all table references mus
+- 物理表裸名查未暴露字段            | 符合预期 | 拦截 [MODEL_NOT_FOUND] Table 'order_performance' is not defined in the MDL manifest. In strict mode, all table references mus
+- 子查询里藏物理表               | 符合预期 | 拦截 [MODEL_NOT_FOUND] Table 'order_performance' is not defined in the MDL manifest. In strict mode, all table references mus
+- CTE 里藏物理表              | 符合预期 | 拦截 [MODEL_NOT_FOUND] Table 'order_performance' is not defined in the MDL manifest. In strict mode, all table references mus
+- 别的物理表                  | 符合预期 | 拦截 [MODEL_NOT_FOUND] Table 'funnel_daily' is not defined in the MDL manifest. In strict mode, all table references must cor
+  dry_plan(物理表全名) 拦截： [MODEL_NOT_FOUND] Table 'order_performance' is not defined in the MDL manifest. In strict mode, all table references must correspond to MDL 

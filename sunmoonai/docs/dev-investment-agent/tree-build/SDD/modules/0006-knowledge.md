@@ -34,8 +34,10 @@ A 股非金融三大表与附注：入库的三大表、附注表提取工具、
 
 令牌（2026-09-25，D10）：配了 `KNOWLEDGE_MCP_JWT_PUBLIC_KEY`（Secret `knowledge-mcp-tokens/jwt-public-key.pem`）时，三段式令牌按 ES256 验签，`aud=knowledge`、`exp`、可选 `iss`，`sub`/`sandbox`/`tools` 即授权；静态表共存。工作台每次拉起或撤换沙箱都按用户签一枚，经供给器进沙箱 Secret（`F-KNOW-03` 完成）。未做：`F-KNOW-04` 用户资料入库；检索与领域工具（第一切口）；异常调用上报只到日志与计数。
 
-## 待做（2026-09-27，最小可行产品）
+## 多数据集（2026-09-27，已做，未部署）
 
-支持多个数据集：登记表、内部登记接口、三个工具的可选参数 `dataset`、新工具 `list_datasets`。设计见 [`0008-info`](0008-info.md)「段三」。
+登记表、内部登记接口、三个工具的可选参数 `dataset`、新工具 `list_datasets`；开关默认关。设计与状态见 [`0008-info`](0008-info.md)「段三」，实现说明在知识后端的 `docs/dataset-registry.md`。
 
-语义层：工具后面的 SQL 防护与执行换成 WrenAI 引擎，增加按口径名查询的工具。设计见 [`0009-semantic`](0009-semantic.md)。
+## 语义层（2026-09-27，已做，未部署）
+
+工具后面的检查、规划、执行可以走语义层（WrenAI 引擎当成库），增加按口径名查询的工具 `query_metric`；开关默认关。设计与状态见 [`0009-semantic`](0009-semantic.md)，实现说明在知识后端的 `docs/semantic-layer.md`。
