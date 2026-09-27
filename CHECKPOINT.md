@@ -1,3 +1,15 @@
+## 最新续接：2026-09-27 Trivy原镜像与离线数据库、隔离扫描已核，正式版本待安全评估
+
+基线8ff8b4968cbdbfd1f044e2cc1adfed2a9d490560；本地luna、不push，起始干净。用户继续推进，中途问旧镜像可否使用；已回答先复用隔离验证，实际发现严重问题后明确不能直接作为长期正式版本。交付为含本段的提交，整体迁移未完。
+
+- 旧Trivy实际StatefulSet sunmoonai-harbor-trivy / namespace cicd-platform-dev，在kind-worker2，Ready、restart0。release label是sunmoonai，不是sunmoonai-harbor。原镜像bitnami/harbor-adapter-trivy:2.13.2-debian-12-r2；trivy --version为0.64.1；adapter metadata为dev/Unknown。临时loopback28080 port-forward读metadata后已关闭。尝试scanner-trivy --version不支持该flag，实际短暂启动第二进程，8080绑定失败后5秒timeout退出；未提交扫描任务，旧资源未改。
+- 原缓存仅空目录12KiB；coldbackup trivy.tar/trivy-active.tar各10KiB。不能用Pod Ready证明扫描已成功。原镜像在固定coldbackup preparation/images/kind-worker2-harbor-amd64.tar，sourceSHAeef8fa55e3847e351c1989ccd675c5de4606ca2ee2ed00efc966e27c434b0c61；prepare_scanner.py抽取单镜像OCI、全图SHA核验。新物料releases/harbor-trivy-2.13.2-original-linux-amd64，97,976,320B SHA2232799c70feb49731350f872af70e0c33fae320b9a2189b473d146c6d4392c1。Docker已load，实际imageID为amd64manifest7c973faed0944ae77350605ea85d5a9d592fd1258e5bd0ad6f3feb701f826d1e，无声明卷，UID1001。
+- prepare_scanner_db.py resolve/download/verify默认只打印；东京只执行public source viaSSH stdin，/home/zym/trivy-db-20260927-v1。两官方GHCR数据库manifest固定，全部压缩/解压字节校验；noDocker/noextract/no部署。rsync回本机同名release目录并再次完整核验。db格式2、UpdatedAt2026-09-27T07:04:17Z，Java格式1、01:08:08Z；压缩合计1,096,889,723B，解开2,986,643,742B。锁SHAeb4a458976d50357c844edc9b5cf87f6eee5fe24a5cf288cc7e5530b25e5bf16。repo scanner-db-20260927.lock.json。准入最大年龄db48h/java7d，不代表定时更新已接通；物料不是发布者签名认证。
+- scanner_verify.py本机新目录rootfs实际验收：固定原镜像、networknone、UID1001、只读root、capdrop/nopriv、2GiB/2CPU、无端口/凭据/socket/管理卷。数据库必须在专用可写缓存，原归档保留。首次v1因目录umask和只读DB失败，仅修目录重试仍失败，日志保留；v2新独立缓存UID1001/dir0700/file0600可写后通过，识别954包，报告SHAf3124025d612c690e35501591610258d58e9fb2136e64a31f04ec812db9a5c75。Java归档全验但没有Java样本扫描；Harbor/adapter/jobservice/privateimage/CI-CD未验。
+- 两试验实例路径releases/trivy-offline-trial-20260927及-v2，容器sunmoon-trivy-offline-20260927 exited1、-v2 exited0，v2 ID7b3634defdcf4fdec7f27f7821e7a207f8eeee0d82f8a55f848979c4952ff017；各0管理卷，总卷仍46，旧/验证6节点running。数据盘没再复制17GB，缓存放系统盘；约5.56GiB试验副本仅列最终清理候选，不现在删。没有Harbor启动/配置/入口切换、云部署或清理，无后台任务。
+- 关键结论：原镜像自身扫描23条CRITICAL、309HIGH，CRITICAL去重9CVE，含SBOM/多包重复。formal_admission=false。已核Go CVE-2025-68121 TLS会话CA变化前提、grpc CVE-2026-33186服务端路径鉴权前提；Debian的CVE-2023-45853不应直接按zlib二进制可利用认定。其余尚未逐条适用性评估。不能把全部发现当可利用，也不能忽略后直接正式运行。docs/scanner-offline.md有来源与边界，证据scripts/results/luna-trivy-offline.20260927.json。没有决定/安装新扫描器版本或改PG/Redis。
+- 当前下一步：核维护中的scanner/adapter最小安全修复候选与Harbor2.13.2接口兼容，随后恢复/映射扫描登记、Jobservice和私有镜像扫描。原8服务readonly副本WITH_TRIVYfalse问题仍未修，不能晋升正式。可写/推拉/CI-CD、共用安装/工具离线闭包/云SSH前置、挂盘自启、SNI30443维护窗口、正式main双挂载/重建独立性继续未完。旧controlplane停机窗口仍未批准，inbox仍旧kind/原kubeconfig/匹配1.27.3kubectl。最终清理必须最后做，保护旧节点/卷/备份。不能通知“luna做完了”。
+
 ## 最新续接：2026-09-27 宿主只读实例备份/独立恢复已验收，发现扫描器迁移缺项
 
 基线53a7fffa（SNI候选已提交），本地luna、不push；本单元起始干净。交付为含本段的提交。用户本轮补充东京空间已腾出，实测22,092,984,320B=20.58GiB，超过原8GiB pull门槛，后续可拉取导出；不重复下载已验NGINX。

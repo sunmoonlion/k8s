@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "source": "docker.io/bitnami/harbor-adapter-trivy:2.13.2-debian-12-r2",
+  "source_archive_sha256": "eef8fa55e3847e351c1989ccd675c5de4606ca2ee2ed00efc966e27c434b0c61",
+  "index_digest": "sha256:a87b6dd19800a5e2406a4194a2b431dbda0f05b526496ee7c3aa3fed63dfcde7",
+  "platform_digest": "sha256:7c973faed0944ae77350605ea85d5a9d592fd1258e5bd0ad6f3feb701f826d1e",
+  "config_digest": "sha256:06e8582c21f1fa03cf855b36bdcf903853f4af12fb3b334839c02477a39200e1",
+  "archive_tag": "sunmoon-offline/harbor-trivy:2.13.2-7c973faed0944ae7",
+  "path": "trivy-linux-amd64.tar",
+  "bytes": 97976320,
+  "sha256": "2232799c70feb49731350f872af70e0c33fae320b9a2189b473d146c6d4392c1",
+  "trivy_version_observed": "0.64.1",
+  "adapter_version_reported": "dev/Unknown",
+  "volumes": [],
+  "provenance": "Original running KIND image and pinned cold backup; publisher signature not verified",
+  "database_included": false,
+  "scan_verified": false
+}

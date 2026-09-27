@@ -1,0 +1,302 @@
+{
+  "schema": 1,
+  "container": "sunmoon-trivy-offline-20260927-v2",
+  "container_id": "7b3634defdcf4fdec7f27f7821e7a207f8eeee0d82f8a55f848979c4952ff017",
+  "image": "sha256:7c973faed0944ae77350605ea85d5a9d592fd1258e5bd0ad6f3feb701f826d1e",
+  "db_lock_sha256": "eb4a458976d50357c844edc9b5cf87f6eee5fe24a5cf288cc7e5530b25e5bf16",
+  "network": "none",
+  "target": "scanner public image rootfs",
+  "artifact_type": "filesystem",
+  "report_sha256": "f3124025d612c690e35501591610258d58e9fb2136e64a31f04ec812db9a5c75",
+  "package_count": 954,
+  "vulnerability_occurrences_by_severity": {
+    "LOW": 148,
+    "HIGH": 309,
+    "MEDIUM": 372,
+    "UNKNOWN": 14,
+    "CRITICAL": 23
+  },
+  "offline_scan_passed": true,
+  "harbor_jobservice_verified": false,
+  "java_archive_verified": true,
+  "java_scan_verified": false,
+  "database_verification": {
+    "schema": 1,
+    "lock_sha256": "eb4a458976d50357c844edc9b5cf87f6eee5fe24a5cf288cc7e5530b25e5bf16",
+    "checked_at": "2026-09-27T12:51:00.509898+00:00",
+    "archives": {
+      "db": {
+        "members": {
+          "trivy.db": {
+            "bytes": 1448931328,
+            "sha256": "41fbf7b3a54777919084a8afc6cf0954760c0286298fd3cd2a6c29d668d2d643"
+          },
+          "metadata.json": {
+            "bytes": 143,
+            "sha256": "f5051ba56a34eb05fec34f4c7c9608cedff85fbd4c95e0828326f0b62a097b2b"
+          }
+        },
+        "uncompressed_bytes": 1448931471,
+        "metadata": {
+          "Version": 2,
+          "NextUpdate": "2026-09-28T07:04:17.756799482Z",
+          "UpdatedAt": "2026-09-27T07:04:17.756799612Z",
+          "DownloadedAt": "0001-01-01T00:00:00Z"
+        },
+        "age_seconds": 20802,
+        "maximum_age_seconds": 172800
+      },
+      "java-db": {
+        "members": {
+          "trivy-java.db": {
+            "bytes": 1537712128,
+            "sha256": "e99e2d1212f4f1ef8281f95ffa72b667ce3fb8d00db0c4b2ddfcc3283b87612c"
+          },
+          "metadata.json": {
+            "bytes": 143,
+            "sha256": "f730c0616742e306095594ef51359f81cd05e48cff224112a59c8fbd68449e31"
+          }
+        },
+        "uncompressed_bytes": 1537712271,
+        "metadata": {
+          "Version": 1,
+          "NextUpdate": "2026-09-30T01:08:08.997213636Z",
+          "UpdatedAt": "2026-09-27T01:08:08.997214067Z",
+          "DownloadedAt": "0001-01-01T00:00:00Z"
+        },
+        "age_seconds": 42171,
+        "maximum_age_seconds": 604800
+      }
+    },
+    "extracted": false,
+    "scan_verified": false
+  },
+  "critical_findings": [
+    {
+      "target": "7b3634defdcf (debian 12.11)",
+      "class": "os-pkgs",
+      "type": "debian",
+      "id": "CVE-2026-33845",
+      "package": "libgnutls30",
+      "installed": "3.7.9-2+deb12u5",
+      "fixed": "3.7.9-2+deb12u7"
+    },
+    {
+      "target": "7b3634defdcf (debian 12.11)",
+      "class": "os-pkgs",
+      "type": "debian",
+      "id": "CVE-2026-42010",
+      "package": "libgnutls30",
+      "installed": "3.7.9-2+deb12u5",
+      "fixed": "3.7.9-2+deb12u7"
+    },
+    {
+      "target": "7b3634defdcf (debian 12.11)",
+      "class": "os-pkgs",
+      "type": "debian",
+      "id": "CVE-2026-13221",
+      "package": "libperl5.36",
+      "installed": "5.36.0-7+deb12u2",
+      "fixed": null
+    },
+    {
+      "target": "7b3634defdcf (debian 12.11)",
+      "class": "os-pkgs",
+      "type": "debian",
+      "id": "CVE-2026-42496",
+      "package": "libperl5.36",
+      "installed": "5.36.0-7+deb12u2",
+      "fixed": null
+    },
+    {
+      "target": "7b3634defdcf (debian 12.11)",
+      "class": "os-pkgs",
+      "type": "debian",
+      "id": "CVE-2026-8376",
+      "package": "libperl5.36",
+      "installed": "5.36.0-7+deb12u2",
+      "fixed": null
+    },
+    {
+      "target": "7b3634defdcf (debian 12.11)",
+      "class": "os-pkgs",
+      "type": "debian",
+      "id": "CVE-2026-31789",
+      "package": "libssl3",
+      "installed": "3.0.17-1~deb12u2",
+      "fixed": "3.0.19-1~deb12u2"
+    },
+    {
+      "target": "7b3634defdcf (debian 12.11)",
+      "class": "os-pkgs",
+      "type": "debian",
+      "id": "CVE-2026-31789",
+      "package": "openssl",
+      "installed": "3.0.17-1~deb12u2",
+      "fixed": "3.0.19-1~deb12u2"
+    },
+    {
+      "target": "7b3634defdcf (debian 12.11)",
+      "class": "os-pkgs",
+      "type": "debian",
+      "id": "CVE-2026-13221",
+      "package": "perl",
+      "installed": "5.36.0-7+deb12u2",
+      "fixed": null
+    },
+    {
+      "target": "7b3634defdcf (debian 12.11)",
+      "class": "os-pkgs",
+      "type": "debian",
+      "id": "CVE-2026-42496",
+      "package": "perl",
+      "installed": "5.36.0-7+deb12u2",
+      "fixed": null
+    },
+    {
+      "target": "7b3634defdcf (debian 12.11)",
+      "class": "os-pkgs",
+      "type": "debian",
+      "id": "CVE-2026-8376",
+      "package": "perl",
+      "installed": "5.36.0-7+deb12u2",
+      "fixed": null
+    },
+    {
+      "target": "7b3634defdcf (debian 12.11)",
+      "class": "os-pkgs",
+      "type": "debian",
+      "id": "CVE-2026-13221",
+      "package": "perl-base",
+      "installed": "5.36.0-7+deb12u2",
+      "fixed": null
+    },
+    {
+      "target": "7b3634defdcf (debian 12.11)",
+      "class": "os-pkgs",
+      "type": "debian",
+      "id": "CVE-2026-42496",
+      "package": "perl-base",
+      "installed": "5.36.0-7+deb12u2",
+      "fixed": null
+    },
+    {
+      "target": "7b3634defdcf (debian 12.11)",
+      "class": "os-pkgs",
+      "type": "debian",
+      "id": "CVE-2026-8376",
+      "package": "perl-base",
+      "installed": "5.36.0-7+deb12u2",
+      "fixed": null
+    },
+    {
+      "target": "7b3634defdcf (debian 12.11)",
+      "class": "os-pkgs",
+      "type": "debian",
+      "id": "CVE-2026-13221",
+      "package": "perl-modules-5.36",
+      "installed": "5.36.0-7+deb12u2",
+      "fixed": null
+    },
+    {
+      "target": "7b3634defdcf (debian 12.11)",
+      "class": "os-pkgs",
+      "type": "debian",
+      "id": "CVE-2026-42496",
+      "package": "perl-modules-5.36",
+      "installed": "5.36.0-7+deb12u2",
+      "fixed": null
+    },
+    {
+      "target": "7b3634defdcf (debian 12.11)",
+      "class": "os-pkgs",
+      "type": "debian",
+      "id": "CVE-2026-8376",
+      "package": "perl-modules-5.36",
+      "installed": "5.36.0-7+deb12u2",
+      "fixed": null
+    },
+    {
+      "target": "7b3634defdcf (debian 12.11)",
+      "class": "os-pkgs",
+      "type": "debian",
+      "id": "CVE-2023-45853",
+      "package": "zlib1g",
+      "installed": "1:1.2.13.dfsg-1",
+      "fixed": null
+    },
+    {
+      "target": "opt/bitnami/harbor-adapter-trivy/.spdx-harbor-adapter-trivy.spdx",
+      "class": "lang-pkgs",
+      "type": "gobinary",
+      "id": "CVE-2026-33186",
+      "package": "google.golang.org/grpc",
+      "installed": "v1.72.2",
+      "fixed": "1.79.3"
+    },
+    {
+      "target": "opt/bitnami/harbor-adapter-trivy/.spdx-harbor-adapter-trivy.spdx",
+      "class": "lang-pkgs",
+      "type": "gobinary",
+      "id": "CVE-2025-68121",
+      "package": "stdlib",
+      "installed": "v1.24.6",
+      "fixed": "1.24.13, 1.25.7, 1.26.0-rc.3"
+    },
+    {
+      "target": "opt/bitnami/harbor-adapter-trivy/bin/scanner-trivy",
+      "class": "lang-pkgs",
+      "type": "gobinary",
+      "id": "CVE-2025-68121",
+      "package": "stdlib",
+      "installed": "v1.24.6",
+      "fixed": "1.24.13, 1.25.7, 1.26.0-rc.3"
+    },
+    {
+      "target": "opt/bitnami/harbor-adapter-trivy/bin/trivy",
+      "class": "lang-pkgs",
+      "type": "gobinary",
+      "id": "CVE-2026-33186",
+      "package": "google.golang.org/grpc",
+      "installed": "v1.72.2",
+      "fixed": "1.79.3"
+    },
+    {
+      "target": "opt/bitnami/harbor-adapter-trivy/bin/trivy",
+      "class": "lang-pkgs",
+      "type": "gobinary",
+      "id": "CVE-2025-68121",
+      "package": "stdlib",
+      "installed": "v1.24.6",
+      "fixed": "1.24.13, 1.25.7, 1.26.0-rc.3"
+    },
+    {
+      "target": "opt/bitnami/harbor-adapter-trivy/bin/wire",
+      "class": "lang-pkgs",
+      "type": "gobinary",
+      "id": "CVE-2025-68121",
+      "package": "stdlib",
+      "installed": "v1.24.6",
+      "fixed": "1.24.13, 1.25.7, 1.26.0-rc.3"
+    }
+  ],
+  "unique_critical_cves": 9,
+  "formal_admission": false,
+  "old_harbor_modified": false,
+  "cleanup_executed": false,
+  "failures": [
+    "v1 directory permissions and read-only database files prevented startup",
+    "v1 directory-only repair did not fix database read/write requirement; retained both logs"
+  ],
+  "docker_volume_count_observed": 46,
+  "containers_observed": {
+    "sunmoon-trivy-offline-20260927": "exited(1)",
+    "sunmoon-trivy-offline-20260927-v2": "exited(0)"
+  },
+  "limits": [
+    "rootfs scan only; no private Harbor image or Jobservice acceptance",
+    "Java DB archive verified; no Java sample scan",
+    "CVE occurrence counts are not confirmed exploitable vulnerabilities",
+    "cloud not installed"
+  ]
+}

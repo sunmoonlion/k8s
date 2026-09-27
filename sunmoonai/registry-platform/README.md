@@ -16,6 +16,8 @@
 
 ## 物料准备
 
+原 Trivy 镜像与漏洞数据库分开准备，复用方法与验收边界见 [扫描器离线物料](docs/scanner-offline.md)。原镜像保持2.13.2包装/Trivy0.64.1；旧缓存为空，补齐当日数据库后已通过断网rootfs扫描，识别954包。自身镜像报告严重漏洞，尚未获正式镜像准入，需核适用性与最小修复版本。新宿主的扫描器登记、Jobservice与私有镜像扫描接线仍待完成。
+
 ```bash
 python3 sunmoonai/registry-platform/prepare-artifacts.py
 python3 sunmoonai/registry-platform/prepare-artifacts.py --apply

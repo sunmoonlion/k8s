@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "resolved_at": "2026-09-27T12:35:54.260434+00:00",
+  "provenance": "Official GHCR HTTPS; content digest pinned; publisher signature not verified",
+  "artifacts": {
+    "db": {
+      "repository": "aquasecurity/trivy-db",
+      "tag": "2",
+      "manifest_digest": "sha256:3391be4419d830d33595ae45a1fb8f949e36e5d10ee0f41e9e584e90b1a7681a",
+      "manifest_bytes": 616,
+      "compressed_bytes": 123462871
+    },
+    "java-db": {
+      "repository": "aquasecurity/trivy-java-db",
+      "tag": "1",
+      "manifest_digest": "sha256:e5922bfd4ec2aafa93226148b28f8cce4df87557544ed1bbc80a5b24d218d123",
+      "manifest_bytes": 624,
+      "compressed_bytes": 973426852
+    }
+  },
+  "trivy_version_target": "0.64.1"
+}
