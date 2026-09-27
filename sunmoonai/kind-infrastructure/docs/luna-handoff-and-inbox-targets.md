@@ -100,3 +100,7 @@ git diff --name-status 7896b339..luna
 ## 10. 数据库逻辑恢复演练完成（2026-09-27）
 
 所有者明确批准后，按提交 fd282292be6492fa9757800fe24282a32a63e5a3 执行，49 表/10,364 行及结构、权限、角色、序列等一致，三个新容器已停止并保留。旧容器与卷集合未变，旧 Harbor healthy。私有结果在新盘 `/data/harbor/rehearsals/pg17-20260927T040000Z`，不可重复覆盖；约 173.70 MiB。脱敏证据 `../../scripts/results/luna-registry-database-rehearsal.20260927.json`。这替代上一节“未执行”状态；Harbor 应用/最新数据迁移未完成，inbox 仍用旧 kind。
+
+## 11. 官方配置生成完成（2026-09-27）
+
+新增 registry-platform 的本机候选配置、私有输入映射和受限官方配置生成器；原密钥/凭据/证书核对通过。生成容器停止且保留、无匿名卷，旧 Harbor healthy。首次镜像元数据核对失败和受限续跑如实记录于 [配置准备](../../registry-platform/docs/config-preparation.md)。官方 Compose 还不能用于启动；镜像层/数据库应用恢复、代理、正式集群和云端接线仍未完成。入口证书当前至 2027-06-22 有效；5 年续签方向已记录但未执行。inbox 仍用第 1 节旧 kind 与指定 kubeconfig/kubectl；现在不能宣称 luna 整体做完。

@@ -2,7 +2,7 @@
 
 目标：一套部署代码，两种建集群方式；本地与云上均使用集群外 Harbor，统一地址 `harbor.sunmoonai.com:30443`。具体部署/迁移约束见 [主方案](../kind-infrastructure/docs/storage-and-harbor-placement-decision.md)。
 
-当前实现 **Harbor 官方 2.13.2 离线安装包准备**，并完成本机冷备份的 PostgreSQL 17.6 逻辑恢复演练。本地 Harbor 部署、SSH 执行、仓库完整备份恢复与入口代理尚未实现，云上未经实机验证。本目录存在不代表仓库已部署。
+当前实现 **Harbor 官方 2.13.2 离线安装包准备**，并完成本机冷备份的 PostgreSQL 17.6 逻辑恢复演练，以及官方配置生成和原密钥映射。具体结果与续签方向见 [配置准备](docs/config-preparation.md)。本地 Harbor 部署、SSH 执行、仓库完整备份恢复与入口代理尚未实现，云上未经实机验证。本目录存在不代表仓库已部署。
 
 ## 物料准备
 

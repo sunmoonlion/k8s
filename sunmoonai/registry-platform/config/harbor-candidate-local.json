@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "platform": "wsl",
+  "version": "2.13.2",
+  "root": "/data/harbor/candidates/harbor-2.13.2-20260927",
+  "external_url": "https://harbor.sunmoonai.com:30443",
+  "https_port": 18443,
+  "bind_address": "127.0.0.1",
+  "database_host": "postgresql",
+  "database_port": 5432,
+  "database_name": "registry",
+  "database_user": "postgres",
+  "database_version": "17.6",
+  "data_uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0"
+}

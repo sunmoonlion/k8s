@@ -1,6 +1,7 @@
 Luna changes relative to 7896b33941206f55db18a73adf63849cd8136fad (includes this delivery)
 Only k8s repository paths; host documents/materials are described in the handoff.
 
+"sunmoonai/kind-infrastructure/docs/\347\211\251\346\226\231\346\217\220\344\272\244\345\244\207\351\275\220\346\226\271\346\241\210\345\222\214\346\226\271\346\263\225.md"
 CHECKPOINT.md
 sunmoonai/cicd-platform/materials/.gitignore
 sunmoonai/cicd-platform/materials/README.md
@@ -34,7 +35,6 @@ sunmoonai/kind-infrastructure/docs/owner-data-disk-100g.md
 sunmoonai/kind-infrastructure/docs/production-readiness-next-plan.md
 sunmoonai/kind-infrastructure/docs/storage-and-harbor-placement-decision.md
 sunmoonai/kind-infrastructure/docs/wsl-space-reclamation-plan.md
-sunmoonai/kind-infrastructure/docs/物料提交备齐方案和方法.md
 sunmoonai/kind-infrastructure/isolated/.gitignore
 sunmoonai/kind-infrastructure/isolated/README.md
 sunmoonai/kind-infrastructure/isolated/artifacts.lock.json
@@ -47,8 +47,12 @@ sunmoonai/kind-infrastructure/mount/attach-vhds.ps1
 sunmoonai/kind-infrastructure/mount/check-storage-mounts.sh
 sunmoonai/registry-platform/README.md
 sunmoonai/registry-platform/artifacts.lock.json
+sunmoonai/registry-platform/config/harbor-candidate-local.json
 sunmoonai/registry-platform/database-rehearsal.py
+sunmoonai/registry-platform/docs/config-preparation.md
 sunmoonai/registry-platform/docs/database-rehearsal-plan.md
+sunmoonai/registry-platform/harbor_inputs.py
+sunmoonai/registry-platform/official_prepare.py
 sunmoonai/registry-platform/prepare-artifacts.py
 sunmoonai/scripts/results/luna-build-cache-candidates.20260927.json
 sunmoonai/scripts/results/luna-data-disk-capacity.20260927.json
@@ -63,6 +67,7 @@ sunmoonai/scripts/results/luna-handoff-clusters.20260927.json
 sunmoonai/scripts/results/luna-harbor-catalog.20260926.complete.json
 sunmoonai/scripts/results/luna-harbor-catalog.20260926.json
 sunmoonai/scripts/results/luna-harbor-cold-backup.20260926.json
+sunmoonai/scripts/results/luna-harbor-config-preparation.20260927.json
 sunmoonai/scripts/results/luna-harbor-isolated-restore.20260926.json
 sunmoonai/scripts/results/luna-harbor-preservation.20260926.inventory.json
 sunmoonai/scripts/results/luna-harbor-restore-plan.20260926.json

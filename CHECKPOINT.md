@@ -1,5 +1,7 @@
 # Luna 工作检查点
 
+**最新单元（2026-09-27 04:30 UTC）：官方 Harbor 配置准备完成。** `registry-platform/harbor_inputs.py` 已向 `/data/harbor/candidates/harbor-2.13.2-20260927` 写入原密钥/TLS/凭据；`official_prepare.py` 生成配置并复核。第一次在镜像 User 空串/null 比较处退出，修正后通过显式 `--resume-import` 继续；已完成目录不可重跑。生成器已停止，无网络/端口/匿名卷，43 卷不变、旧 Harbor healthy。官方 Compose 尚未准入运行，不可直接 up。下一步准备具体恢复运行配置、registry 层复制与逻辑数据库导入、全目录摘要验收；未启动宿主 Harbor，未切入口或清理。代码基线 a6e299d84efca31c6c017d2a792f6e0e1e593f96，交付为包含本记录的本地 luna 提交。详细步骤及失败记录见 `sunmoonai/registry-platform/docs/config-preparation.md`。用户询问内部证书 5 年有效期，已确认现叶证书到 2027-06-22、根 CA 到 2036-05-07；建议迁移核对后统一续签，未签发/替换或旋转 CA。下面为此前单元记录。
+
 **当前单元（2026-09-27）：所有者批准“你执行”，PostgreSQL 17.6 冷备份逻辑恢复演练已完成。** 49 表/10,364 行、结构/权限/角色口令哈希/序列/扩展/large objects 一致；3 个新容器停止并保留，旧 7 容器/43 卷未变，旧 Harbor healthy。新盘副本占 182,140,928 字节，私有 dump/角色文件不入 Git。证据 `sunmoonai/scripts/results/luna-registry-database-rehearsal.20260927.json`，执行卡同模块 docs 下。不要重新执行已有批次。下一步准备官方 Harbor 2.13.2 的配置/密钥映射、registry 数据恢复和完整摘要验收；尚未安装 Harbor/切入口/改云接线。剩余清理最终必须做，禁止容器/卷清理仍有效。下文为历史记录。
 
 

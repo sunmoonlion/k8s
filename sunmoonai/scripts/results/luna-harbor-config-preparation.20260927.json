@@ -1,0 +1,41 @@
+{
+  "checked_at": "2026-09-27T04:30:15.670810+00:00",
+  "candidate": "/data/harbor/candidates/harbor-2.13.2-20260927",
+  "prepared": true,
+  "original_inputs_preserved": true,
+  "internal_credentials_restored": true,
+  "registry_readonly": true,
+  "uploadpurging": false,
+  "registry_delete": false,
+  "compose_runtime_admitted": false,
+  "generator": {
+    "name": "sunmoon-harbor-2132-20260927-prepare",
+    "id": "74703abc4d1796f9bf6b3748216c4c57f3ffe2d2cb7c1fa1255f661c501f050b",
+    "image": "sha256:11ed27051a00da762f1d9fc18fa84afd6f1e6774f63d349efcc19a5d625f5b4b",
+    "running": false,
+    "exit_code": 0,
+    "network_mode": "none",
+    "privileged": false,
+    "port_bindings": {},
+    "anonymous_volumes": [],
+    "tmpfs": {
+      "/harbor_make": "rw,nosuid,nodev,size=16m"
+    }
+  },
+  "docker_volume_count": 43,
+  "old_harbor": {
+    "http_status": 200,
+    "status": "healthy"
+  },
+  "initial_failure": "Imported prepare configuration mismatch: User; archive empty string, Docker inspect null; stopped before container creation",
+  "recovery": "Explicit resume-import after image config SHA256 and RootFS diff_ids verification; only default User normalization accepted",
+  "certificate": {
+    "leaf_expires_utc": "2027-06-22T08:51:00Z",
+    "ca_expires_utc": "2036-05-07T07:48:53Z",
+    "five_year_reissue_requested": true,
+    "reissued": false
+  },
+  "harbor_started": false,
+  "endpoint_switched": false,
+  "cleanup_performed": false
+}
