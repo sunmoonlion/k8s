@@ -1,6 +1,6 @@
 # 本地入口维护步骤与回退边界
 
-本文件是正式切换的实施准备，**还不能执行停旧控制面或接管 30443**。新managed备份独立恢复已通过；最新源端停写同步、正式切换执行器及所有者维护窗口仍未齐备。当前可执行的操作只有下面的只读盘点与备用端口候选验收；云端独立仓库不使用本模块。
+本文件是正式切换的实施准备，**还不能执行停旧控制面或接管 30443**。新managed备份独立恢复已通过；最新源端停写同步、正式切换执行器及所有者维护窗口仍未齐备。当前可执行只读对账、备用端口候选验收，以及正式代理的停止状态准备/创建；云端独立仓库不使用本模块。
 
 ## 已核实的路径
 
@@ -24,7 +24,7 @@
 阶段二，新集群入口验收后：Harbor SNI → 127.0.0.1:18443；其他 SNI → 127.0.0.1:19443
 ```
 
-`sni_proxy.py` 的 `transition-candidate` 使用独立回环端口38443，支持 prepare/create/start/check/stop；`transition` 模式只能校验配置和渲染，实际动作仍拒绝。候选固定旧 worker 的名称、容器 ID、Docker 网络 ID 和 IP，prepare/start 前逐项检查，漂移后停止，不自动寻找替代后端。普通 candidate 的28443接口保持兼容。
+`sni_proxy.py` 的 `transition-candidate` 使用独立回环端口38443，支持 prepare/create/start/check/stop；`transition`模式已允许准备和创建停止容器，实际start仍拒绝。候选固定旧 worker 的名称、容器 ID、Docker 网络 ID 和 IP，prepare/start 前逐项检查，漂移后停止，不自动寻找替代后端。普通 candidate 的28443接口保持兼容。
 
 本轮创建 `sunmoon-sni-transition-candidate-20260927`，复用已锁定NGINX1.30.5镜像，仅挂公开配置，无私钥/数据卷。实际验收结果：[过渡候选](../../scripts/results/luna-sni-transition-candidate.20260927.json)。Harbor 严格 TLS/401/认证realm验证通过；6种 ClientHello 的上游观察符合映射。普通/未知/无SNI观察不等于后端应用认证或大文件/WebSocket验收。未停旧控制面，不能声称停控制面后的路径已验证。
 
@@ -66,3 +66,27 @@ sudo -n python3 -B sunmoonai/registry-platform/sni_verify.py --config sunmoonai/
 ## 当前剩余工作
 
 新版managed备份独立恢复已通过；仅获准提前回收的两处历史registry内容已处理，其余清理最后。正式KIND创建器/CNI代码已接共享renderer，尚未实机执行。旧源最新停写同步、正式入口执行器/自动启动、正式集群与共享平台、真实Docker/CI推拉、重建仓库独立性和最终其余清理仍未完成。不要把本次备用端口路由验收说成完成迁移。
+
+
+## 2026-09-28 最新源对账与正式代理准备
+
+[现场对账](../../scripts/results/luna-entry-reconciliation.20260928.json)和[代理/旧入口收尾](../../scripts/results/luna-entry-preparation.20260928.json)。旧源前后两次GET完整目录及身份/策略，期间未冻结写入，因此这是在线观察，不是停写快照、数据库同步或切换准入。
+
+- 原3项目64仓库、165顶层/429可达制品、164tags与main中原项目完整一致。main额外两个canary项目与已恢复的managed备份相同，3个试验机器人（ID6/7/8）仍禁用且权限限所属试验项目，未当成原仓库数据忽略。
+- 补齐项目级机器人检查。Harbor2.13.2[官方ListRobot实现](https://raw.githubusercontent.com/goharbor/harbor/v2.13.2/src/server/v2.0/handler/robot.go)默认只列系统账号；现逐项目使用`q=Level=project,ProjectID=<id>`，检查分页总数/ID/权限/禁用/到期。旧源普通用户列表、系统机器人和项目机器人均为0；原管理员登录由既有凭据在两端验证，不把用户列表0解释成没有管理员。
+- 原项目成员/metadata及选定认证设置一致；仍未逐项比较数据库密码散列或所有配置表，不声称全数据库相等。
+- 第一次严格策略比较失败并保留。唯一差异是两条策略的ID0/Local/harbor源地址，旧`http://sunmoonai-harbor-core:80`、新`http://core:8080`。已读官方2.13.2源码`src/pkg/reg/manager.go:getLocalRegistry`和`src/lib/config/systemconfig.go:InternalCoreURL`，此字段来自本部署Core配置。二次仅对这两个精确地址做映射，远端地址/凭据/触发器/其他字段仍比较，结果通过；没有改策略来消除差异。两条策略仍manual，不触发复制。
+- 私有前后快照在main/entry-reconcile-20260928-v1、v2；公开结果只保存数量、判定和非敏感内部地址。新`entry_reconcile.py`默认计划，`--apply`只GET旧源并启停新只读main，finally停止；新attempt保留失败，不覆盖历史。
+
+```sh
+python3 -B sunmoonai/registry-platform/entry_reconcile.py
+# 日后复查必须换新attempt；该命令不冻结旧写端，不同步数据。
+sudo -n python3 -B sunmoonai/registry-platform/entry_reconcile.py \
+  --docker-credentials /home/zymun/.docker/config.json --attempt <新的批次> --apply
+```
+
+正式过渡profile：`config/sni-local-transition.json`。实际已准备并创建`sunmoon-sni-transition-main-20260928`，ID`d969eaf924b523acddc2149a3c6233049ea20fb28d745ea4c6688bef45a4c887`，镜像SHA`8f84ed99befc3891b8f329c5c202785278a2cfb7c25107d57fb2a134a3117433`，**状态created、running=false**。仅公开nginx配置挂载，不含私钥或数据卷，restart=no。其目标30443配置没有开始监听，实际入口仍是旧控制面。WSL重启后worker ID/网络/IP必须重核。
+
+新formal/lifecycle.py补显式节点start/stop/check：start核独立盘UUID/服务视角、全部原目录存在、节点ID/镜像/六挂载/端口/restart=no、UID/客户端服务端，再等待Ready；启动失败只撤回本次启动的节点。stop不删除节点/卷，低空间仍可用。未安装自启服务，正式main尚不存在，因此真实启停尚未验；只读check实际因缺创建锁拒绝且未建路径。
+
+最后main停止，旧Harbor7控制器均1/1 Ready；旧/136六节点运行、卷46、旧入口TLS/health通过。本节不解除源端停写/最新逻辑备份与最终同步、正式切换/回退执行器、所有者维护窗口这些前置条件。

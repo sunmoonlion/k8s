@@ -15,7 +15,7 @@
 | 其余/无 SNI | 127.0.0.1:30443，旧入口 | 127.0.0.1:19443，新 KIND |
 | 数据 | 只挂公开 nginx.conf | 同样不挂数据库、registry 或证书私钥 |
 
-正式 KIND 必须把 NodePort30443 映到宿主 **127.0.0.1:19443**。代理不能再转自己的监听地址。正式 profile 的所有实际动作被拒绝，只有默认计划和 `render` 可用；不能改成 candidate 绕过，因为配置校验绑定模式、监听及两个后端。
+正式 KIND 必须把 NodePort30443 映到宿主 **127.0.0.1:19443**。代理不能再转自己的监听地址。正式profile现在允许prepare/create/check/stop，创建结果必须保持停止；公开30443的start仍在CLI与Proxy.start两层拒绝，等待单独维护执行器。不能改成candidate绕过，因为配置校验绑定模式、监听及两个后端。
 
 原始 TLS 字节直通，认证地址保持 `https://harbor.sunmoonai.com:30443/service/token`。不解析 HTTP、不重写 Host、不解密、不注入 PROXY protocol。后端看到代理连接的源地址；本实现不保留客户端源 IP，今后审计不能把后端 peer IP 当原始用户地址。
 

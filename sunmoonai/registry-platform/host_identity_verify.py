@@ -53,7 +53,10 @@ def collect(c):
         members = c.pages('/projects/' + identity + '/members')
         result['projects'][project['name']] = {
             'id': project['project_id'], 'owner_id': project.get('owner_id'),
-            'metadata': metadata, 'members': selected(members, MEMBER)}
+            'metadata': metadata, 'members': selected(members, MEMBER),
+            # Harbor 2.13.2 ListRobot defaults to system accounts. Project
+            # accounts require both case-sensitive query keys below.
+            'robots': selected(c.pages('/robots', {'q': 'Level=project,ProjectID=' + identity}), ROBOT)}
     return normalize(result)
 
 

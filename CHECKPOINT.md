@@ -1,3 +1,15 @@
+## 最新续接：2026-09-28 最新源在线对账通过、正式过渡代理已创建停止
+
+基线0d04fa7212b258059588d44e8f504997f2f4c7be，本地luna、不push，开工工作树干净。本单元没有源端停写/同步/公开入口切换；最新源对账是在线两次观察，不能替代冻结后切换门禁。
+
+- 新entry_reconcile.py默认计划，--apply持统一锁，仅GET旧源并启停只读main。主副本仍3原项目64仓库165顶层/429可达/164tags，与旧源全目录和元数据一致；新增两个验收项目匹配已恢复managed备份。旧源前后两次目录/身份/策略稳定，旧三节点身份/挂载不变。公开scripts/results/luna-entry-reconciliation.20260928.json。
+- 修正host_identity_verify.collect覆盖盲区：/robots默认只列system，项目机器人按官方2.13.2 handler/robot.go的q=Level=project,ProjectID=<id>逐项目分页。旧源users列表0/system robots0/project robots0，管理员旧凭据两端认证通过；源原项目成员/metadata/选定配置一致。目标试验机器人ID6/7/8禁用、权限仅各自试验项目。历史0机器人结果不能当时就解释成包含项目机器人；此次补查实际亦0，没有发现遗漏原机器人。
+- 首次v1策略比较failed，私有快照均保留。只差两条ID0 Local harbor src_registry.url：旧http://sunmoonai-harbor-core:80、新http://core:8080。复核本机已缓存官方源码/tmp/luna-harbor-v2.13.2-source.tar.gz中pkg/reg/manager.go和lib/config/systemconfig.go，此地址由部署CoreURL生成。v2仅允许这两个精确拓扑地址对应，远端URL/凭据/其余策略字段仍比较，passed=true；没有修改策略或触发复制。原两复制策略manual。私有目录main/entry-reconcile-20260928-v{1,2}。未核全数据库等价/密码散列/所有配置，未冻结源，不以成功报告准入切换。
+- sni_proxy现在允许公共profile prepare/create/check/stop，start在CLI与Proxy.start两层继续拒绝等待单独维护流程。新增config/sni-local-transition.json，实际prepare/create通过：sunmoon-sni-transition-main-20260928，IDd969eaf924b523acddc2149a3c6233049ea20fb28d745ea4c6688bef45a4c887，image sha256:8f84ed99befc3891b8f329c5c202785278a2cfb7c25107d57fb2a134a3117433，created/running=false/restart=no。只有公开配置bind，无卷/私钥。目标30443未监听，旧CP仍占原端口。旧worker ID/network/IP仍精确固定，WSL重启后复核不能自动采信旧IP。
+- 新formal/lifecycle.py显式check/start/stop；start核挂载UUID/服务视角20GiB/六原路径存在及同盘、不mkdir，节点ID/镜像/挂载/端口/restart=no，原UID和1.36.4客户端服务端，等待Ready。失败仅停本次启动的节点；stop保留节点/卷且不以容量不足挡住。仅AST/default plans及当前不存在正式锁时的只读check拒绝实测，没有main实际启停或自启安装。创建强杀的恢复/固定代码发布/systemd接线仍待完成。
+- 收尾scripts/results/luna-entry-preparation.20260928.json：旧Harbor7控制器1/1Ready；main停止；运行只有旧/136六节点；卷46；旧入口严格TLS/health成功。没有清理、下载新物料、云部署、应用测试套件、main创建或inbox更新。4个Python AST、默认plans、git diff --check通过。新read-only采样controller UID可用于未来维护，但操作前必须重读；没有后台会话。
+- 下一步是实现源端停写、最新逻辑备份与最终数据处理，以及正式入口切换/恢复执行器，再把所有者WSL压缩/停旧CP窗口做成可执行操作卡。不能因为公共proxy容器已准备，就直接绕过start门禁调用docker start。当前不要求所有者批准尚未备齐的维护步骤。全项目余项仍有main/CNI/共享平台/registry信任、真实Docker与CI推拉、重建独立性、云共享闭包、最终其余清理。inbox依旧kind/原~/.kube/kind-config/匹配1.27.3工具；旧worker2/所有卷保护，不通知“luna做完了”。
+
 ## 最新续接：2026-09-28 限定空间回收与新managed备份独立恢复通过
 
 基线5248faaebb8462465452b62f15db98caed2ea38c；本地luna、不push。本单元先新增正式KIND创建/CNI代码，现场只读准入因新版备份未独立恢复拒绝；随后所有者明确批准“同意，仅这两处提前回收”，这个例外覆盖仅两处历史registry内容，其他清理仍最后且必须做。

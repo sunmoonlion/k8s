@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "deployment": "sunmoon-sni-transition-main-20260928",
+  "mode": "transition",
+  "storage_uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+  "material_root": "/home/zymun/packages-to-be-installed/releases/nginx-sni-1.30.5-linux-amd64",
+  "listen": "0.0.0.0:30443",
+  "harbor_upstream": "127.0.0.1:18443",
+  "default_upstream": "172.18.0.3:30443",
+  "upstream_node": {
+    "name": "kind-worker",
+    "id": "6b0fef2472aef24a0ff86a2f01654b2b4da3a23dbd3895c84058b1c3e74d038f",
+    "ip": "172.18.0.3",
+    "network_id": "5fa6672389a9d3bf6d5040ff4cc89bcc3d4bf9ea896a3b08f8bce152776650c5"
+  }
+}

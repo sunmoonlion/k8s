@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "passed": true,
+  "source_frozen": false,
+  "source_modified": false,
+  "entry_switched": false,
+  "attempt": "20260928-v2",
+  "started_at": "2026-09-27T16:41:56.668708+00:00",
+  "checks": {
+    "original_catalog_equal": true,
+    "candidate_catalog_matches_verified_backup": true,
+    "original_identity_settings_equal": true,
+    "acceptance_robots_disabled_and_scoped": true,
+    "policy_definitions_equal_with_expected_local_endpoint_mapping": true,
+    "source_observed_stable": true,
+    "old_node_identities_unchanged": true
+  },
+  "source_catalog": {
+    "projects": 3,
+    "repositories": 64,
+    "listed_artifacts": 165,
+    "reachable_artifacts": 429,
+    "tags": 164,
+    "untagged": 292,
+    "indexes": 132,
+    "accessories": 0
+  },
+  "target_catalog": {
+    "projects": 5,
+    "repositories": 66,
+    "listed_artifacts": 167,
+    "reachable_artifacts": 431,
+    "tags": 166,
+    "untagged": 292,
+    "indexes": 132,
+    "accessories": 0
+  },
+  "source_users": 0,
+  "source_system_robots": 0,
+  "source_project_robots": 0,
+  "recorded_extra_projects": [
+    "migration-canary-20260927",
+    "migration-canary-20260927-v2"
+  ],
+  "candidate_extra_disabled_robots": 3,
+  "candidate_five_year_tls_verified": true,
+  "source_original_ca_tls_verified": true,
+  "local_replication_endpoint_mapping": {
+    "from": "http://sunmoonai-harbor-core:80",
+    "to": "http://core:8080",
+    "registry_id": 0
+  },
+  "synchronized": false,
+  "frozen_cutover_admitted": false,
+  "coverage": "catalog, selected users/members/settings, system and project robots, replication and schedules",
+  "not_verified": [
+    "full database equivalence",
+    "unchanged password hashes/robot secrets",
+    "source write freeze",
+    "public cutover",
+    "business applications"
+  ],
+  "candidate_stopped": true,
+  "finished_at": "2026-09-27T16:42:48.320475+00:00",
+  "first_attempt": {
+    "passed": false,
+    "difference": "Two ID 0 Local replication URLs follow each installation's internal Core endpoint",
+    "path": "entry-reconcile-20260928-v1/result.json"
+  }
+}

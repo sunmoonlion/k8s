@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""WSL-only SNI candidate lifecycle; default prints only.
+"""WSL-only SNI lifecycle preparation; default prints only.
 
 No TLS keys, cluster access, deletion, restart policy, global network changes or
-30443 handoff. Final routing can be rendered, but applying it remains gated by
-the separate maintenance procedure. Cloud registry hosts do not use this proxy.
+30443 handoff. Public proxy preparation/creation leave it stopped; public start
+requires the separate maintenance procedure and is not implemented here.
+Cloud registry hosts do not use this proxy.
 """
 import argparse
 import fcntl
@@ -201,7 +202,8 @@ class Proxy:
             return {'prepared': True, 'container': 'not_created'}
         info = self.inspect()
         return {'container': info['State']['Status'], 'container_id': info['Id'],
-                'listen': self.config['listen'], 'entry_switched': False}
+                'listen': self.config['listen'], 'running': info['State']['Running'],
+                'public_start_implemented': False}
 
     def create(self):
         self.immutable()
@@ -223,6 +225,8 @@ class Proxy:
         return self.check()
 
     def start(self):
+        if self.config['mode'] not in ('candidate', 'transition-candidate'):
+            raise ValueError('Public proxy start requires the separate approved maintenance procedure')
         storage({'runtime': {'platform': 'wsl'}, 'storage_uuid': self.config['storage_uuid']}, minimum_gib=2)
         upstream_identity(self.config)
         self.immutable(); info = self.inspect()
@@ -262,8 +266,9 @@ def main():
         print(render(config).decode(), end=''); return
     if not args.apply:
         print(json.dumps({'dry_run': True, 'action': args.action, 'profile': config,
-                          'only_candidate_apply_implemented': True, 'delete': False, 'cloud_proxy': False})); return
-    if config['mode'] not in ('candidate', 'transition-candidate'):
+                          'public_prepare_create_stop_implemented': True,
+                          'public_start_implemented': False, 'delete': False, 'cloud_proxy': False})); return
+    if args.action == 'start' and config['mode'] not in ('candidate', 'transition-candidate'):
         raise ValueError('Formal 30443 handoff requires the separate approved maintenance procedure')
     fd = os.open('/data/harbor/.instance-preparation.lock', os.O_RDWR | os.O_NOFOLLOW)
     with os.fdopen(fd, 'rb+') as lock:

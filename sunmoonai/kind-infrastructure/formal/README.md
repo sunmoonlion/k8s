@@ -69,7 +69,7 @@ sudo -n python3 -B sunmoonai/kind-infrastructure/formal/cluster.py preflight --e
 
 进入创建前仍须完成：
 
-1. 新 managed Harbor 完整备份的独立恢复演练（旧布局验收不能代替）；当前容量不足，保留门槛。
+1. 新managed备份独立恢复已于2026-09-28完成；创建前仍复核同一批次及全部归档摘要，旧布局结果不代替新批次。
 2. P3 [维护步骤](../../registry-platform/docs/entry-maintenance.md)、所有者 WSL 压缩与旧控制面停机窗口；38443过渡候选已验，正式切换执行器尚待实现，入口故障须能恢复旧控制面。
 3. 正式 30443 SNI / Harbor 的 TLS、认证推拉与回退验收。
 4. 正式创建器/CNI实机验收、存储门禁启动入口及现有共享平台模块接线。不得直接运行历史自动重建入口，也不得直接运行裸 `kind create` 跳过门禁。
@@ -82,3 +82,10 @@ sudo -n python3 -B sunmoonai/kind-infrastructure/formal/cluster.py preflight --e
 | C-D8 | 不更改数据服务版本、表结构或现有数据 |
 | C-I8 | 现场/物料异常停止；缺失阶段不判通过 |
 | C-T5 | 本地 luna 提交，未 push；代码审阅不等于完成迁移验收 |
+
+
+## 显式启停入口（尚未实机运行）
+
+`lifecycle.py check/start/stop`默认只打印，实际动作用`--apply`。复用创建锁和精确节点ID，start只接受已记录CNI-ready的main：先核UUID、Docker挂载视角与20GiB余量，六个宿主目录必须原已存在/非软链/同盘，不自动mkdir；核镜像、挂载、restart=no及全部端口。启动后核原kube-system UID、固定1.36.4客户端/服务端并等所有节点Ready。失败只停止本次启动的节点，不自动删除或重建。
+
+stop保留所有容器/卷，不受容量门槛阻止；仍需现存可读的受管状态和正确节点身份。缺盘导致无法读取状态时不猜测节点或创建状态目录。check只读。实际仅执行了默认计划/AST和缺正式状态的check拒绝路径；未建main，不能宣称真实启停通过。systemd、固定代码发布与管理员开机附盘的自动接线尚未安装；强杀创建进程的恢复仍需单独实现。
