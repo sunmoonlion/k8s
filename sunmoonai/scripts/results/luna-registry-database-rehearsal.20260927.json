@@ -1,0 +1,88 @@
+{
+  "started_at": "2026-09-27T04:06:54.311456+00:00",
+  "phase": "database-reconciled",
+  "completed": true,
+  "image": {
+    "reference": "bitnami/postgresql@sha256:dbd371582fbbb100b22b891e485f4559187362348c1d4b5d0a2191134807516b",
+    "id": "sha256:dbd371582fbbb100b22b891e485f4559187362348c1d4b5d0a2191134807516b",
+    "platform": "linux/amd64"
+  },
+  "tool_versions": {
+    "pg_dump": "pg_dump (PostgreSQL) 17.6",
+    "pg_dumpall": "pg_dumpall (PostgreSQL) 17.6",
+    "pg_restore": "pg_restore (PostgreSQL) 17.6"
+  },
+  "table_count": 49,
+  "row_count": 10364,
+  "reconciled": [
+    "table names and owners",
+    "row counts",
+    "ordered row SHA256",
+    "sequences and is_called",
+    "extensions",
+    "schema",
+    "roles and password hashes",
+    "database metadata",
+    "large objects"
+  ],
+  "created": [
+    {
+      "name": "sunmoon-pg17-20260927T040000Z-source",
+      "id": "7239d58c2a9f04c27415cf413170c1cde8daea42f08ca6676292f5bfb1f883cb",
+      "stopped": true
+    },
+    {
+      "name": "sunmoon-pg17-20260927T040000Z-init",
+      "id": "be6f30b61eecc1b441461e4793a61a197a01cede38103f90e9632a051fe53598",
+      "stopped": true
+    },
+    {
+      "name": "sunmoon-pg17-20260927T040000Z-target",
+      "id": "6c071da217cb6d419b24a8cac3783508da1ce6a60c332fbf53a7184475d94e00",
+      "stopped": true
+    }
+  ],
+  "stop_errors": [],
+  "harbor_application_verified": false,
+  "verified_at": "2026-09-27T04:08:54.555397+00:00",
+  "run_dir": "/data/harbor/rehearsals/pg17-20260927T040000Z",
+  "actual_disk_bytes": 182140928,
+  "source_archive_sha256_unchanged": "d6eaee7507f5393613fe253298813c24627ff248162237d1c02b76847f1ae59d",
+  "private_files": [
+    {
+      "name": "registry.dump",
+      "bytes": 540024,
+      "mode": "0o600",
+      "sha256": "8690de0139c8e97d6f885b46023ea834c26b246b6f3d27077d7932d2ec8535a4"
+    },
+    {
+      "name": "globals.sql",
+      "bytes": 671,
+      "mode": "0o600",
+      "sha256": "db88e2684931daccddc3f5a252b14cdb1d6d5c5ca8ba33eec1608a9bff8d34e1"
+    },
+    {
+      "name": "state.json",
+      "bytes": 3114,
+      "mode": "0o600",
+      "sha256": "e5174074c1e582eb296509392b132464882587ef69071911ca3d90e5a34607a2"
+    },
+    {
+      "name": "inventory.json",
+      "bytes": 27509,
+      "mode": "0o600",
+      "sha256": "5558bd976e3ca559d7e57a6016e361e87079332ff8b642626616a101a2622791"
+    }
+  ],
+  "cleanup": "retain all rehearsal objects until final authorized cleanup",
+  "scope": "2026-09-26 cold backup only; latest production data and Harbor application not migrated",
+  "approval": "owner: 你执行",
+  "executed_commit": "fd282292be6492fa9757800fe24282a32a63e5a3",
+  "old_harbor_health": {
+    "status": "healthy",
+    "http_status": 200,
+    "tls_verified": true
+  },
+  "old_container_count_unchanged": 7,
+  "docker_volume_count_unchanged": 43
+}

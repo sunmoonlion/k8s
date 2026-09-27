@@ -1,0 +1,120 @@
+{
+  "at": "2026-09-27T04:08:18.237749+00:00",
+  "old_containers_unchanged": true,
+  "old_container_count": 7,
+  "volume_set_unchanged": true,
+  "volume_count": 43,
+  "new_containers": [
+    {
+      "id": "6c071da217cb6d419b24a8cac3783508da1ce6a60c332fbf53a7184475d94e00",
+      "name": "sunmoon-pg17-20260927T040000Z-target",
+      "state": "exited",
+      "exit_code": 0,
+      "network": "none",
+      "ports": {},
+      "anonymous_volumes": [],
+      "restart": "no",
+      "rootfs_readonly": true,
+      "mounts": [
+        {
+          "source": "/data/harbor/rehearsals/pg17-20260927T040000Z/target",
+          "destination": "/bitnami/postgresql",
+          "type": "bind",
+          "rw": true
+        },
+        {
+          "source": "/data/harbor/rehearsals/pg17-20260927T040000Z/config",
+          "destination": "/rehearsal-config",
+          "type": "bind",
+          "rw": false
+        },
+        {
+          "source": "/data/harbor/rehearsals/pg17-20260927T040000Z/config",
+          "destination": "/docker-entrypoint-initdb.d",
+          "type": "bind",
+          "rw": false
+        },
+        {
+          "source": "/data/harbor/rehearsals/pg17-20260927T040000Z/config",
+          "destination": "/docker-entrypoint-preinitdb.d",
+          "type": "bind",
+          "rw": false
+        }
+      ]
+    },
+    {
+      "id": "be6f30b61eecc1b441461e4793a61a197a01cede38103f90e9632a051fe53598",
+      "name": "sunmoon-pg17-20260927T040000Z-init",
+      "state": "exited",
+      "exit_code": 0,
+      "network": "none",
+      "ports": {},
+      "anonymous_volumes": [],
+      "restart": "no",
+      "rootfs_readonly": true,
+      "mounts": [
+        {
+          "source": "/data/harbor/rehearsals/pg17-20260927T040000Z/config",
+          "destination": "/docker-entrypoint-preinitdb.d",
+          "type": "bind",
+          "rw": false
+        },
+        {
+          "source": "/data/harbor/rehearsals/pg17-20260927T040000Z/target",
+          "destination": "/bitnami/postgresql",
+          "type": "bind",
+          "rw": true
+        },
+        {
+          "source": "/data/harbor/rehearsals/pg17-20260927T040000Z/config",
+          "destination": "/rehearsal-config",
+          "type": "bind",
+          "rw": false
+        },
+        {
+          "source": "/data/harbor/rehearsals/pg17-20260927T040000Z/config",
+          "destination": "/docker-entrypoint-initdb.d",
+          "type": "bind",
+          "rw": false
+        }
+      ]
+    },
+    {
+      "id": "7239d58c2a9f04c27415cf413170c1cde8daea42f08ca6676292f5bfb1f883cb",
+      "name": "sunmoon-pg17-20260927T040000Z-source",
+      "state": "exited",
+      "exit_code": 0,
+      "network": "none",
+      "ports": {},
+      "anonymous_volumes": [],
+      "restart": "no",
+      "rootfs_readonly": true,
+      "mounts": [
+        {
+          "source": "/data/harbor/rehearsals/pg17-20260927T040000Z/config",
+          "destination": "/docker-entrypoint-initdb.d",
+          "type": "bind",
+          "rw": false
+        },
+        {
+          "source": "/data/harbor/rehearsals/pg17-20260927T040000Z/config",
+          "destination": "/docker-entrypoint-preinitdb.d",
+          "type": "bind",
+          "rw": false
+        },
+        {
+          "source": "/data/harbor/rehearsals/pg17-20260927T040000Z/source",
+          "destination": "/bitnami/postgresql",
+          "type": "bind",
+          "rw": true
+        },
+        {
+          "source": "/data/harbor/rehearsals/pg17-20260927T040000Z/config",
+          "destination": "/rehearsal-config",
+          "type": "bind",
+          "rw": false
+        }
+      ]
+    }
+  ]
+}

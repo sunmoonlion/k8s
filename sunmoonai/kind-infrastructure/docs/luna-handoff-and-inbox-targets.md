@@ -95,3 +95,8 @@ git diff --name-status 7896b339..luna
 ## 9. 宿主 Harbor 数据库恢复准备（2026-09-27）
 
 新增 `registry-platform/database-rehearsal.py` 与同模块 `docs/database-rehearsal-plan.md`。默认只打印，check 只读；固定冷备份归档、PG17.6 镜像和新盘 UUID，实际 run --apply 待所有者确认。作用是从冷备份建立临时源库，再逻辑导出/导入独立空目标并核对，3 个新容器无网络/端口，不触及旧 Harbor 或原隔离恢复副本；不作为正式最新数据迁移。预检通过，实际数据库演练尚未执行；inbox 仍用旧 kind，云端未操作。镜像三个 VOLUME 已在候选代码显式覆盖，运行前还会拒绝匿名卷。
+
+
+## 10. 数据库逻辑恢复演练完成（2026-09-27）
+
+所有者明确批准后，按提交 fd282292be6492fa9757800fe24282a32a63e5a3 执行，49 表/10,364 行及结构、权限、角色、序列等一致，三个新容器已停止并保留。旧容器与卷集合未变，旧 Harbor healthy。私有结果在新盘 `/data/harbor/rehearsals/pg17-20260927T040000Z`，不可重复覆盖；约 173.70 MiB。脱敏证据 `../../scripts/results/luna-registry-database-rehearsal.20260927.json`。这替代上一节“未执行”状态；Harbor 应用/最新数据迁移未完成，inbox 仍用旧 kind。

@@ -71,6 +71,8 @@ sunmoonai/scripts/results/luna-kind136.20260926-2200.verification.json
 sunmoonai/scripts/results/luna-materials-offline.20260927.json
 sunmoonai/scripts/results/luna-materials-offline.20260927.md
 sunmoonai/scripts/results/luna-materials-plan.20260926.md
+sunmoonai/scripts/results/luna-pg-rehearsal-after.20260927.json
+sunmoonai/scripts/results/luna-pg-rehearsal-before.20260927.json
 sunmoonai/scripts/results/luna-production-readiness.20260926.cluster.json
 sunmoonai/scripts/results/luna-production-readiness.20260926.inventory.json
 sunmoonai/scripts/results/luna-r2-archive-sources.20260927.json
@@ -89,6 +91,7 @@ sunmoonai/scripts/results/luna-reclaim-r4.20260927.preflight.json
 sunmoonai/scripts/results/luna-reclaim-summary.20260927.json
 sunmoonai/scripts/results/luna-registry-artifacts.20260927.json
 sunmoonai/scripts/results/luna-registry-database-rehearsal-preparation.20260927.json
+sunmoonai/scripts/results/luna-registry-database-rehearsal.20260927.json
 sunmoonai/scripts/results/luna-registry-installer-inventory.20260927.json
 sunmoonai/scripts/results/luna-storage-entry-inspection.20260927.json
 sunmoonai/scripts/results/luna-wsl-space-inventory.20260927.json

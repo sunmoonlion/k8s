@@ -1,6 +1,6 @@
 # PostgreSQL 17.6 冷备份逻辑恢复演练执行卡
 
-状态：代码与只读预检已准备，**未启动演练，等待所有者确认本卡范围**。这是宿主 Harbor 迁移前的数据库单元，不能代替 Harbor 全目录/密钥/认证验收或正式切换。
+状态：所有者明确“你执行”后，**本次数据库逻辑恢复演练已通过**，执行代码提交 `fd282292be6492fa9757800fe24282a32a63e5a3`。这是宿主 Harbor 迁移前的数据库单元，不能代替 Harbor 全目录/密钥/认证验收或正式切换。
 
 ## 1. 本次要验证什么
 
@@ -51,7 +51,7 @@ sudo -n python3 sunmoonai/registry-platform/database-rehearsal.py check \
   --run-dir /data/harbor/rehearsals/pg17-20260927T040000Z
 ```
 
-**确认本卡后由助手执行以下命令，所有者不需要复制到 PowerShell。** 当前尚未执行：
+**下面命令已执行成功，仅作为本次记录，不要重复运行已有批次。** 所有者无需复制到 PowerShell：
 
 ```bash
 sudo -n python3 sunmoonai/registry-platform/database-rehearsal.py run \
@@ -89,3 +89,16 @@ state.json、inventory.json、registry.dump、globals.sql 为 root 私有目录�
 本入口固定本机历史冷备份，**不是统一云端部署入口，云端未经实机验证**。正式 registry-platform 的本地/SSH 共用部署、官方 prepare 配置映射、NGINX SNI 物料、完整 Harbor 恢复及云 steps 尚待后续单元。通过本演练不代表可正式写入宿主 Harbor。
 
 技术依据：[PostgreSQL 17 pg_restore](https://www.postgresql.org/docs/17/app-pgrestore.html) 的恢复与错误处理选项；[Docker none 网络](https://docs.docker.com/engine/network/drivers/none/) 的隔离行为。源码/数据版本锁定落实 C-R1；数据迁移的恢复与对账要求按 constraints 数据节执行；本单元仅数据库证据，不冒充跨系统验收。
+
+## 7. 本次实际结果（2026-09-27）
+
+- 04:06:54 UTC 开始，约半分钟完成执行，04:08 后完成独立收尾复核；无恢复错误、无停止错误。
+- 服务端和 pg_dump/pg_dumpall/pg_restore 均为 PostgreSQL 17.6。
+- 49 张表、10,364 行；逐表内容 SHA256、schema、所有者/权限、角色属性及口令哈希、序列参数与 is_called、扩展、large objects 全部一致。
+- 三个新容器均 exited、ExitCode=0，network=none、无端口、无匿名卷、restart=no。原 7 个容器身份/状态未变，Docker 卷仍为原 43 个。
+- 旧 Harbor `/api/v2.0/health` 返回 200/healthy，保持 TLS 校验；没有访问集群 API、调整旧副本或切换入口。
+- 新盘实际占用 182,140,928 字节（约 173.70 MiB）；registry.dump 540,024 字节，globals.sql 671 字节，四份私有输出均 0600。冷备份原件 SHA256 未变。
+- 证据：[执行结果](../../scripts/results/luna-registry-database-rehearsal.20260927.json)、[执行前](../../scripts/results/luna-pg-rehearsal-before.20260927.json)、[执行后](../../scripts/results/luna-pg-rehearsal-after.20260927.json)。私有数据、密码哈希及 SQL 没有进 Git。
+- 当前只证明历史冷备份可在相同数据库版本逻辑迁移。Harbor 官方应用接入、原加密密钥/认证、registry 全目录摘要、后台任务及入口迁移尚未完成。
+
+原目录、三个停止容器和导出文件全部保留，登记最终收尾复核；**不代表获准删除任何容器或卷**。剩余清理仍在完整迁移验收后进行。

@@ -2,7 +2,7 @@
 
 目标：一套部署代码，两种建集群方式；本地与云上均使用集群外 Harbor，统一地址 `harbor.sunmoonai.com:30443`。具体部署/迁移约束见 [主方案](../kind-infrastructure/docs/storage-and-harbor-placement-decision.md)。
 
-当前实现 **Harbor 官方 2.13.2 离线安装包准备**，并备好本机冷备份的 PostgreSQL 17.6 逻辑恢复演练脚本（实际恢复未执行）。本地 Harbor 部署、SSH 执行、仓库完整备份恢复与入口代理尚未实现，云上未经实机验证。本目录存在不代表仓库已部署。
+当前实现 **Harbor 官方 2.13.2 离线安装包准备**，并完成本机冷备份的 PostgreSQL 17.6 逻辑恢复演练。本地 Harbor 部署、SSH 执行、仓库完整备份恢复与入口代理尚未实现，云上未经实机验证。本目录存在不代表仓库已部署。
 
 ## 物料准备
 
@@ -40,3 +40,5 @@ python3 sunmoonai/registry-platform/prepare-artifacts.py --apply
 | C-R1/C-R2：版本与摘要固定 | 官方安装包锁定版本、字节数和 SHA256；OCI 制品准入另做 |
 | C-I8：错误配置拒绝执行 | 摘要/大小/路径异常中止，未实现的部署能力不自动启用 |
 | C-T5：分支与提交交回 | 仅本地 luna 提交，不推送、不发外部消息 |
+
+本次实际演练已获批准并通过：49 张表、10,364 行及结构/权限/序列等一致，3 个新容器已停止，原 7 个容器和 43 个卷未变，旧 Harbor healthy。[执行结果](../scripts/results/luna-registry-database-rehearsal.20260927.json)。使用原批次的 run --apply 会拒绝覆盖；实际步骤和限制见执行卡第 7 节。
