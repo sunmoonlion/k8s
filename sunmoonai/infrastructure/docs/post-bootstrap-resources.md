@@ -27,7 +27,7 @@ CLUSTER=C1 bash sunmoonai/infrastructure/steps/step10_k8s_nodes_management.sh --
 bash sunmoonai/kind-infrastructure/apply-namespaces-existing-cluster.sh --dry-run
 ```
 
-省略动作也是只打印。云端总控明确传 `--apply`，但整个部署仍被 `closure_complete=false` 阻止；后续 [step09](storage-bootstrap.md) 已完成云端代码接线；[step11使用方](registry-consumer.md)也已接线；剩余 step12/13、KIND存储适配、独立仓库主机前置步骤和平台接线必须先完成。不得手改门禁提前执行旧存储/证书逻辑。
+省略动作也是只打印。云端总控明确传 `--apply`，但整个部署仍被 `closure_complete=false` 阻止；后续 [step09](storage-bootstrap.md) 已完成云端代码接线；[step11使用方](registry-consumer.md)及[step12证书消费](tls-consumer.md)也已接线；剩余 step13、KIND存储/证书适配、独立仓库主机前置步骤和平台接线必须先完成。不得手改门禁提前执行旧存储/证书逻辑。
 
 本地实际使用参数形状如下；目标 UID 必须来自建群记录，不能临时读当前默认上下文并把它当成预期目标：
 

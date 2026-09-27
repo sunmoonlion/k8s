@@ -27,6 +27,7 @@ from cluster_resources import execute as resource_execute, identity as resource_
 from storage_resources import execute as storage_execute, images as storage_images
 from storage_host import execute as storage_host_execute
 from registry_consumer import execute as registry_execute
+from tls_resources import execute as tls_execute
 
 
 def run(argv, timeout=90, content=None):
@@ -238,7 +239,9 @@ def main():
         log = work / ('resources-' + str(time.time_ns()) + '.json')
         try:
             resource_identity(guarded_kub, expected)
-            if request['action'] in ('storage', 'storage-preflight'):
+            if request['action'] == 'certificates':
+                result = tls_execute(guarded_kub, spec['tls'], receipt['uid'], verify_only=spec['verify_only'])
+            elif request['action'] in ('storage', 'storage-preflight'):
                 result = storage_execute(guarded_kub, spec, storage_images(args.manifest, data), receipt['uid'],
                                          check_only=request['action'] == 'storage-preflight')
             else:
@@ -247,7 +250,7 @@ def main():
         except (OSError, ValueError, KeyError, StopIteration, http.client.HTTPException, subprocess.SubprocessError) as error:
             # Kubectl diagnostics may contain private data. Keep them on the
             # target in 0600 files, never forward raw SSH/subprocess output.
-            diagnostic = getattr(error, 'stderr', b'') or b''
+            diagnostic = b'' if request['action'] == 'certificates' else (getattr(error, 'stderr', b'') or b'')
             if isinstance(diagnostic, bytes):
                 diagnostic = diagnostic.decode(errors='replace')
             private_json(log, {'action': request['action'], 'uid': receipt['uid'],

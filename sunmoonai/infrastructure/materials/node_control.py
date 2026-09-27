@@ -20,7 +20,7 @@ from bundle import resolve, verify
 PUBLIC_FILES = ("node_install.py", "os_install.py", "verify_os.py", "prepare_os.py",
                 "bundle.py", "cluster_config.py", "cluster_node.py", "image_import.py", "cluster_resources.py",
                 "storage_resources.py", "storage_host.py", "storage-images.lock.json",
-                "registry_consumer.py", "ingress-images.lock.json",
+                "registry_consumer.py", "tls_resources.py", "ingress-images.lock.json",
                 "cluster-artifacts.lock.json", "kubeadm-images.lock.json", "os-dependencies.lock.json")
 
 REMOTE = r'''
@@ -47,7 +47,7 @@ if root.resolve()!=root or root.name!='packages-to-be-installed' or not root.is_
 expected={'node_install.py','os_install.py','verify_os.py','prepare_os.py','bundle.py',
           'cluster_config.py','cluster_node.py','image_import.py','cluster_resources.py',
           'storage_resources.py','storage_host.py','storage-images.lock.json',
-          'registry_consumer.py','ingress-images.lock.json',
+          'registry_consumer.py','tls_resources.py','ingress-images.lock.json',
           'cluster-artifacts.lock.json','kubeadm-images.lock.json','os-dependencies.lock.json'}
 if set(p['files'])!=expected: raise SystemExit('Unexpected public control file set')
 contents={}

@@ -1,5 +1,19 @@
 # Luna 工作检查点
 
+## 最新续接：2026-09-27 step12 已签发入口证书消费
+
+基线 `1f2aa1313833c7f3db8c2a79060783330e9a987d`，本地 luna，不 push，开始时工作树干净。本段优先于旧step12仍可force/rotate的记录，交付为包含本段的提交。
+
+- step12原278行替换短入口→共用cluster-step/control/node的certificates资源动作。默认只打印，--apply仅创建缺失TLS Secret，--verify检查不补建。移除调用旧unified证书工具/CA生成轮换/额外集群分发/失败跳过成功/弱SSH校验路径；旧工具本身保留未运行。菜单说明同步，历史文件名保留。
+- tls_resources.py供两适配器共用，当前仅云端接线；管理机和target均核固定CA、证书SHA、PEM链、非CA叶证书、root+wildcard SAN、24h最低剩余期、私钥匹配、OpenSSL sslserver/auth_level2/hostname/有效期。CA来自registry-profile，与11同公开输入，无CA私钥。密码学函数尚未以真实输入执行。
+- 新STEP12_TLS_BUNDLE_FILE为Git外私有JSON，描述一/两份dev/prod ingress namespace下traefik-tls-secret的证书文件/SHA/私钥文件；描述/私钥owner/root且无组/其他权限、非symlink、限大小、拒绝Git内私有输入。dry-run不读取这些输入。输入准备/五年签发待仓库正式模块，不要求所有者现在手填。
+- 所有Namespace Active/UID/managed-by及已有Secret归属/data/type/注解冲突先检查，缺失才创建，读回逐字比较，永不覆盖/接管。kub每次前核clusterUID/CA；只到已登记master，节点身份复核。OpenSSL私钥走stdin，临时文件仅公开证书；kubectl stdin传Secret且日志屏蔽TLS错误stderr/正文。远端root0600请求仍包含叶私钥，文档明确按凭据保护，不是全机零写。
+- 总配置仅Step12末段替换，前面所有字节精确比较未变。step12 targetmaster，默认空bundle明确标未配置；force/rotate/additional-clusters残留输入拒绝。总控对12显式--apply。公共SSH白名单18文件，新增tls_resources.py；根锁false保持，pending为13、KIND存储/TLS适配、独立仓库主机前置步骤/平台接线。
+- 证据scripts/results/luna-tls-consumer.20260927.json：4Python+远端payload AST，3Shell bash-n/ShellCheck和主conf bash-n，C1/C2共24组01–12只打印，129文件1236303984B全SHA；OpenSSL verify/x509/pkey help确认需要的选项。本轮没测试套件、没读实际证书私钥、没SSH/API/服务/下载/清理。方法infrastructure/docs/tls-consumer.md。
+- 续读入口dev/prod values全部：dev固定hsy-local-2，存在旧Harbor entrypoint额外参数；prod使用hostNetwork与fast-ssd/ACME，与本次本地/云共用目标待收敛。没有改/运行这些values，下游完整链仍需继续读。step13不得直接调用旧链宣称升级完成。
+- 下一步step13入口固定chart/离线引用与统一配置、独立Harbor正式生命周期/原CA五年叶证书/主机前置步骤，随后SNI/main/CI-CD/备份。Secret存储加密/RBAC和实际TLS握手仍需生产准入验收；本模块没有配置etcd加密，不把base64视加密。
+- 现场旧Harbor30443、inbox、容器/卷/物料保持，本轮未复核实时状态；main未建；五年证书尚未签发。最终清理必须做且最后。整体目标未完成，无后台任务/预算上限，不能通知luna做完了。
+
 ## 最新续接：2026-09-27 step11 独立仓库使用方
 
 基线 `14e1cae361f1f944014016bae92f9faeca62c78a`，本地 luna，不 push；本段优先于旧 step11 尚未改写的记录。交付为包含本段的提交。

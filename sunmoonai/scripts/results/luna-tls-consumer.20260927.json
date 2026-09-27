@@ -1,0 +1,313 @@
+{
+  "schema": 1,
+  "date": "2026-09-27",
+  "baseline": "1f2aa1313833c7f3db8c2a79060783330e9a987d",
+  "scope": "shared signed ingress TLS Secret consumer and cloud step12",
+  "cloud_status": "未经实机验证",
+  "ssh_executed": false,
+  "cluster_api_calls": false,
+  "actual_certificate_inputs_read": false,
+  "certificate_generated_or_rotated": false,
+  "service_changes": false,
+  "tests_added_or_run": false,
+  "cleanup": false,
+  "checks": [
+    {
+      "file": "sunmoonai/infrastructure/materials/tls_resources.py",
+      "python_ast": "passed",
+      "sha256": "93102cae193314bead78a6b054d5a92fbf4162569e94730d678c5c93be5f82f5"
+    },
+    {
+      "file": "sunmoonai/infrastructure/materials/cluster_control.py",
+      "python_ast": "passed",
+      "sha256": "5c93c092b50783d486b1253d2ab741200d7d9bf5867f382587682505e853a4b2"
+    },
+    {
+      "file": "sunmoonai/infrastructure/materials/cluster_node.py",
+      "python_ast": "passed",
+      "sha256": "6713c711eeca6647fbf16dcf33b7cee185c5afc0e458fee0ce68c8f70cfe69b2"
+    },
+    {
+      "file": "sunmoonai/infrastructure/materials/node_control.py",
+      "python_ast": "passed",
+      "sha256": "3e715f8bc057f166138ed7dcad8db53107c9bcd1cc490818a8dfec1322ac0ae7"
+    },
+    {
+      "file": "sunmoonai/infrastructure/utils/cluster-step.sh",
+      "bash_n": "passed",
+      "shellcheck": "passed",
+      "sha256": "c1bc00a7fc6bd408dabb760252c265eb7f85cc05546262cae1e81a8e17b95be9"
+    },
+    {
+      "file": "sunmoonai/infrastructure/steps/step12_ca_generation.sh",
+      "bash_n": "passed",
+      "shellcheck": "passed",
+      "sha256": "a30031aa5ec017951d7894722455da1b42386e59b5bb55b39a27702fcaf9d3fb"
+    },
+    {
+      "file": "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh",
+      "bash_n": "passed",
+      "shellcheck": "passed",
+      "sha256": "4b60bfc3ea324c1b26263396509a1d1de676ccab58932ac607d40c5ed982dba2"
+    }
+  ],
+  "remote_payload_ast": "passed",
+  "public_control_files": [
+    "node_install.py",
+    "os_install.py",
+    "verify_os.py",
+    "prepare_os.py",
+    "bundle.py",
+    "cluster_config.py",
+    "cluster_node.py",
+    "image_import.py",
+    "cluster_resources.py",
+    "storage_resources.py",
+    "storage_host.py",
+    "storage-images.lock.json",
+    "registry_consumer.py",
+    "tls_resources.py",
+    "ingress-images.lock.json",
+    "cluster-artifacts.lock.json",
+    "kubeadm-images.lock.json",
+    "os-dependencies.lock.json"
+  ],
+  "main_config": {
+    "all_bytes_before_step12": "unchanged",
+    "bash_n": "passed",
+    "values_recorded": false
+  },
+  "dry_runs": [
+    {
+      "cluster": "C1",
+      "step": "step01_os_baseline.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step02_runtime.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step03_k8s_binaries.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step04_kubeadm_init.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step05_cni_install.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step06_join_nodes.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step07_create_namespaces.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step08_validate.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step09_storage.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step10_k8s_nodes_management.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step11_load-initial-images.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step12_ca_generation.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false,
+      "bundle_configured": false,
+      "order": [
+        "explicit private TLS input descriptor and public CA pin",
+        "verify chain, SANs, lifetime and matching private key on management and target hosts",
+        "pinned cluster identity and all namespace/Secret conflicts",
+        "create missing TLS Secrets only; never regenerate CA or overwrite",
+        "read back exact Secret bytes; TLS handshake acceptance separate"
+      ]
+    },
+    {
+      "cluster": "C2",
+      "step": "step01_os_baseline.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step02_runtime.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step03_k8s_binaries.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step04_kubeadm_init.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step05_cni_install.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step06_join_nodes.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step07_create_namespaces.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step08_validate.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step09_storage.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step10_k8s_nodes_management.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step11_load-initial-images.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step12_ca_generation.sh",
+      "dry_run": true,
+      "ssh_started": false,
+      "closure_complete": false,
+      "bundle_configured": false,
+      "order": [
+        "explicit private TLS input descriptor and public CA pin",
+        "verify chain, SANs, lifetime and matching private key on management and target hosts",
+        "pinned cluster identity and all namespace/Secret conflicts",
+        "create missing TLS Secrets only; never regenerate CA or overwrite",
+        "read back exact Secret bytes; TLS handshake acceptance separate"
+      ]
+    }
+  ],
+  "materials": {
+    "files": 129,
+    "bytes": 1236303984,
+    "sha256": "all passed",
+    "closure_complete": false,
+    "pending": [
+      "Remaining infrastructure step13, KIND storage/TLS adapters and external registry host lifecycle/pre-step11/platform integration"
+    ],
+    "root_lock_sha256": "51db013c5915265b54f359f05bf24aba2f4dac153c8230ea975ccf26b67ef8c1"
+  },
+  "local_openssl": {
+    "version": "OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)",
+    "commands": {
+      "verify": {
+        "required_options_present": [
+          "-no-CAstore",
+          "-no-CApath",
+          "-auth_level",
+          "-verify_hostname",
+          "-purpose",
+          "-untrusted"
+        ]
+      },
+      "x509": {
+        "required_options_present": [
+          "-checkend",
+          "-ext",
+          "-pubkey"
+        ]
+      },
+      "pkey": {
+        "required_options_present": [
+          "-pubout",
+          "-passin"
+        ]
+      }
+    }
+  },
+  "not_verified": [
+    "actual input certificate chain/key compatibility",
+    "live Secret creation/readback",
+    "KIND adapter",
+    "ingress handshake",
+    "five-year leaf issuance",
+    "cloud deployment",
+    "Kubernetes Secret storage encryption/RBAC acceptance"
+  ]
+}

@@ -12,7 +12,7 @@
   },
   "closure_complete": false,
   "pending": [
-    "Remaining infrastructure step12/13, KIND storage adapter and external registry host lifecycle/pre-step11/platform integration"
+    "Remaining infrastructure step13, KIND storage/TLS adapters and external registry host lifecycle/pre-step11/platform integration"
   ],
   "provenance": [
     "https://github.com/containerd/nerdctl/releases/tag/v2.3.5",

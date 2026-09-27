@@ -53,7 +53,7 @@ DEPLOY_STEPS=(
     "step09_storage:存储配置:STEP09_ENABLED"
     "step10_k8s_nodes_management:Kubernetes节点管理:STEP10_ENABLED"
     "step11_load-initial-images:初始镜像加载:STEP11_ENABLED"
-    "step12_ca_generation:统一根 CA 证书生成/轮换:STEP12_ENABLED"
+    "step12_ca_generation:校验并安装已签发入口证书:STEP12_ENABLED"
     "step13_ingress_and_harbor:Ingress (Traefik) 部署（Harbor 在集群外）:STEP13_ENABLED"
 )
 
@@ -120,7 +120,7 @@ execute_step(){
     local description="$2"
     local -a step_args=()
     case "$step" in
-        step01_os_baseline.sh|step02_runtime.sh|step03_k8s_binaries.sh|step04_kubeadm_init.sh|step05_cni_install.sh|step06_join_nodes.sh|step07_create_namespaces.sh|step08_validate.sh|step09_storage.sh|step10_k8s_nodes_management.sh|step11_load-initial-images.sh)
+        step01_os_baseline.sh|step02_runtime.sh|step03_k8s_binaries.sh|step04_kubeadm_init.sh|step05_cni_install.sh|step06_join_nodes.sh|step07_create_namespaces.sh|step08_validate.sh|step09_storage.sh|step10_k8s_nodes_management.sh|step11_load-initial-images.sh|step12_ca_generation.sh)
             step_args=(--apply) ;;
     esac
     
@@ -143,7 +143,7 @@ execute_step(){
 # 步骤执行函数
 step12_ca_generation(){
     load_config || return 1
-    execute_step "step12_ca_generation.sh" "统一根 CA 证书生成/轮换"
+    execute_step "step12_ca_generation.sh" "校验并安装已签发入口证书"
 }
 
 step00_reset(){
@@ -320,7 +320,7 @@ show_step_status(){
     echo ""
     
     local steps=(
-        "step12_ca_generation.sh:统一根 CA 证书生成/轮换"
+        "step12_ca_generation.sh:校验并安装已签发入口证书"
         "step00_reset.sh:重置集群"
         "step01_os_baseline.sh:操作系统基线"
         "step02_runtime.sh:容器运行时"

@@ -67,6 +67,6 @@ Calico 从同一份3.32.2锁定 YAML 在管理机渲染为38个 JSON 对象。�
 5. 检查日志/终端无凭据输出、令牌撤销和过期行为；对中断场景按记录人工判断，不自动reset。
 6. 实机证据齐全后才改“未经实机验证”标记；多控制面、双栈、网络差异不能外推本次结果。
 
-主锁 `closure_complete` 是物料与部署代码的发布门禁，真实验收状态另记 `validation_status`，避免以后首次上云陷入“尚未安装却必须先实机验收”的循环。当前仍false，原因是step12/13、KIND存储适配及独立Harbor主机前置步骤/平台接线未完成；[step11使用方](registry-consumer.md)与step07–10已接线但未实机验证；不能跳过这些审查就手工放开完整总控。
+主锁 `closure_complete` 是物料与部署代码的发布门禁，真实验收状态另记 `validation_status`，避免以后首次上云陷入“尚未安装却必须先实机验收”的循环。当前仍false，原因是step13、KIND存储/证书适配及独立Harbor主机前置步骤/平台接线未完成；[step11使用方](registry-consumer.md)及[step12证书消费](tls-consumer.md)与step07–10已接线但未实机验证；不能跳过这些审查就手工放开完整总控。
 
 本地 inbox 仍在旧 KIND：`~/.kube/kind-config`，kubectl为 `~/packages-to-be-installed/releases/kubectl-1.27.3-existing-kind-linux-amd64/bin/kubectl`。本轮没有切换集群、入口或数据，也未执行最终清理。

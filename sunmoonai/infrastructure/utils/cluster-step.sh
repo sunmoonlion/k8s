@@ -12,11 +12,11 @@ cluster_step_main() {
         [[ $# -eq 1 ]] || { log_error 'Specify one action only'; return 1; }
         case "$argument" in --apply|--dry-run|--verify) action="$argument" ;; *) log_error 'Expected --dry-run, --apply or --verify'; return 1 ;; esac
     done
-    if [[ "$action" == --verify && "$phase" != registry ]]; then
-        log_error '--verify is only supported by the registry consumer'; return 1
+    if [[ "$action" == --verify && "$phase" != registry && "$phase" != certificates ]]; then
+        log_error '--verify is only supported by registry and certificate consumers'; return 1
     fi
     load_config_file || return 1
-    if [[ "$phase" == registry ]]; then
+    if [[ "$phase" == registry || "$phase" == certificates ]]; then
         # shellcheck source=/dev/null
         source "$PROJECT_ROOT/../registry-platform/lib/config.sh"
         # Empty example permits planning only; actual use requires explicit host fields.
@@ -57,7 +57,7 @@ cluster_step_main() {
     local resource_timeout="${STEP08_WAIT_TIMEOUT:-300}"
     [[ "$phase" != storage ]] || resource_timeout="${STEP09_WAIT_TIMEOUT:-300}"
     export SM_RESOURCE_TIMEOUT="$resource_timeout" SM_EXPECTED_NODE_COUNT="${STEP08_EXPECTED_NODE_COUNT:-}"
-    for idx in 07 08 09 10 11; do
+    for idx in 07 08 09 10 11 12; do
         for field in ENABLED TARGET REMOTE_KUBECONFIG; do
             name="STEP${idx}_${field}"
             export "SM_${name}=${!name:-}"
@@ -67,6 +67,9 @@ cluster_step_main() {
         name="STEP09_${field}"
         export "SM_STORAGE_${field}=${!name:-}"
     done
+    export SM_TLS_BUNDLE_FILE="${STEP12_TLS_BUNDLE_FILE:-}"
+    export SM_TLS_FORCE="${STEP12_FORCE_REGENERATE:-false}" SM_TLS_ROTATE="${STEP12_CA_ROTATE:-false}"
+    export SM_TLS_ADDITIONAL_CLUSTERS="${STEP12_ADDITIONAL_CLUSTERS:-}"
     local -a args=(--phase "$phase")
     [[ "$action" == --dry-run ]] || args+=("$action")
     python3 "$PROJECT_ROOT/materials/cluster_control.py" "${args[@]}"
