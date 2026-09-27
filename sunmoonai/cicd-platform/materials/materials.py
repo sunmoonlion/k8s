@@ -119,7 +119,7 @@ class Batch:
                       upstream_checksum=checksum, verification='upstream-checksum' if checksum else 'TLS-metadata')
         return target
 
-    def container(self, image, command, mounts, online=False, timeout=900, extra_env=None):
+    def container(self, image, command, mounts, online=False, timeout=900, extra_env=None, expected=0):
         name = 'sunmoon-material-' + uuid.uuid4().hex[:12]
         args = ['docker', 'run', '--rm', '--name', name, '--label', 'sunmoonai.material-trial=true',
             '--pull=never', '--network=bridge' if online else '--network=none',
@@ -134,7 +134,7 @@ class Batch:
             args += ['--mount', f'type=bind,source={source},target={dest}' + (',readonly' if ro else '')]
         args += [image, 'sh', '-ec', 'mkdir -p /tmp/home; ' + command]
         try:
-            return self.run(args, timeout=timeout)
+            return self.run(args, timeout=timeout, expected=expected)
         finally:
             # --rm normally already cleaned the container; only remove our own
             # randomly named, labelled temporary container after a CLI timeout.

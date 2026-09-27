@@ -1,0 +1,214 @@
+{
+  "checked_at": "2026-09-27T01:51:08.564897+00:00",
+  "clusters": [
+    {
+      "cluster": "kind",
+      "kubeconfig": "/home/zymun/.kube/kind-config",
+      "kubectl": "/home/zymun/packages-to-be-installed/releases/kubectl-1.27.3-existing-kind-linux-amd64/bin/kubectl",
+      "client_version": "v1.27.3",
+      "server_version": "v1.27.3",
+      "kube_system_uid": "5d71ab3a-ea5a-4535-adc6-d7698d820249",
+      "nodes": [
+        {
+          "name": "kind-control-plane",
+          "ready": "True"
+        },
+        {
+          "name": "kind-worker",
+          "ready": "True"
+        },
+        {
+          "name": "kind-worker2",
+          "ready": "True"
+        }
+      ],
+      "kube_system_pods": [
+        {
+          "name": "coredns-5d78c9869d-8zwh2",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "coredns-5d78c9869d-xlzpg",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "etcd-kind-control-plane",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "kindnet-6h882",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "kindnet-9jvjf",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "kindnet-ll9f4",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "kube-apiserver-kind-control-plane",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "kube-controller-manager-kind-control-plane",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "kube-proxy-54hxl",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "kube-proxy-685fs",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "kube-proxy-ljh59",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "kube-scheduler-kind-control-plane",
+          "phase": "Running",
+          "ready": true
+        }
+      ]
+    },
+    {
+      "cluster": "sunmoon-kind-136",
+      "kubeconfig": "/home/zymun/.kube/sunmoon-kind-136.config",
+      "kubectl": "/home/zymun/packages-to-be-installed/releases/kind-1.36.4-calico-3.32.2-linux-amd64/bin/kubectl",
+      "client_version": "v1.36.4",
+      "server_version": "v1.36.4",
+      "kube_system_uid": "f5b11e20-1428-48a0-8c7a-51bc9ef27896",
+      "nodes": [
+        {
+          "name": "sunmoon-kind-136-control-plane",
+          "ready": "True"
+        },
+        {
+          "name": "sunmoon-kind-136-worker",
+          "ready": "True"
+        },
+        {
+          "name": "sunmoon-kind-136-worker2",
+          "ready": "True"
+        }
+      ],
+      "kube_system_pods": [
+        {
+          "name": "calico-kube-controllers-76474699b6-sgmvw",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "calico-node-7w8n2",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "calico-node-9htxs",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "calico-node-gb746",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "coredns-dd4dddb9f-dtnxz",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "coredns-dd4dddb9f-k9rlv",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "etcd-sunmoon-kind-136-control-plane",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "kube-apiserver-sunmoon-kind-136-control-plane",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "kube-controller-manager-sunmoon-kind-136-control-plane",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "kube-proxy-dkccz",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "kube-proxy-dqzvl",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "kube-proxy-wpmmd",
+          "phase": "Running",
+          "ready": true
+        },
+        {
+          "name": "kube-scheduler-sunmoon-kind-136-control-plane",
+          "phase": "Running",
+          "ready": true
+        }
+      ],
+      "harbor_restore_replicas": [
+        {
+          "name": "restore-gateway",
+          "replicas": 0
+        },
+        {
+          "name": "sunmoonai-harbor-core",
+          "replicas": 0
+        },
+        {
+          "name": "sunmoonai-harbor-jobservice",
+          "replicas": 0
+        },
+        {
+          "name": "sunmoonai-harbor-portal",
+          "replicas": 0
+        },
+        {
+          "name": "sunmoonai-harbor-registry",
+          "replicas": 0
+        },
+        {
+          "name": "sunmoonai-harbor-postgresql",
+          "replicas": 0
+        },
+        {
+          "name": "sunmoonai-harbor-redis-master",
+          "replicas": 0
+        },
+        {
+          "name": "sunmoonai-harbor-trivy",
+          "replicas": 0
+        }
+      ],
+      "harbor_restore_pod_count": 0
+    }
+  ],
+  "temporary_material_containers": []
+}

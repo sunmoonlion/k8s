@@ -1,0 +1,24 @@
+{
+  "recorded_at": "2026-09-27T02:16:27.194328+00:00",
+  "read_only": true,
+  "windows_exit": 0,
+  "windows": {
+    "C_TotalBytes": 992541478912,
+    "C_FreeBytes": 249019482112,
+    "Distributions": [
+      {
+        "Name": "Ubuntu",
+        "BasePath": "C:\\Users\\zymun\\AppData\\Local\\Packages\\CanonicalGroupLimited.Ubuntu_79rhkp1fndgsc\\LocalState",
+        "Vhdx": [
+          {
+            "FullName": "C:\\Users\\zymun\\AppData\\Local\\Packages\\CanonicalGroupLimited.Ubuntu_79rhkp1fndgsc\\LocalState\\ext4.vhdx",
+            "Length": 515879469056
+          }
+        ]
+      }
+    ]
+  },
+  "wsl_distro": "Ubuntu",
+  "wsl_df_bytes": "Filesystem         1B-blocks         Used    Available Use% Mounted on\n/dev/sdd       1081101176832 492846100480 533262721024  49% /\n",
+  "wsl_root_findmnt": "TARGET SOURCE   FSTYPE OPTIONS\n/      /dev/sdd ext4   rw,relatime,discard,errors=remount-ro,data=ordered\n"
+}

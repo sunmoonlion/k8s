@@ -1,0 +1,122 @@
+{
+  "recorded_at": "2026-09-27T02:06:39.910827+00:00",
+  "read_only": true,
+  "kind_clusters_exists": false,
+  "commands": [
+    {
+      "command": [
+        "findmnt",
+        "-T",
+        "/",
+        "-o",
+        "TARGET,SOURCE,FSTYPE,OPTIONS"
+      ],
+      "exit_code": 0,
+      "stdout": "TARGET SOURCE   FSTYPE OPTIONS\n/      /dev/sdd ext4   rw,relatime,discard,errors=remount-ro,data=ordered\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "findmnt",
+        "-T",
+        "/data",
+        "-o",
+        "TARGET,SOURCE,FSTYPE,OPTIONS"
+      ],
+      "exit_code": 0,
+      "stdout": "TARGET SOURCE   FSTYPE OPTIONS\n/      /dev/sdd ext4   rw,relatime,discard,errors=remount-ro,data=ordered\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "findmnt",
+        "-T",
+        "/data/kind-local-storage",
+        "-o",
+        "TARGET,SOURCE,FSTYPE,OPTIONS"
+      ],
+      "exit_code": 0,
+      "stdout": "TARGET SOURCE   FSTYPE OPTIONS\n/      /dev/sdd ext4   rw,relatime,discard,errors=remount-ro,data=ordered\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "findmnt",
+        "-T",
+        "/mnt/pv-kind-ext4",
+        "-o",
+        "TARGET,SOURCE,FSTYPE,OPTIONS"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "findmnt",
+        "-T",
+        "/var/lib/docker",
+        "-o",
+        "TARGET,SOURCE,FSTYPE,OPTIONS"
+      ],
+      "exit_code": 0,
+      "stdout": "TARGET          SOURCE                    FSTYPE OPTIONS\n/var/lib/docker /dev/sdd[/var/lib/docker] ext4   rw,relatime,discard,errors=remount-ro,data=ordered\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "lsblk",
+        "-o",
+        "NAME,TYPE,SIZE,FSTYPE,UUID,MOUNTPOINTS"
+      ],
+      "exit_code": 0,
+      "stdout": "NAME TYPE   SIZE FSTYPE UUID                                 MOUNTPOINTS\nsda  disk 364.8M ext4                                        \nsdb  disk 144.5M ext4                                        \nsdc  disk    48G swap   abbbc660-6e1b-4660-8b4c-051567d7b900 [SWAP]\nsdd  disk     1T ext4   693faed3-cebb-473e-81ae-fd88f1fc76b4 /var/lib/docker\n                                                             /mnt/wslg/distro\n                                                             /\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "ss",
+        "-ltnp",
+        "sport = :30443"
+      ],
+      "exit_code": 0,
+      "stdout": "State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess\nLISTEN 0      4096         0.0.0.0:30443      0.0.0.0:*          \n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "docker",
+        "port",
+        "kind-control-plane"
+      ],
+      "exit_code": 0,
+      "stdout": "6443/tcp -> 127.0.0.1:43001\n30080/tcp -> 0.0.0.0:80\n30443/tcp -> 0.0.0.0:30443\n30444/tcp -> 0.0.0.0:30444\n30445/tcp -> 0.0.0.0:30445\n30446/tcp -> 0.0.0.0:30446\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "docker",
+        "inspect",
+        "--format",
+        "{{json .Mounts}}",
+        "kind-worker"
+      ],
+      "exit_code": 0,
+      "stdout": "[{\"Type\":\"bind\",\"Source\":\"/data/kind-local-storage\",\"Destination\":\"/data/kind-local-storage\",\"Mode\":\"\",\"RW\":true,\"Propagation\":\"rprivate\"},{\"Type\":\"bind\",\"Source\":\"/lib/modules\",\"Destination\":\"/lib/modules\",\"Mode\":\"ro\",\"RW\":false,\"Propagation\":\"rprivate\"},{\"Type\":\"volume\",\"Name\":\"8ac9132e26523082f3eee2d798bcc4d794951fc8c9ee2db41cd9bdccd8bb5167\",\"Source\":\"/var/lib/docker/volumes/8ac9132e26523082f3eee2d798bcc4d794951fc8c9ee2db41cd9bdccd8bb5167/_data\",\"Destination\":\"/var\",\"Driver\":\"local\",\"Mode\":\"\",\"RW\":true,\"Propagation\":\"\"}]\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "docker",
+        "inspect",
+        "--format",
+        "{{json .Mounts}}",
+        "kind-worker2"
+      ],
+      "exit_code": 0,
+      "stdout": "[{\"Type\":\"bind\",\"Source\":\"/lib/modules\",\"Destination\":\"/lib/modules\",\"Mode\":\"ro\",\"RW\":false,\"Propagation\":\"rprivate\"},{\"Type\":\"volume\",\"Name\":\"4ad6bbc6c47d4a14615a8aecabd050e23f22f2351ece677c78b7c88cd7cb31f6\",\"Source\":\"/var/lib/docker/volumes/4ad6bbc6c47d4a14615a8aecabd050e23f22f2351ece677c78b7c88cd7cb31f6/_data\",\"Destination\":\"/var\",\"Driver\":\"local\",\"Mode\":\"\",\"RW\":true,\"Propagation\":\"\"}]\n",
+      "stderr": ""
+    }
+  ],
+  "fstab": "# UNCONFIGURED FSTAB FOR BASE SYSTEM\n"
+}

@@ -1,0 +1,161 @@
+{
+  "recorded_at": "2026-09-27T01:53:01.764940+00:00",
+  "scope": "Approved template T0-T4: application artifacts and build checks, not OCI image publication or CI/CD",
+  "batch_root": "/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64",
+  "profile": {
+    "schema": 1,
+    "batch": "build-template-20260926-linux-amd64",
+    "platform": "linux/amd64",
+    "root": "~/packages-to-be-installed/releases/build-template-20260926-linux-amd64",
+    "source_root": "~/worktrees/luna",
+    "max_bytes": 32212254720,
+    "repositories": [
+      {
+        "path": "tpl-app",
+        "commit": "3317c84d984fdd6dbeb4ab490685f9fcdff569a3"
+      },
+      {
+        "path": "tpl-app/tpl-backend",
+        "commit": "6674125cd1c14d9700c707b0b0f4b5d422d42f05"
+      },
+      {
+        "path": "tpl-app/tpl-web-frontend",
+        "commit": "45ceed1a147cadb6dfd1b8a72b79ff5a266854bd"
+      },
+      {
+        "path": "tpl-app/tpl-admin-frontend",
+        "commit": "ee1f542220386e15c8f97c6e40e317caf3c2e9e7"
+      }
+    ],
+    "images": {
+      "node": "harbor.sunmoonai.com:30443/k8s-images/node@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc",
+      "python": "harbor.sunmoonai.com:30443/k8s-images/python@sha256:cd4b90006d24bf02d61ff4dca29587b911552e9f0c8ac933db8b1c536c289379"
+    },
+    "pnpm": "10.24.0",
+    "uv": "0.11.32",
+    "node": "24.18.0"
+  },
+  "public_manifest_sha256": "decd851f3c4fa5721afa8c89d57325492dcad49be10c6dd379999dae406e55bb",
+  "source_lock_sha256": {
+    "pnpm": "fff8c2a0e40453d2fb592301c1413a758d2ddd34bceefe6e0e99d4f49a41ae2d",
+    "uv": "462ec0b72a6c0324f914a8fcee0c709e8a9ebfe0b87b1c86236c4cc573b5ac76"
+  },
+  "public_archives": {
+    "files": 814,
+    "npm": 756,
+    "python_wheels": 58,
+    "bytes": 276598294
+  },
+  "positive": {
+    "network": "Docker --network=none --pull=never; fresh application directories and venv",
+    "source": {
+      "frontend": "45ceed1a147cadb6dfd1b8a72b79ff5a266854bd",
+      "backend": "6674125cd1c14d9700c707b0b0f4b5d422d42f05"
+    },
+    "passed": true,
+    "work": "/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/work/offline-trial-1790472978821158770",
+    "started_ns": 1790472978821635474,
+    "scope": "application artifacts and build checks; no OCI image publication or cluster deployment",
+    "frontend": {
+      "passed": true,
+      "lock_sha256": "fff8c2a0e40453d2fb592301c1413a758d2ddd34bceefe6e0e99d4f49a41ae2d",
+      "standalone_server_sha256": "b50882dafa931be35c45a03e3800eb2ff867964ca84fe5f9f2d459ce25e02ac8"
+    },
+    "backend": {
+      "passed": true,
+      "lock_sha256": "462ec0b72a6c0324f914a8fcee0c709e8a9ebfe0b87b1c86236c4cc573b5ac76",
+      "requirements_sha256": "a21f3675c68b4396d007c5b6420d52c94dafbde4cf7b399ac4c5c3b3a1831340"
+    },
+    "completed_ns": 1790473025483311595
+  },
+  "negative": {
+    "scope": "Python locked wheelhouse; fresh offline containers; source archives untouched",
+    "checks": [
+      {
+        "name": "required-wheel-missing",
+        "passed": true,
+        "expected_exit": 1
+      },
+      {
+        "name": "wheel-hash-mismatch",
+        "passed": true,
+        "expected_exit": 1
+      },
+      {
+        "name": "restored-wheelhouse-installs",
+        "passed": true,
+        "expected_exit": 0
+      }
+    ],
+    "canonical_archives_unchanged": true
+  },
+  "download_interruption": {
+    "passed": true,
+    "work": "/home/zym/.cache/sunmoon-artifacts/build-template-packages-20260927/interruption-proof-1790473228038347343",
+    "manifest_sha256": "dad1cdd523ae9b0e29881ef1f5fb09049ed17543ae9ca67e0637c89f3f758b48",
+    "completed_artifact_reused": "npm/a9ea4cc7627101ae638dfcf11bbf723cfabef01b854e81ddd619bb908f99e3302ad5fb5088fec77313210c322dadbb7055e2e0fdc6362672a7adc1649a2b3034.tgz",
+    "interrupted_artifact": "npm/08a5d120bc84accb547eda7e72819c677f19c04fc0aaae3954c09c44baf62383972ab8312010d71e7060797fd43229744b4f62d895da0cbdd0f9337c0ff70a9a.tgz",
+    "partial_bytes_at_interruption": 40960,
+    "incomplete_artifact_not_admitted": true,
+    "original_lock_checksums_passed": true,
+    "resume_semantics": "Reuse verified completed artifacts; restart incomplete curl download. rsync handles transfer resume separately."
+  },
+  "evidence": [
+    {
+      "log": "evidence/20260927T093327476248.log",
+      "log_sha256": "32349eb555d14e1c26a4788d426f8a81456238f20b723bc403006a815e4a8bf1",
+      "exit_code": 0
+    },
+    {
+      "log": "evidence/20260927T093629287594.log",
+      "log_sha256": "aa0691b26422ac86dda533d45d5560bb994822851074ef9b22fabc84247aa674",
+      "exit_code": 0
+    },
+    {
+      "log": "evidence/20260927T093652794928.log",
+      "log_sha256": "0a6e513e06d9a87080b8853d96237a4092024d480b1a51257cf5eaf340200ecf",
+      "exit_code": 0
+    },
+    {
+      "log": "evidence/20260927T094315583186.log",
+      "log_sha256": "ceed3c049a3b76f286741ef2838181083646b035d56f18329b60813025c43b42",
+      "exit_code": 1
+    },
+    {
+      "log": "evidence/20260927T094318988867.log",
+      "log_sha256": "fab800dd72070cdaabdb371457821e8909ffd8a7210f1ca65d8f56d94a32512c",
+      "exit_code": 1
+    },
+    {
+      "log": "evidence/20260927T094322768303.log",
+      "log_sha256": "b67bea6e03d309ecf16559c2faeab630d81bde134fdda715bfce6d1feb28b8e7",
+      "exit_code": 0
+    },
+    {
+      "log": "evidence/20260927T094839159255.log",
+      "log_sha256": "e05ae17927590256ff35489226a43b4ad919f2dedb65c7fc41deb0c0df5d108a",
+      "exit_code": 0
+    }
+  ],
+  "batch_file_bytes": 4318050614,
+  "local_free_bytes": 533270093824,
+  "limitations": [
+    "Single Linux amd64 template frontend/backend batch only",
+    "No production OCI image assembly or registry publication",
+    "No database/unit/business E2E test execution",
+    "No template admin frontend build or all-project coverage",
+    "No CI/CD or new business deployment",
+    "No independent-medium backup",
+    "No publisher signature verification; TLS metadata and original lock integrity checks"
+  ],
+  "failure_history": [
+    {
+      "log": "evidence/20260926T225021131846.log",
+      "reason": "Direct npm fetch ECONNRESET; replaced acquisition route with reviewed public archives via authorized staging host"
+    },
+    {
+      "log": "evidence/20260927T093914120743.log",
+      "reason": "Initial corrupt wheel was invalid ZIP; not accepted as hash-gate proof; rerun with valid ZIP comment mutation gave explicit Hash mismatch"
+    }
+  ]
+}

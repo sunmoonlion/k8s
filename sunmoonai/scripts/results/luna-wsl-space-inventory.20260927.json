@@ -1,0 +1,143 @@
+{
+  "recorded_at": "2026-09-27T02:34:28.696005+00:00",
+  "read_only": true,
+  "prior_failure": "Root du scan exceeded 180s; switched to bounded targeted scans",
+  "measurements": [
+    {
+      "command": [
+        "sudo",
+        "-n",
+        "timeout",
+        "--kill-after=5s",
+        "120s",
+        "du",
+        "-x",
+        "-B1",
+        "--max-depth=1",
+        "/var/lib/docker"
+      ],
+      "exit_code": 0,
+      "stdout": "8192\t/var/lib/docker/tmp\n131072\t/var/lib/docker/network\n97686581248\t/var/lib/docker/volumes\n1248301056\t/var/lib/docker/buildkit\n4096\t/var/lib/docker/swarm\n36691968\t/var/lib/docker/containers\n8192\t/var/lib/docker/plugins\n167936\t/var/lib/docker/image\n4096\t/var/lib/docker/runtimes\n8192\t/var/lib/docker/rootfs\n98971914240\t/var/lib/docker\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "sudo",
+        "-n",
+        "timeout",
+        "--kill-after=5s",
+        "120s",
+        "du",
+        "-x",
+        "-B1",
+        "--max-depth=2",
+        "/home/zymun/packages-to-be-installed"
+      ],
+      "exit_code": 0,
+      "stdout": "16481935360\t/home/zymun/packages-to-be-installed/images\n105734144\t/home/zymun/packages-to-be-installed/debs\n4096\t/home/zymun/packages-to-be-installed/work\n167936\t/home/zymun/packages-to-be-installed/charts\n283701248\t/home/zymun/packages-to-be-installed/tars\n4096\t/home/zymun/packages-to-be-installed/tar\n4878245888\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64\n19986444288\t/home/zymun/packages-to-be-installed/releases/harbor-preserve-20260926\n525287424\t/home/zymun/packages-to-be-installed/releases/.local-attempt-20260926T215120\n49266688\t/home/zymun/packages-to-be-installed/releases/kubectl-1.27.3-existing-kind-linux-amd64\n719200256\t/home/zymun/packages-to-be-installed/releases/kind-1.36.4-calico-3.32.2-linux-amd64\n26158448640\t/home/zymun/packages-to-be-installed/releases\n43029999616\t/home/zymun/packages-to-be-installed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "sudo",
+        "-n",
+        "timeout",
+        "--kill-after=5s",
+        "120s",
+        "du",
+        "-x",
+        "-B1",
+        "--max-depth=1",
+        "/home/zymun"
+      ],
+      "exit_code": 0,
+      "stdout": "139264\t/home/zymun/.ipython\n49152\t/home/zymun/.sunmoon-agent-kind\n10285056\t/home/zymun/toolboxes\n10014511104\t/home/zymun/repo\n294912\t/home/zymun/.dotnet\n16384\t/home/zymun/research\n18243584\t/home/zymun/.oh-my-zsh\n187699200\t/home/zymun/AI-Application-Development-Lessons\n687255552\t/home/zymun/.codex-official\n8192\t/home/zymun/.wind-aifinmarket\n2113536\t/home/zymun/.docker\n4991545344\t/home/zymun/.qoder-server\n61440\t/home/zymun/.sunmoon-agent-kind2\n146247680\t/home/zymun/.qodersec\n17768448\t/home/zymun/akshare\n1534386176\t/home/zymun/miniconda3\n4103794688\t/home/zymun/.vscode-server\n278528\t/home/zymun/.vscode-remote-containers\n45056\t/home/zymun/.sunmoon-agent\n4273831936\t/home/zymun/.cache\n113553408\t/home/zymun/.codex\n462848\t/home/zymun/fin-agent\n8192\t/home/zymun/.codex-probe-kimi\n720285696\t/home/zymun/worktrees\n28672\t/home/zymun/.pytest_cache\n389120\t/home/zymun/pd\n73728\t/home/zymun/.ssh\n180224\t/home/zymun/switch-test\n43029999616\t/home/zymun/packages-to-be-installed\n160575488\t/home/zymun/.cc-switch\n102903808\t/home/zymun/.codex-kimi\n231505920\t/home/zymun/imooc\n9519104\t/home/zymun/private\n958283776\t/home/zymun/.nvm\n901967872\t/home/zymun/.config\n1563148288\t/home/zymun/.npm\n20480\t/home/zymun/.ruff_cache\n90112\t/home/zymun/.claude\n333574144\t/home/zymun/.qoder\n4231168\t/home/zymun/.bun\n4227166208\t/home/zymun/master\n564977664\t/home/zymun/langchain\n16384\t/home/zymun/.codex-probe-exec\n36864\t/home/zymun/.conda\n8192\t/home/zymun/.jupyter\n4096\t/home/zymun/.anaconda\n43692032\t/home/zymun/rag\n14360576\t/home/zymun/note\n106827776\t/home/zymun/repo-backup\n20480\t/home/zymun/bin\n114044928\t/home/zymun/.codex-kimi-cc-switch\n77824\t/home/zymun/.pki\n4976640\t/home/zymun/tpl-admin-frontend-vue\n16736256\t/home/zymun/.cursor\n421859328\t/home/zymun/.kube\n20480\t/home/zymun/.orca\n243609600\t/home/zymun/mylanggraph\n1921024\t/home/zymun/.dsh\n6172561408\t/home/zymun/.local\n12288\t/home/zymun/.gnupg\n35217408\t/home/zymun/.codex-probe\n2628968448\t/home/zymun/.cursor-server\n45056\t/home/zymun/.copilot\n57344\t/home/zymun/five-repos-sync\n241664\t/home/zymun/.agents\n897024\t/home/zymun/codex-reference-archive\n94754119680\t/home/zymun\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "sudo",
+        "-n",
+        "timeout",
+        "--kill-after=5s",
+        "120s",
+        "du",
+        "-x",
+        "-B1",
+        "--max-depth=2",
+        "/var/lib/containerd"
+      ],
+      "exit_code": 124,
+      "stdout": "4096\t/var/lib/containerd/io.containerd.snapshotter.v1.native/snapshots\n8192\t/var/lib/containerd/io.containerd.snapshotter.v1.native\n4096\t/var/lib/containerd/io.containerd.snapshotter.v1.blockfile\n4096\t/var/lib/containerd/tmpmounts\n4096\t/var/lib/containerd/io.containerd.snapshotter.v1.btrfs\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "sudo",
+        "-n",
+        "timeout",
+        "--kill-after=5s",
+        "120s",
+        "du",
+        "-x",
+        "-B1",
+        "--max-depth=1",
+        "/usr"
+      ],
+      "exit_code": 0,
+      "stdout": "1116635136\t/usr/lib\n6285520896\t/usr/share\n4096\t/usr/games\n29532160\t/usr/include\n12759040\t/usr/sbin\n3825729536\t/usr/local\n214753280\t/usr/libexec\n494374912\t/usr/bin\n90112\t/usr/src\n4096\t/usr/lib64\n11979407360\t/usr\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "sudo",
+        "-n",
+        "timeout",
+        "--kill-after=5s",
+        "120s",
+        "du",
+        "-x",
+        "-B1",
+        "--max-depth=1",
+        "/tmp"
+      ],
+      "exit_code": 0,
+      "stdout": "413696\t/tmp/luna-kind-136-preparation\n4096\t/tmp/snap-private-tmp\n8192\t/tmp/systemd-private-4acbb26c5404435aab1d153f8265e0f5-systemd-resolved.service-Ydtpl5\n4096\t/tmp/codex-ipc\n4096\t/tmp/vscode-typescript1000\n4096\t/tmp/mcp-TbkPIM\n8192\t/tmp/systemd-private-4acbb26c5404435aab1d153f8265e0f5-wsl-pro.service-rdmaDj\n4096\t/tmp/luna-network-npm-cache\n8192\t/tmp/python-languageserver-cancellation\n81920\t/tmp/zymun-cursor-zsh\n4849664\t/tmp/node-compile-cache\n4096\t/tmp/codex-bwrap-synthetic-mount-targets-1000\n102400\t/tmp/sunmoon-network-install\n4096\t/tmp/codex-daemon-1000\n8192\t/tmp/systemd-private-4acbb26c5404435aab1d153f8265e0f5-polkit.service-4RroIP\n4096\t/tmp/sunmoon-npm-check\n8192\t/tmp/systemd-private-4acbb26c5404435aab1d153f8265e0f5-systemd-logind.service-duEh7T\n81920\t/tmp/zymun-code-zsh\n5738496\t/tmp\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "sudo",
+        "-n",
+        "timeout",
+        "--kill-after=5s",
+        "120s",
+        "du",
+        "-x",
+        "-B1",
+        "--max-depth=2",
+        "/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64"
+      ],
+      "exit_code": 0,
+      "stdout": "180948992\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/images\n1933312\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/sources\n62750720\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/tools\n917721088\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/packages/pnpm-store\n4096\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/packages/pyright-cache\n278720512\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/packages/public-archives\n4096\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/packages/uv-cache\n1197154304\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/packages\n958164992\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/work/archive-hydration-1790472807004102080\n4710400\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/work/package-inputs-1790473708386333198\n62803968\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/work/public-tools-incoming\n8765440\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/work/frontend-dependencies\n216424448\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/work/offline-negative-1790473394048549144\n6455296\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/work/source\n225280\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/work/backend-dependencies\n2131890176\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/work/offline-trial-1790472978821158770\n45453312\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/work/offline-negative-1790473149376409988\n3434897408\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/work\n540672\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64/evidence\n4878245888\t/home/zymun/packages-to-be-installed/releases/build-template-20260926-linux-amd64\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "sudo",
+        "-n",
+        "timeout",
+        "--kill-after=5s",
+        "120s",
+        "du",
+        "-x",
+        "-B1",
+        "--max-depth=2",
+        "/home/zymun/packages-to-be-installed/releases/.local-attempt-20260926T215120"
+      ],
+      "exit_code": 0,
+      "stdout": "454672384\t/home/zymun/packages-to-be-installed/releases/.local-attempt-20260926T215120/images\n4096\t/home/zymun/packages-to-be-installed/releases/.local-attempt-20260926T215120/debs\n356352\t/home/zymun/packages-to-be-installed/releases/.local-attempt-20260926T215120/charts\n4096\t/home/zymun/packages-to-be-installed/releases/.local-attempt-20260926T215120/tars\n70119424\t/home/zymun/packages-to-be-installed/releases/.local-attempt-20260926T215120/bin\n122880\t/home/zymun/packages-to-be-installed/releases/.local-attempt-20260926T215120/logs\n525287424\t/home/zymun/packages-to-be-installed/releases/.local-attempt-20260926T215120\n",
+      "stderr": ""
+    }
+  ]
+}

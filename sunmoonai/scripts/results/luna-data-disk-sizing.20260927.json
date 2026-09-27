@@ -1,0 +1,102 @@
+{
+  "recorded_at": "2026-09-27T02:21:25.486076+00:00",
+  "measurements": [
+    {
+      "command": [
+        "sudo",
+        "-n",
+        "du",
+        "-x",
+        "-B1",
+        "--max-depth=1",
+        "/data/kind-local-storage"
+      ],
+      "exit_code": 0,
+      "stdout": "24260608\t/data/kind-local-storage/object-storage\n18116395008\t/data/kind-local-storage/harbor\n4096\t/data/kind-local-storage/mongodb\n335872\t/data/kind-local-storage/redis\n312733696\t/data/kind-local-storage/postgresql\n16384\t/data/kind-local-storage/redis-nodebull\n18453749760\t/data/kind-local-storage\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "sudo",
+        "-n",
+        "du",
+        "-sx",
+        "-B1",
+        "/home/zymun/packages-to-be-installed/releases/harbor-preserve-20260926/backup-20260926T145600Z"
+      ],
+      "exit_code": 0,
+      "stdout": "18093715456\t/home/zymun/packages-to-be-installed/releases/harbor-preserve-20260926/backup-20260926T145600Z\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "sudo",
+        "-n",
+        "du",
+        "-sx",
+        "--apparent-size",
+        "-B1",
+        "/home/zymun/packages-to-be-installed/releases/harbor-preserve-20260926/backup-20260926T145600Z"
+      ],
+      "exit_code": 0,
+      "stdout": "18093661241\t/home/zymun/packages-to-be-installed/releases/harbor-preserve-20260926/backup-20260926T145600Z\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "docker",
+        "exec",
+        "kind-worker",
+        "sh",
+        "-c",
+        "if [ -d /var/local-path-provisioner ]; then du -sx -B1 /var/local-path-provisioner; else echo no-local-path-directory; fi"
+      ],
+      "exit_code": 0,
+      "stdout": "237010944\t/var/local-path-provisioner\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "docker",
+        "exec",
+        "kind-worker2",
+        "sh",
+        "-c",
+        "if [ -d /var/local-path-provisioner ]; then du -sx -B1 /var/local-path-provisioner; else echo no-local-path-directory; fi"
+      ],
+      "exit_code": 0,
+      "stdout": "21168128\t/var/local-path-provisioner\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "df",
+        "-B1",
+        "/"
+      ],
+      "exit_code": 0,
+      "stdout": "Filesystem         1B-blocks         Used    Available Use% Mounted on\n/dev/sdd       1081101176832 492848263168 533260558336  49% /\n",
+      "stderr": ""
+    }
+  ],
+  "windows_exit": 0,
+  "windows": {
+    "C_TotalBytes": 992541478912,
+    "C_FreeBytes": 249066225664,
+    "WSL_VHDX_FileLength": 515879469056
+  },
+  "sizing_proposal": {
+    "unit": "GiB (2^30 bytes)",
+    "live_data_bytes": 18711928832,
+    "cold_backup_bytes": 18093715456,
+    "cold_backup_location": "outside proposed data VHDX; already included in current C drive usage",
+    "triple_live_data_gib": 52.28052520751953,
+    "proposed_max_gib": 60,
+    "approved": false,
+    "c_free_after_full_60_gib": 171.96099853515625,
+    "minimum_host_free_gib": 50,
+    "additional_backup_temporary_budget_gib": 20,
+    "vhdx_metadata_budget_gib": 2,
+    "must_remeasure_before_creation": true
+  }
+}
