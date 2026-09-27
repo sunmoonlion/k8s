@@ -1,5 +1,18 @@
 # Luna 工作检查点
 
+## 最新续接：2026-09-27 Ubuntu 离线依赖准备与独立签名核验
+
+基线 `709f76837ff1a47111f934ed1a5c9949379ebbbe`，本地 luna，不 push；本段优先于历史记录。
+
+- 新 `prepare_os.py` 通过隔离 APT_CONFIG/空 dpkg 状态、官方固定快照、预装 archive keyring 解析依赖，仅 update/simulate/download-only；默认只打印，普通用户执行，不安装、不清理、不改服务。东京下载已实际完成，系统 dpkg 状态前后 SHA 一致。
+- Ubuntu24.04 amd64，快照20260927T000000Z，20根依赖→94包31510444字节；9签名/索引112150216字节。物料已回本机 `~/packages-to-be-installed/releases/kubeadm-1.36.4-linux-amd64/os/ubuntu-24.04-amd64-20260927T000000Z/`。
+- 新 `verify_os.py` 本机使用预装可信 keyring 独立验证3个InRelease、6个Packages以及94包的身份/SHA/大小；通过。下载完成并不代表目标节点离线安装成功；目标预检、拒绝降级/在线补包仍待实现。
+- `os-dependencies.lock.json` SHA 已固定在主锁，bundle新增os作用域，支持Deb版本文件名中的%和~。同步自动消费精确新清单，C1三节点只打印预演通过，没有真实云同步。
+- 当前总锁126文件824488560字节全部本机SHA通过；closure_complete仍false，pending为OS安装适配/目标预检、Calico和镜像消费、节点离线部署验收。未调整平台服务版本。
+- 证据 `sunmoonai/scripts/results/luna-os-materials.20260927.json`；方法 `infrastructure/docs/offline-os-materials.md`。3Python AST、默认只打印、精确同步预演、git diff --check通过；没有测试套件或云部署。
+- 初次URL探查zsh展开=https失败，后固定HTTPS HEAD通过；首次rsync缺父目录失败，新建专用OS批次目录后回传成功。所有旧物料、容器、卷保持，最终清理门禁有效。无后台任务。
+- 下一步继续step01–03 OS基线/远程发布与节点安装接线，然后kubeadm/Calico、宿主Harbor正式生命周期；原整体目标未完成，不能通知luna做完了。
+
 ## 最新续接：2026-09-27 统一配置与精确物料消费、节点安装程序
 
 基线 `180de198041c7fa348c994eec8f1ab1a451fc2a5`，本地 luna，不 push；交付为包含本段的提交。此节优先于下文。

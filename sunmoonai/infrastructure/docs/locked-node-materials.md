@@ -2,7 +2,7 @@
 
 只有一套部署代码、两种建群方式。本文实现集群层的配置读取、物料消费和独立节点安装程序；平台服务版本保持原样。
 
-**云上未经实机验证。** 当前只完成代码、静态检查、本地文件校验和只打印预演。没有连接 C1/C2、没有安装或重启运行时、没有部署集群。常规 step02/03 尚待接到新安装程序；OS 依赖闭包和 kubeadm/Calico 后续步骤未完成，不能运行旧步骤绕过总控准入。
+**云上未经实机验证。** 当前完成代码、静态检查、东京公开备料、本地文件校验和只打印预演。没有连接 C1/C2、没有安装或重启运行时、没有部署集群。常规 step02/03 尚待接到新安装程序；OS 依赖包已备齐，其安装适配和 kubeadm/Calico 后续步骤未完成，不能运行旧步骤绕过总控准入。
 
 ## 1. 现在使用哪些真源
 
@@ -31,14 +31,14 @@ python3 sunmoonai/infrastructure/materials/bundle.py plan
 python3 sunmoonai/infrastructure/materials/bundle.py verify
 ```
 
-当前锁共 23 文件：7 工具、7 控制面配套镜像归档、Calico 清单及 3 镜像、5 个配置文件。本次全部本地 SHA256 通过，共 680,827,900 字节。
+当前锁共 126 文件：7 工具、7 控制面配套镜像归档、Calico 清单及 3 镜像、5 个配置文件、94 个 OS 依赖包和 9 个签名/索引。全部本地 SHA256 通过，共 824,488,560 字节。OS 包另已通过本机 Ubuntu 可信密钥验签，见 [OS 依赖方法](offline-os-materials.md)。
 
 - `plan` 只解析锁；`verify` 逐文件检查路径、大小（锁声明时）和 SHA256。
 - `files --null` 和 `checksums` 先完成本地校验，再输出 rsync 文件清单或校验清单。
 - 根目录、条目路径和子锁不接受软链接或 `..` 逃逸；不扫描 glob、不使用“找到第一个 tar”。
 - 控制面子锁的 SHA、批次、平台、来源集合必须与主锁一致；不会把 index/config/platform/tar 摘要混用。
 - `--expected-kubernetes` 检查部署配置版本；`--require-complete` 额外要求 `closure_complete=true` 且 `pending` 为空。
-- 当前 `closure_complete=false`。23 文件校验通过**不等于 OS 依赖、安装适配和离线验收都已完成**。
+- 当前 `closure_complete=false`。126 文件校验通过**不等于安装适配和离线验收都已完成**。
 
 总控 `materials` 可执行同一只读校验。实际 deploy 或单步变更先经过“版本匹配 + 完整闭包”门禁，随后才可能做远端操作。当前旧配置仍为 1.30.4，门禁会拒绝其消费 1.36.4 物料；后续整套安装适配完成时再成套切换配置。总控拒绝 step00 reset。
 
@@ -103,7 +103,7 @@ python3 sunmoonai/infrastructure/materials/node_install.py --phase kubernetes
 5. kubernetes 阶段要求同机器、同清单的 runtime 完成日志，安装三件工具、核版本、只 enable kubelet，等待后续 kubeadm 配置后启动。
 6. 没有 apt/curl/wget、容器删除、镜像 prune、卷删除、cluster reset 或旧服务重启。
 
-**仍未完成**：实际 step02/03 的远端控制文件发布与调用接线；OS deb 完整依赖集；control-plane 镜像按摘要导入及精确名称；kubeadm init/join、共享 Calico；统一平台与独立 Harbor 生命周期。云端第一台机器必须按审查文档的首次上云清单逐项验收。
+**仍未完成**：实际 step02/03 的远端控制文件发布与调用接线；OS deb 离线安装适配；control-plane 镜像按摘要导入及精确名称；kubeadm init/join、共享 Calico；统一平台与独立 Harbor 生命周期。云端第一台机器必须按审查文档的首次上云清单逐项验收。
 
 ## 6. 本次检查与下一步
 

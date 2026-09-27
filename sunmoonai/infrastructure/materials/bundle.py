@@ -13,7 +13,7 @@ import sys
 from pathlib import Path, PurePosixPath
 
 HEX = re.compile(r"[0-9a-f]{64}\Z")
-SCOPES = ("tools", "images", "calico", "configuration")
+SCOPES = ("tools", "images", "calico", "configuration", "os")
 
 
 def sha256(path):
@@ -27,7 +27,7 @@ def relative_path(value):
     path = PurePosixPath(value)
     if path.is_absolute() or any(p in (".", "..") for p in value.split("/")):
         raise ValueError("Material path must be a normalized relative path")
-    if str(path) != value or not re.fullmatch(r"[A-Za-z0-9_.@/+:-]+", value):
+    if str(path) != value or not re.fullmatch(r"[A-Za-z0-9_.@/+:%~-]+", value):
         raise ValueError("Unsupported character in material path")
     return path
 
@@ -91,6 +91,26 @@ def resolve(manifest):
         add("calico", record, record["material_root_relative_path"])
     for record in data.get("configuration_files", []):
         add("configuration", record, f"{base}/{relative_path(record['path'])}")
+    if "os_dependency_lock" in data:
+        child = data["os_dependency_lock"]
+        if not HEX.fullmatch(child["sha256"]):
+            raise ValueError("Invalid OS lock SHA256")
+        os_lock = read_lock(below(manifest.parent, child["path"]), child["sha256"])
+        if (os_lock.get("schema") != 1 or os_lock.get("complete") is not True
+                or os_lock.get("profile") != "ubuntu-24.04-amd64"
+                or not re.fullmatch(r"[0-9]{8}T[0-9]{6}Z", os_lock.get("snapshot", ""))):
+            raise ValueError("Incomplete or unsupported OS dependency lock")
+        prefix = f"{base}/os/{os_lock['profile']}-{os_lock['snapshot']}"
+        packages = []
+        for record in os_lock["files"]:
+            if record["architecture"] not in ("amd64", "all") or not record["version"]:
+                raise ValueError("Wrong OS package architecture/version")
+            packages.append(record["package"])
+            add("os", record, f"{prefix}/{relative_path(record['path'])}")
+        if len(set(packages)) != len(packages) or not set(os_lock["root_packages"]).issubset(packages):
+            raise ValueError("Missing or duplicate OS package identity")
+        for record in os_lock["indexes"]:
+            add("os", record, f"{prefix}/{relative_path(record['path'])}")
     paths = [entry["path"] for entry in entries]
     if len(paths) != len(set(paths)):
         raise ValueError("Duplicate material path in lock")

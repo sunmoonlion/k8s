@@ -1,0 +1,94 @@
+{
+  "schema": 1,
+  "unit": "os-public-materials",
+  "baseline": "709f76837ff1a47111f934ed1a5c9949379ebbbe",
+  "os_verification": {
+    "schema": 1,
+    "profile": "ubuntu-24.04-amd64",
+    "snapshot": "20260927T000000Z",
+    "packages": 94,
+    "package_bytes": 31510444,
+    "indexes": 9,
+    "index_bytes": 112150216,
+    "keyring_sha256": "80a36b0a6de2f69f49d2df75ef473ccde121e9e190b9ea01d20a4f63778d5c31",
+    "signatures": [
+      {
+        "suite": "noble",
+        "verified": true,
+        "release_sha256": "cdb2f31d809f589719a53c6ad15f255b27569c4059542ada282aaa21b8e164b0"
+      },
+      {
+        "suite": "noble-updates",
+        "verified": true,
+        "release_sha256": "1734d445584d0b6bedd39dcd239bb4914f1ac0a8e6c37e0f8d4e42c28a7ad19e"
+      },
+      {
+        "suite": "noble-security",
+        "verified": true,
+        "release_sha256": "e46a62c5a5d44a49262e24db7154483696238e42b706c72d1879273b059ae982"
+      }
+    ],
+    "all_package_hashes_verified": true,
+    "installed": false,
+    "dependency_resolution": "download host empty-status APT; target host still requires offline preflight",
+    "cloud_validated": false
+  },
+  "bundle": {
+    "files": 126,
+    "bytes": 824488560,
+    "closure_complete": false
+  },
+  "static": {
+    "prepare_os.py": {
+      "ast": "pass",
+      "sha256": "7ffca9d4b91431866cc5e8f87782cccc07ca24d037fa553115c83182e16ee779"
+    },
+    "verify_os.py": {
+      "ast": "pass",
+      "sha256": "4e97f26576e0b18c48be423d15e4689ae9d7822d6942136b3c78a06170f8a868"
+    },
+    "bundle.py": {
+      "ast": "pass",
+      "sha256": "c5e3072fccaac3526403105becc7138fb3efc493fa9ef0578eecb3d34865544d"
+    }
+  },
+  "prepare_dry_run": {
+    "dry_run": true,
+    "root": "/tmp/ubuntu-24.04-amd64-20260927T000000Z",
+    "source": "https://snapshot.ubuntu.com/ubuntu/20260927T000000Z",
+    "roots": [
+      "python3",
+      "rsync",
+      "iproute2",
+      "iptables",
+      "conntrack",
+      "socat",
+      "ethtool",
+      "kmod",
+      "mount",
+      "util-linux",
+      "procps",
+      "libseccomp2",
+      "ca-certificates",
+      "openssl",
+      "jq",
+      "tar",
+      "gzip",
+      "systemd",
+      "systemd-sysv",
+      "systemd-timesyncd"
+    ],
+    "installed_status": "empty isolated file",
+    "host_install": false,
+    "cloud_validated": false
+  },
+  "c1_sync_dry_run_exit": 0,
+  "download_host_dpkg_unchanged": true,
+  "real_install": false,
+  "cleanup": false,
+  "cloud_validated": false,
+  "retained_failures": [
+    "Initial fixed-URL probe: zsh expanded unquoted =https; no files modified",
+    "Initial rsync: destination parent absent; created new directory and retried"
+  ]
+}
