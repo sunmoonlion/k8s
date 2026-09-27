@@ -1,6 +1,6 @@
 # Luna 工作检查点
 
-当前单元：Kubernetes 离线物料与独立建群 A/B 已完成；Harbor 全量冷备份及原服务恢复已完成并校验，隔离恢复尚未执行。模板源码/基镜像/工具已准备，pnpm 包预取因公网连接重置失败；完整离线构建/CI/CD 尚未通过。
+当前单元：Kubernetes 离线物料与独立建群 A/B 已完成；Harbor 冷备份、原服务恢复和首轮隔离数据恢复/镜像读取验证均通过。隔离副本已停止，六卷保留；旧 Harbor 运行正常。模板源码/基镜像/工具已准备，pnpm 包预取因公网连接重置失败；完整离线构建/CI/CD 尚未通过。
 实施基线 `bee0b049ca9e84fead641928816fec4a6a1c6c48`；交付提交是包含本检查点的 `luna` 提交（用 git log 定位）。
 
 ## 决定与边界
@@ -12,8 +12,8 @@
 - 国内云也不保证下载公共镜像；后续 CI/CD 需内部物料供应与失败恢复设计，尚未实施。
 - 所有者原有“基础软件离线包 + Harbor 预存镜像”方式继续保留；明确缺口是 Git 源码与 npm/Python 依赖供应。先检查实际依赖，再讨论内部仓库与同步方案，不先安装新平台。
 - 业务端到端测试最后做；本次网络/PVC 检查是基础设施验收。
-- 所有者最新确认：旧业务数据无需保留，业务全新初始化。**私有 Harbor 镜像数据必须保留**：默认覆盖全部现存制品及其 registry、数据库、配置、Secret/证书和存储恢复依赖；不能缩减为当前运行镜像。独立备份、恢复、摘要比对与新集群拉取验证前，不删除旧 Harbor/相关卷/目录/必要缓存。已完成冷备份与旧服务恢复，未执行隔离恢复或旧集群清理。
-- 所有者通过异步答复明确批准“现在执行冷备份”，范围为 `harbor-preservation-plan.md` 第 3 节。该单元已完成；授权不包含迁移入口或清理旧数据。新集群恢复的具体 manifests/独立存储和访问入口需先给出方案并讨论。
+- 所有者最新确认：旧业务数据无需保留，业务全新初始化。**私有 Harbor 镜像数据必须保留**：默认覆盖全部现存制品及其 registry、数据库、配置、Secret/证书和存储恢复依赖；不能缩减为当前运行镜像。已完成冷备份、首轮隔离只读恢复和新节点实际拉取，但尚未导出可移植制品、切换入口或批准删除旧环境。旧 Harbor/相关卷/目录/必要缓存继续保留。
+- 所有者先批准“现在执行冷备份”，随后以“按方案实施”批准 `harbor-isolated-restore-plan.md` 的明确恢复单元，包括只重启新 worker2 的 containerd 及回滚。两单元均完成；不包含迁移入口、后台作业启用或清理旧数据。
 - 所有者要求编写《物料提交备齐方案和方法.md》，可直接交给 AI 准备物料和 CI/CD；试验通过后再更新为可复用的方法。此次完成文档，不宣称试验通过。
 - 手册仅维护在 k8s 的 `sunmoonai/kind-infrastructure/docs/`，按所有者要求不保留家目录副本。
 - 所有者明确要求：本次迁移（新环境全新初始化与切换，不迁移旧业务数据）成功后，必须回头完善手册，以实际命令、版本、故障修复与验收证据固化经验，便于下次 AI 复现；此项是本次工作的收尾交付，未完成不能宣称整体收尾。
@@ -32,11 +32,15 @@ Harbor 结果：`sunmoonai/scripts/results/luna-harbor-cold-backup.20260926.json
 
 服务恢复于 2026-09-26 14:59:57 UTC，7 个控制器均恢复 1/1 Ready、Harbor healthy、read_only=false，前后目录含空项目/仓库比对一致，无恢复警告。六份卷是停服后复制；输入和归档私有配置未入 Git。入口 TLS 额外依赖 `ingress-platform-dev/traefik-tls-secret`，已在 `preparation/private/` 保存，清单 `preparation/tls-addendum.json`。本机备份与源数据同磁盘，不是独立介质灾备。
 
-下一步的具体方案已完成：`sunmoonai/kind-infrastructure/docs/harbor-isolated-restore-plan.md`，生成入口 `materials/harbor_restore_plan.py`。私有 59 资源清单在备份批次 `restore-plan-20260926/manifests-private.json`，SHA256 `3aef6e503b50786915931ab7b70da819de7f428bdee09a686e71ab44d17f0239`；脱敏清单 `sunmoonai/scripts/results/luna-harbor-restore-plan.20260926.json`。尚未部署，待本单元确认。目标新 namespace `harbor-restore-20260926`、worker 上独立 `/var/local-path-provisioner/harbor-restore-20260926/` 六目录，8 个固定 amd64 自举镜像，初始全为 0 副本。
+隔离恢复方案 `sunmoonai/kind-infrastructure/docs/harbor-isolated-restore-plan.md` 已实施。原私有 59 资源清单在 `restore-plan-20260926/manifests-private.json`，SHA256 `3aef6e503b50786915931ab7b70da819de7f428bdee09a686e71ab44d17f0239` 保持不变；运行期精确网络补丁另存。新 namespace `harbor-restore-20260926`，worker 上独立 `/var/local-path-provisioner/harbor-restore-20260926/` 六目录；8 个固定 amd64 自举镜像已离线导入。**不要重新运行 prepare 或覆盖这些数据。**
 
-临时入口 `harbor-restore.sunmoonai.com:18443`，Service `10.97.60.20`（实施前复核未占用），WSL 只监听 localhost port-forward。证书覆盖该域名，来自已有私有 TLS 备份；worker2 做跨节点真实拉取，本次检查目标 Node 镜像摘要未缓存。修改 worker2 临时 DNS/CA 属于待批准范围，结束恢复原配置。旧环境继续保持运行，不清理旧数据。
+本轮执行入口 `materials/harbor_restore.py`、`harbor_restore_verify.py`。原始证据在 `~/packages-to-be-installed/releases/harbor-preserve-20260926/restore-run-20260926/`，脱敏结果 `sunmoonai/scripts/results/luna-harbor-isolated-restore.20260926.json`。15:25 UTC 开始、15:44 读取验证及回滚通过，15:53:33 最终复核，约 28 分钟，小于 60 分钟窗口。容量保守上界 23.31 GiB（含两个节点原有全部 containerd 数据），小于 30 GiB；剩余 500.87 GiB。
 
-额外只读核对发现 worker2 的有效 containerd `io.containerd.cri.v1.images.registry.config_path` 为空。方案已补充该新节点配置目录启用、候选 config dump 校验、containerd 重启及结束恢复原配置/再次重启；这也是待批准的明确影响，不能只放 CA 文件就宣称 TLS 拉取已配置。磁盘 config 为 version 2，有效 dump 为 version 4；按实际迁移结果生成候选，勿混用旧插件字段。尚未修改或重启节点。
+结果：全部 3 项目/64 仓库/429 含子清单制品/164 tags 及元数据与备份一致；worker2 缓存原先不存在的 Node 摘要经新 TLS 域名实际拉取，启动 v24.18.0；网络负例和 registry 重建后读取通过。新副本 8 控制器为 0、无 Pod，6 PVC Bound/PV Retain；port-forward 关闭。worker2 原配置/hosts 按 SHA256 恢复，临时 CA 项撤回、containerd 重启后 RuntimeReady/NetworkReady，新三节点及 Calico Ready。旧 Harbor 7 控制器 Ready、healthy、read_only=false、完整目录不变。Service/独立存储保留，临时入口不在服务。
+
+失败与修正：缺少 certs.d 父目录导致第一次中止；补齐目录与部分回滚。校验 HTTP Accept 缺少 OCI 单清单导致 404，旧环境对照复现后修正。worker2 经 VXLAN 的实际源为 `10.245.175.64`，原策略未含此地址；用 route/conntrack 确认后只追加该 /32 → 网关 8443，镜像拉取从超时恢复为成功（2.82 秒）。修正和历次失败 acceptance 均保留。验证脚本已固化路由/接口核对，最终单独验证幂等路径后网关停回 0。
+
+恢复节点中断操作前先读 `trust.json` 和脚本 README；文件与本轮写入摘要不符时不强行覆盖。当前 trust.restored=true，无待处理回滚。下次恢复读取演练不能复用“原先未缓存”的断言，因为该 Node 镜像现在已缓存。
 
 现场发现并已纳入方案：core/jobservice 原 hostAliases 指向 `101.126.151.0`，已在新清单删除；原有两条手动复制策略和两个清理类定时任务。首轮 jobservice 保持 0，只验证数据/镜像读取链路，不能宣称后台任务或全套 health 通过。出站限定本 namespace 和 DNS，registry upload purge 关闭，Trivy 禁联网更新。
 

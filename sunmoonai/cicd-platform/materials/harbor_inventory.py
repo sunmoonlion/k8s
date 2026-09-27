@@ -19,11 +19,11 @@ class NoRedirect(http.HTTPRedirectHandler):
 
 
 class Catalog:
-    def __init__(self, host):
+    def __init__(self, host, credential_host=None):
         if '/' in host or '@' in host or not host:
             raise ValueError('Expected registry host[:port]')
         config = json.loads((Path.home() / '.docker/config.json').read_text())
-        self.auth = config.get('auths', {}).get(host, {}).get('auth')
+        self.auth = config.get('auths', {}).get(credential_host or host, {}).get('auth')
         if not self.auth:
             raise RuntimeError('Missing local Docker basic credential; no credential changes made')
         self.base = 'https://' + host + '/api/v2.0'

@@ -1,6 +1,6 @@
 # 私有 Harbor 保留：现场、备份窗口与恢复顺序
 
-日期：2026-09-26。状态：所有者已批准并完成完整冷备份，原 Harbor 服务已恢复；归档/内部 blob 校验通过，隔离恢复尚未执行。
+日期：2026-09-26。状态：完整冷备份、原服务恢复、归档/内部 blob 校验及首轮隔离数据恢复/镜像读取验证均通过；后台作业验证、可移植导出及入口切换未实施。
 
 ## 1. 已完成的准备
 
@@ -83,6 +83,12 @@ python3 harbor_verify_backup.py \
 - 原 Harbor healthy，7 个控制器恢复 1/1 Ready，恢复原 `read_only=false`；无恢复警告。备份前后项目/仓库（含空项目）、tag/digest 和索引子清单一致。比较逻辑后续补充空项目覆盖，使用已保存的前后目录重新比对通过，未再次停服。
 - 入口使用 Traefik 默认 TLSStore。额外保存 `ingress-platform-dev/traefik-tls-secret`、TLSStore 和本机 Harbor 客户端 CA，放入 `preparation/private/`；完整性索引 `preparation/tls-addendum.json`。Secret 内容仅存在私有备份中。
 - 自动恢复入口与原副本状态保存在备份目录 `RECOVER-SERVICES.txt` 和 `state.json`。运行脚本的原始副本为 `backup-script.py`；实现入口保存在本仓 `cicd-platform/materials/`。
-- [脱敏结果与归档散列](../../scripts/results/luna-harbor-cold-backup.20260926.json) 可入 Git。归档完整不证明恢复后的服务可用；未恢复到新集群、未切换入口、未删除旧数据。
+- [脱敏结果与归档散列](../../scripts/results/luna-harbor-cold-backup.20260926.json) 可入 Git。此文件只证明冷备份单元；随后新集群恢复的结果另见下一节，不能改写冷备份记录里的验证范围。
 
 同时推进的模板物料：东京主机公开下载回传 6 份文件，本机重新核验上游摘要；Node/pnpm/uv 在实际基镜像、非 root、`--network=none --pull=never` 下运行成功。本地 pnpm 包预取仍遇到 ECONNRESET，重试耗尽退出 1；没有关闭 TLS 校验或将完整构建标记为成功。
+
+## 6. 隔离恢复已通过的范围
+
+所有者批准 [首轮隔离方案](harbor-isolated-restore-plan.md) 后，六卷恢复到新 KIND 独立 namespace/路径；完整目录及制品元数据一致，worker2 通过 TLS/原凭据实际拉取固定摘要并启动 Node，网络隔离和 registry 重建后的读取检查通过。旧 Harbor 一直保持运行，最终完整目录仍一致。
+
+恢复副本已停到 0，六处数据和 Retain PV/PVC 保留；worker2 临时配置已恢复，临时入口关闭。细节、失败修复与原始证据索引见 [恢复结果](../../scripts/results/luna-harbor-isolated-restore.20260926.json)。jobservice 本轮保持 0，因此不宣称完整 Harbor 后台能力已验收；尚未导出可移植 OCI 制品、切换入口或清理旧环境。

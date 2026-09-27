@@ -1,0 +1,189 @@
+{
+  "schema": 1,
+  "scope": "isolated Harbor data and image read path; no background job or business cutover claim",
+  "approved_by": "owner: 按方案实施",
+  "implementation_started_at": "2026-09-26T15:25:19.868352+00:00",
+  "final_checked_at": "2026-09-26T15:53:33.963372+00:00",
+  "namespace": "harbor-restore-20260926",
+  "backup": "/home/zymun/packages-to-be-installed/releases/harbor-preserve-20260926/backup-20260926T145600Z",
+  "private_run": "/home/zymun/packages-to-be-installed/releases/harbor-preserve-20260926/restore-run-20260926",
+  "approved_base_manifest_sha256": "3aef6e503b50786915931ab7b70da819de7f428bdee09a686e71ab44d17f0239",
+  "acceptance": {
+    "started_at": "2026-09-26T15:40:09.740501+00:00",
+    "passed": true,
+    "jobservice_validated": false,
+    "full_harbor_health_claimed": false,
+    "cleanup_errors": [],
+    "old_before": {
+      "health": "healthy",
+      "read_only": false
+    },
+    "catalog": {
+      "projects": 3,
+      "repositories": 64,
+      "listed_artifacts": 165,
+      "reachable_artifacts": 429,
+      "tags": 164,
+      "untagged": 292,
+      "indexes": 132,
+      "accessories": 0
+    },
+    "manifest_before_restart": {
+      "digest": "sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc",
+      "bytes": 1720,
+      "tls_verified": true,
+      "authenticated": true
+    },
+    "pull": {
+      "reference": "harbor-restore.sunmoonai.com:18443/k8s-images/node@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc",
+      "node": "sunmoon-kind-136-worker2",
+      "version": "v24.18.0",
+      "image_id": "harbor-restore.sunmoonai.com:18443/k8s-images/node@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc",
+      "cache_absent_before": true
+    },
+    "network": [
+      {
+        "host": "sunmoonai-harbor-core",
+        "port": 80,
+        "result": "connected"
+      },
+      {
+        "host": "172.18.0.2",
+        "port": 30443,
+        "result": "timeout"
+      },
+      {
+        "host": "101.126.151.0",
+        "port": 30443,
+        "result": "timeout"
+      }
+    ],
+    "catalog_after_registry_restart": {
+      "projects": 3,
+      "repositories": 64,
+      "listed_artifacts": 165,
+      "reachable_artifacts": 429,
+      "tags": 164,
+      "untagged": 292,
+      "indexes": 132,
+      "accessories": 0
+    },
+    "manifest_after_restart": {
+      "digest": "sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc",
+      "bytes": 1720,
+      "tls_verified": true,
+      "authenticated": true
+    },
+    "old_after": {
+      "health": "healthy",
+      "read_only": false
+    },
+    "completed_at": "2026-09-26T15:44:01.761243+00:00"
+  },
+  "final_state": {
+    "restore_pods": 0,
+    "restore_controllers_stopped": 8,
+    "bound_retained_volumes": 6,
+    "new_nodes_ready": 3,
+    "calico_ready": 3,
+    "worker2_original_files_sha256_restored": true,
+    "temporary_trust_removed": true,
+    "loopback_port_closed": true,
+    "old_harbor_controllers_ready": 7,
+    "old_catalog_unchanged": true
+  },
+  "disk_bytes": {
+    "restored_data": 18112827392,
+    "worker_all_containerd": 4353458176,
+    "worker2_all_containerd": 1616723968,
+    "private_run_files": 945041074,
+    "conservative_upper_bound": 25028050610,
+    "free_bytes": 537801437184
+  },
+  "disk_method": "Conservative upper bound includes both nodes entire containerd stores, even pre-existing Kubernetes images; not an exact filesystem delta.",
+  "network_correction": {
+    "node": "sunmoon-kind-136-worker2",
+    "vxlan_source": "10.245.175.64/32",
+    "gateway_port": 8443,
+    "reason": "Observed service SNAT and route source differ from Docker node IP; allow only this verified node source."
+  },
+  "failures_and_fixes": [
+    "Missing certs.d parent: create and journal exact new directories; partial rollback tolerates absent temporary files.",
+    "Manifest 404 reproduced on old registry: include OCI/Docker single manifests and indexes in Accept.",
+    "Node pull initially timed out: confirmed VXLAN source using ip route and conntrack; added exact /32 gateway rule."
+  ],
+  "limitations": [
+    "jobservice remains 0; job execution and scanning not validated",
+    "No endpoint cutover, old environment cleanup, or portable OCI export performed",
+    "Backup and restored volumes share WSL physical storage; no independent disaster copy",
+    "Business E2E and complete offline build/CI/CD remain pending"
+  ],
+  "evidence": [
+    {
+      "path": "acceptance.json",
+      "sha256": "c2a91050fa68fcb6973062e5b1ac9ae82a2c78490e509cfd2f96525dc5a25816"
+    },
+    {
+      "path": "catalog-restored.json",
+      "sha256": "5cc2d6d170ba082666265196f80f8078f0583494278463cf98e41eb90ac5c640"
+    },
+    {
+      "path": "catalog-after-restart.json",
+      "sha256": "da486539af2df7bf0525ef7dd52fba965b01d93053d1e381821c7e4f80a10b44"
+    },
+    {
+      "path": "catalog-old-final.json",
+      "sha256": "c8753eccf6677bc2bb1197ef073b3e5dbd9c70a9e053f8e74ebdd708ba4b7bb2"
+    },
+    {
+      "path": "network-proof.json",
+      "sha256": "d9bb6bb494b36f96e0af17017d63ed9aa85f391daff7b2b94d7b3e82c939af01"
+    },
+    {
+      "path": "pull-cache-before.json",
+      "sha256": "1ba0d5ec45d05a56ece03f5c04366fcad298e134a01c502f1a8f0b9ec37d4493"
+    },
+    {
+      "path": "pull-image.json",
+      "sha256": "398641bfc9b0c38ca9e338d77c94183d28c4b77d659f7d301b52540a8d0bf9e9"
+    },
+    {
+      "path": "pull-events.json",
+      "sha256": "7fcee3b08e461c3b7bda2ad0bb90a3199dadfc6f8528f85f2d55823b4135c6eb"
+    },
+    {
+      "path": "pull-pod.json",
+      "sha256": "2315aede3bec454568ba3749d980ca7912ede469f25190d5faf8b02e41f8ec4d"
+    },
+    {
+      "path": "trust.json",
+      "sha256": "1f51e519c6ea2b58799386e4b5ff2542177c2451cb79f0b34ae2534cd280144a"
+    },
+    {
+      "path": "state.json",
+      "sha256": "dd827ce8462f278ab68d74c096cd3ea9f3e91f13bf7d18825a2dc2367a2032e0"
+    },
+    {
+      "path": "gateway-vxlan-patch.json",
+      "sha256": "562810b6024b87075e8d0c5bd8df4011907d376acc39aab7f7c14e80acf29ce8"
+    },
+    {
+      "path": "gateway-route.json",
+      "sha256": "9a1f17c3d9e792aa0eddba6e9f8c1a46dd1169cd32268b0766771133006474a5"
+    }
+  ],
+  "implementation_files": [
+    {
+      "path": "sunmoonai/cicd-platform/materials/harbor_restore.py",
+      "sha256": "b9df06d79bd32473edbe56c1ea792a5f978b63f36d6ef049725b0f408c250fd2"
+    },
+    {
+      "path": "sunmoonai/cicd-platform/materials/harbor_restore_verify.py",
+      "sha256": "2b8b891568b09fb07e46304faf40d7ed7837a17158338b54abf3f46cfbae9ff1"
+    },
+    {
+      "path": "sunmoonai/cicd-platform/materials/harbor_inventory.py",
+      "sha256": "54b8d6e99cf63bff5782a16879f80dfb6b021428ea7756edfd431673edc38747"
+    }
+  ]
+}

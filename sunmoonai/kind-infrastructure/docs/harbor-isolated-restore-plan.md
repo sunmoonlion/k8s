@@ -1,6 +1,6 @@
 # Harbor 隔离恢复：首轮数据与镜像拉取验证
 
-日期：2026-09-26。状态：恢复清单已生成并检查；尚未部署，待所有者确认本单元。
+日期：2026-09-26。状态：所有者答复“按方案实施”后，本轮数据恢复与镜像读取验证已通过，临时副本已停止，数据保留。jobservice/完整后台能力及业务入口切换仍未实施。
 
 ## 1. 本轮要完成什么
 
@@ -18,7 +18,7 @@
 - [脱敏资源与镜像摘要清单](../../scripts/results/luna-harbor-restore-plan.20260926.json)：59 个资源、8 个固定 Linux amd64 镜像；包含 6 个 PV、6 个 PVC、7 个 Harbor 控制器、1 个临时 TLS 网关。
 - 所有控制器初始为 **0 副本**。应用清单不会立即启动空库或写入数据，数据归档导入完成后才按顺序启动。
 - 已检查：六处存储与归档一一对应；明文配置和解码后的 Secret 字段没有旧 namespace、旧云端 IP、旧 registry 入口残留；镜像全部固定到 amd64 manifest digest，`imagePullPolicy: Never`。
-- 尚未做 API 服务端准入和运行验收。授权后，先在目标新 namespace 执行服务端 dry-run，失败则不启动工作负载。
+- 已完成 API 服务端 dry-run、六卷恢复、运行与读取验证。下文第 7 节记录现场修正；原私有清单保持原摘要，修正另存证据。
 
 ## 3. 明确的目标和增量
 
@@ -65,7 +65,7 @@
 
 选用现有 `k8s-images/node@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc` 做实际拉取验证；已只读确认 worker2 当前无此摘要缓存。验证 Pod 使用新 registry 名称、固定 digest 和 `imagePullPolicy: Always`，从 worker2 跨节点拉取。实施时再次核对缓存与镜像来源，不把预先导入业务镜像当作拉取验证。
 
-## 5. 实施顺序（确认后执行）
+## 5. 已批准的实施顺序
 
 1. 复核备份全文件摘要、六份归档、TLS/存储补充清单和 8 个启动镜像，确认新 namespace/PV/目录不存在、新节点身份与磁盘空间符合方案。目标冲突则停止，不覆盖现有资源。
 2. 保存旧 Harbor healthy/read_only/目录基线作为旁证；只读访问旧环境，不暂停它。
@@ -84,4 +84,34 @@
 
 规则对应：C-D1 保留旧 Harbor 为当前权威来源，副本只读；C-D3/存储隔离使用独立 namespace/PV/路径；C-R1/R2 固定备份与镜像摘要并记录证据；C-T8 临时网关只做 TLS/转发。业务 E2E 仍在整个建设最后。
 
-技术依据：[Kubernetes NetworkPolicy](https://kubernetes.io/docs/concepts/services-networking/network-policies/)、[containerd registry hosts 配置](https://github.com/containerd/containerd/blob/main/docs/hosts.md)、[nginx 代理模块](https://nginx.org/en/docs/http/ngx_http_proxy_module.html)。这些说明用于方案选择，当前没有据此宣称运行验证已通过。
+技术依据：[Kubernetes NetworkPolicy](https://kubernetes.io/docs/concepts/services-networking/network-policies/)、[containerd registry hosts 配置](https://github.com/containerd/containerd/blob/main/docs/hosts.md)、[nginx 代理模块](https://nginx.org/en/docs/http/ngx_http_proxy_module.html)。这些说明用于方案选择；运行结论以第 7 节实测证据为准。
+
+## 7. 实际结果与复现要点
+
+本轮于 2026-09-26 15:25 UTC 开始；最终读取验证及节点回滚完成于 15:44 UTC。随后单独核对网关来源解析的幂等处理，15:53:33 UTC 完成最终复核，约 28 分钟，小于 60 分钟窗口。容量保守上界 23.31 GiB（包含两个节点原有全部 containerd 数据），小于 30 GiB；磁盘剩余 500.87 GiB。运行入口是 `harbor_restore.py` 与 `harbor_restore_verify.py`，完整私有记录保存在同批次 `restore-run-20260926/`。
+
+- 全文件 SHA256、服务端准入、8 个固定摘要自举镜像、6 个独立数据卷恢复均通过；镜像导入与解包不依赖公网或旧 registry。
+- 恢复 API 使用原凭据与有效 TLS；`read_only=true`。3 项目、64 仓库、165 顶层制品、429 含子清单记录、164 tags，以及逐制品元数据/附件与冷备份一致。含子清单后的无标签记录为 292；此前的 28 是顶层无标签数量，两者口径不同。
+- worker2 在目标摘要未缓存的情况下，经新临时域名、CA 和 imagePullSecret 实际拉取 57,641,907 字节的镜像并启动 Node `v24.18.0`。事件保留首次超时和后续成功，不能只报成功事件掩盖排障。
+- 内部 core:80 可达；验证 Pod 到旧 Harbor `172.18.0.2:30443` 超时，WSL 对同一地址的正向连接成功。到旧云地址的连接也超时，但没有证明该云端当时在线，不能单靠此项认定隔离有效。
+- registry Pod 重建后再次完整目录比对通过，且实际镜像 manifest 字节 SHA256 和响应 digest 一致。
+- 最终新 namespace 无 Pod，8 个控制器为 0，6 PVC 均 Bound、PV 均 Retain；临时 port-forward 已关闭。worker2 原 config.toml、hosts 散列恢复一致，临时 CA/候选配置目录项已撤回，containerd/CNI 正常，三节点 Ready。旧 Harbor 7 控制器仍 1/1、healthy、read_only=false，完整目录保持一致。
+
+三处现场修正已记录：
+
+1. 新节点没有 `/etc/containerd/certs.d` 父目录。必须记录并创建本轮新增目录，回滚时只删除这些空目录；中途失败时应允许临时文件已不存在。首次失败发生在替换节点原配置之前。
+2. manifest 请求只声明接受索引会得到 `MANIFEST_UNKNOWN`，旧 Harbor 对照也能复现。请求须同时接受 OCI/Docker 的单镜像 manifest 与多平台 index/list；没有改镜像数据或关闭 TLS。
+3. **节点 Docker IP 不等于网关实际观察到的源 IP。**worker2 经 Service/VXLAN 路由使用 `10.245.175.64`，`ip route get` 和 conntrack 都证实该来源。原策略增加仅此 `/32` 到网关 TCP 8443 的允许项；未放行 Pod 网段。原清单不覆盖，修正保存在 `gateway-vxlan-patch.json`。验证脚本现从真实路由和节点接口取来源，检查网关选择器/端口后精确补充；该解析及已存在规则的幂等路径另行运行通过。未来重建必须重新取地址。
+
+实际命令顺序（本次记录，**不要在已有批次上重新执行 prepare**）：
+
+```sh
+cd ~/worktrees/luna/k8s/sunmoonai/cicd-platform/materials
+python3 harbor_restore.py prepare
+python3 harbor_restore.py start
+python3 harbor_restore_verify.py
+```
+
+失败会停止副本并保留现场，读取 `state.json`、`trust.json`、`acceptance*.json` 再决定继续步骤；断电/强制终止恢复方法见本目录对应的 [脚本说明](../../cicd-platform/materials/README.md)。已成功拉取后缓存存在，不能再次声称执行了同一“无缓存”检查。
+
+正式证据：[脱敏结果](../../scripts/results/luna-harbor-isolated-restore.20260926.json)，含原始记录 SHA256、最终状态和容量统计。该结果证明本轮只读恢复链路；没有完成后台任务/扫描、可移植 OCI 导出、独立介质灾备、业务迁移或 CI/CD，旧 Harbor 继续保留。

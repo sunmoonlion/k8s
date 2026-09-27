@@ -28,8 +28,15 @@ sunmoon-network run -- python3 materials.py packages
 | `harbor_cold_backup.py --resume-services <已有备份目录>` | 根据持久化状态恢复精确控制器副本与原只读值；不覆盖源数据 |
 | `harbor_verify_backup.py <备份目录>` | 核对归档散列和内部 registry blob/manifest 依赖；不等于隔离恢复通过 |
 | `harbor_restore_plan.py --output <新目录>` | 从备份生成独立 namespace/存储/镜像摘要/TLS/网络策略清单，全部控制器为 0 副本；不连接集群或实施恢复 |
+| `harbor_restore.py prepare` | 仅执行已批准的 20260926 清单；复核摘要、独立路径与服务端准入，导入启动镜像、解包六卷，再应用 0 副本资源；已有运行目录时拒绝重复准备 |
+| `harbor_restore.py start` / `stop` | 显式新 kubeconfig 与 namespace UID 校验，按依赖启动只读副本或停到 0；不启动 jobservice，不删除卷 |
+| `harbor_restore_verify.py` | 已启动副本的完整目录/TLS/实际跨节点拉取/网络拒绝/registry 重启检查；结束时删除精确临时 Pod、停副本、撤销新 worker2 的临时配置并复核旧 Harbor |
 
-冷备份的失败/中断恢复命令也写入备份目录 `RECOVER-SERVICES.txt`。整个批次使用文件锁防止并发冷备份或重复恢复。不会强制删除 Pod，不清理数据，不改变 Harbor 版本。
+冷备份的失败/中断恢复命令也写入备份目录 `RECOVER-SERVICES.txt`。冷备份入口使用文件锁防止并发执行。不会强制删除 Pod，不清理数据，不改变 Harbor 版本。
+
+隔离恢复使用独立 `restore-run-20260926/restore.lock`，不与冷备份并行运行。私有运行目录保存阶段、命令日志、完整目录、节点原文件/散列与 `trust.json`；校验失败会保留历次 `acceptance-previous-*.json`。脚本是本批次执行记录，不能修改几个常量就用于其他集群。已经恢复成功后，不应再次执行 `prepare` 或伪造“无缓存”拉取条件。
+
+若进程被强制终止或主机断电，先核对 namespace UID、节点及运行记录，再恢复：删除仅本轮的 `restore-pull-proof` Pod，执行 `harbor_restore.py stop`；在本目录运行 `python3 -c 'from harbor_restore_verify import restore_trust; restore_trust()'` 恢复节点配置。临时 port-forward 的 PID/命令保存在 `port-forward-process.json`，必须确认实际进程仍与记录一致才停止。不要删除恢复数据，不要重新覆盖备份。节点回滚检查当前文件等于本轮写入摘要；遇到其他修改会拒绝覆盖并留下现场。
 
 `harbor_prepare.py` 导出的是命名空间内恢复输入；实际 TLS 入口可能在别处。本次已另外保存 Traefik 默认 TLSStore、`ingress-platform-dev/traefik-tls-secret` 与客户端 CA，索引在私有批次 `preparation/tls-addendum.json`。将来重新执行时必须重新定位并纳入这类跨命名空间依赖，不能认为仅执行准备脚本就覆盖完整入口。
 
