@@ -56,12 +56,14 @@ execute(){
   if [[ -x "$traefik_deploy_all" ]]; then
     log_info "[Step13] 调用 Traefik 部署脚本: $traefik_deploy_all"
     if ! CLUSTER="$cluster_selected" "$traefik_deploy_all"; then
-      log_warn "[Step13] Traefik 部署脚本执行失败，请检查 ingress-platform/deploy-ingress-platform-all 或单独运行该脚本查看原因"
+      log_error "[Step13] Traefik 部署脚本执行失败，停止本步骤"
+      return 1
     else
       log_success "[Step13] Traefik 部署脚本执行完成"
     fi
   else
-    log_warn "[Step13] 找不到 Traefik 部署脚本或无执行权限: $traefik_deploy_all"
+    log_error "[Step13] 找不到 Traefik 部署脚本或无执行权限: $traefik_deploy_all"
+    return 1
   fi
 
   # Harbor is an independent host service, prepared before Step11.
@@ -70,7 +72,7 @@ execute(){
 }
 
 verify(){
-  log_info "[Step13] Ingress 部署步骤已完成（具体启用状态由各组件自身配置决定）"
+  log_info "[Step13] Ingress 部署步骤已完成（仅表示子脚本成功返回；Pod 就绪和入口连通性仍需验收）"
 }
 
 main(){

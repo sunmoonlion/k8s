@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# 修复步骤脚本权限
-
-cd ~/master/k8s/sunmoonai/infrastructure/steps
-
-# 给所有步骤脚本添加执行权限
-chmod +x step*.sh
-
-# 显示权限
-ls -la step*.sh
-
-echo "权限修复完成"
+# 只修复当前工作树的步骤脚本权限，不访问其他检出。
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+shopt -s nullglob
+scripts=("$SCRIPT_DIR"/steps/step*.sh)
+if [[ ${#scripts[@]} -eq 0 ]]; then
+    echo "未找到步骤脚本" >&2
+    exit 1
+fi
+chmod +x -- "${scripts[@]}"
+ls -l -- "${scripts[@]}"

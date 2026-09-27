@@ -3,6 +3,7 @@ set -euo pipefail
 
 # =============================================================================
 # Infrastructure 包同步脚本
+# 云上升级路径未经实机验证；传输不负责删除远端已有物料。
 # =============================================================================
 # 用途：基础设施安装前的包文件同步和安装后的清理
 # - 同步 debs, images, tars, charts 到所有节点
@@ -37,6 +38,7 @@ fi
 
 # 加载集群配置映射函数（用于将 C1_* 或 C2_* 映射为默认配置）
 if [[ -f "$K8S_ROOT/utils/cluster-config-mapping.sh" ]]; then
+    # shellcheck source=/dev/null
     source "$K8S_ROOT/utils/cluster-config-mapping.sh"
     # 应用集群配置映射（使用 CLUSTER 环境变量）
     if command -v apply_cluster_config_mapping &>/dev/null; then
@@ -143,12 +145,12 @@ rsync_full() {
     if command -v rsync >/dev/null 2>&1; then
         if [[ -n "$secret" && -f "$secret" ]]; then
             RSYNC_RSH="ssh -i $secret -o StrictHostKeyChecking=no -p $dst_port" \
-                rsync -av --delete --mkpath "$src/" "$dst_user@$dst_host:$dst_path/" 2>/dev/null
+                rsync -av --mkpath "$src/" "$dst_user@$dst_host:$dst_path/" 2>/dev/null
             return $?
         elif [[ -n "$pass" ]]; then
             if command -v sshpass >/dev/null 2>&1; then
                 RSYNC_RSH="sshpass -p '$pass' ssh -o StrictHostKeyChecking=no -p $dst_port" \
-                    rsync -av --delete --mkpath "$src/" "$dst_user@$dst_host:$dst_path/" 2>/dev/null
+                    rsync -av --mkpath "$src/" "$dst_user@$dst_host:$dst_path/" 2>/dev/null
                 return $?
             fi
         fi
@@ -156,15 +158,18 @@ rsync_full() {
     
     # fallback: scp
     if [[ -n "$secret" && -f "$secret" ]]; then
-        ssh -i "$secret" -p "$dst_port" -o StrictHostKeyChecking=no "$dst_user@$dst_host" \
-            "rm -rf '$dst_path' && mkdir -p '$dst_path'" 2>/dev/null || true
+        ssh -n -i "$secret" -p "$dst_port" -o StrictHostKeyChecking=no "$dst_user@$dst_host" \
+            "mkdir -p '$dst_path'" || return 1
         scp -r -i "$secret" -P "$dst_port" -o StrictHostKeyChecking=no \
-            "$src"/* "$dst_user@$dst_host:$dst_path/" 2>/dev/null || true
+            "$src"/. "$dst_user@$dst_host:$dst_path/" || return 1
     elif [[ -n "$pass" ]] && command -v sshpass >/dev/null 2>&1; then
-        sshpass -p "$pass" ssh -p "$dst_port" -o StrictHostKeyChecking=no "$dst_user@$dst_host" \
-            "rm -rf '$dst_path' && mkdir -p '$dst_path'" 2>/dev/null || true
+        sshpass -p "$pass" ssh -n -p "$dst_port" -o StrictHostKeyChecking=no "$dst_user@$dst_host" \
+            "mkdir -p '$dst_path'" || return 1
         sshpass -p "$pass" scp -r -P "$dst_port" -o StrictHostKeyChecking=no \
-            "$src"/* "$dst_user@$dst_host:$dst_path/" 2>/dev/null || true
+            "$src"/. "$dst_user@$dst_host:$dst_path/" || return 1
+    else
+        log_error "无法传输：未找到可用的认证方式"
+        return 1
     fi
     return 0
 }
@@ -193,15 +198,18 @@ rsync_incremental() {
     
     # fallback: scp
     if [[ -n "$secret" && -f "$secret" ]]; then
-        ssh -i "$secret" -p "$dst_port" -o StrictHostKeyChecking=no "$dst_user@$dst_host" \
-            "mkdir -p '$dst_path'" 2>/dev/null || true
+        ssh -n -i "$secret" -p "$dst_port" -o StrictHostKeyChecking=no "$dst_user@$dst_host" \
+            "mkdir -p '$dst_path'" || return 1
         scp -r -i "$secret" -P "$dst_port" -o StrictHostKeyChecking=no \
-            "$src"/* "$dst_user@$dst_host:$dst_path/" 2>/dev/null || true
+            "$src"/. "$dst_user@$dst_host:$dst_path/" || return 1
     elif [[ -n "$pass" ]] && command -v sshpass >/dev/null 2>&1; then
-        sshpass -p "$pass" ssh -p "$dst_port" -o StrictHostKeyChecking=no "$dst_user@$dst_host" \
-            "mkdir -p '$dst_path'" 2>/dev/null || true
+        sshpass -p "$pass" ssh -n -p "$dst_port" -o StrictHostKeyChecking=no "$dst_user@$dst_host" \
+            "mkdir -p '$dst_path'" || return 1
         sshpass -p "$pass" scp -r -P "$dst_port" -o StrictHostKeyChecking=no \
-            "$src"/* "$dst_user@$dst_host:$dst_path/" 2>/dev/null || true
+            "$src"/. "$dst_user@$dst_host:$dst_path/" || return 1
+    else
+        log_error "无法传输：未找到可用的认证方式"
+        return 1
     fi
     return 0
 }
@@ -346,9 +354,9 @@ cleanup_node_packages() {
         return 0
     fi
     if [[ -n "$secret" && -f "$secret" ]]; then
-        ssh -i "$secret" -p "$node_port" -o StrictHostKeyChecking=no "$node_user@$node_ip" "$cleanup_cmd"
+        ssh -n -i "$secret" -p "$node_port" -o StrictHostKeyChecking=no "$node_user@$node_ip" "$cleanup_cmd"
     elif [[ -n "$pass" ]] && command -v sshpass >/dev/null 2>&1; then
-        sshpass -p "$pass" ssh -p "$node_port" -o StrictHostKeyChecking=no "$node_user@$node_ip" "$cleanup_cmd"
+        sshpass -p "$pass" ssh -n -p "$node_port" -o StrictHostKeyChecking=no "$node_user@$node_ip" "$cleanup_cmd"
     else
         log_warn "无法清理节点（缺少认证信息）"
         return 1
@@ -401,9 +409,9 @@ install_images_on_node() {
     local count_cmd="find '$images_dir' -maxdepth 1 -type f -name '*.tar' 2>/dev/null | wc -l"
     local tar_count="0"
     if [[ -n "$secret" && -f "$secret" ]]; then
-        tar_count=$(ssh -i "$secret" -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$count_cmd" 2>/dev/null || echo 0)
+        tar_count=$(ssh -n -i "$secret" -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$count_cmd" 2>/dev/null || echo 0)
     elif [[ -n "$pass" ]] && command -v sshpass >/dev/null 2>&1; then
-        tar_count=$(sshpass -p "$pass" ssh -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$count_cmd" 2>/dev/null || echo 0)
+        tar_count=$(sshpass -p "$pass" ssh -n -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$count_cmd" 2>/dev/null || echo 0)
     else
         log_warn "无法连接节点（缺少认证信息）: $host"; return 1
     fi
@@ -417,9 +425,9 @@ install_images_on_node() {
     local list_cmd="find '$images_dir' -maxdepth 1 -type f -name '*.tar' -printf '%p\n' 2>/dev/null | sort"
     local tar_list
     if [[ -n "$secret" && -f "$secret" ]]; then
-        tar_list=$(ssh -i "$secret" -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$list_cmd" 2>/dev/null || true)
+        tar_list=$(ssh -n -i "$secret" -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$list_cmd" 2>/dev/null || true)
     else
-        tar_list=$(sshpass -p "$pass" ssh -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$list_cmd" 2>/dev/null || true)
+        tar_list=$(sshpass -p "$pass" ssh -n -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$list_cmd" 2>/dev/null || true)
     fi
 
     local loaded=0 failed=0 skipped=0 idx=0
@@ -434,9 +442,9 @@ install_images_on_node() {
         local parse_cmd="if command -v jq >/dev/null 2>&1; then tar -xOf '$tar_file' manifest.json 2>/dev/null | jq -r '.[0].RepoTags[]'; else tar -xOf '$tar_file' manifest.json 2>/dev/null | sed -n 's/.*\"RepoTags\"\s*:\s*\[\s*\"\([^\"]*\)\".*/\1/p' ; fi"
         local repotags
         if [[ -n "$secret" && -f "$secret" ]]; then
-            repotags=$(ssh -i "$secret" -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$parse_cmd" 2>/dev/null || echo "")
+            repotags=$(ssh -n -i "$secret" -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$parse_cmd" 2>/dev/null || echo "")
         else
-            repotags=$(sshpass -p "$pass" ssh -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$parse_cmd" 2>/dev/null || echo "")
+            repotags=$(sshpass -p "$pass" ssh -n -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$parse_cmd" 2>/dev/null || echo "")
         fi
 
         local should_skip="false"
@@ -446,9 +454,9 @@ install_images_on_node() {
                 [[ -z "$tag" ]] && continue
                 local exists_cmd="sudo nerdctl -n k8s.io images --format '{{.Repository}}:{{.Tag}}' | grep -Fx '$tag' >/dev/null 2>&1"
                 if [[ -n "$secret" && -f "$secret" ]]; then
-                    if ssh -i "$secret" -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$exists_cmd"; then should_skip="true"; break; fi
+                    if ssh -n -i "$secret" -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$exists_cmd"; then should_skip="true"; break; fi
                 else
-                    if sshpass -p "$pass" ssh -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$exists_cmd"; then should_skip="true"; break; fi
+                    if sshpass -p "$pass" ssh -n -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$exists_cmd"; then should_skip="true"; break; fi
                 fi
             done <<< "$repotags"
         fi
@@ -466,14 +474,14 @@ install_images_on_node() {
         fi
 
         if [[ -n "$secret" && -f "$secret" ]]; then
-            if ssh -i "$secret" -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$load_cmd"; then
+            if ssh -n -i "$secret" -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$load_cmd"; then
                 loaded=$((loaded+1))
             else
                 failed=$((failed+1))
                 log_warn "  加载失败: $base"
             fi
         else
-            if sshpass -p "$pass" ssh -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$load_cmd"; then
+            if sshpass -p "$pass" ssh -n -p "$port" -o StrictHostKeyChecking=no "$user@$host" "$load_cmd"; then
                 loaded=$((loaded+1))
             else
                 failed=$((failed+1))
@@ -508,6 +516,15 @@ install_images_on_all_nodes() {
     fi
 }
 
+# 只统计普通文件，不解析 ls 输出；缺目录显示为零。
+count_package_files() {
+    if [[ -d "$1" ]]; then
+        find "$1" -maxdepth 1 -type f -printf '.' | wc -c
+    else
+        echo 0
+    fi
+}
+
 # 主函数
 main() {
     local cmd="${1:-}"
@@ -539,8 +556,8 @@ main() {
             fi
             validate_config || exit 1
             local ip="$1"; shift || true
-            local user="${1:-}"; [[ -n "${1:-}" ]] && shift || true
-            local port="${1:-22}"; [[ -n "${1:-}" ]] && shift || true
+            local user="${1:-}"; if [[ -n "${1:-}" ]]; then shift; fi
+            local port="${1:-22}"; if [[ -n "${1:-}" ]]; then shift; fi
             local ctype="${1:-all}"
             cleanup_node_packages "$ip" "$user" "$port" "$ctype"
             ;;
@@ -558,10 +575,10 @@ main() {
         "status")
             validate_config || exit 1
             log_info "本地目录: $LOCAL_PACKAGE_DIR"
-            log_info "debs:   $(ls -1 "$LOCAL_DEBS_DIR" 2>/dev/null | wc -l | tr -d ' ') files"
-            log_info "images: $(ls -1 "$LOCAL_IMAGES_DIR" 2>/dev/null | wc -l | tr -d ' ') files"
-            log_info "tars:   $(ls -1 "$LOCAL_TARS_DIR" 2>/dev/null | wc -l | tr -d ' ') files"
-            log_info "charts: $(ls -1 "$LOCAL_CHARTS_DIR" 2>/dev/null | wc -l | tr -d ' ') files"
+            log_info "debs:   $(count_package_files "$LOCAL_DEBS_DIR") files"
+            log_info "images: $(count_package_files "$LOCAL_IMAGES_DIR") files"
+            log_info "tars:   $(count_package_files "$LOCAL_TARS_DIR") files"
+            log_info "charts: $(count_package_files "$LOCAL_CHARTS_DIR") files"
             local servers; mapfile -t servers < <(list_servers)
             log_info "已配置节点数: ${#servers[@]}"
             for idx in "${servers[@]}"; do

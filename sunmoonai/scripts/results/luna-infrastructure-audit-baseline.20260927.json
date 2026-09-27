@@ -1,0 +1,1450 @@
+{
+  "schema": 1,
+  "baseline_commit": "d661840e0c3a49bf1c5e8557236eb3380b0dadb8",
+  "scope": "all regular files under sunmoonai/infrastructure, before changes",
+  "method": "Complete source reading; bash -n and ShellCheck 0.9.0 on every .sh, no deployment script execution. Diagnostic source text omitted to avoid leaking existing configuration values.",
+  "cloud_status": "未经实机验证",
+  "files": [
+    {
+      "path": "deploy-infrastructure-all/deploy-infrastructure-all-menu.sh",
+      "sha256": "5466d067da47f7117846549424ca9c118eb83f62bf7ff8afdb421566e81e2ac3",
+      "lines": 557,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 34,
+          "endLine": 34,
+          "column": 8,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 70,
+          "endLine": 70,
+          "column": 16,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 73,
+          "endLine": 73,
+          "column": 16,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 77,
+          "endLine": 77,
+          "column": 16,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 154,
+          "endLine": 154,
+          "column": 16,
+          "code": 1091,
+          "level": "info"
+        }
+      ]
+    },
+    {
+      "path": "deploy-infrastructure-all/deploy-infrastructure-all.conf",
+      "sha256": "4c2d4d1886cbbf5e57ac1c1e0af0b968d5206642aac9248fe3beaba6dbe4134b",
+      "lines": 647
+    },
+    {
+      "path": "deploy-infrastructure-all/deploy-infrastructure-all.sh",
+      "sha256": "d7c78636a94c1162b94c9a33895718e352410851a8be7d1e21c3ef9a0ddbcffb",
+      "lines": 480,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 34,
+          "endLine": 34,
+          "column": 8,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 81,
+          "endLine": 81,
+          "column": 16,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 94,
+          "endLine": 94,
+          "column": 24,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 99,
+          "endLine": 99,
+          "column": 20,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 158,
+          "endLine": 158,
+          "column": 14,
+          "code": 1091,
+          "level": "info"
+        }
+      ]
+    },
+    {
+      "path": "docs/cloud-provider-switch.md",
+      "sha256": "55c024c6598e4cfc8ae976a1d37d77ea94f4a712edb12f941d0489920fe79daf",
+      "lines": 153
+    },
+    {
+      "path": "docs/volcengine-vfs-setup.md",
+      "sha256": "a45c3559cd594b41b977dc68c30223510d9fd5ee99eb665488d69db0b441cc75",
+      "lines": 264
+    },
+    {
+      "path": "fix_permissions.sh",
+      "sha256": "3f5b2bd61653d5c8f1c4bdb71510fb12635648dac005683193df42f72fe9a72d",
+      "lines": 12,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 4,
+          "endLine": 4,
+          "column": 1,
+          "code": 2164,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "materials/README.md",
+      "sha256": "42eecad22ca2a995ff2c266f58485651d30468462625f812119532b2dd52c9e6",
+      "lines": 46
+    },
+    {
+      "path": "materials/cluster-artifacts.lock.json",
+      "sha256": "65b6bebb9a90e14f9850fd69ee2fb4a9711dd3ed26227cbae0ebd0fd68f1a01d",
+      "lines": 138
+    },
+    {
+      "path": "materials/inventory.py",
+      "sha256": "a05d859a65c06f66c0265a20494598bf30935a2bb6c5ec979123f167f04421b1",
+      "lines": 162
+    },
+    {
+      "path": "materials/kubeadm-images.lock.json",
+      "sha256": "daf944a8c0604336e5c546831494d8aefcafc1b4299def74a844cf5123fd789c",
+      "lines": 101
+    },
+    {
+      "path": "materials/prepare_images.py",
+      "sha256": "56a20dcb62bb71603551aed262b09567643b78e63075b8c38f1fd2e5c0f2ba2a",
+      "lines": 159
+    },
+    {
+      "path": "materials/prepare_public.py",
+      "sha256": "02266f4d0edc0b5f4b0900b82162aabdb2833017fd64f3d379d639b2dfa8b754",
+      "lines": 62
+    },
+    {
+      "path": "steps/step00_reset.sh",
+      "sha256": "401cc4bea1e02f674720032350ef1e3854512e141ef13225c0cc85f0f38c77a5",
+      "lines": 454,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 10,
+          "endLine": 10,
+          "column": 8,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 18,
+          "endLine": 18,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 26,
+          "endLine": 26,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 27,
+          "endLine": 27,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 385,
+          "endLine": 385,
+          "column": 27,
+          "code": 2154,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "steps/step01_os_baseline.sh",
+      "sha256": "2b278079d2a8ecc79d39cad1474eef0f8ea58dc9f67a437f8e0dab939180eb43",
+      "lines": 168,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 10,
+          "endLine": 10,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 75,
+          "endLine": 75,
+          "column": 20,
+          "code": 2154,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "steps/step02_runtime.sh",
+      "sha256": "d527ab2b351f2b1714e20bde609a363b155c1c0ba73a9da27afb90d1b5c5bc87",
+      "lines": 335,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 10,
+          "endLine": 10,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 14,
+          "endLine": 14,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 15,
+          "endLine": 15,
+          "column": 22,
+          "code": 2088,
+          "level": "warning"
+        },
+        {
+          "line": 50,
+          "endLine": 50,
+          "column": 13,
+          "code": 2154,
+          "level": "warning"
+        },
+        {
+          "line": 216,
+          "endLine": 216,
+          "column": 13,
+          "code": 2155,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "steps/step03_k8s_binaries.sh",
+      "sha256": "5a88248535fb5cf97659c9b2aa3d42ac5bc80b59a5ca72797f824357c36f5a96",
+      "lines": 306,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 10,
+          "endLine": 10,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 17,
+          "endLine": 17,
+          "column": 22,
+          "code": 2088,
+          "level": "warning"
+        },
+        {
+          "line": 67,
+          "endLine": 67,
+          "column": 26,
+          "code": 2154,
+          "level": "warning"
+        },
+        {
+          "line": 78,
+          "endLine": 78,
+          "column": 15,
+          "code": 2089,
+          "level": "warning"
+        },
+        {
+          "line": 84,
+          "endLine": 84,
+          "column": 35,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 84,
+          "endLine": 84,
+          "column": 35,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 84,
+          "endLine": 84,
+          "column": 35,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 144,
+          "endLine": 144,
+          "column": 67,
+          "code": 2140,
+          "level": "warning"
+        },
+        {
+          "line": 162,
+          "endLine": 162,
+          "column": 44,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 162,
+          "endLine": 162,
+          "column": 44,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 162,
+          "endLine": 162,
+          "column": 44,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 173,
+          "endLine": 173,
+          "column": 42,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 173,
+          "endLine": 173,
+          "column": 42,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 173,
+          "endLine": 173,
+          "column": 42,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 175,
+          "endLine": 175,
+          "column": 41,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 175,
+          "endLine": 175,
+          "column": 41,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 175,
+          "endLine": 175,
+          "column": 41,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 179,
+          "endLine": 179,
+          "column": 524,
+          "code": 2015,
+          "level": "info"
+        },
+        {
+          "line": 226,
+          "endLine": 226,
+          "column": 37,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 226,
+          "endLine": 226,
+          "column": 37,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 226,
+          "endLine": 226,
+          "column": 37,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 229,
+          "endLine": 229,
+          "column": 37,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 229,
+          "endLine": 229,
+          "column": 37,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 229,
+          "endLine": 229,
+          "column": 37,
+          "code": 2086,
+          "level": "info"
+        }
+      ]
+    },
+    {
+      "path": "steps/step04_kubeadm_init.sh",
+      "sha256": "fd588d61e5f0b892beeffd5a1ee2d06bf9d333f49420eb36535296084b1fc30d",
+      "lines": 349,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 10,
+          "endLine": 10,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 124,
+          "endLine": 124,
+          "column": 27,
+          "code": 2154,
+          "level": "warning"
+        },
+        {
+          "line": 207,
+          "endLine": 207,
+          "column": 5,
+          "code": 2001,
+          "level": "style"
+        },
+        {
+          "line": 225,
+          "endLine": 225,
+          "column": 50,
+          "code": 2154,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "steps/step05_cni_install.sh",
+      "sha256": "4829836183c4b845b36d13d60cf3a56cf3f04a9ff9fa8ac24192bf768cd89d4c",
+      "lines": 673,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 10,
+          "endLine": 10,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 48,
+          "endLine": 48,
+          "column": 22,
+          "code": 2088,
+          "level": "warning"
+        },
+        {
+          "line": 103,
+          "endLine": 109,
+          "column": 1,
+          "code": 2120,
+          "level": "warning"
+        },
+        {
+          "line": 125,
+          "endLine": 125,
+          "column": 15,
+          "code": 2089,
+          "level": "warning"
+        },
+        {
+          "line": 146,
+          "endLine": 146,
+          "column": 37,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 146,
+          "endLine": 146,
+          "column": 37,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 146,
+          "endLine": 146,
+          "column": 37,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 218,
+          "endLine": 218,
+          "column": 17,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 322,
+          "endLine": 322,
+          "column": 18,
+          "code": 2012,
+          "level": "info"
+        },
+        {
+          "line": 399,
+          "endLine": 399,
+          "column": 3,
+          "code": 2119,
+          "level": "info"
+        },
+        {
+          "line": 456,
+          "endLine": 456,
+          "column": 5,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 468,
+          "endLine": 468,
+          "column": 19,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 530,
+          "endLine": 530,
+          "column": 17,
+          "code": 2089,
+          "level": "warning"
+        },
+        {
+          "line": 536,
+          "endLine": 536,
+          "column": 53,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 536,
+          "endLine": 536,
+          "column": 53,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 536,
+          "endLine": 536,
+          "column": 53,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 547,
+          "endLine": 547,
+          "column": 42,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 547,
+          "endLine": 547,
+          "column": 42,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 547,
+          "endLine": 547,
+          "column": 42,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 616,
+          "endLine": 616,
+          "column": 83,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 616,
+          "endLine": 616,
+          "column": 83,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 616,
+          "endLine": 616,
+          "column": 83,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 619,
+          "endLine": 619,
+          "column": 83,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 619,
+          "endLine": 619,
+          "column": 83,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 619,
+          "endLine": 619,
+          "column": 83,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 623,
+          "endLine": 623,
+          "column": 81,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 623,
+          "endLine": 623,
+          "column": 81,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 623,
+          "endLine": 623,
+          "column": 81,
+          "code": 2086,
+          "level": "info"
+        }
+      ]
+    },
+    {
+      "path": "steps/step06_join_nodes.sh",
+      "sha256": "9a51eaf456b48fbebf73d883f73fbce659c417e12ce68865a4de27331ae029ff",
+      "lines": 191,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 10,
+          "endLine": 10,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 12,
+          "endLine": 12,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 13,
+          "endLine": 13,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 106,
+          "endLine": 106,
+          "column": 13,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 130,
+          "endLine": 130,
+          "column": 154,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 154,
+          "endLine": 154,
+          "column": 17,
+          "code": 2089,
+          "level": "warning"
+        },
+        {
+          "line": 158,
+          "endLine": 158,
+          "column": 42,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 158,
+          "endLine": 158,
+          "column": 42,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 158,
+          "endLine": 158,
+          "column": 42,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 169,
+          "endLine": 169,
+          "column": 39,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 169,
+          "endLine": 169,
+          "column": 39,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 169,
+          "endLine": 169,
+          "column": 39,
+          "code": 2086,
+          "level": "info"
+        }
+      ]
+    },
+    {
+      "path": "steps/step07_create_namespaces.sh",
+      "sha256": "ca27eb97856695fc07be8139aba77cc907000a8acc42b9b94d63c64256d33b79",
+      "lines": 395,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 19,
+          "endLine": 19,
+          "column": 12,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 21,
+          "endLine": 21,
+          "column": 12,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 23,
+          "endLine": 23,
+          "column": 12,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 28,
+          "endLine": 28,
+          "column": 12,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 34,
+          "endLine": 34,
+          "column": 12,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 98,
+          "endLine": 98,
+          "column": 19,
+          "code": 2181,
+          "level": "style"
+        },
+        {
+          "line": 104,
+          "endLine": 104,
+          "column": 23,
+          "code": 2181,
+          "level": "style"
+        }
+      ]
+    },
+    {
+      "path": "steps/step08_validate.sh",
+      "sha256": "b2fa7a3b2105ca97c339417fa2b1891a938d25405d4a68d989a4d63916aa9a70",
+      "lines": 50,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 10,
+          "endLine": 10,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 32,
+          "endLine": 32,
+          "column": 39,
+          "code": 2154,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "steps/step09_storage.sh",
+      "sha256": "73537ce21974cd7a33cda958af3da80bc586414edbdbd2a12d601926fc5b7273",
+      "lines": 1470,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 28,
+          "endLine": 28,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 203,
+          "endLine": 203,
+          "column": 28,
+          "code": 2154,
+          "level": "warning"
+        },
+        {
+          "line": 205,
+          "endLine": 205,
+          "column": 11,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 345,
+          "endLine": 345,
+          "column": 5,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 523,
+          "endLine": 523,
+          "column": 31,
+          "code": 2001,
+          "level": "style"
+        },
+        {
+          "line": 533,
+          "endLine": 533,
+          "column": 31,
+          "code": 2001,
+          "level": "style"
+        },
+        {
+          "line": 615,
+          "endLine": 615,
+          "column": 15,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 818,
+          "endLine": 818,
+          "column": 15,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 1112,
+          "endLine": 1112,
+          "column": 15,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 1122,
+          "endLine": 1122,
+          "column": 15,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 1207,
+          "endLine": 1207,
+          "column": 13,
+          "code": 2034,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "steps/step10_k8s_nodes_management.sh",
+      "sha256": "cc1024a0609d48b1d306283b390a2b45b7ed3edfcb6980421d1171f73530a05b",
+      "lines": 329,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 37,
+          "endLine": 37,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 41,
+          "endLine": 41,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 42,
+          "endLine": 42,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 113,
+          "endLine": 113,
+          "column": 28,
+          "code": 2154,
+          "level": "warning"
+        },
+        {
+          "line": 115,
+          "endLine": 115,
+          "column": 11,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 199,
+          "endLine": 199,
+          "column": 15,
+          "code": 2155,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "steps/step11_load-initial-images.sh",
+      "sha256": "36569d971e50f3aa8fc8946e891f7406fa40aefdd33b19dce05b2ae4156c6f30",
+      "lines": 1004,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 19,
+          "endLine": 19,
+          "column": 12,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 32,
+          "endLine": 32,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 33,
+          "endLine": 33,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 39,
+          "endLine": 39,
+          "column": 21,
+          "code": 2088,
+          "level": "warning"
+        },
+        {
+          "line": 66,
+          "endLine": 66,
+          "column": 9,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 184,
+          "endLine": 184,
+          "column": 26,
+          "code": 2016,
+          "level": "info"
+        },
+        {
+          "line": 195,
+          "endLine": 195,
+          "column": 26,
+          "code": 2016,
+          "level": "info"
+        },
+        {
+          "line": 206,
+          "endLine": 206,
+          "column": 75,
+          "code": 2016,
+          "level": "info"
+        },
+        {
+          "line": 216,
+          "endLine": 216,
+          "column": 26,
+          "code": 2016,
+          "level": "info"
+        },
+        {
+          "line": 258,
+          "endLine": 258,
+          "column": 115,
+          "code": 2016,
+          "level": "info"
+        }
+      ]
+    },
+    {
+      "path": "steps/step12_ca_generation.sh",
+      "sha256": "b50d4b177b8c8228240f163a428c48549aec5eb91d358d096ef8fca4c8f402ab",
+      "lines": 301,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 25,
+          "endLine": 25,
+          "column": 12,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 27,
+          "endLine": 27,
+          "column": 12,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 29,
+          "endLine": 29,
+          "column": 12,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 39,
+          "endLine": 39,
+          "column": 12,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 44,
+          "endLine": 44,
+          "column": 12,
+          "code": 1091,
+          "level": "info"
+        }
+      ]
+    },
+    {
+      "path": "steps/step13_ingress_and_harbor.sh",
+      "sha256": "b093d9da1771e9210c09f6f0c1a674ef3eeb22e1fe3671917a621d1f8aaaea2d",
+      "lines": 82,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 0,
+      "shellcheck": []
+    },
+    {
+      "path": "utils/common.sh",
+      "sha256": "12e1f4661da9525a56cd737e043dc03bf544c1ae5b9c71b8a346729bd450af5e",
+      "lines": 417,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 34,
+          "endLine": 34,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 35,
+          "endLine": 35,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 75,
+          "endLine": 75,
+          "column": 12,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 78,
+          "endLine": 78,
+          "column": 12,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 81,
+          "endLine": 81,
+          "column": 12,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 104,
+          "endLine": 104,
+          "column": 14,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 168,
+          "endLine": 168,
+          "column": 12,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 251,
+          "endLine": 251,
+          "column": 34,
+          "code": 2088,
+          "level": "warning"
+        },
+        {
+          "line": 255,
+          "endLine": 255,
+          "column": 46,
+          "code": 2088,
+          "level": "warning"
+        },
+        {
+          "line": 255,
+          "endLine": 255,
+          "column": 54,
+          "code": 2295,
+          "level": "info"
+        },
+        {
+          "line": 263,
+          "endLine": 263,
+          "column": 93,
+          "code": 2015,
+          "level": "info"
+        },
+        {
+          "line": 264,
+          "endLine": 264,
+          "column": 85,
+          "code": 2015,
+          "level": "info"
+        },
+        {
+          "line": 265,
+          "endLine": 265,
+          "column": 89,
+          "code": 2015,
+          "level": "info"
+        },
+        {
+          "line": 312,
+          "endLine": 312,
+          "column": 47,
+          "code": 2029,
+          "level": "info"
+        },
+        {
+          "line": 368,
+          "endLine": 368,
+          "column": 11,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 368,
+          "endLine": 368,
+          "column": 56,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 369,
+          "endLine": 369,
+          "column": 11,
+          "code": 2155,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "utils/image-cleanup/README.md",
+      "sha256": "b4d532e34da328886a688c653273d7101fca7c36df234ad54961a76b7c80218a",
+      "lines": 418
+    },
+    {
+      "path": "utils/image-cleanup/cron/install-cron.sh",
+      "sha256": "6fbef8c269f80dcbb8cc811364a6b4302b1ac35f82d87a1d4cbfbbaa973441bd",
+      "lines": 166,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 24,
+          "endLine": 24,
+          "column": 1,
+          "code": 2034,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "utils/image-cleanup/cron/k8s-image-cleanup.cron.example",
+      "sha256": "14797fa1e2c72bf09aab949e73c05dfb0d27b4b7a9b63e19a340c3e0f59bedac",
+      "lines": 32
+    },
+    {
+      "path": "utils/image-cleanup/image-cleanup.conf",
+      "sha256": "3fa69625fa4cddd0bccee1a345f9e9565f032fc65170739066dc823627146f60",
+      "lines": 28
+    },
+    {
+      "path": "utils/image-cleanup/image-cleanup.sh",
+      "sha256": "c000aa04a7d21cf5ac0b82912c6b112a2b8d58c7299ae249c6a887ee16c02219",
+      "lines": 365,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 0,
+      "shellcheck": []
+    },
+    {
+      "path": "utils/image-cleanup/periodic-cleanup.conf",
+      "sha256": "0ff6af43a70406d631db9ad54fa90cef5d6af5c64300e16586c5b810b9f9214a",
+      "lines": 25
+    },
+    {
+      "path": "utils/image-cleanup/periodic-cleanup.sh",
+      "sha256": "78e605451df5e920adfc87390d316034b3f6a1b301b4ceb45b7325b12c59dc5f",
+      "lines": 123,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 0,
+      "shellcheck": []
+    },
+    {
+      "path": "utils/package-preparation/README.md",
+      "sha256": "f16baffeb4038f2985bd5dbcc9f35d90a2726bf8e7ec599b3e9c7fb33d9404cb",
+      "lines": 68
+    },
+    {
+      "path": "utils/package-preparation/package-sync.conf",
+      "sha256": "42eaded2fcd0ca0db37c6f74e123719f0c98662a1455fea1a9971b2eb690451e",
+      "lines": 107
+    },
+    {
+      "path": "utils/package-preparation/package-sync.sh",
+      "sha256": "fb7677ad958a9a08ebee770b8c70f3e5adc2328e402209d1b23f81c83c4de93a",
+      "lines": 587,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 40,
+          "endLine": 40,
+          "column": 12,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 426,
+          "endLine": 483,
+          "column": 5,
+          "code": 2095,
+          "level": "info"
+        },
+        {
+          "line": 445,
+          "endLine": 453,
+          "column": 13,
+          "code": 2095,
+          "level": "info"
+        },
+        {
+          "line": 449,
+          "endLine": 449,
+          "column": 24,
+          "code": 2095,
+          "level": "warning"
+        },
+        {
+          "line": 469,
+          "endLine": 469,
+          "column": 16,
+          "code": 2095,
+          "level": "warning"
+        },
+        {
+          "line": 542,
+          "endLine": 542,
+          "column": 52,
+          "code": 2015,
+          "level": "info"
+        },
+        {
+          "line": 543,
+          "endLine": 543,
+          "column": 54,
+          "code": 2015,
+          "level": "info"
+        },
+        {
+          "line": 561,
+          "endLine": 561,
+          "column": 33,
+          "code": 2012,
+          "level": "info"
+        },
+        {
+          "line": 562,
+          "endLine": 562,
+          "column": 33,
+          "code": 2012,
+          "level": "info"
+        },
+        {
+          "line": 563,
+          "endLine": 563,
+          "column": 33,
+          "code": 2012,
+          "level": "info"
+        },
+        {
+          "line": 564,
+          "endLine": 564,
+          "column": 33,
+          "code": 2012,
+          "level": "info"
+        }
+      ]
+    },
+    {
+      "path": "utils/setup-runtime-and-disable-socket.sh",
+      "sha256": "1a88304e4d7e862329edff4bd6056b7ecb9f02da9c46c5e51673b829f586a3ab",
+      "lines": 381,
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 69,
+          "endLine": 69,
+          "column": 7,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 133,
+          "endLine": 160,
+          "column": 1,
+          "code": 2120,
+          "level": "warning"
+        },
+        {
+          "line": 218,
+          "endLine": 218,
+          "column": 5,
+          "code": 2119,
+          "level": "info"
+        },
+        {
+          "line": 253,
+          "endLine": 253,
+          "column": 5,
+          "code": 2119,
+          "level": "info"
+        },
+        {
+          "line": 364,
+          "endLine": 364,
+          "column": 43,
+          "code": 2015,
+          "level": "info"
+        }
+      ]
+    }
+  ]
+}

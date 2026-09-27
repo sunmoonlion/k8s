@@ -1,5 +1,19 @@
 # Luna 工作检查点
 
+## 最新续接：2026-09-27 infrastructure 全目录审查和第一批总控修正
+
+基线 `d661840e0c3a49bf1c5e8557236eb3380b0dadb8`；交付为包含此检查点的本地 luna 提交，不 push。此节优先于下方历史记录。
+
+- 所有者最新要求：物料更新必须同步部署脚本，完整细读 infrastructure 的细节。已经逐文件阅读全部 38 文件/11,605 行，包含所有步骤、工具、配置与文档。逐文件 SHA 与修改前静态证据：`sunmoonai/scripts/results/luna-infrastructure-audit-baseline.20260927.json`。
+- 审查发现及逐文件覆盖/调用链/后续顺序：`sunmoonai/infrastructure/docs/infrastructure-upgrade-audit.md`。目录外只追踪直接接口，不能宣称全仓已经审完。
+- 第一批修正：普通总控移除自动 step00；无参数帮助、显式 Cn、命令白名单；总控映射去 eval/支持稀疏节点；菜单转发同一总控和别名；同步/入口子脚本错误向上传递；同步去掉 --delete 与 scp 前清空；历史自动清理默认关闭；fix_permissions 限当前工作树。
+- 总控 `--cluster C1 deploy --dry-run`、C2、菜单 C1、step11 dry-run 只打印，无 SSH/部署/下载/删除；不会执行旧脚本。注意：直接运行旧步骤的 verify/dry-run 仍可能有副作用；step04/06 自动 reset 等待整改，移除总控 step00 不等于所有内部危险行为已修好。
+- 修改的 5 个 Shell 文件 bash -n/ShellCheck 0.9.0 零提示；全目录 23 个 Shell 语法通过，其他历史文件仍有 144 条 ShellCheck 提示。证据 `luna-infrastructure-audit-followup.20260927.json`。云上未经实机验证。
+- 活动旧 cloud 配置仍是 1.30.4，不能只换数字宣称已安装 1.36；新版 materials closure_complete=false。下一单元：统一节点/私有配置与 SHA 清单同步、OS 依赖闭包、systemd/运行时/工具安装，再 kubeadm API/init/join 与共享 Calico；随后独立 Harbor/统一平台接线。用户已授权技术实施，无需重新请求方案批准。
+- 本单元未动集群、镜像缓存、离线包或 Harbor 现场。宿主 Harbor 恢复只读验收通过的状态继续有效；新候选容器停止保留，旧 Harbor 未切入口。最终清理仍必须完成且放验收后；旧 kind-worker2、任何旧容器/卷保护要求有效。
+- 原迁移目标尚未完成，不应通知“luna 做完了”。没有运行中的工具会话。无预算上限指定。
+
+
 ## 最新续接：2026-09-27 宿主 Harbor 只读验收通过，整套集群物料继续准备
 
 基线 `4f55b537182fc2bad2299d9522b7cda8c0eec0b8`，本地 luna，不 push。以下优先于历史“待审/未恢复”描述。

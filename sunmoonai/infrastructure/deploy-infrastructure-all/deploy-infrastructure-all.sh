@@ -3,6 +3,7 @@ set -euo pipefail
 
 # =============================================================================
 # Kubernetes 基础设施部署脚本
+# 云上升级路径未经实机验证；详见 ../docs/infrastructure-upgrade-audit.md。
 # - 提供完整的 Kubernetes 集群部署流程
 # - 支持在线/离线两种部署模式
 # - 每个步骤都有独立的资源检查和错误处理
@@ -31,12 +32,30 @@ if [[ -z "$K8S_ROOT_DIR" ]]; then
 fi
 
 # 集群参数解析（轻量，无连接副作用）
+# shellcheck source=/dev/null
 source "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh"
 
 
 # 变量路径
 SCRIPT_DIR="$PROJECT_ROOT"
 STEPS_DIR="$SCRIPT_DIR/steps"
+
+# 总控、菜单和只打印预演共用此顺序；重置不属于部署。
+DEPLOY_STEPS=(
+    "step01_os_baseline:操作系统基线配置:STEP01_ENABLED"
+    "step02_runtime:容器运行时安装:STEP02_ENABLED"
+    "step03_k8s_binaries:Kubernetes二进制文件安装:STEP03_ENABLED"
+    "step04_kubeadm_init:Master节点初始化:STEP04_ENABLED"
+    "step05_cni_install:CNI网络插件安装:STEP05_ENABLED"
+    "step06_join_nodes:Worker节点加入集群:STEP06_ENABLED"
+    "step07_create_namespaces:命名空间管理:STEP07_ENABLED"
+    "step08_validate:集群验证和状态检查:STEP08_ENABLED"
+    "step09_storage:存储配置:STEP09_ENABLED"
+    "step10_k8s_nodes_management:Kubernetes节点管理:STEP10_ENABLED"
+    "step11_load-initial-images:初始镜像加载:STEP11_ENABLED"
+    "step12_ca_generation:统一根 CA 证书生成/轮换:STEP12_ENABLED"
+    "step13_ingress_and_harbor:Ingress (Traefik) 部署（Harbor 在集群外）:STEP13_ENABLED"
+)
 
 # 颜色输出函数
 red() { echo -e "\033[31m$*\033[0m"; }
@@ -75,91 +94,35 @@ if [[ $# -gt 0 ]]; then
 fi
 
 load_config(){
-    local loaded=""
-    if [[ -f "$PROJECT_ROOT/deploy-infrastructure-all/deploy-infrastructure-all.conf" ]]; then
-        # shellcheck disable=SC1090
-        source "$PROJECT_ROOT/deploy-infrastructure-all/deploy-infrastructure-all.conf"; loaded="deploy-infrastructure-all.conf"
-    else
-        log_error "未找到配置文件：deploy-infrastructure-all/deploy-infrastructure-all.conf"
-        return 1
-    fi
-    
-    # 集群选择逻辑（使用 CLUSTER，从环境变量、全局配置或默认值获取）
-    # 注意：CLUSTER 已经在文件开头通过命令行参数解析设置，这里只作为后备
-    # 如果 CLUSTER 未设置，尝试从全局配置读取
-    if [[ -z "${CLUSTER:-}" ]]; then
-        # 加载集群配置映射函数（如果尚未加载）
-        if [[ ! "$(type -t get_default_cluster)" == "function" ]]; then
-            if [[ -f "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh" ]]; then
-                source "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh"
-            fi
+    local config="$THIS_DIR/deploy-infrastructure-all.conf"
+    local selected="${CLUSTER:-}"
+    [[ "$selected" =~ ^C[0-9]+$ ]] || { log_error "必须显式选择 Cn 集群"; return 1; }
+    [[ -f "$config" ]] || { log_error "配置文件不存在"; return 1; }
+    # 配置是仓内受信任 Shell 文件。此处不加载全局默认集群或另一份节点清单。
+    # shellcheck source=/dev/null
+    source "$config"
+    export CLUSTER="$selected"
+    local name base count=0
+    # 清除上一轮选择的节点字段，支持不连续的节点编号。
+    while IFS= read -r name; do
+        [[ "$name" =~ ^SERVER_[0-9]+_ ]] && unset "$name"
+    done < <(compgen -v)
+    while IFS= read -r name; do
+        [[ "$name" == "${selected}_"* ]] || continue
+        base="${name#"${selected}_"}"
+        [[ "$base" == CLUSTER ]] && continue
+        # 当前配置的集群覆盖项为标量；禁止把数组悄悄截为第一个元素。
+        if [[ "$(declare -p "$name")" == 'declare -a '* || "$(declare -p "$name")" == 'declare -A '* ]]; then
+            log_error "暂不支持集群前缀数组覆盖: $name"
+            return 1
         fi
-        # 从全局配置读取默认集群（支持 C1/C2/.../KIND）
-        if command -v get_default_cluster &>/dev/null; then
-            export CLUSTER=$(get_default_cluster)
+        printf -v "$base" '%s' "${!name}"
+        if [[ "$base" =~ ^SERVER_[0-9]+_PUBLIC_IP$ && -n "${!name}" ]]; then
+            count=$((count+1))
         fi
-    fi
-    local cluster_selected="${CLUSTER:-C1}"
-    # 验证集群值格式：必须是 C{数字} 格式（如 C1, C2, C3, C10 等）
-    # 支持不连续的集群编号（如只有 C1 和 C3，没有 C2）
-    if [[ ! "$cluster_selected" =~ ^C[0-9]+$ ]]; then
-        log_error "无效的集群值: $cluster_selected (格式必须为 C{数字}，如 C1, C2, C3 等)"
-        return 1
-    fi
-    
-    log_info "🎯 使用集群配置: $cluster_selected"
-    
-    # 将 C*_SERVER_n_* 变量映射到 SERVER_n_*
-    # 支持所有可能的字段：TYPE, PUBLIC_IP, LOCAL_IP, USER, SECRET, PASS, SSH_PORT, DIR, 
-    #                     CURRENT_HOSTNAME, CLUSTER_HOSTNAME, EXTRA_LABELS, TAINTS
-    local server_num=1
-    local cluster_prefix="${cluster_selected}_"
-    
-    while true; do
-        # 检查是否存在对应集群的 SERVER_n_PUBLIC_IP（作为判断是否有该节点的依据）
-        local cluster_pub_ip_var="${cluster_prefix}SERVER_${server_num}_PUBLIC_IP"
-        
-        if [[ -z "${!cluster_pub_ip_var:-}" ]]; then
-            # 该节点不存在，停止映射
-            break
-        fi
-        
-        # 映射所有字段
-        local fields=("TYPE" "PUBLIC_IP" "LOCAL_IP" "USER" "SECRET" "PASS" "SSH_PORT" "DIR" 
-                      "CURRENT_HOSTNAME" "CLUSTER_HOSTNAME" "EXTRA_LABELS" "TAINTS")
-        
-        for field in "${fields[@]}"; do
-            local cluster_var="${cluster_prefix}SERVER_${server_num}_${field}"
-            local server_var="SERVER_${server_num}_${field}"
-            
-            if [[ -n "${!cluster_var:-}" ]]; then
-                # 使用间接变量赋值
-                eval "$server_var=\"${!cluster_var}\""
-            fi
-        done
-        
-        server_num=$((server_num+1))
-    done
-    
-    # 清空后续的 SERVER_n_* 变量（如果有的话）
-    local check_var_name="SERVER_${server_num}_PUBLIC_IP"
-    while [[ -n "${!check_var_name:-}" ]]; do
-        local fields=("TYPE" "PUBLIC_IP" "LOCAL_IP" "USER" "SECRET" "PASS" "SSH_PORT" "DIR" 
-                      "CURRENT_HOSTNAME" "CLUSTER_HOSTNAME" "EXTRA_LABELS" "TAINTS")
-        for field in "${fields[@]}"; do
-            eval "unset SERVER_${server_num}_${field}"
-        done
-        server_num=$((server_num+1))
-        check_var_name="SERVER_${server_num}_PUBLIC_IP"
-    done
-    
-    # 应用集群配置映射（使用 utils 中的通用函数）
-    if [[ -f "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh" ]]; then
-      source "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh"
-      apply_cluster_config_mapping "$cluster_selected"
-    fi
-    
-    log_success "已加载配置：$loaded (集群: $cluster_selected, 节点数: $((server_num-1)))"
+    done < <(compgen -v)
+    [[ "$count" -gt 0 ]] || { log_error "所选集群没有节点配置"; return 1; }
+    log_info "已加载 $selected 配置，节点数 $count（配置未连接远端核实）"
 }
 
 # 检查步骤脚本是否存在
@@ -266,7 +229,7 @@ step11_load_initial_images(){
 
 step13_ingress_and_harbor(){
     load_config || return 1
-    execute_step "step13_ingress_and_harbor.sh" "Ingress (Traefik) 与 Harbor 部署"
+    execute_step "step13_ingress_and_harbor.sh" "Ingress (Traefik) 部署（Harbor 在集群外）"
 }
 
 # 完整部署流程
@@ -276,24 +239,6 @@ deploy_all(){
     
     # 加载配置以获取开关状态
     load_config || return 1
-    
-    # 定义所有步骤及其开关（按执行顺序）
-    local steps=(
-        "step00_reset:集群重置:STEP00_ENABLED"
-        "step01_os_baseline:操作系统基线配置:STEP01_ENABLED"
-        "step02_runtime:容器运行时安装:STEP02_ENABLED"
-        "step03_k8s_binaries:Kubernetes二进制文件安装:STEP03_ENABLED"
-        "step04_kubeadm_init:Master节点初始化:STEP04_ENABLED"
-        "step05_cni_install:CNI网络插件安装:STEP05_ENABLED"
-        "step06_join_nodes:Worker节点加入集群:STEP06_ENABLED"
-        "step07_create_namespaces:命名空间管理:STEP07_ENABLED"
-        "step08_validate:集群验证和状态检查:STEP08_ENABLED"
-        "step09_storage:存储配置:STEP09_ENABLED"
-        "step10_k8s_nodes_management:Kubernetes节点管理:STEP10_ENABLED"
-        "step11_load-initial-images:初始镜像加载:STEP11_ENABLED"
-        "step12_ca_generation:统一根 CA 证书生成/轮换:STEP12_ENABLED"
-        "step13_ingress_and_harbor:Ingress (Traefik) 与 Harbor 部署:STEP13_ENABLED"
-    )
     
     # 部署前：同步离线包至各节点（如存在包准备脚本）
     if [[ "${PACKAGE_SYNC_ENABLED:-true}" == "true" ]]; then
@@ -310,20 +255,24 @@ deploy_all(){
         if [[ -n "$sync_script" ]]; then
             log_info "执行离线包同步（all）..."
             # 确保 CLUSTER 环境变量被传递到包同步脚本
-            CLUSTER="${CLUSTER:-C1}" "$sync_script" sync-packages-to-all-nodes all || log_warn "离线包同步返回非零，继续部署"
+            if ! CLUSTER="$CLUSTER" bash "$sync_script" sync-packages-to-all-nodes all; then
+                log_error "离线包同步失败，停止部署"
+                return 1
+            fi
         else
-            log_warn "包同步脚本不存在或无可执行权限，跳过包同步"
+            log_error "启用了包同步，但包同步脚本不存在或无可执行权限，停止部署"
             log_warn "  尝试的路径："
             log_warn "    - $PROJECT_ROOT/utils/package-preparation/package-sync.sh"
             log_warn "    - $SCRIPT_DIR/../utils/package-preparation/package-sync.sh"
             log_warn "    - $THIS_DIR/../utils/package-preparation/package-sync.sh"
+            return 1
         fi
     else
-        log_error "本次部署，没有把本地安装包同步到远程各节点！"
+        log_info "包同步已禁用；各步骤仍须检查目标节点的离线物料"
     fi
 
     # 执行所有启用的步骤
-    for step_info in "${steps[@]}"; do
+    for step_info in "${DEPLOY_STEPS[@]}"; do
         local step_name="${step_info%%:*}"
         local step_desc="${step_info#*:}"
         local step_desc="${step_desc%:*}"
@@ -360,10 +309,12 @@ deploy_all(){
 # 执行单个步骤（命令名可用下划线或连字符，如 step11_load_initial_images / step11_load-initial-images）
 run_single_step(){
     local cmd="${1//-/_}"
-    if declare -f "$cmd" >/dev/null 2>&1; then
-        "$cmd"
-        return $?
-    fi
+    case "$cmd" in
+        step00_reset|step01_os_baseline|step02_runtime|step03_k8s_binaries|step04_kubeadm_init|step05_cni_install|step06_join_nodes|step07_create_namespaces|step08_validate|step09_storage|step10_k8s_nodes_management|step11_load_initial_images|step12_ca_generation|step13_ingress_and_harbor)
+            "$cmd"
+            return $?
+            ;;
+    esac
     log_error "未知命令: $1"
     log_info "提示: 单步命令使用下划线，例如 step11_load_initial_images"
     log_info "或直接执行: CLUSTER=${CLUSTER:-C1} bash $STEPS_DIR/step11_load-initial-images.sh"
@@ -389,7 +340,7 @@ show_step_status(){
         "step09_storage.sh:存储配置"
         "step10_k8s_nodes_management.sh:Kubernetes节点管理"
         "step11_load-initial-images.sh:初始镜像加载"
-        "step13_ingress_and_harbor.sh:Ingress (Traefik) 与 Harbor 部署"
+        "step13_ingress_and_harbor.sh:Ingress (Traefik) 部署（Harbor 在集群外）"
     )
     
     for step_info in "${steps[@]}"; do
@@ -409,72 +360,65 @@ show_step_status(){
     done
 }
 
-# 解析命令行参数（支持 --cluster 或 -c）
+# 只打印当前总控调用顺序；不调用任何步骤或同步脚本。
+show_deployment_plan(){
+    local info name enabled flag
+    echo "[dry-run] 云上升级路径未经实机验证；本输出不表示新版已经可部署。"
+    echo "cluster=$CLUSTER configured_kubernetes=${CLUSTER_VERSION:-unset}"
+    echo "material_target=1.36.4; adapter/status=参见 docs/infrastructure-upgrade-audit.md"
+    echo "package_sync=${PACKAGE_SYNC_ENABLED:-true}"
+    for info in "${DEPLOY_STEPS[@]}"; do
+        name="${info%%:*}"
+        flag="${info##*:}"
+        enabled="${!flag:-true}"
+        printf '[dry-run] enabled=%s bash %q\n' "$enabled" "$STEPS_DIR/$name.sh"
+    done
+    echo "[dry-run] 不含 step00；未连接 SSH、未同步物料、未修改集群或容器。"
+    echo "[dry-run] 独立 Harbor 前置步骤和统一平台调用链仍待接入，不可据此宣称迁移完成。"
+}
+
+usage(){
+    echo "用法: $0 --cluster C1 [deploy|status|stepNN_name] [--dry-run]"
+    echo "无参数显示帮助；总控不自动调用 step00/清理。其他旧步骤仍待整改，禁止用于本次迁移。云上升级路径未经实机验证。"
+    echo "deploy --dry-run 只打印当前调用顺序；单步 --dry-run 只打印目标脚本。"
+}
+
 main(){
-    banner
-    
-    # 检查必要工具
-    if ! need bash; then
-        log_error "bash 未安装"
-        exit 1
-    fi
-    
-    # 检查项目结构
-    if [[ ! -d "$STEPS_DIR" ]]; then
-        log_error "步骤脚本目录不存在: $STEPS_DIR"
-        exit 1
-    fi
-    
-    # 使用解析后的参数（已移除 --cluster 参数）
-    set -- "${ORIGINAL_ARGS[@]}"
-    
-    # 显示当前集群配置（如果设置了）
-    if [[ -n "${CLUSTER:-}" ]]; then
-        log_info "🎯 当前集群配置: ${CLUSTER}"
-    fi
-    
-    # 加载配置（注意：必须在解析参数后调用，因为 load_config 会读取 CLUSTER）
-    if ! load_config; then
-        log_error "配置加载失败，请检查配置文件"
-        exit 1
-    fi
-    
-    # 命令行参数处理
-    if [[ $# -gt 0 ]]; then
-        case "$1" in
-            full|deploy|all) deploy_all ;;
-            status|steps) show_step_status ;;
-            help|--help|-h)
-                echo "用法: $0 [--cluster C1|C2] [命令]"
-                echo ""
-                echo "参数:"
-                echo "  --cluster, -c   集群选择 (格式：C{数字}，如 C1, C2, C3 等)，也可以通过环境变量 CLUSTER 设置"
-                echo ""
-                echo "命令:"
-                echo "  full, deploy, all     完整部署流程（默认）"
-                echo "  status, steps         检查各步骤脚本是否存在"
-                echo "  step11_load_initial_images  仅执行 Step11 初始镜像加载（连字符写法亦可）"
-                echo "  step00_reset ... step13_ingress_and_harbor  其他单步同理"
-                echo "  help                  显示此帮助"
-                echo ""
-                echo "示例:"
-                echo "  $0 --cluster C1 deploy"
-                echo "  CLUSTER=C1 $0 step11_load_initial_images"
-                echo "  CLUSTER=C1 bash $STEPS_DIR/step11_load-initial-images.sh verify"
-                echo ""
-                echo "注意：重置功能通过配置文件中的 STEP00_ENABLED 参数控制"
+    local action="" dry_run=false arg
+    for arg in "${ORIGINAL_ARGS[@]}"; do
+        case "$arg" in
+            --dry-run) dry_run=true ;;
+            *)
+                [[ -z "$action" ]] || { log_error "多余参数: $arg"; return 1; }
+                action="$arg"
                 ;;
-            step*) run_single_step "$1" || exit 1 ;;
-            *) run_single_step "$1" || exit 1 ;;
         esac
-    else
-        # 默认执行完整部署流程
-        log_info "未指定命令，执行完整部署流程"
-        deploy_all
-    fi
+    done
+    case "$action" in
+        ""|help|--help|-h) usage; return 0 ;;
+    esac
+    [[ "${CLUSTER:-}" =~ ^C[0-9]+$ ]] || { log_error "必须用 --cluster Cn 或 CLUSTER=Cn 显式指定目标集群"; return 1; }
+    load_config || return 1
+    case "$action" in
+        full|deploy|all)
+            if [[ "$dry_run" == true ]]; then show_deployment_plan; else deploy_all; fi
+            ;;
+        status|steps) show_step_status ;;
+        step*)
+            if [[ "$dry_run" == true ]]; then
+                # 与实际执行使用同一白名单；预演不调用步骤。
+                local command_name="${action//-/_}"
+                case "$command_name" in
+                    step00_reset|step01_os_baseline|step02_runtime|step03_k8s_binaries|step04_kubeadm_init|step05_cni_install|step06_join_nodes|step07_create_namespaces|step08_validate|step09_storage|step10_k8s_nodes_management|step11_load_initial_images|step12_ca_generation|step13_ingress_and_harbor)
+                        printf '[dry-run] cluster=%s step=%s; 未执行；云上升级路径未经实机验证\n' "$CLUSTER" "$command_name" ;;
+                    *) log_error "未知步骤: $action"; return 1 ;;
+                esac
+            else
+                run_single_step "$action"
+            fi
+            ;;
+        *) log_error "未知命令: $action"; return 1 ;;
+    esac
 }
 
 main "$@"
-
-
-

@@ -1,0 +1,977 @@
+{
+  "schema": 1,
+  "baseline_commit": "d661840e0c3a49bf1c5e8557236eb3380b0dadb8",
+  "scope": "audit follow-up, code/static and controller print-only mode; no SSH, deployment, deletion or service operations",
+  "cloud_status": "未经实机验证",
+  "shellcheck_version": "0.9.0",
+  "changed_shell_files": [
+    "deploy-infrastructure-all/deploy-infrastructure-all.sh",
+    "deploy-infrastructure-all/deploy-infrastructure-all-menu.sh",
+    "steps/step13_ingress_and_harbor.sh",
+    "utils/package-preparation/package-sync.sh",
+    "fix_permissions.sh"
+  ],
+  "static": [
+    {
+      "path": "deploy-infrastructure-all/deploy-infrastructure-all-menu.sh",
+      "sha256": "710eb50e3d9cda3fea47c25b6b2143322c7b8baa5de9df22fa7f32119662958e",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 0,
+      "shellcheck": []
+    },
+    {
+      "path": "deploy-infrastructure-all/deploy-infrastructure-all.sh",
+      "sha256": "ef51ab0cd7c099e3503eae7e4c4152126f037c0cfce6a9d9b2f2ddf7406e82c0",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 0,
+      "shellcheck": []
+    },
+    {
+      "path": "fix_permissions.sh",
+      "sha256": "ffe8b55d5c9074704db02d125d7788f55b2521919abfefc7c2a4256766bada92",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 0,
+      "shellcheck": []
+    },
+    {
+      "path": "steps/step00_reset.sh",
+      "sha256": "401cc4bea1e02f674720032350ef1e3854512e141ef13225c0cc85f0f38c77a5",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 10,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 18,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 26,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 27,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 385,
+          "code": 2154,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "steps/step01_os_baseline.sh",
+      "sha256": "2b278079d2a8ecc79d39cad1474eef0f8ea58dc9f67a437f8e0dab939180eb43",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 10,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 75,
+          "code": 2154,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "steps/step02_runtime.sh",
+      "sha256": "d527ab2b351f2b1714e20bde609a363b155c1c0ba73a9da27afb90d1b5c5bc87",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 10,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 14,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 15,
+          "code": 2088,
+          "level": "warning"
+        },
+        {
+          "line": 50,
+          "code": 2154,
+          "level": "warning"
+        },
+        {
+          "line": 216,
+          "code": 2155,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "steps/step03_k8s_binaries.sh",
+      "sha256": "5a88248535fb5cf97659c9b2aa3d42ac5bc80b59a5ca72797f824357c36f5a96",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 10,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 17,
+          "code": 2088,
+          "level": "warning"
+        },
+        {
+          "line": 67,
+          "code": 2154,
+          "level": "warning"
+        },
+        {
+          "line": 78,
+          "code": 2089,
+          "level": "warning"
+        },
+        {
+          "line": 84,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 84,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 84,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 144,
+          "code": 2140,
+          "level": "warning"
+        },
+        {
+          "line": 162,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 162,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 162,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 173,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 173,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 173,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 175,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 175,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 175,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 179,
+          "code": 2015,
+          "level": "info"
+        },
+        {
+          "line": 226,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 226,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 226,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 229,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 229,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 229,
+          "code": 2086,
+          "level": "info"
+        }
+      ]
+    },
+    {
+      "path": "steps/step04_kubeadm_init.sh",
+      "sha256": "fd588d61e5f0b892beeffd5a1ee2d06bf9d333f49420eb36535296084b1fc30d",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 10,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 124,
+          "code": 2154,
+          "level": "warning"
+        },
+        {
+          "line": 207,
+          "code": 2001,
+          "level": "style"
+        },
+        {
+          "line": 225,
+          "code": 2154,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "steps/step05_cni_install.sh",
+      "sha256": "4829836183c4b845b36d13d60cf3a56cf3f04a9ff9fa8ac24192bf768cd89d4c",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 10,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 48,
+          "code": 2088,
+          "level": "warning"
+        },
+        {
+          "line": 103,
+          "code": 2120,
+          "level": "warning"
+        },
+        {
+          "line": 125,
+          "code": 2089,
+          "level": "warning"
+        },
+        {
+          "line": 146,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 146,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 146,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 218,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 322,
+          "code": 2012,
+          "level": "info"
+        },
+        {
+          "line": 399,
+          "code": 2119,
+          "level": "info"
+        },
+        {
+          "line": 456,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 468,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 530,
+          "code": 2089,
+          "level": "warning"
+        },
+        {
+          "line": 536,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 536,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 536,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 547,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 547,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 547,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 616,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 616,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 616,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 619,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 619,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 619,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 623,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 623,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 623,
+          "code": 2086,
+          "level": "info"
+        }
+      ]
+    },
+    {
+      "path": "steps/step06_join_nodes.sh",
+      "sha256": "9a51eaf456b48fbebf73d883f73fbce659c417e12ce68865a4de27331ae029ff",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 10,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 12,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 13,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 106,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 130,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 154,
+          "code": 2089,
+          "level": "warning"
+        },
+        {
+          "line": 158,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 158,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 158,
+          "code": 2086,
+          "level": "info"
+        },
+        {
+          "line": 169,
+          "code": 2027,
+          "level": "warning"
+        },
+        {
+          "line": 169,
+          "code": 2090,
+          "level": "warning"
+        },
+        {
+          "line": 169,
+          "code": 2086,
+          "level": "info"
+        }
+      ]
+    },
+    {
+      "path": "steps/step07_create_namespaces.sh",
+      "sha256": "ca27eb97856695fc07be8139aba77cc907000a8acc42b9b94d63c64256d33b79",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 19,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 21,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 23,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 28,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 34,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 98,
+          "code": 2181,
+          "level": "style"
+        },
+        {
+          "line": 104,
+          "code": 2181,
+          "level": "style"
+        }
+      ]
+    },
+    {
+      "path": "steps/step08_validate.sh",
+      "sha256": "b2fa7a3b2105ca97c339417fa2b1891a938d25405d4a68d989a4d63916aa9a70",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 10,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 32,
+          "code": 2154,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "steps/step09_storage.sh",
+      "sha256": "73537ce21974cd7a33cda958af3da80bc586414edbdbd2a12d601926fc5b7273",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 28,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 203,
+          "code": 2154,
+          "level": "warning"
+        },
+        {
+          "line": 205,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 345,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 523,
+          "code": 2001,
+          "level": "style"
+        },
+        {
+          "line": 533,
+          "code": 2001,
+          "level": "style"
+        },
+        {
+          "line": 615,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 818,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 1112,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 1122,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 1207,
+          "code": 2034,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "steps/step10_k8s_nodes_management.sh",
+      "sha256": "cc1024a0609d48b1d306283b390a2b45b7ed3edfcb6980421d1171f73530a05b",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 37,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 41,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 42,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 113,
+          "code": 2154,
+          "level": "warning"
+        },
+        {
+          "line": 115,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 199,
+          "code": 2155,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "steps/step11_load-initial-images.sh",
+      "sha256": "36569d971e50f3aa8fc8946e891f7406fa40aefdd33b19dce05b2ae4156c6f30",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 19,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 32,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 33,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 39,
+          "code": 2088,
+          "level": "warning"
+        },
+        {
+          "line": 66,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 184,
+          "code": 2016,
+          "level": "info"
+        },
+        {
+          "line": 195,
+          "code": 2016,
+          "level": "info"
+        },
+        {
+          "line": 206,
+          "code": 2016,
+          "level": "info"
+        },
+        {
+          "line": 216,
+          "code": 2016,
+          "level": "info"
+        },
+        {
+          "line": 258,
+          "code": 2016,
+          "level": "info"
+        }
+      ]
+    },
+    {
+      "path": "steps/step12_ca_generation.sh",
+      "sha256": "b50d4b177b8c8228240f163a428c48549aec5eb91d358d096ef8fca4c8f402ab",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 25,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 27,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 29,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 39,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 44,
+          "code": 1091,
+          "level": "info"
+        }
+      ]
+    },
+    {
+      "path": "steps/step13_ingress_and_harbor.sh",
+      "sha256": "b711d828b24087e504e80382c9bb3b37e1e4036fddd6a7a877d8edaa1d108ccd",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 0,
+      "shellcheck": []
+    },
+    {
+      "path": "utils/common.sh",
+      "sha256": "12e1f4661da9525a56cd737e043dc03bf544c1ae5b9c71b8a346729bd450af5e",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 34,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 35,
+          "code": 2034,
+          "level": "warning"
+        },
+        {
+          "line": 75,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 78,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 81,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 104,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 168,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 251,
+          "code": 2088,
+          "level": "warning"
+        },
+        {
+          "line": 255,
+          "code": 2088,
+          "level": "warning"
+        },
+        {
+          "line": 255,
+          "code": 2295,
+          "level": "info"
+        },
+        {
+          "line": 263,
+          "code": 2015,
+          "level": "info"
+        },
+        {
+          "line": 264,
+          "code": 2015,
+          "level": "info"
+        },
+        {
+          "line": 265,
+          "code": 2015,
+          "level": "info"
+        },
+        {
+          "line": 312,
+          "code": 2029,
+          "level": "info"
+        },
+        {
+          "line": 368,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 368,
+          "code": 2155,
+          "level": "warning"
+        },
+        {
+          "line": 369,
+          "code": 2155,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "utils/image-cleanup/cron/install-cron.sh",
+      "sha256": "6fbef8c269f80dcbb8cc811364a6b4302b1ac35f82d87a1d4cbfbbaa973441bd",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 24,
+          "code": 2034,
+          "level": "warning"
+        }
+      ]
+    },
+    {
+      "path": "utils/image-cleanup/image-cleanup.sh",
+      "sha256": "c000aa04a7d21cf5ac0b82912c6b112a2b8d58c7299ae249c6a887ee16c02219",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 0,
+      "shellcheck": []
+    },
+    {
+      "path": "utils/image-cleanup/periodic-cleanup.sh",
+      "sha256": "78e605451df5e920adfc87390d316034b3f6a1b301b4ceb45b7325b12c59dc5f",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 0,
+      "shellcheck": []
+    },
+    {
+      "path": "utils/package-preparation/package-sync.sh",
+      "sha256": "1afc026d245668e2b1d47c2819263fd9f5052dd622f025a548b936d7978ec22b",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 0,
+      "shellcheck": []
+    },
+    {
+      "path": "utils/setup-runtime-and-disable-socket.sh",
+      "sha256": "1a88304e4d7e862329edff4bd6056b7ecb9f02da9c46c5e51673b829f586a3ab",
+      "bash_n_exit": 0,
+      "shellcheck_exit": 1,
+      "shellcheck": [
+        {
+          "line": 69,
+          "code": 1091,
+          "level": "info"
+        },
+        {
+          "line": 133,
+          "code": 2120,
+          "level": "warning"
+        },
+        {
+          "line": 218,
+          "code": 2119,
+          "level": "info"
+        },
+        {
+          "line": 253,
+          "code": 2119,
+          "level": "info"
+        },
+        {
+          "line": 364,
+          "code": 2015,
+          "level": "info"
+        }
+      ]
+    }
+  ],
+  "dry_run": [
+    {
+      "command": [
+        "bash",
+        "k8s/sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh"
+      ],
+      "exit": 0,
+      "stdout": "用法: k8s/sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh --cluster C1 [deploy|status|stepNN_name] [--dry-run]\n无参数显示帮助；总控不自动调用 step00/清理。其他旧步骤仍待整改，禁止用于本次迁移。云上升级路径未经实机验证。\ndeploy --dry-run 只打印当前调用顺序；单步 --dry-run 只打印目标脚本。\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "bash",
+        "k8s/sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh",
+        "--cluster",
+        "C1",
+        "deploy",
+        "--dry-run"
+      ],
+      "exit": 0,
+      "stdout": "ℹ️  已加载 C1 配置，节点数 3（配置未连接远端核实）\n[dry-run] 云上升级路径未经实机验证；本输出不表示新版已经可部署。\ncluster=C1 configured_kubernetes=1.30.4\nmaterial_target=1.36.4; adapter/status=参见 docs/infrastructure-upgrade-audit.md\npackage_sync=false\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step01_os_baseline.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step02_runtime.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step03_k8s_binaries.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step04_kubeadm_init.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step05_cni_install.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step06_join_nodes.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step07_create_namespaces.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step08_validate.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step09_storage.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step10_k8s_nodes_management.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step11_load-initial-images.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step12_ca_generation.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step13_ingress_and_harbor.sh\n[dry-run] 不含 step00；未连接 SSH、未同步物料、未修改集群或容器。\n[dry-run] 独立 Harbor 前置步骤和统一平台调用链仍待接入，不可据此宣称迁移完成。\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "bash",
+        "k8s/sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh",
+        "--cluster",
+        "C2",
+        "deploy",
+        "--dry-run"
+      ],
+      "exit": 0,
+      "stdout": "ℹ️  已加载 C2 配置，节点数 3（配置未连接远端核实）\n[dry-run] 云上升级路径未经实机验证；本输出不表示新版已经可部署。\ncluster=C2 configured_kubernetes=1.30.4\nmaterial_target=1.36.4; adapter/status=参见 docs/infrastructure-upgrade-audit.md\npackage_sync=false\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step01_os_baseline.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step02_runtime.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step03_k8s_binaries.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step04_kubeadm_init.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step05_cni_install.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step06_join_nodes.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step07_create_namespaces.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step08_validate.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step09_storage.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step10_k8s_nodes_management.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step11_load-initial-images.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step12_ca_generation.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step13_ingress_and_harbor.sh\n[dry-run] 不含 step00；未连接 SSH、未同步物料、未修改集群或容器。\n[dry-run] 独立 Harbor 前置步骤和统一平台调用链仍待接入，不可据此宣称迁移完成。\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "bash",
+        "k8s/sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all-menu.sh",
+        "--cluster",
+        "C1",
+        "deploy",
+        "--dry-run"
+      ],
+      "exit": 0,
+      "stdout": "ℹ️  已加载 C1 配置，节点数 3（配置未连接远端核实）\n[dry-run] 云上升级路径未经实机验证；本输出不表示新版已经可部署。\ncluster=C1 configured_kubernetes=1.30.4\nmaterial_target=1.36.4; adapter/status=参见 docs/infrastructure-upgrade-audit.md\npackage_sync=false\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step01_os_baseline.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step02_runtime.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step03_k8s_binaries.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step04_kubeadm_init.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step05_cni_install.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step06_join_nodes.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step07_create_namespaces.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step08_validate.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step09_storage.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step10_k8s_nodes_management.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step11_load-initial-images.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step12_ca_generation.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step13_ingress_and_harbor.sh\n[dry-run] 不含 step00；未连接 SSH、未同步物料、未修改集群或容器。\n[dry-run] 独立 Harbor 前置步骤和统一平台调用链仍待接入，不可据此宣称迁移完成。\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "bash",
+        "k8s/sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh",
+        "--cluster",
+        "C1",
+        "step11_load_initial_images",
+        "--dry-run"
+      ],
+      "exit": 0,
+      "stdout": "ℹ️  已加载 C1 配置，节点数 3（配置未连接远端核实）\n[dry-run] cluster=C1 step=step11_load_initial_images; 未执行；云上升级路径未经实机验证\n",
+      "stderr": ""
+    }
+  ],
+  "remaining_diagnostics": 144
+}
