@@ -1,0 +1,272 @@
+{
+  "schema": 1,
+  "cluster": "sunmoon-kind-main",
+  "phase": "preparation-only",
+  "dry_run": false,
+  "kubernetes": "1.36.4",
+  "kind": "0.33.0",
+  "calico": "3.32.2",
+  "storage_uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+  "materials": "/home/zymun/packages-to-be-installed/releases/kind-1.36.4-calico-3.32.2-linux-amd64",
+  "kubeconfig": "/home/zymun/.kube/sunmoon-kind-main.config",
+  "kubectl": "/home/zymun/packages-to-be-installed/releases/kind-1.36.4-calico-3.32.2-linux-amd64/bin/kubectl",
+  "registry": "harbor.sunmoonai.com:30443",
+  "kind_config": {
+    "kind": "Cluster",
+    "apiVersion": "kind.x-k8s.io/v1alpha4",
+    "name": "sunmoon-kind-main",
+    "networking": {
+      "apiServerAddress": "127.0.0.1",
+      "apiServerPort": 17443,
+      "disableDefaultCNI": true,
+      "podSubnet": "10.246.0.0/16",
+      "serviceSubnet": "10.98.0.0/16",
+      "kubeProxyMode": "iptables"
+    },
+    "nodes": [
+      {
+        "role": "control-plane",
+        "image": "sunmoon-offline/node:597367624b4748b7",
+        "extraMounts": [
+          {
+            "hostPath": "/data/kind-clusters/sunmoon-kind-main/control-plane/local-path",
+            "containerPath": "/var/local-path-provisioner"
+          },
+          {
+            "hostPath": "/data/kind-clusters/sunmoon-kind-main/control-plane/static",
+            "containerPath": "/data/kind-local-storage"
+          }
+        ],
+        "extraPortMappings": [
+          {
+            "containerPort": 30443,
+            "hostPort": 19443,
+            "listenAddress": "127.0.0.1",
+            "protocol": "TCP"
+          },
+          {
+            "containerPort": 30080,
+            "hostPort": 80,
+            "listenAddress": "0.0.0.0",
+            "protocol": "TCP"
+          },
+          {
+            "containerPort": 30444,
+            "hostPort": 30444,
+            "listenAddress": "0.0.0.0",
+            "protocol": "TCP"
+          },
+          {
+            "containerPort": 30445,
+            "hostPort": 30445,
+            "listenAddress": "0.0.0.0",
+            "protocol": "TCP"
+          },
+          {
+            "containerPort": 30446,
+            "hostPort": 30446,
+            "listenAddress": "0.0.0.0",
+            "protocol": "TCP"
+          }
+        ]
+      },
+      {
+        "role": "worker",
+        "image": "sunmoon-offline/node:597367624b4748b7",
+        "extraMounts": [
+          {
+            "hostPath": "/data/kind-clusters/sunmoon-kind-main/worker/local-path",
+            "containerPath": "/var/local-path-provisioner"
+          },
+          {
+            "hostPath": "/data/kind-clusters/sunmoon-kind-main/worker/static",
+            "containerPath": "/data/kind-local-storage"
+          }
+        ]
+      },
+      {
+        "role": "worker",
+        "image": "sunmoon-offline/node:597367624b4748b7",
+        "extraMounts": [
+          {
+            "hostPath": "/data/kind-clusters/sunmoon-kind-main/worker2/local-path",
+            "containerPath": "/var/local-path-provisioner"
+          },
+          {
+            "hostPath": "/data/kind-clusters/sunmoon-kind-main/worker2/static",
+            "containerPath": "/data/kind-local-storage"
+          }
+        ]
+      }
+    ]
+  },
+  "automatic_delete": false,
+  "creation_implemented": false,
+  "ready_for_creation": false,
+  "remaining_gates": [
+    "new managed Harbor backup independently restored",
+    "owner maintenance window: WSL compression and old control-plane downtime",
+    "formal SNI 30443 and Harbor acceptance (P3)",
+    "storage-gated creator/startup and CNI integration",
+    "fresh capacity/port/network admission at actual creation"
+  ],
+  "after_creation": [
+    "record kube-system UID and explicit kubeconfig without changing inbox",
+    "verify six actual Docker mounts and local-path StorageClass",
+    "render static PV nodeAffinity with actual main node names",
+    "registry trust and real image pull; shared platform deployment",
+    "prove Harbor data survives cluster rebuild",
+    "final approved cleanup"
+  ],
+  "read_only": true,
+  "verified_materials": [
+    "bin/kind",
+    "bin/kubectl",
+    "charts/calico-upstream.yaml",
+    "images/node-linux-amd64.tar",
+    "images/calico-cni-linux-amd64.tar",
+    "images/calico-node-linux-amd64.tar",
+    "images/calico-controllers-linux-amd64.tar",
+    "images/probe-linux-amd64.tar",
+    "kind.yaml",
+    "charts/calico.yaml"
+  ],
+  "storage": {
+    "layout": "SUNMOON_DATA_LAYOUT_V1",
+    "expected_uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+    "root": {
+      "target": "/mnt/sunmoon-data",
+      "source": "/dev/sde",
+      "fstype": "ext4",
+      "uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+      "options": "rw,relatime",
+      "maj:min": "8:64",
+      "fsroot": "/"
+    },
+    "binds": [
+      {
+        "target": "/data/kind-clusters",
+        "source": "/mnt/sunmoon-data/kind-clusters",
+        "identity": [
+          2112,
+          4718593
+        ]
+      },
+      {
+        "target": "/data/harbor",
+        "source": "/mnt/sunmoon-data/harbor",
+        "identity": [
+          2112,
+          524289
+        ]
+      }
+    ],
+    "legacy_storage": {
+      "inode": [
+        2096,
+        33554434
+      ],
+      "mount": {
+        "target": "/",
+        "source": "/dev/sdd",
+        "fstype": "ext4",
+        "uuid": "693faed3-cebb-473e-81ae-fd88f1fc76b4",
+        "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+        "maj:min": "8:48",
+        "fsroot": "/"
+      }
+    },
+    "available_bytes": 24355438592,
+    "mount_namespace": "mnt:[4026532219]",
+    "service_visibility": {
+      "docker_running": true,
+      "views": [
+        {
+          "service": "systemd",
+          "pid": 1,
+          "mount_namespace": "mnt:[4026532219]"
+        },
+        {
+          "service": "docker",
+          "pid": 329,
+          "mount_namespace": "mnt:[4026532219]"
+        }
+      ]
+    }
+  },
+  "ports": [
+    {
+      "address": "127.0.0.1",
+      "port": 17443,
+      "free": true
+    },
+    {
+      "address": "127.0.0.1",
+      "port": 19443,
+      "free": true
+    },
+    {
+      "address": "0.0.0.0",
+      "port": 80,
+      "free": false
+    },
+    {
+      "address": "0.0.0.0",
+      "port": 30444,
+      "free": false
+    },
+    {
+      "address": "0.0.0.0",
+      "port": 30445,
+      "free": false
+    },
+    {
+      "address": "0.0.0.0",
+      "port": 30446,
+      "free": false
+    }
+  ],
+  "existing_clusters": [
+    {
+      "name": "kind",
+      "networks": [
+        "10.244.0.0/16",
+        "10.96.0.0/16"
+      ]
+    },
+    {
+      "name": "sunmoon-kind-136",
+      "networks": [
+        "10.245.0.0/16",
+        "10.97.0.0/16"
+      ]
+    }
+  ],
+  "capacity": {
+    "memory_available_bytes": 79525531648,
+    "docker_filesystem_free_bytes": 485743845376,
+    "data_filesystem_free_bytes": 24355438592,
+    "initial_data_budget_bytes": 2147483648,
+    "minimum_data_free_after_budget_bytes": 21474836480,
+    "physical_windows": {
+      "CFreeBytes": 97992368128,
+      "DataVhdLength": 84628471808,
+      "remaining_data_growth_bytes": 22745710592,
+      "initial_node_budget_bytes": 10737418240,
+      "metadata_margin_bytes": 2147483648,
+      "projected_c_free_bytes": 62361755648,
+      "minimum_c_free_bytes": 53687091200
+    }
+  },
+  "blockers": [
+    "Port occupied: 80",
+    "Port occupied: 30444",
+    "Port occupied: 30445",
+    "Port occupied: 30446",
+    "new managed Harbor backup independently restored",
+    "owner maintenance window: WSL compression and old control-plane downtime",
+    "formal SNI 30443 and Harbor acceptance (P3)",
+    "storage-gated creator/startup and CNI integration",
+    "fresh capacity/port/network admission at actual creation"
+  ]
+}

@@ -1,3 +1,13 @@
+## 最新续接：2026-09-27 正式 KIND 参数与只读预检完成，尚未建群
+
+基线964811057e4091b51e495da5dc81cc24483d6478；本地luna、不push，开始工作树干净。本单元新增kind-infrastructure/formal/prepare.py及README，更新主方案当前状态，公开预检scripts/results/luna-formal-kind-preflight.20260927.json。没有创建器/apply，不能拿render结果直接裸kind create。
+
+- 复用isolated完整验收锁，现场10文件SHA和本地manifest逐字结构核验通过；未写旧物料批次、未下载。配置main三节点/六挂载按批准路径；API17443、pod10.246/16、service10.98/16，TLS下一跳127.0.0.1:19443→node30443，保留原80/30444–46监听；宿主Harbor路径不进KIND。
+- sudo只读check实际退出2（未准建群，非成功创建）：存储UUID/PID1/Docker视图正确、旧目录设备/inode仍2096/33554434；新17443/19443空闲，80/30444–46占用。旧/136控制面GET kubeadm-config确认分别10.244/10.96与10.245/10.97，新网段与这些及当前主机路由无重叠。check现在要求旧控制面running；P3停服后未来创建器应消费维护快照并重核容器身份，不为预检重启旧控制面。
+- 最新Cfree97992368128B，dataVHDX84628471808B，datafree24355438592B。初始节点预算10GiB+元数据2GiB+数据盘长满剩余增长后C预期62361755648B（≥50GiB）；data初始2GiB+20GiB保留可满足。此预算不含独立Harbor恢复副本/平台增长，不代表恢复空间问题解决，也不是实际配额。Windows只读PowerShell已执行。
+- plan/render及Python AST检查已执行；未应用测试套件、未建目录/节点/PV、未改kubeconfig、未启动/停止容器、未清理。check只通过本地Docker socket查询和控制面内GET，不泄露凭据。
+- 继续：补正式创建/存储门禁自启/CNI统一接线，以及P3维护卡/执行器。注意现SNI正式preview默认19443在P4前无后端，P3需先按已批准设计临时转发旧worker且核对其NodePort，不能把19443未建成当作全部域名已验。新managed备份独立恢复受空间限制仍未完成；不得降余量或擅自提前清理。旧控制面具体停服窗口尚未批准；owner压缩仍合并入口窗口。inbox旧kind不变，最终清理必须做，整体未完成，不通知“luna做完了”。无后台会话/子agent。
+
 ## 最新续接：2026-09-27 持续读写模式、冻结备份与系统盘完整归档通过
 
 基线f0affe960ec940ba05e8612f64c0f696dd480c0c；本地luna、不push。新host_mode.py、writer_config.py；修改host_runtime/host_backup/host_verify/host_write_verify及操作文档。未改平台版本、未打扫描器镜像补丁。
