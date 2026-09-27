@@ -2,6 +2,14 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# SUNMOON_DATA_LAYOUT_V1: new services must explicitly select this layout.
+# Never source configuration for the new read-only guard.
+if [[ "${1:-}" == "--layout" ]]; then
+  [[ "${2:-}" == "sunmoon-data" ]] || { echo 'Unknown storage layout' >&2; exit 2; }
+  shift 2
+  exec python3 "$SCRIPT_DIR/sunmoon-data-storage.py" check "$@"
+fi
+[[ $# -eq 0 ]] || { echo 'Unexpected storage-check arguments' >&2; exit 2; }
 CONF="${SCRIPT_DIR}/deploy-kind.conf"
 
 read_pv_mode_from_conf() {
@@ -15,6 +23,9 @@ read_pv_mode_from_conf() {
 }
 
 read_pv_mode_from_conf
+[[ "$KIND_PV_STORAGE_MODE" == native || "$KIND_PV_STORAGE_MODE" == vhd ]] || {
+  echo 'Unknown KIND_PV_STORAGE_MODE; use --layout sunmoon-data for new services' >&2; exit 2;
+}
 
 # --- native：WSL 发行版内普通目录，不要求独立 VHD / fstab ---
 if [[ "${KIND_PV_STORAGE_MODE}" == "native" ]]; then
@@ -53,13 +64,13 @@ fi
 
 # Guard against false-positive mounts that point to the WSL system disk.
 if [[ -n "$root_src" ]]; then
-  if [[ "$docker_src" == "$root_src" || "$docker_src" == "$root_src["* ]]; then
+  if [[ "$docker_src" == "$root_src" || "$docker_src" == "${root_src}["* ]]; then
     ok=false
   fi
-  if [[ "$pv_src" == "$root_src" || "$pv_src" == "$root_src["* ]]; then
+  if [[ "$pv_src" == "$root_src" || "$pv_src" == "${root_src}["* ]]; then
     ok=false
   fi
-  if [[ "$bind_src" == "$root_src" || "$bind_src" == "$root_src["* ]]; then
+  if [[ "$bind_src" == "$root_src" || "$bind_src" == "${root_src}["* ]]; then
     ok=false
   fi
 fi

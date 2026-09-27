@@ -2,7 +2,7 @@
 
 > **统一目标：以后只有一套部署代码，加上两种建集群的方式。本地把平台和应用跑通，云上除了建集群那一步，其余走的是同一条路。**
 
-版本 0.4，2026-09-27。**所有者总体同意方案并补充 100 GiB 上限与回收调整；部署、迁移、数据盘创建和入口切换仍按方案待实施。已单独获批并执行的 R1/R4 回收见第 8 节。** 本轮未新建 registry-platform 代码、未改部署开关、未安装/迁移/停服/重建集群，未连接云主机。
+版本 0.5，2026-09-27。**所有者总体同意方案并补充 100 GiB 上限与回收调整；部署、迁移、数据盘创建和入口切换仍按方案待实施。已单独获批并执行的 R1/R4 回收见第 8 节。** 本轮按“继续”进入准备代码阶段，已完成新数据盘脚本与所有者执行卡；未新建 registry-platform、未改部署开关、未安装/迁移/停服/建群，未连接云主机。
 
 ## 1. 已确定的目标与顺序
 
@@ -119,7 +119,7 @@ C:\wsl-disks\sunmoon-data.vhdx
 
 主入口继续使用仓库 `kind-infrastructure/deploy-kind/attach-vhds.ps1`、开机/登录计划任务与 `deploy-kind/check-storage-mounts.sh`。`mount/` 中现有备查副本应变成明确转发/弃用提示，避免保留两套会漂移的逻辑。
 
-**现有 attach 脚本写死 E 盘，并会 umount/mount `/data/kind-local-storage`、旧 Docker 盘等，本轮绝不能原样执行。**未来修改必须增加新布局模式，只处理本次 VHDX、`/mnt/sunmoon-data`、`/data/kind-clusters`、`/data/harbor`，不用旧盘自动清理循环，不重启 Docker 或 WSL。脚本先按 UUID/设备/源子目录识别现状；正确挂载复用，不符则失败，不强制卸载忙碌目录。
+**旧版 attach 曾写死 E 盘并卸载旧目录，本轮已替换该入口，历史代码保留在 Git 历史中。**现行 `SUNMOON_DATA_LAYOUT_V1` 默认打印计划，只有所有者明确加 `-Apply` 才处理新盘。mount/ 两个入口转发到 deploy-kind 的同一实现。新增 `sunmoon-data-storage.py` 执行 check/setup/mount，setup/mount 默认只打印；不会格式化、卸载、启动 Docker 或关闭 WSL。创建/格式化单独由所有者执行 `initialize-sunmoon-data.ps1 -Apply`，已有盘一律拒绝重新创建。
 
 检查入口扩展新模式：
 
@@ -140,125 +140,15 @@ C:\wsl-disks\sunmoon-data.vhdx
 
 预留接口：`backup plan --scope databases,object-storage,private`、`backup export --target <external-disk|encrypted-object-store>`、`backup verify`、`backup restore --into <隔离目录>`（尚未实现）。配置只记录目标引用、加密公钥/密钥获取方法和凭据文件引用，不打印秘密。归档根目录、临时目录与目标目录必须在排除表中，避免备份 `~/private` 时递归包含历史备份。外部加密的恢复密钥须另由所有者保存，不能只放在被加密的同一备份里。
 
-### 2.6 所有者本人执行的管理员 PowerShell 命令（审阅稿）
+### 2.6 所有者本人执行的管理员 PowerShell 步骤
 
-**以下命令本轮均未执行。**先审阅并实现新 attach/check 脚本，再由所有者本人在 Windows 管理员 PowerShell 执行。创建/格式化只针对新文件和唯一新增空设备；任何既有文件、额外新设备或已识别文件系统均停止，不猜设备名。WSL 管理员附盘要求见 [Microsoft WSL 文档](https://learn.microsoft.com/en-us/windows/wsl/wsl2-mount-disk)。
+完整、可直接粘贴的命令统一维护在 [所有者 100 GiB 数据盘操作卡](owner-data-disk-100g.md)，包含固定版本脚本发布及 SHA256、首次创建/格式化/挂载、计划任务和中断续接。旧的内联创建/fstab 命令由该卡替代，避免两套实现漂移。
 
-**A. 核查、按审定上限创建动态 VHDX、附加及格式化（仅第一次）：**
+执行顺序：先发布四个固定脚本到 Windows 和 root 所有的 `/opt/sunmoon/admin/storage/storage-20260927-v1`，再由所有者管理员窗口显式运行创建脚本 `-Apply`，读取 UUID，跑新布局检查；正确后才注册附盘任务。任何哈希/容量/UUID/挂载冲突都停止。现有 RemoteSigned 拒绝直接执行 UNC 未签名脚本，因此卡中先本地发布；不调整系统执行策略，仍被拒绝时由所有者处理签名。
 
-```powershell
-$ErrorActionPreference = 'Stop'
-$Distro = 'Ubuntu'
-$DataMaxGiB = 100 # 所有者 2026-09-27 明确批准；GiB，动态扩展上限
-if ($DataMaxGiB -lt 53) { throw '低于本次数据量三倍；先刷新测量并重新审定' }
-$ExpectedBytes = [int64]$DataMaxGiB * 1GB
-$MaxMiB = [int64]$DataMaxGiB * 1024
-$Vhd = 'C:\wsl-disks\sunmoon-data.vhdx'
-$IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-if (-not $IsAdmin) { throw '请所有者在管理员 PowerShell 执行' }
-Get-Volume -DriveLetter C | Select-Object DriveLetter,Size,SizeRemaining
-wsl.exe --version
-wsl.exe -l -v
-if ($LASTEXITCODE -ne 0) { throw 'WSL 查询失败' }
-if (Test-Path -LiteralPath $Vhd) { throw 'VHDX 已存在：不要重复创建或格式化，改走 UUID 复核挂载' }
-if ((Get-Volume -DriveLetter C).SizeRemaining -lt ($ExpectedBytes + 50GB + 20GB + 2GB)) { throw '不足批准上限、50 GiB 保底及新增备份/元数据预算' }
-New-Item -ItemType Directory -Path 'C:\wsl-disks' -Force | Out-Null
-$DiskpartFile = 'C:\wsl-disks\create-sunmoon-data.txt'
-@(('create vdisk file="{0}" maximum={1} type=expandable' -f $Vhd,$MaxMiB),'exit') | Set-Content -LiteralPath $DiskpartFile -Encoding Ascii
-diskpart.exe /s $DiskpartFile
-if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $Vhd)) { throw 'VHDX 创建失败' }
-$Before = @(wsl.exe -d $Distro -u root -- lsblk -dnpo NAME)
-if ($LASTEXITCODE -ne 0) { throw '无法读取附盘前设备' }
-wsl.exe --mount --vhd $Vhd --bare
-if ($LASTEXITCODE -ne 0) { throw '附盘失败；不要继续格式化' }
-$After = @(wsl.exe -d $Distro -u root -- lsblk -dnpo NAME)
-if ($LASTEXITCODE -ne 0) { throw '无法读取附盘后设备' }
-$NewDevices = @(Compare-Object $Before $After | Where-Object SideIndicator -eq '=>' | ForEach-Object { $_.InputObject.Trim() })
-if ($NewDevices.Count -ne 1) { throw '不是唯一新增设备，停止人工核对' }
-$DataDevice = $NewDevices[0]
-$Size = (wsl.exe -d $Distro -u root -- blockdev --getsize64 $DataDevice).Trim()
-if ($LASTEXITCODE -ne 0 -or [int64]$Size -ne $ExpectedBytes) { throw '新增设备大小与批准值不符' }
-wsl.exe -d $Distro -u root -- lsblk -o NAME,SIZE,FSTYPE,UUID,MOUNTPOINTS $DataDevice
-$Signatures = @(wsl.exe -d $Distro -u root -- wipefs --no-act --noheadings $DataDevice)
-if ($LASTEXITCODE -ne 0 -or ($Signatures -join '').Trim()) { throw '设备已有签名或无法确认空盘，禁止格式化' }
-wsl.exe -d $Distro -u root -- mkfs.ext4 -L sunmoon-data -m 1 $DataDevice
-if ($LASTEXITCODE -ne 0) { throw '格式化失败' }
-$DataUuid = (wsl.exe -d $Distro -u root -- blkid -s UUID -o value $DataDevice).Trim()
-if ($LASTEXITCODE -ne 0 -or $DataUuid -notmatch '^[0-9a-fA-F-]{36}$') { throw '未取得有效 UUID' }
-$DataUuid | Set-Content -LiteralPath 'C:\wsl-disks\sunmoon-data.uuid' -Encoding Ascii
-```
+本轮完成 PowerShell Parser、bash -n、ShellCheck、Python AST，以及 Linux 只打印/缺盘拒绝/旧 native 检查；[只读证据](../../scripts/results/luna-data-storage-preparation.20260927.json)。**数据 VHDX 尚不存在，Windows 创建/附盘/格式化和重启均未实操，管理员步骤由所有者本人执行。**新 Harbor/KIND 启动服务与挂载门禁的集成尚待后续单元，不把检查脚本存在等同于服务已受保护。
 
-**B. 新挂载点与 fstab（同一管理员 PowerShell；只处理三个新目录）：**
-
-```powershell
-$LinuxSetup = @'
-set -euo pipefail
-uuid="$1"
-old_identity=$(stat -c '%d:%i' /data/kind-local-storage)
-for target in /mnt/sunmoon-data /data/kind-clusters /data/harbor; do
-  if findmnt -rn -M "$target" >/dev/null; then
-    echo "目标已挂载：请改走现状核验 $target" >&2; exit 1
-  fi
-  if awk -v p="$target" '$1 !~ /^#/ && $2 == p {found=1} END {exit !found}' /etc/fstab; then
-    echo "fstab 已有该目标：停止，禁止追加重复项 $target" >&2; exit 1
-  fi
-  if [ -e "$target" ]; then
-    test -d "$target" && test ! -L "$target"
-    test -z "$(find "$target" -mindepth 1 -maxdepth 1 -print -quit)"
-  fi
-done
-mkdir -p /mnt/sunmoon-data /data/kind-clusters /data/harbor
-cp -a /etc/fstab "/etc/fstab.before-sunmoon-data.$(date +%Y%m%dT%H%M%S)"
-printf '\nUUID=%s /mnt/sunmoon-data ext4 defaults,nofail,x-systemd.device-timeout=10s 0 2\n' "$uuid" >> /etc/fstab
-printf '%s\n' '/mnt/sunmoon-data/kind-clusters /data/kind-clusters none bind,nofail,x-systemd.requires=/mnt/sunmoon-data 0 0' '/mnt/sunmoon-data/harbor /data/harbor none bind,nofail,x-systemd.requires=/mnt/sunmoon-data 0 0' >> /etc/fstab
-systemctl daemon-reload
-mount /mnt/sunmoon-data
-test "$(findmnt -n -o UUID -M /mnt/sunmoon-data)" = "$uuid"
-mkdir -p /mnt/sunmoon-data/kind-clusters /mnt/sunmoon-data/harbor
-mount /data/kind-clusters
-mount /data/harbor
-test "$(stat -c '%d:%i' /data/kind-local-storage)" = "$old_identity"
-for target in /mnt/sunmoon-data /data/kind-clusters /data/harbor; do
-  findmnt -M "$target" -o TARGET,SOURCE,FSTYPE,UUID
- done
-'@
-[System.IO.File]::WriteAllText('C:\wsl-disks\sunmoon-data-setup.sh', ($LinuxSetup -replace "`r", ''), [System.Text.UTF8Encoding]::new($false))
-wsl.exe -d $Distro -u root -- bash /mnt/c/wsl-disks/sunmoon-data-setup.sh $DataUuid
-if ($LASTEXITCODE -ne 0) { throw '新目录挂载失败：保留现场，勿 mount -a 或触碰旧目录' }
-```
-
-B 阶段中途失败后不能盲目重跑 A 格式化或重复追加 fstab；先按 UUID/挂载/备份检查已完成步骤。目录权限由各目标组件按 UID/GID 初始化，不在此放开所有权限。
-
-**C. 部署经审阅的新 attach 脚本与计划任务：**
-
-以下接口需在 P1 实现；当前仓库旧脚本不能运行。标记校验用于防止误拷贝旧版，文件摘要另由实际批准提交记录。
-
-```powershell
-$AttachSource = '\\wsl.localhost\Ubuntu\home\zymun\worktrees\luna\k8s\sunmoonai\kind-infrastructure\deploy-kind\attach-vhds.ps1'
-$Attach = 'C:\wsl-disks\attach-vhds.ps1'
-if (-not (Select-String -LiteralPath $AttachSource -SimpleMatch 'SUNMOON_DATA_LAYOUT_V1' -Quiet)) { throw '尚不是获准的新布局脚本，禁止使用旧版' }
-Copy-Item -LiteralPath $AttachSource -Destination $Attach
-$CheckScript = '/home/zymun/worktrees/luna/k8s/sunmoonai/kind-infrastructure/deploy-kind/check-storage-mounts.sh'
-& $Attach -Mode SunmoonData -Distro Ubuntu -VhdPath $Vhd -ExpectedUuid $DataUuid -CheckScript $CheckScript
-if ($LASTEXITCODE -ne 0) { throw '挂载核验失败，不注册自动启动' }
-$TaskName = 'sunmoon-data-mount'
-if (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue) { throw '任务已存在，先审查，不覆盖' }
-$TaskArgs = '-NoProfile -NonInteractive -File "{0}" -Mode SunmoonData -Distro Ubuntu -VhdPath "{1}" -ExpectedUuid "{2}" -CheckScript "{3}"' -f $Attach,$Vhd,$DataUuid,$CheckScript
-$Action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $TaskArgs
-$Owner = [Security.Principal.WindowsIdentity]::GetCurrent().Name
-$Triggers = @((New-ScheduledTaskTrigger -AtStartup),(New-ScheduledTaskTrigger -AtLogOn -User $Owner))
-$Principal = New-ScheduledTaskPrincipal -UserId $Owner -LogonType Interactive -RunLevel Highest
-$Settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 3)
-Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Triggers -Principal $Principal -Settings $Settings
-Start-ScheduledTask -TaskName $TaskName
-Get-ScheduledTaskInfo -TaskName $TaskName | Select-Object LastRunTime,LastTaskResult
-wsl.exe -d Ubuntu -u root -- bash $CheckScript --layout sunmoon-data --expected-uuid $DataUuid
-if ($LASTEXITCODE -ne 0) { throw '最终存储检查失败，禁止启动新 Harbor/新 KIND' }
-```
-
-WSL 发行版按 Windows 用户注册，任务使用所有者身份而不是 SYSTEM。上述 Interactive 任务有开机和登录双触发，**未登录时不保证执行**，登录触发及启动门禁兜底；若要求登录前运行，所有者需另在任务计划程序设置该用户“无论是否登录都运行”并私下提供系统所需凭据，不写入命令/文档。任务入口及检查脚本应在正式运行前从临时 worktree 发布到稳定、固定提交的管理目录，届时更新这两个路径。
-
-只读查询任务不等于重启验收；WSL/Windows 重启验收并入入口切换与压缩维护窗口，避免直接 `wsl --shutdown` 杀掉现有集群。恢复操作仅针对新盘；已被组件使用时不得强制卸载。原 `docker-pv` 旧任务若存在，先查看动作，另获准停用旧挂载任务，禁止两套任务竞争；不自动删除历史任务。
+首次管理员附盘依据 [Microsoft WSL 文档](https://learn.microsoft.com/en-us/windows/wsl/wsl2-mount-disk)。自动任务用发行版所属用户，登录前执行不保证；旧任务如仍引用旧脚本须先审查。重启验收与手动压缩并入入口切换窗口，当前不关闭 WSL。旧路径不得叠挂新盘；机器外备份落点仍待所有者决定。
 
 ## 3. 独立仓库模块：拟建结构与接口
 
@@ -280,7 +170,7 @@ sunmoonai/registry-platform/
   docs/first-cloud-checklist.md
 ```
 
-所有者已授权未来修改 `sunmoonai/infrastructure/`；这不改变本轮“只写方案”的限制。脚本在批准实施后再开发。
+所有者已授权修改 `sunmoonai/infrastructure/`。本轮“继续”已推进存储准备代码；以下仓库模块及云端接线尚未实现，不能把设计接口当可执行命令。
 
 ### 3.1 参数与职责
 
@@ -440,7 +330,7 @@ CLUSTER=C1 deploy-infrastructure-all.sh --dry-run
 | 单元 | 交付 | 当前状态 |
 | --- | --- | --- |
 | P0 方案审阅 | 本文、磁盘/端口事实、范围与停服方案 | 总体方向已定，新增决定已同步；本轮另完成明确批准的 R1/R4 回收，部署未执行 |
-| P1 统一代码与离线物料 | registry-platform、四环境关闭集群内安装、云 steps/dry-run、bash -n/shellcheck 证据、历史标记、存储脚本适配 | 待批准写代码；无云端实操 |
+| P1 统一代码与离线物料 | registry-platform、四环境关闭集群内安装、云 steps/dry-run、bash -n/shellcheck 证据、历史标记、存储脚本适配 | 已完成新数据盘脚本及只读检查；registry-platform、集群消费配置、云接线/物料仍待完成，无云端实操 |
 | P1b 数据盘 | 所有者本人创建/附加 C 盘 VHDX，验证两条新 bind、启动门禁、备份接口 | 管理员操作由所有者执行；须在导入 Harbor 和建正式集群前完成 |
 | P2 本地候选恢复 | 同版本官方 Harbor，PG17 逻辑恢复、密钥映射、全目录摘要及备用入口验证 | 待批准独立目录/容器/迁移演练 |
 | P3 本地入口维护 | 新冻结备份、所有者关闭 WSL/压缩、挂载复核、30443 接管与原端口影响处理、TLS/全部域名/推拉/回退验证 | 需精确实施卡与停服批准；不能默认停止旧控制面 |
@@ -449,7 +339,7 @@ CLUSTER=C1 deploy-infrastructure-all.sh --dry-run
 
 创建正式集群后记录新的 kube-system UID、独立 kubeconfig 和版本匹配 kubectl，再更新 inbox 门禁。此前当前业务 inbox 仍指向旧 `kind`；进入 P3 控制面停机窗口时必须暂停，不能让远程助手继续向不可用 API 发版。
 
-本轮交回文件、实际当前集群与工具路径见 [交接说明](luna-handoff-and-inbox-targets.md)。以上新增模块、配置修改、迁移和云代码测试均未执行；所有者的方向选择不等于这些单元已获实施批准。
+本轮交回文件、实际当前集群与工具路径见 [交接说明](luna-handoff-and-inbox-targets.md)。本轮只有存储准备脚本和只读检查落地；registry-platform、云配置改造、迁移和云代码测试尚未完成，停服切换须遵守实施卡。
 
 
 ## 8. WSL 回收与所有者最新决定

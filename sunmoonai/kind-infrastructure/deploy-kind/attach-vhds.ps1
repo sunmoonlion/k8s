@@ -1,51 +1,44 @@
-$ErrorActionPreference = "SilentlyContinue"
-Start-Sleep -Seconds 20
-
-# 仅当 WSL 内 deploy-kind.conf 设置 KIND_PV_STORAGE_MODE=vhd 时需要本脚本（计划任务/开机挂载）。
-# native 模式请勿再挂载 E 盘 vhdx；可禁用本计划任务。
-$WslUser = "zymun"
-$CheckScript = "/home/zymun/master/k8s/sunmoonai/kind-infrastructure/deploy-kind/check-storage-mounts.sh"
-
-function Notify-Failure($code) {
-  $title = "docker-pv mount failed"
-  $text = "WSL storage mount check failed (exit code: $code).`nRun: check-storage-mounts.sh"
-
-  try {
-    Add-Type -AssemblyName System.Windows.Forms
-    [void][System.Windows.Forms.MessageBox]::Show($text, $title, "OK", "Error")
+# SUNMOON_DATA_LAYOUT_V1
+# Local WSL; owner-run admin operation. Default: print plan only.
+# No shutdown, formatting, unmount, Docker restart, or legacy-path modification.
+[CmdletBinding()]
+param(
+    [ValidateSet('SunmoonData')][string]$Mode = 'SunmoonData',
+    [string]$Distro = 'Ubuntu',
+    [string]$VhdPath = 'C:\wsl-disks\sunmoon-data.vhdx',
+    [string]$ExpectedUuid = '',
+    [string]$CheckScript = '/home/zymun/worktrees/luna/k8s/sunmoonai/kind-infrastructure/deploy-kind/check-storage-mounts.sh',
+    [switch]$Apply
+)
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+if ($Distro -notmatch '^[a-zA-Z0-9._-]+$') { throw 'Invalid distribution name' }
+if ($VhdPath -cne 'C:\wsl-disks\sunmoon-data.vhdx') { throw 'This owner-approved layout uses only C:\wsl-disks\sunmoon-data.vhdx' }
+if ($CheckScript -notmatch '^/[a-zA-Z0-9._/-]+/check-storage-mounts\.sh$') { throw 'Invalid check script path' }
+$StorageScript = $CheckScript -replace 'check-storage-mounts\.sh$', 'sunmoon-data-storage.py'
+if (-not $Apply) {
+    [pscustomobject]@{
+        DryRun=$true; Mode=$Mode; Distro=$Distro; VhdPath=$VhdPath
+        ExpectedUuid=$ExpectedUuid; CheckScript=$CheckScript
+        Actions='verify existing UUID or attach one VHD; mount only three new fstab targets; strict read-only check'
+        Protected='/data/kind-local-storage; existing containers/volumes; Docker/WSL state'
+    } | ConvertTo-Json
     return
-  } catch {}
-
-  try {
-    & msg * "$title - $text" *> $null
-  } catch {}
 }
-
-function Mount-Vhd-Idempotent($path) {
-  # `wsl --mount` may return localized/unstable codes even when VHD is already attached.
-  # Final success is determined by check-storage-mounts.sh at the end.
-  & wsl --mount --vhd $path --bare *> $null
-  return
-}
-
-Mount-Vhd-Idempotent "E:\wsl-disks\docker-data.vhd"
-Mount-Vhd-Idempotent "E:\kind-local-storage\pv-kind-local-storage.vhdx"
-
-# Cleanup possible stale stacked mounts (ignore failures).
-& wsl -u root -e umount /data/kind-local-storage *> $null
-& wsl -u root -e umount /mnt/pv-kind-ext4 *> $null
-& wsl -u root -e umount /mnt/docker-ext4 *> $null
-
-# Mount target points from /etc/fstab (ignore mount command failures, verify via check script).
-& wsl -u root -e mount /mnt/docker-ext4 *> $null
-& wsl -u root -e mount /mnt/pv-kind-ext4 *> $null
-& wsl -u root -e mount /data/kind-local-storage *> $null
-
-# Final truth source: repository storage check script.
-& wsl -u $WslUser -e $CheckScript
+if ($ExpectedUuid -notmatch '^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$') { throw 'ExpectedUuid must come from the owner-created ext4 disk' }
+$Admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $Admin) { throw 'Owner must run in Administrator PowerShell' }
+if (-not (Test-Path -LiteralPath $VhdPath -PathType Leaf)) { throw 'VHDX does not exist; use the owner creation procedure first' }
+& wsl.exe -d $Distro -u root -- test -f $StorageScript
+if ($LASTEXITCODE -ne 0) { throw 'Storage helper missing; no disk was attached' }
+# A present expected UUID is checked by the Linux helper for uniqueness/size/type.
+& wsl.exe -d $Distro -u root -- blkid -U $ExpectedUuid
 if ($LASTEXITCODE -ne 0) {
-  Notify-Failure $LASTEXITCODE
-  exit $LASTEXITCODE
+    & wsl.exe --mount --vhd $VhdPath --bare
+    if ($LASTEXITCODE -ne 0) { throw 'VHD attach failed; investigate, do not blindly unmount/retry' }
 }
-
-exit 0
+& wsl.exe -d $Distro -u root -- python3 $StorageScript mount --expected-uuid $ExpectedUuid --apply
+if ($LASTEXITCODE -ne 0) { throw 'Mount validation failed; do not start Harbor/KIND' }
+& wsl.exe -d $Distro -u root -- bash $CheckScript --layout sunmoon-data --expected-uuid $ExpectedUuid
+if ($LASTEXITCODE -ne 0) { throw 'Final storage guard failed; do not start Harbor/KIND' }
+Write-Output 'SUNMOON_DATA_LAYOUT_V1 mount check passed. No services were started.'

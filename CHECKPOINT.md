@@ -1,5 +1,8 @@
 # Luna 工作检查点
 
+**当前单元（2026-09-27）：按所有者“继续”完成 100 GiB 数据盘准备代码；创建/格式化/挂载仍须所有者管理员 PowerShell 执行。**操作卡 `sunmoonai/kind-infrastructure/docs/owner-data-disk-100g.md`；UUID 尚无，下一步取得挂盘结果后接宿主 Harbor。剩余清理继续留到迁移验收后，必须做。下文历史记录按时间保留，以本文最新决定为准。
+
+
 当前单元：独立 KIND A/B、Harbor 冷备份及只读隔离恢复、模板前后端物料 T0–T4 均完成。物料原始下载失败已由公开归档路径解决；本次通过应用产物/后端静态构建检查，未组装生产 OCI 镜像或完成 CI/CD。正在交回本地 luna 单元；后续方向已由所有者确定，统一部署/独立数据盘/集群外 Harbor 的方案已获总体同意及补充决定；本轮仅实施明确获批的 R1/R4，部署/迁移/附盘/入口切换未执行。
 实施基线 `bee0b049ca9e84fead641928816fec4a6a1c6c48`；交付提交是包含本检查点的 `luna` 提交（用 git log 定位）。
 
@@ -114,3 +117,13 @@ R2 只读：105 个本地应用镜像与 Harbor exact index/manifest digest 相�
 所有者：“那就等最后再一起清理吧”“不过要记住一定要清理”。剩余回收延后到迁移与验收完成，作为不可遗漏的最终收尾门禁；现在停止追加清理。已经执行的 R1 375 条、R4 七文件不回写为未执行。待办：R1 剩余 479 条、R2 两类、远程审阅后的试验目录重新冻结清单并按授权执行；重新盘点各项实际量、更新物料手册与网络参考。来源/时龄不满足者保留并说明，绝不触碰容器/卷/观察期旧节点或唯一备份。空间方案第 8 节含逐项验收清单，未结清不能称整体迁移完成。
 
 本轮机械检查：4 个新增 Python 脚本 AST、全部新增 JSON/JSONL 解析及 git diff --check 通过；R1/R4 前后保护对象一致。没有运行应用/云部署测试。家目录网络参考已追加第20节，未改运行配置。交付仍仅本地 luna 分支，不 push。
+
+## 数据盘准备单元（基线 878c581ef3cb14c1d06896a1894d8d26962a857f）
+
+修改 deploy-kind/attach-vhds.ps1 为显式 SunmoonData 模式、默认只打印，去掉旧 E 盘和任何卸载/重启操作；mount/ 两个副本改成转发。新增 initialize-sunmoon-data.ps1（所有者首次创建100GiB动态VHDX、唯一空设备防护）、sunmoon-data-storage.py（默认只打印的 setup/mount，以及只读 check）。检查含 UUID/ext4/rw、与系统盘不同设备、bind源inode一致、空间门禁、旧路径身份；setup只管理三条新fstab目标，有冲突失败，无自动fallback。旧native检查仍可用，新服务必须显式传 --layout sunmoon-data。
+
+SHA256固定脚本与所有者执行卡已备齐。固定发布目录 C:/wsl-disks/scripts/storage-20260927-v1 与 /opt/sunmoon/admin/storage/storage-20260927-v1；不要让计划任务依赖临时worktree。owner-data-disk-100g.md 含完整命令、任务与中断续接。尚未运行任何Apply，未建盘、格式化、挂载、注册任务、改fstab或启动服务。
+
+静态/只读结果 luna-data-storage-preparation.20260927.json：三PowerShell Parser通过；两shell bash -n/ShellCheck0.9.0通过；Python AST；Linux setup默认只打印、缺盘拒绝、旧native兼容通过。ShellCheck修正旧变量展开三处。Windows直接执行UNC默认plan被现有CurrentUser RemoteSigned拒绝，未修改/绕过策略；卡中给出本地固定副本发布供所有者操作，本地副本执行和真实挂盘/重启仍未验证。ShellCheck仅Ubuntu包下载解压/tmp，无系统安装。C盘剩余232.54GiB，目标VHDX不存在。
+
+本单元只是存储前置，不是整个P1或迁移完成。registry-platform、官方Harbor2.13.2物料、PG17逻辑迁移、入口代理、云steps与消费开关仍待完成。先等待所有者按操作卡返回UUID及check输出，同时可继续独立准备仓库模块/物料。新服务启动门禁尚须实际接线，不得宣称已形成自动保护。
