@@ -93,36 +93,10 @@ if [[ $# -gt 0 ]]; then
     ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
 fi
 
+# shellcheck source=/dev/null
+source "$PROJECT_ROOT/utils/config.sh"
 load_config(){
-    local config="$THIS_DIR/deploy-infrastructure-all.conf"
-    local selected="${CLUSTER:-}"
-    [[ "$selected" =~ ^C[0-9]+$ ]] || { log_error "必须显式选择 Cn 集群"; return 1; }
-    [[ -f "$config" ]] || { log_error "配置文件不存在"; return 1; }
-    # 配置是仓内受信任 Shell 文件。此处不加载全局默认集群或另一份节点清单。
-    # shellcheck source=/dev/null
-    source "$config"
-    export CLUSTER="$selected"
-    local name base count=0
-    # 清除上一轮选择的节点字段，支持不连续的节点编号。
-    while IFS= read -r name; do
-        [[ "$name" =~ ^SERVER_[0-9]+_ ]] && unset "$name"
-    done < <(compgen -v)
-    while IFS= read -r name; do
-        [[ "$name" == "${selected}_"* ]] || continue
-        base="${name#"${selected}_"}"
-        [[ "$base" == CLUSTER ]] && continue
-        # 当前配置的集群覆盖项为标量；禁止把数组悄悄截为第一个元素。
-        if [[ "$(declare -p "$name")" == 'declare -a '* || "$(declare -p "$name")" == 'declare -A '* ]]; then
-            log_error "暂不支持集群前缀数组覆盖: $name"
-            return 1
-        fi
-        printf -v "$base" '%s' "${!name}"
-        if [[ "$base" =~ ^SERVER_[0-9]+_PUBLIC_IP$ && -n "${!name}" ]]; then
-            count=$((count+1))
-        fi
-    done < <(compgen -v)
-    [[ "$count" -gt 0 ]] || { log_error "所选集群没有节点配置"; return 1; }
-    log_info "已加载 $selected 配置，节点数 $count（配置未连接远端核实）"
+    infra_load_config
 }
 
 # 检查步骤脚本是否存在
@@ -232,14 +206,23 @@ step13_ingress_and_harbor(){
     execute_step "step13_ingress_and_harbor.sh" "Ingress (Traefik) 部署（Harbor 在集群外）"
 }
 
+# 安装必须使用新锁且依赖闭包已完整；不能因旧脚本尚在就静默跑旧版本。
+require_deployment_materials(){
+    python3 "$PROJECT_ROOT/materials/bundle.py" verify \
+        --root "${INFRA_MATERIAL_ROOT:-$HOME/packages-to-be-installed}" \
+        --expected-kubernetes "${STEP03_K8S_VERSION:-${CLUSTER_VERSION:-unset}}" \
+        --require-complete >/dev/null
+}
+
 # 完整部署流程
 deploy_all(){
     log_info "开始完整部署流程..."
     echo ""
     
-    # 加载配置以获取开关状态
+    # 加载配置以获取开关状态，所有远端操作前完成物料准入。
     load_config || return 1
-    
+    require_deployment_materials || return 1
+
     # 部署前：同步离线包至各节点（如存在包准备脚本）
     if [[ "${PACKAGE_SYNC_ENABLED:-true}" == "true" ]]; then
         # 尝试多个可能的路径（PROJECT_ROOT 指向 infrastructure 目录）
@@ -309,6 +292,11 @@ deploy_all(){
 # 执行单个步骤（命令名可用下划线或连字符，如 step11_load_initial_images / step11_load-initial-images）
 run_single_step(){
     local cmd="${1//-/_}"
+    if [[ "$cmd" == step00_reset ]]; then
+        log_error "历史 reset 不属于本次升级入口；受保护节点/卷不可清理"
+        return 1
+    fi
+    require_deployment_materials || return 1
     case "$cmd" in
         step00_reset|step01_os_baseline|step02_runtime|step03_k8s_binaries|step04_kubeadm_init|step05_cni_install|step06_join_nodes|step07_create_namespaces|step08_validate|step09_storage|step10_k8s_nodes_management|step11_load_initial_images|step12_ca_generation|step13_ingress_and_harbor)
             "$cmd"
@@ -373,12 +361,13 @@ show_deployment_plan(){
         enabled="${!flag:-true}"
         printf '[dry-run] enabled=%s bash %q\n' "$enabled" "$STEPS_DIR/$name.sh"
     done
+    echo "[dry-run] 实际执行前必须核对部署版本与物料锁一致、closure_complete=true；当前适配未完成。"
     echo "[dry-run] 不含 step00；未连接 SSH、未同步物料、未修改集群或容器。"
     echo "[dry-run] 独立 Harbor 前置步骤和统一平台调用链仍待接入，不可据此宣称迁移完成。"
 }
 
 usage(){
-    echo "用法: $0 --cluster C1 [deploy|status|stepNN_name] [--dry-run]"
+    echo "用法: $0 --cluster C1 [deploy|status|materials|stepNN_name] [--dry-run]"
     echo "无参数显示帮助；总控不自动调用 step00/清理。其他旧步骤仍待整改，禁止用于本次迁移。云上升级路径未经实机验证。"
     echo "deploy --dry-run 只打印当前调用顺序；单步 --dry-run 只打印目标脚本。"
 }
@@ -404,6 +393,9 @@ main(){
             if [[ "$dry_run" == true ]]; then show_deployment_plan; else deploy_all; fi
             ;;
         status|steps) show_step_status ;;
+        materials)
+            python3 "$PROJECT_ROOT/materials/bundle.py" verify --root "${INFRA_MATERIAL_ROOT:-$HOME/packages-to-be-installed}"
+            ;;
         step*)
             if [[ "$dry_run" == true ]]; then
                 # 与实际执行使用同一白名单；预演不调用步骤。

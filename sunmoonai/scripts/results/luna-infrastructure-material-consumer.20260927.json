@@ -1,0 +1,159 @@
+{
+  "schema": 1,
+  "baseline_commit": "180de198041c7fa348c994eec8f1ab1a451fc2a5",
+  "cloud_status": "未经实机验证",
+  "remote_executed": false,
+  "services_changed": false,
+  "cleanup_performed": false,
+  "static": [
+    {
+      "path": "utils/config.sh",
+      "sha256": "85d1f161c29ea3206c27d15298a6e9f24cc16e195d87eb903eb4d36308c3b516",
+      "bash_n": 0,
+      "shellcheck": 0
+    },
+    {
+      "path": "utils/common.sh",
+      "sha256": "c3f81961ca88c539c8fbb7d9595d77d45c95bb84f8cb9199e8c5938e47ae43ee",
+      "bash_n": 0,
+      "shellcheck": 0
+    },
+    {
+      "path": "utils/package-preparation/package-sync.sh",
+      "sha256": "538e9e0cc435da72d84ba19ec5626accbd5037bed394fb52286a71dd88a90915",
+      "bash_n": 0,
+      "shellcheck": 0
+    },
+    {
+      "path": "steps/step07_create_namespaces.sh",
+      "sha256": "5112a409252429aefca45fa7bfa07bc97d11d09f48388c89c64d5377f672fe87",
+      "bash_n": 0,
+      "shellcheck": 0
+    },
+    {
+      "path": "steps/step12_ca_generation.sh",
+      "sha256": "22fb31dc8f1b9918c8cf0bc4cf10df81ea285a4e9e6f3f565d1cb1ee217006ec",
+      "bash_n": 0,
+      "shellcheck": 0
+    },
+    {
+      "path": "deploy-infrastructure-all/deploy-infrastructure-all.sh",
+      "sha256": "b6892523a45068dd9e7a02773baf67c8412c2898db22d0af54b82e6956d3b80e",
+      "bash_n": 0,
+      "shellcheck": 0
+    },
+    {
+      "path": "materials/bundle.py",
+      "sha256": "9d3e4118ae62b255b33466ad682ff6265a297a8e715a89b98db490734d7a25b4",
+      "python_ast": true
+    },
+    {
+      "path": "materials/sync.py",
+      "sha256": "8d96bd30a32bc7b67e328d502a9102453f1fdd4548fb43a845475377d32f2f18",
+      "python_ast": true
+    },
+    {
+      "path": "materials/stage_configuration.py",
+      "sha256": "c67cea84e2bed8dfe1f6b7c4ba07521e604c456775a4dd13136b4eb56e943d19",
+      "python_ast": true
+    },
+    {
+      "path": "materials/node_install.py",
+      "sha256": "175a7c67579fb67216a1073116b2ae01b6e1afa1006aaf8f5bbcccc815097fb4",
+      "python_ast": true
+    }
+  ],
+  "commands": [
+    {
+      "argv": [
+        "python3",
+        "sunmoonai/infrastructure/materials/bundle.py",
+        "verify"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"schema\": 1,\n  \"action\": \"verify\",\n  \"batch\": \"kubeadm-1.36.4-linux-amd64\",\n  \"versions\": {\n    \"kubernetes\": \"1.36.4\",\n    \"calico\": \"3.32.2\",\n    \"nerdctl\": \"2.3.5\",\n    \"containerd\": \"2.3.4\",\n    \"runc\": \"1.4.3\",\n    \"crictl\": \"1.36.0\"\n  },\n  \"root\": \"/home/zymun/packages-to-be-installed\",\n  \"files_verified\": true,\n  \"closure_complete\": false,\n  \"pending\": [\n    \"OS dependency closure\",\n    \"Calico shared manifest and image consumer adapter\",\n    \"node installer and offline deployment acceptance\"\n  ],\n  \"install_admitted\": false,\n  \"files\": [\n    {\n      \"scope\": \"tools\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/bin/kubeadm\",\n      \"sha256\": \"10d054585907f2c8bb823c84f6a66b3bd2a474c3d795475f04e9a44f78650fe6\",\n      \"bytes\": 73040034\n    },\n    {\n      \"scope\": \"tools\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/bin/kubelet\",\n      \"sha256\": \"cf2562db46c48ab84cc3791540778ee7fb1a0a008529adbb434723dd02ed8b4b\",\n      \"bytes\": 60166409\n    },\n    {\n      \"scope\": \"tools\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/bin/kubectl\",\n      \"sha256\": \"8b8f088da2dab964f853b38464033b1be15ede2839eca751482357c45abdd05a\",\n      \"bytes\": 59572386\n    },\n    {\n      \"scope\": \"tools\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/tars/crictl-v1.36.0-linux-amd64.tar.gz\",\n      \"sha256\": \"83855e114566a8a8c44c548d515670f51de3a5e1da8b2effb59870e2f10c25a3\",\n      \"bytes\": 19263420\n    },\n    {\n      \"scope\": \"tools\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/tars/nerdctl-2.3.5-linux-amd64.tar.gz\",\n      \"sha256\": \"de3206aeb7cbd5f20f5fb1f55c1e3bf2db1be567812a8a3f5e65eba2488347ee\",\n      \"bytes\": 11744522\n    },\n    {\n      \"scope\": \"tools\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/tars/containerd-2.3.4-linux-amd64.tar.gz\",\n      \"sha256\": \"9d68969855fbf676cdb8ed758e420fb048d61f984f61de3e53eddfebe484d168\",\n      \"bytes\": 34566765\n    },\n    {\n      \"scope\": \"tools\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/bin/runc-1.4.3.amd64\",\n      \"sha256\": \"f6ae8efc0fa40079e1475e97cbe9d1bd3f106a28d6af78a11d9f1bd565515e60\",\n      \"bytes\": 12245392\n    },\n    {\n      \"scope\": \"images\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/images/kube-apiserver-linux-amd64.tar\",\n      \"sha256\": \"2294af8927d0a086fdd760f66c45d7799929f14ced3b0d73598c18d90bf11a59\",\n      \"bytes\": 29823488\n    },\n    {\n      \"scope\": \"images\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/images/kube-controller-manager-linux-amd64.tar\",\n      \"sha256\": \"3cdec30d23943afd17ed3f65cda95886342157c3c54e0b8f2474d13d4749d92c\",\n      \"bytes\": 26492416\n    },\n    {\n      \"scope\": \"images\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/images/kube-scheduler-linux-amd64.tar\",\n      \"sha256\": \"8b267dd83a27ba284ccaac239fed4494b0bf52555d7451a3a403218f0ef75a3d\",\n      \"bytes\": 20515840\n    },\n    {\n      \"scope\": \"images\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/images/kube-proxy-linux-amd64.tar\",\n      \"sha256\": \"c64f759b5e9abcbacabe951d54fd93e0acc238207ad6e42410b99df7bbc474dd\",\n      \"bytes\": 30062080\n    },\n    {\n      \"scope\": \"images\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/images/coredns-linux-amd64.tar\",\n      \"sha256\": \"6b34bf73b17a760a2e3af5bd36d2e858c028250877d3235cc06dbb29a58cf308\",\n      \"bytes\": 23272960\n    },\n    {\n      \"scope\": \"images\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/images/pause-linux-amd64.tar\",\n      \"sha256\": \"c759798a47dcad1027d2de2fc1f18729fe104a0bdd5368c8a51dbd1675c98667\",\n      \"bytes\": 325120\n    },\n    {\n      \"scope\": \"images\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/images/etcd-linux-amd64.tar\",\n      \"sha256\": \"30fe1aca6a05dcd1fde9250430b7bd6ea5ae321554ce8efc66c3bc35e7c80695\",\n      \"bytes\": 22905344\n    },\n    {\n      \"scope\": \"calico\",\n      \"path\": \"releases/kind-1.36.4-calico-3.32.2-linux-amd64/charts/calico-upstream.yaml\",\n      \"sha256\": \"a8c828a06a87c629a282ebbc424895b77f3a030251993e41ea400a743675bb02\",\n      \"bytes\": 350324\n    },\n    {\n      \"scope\": \"calico\",\n      \"path\": \"releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-cni-linux-amd64.tar\",\n      \"sha256\": \"431f4527245e2a0845537125cab0825070c1e99ea6e099a4a45f5e461378b435\",\n      \"bytes\": 69878784\n    },\n    {\n      \"scope\": \"calico\",\n      \"path\": \"releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-node-linux-amd64.tar\",\n      \"sha256\": \"bfde5f35df29f29c0322a199f9b990b30b303223e8abbc894c1209ea0767889c\",\n      \"bytes\": 123398656\n    },\n    {\n      \"scope\": \"calico\",\n      \"path\": \"releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-controllers-linux-amd64.tar\",\n      \"sha256\": \"c5913c71b51a45f51ce555b3f64446ef3151b65adc757dacfdf130a07a10ff14\",\n      \"bytes\": 63201280\n    },\n    {\n      \"scope\": \"configuration\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/configuration/containerd.toml\",\n      \"sha256\": \"1e6ced7e7ff158259a1159f966a83d3b19c91b2869f3d15e41d1feb7610a93a7\",\n      \"bytes\": 1038\n    },\n    {\n      \"scope\": \"configuration\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/configuration/containerd.service\",\n      \"sha256\": \"23b28b41af1aa1714e1a6df94f5a79d522f53e7702b113a299c28a6d0053c4db\",\n      \"bytes\": 517\n    },\n    {\n      \"scope\": \"configuration\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/configuration/kubelet.service\",\n      \"sha256\": \"ce6ac47be54b601a3c2aded062946d955023e039d1ccb019cd7f692535eafb05\",\n      \"bytes\": 373\n    },\n    {\n      \"scope\": \"configuration\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/configuration/10-kubeadm.conf\",\n      \"sha256\": \"df0f548ec01e8a041069b17e2f01f83af811452104b9e3cd9d8f6d42b401ff84\",\n      \"bytes\": 615\n    },\n    {\n      \"scope\": \"configuration\",\n      \"path\": \"releases/kubeadm-1.36.4-linux-amd64/configuration/crictl.yaml\",\n      \"sha256\": \"3f7c438ac3f1beb3c76017eee043a270752c51272b5410a975d07ce3593605cf\",\n      \"bytes\": 137\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "python3",
+        "sunmoonai/infrastructure/materials/node_install.py",
+        "--phase",
+        "runtime"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"dry_run\": true,\n  \"phase\": \"runtime\",\n  \"versions\": {\n    \"kubernetes\": \"1.36.4\",\n    \"calico\": \"3.32.2\",\n    \"nerdctl\": \"2.3.5\",\n    \"containerd\": \"2.3.4\",\n    \"runc\": \"1.4.3\",\n    \"crictl\": \"1.36.0\"\n  },\n  \"cloud_status\": \"未经实机验证\",\n  \"closure_complete\": false,\n  \"pending\": [\n    \"OS dependency closure\",\n    \"Calico shared manifest and image consumer adapter\",\n    \"node installer and offline deployment acceptance\"\n  ],\n  \"file_install\": [\n    \"/etc/containerd/config.toml\",\n    \"/etc/systemd/system/containerd.service\",\n    \"/etc/crictl.yaml\"\n  ],\n  \"binary_directory\": \"/usr/local/bin\",\n  \"host_identity_required\": true,\n  \"operations\": [\n    \"verify complete closure and all material SHA256\",\n    \"fresh dedicated host preflight\",\n    \"check all existing destinations\",\n    \"exclusive file creation with journal\",\n    \"verify binary versions\",\n    \"daemon-reload; enable runtime or kubelet\",\n    \"start containerd only in runtime phase; kubelet waits for kubeadm\"\n  ],\n  \"deletion\": false,\n  \"overwrite\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "python3",
+        "sunmoonai/infrastructure/materials/node_install.py",
+        "--phase",
+        "kubernetes"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"dry_run\": true,\n  \"phase\": \"kubernetes\",\n  \"versions\": {\n    \"kubernetes\": \"1.36.4\",\n    \"calico\": \"3.32.2\",\n    \"nerdctl\": \"2.3.5\",\n    \"containerd\": \"2.3.4\",\n    \"runc\": \"1.4.3\",\n    \"crictl\": \"1.36.0\"\n  },\n  \"cloud_status\": \"未经实机验证\",\n  \"closure_complete\": false,\n  \"pending\": [\n    \"OS dependency closure\",\n    \"Calico shared manifest and image consumer adapter\",\n    \"node installer and offline deployment acceptance\"\n  ],\n  \"file_install\": [\n    \"/etc/systemd/system/kubelet.service\",\n    \"/etc/systemd/system/kubelet.service.d/10-kubeadm.conf\"\n  ],\n  \"binary_directory\": \"/usr/local/bin\",\n  \"host_identity_required\": true,\n  \"operations\": [\n    \"verify complete closure and all material SHA256\",\n    \"fresh dedicated host preflight\",\n    \"check all existing destinations\",\n    \"exclusive file creation with journal\",\n    \"verify binary versions\",\n    \"daemon-reload; enable runtime or kubelet\",\n    \"start containerd only in runtime phase; kubelet waits for kubeadm\"\n  ],\n  \"deletion\": false,\n  \"overwrite\": false\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "bash",
+        "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh",
+        "--cluster",
+        "C1",
+        "deploy",
+        "--dry-run"
+      ],
+      "exit": 0,
+      "stdout": "[dry-run] 云上升级路径未经实机验证；本输出不表示新版已经可部署。\ncluster=C1 configured_kubernetes=1.30.4\nmaterial_target=1.36.4; adapter/status=参见 docs/infrastructure-upgrade-audit.md\npackage_sync=false\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step01_os_baseline.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step02_runtime.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step03_k8s_binaries.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step04_kubeadm_init.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step05_cni_install.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step06_join_nodes.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step07_create_namespaces.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step08_validate.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step09_storage.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step10_k8s_nodes_management.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step11_load-initial-images.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step12_ca_generation.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step13_ingress_and_harbor.sh\n[dry-run] 实际执行前必须核对部署版本与物料锁一致、closure_complete=true；当前适配未完成。\n[dry-run] 不含 step00；未连接 SSH、未同步物料、未修改集群或容器。\n[dry-run] 独立 Harbor 前置步骤和统一平台调用链仍待接入，不可据此宣称迁移完成。\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "bash",
+        "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh",
+        "--cluster",
+        "C2",
+        "deploy",
+        "--dry-run"
+      ],
+      "exit": 0,
+      "stdout": "[dry-run] 云上升级路径未经实机验证；本输出不表示新版已经可部署。\ncluster=C2 configured_kubernetes=1.30.4\nmaterial_target=1.36.4; adapter/status=参见 docs/infrastructure-upgrade-audit.md\npackage_sync=false\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step01_os_baseline.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step02_runtime.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step03_k8s_binaries.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step04_kubeadm_init.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step05_cni_install.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step06_join_nodes.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step07_create_namespaces.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step08_validate.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step09_storage.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step10_k8s_nodes_management.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step11_load-initial-images.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step12_ca_generation.sh\n[dry-run] enabled=true bash /home/zymun/worktrees/luna/k8s/sunmoonai/infrastructure/steps/step13_ingress_and_harbor.sh\n[dry-run] 实际执行前必须核对部署版本与物料锁一致、closure_complete=true；当前适配未完成。\n[dry-run] 不含 step00；未连接 SSH、未同步物料、未修改集群或容器。\n[dry-run] 独立 Harbor 前置步骤和统一平台调用链仍待接入，不可据此宣称迁移完成。\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "bash",
+        "sunmoonai/infrastructure/utils/package-preparation/package-sync.sh",
+        "sync-cluster-materials",
+        "--dry-run"
+      ],
+      "exit": 0,
+      "stdout": "{\n  \"dry_run\": true,\n  \"cloud_status\": \"未经实机验证\",\n  \"batch\": \"kubeadm-1.36.4-linux-amd64\",\n  \"closure_complete\": false,\n  \"install\": false,\n  \"files_verified\": false,\n  \"files\": [\n    \"releases/kubeadm-1.36.4-linux-amd64/bin/kubeadm\",\n    \"releases/kubeadm-1.36.4-linux-amd64/bin/kubelet\",\n    \"releases/kubeadm-1.36.4-linux-amd64/bin/kubectl\",\n    \"releases/kubeadm-1.36.4-linux-amd64/tars/crictl-v1.36.0-linux-amd64.tar.gz\",\n    \"releases/kubeadm-1.36.4-linux-amd64/tars/nerdctl-2.3.5-linux-amd64.tar.gz\",\n    \"releases/kubeadm-1.36.4-linux-amd64/tars/containerd-2.3.4-linux-amd64.tar.gz\",\n    \"releases/kubeadm-1.36.4-linux-amd64/bin/runc-1.4.3.amd64\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/kube-apiserver-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/kube-controller-manager-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/kube-scheduler-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/kube-proxy-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/coredns-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/pause-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/etcd-linux-amd64.tar\",\n    \"releases/kind-1.36.4-calico-3.32.2-linux-amd64/charts/calico-upstream.yaml\",\n    \"releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-cni-linux-amd64.tar\",\n    \"releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-node-linux-amd64.tar\",\n    \"releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-controllers-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/configuration/containerd.toml\",\n    \"releases/kubeadm-1.36.4-linux-amd64/configuration/containerd.service\",\n    \"releases/kubeadm-1.36.4-linux-amd64/configuration/kubelet.service\",\n    \"releases/kubeadm-1.36.4-linux-amd64/configuration/10-kubeadm.conf\",\n    \"releases/kubeadm-1.36.4-linux-amd64/configuration/crictl.yaml\"\n  ],\n  \"ssh\": [\n    \"ssh\",\n    \"-o\",\n    \"BatchMode=yes\",\n    \"-o\",\n    \"StrictHostKeyChecking=yes\",\n    \"-o\",\n    \"ConnectTimeout=10\",\n    \"-o\",\n    \"ServerAliveInterval=15\",\n    \"-o\",\n    \"ServerAliveCountMax=3\",\n    \"-p\",\n    \"1022\",\n    \"-o\",\n    \"IdentitiesOnly=yes\",\n    \"-i\",\n    \"/home/zym/.ssh/id_rsa\",\n    \"zym@115.190.64.131\"\n  ],\n  \"remote_root\": \"packages-to-be-installed\",\n  \"order\": [\n    \"local SHA256\",\n    \"remote existing-file SHA256/no-symlink preflight\",\n    \"rsync exact list with partial-dir; no delete\",\n    \"remote all-file SHA256\"\n  ]\n}\n{\n  \"dry_run\": true,\n  \"cloud_status\": \"未经实机验证\",\n  \"batch\": \"kubeadm-1.36.4-linux-amd64\",\n  \"closure_complete\": false,\n  \"install\": false,\n  \"files_verified\": false,\n  \"files\": [\n    \"releases/kubeadm-1.36.4-linux-amd64/bin/kubeadm\",\n    \"releases/kubeadm-1.36.4-linux-amd64/bin/kubelet\",\n    \"releases/kubeadm-1.36.4-linux-amd64/bin/kubectl\",\n    \"releases/kubeadm-1.36.4-linux-amd64/tars/crictl-v1.36.0-linux-amd64.tar.gz\",\n    \"releases/kubeadm-1.36.4-linux-amd64/tars/nerdctl-2.3.5-linux-amd64.tar.gz\",\n    \"releases/kubeadm-1.36.4-linux-amd64/tars/containerd-2.3.4-linux-amd64.tar.gz\",\n    \"releases/kubeadm-1.36.4-linux-amd64/bin/runc-1.4.3.amd64\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/kube-apiserver-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/kube-controller-manager-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/kube-scheduler-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/kube-proxy-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/coredns-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/pause-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/etcd-linux-amd64.tar\",\n    \"releases/kind-1.36.4-calico-3.32.2-linux-amd64/charts/calico-upstream.yaml\",\n    \"releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-cni-linux-amd64.tar\",\n    \"releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-node-linux-amd64.tar\",\n    \"releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-controllers-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/configuration/containerd.toml\",\n    \"releases/kubeadm-1.36.4-linux-amd64/configuration/containerd.service\",\n    \"releases/kubeadm-1.36.4-linux-amd64/configuration/kubelet.service\",\n    \"releases/kubeadm-1.36.4-linux-amd64/configuration/10-kubeadm.conf\",\n    \"releases/kubeadm-1.36.4-linux-amd64/configuration/crictl.yaml\"\n  ],\n  \"ssh\": [\n    \"ssh\",\n    \"-o\",\n    \"BatchMode=yes\",\n    \"-o\",\n    \"StrictHostKeyChecking=yes\",\n    \"-o\",\n    \"ConnectTimeout=10\",\n    \"-o\",\n    \"ServerAliveInterval=15\",\n    \"-o\",\n    \"ServerAliveCountMax=3\",\n    \"-p\",\n    \"1022\",\n    \"-o\",\n    \"IdentitiesOnly=yes\",\n    \"-i\",\n    \"/home/zym/.ssh/id_rsa\",\n    \"zym@101.126.151.0\"\n  ],\n  \"remote_root\": \"packages-to-be-installed\",\n  \"order\": [\n    \"local SHA256\",\n    \"remote existing-file SHA256/no-symlink preflight\",\n    \"rsync exact list with partial-dir; no delete\",\n    \"remote all-file SHA256\"\n  ]\n}\n{\n  \"dry_run\": true,\n  \"cloud_status\": \"未经实机验证\",\n  \"batch\": \"kubeadm-1.36.4-linux-amd64\",\n  \"closure_complete\": false,\n  \"install\": false,\n  \"files_verified\": false,\n  \"files\": [\n    \"releases/kubeadm-1.36.4-linux-amd64/bin/kubeadm\",\n    \"releases/kubeadm-1.36.4-linux-amd64/bin/kubelet\",\n    \"releases/kubeadm-1.36.4-linux-amd64/bin/kubectl\",\n    \"releases/kubeadm-1.36.4-linux-amd64/tars/crictl-v1.36.0-linux-amd64.tar.gz\",\n    \"releases/kubeadm-1.36.4-linux-amd64/tars/nerdctl-2.3.5-linux-amd64.tar.gz\",\n    \"releases/kubeadm-1.36.4-linux-amd64/tars/containerd-2.3.4-linux-amd64.tar.gz\",\n    \"releases/kubeadm-1.36.4-linux-amd64/bin/runc-1.4.3.amd64\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/kube-apiserver-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/kube-controller-manager-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/kube-scheduler-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/kube-proxy-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/coredns-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/pause-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/images/etcd-linux-amd64.tar\",\n    \"releases/kind-1.36.4-calico-3.32.2-linux-amd64/charts/calico-upstream.yaml\",\n    \"releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-cni-linux-amd64.tar\",\n    \"releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-node-linux-amd64.tar\",\n    \"releases/kind-1.36.4-calico-3.32.2-linux-amd64/images/calico-controllers-linux-amd64.tar\",\n    \"releases/kubeadm-1.36.4-linux-amd64/configuration/containerd.toml\",\n    \"releases/kubeadm-1.36.4-linux-amd64/configuration/containerd.service\",\n    \"releases/kubeadm-1.36.4-linux-amd64/configuration/kubelet.service\",\n    \"releases/kubeadm-1.36.4-linux-amd64/configuration/10-kubeadm.conf\",\n    \"releases/kubeadm-1.36.4-linux-amd64/configuration/crictl.yaml\"\n  ],\n  \"ssh\": [\n    \"ssh\",\n    \"-o\",\n    \"BatchMode=yes\",\n    \"-o\",\n    \"StrictHostKeyChecking=yes\",\n    \"-o\",\n    \"ConnectTimeout=10\",\n    \"-o\",\n    \"ServerAliveInterval=15\",\n    \"-o\",\n    \"ServerAliveCountMax=3\",\n    \"-p\",\n    \"1022\",\n    \"-o\",\n    \"IdentitiesOnly=yes\",\n    \"-i\",\n    \"/home/zym/.ssh/id_rsa\",\n    \"zym@115.190.61.238\"\n  ],\n  \"remote_root\": \"packages-to-be-installed\",\n  \"order\": [\n    \"local SHA256\",\n    \"remote existing-file SHA256/no-symlink preflight\",\n    \"rsync exact list with partial-dir; no delete\",\n    \"remote all-file SHA256\"\n  ]\n}\n",
+      "stderr": ""
+    }
+  ],
+  "failures_corrected": [
+    {
+      "operation": "locked sync print-only mode",
+      "failure": "Default manifest used a lexical ../ path and was refused as a symlink",
+      "resolution": "Resolve the program-owned default manifest path and material tool directory; keep external symlink input rejection"
+    }
+  ],
+  "material_verification": {
+    "files": 23,
+    "bytes": 680827900,
+    "closure_complete": false,
+    "configuration_files": 5,
+    "configuration_staging": "5 locked public files created under existing offline batch; no host service installed"
+  },
+  "containerd_configuration": {
+    "binary_sha256": "15e00263fed22c55e75ae2b0fb89c6a0862741d5ee82728a2d4ecb99a26fbf2d",
+    "command": "containerd 2.3.4 --config <locked configuration> config dump",
+    "schema": 4,
+    "systemd_cgroup": true,
+    "registry_config_path": "/etc/containerd/certs.d",
+    "service_started": false
+  }
+}

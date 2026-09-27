@@ -14,27 +14,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# 加载配置
-if [[ -f "$PROJECT_ROOT/deploy-infrastructure-all/deploy-infrastructure-all.conf" ]]; then
-    source "$PROJECT_ROOT/deploy-infrastructure-all/deploy-infrastructure-all.conf"
-elif [[ -f "$PROJECT_ROOT/config/deploy.conf" ]]; then
-    source "$PROJECT_ROOT/config/deploy.conf"
-elif [[ -f "$PROJECT_ROOT/config/cluster.conf" ]]; then
-    source "$PROJECT_ROOT/config/cluster.conf"
-fi
-
-# 加载通用函数库
-if [[ -f "$PROJECT_ROOT/utils/common.sh" ]]; then
-    source "$PROJECT_ROOT/utils/common.sh"
-fi
-
-# 加载集群配置映射函数（使用 utils 中的通用函数）
-K8S_ROOT="$(cd "$PROJECT_ROOT/../.." && pwd)"
-if [[ -f "$K8S_ROOT/utils/cluster-config-mapping.sh" ]]; then
-    source "$K8S_ROOT/utils/cluster-config-mapping.sh"
-    # 应用集群配置映射（使用 CLUSTER 环境变量，支持 C1_* 和 C2_* 前缀配置）
-    apply_cluster_config_mapping
-fi
+# 所有步骤与总控使用同一个配置加载器；不使用另一检出或隐式默认集群。
+# 云上升级路径未经实机验证。
+# shellcheck source=/dev/null
+source "$PROJECT_ROOT/utils/common.sh"
+load_config_file || exit 1
 
 # 颜色输出函数
 red() { echo -e "\033[31m$*\033[0m"; }
@@ -93,17 +77,13 @@ create_namespace(){
     kubectl_cmd="$(ssh_exec "$node_idx" "which kubectl 2>/dev/null || command -v kubectl 2>/dev/null || echo ''")"
     # 如果 PATH 中找不到，尝试常见位置
     if [[ -z "$kubectl_cmd" ]] || [[ "$kubectl_cmd" == "" ]]; then
-        # 使用 || true 防止 set -e 导致脚本退出
-        if ssh_exec "$node_idx" "test -x /usr/bin/kubectl" || true; then
-            if [[ $? -eq 0 ]]; then
-                kubectl_cmd="/usr/bin/kubectl"
-            fi
+        # 只在目标路径确实可执行时选择该 kubectl。
+        if ssh_exec "$node_idx" "test -x /usr/bin/kubectl"; then
+            kubectl_cmd="/usr/bin/kubectl"
         fi
         if [[ -z "$kubectl_cmd" ]]; then
-            if ssh_exec "$node_idx" "test -x /usr/local/bin/kubectl" || true; then
-                if [[ $? -eq 0 ]]; then
-                    kubectl_cmd="/usr/local/bin/kubectl"
-                fi
+            if ssh_exec "$node_idx" "test -x /usr/local/bin/kubectl"; then
+                kubectl_cmd="/usr/local/bin/kubectl"
             fi
         fi
     fi
@@ -114,7 +94,7 @@ create_namespace(){
     fi
     
     # 检查命名空间是否已存在
-    # 注意：ssh_exec 使用 stdbuf，需要将环境变量和命令封装在 shell 中
+    # 环境变量赋值属于远端命令。
     if ssh_exec "$node_idx" "bash -c 'export KUBECONFIG=\"$REMOTE_KUBECONFIG\" && $kubectl_cmd get ns \"$namespace\" >/dev/null 2>&1'"; then
         log_info "[Step07] 命名空间 $namespace 已存在，跳过创建"
         return 0

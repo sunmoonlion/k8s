@@ -21,59 +21,9 @@ log_success() { log "✅ $*"; }
 log_warn() { log "⚠️  $*"; }
 log_error() { log "❌ $*"; }
 
-# 计算 k8s 根目录
-# package-preparation/ -> utils/ -> infrastructure/ -> sunmoonai/ -> k8s/
-# 尝试多个可能的路径
-K8S_ROOT=""
-if [[ -f "$HOME/k8s/utils/cluster-config-mapping.sh" ]]; then
-    K8S_ROOT="$HOME/k8s"
-elif [[ -f "$SCRIPT_DIR/../../../../utils/cluster-config-mapping.sh" ]]; then
-    K8S_ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
-elif [[ -f "$SCRIPT_DIR/../../../utils/cluster-config-mapping.sh" ]]; then
-    K8S_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
-else
-    # 默认尝试从 package-preparation 向上找到 k8s 目录
-    K8S_ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
-fi
-
-# 加载集群配置映射函数（用于将 C1_* 或 C2_* 映射为默认配置）
-if [[ -f "$K8S_ROOT/utils/cluster-config-mapping.sh" ]]; then
-    # shellcheck source=/dev/null
-    source "$K8S_ROOT/utils/cluster-config-mapping.sh"
-    # 应用集群配置映射（使用 CLUSTER 环境变量）
-    if command -v apply_cluster_config_mapping &>/dev/null; then
-        apply_cluster_config_mapping
-        if [[ -n "${CLUSTER:-}" ]]; then
-            log_info "应用集群配置: CLUSTER=${CLUSTER}"
-        fi
-    fi
-    
-    # 手动映射 SERVER_n_* 变量（因为 apply_cluster_config_mapping 跳过了这些变量）
-    if [[ -n "${CLUSTER:-}" ]] && [[ "$CLUSTER" =~ ^C[0-9]+$ ]]; then
-        cluster_prefix="${CLUSTER}_"
-        server_num=1
-        while true; do
-            cluster_pub_ip_var="${cluster_prefix}SERVER_${server_num}_PUBLIC_IP"
-            if [[ -z "${!cluster_pub_ip_var:-}" ]]; then
-                break
-            fi
-            
-            # 映射所有 SERVER_n_* 字段
-            fields=("TYPE" "PUBLIC_IP" "LOCAL_IP" "USER" "SECRET" "PASS" "SSH_PORT" "DIR" 
-                    "CURRENT_HOSTNAME" "CLUSTER_HOSTNAME" "EXTRA_LABELS" "TAINTS")
-            for field in "${fields[@]}"; do
-                cluster_var="${cluster_prefix}SERVER_${server_num}_${field}"
-                server_var="SERVER_${server_num}_${field}"
-                if [[ -n "${!cluster_var:-}" ]]; then
-                    eval "$server_var=\"${!cluster_var}\""
-                fi
-            done
-            
-            server_num=$((server_num+1))
-        done
-        log_info "已映射 ${CLUSTER} 集群的 $((server_num-1)) 个节点配置"
-    fi
-fi
+# 与总控、步骤共用同一份节点配置；package-sync.conf 只保留物料路径。
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/../config.sh"
 
 # 全局开关（--dry-run）
 DRY_RUN="false"
@@ -83,7 +33,7 @@ validate_config() {
     local servers
     mapfile -t servers < <(list_servers)
     if [[ ${#servers[@]} -eq 0 ]]; then
-        log_error "未在 package-sync.conf 中配置任何 SERVER_*_PUBLIC_IP；请至少配置一个节点"
+        log_error "统一配置未包含所选集群的节点"
         return 1
     fi
     # 校验每个节点的必要字段
@@ -100,16 +50,7 @@ validate_config() {
 }
 
 # 列出所有服务器
-list_servers() {
-    local idx=1
-    while true; do
-        local pub_ip_var="SERVER_${idx}_PUBLIC_IP"
-        local host_ip="${!pub_ip_var:-}"
-        [[ -z "$host_ip" ]] && break
-        echo "$idx"
-        idx=$((idx+1))
-    done
-}
+list_servers() { infra_server_indices; }
 
 # 获取服务器信息
 get_server_info() {
@@ -128,8 +69,12 @@ get_server_info() {
     local pass="${!pass_var:-}"
     local rdir="${!dir_var:-$REMOTE_PACKAGE_DIR}"
     
-    # 展开 ~ 路径
-    rdir=$(eval echo "$rdir")
+    # SSH 的工作目录为目标用户家目录；保留绝对路径，否则使用相对该目录的路径。
+    # shellcheck disable=SC2088 # literal remote-home syntax, not local expansion
+    if [[ "$rdir" == '~/'* ]]; then rdir="${rdir:2}"; fi
+    [[ "$rdir" =~ ^[a-zA-Z0-9_./-]+$ && "$rdir" != *..* && "$rdir" != / ]] || {
+        log_error "非法远端物料目录" >&2; return 1;
+    }
     
     echo "$host|$user|$port|$secret|$pass|$rdir"
 }
@@ -372,6 +317,8 @@ usage() {
 Infrastructure 包同步工具
 
 用法:
+  $0 sync-cluster-materials --dry-run               # 只打印新版精确物料传输计划，不连接远端
+  $0 sync-cluster-materials --apply                 # 明确执行新版物料传输并在远端核验SHA（云未经实机验证）
   $0 sync-packages-to-all-nodes [type] [--dry-run]    # 同步包到所有节点（all|debs|images|tars|charts）
   $0 sync-images-to-all-nodes [--dry-run]             # 兼容别名，同步 images 到所有节点
   $0 install-images-on-all-nodes [--dry-run]          # 在所有节点安装 images 目录下的所有镜像到 k8s.io
@@ -525,10 +472,48 @@ count_package_files() {
     fi
 }
 
+# 新版集群物料：同一锁清单负责选包、传输前后校验。只支持密钥/agent认证。
+sync_cluster_materials() {
+    local idx host user port identity remote_dir
+    local material_tools
+    material_tools="$(cd "$SCRIPT_DIR/../../materials" && pwd)"
+    local -a command_args
+    for idx in $(infra_server_indices); do
+        host="$(infra_server_value "$idx" PUBLIC_IP)"
+        [[ -n "$host" ]] || host="$(infra_server_value "$idx" LOCAL_IP)"
+        user="$(infra_server_value "$idx" USER)"
+        port="$(infra_server_value "$idx" SSH_PORT)"
+        identity="$(infra_server_value "$idx" SECRET)"
+        remote_dir="$(infra_server_value "$idx" DIR)"
+        command_args=(python3 "$material_tools/sync.py" --root "$LOCAL_PACKAGE_DIR"
+                      --host "$user@$host" --port "${port:-22}"
+                      --remote-root "${remote_dir:-packages-to-be-installed}")
+        [[ -z "$identity" ]] || command_args+=(--identity "$identity")
+        [[ "$DRY_RUN" == true ]] || command_args+=(--apply)
+        "${command_args[@]}" || return 1
+    done
+}
+
 # 主函数
 main() {
     local cmd="${1:-}"
     shift || true
+    case "$cmd" in help|-h|--help|"") usage; return 0 ;; esac
+    infra_load_config || return 1
+    # 路径覆盖须在统一/私有配置加载后解析。
+    # shellcheck source=/dev/null
+    source "$CONF_FILE"
+    if [[ "$cmd" == sync-cluster-materials ]]; then
+        DRY_RUN=true
+        if [[ $# -gt 1 ]]; then log_error "新版同步只接受 --dry-run 或 --apply"; return 1; fi
+        case "${1:-}" in
+            ""|--dry-run) ;;
+            --apply) DRY_RUN=false ;;
+            *) log_error "新版同步只接受 --dry-run 或 --apply"; return 1 ;;
+        esac
+        sync_cluster_materials
+        return $?
+    fi
     # 解析可选的 --dry-run
     for arg in "$@"; do
         [[ "$arg" == "--dry-run" ]] && DRY_RUN="true"

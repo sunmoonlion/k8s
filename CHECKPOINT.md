@@ -1,5 +1,20 @@
 # Luna 工作检查点
 
+## 最新续接：2026-09-27 统一配置与精确物料消费、节点安装程序
+
+基线 `180de198041c7fa348c994eec8f1ab1a451fc2a5`，本地 luna，不 push；交付为包含本段的提交。此节优先于下文。
+
+- 所有者继续授权升级。完成 `infrastructure/utils/config.sh` 共用加载器，总控/common/step07/step12/package-sync 统一配置；重复 sync 节点与凭据先逐字比对一致后移除，没有移除唯一凭据。主配置历史凭据仍在、未宣称历史脱敏。显式 Cn，稀疏节点，空值覆盖，无 eval，单进程禁止切目标；可选 Git 外私有覆盖。
+- common SSH 改密钥/agent、严格 known_hosts、明确端口/超时；sudo 只执行一次，经 stdin 传脚本，不再密码重试。kubeconfig 不再隐式 fallback 或 chmod0644。旧步骤内绕过公共函数的 raw SSH 仍须整改。
+- 新 `materials/bundle.py` 统一工具/控制面/共享Calico/配置的精确路径和摘要；`sync.py` 严格SSH、远端同名不同摘要拒绝、精确rsync/no delete/远端复核；package-sync 的 `sync-cluster-materials` 默认只打印，显式 --apply 才传输，本次未执行远端传输。
+- 五个公开配置已实际备料到 `~/packages-to-be-installed/releases/kubeadm-1.36.4-linux-amd64/configuration/`；只创建物料，不安装服务。containerd已核SHA二进制的 config dump 通过schema4/SystemdCgroup/registry路径；kubeadm1.36.4 init-defaults只读确认v1beta4。临时解析工具 `/tmp/luna-containerd-config-p_jbny13/containerd`，未启动daemon。
+- `node_install.py` 独立安装程序已写：只打印默认；真实分支先完整闭包/主机身份/专用新Ubuntu24.04 amd64/systemd/cgroup2预检，拒绝WSL/Docker/Harbor/已有集群；白名单解包、实际输入内存再核SHA、独占创建不覆盖、日志/版本/CRI检查。实际 --apply 未运行，未经实机验证。尚未接到旧step02/03，不能声称云安装已升级。
+- 当前23文件680827900字节SHA通过（包含共享Calico），主锁 closure_complete=false；pending为OS依赖、Calico消费、节点适配/离线验收。总控deploy与单步变更已加入版本和闭包准入，当前1.30.4旧配置会被拒绝，不能绕过门禁执行旧step。Step00在总控明确拒绝。
+- 证据 `sunmoonai/scripts/results/luna-infrastructure-material-consumer.20260927.json`，方法 `infrastructure/docs/locked-node-materials.md`。6改动Shell bash-n/ShellCheck零提示，4新Python语法，C1/C2总控、C1三节点精确同步、两阶段安装只打印通过。本次首次预演因默认路径含../误判失败，已修正规范化路径，保留失败记录。
+- 下步：补Ubuntu24.04 OS依赖完整离线集；将step01–03与控制脚本发布/机器身份准入接到新程序；kubeadm v1beta4 init/join和镜像导入、共享Calico；然后统一平台/宿主Harbor正式生命周期。已有授权不需再问技术方案。
+- 未操作云主机、KIND、Harbor现场或旧物料；最终清理必须做且放最后。原大迁移目标未完成，不能通知“luna做完了”。没有后台工具会话。预算未设上限。
+
+
 ## 最新续接：2026-09-27 infrastructure 全目录审查和第一批总控修正
 
 基线 `d661840e0c3a49bf1c5e8557236eb3380b0dadb8`；交付为包含此检查点的本地 luna 提交，不 push。此节优先于下方历史记录。

@@ -4,6 +4,12 @@
 
 版本与范围真源是 `cluster-artifacts.lock.json`。平台服务版本保持原样；KIND 使用 `kind-infrastructure/isolated/profile.json` 和既有批次。Calico归档在共享批次只保留一份，锁中 `shared_calico_materials` 的路径相对物料总根解析，不能清理其唯一副本。
 
+## 部署方消费入口（2026-09-27）
+
+新增的 `bundle.py` 统一解析和验证精确清单，`sync.py` 默认只打印、显式 apply 才通过严格 SSH 传输并在远端重新校验；`stage_configuration.py` 把锁定的五个节点配置放进离线批次；`node_install.py` 提供专用新节点的运行时/工具安装分支，默认只打印。
+
+现在 23 文件、本地全量 SHA 通过；OS 依赖与安装/网络接线未完成，主锁仍 `closure_complete=false`，总控实际变更被版本/闭包门禁阻止。详细命令、配置来源和未验边界见 [固定物料与节点入口](../docs/locked-node-materials.md)。
+
 ## 下载与回传
 
 同一脚本可在本机或所有者授权的公开物料下载主机运行。脚本默认只打印计划；显式 `--apply` 才下载或拉取/导出镜像，不部署、不启动容器、不清理缓存。远程仅上传这两个公共脚本和版本清单，不上传源码、kubeconfig、登录凭据或私钥。

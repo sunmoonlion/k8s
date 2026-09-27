@@ -13,8 +13,8 @@
   "closure_complete": false,
   "pending": [
     "OS dependency closure",
-    "Calico shared manifest and image reuse",
-    "systemd service/drop-in files"
+    "Calico shared manifest and image consumer adapter",
+    "node installer and offline deployment acceptance"
   ],
   "provenance": [
     "https://github.com/containerd/nerdctl/releases/tag/v2.3.5",
@@ -134,5 +134,43 @@
   "kubeadm_image_archive_lock": {
     "path": "kubeadm-images.lock.json",
     "sha256": "daf944a8c0604336e5c546831494d8aefcafc1b4299def74a844cf5123fd789c"
+  },
+  "configuration_files": [
+    {
+      "path": "configuration/containerd.toml",
+      "sha256": "1e6ced7e7ff158259a1159f966a83d3b19c91b2869f3d15e41d1feb7610a93a7",
+      "bytes": 1038,
+      "install_target": "/etc/containerd/config.toml"
+    },
+    {
+      "path": "configuration/containerd.service",
+      "sha256": "23b28b41af1aa1714e1a6df94f5a79d522f53e7702b113a299c28a6d0053c4db",
+      "bytes": 517,
+      "install_target": "/etc/systemd/system/containerd.service"
+    },
+    {
+      "path": "configuration/kubelet.service",
+      "sha256": "ce6ac47be54b601a3c2aded062946d955023e039d1ccb019cd7f692535eafb05",
+      "bytes": 373,
+      "install_target": "/etc/systemd/system/kubelet.service"
+    },
+    {
+      "path": "configuration/10-kubeadm.conf",
+      "sha256": "df0f548ec01e8a041069b17e2f01f83af811452104b9e3cd9d8f6d42b401ff84",
+      "bytes": 615,
+      "install_target": "/etc/systemd/system/kubelet.service.d/10-kubeadm.conf"
+    },
+    {
+      "path": "configuration/crictl.yaml",
+      "sha256": "3f7c438ac3f1beb3c76017eee043a270752c51272b5410a975d07ce3593605cf",
+      "bytes": 137,
+      "install_target": "/etc/crictl.yaml"
+    }
+  ],
+  "configuration_provenance": {
+    "containerd": "https://github.com/containerd/containerd/blob/v2.3.4/containerd.service",
+    "cri": "https://github.com/containerd/containerd/blob/v2.3.4/docs/cri/config.md",
+    "kubeadm": "https://v1-36.docs.kubernetes.io/docs/setup/production-environment/tools/kubeadm/kubelet-integration/",
+    "method": "Project-maintained configuration; containerd 2.3.4 config default reports schema 4; kubeadm 1.36.4 init-defaults reports v1beta4. Not installed."
   }
 }

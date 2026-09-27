@@ -1,0 +1,14 @@
+# SunMoon dedicated kubeadm node. Cloud 未经实机验证.
+[Unit]
+Description=Kubernetes kubelet
+Documentation=https://kubernetes.io/docs/
+After=network-online.target containerd.service
+Wants=network-online.target
+Requires=containerd.service
+[Service]
+ExecStart=/usr/local/bin/kubelet
+Restart=always
+RestartSec=10
+StartLimitInterval=0
+[Install]
+WantedBy=multi-user.target

@@ -20,35 +20,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# 加载配置
-if [[ -f "$PROJECT_ROOT/deploy-infrastructure-all/deploy-infrastructure-all.conf" ]]; then
-    source "$PROJECT_ROOT/deploy-infrastructure-all/deploy-infrastructure-all.conf"
-elif [[ -f "$PROJECT_ROOT/config/deploy.conf" ]]; then
-    source "$PROJECT_ROOT/config/deploy.conf"
-elif [[ -f "$PROJECT_ROOT/config/cluster.conf" ]]; then
-    source "$PROJECT_ROOT/config/cluster.conf"
-fi
-
-# 计算项目根目录（k8s目录）
-# PROJECT_ROOT 是 infrastructure/，需要向上两级到 k8s/
-# 路径：infrastructure/ -> sunmoonai/ -> k8s/（两级）
+# 所有步骤与总控使用同一个配置加载器；不使用另一检出或隐式默认集群。
+# 云上升级路径未经实机验证。
+# shellcheck source=/dev/null
+source "$PROJECT_ROOT/utils/common.sh"
+load_config_file || exit 1
 K8S_ROOT="$(cd "$PROJECT_ROOT/../.." && pwd)"
-
-# 加载通用工具函数（获取 SSH 执行函数）
-if [[ -f "$PROJECT_ROOT/utils/common.sh" ]]; then
-    source "$PROJECT_ROOT/utils/common.sh"
-fi
-
-# 加载集群配置映射函数（用于将 C1_SERVER_* 或 C2_SERVER_* 映射为 SERVER_*）
-if [[ -f "$K8S_ROOT/utils/cluster-config-mapping.sh" ]]; then
-    source "$K8S_ROOT/utils/cluster-config-mapping.sh"
-    # 应用集群配置映射（使用 CLUSTER 环境变量）
-    if command -v apply_cluster_config_mapping &>/dev/null; then
-        apply_cluster_config_mapping
-    fi
-fi
-
-# 注意：CA 分发功能已由 unified-cert-secret-management 处理，不再需要 ca-management
 
 # 颜色输出函数
 red() { echo -e "\033[31m$*\033[0m"; }
