@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "deployment": "sunmoon-sni-candidate-20260927",
+  "mode": "candidate",
+  "storage_uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+  "material_root": "/home/zymun/packages-to-be-installed/releases/nginx-sni-1.30.5-linux-amd64",
+  "listen": "127.0.0.1:28443",
+  "harbor_upstream": "127.0.0.1:18443",
+  "default_upstream": "127.0.0.1:30443"
+}

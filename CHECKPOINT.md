@@ -1,3 +1,16 @@
+## 最新续接：2026-09-27 本地 SNI 候选已验收，正式入口未切换
+
+基线59b94f7d0b42376500636f74de6d3d95c26facac，本地luna，不push；起始工作树干净。交付为包含本段的提交。
+
+- NGINX1.30.5-alpine官方index/amd64固定摘要，经东京prepare_sni.py直接HTTPS下载压缩OCI、归档回本机唯一物料根。26,112,000B SHA cca17bf6af939d0ec69bfe92782e8e392cf50ae19cd2d1902fbed36aa028768d；10必要blob含8层全核。远端/home/zym/sunmoon-nginx-sni-20260927-v1/materials；未docker pull/解包/云部署。来源HTTPS与固定摘要，未独立发布者签名。原Harbor/PG/Redis不升版。
+- 东京初始余7,945,834,496B不满足原8GiB pull门槛，直接下载维持6GiB门槛/512MiB压缩上限。用户本轮通知已清空间；复核余22,092,984,320B=20.58GiB，后续可用原pull/export，不重复下载这份已验证物料。
+- sni_proxy.py默认计划，candidate严格绑定回环28443→精确Harbor18443/default旧30443；formal预览0.0.0.0:30443→18443/19443，只可render，实际动作拒绝。固定镜像、private管理目录、UUID服务可见性、配置内容/容器ID/标签/mount/权限准入；无私钥或Docker socket挂载，host网络UID101/RO/capdrop/nopriv/restart=no/tmpfs/日志容量限制。create停止、start nginx-t、stop保留。
+- 实例/data/harbor/entry-proxy/sunmoon-sni-candidate-20260927，ID7141d1a57800e2b54aaffeebc4592d605c0d5a86d18ebdf780298bbf5bf45300。sni_verify.py实际启动新Harbor只读+代理，严格CA/hostname，直通五年叶DER SHA106bab970a87f1d2e5ac749e0efd61cf369f0f8baac7a5283dad7a6d3178e11e匹配；/v2/401及tokenrealm保留30443。6种ClientHello路由观察通过：Harbor大小写18443，普通/未知/伪装后缀/无SNI旧30443；后者不是完整应用TLS验收。完成后finally均停止，旧Harborhealthy/旧叶不变。
+- 失误必须保留：最初旧nginx-photon1.26.2模块检查容器sunmoon-sni-module-inspection-20260927未用tmpfs覆盖镜像声明卷，新增3个匿名卷，已退出保留。卷数43→46，旧卷未删。后续实际代理0卷；不擅自清理检查容器/卷。代码准入拒绝新proxy镜像的隐式卷。
+- 当前新Harbor9容器均停止（jobservice为created），新代理exited，旧/验证6节点仍running；无30443切换、无旧容器停止/删除、无挂载旧路径、无清理、无后台任务。证据scripts/results/luna-sni-entry.20260927.json；3PythonAST、默认计划、nginx-t通过，未测试套件。
+- docs/sni-entry.md说明方法、实测、限制和维护卡前置。30443当前属于旧controlplane，停止也影响API/80/30444–30446；具体窗口尚未批准，不擅自切换。主方案要求先Harbor/入口后main，需如实写整个旧API停机时长，不能用短代理切换掩盖后续平台部署。先补最新冻结/备份恢复/写入验收与管理工具闭包，再就完整维护动作批准。
+- 下一步：独立Harbor备份/恢复通用接口、可写/Jobservice/认证推拉与CI-CD、挂盘自动启动、云SSH前置未实机；然后正式SNI/main静动态卷/信任/共享平台、重建集群仓库不丢。整体仍未完成，不通知luna做完了。inbox仍旧kind/~/.kube/kind-config/1.27.3kubectl。最后清理必须做，保护节点/卷/备份。
+
 ## 最新续接：2026-09-27 新宿主实例已恢复并通过只读启停验收
 
 基线 `cf246d4794771ba47b936bf48ae8adbd32f5f15c`，本地 luna，不 push，开始工作树干净。交付为包含本段的提交；没有把整体迁移写成完成。

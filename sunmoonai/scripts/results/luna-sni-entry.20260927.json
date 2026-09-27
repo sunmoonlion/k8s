@@ -1,0 +1,118 @@
+{
+  "date": "2026-09-27",
+  "scope": "WSL loopback SNI candidate only",
+  "material": {
+    "schema": 1,
+    "batch": "nginx-sni-1.30.5-linux-amd64",
+    "source": "docker.io/library/nginx:1.30.5-alpine",
+    "index_digest": "sha256:0985e772fb9f729e6fa0980da05fca5d9c468e870eed43071545afa9d2e27d94",
+    "platform_digest": "sha256:8f84ed99befc3891b8f329c5c202785278a2cfb7c25107d57fb2a134a3117433",
+    "reference": "docker.io/library/nginx@sha256:8f84ed99befc3891b8f329c5c202785278a2cfb7c25107d57fb2a134a3117433",
+    "config_digest": "sha256:43d9d8c1f8968f09df8c1aa6c136ecc617e62d64fe4c0b24c97de4eb210bd973",
+    "archive_tag": "sunmoon-offline/nginx-sni:1.30.5-8f84ed99befc3891",
+    "path": "nginx-linux-amd64.tar",
+    "sha256": "cca17bf6af939d0ec69bfe92782e8e392cf50ae19cd2d1902fbed36aa028768d",
+    "bytes": 26112000,
+    "nginx_version": "1.30.5",
+    "layers": 8,
+    "volumes": [],
+    "provenance": "Official Docker Hub HTTPS pinned index + amd64 manifest; no publisher signature verified"
+  },
+  "oci_graph_verified": {
+    "necessary_blobs": 10,
+    "layers": 8,
+    "original_index_also_preserved": true
+  },
+  "proxy": {
+    "name": "sunmoon-sni-candidate-20260927",
+    "container_id": "7141d1a57800e2b54aaffeebc4592d605c0d5a86d18ebdf780298bbf5bf45300",
+    "state": "exited",
+    "volume_mounts": 0,
+    "listen": "127.0.0.1:28443",
+    "nginx_version": "1.30.5"
+  },
+  "verified": {
+    "strict_CA_and_hostname": true,
+    "direct_and_proxied_leaf_identical": true,
+    "certificate_DER_sha256": "106bab970a87f1d2e5ac749e0efd61cf369f0f8baac7a5283dad7a6d3178e11e",
+    "registry_status": 401,
+    "original_30443_token_realm_preserved": true,
+    "syntax_and_ssl_preread": true
+  },
+  "route_observations": [
+    {
+      "sni": "harbor.sunmoonai.com",
+      "upstream": "127.0.0.1:18443",
+      "initial_server_bytes": 2197,
+      "complete_backend_TLS_handshake_claimed": false
+    },
+    {
+      "sni": "HARBOR.SUNMOONAI.COM",
+      "upstream": "127.0.0.1:18443",
+      "initial_server_bytes": 2197,
+      "complete_backend_TLS_handshake_claimed": false
+    },
+    {
+      "sni": "sunmoonai.com",
+      "upstream": "127.0.0.1:30443",
+      "initial_server_bytes": 1939,
+      "complete_backend_TLS_handshake_claimed": false
+    },
+    {
+      "sni": "unrecognized.invalid",
+      "upstream": "127.0.0.1:30443",
+      "initial_server_bytes": 1939,
+      "complete_backend_TLS_handshake_claimed": false
+    },
+    {
+      "sni": "harbor.sunmoonai.com.evil.invalid",
+      "upstream": "127.0.0.1:30443",
+      "initial_server_bytes": 1939,
+      "complete_backend_TLS_handshake_claimed": false
+    },
+    {
+      "sni": null,
+      "upstream": "127.0.0.1:30443",
+      "initial_server_bytes": 1939,
+      "complete_backend_TLS_handshake_claimed": false
+    }
+  ],
+  "end_state": {
+    "new_harbor_services_and_initializer_stopped": 9,
+    "old_and_validation_kind_nodes_running": 6,
+    "old_harbor_healthy": true,
+    "old_leaf_unchanged": true,
+    "formal_entry_switched": false,
+    "docker_volumes": 46
+  },
+  "inspection_side_effect": {
+    "name": "sunmoon-sni-module-inspection-20260927",
+    "container_id": "6c906a74536a49ab0da8aed18af28ce663d80b0711d2b0a2468e914255c550b5",
+    "state": "exited",
+    "implicit_new_volumes": 3,
+    "old_volumes_before": 43,
+    "cause": "one-time old nginx-photon module inspection omitted tmpfs coverage",
+    "retained_not_deleted": true
+  },
+  "checks": {
+    "python_AST": 3,
+    "default_plans": true,
+    "nginx_config_syntax": true,
+    "test_suite_run": false
+  },
+  "not_verified": [
+    "formal30443 handoff",
+    "application routing",
+    "authenticated push/pull through proxy",
+    "long connections/large upload",
+    "startup after WSL/Docker restart",
+    "cloud deployment"
+  ],
+  "tokyo_storage": {
+    "before_download_available_bytes": 7945834496,
+    "after_owner_cleanup_available_bytes": 22092984320,
+    "docker_pull_minimum_gib": 8,
+    "direct_OCI_minimum_gib": 6,
+    "existing_valid_archive_retained": true
+  }
+}

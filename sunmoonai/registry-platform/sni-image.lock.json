@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "batch": "nginx-sni-1.30.5-linux-amd64",
+  "source": "docker.io/library/nginx:1.30.5-alpine",
+  "index_digest": "sha256:0985e772fb9f729e6fa0980da05fca5d9c468e870eed43071545afa9d2e27d94",
+  "platform_digest": "sha256:8f84ed99befc3891b8f329c5c202785278a2cfb7c25107d57fb2a134a3117433",
+  "reference": "docker.io/library/nginx@sha256:8f84ed99befc3891b8f329c5c202785278a2cfb7c25107d57fb2a134a3117433",
+  "config_digest": "sha256:43d9d8c1f8968f09df8c1aa6c136ecc617e62d64fe4c0b24c97de4eb210bd973",
+  "archive_tag": "sunmoon-offline/nginx-sni:1.30.5-8f84ed99befc3891",
+  "path": "nginx-linux-amd64.tar",
+  "sha256": "cca17bf6af939d0ec69bfe92782e8e392cf50ae19cd2d1902fbed36aa028768d",
+  "bytes": 26112000,
+  "nginx_version": "1.30.5",
+  "layers": 8,
+  "volumes": [],
+  "provenance": "Official Docker Hub HTTPS pinned index + amd64 manifest; no publisher signature verified"
+}
