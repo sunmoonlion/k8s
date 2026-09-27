@@ -50,7 +50,7 @@ sudo -n python3 -B sunmoonai/kind-infrastructure/formal/prepare.py check
 进入创建前仍须完成：
 
 1. 新 managed Harbor 完整备份的独立恢复演练（旧布局验收不能代替）；当前容量不足，保留门槛。
-2. P3 具体维护卡、所有者 WSL 压缩与旧控制面停机窗口；入口故障须能恢复旧控制面。
+2. P3 [维护步骤](../../registry-platform/docs/entry-maintenance.md)、所有者 WSL 压缩与旧控制面停机窗口；38443过渡候选已验，正式切换执行器尚待实现，入口故障须能恢复旧控制面。
 3. 正式 30443 SNI / Harbor 的 TLS、认证推拉与回退验收。
 4. 带存储门禁的正式创建/启动入口、CNI 导入与现有共享平台模块接线。不得直接运行历史自动重建入口，也不得直接运行裸 `kind create` 跳过门禁。
 

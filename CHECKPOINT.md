@@ -1,3 +1,15 @@
+## 最新续接：2026-09-27 旧入口身份盘点和38443过渡候选实测通过
+
+基线94c16285a3876ac354db5de8f8bc1173bad7dd59；本地luna、不push，开始工作树干净。本单元补P3前置实际证据；正式创建器/正式切换执行器仍未实现，不能误报本轮完成建群。
+
+- 新entry_handoff.py默认计划，--check仅GET旧API、Docker inspect、无凭据严格TLS GET。固定1.27.3 kubectl SHA、旧kube-system UID、静态kubeconfig端点、原CA SHA。实际三节点身份/端口/挂载/网段、Traefik Service与Ready endpoints已记录到scripts/results/luna-entry-handoff-inspection.20260927.json。旧CP ID790e27...，worker ID6b0fef... IP172.18.0.3，worker2 ID7d5e66... IP172.18.0.4；不要仅按IP取代身份核验。
+- Traefik ingress-platform-dev/traefik-sunmoonai，NodePort30080和30443–46，externalTrafficPolicy=Cluster；Ready端点10.244.1.16在kind-worker。旧公开30443及两个worker直接访问，Harbor/v2均401、health200healthy、原CA/hostname严格验证且证书DER SHA一致。sunmoonai.com根路径404仅TLS/HTTP路径证据，不是业务验收；实际停止旧CP后的可用性未验。
+- sni_proxy增加transition-candidate（回环38443→18443/固定旧worker30443）和仅预览transition模式；后者及formal实际动作继续拒绝。prepare/start前固定worker容器ID/网络ID/IP/running状态，漂移失败；不自动换后端。sni_verify复用任意已准入候选端口/默认上游并要求Harbor mode=read-only，原28443保持兼容。
+- 实际创建sunmoon-sni-transition-candidate-20260927，ID ec3e40eb1870f17c9ad32c3506ec7219ef1e637df1b978a4894512895445c233，镜像仍官方已锁NGINX1.30.5，无数据卷/私钥挂载。38443完整候选验收通过，结果scripts/results/luna-sni-transition-candidate.20260927.json：新Harbor严格TLS/401/token realm保持30443，6种ClientHello路由符合（其他域名/无SNI为路由观察），nginx版本/模块检查通过。私有acceptance-*在/data/harbor/entry-proxy/该实例下。
+- 结束新代理/新只读Harbor停止保留，docker ps运行只有旧/136六节点，卷仍46。未停旧CP/worker2、未切正式30443、未清理、未下载/造镜像、未改inbox、无云操作/后台会话。AST/默认plan/render/gitdiffcheck通过，无应用测试套件。没有为本轮再盘点容量；前段容量快照仍需动作前刷新。
+- 清理依赖提醒：公开harbor-main-local.json.source仍指/data/harbor/candidates/harbor-2.13.2-20260927，runtime_inspect.inputs还读取该处generator-state/inputs-receipt/private/compose/generated-config。最终清理不得把整个candidate目录当废物直接删；必须先解耦/保留必要输入，逐项列文件与恢复来源。本轮没有执行任何清理。
+- 新docs/entry-maintenance.md列出维护顺序、停服影响、只读切换与写入后回退的不同边界：P3默认旧worker临时转发，P4后验证19443再转新集群。TLS-only过渡不承接80/30444–46，旧API43001也停；确切停服窗口未授权。此前方案60–90分钟及30分钟回退上限是建议，不冒充所有者批准。维护前新managed备份独立恢复/最新旧源停写同步未完成。剩余正式创建器/CNI共享接线/自启/真实Docker-CI推拉/重建独立性/云代码闭包继续推进。最终清理必须最后做，旧节点/卷/唯一备份保护，不通知“luna做完了”。
+
 ## 最新续接：2026-09-27 正式 KIND 参数与只读预检完成，尚未建群
 
 基线964811057e4091b51e495da5dc81cc24483d6478；本地luna、不push，开始工作树干净。本单元新增kind-infrastructure/formal/prepare.py及README，更新主方案当前状态，公开预检scripts/results/luna-formal-kind-preflight.20260927.json。没有创建器/apply，不能拿render结果直接裸kind create。

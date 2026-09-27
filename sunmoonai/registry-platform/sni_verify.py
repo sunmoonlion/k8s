@@ -42,7 +42,7 @@ def request(port, context, path):
         c.close()
 
 
-def route_probe(name):
+def route_probe(name, port=28443):
     # Generate a real ClientHello, then close after receiving initial server bytes.
     # We deliberately make no claim about backend certs/auth for unknown/no SNI.
     context = ssl.create_default_context()
@@ -56,7 +56,7 @@ def route_probe(name):
         tls.do_handshake()
     except ssl.SSLWantReadError:
         pass
-    with socket.create_connection(('127.0.0.1', 28443), timeout=10) as connection:
+    with socket.create_connection(('127.0.0.1', port), timeout=10) as connection:
         connection.sendall(outgoing.read())
         return len(connection.recv(65536))
 
@@ -67,8 +67,12 @@ def upstreams(container, since):
 
 
 def verify(proxy, harbor):
-    if proxy.config['mode'] != 'candidate' or harbor.config['runtime']['platform'] != 'wsl':
+    if proxy.config['mode'] not in ('candidate', 'transition-candidate') or harbor.config['runtime']['platform'] != 'wsl':
         raise ValueError('Only local candidate verification is admitted')
+    port = int(proxy.config['listen'].rsplit(':', 1)[1])
+    default_upstream = proxy.config['default_upstream']
+    if harbor.mode() != 'read-only':
+        raise ValueError('SNI acceptance requires a read-only Harbor; no automatic mode change')
     if proxy.inspect()['State']['Running'] or any(v == 'running' for v in harbor.check().values()):
         raise ValueError('Acceptance owns only initially stopped new services')
     context = ssl.create_default_context(cafile=str(harbor.root / 'ca-download/ca.crt'))
@@ -91,7 +95,7 @@ def verify(proxy, harbor):
                     raise ValueError('Harbor readiness deadline') from None
                 time.sleep(2)
         proxy.start()
-        response = request(28443, context, '/v2/')
+        response = request(port, context, '/v2/')
         expected = hashlib.sha256(ssl.PEM_cert_to_DER_cert(read(harbor.root / 'tls/server.crt').decode())).hexdigest()
         if (response['status'] != 401 or response['api_version'] != 'registry/2.0'
                 or response['certificate_der_sha256'] != expected
@@ -99,7 +103,7 @@ def verify(proxy, harbor):
                 or 'realm="https://harbor.sunmoonai.com:30443/service/token"' not in (response['challenge'] or '')
                 or response['challenge'] != direct['challenge']):
             raise ValueError('Candidate TLS/registry authentication realm differs')
-        health = request(28443, context, '/api/v2.0/health')
+        health = request(port, context, '/api/v2.0/health')
         # Jobservice is intentionally stopped, so do not require overall healthy.
         if health['status'] not in (200, 503) or 'components' not in json.loads(health['body']):
             raise ValueError('Harbor health API did not traverse candidate')
@@ -107,12 +111,12 @@ def verify(proxy, harbor):
         routes = []
         for name, upstream in [('harbor.sunmoonai.com', '127.0.0.1:18443'),
                                ('HARBOR.SUNMOONAI.COM', '127.0.0.1:18443'),
-                               ('sunmoonai.com', '127.0.0.1:30443'),
-                               ('unrecognized.invalid', '127.0.0.1:30443'),
-                               ('harbor.sunmoonai.com.evil.invalid', '127.0.0.1:30443'),
-                               (None, '127.0.0.1:30443')]:
+                               ('sunmoonai.com', default_upstream),
+                               ('unrecognized.invalid', default_upstream),
+                               ('harbor.sunmoonai.com.evil.invalid', default_upstream),
+                               (None, default_upstream)]:
             previous = len(upstreams(proxy.state['container_id'], since))
-            received = route_probe(name)
+            received = route_probe(name, port)
             end = time.monotonic() + 5
             while True:
                 observed = upstreams(proxy.state['container_id'], since)[previous:]
@@ -131,7 +135,7 @@ def verify(proxy, harbor):
         version = (probe.stdout + probe.stderr).decode()
         if probe.returncode or 'nginx/1.30.5' not in version or '--with-stream_ssl_preread_module' not in version:
             raise ValueError('NGINX version or preread module differs')
-        result = {'completed': True, 'listen': '127.0.0.1:28443', 'nginx_version': '1.30.5',
+        result = {'completed': True, 'listen': proxy.config['listen'], 'nginx_version': '1.30.5',
                   'tls_certificate_der_sha256': expected, 'strict_ca_and_hostname': True,
                   'token_realm_preserved': True, 'anonymous_private_registry_status': response['status'],
                   'routes': routes, 'proxy_has_no_private_key_mounts': True,

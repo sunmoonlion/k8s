@@ -1,0 +1,53 @@
+{
+  "completed": true,
+  "listen": "127.0.0.1:38443",
+  "nginx_version": "1.30.5",
+  "tls_certificate_der_sha256": "106bab970a87f1d2e5ac749e0efd61cf369f0f8baac7a5283dad7a6d3178e11e",
+  "strict_ca_and_hostname": true,
+  "token_realm_preserved": true,
+  "anonymous_private_registry_status": 401,
+  "routes": [
+    {
+      "sni": "harbor.sunmoonai.com",
+      "upstream": "127.0.0.1:18443",
+      "initial_response_bytes": 2197,
+      "backend_certificate_verified": false
+    },
+    {
+      "sni": "HARBOR.SUNMOONAI.COM",
+      "upstream": "127.0.0.1:18443",
+      "initial_response_bytes": 2197,
+      "backend_certificate_verified": false
+    },
+    {
+      "sni": "sunmoonai.com",
+      "upstream": "172.18.0.3:30443",
+      "initial_response_bytes": 1939,
+      "backend_certificate_verified": false
+    },
+    {
+      "sni": "unrecognized.invalid",
+      "upstream": "172.18.0.3:30443",
+      "initial_response_bytes": 1939,
+      "backend_certificate_verified": false
+    },
+    {
+      "sni": "harbor.sunmoonai.com.evil.invalid",
+      "upstream": "172.18.0.3:30443",
+      "initial_response_bytes": 1939,
+      "backend_certificate_verified": false
+    },
+    {
+      "sni": null,
+      "upstream": "172.18.0.3:30443",
+      "initial_response_bytes": 1939,
+      "backend_certificate_verified": false
+    }
+  ],
+  "proxy_has_no_private_key_mounts": true,
+  "formal_port_switched": false,
+  "authenticated_push_pull_verified": false,
+  "long_transfer_or_application_routes_verified": false,
+  "candidate_and_new_harbor_stopped": true,
+  "old_harbor_healthy": true
+}

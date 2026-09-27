@@ -8,6 +8,7 @@ the separate maintenance procedure. Cloud registry hosts do not use this proxy.
 import argparse
 import fcntl
 import hashlib
+import ipaddress
 import json
 import os
 from pathlib import Path
@@ -31,8 +32,12 @@ TMPFS = {'/tmp': 'rw,noexec,nosuid,nodev,size=16m,mode=1777',
 
 def load(path):
     config = json.loads(read(path.absolute()))
-    if set(config) != {'schema', 'deployment', 'mode', 'storage_uuid', 'material_root',
-                       'listen', 'harbor_upstream', 'default_upstream'} or config['schema'] != 1:
+    fields = {'schema', 'deployment', 'mode', 'storage_uuid', 'material_root',
+              'listen', 'harbor_upstream', 'default_upstream'}
+    transition = config.get('mode') in ('transition-candidate', 'transition')
+    if transition:
+        fields.add('upstream_node')
+    if set(config) != fields or config['schema'] != 1:
         raise ValueError('Unexpected SNI profile')
     if not re.fullmatch(r'sunmoon-sni-[a-z0-9-]{1,50}', config['deployment']):
         raise ValueError('Explicit owned deployment name required')
@@ -40,13 +45,34 @@ def load(path):
         raise ValueError('Data disk UUID required')
     expected = {'candidate': ('127.0.0.1:28443', '127.0.0.1:30443'),
                 'formal': ('0.0.0.0:30443', '127.0.0.1:19443')}
+    if transition:
+        node = config['upstream_node']
+        if (set(node) != {'name', 'id', 'ip', 'network_id'} or node['name'] != 'kind-worker'
+                or any(not re.fullmatch(r'[0-9a-f]{64}', node[k]) for k in ('id', 'network_id'))
+                or ipaddress.IPv4Address(node['ip']) not in ipaddress.IPv4Network('172.18.0.0/16')):
+            raise ValueError('Explicit old worker identity and local KIND IPv4 required')
+        expected.update({'transition-candidate': ('127.0.0.1:38443', node['ip'] + ':30443'),
+                         'transition': ('0.0.0.0:30443', node['ip'] + ':30443')})
     if (config['mode'] not in expected or (config['listen'], config['default_upstream']) != expected[config['mode']]
             or config['harbor_upstream'] != '127.0.0.1:18443'):
-        raise ValueError('Only the approved candidate/formal WSL routing shapes are admitted')
+        raise ValueError('Only the declared candidate/transition/formal WSL routing shapes are admitted')
     path = Path(config['material_root'])
     if not path.is_absolute() or path.resolve() != path:
         raise ValueError('Explicit nonsymlink material root required')
     return config
+
+
+def upstream_identity(config):
+    if config['mode'] not in ('transition-candidate', 'transition'):
+        return
+    expected = config['upstream_node']
+    actual = json.loads(docker('inspect', expected['name']))[0]
+    network = actual['NetworkSettings']['Networks']['kind']
+    if (actual['Id'] != expected['id'] or actual['Name'] != '/' + expected['name']
+            or (actual['Config'].get('Labels') or {}).get('io.x-k8s.kind.cluster') != 'kind'
+            or not actual['State']['Running'] or network['IPAddress'] != expected['ip']
+            or network['NetworkID'] != expected['network_id']):
+        raise ValueError('Transition worker identity/address changed; re-inspect, never silently retarget')
 
 
 def render(config):
@@ -94,6 +120,7 @@ def image_identity(record):
 
 def prepare(config):
     storage({'runtime': {'platform': 'wsl'}, 'storage_uuid': config['storage_uuid']}, minimum_gib=2)
+    upstream_identity(config)
     root = BASE / config['deployment']
     if root.exists():
         return Proxy(config).check()
@@ -197,6 +224,7 @@ class Proxy:
 
     def start(self):
         storage({'runtime': {'platform': 'wsl'}, 'storage_uuid': self.config['storage_uuid']}, minimum_gib=2)
+        upstream_identity(self.config)
         self.immutable(); info = self.inspect()
         if info['State']['Running']:
             return self.check()
@@ -235,7 +263,7 @@ def main():
     if not args.apply:
         print(json.dumps({'dry_run': True, 'action': args.action, 'profile': config,
                           'only_candidate_apply_implemented': True, 'delete': False, 'cloud_proxy': False})); return
-    if config['mode'] != 'candidate':
+    if config['mode'] not in ('candidate', 'transition-candidate'):
         raise ValueError('Formal 30443 handoff requires the separate approved maintenance procedure')
     fd = os.open('/data/harbor/.instance-preparation.lock', os.O_RDWR | os.O_NOFOLLOW)
     with os.fdopen(fd, 'rb+') as lock:

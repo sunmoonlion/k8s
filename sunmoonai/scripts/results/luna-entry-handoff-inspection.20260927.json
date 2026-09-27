@@ -1,0 +1,249 @@
+{
+  "schema": 1,
+  "observed_at": "2026-09-27T15:48:12.163999+00:00",
+  "read_only": true,
+  "old_cluster_uid": "5d71ab3a-ea5a-4535-adc6-d7698d820249",
+  "kubeconfig_sha256": "390f07eef08e7fe0764274f2abe6e8001245656504faf08e06531b416f3151ec",
+  "nodes": [
+    {
+      "name": "kind-control-plane",
+      "id": "790e27b223e82424a27bb52329ebb60e8a5d9b264395ca779e352876cd22af3e",
+      "ip": "172.18.0.2",
+      "network_id": "5fa6672389a9d3bf6d5040ff4cc89bcc3d4bf9ea896a3b08f8bce152776650c5",
+      "image_id": "sha256:2a19f453bfd67eae9de766193b22aa7cfcd17d0334f0d47d05cd4cec6f308204",
+      "ports": {
+        "30080/tcp": [
+          {
+            "HostIp": "0.0.0.0",
+            "HostPort": "80"
+          }
+        ],
+        "30443/tcp": [
+          {
+            "HostIp": "0.0.0.0",
+            "HostPort": "30443"
+          }
+        ],
+        "30444/tcp": [
+          {
+            "HostIp": "0.0.0.0",
+            "HostPort": "30444"
+          }
+        ],
+        "30445/tcp": [
+          {
+            "HostIp": "0.0.0.0",
+            "HostPort": "30445"
+          }
+        ],
+        "30446/tcp": [
+          {
+            "HostIp": "0.0.0.0",
+            "HostPort": "30446"
+          }
+        ],
+        "6443/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "43001"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "Type": "volume",
+          "Name": "97772817b24982c6b7296b9c192dabe10d5a1d693651836336923dac59fbd565",
+          "Source": "/var/lib/docker/volumes/97772817b24982c6b7296b9c192dabe10d5a1d693651836336923dac59fbd565/_data",
+          "Destination": "/var",
+          "RW": true
+        },
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/lib/modules",
+          "Destination": "/lib/modules",
+          "RW": false
+        }
+      ]
+    },
+    {
+      "name": "kind-worker",
+      "id": "6b0fef2472aef24a0ff86a2f01654b2b4da3a23dbd3895c84058b1c3e74d038f",
+      "ip": "172.18.0.3",
+      "network_id": "5fa6672389a9d3bf6d5040ff4cc89bcc3d4bf9ea896a3b08f8bce152776650c5",
+      "image_id": "sha256:2a19f453bfd67eae9de766193b22aa7cfcd17d0334f0d47d05cd4cec6f308204",
+      "ports": {},
+      "mounts": [
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/data/kind-local-storage",
+          "Destination": "/data/kind-local-storage",
+          "RW": true
+        },
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/lib/modules",
+          "Destination": "/lib/modules",
+          "RW": false
+        },
+        {
+          "Type": "volume",
+          "Name": "8ac9132e26523082f3eee2d798bcc4d794951fc8c9ee2db41cd9bdccd8bb5167",
+          "Source": "/var/lib/docker/volumes/8ac9132e26523082f3eee2d798bcc4d794951fc8c9ee2db41cd9bdccd8bb5167/_data",
+          "Destination": "/var",
+          "RW": true
+        }
+      ]
+    },
+    {
+      "name": "kind-worker2",
+      "id": "7d5e66507c8f84136f9052e7ff43e512e836ec58dc740d637ca97c3634736b37",
+      "ip": "172.18.0.4",
+      "network_id": "5fa6672389a9d3bf6d5040ff4cc89bcc3d4bf9ea896a3b08f8bce152776650c5",
+      "image_id": "sha256:2a19f453bfd67eae9de766193b22aa7cfcd17d0334f0d47d05cd4cec6f308204",
+      "ports": {},
+      "mounts": [
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/lib/modules",
+          "Destination": "/lib/modules",
+          "RW": false
+        },
+        {
+          "Type": "volume",
+          "Name": "4ad6bbc6c47d4a14615a8aecabd050e23f22f2351ece677c78b7c88cd7cb31f6",
+          "Source": "/var/lib/docker/volumes/4ad6bbc6c47d4a14615a8aecabd050e23f22f2351ece677c78b7c88cd7cb31f6/_data",
+          "Destination": "/var",
+          "RW": true
+        }
+      ]
+    }
+  ],
+  "service": {
+    "namespace": "ingress-platform-dev",
+    "name": "traefik-sunmoonai",
+    "uid": "14a50d7c-b494-4db8-a88f-66c8d93b1dc9",
+    "policy": "Cluster",
+    "ports": [
+      {
+        "name": "mongodb",
+        "nodePort": 30445,
+        "port": 30445,
+        "protocol": "TCP",
+        "targetPort": "mongodb"
+      },
+      {
+        "name": "postgresql",
+        "nodePort": 30444,
+        "port": 30444,
+        "protocol": "TCP",
+        "targetPort": "postgresql"
+      },
+      {
+        "name": "redis",
+        "nodePort": 30446,
+        "port": 30446,
+        "protocol": "TCP",
+        "targetPort": "redis"
+      },
+      {
+        "name": "web",
+        "nodePort": 30080,
+        "port": 80,
+        "protocol": "TCP",
+        "targetPort": "web"
+      },
+      {
+        "name": "websecure",
+        "nodePort": 30443,
+        "port": 443,
+        "protocol": "TCP",
+        "targetPort": "websecure"
+      }
+    ]
+  },
+  "ready_endpoints": [
+    {
+      "ip": "10.244.1.16",
+      "node": "kind-worker"
+    }
+  ],
+  "tls_probes": [
+    {
+      "address": "127.0.0.1",
+      "registry": {
+        "status": 401,
+        "certificate_der_sha256": "a0c60b64911e69797bc8832be22e0a9eae96f9488a80ff6d59158b199842834d",
+        "body_sha256": "a2dd4b830828e9de17b1a7790d9018c3136c07d54fc40448bdc2e2efa14a7cd8",
+        "challenge": "Bearer realm=\"https://harbor.sunmoonai.com:30443/service/token\",service=\"harbor-registry\""
+      },
+      "health": {
+        "status": 200,
+        "certificate_der_sha256": "a0c60b64911e69797bc8832be22e0a9eae96f9488a80ff6d59158b199842834d",
+        "body_sha256": "a2771d9f2345b6c1cb1d35dad9cb05a5c28f5be0676484ea673db513acaee47f",
+        "challenge": null
+      },
+      "ordinary_tls": {
+        "status": 404,
+        "certificate_der_sha256": "a0c60b64911e69797bc8832be22e0a9eae96f9488a80ff6d59158b199842834d",
+        "body_sha256": "b16e15764b8bc06c5c3f9f19bc8b99fa48e7894aa5a6ccdad65da49bbf564793",
+        "challenge": null
+      }
+    },
+    {
+      "address": "172.18.0.3",
+      "registry": {
+        "status": 401,
+        "certificate_der_sha256": "a0c60b64911e69797bc8832be22e0a9eae96f9488a80ff6d59158b199842834d",
+        "body_sha256": "a2dd4b830828e9de17b1a7790d9018c3136c07d54fc40448bdc2e2efa14a7cd8",
+        "challenge": "Bearer realm=\"https://harbor.sunmoonai.com:30443/service/token\",service=\"harbor-registry\""
+      },
+      "health": {
+        "status": 200,
+        "certificate_der_sha256": "a0c60b64911e69797bc8832be22e0a9eae96f9488a80ff6d59158b199842834d",
+        "body_sha256": "a2771d9f2345b6c1cb1d35dad9cb05a5c28f5be0676484ea673db513acaee47f",
+        "challenge": null
+      },
+      "ordinary_tls": {
+        "status": 404,
+        "certificate_der_sha256": "a0c60b64911e69797bc8832be22e0a9eae96f9488a80ff6d59158b199842834d",
+        "body_sha256": "b16e15764b8bc06c5c3f9f19bc8b99fa48e7894aa5a6ccdad65da49bbf564793",
+        "challenge": null
+      }
+    },
+    {
+      "address": "172.18.0.4",
+      "registry": {
+        "status": 401,
+        "certificate_der_sha256": "a0c60b64911e69797bc8832be22e0a9eae96f9488a80ff6d59158b199842834d",
+        "body_sha256": "a2dd4b830828e9de17b1a7790d9018c3136c07d54fc40448bdc2e2efa14a7cd8",
+        "challenge": "Bearer realm=\"https://harbor.sunmoonai.com:30443/service/token\",service=\"harbor-registry\""
+      },
+      "health": {
+        "status": 200,
+        "certificate_der_sha256": "a0c60b64911e69797bc8832be22e0a9eae96f9488a80ff6d59158b199842834d",
+        "body_sha256": "a2771d9f2345b6c1cb1d35dad9cb05a5c28f5be0676484ea673db513acaee47f",
+        "challenge": null
+      },
+      "ordinary_tls": {
+        "status": 404,
+        "certificate_der_sha256": "a0c60b64911e69797bc8832be22e0a9eae96f9488a80ff6d59158b199842834d",
+        "body_sha256": "b16e15764b8bc06c5c3f9f19bc8b99fa48e7894aa5a6ccdad65da49bbf564793",
+        "challenge": null
+      }
+    }
+  ],
+  "proposed_transition_default": "172.18.0.3:30443",
+  "control_plane_stopped": false,
+  "entry_switched": false,
+  "remaining": [
+    "recheck after WSL restart; node IPs may change",
+    "worker health after old control-plane stop remains untested",
+    "80 and 30444-30446 unavailable during the proposed TLS-only transition",
+    "freeze source writes and reconcile latest Harbor data before cutover",
+    "new backup restore, maintenance approval and formal creator remain pending"
+  ]
+}
