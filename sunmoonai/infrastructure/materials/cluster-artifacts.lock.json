@@ -12,7 +12,7 @@
   },
   "closure_complete": false,
   "pending": [
-    "Remaining infrastructure step09/11/12/13 and external registry/platform integration"
+    "Remaining infrastructure step11/12/13, KIND storage adapter and external registry/platform integration"
   ],
   "provenance": [
     "https://github.com/containerd/nerdctl/releases/tag/v2.3.5",
@@ -180,5 +180,9 @@
     "kubeadm_configuration": "passed",
     "node_side_execution": "not_run",
     "cloud_execution": "not_run"
+  },
+  "storage_image_lock": {
+    "path": "storage-images.lock.json",
+    "sha256": "e55efc5e7edcfe5db7250ea1c539f06c4cc4e2d10c61813dc9fc37c759400a39"
   }
 }

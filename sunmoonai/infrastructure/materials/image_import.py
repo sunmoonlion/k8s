@@ -120,6 +120,11 @@ def references():
 
 def import_images(root, manifest, data, work):
     items = records(manifest, data)
+    return import_items(root, items, work)
+
+
+def import_items(root, items, work):
+    """Import an explicit, already locked set; shared by CNI and storage."""
     graphs = [inspect_archive(below(root, i['material_path']), i) for i in items]
     existing = references()
     for item in items:

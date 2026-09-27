@@ -19,10 +19,11 @@ from bundle import resolve, verify
 from cluster_config import validate, init_documents, calico_objects, multi_json
 from node_control import PUBLIC_FILES, REMOTE
 from cluster_resources import namespaces, taints
+from storage_resources import validate as validate_storage
 
 
 def resource_spec(phase, profile, connections, data):
-    step = {'namespaces': '07', 'health': '08', 'taints': '10'}[phase]
+    step = {'namespaces': '07', 'health': '08', 'storage': '09', 'taints': '10'}[phase]
     enabled = os.environ.get(f'SM_STEP{step}_ENABLED')
     if enabled not in ('true', 'false'):
         raise ValueError('Explicit resource step enable/disable required')
@@ -52,6 +53,26 @@ def resource_spec(phase, profile, connections, data):
         spec['taints'] = {n['name']: os.environ.get(f'SM_NODE_{i}_TAINTS', '') for i, n in zip(indices, profile['nodes'])}
         for value in spec['taints'].values():
             taints(value)
+    if phase == 'storage':
+        def flag(key):
+            value = os.environ.get('SM_STORAGE_' + key)
+            if value not in ('true', 'false'):
+                raise ValueError('Explicit storage boolean required: ' + key)
+            return value == 'true'
+        get = lambda key: os.environ.get('SM_STORAGE_' + key, '')
+        spec.update(local_enabled=flag('LOCAL_STORAGE_ENABLED'), cloud_enabled=flag('CLOUD_STORAGE_ENABLED'),
+                    default=flag('LOCAL_STORAGE_DEFAULT_CLASS'), version=get('LOCAL_STORAGE_VERSION'),
+                    helper=get('HELPER_IMAGE'), pull_policy=get('HELPER_IMAGE_PULL_POLICY'),
+                    reclaim=get('LOCAL_STORAGE_RECLAIM_POLICY'), binding=get('LOCAL_STORAGE_VOLUME_BINDING_MODE'),
+                    class_name=get('LOCAL_STORAGE_CLASS_NAME'), paths={})
+        for i, n in zip(os.environ['SM_NODE_INDICES'].split(), profile['nodes']):
+            eligibility = os.environ.get(f'SM_NODE_{i}_STORAGE_ENABLED')
+            if eligibility not in ('true', 'false'):
+                raise ValueError('Every node needs explicit storage eligibility')
+            spec['paths'][n['name']] = {'enabled': eligibility == 'true',
+                'uuid': os.environ.get(f'SM_NODE_{i}_STORAGE_UUID', ''),
+                'path': get('LOCAL_STORAGE_PATH'), 'mountpoint': get('LOCAL_STORAGE_MOUNTPOINT')}
+        validate_storage(spec)
     return enabled == 'true', spec
 
 
@@ -126,7 +147,7 @@ def call(c, files, release, phase, request):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--phase', choices=('init', 'cni', 'join', 'namespaces', 'health', 'taints'), required=True)
+    parser.add_argument('--phase', choices=('init', 'cni', 'join', 'namespaces', 'health', 'storage', 'taints'), required=True)
     parser.add_argument('--apply', action='store_true')
     args = parser.parse_args()
     directory = Path(__file__).resolve().parent
@@ -138,7 +159,7 @@ def main():
     master = next(n for n in profile['nodes'] if n['role'] == 'master')
     configured_version = os.environ.get('SM_KUBERNETES', '').removeprefix('v')
     configured_calico = os.environ.get('SM_CALICO', '').removeprefix('v')
-    resource = args.phase in ('namespaces', 'health', 'taints')
+    resource = args.phase in ('namespaces', 'health', 'storage', 'taints')
     enabled, spec = resource_spec(args.phase, profile, connections, data) if resource else (True, None)
     order = {'init': ['all node preflight', 'all node exact image import', 'single master init'],
              'cni': ['master UID check', 'owned Calico resources only', 'Calico rollouts'],
@@ -146,6 +167,9 @@ def main():
                       'node machine-id/IP/version/Ready check', 'revoke ticket'],
              'namespaces': ['pinned UID/CA and all node identities', 'check all namespace owners', 'create missing only', 'verify Active'],
              'health': ['pinned UID/CA', 'all node identities/Ready', 'core controller rollouts and system Pod readiness'],
+             'storage': ['pinned UID/CA and API conflicts', 'all eligible node data mounts/UUID and OCI preflight',
+                         'prepare only owned paths and import exact storage images', 'create missing storage objects',
+                         'verify controller and Retain class; data IO acceptance separate'],
              'taints': ['pinned UID/CA and all node identities', 'preflight all taint conflicts', 'resourceVersion conditional patch', 'verify']}[args.phase]
     if not args.apply:
         print(json.dumps({'dry_run': True, 'phase': args.phase, 'cloud_status': '未经实机验证',
@@ -174,6 +198,9 @@ def main():
                    input=multi_json(init_documents(profile, data)), text=True, check=True, capture_output=True, timeout=30)
     for c in connections.values():
         check_connection(c)
+    if args.phase == 'storage' and any(p['enabled'] and not re.fullmatch(
+            r'[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}', p['uuid']) for p in spec['paths'].values()):
+        raise ValueError('Every eligible cloud node needs a pre-recorded data filesystem UUID; no SSH started')
     files, release = controls(directory)
     invoke = lambda name, phase, extra=None: call(connections[name], files, release, phase, {'profile': profile, **(extra or {})})
     if args.phase == 'init':
@@ -186,6 +213,12 @@ def main():
     status = invoke(master['name'], 'status')
     uid = status['uid']
     if resource:
+        if args.phase == 'storage':
+            invoke(master['name'], 'resources', {'expected_uid': uid, 'action': 'storage-preflight', 'spec': spec})
+            for n in profile['nodes']:
+                invoke(n['name'], 'storage-check', {'expected_uid': uid, 'spec': spec})
+            for n in profile['nodes']:
+                invoke(n['name'], 'storage-host', {'expected_uid': uid, 'spec': spec})
         result = invoke(master['name'], 'resources', {'expected_uid': uid, 'action': args.phase, 'spec': spec})
         print(json.dumps({'phase': args.phase, 'uid': uid, **result})); return
     if args.phase == 'cni':

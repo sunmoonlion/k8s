@@ -120,7 +120,7 @@ execute_step(){
     local description="$2"
     local -a step_args=()
     case "$step" in
-        step01_os_baseline.sh|step02_runtime.sh|step03_k8s_binaries.sh|step04_kubeadm_init.sh|step05_cni_install.sh|step06_join_nodes.sh|step07_create_namespaces.sh|step08_validate.sh|step10_k8s_nodes_management.sh)
+        step01_os_baseline.sh|step02_runtime.sh|step03_k8s_binaries.sh|step04_kubeadm_init.sh|step05_cni_install.sh|step06_join_nodes.sh|step07_create_namespaces.sh|step08_validate.sh|step09_storage.sh|step10_k8s_nodes_management.sh)
             step_args=(--apply) ;;
     esac
     
@@ -193,7 +193,7 @@ step08_validate(){
 
 step09_storage(){
     load_config || return 1
-    execute_step "step09_storage.sh" "存储配置（本地存储 + NFS存储）"
+    execute_step "step09_storage.sh" "存储配置（固定离线物料与独立数据盘）"
 }
 
 step10_k8s_nodes_management(){

@@ -27,6 +27,12 @@ cluster_step_main() {
         field="STEP10_NODE_${idx}_TAINTS"
         printf -v "$name" '%s' "${!field:-}"
         export "${name?}"
+        for field in ENABLED UUID; do
+            name="SM_NODE_${idx}_STORAGE_${field}"
+            local source_name="STEP09_LOCAL_STORAGE_SERVER_${idx}_${field}"
+            printf -v "$name" '%s' "${!source_name:-}"
+            export "${name?}"
+        done
     done
     export SM_POD_CIDR="${STEP04_POD_CIDR:-}" SM_SERVICE_CIDR="${STEP04_SERVICE_CIDR:-}"
     export SM_ENDPOINT="${STEP04_CONTROLPLANE_ENDPOINT:-}" SM_API_SANS="${STEP04_APISERVER_CERT_SANS:-}"
@@ -38,12 +44,18 @@ cluster_step_main() {
     export SM_NAMESPACE_PLATFORMS="${NAMESPACE_PLATFORM_PLATFORMS:-}"
     export SM_NAMESPACE_POLICIES="${NAMESPACE_PLATFORM_APPLY_POLICIES:-false}"
     export SM_NAMESPACE_ENABLED="${NAMESPACE_PLATFORM_ENABLE:-false}"
-    export SM_RESOURCE_TIMEOUT="${STEP08_WAIT_TIMEOUT:-300}" SM_EXPECTED_NODE_COUNT="${STEP08_EXPECTED_NODE_COUNT:-}"
-    for idx in 07 08 10; do
+    local resource_timeout="${STEP08_WAIT_TIMEOUT:-300}"
+    [[ "$phase" != storage ]] || resource_timeout="${STEP09_WAIT_TIMEOUT:-300}"
+    export SM_RESOURCE_TIMEOUT="$resource_timeout" SM_EXPECTED_NODE_COUNT="${STEP08_EXPECTED_NODE_COUNT:-}"
+    for idx in 07 08 09 10; do
         for field in ENABLED TARGET REMOTE_KUBECONFIG; do
             name="STEP${idx}_${field}"
             export "SM_${name}=${!name:-}"
         done
+    done
+    for field in LOCAL_STORAGE_ENABLED CLOUD_STORAGE_ENABLED LOCAL_STORAGE_PATH LOCAL_STORAGE_MOUNTPOINT LOCAL_STORAGE_VERSION HELPER_IMAGE HELPER_IMAGE_PULL_POLICY LOCAL_STORAGE_CLASS_NAME LOCAL_STORAGE_DEFAULT_CLASS LOCAL_STORAGE_RECLAIM_POLICY LOCAL_STORAGE_VOLUME_BINDING_MODE; do
+        name="STEP09_${field}"
+        export "SM_STORAGE_${field}=${!name:-}"
     done
     local -a args=(--phase "$phase")
     [[ "$action" != --apply ]] || args+=(--apply)

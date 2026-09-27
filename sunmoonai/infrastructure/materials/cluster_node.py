@@ -23,6 +23,8 @@ from image_import import import_images, inspect_archive, records
 from node_install import host_preflight
 from os_install import safe_directory, exact_file
 from cluster_resources import execute as resource_execute, identity as resource_identity
+from storage_resources import execute as storage_execute, images as storage_images
+from storage_host import execute as storage_host_execute
 
 
 def run(argv, timeout=90, content=None):
@@ -85,7 +87,7 @@ def main():
     parser.add_argument('--root', type=Path, required=True)
     parser.add_argument('--hostname', required=True)
     parser.add_argument('--machine-id', required=True)
-    parser.add_argument('--phase', choices=('preflight', 'images', 'init', 'cni', 'ticket', 'join', 'status', 'revoke', 'resources'), required=True)
+    parser.add_argument('--phase', choices=('preflight', 'images', 'init', 'cni', 'ticket', 'join', 'status', 'revoke', 'resources', 'storage-check', 'storage-host'), required=True)
     parser.add_argument('--apply', action='store_true')
     args = parser.parse_args()
     if not args.apply:
@@ -140,6 +142,14 @@ def main():
     images = json.loads((work / 'images-complete.json').read_text())
     if any(images.get(k) != v for k, v in identity.items()):
         raise ValueError('Image completion belongs to another installation')
+    if args.phase in ('storage-check', 'storage-host'):
+        record = work / ('init-complete.json' if node['role'] == 'master' else 'join-complete.json')
+        receipt = json.loads(record.read_text())
+        if receipt['uid'] != request.get('expected_uid') or ca_pin() != receipt['ca_pin']:
+            raise ValueError('Storage preparation requires matching cluster UID/CA')
+        result = storage_host_execute(root, args.manifest, data, work, request['spec'], node['name'],
+                                      receipt['uid'], apply=args.phase == 'storage-host')
+        print(json.dumps(result)); return
     if args.phase == 'init':
         if node['role'] != 'master':
             raise ValueError('Initialization only allowed on the single declared master')
@@ -212,7 +222,11 @@ def main():
         log = work / ('resources-' + str(time.time_ns()) + '.json')
         try:
             resource_identity(guarded_kub, expected)
-            result = resource_execute(guarded_kub, request['action'], spec, receipt['uid'])
+            if request['action'] in ('storage', 'storage-preflight'):
+                result = storage_execute(guarded_kub, spec, storage_images(args.manifest, data), receipt['uid'],
+                                         check_only=request['action'] == 'storage-preflight')
+            else:
+                result = resource_execute(guarded_kub, request['action'], spec, receipt['uid'])
             current_cluster(work)
         except (OSError, ValueError, KeyError, StopIteration, subprocess.SubprocessError) as error:
             # Kubectl diagnostics may contain private data. Keep them on the

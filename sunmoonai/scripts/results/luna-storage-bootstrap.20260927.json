@@ -1,0 +1,638 @@
+{
+  "schema": 1,
+  "date": "2026-09-27",
+  "baseline": "f253d203498c5783f368e129e827ed669ef2bf20",
+  "scope": "cloud storage adapter, shared rendering, existing offline storage materials",
+  "cloud_status": "未经实机验证",
+  "live_operations": false,
+  "ssh_executed": false,
+  "cluster_api_calls": false,
+  "new_downloads": false,
+  "tests_added_or_run": false,
+  "checks": [
+    {
+      "file": "sunmoonai/infrastructure/materials/storage_resources.py",
+      "python_ast": "passed",
+      "sha256": "e87ee2f7bda1b030d3275b297dd8b38aa64609e92b2272a6d0adcfabc081c860"
+    },
+    {
+      "file": "sunmoonai/infrastructure/materials/storage_host.py",
+      "python_ast": "passed",
+      "sha256": "485658223806e69ae4b2b16b339bd002219647065ca3521a165ec9f4179b19a6"
+    },
+    {
+      "file": "sunmoonai/infrastructure/materials/bundle.py",
+      "python_ast": "passed",
+      "sha256": "81f2a75f4976a4fd226be55e36073a9cb9eb6354e6862a0aa51b576429169c11"
+    },
+    {
+      "file": "sunmoonai/infrastructure/materials/image_import.py",
+      "python_ast": "passed",
+      "sha256": "47657a45c93ef43c4da277adcb4e990a01b0e84399abec0552c1e2502bce7496"
+    },
+    {
+      "file": "sunmoonai/infrastructure/materials/cluster_control.py",
+      "python_ast": "passed",
+      "sha256": "42f45138e834cbb8c29dbfcf5041e0080c8149973b41854d2d3fad61d163e150"
+    },
+    {
+      "file": "sunmoonai/infrastructure/materials/cluster_node.py",
+      "python_ast": "passed",
+      "sha256": "384dfea462e62cf42546538da7939df41c9b29cc8694a05cdc49bcd80dfec711"
+    },
+    {
+      "file": "sunmoonai/infrastructure/materials/node_control.py",
+      "python_ast": "passed",
+      "sha256": "8ebeea2889513569b994cccd4e40419d4da992bd6a2a8c27fa03f7afafaa1722"
+    },
+    {
+      "file": "sunmoonai/infrastructure/steps/step09_storage.sh",
+      "bash_n": "passed",
+      "shellcheck": "passed",
+      "diagnostics": 0,
+      "sha256": "9f26d4007ddb371e2e51a29be2282f16f475176eac3137906a7cb5bcbfabf699"
+    },
+    {
+      "file": "sunmoonai/infrastructure/utils/cluster-step.sh",
+      "bash_n": "passed",
+      "shellcheck": "passed",
+      "diagnostics": 0,
+      "sha256": "5051f63b39a37a982b7d28877a79548cfdede358471bfcd546d954fd998a8a9a"
+    },
+    {
+      "file": "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh",
+      "bash_n": "passed",
+      "shellcheck": "passed",
+      "diagnostics": 0,
+      "sha256": "7bb17746d5f7a96b71f816a8624776397c536f4de2eeb265ac6121e48556d1a2"
+    }
+  ],
+  "remote_payload": {
+    "ast": "passed",
+    "public_file_count": 15,
+    "allowlist_matches": true
+  },
+  "configuration": {
+    "outside_step09_bytes_unchanged": true,
+    "only_existing_declaration_comment_changed": [
+      "STEP09_TARGET"
+    ],
+    "added": [
+      "STEP09_LOCAL_STORAGE_MOUNTPOINT",
+      "STEP09_LOCAL_STORAGE_SERVER_1_UUID",
+      "STEP09_LOCAL_STORAGE_SERVER_2_UUID",
+      "STEP09_LOCAL_STORAGE_SERVER_3_UUID",
+      "STEP09_WAIT_TIMEOUT"
+    ],
+    "retired": [
+      "STEP09_HELM_NAMESPACE",
+      "STEP09_OFFLINE_CHARTS_DIR",
+      "STEP09_OFFLINE_PACKAGES_SOURCE_NODE",
+      "STEP09_ONLINE_TIMEOUT",
+      "STEP09_REMOTE_DIR_FALLBACK",
+      "STEP09_VALIDATION_ENABLED",
+      "STEP09_VALIDATION_NAMESPACE",
+      "STEP09_VALIDATION_TIMEOUT"
+    ],
+    "duplicate_admin_conf_removed": true,
+    "platform_versions_unchanged": true
+  },
+  "plans": [
+    {
+      "cluster": "C1",
+      "step": "step01_os_baseline",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step02_runtime",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step03_k8s_binaries",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step04_kubeadm_init",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step05_cni_install",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step06_join_nodes",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step07_create_namespaces",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step08_validate",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step09_storage",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C1",
+      "step": "step10_k8s_nodes_management",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step01_os_baseline",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step02_runtime",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step03_k8s_binaries",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step04_kubeadm_init",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step05_cni_install",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step06_join_nodes",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step07_create_namespaces",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step08_validate",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step09_storage",
+      "passed": true,
+      "ssh_started": false
+    },
+    {
+      "cluster": "C2",
+      "step": "step10_k8s_nodes_management",
+      "passed": true,
+      "ssh_started": false
+    }
+  ],
+  "materials": {
+    "files": 128,
+    "bytes": 1057716848,
+    "sha256": "passed",
+    "closure_complete": false,
+    "pending": [
+      "Remaining infrastructure step11/12/13, KIND storage adapter and external registry/platform integration"
+    ]
+  },
+  "storage_archives": [
+    {
+      "name": "local-path-provisioner",
+      "version": "v0.0.32",
+      "source": "docker.io/sunmoon-offline/local-path-provisioner:v0.0.32",
+      "reference": "docker.io/sunmoon-offline/local-path-provisioner@sha256:96fce62b9075737c05cfe7db7c3bec708dc8e0f6275a2a6c94cd86344df03285",
+      "original_tag": "rancher/local-path-provisioner:v0.0.32",
+      "platform_digest": "sha256:96fce62b9075737c05cfe7db7c3bec708dc8e0f6275a2a6c94cd86344df03285",
+      "config_digest": "sha256:cb584e17a5f4bdc03011c803f10a77af4e3be190745705c716cdb6cd35cd6e5d",
+      "material_path": "images/rancher_local-path-provisioner_v0.0.32.tar",
+      "sha256": "a00ed2010cdd94198bb4fba10de70a9dcc3bb0bbb18a4bca2477653dd7c2bf07",
+      "bytes": 63292928,
+      "verified_blobs": 7,
+      "verified_layers": 5,
+      "public_registry_digest_claimed": false
+    },
+    {
+      "name": "os-shell",
+      "version": "12-debian-12-r51",
+      "source": "docker.io/sunmoon-offline/os-shell:12-debian-12-r51",
+      "reference": "docker.io/sunmoon-offline/os-shell@sha256:6f4753eaf4d765bfb12979cb430820ee1017b688fb948e7e88390c76af1cddf5",
+      "original_tag": "bitnami/os-shell:12-debian-12-r51",
+      "platform_digest": "sha256:6f4753eaf4d765bfb12979cb430820ee1017b688fb948e7e88390c76af1cddf5",
+      "config_digest": "sha256:3b573329f84d66e1292b04df76288b11a9c91f83c501bef213bf46d27a542fd7",
+      "material_path": "images/bitnami_os-shell_12-debian-12-r51.tar",
+      "sha256": "c73073c3bd8b0dc278ab56e54c2a750ff08cb415f10e1c57ed9a9d7290de770e",
+      "bytes": 169935360,
+      "verified_blobs": 3,
+      "verified_layers": 1,
+      "public_registry_digest_claimed": false
+    }
+  ],
+  "rendered": [
+    {
+      "cluster": "C1",
+      "objects": 9,
+      "reclaim": "Retain",
+      "binding": "WaitForFirstConsumer",
+      "helper_pull_policy": "Never",
+      "static_volumes_emitted": false,
+      "data_io_validated": false,
+      "data_uuids_configured": false
+    },
+    {
+      "cluster": "C2",
+      "objects": 9,
+      "reclaim": "Retain",
+      "binding": "WaitForFirstConsumer",
+      "helper_pull_policy": "Never",
+      "static_volumes_emitted": false,
+      "data_io_validated": false,
+      "data_uuids_configured": false
+    }
+  ],
+  "static_volume_inventory": [
+    {
+      "path": "sunmoonai/app-platform/auth-app/casdoor/resources/custom-values/casdoor-kind-pv-pvc.yaml",
+      "sha256": "ff1b44a75c50e2a1db13c50902f0682b97c77bee637305f1e9a31dd473b9e31d",
+      "historical_harbor_excluded_from_new_cluster": false,
+      "volumes": [
+        {
+          "name": "casdoor-sunmoonai-dev-pv",
+          "path": "/data/kind-local-storage/casdoor",
+          "reclaim": "Retain",
+          "storage_class": "",
+          "node_affinity": {
+            "required": {
+              "nodeSelectorTerms": [
+                {
+                  "matchExpressions": [
+                    {
+                      "key": "kubernetes.io/hostname",
+                      "operator": "In",
+                      "values": [
+                        "kind-worker"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "source_type": "hostPath"
+        }
+      ]
+    },
+    {
+      "path": "sunmoonai/cicd-platform/harbor/resources/custom-values/harbor-kind-pv-pvc.yaml",
+      "sha256": "31e9927fe54fc3519a2811032c871a541f8242dbe6b7634c2fe9812abb606925",
+      "historical_harbor_excluded_from_new_cluster": true,
+      "volumes": [
+        {
+          "name": "harbor-sunmoonai-registry-dev-pv",
+          "path": "/data/kind-local-storage/harbor/registry",
+          "reclaim": "Retain",
+          "storage_class": "",
+          "node_affinity": {
+            "required": {
+              "nodeSelectorTerms": [
+                {
+                  "matchExpressions": [
+                    {
+                      "key": "kubernetes.io/hostname",
+                      "operator": "In",
+                      "values": [
+                        "kind-worker"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "source_type": "hostPath"
+        },
+        {
+          "name": "harbor-sunmoonai-jobservice-dev-pv",
+          "path": "/data/kind-local-storage/harbor/jobservice",
+          "reclaim": "Retain",
+          "storage_class": "",
+          "node_affinity": {
+            "required": {
+              "nodeSelectorTerms": [
+                {
+                  "matchExpressions": [
+                    {
+                      "key": "kubernetes.io/hostname",
+                      "operator": "In",
+                      "values": [
+                        "kind-worker"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "source_type": "hostPath"
+        },
+        {
+          "name": "harbor-sunmoonai-database-dev-pv",
+          "path": "/data/kind-local-storage/harbor/database",
+          "reclaim": "Retain",
+          "storage_class": "",
+          "node_affinity": {
+            "required": {
+              "nodeSelectorTerms": [
+                {
+                  "matchExpressions": [
+                    {
+                      "key": "kubernetes.io/hostname",
+                      "operator": "In",
+                      "values": [
+                        "kind-worker"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "source_type": "hostPath"
+        },
+        {
+          "name": "harbor-sunmoonai-redis-dev-pv",
+          "path": "/data/kind-local-storage/harbor/redis",
+          "reclaim": "Retain",
+          "storage_class": "",
+          "node_affinity": {
+            "required": {
+              "nodeSelectorTerms": [
+                {
+                  "matchExpressions": [
+                    {
+                      "key": "kubernetes.io/hostname",
+                      "operator": "In",
+                      "values": [
+                        "kind-worker"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "source_type": "hostPath"
+        },
+        {
+          "name": "harbor-sunmoonai-trivy-dev-pv",
+          "path": "/data/kind-local-storage/harbor/trivy",
+          "reclaim": "Retain",
+          "storage_class": "",
+          "node_affinity": {
+            "required": {
+              "nodeSelectorTerms": [
+                {
+                  "matchExpressions": [
+                    {
+                      "key": "kubernetes.io/hostname",
+                      "operator": "In",
+                      "values": [
+                        "kind-worker"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "source_type": "hostPath"
+        }
+      ]
+    },
+    {
+      "path": "sunmoonai/data-platform/mongodb/resources/custom-values/mongodb-kind-pv-pvc.yaml",
+      "sha256": "1f045a00466e4c6364d2d443b42a66b1a241beb5e0352c3034793d7d9b4418ed",
+      "historical_harbor_excluded_from_new_cluster": false,
+      "volumes": [
+        {
+          "name": "mongodb-sunmoonai-dev-pv",
+          "path": "/data/kind-local-storage/mongodb",
+          "reclaim": "Retain",
+          "storage_class": "",
+          "node_affinity": {
+            "required": {
+              "nodeSelectorTerms": [
+                {
+                  "matchExpressions": [
+                    {
+                      "key": "kubernetes.io/hostname",
+                      "operator": "In",
+                      "values": [
+                        "kind-worker"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "source_type": "hostPath"
+        }
+      ]
+    },
+    {
+      "path": "sunmoonai/data-platform/neo4j/resources/custom-values/neo4j-kind-pv-pvc.yaml",
+      "sha256": "26ec4f50d60c909e79de90177c724dfbdfd4f9f5a9a4e39b6e8b5363315a38de",
+      "historical_harbor_excluded_from_new_cluster": false,
+      "volumes": [
+        {
+          "name": "neo4j-sunmoonai-dev-pv",
+          "path": "/data/kind-local-storage/neo4j",
+          "reclaim": "Retain",
+          "storage_class": "",
+          "node_affinity": {
+            "required": {
+              "nodeSelectorTerms": [
+                {
+                  "matchExpressions": [
+                    {
+                      "key": "kubernetes.io/hostname",
+                      "operator": "In",
+                      "values": [
+                        "kind-worker"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "source_type": "hostPath"
+        }
+      ]
+    },
+    {
+      "path": "sunmoonai/data-platform/object-storage/resources/custom-values/object-storage-kind-pv.yaml",
+      "sha256": "dbefbdfc7c5f78058fb877e535aabc93ac35bde18157c7dc12870892f60808e6",
+      "historical_harbor_excluded_from_new_cluster": false,
+      "volumes": [
+        {
+          "name": "object-storage-sunmoonai-dev-pv",
+          "path": "/data/kind-local-storage/object-storage",
+          "reclaim": "Retain",
+          "storage_class": "object-storage-kind-static",
+          "node_affinity": {
+            "required": {
+              "nodeSelectorTerms": [
+                {
+                  "matchExpressions": [
+                    {
+                      "key": "kubernetes.io/hostname",
+                      "operator": "In",
+                      "values": [
+                        "kind-worker"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "source_type": "hostPath"
+        }
+      ]
+    },
+    {
+      "path": "sunmoonai/data-platform/postgresql/resources/custom-values/postgresql-kind-pv-pvc.yaml",
+      "sha256": "34fcecd7efb435257a6538dcfe8235d18069c778753d55dcab7170b509443367",
+      "historical_harbor_excluded_from_new_cluster": false,
+      "volumes": [
+        {
+          "name": "postgresql-sunmoonai-dev-pv",
+          "path": "/data/kind-local-storage/postgresql",
+          "reclaim": "Retain",
+          "storage_class": "",
+          "node_affinity": {
+            "required": {
+              "nodeSelectorTerms": [
+                {
+                  "matchExpressions": [
+                    {
+                      "key": "kubernetes.io/hostname",
+                      "operator": "In",
+                      "values": [
+                        "kind-worker"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "source_type": "hostPath"
+        }
+      ]
+    },
+    {
+      "path": "sunmoonai/data-platform/redis/resources/custom-values/redis-kind-pv-pvc.yaml",
+      "sha256": "0e44f0771474dfbfa36f310018a3aefb551777f15e4c983353302fdd835b76ee",
+      "historical_harbor_excluded_from_new_cluster": false,
+      "volumes": [
+        {
+          "name": "redis-sunmoonai-dev-pv",
+          "path": "/data/kind-local-storage/redis",
+          "reclaim": "Retain",
+          "storage_class": "",
+          "node_affinity": {
+            "required": {
+              "nodeSelectorTerms": [
+                {
+                  "matchExpressions": [
+                    {
+                      "key": "kubernetes.io/hostname",
+                      "operator": "In",
+                      "values": [
+                        "kind-worker"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "source_type": "hostPath"
+        }
+      ]
+    },
+    {
+      "path": "sunmoonai/data-platform/redis/resources/custom-values/redis-nodebull-kind-pv-pvc.yaml",
+      "sha256": "26c5aaed786eb8b855b58724dc467d3ed233081a3f29906d764059e318ca3684",
+      "historical_harbor_excluded_from_new_cluster": false,
+      "volumes": [
+        {
+          "name": "redis-nodebull-dev-pv",
+          "path": "/data/kind-local-storage/redis-nodebull",
+          "reclaim": "Retain",
+          "storage_class": "",
+          "node_affinity": {
+            "required": {
+              "nodeSelectorTerms": [
+                {
+                  "matchExpressions": [
+                    {
+                      "key": "kubernetes.io/hostname",
+                      "operator": "In",
+                      "values": [
+                        "kind-worker"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "source_type": "hostPath"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "No cloud/local storage deployment or runtime imports",
+    "KIND storage adapter and static node binding pending",
+    "No actual data IO/rebuild persistence acceptance",
+    "Provider-specific CSI not selected/locked/implemented; enabled setting rejects",
+    "Cleanup deferred and protected old containers/volumes retained"
+  ]
+}

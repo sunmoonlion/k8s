@@ -1,5 +1,20 @@
 # Luna 工作检查点
 
+## 最新续接：2026-09-27 step09 存储适配与现有物料保护
+
+基线 `f253d203498c5783f368e129e827ed669ef2bf20`，本地 luna，交付为包含本段的提交，不 push；开工工作树干净。此节优先于旧“step09尚未写”的记录。
+
+- 原1470行step09替换为短入口→cluster-step/control/node；默认只打印，总控显式--apply。删除旧脚本的自动删namespace/SC/RBAC再装、取消其他默认SC、跨Docker/nerdctl兜底、通配chart/浮动master清单、离线失败继续、自动创建/删除测试PVC/Pod等执行路径。本次没有运行任何实际删除/安装。
+- 新storage_resources.py生成共用9对象，独立namespace sunmoon-local-storage、provisioner sunmoonai.com/local-path，避免接管KIND内置对象。固定原local-path0.0.32和os-shell12-debian-12-r51、摘要/Never；明确每节点path/禁用未声明节点；SC Retain+WaitForFirstConsumer；teardown失败并保留目录。先预检全部已有资源UID/配置SHA/声明字段/默认SC冲突，仅创建缺项，不覆盖漂移，等待controller就绪并复核。不声称数据IO已验证。
+- 新storage_host.py只用于已登记云节点：明确/data挂载点、每节点预登记UUID、ext4/xfs/rw/整文件系统非系统盘、无nested mount/symlink、root父目录；未登记有数据拒绝。所有节点先只读预检→准备目录/root0600归属记录→共享image_import.import_items导入2镜像。无mount/mkfs/fstab/chmod现有目录/清理。归属记录不是完成记录，导入中断可同身份续；真实云执行未发生。
+- 本机原images/rancher_local-path-provisioner_v0.0.32.tar与bitnami_os-shell_12-debian-12-r51.tar完整图SHA核过，合计233228288B。新storage-images.lock.json由主锁SHA钉住，bundle新增storage范围，精确同步自动覆盖；文件保持原位置没复制/下载/删除。两包是未压缩层的Docker-save OCI digest，不冒充公共registry digest；使用docker.io/sunmoon-offline/*离线别名和Never，不能公网拉。节点import分支未实际执行。
+- 总清单现128文件1057716848B全SHA通过；公共SSH程序白名单15文件（新增storage资源/host程序和锁）。主锁closure_complete=false，pending为11/12/13、KIND存储适配及外部registry/platform接线。平台组件版本未升。
+- conf仅Step09区域变：新增mountpoint /data和3个空UUID（真实apply前须预登记）；移除旧自动验证/在线目录/节点补包等废字段，等待改STEP09_WAIT_TIMEOUT，重复admin.conf只留一处，TARGET注释纠正；其余区域字节和保留字段值私下精确比对未变，不打印全conf/diff。
+- 只读盘点custom-values/*kind-pv*.yaml：8份PV模板/12PV（7非Harbor组件卷+Harbor5卷），路径/affinity/SHA进证据，未改/部署。旧kind-worker固定绑定必须在新main平台部署时映射，节点内/data/kind-local-storage/<组件>保持。对象存储文件名是object-storage-kind-pv.yaml，不能只搜pv-pvc漏掉。ES动态、RabbitMQ持久化关闭是原有文件事实。
+- 证据 sunmoonai/scripts/results/luna-storage-bootstrap.20260927.json：7Python/远端payload AST，3Shell逐个bash-n/ShellCheck零提示，C1/C2共20组步骤01–10只打印；两套storage各9对象、两镜像10blob内容核对；全128SHA。没加/跑测试，没SSH/API/实际导入/服务/磁盘操作。方法docs/storage-bootstrap.md，相关审查索引与入口文档已更新。
+- 云CSI开关原false保持；若启用明确报无选定provider/精确物料/validated profile，不留旧腾讯占位假成功；首次上云需按选定provider补锁/验证。KIND存储主机适配、默认SC策略、三节点mount身份及静态卷绑定尚未接通，不能把云node程序拿到WSL执行。
+- 下一步：继续step11镜像/独立仓库host地址、step12证书与step13入口接线；独立Harbor正式生命周期/五年叶证书/入口/推拉/CI/CD/备份，然后正式KIND建群及共用存储/平台。旧Harbor30443、inbox目标、所有容器/卷/物料保持；本轮没复核现场。最终清理必做且最后，不能清容器/卷。无后台任务，整体未完成，不能通知luna做完了；未设预算。
+
 ## 最新续接：2026-09-27 step07/08/10 共用资源入口
 
 基线 `6c96233676a18846bf850eb854bc2032e2eb7716`，本地 luna；交付为包含本段的提交，不 push。工作树在本单元开始时干净。本段优先于下面历史待办。

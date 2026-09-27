@@ -13,7 +13,7 @@ import sys
 from pathlib import Path, PurePosixPath
 
 HEX = re.compile(r"[0-9a-f]{64}\Z")
-SCOPES = ("tools", "images", "calico", "configuration", "os")
+SCOPES = ("tools", "images", "calico", "configuration", "os", "storage")
 
 
 def sha256(path):
@@ -91,6 +91,13 @@ def resolve(manifest):
         add("calico", record, record["material_root_relative_path"])
     for record in data.get("configuration_files", []):
         add("configuration", record, f"{base}/{relative_path(record['path'])}")
+    if "storage_image_lock" in data:
+        child = data['storage_image_lock']
+        storage = read_lock(below(manifest.parent, child['path']), child['sha256'])
+        if storage.get('complete') is not True or storage.get('platform') != 'linux/amd64':
+            raise ValueError('Storage image lock incomplete or unsupported')
+        for record in storage['images']:
+            add('storage', record, record['material_path'])
     if "os_dependency_lock" in data:
         child = data["os_dependency_lock"]
         if not HEX.fullmatch(child["sha256"]):

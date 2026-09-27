@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "complete": true,
+  "platform": "linux/amd64",
+  "provenance": "Existing owner offline Docker-save archives. OCI manifests reference uncompressed layers: these digests identify the saved content, not public-registry manifests. Import under private offline aliases with Never; do not pull these aliases. Platform versions unchanged.",
+  "images": [
+    {
+      "name": "local-path-provisioner",
+      "version": "v0.0.32",
+      "source": "docker.io/sunmoon-offline/local-path-provisioner:v0.0.32",
+      "reference": "docker.io/sunmoon-offline/local-path-provisioner@sha256:96fce62b9075737c05cfe7db7c3bec708dc8e0f6275a2a6c94cd86344df03285",
+      "original_tag": "rancher/local-path-provisioner:v0.0.32",
+      "platform_digest": "sha256:96fce62b9075737c05cfe7db7c3bec708dc8e0f6275a2a6c94cd86344df03285",
+      "config_digest": "sha256:cb584e17a5f4bdc03011c803f10a77af4e3be190745705c716cdb6cd35cd6e5d",
+      "material_path": "images/rancher_local-path-provisioner_v0.0.32.tar",
+      "sha256": "a00ed2010cdd94198bb4fba10de70a9dcc3bb0bbb18a4bca2477653dd7c2bf07",
+      "bytes": 63292928
+    },
+    {
+      "name": "os-shell",
+      "version": "12-debian-12-r51",
+      "source": "docker.io/sunmoon-offline/os-shell:12-debian-12-r51",
+      "reference": "docker.io/sunmoon-offline/os-shell@sha256:6f4753eaf4d765bfb12979cb430820ee1017b688fb948e7e88390c76af1cddf5",
+      "original_tag": "bitnami/os-shell:12-debian-12-r51",
+      "platform_digest": "sha256:6f4753eaf4d765bfb12979cb430820ee1017b688fb948e7e88390c76af1cddf5",
+      "config_digest": "sha256:3b573329f84d66e1292b04df76288b11a9c91f83c501bef213bf46d27a542fd7",
+      "material_path": "images/bitnami_os-shell_12-debian-12-r51.tar",
+      "sha256": "c73073c3bd8b0dc278ab56e54c2a750ff08cb415f10e1c57ed9a9d7290de770e",
+      "bytes": 169935360
+    }
+  ]
+}
