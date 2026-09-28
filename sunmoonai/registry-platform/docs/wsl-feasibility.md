@@ -4,7 +4,7 @@
 
 ## 找到了什么
 
-- 2026-03-04 提交 `965b6309` 已包含 `utils/HARBOR-KIND-EXTERNAL/` 的两份集群外 Harbor 方案，采用 WSL + 官方安装包 + Compose。它们是方案/操作说明，没有失败日志或放弃该架构的决策记录。现归档在 `legacy/local/utils/HARBOR-KIND-EXTERNAL/`，原位置只保留指引；不可按其中的安装/卸载命令操作当前环境。
+- 2026-03-04 提交 `965b6309` 已包含 `utils/HARBOR-KIND-EXTERNAL/` 的两份集群外 Harbor 方案，采用 WSL + 官方安装包 + Compose。它们是方案/操作说明，没有失败日志或放弃该架构的决策记录。现归档在 `legacy/local/utils/HARBOR-KIND-EXTERNAL/`，原操作目录已删除（包括废弃 2.11 在线安装包）；不可按其中的安装/卸载命令操作当前环境。
 - [旧排障纪要](../../kind-infrastructure/docs/harbor-wsl-setup-changes.md)第 4 节明确记载：Docker daemon 的 `NO_PROXY` 只有 localhost/127.0.0.1，访问 Harbor 经过代理，出现 EOF；增加仓库域名直连后，错误转为入口连接拒绝，进一步查到 Traefik/PVC 问题。这个记录支持“曾遇到代理绕行”，不能证明它就是当时放弃集群外方案的唯一原因。
 - 2026-06-03 的 `bdb9caa1`、`a9a6669a`、`87c0a9de` 继续修复重启后的节点解析、CA 与拉取路径。说明重启和不同网络视角必须验收，不能只看当前终端能否访问。
 - 旧外置操作卡把 Harbor 直接绑定 30443，没有处理当前应用与 Harbor 共用该端口的 SNI 分流。这是旧方案与当前拓扑的缺口；没有证据认定它是历史失败原因。现在采用独立入口代理，Harbor 转宿主后端，其他域名转集群入口。

@@ -1,5 +1,15 @@
 ## 最新续接：2026-09-28 Skopeo 离线依赖、独立运行目录和首份真实批次
 
+## 最新续接：2026-09-28 删除已替代的旧操作目录
+
+基线 `9b4e59a439a28967217866d70493be7b2824d5ce`，luna 开工干净。所有者明确不需要旧转发入口/占位说明，认为散落目录造成混淆；本单元删除已无活动调用的旧操作目录，不恢复现场迁移。
+
+- 删除5目录、20个跟踪文件：utils/HARBOR-KIND-EXTERNAL、utils/registry-push-management、kind-infrastructure/push-to-harbor、kind-infrastructure/load-images、cicd-platform/harbor/utils/harbor-image-management（后三项在sunmoonai下）。包括废弃配置、列表、tar占位、转发/拒绝脚本及旧2.11在线安装包11,576B；先确认无未跟踪文件/软链/真实镜像tar。没有读取输出口令，也没有复制旧凭据到新配置。
+- 当前操作文档只指向 ./sunmoon harbor，迁移第9节逐项改为原目录已删除；修改镜像设计/发布/客户端/密码索引/旧代码README和三处旧注释。legacy清单加original_path_status，历史归档继续集中保留；云端旧代码按此前实机退出条件保护。旧WSL排障纪要标为历史证据，不作为操作手册。
+- 静态引用检查：活动sh/py/groovy对上述旧入口零引用；修改文档60个本地链接存在，legacy清单所有归档路径存在；git diff --check通过。未运行测试、部署、推拉、Docker/K8s/Windows/SSH或物料根清理。
+- 没有删除旧节点/卷、正式离线物料、Harbor数据或备份。仍需完成真实发布/应用CI接线/正式集群和入口迁移/重建独立性/云验证，以及最后本机东京临时物料清理。当前inbox不变。仅本地luna提交，不push。回退本单元只需恢复Git文件，不涉及数据恢复。
+
+
 ## 最新续接：2026-09-28 镜像脚本退役清单
 
 基线 `27e1c8628e45ade3fbdfb5a6eb9bebe9ddadba68`，luna 开工干净。所有者要求核对 Skopeo 统一后旧推送/节点导入脚本是否保留，在迁移文档明确退役。

@@ -1,8 +1,8 @@
 # 本地回退与历史实现
 
-文件见 [总清单](../manifest.json)。本组当前收纳旧建群链及旧操作说明，原入口已拒绝执行或转为说明指针。
+文件见 [总清单](../manifest.json)。本组当前收纳旧建群链及旧操作说明，原操作路径已删除或暂留拒绝执行提示；不得将本目录当部署入口。
 
-旧通用 `load-images/load-kind-images.sh` 已追加禁用归档；其原入口仅报退役提示。
+旧通用 `load-images/load-kind-images.sh` 已禁用归档；其原操作目录已删除。
 通用导入帮助函数从活动 `kind-cli.sh` 移除，CLI 路径函数保留。
 精确退役和保留范围见 [迁移文档第 9 节](../../sunmoonai/kind-infrastructure/docs/harbor-external-integration-plan.md#9-镜像脚本退役与保留清单2026-09-28)。
 
@@ -17,6 +17,6 @@
 
 ## 尚未搬动的依赖
 
-旧 `deploy-kind.conf` 仍被部分 hosts/镜像帮助工具读取，旧 `kind-cluster.yaml` 随之保留；不用于正式建群。配置可能含私有值，不复制到归档清单。旧外置 Harbor 2.11 安装包仍在原处，属于最终物料回收范围，本次没有删除。
+旧 `deploy-kind.conf` 仍被部分 hosts/镜像帮助工具读取，旧 `kind-cluster.yaml` 随之保留；不用于正式建群。配置可能含私有值，不复制到归档清单。旧 `utils/HARBOR-KIND-EXTERNAL/` 目录及其中 2.11 在线安装包已删除；没有删除正式物料根中的包或备份。
 
 退出条件：新 Harbor 正式入口、Docker/节点/CI 实际推拉、空载正式 KIND 重建独立性通过，备份能独立恢复，观察期结束；再核引用并按获准具体清单清理。归档代码由 Git 留历史即可，运行资源处置另行完成。

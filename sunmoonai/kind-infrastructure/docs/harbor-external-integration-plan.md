@@ -73,7 +73,7 @@
 | 其他消费方 Secret | `data-platform/`、`ops-platform/`、`messaging-platform/`、`app-platform/` 下各 `harbor-registry-secret` 入口和共享生成逻辑 | 逐处确认没有把旧 Harbor Service/Secret 当唯一来源；优先改共享实现，局部只接参数，保持 namespace 与权限隔离 |
 | 备份恢复 | `registry-platform/` 新宿主备份/恢复入口；`cicd-platform/materials/harbor_{cold_backup,restore,verify_backup,inventory,...}.py` | 新备份不依赖 K8s Pod/PVC；同一冻结点 PG 逻辑导出、registry、密钥/配置/证书；逐件摘要及恢复演练；旧工具保留原批次能力，不改写历史结果 |
 | 存储与运维 | `kind-infrastructure/deploy-kind/check-storage-mounts.sh`、`attach-vhds.ps1` 相关门禁集成；`registry-platform/` 启动单元 | 挂盘先于服务；计划任务和重启实际验收；控制 C 盘容量；管理员 Windows 操作仍由所有者完成 |
-| 历史脚本/chart | `cicd-platform/harbor/deploy-harbor/`、`resources/harbor/`、`resources/harbor-bitnami-native/`、旧静态 PV；`k8s/utils/HARBOR-KIND-EXTERNAL/` 历史说明 | 标注“历史路径，云上新路径实机验证前不删”；入口/chart 可读元数据处标注，不修改旧 tgz；禁止新总控误调用或引入另一套 2.11 部署实现 |
+| 历史脚本/chart（原盘点范围，已删除目录见第 9 节） | `cicd-platform/harbor/deploy-harbor/`、`resources/harbor/`、`resources/harbor-bitnami-native/`、旧静态 PV；`k8s/utils/HARBOR-KIND-EXTERNAL/` 历史说明 | 标注“历史路径，云上新路径实机验证前不删”；入口/chart 可读元数据处标注，不修改旧 tgz；禁止新总控误调用或引入另一套 2.11 部署实现 |
 | 文档与物料 | 本方案、主方案、交接文档、唯一《物料提交备齐方案和方法.md》、模块 README、云端首部署清单、变更文件列表 | 固定包/镜像/Compose/代理摘要与依赖闭包；记录失败和修复、实际执行命令、集群 UID/kubeconfig/kubectl；迁移完成后回填复用方法 |
 
 证书 5 年续签单独纳入证书阶段：迁移核对先保留原证书，随后用原 CA 重新签发内部叶证书并统一分发；不隐式改变根 CA 或 Harbor 内部签名密钥。公网站点证书策略单独管理。长期证书仍有到期告警和泄露轮换流程。
@@ -146,19 +146,26 @@ Harbor 的实际状态需与版本决策区分：旧集群 Bitnami chart 27.0.3 
 
 ### 9.1 已退役的旧实现
 
-以下路径均相对仓库根 `k8s/`。原路径保留转发或拒绝执行提示，方便识别旧调用；不保留第二套可运行的发布逻辑。
+以下路径均相对仓库根 `k8s/`。按所有者最新要求，已覆盖的旧操作目录直接删除，不再保留转发、退役提示、废弃配置或占位 README。历史代码仅集中在 `legacy/`；日常从根目录 `./sunmoon` 操作。
 
 | 旧入口/功能 | 当前处置 | 替代与覆盖范围 |
 | --- | --- | --- |
-| `sunmoonai/kind-infrastructure/push-to-harbor/push-images-to-harbor.sh` | 旧实现已退役，原路径仅转发 `publish.py`；旧实现禁用归档到 `legacy/local/` 对应路径 | 使用显式 OCI 批次。旧 `--img-file`、`--tar-dir`、节点回退和清理参数不兼容；旧 `.conf` 不再读取 |
-| `utils/registry-push-management/loadimage.sh` | 旧实现已退役，原路径转发同一发布器；禁用归档在 `legacy/cloud/` | 替代原隐式加载/推送；旧 SSH 调度不自动转成新发布流程，云端接线与实机验证仍待完成 |
-| `utils/registry-push-management/registry-push-menu.sh` | 旧交互菜单退役，原路径仅转发同一发布器；禁用归档在 `legacy/cloud/` | 批次 JSON 和独立仓库配置替代菜单；不执行旧菜单的清理动作 |
-| `sunmoonai/kind-infrastructure/load-images/load-kind-images.sh` | 本次退役：原路径只提示替代入口并返回 2，执行和 source 均在读取配置前停止；原字节加拒绝执行头归档到 `legacy/local/` | 平台/应用镜像走发布器；建群 Calico 导入由 `formal/cluster.py` 接管。不再接受任意列表、扫描 tar 目录或默认选旧 `kind` |
+| `sunmoonai/kind-infrastructure/push-to-harbor/push-images-to-harbor.sh` | 整个 `push-to-harbor/` 操作目录已删除；旧实现仅在 `legacy/local/` 禁用归档 | 使用显式 OCI 批次。旧 `--img-file`、`--tar-dir`、节点回退和清理参数不兼容；旧 `.conf` 不再读取 |
+| `utils/registry-push-management/loadimage.sh` | 整个 `registry-push-management/` 操作目录及旧配置已删除；旧实现仅在 `legacy/cloud/` 禁用归档 | 替代原隐式加载/推送；旧 SSH 调度不自动转成新发布流程，云端接线与实机验证仍待完成 |
+| `utils/registry-push-management/registry-push-menu.sh` | 随 `registry-push-management/` 删除，不再保留转发入口；禁用归档在 `legacy/cloud/` | 批次 JSON 和独立仓库配置替代菜单；不执行旧菜单的清理动作 |
+| `sunmoonai/kind-infrastructure/load-images/load-kind-images.sh` | 整个 `load-images/` 操作目录、配置和默认列表已删除；原实现加拒绝执行头仅留在 `legacy/local/` | 平台/应用镜像走发布器；建群 Calico 导入由 `formal/cluster.py` 接管。不再接受任意列表、扫描 tar 目录或默认选旧 `kind` |
 | `sunmoonai/kind-infrastructure/kind-cli.sh` 的 `kind_ctr_import_tar_to_all_nodes()`、`kind_docker_save_and_ctr_import_all_nodes()` | 本次移除：活动代码唯一调用方是上行旧加载器；旧推送器的调用已在禁用归档内 | 不再提供通用节点注入或导入标记跳过。`kind-cli.sh` 本身保留 CLI 路径帮助函数，仍供三个节点信任/解析脚本引用；完整旧函数可从本次基线提交恢复审阅 |
 | `sunmoonai/kind-infrastructure/deploy-kind/build-kind-node-image/build-kind-node-image.sh` | 已退役，原路径拒绝执行；禁用归档在 `legacy/local/` | 正式流程使用锁定的官方 KIND 节点镜像，再导入锁定的 CNI 物料；不再把 Harbor/平台镜像预装到自制节点镜像 |
 | 旧说明中的 `sunmoonai/kind-infrastructure/load-initial-images-kind.sh` | 当前仓库没有此文件；删除活动说明中“兼容包装可调用”的说法 | 不恢复该入口。云端同名近似的 step11 不是这个脚本，见下表 |
 
-旧加载器 `.conf`、默认镜像列表及旧发布配置不是新流程输入，标明历史用途后留待最终清点。归档摘要、原提交、替代入口和退出条件以 [legacy 清单](../../../legacy/manifest.json)为准。本次导入帮助函数的历史基线为 `27e1c8628e45ade3fbdfb5a6eb9bebe9ddadba68`。
+另外两处已删除的操作目录：
+
+| 目录 | 处置与替代 |
+| --- | --- |
+| `utils/HARBOR-KIND-EXTERNAL/` | 两份旧说明指针和 Harbor 2.11 在线安装包全部删除。当前部署用 `sunmoonai/registry-platform/`；历史说明集中在 `legacy/local/`，不作为操作手册 |
+| `sunmoonai/cicd-platform/harbor/utils/harbor-image-management/` | 仅剩的拒绝执行脚本和 README 一并删除。旧云实现仍集中在 `legacy/cloud/` 等待云实机退出条件 |
+
+旧加载器 `.conf`、默认镜像列表、旧发布配置和 tar 占位目录均已删除；删除前确认这些目录没有未跟踪文件或实际镜像 tar。归档摘要、原提交、替代入口和退出条件以 [legacy 清单](../../../legacy/manifest.json)为准。本次导入帮助函数的历史基线为 `27e1c8628e45ade3fbdfb5a6eb9bebe9ddadba68`。
 
 ### 9.2 必须保留的导入与检查
 
@@ -177,5 +184,5 @@ Skopeo 向仓库发布镜像不会把镜像装进节点。离线建群时，网�
 
 - `sunmoonai/app-platform/scripts/build-push-app-images.sh` 仍有 `docker push`；`sunmoonai/cicd-platform/jenkins/kaniko-build-pipeline.groovy` 仍有构建器直接发布。后续须接入统一物料/摘要发布与凭据流程，逐调用方验收，不能把这两项标作已退役或已经统一。
 - `utils/packages-management/packages-management.sh` 仍有远端 `ctr import` 分支；它是旧综合物料工具，本次未停用整个工具，也未验证这条旧分支。新建群走锁定自举入口，不能把该分支列为新正式流程的一部分；剩余功能拆分和调用核对后再决定退役。
-- 已归档本地实现待正式 Harbor、实际 Docker/节点/CI 推拉、空载重建独立性与观察期通过后清理；云端归档遵守“历史路径，云上新路径实机验证前不删”。最终检查外部脚本和调用方后，可删除无依赖的提示/转发入口及废弃配置，Git 留历史。
-- 代码退役不删除现有镜像、tar、节点、容器、卷、Harbor 数据或备份。本次没有调用 Docker/Kubernetes、实际发布镜像或进行运行时清理；既定最终本机/东京临时物料清理仍须另按清单完成。
+- 已归档本地实现待正式 Harbor、实际 Docker/节点/CI 推拉、空载重建独立性与观察期通过后清理；云端归档遵守“历史路径，云上新路径实机验证前不删”。本次已核对仓内调用并删除上述无依赖的原操作目录及废弃配置。仓外人工脚本若仍引用旧路径，须改用统一入口；不恢复兼容层。
+- 本次额外删除的是旧目录内已被替代的 Harbor 2.11 在线安装包（11,576 字节），不是镜像层归档。正式物料根、现有镜像、节点、容器、卷、Harbor 数据和备份不受影响。本次没有调用 Docker/Kubernetes、实际发布镜像或进行运行时清理；既定最终本机/东京临时物料清理仍须另按清单完成。

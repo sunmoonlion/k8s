@@ -1,1 +1,0 @@
-# 将需要推送到 Harbor 的 .tar 文件放入此目录，无参执行 push-images-to-harbor.sh 即可

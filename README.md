@@ -6,6 +6,8 @@
 
 ## 从这里操作
 
+已替代的旧镜像发布/加载和外置 Harbor 操作目录已删除，不保留兼容转发。日常只使用下方统一入口；历史退役清单见 [迁移文档第 9 节](sunmoonai/kind-infrastructure/docs/harbor-external-integration-plan.md#9-镜像脚本退役与保留清单2026-09-28)，`legacy/` 不用于部署。
+
 日常继续通过配置文件控制，开关与参数入口见 [配置对照](sunmoonai/operations/configuration.md)。命令行支持临时覆盖，私有凭据内容不进普通配置。
 
 在仓库根运行 `./sunmoon help`。它转发到各模块唯一实现，不复制部署逻辑。先看计划/帮助，只有明确的 `--apply` 才进入相关实际分支；现有的摘要、存储、资源身份与切换门槛继续生效。

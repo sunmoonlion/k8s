@@ -65,15 +65,16 @@
 
 ## 旧入口的去向
 
-以下三个入口现在只向同一发布器转发新参数，默认只打印；旧的 positional、目录扫描、删除和交互菜单参数会拒绝：
+以下三个旧入口及其目录、废弃配置已删除，不再提供兼容转发；日常只使用 `./sunmoon harbor publish --batch <绝对路径 JSON>`：
 
 - `kind-infrastructure/push-to-harbor/push-images-to-harbor.sh`
 - `utils/registry-push-management/loadimage.sh`
 - `utils/registry-push-management/registry-push-menu.sh`
 
 旧实现已按摘要归档 `legacy/local` / `legacy/cloud`，原实现最前置拒绝执行；云上新路径实机验证前不删。
-旧 `.conf` 仍在原处供后续清点，但这些入口不再加载；日常控制改用仓库 `.conf` 和发布批次 JSON。
-RAGFlow 已取消读取 loadimage.conf 补口令，使用独立仓库配置及私有文件。
+旧 `.conf` 已删除；日常控制使用 `registry-platform/config/` 下的仓库配置和发布批次 JSON。
+RAGFlow 已取消读取旧配置补口令，使用独立仓库配置及私有文件。
+旧 `load-images/`、`harbor-image-management/` 和 `utils/HARBOR-KIND-EXTERNAL/` 操作目录也已删除；精确范围见迁移文档第 9 节。
 旧工具附带的清理功能移交统一回收方案，不在发布后附带清理镜像、容器、卷或离线物料。
 
 ## 工具准入与首次实际验收清单

@@ -81,7 +81,8 @@
       "replacement": "sunmoonai/registry-platform/README.md",
       "group": "local",
       "execution": "historical-document",
-      "exit_condition": "local-migration-and-observation-complete"
+      "exit_condition": "local-migration-and-observation-complete",
+      "original_path_status": "removed; use ./sunmoon harbor; archive retained until exit condition"
     },
     {
       "original": "utils/HARBOR-KIND-EXTERNAL/INSTALL-EXTERNAL-HARBOR.md",
@@ -90,7 +91,8 @@
       "replacement": "sunmoonai/registry-platform/README.md",
       "group": "local",
       "execution": "historical-document",
-      "exit_condition": "local-migration-and-observation-complete"
+      "exit_condition": "local-migration-and-observation-complete",
+      "original_path_status": "removed; use ./sunmoon harbor; archive retained until exit condition"
     },
     {
       "original": "sunmoonai/kind-infrastructure/自建节点镜像与重建集群.md",
@@ -216,7 +218,8 @@
       "replacement": "sunmoonai/registry-platform/docs/clients.md",
       "group": "cloud",
       "execution": "disabled",
-      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement"
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement",
+      "original_path_status": "removed; use ./sunmoon harbor; archive retained until exit condition"
     },
     {
       "original": "sunmoonai/cicd-platform/harbor/utils/harbor-image-management/harbor-image.conf",
@@ -226,7 +229,8 @@
       "replacement": "sunmoonai/registry-platform/docs/clients.md",
       "group": "cloud",
       "execution": "reference-only",
-      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement"
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement",
+      "original_path_status": "removed; use ./sunmoon harbor; archive retained until exit condition"
     },
     {
       "original": "sunmoonai/cicd-platform/harbor/utils/harbor-image-management/README.md",
@@ -236,7 +240,8 @@
       "replacement": "sunmoonai/registry-platform/docs/clients.md",
       "group": "cloud",
       "execution": "reference-only",
-      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement"
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement",
+      "original_path_status": "removed; use ./sunmoon harbor; archive retained until exit condition"
     },
     {
       "original": "sunmoonai/kind-infrastructure/push-to-harbor/push-images-to-harbor.sh",
@@ -247,7 +252,8 @@
       "replacement": "sunmoonai/registry-platform/publish.py",
       "group": "local",
       "execution": "disabled",
-      "exit_condition": "local-migration-and-observation-complete"
+      "exit_condition": "local-migration-and-observation-complete",
+      "original_path_status": "removed; use ./sunmoon harbor; archive retained until exit condition"
     },
     {
       "original": "utils/registry-push-management/loadimage.sh",
@@ -258,7 +264,8 @@
       "replacement": "sunmoonai/registry-platform/publish.py",
       "group": "cloud",
       "execution": "disabled",
-      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement"
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement",
+      "original_path_status": "removed; use ./sunmoon harbor; archive retained until exit condition"
     },
     {
       "original": "utils/registry-push-management/registry-push-menu.sh",
@@ -269,7 +276,8 @@
       "replacement": "sunmoonai/registry-platform/publish.py",
       "group": "cloud",
       "execution": "disabled",
-      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement"
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement",
+      "original_path_status": "removed; use ./sunmoon harbor; archive retained until exit condition"
     },
     {
       "original": "sunmoonai/kind-infrastructure/load-images/load-kind-images.sh",
@@ -280,7 +288,8 @@
       "replacement": "sunmoonai/kind-infrastructure/docs/harbor-external-integration-plan.md",
       "group": "local",
       "execution": "disabled",
-      "exit_condition": "local-migration-and-observation-complete"
+      "exit_condition": "local-migration-and-observation-complete",
+      "original_path_status": "removed; use ./sunmoon harbor; archive retained until exit condition"
     }
   ]
 }

@@ -1,5 +1,7 @@
 ## Harbor WSL 登录与推送调试纪要（2026-03-04）
 
+> 历史排障记录，不是现行操作手册。文中旧推送/加载入口及配置已删除；当前操作见 [仓库模块](../../registry-platform/README.md) 和 [统一发布](../../registry-platform/docs/publication.md)。原文保留用于核对代理故障经过。
+
 这份文档记录了今天从 WSL 上 `docker login` Harbor 失败，到最终打通「登录 + 一键推送镜像」整条链路的关键过程，供以后排障和回顾设计思路使用。
 
 ---

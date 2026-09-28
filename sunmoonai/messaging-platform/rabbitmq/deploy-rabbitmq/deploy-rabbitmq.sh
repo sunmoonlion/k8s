@@ -806,7 +806,7 @@ main() {
                 return 1
             fi
             
-            # 执行部署前，按需推送 RabbitMQ 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
+            # 部署前通过共享入口检查 RabbitMQ 镜像；缺失则停止，由 ./sunmoon harbor publish 显式发布
             push_rabbitmq_images_to_harbor "$dry_run" || return 1
             # 执行部署
             if execute_rabbitmq_deployment "$project_id" "$namespace" "$environment" "$dry_run"; then

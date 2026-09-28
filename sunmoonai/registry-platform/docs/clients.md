@@ -61,13 +61,13 @@ sudo env REGISTRY_CA_FILE="$HOME/private/registry-platform/tls-20260927-five-yea
 
 三个兼容入口均转发参数，默认计划；旧的 `HARBOR_ADMIN_PASSWORD`、自动交互登录、
 `SYNC_DOCKER_RESTART_DOCKER` 不再触发动作。需要实际操作时按本页显式选择动作和私有文件。
-`push-images-to-harbor.sh` 不再在推送前自动刷新系统信任，先完成客户端配置再推送。
+发布只用 `./sunmoon harbor publish`；先完成客户端配置，再显式发布，发布器不修改系统信任。
 PostgreSQL、RabbitMQ、pgAdmin、RedisInsight 的四处旧镜像工具空检查已删除，它们原本没有执行镜像操作。
 
 ## 尚未完成的共用链路
 
 1. Secret 公共库已取消从总控/建群配置补凭据；平台总控、应用生成器、十二个组件调用点和 RAGFlow 已支持显式私有文件。既有配置中的历史凭据值与其他调用链仍待逐项退役，不声称所有私有输入已迁好。
-2. 旧 KIND/远端推送及菜单已转发统一 [OCI 发布器](publication.md)，但工具闭包、实际物料批次、别名晋级与真实推拉仍待完成。
+2. 旧 KIND/远端推送及菜单的操作目录已删除，统一使用 [OCI 发布器](publication.md)。工具与首批物料已准备，别名晋级与真实推拉仍待完成。
 3. Docker daemon 的 NO_PROXY 与终端环境不同；本工具不自动更改 daemon 代理或重启它。节点 containerd 和 CI 的域名、CA、NO_PROXY、imagePullSecrets 分别验收。
 4. 正式验收包含新入口身份核对、Docker Engine 和节点按 digest 拉取、真实 CI 推送/拉取、重建 KIND 后 Harbor 摘要和数据不变。
 
