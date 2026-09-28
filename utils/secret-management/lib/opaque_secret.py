@@ -53,6 +53,7 @@ def restart_existing_workloads(target, namespace, names):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--action', choices=('deploy', 'status', 'uninstall'), default='deploy')
     parser.add_argument('--namespace', required=True)
     parser.add_argument('--name', required=True)
     parser.add_argument('--restart-mode', choices=('none', 'always', 'existing-changed'), default='none')
@@ -64,11 +65,11 @@ def main():
     for name in args.restart:
         dns_name(name, subdomain=True)
     if not args.apply:
-        print(f'Plan: deploy Opaque Secret {args.namespace}/{args.name}; no input or API read')
+        print(f'Plan: {args.action} Opaque Secret {args.namespace}/{args.name}; no input or API read')
         return
     if os.environ.get('SUNMOON_DEPLOY_DRY_RUN', 'false') != 'false':
         raise SecretError('Cannot apply with inherited dry-run or invalid mode')
-    expected = read_data()
+    expected = read_data() if args.action == 'deploy' else None
     target = Target()
     target.check()
     target.command('get', 'namespace', args.namespace, '-o', 'name')
@@ -76,6 +77,16 @@ def main():
     if existing is not None and (existing.get('type') != 'Opaque'
                                 or existing.get('metadata', {}).get('deletionTimestamp')):
         raise SecretError('Existing Secret has the wrong type or is being deleted')
+    if args.action == 'status':
+        if existing is None:
+            raise SecretError('Business Secret does not exist')
+        print(f'Business Secret present: {args.namespace}/{args.name}; credentials not displayed or authenticated')
+        return
+    if args.action == 'uninstall':
+        target.check()
+        target.command('delete', 'secret', args.name, '-n', args.namespace, '--ignore-not-found', '--wait=false')
+        print(f'Business Secret deletion requested: {args.namespace}/{args.name}')
+        return
     payload = {'apiVersion': 'v1', 'kind': 'Secret',
                'metadata': {'name': args.name, 'namespace': args.namespace},
                'type': 'Opaque', 'data': expected}

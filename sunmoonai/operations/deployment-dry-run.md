@@ -71,8 +71,8 @@ bash sunmoonai/app-platform/question-data-demo/deploy.sh --dry-run
 
 Casdoor 和 Elasticsearch Secret 总控现在使用父级传入的 project、namespace、environment，显式参数优先于配置默认。
 已启用的 Secret 子脚本缺失会失败；聚合层传播失败，不能靠最后的成功日志覆盖错误。
-Elasticsearch 的 `APPLY_ELASTICSEARCH_MYAPP_SECRET=true` 只允许实际 `elasticsearch-myapp-secret.yaml`，
-缺失即失败，不会再把 `.yaml.example` 作为真实凭据安装。默认关闭时不改变其行为。
+Elasticsearch 的 `APPLY_ELASTICSEARCH_MYAPP_SECRET=true` 在 MyApp 开关也启用时调用同一业务 Secret 配置入口，
+不再读取旧 `elasticsearch-myapp-secret.yaml` 或 `.yaml.example`。默认关闭时不改变其行为。
 pgAdmin 认证入口仅保留一套配置、生成和部署流程，移除了原来重复执行的第二套逻辑及密码片段日志。
 9 个原先缺少默认值的 Secret 入口补齐直接调用默认值；Elasticsearch MyApp 入口补上遗漏的配置加载。
 上述改动没有修改现有 `.conf` 的开关和凭据，实际部署仍须按目标集群准入执行。

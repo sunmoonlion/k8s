@@ -1,5 +1,17 @@
 # luna 工作检查点
 
+## 最新续接：2026-09-28 Elasticsearch/Redis 独立 Secret 与总控绕行
+
+前一单元已提交 `81f59e3d`（16 个业务 Secret）；本单元继续原任务，不是实机迁移。
+
+- 另两份 elasticsearch-secrets/redis-secrets 改用同一 opaque helper，当前共18个。保留 namespace契约 deploy/status/uninstall 与ES delete别名，修复Redis未初始化PROJECT_ROOT/配置路径/连接函数依赖。查询删除不准备业务值/不读stdin，只读原.conf身份；数据不打印。真实执行仍需固定目标；删除只忽略NotFound、不等待完成。
+- ES管理员三个字段与原键名保留；Redis手工工具三个键保留、database默认redis，取消随机生成和打印密码/同名即跳过。deploy现须显式REDIS_PASSWORD/REDIS_MASTER_PASSWORD，原配置不含值，实际调用前须准备；未读取/复制/修改现场凭据。共享opaque Python新增显式action，只在deploy读stdin。
+- ES Secret总控启用MyApp时不再apply历史YAML，调用本轮同一配置入口；仍保留双开关、默认不开。三个子入口bash执行并显式cluster/失败传播；布尔开关校验、目标绑定，不修改.conf值。干运行/配置/业务Secret/utils文档同步。
+- 静态4Shell bash-n/ShellCheck error、1Python AST、193入口路径/两namespace契约/根路径、文档链接与git diff --check通过；没有行为测试、API/生成/部署/清理。
+- 新发现待继续修：Redis secrets/deploy-secrets-all部署4种实际Secret，却status/uninstall只操作另一份redis-secrets；仍旧连接库并吞缺脚本错误。需保留独立手工工具身份并纠正聚合对象，不能误删共享Harbor。Traefik TLS Secret每次部署重新签发证书、使用临时私钥/YAML且未绑定目标；对象存储/provisioner仍有create secret --from-literal。这些已定位但未修，不得称全组件完成。
+- 顺序仍原整改完成后接三场景持久化实测、space实现和删除策略批准，最终清本地/Tokyo临时物料。main未创建/inbox旧kind/运行迁移暂停，旧节点卷Harbor备份保护，只本地luna不push。
+
+
 ## 最新续接：2026-09-28 业务 Opaque Secret 统一提交
 
 基线 `5f36729c`，原全部组件整改继续；没有转去做空间管理或恢复运行态迁移。

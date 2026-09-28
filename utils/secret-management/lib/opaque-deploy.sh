@@ -9,26 +9,64 @@ opaque_secret_entry() (
     source "$root/utils/cluster-arg-parser.sh"
     unified_parse_cluster_arg "$@"
     set -- "${PARSED_ARGS[@]}"
-    [[ $# -le 4 && "${4:-false}" == false ]] || {
-        echo 'Business Secret expects project namespace environment false; use the entry for dry-run' >&2; return 2;
-    }
+    local action=deploy positional_namespace=''
+    case "$profile" in
+        redis-secrets|elasticsearch-secrets)
+            [[ $# -le 3 && "${3:-false}" == false ]] || { echo 'Expected action namespace false' >&2; return 2; }
+            action="${1:-deploy}"; positional_namespace="${2:-}"
+            # Elasticsearch previously accepted delete as an uninstall alias.
+            [[ "$profile:$action" != elasticsearch-secrets:delete ]] || action=uninstall
+            case "$action" in deploy|status|uninstall) ;; *) echo 'Unsupported Secret action' >&2; return 2 ;; esac ;;
+        *)
+            [[ $# -le 4 && "${4:-false}" == false ]] || {
+                echo 'Business Secret expects project namespace environment false; use the entry for dry-run' >&2; return 2;
+            }
+            positional_namespace="${2:-}" ;;
+    esac
     [[ "${CLUSTER:-}" =~ ^(KIND|C[1-9][0-9]*)$ ]] || {
         echo 'Explicit CLUSTER required' >&2; return 1;
     }
-    local selected_cluster="$CLUSTER" namespace="${2:-}"
+    local selected_cluster="$CLUSTER" namespace="$positional_namespace"
     [[ -f "$config" && ! -L "$config" ]] || { echo 'Secret configuration missing' >&2; return 1; }
     source "$config" >/dev/null 2>&1 || { echo 'Secret configuration failed' >&2; return 1; }
     [[ "$CLUSTER" == "$selected_cluster" ]] || { echo 'Configuration changed selected cluster' >&2; return 1; }
     source "$root/utils/cluster-config-mapping.sh"
     apply_cluster_config_mapping >/dev/null 2>&1 || { echo 'Secret cluster mapping failed' >&2; return 1; }
     [[ "$CLUSTER" == "$selected_cluster" ]] || { echo 'Mapping changed selected cluster' >&2; return 1; }
-    namespace="${namespace:-${NAMESPACE:-${SECRET_NAMESPACE:-$default_namespace}}}"
+    case "$profile" in
+        elasticsearch-secrets)
+            SECRET_NAME="${ELASTICSEARCH_SECRET_NAME:?Secret name required}"
+            namespace="${namespace:-${ELASTICSEARCH_NAMESPACE:-$default_namespace}}" ;;
+        redis-secrets)
+            SECRET_NAME="${REDIS_SECRET_NAME:?Secret name required}"
+            namespace="${namespace:-${REDIS_NAMESPACE:-$default_namespace}}" ;;
+        *) namespace="${namespace:-${NAMESPACE:-${SECRET_NAMESPACE:-$default_namespace}}}" ;;
+    esac
     [[ "${SECRET_TYPE:-Opaque}" == Opaque ]] || { echo 'Business Secret type must be Opaque' >&2; return 1; }
+    source "$root/utils/deploy-target.sh"
+    if [[ "$action" != deploy ]]; then
+        sunmoon_deploy_target_init "$root" || return 1
+        python3 -B "$root/utils/secret-management/lib/opaque_secret.py" --action "$action" \
+            --namespace "$namespace" --name "$SECRET_NAME" --apply
+        return $?
+    fi
 
     # key:variable mappings preserve the component's actual historical keys.
     local -a fields=() required=() payload=() restart_args=()
     local restart_mode=always
     case "$profile" in
+        elasticsearch-secrets)
+            fields=("${ELASTICSEARCH_AUTH_SECRET_PASSWORD_KEY:?Secret password key required}:ELASTICSEARCH_PASSWORD"
+                    elasticsearch-username:ELASTICSEARCH_USERNAME kibana-password:KIBANA_SYSTEM_PASSWORD)
+            required=(ELASTICSEARCH_PASSWORD ELASTICSEARCH_USERNAME KIBANA_SYSTEM_PASSWORD)
+            restart_mode=none ;;
+        redis-secrets)
+            fields=("${REDIS_PASSWORD_KEY:?Secret password key required}:REDIS_PASSWORD"
+                    "${REDIS_MASTER_PASSWORD_KEY:?Secret master key required}:REDIS_MASTER_PASSWORD"
+                    "${REDIS_DATABASE_KEY:?Secret database key required}:REDIS_DATABASE")
+            REDIS_DATABASE="${REDIS_DATABASE:-redis}"
+            required=(REDIS_PASSWORD REDIS_MASTER_PASSWORD)
+            restart_mode=none ;;
         postgresql-auth-secret) fields=(admin_password:admin_password dev_password:dev_password) ;;
         postgresql-authservice-db-secret|postgresql-llmopsservice-db-secret)
             fields=(DB_HOST:DB_HOST DB_PORT:DB_PORT DB_NAME:DB_NAME DB_USER:DB_USER DB_PASSWORD:DB_PASSWORD DB_SSLMODE:DB_SSLMODE) ;;
@@ -94,7 +132,6 @@ opaque_secret_entry() (
             [[ -z "$component" ]] || restart_args+=(--restart "$component")
         done
     fi
-    source "$root/utils/deploy-target.sh"
     sunmoon_deploy_target_init "$root" || return 1
     # Shell builtin -> pipe. Values never become an external process argument or file.
     builtin printf '%s\0' "${payload[@]}" | python3 -B "$root/utils/secret-management/lib/opaque_secret.py" \
