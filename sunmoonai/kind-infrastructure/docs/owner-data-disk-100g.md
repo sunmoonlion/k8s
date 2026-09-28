@@ -88,14 +88,18 @@ if ($LASTEXITCODE -ne 0) { throw '服务挂载检查失败，禁止启动 Harbor
 
 本机任务为 `sunmoon-data-mount`；完整规则、维护暂停/恢复命令及功能索引见 [mount/README.md](../mount/README.md)。历史 `docker-pv` 属于格式化前 E 盘环境，不能恢复其旧路径。
 
-发布文件固定在 `C:\wsl-disks\scripts\storage-automation-20260928-v1`：
+执行器固定在 `C:\wsl-disks\scripts\storage-automation-20260928-v1`，无窗口启动器位于 v2；本次任务修复器与更新后的注册器最终发布于 v4：
 
 - [ensure-sunmoon-data.ps1](../deploy-kind/ensure-sunmoon-data.ps1)：维护标记优先；Ubuntu 未运行则跳过，正常挂载只检查；缺盘时调用已发布 v2 attach，核原 UUID，不初始化、不启动 Harbor/KIND。
-- [register-sunmoon-data-task.ps1](../deploy-kind/register-sunmoon-data-task.ps1)：默认只打印，`-Apply` 才注册；固定 runner SHA；已有同名任务拒绝覆盖。任务用当前 Ubuntu 所属 Windows 用户的最高 Interactive 权限，登录和每分钟触发；只在用户已登录时保证执行。
+- [register-sunmoon-data-task.ps1](../deploy-kind/register-sunmoon-data-task.ps1)：默认只打印，`-Apply` 才注册；固定 runner 与 launcher SHA；已有同名任务拒绝覆盖。任务用当前 Ubuntu 所属 Windows 用户的最高 Interactive 权限，**仅登录触发，无分钟轮询**。
+- [run-sunmoon-data-hidden.vbs](../deploy-kind/run-sunmoon-data-hidden.vbs)：非控制台入口，隐藏 PowerShell，等待并传回退出码；调用原 v1 runner，不改变附盘逻辑。
+- [hide-sunmoon-data-task.ps1](../deploy-kind/hide-sunmoon-data-task.ps1)：只修复已核身份/动作的原任务，先备份 XML，等现有运行完成后移除定时触发并换无窗口入口；不强停附盘进程、不改服务。
 
 每次任务运行重新核对脚本摘要。当前 runner SHA256：`70ca2d6693881940231bdd39acaad9b2853f96d0c7ddbf5e9d523747e0a4c2bd`。发布目录只允许 Administrators/SYSTEM 修改，当前用户读执行；不依赖 worktree。未来更换代码必须使用新版本发布目录、重新核对 SHA 和任务动作，不覆盖当前发布字节。
 
-复用方法：管理员先把仓中两个文件复制到上述发布目录（已存在时仅比对摘要，拒绝覆盖），设置上述 ACL，再调用注册器 `-RunnerSha256 <已核对的runner摘要> -Apply`。注册器保存回执并等首次运行结果。**本机已经完成，不重跑注册。** 唯一状态文件 `C:\wsl-disks\sunmoon-data-automation-status.json`；查看计划任务 `LastTaskResult` 并核状态为 `already-mounted`/`mounted-and-checked`，不能把 maintenance/Ubuntu-stopped 的跳过结果当挂载成功。
+复用方法：管理员按脚本中固定路径发布 runner 和 launcher（已存在时仅比对摘要，拒绝覆盖），设置上述 ACL，再调用当前注册器 `-RunnerSha256 <已核对的runner摘要> -LauncherSha256 <已核对的launcher摘要> -Apply`。注册器保存回执并等首次运行结果。**本机已经完成修复，不重跑注册。** 唯一状态文件 `C:\wsl-disks\sunmoon-data-automation-status.json`；查看计划任务 `LastTaskResult` 并核状态为 `already-mounted`/`mounted-and-checked`，不能把 maintenance/Ubuntu-stopped 的跳过结果当挂载成功。
+
+登录后单独重启 WSL 不会再次触发登录任务；如果登录时 Ubuntu 未运行，任务也会跳过。统一 Harbor/KIND 启动入口需接按需附盘和严格挂载检查，此接线尚未完成；不能因此取消现有启动门禁，也不恢复分钟轮询。取消轮询与无窗口执行的实际结果见 [存储索引](../mount/README.md#自动挂载的实际规则)。
 
 完整关机/WSL 重启与 Harbor/正式 KIND 自动启动仍待后续验收。新服务继续经过严格挂载检查；任务成功不等于服务已启动。执行压缩之前必须使用索引中的维护标记、Disable 任务并等待已运行实例结束，再关闭 WSL。
 

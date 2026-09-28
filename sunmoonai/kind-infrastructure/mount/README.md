@@ -40,10 +40,12 @@
 
 - 发布位置：`C:\wsl-disks\scripts\storage-automation-20260928-v1`，不依赖 worktree；新发布目录限制为 Administrators/SYSTEM 可写、当前用户可读执行。
 - 任务以 Ubuntu 所属用户 `ZYMUN\zymun` 的最高权限 Interactive token 运行，不使用 SYSTEM，不保存密码。
-- 登录时及每分钟检查。先检查维护标记，再查询 Ubuntu 是否正在运行；未运行则跳过。已挂载时只读检查，不重复挂载，不启动服务。未登录时不保证运行。
+- **仅登录时触发，已取消每分钟检查。** 2026-09-28 所有者报告弹窗并质疑轮询频率；根因是原任务每分钟直接启动可见的 PowerShell。现使用 `wscript.exe //B //Nologo` 启动受限目录下的 `run-sunmoon-data-hidden.vbs`，内部 PowerShell 使用 Hidden 模式，等结束并向任务返回退出码。
+- 先检查维护标记，再查询 Ubuntu 是否正在运行；未运行则跳过。已挂载时只读检查，不重复挂载，不启动服务。未登录时不保证运行。**登录时 Ubuntu 未启动、登录后单独重启 WSL，都不能靠这一次触发覆盖；统一服务启动前按需附盘接线仍待完成。**
 - 每次校验 runner、v2 attach、Linux helper 的固定 SHA256。UUID/挂载异常拒绝，绝不自动创建或格式化盘。
 - 最近状态：`C:\wsl-disks\sunmoon-data-automation-status.json`；注册回执：`C:\wsl-disks\sunmoon-data-task-registration.json`。
-- 首次实际执行 `LastTaskResult=0`、`already-mounted`，后续一分钟触发同样成功。没有为验收关闭 WSL；尚不能说整机重启/未附盘时的定时修复分支已实测。
+- 无窗口入口发布于 `storage-automation-20260928-v2`，SHA256 `131877883b2ac97a9bd0220b444ef3433792a035ad36e289b5be59e5b66c3b8e`；只调用原 v1 runner，每次核原 SHA。任务修复器最终发布在 v4，v2/v3 修复器因 Windows 简写账号解析失败，在修改任务之前停止，保留原发布不覆盖。
+- 修改后 11:46:07 实际运行 `LastTaskResult=0`、`already-mounted`，任务回读只剩一个登录触发器。修复回执 `C:\wsl-disks\sunmoon-data-task-hidden.json`，公开副本见 [结果](../../scripts/results/luna-storage-task-hidden.20260928.json)。没有为验收关闭 WSL；整机重启、未附盘修复、登录触发端到端均尚未实测。
 - Ubuntu 运行检查和后续命令之间不是原子操作；维护时必须按下节暂停任务并等待已运行实例结束，避免与 WSL 关闭竞态。
 
 日常可以只读查看 JSON 状态；准备启动新 Harbor/KIND 时仍必须通过服务挂载门禁，不能只看计划任务返回 0（维护跳过、Ubuntu 停止跳过也返回 0）。注册器拒绝覆盖已有任务；升级发布须新目录、新摘要和明确的任务更新步骤。

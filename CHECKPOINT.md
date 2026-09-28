@@ -1,3 +1,14 @@
+## 最新续接：2026-09-28 取消一分钟附盘轮询，修复反复 Windows 弹窗
+
+基线 b23f1a6d。部署入口整理仍是主任务，尚未移动 legacy 或改总控；期间所有者要求核查旧 WSL/Harbor 障碍，随后反馈频繁 Windows 窗口并质疑每分钟检查。
+
+- 找到 utils/HARBOR-KIND-EXTERNAL 两份 2026-03-04 外置方案，未找到放弃原因；旧 harbor-wsl-setup-changes.md 明确记 EOF 源于 dockerd NO_PROXY 缺 Harbor。不能认定这是唯一历史原因，也不能宣称所有 WSL 问题已解决。新 registry-platform/docs/wsl-feasibility.md 汇总证据及真正 Docker/CI、正式入口、重启和 KIND 重建独立性门槛，原旧外置文档仍未归档。
+- 弹窗原因：刚注册的 sunmoon-data-mount 每分钟直接 powershell.exe，没有隐藏参数。所有者质疑后改为仅登录触发，保留 Interactive/Highest 所属用户、SHA/UUID/维护守卫；wscript 无控制台入口等待 Hidden PowerShell 返回退出码，不启动服务。
+- 新 run-sunmoon-data-hidden.vbs 发布于 C:/wsl-disks/scripts/storage-automation-20260928-v2，SHA131877883b2ac97a9bd0220b444ef3433792a035ad36e289b5be59e5b66c3b8e，调用原 v1 runner SHA70ca2d6693881940231bdd39acaad9b2853f96d0c7ddbf5e9d523747e0a4c2bd。新 hide-sunmoon-data-task.ps1 的 v2/v3 管理发布在修改任务前因无机器前缀的 zymun 账号无法 Translate 而拒绝，均保留；只读确认 TaskOwner=zymun、Caller=ZYMUN\zymun 后按机器限定账号核 SID，v4修复成功。修复器最终 SHAae1b8e0bf7a6ba67ef791efead9ea0724e233e3edd1ed9f95d442adfa8600649。注册器也已改无窗口/只登录，需要显式 launcher SHA。没有覆盖旧管理副本。
+- 原任务 XML 保存在 C:/wsl-disks/sunmoon-data-task-before-hidden-20260928-114605.xml；最终回执 sunmoon-data-task-hidden.json。任务回读仅一个登录触发器，11:46:07实际启动 LastTaskResult0，挂载状态already-mounted、ServicesStarted=false；公开 scripts/results/luna-storage-task-hidden.20260928.json。未更改数据/集群/Harbor/入口，未清理。两PS最终Parser通过；11:50:02只读回查仅一个登录触发器、RepetitionInterval=null、LastTaskResult0，LastRunTime仍11:46:07，约4分钟无重复执行；git diff --check通过。
+- 重要未完项：取消轮询后，登录时Ubuntu未运行则跳过；登录后单独重启WSL不再自动触发。必须把按需附盘接入统一Harbor/KIND启动入口，不能把登录任务当覆盖所有重启，也不能绕过严格服务挂载门禁。完整WSL/Windows重启验收未做。
+- 回到主任务：用户批准开始整理，保留 legacy/local、legacy/cloud 中必要旧代码及退出条件；旧节点/卷只登记不搬动清理。已读旧总控：KIND infrastructure分支仍调旧deploy-kind/kind-up，旧脚本可重建/清PV；cloud step00/reset、setup-runtime与image-cleanup需归档/禁止误用。旧配置含凭据，不输出或复制到新公开文件。当前工作树只本单元列出的脚本/文档/回执修改，不通知整体迁移完成。inbox仍旧kind。
+
 ## 最新续接：2026-09-28 自动附盘恢复与功能盘点；转入部署入口整理
 
 本单元基线620e2cd9dc60d924592cefe3871b5530784aceca。所有者先暂停迁移，讨论后明确“好，那开始整理吧”：优先整理全仓部署功能/调用关系/统一操作入口，旧代码按legacy/local与legacy/cloud分别暂存，明确删除条件；已替代且不再需要的内容由Git留历史。旧节点/卷只登记，不搬动、不清理；镜像及Harbor数据库/密钥/配置/备份保护。不能先整理一层新说明便继续原先零散部署。

@@ -3,29 +3,33 @@
 [CmdletBinding()]
 param(
     [string]$RunnerSha256 = '',
+    [string]$LauncherSha256 = '',
     [switch]$Apply
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $TaskName = 'sunmoon-data-mount'
 $Runner = 'C:\wsl-disks\scripts\storage-automation-20260928-v1\ensure-sunmoon-data.ps1'
+$Launcher = 'C:\wsl-disks\scripts\storage-automation-20260928-v2\run-sunmoon-data-hidden.vbs'
+$HostExe = Join-Path $env:SystemRoot 'System32\wscript.exe'
 if (-not $Apply) {
-    [pscustomobject]@{DryRun=$true;Task=$TaskName;Runner=$Runner;Triggers='owner logon and every minute while owner logged in';StartsStoppedUbuntu=$false;ExistingTaskPolicy='refuse overwrite';OldTasksModified=$false} | ConvertTo-Json
+    [pscustomobject]@{DryRun=$true;Task=$TaskName;Runner=$Runner;Launcher=$Launcher;Triggers='owner logon only';StartsStoppedUbuntu=$false;ExistingTaskPolicy='refuse overwrite; use hide-sunmoon-data-task.ps1 for the known old action';OldTasksModified=$false} | ConvertTo-Json
     return
 }
 $IsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $IsAdmin) { throw 'Run registration in an elevated PowerShell for the Ubuntu owner' }
 if ($RunnerSha256 -notmatch '^[0-9a-f]{64}$' -or (Get-FileHash -LiteralPath $Runner -Algorithm SHA256).Hash.ToLowerInvariant() -ne $RunnerSha256) { throw 'Explicit published runner digest required' }
+if ($RunnerSha256 -ne '70ca2d6693881940231bdd39acaad9b2853f96d0c7ddbf5e9d523747e0a4c2bd') { throw 'Launcher is pinned to the v1 runner; revise publication as one unit' }
+if ($LauncherSha256 -notmatch '^[0-9a-f]{64}$' -or (Get-FileHash -LiteralPath $Launcher -Algorithm SHA256).Hash.ToLowerInvariant() -ne $LauncherSha256) { throw 'Explicit published launcher digest required' }
+if (-not (Test-Path -LiteralPath $HostExe)) { throw 'Windows Script Host unavailable' }
 if (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue) { throw 'Task exists; inspect rather than overwrite it' }
 $Owner = [Security.Principal.WindowsIdentity]::GetCurrent().Name
 # The task verifies the published bytes on EVERY run; no worktree dependency.
-$Command = "if ((Get-FileHash -LiteralPath '$Runner' -Algorithm SHA256).Hash.ToLowerInvariant() -ne '$RunnerSha256') { exit 3 }; & '$Runner' -Apply"
-$Action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -NonInteractive -Command "' + $Command + '"')
+$Action = New-ScheduledTaskAction -Execute $HostExe -Argument ('//B //Nologo "' + $Launcher + '"')
 $Logon = New-ScheduledTaskTrigger -AtLogOn -User $Owner
-$Periodic = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 1)
 $Principal = New-ScheduledTaskPrincipal -UserId $Owner -LogonType Interactive -RunLevel Highest
 $Settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 3)
-Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger @($Logon,$Periodic) -Principal $Principal -Settings $Settings -Description 'Attach only the existing C:\wsl-disks\sunmoon-data.vhdx when Ubuntu is running; skip maintenance; no service startup' | Out-Null
+Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Logon -Principal $Principal -Settings $Settings -Description 'Check existing Sunmoon data disk at owner logon without a console; no periodic polling or service startup' | Out-Null
 $StartedAfter = (Get-Date).AddSeconds(-2)
 Start-ScheduledTask -TaskName $TaskName
 $Deadline = (Get-Date).AddSeconds(45)

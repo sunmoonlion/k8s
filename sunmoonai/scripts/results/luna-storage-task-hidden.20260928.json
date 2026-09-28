@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "date": "2026-09-28",
+  "task_repair": {
+    "Task": "sunmoon-data-mount",
+    "Changed": true,
+    "Execute": "C:\\Windows\\System32\\wscript.exe",
+    "Arguments": "//B //Nologo \"C:\\wsl-disks\\scripts\\storage-automation-20260928-v2\\run-sunmoon-data-hidden.vbs\"",
+    "Trigger": "owner logon only",
+    "PeriodicTriggerRemoved": true,
+    "Backup": "C:\\wsl-disks\\sunmoon-data-task-before-hidden-20260928-114605.xml",
+    "LauncherSha256": "131877883b2ac97a9bd0220b444ef3433792a035ad36e289b5be59e5b66c3b8e",
+    "RunnerSha256": "70ca2d6693881940231bdd39acaad9b2853f96d0c7ddbf5e9d523747e0a4c2bd",
+    "State": "Ready",
+    "LastRunTime": "2026-09-28T11:46:07.0000000+08:00",
+    "LastTaskResult": 0,
+    "ServicesChanged": false
+  },
+  "last_mount_check": {
+    "CheckedAt": "2026-09-28T11:46:07.7795444+08:00",
+    "Distro": "Ubuntu",
+    "Uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+    "Result": "already-mounted",
+    "AttachedByThisRun": false,
+    "ServicesStarted": false
+  },
+  "on_demand_startup_integration_complete": false,
+  "full_wsl_restart_verified": false,
+  "public_entry_switched": false,
+  "cleanup_executed": false,
+  "historical_failure": "Two repair publications refused before task mutation because unqualified local account translation failed; machine-qualified SID verification fixed it.",
+  "readback": {
+    "ParserPassed": true,
+    "Execute": "C:\\Windows\\System32\\wscript.exe",
+    "State": "Ready",
+    "Triggers": [
+      {
+        "Type": "MSFT_TaskLogonTrigger",
+        "RepetitionInterval": null
+      }
+    ],
+    "LastRunTime": "2026-09-28T11:46:07.0000000+08:00",
+    "LastTaskResult": 0,
+    "CheckedAt": "2026-09-28T11:50:02.8098443+08:00"
+  }
+}
