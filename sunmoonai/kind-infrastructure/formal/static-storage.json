@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "nodes": {
+    "postgresql": "worker",
+    "redis": "worker",
+    "redis-nodebull": "worker",
+    "mongodb": "worker",
+    "neo4j": "worker",
+    "object-storage": "worker",
+    "casdoor": "worker"
+  }
+}

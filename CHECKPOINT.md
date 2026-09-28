@@ -1,5 +1,19 @@
 # luna 工作检查点
 
+## 最新续接：2026-09-28 正式 KIND 静态卷与组件调用接线
+
+基线 `186a41738939aa4ca493297206027bbb665f8500`，本地 luna 开工干净；继续用户授权的部署整理，未恢复实际建群/服务安装。
+
+- 发现7份真实静态PV模板仍写kind-worker，PostgreSQL在process_values中直接apply，其他组件dry_run也会apply；Jenkins/RabbitMQ/pgAdmin/Elasticsearch四个PV文件只有注释，前三者仍apply空文件。已删除4占位文件和3无效调用；Elasticsearch原无该调用。现有服务持久化开关/数据库版本没有改。
+- 新formal/static-storage.json逐组件worker/worker2映射；static_storage.py / `./sunmoon kind storage` 默认只渲染，node只读配置。正式集群名/磁盘UUID/kubeconfig从同一deploy-kind.json读取。7模板改__KIND_STATIC_NODE__，仅适配器渲染为main节点；namespace从显式调用传入，普通PV/PVC双向预留绑定，Retain和原节点内路径/容量保持。
+- ensure --apply需明确工具/正式kubeconfig/UID；核目标namespace、3 Ready KIND节点/hostname、Docker本机socket身份、6独立bind/数据盘UUID/可写及数据盘保留空间、容器/宿主device+inode；拒绝遮挡子挂载与组件路径软链。已有PV/PVC/SC要求本UID管理标记及关键规格一致，拒绝Released/Lost/Failed、错误namespace或PV claim UID，不接管/patch/删/自动改绑；只create缺失并回读，部分失败保留资源。
+- 对象存储移除docker exec旧kind-worker递归chown，Pod nodeSelector与PV共用profile。只有新空目录创建后chown1000:1000/0770；现有权限不符拒绝。创建专用no-provisioner/Retain/Immediate StorageClass，固定Pod/PV同节点；真实调度仍待验。其他组件保留hostPath及chart权限策略。对象存储.conf移除4个已无读取者的KIND节点/路径/类/容量键，PV_NAME状态查询保留；日常节点控制收口JSON，其余卷规格继续用模板。
+- PostgreSQL/MongoDB/Neo4j/Redis(含NodeBull)/Casdoor/ObjectStorage共6组件执行脚本用共享helper显式传dry_run并传播失败。PostgreSQL values处理不再写PV；共享helper真实分支先核此前固定部署目标，默认dry分支不查集群/挂载。不要据此宣称整个组件dry-run的Secret/Helm子步骤均无副作用。cloud动态存储分支保留，云端未经实机验证；旧Harbor快照/备份源中的kind-worker不能批量替换。
+- 更新正式KIND操作说明、配置索引、公共库说明、持久化设计及存储决定。准入只覆盖静态卷/挂载，不能证明容量配额、完整恢复或业务读写；没创建main，没写新目录/PV/SC/PVC，没碰旧节点/卷/Harbor。
+- 静态：10修改Shell bash -n/ShellCheck error级，2 Python AST、1内嵌目录helper Shell语法、1 JSON、8 YAML解析、3新增文档本地链接和git diff --check通过。删除文件内容均仅注释，删除后活动引用为零；活组件未剩旧kind-worker/apply静态模板调用。未跑测试、CLI计划/ensure、Docker/K8s/Windows/SSH查询或数据清理；实际API默认字段/绑定、UID/GID、对象存储调度与持久化读写仍待验收。
+- 后续：继续平台消费者/全流程dry-run与保留人工工具适配、CI与物料；整理完成后再按准入迁移main/30443及Harbor独立性验收。旧inbox仍kind；所有旧数据/镜像/节点/卷保护不变；最终本机refactor临时文件和东京下载清理不能遗漏。本轮没有新运行时临时物料/远程文件。仅本地luna提交，不push；回退只涉及Git文件。
+
+
 ## 最新续接：2026-09-28 构建批次接入现有开发输入与渲染门禁
 
 基线 `3661c6030bf89d5a449e418e9f3fc42c156e3b9e`，本地 luna 开工干净。继续已授权的镜像/部署整理，不恢复现场迁移。

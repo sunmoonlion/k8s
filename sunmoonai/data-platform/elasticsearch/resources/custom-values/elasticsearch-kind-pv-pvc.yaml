@@ -1,2 +1,0 @@
-# Kind 环境由 local-path StorageClass 动态创建 PVC。
-# 本文件保留为迁移说明，不包含需要 apply 的 Kubernetes 资源。

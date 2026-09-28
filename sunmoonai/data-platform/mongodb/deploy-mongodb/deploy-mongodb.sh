@@ -160,7 +160,7 @@ execute_mongodb_deployment() {
                     return 1
                 fi
                 log_info "Kind 集群：应用静态 PV/PVC: $pv_pvc_file"
-                kubectl apply -f "$pv_pvc_file"
+                unified_kind_static_storage mongodb "$namespace" "$dry_run" || return 1
                 values_file="$MONGODB_CUSTOM_VALUES_DIR/dev-values-kind.yaml"
             else
                 # Remote：动态 local-path

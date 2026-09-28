@@ -197,14 +197,6 @@ process_postgresql_values() {
             ;;
         "development")
             if [[ "$cluster_lower" == "kind" ]]; then
-                # Kind：静态 hostPath PV + dev-values-kind.yaml
-                local pv_pvc_file="$PROJECT_ROOT/resources/custom-values/postgresql-kind-pv-pvc.yaml"
-                if [[ ! -f "$pv_pvc_file" ]]; then
-                    log_error "未找到 Kind 静态 PV/PVC 文件: $pv_pvc_file" >&2
-                    return 1
-                fi
-                log_info "Kind 集群：应用静态 PV/PVC: $pv_pvc_file" >&2
-                kubectl apply -f "$pv_pvc_file" >&2
                 env_values_file="$PROJECT_ROOT/resources/custom-values/dev-values-kind.yaml"
             else
                 # Remote：动态 local-path
@@ -332,7 +324,12 @@ execute_postgresql_deployment() {
     fi
     
     # 处理 PostgreSQL 特定的 values 文件
-    local postgresql_values_file=$(process_postgresql_values "$project_id" "$namespace" "$environment" 2>/dev/null)
+    local storage_cluster="${CLUSTER:-}"
+    if [[ "${storage_cluster^^}" == KIND && "$environment" == development ]]; then
+        unified_kind_static_storage postgresql "$namespace" "$dry_run" >&2 || return 1
+    fi
+    local postgresql_values_file
+    postgresql_values_file=$(process_postgresql_values "$project_id" "$namespace" "$environment") || return 1
     local process_exit_code=$?
     
     if [[ $process_exit_code -ne 0 ]] || [[ -z "$postgresql_values_file" ]]; then

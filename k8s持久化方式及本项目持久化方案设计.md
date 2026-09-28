@@ -95,7 +95,7 @@ Windows 当前采用登录触发的无窗口任务，不再每分钟检查。统
 
 现有组件配置和静态模板继续作为共享部署代码的输入，不为了换集群顺便升级数据库版本。
 
-已在仓库找到 PostgreSQL、Redis（含 NodeBull）、MongoDB、Neo4j、对象存储、Elasticsearch、RabbitMQ、Casdoor、pgAdmin 的 KIND 静态 PV 文件；这不代表它们都已适配新 main。旧版“Casdoor/pgAdmin 待建”的清单已过时，Harbor 则应从集群内正式组件清单移出。
+实际静态资源为 PostgreSQL、Redis（含 NodeBull）、MongoDB、Neo4j、对象存储和 Casdoor。Jenkins、RabbitMQ、pgAdmin 的同名文件只有注释，Elasticsearch 的文件只说明动态供应；这四个空文件和无效调用已删除，不能把文件名当成已持久化的证据。Harbor 不属于新集群内的正式组件。
 
 部署前逐组件核对：
 
@@ -105,7 +105,7 @@ Windows 当前采用登录触发的无窗口任务，不再每分钟检查。统
 4. 组件 UID/GID、fsGroup 与目录权限相符；按组件准备目录，不能沿用全目录 `chmod -R 777`。
 5. 明确回收策略。保留数据的卷使用审核过的 Retain 方案，处理 Released/claimRef 时不能仅凭 PVC 同名就假定安全。
 
-实际模板例子：[PostgreSQL 静态 PV/PVC](sunmoonai/data-platform/postgresql/resources/custom-values/postgresql-kind-pv-pvc.yaml)。本轮仍能看到旧节点名，正式消费者渲染/部署验收尚未完成。
+实际模板例子：[PostgreSQL 静态 PV/PVC](sunmoonai/data-platform/postgresql/resources/custom-values/postgresql-kind-pv-pvc.yaml)。模板使用节点占位符，经 [正式静态卷适配器](sunmoonai/kind-infrastructure/formal/README.md#静态卷与组件部署) 渲染。节点选择统一在 `formal/static-storage.json`；实际创建前核目标和六条数据盘挂载，只创建缺失资源，现存卷不自动改绑。代码已接入组件入口，真实部署/权限/读写验收仍未完成。
 
 ### 4.2 动态 local-path
 

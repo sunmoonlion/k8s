@@ -1,2 +1,0 @@
-# Kind 环境 Jenkins 不使用静态 PV/PVC
-# 持久化已禁用（persistence.enabled: false），配置通过 JCasC + Helm values 代码化管理

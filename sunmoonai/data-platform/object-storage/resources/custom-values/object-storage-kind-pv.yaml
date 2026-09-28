@@ -1,3 +1,4 @@
+# 通过 ./sunmoon kind storage 渲染节点并核验挂载；不要直接 kubectl apply 此模板。
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -23,4 +24,4 @@ spec:
             - key: kubernetes.io/hostname
               operator: In
               values:
-                - kind-worker
+                - __KIND_STATIC_NODE__

@@ -19,6 +19,31 @@ unified_check_deploy_target() {
     root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)" || return 1
     sunmoon_deploy_target_check "$root"
 }
+
+# KIND storage is a cluster adapter; PV writes must never hide in Helm value rendering.
+unified_kind_static_storage() {
+    local component="$1" namespace="$2" dry_run="${3:?dry_run required}" root
+    root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)" || return 1
+    local -a args=(ensure --component "$component" --namespace "$namespace")
+    case "$dry_run" in
+        true) ;;
+        false)
+            unified_check_deploy_target || return 1
+            [[ "${CLUSTER:-}" == KIND ]] || return 1
+            args+=(--kubeconfig "$KUBECONFIG" --kubectl "$SUNMOON_KUBECTL"
+                   --expected-uid "$SUNMOON_EXPECTED_CLUSTER_UID" --apply)
+            ;;
+        *) printf '%s\n' 'Static storage requires explicit true/false dry_run' >&2; return 1 ;;
+    esac
+    python3 -B "$root/sunmoonai/kind-infrastructure/formal/static_storage.py" "${args[@]}"
+}
+
+unified_kind_static_node() {
+    local root
+    root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)" || return 1
+    python3 -B "$root/sunmoonai/kind-infrastructure/formal/static_storage.py" node \
+        --component "$1" --namespace "$2"
+}
 prepend_dev_cli_to_path
 # 使用绝对路径指向正确的配置文件
 CONFIG_FILE="${UNIFIED_CONFIG_FILE:-$SCRIPT_DIR/k8s-admin.conf}"

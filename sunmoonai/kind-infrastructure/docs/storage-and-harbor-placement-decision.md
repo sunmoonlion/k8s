@@ -73,7 +73,7 @@ nodes:
 
 静态卷继续使用 `/data/kind-local-storage/postgresql`、`redis`、`redis-nodebull`、`mongodb`、`neo4j`、`object-storage`、`casdoor` 等路径。Harbor 历史 `/data/kind-local-storage/harbor/...` 清单保留，但新正式集群不部署 Harbor，也不把宿主 Harbor 数据目录挂入任何节点。
 
-仓库静态 PV 的 `nodeAffinity` 存在写死 `kind-worker` 的条目（包括 PostgreSQL、Casdoor）。未来渲染必须改成实际 `sunmoon-kind-main-worker` 等目标，按组件明确落点；不能只换 extraMounts 后沿用旧节点亲和性。同一节点内路径在三个节点映射不同目录，不能靠跨节点重新调度找回原卷。保留控制面污点，分别核对 StorageClass、provisioner 路径、UID/GID、PV Retain 策略与数据库恢复方法，不使用递归 777。
+静态 PV 模板已改为节点占位符，由 [正式卷适配器](../formal/README.md#静态卷与组件部署) 按 `static-storage.json` 渲染实际 main worker；对象存储 Pod 也使用同一落点。代码接线已完成，实际调度/挂载/读写仍待验收。同一节点内路径在三个节点映射不同目录，不能靠跨节点重新调度找回原卷。保留控制面污点，分别核对 StorageClass、provisioner 路径、UID/GID、PV Retain 策略与数据库恢复方法，不使用递归 777。
 
 ### 2.3 C 盘容量与新数据盘
 

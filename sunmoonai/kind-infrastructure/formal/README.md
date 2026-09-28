@@ -57,7 +57,51 @@ limits/timeouts 不计入身份摘要，可以调整等待时间或提高容量�
 | 其余原有端口 | 保留 80、30444、30445、30446 的原监听范围，需维护窗口释放 |
 | Harbor | 宿主服务；统一 `harbor.sunmoonai.com:30443`；不挂入任何 KIND 节点 |
 
-六条宿主路径来自已批准的[存储方案](../docs/storage-and-harbor-placement-decision.md#22-正式-kind-六条挂载)。节点镜像别名仅用于 KIND 读取本地已导入镜像；未来创建器必须核对真实 image ID，不能按可变别名直接信任。数据平台静态 PV 仍需逐项渲染 nodeAffinity；本工具不创建 PV 或改权限。
+六条宿主路径来自已批准的[存储方案](../docs/storage-and-harbor-placement-decision.md#22-正式-kind-六条挂载)。节点镜像别名仅用于 KIND 读取本地已导入镜像；创建器核对真实 image ID。建群与静态卷是独立步骤，后者使用下节同一部署适配器。
+
+## 静态卷与组件部署
+
+[static-storage.json](static-storage.json) 逐组件选择 `worker` 或 `worker2`，完整节点名从
+同一 `deploy-kind.json` 的集群名生成；默认保留原来全部使用首个 worker 的布局。
+可用 `SUNMOON_KIND_STORAGE_CONFIG` 选择同结构绝对路径配置，部署期间不要修改配置。
+节点内目录保持 `/data/kind-local-storage/<组件>`，不改数据库或平台服务版本。
+
+```bash
+# 只渲染，不访问 Docker/Kubernetes、不建目录。
+./sunmoon kind storage --component postgresql --namespace data-platform-dev
+./sunmoon kind storage node --component object-storage --namespace data-platform-dev
+
+# 正式 main 已建成并完成挂载/目标准入之后才可执行；路径和 UID 必须取现场真实值。
+./sunmoon kind storage ensure --component postgresql --namespace data-platform-dev \
+  --kubeconfig /home/zymun/.kube/sunmoon-kind-main.config \
+  --kubectl /absolute/admitted/kubectl --expected-uid <main实际UID> --apply
+```
+
+实际分支需要 Python/PyYAML、指定 kubectl、本机 Docker socket 权限、`findmnt`、
+对六条宿主目录的读取权限；不会自动 sudo 或回退到其他 Docker context。
+它核正式 kubeconfig/UID、三节点名字/Ready/providerID、六条独立 bind、数据盘 UUID/剩余空间/可写状态，
+并比较容器内外目录的设备号和 inode，防止磁盘恢复挂载后容器仍指向旧的空目录。
+旧 kind 与验证集群不满足本入口的目标条件。
+
+覆盖 PostgreSQL、Redis、Redis NodeBull、MongoDB、Neo4j、对象存储、Casdoor。
+共享组件脚本在 KIND 分支调用同一 helper，传递 namespace 和 dry_run；干运行只渲染这一步。
+这不等于整个旧组件脚本的所有 Secret/Helm 子步骤都已证明无副作用。
+静态 YAML 的 `__KIND_STATIC_NODE__` 必须经本适配器渲染，不直接 apply 模板。
+
+- 普通静态 PVC 显式选择 PV，PV `claimRef` 预留给该 namespace/name；容量/类/卷名继续来自组件模板。
+- 对象存储没有预建 PVC，由 chart 创建；适配器创建专用无动态供应的静态 StorageClass，采用
+  Immediate，Pod nodeSelector 与 PV nodeAffinity 使用相同节点。该组合仍须真实调度验证。
+- 对象存储仅在目录不存在时创建并设置 `1000:1000/0770`；现有目录权限不符即失败。
+  原递归 chown 已移除。其他组件沿用既有 hostPath 类型及 chart 权限策略。
+- 现存资源必须带本集群 UID 标记、关键规格相同、状态可用；PV 的 claim UID 与现存 PVC 也要匹配。
+  无标记、Released/Lost、节点/namespace/容量不符均拒绝自动接管；不 patch、不删、不自动重绑定。
+- 仅创建缺失资源，逐件回读；失败可能留下已创建的资源/空目录，保留排查，不自动清理数据。
+
+Jenkins、RabbitMQ、pgAdmin 的原 KIND PV 文件只有注释，Elasticsearch 的同名文件也只说明动态供应；
+四个空文件及前三者的无效 apply 调用已移除，服务的现有持久化开关没有改变。
+本单元只完成静态接线，**未创建 PV/PVC、未初始化目录、未安装服务，也未验证 Pod 持久化**。
+重建恢复、目录权限/容器身份、对象存储绑定与实际读写仍需在正式迁移验收。
+PV/PVC 预留机制见 [Kubernetes 官方说明](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#reserving-a-persistentvolume)。
 
 ## 当前可执行命令
 

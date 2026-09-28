@@ -1,2 +1,0 @@
-# Kind 环境 pgAdmin 不使用静态 PV/PVC
-# 持久化已禁用（persistentVolume.enabled: false），连接配置通过 Helm values 管理

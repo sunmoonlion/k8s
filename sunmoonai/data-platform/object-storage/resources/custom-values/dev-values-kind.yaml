@@ -17,8 +17,8 @@ objectStore:
       volumesPerServer: 1
       size: 10Gi
       storageClassName: object-storage-kind-static
-      nodeSelector:
-        kubernetes.io/hostname: kind-worker
+      # 部署入口从 formal/static-storage.json 注入与 PV 相同的节点。
+      nodeSelector: {}
       resources:
         requests:
           cpu: 500m

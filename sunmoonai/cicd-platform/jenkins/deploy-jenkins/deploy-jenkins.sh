@@ -154,8 +154,7 @@ execute_jenkins_deployment() {
         "development"|"dev")
             local cluster_lower="$(echo "${CLUSTER:-}" | tr '[:upper:]' '[:lower:]')"
             if [[ "$cluster_lower" == "kind" ]]; then
-                local pv_pvc_file="$JENKINS_CUSTOM_VALUES_DIR/jenkins-kind-pv-pvc.yaml"
-                kubectl apply -f "$pv_pvc_file" >&2
+                # 此配置未启用静态持久卷，不 apply 空资源文件。
                 values_filename="dev-values-kind.yaml"
             else
                 values_filename="dev-values.yaml"

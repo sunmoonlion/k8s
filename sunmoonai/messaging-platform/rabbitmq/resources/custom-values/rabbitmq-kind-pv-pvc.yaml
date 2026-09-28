@@ -1,2 +1,0 @@
-# Kind 环境 RabbitMQ 不使用静态 PV/PVC
-# 持久化已禁用（persistence.enabled: false），消息数据无需跨集群保留

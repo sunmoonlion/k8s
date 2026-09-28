@@ -144,25 +144,6 @@ object_store_release() {
     printf '%s-%s\n' "${OBJECT_STORAGE_RELEASE_PREFIX:-object-storage}" "$project_id"
 }
 
-prepare_kind_host_path() {
-    local node="${OBJECT_STORAGE_KIND_NODE:-kind-worker}"
-    local path="${OBJECT_STORAGE_KIND_HOST_PATH:-/data/kind-local-storage/object-storage}"
-
-    command -v docker >/dev/null 2>&1 || {
-        log_error "Kind hostPath 初始化需要 docker 命令"
-        return 1
-    }
-    docker inspect "$node" >/dev/null 2>&1 || {
-        log_error "未找到 Kind 节点容器: $node"
-        return 1
-    }
-
-    log_info "准备 Kind Object Storage 数据目录: $node:$path"
-    docker exec "$node" mkdir -p "$path"
-    docker exec "$node" chown -R 1000:1000 "$path"
-    docker exec "$node" chmod 0770 "$path"
-}
-
 deploy_operator() {
     local namespace="$1"
     local dry_run="$2"
@@ -193,6 +174,7 @@ deploy_object_store() {
     local dry_run="$4"
     local cluster_lower
     local values_file
+    local storage_node=""
     cluster_lower="$(echo "${CLUSTER:-}" | tr '[:upper:]' '[:lower:]')"
 
     if [[ "$environment" != "development" && "$environment" != "dev" ]]; then
@@ -203,10 +185,8 @@ deploy_object_store() {
     case "$cluster_lower" in
         kind)
             values_file="$CUSTOM_VALUES_DIR/dev-values-kind.yaml"
-            if [[ "$dry_run" != "true" ]]; then
-                prepare_kind_host_path
-                kubectl apply -f "$CUSTOM_VALUES_DIR/object-storage-kind-pv.yaml"
-            fi
+            storage_node=$(unified_kind_static_node object-storage "$namespace") || return 1
+            unified_kind_static_storage object-storage "$namespace" "$dry_run" >&2 || return 1
             ;;
         c[0-9]*)
             values_file="$CUSTOM_VALUES_DIR/dev-values.yaml"
@@ -229,6 +209,9 @@ deploy_object_store() {
         --values "$values_file"
         --set "namespaceOverride=$namespace"
     )
+    if [[ -n "$storage_node" ]]; then
+        args+=(--set-string "objectStore.pools[0].nodeSelector.kubernetes\.io/hostname=$storage_node")
+    fi
     [[ "$dry_run" == "true" ]] && args+=(--dry-run)
     helm "${args[@]}"
 }

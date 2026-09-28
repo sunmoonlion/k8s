@@ -180,14 +180,7 @@ execute_rabbitmq_deployment() {
     case "$environment" in
         "development"|"dev")
             if [[ "$cluster_lower" == "kind" ]]; then
-                # Kind：静态 hostPath PV + dev-values-kind.yaml
-                local pv_pvc_file="$RABBITMQ_CUSTOM_VALUES_DIR/rabbitmq-kind-pv-pvc.yaml"
-                if [[ ! -f "$pv_pvc_file" ]]; then
-                    log_error "未找到 Kind 静态 PV/PVC 文件: $pv_pvc_file"
-                    return 1
-                fi
-                log_info "Kind 集群：应用静态 PV/PVC: $pv_pvc_file"
-                kubectl apply -f "$pv_pvc_file"
+                # 此 KIND 配置未启用静态持久卷，不 apply 空资源文件。
                 values_file="$RABBITMQ_CUSTOM_VALUES_DIR/dev-values-kind.yaml"
                 app_definitions_file="$RABBITMQ_CUSTOM_VALUES_DIR/app-definitions-development.yaml"
             else

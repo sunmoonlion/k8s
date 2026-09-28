@@ -15,6 +15,7 @@
 | 仓库镜像检查 | 仓库 `.conf` 的 `REGISTRY_IMAGE_PROJECT`、`REGISTRY_COMPONENT_LIST_DIR`、`REGISTRY_REQUEST_TIMEOUT` | 项目默认 k8s-images，清单默认 utils/components-images；每请求默认 15 秒、允许 1–120 秒；缺失与异常阻止部署 |
 | 应用构建与制品 | `app-platform/scripts/build-push-app-images.conf`、`registry-platform/config/build-publication.local.json` | 默认计划；构建生成 OCI 批次，发布单独执行；保留 App/组件/源码/缓存控制，取消按集群切换仓库别名 |
 | 应用候选输入 | `./sunmoon app prepare-input` 的显式基础输入、组件制品目录和 App 源码锁 | 默认元数据计划；apply 核文件/源码/仓库后只创建新 development-input，复用原渲染与部署门禁 |
+| KIND 静态卷节点 | `kind-infrastructure/formal/static-storage.json`；`SUNMOON_KIND_STORAGE_CONFIG` 可选配置 | 节点后缀统一选择 worker/worker2，集群名读取正式建群配置；PV/对象存储 Pod 共用。容量/类/卷名仍在组件模板；已绑定卷不能靠改配置迁移 |
 | 显式镜像发布批次 | `registry-platform/config/publication.example.json` 的真实副本 | 同一 OCI 发布器；控制归档/摘要、工具/策略、空间、重试；模板不是已准入物料 |
 | Harbor 实例及恢复输入 | `registry-platform/config/harbor-main-local.json` | 保留已有 JSON 配置和摘要核验；实例初始化后不能靠改路径冒充同一个实例 |
 | TLS 分流入口 | `registry-platform/config/sni-local-*.json` | 区分候选、过渡和正式方案；正式入口仍受维护窗口门禁保护 |

@@ -10,6 +10,7 @@
 | 内容 | 用途和调用方式 |
 | --- | --- |
 | `unified-deployment-template.sh`、`cluster-arg-parser.sh`、`cluster-config-mapping.sh` | 组件共享的连接、集群参数与配置映射。参数解析只保留一份实现；仍有大量实际部署调用方 |
+| `unified_kind_static_storage` / `unified_kind_static_node`（共享模板函数） | 组件调用正式 KIND 的同一静态卷适配器，显式传递 namespace/dry_run；实际写入要求固定部署目标，节点配置见 formal/static-storage.json |
 | `k8s-admin.conf`、`kubeconfig-path-for-cluster.sh` / `kubeconfig_path.py`、`deploy-target.sh`、`deploy-runtime-helpers.sh`、`prepend-dev-cli-path.sh` | 连接配置、按数据解析路径和固定部署目标。总控及共享子脚本复核路径/内容摘要/UID，显式部署不读旧连接缓存或自动重连 |
 | `secret-management/` | 参数化 Secret 数据准备/YAML 生成、基于已有 CA 签发叶证书，供组件调用 |
 | `unified-cert-secret-management/` | 按服务端/客户端组合分发证书，包含动态加载的 Traefik 插件；与上一目录接口不同，不能按同名函数直接合并 |

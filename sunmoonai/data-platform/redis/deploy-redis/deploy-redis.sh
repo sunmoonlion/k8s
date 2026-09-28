@@ -195,7 +195,9 @@ execute_redis_deployment() {
                     return 1
                 fi
                 log_info "Kind 集群：应用静态 PV/PVC: $pv_pvc_file"
-                kubectl apply -f "$pv_pvc_file"
+                local storage_component=redis
+                [[ "$pv_pvc_file" != *redis-nodebull-kind-pv-pvc.yaml ]] || storage_component=redis-nodebull
+                unified_kind_static_storage "$storage_component" "$namespace" "$dry_run" || return 1
             else
                 # Remote：动态 local-path
                 values_file="$REDIS_CUSTOM_VALUES_DIR/dev-values.yaml"

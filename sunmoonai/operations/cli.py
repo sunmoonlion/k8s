@@ -13,6 +13,7 @@ ROUTES = {
     ('kind', 'prepare'): 'sunmoonai/kind-infrastructure/formal/prepare.py',
     ('kind', 'cluster'): 'sunmoonai/kind-infrastructure/formal/cluster.py',
     ('kind', 'lifecycle'): 'sunmoonai/kind-infrastructure/formal/lifecycle.py',
+    ('kind', 'storage'): 'sunmoonai/kind-infrastructure/formal/static_storage.py',
     ('harbor', 'prepare'): 'sunmoonai/registry-platform/host_prepare.py',
     ('harbor', 'lifecycle'): 'sunmoonai/registry-platform/host_runtime.py',
     ('harbor', 'mode'): 'sunmoonai/registry-platform/host_mode.py',
