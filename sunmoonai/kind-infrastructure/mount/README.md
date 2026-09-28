@@ -9,11 +9,19 @@
 | 对象 | Linux 路径 | Windows 上的落点 | 当前作用 |
 | --- | --- | --- | --- |
 | 原 Harbor、原 KIND 静态数据 | `/data/kind-local-storage` | Ubuntu 系统 VHDX，位于 C 盘 | 原集群仍对外服务；禁止在此覆盖挂载或清空 |
-| 新独立数据盘 | `/mnt/sunmoon-data` | `C:\wsl-disks\sunmoon-data.vhdx`，动态上限 100 GiB | ext4，UUID `a28de356-4ba1-4a21-93f5-744b9b9d8be0` |
+| 新独立数据盘 | `/mnt/sunmoon-data` | `C:\wsl-disks\sunmoon-data.vhdx`，动态上限 230 GiB | ext4，UUID `a28de356-4ba1-4a21-93f5-744b9b9d8be0` |
 | 新宿主 Harbor | `/data/harbor` | 新盘的 `harbor/` 子目录 | 已恢复候选，尚未切换公开入口 |
 | 正式 KIND 节点数据 | `/data/kind-clusters` | 新盘的 `kind-clusters/` 子目录 | 预留给 `sunmoon-kind-main`，尚未建群 |
 
 两份 VHDX 都占用 C 盘，分开管理不等于两块物理硬盘，不防同盘硬件故障。旧 `kind-worker2` 的容器内部卷也必须保留。
+
+## 当前管理版本与维护结果
+
+2026-09-28晚完成数据盘230GiB扩容。固定发布：Windows `C:\wsl-disks\scripts\storage-20260928-v3`，Linux `/opt/sunmoon/admin/storage/storage-20260928-v3`。旧100GiB附盘工具不能用于新盘；历史副本暂留但不是日常入口。
+
+18,712文件/元数据扩前扩后相同；两集群六节点Ready，旧集群71个Pod均Ready或Succeeded，Harbor目录一致、BusyBox完整拉取校验通过。挂载任务v3已Enabled/Ready、LastTaskResult=0，只登录触发；维护标记已移除。只读空间监控版本`16b3d2bf57ad20dd`已运行，未启自动删除。详见[结果](../../scripts/results/luna-storage-expansion-recovery.20260928.json)。外置Harbor正式迁移和三场景持久化仍待完成。
+
+[Windows互操作检查与恢复](../docs/wsl-interop-recovery.md)：当前已实测恢复；开机检查一次，无轮询或弹窗。下文v1/v2任务记录是首次安装历史，现行任务使用上面的v3。
 
 ## 功能都在哪里，还能不能用
 
@@ -52,7 +60,7 @@
 
 ## 压缩维护：先暂停自动任务，完毕再恢复
 
-以下仅用于已约定维护窗口，当前没有执行关闭 WSL或压缩。管理员 PowerShell：
+以下用于后续已约定维护窗口；2026-09-28的系统盘压缩、数据盘扩至230GiB及服务恢复已完成。管理员 PowerShell：
 
 ```powershell
 $ErrorActionPreference = 'Stop'
@@ -66,10 +74,10 @@ while ((Get-ScheduledTask -TaskName 'sunmoon-data-mount').State -eq 'Running') {
 }
 ```
 
-然后才按空间方案保存服务状态、备份、sync/trim、关闭 WSL与压缩。完成后，先启动 Ubuntu并通过固定 v2 脚本恢复挂载、核 UUID/服务可见性，再解除维护：
+然后才按空间方案保存服务状态、备份、sync/trim、关闭 WSL与压缩。完成后，先启动 Ubuntu并通过固定 v3（storage-20260928-v3）脚本恢复挂载、核 UUID/服务可见性，再解除维护：
 
 ```powershell
-# 必须先确认本次维护完成，且既有 v2 挂载检查通过。
+# 必须先确认本次维护完成，且当前 v3 挂载检查通过。
 Remove-Item -LiteralPath 'C:\wsl-disks\sunmoon-data.maintenance'
 Enable-ScheduledTask -TaskName 'sunmoon-data-mount' | Out-Null
 Start-ScheduledTask -TaskName 'sunmoon-data-mount'

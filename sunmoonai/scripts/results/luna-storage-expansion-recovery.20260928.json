@@ -1,0 +1,136 @@
+{
+  "checked_at": "2026-09-28T15:24:06.986166+00:00",
+  "expanded_gib": 230,
+  "data_uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+  "file_verification": {
+    "checked_at": "2026-09-28T15:16:10.778181+00:00",
+    "files": 18712,
+    "all_file_content_and_metadata_equal": true,
+    "difference_count": 0,
+    "backup_manifest_sha256": "9dbb2b87629a18ae35b47f4c4a6ae0da8a9b61cfc85dc4749b69d44a092f3349"
+  },
+  "old_cluster_uid": "5d71ab3a-ea5a-4535-adc6-d7698d820249",
+  "old_pods_total": 71,
+  "old_pods_not_ready": [],
+  "validation_cluster_uid": "f5b11e20-1428-48a0-8c7a-51bc9ef27896",
+  "validation_nodes_ready": 3,
+  "old_nodes_ready": 3,
+  "harbor_catalog_equal": true,
+  "image_pull": {
+    "reference": "harbor.sunmoonai.com:30443/app-images/busybox@sha256:1cfa4e2b09e127b9c4ed43578d3f3c18e7d44ea47b9ea98475c0cbe9086525f8",
+    "complete_image_download": true,
+    "all_oci_blob_sha256_equal": true,
+    "blobs": 3,
+    "bytes": 2227396,
+    "tls_verified": true,
+    "signature_verification": false,
+    "at": "2026-09-28T15:21:59.179628+00:00"
+  },
+  "protected_inventory": {
+    "images": 219,
+    "containers": 89,
+    "volumes": 46
+  },
+  "storage": {
+    "layout": "SUNMOON_DATA_LAYOUT_V1",
+    "expected_uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+    "root": {
+      "target": "/mnt/sunmoon-data",
+      "source": "/dev/sdd",
+      "fstype": "ext4",
+      "uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+      "options": "rw,relatime",
+      "maj:min": "8:48",
+      "fsroot": "/"
+    },
+    "binds": [
+      {
+        "target": "/data/kind-clusters",
+        "source": "/mnt/sunmoon-data/kind-clusters",
+        "identity": [
+          2096,
+          4718593
+        ]
+      },
+      {
+        "target": "/data/harbor",
+        "source": "/mnt/sunmoon-data/harbor",
+        "identity": [
+          2096,
+          524289
+        ]
+      }
+    ],
+    "legacy_storage": {
+      "inode": [
+        2112,
+        33554434
+      ],
+      "mount": {
+        "target": "/",
+        "source": "/dev/sde",
+        "fstype": "ext4",
+        "uuid": "693faed3-cebb-473e-81ae-fd88f1fc76b4",
+        "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+        "maj:min": "8:64",
+        "fsroot": "/"
+      }
+    },
+    "available_bytes": 175159877632,
+    "mount_namespace": "mnt:[4026532220]",
+    "service_visibility": {
+      "docker_running": true,
+      "views": [
+        {
+          "service": "systemd",
+          "pid": 1,
+          "mount_namespace": "mnt:[4026532220]"
+        },
+        {
+          "service": "docker",
+          "pid": 48866,
+          "mount_namespace": "mnt:[4026532220]"
+        }
+      ]
+    }
+  },
+  "capacity": {
+    "at": "2026-09-28T15:24:07.032537+00:00",
+    "root_used_bytes": 371565375488,
+    "root_available_bytes": 654543446016,
+    "windows": {
+      "C_TotalBytes": 992541478912,
+      "C_FreeBytes": 246621274112,
+      "WSL_VHDX_FileLength": 418068299776
+    },
+    "windows_measurement": "WSL stat; physical VHDX allocation not verified"
+  },
+  "monitor_publication": "/opt/sunmoon/admin/space/16b3d2bf57ad20dd",
+  "monitor_alerts": [
+    {
+      "level": "warning",
+      "message": "windows: 75.15% used"
+    }
+  ],
+  "windows_task_enabled": true,
+  "maintenance_marker_retained": false,
+  "migration_complete": false,
+  "formal_cluster_created": false,
+  "external_harbor_persistence_acceptance": false,
+  "windows_task": {
+    "Enabled": true,
+    "State": "Ready",
+    "Execute": "C:\\Windows\\System32\\wscript.exe",
+    "Arguments": "//B //Nologo \"C:\\wsl-disks\\scripts\\storage-20260928-v3\\run-sunmoon-data-hidden.vbs\"",
+    "TriggerCount": 1,
+    "TriggerClass": "MSFT_TaskLogonTrigger",
+    "Repetition": null,
+    "LastTaskResult": 0,
+    "LastRunTime": "2026-09-28T15:22:29.0000000Z",
+    "Maintenance": false
+  },
+  "windows_interop_recovered": true,
+  "interop_boot_service": "sunmoon-wsl-interop.service",
+  "interop_boot_reboot_verified": false,
+  "finalized_at": "2026-09-28T15:31:40.015046+00:00"
+}

@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import shutil
 import stat
+import subprocess
 import tarfile
 import sys
 
@@ -44,14 +45,22 @@ def frozen():
         raise ValueError('Maintenance marker required')
 
 
-def budget(extra=0):
+def budget(extra=0, after_expansion=False):
     # Native Windows allocation confirmed by owner at 2026-09-28T14:41:36Z.
     # Reject a changed data VHDX length; a fresh native probe is then required.
     p=Path('/mnt/c/wsl-disks/sunmoon-data.vhdx')
-    if p.stat().st_size != 93050634240:
-        raise ValueError('Data VHDX length changed; recheck native allocation')
-    v=os.statvfs('/mnt/c'); free=v.f_bavail*v.f_frsize
-    if free-(230*GIB-93050634240)-22*GIB-extra < 50*GIB:
+    if after_expansion:
+        # Recovery must work after VHD expansion changed its physical length.
+        probe=Path(__file__).resolve().parents[2]/'operations/space/windows_capacity.py'
+        report=json.loads(subprocess.check_output([sys.executable,'-B',str(probe)],timeout=50))
+        if report['TargetGiB']!=230:raise ValueError('Restore capacity profile changed')
+        free=report['CFreeBytes']; growth=report['remaining_data_growth_bytes']
+    else:
+        if p.stat().st_size != 93050634240:
+            raise ValueError('Data VHDX length changed; recheck native allocation')
+        v=os.statvfs('/mnt/c'); free=v.f_bavail*v.f_frsize
+        growth=230*GIB-93050634240
+    if free-growth-22*GIB-extra < 50*GIB:
         raise ValueError('Backup would violate full-data-growth C reserve')
     v=os.statvfs(BACKUP)
     if v.f_bavail*v.f_frsize-extra < 22*GIB:
@@ -170,7 +179,7 @@ def restore():
     m=verify()
     if RESTORE.exists():raise ValueError('Restore target exists; never overwrite')
     needed=sum(r.get('bytes',0) for r in m['files'].values())
-    budget(needed)
+    budget(needed, after_expansion=True)
     RESTORE.mkdir(mode=0o700)
     # Files/dirs before symlinks: never follow a restored symlink while writing.
     rows=sorted(m['files'].items(),key=lambda item:(item[1]['kind']=='symlink',len(Path(item[0]).parts)))

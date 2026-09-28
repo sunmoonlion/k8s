@@ -1,5 +1,19 @@
 # luna 工作检查点
 
+## 最新：扩盘及旧服务恢复完成，Windows互操作已修复
+
+用户在讨论直接迁移后明确决定“还是恢复”，已恢复原六节点。两集群各3Ready，旧UID5d71ab3a-ea5a-4535-adc6-d7698d820249、136UIDf5b11e20-1428-48a0-8c7a-51bc9ef27896；旧71Pod全部Ready或Succeeded（Kibana曾稍迟，wait已通过）。Harbor全目录API与停机前相同，skopeo完整拉取BusyBox@sha256:1cfa4e2b09e127b9c4ed43578d3f3c18e7d44ea47b9ea98475c0cbe9086525f8，3blobs/2227396B全SHA正确、TLS开启。镜像219/容器89/卷46身份保留，候选Harbor/SNI仍停止。原节点on-failure:1与Harbor原只读设置已恢复。
+Windows Cursor已收尾：任务v3Enabled/Ready、LastTaskResult0、15:22:29Z执行already-mounted、单登录触发无重复；marker不存在。Luna ensure_storage返回storage_verified=true、task_requested=false。monitor发布16b3d2bf57ad20dd已运行，policy230，无自动删除。公开结果sunmoonai/scripts/results/luna-storage-expansion-recovery.20260928.json。
+用户追问何时恢复Windows调用，现已处理：WSLInterop项缺失、wsl.conf enabled=true；本机WSL生成恢复规则但Ubuntu ConditionVirtualization=!wsl使systemd-binfmt跳过。仅补回生成规则:WSLInterop:M::MZ::/init:P，PowerShell5.1.26100.9444调用退出0；首次中文CLIXML解码错误是捕获端问题，再次原始字节验证成功。容量查询、Windows任务只读查询均成功。谁删除该项尚未定位，勿归因网络/某节点。
+一次开机服务sunmoon-wsl-interop.service已enabled，实际执行Result=success；固定helper /opt/sunmoon/admin/wsl-interop/3aa688cbe9135143/wsl_interop.py，只补缺失项，无轮询/Windows进程，不重启服务。完整重启验收未做。文档docs/wsl-interop-recovery.md，家目录网络方案已追加。当前C空闲246623444992B，数据VHD已分配95231672320B，230长满后约88.38GiB，扣22后约66.38GiB（Windows实测15:29:49Z）。
+原全项目迁移/三场景持久化/空间策略收尾尚未完成，main未建、inbox仍旧kind；继续原任务。临时拉取目录 /var/lib/sunmoon/maintenance/data230-20260928-v1/pull-busybox 与 /tmp/luna-storage-final-task-20260928.json、扩盘差异备份等加入最终清理清单，先保留证据和必要恢复来源；Tokyo清理仍必做。不push。
+
+## 最新：230 GiB扩盘成功，全量文件相等；用户提出跳过旧服务整体恢复
+
+Windows回执 C:\wsl-disks\expand-230-20260928T231147428，after.json是UTF16，before.json是UTF8 BOM。filesystem-grown，246960619520B，UUID不变；v3严格挂载检查通过，数据盘可用175159877632B。18,712文件及全部目录/元数据对比差异0，私有结果 /var/lib/sunmoon/maintenance/data230-20260928-v1/post-resize-content.json；backup manifest SHA9dbb2b87629a18ae35b47f4c4a6ae0da8a9b61cfc85dc4749b69d44a092f3349。
+仅Docker守护进程已启动（PID48866），PID1/Docker挂载可见性一致；219镜像/89容器/46卷身份完整，运行容器0。六节点未恢复，原Harbor/候选/代理全停；monitor仍停，Windows任务已指向新v3但disabled，维护标记保留。没有调用system_compaction restore。该脚本CHECK已改v3（本地未提交），不要根据旧准备记录启动整套旧服务。
+用户问“可以不恢复旧服务直接迁移吗”，已答可以优先走停机备份 -> 外置Harbor恢复及完整验收 -> 入口 -> 正式集群，先保持旧6停止。不能跳过源数据新鲜度/账号密钥/全摘要/拉取门槛；若确需旧源在线，只临时恢复最小必要范围并说明原因。最新precompact逻辑备份未独立恢复，尚未用于候选同步；entry_reconcile仍是live旧API核对，P3切换执行器尚未完成，需实现可信离线冻结核对路径，不直接绕过guard。扩盘验收不等于迁移或外置Harbor持久化三场景完成。所有原任务/收尾清理仍保留。
+
 ## 最新：230 GiB扩盘已完成Linux准备，等待Windows Cursor执行
 
 唯一目标230 GiB；物理盘仍100GiB。原六节点停止，Docker/socket/containerd和只读监控已停，维护标记保留。系统盘压缩已完成（VHDX395217731584B），不得重复压缩。

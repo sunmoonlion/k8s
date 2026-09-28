@@ -1,6 +1,8 @@
 # 现有数据盘扩容至230 GiB
 
-状态：Linux准备完成，可交Windows Cursor执行下节；尚未扩盘，原六节点停止。100 → 230 GiB，240/260 GiB方案作废。
+状态：2026-09-28已扩到230GiB并完成旧服务恢复。18,712文件/元数据相同，六节点Ready，旧集群71个Pod正常，Harbor目录与完整镜像拉取通过。Windows任务v3已启用、维护标记已移除；下文是本次执行记录，不可再次重跑扩盘。240/260GiB方案作废。
+
+验收见[完整结果](../../scripts/results/luna-storage-expansion-recovery.20260928.json)。原迁移和正式外置Harbor持久化验收仍未完成。
 
 ## Windows管理员执行交接
 

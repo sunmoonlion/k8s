@@ -26,7 +26,7 @@ SNAPSHOT = Path('/data/harbor/source-snapshots/precompact-20260928-v1')
 CREDENTIALS = Path('/home/zymun/.docker/config.json')
 NAMES = {c + '-' + n for c in ('kind', 'sunmoon-kind-136')
          for n in ('control-plane', 'worker', 'worker2')}
-CHECK = '/opt/sunmoon/admin/storage/storage-20260927-v2/check-storage-mounts.sh'
+CHECK = '/opt/sunmoon/admin/storage/storage-20260928-v3/check-storage-mounts.sh'
 CHECK_SHA = 'be63dddb1ce85d7de949d35b2a439c25aae8b27d6c3f7e5cc8ef748105515407'
 
 
