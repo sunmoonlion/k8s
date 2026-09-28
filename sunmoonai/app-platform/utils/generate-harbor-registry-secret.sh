@@ -136,18 +136,11 @@ if [[ "${ENABLED:-true}" != "true" ]]; then
     exit 0
 fi
 
-DOCKER_PASSWORD="$(resolve_docker_auth_password "${DOCKER_PASSWORD:-}")"
-if [[ -z "${DOCKER_PASSWORD:-}" || "$DOCKER_PASSWORD" == "TODO_FILL_IN_HARBOR_PASSWORD" ]]; then
-    log_error "Harbor 密码未配置，拒绝生成无效的镜像拉取 Secret"
-    exit 1
-fi
-
 export NAMESPACE="${NAMESPACE:-app-platform-dev}"
 export ENVIRONMENT="${ENVIRONMENT:-development}"
 export ENV="${ENV:-dev}"
 
-HARBOR_AUTH_STRING="$(echo -n "${DOCKER_USERNAME}:${DOCKER_PASSWORD}" | base64 -w 0)"
-HARBOR_DOCKER_CONFIG_JSON="$(echo -n "{\"auths\":{\"${DOCKER_SERVER}\":{\"username\":\"${DOCKER_USERNAME}\",\"password\":\"${DOCKER_PASSWORD}\",\"auth\":\"${HARBOR_AUTH_STRING}\"}}}" | base64 -w 0)"
+HARBOR_DOCKER_CONFIG_JSON="$(docker_auth_config_json "${DOCKER_SERVER:-harbor.sunmoonai.com:30443}" "${DOCKER_USERNAME:-}" "${DOCKER_PASSWORD:-}" | base64 -w 0)"
 export HARBOR_DOCKER_CONFIG_JSON
 
 log_info "开始生成 Harbor Registry Secret YAML 文件..."
@@ -165,6 +158,9 @@ if [[ ! -f "$full_template_path" ]]; then
 fi
 
 log_info "生成 harbor-registry-secret: $(basename "$full_output_path")"
+[[ ! -L "$full_output_path" ]] || { log_error "Refusing symlink for credential output"; exit 1; }
+if [[ -e "$full_output_path" ]]; then chmod 600 "$full_output_path"; fi
+umask 077
 sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$full_template_path" | envsubst > "$full_output_path"
 validate_yaml "$full_output_path"
 log_success "✅ harbor-registry-secret 生成完成: $(basename "$full_output_path")"

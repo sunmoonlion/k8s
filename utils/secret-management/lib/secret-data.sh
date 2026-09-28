@@ -20,48 +20,35 @@ _is_placeholder_docker_password() {
     [[ -z "$password" || "$password" == "TODO_FILL_IN_HARBOR_PASSWORD" ]]
 }
 
-_load_global_harbor_credentials() {
-    local lib_dir
-    lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    local k8s_root
-    k8s_root="$(cd "$lib_dir/../../.." && pwd)"
-
-    local had_errexit=0
-    local had_nounset=0
-    [[ $- == *e* ]] && had_errexit=1
-    [[ $- == *u* ]] && had_nounset=1
-
-    for global_config in \
-        "$k8s_root/sunmoonai/deploy-sunmoonai-all/deploy-sunmoonai-all.conf" \
-        "$k8s_root/sunmoonai/kind-infrastructure/deploy-kind/deploy-kind.conf"; do
-        if [[ -f "$global_config" ]]; then
-            set +e +u
-            # shellcheck disable=SC1090
-            source "$global_config" >/dev/null 2>&1
-        fi
-    done
-
-    (( had_errexit )) && set -e
-    (( had_nounset )) && set -u
-}
-
+# Explicit compatibility input only. Never source cluster or project configs here.
 resolve_docker_auth_password() {
     local password="${1:-}"
-
-    if ! _is_placeholder_docker_password "$password"; then
-        printf '%s\n' "$password"
-        return 0
+    if _is_placeholder_docker_password "$password"; then
+        password="${HARBOR_ADMIN_PASSWORD:-}"
     fi
-
-    _load_global_harbor_credentials
-
-    if [[ -n "${HARBOR_ADMIN_PASSWORD:-}" ]]; then
-        printf '%s\n' "$HARBOR_ADMIN_PASSWORD"
-        return 0
+    if _is_placeholder_docker_password "$password"; then
+        log_error "Registry credentials missing: use REGISTRY_CREDENTIALS_FILE or explicit caller credentials."
+        return 1
     fi
+    printf '%s\n' "$password"
+}
 
-    log_error "Docker registry 密码未配置。请设置 DOCKER_PASSWORD 或 HARBOR_ADMIN_PASSWORD，不能使用 TODO_FILL_IN_HARBOR_PASSWORD。"
-    return 1
+# Internal stdout contains a secret. Capture it; never call from diagnostic output.
+# A private bundle takes precedence as a complete registry/user/password tuple.
+docker_auth_config_json() {
+    local server="${1:-harbor.sunmoonai.com:30443}" username="${2:-}" password="${3:-}" email="${4:-}"
+    local lib_dir k8s_root
+    lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || return 1
+    k8s_root="$(cd "$lib_dir/../../.." && pwd)" || return 1
+    if [[ -z "${REGISTRY_CREDENTIALS_FILE:-}" ]]; then
+        password="$(resolve_docker_auth_password "$password")" || return 1
+    else
+        password='' # Ignore legacy caller values when an explicit private bundle is selected.
+    fi
+    SUNMOON_AUTH_REGISTRY="$server" SUNMOON_AUTH_USERNAME="$username" \
+        SUNMOON_AUTH_PASSWORD="$password" SUNMOON_AUTH_EMAIL="$email" \
+        REGISTRY_CREDENTIALS_FILE="${REGISTRY_CREDENTIALS_FILE:-}" \
+        python3 -B "$k8s_root/sunmoonai/registry-platform/credentials.py" docker-config
 }
 
 # =============================================================================
@@ -224,57 +211,27 @@ prepare_docker_auth_secret_data() {
         esac
     done
     
-    # 如果直接提供了DOCKER_CONFIG，使用它
+    local auth_data
     if [[ -n "$docker_config" ]]; then
-        log_info "使用预配置的Docker认证数据"
-        
-        if [[ -z "$output_dir" ]]; then
-            output_dir=$(mktemp -d)
-        else
-            mkdir -p "$output_dir"
+        if [[ -n "${REGISTRY_CREDENTIALS_FILE:-}" ]]; then
+            log_error "Do not combine --docker-config and REGISTRY_CREDENTIALS_FILE"
+            return 1
         fi
-        
-        echo "$docker_config" > "$output_dir/.dockerconfigjson"
-        log_success "Docker认证Secret数据准备完成: $output_dir"
-        echo "$output_dir"
-        return 0
+        auth_data="$docker_config"
+    else
+        auth_data="$(docker_auth_config_json "${docker_server:-harbor.sunmoonai.com:30443}" "$docker_username" "$docker_password" "$docker_email")" || return 1
     fi
-    
-    docker_password="$(resolve_docker_auth_password "$docker_password")" || return 1
-
-    # 检查必需参数
-    if [[ -z "$docker_username" || -z "$docker_password" ]]; then
-        log_error "Docker认证需要 --username 和 --password 参数，或提供 --docker-config"
-        return 1
-    fi
-    
-    # 默认服务器
-    if [[ -z "$docker_server" ]]; then
-        docker_server="harbor.sunmoonai.local"
-    fi
-    
-    # 创建输出目录
     if [[ -z "$output_dir" ]]; then
-        output_dir=$(mktemp -d)
+        output_dir=$(mktemp -d) || return 1
     else
-        mkdir -p "$output_dir"
+        mkdir -p "$output_dir" || return 1
     fi
-    
-    # 生成Docker认证数据
-    local auth_data=""
-    if [[ -n "$docker_email" ]]; then
-        auth_data="{\"auths\":{\"$docker_server\":{\"username\":\"$docker_username\",\"password\":\"$docker_password\",\"email\":\"$docker_email\",\"auth\":\"$(echo -n "$docker_username:$docker_password" | base64 -w 0)\"}}}"
-    else
-        auth_data="{\"auths\":{\"$docker_server\":{\"username\":\"$docker_username\",\"password\":\"$docker_password\",\"auth\":\"$(echo -n "$docker_username:$docker_password" | base64 -w 0)\"}}}"
-    fi
-    
-    log_info "使用Docker认证: $docker_username@$docker_server"
-    
-    echo "$auth_data" > "$output_dir/.dockerconfigjson"
-    
+    local target="$output_dir/.dockerconfigjson"
+    [[ ! -L "$target" ]] || { log_error "Refusing symlink for credential output"; return 1; }
+    if [[ -e "$target" ]]; then chmod 600 "$target" || return 1; fi
+    (umask 077; printf '%s\n' "$auth_data" > "$target") || return 1
     log_success "Docker认证Secret数据准备完成: $output_dir"
-    echo "$output_dir"
-    return 0
+    printf '%s\n' "$output_dir"
 }
 
 # =============================================================================

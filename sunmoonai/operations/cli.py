@@ -32,10 +32,18 @@ def platform(arguments):
     parser.add_argument('--kubeconfig', type=Path)
     parser.add_argument('--kubectl', type=Path)
     parser.add_argument('--expected-uid')
+    parser.add_argument('--registry-config', type=Path,
+                        help='Independent registry profile; normally configured in the environment')
+    parser.add_argument('--registry-credentials-file', type=Path,
+                        help='Override the private consumer credential path from the registry profile')
     parser.add_argument('--apply', action='store_true')
     args = parser.parse_args(arguments)
     if args.action == 'plan' and args.apply:
         parser.error('plan cannot apply')
+    if args.registry_config:
+        os.environ['REGISTRY_CONFIG_FILE'] = str(args.registry_config)
+    if args.registry_credentials_file:
+        os.environ['REGISTRY_CREDENTIALS_FILE'] = str(args.registry_credentials_file)
     if args.apply:
         if (not args.kubeconfig or not args.kubectl or not args.expected_uid
                 or not args.kubeconfig.is_absolute() or not args.kubectl.is_absolute()):

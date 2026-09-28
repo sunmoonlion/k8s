@@ -206,6 +206,36 @@
       "group": "local",
       "execution": "historical only",
       "exit_condition": "local-migration-and-observation-complete"
+    },
+    {
+      "original": "sunmoonai/cicd-platform/harbor/utils/harbor-image-management/harbor-image.sh",
+      "archive": "legacy/cloud/sunmoonai/cicd-platform/harbor/utils/harbor-image-management/harbor-image.sh",
+      "original_sha256": "b14b096db557a155bbbc84f9ee01d115ebd57f7a1b21f92fe0759cfbf837f1f6",
+      "baseline": "b3a49ec0efc1619f86c69ae6beb2205a800f0575",
+      "replacement": "sunmoonai/registry-platform/docs/clients.md",
+      "group": "cloud",
+      "execution": "disabled",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement"
+    },
+    {
+      "original": "sunmoonai/cicd-platform/harbor/utils/harbor-image-management/harbor-image.conf",
+      "archive": "legacy/cloud/sunmoonai/cicd-platform/harbor/utils/harbor-image-management/harbor-image.conf",
+      "original_sha256": "a96a6bf4892e278ae2a701486487b1c6f49f5d90670dbce563a2be497d206018",
+      "baseline": "b3a49ec0efc1619f86c69ae6beb2205a800f0575",
+      "replacement": "sunmoonai/registry-platform/docs/clients.md",
+      "group": "cloud",
+      "execution": "reference-only",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement"
+    },
+    {
+      "original": "sunmoonai/cicd-platform/harbor/utils/harbor-image-management/README.md",
+      "archive": "legacy/cloud/sunmoonai/cicd-platform/harbor/utils/harbor-image-management/README.md",
+      "original_sha256": "a0b6e9df60f4c14581b144b999b313b0135e29f5c5ea32b9f74c4da8e9cb2a79",
+      "baseline": "b3a49ec0efc1619f86c69ae6beb2205a800f0575",
+      "replacement": "sunmoonai/registry-platform/docs/clients.md",
+      "group": "cloud",
+      "execution": "reference-only",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement"
     }
   ]
 }

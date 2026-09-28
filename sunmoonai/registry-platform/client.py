@@ -12,10 +12,11 @@ import ssl
 import stat
 import subprocess
 import tempfile
+from credentials import load_credentials, read_private, validate
 
 MODULE = Path(__file__).resolve().parent
 FIELDS = ('REGISTRY_ADDRESS', 'REGISTRY_CLIENT_ADDRESS', 'REGISTRY_CA_FILE',
-          'REGISTRY_CA_SHA256')
+          'REGISTRY_CA_SHA256', 'REGISTRY_CREDENTIALS_FILE')
 
 
 def config(profile):
@@ -128,19 +129,21 @@ def setup_trust(data):
     print('Trust files installed. Docker was not restarted; Docker pull acceptance remains required.')
 
 
-def login(data, username, password_file):
-    if not username or not password_file:
+def login(data, username, password_file, credentials_file):
+    if credentials_file:
+        if username or password_file:
+            raise ValueError('Do not mix a credential bundle with separate login arguments')
+        credential = load_credentials(credentials_file)
+        username = credential['username']
+        password = credential['password'].encode()
+    elif username and password_file:
+        password = read_private(password_file).rstrip(b'\r\n')
+    else:
         raise ValueError('login --apply requires --username and --password-file')
-    path = password_file
-    if not path.is_absolute() or path.is_symlink():
-        raise ValueError('Password file must be an absolute non-symlink path')
-    info = path.stat()
-    if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid()
-            or stat.S_IMODE(info.st_mode) & 0o077 or info.st_size > 65536):
-        raise ValueError('Password file must be owner-only, owned by the caller, and at most 64 KiB')
-    password = path.read_bytes().rstrip(b'\r\n')
     if not password or b'\n' in password or b'\r' in password or b'\0' in password:
         raise ValueError('Password file must contain one nonempty line')
+    validate({'registry': data['REGISTRY_ADDRESS'], 'username': username,
+              'password': password.decode()}, independent=True)
     check_registry(data)
     # Keep credentials out of argv, output and shell interpolation.
     result = subprocess.run(['docker', 'login', data['REGISTRY_ADDRESS'],
@@ -157,6 +160,8 @@ def main():
     parser.add_argument('--config', type=Path, help='Trusted independent registry shell profile')
     parser.add_argument('--username')
     parser.add_argument('--password-file', type=Path)
+    parser.add_argument('--credentials-file', type=Path,
+                        help='Private JSON bundle; otherwise REGISTRY_CREDENTIALS_FILE if set')
     parser.add_argument('--apply', action='store_true')
     args = parser.parse_args()
     data = config(args.config)
@@ -164,6 +169,7 @@ def main():
         print(json.dumps({'apply': False, 'action': args.action, 'registry': data['REGISTRY_ADDRESS'],
                           'client_address': data['REGISTRY_CLIENT_ADDRESS'],
                           'ca_file': data['REGISTRY_CA_FILE'], 'ca_sha256': data['REGISTRY_CA_SHA256'],
+                          'credentials_file': str(args.credentials_file or data['REGISTRY_CREDENTIALS_FILE']),
                           'effects': {'hosts': 'Update exact hostname in local /etc/hosts',
                                       'trust': 'Install pinned CA in three exact Docker directories and system trust',
                                       'login': 'Direct TLS preflight, then docker login with password stdin',
@@ -177,7 +183,9 @@ def main():
     elif args.action == 'trust':
         setup_trust(data)
     elif args.action == 'login':
-        login(data, args.username, args.password_file)
+        login(data, args.username, args.password_file,
+              args.credentials_file or (None if args.username or args.password_file
+                                        else data['REGISTRY_CREDENTIALS_FILE']))
     else:
         check_registry(data)
         print('Pinned CA, hostname, direct TLS and Registry v2 response verified.')

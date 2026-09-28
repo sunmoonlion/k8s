@@ -7,6 +7,26 @@
 
 ## 1. 禁止事项与审批边界
 
+### 本次重构临时物料必须最终清理
+
+2026-09-28 所有者明确要求：本次 refactor 产生的本机临时目录、文件，及东京服务器下载中转物料，在最终收尾全部清理。当前仍是整理/迁移阶段，尚未实施此轮清理；不能只留下方案就宣称交付完成。
+
+执行前以本次命令/下载回执重新定位准确路径、大小、用途、最终副本和引用；以下是已记录的候选，**不是已完成的全量盘点，也不保证当前仍存在**：
+
+| 位置 | 已知本次临时物料候选 |
+| --- | --- |
+| WSL `/tmp` | `/tmp/luna-shellcheck-20260928`、旧 `/tmp/luna-shellcheck-package`、`/tmp/luna-harbor-v2.13.2-source.tar.gz`、`/tmp/luna-adapter-v0.38.0-source.tar.gz`、`/tmp/luna-containerd-config-p_jbny13`；其他临时脚本/输出按回执逐项补齐 |
+| 本地物料目录内试验产物 | `releases/scanner-patches-20260927-v1`、`releases/harbor-scanner-osfix-20260927-v1` 等已取消方案产物；现用 releases、锁文件及唯一安装包先核引用，不视为临时垃圾 |
+| 东京 `txy-tokyo` | `/home/zym/sunmoon-scanner-patches-20260927-v1`、`/home/zym/trivy-db-20260927-v1`、`/home/zym/sunmoon-nginx-sni-20260927-v1`、`/home/zym/sunmoon-traefik-20260927-v1`、`/home/zym/.cache/sunmoon-artifacts/kubeadm-1.36.4-linux-amd64`；其余下载/中转/半文件及 ShellCheck 包按本次记录补齐 |
+
+收尾步骤：
+
+1. 查本次任务记录和实际目录，生成本机、东京两份精确清单；拒绝软链越界、其他任务文件或用途不明对象，不能执行 `/tmp/*`、整个用户缓存或物料根目录的通配删除。
+2. 正式离线物料已回传唯一物料根并通过 SHA/版本/部署引用核验后，东京下载副本、导出 tar、半文件、公开下载脚本及临时日志均删除。远端本次拉取的 Docker 镜像单列精确 ID，先核无他人/现有容器使用；禁止全局 prune 或顺带删除容器、卷。
+3. 本地临时下载、解包工具、试验工作目录和脚本删除；应保留的验收结论、公共摘要、操作步骤先写回正式文档或结果文件，真实口令/密钥只留既定私有位置，不保留临时泄露副本。
+4. 仍受保护的旧节点/卷、Harbor 数据/必要备份和云端未验证历史代码按原退出条件办理；从“本次临时目录”中识别出来并列出保留依据，不靠改名逃避最终清理，也不把它们误当下载缓存。
+5. 结束再次盘点本机和东京候选路径，报告已删清单、Linux/远端实际释放量、仍需保留项与退出条件。VHDX 压缩收益另按维护窗口记录，不与逻辑文件释放量混算。
+
 - 禁止 `docker system prune`、`docker volume prune`、`docker container prune`，也禁止以其他命令达到清理容器/卷的同样效果。
 - 所有 KIND 节点容器和关联 Docker 卷均保护，包括停止状态的旧节点。切换后观察期内，它们是回退保障，不是“unused 垃圾”。旧 kind-worker2 和它的沙箱持久卷明确保留。
 - 不直接删除 `/var/lib/docker/overlay2`、Docker/containerd content、snapshot、卷目录或数据库目录；镜像回收只能通过对应运行时、精确审定对象执行。

@@ -190,36 +190,28 @@ generate_docker_secret_yaml() {
     # 两种模式：直接使用 dockerconfigjson 文件 或 账号密码生成
     local b64_docker_config=""
     if [[ -n "$docker_config_path" ]]; then
+        if [[ -n "${REGISTRY_CREDENTIALS_FILE:-}" ]]; then
+            log_error "Do not combine --docker-config and REGISTRY_CREDENTIALS_FILE"
+            return 1
+        fi
         if [[ ! -f "$docker_config_path" ]]; then
             log_error "docker config 文件不存在: $docker_config_path"
             return 1
         fi
         b64_docker_config=$(base64 -w 0 "$docker_config_path")
     else
-        if command -v resolve_docker_auth_password >/dev/null 2>&1; then
-            docker_password="$(resolve_docker_auth_password "$docker_password")" || return 1
-        fi
-
-        if [[ -z "$docker_server" || -z "$docker_username" || -z "$docker_password" ]]; then
-            log_error "缺少 Docker 认证参数（需要 --docker-server/--docker-username/--docker-password 或 --docker-config）"
-            return 1
-        fi
-        # 生成Docker认证数据
-        local auth_data=""
-        local auth_string
-        auth_string=$(echo -n "$docker_username:$docker_password" | base64 -w 0)
-        if [[ -n "$docker_email" ]]; then
-            auth_data="{\"auths\":{\"$docker_server\":{\"username\":\"$docker_username\",\"password\":\"$docker_password\",\"email\":\"$docker_email\",\"auth\":\"$auth_string\"}}}"
-        else
-            auth_data="{\"auths\":{\"$docker_server\":{\"username\":\"$docker_username\",\"password\":\"$docker_password\",\"auth\":\"$auth_string\"}}}"
-        fi
-        b64_docker_config=$(echo -n "$auth_data" | base64 -w 0)
+        local auth_data
+        auth_data="$(docker_auth_config_json "$docker_server" "$docker_username" "$docker_password" "$docker_email")" || return 1
+        b64_docker_config=$(printf '%s' "$auth_data" | base64 -w 0) || return 1
     fi
-    
+
     # 创建输出目录
     mkdir -p "$(dirname "$output_path")"
     
+    [[ ! -L "$output_path" ]] || { log_error "Refusing symlink for credential output"; return 1; }
+    if [[ -e "$output_path" ]]; then chmod 600 "$output_path" || return 1; fi
     # 生成YAML
+    (umask 077
     {
         echo "apiVersion: v1"
         echo "kind: Secret"
@@ -229,7 +221,7 @@ generate_docker_secret_yaml() {
         echo "type: kubernetes.io/dockerconfigjson"
         echo "data:"
         echo "  .dockerconfigjson: ${b64_docker_config}"
-    } > "$output_path"
+    } > "$output_path") || return 1
     
     log_success "Docker Secret YAML生成完成: $output_path"
     return 0

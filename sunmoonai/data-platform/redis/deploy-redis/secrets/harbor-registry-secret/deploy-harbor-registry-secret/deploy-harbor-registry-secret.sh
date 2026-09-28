@@ -71,8 +71,8 @@ main() {
     
     local prepare_args=(
         --server "${DOCKER_SERVER:-harbor.sunmoonai.local}"
-        --username "$DOCKER_USERNAME"
-        --password "$DOCKER_PASSWORD"
+        --username "${DOCKER_USERNAME:-}"
+        --password "${DOCKER_PASSWORD:-}"
     )
     
     [[ -n "${DOCKER_EMAIL:-}" ]] && prepare_args+=(--email "$DOCKER_EMAIL")

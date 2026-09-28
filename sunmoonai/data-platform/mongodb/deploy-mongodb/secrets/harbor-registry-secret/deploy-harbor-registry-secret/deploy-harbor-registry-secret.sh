@@ -93,8 +93,8 @@ main() {
     
     local prepare_args=(
         --server "${DOCKER_SERVER:-harbor.sunmoonai.local}"
-        --username "$DOCKER_USERNAME"
-        --password "$DOCKER_PASSWORD"
+        --username "${DOCKER_USERNAME:-}"
+        --password "${DOCKER_PASSWORD:-}"
     )
     
     if [[ -n "${DOCKER_EMAIL:-}" ]]; then
@@ -119,8 +119,8 @@ main() {
         --name "$SECRET_NAME" \
         --namespace "$namespace" \
         --docker-server "${DOCKER_SERVER:-harbor.sunmoonai.local}" \
-        --docker-username "$DOCKER_USERNAME" \
-        --docker-password "$DOCKER_PASSWORD" \
+        --docker-username "${DOCKER_USERNAME:-}" \
+        --docker-password "${DOCKER_PASSWORD:-}" \
         ${DOCKER_EMAIL:+--docker-email "$DOCKER_EMAIL"} \
         --output "$secret_yaml"
     

@@ -822,6 +822,13 @@ deploy_sunmoonai() {
     actual_uid=$("$SUNMOON_KUBECTL" --kubeconfig "$KUBECONFIG" --request-timeout=10s get ns kube-system -o jsonpath='{.metadata.uid}') || return 1
     [[ "$actual_uid" == "$SUNMOON_EXPECTED_CLUSTER_UID" ]] || { log_error "集群 UID 不符"; return 1; }
 
+    # Keep normal .conf switches; credentials are a referenced private bundle.
+    # Validate before preparing Secrets or invoking any platform deployment.
+    # shellcheck source=/dev/null
+    source "$PROJECT_ROOT/registry-platform/lib/config.sh" || return 1
+    registry_load_config || return 1
+    python3 -B "$PROJECT_ROOT/registry-platform/credentials.py" check || return 1
+
     # 部署前：按配置自动从 .yaml.example 复制生成各组件 secret 的 .yaml 占位文件
     if [[ "${PREPARE_SECRETS_FROM_EXAMPLES:-true}" == "true" ]]; then
         local prepare_script="$PROJECT_ROOT/../utils/prepare-secrets-from-examples.sh"

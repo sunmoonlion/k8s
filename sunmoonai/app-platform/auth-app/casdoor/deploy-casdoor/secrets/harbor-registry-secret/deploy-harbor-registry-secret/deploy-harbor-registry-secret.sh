@@ -66,8 +66,8 @@ main() {
     local temp_data_dir
     temp_data_dir=$(prepare_docker_auth_secret_data \
         --server   "${DOCKER_SERVER:-harbor.sunmoonai.com}" \
-        --username "$DOCKER_USERNAME" \
-        --password "$DOCKER_PASSWORD")
+        --username "${DOCKER_USERNAME:-}" \
+        --password "${DOCKER_PASSWORD:-}")
     trap "rm -rf $temp_data_dir" EXIT
 
     local secret_yaml="$SECRET_DIR/harbor-registry-secret.yaml"
@@ -75,8 +75,8 @@ main() {
         --name            "$SECRET_NAME" \
         --namespace       "$namespace" \
         --docker-server   "${DOCKER_SERVER:-harbor.sunmoonai.com}" \
-        --docker-username "$DOCKER_USERNAME" \
-        --docker-password "$DOCKER_PASSWORD" \
+        --docker-username "${DOCKER_USERNAME:-}" \
+        --docker-password "${DOCKER_PASSWORD:-}" \
         --output          "$secret_yaml"
 
     if [[ "$dry_run" != "true" ]]; then

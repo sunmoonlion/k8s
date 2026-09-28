@@ -87,8 +87,8 @@ main() {
     
     local prepare_args=(
         --server "${DOCKER_SERVER:-www.sunmoonai.com:30443}"
-        --username "$DOCKER_USERNAME"
-        --password "$DOCKER_PASSWORD"
+        --username "${DOCKER_USERNAME:-}"
+        --password "${DOCKER_PASSWORD:-}"
     )
     
     if [[ -n "${DOCKER_EMAIL:-}" ]]; then

@@ -70,6 +70,23 @@ ensure_harbor_registry_secret() {
         return 0
     fi
 
+    if [[ -n "${REGISTRY_CREDENTIALS_FILE:-}" ]]; then
+        # Shared private tuple; never expose the password in kubectl argv.
+        (
+            umask 077
+            credential_tmp=$(mktemp /tmp/sunmoon-registry-XXXXXX) || exit 1
+            trap 'rm -f -- "$credential_tmp"' EXIT
+            REGISTRY_CREDENTIALS_FILE="$REGISTRY_CREDENTIALS_FILE" python3 -B \
+                "$K8S_ROOT_DIR/sunmoonai/registry-platform/credentials.py" docker-config \
+                > "$credential_tmp" || exit 1
+            kubectl create secret generic "$secret_name" --namespace "$namespace" \
+                --type=kubernetes.io/dockerconfigjson \
+                --from-file=".dockerconfigjson=$credential_tmp" \
+                --dry-run=client -o json | kubectl apply -f -
+        )
+        return $?
+    fi
+
     load_registry_secret_defaults
 
     if declare -F get_cluster_harbor_registry >/dev/null 2>&1; then

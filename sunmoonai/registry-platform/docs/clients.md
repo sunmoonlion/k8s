@@ -46,6 +46,10 @@ sudo env REGISTRY_CA_FILE="$HOME/private/registry-platform/tls-20260927-five-yea
 内容不提交 Git。不要把口令写在命令行。Docker 登录会按现有 Docker credential helper/config 保存凭据；
 这里不替换 credential helper，不自动登录 root 或 nerdctl。账号应限定到所需项目和推拉权限。
 
+日常也可在 `.conf` 设置 `REGISTRY_CREDENTIALS_FILE`，使用一个私有 JSON 同时提供仓库、用户名和密码，
+随后运行 `./sunmoon harbor client login --apply`。格式、覆盖顺序、只读与发布账号分离见
+[配置对照](../../operations/configuration.md)。默认路径只是一项配置，不代表已创建真实文件。
+
 **当前公开入口仍是旧 KIND，迁移尚未切换。** 本批只有静态检查和默认计划，未执行上述 `--apply`。
 客户端检查最多证明所解析端点的 TLS 和 Registry v2 可达，不证明它是新宿主实例、账号可推拉、镜像完整或正式入口已切换。
 
@@ -62,7 +66,7 @@ PostgreSQL、RabbitMQ、pgAdmin、RedisInsight 的四处旧镜像工具空检查
 
 ## 尚未完成的共用链路
 
-1. 旧 `utils/secret-management/lib/secret-data.sh` 仍会从旧总控/建群配置补凭据；需先改实际调用方与私有输入，再归档旧配置。
+1. Secret 公共库已取消从总控/建群配置补凭据；平台总控、应用生成器、十二个组件调用点和 RAGFlow 已支持显式私有文件。既有配置中的历史凭据值与其他调用链仍待逐项退役，不声称所有私有输入已迁好。
 2. 旧 Harbor 镜像工具及 KIND 推送工具的物料加载、标签、真实推拉需继续收口；本页不宣称镜像发布链已完成统一。
 3. Docker daemon 的 NO_PROXY 与终端环境不同；本工具不自动更改 daemon 代理或重启它。节点 containerd 和 CI 的域名、CA、NO_PROXY、imagePullSecrets 分别验收。
 4. 正式验收包含新入口身份核对、Docker Engine 和节点按 digest 拉取、真实 CI 推送/拉取、重建 KIND 后 Harbor 摘要和数据不变。

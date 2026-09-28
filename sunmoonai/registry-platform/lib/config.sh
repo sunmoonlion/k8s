@@ -24,6 +24,7 @@ registry_load_config() {
         echo 'Registry transport must be local or ssh' >&2; return 1
     fi
     export REGISTRY_CONFIG_FILE="$profile" REGISTRY_ADDRESS REGISTRY_VERSION REGISTRY_TRANSPORT
+    export REGISTRY_CREDENTIALS_FILE="${REGISTRY_CREDENTIALS_FILE:-}"
     export HARBOR_HOST='harbor.sunmoonai.com' HARBOR_PORT=30443
     export HARBOR_CA_PATH="${REGISTRY_CA_FILE:?Registry CA file reference required}"
     export HARBOR_REGISTRY="$REGISTRY_ADDRESS"

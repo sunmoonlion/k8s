@@ -1,3 +1,14 @@
+## 最新续接：2026-09-28 私有凭据入口、旧镜像工具归档与配置要求
+
+基线 b3a49ec0efc1619f86c69ae6beb2205a800f0575，luna 开工干净。本单元继续已批准整理；现场迁移保持暂停。
+
+- 用户补充两项长期要求：保留像原来一样的配置文件做日常控制；最终清干净本次 refactor 本机临时目录/文件及东京下载中转物料。已写 operations/configuration.md（根 README 链接）、wsl-space-reclamation-plan.md 新最终清理节。明确临时下载/半文件/工具/远端本次镜像需清点并回收，正式离线物料与旧节点/卷/必要备份/待云验收代码仍按退出条件保护；本批不清现场。
+- 新 registry-platform/credentials.py 读取绝对路径 owner-only JSON（registry/username/password），O_NOFOLLOW/fstat 限制软链/属主/权限/大小，固定独立仓库地址。使用 JSON 序列化兼容引号/反斜杠，内部 docker-config stdout 是秘密必须捕获，check 只打印校验结论。没有创建真实文件或账号，没有读取实际口令。公开 .conf 新增 REGISTRY_CREDENTIALS_FILE 默认引用 Git 外 consumer.json；CLI 支持临时覆盖；client login 与平台 Secret 共用私有输入。
+- Secret 公共库取消自动 source 总控/deploy-kind.conf，兼容调用者明确传入的旧参数；私有文件优先成套覆盖。app-platform 生成器及12组件调用点已适配，认证输出/Secret YAML 0600，拒绝目标软链。RAGFlow 私有输入走临时0600 dockerconfigjson→kubectl from-file，退出删除此临时文件，不把新凭据送进 argv；已有 Secret 复用和旧显式参数分支保持。平台总控在 UID 校验后/Secret 准备前加载独立仓库配置并检查文件，缺文件阻止实际部署。默认计划不读秘密。原配置里历史凭据及其他推送调用链尚未全部退役，不能宣称所有凭据已迁完。
+- 旧 harbor-image-management 已无运行时代码调用者，发现 --dry-run 只赋值未阻止动作，含全节点 image prune 和物料删除；脚本/conf/README 三项归档 legacy/cloud，原脚本和归档脚本都先拒绝，conf 原处移除。manifest新增3项各记本批基线/原 SHA；三原字节校验通过。相关说明和密码位置索引更新。归档不是新推送实现，其他 loadimage/KIND/build-push 消费链仍待整理。
+- 3 Python AST、21 Bash/conf语法及ShellCheck error级0；harbor client login 与platform KIND默认计划成功；活动文件 git diff --check通过。报告 scripts/results/luna-registry-credentials-consolidation.20260928.json。没有应用测试套件、真实Secret生成/应用、登录推拉、Windows、服务操作、云部署或远端清理；私有接口实际验收尚待完成。
+- 配置对照明确 formal/prepare.py 仍有迁移专用常量，正式KIND配置化未完成；不能说所有配置已收口。下一步继续正式KIND配置和镜像发布/信任调用链，保持用户日常控制能力。正式入口维护、main建群、真实Docker/节点/CI验收、重启重建独立性、云闭包与最终清理仍未完成；inbox仍旧kind。只本地提交，不push、不通知“luna做完了”。
+
 ## 最新续接：2026-09-28 仓库宿主客户端入口收口
 
 基线 1ddade00c91f851e5be374892dfa4360f6431c61，luna 工作区开工干净。本批属于已批准的部署代码整理，现场迁移仍暂停。

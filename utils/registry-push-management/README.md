@@ -1028,19 +1028,13 @@ push-to-harbor:
 
 ## 附录
 
-### A. 与 harbor-image-management 的关系
+### A. 旧 Harbor 高层工具已停用
 
-```
-harbor-image.sh (Harbor 专用高层工具)
-    ↓ 调用
-loadimage.sh (通用底层工具) ← 本工具
-    ↓ 执行
-远程节点 (nerdctl/containerd)
-```
-
-**区别**：
-- `loadimage.sh`: **通用工具**，Registry 无关，适用于任何镜像仓库
-- `harbor-image.sh`: **Harbor 专用**，封装了 Harbor API 检查、组件管理、批量处理等业务逻辑
+`harbor-image.sh` 和配置已归档到 `legacy/cloud/`，原入口拒绝执行。
+旧版 `--dry-run` 没有阻止节点推送/清理，不能继续用作演练。
+`loadimage.sh` 的现存调用方仍在整理，不代表新的统一推拉链已验收。
+客户端域名、证书、登录见 `sunmoonai/registry-platform/docs/clients.md`；
+节点镜像/物料清理必须按批准清单，不能从历史工具恢复自动全清理。
 
 ### B. 支持的 Registry 类型
 
