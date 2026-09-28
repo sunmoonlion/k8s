@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
+set +x
+umask 077
 
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SELF_DIR}/.." && pwd)"
@@ -28,7 +30,7 @@ usage() {
 dbctl - unified db provisioner (mongodb/postgresql/redis)
 
 Usage:
-  dbctl --config <path> [--target k8s|external] [--action provision|reconcile|deprovision|rotate-password] [--dry-run]
+  dbctl --config <path> --target k8s|external [--action provision|reconcile|deprovision|rotate-password] [--dry-run]
 
 Examples:
   dbctl --config ./examples/mongo-k8s.env --target k8s
@@ -135,13 +137,43 @@ write_output() {
 main() {
   parse_args "$@"
   require_non_empty "--config" "${CONFIG_FILE}"
-  load_env_file "${CONFIG_FILE}"
+  if [[ "$DRY_RUN" == true || "${SUNMOON_DEPLOY_DRY_RUN:-false}" == true ]]; then
+    printf '%s\n' 'dbctl plan: validate argument shape only; no config, credential, API, output or database access'
+    return 0
+  fi
+  [[ "$TARGET" == k8s || "$TARGET" == external ]] || die 'Explicit --target k8s|external required'
+  PROVISIONER_K8S_ROOT="$(cd "$ROOT_DIR/../.." && pwd)"
+  export PROVISIONER_K8S_ROOT
+  if [[ "$TARGET" == k8s ]]; then
+    source "$PROVISIONER_K8S_ROOT/utils/deploy-target.sh"
+    sunmoon_deploy_target_init "$PROVISIONER_K8S_ROOT" || exit 1
+    source "$PROVISIONER_K8S_ROOT/utils/provisioner-runtime.sh"
+  fi
+  local requested_action="$ACTION" requested_target="$TARGET"
+  load_env_file "${CONFIG_FILE}" >/dev/null 2>&1 || die 'Unable to load trusted configuration'
+  ACTION="$requested_action"
+  TARGET="$requested_target"
+  DRY_RUN=false
   validate_common
+  dbctl_validate_interpolation
+  if [[ "$TARGET" == k8s ]]; then
+    sunmoon_deploy_target_check "$PROVISIONER_K8S_ROOT" || exit 1
+  elif k8s_precheck_enabled; then
+    die 'External target cannot use implicit Kubernetes precheck'
+  fi
 
   export DRY_RUN
   log "dbctl v${DBP_VERSION} start: engine=${DB_ENGINE}, target=${TARGET}, action=${ACTION}, service=${SERVICE_NAME:-unknown}"
-  run_driver
+  local evidence
+  evidence=$(mktemp -d)
+  # Keep potentially credential-bearing client errors private. Do not wrap the
+  # shell function in `if`: that would disable errexit throughout its drivers.
+  DBCTL_EVIDENCE="$evidence"
+  trap 'rc=$?; if [[ "$rc" != 0 ]]; then printf "dbctl failed; private evidence: %s\n" "$DBCTL_EVIDENCE" >&2; fi' EXIT
+  run_driver > "$evidence/driver.log" 2>&1
   write_output
+  rm -rf -- "$evidence"
+  trap - EXIT
   log "Done"
 }
 

@@ -70,6 +70,7 @@ def main():
         print('Usage: ./sunmoon <module> <operation> [backend arguments]\n')
         for module, operation in ROUTES:
             print(f'  {module:8s} {operation}')
+        print('  space    status | preview | apply | policy show | monitor status/install/disable')
         print('\ncloud plan --cluster C1: print the kubeadm path only (no real-host validation).')
         print('platform plan/deploy --cluster KIND: shared platform backend, defaults to a plan.')
         print('platform deploy --apply requires explicit kubeconfig/kubectl/UID; main consumer migration is incomplete.')
@@ -77,6 +78,12 @@ def main():
         print('kind routes accept --config <absolute JSON path>; otherwise formal/deploy-kind.json.')
         print('Current public registry/inbox still use the old kind. See README.md and legacy/README.md.')
         return
+    if args[0] == 'space':
+        if args[1:2] == ['migration-cache']:
+            target = ROOT / 'sunmoonai/operations/space/migration_cache.py'
+            os.execv(sys.executable, [sys.executable, '-B', str(target), *args[2:]])
+        target = ROOT / 'sunmoonai/operations/space/space.py'
+        os.execv(sys.executable, [sys.executable, '-B', str(target), *args[1:]])
     if args[0] == 'platform':
         platform(args[1:])
         return

@@ -107,17 +107,17 @@ wait_k8s_pods_ready() {
     return 0
   fi
 
-  require_cmd "kubectl"
+  require_cmd "${SUNMOON_KUBECTL:?Explicit target required}"
   require_non_empty "K8S_PRECHECK_LABEL_SELECTOR" "${selector}"
 
   log "K8s precheck: waiting pods ready (ns=${ns}, selector=${selector}, timeout=${timeout}s)"
-  if wait_until "${timeout}" "${interval}" kubectl -n "${ns}" wait --for=condition=Ready pod -l "${selector}" --timeout=5s >/dev/null 2>&1; then
+  if wait_until "${timeout}" "${interval}" provisioner_kube -n "${ns}" wait --for=condition=Ready pod -l "${selector}" --timeout=5s >/dev/null 2>&1; then
     log "K8s precheck passed"
     return 0
   fi
 
   err "K8s precheck failed. Pods status:"
-  kubectl -n "${ns}" get pods -l "${selector}" -o wide || true
+  provisioner_kube -n "${ns}" get pods -l "${selector}" -o wide || true
   die "K8s pod readiness precheck failed"
 }
 
@@ -135,4 +135,46 @@ dbctl_k8s_client_pod_name() {
     service="${service:0:max_len}"
   fi
   printf '%s%s%s' "$prefix" "$service" "$suffix"
+}
+
+# Existing drivers render shell/SQL text. Refuse unsupported interpolation input
+# rather than silently rewrite a password or execute config data as code.
+dbctl_validate_interpolation() {
+  local key value
+  for key in APP_DB_NAME APP_DB_USER PG_ADMIN_USER PG_ADMIN_DB REDIS_ADMIN_USER MONGO_ADMIN_USER MONGO_AUTH_DB SERVICE_NAME; do
+    value="${!key:-}"
+    [[ -z "$value" || "$value" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_-]{0,62}$ ]] || die "Unsupported identifier: $key"
+  done
+  for key in APP_DB_PASSWORD PG_ADMIN_PASSWORD REDIS_PASSWORD REDIS_ADMIN_PASSWORD MONGO_ADMIN_PASSWORD DB_HOST REDIS_KEY_PREFIX REDIS_KEY_PREFIX_SEP REDIS_CHANNEL_PREFIX REDIS_ACL_CATEGORY; do
+    value="${!key:-}"
+    case "$value" in
+      *"'"*|*'"'*|*'`'*|*'$'*|*'\'*|*$'\n'*|*$'\r'*) die "Unsupported interpolation characters: $key" ;;
+    esac
+  done
+  case "${DB_ENGINE:-}" in
+    postgresql|postgres|pg) [[ "${APP_DB_USER:-}" != "${PG_ADMIN_USER:-}" ]] || die 'Application role must differ from PostgreSQL administrator' ;;
+    mongodb) [[ "${APP_DB_USER:-}" != "${MONGO_ADMIN_USER:-}" ]] || die 'Application user must differ from MongoDB administrator' ;;
+    redis) if ! bool_true "${REDIS_AUTH_ONLY:-false}"; then
+      [[ "${APP_DB_USER:-}" != default && "${APP_DB_USER:-}" != "${REDIS_ADMIN_USER:-}" ]] || die 'Application ACL must differ from Redis administrator/default'
+    fi ;;
+  esac
+  [[ "${DB_HOST:-}" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]] || die 'DB_HOST must be a DNS name or IPv4 address'
+  for key in DB_PRECHECK_TIMEOUT_SECONDS K8S_PRECHECK_TIMEOUT_SECONDS; do
+    value="${!key:-60}"
+    [[ "$value" =~ ^[1-9][0-9]{0,2}$ && "$value" -le 300 ]] || die "Invalid timeout: $key"
+  done
+  [[ "${DB_PORT:-}" =~ ^[1-9][0-9]{0,4}$ && "$DB_PORT" -le 65535 ]] || die 'Invalid DB_PORT'
+  if [[ "${DB_ENGINE:-}" == redis ]]; then
+    [[ "${REDIS_DB_INDEX:-}" =~ ^[0-9]{1,5}$ ]] || die 'Invalid REDIS_DB_INDEX'
+  fi
+}
+
+dbctl_connection_uri() {
+  builtin printf '%s\0' "$1" "$2" "$3" "$DB_HOST" "$DB_PORT" "$4" "${5:-}" | python3 -B -c '
+import sys
+from urllib.parse import quote
+scheme,user,password,host,port,database,mode,tail=sys.stdin.buffer.read().decode().split("\0")
+if tail:raise SystemExit("Invalid URI data")
+q=lambda v:quote(v,safe="")
+print(scheme+"://"+q(user)+":"+q(password)+"@"+host+":"+port+"/"+q(database)+("?sslmode="+q(mode) if mode else ""))'
 }

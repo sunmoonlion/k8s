@@ -48,12 +48,16 @@ def get(path):
 
 
 def disk():
+    # WSL/DrvFS stat only: no visible Windows/PowerShell process during cleanup.
     v = os.statvfs('/')
-    ps = r'''$ErrorActionPreference='Stop'; $d=Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'"; $v=Get-Item -LiteralPath 'C:\Users\zymun\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu_79rhkp1fndgsc\LocalState\ext4.vhdx'; [pscustomobject]@{C_TotalBytes=[int64]$d.Size;C_FreeBytes=[int64]$d.FreeSpace;WSL_VHDX_FileLength=[int64]$v.Length} | ConvertTo-Json -Compress'''
-    p = subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-Command', ps],
-                       capture_output=True, text=True, timeout=60, check=True)
+    win = os.statvfs('/mnt/c')
+    vhd = Path('/mnt/c/Users/zymun/AppData/Local/Packages/CanonicalGroupLimited.Ubuntu_79rhkp1fndgsc/LocalState/ext4.vhdx')
     return {'at': now(), 'root_used_bytes': (v.f_blocks-v.f_bfree)*v.f_frsize,
-            'root_available_bytes': v.f_bavail*v.f_frsize, 'windows': json.loads(p.stdout)}
+            'root_available_bytes': v.f_bavail*v.f_frsize,
+            'windows': {'C_TotalBytes': win.f_blocks*win.f_frsize,
+                        'C_FreeBytes': win.f_bavail*win.f_frsize,
+                        'WSL_VHDX_FileLength': vhd.stat().st_size},
+            'windows_measurement': 'WSL stat; physical VHDX allocation not verified'}
 
 
 def protected():
@@ -77,7 +81,7 @@ def snapshot(output):
     print('Snapshot saved:', output, flush=True)
 
 
-def r1(output):
+def r1(output, maximum_bytes=None):
     manifest = RESULTS / 'luna-build-cache-candidates.20260927.json'
     raw = manifest.read_bytes()
     frozen = json.loads(raw)
@@ -98,6 +102,15 @@ def r1(output):
             exclusions.append({'id': ident, 'reason': 'reference/age drift'})
             continue
         candidates.append({k: c.get(k) for k in ['ID', 'Size', 'InUse', 'Shared', 'LastUsedAt']})
+    candidates.sort(key=lambda c:(c['LastUsedAt'],c['ID']))
+    if maximum_bytes is not None:
+        selected, total = [], 0
+        for row in candidates:
+            if total + row['Size'] <= maximum_bytes:
+                selected.append(row);total += row['Size']
+            else:
+                exclusions.append({'id':row['ID'],'reason':'outside approved partial size cap'})
+        candidates=selected
     if not candidates:
         raise RuntimeError('No eligible candidates; no prune issued')
     pattern = '^(' + '|'.join(c['ID'] for c in candidates) + ')$'
@@ -115,6 +128,8 @@ def r1(output):
         raise RuntimeError('Runtime preview escaped approved candidate intersection')
     state = {'approved_by': 'owner message 2026-09-27 R1 >=7 days',
              'manifest_sha256': hashlib.sha256(raw).hexdigest(), 'builder': 'default',
+             'partial_batch_maximum_bytes': maximum_bytes,
+             'partial_batch_authorization': 'owner 2026-09-28 request to reclaim some additional cache' if maximum_bytes else None,
              'candidates': candidates, 'exclusions': exclusions, 'preview_ids': sorted(preview_ids),
              'api_candidate_bytes': sum(c['Size'] for c in candidates),
              'before_disk': disk(), 'before_protected': protected(), 'started_at': now()}
@@ -188,7 +203,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['snapshot', 'r1', 'r4'])
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--max-gib', type=int, choices=range(1,6), help='R1 only: cap partial batch to at most 5 GiB of API size')
     args = parser.parse_args()
+    if args.max_gib and args.action != 'r1':
+        parser.error('--max-gib applies only to r1')
     if args.output.exists() or args.output.with_suffix('.preflight.json').exists():
         raise RuntimeError('Evidence already exists; do not repeat a completed or interrupted batch')
-    {'snapshot': snapshot, 'r1': r1, 'r4': r4}[args.action](args.output)
+    if args.action == 'r1':
+        r1(args.output, args.max_gib*1024**3 if args.max_gib else None)
+    else:
+        {'snapshot':snapshot, 'r4':r4}[args.action](args.output)

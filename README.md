@@ -6,6 +6,10 @@
 
 本次收尾必须完成[镜像持久化与长期空间管理验收](sunmoonai/operations/persistence-and-space-acceptance.md)：分别记录 WSL/KIND 重启、KIND 删除重建和新节点拉取证据，交付统一容量查看/预览/执行入口。删除策略先由所有者确认；当前仍未完成，不能以挂载检查代替验收。
 
+日常容量已接入 `sudo ./sunmoon space status`、`sudo ./sunmoon space monitor status`，
+只读小时监控已安装；预览、批准执行与当前边界见[空间控制](sunmoonai/operations/space/README.md)。
+Harbor保留/GC、日志/备份轮换仍待策略确认和后端准入，不能把查看入口当成全项已完成。
+
 ## 从这里操作
 
 已替代的旧镜像发布/加载和外置 Harbor 操作目录已删除，不保留兼容转发。日常只使用下方统一入口；历史退役清单见 [迁移文档第 9 节](sunmoonai/kind-infrastructure/docs/harbor-external-integration-plan.md#9-镜像脚本退役与保留清单2026-09-28)，`legacy/` 不用于部署。

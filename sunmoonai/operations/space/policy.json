@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "version": "20260928-v1",
+  "deletion_policy_approved": false,
+  "automatic_deletion": false,
+  "monitor": {"interval_minutes": 60, "stale_minutes": 130, "warning_percent": 70, "block_percent": 80, "critical_percent": 90, "external_notification": null},
+  "capacity": {"windows_reserve_gib": 50, "data_maximum_gib": 100, "data_reserve_gib": 20, "operation_peak_gib": 0},
+  "storage_uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+  "paths": {
+    "windows": "/mnt/c",
+    "wsl_vhdx": "/mnt/c/Users/zymun/AppData/Local/Packages/CanonicalGroupLimited.Ubuntu_79rhkp1fndgsc/LocalState/ext4.vhdx",
+    "data_vhdx": "/mnt/c/wsl-disks/sunmoon-data.vhdx",
+    "data": "/mnt/sunmoon-data",
+    "harbor": "/data/harbor",
+    "clusters": "/data/kind-clusters"
+  },
+  "proposed_retention": {
+    "harbor": {"age_days": 30, "keep_latest_per_repository": 10, "keep_successful_rollback_releases": 2, "automatic": false, "delete_untagged": false},
+    "cache": {"builder": "default", "unused_days": 7, "automatic": false, "require_recoverable_inputs": true},
+    "logs": {"docker_max_size": "20m", "docker_max_files": 5, "file_days": 14, "automatic_after_approval": true},
+    "backups": {"keep_restore_verified": 2, "keep_pre_change": true, "automatic": false}
+  },
+  "protected": ["all containers and volumes", "old KIND nodes including kind-worker2", "/data/kind-local-storage", "in-use and rollback images", "required offline material", "verified complete Harbor backups", "/home/zymun/private"],
+  "file_scopes": {"logs": [], "backups": [], "temporary": []}
+}

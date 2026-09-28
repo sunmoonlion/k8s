@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "started_at": "2026-09-28T12:27:57.183008+00:00",
+  "finished_at": "2026-09-28T12:38:24.866631+00:00",
+  "scope": "all unused default-builder cache for this migration only",
+  "owner_authorization": "2026-09-28: caches no longer needed during migration; rebuild later",
+  "candidate_count": 1845,
+  "candidate_sha256": "44dbf56fe74df0c85a9d18ae6b1d494eddbb0de5ddc3c67b268035a6749d613c",
+  "completed": true,
+  "exit_code": 0,
+  "removed_count": 1845,
+  "retained_candidate_count": 0,
+  "protected_unchanged": true,
+  "protected_counts_before_and_after": {"containers": 89, "volumes": 46, "images": 219},
+  "filesystem_used_decrease_bytes": 192362614784,
+  "c_free_change_bytes": -2335920128,
+  "before": {
+    "root_used_bytes": 541157195776,
+    "root_available_bytes": 484951625728,
+    "c_free_bytes": 92777852928,
+    "wsl_vhdx_file_length": 565997207552
+  },
+  "after": {
+    "root_used_bytes": 348794580992,
+    "root_available_bytes": 677314240512,
+    "c_free_bytes": 90441932800,
+    "wsl_vhdx_file_length": 565997207552
+  },
+  "notes": [
+    "Filesystem delta includes concurrent writes and delayed snapshot/content garbage collection.",
+    "Docker API private cache size is not a physical reclamation upper bound.",
+    "Windows figures use WSL stat; physical VHDX allocation is not independently verified.",
+    "No VHDX compaction; Windows C free space did not increase.",
+    "This one-time authorization does not enable recurring deletion."
+  ]
+}

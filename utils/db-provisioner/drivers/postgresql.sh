@@ -29,46 +29,11 @@ pg_client_image() {
 }
 
 pg_run_k8s_client() {
-  # 从 stdin 读脚本（与原有 heredoc 调用方式兼容）；非交互 Pod，避免 --rm -i 的 "pod deleted" 误判
-  local pod_name="$1"
-  local namespace image timeout pull_policy term_exit logs
-  local pull_secret overrides script_content script_b64
-  namespace="$(pg_client_namespace)"
-  image="$(pg_client_image)"
-  timeout="${PG_CLIENT_POD_RUNNING_TIMEOUT:-5m0s}"
-  pull_policy="${PG_CLIENT_IMAGE_PULL_POLICY:-IfNotPresent}"
-  pull_secret="${PG_CLIENT_IMAGE_PULL_SECRET:-harbor-registry-secret}"
-  overrides="$(printf '{"spec":{"imagePullSecrets":[{"name":"%s"}]}}' "${pull_secret}")"
-
-  require_cmd "kubectl"
+  local ignored_pod_name="$1" script_content
   script_content="$(cat)"
-  script_b64="$(printf '%s' "${script_content}" | base64 -w0 2>/dev/null || printf '%s' "${script_content}" | base64)"
-
-  log "[pg] using temporary PostgreSQL client pod: ${namespace}/${pod_name} (${image})"
-  if ! kubectl run "${pod_name}" --restart=Never -n "${namespace}" \
-    --image="${image}" \
-    --image-pull-policy="${pull_policy}" \
-    --overrides="${overrides}" \
-    --env="PGPASSWORD=${PG_ADMIN_PASSWORD}" \
-    --command -- bash -c "echo '${script_b64}' | base64 -d | bash -se" >/dev/null 2>&1; then
-    kubectl delete pod "${pod_name}" -n "${namespace}" --ignore-not-found --wait=false >/dev/null 2>&1 || true
-    return 1
-  fi
-
-  if kubectl wait --for=jsonpath='{.status.phase}'=Succeeded -n "${namespace}" "pod/${pod_name}" --timeout="${timeout}" >/dev/null 2>&1; then
-    term_exit=0
-  elif kubectl wait --for=jsonpath='{.status.phase}'=Failed -n "${namespace}" "pod/${pod_name}" --timeout="${timeout}" >/dev/null 2>&1; then
-    term_exit="$(kubectl get pod "${pod_name}" -n "${namespace}" -o jsonpath='{.status.containerStatuses[0].state.terminated.exitCode}' 2>/dev/null || echo 1)"
-  else
-    term_exit=1
-  fi
-
-  logs="$(kubectl logs "${pod_name}" -n "${namespace}" 2>/dev/null || true)"
-  kubectl delete pod "${pod_name}" -n "${namespace}" --ignore-not-found --wait=false >/dev/null 2>&1 || true
-  if [[ -n "${logs}" ]]; then
-    printf '%s\n' "${logs}"
-  fi
-  return "${term_exit:-1}"
+  builtin printf '%s\0' "$script_content" "${PG_ADMIN_PASSWORD:-}" | \
+    python3 -B "$ROOT_DIR/lib/client_pod.py" --namespace "$(pg_client_namespace)" \
+      --image "$(pg_client_image)" --pull-secret "${PG_CLIENT_IMAGE_PULL_SECRET:-harbor-registry-secret}"
 }
 
 pg_provision() {
@@ -89,7 +54,7 @@ pg_provision() {
     pg_run_k8s_client "${pod_name}" <<EOF
 pg_isready -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" >/dev/null
 
-db_exists=\$(psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -tAc "SELECT 1 FROM pg_database WHERE datname='${APP_DB_NAME}'" || true)
+db_exists=\$(psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -tAc "SELECT 1 FROM pg_database WHERE datname='${APP_DB_NAME}'")
 if [[ "\${db_exists}" != "1" ]]; then
   createdb -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" "${APP_DB_NAME}"
   echo "[pg-client] created database: ${APP_DB_NAME}"
@@ -97,12 +62,12 @@ else
   echo "[pg-client] database already exists: ${APP_DB_NAME}"
 fi
 
-role_exists=\$(psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='${APP_DB_USER}'" || true)
+role_exists=\$(psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='${APP_DB_USER}'")
 if [[ "\${role_exists}" != "1" ]]; then
-  psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -v ON_ERROR_STOP=1 -c "CREATE ROLE \"${APP_DB_USER}\" LOGIN PASSWORD '${APP_DB_PASSWORD}';"
+  psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -v ON_ERROR_STOP=1 <<< "CREATE ROLE \"${APP_DB_USER}\" LOGIN PASSWORD '${APP_DB_PASSWORD}';"
   echo "[pg-client] created role: ${APP_DB_USER}"
 else
-  psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -v ON_ERROR_STOP=1 -c "ALTER ROLE \"${APP_DB_USER}\" WITH PASSWORD '${APP_DB_PASSWORD}';"
+  psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -v ON_ERROR_STOP=1 <<< "ALTER ROLE \"${APP_DB_USER}\" WITH PASSWORD '${APP_DB_PASSWORD}';"
   echo "[pg-client] updated role password: ${APP_DB_USER}"
 fi
 
@@ -114,7 +79,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON ALL TABLE
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLES TO "${APP_DB_USER}";
 SQL
 EOF
-    APP_DB_URI="postgresql://${APP_DB_USER}:${APP_DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${APP_DB_NAME}?sslmode=${sslmode}"
+    APP_DB_URI="$(dbctl_connection_uri postgresql "$APP_DB_USER" "$APP_DB_PASSWORD" "$APP_DB_NAME" "$sslmode")"
     require_non_empty "APP_DB_URI(pg)" "${APP_DB_URI}"
     return 0
   fi
@@ -125,7 +90,7 @@ EOF
 
   export PGPASSWORD="${PG_ADMIN_PASSWORD}"
 
-  db_exists="$(psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -tAc "SELECT 1 FROM pg_database WHERE datname='${APP_DB_NAME}'" || true)"
+  db_exists="$(psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -tAc "SELECT 1 FROM pg_database WHERE datname='${APP_DB_NAME}'")"
   if [[ "${db_exists}" != "1" ]]; then
     createdb -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" "${APP_DB_NAME}"
     log "[pg] created database: ${APP_DB_NAME}"
@@ -133,12 +98,12 @@ EOF
     log "[pg] database already exists: ${APP_DB_NAME}"
   fi
 
-  role_exists="$(psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='${APP_DB_USER}'" || true)"
+  role_exists="$(psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='${APP_DB_USER}'")"
   if [[ "${role_exists}" != "1" ]]; then
-    psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -v ON_ERROR_STOP=1 -c "CREATE ROLE \"${APP_DB_USER}\" LOGIN PASSWORD '${APP_DB_PASSWORD}';"
+    psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -v ON_ERROR_STOP=1 <<< "CREATE ROLE \"${APP_DB_USER}\" LOGIN PASSWORD '${APP_DB_PASSWORD}';"
     log "[pg] created role: ${APP_DB_USER}"
   else
-    psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -v ON_ERROR_STOP=1 -c "ALTER ROLE \"${APP_DB_USER}\" WITH PASSWORD '${APP_DB_PASSWORD}';"
+    psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -v ON_ERROR_STOP=1 <<< "ALTER ROLE \"${APP_DB_USER}\" WITH PASSWORD '${APP_DB_PASSWORD}';"
     log "[pg] updated role password: ${APP_DB_USER}"
   fi
 
@@ -150,83 +115,47 @@ GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON ALL TABLE
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON TABLES TO "${APP_DB_USER}";
 EOF
 
-  APP_DB_URI="postgresql://${APP_DB_USER}:${APP_DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${APP_DB_NAME}?sslmode=${sslmode}"
+  APP_DB_URI="$(dbctl_connection_uri postgresql "$APP_DB_USER" "$APP_DB_PASSWORD" "$APP_DB_NAME" "$sslmode")"
   require_non_empty "APP_DB_URI(pg)" "${APP_DB_URI}"
 }
 
-pg_deprovision() {
-  log "Deprovision PostgreSQL: db=${APP_DB_NAME}, user=${APP_DB_USER}"
-  if bool_true "${DRY_RUN:-false}"; then
-    log "DRY_RUN=true, skip executing psql"
-    APP_DB_URI=""
-    return 0
-  fi
-
-  wait_k8s_pods_ready
+pg_deprovision_script() {
   local admin_db="${PG_ADMIN_DB:-postgres}"
-
-  if pg_use_k8s_client; then
-    local pod_name="dbctl-pg-deprovision-${SERVICE_NAME:-app}-$(date +%s)"
-    pg_run_k8s_client "${pod_name}" <<EOF
-pg_isready -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" >/dev/null
-
-psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -v ON_ERROR_STOP=1 <<SQL
-REVOKE CONNECT ON DATABASE "${APP_DB_NAME}" FROM "${APP_DB_USER}";
-DO \$\$
-BEGIN
-  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='${APP_DB_USER}') THEN
-    REASSIGN OWNED BY "${APP_DB_USER}" TO "${PG_ADMIN_USER}";
-    DROP OWNED BY "${APP_DB_USER}";
-    DROP ROLE "${APP_DB_USER}";
-  END IF;
-END
-\$\$;
+  cat <<EOF
+role_exists=\$(psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='${APP_DB_USER}'")
+db_exists=\$(psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -tAc "SELECT 1 FROM pg_database WHERE datname='${APP_DB_NAME}'")
+if [[ "\${role_exists}" == 1 ]]; then
+  if [[ "\${db_exists}" == 1 ]]; then
+    # Database-local ownership/grants must be handled in the application DB.
+    psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${APP_DB_NAME}" -v ON_ERROR_STOP=1 <<SQL
+REASSIGN OWNED BY "${APP_DB_USER}" TO "${PG_ADMIN_USER}";
+DROP OWNED BY "${APP_DB_USER}";
 SQL
-echo "[pg-client] dropped role if exists: ${APP_DB_USER}"
-
-if [[ "${DEPROVISION_DROP_DATABASE:-false}" == "true" || "${DEPROVISION_DROP_DATABASE:-false}" == "1" ]]; then
+  fi
+  # Fail rather than cascade if this role has dependencies in other databases.
   psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -v ON_ERROR_STOP=1 <<SQL
-SELECT pg_terminate_backend(pid)
-FROM pg_stat_activity
+DROP ROLE "${APP_DB_USER}";
+SQL
+fi
+if [[ "${DEPROVISION_DROP_DATABASE:-false}" == true || "${DEPROVISION_DROP_DATABASE:-false}" == 1 ]]; then
+  psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -v ON_ERROR_STOP=1 <<SQL
+SELECT pg_terminate_backend(pid) FROM pg_stat_activity
 WHERE datname='${APP_DB_NAME}' AND pid <> pg_backend_pid();
 SQL
   dropdb -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" --if-exists "${APP_DB_NAME}"
-  echo "[pg-client] dropped database if exists: ${APP_DB_NAME}"
 fi
 EOF
-    APP_DB_URI=""
-    return 0
-  fi
+}
 
-  require_cmd "psql"
-  pg_precheck
-  if bool_true "${DEPROVISION_DROP_DATABASE:-false}"; then
-    require_cmd "dropdb"
-  fi
-  export PGPASSWORD="${PG_ADMIN_PASSWORD}"
-
-  psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -v ON_ERROR_STOP=1 <<EOF
-REVOKE CONNECT ON DATABASE "${APP_DB_NAME}" FROM "${APP_DB_USER}";
-DO \$\$
-BEGIN
-  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='${APP_DB_USER}') THEN
-    REASSIGN OWNED BY "${APP_DB_USER}" TO "${PG_ADMIN_USER}";
-    DROP OWNED BY "${APP_DB_USER}";
-    DROP ROLE "${APP_DB_USER}";
-  END IF;
-END
-\$\$;
-EOF
-  log "[pg] dropped role if exists: ${APP_DB_USER}"
-
-  if bool_true "${DEPROVISION_DROP_DATABASE:-false}"; then
-    psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" -d "${admin_db}" -v ON_ERROR_STOP=1 <<EOF
-SELECT pg_terminate_backend(pid)
-FROM pg_stat_activity
-WHERE datname='${APP_DB_NAME}' AND pid <> pg_backend_pid();
-EOF
-    dropdb -h "${DB_HOST}" -p "${DB_PORT}" -U "${PG_ADMIN_USER}" --if-exists "${APP_DB_NAME}"
-    log "[pg] dropped database if exists: ${APP_DB_NAME}"
+pg_deprovision() {
+  wait_k8s_pods_ready
+  if pg_use_k8s_client; then
+    pg_deprovision_script | pg_run_k8s_client unused
+  else
+    require_cmd psql
+    pg_precheck
+    export PGPASSWORD="${PG_ADMIN_PASSWORD}"
+    pg_deprovision_script | timeout 300s bash -se
   fi
   APP_DB_URI=""
 }

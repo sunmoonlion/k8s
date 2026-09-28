@@ -1,19 +1,34 @@
 #!/usr/bin/env bash
 
+# Shared local plan boundary: no configuration, credentials or API before this.
+source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../utils/deploy-plan.sh" || exit 2
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" named "$@" || exit $?
+[[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
+set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
+
 set -euo pipefail
+set +x
+umask 077
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 PROVISIONER_SCRIPT_DIR="$SCRIPT_DIR"
 
-source "$PROJECT_ROOT/../../../utils/unified-deployment-template.sh"
-SCRIPT_DIR="$PROVISIONER_SCRIPT_DIR"
-
-ORIGINAL_ARGS=("$@")
-if [[ $# -gt 0 ]] && type unified_parse_cluster_arg >/dev/null 2>&1; then
-    unified_parse_cluster_arg "$@"
-    ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
+PROVISIONER_K8S_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+source "$PROVISIONER_K8S_ROOT/utils/cluster-arg-parser.sh"
+unified_parse_cluster_arg "$@"
+ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
+if [[ "${ORIGINAL_ARGS[0]:-}" == validate ]]; then
+    [[ ${#ORIGINAL_ARGS[@]} == 2 ]] || { echo 'validate requires one declaration' >&2; exit 2; }
+    exec python3 -B "$SCRIPT_DIR/lib/declaration.py" validate "${ORIGINAL_ARGS[1]}"
 fi
+[[ ${#ORIGINAL_ARGS[@]} == 2 ]] || { echo 'Expected action and declaration' >&2; exit 2; }
+case "${ORIGINAL_ARGS[0]}" in provision|rotate|status|teardown) ;; *) echo 'Unsupported provisioner action' >&2; exit 2 ;; esac
+[[ "${CLUSTER:-}" =~ ^(KIND|C[1-9][0-9]*)$ ]] || { echo 'Explicit CLUSTER required' >&2; exit 1; }
+source "$PROVISIONER_K8S_ROOT/utils/deploy-target.sh"
+sunmoon_deploy_target_init "$PROVISIONER_K8S_ROOT" || exit 1
+source "$PROVISIONER_K8S_ROOT/utils/provisioner-runtime.sh"
+
 
 OBJECT_STORAGE_CONFIG_FILE="$PROJECT_ROOT/deploy-object-storage/deploy-object-storage.conf"
 HELPER="$SCRIPT_DIR/lib/declaration.py"
@@ -21,7 +36,7 @@ if [[ ! -f "$OBJECT_STORAGE_CONFIG_FILE" ]]; then
     log_error "缺少 Object Storage 配置文件: $OBJECT_STORAGE_CONFIG_FILE"
     exit 1
 fi
-source "$OBJECT_STORAGE_CONFIG_FILE"
+source "$OBJECT_STORAGE_CONFIG_FILE" >/dev/null 2>&1 || { echo "Object storage configuration failed" >&2; exit 1; }
 
 if [[ -f "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh" ]]; then
     source "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh"
@@ -54,42 +69,43 @@ require_command() {
 }
 
 ensure_cluster_connection() {
-    if kubectl get nodes >/dev/null 2>&1; then
-        return 0
-    fi
-    setup_kubectl_environment
-    kubectl get nodes >/dev/null
+    sunmoon_deploy_target_check "$PROVISIONER_K8S_ROOT"
 }
 
 cleanup_runtime_resources() {
+    local result=$?
+    trap - EXIT
+    if [[ "$result" != 0 ]]; then
+        log_error "Provisioning failed; preserve recovery material: $WORK_DIR; job=$JOB_NAME; runtime-secret=$RUNTIME_SECRET"
+        exit "$result"
+    fi
     if [[ -n "$JOB_NAME" ]]; then
-        kubectl delete job "$JOB_NAME" -n "$DATA_NAMESPACE" \
-            --ignore-not-found --wait=false >/dev/null 2>&1 || true
+        provisioner_kube delete job "$JOB_NAME" -n "$DATA_NAMESPACE" --ignore-not-found --wait=false >/dev/null || result=1
     fi
     if [[ -n "$RUNTIME_CONFIGMAP" ]]; then
-        kubectl delete configmap "$RUNTIME_CONFIGMAP" -n "$DATA_NAMESPACE" \
-            --ignore-not-found >/dev/null 2>&1 || true
+        provisioner_kube delete configmap "$RUNTIME_CONFIGMAP" -n "$DATA_NAMESPACE" --ignore-not-found --wait=false >/dev/null || result=1
     fi
-    if [[ -n "$RUNTIME_SECRET" ]]; then
-        kubectl delete secret "$RUNTIME_SECRET" -n "$DATA_NAMESPACE" \
-            --ignore-not-found >/dev/null 2>&1 || true
+    if [[ -n "$RUNTIME_SECRET" && "$result" == 0 ]]; then
+        provisioner_kube delete secret "$RUNTIME_SECRET" -n "$DATA_NAMESPACE" --ignore-not-found --wait=false >/dev/null || result=1
     fi
-    if [[ -n "$WORK_DIR" && -d "$WORK_DIR" ]]; then
-        rm -rf "$WORK_DIR"
+    if [[ "$result" == 0 && -n "$WORK_DIR" && -d "$WORK_DIR" ]]; then
+        rm -rf -- "$WORK_DIR"
     fi
+    [[ "$result" == 0 ]] || log_error "Runtime cleanup incomplete; preserve $WORK_DIR for recovery"
+    exit "$result"
 }
 
 load_declaration() {
     local declaration="$1"
     [[ -f "$declaration" ]] || die "声明文件不存在: $declaration"
     require_command python3
-    python3 "$HELPER" validate "$declaration" >/dev/null
+    python3 -B "$HELPER" validate "$declaration" >/dev/null
 
     WORK_DIR="$(mktemp -d)"
-    python3 "$HELPER" shell "$declaration" > "$WORK_DIR/declaration.env"
+    python3 -B "$HELPER" shell "$declaration" > "$WORK_DIR/declaration.env"
     # shellcheck disable=SC1091
     source "$WORK_DIR/declaration.env"
-    python3 "$HELPER" policy "$declaration" > "$WORK_DIR/policy.json"
+    python3 -B "$HELPER" policy "$declaration" > "$WORK_DIR/policy.json"
 
     POLICY_NAME="$DECLARATION_NAME"
     ACCESS_KEY="$DECLARATION_NAME"
@@ -112,15 +128,20 @@ load_or_generate_credentials() {
     local existing_access=""
     local existing_secret=""
 
-    if [[ "$rotate" != "true" ]] && kubectl get secret "$TARGET_SECRET_NAME" \
-        -n "$TARGET_NAMESPACE" >/dev/null 2>&1; then
-        existing_access="$(kubectl get secret "$TARGET_SECRET_NAME" \
+    local existing_name
+    existing_name=$(provisioner_kube get secret "$TARGET_SECRET_NAME" -n "$TARGET_NAMESPACE" -o name --ignore-not-found) || return 1
+    if [[ "$rotate" != true && -n "$existing_name" ]]; then
+        existing_access="$(provisioner_kube get secret "$TARGET_SECRET_NAME" \
             -n "$TARGET_NAMESPACE" -o jsonpath='{.data.S3_ACCESS_KEY_ID}' | base64 -d)"
-        existing_secret="$(kubectl get secret "$TARGET_SECRET_NAME" \
+        existing_secret="$(provisioner_kube get secret "$TARGET_SECRET_NAME" \
             -n "$TARGET_NAMESPACE" -o jsonpath='{.data.S3_SECRET_ACCESS_KEY}' | base64 -d)"
     fi
 
+    if [[ "$rotate" != true && -n "$existing_name" && ( -z "$existing_access" || -z "$existing_secret" ) ]]; then
+        die 'Existing S3 Secret is incomplete; refusing implicit credential rotation'
+    fi
     if [[ -n "$existing_access" && -n "$existing_secret" ]]; then
+        [[ "$existing_access" == "$DECLARATION_NAME" ]] || die 'Existing access key differs from declaration identity'
         ACCESS_KEY="$existing_access"
         SECRET_KEY="$existing_secret"
         UPDATE_USER="false"
@@ -173,8 +194,20 @@ EOF
 
             cat >> "$WORK_DIR/run.sh" <<'EOF'
 mc admin policy create platform "$POLICY_NAME" /work/policy.json
-if [ "$UPDATE_USER" = "true" ] || ! mc admin user info platform "$APP_ACCESS_KEY" >/dev/null 2>&1; then
-    mc admin user add platform "$APP_ACCESS_KEY" "$APP_SECRET_KEY"
+if [ "$UPDATE_USER" = "true" ]; then
+    # Listing must succeed; authentication/network errors are never 'user absent'.
+    mc --json admin user list platform > /tmp/sunmoon-users.json
+    if [ -s /tmp/sunmoon-users.json ] && ! grep -q '"accessKey"' /tmp/sunmoon-users.json; then
+        echo "Unsupported administrative response; refusing user changes" >&2
+        exit 1
+    fi
+    if [ "$OPERATION" != "rotate" ] && grep -Eq '"accessKey"[[:space:]]*:[[:space:]]*"'"$APP_ACCESS_KEY"'"' /tmp/sunmoon-users.json; then
+        echo "Remote user exists without matching saved credentials; explicit recovery or rotation required" >&2
+        exit 1
+    fi
+    printf '%s\n%s\n' "$APP_ACCESS_KEY" "$APP_SECRET_KEY" | mc admin user add platform >/dev/null
+else
+    mc admin user info platform "$APP_ACCESS_KEY" >/dev/null
 fi
 mc admin policy attach platform "$POLICY_NAME" --user "$APP_ACCESS_KEY"
 mc admin user info platform "$APP_ACCESS_KEY"
@@ -199,13 +232,11 @@ EOF
             ;;
         teardown)
             cat >> "$WORK_DIR/run.sh" <<'EOF'
-if mc admin user info platform "$APP_ACCESS_KEY" >/dev/null 2>&1; then
-    mc admin policy detach platform "$POLICY_NAME" --user "$APP_ACCESS_KEY" || true
-    mc admin user rm platform "$APP_ACCESS_KEY"
-fi
-if mc admin policy info platform "$POLICY_NAME" >/dev/null 2>&1; then
-    mc admin policy rm platform "$POLICY_NAME"
-fi
+mc admin user info platform "$APP_ACCESS_KEY" >/dev/null
+mc admin policy info platform "$POLICY_NAME" >/dev/null
+mc admin policy detach platform "$POLICY_NAME" --user "$APP_ACCESS_KEY"
+mc admin user rm platform "$APP_ACCESS_KEY"
+mc admin policy rm platform "$POLICY_NAME"
 echo "Buckets retained by deletionPolicy=Retain"
 EOF
             ;;
@@ -220,28 +251,27 @@ create_runtime_resources() {
     local action="$1"
     local suffix
     suffix="$(date +%s)-$RANDOM"
-    JOB_NAME="s3-${action}-${DECLARATION_NAME}-${suffix}"
+    JOB_NAME="s3-${action}-${DECLARATION_NAME:0:24}-${suffix}"
     JOB_NAME="${JOB_NAME:0:63}"
     RUNTIME_CONFIGMAP="${JOB_NAME}-work"
     RUNTIME_CONFIGMAP="${RUNTIME_CONFIGMAP:0:63}"
     RUNTIME_SECRET="${JOB_NAME}-credentials"
     RUNTIME_SECRET="${RUNTIME_SECRET:0:63}"
 
-    kubectl create configmap "$RUNTIME_CONFIGMAP" \
+    provisioner_kube create configmap "$RUNTIME_CONFIGMAP" \
         -n "$DATA_NAMESPACE" \
         --from-file=run.sh="$WORK_DIR/run.sh" \
         --from-file=policy.json="$WORK_DIR/policy.json"
-    kubectl create secret generic "$RUNTIME_SECRET" \
-        -n "$DATA_NAMESPACE" \
-        --from-literal=accessKey="$ACCESS_KEY" \
-        --from-literal=secretKey="$SECRET_KEY"
+    builtin printf '%s\0' accessKey "$ACCESS_KEY" secretKey "$SECRET_KEY" | \
+        provisioner_secret --namespace "$DATA_NAMESPACE" --name "$RUNTIME_SECRET"
 }
 
 run_admin_job() {
     local action="$1"
     local timeout="${OBJECT_STORAGE_PROVISIONER_TIMEOUT:-180s}"
+    [[ "$timeout" =~ ^([1-9][0-9]{0,2})s$ && "${timeout%s}" -le 300 ]] || die 'Provisioner timeout must be 1s..300s'
 
-    kubectl apply -f - <<EOF
+    provisioner_kube apply -f - <<EOF
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -252,13 +282,14 @@ metadata:
     storage.sunmoonai.com/declaration: ${DECLARATION_NAME}
 spec:
   backoffLimit: 0
-  ttlSecondsAfterFinished: 300
+  activeDeadlineSeconds: 300
   template:
     metadata:
       labels:
         app.kubernetes.io/name: object-storage-provisioner
     spec:
       restartPolicy: Never
+      automountServiceAccountToken: false
       imagePullSecrets:
         - name: ${IMAGE_PULL_SECRET}
       containers:
@@ -275,6 +306,8 @@ spec:
               value: "${S3_REGION}"
             - name: POLICY_NAME
               value: "${POLICY_NAME}"
+            - name: OPERATION
+              value: "${action}"
             - name: UPDATE_USER
               value: "${UPDATE_USER}"
           securityContext:
@@ -309,12 +342,12 @@ spec:
             secretName: ${RUNTIME_SECRET}
 EOF
 
-    if ! kubectl wait --for=condition=complete "job/$JOB_NAME" \
+    if ! provisioner_kube wait --for=condition=complete "job/$JOB_NAME" \
         -n "$DATA_NAMESPACE" --timeout="$timeout"; then
-        kubectl logs -n "$DATA_NAMESPACE" "job/$JOB_NAME" --all-containers=true || true
+        log_error "Job failed or timed out: $DATA_NAMESPACE/$JOB_NAME; raw logs withheld, recovery resources retained"
         return 1
     fi
-    kubectl logs -n "$DATA_NAMESPACE" "job/$JOB_NAME" --all-containers=true
+    log_info "Administrative Job completed: $DATA_NAMESPACE/$JOB_NAME; raw logs withheld"
 }
 
 apply_backend_resources() {
@@ -322,13 +355,10 @@ apply_backend_resources() {
     buckets="$(bucket_names_csv)"
     primary_bucket="${buckets%%,*}"
 
-    kubectl create secret generic "$TARGET_SECRET_NAME" \
-        -n "$TARGET_NAMESPACE" \
-        --from-literal=S3_ACCESS_KEY_ID="$ACCESS_KEY" \
-        --from-literal=S3_SECRET_ACCESS_KEY="$SECRET_KEY" \
-        --dry-run=client -o yaml | kubectl apply -f -
+    builtin printf '%s\0' S3_ACCESS_KEY_ID "$ACCESS_KEY" S3_SECRET_ACCESS_KEY "$SECRET_KEY" | \
+        provisioner_secret --namespace "$TARGET_NAMESPACE" --name "$TARGET_SECRET_NAME"
 
-    kubectl create configmap "$TARGET_CONFIGMAP_NAME" \
+    provisioner_kube create configmap "$TARGET_CONFIGMAP_NAME" \
         -n "$TARGET_NAMESPACE" \
         --from-literal=S3_ENDPOINT="$S3_ENDPOINT" \
         --from-literal=S3_REGION="$S3_REGION" \
@@ -336,25 +366,25 @@ apply_backend_resources() {
         --from-literal=S3_BUCKETS="$buckets" \
         --from-literal=S3_FORCE_PATH_STYLE="$S3_FORCE_PATH_STYLE" \
         --from-literal=S3_USE_TLS="$S3_USE_TLS" \
-        --dry-run=client -o yaml | kubectl apply -f -
+        --dry-run=client -o yaml | provisioner_kube apply -f -
 }
 
 remove_backend_resources() {
-    kubectl delete secret "$TARGET_SECRET_NAME" -n "$TARGET_NAMESPACE" \
+    provisioner_kube delete secret "$TARGET_SECRET_NAME" -n "$TARGET_NAMESPACE" \
         --ignore-not-found
-    kubectl delete configmap "$TARGET_CONFIGMAP_NAME" -n "$TARGET_NAMESPACE" \
+    provisioner_kube delete configmap "$TARGET_CONFIGMAP_NAME" -n "$TARGET_NAMESPACE" \
         --ignore-not-found
 }
 
 preflight() {
-    require_command kubectl
+    require_command "$SUNMOON_KUBECTL"
     require_command base64
     ensure_cluster_connection
-    kubectl get namespace "$DATA_NAMESPACE" >/dev/null
-    kubectl get namespace "$TARGET_NAMESPACE" >/dev/null
-    kubectl get secret "$ROOT_SECRET_NAME" -n "$DATA_NAMESPACE" >/dev/null
-    kubectl get secret "$IMAGE_PULL_SECRET" -n "$DATA_NAMESPACE" >/dev/null
-    kubectl get service minio -n "$DATA_NAMESPACE" >/dev/null
+    provisioner_kube get namespace "$DATA_NAMESPACE" >/dev/null
+    provisioner_kube get namespace "$TARGET_NAMESPACE" >/dev/null
+    provisioner_kube get secret "$ROOT_SECRET_NAME" -n "$DATA_NAMESPACE" >/dev/null
+    provisioner_kube get secret "$IMAGE_PULL_SECRET" -n "$DATA_NAMESPACE" >/dev/null
+    provisioner_kube get service minio -n "$DATA_NAMESPACE" >/dev/null
 }
 
 execute_action() {
@@ -363,7 +393,7 @@ execute_action() {
 
     load_declaration "$declaration"
     if [[ "$action" == "validate" ]]; then
-        python3 "$HELPER" validate "$declaration"
+        python3 -B "$HELPER" validate "$declaration"
         return
     fi
 

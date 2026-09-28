@@ -2,7 +2,7 @@
 
 本目录是 **k8s 平台组件的实际工具**，Casdoor 的 `db-access-bootstrap/config/common.env` 默认指向这里。`sunmoonai/utils/db-provisioner/` 仓内副本已删除；保留本目录既有 Redis ACL 修正和模板配置。它不是 `tpl-app` 或实例应用的备份：四个 backend 的自举配置默认各自使用本仓内的 `db-provisioner`，本次没有改它们或建立跨仓依赖。
 
-下文 `examples/` 路径仅是示意，本仓没有该目录；实际配置应由调用组件提供，模板在 `templates/db-access-bootstrap-template/config/`。旧工具默认会执行建库/授权，整理过程没有调用它；不能把本轮目录去重当作数据库操作验收。
+下文 `examples/` 路径仅是示意，本仓没有该目录；实际配置应由调用组件提供，模板在 `templates/db-access-bootstrap-template/config/`。实际分支会执行建库/授权；`--dry-run` 现在在加载配置前返回，不读取凭据、不生成输出。此次没有执行真实授权，不能把静态整改当作数据库操作验收。
 
 > **维护**：本目录位于 **k8s** 仓库内，为平台组件的 `db-access-bootstrap` 提供随仓库发布的 `dbctl`。
 
@@ -219,3 +219,14 @@ SunMoonAI 当前建议 selector（默认 `project_id=sunmoonai`）：
     - MongoDB：额外执行 `dropDatabase()`
     - PostgreSQL：额外执行 `dropdb`（先终止连接）
     - Redis：仅在 `REDIS_ALLOW_FLUSH_DB=true` 时执行 `FLUSHDB ASYNC`
+
+## 2026-09-28 运行约束
+
+- 实际执行必须显式 `--target k8s|external`；k8s 在加载配置前绑定 CLUSTER/KUBECONFIG/SUNMOON_KUBECTL/SUNMOON_EXPECTED_CLUSTER_UID，之后复核。云上未经实机验证。
+- PG/Redis临时客户端使用随机Pod与Secret名，脚本/口令走stdin JSON创建Secret，Pod只挂载，不把脚本或管理员口令放kubectl参数。300秒运行上限，无失败自动清理；成功按UID前置条件删除自己的Pod/Secret。原始日志不输出。
+- MongoDB使用私有JS文件中的JSON数据和mongosh `--nodb --file`，不把URI/密码拼JS命令参数。错误日志在owner-only目录；失败保留，不能公开粘贴。
+- k8s输出复用共享Opaque Secret提交器并回读；external要求明确绝对OUTPUT_ENV_FILE、现有owner-only父目录，不再写默认/tmp连接串。所有引擎都需明确DB_HOST/DB_PORT，即使Mongo管理员使用完整URI；输出的应用地址不再猜localhost。文件值用Shell引号转义、0600原子替换。deprovision仅删除明确指定输出文件。
+- 旧PG/Redis驱动仍生成Shell/SQL文本，因此明确拒绝密码中的单/双引号、反引号、美元符、反斜线、CR/LF，以及不支持的名称/主机格式；不改写已有密码。需要这些字符时应先扩展结构化输入，不能改密码绕过。URI对用户/口令做URL编码。
+- Redis CLI加`-e`传播服务端错误，管理员密码环境输入，ACL密码stdin，声明ACL使用reset避免旧密码/旧范围累积。这会收敛被本工具管理的用户权限；只能对专用用户使用；代码拒绝APP_DB_USER等于管理员，Redis还拒绝default。PG撤销权限在应用库内处理所属对象，在其他库仍有依赖时拒绝DROP ROLE，不跨库级联。
+- 清库仍必须显式原有DEPROVISION_DROP_DATABASE，Redis还需REDIS_ALLOW_FLUSH_DB；普通回收Secret不等于跨数据库事务。授权后输出失败时先用私有证据修复，不重新随机生成。
+- 配置仍是受信任Shell文件；应用仓自带的db-provisioner副本未被改动。模板生成器与手工external自举的额外输出逻辑未做全面安全验收，本轮不宣称整个模板系统已实测。

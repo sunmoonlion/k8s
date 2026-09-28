@@ -4,14 +4,14 @@
 不能只在几个数据库组件的 Helm 命令上加 `--dry-run`。
 
 逐文件位置与参数契约保存在 [deployment-dry-run-inventory.json](deployment-dry-run-inventory.json)。
-清单包含六个平台目录的全部 165 个 `deploy-*.sh` / `deploy.sh`，以及总控、部署辅助工具和独立 Harbor 入口，合计 190 项。
-这是入口及分支的静态覆盖清单，不是 190 项实机验收记录。
+清单包含六个平台目录的全部 165 个 `deploy-*.sh` / `deploy.sh`，以及总控、部署辅助工具和独立 Harbor 入口，合计 192 项。
+这是入口及分支的静态覆盖清单，不是 192 项实机验收记录。
 
 ## 覆盖方式
 
 | 入口 | 数量 | 处理 |
 | --- | ---: | --- |
-| 活动旧 Shell 组件、子组件及辅助工具 | 146 | 第一个公共调用即进入 `utils/deploy-plan.sh`，在配置、凭据、连接库、临时文件和 EXIT trap 之前判断计划；计划直接退出 |
+| 活动旧 Shell 组件、子组件及辅助工具 | 148 | 第一个公共调用即进入 `utils/deploy-plan.sh`，在配置、凭据、连接库、临时文件和 EXIT trap 之前判断计划；计划直接退出 |
 | Info / Knowledge / Investment 总入口及六个角色入口 | 21 | 共用 `formal_deploy_entry.py`；位置 `true` 和命名 `--dry-run` 转到本地 plan，保留发布配置、namespace、镜像/发布门禁 |
 | 根平台、Data Platform 总控 | 2 | 同一请求校验后继续现有本地配置计划；不会递归执行组件 |
 | 统一 Ingress 入口 | 1 | 保留默认计划及显式 `--apply/--verify`，参数冲突拒绝；本地 Python 使用 `-B` |
@@ -23,7 +23,7 @@
 | ONLYOFFICE 本地资源生成器 | 1 | --dry-run 或继承计划在加载配置前退出；默认只生成非 Secret，Secret 必须逐项显式选择 |
 | 原集群内 Harbor 三个入口、原 KIND 建群入口 | 4 | 仍拒绝执行；本次不会把停用入口重新启用 |
 
-146 个旧入口包括 PostgreSQL、MongoDB、Neo4j、Redis/NodeBull、对象存储、Elasticsearch、Kibana、Logstash、
+148 个旧入口包括 PostgreSQL、MongoDB、Neo4j、Redis/NodeBull、对象存储、Elasticsearch、Kibana、Logstash、
 RabbitMQ、Jenkins、pgAdmin、RedisInsight、Mongo Express、Flower、Casdoor、OnlyOffice、Document Converter、RagFlow，
 及其 Secret、路由和中间件。另补入问数 Demo、Casdoor 初始化/数据库访问工具、手动 Traefik NAT 工具。
 这些辅助工具保留原用途；增加计划模式不代表其真实执行方式已符合新版集群的全部要求。

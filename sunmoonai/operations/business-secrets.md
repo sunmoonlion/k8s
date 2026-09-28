@@ -113,8 +113,8 @@ License 与根凭据复用同一个 Opaque 提交器：`minio.license` 从 `AIST
 不再因同名存在即接受，也不借用 PostgreSQL 的配置来创建另一个名字。
 三个 Secret 在内存提交并回读，失败传播。对象存储数据/License/账号、Chart 版本未改变。
 旧公共库暂为静态卷/镜像检查提供函数，严格目标模式禁止自动连接清理。
-主部署其余 Helm 状态/卸载吞错、等待和 provisioner 路径仍待整改，不把本批凭据路径改动当完整组件验收。
-`config.env` 保留原格式；特殊字符与对象存储实际配置解析、许可证有效性和 root 登录仍需实际核验。
+主部署 Helm 状态/卸载错误现在传播，upgrade 等待300秒；ObjectStore 另外按本地CRD的 pools.ssName 核 StatefulSet 所有权、期望副本、版本、Pod Ready。Helm 成功不能代替这一步，S3认证仍需实际验收。
+`config.env` 使用单引号保护 Shell 值，拒绝单引号、CR/LF，避免 Job source 时展开命令；不自动换密码。许可证有效性和 root 登录仍需实际核验。
 
 ### 其他边界
 
@@ -139,3 +139,18 @@ status 查询启用的业务/Harbor Secret，**uninstall 只申请删除启用�
 本批完成 Shell/Python 静态检查与字段/入口清单核对，未运行部署或行为测试。
 尚待实际验收：首次安装、重复提交、字段冲突、权限/网络故障、回读不一致、重启失败、
 数据库登录与各组件就绪。云上未经实机验证。旧节点/卷、Harbor、必要备份保持保护。
+
+## Elasticsearch 与对象存储授权工具
+
+两个 `provisioner/<组件>-provisioner.sh` 保留原 action/声明文件接口；`--dry-run` 在配置与API前返回。
+`validate` 只校验本地声明；真实动作要求显式 cluster、工具、kubeconfig、UID，与平台同一目标绑定。
+业务凭据通过 NUL 管道提交 Opaque Secret，失败保留 owner-only 工作目录和已创建的恢复资源，不自动回滚已修改的远端账号。
+
+- ES 用私有 curl 配置和有期限的本机端口转发；404单独处理，认证/权限失败不能当作资源缺失。已有Secret用户名必须匹配；Secret丢失但远端用户存在时拒绝普通 provision 重置密码，须显式恢复或 rotate。
+- S3 管理 Job 不挂 ServiceAccount 令牌，300秒运行上限，无失败后自动TTL删除。成功才清本次Job/ConfigMap/临时Secret；失败保留，需在私有环境复核并单独回收，不无限重试改用户。
+- S3 新建用户前必须成功列出用户；非 rotate 若已有同名账号但未找到对应本地凭据则拒绝。用户密码经标准输入交给 mc；root alias 配置仍在受限管理Job内传入 mc 参数，不能声称容器管理员不可见。原始Job日志不回显。
+- S3 `status` 会创建短期管理Job，**不是无写入的集群只读命令**。teardown严格撤销用户与策略，保留Bucket；部分失败后的再次执行可能因对象已缺失而停止，须按保留证据完成恢复/撤销。
+- ES/S3账号与Kubernetes Secret不是跨系统事务。旋转后若Secret提交失败，旧消费者可能失效；保留的新凭据须用于修复，不以再次随机生成代替恢复。
+
+用户JSON的 accessKey 字段及 stdin 用户创建依据 [MinIO mc 实现](https://github.com/minio/mc/blob/master/cmd/admin-user-add.go)；项目锁定的AIStor镜像仍需实际运行核验格式，格式不符会停止，不推定缺用户。没有更换服务或数据库版本。
+本轮仅静态语法/字段检查；两个工具和ObjectStore完整生命周期尚未实际验收。

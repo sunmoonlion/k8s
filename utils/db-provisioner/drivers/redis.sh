@@ -2,7 +2,7 @@
 
 redis_admin_auth_args() {
   if redis-cli --help 2>&1 | grep -q -- '--user'; then
-    printf -- '--user %s -a %s' "${REDIS_ADMIN_USER}" "${REDIS_ADMIN_PASSWORD}"
+    printf -- '--user %s' "${REDIS_ADMIN_USER}"
     return 0
   fi
 
@@ -28,43 +28,11 @@ redis_client_image() {
 }
 
 redis_run_k8s_client() {
-  # 从 stdin 读脚本；非交互 Pod，避免 --rm -i 的 "pod deleted" 误判
-  local pod_name="$1"
-  local namespace image timeout term_exit logs
-  local pull_secret overrides script_content script_b64
-  namespace="$(redis_client_namespace)"
-  image="$(redis_client_image)"
-  timeout="${REDIS_CLIENT_POD_RUNNING_TIMEOUT:-5m0s}"
-  pull_secret="${REDIS_CLIENT_IMAGE_PULL_SECRET:-harbor-registry-secret}"
-  overrides="$(printf '{"spec":{"imagePullSecrets":[{"name":"%s"}]}}' "${pull_secret}")"
-
-  require_cmd "kubectl"
+  local ignored_pod_name="$1" script_content
   script_content="$(cat)"
-  script_b64="$(printf '%s' "${script_content}" | base64 -w0 2>/dev/null || printf '%s' "${script_content}" | base64)"
-
-  log "[redis] using temporary Redis client pod: ${namespace}/${pod_name} (${image})"
-  if ! kubectl run "${pod_name}" --restart=Never -n "${namespace}" \
-    --image="${image}" \
-    --overrides="${overrides}" \
-    --command -- bash -c "echo '${script_b64}' | base64 -d | bash -se" >/dev/null 2>&1; then
-    kubectl delete pod "${pod_name}" -n "${namespace}" --ignore-not-found --wait=false >/dev/null 2>&1 || true
-    return 1
-  fi
-
-  if kubectl wait --for=jsonpath='{.status.phase}'=Succeeded -n "${namespace}" "pod/${pod_name}" --timeout="${timeout}" >/dev/null 2>&1; then
-    term_exit=0
-  elif kubectl wait --for=jsonpath='{.status.phase}'=Failed -n "${namespace}" "pod/${pod_name}" --timeout="${timeout}" >/dev/null 2>&1; then
-    term_exit="$(kubectl get pod "${pod_name}" -n "${namespace}" -o jsonpath='{.status.containerStatuses[0].state.terminated.exitCode}' 2>/dev/null || echo 1)"
-  else
-    term_exit=1
-  fi
-
-  logs="$(kubectl logs "${pod_name}" -n "${namespace}" 2>/dev/null || true)"
-  kubectl delete pod "${pod_name}" -n "${namespace}" --ignore-not-found --wait=false >/dev/null 2>&1 || true
-  if [[ -n "${logs}" ]]; then
-    printf '%s\n' "${logs}"
-  fi
-  return "${term_exit:-1}"
+  builtin printf '%s\0' "$script_content" "${PG_ADMIN_PASSWORD:-}" | \
+    python3 -B "$ROOT_DIR/lib/client_pod.py" --namespace "$(redis_client_namespace)" \
+      --image "$(redis_client_image)" --pull-secret "${REDIS_CLIENT_IMAGE_PULL_SECRET:-harbor-registry-secret}"
 }
 
 redis_validate() {
@@ -96,14 +64,14 @@ redis_provision() {
       local pod_name
       pod_name="$(dbctl_k8s_client_pod_name "redis-auth" "${SERVICE_NAME:-app}")"
       redis_run_k8s_client "${pod_name}" <<EOF
-REDISCLI_AUTH='${REDIS_PASSWORD}' redis-cli -h '${DB_HOST}' -p '${DB_PORT}' -n '${REDIS_DB_INDEX}' PING >/dev/null
+REDISCLI_AUTH='${REDIS_PASSWORD}' redis-cli -e -h '${DB_HOST}' -p '${DB_PORT}' -n '${REDIS_DB_INDEX}' PING >/dev/null
 EOF
       [[ $? -eq 0 ]] || die "Redis k8s auth client pod failed"
     else
       require_cmd "redis-cli"
       redis_precheck
     fi
-    APP_DB_URI="redis://:${REDIS_PASSWORD}@${DB_HOST}:${DB_PORT}/${REDIS_DB_INDEX}"
+    APP_DB_URI="$(dbctl_connection_uri redis "" "$REDIS_PASSWORD" "$REDIS_DB_INDEX")"
     require_non_empty "APP_DB_URI(redis)" "${APP_DB_URI}"
     return 0
   fi
@@ -172,16 +140,16 @@ if [[ "\${redis_all_channels}" != "true" && -n "\${channel_spec}" ]]; then
     channel_args+=( "&\${pat}" )
   done
 fi
-REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' PING >/dev/null
+REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -e -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' PING >/dev/null
 if [[ "\${redis_all_channels}" == "true" ]]; then
-  REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' ACL SETUSER '${APP_DB_USER}' on '>${APP_DB_PASSWORD}' "\${key_args[@]}" resetchannels allchannels \${category} -@dangerous >/dev/null
+printf '%s' ">${APP_DB_PASSWORD}" | REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -e -x -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' ACL SETUSER '${APP_DB_USER}' reset on "\${key_args[@]}" resetchannels allchannels \${category} -@dangerous >/dev/null
 else
-  REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' ACL SETUSER '${APP_DB_USER}' on '>${APP_DB_PASSWORD}' "\${key_args[@]}" resetchannels "\${channel_args[@]}" \${category} -@dangerous >/dev/null
+printf '%s' ">${APP_DB_PASSWORD}" | REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -e -x -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' ACL SETUSER '${APP_DB_USER}' reset on "\${key_args[@]}" resetchannels "\${channel_args[@]}" \${category} -@dangerous >/dev/null
 fi
 echo '[redis-client] ACL user upserted: ${APP_DB_USER}'
 EOF
     [[ $? -eq 0 ]] || die "Redis k8s provision client pod failed"
-    APP_DB_URI="redis://${APP_DB_USER}:${APP_DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${REDIS_DB_INDEX}"
+    APP_DB_URI="$(dbctl_connection_uri redis "$APP_DB_USER" "$APP_DB_PASSWORD" "$REDIS_DB_INDEX")"
     require_non_empty "APP_DB_URI(redis)" "${APP_DB_URI}"
     return 0
   fi
@@ -191,6 +159,7 @@ EOF
 
   local auth_args
   auth_args="$(redis_admin_auth_args)"
+  export REDISCLI_AUTH="${REDIS_ADMIN_PASSWORD}"
   local -a key_args=()
   local -a channel_args=()
   local -a prefix_parts=()
@@ -225,14 +194,14 @@ EOF
   fi
   if [[ "${redis_all_channels}" == "true" ]]; then
     # shellcheck disable=SC2086
-    redis-cli -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} ACL SETUSER "${APP_DB_USER}" on ">${APP_DB_PASSWORD}" "${key_args[@]}" resetchannels allchannels ${category} -@dangerous >/dev/null
+printf '%s' ">${APP_DB_PASSWORD}" | redis-cli -e -x -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} ACL SETUSER "${APP_DB_USER}" reset on "${key_args[@]}" resetchannels allchannels ${category} -@dangerous >/dev/null
   else
     # shellcheck disable=SC2086
-    redis-cli -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} ACL SETUSER "${APP_DB_USER}" on ">${APP_DB_PASSWORD}" "${key_args[@]}" resetchannels "${channel_args[@]}" ${category} -@dangerous >/dev/null
+printf '%s' ">${APP_DB_PASSWORD}" | redis-cli -e -x -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} ACL SETUSER "${APP_DB_USER}" reset on "${key_args[@]}" resetchannels "${channel_args[@]}" ${category} -@dangerous >/dev/null
   fi
   log "[redis] ACL user upserted: ${APP_DB_USER}"
 
-  APP_DB_URI="redis://${APP_DB_USER}:${APP_DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${REDIS_DB_INDEX}"
+  APP_DB_URI="$(dbctl_connection_uri redis "$APP_DB_USER" "$APP_DB_PASSWORD" "$REDIS_DB_INDEX")"
   require_non_empty "APP_DB_URI(redis)" "${APP_DB_URI}"
 }
 
@@ -256,11 +225,11 @@ redis_deprovision() {
     local pod_name
     pod_name="$(dbctl_k8s_client_pod_name "redis-deprovision" "${SERVICE_NAME:-app}")"
     redis_run_k8s_client "${pod_name}" <<EOF
-REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' PING >/dev/null
-REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' ACL DELUSER '${APP_DB_USER}' >/dev/null || true
+REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -e -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' PING >/dev/null
+REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -e -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' ACL DELUSER '${APP_DB_USER}' >/dev/null
 if [[ '${DEPROVISION_DROP_DATABASE:-false}' == 'true' || '${DEPROVISION_DROP_DATABASE:-false}' == '1' ]]; then
   if [[ '${REDIS_ALLOW_FLUSH_DB:-false}' == 'true' || '${REDIS_ALLOW_FLUSH_DB:-false}' == '1' ]]; then
-    REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' -n '${REDIS_DB_INDEX}' FLUSHDB ASYNC >/dev/null
+    REDISCLI_AUTH='${REDIS_ADMIN_PASSWORD}' redis-cli -e -h '${DB_HOST}' -p '${DB_PORT}' --user '${REDIS_ADMIN_USER}' -n '${REDIS_DB_INDEX}' FLUSHDB ASYNC >/dev/null
   else
     echo '[redis-client][warn] DEPROVISION_DROP_DATABASE=true but REDIS_ALLOW_FLUSH_DB!=true, skip FLUSHDB for safety'
   fi
@@ -275,13 +244,14 @@ EOF
   redis_precheck
   local auth_args
   auth_args="$(redis_admin_auth_args)"
+  export REDISCLI_AUTH="${REDIS_ADMIN_PASSWORD}"
   # shellcheck disable=SC2086
-  redis-cli -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} ACL DELUSER "${APP_DB_USER}" >/dev/null || true
+  redis-cli -e -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} ACL DELUSER "${APP_DB_USER}" >/dev/null
   log "[redis] dropped ACL user if exists: ${APP_DB_USER}"
   if bool_true "${DEPROVISION_DROP_DATABASE:-false}"; then
     if bool_true "${REDIS_ALLOW_FLUSH_DB:-false}"; then
       # shellcheck disable=SC2086
-      redis-cli -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} -n "${REDIS_DB_INDEX}" FLUSHDB ASYNC >/dev/null
+      redis-cli -e -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} -n "${REDIS_DB_INDEX}" FLUSHDB ASYNC >/dev/null
       log "[redis] flushed db index: ${REDIS_DB_INDEX}"
     else
       warn "DEPROVISION_DROP_DATABASE=true but REDIS_ALLOW_FLUSH_DB!=true, skip FLUSHDB for safety"
@@ -306,15 +276,16 @@ redis_precheck() {
   require_cmd "redis-cli"
   log "Redis precheck: waiting for readiness (timeout=${timeout}s, interval=${interval}s)"
   if bool_true "${REDIS_AUTH_ONLY:-false}"; then
-    if wait_until "${timeout}" "${interval}" redis-cli -h "${DB_HOST}" -p "${DB_PORT}" -a "${REDIS_PASSWORD}" PING >/dev/null 2>&1; then
+    if REDISCLI_AUTH="${REDIS_PASSWORD}" wait_until "${timeout}" "${interval}" redis-cli -e -h "${DB_HOST}" -p "${DB_PORT}" PING >/dev/null 2>&1; then
       log "Redis precheck passed"
       return 0
     fi
   else
     local auth_args
     auth_args="$(redis_admin_auth_args)"
+  export REDISCLI_AUTH="${REDIS_ADMIN_PASSWORD}"
     # shellcheck disable=SC2086
-    if wait_until "${timeout}" "${interval}" redis-cli -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} PING >/dev/null 2>&1; then
+    if wait_until "${timeout}" "${interval}" redis-cli -e -h "${DB_HOST}" -p "${DB_PORT}" ${auth_args} PING >/dev/null 2>&1; then
       log "Redis precheck passed"
       return 0
     fi

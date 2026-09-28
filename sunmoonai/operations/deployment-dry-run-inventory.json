@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "scope": "six platform trees: all deploy-*.sh/deploy.sh; root deployment; Casdoor post-install/db-access CLI, manual Traefik NAT; native cloud/certificates and retired KIND entry; six external Harbor lifecycle/recovery/scanner/SNI entry points retain explicit --apply; ONLYOFFICE explicitly selected local resource renderer; Document Converter six selected local resource renderers and private registry export",
+  "scope": "six platform trees: all deploy-*.sh/deploy.sh; root deployment; Casdoor post-install/db-access CLI, manual Traefik NAT; native cloud/certificates and retired KIND entry; six external Harbor lifecycle/recovery/scanner/SNI entry points retain explicit --apply; ONLYOFFICE explicitly selected local resource renderer; Document Converter six selected local resource renderers and private registry export; explicit-target Elasticsearch and Object Storage access provisioners",
   "entries": [
     {
       "path": "sunmoonai/app-platform/auth-app/casdoor/deploy-casdoor/deploy-casdoor.sh",
@@ -950,6 +950,16 @@
     {
       "path": "sunmoonai/app-platform/knowledge-app/components/document-converter-backend/resources/k8s-resource/custom-values/ingress/document-converter-ingress/generate-ingress/generate-ingress.sh",
       "kind": "native-dc-renderer",
+      "profile": "named"
+    },
+    {
+      "path": "sunmoonai/data-platform/elasticsearch/provisioner/elasticsearch-provisioner.sh",
+      "kind": "early-shell",
+      "profile": "named"
+    },
+    {
+      "path": "sunmoonai/data-platform/object-storage/provisioner/object-storage-provisioner.sh",
+      "kind": "early-shell",
       "profile": "named"
     }
   ]

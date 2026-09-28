@@ -18,7 +18,7 @@ from pull_secret import SecretError, Target, dns_name  # noqa: E402
 from credentials import read_private  # noqa: E402
 
 
-def read_data():
+def read_data(allow_empty=False):
     limit = 1024 * 1024
     raw = sys.stdin.buffer.read(limit + 1)
     if not raw or len(raw) > limit or not raw.endswith(b'\0'):
@@ -29,7 +29,7 @@ def read_data():
     data = {}
     for key, value in zip(parts[::2], parts[1::2]):
         key = key.decode('ascii')
-        if not re.fullmatch(r'[a-zA-Z0-9._-]{1,253}', key) or key in data or not value:
+        if not re.fullmatch(r'[a-zA-Z0-9._-]{1,253}', key) or key in data or (not value and not allow_empty):
             raise SecretError('Secret keys are invalid, duplicated or have empty values')
         data[key] = base64.b64encode(value).decode('ascii')
     # Include base64 expansion and metadata headroom before attempting the API.
@@ -62,6 +62,7 @@ def main():
     parser.add_argument('--apply', action='store_true')
     parser.add_argument('--data-file', help='Explicit caller-owned owner-only file, at most 64 KiB')
     parser.add_argument('--data-file-key')
+    parser.add_argument('--allow-empty-values', action='store_true', help='Preserve explicit optional empty connection fields')
     args = parser.parse_args()
     dns_name(args.namespace)
     dns_name(args.name, subdomain=True)
@@ -84,7 +85,7 @@ def main():
                 raise SecretError('Secret input file is empty')
             expected = {args.data_file_key: base64.b64encode(raw).decode('ascii')}
         else:
-            expected = read_data()
+            expected = read_data(args.allow_empty_values)
     target = Target()
     target.check()
     target.command('get', 'namespace', args.namespace, '-o', 'name')

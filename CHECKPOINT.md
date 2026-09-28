@@ -1,5 +1,36 @@
 # luna 工作检查点
 
+## 最新现场：本次全量未使用构建缓存已清理完成
+
+用户针对74条/2.22GiB例外建议明确回复：迁移时缓存没用，以后重新build。这是当前有效授权：清默认builder全部未使用构建缓存，取消7天/5GiB限制；保持镜像、容器、卷/Harbor数据，非长期自动删除。
+- 首个原R1严格7天子批191条/显示5GiB实际0条删除、0B释放；Docker退出0不代表回收成功。原284旧候选全部有较新子缓存，Docker API不返回Parents，需Buildx结构化Parents。新的长期preview已做完整子依赖排除；不能重跑无效父缓存列表。74条例外未执行，已被全缓存授权替代。
+- `./sunmoon space migration-cache` 接operations/space/migration_cache.py，默认只计划；执行时精确冻结未使用ID，再Buildx reclaimable复核，--all仅缓存内部/frontend元数据。2026-09-28 20:38北京时间完成，1845候选全部删除，退出0；镜像219、容器89（含状态）、卷46前后身份完全一致。WSL文件系统实际减少192362614784B（179.15GiB），C可用反而减少2335920128B（并发使用/物理回收未独立归因），VHDX长度565997207552B不变；不能宣称C盘已释放空间。session29402已结束，不要重复执行。脱敏结果见sunmoonai/scripts/results/luna-migration-cache-reclaim.20260928.json；私有原始回执/tmp/luna-migration-cache-reclaim-20260928-v1.json及.intent.json/.prune.log待最终归档清理。API私有规模约32.3GB不能当物理上界，内容/快照延迟GC可使实际释放更多。
+- 已有root只读监控发布版本7efb5adc11176491仍运行；工作树space.py后续改的是清理候选依赖/估计/无释放结果，不影响该发布的只读采集。若再发布，应使用受管版本更新核验，不能改旧固定副本。
+- 新临时审计文件还包括 /tmp/luna-cache-dependency-snapshot-20260928-v1.json（包含Docker构建描述，私有，不公开贴）、luna-cache-buildx-parents-20260928-v1.json、luna-cache-closed-branch-proposal-20260928-v2.json、luna-reclaim-r1-partial-20260928-v1.summary.json。最终按用户要求归档脱敏结果后清本轮临时文件和Tokyo物料，不动旧保护数据。
+- 当前全部Shell/Python/JSON静态检查通过；未运行数据库授权/轮换/清库。持续原任务，缓存操作是插入工作；不能收尾宣称持久化三场景/main/迁移/空间全部完成。Harbor源新只读预检已通过，capture/正式维护还没做。
+
+
+## 连续推进新增：DB接入与空间监控；所有者授权部分缓存
+
+- DB平台实际工具保留，PG/Redis临时Pod使用随机名Secret挂载脚本、私密凭据stdin，成功UID条件清理，失败保留；Mongo私有JSON/JS文件不再URI/密码参数；k8s输出共享Opaque（dbctl显式允许原可选空字段，18业务入口默认仍拒绝空值）；external绝对owner-only目录、0600原子Shell转义输出。Casdoor setup去自动重连，两个k8s入口子失败传播。DB驱动还保留原建库/显式清库语义，拒绝不支持的Shell/SQL插值字符，Redis ACL reset收敛专用账号权限。未实际建库/轮换/删除，模板/手工组合证书工具不因本批而算全验。
+- 新operations/space/space.py +policy.json接根sunmoon；status/深度du/preview/固定候选批准apply/monitor入口存在。Harbor/GC返回明确阻塞，日志/备份只支持登记且有保留副本的重复文件，真正保留规则/日志轮转/备份轮换未启用。新删除政策仍false；不能说空间管理全完成。
+- 实际安装只读systemd timer，开机3分及每小时；固定root副本/opt/sunmoon/admin/space/7efb5adc11176491，旧b7af56a37eb87eeb保留管理升级记录。timer active/enabled，latest实际critical（C盘90.58%），不用PowerShell无窗口；过期或服务失败显示unknown，无机器外通知。新告警尚未接全部重操作门禁。
+- 现场：C空闲93525090304B（87.1GiB），数据可用39169232896B（36.5GiB），WSL VHDX565963653120B、数据VHDX93050634240B；按WSL文件分配估计增长后C剩79201542144B（73.8GiB），操作峰值另算，Windows物理分配未核。89容器/46卷。
+- 缓存只读预览第一次45秒超时，system/df改240秒后成功：284个、API大小上界17807432610B；284个全属原R1批准854集合。用户新消息“再清理部分缓存”已授权。现执行原R1脚本新增--max-gib5，先选最旧且私有/未用>7d，精确ID过滤，前后保护容器卷镜像；/tmp/luna-reclaim-r1-partial-20260928-v1.json为回执，需读完成结果，不重复运行。此条是单次例外，不启用新长期自动删除政策。
+- Harbor source_snapshot check已实际再次通过：旧7控制器Ready、PG17.6、4400备份文件摘要通过，source_modified=false。尚未capture/freeze/cutover，三场景持久化未做，main未建。
+- 待清临时本轮文件：/tmp/luna-space-status-20260928-v1.json、luna-space-cache-preview-20260928-v2.json、luna-space-cache-preview-output-20260928-v2.json、luna-reclaim-r1-partial-20260928-v1.*，先归档脱敏回执；历史本机/Tokyo总清单继续保留，不漏最终清理。只本地luna提交，不push。用户要求连续完成，缓存插入不是替代原任务。
+
+
+## 连续推进：2026-09-28 对象存储与ES授权工具
+
+用户要求一次连续做完，不再每个小单元停下等继续。基线69847862。
+- 两provisioner绑定明确目标/早期计划，validate仅本地；去旧连接库/自动重连，Secret stdin SSA。ES区分404与权限/网络失败、明确用户名、缺Secret但远端账号存在时拒绝隐式换密；curl私有配置/有界重试/端口转发。S3用户列表必须成功，拒绝隐式覆盖已有账号，密码stdin给mc；root alias参数仍在管理Job内，不宣称完全无参数凭据。
+- 失败保留私有恢复目录/Job及临时Secret，成功才清自己的临时资源；Job300秒上限且不TTL删除失败证据。S3 status创建管理Job，teardown部分失败需明确续办。
+- 对象存储root config.env保护Shell展开、拒绝单引号及CR/LF；Helm等待及失败传播，单独核ObjectStore池STS所有权/副本/Pod Ready。原版本和配置值未变。
+- inventory192项/165平台deploy，early-shell148。Shell语法/ShellCheck error与Python AST已查；未实际授权/部署测试。下一步继续剩余人工工具/运行态准入，完成后接持久化与space，最终清理。
+- 本轮只读现场：数据盘实际rw（sandbox的ro只是隔离视图）；C约88GiB可用、数据盘约37GiB、WSL用约504GiB。旧kind和136六节点运行，main未建；外置Harbor候选与正式过渡SNI停止。容量需精确VHDX预算复核后再重操作。
+
+
 ## 最新续接：2026-09-28 Redis 聚合对齐、旧 TLS 退役与对象存储 Secret
 
 基线 `2c43c3b0`，工作树开工干净。继续原全组件整改；没有恢复运行态迁移或做空间清理。

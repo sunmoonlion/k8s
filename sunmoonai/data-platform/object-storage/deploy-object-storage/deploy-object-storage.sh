@@ -56,6 +56,23 @@ OPERATOR_CHART_DIR="$PROJECT_ROOT/resources/aistor-operator"
 OBJECT_STORE_CHART_DIR="$PROJECT_ROOT/resources/aistor-objectstore"
 CUSTOM_VALUES_DIR="$PROJECT_ROOT/resources/custom-values"
 
+object_storage_kube() (
+    sunmoon_deploy_target_check "$OBJECT_STORAGE_K8S_ROOT" || return 1
+    local limit=25s request=10s
+    case "${1:-}" in
+        wait|rollout) limit=350s; request=330s ;;
+        port-forward) exec "$SUNMOON_KUBECTL" --kubeconfig "$KUBECONFIG" --request-timeout=0 "$@" ;;
+    esac
+    exec timeout "$limit" "$SUNMOON_KUBECTL" --kubeconfig "$KUBECONFIG" --request-timeout="$request" "$@"
+)
+
+object_storage_helm() {
+    sunmoon_deploy_target_check "$OBJECT_STORAGE_K8S_ROOT" || return 1
+    timeout 360s helm --kubeconfig "$KUBECONFIG" "$@" 2>/dev/null || {
+        log_error 'Helm operation failed; private diagnostics suppressed'; return 1;
+    }
+}
+
 ensure_helm_version() {
     command -v helm >/dev/null 2>&1 || {
         log_error "未找到 helm 命令"
@@ -76,7 +93,7 @@ ensure_cluster_connection() {
 
 ensure_namespace() {
     local namespace="$1"
-    kubectl get namespace "$namespace" >/dev/null 2>&1 || {
+    object_storage_kube get namespace "$namespace" >/dev/null 2>&1 || {
         log_error "命名空间不存在: $namespace"
         return 1
     }
@@ -105,8 +122,16 @@ ensure_root_secret() {
         log_error 'Object storage root credentials must be explicitly configured'; return 1;
     }
     local config_env
-    config_env="export MINIO_ROOT_USER=${OBJECT_STORAGE_ROOT_USER}
-export MINIO_ROOT_PASSWORD=${OBJECT_STORAGE_ROOT_PASSWORD}"
+    # config.env is also sourced by the administrative /bin/sh Job. Preserve
+    # values literally; reject characters that cannot use this single-quote form.
+    local value
+    for value in "$OBJECT_STORAGE_ROOT_USER" "$OBJECT_STORAGE_ROOT_PASSWORD"; do
+        [[ "$value" != *"'"* && "$value" != *$'\n'* && "$value" != *$'\r'* ]] || {
+            log_error 'Root credential contains an unsupported config.env character'; return 1;
+        }
+    done
+    config_env="export MINIO_ROOT_USER='${OBJECT_STORAGE_ROOT_USER}'
+export MINIO_ROOT_PASSWORD='${OBJECT_STORAGE_ROOT_PASSWORD}'"
 
     sunmoon_deploy_target_check "$OBJECT_STORAGE_K8S_ROOT" || return 1
     builtin printf '%s\0' config.env "$config_env" | \
@@ -150,16 +175,16 @@ deploy_operator() {
         --set "namespaceOverride=$namespace"
     )
     [[ "$dry_run" == "true" ]] && args+=(--dry-run)
-    helm "${args[@]}"
+    object_storage_helm "${args[@]}" --wait --timeout 300s >/dev/null
 }
 
 wait_for_operator() {
     local namespace="$1"
-    kubectl wait --for=condition=Established \
+    object_storage_kube wait --for=condition=Established \
         crd/objectstores.aistor.min.io --timeout=180s || return 1
-    kubectl rollout status deployment/object-store-operator \
+    object_storage_kube rollout status deployment/object-store-operator \
         -n "$namespace" --timeout=300s || return 1
-    kubectl rollout status deployment/object-store-webhook \
+    object_storage_kube rollout status deployment/object-store-webhook \
         -n "$namespace" --timeout=300s
 }
 
@@ -209,7 +234,7 @@ deploy_object_store() {
         args+=(--set-string "objectStore.pools[0].nodeSelector.kubernetes\.io/hostname=$storage_node")
     fi
     [[ "$dry_run" == "true" ]] && args+=(--dry-run)
-    helm "${args[@]}"
+    object_storage_helm "${args[@]}" --wait --timeout 300s >/dev/null
 }
 
 show_status() {
@@ -218,12 +243,17 @@ show_status() {
     local cluster_lower
     cluster_lower="$(echo "${CLUSTER:-}" | tr '[:upper:]' '[:lower:]')"
 
-    helm status "$(operator_release)" -n "$namespace" || true
-    helm status "$(object_store_release "$project_id")" -n "$namespace" || true
-    kubectl get objectstore,pods,svc,pvc -n "$namespace" \
-        -l 'app in (minio)' -o wide || true
-    if [[ "$cluster_lower" == "kind" ]]; then
-        kubectl get pv "${OBJECT_STORAGE_KIND_PV_NAME:-object-storage-sunmoonai-dev-pv}" || true
+    local release
+    for release in "$(operator_release)" "$(object_store_release "$project_id")"; do
+        object_storage_helm status "$release" -n "$namespace" -o json | python3 -B -c '
+import json,sys
+x=json.load(sys.stdin); print(json.dumps({k:x.get(k) for k in ("name","namespace","version")} | {"status":x.get("info",{}).get("status")}))
+' || return 1
+    done
+    object_storage_kube get objectstore,pods,svc,pvc -n "$namespace" \
+        -l 'app in (minio)' -o wide || return 1
+    if [[ "$cluster_lower" == kind ]]; then
+        object_storage_kube get pv "${OBJECT_STORAGE_KIND_PV_NAME:-object-storage-sunmoonai-dev-pv}" || return 1
     fi
 }
 
@@ -235,14 +265,14 @@ open_console() {
     local service_port="${OBJECT_STORAGE_CONSOLE_SERVICE_PORT:-9090}"
 
     ensure_cluster_connection
-    if ! kubectl get service "$service_name" -n "$namespace" >/dev/null 2>&1; then
+    if ! object_storage_kube get service "$service_name" -n "$namespace" >/dev/null 2>&1; then
         log_error "Console Service 不存在: $namespace/$service_name"
         return 1
     fi
 
     log_info "AIStor Console: http://${address}:${local_port}"
     log_info "仅在当前终端运行期间开放，按 Ctrl+C 关闭"
-    kubectl port-forward \
+    object_storage_kube port-forward \
         --namespace "$namespace" \
         --address "$address" \
         "service/$service_name" \
@@ -273,6 +303,8 @@ deploy_all() {
     deploy_object_store "$project_id" "$namespace" "$environment" "$dry_run" || return 1
 
     if [[ "$dry_run" != "true" ]]; then
+        python3 -B "$OBJECT_STORAGE_SCRIPT_DIR/wait_ready.py" --namespace "$namespace" \
+            --name "${OBJECT_STORAGE_NAME:-platform-object-storage}" --timeout 300 || return 1
         show_status "$project_id" "$namespace"
     fi
 }
@@ -281,9 +313,9 @@ uninstall_all() {
     local project_id="$1"
     local namespace="$2"
 
-    ensure_cluster_connection
-    helm uninstall "$(object_store_release "$project_id")" -n "$namespace" || true
-    helm uninstall "$(operator_release)" -n "$namespace" || true
+    ensure_cluster_connection || return 1
+    object_storage_helm uninstall "$(object_store_release "$project_id")" -n "$namespace" --ignore-not-found --wait --timeout 300s >/dev/null || return 1
+    object_storage_helm uninstall "$(operator_release)" -n "$namespace" --ignore-not-found --wait --timeout 300s >/dev/null || return 1
     log_warn "已保留 PV、PVC、License Secret 和根凭据 Secret"
 }
 
@@ -308,7 +340,7 @@ main() {
             ;;
         logs)
             ensure_cluster_connection
-            kubectl logs -n "$namespace" deployment/object-store-operator --tail=200
+            object_storage_kube logs -n "$namespace" deployment/object-store-operator --tail=200
             ;;
         console)
             open_console "$namespace"
