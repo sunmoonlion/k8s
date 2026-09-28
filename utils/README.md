@@ -13,7 +13,7 @@
 | `unified_kind_static_storage` / `unified_kind_static_node`（共享模板函数） | 组件调用正式 KIND 的同一静态卷适配器，显式传递 namespace/dry_run；实际写入要求固定部署目标，节点配置见 formal/static-storage.json |
 | `deploy-plan.sh` | 统一的入口请求校验；所有活动平台 Shell 部署入口（含 Secret/Ingress/中间件）在配置与连接之前接入，见[逐入口覆盖清单](../sunmoonai/operations/deployment-dry-run.md)。43 个只写 Secret 入口还统一可选 deploy 前缀并拒绝 status/uninstall 等不支持的动作。仅保护列出的 CLI 边界，不拦截任意 source 后直接调用的函数 |
 | `k8s-admin.conf`、`kubeconfig-path-for-cluster.sh` / `kubeconfig_path.py`、`deploy-target.sh`、`deploy-runtime-helpers.sh`、`prepend-dev-cli-path.sh` | 连接配置、按数据解析路径和固定部署目标。总控及共享子脚本复核路径/内容摘要/UID，显式部署不读旧连接缓存或自动重连 |
-| `secret-management/` | 参数化 Secret 数据准备/YAML 生成、基于已有 CA 签发叶证书，供组件调用 |
+| `secret-management/` | 16 个业务 Secret 的固定目标/内存提交与回读，见[操作说明](../sunmoonai/operations/business-secrets.md)；另保留人工 Secret 数据准备/YAML 生成、基于已有 CA 签发叶证书 |
 | `unified-cert-secret-management/` | 按服务端/客户端组合分发证书，包含动态加载的 Traefik 插件；与上一目录接口不同，不能按同名函数直接合并 |
 | `components-images/` | 通过组件名动态读取的 19 份镜像清单；文件名没有固定调用也不能删除。与最终部署摘要锁的对齐仍待迁移完成 |
 | `db-provisioner/` | k8s 平台组件的建库/授权公共实现；Casdoor 仍使用它。模板仓和实例仓使用各自 backend 自带版本，不指向这里 |

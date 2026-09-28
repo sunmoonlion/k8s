@@ -1,5 +1,17 @@
 # luna 工作检查点
 
+## 最新续接：2026-09-28 业务 Opaque Secret 统一提交
+
+基线 `5f36729c`，原全部组件整改继续；没有转去做空间管理或恢复运行态迁移。
+
+- 16 个业务 Secret（PostgreSQL 3/MongoDB 2/Redis 3/ES/Kibana/Logstash/Neo4j/RabbitMQ/Flower/Mongo Express/pgAdmin）变为薄配置入口，共用 utils/secret-management/lib/opaque-deploy.sh 与 opaque_secret.py；保留 deploy-project 早期计划边界、位置参数、相邻 .conf、原键名和值。配置前明确集群，禁止配置换目标，应用集群映射；namespace 明确参数优先，其次配置，不再静默忽略 SECRET_NAMESPACE。
+- 删除重复 mktemp/明文文件/工作树 Secret YAML生成、自动重连、密码片段输出和吞错重启。Shell builtin printf NUL管道传内存值；复用 Target 固定工具/kubeconfig/UID，stdin SSA manager sunmoon-business-secret、不force，类型/namespace校验、写后回读提交键，原始API错误抑制。没有API或实际密码读取/轮换。
+- 重启仍按原支持范围/配置；RabbitMQ保留既有内容变化且非首次才重启。准备阶段确实不存在的 Deployment/StatefulSet明确跳过，权限/网络/重启失败传播；不等待rollout。后步失败非事务，RabbitMQ重试可能需人工补重启，文档已说明。
+- pgAdmin/Flower缺密码不再自动随机；Mongo Express取消MongoDB口令冒用与每次重新随机Cookie/Session，要求明确五个值。原.conf不含site_cookie_secret/site_session_secret，实际部署前须安全准备；此轮未替所有者生成/复制现场凭据。其他旧可选字段仍按非空提交，MongoDB llmops原链无DB_PASSWORD未擅自加，需按消费者验收。业务凭据并未全面移到私有文件，不能作此声明。
+- 文档 operations/business-secrets.md列16路径规律、字段与重启/失败/待验收；配置索引、utils README接入。17Shell bash-n/ShellCheck error、1Python AST、193清单路径与16profile/根路径、文档链接、git diff --check通过；没有行为测试/生成/API/部署/清理，.conf实际值未改。
+- 下一步继续剩余TLS、对象存储/provisioner、主部署内嵌Secret/保留工具等调用链；不能说全组件已修复。原任务结束后继续持久化三场景实际验收与space实现/删除策略批准，然后清本地和东京refactor临时物料。space入口/新监控尚未实现；inbox旧kind/main未创建/运行迁移暂停；旧节点卷Harbor备份保护。只本地luna提交不push。
+
+
 ## 最新续接：2026-09-28 问数 Demo 退出旧构建/KIND 导入链
 
 基线 `18141c10`；继续原全部组件任务。此前本轮已提交DC剩余链、RAGFlow/Messaging，未插队启动空间治理。
