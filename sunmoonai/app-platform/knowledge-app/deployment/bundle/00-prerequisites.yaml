@@ -70,7 +70,7 @@ data:
   ENV: production
   LOG_LEVEL: INFO
   SERVICE_NAME: knowledge-backend
-  DEPLOYMENT_ID: know-mcp-0925-r2
+  DEPLOYMENT_ID: know-0926-metric
   APP_SLUG: knowledge
   REDIS_HOST: redis-sunmoonai-master.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -142,7 +142,7 @@ data:
   AUTH_APP: knowledge
   APP_ORIGIN: https://knowledge-admin.sunmoonai.com:30443
   BACKEND_INTERNAL_URL: http://knowledge-backend:8000
-  DEPLOYMENT_ID: know-mcp-0925-r2-admin
+  DEPLOYMENT_ID: know-0926-metric-admin
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -157,7 +157,7 @@ data:
   AUTH_APP: knowledge
   APP_ORIGIN: https://knowledge.sunmoonai.com:30443
   BACKEND_INTERNAL_URL: http://knowledge-backend:8000
-  DEPLOYMENT_ID: know-mcp-0925-r2-web
+  DEPLOYMENT_ID: know-0926-metric-web
   REFERENCE_UI_ENABLED: 'false'
 ---
 apiVersion: v1

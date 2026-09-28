@@ -6,7 +6,10 @@
 #       KNOWLEDGE_MCP_URL + KNOWLEDGE_MCP_TOKEN（知识服务 MCP，0006）。
 set -euo pipefail
 : "${RELAY_URL:?}" "${RELAY_USER:?}" "${RELAY_TOKEN:?}" "${APP_SERVER_TOKEN_FILE:?}"
-CODEX_HOME="${CODEX_HOME:-/data/codex}"; mkdir -p "$CODEX_HOME"; chmod 700 "$CODEX_HOME"
+CODEX_HOME="${CODEX_HOME:-/data/codex}"; mkdir -p "$CODEX_HOME"
+# 老 PVC 里可能留着 containerd 当年为匿名卷建的 root 属主空目录（见 Dockerfile 注释）：不可写就明说退出，别静默写到别处
+[ -w "$CODEX_HOME" ] || { echo "[entrypoint] $CODEX_HOME is not writable by $(id -u) (owner $(stat -c %u "$CODEX_HOME")): fix the PVC subdir ownership"; exit 4; }
+chmod 700 "$CODEX_HOME" 2>/dev/null || true
 ENVIRONMENT_ID="${ENVIRONMENT_ID:-user-pc}"
 
 if [ ! -f "$CODEX_HOME/config.toml" ] || [ "${REWRITE_CONFIG:-1}" = 1 ]; then

@@ -21,6 +21,7 @@ COPY --chown=codex:codex image/entrypoint.sh /opt/sandbox/entrypoint.sh
 RUN chmod +x /opt/sandbox/entrypoint.sh
 USER codex
 WORKDIR /data
-VOLUME ["/data/codex"]
+# 不要在这里声明 VOLUME ["/data/codex"]：containerd 会按它挂一个随容器生灭的匿名卷，盖住 PVC 里的同名子目录，
+# 线程 rollout 全写在匿名卷里，回收再拉起就没了（KIND 2026-09-26 第 15、16 轮查明）。持久化由 Pod 规格挂 PVC 到 /data 保证。
 EXPOSE 47800
 ENTRYPOINT ["/sbin/tini", "--", "/opt/sandbox/entrypoint.sh"]

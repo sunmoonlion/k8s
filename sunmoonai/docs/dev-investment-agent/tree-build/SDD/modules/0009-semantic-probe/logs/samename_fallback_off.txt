@@ -1,0 +1,9 @@
+fallback = False
+默认 | 全名查未暴露字段     | 放行 字段数=1 含cogs=False {'v': Decimal('5212845067')}
+默认 | 全名查已暴露字段     | 放行 字段数=1 含cogs=False {'v': Decimal('6979000000')}
+默认 | 全名 SELECT *  | 放行 字段数=20 含cogs=True {'order_id': 'order-00000001', 'order_date': datetime.date(2024, 1, 1)
+默认 | 改写结果 | WITH order_performance AS (SELECT "wren_src_order_performance".net_revenue_cents AS net_revenue_cents FROM (SELECT order_performance.net_revenue_cents FROM (SELECT __source.net
+严格 | 全名查未暴露字段     | 放行 字段数=1 含cogs=False {'v': Decimal('5212845067')}
+严格 | 全名查已暴露字段     | 放行 字段数=1 含cogs=False {'v': Decimal('6979000000')}
+严格 | 全名 SELECT *  | 放行 字段数=20 含cogs=True {'order_id': 'order-00000001', 'order_date': datetime.date(2024, 1, 1)
+严格 | 改写结果 | WITH order_performance AS (SELECT "wren_src_order_performance".net_revenue_cents AS net_revenue_cents FROM (SELECT order_performance.net_revenue_cents FROM (SELECT __source.net

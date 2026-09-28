@@ -58,7 +58,7 @@ spec:
           image: harbor.sunmoonai.com:30443/app-images/sandbox-provisioner@sha256:9df0db43168977ac389f311c30e20cb43c3790059efa537d3b64da06b51677ec
           env:
             - { name: SANDBOX_NAMESPACE, value: "sandbox-pool" }
-            - { name: SANDBOX_IMAGE, value: "harbor.sunmoonai.com:30443/app-images/sandbox@sha256:ba14b8d3f69e4359a4b13dc78c1078b2ef2ec1498e54eeda8dd62e100c219a2f" }
+            - { name: SANDBOX_IMAGE, value: "harbor.sunmoonai.com:30443/app-images/sandbox@sha256:dbafbcd4eba426fe2a8aa89545214a90b80ae38d508bf1bcee55dda7d41502af" }
             - { name: RELAY_URL, value: "ws://relay.edge.svc.cluster.local:47100" }
             - { name: KNOWLEDGE_MCP_URL, value: "http://knowledge-backend.app-platform-dev.svc.cluster.local:8000/api/mcp/knowledge" }
             - name: PROVISIONER_TOKEN
