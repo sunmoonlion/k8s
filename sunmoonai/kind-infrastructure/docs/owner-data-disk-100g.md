@@ -99,7 +99,7 @@ if ($LASTEXITCODE -ne 0) { throw '服务挂载检查失败，禁止启动 Harbor
 
 复用方法：管理员按脚本中固定路径发布 runner 和 launcher（已存在时仅比对摘要，拒绝覆盖），设置上述 ACL，再调用当前注册器 `-RunnerSha256 <已核对的runner摘要> -LauncherSha256 <已核对的launcher摘要> -Apply`。注册器保存回执并等首次运行结果。**本机已经完成修复，不重跑注册。** 唯一状态文件 `C:\wsl-disks\sunmoon-data-automation-status.json`；查看计划任务 `LastTaskResult` 并核状态为 `already-mounted`/`mounted-and-checked`，不能把 maintenance/Ubuntu-stopped 的跳过结果当挂载成功。
 
-登录后单独重启 WSL 不会再次触发登录任务；如果登录时 Ubuntu 未运行，任务也会跳过。统一 Harbor/KIND 启动入口需接按需附盘和严格挂载检查，此接线尚未完成；不能因此取消现有启动门禁，也不恢复分钟轮询。取消轮询与无窗口执行的实际结果见 [存储索引](../mount/README.md#自动挂载的实际规则)。
+登录后单独重启 WSL 不会再次触发登录任务；如果登录时 Ubuntu 未运行，任务也会跳过。统一 Harbor/KIND CLI 启动入口已接按需附盘和严格挂载检查，完整重启/缺盘恢复分支仍待实测；不能因此取消现有启动门禁，也不恢复分钟轮询。取消轮询与无窗口执行的实际结果见 [存储索引](../mount/README.md#自动挂载的实际规则)。
 
 完整关机/WSL 重启与 Harbor/正式 KIND 自动启动仍待后续验收。新服务继续经过严格挂载检查；任务成功不等于服务已启动。执行压缩之前必须使用索引中的维护标记、Disable 任务并等待已运行实例结束，再关闭 WSL。
 

@@ -147,8 +147,8 @@ step12_ca_generation(){
 }
 
 step00_reset(){
-    load_config || return 1
-    execute_step "step00_reset.sh" "重置集群（清理所有组件）"
+    log_error "历史 reset 已归档 legacy/cloud；本入口不重置或清理受保护资源"
+    return 1
 }
 
 step01_os_baseline(){
@@ -321,7 +321,7 @@ show_step_status(){
     
     local steps=(
         "step12_ca_generation.sh:校验并安装已签发入口证书"
-        "step00_reset.sh:重置集群"
+        "step00_reset.sh:历史 reset 已停用（legacy/cloud）"
         "step01_os_baseline.sh:操作系统基线"
         "step02_runtime.sh:容器运行时"
         "step03_k8s_binaries.sh:K8s二进制文件"

@@ -127,6 +127,11 @@ def main():
                           'delete':False,'autostart_installed':False})); return
     if os.geteuid()!=0:
         raise ValueError('Root required for node lifecycle')
+    if args.action=='start':
+        import subprocess
+        import sys
+        subprocess.run([sys.executable,'-B',str(Path(__file__).resolve().parents[1]/
+                        'mount/ensure_storage.py'),'--apply'],check=True)
     # The creation lock must already exist; lifecycle never creates paths on an
     # unmounted filesystem. Stop remains available even if capacity is low.
     descriptor=os.open('/data/kind-clusters/.formal-create.lock',os.O_RDWR|os.O_NOFOLLOW)

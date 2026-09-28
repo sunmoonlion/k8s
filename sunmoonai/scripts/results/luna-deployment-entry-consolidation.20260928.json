@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "baseline": "28683fe20ab9c82479c2954a9338064434a72cef",
+  "date": "2026-09-28",
+  "archive_manifest": "legacy/manifest.json",
+  "archive_groups": 22,
+  "unchanged_chart_resource_files": 389,
+  "all_original_content_hashes_verified": true,
+  "python_ast_files": [
+    "sunmoonai/kind-infrastructure/mount/ensure_storage.py",
+    "sunmoonai/kind-infrastructure/formal/lifecycle.py",
+    "sunmoonai/registry-platform/host_runtime.py",
+    "sunmoonai/operations/cli.py",
+    "sunmoonai/cicd-platform/materials/harbor_prepare.py"
+  ],
+  "powershell_request_parser_passed": true,
+  "new_task_or_polling_installed": false,
+  "on_demand_request_executed": false,
+  "service_start_executed": false,
+  "full_wsl_restart_verified": false,
+  "cloud_real_host_validated": false,
+  "default_plans_checked": [
+    "storage ensure",
+    "kind lifecycle start",
+    "platform plan --cluster KIND",
+    "cloud plan --cluster C1"
+  ],
+  "shellcheck": {
+    "version": "0.9.0-1",
+    "package_sha256": "eadf78f4dfcb1a271f47a9be5e38d124dffe9d4fea74956fab34e8c3e322a854",
+    "source": "Ubuntu archive through approved Tokyo host after local proxy failures",
+    "error_level_findings": 0,
+    "project_controller_preexisting_warnings": [
+      2034,
+      1090,
+      2207,
+      2207
+    ],
+    "new_warning_findings": 0
+  },
+  "protected_runtime_resources_moved_or_deleted": false,
+  "cleanup_executed": false,
+  "shared_platform_consumer_migration_complete": false,
+  "platform_shared_dispatch_implemented": true,
+  "platform_live_deploy_executed": false,
+  "whitespace_check": {
+    "active_files_passed": true,
+    "copy_aware_all_files_passed": true,
+    "command": "git diff --check -C --find-copies-harder <baseline> <commit>",
+    "note": "Default staged diff treats retained-script archives as additions and reports inherited whitespace. Original archived bytes intentionally preserved and separately hash-verified."
+  }
+}

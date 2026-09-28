@@ -136,7 +136,7 @@ resolve_remote_cluster_kubeconfig_path() {
     kubeconfig_path_from_admin_conf "${PROJECT_ROOT}/../utils/k8s-admin.conf" "$cu"
 }
 
-# 等待命名空间内 Pod 就绪（Running/Completed），超时后不失败
+# 等待非空 Pod 集合 Ready/Succeeded；查询失败、空集合或超时不报成功
 # 用法: wait_for_namespace_pods_ready <namespace> [timeout_sec]
 # 仅在 WAIT_READY=true 时由部署流程调用
 wait_for_namespace_pods_ready() {
@@ -146,22 +146,28 @@ wait_for_namespace_pods_ready() {
     local waited=0
 
     if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
-        log_warn "⚠️  命名空间 $namespace 不存在，跳过等待"
-        return 0
+        log_error "命名空间 $namespace 不存在或查询失败"
+        return 1
     fi
     while [[ $waited -lt $timeout_sec ]]; do
-        local not_ready
-        not_ready=$(kubectl get pods -n "$namespace" --no-headers 2>/dev/null | grep -vE "Running|Completed|Succeeded" | grep -c . || true)
-        if [[ "${not_ready:-0}" -eq 0 ]]; then
+        if (set -o pipefail; kubectl get pods -n "$namespace" --request-timeout=10s -o json | python3 -c '
+import json, sys
+pods = json.load(sys.stdin)["items"]
+def ready(p):
+    s = p.get("status", {})
+    return not p.get("metadata", {}).get("deletionTimestamp") and (s.get("phase") == "Succeeded" or
+        (s.get("phase") == "Running" and any(c.get("type") == "Ready" and c.get("status") == "True" for c in s.get("conditions", []))))
+sys.exit(0 if pods and all(ready(p) for p in pods) else 1)
+'); then
             log_success "✅ $namespace 内 Pod 已就绪 (${waited}s)"
             return 0
         fi
-        log_info "⏳ 等待 $namespace 的 Pod 就绪... (${waited}s/${timeout_sec}s, 非 Running/Completed: ${not_ready:-0})"
+        log_info "⏳ 等待 $namespace 的 Pod Ready... (${waited}s/${timeout_sec}s)"
         sleep "$interval"
         waited=$((waited + interval))
     done
-    log_warn "⚠️  等待 $namespace 就绪超时 (${timeout_sec}s)，继续执行"
-    return 0
+    log_error "等待 $namespace 就绪超时 (${timeout_sec}s)，停止部署"
+    return 1
 }
 
 # 部署平台组件（按优先级）
@@ -186,7 +192,8 @@ deploy_platform_components_by_priority() {
         # 远程集群：总控进程里的 kubectl（如 WAIT_READY）需指向 C1/C2 的 admin.conf，避免继承 shell 中误留的 Kind KUBECONFIG
         local remote_kc
         if ! remote_kc=$(resolve_remote_cluster_kubeconfig_path); then
-            log_warn "无法从 k8s-admin.conf 解析 CLUSTER=$cluster_upper 的 kubeconfig 路径，总控进程将继续使用当前 KUBECONFIG=${KUBECONFIG:-<unset>}（可能串集群）"
+            log_error "无法解析目标集群 kubeconfig；停止"
+            return 1
         elif [[ -n "$remote_kc" && -f "$remote_kc" ]]; then
             unset KUBECONFIG
             export KUBECONFIG="$remote_kc"
@@ -265,62 +272,8 @@ deploy_platform_components_by_priority() {
         
         case "$component" in
             "infrastructure")
-                # 基础设施第一阶段：根据 CLUSTER 分流到 Kind 或远程集群
-                local cluster_selected="${CLUSTER:-}"
-                local cluster_upper
-                cluster_upper=$(echo "${cluster_selected:-}" | tr '[:lower:]' '[:upper:]')
-
-                if [[ "$cluster_upper" == "KIND" ]]; then
-                    local kind_script="$PROJECT_ROOT/kind-infrastructure/deploy-kind/deploy-kind.sh"
-                    if [[ -f "$kind_script" ]]; then
-                        log_info "使用 Kind 基础设施一键脚本: $kind_script"
-                        if "$kind_script"; then
-                            log_success "✅ KIND 基础设施部署完成"
-                            # 在总控进程中导出 KUBECONFIG，否则后续 messaging/data/ops 等子脚本不会继承 deploy-kind 子进程的 export，导致 kubectl 指向错误集群、Secret 等未创建而不稳定
-                            local kind_kubeconfig
-                            kind_kubeconfig=$(resolve_kind_kubeconfig)
-                            if [[ -f "$kind_kubeconfig" ]]; then
-                                export KUBECONFIG="$kind_kubeconfig"
-                                log_info "已设置 KUBECONFIG=$KUBECONFIG，后续平台部署将使用该 Kind 集群"
-                            else
-                                log_warn "未找到 Kind kubeconfig ($kind_kubeconfig)，请确保已 export KUBECONFIG 或后续部署可能失败"
-                            fi
-                        else
-                            log_error "❌ KIND 基础设施部署失败"
-                            return 1
-                        fi
-                    else
-                        log_error "❌ KIND 基础设施脚本不存在: $kind_script"
-                        return 1
-                    fi
-                else
-                    if [[ -d "$PROJECT_ROOT/infrastructure/deploy-infrastructure-all" ]]; then
-                        local script_path="$PROJECT_ROOT/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh"
-                        if [[ -f "$script_path" ]]; then
-                            log_info "使用远程基础设施脚本: $script_path"
-                            if call_subscript "$script_path" deploy "$project_id" "$environment" "$dry_run"; then
-                                log_success "✅ 远程基础设施部署完成"
-                                local remote_kc
-                                if ! remote_kc=$(resolve_remote_cluster_kubeconfig_path); then
-                                    log_warn "无法从 k8s-admin.conf 解析 CLUSTER=${cluster_upper} 的 kubeconfig 路径，基础设施后同步跳过（当前 KUBECONFIG=${KUBECONFIG:-<unset>}）"
-                                elif [[ -n "$remote_kc" && -f "$remote_kc" ]]; then
-                                    unset KUBECONFIG
-                                    export KUBECONFIG="$remote_kc"
-                                    log_info "总控进程已同步 KUBECONFIG=$KUBECONFIG（后续平台与 kubectl 一致性）"
-                                fi
-                            else
-                                log_error "❌ 远程基础设施部署失败"
-                                return 1
-                            fi
-                        else
-                            log_error "❌ 基础设施部署脚本不存在: $script_path"
-                            return 1
-                        fi
-                    else
-                        log_error "❌ 基础设施目录不存在: $PROJECT_ROOT/infrastructure/deploy-infrastructure-all"
-                        return 1
-                    fi
-                fi
+                log_error "建群已从平台部署拆开；先按根 README 的 KIND/kubeadm 入口准备集群。"
+                return 1
                 ;;
             "ingress-platform")
                 if [[ -d "$PROJECT_ROOT/ingress-platform/deploy-ingress-platform-all" ]]; then
@@ -329,7 +282,7 @@ deploy_platform_components_by_priority() {
                         if call_subscript "$script_path" deploy "$project_id" "ingress-platform-dev" "$environment" "$dry_run"; then
                             log_success "✅ $component 部署成功"
                             if [[ "${WAIT_READY:-false}" == "true" ]]; then
-                                wait_for_namespace_pods_ready "ingress-platform-dev"
+                                wait_for_namespace_pods_ready "ingress-platform-dev" || return 1
                             fi
                         else
                             log_error "❌ $component 部署失败"
@@ -351,7 +304,7 @@ deploy_platform_components_by_priority() {
                         if call_subscript "$script_path" deploy "$project_id" "cicd-platform-dev" "$environment" "$dry_run"; then
                             log_success "✅ $component 部署成功"
                             if [[ "${WAIT_READY:-false}" == "true" ]]; then
-                                wait_for_namespace_pods_ready "cicd-platform-dev"
+                                wait_for_namespace_pods_ready "cicd-platform-dev" || return 1
                             fi
                         else
                             log_error "❌ $component 部署失败"
@@ -373,7 +326,7 @@ deploy_platform_components_by_priority() {
                         if call_subscript "$script_path" deploy "$project_id" "data-platform-dev" "$environment" "$dry_run"; then
                             log_success "✅ $component 部署成功"
                             if [[ "${WAIT_READY:-false}" == "true" ]]; then
-                                wait_for_namespace_pods_ready "data-platform-dev"
+                                wait_for_namespace_pods_ready "data-platform-dev" || return 1
                             fi
                         else
                             log_error "❌ $component 部署失败"
@@ -395,7 +348,7 @@ deploy_platform_components_by_priority() {
                         if call_subscript "$script_path" deploy "$project_id" "${APP_PLATFORM_NAMESPACE:-app-platform-dev}" "${APP_PLATFORM_ENVIRONMENT:-$environment}" "$dry_run"; then
                             log_success "✅ $component 部署成功"
                             if [[ "${WAIT_READY:-false}" == "true" ]]; then
-                                wait_for_namespace_pods_ready "${APP_PLATFORM_NAMESPACE:-app-platform-dev}"
+                                wait_for_namespace_pods_ready "${APP_PLATFORM_NAMESPACE:-app-platform-dev}" || return 1
                             fi
                         else
                             log_error "❌ $component 部署失败"
@@ -417,7 +370,7 @@ deploy_platform_components_by_priority() {
                         if call_subscript "$script_path" deploy "$project_id" "messaging-platform-dev" "$environment" "$dry_run"; then
                             log_success "✅ $component 部署成功"
                             if [[ "${WAIT_READY:-false}" == "true" ]]; then
-                                wait_for_namespace_pods_ready "messaging-platform-dev"
+                                wait_for_namespace_pods_ready "messaging-platform-dev" || return 1
                             fi
                         else
                             log_error "❌ $component 部署失败"
@@ -439,7 +392,7 @@ deploy_platform_components_by_priority() {
                         if call_subscript "$script_path" deploy "$project_id" "ops-platform-dev" "$environment" "$dry_run"; then
                             log_success "✅ $component 部署成功"
                             if [[ "${WAIT_READY:-false}" == "true" ]]; then
-                                wait_for_namespace_pods_ready "ops-platform-dev"
+                                wait_for_namespace_pods_ready "ops-platform-dev" || return 1
                             fi
                         else
                             log_error "❌ $component 部署失败"
@@ -830,6 +783,45 @@ deploy_sunmoonai() {
     local environment="$3"
     local dry_run="$4"
     
+    if [[ "${infrastructure_enabled:-false}" != "false" ]]; then
+        log_error "infrastructure_enabled 必须为 false；平台部署不会创建或重置集群。"
+        return 1
+    fi
+
+    [[ "$dry_run" == true || "$dry_run" == false ]] || { log_error "dry_run 必须为 true/false"; return 1; }
+    if [[ "$dry_run" == true ]]; then
+        log_info "平台计划：cluster=${CLUSTER:-<未指定>}；不建群、不连接集群、不生成 Secret、不执行子脚本"
+        local component flag priority
+        for component in ingress_platform cicd_platform data_platform messaging_platform app_platform ops_platform; do
+            flag="${component}_enabled"; priority="${component}_priority"
+            [[ "${!flag:-false}" != true ]] || log_info "$component priority=${!priority:-<默认>}"
+        done
+        return 0
+    fi
+    # An explicit identity is required before generating files or calling children.
+    if [[ "${SUNMOON_KUBECTL:-}" != /* || ! -x "${SUNMOON_KUBECTL:-}" || -z "${SUNMOON_EXPECTED_CLUSTER_UID:-}" || ! -f "${KUBECONFIG:-}" ]]; then
+        log_error "实际平台部署需要显式 KUBECONFIG、SUNMOON_KUBECTL 绝对路径和 SUNMOON_EXPECTED_CLUSTER_UID"
+        return 1
+    fi
+    local expected_kubeconfig actual_uid tool_directory
+    if [[ "${CLUSTER^^}" == KIND ]]; then
+        expected_kubeconfig=$(resolve_kind_kubeconfig) || return 1
+    elif [[ "${CLUSTER:-}" =~ ^C[0-9]+$ ]]; then
+        expected_kubeconfig=$(resolve_remote_cluster_kubeconfig_path) || return 1
+    else
+        log_error "必须显式选择 KIND/C1/C2/C3 目标"; return 1
+    fi
+    if [[ ! -f "$expected_kubeconfig" || "$(readlink -f "$expected_kubeconfig")" != "$(readlink -f "$KUBECONFIG")" ]]; then
+        log_error "总控配置与显式 kubeconfig 不一致；先完成消费者配置迁移，不退回当前上下文"; return 1
+    fi
+    tool_directory=$(dirname "$SUNMOON_KUBECTL") || return 1
+    export PATH="$tool_directory:$PATH"
+    if [[ "$(readlink -f "$(command -v kubectl)")" != "$(readlink -f "$SUNMOON_KUBECTL")" ]]; then
+        log_error "子脚本 kubectl 与显式工具不一致"; return 1
+    fi
+    actual_uid=$("$SUNMOON_KUBECTL" --kubeconfig "$KUBECONFIG" --request-timeout=10s get ns kube-system -o jsonpath='{.metadata.uid}') || return 1
+    [[ "$actual_uid" == "$SUNMOON_EXPECTED_CLUSTER_UID" ]] || { log_error "集群 UID 不符"; return 1; }
+
     # 部署前：按配置自动从 .yaml.example 复制生成各组件 secret 的 .yaml 占位文件
     if [[ "${PREPARE_SECRETS_FROM_EXAMPLES:-true}" == "true" ]]; then
         local prepare_script="$PROJECT_ROOT/../utils/prepare-secrets-from-examples.sh"
@@ -993,7 +985,8 @@ main() {
             deploy_sunmoonai "$project_id" "$namespace" "$environment" "$dry_run"
             ;;
         "uninstall")
-            uninstall_sunmoonai "$project_id" "$namespace" "$environment" "$dry_run"
+            log_error "全项目卸载已停用；先按 legacy/README.md 核对退出条件与具体资源清单"
+            return 1
             ;;
         "status")
             check_sunmoonai_status "$project_id" "$namespace" "$environment"

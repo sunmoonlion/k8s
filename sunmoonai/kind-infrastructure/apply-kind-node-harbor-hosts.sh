@@ -3,7 +3,7 @@
 # 在 Kind 各节点内写入 /etc/hosts：harbor.sunmoonai.com -> Docker 网关 IP。
 # 这样节点通过宿主机发布的 30443 访问 Harbor，避免依赖 control-plane 容器 IP 或 IPv6 解析顺序。
 # 因 kind v1alpha4 不支持节点 extraHosts，建集群后通过本脚本补上，供 containerd 拉镜像时解析。
-# 应在 kind-up.sh 之后、apply-kind-registry-config.sh 之前执行。
+# 应在 按根 README 准备好目标集群之后、apply-kind-registry-config.sh 之前执行。
 #
 set -euo pipefail
 

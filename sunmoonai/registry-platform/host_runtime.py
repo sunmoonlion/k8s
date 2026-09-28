@@ -288,6 +288,13 @@ def main():
     if not args.apply:
         print(json.dumps({'dry_run': True, 'action': args.action, 'deployment': config['runtime']['deployment'],
                           'start_requires_reconciliation': True, 'with_jobs': args.with_jobs, 'delete': False, 'entry_switch': False})); return
+    if args.action == 'start' and config['runtime']['platform'] == 'wsl':
+        # Attach before opening locks/state on the data disk. Internal recovery
+        # calls retain their strict guards and never acquire Windows privileges.
+        import subprocess
+        import sys
+        subprocess.run([sys.executable, '-B', str(Path(__file__).resolve().parents[1] /
+                        'kind-infrastructure/mount/ensure_storage.py'), '--apply'], check=True)
     fd = os.open('/data/harbor/.instance-preparation.lock', os.O_RDWR | os.O_NOFOLLOW)
     with os.fdopen(fd, 'rb+') as lock:
         if os.fstat(lock.fileno()).st_uid != 0 or stat.S_IMODE(os.fstat(lock.fileno()).st_mode) != 0o600:

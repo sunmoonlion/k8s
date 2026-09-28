@@ -1,3 +1,15 @@
+## 最新续接：2026-09-28 部署入口归档第一批与按需附盘接线
+
+基线28683fe20ab9c82479c2954a9338064434a72cef，开工干净。所有者“继续”，本单元继续已批准部署入口整理；没有恢复现场迁移、停服或切换。
+
+- 新根 README 和可执行 ./sunmoon（operations/cli.py）统一导航/转发已有实现，Harbor准备/启停/读写/备份/入口/物料/证书、formal建群/启停、storage ensure 共用原后端；cloud plan仅总控dry-run；platform plan/deploy对KIND/C1/C2/C3使用同一旧总控，默认计划，apply要求显式kubeconfig/kubectl/UID。平台总控拆掉自动建群，infrastructure_enabled=false；计划在Secret准备/连接之前退出；实际核映射与显式目标、工具、UID；整项目uninstall拒绝。WAIT_READY改为非空集合Ready/Succeeded，失败/超时返回非零并由调用点传播。当前子脚本/消费者配置尚未全迁移，main仍未建，不声明平台部署已验。
+- 新 mount/ensure_storage.py 先核已发布root helper SHA/权限，正常挂载只读检查不碰Windows；异常才通过非提权Windows请求启动已有无窗口owner任务，核owner/action/launcher SHA，最多等50秒；最后独立核UUID/PID1/Docker视图。维护/禁用/缺任务/超时都拒绝启动，不创建磁盘/任务或开启轮询。已接入host_runtime CLI start（仅WSL）和formal lifecycle CLI start，在打开数据盘锁前执行；内部恢复流程不隐式附盘。REQUEST通过Windows Parser；未实际执行新请求、未重启WSL，也未启动服务。完整缺盘/重启及正式服务自启仍待验收。
+- legacy/local与legacy/cloud落地，manifest共22项（含一组389个chart/resource原字节移动）。旧kind-up、deploy-kind、自制节点构建、cloud reset/runtime重装/三清理入口、集群内Harbor/两Secret部署脚本等11个原入口变最前置拒绝，归档实现也加拒绝头且去执行位。旧建群/外置Harbor/WSL E盘/NFS指南转指针。清理配置及cron示例归档，原执行入口不能误清理。旧Harbor chart移legacy/cloud/sunmoonai/cicd-platform/harbor/resources，harbor_prepare.py备份输入同步改址；chart树SHA ff6bca2a2a07785fc034bd0d37e56ee7c3ec0f590b975b41feeda80135ff72a5。原脚本/文档内容（扣归档门禁前缀）与基线摘要相同；不把相对依赖未齐的归档当可执行恢复包。
+- 仍留原处的旧config及Harbor镜像公共helper有活调用者，含私有值，不复制到新清单。归档README列退出条件：本地迁移/消费者/重建独立性/观察期，云实机验证及旧源备份无依赖后另清。旧节点/卷仅登记历史身份快照，全部原地不动。原旧Harbor仍正式，inbox没变。
+- 静态/默认计划：5 Python AST、14 Bash语法、REQUEST PowerShell Parser；storage/kind lifecycle/platform KIND/cloud C1 plans未执行部署。ShellCheck临时工具此前重启丢失，本机apt代理HTTP502/HTTPS SSL失败；按既有授权东京curl官方下载回传2845342B，SHA eadf78f4dfcb1a271f47a9be5e38d124dffe9d4fea74956fab34e8c3e322a854，dpkg-deb仅解/tmp/luna-shellcheck-20260928。error级0；总控仍有4个既存warning（2034,1090,2207×2），无新warning；新入口与云总控warning0。无应用测试套件。报告scripts/results/luna-deployment-entry-consolidation.20260928.json。
+- 提交归档时普通cached diff把保留原入口的归档视为新增，报告旧原字节的尾随空格；未重写历史源码。归档全SHA仍一致，copy-aware `git diff --check -C --find-copies-harder` 与排除legacy后的所有当前文件检查均0。可复核时使用此命令，避免把历史空格当新增代码问题。
+- 后续仍属于整理：逐调用方收口旧deploy-kind.conf/Harbor配置与共享镜像工具、平台子脚本目标/私有凭据入口；把已废旧说明/引用清完，完成共享消费链再继续正式迁移。实操准入：main/消费者/真实Docker-CI推拉、正式30443维护、完整重启/重建独立性、云闭包仍待完成；最终剩余清理必须最后执行，不删旧节点/卷，不通知“luna做完了”。
+
 ## 最新续接：2026-09-28 取消一分钟附盘轮询，修复反复 Windows 弹窗
 
 基线 b23f1a6d。部署入口整理仍是主任务，尚未移动 legacy 或改总控；期间所有者要求核查旧 WSL/Harbor 障碍，随后反馈频繁 Windows 窗口并质疑每分钟检查。

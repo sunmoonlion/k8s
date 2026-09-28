@@ -129,7 +129,7 @@ load_conf
 
 prepend_kind_to_path_if_needed || true
 if ! kind get clusters 2>/dev/null | grep -q "^${KIND_CLUSTER_NAME}$"; then
-    log_error "Kind 集群 ${KIND_CLUSTER_NAME} 不存在，请先执行 ../kind-up.sh 创建集群"
+    log_error "Kind 集群 ${KIND_CLUSTER_NAME} 不存在，请按仓库根 README 选择正式建群入口；旧 kind-up 已停用"
     exit 1
 fi
 

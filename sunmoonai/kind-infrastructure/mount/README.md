@@ -1,6 +1,6 @@
 # 本机存储、自动挂载与清理入口
 
-更新：2026-09-28。这里是功能索引，实际代码继续共用 `../deploy-kind/`，不维护第二套实现。所有者提到的“永久功能”，本次按重启后自动挂载、集群数据持久化两部分核对。
+更新：2026-09-28。这里是存储功能索引；底层附盘/检查共用 `../deploy-kind/`，`ensure_storage.py` 只负责启动前按需调用。全仓操作入口见 [根说明](../../../README.md)。所有者提到的“永久功能”，本次按重启后自动挂载、集群数据持久化两部分核对。
 
 ## 当前磁盘在哪里
 
@@ -41,7 +41,7 @@
 - 发布位置：`C:\wsl-disks\scripts\storage-automation-20260928-v1`，不依赖 worktree；新发布目录限制为 Administrators/SYSTEM 可写、当前用户可读执行。
 - 任务以 Ubuntu 所属用户 `ZYMUN\zymun` 的最高权限 Interactive token 运行，不使用 SYSTEM，不保存密码。
 - **仅登录时触发，已取消每分钟检查。** 2026-09-28 所有者报告弹窗并质疑轮询频率；根因是原任务每分钟直接启动可见的 PowerShell。现使用 `wscript.exe //B //Nologo` 启动受限目录下的 `run-sunmoon-data-hidden.vbs`，内部 PowerShell 使用 Hidden 模式，等结束并向任务返回退出码。
-- 先检查维护标记，再查询 Ubuntu 是否正在运行；未运行则跳过。已挂载时只读检查，不重复挂载，不启动服务。未登录时不保证运行。**登录时 Ubuntu 未启动、登录后单独重启 WSL，都不能靠这一次触发覆盖；统一服务启动前按需附盘接线仍待完成。**
+- 先检查维护标记，再查询 Ubuntu 是否正在运行；未运行则跳过。已挂载时只读检查，不重复挂载，不启动服务。未登录时不保证运行。**登录时 Ubuntu 未启动、登录后单独重启 WSL，都不能靠这一次触发覆盖；Harbor 与正式 KIND 的 CLI start 已接入 `ensure_storage.py`，正常挂载不调用 Windows；异常才请求已有任务并重新核 UUID/服务视图。完整重启/缺盘恢复实测仍待完成。**
 - 每次校验 runner、v2 attach、Linux helper 的固定 SHA256。UUID/挂载异常拒绝，绝不自动创建或格式化盘。
 - 最近状态：`C:\wsl-disks\sunmoon-data-automation-status.json`；注册回执：`C:\wsl-disks\sunmoon-data-task-registration.json`。
 - 无窗口入口发布于 `storage-automation-20260928-v2`，SHA256 `131877883b2ac97a9bd0220b444ef3433792a035ad36e289b5be59e5b66c3b8e`；只调用原 v1 runner，每次核原 SHA。任务修复器最终发布在 v4，v2/v3 修复器因 Windows 简写账号解析失败，在修改任务之前停止，保留原发布不覆盖。
@@ -76,6 +76,19 @@ Start-ScheduledTask -TaskName 'sunmoon-data-mount'
 ```
 
 这处 `Remove-Item` 只删除维护标记。任何失败都保留标记和任务暂停状态，不在 `finally` 中无条件恢复。撤销自动挂载只需先 Disable 这个新任务；不影响已挂载数据，不执行卸载或清理。
+
+## 启动前按需检查
+
+```bash
+# 仓库根目录，只打印计划。
+./sunmoon storage ensure
+# 需要明确执行时：仅按需附盘，不启动服务。
+sudo ./sunmoon storage ensure --apply
+```
+
+[ensure_storage.py](ensure_storage.py) 先核已发布 root 所有的 Linux 检查器及 SHA，再检查 UUID、绑定目录、PID 1/Docker 可见性。已挂载只读；失败时请求已有 `sunmoon-data-mount` 任务（固定所属用户、动作及 launcher 摘要），等待最多 50 秒，并重新执行 Linux 严格检查。不会新建/改写任务，不自动提权或弹 UAC，也不安装轮询。任务缺失/停用、维护标记、互操作失败或结果不符均拒绝服务启动。超时不强停可能仍在附盘的任务。
+
+`host_runtime.py start --apply`（仅 WSL）及 `formal/lifecycle.py start --apply` 在读取数据盘锁/状态之前调用它；各自容量、数据身份与资源门槛随后继续检查。内部恢复流程仍使用既有严格门槛，不隐式申请 Windows 操作。没有自动注册服务自启，不能宣称机器重启后全部服务已恢复。
 
 ## 清理功能的保留边界
 

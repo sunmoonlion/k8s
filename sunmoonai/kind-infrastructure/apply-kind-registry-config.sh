@@ -3,7 +3,7 @@
 # 在 Kind 各节点内写入 containerd 的镜像拉取配置（/etc/containerd/certs.d/），
 # 与远程 Step02 的 registry mirrors / direct 逻辑对齐，实现「本地 Harbor → 官方」的拉取顺序。
 # 配置来源：deploy-infrastructure-all.conf 的 STEP02_REGISTRY_*（可与 deploy-kind.conf 覆写）。
-# 应在 kind-up.sh 之后、load-images/load-kind-images.sh 之前执行，以便与远程 Step02→Step11 顺序一致。
+# 应在 按根 README 准备好目标集群之后、load-images/load-kind-images.sh 之前执行，以便与远程 Step02→Step11 顺序一致。
 #
 set -euo pipefail
 

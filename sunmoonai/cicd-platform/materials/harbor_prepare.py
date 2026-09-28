@@ -69,7 +69,8 @@ def main():
     for action, filename, extra in [('values', 'helm-values.yaml', ['--all']), ('manifest', 'helm-manifest.yaml', [])]:
         (root / 'private' / filename).write_bytes(run(['helm', '--kubeconfig', '/home/zymun/.kube/kind-config',
              'get', action, RELEASE, '-n', NS] + extra))
-    chart = Path(__file__).resolve().parents[1] / 'harbor/resources/harbor'
+    # Retained historical chart is a backup input, never a current install path.
+    chart = Path(__file__).resolve().parents[3] / 'legacy/cloud/sunmoonai/cicd-platform/harbor/resources/harbor'
     with tarfile.open(root / 'charts/harbor-27.0.3-source.tar', 'w') as archive:
         archive.add(chart, arcname='harbor', recursive=True)
     images, seen = {}, set()

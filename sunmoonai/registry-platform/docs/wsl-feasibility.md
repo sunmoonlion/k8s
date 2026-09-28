@@ -4,7 +4,7 @@
 
 ## 找到了什么
 
-- 2026-03-04 提交 `965b6309` 已包含 `utils/HARBOR-KIND-EXTERNAL/` 的两份集群外 Harbor 方案，采用 WSL + 官方安装包 + Compose。它们是方案/操作说明，没有失败日志或放弃该架构的决策记录。目前仍在原目录，是待整理的历史材料，不可按其中的安装/卸载命令操作当前环境。
+- 2026-03-04 提交 `965b6309` 已包含 `utils/HARBOR-KIND-EXTERNAL/` 的两份集群外 Harbor 方案，采用 WSL + 官方安装包 + Compose。它们是方案/操作说明，没有失败日志或放弃该架构的决策记录。现归档在 `legacy/local/utils/HARBOR-KIND-EXTERNAL/`，原位置只保留指引；不可按其中的安装/卸载命令操作当前环境。
 - [旧排障纪要](../../kind-infrastructure/docs/harbor-wsl-setup-changes.md)第 4 节明确记载：Docker daemon 的 `NO_PROXY` 只有 localhost/127.0.0.1，访问 Harbor 经过代理，出现 EOF；增加仓库域名直连后，错误转为入口连接拒绝，进一步查到 Traefik/PVC 问题。这个记录支持“曾遇到代理绕行”，不能证明它就是当时放弃集群外方案的唯一原因。
 - 2026-06-03 的 `bdb9caa1`、`a9a6669a`、`87c0a9de` 继续修复重启后的节点解析、CA 与拉取路径。说明重启和不同网络视角必须验收，不能只看当前终端能否访问。
 - 旧外置操作卡把 Harbor 直接绑定 30443，没有处理当前应用与 Harbor 共用该端口的 SNI 分流。这是旧方案与当前拓扑的缺口；没有证据认定它是历史失败原因。现在采用独立入口代理，Harbor 转宿主后端，其他域名转集群入口。
@@ -21,7 +21,7 @@
 | SNI 入口候选 | [38443 候选](../../scripts/results/luna-sni-transition-candidate.20260927.json) | 正式 30443 仍由旧 KIND 持有 |
 | 存储可见性与自动任务 | [挂载回执](../../scripts/results/luna-storage-automation.20260928.json)：PID 1/Docker 可见、任务注册及周期检查成功 | 完整 Windows/WSL 重启、缺盘时自动修复分支尚未实测 |
 
-自动任务随后按所有者反馈取消了一分钟轮询，改为无窗口、仅登录触发；[修复回执](../../scripts/results/luna-storage-task-hidden.20260928.json)记录修改后一次运行成功。Harbor/KIND 启动前按需附盘接线仍待完成，不把“登录时检查一次”当成覆盖任意 WSL 重启。
+自动任务随后按所有者反馈取消了一分钟轮询，改为无窗口、仅登录触发；[修复回执](../../scripts/results/luna-storage-task-hidden.20260928.json)记录修改后一次运行成功。Harbor/KIND 的 CLI 启动前现已接入按需附盘及重新核验；完整重启/缺盘恢复分支尚未实测，不把“登录时检查一次”当成覆盖任意 WSL 重启。
 
 这些是过去运行的证据，不是本次又启动了服务。当前宿主实例停止保留，旧 Harbor 继续服务。
 

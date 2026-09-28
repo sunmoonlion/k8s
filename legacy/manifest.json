@@ -1,0 +1,211 @@
+{
+  "schema": 1,
+  "baseline": "28683fe20ab9c82479c2954a9338064434a72cef",
+  "files": [
+    {
+      "original": "sunmoonai/kind-infrastructure/kind-up.sh",
+      "archive": "legacy/local/sunmoonai/kind-infrastructure/kind-up.sh",
+      "original_sha256": "de2713fd7d198bbf88a0fb48dd048bc42c3a706227bf9e833eeeb2932fa27c15",
+      "replacement": "sunmoonai/kind-infrastructure/formal/README.md",
+      "group": "local",
+      "execution": "disabled",
+      "exit_condition": "local-migration-and-observation-complete"
+    },
+    {
+      "original": "sunmoonai/kind-infrastructure/deploy-kind/deploy-kind.sh",
+      "archive": "legacy/local/sunmoonai/kind-infrastructure/deploy-kind/deploy-kind.sh",
+      "original_sha256": "2a2045d8675db7e142b0f8be51f0d644583324c83903e3a177872a063250ae3c",
+      "replacement": "sunmoonai/kind-infrastructure/formal/README.md",
+      "group": "local",
+      "execution": "disabled",
+      "exit_condition": "local-migration-and-observation-complete"
+    },
+    {
+      "original": "sunmoonai/kind-infrastructure/deploy-kind/build-kind-node-image/build-kind-node-image.sh",
+      "archive": "legacy/local/sunmoonai/kind-infrastructure/deploy-kind/build-kind-node-image/build-kind-node-image.sh",
+      "original_sha256": "be63d6131fe1aa191b441cfd546eb0a0263319d80bafb897777422192f402417",
+      "replacement": "sunmoonai/kind-infrastructure/formal/README.md",
+      "group": "local",
+      "execution": "disabled",
+      "exit_condition": "local-migration-and-observation-complete"
+    },
+    {
+      "original": "sunmoonai/infrastructure/steps/step00_reset.sh",
+      "archive": "legacy/cloud/sunmoonai/infrastructure/steps/step00_reset.sh",
+      "original_sha256": "401cc4bea1e02f674720032350ef1e3854512e141ef13225c0cc85f0f38c77a5",
+      "replacement": "sunmoonai/infrastructure/docs/fresh-node-bootstrap.md",
+      "group": "cloud",
+      "execution": "disabled",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement"
+    },
+    {
+      "original": "sunmoonai/infrastructure/utils/setup-runtime-and-disable-socket.sh",
+      "archive": "legacy/cloud/sunmoonai/infrastructure/utils/setup-runtime-and-disable-socket.sh",
+      "original_sha256": "1a88304e4d7e862329edff4bd6056b7ecb9f02da9c46c5e51673b829f586a3ab",
+      "replacement": "sunmoonai/infrastructure/docs/locked-node-materials.md",
+      "group": "cloud",
+      "execution": "disabled",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement"
+    },
+    {
+      "original": "sunmoonai/infrastructure/utils/image-cleanup/image-cleanup.sh",
+      "archive": "legacy/cloud/sunmoonai/infrastructure/utils/image-cleanup/image-cleanup.sh",
+      "original_sha256": "c000aa04a7d21cf5ac0b82912c6b112a2b8d58c7299ae249c6a887ee16c02219",
+      "replacement": "sunmoonai/kind-infrastructure/docs/wsl-space-reclamation-plan.md",
+      "group": "cloud",
+      "execution": "disabled",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement"
+    },
+    {
+      "original": "sunmoonai/infrastructure/utils/image-cleanup/periodic-cleanup.sh",
+      "archive": "legacy/cloud/sunmoonai/infrastructure/utils/image-cleanup/periodic-cleanup.sh",
+      "original_sha256": "78e605451df5e920adfc87390d316034b3f6a1b301b4ceb45b7325b12c59dc5f",
+      "replacement": "sunmoonai/kind-infrastructure/docs/wsl-space-reclamation-plan.md",
+      "group": "cloud",
+      "execution": "disabled",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement"
+    },
+    {
+      "original": "sunmoonai/infrastructure/utils/image-cleanup/cron/install-cron.sh",
+      "archive": "legacy/cloud/sunmoonai/infrastructure/utils/image-cleanup/cron/install-cron.sh",
+      "original_sha256": "6fbef8c269f80dcbb8cc811364a6b4302b1ac35f82d87a1d4cbfbbaa973441bd",
+      "replacement": "sunmoonai/kind-infrastructure/docs/wsl-space-reclamation-plan.md",
+      "group": "cloud",
+      "execution": "disabled",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement"
+    },
+    {
+      "original": "utils/HARBOR-KIND-EXTERNAL/HARBOR-KIND-EXTERNAL.md",
+      "archive": "legacy/local/utils/HARBOR-KIND-EXTERNAL/HARBOR-KIND-EXTERNAL.md",
+      "original_sha256": "ebd31481cae7ee959b459a06f484540d27b37ebcf057f9e61ef6ef52f1a9c5ba",
+      "replacement": "sunmoonai/registry-platform/README.md",
+      "group": "local",
+      "execution": "historical-document",
+      "exit_condition": "local-migration-and-observation-complete"
+    },
+    {
+      "original": "utils/HARBOR-KIND-EXTERNAL/INSTALL-EXTERNAL-HARBOR.md",
+      "archive": "legacy/local/utils/HARBOR-KIND-EXTERNAL/INSTALL-EXTERNAL-HARBOR.md",
+      "original_sha256": "4e235086d3dc29587c524ce8f48f9c9fd12160884761852956733b208043dec0",
+      "replacement": "sunmoonai/registry-platform/README.md",
+      "group": "local",
+      "execution": "historical-document",
+      "exit_condition": "local-migration-and-observation-complete"
+    },
+    {
+      "original": "sunmoonai/kind-infrastructure/自建节点镜像与重建集群.md",
+      "archive": "legacy/local/sunmoonai/kind-infrastructure/自建节点镜像与重建集群.md",
+      "original_sha256": "66775fc496fe5787664372435e32cc7fee4e34874d2064b8e17722835d52c04c",
+      "replacement": "sunmoonai/kind-infrastructure/formal/README.md",
+      "group": "local",
+      "execution": "historical-document",
+      "exit_condition": "local-migration-and-observation-complete"
+    },
+    {
+      "original": "sunmoonai/kind-infrastructure/deploy-kind/deploy-kind.md",
+      "archive": "legacy/local/sunmoonai/kind-infrastructure/deploy-kind/deploy-kind.md",
+      "original_sha256": "0fe16d0c616877ea7f2d1ab29f4e30ec4634a43b7cc71ed5f43ee94ac106bf04",
+      "replacement": "sunmoonai/kind-infrastructure/formal/README.md",
+      "group": "local",
+      "execution": "historical-document",
+      "exit_condition": "local-migration-and-observation-complete"
+    },
+    {
+      "original": "sunmoonai/kind-infrastructure/docs/wsl的vhdx挂载.md",
+      "archive": "legacy/local/sunmoonai/kind-infrastructure/docs/wsl的vhdx挂载.md",
+      "original_sha256": "c6bdffacb890c0b33873e08591f9f4a650222d7e8552e11dbb379ae1306c0cc5",
+      "replacement": "sunmoonai/kind-infrastructure/mount/README.md",
+      "group": "local",
+      "execution": "historical-document",
+      "exit_condition": "local-migration-and-observation-complete"
+    },
+    {
+      "original": "sunmoonai/cicd-platform/harbor/resources",
+      "archive": "legacy/cloud/sunmoonai/cicd-platform/harbor/resources",
+      "file_count": 389,
+      "tree_sha256": "ff6bca2a2a07785fc034bd0d37e56ee7c3ec0f590b975b41feeda80135ff72a5",
+      "tree_hash_format": "sorted original-path + NUL + file-sha256 + newline, UTF-8",
+      "replacement": "sunmoonai/registry-platform/README.md",
+      "group": "cloud",
+      "execution": "chart archive consumed only by source backup",
+      "exit_condition": "source-harbor-retired-and-cloud-real-host-validation-and-no-backup-code-dependency"
+    },
+    {
+      "original": "sunmoonai/cicd-platform/harbor/deploy-harbor/deploy-harbor.sh",
+      "archive": "legacy/cloud/sunmoonai/cicd-platform/harbor/deploy-harbor/deploy-harbor.sh",
+      "original_sha256": "33bc60a1f41144d9bcc2ca818239d95d5f391ad3bae2f23414bddef62e3ca54d",
+      "replacement": "sunmoonai/registry-platform/README.md",
+      "group": "cloud",
+      "execution": "disabled",
+      "exit_condition": "source-harbor-retired-and-cloud-real-host-validation"
+    },
+    {
+      "original": "sunmoonai/cicd-platform/harbor/deploy-harbor/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "archive": "legacy/cloud/sunmoonai/cicd-platform/harbor/deploy-harbor/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "original_sha256": "477f7659b91658d2d12cd907f296d9bf54280a972ef6277ddda7b4a72a88f900",
+      "replacement": "sunmoonai/registry-platform/README.md",
+      "group": "cloud",
+      "execution": "disabled",
+      "exit_condition": "source-harbor-retired-and-cloud-real-host-validation"
+    },
+    {
+      "original": "sunmoonai/cicd-platform/harbor/deploy-harbor/secrets/harbor-secret/deploy-harbor-secret/deploy-harbor-secret.sh",
+      "archive": "legacy/cloud/sunmoonai/cicd-platform/harbor/deploy-harbor/secrets/harbor-secret/deploy-harbor-secret/deploy-harbor-secret.sh",
+      "original_sha256": "56daaa6f4f673e7926e3dd7ce4b5842f0ba54641b2f80d06e892af3737d68b30",
+      "replacement": "sunmoonai/registry-platform/README.md",
+      "group": "cloud",
+      "execution": "disabled",
+      "exit_condition": "source-harbor-retired-and-cloud-real-host-validation"
+    },
+    {
+      "original": "sunmoonai/infrastructure/utils/image-cleanup/README.md",
+      "archive": "legacy/cloud/sunmoonai/infrastructure/utils/image-cleanup/README.md",
+      "original_sha256": "da3702c3fd6da7e88f0f1593e31951f94ba750c48b90924f7041ee5670653b3c",
+      "raw_bytes_unchanged": true,
+      "replacement": "README.md",
+      "group": "cloud",
+      "execution": "historical only",
+      "exit_condition": "cloud-real-host-validation"
+    },
+    {
+      "original": "sunmoonai/infrastructure/utils/image-cleanup/image-cleanup.conf",
+      "archive": "legacy/cloud/sunmoonai/infrastructure/utils/image-cleanup/image-cleanup.conf",
+      "original_sha256": "2ab32d386377803e1cbbc2d6cc60446343a73cce40b7b2d6b593d18aad65de04",
+      "raw_bytes_unchanged": true,
+      "replacement": "README.md",
+      "group": "cloud",
+      "execution": "historical only",
+      "exit_condition": "cloud-real-host-validation"
+    },
+    {
+      "original": "sunmoonai/infrastructure/utils/image-cleanup/periodic-cleanup.conf",
+      "archive": "legacy/cloud/sunmoonai/infrastructure/utils/image-cleanup/periodic-cleanup.conf",
+      "original_sha256": "0ff6af43a70406d631db9ad54fa90cef5d6af5c64300e16586c5b810b9f9214a",
+      "raw_bytes_unchanged": true,
+      "replacement": "README.md",
+      "group": "cloud",
+      "execution": "historical only",
+      "exit_condition": "cloud-real-host-validation"
+    },
+    {
+      "original": "sunmoonai/infrastructure/utils/image-cleanup/cron/k8s-image-cleanup.cron.example",
+      "archive": "legacy/cloud/sunmoonai/infrastructure/utils/image-cleanup/cron/k8s-image-cleanup.cron.example",
+      "original_sha256": "14797fa1e2c72bf09aab949e73c05dfb0d27b4b7a9b63e19a340c3e0f59bedac",
+      "raw_bytes_unchanged": true,
+      "replacement": "README.md",
+      "group": "cloud",
+      "execution": "historical only",
+      "exit_condition": "cloud-real-host-validation"
+    },
+    {
+      "original": "kind使用指南.md",
+      "archive": "legacy/local/kind使用指南.md",
+      "original_sha256": "2d54fb9d2cc0dbe1a348d33afd330bde491cf90a2463ac0cb1e086c7e73ad8d8",
+      "raw_bytes_unchanged": true,
+      "replacement": "README.md",
+      "group": "local",
+      "execution": "historical only",
+      "exit_condition": "local-migration-and-observation-complete"
+    }
+  ]
+}
