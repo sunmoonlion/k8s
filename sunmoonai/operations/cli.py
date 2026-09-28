@@ -8,6 +8,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 # Pass argv directly without a shell; these backends default to plans/help.
 ROUTES = {
+    ('app', 'prepare-input'): 'sunmoonai/app-platform/scripts/prepare_development_input.py',
     ('storage', 'ensure'): 'sunmoonai/kind-infrastructure/mount/ensure_storage.py',
     ('kind', 'prepare'): 'sunmoonai/kind-infrastructure/formal/prepare.py',
     ('kind', 'cluster'): 'sunmoonai/kind-infrastructure/formal/cluster.py',

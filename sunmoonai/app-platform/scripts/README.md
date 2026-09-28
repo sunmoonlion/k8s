@@ -16,6 +16,49 @@ digest、`migration_head` 和完整 `development_source_lock`。渲染时校验�
 `verify-formal-instance.py`，并将输出更新到唯一规范 bundle，同时更新 `.conf`。
 来源锁记录的是源码准备时的事实；实际部署边界由新的 `release.json` 声明。
 
+### 从新构建批次准备开发输入
+
+入口 `./sunmoon app prepare-input` 将构建产物接到上述**同一个**开发输入与渲染流程。
+仅用于 Info / Knowledge / Investment 的 KIND 开发包；模板发布和云生产发布不由此入口放行。
+脚本依赖 Python 3.11+ 与既有渲染环境的 PyYAML。源码锁仍是并列 App 父仓的
+`development-source-lock.json`，不自动生成或修改源码锁。
+
+```bash
+# k8s 仓根目录。先完成各候选 OCI 批次的显式发布，再准备本次输入。
+# ROLE 使用 backend / admin / web；只传本次替换的组件，其余可沿用显式 base-input。
+./sunmoon app prepare-input \
+  --base-input /absolute/k8s/sunmoonai/app-platform/investment-app/deployment/development-input.json \
+  --artifact backend=/absolute/app-artifacts/app-build.ID/investment-backend \
+  --migration-head 20260925_0011 \
+  --output /absolute/new-candidate/development-input.json
+# 以上仅元数据计划；migration-head 须换成选定 Backend 的实际 head。
+# 确认后加 --registry-config /absolute/registry.conf \
+#   --credentials-file /absolute/private/consumer.json --apply。
+```
+
+输出文件必须不存在，父目录须已准备。默认计划只读元数据，不哈希大型归档、不查询 Git/Harbor、
+不创建文件；`--apply` 才完成以下核对并写文件：
+
+1. 新组件的 `build.json`、`oci/source.json`、`oci/publication.json` 关联正确；
+   构建提交等于选定源码锁，目标是该 App 自己的 `repo@sha256`。
+2. 哈希 Docker/OCI 归档；Docker config 摘要等于记录的 image ID，OCI manifest/config
+   也必须关联到这个 ID。若转换改变了 config，拒绝自动接入，不猜摘要。
+3. 构建时父仓 gitlink 对应组件提交；当前 Dockerfile、三个干净子仓的 commit/tree 和迁移 head
+   与源码锁一致。没有提供新制品的组件只有在 commit/tree 都未变时才允许复用基础输入的镜像。
+4. 用独立仓库的严格 TLS/只读身份查询三个镜像 manifest，任一缺失、认证/网络/摘要错误都停止。
+   不补推、不查询集群，不把 manifest 存在当成完整拉取验收。
+5. 复核准备期间的元数据和源码状态没有变化，创建新的开发输入；不会覆盖既有输入或 bundle。
+
+输入新增可选 `artifact_evidence`，记录已替换组件的源码、制品与构建元数据摘要，
+现有 `development_release.py` 将其传入 `release.json` 并核对；原有不含此字段的历史输入仍可读取。
+这是构建与操作记录，不是签名的源码到二进制证明；忽略文件、构建依赖闭包、镜像层拉取仍须单独验收。
+复用的历史镜像不凭空补一份构建证明，证据只覆盖实际提供过的制品。
+
+新文件随后显式传给原 `deployment/render.py --development-input ...`，先渲染到候选目录、
+经过原门禁再更新规范 bundle 和 `.conf`。本工具不会改运行身份、备份批准、发布别名或启用云 profile。
+它沿用显式基础输入的身份声明；旧集群的身份准备不能直接当成新集群的初始化依据。
+**当前仅完成源码接线和静态检查，尚未实跑本入口、生成新候选、渲染或部署。**
+
 当前候选 `kind-b7-20260919` 显式声明 `runtime_identity_mode=independent-v1`，
 渲染器据此启用 `CELERY_TASK_TOPOLOGY_PREDECLARED=true`。apply 检查每 App 的
 `<app>-backend-runtime` 六个键：三个角色各自的 `DATABASE_URL` 与 `CELERY_BROKER_URL`，

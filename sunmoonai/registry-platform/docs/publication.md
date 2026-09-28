@@ -17,6 +17,10 @@
 既有 Docker-save tar 必须在物料准备阶段明确转换/核验并形成 OCI 批次；本次没有转换或删除任何实际物料。
 发布后不创建 tag 别名。已有组件 tag 清单仍需与部署 digest 锁对齐；发布别名通过单独晋级流程处理，不能用本模块覆盖 `1.0.0`/`2.0.0`。
 
+应用候选发布后，可通过 `./sunmoon app prepare-input` 核构建记录/源码锁/Harbor manifest，
+生成原应用渲染器接受的新开发输入，见[输入准备方法](../../app-platform/scripts/README.md#从新构建批次准备开发输入)。
+它不会自行修改 bundle、部署集群或放宽原备份/身份门禁；当前仍待实际验收。
+
 ## 日常配置与计划
 
 [批次模板](../config/publication.example.json)放在 Git；路径、大小、摘要中的占位值均须用实际核对值替换。

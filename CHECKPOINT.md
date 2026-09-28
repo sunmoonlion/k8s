@@ -1,5 +1,18 @@
 # luna 工作检查点
 
+## 最新续接：2026-09-28 构建批次接入现有开发输入与渲染门禁
+
+基线 `3661c6030bf89d5a449e418e9f3fc42c156e3b9e`，本地 luna 开工干净。继续已授权的镜像/部署整理，不恢复现场迁移。
+
+- 审阅三应用 render.py/deploy.py、development_release.py、verify-formal-instance.py：原部署本来已要求App所属repo@sha256，不需要新建发布/部署协议。缺口是刚生成的OCI批次与原development-input之间无来源核对。本轮只增加准备步骤，未修改三个现行input/bundle/.conf、源码锁或其他应用仓。
+- 新 scripts/prepare_development_input.py / `./sunmoon app prepare-input`：显式base-input、重复role=artifact-dir、迁移head、新输出文件；固定读取并列App已有development-source-lock。默认只读元数据计划。apply核源码锁/干净子仓commit+tree/实际head，提供制品的Docker/OCI归档SHA与build记录、Docker config=imageID、OCI manifest/config与同一ID、Dockerfile SHA以及构建父提交gitlink；用独立仓库严格TLS/只读身份查三个manifest后才创建新input。拒绝覆盖。未替换组件必须base与目标commit/tree完全相同才能复用镜像，不能换源码沿用旧镜像。
+- development_release.py抽共享verify_source_input，原render也使用；新增可选artifact_evidence验证/传入release.json，现有verify-formal-instance和deploy guard经同一validate消费。证据绑定已提供制品的源码、归档、构建元数据和manifest；历史无此字段input兼容，复用老镜像不伪造构建证据。身份/备份/UID/正式别名门禁原样保留。工具仅KIND开发包Info/Knowledge/Investment，不放开模板/云production；旧集群身份准备不可直接用于新集群初始化。
+- 证据是操作者/构建记录，不是签名source-to-binary证明；未核ignored文件、完整离线依赖/层diffID、实际节点拉取或业务验收。OCI转换若改变config则自动接线拒绝，不猜ID；当前产物仍需保留Docker tar/build.json/source.json/publication.json/OCI至验收和退出条件。默认计划不读取大型归档或凭据、不调用Git/网络；apply只写一个新文件，不构建/推送/渲染/部署。
+- 更新脚本README、发布说明、配置索引和发布现状。C-I8未知配置/缺来源/缺镜像拒绝；C-R1提交与制品相互关联；C-R2只用digest；C-R3/R5不重建/覆盖发布别名。新字段没有把操作记录当作完整验收。
+- 静态：3 Python AST、新增本地文档链接存在、git diff --check通过；宿主Python可发现PyYAML。未运行测试/新入口计划或apply用例、转换/推拉/Git来源校验流程、实际render或集群操作。没有生成新候选输入或修改运行态。真实成功/失败路径、三应用门禁兼容与完整发布仍待验收，不能以AST代替。
+- 下一步：继续共享部署消费者/静态PV和人工工具适配、CI物料与自动传输调度；整理后按原准入恢复main/30443迁移和Harbor独立性验证。整体未完成，inbox仍旧kind。最终本机refactor临时目录/东京下载清理不可遗漏；本轮无新实际物料/远端文件。旧节点/卷/Harbor数据/备份保护不变。只本地luna提交，不push；回退此单元只涉及Git文件。
+
+
 ## 最新续接：2026-09-28 应用构建制品接入统一发布器
 
 基线 `195375f13b7d4f05a8d7ff1063312a607a1603fc`，本地 luna 开工干净，所有者“继续”已批准的部署整理。此单元只改代码/文档，仍未恢复实际建群/入口切换。

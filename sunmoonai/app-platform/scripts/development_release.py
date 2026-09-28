@@ -19,6 +19,43 @@ DIGEST = re.compile(r"[^\s]+@sha256:[0-9a-f]{64}")
 ROLES = {"backend": "backend", "admin": "admin-frontend", "web": "web-frontend"}
 IDENTITY_MODE = "independent-v1"
 RUNTIME_ROLES = ("api", "worker", "scheduler")
+ARTIFACT_FIELDS = {
+    "source_commit", "source_tree", "parent_commit", "dockerfile_sha256", "docker_image_id",
+    "docker_archive_sha256", "oci_archive_sha256", "manifest_digest",
+    "build_metadata_sha256", "publication_batch_sha256",
+}
+
+
+def validate_artifact_evidence(source: dict[str, Any]) -> None:
+    """Optional build records bind new inputs; historic inputs remain valid.
+
+    These are operator/build records, not signed source-to-binary attestations.
+    """
+    if "artifact_evidence" not in source:
+        return
+    evidence = source["artifact_evidence"]
+    if not isinstance(evidence, dict) or not evidence or not set(evidence) <= set(ROLES):
+        raise ValueError("invalid development artifact roles")
+    app = source["logical_app"]
+    components = {c["path"]: c for c in source["development_source_lock"]["components"]}
+    for role, item in evidence.items():
+        if not isinstance(item, dict) or set(item) != ARTIFACT_FIELDS:
+            raise ValueError("invalid development artifact evidence fields")
+        component = components[app + "-" + ROLES[role]]
+        if item["source_commit"] != component["commit"] or item["source_tree"] != component["tree"]:
+            raise ValueError("artifact source differs from development source lock")
+        if not SHA.fullmatch(str(item["parent_commit"])):
+            raise ValueError("artifact requires full parent commit")
+        for key in ("dockerfile_sha256", "docker_archive_sha256", "oci_archive_sha256",
+                    "build_metadata_sha256", "publication_batch_sha256"):
+            if not re.fullmatch(r"[a-f0-9]{64}", str(item[key])):
+                raise ValueError("artifact requires full file checksums")
+        for key in ("docker_image_id", "manifest_digest"):
+            if not re.fullmatch(r"sha256:[a-f0-9]{64}", str(item[key])):
+                raise ValueError("artifact requires SHA256 image identifiers")
+        if source["images"][role] != (
+                f"harbor.sunmoonai.com:30443/app-images/{app}-{ROLES[role]}@{item['manifest_digest']}"):
+            raise ValueError("artifact manifest differs from development image")
 
 
 def release_content_sha256(release):
@@ -63,6 +100,7 @@ def validate(release: dict[str, Any]) -> None:
                 or upgrade["prepared_release_id"] == release.get("release_id")
                 or not re.fullmatch(r"[0-9a-f]{64}", str(upgrade["preparation_plan_sha256"]))):
             raise ValueError("invalid runtime identity upgrade declaration")
+    validate_artifact_evidence(release)
 
 
 def verify_runtime_secret_contract(secret: dict[str, Any], app: str) -> None:
@@ -142,14 +180,13 @@ def existing_retrieval_binding_gate(args: Any, release: dict[str, Any], run: Any
         raise ValueError("existing retrieval binding missing or drifted; no automatic reconciliation") from None
 
 
-def render(output: Path, input_path: Path, k8s_root: Path) -> None:
-    """Finish the existing renderer output; keep one canonical bundle per App."""
-    source = json.loads(input_path.read_text())
-    release_path = output / "release.json"
-    release = json.loads(release_path.read_text())
-    app = release["logical_app"]
-    if source.get("kind") != "kind-development-release-input" or source.get("logical_app") != app:
+def verify_source_input(source: dict[str, Any], k8s_root: Path) -> None:
+    """Shared read-only source/head checks for input preparation and rendering."""
+    app = source.get("logical_app")
+    if source.get("kind") != "kind-development-release-input" or app not in ("info", "knowledge", "investment"):
         raise ValueError("wrong development release input")
+    validate({**source, "architecture": ARCHITECTURE, "formal_release": False,
+              "deployment_target": "KIND", "namespace": "app-platform-dev", "resource_app": app})
     source_root = k8s_root.parent / (app + "-app")
     source_lock = json.loads((source_root / "development-source-lock.json").read_text())
     if source.get("development_source_lock") != source_lock:
@@ -160,7 +197,8 @@ def render(output: Path, input_path: Path, k8s_root: Path) -> None:
             actual = subprocess.check_output(["git", "-C", str(repo), "rev-parse", revision], text=True).strip()
             if actual != expected:
                 raise ValueError("source checkout does not match the development lock")
-        if subprocess.check_output(["git", "-C", str(repo), "status", "--porcelain"], text=True).strip():
+        if subprocess.check_output(["git", "-C", str(repo), "status", "--porcelain",
+                                    "--untracked-files=all", "--ignore-submodules=none"], text=True).strip():
             raise ValueError("cannot render a development release from dirty source")
     revisions, parents = set(), set()
     for migration in (source_root / (app + "-backend/app/alembic/versions")).glob("*.py"):
@@ -173,6 +211,19 @@ def render(output: Path, input_path: Path, k8s_root: Path) -> None:
                     parents.add(node.value.value)
     if revisions - parents != {source.get("migration_head")}:
         raise ValueError("migration head does not match the locked backend source")
+    validate_artifact_evidence(source)
+
+
+def render(output: Path, input_path: Path, k8s_root: Path) -> None:
+    """Finish the existing renderer output; keep one canonical bundle per App."""
+    source = json.loads(input_path.read_text())
+    release_path = output / "release.json"
+    release = json.loads(release_path.read_text())
+    app = release["logical_app"]
+    if source.get("logical_app") != app:
+        raise ValueError("wrong development release input")
+    verify_source_input(source, k8s_root)
+    source_lock = source["development_source_lock"]
     previous_images = release["images"]
     release.update(architecture=ARCHITECTURE, formal_release=False, deployment_target="KIND",
                    development_source_lock=source_lock, images=source["images"],
@@ -183,6 +234,9 @@ def render(output: Path, input_path: Path, k8s_root: Path) -> None:
     release.pop("runtime_identity_upgrade", None)
     if "runtime_identity_upgrade" in source:
         release["runtime_identity_upgrade"] = source["runtime_identity_upgrade"]
+    release.pop("artifact_evidence", None)
+    if "artifact_evidence" in source:
+        release["artifact_evidence"] = source["artifact_evidence"]
     validate(release)
     replacements = {previous_images[role]: release["images"][role] for role in ROLES}
     for filename in release["resources"]:
