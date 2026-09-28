@@ -49,3 +49,10 @@ Harbor `lifecycle start --apply` 与 KIND `lifecycle start --apply` 均先按需
 仍是旧 `kind`、`~/.kube/kind-config`、对应 1.27.3 kubectl；具体 UID/工具绝对路径见 [交接目标](sunmoonai/kind-infrastructure/docs/luna-handoff-and-inbox-targets.md)。迁移验收前不要改 inbox 指向 main，也不要删除旧节点/卷。
 
 架构与开发规则入口仍为 [AGENTS.md](AGENTS.md)，本页只收口部署运维，不复制产品设计规范。
+
+## 设计说明与已撤下的旧入口
+
+- [持久化方案](k8s持久化方式及本项目持久化方案设计.md)：独立数据盘、三节点挂载、集群外 Harbor、备份与恢复边界。
+- [镜像管理设计](image-management-design.md)：离线物料、独立仓库、发布与清理，以及尚未完成的旧调用链整理。
+- 原根目录 `kind使用指南.md` 空壳指针已删除，当前 KIND 操作统一见 [formal 使用说明](sunmoonai/kind-infrastructure/formal/README.md)；旧版内容仍在 [legacy/local](legacy/local/kind使用指南.md)，仅作历史参考。
+- `refactor-cluster-arg.sh` 是一次性批量改写工具，仓库内未发现调用方，已删除。现用 `utils/cluster-arg-parser.sh` 及其调用方保留，不再通过批量正则脚本重写部署代码。

@@ -16,10 +16,15 @@
 | TLS 分流入口 | `registry-platform/config/sni-local-*.json` | 区分候选、过渡和正式方案；正式入口仍受维护窗口门禁保护 |
 | 云端节点、步骤与物料 | `infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf` 及 materials 锁文件 | 保留；实际云部署未经实机验证，闭包门禁仍关闭 |
 | KIND 的版本与离线物料 | `kind-infrastructure/isolated/profile.json` / `artifacts.lock.json` | 已固定版本和 SHA；改版本要同时备齐物料并更新锁，不能只改字符串 |
-| 正式 KIND 的集群名、挂载、端口 | 当前仍有 `formal/prepare.py` 迁移专用常量 | **尚未完成配置化**。后续移到正式配置，保留存储 UUID、旧节点保护和实例身份核验；不能沿用旧 `deploy-kind.conf` 重建 |
+| 正式 KIND 的部署参数 | `kind-infrastructure/formal/deploy-kind.json` | prepare/create/CNI/lifecycle 共读一份；端口、网段、物料路径、kubeconfig、容量门槛和等待时间可见。集群名/盘 UUID、三节点六挂载和旧节点保护仍受批准边界限制 |
 
 普通控制项可在配置中日常调整；身份、物料摘要和存储绑定等受控项需要相应准入流程。
 修改配置不自动执行部署、不自动重建、不自动清数据。
+
+正式 KIND 默认读取 `formal/deploy-kind.json`，统一入口可用 `--config <绝对路径>` 临时选择完整 JSON；
+也可设置 `SUNMOON_KIND_CONFIG`。建群保存配置快照和身份摘要；此后改变端口、网段、物料/kubeconfig 路径等
+身份字段会拒绝按原节点继续操作，不能改 JSON 冒充迁移。等待时间和更严格的容量门槛可日常调整，
+已有的容量安全下限不能调低。具体命令与字段见 [formal 配置说明](../kind-infrastructure/formal/README.md#日常配置)。
 
 ## 仓库凭据的选择顺序
 

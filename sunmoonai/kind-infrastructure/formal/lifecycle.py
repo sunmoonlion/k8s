@@ -66,7 +66,7 @@ def act(action):
         if failures or any(n['State']['Running'] for n in after):
             raise ValueError('Some formal nodes did not stop; all retained')
         return {'stopped':list(cluster.state['nodes']),'deleted':False}
-    c.storage(c.load_harbor(c.HARBOR_CONFIG),minimum_gib=20)
+    c.storage(c.harbor_config(),minimum_gib=c.p.LIMITS['data_reserve_gib'])
     for desired in c.p.document(cluster.lock)['nodes']:
         for mount in desired['extraMounts']:
             path=Path(mount['hostPath'])
@@ -88,7 +88,7 @@ def act(action):
         for obj in nodes:
             if not obj['State']['Running']:
                 c.docker('start',obj['Id']); started.append(obj['Id'])
-        deadline=time.monotonic()+180
+        deadline=time.monotonic()+c.p.TIMEOUTS['api_ready_seconds']
         while True:
             try:
                 # kub validates pinned client, kubeconfig and recorded UID.
@@ -100,7 +100,9 @@ def act(action):
                 if time.monotonic()>=deadline:
                     raise ValueError('Formal API identity/readiness deadline') from None
                 time.sleep(3)
-        cluster.kub('wait','--for=condition=Ready','nodes','--all','--timeout=300s')
+        cluster.kub('wait','--for=condition=Ready','nodes','--all',
+                    '--timeout='+str(c.p.TIMEOUTS['nodes_ready_seconds'])+'s',
+                    timeout=c.p.TIMEOUTS['nodes_ready_seconds']+60)
         cluster.nodes()
     except Exception:
         # Only undo starts made here; do not stop pre-existing running nodes.
@@ -123,6 +125,7 @@ def main():
     args=parser.parse_args()
     if not args.apply:
         print(json.dumps({'dry_run':True,'cluster':c.p.NAME,'action':args.action,
+                          'configuration':str(c.p.CONFIG_PATH),'configuration_sha256':c.p.CONFIG_SHA256,
                           'missing_storage':'refuse without mkdir','old_nodes_touched':False,
                           'delete':False,'autostart_installed':False})); return
     if os.geteuid()!=0:

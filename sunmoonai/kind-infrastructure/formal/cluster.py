@@ -113,6 +113,9 @@ def entry_gate(entry_path):
     config = load_entry(entry_path)
     if config['mode'] not in ('transition', 'formal') or config['listen'] != '0.0.0.0:30443':
         raise ValueError('Public entry required; a candidate port cannot admit formal creation')
+    tls_port = next(item['hostPort'] for item in p.CONFIG['port_mappings'] if item['containerPort'] == 30443)
+    if config['mode'] == 'formal' and config['default_upstream'] != '127.0.0.1:' + str(tls_port):
+        raise ValueError('Formal SNI backend differs from configured KIND TLS port')
     proxy = Proxy(config)
     proxy.immutable(); upstream_identity(config)
     if not proxy.inspect()['State']['Running']:
@@ -127,10 +130,18 @@ def entry_gate(entry_path):
             'leaf_der_sha256': expected, 'harbor': instance.project}
 
 
+def harbor_config():
+    config = load_harbor(HARBOR_CONFIG)
+    if config['storage_uuid'] != p.UUID:
+        raise ValueError('Harbor and KIND storage configuration identities differ')
+    return config
+
+
 def preflight(entry_path):
+    pwd.getpwnam(p.CONFIG['kubeconfig_owner'])  # Fail before creating a cluster for an unknown owner.
     lock = p.accepted()
     p.material_check(lock)
-    storage(load_harbor(HARBOR_CONFIG), minimum_gib=22)
+    storage(harbor_config(), minimum_gib=p.LIMITS['initial_data_gib'] + p.LIMITS['data_reserve_gib'])
     # Fail before creating paths, importing images or stopping anything.
     gate = entry_gate(entry_path)
     old = protected_nodes()
@@ -155,7 +166,9 @@ def preflight(entry_path):
     available = next(int(s.split()[1]) * 1024 for s in Path('/proc/meminfo').read_text().splitlines() if s.startswith('MemAvailable:'))
     docker_root = docker('info', '--format', '{{.DockerRootDir}}').decode().strip()
     physical = p.physical_capacity()
-    if available < 16 * p.GIB or shutil.disk_usage(docker_root).free < 30 * p.GIB or physical['projected_c_free_bytes'] < 50 * p.GIB:
+    if (available < p.LIMITS['memory_free_gib'] * p.GIB
+            or shutil.disk_usage(docker_root).free < p.LIMITS['docker_free_gib'] * p.GIB
+            or physical['projected_c_free_bytes'] < p.LIMITS['windows_reserve_gib'] * p.GIB):
         raise ValueError('Insufficient physical/virtual capacity for initial cluster budget')
     return lock, {'entry': gate, 'old_nodes': old, 'physical_capacity': physical}
 
@@ -169,6 +182,8 @@ class Cluster:
         self.state = json.loads(STATE_FILE.read_text())
         if self.state.get('schema') != 1 or self.state['cluster'] != p.NAME or self.state['material_lock_sha256'] != p.sha(p.ISOLATED / 'artifacts.lock.json'):
             raise ValueError('Formal state/material identity changed')
+        if self.state.get('formal_identity_sha256') != p.IDENTITY_SHA256:
+            raise ValueError('Recorded formal identity differs; restore the creation config, do not adopt nodes')
         self.lock = p.accepted()
         rendered = yaml.safe_dump(p.document(self.lock), sort_keys=False).encode()
         if (p.sha(STATE_ROOT / 'kind.yaml') != self.state['kind_config_sha256']
@@ -194,7 +209,7 @@ class Cluster:
                 raise ValueError('Formal node identity/image/running/restart/mount contract differs')
         return names
 
-    def kub(self, *args, content=None):
+    def kub(self, *args, content=None, timeout=360):
         if p.KUBECONFIG.resolve() != p.KUBECONFIG or p.sha(p.KUBECONFIG) != self.state['kubeconfig_sha256']:
             raise ValueError('Explicit formal kubeconfig changed')
         tool = next(v for v in self.lock['files'] if v['path'] == 'bin/kubectl')
@@ -206,13 +221,13 @@ class Cluster:
             current = run([*prefix, 'get', 'namespace', 'kube-system', '-o', 'json'])
             if json.loads(current)['metadata']['uid'] != self.state['uid']:
                 raise ValueError('Formal cluster UID changed')
-        return run([*prefix, *args], content=content, timeout=360)
+        return run([*prefix, *args], content=content, timeout=timeout)
 
     def install_cni(self):
         if (self.state.get('phase') not in ('created-before-cni', 'cni-ready')
                 or not re.fullmatch(r'[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}', self.state.get('uid') or '')):
             raise ValueError('Completed creation and recorded UID required before CNI installation')
-        storage(load_harbor(HARBOR_CONFIG), minimum_gib=20)
+        storage(harbor_config(), minimum_gib=p.LIMITS['data_reserve_gib'])
         p.material_check(self.lock)
         nodes = self.nodes()
         version = json.loads(self.kub('version', '-o', 'json'))
@@ -236,9 +251,13 @@ class Cluster:
             self.kub('-n', namespace, 'patch', kind, name, '--type=json', '-p',
                 json.dumps([{'op': 'add', 'path': '/spec/template/spec/containers/0/imagePullPolicy', 'value': 'Never'}]))
         self.kub('apply', '--server-side', '--field-manager=sunmoon-bootstrap', '-f', '-', content=json.dumps(objects).encode())
-        self.kub('wait', '--for=condition=Ready', 'nodes', '--all', '--timeout=300s')
+        self.kub('wait', '--for=condition=Ready', 'nodes', '--all',
+                 '--timeout=' + str(p.TIMEOUTS['nodes_ready_seconds']) + 's',
+                 timeout=p.TIMEOUTS['nodes_ready_seconds'] + 60)
         for resource in ('ds/calico-node', 'deployment/calico-kube-controllers', 'deployment/coredns', 'ds/kube-proxy'):
-            self.kub('-n', 'kube-system', 'rollout', 'status', resource, '--timeout=180s')
+            self.kub('-n', 'kube-system', 'rollout', 'status', resource,
+                     '--timeout=' + str(p.TIMEOUTS['rollout_seconds']) + 's',
+                     timeout=p.TIMEOUTS['rollout_seconds'] + 60)
         self.state['phase'] = 'cni-ready'; self.persist()
         return {'phase': self.state['phase'], 'uid': self.state['uid'], 'business_acceptance': False}
 
@@ -257,6 +276,8 @@ def create(entry_path):
     state = {'schema': 1, 'cluster': p.NAME, 'phase': 'creating', 'nodes': {}, 'uid': None,
         'material_lock_sha256': p.sha(p.ISOLATED / 'artifacts.lock.json'),
         'kind_config_sha256': hashlib.sha256(document).hexdigest(),
+        'formal_identity_sha256': p.IDENTITY_SHA256, 'formal_config_sha256': p.CONFIG_SHA256,
+        'formal_config': p.CONFIG,
         'node_image_id': node['docker_image_id'], 'admission': admitted}
     save(STATE_FILE, state)
     try:
@@ -264,7 +285,7 @@ def create(entry_path):
         if docker('image', 'inspect', '--format', '{{.Id}}', node['archive_tag']).decode().strip() != node['docker_image_id']:
             raise ValueError('Loaded KIND node identity differs from lock')
         run([p.MATERIALS / 'bin/kind', 'create', 'cluster', '--name', p.NAME, '--config', STATE_ROOT / 'kind.yaml',
-             '--image', node['archive_tag'], '--kubeconfig', p.KUBECONFIG, '--retain', '--wait', '0s'], timeout=600)
+             '--image', node['archive_tag'], '--kubeconfig', p.KUBECONFIG, '--retain', '--wait', '0s'], timeout=p.TIMEOUTS['create_seconds'])
         config = yaml.safe_load(p.KUBECONFIG.read_text())
         if (len(config['clusters']) != 1 or config['clusters'][0]['name'] != 'kind-' + p.NAME
                 or config['clusters'][0]['cluster']['server'] != 'https://127.0.0.1:' + str(p.API_PORT)
@@ -272,7 +293,7 @@ def create(entry_path):
                 or config['clusters'][0]['cluster'].get('proxy-url')
                 or any(any(k in u['user'] for k in ('exec', 'auth-provider')) for u in config['users'])):
             raise ValueError('Created kubeconfig identity differs')
-        account = pwd.getpwnam('zymun')
+        account = pwd.getpwnam(p.CONFIG['kubeconfig_owner'])
         os.chown(p.KUBECONFIG, account.pw_uid, account.pw_gid); os.chmod(p.KUBECONFIG, 0o600)
         state['kubeconfig_sha256'] = p.sha(p.KUBECONFIG)
     finally:
@@ -309,13 +330,14 @@ def main():
         print(json.dumps(result, indent=2)); return
     if not args.apply:
         print(json.dumps({'dry_run': True, 'action': args.action, 'cluster': p.NAME,
+            'configuration': str(p.CONFIG_PATH), 'configuration_sha256': p.CONFIG_SHA256,
             'requires': ['independently restored backup', 'owned public entry with new readonly Harbor',
                          'old control-plane already stopped', 'fresh storage/ports/capacity'],
             'delete': False, 'stop_old_nodes': False, 'runtime_verified': False}, indent=2)); return
     if os.geteuid() != 0:
         raise ValueError('Root required for formal creation and mount ownership')
     LOG_FAILURES = True
-    storage(load_harbor(HARBOR_CONFIG), minimum_gib=20)
+    storage(harbor_config(), minimum_gib=p.LIMITS['data_reserve_gib'])
     path = Path('/data/kind-clusters/.formal-create.lock')
     descriptor = os.open(path, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
     with os.fdopen(descriptor, 'rb+') as handle:

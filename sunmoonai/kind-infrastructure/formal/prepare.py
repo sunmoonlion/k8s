@@ -17,16 +17,18 @@ import subprocess
 import sys
 
 import yaml
+from configuration import CONFIG, CONFIG_PATH, CONFIG_SHA256, IDENTITY_SHA256
 
 HERE = Path(__file__).resolve().parent
 ISOLATED = HERE.parent / 'isolated'
-NAME = 'sunmoon-kind-main'
-UUID = 'a28de356-4ba1-4a21-93f5-744b9b9d8be0'
-MATERIALS = Path('/home/zymun/packages-to-be-installed/releases/kind-1.36.4-calico-3.32.2-linux-amd64')
+NAME = CONFIG['cluster']
+UUID = CONFIG['storage_uuid']
+MATERIALS = Path(CONFIG['materials_root'])
 STORAGE = Path('/data/kind-clusters') / NAME
-KUBECONFIG = Path('/home/zymun/.kube/sunmoon-kind-main.config')
+KUBECONFIG = Path(CONFIG['kubeconfig'])
 GUARD = Path('/opt/sunmoon/admin/storage/storage-20260927-v2/check-storage-mounts.sh')
-POD_CIDR, SERVICE_CIDR, API_PORT = '10.246.0.0/16', '10.98.0.0/16', 17443
+POD_CIDR, SERVICE_CIDR, API_PORT = CONFIG['pod_cidr'], CONFIG['service_cidr'], CONFIG['api_port']
+LIMITS, TIMEOUTS = CONFIG['limits'], CONFIG['timeouts']
 GIB = 1024**3
 
 
@@ -54,11 +56,7 @@ def document(lock):
             {'hostPath': str(STORAGE / suffix / 'static'), 'containerPath': '/data/kind-local-storage'},
         ]})
     # The public TLS port belongs to the host SNI proxy, never to a KIND node.
-    nodes[0]['extraPortMappings'] = [
-        {'containerPort': 30443, 'hostPort': 19443, 'listenAddress': '127.0.0.1', 'protocol': 'TCP'},
-        *[{'containerPort': node_port, 'hostPort': host_port, 'listenAddress': '0.0.0.0', 'protocol': 'TCP'}
-          for node_port, host_port in [(30080, 80), (30444, 30444), (30445, 30445), (30446, 30446)]],
-    ]
+    nodes[0]['extraPortMappings'] = [dict(item) for item in CONFIG['port_mappings']]
     return {'kind': 'Cluster', 'apiVersion': 'kind.x-k8s.io/v1alpha4', 'name': NAME,
             'networking': {'apiServerAddress': '127.0.0.1', 'apiServerPort': API_PORT,
                            'disableDefaultCNI': True, 'podSubnet': POD_CIDR,
@@ -68,6 +66,8 @@ def document(lock):
 
 def plan(lock):
     return {'schema': 1, 'cluster': NAME, 'phase': 'preparation-only', 'dry_run': True,
+            'configuration': str(CONFIG_PATH), 'configuration_sha256': CONFIG_SHA256,
+            'identity_sha256': IDENTITY_SHA256, 'limits': LIMITS, 'timeouts': TIMEOUTS,
             'kubernetes': '1.36.4', 'kind': '0.33.0', 'calico': '3.32.2',
             'storage_uuid': UUID, 'materials': str(MATERIALS), 'kubeconfig': str(KUBECONFIG),
             'kubectl': str(MATERIALS / 'bin/kubectl'), 'registry': 'harbor.sunmoonai.com:30443',
@@ -129,11 +129,11 @@ def physical_capacity():
     value['remaining_data_growth_bytes'] = max(0, 100 * GIB - value['DataVhdLength'])
     # Initial cluster-only allowance, not a lifetime capacity promise or a
     # reservation for the independent Harbor restore/platform deployment.
-    value['initial_node_budget_bytes'] = 10 * GIB
-    value['metadata_margin_bytes'] = 2 * GIB
+    value['initial_node_budget_bytes'] = LIMITS['initial_node_gib'] * GIB
+    value['metadata_margin_bytes'] = LIMITS['metadata_margin_gib'] * GIB
     value['projected_c_free_bytes'] = (value['CFreeBytes'] - value['remaining_data_growth_bytes']
                                      - value['initial_node_budget_bytes'] - value['metadata_margin_bytes'])
-    value['minimum_c_free_bytes'] = 50 * GIB
+    value['minimum_c_free_bytes'] = LIMITS['windows_reserve_gib'] * GIB
     return value
 
 
@@ -148,7 +148,7 @@ def check(lock):
     if (GUARD.resolve() != GUARD or GUARD.stat().st_uid != 0 or GUARD.stat().st_mode & 0o022):
         raise ValueError('Published storage guard ownership/path changed')
     report['storage'] = json.loads(run(['bash', str(GUARD), '--layout', 'sunmoon-data',
-        '--expected-uuid', UUID, '--min-free-gib', '20', '--require-service-visibility']))
+        '--expected-uuid', UUID, '--min-free-gib', str(LIMITS['data_reserve_gib']), '--require-service-visibility']))
     for path in (STORAGE, KUBECONFIG):
         if path.resolve() != path or path.exists() or path.is_symlink():
             blockers.append('Fresh target already exists or has a symlink: ' + str(path))
@@ -196,17 +196,17 @@ def check(lock):
     report['capacity'] = {'memory_available_bytes': available,
         'docker_filesystem_free_bytes': shutil.disk_usage(docker_root).free,
         'data_filesystem_free_bytes': shutil.disk_usage('/data/kind-clusters').free,
-        'initial_data_budget_bytes': 2 * GIB,
-        'minimum_data_free_after_budget_bytes': 20 * GIB,
+        'initial_data_budget_bytes': LIMITS['initial_data_gib'] * GIB,
+        'minimum_data_free_after_budget_bytes': LIMITS['data_reserve_gib'] * GIB,
         'physical_windows': physical_capacity()}
-    if available < 16 * GIB:
-        blockers.append('Available memory below 16 GiB')
-    if report['capacity']['docker_filesystem_free_bytes'] < 30 * GIB:
-        blockers.append('Docker filesystem free below 30 GiB')
-    if report['capacity']['data_filesystem_free_bytes'] < 22 * GIB:
-        blockers.append('Data disk lacks 2 GiB initial budget plus 20 GiB reserve')
-    if report['capacity']['physical_windows']['projected_c_free_bytes'] < 50 * GIB:
-        blockers.append('Initial cluster budget and full data disk would violate 50 GiB C reserve')
+    if available < LIMITS['memory_free_gib'] * GIB:
+        blockers.append('Available memory below configured reserve')
+    if report['capacity']['docker_filesystem_free_bytes'] < LIMITS['docker_free_gib'] * GIB:
+        blockers.append('Docker filesystem free below configured reserve')
+    if report['capacity']['data_filesystem_free_bytes'] < (LIMITS['initial_data_gib'] + LIMITS['data_reserve_gib']) * GIB:
+        blockers.append('Data disk lacks configured initial budget plus reserve')
+    if report['capacity']['physical_windows']['projected_c_free_bytes'] < LIMITS['windows_reserve_gib'] * GIB:
+        blockers.append('Initial cluster budget and full data disk would violate configured C reserve')
     report['blockers'] = blockers + report['remaining_gates']
     return report
 

@@ -1,3 +1,15 @@
+## 最新续接：2026-09-28 正式 KIND 配置化、两份设计重写与旧根入口删除
+
+基线 2a220f2af7b2d396827f6475b14ea50a6c2c56b9，luna 开工干净。用户继续原整理，并要求按新情况处理根持久化方案、重写 image-management-design.md、说明去向后删除 kind使用指南.md 空壳、检查删除 refactor-cluster-arg.sh。
+
+- 新 formal/deploy-kind.json + configuration.py：准备、创建/CNI、启停共用参数。端口、网段、物料/kubeconfig/属主、容量预算、等待时限来自配置；CLI kind 路由支持 --config 绝对路径，优先于 SUNMOON_KIND_CONFIG。固定 main/盘UUID、三节点六挂载、30443不分配给节点、TLS回环、旧节点保护及容量原下限仍硬检查；未知/重复字段、错类型、重叠网段/端口拒绝。preparecheck/create/lifecycle容量参数统一；对应节点/rollout外层超时随配置增加余量。创建前查用户存在、Harbor盘UUID与KIND一致、formal SNI下一跳与TLS映射一致。
+- 创建状态新增 formal_config 完整快照、完整摘要和身份摘要，身份包括路径/网段/端口等；后续 Cluster 拒绝身份漂移。limits/timeouts排除身份摘要，允许提高容量/调整等待；stop仍不查容量。不兼容自动认领缺身份字段的未知状态；main从未正式创建，未迁移实际state。受管存储guard、物料版本锁和节点形状仍是保护约束，不提供关闭开关。
+- 原持久化文档345行的旧架构重写：100GiB C盘VHDX/两bind/六节点挂载、静态和动态卷区别、集群外Harbor、同盘与机器外备份、配置入口、当前与待验明确分开；删除旧宽权限和目录清空命令，纠正local PV不是hostPath别名、目录保留不是自动恢复、云主机数据不统称节点容器内。原理对照Kubernetes官方Volumes/PV/StorageClass并在文内引用；现场事实以本次既有记录/仓库模板为准，没有实时集群查询。
+- image-management-design.md由旧集群内Harbor/自制节点预装方案改为独立仓库、唯一物料根、三类自举/业务镜像、共享发布与摘要/配置/备份清理。发现并明确记录未完代码：unified-deployment-template仍有curl -k/skopeo不验TLS回退、旧配置和忽略登录失败；build-push-app-images仍有ALLOW_PROTECTED_TAG绕过；其余KIND/loadimage调用链仍待改，不宣称已经统一或可生产用。
+- 删除根kind使用指南.md三行指针，README说明formal指南与legacy历史位置；legacy/local旧内容继续保留，manifest补指针删除状态。refactor-cluster-arg.sh是197行一次性批量正则改写器，仓库搜索无调用方，用户要求下删除；现用utils/cluster-arg-parser.sh及58个包含引用的Shell文件未动，不执行重构器。Git历史保留，不额外归档一次性工具。
+- 5 Python AST；4默认计划（含--config）成功；新旧默认KIND YAML逐字节一致，3节点6bind，SHA6619929978256872f3f3fce2ff7426efafdfc34fd4d44b0badb48390368a1351；5份文档50个本地链接存在，git diff --check通过。报告scripts/results/luna-formal-config-and-designs.20260928.json。不运行测试套件、create/CNI/启停/preflight、Docker/K8s/Windows/云SSH/真实凭据/现场清理。
+- 下一步继续共享镜像检查/发布严格TLS和账号、平台静态PV节点名/消费者接线，随后按批准方案恢复现场迁移。入口维护/main/真实Docker节点CI/重启重建独立性/云闭包/最终本机和东京临时物料清理均未完成。旧节点/卷/Harbor必要恢复数据保护；inbox不变；仅本地luna提交，不push、不通知“luna做完了”。
+
 ## 最新续接：2026-09-28 私有凭据入口、旧镜像工具归档与配置要求
 
 基线 b3a49ec0efc1619f86c69ae6beb2205a800f0575，luna 开工干净。本单元继续已批准整理；现场迁移保持暂停。

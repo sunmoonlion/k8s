@@ -1,345 +1,175 @@
 # K8s 持久化方式及本项目持久化方案设计
 
-> 更新时间：2026-04-14
+更新时间：2026-09-28。本文取代 2026-04-14 版的项目方案和操作说明，旧内容通过 Git 历史查询。
 
----
+**统一目标：只有一套部署代码，加上两种建集群的方式。本地把平台和应用跑通，云上除了建集群那一步，其余走的是同一条路。**
 
-## 一、K8s 持久化方式全景
+本页是持久化架构与日常操作索引，具体配置以被链接的配置文件为准。当前正在整理和迁移，不能把目标拓扑当成已经部署完成。
 
-### 1.1 分类总览
+## 一、先分清几个概念
 
-```
-K8s 持久化方式
-├── 第一大类：直接挂载（Volume，Pod 级别，不经过 PV/PVC 体系）
-│   ├── 临时挂载：emptyDir
-│   ├── 持久挂载：hostPath
-│   └── hostPath 变种：Local Volume（hostPath + nodeAffinity）
-│
-└── 第二大类：通过 PV/PVC 体系挂载
-    ├── 静态供应（Static Provisioning）
-    │   ├── 管理员手动创建 PV，PVC 按 storageClassName + 容量匹配绑定
-    │   └── PVC 通过 volumeName 精确绑定指定 PV
-    │
-    └── 动态供应（Dynamic Provisioning）
-        └── StorageClass + Provisioner 自动创建 PV
-            ├── local-path-provisioner（Rancher，轻量，Kind 内置）
-            ├── NFS Provisioner（共享存储）
-            └── 其他（Longhorn、Ceph、云厂商 CSI 等）
-```
+| 概念 | 说明 | 能否保证数据不丢 |
+| --- | --- | --- |
+| 容器可写层 | 容器自身文件系统的写入层 | 不作为业务持久化位置 |
+| `emptyDir` | 同一个 Pod 内的临时共享目录 | Pod 删除后不保留 |
+| `hostPath` | 把 Kubernetes 节点上的目录挂给 Pod；也可作为 PV 的后端 | 取决于那台节点和目录是否保留，不提供副本 |
+| `local` PV | 使用 `spec.local.path` 的本地持久卷，需要节点亲和性 | 节点本地存储，不自动跨节点复制 |
+| PV / PVC | PV 描述存储资源，PVC 申请并绑定资源 | 资源对象存在不等于底层数据已备份 |
+| StorageClass | 描述供应方式、绑定时机和回收策略 | 名字不代表实际介质或高可用能力 |
 
----
+旧版把 Local Volume 写成 `hostPath + nodeAffinity`，概念不准确。项目现有静态模板中的 `spec.hostPath` 仍是 hostPath 类型；给它加节点亲和性不会变成 `spec.local`。原理见 [Kubernetes Volumes](https://kubernetes.io/docs/concepts/storage/volumes/#local)。
 
-### 1.2 第一大类：直接挂载（Volume）
+静态供应是预先创建 PV；动态供应由 provisioner 根据 PVC 创建资源。`volumeName` 指定目标 PV，仍须满足绑定条件。Helm 的 `existingClaim` 是引用已有 PVC 的 chart 参数。`Retain` 表示释放后保留底层存储待处理，不会自动完成重绑定；`Delete` 可能删除供应出的存储。见 [Persistent Volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)。
 
-直接在 Pod spec 中定义，与 PV/PVC 无关，生命周期跟着 Pod 或节点走。
+`WaitForFirstConsumer` 能结合 Pod 的调度要求安排卷绑定，但不能为本地数据提供副本。动态供应也需要容量、权限、回收和恢复管理。见 [Storage Classes](https://kubernetes.io/docs/concepts/storage/storage-classes/)。
 
-#### 1.2.1 emptyDir（临时挂载）
+## 二、当前实际状态与目标
 
-```yaml
-volumes:
-  - name: cache
-    emptyDir: {}
-```
+下表依据迁移记录和已提交实现整理；本次文档修改没有重新操作现场。
 
-- Pod 启动时创建，Pod 销毁时随之消失
-- 同一 Pod 内多个容器可共享
-- 适合：缓存、临时计算文件、容器间共享数据
+| 对象 | 当前记录 | 后续安排 |
+| --- | --- | --- |
+| 旧 `kind` | 仍承载公开入口、旧 Harbor 和当前 inbox | 保留节点和卷；维护切换及观察期完成前不删除 |
+| `sunmoon-kind-136` | 一次性验证环境，未按新方案挂宿主数据目录 | 不承载正式数据；不能直接当正式环境 |
+| `sunmoon-kind-main` | 配置/创建/启停代码已准备，尚未正式建群 | 1 控制面 + 2 worker，每节点两条独立宿主挂载 |
+| 100 GiB 独立 VHDX | 已创建并完成过 UUID、bind、systemd/Docker 可见性核验 | 每次启动仍检查；完整重启恢复验收尚未完成 |
+| 宿主 Harbor | 独立实例恢复和受管备份恢复已验，候选停止保留 | 正式 30443 入口、真实 Docker/节点/CI 推拉仍待验收 |
+| 云端 | 没有可实操的服务器 | 统一代码、打印演练和静态核对；未经实机验证 |
 
-#### 1.2.2 hostPath（持久挂载）
+旧 `kind-worker2` 没有对应宿主目录挂载，其沙箱持久卷在节点关联的 Docker 存储里。**不能因为“没有业务数据要迁”就删它或清理 Docker 卷。**
 
-```yaml
-volumes:
-  - name: data
-    hostPath:
-      path: /data/myapp
-      type: DirectoryOrCreate
-```
+## 三、本地数据的完整路径
 
-- 挂载节点（宿主机）上的指定目录
-- Pod 销毁后数据留在那台节点上
-- 致命缺点：Pod 重新调度到其他节点后找不到数据
+### 3.1 Windows、WSL、节点、Pod 是不同层
 
-#### 1.2.3 Local Volume（hostPath + nodeAffinity）
-
-```yaml
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: my-local-pv
-spec:
-  storageClassName: ""
-  hostPath:
-    path: /data/myapp
-    type: DirectoryOrCreate
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values: [my-node-1]
+```text
+Windows C 盘（同一块物理硬盘）
+├─ Ubuntu 系统 VHDX
+│  ├─ WSL 系统、Docker 运行时数据
+│  └─ /data/kind-local-storage    旧数据，禁止覆盖挂载/清空
+└─ C:\wsl-disks\sunmoon-data.vhdx    动态扩展，上限 100 GiB，ext4
+   └─ /mnt/sunmoon-data
+      ├─ kind-clusters  ← bind 到 /data/kind-clusters
+      │  └─ sunmoon-kind-main
+      │     ├─ control-plane/{static,local-path}
+      │     ├─ worker/{static,local-path}
+      │     └─ worker2/{static,local-path}
+      └─ harbor         ← bind 到 /data/harbor
+         └─ 独立 Harbor 实例及受管数据
 ```
 
-- 本质是 hostPath，但通过 `nodeAffinity` 告诉 K8s 调度器：使用此 PV 的 Pod 必须调度到指定节点
-- 补了 hostPath 最大的漏洞——Pod 漂移后找不到数据
-- 代价：数据与节点强绑定，该节点宕机则数据不可用（无高可用）
+数据盘和系统盘虽然是两个 VHDX，仍在同一块 C 盘物理硬盘上，**不能防硬件故障**。100 GiB 是 KIND 数据与 Harbor 共同使用的上限，不是每个节点各有 100 GiB。PV 里的容量声明也不等于给本地目录配置了磁盘配额。
 
-**三者对比**
+物理盘容量门禁会扣除数据 VHDX 长满后的潜在增长、建群预算和余量，要求 C 盘仍剩至少 50 GiB。删除 Linux 文件不等于 Windows 立即释放同样空间；VHDX 压缩另按维护窗口进行。
 
-| | emptyDir | hostPath | Local Volume |
-|--|--|--|--|
-| 数据生命周期 | Pod 生命周期 | 节点上永久 | 节点上永久 |
-| Pod 重调度 | 新 Pod 空盘 | 新节点上无数据 | 强制回原节点 |
-| 经过 PV/PVC | 否 | 否 | 是（静态 PV） |
-| 生产可用性 | 不建议持久化 | 不建议 | 单节点场景可用 |
+### 3.2 三节点、六条挂载
 
----
+正式节点的宿主目录互相独立，但节点内路径保持现有静态卷所需的名字：
 
-### 1.3 第二大类：通过 PV/PVC 体系
+| 节点后缀 | 宿主路径（都在 `/data/kind-clusters/sunmoon-kind-main/` 下） | 节点容器内路径 |
+| --- | --- | --- |
+| `control-plane` | `control-plane/static` | `/data/kind-local-storage` |
+| `control-plane` | `control-plane/local-path` | `/var/local-path-provisioner` |
+| `worker` | `worker/static` | `/data/kind-local-storage` |
+| `worker` | `worker/local-path` | `/var/local-path-provisioner` |
+| `worker2` | `worker2/static` | `/data/kind-local-storage` |
+| `worker2` | `worker2/local-path` | `/var/local-path-provisioner` |
 
-PV（PersistentVolume）是集群级别的存储资源，PVC（PersistentVolumeClaim）是 Pod 对存储的申请。两者解耦后，Pod 只关心"我要多大、什么访问模式的存储"，不关心底层怎么实现。
+例：Pod 使用 `sunmoon-kind-main-worker` 上的 `/data/kind-local-storage/postgresql` 时，底层应是新数据盘的 `kind-clusters/sunmoon-kind-main/worker/static/postgresql`。
 
-#### 1.3.1 静态供应（Static Provisioning）
+这里的**节点内** `/data/kind-local-storage` 和 WSL 上受保护的**旧宿主** `/data/kind-local-storage` 是不同位置。不能因为字符串相同就把旧宿主目录挂给新节点。
 
-管理员提前手动创建 PV，PVC 创建时 K8s 去找匹配的 PV 绑定。
+给三节点挂盘不表示默认把数据库调度到控制面；数据库仍按污点、资源和 PV 节点亲和性调度。相同组件名在三个节点目录中是三份不同数据，不自动同步。
 
-> 静态供应是**一种供应方式**，PVC 绑定 PV 有两种写法：
+### 3.3 挂载先于服务
 
-**写法一：条件匹配**（K8s 自动从可用 PV 中找满足条件的）
+启动 Harbor 或正式 KIND 之前，检查预期 UUID、根挂载、两条 bind 以及 systemd/Docker 的实际挂载视图。缺盘时不能创建一个空目录冒充挂载，否则服务会把数据写进系统盘。
 
-匹配条件：`storageClassName` 相同 + `accessModes` 兼容 + 容量满足（三者同时满足）。有多个候选 PV 时选容量最接近的。
+Windows 当前采用登录触发的无窗口任务，不再每分钟检查。统一服务启动入口有按需检查和附盘接线；正常挂载不调用 Windows。维护标记、任务禁用、附盘失败或视图不一致时拒绝启动。完整 Windows/WSL 重启及缺盘恢复仍待实测。
 
-```yaml
-# 管理员创建 PV
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: my-pv
-spec:
-  capacity:
-    storage: 8Gi
-  accessModes: [ReadWriteOnce]
-  storageClassName: ""          # 空 = 不走 SC，只能静态绑定
-  hostPath:
-    path: /data/myapp
----
-# 用户创建 PVC，不写 volumeName，K8s 按条件自动匹配
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: my-pvc
-spec:
-  accessModes: [ReadWriteOnce]
-  resources:
-    requests:
-      storage: 8Gi
-  storageClassName: ""          # 与 PV 的 storageClassName 一致，才能匹配
-```
+管理员发布、计划任务、维护暂停与恢复以 [存储操作索引](sunmoonai/kind-infrastructure/mount/README.md) 和 [数据盘操作卡](sunmoonai/kind-infrastructure/docs/owner-data-disk-100g.md) 为准。本文不再保留旧 D/E 盘操作命令。
 
-**写法二：精确指定**（volumeName，直接点名绑哪个 PV）
+## 四、集群内业务数据
 
-```yaml
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: my-pvc
-spec:
-  volumeName: my-pv             # 跳过匹配逻辑，1:1 绑定
-  storageClassName: ""
-  accessModes: [ReadWriteOnce]
-  resources:
-    requests:
-      storage: 8Gi
-```
+### 4.1 静态卷继续保留，节点绑定必须更新
 
-> **补充：Helm 层的 existingClaim**
->
-> 这不是第三种绑定方式，而是 Helm Chart 的约定——跳过 PVC 创建，直接引用一个已存在的 PVC。
-> 该 PVC 本身可能是静态绑定的，也可能是动态创建的，与供应方式无关。
->
-> ```yaml
-> # Helm values.yaml
-> persistence:
->   existingClaim: my-pvc       # Helm 不再创建 PVC，直接用这个
-> ```
+现有组件配置和静态模板继续作为共享部署代码的输入，不为了换集群顺便升级数据库版本。
 
-#### 1.3.2 动态供应（Dynamic Provisioning）
+已在仓库找到 PostgreSQL、Redis（含 NodeBull）、MongoDB、Neo4j、对象存储、Elasticsearch、RabbitMQ、Casdoor、pgAdmin 的 KIND 静态 PV 文件；这不代表它们都已适配新 main。旧版“Casdoor/pgAdmin 待建”的清单已过时，Harbor 则应从集群内正式组件清单移出。
 
-用户创建 PVC 时，K8s 通过 StorageClass 找到对应 Provisioner，由 Provisioner 自动创建 PV 并绑定。
+部署前逐组件核对：
 
-```yaml
-# 1. 管理员创建 StorageClass
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: local-path
-provisioner: rancher.io/local-path
-reclaimPolicy: Delete
-volumeBindingMode: WaitForFirstConsumer
+1. `nodeAffinity` 使用实际正式节点名，不能仍绑定 `kind-worker`。
+2. hostPath 仍为 `/data/kind-local-storage/<组件>`，落在所选节点的 `static` 挂载中。
+3. PV/PVC 名称、命名空间、storageClassName、容量、访问模式和 chart 的 existingClaim 一致。
+4. 组件 UID/GID、fsGroup 与目录权限相符；按组件准备目录，不能沿用全目录 `chmod -R 777`。
+5. 明确回收策略。保留数据的卷使用审核过的 Retain 方案，处理 Released/claimRef 时不能仅凭 PVC 同名就假定安全。
 
----
-# 2. 用户创建 PVC，触发自动建 PV
-apiVersion: v1
-kind: PersistentVolumeClaim
-spec:
-  storageClassName: local-path
-  accessModes: [ReadWriteOnce]
-  resources:
-    requests:
-      storage: 8Gi
-```
+实际模板例子：[PostgreSQL 静态 PV/PVC](sunmoonai/data-platform/postgresql/resources/custom-values/postgresql-kind-pv-pvc.yaml)。本轮仍能看到旧节点名，正式消费者渲染/部署验收尚未完成。
 
-**常见 Provisioner 对比**
+### 4.2 动态 local-path
 
-| Provisioner | 适合场景 | 高可用 | 数据位置 |
-|--|--|--|--|
-| rancher.io/local-path | 开发 / 单节点 / Kind | 否 | 节点本地目录 |
-| NFS Provisioner | 多 Pod 共享读写 | 依赖 NFS 服务器 | NFS 服务器 |
-| Longhorn | 生产多副本 | 是（多副本） | 节点本地，跨节点复制 |
-| 云厂商 CSI（如 AWS EBS）| 云原生生产 | 依赖云服务 | 云存储 |
+KIND 的动态卷目录也要持久挂载，不能只保护静态数据库路径。建群后需核 provisioner 的真实配置、生成 PV 的路径/节点绑定，以及 `standard`、`local-path` 两个类各自的回收策略，不能只检查存在一个 StorageClass 名字。
 
----
+仓库的 [local-path 类声明](sunmoonai/kind-infrastructure/manifests/storageclass-local-path.yaml) 采用 Retain 和 WaitForFirstConsumer；它存在于仓库不代表已经安装进新 main，也不代表另一个默认类采用相同策略。
 
-### 1.4 静态供应 vs 动态供应
+### 4.3 重建不是自动恢复
 
-| | 静态供应 | 动态供应 |
-|--|--|--|
-| PV 创建者 | 管理员手动 | Provisioner 自动 |
-| 适合场景 | 固定数据目录、集群重建后复用数据 | 按需创建、不关心数据在哪 |
-| 路径/UUID | 管理员指定，固定 | Provisioner 生成，含 UUID |
-| 数据复用 | 容易（路径固定）| 困难（UUID 变化）|
-| 运维成本 | 需提前建 PV | 零操作 |
+宿主数据目录保留，只解决数据字节可能仍在的问题。重建还需恢复或重新绑定 PV/PVC、正确节点亲和性、命名空间、Secret/证书和组件配置，核目录权限及数据库一致性。动态目录名含旧 PVC 身份时，更不能重新申请一个空卷就当恢复完成。
 
----
+本次旧业务数据不迁移是所有者选择；这个选择不等于允许随意删除旧节点、卷或 Harbor 镜像。以后如果已有业务数据，重建必须按备份恢复流程操作。
 
-## 二、本项目持久化方案
+## 五、Harbor 在集群外独立持久化
 
-### 2.1 环境分层
+本地与云端统一使用 [registry-platform](sunmoonai/registry-platform/README.md)。本地在 WSL 宿主运行，数据位于 `/data/harbor`；云上目标是独立仓库主机。所有集群都是使用方，`harbor_enabled=false`，统一地址 `harbor.sunmoonai.com:30443`。
 
-项目按运行环境分三层，每条路只有一种做法，无开关：
+Harbor 的镜像层、数据库、配置、证书、加密密钥及必要任务状态共同组成恢复对象。迁移先保持 Harbor 2.13.2、既定数据库/Redis 版本，使用逻辑导出导入、镜像层复制和全目录摘要比对。升级是独立步骤。
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│  Layer 1：Kind（WSL 本地开发）                                 │
-│    静态 hostPath PV（*-kind-pv-pvc.yaml）+ dev-values-kind.yaml│
-│    数据固定写入 WSL /data/kind-local-storage/，集群重建后保留   │
-├──────────────────────────────────────────────────────────────┤
-│  Layer 2：Remote（C1/C2，真实 K8s 集群）                       │
-│    动态 local-path SC + dev-values.yaml                       │
-│    数据在节点容器内（含 UUID 路径），重建后丢失                  │
-├──────────────────────────────────────────────────────────────┤
-│  Layer 3：Production                                         │
-│    动态 fast-ssd SC + prod-values.yaml                        │
-└──────────────────────────────────────────────────────────────┘
-```
+本地 30443 由按域名分流的 TLS 直通代理接管：Harbor 域名转宿主 Harbor，其他域名转集群入口。云端仓库独立主机不需要这一本地共用端口代理。正式入口目前尚未切换。
 
-### 2.2 StorageClass 设计
+**停止或重建 KIND 不应触碰 `/data/harbor` 或 Harbor 容器。** 这项结构要求已经进入实现，但重建独立性还要实际验收。关闭 WSL、重启 Docker、宿主磁盘故障仍可能同时影响 KIND 与 Harbor。
 
-| 环境 | SC 名称 | Provisioner | 创建方式 |
-|--|--|--|--|
-| Kind | 不使用 SC（静态 PV，`storageClassName: ""`）| 无 | 手动 apply *-kind-pv-pvc.yaml |
-| Remote | `local-path` | rancher.io/local-path | step09 脚本安装 local-path-provisioner |
-| Production | `fast-ssd` | 云厂商 CSI | 集群初始化时配置 |
+验收至少包括：重建前后 Harbor 全目录/镜像 digest、数据库与账号可用性一致；宿主服务不被建群脚本启停或删除；重建后节点信任、DNS、代理绕行、imagePullSecrets 和真实拉取重新通过。不能用一次 HTTP `/v2/` 返回正常代替全部验收。
 
-> Kind 内置了 local-path-provisioner（SC 名为 `standard`，kind-up 时会创建 `local-path` 别名），但本项目在 Kind 下使用静态 hostPath PV，不依赖 provisioner。
+## 六、云端共用与边界
 
-### 2.3 Kind 部署机制
+云上通过 kubeadm 建群，本地通过 KIND 建群；平台和应用继续共用部署逻辑，以明确配置选择存储能力。云端实际数据目录位于对应主机/磁盘，不应像旧文档一样统称为“节点容器内”。
 
-Kind 下唯一的部署方式，无模式开关：
+当前没有云服务器，云端新流程未经实机验证。旧 `fast-ssd` 名称和 prod-values 中的副本数是配置输入，不证明已经存在对应 CSI、高可用数据库或可恢复备份。
 
-```
-WSL 宿主机                     Kind 第一个 worker 节点（容器）      Pod
-/data/kind-local-storage   →  /data/kind-local-storage        →  静态 PV → PVC → Pod
-（集群删除后仍在）            （extraMounts 挂入，kind-cluster.yaml）
-```
+首次上云需核：数据盘与文件系统、真实 StorageClass/驱动、可用区和节点亲和性、权限与容量、卷回收策略、恢复流程、独立 Harbor 主机和使用方信任。具体核对入口见 [云端升级审计](sunmoonai/infrastructure/docs/infrastructure-upgrade-audit.md)。
 
-**关键设计点**
+## 七、备份与清理
 
-| 特征 | 说明 |
-|--|--|
-| `storageClassName: ""` | 不走 SC，纯静态绑定，provisioner 不参与 |
-| `persistentVolumeReclaimPolicy: Retain` | PVC 删除后 PV 和数据保留 |
-| `hostPath.type: DirectoryOrCreate` | 目录不存在时自动创建 |
-| `nodeAffinity` 指向 `kind-worker` | 强制 Pod 调度到 extraMounts 所在节点 |
-| 路径固定（无 UUID）| YAML 写一次永久有效，无需更新脚本 |
-| extraMounts 挂在第一个 worker | control-plane 不承载有状态负载 |
+| 层次 | 范围与目的 | 当前边界 |
+| --- | --- | --- |
+| 同盘备份 | 数据库一致性备份、对象存储、私有配置，以及 Harbor 完整恢复材料；防误删、升级失败 | 与原数据同物理硬盘，不能防整盘损坏；容量和恢复演练要单独核验 |
+| 机器外备份 | 所有者指定的数据库、对象存储、`~/private` | 移动硬盘或加密上传对象存储的落点待定；不默认外传完整镜像层 |
 
-**集群重建后数据自动恢复**：WSL 宿主机目录始终存在，重建集群后 apply 同一份 `*-kind-pv-pvc.yaml`，Pod 绑回原目录，数据即恢复。
+机器外备份接口和恢复密钥管理见 [主方案](sunmoonai/kind-infrastructure/docs/storage-and-harbor-placement-decision.md)，Harbor 已做的备份恢复见 [宿主备份](sunmoonai/registry-platform/docs/host-backup.md)。本页不把预留接口写成已经运行的任务。
 
-**想清空数据**：`rm -rf /data/kind-local-storage/<component>/*`，无需改部署方式。
+最终必须清理本次重构临时目录、文件及东京下载中转物料，按 [回收方案](sunmoonai/kind-infrastructure/docs/wsl-space-reclamation-plan.md) 逐项核验并记录实际释放量。正式离线物料、必要备份和未达退出条件的旧节点/卷/历史代码继续保护。禁止全局 system/container/volume prune；不在本文提供直接清空数据目录的日常命令。
 
-### 2.4 各组件 Kind 静态 PV 配置
+## 八、日常从哪里改、从哪里操作
 
-有状态组件分两组，反映历史演进中的完整度差异：
+| 事项 | 唯一入口 |
+| --- | --- |
+| 正式 KIND 参数、网段、端口、等待时间、容量门槛 | [formal/deploy-kind.json](sunmoonai/kind-infrastructure/formal/deploy-kind.json)；[操作说明](sunmoonai/kind-infrastructure/formal/README.md) |
+| 平台开关、组件配置、私有凭据引用 | [配置对照](sunmoonai/operations/configuration.md) |
+| 存储检查、按需附盘、持久化任务 | [mount](sunmoonai/kind-infrastructure/mount/README.md) |
+| Harbor 安装、启停、镜像数据与恢复 | [registry-platform](sunmoonai/registry-platform/README.md) |
+| 全部运维命令导航 | [仓库 README](README.md) 与 `./sunmoon help` |
+| 临时保留的旧实现及退出条件 | [legacy](legacy/README.md) |
 
-**第一组：已有静态 PV 支持（6 个）**
-
-| 组件 | 平台 | Kind PV 路径 | Kind PV 容量 |
-|--|--|--|--|
-| PostgreSQL | data-platform | `/data/kind-local-storage/postgresql` | 8 Gi |
-| Redis | data-platform | `/data/kind-local-storage/redis` | 5 Gi |
-| MongoDB | data-platform | `/data/kind-local-storage/mongodb` | 8 Gi |
-| Neo4j | data-platform | `/data/kind-local-storage/neo4j` | 20 Gi |
-| Elasticsearch | data-platform | `/data/kind-local-storage/elasticsearch` | 8 Gi |
-| RabbitMQ | messaging-platform | `/data/kind-local-storage/rabbitmq` | 10 Gi |
-
-**第二组：待补充静态 PV（4 个）**
-
-| 组件 | 平台 | Kind PV 路径 |
-|--|--|--|
-| Harbor | cicd-platform | `/data/kind-local-storage/harbor` |
-| Jenkins | cicd-platform | `/data/kind-local-storage/jenkins` |
-| Casdoor | app-platform | `/data/kind-local-storage/casdoor` |
-| pgAdmin | ops-platform | `/data/kind-local-storage/pgadmin` |
-
-**WSL 目录初始化（一次性）**
+默认计划示例：
 
 ```bash
-sudo mkdir -p /data/kind-local-storage/{postgresql,redis,mongodb,neo4j,elasticsearch,rabbitmq,harbor,jenkins,casdoor,pgadmin}
-sudo chmod -R 777 /data/kind-local-storage
+./sunmoon storage ensure
+./sunmoon kind prepare
+./sunmoon kind prepare render
+./sunmoon kind lifecycle start
+./sunmoon harbor client login
+./sunmoon platform plan --cluster KIND
 ```
 
-**生产配置（不涉及重构）**
-
-| 组件 | SC | 容量 | 副本数 |
-|--|--|--|--|
-| PostgreSQL | fast-ssd | 100 Gi | primary×1，replica×2 |
-| Redis | fast-ssd | 20 Gi | master×1，replica×2 |
-| MongoDB | fast-ssd | 100 Gi | 3（ReplicaSet）|
-| Neo4j | fast-ssd | 100 Gi | 3 |
-| Elasticsearch | fast-ssd | 100 Gi | master×3 |
-| RabbitMQ | fast-ssd | 50 Gi | 3 |
-
-### 2.5 文件结构
-
-**第一组（已有静态 PV）每个组件**：
-
-```
-resources/custom-values/
-├── dev-values.yaml           ← Remote 使用，动态 local-path
-├── dev-values-kind.yaml      ← Kind 使用，existingClaim 指向静态 PVC
-├── <component>-kind-pv-pvc.yaml  ← Kind 专用静态 hostPath PV/PVC
-└── prod-values.yaml          ← 生产，fast-ssd
-```
-
-**第二组（待补充）每个组件**：
-
-```
-resources/custom-values/
-├── dev-values.yaml           ← 当前 Kind + Remote 共用（待拆分）
-├── dev-values-kind.yaml      ← 待新建
-├── <component>-kind-pv-pvc.yaml  ← 待新建
-└── prod-values.yaml          ← 不动
-```
-
-### 2.6 关键代码位置
-
-| 内容 | 位置 |
-|--|--|
-| Kind 集群配置（extraMounts 在 kind-worker）| `sunmoonai/kind-infrastructure/deploy-kind/kind-cluster.yaml` |
-| local-path SC 别名 manifest | `sunmoonai/kind-infrastructure/manifests/storageclass-local-path.yaml` |
-| SC 别名自动应用逻辑 | `sunmoonai/kind-infrastructure/apply-namespaces-existing-cluster.sh` |
-| Remote SC 安装脚本 | `sunmoonai/infrastructure/steps/step09_storage.sh` |
-| Remote SC 配置 | `sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf`（STEP09_LOCAL_STORAGE_CLASS_NAME） |
-| 静态 PV/PVC（第一组，已有）| `sunmoonai/<platform>/<component>/resources/custom-values/*-kind-pv-pvc.yaml` |
-| 静态 PV/PVC（第二组，待建）| harbor / jenkins / casdoor / pgadmin 对应目录 |
+这些默认命令只打印计划/配置，不启动服务、不生成 Secret、不清理数据。实际动作仍须满足对应准入条件；不要绕过统一入口运行旧的重建或清理脚本。

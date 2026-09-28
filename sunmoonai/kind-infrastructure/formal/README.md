@@ -4,7 +4,44 @@
 
 `prepare.py` 实现 **plan / render / check**；`cluster.py` 新增 **create / install-cni / preflight**，创建/安装默认只打印，实际分支尚未执行。它们为 `sunmoon-kind-main` 准备建群参数、复核本地物料和现场条件；**不能把本单元当作正式建群完成**。旧 `deploy-kind/deploy-kind.conf` / `kind-cluster.yaml` 是 1.27.3 历史路径，不用于新正式集群。
 
-## 固定输入
+## 日常配置
+
+唯一正式配置为 [deploy-kind.json](deploy-kind.json)，prepare、create、install-cni、lifecycle 都读取它。
+不再通过改 Python 常量调整日常参数，也不读取旧 `deploy-kind/deploy-kind.conf`。
+
+```bash
+./sunmoon kind prepare
+./sunmoon kind prepare render
+# 临时选完整配置，路径必须绝对；仍只打印。
+./sunmoon kind cluster create --config /home/zymun/worktrees/luna/k8s/sunmoonai/kind-infrastructure/formal/deploy-kind.json
+```
+
+也可通过 `SUNMOON_KIND_CONFIG` 指定文件；直接调用 Python 后端时使用这个环境变量。
+统一入口的 `--config` 优先于环境变量。计划输出配置路径、完整配置摘要和身份摘要，便于确认采用哪一份。
+
+| 字段 | 控制内容 | 限制 |
+| --- | --- | --- |
+| `cluster` / `storage_uuid` | 明确目标集群和数据盘 | 本次只准已批准的 main 和既定 UUID；不允许通过改值动旧集群 |
+| `materials_root` | 已验收离线批次目录 | 仍按原 profile/lock 验证全部 SHA，不提供任意版本替代 |
+| `kubeconfig` / `kubeconfig_owner` | 新凭据文件路径与所有者 | 创建前确认用户存在；现有文件不覆盖，创建后核文件摘要 |
+| `pod_cidr` / `service_cidr` | Pod/Service 网段 | 私有 IPv4、互不重叠，实际创建前再核主机与旧集群冲突 |
+| `api_port` / `port_mappings` | API 和五项既定业务端口映射 | API 与 TLS 下一跳仍回环监听；宿主 30443 留给独立入口，不可重复占用 |
+| `limits` | 内存、Docker、数据盘、C 盘余量与初始预算 | 可调严格，不能降低已批准下限；100 GiB 数据盘仍按既定值核容量 |
+| `timeouts` | API/节点/rollout 等待和创建命令时限 | 正整数；传给对应等待命令与外层进程时限 |
+
+三节点、六条挂载、静态卷节点内路径、受管存储检查器以及禁止自动删除/重建属于架构约束，不提供关闭开关。
+正式 SNI profile 的下一跳必须与配置中的 TLS hostPort 一致；过渡入口仍按其旧 worker 身份核验。
+
+建群在受保护 `.state/state.json` 保存配置快照、完整摘要、身份摘要以及原有 KIND YAML/物料摘要。
+limits/timeouts 不计入身份摘要，可以调整等待时间或提高容量要求；身份参数变化会使后续启停/CNI 拒绝操作，
+需恢复原配置或另走审核迁移。stop 不做容量检查，因此提高余量门槛不会阻止正常停止。
+正式集群尚未创建，不为缺新身份字段的未知状态补默认值或自动认领节点。
+
+本次默认配置与配置化之前的 KIND YAML 逐字节一致：3 节点、6 bind，SHA256
+`6619929978256872f3f3fce2ff7426efafdfc34fd4d44b0badb48390368a1351`。
+只做静态解析和默认计划/渲染，未实际执行 create、CNI、启停或现场检查。
+
+## 当前默认输入
 
 | 项目 | 值 |
 | --- | --- |

@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "cluster": "sunmoon-kind-main",
+  "storage_uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+  "materials_root": "/home/zymun/packages-to-be-installed/releases/kind-1.36.4-calico-3.32.2-linux-amd64",
+  "kubeconfig": "/home/zymun/.kube/sunmoon-kind-main.config",
+  "kubeconfig_owner": "zymun",
+  "pod_cidr": "10.246.0.0/16",
+  "service_cidr": "10.98.0.0/16",
+  "api_port": 17443,
+  "port_mappings": [
+    {"containerPort": 30443, "hostPort": 19443, "listenAddress": "127.0.0.1", "protocol": "TCP"},
+    {"containerPort": 30080, "hostPort": 80, "listenAddress": "0.0.0.0", "protocol": "TCP"},
+    {"containerPort": 30444, "hostPort": 30444, "listenAddress": "0.0.0.0", "protocol": "TCP"},
+    {"containerPort": 30445, "hostPort": 30445, "listenAddress": "0.0.0.0", "protocol": "TCP"},
+    {"containerPort": 30446, "hostPort": 30446, "listenAddress": "0.0.0.0", "protocol": "TCP"}
+  ],
+  "limits": {
+    "memory_free_gib": 16,
+    "docker_free_gib": 30,
+    "data_reserve_gib": 20,
+    "initial_data_gib": 2,
+    "initial_node_gib": 10,
+    "metadata_margin_gib": 2,
+    "windows_reserve_gib": 50
+  },
+  "timeouts": {
+    "api_ready_seconds": 180,
+    "nodes_ready_seconds": 300,
+    "rollout_seconds": 180,
+    "create_seconds": 600
+  }
+}

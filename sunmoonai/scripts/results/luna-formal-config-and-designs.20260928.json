@@ -1,0 +1,88 @@
+{
+  "baseline": "2a220f2af7b2d396827f6475b14ea50a6c2c56b9",
+  "python_ast": [
+    "sunmoonai/kind-infrastructure/formal/configuration.py",
+    "sunmoonai/kind-infrastructure/formal/prepare.py",
+    "sunmoonai/kind-infrastructure/formal/cluster.py",
+    "sunmoonai/kind-infrastructure/formal/lifecycle.py",
+    "sunmoonai/operations/cli.py"
+  ],
+  "default_kind_yaml_byte_identical": true,
+  "kind_yaml_sha256": "6619929978256872f3f3fce2ff7426efafdfc34fd4d44b0badb48390368a1351",
+  "nodes": 3,
+  "extra_mounts": 6,
+  "configuration_sha256": "38a246c24eee106d8a0b4791631929f07cd12920965cb1bfb3dfd0eca1e6db72",
+  "identity_sha256": "8a59d82f0aa5e41291d9ae6157e2efd02bc4d0b0b30e2fc2c37356452cd0d091",
+  "plans": [
+    {
+      "argv": [
+        "./sunmoon",
+        "kind",
+        "prepare"
+      ],
+      "config": "/home/zymun/worktrees/luna/k8s/sunmoonai/kind-infrastructure/formal/deploy-kind.json",
+      "config_sha256": "38a246c24eee106d8a0b4791631929f07cd12920965cb1bfb3dfd0eca1e6db72",
+      "dry_run": true
+    },
+    {
+      "argv": [
+        "./sunmoon",
+        "kind",
+        "cluster",
+        "create"
+      ],
+      "config": "/home/zymun/worktrees/luna/k8s/sunmoonai/kind-infrastructure/formal/deploy-kind.json",
+      "config_sha256": "38a246c24eee106d8a0b4791631929f07cd12920965cb1bfb3dfd0eca1e6db72",
+      "dry_run": true
+    },
+    {
+      "argv": [
+        "./sunmoon",
+        "kind",
+        "lifecycle",
+        "start"
+      ],
+      "config": "/home/zymun/worktrees/luna/k8s/sunmoonai/kind-infrastructure/formal/deploy-kind.json",
+      "config_sha256": "38a246c24eee106d8a0b4791631929f07cd12920965cb1bfb3dfd0eca1e6db72",
+      "dry_run": true
+    },
+    {
+      "argv": [
+        "./sunmoon",
+        "kind",
+        "cluster",
+        "create",
+        "--config",
+        "/home/zymun/worktrees/luna/k8s/sunmoonai/kind-infrastructure/formal/deploy-kind.json"
+      ],
+      "config": "/home/zymun/worktrees/luna/k8s/sunmoonai/kind-infrastructure/formal/deploy-kind.json",
+      "config_sha256": "38a246c24eee106d8a0b4791631929f07cd12920965cb1bfb3dfd0eca1e6db72",
+      "dry_run": true
+    }
+  ],
+  "local_document_links_checked": 50,
+  "removed": [
+    "kind使用指南.md",
+    "refactor-cluster-arg.sh"
+  ],
+  "retained": [
+    "legacy/local/kind使用指南.md",
+    "utils/cluster-arg-parser.sh"
+  ],
+  "runtime_actions": [],
+  "not_executed": [
+    "Kubernetes API",
+    "Docker",
+    "Windows",
+    "cloud SSH",
+    "real credential operations",
+    "cluster create/CNI/start/stop",
+    "test suites"
+  ],
+  "remaining": [
+    "shared image publishing and strict TLS migration",
+    "PV node affinity and consumer integration",
+    "formal migration acceptance",
+    "final local/Tokyo cleanup"
+  ]
+}

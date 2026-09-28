@@ -1,266 +1,126 @@
-## SunmoonAI 镜像管理与按需推送方案（设计草案）
+# SunMoonAI 镜像与离线物料管理设计
 
-### 1. 设计目标
+更新：2026-09-28。原文关于“集群内 Harbor、自制 KIND 节点预装 Harbor、Step13 安装 Harbor”的流程已失效，由本文替代。旧版本留在 Git 历史。
 
-- **不在集群初始化阶段集中推送所有镜像到 Harbor**。
-- **在组件部署阶段做镜像检查 + 按需推送/拉取**：
-  - 哪个组件要部署，只为这个组件补齐它自己需要的镜像。
-- **统一远程集群与 Kind 的“Harbor 之后”体验**：
-  - Harbor 一旦可用，其它组件都通过 Harbor 拉取镜像，部署前有组件级镜像检查逻辑。
+**只有一套部署代码，加上两种建集群的方式。本地把平台和应用跑通，云上除了建集群那一步，其余走的是同一条路。**
 
----
+本文区分目标流程与当前实现。公开 Harbor 仍在旧 KIND，宿主候选已完成若干恢复验收但尚未正式接管；云端未经实机验证。不能按本页目标描述推断整条流水线已经跑通。
 
-### 2. 集群类型与初始化职责
+## 一、职责和数据位置
 
-#### 2.1 远程集群（C1/C2 等）
-
-- **初始化阶段（infrastructure 层）主要职责：**
-  - 使用 `deploy-infrastructure-all`：
-    - **Step11 初始镜像加载**：
-      - 将 Traefik、Harbor 及其最小依赖（PostgreSQL、Redis 等）相关镜像打成 tar 包；
-      - 分发到各节点并通过 `ctr import` / `nerdctl load` 预加载；
-      - 目的是在 Harbor 不可用的前提下，仍然可以完成 Traefik + Harbor 的首次部署。
-    - **Step02 registry 配置**：
-      - 为各节点的 containerd 写入 `/etc/containerd/certs.d/*/hosts.toml`；
-      - 配置 Harbor 代理（REGISTRY_MIRRORS）与 Harbor 直连（REGISTRY_DIRECT）。
-  - **不负责**：为所有后续组件（数据平台、消息平台、业务应用）准备镜像，只保证基础设施组件能启动。
-
-- **Harbor 就绪之后：**
-  - 所有后续组件的镜像源统一为：
-    - `harbor.sunmoonai.com:30443/<project>/<repo>:<tag>`
-  - 组件部署前通过“组件级镜像检查 + 按需推送”来保证：
-    - Harbor 中存在所需镜像；
-    - （可选）节点本地已有镜像缓存。
-  - 在基础设施阶段末尾，统一触发 **Traefik 与 Harbor 的部署脚本**（Step13），形成与 Kind 一致的“第一阶段”：
-    - Step11 预加载 Traefik/Harbor/Redis/PostgreSQL 等镜像到所有节点；
-    - Step12 生成/轮换统一根 CA；
-    - Step13（`step13_ingress_and_harbor.sh`）在远程集群上顺序调用：
-      - `ingress-platform/deploy-ingress-platform-all/deploy-ingress-platform-all.sh`
-      - `cicd-platform/harbor/deploy-harbor/deploy-harbor.sh deploy`
-    - 是否真正部署 Traefik/Harbor 仍由各组件自身配置文件中的开关决定，本步骤只负责在基础设施阶段统一触发部署调用。
-
-#### 2.2 Kind 集群
-
-- **初始化阶段（kind-infrastructure）主要职责：**
-  - 使用 `kind-infrastructure/deploy-kind.sh`：
-    - 创建 Kind 集群、配置 NFS、生成本地根 CA、配置节点 registry/TLS 等；
-    - 始终在 Kind 集群中部署 Traefik 与 Harbor，不再提供开关。
-  - 将 **Traefik + Harbor + 其最小依赖（PostgreSQL、Redis 等）** 视为 Kind 上的“第一批基础设施组件”。
-
-- **Kind 第一阶段：节点镜像预烤策略**
-  - Traefik / Harbor / PostgreSQL / Redis 等基础镜像**不通过 Harbor 在线拉取**，而是统一通过“烤进 Kind 节点镜像”的方式预置到所有节点：
-    - 使用 `deploy-kind/build-kind-node-image/build-kind-node-image.sh`：
-      - 从镜像列表或 tar 目录（由 `build-kind-node-image.conf` 配置）收集上述基础镜像；
-      - 在 Docker build 过程中启动临时 containerd，执行 `ctr -n k8s.io images import` 将这些镜像导入到底层节点镜像；
-      - 生成自定义节点镜像（如 `kindest/node:v1.27.3-sunmoonai`），并更新 `deploy-kind/kind-cluster.yaml` 中所有节点的 `image:`。
-    - `deploy-kind.sh` 使用该自定义节点镜像创建 Kind 集群，此时 **每个节点一启动就已包含 Traefik/Harbor/PG/Redis 等镜像**，无需访问外部 registry。
-
-- **Harbor 就绪之后：**
-  - Kind 与远程集群在逻辑上尽量统一：
-    - 组件镜像统一通过 Harbor 管理（容器运行时通过 `apply-kind-registry-config.sh` 配置 registry mirrors/direct，与远程 Step02 对齐）；
-    - 部署前执行相同的“组件级镜像检查 + 按需推送”流程；
-    - 差异只体现在：连接方式（`k8s-admin.conf` 中的 `cluster_mode=kind|remote`）、Harbor 域名解析路径等。
-
----
-
-### 3. 组件级镜像检查流程（概念）
-
-#### 3.1 镜像定义：required_images
-
-- 每个组件的部署脚本提供一个函数，例如：
-
-```bash
-define_required_images() {
-  local environment="$1"
-  case "$environment" in
-    "production")
-      echo "harbor.sunmoonai.com:30443/k8s-images/postgresql:17.6.0|true"
-      ;;
-    "development"|"dev")
-      echo "harbor.sunmoonai.com:30443/k8s-images/postgresql:17.6.0|true"
-      ;;
-  esac
-}
+```text
+官方发布源 / 源码与依赖
+        ↓ 本机下载，网络困难时经东京中转
+~/packages-to-be-installed/releases/<固定批次>
+        ↓ 校验版本、文件 SHA、镜像身份、依赖闭包
+        ├─ 仓库自举物料 → 独立 Harbor 主机
+        ├─ 集群层物料 → KIND / kubeadm 建群
+        └─ 平台与应用镜像 → Harbor → 集群节点 / CI 使用方
 ```
 
-- 返回格式为多行，每行：
-  - `镜像全名|是否启用`，例如：`<registry>/<project>/<repo>:<tag>|true/false`。
+| 对象 | 职责 | 不应承担的动作 |
+| --- | --- | --- |
+| `registry-platform` | 集群外 Harbor 安装准备、启停、证书、客户端、备份恢复 | 不把数据生命周期绑到 KIND 节点 |
+| KIND / kubeadm 建群 | 安装集群层工具、运行时、网络插件和节点仓库信任 | 不重新安装集群内 Harbor |
+| 物料准备 | 提前把本次所需制品及依赖收齐，形成可重复使用的锁定批次 | 不靠临时修改镜像 tag 或忽略摘要解决缺包 |
+| 平台部署 | 在确定的集群 UID/kubeconfig 上部署已准备的组件 | 不在缺包时静默改用外网最新版本 |
+| 应用构建发布 | 按源码与依赖锁构建，推送候选镜像，记录实际 digest | 不把本地构建直接覆盖正式发布别名 |
+| 东京主机 | 下载与中转公开物料 | 不作为正式仓库或长期唯一备份；不接收本地私有凭据 |
 
-#### 3.2 部署前检查的标准步骤
+统一仓库地址为 `harbor.sunmoonai.com:30443`，保留 `app-images`、`k8s-images` 等现有项目和镜像引用。集群内 Harbor 安装路径已退役，C1/C2/C3/KIND 均是仓库使用方。
 
-以组件 `X` 为例（PostgreSQL / RabbitMQ / 某业务 BFF）：
+## 二、版本与物料配置
 
-1. **准备镜像列表**
-   - 在 `deploy-X.sh` 中：
-     - `local required_images=$(define_required_images "$environment")`
+### 2.1 本次版本范围
 
-2. **调用统一镜像检查函数**
-   - 在执行 Helm 或 `kubectl apply` 之前，调用统一模板中的函数：
-     - `check_component_images "$project_id" "$namespace" "postgresql" "$environment" "$required_images" "remote"`
-   - 逻辑概念：
-     - 遍历 `required_images` 列表；
-     - 对每个启用镜像进行检查（见 3.3）。
+- 集群层使用已批准的 Kubernetes 1.36.4、KIND 0.33.0、Calico 3.32.2，以及相匹配且已锁定的 kubeadm、kubelet、kubectl、容器运行时和离线物料。
+- Traefik 已另行批准使用 3.7.13 / chart 41.6.0。
+- 数据库等平台服务保留既定版本；不能因为集群升级就自动更新它们的镜像。
+- Harbor 主服务先按 2.13.2 完成迁移，数据库/Redis 保持既定版本；主服务后续升级单独备份、验证兼容性和恢复。
+- 扫描器按已单独准入的官方镜像与离线数据库运行；系统包已知问题随官方维护处理，不构建自制补丁镜像。
 
-3. **对缺失镜像执行“按需补齐”**
-   - `check_component_images` 内部或之后，驱动“按需推送”流程，按集群模式分流：
-     - **Kind**：使用 `sunmoonai/kind-infrastructure/push-to-harbor/push-images-to-harbor.sh`（本机 Docker → Harbor）；
-     - **远程（C1/C2/...）**：使用 `utils/registry-push-management/loadimage.sh`（SSH 到节点 + nerdctl → Harbor）。
-     - 从本地 tar / 本地 Docker / 其它 registry 拉取镜像后，推送到 Harbor 对应项目，再次验证 artifact 是否存在。
+版本值以对应 lock/profile 为执行依据，本文只解释边界。更改配置中的版本必须同时更新并核验物料；不能依赖旧目录里“刚好有一个相近版本”。
 
-4. **决策与反馈**
-   - 当所有必需镜像均存在于 Harbor 中：
-     - 日志打印“镜像检查通过”，继续执行 Helm 部署。
-   - 当仍有缺失镜像：
-     - 严格模式：终止部署，并打印缺失镜像清单 + 推荐的手工命令。
-     - 宽松模式：打印警告，允许部署流程继续（交给在线拉取）。
+### 2.2 唯一离线物料根
 
-#### 3.3 检查维度（Harbor / 节点）
+正式离线物料统一放在 `~/packages-to-be-installed`，新增批次在 `releases/<批次>`，部署脚本按明确的批次和锁读取。旧 `debs/tars/images/charts` 路径只能用于已登记的兼容来源，不能在新版批次缺失时自动回退。
 
-- **Harbor 维度（必选）**
-  - 通过 Harbor API 检查 artifact 是否存在：
-    - `GET /api/v2.0/projects/<project>/repositories/<repo>/artifacts/<tag>`。
-  - 缺失则标记为 `missing_in_harbor`。
+主要执行说明：
 
-- **节点维度（可选）**
-  - 使用 `kubectl get node <node> -o jsonpath='{.status.images[*].names[*]}'` 或 `crictl images`：
-    - 检查某个镜像是否已经加载在节点的容器运行时中。
-  - 使用场景：
-    - 网络受限环境下，希望在部署前确保节点已经 preload 完成。
-    - 或仅用于排查日志提示，不强制要求。
+- [物料提交备齐方案和方法](sunmoonai/kind-infrastructure/docs/物料提交备齐方案和方法.md)：唯一完整操作手册。
+- [KIND 物料锁](sunmoonai/kind-infrastructure/isolated/artifacts.lock.json)。
+- [云端集群物料锁](sunmoonai/infrastructure/materials/cluster-artifacts.lock.json)：闭包未完成时必须阻止实际部署。
+- [Harbor 官方物料锁](sunmoonai/registry-platform/artifacts.lock.json)。
 
----
+日常配置继续保留在 `.conf` / JSON 中，详见 [配置对照](sunmoonai/operations/configuration.md)。本地与云上选择不同建群配置；仓库地址、凭据引用、组件开关和发布过程不再由“Harbor 是否装在该集群”决定。
 
-### 4. 配置与行为开关（草案）
+## 三、三类镜像分别准备
 
-#### 4.1 组件级配置（deploy-xxx.conf）
+### 3.1 仓库自举镜像
 
-- **`ENABLE_OFFLINE_IMAGE_CHECK`**
-  - `false`（默认）：在线模式。
-    - 不强制 Harbor 提前准备镜像。
-    - 建议：仍可执行镜像检查，但检查失败仅告警，不终止部署。
-  - `true`：离线/半离线模式。
-    - 部署前必须保证 Harbor 中镜像齐全。
-    - 若检查失败 → 终止部署。
+独立 Harbor 及其既定数据库、Redis、入口和辅助服务必须能在 Harbor 尚未启动时恢复。因此它们的官方镜像和实际版本依赖需要独立离线保存，不能只存在于这个 Harbor 里面。
 
-- **`FORCE_IMAGE_CHECK`**
-  - `true`：即使 `ENABLE_OFFLINE_IMAGE_CHECK=false`，也执行一次严格镜像检查（运维手动触发时使用）。
+安装包内置镜像不等于符合本项目数据库版本约束。需要核对真正生成的运行配置、外接服务镜像、证书和数据目录；备份应包含实际运行摘要和恢复所需配置。
 
-- **可选：`IMAGE_CHECK_MODE`**
-  - `remote`：仅检查 Harbor。
-  - `remote+node`：同时检查节点镜像缓存（例如对数据库、消息队列等关键组件使用）。
+### 3.2 集群自举镜像
 
-#### 4.2 集群模式配置（Kind vs 远程）
+KIND 使用已锁定的官方节点镜像。旧“把 Harbor/数据库烤进自制 kindest/node”的流程已经归档，不作为新环境入口。网络插件等按锁定离线材料导入并核镜像身份。
 
-- 在 `k8s-admin.conf` / 统一模板中通过 `cluster_mode` 或类似变量区分：
-  - `cluster_mode=remote`：执行完整的远程集群检查逻辑。
-  - `cluster_mode=kind`：
-    - 初始化阶段可以跳过节点级严格检查（因为很多镜像可以在线拉取）。
-    - 当 Kind + Harbor 稳定后，可选择启用与远程类似的镜像检查逻辑。
+kubeadm 路径准备对应控制面、etcd、CoreDNS、pause、网络插件、运行时与系统依赖。云端 Step11 使用独立仓库主机配置，Step13 只负责入口；独立仓库主机前置步骤及整个云端闭包仍待完成实机验证，不能把打印演练当安装成功。
 
----
+### 3.3 平台和应用镜像
 
-### 5. 与现有工具的关系
+按本次选中的组件生成所需镜像集合，**在部署前准备齐全**。无需每次把所有未启用组件重推一遍；也不能到了 Helm 部署过程中才临时选择不明来源补包。
 
-#### 5.1 `utils/unified-deployment-template.sh`
+平台镜像沿用既定版本并记录 digest；应用镜像关联源码提交、依赖锁、构建参数和构建结果。正式发布以 `repo@sha256:<摘要>` 为依据，tag 用作可读别名；正式别名只能指向已经过门禁的制品。
 
-- **将承担的功能（计划恢复/重构）：**
-  - `check_remote_images`：面向 Kubernetes 节点的镜像存在性检查。
-  - `check_component_images`：组件级统一入口，封装：
-    - Harbor 检查（仓库维度）。
-    - 节点镜像检查（可选）。
-    - 结果汇总与日志输出。
-  - `generate_image_list`：输出需要准备的镜像列表及参考 `docker pull` 命令。
+镜像是否存在、摘要是否正确、目标架构是否可用、节点是否能真实拉取，是不同的检查。仅在 API 中看到相同 tag，或节点列表出现一个镜像名，都不能代替摘要及实际拉取验收。
 
-- **脚本自身命令行接口（可能恢复）：**
-  - `setup-kubectl`：连接管理。
-  - `check-images`：独立执行镜像检查。
-  - `cleanup`：清理连接。
+## 四、准备、推送、部署的目标流程
 
-#### 5.2 镜像推送工具（按集群模式分流）
+1. **计划**：选定平台开关、目标集群、镜像版本和锁；列出需要的制品、来源及容量预算，不修改服务。
+2. **备料**：本地下载；家庭网络不稳定时用东京中转，采用有界重试/断点续传，完成后回传并重新核 SHA。
+3. **核验**：文件字节、镜像清单/平台/层与锁一致；缺失、认证失败和超时分别报告，不能把“无法判断”当“镜像不存在”。
+4. **导入/推送**：只针对批准的清单，把指定镜像推到独立 Harbor；保存最终 digest，失败中止，不自动清理原物料。
+5. **拉取验收**：宿主 Docker、KIND/containerd、未来云节点和真实 CI 分别验证域名、TLS、账号权限及按摘要拉取。
+6. **部署**：镜像集合通过后，使用明确的 kubeconfig、kubectl 和 kube-system UID 部署平台/应用。
+7. **保留与回收**：保护当前版本、回退版本和离线自举物料，再执行已审定的缓存/重复物料回收。
 
-- **远程集群（C1/C2/...）**：`utils/registry-push-management/*`
-  - 通过 SSH 在远程节点执行 nerdctl load/tag/push，推送到 Harbor。
-  - 输入：组件镜像清单（如 `components-images/<component>-images.txt`）或单镜像引用。
-  - 在 CI/CD 或人工脚本中直接调用 `loadimage.sh`（如 `push-from-list`）实现按需推送。
+本地/云端共享镜像清单、摘要判断和准入逻辑。需要在远端执行下载/导入时，SSH 只是执行适配层，不能成为另一套选版本、忽略 TLS 或全局清理的流程。
 
-- **Kind 集群**：`sunmoonai/kind-infrastructure/push-to-harbor/*`
-  - 在本机使用 Docker load/tag/push，推送到 Harbor（Kind 节点无 SSH，不适用 registry-push-management）。
-  - 输入：镜像列表文件（`--img-file`）或 tar 目录（`--tar-dir`）。
-  - 统一模板中的 `push_component_images_to_harbor` 会根据 `K8S_TARGET_MODE` 自动选择上述二者之一。
+## 五、凭据、证书和代理
 
-#### 5.3 检查类工具脚本
+- 仓库配置：`registry-platform/config/local-wsl.conf` 或所有者维护的云配置，地址统一；客户端 IP 与集群节点可达地址分开配置。
+- 使用方凭据：`REGISTRY_CREDENTIALS_FILE` 引用 Git 外 JSON，成套保存仓库、用户名和密码。拉取账号与发布账号分别授权；不默认把管理员口令下发给每个组件。
+- 宿主操作：`./sunmoon harbor client hosts|trust|login|check`，默认计划；具体参数见 [客户端说明](sunmoonai/registry-platform/docs/clients.md)。
+- 证书按已锁 CA 验证；正式路径不能依靠 `curl -k`、`skip_verify` 或 `--tls-verify=false` 继续。
+- Docker daemon、终端、节点 containerd、BuildKit 和 CI 容器可能有不同代理环境。每层都需保证内网 Harbor 直达，不能用终端 curl 成功代替节点/CI 验收。
+- 本地公开 30443 是按域名分流的 TLS 直通入口，不是独占 Harbor 端口。云端独立主机不需要本地这层共用端口代理。
 
-- `check-local-images.sh`：在单节点上直接检查 Docker/containerd/nerdctl 镜像。
-- `check-remote-node-images.sh`：通过 `kubectl` 结合 Pod 信息从集群角度检查镜像版本一致性。
-- `check-node-images.sh`：混合视角（Pod → 节点本地缓存），用于人工排查。
+网络和域名配置只引用既定方案，不由推送脚本临时修改系统 CA、代理或重启 Docker。
 
-这些脚本定位为 **运维手工诊断工具**，不强制集成到自动部署流程中，但可在日志或文档中推荐使用。
+## 六、当前实现与必须继续完成的部分
 
----
+| 入口 | 当前事实 | 后续工作 |
+| --- | --- | --- |
+| `registry-platform/client.py` / `credentials.py` | 独立配置、计划默认、CA 摘要、私有输入和失败返回已整理 | 实际 Docker/节点/CI 使用方验收 |
+| `utils/secret-management/lib/` 与应用 Secret 生成器 | 已取消自行读取旧建群配置补口令，支持私有文件 | 其余历史配置中的凭据逐项退役，实际部署验证 |
+| `utils/unified-deployment-template.sh` | 仍有按集群分支的旧镜像补齐逻辑；本次读到 Harbor API `curl -k`、skopeo 不校验证书的回退、旧推送配置和忽略登录失败 | 必须收口到统一严格检查/显式推送，不能把当前逻辑当新版生产验收依据 |
+| `kind-infrastructure/push-to-harbor/` | 已取消推送前隐式修改系统 CA；其余导入/标签/推送逻辑仍在整理 | 对齐独立配置、摘要、清单及失败行为 |
+| `utils/registry-push-management/loadimage.sh` | 仍有现存调用方和云端 SSH 分支 | 保留可用功能，迁到共享实现/执行适配；云上标注未经实机验证 |
+| `app-platform/scripts/build-push-app-images.sh` | 现有应用构建入口，保留应用/组件/源码/构建参数配置；仍有允许覆盖受保护 tag 的旧开关 | 收口发布门禁，禁止本地重建覆盖正式别名；真实 CI 尚未完成 |
+| 旧 `harbor-image-management` | 已无运行时代码调用，归档到 legacy/cloud；原入口和归档实现均拒绝执行 | 云新流程实机验证并审阅无依赖后删除 |
 
-### 6. 后续工作与细化方向
+旧高层镜像脚本的 `--dry-run` 只设置变量，没有阻止全节点镜像和物料清理。不能重新启用它，也不能把文档中的新目标当作旧脚本已修复。
 
-- **1）确定最小可行版本的行为边界**
-  - 第一阶段是否先只做“Harbor 维度检查 + 日志提示”，暂不自动 push。
-  - 或者在缺镜像时按集群模式调用对应工具（Kind：push-to-harbor；远程：registry-push-management）执行自动推送。
+以上未完成项是迁移收尾前必须处理的工作，不通过增加“忽略错误”开关绕过。
 
-- **2）选择一个组件作为 POC 样板**
-  - 推荐：PostgreSQL 或 RabbitMQ（依赖清晰、影响面适中）。
-  - 为该组件补齐：
-    - `define_required_images` 实现。
-    - 部署脚本中插入镜像检查调用的位置与日志格式。
+## 七、备份、保留和最终清理
 
-- **3）Kind vs 远程的差异抽象**
-  - 确定哪些逻辑需要在 Kind 下“降级为告警但不断言失败”，以兼容本地开发体验。
-  - 远程集群则可以使用更严格策略（特别是离线/半离线环境）。
+Harbor 数据恢复包括逻辑数据库、镜像层、配置/证书/加密密钥和实际运行摘要。全目录核验与恢复演练见 [宿主备份](sunmoonai/registry-platform/docs/host-backup.md)。不能只备份镜像 tar 就宣称账号、令牌和仓库元数据可恢复。
 
----
+长期保留策略先输出候选清单，保护当前和回退摘要，再单独安排删除/GC。构建后回收本任务临时物，缓存按批准范围处理；不附带清理容器、卷或所有节点镜像。
 
-### 7. 远程集群第一阶段：离线包分发（Step01 前置）
+**本次最终必须清理本地临时目录/文件及东京下载中转物料。** 清理前核正式物料已回传且摘要一致、部署不再引用临时路径；执行后报告本地和远端实际释放量。具体候选与边界见 [回收方案](sunmoonai/kind-infrastructure/docs/wsl-space-reclamation-plan.md)。
 
-- **目标**：在不大改现有步骤结构的前提下，将集群初始化所需的离线工件（deb 包、运行时 tar、镜像 tar、基础 chart）在 **Step01（OS 基线）开始时一次性同步到所有远程节点的 `SERVER_n_DIR`，为 Step02/03/11/05 等后续步骤提供统一的离线源。
-
-- **本机离线包目录（控制平面）**
-  - 根目录：`$HOME/packages-to-be-installed`（沿用现有约定）。
-  - 子目录：
-    - `debs/`：Kubernetes / NFS / 工具等 deb 包（kubeadm/kubelet/kubectl/kubernetes-cni/nfs-kernel-server/socat 等）。
-    - `tars/`：运行时安装包（例如 `nerdctl-full-*.tar.gz`、`crictl-*.tar.gz`）。
-    - `images/`：各类镜像 tar（K8s 核心镜像、Traefik/Harbor/Redis/PostgreSQL/Elasticsearch/Kibana/Logstash/MongoDB/Neo4j/RabbitMQ/RedisInsight/pgAdmin/Flower/Jenkins 等）。
-    - `charts/`：基础设施 Helm chart（如 `nfs-subdir-external-provisioner-*.tgz`、`tigera-operator-*.tgz` 等）。
-
-- **远程节点离线包目录**
-  - 每个节点通过 `SERVER_n_DIR`（`deploy-infrastructure-all.conf` 中配置，通常为 `~/packages-to-be-installed`）指定离线包根目录。
-  - 目录结构：
-    - `<SERVER_n_DIR>/debs/`
-    - `<SERVER_n_DIR>/tars/`
-    - `<SERVER_n_DIR>/images/`
-    - `<SERVER_n_DIR>/charts/`
-  - Step02/03/11 等步骤继续从这些目录中读取离线工件（保持现有逻辑不变），例如：
-    - Step11 从 `<SERVER_n_DIR>/images/` 读取 `bitnami_harbor-core_*.tar` 等镜像；
-    - Step02 从 `<SERVER_n_DIR>/tars/` 读取 `nerdctl-full-*.tar.gz`；
-    - Step03 从 `<SERVER_n_DIR>/debs/` 读取 kubeadm/kubelet/kubectl 等 deb。
-
-- **行为开关与配置（`deploy-infrastructure-all.conf`）**
-  - 新增开关：
-    - `PRE_SYNC_OFFLINE_PACKAGES="true|false"`  
-      - `true`：Step01 在执行 OS 基线配置前，会从本机 `packages-to-be-installed` 将 `debs/`、`tars/`、`images/`、`charts/` 同步到每个节点的 `SERVER_n_DIR` 对应子目录。
-      - `false`：保持现有行为，假定离线包已经通过其他方式（手工/CI）提前分发到远程节点。
-  - 可选覆盖本机根目录：
-    - `LOCAL_PACKAGES_ROOT="$HOME/packages-to-be-installed"`（默认值，如不配置则使用 `~/packages-to-be-installed`）。
-
-- **Step01 中的实现思路（`step01_os_baseline.sh`）**
-  - 在 `precheck`/`execute` 之前，增加一个“离线包预同步”阶段：
-    - 从配置读取 `PRE_SYNC_OFFLINE_PACKAGES` 与 `LOCAL_PACKAGES_ROOT`；
-    - 若 `PRE_SYNC_OFFLINE_PACKAGES=true`：
-      - 遍历所有目标节点索引 `i`（`get_defined_server_indices`）；
-      - 解析每个节点的 `DIR`（`get_server_var "$i" DIR` + `resolve_remote_dir`）；
-      - 对 `debs`、`tars`、`images`、`charts` 四个子目录：
-        - 若本机存在 `"$LOCAL_PACKAGES_ROOT/$sub"`，则：
-          - 在远程节点上创建 `"$DIR/$sub"`；
-          - 使用 `rsync -az` 或 `scp` 同步该目录内容到远程节点（可选带 `--delete` 保持一致性）。
-    - 若 `PRE_SYNC_OFFLINE_PACKAGES=false`：
-      - 仅输出日志提示“跳过离线包预同步”，后续 Step02/03/11 如缺包会维持原有错误提示。
-  - 之后按原逻辑执行：
-    - `_apply_swap_and_sysctl`、`_configure_iptables_mode`、`_set_hostname_and_hosts`、`_ensure_time_sync`；
-    - 使用 `<SERVER_n_DIR>/debs` 中的离线 deb 安装 conntrack/socat 等依赖（若存在），否则回退在线安装。
-
+旧节点、卷、Harbor 必要恢复材料及未通过云端实机验证的历史代码继续按各自退出条件保留。正式物料根不是临时缓存，不能整目录清空，也不能用 rsync `--delete` 把未知文件一起删掉。

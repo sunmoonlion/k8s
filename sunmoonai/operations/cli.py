@@ -67,6 +67,7 @@ def main():
         print('platform plan/deploy --cluster KIND: shared platform backend, defaults to a plan.')
         print('platform deploy --apply requires explicit kubeconfig/kubectl/UID; main consumer migration is incomplete.')
         print('Use --help after a route for its arguments. Mutations require the backend apply flag.')
+        print('kind routes accept --config <absolute JSON path>; otherwise formal/deploy-kind.json.')
         print('Current public registry/inbox still use the old kind. See README.md and legacy/README.md.')
         return
     if args[0] == 'platform':
@@ -80,6 +81,15 @@ def main():
     key = tuple(args[:2])
     if key not in ROUTES:
         raise SystemExit('Unknown or not yet admitted operation; see ./sunmoon help and README.md')
+    if key[0] == 'kind':
+        selector = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
+        selector.add_argument('--config', type=Path)
+        selected, remaining = selector.parse_known_args(args[2:])
+        if selected.config:
+            if not selected.config.is_absolute():
+                selector.error('--config requires an absolute path')
+            os.environ['SUNMOON_KIND_CONFIG'] = str(selected.config)
+        args = [*args[:2], *remaining]
     target = ROOT / ROUTES[key]
     os.execv(sys.executable, [sys.executable, '-B', str(target), *args[2:]])
 

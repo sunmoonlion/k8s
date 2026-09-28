@@ -205,7 +205,8 @@
       "replacement": "README.md",
       "group": "local",
       "execution": "historical only",
-      "exit_condition": "local-migration-and-observation-complete"
+      "exit_condition": "local-migration-and-observation-complete",
+      "original_path_status": "pointer-removed-by-owner-request-2026-09-28"
     },
     {
       "original": "sunmoonai/cicd-platform/harbor/utils/harbor-image-management/harbor-image.sh",
