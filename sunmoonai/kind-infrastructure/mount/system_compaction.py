@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import time
@@ -104,9 +105,61 @@ def rank(c):
         return 99 if 'etcd' in name else 95 if 'kube-apiserver' in name else 90
     if c['namespace'] == 'local-path-storage':
         return 90
-    if any(x in name for x in ('postgresql', 'redis', 'rabbitmq', 'mongodb', 'elasticsearch', 'neo4j', 'object-storage-pool')):
+    if any(x in name for x in ('postgresql', 'mysql', 'redis', 'rabbitmq', 'mongodb', 'elasticsearch', 'neo4j', 'object-storage-pool')):
         return 80
     return 20
+
+
+def disposable_probe(c, info):
+    if (c['namespace'] != 'sunmoon-infra-check' or c['name'] != 'probe'
+            or view(c['node'])['labels'].get('io.x-k8s.kind.cluster') != 'sunmoon-kind-136'):
+        return False
+    # Existing validation PVC reader runs only sleep; stopping it retains the PVC
+    # and node volume. It is not a database or the protected old worker2 sandbox.
+    if c['pod'] == 'pvc-reader':
+        detail = json.loads(docker('exec', c['node'], 'crictl', 'inspect', c['id']))
+        return detail.get('info', {}).get('runtimeSpec', {}).get('process', {}).get('args') == ['sleep', '3600']
+    return all(re.fullmatch(r'/var/lib/kubelet/pods/[0-9a-f-]+/(?:volumes/kubernetes.io~(?:empty-dir|projected)/[^/]+|etc-hosts|containers/probe/[^/]+)',
+                           m.get('hostPath', '')) for m in info.get('mounts', []))
+
+
+def reviewed_timeout(c, info):
+    if disposable_probe(c, info):
+        return True
+    # Observed old RAGFlow entrypoint did not exit during its full 120s grace.
+    # Its external database is stopped later; only readonly config/token mounts
+    # and kubelet hosts/termination files are present. Retain all node storage.
+    reviewed_component = (c['name'] == 'ragflow' and c['namespace'] == 'app-platform-dev'
+                          and c['pod'].startswith('ragflow-sunmoonai-')) or (
+                          c['name'] == 'local-path-provisioner' and c['namespace'] == 'local-path-storage')
+    return (reviewed_component
+            and view(c['node'])['labels'].get('io.x-k8s.kind.cluster') in ('kind', 'sunmoon-kind-136')
+            and bool(info.get('mounts'))
+            and all(m.get('readonly') or m.get('containerPath') in ('/etc/hosts', '/dev/termination-log')
+                    for m in info['mounts']))
+
+
+def node_shutdown(state, node):
+    obj = get('/containers/' + node['id'] + '/json')
+    intent = next(e for e in state['events'] if e.get('intent') == 'stop-node' and e['node'] == node['id'])
+    p = subprocess.run(['docker', '--host', 'unix:///var/run/docker.sock', 'logs', '--since', intent['at'], node['id']],
+                       capture_output=True, timeout=30, check=True)
+    log = p.stdout + p.stderr
+    plain = re.sub(rb'\x1b\[[0-9;]*[A-Za-z]', b'', log)
+    targets = any(b'Reached target' in line and b'Unmount All Filesystems' in line for line in plain.splitlines()) and any(
+        b'Reached target' in line and b'Shutdown' in line for line in plain.splitlines())
+    detached = (b'All filesystems' in plain and (b'detached' in plain or b'unmounted' in plain)) or targets
+    detail = obj['State']
+    # Observed systemd container halt returns 130 with the full detach marker.
+    # Never accept 130 merely because it is commonly associated with SIGINT.
+    if (detail['Status'] != 'exited' or detail.get('Error') or detail['ExitCode'] not in (0, 130)
+            or (detail['ExitCode'] == 130 and not detached)):
+        raise ValueError('Node shutdown lacks required completion evidence: ' + node['name'])
+    state.setdefault('node_shutdown', {})[node['name']] = {
+        'exit_code': detail['ExitCode'], 'finished_at': detail['FinishedAt'],
+        'filesystem_detach_marker': detached, 'log_sha256': hashlib.sha256(log).hexdigest(),
+        'docker_stop_timeout': -1}
+    save(state)
 
 
 def prepare():
@@ -145,40 +198,49 @@ def prepare():
              'monitor_active': run(['systemctl', 'is-active', 'sunmoon-space-monitor.timer']).strip(),
              'events': []}
     save(state)
+    quiesce(state, snap, client)
+
+
+def quiesce(state, snap, client=None, resume=False):
+    nodes = state['nodes']
     try:
-        state['phase'] = 'freezing'; save(state)
-        source.set_readonly(client, True)
-        workers, _ = client.get('/jobservice/pools/all/workers')
-        queues, _ = client.get('/jobservice/queues')
-        if any(w.get('job_id') for w in workers) or any(q.get('count', 0) for q in queues):
-            raise ValueError('Harbor jobs remain active; no forced cancellation')
+        if not resume:
+            state['phase'] = 'freezing'; save(state)
+            source.set_readonly(client, True)
+            workers, _ = client.get('/jobservice/pools/all/workers')
+            queues, _ = client.get('/jobservice/queues')
+            if any(w.get('job_id') for w in workers) or any(q.get('count', 0) for q in queues):
+                raise ValueError('Harbor jobs remain active; no forced cancellation')
         run(['systemctl', 'stop', 'sunmoon-space-monitor.timer', 'sunmoon-space-monitor.service'])
-        for n in nodes:
+        running = [n for n in nodes if view(n['id'])['status'] == 'running']
+        for n in running:
             guard(state)
             state['events'].append({'intent': 'restart-no-and-stop-kubelet', 'node': n['id'], 'at': now()}); save(state)
             docker('update', '--restart=no', n['id'])
             docker('exec', n['id'], 'systemctl', 'stop', 'kubelet')
         # Re-read after kubelets stop; there can be no kubelet-driven replacement.
-        containers = [c for n in nodes for c in cri(n)]
-        state['containers_to_stop'] = containers; state['phase'] = 'stopping-workloads'; save(state)
+        containers = [c for n in running for c in cri(n)]
+        state.setdefault('containers_to_stop', containers); state['phase'] = 'stopping-workloads'; save(state)
         for c in sorted(containers, key=lambda c: (rank(c), c['node'], c['id'])):
             state['events'].append({'intent': 'stop-cri', **c, 'at': now()}); save(state)
-            docker('exec', c['node'], 'crictl', '--timeout=150s', 'stop', '--timeout', '120', c['id'], timeout=170)
+            before = json.loads(docker('exec', c['node'], 'crictl', 'inspect', c['id']))['status']
+            probe = disposable_probe(c, before)
+            docker('exec', c['node'], 'crictl', '--timeout=150s', 'stop', '--timeout', '10' if probe else '120', c['id'], timeout=170)
             info = json.loads(docker('exec', c['node'], 'crictl', 'inspect', c['id']))['status']
-            if info['state'] != 'CONTAINER_EXITED' or info.get('exitCode') == 137:
+            if info['state'] != 'CONTAINER_EXITED' or (info.get('exitCode') == 137 and not reviewed_timeout(c, info)):
                 raise ValueError('Workload did not stop normally: ' + c['pod'])
             state['events'].append({'stopped_cri': c['id'], 'exit_code': info.get('exitCode'), 'at': now()}); save(state)
-        if any(cri(n) for n in nodes):
+        if any(cri(n) for n in running):
             raise ValueError('CRI workloads remain running')
         state['phase'] = 'stopping-nodes'; save(state)
-        for n in sorted(nodes, key=lambda n: n['name'].endswith('control-plane')):
+        for n in sorted(running, key=lambda n: n['name'].endswith('control-plane')):
             guard(state)
             state['events'].append({'intent': 'stop-node', 'node': n['id'], 'at': now()}); save(state)
             # No Docker SIGKILL timeout fallback. A host-side deadline fails closed.
             docker('stop', '--time', '-1', n['id'], timeout=180)
-            current = view(n['id'])
-            if current['status'] != 'exited' or current['exit_code'] != 0:
-                raise ValueError('Node did not shut down normally: ' + n['name'])
+            node_shutdown(state, n)
+        for n in nodes:
+            node_shutdown(state, n)
         guard(state)
         state['registry_after_stop'] = source.content(snap, source.read_manifest(source.ARCHIVE / 'backup.json')['registry']['files'])
         state['protected_after'] = protected()
@@ -196,9 +258,31 @@ def prepare():
               'nodes_stopped': len(nodes), 'registry': state['registry_after_stop'],
               'trim': state['trim_output']}, indent=2), flush=True)
     except BaseException as exc:
-        state.update(phase='interrupted-needs-review', error_type=type(exc).__name__)
+        state.update(interrupted_phase=state['phase'], phase='interrupted-needs-review', error_type=type(exc).__name__)
         save(state)
         raise
+
+
+def resume_prepare():
+    state = source.read_manifest(STATE / 'state.json')
+    if (state['phase'] != 'interrupted-needs-review' or state['ready_for_windows_shutdown']
+            or {n['name'] for n in state['nodes']} != NAMES
+            or len([e for e in state['events'] if e.get('intent') == 'restart-no-and-stop-kubelet']) < 6):
+        raise ValueError('Journal is not an interrupted post-freeze maintenance')
+    check_storage()
+    guard(state)
+    # Review every recorded stop, including the intent interrupted before receipt.
+    by_id = {n['id']: n for n in state['nodes']}
+    for c in state.get('containers_to_stop', []):
+        if view(c['node'])['status'] != 'running':
+            continue
+        info = json.loads(docker('exec', by_id[c['node']]['id'], 'crictl', 'inspect', c['id']))['status']
+        if info['state'] == 'CONTAINER_EXITED' and info.get('exitCode') == 137:
+            if not reviewed_timeout(c, info):
+                raise ValueError('Unreviewed workload was killed; restore/review required')
+            state['events'].append({'reviewed_timeout': c['id'], 'pod': c['pod'], 'exit_code': 137, 'at': now()})
+    save(state)
+    quiesce(state, source.read_manifest(SNAPSHOT / 'state.json'), resume=True)
 
 
 def restore():
@@ -213,7 +297,15 @@ def restore():
         if current['status'] != 'running':
             docker('start', n['id'])
         # Supports interrupted preparation before the node was stopped.
-        docker('exec', n['id'], 'systemctl', 'start', 'kubelet')
+        deadline = time.monotonic() + 120
+        while True:
+            try:
+                docker('exec', n['id'], 'systemctl', 'start', 'kubelet', timeout=30)
+                break
+            except Exception:
+                if time.monotonic() > deadline:
+                    raise ValueError('Node systemd/kubelet did not start: ' + n['name'])
+                time.sleep(3)
     deadline = time.monotonic() + 600
     while True:
         try:
@@ -245,7 +337,7 @@ def restore():
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('action', choices=('prepare', 'restore', 'status'))
+    p.add_argument('action', choices=('prepare', 'resume-prepare', 'restore', 'status'))
     p.add_argument('--apply', action='store_true')
     a = p.parse_args()
     if not a.apply:
@@ -256,6 +348,8 @@ def main():
     os.umask(0o077)
     if a.action == 'prepare':
         prepare()
+    elif a.action == 'resume-prepare':
+        resume_prepare()
     elif a.action == 'restore':
         restore()
     else:

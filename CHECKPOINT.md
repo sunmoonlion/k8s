@@ -1,5 +1,15 @@
 # luna 工作检查点
 
+## 当前交接：Linux已停止，等待Windows Cursor压缩；不要自行启动服务
+
+2026-09-28 21:46北京时间准备完成，所有者已安排Windows Cursor在收到Luna放行后做管理员压缩。固定操作卡 kind-infrastructure/docs/system-vhd-compaction-20260928.md；公开结果 scripts/results/luna-system-compaction-preparation.20260928.json（均位于sunmoonai下）。只压Ubuntu系统ext4.vhdx，不压100GiB数据盘，不切入口，不启自动收缩。
+- 六个旧/136节点已退出、restart临时no；全部89容器保留且停止，219镜像/46卷身份不变。Docker.service/socket、containerd、space-monitor.timer/service均inactive。Windows压缩前不要访问Docker或启动节点。全Harbor4400文件停服后SHA匹配17850816895B；sync+fstrim完成707028582400B（非C盘释放）。系统VHDX仍565997207552B，C可用89877569536B。
+- 新源逻辑快照/data/harbor/source-snapshots/precompact-20260928-v1 completed/services_restored（这是快照阶段恢复，随后维护又停了服务）；新快照未独立恢复演练，保留完整备份已有演练。~/private另存/data/harbor/backups/precompact-private-20260928-v1.tar，9359360B，SHA96f1ff1c2f09fbc3b47d9c7f8a79de6c51868e6fac2d57afaa979d8252c017da，无机器外备份。
+- 精确节点/容器/卷/镜像/挂载/原restart/原Harbor只读值与阶段都在 /var/lib/sunmoon/maintenance/precompact-20260928-v1/state.json。缓存清理原始/tmp三回执已逐字节归档其cache-audit/；临时原文件未提前删除，最终收尾仍要做。
+- 准备期间明确复核6个CRI退出137（4验证探针、旧RAGFlow、旧local-path-provisioner），后两者只有只读配置/令牌与kubelet元文件，不带可写数据卷；数据库无此异常。6节点exit130均核对本次systemd关机/卸载标记，docker stop时间-1未强杀。RAGFlow信号转发/控制器停止超时是后续整改项，不宣称全部优雅退出。
+- 恢复：先让Windows启动Ubuntu，用固定v2 attach恢复数据盘和UUID/服务可见性（操作卡有完整命令）；必要时仅先启Docker，其时六节点restart=no。Luna再运行 sudo python3 -B sunmoonai/kind-infrastructure/mount/system_compaction.py restore --apply。会核挂载/容器身份、只启原六节点、旧UID/Ready/Harbor目录API一致后恢复原只读设置/restart与监控。验证集群Ready、新实际镜像拉取、Windows前后量及全目录重核仍需补齐；此维护不等于外置Harbor正式持久化验收。
+- Windows维护标记与sunmoon-data-mount任务由Cursor暂停；挂载并恢复服务验收后才解除/启用。若压缩或恢复失败保留记录，不重建/格式化/删除节点或卷。此刻不继续普通迁移，以免重启服务与Windows压缩竞态。原大任务恢复后继续，仍未完成；main未建、inbox旧kind（目前维护停服）、无push。
+
 ## 当前用户讨论：是否提前停机压缩系统VHDX
 
 缓存整改已本地提交9fa81c3d，无push。只读监控刷新为WSL32.26%使用、C90.89%使用/约84.23GiB可用、数据盘36.48GiB可用，大型新增操作仍不准入。所有者问“那要不要停止然后压缩”；建议单独提前压缩，提案在kind-infrastructure/docs/system-vhd-compaction-20260928.md。此前要求与入口切换合并，当前公共入口未具备切换条件，因此提前单独停机需确认；未执行停服务/trim/WSL关闭/压缩。旧证书工具仅完成进一步只读审阅，未修改或归档。

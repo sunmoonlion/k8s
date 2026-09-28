@@ -1,0 +1,131 @@
+{
+  "schema": 1,
+  "maintenance": "precompact-20260928-v1",
+  "prepared_at": "2026-09-28T13:46:31.117524+00:00",
+  "ready_for_windows_shutdown": true,
+  "journal": "/var/lib/sunmoon/maintenance/precompact-20260928-v1/state.json",
+  "services": {
+    "docker.service": "inactive",
+    "docker.socket": "inactive",
+    "containerd.service": "inactive",
+    "sunmoon-space-monitor.timer": "inactive",
+    "sunmoon-space-monitor.service": "inactive"
+  },
+  "nodes": {
+    "kind-worker2": {
+      "exit_code": 130,
+      "finished_at": "2026-09-28T13:46:10.141218775Z",
+      "filesystem_detach_marker": true,
+      "log_sha256": "5ff74c48008b2bb348f916deb3b9493b2b771625931a4336e06e4014abef2169",
+      "docker_stop_timeout": -1
+    },
+    "sunmoon-kind-136-worker2": {
+      "exit_code": 130,
+      "finished_at": "2026-09-28T13:46:11.60454401Z",
+      "filesystem_detach_marker": true,
+      "log_sha256": "0eb5aec49d5d82ed736be4146115633b460208ec01f393054ddd0f61869fc2df",
+      "docker_stop_timeout": -1
+    },
+    "sunmoon-kind-136-control-plane": {
+      "exit_code": 130,
+      "finished_at": "2026-09-28T13:46:13.088030138Z",
+      "filesystem_detach_marker": true,
+      "log_sha256": "e1683df65c25ca5fd838eff8155fdb1c719c773d7f874f90f6ea23d27991ccee",
+      "docker_stop_timeout": -1
+    },
+    "kind-control-plane": {
+      "exit_code": 130,
+      "finished_at": "2026-09-28T13:46:14.542392223Z",
+      "filesystem_detach_marker": true,
+      "log_sha256": "c8f4a23cf23e23dcb92d606bdca3dc8065979546aef833e5faf1889a59970ea0",
+      "docker_stop_timeout": -1
+    },
+    "sunmoon-kind-136-worker": {
+      "exit_code": 130,
+      "finished_at": "2026-09-28T13:41:58.028174303Z",
+      "filesystem_detach_marker": true,
+      "log_sha256": "3bab86067bf84ff4ec5df49f036157c16b8f713bf40ffb7922067de7d3ad353b",
+      "docker_stop_timeout": -1
+    },
+    "kind-worker": {
+      "exit_code": 130,
+      "finished_at": "2026-09-28T13:44:32.210302089Z",
+      "filesystem_detach_marker": true,
+      "log_sha256": "3d793756bdc289e0e8b2e5b1d1b596ff429fdd0156e8f9135261571761744d5b",
+      "docker_stop_timeout": -1
+    }
+  },
+  "registry": {
+    "files": 4400,
+    "bytes": 17850816895,
+    "all_sha256_equal": true
+  },
+  "protected_counts": {
+    "containers": 89,
+    "volumes": 46,
+    "images": 219
+  },
+  "image_ids_unchanged": true,
+  "volume_names_unchanged": true,
+  "all_docker_containers_stopped": true,
+  "known_cri_timeout_exits": [
+    {
+      "pod": "denied",
+      "namespace": "sunmoon-infra-check",
+      "exit_code": 137
+    },
+    {
+      "pod": "echo",
+      "namespace": "sunmoon-infra-check",
+      "exit_code": 137
+    },
+    {
+      "pod": "pvc-reader",
+      "namespace": "sunmoon-infra-check",
+      "exit_code": 137
+    },
+    {
+      "pod": "local-path-provisioner-6bc4bddd6b-stk9z",
+      "namespace": "local-path-storage",
+      "exit_code": 137
+    },
+    {
+      "pod": "allowed",
+      "namespace": "sunmoon-infra-check",
+      "exit_code": 137
+    },
+    {
+      "pod": "ragflow-sunmoonai-7697fd9fc4-2hqj5",
+      "namespace": "app-platform-dev",
+      "exit_code": 137
+    }
+  ],
+  "disk_before": {
+    "at": "2026-09-28T13:26:47.271570+00:00",
+    "root_used_bytes": 348751671296,
+    "root_available_bytes": 677357150208,
+    "windows": {
+      "C_TotalBytes": 992541478912,
+      "C_FreeBytes": 89958383616,
+      "WSL_VHDX_FileLength": 565997207552
+    },
+    "windows_measurement": "WSL stat; physical VHDX allocation not verified"
+  },
+  "disk_after": {
+    "at": "2026-09-28T13:46:31.117993+00:00",
+    "root_used_bytes": 348617510912,
+    "root_available_bytes": 677491310592,
+    "windows": {
+      "C_TotalBytes": 992541478912,
+      "C_FreeBytes": 89877569536,
+      "WSL_VHDX_FileLength": 565997207552
+    },
+    "windows_measurement": "WSL stat; physical VHDX allocation not verified"
+  },
+  "trim_output": "/: 658.5 GiB (707028582400 bytes) trimmed",
+  "windows_compaction_executed": false,
+  "entry_switched": false,
+  "source_snapshot": "/data/harbor/source-snapshots/precompact-20260928-v1",
+  "source_snapshot_independently_restore_verified": false,
+  "previous_full_backup_restore_verified": true
+}

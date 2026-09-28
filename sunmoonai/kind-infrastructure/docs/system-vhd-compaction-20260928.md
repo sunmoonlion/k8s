@@ -1,6 +1,6 @@
 # 2026-09-28 系统盘单独压缩维护提案
 
-状态：所有者已安排Windows Cursor接手压缩，等待Luna的停机准备完成通知；Linux侧正在准备，尚未授权Cursor关闭WSL。
+状态：**2026-09-28 21:46北京时间Linux停机准备完成，可交Windows Cursor关闭WSL并压缩。** 六节点均已退出，Docker/socket/containerd/监控均inactive，全部89容器保留且停止，219镜像和46卷身份未变。停服后4400个Harbor文件与保留备份全摘要一致。系统盘trim成功；尚未执行Windows压缩或入口切换。详见[公开准备结果](../../scripts/results/luna-system-compaction-preparation.20260928.json)。
 原决定是压缩与入口切换合并。当前入口切换尚未就绪，本提案将压缩提前为一次独立维护，恢复时仍使用原集群与原入口。
 
 ## 依据与范围
@@ -31,6 +31,12 @@
 
 私有恢复日志固定为 `/var/lib/sunmoon/maintenance/precompact-20260928-v1/state.json`。失败会留在 `interrupted-needs-review`；只有 `ready_for_windows_shutdown=true` 且Luna明确通知才允许Windows关闭。
 
+本次遇到验证集群的 `sleep 3600` 探针不处理停止信号，标准CRI停止宽限期结束后退出137。已逐项确认是 `sunmoon-infra-check` 的验证探针；`pvc-reader` 仅休眠，PVC和节点卷均保留。另有旧RAGFlow entrypoint在120秒宽限期结束后退出137，逐挂载确认只有只读配置/令牌及kubelet的hosts/termination-log，没有可写数据卷；外部数据库随后单独停止。这些退出如实记录，不写成全部优雅退出，RAGFlow信号转发问题保留为后续整改项。
+
+旧local-path-provisioner也在宽限期后退出137；其挂载仅只读ConfigMap/令牌及hosts/termination-log，不包含任何业务PV数据目录，卷及数据由节点保留。维护工具可显式 `resume-prepare --apply` 接续；仅这些逐项复核过的范围可接受退出137，其他工作负载仍拒绝继续，不把应用/控制器超时当作数据库正常关闭的证据。
+
+六个节点本次均退出130；已逐节点核实本次停止后的systemd文件系统卸载/Shutdown完成标记，Docker stop使用无限宽限期，没有其超时SIGKILL回退。不同systemd版本关机文本有差异，不能只按退出码0或某一版文本判断；每节点日志摘要已登记。系统trim报告658.5GiB，是提交discard的范围，不是Windows已回收的空间。
+
 本次最新Harbor快照在 `/data/harbor/source-snapshots/precompact-20260928-v1`，包含PG逻辑导出/身份/清单；4400个镜像文件与保留完整镜像层备份逐项相同。该新逻辑快照未单独演练恢复，原完整备份已有恢复演练。另保存 `~/private` 的约9MiB同机副本 `/data/harbor/backups/precompact-private-20260928-v1.tar`，不是机器外备份。
 
 Windows压缩后先启动Ubuntu，使用原v2 attach脚本恢复数据盘并核UUID/服务视图；不要运行磁盘初始化脚本或启动候选容器。随后交回Luna执行：
@@ -41,3 +47,27 @@ sudo python3 -B sunmoonai/kind-infrastructure/mount/system_compaction.py restore
 ```
 
 restore先核实际挂载和原容器/卷/镜像，再仅启动维护前运行的六节点；原集群UID、Ready、Harbor全目录API清单核对后恢复Harbor原只读设置和节点原重启策略、监控。整个操作不切换入口。验证集群Ready和实际认证镜像拉取、前后磁盘比较由恢复后的验收补齐，不能用脚本退出0替代。
+
+## Windows Cursor 接手约定
+
+Windows侧已确认只有Ubuntu/WSL2，DiskPart存在，系统VHDX约527.13GiB，数据VHDX约86.66GiB，C空闲约83.79GiB；原会话不是管理员。`sunmoon-data-mount` 原状态Enabled/Ready，上次结果0；这些是停机前快照，执行前仍需复核。
+
+收到Luna明确放行后，先提权并将本操作卡、空间方案4.3及挂载恢复命令保存到 **Windows本地目录**，让Windows Cursor在C盘目录工作；压缩期间不要读取WSL的UNC路径，也不要保留会自动重启Ubuntu的远程IDE连接。
+
+恢复既有数据盘用固定v2脚本，不创建新盘。管理员PowerShell：
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$Attach = 'C:\wsl-disks\scripts\storage-20260927-v2\attach-vhds.ps1'
+if ((Get-FileHash -LiteralPath $Attach -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'dc65e5f02495fac2054fd1ce3464229ce476447468571c7e243e00d33a2ab4e0') { throw '附盘脚本摘要不符' }
+$DataUuid = (Get-Content -LiteralPath 'C:\wsl-disks\sunmoon-data.uuid' -Raw).Trim()
+if ($DataUuid -ne 'a28de356-4ba1-4a21-93f5-744b9b9d8be0') { throw '数据盘UUID不符' }
+$CheckScript = '/opt/sunmoon/admin/storage/storage-20260927-v2/check-storage-mounts.sh'
+# Docker通常随Ubuntu启动；六个节点已暂设restart=no，不能自动抢先启动。
+wsl.exe -d Ubuntu -u root -- systemctl start docker.service
+if ($LASTEXITCODE -ne 0) { throw 'Docker启动失败，停止并交回Luna' }
+& $Attach -Mode SunmoonData -Distro Ubuntu -ExpectedUuid $DataUuid -CheckScript $CheckScript -Apply
+if (-not $?) { throw '数据盘恢复失败，保留维护标记并交回Luna' }
+```
+
+挂载检查通过后回报压缩前后字节数、C空闲量、UUID/挂载结果，交Luna恢复六节点和核验服务。正式应用、旧Harbor以及inbox在Luna恢复前不可用；外置Harbor候选和SNI代理继续停止。解除Windows维护标记和恢复挂载任务放在Luna确认恢复通过之后。
