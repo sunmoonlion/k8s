@@ -126,3 +126,7 @@ Info/Knowledge/Investment 三个正式应用及角色入口共用 Python 解析�
 ## ONLYOFFICE 生成控制
 
 OnlyOffice 主配置、资源列表开关、各业务 Secret 配置继续保留。调用方现在明确选择生成范围；更新路由不生成 JWT/数据库凭据，查询和卸载不生成文件。用法与验收限制见[资源部署说明](../app-platform/knowledge-app/components/onlyoffice-docs-bff/docs/deployment-resources.md)。
+
+## 人工 Secret 导出与 Document Converter
+
+Harbor 人工导出使用 [`./sunmoon harbor export-secret`](../registry-platform/docs/export-pull-secret.md)，默认计划、私有文件输入、仅写 ~/private 新文件；旧生成脚本退役且无转发入口。Document Converter 的 Secret/ConfigMap 参数、开关与纯本地渲染见[配置资源说明](../app-platform/knowledge-app/components/document-converter-backend/docs/deployment-resources.md)。本轮静态接线完成，尚未实机验收。

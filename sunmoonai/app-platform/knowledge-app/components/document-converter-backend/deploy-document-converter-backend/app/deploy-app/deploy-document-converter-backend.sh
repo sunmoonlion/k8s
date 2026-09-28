@@ -6,6 +6,7 @@ source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../../../../../utils/deploy-p
 sunmoon_deploy_entry "${BASH_SOURCE[0]}" action "$@" || exit $?
 [[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
 set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
+export DISABLE_AUTO_CLEANUP=true
 
 # Document Converter BFF 部署脚本
 # 用法: ./deploy-document-converter-backend.sh <deploy|uninstall|status> [project_id] [namespace] [environment]
@@ -57,30 +58,19 @@ if [[ $# -gt 0 ]]; then
     unified_parse_cluster_arg "$@"
     ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
 fi
+REQUESTED_CLUSTER="${CLUSTER:-}"
 
 # 加载部署配置文件（标准结构：app/deploy-app/deploy-document-converter-backend.conf）
 DOCUMENT_CONVERTER_BFF_CONFIG_FILE="$SCRIPT_DIR/deploy-document-converter-backend.conf"
-if [[ -f "$DOCUMENT_CONVERTER_BFF_CONFIG_FILE" ]]; then
-    source "$DOCUMENT_CONVERTER_BFF_CONFIG_FILE"
-    
-    # 加载集群配置映射函数
-    if [[ -f "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh" ]]; then
-        source "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh"
-        apply_cluster_config_mapping
-    fi
-    
-    log_info "已加载 Document Converter BFF 配置文件: $DOCUMENT_CONVERTER_BFF_CONFIG_FILE"
-else
-    log_warn "未找到 Document Converter BFF 配置文件: $DOCUMENT_CONVERTER_BFF_CONFIG_FILE，使用默认配置"
-fi
-
-# 向后兼容：如果存在旧的配置文件，也加载它（但会给出警告）
-OLD_CONFIG_FILE="$PROJECT_ROOT/deploy-document-converter.conf"
-if [[ -f "$OLD_CONFIG_FILE" ]]; then
-    log_warn "⚠️  检测到旧版配置文件: $OLD_CONFIG_FILE"
-    log_warn "⚠️  此文件已废弃，请使用标准配置文件: $DOCUMENT_CONVERTER_BFF_CONFIG_FILE"
-    source "$OLD_CONFIG_FILE"
-fi
+[[ -f "$DOCUMENT_CONVERTER_BFF_CONFIG_FILE" && ! -L "$DOCUMENT_CONVERTER_BFF_CONFIG_FILE" ]] || {
+    log_error 'Document Converter 当前部署配置缺失或为软链接'; exit 1;
+}
+source "$DOCUMENT_CONVERTER_BFF_CONFIG_FILE" >/dev/null 2>&1 || {
+    log_error 'Document Converter 部署配置读取失败'; exit 1;
+}
+source "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh" || exit 1
+apply_cluster_config_mapping || exit 1
+log_info "已加载 Document Converter 配置: $DOCUMENT_CONVERTER_BFF_CONFIG_FILE"
 
 # 默认配置从配置文件读取（deploy-document-converter-backend.conf）
 # 如果配置文件未设置，则使用空值（由函数参数默认值处理）
@@ -171,145 +161,62 @@ check_namespace() {
 #   $4: environment
 #   $5: dry_run（可选）
 scan_and_deploy_components() {
-    local component_type="$1"
-    local project_id="$2"
-    local namespace="$3"
-    local environment="$4"
-    local dry_run="${5:-}"
-    local base_dir="$PROJECT_ROOT/$component_type"
-    local components=()
-    
-    log_info "开始扫描 $component_type/ 目录下的组件..."
-    
-    # 检查目录是否存在
-    if [[ ! -d "$base_dir" ]]; then
-        log_warn "目录不存在: $base_dir，跳过 $component_type 组件部署"
-        return 0
+    local component_type="$1" project_id="$2" namespace="$3" environment="$4"
+    local dry_run="${5:-false}" operation="${6:-deploy}" base_dir="$PROJECT_ROOT/$1"
+    local script_file conf_file dirname prefix settings enabled priority
+    local -a components=() sorted_components=()
+    case "$operation" in deploy|uninstall) ;; *) return 2 ;; esac
+    # These categories have a direct entry, rather than a nested per-resource directory.
+    case "$component_type" in
+        ingress) script_file="$base_dir/deploy-ingress/deploy-ingress.sh" ;;
+        middleware) script_file="$base_dir/deploy-middleware-all/deploy-middleware-all.sh" ;;
+        *) script_file='' ;;
+    esac
+    if [[ -n "$script_file" ]]; then
+        [[ -f "$script_file" ]] || { log_error "启用的组件入口缺失: $component_type"; return 1; }
+        DISABLE_AUTO_CLEANUP=true bash "$script_file" "$operation" "$project_id" "$namespace" "$environment" "$dry_run"
+        return $?
     fi
-    
-    # 扫描所有子目录
+    [[ -d "$base_dir" ]] || { log_error "启用的组件目录缺失: $component_type"; return 1; }
+    local subdir
     for subdir in "$base_dir"/*/; do
-        # 检查是否是目录
-        [[ ! -d "$subdir" ]] && continue
-        
-        local dirname=$(basename "$subdir")
-        
-        # 跳过 deploy-*-all 目录
-        if [[ "$dirname" =~ ^deploy-.*-all$ ]]; then
-            log_info "跳过 deploy-*-all 目录: $dirname"
-            continue
-        fi
-        
-        # 查找 deploy-* 目录
-        # 特殊处理：ingress 组件使用 deploy-ingress（简化命名）
-        local deploy_dir
-        local script_file
-        local conf_file
-        
-        if [[ "$component_type" == "ingress" ]]; then
-            # Ingress 组件使用简化命名：deploy-ingress/deploy-ingress.sh
-            deploy_dir="$subdir/deploy-ingress"
-            script_file="$deploy_dir/deploy-ingress.sh"
-            conf_file="$deploy_dir/deploy-ingress.conf"
-        else
-            # 其他组件使用标准命名：deploy-{component-name}/deploy-{component-name}.sh
-            deploy_dir="$subdir/deploy-${dirname}"
-            script_file="$deploy_dir/deploy-${dirname}.sh"
-            conf_file="$deploy_dir/deploy-${dirname}.conf"
-        fi
-        
-        if [[ ! -d "$deploy_dir" ]]; then
-            log_warn "未找到部署目录: $deploy_dir，跳过组件 $dirname"
-            continue
-        fi
-        
-        if [[ ! -f "$script_file" ]]; then
-            log_warn "部署脚本不存在: $script_file，跳过组件 $dirname"
-            continue
-        fi
-        
-        # 将目录名转换为变量名（将 - 替换为 _）
-        # 特殊处理：document-converter-backend-* -> document_converter_bff_*
-        # 例如：harbor-registry-secret -> harbor_registry_secret
-        #      document-converter-backend-secret -> document_converter_bff_secret
-        #      document-converter-backend-config -> document_converter_bff_config
-        local var_base=$(echo "$dirname" | tr '-' '_')
-        # 处理 document_converter_bff_* 简化为 document_converter_bff_*
-        var_base=$(echo "$var_base" | sed 's/^document_converter_bff_/document_converter_bff_/')
-        
-        local enabled_var="${var_base}_enabled"
-        local priority_var="${var_base}_priority"
-        local description_var="${var_base}_description"
-        
-        # 读取配置文件（如果存在）
-        local enabled="true"
-        local priority="100"
-        local description="$dirname"
-        
-        if [[ -f "$conf_file" ]]; then
-            # Source 配置文件以读取变量
-            # 注意：每个组件的变量名是特定的，不会冲突
-            source "$conf_file" 2>/dev/null || true
-            
-            # 读取组件特定的 enabled 和 priority（使用 eval 动态获取变量值）
-            # 混合方案：主配置的总开关（在 deploy_sub_components 中检查）&& 组件的细粒度开关 = 最终是否部署
-            # 例如：secrets_enabled=true && harbor_registry_secret_enabled=true = 部署
-            eval "enabled=\${${enabled_var}:-true}"
-            eval "priority=\${${priority_var}:-100}"
-            eval "description=\${${description_var}:-$dirname}"
-        fi
-        
-        # 添加到组件列表（格式：dirname:enabled:priority:description:script_file）
-        components+=("$dirname:$enabled:$priority:$description:$script_file")
+        [[ -d "$subdir" ]] || continue
+        dirname="$(basename "$subdir")"
+        [[ "$dirname" != deploy-*-all ]] || continue
+        script_file="$subdir/deploy-$dirname/deploy-$dirname.sh"
+        conf_file="$subdir/deploy-$dirname/deploy-$dirname.conf"
+        case "$dirname" in
+            dc-secret) prefix=document_converter_secret ;;
+            dc-config) prefix=document_converter_config ;;
+            dc-backend-ns) prefix=document_converter_bff_namespace ;;
+            *) prefix="${dirname//-/_}" ;;
+        esac
+        [[ "$prefix" =~ ^[a-zA-Z_][a-zA-Z_0-9]*$ && -f "$conf_file" ]] || { log_error '子组件配置缺失或名字不合法'; return 1; }
+        # Read controls in a subshell: child NAMESPACE/PROJECT_ID must not overwrite the parent target.
+        settings=$(
+            set +x
+            source "$conf_file" >/dev/null 2>&1 || exit 1
+            apply_cluster_config_mapping >/dev/null || exit 1
+            enabled_var="${prefix}_enabled"; priority_var="${prefix}_priority"
+            printf '%s %s' "${!enabled_var:-true}" "${!priority_var:-100}"
+        ) || { log_error '子组件配置读取失败'; return 1; }
+        read -r enabled priority <<< "$settings"
+        [[ "$enabled" == true || "$enabled" == false ]] || { log_error '组件 enabled 必须为 true/false'; return 1; }
+        [[ "$priority" =~ ^[0-9]+$ ]] || { log_error '组件 priority 必须为非负整数'; return 1; }
+        [[ "$enabled" == true ]] || { log_info "跳过已禁用组件: $dirname"; continue; }
+        [[ -f "$script_file" ]] || { log_error "启用的组件脚本缺失: $dirname"; return 1; }
+        components+=("$priority"$'\t'"$dirname"$'\t'"$script_file")
     done
-    
-    # 如果没有找到组件，直接返回
-    if [[ ${#components[@]} -eq 0 ]]; then
-        log_info "未找到 $component_type 组件，跳过部署"
-        return 0
-    fi
-    
-    # 按优先级排序（数值越大优先级越高）
-    IFS=$'\n' sorted_components=($(printf '%s\n' "${components[@]}" | sort -t: -k3 -nr))
-    unset IFS
-    
-    # 显示部署顺序
-    log_info "📋 $component_type 组件部署顺序（按优先级排序）："
-    for c in "${sorted_components[@]}"; do
-        IFS=':' read -r name enabled priority desc script <<< "$c"
-        if [[ "$enabled" == "true" ]]; then
-            log_info "  🚀 $priority - $desc"
-        else
-            log_info "  ⏭️  $priority - $desc (已禁用)"
-        fi
+    [[ ${#components[@]} -gt 0 ]] || { log_info "没有启用的 $component_type 子组件"; return 0; }
+    local order=-nr sorted line
+    [[ "$operation" != uninstall ]] || order=-n
+    sorted=$(printf '%s\n' "${components[@]}" | LC_ALL=C sort -t $'\t' -k1,1 "$order") || return 1
+    mapfile -t sorted_components <<< "$sorted"
+    for line in "${sorted_components[@]}"; do
+        IFS=$'\t' read -r priority dirname script_file <<< "$line"
+        log_info "$operation $dirname (priority=$priority)"
+        DISABLE_AUTO_CLEANUP=true bash "$script_file" "$operation" "$project_id" "$namespace" "$environment" "$dry_run" || return $?
     done
-    
-    # 部署启用的组件
-    for c in "${sorted_components[@]}"; do
-        IFS=':' read -r name enabled priority desc script <<< "$c"
-        
-        if [[ "$enabled" == "true" ]]; then
-            log_info "🚀 部署 $desc (优先级: $priority)..."
-            
-            if [[ -f "$script" ]]; then
-                # 禁用子脚本的自动清理，保持连接以便后续操作
-                if DISABLE_AUTO_CLEANUP=true bash "$script" deploy "$project_id" "$namespace" "$environment" "$dry_run"; then
-                    log_success "✅ $desc 部署成功"
-                else
-                    log_error "❌ $desc 部署失败"
-                    return 1
-                fi
-            else
-                log_error "❌ $desc 部署脚本不存在: $script"
-                return 1
-            fi
-        else
-            log_info "⏭️  跳过 $desc (已禁用)"
-        fi
-    done
-    
-    log_success "✅ $component_type 组件部署完成"
-    return 0
 }
 
 # 递归部署子组件
@@ -402,10 +309,10 @@ auto_generate_yaml() {
     if [ -f "$generate_script" ]; then
         # 导出基础配置变量，供生成脚本使用（通过环境变量继承）
         # 这样生成脚本可以通过 ${NAMESPACE:-default} 语法使用这些值
-        export NAMESPACE="${DOCUMENT_CONVERTER_BFF_NAMESPACE:-app-platform-dev}"
+        export NAMESPACE="${NAMESPACE:-${DOCUMENT_CONVERTER_BFF_NAMESPACE:-app-platform-dev}}"
         export ENVIRONMENT="${ENVIRONMENT:-development}"
         export ENV="${ENV:-dev}"
-        export PROJECT_ID="${DOCUMENT_CONVERTER_BFF_PROJECT_ID:-sunmoonai}"
+        export PROJECT_ID="${PROJECT_ID:-${DOCUMENT_CONVERTER_BFF_PROJECT_ID:-sunmoonai}}"
         
         if bash "$generate_script"; then
             log_success "YAML 文件生成成功"
@@ -421,11 +328,6 @@ auto_generate_yaml() {
 }
 
 check_env_config() {
-    # 自动生成 YAML 文件（如果不存在）
-    if ! auto_generate_yaml "$DOCUMENT_CONVERTER_BFF_YAML" "$K8S_RESOURCE_DIR"; then
-        exit 1
-    fi
-    
     if [[ "${secrets_enabled:-true}" == "true" ]] || [[ "${configmap_enabled:-true}" == "true" ]]; then
         # 检查 ConfigMap 和 Secret 的部署脚本
         local secrets_dir="$PROJECT_ROOT/secret"
@@ -529,7 +431,8 @@ deploy_app() {
     # 部署 PVC（如果存在）
     if [ -f "$DOCUMENT_CONVERTER_BFF_PVC_YAML" ]; then
         log_info "部署 PVC..."
-        kubectl apply -f "$DOCUMENT_CONVERTER_BFF_PVC_YAML" -n "$NAMESPACE"
+        sunmoon_deploy_target_check "$K8S_ROOT_DIR" || return 1
+        kubectl apply -f "$DOCUMENT_CONVERTER_BFF_PVC_YAML" -n "$NAMESPACE" || return 1
         if [ $? -eq 0 ]; then
             log_success "PVC 部署完成"
         else
@@ -539,7 +442,8 @@ deploy_app() {
     fi
     
     # 部署 Deployment 和 Service（直接使用生成的 YAML）
-    kubectl apply -f "$DOCUMENT_CONVERTER_BFF_YAML" -n "$NAMESPACE"
+    sunmoon_deploy_target_check "$K8S_ROOT_DIR" || return 1
+    kubectl apply -f "$DOCUMENT_CONVERTER_BFF_YAML" -n "$NAMESPACE" || return 1
     
         if [ $? -eq 0 ]; then
         log_success "Document Converter BFF 部署完成！"
@@ -562,21 +466,10 @@ uninstall_app() {
     log_info "开始卸载 Document Converter BFF..."
     log_info "环境: $ENVIRONMENT, 命名空间: $NAMESPACE"
     
-    check_env_config
-    
-    # ============================================================
-    # 阶段1：卸载本级核心服务（Deployment 和 Service）
-    # ============================================================
-    log_info "🚀 阶段1：卸载 Document Converter BFF 核心服务..."
-    # 卸载时使用原始 YAML（删除时不需要替换镜像，但需要替换命名空间）
-    # 检查生成的 YAML 文件是否存在
-    if [ ! -f "$DOCUMENT_CONVERTER_BFF_YAML" ]; then
-        log_warn "生成的 YAML 文件不存在: $DOCUMENT_CONVERTER_BFF_YAML，尝试直接删除资源"
-        kubectl delete deployment document-converter-backend -n "$NAMESPACE" --ignore-not-found=true || true
-        kubectl delete service document-converter-backend -n "$NAMESPACE" --ignore-not-found=true || true
-    else
-        kubectl delete -f "$DOCUMENT_CONVERTER_BFF_YAML" -n "$NAMESPACE" --ignore-not-found=true
-    fi
+    sunmoon_deploy_target_check "$K8S_ROOT_DIR" || return 1
+    kubectl delete deployment document-converter -n "$NAMESPACE" --ignore-not-found=true || return 1
+    sunmoon_deploy_target_check "$K8S_ROOT_DIR" || return 1
+    kubectl delete service document-converter -n "$NAMESPACE" --ignore-not-found=true || return 1
     log_success "✅ Document Converter BFF 核心服务卸载完成"
     
     # ============================================================
@@ -585,7 +478,8 @@ uninstall_app() {
     # ============================================================
     log_info "🚀 阶段2：卸载 Document Converter BFF 子级组件..."
     if ! uninstall_sub_components "$PROJECT_ID" "$NAMESPACE" "$ENVIRONMENT" false; then
-        log_warn "⚠️ Document Converter BFF 子级组件卸载部分失败，继续..."
+        log_error "Document Converter BFF 子级组件卸载失败"
+        return 1
     fi
     log_success "✅ Document Converter BFF 子级组件卸载完成"
     
@@ -605,98 +499,20 @@ uninstall_app() {
 
 # 卸载子组件（按优先级，逆序）
 uninstall_sub_components() {
-    local project_id="$1"
-    local namespace="$2"
-    local environment="$3"
-    local dry_run="$4"
-    
-    log_info "开始卸载 Document Converter BFF 子组件..."
-    
-    # 定义子组件卸载顺序（按优先级排序，逆序卸载）
-    # 注意：这里只处理需要特殊卸载逻辑的组件，其他组件通过动态扫描卸载
-    local sub_components=(
-        "document_converter_bff_middleware:${middleware_enabled:-false}:${middleware_priority:-1000}:Document Converter BFF 中间件:$PROJECT_ROOT/middleware/deploy-middleware-all/deploy-middleware-all.sh"
-        "document_converter_bff_ingress:${ingress_enabled:-false}:${ingress_priority:-100}:Document Converter BFF HTTP 路由:$PROJECT_ROOT/ingress/deploy-ingress/deploy-ingress.sh"
-    )
-    
-    # 按优先级排序（卸载时反向顺序）
-    IFS=$'\n' sub_components=($(sort -t: -k3 -n <<<"${sub_components[*]}"))
-    unset IFS
-    
-    # 卸载子组件
-    for component_info in "${sub_components[@]}"; do
-        IFS=':' read -r name enabled priority description script_path <<< "$component_info"
-        
-        if [[ "$enabled" == "true" ]]; then
-            log_info "卸载 $description (优先级: $priority)..."
-            
-            if [[ -f "$script_path" ]]; then
-                # 禁用子脚本的自动清理，保持连接以便后续操作
-                # Ingress 脚本使用 uninstall 命令
-                if [[ "$name" == "document_converter_bff_ingress" ]]; then
-                    if DISABLE_AUTO_CLEANUP=true bash "$script_path" uninstall "$project_id" "$namespace" "$environment"; then
-                        log_success "✅ $description 卸载成功"
-                    else
-                        log_error "❌ $description 卸载失败"
-                    fi
-                else
-                    # 其他子组件可能使用不同的卸载方式
-                    if DISABLE_AUTO_CLEANUP=true bash "$script_path" uninstall "$project_id" "$namespace" "$environment"; then
-                        log_success "✅ $description 卸载成功"
-                    else
-                        log_error "❌ $description 卸载失败"
-                    fi
-                fi
-            else
-                log_warn "⚠️ $description 脚本不存在: $script_path"
-            fi
-        fi
+    local project_id="$1" namespace="$2" environment="$3" dry_run="$4"
+    local category flag
+    # Reverse the dependency order; namespace/PVC are retained.
+    for category in ingress middleware configMap secret; do
+        case "$category" in
+            ingress) flag="${ingress_enabled:-false}" ;;
+            middleware) flag="${middleware_enabled:-false}" ;;
+            configMap) flag="${configmap_enabled:-true}" ;;
+            secret) flag="${secrets_enabled:-true}" ;;
+        esac
+        [[ "$flag" == true || "$flag" == false ]] || { log_error '组件总开关必须为 true/false'; return 1; }
+        [[ "$flag" == true ]] || continue
+        scan_and_deploy_components "$category" "$project_id" "$namespace" "$environment" "$dry_run" uninstall || return $?
     done
-    
-    # 动态卸载其他组件（secret, configmap）
-    # 注意：scan_and_deploy_components 只支持 deploy，卸载需要直接调用组件的 uninstall 脚本
-    if [[ "${secrets_enabled:-true}" == "true" ]]; then
-        local secrets_dir="$PROJECT_ROOT/secret"
-        if [[ -d "$secrets_dir" ]]; then
-            for secret_dir in "$secrets_dir"/*/; do
-                [[ ! -d "$secret_dir" ]] && continue
-                local secret_name=$(basename "$secret_dir")
-                local secret_deploy_dir="$secret_dir/deploy-${secret_name}"
-                local secret_script="$secret_deploy_dir/deploy-${secret_name}.sh"
-                if [[ -f "$secret_script" ]]; then
-                    log_info "卸载 Secret: $secret_name..."
-                    if DISABLE_AUTO_CLEANUP=true bash "$secret_script" uninstall "$project_id" "$namespace" "$environment" 2>/dev/null; then
-                        log_success "✅ Secret $secret_name 卸载成功"
-                    else
-                        log_warn "⚠️ Secret $secret_name 卸载失败或已不存在"
-                    fi
-                fi
-            done
-        fi
-    fi
-    
-    if [[ "${configmap_enabled:-true}" == "true" ]]; then
-        local configmap_dir="$PROJECT_ROOT/configMap"
-        if [[ -d "$configmap_dir" ]]; then
-            for config_dir in "$configmap_dir"/*/; do
-                [[ ! -d "$config_dir" ]] && continue
-                local config_name=$(basename "$config_dir")
-                local config_deploy_dir="$config_dir/deploy-${config_name}"
-                local config_script="$config_deploy_dir/deploy-${config_name}.sh"
-                if [[ -f "$config_script" ]]; then
-                    log_info "卸载 ConfigMap: $config_name..."
-                    if DISABLE_AUTO_CLEANUP=true bash "$config_script" uninstall "$project_id" "$namespace" "$environment" 2>/dev/null; then
-                        log_success "✅ ConfigMap $config_name 卸载成功"
-                    else
-                        log_warn "⚠️ ConfigMap $config_name 卸载失败或已不存在"
-                    fi
-                fi
-            done
-        fi
-    fi
-    
-    log_success "✅ Document Converter BFF 子组件卸载完成"
-    return 0
 }
 
 # 显示状态
@@ -704,29 +520,28 @@ show_status() {
     log_info "Document Converter BFF 状态:"
     echo ""
     echo "📦 Pods:"
-    kubectl get pods -n "$NAMESPACE" -l app=document-converter-backend 2>/dev/null || echo "  无 Pod 运行"
+    kubectl get pods -n "$NAMESPACE" -l app=document-converter-backend || return 1
     echo ""
     echo "🌐 Services:"
-    kubectl get svc -n "$NAMESPACE" -l app=document-converter-backend 2>/dev/null || echo "  无 Service"
+    kubectl get svc -n "$NAMESPACE" -l app=document-converter-backend || return 1
     echo ""
     echo "📋 Deployments:"
-    kubectl get deployment -n "$NAMESPACE" -l app=document-converter-backend 2>/dev/null || echo "  无 Deployment"
+    kubectl get deployment -n "$NAMESPACE" -l app=document-converter-backend || return 1
     echo ""
     echo "📋 ConfigMaps:"
-    kubectl get configmap -n "$NAMESPACE" -l app=document-converter-backend 2>/dev/null || echo "  无 ConfigMap"
+    kubectl get configmap -n "$NAMESPACE" -l app=document-converter-backend || return 1
     echo ""
     echo "🔐 Secrets:"
-    kubectl get secret -n "$NAMESPACE" -l app=document-converter-backend 2>/dev/null || echo "  无 Secret"
+    kubectl get secret -n "$NAMESPACE" -l app=document-converter-backend || return 1
     echo ""
     echo "📦 PVCs:"
-    kubectl get pvc -n "$NAMESPACE" -l app=document-converter-backend 2>/dev/null || echo "  无 PVC"
+    kubectl get pvc -n "$NAMESPACE" -l app=document-converter-backend || return 1
 }
 
 # 主函数
 main() {
     # 使用解析后的参数（已移除 --cluster 参数）
     set -- "${ORIGINAL_ARGS[@]}"
-    set -- "${PARSED_ARGS[@]}"
     
     if [[ -n "${CLUSTER:-}" ]]; then
         log_info "🎯 当前集群配置: ${CLUSTER}"
@@ -760,104 +575,30 @@ main() {
     log_info "Document Converter BFF 部署脚本启动"
     log_info "操作: $ACTION, 项目: $PROJECT_ID, 命名空间: $NAMESPACE, 环境: $ENVIRONMENT"
     
-    check_kubectl
-    
     case "$ACTION" in
-        "deploy")
-            log_info "开始部署 Document Converter BFF..."
-            
-            # 读取 Kubernetes 配置文件
-            if ! read_k8s_config; then
-                log_error "无法读取 Kubernetes 配置文件"
-                exit 1
-            fi
-            
-            # 检查是否已有可用的Kubernetes连接
-            if kubectl get nodes >/dev/null 2>&1; then
-                log_info "使用现有 Kubernetes 连接"
-            else
-                # 设置 Kubernetes 环境（建立远程连接）
-                if ! setup_kubectl_environment; then
-                    log_error "无法建立 Kubernetes 连接"
-                    exit 1
-                fi
-                
-                # 验证连接是否可用
-                if ! kubectl get nodes >/dev/null 2>&1; then
-                    log_error "Kubernetes 连接不可用，请检查连接状态"
-                    exit 1
-                fi
-            fi
-            
-            # 如果启用了 namespace 组件，先部署 namespace（会在 deploy_sub_components 中处理）
-            # 否则检查命名空间是否存在
-            if [[ "${namespace_enabled:-true}" != "true" ]]; then
-                if ! check_namespace "$NAMESPACE"; then
-                    log_error "命名空间检查失败"
-                    exit 1
-                fi
-            fi
-            
-            # 部署应用
-            if deploy_app; then
-                log_success "✅ Document Converter BFF 部署完成！"
-            else
-                log_error "❌ Document Converter BFF 部署失败"
-                exit 1
-            fi
-            ;;
-        "uninstall")
-            log_info "开始卸载 Document Converter BFF..."
-            
-            # 读取 Kubernetes 配置文件
-            if ! read_k8s_config; then
-                log_error "无法读取 Kubernetes 配置文件"
-                exit 1
-            fi
-            
-            # 设置 Kubernetes 环境（建立远程连接）
-            if ! setup_kubectl_environment; then
-                log_error "无法建立 Kubernetes 连接"
-                exit 1
-            fi
-            
-            # 验证连接是否可用
-            if ! kubectl get nodes >/dev/null 2>&1; then
-                log_error "Kubernetes 连接不可用，请检查连接状态"
-                exit 1
-            fi
-            
-            # 卸载应用
-            uninstall_app
-            ;;
-        "status")
-            log_info "查询 Document Converter BFF 状态..."
-            
-            # 读取 Kubernetes 配置文件
-            if ! read_k8s_config; then
-                log_error "无法读取 Kubernetes 配置文件"
-                exit 1
-            fi
-            
-            # 设置 Kubernetes 环境（建立远程连接）
-            if ! setup_kubectl_environment; then
-                log_error "无法建立 Kubernetes 连接"
-                exit 1
-            fi
-            
-            # 验证连接是否可用
-            if ! kubectl get nodes >/dev/null 2>&1; then
-                log_error "Kubernetes 连接不可用，请检查连接状态"
-                exit 1
-            fi
-            
-            show_status
-            ;;
-        *)
-            log_error "❌ 未知操作: $ACTION"
-            log_info "支持的操作: deploy, uninstall, status"
-            exit 1
-            ;;
+        deploy|uninstall|status) ;;
+        *) log_error '支持的操作: deploy, uninstall, status'; return 2 ;;
+    esac
+    [[ "$REQUESTED_CLUSTER" =~ ^(KIND|C[1-9][0-9]*)$ && "$CLUSTER" == "$REQUESTED_CLUSTER" ]] || {
+        log_error '必须显式指定集群，且配置不得改变选择'; return 1;
+    }
+    [[ "$NAMESPACE" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ && ${#NAMESPACE} -le 63 ]] || {
+        log_error '必须指定合法的 namespace'; return 1;
+    }
+    local flag
+    for flag in namespace_enabled secrets_enabled configmap_enabled middleware_enabled ingress_enabled; do
+        [[ ! -v "$flag" || "${!flag}" == true || "${!flag}" == false ]] || {
+            log_error '组件总开关必须为 true/false'; return 1;
+        }
+    done
+    sunmoon_deploy_target_init "$K8S_ROOT_DIR" || return 1
+    check_kubectl
+    case "$ACTION" in
+        deploy)
+            if [[ "${namespace_enabled:-true}" != true ]]; then check_namespace "$NAMESPACE" || return 1; fi
+            deploy_app || return 1 ;;
+        uninstall) uninstall_app || return 1 ;;
+        status) show_status || return 1 ;;
     esac
 }
 

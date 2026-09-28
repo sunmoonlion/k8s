@@ -4,6 +4,8 @@
 
 当前正在按这个目标整理和迁移，不能把目标当成已经全部完成：正式 `sunmoon-kind-main` 尚未创建；公开 Harbor 和 inbox 仍使用旧 `kind`。云端新流程未经实机验证。完整现场续接见 [CHECKPOINT.md](CHECKPOINT.md)。
 
+本次收尾必须完成[镜像持久化与长期空间管理验收](sunmoonai/operations/persistence-and-space-acceptance.md)：分别记录 WSL/KIND 重启、KIND 删除重建和新节点拉取证据，交付统一容量查看/预览/执行入口。删除策略先由所有者确认；当前仍未完成，不能以挂载检查代替验收。
+
 ## 从这里操作
 
 已替代的旧镜像发布/加载和外置 Harbor 操作目录已删除，不保留兼容转发。日常只使用下方统一入口；历史退役清单见 [迁移文档第 9 节](sunmoonai/kind-infrastructure/docs/harbor-external-integration-plan.md#9-镜像脚本退役与保留清单2026-09-28)，`legacy/` 不用于部署。

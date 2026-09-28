@@ -25,7 +25,7 @@
 | OnlyOffice / Document Converter 两个入口 | `action [project namespace environment dry_run]` |
 
 后四个入口支持 deploy/status/uninstall/help；不再调用生成器或消费落在工作树中的凭据 YAML。
-Document Converter 原 `generate` 部署动作退役；独立生成工具仍保留人工用途，不构成新部署的数据源。
+Document Converter 原 `generate` 部署动作退役；人工导出改用 `./sunmoon harbor export-secret`，见[私有导出说明](export-pull-secret.md)；两个旧生成脚本和 Document Converter 旧配置/模板已删除，不留转发入口。
 传入 namespace 优先于配置，默认依次取 NAMESPACE、SECRET_NAMESPACE、平台默认值。
 `--cluster` 使用公共解析器，`--dry-run` 在加载组件配置及凭据之前返回；无参数旧入口仍默认实际部署，必须先满足目标准入。
 直接调用 Python 工具默认只打印计划；Shell 实际分支在准入通过后显式传 `--apply`。
@@ -74,7 +74,7 @@ Jenkins 原 Kaniko Secret 名称保留，供构建器拉取基础镜像时挂载
 
 ## 未覆盖和验收状态
 
-通用 Secret 生成库、应用资源生成工具、其他业务数据库 Secret 仍有各自用途，本轮未删除。
+通用 Secret 生成库、其他应用资源生成工具、业务数据库 Secret 仍有各自用途；旧 Harbor 专用生成路径已被私有导出工具替代。
 本轮仅切换上述 17 个部署入口；不能据此宣称全仓已无历史凭据字段或所有上层资源生成器都已退役。
 17 份当前组件配置的旧字段被删除，不会从 Git 历史中抹除；如果曾有真实口令进入版本历史，后续需按原凭据轮换安排处理。
 

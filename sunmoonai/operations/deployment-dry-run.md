@@ -4,26 +4,28 @@
 不能只在几个数据库组件的 Helm 命令上加 `--dry-run`。
 
 逐文件位置与参数契约保存在 [deployment-dry-run-inventory.json](deployment-dry-run-inventory.json)。
-清单包含六个平台目录的全部 168 个 `deploy-*.sh` / `deploy.sh`，以及总控、部署辅助工具和独立 Harbor 入口，合计 187 项。
-这是入口及分支的静态覆盖清单，不是 187 项实机验收记录。
+清单包含六个平台目录的全部 168 个 `deploy-*.sh` / `deploy.sh`，以及总控、部署辅助工具和独立 Harbor 入口，合计 189 项。
+这是入口及分支的静态覆盖清单，不是 189 项实机验收记录。
 
 ## 覆盖方式
 
 | 入口 | 数量 | 处理 |
 | --- | ---: | --- |
-| 活动旧 Shell 组件、子组件及辅助工具 | 149 | 第一个公共调用即进入 `utils/deploy-plan.sh`，在配置、凭据、连接库、临时文件和 EXIT trap 之前判断计划；计划直接退出 |
+| 活动旧 Shell 组件、子组件及辅助工具 | 148 | 第一个公共调用即进入 `utils/deploy-plan.sh`，在配置、凭据、连接库、临时文件和 EXIT trap 之前判断计划；计划直接退出 |
 | Info / Knowledge / Investment 总入口及六个角色入口 | 21 | 共用 `formal_deploy_entry.py`；位置 `true` 和命名 `--dry-run` 转到本地 plan，保留发布配置、namespace、镜像/发布门禁 |
 | 根平台、Data Platform 总控 | 2 | 同一请求校验后继续现有本地配置计划；不会递归执行组件 |
 | 统一 Ingress 与 Traefik 转入入口 | 2 | 保留默认计划及显式 `--apply/--verify`，参数冲突拒绝；本地 Python 使用 `-B` |
 | 云基础设施总控 | 1 | 保留 `--dry-run`；补齐 status/steps/materials 的只打印分支，云上未经实机验证 |
 | 共享证书入口 | 1 | 保留默认计划与显式执行；拒绝在继承计划模式时执行 apply/verify |
 | 独立 Harbor 准备、启停、恢复、备份、SNI、扫描器 | 6 | 原生默认计划、显式 `--apply`；审阅其本地计划分支，保留现有生命周期协议 |
+| Document Converter 本地配置生成器 | 2 | Secret/ConfigMap 单资源渲染，--dry-run 在配置之前返回；不使用 kubectl 验证 |
+| 私有拉取 Secret 导出 | 1 | 默认计划，--apply 仅写 ~/private 新文件；不读取集群 |
 | ONLYOFFICE 本地资源生成器 | 1 | --dry-run 或继承计划在加载配置前退出；默认只生成非 Secret，Secret 必须逐项显式选择 |
 | 原集群内 Harbor 三个入口、原 KIND 建群入口 | 4 | 仍拒绝执行；本次不会把停用入口重新启用 |
 
-149 个旧入口包括 PostgreSQL、MongoDB、Neo4j、Redis/NodeBull、对象存储、Elasticsearch、Kibana、Logstash、
+148 个旧入口包括 PostgreSQL、MongoDB、Neo4j、Redis/NodeBull、对象存储、Elasticsearch、Kibana、Logstash、
 RabbitMQ、Jenkins、pgAdmin、RedisInsight、Mongo Express、Flower、Casdoor、OnlyOffice、Document Converter、RagFlow，
-及其 Secret、路由和中间件。另补入问数 Demo、Secret 生成器、Casdoor 初始化/数据库访问工具、手动 Traefik NAT 工具。
+及其 Secret、路由和中间件。另补入问数 Demo、Casdoor 初始化/数据库访问工具、手动 Traefik NAT 工具。
 这些辅助工具保留原用途；增加计划模式不代表其真实执行方式已符合新版集群的全部要求。
 
 `signup-setup.sh` 是供 Casdoor 初始化脚本 source 的函数库，仍由已纳入清单的调用入口保护。
@@ -114,8 +116,13 @@ bash sunmoonai/app-platform/info-app/deploy-info-app-all/deploy-info-app-all.sh 
 
 ## 镜像拉取 Secret 后续收口
 
-覆盖清单中的 17 个 Harbor/Kaniko Secret 部署入口现共用 [registry-platform 拉取身份实现](../registry-platform/docs/pull-secrets.md)，保留本页提前返回边界及 profile。13 个只写入口保留 deploy-project；Jenkins 两个 namespace 和 OnlyOffice/Document Converter 两个 action 入口保留 deploy/status/uninstall。Document Converter 的 generate 动作从部署入口退役，独立人工生成工具保留。真实部署的地址/凭据和目标检查按该说明执行。
+覆盖清单中的 17 个 Harbor/Kaniko Secret 部署入口现共用 [registry-platform 拉取身份实现](../registry-platform/docs/pull-secrets.md)，保留本页提前返回边界及 profile。13 个只写入口保留 deploy-project；Jenkins 两个 namespace 和 OnlyOffice/Document Converter 两个 action 入口保留 deploy/status/uninstall。Document Converter 拉取 Secret 的 generate 动作从部署入口退役；旧独立生成器已删除，人工用途改用 [统一私有导出](../registry-platform/docs/export-pull-secret.md)。真实部署的地址/凭据和目标检查按该说明执行。
 
 ## ONLYOFFICE 上层生成调用
 
 路由与四个业务 Secret 的生成范围已按调用方收敛，见[操作说明](../app-platform/knowledge-app/components/onlyoffice-docs-bff/docs/deployment-resources.md)。Ingress 只生成自己的路由和 Middleware；status/uninstall 不调用生成器；JWT 缺值不会自动随机生成。修改只完成静态核对，真实部署尚未验收。
+
+## Document Converter 配置资源
+
+Secret/ConfigMap 的 status/uninstall 不生成文件，两个本地生成器已加入清单；
+父级按实际配置键扫描、隔离子配置并传播失败。范围及待办见[操作说明](../app-platform/knowledge-app/components/document-converter-backend/docs/deployment-resources.md)。

@@ -76,3 +76,5 @@ python3 sunmoonai/registry-platform/prepare-artifacts.py --apply
 ## 集群拉取身份
 
 [统一镜像拉取 Secret](docs/pull-secrets.md)：17 个组件入口共用私有认证文件和固定目标检查，组件名称/命名空间/重启配置保留；静态接线完成，实际创建、节点拉取及云端验收待完成。
+
+人工需要导出拉取 Secret 时用 [`./sunmoon harbor export-secret`](docs/export-pull-secret.md)，默认计划，实际输出仅限 ~/private 且不覆盖已有文件；不连接旧集群找口令。

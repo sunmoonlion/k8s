@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "scope": "six platform trees: all deploy-*.sh/deploy.sh; root deployment; Casdoor post-install/db-access CLI, Secret generator, manual Traefik NAT; native cloud/certificates and retired KIND entry; six external Harbor lifecycle/recovery/scanner/SNI entry points retain explicit --apply; ONLYOFFICE explicitly selected local resource renderer",
+  "scope": "six platform trees: all deploy-*.sh/deploy.sh; root deployment; Casdoor post-install/db-access CLI, manual Traefik NAT; native cloud/certificates and retired KIND entry; six external Harbor lifecycle/recovery/scanner/SNI entry points retain explicit --apply; ONLYOFFICE explicitly selected local resource renderer; Document Converter local config renderers and private registry export",
   "entries": [
     {
       "path": "sunmoonai/app-platform/auth-app/casdoor/deploy-casdoor/deploy-casdoor.sh",
@@ -858,11 +858,6 @@
       "profile": "named"
     },
     {
-      "path": "sunmoonai/app-platform/utils/generate-harbor-registry-secret.sh",
-      "kind": "early-shell",
-      "profile": "named"
-    },
-    {
       "path": "sunmoonai/ingress-platform/traefik/setup-iptables-forward.sh",
       "kind": "early-shell",
       "profile": "named"
@@ -936,6 +931,21 @@
       "path": "sunmoonai/app-platform/knowledge-app/components/onlyoffice-docs-bff/resources/custom-values/generate.sh",
       "kind": "native-onlyoffice-renderer",
       "profile": "named-resource"
+    },
+    {
+      "path": "sunmoonai/registry-platform/export_pull_secret.py",
+      "kind": "native-private-export",
+      "profile": "named"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/document-converter-backend/resources/k8s-resource/custom-values/secret/dc-secret/generate-dc-secret/generate-dc-secret.sh",
+      "kind": "native-dc-renderer",
+      "profile": "named"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/document-converter-backend/resources/k8s-resource/custom-values/configMap/dc-config/generate-dc-config/generate-dc-config.sh",
+      "kind": "native-dc-renderer",
+      "profile": "named"
     }
   ]
 }

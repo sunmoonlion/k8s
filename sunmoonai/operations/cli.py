@@ -26,6 +26,7 @@ ROUTES = {
     ('harbor', 'prepare-image'): 'sunmoonai/registry-platform/prepare_image.py',
     ('harbor', 'images'): 'sunmoonai/registry-platform/images.py',
     ('harbor', 'client'): 'sunmoonai/registry-platform/client.py',
+    ('harbor', 'export-secret'): 'sunmoonai/registry-platform/export_pull_secret.py',
 }
 
 

@@ -68,5 +68,5 @@ Middleware namespace 随本次部署参数，不再固定为 app-platform-dev。
 没有执行生成器、行为测试、Secret 写入、Ingress 部署或浏览器访问；不能据此认为 ONLYOFFICE 已在新集群通过。
 正式验收还需指定 namespace、既有 JWT 保持、字符转义、字段冲突、失败传播、路由访问和真实文档操作。
 
-Document Converter 的旧独立生成工具仍需下一步处理；本轮未修改它。
+Document Converter 旧 Harbor 生成器现已由仓库模块的 export-secret 私有导出替代，退役路径见仓库模块说明。
 旧节点/卷/Harbor/备份保护不变，本机重构临时文件与东京下载中转物料仍需最终清理。

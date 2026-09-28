@@ -1,5 +1,17 @@
 # luna 工作检查点
 
+## 最新续接：2026-09-28 Document Converter 配置生命周期与收尾验收补充
+
+基线 `9f9f8194`，本地 luna 开工干净；只改代码/文档，运行态迁移继续暂停。
+
+- Document Converter Secret/ConfigMap 的两个生成器与两个部署入口共用 resources/config-resource.sh 和 render_config_resource.py。修正应用根路径；本地渲染先解析模板再插值，JSON序列化、Secret转data、0600原子输出；允许空遥测值、不生成口令、不用kubectl验证。status/uninstall不生成，部署明确目标并写前复核，API错误脱敏；配置保持原值。业务配置生成文件仍在原工作树，未宣称所有业务凭据私有化。
+- 父级扫描按dc-secret/dc-config/dc-backend-ns实际键名，子配置隔离读取；Ingress/Middleware按实际直接入口。卸载不重新生成清单，按当前模板名称删除Deployment/Service，子失败传播，保留PVC/namespace。主配置缺失/失败不回退默认或加载旧覆盖；namespace和布尔开关校验，显式集群绑定，禁EXIT自动清理。其他App/PVC/namespace/Ingress旧渲染器仍待后续审阅，不能泛称全组件完成。
+- 新 ./sunmoon harbor export-secret 默认计划；显式私有凭据，固定仓库地址，--apply只写~/private下已存在的所有者私有目录，逐级拒软链接/工作树，0600临时文件+不覆盖原子发布，无API。对应通用与Document Converter旧生成器/配置/模板四个跟踪源文件删除，无转发；不清理生成文件或历史审计快照。17个实际pull-secret入口继续用此前内存/STDIN实现，不消费人工导出。
+- 清单189项，六平台168部署Shell完整，148 early-shell；本轮静态6Shell bash-n/ShellCheck error、3Python AST、6根路径、清单路径和文档链接、git diff --check通过。未执行生成/导出、行为测试、API、Docker、SSH、Windows、部署或数据清理。
+- 所有者本轮新增强制收尾：分别验证WSL/KIND重启及KIND删除重建后外置Harbor全目录/全artifact摘要和新节点拉取，不能用挂载代替；长期容量监控、保留/GC、缓存清理、日志轮转、备份轮换统一查看/预览/执行，删除策略先批准，保护在用/回退/必要备份。已写 operations/persistence-and-space-acceptance.md 并接入README、空间方案与交接。新space命令、定时监控尚未实现，策略数字只是提案；运行证据全待完成。官方2.13保留/GC与Docker日志文档已查阅并附链接。
+- 后续继续全部组件调用链，然后按准入恢复main/入口迁移及上述验收；最终本机refactor临时文件和东京下载清理仍必做，逐项报实际释放量。inbox仍旧kind，main未创建；旧节点/卷/Harbor/必要备份保护不变。仅本地luna提交，不push。
+
+
 ## 最新续接：2026-09-28 ONLYOFFICE 上层资源生成与查询副作用修复
 
 基线 `3a8ea9f2`，本地 luna 开工干净；继续上层生成器审阅，未恢复运行态迁移。
