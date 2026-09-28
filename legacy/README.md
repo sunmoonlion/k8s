@@ -11,3 +11,6 @@
 **运行时资源没有移动进 Git，也不能通过删除本目录来清理资源。** 旧 `kind` 三节点（特别是 `kind-worker2`）、验证集群节点、Docker 卷、`/data/kind-local-storage`、Harbor 镜像与数据库/密钥/备份均原地保留。它们按具体 ID/挂载/摘要登记，退出时另做清单核验。
 
 本地退出与云端退出分别判定；云端验收通过不会自动允许删除本地回退节点或卷。不得执行 system/container/volume prune，也不因文件归档释放数据目录。
+
+本次追加归档旧 KIND 推送、远端 loadimage 和交互菜单；活入口转发统一 OCI 发布器。
+旧发布工具的自动清理和失败后节点加载回退不得恢复。工具闭包及真实新发布链仍待验收，详见 [发布说明](../sunmoonai/registry-platform/docs/publication.md)。

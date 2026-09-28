@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "tool": {
+    "path": "/home/zymun/packages-to-be-installed/releases/registry-publisher-linux-amd64/bin/skopeo",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "policy": {
+    "path": "/home/zymun/private/registry-platform/publication-policy.json",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "work_root": "/home/zymun/packages-to-be-installed/work/registry-publish",
+  "minimum_free_gib": 2,
+  "timeout_seconds": 1800,
+  "retry_times": 2,
+  "images": [
+    {
+      "archive": "/home/zymun/packages-to-be-installed/releases/REPLACE_BATCH/image.oci.tar",
+      "archive_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "archive_bytes": 1,
+      "manifest_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "destination": "harbor.sunmoonai.com:30443/k8s-images/replace-repository@sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ]
+}

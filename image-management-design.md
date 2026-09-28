@@ -106,8 +106,8 @@ kubeadm 路径准备对应控制面、etcd、CoreDNS、pause、网络插件、�
 | `registry-platform/client.py` / `credentials.py` | 独立配置、计划默认、CA 摘要、私有输入和失败返回已整理 | 实际 Docker/节点/CI 使用方验收 |
 | `utils/secret-management/lib/` 与应用 Secret 生成器 | 已取消自行读取旧建群配置补口令，支持私有文件 | 其余历史配置中的凭据逐项退役，实际部署验证 |
 | `utils/unified-deployment-template.sh` / `registry-platform/images.py` | 已统一独立仓库 manifest 检查、严格 TLS/私有账号；16 个组件传递失败与镜像检查 dry-run；删除自动补推及不安全回退 | 显式发布入口、清单与实际渲染/发布锁对应、镜像层/架构和实际拉取仍待完成 |
-| `kind-infrastructure/push-to-harbor/` | 已取消推送前隐式修改系统 CA；其余导入/标签/推送逻辑仍在整理 | 对齐独立配置、摘要、清单及失败行为 |
-| `utils/registry-push-management/loadimage.sh` | 仍有现存调用方和云端 SSH 分支 | 保留可用功能，迁到共享实现/执行适配；云上标注未经实机验证 |
+| `kind-infrastructure/push-to-harbor/` | 原脚本归档；现入口转发同一 `registry-platform/publish.py`，只按显式 OCI 批次/digest 发布 | Skopeo 物料/策略/真实批次准备，实际复制和节点/CI 拉取尚待验证 |
+| `utils/registry-push-management/loadimage.sh` / 菜单 | 旧远程执行/清理实现归档，现入口统一转发发布器；不再读取旧配置 | 云 SSH 调度仍待接线与实机验证；tag 别名晋级/旧 tar 转换另行准入 |
 | `app-platform/scripts/build-push-app-images.sh` | 现有应用构建入口，保留应用/组件/源码/构建参数配置；已移除覆盖受保护发布 tag 的绕过开关 | 其余配置/账号/摘要收口及真实 CI 尚未完成 |
 | 旧 `harbor-image-management` | 已无运行时代码调用，归档到 legacy/cloud；原入口和归档实现均拒绝执行 | 云新流程实机验证并审阅无依赖后删除 |
 

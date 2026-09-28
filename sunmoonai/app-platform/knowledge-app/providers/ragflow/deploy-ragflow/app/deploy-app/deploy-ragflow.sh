@@ -42,23 +42,10 @@ run_ingress() {
     fi
 }
 
-load_registry_secret_defaults() {
-    local registry_conf="$K8S_ROOT_DIR/utils/registry-push-management/loadimage.conf"
-    [[ -f "$registry_conf" ]] || return 0
-
-    local current_registry_username="${REGISTRY_USERNAME:-}"
-    local current_registry_password="${REGISTRY_PASSWORD:-}"
-    # shellcheck disable=SC1090
-    source "$registry_conf"
-    [[ -n "$current_registry_username" ]] && REGISTRY_USERNAME="$current_registry_username"
-    [[ -n "$current_registry_password" ]] && REGISTRY_PASSWORD="$current_registry_password"
-}
-
 ensure_harbor_registry_secret() {
     local namespace="$1"
     local dry_run="${2:-false}"
     local secret_name="${RAGFLOW_IMAGE_PULL_SECRET:-harbor-registry-secret}"
-    local docker_server docker_username docker_password
 
     if kubectl get secret "$secret_name" -n "$namespace" >/dev/null 2>&1; then
         log_success "复用命名空间现有 Harbor Registry Secret: $namespace/$secret_name"
@@ -70,45 +57,26 @@ ensure_harbor_registry_secret() {
         return 0
     fi
 
-    if [[ -n "${REGISTRY_CREDENTIALS_FILE:-}" ]]; then
-        # Shared private tuple; never expose the password in kubectl argv.
-        (
-            umask 077
-            credential_tmp=$(mktemp /tmp/sunmoon-registry-XXXXXX) || exit 1
-            trap 'rm -f -- "$credential_tmp"' EXIT
-            REGISTRY_CREDENTIALS_FILE="$REGISTRY_CREDENTIALS_FILE" python3 -B \
-                "$K8S_ROOT_DIR/sunmoonai/registry-platform/credentials.py" docker-config \
-                > "$credential_tmp" || exit 1
-            kubectl create secret generic "$secret_name" --namespace "$namespace" \
-                --type=kubernetes.io/dockerconfigjson \
-                --from-file=".dockerconfigjson=$credential_tmp" \
-                --dry-run=client -o json | kubectl apply -f -
-        )
-        return $?
-    fi
+    # Same independent registry configuration and private tuple as other consumers.
+    # shellcheck source=/dev/null
+    source "$K8S_ROOT_DIR/sunmoonai/registry-platform/lib/config.sh"
+    registry_load_config || return 1
+    [[ -n "${REGISTRY_CREDENTIALS_FILE:-}" ]] || {
+        log_error "缺少独立 Harbor 使用方私有凭据文件配置"; return 1;
+    }
+    (
+        umask 077
+        credential_tmp=$(mktemp /tmp/sunmoon-registry-XXXXXX) || exit 1
+        trap 'rm -f -- "$credential_tmp"' EXIT
+        REGISTRY_CREDENTIALS_FILE="$REGISTRY_CREDENTIALS_FILE" python3 -B \
+            "$K8S_ROOT_DIR/sunmoonai/registry-platform/credentials.py" docker-config \
+            > "$credential_tmp" || exit 1
+        kubectl create secret generic "$secret_name" --namespace "$namespace" \
+            --type=kubernetes.io/dockerconfigjson \
+            --from-file=".dockerconfigjson=$credential_tmp" \
+            --dry-run=client -o json | kubectl apply -f -
+    )
 
-    load_registry_secret_defaults
-
-    if declare -F get_cluster_harbor_registry >/dev/null 2>&1; then
-        docker_server="${DOCKER_SERVER:-${RAGFLOW_IMAGE_REGISTRY:-$(get_cluster_harbor_registry)}}"
-    else
-        docker_server="${DOCKER_SERVER:-${RAGFLOW_IMAGE_REGISTRY:-harbor.sunmoonai.com:30443}}"
-    fi
-    docker_username="${DOCKER_USERNAME:-${HARBOR_ADMIN_USER:-${HARBOR_USERNAME:-${REGISTRY_USERNAME:-admin}}}}"
-    docker_password="${DOCKER_PASSWORD:-${HARBOR_ADMIN_PASSWORD:-${HARBOR_PASSWORD:-${REGISTRY_PASSWORD:-}}}}"
-
-    if [[ -z "$docker_password" || "$docker_password" == "TODO_FILL_IN_HARBOR_PASSWORD" ]]; then
-        log_error "Harbor Registry Secret 不存在，且未配置 Harbor 密码。请设置 DOCKER_PASSWORD/HARBOR_ADMIN_PASSWORD/HARBOR_PASSWORD/REGISTRY_PASSWORD"
-        return 1
-    fi
-
-    log_info "创建 Harbor Registry Secret: $namespace/$secret_name"
-    kubectl create secret docker-registry "$secret_name" \
-        --namespace "$namespace" \
-        --docker-server="$docker_server" \
-        --docker-username="$docker_username" \
-        --docker-password="$docker_password" \
-        --dry-run=client -o yaml | kubectl apply -f -
 }
 
 required_images() {

@@ -237,6 +237,39 @@
       "group": "cloud",
       "execution": "reference-only",
       "exit_condition": "cloud-real-host-validation-and-reviewed-replacement"
+    },
+    {
+      "original": "sunmoonai/kind-infrastructure/push-to-harbor/push-images-to-harbor.sh",
+      "archive": "legacy/local/sunmoonai/kind-infrastructure/push-to-harbor/push-images-to-harbor.sh",
+      "original_sha256": "d28ebbb8baa691c1a9c8aedbf8f9c65df27855b0d7dca8e0b1dda05ba4837a9c",
+      "baseline": "4564bc2128f62acc4c2a32d7b06e266e941cb3ac",
+      "archive_guard_bytes": 225,
+      "replacement": "sunmoonai/registry-platform/publish.py",
+      "group": "local",
+      "execution": "disabled",
+      "exit_condition": "local-migration-and-observation-complete"
+    },
+    {
+      "original": "utils/registry-push-management/loadimage.sh",
+      "archive": "legacy/cloud/utils/registry-push-management/loadimage.sh",
+      "original_sha256": "d0d92eefb4396230271172fc4d2205f793a8025a33c46d7387748ea466e573de",
+      "baseline": "4564bc2128f62acc4c2a32d7b06e266e941cb3ac",
+      "archive_guard_bytes": 210,
+      "replacement": "sunmoonai/registry-platform/publish.py",
+      "group": "cloud",
+      "execution": "disabled",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement"
+    },
+    {
+      "original": "utils/registry-push-management/registry-push-menu.sh",
+      "archive": "legacy/cloud/utils/registry-push-management/registry-push-menu.sh",
+      "original_sha256": "9df436e96a2a1a8a53feb35c881a90ee3f8ff287d7a20206a28ef22749617b07",
+      "baseline": "4564bc2128f62acc4c2a32d7b06e266e941cb3ac",
+      "archive_guard_bytes": 210,
+      "replacement": "sunmoonai/registry-platform/publish.py",
+      "group": "cloud",
+      "execution": "disabled",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement"
     }
   ]
 }

@@ -1,3 +1,15 @@
+## 最新续接：2026-09-28 显式 OCI 发布器与旧推送入口归档
+
+基线 4564bc2128f62acc4c2a32d7b06e266e941cb3ac，luna 工作区开工干净，用户继续已批准的部署整理。仍未恢复现场迁移/切换。
+
+- 新 registry-platform/publish.py / `./sunmoon harbor publish --batch <绝对JSON>`。本地/云执行同一实现，默认计划；schema严校验批次，锁Skopeo二进制/信任策略/归档SHA和归档字节、根manifest与完整目标digest。仅单根OCI archive（根可多架构），目标必须repo@sha256，不接受tag；无公网fallback、Docker load、节点导入或源文件清理。归档危险路径/链接/重复项拒绝，复制前全部源manifest核锁；工作目录空间按最大展开量两倍加至少2GiB，逐件再查。
+- --apply路径使用已锁Skopeo inspect/copy --all --preserve-digests，固定CA/TLS、0600 authfile、明确tmpdir及本次registry/signature配置、移除代理env，限时/有限重试。工具digestfile与独立Registry按摘要回读共同核对；不因manifest已存在便跳过层复制。输出逐件成功，非批事务；失败可能留已上传层/镜像，不自动回滚删远端。私有临时目录正常退出清理，强杀残留纳入最终精确清理。签名策略需审阅，不自动生成全放行策略。
+- 本机command -v未发现Skopeo/crane，**未下载安装工具、未执行其命令或实际推送**；版本/运行依赖闭包、实际policy及真实batch均待准备。publication.example.json全零SHA/占位路径仅示例；4默认计划成功不证明物料存在。工具支持参数和digest写入依据上游Skopeo/containers-image官方源码，文内列链接，但固定工具版本尚未实测。缺前置会拦实际执行，不宣称发布链可正式用。
+- 发现旧KIND push失败后kind load/ctr import会报告成功，旧loadimage忽略登录失败/TLS默认false、SSH口令进argv且带删除功能。旧KIND脚本、云loadimage与交互menu共3项按原SHA+baseline归档legacy/local、legacy/cloud，guard先拒绝且去执行位。三个原入口变同一publisher转发，旧参数拒绝；云实机验证前保留归档。旧conf仍原地但活动Shell无读取者，需最终清点，不在本批输出/复制其内容；旧README重写为新入口说明，历史由Git保留。
+- RAGFlow删除loadimage.conf自动补管理员口令和密码argv分支，实际新建Secret读独立registry配置+私有JSON，经0600临时文件/stdin；已有Secret复用不变。应用build-push其余配置/身份仍未统一，不能把该构建入口当新发布batch。
+- 静态2 Python AST、4 Bash -n/ShellCheck error级通过；根入口/3兼容入口默认计划通过；3归档原字节对比一致；11文档84本地链接存在。报告 sunmoonai/scripts/results/luna-registry-publication-consolidation.20260928.json。未跑测试套件/真实凭据/网络查询推拉/Docker/K8s/Windows/SSH/清理，旧节点卷和Harbor实际数据未改。
+- 下一步准备可信Skopeo及依赖离线物料、锁tool版本/SHA与实际策略/批次，核旧Docker-save tar转换与tag部署清单/别名晋级；继续应用构建和PV节点/目标接线。云SSH发布适配仍待写/演练/实机验。整理完成后再恢复main建群/正式入口迁移与真实Docker节点CI/重启重建独立性验收；最后必须清本机和东京临时物料。旧inbox仍kind；仅本地luna提交，不push，不宣称整体完成。
+
 ## 最新续接：2026-09-28 共享仓库镜像检查与组件失败传播
 
 基线 33ae38140eac86c352de821ca670ab0de4dc9c88，luna；续接未提交的 images.py 草稿，用户“继续”原部署代码整理。现场迁移仍暂停，本批无运行时操作。

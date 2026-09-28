@@ -67,7 +67,7 @@ PostgreSQL、RabbitMQ、pgAdmin、RedisInsight 的四处旧镜像工具空检查
 ## 尚未完成的共用链路
 
 1. Secret 公共库已取消从总控/建群配置补凭据；平台总控、应用生成器、十二个组件调用点和 RAGFlow 已支持显式私有文件。既有配置中的历史凭据值与其他调用链仍待逐项退役，不声称所有私有输入已迁好。
-2. 旧 Harbor 镜像工具及 KIND 推送工具的物料加载、标签、真实推拉需继续收口；本页不宣称镜像发布链已完成统一。
+2. 旧 KIND/远端推送及菜单已转发统一 [OCI 发布器](publication.md)，但工具闭包、实际物料批次、别名晋级与真实推拉仍待完成。
 3. Docker daemon 的 NO_PROXY 与终端环境不同；本工具不自动更改 daemon 代理或重启它。节点 containerd 和 CI 的域名、CA、NO_PROXY、imagePullSecrets 分别验收。
 4. 正式验收包含新入口身份核对、Docker Engine 和节点按 digest 拉取、真实 CI 推送/拉取、重建 KIND 后 Harbor 摘要和数据不变。
 

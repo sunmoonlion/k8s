@@ -1,0 +1,43 @@
+{
+  "date": "2026-09-28",
+  "baseline": "4564bc2128f62acc4c2a32d7b06e266e941cb3ac",
+  "branch": "luna",
+  "scope": "Explicit OCI batch publication and retirement of old implicit push paths",
+  "checks": {
+    "python_ast": 2,
+    "bash_n": 4,
+    "shellcheck_error_level_exit": 0,
+    "default_plans": 4,
+    "archived_original_byte_comparisons": 3,
+    "markdown_files": 11,
+    "local_links": 84
+  },
+  "default_plan_note": "example placeholders only; input bytes/tool readiness not checked",
+  "runtime_actions": [],
+  "not_run": [
+    "test suites",
+    "Skopeo installation/execution",
+    "real credential reads",
+    "network registry calls",
+    "push/pull",
+    "Docker/Kubernetes/Windows/SSH",
+    "cleanup"
+  ],
+  "constraints": {
+    "C-R1/C-R2": "Batch pins archive/tool/policy SHA and publishes only exact digest destinations; legacy tag/render closure still pending",
+    "C-R5": "No mutable tag destinations or protected release aliases",
+    "C-I8": "Missing/unverified inputs and unknown outcomes stop; no node-load success fallback"
+  },
+  "remaining": [
+    "Prepare pinned Skopeo and dependencies, reviewed policy and actual OCI batch",
+    "Validate actual copy/all/preserve-digests/auth/TLS/timeout semantics with admitted tool",
+    "Legacy Docker-save tar conversion, deployment digest/alias reconciliation",
+    "Cloud SSH publication orchestration and live validation",
+    "Real Docker/node/CI acceptance, main cluster/cutover and final local/Tokyo cleanup"
+  ],
+  "primary_sources": [
+    "https://github.com/containers/skopeo/blob/main/docs/skopeo-copy.1.md",
+    "https://github.com/containers/skopeo/blob/main/cmd/skopeo/main.go",
+    "https://github.com/containers/image/blob/main/docker/docker_image_dest.go"
+  ]
+}
