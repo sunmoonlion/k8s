@@ -411,14 +411,14 @@ read_k8s_config() {
     return 0
 }
 
-# 保存连接状态（按 k8s-connection-manager.sh 的字段统一）
+# 保存连接状态（共享部署链 CURRENT_* 状态字段）
 save_k8s_status() {
     local mode="$1"
     local _timestamp="$2"   # 参数位占位，当前不写入文件
     local _local_port="$3"  # 参数位占位，当前不写入文件
     local pid="$4"
 
-    # 统一采用 CURRENT_* 字段，完全对齐 k8s-connection-manager.sh
+    # 统一采用 CURRENT_* 字段，供共享部署链读取
     CURRENT_MODE="$mode"
     # CURRENT_KUBECONFIG 由上层在建立连接后设置，这里不修改
     TUNNEL_PID="$pid"
@@ -1198,45 +1198,9 @@ setup_kubectl_environment() {
 # 输出：
 #   - 设置并导出 CLUSTER（统一为大写，数字自动补全为 C{数字}）
 #   - 生成 PARSED_ARGS（去掉 cluster 参数后的其余参数，供组件脚本继续解析自身参数）
-unified_parse_cluster_arg() {
-    local args=("$@")
-    PARSED_ARGS=()
-    local cluster_value=""
-    local i=0
-
-    while [[ $i -lt ${#args[@]} ]]; do
-        shopt -s nocasematch
-        case "${args[$i]}" in
-            --[cC][lL][uU][sS][tT][eE][rR]=*)
-                cluster_value="${args[$i]#*=}"
-                ;;
-            --[cC][lL][uU][sS][tT][eE][rR]|-c|-C)
-                if [[ $((i+1)) -lt ${#args[@]} ]]; then
-                    cluster_value="${args[$((i+1))]}"
-                    i=$((i+1))
-                else
-                    log_error "❌ --cluster 参数需要指定值（格式：C{数字} 或 -c2、-c 2 等）"
-                    exit 1
-                fi
-                ;;
-            -[cC][0-9]*)
-                cluster_value="${args[$i]#-[cC]}"
-                ;;
-            *)
-                PARSED_ARGS+=("${args[$i]}")
-                ;;
-        esac
-        shopt -u nocasematch
-        i=$((i+1))
-    done
-
-    if [[ -n "$cluster_value" ]]; then
-        cluster_value=$(echo "$cluster_value" | tr '[:lower:]' '[:upper:]')
-        [[ "$cluster_value" =~ ^[0-9]+$ ]] && cluster_value="C${cluster_value}"
-        export CLUSTER="$cluster_value"
-        log_info "🔧 设置集群环境变量: CLUSTER=$cluster_value"
-    fi
-}
+# One parser implementation shared with direct component callers.
+# shellcheck source=cluster-arg-parser.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/cluster-arg-parser.sh"
 
 # 子组件脚本常用别名（与 setup_kubectl_environment 一致，避免“未找到命令”）
 setup_connection() {

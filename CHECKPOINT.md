@@ -1,5 +1,16 @@
 ## 最新续接：2026-09-28 Skopeo 离线依赖、独立运行目录和首份真实批次
 
+## 最新续接：2026-09-28 utils 全量用途与依赖整理
+
+基线 `f2e6b1a21d92237aa0ebca6665077a1e6beadb2f`，luna 开工干净。所有者要求逐文件/逐目录处理 utils，并提醒 db-provisioner 有应用仓版本、人工工具不一定有代码引用。131 个原跟踪文件均有明确处置，见 operations/utils-refactor-inventory.md 与 scripts/results/luna-utils-disposition.20260928.json（均在 sunmoonai 下）。清单是用途/依赖/重复与替代核对，不是完整功能/安全审计。
+
+- 保留人工连接 shell/PowerShell、packages 菜单/导出与配置、三个镜像盘点和 local-path 修复工具；它们的人工能力尚未全部被新总控替代，不能因零引用删除。初步归档方案经能力复核撤销，最终这些工具原字节保留（两个盘点脚本仅去除宽泛清理/删Pod建议）。新写 utils/README.md、packages README，重写 k8s-admin/共享库说明区分适用范围。
+- 删除9个原utils文件：两份失效KIND/storage手册、旧CALLERS_ANALYSIS、已替代Harbor检查器、5份逐字节重复证书规范/模板。参数解析去重到cluster-arg-parser.sh；唯一旧Harbor检查调用方Document Converter直接调用registry-platform/images.py，TLS/认证/网络失败不再放行；prepare-secrets仅补缺失文件，不覆盖既有文件。组件公共库和动态19份镜像清单、30份认证样例均保留用途，证书两层接口不能按同名函数合并。
+- db-provisioner：只读核四应用仓 DBCTL_BIN，默认各用backend同级实现；k8s Casdoor仍用k8s/utils版本，不是纯备份。删除sunmoonai/utils/db-provisioner的19文件副本（16完全相同；README、Redis ACL、PG模板3处不同），保留实际默认使用的根utils版本及其已有修正；更正文档。四应用仓没有编辑、提交或执行。
+- 机械核对：131条精确覆盖基线文件集合与存在状态；19项额外副本比较；6修改Shell分别bash -n/ShellCheck error级通过；76本地文档链接存在；git diff --check通过。仅静态/只读核对，无测试套件、安装、推拉、SSH、数据库、K8s、Windows或实际物料清理。本轮/tmp目录清单已转正式报告后删除，无新远端文件。
+- 保留工具的旧行为仍有后续适配：SSH/TLS校验、自动安装/连接状态回退、物料宽泛清理/未锁摘要、证书分发与数据库凭据输出。保留不等于新版生产准入；不能借整理运行它们。原main建群/Harbor入口与发布消费者接线、重建独立性、云实机和最终本机东京清理仍未完成。旧节点/卷/镜像/Harbor/备份保护不变；inbox仍旧kind。只本地luna提交，不push。
+
+
 ## 最新续接：2026-09-28 删除已替代的旧操作目录
 
 基线 `9b4e59a439a28967217866d70493be7b2824d5ce`，luna 开工干净。所有者明确不需要旧转发入口/占位说明，认为散落目录造成混淆；本单元删除已无活动调用的旧操作目录，不恢复现场迁移。

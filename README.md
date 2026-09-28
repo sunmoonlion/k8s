@@ -60,3 +60,5 @@ Harbor `lifecycle start --apply` 与 KIND `lifecycle start --apply` 均先按需
 - [镜像管理设计](image-management-design.md)：离线物料、独立仓库、发布与清理，以及尚未完成的旧调用链整理。
 - 原根目录 `kind使用指南.md` 空壳指针已删除，当前 KIND 操作统一见 [formal 使用说明](sunmoonai/kind-infrastructure/formal/README.md)；旧版内容仍在 [legacy/local](legacy/local/kind使用指南.md)，仅作历史参考。
 - `refactor-cluster-arg.sh` 是一次性批量改写工具，仓库内未发现调用方，已删除。现用 `utils/cluster-arg-parser.sh` 及其调用方保留，不再通过批量正则脚本重写部署代码。
+
+公共库、人工工具与模板见 [utils 索引](utils/README.md)；逐文件的保留/合并/删除依据见 [整理清单](sunmoonai/operations/utils-refactor-inventory.md)。

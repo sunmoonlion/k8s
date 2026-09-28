@@ -1,5 +1,7 @@
 # auth-integration-template
 
+> 用途：人工接入样例，保留 Nuxt/Vite 与多种后端框架的示例能力；没有被脚本引用不代表无用。本目录不是当前 Next.js/Casdoor 模板的发布真源，不能直接覆盖 `tpl-app` 的既定身份实现。复制采用前需按应用契约核对 issuer、audience、会话与客户端配置；本轮未执行注册或接入验证。
+
 新业务应用接入 auth-app OIDC 的标准模板。
 
 ---

@@ -37,7 +37,7 @@
 | `template-release-manifest.json` + `verify_template_release.py` | 模板发布锁与校验 |
 | `init.sh` | 克隆转实例的一次性原地转换 |
 
-⚠ **供给脚本有两份，别只看一份**：`k8s/sunmoonai/utils/db-provisioner/` 是平台侧入口；
+⚠ **供给脚本有两份，别只看一份**：`k8s/utils/db-provisioner/` 是平台侧入口；
 上面四个供给目录在 Backend 仓内，随模板同步实例。旧入口不能冒充新运行角色策略已落地。
 
 `app/main.py` 只有 5 行，注释自陈是 "Backward-compatible ASGI import"，

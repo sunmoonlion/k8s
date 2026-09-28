@@ -30,7 +30,7 @@
 | Harbor 镜像保留策略、GC，构建后清缓存 | [空间方案第 5 节](../docs/wsl-space-reclamation-plan.md#5-长期措施同样待批准后实施) | 作为长期功能保留；当前没有启用自动删除策略 |
 | 云节点定时清镜像/安装包 | [image-cleanup/README.md](../../infrastructure/utils/image-cleanup/README.md) | 历史代码仍在；实际两个总开关均 `false`。有全量 `nerdctl image prune -a` 和通配包删除，不能套用本机或当前回退环境 |
 | KIND 重建时清空 PV | [kind-up.sh](../kind-up.sh) 的 `clean_pv_data_if_configured` | 历史代码仍在，`CLEAN_PV_DATA_ON_RECREATE=false`；这是删除业务数据，不是安全腾空间。正式流程不调用 |
-| 交互式存储管理菜单 | [storage-manager-README.md](../../../utils/storage-manager-README.md) | 只有旧说明，本仓查不到其声称的 `storage-manager.sh`，不能当成可用工具 |
+| 交互式存储管理菜单 | 已删除的旧 storage-manager 说明 | 本仓没有 `storage-manager.sh`；当前能力使用本页已列出的挂盘、检查和维护入口 |
 
 旧 [WSL VHDX 文档](../docs/wsl的vhdx挂载.md)里的“清理后重挂”，指卸载叠加挂载，并非删除缓存或压缩磁盘。它会碰旧 `/data/kind-local-storage`，本机不能照做。`utils/` 其他连接脚本的 cleanup 通常是关闭 SSH 隧道、清连接状态，不是磁盘回收。
 

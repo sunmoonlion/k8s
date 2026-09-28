@@ -142,25 +142,6 @@ if command -v nerdctl &> /dev/null; then
     fi
 fi
 
-# 清理建议
-log_info "=========================================="
-log_info "清理旧镜像建议"
-log_info "=========================================="
-echo ""
-
-log_info "如果发现旧版本镜像，可以删除:"
-log_info ""
-log_info "Docker:"
-log_info "  docker rmi <image-id> 或 docker rmi <repo>:<tag>"
-log_info "  docker image prune -a  # 删除所有未使用的镜像"
-log_info ""
-log_info "containerd (crictl):"
-log_info "  crictl rmi <image-id>"
-log_info "  crictl rmi <repo>:<tag>"
-log_info ""
-log_info "containerd (nerdctl):"
-log_info "  nerdctl rmi <image-id>"
-log_info "  nerdctl rmi <repo>:<tag>"
-
-echo ""
+# Inventory only; cleanup is a separate, explicitly scoped maintenance action.
+log_info "本工具只盘点镜像。回收按 kind-infrastructure/docs/wsl-space-reclamation-plan.md 的获准清单执行。"
 log_success "检查完成"

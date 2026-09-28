@@ -154,21 +154,6 @@ else
     done
 fi
 
-# 方法4: 提供清理建议
-log_info "=========================================="
-log_info "清理建议"
-log_info "=========================================="
-echo ""
-
-log_info "如果发现节点上有旧版本镜像，可以："
-log_info "1. 确保 Deployment 的 imagePullPolicy 设置为 Always（已设置）"
-log_info "2. 删除旧 Pod 强制重新拉取:"
-log_info "   kubectl delete pod -n $NAMESPACE -l app=<app-name>"
-log_info "3. 在节点上手动删除旧镜像（需要节点访问权限）:"
-log_info "   ssh <node> 'docker rmi <old-image>'"
-log_info "   或: ssh <node> 'crictl rmi <old-image>'"
-log_info "4. 重启 Deployment 强制重新拉取:"
-log_info "   kubectl rollout restart deployment/<deployment-name> -n $NAMESPACE"
-
-echo ""
+# Inventory only; do not recommend restarting workloads or removing node images.
+log_info "本工具只盘点使用情况；节点镜像清理已取消，旧节点及卷仍受保护。"
 log_success "检查完成"

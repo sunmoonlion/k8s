@@ -1,5 +1,7 @@
 # 统一证书和密钥管理系统
 
+> 当前职责：保留组合式证书分发及其动态插件；不是独立 Harbor 的安装总控。重复规范/模板已合并到 [公共规范](../secret-management/lib/README-specifications.md)。下文旧组合配置的实际使用需核对目标，云端分发尚未完成新版实机验收。
+
 一个基于5层架构的自动化证书和密钥管理工具，支持Harbor、Traefik等服务的证书生成、分发、部署、轮换和Kubernetes Secret管理。
 
 ## 🚀 快速开始
@@ -122,7 +124,7 @@ cd ~/master/k8s/utils/unified-cert-secret-management
 │           ├── traefik-K-deploy-client.sh
 │           ├── traefik-D-deploy-client.sh
 │           └── traefik-N-deploy-client.sh
-└── 证书规范模板 (lib/cert-conf-template/)
+└── 证书规范模板（共用 utils/secret-management/lib/cert-conf-template/）
     ├── server-specifications  # 服务器证书规范模板
     └── ca-specifications      # CA证书规范模板
 ```

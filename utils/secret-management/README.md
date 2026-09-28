@@ -1,5 +1,7 @@
 # Secret 管理系统
 
+> 本目录是组件仍在使用的参数化公共库。历史调用分析快照已删除，当前职责见 [utils 索引](../README.md) 和 [两类模块的区别](../SECRET_SYSTEMS_COMPARISON.md)。旧示例中的 `utils/ca-management/` 当前不存在；独立仓库 CA/认证改用 `registry-platform` 的既定输入，不按旧示例另建 CA。
+
 Kubernetes Secret 生成和管理系统，支持多种 Secret 类型。
 
 ## 目录结构

@@ -1,5 +1,9 @@
 # db-provisioner
 
+本目录是 **k8s 平台组件的实际工具**，Casdoor 的 `db-access-bootstrap/config/common.env` 默认指向这里。`sunmoonai/utils/db-provisioner/` 仓内副本已删除；保留本目录既有 Redis ACL 修正和模板配置。它不是 `tpl-app` 或实例应用的备份：四个 backend 的自举配置默认各自使用本仓内的 `db-provisioner`，本次没有改它们或建立跨仓依赖。
+
+下文 `examples/` 路径仅是示意，本仓没有该目录；实际配置应由调用组件提供，模板在 `templates/db-access-bootstrap-template/config/`。旧工具默认会执行建库/授权，整理过程没有调用它；不能把本轮目录去重当作数据库操作验收。
+
 > **维护**：本目录位于 **k8s** 仓库内，为平台组件的 `db-access-bootstrap` 提供随仓库发布的 `dbctl`。
 
 统一数据库开通工具（`mongodb` / `postgresql` / `redis`），支持：

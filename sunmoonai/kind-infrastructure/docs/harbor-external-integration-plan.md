@@ -178,7 +178,7 @@ Skopeo 向仓库发布镜像不会把镜像装进节点。离线建群时，网�
 | `sunmoonai/infrastructure/materials/image_import.py` | kubeadm 路径的锁定自举镜像校验/导入；云端未经实机验证，不因统一发布而移除 |
 | `sunmoonai/infrastructure/steps/step11_load-initial-images.sh` | 文件名保留，实际已转发仓库消费者步骤；仓库安装与生命周期属于独立模块，不恢复原集群内 Harbor 预加载 |
 | `sunmoonai/registry-platform/host_prepare.py` | 独立 Harbor 启动所需镜像的宿主 Docker 导入。仓库自身启动不能依赖先从自身拉取；与 KIND 节点注入不同 |
-| `utils/check-node-images.sh`、`check-local-images.sh`、`check-remote-node-images.sh`、`harbor-image-check.sh` | 镜像盘点/检查入口，不是发布器；不能仅因名字带 image 一并删除。具体目标与访问配置仍须按各入口要求核对 |
+| `utils/check-node-images.sh`、`check-local-images.sh`、`check-remote-node-images.sh` | 镜像盘点/检查入口，不是发布器；不能仅因名字带 image 一并删除。具体目标与访问配置仍须按各入口要求核对 |
 
 ### 9.3 尚未覆盖的调用与最终删除条件
 
@@ -186,3 +186,9 @@ Skopeo 向仓库发布镜像不会把镜像装进节点。离线建群时，网�
 - `utils/packages-management/packages-management.sh` 仍有远端 `ctr import` 分支；它是旧综合物料工具，本次未停用整个工具，也未验证这条旧分支。新建群走锁定自举入口，不能把该分支列为新正式流程的一部分；剩余功能拆分和调用核对后再决定退役。
 - 已归档本地实现待正式 Harbor、实际 Docker/节点/CI 推拉、空载重建独立性与观察期通过后清理；云端归档遵守“历史路径，云上新路径实机验证前不删”。本次已核对仓内调用并删除上述无依赖的原操作目录及废弃配置。仓外人工脚本若仍引用旧路径，须改用统一入口；不恢复兼容层。
 - 本次额外删除的是旧目录内已被替代的 Harbor 2.11 在线安装包（11,576 字节），不是镜像层归档。正式物料根、现有镜像、节点、容器、卷、Harbor 数据和备份不受影响。本次没有调用 Docker/Kubernetes、实际发布镜像或进行运行时清理；既定最终本机/东京临时物料清理仍须另按清单完成。
+
+
+### 9.4 utils 逐文件整理补充
+
+[131 文件处置清单](../../operations/utils-refactor-inventory.md)区分公共库、人工工具、模板、重复和失效说明。人工工具不能仅因没有代码调用就删除。
+`utils/harbor-image-check.sh` 已在核对唯一调用方后删除，Document Converter 改用统一 `registry-platform/images.py`，TLS/认证/网络异常不再当成功。人工连接、物料菜单、节点盘点和 local-path 修复工具保留，旧功能不等于已通过新版迁移验收。

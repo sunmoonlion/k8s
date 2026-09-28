@@ -20,9 +20,13 @@ while IFS= read -r -d '' src; do
   base="$(basename "$src")"
   dest_name="${base%.yaml.example}.yaml"
   dest="$dir/$dest_name"
-  cp -- "$src" "$dest"
+  if [[ -e "$dest" || -L "$dest" ]]; then
+    echo "  保留已有文件: $dest"
+    continue
+  fi
+  cp --no-clobber -- "$src" "$dest"
   echo "  $src -> $dest_name"
   ((count++)) || true
 done < <(find "$SUNMOONAI_ROOT" -path '*/deploy-*/secrets/*' -name '*.yaml.example' -print0 2>/dev/null)
 
-echo "已从 .yaml.example 生成 $count 个 secret 文件，可直接启动集群；如需真实密码请编辑对应 .yaml。"
+echo "已从 .yaml.example 生成 $count 个 secret 文件，仅生成缺失模板；部署前须按组件要求准备真实私有配置，不能将占位文件当作可用凭据。"

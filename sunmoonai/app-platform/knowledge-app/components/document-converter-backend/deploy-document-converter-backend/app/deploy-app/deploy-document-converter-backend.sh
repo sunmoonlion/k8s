@@ -38,9 +38,6 @@ fi
 
 # 导入统一部署模板
 source "$K8S_ROOT_DIR/utils/unified-deployment-template.sh"
-if [[ -f "$K8S_ROOT_DIR/utils/harbor-image-check.sh" ]]; then
-    source "$K8S_ROOT_DIR/utils/harbor-image-check.sh"
-fi
 
 # 恢复 Document Converter 脚本的目录路径
 SCRIPT_DIR="$DOCUMENT_CONVERTER_SCRIPT_DIR"
@@ -490,7 +487,8 @@ deploy_app() {
     fi
     log_success "✅ Document Converter BFF 子级组件部署完成"
 
-    if ! check_harbor_image_exists "$DOCUMENT_CONVERTER_BFF_FULL_IMAGE_NAME" "$NAMESPACE" "${DOCUMENT_CONVERTER_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}"; then
+    if ! python3 -B "$K8S_ROOT_DIR/sunmoonai/registry-platform/images.py" check \
+        --image "$DOCUMENT_CONVERTER_BFF_FULL_IMAGE_NAME" --apply; then
         return 1
     fi
     
