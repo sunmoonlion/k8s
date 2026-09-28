@@ -126,3 +126,9 @@ bash sunmoonai/app-platform/info-app/deploy-info-app-all/deploy-info-app-all.sh 
 
 Secret/ConfigMap 的 status/uninstall 不生成文件，六个本地生成器已加入清单；
 父级按实际配置键扫描、隔离子配置并传播失败。范围及待办见[操作说明](../app-platform/knowledge-app/components/document-converter-backend/docs/deployment-resources.md)。
+
+## Messaging 总控与 RAGFlow 后续修复
+
+Messaging保留可选action：不带动作时按project/namespace/environment/dry_run部署，明确动作支持deploy/uninstall/status/logs；不支持的保留动作词拒绝。显式集群必须通过目标准入，RabbitMQ开关/优先级格式校验；空组件列表不再生成空白脚本项，子脚本用bash调用并传播失败，卸载反向排序。
+
+RAGFlow主/路由入口移除旧自动连接，统一拉取身份与实际渲染镜像核对，purge-data从部署入口停用；边界和剩余验收见[组件说明](../app-platform/knowledge-app/providers/ragflow/README.md#部署入口整改2026-09-28)。此处未改变入口数量与原dry-run profile；两个内部Python辅助只由实际部署分支调用，不作为新的独立部署CLI列入覆盖清单。

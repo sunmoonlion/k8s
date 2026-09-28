@@ -1,5 +1,17 @@
 # luna 工作检查点
 
+## 最新续接：2026-09-28 RAGFlow 与 Messaging 继续修复
+
+基线 `0c5405b5`（本轮先提交的DC剩余入口单元）；按所有者要求继续原全部组件整理，空间/持久化收尾不插队。
+
+- RAGFlow主/路由显式集群/namespace/release准入，使用固定工具/kubeconfig和写前检查，去旧统一连接库/自动SSH/EXIT清理。kubectl10秒API/25秒进程；Helm明确kubeconfig、uninstall只ignore-not-found且失败传播；purge-data明确拒绝，普通卸载不再接PVC删除。
+- RAGFlow内嵌Harbor身份复用已有pull_secret.py内存/stdin，去临时认证文件和“同名存在即复用”；这不是新增独立CLI，17薄入口清单不变。业务Helm私有values仍原路径，未改变凭据/版本/代理值。
+- Helm lint/upgrade诊断隐藏私有values，status只打印元数据。新增check_rendered_images.py从同一values Helm输出内存解析实际容器引用，检查原始manifest与固定Harbor，不再另一份手写列表；未锁定全部Charttag、未验证镜像层/rollout，tag漂移和来源证明仍是待办。新增render_ingress.py安全解析占位模板，原子JSON输出，部署前查Service；status/uninstall无渲染。
+- Messaging修复optional-action省略时误把project当action、空组件数组产生空白项、脚本执行位依赖；保留原开关优先级并校验，卸载反向排序，子失败传播，显式目标准入。未改变rabbitmq配置值。
+- 本单元静态3Shell bash-n/ShellCheck error、2Python AST、Python导入路径、git diff --check通过；29文档链接/193整体入口路径随后复核通过。官方Helm3.15.4源码确认ignore-not-found/timeout存在，不代表更换或实测了本机Helm。未跑行为测试、Helm渲染、API、Docker/SSH/Windows、生成器或清理。
+- 新发现必须继续：question-data-demo/deploy.sh仍使用旧默认kubeconfig、docker build+kind load、API key命令行参数；暂未修改，要保留人工Demo用途并改为统一制品消费，不可仅因少调用就删工具。其余组件业务Secret/生成链审阅仍未全完。之后按既定顺序做持久化与长期空间管理，再最终清理本机和东京临时物料。main未创建/inbox旧kind，迁移暂停，旧节点/卷/Harbor/备份保护不变；仅本地luna，不push。
+
+
 ## 最新续接：2026-09-28 Document Converter 剩余部署入口与渲染链
 
 基线 `0edbd13e`，luna 开工干净。所有者纠正执行顺序：先做完原全部组件部署修复，再自动接续持久化验收与长期空间管理，不用再次提醒。本轮起初只读查看了空间管理实现位置，没有创建space代码/监控/清理；随后回到原任务。

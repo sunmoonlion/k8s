@@ -6,6 +6,8 @@ source "$(dirname -- "${BASH_SOURCE[0]}")/../../../utils/deploy-plan.sh" || exit
 sunmoon_deploy_entry "${BASH_SOURCE[0]}" optional-action "$@" || exit $?
 [[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
 set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
+set -euo pipefail
+export DISABLE_AUTO_CLEANUP=true
 
 # 脚本目录配置
 THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -51,6 +53,7 @@ if [[ $# -gt 0 ]]; then
     unified_parse_cluster_arg "$@"
     ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
 fi
+REQUESTED_CLUSTER="${CLUSTER:-}"
 
 MSG_PLATFORM_CONFIG_FILE="$THIS_DIR/deploy-messaging-platform-all.conf"
 if [[ -f "$MSG_PLATFORM_CONFIG_FILE" ]]; then
@@ -79,9 +82,9 @@ call_subscript() {
     local args=("$@")
     
     if [[ -n "${CLUSTER:-}" ]]; then
-        "$script_path" --cluster "$CLUSTER" "${args[@]}"
+        bash "$script_path" --cluster "$CLUSTER" "${args[@]}"
     else
-        "$script_path" "${args[@]}"
+        bash "$script_path" "${args[@]}"
     fi
 }
 
@@ -96,20 +99,24 @@ run_sub_components_by_priority() {
     log_info "开始执行子级组件: ${action}"
     
     local components=()
+    local -a sorted_components=()
+    [[ "${rabbitmq_enabled:-false}" == true || "${rabbitmq_enabled:-false}" == false ]] || { log_error 'rabbitmq_enabled 必须为 true/false'; return 1; }
     
     # 检查 RabbitMQ
     if [[ "${rabbitmq_enabled:-false}" == "true" ]]; then
         local priority="${rabbitmq_priority:-900}"
+        [[ "$priority" =~ ^[0-9]+$ ]] || { log_error 'rabbitmq_priority 必须为非负整数'; return 1; }
         components+=("$priority:rabbitmq:$PROJECT_ROOT/rabbitmq/deploy-rabbitmq/deploy-rabbitmq.sh")
     fi
     
-    IFS=$'\n' sorted_components=($(sort -nr <<<"${components[*]}"))
-    unset IFS
-    
-    if [[ ${#sorted_components[@]} -eq 0 ]]; then
+    if [[ ${#components[@]} -eq 0 ]]; then
         log_warn "⚠️  没有启用的子级组件"
         return 0
     fi
+    local order=-nr sorted
+    [[ "$action" != uninstall ]] || order=-n
+    sorted=$(printf '%s\n' "${components[@]}" | LC_ALL=C sort -t: -k1,1 "$order") || return 1
+    mapfile -t sorted_components <<< "$sorted"
     
     log_info "📋 子级组件部署顺序："
     for component_info in "${sorted_components[@]}"; do
@@ -165,17 +172,25 @@ main() {
         log_info "🎯 当前集群配置: ${CLUSTER}"
     fi
     
-    local action="${1:-deploy}"
-    if [[ "$action" == "deploy" || "$action" == "uninstall" || "$action" == "status" || "$action" == "logs" ]]; then
-        [[ $# -eq 0 ]] || shift
-    fi
+    local action=deploy
+    case "${1:-}" in
+        deploy|uninstall|status|logs) action="$1"; shift ;;
+        help|-h|--help) echo '用法: [deploy|uninstall|status|logs] [project namespace environment dry_run] --cluster KIND|C1'; return 0 ;;
+        upgrade|delete|purge-data|apply|generate|restart|start|stop|cleanup|plan|verify|install)
+            log_error '此总控不支持该动作'; return 2 ;;
+    esac
+    [[ $# -le 4 ]] || { log_error '位置参数过多'; return 2; }
     
     local project_id="${1:-${MESSAGING_PLATFORM_PROJECT_ID:-$DEFAULT_PROJECT_ID}}"
     local namespace="${2:-${MESSAGING_PLATFORM_NAMESPACE:-$DEFAULT_NAMESPACE}}"
     local environment="${3:-${ENVIRONMENT:-$DEFAULT_ENVIRONMENT}}"
     local dry_run="${4:-false}"
-    
-    run_messaging_platform "$action" "$project_id" "$namespace" "$environment" "$dry_run"
+    [[ "$REQUESTED_CLUSTER" =~ ^(KIND|C[1-9][0-9]*)$ && "${CLUSTER:-}" == "$REQUESTED_CLUSTER" ]] || {
+        log_error '必须显式选择集群且配置不得覆盖'; return 1;
+    }
+    source "$K8S_ROOT_DIR/utils/deploy-target.sh" || return 1
+    sunmoon_deploy_target_init "$K8S_ROOT_DIR" || return 1
+    run_messaging_platform "$action" "$project_id" "$namespace" "$environment" "$dry_run" || return 1
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

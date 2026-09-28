@@ -92,3 +92,7 @@ Jenkins 原 Kaniko Secret 名称保留，供构建器拉取基础镜像时挂载
 | C-I8 | 缺私有凭据、目标/类型不符、API 失败或字段冲突均失败 |
 | C-R1/C-R2/C-R3 | 不改变源码/镜像关联、digest、平台版本或晋级流程；这里只更新认证消费者 |
 | C-D1 | 不创建第二份仓库数据，不把凭据复制到代码工作树 |
+
+### RAGFlow 主入口
+
+RAGFlow的内嵌拉取身份准备也复用本Python实现，见[组件说明](../../app-platform/knowledge-app/providers/ragflow/README.md#部署入口整改2026-09-28)。上述17项独立入口清单不变；另增加这一父级调用路径。它不再写认证临时文件，也不因同名Secret存在就直接认定通过；业务Helm values不是本模块管理的凭据。

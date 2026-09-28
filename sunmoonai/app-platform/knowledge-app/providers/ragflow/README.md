@@ -120,3 +120,17 @@ The deployment injects both upper- and lower-case proxy variables into the
 RAGFlow container and keeps loopback, cluster DNS and private service networks
 in `NO_PROXY`. Do not use a developer desktop proxy as a production egress
 design; production must use governed NAT, egress gateway or proxy controls.
+
+## 部署入口整改（2026-09-28）
+
+本地与云端共用上述入口；云端仍未经实机验证。本轮只修改代码，Chart、数据库及应用版本、代理配置值不变。
+
+- 主入口和路由入口实际动作必须指定 CLUSTER、KUBECONFIG、SUNMOON_KUBECTL、SUNMOON_EXPECTED_CLUSTER_UID；共用部署目标绑定、写前复核，不自动SSH重连/猜context/清连接。命名空间和release名称先校验；kubectl请求10秒、进程25秒，logs也是有界观察。
+- 主入口支持deploy/uninstall/status/logs；`--dry-run`仍在加载配置前返回。旧purge-data动作明确拒绝，数据删除须走最终清理方案，不能借卸载失败后继续删PVC。uninstall仅忽略release不存在，路由/Helm错误返回失败，timeout继续读原RAGFLOW_HELM_TIMEOUT。相关参数参照[Helm 3 官方实现](https://github.com/helm/helm/blob/v3.15.4/cmd/helm/uninstall.go)。
+- Harbor拉取身份使用统一registry-platform/pull_secret.py，凭据在内存/标准输入中处理，不再写临时认证文件，也不因同名Secret存在就跳过目标/内容核对；实际私有凭据仍需准备。既有Secret字段冲突会阻止部署，不force覆盖。
+- 镜像检查从**同一组values渲染的Chart**提取Pod容器/init/临时容器镜像，逐一核对固定Harbor地址及manifest摘要，不再检查另一份手写列表。Helm输出中的Secret只经管道进入内存，不写文件或回显；失败不泄露解析片段。镜像层、节点拉取及tag检查到实际安装间的tag漂移仍未验收；本单元没有把Chart所有镜像改为digest，也不能当成完整发布来源证明。
+- 路由只在deploy时从模板解析生成JSON并原子写入原.yaml输出；名字/namespace/域名校验，确认Service存在后apply。status/uninstall不生成，删除按名字，保留原域名/后端端口。模板仍使用默认Traefik证书。
+- 主入口错误显式传播；Helm lint/upgrade诊断不直接显示私有values，status仅显示release名称/namespace/revision/status，不输出整个Helm状态或Notes。实际失败需在私有运维会话诊断；本次没有产生真实失败日志。
+- 业务密码values仍在原路径，未宣称凭据全部迁出工作树。Chart现有PVC keep/StatefulSet保留设置不变，没有实际删除任何资源。
+
+静态检查通过不代表服务实机通过：本单元未运行Helm lint/template、生成器、行为测试、Harbor/Kubernetes API、Docker、SSH或清理。仍需在准入后的集群验收路由、部署失败、卸载保留、镜像拉取和真实业务请求。
