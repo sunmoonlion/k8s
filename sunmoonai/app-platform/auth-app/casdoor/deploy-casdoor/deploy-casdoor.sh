@@ -27,6 +27,9 @@ if [[ $# -gt 0 ]]; then
     fi
 fi
 
+# Validate before config errors can trigger the legacy connection cleanup trap.
+sunmoon_deploy_validate_mode "${ORIGINAL_ARGS[4]:-false}" || exit 1
+
 CASDOOR_CONFIG_FILE="$SCRIPT_DIR/deploy-casdoor.conf"
 if [[ -f "$CASDOOR_CONFIG_FILE" ]]; then
     source "$CASDOOR_CONFIG_FILE"
@@ -314,7 +317,6 @@ declare -a PARSED_ARGS
 
 main() {
     set -- "${ORIGINAL_ARGS[@]}"
-    set -- "${PARSED_ARGS[@]}"
 
     [[ -n "${CLUSTER:-}" ]] && log_info "🎯 当前集群: ${CLUSTER}"
 
@@ -323,6 +325,13 @@ main() {
     local namespace="${3:-$DEFAULT_NAMESPACE}"
     local environment="${4:-$DEFAULT_ENVIRONMENT}"
     local dry_run="${5:-false}"
+
+    sunmoon_deploy_validate_mode "$dry_run" || return 1
+    if [[ "$dry_run" == true ]]; then
+        sunmoon_deploy_print_plan casdoor "$action" "$project_id" "$namespace" "$environment"
+        return $?
+    fi
+
 
     case "$action" in
         "help"|"--help"|"-h")

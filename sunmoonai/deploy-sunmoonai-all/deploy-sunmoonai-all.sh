@@ -776,14 +776,18 @@ deploy_sunmoonai() {
     python3 -B "$PROJECT_ROOT/registry-platform/credentials.py" check || return 1
 
     # 部署前：按配置自动从 .yaml.example 复制生成各组件 secret 的 .yaml 占位文件
+    [[ "${PREPARE_SECRETS_FROM_EXAMPLES:-true}" == true || "${PREPARE_SECRETS_FROM_EXAMPLES:-true}" == false ]] || {
+        log_error "PREPARE_SECRETS_FROM_EXAMPLES 必须为 true/false"; return 1;
+    }
     if [[ "${PREPARE_SECRETS_FROM_EXAMPLES:-true}" == "true" ]]; then
         local prepare_script="$PROJECT_ROOT/../utils/prepare-secrets-from-examples.sh"
         prepare_script="$(cd "$(dirname "$prepare_script")" && pwd)/$(basename "$prepare_script")"
         if [[ -x "$prepare_script" ]]; then
             log_info "部署前：从 .yaml.example 复制生成各组件 secret 的 .yaml（PREPARE_SECRETS_FROM_EXAMPLES=true）"
-            "$prepare_script" || log_warn "prepare-secrets-from-examples 执行异常，继续部署"
+            "$prepare_script" || { log_error "Secret 模板准备失败，停止部署"; return 1; }
         else
-            log_warn "未找到或不可执行: $prepare_script，跳过 secret 占位文件生成"
+            log_error "未找到或不可执行: $prepare_script，停止部署"
+            return 1
         fi
     fi
     

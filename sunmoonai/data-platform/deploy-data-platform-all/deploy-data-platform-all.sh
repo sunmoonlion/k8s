@@ -21,6 +21,7 @@ fi
 
 # 集群参数解析（轻量，无连接副作用）
 source "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh"
+source "$K8S_ROOT_DIR/utils/deploy-plan.sh"
 
 
 # 颜色输出函数
@@ -173,6 +174,11 @@ run_sub_components_by_priority() {
                 component_project_id="nodebull"
             fi
 
+            if [[ "$dry_run" == true ]]; then
+                sunmoon_deploy_print_plan "$component" "$action" "$component_project_id" "$namespace" "$environment" || return 1
+                continue
+            fi
+
             if call_subscript "$script_path" "$action" "$component_project_id" "$namespace" "$environment" "$dry_run"; then
                 log_success "✅ $component ${action} 成功"
             else
@@ -180,11 +186,14 @@ run_sub_components_by_priority() {
                 return 1
             fi
         else
-            log_warn "⚠️  $component 部署脚本不存在: $script_path"
+            log_error "❌ $component 部署脚本不存在: $script_path"
+            return 1
         fi
     done
     
-    log_success "✅ 所有子级组件 ${action} 完成！"
+    if [[ "$dry_run" != true ]]; then
+        log_success "✅ 所有子级组件 ${action} 完成！"
+    fi
 }
 
 # 主函数（按 action 执行）
@@ -198,9 +207,14 @@ run_data_platform() {
     log_info "开始执行 Data Platform: ${action}"
     log_info "项目: $project_id, 命名空间: $namespace, 环境: $environment"
     
-    run_sub_components_by_priority "$action" "$project_id" "$namespace" "$environment" "$dry_run"
+    sunmoon_deploy_validate_mode "$dry_run" || return 1
+    run_sub_components_by_priority "$action" "$project_id" "$namespace" "$environment" "$dry_run" || return 1
     
-    log_success "✅ Data Platform ${action} 完成！"
+    if [[ "$dry_run" == true ]]; then
+        log_info "Data Platform 计划完成；未执行子脚本。"
+    else
+        log_success "✅ Data Platform ${action} 完成！"
+    fi
 }
 
 # 主函数
@@ -213,7 +227,10 @@ main() {
     
     local action="${1:-deploy}"
     if [[ "$action" == "deploy" || "$action" == "uninstall" || "$action" == "status" || "$action" == "logs" ]]; then
-        shift
+        if [[ $# -gt 0 ]]; then shift; fi
+    else
+        log_error "不支持的 Data Platform 动作: $action"
+        return 1
     fi
     
     local project_id="${1:-${DATA_PLATFORM_PROJECT_ID:-$DEFAULT_PROJECT_ID}}"

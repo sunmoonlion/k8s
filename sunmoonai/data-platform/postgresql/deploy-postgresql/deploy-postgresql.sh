@@ -31,6 +31,9 @@ if [[ $# -gt 0 ]]; then
     fi
 fi
 
+# Validate before config errors can trigger the legacy connection cleanup trap.
+sunmoon_deploy_validate_mode "${ORIGINAL_ARGS[4]:-false}" || exit 1
+
 POSTGRESQL_CONFIG_FILE="$SCRIPT_DIR/deploy-postgresql.conf"
 if [[ -f "$POSTGRESQL_CONFIG_FILE" ]]; then
     source "$POSTGRESQL_CONFIG_FILE"
@@ -484,9 +487,7 @@ declare -a PARSED_ARGS
 
 # 主函数
 main() {
-    # 使用解析后的参数（已移除 --cluster 参数）
-    set -- "${ORIGINAL_ARGS[@]}"
-    set -- "${PARSED_ARGS[@]}"
+    # Caller passes parsed arguments; recursive upgrade must retain its deploy action.
     
     if [[ -n "${CLUSTER:-}" ]]; then
         log_info "🎯 当前集群配置: ${CLUSTER}"
@@ -497,6 +498,13 @@ main() {
     local namespace="${3:-$DEFAULT_NAMESPACE}"
     local environment="${4:-$DEFAULT_ENVIRONMENT}"
     local dry_run="${5:-false}"
+
+    sunmoon_deploy_validate_mode "$dry_run" || return 1
+    if [[ "$dry_run" == true ]]; then
+        sunmoon_deploy_print_plan postgresql "$action" "$project_id" "$namespace" "$environment"
+        return $?
+    fi
+
     
     case "$action" in
         "deploy")
@@ -743,5 +751,5 @@ main() {
 # 脚本入口
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     # 执行主函数
-    main "$@"
+    main "${ORIGINAL_ARGS[@]}"
 fi

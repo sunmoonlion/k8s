@@ -69,6 +69,36 @@
 [最终清理范围](../kind-infrastructure/docs/wsl-space-reclamation-plan.md#本次重构临时物料必须最终清理)。
 正式配置、已提交操作文档和唯一离线物料属于交付物；历史代码/旧节点退出条件独立判定。
 
+## 部署计划与干运行范围
+
+`./sunmoon platform plan --cluster KIND` 保持现有总控计划入口。需要单独看数据平台的启用项、优先级和目标参数时：
+
+```bash
+bash sunmoonai/data-platform/deploy-data-platform-all/deploy-data-platform-all.sh \
+  --cluster KIND deploy sunmoonai data-platform-dev development true
+```
+
+末尾 `true` 是 `dry_run`，只接受 `true/false`。Data Platform 按现有 `.conf` 排序列出组件；
+Redis NodeBull 仍传 `project_id=nodebull`。计划不调用组件脚本，启用的脚本缺失会报错。
+实际子组件失败向上传递，不再继续打印整个平台成功。
+
+PostgreSQL、MongoDB、Neo4j、Redis（含 NodeBull）、Object Storage 和 Casdoor 的独立主入口也使用同一模式校验：
+`<action> <project_id> <namespace> <environment> true` 在连接初始化之前打印请求并返回。
+不会进入 Secret、数据库初始化、静态卷、Ingress、Helm、状态查询或连接清理。
+这些入口支持其原有动作；Data Platform 总控仍只接受 deploy/uninstall/status/logs。
+PostgreSQL upgrade 复用 deploy 时保留递归调用参数，避免重置回原始 upgrade 请求。
+MongoDB/Redis 配置映射路径修正为根 utils，保留按集群选择配置的原有意图。
+
+这里的计划是请求与配置摘要，不是 Helm `--dry-run` 渲染，也不是准入或部署成功证明。
+会读取现有受信任 Shell `.conf`（它们仍是可执行配置），不打印凭据；
+没有把配置转换为数据解析器。共享函数本身不阻止其他脚本直接调用 Kubernetes/Helm。
+未接入此分支的旧组件、Secret/Ingress 子脚本独立运行时，不应据此认定支持无副作用的 dry-run。
+本批只有静态检查；行为验证、完整渲染、真实部署及云端实机验收仍待完成。
+
+总控实际部署仍保留 `PREPARE_SECRETS_FROM_EXAMPLES` 开关及当前默认值；
+启用时准备脚本缺失或失败会停止，不再忽略错误。复制出来的是待填写的模板，
+不能把“模板复制成功”当作凭据准备完成，组件凭据准入仍需继续核对。
+
 镜像检查入口 `./sunmoon harbor images check --component <名称>` 支持同样的 `--config` 和 `--credentials-file`。
 默认只打印；显式 C1/C2/C3 未提供仓库配置时拒绝，不隐式退回 WSL。详见 [组件镜像检查](../docs/harbor-component-image-ensure.md)。
 

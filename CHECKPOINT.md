@@ -1,5 +1,17 @@
 # luna 工作检查点
 
+## 最新续接：2026-09-28 数据组件干运行提前返回与错误传播
+
+基线 `ca17466c9633e0b8dfd765abd5a15b4aef0054cd`，本地 luna 开工干净；继续代码整理，运行态迁移仍未恢复。
+
+- 审阅发现 PostgreSQL/Casdoor dry_run 仍调 Ingress、Neo4j 在 Helm 前创建 Secret，多个组件先连接、退出时走旧连接清理。新增纯函数 utils/deploy-plan.sh；六组件（PG/Mongo/Neo4j/Redis含NodeBull/ObjectStorage/Casdoor）在加载组件配置前验证 dry_run 并禁用计划/无效请求的自动清理，main 在连接前打印计划返回。true/false 严格校验；计划不是 Helm 渲染或可部署证明。
+- Data Platform 总控按原配置排序和 project_id 映射列计划，不调用任何子组件。不存在的启用脚本报错；子组件失败显式上传，不被成功日志覆盖；拒绝未知动作，保留 deploy/uninstall/status/logs 和默认 deploy。直接组件实际动作接口保留；独立 Secret/Ingress、其余未接入组件仍不能宣称 dry-run 无副作用。
+- PG main 不再每次重置全局参数，upgrade 递归 deploy 不会被改回 upgrade；Mongo/Redis 修正到根 utils 的配置映射路径，原路径不存在会静默跳过配置映射。其余三脚本去除重复 PARSED_ARGS 覆盖，以原入口已解析参数为准。
+- 根总控保留 Secret 模板开关/默认值，仅增加布尔校验及准备脚本缺失/失败即停；没将占位凭据宣称可用，真实凭据准入仍待后续核对。所有 .conf 仍为受信任 Shell 配置，本轮没有变更其格式或打印私有内容。
+- 10 Shell bash -n / ShellCheck error级通过；git diff --check 通过。更新公共工具说明和配置索引。未运行测试、脚本计划行为用例、Helm/K8s/Docker/SSH/Windows、部署或清理；运行成功/失败路径仍待验证。只改 Git 文件，不改变数据库/Harbor版本，不动旧节点/卷/数据。
+- 后续继续共享部署/保留人工工具、凭据与CI物料接线，再按原准入恢复 main/30443迁移和重建独立性验收。inbox 仍旧 kind；整体未完成。本机 refactor 临时目录和东京下载最终清理不能遗漏，本轮无新运行时临时物料。仅本地 luna 提交、不 push；回退本单元不涉及数据恢复。
+
+
 ## 最新续接：2026-09-28 正式 KIND 静态卷与组件调用接线
 
 基线 `186a41738939aa4ca493297206027bbb665f8500`，本地 luna 开工干净；继续用户授权的部署整理，未恢复实际建群/服务安装。

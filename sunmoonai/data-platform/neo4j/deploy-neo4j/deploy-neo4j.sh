@@ -30,6 +30,9 @@ if [[ $# -gt 0 ]]; then
     fi
 fi
 
+# Validate before config errors can trigger the legacy connection cleanup trap.
+sunmoon_deploy_validate_mode "${ORIGINAL_ARGS[4]:-false}" || exit 1
+
 NEO4J_CONFIG_FILE="$SCRIPT_DIR/deploy-neo4j.conf"
 if [[ -f "$NEO4J_CONFIG_FILE" ]]; then
     source "$NEO4J_CONFIG_FILE"
@@ -466,7 +469,6 @@ declare -a PARSED_ARGS
 main() {
     # 使用解析后的参数（已移除 --cluster 参数）
     set -- "${ORIGINAL_ARGS[@]}"
-    set -- "${PARSED_ARGS[@]}"
     
     if [[ -n "${CLUSTER:-}" ]]; then
         log_info "🎯 当前集群配置: ${CLUSTER}"
@@ -477,6 +479,13 @@ main() {
     local namespace="${3:-$DEFAULT_NAMESPACE}"
     local environment="${4:-$DEFAULT_ENVIRONMENT}"
     local dry_run="${5:-false}"
+
+    sunmoon_deploy_validate_mode "$dry_run" || return 1
+    if [[ "$dry_run" == true ]]; then
+        sunmoon_deploy_print_plan neo4j "$action" "$project_id" "$namespace" "$environment"
+        return $?
+    fi
+
     
     # 读取 Kubernetes 配置文件并建立连接
     if ! read_k8s_config; then

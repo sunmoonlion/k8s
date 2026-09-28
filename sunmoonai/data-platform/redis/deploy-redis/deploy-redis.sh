@@ -30,13 +30,16 @@ if [[ $# -gt 0 ]]; then
     fi
 fi
 
+# Validate before config errors can trigger the legacy connection cleanup trap.
+sunmoon_deploy_validate_mode "${ORIGINAL_ARGS[4]:-false}" || exit 1
+
 REDIS_CONFIG_FILE="$SCRIPT_DIR/deploy-redis.conf"
 if [[ -f "$REDIS_CONFIG_FILE" ]]; then
     source "$REDIS_CONFIG_FILE"
     
     # 加载集群配置映射函数（使用 utils 中的通用函数）
-    if [[ -f "$PROJECT_ROOT/utils/cluster-config-mapping.sh" ]]; then
-        source "$PROJECT_ROOT/utils/cluster-config-mapping.sh"
+    if [[ -f "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh" ]]; then
+        source "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh"
         # 应用集群配置映射（使用 CLUSTER 环境变量，支持 C1_* 和 C2_* 前缀配置）
         apply_cluster_config_mapping
     fi
@@ -538,6 +541,13 @@ main() {
     local namespace="${3:-$DEFAULT_NAMESPACE}"
     local environment="${4:-$DEFAULT_ENVIRONMENT}"
     local dry_run="${5:-false}"
+
+    sunmoon_deploy_validate_mode "$dry_run" || return 1
+    if [[ "$dry_run" == true ]]; then
+        sunmoon_deploy_print_plan redis "$action" "$project_id" "$namespace" "$environment"
+        return $?
+    fi
+
     
     # 读取 Kubernetes 配置文件
     if ! read_k8s_config; then

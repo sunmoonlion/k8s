@@ -12,6 +12,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/prepend-dev-cli-path.sh"
 # shellcheck source=deploy-target.sh
 source "${SCRIPT_DIR}/deploy-target.sh"
+# shellcheck source=deploy-plan.sh
+source "${SCRIPT_DIR}/deploy-plan.sh"
 
 # Strict root deployments never enter the legacy connection/status lifecycle.
 unified_check_deploy_target() {

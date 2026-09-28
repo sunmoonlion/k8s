@@ -15,6 +15,9 @@ if [[ $# -gt 0 ]] && type unified_parse_cluster_arg >/dev/null 2>&1; then
     ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
 fi
 
+# Validate before config errors can trigger the legacy connection cleanup trap.
+sunmoon_deploy_validate_mode "${ORIGINAL_ARGS[4]:-false}" || exit 1
+
 OBJECT_STORAGE_CONFIG_FILE="$SCRIPT_DIR/deploy-object-storage.conf"
 if [[ ! -f "$OBJECT_STORAGE_CONFIG_FILE" ]]; then
     log_error "缺少 Object Storage 配置文件: $OBJECT_STORAGE_CONFIG_FILE"
@@ -299,6 +302,13 @@ main() {
     local namespace="${3:-$DEFAULT_NAMESPACE}"
     local environment="${4:-$DEFAULT_ENVIRONMENT}"
     local dry_run="${5:-false}"
+
+    sunmoon_deploy_validate_mode "$dry_run" || return 1
+    if [[ "$dry_run" == true ]]; then
+        sunmoon_deploy_print_plan object-storage "$action" "$project_id" "$namespace" "$environment"
+        return $?
+    fi
+
 
     case "$action" in
         deploy|upgrade)
