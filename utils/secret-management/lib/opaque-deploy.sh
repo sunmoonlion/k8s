@@ -1,17 +1,27 @@
 #!/usr/bin/env bash
 # Business Secret deployment; sourced functions only. Cloud: 未经实机验证.
 # Call only after the component's deploy-plan boundary.
-opaque_secret_entry() (
+opaque_secret_entry() {
+    _opaque_secret_entry component "$@"
+}
+
+# Aggregators use the same configuration identity for query/delete. The original
+# write-only component CLIs retain their deploy-project contract.
+opaque_secret_lifecycle_entry() {
+    _opaque_secret_entry namespace "$@"
+}
+
+_opaque_secret_entry() (
     set -euo pipefail
     set +x
-    local root="$1" config="$2" profile="$3" default_namespace="$4"
-    shift 4
+    local contract="$1" root="$2" config="$3" profile="$4" default_namespace="$5"
+    shift 5
     source "$root/utils/cluster-arg-parser.sh"
     unified_parse_cluster_arg "$@"
     set -- "${PARSED_ARGS[@]}"
     local action=deploy positional_namespace=''
-    case "$profile" in
-        redis-secrets|elasticsearch-secrets)
+    case "$contract:$profile" in
+        namespace:*|component:redis-secrets|component:elasticsearch-secrets)
             [[ $# -le 3 && "${3:-false}" == false ]] || { echo 'Expected action namespace false' >&2; return 2; }
             action="${1:-deploy}"; positional_namespace="${2:-}"
             # Elasticsearch previously accepted delete as an uninstall alias.
@@ -47,7 +57,7 @@ opaque_secret_entry() (
     if [[ "$action" != deploy ]]; then
         sunmoon_deploy_target_init "$root" || return 1
         python3 -B "$root/utils/secret-management/lib/opaque_secret.py" --action "$action" \
-            --namespace "$namespace" --name "$SECRET_NAME" --apply
+            --namespace "$namespace" --name "${SECRET_NAME:-$profile}" --apply
         return $?
     fi
 

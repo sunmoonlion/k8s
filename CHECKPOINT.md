@@ -1,5 +1,17 @@
 # luna 工作检查点
 
+## 最新续接：2026-09-28 Redis 聚合对齐、旧 TLS 退役与对象存储 Secret
+
+基线 `2c43c3b0`，工作树开工干净。继续原全组件整改；没有恢复运行态迁移或做空间清理。
+
+- Redis secrets/deploy-secrets-all 改为明确集群/绑定/配置映射，共用原四组件列表做deploy/status/uninstall，校验开关/优先级/缺文件，deploy降序删除逆序。业务身份读取同一子.conf，取消错误操作另一份redis-secrets；共享Harbor在uninstall保留。删除仅当前启用的三个业务Secret，配置关闭的旧对象不自动发现/清理。添加opaque_secret_lifecycle_entry内部函数，原16个write-only CLI不扩动作；多对象非事务。独立redis-secrets手工工具保留。
+- 核实TLS新流程已由registry-platform/deploy-certificates.sh和infrastructure/materials/tls_resources.py覆盖；不再重修第二套签发器。4个旧Traefik/TLS脚本+3专属conf移legacy/cloud，前置拒绝执行、原路径删除无转发。旧WHY-ONLY-NODE2-WORKS与NAT长说明共2文档归档，手工NAT说明重写其真实能力和未改进边界。9项清单记录原commit/SHA及归档SHA、云实机退出条件。没有移动/读取/删除CA私钥/现场证书/生成Secret/运行时文件；独立middleware/通用证书组合工具及主.conf仍待审阅。新TLS入口/资源未修改，不代表已安装。
+- active inventory 193->190，六平台deploy脚本168->165；early-shell146、deploy-project41、native-ingress1。文档计数、证书/ingress入口与legacy说明同步。静态9归档原字节/归档摘要/拒绝头、4归档bash-n、190路径/165平台覆盖、文档链接通过；无行为测试/旧脚本执行。
+- 对象存储主入口在source旧common库之前显式绑定，映射后复核；连接函数仅检查原目标。License/根Secret统一opaque Python stdin SSA回读，root口令不再kubectl参数；新增--data-file/key读取绝对路径caller-owned owner-only末级非软链<=64KiB许可证。Harbor Secret直接用独立仓库私有凭据和pull_secret.py按自身配置名写回，不借PG入口、不盲信同名。原config.env格式/实际值/服务版本未改，特殊字符解析和许可证/登录仍待验。准备/Helm阶段失败显式传播、operator等待前两步失败不覆盖。
+- 3活动Shell bash-n/ShellCheck error、1Python AST、路径与无from-literal/from-file静态核对、git diff --check通过；未跑行为测试/API/部署/清理，未读取实际License/口令。对象存储主流程仍有Helm status/uninstall吞错及就绪/超时待修，provisioner含口令参数仍待接续，不能宣称对象存储全通过。
+- 后续原任务：对象存储完整生命周期/provisioner、其余数据库provisioner及通用证书/手工工具实际路径；再做持久化WSL/KIND重启/删群重建全摘要+新节点拉取、space代码/监控/策略批准，最终清本地/Tokyo refactor临时物料。space尚未实现；main未创建/inbox旧kind/迁移暂停，旧节点卷Harbor备份保护。只本地luna提交不push。
+
+
 ## 最新续接：2026-09-28 Elasticsearch/Redis 独立 Secret 与总控绕行
 
 前一单元已提交 `81f59e3d`（16 个业务 Secret）；本单元继续原任务，不是实机迁移。

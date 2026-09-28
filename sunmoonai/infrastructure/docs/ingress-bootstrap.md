@@ -19,7 +19,11 @@ Traefik 3.5 系列已无安全维护，见[官方支持状态](https://doc.traef
 
 ## 同一实现、两种适配器
 
-公共实现 `materials/ingress_resources.py`；云端 step13 经 cluster-step/control/node 调用，本地经 `materials/ingress_local.py` 调用。平台总入口和旧 `deploy-traefik.sh` 均转入此路径；旧脚本正文暂留审阅，exec 后不会执行。历史 ingress `.conf`/values 不再控制新版资源，资源来自锁定的 bootstrap values；云端启用/环境选择来自基础设施 `STEP13_ENABLED` / `STEP13_PROFILE`。
+公共实现 `materials/ingress_resources.py`；云端 step13 经 cluster-step/control/node 调用，本地经 `materials/ingress_local.py` 调用。日常使用平台总入口；旧 `deploy-traefik.sh` 转发入口、其 Secret 总控/TLS 安装与每次重新签发脚本已从原路径删除，历史代码集中在 [legacy/cloud](../../../legacy/cloud/README.md)，拒绝运行，待云实机验证后退出。历史 ingress `.conf`/values 不再控制新版资源，资源来自锁定的 bootstrap values；云端启用/环境选择来自基础设施 `STEP13_ENABLED` / `STEP13_PROFILE`。
+
+证书只由[统一证书流程](../../registry-platform/docs/certificates.md)签发/安装；普通部署不重新签发、不轮换 CA。
+这次仅移动 Git 跟踪的历史源代码/配置/说明，**未移动或删除旧 CA、私钥、已生成证书/Secret、运行时文件**。
+尚有独立的通用证书分发工具和手工 NAT 工具，不能把它们误当作新版安装步骤，其余调用方继续单独审阅。
 
 ```sh
 # 默认只打印：无 SSH、集群 API、Helm 安装、服务操作。

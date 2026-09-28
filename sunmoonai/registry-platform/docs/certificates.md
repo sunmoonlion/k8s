@@ -44,6 +44,11 @@ python3 -B sunmoonai/registry-platform/certificates.py issue \
 
 ## 使用方
 
+旧 Traefik 主入口转发、Secret 总控、TLS Secret 安装与 server-cert 生成脚本及三个专属配置已移入
+[云端历史目录](../../../legacy/cloud/README.md)，原路径不留转发或可执行副本。
+普通部署不再通过这些入口重新签发证书。此处记录的原 CA 位置、五年证书批次和现场 Secret 均未移动/删除；
+归档源代码不能作为允许清理 CA/私钥目录的依据。通用证书组合分发工具仍需独立审阅，非当前安装入口。
+
 `config/local-wsl.conf` 已指向本次批次，并锁定 CA SHA；这些配置引用不触发安装。`config/cloud.example.conf` 保留空的显式叶证书/私钥/描述符字段，未来由管理机准备云端输入，不会自动复制本机签发私钥。
 
 统一入口（默认只打印）：

@@ -4,17 +4,17 @@
 不能只在几个数据库组件的 Helm 命令上加 `--dry-run`。
 
 逐文件位置与参数契约保存在 [deployment-dry-run-inventory.json](deployment-dry-run-inventory.json)。
-清单包含六个平台目录的全部 168 个 `deploy-*.sh` / `deploy.sh`，以及总控、部署辅助工具和独立 Harbor 入口，合计 193 项。
-这是入口及分支的静态覆盖清单，不是 193 项实机验收记录。
+清单包含六个平台目录的全部 165 个 `deploy-*.sh` / `deploy.sh`，以及总控、部署辅助工具和独立 Harbor 入口，合计 190 项。
+这是入口及分支的静态覆盖清单，不是 190 项实机验收记录。
 
 ## 覆盖方式
 
 | 入口 | 数量 | 处理 |
 | --- | ---: | --- |
-| 活动旧 Shell 组件、子组件及辅助工具 | 148 | 第一个公共调用即进入 `utils/deploy-plan.sh`，在配置、凭据、连接库、临时文件和 EXIT trap 之前判断计划；计划直接退出 |
+| 活动旧 Shell 组件、子组件及辅助工具 | 146 | 第一个公共调用即进入 `utils/deploy-plan.sh`，在配置、凭据、连接库、临时文件和 EXIT trap 之前判断计划；计划直接退出 |
 | Info / Knowledge / Investment 总入口及六个角色入口 | 21 | 共用 `formal_deploy_entry.py`；位置 `true` 和命名 `--dry-run` 转到本地 plan，保留发布配置、namespace、镜像/发布门禁 |
 | 根平台、Data Platform 总控 | 2 | 同一请求校验后继续现有本地配置计划；不会递归执行组件 |
-| 统一 Ingress 与 Traefik 转入入口 | 2 | 保留默认计划及显式 `--apply/--verify`，参数冲突拒绝；本地 Python 使用 `-B` |
+| 统一 Ingress 入口 | 1 | 保留默认计划及显式 `--apply/--verify`，参数冲突拒绝；本地 Python 使用 `-B` |
 | 云基础设施总控 | 1 | 保留 `--dry-run`；补齐 status/steps/materials 的只打印分支，云上未经实机验证 |
 | 共享证书入口 | 1 | 保留默认计划与显式执行；拒绝在继承计划模式时执行 apply/verify |
 | 独立 Harbor 准备、启停、恢复、备份、SNI、扫描器 | 6 | 原生默认计划、显式 `--apply`；审阅其本地计划分支，保留现有生命周期协议 |
@@ -23,7 +23,7 @@
 | ONLYOFFICE 本地资源生成器 | 1 | --dry-run 或继承计划在加载配置前退出；默认只生成非 Secret，Secret 必须逐项显式选择 |
 | 原集群内 Harbor 三个入口、原 KIND 建群入口 | 4 | 仍拒绝执行；本次不会把停用入口重新启用 |
 
-148 个旧入口包括 PostgreSQL、MongoDB、Neo4j、Redis/NodeBull、对象存储、Elasticsearch、Kibana、Logstash、
+146 个旧入口包括 PostgreSQL、MongoDB、Neo4j、Redis/NodeBull、对象存储、Elasticsearch、Kibana、Logstash、
 RabbitMQ、Jenkins、pgAdmin、RedisInsight、Mongo Express、Flower、Casdoor、OnlyOffice、Document Converter、RagFlow，
 及其 Secret、路由和中间件。另补入问数 Demo、Casdoor 初始化/数据库访问工具、手动 Traefik NAT 工具。
 这些辅助工具保留原用途；增加计划模式不代表其真实执行方式已符合新版集群的全部要求。
@@ -53,7 +53,7 @@ bash sunmoonai/app-platform/question-data-demo/deploy.sh --dry-run
 | action | action / project / namespace / environment / dry_run |
 | action-logs-tail | RabbitMQ 与 action 相同；logs 的第五位数字保留为日志行数，布尔 true 仍表示计划 |
 | project | project / namespace / environment / dry_run |
-| deploy-project | 43 个只写 Secret 的入口：可选 deploy / project / namespace / environment / dry_run；只支持部署，其他动作提前拒绝 |
+| deploy-project | 41 个只写 Secret 的入口：可选 deploy / project / namespace / environment / dry_run；只支持部署，其他动作提前拒绝 |
 | optional-action | 原脚本接受的可选 action，后跟 project / namespace / environment / dry_run |
 | namespace | action / namespace / dry_run；也识别父级完整五参数格式中的 dry_run，真实目标参数仍按各原脚本处理 |
 | named | 辅助工具保留原参数，只通过命名 `--dry-run` 或继承模式控制计划 |
@@ -61,7 +61,7 @@ bash sunmoonai/app-platform/question-data-demo/deploy.sh --dry-run
 
 ### Secret 入口的动作边界
 
-清单中 `deploy-project` 的 43 个入口只负责部署 Secret。支持原来的四个位置参数和可选 `deploy` 前缀；
+清单中 `deploy-project` 的 41 个入口只负责部署 Secret。支持原来的四个位置参数和可选 `deploy` 前缀；
 公共层在加载配置前去掉前缀，保留 `--cluster` 交给原集群解析器。`--help` / `help` 在加载配置前显示用法。
 `status`、`uninstall`、`delete`、`logs`、`upgrade`、`apply`、`generate`、`restart`、`start`、`stop`、
 `cleanup`、`plan`、`verify`、`install` 和重复的 `deploy` 均拒绝，不能把这些词当作项目 ID。

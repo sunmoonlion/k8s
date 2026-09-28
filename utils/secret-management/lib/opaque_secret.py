@@ -15,6 +15,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'sunmoonai' / 'registry-platform'))
 from pull_secret import SecretError, Target, dns_name  # noqa: E402
+from credentials import read_private  # noqa: E402
 
 
 def read_data():
@@ -59,17 +60,31 @@ def main():
     parser.add_argument('--restart-mode', choices=('none', 'always', 'existing-changed'), default='none')
     parser.add_argument('--restart', action='append', default=[])
     parser.add_argument('--apply', action='store_true')
+    parser.add_argument('--data-file', help='Explicit caller-owned owner-only file, at most 64 KiB')
+    parser.add_argument('--data-file-key')
     args = parser.parse_args()
     dns_name(args.namespace)
     dns_name(args.name, subdomain=True)
     for name in args.restart:
         dns_name(name, subdomain=True)
+    if bool(args.data_file) != bool(args.data_file_key):
+        raise SecretError('File input requires both path and key')
+    if args.data_file and (args.action != 'deploy' or not re.fullmatch(r'[a-zA-Z0-9._-]{1,253}', args.data_file_key)):
+        raise SecretError('File input requires deploy and a valid Secret key')
     if not args.apply:
         print(f'Plan: {args.action} Opaque Secret {args.namespace}/{args.name}; no input or API read')
         return
     if os.environ.get('SUNMOON_DEPLOY_DRY_RUN', 'false') != 'false':
         raise SecretError('Cannot apply with inherited dry-run or invalid mode')
-    expected = read_data() if args.action == 'deploy' else None
+    expected = None
+    if args.action == 'deploy':
+        if args.data_file:
+            raw = read_private(args.data_file)
+            if not raw:
+                raise SecretError('Secret input file is empty')
+            expected = {args.data_file_key: base64.b64encode(raw).decode('ascii')}
+        else:
+            expected = read_data()
     target = Target()
     target.check()
     target.command('get', 'namespace', args.namespace, '-o', 'name')

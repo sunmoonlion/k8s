@@ -100,6 +100,24 @@ Secret 提交、回读和多个工作负载重启不是事务：后一步失败�
 
 ## 退役与待验收
 
+### 对象存储主部署的内嵌 Secret
+
+对象存储主入口在加载旧公共连接库之前绑定明确目标，配置映射后再次核对；
+`ensure_cluster_connection` 只复核原目标，不再失败后自动重连。
+License 与根凭据复用同一个 Opaque 提交器：`minio.license` 从 `AISTOR_LICENSE_FILE` 读取，
+必须绝对路径、调用者所有、owner-only、末级非软链、非空且不超过 64 KiB；
+`config.env` 的原配置格式和值保留，经内建 printf 管道提交，不再把口令放入 kubectl 命令参数。
+这不是自动改文件权限或凭据迁移；现存许可文件若不满足要求，部署会停止，须先由管理者准备。
+
+拉取 Secret 按 `OBJECT_STORAGE_IMAGE_PULL_SECRET_NAME`，使用独立仓库的私有凭据与共享提交器核对/写回，
+不再因同名存在即接受，也不借用 PostgreSQL 的配置来创建另一个名字。
+三个 Secret 在内存提交并回读，失败传播。对象存储数据/License/账号、Chart 版本未改变。
+旧公共库暂为静态卷/镜像检查提供函数，严格目标模式禁止自动连接清理。
+主部署其余 Helm 状态/卸载吞错、等待和 provisioner 路径仍待整改，不把本批凭据路径改动当完整组件验收。
+`config.env` 保留原格式；特殊字符与对象存储实际配置解析、许可证有效性和 root 登录仍需实际核验。
+
+### 其他边界
+
 上述 18 份入口里的重复 YAML 生成/自动连接/密码生成/吞错重启实现已删除。
 部署不再读写各自的 `<名称>.yaml`，历史生成文件不作为真实输入。
 Elasticsearch 总控仍需同时启用 `elasticsearch_myapp_secret_enabled` 和
@@ -107,9 +125,15 @@ Elasticsearch 总控仍需同时启用 `elasticsearch_myapp_secret_enabled` 和
 管理员/Harbor/MyApp 三个子入口显式传播失败；开关原值未改变。
 Redis 独立工具不再因同名 Secret 存在就跳过检查；deploy 必须提供明确值并提交回读，
 只查看现存 Secret 应使用 status。其旧未初始化的 PROJECT_ROOT/配置路径依赖已移除。
-Redis 父级聚合查询/卸载仍需继续审阅：历史路径指向 redis-secrets，而其部署集合使用 redis-auth-secret，
-本批不把这两种身份混为一份，也不擅自删除另一份 Secret。
-手工 Secret 生成库有独立用途，仍保留；TLS、对象存储/数据库 provisioner、
+Redis `secrets/deploy-secrets-all` 的 deploy/status/uninstall 共用原四组件启用列表和优先级，
+按各子入口同一 `.conf` 读取实际名称。deploy 降序、uninstall 逆序；非法开关/优先级、
+启用但缺失的入口或配置会失败，不再跳过后报成功。Namespace 使用明确参数，其次总控 `.conf`。
+status 查询启用的业务/Harbor Secret，**uninstall 只申请删除启用的三个业务 Secret，保留共享 Harbor 拉取身份**，
+不触及独立手工工具 `redis-secrets`、数据库数据、PVC 或 namespace。开关关闭的对象不追溯删除。
+这是当前配置集合的动作，不是历史资源自动发现；卸载前应先核对 status 和业务影响。
+三个业务薄入口的 CLI 仍只写；父级通过共享 `opaque_secret_lifecycle_entry` 查询/删除，
+不生成业务值、不调用旧随机密码脚本，也不重新连接集群。多对象操作非事务，失败时保留已完成状态。
+手工 Secret 生成库有独立用途，仍保留；通用证书分发工具、对象存储/数据库 provisioner、
 其余主部署里的内嵌 Secret 路径不属于本表，需继续逐项审阅，不能泛称所有 Secret 完成。
 
 本批完成 Shell/Python 静态检查与字段/入口清单核对，未运行部署或行为测试。

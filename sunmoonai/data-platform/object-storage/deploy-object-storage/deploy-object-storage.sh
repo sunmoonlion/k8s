@@ -8,31 +8,36 @@ sunmoon_deploy_entry "${BASH_SOURCE[0]}" action "$@" || exit $?
 set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
 
 set -euo pipefail
+set +x
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 OBJECT_STORAGE_SCRIPT_DIR="$SCRIPT_DIR"
+OBJECT_STORAGE_K8S_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+
+# Admit the explicit target before the legacy common library can choose a context.
+source "$OBJECT_STORAGE_K8S_ROOT/utils/cluster-arg-parser.sh"
+unified_parse_cluster_arg "$@"
+ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
+[[ "${CLUSTER:-}" =~ ^(KIND|C[1-9][0-9]*)$ ]] || { echo 'Explicit CLUSTER required' >&2; exit 1; }
+source "$OBJECT_STORAGE_K8S_ROOT/utils/deploy-target.sh"
+sunmoon_deploy_target_init "$OBJECT_STORAGE_K8S_ROOT" || exit 1
 
 source "$PROJECT_ROOT/../../../utils/unified-deployment-template.sh"
 SCRIPT_DIR="$OBJECT_STORAGE_SCRIPT_DIR"
-
-ORIGINAL_ARGS=("$@")
-if [[ $# -gt 0 ]] && type unified_parse_cluster_arg >/dev/null 2>&1; then
-    unified_parse_cluster_arg "$@"
-    ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
-fi
 
 OBJECT_STORAGE_CONFIG_FILE="$SCRIPT_DIR/deploy-object-storage.conf"
 if [[ ! -f "$OBJECT_STORAGE_CONFIG_FILE" ]]; then
     log_error "缺少 Object Storage 配置文件: $OBJECT_STORAGE_CONFIG_FILE"
     exit 1
 fi
-source "$OBJECT_STORAGE_CONFIG_FILE"
+source "$OBJECT_STORAGE_CONFIG_FILE" >/dev/null 2>&1 || { echo 'Object storage configuration failed' >&2; exit 1; }
 
 if [[ -f "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh" ]]; then
     source "$PROJECT_ROOT/../../../utils/cluster-config-mapping.sh"
     apply_cluster_config_mapping
 fi
+sunmoon_deploy_target_check "$OBJECT_STORAGE_K8S_ROOT" || exit 1
 
 case "$(echo "${CLUSTER:-}" | tr '[:lower:]' '[:upper:]')" in
     KIND)
@@ -58,7 +63,7 @@ ensure_helm_version() {
     }
 
     local version
-    version="$(helm version --template '{{.Version}}' | sed 's/^v//')"
+    version="$(helm version --template '{{.Version}}' | sed 's/^v//')" || return 1
     if ! printf '%s\n%s\n' "3.17.0" "$version" | sort -V -C; then
         log_error "AIStor 要求 Helm >= 3.17.0，当前版本: $version"
         return 1
@@ -66,11 +71,7 @@ ensure_helm_version() {
 }
 
 ensure_cluster_connection() {
-    if kubectl get nodes >/dev/null 2>&1; then
-        return 0
-    fi
-    setup_kubectl_environment
-    kubectl get nodes >/dev/null
+    sunmoon_deploy_target_check "$OBJECT_STORAGE_K8S_ROOT"
 }
 
 ensure_namespace() {
@@ -91,49 +92,37 @@ ensure_license_secret() {
         return 1
     fi
 
-    kubectl create secret generic "$secret_name" \
-        --namespace "$namespace" \
-        --from-file=minio.license="$AISTOR_LICENSE_FILE" \
-        --dry-run=client -o yaml | kubectl apply -f -
+    sunmoon_deploy_target_check "$OBJECT_STORAGE_K8S_ROOT" || return 1
+    python3 -B "$OBJECT_STORAGE_K8S_ROOT/utils/secret-management/lib/opaque_secret.py" \
+        --namespace "$namespace" --name "$secret_name" \
+        --data-file "$AISTOR_LICENSE_FILE" --data-file-key minio.license --apply
 }
 
 ensure_root_secret() {
     local namespace="$1"
     local secret_name="${OBJECT_STORAGE_ROOT_SECRET_NAME:-object-storage-root-credentials}"
+    [[ -n "${OBJECT_STORAGE_ROOT_USER:-}" && -n "${OBJECT_STORAGE_ROOT_PASSWORD:-}" ]] || {
+        log_error 'Object storage root credentials must be explicitly configured'; return 1;
+    }
     local config_env
     config_env="export MINIO_ROOT_USER=${OBJECT_STORAGE_ROOT_USER}
 export MINIO_ROOT_PASSWORD=${OBJECT_STORAGE_ROOT_PASSWORD}"
 
-    kubectl create secret generic "$secret_name" \
-        --namespace "$namespace" \
-        --from-literal=config.env="$config_env" \
-        --dry-run=client -o yaml | kubectl apply -f -
+    sunmoon_deploy_target_check "$OBJECT_STORAGE_K8S_ROOT" || return 1
+    builtin printf '%s\0' config.env "$config_env" | \
+        python3 -B "$OBJECT_STORAGE_K8S_ROOT/utils/secret-management/lib/opaque_secret.py" \
+            --namespace "$namespace" --name "$secret_name" --apply
 }
 
-ensure_harbor_secret() {
+ensure_harbor_secret() (
     local namespace="$1"
     local secret_name="${OBJECT_STORAGE_IMAGE_PULL_SECRET_NAME:-harbor-registry-secret}"
-    local harbor_secret_script="$PROJECT_ROOT/../postgresql/deploy-postgresql/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh"
-
-    if ! kubectl get secret "$secret_name" -n "$namespace" >/dev/null 2>&1; then
-        log_warn "缺少 Harbor 镜像拉取 Secret: $namespace/$secret_name，尝试自动创建"
-        if [[ ! -x "$harbor_secret_script" ]]; then
-            log_error "缺少 Harbor Secret 部署脚本或不可执行: $harbor_secret_script"
-            return 1
-        fi
-
-        if [[ -n "${CLUSTER:-}" ]]; then
-            "$harbor_secret_script" --cluster "$CLUSTER" deploy "${OBJECT_STORAGE_PROJECT_ID:-sunmoonai}" "$namespace" "${ENVIRONMENT:-development}" false
-        else
-            "$harbor_secret_script" deploy "${OBJECT_STORAGE_PROJECT_ID:-sunmoonai}" "$namespace" "${ENVIRONMENT:-development}" false
-        fi
-
-        kubectl get secret "$secret_name" -n "$namespace" >/dev/null 2>&1 || {
-            log_error "Harbor 镜像拉取 Secret 自动创建后仍不存在: $namespace/$secret_name"
-            return 1
-        }
-    fi
-}
+    source "$OBJECT_STORAGE_K8S_ROOT/sunmoonai/registry-platform/lib/config.sh"
+    registry_load_config || return 1
+    sunmoon_deploy_target_check "$OBJECT_STORAGE_K8S_ROOT" || return 1
+    python3 -B "$OBJECT_STORAGE_K8S_ROOT/sunmoonai/registry-platform/pull_secret.py" deploy \
+        --namespace "$namespace" --name "$secret_name" --apply
+)
 
 push_object_storage_images_to_harbor() {
     push_component_images_to_harbor "object-storage" "" "${1:-false}" || {
@@ -167,9 +156,9 @@ deploy_operator() {
 wait_for_operator() {
     local namespace="$1"
     kubectl wait --for=condition=Established \
-        crd/objectstores.aistor.min.io --timeout=180s
+        crd/objectstores.aistor.min.io --timeout=180s || return 1
     kubectl rollout status deployment/object-store-operator \
-        -n "$namespace" --timeout=300s
+        -n "$namespace" --timeout=300s || return 1
     kubectl rollout status deployment/object-store-webhook \
         -n "$namespace" --timeout=300s
 }
@@ -266,22 +255,22 @@ deploy_all() {
     local environment="$3"
     local dry_run="$4"
 
-    ensure_helm_version
-    ensure_cluster_connection
-    ensure_namespace "$namespace"
-    ensure_harbor_secret "$namespace"
+    ensure_helm_version || return 1
+    ensure_cluster_connection || return 1
+    ensure_namespace "$namespace" || return 1
+    ensure_harbor_secret "$namespace" || return 1
 
     if [[ "$dry_run" != "true" ]]; then
-        ensure_license_secret "$namespace"
-        ensure_root_secret "$namespace"
+        ensure_license_secret "$namespace" || return 1
+        ensure_root_secret "$namespace" || return 1
         push_object_storage_images_to_harbor "$dry_run" || return 1
     fi
 
-    deploy_operator "$namespace" "$dry_run"
+    deploy_operator "$namespace" "$dry_run" || return 1
     if [[ "$dry_run" != "true" ]]; then
-        wait_for_operator "$namespace"
+        wait_for_operator "$namespace" || return 1
     fi
-    deploy_object_store "$project_id" "$namespace" "$environment" "$dry_run"
+    deploy_object_store "$project_id" "$namespace" "$environment" "$dry_run" || return 1
 
     if [[ "$dry_run" != "true" ]]; then
         show_status "$project_id" "$namespace"

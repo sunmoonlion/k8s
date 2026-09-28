@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# 历史路径，云上新路径实机验证前不删。新版云流程未经实机验证。
+printf '%s\n' 'Archived Traefik/TLS path; see legacy/cloud/README.md' >&2
+return 2 2>/dev/null || exit 2
 
 # Shared request boundary: before configuration, credentials, connections and EXIT traps.
 # shellcheck source=/dev/null

@@ -290,6 +290,115 @@
       "execution": "disabled",
       "exit_condition": "local-migration-and-observation-complete",
       "original_path_status": "removed; use ./sunmoon harbor; archive retained until exit condition"
+    },
+    {
+      "original": "sunmoonai/ingress-platform/traefik/deploy-traefik/deploy-traefik.sh",
+      "archive": "legacy/cloud/sunmoonai/ingress-platform/traefik/deploy-traefik/deploy-traefik.sh",
+      "original_sha256": "deda5fc935ee60da44fc1c7101b641e157e2839090c5f5b8f0b10d3322507624",
+      "original_commit": "2c43c3b0d66367c8fe519fbb124bf688866da26e",
+      "archive_sha256": "725a5eca4b7b871a7ae77301e11b414760cd0b183df9705b6832dc7eb044ae35",
+      "replacement": "sunmoonai/infrastructure/docs/ingress-bootstrap.md",
+      "group": "cloud",
+      "execution": "disabled",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement",
+      "original_path_status": "removed; no forwarding entry; CA/key/runtime files untouched"
+    },
+    {
+      "original": "sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "archive": "legacy/cloud/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "original_sha256": "a61c98dbf5e30e97a831327c29e13dc717bf59f36c30934d6ed60e1973239129",
+      "original_commit": "2c43c3b0d66367c8fe519fbb124bf688866da26e",
+      "archive_sha256": "403101ce714fe81ae75796428cc984398b1c546cf8c3fbdfd75eac4ccada199c",
+      "replacement": "sunmoonai/registry-platform/docs/certificates.md",
+      "group": "cloud",
+      "execution": "disabled",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement",
+      "original_path_status": "removed; no forwarding entry; CA/key/runtime files untouched"
+    },
+    {
+      "original": "sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/deploy-secrets-all/deploy-secrets-all.conf",
+      "archive": "legacy/cloud/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/deploy-secrets-all/deploy-secrets-all.conf",
+      "original_sha256": "70624f94560710d1df0af74eec0e5d90fe54dd8713e73c1e12a8656063286ad4",
+      "original_commit": "2c43c3b0d66367c8fe519fbb124bf688866da26e",
+      "archive_sha256": "ed32a6b895ff7e2869f52964eb133356b1e8af19e65dab489c9fb9803ab90690",
+      "replacement": "sunmoonai/registry-platform/docs/certificates.md",
+      "group": "cloud",
+      "execution": "historical-configuration",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement",
+      "original_path_status": "removed; no forwarding entry; CA/key/runtime files untouched"
+    },
+    {
+      "original": "sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/deploy-traefik-tls-secret/deploy-traefik-tls-secret.sh",
+      "archive": "legacy/cloud/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/deploy-traefik-tls-secret/deploy-traefik-tls-secret.sh",
+      "original_sha256": "2df98c9c7ec17c3207b297619037c41326393ff2d1c41c05222c074fe4ccb988",
+      "original_commit": "2c43c3b0d66367c8fe519fbb124bf688866da26e",
+      "archive_sha256": "76514200100ec64640c3d8619386c1b0caa12cc03d4846c77a7dbfd8306fd287",
+      "replacement": "sunmoonai/registry-platform/docs/certificates.md",
+      "group": "cloud",
+      "execution": "disabled",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement",
+      "original_path_status": "removed; no forwarding entry; CA/key/runtime files untouched"
+    },
+    {
+      "original": "sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/deploy-traefik-tls-secret/deploy-traefik-tls-secret.conf",
+      "archive": "legacy/cloud/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/deploy-traefik-tls-secret/deploy-traefik-tls-secret.conf",
+      "original_sha256": "7e74beefe4248d2ac01137bf0068b6ff8be1a58bd7ed516746e847d948bd2090",
+      "original_commit": "2c43c3b0d66367c8fe519fbb124bf688866da26e",
+      "archive_sha256": "8e868bc3edca3a64092dad4431acc23ab2a900e107e48eb220b07df5291ee29a",
+      "replacement": "sunmoonai/registry-platform/docs/certificates.md",
+      "group": "cloud",
+      "execution": "historical-configuration",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement",
+      "original_path_status": "removed; no forwarding entry; CA/key/runtime files untouched"
+    },
+    {
+      "original": "sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/server-cert/generate-server-cert/generate-server-cert.sh",
+      "archive": "legacy/cloud/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/server-cert/generate-server-cert/generate-server-cert.sh",
+      "original_sha256": "b30b174d4a5d59aff285684868952c57b06de7e6c42a9b15122aa0b3140987de",
+      "original_commit": "2c43c3b0d66367c8fe519fbb124bf688866da26e",
+      "archive_sha256": "36cb1073312e31f1035b2e899e2458c84a8c83f4478874f2680e95e80603ec15",
+      "replacement": "sunmoonai/registry-platform/docs/certificates.md",
+      "group": "cloud",
+      "execution": "disabled",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement",
+      "original_path_status": "removed; no forwarding entry; CA/key/runtime files untouched"
+    },
+    {
+      "original": "sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/server-cert/generate-server-cert/generate-server-cert.conf",
+      "archive": "legacy/cloud/sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/server-cert/generate-server-cert/generate-server-cert.conf",
+      "original_sha256": "35dbb5c1cdc5f0cf29b845a5768ba2b5371fe2044cceb7fbcf360df1497a6547",
+      "original_commit": "2c43c3b0d66367c8fe519fbb124bf688866da26e",
+      "archive_sha256": "1ba5d869b5c878758073e78efbe94438fa8493b750b0eaeb2be70066b9957ca9",
+      "replacement": "sunmoonai/registry-platform/docs/certificates.md",
+      "group": "cloud",
+      "execution": "historical-configuration",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement",
+      "original_path_status": "removed; no forwarding entry; CA/key/runtime files untouched"
+    },
+    {
+      "original": "sunmoonai/ingress-platform/traefik/WHY-ONLY-NODE2-WORKS.md",
+      "archive": "legacy/cloud/sunmoonai/ingress-platform/traefik/WHY-ONLY-NODE2-WORKS.md",
+      "original_sha256": "55e507731a5e5cc66d06cf2c3aaf374206755bd2f2a20f737357a119f9a30ce2",
+      "archive_sha256": "55e507731a5e5cc66d06cf2c3aaf374206755bd2f2a20f737357a119f9a30ce2",
+      "original_commit": "2c43c3b0d66367c8fe519fbb124bf688866da26e",
+      "replacement": "sunmoonai/infrastructure/docs/ingress-bootstrap.md",
+      "group": "cloud",
+      "execution": "historical-document",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement",
+      "original_path_status": "removed; historical old cluster incident"
+    },
+    {
+      "original": "sunmoonai/ingress-platform/traefik/setup-iptables-forward.README.md",
+      "archive": "legacy/cloud/sunmoonai/ingress-platform/traefik/setup-iptables-forward.README.md",
+      "original_sha256": "0cfe6c29f96e9c5267952dd0a9bc9b04ad2495216ef8880d6730a7756a823fbc",
+      "archive_sha256": "0d483326c34c211fd5333b2301d5d83607bbad9a1dd22661f0204fee80324566",
+      "original_commit": "2c43c3b0d66367c8fe519fbb124bf688866da26e",
+      "replacement": "sunmoonai/infrastructure/docs/ingress-bootstrap.md",
+      "group": "cloud",
+      "execution": "historical-document",
+      "exit_condition": "cloud-real-host-validation-and-reviewed-replacement",
+      "original_path_status": "rewritten as manual tool guide",
+      "archive_transform": "Trailing whitespace and final blank lines trimmed; original bytes recoverable at original_commit"
     }
   ]
 }

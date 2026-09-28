@@ -623,11 +623,6 @@
       "profile": null
     },
     {
-      "path": "sunmoonai/ingress-platform/traefik/deploy-traefik/deploy-traefik.sh",
-      "kind": "native-ingress",
-      "profile": null
-    },
-    {
       "path": "sunmoonai/ingress-platform/traefik/deploy-traefik/middleware/deploy-middleware-all/deploy-middleware-all.sh",
       "kind": "early-shell",
       "profile": "action"
@@ -636,16 +631,6 @@
       "path": "sunmoonai/ingress-platform/traefik/deploy-traefik/middleware/traefik-buffering-middleware/deploy-buffering-traefik-middleware/deploy-traefik-middleware.sh",
       "kind": "early-shell",
       "profile": "action"
-    },
-    {
-      "path": "sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/deploy-secrets-all/deploy-secrets-all.sh",
-      "kind": "early-shell",
-      "profile": "deploy-project"
-    },
-    {
-      "path": "sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/deploy-traefik-tls-secret/deploy-traefik-tls-secret.sh",
-      "kind": "early-shell",
-      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/messaging-platform/deploy-messaging-platform-all/deploy-messaging-platform-all.sh",
