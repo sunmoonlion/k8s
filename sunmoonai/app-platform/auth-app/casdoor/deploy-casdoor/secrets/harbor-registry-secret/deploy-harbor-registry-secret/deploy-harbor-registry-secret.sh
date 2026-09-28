@@ -3,7 +3,7 @@
 # Shared request boundary: before configuration, credentials, connections and EXIT traps.
 # shellcheck source=/dev/null
 source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../../../../../utils/deploy-plan.sh" || exit 2
-sunmoon_deploy_entry "${BASH_SOURCE[0]}" optional-action "$@" || exit $?
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" deploy-project "$@" || exit $?
 [[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
 set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
 
@@ -60,8 +60,6 @@ main() {
     set -- "${ORIGINAL_ARGS[@]}"
     [[ -n "${CLUSTER:-}" ]] && log_info "🎯 当前集群: ${CLUSTER}"
 
-    local action="${1:-deploy}"
-    [[ "$action" == "deploy" || "$action" == "uninstall" || "$action" == "status" ]] && shift
 
     local project_id="${1:-${PROJECT_ID:-$DEFAULT_PROJECT_ID}}"
     local namespace="${2:-${NAMESPACE:-$DEFAULT_NAMESPACE}}"

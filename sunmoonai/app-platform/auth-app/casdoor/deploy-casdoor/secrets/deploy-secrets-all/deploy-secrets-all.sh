@@ -3,7 +3,7 @@
 # Shared request boundary: before configuration, credentials, connections and EXIT traps.
 # shellcheck source=/dev/null
 source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../../../../utils/deploy-plan.sh" || exit 2
-sunmoon_deploy_entry "${BASH_SOURCE[0]}" optional-action "$@" || exit $?
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" deploy-project "$@" || exit $?
 [[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
 set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
 set -euo pipefail
@@ -28,9 +28,13 @@ source "$K8S_ROOT_DIR/utils/cluster-arg-parser.sh"
 
 declare -a PARSED_ARGS
 ORIGINAL_ARGS=("$@")
-[[ $# -gt 0 ]] && unified_parse_cluster_arg "$@" && ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
+if [[ $# -gt 0 ]]; then
+    unified_parse_cluster_arg "$@"
+    ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
+fi
 
-[[ -f "$CONF_FILE" ]] && source "$CONF_FILE"
+[[ -f "$CONF_FILE" ]] || { echo "[ERROR] 缺少 Secret 总控配置文件" >&2; exit 1; }
+source "$CONF_FILE"
 
 if [[ -f "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh" ]]; then
     source "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh"
@@ -39,7 +43,11 @@ fi
 
 [[ -n "${CLUSTER:-}" ]] && echo "[INFO] 🎯 当前集群: ${CLUSTER}"
 
-NAMESPACE="${NAMESPACE:-app-platform-dev}"
+set -- "${ORIGINAL_ARGS[@]}"
+PROJECT_ID="${1:-${PROJECT_ID:-sunmoonai}}"
+NAMESPACE="${2:-${NAMESPACE:-app-platform-dev}}"
+ENVIRONMENT="${3:-${ENVIRONMENT:-development}}"
+DRY_RUN="${4:-false}"
 
 # 部署 Harbor Registry Secret
 if [[ "${harbor_registry_secret_enabled:-true}" == "true" ]]; then
@@ -50,9 +58,10 @@ if [[ "${harbor_registry_secret_enabled:-true}" == "true" ]]; then
             "${PROJECT_ID:-sunmoonai}" \
             "${NAMESPACE:-app-platform-dev}" \
             "${ENVIRONMENT:-development}" \
-            "false"
+            "$DRY_RUN"
     else
-        echo "[WARN] Harbor Registry Secret 脚本不存在，跳过: $HARBOR_SECRET_SCRIPT"
+        echo "[ERROR] 启用的 Harbor Registry Secret 脚本不存在: $HARBOR_SECRET_SCRIPT" >&2
+        exit 1
     fi
 fi
 

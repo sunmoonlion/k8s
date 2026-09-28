@@ -3,7 +3,7 @@
 # Shared request boundary: before configuration, credentials, connections and EXIT traps.
 # shellcheck source=/dev/null
 source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../../../../utils/deploy-plan.sh" || exit 2
-sunmoon_deploy_entry "${BASH_SOURCE[0]}" optional-action "$@" || exit $?
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" deploy-project "$@" || exit $?
 [[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
 set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
 
@@ -51,7 +51,6 @@ log_warn() { echo -e "\033[33m[WARN]\033[0m $*"; }
 main() {
     # 使用解析后的参数（已移除 --cluster 参数）
     set -- "${ORIGINAL_ARGS[@]}"
-    set -- "${PARSED_ARGS[@]}"
     
     if [[ -n "${CLUSTER:-}" ]]; then
         log_info "🎯 当前集群配置: ${CLUSTER}"
@@ -201,7 +200,7 @@ show_help() {
 
 # 主程序入口
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
         show_help
         exit 0
     fi

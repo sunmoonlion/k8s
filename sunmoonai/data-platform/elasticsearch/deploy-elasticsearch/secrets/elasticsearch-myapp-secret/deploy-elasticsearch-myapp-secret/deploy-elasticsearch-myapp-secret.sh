@@ -3,7 +3,7 @@
 # Shared request boundary: before configuration, credentials, connections and EXIT traps.
 # shellcheck source=/dev/null
 source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../../../../utils/deploy-plan.sh" || exit 2
-sunmoon_deploy_entry "${BASH_SOURCE[0]}" optional-action "$@" || exit $?
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" deploy-project "$@" || exit $?
 [[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
 set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
 
@@ -31,10 +31,20 @@ if [[ $# -gt 0 ]]; then
 fi
 
 
+CONFIG_FILE="$SCRIPT_DIR/deploy-elasticsearch-myapp-secret.conf"
+[[ -f "$CONFIG_FILE" ]] || { log_error "缺少 Secret 配置文件"; exit 1; }
+source "$CONFIG_FILE"
+source "$PROJECT_ROOT/utils/cluster-config-mapping.sh"
+apply_cluster_config_mapping
+
+# 直接调用时的默认值；显式位置参数仍优先。
+DEFAULT_PROJECT_ID="${PROJECT_ID:-sunmoonai}"
+DEFAULT_NAMESPACE="${NAMESPACE:-data-platform-dev}"
+DEFAULT_ENVIRONMENT="${ENVIRONMENT:-development}"
+
 main() {
     # 使用解析后的参数（已移除 --cluster 参数）
     set -- "${ORIGINAL_ARGS[@]}"
-    set -- "${PARSED_ARGS[@]}"
     
     if [[ -n "${CLUSTER:-}" ]]; then
         log_info "🎯 当前集群配置: ${CLUSTER}"

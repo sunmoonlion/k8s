@@ -15,12 +15,12 @@
     {
       "path": "sunmoonai/app-platform/auth-app/casdoor/deploy-casdoor/secrets/deploy-secrets-all/deploy-secrets-all.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/app-platform/auth-app/casdoor/deploy-casdoor/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/app-platform/auth-app/deploy-auth-app-all/deploy-auth-app-all.sh",
@@ -280,7 +280,7 @@
     {
       "path": "sunmoonai/cicd-platform/jenkins/deploy-jenkins/secrets/deploy-secrets-all/deploy-secrets-all.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/cicd-platform/jenkins/deploy-jenkins/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
@@ -330,12 +330,12 @@
     {
       "path": "sunmoonai/data-platform/elasticsearch/deploy-elasticsearch/secrets/deploy-secrets-all/deploy-secrets-all.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/elasticsearch/deploy-elasticsearch/secrets/elasticsearch-myapp-secret/deploy-elasticsearch-myapp-secret/deploy-elasticsearch-myapp-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/elasticsearch/deploy-elasticsearch/secrets/elasticsearch-secrets/deploy-elasticsearch-secrets/deploy-elasticsearch-secrets.sh",
@@ -345,7 +345,7 @@
     {
       "path": "sunmoonai/data-platform/elasticsearch/deploy-elasticsearch/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/kibana/deploy-kibana/deploy-kibana.sh",
@@ -375,17 +375,17 @@
     {
       "path": "sunmoonai/data-platform/kibana/deploy-kibana/secrets/deploy-secrets-all/deploy-secrets-all.sh",
       "kind": "early-shell",
-      "profile": "project"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/kibana/deploy-kibana/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/kibana/deploy-kibana/secrets/kibana-elasticsearch-secret/deploy-kibana-elasticsearch-secret/deploy-kibana-elasticsearch-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/logstash/deploy-logstash/deploy-logstash.sh",
@@ -415,17 +415,17 @@
     {
       "path": "sunmoonai/data-platform/logstash/deploy-logstash/secrets/deploy-secrets-all/deploy-secrets-all.sh",
       "kind": "early-shell",
-      "profile": "project"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/logstash/deploy-logstash/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/logstash/deploy-logstash/secrets/logstash-elasticsearch-secret/deploy-logstash-elasticsearch-secret/deploy-logstash-elasticsearch-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/mongodb/deploy-mongodb/deploy-mongodb.sh",
@@ -450,22 +450,22 @@
     {
       "path": "sunmoonai/data-platform/mongodb/deploy-mongodb/secrets/deploy-secrets-all/deploy-secrets-all.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/mongodb/deploy-mongodb/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/mongodb/deploy-mongodb/secrets/mongodb-auth-secret/deploy-mongodb-auth-secret/deploy-mongodb-auth-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/mongodb/deploy-mongodb/secrets/mongodb-llmopsservice-db-secret/deploy-mongodb-llmopsservice-db-secret/deploy-mongodb-llmopsservice-db-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/neo4j/deploy-neo4j/deploy-neo4j.sh",
@@ -510,12 +510,12 @@
     {
       "path": "sunmoonai/data-platform/neo4j/deploy-neo4j/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/neo4j/deploy-neo4j/secrets/neo4j-secrets/deploy-neo4j-secrets/deploy-neo4j-secrets.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/object-storage/deploy-object-storage/deploy-object-storage.sh",
@@ -545,27 +545,27 @@
     {
       "path": "sunmoonai/data-platform/postgresql/deploy-postgresql/secrets/deploy-secrets-all/deploy-secrets-all.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/postgresql/deploy-postgresql/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/postgresql/deploy-postgresql/secrets/postgresql-auth-secret/deploy-postgresql-auth-secret/deploy-postgresql-auth-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/postgresql/deploy-postgresql/secrets/postgresql-authservice-db-secret/deploy-postgresql-authservice-db-secret/deploy-postgresql-authservice-db-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/postgresql/deploy-postgresql/secrets/postgresql-llmopsservice-db-secret/deploy-postgresql-llmopsservice-db-secret/deploy-postgresql-llmopsservice-db-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/redis/deploy-redis/deploy-redis.sh",
@@ -595,22 +595,22 @@
     {
       "path": "sunmoonai/data-platform/redis/deploy-redis/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/redis/deploy-redis/secrets/redis-auth-secret/deploy-redis-auth-secret/deploy-redis-auth-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/redis/deploy-redis/secrets/redis-llmopsservice-secret/deploy-redis-llmopsservice-secret/deploy-redis-llmopsservice-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/redis/deploy-redis/secrets/redis-myapp-secret/deploy-redis-myapp-secret/deploy-redis-myapp-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/data-platform/redis/deploy-redis/secrets/redis-secrets/deploy-redis-secrets/deploy-redis-secrets.sh",
@@ -640,12 +640,12 @@
     {
       "path": "sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/deploy-secrets-all/deploy-secrets-all.sh",
       "kind": "early-shell",
-      "profile": "project"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/deploy-traefik-tls-secret/deploy-traefik-tls-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/messaging-platform/deploy-messaging-platform-all/deploy-messaging-platform-all.sh",
@@ -680,17 +680,17 @@
     {
       "path": "sunmoonai/messaging-platform/rabbitmq/deploy-rabbitmq/secrets/deploy-secrets-all/deploy-secrets-all.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/messaging-platform/rabbitmq/deploy-rabbitmq/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/messaging-platform/rabbitmq/deploy-rabbitmq/secrets/rabbitmq-auth-secret/deploy-rabbitmq-auth-secret/deploy-rabbitmq-auth-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/ops-platform/deploy-ops-platform-all/deploy-ops-platform-all.sh",
@@ -725,17 +725,17 @@
     {
       "path": "sunmoonai/ops-platform/flower/deploy-flower/secrets/deploy-secrets-all/deploy-secrets-all.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/ops-platform/flower/deploy-flower/secrets/flower-secrets/deploy-flower-secrets/deploy-flower-secrets.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/ops-platform/flower/deploy-flower/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/ops-platform/mongo-express/deploy-mongo-express/deploy-mongo-express.sh",
@@ -760,17 +760,17 @@
     {
       "path": "sunmoonai/ops-platform/mongo-express/deploy-mongo-express/secrets/deploy-secrets-all/deploy-secrets-all.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/ops-platform/mongo-express/deploy-mongo-express/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/ops-platform/mongo-express/deploy-mongo-express/secrets/mongo-express-secrets/deploy-mongo-express-secrets/deploy-mongo-express-secrets.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/ops-platform/pgadmin/deploy-pgadmin/deploy-pgadmin.sh",
@@ -800,17 +800,17 @@
     {
       "path": "sunmoonai/ops-platform/pgadmin/deploy-pgadmin/secrets/deploy-secrets-all/deploy-secrets-all.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/ops-platform/pgadmin/deploy-pgadmin/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/ops-platform/pgadmin/deploy-pgadmin/secrets/pgadmin-auth-secret/deploy-pgadmin-auth-secret/deploy-pgadmin-auth-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/ops-platform/redisinsight/deploy-redisinsight/deploy-redisinsight.sh",
@@ -830,12 +830,12 @@
     {
       "path": "sunmoonai/ops-platform/redisinsight/deploy-redisinsight/secrets/deploy-secrets-all/deploy-secrets-all.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/ops-platform/redisinsight/deploy-redisinsight/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
       "kind": "early-shell",
-      "profile": "optional-action"
+      "profile": "deploy-project"
     },
     {
       "path": "sunmoonai/app-platform/auth-app/casdoor/deploy-casdoor/post-deploy-setup.sh",

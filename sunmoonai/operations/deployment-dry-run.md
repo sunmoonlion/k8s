@@ -50,10 +50,29 @@ bash sunmoonai/app-platform/question-data-demo/deploy.sh --dry-run
 | action | action / project / namespace / environment / dry_run |
 | action-logs-tail | RabbitMQ 与 action 相同；logs 的第五位数字保留为日志行数，布尔 true 仍表示计划 |
 | project | project / namespace / environment / dry_run |
+| deploy-project | 43 个只写 Secret 的入口：可选 deploy / project / namespace / environment / dry_run；只支持部署，其他动作提前拒绝 |
 | optional-action | 原脚本接受的可选 action，后跟 project / namespace / environment / dry_run |
 | namespace | action / namespace / dry_run；也识别父级完整五参数格式中的 dry_run，真实目标参数仍按各原脚本处理 |
 | named | 辅助工具保留原参数，只通过命名 `--dry-run` 或继承模式控制计划 |
 | root | action / project / environment / dry_run，根总控不接收 namespace |
+
+### Secret 入口的动作边界
+
+清单中 `deploy-project` 的 43 个入口只负责部署 Secret。支持原来的四个位置参数和可选 `deploy` 前缀；
+公共层在加载配置前去掉前缀，保留 `--cluster` 交给原集群解析器。`--help` / `help` 在加载配置前显示用法。
+`status`、`uninstall`、`delete`、`logs`、`upgrade`、`apply`、`generate`、`restart`、`start`、`stop`、
+`cleanup`、`plan`、`verify`、`install` 和重复的 `deploy` 均拒绝，不能把这些词当作项目 ID。
+这修复了原来移除 `status/uninstall` 后仍执行 Secret 创建的问题。
+有真实动作分支的 OnlyOffice、Document Converter、Jenkins Secret 子入口、Redis/Neo4j Secret 总控等保留原接口；
+需要查询或卸载时按对应组件总控的能力操作，不为只写入口伪造成功的状态/卸载结果。
+
+Casdoor 和 Elasticsearch Secret 总控现在使用父级传入的 project、namespace、environment，显式参数优先于配置默认。
+已启用的 Secret 子脚本缺失会失败；聚合层传播失败，不能靠最后的成功日志覆盖错误。
+Elasticsearch 的 `APPLY_ELASTICSEARCH_MYAPP_SECRET=true` 只允许实际 `elasticsearch-myapp-secret.yaml`，
+缺失即失败，不会再把 `.yaml.example` 作为真实凭据安装。默认关闭时不改变其行为。
+pgAdmin 认证入口仅保留一套配置、生成和部署流程，移除了原来重复执行的第二套逻辑及密码片段日志。
+9 个原先缺少默认值的 Secret 入口补齐直接调用默认值；Elasticsearch MyApp 入口补上遗漏的配置加载。
+上述改动没有修改现有 `.conf` 的开关和凭据，实际部署仍须按目标集群准入执行。
 
 普通组件计划只打印请求，不加载组件配置，因此不展示完整展开步骤，不检查真实目标、依赖、凭据、镜像或存储。
 根总控和 Data Platform 的详细计划继续读取本地可信 Shell 配置列出开关/优先级；正式应用计划按数据读取发布配置并校验本地 bundle。

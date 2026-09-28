@@ -3,7 +3,7 @@
 # Shared request boundary: before configuration, credentials, connections and EXIT traps.
 # shellcheck source=/dev/null
 source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../../../utils/deploy-plan.sh" || exit 2
-sunmoon_deploy_entry "${BASH_SOURCE[0]}" optional-action "$@" || exit $?
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" deploy-project "$@" || exit $?
 [[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
 set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
 set -euo pipefail
@@ -43,7 +43,8 @@ if [[ $# -gt 0 ]]; then
 fi
 
 # 加载配置文件（现在可以使用已设置的 CLUSTER 值）
-[[ -f "$CONF_FILE" ]] && source "$CONF_FILE"
+[[ -f "$CONF_FILE" ]] || { echo "[ERROR] 缺少 Secret 总控配置文件" >&2; exit 1; }
+source "$CONF_FILE"
 
 # 加载集群配置映射函数（使用 utils 中的通用函数）
 if [[ -f "$K8S_ROOT_DIR/utils/cluster-config-mapping.sh" ]]; then
@@ -56,14 +57,17 @@ if [[ -n "${CLUSTER:-}" ]]; then
     echo "[INFO] 🎯 当前集群配置: ${CLUSTER}"
 fi
 
-NAMESPACE="${NAMESPACE:-data-platform-dev}"
+set -- "${ORIGINAL_ARGS[@]}"
+PROJECT_ID="${1:-${PROJECT_ID:-sunmoonai}}"
+NAMESPACE="${2:-${NAMESPACE:-data-platform-dev}}"
+ENVIRONMENT="${3:-${ENVIRONMENT:-development}}"
+DRY_RUN="${4:-false}"
 
 apply_yaml() {
   local file="$1"
-  if [[ -f "$file" ]]; then
-    echo "[INFO] kubectl apply -f $file -n $NAMESPACE"
-    kubectl apply -f "$file" -n "$NAMESPACE"
-  fi
+  [[ -f "$file" ]] || { echo "[ERROR] 缺少显式启用的 MyApp Secret 文件" >&2; return 1; }
+  echo "[INFO] kubectl apply -f $file -n $NAMESPACE"
+  kubectl apply -f "$file" -n "$NAMESPACE"
 }
 
 # 部署 Elasticsearch 管理员认证 Secret
@@ -85,16 +89,20 @@ if [[ "${harbor_registry_secret_enabled:-true}" == "true" ]]; then
             "${PROJECT_ID:-sunmoonai}" \
             "${NAMESPACE:-data-platform-dev}" \
             "${ENVIRONMENT:-development}" \
-            "false"
+            "$DRY_RUN"
     else
-        echo "[WARN] Harbor Registry Secret 部署脚本不存在，跳过"
+        echo "[ERROR] 启用的 Harbor Registry Secret 部署脚本不存在" >&2
+        exit 1
     fi
 fi
 
 # 部署 Elasticsearch MyApp Secret（如果启用）
 if [[ "${elasticsearch_myapp_secret_enabled:-true}" == "true" ]]; then
     echo "[INFO] 部署 Elasticsearch MyApp Secret..."
-    [[ "${APPLY_ELASTICSEARCH_MYAPP_SECRET:-false}" == "true" ]] && apply_yaml "$ROOT_DIR/elasticsearch-myapp-secret/elasticsearch-myapp-secret.yaml.example"
+    if [[ "${APPLY_ELASTICSEARCH_MYAPP_SECRET:-false}" == "true" ]]; then
+        # 必须由所有者准备真实配置，示例文件不能用作部署输入。
+        apply_yaml "$ROOT_DIR/elasticsearch-myapp-secret/elasticsearch-myapp-secret.yaml"
+    fi
 fi
 
 echo "[OK] Completed"

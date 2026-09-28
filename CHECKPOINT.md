@@ -1,5 +1,17 @@
 # luna 工作检查点
 
+## 最新续接：2026-09-28 Secret 动作契约与参数传递修复
+
+基线 `402b69f2`，本地 luna 开工干净。沿上一轮全部组件入口继续审阅 Secret 实际调用；本轮仅代码整理，现场迁移仍暂停。
+
+- 公共 deploy-plan.sh 新增 deploy-project 契约，43 个仅支持创建的 Secret 入口接入。可选 deploy 前缀在配置/凭据/连接前规范化去掉，cluster 参数保留，dry_run 第四位置与命名/继承冲突校验保留；拒绝 status/uninstall 等保留动作词、重复 deploy、多余位置参数。help 纯打印提前返回。原来移除 status/uninstall 后继续创建 Secret 的路径被阻断；有真实动作分派的 OnlyOffice/Document Converter/Jenkins 子 Secret、Redis/Neo4j 总控等未套用此契约。
+- 去除旧 main 中重复 shift 与多处 ORIGINAL_ARGS 后再次用 PARSED_ARGS 覆盖；Traefik TLS 改用已有 ORIGINAL_ARGS。只写入口无参数帮助判断改为安全默认，9 个缺默认值入口补齐；ES MyApp 补遗漏的配置加载与集群映射。
+- Casdoor/Elasticsearch Secret 总控使用解析后的显式 project/namespace/environment/dry_run，配置必须存在，启用 Harbor 子脚本缺失失败。ES 显式 APPLY_ELASTICSEARCH_MYAPP_SECRET=true 需要真实 YAML，不再 apply example；关闭时保持不部署。Casdoor 父入口启用 Secrets/Ingress 但脚本缺失时失败。
+- 12 个 Secret 聚合入口不再静默跳过已启用却缺失的脚本；Kibana/Logstash/MongoDB/PostgreSQL/Traefik 的分阶段调用显式传播错误，避免 if 调用上下文禁用 errexit 后被末尾成功日志覆盖。
+- pgAdmin auth 原文件包含两套 main/入口执行，首套还在配置前生成凭据。现保留一套，在生成前完成参数解析、配置和映射；设置私密 umask，删除密码片段日志，不重复加载配置覆盖映射。未修改任何实际凭据、版本或开关。
+- 静态：45 修改 Shell bash -n/ShellCheck error级通过；186 清单路径/early-shell profile、43 Secret 契约与无遗留 action-shift、pgAdmin 单入口、JSON解析、git diff --check通过。未执行行为测试、CLI计划分支、Secret生成、部署、K8s/Docker/SSH/Windows查询或清理；不能宣称所有组件已部署通过。
+- 后续继续配置/凭据真源、目标绑定与保留工具实际调用核对，然后按既有准入恢复 main/入口迁移及 Harbor 独立性验收。inbox仍旧kind；main未创建；旧节点/卷/Harbor/备份保护不变。最终本机 refactor 临时目录和东京下载清理必须完成，本轮无新运行时物料。仅本地 luna 提交，不push。
+
 ## 最新续接：2026-09-28 全组件入口干运行覆盖
 
 基线 `c132d99d`，本地 luna 开工干净。所有者指出不能只修六个组件，要求全部组件一起修；本轮沿所有平台的部署入口扩展，未恢复现场迁移。

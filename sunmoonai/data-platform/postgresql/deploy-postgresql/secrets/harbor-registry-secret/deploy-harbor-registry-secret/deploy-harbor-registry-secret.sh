@@ -3,7 +3,7 @@
 # Shared request boundary: before configuration, credentials, connections and EXIT traps.
 # shellcheck source=/dev/null
 source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../../../../utils/deploy-plan.sh" || exit 2
-sunmoon_deploy_entry "${BASH_SOURCE[0]}" optional-action "$@" || exit $?
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" deploy-project "$@" || exit $?
 [[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
 set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
 
@@ -80,12 +80,6 @@ main() {
         log_info "🎯 当前集群配置: ${CLUSTER}"
     fi
     
-    # 处理参数：如果第一个参数是 action（如 deploy），则跳过
-    local action="${1:-deploy}"
-    if [[ "$action" == "deploy" || "$action" == "uninstall" || "$action" == "status" ]]; then
-        # 第一个参数是 action，跳过它
-        shift
-    fi
     
     local project_id="${1:-${PROJECT_ID:-$DEFAULT_PROJECT_ID}}"
     local namespace="${2:-${NAMESPACE:-$DEFAULT_NAMESPACE}}"
@@ -213,7 +207,7 @@ show_help() {
 
 # 主程序入口
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
         show_help
         exit 0
     fi

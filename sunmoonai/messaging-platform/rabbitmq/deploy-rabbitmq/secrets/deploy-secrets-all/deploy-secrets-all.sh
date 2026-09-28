@@ -3,7 +3,7 @@
 # Shared request boundary: before configuration, credentials, connections and EXIT traps.
 # shellcheck source=/dev/null
 source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../../../utils/deploy-plan.sh" || exit 2
-sunmoon_deploy_entry "${BASH_SOURCE[0]}" optional-action "$@" || exit $?
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" deploy-project "$@" || exit $?
 [[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
 set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
 
@@ -218,7 +218,8 @@ deploy_sub_components_by_priority() {
             
             cd "$original_dir"
         else
-            log_warn "⚠️  $description 部署脚本不存在: $script_path"
+            log_error "启用的 $description 部署脚本不存在: $script_path"
+            return 1
         fi
     done
     
@@ -299,7 +300,7 @@ show_help() {
 }
 
 main() {
-    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
         show_help
         exit 0
     fi
@@ -310,10 +311,6 @@ main() {
         log_info "🎯 当前集群配置: ${CLUSTER}"
     fi
     
-    local action="${1:-deploy}"
-    if [[ "$action" == "deploy" || "$action" == "uninstall" || "$action" == "status" ]]; then
-        shift
-    fi
     
     deploy_secrets "$@"
 }

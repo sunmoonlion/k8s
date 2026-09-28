@@ -3,7 +3,7 @@
 # Shared request boundary: before configuration, credentials, connections and EXIT traps.
 # shellcheck source=/dev/null
 source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../../../utils/deploy-plan.sh" || exit 2
-sunmoon_deploy_entry "${BASH_SOURCE[0]}" project "$@" || exit $?
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" deploy-project "$@" || exit $?
 [[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
 set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
 
@@ -187,7 +187,8 @@ deploy_sub_components_by_priority() {
             
             cd "$original_dir"
         else
-            log_warn "⚠️  $description 部署脚本不存在: $script_path"
+            log_error "启用的 $description 部署脚本不存在: $script_path"
+            return 1
         fi
     done
     
@@ -257,13 +258,13 @@ deploy_secrets() {
     fi
     
     # 阶段1：部署子级组件（按优先级）
-    deploy_sub_components_by_priority "$project_id" "$namespace" "$environment" "$dry_run"
+    deploy_sub_components_by_priority "$project_id" "$namespace" "$environment" "$dry_run" || return $?
     
     # 阶段2：部署 Secrets 核心服务
-    deploy_secrets_core "$project_id" "$namespace" "$environment" "$dry_run"
+    deploy_secrets_core "$project_id" "$namespace" "$environment" "$dry_run" || return $?
     
     # 阶段3：部署本级专属组件
-    deploy_current_level_components "$project_id" "$namespace" "$environment" "$dry_run"
+    deploy_current_level_components "$project_id" "$namespace" "$environment" "$dry_run" || return $?
     
     log_success "🎉 Traefik Secrets 递归部署完成！"
     echo ""
@@ -304,14 +305,13 @@ declare -a PARSED_ARGS
 # 主程序入口
 main() {
     # 检查参数
-    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
         show_help
         exit 0
     fi
     
     # 使用解析后的参数（已移除 --cluster 参数）
     set -- "${ORIGINAL_ARGS[@]}"
-    set -- "${PARSED_ARGS[@]}"
     
     if [[ -n "${CLUSTER:-}" ]]; then
         log_info "🎯 当前集群配置: ${CLUSTER}"

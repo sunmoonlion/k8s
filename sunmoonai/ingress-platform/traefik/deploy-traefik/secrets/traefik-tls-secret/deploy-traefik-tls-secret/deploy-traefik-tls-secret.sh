@@ -3,7 +3,7 @@
 # Shared request boundary: before configuration, credentials, connections and EXIT traps.
 # shellcheck source=/dev/null
 source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../../../../utils/deploy-plan.sh" || exit 2
-sunmoon_deploy_entry "${BASH_SOURCE[0]}" optional-action "$@" || exit $?
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" deploy-project "$@" || exit $?
 [[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
 set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
 
@@ -77,8 +77,13 @@ if [[ -n "${CLUSTER:-}" && -f "$PROJECT_ROOT/utils/cluster-config-mapping.sh" ]]
 fi
 
 # 主函数
+# 直接调用时的默认值；显式位置参数仍优先。
+DEFAULT_PROJECT_ID="${PROJECT_ID:-sunmoonai}"
+DEFAULT_NAMESPACE="${NAMESPACE:-ingress-platform-dev}"
+DEFAULT_ENVIRONMENT="${ENVIRONMENT:-development}"
+
 main() {
-    set -- "${PARSED_ARGS[@]}"
+    set -- "${ORIGINAL_ARGS[@]}"
     
     if [[ -n "${CLUSTER:-}" ]]; then
         log_info "🎯 当前集群配置: ${CLUSTER}"
@@ -269,7 +274,7 @@ show_help() {
 # 主程序入口
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     # 检查参数
-    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
         show_help
         exit 0
     fi

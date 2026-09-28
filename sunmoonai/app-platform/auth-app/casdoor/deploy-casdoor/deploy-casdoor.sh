@@ -246,7 +246,7 @@ deploy_secrets() {
     local secrets_script="$SCRIPT_DIR/secrets/deploy-secrets-all/deploy-secrets-all.sh"
 
     [[ "${secrets_enabled:-true}" != "true" ]] && { log_info "跳过 Secrets 部署"; return 0; }
-    [[ -f "$secrets_script" ]] || { log_warn "Secrets 脚本不存在，跳过: $secrets_script"; return 0; }
+    [[ -f "$secrets_script" ]] || { log_error "启用的 Secrets 脚本不存在: $secrets_script"; return 1; }
 
     if bash "$secrets_script" "$project_id" "$namespace" "$environment" "$dry_run"; then
         log_success "✅ Casdoor Secrets 部署成功"
@@ -260,7 +260,7 @@ deploy_ingress() {
     local ingress_script="$SCRIPT_DIR/ingress/deploy-ingress/deploy-ingress.sh"
 
     [[ "${ingress_enabled:-true}" != "true" ]] && { log_info "跳过 Ingress 部署"; return 0; }
-    [[ -f "$ingress_script" ]] || { log_warn "Ingress 脚本不存在，跳过: $ingress_script"; return 0; }
+    [[ -f "$ingress_script" ]] || { log_error "启用的 Ingress 脚本不存在: $ingress_script"; return 1; }
 
     if DISABLE_AUTO_CLEANUP=true bash "$ingress_script" deploy "$project_id" "$namespace" "$environment"; then
         log_success "✅ Casdoor Ingress 部署成功"

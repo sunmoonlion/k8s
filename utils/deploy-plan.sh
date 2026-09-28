@@ -3,13 +3,14 @@
 
 # Call before configuration, connection libraries, traps or temporary files.
 # Profiles describe existing positional APIs; named --dry-run works for all of them.
-# Outputs: SUNMOON_DEPLOY_PLAN_ONLY and SUNMOON_DEPLOY_EXEC_ARGS (original API).
+# Outputs: SUNMOON_DEPLOY_PLAN_ONLY (handled without execution) and
+# SUNMOON_DEPLOY_EXEC_ARGS (normalized API; deploy-project removes optional deploy).
 sunmoon_deploy_entry() {
     local entry="$1" profile="$2"
     shift 2
     local named='' positional='' inherited="${SUNMOON_DEPLOY_DRY_RUN:-false}"
     local cluster="${CLUSTER:-<配置默认>}" value='' index=-1 action=deploy
-    local -a positions=()
+    local -a positions=() position_indices=()
     SUNMOON_DEPLOY_EXEC_ARGS=()
     SUNMOON_DEPLOY_PLAN_ONLY=false
     [[ "$inherited" == true || "$inherited" == false ]] || {
@@ -41,11 +42,14 @@ sunmoon_deploy_entry() {
             -[cC][0-9]*)
                 cluster="${1:2}"; SUNMOON_DEPLOY_EXEC_ARGS+=("$1"); shift ;;
             --help|-h)
+                position_indices+=("${#SUNMOON_DEPLOY_EXEC_ARGS[@]}")
                 positions+=("$1"); SUNMOON_DEPLOY_EXEC_ARGS+=("$1"); shift ;;
             --*)
                 # These legacy entries have no other named API. Never let a typo deploy.
                 printf '%s\n' '不支持的部署选项；请核对该入口的参数说明' >&2; return 2 ;;
-            *) positions+=("$1"); SUNMOON_DEPLOY_EXEC_ARGS+=("$1"); shift ;;
+            *)
+                position_indices+=("${#SUNMOON_DEPLOY_EXEC_ARGS[@]}")
+                positions+=("$1"); SUNMOON_DEPLOY_EXEC_ARGS+=("$1"); shift ;;
         esac
     done
     case "$profile" in
@@ -57,6 +61,29 @@ sunmoon_deploy_entry() {
             if [[ "$action" == logs && "${positions[4]:-}" =~ ^-?[0-9]+$ ]]; then index=-1; fi
             ;;
         project) index=3 ;;
+        deploy-project)
+            # These Secret writers implement deployment only. Reject action words
+            # before configuration, rather than interpreting status as project_id.
+            case "${positions[0]:-}" in
+                deploy)
+                    unset 'SUNMOON_DEPLOY_EXEC_ARGS[position_indices[0]]'
+                    SUNMOON_DEPLOY_EXEC_ARGS=("${SUNMOON_DEPLOY_EXEC_ARGS[@]}")
+                    positions=("${positions[@]:1}") ;;
+            esac
+            case "${positions[0]:-}" in
+                deploy|status|uninstall|delete|logs|upgrade|apply|generate|restart|start|stop|cleanup|plan|verify|install)
+                    printf '%s\n' '此 Secret 入口仅支持 deploy；其他动作请使用组件总控。' >&2
+                    return 2 ;;
+            esac
+            if [[ "${positions[0]:-}" == help || "${positions[0]:-}" == -h || "${positions[0]:-}" == --help ]]; then
+                [[ ${#positions[@]} -eq 1 ]] || { printf '%s\n' 'help 不接受位置参数' >&2; return 2; }
+                SUNMOON_DEPLOY_PLAN_ONLY=true
+                printf '用法: %q [deploy] [project namespace environment dry_run] [--cluster CLUSTER] [--dry-run]\n' "$entry"
+                printf '%s\n' '仅部署 Secret；dry_run 为 true/false。status/uninstall 等动作词不能用作项目ID。'
+                return 0
+            fi
+            [[ ${#positions[@]} -le 4 ]] || { printf '%s\n' 'Secret 部署位置参数过多' >&2; return 2; }
+            index=3 ;;
         optional-action)
             index=3
             case "${positions[0]:-}" in

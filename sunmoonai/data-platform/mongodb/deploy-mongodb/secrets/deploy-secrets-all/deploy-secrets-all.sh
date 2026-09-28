@@ -3,7 +3,7 @@
 # Shared request boundary: before configuration, credentials, connections and EXIT traps.
 # shellcheck source=/dev/null
 source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../../../utils/deploy-plan.sh" || exit 2
-sunmoon_deploy_entry "${BASH_SOURCE[0]}" optional-action "$@" || exit $?
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" deploy-project "$@" || exit $?
 [[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
 set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
 
@@ -237,7 +237,8 @@ deploy_sub_components_by_priority() {
             
             cd "$original_dir"
         else
-            log_warn "⚠️  $description 部署脚本不存在: $script_path"
+            log_error "启用的 $description 部署脚本不存在: $script_path"
+            return 1
         fi
     done
     
@@ -331,9 +332,9 @@ deploy_secrets() {
         return 1
     fi
     
-    deploy_sub_components_by_priority "$project_id" "$namespace" "$environment" "$dry_run"
-    deploy_secrets_core "$project_id" "$namespace" "$environment" "$dry_run"
-    deploy_current_level_components "$project_id" "$namespace" "$environment" "$dry_run"
+    deploy_sub_components_by_priority "$project_id" "$namespace" "$environment" "$dry_run" || return $?
+    deploy_secrets_core "$project_id" "$namespace" "$environment" "$dry_run" || return $?
+    deploy_current_level_components "$project_id" "$namespace" "$environment" "$dry_run" || return $?
     
     log_success "🎉 Secrets 递归部署完成！"
     log_info ""
@@ -371,7 +372,7 @@ declare -a PARSED_ARGS
 
 
 main() {
-    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
         show_help
         exit 0
     fi
@@ -383,12 +384,6 @@ main() {
         log_info "🎯 当前集群配置: ${CLUSTER}"
     fi
     
-    # 处理参数：如果第一个参数是 action（如 deploy），则跳过
-    local action="${1:-deploy}"
-    if [[ "$action" == "deploy" || "$action" == "uninstall" || "$action" == "status" ]]; then
-        # 第一个参数是 action，跳过它
-        shift
-    fi
     
     deploy_secrets "$@"
 }
