@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "tool": {
+    "path": "/home/zymun/packages-to-be-installed/releases/registry-publisher-linux-amd64/runtime/bin/skopeo",
+    "sha256": "29a058c573fdf6be3f06178202e707ad97ed132b88182e765ec9289d0bd72490"
+  },
+  "work_root": "/home/zymun/packages-to-be-installed/work/registry-publish",
+  "minimum_free_gib": 2,
+  "timeout_seconds": 1800,
+  "retry_times": 2
+}

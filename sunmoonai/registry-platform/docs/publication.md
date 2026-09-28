@@ -63,6 +63,43 @@
 工具按摘要完成复制及 manifest 回读，仍不能替代 Docker Engine、节点 containerd 和真实 CI 的独立拉取验收。
 不记录“已核官方签名”除非实际策略和物料来源证明这一点；仅有 SHA 只能证明与所选批次的字节一致。
 
+## 构建产物与旧 Docker tar 的准备
+
+`./sunmoon harbor prepare-image` 使用同一已核 SHA 的 Skopeo，把**明确指定的单镜像 Docker tar**
+转为 OCI，再生成本页发布器的批次。默认只打印计划，`--apply` 也只写本机新目录，不访问仓库。
+本次代码仅经过静态检查，实际转换和发布尚未验收。
+
+```bash
+./sunmoon harbor prepare-image \
+  --settings /absolute/k8s/sunmoonai/registry-platform/config/build-publication.local.json \
+  --archive /absolute/artifacts/docker.tar --archive-sha256 <已核对的64位SHA256> \
+  --repository harbor.sunmoonai.com:30443/app-images/investment-backend \
+  --output-directory /absolute/artifacts/new-oci
+# 确認输入及目标后增加 --apply。已有输出目录拒绝覆盖。
+```
+
+[本机工具配置](../config/build-publication.local.json)保留已备 Skopeo 的路径/摘要、临时目录、
+空间/超时/重试；它不是任意机器通用路径，云主机必须用自己的同结构配置，且未经实机验证。
+输入 tar 要有单条 manifest，危险路径/链接/重复条目、缺层或缺配置、多镜像歧义会被拒绝。
+输入 SHA 在转换前后复核；复制为 OCI 后，以工具回执、原始 manifest SHA 和 OCI 根描述符核对。
+转换后的 digest 可能与原 Docker/构建器 manifest 不同，不能沿用原 digest。
+
+转换策略只允许这一个显式 Docker archive；发布策略只允许新生成的那一个 OCI archive。
+其 `insecureAcceptAnything` 表示信任已选本地制品，不要求来源签名；默认其他来源 reject，
+不关闭 Registry TLS，不表示已核上游签名。制品可含应用源码，整个输出目录按 0700 创建。
+准备过程中按展开输入三倍加保留空间检查工作盘和输出盘；构建器本身的空间仍须单独盘点。
+转换失败保留输入和不完整输出；正常退出仅清理自己的 `.sunmoon-convert-*` 临时目录。
+强杀残留与重复 Docker tar 纳入最后的精确清理，不能删除已准入的正式 OCI 制品。
+
+应用入口 [build-push-app-images.sh](../../app-platform/scripts/build-push-app-images.sh)
+已通过 image ID 导出并调用本准备器，默认计划；其 `.conf` 继续控制构建范围/参数。
+[Jenkins Kaniko 示例](../../cicd-platform/jenkins/kaniko-build-pipeline.groovy)只导出 tar，
+不再写远端 tag、推送缓存、生成占位 Dockerfile 或跳过 TLS；取回其归档并核对 SHA 后走同一准备器。
+CI 的自动制品传输/发布调度、构建器物料准入和真实流水线仍待完成，不能把该示例视为生产 CI。
+[Skopeo 转换参数](https://github.com/containers/skopeo/blob/v1.13.3/docs/skopeo-copy.1.md)
+和 [Kaniko tar/no-push 参数](https://github.com/GoogleContainerTools/kaniko/blob/v1.23.2/README.md)
+是实现依据，不替代本项目锁定工具的实际验收。
+
 ## 旧入口的去向
 
 以下三个旧入口及其目录、废弃配置已删除，不再提供兼容转发；日常只使用 `./sunmoon harbor publish --batch <绝对路径 JSON>`：

@@ -1,158 +1,41 @@
-# Jenkins Kaniko 配置说明
+# Jenkins Kaniko 构建制品
 
-## 文件说明
+本目录的 `kaniko-build-pipeline.groovy` 是**未完成实机验收的构建示例**，云端未经实机验证。
+它只检出真实源码、构建并归档 Docker tar，不负责发布。原来直接推 tag/latest、占位 Dockerfile、
+硬编码 Harbor IP 和跳过 TLS 的路径已移除。
 
-### 配置文件
+## 必须提供的配置
 
-1. **resources/custom-values/dev-values.yaml**
-   - Kaniko Agent 配置（通过 CASC）
-   - 在 `configAsCode.extraKubernetes` 中添加 Kaniko 模板
-   - Jenkins 会自动读取并应用
+- Jenkins 作业明确选择已核实目标集群的 `KUBERNETES_CLOUD`。
+- `JNLP_IMAGE`、`KANIKO_IMAGE` 使用已准入内部仓库 `repo@sha256`；默认空值会被拒绝。
+  Agent 必须有 git/sh；Kaniko 必须是支持 `/busybox/sh` 及所用参数的 debug 制品。
+  这里没有把旧 debug/latest 标签冒充为已锁定版本，也没有下载或升级构建器。
+- `IMAGE_REPOSITORY` 是 app-images 内的仓库名，不带 tag；源码仓根必须有真实 Dockerfile。
+- 节点已配置独立 Harbor DNS、CA 与拉取身份；Pod DNS 必须能解析同一域名，不使用旧云 IP。
+- 命名空间中准备只读拉取用途的 `kaniko-registry-secret`、`harbor-registry-secret`，
+  以及 `registry-ca`（`ca.crt`）；`CA_SHA256` 必须对应已准入 CA。
+  不得把旧管理员或推送账号当作构建容器的只读账号。
 
-2. **deploy-kaniko-registry-secret/** (目录)
-   - Kaniko Registry 认证 Secret 部署脚本
-   - 使用统一的部署模式创建 Secret
+示例禁用 ServiceAccount token 自动挂载，固定 amd64，设置构建资源/临时存储限制。
+CA 在执行前核摘要；Kaniko 使用 `--registry-certificate` 和 TLS 默认校验。
+`--no-push` 与 `--no-push-cache` 同时启用，避免仅禁最终镜像却仍向仓库写缓存。
+源码在 `source/`，输出在其同级 `sunmoon-build-artifacts/`，避免把导出包放进构建上下文。
+构建前后核 Git 状态和提交；被忽略文件、下载依赖仍不属于可复现构建保证。
 
-### Pipeline 脚本
+## 输出如何发布
 
-3. **kaniko-build-pipeline.groovy**
-   - Kaniko 构建 Pipeline 示例
-   - 包含完整的构建和推送流程
-   - 可根据实际项目修改
+Jenkins 归档 Docker tar、tar SHA256、源码提交和构建器 manifest digest。
+按批准的制品传输流程取回并核对 tar 字节后，执行：
 
-### 文档
+1. `./sunmoon harbor prepare-image`：指定 tar、SHA、无 tag 的目标仓库和新输出目录；先计划后 apply。
+2. 复核生成的 OCI 摘要和 `publication.json`。转换后可能改变 digest，以新批次为准。
+3. `./sunmoon harbor publish`：同一发布器、独立发布账号、严格 TLS；先计划后 apply。
+4. 将实际 OCI 摘要接入发布门禁/bundle，经过验收再部署；不重新构建正式别名。
 
-4. **Kaniko实施指南.md**
-   - 详细的实施步骤
-   - 常见问题解答
-   - 最佳实践
+参数与失败恢复见[统一发布说明](../../registry-platform/docs/publication.md)。
+本轮未启用 Jenkins 作业、运行 Pipeline 或推送镜像；没有声称 CI 自动传输和发布调度已经接通。
+旧 README 提到的 `Kaniko实施指南.md`、`Kaniko迁移方案.md` 在当前仓未找到，不作为入口。
+现存 CASC 模板与 Secret 部署入口仍须逐项适配、核验只读身份，不能直接沿用旧 tag 或认证配置。
 
-5. **Kaniko迁移方案.md**
-   - 迁移方案对比
-   - 架构说明
-   - 配置示例
-
-
-## 快速开始
-
-### 1. 创建 Registry Secret
-
-使用统一的部署脚本创建 Secret：
-
-```bash
-cd ~/master/k8s/sunmoonai/cicd-platform/jenkins/deploy-jenkins/secrets/kaniko-registry-secret/deploy-kaniko-registry-secret
-./deploy-kaniko-registry-secret.sh deploy
-```
-
-或者使用统一部署脚本部署所有 Secret：
-
-```bash
-cd ~/master/k8s/sunmoonai/cicd-platform/jenkins/deploy-jenkins/secrets/deploy-secrets-all
-./deploy-secrets-all.sh
-```
-
-### 2. 配置 Kaniko Agent（通过 CASC）
-
-在 `resources/custom-values/dev-values.yaml` 中添加 Kaniko Agent 配置：
-
-```yaml
-configAsCode:
-  enabled: true
-  extraKubernetes: |
-    templates:
-      - name: kaniko-agent
-        label: "kaniko-agent"
-        namespace: cicd-platform-dev
-        containers:
-          - name: jnlp
-            image: harbor.sunmoonai.com:30443/k8s-images/jenkins-agent:0.3327.0-debian-12-r1
-            resourceRequestCpu: 200m
-            resourceRequestMemory: 256Mi
-            resourceLimitCpu: 1000m
-            resourceLimitMemory: 1Gi
-          - name: kaniko
-            image: gcr.io/kaniko-project/executor:latest
-            tty: true
-            resourceRequestCpu: 500m
-            resourceRequestMemory: 512Mi
-            resourceLimitCpu: 2000m
-            resourceLimitMemory: 2Gi
-        volumes:
-          - type: Secret
-            secretName: kaniko-registry-secret
-            mountPath: /kaniko/.docker
-        imagePullSecrets:
-          - name: harbor-registry-secret
-```
-
-### 3. 重新部署 Jenkins
-
-```bash
-cd ~/master/k8s/sunmoonai/cicd-platform/jenkins/deploy-jenkins
-./deploy-jenkins.sh deploy
-```
-
-### 4. 创建测试 Pipeline
-
-1. 创建新的 Pipeline 任务
-2. 使用 `kaniko-build-pipeline.groovy` 作为 Pipeline 脚本
-3. 根据实际项目修改配置
-
-## 架构说明
-
-### Kaniko Agent Pod 结构
-
-```
-Agent Pod
-├── jnlp 容器
-│   ├── 镜像: harbor.sunmoonai.com:30443/k8s-images/jenkins-agent:0.3327.0-debian-12-r1
-│   ├── 职责: 连接 Jenkins Master，执行构建脚本
-│   └── 资源: CPU 200m-1000m, Memory 256Mi-1Gi
-│
-└── kaniko 容器
-    ├── 镜像: gcr.io/kaniko-project/executor:latest
-    ├── 职责: 构建和推送 Docker 镜像
-    ├── 资源: CPU 500m-2000m, Memory 512Mi-2Gi
-    └── 认证: /kaniko/.docker (Secret Volume)
-```
-
-### 工作流程
-
-```
-1. Pipeline 开始执行
-   ↓
-2. Jenkins 创建 Agent Pod（包含 jnlp + kaniko）
-   ↓
-3. jnlp 容器连接 Jenkins Master
-   ↓
-4. Pipeline 在 jnlp 容器中执行（Checkout 等）
-   ↓
-5. 构建阶段切换到 kaniko 容器
-   ↓
-6. kaniko 容器执行 /kaniko/executor 构建镜像
-   ↓
-7. 镜像推送到 Harbor
-   ↓
-8. Pipeline 完成，Agent Pod 被清理
-```
-
-## 优势
-
-1. **安全性高**：不需要 privileged 权限
-2. **性能好**：比 dind 快 10-20%
-3. **资源消耗低**：比 dind 节省约 1GB 内存
-4. **适合 containerd**：不依赖 Docker daemon
-
-## 注意事项
-
-1. **Registry 认证**：必须创建 `kaniko-registry-secret`
-2. **镜像拉取**：kaniko 镜像需要从 gcr.io 拉取（可能需要代理）
-3. **缓存配置**：建议启用缓存以提升构建速度
-4. **不支持 docker run**：如果需要运行容器，仍使用 dind
-
-## 相关文档
-
-- [Kaniko实施指南.md](./Kaniko实施指南.md) - 详细实施步骤
-- [Kaniko迁移方案.md](./Kaniko迁移方案.md) - 迁移方案对比
-- [Docker构建方案对比分析.md](./Docker构建方案对比分析.md) - 方案对比
-
+[上游参数说明](https://github.com/GoogleContainerTools/kaniko/blob/v1.23.2/README.md)
+解释 no-push/no-push-cache、tar-path 和 registry-certificate；实际选定构建器仍须核版本/参数及拉取能力。

@@ -26,23 +26,23 @@ Ingress 路由结构、须预先存在的 Secret 名、禁止出现的字符串�
 **bundle 里只允许 `repo@sha256:<64hex>`，不允许可变 tag**
 （门禁正则 `^[^\s]+@sha256:[0-9a-f]{64}$`）。
 
-但链条两端不一致，这点必须知道：
+应用构建入口现在只生成候选制品，发布由独立仓库模块负责：
 
+```text
+构建 → Docker archive → OCI archive 与 publication.json
+                              ↓
+               Skopeo 按 repo@sha256 发布
+                              ↓
+                  发布门禁与 bundle 引用摘要
 ```
-构建脚本 docker push …:${TAG}   ← 推的是可变 tag
-        ↓
-render.py 解析出 digest 写入 bundle
-        ↓
-门禁只认 digest
-```
 
-即 **tag 只是构建产物的临时把手，进入发布视野的一律是 digest。**
+构建入口默认计划，不执行 `docker push`。`TAG` 只作本地候选标识，不创建远端 tag。
+具体配置和行为见[构建脚本说明](../../../app-platform/scripts/README.md)。
+转换会产生新的 OCI manifest digest，不能拿 Docker image ID 或转换前摘要填 bundle。
+源码接线已经修改，实际构建/转换/发布及 CI 验收尚未完成，不据此改变当前部署。
 
-唯一例外是**正式发布别名**：`2.0.0` 由 R7 打给已过门禁的 digest
-（`release_policy.promotion_method: exact-digest-alias`），`1.0.0` 同理属于 v1。
-这两个 tag 是发布制品的名字，不是构建把手——
-`build-push-app-images.sh` 会**拒绝**推到它们上面（`PROTECTED_TAGS`），
-没有本地绕过开关；正式别名通过已验收摘要晋级。本地构建的默认 tag 是 `architecture-v2-dev`。
+正式发布别名 `1.0.0` / `2.0.0` 只允许指向已经过门禁的 digest；
+构建入口仍拒绝这些候选标识，没有本地绕过开关。本次没有修改既有发布别名。
 
 `.conf` 配置文件**不得覆盖** bundle 里的镜像、副本、origin 等字段，
 值必须与 `release.json` 完全一致，否则 `ConfigError`。这条保证了「配置改不动发布内容」。

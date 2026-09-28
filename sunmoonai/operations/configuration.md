@@ -13,6 +13,7 @@
 | 仓库地址、客户端 IP、CA、端口、数据路径 | `sunmoonai/registry-platform/config/local-wsl.conf`；云上从 `cloud.example.conf` 复制成所有者配置 | 本地/云上共用模块；`REGISTRY_CONFIG_FILE` 或命令行 `--config` 选仓库配置 |
 | 仓库使用方账号、密码 | 上述配置的 `REGISTRY_CREDENTIALS_FILE` | 只保存 JSON 私有文件的路径；账号、密码、仓库地址成套读取，不能和旧管理员密码拼接 |
 | 仓库镜像检查 | 仓库 `.conf` 的 `REGISTRY_IMAGE_PROJECT`、`REGISTRY_COMPONENT_LIST_DIR`、`REGISTRY_REQUEST_TIMEOUT` | 项目默认 k8s-images，清单默认 utils/components-images；每请求默认 15 秒、允许 1–120 秒；缺失与异常阻止部署 |
+| 应用构建与制品 | `app-platform/scripts/build-push-app-images.conf`、`registry-platform/config/build-publication.local.json` | 默认计划；构建生成 OCI 批次，发布单独执行；保留 App/组件/源码/缓存控制，取消按集群切换仓库别名 |
 | 显式镜像发布批次 | `registry-platform/config/publication.example.json` 的真实副本 | 同一 OCI 发布器；控制归档/摘要、工具/策略、空间、重试；模板不是已准入物料 |
 | Harbor 实例及恢复输入 | `registry-platform/config/harbor-main-local.json` | 保留已有 JSON 配置和摘要核验；实例初始化后不能靠改路径冒充同一个实例 |
 | TLS 分流入口 | `registry-platform/config/sni-local-*.json` | 区分候选、过渡和正式方案；正式入口仍受维护窗口门禁保护 |

@@ -108,7 +108,7 @@ kubeadm 路径准备对应控制面、etcd、CoreDNS、pause、网络插件、�
 | `utils/unified-deployment-template.sh` / `registry-platform/images.py` | 已统一独立仓库 manifest 检查、严格 TLS/私有账号；16 个组件传递失败与镜像检查 dry-run；删除自动补推及不安全回退 | 显式发布入口、清单与实际渲染/发布锁对应、镜像层/架构和实际拉取仍待完成 |
 | `./sunmoon harbor publish` | `registry-platform/publish.py` 按显式 OCI 批次/digest 发布；旧 `push-to-harbor/` 目录已删除 | Skopeo 及依赖物料已核签名，独立运行目录和首份 Traefik 批次已准备；实际复制和节点/CI 拉取尚待验证 |
 | 旧 `utils/registry-push-management/` | 操作目录、兼容入口及配置已删除；历史代码仅在 `legacy/cloud` | 云 SSH 调度仍待接线与实机验证；tag 别名晋级/旧 tar 转换另行准入 |
-| `app-platform/scripts/build-push-app-images.sh` | 现有应用构建入口，保留应用/组件/源码/构建参数配置；已移除覆盖受保护发布 tag 的绕过开关 | 其余配置/账号/摘要收口及真实 CI 尚未完成 |
+| `app-platform/scripts/build-push-app-images.sh` | 默认计划；按 image ID 导出、转换 OCI 并生成统一发布批次；保留应用/组件/源码/构建参数，取消 docker push 与集群仓库别名 | 构建/转换/发布尚待实测；Kaniko 只导出 tar，CI 自动传输/发布及真实流水线未完成 |
 | 旧 `harbor-image-management` | 已无运行时代码调用，归档到 legacy/cloud；原操作目录已删除，归档实现拒绝执行 | 云新流程实机验证并审阅无依赖后删除 |
 
 旧高层镜像脚本的 `--dry-run` 只设置变量，没有阻止全节点镜像和物料清理。不能重新启用它，也不能把文档中的新目标当作旧脚本已修复。

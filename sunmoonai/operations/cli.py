@@ -21,6 +21,7 @@ ROUTES = {
     ('harbor', 'certificates'): 'sunmoonai/registry-platform/certificates.py',
     ('harbor', 'publisher-runtime'): 'sunmoonai/registry-platform/prepare_publisher_runtime.py',
     ('harbor', 'publish'): 'sunmoonai/registry-platform/publish.py',
+    ('harbor', 'prepare-image'): 'sunmoonai/registry-platform/prepare_image.py',
     ('harbor', 'images'): 'sunmoonai/registry-platform/images.py',
     ('harbor', 'client'): 'sunmoonai/registry-platform/client.py',
 }

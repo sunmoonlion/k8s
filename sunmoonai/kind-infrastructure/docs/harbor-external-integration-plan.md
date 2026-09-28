@@ -50,7 +50,7 @@
 | `kind-infrastructure/wsl-setup-harbor-login.sh` | 从 kubectl 控制面地址推导 Harbor IP | 使用仓库配置；无集群时也可登录 |
 | `kind-infrastructure/kind-up.sh` | 存在旧 PV 根目录递归清理、创建 Harbor 目录、重建集群逻辑 | 去除新路径上的仓库管理；重建绑定指定集群，不执行目录清空 |
 | `infrastructure/steps/step00_reset.sh` | 存在停止 Docker、清理 /var/lib/docker、广泛删除 PV/PVC 路径 | 先验证目标主机角色；仓库主机拒绝进入集群重置；不以默认动作清除存储/运行时 |
-| `cicd-platform/jenkins/kaniko-build-pipeline.groovy` | 存在 `--insecure-registry` | 配置真实 CA 与凭据后启用严格 TLS，移除不安全参数 |
+| `cicd-platform/jenkins/kaniko-build-pipeline.groovy` | 已移除不安全 TLS、硬编码 IP 与直接发布；改为只导出制品 | 核准入构建器摘要、CA/只读身份，完成真实 CI 与制品传输验收 |
 | `kind-infrastructure/sync-docker-harbor-ca.sh` | 有 Docker 重启路径 | 显式列出影响，不能在推送/登录时隐式重启整个 Docker |
 
 以上为只读发现，不表示已修复。`step00_reset` 等旧脚本当前不得直接用于本机迁移或验证。
@@ -182,7 +182,7 @@ Skopeo 向仓库发布镜像不会把镜像装进节点。离线建群时，网�
 
 ### 9.3 尚未覆盖的调用与最终删除条件
 
-- `sunmoonai/app-platform/scripts/build-push-app-images.sh` 仍有 `docker push`；`sunmoonai/cicd-platform/jenkins/kaniko-build-pipeline.groovy` 仍有构建器直接发布。后续须接入统一物料/摘要发布与凭据流程，逐调用方验收，不能把这两项标作已退役或已经统一。
+- `sunmoonai/app-platform/scripts/build-push-app-images.sh` 已改为默认计划、构建导出和 OCI 批次准备，不再 `docker push`；Kaniko 示例只导出 tar，移除直接发布/缓存推送与不安全 TLS。两者制品使用 `registry-platform/prepare_image.py` 和同一 Skopeo 发布器；CI 自动传输/调度与实际构建/转换/推送仍待验收，不能把代码接线说成迁移完成。
 - `utils/packages-management/packages-management.sh` 仍有远端 `ctr import` 分支；它是旧综合物料工具，本次未停用整个工具，也未验证这条旧分支。新建群走锁定自举入口，不能把该分支列为新正式流程的一部分；剩余功能拆分和调用核对后再决定退役。
 - 已归档本地实现待正式 Harbor、实际 Docker/节点/CI 推拉、空载重建独立性与观察期通过后清理；云端归档遵守“历史路径，云上新路径实机验证前不删”。本次已核对仓内调用并删除上述无依赖的原操作目录及废弃配置。仓外人工脚本若仍引用旧路径，须改用统一入口；不恢复兼容层。
 - 本次额外删除的是旧目录内已被替代的 Harbor 2.11 在线安装包（11,576 字节），不是镜像层归档。正式物料根、现有镜像、节点、容器、卷、Harbor 数据和备份不受影响。本次没有调用 Docker/Kubernetes、实际发布镜像或进行运行时清理；既定最终本机/东京临时物料清理仍须另按清单完成。

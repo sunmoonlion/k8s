@@ -1,5 +1,8 @@
 # Kind Harbor → 远程 C1 Harbor 镜像同步
 
+> 历史集群内 Harbor 同步流程，待云上新流程实机验收后清退。当前部署使用独立仓库，
+> 不再按本文的 harbor-c1 别名或构建直推操作；现行方法见[统一发布](../../../registry-platform/docs/publication.md)。
+
 本文档记录从本地 Kind Harbor 向远程集群 C1 Harbor 同步镜像的配置方法、踩坑说明与日常使用流程。
 
 ## 架构说明

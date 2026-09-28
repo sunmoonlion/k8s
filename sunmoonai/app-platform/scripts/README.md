@@ -93,132 +93,53 @@ Knowledge 摄入授权必须单独显式给出；检索 allowlist 不授权上�
   不自动寻找别的版本、不改数据库；成功导出也不等于 S3 恢复已验证。
   `info_object_backup_payload.py` 是其 Pod 内只读载荷，stdout 含私有数据，勿直接打印。
 
-本目录的 `build-push-app-images.sh` 只做一件事：**在 WSL 本地构建镜像，并直推到指定 Harbor**。
+## 应用构建 → OCI 批次 → 独立发布
 
-```text
-tpl / info / knowledge / investment
-  × backend / admin-frontend / web-frontend
-```
+`build-push-app-images.sh` 保留原文件名和 App/组件/构建参数配置，行为已改为：
+**默认输出计划，实际执行只构建和准备制品，不再 docker push。**
+四个 App 各有 backend、admin-frontend、web-frontend，共 12 个可选组件。
+它不连接集群、不创建 Harbor tag，不触发 Harbor 复制。
 
-ADR-0007 把 `admin-backend` 与 `web-backend` 并成了单一 `backend`；`research`
-已退役。共 12 个镜像。
+| 控制项 | 当前用途 |
+| --- | --- |
+| `APPS` / `COMPONENTS` / `START_FROM` | 选择构建范围和续接点 |
+| `SOURCE_ROOT` | 四个应用仓的父目录；默认与当前 k8s 仓并列 |
+| `TAG` | 候选标识，只记入构建元数据；仍拒绝 `1.0.0` / `2.0.0` |
+| `CLUSTER` | 记录使用环境，不切换仓库域名；旧 `KIND_*` / `C1_*` 等仓库配置拒绝 |
+| `TARGET_REGISTRY` / `BASE_REGISTRY` | 固定独立 Harbor 的 app-images / k8s-images |
+| `ARTIFACT_ROOT` | 必须事先准备的 Git 外绝对目录；每次生成新的 `app-build.*` |
+| `PUBLICATION_SETTINGS` | Skopeo 路径/摘要、临时目录、空间、超时与重试；默认本机已备工具配置 |
+| `DRY_RUN` | 默认 true；只有 false 才构建与导出 |
+| `NO_CACHE` / `PROGRESS` / 依赖源 | 原构建控制继续保留；不会自动清缓存 |
 
-脚本不部署 Kubernetes，也不触发 Harbor 复制。
-
-## 两种镜像到达远程的方式（勿混淆）
-
-| 机制 | 入口 | 配置位置 |
-|------|------|----------|
-| **本地构建直推** | `build-push-app-images.sh` | 本目录 `build-push-app-images.conf` |
-| **Harbor 复制** | Kind Harbor UI → 复制管理 | `cicd-platform/harbor/docs/kind-to-c1-sync-README.md` |
-
-直推：改代码后 `docker build` + `docker push`，按 `CLUSTER` 推到对应 Harbor。  
-复制：镜像已在源 Harbor 中，由复制规则同步到目标 Harbor，无需重新构建。
-
-## 文件
-
-```text
-build-push-app-images.sh      # 构建并直推镜像
-build-push-app-images.conf    # 各 CLUSTER 的直推仓库地址
-```
-
-配置优先级：
-
-```text
-命令行环境变量 > build-push-app-images.conf > 脚本内置默认值
-```
-
-## 直推目标：KIND 与 C1 配置不同
-
-Kind 与 C1 是**两套独立 Harbor**。`CLUSTER` 决定直推落到哪套：
-
-| CLUSTER | 本机 WSL 直推地址 | 其它机器直推 C1 |
-|---------|-------------------|-----------------|
-| `KIND` | `harbor.sunmoonai.com:30443` | 不适用（无本机 Kind 时无 KIND 直推场景） |
-| `C1` | `harbor-c1.sunmoonai.com:30443` | `harbor.sunmoonai.com:30443`（无本地 Kind 冲突，可直接用主域名） |
-
-本机 WSL 同时跑着 Kind Harbor，`harbor.sunmoonai.com` 会解析到本地实例，因此 C1 直推需用 `harbor-c1` 别名（`/etc/hosts` 指向 C1 公网 IP）。在其它机器上构建直推远程 C1 时，改 `build-push-app-images.conf` 中 `C1_*` 为 `harbor.sunmoonai.com:30443` 即可。
-
-对应配置项见 `build-push-app-images.conf` 中的 `KIND_*` 与 `C1_*`。
-
-## 推到 Kind Harbor
+环境变量优先于同名 `.conf`。默认计划不访问 Docker/Harbor；读取源码路径和 Git 状态。
+实际执行要求应用父仓和组件子仓干净（含子模块状态）、构建前后两级提交不变，并分别记录；被 Git 忽略的文件和 Dockerfile 的网络下载
+仍可能进入构建，因此这不是可复现构建证明，构建依赖闭包仍须单独验收。
 
 ```bash
-cd ~/master/k8s/sunmoonai/app-platform
+# 在 k8s 仓根目录；先看计划。
+APPS=investment COMPONENTS=backend bash sunmoonai/app-platform/scripts/build-push-app-images.sh
 
-docker login harbor.sunmoonai.com:30443
+# 事先选择并准备 Git 外制品目录及 settings 中的临时目录，核对剩余空间。
+# 本例路径须按实际盘点设置；本操作不会自动创建共享根目录。
+ARTIFACT_ROOT=/absolute/prepared/app-artifacts DRY_RUN=false \
+APPS=investment COMPONENTS=backend \
+bash sunmoonai/app-platform/scripts/build-push-app-images.sh
 
-CLUSTER=KIND ./scripts/build-push-app-images.sh
-# 或省略 CLUSTER（DEFAULT_CLUSTER=KIND）
-./scripts/build-push-app-images.sh
+# 复核本次 build.json、source.json、OCI 制品/摘要后，先看发布计划。
+./sunmoon harbor publish --batch /absolute/prepared/app-artifacts/app-build.ID/investment-backend/oci/publication.json
+# 获准写入所选仓库后，增加 --credentials-file /absolute/private/publisher.json --apply。
 ```
 
-## 直推到远程 C1 Harbor
+每个组件通过 Docker 的 `--iidfile` 固定本次 image ID，按 ID 导出，避免从可变 tag 猜制品。
+`registry-platform/prepare_image.py` 把 Docker tar 转为 OCI，核 manifest 摘要并生成同一发布器
+接受的 `publication.json`。转换可能改变 manifest digest，以转换后的实际摘要用于部署；
+Docker image ID、构建器 digest 和 OCI manifest digest 不混用。
 
-```bash
-cd ~/master/k8s/sunmoonai/app-platform
-
-docker login harbor-c1.sunmoonai.com:30443
-
-CLUSTER=C1 ./scripts/build-push-app-images.sh
-```
-
-远程 `k8s-images` 中需已有 Python、Node 等基础镜像，否则 Dockerfile 构建阶段会失败。
-
-临时覆盖仓库地址：
-
-```bash
-CLUSTER=C1 \
-TARGET_REGISTRY="harbor-c1.sunmoonai.com:30443/app-images" \
-BASE_REGISTRY="harbor-c1.sunmoonai.com:30443/k8s-images" \
-TAG="architecture-v2-dev" \
-./scripts/build-push-app-images.sh
-```
-
-## 常用参数
-
-指定版本（默认 `architecture-v2-dev`）：
-
-```bash
-TAG=my-feature ./scripts/build-push-app-images.sh
-```
-
-⚠ **`1.0.0` 与 `2.0.0` 被拒绝**——它们分别是 v1 与 v2 的正式发布 tag，
-指向已过门禁的 digest；本脚本产出的是未经门禁的本地构建，不该占用它们。
-详见脚本内 `PROTECTED_TAGS` 上方的说明。旧 `ALLOW_PROTECTED_TAG` 绕过已移除；
-正式发布应给已通过门禁的摘要打别名，不通过本脚本重建覆盖。
-
-从某个组件继续：
-
-```bash
-START_FROM="knowledge/backend" ./scripts/build-push-app-images.sh
-```
-
-只打印命令，不执行构建和推送：
-
-```bash
-DRY_RUN=true ./scripts/build-push-app-images.sh
-```
-
-使用 Docker 构建缓存：
-
-```bash
-NO_CACHE=false ./scripts/build-push-app-images.sh
-```
-
-输出 plain 日志，便于排错：
-
-```bash
-PROGRESS=plain ./scripts/build-push-app-images.sh
-```
-
-只构建部分 App 或组件：
-
-```bash
-APPS="info knowledge" \
-COMPONENTS="backend web-frontend" \
-./scripts/build-push-app-images.sh
-```
+构建失败保留已有制品，不报“发布成功”；重试创建新目录，发布失败重用原批次，无须重新构建。
+制品、Docker 构建缓存与导出包不随脚本自动清理，待按最终清理清单批准后处理。
+只输出计划/通过静态检查不代表实际构建、转换、推送或 CI 已验收。
+详细输入与边界见[统一发布说明](../../registry-platform/docs/publication.md)。
 
 ## 与部署配置的关系
 

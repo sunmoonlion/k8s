@@ -1,5 +1,17 @@
 # luna 工作检查点
 
+## 最新续接：2026-09-28 应用构建制品接入统一发布器
+
+基线 `195375f13b7d4f05a8d7ff1063312a607a1603fc`，本地 luna 开工干净，所有者“继续”已批准的部署整理。此单元只改代码/文档，仍未恢复实际建群/入口切换。
+
+- 新 registry-platform/prepare_image.py / `./sunmoon harbor prepare-image`：默认计划；apply 将显式 SHA 锁定的单镜像 Docker tar 转为 OCI，核工具 SHA、危险 tar/单 manifest/所需文件、空间（展开量三倍+保留）、工具回执/原始 manifest SHA/OCI 根，并生成 publish.py 原 schema 批次。新输出目录拒绝覆盖，输入前后核 SHA；默认 reject 且仅明确源/输出归档允许本地信任，不声称上游签名。无网络/凭据/Docker daemon/集群调用。正常退出清自己临时目录，失败输出保留。build-publication.local.json 复用既有本机工具路径/锁，工作根仍需现场准备；没创建任何物料目录或转换真实 tar。
+- build-push-app-images.sh/.conf 保留 App/组件/START_FROM/源码/缓存/依赖源控制，默认 DRY_RUN=true；实际只 build(--iidfile)/按ID export/转换生成批次，删除 docker push 和按CLUSTER仓库别名，旧集群前缀配置拒绝。TAG只本地候选标识且1.0.0/2.0.0仍拒绝。不建立远端tag，不自动发布/部署。父仓与组件子仓分别核干净/提交，记录两个HEAD、Dockerfile SHA/imageID/平台；ignored文件、网络依赖和基镜像tag仍不是可复现闭包。构建前工具/空间准入，导出前按imageSize复核，转换再检查空间；不自动清缓存/镜像/包。
+- Kaniko 示例保留工具用途，改为真实 checkout、显式 Kubernetes cloud/内部摘要引用/CA SHA、只读Secret挂载、严格TLS、no-push+no-push-cache，导出tar及SHA/提交。移除硬编码旧IP、占位scratch回退、latest直推及跳TLS。源码和输出目录分开；仍是示例，未启用Job，构建器准入/只读身份/CASC/自动制品传输与发布调度、真实CI未完成。
+- 更新构建/发布/Kaniko说明、配置索引、镜像设计、迁移退役清单和现状发布页；旧云Harbor复制说明加历史提示，原cloud路径按保护要求保留。其他应用仓未修改。C-I8缺配置/未知状态失败；C-R1保留源码与制品来源；C-R2输出digest批次；C-R3/R5不重建正式别名不覆盖保护tag。源码/依赖完整离线闭包、bundle接线及真实推拉不能视为已验收。
+- 静态检查：1 Bash bash -n / ShellCheck error级；2 Python模块+3内嵌Python AST；1 JSON解析；Pipeline 4内嵌Shell bash -n；9新增文档本地链接存在；git diff --check通过。环境无Groovy编译器，未跑Groovy/Jenkins校验、测试或默认计划行为用例；未执行实际构建/转换/推拉/Docker/K8s/Windows/SSH/清理。参数依据官方Skopeo1.13.3及Kaniko1.23.2文档，不能替代实际选定版本验证。
+- 下一步：构建器/依赖物料与CI发布调度、镜像digest和实际部署消费者/bundle接线、人工工具适配；之后按原准入恢复main/30443迁移和Harbor重建独立性验证。整体迁移未完成。inbox仍旧kind；旧节点/卷/Harbor数据/备份保护不变。必须最后清本机refactor临时目录和东京下载；本轮无新远程文件或真实制品。只本地luna提交，不push。回退此单元只涉及Git代码，不需数据回退。
+
+
 ## 最新续接：2026-09-28 固定部署目标，阻断共享子脚本连接回退
 
 基线 `9f9703ada92fc59e48bc313a266c300c4d85b28c`，luna 开工干净，所有者继续原 utils 适配。发现总控核 UID 后，子脚本仍可能 source .k8s-status、自动重连并改 KUBECONFIG，且目标路径解析含 eval。
