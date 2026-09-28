@@ -1,5 +1,16 @@
 # luna 工作检查点
 
+## 最新：230 GiB扩盘已完成Linux准备，等待Windows Cursor执行
+
+唯一目标230 GiB；物理盘仍100GiB。原六节点停止，Docker/socket/containerd和只读监控已停，维护标记保留。系统盘压缩已完成（VHDX395217731584B），不得重复压缩。
+- 新固定管理副本 /opt/sunmoon/admin/storage/storage-20260928-v3 已发布；manifest SHA 0f2f4eae32b2e43003e7be5b825090cd4c0ffa02438e47bb4add6e3fe77d10ec。Windows尚未复制/扩盘/改任务。操作卡 kind-infrastructure/docs/data-disk-expand.md；用户要求把可转发Cursor步骤直接贴对话框。
+- 系统盘备份 /var/backups/sunmoon-data/preexpand-230-20260928-v1 complete=true：18712文件，6432不同内容，全引用/新增内容摘要复核，新增22910074564B。复用 /var/backups/sunmoon-harbor/host-managed-20260927-v1 中不可删除的整文件/归档成员引用。新备份尚未独立整盘恢复演练；工具resize_backup.py提供restore到固定新系统盘目录，不覆盖现场。整体备份及依赖必须一起保留。
+- Linux扩盘状态 /var/lib/sunmoon/maintenance/data230-20260928-v1/state.json 保存备份manifest摘要、原挂载和新发布身份。PID1三个新数据挂载已正常卸载；另外发现udevd PID97、resolved PID170、logind PID188的私有命名空间保留3挂载，已精确正常卸载（不停止服务、不强制/lazy）。resize_data.py ready --apply为最终放行检查，必须成功；Windows脚本执行前会再查一遍。
+- Windows执行固定新版expand-sunmoon-data.ps1，先重核C实际分配预算>=50GiB（扣满230增长和22余量）、维护标记、任务disabled/旧v2隐藏action、Linux放行；仅分离数据VHDX、DiskPart235520MiB、bare附盘、UUID/块设备230验证后e2fsck+resize2fs，再挂载；只更新task action到新副本并保持disabled，不启服务、不移除marker。
+- WSLInterop注册缺失导致本机powershell.exe Exec format error；Linux未改系统互操作。Windows Cursor可从Windows调用wsl.exe。WindowsPS曾Math.Max int32溢出，显式int64已修；新PS仍需Cursor先Parser语法检查与默认dry-run后再Apply。
+- 新storage helper检查230；task runner/launcher/ensure_storage pins和6处guard路径同步，首次创建器230但不可对现有盘运行。Harbor备份与formal已共用windows_capacity.py按实际分配/space policy计算，修掉旧100门槛；monitor policy230，运行态监控新副本待扩盘后安装。不要使用旧100挂载脚本来修扩盘后的磁盘。
+- 扩盘后Luna：新checker UUID/绑定/PID1+Ddocker视图；resize_backup完整文件树比较（inode/内容/权限/xattr）；保留旧system_compaction恢复清单恢复6节点+旧Harbor目录API/真实pull和136Ready，之后才解除Windows维护/启用新task。main未建、迁移/三场景持久化/空间管理仍未完成，临时备份/本地Tokyo清理仍收尾必做；不push。
+
 ## 当前交接：Linux已停止，等待Windows Cursor压缩；不要自行启动服务
 
 2026-09-28 21:46北京时间准备完成，所有者已安排Windows Cursor在收到Luna放行后做管理员压缩。固定操作卡 kind-infrastructure/docs/system-vhd-compaction-20260928.md；公开结果 scripts/results/luna-system-compaction-preparation.20260928.json（均位于sunmoonai下）。只压Ubuntu系统ext4.vhdx，不压100GiB数据盘，不切入口，不启自动收缩。

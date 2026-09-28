@@ -26,7 +26,7 @@ UUID = CONFIG['storage_uuid']
 MATERIALS = Path(CONFIG['materials_root'])
 STORAGE = Path('/data/kind-clusters') / NAME
 KUBECONFIG = Path(CONFIG['kubeconfig'])
-GUARD = Path('/opt/sunmoon/admin/storage/storage-20260927-v2/check-storage-mounts.sh')
+GUARD = Path('/opt/sunmoon/admin/storage/storage-20260928-v3/check-storage-mounts.sh')
 POD_CIDR, SERVICE_CIDR, API_PORT = CONFIG['pod_cidr'], CONFIG['service_cidr'], CONFIG['api_port']
 LIMITS, TIMEOUTS = CONFIG['limits'], CONFIG['timeouts']
 GIB = 1024**3
@@ -119,14 +119,11 @@ def material_check(lock):
 
 
 def physical_capacity():
-    command = ("$ErrorActionPreference='Stop'; $d=Get-PSDrive -Name C; "
-        "$v=Get-Item -LiteralPath 'C:\\wsl-disks\\sunmoon-data.vhdx'; "
-        "[pscustomobject]@{CFreeBytes=$d.Free;DataVhdLength=$v.Length} | ConvertTo-Json -Compress")
-    value = json.loads(run(['/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
-        '-NoProfile', '-NonInteractive', '-Command', command]).decode('utf-8-sig'))
-    if any(type(value.get(k)) is not int or value[k] < 0 for k in ('CFreeBytes', 'DataVhdLength')):
+    probe = HERE.parents[1] / 'operations/space/windows_capacity.py'
+    value = json.loads(run([sys.executable, '-B', str(probe)]).decode('utf-8-sig'))
+    if any(type(value.get(k)) is not int or value[k] < 0 for k in
+           ('CFreeBytes', 'DataVhdAllocatedBytes', 'remaining_data_growth_bytes')):
         raise ValueError('Physical capacity result schema changed')
-    value['remaining_data_growth_bytes'] = max(0, 100 * GIB - value['DataVhdLength'])
     # Initial cluster-only allowance, not a lifetime capacity promise or a
     # reservation for the independent Harbor restore/platform deployment.
     value['initial_node_budget_bytes'] = LIMITS['initial_node_gib'] * GIB

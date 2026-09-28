@@ -34,7 +34,7 @@ SERVICES = {'registry':'registry-photon','registryctl':'harbor-registryctl','cor
 
 
 def guard():
-    command(['bash','/opt/sunmoon/admin/storage/storage-20260927-v2/check-storage-mounts.sh',
+    command(['bash','/opt/sunmoon/admin/storage/storage-20260928-v3/check-storage-mounts.sh',
              '--layout','sunmoon-data','--expected-uuid','a28de356-4ba1-4a21-93f5-744b9b9d8be0',
              '--min-free-gib','40','--require-service-visibility'])
     if os.geteuid() != 0 or ROOT.resolve() != ROOT:

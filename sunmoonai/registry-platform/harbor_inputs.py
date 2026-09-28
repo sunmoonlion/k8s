@@ -197,7 +197,7 @@ def main():
         return
     if os.geteuid() != 0:
         raise RuntimeError('Staging on the admitted data disk requires root')
-    guard = subprocess.run(['bash', '/opt/sunmoon/admin/storage/storage-20260927-v2/check-storage-mounts.sh',
+    guard = subprocess.run(['bash', '/opt/sunmoon/admin/storage/storage-20260928-v3/check-storage-mounts.sh',
         '--layout', 'sunmoon-data', '--expected-uuid', site['data_uuid'], '--min-free-gib', '40',
         '--require-service-visibility'], capture_output=True, timeout=30)
     if guard.returncode:

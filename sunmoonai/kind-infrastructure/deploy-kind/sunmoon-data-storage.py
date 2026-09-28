@@ -19,6 +19,7 @@ ROOT = Path('/mnt/sunmoon-data')
 BINDS = {Path('/data/kind-clusters'): ROOT / 'kind-clusters', Path('/data/harbor'): ROOT / 'harbor'}
 OLD = Path('/data/kind-local-storage')
 GIB = 1024**3
+EXPECTED_DISK_GIB = 230
 
 
 def run(*args):
@@ -63,6 +64,8 @@ def check_root(uuid, minimum):
         raise RuntimeError('Data filesystem must be the writable filesystem root')
     if ROOT.stat().st_dev == Path('/').stat().st_dev:
         raise RuntimeError('Data mount is on the WSL system filesystem')
+    if int(run('blockdev', '--getsize64', info['source'])) != EXPECTED_DISK_GIB*GIB:
+        raise RuntimeError(f'Data block device is not the owner-approved {EXPECTED_DISK_GIB} GiB')
     fs = os.statvfs(ROOT)
     if fs.f_bavail*fs.f_frsize < minimum*GIB:
         raise RuntimeError(f'Data filesystem has less than {minimum} GiB available')
@@ -152,8 +155,8 @@ def apply(action, uuid, minimum):
         device = devices[0]
         if run('blkid', '-s', 'TYPE', '-o', 'value', device) != 'ext4':
             raise RuntimeError('Expected ext4; this script never formats disks')
-        if int(run('blockdev', '--getsize64', device)) != 100*GIB:
-            raise RuntimeError('Device is not the owner-approved 100 GiB disk')
+        if int(run('blockdev', '--getsize64', device)) != EXPECTED_DISK_GIB*GIB:
+            raise RuntimeError(f'Device is not the owner-approved {EXPECTED_DISK_GIB} GiB disk')
         original, missing = fstab_state(uuid)
         if action == 'mount' and missing:
             raise RuntimeError('fstab setup incomplete; mount mode never edits configuration')
@@ -220,7 +223,7 @@ def main():
         parser.error('A real filesystem UUID and positive free-space floor are required')
     if args.action != 'check' and not args.apply:
         print(json.dumps({'dry_run': True, 'action': args.action, 'fstab_rows': entries(uuid),
-                          'expected_disk_gib': 100, 'min_free_gib': args.min_free_gib,
+                          'expected_disk_gib': EXPECTED_DISK_GIB, 'min_free_gib': args.min_free_gib,
                           'legacy_path': 'protected; never mounted/unmounted/modified'}))
         return
     result = check(uuid, args.min_free_gib, args.require_service_visibility) if args.action == 'check' else apply(args.action, uuid, args.min_free_gib)

@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "version": "20260928-v1",
+  "version": "20260928-data230-v2",
   "deletion_policy_approved": false,
   "automatic_deletion": false,
   "monitor": {"interval_minutes": 60, "stale_minutes": 130, "warning_percent": 70, "block_percent": 80, "critical_percent": 90, "external_notification": null},
-  "capacity": {"windows_reserve_gib": 50, "data_maximum_gib": 100, "data_reserve_gib": 20, "operation_peak_gib": 0},
+  "capacity": {"windows_reserve_gib": 50, "data_maximum_gib": 230, "data_reserve_gib": 20, "operation_peak_gib": 0},
   "storage_uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
   "paths": {
     "windows": "/mnt/c",

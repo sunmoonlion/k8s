@@ -14,10 +14,10 @@ import stat
 import subprocess
 
 UUID = 'a28de356-4ba1-4a21-93f5-744b9b9d8be0'
-PUBLISHED = Path('/opt/sunmoon/admin/storage/storage-20260927-v2')
+PUBLISHED = Path('/opt/sunmoon/admin/storage/storage-20260928-v3')
 PINS = {
     'check-storage-mounts.sh': 'be63dddb1ce85d7de949d35b2a439c25aae8b27d6c3f7e5cc8ef748105515407',
-    'sunmoon-data-storage.py': 'e542c9cdbc68abe291d5ab47af466540e632627201d7ac0d1e9e04e30fab99c5',
+    'sunmoon-data-storage.py': '71db9ca487777adb98d45be0a142744b168ad5d86ea5f91ce35fc0fff7cd171b',
 }
 POWERSHELL = Path('/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe')
 MAINTENANCE = Path('/mnt/c/wsl-disks/sunmoon-data.maintenance')
@@ -27,9 +27,9 @@ MAINTENANCE = Path('/mnt/c/wsl-disks/sunmoon-data.maintenance')
 REQUEST = r'''
 $ErrorActionPreference='Stop'; $ProgressPreference='SilentlyContinue'
 $Name='sunmoon-data-mount'
-$Launcher='C:\wsl-disks\scripts\storage-automation-20260928-v2\run-sunmoon-data-hidden.vbs'
+$Launcher='C:\wsl-disks\scripts\storage-20260928-v3\run-sunmoon-data-hidden.vbs'
 if (Test-Path -LiteralPath 'C:\wsl-disks\sunmoon-data.maintenance') { throw 'Maintenance active' }
-if ((Get-FileHash -LiteralPath $Launcher -Algorithm SHA256).Hash.ToLowerInvariant() -ne '131877883b2ac97a9bd0220b444ef3433792a035ad36e289b5be59e5b66c3b8e') { throw 'Launcher changed' }
+if ((Get-FileHash -LiteralPath $Launcher -Algorithm SHA256).Hash.ToLowerInvariant() -ne '043365a3b08d951c87680dedad4e6cb9317c28683c9e4125720212048e6f8e7b') { throw 'Launcher changed' }
 $Task=Get-ScheduledTask -TaskName $Name -TaskPath '\'
 $PrincipalId=[string]$Task.Principal.UserId
 if ($PrincipalId -match '^S-1-') { $Sid=([Security.Principal.SecurityIdentifier]$PrincipalId).Value }

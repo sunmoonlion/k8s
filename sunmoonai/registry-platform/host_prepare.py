@@ -27,7 +27,7 @@ from runtime_inspect import inputs, read
 from runtime_config import validate_site, render
 from runtime_files import render as render_files, file_permissions
 
-GUARD = Path('/opt/sunmoon/admin/storage/storage-20260927-v2/check-storage-mounts.sh')
+GUARD = Path('/opt/sunmoon/admin/storage/storage-20260928-v3/check-storage-mounts.sh')
 BASE = Path('/data/harbor/instances')
 
 

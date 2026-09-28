@@ -6,8 +6,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $Distro = 'Ubuntu'
 $DataUuid = 'a28de356-4ba1-4a21-93f5-744b9b9d8be0'
-$Published = 'C:\wsl-disks\scripts\storage-20260927-v2'
-$LinuxPublished = '/opt/sunmoon/admin/storage/storage-20260927-v2'
+$Published = 'C:\wsl-disks\scripts\storage-20260928-v3'
+$LinuxPublished = '/opt/sunmoon/admin/storage/storage-20260928-v3'
 $Maintenance = 'C:\wsl-disks\sunmoon-data.maintenance'
 $StatusFile = 'C:\wsl-disks\sunmoon-data-automation-status.json'
 if (-not $Apply) {
@@ -33,7 +33,7 @@ try {
             if ((Get-Content -LiteralPath 'C:\wsl-disks\sunmoon-data.uuid' -Raw).Trim() -ne $DataUuid) { throw 'Data UUID receipt differs' }
             $Expected = @{
                 'check-storage-mounts.sh' = 'be63dddb1ce85d7de949d35b2a439c25aae8b27d6c3f7e5cc8ef748105515407'
-                'sunmoon-data-storage.py' = 'e542c9cdbc68abe291d5ab47af466540e632627201d7ac0d1e9e04e30fab99c5'
+                'sunmoon-data-storage.py' = '71db9ca487777adb98d45be0a142744b168ad5d86ea5f91ce35fc0fff7cd171b'
             }
             foreach ($Name in $Expected.Keys) {
                 $Actual = (wsl.exe -d $Distro -u root -- sha256sum "$LinuxPublished/$Name")

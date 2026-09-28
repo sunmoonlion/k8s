@@ -17,6 +17,7 @@ from pathlib import Path, PurePosixPath
 import re
 import stat
 import subprocess
+import sys
 import tarfile
 import time
 
@@ -86,20 +87,18 @@ def admit_capacity(config, destination, content_bytes):
     if destination.parent == SYSTEM_BASE:
         if config['runtime']['platform'] != 'wsl' or location.stat().st_dev != Path('/').stat().st_dev:
             raise ValueError('System-disk backup adapter is WSL-only and requires the expected root filesystem')
-        command = ("$ErrorActionPreference='Stop'; $d=Get-PSDrive -Name C; "
-            "$v=Get-Item -LiteralPath 'C:\\wsl-disks\\sunmoon-data.vhdx'; "
-            "[pscustomobject]@{CFreeBytes=$d.Free;DataVhdLength=$v.Length} | ConvertTo-Json -Compress")
-        query = subprocess.run(['/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
-            '-NoProfile','-NonInteractive','-Command',command],capture_output=True,timeout=30)
+        probe = Path(__file__).resolve().parents[1] / 'operations/space/windows_capacity.py'
+        query = subprocess.run([sys.executable, '-B', str(probe)], capture_output=True, timeout=50)
         if query.returncode:
             raise ValueError('Physical Windows free-space read failed; no fallback to virtual free space')
         physical = json.loads(query.stdout.decode('utf-8-sig'))
-        if any(type(physical.get(n)) is not int or physical[n] < 0 for n in ('CFreeBytes','DataVhdLength')):
+        if any(type(physical.get(n)) is not int or physical[n] < 0 for n in
+               ('CFreeBytes', 'DataVhdAllocatedBytes', 'remaining_data_growth_bytes')):
             raise ValueError('Physical capacity probe schema differs')
-        future_growth = max(0,100 * 1024**3 - physical['DataVhdLength'])
+        future_growth = physical['remaining_data_growth_bytes']
         after = physical['CFreeBytes'] - future_growth - content_bytes - 2 * 1024**3
         if after < 50 * 1024**3:
-            raise ValueError('Backup plus full 100GiB data disk would violate the physical C reserve')
+            raise ValueError('Backup plus configured full data disk would violate the physical C reserve')
         result.update(physical, projected_c_free_after_backup_and_full_data_disk=after,
                       minimum_physical_c_free=50 * 1024**3)
     return result

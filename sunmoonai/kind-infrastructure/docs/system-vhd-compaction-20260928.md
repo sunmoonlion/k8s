@@ -1,5 +1,21 @@
 # 2026-09-28 系统盘单独压缩维护提案
 
+## 最新决定：数据盘扩至230 GiB，尚未执行
+
+所有者最终改为**230 GiB**，替代240/260。以Windows Cursor 2026-09-28T14:41:36Z实际分配读数计算：C空闲253.01GiB、数据VHDX已分配86.66GiB；230长满后C约109.67GiB，另预留22后87.67GiB，仍保留50GiB底线。当前物理盘未变，仍为100GiB；后续执行使用[数据盘扩容操作卡](data-disk-expand.md)。下列260内容是历史预算，不能作为执行参数。
+
+所有者在压缩完成后提出扩容，随后明确将240改为**260 GiB**；此值替代原100 GiB上限，240 GiB不实施。下文停机准备内容是历史记录。
+
+压缩后只读复核：系统VHDX长度395217731584B（约368.08GiB），C空闲271587725312B（约252.94GiB），数据VHDX长度93050634240B（约86.66GiB）。按文件长度估算，数据盘长满260GiB后C约剩79.6GiB；文件长度不等于物理分配，实施前必须核Windows实际分配、备份/临时空间和系统盘增长预算，仍须保留至少50GiB。
+
+原Harbor目录4400文件/17850816895B已全量SHA核对一致，原镜像/容器/卷身份一致。WSL重启使设备号变化，核对原系统盘UUID和目录inode后完成比对，原快照未改写。六节点仍停止，restore命令被打断前未执行，维护标记保留；服务尚未恢复，外置Harbor持久化验收尚未通过。
+
+实施顺序：核验数据盘现有内容的备份覆盖及摘要；准备并发布容量相关脚本、自动挂载与监控配置及操作卡；停止使用者并解除数据盘绑定和主挂载，Windows分离VHDX后扩容；重新附加后按固定UUID唯一识别原设备，核260GiB块设备容量，在未挂载状态检查并扩展ext4；恢复挂载、服务可见性和全量镜像摘要核对，再恢复六节点/Harbor并实际拉取。失败保留维护状态，不格式化或缩容，不删除旧节点/卷，不在/data/kind-local-storage挂盘。
+
+必须同步调整：sunmoon-data-storage.py的mount/setup容量100GiB限制；initialize-sunmoon-data.ps1的创建参数与预算；operations/space/policy.json的data_maximum_gib；已发布Linux/Windows副本摘要及引用、计划任务引用和监控副本。新版本单独发布，不覆盖固定摘要旧副本，不对现有盘运行初始化。扩容操作卡准备和复核完成前，不向Windows助手发出执行放行。
+
+依据：[Microsoft expand vdisk](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/expand-vdisk)要求扩展时虚拟盘已分离；[resize2fs](https://man7.org/linux/man-pages/man8/resize2fs.8.html)负责扩展ext4文件系统，扩大VHDX本身不能代替这一步。
+
 状态：**2026-09-28 21:46北京时间Linux停机准备完成，可交Windows Cursor关闭WSL并压缩。** 六节点均已退出，Docker/socket/containerd/监控均inactive，全部89容器保留且停止，219镜像和46卷身份未变。停服后4400个Harbor文件与保留备份全摘要一致。系统盘trim成功；尚未执行Windows压缩或入口切换。详见[公开准备结果](../../scripts/results/luna-system-compaction-preparation.20260928.json)。
 原决定是压缩与入口切换合并。当前入口切换尚未就绪，本提案将压缩提前为一次独立维护，恢复时仍使用原集群与原入口。
 

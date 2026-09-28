@@ -156,7 +156,7 @@ def main():
     for name, info in receipt['private_files'].items():
         if sha(root/name) != info['sha256']:
             raise RuntimeError('Staged input changed; preserve and investigate')
-    command(['bash', '/opt/sunmoon/admin/storage/storage-20260927-v2/check-storage-mounts.sh', '--layout', 'sunmoon-data',
+    command(['bash', '/opt/sunmoon/admin/storage/storage-20260928-v3/check-storage-mounts.sh', '--layout', 'sunmoon-data',
              '--expected-uuid', receipt['site']['data_uuid'], '--min-free-gib', '40', '--require-service-visibility'])
     lock = json.loads((HERE/'artifacts.lock.json').read_text())['artifacts'][0]
     if args.installer.resolve() != args.installer or args.installer.stat().st_size != lock['bytes'] or sha(args.installer) != lock['sha256']:
