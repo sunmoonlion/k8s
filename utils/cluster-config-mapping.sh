@@ -224,7 +224,9 @@ apply_cluster_config_mapping() {
     #       C3_STEP09_ENABLED=false 会覆盖 STEP09_ENABLED（当 CLUSTER=C3 时）
     local cluster_value="${!var_name}"
     if [[ -n "$cluster_value" ]]; then
-      eval "$base_var_name=\"$cluster_value\""
+      # Values were already read from trusted config. Do not evaluate dollars,
+      # quotes or command substitutions again (e.g. registry robot credentials).
+      printf -v "$base_var_name" '%s' "$cluster_value" || return 1
       mapped_count=$((mapped_count+1))  # 使用显式赋值，避免 ((mapped_count++)) 在某些情况下导致的问题
     fi
   done

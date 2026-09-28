@@ -1,5 +1,17 @@
 # luna 工作检查点
 
+## 最新续接：2026-09-28 镜像拉取 Secret 统一私有凭据与目标绑定
+
+基线 `19a1c4f9`，本地 luna 开工干净。继续全部组件部署调用链；本轮只改代码/文档，未恢复运行态迁移。
+
+- 发现 Harbor Secret 多份重复实现仍有旧地址默认、工作树凭据 YAML 和 Jenkins 口令命令参数；OnlyOffice/Document Converter 查询也会触发 YAML 生成。17 个部署入口现共用 registry-platform/lib/pull-secret.sh 与 pull_secret.py：13 deploy-project、2 Jenkins namespace、2 App action，保留父级/相邻配置和纯 dry-run 边界。Document Converter generate 从部署入口退役，独立人工生成工具仍保留；这些部署不再消费生成的凭据 YAML。
+- 17 份相邻 .conf 移除 DOCKER_* 等旧认证字段，保留所有原有名称/namespace/类型/重启/管理字段值；Document Converter 补显式 SECRET_NAME=harbor-registry-secret（原脚本常量）。认证只能来自独立仓库配置指定的私有 JSON，地址固定 harbor.sunmoonai.com:30443；未读取实际口令、未轮换账号、未改变服务版本。Kaniko 同一接口供基础镜像拉取，写端仍 skopeo；私有身份是否只读需验收，不能声称已限权。
+- 显式 CLUSTER/kubeconfig/kubectl/UID 必须通过既有 deploy-target 准入，嵌套绑定不得替换。新 Python 每个命令复核 kubeconfig SHA256，写前/后核 UID，10秒API/25秒进程期限，不猜context/重连。私有认证在内存构造，以stdin提交 data；server-side apply固定manager不force-conflicts；写后回读核数据。子命令输出只捕获，失败固定说明，避免API诊断含凭据。status不加载本地认证文件且不回显Secret；uninstall指定namespace/name、只忽略NotFound。回读/重启失败时Secret可能已写，不自动回退。
+- 重启保留原配置选项，先Deployment再StatefulSet；权限/网络错误不当NotFound，不吞失败；不等待rollout成功。公共 cluster-config-mapping.sh 用 printf -v 替代二次eval，保留已展开配置值中的美元号/引号，不执行其中的命令替换。
+- 官方Secret/SSA文档核对了data字段和字段所有权机制，链接写入 docs/pull-secrets.md；添加完整17入口清单、配置/目标/生命周期、退役generate与待验收边界，同步 registry README/clients、operations配置/干运行文档。
+- 静态：18 Shell入口/共享库+17.conf+公共mapping共36文件 bash -n/ShellCheck error级通过；1 Python AST；17管理字段与Git原值一致、17profile/路径/无旧直接kubectl与YAML消费、21新文档本地链接、git diff --check通过。最初ShellCheck .conf无目标Shell提示已添加shell=bash后重查通过。没有跑行为测试、CLI计划/实际分支、API、Docker、SSH、Windows、Secret生成或清理；本轮无运行时新物料。
+- 后续：其他业务Secret/上层资源生成器/通用工具仍需审阅，不能宣称全仓历史凭据已移除；17入口实际创建/更新/冲突/查询/卸载/节点拉取/CI拉取尚未验收，云端未经实机验证。之后恢复main/30443迁移、Harbor重建独立性验收及最终本机refactor临时文件和东京下载清理。inbox仍旧kind，main未创建，旧节点/卷/Harbor/备份保护不变。只本地luna提交，不push。
+
 ## 最新续接：2026-09-28 Secret 动作契约与参数传递修复
 
 基线 `402b69f2`，本地 luna 开工干净。沿上一轮全部组件入口继续审阅 Secret 实际调用；本轮仅代码整理，现场迁移仍暂停。

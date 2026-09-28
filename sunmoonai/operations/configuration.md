@@ -118,3 +118,7 @@ Info/Knowledge/Investment 三个正式应用及角色入口共用 Python 解析�
 路径映射由 `utils/kubeconfig_path.py` 按数据读取，Shell 调用用 `kubeconfig-path-for-cluster.sh` 公共函数。不执行 `eval`，只允许绝对路径与 `~/`、`$HOME`、`${HOME}`；不接受多文件 KUBECONFIG。KIND 必须配置自身路径；云集群 DIRECT/BASTION 若同时存在必须指向同一路径，歧义则停止。选定段或 kubeconfig 键重复也会拒绝，不猜默认集群。
 
 **验证边界**：本批只有 Shell/Python 静态检查和调用路径审阅，未运行真实连接、成功/失败用例或部署。绑定是共享部署调用边界的保护，不是沙箱；不能保证绕过公共入口直接运行的任意脚本或外部进程不会改变配置。实际子组件、helm、Python 子进程及云端操作仍要随迁移验收逐项核对。
+
+## 镜像拉取 Secret
+
+17 个 Harbor/Kaniko Secret 入口共用 [仓库模块实现](../registry-platform/docs/pull-secrets.md)。相邻 `.conf` 控制名称、命名空间、重启；旧地址/口令字段已移除。认证仅引用私有 JSON，实际调用必须携带指定 kubectl、kubeconfig 和集群 UID。总控会传递绑定，独立调用也必须满足同样检查。查询不读口令，生成到工作树的凭据 YAML 已退出这些部署入口。实机拉取验证尚未执行。

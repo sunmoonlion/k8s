@@ -72,3 +72,7 @@ python3 sunmoonai/registry-platform/prepare-artifacts.py --apply
 | C-T5：分支与提交交回 | 仅本地 luna 提交，不推送、不发外部消息 |
 
 本次实际演练已获批准并通过：49 张表、10,364 行及结构/权限/序列等一致，3 个新容器已停止，原 7 个容器和 43 个卷未变，旧 Harbor healthy。[执行结果](../scripts/results/luna-registry-database-rehearsal.20260927.json)。使用原批次的 run --apply 会拒绝覆盖；实际步骤和限制见执行卡第 7 节。
+
+## 集群拉取身份
+
+[统一镜像拉取 Secret](docs/pull-secrets.md)：17 个组件入口共用私有认证文件和固定目标检查，组件名称/命名空间/重启配置保留；静态接线完成，实际创建、节点拉取及云端验收待完成。

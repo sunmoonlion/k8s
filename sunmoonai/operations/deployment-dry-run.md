@@ -110,3 +110,7 @@ bash sunmoonai/app-platform/info-app/deploy-info-app-all/deploy-info-app-all.sh 
 后续验收应覆盖命名/位置布尔参数、冲突参数、无效配置、子脚本失败、目标 UID 变更等路径；
 云端仍须首次上云验收。实际部署中的凭据与版本准入继续沿既有迁移清单处理。
 旧集群、节点、卷、Harbor 数据保护不变；最终本机重构临时文件和东京下载物料的清理仍是必做收尾项。
+
+## 镜像拉取 Secret 后续收口
+
+覆盖清单中的 17 个 Harbor/Kaniko Secret 部署入口现共用 [registry-platform 拉取身份实现](../registry-platform/docs/pull-secrets.md)，保留本页提前返回边界及 profile。13 个只写入口保留 deploy-project；Jenkins 两个 namespace 和 OnlyOffice/Document Converter 两个 action 入口保留 deploy/status/uninstall。Document Converter 的 generate 动作从部署入口退役，独立人工生成工具保留。真实部署的地址/凭据和目标检查按该说明执行。
