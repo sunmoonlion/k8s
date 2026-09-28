@@ -1,3 +1,13 @@
+## 最新续接：2026-09-28 仓库宿主客户端入口收口
+
+基线 1ddade00c91f851e5be374892dfa4360f6431c61，luna 工作区开工干净。本批属于已批准的部署代码整理，现场迁移仍暂停。
+
+- 新 registry-platform/client.py，根入口 `./sunmoon harbor client hosts|trust|login|check`；读取已有独立仓库 lib/config.sh，默认只打印，不读口令、不联网、不改文件。宿主 IP 来自 REGISTRY_CLIENT_ADDRESS，不猜集群节点 IP；CA 用已有 SHA 锁。check 实施分支为直接 TLS /v2/，不经终端代理；这不是新实例身份或 Docker daemon/CI 验收。
+- 原 wsl-setup-harbor-hosts/sync-docker-harbor-ca/wsl-setup-harbor-login 三脚本变薄转发，默认均计划，实际动作显式 --apply。hosts/trust 要 root；trust 精确更新三 Docker 别名及系统 CA，不重启 Docker；login 要调用者所有且无组/其他权限的单行私有文件，密码 stdin，失败不再吞掉。不再使用旧 HARBOR_ADMIN_PASSWORD 或自动登录 nerdctl。
+- KIND push-images-to-harbor 去掉隐式 CA 修改；PostgreSQL/RabbitMQ/pgAdmin/RedisInsight 四个没有动作的旧镜像工具存在性判断删除。原旧镜像 helper 没有运行时代码引用了，但仍有历史文档/自身配置，未在本批移动；Secret 库仍读取旧建群配置，下一批必须先迁私有输入与实际调用方再归档 config，不能现在删。
+- 2 Python AST、8 Bash -n、这8文件 ShellCheck error级0；四个统一客户端默认计划、三个兼容入口默认计划均成功，git diff --check 通过。公开记录 scripts/results/luna-registry-client-consolidation.20260928.json；没有运行应用测试、任何客户端 --apply、修改现场 hosts/CA/代理、Docker 登录推拉、Windows、服务、集群 API 或云端动作。
+- 新 docs/clients.md 记录功能、权限、CA提权路径、代理分层、旧兼容行为变更与未完成项。还需继续私有凭据与共享镜像工具收口、平台子脚本目标检查；正式30443切换、新main创建、真实Docker/CI推拉、完整重启/重建独立性、云闭包和最终清理都未完成。旧节点/卷/数据和旧inbox保护不变；不推送，不通知“luna做完了”。
+
 ## 最新续接：2026-09-28 部署入口归档第一批与按需附盘接线
 
 基线28683fe20ab9c82479c2954a9338064434a72cef，开工干净。所有者“继续”，本单元继续已批准部署入口整理；没有恢复现场迁移、停服或切换。

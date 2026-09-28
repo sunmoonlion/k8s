@@ -822,10 +822,6 @@ main() {
                         return 1
                     fi
                 fi
-                # 安装后清理控制平面 tar 包
-                if [[ -x "$PROJECT_ROOT/../../cicd-platform/harbor/utils/harbor-image-management/harbor-image.sh" ]]; then
-                    : # 通用工具已在推送过程中清理，无需额外清理
-                fi
                 # 显示部署信息
                 log_info "RabbitMQ 部署信息:"
                 log_info "项目: $project_id"

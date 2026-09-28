@@ -15,6 +15,7 @@
 ./sunmoon kind lifecycle start                  # 启动计划，不执行
 ./sunmoon harbor lifecycle --help               # 宿主仓库启停参数
 ./sunmoon harbor backup --help                  # 备份、校验、恢复准备参数
+./sunmoon harbor client login                   # 宿主客户端计划，不读取口令或登录
 ./sunmoon platform plan --cluster KIND          # 共享平台开关计划
 ./sunmoon cloud plan --cluster C1                # 云端只打印演练
 ```
@@ -32,6 +33,7 @@ Harbor `lifecycle start --apply` 与 KIND `lifecycle start --apply` 均先按需
 | 云端建群与集群层物料 | [基础设施](sunmoonai/infrastructure/docs/infrastructure-upgrade-audit.md) | kubeadm 路径；真实云部署未验证，闭包门禁继续关闭 |
 | 独立 Harbor 安装准备、启停、数据恢复 | [registry-platform](sunmoonai/registry-platform/README.md) | 候选恢复通过；公开入口未切换 |
 | 入口、证书与消费者信任 | [入口与集成](sunmoonai/kind-infrastructure/docs/harbor-external-integration-plan.md) | SNI 候选验证通过；正式接管及新消费者接线待完成 |
+| 宿主域名、CA、登录 | [仓库客户端](sunmoonai/registry-platform/docs/clients.md) | 已独立于旧建群配置，默认计划；新客户端实际执行仍待验 |
 | 平台和应用共享部署 | [项目总控](sunmoonai/deploy-sunmoonai-all/deploy-sunmoonai-all.sh) | 建群已从平台流程拆开；子脚本的目标配置仍须逐项对齐，不能对 main 宣称可用 |
 | 镜像推拉、离线物料和 CI/CD | [唯一物料手册](sunmoonai/kind-infrastructure/docs/物料提交备齐方案和方法.md) | 保留既有功能，真实新仓库 Docker/CI 推拉仍待验；不靠候选 HTTP 结果替代 |
 | 备份和独立恢复 | [宿主备份](sunmoonai/registry-platform/docs/host-backup.md) | 同盘恢复已验；机器外落点待定 |

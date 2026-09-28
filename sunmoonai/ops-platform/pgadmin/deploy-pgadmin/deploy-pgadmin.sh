@@ -573,10 +573,6 @@ main() {
             # 收尾状态检查：仅记录，不因检查失败而让本次部署判失败（连接已清理或 Pod 未就绪时可能检查失败）
             check_pgadmin_status "$project_id" "$namespace" || true
             show_pgadmin_connection_info "$namespace"
-            # 安装后清理控制平面 tar 包
-            if [[ -x "$PROJECT_ROOT/../../cicd-platform/harbor/utils/harbor-image-management/harbor-image.sh" ]]; then
-                : # 通用工具已在推送过程中清理，无需额外清理
-            fi
             ;;
         "upgrade")
             log_info "开始升级 pgAdmin..."

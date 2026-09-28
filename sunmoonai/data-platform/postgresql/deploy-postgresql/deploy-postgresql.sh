@@ -576,10 +576,6 @@ main() {
                 log_info "访问地址: http://$POSTGRESQL_EXTERNAL_HOST:$POSTGRESQL_EXTERNAL_PORT"
             fi
             
-            # 安装后清理控制平面 tar 包
-            if [[ -x "$PROJECT_ROOT/../../cicd-platform/harbor/utils/harbor-image-management/harbor-image.sh" ]]; then
-                : # 通用工具已在推送过程中清理，无需额外清理
-            fi
             return 0
             ;;
         "upgrade")

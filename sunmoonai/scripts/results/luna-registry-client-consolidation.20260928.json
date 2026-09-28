@@ -1,0 +1,54 @@
+{
+  "baseline": "1ddade00c91f851e5be374892dfa4360f6431c61",
+  "scope": "host registry client consolidation; runtime migration remains paused",
+  "python_ast": [
+    "sunmoonai/registry-platform/client.py",
+    "sunmoonai/operations/cli.py"
+  ],
+  "bash_n_files": 8,
+  "shellcheck_severity": "error",
+  "shellcheck_errors": 0,
+  "root_default_plans": [
+    "hosts",
+    "trust",
+    "login",
+    "check"
+  ],
+  "compatibility_default_plans": [
+    {
+      "entry": "sunmoonai/kind-infrastructure/wsl-setup-harbor-hosts.sh",
+      "apply": false,
+      "action": "hosts",
+      "registry": "harbor.sunmoonai.com:30443"
+    },
+    {
+      "entry": "sunmoonai/kind-infrastructure/sync-docker-harbor-ca.sh",
+      "apply": false,
+      "action": "trust",
+      "registry": "harbor.sunmoonai.com:30443"
+    },
+    {
+      "entry": "sunmoonai/kind-infrastructure/wsl-setup-harbor-login.sh",
+      "apply": false,
+      "action": "login",
+      "registry": "harbor.sunmoonai.com:30443"
+    }
+  ],
+  "runtime_actions": [],
+  "not_executed": [
+    "client --apply",
+    "system trust or hosts update",
+    "Docker login/push/pull",
+    "Kubernetes API",
+    "Windows task invocation",
+    "service start/stop",
+    "cloud deployment",
+    "test suites"
+  ],
+  "remaining": [
+    "private credentials/secret-data fallback",
+    "image loading and publishing helper consolidation",
+    "actual Docker/node/CI verification",
+    "formal ingress cutover and KIND rebuild independence"
+  ]
+}

@@ -441,10 +441,6 @@ main() {
                 check_redisinsight_status "$project_id" "$namespace" || true
                 show_redisinsight_connection_info "$namespace"
             fi
-            # 安装后清理控制平面 tar 包
-            if [[ -x "$PROJECT_ROOT/../../cicd-platform/harbor/utils/harbor-image-management/harbor-image.sh" ]]; then
-                : # 通用工具已在推送过程中清理，无需额外清理
-            fi
             ;;
         "upgrade")
             log_info "开始升级 RedisInsight..."

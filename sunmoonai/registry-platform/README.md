@@ -10,6 +10,8 @@ WSL 曾有 Docker 代理绕行、节点解析和入口故障记录；已核历�
 
 ## 共用运行配置
 
+宿主机使用仓库的域名、CA、登录已收口到 `./sunmoon harbor client`，见 [客户端操作](docs/clients.md)。默认只打印计划，旧 WSL 三个脚本转发到同一实现；真实 Docker/节点/CI 推拉仍需验收。
+
 [正式配置生成与已核对范围](docs/runtime-rendering.md)：本地/云端共用官方2.13.2输出转换，固定PG17.6/Redis8.2.1，纳入Jobservice认证及显式数据挂载。四组配置通过只读渲染/Compose解析；随后已完成[本地新实例](docs/host-instance.md)的数据复制和只读生命周期验收；全新主机安装、正式写入与云端SSH仍需继续。
 
 ## 受管扫描器
