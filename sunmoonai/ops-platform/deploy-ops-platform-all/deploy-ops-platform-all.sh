@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+# Shared request boundary: before configuration, credentials, connections and EXIT traps.
+# shellcheck source=/dev/null
+source "$(dirname -- "${BASH_SOURCE[0]}")/../../../utils/deploy-plan.sh" || exit 2
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" optional-action "$@" || exit $?
+[[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
+set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
+
 # 脚本目录配置
 THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$THIS_DIR")"
@@ -84,8 +91,9 @@ deploy_sub_components_by_priority() {
     local namespace="$2"
     local environment="$3"
     local dry_run="$4"
+    local action="${5:-deploy}"
     
-    log_info "开始部署子级组件..."
+    log_info "开始 ${action} 子级组件..."
     
     local components=()
     
@@ -121,7 +129,7 @@ deploy_sub_components_by_priority() {
         return 0
     fi
     
-    log_info "📋 子级组件部署顺序："
+    log_info "📋 子级组件 ${action} 顺序："
     for component_info in "${sorted_components[@]}"; do
         local priority="${component_info%%:*}"
         local component=$(echo "$component_info" | cut -d: -f2)
@@ -133,21 +141,22 @@ deploy_sub_components_by_priority() {
         local component=$(echo "$component_info" | cut -d: -f2)
         local script_path=$(echo "$component_info" | cut -d: -f3)
         
-        log_info "🚀 部署 $component..."
+        log_info "🚀 ${action} $component..."
         
         if [[ -f "$script_path" ]]; then
-            if call_subscript "$script_path" deploy "$project_id" "$namespace" "$environment" "$dry_run"; then
-                log_success "✅ $component 部署成功"
+            if call_subscript "$script_path" "$action" "$project_id" "$namespace" "$environment" "$dry_run"; then
+                log_success "✅ $component ${action} 成功"
             else
-                log_error "❌ $component 部署失败"
+                log_error "❌ $component ${action} 失败"
                 return 1
             fi
         else
-            log_warn "⚠️  $component 部署脚本不存在: $script_path"
+            log_error "❌ $component 部署脚本不存在: $script_path"
+            return 1
         fi
     done
     
-    log_success "✅ 所有子级组件部署完成！"
+    log_success "✅ 所有子级组件 ${action} 完成！"
 }
 
 # 主部署函数
@@ -160,7 +169,7 @@ deploy_ops_platform() {
     log_info "开始部署 Ops Platform..."
     log_info "项目: $project_id, 命名空间: $namespace, 环境: $environment"
     
-    deploy_sub_components_by_priority "$project_id" "$namespace" "$environment" "$dry_run"
+    deploy_sub_components_by_priority "$project_id" "$namespace" "$environment" "$dry_run" || return 1
     
     log_success "✅ Ops Platform 部署完成！"
 }
@@ -231,12 +240,14 @@ uninstall_sub_components_by_priority() {
                 uninstall_failed=true
             fi
         else
-            log_warn "⚠️  $component 卸载脚本不存在: $script_path"
+            log_error "❌ $component 卸载脚本不存在: $script_path"
+            uninstall_failed=true
         fi
     done
     
     if [[ "$uninstall_failed" == "true" ]]; then
-        log_warn "⚠️  部分子级组件卸载失败"
+        log_error "❌ 部分子级组件卸载失败"
+        return 1
     else
         log_success "✅ 所有子级组件卸载完成！"
     fi
@@ -251,7 +262,7 @@ uninstall_ops_platform() {
     log_info "开始卸载 Ops Platform..."
     log_info "项目: $project_id, 命名空间: $namespace, 环境: $environment"
     
-    uninstall_sub_components_by_priority "$project_id" "$namespace" "$environment"
+    uninstall_sub_components_by_priority "$project_id" "$namespace" "$environment" || return 1
     
     log_success "✅ Ops Platform 卸载完成！"
 }
@@ -266,7 +277,7 @@ main() {
     
     local action="${1:-deploy}"
     if [[ "$action" == "deploy" || "$action" == "uninstall" || "$action" == "status" ]]; then
-        shift
+        [[ $# -eq 0 ]] || shift
     fi
     
     local project_id="${1:-${OPS_PLATFORM_PROJECT_ID:-$DEFAULT_PROJECT_ID}}"
@@ -284,8 +295,7 @@ main() {
         "status")
             log_info "检查 Ops Platform 状态..."
             log_info "项目: $project_id, 命名空间: $namespace, 环境: $environment"
-            # TODO: 实现状态检查逻辑
-            log_warn "状态检查功能尚未实现"
+            deploy_sub_components_by_priority "$project_id" "$namespace" "$environment" false status
             ;;
         *)
             log_error "未知操作: $action"

@@ -1,6 +1,100 @@
 #!/usr/bin/env bash
 # Pure request helpers. Sourcing this file does not contact services or write files.
 
+# Call before configuration, connection libraries, traps or temporary files.
+# Profiles describe existing positional APIs; named --dry-run works for all of them.
+# Outputs: SUNMOON_DEPLOY_PLAN_ONLY and SUNMOON_DEPLOY_EXEC_ARGS (original API).
+sunmoon_deploy_entry() {
+    local entry="$1" profile="$2"
+    shift 2
+    local named='' positional='' inherited="${SUNMOON_DEPLOY_DRY_RUN:-false}"
+    local cluster="${CLUSTER:-<配置默认>}" value='' index=-1 action=deploy
+    local -a positions=()
+    SUNMOON_DEPLOY_EXEC_ARGS=()
+    SUNMOON_DEPLOY_PLAN_ONLY=false
+    [[ "$inherited" == true || "$inherited" == false ]] || {
+        printf '%s\n' 'SUNMOON_DEPLOY_DRY_RUN 必须为 true/false' >&2; return 2;
+    }
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --dry-run|--dry-run=*)
+                [[ -z "$named" ]] || { printf '%s\n' '重复的 --dry-run' >&2; return 2; }
+                value=true
+                if [[ "$1" == --dry-run=* ]]; then
+                    value="${1#*=}"
+                elif [[ "${2:-}" == true || "${2:-}" == false ]]; then
+                    value="$2"; shift
+                fi
+                [[ "$value" == true || "$value" == false ]] || {
+                    printf '%s\n' '--dry-run 只接受 true/false' >&2; return 2;
+                }
+                named="$value"; shift ;;
+            --[cC][lL][uU][sS][tT][eE][rR]|-c|-C)
+                [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || {
+                    printf '%s\n' 'cluster 参数缺少值' >&2; return 2;
+                }
+                cluster="$2"; SUNMOON_DEPLOY_EXEC_ARGS+=("$1" "$2"); shift 2 ;;
+            --[cC][lL][uU][sS][tT][eE][rR]=*)
+                cluster="${1#*=}"
+                [[ -n "$cluster" ]] || return 2
+                SUNMOON_DEPLOY_EXEC_ARGS+=("$1"); shift ;;
+            -[cC][0-9]*)
+                cluster="${1:2}"; SUNMOON_DEPLOY_EXEC_ARGS+=("$1"); shift ;;
+            --help|-h)
+                positions+=("$1"); SUNMOON_DEPLOY_EXEC_ARGS+=("$1"); shift ;;
+            --*)
+                # These legacy entries have no other named API. Never let a typo deploy.
+                printf '%s\n' '不支持的部署选项；请核对该入口的参数说明' >&2; return 2 ;;
+            *) positions+=("$1"); SUNMOON_DEPLOY_EXEC_ARGS+=("$1"); shift ;;
+        esac
+    done
+    case "$profile" in
+        root) index=3; action="${positions[0]:-deploy}" ;;
+        action) index=4; action="${positions[0]:-deploy}" ;;
+        action-logs-tail)
+            index=4; action="${positions[0]:-deploy}"
+            # RabbitMQ's existing logs API uses this slot for a numeric tail count.
+            if [[ "$action" == logs && "${positions[4]:-}" =~ ^-?[0-9]+$ ]]; then index=-1; fi
+            ;;
+        project) index=3 ;;
+        optional-action)
+            index=3
+            case "${positions[0]:-}" in
+                deploy|upgrade|uninstall|delete|status|logs|help|-h|--help)
+                    index=4; action="${positions[0]}" ;;
+            esac
+            ;;
+        namespace)
+            action="${positions[0]:-deploy}"
+            # Compact API: action namespace dry_run; legacy parent API has five args.
+            if [[ ${#positions[@]} -le 3 ]]; then index=2; else index=4; fi
+            ;;
+        named) ;; # Auxiliary tools keep their existing positional API.
+        *) printf '%s\n' '未知部署参数契约' >&2; return 2 ;;
+    esac
+    if (( index >= 0 && ${#positions[@]} > index )); then
+        positional="${positions[$index]}"
+        [[ "$positional" == true || "$positional" == false ]] || {
+            printf '%s\n' '位置参数 dry_run 必须为 true/false；也可使用 --dry-run' >&2; return 2;
+        }
+    fi
+    if [[ -n "$named" && -n "$positional" && "$named" != "$positional" ]]; then
+        printf '%s\n' '命名与位置 dry_run 参数冲突' >&2; return 2
+    fi
+    if [[ "$inherited" == true && ( "$named" == false || "$positional" == false ) ]]; then
+        printf '%s\n' '子请求不能关闭继承的 dry-run' >&2; return 2
+    fi
+    if [[ "$inherited" == true || "$named" == true || "$positional" == true ]]; then
+        SUNMOON_DEPLOY_PLAN_ONLY=true
+        export SUNMOON_DEPLOY_DRY_RUN=true DISABLE_AUTO_CLEANUP=true
+        printf '请求计划 entry=%q action=%q cluster=%q\n' "$entry" "$action" "$cluster"
+        printf '%s\n' '请求已在加载配置之前识别为计划；组件直接返回，总控可继续读取本地配置列出计划。'
+        printf '%s\n' '不执行部署、连接服务、生成凭据文件或清理。'
+        printf '%s\n' '这里只确认请求为计划模式；配置、模板、参数目标和实际部署结果仍需另行核对。'
+    fi
+    return 0
+}
+
 sunmoon_deploy_validate_mode() {
     case "${1:-}" in
         true) export DISABLE_AUTO_CLEANUP=true ;;

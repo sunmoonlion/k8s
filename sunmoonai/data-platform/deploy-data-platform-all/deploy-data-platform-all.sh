@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# Pure request admission; the detailed platform plan below reads only local configuration.
+# shellcheck source=/dev/null
+source "$(dirname -- "${BASH_SOURCE[0]}")/../../../utils/deploy-plan.sh" || exit 2
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" action "$@" || exit $?
+set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
+
 # 脚本目录配置
 THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$THIS_DIR")"
@@ -237,6 +243,7 @@ main() {
     local namespace="${2:-${DATA_PLATFORM_NAMESPACE:-$DEFAULT_NAMESPACE}}"
     local environment="${3:-${ENVIRONMENT:-$DEFAULT_ENVIRONMENT}}"
     local dry_run="${4:-false}"
+    [[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || dry_run=true
     
     run_data_platform "$action" "$project_id" "$namespace" "$environment" "$dry_run"
 }

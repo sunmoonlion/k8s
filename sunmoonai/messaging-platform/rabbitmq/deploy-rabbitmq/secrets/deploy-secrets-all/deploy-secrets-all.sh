@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Shared request boundary: before configuration, credentials, connections and EXIT traps.
+# shellcheck source=/dev/null
+source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../../../utils/deploy-plan.sh" || exit 2
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" optional-action "$@" || exit $?
+[[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
+set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
+
 set -euo pipefail
 
 # 计算脚本目录和项目根目录
@@ -267,7 +274,7 @@ deploy_secrets() {
         return 1
     fi
     
-    deploy_sub_components_by_priority "$project_id" "$namespace" "$environment" "$dry_run"
+    deploy_sub_components_by_priority "$project_id" "$namespace" "$environment" "$dry_run" || return 1
     
     log_success "🎉 RabbitMQ Secrets 部署完成！"
 }

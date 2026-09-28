@@ -10,6 +10,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.dont_write_bytecode = True
 from deployment_config import ConfigError, load_base, load_profile, resolve_inside, validate_release
 
 
@@ -33,14 +34,36 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--component", default="all")
     parser.add_argument("--backup-receipt", type=Path)
     parser.add_argument("--identity-preparation", type=Path)
+    parser.add_argument("--dry-run", nargs="?", const="true", choices=("true", "false"))
     parser.add_argument("action", nargs="?", choices=ACTIONS, default="plan")
     parser.add_argument("compatibility", nargs="*")
-    return parser.parse_args()
+    # Allow `--dry-run deploy ...` as well as `deploy ... --dry-run=false`.
+    argv = list(sys.argv[1:])
+    if sum(value == "--dry-run" or value.startswith("--dry-run=") for value in argv) > 1:
+        parser.error("duplicate --dry-run")
+    for index, value in enumerate(argv):
+        if value == "--dry-run" and (index + 1 == len(argv) or argv[index + 1] not in ("true", "false")):
+            argv[index] = "--dry-run=true"
+    return parser.parse_args(argv)
 
 
 def main() -> int:
     args = parse_args()
     try:
+        if len(args.compatibility) > 4:
+            raise ConfigError("too many compatibility positional arguments")
+        positional_mode = args.compatibility[3] if len(args.compatibility) == 4 else None
+        inherited_mode = os.environ.get("SUNMOON_DEPLOY_DRY_RUN", "false")
+        if positional_mode not in (None, "true", "false") or inherited_mode not in ("true", "false"):
+            raise ConfigError("dry_run must be true or false")
+        if args.dry_run is not None and positional_mode is not None and args.dry_run != positional_mode:
+            raise ConfigError("conflicting named and positional dry_run")
+        if inherited_mode == "true" and "false" in (args.dry_run, positional_mode):
+            raise ConfigError("cannot disable inherited dry-run")
+        if "true" in (args.dry_run, positional_mode, inherited_mode):
+            # In particular, legacy `deploy project namespace environment true`
+            # must never map to apply or server-dry-run.
+            args.action = "plan"
         app_root = args.app_root.resolve()
         config_path = args.config.resolve()
         base = load_base(config_path)
@@ -57,8 +80,6 @@ def main() -> int:
         if release.get("formal_release") is False and cluster != "KIND":
             raise ConfigError("development releases can only use the KIND profile")
         validate_release(base, release)
-        if len(args.compatibility) > 4:
-            raise ConfigError("too many compatibility positional arguments")
         if len(args.compatibility) >= 2 and args.compatibility[1] != base["NAMESPACE"]:
             raise ConfigError(
                 f"namespace is locked by the release: {base['NAMESPACE']}"
@@ -87,7 +108,7 @@ def main() -> int:
             )
         action = ACTION_MAP.get(args.action, args.action)
         command = [
-            sys.executable, str(deploy_script), action,
+            sys.executable, "-B", str(deploy_script), action,
             "--kubeconfig", str(kubeconfig), "--timeout", str(timeout),
             "--component", args.component,
             "--cluster", cluster,
@@ -98,6 +119,7 @@ def main() -> int:
             command.extend(("--identity-preparation", str(args.identity_preparation.resolve())))
         environment = os.environ.copy()
         environment.pop("DEBUG", None)
+        environment["PYTHONDONTWRITEBYTECODE"] = "1"
         return subprocess.run(command, env=environment, check=False).returncode
     except (ConfigError, OSError, ValueError, json.JSONDecodeError) as exc:
         print(json.dumps({"result": "failed", "error": str(exc)}, ensure_ascii=False), file=sys.stderr)

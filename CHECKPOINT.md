@@ -1,5 +1,18 @@
 # luna 工作检查点
 
+## 最新续接：2026-09-28 全组件入口干运行覆盖
+
+基线 `c132d99d`，本地 luna 开工干净。所有者指出不能只修六个组件，要求全部组件一起修；本轮沿所有平台的部署入口扩展，未恢复现场迁移。
+
+- 新 operations/deployment-dry-run-inventory.json 精确列186项：六个平台所有168个deploy-*.sh/deploy.sh，加总控、Casdoor部署辅助/数据库访问CLI、Secret生成器、手动NAT、云/证书及独立Harbor入口。149旧活动Shell在首个副作用前调用共享deploy-plan.sh；21正式App/角色入口共用Python修复；2总控保留详细本地配置计划；2原生Ingress、1云、1证书、6Harbor保留原生协议；4停用入口保持拒绝。signup函数库由调用入口保护，不把容器脚本/任意source函数/所有工具纳入无副作用保证。
+- 共用请求层支持命名--dry-run与各旧位置布尔契约，先解析集群选项再定位布尔位；无效、重复、冲突、继承计划被false覆盖均拒绝。普通组件在加载配置/连接库/凭据/临时文件/退出trap前返回；根/Data计划只读本地配置，未执行组件。缺省真实执行行为未改变；普通组件计划是请求摘要，不是配置展开或Helm渲染。RabbitMQ logs第五位数字仍作tail_lines，聚合传false时用默认行数。旧六个main内重复保护收口到首部。
+- 发现正式应用兼容位置dry_run被忽略，deploy true仍可能转apply。formal_deploy_entry.py在动作映射前严格解析，命名或位置true转本地plan，保留本地发布/namespace门禁；server-dry-run仍为显式API验证。三个总入口和后代Python用-B/禁bytecode；普通正式角色包装器继续透传。
+- CI/CD原main忽略action始终deploy，现按deploy/uninstall/status/logs调启用组件，卸载逆优先级、未知拒绝。Ops status接原启用组件检查，卸载失败/缺脚本上报失败。CI/CD/Messaging/App/Ops/RabbitMQ Secret聚合显式传失败；部分原默认调用shift空参修正。Mongo Express去原始参数回显，两脚本补shebang；没有改平台版本、配置开关值、凭据或数据路径。
+- 云总控补status/steps/materials --dry-run只打印分支；原生Ingress/证书拒绝继承计划时执行apply/verify，Ingress本地Python用-B。独立Harbor6入口审阅默认非apply即返回的分支，未改生命周期。云仍未经实机验证。辅助Demo/手工NAT/DB接入工具仅增加计划边界，其实际旧行为并不因此成为正式新版流程。
+- 静态：158修改Shell bash -n/ShellCheck error级、1修改Python AST、1 JSON解析、186清单路径与149提前返回位置/公共helper相对路径核对、168部署Shell集合完整性、13文档链接、git diff --check通过；最后RabbitMQ参数特例单独重查语法/ShellCheck。没有跑任何入口计划/实际分支、行为测试、Helm/K8s/Docker/SSH/Windows或清理。不能宣称全组件部署、故障注入或云实机已验收。
+- 文档deployment-dry-run.md说明全范围、不同参数契约、默认行为、计划与server-dry-run区别及剩余验证；配置索引和utils README同步。正式迁移仍未完成，inbox仍旧kind。旧节点/卷/Harbor/备份保护不变；最终本机refactor临时文件及东京下载清理不可遗漏。本轮仅代码/文档，无新运行时临时物料。只提交本地luna，不push；回退本单元仅Git文件。
+
+
 ## 最新续接：2026-09-28 数据组件干运行提前返回与错误传播
 
 基线 `ca17466c9633e0b8dfd765abd5a15b4aef0054cd`，本地 luna 开工干净；继续代码整理，运行态迁移仍未恢复。

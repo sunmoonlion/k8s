@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# Pure request admission; the detailed platform plan below reads only local configuration.
+# shellcheck source=/dev/null
+source "$(dirname -- "${BASH_SOURCE[0]}")/../../utils/deploy-plan.sh" || exit 2
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" root "$@" || exit $?
+set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
+
 # =============================================================================
 # SunmoonAI 项目总部署脚本
 # - 管理多个平台组件的部署
@@ -922,6 +928,7 @@ main() {
     local project_id="${2:-$DEFAULT_PROJECT_ID}"
     local environment="${3:-$DEFAULT_ENVIRONMENT}"
     local dry_run="${4:-false}"
+    [[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || dry_run=true
     local namespace="dummy"  # 保留参数但不使用
     
     # 检查参数
@@ -936,6 +943,11 @@ main() {
         log_info "🎯 当前集群配置: ${CLUSTER}"
     fi
     
+    if [[ "$dry_run" == true && "$action" != deploy ]]; then
+        sunmoon_deploy_print_plan sunmoonai "$action" "$project_id" "$namespace" "$environment"
+        return $?
+    fi
+
     # 执行操作
     case "$action" in
         "deploy")

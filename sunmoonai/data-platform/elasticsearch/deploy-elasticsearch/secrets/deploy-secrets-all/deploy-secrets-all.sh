@@ -1,4 +1,11 @@
 #!/bin/bash
+
+# Shared request boundary: before configuration, credentials, connections and EXIT traps.
+# shellcheck source=/dev/null
+source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../../../utils/deploy-plan.sh" || exit 2
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" optional-action "$@" || exit $?
+[[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
+set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

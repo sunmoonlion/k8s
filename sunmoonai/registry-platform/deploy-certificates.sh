@@ -21,6 +21,11 @@ while [[ $# -gt 0 ]]; do
         *) echo 'Unsupported certificate argument' >&2; exit 1 ;;
     esac
 done
+case "${SUNMOON_DEPLOY_DRY_RUN:-false}" in
+    true) [[ "$action" == --dry-run ]] || { echo 'Cannot disable inherited dry-run' >&2; exit 1; } ;;
+    false) ;;
+    *) echo 'SUNMOON_DEPLOY_DRY_RUN must be true/false' >&2; exit 1 ;;
+esac
 export CLUSTER="${cluster^^}"
 case "$CLUSTER" in
     KIND)

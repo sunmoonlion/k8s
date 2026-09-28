@@ -71,33 +71,35 @@
 
 ## 部署计划与干运行范围
 
-`./sunmoon platform plan --cluster KIND` 保持现有总控计划入口。需要单独看数据平台的启用项、优先级和目标参数时：
+总控仍使用 `./sunmoon platform plan --cluster KIND`；Data Platform 的既有位置参数计划也保留，
+它们会读取本地配置列出开关/优先级，但不会执行组件。日常 `.conf` 和真实部署参数没有改格式。
+
+所有平台的活动 Shell 部署入口（包括 Secret、Ingress、中间件）现在在加载配置、连接库、退出清理之前
+通过 `utils/deploy-plan.sh` 识别计划。推荐统一使用命名参数：
 
 ```bash
-bash sunmoonai/data-platform/deploy-data-platform-all/deploy-data-platform-all.sh \
-  --cluster KIND deploy sunmoonai data-platform-dev development true
+bash sunmoonai/ops-platform/flower/deploy-flower/deploy-flower.sh --dry-run --cluster KIND deploy
+bash sunmoonai/data-platform/postgresql/deploy-postgresql/secrets/postgresql-auth-secret/deploy-postgresql-auth-secret/deploy-postgresql-auth-secret.sh --dry-run
 ```
 
-末尾 `true` 是 `dry_run`，只接受 `true/false`。Data Platform 按现有 `.conf` 排序列出组件；
-Redis NodeBull 仍传 `project_id=nodebull`。计划不调用组件脚本，启用的脚本缺失会报错。
-实际子组件失败向上传递，不再继续打印整个平台成功。
+旧接口已有的位置 `dry_run=true` 继续生效，缺省仍保持原来行为，**这些旧脚本不因本次改动默认变成计划模式**。
+不同脚本的 action/project/namespace 参数顺序有差异，不应把同一组位置参数直接套到所有脚本；
+逐入口契约和范围见[完整覆盖说明](deployment-dry-run.md)及其 JSON 清单。
+布尔值只接受 true/false；相互矛盾的命名、位置或继承参数会拒绝，不会退回实际执行。
 
-PostgreSQL、MongoDB、Neo4j、Redis（含 NodeBull）、Object Storage 和 Casdoor 的独立主入口也使用同一模式校验：
-`<action> <project_id> <namespace> <environment> true` 在连接初始化之前打印请求并返回。
-不会进入 Secret、数据库初始化、静态卷、Ingress、Helm、状态查询或连接清理。
-这些入口支持其原有动作；Data Platform 总控仍只接受 deploy/uninstall/status/logs。
-PostgreSQL upgrade 复用 deploy 时保留递归调用参数，避免重置回原始 upgrade 请求。
-MongoDB/Redis 配置映射路径修正为根 utils，保留按集群选择配置的原有意图。
+普通组件计划仅输出请求，不加载它的 Shell `.conf`/私有凭据，不生成 Secret/values/证书，
+不连接 Kubernetes、Docker、SSH、数据库，也不触发连接清理。
+因此它不展示配置展开后的完整部署步骤，不代表 Helm 渲染、镜像可用或实际安装成功。
+总控详细计划与正式应用的发布校验计划仍保留各自的只读本地配置解析。
 
-这里的计划是请求与配置摘要，不是 Helm `--dry-run` 渲染，也不是准入或部署成功证明。
-会读取现有受信任 Shell `.conf`（它们仍是可执行配置），不打印凭据；
-没有把配置转换为数据解析器。共享函数本身不阻止其他脚本直接调用 Kubernetes/Helm。
-未接入此分支的旧组件、Secret/Ingress 子脚本独立运行时，不应据此认定支持无副作用的 dry-run。
-本批只有静态检查；行为验证、完整渲染、真实部署及云端实机验收仍待完成。
+Info/Knowledge/Investment 三个正式应用及角色入口共用 Python 解析器：旧格式
+`deploy project namespace environment true` 与 `--dry-run` 都转到本地 `plan`。
+`server-dry-run` 是另一种显式动作，会访问 API，不能等同于这里的离线计划。
+新入口的 `--apply/--dry-run` 协议、身份/版本/恢复门禁继续保留，停用入口仍拒绝执行。
 
-总控实际部署仍保留 `PREPARE_SECRETS_FROM_EXAMPLES` 开关及当前默认值；
-启用时准备脚本缺失或失败会停止，不再忽略错误。复制出来的是待填写的模板，
-不能把“模板复制成功”当作凭据准备完成，组件凭据准入仍需继续核对。
+实际总控保留 `PREPARE_SECRETS_FROM_EXAMPLES` 开关及当前默认值；准备失败即停止。
+模板复制成功不代表凭据可用。部署消费者的完整行为、凭据准入、云端实机验证仍要随迁移验收；
+本批只做代码审阅与静态检查，没有执行入口、测试或部署。
 
 镜像检查入口 `./sunmoon harbor images check --component <名称>` 支持同样的 `--config` 和 `--credentials-file`。
 默认只打印；显式 C1/C2/C3 未提供仓库配置时拒绝，不隐式退回 WSL。详见 [组件镜像检查](../docs/harbor-component-image-ensure.md)。

@@ -378,7 +378,8 @@ usage(){
 }
 
 main(){
-    local action="" dry_run=false arg
+    local action="" dry_run="${SUNMOON_DEPLOY_DRY_RUN:-false}" arg
+    [[ "$dry_run" == true || "$dry_run" == false ]] || { log_error 'SUNMOON_DEPLOY_DRY_RUN must be true/false'; return 1; }
     for arg in "${ORIGINAL_ARGS[@]}"; do
         case "$arg" in
             --dry-run) dry_run=true ;;
@@ -397,9 +398,18 @@ main(){
         full|deploy|all)
             if [[ "$dry_run" == true ]]; then show_deployment_plan; else deploy_all; fi
             ;;
-        status|steps) show_step_status ;;
+        status|steps)
+            if [[ "$dry_run" == true ]]; then
+                printf '[dry-run] cluster=%s action=%s; 不检查远程状态\n' "$CLUSTER" "$action"
+            else
+                show_step_status
+            fi ;;
         materials)
-            python3 "$PROJECT_ROOT/materials/bundle.py" verify --root "${INFRA_MATERIAL_ROOT:-$HOME/packages-to-be-installed}"
+            if [[ "$dry_run" == true ]]; then
+                printf '[dry-run] cluster=%s action=materials; 不运行物料校验\n' "$CLUSTER"
+            else
+                python3 -B "$PROJECT_ROOT/materials/bundle.py" verify --root "${INFRA_MATERIAL_ROOT:-$HOME/packages-to-be-installed}"
+            fi
             ;;
         step*)
             if [[ "$dry_run" == true ]]; then

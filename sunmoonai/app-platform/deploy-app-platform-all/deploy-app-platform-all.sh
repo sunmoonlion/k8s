@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+
+# Shared request boundary: before configuration, credentials, connections and EXIT traps.
+# shellcheck source=/dev/null
+source "$(dirname -- "${BASH_SOURCE[0]}")/../../../utils/deploy-plan.sh" || exit 2
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" optional-action "$@" || exit $?
+[[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
+set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
 set -euo pipefail
 
 THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -160,7 +167,7 @@ run_app_platform() {
     log_info "开始执行 App Platform: $action"
     log_info "项目: $project_id, 命名空间: $namespace, 环境: $environment"
 
-    run_business_apps_by_priority "$action" "$project_id" "$namespace" "$environment" "$dry_run"
+    run_business_apps_by_priority "$action" "$project_id" "$namespace" "$environment" "$dry_run" || return 1
 
     log_success "✅ App Platform $action 完成！"
 }
@@ -172,7 +179,7 @@ main() {
 
     local action="${1:-deploy}"
     if [[ "$action" == "deploy" || "$action" == "uninstall" || "$action" == "status" || "$action" == "logs" ]]; then
-        shift
+        [[ $# -eq 0 ]] || shift
     fi
 
     local project_id="${1:-${APP_PLATFORM_PROJECT_ID:-$DEFAULT_PROJECT_ID}}"

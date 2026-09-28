@@ -1,0 +1,936 @@
+{
+  "schema": 1,
+  "scope": "six platform trees: all deploy-*.sh/deploy.sh; root deployment; Casdoor post-install/db-access CLI, Secret generator, manual Traefik NAT; native cloud/certificates and retired KIND entry; six external Harbor lifecycle/recovery/scanner/SNI entry points retain explicit --apply",
+  "entries": [
+    {
+      "path": "sunmoonai/app-platform/auth-app/casdoor/deploy-casdoor/deploy-casdoor.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/auth-app/casdoor/deploy-casdoor/ingress/deploy-ingress/deploy-ingress.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/auth-app/casdoor/deploy-casdoor/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/app-platform/auth-app/casdoor/deploy-casdoor/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/app-platform/auth-app/deploy-auth-app-all/deploy-auth-app-all.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/app-platform/deploy-app-platform-all/deploy-app-platform-all.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/app-platform/info-app/deploy-info-admin-frontend/deploy-info-admin-frontend.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/info-app/deploy-info-app-all/deploy-info-app-all.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/info-app/deploy-info-backend-api/deploy-info-backend-api.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/info-app/deploy-info-backend-scheduler/deploy-info-backend-scheduler.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/info-app/deploy-info-backend-worker/deploy-info-backend-worker.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/info-app/deploy-info-migration/deploy-info-migration.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/info-app/deploy-info-web-frontend/deploy-info-web-frontend.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/investment-app/deploy-investment-admin-frontend/deploy-investment-admin-frontend.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/investment-app/deploy-investment-app-all/deploy-investment-app-all.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/investment-app/deploy-investment-backend-api/deploy-investment-backend-api.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/investment-app/deploy-investment-backend-scheduler/deploy-investment-backend-scheduler.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/investment-app/deploy-investment-backend-worker/deploy-investment-backend-worker.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/investment-app/deploy-investment-migration/deploy-investment-migration.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/investment-app/deploy-investment-web-frontend/deploy-investment-web-frontend.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/document-converter-backend/deploy-document-converter-backend/app/deploy-app/deploy-document-converter-backend.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/document-converter-backend/deploy-document-converter-backend/configMap/dc-config/deploy-dc-config/deploy-dc-config.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/document-converter-backend/deploy-document-converter-backend/ingress/deploy-ingress/deploy-ingress.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/document-converter-backend/deploy-document-converter-backend/middleware/deploy-middleware-all/deploy-middleware-all.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/document-converter-backend/deploy-document-converter-backend/namespace/dc-backend-ns/deploy-dc-backend-ns/deploy-dc-backend-ns.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/document-converter-backend/deploy-document-converter-backend/pvc/document-converter-pvc/deploy-document-converter-pvc/deploy-document-converter-pvc.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/document-converter-backend/deploy-document-converter-backend/secret/dc-secret/deploy-dc-secret/deploy-dc-secret.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/document-converter-backend/deploy-document-converter-backend/secret/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/onlyoffice-docs-bff/deploy-onlyoffice-docs/deploy-onlyoffice-docs.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/onlyoffice-docs-bff/ingress/deploy-ingress/deploy-ingress.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/onlyoffice-docs-bff/middleware/deploy-middleware-all/deploy-middleware-all.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/onlyoffice-docs-bff/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/onlyoffice-docs-bff/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/onlyoffice-docs-bff/secrets/onlyoffice-jwt-secret/deploy-onlyoffice-jwt-secret/deploy-onlyoffice-jwt-secret.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/onlyoffice-docs-bff/secrets/onlyoffice-postgresql-secret/deploy-onlyoffice-postgresql-secret/deploy-onlyoffice-postgresql-secret.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/onlyoffice-docs-bff/secrets/onlyoffice-rabbitmq-secret/deploy-onlyoffice-rabbitmq-secret/deploy-onlyoffice-rabbitmq-secret.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/onlyoffice-docs-bff/secrets/onlyoffice-redis-secret/deploy-onlyoffice-redis-secret/deploy-onlyoffice-redis-secret.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/deploy-knowledge-admin-frontend/deploy-knowledge-admin-frontend.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/deploy-knowledge-app-all/deploy-knowledge-app-all.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/deploy-knowledge-backend-api/deploy-knowledge-backend-api.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/deploy-knowledge-backend-scheduler/deploy-knowledge-backend-scheduler.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/deploy-knowledge-backend-worker/deploy-knowledge-backend-worker.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/deploy-knowledge-migration/deploy-knowledge-migration.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/deploy-knowledge-web-frontend/deploy-knowledge-web-frontend.sh",
+      "kind": "formal-app",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/providers/ragflow/deploy-ragflow/app/deploy-app/deploy-ragflow.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/providers/ragflow/deploy-ragflow/ingress/ragflow-ingress/deploy-ingress/deploy-ingress.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/cicd-platform/deploy-cicd-platform-all/deploy-cicd-platform-all.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/cicd-platform/harbor/deploy-harbor/deploy-harbor.sh",
+      "kind": "retired-deny",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/cicd-platform/harbor/deploy-harbor/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "kind": "retired-deny",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/cicd-platform/harbor/deploy-harbor/secrets/harbor-secret/deploy-harbor-secret/deploy-harbor-secret.sh",
+      "kind": "retired-deny",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/cicd-platform/jenkins/deploy-jenkins/deploy-jenkins.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/cicd-platform/jenkins/deploy-jenkins/ingress/deploy-ingress/deploy-ingress.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/cicd-platform/jenkins/deploy-jenkins/ingress/deploy-ingress/deploy-web-routes.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/cicd-platform/jenkins/deploy-jenkins/middleware/deploy-middleware-all/deploy-middleware-all.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/cicd-platform/jenkins/deploy-jenkins/middleware/jenkins-policy/deploy-jenkins-policy/deploy-jenkins-policy.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/cicd-platform/jenkins/deploy-jenkins/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/cicd-platform/jenkins/deploy-jenkins/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/cicd-platform/jenkins/deploy-jenkins/secrets/jenkins-sunmoonai/deploy-jenkins-sunmoonai/deploy-jenkins-secrets.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/cicd-platform/jenkins/deploy-jenkins/secrets/kaniko-registry-secret/deploy-kaniko-registry-secret/deploy-kaniko-registry-secret.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/data-platform/deploy-data-platform-all/deploy-data-platform-all.sh",
+      "kind": "data-plan",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/elasticsearch/deploy-elasticsearch/deploy-elasticsearch.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/elasticsearch/deploy-elasticsearch/ingress/deploy-ingress/deploy-ingress.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/elasticsearch/deploy-elasticsearch/middleware/deploy-middleware-all/deploy-middleware-all.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/elasticsearch/deploy-elasticsearch/middleware/elasticsearch-policy/deploy-elasticsearch-policy/deploy-elasticsearch-policy.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/data-platform/elasticsearch/deploy-elasticsearch/middleware/elasticsearch-stripprefix/deploy-elasticsearch-stripprefix/deploy-elasticsearch-stripprefix.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/data-platform/elasticsearch/deploy-elasticsearch/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/elasticsearch/deploy-elasticsearch/secrets/elasticsearch-myapp-secret/deploy-elasticsearch-myapp-secret/deploy-elasticsearch-myapp-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/elasticsearch/deploy-elasticsearch/secrets/elasticsearch-secrets/deploy-elasticsearch-secrets/deploy-elasticsearch-secrets.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/data-platform/elasticsearch/deploy-elasticsearch/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/kibana/deploy-kibana/deploy-kibana.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/kibana/deploy-kibana/ingress/deploy-ingress/deploy-ingress.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/kibana/deploy-kibana/middleware/deploy-middleware-all/deploy-middleware-all.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/kibana/deploy-kibana/middleware/kibana-policy/deploy-kibana-policy/deploy-kibana-policy.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/data-platform/kibana/deploy-kibana/middleware/kibana-stripprefix/deploy-kibana-stripprefix/deploy-kibana-stripprefix.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/data-platform/kibana/deploy-kibana/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "kind": "early-shell",
+      "profile": "project"
+    },
+    {
+      "path": "sunmoonai/data-platform/kibana/deploy-kibana/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/kibana/deploy-kibana/secrets/kibana-elasticsearch-secret/deploy-kibana-elasticsearch-secret/deploy-kibana-elasticsearch-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/logstash/deploy-logstash/deploy-logstash.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/logstash/deploy-logstash/ingress/deploy-ingress/deploy-ingress.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/logstash/deploy-logstash/middleware/deploy-middleware-all/deploy-middleware-all.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/logstash/deploy-logstash/middleware/logstash-policy/deploy-logstash-policy/deploy-logstash-policy.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/data-platform/logstash/deploy-logstash/middleware/logstash-stripprefix/deploy-logstash-stripprefix/deploy-logstash-stripprefix.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/data-platform/logstash/deploy-logstash/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "kind": "early-shell",
+      "profile": "project"
+    },
+    {
+      "path": "sunmoonai/data-platform/logstash/deploy-logstash/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/logstash/deploy-logstash/secrets/logstash-elasticsearch-secret/deploy-logstash-elasticsearch-secret/deploy-logstash-elasticsearch-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/mongodb/deploy-mongodb/deploy-mongodb.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/mongodb/deploy-mongodb/ingress/deploy-ingress/deploy-ingress.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/mongodb/deploy-mongodb/middleware/deploy-middleware-all/deploy-middleware-all.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/mongodb/deploy-mongodb/middleware/mongodb-policy/deploy-mongodb-policy/deploy-mongodb-policy.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/data-platform/mongodb/deploy-mongodb/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/mongodb/deploy-mongodb/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/mongodb/deploy-mongodb/secrets/mongodb-auth-secret/deploy-mongodb-auth-secret/deploy-mongodb-auth-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/mongodb/deploy-mongodb/secrets/mongodb-llmopsservice-db-secret/deploy-mongodb-llmopsservice-db-secret/deploy-mongodb-llmopsservice-db-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/neo4j/deploy-neo4j/deploy-neo4j.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/neo4j/deploy-neo4j/ingress/deploy-ingress-all/deploy-ingress-all.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/data-platform/neo4j/deploy-neo4j/ingress/tcp-routes/deploy-tcp-routes/deploy-tcp-routes.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/data-platform/neo4j/deploy-neo4j/ingress/web-routes/deploy-web-routes/deploy-web-routes.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/data-platform/neo4j/deploy-neo4j/middleware/deploy-middleware-all/deploy-middleware-all.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/neo4j/deploy-neo4j/middleware/neo4j-policy/deploy-neo4j-policy/deploy-neo4j-policy.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/data-platform/neo4j/deploy-neo4j/middleware/neo4j-stripprefix/deploy-neo4j-stripprefix/deploy-neo4j-stripprefix.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/data-platform/neo4j/deploy-neo4j/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/neo4j/deploy-neo4j/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/neo4j/deploy-neo4j/secrets/neo4j-secrets/deploy-neo4j-secrets/deploy-neo4j-secrets.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/object-storage/deploy-object-storage/deploy-object-storage.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/postgresql/deploy-postgresql/deploy-postgresql.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/postgresql/deploy-postgresql/ingress/deploy-ingress/deploy-ingress.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/postgresql/deploy-postgresql/middleware/deploy-middleware-all/deploy-middleware-all.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/postgresql/deploy-postgresql/middleware/postgresql-policy/deploy-postgresql-policy/deploy-postgresql-policy.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/data-platform/postgresql/deploy-postgresql/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/postgresql/deploy-postgresql/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/postgresql/deploy-postgresql/secrets/postgresql-auth-secret/deploy-postgresql-auth-secret/deploy-postgresql-auth-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/postgresql/deploy-postgresql/secrets/postgresql-authservice-db-secret/deploy-postgresql-authservice-db-secret/deploy-postgresql-authservice-db-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/postgresql/deploy-postgresql/secrets/postgresql-llmopsservice-db-secret/deploy-postgresql-llmopsservice-db-secret/deploy-postgresql-llmopsservice-db-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/redis/deploy-redis/deploy-redis.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/redis/deploy-redis/ingress/deploy-ingress/deploy-ingress.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/redis/deploy-redis/middleware/deploy-middleware-all/deploy-middleware-all.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/data-platform/redis/deploy-redis/middleware/redis-policy/deploy-redis-policy/deploy-redis-policy.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/data-platform/redis/deploy-redis/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/data-platform/redis/deploy-redis/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/redis/deploy-redis/secrets/redis-auth-secret/deploy-redis-auth-secret/deploy-redis-auth-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/redis/deploy-redis/secrets/redis-llmopsservice-secret/deploy-redis-llmopsservice-secret/deploy-redis-llmopsservice-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/redis/deploy-redis/secrets/redis-myapp-secret/deploy-redis-myapp-secret/deploy-redis-myapp-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/data-platform/redis/deploy-redis/secrets/redis-secrets/deploy-redis-secrets/deploy-redis-secrets.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/ingress-platform/deploy-ingress-platform-all/deploy-ingress-platform-all.sh",
+      "kind": "native-ingress",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/ingress-platform/traefik/deploy-traefik/deploy-traefik.sh",
+      "kind": "native-ingress",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/ingress-platform/traefik/deploy-traefik/middleware/deploy-middleware-all/deploy-middleware-all.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/ingress-platform/traefik/deploy-traefik/middleware/traefik-buffering-middleware/deploy-buffering-traefik-middleware/deploy-traefik-middleware.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "kind": "early-shell",
+      "profile": "project"
+    },
+    {
+      "path": "sunmoonai/ingress-platform/traefik/deploy-traefik/secrets/traefik-tls-secret/deploy-traefik-tls-secret/deploy-traefik-tls-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/messaging-platform/deploy-messaging-platform-all/deploy-messaging-platform-all.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/messaging-platform/rabbitmq/deploy-rabbitmq/deploy-rabbitmq.sh",
+      "kind": "early-shell",
+      "profile": "action-logs-tail"
+    },
+    {
+      "path": "sunmoonai/messaging-platform/rabbitmq/deploy-rabbitmq/ingress/deploy-ingress/deploy-ingress.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/messaging-platform/rabbitmq/deploy-rabbitmq/middleware/deploy-middleware-all/deploy-middleware-all.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/messaging-platform/rabbitmq/deploy-rabbitmq/middleware/rabbitmq-policy/deploy-rabbitmq-policy/deploy-rabbitmq-policy.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/messaging-platform/rabbitmq/deploy-rabbitmq/middleware/rabbitmq-stripprefix/deploy-rabbitmq-stripprefix/deploy-rabbitmq-stripprefix.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/messaging-platform/rabbitmq/deploy-rabbitmq/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/messaging-platform/rabbitmq/deploy-rabbitmq/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/messaging-platform/rabbitmq/deploy-rabbitmq/secrets/rabbitmq-auth-secret/deploy-rabbitmq-auth-secret/deploy-rabbitmq-auth-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/deploy-ops-platform-all/deploy-ops-platform-all.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/flower/deploy-flower/deploy-flower.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/flower/deploy-flower/ingress/deploy-ingress/deploy-ingress.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/flower/deploy-flower/middleware/deploy-middleware-all/deploy-middleware-all.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/flower/deploy-flower/middleware/flower-policy/deploy-flower-policy/deploy-flower-policy.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/ops-platform/flower/deploy-flower/middleware/flower-stripprefix/deploy-flower-stripprefix/deploy-flower-stripprefix.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/ops-platform/flower/deploy-flower/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/flower/deploy-flower/secrets/flower-secrets/deploy-flower-secrets/deploy-flower-secrets.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/flower/deploy-flower/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/mongo-express/deploy-mongo-express/deploy-mongo-express.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/mongo-express/deploy-mongo-express/ingress/deploy-ingress/deploy-ingress.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/mongo-express/deploy-mongo-express/middleware/deploy-middleware-all/deploy-middleware-all.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/mongo-express/deploy-mongo-express/middleware/mongo-express-policy/deploy-mongo-express-policy/deploy-mongo-express-policy.sh",
+      "kind": "early-shell",
+      "profile": "namespace"
+    },
+    {
+      "path": "sunmoonai/ops-platform/mongo-express/deploy-mongo-express/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/mongo-express/deploy-mongo-express/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/mongo-express/deploy-mongo-express/secrets/mongo-express-secrets/deploy-mongo-express-secrets/deploy-mongo-express-secrets.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/pgadmin/deploy-pgadmin/deploy-pgadmin.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/pgadmin/deploy-pgadmin/ingress/deploy-ingress/deploy-ingress.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/pgadmin/deploy-pgadmin/middleware/deploy-middleware-all/deploy-middleware-all.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/pgadmin/deploy-pgadmin/middleware/pgadmin-policy/deploy-pgadmin-policy/deploy-pgadmin-policy.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/pgadmin/deploy-pgadmin/middleware/pgadmin-stripprefix/deploy-pgadmin-stripprefix/deploy-pgadmin-stripprefix.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/pgadmin/deploy-pgadmin/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/pgadmin/deploy-pgadmin/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/pgadmin/deploy-pgadmin/secrets/pgadmin-auth-secret/deploy-pgadmin-auth-secret/deploy-pgadmin-auth-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/redisinsight/deploy-redisinsight/deploy-redisinsight.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/redisinsight/deploy-redisinsight/ingress/deploy-ingress/deploy-ingress.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/redisinsight/deploy-redisinsight/middleware/deploy-middleware-all/deploy-middleware-all.sh",
+      "kind": "early-shell",
+      "profile": "action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/redisinsight/deploy-redisinsight/secrets/deploy-secrets-all/deploy-secrets-all.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/ops-platform/redisinsight/deploy-redisinsight/secrets/harbor-registry-secret/deploy-harbor-registry-secret/deploy-harbor-registry-secret.sh",
+      "kind": "early-shell",
+      "profile": "optional-action"
+    },
+    {
+      "path": "sunmoonai/app-platform/auth-app/casdoor/deploy-casdoor/post-deploy-setup.sh",
+      "kind": "early-shell",
+      "profile": "named"
+    },
+    {
+      "path": "sunmoonai/app-platform/auth-app/casdoor/deploy-casdoor/kind-apply-signup.sh",
+      "kind": "early-shell",
+      "profile": "named"
+    },
+    {
+      "path": "sunmoonai/deploy-sunmoonai-all/deploy-sunmoonai-all.sh",
+      "kind": "root-plan",
+      "profile": "root"
+    },
+    {
+      "path": "sunmoonai/app-platform/question-data-demo/deploy.sh",
+      "kind": "early-shell",
+      "profile": "named"
+    },
+    {
+      "path": "sunmoonai/app-platform/utils/generate-harbor-registry-secret.sh",
+      "kind": "early-shell",
+      "profile": "named"
+    },
+    {
+      "path": "sunmoonai/ingress-platform/traefik/setup-iptables-forward.sh",
+      "kind": "early-shell",
+      "profile": "named"
+    },
+    {
+      "path": "sunmoonai/app-platform/auth-app/casdoor/db-access-bootstrap/setup-external-db-access.sh",
+      "kind": "early-shell",
+      "profile": "named"
+    },
+    {
+      "path": "sunmoonai/app-platform/auth-app/casdoor/db-access-bootstrap/setup-k8s-db-access.sh",
+      "kind": "early-shell",
+      "profile": "named"
+    },
+    {
+      "path": "sunmoonai/app-platform/auth-app/casdoor/db-access-bootstrap/teardown-external-db-access.sh",
+      "kind": "early-shell",
+      "profile": "named"
+    },
+    {
+      "path": "sunmoonai/app-platform/auth-app/casdoor/db-access-bootstrap/teardown-k8s-db-access.sh",
+      "kind": "early-shell",
+      "profile": "named"
+    },
+    {
+      "path": "sunmoonai/infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.sh",
+      "kind": "native-cloud",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/kind-infrastructure/deploy-kind/deploy-kind.sh",
+      "kind": "retired-deny",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/registry-platform/deploy-certificates.sh",
+      "kind": "native-certificates",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/registry-platform/host_prepare.py",
+      "kind": "native-registry",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/registry-platform/host_runtime.py",
+      "kind": "native-registry",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/registry-platform/host_restore.py",
+      "kind": "native-registry",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/registry-platform/host_backup.py",
+      "kind": "native-registry",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/registry-platform/sni_proxy.py",
+      "kind": "native-registry",
+      "profile": null
+    },
+    {
+      "path": "sunmoonai/registry-platform/host_scanner.py",
+      "kind": "native-registry",
+      "profile": null
+    }
+  ]
+}

@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Shared request boundary: before configuration, credentials, connections and EXIT traps.
+# shellcheck source=/dev/null
+source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../../utils/deploy-plan.sh" || exit 2
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" action "$@" || exit $?
+[[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
+set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
+
 # Casdoor 部署脚本
 # 使用官方 Helm chart：https://casdoor.github.io/casdoor-helm
 # 部署到 app-platform-dev 命名空间
@@ -26,9 +33,6 @@ if [[ $# -gt 0 ]]; then
         ORIGINAL_ARGS=("${PARSED_ARGS[@]}")
     fi
 fi
-
-# Validate before config errors can trigger the legacy connection cleanup trap.
-sunmoon_deploy_validate_mode "${ORIGINAL_ARGS[4]:-false}" || exit 1
 
 CASDOOR_CONFIG_FILE="$SCRIPT_DIR/deploy-casdoor.conf"
 if [[ -f "$CASDOOR_CONFIG_FILE" ]]; then
@@ -326,11 +330,6 @@ main() {
     local environment="${4:-$DEFAULT_ENVIRONMENT}"
     local dry_run="${5:-false}"
 
-    sunmoon_deploy_validate_mode "$dry_run" || return 1
-    if [[ "$dry_run" == true ]]; then
-        sunmoon_deploy_print_plan casdoor "$action" "$project_id" "$namespace" "$environment"
-        return $?
-    fi
 
 
     case "$action" in

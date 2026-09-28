@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Shared request boundary: before configuration, credentials, connections and EXIT traps.
+# shellcheck source=/dev/null
+source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../../../utils/deploy-plan.sh" || exit 2
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" optional-action "$@" || exit $?
+[[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
+set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
+
 # =============================================================================
 # Mongo Express Secrets 总控部署脚本
 # 文件名: deploy-secrets-all.sh
@@ -40,11 +47,9 @@ declare -a PARSED_ARGS=()
 ORIGINAL_ARGS=("$@")
 if [[ $# -gt 0 ]]; then
     log_info "原始参数数量: $#"
-    log_info "原始参数: ${ORIGINAL_ARGS[@]}"
     if type unified_parse_cluster_arg >/dev/null 2>&1; then
         unified_parse_cluster_arg "$@"
         log_info "解析后参数数量: ${#PARSED_ARGS[@]}"
-        log_info "解析后参数: ${PARSED_ARGS[@]}"
         # 注意：不要覆盖 ORIGINAL_ARGS，保留原始参数用于后续处理
         # PARSED_ARGS 包含已移除 --cluster 参数的参数列表
     else
@@ -189,7 +194,6 @@ main() {
     
     # 调试：显示解析后的参数
     log_info "解析后的参数数量: $#"
-    log_info "解析后的参数: $@"
     
     local project_id="${1:-${PROJECT_ID:-sunmoonai}}"
     local namespace="${2:-${NAMESPACE:-ops-platform-dev}}"

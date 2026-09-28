@@ -24,8 +24,13 @@ while [[ $# -gt 0 ]]; do
         *) echo 'Unsupported ingress action/argument; automatic removal and legacy options are disabled' >&2; exit 1 ;;
     esac
 done
+case "${SUNMOON_DEPLOY_DRY_RUN:-false}" in
+    true) [[ "$action" == --dry-run ]] || { echo 'Cannot disable inherited dry-run' >&2; exit 1; } ;;
+    false) ;;
+    *) echo 'SUNMOON_DEPLOY_DRY_RUN must be true/false' >&2; exit 1 ;;
+esac
 case "${cluster^^}" in
-    KIND) exec python3 "$SUNMOON_ROOT/infrastructure/materials/ingress_local.py" "$action" "${local_args[@]}" ;;
+    KIND) exec python3 -B "$SUNMOON_ROOT/infrastructure/materials/ingress_local.py" "$action" "${local_args[@]}" ;;
     C1|C2)
         [[ ${#local_args[@]} -eq 0 ]] || { echo 'Cloud parameters must come from the explicit infrastructure profile' >&2; exit 1; }
         export CLUSTER="${cluster^^}"

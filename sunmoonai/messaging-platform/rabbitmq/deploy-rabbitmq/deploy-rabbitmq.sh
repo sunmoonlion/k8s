@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Shared request boundary: before configuration, credentials, connections and EXIT traps.
+# shellcheck source=/dev/null
+source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../utils/deploy-plan.sh" || exit 2
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" action-logs-tail "$@" || exit $?
+[[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
+set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
+
 # RabbitMQ 递归部署脚本
 # 基于递归架构设计原则的两级部署逻辑
 
@@ -957,6 +964,7 @@ main() {
             fi
             
             local tail_lines="${5:-50}"
+            [[ "$tail_lines" != false ]] || tail_lines=50
             
             # 设置 Kubernetes 环境
             if ! setup_kubectl_environment; then

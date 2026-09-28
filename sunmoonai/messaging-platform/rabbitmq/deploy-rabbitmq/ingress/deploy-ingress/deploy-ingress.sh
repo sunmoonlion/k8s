@@ -1,4 +1,11 @@
 #!/bin/bash
+
+# Shared request boundary: before configuration, credentials, connections and EXIT traps.
+# shellcheck source=/dev/null
+source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../../../utils/deploy-plan.sh" || exit 2
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" namespace "$@" || exit $?
+[[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
+set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
 set -e
 # 作为子脚本被主部署流程调用时，勿在退出时拆掉父脚本仍需要的 SSH 隧道
 DISABLE_AUTO_CLEANUP=true

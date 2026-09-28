@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+
+# Shared request boundary: before configuration, credentials, connections and EXIT traps.
+# shellcheck source=/dev/null
+source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../../utils/deploy-plan.sh" || exit 2
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" named "$@" || exit $?
+[[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
+set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
 # KIND：只跑自助注册这一步（signup-setup.sh）——注册页、登录页的中文与品牌、关掉 Casdoor 自带应用的注册、
 # 可选的首个邀请码与发信服务。不需要 post-deploy-setup.local.conf 里各应用的密钥。
 #

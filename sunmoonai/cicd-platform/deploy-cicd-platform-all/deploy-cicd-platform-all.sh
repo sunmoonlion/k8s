@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+# Shared request boundary: before configuration, credentials, connections and EXIT traps.
+# shellcheck source=/dev/null
+source "$(dirname -- "${BASH_SOURCE[0]}")/../../../utils/deploy-plan.sh" || exit 2
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" optional-action "$@" || exit $?
+[[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
+set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
+
 # 脚本目录配置
 THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$THIS_DIR")"
@@ -81,13 +88,14 @@ call_subscript() {
 }
 
 # 部署子级组件（按优先级）
-deploy_sub_components_by_priority() {
+run_sub_components_by_priority() {
     local project_id="$1"
     local namespace="$2"
     local environment="$3"
     local dry_run="$4"
+    local action="${5:-deploy}"
     
-    log_info "开始部署子级组件..."
+    log_info "开始 ${action} 子级组件..."
     
     local components=()
     
@@ -109,7 +117,9 @@ deploy_sub_components_by_priority() {
         components+=("$priority:argocd:$PROJECT_ROOT/argocd/deploy-argocd/deploy-argocd.sh")
     fi
     
-    IFS=$'\n' sorted_components=($(sort -nr <<<"${components[*]}"))
+    local order=-nr
+    [[ "$action" != uninstall ]] || order=-n
+    IFS=$'\n' sorted_components=($(sort "$order" <<<"${components[*]}"))
     unset IFS
     
     if [[ ${#sorted_components[@]} -eq 0 ]]; then
@@ -117,7 +127,7 @@ deploy_sub_components_by_priority() {
         return 0
     fi
     
-    log_info "📋 子级组件部署顺序："
+    log_info "📋 子级组件 ${action} 顺序："
     for component_info in "${sorted_components[@]}"; do
         local priority="${component_info%%:*}"
         local component=$(echo "$component_info" | cut -d: -f2)
@@ -129,36 +139,38 @@ deploy_sub_components_by_priority() {
         local component=$(echo "$component_info" | cut -d: -f2)
         local script_path=$(echo "$component_info" | cut -d: -f3)
         
-        log_info "🚀 部署 $component..."
+        log_info "🚀 ${action} $component..."
         
         if [[ -f "$script_path" ]]; then
-            if call_subscript "$script_path" deploy "$project_id" "$namespace" "$environment" "$dry_run"; then
-                log_success "✅ $component 部署成功"
+            if call_subscript "$script_path" "$action" "$project_id" "$namespace" "$environment" "$dry_run"; then
+                log_success "✅ $component ${action} 成功"
             else
-                log_error "❌ $component 部署失败"
+                log_error "❌ $component ${action} 失败"
                 return 1
             fi
         else
-            log_warn "⚠️  $component 部署脚本不存在: $script_path"
+            log_error "❌ $component 部署脚本不存在: $script_path"
+            return 1
         fi
     done
     
-    log_success "✅ 所有子级组件部署完成！"
+    log_success "✅ 所有子级组件 ${action} 完成！"
 }
 
 # 主部署函数
-deploy_cicd_platform() {
+run_cicd_platform() {
     local project_id="${1:-$DEFAULT_PROJECT_ID}"
     local namespace="${2:-$DEFAULT_NAMESPACE}"
     local environment="${3:-$DEFAULT_ENVIRONMENT}"
     local dry_run="${4:-false}"
+    local action="${5:-deploy}"
     
-    log_info "开始部署 CI/CD 平台..."
+    log_info "开始 ${action} CI/CD 平台..."
     log_info "项目: $project_id, 命名空间: $namespace, 环境: $environment"
     
-    deploy_sub_components_by_priority "$project_id" "$namespace" "$environment" "$dry_run"
+    run_sub_components_by_priority "$project_id" "$namespace" "$environment" "$dry_run" "$action" || return 1
     
-    log_success "✅ CI/CD 平台部署完成！"
+    log_success "✅ CI/CD 平台 ${action} 完成！"
 }
 
 # 主函数
@@ -170,16 +182,17 @@ main() {
     fi
     
     local action="${1:-deploy}"
-    if [[ "$action" == "deploy" || "$action" == "uninstall" || "$action" == "status" ]]; then
-        shift
-    fi
+    case "$action" in
+        deploy|uninstall|status|logs) [[ $# -eq 0 ]] || shift ;;
+        *) log_error "不支持的 CI/CD 动作: $action"; return 1 ;;
+    esac
     
     local project_id="${1:-${CICD_PLATFORM_PROJECT_ID:-$DEFAULT_PROJECT_ID}}"
     local namespace="${2:-${CICD_PLATFORM_NAMESPACE:-$DEFAULT_NAMESPACE}}"
     local environment="${3:-${ENVIRONMENT:-$DEFAULT_ENVIRONMENT}}"
     local dry_run="${4:-false}"
     
-    deploy_cicd_platform "$project_id" "$namespace" "$environment" "$dry_run"
+    run_cicd_platform "$project_id" "$namespace" "$environment" "$dry_run" "$action"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

@@ -1,4 +1,11 @@
 #!/bin/bash
+
+# Shared request boundary: before configuration, credentials, connections and EXIT traps.
+# shellcheck source=/dev/null
+source "$(dirname -- "${BASH_SOURCE[0]}")/../../../utils/deploy-plan.sh" || exit 2
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" named "$@" || exit $?
+[[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
+set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
 # Traefik iptables 端口转发脚本
 # 将标准端口 80/443 转发到 NodePort 30080/30443
 # 这样外部可以通过标准端口访问，同时 Traefik 以非 root 用户运行

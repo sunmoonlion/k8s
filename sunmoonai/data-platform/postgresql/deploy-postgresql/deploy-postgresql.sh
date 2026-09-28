@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Shared request boundary: before configuration, credentials, connections and EXIT traps.
+# shellcheck source=/dev/null
+source "$(dirname -- "${BASH_SOURCE[0]}")/../../../../utils/deploy-plan.sh" || exit 2
+sunmoon_deploy_entry "${BASH_SOURCE[0]}" action "$@" || exit $?
+[[ "$SUNMOON_DEPLOY_PLAN_ONLY" != true ]] || exit 0
+set -- "${SUNMOON_DEPLOY_EXEC_ARGS[@]}"
+
 # PostgreSQL 递归部署脚本
 # 基于递归架构设计原则的两级部署逻辑
 
@@ -30,9 +37,6 @@ if [[ $# -gt 0 ]]; then
         log_warn "⚠️  unified_parse_cluster_arg 不存在，跳过集群参数解析（将依赖 CLUSTER/default_cluster）"
     fi
 fi
-
-# Validate before config errors can trigger the legacy connection cleanup trap.
-sunmoon_deploy_validate_mode "${ORIGINAL_ARGS[4]:-false}" || exit 1
 
 POSTGRESQL_CONFIG_FILE="$SCRIPT_DIR/deploy-postgresql.conf"
 if [[ -f "$POSTGRESQL_CONFIG_FILE" ]]; then
@@ -499,11 +503,6 @@ main() {
     local environment="${4:-$DEFAULT_ENVIRONMENT}"
     local dry_run="${5:-false}"
 
-    sunmoon_deploy_validate_mode "$dry_run" || return 1
-    if [[ "$dry_run" == true ]]; then
-        sunmoon_deploy_print_plan postgresql "$action" "$project_id" "$namespace" "$environment"
-        return $?
-    fi
 
     
     case "$action" in
