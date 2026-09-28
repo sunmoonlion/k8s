@@ -8,7 +8,7 @@ WSL 曾有 Docker 代理绕行、节点解析和入口故障记录；已核历�
 
 云端 step11 已接入本模块 `lib/config.sh` 的独立主机配置，只处理节点信任、解析和原版本入口镜像；方法及首次上云清单见 [使用方](../infrastructure/docs/registry-consumer.md)。云端仓库主机安装与前置步骤仍待接通，**未经实机验证**；主闭包门禁继续关闭。下文早期准备记录保留其当时范围。
 
-显式离线镜像发布已收口到 `./sunmoon harbor publish`，见 [批次与前置条件](docs/publication.md)。旧 KIND/远端/菜单入口转发同一实现；真实工具物料和推送尚未验收。
+显式离线镜像发布已收口到 `./sunmoon harbor publish`，见 [批次与前置条件](docs/publication.md)。旧 KIND/远端/菜单入口转发同一实现；[工具物料与独立运行目录](docs/publisher-materials.md)已准备并核验，真实推送尚未验收。
 
 ## 共用运行配置
 

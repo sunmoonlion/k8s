@@ -1,0 +1,98 @@
+{
+  "date": "2026-09-28",
+  "baseline": "ec936554fa81e36803f5dd9ee6f2d85dd68ffcc5",
+  "branch": "luna",
+  "scope": "Signed offline publisher material preparation and local isolated runtime",
+  "remote_download_root": "/home/zym/sunmoon-registry-publisher-20260928-v1",
+  "remote_cleanup": "required at final migration cleanup; not performed",
+  "local_material_root": "/home/zymun/packages-to-be-installed/releases/registry-publisher-linux-amd64",
+  "package_set": [
+    "skopeo",
+    "ca-certificates"
+  ],
+  "snapshot": "20260927T000000Z",
+  "skopeo_package": "1.13.3+ds1-2ubuntu0.24.04.3",
+  "packages": 78,
+  "package_bytes": 32171430,
+  "indexes": 9,
+  "index_bytes": 112150216,
+  "all_packages_and_release_signatures_verified_locally": true,
+  "signatures": [
+    {
+      "suite": "noble",
+      "verified": true,
+      "release_sha256": "cdb2f31d809f589719a53c6ad15f255b27569c4059542ada282aaa21b8e164b0"
+    },
+    {
+      "suite": "noble-updates",
+      "verified": true,
+      "release_sha256": "1734d445584d0b6bedd39dcd239bb4914f1ac0a8e6c37e0f8d4e42c28a7ad19e"
+    },
+    {
+      "suite": "noble-security",
+      "verified": true,
+      "release_sha256": "e46a62c5a5d44a49262e24db7154483696238e42b706c72d1879273b059ae982"
+    }
+  ],
+  "rsync": {
+    "regular_files": 105,
+    "total_bytes": 241212837,
+    "deleted_files": 0
+  },
+  "runtime": {
+    "regular_files": 80,
+    "library_links": 53,
+    "regular_bytes": 50437568,
+    "source_lock_sha256": "34155c0f648c5e9f628fabad540737b706366c2106407f869f798ffc8e833d66",
+    "runtime_lock_sha256": "f5aea7d4b012a76ae03f4ea0074ed29653a4b1a2a49c838e6124a808a514fd77",
+    "launcher_sha256": "29a058c573fdf6be3f06178202e707ad97ed132b88182e765ec9289d0bd72490",
+    "version_output": "skopeo version 1.13.3",
+    "copy_help_and_global_options_queried": true,
+    "host_installed": false
+  },
+  "local_oci_inventory": {
+    "image": "Traefik v3.7.13",
+    "archive_bytes": 55225344,
+    "archive_sha256": "f2ac4906393fa1fa0dd40c3b664a192c838c0c84f0a75e744c575b526f4be50d",
+    "manifest_digest": "sha256:3429c14149401de2ac82fc72ddc6a92642332b90deb3012301ff211b9d2d0f18",
+    "matches_existing_lock": true,
+    "published": false,
+    "temporary_directory_removed": true
+  },
+  "capacity_before_transfer": {
+    "c_free_bytes": 94775484416,
+    "data_vhd_file_bytes": 93050634240,
+    "data_vhd_max_bytes": 107374182400,
+    "tool_budget_bytes": 1073741824,
+    "projected_c_free_bytes": 79378194432,
+    "reserve_50gib_passed": true
+  },
+  "static_checks": {
+    "python_ast": 4,
+    "default_plans": [
+      "registry-publisher download",
+      "cluster download default unchanged",
+      "runtime stage",
+      "real Traefik publish batch"
+    ],
+    "markdown_files": 6,
+    "local_links": 68,
+    "diff_check": 0
+  },
+  "not_run": [
+    "test suites",
+    "apt installation or package maintainer scripts",
+    "registry login/push/pull",
+    "Docker/Kubernetes/Harbor service commands",
+    "Windows commands",
+    "cloud production deployment",
+    "final cleanup"
+  ],
+  "remaining": [
+    "Publication credentials/workdir and actual write acceptance after migration admission",
+    "Deployment tag/digest reconciliation and application build consumers",
+    "PV node/target consolidation",
+    "Formal main/cutover, node and CI pulls, rebuild independence",
+    "Cloud live validation and final local/Tokyo cleanup"
+  ]
+}

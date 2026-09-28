@@ -23,6 +23,7 @@ ROOT_PACKAGES = (
     "ca-certificates", "openssl", "jq", "tar", "gzip", "systemd",
     "systemd-sysv", "systemd-timesyncd",
 )
+PACKAGE_SETS = {"cluster": ROOT_PACKAGES, "registry-publisher": ("skopeo", "ca-certificates")}
 KEYRING = Path("/usr/share/keyrings/ubuntu-archive-keyring.gpg")
 
 
@@ -70,8 +71,11 @@ def main():
     parser.add_argument("--root", type=Path, required=True,
                         help="Dedicated new OS material batch directory")
     parser.add_argument("--snapshot", default="20260927T000000Z")
+    parser.add_argument("--package-set", choices=tuple(PACKAGE_SETS), default="cluster",
+                        help="Reuse signed snapshot/empty-status resolution for a named tool set")
     parser.add_argument("--apply", action="store_true")
     args = parser.parse_args()
+    roots = PACKAGE_SETS[args.package_set]
     root = args.root.expanduser().absolute()
     if root.resolve() != root or not re.fullmatch(r"/[A-Za-z0-9_./-]+", str(root)):
         raise ValueError("Root must be an absolute, non-symlink path without special characters")
@@ -81,7 +85,7 @@ def main():
         raise ValueError("Dedicated root basename must include profile and snapshot")
     url = "https://snapshot.ubuntu.com/ubuntu/" + args.snapshot
     print(json.dumps({"dry_run": not args.apply, "root": str(root), "source": url,
-                      "roots": ROOT_PACKAGES, "installed_status": "empty isolated file",
+                      "roots": roots, "installed_status": "empty isolated file",
                       "host_install": False, "cloud_validated": False}), flush=True)
     if not args.apply:
         return
@@ -101,7 +105,7 @@ def main():
         raise ValueError("Existing directory is not an owned OS download batch")
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
     create_exact(root / "sunmoon-os-download.json", json.dumps({
-        "schema": 1, "snapshot": args.snapshot, "roots": ROOT_PACKAGES,
+        "schema": 1, "snapshot": args.snapshot, "roots": roots,
         "keyring_sha256": digest(KEYRING)}, sort_keys=True) + "\n")
     for relative in ("etc/parts", "etc/sourceparts", "etc/preferencesparts",
                      "state/lists/partial", "cache/archives/partial", "logs", "evidence"):
@@ -167,12 +171,12 @@ Acquire::AllowDowngradeToInsecureRepositories "false";
         print(json.dumps({"complete": True, "reused": True, "files": len(locked["files"])}))
         return
     run_logged(["apt-get", "update"], env, root, "indexes", 600)
-    simulate = run_logged(["apt-get", "--simulate", "--no-install-recommends", "install", *ROOT_PACKAGES],
+    simulate = run_logged(["apt-get", "--simulate", "--no-install-recommends", "install", *roots],
                           env, root, "resolve", 120)
     run_logged(["apt-get", "--download-only", "--assume-yes", "--no-install-recommends",
-                "install", *ROOT_PACKAGES], env, root, "download", 1800)
+                "install", *roots], env, root, "download", 1800)
     planned = set(re.findall(r"^Inst ([^ :]+)(?::amd64)? ", simulate.read_text(), re.M))
-    if not set(ROOT_PACKAGES).issubset(planned):
+    if not set(roots).issubset(planned):
         raise ValueError("Empty-status resolution did not include every root package")
     files, packages = [], set()
     for archive in sorted((root / "cache/archives").glob("*.deb")):
@@ -204,7 +208,7 @@ Acquire::AllowDowngradeToInsecureRepositories "false";
     indexes = [{"path": str(p.relative_to(root)), "sha256": digest(p), "bytes": p.stat().st_size}
                for p in sorted((root / "state/lists").iterdir()) if p.is_file() and p.name != "lock"]
     lock = {"schema": 1, "profile": "ubuntu-24.04-amd64", "snapshot": args.snapshot,
-            "complete": True, "deployment_validated": False, "root_packages": ROOT_PACKAGES,
+            "complete": True, "deployment_validated": False, "root_packages": roots,
             "host_dpkg_status_unchanged": True, "host_dpkg_status_sha256": before,
             "keyring_sha256": digest(KEYRING), "source": url, "files": files,
             "indexes": indexes, "total_bytes": sum(f["bytes"] for f in files)}

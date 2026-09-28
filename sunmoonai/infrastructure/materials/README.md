@@ -52,3 +52,8 @@ python3 sunmoonai/infrastructure/materials/inventory.py \
 执行顺序与容量见 [集群升级物料对应与最终清理](../../kind-infrastructure/docs/cluster-material-retirement.md)。所有者要求最后一起清理且必须清理；新物料未齐、引用未切、迁移未验收时，旧包保留。平台/应用镜像、Harbor冷备、旧集群客户端与受保护节点/卷不属于按版本批量删除范围。
 
 新版入口及复用方法见 [共用 Traefik 入口](../docs/ingress-bootstrap.md)。平台入口与本地/云端适配器共用资源实现，实际运行和业务路由验收仍未完成。
+
+## 共用发布工具下载集合
+
+`prepare_os.py --package-set registry-publisher` 使用同一签名快照/空 status 流程下载 Skopeo 与依赖，另放独立批次；
+默认 `cluster` 的原根包集合不变。独立运行目录和已准备结果见 [发布工具物料](../../registry-platform/docs/publisher-materials.md)。

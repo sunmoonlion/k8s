@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "tool": {
+    "path": "/home/zymun/packages-to-be-installed/releases/registry-publisher-linux-amd64/runtime/bin/skopeo",
+    "sha256": "29a058c573fdf6be3f06178202e707ad97ed132b88182e765ec9289d0bd72490"
+  },
+  "policy": {
+    "path": "/home/zymun/worktrees/luna/k8s/sunmoonai/registry-platform/config/publication-traefik-policy.json",
+    "sha256": "53406e10c5ae6acb6036b87adc45bdb616fae277a9a55b16e8f6df74d2748186"
+  },
+  "work_root": "/home/zymun/packages-to-be-installed/work/registry-publish",
+  "minimum_free_gib": 2,
+  "timeout_seconds": 1800,
+  "retry_times": 2,
+  "images": [
+    {
+      "archive": "/home/zymun/packages-to-be-installed/releases/traefik-3.7.13-chart-41.6.0-linux-amd64/images/traefik-linux-amd64.tar",
+      "archive_sha256": "f2ac4906393fa1fa0dd40c3b664a192c838c0c84f0a75e744c575b526f4be50d",
+      "archive_bytes": 55225344,
+      "manifest_digest": "sha256:3429c14149401de2ac82fc72ddc6a92642332b90deb3012301ff211b9d2d0f18",
+      "destination": "harbor.sunmoonai.com:30443/k8s-images/traefik@sha256:3429c14149401de2ac82fc72ddc6a92642332b90deb3012301ff211b9d2d0f18"
+    }
+  ]
+}

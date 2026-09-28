@@ -1,0 +1,881 @@
+{
+  "schema": 1,
+  "profile": "ubuntu-24.04-amd64",
+  "source_lock_sha256": "34155c0f648c5e9f628fabad540737b706366c2106407f869f798ffc8e833d66",
+  "skopeo_package": "1.13.3+ds1-2ubuntu0.24.04.3",
+  "files": [
+    {
+      "path": "lib/ld-linux-x86-64.so.2",
+      "sha256": "c20a2dc8917c755f02b94049356320fe1f62ac7d9f8994731f807d9df39302da",
+      "bytes": 236616,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libBrokenLocale.so.1",
+      "sha256": "53a6002b3327777a57439e6e08638f053bfc2153a37c6abd5f6c563dcd9ea15c",
+      "bytes": 14624,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libanl.so.1",
+      "sha256": "e029bd325148fc66b092191fb10c6b69fe0f8947e093d00ea433f1e5fdba2830",
+      "bytes": 14408,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libassuan.so.0.8.6",
+      "sha256": "ae80d8e06d17cd95d654da3dd52f3a63ad241ea5fc001fa2f52ada5e640cfdd8",
+      "bytes": 80176,
+      "packages": [
+        "libassuan0"
+      ]
+    },
+    {
+      "path": "lib/libaudit.so.1.0.0",
+      "sha256": "36b5b7a7f0cb3ef3bddd3501f5c3fce38f200b20804993c0a249171ba7881d17",
+      "bytes": 133200,
+      "packages": [
+        "libaudit1"
+      ]
+    },
+    {
+      "path": "lib/libbz2.so.1.0.4",
+      "sha256": "cc08c9f50a8009ffd6391e0116a100369b11ca9238fa52392c019e6645b122a1",
+      "bytes": 78944,
+      "packages": [
+        "libbz2-1.0"
+      ]
+    },
+    {
+      "path": "lib/libc.so.6",
+      "sha256": "3a15d66867d83762c7f2f1e37359cb8f6c5743edb369c65285cb0b1c4f7498bf",
+      "bytes": 2129424,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libc_malloc_debug.so.0",
+      "sha256": "bd019e51ce7d91743961d13d0c6524eb54cafdf2ca87358f19ccc1403f9c6ea3",
+      "bytes": 60744,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libcap-ng.so.0.0.0",
+      "sha256": "25349c22956c7af94f46e728d7e4c1eba57d0e4a0517f72781fb495d541eeef3",
+      "bytes": 26848,
+      "packages": [
+        "libcap-ng0"
+      ]
+    },
+    {
+      "path": "lib/libcap.so.2.66",
+      "sha256": "6ac6abc86ac891c6e13486470e26f1d939f47fda9e6b5d5508a7f5ec881adc84",
+      "bytes": 51536,
+      "packages": [
+        "libcap2"
+      ]
+    },
+    {
+      "path": "lib/libcrypt.so.1.1.0",
+      "sha256": "1502636e3be8232c9cf801dfb533694aea985d449904f3e1295db26d7b348946",
+      "bytes": 198664,
+      "packages": [
+        "libcrypt1"
+      ]
+    },
+    {
+      "path": "lib/libcrypto.so.3",
+      "sha256": "6a66c3ba6b3749aacc9497973fff00f6ba61c703ba7015d0d7ab3fd9510974b6",
+      "bytes": 5309400,
+      "packages": [
+        "libssl3t64"
+      ]
+    },
+    {
+      "path": "lib/libdb-5.3.so",
+      "sha256": "1812047c39ea3c26ee5b2b585abbafc18cd158dfcd84e5368c998cc6178e815b",
+      "bytes": 1769040,
+      "packages": [
+        "libdb5.3t64"
+      ]
+    },
+    {
+      "path": "lib/libdevmapper.so.1.02.1",
+      "sha256": "0b33f9e9780b2e22bd40170f4cfe358b0cf525974d01896b3bb2b02d6e4e2582",
+      "bytes": 438728,
+      "packages": [
+        "libdevmapper1.02.1"
+      ]
+    },
+    {
+      "path": "lib/libdl.so.2",
+      "sha256": "c2994527172cc23b7fb0f7d611b71e00a37da27af12c2e5e9e0dc1a742886c96",
+      "bytes": 14408,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libdrop_ambient.so.0.0.0",
+      "sha256": "df1d550908fa076b66b23902582a7f483104ecb4f4f032eb31b275c64173f2f0",
+      "bytes": 14416,
+      "packages": [
+        "libcap-ng0"
+      ]
+    },
+    {
+      "path": "lib/libffi.so.8.1.4",
+      "sha256": "00f593fe192f2851b8ce23b25cec2488d769beb5a8f63e8c9e563071e1075153",
+      "bytes": 47672,
+      "packages": [
+        "libffi8"
+      ]
+    },
+    {
+      "path": "lib/libformw.so.6.4",
+      "sha256": "cbbf42a3e1313ae714d756043b781b7cf86485e1735ac3f2933194f3abe1ea75",
+      "bytes": 77328,
+      "packages": [
+        "libncursesw6"
+      ]
+    },
+    {
+      "path": "lib/libgcc_s.so.1",
+      "sha256": "d93224d2b0dab4247598be683adca02f5cf00586f99c187579cd7e92058fb7cb",
+      "bytes": 183024,
+      "packages": [
+        "libgcc-s1"
+      ]
+    },
+    {
+      "path": "lib/libgcrypt.so.20.4.3",
+      "sha256": "6ad6d7007ee1ad8319eb18ba9a512cf09dda49396a303774c68b47477020bad4",
+      "bytes": 1345072,
+      "packages": [
+        "libgcrypt20"
+      ]
+    },
+    {
+      "path": "lib/libgmp.so.10.5.0",
+      "sha256": "0ccdfb6d6f5c039465f6d002cf7e4c072d48ac6a2cffc8dd6c748dec31592804",
+      "bytes": 534896,
+      "packages": [
+        "libgmp10"
+      ]
+    },
+    {
+      "path": "lib/libgnutls.so.30.37.1",
+      "sha256": "ddbae2995750875c07bc218d12a062d73f8250678f54dedda7e9be5068781c98",
+      "bytes": 2065824,
+      "packages": [
+        "libgnutls30t64"
+      ]
+    },
+    {
+      "path": "lib/libgpg-error.so.0.34.0",
+      "sha256": "6cb18a007bfcb623029f4528a36b46578fea7dc34c2b505b8e6e0d99e6348cd1",
+      "bytes": 149760,
+      "packages": [
+        "libgpg-error0"
+      ]
+    },
+    {
+      "path": "lib/libgpgme.so.11.27.0",
+      "sha256": "a5b16b01e5a7bebbe80ca228d021fa117e4d982226381312218ba47c9f12bed1",
+      "bytes": 331296,
+      "packages": [
+        "libgpgme11t64"
+      ]
+    },
+    {
+      "path": "lib/libhistory.so.8.2",
+      "sha256": "6cb9908169c3056de7cc456a4774eae24982cda92ecc68e6d16ad73a56eddfcb",
+      "bytes": 51632,
+      "packages": [
+        "libreadline8t64"
+      ]
+    },
+    {
+      "path": "lib/libhogweed.so.6.8",
+      "sha256": "c3c606139d4f7776efa4dbd4a6b62e30c916b07a0cafd8c3ef173d6f093607e3",
+      "bytes": 288920,
+      "packages": [
+        "libhogweed6t64"
+      ]
+    },
+    {
+      "path": "lib/libidn2.so.0.4.0",
+      "sha256": "6e632fd9a3125db60bbc623719bbc17b0470330321c5b1c57f1ff7190e5551ad",
+      "bytes": 133192,
+      "packages": [
+        "libidn2-0"
+      ]
+    },
+    {
+      "path": "lib/libip4tc.so.2.0.0",
+      "sha256": "37596cafb78a4f45cfee66b1d760d864c73a5dbfded22bac036c00ebb6ba2183",
+      "bytes": 35440,
+      "packages": [
+        "libip4tc2"
+      ]
+    },
+    {
+      "path": "lib/libip6tc.so.2.0.0",
+      "sha256": "4fce842ed1d615f13efa50c3068fd26964f051836b2bf8d69a06de17834b5765",
+      "bytes": 35440,
+      "packages": [
+        "libip6tc2"
+      ]
+    },
+    {
+      "path": "lib/libksba.so.8.14.6",
+      "sha256": "6089859be139e70bb33e52de5e018bc6ae7810b59b8e8f7f31a6ffa75f72e349",
+      "bytes": 272560,
+      "packages": [
+        "libksba8"
+      ]
+    },
+    {
+      "path": "lib/liblber.so.2.0.200",
+      "sha256": "ddf14275b1fb70ba06510094071adcc1462e675f15ae6cdcadbf40c1dabe5a03",
+      "bytes": 59888,
+      "packages": [
+        "libldap2"
+      ]
+    },
+    {
+      "path": "lib/libldap.so.2.0.200",
+      "sha256": "a9829b999c95452eb0a34cc7b5349427b76dbf3e5d5c8672a5ca69e454c1b151",
+      "bytes": 372400,
+      "packages": [
+        "libldap2"
+      ]
+    },
+    {
+      "path": "lib/liblz4.so.1.9.4",
+      "sha256": "40bffd0a098387368b16b992abd5f7cf43c0fa2f05cabe5a6d483719554adfda",
+      "bytes": 137440,
+      "packages": [
+        "liblz4-1"
+      ]
+    },
+    {
+      "path": "lib/liblzma.so.5.4.5",
+      "sha256": "696e868dd0700a19a6d65fc01608ec2d70d3cb91f65710e89180cd2e688f30cb",
+      "bytes": 202904,
+      "packages": [
+        "liblzma5"
+      ]
+    },
+    {
+      "path": "lib/libm.so.6",
+      "sha256": "fce00b6f25f459cf4ae0b7fae4257909a1a8a86f9149e7c029a5d617baf1ccd0",
+      "bytes": 952616,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libmemusage.so",
+      "sha256": "8aaf59aabf55552f8aac2963f30c549f95789df55a265b605802ae1d182f8236",
+      "bytes": 18712,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libmenuw.so.6.4",
+      "sha256": "e075718444e63b4049b42b9313a45f5e247b381eb9fa43ccd5c1e8e2bec69e7f",
+      "bytes": 43576,
+      "packages": [
+        "libncursesw6"
+      ]
+    },
+    {
+      "path": "lib/libmnl.so.0.2.0",
+      "sha256": "a166aeee69e4b89b3cdb94e9b4cf1391081c1d141e19d24f1964e76990a18435",
+      "bytes": 26776,
+      "packages": [
+        "libmnl0"
+      ]
+    },
+    {
+      "path": "lib/libmvec.so.1",
+      "sha256": "57329ee0018b8fd8f8e51af5f87c723b6ecdf04679f4493134beab0f45d58ec5",
+      "bytes": 1018144,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libncursesw.so.6.4",
+      "sha256": "b552c698f9f5c7ff8a6f7c11d8595a0d3e6dc3eaf483843895ec76f418080dfb",
+      "bytes": 239848,
+      "packages": [
+        "libncursesw6"
+      ]
+    },
+    {
+      "path": "lib/libnetfilter_conntrack.so.3.8.0",
+      "sha256": "9c7872c3790aca2e044a3dbdca44479e90c3e5a0f28115814851ac0d2a32618a",
+      "bytes": 124552,
+      "packages": [
+        "libnetfilter-conntrack3"
+      ]
+    },
+    {
+      "path": "lib/libnettle.so.8.8",
+      "sha256": "a245ed916229583d6fe0b07657b3ed945bc148c28cc08b5266295f620d2b91cc",
+      "bytes": 342280,
+      "packages": [
+        "libnettle8t64"
+      ]
+    },
+    {
+      "path": "lib/libnfnetlink.so.0.2.0",
+      "sha256": "5a62ccf1905d93657657666ad96f0a70e61cb561673a2427de74e93d105ea82b",
+      "bytes": 34384,
+      "packages": [
+        "libnfnetlink0"
+      ]
+    },
+    {
+      "path": "lib/libnftnl.so.11.6.0",
+      "sha256": "31de1bbd42e0976d6fbde5cc8b805036189506d092dd0964dc8547b2e2ad57e5",
+      "bytes": 203608,
+      "packages": [
+        "libnftnl11"
+      ]
+    },
+    {
+      "path": "lib/libnpth.so.0.1.2",
+      "sha256": "d5d934c9382c733e43edecf6d9ed446d9b9985591ee1c638413f4879c7f57f6a",
+      "bytes": 23040,
+      "packages": [
+        "libnpth0t64"
+      ]
+    },
+    {
+      "path": "lib/libnsl.so.1",
+      "sha256": "6e93ed70f14b051657885dfd17a8e926d9e9f9de1d657ef05d6df334b26b7dfc",
+      "bytes": 100640,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libnss_compat.so.2",
+      "sha256": "842043d89a6c9d39237b5097826b176b4254a43ebf3978fbfb695665aa5d2df7",
+      "bytes": 43736,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libnss_dns.so.2",
+      "sha256": "339a6b4262741d8be71b87b7a57173e2c3ecfb17a550c6893aaf7406d5474569",
+      "bytes": 14336,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libnss_files.so.2",
+      "sha256": "a906b342dc7a0a353135e709be3493bf6b2e76fa64cf914665e51142278e3d25",
+      "bytes": 14336,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libnss_hesiod.so.2",
+      "sha256": "562bcb4c7015e00360cbe91f51fa1611956517cc3081b745d421d70ef74c2392",
+      "bytes": 26912,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libp11-kit.so.0.3.1",
+      "sha256": "a59efd4792d3343dedea1d26a28f5597abfe3369082deb504c4802a31b014897",
+      "bytes": 1714008,
+      "packages": [
+        "libp11-kit0"
+      ]
+    },
+    {
+      "path": "lib/libpam.so.0.85.1",
+      "sha256": "9e1c85dcceeedd56568874afa04c52bbd051fb8bac52c3e1f5feeb1eed14238a",
+      "bytes": 67888,
+      "packages": [
+        "libpam0g"
+      ]
+    },
+    {
+      "path": "lib/libpam_misc.so.0.82.1",
+      "sha256": "a8fddf2a564a352986de28e0146a4cd7c1dd4c64aa84e9654c38a19c29fd56b6",
+      "bytes": 22776,
+      "packages": [
+        "libpam0g"
+      ]
+    },
+    {
+      "path": "lib/libpamc.so.0.82.1",
+      "sha256": "af3d42a137a9a2f9389e8523abe43896eab74c8e7c346477393fc0725508fcaf",
+      "bytes": 22752,
+      "packages": [
+        "libpam0g"
+      ]
+    },
+    {
+      "path": "lib/libpanelw.so.6.4",
+      "sha256": "8eccca53962e74575da4b649dbafdfd24a450bafdc73d871bc5346824a1e7abd",
+      "bytes": 22688,
+      "packages": [
+        "libncursesw6"
+      ]
+    },
+    {
+      "path": "lib/libpcprofile.so",
+      "sha256": "d74fac1974b7c5a4530ff3219bdf6af2ae10f0ee7260da29c96ba9237d268000",
+      "bytes": 14544,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libpcre2-8.so.0.11.2",
+      "sha256": "e00576d71d81d3ba0cfa4903c835a44a8723aac96f72f79ff75200b4cff9071b",
+      "bytes": 625344,
+      "packages": [
+        "libpcre2-8-0"
+      ]
+    },
+    {
+      "path": "lib/libpsx.so.2.66",
+      "sha256": "7cd42c4bffba87347d7e2ec19a2d594f171f159bb32e24e04c5711e43c505911",
+      "bytes": 22744,
+      "packages": [
+        "libcap2"
+      ]
+    },
+    {
+      "path": "lib/libpthread.so.0",
+      "sha256": "90491a21ce44efcf3bd4b65ec82501c091d7ebe7f8d9b341dd01d721001d9ecd",
+      "bytes": 14408,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libreadline.so.8.2",
+      "sha256": "0a079f958147699f7bb5bf228406a5d878dc2387fe9cdc5cce6f3e35e20380fc",
+      "bytes": 344096,
+      "packages": [
+        "libreadline8t64"
+      ]
+    },
+    {
+      "path": "lib/libresolv.so.2",
+      "sha256": "1d730ea434da5a5595bc6a961d7a9ace83e03703205df9644044b3dca79c362f",
+      "bytes": 64008,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/librt.so.1",
+      "sha256": "6d072187d88e092e81561a44c03a4a41397319022c6d43519757cc051c576d82",
+      "bytes": 14624,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libsasl2.so.2.0.25",
+      "sha256": "a0f410ad093236856eee59c4ff2838dc04d932ea0993400f23ed77d67d85af34",
+      "bytes": 101200,
+      "packages": [
+        "libsasl2-2"
+      ]
+    },
+    {
+      "path": "lib/libselinux.so.1",
+      "sha256": "0ec0843463f90e227b0e138e1f379774f50b5514bd7f5dbd4c8a87aca0aa6670",
+      "bytes": 174472,
+      "packages": [
+        "libselinux1"
+      ]
+    },
+    {
+      "path": "lib/libsemanage.so.2",
+      "sha256": "463e60d71e72bc97240fb17bdca7d80eb9d9b42be209cb65944c1e74aa0fac87",
+      "bytes": 262288,
+      "packages": [
+        "libsemanage2"
+      ]
+    },
+    {
+      "path": "lib/libsepol.so.2",
+      "sha256": "bbab0fe601f90a7e3c435a6bb3da5c85a6d80614b14af232d87387c581a77077",
+      "bytes": 739760,
+      "packages": [
+        "libsepol2"
+      ]
+    },
+    {
+      "path": "lib/libsqlite3.so.0.8.6",
+      "sha256": "85265a9d4afca6f4b325ceb078b669c754fb881abed4cafe91ccebe9d625d975",
+      "bytes": 1468440,
+      "packages": [
+        "libsqlite3-0"
+      ]
+    },
+    {
+      "path": "lib/libssl.so.3",
+      "sha256": "8e49cebd373d90b55f3626da71dd97fe8e95c68dc4c064d8962b27907690736e",
+      "bytes": 696512,
+      "packages": [
+        "libssl3t64"
+      ]
+    },
+    {
+      "path": "lib/libsystemd.so.0.38.0",
+      "sha256": "bdf59c828b547bcdbe7b3576c0810d9d9d2e982d8b61b365812542da6a4c4a99",
+      "bytes": 910592,
+      "packages": [
+        "libsystemd0"
+      ]
+    },
+    {
+      "path": "lib/libtasn1.so.6.6.3",
+      "sha256": "59994414d0cdec4f678ef91eaaafc44b26b00bca507e4cc7978caaf79f584173",
+      "bytes": 88216,
+      "packages": [
+        "libtasn1-6"
+      ]
+    },
+    {
+      "path": "lib/libthread_db.so.1",
+      "sha256": "04ca2439f72825ae4b60c4a43ec59f38127467e2d4bac6dae4de299defaec718",
+      "bytes": 47912,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libtic.so.6.4",
+      "sha256": "47ae417b7df72110c7c2a1ea7c150b1610b9a598aff31acc242254c1d0a34b36",
+      "bytes": 76088,
+      "packages": [
+        "libtinfo6"
+      ]
+    },
+    {
+      "path": "lib/libtinfo.so.6.4",
+      "sha256": "e6089d7bb95eee5b545f3770dd69095b0bca47d26701cad145af429561d16306",
+      "bytes": 208328,
+      "packages": [
+        "libtinfo6"
+      ]
+    },
+    {
+      "path": "lib/libudev.so.1.7.8",
+      "sha256": "4298228175fa62a36af88b1afd4406cdd8b1bf166621f957d0dbbde45a698fe5",
+      "bytes": 207288,
+      "packages": [
+        "libudev1"
+      ]
+    },
+    {
+      "path": "lib/libunistring.so.5.0.0",
+      "sha256": "7bcf825cd449892db5105ad2aed91dcf94a27b796426600c765720c584c54dd1",
+      "bytes": 1755312,
+      "packages": [
+        "libunistring5"
+      ]
+    },
+    {
+      "path": "lib/libutil.so.1",
+      "sha256": "5181d2b5de571bf054395684bfe77db685badf0163ac50b5e47d2148b52f11c3",
+      "bytes": 14408,
+      "packages": [
+        "libc6"
+      ]
+    },
+    {
+      "path": "lib/libxtables.so.12.7.0",
+      "sha256": "e971495b2fcde36e24ed71636f085f8e2e3f5eacdf81e76c8d1cecf496dfd60f",
+      "bytes": 67656,
+      "packages": [
+        "libxtables12"
+      ]
+    },
+    {
+      "path": "lib/libz.so.1.3",
+      "sha256": "86200da370f20476a2507e9097a789b5ef97269b4ca8d5e164ad82dab9d99892",
+      "bytes": 113000,
+      "packages": [
+        "zlib1g"
+      ]
+    },
+    {
+      "path": "lib/libzstd.so.1.5.5",
+      "sha256": "0a2128bc10841fb29e76d08d945864dfb0b6a66da5df6df5d8299197439e54bb",
+      "bytes": 755864,
+      "packages": [
+        "libzstd1"
+      ]
+    },
+    {
+      "path": "libexec/skopeo",
+      "sha256": "1802f4706bb0f3f5a7a43e61c6ecef2adcfff567d454eb0052aeb5769885302c",
+      "bytes": 19676992,
+      "packages": [
+        "skopeo"
+      ]
+    }
+  ],
+  "links": [
+    {
+      "path": "lib/libassuan.so.0",
+      "target": "libassuan.so.0.8.6"
+    },
+    {
+      "path": "lib/libaudit.so.1",
+      "target": "libaudit.so.1.0.0"
+    },
+    {
+      "path": "lib/libbz2.so.1",
+      "target": "libbz2.so.1.0.4"
+    },
+    {
+      "path": "lib/libbz2.so.1.0",
+      "target": "libbz2.so.1.0.4"
+    },
+    {
+      "path": "lib/libcap-ng.so.0",
+      "target": "libcap-ng.so.0.0.0"
+    },
+    {
+      "path": "lib/libcap.so.2",
+      "target": "libcap.so.2.66"
+    },
+    {
+      "path": "lib/libcrypt.so.1",
+      "target": "libcrypt.so.1.1.0"
+    },
+    {
+      "path": "lib/libdrop_ambient.so.0",
+      "target": "libdrop_ambient.so.0.0.0"
+    },
+    {
+      "path": "lib/libffi.so.8",
+      "target": "libffi.so.8.1.4"
+    },
+    {
+      "path": "lib/libformw.so.6",
+      "target": "libformw.so.6.4"
+    },
+    {
+      "path": "lib/libgcrypt.so.20",
+      "target": "libgcrypt.so.20.4.3"
+    },
+    {
+      "path": "lib/libgmp.so.10",
+      "target": "libgmp.so.10.5.0"
+    },
+    {
+      "path": "lib/libgnutls.so.30",
+      "target": "libgnutls.so.30.37.1"
+    },
+    {
+      "path": "lib/libgpg-error.so.0",
+      "target": "libgpg-error.so.0.34.0"
+    },
+    {
+      "path": "lib/libgpgme-pthread.so.11",
+      "target": "libgpgme.so.11"
+    },
+    {
+      "path": "lib/libgpgme.so.11",
+      "target": "libgpgme.so.11.27.0"
+    },
+    {
+      "path": "lib/libhistory.so.8",
+      "target": "libhistory.so.8.2"
+    },
+    {
+      "path": "lib/libhogweed.so.6",
+      "target": "libhogweed.so.6.8"
+    },
+    {
+      "path": "lib/libidn2.so.0",
+      "target": "libidn2.so.0.4.0"
+    },
+    {
+      "path": "lib/libip4tc.so.2",
+      "target": "libip4tc.so.2.0.0"
+    },
+    {
+      "path": "lib/libip6tc.so.2",
+      "target": "libip6tc.so.2.0.0"
+    },
+    {
+      "path": "lib/libksba.so.8",
+      "target": "libksba.so.8.14.6"
+    },
+    {
+      "path": "lib/liblber.so.2",
+      "target": "liblber.so.2.0.200"
+    },
+    {
+      "path": "lib/libldap.so.2",
+      "target": "libldap.so.2.0.200"
+    },
+    {
+      "path": "lib/liblz4.so.1",
+      "target": "liblz4.so.1.9.4"
+    },
+    {
+      "path": "lib/liblzma.so.5",
+      "target": "liblzma.so.5.4.5"
+    },
+    {
+      "path": "lib/libmenuw.so.6",
+      "target": "libmenuw.so.6.4"
+    },
+    {
+      "path": "lib/libmnl.so.0",
+      "target": "libmnl.so.0.2.0"
+    },
+    {
+      "path": "lib/libncursesw.so.6",
+      "target": "libncursesw.so.6.4"
+    },
+    {
+      "path": "lib/libnetfilter_conntrack.so.3",
+      "target": "libnetfilter_conntrack.so.3.8.0"
+    },
+    {
+      "path": "lib/libnettle.so.8",
+      "target": "libnettle.so.8.8"
+    },
+    {
+      "path": "lib/libnfnetlink.so.0",
+      "target": "libnfnetlink.so.0.2.0"
+    },
+    {
+      "path": "lib/libnftnl.so.11",
+      "target": "libnftnl.so.11.6.0"
+    },
+    {
+      "path": "lib/libnpth.so.0",
+      "target": "libnpth.so.0.1.2"
+    },
+    {
+      "path": "lib/libp11-kit.so.0",
+      "target": "libp11-kit.so.0.3.1"
+    },
+    {
+      "path": "lib/libpam.so.0",
+      "target": "libpam.so.0.85.1"
+    },
+    {
+      "path": "lib/libpam_misc.so.0",
+      "target": "libpam_misc.so.0.82.1"
+    },
+    {
+      "path": "lib/libpamc.so.0",
+      "target": "libpamc.so.0.82.1"
+    },
+    {
+      "path": "lib/libpanelw.so.6",
+      "target": "libpanelw.so.6.4"
+    },
+    {
+      "path": "lib/libpcre2-8.so.0",
+      "target": "libpcre2-8.so.0.11.2"
+    },
+    {
+      "path": "lib/libpsx.so.2",
+      "target": "libpsx.so.2.66"
+    },
+    {
+      "path": "lib/libreadline.so.8",
+      "target": "libreadline.so.8.2"
+    },
+    {
+      "path": "lib/libsasl2.so.2",
+      "target": "libsasl2.so.2.0.25"
+    },
+    {
+      "path": "lib/libsqlite3.so.0",
+      "target": "libsqlite3.so.0.8.6"
+    },
+    {
+      "path": "lib/libsystemd.so.0",
+      "target": "libsystemd.so.0.38.0"
+    },
+    {
+      "path": "lib/libtasn1.so.6",
+      "target": "libtasn1.so.6.6.3"
+    },
+    {
+      "path": "lib/libtic.so.6",
+      "target": "libtic.so.6.4"
+    },
+    {
+      "path": "lib/libtinfo.so.6",
+      "target": "libtinfo.so.6.4"
+    },
+    {
+      "path": "lib/libudev.so.1",
+      "target": "libudev.so.1.7.8"
+    },
+    {
+      "path": "lib/libunistring.so.5",
+      "target": "libunistring.so.5.0.0"
+    },
+    {
+      "path": "lib/libxtables.so.12",
+      "target": "libxtables.so.12.7.0"
+    },
+    {
+      "path": "lib/libz.so.1",
+      "target": "libz.so.1.3"
+    },
+    {
+      "path": "lib/libzstd.so.1",
+      "target": "libzstd.so.1.5.5"
+    }
+  ],
+  "os_signatures_verified": [
+    {
+      "suite": "noble",
+      "verified": true,
+      "release_sha256": "cdb2f31d809f589719a53c6ad15f255b27569c4059542ada282aaa21b8e164b0"
+    },
+    {
+      "suite": "noble-updates",
+      "verified": true,
+      "release_sha256": "1734d445584d0b6bedd39dcd239bb4914f1ac0a8e6c37e0f8d4e42c28a7ad19e"
+    },
+    {
+      "suite": "noble-security",
+      "verified": true,
+      "release_sha256": "e46a62c5a5d44a49262e24db7154483696238e42b706c72d1879273b059ae982"
+    }
+  ],
+  "host_installed": false,
+  "cloud_validated": false
+}

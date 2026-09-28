@@ -1,3 +1,16 @@
+## 最新续接：2026-09-28 Skopeo 离线依赖、独立运行目录和首份真实批次
+
+基线 ec936554fa81e36803f5dd9ee6f2d85dd68ffcc5，luna 开工干净，用户继续整理。实际动作只涉及已授权的东京物料下载/回传与本机正式物料目录，不恢复现场迁移/入口切换。
+
+- 复用 infrastructure/materials/prepare_os.py，新增 --package-set registry-publisher（skopeo+ca-certificates），默认cluster原20根包集合不变。仍官方20260927快照、隔离APT/空status、下载only、签名验证；标记含roots防混批。东京Ubuntu24.04/Python3.12/20GiB空闲；新临时根 /home/zym/sunmoon-registry-publisher-20260928-v1，脚本上传后下载78包32,171,430B。无安装/服务/清理；远端dpkg状态前后相同由原流程锁记录。
+- rsync无delete回传105普通文件共241,212,837B到 /home/zymun/packages-to-be-installed/releases/registry-publisher-linux-amd64/ubuntu-24.04-amd64-20260927T000000Z。本机verify_os核3签名+9索引112,150,216B+所有包SHA通过；包锁34155c0f648c5e9f628fabad540737b706366c2106407f869f798ffc8e833d66已复制到registry-platform/publisher-os.lock.json。
+- 新 prepare_publisher_runtime.py / `./sunmoon harbor publisher-runtime`默认计划、apply只在新output提取Skopeo ELF/共享库，拒绝root/覆盖/危险路径/库冲突、保留失败残留。实际stage到正式批次runtime，80普通文件50,437,568B、53库别名。无需dpkg安装、不写系统usr/etc；自带loader和库路径，Python3.11+启动器每次核runtime锁/文件/别名后exec。运行锁f5aea7d4b012a76ae03f4ea0074ed29653a4b1a2a49c838e6124a808a514fd77，launcher SHA29a058c573fdf6be3f06178202e707ad97ed132b88182e765ec9289d0bd72490，路径release/runtime/bin/skopeo。完整runtime可复制到未来Ubuntu24.04amd64主机，路径相对锁；不是全系统沙箱，宿主Python/内核/DNS仍需满足，其他GPG策略另验。
+- 固定Ubuntu包1.13.3+ds1-2ubuntu0.24.04.3；实际 --version输出1.13.3，copy帮助及隐藏registries-conf/tmpdir/command-timeout参数查询通过。官方v1.13.3源码/doc核支持所需参数。没有运行copy或Registry网络请求。真实既有Traefik3.7.13 OCI包55,225,344B、文件SHA f2ac4906393fa1fa0dd40c3b664a192c838c0c84f0a75e744c575b526f4be50d；Skopeo只读inspect --raw SHA3429c14149401de2ac82fc72ddc6a92642332b90deb3012301ff211b9d2d0f18与原锁一致，临时解包目录已自动清除。
+- 首份真实config/publication-traefik-local.json锁实际tool/policy/archive。policy默认reject，仅允许这个已锁归档路径；insecureAcceptAnything是该本地归档“不要求签名”的策略名，安全依据已准入来源+文件/manifestSHA，不宣称发布者签名验证、不改变强TLS。policySHA53406e10c5ae6acb6036b87adc45bdb616fae277a9a55b16e8f6df74d2748186。默认publish计划通过，tool_ready改成tool_readiness_checked=false避免把未检查说成未就绪。没有创建publisher账号/读取真实口令/创建work_root/实际推送；仍等现场准入。
+- 回传前C可用94,775,484,416B，数据VHDX文件93,050,634,240B；预留数据盘长至100GiB和工具1GiB后C预计79,378,194,432B，50GiB门槛通过。正式工具批次当前文件约291,673,572B；东京临时根纳入最终清理，本轮不删。正式物料/rootruntime不可随临时源一起清。
+- 4 Python AST、4默认计划（cluster默认根包不变）、6文档68本地链接和diff检查通过。实际检查限下载签名/包/工具信息/既有OCI清单；未跑测试套件、安装系统包、调用Docker/K8s/Harbor/Windows、云生产流程。结果 sunmoonai/scripts/results/luna-publisher-materials.20260928.json，方法 registry-platform/docs/publisher-materials.md。
+- 下一步继续部署镜像锁/别名和应用构建消费者、静态PV节点名/目标接线，准入后做真实发布与Docker/节点/CI拉取；main/30443切换/重启重建独立性/云实机/最终本机东京清理仍未完成。旧节点卷数据/inbox保护不变，仅本地luna提交，不push，不通知整体完成。
+
 ## 最新续接：2026-09-28 显式 OCI 发布器与旧推送入口归档
 
 基线 4564bc2128f62acc4c2a32d7b06e266e941cb3ac，luna 工作区开工干净，用户继续已批准的部署整理。仍未恢复现场迁移/切换。

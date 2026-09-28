@@ -1,0 +1,16 @@
+{
+  "default": [
+    {
+      "type": "reject"
+    }
+  ],
+  "transports": {
+    "oci-archive": {
+      "/home/zymun/packages-to-be-installed/releases/traefik-3.7.13-chart-41.6.0-linux-amd64/images/traefik-linux-amd64.tar": [
+        {
+          "type": "insecureAcceptAnything"
+        }
+      ]
+    }
+  }
+}

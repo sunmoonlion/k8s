@@ -253,3 +253,9 @@ DiskPart 文本若包含失败，即使退出码为 0 也不能当通过。压�
 新 `registry-platform/publish.py` 将本次认证文件、CA 副本、Skopeo 大文件临时空间和用户缓存放在批次 `work_root` 下的 `.sunmoon-publish-*` 私有目录。
 正常退出自动回收；强杀/断电遗留目录纳入最终精确清单，先确认没有发布进程使用再处理，不删工作根中的源物料。
 本批仅运行默认计划，没有创建这类运行时目录，也没有安装 Skopeo 或实际推送。
+
+### 2026-09-28 发布工具东京中转批次
+
+新增最终清理对象：东京 `/home/zym/sunmoon-registry-publisher-20260928-v1`，含准备脚本、Ubuntu 签名索引、78 个依赖包和 APT 缓存。
+已回传本机正式物料根并核验三组签名/全部包 SHA；当前未删除，统一等迁移最终验收后精确清点。
+正式本机 `releases/registry-publisher-linux-amd64` 是需保留的发布工具物料，不能随东京临时目录一起清空。

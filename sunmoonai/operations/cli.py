@@ -19,6 +19,7 @@ ROUTES = {
     ('harbor', 'entry'): 'sunmoonai/registry-platform/sni_proxy.py',
     ('harbor', 'materials'): 'sunmoonai/registry-platform/prepare-artifacts.py',
     ('harbor', 'certificates'): 'sunmoonai/registry-platform/certificates.py',
+    ('harbor', 'publisher-runtime'): 'sunmoonai/registry-platform/prepare_publisher_runtime.py',
     ('harbor', 'publish'): 'sunmoonai/registry-platform/publish.py',
     ('harbor', 'images'): 'sunmoonai/registry-platform/images.py',
     ('harbor', 'client'): 'sunmoonai/registry-platform/client.py',

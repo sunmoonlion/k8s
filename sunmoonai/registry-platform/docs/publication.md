@@ -6,7 +6,8 @@
 
 ## 当前可用范围与前置
 
-代码已完成静态检查和默认计划；**本机尚未准备 Skopeo 工具及依赖闭包、没有获准使用的真实发布批次，未执行实际推送**。
+已准备 Ubuntu 官方 Skopeo `1.13.3+ds1-2ubuntu0.24.04.3` 及 78 个依赖包，独立运行目录的版本/参数查询、既有 Traefik OCI manifest 读取已通过。
+已形成真实 Traefik 发布批次和只允许该归档的策略；**尚未执行实际推送**。准备方法、摘要和边界见 [发布工具物料](publisher-materials.md)。
 正式入口仍是旧 KIND，不能把本页当作 Harbor 已完成接管的证明。
 
 支持单一根镜像的 OCI tar（根可为多架构 index），只发布到 `repo@sha256:<64hex>`。
@@ -75,13 +76,13 @@ RAGFlow 已取消读取 loadimage.conf 补口令，使用独立仓库配置及�
 
 ## 工具准入与首次实际验收清单
 
-- 从可信发行来源准备 Skopeo 和运行依赖、记录版本/SHA；家庭网络不稳则东京下载再回传核对。
-- 确认所选版本支持本模块参数（含 tmpdir、registries-conf、authfile、all、preserve-digests、digestfile）；不支持则停止，不删除保护参数绕过。
+- 已完成本批 Skopeo/依赖的东京下载、回传和 Ubuntu 签名核验；新机器仍须按物料说明核字节/宿主前置条件。
+- 本批已查询实际二进制参数，支持 tmpdir、registries-conf、authfile、all、preserve-digests、digestfile；完整复制路径仍待验证，不删除保护参数绕过。
 - 审阅并锁定签名策略、真实 OCI 归档、目标项目及专用账号；为无 tag 的发布摘要配置保留规则，防止 Harbor 策略过早删除待部署镜像。
 - 在批准的目标完成单架构/多架构复制、错误摘要/认证/超时的失败行为，以及真实 Docker/节点/CI 拉取核对。
 - 云端首次验证还须核主机身份、TLS/域名、NO_PROXY、工作空间和同一代码/物料锁；未验证前保留归档旧代码。
 
-实现依据：[Skopeo copy 参数](https://github.com/containers/skopeo/blob/main/docs/skopeo-copy.1.md)、
-[全局参数实现](https://github.com/containers/skopeo/blob/main/cmd/skopeo/main.go)、
+实现依据：[Skopeo copy 参数](https://github.com/containers/skopeo/blob/v1.13.3/docs/skopeo-copy.1.md)、
+[全局参数实现](https://github.com/containers/skopeo/blob/v1.13.3/cmd/skopeo/main.go)、
 [Registry manifest 写入实现](https://github.com/containers/image/blob/main/docker/docker_image_dest.go)。
-这些上游资料说明工具能力；本项目锁定版本的实际验收仍须完成。
+这些上游资料说明工具能力；本项目锁定版本的完整推送验收仍须完成。

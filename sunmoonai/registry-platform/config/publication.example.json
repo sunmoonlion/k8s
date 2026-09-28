@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "tool": {
-    "path": "/home/zymun/packages-to-be-installed/releases/registry-publisher-linux-amd64/bin/skopeo",
+    "path": "/home/zymun/packages-to-be-installed/releases/registry-publisher-linux-amd64/runtime/bin/skopeo",
     "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
   },
   "policy": {

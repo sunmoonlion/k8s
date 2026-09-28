@@ -233,7 +233,7 @@ def main():
     if not args.apply:
         print(json.dumps({'apply': False, 'batch': str(args.batch), 'settings': batch,
                           'credentials_read': False, 'network': False,
-                          'input_bytes_verified': False, 'tool_ready': False,
+                          'input_bytes_verified': False, 'tool_readiness_checked': False,
                           'scope': 'OCI archives to immutable digest references; no release aliases'}, indent=2))
         return
     apply(batch, profile, args.credentials_file)
