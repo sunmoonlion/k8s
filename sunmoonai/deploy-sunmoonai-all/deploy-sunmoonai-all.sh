@@ -87,6 +87,10 @@ check_namespace() {
         echo ""
         return 1
     else
+        if sunmoon_deploy_target_required; then
+            log_error "明确部署目标查询失败；停止，不自动重连或更换上下文"
+            return 1
+        fi
         log_warn "kubectl 连接失败，尝试自动重连后重试（${_ns_err%%$'\n'*}）"
         if command -v setup_kubectl_environment >/dev/null 2>&1 && setup_kubectl_environment >/dev/null 2>&1; then
             if kubectl get namespace "$namespace" >/dev/null 2>&1; then
@@ -117,23 +121,6 @@ call_subscript() {
     else
         DISABLE_AUTO_CLEANUP=true "$script_path" "${args[@]}"
     fi
-}
-
-# 与 utils/kubeconfig-path-for-cluster.sh、unified-deployment-template 共用同一解析规则
-# shellcheck source=/dev/null
-source "${PROJECT_ROOT}/../utils/kubeconfig-path-for-cluster.sh"
-
-# 当 CLUSTER=KIND 时，在总控进程中设置 KUBECONFIG，使后续 data/messaging/ops 等平台部署都操作同一 Kind 集群。
-# 否则 deploy-kind 在子进程里 export 的 KUBECONFIG 不会继承，导致子脚本有时用默认 kubeconfig，出现 Secret 未创建等不稳定现象。
-resolve_kind_kubeconfig() {
-    kubeconfig_path_from_admin_conf "${PROJECT_ROOT}/../utils/k8s-admin.conf" "KIND"
-}
-
-# 从 k8s-admin.conf 读取当前 CLUSTER（C1/C2/…）对应的 kubeconfig 路径
-resolve_remote_cluster_kubeconfig_path() {
-    local cu
-    cu=$(echo "${CLUSTER:-}" | tr '[:lower:]' '[:upper:]')
-    kubeconfig_path_from_admin_conf "${PROJECT_ROOT}/../utils/k8s-admin.conf" "$cu"
 }
 
 # 等待非空 Pod 集合 Ready/Succeeded；查询失败、空集合或超时不报成功
@@ -178,28 +165,8 @@ deploy_platform_components_by_priority() {
     local dry_run="$4"
     
     log_info "开始基于优先级的平台组件部署..."
-    # 当目标为 Kind 时，确保总控进程已设置 KUBECONFIG，避免子脚本继承不到而出现 Secret 未创建等不稳定
-    local cluster_upper kind_kubeconfig
-    cluster_upper=$(echo "${CLUSTER:-}" | tr '[:lower:]' '[:upper:]')
-    if [[ "$cluster_upper" == "KIND" ]]; then
-        kind_kubeconfig=$(resolve_kind_kubeconfig)
-        if [[ -f "$kind_kubeconfig" && "${KUBECONFIG:-}" != "$kind_kubeconfig" ]]; then
-            unset KUBECONFIG
-            export KUBECONFIG="$kind_kubeconfig"
-            log_info "已设置 KUBECONFIG=$KUBECONFIG（Kind 集群）"
-        fi
-    elif [[ "$cluster_upper" =~ ^C[0-9]+$ ]]; then
-        # 远程集群：总控进程里的 kubectl（如 WAIT_READY）需指向 C1/C2 的 admin.conf，避免继承 shell 中误留的 Kind KUBECONFIG
-        local remote_kc
-        if ! remote_kc=$(resolve_remote_cluster_kubeconfig_path); then
-            log_error "无法解析目标集群 kubeconfig；停止"
-            return 1
-        elif [[ -n "$remote_kc" && -f "$remote_kc" ]]; then
-            unset KUBECONFIG
-            export KUBECONFIG="$remote_kc"
-            log_info "已设置 KUBECONFIG=$KUBECONFIG（远程集群 $cluster_upper）"
-        fi
-    fi
+    # Never replace an admitted target from cached/default connection state.
+    sunmoon_deploy_target_check "$K8S_ROOT_DIR" || return 1
     if [[ "${WAIT_READY:-false}" == "true" ]]; then
         log_info "⏳ 已启用等待就绪模式 (WAIT_READY=true, 单平台超时: ${WAIT_READY_TIMEOUT:-180}s)"
     fi
@@ -798,29 +765,8 @@ deploy_sunmoonai() {
         done
         return 0
     fi
-    # An explicit identity is required before generating files or calling children.
-    if [[ "${SUNMOON_KUBECTL:-}" != /* || ! -x "${SUNMOON_KUBECTL:-}" || -z "${SUNMOON_EXPECTED_CLUSTER_UID:-}" || ! -f "${KUBECONFIG:-}" ]]; then
-        log_error "实际平台部署需要显式 KUBECONFIG、SUNMOON_KUBECTL 绝对路径和 SUNMOON_EXPECTED_CLUSTER_UID"
-        return 1
-    fi
-    local expected_kubeconfig actual_uid tool_directory
-    if [[ "${CLUSTER^^}" == KIND ]]; then
-        expected_kubeconfig=$(resolve_kind_kubeconfig) || return 1
-    elif [[ "${CLUSTER:-}" =~ ^C[0-9]+$ ]]; then
-        expected_kubeconfig=$(resolve_remote_cluster_kubeconfig_path) || return 1
-    else
-        log_error "必须显式选择 KIND/C1/C2/C3 目标"; return 1
-    fi
-    if [[ ! -f "$expected_kubeconfig" || "$(readlink -f "$expected_kubeconfig")" != "$(readlink -f "$KUBECONFIG")" ]]; then
-        log_error "总控配置与显式 kubeconfig 不一致；先完成消费者配置迁移，不退回当前上下文"; return 1
-    fi
-    tool_directory=$(dirname "$SUNMOON_KUBECTL") || return 1
-    export PATH="$tool_directory:$PATH"
-    if [[ "$(readlink -f "$(command -v kubectl)")" != "$(readlink -f "$SUNMOON_KUBECTL")" ]]; then
-        log_error "子脚本 kubectl 与显式工具不一致"; return 1
-    fi
-    actual_uid=$("$SUNMOON_KUBECTL" --kubeconfig "$KUBECONFIG" --request-timeout=10s get ns kube-system -o jsonpath='{.metadata.uid}') || return 1
-    [[ "$actual_uid" == "$SUNMOON_EXPECTED_CLUSTER_UID" ]] || { log_error "集群 UID 不符"; return 1; }
+    # Admit and export one target before generating files or calling children.
+    sunmoon_deploy_target_init "$K8S_ROOT_DIR" || return 1
 
     # Keep normal .conf switches; credentials are a referenced private bundle.
     # Validate before preparing Secrets or invoking any platform deployment.

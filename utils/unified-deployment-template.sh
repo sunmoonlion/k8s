@@ -10,6 +10,15 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=prepend-dev-cli-path.sh
 source "${SCRIPT_DIR}/prepend-dev-cli-path.sh"
+# shellcheck source=deploy-target.sh
+source "${SCRIPT_DIR}/deploy-target.sh"
+
+# Strict root deployments never enter the legacy connection/status lifecycle.
+unified_check_deploy_target() {
+    local root
+    root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)" || return 1
+    sunmoon_deploy_target_check "$root"
+}
 prepend_dev_cli_to_path
 # 使用绝对路径指向正确的配置文件
 CONFIG_FILE="${UNIFIED_CONFIG_FILE:-$SCRIPT_DIR/k8s-admin.conf}"
@@ -22,6 +31,9 @@ PID_FILE="$SCRIPT_DIR/.k8s-tunnel.pid"
 # 清理函数（保留原始退出码，避免子脚本“失败却返回成功”）
 cleanup() {
     local exit_code=$?
+    if sunmoon_deploy_target_required; then
+        return "$exit_code"
+    fi
     # 检查是否禁用自动清理
     if [[ "${DISABLE_AUTO_CLEANUP:-false}" == "true" ]]; then
         log_info "跳过自动清理（由主脚本负责）"
@@ -234,6 +246,10 @@ check_helm() {
 
 # 初始化环境
 initialize_environment() {
+    if sunmoon_deploy_target_required; then
+        unified_check_deploy_target
+        return $?
+    fi
     # 确保 .kube 目录存在
     local kube_dir="$HOME/.kube"
     if [[ ! -d "$kube_dir" ]]; then
@@ -248,6 +264,10 @@ initialize_environment() {
 
 # 读取配置文件
 read_k8s_config() {
+    if sunmoon_deploy_target_required; then
+        unified_check_deploy_target
+        return $?
+    fi
     if [[ ! -f "$CONFIG_FILE" ]]; then
         log_error "配置文件不存在: $CONFIG_FILE"
         return 1
@@ -413,6 +433,10 @@ read_k8s_config() {
 
 # 保存连接状态（共享部署链 CURRENT_* 状态字段）
 save_k8s_status() {
+    if sunmoon_deploy_target_required; then
+        sunmoon_deploy_target_error 'Legacy connection/status operations are disabled for an explicit deployment'
+        return 1
+    fi
     local mode="$1"
     local _timestamp="$2"   # 参数位占位，当前不写入文件
     local _local_port="$3"  # 参数位占位，当前不写入文件
@@ -434,6 +458,10 @@ EOF
 
 # 加载连接状态（直接使用 CURRENT_* 字段）
 load_k8s_status() {
+    if sunmoon_deploy_target_required; then
+        sunmoon_deploy_target_error 'Legacy connection/status operations are disabled for an explicit deployment'
+        return 1
+    fi
     # 初始化变量（只有在未定义时才初始化）
     CURRENT_MODE=${CURRENT_MODE:-""}
     CURRENT_KUBECONFIG=${CURRENT_KUBECONFIG:-""}
@@ -457,6 +485,10 @@ load_k8s_status() {
 
 # 清理连接状态
 clear_k8s_status() {
+    if sunmoon_deploy_target_required; then
+        sunmoon_deploy_target_error 'Legacy connection/status operations are disabled for an explicit deployment'
+        return 1
+    fi
     if [[ -f "$STATUS_FILE" ]]; then
         rm -f "$STATUS_FILE"
         log_info "连接状态已清理"
@@ -536,6 +568,10 @@ k8s_status_matches_desired_cluster() {
 
 # 检查连接状态
 check_k8s_connection_status() {
+    if sunmoon_deploy_target_required; then
+        unified_check_deploy_target
+        return $?
+    fi
     if load_k8s_status; then
         if ! k8s_status_matches_desired_cluster; then
             return 1
@@ -590,6 +626,10 @@ check_k8s_connection_status() {
 
 # 自动重连
 auto_reconnect() {
+    if sunmoon_deploy_target_required; then
+        sunmoon_deploy_target_error 'Legacy connection/status operations are disabled for an explicit deployment'
+        return 1
+    fi
     log_info "检测到连接断开，正在自动重连..."
 
     # 清理旧的连接（杀进程并等端口释放）
@@ -619,6 +659,10 @@ auto_reconnect() {
 
 # 建立 Kubernetes 连接
 start_k8s_connection() {
+    if sunmoon_deploy_target_required; then
+        sunmoon_deploy_target_error 'Legacy connection/status operations are disabled for an explicit deployment'
+        return 1
+    fi
     # 先读取配置文件
     if ! read_k8s_config; then
         return 1
@@ -659,6 +703,10 @@ start_k8s_connection() {
 # Kind 模式连接：将 kind kubeconfig 写入配置路径并设置 KUBECONFIG
 # 注意：如果目标集群为 KIND，则必须存在 kind 命令且 Kind 集群可用；不做“隐式回退”，避免破坏集群选择优先级
 start_kind_connection() {
+    if sunmoon_deploy_target_required; then
+        sunmoon_deploy_target_error 'Legacy connection/status operations are disabled for an explicit deployment'
+        return 1
+    fi
     log_info "使用 Kind 模式连接..."
     
     if ! command -v kind &>/dev/null; then
@@ -694,6 +742,10 @@ start_kind_connection() {
 
 # 跳板机模式连接
 start_bastion_connection() {
+    if sunmoon_deploy_target_required; then
+        sunmoon_deploy_target_error 'Legacy connection/status operations are disabled for an explicit deployment'
+        return 1
+    fi
     log_info "使用跳板机模式连接..."
     
     # 检查必要的配置
@@ -743,6 +795,10 @@ start_bastion_connection() {
 
 # 直接访问模式连接
 start_direct_connection() {
+    if sunmoon_deploy_target_required; then
+        sunmoon_deploy_target_error 'Legacy connection/status operations are disabled for an explicit deployment'
+        return 1
+    fi
     log_info "使用直接访问模式连接..."
     
     # 检查必要的配置
@@ -991,6 +1047,10 @@ start_direct_connection() {
 
 # 本地连接设置
 setup_local_connection() {
+    if sunmoon_deploy_target_required; then
+        sunmoon_deploy_target_error 'Legacy connection/status operations are disabled for an explicit deployment'
+        return 1
+    fi
     log_info "使用本地 Kubernetes 集群..."
     unset KUBECONFIG
     export CURRENT_SELECT_CLUSTER="LOCAL"
@@ -1001,6 +1061,10 @@ setup_local_connection() {
 
 # 静默停止连接
 stop_k8s_connection_quiet() {
+    if sunmoon_deploy_target_required; then
+        sunmoon_deploy_target_error 'Legacy connection/status operations are disabled for an explicit deployment'
+        return 1
+    fi
     # 初始化变量
     CURRENT_MODE=${CURRENT_MODE:-""}
     TUNNEL_PID=${TUNNEL_PID:-""}
@@ -1053,6 +1117,10 @@ enforce_no_merged_kubeconfig_env() {
 
 # 在已导出 KUBECONFIG 且指定了 CLUSTER 时，校验路径与 k8s-admin.conf 中 [KIND]/[C*_DIRECT|BASTION] 一致（最后一道闸）
 assert_kubeconfig_matches_cluster_selection() {
+    if sunmoon_deploy_target_required; then
+        unified_check_deploy_target
+        return $?
+    fi
     local cu
     cu=$(echo "${CLUSTER:-}" | tr '[:lower:]' '[:upper:]')
     [[ -n "$cu" ]] || return 0
@@ -1074,37 +1142,17 @@ assert_kubeconfig_matches_cluster_selection() {
         return 1
     fi
 
-    # 期望 kubeconfig 路径：以 CLUSTER（$cu）为准，避免「环境要求 KIND」但状态文件仍为 direct
-    # 时 read_k8s_config 未填充 DIRECT_KUBECONFIG 导致 set -u 下未绑定变量崩溃。
-    local exp=""
-    if [[ "$cu" == "KIND" ]]; then
-        exp="${KIND_KUBECONFIG:-}"
-    else
-        case "${CURRENT_MODE:-}" in
-            kind) exp="${KIND_KUBECONFIG:-}" ;;
-            bastion) exp="${BASTION_KUBECONFIG:-}" ;;
-            direct) exp="${DIRECT_KUBECONFIG:-}" ;;
-            *)
-                log_error "无法校验 kubeconfig：未知 CURRENT_MODE='${CURRENT_MODE:-}'"
-                return 1
-                ;;
-        esac
-    fi
-
-    exp="${exp/#\~/$HOME}"
-    exp=$(eval echo "$exp")
-    local got="${KUBECONFIG:-}"
-    got="${got/#\~/$HOME}"
-    got=$(eval echo "$got")
-
-    if [[ -z "$got" ]]; then
-        log_error "CLUSTER=$cu 已指定，但 KUBECONFIG 未设置"
+    # Parse the selected cluster mapping as data. Cached mode must not select
+    # another cluster, and path strings are never evaluated as shell commands.
+    local exp got e_can g_can
+    exp=$(kubeconfig_path_from_admin_conf "$CONFIG_FILE" "$cu") || return 1
+    got="${KUBECONFIG:-}"
+    [[ "$got" == /* && "$got" != *:* && -f "$got" ]] || {
+        log_error "显式集群要求一个存在的绝对 kubeconfig 路径"
         return 1
-    fi
-
-    local e_can g_can
-    e_can=$(readlink -f "$exp" 2>/dev/null || echo "$exp")
-    g_can=$(readlink -f "$got" 2>/dev/null || echo "$got")
+    }
+    e_can="$exp"
+    g_can=$(readlink -f -- "$got") || return 1
 
     if [[ "$e_can" != "$g_can" ]]; then
         log_error "kubeconfig 与 CLUSTER=$cu、连接模式 ${CURRENT_MODE} 不一致（防止串集群）：当前 $g_can ，配置期望 $e_can"
@@ -1116,6 +1164,10 @@ assert_kubeconfig_matches_cluster_selection() {
 
 # 设置 kubectl 环境
 setup_kubectl_environment() {
+    if sunmoon_deploy_target_required; then
+        unified_check_deploy_target
+        return $?
+    fi
     log_info "设置 kubectl 环境..."
 
     if ! enforce_no_merged_kubeconfig_env; then
@@ -1209,6 +1261,10 @@ setup_connection() {
 
 # 清理连接资源
 cleanup_k8s_connection() {
+    if sunmoon_deploy_target_required; then
+        sunmoon_deploy_target_error 'Legacy connection/status operations are disabled for an explicit deployment'
+        return 1
+    fi
     log_info "清理 Kubernetes 连接资源..."
     stop_k8s_connection_quiet
     if [[ -f "$PID_FILE" ]]; then

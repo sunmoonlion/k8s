@@ -22,3 +22,5 @@
 ```
 
 旧 `storage-manager.sh` 在本仓不存在，其菜单说明已删除；存储操作见 [当前存储入口](../sunmoonai/kind-infrastructure/mount/README.md)。
+
+总控部署现在由 [固定目标传递](../sunmoonai/operations/configuration.md#平台部署的固定目标传递)保护，不调用本页人工菜单自动重连。映射缺项/歧义不再回退到旧 kind 默认路径。

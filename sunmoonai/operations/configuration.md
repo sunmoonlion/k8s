@@ -68,3 +68,18 @@
 
 镜像检查入口 `./sunmoon harbor images check --component <名称>` 支持同样的 `--config` 和 `--credentials-file`。
 默认只打印；显式 C1/C2/C3 未提供仓库配置时拒绝，不隐式退回 WSL。详见 [组件镜像检查](../docs/harbor-component-image-ensure.md)。
+
+
+## 平台部署的固定目标传递
+
+实际总控部署准入使用 `utils/deploy-target.sh`：从已有 `--cluster`、`--kubeconfig`、`--kubectl`、`--expected-uid` 形成一份环境绑定，不增加另一份日常配置。现有 `k8s-admin.conf` 继续控制集群到 kubeconfig 的映射；`UNIFIED_CONFIG_FILE` 可显式指定同格式映射文件。
+
+- kubeconfig 和 kubectl 先规范为实际绝对路径；记录 kubeconfig 内容 SHA256、集群选择和 kube-system UID。
+- 总控进入子平台前、公共子脚本调用前、共享模板设置连接时重复检查映射/内容/UID；固定所选 kubectl 的 PATH 优先级。查询使用 10 秒请求期限、20 秒进程期限。
+- 显式部署模式不读取/保存/删除 `.k8s-status`，不自行创建 SSH 隧道、不修改 hosts、不自动重连、不退回默认 context。异常停止；共享 EXIT 清理不介入原人工连接。
+- 绑定通过 `SUNMOON_DEPLOY_BOUND_*` 传给后代；它们是单次运行状态，不是供人修改的配置。嵌套调用不能重新初始化已存在的绑定。
+- 独立运行的人工连接工具仍保留其原有能力；本次没有将工具本身的旧实现宣称为已完成新版适配。
+
+路径映射由 `utils/kubeconfig_path.py` 按数据读取，Shell 调用用 `kubeconfig-path-for-cluster.sh` 公共函数。不执行 `eval`，只允许绝对路径与 `~/`、`$HOME`、`${HOME}`；不接受多文件 KUBECONFIG。KIND 必须配置自身路径；云集群 DIRECT/BASTION 若同时存在必须指向同一路径，歧义则停止。选定段或 kubeconfig 键重复也会拒绝，不猜默认集群。
+
+**验证边界**：本批只有 Shell/Python 静态检查和调用路径审阅，未运行真实连接、成功/失败用例或部署。绑定是共享部署调用边界的保护，不是沙箱；不能保证绕过公共入口直接运行的任意脚本或外部进程不会改变配置。实际子组件、helm、Python 子进程及云端操作仍要随迁移验收逐项核对。

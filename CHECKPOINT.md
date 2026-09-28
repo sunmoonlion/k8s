@@ -1,3 +1,15 @@
+# luna 工作检查点
+
+## 最新续接：2026-09-28 固定部署目标，阻断共享子脚本连接回退
+
+基线 `9f9703ada92fc59e48bc313a266c300c4d85b28c`，luna 开工干净，所有者继续原 utils 适配。发现总控核 UID 后，子脚本仍可能 source .k8s-status、自动重连并改 KUBECONFIG，且目标路径解析含 eval。
+
+- 新 utils/deploy-target.sh，source 只定义函数。实际总控准入绑定规范 kubeconfig/kubectl 路径、CLUSTER、UID、kubeconfig SHA256；检查映射与内容、恢复显式 kubectl PATH 优先级，10秒请求+20秒进程期限读 kube-system UID。绑定经环境传子脚本，嵌套 init 不替换已有绑定。
+- 根总控改用共享准入，去掉再次根据配置替换KUBECONFIG及无引用的旧resolver。deploy-runtime-helpers在显式模式仅复核固定目标，明确传播失败。共享模板read/setup/check/initialize进入固定目标检查，旧缓存读写/清理与隧道建立/自动重连在显式模式拒绝，退出trap不动旧人工连接。
+- 新 kubeconfig_path.py 按数据读取选定INI段，不执行eval，仅HOME/~/展开；缺映射/重复/多文件/非绝对路径/云DIRECT与BASTION歧义拒绝。原Shell helper保持公共函数接口，实际解析只有这份Python；共享模板路径比对也改用它。配置值、实际工具/集群/inbox均未改变。
+- 静态：5 Shell bash -n及ShellCheck error级、1 Python AST、17个本地文档链接核对及git diff --check通过。未运行测试/成功失败用例、CLI部署、K8s查询、SSH/隧道/Windows或清理。代码接线不等于实际消费者、helm/Python子进程与云实机验收；绑定只保护公共边界，不能当作沙箱或对全部旧脚本作保证。
+- 继续待办：实际消费者target/镜像锁接线、应用CI发布、保留人工工具适配；随后依原准入迁移main/30443和重建独立性。最终本机东京临时物料清理不可遗漏。旧节点/卷/Harbor数据/备份保护不变。仅本地luna提交，不push。
+
 ## 最新续接：2026-09-28 Skopeo 离线依赖、独立运行目录和首份真实批次
 
 ## 最新续接：2026-09-28 utils 全量用途与依赖整理

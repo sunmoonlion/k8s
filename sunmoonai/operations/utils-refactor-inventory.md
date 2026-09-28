@@ -190,3 +190,8 @@
 | `sunmoonai/utils/db-provisioner/templates/db-access-bootstrap-template/teardown-k8s-db-access.sh` | 逐字节相同 |
 
 机械检查：6 个修改 Shell 的 bash -n 与 ShellCheck error 级通过；76 个修改文档本地链接存在；131 条处置精确覆盖基线文件集合。没有运行测试套件或真实工具动作。
+
+
+## 后续单元：部署目标接线
+
+上述 131 条是整理基线的处置记录；后续新增 `utils/deploy-target.sh`、`utils/kubeconfig_path.py`，并将公共 Shell 路径解析与总控/子脚本/共享模板接入固定目标检查。原清单中“旧状态回退”的待办在显式总控路径已做代码处理，人工旧路径仍保留。细节和未实测范围见 [配置说明](configuration.md#平台部署的固定目标传递)；不回写原始盘点 SHA 或把静态核对算作运行时验收。

@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 # Shared helpers for deploy orchestration scripts (app-platform / *-app-all).
+# shellcheck source=deploy-target.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/deploy-target.sh"
 
 inherit_deploy_kubeconfig() {
     local k8s_root="${1:-}"
+    if sunmoon_deploy_target_required; then
+        [[ -n "$k8s_root" ]] || k8s_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+        sunmoon_deploy_target_check "$k8s_root"
+        return $?
+    fi
 
     if [[ -n "${KUBECONFIG:-}" ]] && kubectl get ns default >/dev/null 2>&1; then
         return 0
@@ -27,7 +34,7 @@ call_deploy_subscript() {
     local script_path="$2"
     shift 2
 
-    inherit_deploy_kubeconfig "$k8s_root"
+    inherit_deploy_kubeconfig "$k8s_root" || return 1
     if [[ -n "${CLUSTER:-}" ]]; then
         DISABLE_AUTO_CLEANUP=true "$script_path" --cluster "$CLUSTER" "$@"
     else

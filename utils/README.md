@@ -10,7 +10,7 @@
 | 内容 | 用途和调用方式 |
 | --- | --- |
 | `unified-deployment-template.sh`、`cluster-arg-parser.sh`、`cluster-config-mapping.sh` | 组件共享的连接、集群参数与配置映射。参数解析只保留一份实现；仍有大量实际部署调用方 |
-| `k8s-admin.conf`、`kubeconfig-path-for-cluster.sh`、`deploy-runtime-helpers.sh`、`prepend-dev-cli-path.sh` | 现有组件的连接配置、路径和子脚本环境。配置保留；不得因整理擅自改变当前集群目标 |
+| `k8s-admin.conf`、`kubeconfig-path-for-cluster.sh` / `kubeconfig_path.py`、`deploy-target.sh`、`deploy-runtime-helpers.sh`、`prepend-dev-cli-path.sh` | 连接配置、按数据解析路径和固定部署目标。总控及共享子脚本复核路径/内容摘要/UID，显式部署不读旧连接缓存或自动重连 |
 | `secret-management/` | 参数化 Secret 数据准备/YAML 生成、基于已有 CA 签发叶证书，供组件调用 |
 | `unified-cert-secret-management/` | 按服务端/客户端组合分发证书，包含动态加载的 Traefik 插件；与上一目录接口不同，不能按同名函数直接合并 |
 | `components-images/` | 通过组件名动态读取的 19 份镜像清单；文件名没有固定调用也不能删除。与最终部署摘要锁的对齐仍待迁移完成 |
@@ -39,3 +39,5 @@
 - 删除 `sunmoonai/utils/db-provisioner/` 仓内重复副本；唯一平台实现是本目录下的 `db-provisioner/`。模板仓与实例仓版本未动。
 
 旧镜像发布目录此前已删除。需暂存的旧云代码仍集中在 `legacy/`，不是日常操作入口。代码整理不清理镜像、节点、卷、数据库或实际物料。
+
+固定目标的参数、人工工具边界及尚未实测范围见 [部署目标传递](../sunmoonai/operations/configuration.md#平台部署的固定目标传递)。
