@@ -1,5 +1,16 @@
 # luna 工作检查点
 
+## 最新续接：2026-09-28 问数 Demo 退出旧构建/KIND 导入链
+
+基线 `18141c10`；继续原全部组件任务。此前本轮已提交DC剩余链、RAGFlow/Messaging，未插队启动空间治理。
+
+- 保留question-data-demo人工研究用途，deploy.sh新增deploy/status/uninstall严格分派/目标绑定，无默认旧kind kubeconfig，无docker build/kind load/课程源码与.env隐式路径。新deploy.conf保留环境覆盖，控制Harbor摘要镜像、namespace、域名、拉取Secret、私有env文件及180秒就绪期限；云上代码共用但未实机验证。
+- 新deploy.py只在显式--apply+共享Target绑定下API；默认计划。私有.env按数据解析、调用者所有/owner-only/64KiB/非末级软链，读现有三个DEEPSEEK字段；无eval/展开，不传key参数、不写Secret文件。既有registry模块验证CA/私有消费凭据与明确镜像digest，业务/拉取Secret走内存stdin SSA、不force并回读。查询/卸载不读凭据；共享pull Secret/namespace/PVC不删除。
+- 原runtime模板改消费输入镜像/IfNotPresent，Python设置namespace和pull引用；配置/业务Secret摘要触发Pod更新。保留等待Deployment更新并可用，不把仅提交当成功，外部HTTPS及真实模型调用仍待验。路由只指定域名，取消借用info-tls和localhost/IP抢根路由，使用共享TLSStore；模型和数据库配置值未变。
+- 仅Shell/config语法与ShellCheck、Python AST、YAML模板、模块路径/文档/193入口静态核对；未实际部署/生成/读私有.env/构建/发布/API/模型请求/KIND导入/清理。Secret/部署写入非事务，失败可留下部分状态，文档已明示。
+- 继续其余组件业务Secret/生成/生命周期审阅，原任务尚未全完。所有者明确顺序：原修复完成后自动接持久化验收与长期空间管理；不再只留方案等提醒。新监控/space入口尚无代码/安装，三种持久化场景尚未验收。最终本机/Tokyo refactor临时物料清理必做；旧节点/卷/Harbor/必要备份保护。main未创建，inbox旧kind，运行迁移暂停；只提交本地luna，不push。
+
+
 ## 最新续接：2026-09-28 RAGFlow 与 Messaging 继续修复
 
 基线 `0c5405b5`（本轮先提交的DC剩余入口单元）；按所有者要求继续原全部组件整理，空间/持久化收尾不插队。

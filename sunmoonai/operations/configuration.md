@@ -132,3 +132,7 @@ OnlyOffice 主配置、资源列表开关、各业务 Secret 配置继续保留�
 Harbor 人工导出使用 [`./sunmoon harbor export-secret`](../registry-platform/docs/export-pull-secret.md)，默认计划、私有文件输入、仅写 ~/private 新文件；旧生成脚本退役且无转发入口。Document Converter 的 Secret/ConfigMap 参数、开关与纯本地渲染见[配置资源说明](../app-platform/knowledge-app/components/document-converter-backend/docs/deployment-resources.md)。本轮静态接线完成，尚未实机验收。
 
 Document Converter 的应用/PVC/namespace/路由生成也已统一，父级新增默认关闭的 `pvc_enabled`（当前模板无卷挂载），其余现有开关保持。实际部署先核验渲染出的镜像并锁定摘要；路由使用原 UNIFIED_HOST 和中间件开关，缺外部限流资源即停止，不默默关闭。详见上述组件说明。
+
+## 问数研究 Demo
+
+人工Demo继续保留，[deploy.conf](../app-platform/question-data-demo/deploy.conf)控制namespace/域名/镜像摘要/私有文件路径/就绪期限。部署消费Harbor已发布摘要，不再构建或kind load，不默认连接旧kind；[日常方法](../app-platform/question-data-demo/README.md)包括查看、卸载与私有输入要求。数据库和模型默认值未升级，尚未实际部署。

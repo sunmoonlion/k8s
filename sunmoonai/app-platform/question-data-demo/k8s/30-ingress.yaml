@@ -33,12 +33,5 @@ spec:
           port: 8000
           serversTransport: question-data-transport
       priority: 20
-    - kind: Rule
-      match: (Host(`127.0.0.1`) || Host(`localhost`)) && PathPrefix(`/`)
-      services:
-        - name: question-data
-          port: 8000
-          serversTransport: question-data-transport
-      priority: 5
-  tls:
-    secretName: info-tls
+  # The shared Traefik TLSStore owns the certificate.
+  tls: {}
