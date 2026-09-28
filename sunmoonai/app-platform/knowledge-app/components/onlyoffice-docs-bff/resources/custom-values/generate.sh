@@ -1,179 +1,81 @@
-#!/bin/bash
-# ONLYOFFICE Docs App BFF YAML 生成脚本
-# 根据配置生成所有相关的 YAML 文件
-# 注意：主应用使用 Helm 部署，这里只生成 Ingress 和 Middleware 的 YAML
-
+#!/usr/bin/env bash
+# ONLYOFFICE local renderer. No API calls; secrets require explicit selection.
 set -euo pipefail
-
+set +x
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_FILE="${SCRIPT_DIR}/generate.conf"
-OUTPUT_DIR="${SCRIPT_DIR}"
-
-# 日志函数
-log_info() { echo -e "\033[0;34m[INFO]\033[0m $*"; }
-log_success() { echo -e "\033[0;32m[SUCCESS]\033[0m $*"; }
-log_error() { echo -e "\033[0;31m[ERROR]\033[0m $*" >&2; }
-log_warn() { echo -e "\033[1;33m[WARN]\033[0m $*"; }
-
-# 加载配置
-if [ ! -f "$CONFIG_FILE" ]; then
-    log_error "配置文件不存在: $CONFIG_FILE"
-    exit 1
-fi
-
-source "$CONFIG_FILE"
-
-# 加载部署配置（获取环境变量）
-if [ -n "${DEPLOY_CONFIG:-}" ] && [ -f "$SCRIPT_DIR/$DEPLOY_CONFIG" ]; then
-    source "$SCRIPT_DIR/$DEPLOY_CONFIG"
-else
-    log_warn "部署配置文件不存在或未配置: ${DEPLOY_CONFIG:-未设置}"
-fi
-
-# 设置默认环境变量
-export NAMESPACE="${NAMESPACE:-${ONLYOFFICE_NAMESPACE:-app-platform-dev}}"
-export ENVIRONMENT="${ENVIRONMENT:-development}"
-export ENV="${ENV:-dev}"
-
-# 准备 ONLYOFFICE Docs 相关的环境变量
-export ONLYOFFICE_UNIFIED_HOST="${ONLYOFFICE_UNIFIED_HOST:-www.sunmoonai.com}"
-export ONLYOFFICE_SERVICE_PORT="${ONLYOFFICE_SERVICE_PORT:-8888}"
-
-# Harbor Docker 认证配置（用于 harbor-registry-secret）
-HARBOR_DOCKER_SERVER="${HARBOR_DOCKER_SERVER:-${ONLYOFFICE_IMAGE_REGISTRY:-harbor.sunmoonai.com:30443}}"
-HARBOR_DOCKER_USERNAME="${HARBOR_DOCKER_USERNAME:-admin}"
-HARBOR_DOCKER_PASSWORD="${HARBOR_DOCKER_PASSWORD:-Harbor@12345}"
-# 生成 base64 编码的 Docker config JSON
-HARBOR_AUTH_STRING=$(echo -n "${HARBOR_DOCKER_USERNAME}:${HARBOR_DOCKER_PASSWORD}" | base64 -w 0)
-HARBOR_DOCKER_CONFIG_JSON=$(echo -n "{\"auths\":{\"${HARBOR_DOCKER_SERVER}\":{\"username\":\"${HARBOR_DOCKER_USERNAME}\",\"password\":\"${HARBOR_DOCKER_PASSWORD}\",\"auth\":\"${HARBOR_AUTH_STRING}\"}}}" | base64 -w 0)
-export HARBOR_DOCKER_CONFIG_JSON
-
-# ONLYOFFICE Secrets 环境变量（如果未设置，使用默认值或从配置文件加载）
-# JWT Secret：如果未设置，自动生成一个随机值（32 字节，base64 编码）
-if [[ -z "${JWT_SECRET_VALUE:-}" ]]; then
-    JWT_SECRET_VALUE=$(openssl rand -base64 32 | tr -d '\n' 2>/dev/null || echo "")
-    if [[ -n "$JWT_SECRET_VALUE" ]]; then
-        log_warn "⚠️  JWT_SECRET_VALUE 未设置，已自动生成随机值（请妥善保管）"
-    fi
-fi
-export JWT_SECRET_VALUE="${JWT_SECRET_VALUE:-}"
-export POSTGRESQL_PASSWORD="${POSTGRESQL_PASSWORD:-}"
-export RABBITMQ_PASSWORD="${RABBITMQ_PASSWORD:-}"
-export REDIS_PASSWORD="${REDIS_PASSWORD:-}"
-
-# 验证 YAML 文件
-validate_yaml() {
-    local yaml_file="$1"
-    
-    if command -v kubectl &> /dev/null; then
-        if kubectl apply --dry-run=client -f "$yaml_file" &> /dev/null; then
-            log_success "YAML 验证通过: $(basename "$yaml_file")"
-            return 0
-        else
-            log_error "YAML 验证失败: $(basename "$yaml_file")"
-            kubectl apply --dry-run=client -f "$yaml_file" 2>&1 | head -20
-            return 1
-        fi
-    else
-        log_warn "kubectl 未安装，跳过 YAML 验证"
-        return 0
-    fi
-}
-
-# 生成单个资源
-generate_resource() {
-    local resource_type="$1"
-    local template_path="$2"
-    local output_file="$3"
-    local enabled="$4"
-    
-    if [ "$enabled" != "true" ]; then
-        log_info "跳过资源生成: $resource_type (已禁用)"
-        return 0
-    fi
-    
-    # 解析路径（支持相对路径）
-    local full_template_path
-    if [[ "$template_path" = /* ]]; then
-        full_template_path="$template_path"
-    else
-        full_template_path="$SCRIPT_DIR/$template_path"
-    fi
-    
-    local full_output_path="$OUTPUT_DIR/$output_file"
-    
-    # 检查模板文件
-    if [ ! -f "$full_template_path" ]; then
-        log_error "模板文件不存在: $full_template_path"
-        return 1
-    fi
-    
-    log_info "生成 $resource_type: $output_file"
-    
-    # 根据资源类型选择不同的处理方式
-    case "$resource_type" in
-        app)
-            # 主应用 YAML：处理 {{VAR}} 模板语法
-            sed -e "s|{{NAMESPACE}}|${NAMESPACE}|g" \
-                -e "s|{{UNIFIED_HOST}}|${ONLYOFFICE_UNIFIED_HOST}|g" \
-                "$full_template_path" > "$full_output_path"
-            ;;
-        configmap|secret|pvc)
-            # ConfigMap、Secret 和 PVC：先处理 ${VAR:-default}，然后使用 envsubst
-            sed -e 's/\${\([^:}]*\):-[^}]*}/\${\1}/g' "$full_template_path" | envsubst > "$full_output_path"
-            ;;
-        ingress|middleware)
-            # Ingress 和 Middleware：处理 {{VAR}} 模板语法
-            sed -e "s|{{NAMESPACE}}|${NAMESPACE}|g" \
-                -e "s|{{UNIFIED_HOST}}|${ONLYOFFICE_UNIFIED_HOST}|g" \
-                "$full_template_path" > "$full_output_path"
-            ;;
-        *)
-            log_warn "未知的资源类型: $resource_type，使用默认处理方式"
-            envsubst < "$full_template_path" > "$full_output_path"
-            ;;
+requested=()
+dry_run=false
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --resource)
+            [[ $# -ge 2 && -n "$2" && "$2" != */* && "$2" != -* ]] || { echo 'Expected a configured resource output filename' >&2; exit 2; }
+            requested+=("$2"); shift 2 ;;
+        --dry-run) dry_run=true; shift ;;
+        --help|-h)
+            echo 'generate.sh [--resource OUTPUT_FILE ...] [--dry-run]'
+            echo 'Default: non-Secret resources only. A Secret must be explicitly selected with its configured value.'
+            exit 0 ;;
+        *) echo 'Unsupported renderer option' >&2; exit 2 ;;
     esac
-    
-    # 验证生成的 YAML
-    if ! validate_yaml "$full_output_path"; then
-        return 1
-    fi
-    
-    log_success "✅ $resource_type 生成完成: $output_file"
-    return 0
-}
-
-# 主函数
-main() {
-    log_info "开始生成 ONLYOFFICE Docs App BFF YAML 文件..."
-    log_info "输出目录: $OUTPUT_DIR"
-    log_warn "注意：主应用使用 Helm 部署，这里只生成 Ingress 和 Middleware 的 YAML"
-    
-    mkdir -p "$OUTPUT_DIR"
-    
-    # 检查是否有配置的资源列表
-    if [ -z "${GENERATE_RESOURCES:-}" ] || [ ${#GENERATE_RESOURCES[@]} -eq 0 ]; then
-        log_error "未配置需要生成的资源 (GENERATE_RESOURCES)"
-        exit 1
-    fi
-    
-    # 生成所有启用的资源
-    local failed=0
-    for resource_config in "${GENERATE_RESOURCES[@]}"; do
-        IFS=':' read -r resource_type template_path output_file enabled <<< "$resource_config"
-        
-        if ! generate_resource "$resource_type" "$template_path" "$output_file" "$enabled"; then
-            failed=1
-        fi
-    done
-    
-    if [ $failed -eq 0 ]; then
-        log_success "🎉 所有 YAML 文件生成完成！"
-        return 0
+done
+if [[ "$dry_run" == true || "${SUNMOON_DEPLOY_DRY_RUN:-false}" == true ]]; then
+    echo 'ONLYOFFICE rendering plan only; no config, credentials, files or API accessed.'
+    exit 0
+fi
+[[ "${SUNMOON_DEPLOY_DRY_RUN:-false}" == false ]] || { echo 'Invalid inherited dry-run mode' >&2; exit 2; }
+# Explicit caller values take precedence over deployment configuration defaults.
+incoming_namespace="${NAMESPACE:-}"
+incoming_service="${SERVICE_NAME:-}"
+incoming_port="${SERVICE_PORT:-}"
+incoming_host="${UNIFIED_HOST:-}"
+declare -A incoming_values=()
+for key in JWT_SECRET_VALUE POSTGRESQL_PASSWORD RABBITMQ_PASSWORD REDIS_PASSWORD SECRET_NAME TARGET_SECRET_KEY; do
+    if [[ -v "$key" ]]; then incoming_values[$key]="${!key}"; fi
+done
+source "$SCRIPT_DIR/generate.conf" >/dev/null 2>&1
+if [[ -n "${DEPLOY_CONFIG:-}" ]]; then
+    [[ -f "$SCRIPT_DIR/$DEPLOY_CONFIG" ]] || { echo 'ONLYOFFICE deployment config missing' >&2; exit 1; }
+    source "$SCRIPT_DIR/$DEPLOY_CONFIG" >/dev/null 2>&1
+fi
+for key in "${!incoming_values[@]}"; do export "$key=${incoming_values[$key]}"; done
+export NAMESPACE="${incoming_namespace:-${NAMESPACE:-${ONLYOFFICE_NAMESPACE:-app-platform-dev}}}"
+export SERVICE_NAME="${incoming_service:-onlyoffice-docs-${ONLYOFFICE_PROJECT_ID:-sunmoonai}}"
+export SERVICE_PORT="${incoming_port:-${ONLYOFFICE_SERVICE_PORT:-8888}}"
+export UNIFIED_HOST="${incoming_host:-${ONLYOFFICE_UNIFIED_HOST:-www.sunmoonai.com}}"
+# No Harbor auth construction and no random JWT. Only a selected Secret needs a value.
+export JWT_SECRET_VALUE="${JWT_SECRET_VALUE:-}" POSTGRESQL_PASSWORD="${POSTGRESQL_PASSWORD:-}"
+export RABBITMQ_PASSWORD="${RABBITMQ_PASSWORD:-}" REDIS_PASSWORD="${REDIS_PASSWORD:-}"
+export PVC_ACCESS_MODE="${PVC_ACCESS_MODE:-}" PVC_STORAGE_CLASS="${PVC_STORAGE_CLASS:-}" PVC_STORAGE_SIZE="${PVC_STORAGE_SIZE:-}"
+selected=()
+matched=()
+for resource_config in "${GENERATE_RESOURCES[@]}"; do
+    IFS=':' read -r resource_type template_path output_file enabled <<< "$resource_config"
+    choose=false
+    if [[ ${#requested[@]} -eq 0 ]]; then
+        [[ "$resource_type" == secret ]] || choose=true
     else
-        log_error "❌ 部分 YAML 文件生成失败"
-        return 1
+        for request in "${requested[@]}"; do
+            if [[ "$request" == "$output_file" ]]; then choose=true; matched+=("$request"); fi
+        done
     fi
-}
-
-main "$@"
+    [[ "$choose" == true ]] || continue
+    if [[ "$enabled" != true ]]; then
+        [[ ${#requested[@]} -gt 0 ]] || continue
+        echo 'Selected resource is disabled' >&2; exit 1
+    fi
+    [[ "$output_file" != */* && "$output_file" != .* && -n "$output_file" ]] || { echo 'Invalid output filename' >&2; exit 1; }
+    [[ "$template_path" != *harbor-registry-secret* ]] || { echo 'Harbor Secret belongs to registry-platform' >&2; exit 1; }
+    selected+=("$resource_config")
+done
+for request in "${requested[@]}"; do
+    found=false
+    for item in "${matched[@]}"; do [[ "$item" != "$request" ]] || found=true; done
+    [[ "$found" == true ]] || { echo 'Requested resource is not configured' >&2; exit 1; }
+done
+[[ ${#selected[@]} -gt 0 ]] || { echo 'No resources selected' >&2; exit 1; }
+for resource_config in "${selected[@]}"; do
+    IFS=':' read -r resource_type template_path output_file enabled <<< "$resource_config"
+    if [[ "$template_path" != /* ]]; then template_path="$SCRIPT_DIR/$template_path"; fi
+    python3 -B "$SCRIPT_DIR/render_resource.py" "$template_path" "$SCRIPT_DIR/$output_file" || exit 1
+    printf 'Rendered selected resource: %s\n' "$output_file"
+done

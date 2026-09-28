@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "scope": "six platform trees: all deploy-*.sh/deploy.sh; root deployment; Casdoor post-install/db-access CLI, Secret generator, manual Traefik NAT; native cloud/certificates and retired KIND entry; six external Harbor lifecycle/recovery/scanner/SNI entry points retain explicit --apply",
+  "scope": "six platform trees: all deploy-*.sh/deploy.sh; root deployment; Casdoor post-install/db-access CLI, Secret generator, manual Traefik NAT; native cloud/certificates and retired KIND entry; six external Harbor lifecycle/recovery/scanner/SNI entry points retain explicit --apply; ONLYOFFICE explicitly selected local resource renderer",
   "entries": [
     {
       "path": "sunmoonai/app-platform/auth-app/casdoor/deploy-casdoor/deploy-casdoor.sh",
@@ -931,6 +931,11 @@
       "path": "sunmoonai/registry-platform/host_scanner.py",
       "kind": "native-registry",
       "profile": null
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/onlyoffice-docs-bff/resources/custom-values/generate.sh",
+      "kind": "native-onlyoffice-renderer",
+      "profile": "named-resource"
     }
   ]
 }

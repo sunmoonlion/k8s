@@ -122,3 +122,7 @@ Info/Knowledge/Investment 三个正式应用及角色入口共用 Python 解析�
 ## 镜像拉取 Secret
 
 17 个 Harbor/Kaniko Secret 入口共用 [仓库模块实现](../registry-platform/docs/pull-secrets.md)。相邻 `.conf` 控制名称、命名空间、重启；旧地址/口令字段已移除。认证仅引用私有 JSON，实际调用必须携带指定 kubectl、kubeconfig 和集群 UID。总控会传递绑定，独立调用也必须满足同样检查。查询不读口令，生成到工作树的凭据 YAML 已退出这些部署入口。实机拉取验证尚未执行。
+
+## ONLYOFFICE 生成控制
+
+OnlyOffice 主配置、资源列表开关、各业务 Secret 配置继续保留。调用方现在明确选择生成范围；更新路由不生成 JWT/数据库凭据，查询和卸载不生成文件。用法与验收限制见[资源部署说明](../app-platform/knowledge-app/components/onlyoffice-docs-bff/docs/deployment-resources.md)。

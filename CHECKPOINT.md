@@ -1,5 +1,17 @@
 # luna 工作检查点
 
+## 最新续接：2026-09-28 ONLYOFFICE 上层资源生成与查询副作用修复
+
+基线 `3a8ea9f2`，本地 luna 开工干净；继续上层生成器审阅，未恢复运行态迁移。
+
+- 找到 ONLYOFFICE generate.sh 仍独立拼旧 Harbor 凭据、生成随机 JWT，Ingress 每次调用它会重生成全部 Secret；四业务 Secret 的 status/uninstall 也先生成文件，APP_ROOT 上溯多一层。资源生成现支持显式 --resource，可重复；默认只生成启用的非 Secret。--dry-run/继承计划先于配置返回；Harbor 列表项及无活动引用的旧模板已删除，不改任何现场凭据/镜像。
+- 新 render_resource.py 使用已准备的 PyYAML 先解析模板再插值，JSON序列化避免引号/换行注入，Secret转data并按SECRET_NAME/TARGET_SECRET_KEY输出，缺值失败且无随机JWT。输出仍是原.yaml路径，但内容为JSON；0600临时文件完整写入后原子替换，错误不打印私有输入或解析片段。无API/自动依赖下载；业务Secret文件暂仍在工作树，未宣称全业务凭据已迁私有目录。
+- 四业务Secret保留相邻配置与action参数，共用 secrets/secret-entry.sh；修正根目录与公共参数解析。status/uninstall按名字访问不生成文件；deploy要求明确已有值，只生成本Secret；generate保留本地人工功能。实际集群动作需显式CLUSTER和既有kubeconfig/kubectl/UID绑定，写前复核；10秒请求/25秒进程期限，server-side apply不force且屏蔽可能含Secret的错误。没有新增业务重启或宣称Secret回读/rollout验收。
+- Ingress入口修正原错误公共库路径，明确目标和namespace，生成范围仅Middleware/IngressRoute；先服务检查再依次应用。status/uninstall支持按资源名执行且不生成文件。补齐SERVICE_NAME/PORT替换、Middleware参数化namespace，删除历史云节点IP路由，域名仍由既有ONLYOFFICE_UNIFIED_HOST控制。多对象写入非事务，失败不自动回退。
+- 新操作说明部署范围/参数/保留配置/本地生成/版本/验收限制；清单增加1原生ONLYOFFICE renderer，现在187入口，六平台168部署Shell仍完整。共享干运行文档及配置索引同步。本轮未改业务Secret配置值或数据库/Harbor/应用版本。
+- 静态：7 Shell+1.conf共8文件 bash -n/ShellCheck error级，1Python AST，7模板YAML解析，5组件根路径、187清单路径/168部署覆盖、5文档链接、无旧Harbor/JWT随机/API生成命令和git diff --check通过。文档相对链接初查错1处已改后重查通过。未运行生成器、行为测试、kubectl/Docker/SSH/Windows、部署或任何数据清理。
+- 新发现待后续：Document Converter 的独立Harbor生成器仍先调用后定义密码函数并保留旧集群Secret回读，尚未修改；通用Harbor人工导出/其他业务Secret及上层旧连接流程也仍需处理。不能宣称所有组件已完成或实机可用。随后按准入恢复main/入口迁移、Harbor重建独立性及最终本机refactor临时文件和东京下载清理。inbox仍旧kind，main未创建，旧节点/卷/Harbor/备份保护不变。只本地luna提交，不push。
+
 ## 最新续接：2026-09-28 镜像拉取 Secret 统一私有凭据与目标绑定
 
 基线 `19a1c4f9`，本地 luna 开工干净。继续全部组件部署调用链；本轮只改代码/文档，未恢复运行态迁移。
