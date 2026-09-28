@@ -116,9 +116,9 @@ define_required_images() {
     esac
 }
 
-# 使用统一模板的通用按需推送 helper，将 Flower 组件镜像推送到 Harbor
+# 使用共享检查器核对独立 Harbor 的镜像；此兼容函数不推送
 push_flower_images_to_harbor() {
-    push_component_images_to_harbor "flower"
+    push_component_images_to_harbor "flower" "" "${1:-false}"
 }
 
 # 处理 Flower 特定的 values 文件
@@ -461,9 +461,8 @@ main() {
         "deploy")
             log_info "开始部署 Flower..."
             check_namespace "$namespace"
-            # 在部署前按需推送 Flower 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
-            push_flower_images_to_harbor
-            
+            # 部署前检查独立 Harbor 所需镜像；缺失或无法确认即停止
+            push_flower_images_to_harbor "$dry_run" || return 1
             # 部署 Secrets 子组件
             if ! create_flower_secrets_if_needed "$namespace" "$project_id" "$environment" "$dry_run"; then
                 log_error "❌ Flower Secrets 部署失败，终止主部署"

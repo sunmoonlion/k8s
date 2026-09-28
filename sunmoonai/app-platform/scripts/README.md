@@ -185,11 +185,8 @@ TAG=my-feature ./scripts/build-push-app-images.sh
 
 ⚠ **`1.0.0` 与 `2.0.0` 被拒绝**——它们分别是 v1 与 v2 的正式发布 tag，
 指向已过门禁的 digest；本脚本产出的是未经门禁的本地构建，不该占用它们。
-详见脚本内 `PROTECTED_TAGS` 上方的说明。确需覆盖：
-
-```bash
-ALLOW_PROTECTED_TAG=true TAG=2.0.0 ./scripts/build-push-app-images.sh
-```
+详见脚本内 `PROTECTED_TAGS` 上方的说明。旧 `ALLOW_PROTECTED_TAG` 绕过已移除；
+正式发布应给已通过门禁的摘要打别名，不通过本脚本重建覆盖。
 
 从某个组件继续：
 

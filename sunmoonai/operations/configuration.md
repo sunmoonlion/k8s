@@ -12,6 +12,7 @@
 | 各组件副本、资源、命名空间、参数 | 各平台和组件现有 `.conf` / values | 保留；不能让普通配置覆盖已发布 bundle 的镜像摘要等受控字段 |
 | 仓库地址、客户端 IP、CA、端口、数据路径 | `sunmoonai/registry-platform/config/local-wsl.conf`；云上从 `cloud.example.conf` 复制成所有者配置 | 本地/云上共用模块；`REGISTRY_CONFIG_FILE` 或命令行 `--config` 选仓库配置 |
 | 仓库使用方账号、密码 | 上述配置的 `REGISTRY_CREDENTIALS_FILE` | 只保存 JSON 私有文件的路径；账号、密码、仓库地址成套读取，不能和旧管理员密码拼接 |
+| 仓库镜像检查 | 仓库 `.conf` 的 `REGISTRY_IMAGE_PROJECT`、`REGISTRY_COMPONENT_LIST_DIR`、`REGISTRY_REQUEST_TIMEOUT` | 项目默认 k8s-images，清单默认 utils/components-images；每请求默认 15 秒、允许 1–120 秒；缺失与异常阻止部署 |
 | Harbor 实例及恢复输入 | `registry-platform/config/harbor-main-local.json` | 保留已有 JSON 配置和摘要核验；实例初始化后不能靠改路径冒充同一个实例 |
 | TLS 分流入口 | `registry-platform/config/sni-local-*.json` | 区分候选、过渡和正式方案；正式入口仍受维护窗口门禁保护 |
 | 云端节点、步骤与物料 | `infrastructure/deploy-infrastructure-all/deploy-infrastructure-all.conf` 及 materials 锁文件 | 保留；实际云部署未经实机验证，闭包门禁仍关闭 |
@@ -63,3 +64,6 @@
 本次重构临时目录和东京下载中转物料须在最终验收后清干净，见
 [最终清理范围](../kind-infrastructure/docs/wsl-space-reclamation-plan.md#本次重构临时物料必须最终清理)。
 正式配置、已提交操作文档和唯一离线物料属于交付物；历史代码/旧节点退出条件独立判定。
+
+镜像检查入口 `./sunmoon harbor images check --component <名称>` 支持同样的 `--config` 和 `--credentials-file`。
+默认只打印；显式 C1/C2/C3 未提供仓库配置时拒绝，不隐式退回 WSL。详见 [组件镜像检查](../docs/harbor-component-image-ensure.md)。

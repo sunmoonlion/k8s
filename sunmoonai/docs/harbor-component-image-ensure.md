@@ -1,397 +1,90 @@
-# 组件镜像 Harbor 确保机制说明
+# 组件部署前的独立 Harbor 镜像检查
 
-本文说明组件部署前的镜像检查和补齐机制。该机制用于保证业务组件、数据平台组件、运维组件等在部署前，所需镜像已经存在于目标 Harbor 项目中。
+更新：2026-09-28。本文替代原来的“部署时发现缺失即从本地或远端补推”机制。
+本地 KIND 与云集群共用 `registry-platform/images.py`；云上执行未经实机验证。
 
-## 设计目标
+## 入口和行为
 
-组件部署前只做一件事：确保目标 Harbor 中存在部署所需镜像。
-
-统一流程：
-
-1. 读取组件镜像清单
-2. 查询目标 Harbor 是否已有镜像
-3. 如果 Harbor 已有，直接跳过
-4. 如果 Harbor 缺失，再从本地或远程 tar 补齐
-5. 如果无法确认 Harbor 状态，或 tar/load/tag/push 任一步失败，直接报错退出
-
-这不是“每次部署都强制推镜像”。旧函数名 `push_component_images_to_harbor` 仍保留兼容，但现在语义已经变成 strict ensure：先查，缺失才补齐。
-
-## 基础设施例外
-
-Harbor 本身和更早安装的 Traefik 不受该机制约束。
-
-原因：
-
-- Traefik 安装时 Harbor 还不可用
-- Harbor 安装时 Harbor 自身也不可作为前置镜像仓库依赖
-
-Harbor 安装完成后，Harbor 部署脚本中“推送基础设施镜像到 Harbor”的逻辑应保留。该步骤用于把后续组件部署依赖的基础镜像准备好，不属于普通组件部署前的镜像 ensure 流程。
-
-因此顺序是：
-
-1. 部署 Traefik
-2. 部署 Harbor
-3. Harbor 完成后推送基础设施镜像
-4. 后续其它组件统一走组件镜像 ensure
-
-## 入口函数
-
-核心入口在：
-
-```text
-utils/unified-deployment-template.sh
-```
-
-推荐新代码调用：
+在仓库根运行，默认只打印目标镜像，不联网、不读取凭据：
 
 ```bash
-ensure_component_images_in_harbor "<component-name>"
+./sunmoon harbor images check --component postgresql
+./sunmoon harbor images check --component ragflow --project app-images
 ```
 
-旧调用仍可用：
+显式加 `--apply` 才读取私有凭据并向 Harbor 发 GET 请求：
 
 ```bash
-push_component_images_to_harbor "<component-name>"
+./sunmoon harbor images check --component postgresql --apply
+./sunmoon harbor images check --image 'harbor.sunmoonai.com:30443/k8s-images/postgresql:17.6.0-debian-12-r4' --apply
 ```
 
-但应理解为兼容名，实际语义是：
+该动作没有 Docker load/login/push、SSH、Kubernetes 查询、目录清理或系统配置修改。
+已有独立仓库必须先完成域名、CA 和使用方账号准备，见 [客户端说明](../registry-platform/docs/clients.md)。
 
-```bash
-push_component_images_to_harbor() {
-    ensure_component_images_in_harbor "$@"
-}
-```
-
-## 镜像清单
-
-每个组件维护一份镜像清单：
-
-```text
-utils/components-images/<component-name>-images.txt
-```
-
-示例：
-
-```text
-utils/components-images/postgresql-images.txt
-utils/components-images/redis-images.txt
-utils/components-images/info-app-backend-images.txt
-```
-
-清单格式：
-
-```text
-repository:tag
-```
-
-一行一个镜像，空行和 `#` 注释会被忽略。
-
-示例：
-
-```text
-bitnami/postgresql:17.6.0-debian-12-r4
-bitnami/postgres-exporter:0.17.1-debian-12-r16
-bitnami/os-shell:12-debian-12-r51
-```
-
-清单中的镜像可以是短引用，也可以带上游 registry：
-
-```text
-mysql:8.0.39
-docker.io/library/mysql:8.0.39
-quay.io/minio/aistor/minio:RELEASE.2026-05-28T20-50-32Z
-```
-
-推送到 Harbor 时会生成目标引用。一般情况下，最终落到：
-
-```text
-<registry>/<project>/<image-name>:<tag>
-```
-
-特殊路径如 `minio/aistor/*` 会保留必要的 repo 路径，避免多个 MinIO 相关镜像压成同名。
-
-## Harbor 状态检查
-
-对每个目标镜像，脚本先判断 Harbor 中是否已存在。
-
-检查顺序：
-
-1. Harbor API
-2. `docker manifest inspect`
-3. `skopeo inspect`
-
-Harbor API 返回含义：
-
-| HTTP 状态 | 结果 |
+| 结果 | 返回值与后续 |
 | --- | --- |
-| `200` | 镜像存在 |
-| `404` | 镜像缺失 |
-| 其它 | 状态未知，进入 fallback |
+| 全部 manifest 存在，原始响应字节 SHA256 与响应摘要一致 | 0；输出摘要、是否按 digest 查询，以及 `layers_verified=false` |
+| Registry 返回可识别的 MANIFEST_UNKNOWN / NAME_UNKNOWN | 2；列出 missing，停止部署，先备齐物料 |
+| 网络、TLS、认证、权限、响应结构或摘要错误 | 非零；停止部署，不把异常当成缺失，也不转远端尝试推送 |
+| 清单为空、引用无明确 tag/digest、多个不同来源映射到同一目标 | 非零；先修清单 |
 
-fallback 只能确认“存在”。如果 Harbor API 不可用，且 `docker manifest inspect` / `skopeo inspect` 都不能确认存在，结果会是 `unknown`。
+使用锁定 CA，校验域名，直连 `harbor.sunmoonai.com:30443`，不使用终端 HTTP(S) 代理。
+只向同一个 HTTPS 仓库的 `/service/token` 发送私有账号，不跟随重定向或认证挑战中的其他域名。
+每个网络请求受配置超时约束，无无限重试；失败后可修复网络再重新检查。
+错误输出不含口令、令牌或服务端响应正文。
 
-`unknown` 不会被当成缺失自动补齐，而是直接失败退出。这样避免 Harbor 网络、认证、TLS、项目路径错误时被误判成“缺镜像”，然后做错误推送。
+**manifest 检查不是完整拉取验收。** 它尚不递归核验多架构清单、配置与镜像层，也不验证节点或 CI 的访问路径。
+tag 查询只报告当前摘要；不会自动把一个可变 tag 视为已经和发布锁匹配。
+正式发布仍必须用锁定的 `repo@sha256:<64hex>`，并完成目标架构和真实拉取验收。
+当前组件清单仍含 tag，不能据此宣称发布锁和实际 Helm 渲染已全部闭合。
 
-## Harbor 已存在时
+## 日常配置
 
-如果检查结果为 `exists`：
+配置选择：`--config <可信配置绝对路径>`、`REGISTRY_CONFIG_FILE`，否则仅 KIND/无 CLUSTER 使用本地配置。
+显式 C1/C2/C3 而未给仓库配置会拒绝，不能误选 WSL 地址。
 
-```text
-[images] Harbor 已存在，跳过: harbor.sunmoonai.com:30443/k8s-images/xxx:tag
-```
-
-不会 load tar，也不会 push。
-
-## Harbor 缺失时
-
-如果检查结果为 `missing`，才进入补齐流程。
-
-补齐方式取决于部署目标：
-
-| 目标 | 补齐方式 |
+| 字段 | 默认 / 含义 |
 | --- | --- |
-| KIND | 本机 `docker load` + `docker tag` + `docker push` |
-| C1/C2/C3 等远程集群 | 使用 `utils/registry-push-management/loadimage.sh remote-push-by-ref` |
+| `REGISTRY_IMAGE_PROJECT` | `k8s-images`；`--project` 可临时覆盖，RAGFlow 使用 `app-images` |
+| `REGISTRY_COMPONENT_LIST_DIR` | 本仓 `utils/components-images`；可设为另一个绝对目录 |
+| `REGISTRY_REQUEST_TIMEOUT` | 每请求 15 秒，允许 1–120 秒；也用于 client 的 `/v2/` 检查 |
+| `REGISTRY_CREDENTIALS_FILE` | Git 外消费者 JSON；`--credentials-file` 可临时覆盖 |
+| `REGISTRY_CA_FILE` / `REGISTRY_CA_SHA256` | 证书文件及已锁定摘要；不会自动修改系统 CA |
 
-## KIND 流程
+凭据格式和权限见 [日常配置](../operations/configuration.md)。检查用只读账号；缺文件即拒绝，
+不读取旧 KIND/远端推送配置来补管理员口令。上述默认值兼容没有新增字段的既有可信仓库配置。
 
-KIND 使用本机 Docker。
+## 清单和映射
 
-默认从本地目录查找 tar：
+每个组件维护 `<component>-images.txt`，一行一个明确 tag 或 SHA256 digest；忽略空行和整行 `#` 注释。
+Harbor 完整引用原样保留；上游引用通常映射为 `<仓库>/<项目>/<最后一段镜像名>:tag`，
+`minio/aistor/*` 保留嵌套路径。digest 引用保留 `@sha256:`，不当 tag 解析。
 
-```text
-~/packages-to-be-installed/images
-```
+新增或改清单时，核对其映射结果和真正部署的 Helm/应用镜像一致。默认计划不检查清单中所有镜像是否已在仓库。
 
-可用环境变量覆盖：
+## 部署脚本接入
 
-```bash
-COMPONENT_IMAGE_TAR_DIR=/path/to/images
-```
-
-查找 tar 后执行：
-
-1. `docker load -i <tar>`
-2. 解析 `Loaded image: ...`
-3. `docker tag <loaded-ref> <target-ref>`
-4. `docker push <target-ref>`
-
-如果本地 tar 不存在，直接失败退出。KIND 不会再尝试从公网 pull。
-
-## 远程集群流程
-
-远程集群使用：
-
-```text
-utils/registry-push-management/loadimage.sh
-```
-
-调用方式：
+共享模板提供：
 
 ```bash
-PROJECT_NAME="$project" REGISTRY_URL="$registry" \
-  utils/registry-push-management/loadimage.sh --cluster "$CLUSTER" remote-push-by-ref "<repo:tag>"
+ensure_component_images_in_harbor "postgresql" "" "$dry_run" || return 1
+ensure_component_images_in_harbor "ragflow" "app-images" "$dry_run" || return 1
 ```
 
-`remote-push-by-ref` 的策略：
+第三参数为 `true` 时只打印；`false` 时实际检查。旧函数名 `push_component_images_to_harbor` 为兼容转发，
+**现在只检查，不补推**。调用方须明确传播非零返回，不能仅依赖 `set -e`。
+16 个现有组件入口已传递此参数及失败结果。这只描述镜像检查子步骤；旧组件脚本其他步骤的 dry-run、目标核验仍须继续整理。
+`SKIP_COMPONENT_IMAGE_ENSURE`、`SKIP_HARBOR_WAIT` 不再是准入开关。
 
-1. 优先在远端节点的 `REMOTE_IMAGE_DIR` 查找 tar
-2. 远端没有 tar，则尝试从本地 `LOCAL_IMAGE_DIR` 上传
-3. 仍然找不到 tar，则失败退出
-4. 找到 tar 后远端 load/tag/push
+Harbor 已搬出集群，检查不等待集群中的 Harbor Pod，也不缓存一次成功供后续部署冒用。
+Harbor 本身和集群自举制品使用独立离线物料，不依赖尚未可用的目标 Harbor。
 
-这里不会把“本地/远程 tar 都不存在”当成可忽略问题；缺 tar 会阻断组件部署。
+## 发布链尚待完成
 
-## tar 命名规则
+准备和发布是部署前的显式步骤，不能靠部署时自动从未知 tar 补包。
+本批删除共享模板里的自动补推、猜 tar 名、忽略登录失败和不校验 TLS 的回退。
+专用 KIND 推送、`loadimage.sh` 和应用构建入口仍需统一物料锁、凭据、摘要及失败处理；不宣称它们已经具备新发布链的全部保护。
+镜像不足时先停止；后续由统一显式发布入口消费已核验清单，保留原有推送能力后再退役旧工具。
 
-tar 查找会尝试多种文件名。
-
-例如镜像：
-
-```text
-bitnami/postgresql:17.6.0-debian-12-r4
-```
-
-可能匹配：
-
-```text
-bitnami/postgresql:17.6.0-debian-12-r4.tar
-bitnami_postgresql_17.6.0-debian-12-r4.tar
-postgresql:17.6.0-debian-12-r4.tar
-postgresql_17.6.0-debian-12-r4.tar
-```
-
-也支持 `.tar.gz`。
-
-远程查找主要使用安全文件名：
-
-```text
-bitnami_postgresql_17.6.0-debian-12-r4.tar
-bitnami_postgresql_17.6.0-debian-12-r4.tar.gz
-```
-
-实际打包时建议统一使用安全文件名：把 `/` 和 `:` 替换为 `_`。
-
-## 目标 registry/project
-
-默认值来自：
-
-```text
-utils/registry-push-management/loadimage.conf
-```
-
-常用变量：
-
-```bash
-REGISTRY_URL="harbor.sunmoonai.com:30443"
-PROJECT_NAME="k8s-images"
-```
-
-组件也可以通过函数参数覆盖 project：
-
-```bash
-ensure_component_images_in_harbor "casdoor" "k8s-images"
-```
-
-业务 App 自身镜像通常进入 `app-images`，Casdoor 等平台基础镜像通常进入 `k8s-images`。
-
-KIND 场景还会读取：
-
-```text
-sunmoonai/kind-infrastructure/push-to-harbor/push-images-to-harbor.conf
-```
-
-用于获取 KIND Harbor 地址、项目、管理员账号密码等。
-
-## 如何接入新组件
-
-1. 新增镜像清单：
-
-```text
-utils/components-images/<component-name>-images.txt
-```
-
-2. 在部署脚本里定义函数：
-
-```bash
-push_<component>_images_to_harbor() {
-    push_component_images_to_harbor "<component-name>"
-}
-```
-
-或直接：
-
-```bash
-ensure_component_images_in_harbor "<component-name>"
-```
-
-3. 在真正部署 workload 前调用该函数。
-
-4. 不要吞掉失败返回值。错误写法：
-
-```bash
-push_xxx_images_to_harbor || log_warn "镜像推送失败，继续部署"
-```
-
-正确做法是让失败阻断部署：
-
-```bash
-push_xxx_images_to_harbor
-```
-
-## 跳过开关
-
-调试时可显式跳过组件镜像 ensure：
-
-```bash
-SKIP_COMPONENT_IMAGE_ENSURE=true
-```
-
-该开关只用于临时调试。正常部署不要开启，否则可能出现 Pod 拉镜像失败。
-
-Harbor 等待也可跳过：
-
-```bash
-SKIP_HARBOR_WAIT=true
-```
-
-这只跳过 Harbor 就绪等待，不改变后续镜像检查逻辑。
-
-## 常见失败与排查
-
-### 找不到镜像清单
-
-```text
-[images] 找不到组件镜像清单
-```
-
-检查是否存在：
-
-```text
-utils/components-images/<component-name>-images.txt
-```
-
-以及部署脚本传入的 `<component-name>` 是否和文件名前缀一致。
-
-### Harbor 状态 unknown
-
-```text
-[images] 无法确认 Harbor 镜像状态，停止部署
-```
-
-常见原因：
-
-- Harbor API 不通
-- 账号密码错误
-- Harbor TLS/证书问题
-- project/repository 解析错误
-- 本机缺少 `curl`、`python3`，且 fallback 工具也无法确认
-
-优先用以下方式确认：
-
-```bash
-curl -k https://harbor.sunmoonai.com:30443/v2/
-docker manifest inspect harbor.sunmoonai.com:30443/k8s-images/<image>:<tag>
-skopeo inspect --tls-verify=false docker://harbor.sunmoonai.com:30443/k8s-images/<image>:<tag>
-```
-
-### Harbor 缺失但找不到 tar
-
-```text
-[images] 本地 tar 不存在
-本地也未找到 tar
-```
-
-检查：
-
-- KIND：`COMPONENT_IMAGE_TAR_DIR` 或 `~/packages-to-be-installed/images`
-- 远程：`REMOTE_IMAGE_DIR`
-- 本地 fallback：`LOCAL_IMAGE_DIR`
-- tar 文件名是否符合命名规则
-
-### 远程 load/tag/push 失败
-
-检查：
-
-- 远程节点能否执行 `nerdctl`
-- `CONTAINERD_NAMESPACE` 是否正确
-- 远程节点能否访问 Harbor
-- `REGISTRY_LOGIN_BEFORE_PUSH`、`REGISTRY_USERNAME`、`REGISTRY_PASSWORD` 是否需要配置
-
-## 与旧检查脚本的关系
-
-旧脚本如 `check-local-immage.sh`、`check-node-images.sh` 主要用于检查本地或节点侧镜像/tar 状态。现在组件部署前的主流程应使用 `ensure_component_images_in_harbor`。
-
-部署前不再只检查“本地有没有”或“节点有没有”，而是以目标 Harbor 是否已有镜像为准。Harbor 没有时才补齐，无法补齐就失败退出。
-
-## 总结
-
-组件镜像机制的关键点：
-
-- Harbor 是部署拉镜像的目标事实源
-- 组件部署前必须确认 Harbor 有所需镜像
-- Harbor 已有就跳过，不重复推
-- Harbor 缺失才从 tar 补齐
-- tar 不存在或推送失败必须阻断部署
-- Traefik 和 Harbor 自身是前置基础设施例外
-- Harbor 安装完成后的基础设施镜像推送逻辑保留
+当前公开入口仍是旧 KIND，正式迁移未切换。本批只做静态检查和默认计划，没有执行真实 Harbor 查询或推拉。

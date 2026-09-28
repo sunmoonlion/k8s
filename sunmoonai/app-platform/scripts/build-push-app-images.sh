@@ -117,10 +117,6 @@ assert_tag_is_not_protected() {
     local protected
     for protected in "${PROTECTED_TAGS[@]}"; do
         [[ "$TAG" == "$protected" ]] || continue
-        if [[ "${ALLOW_PROTECTED_TAG:-false}" == "true" ]]; then
-            log "已显式放行受保护 tag: ${TAG}"
-            return 0
-        fi
         cat >&2 <<MSG
 拒绝推送受保护的 tag: ${TAG}
 
@@ -129,7 +125,6 @@ assert_tag_is_not_protected() {
 
 本脚本产出的是未经门禁的本地构建，不该占用发布 tag。
 换一个 tag，例如：TAG=architecture-v2-dev $0
-确需覆盖（你清楚后果）：ALLOW_PROTECTED_TAG=true TAG=${TAG} $0
 MSG
         exit 1
     done

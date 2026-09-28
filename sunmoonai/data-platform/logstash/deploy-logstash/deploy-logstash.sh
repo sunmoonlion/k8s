@@ -113,9 +113,9 @@ define_required_images() {
     esac
 }
 
-# 使用统一模板的通用按需推送 helper，将 Logstash 组件镜像推送到 Harbor
+# 使用共享检查器核对独立 Harbor 的镜像；此兼容函数不推送
 push_logstash_images_to_harbor() {
-    push_component_images_to_harbor "logstash"
+    push_component_images_to_harbor "logstash" "" "${1:-false}"
 }
 
 # 执行 Logstash 部署
@@ -451,8 +451,8 @@ main() {
         "deploy")
             log_info "开始部署 Logstash..."
             check_namespace "$namespace"
-            # 在部署前按需推送 Logstash 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
-            push_logstash_images_to_harbor
+            # 部署前检查独立 Harbor 所需镜像；缺失或无法确认即停止
+            push_logstash_images_to_harbor "$dry_run" || return 1
             # 部署 Secrets（在主部署之前）
             if ! deploy_logstash_secrets "$project_id" "$namespace" "$environment" "$dry_run"; then
                 log_error "❌ Logstash Secrets 部署失败，终止主部署"

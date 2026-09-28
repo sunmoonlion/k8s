@@ -1,3 +1,14 @@
+## 最新续接：2026-09-28 共享仓库镜像检查与组件失败传播
+
+基线 33ae38140eac86c352de821ca670ab0de4dc9c88，luna；续接未提交的 images.py 草稿，用户“继续”原部署代码整理。现场迁移仍暂停，本批无运行时操作。
+
+- 新 registry-platform/images.py / `./sunmoon harbor images check`：默认本地计划，--apply 才严格 CA/域名直连 Registry v2、私有 JSON 账号及固定同源 token 端点。明确 tag 或 sha256 引用；保留 AIStor 嵌套路径；拒绝空集合及不同来源映射同一目标。核原始 manifest SHA 与响应摘要，digest 查询再核期望；missing 返回2，其余认证/TLS/网络/摘要异常非零，不泄漏响应/凭据。仅 manifest，layers_verified=false，不递归架构/层或宣称 tag 与发布锁一致。
+- shared template 删除旧 Harbor Pod 等待、缓存成功、跳过检查、旧配置补口令、忽略 Docker 登录、猜 tar 自动补推、curl -k/skopeo 不验TLS以及远端补推回退。兼容 push_component_images_to_harbor 名字保留但只检查；16组件（含Neo4j/RAGFlow）传递镜像检查 dry_run、明确 || return1。该 dry-run 仅镜像子步骤，组件其他步骤仍需整理。显式发布尚未替代全部旧工具，缺物料先停止，不恢复不安全自动补推。
+- 独立配置增加 REGISTRY_REQUEST_TIMEOUT 默认15/范围1..120、REGISTRY_IMAGE_PROJECT 默认k8s-images、REGISTRY_COMPONENT_LIST_DIR 默认本仓清单目录；CLI可覆项目/私有路径。修 client.config 的显式云CLUSTER未给配置时误选KIND的问题。保留原 public .conf 日常控制及旧profile默认兼容。
+- 应用本地 build-push 删除 ALLOW_PROTECTED_TAG 绕过，1.0.0/2.0.0始终拒绝。同步脚本README、项目指南发布说明、镜像设计、组件检查说明及配置/客户端说明，删除已失效自动补推和不验TLS排障指令。
+- 静态：3 Python AST、21 Bash -n、21 ShellCheck error级通过。首轮共享模板既有SC1087（$valid_domain紧邻字符类）已用花括号修复。19组件默认计划均通过；额外client/object-storage/cloud.example计划通过；9修改文档44本地链接存在，diff --check通过。报告 sunmoonai/scripts/results/luna-registry-image-admission.20260928.json。未跑测试套件/真实网络GET/读取真实凭据/登录推拉/集群/Windows/SSH/清理。
+- 剩余：统一显式发布和旧KIND/loadimage消费者、清单与实际渲染/发布锁闭合、静态PV节点名及子脚本目标接线；完成整理再恢复现场迁移。正式30443/main/真实Docker节点CI/重启重建独立性/云闭包及实机验证/最终本机东京临时物料清理仍未完成。旧节点卷Harbor必要恢复材料与旧inbox保护，不能宣称“luna做完了”。仅本地luna提交，不push。
+
 ## 最新续接：2026-09-28 正式 KIND 配置化、两份设计重写与旧根入口删除
 
 基线 2a220f2af7b2d396827f6475b14ea50a6c2c56b9，luna 开工干净。用户继续原整理，并要求按新情况处理根持久化方案、重写 image-management-design.md、说明去向后删除 kind使用指南.md 空壳、检查删除 refactor-cluster-arg.sh。

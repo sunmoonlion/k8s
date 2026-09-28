@@ -79,7 +79,7 @@ check_chart() {
 }
 
 push_casdoor_images_to_harbor() {
-    push_component_images_to_harbor "casdoor"
+    push_component_images_to_harbor "casdoor" "" "${1:-false}"
 }
 
 provision_casdoor_database() {
@@ -341,7 +341,7 @@ main() {
         "deploy")
             log_info "开始部署 Casdoor..."
             check_namespace "$namespace"
-            push_casdoor_images_to_harbor
+            push_casdoor_images_to_harbor "$dry_run" || return 1
             provision_casdoor_database "$environment" "$dry_run" || exit 1
             deploy_secrets "$project_id" "$namespace" "$environment" "$dry_run" || exit 1
             execute_casdoor_deployment "$project_id" "$namespace" "$environment" "$dry_run" || exit 1

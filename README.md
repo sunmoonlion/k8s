@@ -18,6 +18,7 @@
 ./sunmoon harbor lifecycle --help               # 宿主仓库启停参数
 ./sunmoon harbor backup --help                  # 备份、校验、恢复准备参数
 ./sunmoon harbor client login                   # 宿主客户端计划，不读取口令或登录
+./sunmoon harbor images check --component postgresql # 组件镜像目标计划，不联网
 ./sunmoon platform plan --cluster KIND          # 共享平台开关计划
 ./sunmoon cloud plan --cluster C1                # 云端只打印演练
 ```

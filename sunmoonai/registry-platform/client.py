@@ -16,14 +16,15 @@ from credentials import load_credentials, read_private, validate
 
 MODULE = Path(__file__).resolve().parent
 FIELDS = ('REGISTRY_ADDRESS', 'REGISTRY_CLIENT_ADDRESS', 'REGISTRY_CA_FILE',
-          'REGISTRY_CA_SHA256', 'REGISTRY_CREDENTIALS_FILE')
+          'REGISTRY_CA_SHA256', 'REGISTRY_CREDENTIALS_FILE', 'REGISTRY_REQUEST_TIMEOUT',
+          'REGISTRY_IMAGE_PROJECT', 'REGISTRY_COMPONENT_LIST_DIR')
 
 
 def config(profile):
     env = dict(os.environ)
     if profile:
         env['REGISTRY_CONFIG_FILE'] = str(profile)
-    if not env.get('REGISTRY_CONFIG_FILE'):
+    if not env.get('REGISTRY_CONFIG_FILE') and not env.get('CLUSTER'):
         env['CLUSTER'] = 'KIND'  # Explicit local client profile, not kubectl context.
     command = 'source "$1" >&2; registry_load_config >&2 || exit; printf "%s\\0" '
     command += ' '.join('"${' + name + ':-}"' for name in FIELDS)
@@ -57,7 +58,7 @@ def check_registry(data):
     _, context = checked_ca(data)
     host, port = data['REGISTRY_ADDRESS'].split(':')
     # Direct connection: the registry is internal. No HTTP(S)_PROXY is consulted.
-    conn = http.client.HTTPSConnection(host, int(port), context=context, timeout=15)
+    conn = http.client.HTTPSConnection(host, int(port), context=context, timeout=int(data['REGISTRY_REQUEST_TIMEOUT']))
     try:
         conn.request('GET', '/v2/')
         response = conn.getresponse()

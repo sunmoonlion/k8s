@@ -134,9 +134,9 @@ define_required_images() {
     esac
 }
 
-# 使用统一模板的通用按需推送 helper，将 Redis 组件镜像推送到 Harbor
+# 使用共享检查器核对独立 Harbor 的镜像；此兼容函数不推送
 push_redis_images_to_harbor() {
-    push_component_images_to_harbor "redis"
+    push_component_images_to_harbor "redis" "" "${1:-false}"
 }
 
 # 执行 Redis 部署
@@ -553,9 +553,8 @@ main() {
             log_info "开始部署 Redis..."
             check_namespace "$namespace"
             
-            # 在部署前按需推送 Redis 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
-            push_redis_images_to_harbor
-            
+            # 部署前检查独立 Harbor 所需镜像；缺失或无法确认即停止
+            push_redis_images_to_harbor "$dry_run" || return 1
             # ============================================================
             # 阶段1：部署子级组件（按优先级，先部署依赖项）
             # ============================================================

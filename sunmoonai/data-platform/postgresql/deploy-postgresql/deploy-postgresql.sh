@@ -180,7 +180,7 @@ define_required_images() {
 
 push_postgresql_images_to_harbor() {
     # 统一使用模板中的通用 helper，component_name 固定为 postgresql
-    push_component_images_to_harbor "postgresql"
+    push_component_images_to_harbor "postgresql" "" "${1:-false}"
 }
 
 # 处理 PostgreSQL 特定的 values 文件
@@ -532,8 +532,7 @@ main() {
             detect_deployment_mode
             
             # 部署前：始终按需推送 PostgreSQL 镜像到 Harbor（仅对 Harbor 中缺失的镜像执行 push）
-            push_postgresql_images_to_harbor
-            
+            push_postgresql_images_to_harbor "$dry_run" || return 1
             # ============================================================
             # 阶段1：部署子级组件（按优先级，先部署依赖项）
             # ============================================================

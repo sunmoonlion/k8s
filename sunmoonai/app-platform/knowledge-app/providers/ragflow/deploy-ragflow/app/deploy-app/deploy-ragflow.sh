@@ -155,7 +155,7 @@ check_prerequisites() {
 }
 
 check_images() {
-    ensure_component_images_in_harbor "ragflow" "${RAGFLOW_IMAGE_PROJECT:-app-images}"
+    ensure_component_images_in_harbor "ragflow" "${RAGFLOW_IMAGE_PROJECT:-app-images}" "${1:-false}"
 }
 
 deploy_release() {
@@ -250,7 +250,7 @@ main() {
     case "$action" in
         deploy)
             check_prerequisites "$namespace" "$dry_run"
-            check_images "$namespace"
+            check_images "$dry_run" || return 1
             deploy_release "$project_id" "$namespace" "$environment" "$dry_run"
             [[ "$dry_run" == "true" ]] || show_status "$project_id" "$namespace"
             ;;

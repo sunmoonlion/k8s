@@ -129,7 +129,7 @@ ensure_harbor_secret() {
 }
 
 push_object_storage_images_to_harbor() {
-    push_component_images_to_harbor "object-storage" || {
+    push_component_images_to_harbor "object-storage" "" "${1:-false}" || {
         log_error "Object Storage 镜像未全部进入 Harbor（含 minio/aistor/mc），中止部署"
         return 1
     }
@@ -284,7 +284,7 @@ deploy_all() {
     if [[ "$dry_run" != "true" ]]; then
         ensure_license_secret "$namespace"
         ensure_root_secret "$namespace"
-        push_object_storage_images_to_harbor
+        push_object_storage_images_to_harbor "$dry_run" || return 1
     fi
 
     deploy_operator "$namespace" "$dry_run"

@@ -1,0 +1,51 @@
+{
+  "date": "2026-09-28",
+  "branch": "luna",
+  "baseline": "33ae38140eac86c352de821ca670ab0de4dc9c88",
+  "scope": "Shared independent registry manifest admission; deployment consolidation only",
+  "changes": [
+    "Shared strict TLS checker, private credentials, digest-aware references and missing vs unknown distinction; plans by default",
+    "16 component callers pass mirror-check dry_run and explicitly propagate failures",
+    "Remove component auto-push, Harbor Pod waiting, old push configuration and insecure fallback",
+    "Cloud CLUSTER requires explicit registry profile; timeout/project/list directory remain configurable",
+    "Remove local build protected tag bypass; update documentation"
+  ],
+  "checks": {
+    "python_ast_files": 3,
+    "bash_n_files": 21,
+    "shellcheck_error_level_exit": 0,
+    "shellcheck_initial_finding": "Existing SC1087 in hosts regex; fixed by bracing valid_domain",
+    "component_default_plans": 19,
+    "additional_default_plans": [
+      "client check",
+      "object-storage check",
+      "cloud.example.conf postgresql check"
+    ],
+    "modified_markdown_local_links": 44,
+    "missing_links": 0,
+    "git_diff_check_exit": 0
+  },
+  "constraints": {
+    "C-I8": "Configuration/check errors stop the operation",
+    "C-R1/C-R2": "Raw manifest digest checked; tag lists/rendered deployments/release locks still need reconciliation",
+    "C-R5": "No local build bypass for protected tags 1.0.0 and 2.0.0"
+  },
+  "not_run": [
+    "test suites",
+    "real registry GET or login/pull/push",
+    "private credential reads",
+    "Docker/Kubernetes operations",
+    "Windows",
+    "SSH/cloud deployment",
+    "cleanup"
+  ],
+  "remaining": [
+    "Explicit publishing and old KIND/loadimage consumers",
+    "Rendered image/lock reconciliation and static PV node mapping",
+    "Formal entry cutover and main creation",
+    "Real Docker/node/CI and restart/rebuild independence acceptance",
+    "Cloud closure and live verification",
+    "Final local and Tokyo temporary material cleanup"
+  ],
+  "runtime": "Unchanged by this work; public Harbor/inbox remain old kind; main not created"
+}

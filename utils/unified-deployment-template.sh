@@ -101,88 +101,10 @@ log_error() {
 # ========================================
 
 wait_for_harbor_if_needed() {
-    # 允许通过环境变量显式跳过（例如离线调试时只做本地 kind load）
-    if [[ "${SKIP_HARBOR_WAIT:-false}" == "true" ]]; then
-        return 0
-    fi
-
-    # 只在当前 shell 进程内检查一次，避免多个组件重复等待
-    if [[ -n "${HARBOR_READY_CHECKED:-}" ]]; then
-        return 0
-    fi
-
-    local host="${HARBOR_HOST:-harbor.sunmoonai.com}"
-    local port="${HARBOR_PORT:-30443}"
-    local timeout="${HARBOR_WAIT_TIMEOUT:-300}" # 最长等待秒数，默认 5 分钟
-    local interval=5
-    local start
-    start=$(date +%s)
-
-    local namespace="${HARBOR_NAMESPACE:-cicd-platform-dev}"
-    local project_id="${HARBOR_PROJECT_ID:-sunmoonai}"
-
-    log_info "[harbor] 等待 Harbor 就绪 (namespace=${namespace}，最长 ${timeout}s)..."
-
-    while true; do
-        # 通过 kubectl 检查 Harbor 所有 pod 是否就绪（Ready 列 n/n 或 Succeeded）
-        local total ready
-        total=$(kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=${project_id}" \
-            --no-headers 2>/dev/null | wc -l)
-        # 统计 READY 列 x/x（容器全就绪）或状态 Completed/Succeeded 的 pod 数
-        ready=$(kubectl get pods -n "$namespace" -l "app.kubernetes.io/instance=${project_id}" \
-            --no-headers 2>/dev/null \
-            | awk '{split($2,a,"/"); status=$3; if ((a[1]==a[2] && a[2]!="") || status=="Completed") count++} END{print count+0}')
-
-        # 远程集群（C1/C2 等）常见：Harbor 不在本集群该 namespace，kubectl 一直 0/0。
-        # 此时改探测外部 Registry /v2/（200/401 即服务在），避免空等超时。
-        if [[ $total -eq 0 ]]; then
-            local _rv2
-            _rv2=$(curl -sk -o /dev/null -w "%{http_code}" --connect-timeout 5 \
-                "https://${host}:${port}/v2/" 2>/dev/null || echo "000")
-            if [[ "$_rv2" == "200" || "$_rv2" == "401" ]]; then
-                log_info "[harbor] 集群内无 Harbor Pod（instance=${project_id}，0/0），Registry https://${host}:${port}/v2/ 已响应 (HTTP ${_rv2})，按外部 Harbor 视为就绪"
-                export HARBOR_READY_CHECKED="1"
-                return 0
-            fi
-        fi
-
-        if [[ $total -gt 0 && $ready -eq $total ]]; then
-            log_info "[harbor] Harbor 所有 Pod 已就绪 (${ready}/${total})"
-            # Kind 模式下额外等待 Harbor API 可访问（pod Ready ≠ API 可写）
-            if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
-                local api_start; api_start=$(date +%s)
-                log_info "[harbor] Kind 模式：等待 Harbor API 可访问 (https://${host}:${port})..."
-                while true; do
-                    local _hcode
-                    _hcode=$(curl -k -s -o /dev/null -w "%{http_code}" --connect-timeout 5 \
-                        "https://${host}:${port}/api/v2.0/systeminfo" 2>/dev/null || echo "000")
-                    if [[ "$_hcode" == "200" || "$_hcode" == "401" || "$_hcode" == "403" ]]; then
-                        log_info "[harbor] Harbor API 就绪 (HTTP ${_hcode})"
-                        break
-                    fi
-                    local _anow; _anow=$(date +%s)
-                    if (( _anow - api_start >= 120 )); then
-                        log_warn "[harbor] Harbor API 120s 内未响应 (HTTP ${_hcode})，继续推送"
-                        break
-                    fi
-                    log_info "[harbor] Harbor API 未就绪 (HTTP ${_hcode})，等待中..."
-                    sleep 5
-                done
-            fi
-            export HARBOR_READY_CHECKED="1"
-            return 0
-        fi
-
-        local now
-        now=$(date +%s)
-        if (( now - start >= timeout )); then
-            log_warn "[harbor] Harbor 在 ${timeout}s 内未就绪，后续镜像推送可能失败（可稍后单独重试 push）"
-            export HARBOR_READY_CHECKED="1"
-            return 1
-        fi
-        log_info "[harbor] 等待 Harbor Pod 就绪 (${ready:-0}/${total:-0})..."
-        sleep "${interval}"
-    done
+    local base_dir
+    base_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || return 1
+    # Independent registry: strict TLS, no cluster Pod lookup or cached success.
+    CLUSTER="${CLUSTER:-}" python3 -B "$base_dir/../sunmoonai/registry-platform/client.py" check --apply
 }
 
 # ========================================
@@ -1036,7 +958,7 @@ start_direct_connection() {
         rm -f "$cert_tmp"
         
         # hosts 添加域名别名（带标记）
-        if ! grep -q "^127.0.0.1[[:space:]]*$valid_domain[[:space:]]*# added_by_k8s_manager" /etc/hosts 2>/dev/null; then
+        if ! grep -q "^127.0.0.1[[:space:]]*${valid_domain}[[:space:]]*# added_by_k8s_manager" /etc/hosts 2>/dev/null; then
             echo "127.0.0.1 $valid_domain # added_by_k8s_manager" | sudo tee -a /etc/hosts >/dev/null
             log_info "已添加域名别名: 127.0.0.1 $valid_domain"
         else
@@ -1333,311 +1255,25 @@ cleanup_k8s_connection() {
 # ========================================
 # Harbor 组件镜像确保（组件通用）
 # ========================================
-# 统一契约：
-#   - Harbor 已有目标镜像：跳过
-#   - Harbor 明确缺失：从远程/本地 tar load/tag/push 补齐
-#   - Harbor 状态无法确认：失败退出，避免误把网络/鉴权问题当成缺镜像
-#   - tar 缺失或推送失败：失败退出
-_image_ref_tag() {
-    local ref="$1"
-    if [[ "$ref" == *":"* && "${ref##*:}" != *"/"* ]]; then
-        echo "${ref##*:}"
-    else
-        echo "latest"
-    fi
-}
-
-_image_ref_repo_without_tag() {
-    local ref="$1"
-    if [[ "$ref" == *":"* && "${ref##*:}" != *"/"* ]]; then
-        echo "${ref%:*}"
-    else
-        echo "$ref"
-    fi
-}
-
-_image_ref_target_name() {
-    local img_ref="$1"
-    local repo
-    repo="$(_image_ref_repo_without_tag "$img_ref")"
-    local first="${repo%%/*}"
-    local repo_without_registry="$repo"
-
-    if [[ "$repo" == */* && ( "$first" == *.* || "$first" == *:* || "$first" == "localhost" ) ]]; then
-        repo_without_registry="${repo#*/}"
-    fi
-
-    case "$repo_without_registry" in
-        minio/aistor/*)
-            echo "$repo_without_registry"
-            ;;
-        *)
-            echo "${repo_without_registry##*/}"
-            ;;
-    esac
-}
-
-_component_target_ref() {
-    local img_ref="$1"
-    local registry="$2"
-    local project="$3"
-    local repo
-    repo="$(_image_ref_repo_without_tag "$img_ref")"
-    local first="${repo%%/*}"
-
-    if [[ "$repo" == */* && ( "$first" == "$registry" || "$first" == "${registry%%:*}" ) ]]; then
-        echo "$img_ref"
-        return 0
-    fi
-
-    echo "${registry}/${project}/$(_image_ref_target_name "$img_ref"):$(_image_ref_tag "$img_ref")"
-}
-
-_urlencode_harbor_repo() {
-    python3 - "$1" <<'PY'
-import sys
-from urllib.parse import quote
-print(quote(sys.argv[1], safe=""))
-PY
-}
-
-_harbor_auth_pair() {
-    if [[ -n "${HARBOR_USERNAME:-}" && -n "${HARBOR_PASSWORD:-}" ]]; then
-        echo "${HARBOR_USERNAME}:${HARBOR_PASSWORD}"
-    elif [[ -n "${REGISTRY_USERNAME:-}" && -n "${REGISTRY_PASSWORD:-}" ]]; then
-        echo "${REGISTRY_USERNAME}:${REGISTRY_PASSWORD}"
-    elif [[ -n "${HARBOR_ADMIN_USER:-}" && -n "${HARBOR_ADMIN_PASSWORD:-}" ]]; then
-        echo "${HARBOR_ADMIN_USER}:${HARBOR_ADMIN_PASSWORD}"
-    elif [[ -n "${HARBOR_ADMIN_PASSWORD:-}" ]]; then
-        echo "admin:${HARBOR_ADMIN_PASSWORD}"
-    fi
-}
-
-# 输出：exists / missing / unknown
-_check_harbor_ref_state() {
-    local target_ref="$1"
-    local image_without_tag tag registry remainder project repo repo_encoded url auth http_code
-
-    image_without_tag="$(_image_ref_repo_without_tag "$target_ref")"
-    tag="$(_image_ref_tag "$target_ref")"
-    registry="${image_without_tag%%/*}"
-    remainder="${image_without_tag#*/}"
-    project="${remainder%%/*}"
-    repo="${remainder#*/}"
-
-    if [[ -z "$registry" || -z "$project" || -z "$repo" || "$repo" == "$remainder" ]]; then
-        log_error "[images] 无法解析 Harbor 镜像地址: $target_ref" >&2
-        echo "unknown"
-        return 0
-    fi
-
-    if command -v curl >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
-        repo_encoded="$(_urlencode_harbor_repo "$repo")"
-        url="https://${registry}/api/v2.0/projects/${project}/repositories/${repo_encoded}/artifacts/${tag}"
-        auth="$(_harbor_auth_pair || true)"
-        if [[ -n "$auth" ]]; then
-            http_code="$(curl -sk -o /dev/null -w "%{http_code}" -u "$auth" "$url" 2>/dev/null || echo "000")"
-        else
-            http_code="$(curl -sk -o /dev/null -w "%{http_code}" "$url" 2>/dev/null || echo "000")"
-        fi
-        case "$http_code" in
-            200) echo "exists"; return 0 ;;
-            404) echo "missing"; return 0 ;;
-            *) log_warn "[images] Harbor API 未能确认镜像状态: $target_ref (HTTP $http_code)，尝试 fallback 检查" >&2 ;;
-        esac
-    else
-        log_warn "[images] curl 或 python3 不存在，跳过 Harbor API 检查，尝试 fallback 检查" >&2
-    fi
-
-    if command -v docker >/dev/null 2>&1; then
-        if docker manifest inspect "$target_ref" >/dev/null 2>&1; then
-            echo "exists"
-            return 0
-        fi
-    fi
-
-    if command -v skopeo >/dev/null 2>&1; then
-        local tlsopt="--tls-verify=false"
-        auth="$(_harbor_auth_pair || true)"
-        if [[ -n "$auth" ]]; then
-            if skopeo inspect "$tlsopt" --creds "$auth" "docker://$target_ref" >/dev/null 2>&1; then
-                echo "exists"
-                return 0
-            fi
-        elif skopeo inspect "$tlsopt" "docker://$target_ref" >/dev/null 2>&1; then
-            echo "exists"
-            return 0
-        fi
-    fi
-
-    echo "unknown"
-}
-
-_safe_image_name() {
-    echo "$1" | sed 's#[/:]#_#g'
-}
-
-_find_local_tar_for_image_ref() {
-    local img_ref="$1"
-    local dir="$2"
-    local target_name tag short_ref safe candidate
-    target_name="$(_image_ref_target_name "$img_ref")"
-    tag="$(_image_ref_tag "$img_ref")"
-    short_ref="${target_name}:${tag}"
-
-    for candidate in \
-        "$dir/${img_ref}.tar" \
-        "$dir/$(_safe_image_name "$img_ref").tar" \
-        "$dir/${img_ref}.tar.gz" \
-        "$dir/$(_safe_image_name "$img_ref").tar.gz" \
-        "$dir/${short_ref}.tar" \
-        "$dir/$(_safe_image_name "$short_ref").tar" \
-        "$dir/${short_ref}.tar.gz" \
-        "$dir/$(_safe_image_name "$short_ref").tar.gz"; do
-        [[ -f "$candidate" ]] && { echo "$candidate"; return 0; }
-    done
-    return 1
-}
-
-_kind_push_tar_to_harbor() {
-    local img_ref="$1"
-    local target_ref="$2"
-    local tar_dir="${COMPONENT_IMAGE_TAR_DIR:-$HOME/packages-to-be-installed/images}"
-    local tar_path loaded_ref line
-
-    [[ -d "$tar_dir" ]] || { log_error "[images] 本地 tar 目录不存在: $tar_dir"; return 1; }
-    tar_path="$(_find_local_tar_for_image_ref "$img_ref" "$tar_dir" || true)"
-    [[ -n "$tar_path" ]] || { log_error "[images] 本地 tar 不存在: $img_ref (dir=$tar_dir)"; return 1; }
-
-    log_info "[images] 从本地 tar 加载并推送: $tar_path -> $target_ref"
-    loaded_ref=""
-    while IFS= read -r line; do
-        if [[ "$line" =~ Loaded\ image:\ (.+) ]]; then
-            loaded_ref="${BASH_REMATCH[1]}"
-            break
-        fi
-    done < <(docker load -i "$tar_path" 2>&1)
-
-    [[ -n "$loaded_ref" ]] || { log_error "[images] docker load 未解析到镜像引用: $tar_path"; return 1; }
-    docker tag "$loaded_ref" "$target_ref"
-    docker push "$target_ref"
-}
-
+# Deployment consumes prepared images. Missing images and unknown state both stop
+# deployment; publishing is a separate material-preparation action.
 ensure_component_images_in_harbor() {
-    local component_name="$1"
-    local project_override="${2:-}"
-
-    if [[ "${SKIP_COMPONENT_IMAGE_ENSURE:-false}" == "true" ]]; then
-        log_warn "[images] SKIP_COMPONENT_IMAGE_ENSURE=true，跳过组件镜像确保: $component_name"
-        return 0
-    fi
-
-    wait_for_harbor_if_needed || {
-        log_error "[images] Harbor 未就绪，无法确保组件镜像: $component_name"
-        return 1
-    }
-
+    local component_name="$1" project_override="${2:-}" dry_run="${3:-false}"
     local base_dir
-    base_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-    local image_list_file="$base_dir/components-images/${component_name}-images.txt"
-    [[ -f "$image_list_file" ]] || { log_error "[images] 找不到组件镜像清单: $image_list_file"; return 1; }
-
-    local registry project loadimage_conf
-    registry="${REGISTRY_URL:-}"
-    project="${project_override:-${PROJECT_NAME:-}}"
-
-    loadimage_conf="$base_dir/registry-push-management/loadimage.conf"
-    if [[ -f "$loadimage_conf" ]]; then
-        # shellcheck disable=SC1090
-        source "$loadimage_conf"
-        registry="${registry:-${REGISTRY_URL:-}}"
-        project="${project_override:-${PROJECT_NAME:-${project:-}}}"
+    local args=(check --component "$component_name")
+    [[ "$dry_run" == true || "$dry_run" == false ]] || {
+        log_error '[images] dry_run 必须为 true 或 false'; return 1;
+    }
+    base_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || return 1
+    [[ -z "$project_override" ]] || args+=(--project "$project_override")
+    [[ "$dry_run" == true ]] || args+=(--apply)
+    if ! CLUSTER="${CLUSTER:-}" python3 -B "$base_dir/../sunmoonai/registry-platform/images.py" "${args[@]}"; then
+        log_error "[images] 镜像检查失败，停止部署: $component_name；先处理缺失物料、认证或网络问题"
+        return 1
     fi
-
-    if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
-        local k8s_root kind_push_conf harbor_host harbor_project harbor_user harbor_pass
-        k8s_root="$(cd "$base_dir/.." && pwd)"
-        kind_push_conf="$k8s_root/sunmoonai/kind-infrastructure/push-to-harbor/push-images-to-harbor.conf"
-        if [[ -f "$kind_push_conf" ]]; then
-            # shellcheck disable=SC1090
-            source "$kind_push_conf"
-        fi
-        harbor_host="${HARBOR_HOST:-${registry:-harbor.sunmoonai.com:30443}}"
-        harbor_project="${project_override:-${HARBOR_PROJECT:-${project:-k8s-images}}}"
-        registry="$harbor_host"
-        project="$harbor_project"
-        harbor_user="${HARBOR_ADMIN_USER:-admin}"
-        harbor_pass="${HARBOR_ADMIN_PASSWORD:-}"
-        if [[ -n "$harbor_pass" ]]; then
-            echo "$harbor_pass" | docker login "$registry" -u "$harbor_user" --password-stdin >/dev/null 2>&1 || true
-        fi
-    fi
-
-    registry="${registry:-harbor.sunmoonai.com:30443}"
-    project="${project:-k8s-images}"
-
-    local loadimage_sh="$base_dir/registry-push-management/loadimage.sh"
-    local cluster_args=()
-    [[ -n "${CLUSTER:-}" ]] && cluster_args+=(--cluster "$CLUSTER")
-
-    log_info "[images] 确保组件镜像存在于 Harbor: component=${component_name}, registry=${registry}, project=${project}"
-
-    local img state target_ref failed=0
-    while IFS= read -r img; do
-        [[ -z "$img" || "$img" =~ ^[[:space:]]*# ]] && continue
-        target_ref="$(_component_target_ref "$img" "$registry" "$project")"
-        state="$(_check_harbor_ref_state "$target_ref")"
-        case "$state" in
-            exists)
-                log_info "[images] Harbor 已存在，跳过: $target_ref"
-                ;;
-            missing)
-                log_warn "[images] Harbor 缺失，准备从 tar 补齐: $target_ref"
-                if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
-                    _kind_push_tar_to_harbor "$img" "$target_ref" || failed=1
-                else
-                    [[ -f "$loadimage_sh" ]] || { log_error "[images] registry-push-management 工具不存在: $loadimage_sh"; failed=1; continue; }
-                    PROJECT_NAME="$project" REGISTRY_URL="$registry" "$loadimage_sh" "${cluster_args[@]}" remote-push-by-ref "$img" || failed=1
-                fi
-                ;;
-            *)
-                if [[ "${K8S_TARGET_MODE:-}" == "kind" ]]; then
-                    log_error "[images] 无法确认 Harbor 镜像状态，停止部署: $target_ref"
-                    failed=1
-                else
-                    log_warn "[images] 本机无法确认 Harbor 镜像状态，改由远程节点检查/补齐: $target_ref"
-                    [[ -f "$loadimage_sh" ]] || { log_error "[images] registry-push-management 工具不存在: $loadimage_sh"; failed=1; continue; }
-                    PROJECT_NAME="$project" REGISTRY_URL="$registry" "$loadimage_sh" "${cluster_args[@]}" remote-push-by-ref "$img" || failed=1
-                fi
-                ;;
-        esac
-    done < "$image_list_file"
-
-    [[ "$failed" -eq 0 ]] || return 1
-
-    # 二次校验：清单内镜像必须在 Harbor 中可拉取（避免 push 误报成功或路径 flatten）
-    local verify_state
-    while IFS= read -r img; do
-        [[ -z "$img" || "$img" =~ ^[[:space:]]*# ]] && continue
-        target_ref="$(_component_target_ref "$img" "$registry" "$project")"
-        verify_state="$(_check_harbor_ref_state "$target_ref")"
-        if [[ "$verify_state" == "exists" ]]; then
-            log_info "[images] Harbor 校验通过: $target_ref"
-        else
-            log_error "[images] Harbor 校验失败: $target_ref (state=${verify_state:-unknown})"
-            if [[ "$target_ref" == *"/minio/aistor/mc:"* ]]; then
-                log_error "[images] S3 provision Job 依赖此镜像；请检查离线 tar 或 push_control_plane_images 路径"
-            fi
-            failed=1
-        fi
-    done < "$image_list_file"
-
-    [[ "$failed" -eq 0 ]] || return 1
-    log_success "[images] 组件镜像检查/补齐完成: $component_name"
 }
 
-# 兼容旧调用名；语义已变为 strict ensure。
+# Compatibility name only: this checks manifests; it never loads or pushes images.
 push_component_images_to_harbor() {
     ensure_component_images_in_harbor "$@"
 }

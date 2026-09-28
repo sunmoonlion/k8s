@@ -23,6 +23,13 @@ registry_load_config() {
     if [[ "${REGISTRY_TRANSPORT:-}" != local && "${REGISTRY_TRANSPORT:-}" != ssh ]]; then
         echo 'Registry transport must be local or ssh' >&2; return 1
     fi
+    REGISTRY_REQUEST_TIMEOUT="${REGISTRY_REQUEST_TIMEOUT:-15}"
+    if [[ ! "$REGISTRY_REQUEST_TIMEOUT" =~ ^[1-9][0-9]{0,2}$ ]] || (( REGISTRY_REQUEST_TIMEOUT > 120 )); then
+        echo 'REGISTRY_REQUEST_TIMEOUT must be 1..120 seconds' >&2; return 1
+    fi
+    export REGISTRY_REQUEST_TIMEOUT
+    export REGISTRY_IMAGE_PROJECT="${REGISTRY_IMAGE_PROJECT:-k8s-images}"
+    export REGISTRY_COMPONENT_LIST_DIR="${REGISTRY_COMPONENT_LIST_DIR:-$module_dir/../../utils/components-images}"
     export REGISTRY_CONFIG_FILE="$profile" REGISTRY_ADDRESS REGISTRY_VERSION REGISTRY_TRANSPORT
     export REGISTRY_CREDENTIALS_FILE="${REGISTRY_CREDENTIALS_FILE:-}"
     export HARBOR_HOST='harbor.sunmoonai.com' HARBOR_PORT=30443

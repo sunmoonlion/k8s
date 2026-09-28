@@ -135,9 +135,9 @@ define_required_images() {
     esac
 }
 
-# 使用统一模板的通用按需推送 helper，将 RabbitMQ 组件镜像推送到 Harbor
+# 使用共享检查器核对独立 Harbor 的镜像；此兼容函数不推送
 push_rabbitmq_images_to_harbor() {
-    push_component_images_to_harbor "rabbitmq"
+    push_component_images_to_harbor "rabbitmq" "" "${1:-false}"
 }
 
 # 执行 RabbitMQ 部署
@@ -807,8 +807,7 @@ main() {
             fi
             
             # 执行部署前，按需推送 RabbitMQ 组件镜像到 Harbor（Kind 使用 push-to-harbor，远程使用 registry-push-management）
-            push_rabbitmq_images_to_harbor
-            
+            push_rabbitmq_images_to_harbor "$dry_run" || return 1
             # 执行部署
             if execute_rabbitmq_deployment "$project_id" "$namespace" "$environment" "$dry_run"; then
                 # 部署子组件（包括 Secrets、Middleware 和 Ingress，按优先级自动排序）

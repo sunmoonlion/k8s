@@ -2,7 +2,7 @@
 
 唯一实现为 `registry-platform/client.py`，根入口 `./sunmoon harbor client`。
 本地和云主机使用相同实现，以 `--config` 或 `REGISTRY_CONFIG_FILE` 选择独立仓库配置。
-没有显式配置时使用 `config/local-wsl.conf`；不读取旧建群配置，不查询当前 Kubernetes context。
+没有显式配置且 CLUSTER 为空或 KIND 时使用 `config/local-wsl.conf`；云集群必须显式选择仓库配置；不读取旧建群配置，不查询当前 Kubernetes context。
 这是**执行命令的宿主机**的消费配置，不能代替 KIND 节点、远程节点或 CI 容器的配置。
 云端 SSH 调度接线和实机运行仍未验证，此工具本身不会执行 SSH。
 
@@ -78,3 +78,8 @@ PostgreSQL、RabbitMQ、pgAdmin、RedisInsight 的四处旧镜像工具空检查
 | C-D1 | 不创建第二个数据主档，不改变仓库实例或入口 |
 
 回退代码使用本批之前的 Git 提交审阅恢复；不能直接运行旧脚本来回退现场证书或代理。
+
+## 组件镜像检查
+
+`./sunmoon harbor images check --component postgresql` 默认计划；`--apply` 进行严格 TLS、私有账号的 manifest 查询。
+不查 Harbor Pod、不自动补推；缺失与认证/网络错误分别返回失败。具体边界和配置见 [检查说明](../../docs/harbor-component-image-ensure.md)。
