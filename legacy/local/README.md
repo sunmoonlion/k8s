@@ -2,6 +2,10 @@
 
 文件见 [总清单](../manifest.json)。本组当前收纳旧建群链及旧操作说明，原入口已拒绝执行或转为说明指针。
 
+旧通用 `load-images/load-kind-images.sh` 已追加禁用归档；其原入口仅报退役提示。
+通用导入帮助函数从活动 `kind-cli.sh` 移除，CLI 路径函数保留。
+精确退役和保留范围见 [迁移文档第 9 节](../../sunmoonai/kind-infrastructure/docs/harbor-external-integration-plan.md#9-镜像脚本退役与保留清单2026-09-28)。
+
 ## 原地保留的资源
 
 - 旧 `kind-control-plane`、`kind-worker`、`kind-worker2`：仍承载原入口/回退状态，不能删除。特别是 worker2 没有宿主数据绑定，其 Docker 卷不可清理。

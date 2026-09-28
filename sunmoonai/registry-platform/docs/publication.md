@@ -10,6 +10,8 @@
 已形成真实 Traefik 发布批次和只允许该归档的策略；**尚未执行实际推送**。准备方法、摘要和边界见 [发布工具物料](publisher-materials.md)。
 正式入口仍是旧 KIND，不能把本页当作 Harbor 已完成接管的证明。
 
+旧推送和通用 KIND 加载入口的逐项状态见 [迁移文档第 9 节](../../kind-infrastructure/docs/harbor-external-integration-plan.md#9-镜像脚本退役与保留清单2026-09-28)。建群自举导入保留；应用构建与 CI 尚未全部接入统一发布器。
+
 支持单一根镜像的 OCI tar（根可为多架构 index），只发布到 `repo@sha256:<64hex>`。
 不接受裸 tag、无锁的目录扫描、运行时从公网拉取、从 Docker 日志猜镜像名或推送失败后塞进 KIND 节点。
 既有 Docker-save tar 必须在物料准备阶段明确转换/核验并形成 OCI 批次；本次没有转换或删除任何实际物料。

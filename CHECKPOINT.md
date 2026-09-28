@@ -1,5 +1,16 @@
 ## 最新续接：2026-09-28 Skopeo 离线依赖、独立运行目录和首份真实批次
 
+## 最新续接：2026-09-28 镜像脚本退役清单
+
+基线 `27e1c8628e45ade3fbdfb5a6eb9bebe9ddadba68`，luna 开工干净。所有者要求核对 Skopeo 统一后旧推送/节点导入脚本是否保留，在迁移文档明确退役。
+
+- `harbor-external-integration-plan.md` 第 9 节逐项记录：三个旧推送实现已退役、原路径只转发；通用 KIND loader 本次退役；自制节点镜像构建已退役；旧说明所称 load-initial-images-kind.sh 实际不存在。旧参数/配置不自动兼容。不是全部镜像发布已经验收的声明。
+- 活动调用审阅发现 load-kind-images.sh 的两个导入函数无其他活动调用方；原 loader 加拒绝执行头按原字节归档 legacy/local，manifest 记录 baseline/SHA/guard 长度。原入口直接提示并返回2，kind-cli.sh 删除两个通用导入函数、保留三个节点信任/解析脚本仍使用的 CLI 路径函数；旧函数由 Git 基线保存。旧配置/默认列表标历史输入、原地保留，相关 README/header 同步。
+- 保留 formal/isolated 锁定的自举导入、云 kubeadm 的 image_import.py、宿主 Harbor 自举加载和盘点工具。明确应用 build-push 仍 docker push、Kaniko 仍直接发布、packages-management 仍远端 ctr import，不能标为全覆盖或已退役；云端仍未经实机验证。新正式集群/入口切换/真实发布及重建独立性仍待完成。
+- 机械核对：3 个活动 Shell 分别 bash -n、ShellCheck error 级、git diff --check 通过；归档去 guard 后与基线逐字节一致，原 SHA256 `7f10adb1c8d6dfd72f35f14ad1c0a7610ba9619370c241808f3b12783d875dea`；5 份文档17个本地链接存在；活动 Shell 对两个已移除函数零引用。没有运行测试套件、加载/推送镜像、访问 Docker/Kubernetes/Windows/SSH 或清理任何运行数据。本轮仅本地代码与文档整理，可按提交回退，不需数据回退。
+- 后续继续原统一链路待办；本机/东京临时目录最终精确清理不可遗漏，旧节点/卷/Harbor 及必要备份保护不变。inbox 仍旧 kind，未迁移。仅本地 luna 提交，不 push。
+
+
 基线 ec936554fa81e36803f5dd9ee6f2d85dd68ffcc5，luna 开工干净，用户继续整理。实际动作只涉及已授权的东京物料下载/回传与本机正式物料目录，不恢复现场迁移/入口切换。
 
 - 复用 infrastructure/materials/prepare_os.py，新增 --package-set registry-publisher（skopeo+ca-certificates），默认cluster原20根包集合不变。仍官方20260927快照、隔离APT/空status、下载only、签名验证；标记含roots防混批。东京Ubuntu24.04/Python3.12/20GiB空闲；新临时根 /home/zym/sunmoon-registry-publisher-20260928-v1，脚本上传后下载78包32,171,430B。无安装/服务/清理；远端dpkg状态前后相同由原流程锁记录。

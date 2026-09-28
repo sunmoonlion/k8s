@@ -6,3 +6,5 @@
 
 日常参数、工具物料前置、凭据、实际执行与未完成边界见 [统一发布说明](../../registry-platform/docs/publication.md)。
 旧 `.conf` 当前不再由这些入口读取，保留待最终清点；不会自动转成新发布批次。
+
+哪些旧脚本已退役、哪些建群自举导入必须保留，见 [迁移清单第 9 节](../docs/harbor-external-integration-plan.md#9-镜像脚本退役与保留清单2026-09-28)。

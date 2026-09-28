@@ -270,6 +270,17 @@
       "group": "cloud",
       "execution": "disabled",
       "exit_condition": "cloud-real-host-validation-and-reviewed-replacement"
+    },
+    {
+      "original": "sunmoonai/kind-infrastructure/load-images/load-kind-images.sh",
+      "archive": "legacy/local/sunmoonai/kind-infrastructure/load-images/load-kind-images.sh",
+      "original_sha256": "7f10adb1c8d6dfd72f35f14ad1c0a7610ba9619370c241808f3b12783d875dea",
+      "baseline": "27e1c8628e45ade3fbdfb5a6eb9bebe9ddadba68",
+      "archive_guard_bytes": 225,
+      "replacement": "sunmoonai/kind-infrastructure/docs/harbor-external-integration-plan.md",
+      "group": "local",
+      "execution": "disabled",
+      "exit_condition": "local-migration-and-observation-complete"
     }
   ]
 }

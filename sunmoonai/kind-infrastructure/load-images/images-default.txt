@@ -1,3 +1,4 @@
+# 历史输入：load-kind-images.sh 已退役，不再读取本文件；保留待最终清点。
 # 默认镜像列表（与 Step11 一致），一行一个，# 开头为注释
 traefik:v3.5.2
 bitnami/harbor-core:2.13.2-debian-12-r3
