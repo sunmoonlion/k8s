@@ -1,5 +1,18 @@
 # luna 工作检查点
 
+## 最新续接：2026-09-28 Document Converter 剩余部署入口与渲染链
+
+基线 `0edbd13e`，luna 开工干净。所有者纠正执行顺序：先做完原全部组件部署修复，再自动接续持久化验收与长期空间管理，不用再次提醒。本轮起初只读查看了空间管理实现位置，没有创建space代码/监控/清理；随后回到原任务。
+
+- 剩余App/PVC/namespace/Ingress四个生成器统一复用resources/config-resource.sh + render_config_resource.py；六生成器纯本地、dry-run配置前返回。修正三个旧上溯路径，移除kubectl client dry-run/envsubst拼接；解析后插值、显式数值、资源身份/域名/PVC字段核对、0600原子输出，未改数据库或应用版本。生成输出仍原工作树路径，不能提交业务Secret。
+- PVC/namespace/Ingress/Middleware四入口真实分派deploy/status/uninstall/generate，目标显式绑定、超时、写前复核；查询/删除不生成。PVC status/uninstall读取原生成配置的PVC_NAME，Namespace按明确namespace。独立删除保留既有能力，不在父级自动卸载链中执行PVC/namespace；不能用这些入口触碰受保护旧资源。
+- 父级移除统一自动连接库/猜context/SSH重连/清理，改公共参数/映射/目标绑定。实际读取生成清单的镜像，调用registry images检查后校验reference一致并原子锁为repo@sha256再apply，避免检查与部署分叉；不构建/发布镜像，不把manifest检查当完整层拉取或发布来源证明。新增resource_metadata.py只处理本地JSON、依赖和镜像摘要，stdout不含凭据。
+- 核心Service先于Ingress，status查询真实名称/标签并递归已启用子组件，失败传递；uninstall先路由/中间件再核心/配置，仍保留PVC/namespace。没有等待rollout/异步删除完成的假成功。主配置新增pvc_enabled=false，现模板本来无PVC挂载，不再按遗留YAML存在与否偷偷apply；原独立PVC开关/配置保留，不新增业务持久化语义。
+- Ingress保留域名/服务与中间件开关、删除历史NODE_IP路线，默认仓库补30443。StripPrefix与Ingress共用模板/控制但不同输出；外部rate-limit部署前必须存在。既有默认USE_STRIP_PREFIX=false/USE_RATE_LIMIT=true，而仓内无rate-limit实现，启用Ingress时现场缺此依赖会阻断。当前ingress_enabled仍false，未擅自设限流参数或关闭保护；实际启用前需明确外部依赖/策略。
+- 静态13Shell/conf bash-n与ShellCheck error，2Python AST、6模板解析、13根路径、17文档链接、193清单路径/168平台部署覆盖/6DC生成器、git diff --check通过；后补父级status分派继续静态检查。未跑行为测试、生成器/部署、API/Docker/SSH/Windows、凭据读取或清理。
+- 后续原任务还包括其余组件业务Secret/生成/生命周期和保留工具链审阅，不能称所有组件已完成；DC及其他实际部署也尚未验收。原任务完成后接 operations/persistence-and-space-acceptance.md 的WSL/KIND重启/删群全摘要+新节点拉取、统一空间监控预览执行及删除策略批准。最终本机refactor临时物料、东京下载清理仍必做。inbox旧kind/main未创建，运行迁移暂停，旧节点/卷/Harbor/备份保护不变。仅本地luna提交，不push。
+
+
 ## 最新续接：2026-09-28 Document Converter 配置生命周期与收尾验收补充
 
 基线 `9f9f8194`，本地 luna 开工干净；只改代码/文档，运行态迁移继续暂停。

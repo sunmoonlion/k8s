@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "scope": "six platform trees: all deploy-*.sh/deploy.sh; root deployment; Casdoor post-install/db-access CLI, manual Traefik NAT; native cloud/certificates and retired KIND entry; six external Harbor lifecycle/recovery/scanner/SNI entry points retain explicit --apply; ONLYOFFICE explicitly selected local resource renderer; Document Converter local config renderers and private registry export",
+  "scope": "six platform trees: all deploy-*.sh/deploy.sh; root deployment; Casdoor post-install/db-access CLI, manual Traefik NAT; native cloud/certificates and retired KIND entry; six external Harbor lifecycle/recovery/scanner/SNI entry points retain explicit --apply; ONLYOFFICE explicitly selected local resource renderer; Document Converter six selected local resource renderers and private registry export",
   "entries": [
     {
       "path": "sunmoonai/app-platform/auth-app/casdoor/deploy-casdoor/deploy-casdoor.sh",
@@ -944,6 +944,26 @@
     },
     {
       "path": "sunmoonai/app-platform/knowledge-app/components/document-converter-backend/resources/k8s-resource/custom-values/configMap/dc-config/generate-dc-config/generate-dc-config.sh",
+      "kind": "native-dc-renderer",
+      "profile": "named"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/document-converter-backend/resources/k8s-resource/custom-values/app/generate-app/generate-app.sh",
+      "kind": "native-dc-renderer",
+      "profile": "named"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/document-converter-backend/resources/k8s-resource/custom-values/pvc/document-converter-pvc/generate-document-converter-pvc/generate-document-converter-pvc.sh",
+      "kind": "native-dc-renderer",
+      "profile": "named"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/document-converter-backend/resources/k8s-resource/custom-values/namespace/dc-backend-ns/generate-dc-backend-ns/generate-dc-backend-ns.sh",
+      "kind": "native-dc-renderer",
+      "profile": "named"
+    },
+    {
+      "path": "sunmoonai/app-platform/knowledge-app/components/document-converter-backend/resources/k8s-resource/custom-values/ingress/document-converter-ingress/generate-ingress/generate-ingress.sh",
       "kind": "native-dc-renderer",
       "profile": "named"
     }

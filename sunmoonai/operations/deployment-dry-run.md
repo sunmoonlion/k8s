@@ -4,8 +4,8 @@
 不能只在几个数据库组件的 Helm 命令上加 `--dry-run`。
 
 逐文件位置与参数契约保存在 [deployment-dry-run-inventory.json](deployment-dry-run-inventory.json)。
-清单包含六个平台目录的全部 168 个 `deploy-*.sh` / `deploy.sh`，以及总控、部署辅助工具和独立 Harbor 入口，合计 189 项。
-这是入口及分支的静态覆盖清单，不是 189 项实机验收记录。
+清单包含六个平台目录的全部 168 个 `deploy-*.sh` / `deploy.sh`，以及总控、部署辅助工具和独立 Harbor 入口，合计 193 项。
+这是入口及分支的静态覆盖清单，不是 193 项实机验收记录。
 
 ## 覆盖方式
 
@@ -18,7 +18,7 @@
 | 云基础设施总控 | 1 | 保留 `--dry-run`；补齐 status/steps/materials 的只打印分支，云上未经实机验证 |
 | 共享证书入口 | 1 | 保留默认计划与显式执行；拒绝在继承计划模式时执行 apply/verify |
 | 独立 Harbor 准备、启停、恢复、备份、SNI、扫描器 | 6 | 原生默认计划、显式 `--apply`；审阅其本地计划分支，保留现有生命周期协议 |
-| Document Converter 本地配置生成器 | 2 | Secret/ConfigMap 单资源渲染，--dry-run 在配置之前返回；不使用 kubectl 验证 |
+| Document Converter 本地资源生成器 | 6 | Secret/ConfigMap/App/PVC/namespace/Ingress 显式选择，--dry-run 在配置之前返回；不使用 kubectl 验证 |
 | 私有拉取 Secret 导出 | 1 | 默认计划，--apply 仅写 ~/private 新文件；不读取集群 |
 | ONLYOFFICE 本地资源生成器 | 1 | --dry-run 或继承计划在加载配置前退出；默认只生成非 Secret，Secret 必须逐项显式选择 |
 | 原集群内 Harbor 三个入口、原 KIND 建群入口 | 4 | 仍拒绝执行；本次不会把停用入口重新启用 |
@@ -124,5 +124,5 @@ bash sunmoonai/app-platform/info-app/deploy-info-app-all/deploy-info-app-all.sh 
 
 ## Document Converter 配置资源
 
-Secret/ConfigMap 的 status/uninstall 不生成文件，两个本地生成器已加入清单；
+Secret/ConfigMap 的 status/uninstall 不生成文件，六个本地生成器已加入清单；
 父级按实际配置键扫描、隔离子配置并传播失败。范围及待办见[操作说明](../app-platform/knowledge-app/components/document-converter-backend/docs/deployment-resources.md)。
