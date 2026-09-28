@@ -1,5 +1,7 @@
 # Kubernetes 存储管理工具
 
+> 2026-09-28 核查：本仓当前没有本文引用的 `utils/storage-manager.sh`，下方菜单和安装/清理示例只能作为历史说明，不能视为已提供的功能。当前本机存储运维入口见 [mount/README.md](../sunmoonai/kind-infrastructure/mount/README.md)。
+
 ## 概述
 
 `storage-manager.sh` 是一个专门用于管理 Kubernetes 存储解决方案的脚本。它引用 `unified-deployment-template.sh` 来处理 Kubernetes 连接管理，专注于存储相关的功能。

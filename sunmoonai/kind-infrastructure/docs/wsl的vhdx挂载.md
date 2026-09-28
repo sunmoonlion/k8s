@@ -1,4 +1,14 @@
-﻿# WSL VHDX 挂载说明（Kind + Docker + PV）
+# WSL VHDX 挂载说明：当前入口与历史记录
+
+**2026-09-28：原电脑已格式化，当前仅有 C 盘。下方 E 盘、`docker-pv`、Desktop 路径以及卸载旧 `/data/kind-local-storage` 的命令全部属于历史环境，不适用于当前机器。** 原操作记录保留，不能据此推断旧任务仍存在。
+
+当前可用功能和入口统一见 [mount/README.md](../mount/README.md)：新盘 `C:\wsl-disks\sunmoon-data.vhdx`、UUID 校验、自动挂载、持久化、清理与压缩、备份恢复。当前 `mount/attach-vhds.ps1` 已是新实现的兼容转发；不能把旧文档参数直接交给它。新自动任务名为 `sunmoon-data-mount`。
+
+原文的“清理后重挂”只处理重复挂载，不是回收磁盘空间。实际空间回收见 [回收方案](wsl-space-reclamation-plan.md)，剩余回收仍在迁移末尾执行。
+
+## 以下为格式化前的历史正文，禁止照此操作当前机器
+
+# WSL VHDX 挂载说明（Kind + Docker + PV）
 
 > **默认已不再需要本文档**：`deploy-kind.conf` 中 `KIND_PV_STORAGE_MODE=native` 时，PV 落在 WSL 发行版根分区上的普通目录，无须 E 盘独立 VHD。仅当你仍使用独立数据盘时，继续按下文配置 `KIND_PV_STORAGE_MODE=vhd` 与 `attach-vhds.ps1` / `/etc/fstab`。
 

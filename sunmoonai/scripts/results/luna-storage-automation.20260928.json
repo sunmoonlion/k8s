@@ -1,0 +1,39 @@
+{
+  "observed_at": "2026-09-28T03:29:11.515845+00:00",
+  "task_registration": {
+    "Registered": true,
+    "Task": "sunmoon-data-mount",
+    "Owner": "ZYMUN\\zymun",
+    "Runner": "C:\\wsl-disks\\scripts\\storage-automation-20260928-v1\\ensure-sunmoon-data.ps1",
+    "RunnerSha256": "70ca2d6693881940231bdd39acaad9b2853f96d0c7ddbf5e9d523747e0a4c2bd",
+    "State": "Ready",
+    "LastRunTime": "2026-09-28T11:13:37.0000000+08:00",
+    "LastTaskResult": 0,
+    "ObservedAt": "2026-09-28T11:13:39.1754523+08:00"
+  },
+  "latest_task_status": {
+    "CheckedAt": "2026-09-28T11:28:37.5897975+08:00",
+    "Distro": "Ubuntu",
+    "Uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0",
+    "Result": "already-mounted",
+    "AttachedByThisRun": false,
+    "ServicesStarted": false
+  },
+  "admin_original_task_count": 271,
+  "old_and_new_mount_tasks_before_registration": [],
+  "data_disk_attach_verified": true,
+  "source_snapshot": {
+    "capture_executed": false,
+    "recovery_executed": false,
+    "read_only_preflight_passed": true,
+    "ready_controllers": 7,
+    "registry_archive_files": 4400,
+    "live_pg_version": "17.6",
+    "live_tables": 49,
+    "live_rows": 10374,
+    "live_sequences": 47
+  },
+  "full_wsl_restart_verified": false,
+  "cleanup_executed": false,
+  "public_entry_switched": false
+}

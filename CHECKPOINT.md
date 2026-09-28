@@ -1,3 +1,16 @@
+## 最新续接：2026-09-28 自动附盘恢复与功能盘点；转入部署入口整理
+
+本单元基线620e2cd9dc60d924592cefe3871b5530784aceca。所有者先暂停迁移，讨论后明确“好，那开始整理吧”：优先整理全仓部署功能/调用关系/统一操作入口，旧代码按legacy/local与legacy/cloud分别暂存，明确删除条件；已替代且不再需要的内容由Git留历史。旧节点/卷只登记，不搬动、不清理；镜像及Harbor数据库/密钥/配置/备份保护。不能先整理一层新说明便继续原先零散部署。
+
+- 本次初查新数据VHDX未附加，系统与Docker视角都缺盘；所有者说明电脑原C/D/E分区已格式化、当前只剩C盘。管理员查询271任务，无旧docker-pv或新sunmoon-data-mount。不是旧任务运行失败，旧任务属于原环境，新任务此前尚未注册。
+- 所有者明确授权助手执行管理员附盘；通过Windows RunAs/UAC调用已核SHA的v2附盘脚本成功，UUID a28de356-4ba1-4a21-93f5-744b9b9d8be0、三个挂载、PID1/Docker可见性通过；旧路径设备/inode2096/33554434未变，可用39169232896B。没有创建/格式化盘或启动服务。
+- 新ensure-sunmoon-data.ps1/register-sunmoon-data-task.ps1已发布C:/wsl-disks/scripts/storage-automation-20260928-v1，目录Administrators/SYSTEM可写、当前用户RX；任务每次核runner SHA70ca2d6693881940231bdd39acaad9b2853f96d0c7ddbf5e9d523747e0a4c2bd及v2/helper摘要。sunmoon-data-mount按所属用户Highest/Interactive登录+每分钟运行，先查维护标记与Ubuntu运行状态，已挂载只检查，不启动服务。首次审批被误取消，确认未注册后按所有者要求重新申请并执行成功；首次LastTaskResult0及后续定时already-mounted通过。完整WSL/Windows重启、未挂载自动修复分支尚未实测；维护须标记+Disable并等运行结束，避免查询/关闭竞态。
+- 新mount/README.md盘点挂载/自动挂载/持久化/回收/压缩/备份/旧清理入口；旧E盘文档加历史标记，storage-manager旧文档引用的主脚本不存在已标注。旧cloud image-cleanup两总开关false，有prune-a与通配包删除；kind-up清PV开关false，代码仍在。当前指定cron目录未发现对应cleanup/prune任务；fstrim.timer enabled/inactive，未执行清理或trim。
+- 新source_snapshot.py默认plan，check只读，capture有界冻结5写端/PG17.6逻辑导出/4400文件全SHA复用归档/持久恢复日志/恢复原副本和只读设置；recover可显式续接。只读实际预检通过；源数据库只读session、49表10374行47序列读取成功；数据库库存共用方法仅提取传输方法，哈希编码不改。capture/recover均未执行，尚无source-snapshots批次，不能说停写/同步完成。docs/source-snapshot.md明确范围。
+- 证据scripts/results/luna-storage-automation.20260928.json；Windows私有操作记录C:/wsl-disks/attach-20260928-luna-v1.log及任务状态/注册JSON。PowerShell Parser与Python AST/defaultplan/gitdiffcheck通过，无应用测试。任务持续运行属于已部署自动附盘功能；未停服务、未切30443、未建main，inbox仍旧kind。正式切换/最终清理/云实机验证均未完成。
+
+下一步：先提交上述中断前同任务改动，再建立当前操作功能表、统一入口与legacy清单；逐调用方调整后才移动旧实现。仍只本地luna，不push。不通知“luna做完了”。
+
 ## 最新续接：2026-09-28 最新源在线对账通过、正式过渡代理已创建停止
 
 基线0d04fa7212b258059588d44e8f504997f2f4c7be，本地luna、不push，开工工作树干净。本单元没有源端停写/同步/公开入口切换；最新源对账是在线两次观察，不能替代冻结后切换门禁。

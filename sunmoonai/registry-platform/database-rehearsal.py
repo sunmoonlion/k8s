@@ -152,9 +152,16 @@ class Rehearsal:
         run(['docker', 'start', entry['id']])
         return entry['id']
 
-    def psql(self, container, sql, database='registry'):
+    def psql_raw(self, container, sql, database='registry'):
         return run(['docker', 'exec', '-i', container, PG+'psql', '-X', '-v', 'ON_ERROR_STOP=1',
-                    '-h', '/tmp', '-U', 'postgres', '-d', database, '-At'], stdin=sql.encode(), timeout=120).strip()
+                    '-h', '/tmp', '-U', 'postgres', '-d', database, '-At'], stdin=sql.encode(), timeout=120)
+
+    def psql(self, container, sql, database='registry'):
+        return self.psql_raw(container, sql, database).strip()
+
+    def schema(self, container):
+        return run(['docker', 'exec', container, PG+'pg_dump', '-h', '/tmp', '-U', 'postgres',
+                    '--schema-only', 'registry'], timeout=120)
 
     def ready(self, container):
         deadline = time.monotonic()+90
@@ -179,9 +186,8 @@ class Rehearsal:
         for item in tables:
             table = quote(item['schemaname'])+'.'+quote(item['tablename'])
             # Canonical ordered rows are hashed in memory; no row content in evidence.
-            cmd = ['docker', 'exec', '-i', container, PG+'psql', '-X', '-v', 'ON_ERROR_STOP=1', '-h', '/tmp', '-U', 'postgres', '-d', 'registry', '-At']
             sql = f'SET timezone=\'UTC\';\nCOPY (SELECT row_to_json(t)::text FROM {table} t ORDER BY row_to_json(t)::text COLLATE "C") TO STDOUT;'
-            value = run(cmd, stdin=sql.encode(), timeout=120)
+            value = self.psql_raw(container, sql)
             count = int(self.psql(container, 'SELECT count(*) FROM '+table+';'))
             result['tables'].append({**item, 'rows': count, 'row_sha256': hashlib.sha256(value.encode()).hexdigest()})
         result['sequences'] = self.psql(container, "SELECT coalesce(json_agg(x ORDER BY schemaname,sequencename),'[]') FROM (SELECT schemaname,sequencename,sequenceowner,data_type,start_value,min_value,max_value,increment_by,cycle,cache_size,last_value FROM pg_sequences WHERE schemaname NOT IN ('pg_catalog','information_schema')) x;")
@@ -196,7 +202,7 @@ class Rehearsal:
             'large_objects_sha256': "SELECT coalesce(json_agg(x ORDER BY loid,pageno),'[]') FROM (SELECT loid,pageno,encode(data,'hex') AS data FROM pg_largeobject) x;",
         }.items():
             result[key] = hashlib.sha256(self.psql(container, sql).encode()).hexdigest()
-        schema = run(['docker', 'exec', container, PG+'pg_dump', '-h', '/tmp', '-U', 'postgres', '--schema-only', 'registry'], timeout=120)
+        schema = self.schema(container)
         # PostgreSQL 17.6 injects random psql restrict tokens, not schema content.
         schema = '\n'.join(line for line in schema.splitlines() if not line.startswith(('\\restrict ', '\\unrestrict ')))
         result['schema_sha256'] = hashlib.sha256(schema.encode()).hexdigest()

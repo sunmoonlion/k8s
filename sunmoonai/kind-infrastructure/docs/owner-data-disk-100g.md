@@ -1,6 +1,6 @@
 # 所有者操作：创建并挂载 100 GiB 数据盘
 
-状态（2026-09-27）：**所有者已完成 100 GiB 数据盘创建及 v2 挂载修复，助手从当前 WSL 会话复核通过**。UUID `a28de356-4ba1-4a21-93f5-744b9b9d8be0`；PID 1 与 Docker 可见性通过，可用约 96.86 GiB，旧路径设备/inode 未变。第 1、2、2a 节本机已完成，**不要再次创建/格式化**。计划任务、重启验收待后续安排，当前不用重复执行。没有恢复 Harbor 或启动新服务。创建前 C 盘剩余 232.54 GiB；首次创建容量门禁为 172 GiB。
+状态（2026-09-28）：100 GiB 数据盘已创建。此次 WSL 启动后盘未附加；所有者新增授权“我授权你自己执行”，助手已使用管理员 PowerShell 调用原 v2 固定脚本恢复挂载，通过 UUID、PID1/Docker 可见性及旧路径检查。新 `sunmoon-data-mount` 计划任务已注册，首次与后续定时检查成功。完整重启验收留维护窗口。UUID `a28de356-4ba1-4a21-93f5-744b9b9d8be0`；当前可用约 36.48 GiB，旧路径设备/inode 未变。**不要再次创建/格式化。** 原 Harbor 仍在旧 KIND，新 Harbor 候选停止；本次挂载操作没有启动服务。
 
 本文件对应已确定的[主方案](storage-and-harbor-placement-decision.md)。整块虚拟盘为 ext4，同一物理 C 盘不能防硬件故障。旧 `/data/kind-local-storage` 不被挂载、卸载或改写。
 
@@ -84,30 +84,20 @@ if ($LASTEXITCODE -ne 0) { throw '服务挂载检查失败，禁止启动 Harbor
 
 完成后助手从普通会话再次核对 UUID、三个挂载及旧路径。`service_visibility` 必须列出 systemd 和当前运行的 docker；Docker 未运行时不得声称其可见性已验证，后续启动后必须补查。不对已有管理员会话的正确挂载执行卸载。失败保留现场，不自动回滚 fstab、卸载或格式化。
 
-## 3. 后续附盘与开机/登录任务
+## 3. 自动附盘任务（已注册）
 
-先确认原 `docker-pv` 等历史任务不会执行旧 E 盘/卸载逻辑；可只读检查其 Actions。不自动禁用或删除未知任务，存在冲突时先交所有者处理。以下只注册新任务，Windows 用户为当前所有者，不能用 SYSTEM 替代 Ubuntu 所属用户。
+本机任务为 `sunmoon-data-mount`；完整规则、维护暂停/恢复命令及功能索引见 [mount/README.md](../mount/README.md)。历史 `docker-pv` 属于格式化前 E 盘环境，不能恢复其旧路径。
 
-```powershell
-$Attach = Join-Path $Published 'attach-vhds.ps1'
-& $Attach -Mode SunmoonData -Distro Ubuntu -ExpectedUuid $DataUuid -CheckScript $CheckScript -Apply
-$TaskName = 'sunmoon-data-mount'
-if (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue) { throw '任务已存在：先核对，不覆盖' }
-$TaskArgs = '-NoProfile -NonInteractive -File "{0}" -Mode SunmoonData -Distro Ubuntu -ExpectedUuid "{1}" -CheckScript "{2}" -Apply' -f $Attach,$DataUuid,$CheckScript
-$Action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $TaskArgs
-$Owner = [Security.Principal.WindowsIdentity]::GetCurrent().Name
-$Triggers = @((New-ScheduledTaskTrigger -AtStartup),(New-ScheduledTaskTrigger -AtLogOn -User $Owner))
-$Principal = New-ScheduledTaskPrincipal -UserId $Owner -LogonType Interactive -RunLevel Highest
-$Settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 3)
-Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Triggers -Principal $Principal -Settings $Settings
-Start-ScheduledTask -TaskName $TaskName
-# 等任务结束，再核对 LastTaskResult=0 和 Linux 检查；不能只看注册成功。
-Get-ScheduledTaskInfo -TaskName $TaskName | Select-Object LastRunTime,LastTaskResult
-wsl.exe -d Ubuntu -u root -- nsenter --target 1 --mount -- bash $CheckScript --layout sunmoon-data --expected-uuid $DataUuid --require-service-visibility
-if ($LASTEXITCODE -ne 0) { throw '任务后检查失败' }
-```
+发布文件固定在 `C:\wsl-disks\scripts\storage-automation-20260928-v1`：
 
-Interactive 任务在未登录时不保证运行，登录触发兜底；要登录前运行须所有者另行配置账户凭据。新服务必须先经过新布局检查，并由受挂载依赖约束的启动服务管理；该服务集成将在 Harbor/正式 KIND 单元实现，目前不能直接给新容器开启自动重启。Windows/WSL 重启验收留在入口切换与压缩维护窗口，不现在关闭 WSL。
+- [ensure-sunmoon-data.ps1](../deploy-kind/ensure-sunmoon-data.ps1)：维护标记优先；Ubuntu 未运行则跳过，正常挂载只检查；缺盘时调用已发布 v2 attach，核原 UUID，不初始化、不启动 Harbor/KIND。
+- [register-sunmoon-data-task.ps1](../deploy-kind/register-sunmoon-data-task.ps1)：默认只打印，`-Apply` 才注册；固定 runner SHA；已有同名任务拒绝覆盖。任务用当前 Ubuntu 所属 Windows 用户的最高 Interactive 权限，登录和每分钟触发；只在用户已登录时保证执行。
+
+每次任务运行重新核对脚本摘要。当前 runner SHA256：`70ca2d6693881940231bdd39acaad9b2853f96d0c7ddbf5e9d523747e0a4c2bd`。发布目录只允许 Administrators/SYSTEM 修改，当前用户读执行；不依赖 worktree。未来更换代码必须使用新版本发布目录、重新核对 SHA 和任务动作，不覆盖当前发布字节。
+
+复用方法：管理员先把仓中两个文件复制到上述发布目录（已存在时仅比对摘要，拒绝覆盖），设置上述 ACL，再调用注册器 `-RunnerSha256 <已核对的runner摘要> -Apply`。注册器保存回执并等首次运行结果。**本机已经完成，不重跑注册。** 唯一状态文件 `C:\wsl-disks\sunmoon-data-automation-status.json`；查看计划任务 `LastTaskResult` 并核状态为 `already-mounted`/`mounted-and-checked`，不能把 maintenance/Ubuntu-stopped 的跳过结果当挂载成功。
+
+完整关机/WSL 重启与 Harbor/正式 KIND 自动启动仍待后续验收。新服务继续经过严格挂载检查；任务成功不等于服务已启动。执行压缩之前必须使用索引中的维护标记、Disable 任务并等待已运行实例结束，再关闭 WSL。
 
 ## 4. 中断后处理
 
@@ -121,6 +111,6 @@ Interactive 任务在未登录时不保证运行，登录触发兜底；要登�
 
 [只读证据](../../scripts/results/luna-data-storage-preparation.20260927.json)：三个 PowerShell 文件 Parser 语法通过；两个 shell 文件 bash -n 与 ShellCheck 0.9.0 通过；Python AST 通过；Linux 默认 setup 只打印、缺盘明确失败、旧 native 只读检查通过。
 
-所有者已执行 Windows 创建/附盘/格式化，v1 管理员会话检查通过；原服务空间检查未通过；现已由所有者执行 v2，助手普通 WSL 会话复核通过。计划任务注册尚未回传/核实，未做重启验收。UNC 默认执行被 RemoteSigned 拒绝，未修改/绕过策略；所有者使用 Windows 本地发布副本已实际运行。ShellCheck 仅在临时目录解包，没有系统安装。v2 静态与只读证据见 `../../scripts/results/luna-data-storage-v2-preparation.20260927.json`。
+所有者已执行 Windows 创建/附盘/格式化，v1 管理员会话检查通过；原服务空间检查未通过；现已由所有者执行 v2，助手普通 WSL 会话复核通过。2026-09-28 已注册并核实新计划任务；未做整机/WSL 重启验收。UNC 默认执行被 RemoteSigned 拒绝，未修改/绕过策略；所有者使用 Windows 本地发布副本已实际运行。ShellCheck 仅在临时目录解包，没有系统安装。v2 静态与只读证据见 `../../scripts/results/luna-data-storage-v2-preparation.20260927.json`。
 
 最终挂载复核：[v2 实测结果](../../scripts/results/luna-data-storage-v2-mounted.20260927.json)。包含正确 UUID/ext4/rw、两条 bind 的设备/inode、旧路径身份和 systemd/Docker 可见性。历史失败记录保留在 `luna-data-storage-mounted.20260927.json`，不覆盖为成功。

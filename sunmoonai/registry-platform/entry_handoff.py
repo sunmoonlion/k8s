@@ -34,8 +34,10 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def kub(*args):
-    # Pin the executable and static kubeconfig before every GET. The old client
+def kub_raw(*args, stdin=None, timeout=30):
+    # Shared pinned transport; the CLI below remains GET-only. Explicit source
+    # snapshot/recovery commands additionally guard UID and controller identity.
+    # Pin the executable and static kubeconfig before every operation. The old client
     # stays separate from the 1.36 tool and the user's current context.
     if TOOL.resolve() != TOOL or sha(TOOL) != TOOL_SHA:
         raise ValueError('Old kubectl differs from the accepted 1.27.3 tool')
@@ -52,10 +54,14 @@ def kub(*args):
     env = {k: v for k, v in os.environ.items()
            if k.lower() not in ('http_proxy', 'https_proxy', 'all_proxy', 'no_proxy') and k != 'KUBECONFIG'}
     result = subprocess.run([str(TOOL), '--kubeconfig', str(KUBECONFIG), '--context', 'kind-kind',
-        '--request-timeout=20s', *args, '-o', 'json'], capture_output=True, env=env, timeout=30)
+        '--request-timeout=20s', *args], input=stdin, capture_output=True, env=env, timeout=timeout)
     if result.returncode:
-        raise ValueError('Old API read failed; raw output withheld')
-    return json.loads(result.stdout)
+        raise ValueError('Pinned old API operation failed; raw output withheld')
+    return result.stdout
+
+
+def kub(*args):
+    return json.loads(kub_raw(*args, '-o', 'json'))
 
 
 def node(name):
