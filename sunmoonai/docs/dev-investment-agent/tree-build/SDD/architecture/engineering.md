@@ -93,7 +93,7 @@
 | 后端 | 文件数 | 其中 |
 | --- | --- | --- |
 | investment | 0 | 工作台的 5 个已改（2026-09-29，`656a93d`）；模板带来的 2 个已改（2026-09-29，A6）；旧运行时的 5 个已随删除消失 |
-| info | 5 | 都是 2026-09-13 之前的：采集器 2 个、采集服务、投递、原件对账。模板带来的 2 个已改（A6） |
+| info | 2 | 都是 2026-09-13 之前的：采集服务（1933 行）与它的投递。采集器 2 个、原件对账已改（2026-09-29，A7 甲）；模板带来的 2 个已改（A6） |
 | knowledge | 5 | 都是 2026-09-13 之前的：入库 3 个、检索、投递。模板带来的 2 个已改（A6） |
 
 三个后端的领域层都没有引用外层。2026-09-27 之后新写的代码（证券采集与建库、数据集登记、语义层、年报抽取）没有违反前三条。
@@ -102,8 +102,8 @@
 | 后端 | 位置 | 直接用了 |
 | --- | --- | --- |
 | 三个后端与模板 | `application/ports/outbox.py`、`application/audit_context.py` | `sqlalchemy`、`starlette`。**已改**（2026-09-29，A6） |
-| info | `domain/info_identity_v1.py` | `httpx` |
-| info | `application/securities/dataset/sqlite_writer.py`（远程 2026-09-27 写的） | `sqlite3` |
+| info | `domain/info_identity_v1.py` | `httpx`。只用来解析地址、不发请求，规则本身是冻结的；建议记为例外，等所有者定 |
+| info | `application/securities/dataset/sqlite_writer.py`（远程 2026-09-27 写的） | `sqlite3`。**已改**（2026-09-29，A7 甲） |
 | knowledge | `application/services/dataset_query.py`（远程 2026-09-24 写的） | `sqlite3` |
 | investment | `application/workbench/provisioning.py` | `httpx`、`websockets` |
 
