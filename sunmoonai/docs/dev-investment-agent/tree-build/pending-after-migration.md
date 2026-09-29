@@ -32,7 +32,7 @@
 | 18 | info 的配置（可不配，默认开）：`SECURITY_STATEMENT_FALLBACK_ENABLED` | 年报的关键数字表认不出来时，从合并报表取 | info-backend `b8a872f` | 待办 |
 | 19 | info 的建库任务变慢、变重：认不出关键数字表的年报每份多花 20 到 75 秒；报表是图片的年报更慢。远程机上实测紫金矿业建一次约 9 分钟，进程常驻内存最高约 1.2 GB（加页数上限之前）、约 0.5 GB（之后） | 工作进程的超时与内存上限要够；与第 14 行一起核 | 同上 | 待办 |
 | 20 | investment 的部署清单里这些配置项后端不再读取，可以去掉：`AGENT_V4_TRAFFIC_ENABLED`、`AGENT_PILOT_*`、`AGENT_REDIS_KEY_PREFIX`、`KNOWLEDGE_RETRIEVAL_*` | 旧运行时已删。留着不会出错（后端忽略不认识的配置项），只是没有用 | investment-backend `0c1a030` | 待办 |
-| 21 | investment 到知识服务的检索身份绑定（`sunmoonai-investment-knowledge-retrieve`）没有使用方了 | 检索客户端随旧运行时一起删了。工作台经沙箱里的 MCP 访问知识服务，不走这条 | 同上 | 等所有者定是否撤销 |
+| 21 | investment 到知识服务的检索身份绑定（`sunmoonai-investment-knowledge-retrieve`）没有使用方了。**所有者 2026-09-29 定：撤销** | 检索客户端随旧运行时一起删了。工作台经沙箱里的 MCP 访问知识服务，不走这条。撤销时一并处理：知识服务那一侧给它留的绑定与白名单、父仓库里的契约消费锁 | 同上 | 待办 |
 | 22 | investment 的数据库权限清单仍然列着旧运行时的表 | 表还在，清单暂时不用改。以后用新的迁移删表时，清单同步改 | 同上 | 待办 |
 | 23 | investment 后端镜像变小：去掉了 langgraph、langchain 等依赖（依赖包从 100 多个减到 62 个）；`scripts/`、`eval/` 不再进镜像。info、knowledge 的镜像也不再含 `scripts/` | 重新构建时核对 | investment-backend `0c1a030`、info-backend `d191528`、knowledge-backend `8edc66f` | 待办 |
 

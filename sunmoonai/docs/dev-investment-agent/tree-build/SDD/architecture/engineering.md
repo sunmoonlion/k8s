@@ -107,8 +107,10 @@
 | 模板带来的 2 个脚本 | 三个后端与模板的 `app/scripts/pair_fixture.py`、`delivery_runtime_probe.py` | 留着，要在模板里处理 |
 | 打镜像时没有排除 `scripts/`、`eval/` | 三个后端仓库根的 `.dockerignore` | **已补**（2026-09-29） |
 | 旧运行时的表还在库里 | investment 的数据库 | 已发布的迁移不删不改；以后用新的迁移去掉 |
-| 旧运行时的历史设计文档 | investment-backend `docs/mooc-manus-v4-*`（3 份）与 `docs/adr/`（18 份） | 等所有者定 |
-| 父仓库里的检索契约消费锁 | `investment-app/contracts/knowledge-retrieval-provider-lock.json` | 检索客户端已删，这份锁没有消费方了；等所有者定 |
+| 旧运行时的历史设计文档 | investment-backend `docs/mooc-manus-v4-*`（3 份）与 `docs/adr/`（18 份） | **已删**（2026-09-29 所有者定，investment-backend `0c22ea6`） |
+| 父仓库里的检索契约消费锁 | `investment-app/contracts/knowledge-retrieval-provider-lock.json` | 所有者 2026-09-29 定撤销检索身份；这份锁到时一并删 |
+
+**留待后面做的事都记在 [工程结构整改的账本](../../structure-ledger.md)。** 上表只说现状，以账本为准。
 | 接口层两套放法并存 | 三个后端 | 工作台路由挪到 `http/web`；其余随改随挪 |
 | 首页还挂着旧的研究工作区，约 829 行 | investment-web-frontend | 随前端改造处理 |
 
