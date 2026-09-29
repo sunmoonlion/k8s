@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>专家界面样稿</title>
+<style>
+:root{
+  --bg:#ffffff; --panel:#fafafa; --line:#e5e5e5; --line2:#d4d4d4; --text:#171717; --muted:#737373;
+  --soft:#f5f5f5; --accent:#171717; --ok:#15803d; --okbg:#f0fdf4; --warn:#b45309; --warnbg:#fffbeb;
+  --bad:#b91c1c; --badbg:#fef2f2; --info:#1d4ed8; --infobg:#eff6ff; --radius:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;color:var(--text);background:var(--bg)}
+button{font:inherit}
+.app{display:grid;grid-template-columns:240px 1fr;height:100vh}
+.side{border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;padding:12px;gap:14px;overflow:auto}
+.brand{font-weight:600;padding:4px 6px}
+.modes{display:grid;grid-template-columns:repeat(3,1fr);background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:3px;gap:2px}
+.modes span{text-align:center;padding:5px 0;border-radius:6px;color:var(--muted);font-size:13px}
+.modes .on{background:#fff;color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.08);font-weight:600}
+.side h4{margin:0 0 4px;font-size:12px;color:var(--muted);font-weight:500;padding:0 6px}
+.item{padding:6px 8px;border-radius:6px;font-size:13px;display:flex;justify-content:space-between;gap:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item.on{background:#ededed}
+.item small{color:var(--muted)}
+.spacer{flex:1}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px}
+.badge{font-size:12px;padding:0 7px;border-radius:999px;background:var(--accent);color:#fff}
+.ext::after{content:" ↗";color:var(--muted)}
+.main{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.tabs{display:flex;gap:6px;padding:8px 16px;border-bottom:1px dashed var(--line2);background:#fffdf5;align-items:center;flex-wrap:wrap}
+.tabs b{font-weight:500;color:var(--warn);font-size:12px;margin-right:8px}
+.tabs button{border:1px solid var(--line2);background:#fff;border-radius:999px;padding:3px 12px;cursor:pointer;font-size:13px}
+.tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.screen{display:none;flex:1;min-height:0;overflow:auto;outline:none}
+.screen.on{display:block}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 28px 60px}
+h1{font-size:22px;margin:0 0 4px}
+h2{font-size:15px;margin:0 0 10px}
+h3{font-size:14px;margin:0 0 6px}
+p{margin:0 0 8px}
+.muted{color:var(--muted)}
+.card{border:1px solid var(--line);border-radius:var(--radius);background:#fff;padding:16px;display:flex;flex-direction:column}
+.card .foot{margin-top:auto;padding-top:12px;display:flex;justify-content:flex-end}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.row{display:flex;align-items:center;gap:12px;justify-content:space-between}
+.btn{border:1px solid var(--line2);background:#fff;border-radius:8px;padding:6px 14px;cursor:pointer}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.small{padding:3px 10px;font-size:13px}
+.sec{margin-top:26px}
+.alert{border:1px solid #fcd34d;background:var(--warnbg);border-radius:var(--radius);padding:14px 16px}
+.list{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.list>div{display:grid;grid-template-columns:1.6fr .8fr 1fr 1fr auto;gap:12px;padding:10px 16px;border-top:1px solid var(--line);align-items:center}
+.list>div:first-child{border-top:0}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;border:1px solid var(--line2);color:var(--muted)}
+.tag.ok{color:var(--ok);border-color:#bbf7d0;background:var(--okbg)}
+.tag.bad{color:var(--bad);border-color:#fecaca;background:var(--badbg)}
+.kv{display:grid;grid-template-columns:70px 1fr;gap:4px 10px;font-size:13px}
+.kv dt{color:var(--muted)} .kv dd{margin:0}
+/* 请专家 */
+.two{display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start}
+label{display:block;font-weight:500;margin:16px 0 6px}
+textarea,input,select{width:100%;border:1px solid var(--line2);border-radius:8px;padding:8px 10px;font:inherit;background:#fff}
+.hint{font-size:12px;color:var(--muted);margin-top:4px}
+.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+.steps li{counter-increment:s;padding:8px 0 8px 30px;position:relative;border-top:1px solid var(--line)}
+.steps li:first-child{border-top:0}
+.steps li::before{content:counter(s);position:absolute;left:0;top:9px;width:20px;height:20px;border-radius:50%;border:1px solid var(--line2);font-size:12px;text-align:center;line-height:18px;color:var(--muted)}
+.steps .t{font-weight:500}
+.steps .d{font-size:13px;color:var(--muted)}
+.steps .r{font-size:12px;color:var(--warn)}
+.confirm{margin-top:20px;border:1px solid var(--line);border-radius:var(--radius);background:var(--soft);padding:14px 16px}
+.confirm ul{margin:0 0 10px;padding-left:18px}
+/* 处理中 */
+.band{display:flex;gap:18px;align-items:center;padding:10px 20px;border-bottom:1px solid var(--line);background:var(--infobg);font-size:13px}
+.band.wait{background:var(--warnbg)}
+.band b{font-weight:600}
+.band .grow{flex:1}
+.work{display:grid;grid-template-columns:210px 1fr 260px;min-height:calc(100% - 45px)}
+.rail{border-right:1px solid var(--line);padding:16px 12px;background:var(--panel)}
+.rail h4,.order h4{margin:0 0 8px;font-size:12px;color:var(--muted);font-weight:500}
+.st{display:grid;grid-template-columns:22px 1fr;gap:6px;padding:7px 8px;border-radius:8px;font-size:13px;align-items:start}
+.st.on{background:#fff;border:1px solid var(--line2);box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.st .m{font-size:12px;color:var(--muted)}
+.ic{width:18px;height:18px;border-radius:50%;display:inline-grid;place-items:center;font-size:11px;margin-top:2px;border:1px solid var(--line2);color:var(--muted);background:#fff}
+.ic.done{background:var(--ok);border-color:var(--ok);color:#fff}
+.ic.now{background:var(--info);border-color:var(--info);color:#fff}
+.ic.wait{background:var(--warn);border-color:var(--warn);color:#fff}
+.center{padding:20px 24px;min-width:0}
+.block{margin-top:18px}
+.block>h3{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.02em;margin-bottom:8px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border-bottom:1px solid var(--line);padding:7px 10px;text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:500;background:var(--soft)}
+.tbl{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.chk{list-style:none;margin:0;padding:0}
+.chk li{padding:5px 0 5px 26px;position:relative;font-size:13px}
+.chk li::before{content:"✓";position:absolute;left:0;top:6px;width:17px;height:17px;border-radius:50%;background:var(--okbg);color:var(--ok);font-size:11px;text-align:center;line-height:17px;border:1px solid #bbf7d0}
+.chk li.no::before{content:"✕";background:var(--badbg);color:var(--bad);border-color:#fecaca}
+.chk li.no{color:var(--bad)}
+.chk li small{display:block;color:var(--muted)}
+.used{font-size:13px;display:grid;gap:3px}
+.order{border-left:1px solid var(--line);padding:16px;background:var(--panel);font-size:13px}
+.order section{margin-bottom:16px}
+.meter{height:8px;border-radius:999px;background:#e5e5e5;overflow:hidden;margin:6px 0 4px;display:flex}
+.meter i{display:block;height:100%;background:var(--accent)}
+.meter i.res{background:#a3a3a3}
+details{border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px}
+summary{cursor:pointer;color:var(--muted)}
+.ask{border:1px solid #fcd34d;background:var(--warnbg);border-radius:var(--radius);padding:16px;margin-top:18px}
+.opt{display:grid;grid-template-columns:18px 1fr;gap:8px;padding:8px 10px;border:1px solid var(--line2);border-radius:8px;background:#fff;margin-top:8px}
+.opt small{color:var(--muted);display:block}
+/* 底稿 */
+.paper{max-width:860px;margin:0 auto;padding:32px 28px 80px}
+.paper header{border-bottom:2px solid var(--text);padding-bottom:14px}
+.paper header h1{font-size:24px;line-height:1.35}
+.paper .meta{font-size:13px;color:var(--muted)}
+.paper section{padding:20px 0;border-bottom:1px solid var(--line)}
+.paper section>h2{font-size:15px}
+sup{color:var(--info);cursor:pointer;font-size:11px}
+.verified{display:grid;gap:8px}
+.verified>div{display:grid;grid-template-columns:90px 1fr auto;gap:12px;align-items:start;padding:10px 12px;border:1px solid var(--line);border-radius:8px}
+.flow{display:flex;flex-wrap:wrap;gap:6px}
+.flow span{border:1px solid #bbf7d0;background:var(--okbg);color:var(--ok);border-radius:999px;padding:2px 10px;font-size:12px}
+.mine{border:1px solid var(--line2);border-radius:var(--radius);padding:14px;background:var(--soft)}
+.mine textarea{min-height:90px;background:#fff}
+.sample{position:fixed;right:12px;bottom:10px;font-size:12px;color:var(--warn);background:#fffdf5;border:1px dashed #fcd34d;border-radius:6px;padding:2px 8px}
+.nodata{border:1px solid var(--line2);border-radius:8px;padding:12px 14px;background:#fff;margin-top:10px}
+@media (max-width:1100px){.work{grid-template-columns:180px 1fr}.order{display:none}.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">投研工作台</div>
+    <div class="modes"><span>聊天</span><span>工作</span><span class="on">专家</span></div>
+    <div><button class="btn" style="width:100%">＋ 新建</button></div>
+    <div>
+      <h4>工作区 · ~/research ▾</h4>
+      <div class="item on">恒瑞医药研究</div>
+      <div class="item">白酒行业</div>
+      <div class="item">新能源</div>
+    </div>
+    <div>
+      <h4>最近</h4>
+      <div class="item">盈利能力怎么样 <small>专家</small></div>
+      <div class="item">整理年报要点 <small>工作</small></div>
+      <div class="item">毛利率是什么 <small>聊天</small></div>
+    </div>
+    <div class="spacer"></div>
+    <div>
+      <div class="item">待我决定 <span class="badge">1</span></div>
+      <div class="item ext">数据目录</div>
+      <div class="item ext">数据申请</div>
+      <div class="item"><span><span class="dot"></span>我的机器</span><small>在线</small></div>
+      <div class="item">设置</div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="tabs">
+      <b>样稿，点这里切换页面：</b>
+      <button data-s="e1" class="on">E1 专家首页</button>
+      <button data-s="e2">E2 请专家</button>
+      <button data-s="e3">E3 处理中</button>
+      <button data-s="e3w">E3 停下来等你</button>
+      <button data-s="e4">E4 底稿</button>
+    </div>
+
+    <!-- E1 -->
+    <div class="screen on" id="e1"><div class="wrap">
+      <h1>专家</h1>
+      <p class="muted">把一件事整个交出去。专家按方法一步步做，每一步都验过才往下，做完交回底稿。</p>
+
+      <div class="sec">
+        <h2>等我决定 <span class="badge">1</span></h2>
+        <div class="alert row">
+          <div>
+            <div><b>恒瑞医药 2023 到 2025 年的盈利能力怎么样？</b></div>
+            <div class="muted">财报体检 · 第 3 步「勾稽」没有通过验收 · 有 1 条勾稽规则不平</div>
+          </div>
+          <button class="btn primary">去处理</button>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h2>进行中</h2>
+        <div class="list">
+          <div><span>五粮液近五年的毛利率</span><span class="muted">问数</span><span>第 3 步，共 5 步</span><span class="muted">已花 0.12 / 2.00 元</span><button class="btn small">打开</button></div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h2>有哪些专家</h2>
+        <div class="grid2">
+          <div class="card">
+            <h3>财报体检</h3>
+            <p class="muted">先验数据，再算指标，不下结论</p>
+            <dl class="kv">
+              <dt>解决</dt><dd>一家已入库的 A 股非金融公司，按指定期间给出带出处、先过勾稽的财务体检底稿</dd>
+              <dt>不解决</dt><dd>预测、估值、评级、买卖或仓位建议；没有入库的公司；附注与经营数据</dd>
+              <dt>怎么做</dt><dd>7 步 · 要用我们的数据</dd>
+            </dl>
+            <div class="foot"><button class="btn primary">请这位专家</button></div>
+          </div>
+          <div class="card">
+            <h3>问数</h3>
+            <p class="muted">对已有的数据问一个数</p>
+            <dl class="kv">
+              <dt>解决</dt><dd>对已入库数据集的、口径明确的数值问题</dd>
+              <dt>不解决</dt><dd>预测、评级、买卖建议</dd>
+              <dt>怎么做</dt><dd>5 步 · 要用我们的数据</dd>
+            </dl>
+            <div class="foot"><button class="btn primary">请这位专家</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h2>最近交回的</h2>
+        <div class="list">
+          <div><span>上海机场近三年的偿债能力</span><span class="muted">财报体检</span><span><span class="tag ok">已完成</span></span><span class="muted">09-27 · 花了 0.31 元</span><button class="btn small">看底稿</button></div>
+          <div><span>宁德时代 2024 年的盈利质量</span><span class="muted">财报体检</span><span><span class="tag bad">停在第 3 步</span> <small class="muted">勾稽不平</small></span><span class="muted">09-27 · 花了 0.14 元</span><button class="btn small">看底稿</button></div>
+        </div>
+      </div>
+    </div></div>
+
+    <!-- E2 -->
+    <div class="screen" id="e2"><div class="wrap">
+      <div class="row"><h1>请专家：财报体检</h1><button class="btn small">换一位专家</button></div>
+      <div class="two">
+        <div>
+          <label>要解决什么问题</label>
+          <textarea rows="3">恒瑞医药 2023 到 2025 年的盈利能力怎么样？</textarea>
+          <div class="hint">写清公司和期间，专家才接得住。</div>
+          <label>在哪个项目里</label>
+          <select><option>恒瑞医药研究（~/research/hengrui）</option></select>
+          <label>预算上限</label>
+          <div class="row" style="justify-content:flex-start"><input style="width:120px" value="2.00"><span>元</span></div>
+          <div class="hint">用完会停下来问你，不会超。</div>
+          <label>专家看得到</label>
+          <ul class="chk">
+            <li>这段对话（12 轮）</li>
+            <li>项目里的文件 <small>只读，用到才读</small></li>
+            <li>项目里别的 3 段对话、1 份底稿 <small>只读，用到才读</small></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>它会这样做</h3>
+          <ol class="steps">
+            <li><div class="t">定范围</div><div class="d">认出公司、期间、报告类型</div><div class="r">认不出 → 停下来问你</div></li>
+            <li><div class="t">数据摸底</div><div class="d">确认有这家的数据、数据到哪一天</div><div class="r">没有数据 → 停下来，可以申请入库</div></li>
+            <li><div class="t">勾稽</div><div class="d">三张表之间对不对得上</div><div class="r">对不上 → 停下来问你，不往下算</div></li>
+            <li><div class="t">取数</div><div class="d">按范围把要用的数取出来</div><div class="r">不合格 → 退回第 2 步</div></li>
+            <li><div class="t">算指标</div><div class="d">按口径算出指标</div><div class="r">不合格 → 重做，最多 2 次</div></li>
+            <li><div class="t">对照官方</div><div class="d">和公司年报里披露的数对一遍</div><div class="r">对不上 → 停下来问你</div></li>
+            <li><div class="t">成稿</div><div class="d">写成底稿，结论栏留空</div><div class="r">不合格 → 停下来问你</div></li>
+          </ol>
+          <div class="block"><h3>它不会做</h3><p>预测、估值、评级、买卖或仓位建议。</p></div>
+          <div class="block"><h3>做完交回</h3><p>底稿：数据摸底、勾稽结果、取数表、指标表、与官方的对照、观察与提醒。</p></div>
+        </div>
+      </div>
+      <div class="confirm">
+        <ul>
+          <li>专家会接着做：<b>恒瑞医药 2023 到 2025 年的盈利能力怎么样？</b></li>
+          <li>最多花：<b>2.00 元</b></li>
+          <li>做完把底稿交回给你，期间你可以随时取消</li>
+        </ul>
+        <div class="row" style="justify-content:flex-end"><button class="btn">取消</button><button class="btn primary">交给专家</button></div>
+      </div>
+    </div></div>
+
+    <!-- E3 -->
+    <div class="screen" id="e3">
+      <div class="band"><b>专家正在处理：财报体检</b><span>第 4 步，共 7 步：取数</span><span>已花 0.18 / 2.00 元</span><span class="grow"></span><button class="btn small">取消</button></div>
+      <div class="work">
+        <div class="rail">
+          <h4>步骤</h4>
+          <div class="st"><span class="ic done">✓</span><div>1 定范围<div class="m">0.03 元</div></div></div>
+          <div class="st"><span class="ic done">✓</span><div>2 数据摸底<div class="m">0.05 元</div></div></div>
+          <div class="st on"><span class="ic done">✓</span><div>3 勾稽<div class="m">0.06 元</div></div></div>
+          <div class="st"><span class="ic now">●</span><div>4 取数<div class="m">正在做</div></div></div>
+          <div class="st"><span class="ic">5</span><div>5 算指标</div></div>
+          <div class="st"><span class="ic">6</span><div>6 对照官方</div></div>
+          <div class="st"><span class="ic">7</span><div>7 成稿</div></div>
+        </div>
+        <div class="center">
+          <div class="muted" style="font-size:12px">第 3 步 · 已通过</div>
+          <h1>勾稽</h1>
+          <p class="muted">三张表之间对不对得上。对不上就不往下算。</p>
+
+          <div class="block"><h3>用了什么</h3>
+            <div class="used">
+              <div>前面的交回物：第 1 步「范围」、第 2 步「摸底」</div>
+              <div>工具：查询 ×6</div>
+              <div>数据：sh600276-financials · 版本 …5868ab1a · 数据到 2025-12-31</div>
+            </div>
+          </div>
+
+          <div class="block"><h3>交回了什么</h3>
+            <div class="tbl"><table>
+              <tr><th>勾稽规则</th><th>2023</th><th>2024</th><th>2025</th></tr>
+              <tr><td>资产 = 负债 + 所有者权益</td><td>平</td><td>平</td><td>平</td></tr>
+              <tr><td>净利润与利润表一致</td><td>平</td><td>平</td><td>平</td></tr>
+              <tr><td>现金净增加额 = 期末 − 期初</td><td>平</td><td>平</td><td>平</td></tr>
+              <tr><td>跨期：上年期末 = 本年期初</td><td>—</td><td>平</td><td>平</td></tr>
+            </table></div>
+          </div>
+
+          <div class="block"><h3>验收</h3>
+            <ul class="chk">
+              <li>做了勾稽</li>
+              <li>每条勾稽规则都平</li>
+              <li>跨期的断点都有解释</li>
+            </ul>
+          </div>
+
+          <div class="block"><details><summary>这一步的过程（6 次查询）</summary>
+            <p style="margin-top:8px" class="muted">查询 balance_sheet（3 行）· 查询 income_statement（3 行）· …</p></details></div>
+        </div>
+        <div class="order">
+          <section><h4>问题</h4>恒瑞医药 2023 到 2025 年的盈利能力怎么样？</section>
+          <section><h4>预算</h4>
+            <div class="meter"><i style="width:9%"></i><i class="res" style="width:3%"></i></div>
+            <div>已花 0.18 元 · 预留 0.05 元</div><div class="muted">上限 2.00 元</div></section>
+          <section><h4>数据</h4>恒瑞医药（600276）<div class="muted">数据到 2025-12-31</div></section>
+          <section><h4>已用时间</h4>3 分 12 秒</section>
+          <section><h4>专家看得到</h4><span class="muted">这段对话、项目里的文件、别的 3 段对话</span></section>
+          <button class="btn small" style="width:100%">看底稿（还没做完）</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- E3 等你 -->
+    <div class="screen" id="e3w">
+      <div class="band wait"><b>专家停下来了，等你决定</b><span>财报体检 · 第 3 步：勾稽</span><span>已花 0.24 / 2.00 元</span><span class="grow"></span><button class="btn small">取消</button></div>
+      <div class="work">
+        <div class="rail">
+          <h4>步骤</h4>
+          <div class="st"><span class="ic done">✓</span><div>1 定范围<div class="m">0.03 元</div></div></div>
+          <div class="st"><span class="ic done">✓</span><div>2 数据摸底<div class="m">0.05 元</div></div></div>
+          <div class="st on"><span class="ic wait">⏸</span><div>3 勾稽<div class="m">等你决定</div></div></div>
+          <div class="st"><span class="ic">4</span><div>4 取数</div></div>
+          <div class="st"><span class="ic">5</span><div>5 算指标</div></div>
+          <div class="st"><span class="ic">6</span><div>6 对照官方</div></div>
+          <div class="st"><span class="ic">7</span><div>7 成稿</div></div>
+        </div>
+        <div class="center">
+          <div class="muted" style="font-size:12px">第 3 步 · 没有通过验收</div>
+          <h1>勾稽</h1>
+          <p class="muted">三张表之间对不对得上。对不上就不往下算。</p>
+
+          <div class="block"><h3>交回了什么</h3>
+            <div class="tbl"><table>
+              <tr><th>勾稽规则</th><th>2023</th><th>2024</th><th>2025</th></tr>
+              <tr><td>资产 = 负债 + 所有者权益</td><td>平</td><td style="color:var(--bad)">差 1,204.00</td><td>平</td></tr>
+              <tr><td>净利润与利润表一致</td><td>平</td><td>平</td><td>平</td></tr>
+              <tr><td>现金净增加额 = 期末 − 期初</td><td>平</td><td>平</td><td>平</td></tr>
+            </table></div>
+          </div>
+
+          <div class="block"><h3>验收</h3>
+            <ul class="chk">
+              <li>做了勾稽</li>
+              <li class="no">每条勾稽规则都平 <small>有勾稽规则不平，不往下算</small></li>
+              <li>跨期的断点都有解释</li>
+            </ul>
+          </div>
+
+          <div class="ask">
+            <h3>你可以</h3>
+            <div class="opt"><input type="radio" name="o" style="width:auto"><div>再试一次<small>专家重做这一步。会再花这一步的预留 0.05 元。</small></div></div>
+            <div class="opt"><input type="radio" name="o" style="width:auto"><div>停止<small>专家停下，把做完的两步交回给你。已花的不退。</small></div></div>
+            <div class="block"><h3>还不知道的</h3><p>差额是数据的问题，还是披露单位四舍五入造成的。</p></div>
+            <div class="row"><span class="muted">这个决定 24 小时内有效</span><button class="btn primary">提交</button></div>
+          </div>
+        </div>
+        <div class="order">
+          <section><h4>问题</h4>恒瑞医药 2023 到 2025 年的盈利能力怎么样？</section>
+          <section><h4>预算</h4>
+            <div class="meter"><i style="width:12%"></i></div>
+            <div>已花 0.24 元</div><div class="muted">上限 2.00 元</div></section>
+          <section><h4>数据</h4>恒瑞医药（600276）<div class="muted">数据到 2025-12-31</div></section>
+          <section><h4>这一步</h4>勾稽不平时专家不重做，直接停下来问你</section>
+        </div>
+      </div>
+    </div>
+
+    <!-- E4 -->
+    <div class="screen" id="e4"><div class="paper">
+      <header>
+        <h1>恒瑞医药 2023 到 2025 年的盈利能力怎么样？</h1>
+        <div class="meta">财报体检 v1 · <span class="tag ok">已完成</span> · 2026-09-29 17:40 · 花了 0.31 / 2.00 元</div>
+        <div class="meta">数据：sh600276-financials · 版本 …5868ab1a · 数据到 2025-12-31</div>
+        <div class="row" style="justify-content:flex-start;margin-top:10px"><button class="btn small">回到对话</button><button class="btn small">重新请专家</button><button class="btn small">导出</button></div>
+      </header>
+
+      <section><h2>一、回答</h2>
+        <p>三年里毛利率逐年上升，净利率同向变化。以下数字均来自已通过勾稽的数据集，并与公司年报披露的关键数字对照一致。</p>
+      </section>
+
+      <section><h2>二、数据</h2>
+        <h3>指标表</h3>
+        <div class="tbl"><table>
+          <tr><th>指标</th><th>2023</th><th>2024</th><th>2025</th></tr>
+          <tr><td>毛利率</td><td>84.6%<sup>1</sup></td><td>85.9%<sup>1</sup></td><td>86.2%<sup>1</sup></td></tr>
+          <tr><td>净利率</td><td>18.8%<sup>1</sup></td><td>22.6%<sup>1</sup></td><td>24.1%<sup>1</sup></td></tr>
+          <tr><td>净资产收益率</td><td>11.0%<sup>1</sup></td><td>14.6%<sup>1</sup></td><td>15.9%<sup>1</sup></td></tr>
+        </table></div>
+        <div style="margin-top:10px"><details><summary>取数表（12 行）</summary></details></div>
+      </section>
+
+      <section><h2>三、专家验过什么</h2>
+        <div class="verified">
+          <div><b>勾稽</b><span>4 条规则 × 3 年，全部平</span><button class="btn small">看明细</button></div>
+          <div><b>对照官方</b><span>与年报里的关键数字对了 12 项，12 项一致<br><span class="muted">没有覆盖：现金流量表的 2 项，年报的关键数字表里没有</span></span><button class="btn small">看明细</button></div>
+        </div>
+      </section>
+
+      <section><h2>四、观察与提醒</h2>
+        <ul><li>2024 年的数是追溯调整后的口径，与当年年报首次披露的数不完全相同。</li></ul>
+      </section>
+
+      <section><h2>五、局限</h2>
+        <ul><li>没有做附注与经营数据。</li><li>没有做同行比较。</li></ul>
+      </section>
+
+      <section><h2>六、它是怎么做的</h2>
+        <div class="flow"><span>✓ 1 定范围</span><span>✓ 2 数据摸底</span><span>✓ 3 勾稽</span><span>✓ 4 取数</span><span>✓ 5 算指标 · 重做过 1 次</span><span>✓ 6 对照官方</span><span>✓ 7 成稿</span></div>
+        <div style="margin-top:10px"><details><summary>每一步的交回物与验收</summary></details></div>
+      </section>
+
+      <section><h2>七、出处</h2>
+        <p><sup>1</sup> sh600276-financials · 版本 …5868ab1a · 数据到 2025-12-31</p>
+      </section>
+
+      <section style="border-bottom:0"><h2>八、我的结论 <span class="tag">用户草稿</span></h2>
+        <div class="mine">
+          <textarea placeholder="专家不下结论。这一栏是你的。"></textarea>
+          <div class="row" style="margin-top:8px"><span class="muted">专家不下结论。这一栏是你的。</span><button class="btn primary">保存</button></div>
+        </div>
+      </section>
+    </div></div>
+  </div>
+</div>
+<div class="sample">样稿 · 数字是编的，不是真实数据</div>
+<script>
+document.querySelectorAll('.tabs button').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.tabs button').forEach(function(x){x.classList.remove('on')});
+    document.querySelectorAll('.screen').forEach(function(x){x.classList.remove('on')});
+    b.classList.add('on'); document.getElementById(b.dataset.s).classList.add('on');
+  });
+});
+var h=location.hash.replace('#',''); if(h&&document.getElementById(h)){document.querySelector('.tabs button[data-s="'+h+'"]').click();}
+</script>
+</body>
+</html>
