@@ -56,11 +56,12 @@
 | 命令行 | `app/cli/` | 运维命令 | 组装 |
 | 后台任务 | `app/tasks/` | 队列任务的入口 | 组装 |
 
-三条硬规则：
+四条硬规则：
 
 1. **领域层不引用任何外层。**
 2. **应用层不引用基础设施层。** 要用数据库或外部服务，先在端口里写接口，实现放基础设施层，在组装里接上。
 3. **接口层按「面」分**（`http/admin`、`http/web`、`http/internal`），因为鉴权的边界是按面划的。`interfaces/endpoints/` 是旧的放法，新路由不再往里放。
+4. **应用层与领域层不直接引用数据库、网络、消息这类库**（`sqlalchemy`、`sqlite3`、`httpx`、`websockets`、`redis`、`celery`、`fastapi` 等，清单在各后端 `app/pyproject.toml`）。2026-09-29 所有者定加。理由：有的代码没有引用基础设施层，但自己就是基础设施，前三条挡不住。
 
 ### 细则：哪些东西不留、不进镜像
 
@@ -81,7 +82,7 @@
 
 | 做法 | 说明 |
 | --- | --- |
-| 自动检查 | 用 `import-linter` 把上面三条硬规则写成契约，和现有的质量检查一起跑，违反就不通过 |
+| 自动检查 | 用 `import-linter` 把上面四条硬规则写成契约，接进 `pytest`，违反就不通过。**已做**（2026-09-29，模板 tpl-backend `bcda893` 与三个后端） |
 | 规则放模板 | 契约先进 `tpl-app`，再同步到三个后端，避免各仓各写一套 |
 | 旧账单独列 | 现有的违反先列清单、逐个还；还清之前，检查对清单里的文件放行，对新文件不放行 |
 
@@ -95,7 +96,17 @@
 | info | 7 | 都是 2026-09-13 之前的：采集器、采集服务、投递；模板带来的 2 个 |
 | knowledge | 7 | 都是 2026-09-13 之前的：入库、检索、投递；模板带来的 2 个 |
 
-三个后端的领域层都没有引用外层。2026-09-27 之后新写的代码（证券采集与建库、数据集登记、语义层、年报抽取）没有违反。
+三个后端的领域层都没有引用外层。2026-09-27 之后新写的代码（证券采集与建库、数据集登记、语义层、年报抽取）没有违反前三条。
+按第四条查，另有（2026-09-29 自动检查查出）：
+
+| 后端 | 位置 | 直接用了 |
+| --- | --- | --- |
+| 三个后端与模板 | `application/ports/outbox.py`、`application/audit_context.py` | `sqlalchemy`、`starlette` |
+| info | `domain/info_identity_v1.py` | `httpx` |
+| info | `application/securities/dataset/sqlite_writer.py`（远程 2026-09-27 写的） | `sqlite3` |
+| knowledge | `application/services/dataset_query.py`（远程 2026-09-24 写的） | `sqlite3` |
+| investment | `application/workbench/provisioning.py` | `httpx`、`websockets` |
+
 「模板带来的 2 个」是登录服务与可靠投递，三个后端一样，要在模板里改。
 
 别的欠账：
