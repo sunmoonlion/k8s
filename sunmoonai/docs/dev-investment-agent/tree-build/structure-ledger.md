@@ -103,6 +103,7 @@
 | H18 | 本机联调脚本起对象存储时偶尔抢跑（容器首次启动会自己重启一次），`up` 第一次可能失败，重跑即可 | k8s 仓 `scripts/local-integration/dataset-chain/run.sh` | 不急 | 待做 |
 | H19 | k8s 仓部署目录里 info、knowledge 的两个集成测试，直接引用了 info 的采集服务与 knowledge 的入库、检索、投递服务，并替换这些模块里的名字（info 8 处、knowledge 9 处）。A7 乙、A8 每做一步，这两个测试都要跟着改。办法同 A6：远程先备好补丁并在草稿副本里验证，再交给本地助手 | k8s 仓 `app-platform/scripts/integration/` | 随 A7 乙、A8 | 待做 |
 | H20 | 远程此前一直把 info 的 `test_abrupt_process_exit_releases_source_lock` 记为「原来就不过」。**记错了**：是远程跑测试时数据库地址写成了 `postgresql://`，那个测试起的子进程连不上；写成 `postgresql+asyncpg://` 就通过。代码没有问题。2026-09-28 以来各份记录里的「1 个失败」都是这个原因 | 远程的测试环境 | — | 已查清（2026-09-29）。以后跑测试一律用带驱动名的地址 |
+| H23 | 远程 2026-09-29 回答所有者时说「两个前端没有任何页面调用来源、采集器、采集任务、文档这些接口」。**说错了**：当时查的目录不存在，查不到东西不等于没有。实际上 info 管理端有一个旧页面「Info crawl」（2026-07），能列文档、建采集任务。证券采集确实没有页面 | 远程的回答 | — | 已更正（2026-09-29），写进 [`0008-info-intake`](SDD/modules/0008-info-intake.md)「现状」 |
 | H21 | 供给器的配置里混着两样东西：怎么连供给器（地址、令牌），和新建沙箱默认用哪个模型。后一样是业务设置，应用层现在经供给器的 `config` 去读。以后分开：默认模型单独交给应用层 | investment-backend `infrastructure/workbench/provisioner.py` | 不急 | 待做 |
 | H22 | 跑测试用的两个数据库地址写法不同：`DELIVERY_TEST_DATABASE_URL` 要带驱动名（`postgresql+asyncpg://`），`AGENT_TEST_DATABASE_URL` 不能带（`postgresql://`）。写反了会有测试失败或报错，而且报的错看不出是地址的问题 | 三个后端的测试 | 不急。把两处的写法统一，或在测试开头检查并给出明白的提示 | 待做 |
 
