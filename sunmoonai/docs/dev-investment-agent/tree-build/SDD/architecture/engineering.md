@@ -93,8 +93,8 @@
 | 后端 | 文件数 | 其中 |
 | --- | --- | --- |
 | investment | 0 | 工作台的 5 个已改（2026-09-29，`656a93d`）；模板带来的 2 个已改（2026-09-29，A6）；旧运行时的 5 个已随删除消失 |
-| info | 2 | 都是 2026-09-13 之前的：采集服务（1933 行）与它的投递。采集器 2 个、原件对账已改（2026-09-29，A7 甲）；模板带来的 2 个已改（A6） |
-| knowledge | 5 | 都是 2026-09-13 之前的：入库 3 个、检索、投递。模板带来的 2 个已改（A6） |
+| info | 2 | 都是 2026-09-13 之前的：采集服务（1933 行）与它的投递，**等集群迁移完成再改**（所有者 2026-09-29 定）。采集器 2 个、原件对账已改（2026-09-29，A7 甲）；模板带来的 2 个已改（A6） |
+| knowledge | 5 | 都是 2026-09-13 之前的：入库 3 个、检索、投递，**等集群迁移完成再改**（所有者 2026-09-29 定）。模板带来的 2 个已改（A6） |
 
 三个后端的领域层都没有引用外层。2026-09-27 之后新写的代码（证券采集与建库、数据集登记、语义层、年报抽取）没有违反前三条。
 按第四条查，另有（2026-09-29 自动检查查出）：
@@ -102,10 +102,10 @@
 | 后端 | 位置 | 直接用了 |
 | --- | --- | --- |
 | 三个后端与模板 | `application/ports/outbox.py`、`application/audit_context.py` | `sqlalchemy`、`starlette`。**已改**（2026-09-29，A6） |
-| info | `domain/info_identity_v1.py` | `httpx`。只用来解析地址、不发请求，规则本身是冻结的；建议记为例外，等所有者定 |
+| info | `domain/info_identity_v1.py` | `httpx`。只用来解析地址、不发请求，规则本身是冻结的。**例外**，所有者 2026-09-29 同意，不用改 |
 | info | `application/securities/dataset/sqlite_writer.py`（远程 2026-09-27 写的） | `sqlite3`。**已改**（2026-09-29，A7 甲） |
-| knowledge | `application/services/dataset_query.py`（远程 2026-09-24 写的） | `sqlite3` |
-| investment | `application/workbench/provisioning.py` | `httpx`、`websockets` |
+| knowledge | `application/services/dataset_query.py`（远程 2026-09-24 写的） | `sqlite3`。**已改**（2026-09-29） |
+| investment | `application/workbench/provisioning.py` | `httpx`、`websockets`。**已改**（2026-09-29） |
 
 「模板带来的 2 个」是登录服务与可靠投递，已在模板里改好并同步到三个后端（2026-09-29）。可靠投递的旧路径还留着一个只做转发的文件，为的是部署目录里的集成测试能照常跑；集群迁移完成后删。
 
@@ -122,7 +122,7 @@
 | 父仓库里的检索契约消费锁 | `investment-app/contracts/knowledge-retrieval-provider-lock.json` | 所有者 2026-09-29 定撤销检索身份；这份锁到时一并删 |
 | 接口层两套放法并存 | 三个后端 | 工作台路由挪到 `http/web`；其余随改随挪 |
 | 首页还挂着旧的研究工作区，约 829 行 | investment-web-frontend | 随前端改造处理 |
-| 应用层里放着对外的实现（会合点管理通道、供给器、Redis 发布、令牌签名） | investment-backend `application/workbench/` | 2026-09-29 改工作台时发现。没有引用基础设施层，但自己就是基础设施；见账本第七节 |
+| 应用层里放着对外的实现（会合点管理通道、供给器、Redis 发布、令牌签名） | investment-backend `application/workbench/` | 前三样**已挪到基础设施层**（2026-09-29，`0d55ab6`）。令牌签名还在应用层，规则没定（账本 H3） |
 
 **留待后面做的事都记在 [工程结构整改的账本](../../structure-ledger.md)。** 上表只说现状，以账本为准。
 

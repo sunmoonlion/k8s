@@ -20,12 +20,12 @@
 | A2 | 删除旧运行时、15 个旧脚本；镜像不含脚本与评测目录 | — | 已做，investment-backend `0c1a030` |
 | A3 | 删除旧运行时的历史设计文档（3 份 v4 文档、18 份 ADR） | — | 已做，investment-backend `0c22ea6` |
 | A4 | 工作台 5 个应用层文件改依赖方向：经端口引用，组装放到 `bootstrap` | — | 已做，investment-backend `656a93d`。行为不变：测试 479 过、5 跳过，57 条路由逐条相同。这一步里新发现的事记在下面第七节（H1 至 H7）；A5 查出的是 H8 至 H14 |
-| A5 | 加自动检查（`import-linter`），违反就不通过。共四条契约：原来的三条硬规则，加所有者 2026-09-29 定的第四条（H5） | — | 已做。模板 tpl-backend `bcda893`；info-backend `240b01a`；knowledge-backend `db38178`；investment-backend `9caac46`。旧账放行清单：模板 10 条，info 27 条，knowledge 28 条，investment 12 条。A6 之后：模板 1 条，info 18 条，knowledge 19 条，investment 3 条。A7 甲 之后：info 12 条 |
+| A5 | 加自动检查（`import-linter`），违反就不通过。共四条契约：原来的三条硬规则，加所有者 2026-09-29 定的第四条（H5） | — | 已做。模板 tpl-backend `bcda893`；info-backend `240b01a`；knowledge-backend `db38178`；investment-backend `9caac46`。旧账放行清单：模板 10 条，info 27 条，knowledge 28 条，investment 12 条。A6 之后：模板 1 条，info 18 条，knowledge 19 条，investment 3 条。A7 甲 之后：info 12 条（其中 1 条是例外）。H1、H2、H12 之后：investment 1 条，knowledge 18 条 |
 | A6 甲 | 模板带来的可靠投递改依赖方向：代码挪到基础设施层。连同 H8、H9。先改模板，再同步到三个后端 | — | 已做。模板 tpl-backend `f27dabe`；info-backend `d3a4202`；knowledge-backend `23586c4`；investment-backend `1584de1`。旧路径留了一个只做转发的文件（H15） |
 | A6 乙 | 模板带来的登录服务改依赖方向：经端口引用，组装放到 `bootstrap` | — | 已做。模板 tpl-backend `058c663`；info-backend `c54388b`；knowledge-backend `7f12225`；investment-backend `6abae02`。部署目录里有一个集成测试要跟着改，归本地助手；所有者 2026-09-29 同意派任务给它，补丁与交接单在 [`handoff-luna/2026-09-29-a6/`](handoff-luna/2026-09-29-a6/README.md)，见迁移账本第 25 行 |
 | A7 甲 | info：两个采集器经端口取数；数据集写文件挪到基础设施层（H11）；原件对账整个挪到基础设施层 | — | 已做，info-backend `89f4d77`。放行清单 18 条减到 12 条 |
-| A7 乙 | info：采集服务（`info_crawl_service.py`，1933 行）与它的投递（`delivery_outbox.py`）改依赖方向。**规模比 2026-09-29 早些时候说的「5 个旧文件」大得多**：110 处直接操作数据库会话，9 个表模型，约 20 个测试文件（约 3900 行）和部署目录里一个 497 行的集成测试都直接依赖它的内部写法（替换模块里的名字 8 处）。要分几步做：先把对外的六样（取数、对象存储、知识服务、搜索、并发名额、排队）改成经端口；再把纯计算搬出去；最后是数据库这一层（实体与表的映射分开，加仓储）。做完后从放行清单里删 10 条 | 所有者定：现在做，还是等集群迁移完成。远程建议等：每一步都会让部署目录里的集成测试失败，迁移期间要反复交接 | 等所有者定 |
-| A8 | knowledge 的 5 个旧文件改依赖方向（入库 3、检索、投递，共约 1670 行），连同 H12。与 A7 乙 是同一种情况：部署目录里的集成测试直接依赖它们的内部写法（替换模块里的名字 9 处）。做完后从放行清单里删 17 条 | 与 A7 乙 一起定 | 等所有者定 |
+| A7 乙 | info：采集服务（`info_crawl_service.py`，1933 行）与它的投递（`delivery_outbox.py`）改依赖方向。**规模比 2026-09-29 早些时候说的「5 个旧文件」大得多**：110 处直接操作数据库会话，9 个表模型，约 20 个测试文件（约 3900 行）和部署目录里一个 497 行的集成测试都直接依赖它的内部写法（替换模块里的名字 8 处）。要分几步做：先把对外的六样（取数、对象存储、知识服务、搜索、并发名额、排队）改成经端口；再把纯计算搬出去；最后是数据库这一层（实体与表的映射分开，加仓储）。做完后从放行清单里删 10 条 | 集群迁移完成 | 待做。**所有者 2026-09-29 定：等集群迁移完成再做** |
+| A8 | knowledge 的 5 个旧文件改依赖方向（入库 3、检索、投递，共约 1670 行），连同 H12。与 A7 乙 是同一种情况：部署目录里的集成测试直接依赖它们的内部写法（替换模块里的名字 9 处）。做完后从放行清单里删 17 条 | 集群迁移完成 | 待做。**所有者 2026-09-29 定：等集群迁移完成再做**。其中 H12（数据集查询）不牵连部署目录，已先做 |
 
 ## 二、删除旧运行时之后留下的尾巴
 
@@ -83,8 +83,8 @@
 
 | # | 内容 | 位置 | 等什么 | 状态 |
 | --- | --- | --- | --- | --- |
-| H1 | 应用层里放着对外的实现：会合点管理通道的 WebSocket 实现 `WsRelayAdmin`、供给器的 HTTP 实现 `HttpProvisioner`（直接用 `httpx`、`websockets`）。接口 `RelayAdmin` 已经有了，只是实现没有挪走 | investment-backend `application/workbench/provisioning.py` | A5 做完。挪到基础设施层，在 `bootstrap` 里接上 | 待做 |
-| H2 | 应用层里放着 Redis 发布的实现 `Publisher` | investment-backend `application/workbench/runner.py` | 同上 | 待做 |
+| H1 | 应用层里放着对外的实现：会合点管理通道的 WebSocket 实现 `WsRelayAdmin`、供给器的 HTTP 实现 `HttpProvisioner`（直接用 `httpx`、`websockets`）。接口 `RelayAdmin` 已经有了，只是实现没有挪走 | investment-backend `application/workbench/provisioning.py` | — | 已做，investment-backend `0d55ab6`。实现挪到 `infrastructure/workbench/`，端口补上 `Provisioner`、`RelayAdmin`、`Cipher`；四个类的代码逐字相同。会合点管理通道原来没有测试，这次补了 |
+| H2 | 应用层里放着 Redis 发布的实现 `Publisher` | investment-backend `application/workbench/runner.py` | — | 已做，investment-backend `0d55ab6`。挪到 `infrastructure/workbench/publisher.py`，改名 `RedisPublisher`，端口 `EventPublisher` |
 | H3 | 应用层里直接用签名库签发令牌（`joserfc`） | investment-backend `application/workbench/tokens.py` | 同上。先定规则：签名算不算「外部」 | 待做 |
 | H4 | 基础设施层引用了应用层的数据结构与异常（`application/dto/outbox`、`application/errors`）。方向是「外层引用内层」，规则允许。原来 `durable_tasks` 与基础设施层互相引用，已随 A6 甲解开 | 三个后端（模板带来的） | — | 已做，随 A6 甲 |
 | H5 | 自动检查多加一条：应用层与领域层不直接引用数据库、网络、消息这类库 | 规则 | — | 已做，随 A5。**所有者 2026-09-29 定：加** |
@@ -92,9 +92,9 @@
 | H7 | 端口上有 `commit()`、`flush()`：应用层原来有 7 处直接操作数据库会话，为了行为不变，这次原样搬到端口上。更干净的做法是全部改用 `transaction()` | investment-backend `application/workbench/advisor.py`、`ledger.py` | 不急。要改提交点，得单独做、单独测 | 待做 |
 | H8 | outbox 端口的方法签名里直接写了数据库会话的类型（`sqlalchemy`） | 三个后端与模板 `application/ports/outbox.py` | — | 已做，随 A6 甲。事务句柄改成不透明的类型，端口只负责原样交给实现 |
 | H9 | 审计上下文直接读网页框架的请求对象（`starlette`） | 三个后端与模板 `application/audit_context.py` | — | 已做，随 A6 甲。应用层只收请求头；读请求的那一行留在组装层 |
-| H10 | 领域层的身份规则用了 `httpx`。**查过之后认为不该改**：这份规则是冻结的（文件开头写明不许就地改，迁移 0008 也用它），用的只是 `httpx.URL` 解析地址，不发请求；换成别的解析器，地址归一的结果可能不同，已有文档的身份会变。建议记为例外，在放行清单里注明，不算旧账 | info-backend `domain/info_identity_v1.py` | 所有者定：同意记为例外 | 等所有者定 |
+| H10 | 领域层的身份规则用了 `httpx`。**查过之后认为不该改**：这份规则是冻结的（文件开头写明不许就地改，迁移 0008 也用它），用的只是 `httpx.URL` 解析地址，不发请求；换成别的解析器，地址归一的结果可能不同，已有文档的身份会变。建议记为例外，在放行清单里注明，不算旧账 | info-backend `domain/info_identity_v1.py` | — | **所有者 2026-09-29 定：同意记为例外。** 放行清单里已注明原因，不算旧账，不用还 |
 | H11 | 数据集文件的写入实现放在了应用层（直接用 `sqlite3`）。远程 2026-09-27 写的 | info-backend | — | 已做，随 A7 甲。各张表的排法留在应用层（`dataset/tables.py`），写文件挪到 `infrastructure/securities/dataset_file.py` |
-| H12 | 数据集文件的查询实现放在了应用层（直接用 `sqlite3`）。远程 2026-09-24 写的 | knowledge-backend `application/services/dataset_query.py` | 随 A8 | 待做 |
+| H12 | 数据集文件的查询实现放在了应用层（直接用 `sqlite3`）。远程 2026-09-24 写的 | knowledge-backend `application/services/dataset_query.py` | — | 已做，knowledge-backend `9bba92a`。规则（只读检查、按名字找口径、出处）留在应用层；读 SQLite 文件的实现挪到 `infrastructure/datasets/`，改名 `SqliteDatasetQueries`。7 个方法的代码逐字相同 |
 | H13 | 模板与 knowledge 的 `tests/test_kernel_invariants.py` 有一行超长，代码检查报 1 个错。改之前就有，不是这次引入的 | tpl-backend、knowledge-backend | 随 A6 在模板里改 | 待做 |
 | H14 | 模板的三个子仓（后端与两个前端）在远程工作区里原来没有 `fable` 分支。这次给 tpl-backend 建了；两个前端还没有 | tpl-app 的子仓 | 要动模板前端时再建 | 待做 |
 | H15 | 可靠投递的旧路径 `app/application/services/durable_tasks.py` 现在只做转发，为的是部署目录里的集成测试还能跑。它是应用层引用基础设施层，在放行清单里占 1 条 | 三个后端与模板 | 集群迁移完成。与迁移账本第 24 行一起做：先改集成测试的引用，再删这个文件 | 待做 |
@@ -103,6 +103,8 @@
 | H18 | 本机联调脚本起对象存储时偶尔抢跑（容器首次启动会自己重启一次），`up` 第一次可能失败，重跑即可 | k8s 仓 `scripts/local-integration/dataset-chain/run.sh` | 不急 | 待做 |
 | H19 | k8s 仓部署目录里 info、knowledge 的两个集成测试，直接引用了 info 的采集服务与 knowledge 的入库、检索、投递服务，并替换这些模块里的名字（info 8 处、knowledge 9 处）。A7 乙、A8 每做一步，这两个测试都要跟着改。办法同 A6：远程先备好补丁并在草稿副本里验证，再交给本地助手 | k8s 仓 `app-platform/scripts/integration/` | 随 A7 乙、A8 | 待做 |
 | H20 | 远程此前一直把 info 的 `test_abrupt_process_exit_releases_source_lock` 记为「原来就不过」。**记错了**：是远程跑测试时数据库地址写成了 `postgresql://`，那个测试起的子进程连不上；写成 `postgresql+asyncpg://` 就通过。代码没有问题。2026-09-28 以来各份记录里的「1 个失败」都是这个原因 | 远程的测试环境 | — | 已查清（2026-09-29）。以后跑测试一律用带驱动名的地址 |
+| H21 | 供给器的配置里混着两样东西：怎么连供给器（地址、令牌），和新建沙箱默认用哪个模型。后一样是业务设置，应用层现在经供给器的 `config` 去读。以后分开：默认模型单独交给应用层 | investment-backend `infrastructure/workbench/provisioner.py` | 不急 | 待做 |
+| H22 | 跑测试用的两个数据库地址写法不同：`DELIVERY_TEST_DATABASE_URL` 要带驱动名（`postgresql+asyncpg://`），`AGENT_TEST_DATABASE_URL` 不能带（`postgresql://`）。写反了会有测试失败或报错，而且报的错看不出是地址的问题 | 三个后端的测试 | 不急。把两处的写法统一，或在测试开头检查并给出明白的提示 | 待做 |
 
 ## 八、自动检查怎么用
 
