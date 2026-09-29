@@ -19,7 +19,7 @@
 | A1 | 规则写进工程架构文档 | — | 已做，k8s `3d755f0c` |
 | A2 | 删除旧运行时、15 个旧脚本；镜像不含脚本与评测目录 | — | 已做，investment-backend `0c1a030` |
 | A3 | 删除旧运行时的历史设计文档（3 份 v4 文档、18 份 ADR） | — | 已做，investment-backend `0c22ea6` |
-| A4 | 工作台 5 个应用层文件改依赖方向：经端口引用，组装放到 `bootstrap` | 不等 | 进行中 |
+| A4 | 工作台 5 个应用层文件改依赖方向：经端口引用，组装放到 `bootstrap` | — | 已做，investment-backend `656a93d`。行为不变：测试 479 过、5 跳过，57 条路由逐条相同。这一步里新发现的事记在下面第七节（H1 至 H7） |
 | A5 | 加自动检查（`import-linter`），违反三条硬规则就不通过 | A4 做完 | 待做 |
 | A6 | 模板带来的 2 个文件（登录服务、可靠投递）改依赖方向：先改模板，再同步到三个后端 | A5 做完 | 待做 |
 | A7 | info 的 5 个旧文件改依赖方向（采集器 2、采集服务、投递、原件对账） | A6 做完 | 待做 |
@@ -73,3 +73,19 @@
 | # | 内容 | 归谁 | 说明 |
 | --- | --- | --- | --- |
 | F1 | 远程机家目录下 `sunmoon-nginx-sni-20260927-v1`、`sunmoon-registry-publisher-20260928-v1`、`sunmoon-scanner-patches-20260927-v1`、`sunmoon-scanner-stable-20260927-v1`、`sunmoon-traefik-20260927-v1`，合计约 660 MB | 本地助手 | 是它借远程机下载公开物料时留下的，已登记在它的最终清理清单里。所有者 2026-09-29 问过要不要删，远程建议等迁移验收之后按它的清单清 |
+
+## 七、做 A4 时新发现的
+
+2026-09-29 改工作台依赖方向时看到的。都不违反「应用层不引用基础设施层」这一条的字面，所以 A4 没有动它们；但按分层的本意，它们放错了地方。
+编号用 H，是为了不和 [网页差距盘点](SDD/modules/0002-web-gap.md) 里的后端契约缺口 G1 至 G7 撞号。
+
+| # | 内容 | 位置 | 等什么 | 状态 |
+| --- | --- | --- | --- | --- |
+| H1 | 应用层里放着对外的实现：会合点管理通道的 WebSocket 实现 `WsRelayAdmin`、供给器的 HTTP 实现 `HttpProvisioner`（直接用 `httpx`、`websockets`）。接口 `RelayAdmin` 已经有了，只是实现没有挪走 | investment-backend `application/workbench/provisioning.py` | A5 做完。挪到基础设施层，在 `bootstrap` 里接上 | 待做 |
+| H2 | 应用层里放着 Redis 发布的实现 `Publisher` | investment-backend `application/workbench/runner.py` | 同上 | 待做 |
+| H3 | 应用层里直接用签名库签发令牌（`joserfc`） | investment-backend `application/workbench/tokens.py` | 同上。先定规则：签名算不算「外部」 | 待做 |
+| H4 | 基础设施层引用了应用层的数据结构与异常（`application/dto/outbox`、`application/errors`、`application/services/durable_tasks`）。方向是「外层引用内层」，规则允许；但其中 `durable_tasks` 与基础设施层互相引用，要随 A6 一起解开 | 三个后端（模板带来的） | A6 | 待做 |
+| H5 | 自动检查的契约要不要再加一条：应用层不直接引用 `sqlalchemy`、`httpx`、`websockets`、`redis` 这类库。加了才能挡住 H1、H2 这种「没引用基础设施层、但自己就是基础设施」的写法 | 规则 | A5 时提给所有者定 | 等所有者定 |
+| H6 | 端口 `WorkbenchStore` 有 64 个方法，是照着现有的仓储原样列的。以后按用途拆成几个小端口（会话、委托、待办、凭据……） | investment-backend `application/ports/workbench.py` | 不急。工作台下一次大改时顺带做 | 待做 |
+| H7 | 端口上有 `commit()`、`flush()`：应用层原来有 7 处直接操作数据库会话，为了行为不变，这次原样搬到端口上。更干净的做法是全部改用 `transaction()` | investment-backend `application/workbench/advisor.py`、`ledger.py` | 不急。要改提交点，得单独做、单独测 | 待做 |
+
