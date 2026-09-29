@@ -40,3 +40,10 @@
 | 26 | info 后端：数据库迁移到 `20260929_0013` | 采集申请的两张表、关注清单的两张表（连同第一批十家）、采集批次上多两列（记建库被拒绝） | info-backend `3b5d037` | 待办 |
 | 27 | info 的配置（都可不配，有默认值）：`SECURITY_REQUEST_MAX_OPEN`（默认 5）；`SECURITY_REQUEST_SOURCES_JSON`（哪些应用可以把用户带到申请页、各自的回跳地址；默认认 `investment` 与 `knowledge`，都没有回跳地址）；`KNOWLEDGE_WEB_BASE_URL`（knowledge 网页端的地址，用来拼「去看这个数据集」的链接） | 采集申请。不配回跳地址，页面上就没有「回到原处」；不配 knowledge 的地址，就没有「去看这个数据集」 | 同上 | 待办 |
 | 28 | info 的数据库权限清单里加上新的四张表：`api` 身份对 `security_request`、`security_request_requester`、`security_watchlist`、`security_watchlist_log` 要能读写；`worker` 身份对 `security_ingestion` 的新两列要能写 | 不加的话，申请的接口和建库任务记拒绝原因都会被数据库拒绝 | 同上 | 待办（权限清单在部署目录里，归本地助手） |
+| 29 | investment 后端：数据库迁移到 `20260929_0012` | 项目表；对话加种类、项目、名字；委托加项目。已有的会话各自归入一个项目 | investment-backend `ef0211c` | 待办 |
+| 30 | investment 的数据库权限清单里加上新表 `workbench_projects`：`api` 身份要能读写，`runner` 身份要能读 | runner 每一轮都要读项目所在的机器与目录 | 同上 | 待办 |
+| 31 | 沙箱镜像里 Codex 的配置关掉 `multi_agent` 与 `goals` | 子代理与「目标」是账外的：事件不进账、费用不进预算。工作台起线时已经关了，镜像里再关一道 | investment-backend `4897cf4`；[账本](structure-ledger.md) H30 | 待办 |
+| 32 | 供给器认得两个新的项：`records_mcp_url`、`records_mcp_token`，并把它们写进沙箱里 Codex 的配置（一个新的工具服务，名字建议 `sunmoon_workbench`） | 专家读本项目别的对话与底稿。供给器不认得之前，investment 这边的开关不要打开 | investment-backend `5098d7b` | 待办 |
+| 33 | investment 的配置：`WORKBENCH_RECORDS_MCP_ENABLED`（默认关）、`WORKBENCH_RECORDS_MCP_URL`（沙箱访问工作台这个地址用的，集群内的地址）、`WORKBENCH_RECORDS_MCP_RATE_PER_MINUTE`（默认 60） | 同上。第 32 项做完、在集群上验过之后再打开 | 同上 | 待办 |
+| 34 | 沙箱到 investment 后端的网络放行：沙箱要能访问 `/api/mcp/workbench` | 同上。现在沙箱只访问知识服务与会合点 | 同上 | 待办 |
+| 35 | 本机的沙箱镜像 `sunmoon/sandbox:dev` 是远程 2026-09-29 按仓库里的 Dockerfile 重新构建的（原来的不在了）。只读用了 `sandbox-platform` 目录，没有改它 | 本机联调要用 | — | 只是告知 |

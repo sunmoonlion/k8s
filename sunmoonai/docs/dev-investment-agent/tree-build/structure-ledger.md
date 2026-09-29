@@ -107,6 +107,26 @@
 | H21 | 供给器的配置里混着两样东西：怎么连供给器（地址、令牌），和新建沙箱默认用哪个模型。后一样是业务设置，应用层现在经供给器的 `config` 去读。以后分开：默认模型单独交给应用层 | investment-backend `infrastructure/workbench/provisioner.py` | 不急 | 待做 |
 | H22 | 跑测试用的两个数据库地址写法不同：`DELIVERY_TEST_DATABASE_URL` 要带驱动名（`postgresql+asyncpg://`），`AGENT_TEST_DATABASE_URL` 不能带（`postgresql://`）。写反了会有测试失败或报错，而且报的错看不出是地址的问题 | 三个后端的测试 | 不急。把两处的写法统一，或在测试开头检查并给出明白的提示 | 待做 |
 
+## 七之二、做工作台第 4 步时新发现的
+
+2026-09-29 做项目、对话的种类、专家这一面的接口时看到的。前六条是在真的 Codex 0.155.1 上跑出来的。全文见 [`0001-workbench-projects`](SDD/modules/0001-workbench-projects.md)。
+
+| # | 内容 | 位置 | 等什么 | 状态 |
+| --- | --- | --- | --- | --- |
+| H24 | 联调驱动从 `scripts/` 搬到 `tests/drivers/` 之后路径算错，搬家后一直跑不起来，没有人发现 | investment-backend `tests/drivers/workbench_chain_driver.py` | — | 已做，`4897cf4` |
+| H25 | 联调驱动等事件时不给沙箱的租约续期（租约 10 秒）。模型一慢，连接就被当成丢了，审批答复失败。租约是后来加的，驱动没跟上 | 同上 | — | 已做，`4897cf4` |
+| H26 | 推理摘要的增量事件被记进了账：后缀名单里没有 0.155.1 的新名字。一轮几十条；读事件的接口一次最多 500 条，几轮之后就取不全 | investment-backend `application/workbench/runner.py` | — | 已做，`4897cf4`。凡是增量都不入账 |
+| H27 | 页面要流式显示，增量事件要「发给页面但不入账」。现在是既不入账也不发 | 同上 | 第 7 步做聊天页时 | 待做 |
+| H28 | 同一条线上换了情形，Codex 不告诉模型手里的工具变了；模型按自己先前说过的话行事 | — | — | 已做，`4897cf4`。换情形时往线里插一段说明 |
+| H29 | 被只读拦下的命令，Codex 不发事件：命令在用户机器上执行了、写被拒了，账里没有这条命令。聊天页显示不出「试过、被拒」，审计少一条 | Codex 0.155.1 | 可能的补法：一轮结束后用 `thread/items/list` 对一遍账。要不要做，等做聊天页时看 | 待定 |
+| H30 | 模型会起子代理、会设「目标」让线自己接着跑，都是账外的：事件不进账，费用不进预算 | — | — | 已做，`4897cf4`，起线与重新装载线时关掉。沙箱镜像的配置里也该关，作为第二道，见 [迁移账本](pending-after-migration.md) 31 |
+| H31 | 专家包里「退回第 k 步」没有次数上限：退回之后这一步再不过，还会再退回，只有预算能拦住 | investment-backend `application/workbench/advisor.py` | 要不要给退回也设上限，是专家包的规矩，请所有者定 | 待定 |
+| H32 | 机器在不在线没有真的跟踪：登记时写在线，之后没有人改（初稿缺口 G6）。聊天「机器不在线时不给执行环境」、请专家「机器不在线交不出去」这两支代码有、测试有，现在实际走不到 | investment-backend | 本地代理的心跳经会合点报给工作台。要动会合点与本地代理 | 待做 |
+| H33 | 设置页里审批策略能选 `on-failure`，Codex 0.155.1 已经不认。后端按 `on-request` 发 | investment-web | 第 7 步 | 待做 |
+| H34 | 专家一步的费用按占位的单价算。联调里机制烟测两步记了 1.02 | investment-backend `application/workbench/advisor.py` 的 `Pricing` | 和预算的默认值（`W4`）一起定 | 待定 |
+| H35 | 读项目记录的工具服务用的限流是进程内计数，多个进程各算各的 | investment-backend `interfaces/mcp/workbench_mcp.py` | 知识服务的工具也是这样。要换成共用的计数时一起换 | 待做 |
+| H36 | 专家这一面新加的读取（步骤、待办、底稿）每次都从账里现算。委托多了、事件多了会慢 | investment-backend `application/workbench/expert_desk.py` | 真的慢了再说 | 待定 |
+
 ## 八、自动检查怎么用
 
 | 项 | 说明 |
