@@ -9,6 +9,7 @@
 | | 是什么 |
 | --- | --- |
 | [`PRD/requirement.md`](PRD/requirement.md) | **先读这一份**：产品是什么、两层决策权、六条前提、整体功能、切块、在什么基础上开发 |
+| [`PRD/apps/`](PRD/apps/README.md) | **用户看得见的产品**（2026-09-29）：investment、info、knowledge 三个应用各有什么页面、怎么连在一起；各一份，加一份全局设计 |
 | [`PRD/value.md`](PRD/value.md) | 三元组、四臂检验、卖点与入口分开、评测一等公民、`F-POS-*`、第一切口 |
 | [`PRD/knowledge.md`](PRD/knowledge.md) | 数据与用户资料 |
 | [`PRD/user-guide.md`](PRD/user-guide.md) | 用户说明：账号、云端沙箱、本地代理各是什么，第一次怎么设，之后什么时候还要再动（网页提示文字从这里摘） |

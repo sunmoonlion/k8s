@@ -1,5 +1,7 @@
 # `0002-web` 网页设计（初稿，待所有者改）
 
+> **2026-09-29：第二、三节与 4.1 至 4.3 已被 [`PRD/apps/investment.md`](../../PRD/apps/investment.md) 替换。** 所有者当天定了 investment 的大方向：聊天、工作、专家三个功能，工作区与项目，专家可从对话里转入。其余各节（审查面、底稿页的区块、设置、我的机器、公开首页、说明文字、组件、文案原则）仍然有效。第九节的第 1 件事（会话页的样子）已有答案：聊天是气泡，工作是时间线。
+
 > 页表与义务在 [`0002-web.md`](0002-web.md)。这一份回答"用户在网页里怎么走、每页长什么样、什么状态下看到什么"。
 > 依据：[需求](../../PRD/requirement.md)「两层决策权」、[方向盘](../architecture/wheel.md)、[审批](../architecture/approval.md)「Task 级审查必须表达」、[Task 契约](../architecture/task-contract.md)「结果信封」「交回物」、[工作区](../architecture/workspace.md)、[状态机](../architecture/state-machine.md)。
 > 初稿由远程助手 2026-09-24 写；所有者改定后才动代码（先冻结契约，再按 `F-WEB-06` 生成客户端）。
