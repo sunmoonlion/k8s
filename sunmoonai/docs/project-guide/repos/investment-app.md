@@ -1,5 +1,12 @@
 # investment-app（投资研究智能体）
 
+> **2026-09-29：本文大部分内容已经过时。** 本文写于 2026-09-13 至 09-22，讲的是 2026-07 的智能体运行时
+> （`domain/agent`、`application/agent`、`infrastructure/agent`、`infrastructure/graph`、Agent 与 Pilot 两组路由）。
+> 这套运行时已按所有者的决定删除（investment-backend `0c1a030`）。
+> 第 1.1、2、3、4 节和第 7 节表格里关于它的内容**都不再成立**；第 5 节里它的表还在库里，代码不再使用。
+> 现在的产品代码是工作台，设计见 `dev-investment-agent/tree-build/SDD/modules/0001-workbench.md`。
+> 本文需要重写，还没有做。
+
 > 源码取证：2026-09-13；运行状态补至 2026-09-20 本机 KIND 固定候选 ｜ 骨架继承 [`tpl-app.md`](tpl-app.md)，本文只写它多出来的东西
 
 ## 1. 定位
@@ -154,13 +161,11 @@ Pilot run 用 `owner_actor_id + idempotency_key`。
 
 | 项 | 实际状态 |
 | --- | --- |
-| **`RunBudget` 在生产生效** | 未接线，见 §4.5。`budget_exceeded` 生产不可达。现有实现是内存态 pydantic model、随 graph state 传递，**进程一死即失**，结构上满足不了「跨 run／跨进程仍须正确」的判据。载体须换 PG——见 [`constraints.md`](../../dev-investment-agent/tree-build/rules/constraints.md)「智能体」`C-A3`（四本账必须落 PostgreSQL），不是单独接线 |
-| **Web 面接了 Agent/Pilot** | **未接**。`/api/web/v1` 默认 `Unavailable` 适配器 503；开 flag 也只是内存 reference 适配器，不调 `AgentRunService` / `PilotService` |
-| Attempt / Invocation 表 | **无 DB 表**，仅 spike 内存类 |
-| `AgentMemoryService` | 类存在，生产无调用方 |
-| `CancelRunCommand` | 领域命令已定义，无对应 HTTP 端点 |
-| `first_m1_graph` | 非生产图，仅 tests 与 `scripts/agent_golden.py` |
-| 两个 spike | `execution_identity_spike` / `runtime_selection_spike`，不在生产链 |
+| `domain/{models,repositories,services}` 三个包 | 仍是模板的空壳 |
+| web-interaction 运行时 | 默认适配器返回 503（模板有意留白） |
+
+关于旧运行时的七条（RunBudget、Web 面接 Agent/Pilot、Attempt / Invocation、AgentMemoryService、CancelRunCommand、
+first_m1_graph、AgentProfile）已于 2026-09-29 随代码一起删除：这些能力不是「接上了」，而是不存在了。
 
 ### Agent 可靠性现状（2026-09-13 源码复核）
 

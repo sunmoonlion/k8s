@@ -91,7 +91,7 @@
 
 | 后端 | 文件数 | 其中 |
 | --- | --- | --- |
-| investment | 12 | 工作台 5 个；旧运行时 5 个（随删除消失）；模板带来的 2 个 |
+| investment | 7 | 工作台 5 个；模板带来的 2 个。旧运行时的 5 个已随删除消失（2026-09-29） |
 | info | 7 | 都是 2026-09-13 之前的：采集器、采集服务、投递；模板带来的 2 个 |
 | knowledge | 7 | 都是 2026-09-13 之前的：入库、检索、投递；模板带来的 2 个 |
 
@@ -102,9 +102,13 @@
 
 | 项 | 位置 | 处理 |
 | --- | --- | --- |
-| 旧运行时，约 4400 行，路由还注册着 | investment-backend 的 `application/agent`、`domain/agent`、`infrastructure/agent`、`infrastructure/graph` | 删（所有者已定） |
-| 18 个 2026-07 至 2026-09-11 的旧脚本 | investment-backend `app/scripts/` | 删 |
-| 打镜像时没有排除 `scripts/`、`eval/` | 三个后端的 `.dockerignore` | 补上 |
+| 旧运行时，路由还注册着 | investment-backend 的 `application/agent`、`domain/agent`、`infrastructure/agent`、`infrastructure/graph` | **已删**（2026-09-29，investment-backend `0c1a030`）。连同路由、后台任务、定时任务、检索客户端、配置项、依赖包、32 个测试文件，共删约 1.2 万行 |
+| 15 个 2026-07 至 2026-09-11 的旧脚本 | investment-backend `app/scripts/` | **已删**（同上） |
+| 模板带来的 2 个脚本 | 三个后端与模板的 `app/scripts/pair_fixture.py`、`delivery_runtime_probe.py` | 留着，要在模板里处理 |
+| 打镜像时没有排除 `scripts/`、`eval/` | 三个后端仓库根的 `.dockerignore` | **已补**（2026-09-29） |
+| 旧运行时的表还在库里 | investment 的数据库 | 已发布的迁移不删不改；以后用新的迁移去掉 |
+| 旧运行时的历史设计文档 | investment-backend `docs/mooc-manus-v4-*`（3 份）与 `docs/adr/`（18 份） | 等所有者定 |
+| 父仓库里的检索契约消费锁 | `investment-app/contracts/knowledge-retrieval-provider-lock.json` | 检索客户端已删，这份锁没有消费方了；等所有者定 |
 | 接口层两套放法并存 | 三个后端 | 工作台路由挪到 `http/web`；其余随改随挪 |
 | 首页还挂着旧的研究工作区，约 829 行 | investment-web-frontend | 随前端改造处理 |
 

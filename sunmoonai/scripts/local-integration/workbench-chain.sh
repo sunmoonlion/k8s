@@ -17,7 +17,7 @@ pids=(); cleanup() { docker rm -f sandbox-wb >/dev/null 2>&1; for p in "${pids[@
 trap cleanup EXIT
 
 echo "--- 依赖"
-for f in "$PY" "$RUNTIME/agent/dist/cli.js" "$K8S/sunmoonai/relay-platform/relay/relay.py" "$K8S/sunmoonai/sandbox-platform/bridge/sandbox_bridge.py" "$BACKEND/scripts/workbench_chain_driver.py"; do [ -e "$f" ] || { echo "缺 $f"; exit 3; }; done
+for f in "$PY" "$RUNTIME/agent/dist/cli.js" "$K8S/sunmoonai/relay-platform/relay/relay.py" "$K8S/sunmoonai/sandbox-platform/bridge/sandbox_bridge.py" "$BACKEND/tests/drivers/workbench_chain_driver.py"; do [ -e "$f" ] || { echo "缺 $f"; exit 3; }; done
 docker image inspect "$IMAGE" >/dev/null 2>&1 || { echo "没有镜像 $IMAGE"; exit 3; }
 KEYFILE="${KEYFILE:-$HOME/.codex-probe-kimi/auth.json}"; [ -f "$KEYFILE" ] || { echo "缺 $KEYFILE"; exit 3; }
 (cd "$BACKEND" && uv run python -c "import asyncpg, psycopg" 2>/dev/null) || { echo "backend venv 没就绪（cd $BACKEND && uv sync）"; exit 3; }
@@ -39,7 +39,7 @@ docker run -d --name sandbox-wb --add-host=host.docker.internal:host-gateway -p 
 unset MODEL_KEY
 for i in $(seq 1 40); do ss -ltn | grep -q ":$APP_PORT " && docker logs sandbox-wb 2>&1 | grep -q "listening on" && break; sleep 0.5; done; sleep 1
 echo "--- 4. 工作台驱动整条链"
-(cd "$BACKEND" && AGENT_TEST_DATABASE_URL="$DB_URL" APP_SERVER_URL="ws://127.0.0.1:$APP_PORT" APP_SERVER_TOKEN="$APP_TOKEN" ROOT="$ROOT" timeout 700 uv run python scripts/workbench_chain_driver.py 2>&1 | grep -v "sk-")
+(cd "$BACKEND" && AGENT_TEST_DATABASE_URL="$DB_URL" APP_SERVER_URL="ws://127.0.0.1:$APP_PORT" APP_SERVER_TOKEN="$APP_TOKEN" ROOT="$ROOT" timeout 700 uv run python tests/drivers/workbench_chain_driver.py 2>&1 | grep -v "sk-")
 rc=${PIPESTATUS[0]}
 echo "--- 日志尾部"; echo "[agent]"; tail -4 "$HERE/results/.agent.log" | cut -c1-200; echo "[sandbox]"; docker logs sandbox-wb 2>&1 | grep -v "sk-" | tail -4 | cut -c1-200
 rm -f "$HERE/results/.relay.log" "$HERE/results/.agent.log"
