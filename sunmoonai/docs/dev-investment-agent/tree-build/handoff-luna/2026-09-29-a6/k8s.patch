@@ -1,0 +1,24 @@
+diff --git a/sunmoonai/app-platform/scripts/integration/test_info_database_policy_pg.py b/sunmoonai/app-platform/scripts/integration/test_info_database_policy_pg.py
+--- a/sunmoonai/app-platform/scripts/integration/test_info_database_policy_pg.py
++++ b/sunmoonai/app-platform/scripts/integration/test_info_database_policy_pg.py
+@@ -29,7 +29,7 @@
+ import info_database_policy as policy
+ from app.application.collectors.base import CollectedLink
+ from app.application.services import info_crawl_service as service
+-from app.application.services.durable_tasks import DurableTasks
++from app.infrastructure.messaging.durable_tasks import DurableTasks
+ from app.infrastructure.messaging.delivery_handlers import get_delivery_handlers
+ from app.infrastructure.storage.object_storage import StoredObject
+ from app.infrastructure.storage.schema_readiness import verify_schema_revision
+diff --git a/sunmoonai/app-platform/scripts/integration/test_knowledge_database_policy_pg.py b/sunmoonai/app-platform/scripts/integration/test_knowledge_database_policy_pg.py
+--- a/sunmoonai/app-platform/scripts/integration/test_knowledge_database_policy_pg.py
++++ b/sunmoonai/app-platform/scripts/integration/test_knowledge_database_policy_pg.py
+@@ -31,7 +31,7 @@
+ from app.application.services import knowledge_ingestion_service as service
+ from app.application.services import knowledge_retrieval_service as retrieval
+ from app.application.services import provider_delivery as provider
+-from app.application.services.durable_tasks import DurableTasks
++from app.infrastructure.messaging.durable_tasks import DurableTasks
+ from app.infrastructure.external.ragflow import ArtifactContent, RAGFlowRetrievalResult
+ from app.infrastructure.external.ragflow_provider import RAGFlowProvider
+ from app.infrastructure.messaging.delivery_handlers import get_delivery_handlers

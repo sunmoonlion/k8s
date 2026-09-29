@@ -92,22 +92,22 @@
 
 | 后端 | 文件数 | 其中 |
 | --- | --- | --- |
-| investment | 2 | 模板带来的 2 个。工作台的 5 个已改（2026-09-29，investment-backend `656a93d`）；旧运行时的 5 个已随删除消失（2026-09-29） |
-| info | 7 | 都是 2026-09-13 之前的：采集器、采集服务、投递；模板带来的 2 个 |
-| knowledge | 7 | 都是 2026-09-13 之前的：入库、检索、投递；模板带来的 2 个 |
+| investment | 0 | 工作台的 5 个已改（2026-09-29，`656a93d`）；模板带来的 2 个已改（2026-09-29，A6）；旧运行时的 5 个已随删除消失 |
+| info | 5 | 都是 2026-09-13 之前的：采集器 2 个、采集服务、投递、原件对账。模板带来的 2 个已改（A6） |
+| knowledge | 5 | 都是 2026-09-13 之前的：入库 3 个、检索、投递。模板带来的 2 个已改（A6） |
 
 三个后端的领域层都没有引用外层。2026-09-27 之后新写的代码（证券采集与建库、数据集登记、语义层、年报抽取）没有违反前三条。
 按第四条查，另有（2026-09-29 自动检查查出）：
 
 | 后端 | 位置 | 直接用了 |
 | --- | --- | --- |
-| 三个后端与模板 | `application/ports/outbox.py`、`application/audit_context.py` | `sqlalchemy`、`starlette` |
+| 三个后端与模板 | `application/ports/outbox.py`、`application/audit_context.py` | `sqlalchemy`、`starlette`。**已改**（2026-09-29，A6） |
 | info | `domain/info_identity_v1.py` | `httpx` |
 | info | `application/securities/dataset/sqlite_writer.py`（远程 2026-09-27 写的） | `sqlite3` |
 | knowledge | `application/services/dataset_query.py`（远程 2026-09-24 写的） | `sqlite3` |
 | investment | `application/workbench/provisioning.py` | `httpx`、`websockets` |
 
-「模板带来的 2 个」是登录服务与可靠投递，三个后端一样，要在模板里改。
+「模板带来的 2 个」是登录服务与可靠投递，已在模板里改好并同步到三个后端（2026-09-29）。可靠投递的旧路径还留着一个只做转发的文件，为的是部署目录里的集成测试能照常跑；集群迁移完成后删。
 
 别的欠账：
 

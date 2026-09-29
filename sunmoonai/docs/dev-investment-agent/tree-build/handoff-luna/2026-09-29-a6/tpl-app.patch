@@ -1,0 +1,86 @@
+diff --git a/k8s-deployment/integration/runtime_identity_worker.py b/k8s-deployment/integration/runtime_identity_worker.py
+--- a/k8s-deployment/integration/runtime_identity_worker.py
++++ b/k8s-deployment/integration/runtime_identity_worker.py
+@@ -10,7 +10,7 @@
+ import os
+ from pathlib import Path
+ 
+-from app.application.services.durable_tasks import enqueue_task
++from app.infrastructure.messaging.durable_tasks import enqueue_task
+ from app.bootstrap.worker import celery_app
+ from app.tasks import durable_delivery
+ from sqlalchemy import text
+diff --git a/k8s-deployment/integration/test_runtime_database_policy_pg.py b/k8s-deployment/integration/test_runtime_database_policy_pg.py
+--- a/k8s-deployment/integration/test_runtime_database_policy_pg.py
++++ b/k8s-deployment/integration/test_runtime_database_policy_pg.py
+@@ -19,10 +19,10 @@
+ sys.path.insert(0, str(DEPLOYMENT))
+ sys.path.insert(0, str(BACKEND))
+ import runtime_database_policy as policy
+-from app.application.services import auth_service
+-from app.application.services.durable_tasks import DurableTasks, enqueue_task
+ from app.infrastructure.messaging.delivery_observation import collect_delivery_snapshot
+ from app.infrastructure.messaging.durable_delivery import DeliveryLeaseLost
++from app.infrastructure.messaging.durable_tasks import DurableTasks, enqueue_task
++from app.infrastructure.repositories import auth_user
+ from app.infrastructure.storage.schema_readiness import verify_schema_revision
+ from app.tasks.durable_delivery import pump
+ from permission_pg_support import denied, execute, inventory, provision_database
+@@ -74,17 +74,25 @@
+ 
+ async def test_api_real_identity_upsert_and_immutable_binding(database, monkeypatch):
+     monkeypatch.setattr(
+-        auth_service,
++        auth_user,
+         "get_postgres",
+         lambda: SimpleNamespace(session_factory=database.sessions["api"]),
+     )
+-    service = auth_service.AuthService("admin")
+-    first = await service._load_or_create_user(
+-        "https://issuer.example.test", "one", {"name": "First"}
+-    )
+-    updated = await service._load_or_create_user(
+-        "https://issuer.example.test", "one", {"name": "Updated"}
+-    )
++    directory = auth_user.SqlUserDirectory()
++
++    async def upsert(name):
++        return await directory.upsert(
++            issuer="https://issuer.example.test",
++            subject="one",
++            username=name,
++            email=None,
++            display_name=name,
++            roles=[],
++            scopes=[],
++        )
++
++    first = await upsert("First")
++    updated = await upsert("Updated")
+     assert first["id"] == updated["id"]
+     assert updated["display_name"] == "Updated"
+     await denied(database, "api", "UPDATE auth_user SET subject='another'")
+diff --git a/k8s-deployment/integration/test_runtime_identity_joint.py b/k8s-deployment/integration/test_runtime_identity_joint.py
+--- a/k8s-deployment/integration/test_runtime_identity_joint.py
++++ b/k8s-deployment/integration/test_runtime_identity_joint.py
+@@ -229,7 +229,7 @@
+ import asyncio, json, sys
+ from sqlalchemy import text
+ from app.infrastructure.storage.postgres import get_postgres
+-from app.application.services.durable_tasks import enqueue_task
++from app.infrastructure.messaging.durable_tasks import enqueue_task
+ async def main():
+     pg = get_postgres()
+     await pg.init()
+diff --git a/k8s-deployment/integration/test_runtime_identity_lifecycle.py b/k8s-deployment/integration/test_runtime_identity_lifecycle.py
+--- a/k8s-deployment/integration/test_runtime_identity_lifecycle.py
++++ b/k8s-deployment/integration/test_runtime_identity_lifecycle.py
+@@ -31,7 +31,7 @@
+ 
+ sys.path.insert(0, str(BACKEND))
+ 
+-from app.application.services.durable_tasks import enqueue_task
++from app.infrastructure.messaging.durable_tasks import enqueue_task
+ from permission_pg_support import denied, execute, inventory
+ from runtime_database_policy import PolicyError, identifier
+ from test_runtime_broker_policy import (
