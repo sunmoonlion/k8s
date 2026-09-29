@@ -14,6 +14,7 @@
 | [`task-contract.md`](task-contract.md) | Task 契约：提交信封、持久化主档、完成契约、结果信封、步骤交回物 |
 | [`state-machine.md`](state-machine.md) | Task 与 Attempt 两层状态机 |
 | [`approval.md`](approval.md) | 审批：工具级、Task 级、本地上限三条路 |
+| [`cross-app-links.md`](cross-app-links.md) | 跨应用跳转：一个应用把用户带到另一个应用的某个页面，链接里带什么、不带什么、怎么回去 |
 | [`workspace.md`](workspace.md) | 工作区：用户选工作区与项目、本地代理的根目录白名单、云端怎么读写 |
 | [`security.md`](security.md) | 安全模型：威胁、本地上限、key 的走向、会合点令牌 |
 | [`methods.md`](methods.md) | 方法与专家包：怎么下发、什么留服务端 |

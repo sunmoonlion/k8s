@@ -96,7 +96,7 @@
 | H11 | 数据集文件的写入实现放在了应用层（直接用 `sqlite3`）。远程 2026-09-27 写的 | info-backend | — | 已做，随 A7 甲。各张表的排法留在应用层（`dataset/tables.py`），写文件挪到 `infrastructure/securities/dataset_file.py` |
 | H12 | 数据集文件的查询实现放在了应用层（直接用 `sqlite3`）。远程 2026-09-24 写的 | knowledge-backend `application/services/dataset_query.py` | — | 已做，knowledge-backend `9bba92a`。规则（只读检查、按名字找口径、出处）留在应用层；读 SQLite 文件的实现挪到 `infrastructure/datasets/`，改名 `SqliteDatasetQueries`。7 个方法的代码逐字相同 |
 | H13 | 模板与 knowledge 的 `tests/test_kernel_invariants.py` 有一行超长，代码检查报 1 个错。改之前就有，不是这次引入的 | tpl-backend、knowledge-backend | 随 A6 在模板里改 | 待做 |
-| H14 | 模板的三个子仓（后端与两个前端）在远程工作区里原来没有 `fable` 分支。这次给 tpl-backend 建了；两个前端还没有 | tpl-app 的子仓 | 要动模板前端时再建 | 待做 |
+| H14 | 模板的三个子仓（后端与两个前端）在远程工作区里原来没有 `fable` 分支。这次给 tpl-backend 建了；两个前端还没有 | tpl-app 的子仓 | 要动模板前端时再建 | 做了一半：2026-09-29 做跨应用跳转时给四个网页端的仓库（模板与三个应用）建了。四个管理端的仓库还没有 |
 | H15 | 可靠投递的旧路径 `app/application/services/durable_tasks.py` 现在只做转发，为的是部署目录里的集成测试还能跑。它是应用层引用基础设施层，在放行清单里占 1 条 | 三个后端与模板 | 集群迁移完成。与迁移账本第 24 行一起做：先改集成测试的引用，再删这个文件 | 待做 |
 | H16 | info、knowledge 应用层里的旧文件（A7 乙、A8 的那几个）仍然经旧路径用可靠投递。改它们的时候，把「排队」「确认租约还在」做成各自存储端口上的方法，不再直接引用 | info-backend、knowledge-backend | 随 A7 乙、A8 | 待做 |
 | H17 | 接口层的模块在加载时从 `bootstrap` 取接好的登录服务。更彻底的做法是由组装层在建应用时把它交给接口层。要动路由和现有测试替换假对象的方式 | 三个后端与模板 `interfaces/http/` | 不急 | 待做 |
@@ -126,6 +126,9 @@
 | H34 | 专家一步的费用按占位的单价算。联调里机制烟测两步记了 1.02 | investment-backend `application/workbench/advisor.py` 的 `Pricing` | 和预算的默认值（`W4`）一起定 | 待定 |
 | H35 | 读项目记录的工具服务用的限流是进程内计数，多个进程各算各的 | investment-backend `interfaces/mcp/workbench_mcp.py` | 知识服务的工具也是这样。要换成共用的计数时一起换 | 待做 |
 | H36 | 专家这一面新加的读取（步骤、待办、底稿）每次都从账里现算。委托多了、事件多了会慢 | investment-backend `application/workbench/expert_desk.py` | 真的慢了再说 | 待定 |
+| H37 | 三个应用网页端的登录契约里，应用名的名单是 `tpl`、`info`、`knowledge`、`research`；investment 的那一份另加了 `investment`。`research` 是 investment 以前的名字，名单没有清 | 四个网页端 `contracts/auth.ts` | 做页面时一起清。先在模板里改 | 待做 |
+| H38 | 配置文件（`core/config.py`）现在引用了领域层（跨应用跳转的规则）。以前 `core` 不引用 `app`。为的是规则只写一处，配置写错了启动时就能报 | 四个后端 | 远程认为可以接受：领域层是最里面的一层，谁都可以引用它。所有者或评审认为不行的话，退路是把校验挪到组装层 | 待定 |
+| H39 | 跑 `ruff format` 时带上了整个 `tests` 目录，顺手重排了模板里 7 个无关的测试文件的格式。发现后原样恢复了，没有提交。这些文件本来就不合现在的格式，代码检查不查它们 | tpl-backend `tests/` | 以后只对自己动过的文件跑格式化 | 已处理 |
 
 ## 八、自动检查怎么用
 
