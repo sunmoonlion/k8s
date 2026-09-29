@@ -14,6 +14,7 @@ cd sunmoonai/scripts/local-integration/dataset-chain
 ./run.sh driver verify 600009    # 站在专家的位置上经 MCP 核对
 ./run.sh negative 600009         # 出错的情况
 ./run.sh queued 600276           # 生产上的走法：排队，三个任务接力
+./run.sh requested 600276        # 采集申请：用户申请、管理员批准，然后同上
 ./run.sh down                    # 全部清掉
 ```
 
@@ -34,6 +35,7 @@ cd sunmoonai/scripts/local-integration/dataset-chain
 | `driver.py` | 经 MCP 查询，并与直接读对象存储里的文件逐条比对 |
 | `register_once.py` | 只做登记这一步，打印稳定的错误码 |
 | `enqueue_once.py` | 登记批次并排队，与管理接口调用的是同一个函数 |
+| `request_once.py` | 采集申请的每一步（申请、批准、看进度、移出关注清单），与接口调用的是同一个服务 |
 | `oidc_standin.py` | 身份服务的替身：发现文档、公钥、服务间令牌 |
 
 ## 与正式环境的差别

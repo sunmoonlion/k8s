@@ -223,6 +223,30 @@ https://<info 网页端>/<语言>/requests/new?code=600519&from=investment&ref=<
 | `P7` | 申请被批准并入库之后，这家公司要不要自动进关注清单 | 是；否 | 与 `S10` 是同一件事，一起定 |
 | `P8` | 旧资讯线（网页、RSS）要不要也能申请 | 要；先不要 | 先不要。旧资讯采到的文档专家现在查不到（知识服务的 MCP 上没有文档检索的工具），申请了也用不上 |
 
+## 实现状态（2026-09-29）
+
+后端已做，页面没有做。
+
+| 项 | 状态 |
+| --- | --- |
+| 领域规则：状态、进度怎么推、链接带来的参数怎么校验 | 已做，`app/domain/securities/requests.py` |
+| 申请服务 | 已做，`app/application/securities/request_service.py`；端口在 `app/application/ports/security_requests.py` |
+| 数据库：迁移 `20260929_0013`、账本与关注清单的实现 | 已做，`app/infrastructure/securities/request_store.py` |
+| 接口：用户面 6 个、管理面 6 个 | 已做，`app/interfaces/http/web/security_requests.py`、`app/interfaces/http/admin/security_requests.py` |
+| 组装 | 已做，`app/bootstrap/security_requests.py` |
+| 建库被拒绝时留记录 | 已做。以前只写日志，申请会永远停在「建库中」 |
+| 本机联调 | 已做，`run.sh requested <代码>` |
+| 页面 | 没有做。等前端的底座搭好 |
+
+与设计不同的地方：
+
+| 项 | 设计 | 实现 | 原因 |
+| --- | --- | --- | --- |
+| 用户面的接口 | 4 个 | 6 个 | 多了「看一个申请」和「解析从哪来」。后者让页面不用自己拼回跳地址 |
+| 管理面的接口 | 3 个 | 6 个 | 多了关注清单的三个 |
+| 进度 | 8 种 | 11 种 | 多了「排队中」「登记中」「登记失败」，分得更细 |
+| 申请的种类 | 没有分 | 分「首次」和「更新」 | 已有数据的公司再申请，是更新 |
+
 ## 这份设计没有覆盖的
 
 | 项 | 原因 |

@@ -288,6 +288,45 @@ queued() {
   say "超时：$state"; stop_worker; return 1
 }
 
+# 用户申请 → 管理员批准 → 采集、建库、登记 → 申请的进度变成「可用」。
+# 先把这家公司移出关注清单，走的才是「要批准」那条路；清单里的公司提交时就自动批准了。
+requested() {
+  local code="$1" waited=0 progress="" request=""
+  local user="00000000-0000-4000-8000-00000000000a" owner="00000000-0000-4000-8000-0000000000ff"
+  load
+  info_env > "$STATE/info.env"; chmod 600 "$STATE/info.env"
+  once() { (cd "$INFO" && set -a && . "$STATE/info.env" && set +a && PYTHONPATH="$INFO" .venv/bin/python "$HERE/request_once.py" "$@" 2>/dev/null | tail -1); }
+  field() { python3 -c "import json,sys; print(json.load(sys.stdin).get('$1') or '')"; }
+  stop_worker
+  (
+    cd "$INFO"; set -a; . "$STATE/info.env"; set +a
+    exec setsid .venv/bin/celery -A app.bootstrap.worker:celery_app worker --loglevel=INFO --concurrency=1 --pidfile="$STATE/worker.pid"
+  ) > "$STATE/worker.log" 2>&1 < /dev/null &
+  disown
+  for _ in $(seq 1 60); do grep -q "ready\." "$STATE/worker.log" 2>/dev/null && break; sleep 1; done
+  grep -q "ready\." "$STATE/worker.log" || { say "工作进程没起来，见 $STATE/worker.log"; tail -5 "$STATE/worker.log" >&2; return 1; }
+  say "移出关注清单：$(once unwatch "$code")"
+  once submit "$code" "$user" > "$STATE/request-$code.json"
+  say "已申请：$(cat "$STATE/request-$code.json")"
+  request="$(field request_id < "$STATE/request-$code.json")"
+  [ "$(field progress < "$STATE/request-$code.json")" = "pending" ] || { say "没有停在等批准"; stop_worker; return 1; }
+  [ "$(docker exec "$PG_CONTAINER" psql -U t -d it_info -Atc "select count(*) from security_ingestion where security_code='$code'")" = "0" ] || { say "批准之前就开始采集了"; stop_worker; return 1; }
+  say "批准之前没有采集"
+  say "已批准：$(once approve "$request" "$owner")"
+  while [ "$waited" -lt "${QUEUED_TIMEOUT:-900}" ]; do
+    (cd "$INFO" && set -a && . "$STATE/info.env" && set +a && .venv/bin/python -m app.cli.drain_delivery_outbox >/dev/null 2>&1) || true
+    once progress "$request" "$user" > "$STATE/progress-$code.json"
+    progress="$(field progress < "$STATE/progress-$code.json")"
+    if [ "$progress" != "${last:-}" ]; then say "进度：$progress（${waited} 秒）"; last="$progress"; fi
+    case "$progress" in
+      available) say "完成：$(cat "$STATE/progress-$code.json")"; stop_worker; return 0 ;;
+      failed|quality_failed|registration_failed|rejected|withdrawn) say "停在：$(cat "$STATE/progress-$code.json")"; stop_worker; return 1 ;;
+    esac
+    sleep 10; waited=$((waited+10))
+  done
+  say "超时：$progress"; stop_worker; return 1
+}
+
 down() {
   pkill_port $KNOW_PORT; pkill_port $OIDC_PORT; stop_worker
   docker rm -f it-s3 it-redis >/dev/null 2>&1 || true
@@ -305,6 +344,7 @@ case "${1:-}" in
   build) shift; info_cli app.cli.security_dataset --code "$1" --register ;;
   negative) negative "$2" ;;
   queued) queued "$2" ;;
+  requested) requested "$2" ;;
   restart-knowledge) start_knowledge ;;
   restart-identity)
     load; pkill_port $OIDC_PORT; sleep 1
