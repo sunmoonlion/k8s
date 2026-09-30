@@ -10,7 +10,7 @@
 
 本轮没有重新同步远端。master 中的业务代码可能落后于协作分支；接入每个应用前必须对比差异并确定应用提交和子模块提交，不整体合并 luna 的部署改动。
 
-继续保护现有 Harbor 镜像、证书、凭据和必要备份；现有 KIND 及旧节点、卷不因创建新工作区而改变。历史上已经完成的验证可以作为设计输入，不能直接记为新代码验收通过。现有 Harbor 能否原地纳管，须在布局、配置、数据库与官方输出对照完成后决定。
+所有者在 2026-10-01 更新决定：新体系不迁移旧业务数据或旧 Harbor 镜像；选择新稳定版本，适配业务代码并重新构建。此前保留 Harbor 2.13.2、PG17.6、Redis8.2.1 的约束取消。现有服务及旧节点、卷不因选版而删除；历史验证不能直接记作新代码验收通过。
 
 ## 推荐方案与取舍
 
@@ -28,7 +28,7 @@
 
 Ansible 的 check 模式受模块支持程度限制，不能把没有输出视为已经验证；含秘密的任务关闭 diff。[Ansible 检查模式](https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_checkmode.html)
 
-Harbor 官方安装流程使用安装器和 harbor.yml，并区分新装、重配置和升级。具体数据库适配仍需核实。[Harbor 安装说明](https://goharbor.io/docs/2.13.0/install-config/)、[配置字段](https://goharbor.io/docs/2.13.0/install-config/configure-yml-file/)
+Harbor 选定 2.15.2，采用官方离线安装包及其配套依赖，新装空实例。版本与资料见 [镜像版本选定表](images.md)。
 
 替代方案是直接 Helm 加 Kustomize：初期运行组件更少，但漂移检查、持续交付和依赖等待需要另外组织。推荐 Flux 是为了把这些职责交给成熟控制器；引入它也增加了控制器、凭据和故障诊断成本，不代表自动达到生产标准。第一期不同时引入 Argo CD，不另部署 Git 服务或 Jenkins 作为启动前提。
 
@@ -107,50 +107,23 @@ Flux 提供离线安装和 OCI 源能力；这里的发布方式是本项目推�
 
 ## 版本与兼容性准入
 
-2026 年 9 月 30 日核对官方发行说明和固定 tag 源码，得到下表。文档支持、物料存在与现场通过是三个不同状态；本轮未下载或运行这些新工具。
+版本唯一选择表见 [第一期镜像版本选定表](images.md)，核对日期 2026-10-01。Kubernetes 1.36.5、KIND 0.33.0、Calico 3.32.2、Flux 2.9.5；Harbor 2.15.2，新业务 PostgreSQL 18.6、Redis 8.10.2。表中明确 KIND 节点构建方式、镜像地址、版本例外和未验收边界。
 
-| 项目 | 推荐候选或保留值 | 已核依据与剩余条件 |
-| --- | --- | --- |
-| Kubernetes 与 KIND | 1.36.4 与 0.33.0 | 官方 KIND 发行列出这组节点镜像；本地物料还须重新比对摘要 |
-| Calico | 3.32.2 | 3.32 测试范围包含 Kubernetes 1.36，3.32.2 有官方发行；本机内核、隧道和策略仍需实际验收 |
-| Flux | 2.9.5 候选 | 2.9 明确兼容 Kubernetes 1.36；2.9.5 是该系列补丁发行；尚未安装 |
-| Helm | 跟随 Flux 2.9.5 的控制器依赖 | 该发行说明列 Helm 4.2.4；原有 chart 的渲染和钩子需逐个验证，不能据此宣称旧 chart 全部兼容 |
-| Harbor | 保留 2.13.2 | 固定 tag 提供 external_database、external_redis；具体数据库版本未获得逐版本兼容保证 |
-| Harbor 依赖 | 保留 PG 17.6、Redis 8.2.1 | 当前实例历史参考值；新的官方部署路径须通过独立恢复、推拉和任务验收 |
-| Ansible | ansible-core 2.21 系列候选 | 官方控制端 Python 范围 3.12–3.14；本机 Python 3.12.3；精确补丁和 collection 锁待完成 |
-| Compose | 待钉精确版本，需支持明确覆盖语义 | Docker 文档中 !override 要求 2.24.4 起；最低功能要求不等同推荐安装旧版本 |
-| SOPS 与 age | 待钉版 | Flux 提供集成；离线包、密钥恢复和所选发行兼容仍待验收 |
-
-KIND 0.33.0 默认节点已经是 1.37.0，因此新代码必须显式选择
-`kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed`，不能省略 image 后误升版本。[KIND 固定发行](https://github.com/kubernetes-sigs/kind/releases/tag/v0.33.0)
-
-Calico 的证据限定于 3.32 系列测试范围和 3.32.2 发行存在，不代替本机验证。[系统要求](https://docs.tigera.io/calico/latest/getting-started/kubernetes/requirements)、[3.32.2 发行](https://github.com/projectcalico/calico/releases/tag/v3.32.2)
-
-Flux 的精确组件组合从发行物锁定，不独立随意拼装控制器；第一期只安装所需控制器，不启用自动更新镜像版本。[2.9 兼容列表](https://github.com/fluxcd/flux2/releases/tag/v2.9.0)、[2.9.5 组件与 Helm 说明](https://github.com/fluxcd/flux2/releases/tag/v2.9.5)
-
-Ansible 使用独立工具环境，固定 core、collection 和依赖，不修改系统 Python。精确补丁尚未选定。[官方维护矩阵](https://docs.ansible.com/projects/ansible/latest/reference_appendices/release_and_maintenance.html)
+该表确定版本目标，尚不是完整的物料摘要锁。Ansible、Compose、SOPS、age 等宿主工具和全部 chart 的精确锁仍须在物料阶段完成。镜像、chart、应用依赖和宿主工具应作为一个发布验证，不能只替换旧 chart 的镜像标签。
 
 ## Harbor 官方部署适配边界
 
-已核实 2.13.2 官方 harbor.yml 提供外部 PostgreSQL 和 Redis 字段，官方 Compose 模板会在配置外部依赖时省略内置数据库/Redis 服务。这证明存在官方接入路径，尚不能证明 PG17.6 和 Redis8.2.1 全功能兼容。[固定配置模板](https://raw.githubusercontent.com/goharbor/harbor/v2.13.2/make/harbor.yml.tmpl)、[固定 Compose 模板](https://raw.githubusercontent.com/goharbor/harbor/v2.13.2/make/photon/prepare/templates/docker_compose/docker-compose.yml.jinja)
+新装使用 2.15.2 官方安装器配套数据库、Valkey 和扫描器，不再恢复旧数据库或单独保留旧 PG/Redis 版本。仓库依赖位于宿主机层，不使用业务集群里的数据库，避免自举循环。[官方发行](https://github.com/goharbor/harbor/releases/tag/v2.15.2)
 
-推荐独立管理 Harbor 专用 PG/Redis，保留既定版本和数据，通过官方 external_database/external_redis 接口连接。它们留在宿主机层，不使用业务集群里的数据库，避免建群与仓库互相依赖。主机内部网络互通必须先验证，不把数据库端口向家庭网络开放。外部 Redis 的账号、逻辑库索引和任务队列配置须逐项核对。
+保留官方生成配置；有限 Compose 覆盖只处理镜像摘要、离线拉取、挂载准入、端口绑定和资源限制，不自建实例状态机。覆盖端口必须明确替换，不能意外留下原端口。[Compose 合并规则](https://docs.docker.com/reference/compose-file/merge/)
 
-官方模板使用自动重启策略，且端口发布没有满足本机只绑定回环地址的默认限制。拟保留原始生成文件，以一份明确的 Compose 覆盖文件处理：镜像摘要及离线拉取策略、WSL 挂载前禁止自动启动、只绑定所需端口、必要资源限制、外部依赖网络连接和不自动创建数据目录。覆盖字段需列入审查清单；不修改容器内部程序，不复制整份官方 Compose 重写，也不引入只读/可写双实例状态机。
-
-端口覆盖采用明确替换语义，不能直接追加，否则旧端口可能继续暴露。Compose 原生支持该能力；实施时对合并后的配置做校验。[Compose 合并规则](https://docs.docker.com/reference/compose-file/merge/)
-
-WSL 上使用 Docker 的 restart=no 配合 systemd 监管前台 Compose 进程及服务健康；服务启动依赖挂载检查，失效时停止受管服务。容器异常退出、Docker 重启、挂载缺失都需有失败演练，不能只配置一个 oneshot 后宣称有自动恢复。具体 Compose 选项在工具版本锁定后验证。
-
-新装与恢复是两个明确入口：新装初始化空数据；恢复使用一致备份、逻辑导入、镜像层复制及原加密/签名材料。恢复先在隔离目录验证，不让两个实例同时写同一份数据库或镜像层。生成配置不得悄悄轮换旧加密密钥。只有完整摘要、账号/机器人认证、推拉、扫描任务与重启恢复通过后，才能切换当前正式数据。
-
-本次没有发现必须改变数据库版本的确证，也没有获得新方式已兼容的证据。下一步的隔离验证须使用实际离线物料并留出容量；如果失败，依据具体错误修订方案，不能以再次自建 Harbor 运行框架替代兼容性结论。
+WSL 挂载成功前禁止启动 Harbor。宿主服务监管、容器异常退出、Docker 重启、磁盘缺失和 SNI 代理仍须验收。新装完成后为新数据建立备份、恢复演练及 KIND 删除重建后的镜像持久化验收；没有旧数据迁移需求不等于不需要备份。
 
 ## 第一实现单元的范围
 
 架构取舍确认后，首先实现配置与物料预检：环境字段、版本/摘要锁、秘密引用、宿主条件和依赖顺序。提供查看和预览；默认不安装、不创建容器、不改集群。
 
-第一单元完成条件：相同输入产生相同计划；缺物料、非法配置、错误目标或容量不足明确失败；日志不含秘密；新实现不 import、source 或执行旧目录程序。该单元通过后再进入隔离 Harbor 配置生成与恢复验证，不直接改当前实例。
+第一单元完成条件：相同输入产生相同计划；缺物料、非法配置、错误目标或容量不足明确失败；日志不含秘密；新实现不 import、source 或执行旧目录程序。该单元通过后再进入新 Harbor 配置生成、新装与新数据的备份恢复验证。
 
 首次引导须解决独立证书与拉取认证：Docker/KIND 节点信任 CA，Flux 源通过 Secret 信任 Harbor 并只读拉取，Pod 能解析并到达宿主机仓库；这些输入不能等待 Flux 自己从尚不可访问的源下载。宿主机 SNI 代理的 Harbor 路由先就绪，业务域名路由待集群入口就绪后加入，避免通过未建好的集群访问仓库。
 
@@ -160,7 +133,7 @@ WSL 上使用 Docker 的 restart=no 配合 systemd 监管前台 Compose 进程�
 | --- | --- | --- |
 | 1 | 审定结构、范围和组件清单 | 推荐选型得到确认；明确云端待验证与资源限制 |
 | 2 | 钉版与最小骨架 | 物料来源和摘要可核，依赖齐全，配置错误拒绝执行；无旧代码依赖 |
-| 3 | 宿主机、Harbor、KIND、Flux | 隔离新装与备份恢复均有路径；当前 Harbor 纳管或切换先有明确计划 |
+| 3 | 宿主机、Harbor、KIND、Flux | 新装与新数据备份恢复均有路径；入口切换有明确计划 |
 | 4 | 首条真实应用链 | 模板验证公共能力，再部署 info 的认证、迁移、API、Worker、Scheduler、前端及必要依赖；按既有规则保持模板优先 |
 | 5 | 覆盖全部约定组件 | Knowledge 和 Investment 的角色、身份与跨应用接口通过，选装组件有独立验收 |
 | 6 | 重建与运维验收 | 以下验收矩阵通过，并由维护者按手册操作 |
