@@ -40,7 +40,7 @@ Flux 第一期开启四个镜像：`ghcr.io/fluxcd/source-controller:v1.9.5`、`
 | 业务 PostgreSQL | **18.6**；`docker.io/library/postgres:18.6-trixie` | [官方镜像清单](https://raw.githubusercontent.com/docker-library/official-images/master/library/postgres)；19beta4 不纳入 |
 | 业务 Redis / Nodebull Redis | **8.10.2**；`docker.io/library/redis:8.10.2-trixie` | [官方镜像清单](https://raw.githubusercontent.com/docker-library/official-images/master/library/redis)；不同用途隔离身份和实例配置 |
 | RabbitMQ | **4.3.6**；`docker.io/library/rabbitmq:4.3.6-management` | [官方镜像清单](https://raw.githubusercontent.com/docker-library/official-images/master/library/rabbitmq) |
-| Casdoor | **4.12.0**；镜像目标 `docker.io/casbin/casdoor:v4.12.0` | [正式发行](https://github.com/casdoor/casdoor/releases/tag/v4.12.0)；镜像 manifest 尚未核实 |
+| Casdoor | **4.12.0**；镜像目标 `docker.io/casbin/casdoor:4.12.0` | [正式发行](https://github.com/casdoor/casdoor/releases/tag/v4.12.0)；镜像 manifest 尚未核实 |
 | Elasticsearch | **9.5.4**；`docker.elastic.co/elasticsearch/elasticsearch:9.5.4` | [发行](https://github.com/elastic/elasticsearch/releases/tag/v9.5.4) |
 | Kibana | **9.5.4**；`docker.elastic.co/kibana/kibana:9.5.4` | [发行](https://github.com/elastic/kibana/releases/tag/v9.5.4) |
 | Logstash | **9.5.4**；`docker.elastic.co/logstash/logstash:9.5.4` | [发行](https://github.com/elastic/logstash/releases/tag/v9.5.4) |
@@ -65,7 +65,7 @@ AIStor 保持现有产品选择，第一期采用单节点部署，使用合法�
 | RAGFlow 文档引擎 | `docker.io/infiniflow/infinity:v0.7.3-x64-v3` | 选择上游提供的 Infinity profile；[固定配置](https://raw.githubusercontent.com/infiniflow/ragflow/v0.27.2/docker/docker-compose-base.yml)；宿主 CPU 指令集须核实 |
 | RAGFlow 专用缓存 | `docker.io/valkey/valkey:8.1.10` | 将上游浮动 `valkey:8` 收敛为 8 系列补丁；[官方发行](https://valkey.io/download/releases/) |
 | ONLYOFFICE | `docker.io/onlyoffice/documentserver:9.4.0` | [官方镜像](https://hub.docker.com/r/onlyoffice/documentserver/tags) |
-| 自有后端构建基础 | `docker.io/library/python:3.14.7-slim-trixie` | [官方镜像清单](https://raw.githubusercontent.com/docker-library/official-images/master/library/python)；逐应用调整依赖锁，3.15 RC 排除 |
+| 自有后端构建基础 | `docker.io/library/python:3.13.15-slim-trixie` | [官方镜像清单](https://raw.githubusercontent.com/docker-library/official-images/master/library/python)；所有者指定 3.13 系列，采用 3.13.15；现有依赖锁优先保留 |
 | 自有前端构建基础 | `docker.io/library/node:24.21.0-trixie`；运行层 `24.21.0-trixie-slim` | [官方镜像清单](https://raw.githubusercontent.com/docker-library/official-images/master/library/node)；采用当前 LTS，26 Current 不作为生产默认 |
 
 RAGFlow 0.27.2 上游默认 Elasticsearch 仍为 8.11.3，不能声称直接兼容本平台 ES 9.5.4。本次选择它已提供的 Infinity 接口；元数据库选择上游支持的 PostgreSQL 接口，目标使用独立逻辑库的 PG 18.6；S3 接口使用平台 AIStor 独立身份和桶。这是本项目的集成选择，尚无整套实测结论。不得把官方默认组合的验证结果挪作该组合的通过证明。[固定环境配置及数据库类型](https://raw.githubusercontent.com/infiniflow/ragflow/v0.27.2/docker/.env)
@@ -84,3 +84,5 @@ RAGFlow 0.27.2 上游默认 Elasticsearch 仍为 8.11.3，不能声称直接兼�
 4. 发布前完成依赖配置、认证、真实业务读写与重建恢复验收。新版本可能要求新 chart/初始化参数，不能仅替换旧 Bitnami chart 的 repository。
 
 当前已完成版本选择和上述官方资料核对。未完成全部 Registry 摘要、工具/安装包锁、chart 锁、离线物料及实机集成。因此本文不是完整可执行 BOM，也不宣称“整套已达到生产验收标准”。
+
+2026-10-01 实际 Registry 核验：43 个上游目标中 39 个已确认 linux/amd64 manifest 摘要并复算原始 manifest SHA256。4 项受 Docker Hub 匿名限流阻断；Casdoor 同时修正镜像 tag 不带 `v`，该正确 tag 尚待核验。记录见 `platform/artifacts/upstream-images.lock.json`，未下载镜像层，`offline_ready=false`。Python 按所有者后续决定改为 3.13.15。

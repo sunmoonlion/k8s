@@ -1,0 +1,12 @@
+---
+# Site values only; no image overrides or credentials.
+cluster_name: sunmoon-kind-main
+registry_address: harbor.sunmoonai.com:30443
+storage_uuid: a28de356-4ba1-4a21-93f5-744b9b9d8be0
+storage_mounts:
+  - target: /mnt/sunmoon-data
+    fsroot: /
+  - target: /data/kind-clusters
+    fsroot: /kind-clusters
+  - target: /data/harbor
+    fsroot: /harbor
