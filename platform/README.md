@@ -1,6 +1,6 @@
-# 新部署体系：物料与宿主预检
+# 新部署体系：物料、宿主与独立仓库
 
-本目录使用原生 Make、Ansible 和声明文件，不调用旧 `sunmoonai/`、`utils/` 或 luna 工作区部署程序。当前提供物料准备、宿主挂载预检、官方 KIND 节点构建以及 Harbor 官方安装文件和启动镜像准备；Harbor 服务新装、KIND 创建、平台部署和统一启停尚未实现。
+本目录使用原生 Make、Ansible 和声明文件，不调用旧 `sunmoonai/`、`utils/` 或 luna 工作区部署程序。当前提供物料准备、宿主挂载预检、官方 KIND 节点构建、独立 Harbor 新装和启停。KIND 创建、平台部署及整套统一启停尚未实现。
 
 ## 日常入口
 
@@ -22,6 +22,12 @@ make plan-bootstrap-images   # 预览 KIND/Calico 离线镜像归档
 make fetch-bootstrap-images  # 按摘要获取、导出并核验归档
 make check-bootstrap-images  # 不联网、不调用 Docker，核验完整归档
 make prepare-harbor-materials # 官方安装文件解包及启动镜像导入；不启动服务
+make install-binaries BINARIES=compose # 安装已核验的 Compose
+make registry-plan           # 查看新 Harbor 的部署范围
+make registry-deploy         # 配置并启动新 Harbor，不切换旧入口
+make registry-status         # 查看新 Harbor 的 systemd 状态
+make registry-stop           # 停止新 Harbor，保留数据
+make registry-start          # 检查挂载并启动，验健康与认证
 ```
 
 支持同一入口选择部分文件，例如 `make fetch-artifacts ARTIFACTS=kind,kubectl`；默认选择锁文件内全部文件。不存在的名称报错，不跳过。站点参数可用 `SITE=environments/kind/site.yaml` 指定。当前首次创建物料缓存要求其父目录已存在，以便先核验所在文件系统的可用空间。
@@ -69,15 +75,15 @@ uv pip compile --python-version 3.12 --generate-hashes --no-header \
 
 55 个选定上游及建群配套镜像的 linux/amd64 manifest 已全部取得。通过东京及本机原生 `docker manifest inspect --verbose` 读取公开元数据，对 Base64 Raw 解码后复算 SHA256，与 Descriptor 对比。Calico 三项使用官方清单指定的 quay.io；Casdoor 已确认使用不带 v 的 4.12.0。查询临时程序不作为部署依赖。
 
-`check-images` 通过仅证明这一批镜像身份完整；文件校验通过仅证明选中文件可用。KIND 1.36.5 产物导出与集群验收、配套镜像的离线归档、完整宿主工具/构建依赖、chart/辅助镜像、自有应用镜像和离线发布尚需完成，因此两份锁均保持 `offline_ready=false`。
+`check-images` 通过仅证明这一批镜像身份完整；文件校验通过仅证明选中文件可用。KIND/Calico 引导归档已经完成；集群验收、完整宿主工具/构建依赖、chart/辅助镜像、自有应用镜像和完整离线发布尚需完成，因此两份锁均保持 `offline_ready=false`。
 
-宿主挂载预检已实际通过（ok=5、changed=0、failed=0），但 Docker 服务命名空间可见性、TLS/认证、服务部署和重建恢复仍需后续准入及验收。当前没有执行业务测试或服务重启。
+宿主挂载预检、Harbor 数据目录的 Docker 可见性、新 Harbor 部署及后端 TLS/认证已实际通过。正式入口推拉、WSL/KIND 重启与重建恢复仍待验收；未执行业务测试。
 
 ## 本批物料的实际结果
 
 10 项文件共 1,358,981,849 字节已经下载。此前 8 项重复 fetch 为 changed=0；新增 kubeadm 和 server 包均通过统一入口下载并校验。
 
-Harbor 官方包内 177 个 OCI blob 已流式复算 SHA256，12 个镜像的配置及未压缩层身份与上游一致。由于层的压缩表示不同，归档 manifest 摘要与上游分发摘要不同，映射见 `artifacts/harbor-offline-images.lock.json`。导入后的 Docker 摘要查询和启动尚未验证；安装阶段不得混用这两类摘要。
+Harbor 官方包内 177 个 OCI blob 已流式复算 SHA256，12 个镜像的配置及未压缩层身份与上游一致。由于层的压缩表示不同，归档 manifest 摘要与上游分发摘要不同，映射见 `artifacts/harbor-offline-images.lock.json`。导入后的 Docker 摘要查询及按归档 digest 启动新 Harbor 已验证；不得混用这两类摘要。
 
 ## 规则对应
 
@@ -126,4 +132,4 @@ Harbor 官方包内 177 个 OCI blob 已流式复算 SHA256，12 个镜像的配
 
 Harbor 安装包解包约 735 MB，内部未压缩镜像内容约 2.03 GB；本次准备预留 6 GiB，覆盖解包、内容存储、展开副本与余量。这是容量估计，不是配额。Windows 增长预算以及工作目录、Docker 目录的文件系统空间均检查；已完成的重复操作不重复要求新增 6 GiB。
 
-**不要直接执行该目录的 install.sh**：官方脚本含 `compose down -v`。新服务入口将调用官方 `prepare` 生成配置，再使用明确的 Compose 操作。官方 `prepare` 还可能搬动 `/data/secretkey` 和 `/data/defaultalias`；服务实施前须检查并阻止触碰历史文件。当前没有运行 prepare/install.sh，没有生成凭据、证书或新 Harbor 服务配置，没有启动新 Harbor 或修改入口。离线物料导入成功不代表服务已安装。
+**不要直接执行该目录的 install.sh**：官方脚本含 `compose down -v`。新入口直接调用官方 prepare 镜像生成配置，避免包装脚本搬动全局历史文件，再用原生 Compose/systemd 管理服务。新 Harbor 已独立启动，旧入口未切换。配置路径、日志授权、日常操作和验收边界见 [独立 Harbor](registry/README.md)。

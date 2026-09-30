@@ -59,12 +59,13 @@ Flux 提供离线安装和 OCI 源能力；这里的发布方式是本项目推�
 
 ## 配置和代码布局
 
-新实现统一位于 `k8s/platform/`，目前仅落地第一单元的物料记录、工具锁与只读预检。
+新实现统一位于 `k8s/platform/`，已落地物料、工具锁、宿主预检、节点构建和独立 Harbor；其余目录按实现需要建立。
 
 | 位置 | 唯一职责 |
 | --- | --- |
-| `platform/host/` | Ansible、宿主机 Harbor、入口代理、Windows 附盘与系统服务 |
-| `platform/clusters/kind/` | KIND 配置、引导和生命周期 |
+| `platform/host/` | 宿主预检、容量、入口代理和 Windows 附盘 |
+| `platform/registry/` | 官方 Harbor 物料、配置、证书、Compose 和宿主服务生命周期 |
+| `platform/cluster/` | KIND 配置、引导和生命周期 |
 | `platform/components/` | 平台组件及应用的声明，明确各对象所有者 |
 | `platform/environments/kind/` | 本地站点参数、组件选择、资源规格、源摘要 |
 | `platform/artifacts/` | 版本和摘要锁、物料类型、来源与用途；不提交大归档 |
@@ -115,9 +116,9 @@ Flux 提供离线安装和 OCI 源能力；这里的发布方式是本项目推�
 
 新装使用 2.15.2 官方安装器配套数据库、Valkey 和扫描器，不再恢复旧数据库或单独保留旧 PG/Redis 版本。仓库依赖位于宿主机层，不使用业务集群里的数据库，避免自举循环。[官方发行](https://github.com/goharbor/harbor/releases/tag/v2.15.2)
 
-保留官方生成配置；有限 Compose 覆盖只处理镜像摘要、离线拉取、挂载准入、端口绑定和资源限制，不自建实例状态机。覆盖端口必须明确替换，不能意外留下原端口。[Compose 合并规则](https://docs.docker.com/reference/compose-file/merge/)
+保留官方生成配置；有限 Compose 覆盖只处理镜像摘要、离线拉取、挂载准入、端口绑定、资源限制、已批准日志轮转和服务健康依赖，不自建实例状态机。覆盖端口必须明确替换，不能意外留下原端口。[Compose 合并规则](https://docs.docker.com/reference/compose-file/merge/)
 
-WSL 挂载成功前禁止启动 Harbor。宿主服务监管、容器异常退出、Docker 重启、磁盘缺失和 SNI 代理仍须验收。新装完成后为新数据建立备份、恢复演练及 KIND 删除重建后的镜像持久化验收；没有旧数据迁移需求不等于不需要备份。
+WSL 挂载成功前禁止启动 Harbor。已通过后端健康与认证；容器异常退出、Docker/WSL 重启、磁盘缺失和 SNI 代理仍须分别验收。新装完成后为新数据建立备份、恢复演练及 KIND 删除重建后的镜像持久化验收；没有旧数据迁移需求不等于不需要备份。
 
 ## 第一实现单元的范围
 
@@ -160,6 +161,6 @@ WSL 挂载成功前禁止启动 Harbor。宿主服务监管、容器异常退出
 
 ## 尚需补齐的设计输入
 
-当前已经按上述分工实现物料与只读预检。后续补齐发布闭包、宿主容量及秘密输入后，再进入 Harbor/KIND 的实际部署；具体进度见 CHECKPOINT.md。
+当前已实现物料、宿主准入、节点构建和独立 Harbor 配置/启停，具体实测见 CHECKPOINT.md。后续继续入口与完整推拉、扫描和备份恢复，再进入 KIND/Flux 与平台应用部署；完整发布闭包仍需补齐。
 
 第一期资源预算、具体恢复时间和可接受数据损失目标还需根据实际容量及演练确定；不在草案中虚构可用性承诺。业务能力与选装组件不能因资源不足被静默删除。

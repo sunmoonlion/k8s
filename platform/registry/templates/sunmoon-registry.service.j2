@@ -1,0 +1,28 @@
+[Unit]
+Description=SunMoon standalone Harbor
+Requires=docker.service
+After=docker.service
+PartOf=docker.service
+RequiresMountsFor={{ registry_data_root }}
+StartLimitIntervalSec=120
+StartLimitBurst=3
+
+[Service]
+Type=exec
+WorkingDirectory={{ registry_runtime_dir }}
+UMask=0077
+ExecStartPre=/usr/bin/python3 {{ registry_runtime_dir }}/check-storage.py {{ registry_runtime_dir }}/storage.json
+ExecStart={{ registry_runtime_dir }}/docker-compose --project-name {{ registry_project }} -f docker-compose.yml -f compose.override.yaml up --no-build --pull never --abort-on-container-exit --exit-code-from core --no-color{% for name in registry_release.services %} --no-attach {{ name }}{% endfor %}
+
+ExecStop={{ registry_runtime_dir }}/docker-compose --project-name {{ registry_project }} -f docker-compose.yml -f compose.override.yaml stop --timeout 60
+ExecStopPost=-{{ registry_runtime_dir }}/docker-compose --project-name {{ registry_project }} -f docker-compose.yml -f compose.override.yaml stop --timeout 60
+Restart=always
+RestartSec=10
+TimeoutStartSec=120
+TimeoutStopSec=180
+# Container logs use the separately approved local-driver rotation policy.
+StandardOutput=null
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

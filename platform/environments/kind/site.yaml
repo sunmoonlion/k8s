@@ -18,3 +18,15 @@ data_vhd_windows_path: 'C:\wsl-disks\sunmoon-data.vhdx'
 data_vhd_maximum_gib: 230
 windows_minimum_free_gib: 50
 windows_script_directory: /mnt/c/wsl-disks/scripts/platform-kind-v1
+
+# Standalone registry. The SNI listener remains a separately managed host service.
+registry_enabled: true
+registry_hostname: harbor.sunmoonai.com
+registry_project: sunmoon-registry
+registry_https_port: 11443
+registry_config_dir: /etc/sunmoon/registry
+registry_runtime_dir: /opt/sunmoon/registry
+registry_data_root: /data/harbor
+registry_instance_dir: /data/harbor/platform-kind-v1
+# Owner approved 2026-10-01: 3 files of 20 MiB per container, automatic rotation.
+registry_log_rotation_approved: true
