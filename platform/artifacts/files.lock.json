@@ -84,6 +84,26 @@
       "sha256": "a8c828a06a87c629a282ebbc424895b77f3a030251993e41ea400a743675bb02",
       "url": "https://raw.githubusercontent.com/projectcalico/calico/v3.32.2/manifests/calico.yaml",
       "identity_source": "SHA256 computed from official version-tagged manifest bytes"
+    },
+    {
+      "id": "kubeadm",
+      "version": "v1.36.5",
+      "kind": "binary",
+      "path": "bin/kubeadm-v1.36.5-linux-amd64",
+      "size_bytes": 73064610,
+      "sha256": "be2f2c73cd6d3414b37aafb05016bc3a1da3e17c8393aa75c34636198fefa77c",
+      "url": "https://dl.k8s.io/release/v1.36.5/bin/linux/amd64/kubeadm",
+      "identity_source": "https://dl.k8s.io/release/v1.36.5/bin/linux/amd64/kubeadm.sha256"
+    },
+    {
+      "id": "kubernetes-server",
+      "version": "v1.36.5",
+      "kind": "package",
+      "path": "packages/kubernetes-server-v1.36.5-linux-amd64.tar.gz",
+      "size_bytes": 356575952,
+      "sha256": "7f87ca9e71319d77b58e67e89637498a436bf1b058e4051376396c5a49371e11",
+      "url": "https://dl.k8s.io/v1.36.5/kubernetes-server-linux-amd64.tar.gz",
+      "identity_source": "https://dl.k8s.io/v1.36.5/kubernetes-server-linux-amd64.tar.gz.sha256"
     }
   ]
 }

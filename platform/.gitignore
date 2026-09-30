@@ -1,1 +1,5 @@
 .venv/
+.tools/
+
+.build/
+.node-build-*/

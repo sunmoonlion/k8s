@@ -26,9 +26,9 @@
 
 Kubernetes 1.37 已发行，但本次所选 Calico 官方测试矩阵没有覆盖它。因此选 1.36.5；不能称它为 Kubernetes 全部发行中的最新 minor，也不能因旧物料已有 1.36.4 就继续使用旧补丁。
 
-节点镜像准备采用 KIND 原生命令 `kind build node-image --type release v1.36.5 --image sunmoon-kind-node:v1.36.5-kind0.33.0`。实施时还须固定 KIND base 镜像摘要、记录构建输入和最终镜像摘要，验证节点版本与重启；本轮未构建。[官方构建方式](https://kind.sigs.k8s.io/docs/user/quick-start/)
+节点镜像采用 KIND 原生 `build node-image --type file`，输入为已校验的 Kubernetes 1.36.5 官方 server 包；由 `make build-node` 调用，不重新实现构建器。base 镜像摘要及依赖 ID 见 `platform/artifacts/kind-build.lock.json`，身份统一引用文件与镜像锁。构建产物仍须导出、记录摘要并完成实际建群和重启验收。[官方构建方式](https://kind.sigs.k8s.io/docs/user/quick-start/)
 
-KIND 节点内的 containerd、runc 跟随固定 KIND base，不在节点启动后另装另一套运行时。CoreDNS、etcd、pause 跟随 kubeadm 1.36.5 的配套清单，物料阶段展开为逐镜像摘要。不能将这些子组件各自的最新大版混入 kubeadm 组合。云端运行时的精确安装包是下一阶段工具锁，不是已选定或已验收的云部署。
+KIND 节点内的 containerd、runc 跟随固定 KIND base，不在节点启动后另装另一套运行时。实际执行 kubeadm 1.36.5 得到 CoreDNS 1.14.2、etcd 3.6.8-0、pause 3.10.2。KIND 官方构建器会用 base 的 containerd 配置覆盖 pause，此版源码指定 3.10；两者分别锁为 `kubeadm-pause`、`kind-pause`，不混用。KIND 还会预载 kindnet 和 local-path 两个辅助镜像，属于构建输入；正式集群仍选择 Calico。不能将这些子组件各自的最新大版混入 kubeadm 组合。云端运行时的精确安装包是下一阶段工具锁，不是已选定或已验收的云部署。
 
 Flux 第一期开启四个镜像：`ghcr.io/fluxcd/source-controller:v1.9.5`、`ghcr.io/fluxcd/kustomize-controller:v1.9.5`、`ghcr.io/fluxcd/helm-controller:v1.6.4`、`ghcr.io/fluxcd/notification-controller:v1.9.4`。不启用自动镜像版本晋级。Flux 属于当前架构建议，本表选版不替代整体架构确认。
 
@@ -85,6 +85,8 @@ RAGFlow 0.27.2 上游默认 Elasticsearch 仍为 8.11.3，不能声称直接兼�
 
 当前已完成版本选择和上述官方资料核对。未完成全部 Registry 摘要、工具/安装包锁、chart 锁、离线物料及实机集成。因此本文不是完整可执行 BOM，也不宣称“整套已达到生产验收标准”。
 
-2026-10-01 实际 Registry 核验：43 个上游目标已全部确认 linux/amd64 manifest 摘要并复算原始 manifest SHA256，`make check-images` 返回 0。此前 4 项匿名限流缺口已关闭；Calico 三项统一采用[官方清单](https://raw.githubusercontent.com/projectcalico/calico/v3.32.2/manifests/calico.yaml)中的 `quay.io/calico/`，Casdoor 的真实 tag 为 `4.12.0`（不带 v）。记录见 `platform/artifacts/upstream-images.lock.json`，镜像层尚未全部下载，`offline_ready=false`。
+2026-10-01 实际 Registry 核验：55 个上游及建群配套目标已全部确认 linux/amd64 manifest 摘要并复算原始 manifest SHA256，`make check-images` 返回 0。此前 4 项匿名限流缺口已关闭；Calico 三项统一采用[官方清单](https://raw.githubusercontent.com/projectcalico/calico/v3.32.2/manifests/calico.yaml)中的 `quay.io/calico/`，Casdoor 的真实 tag 为 `4.12.0`（不带 v）。记录见 `platform/artifacts/upstream-images.lock.json`，镜像层尚未全部下载，`offline_ready=false`。
 
-宿主引导文件另锁于 `platform/artifacts/files.lock.json`：KIND 0.33.0、kubectl 1.36.5、Compose 5.5.1、SOPS 3.13.3、age 1.3.2、Flux 2.9.5、Harbor 2.15.2 官方离线安装包、Calico 3.32.2 清单。安装包摘要采用官方发布资产 SHA256，kubectl 使用官方校验文件，Calico 清单由固定版本源文件计算。选定 Compose 版本尚需与 Harbor 的实际生成配置联合验收；版本检查允许并不等于运行兼容已通过。[Compose 发行](https://github.com/docker/compose/releases/tag/v5.5.1)、[SOPS 发行](https://github.com/getsops/sops/releases/tag/v3.13.3)、[age 发行](https://github.com/FiloSottile/age/releases/tag/v1.3.2)。
+宿主引导文件另锁于 `platform/artifacts/files.lock.json`：KIND 0.33.0、kubectl/kubeadm 1.36.5、Kubernetes server 1.36.5、Compose 5.5.1、SOPS 3.13.3、age 1.3.2、Flux 2.9.5、Harbor 2.15.2 官方离线安装包、Calico 3.32.2 清单。安装包摘要采用官方发布资产 SHA256，kubectl 使用官方校验文件，Calico 清单由固定版本源文件计算。选定 Compose 版本尚需与 Harbor 的实际生成配置联合验收；版本检查允许并不等于运行兼容已通过。[Compose 发行](https://github.com/docker/compose/releases/tag/v5.5.1)、[SOPS 发行](https://github.com/getsops/sops/releases/tag/v3.13.3)、[age 发行](https://github.com/FiloSottile/age/releases/tag/v1.3.2)。
+
+Kubernetes server 包解压文件合计 1,069,089,184 字节。只读核实包内 version 为 v1.36.5，kubectl/kubeadm 与独立二进制摘要一致，四个控制面/代理归档的配置摘要与上游一致。文件模式构建仍会联网拉取 KIND 辅助镜像；不能据此宣称构建全离线。原生行为依据 [KIND 固定版源码](https://github.com/kubernetes-sigs/kind/tree/v0.33.0/pkg/build/nodeimage)。

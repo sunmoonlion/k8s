@@ -102,46 +102,10 @@
     - name: Fetch files within capacity budget
       when: artifact_action == 'fetch'
       block:
-        - name: Publish read-only helper to Windows local script directory
-          ansible.builtin.file:
-            path: '{{ windows_script_directory }}'
-            state: directory
-            mode: '0755'
-
-        - name: Install the reviewed capacity helper without changing execution policy
-          ansible.builtin.copy:
-            src: '{{ playbook_dir }}/../host/windows-capacity.ps1'
-            dest: '{{ windows_script_directory }}/windows-capacity.ps1'
-            mode: '0644'
-
-        - name: Resolve Windows path to read-only capacity helper
-          ansible.builtin.command:
-            argv: [wslpath, -w, '{{ windows_script_directory }}/windows-capacity.ps1']
-          register: capacity_script_path
-          changed_when: false
-
-        - name: Require Windows growth budget before downloading
-          ansible.builtin.command:
-            argv:
-              - '{{ windows_powershell }}'
-              - -NoProfile
-              - -NonInteractive
-              - -File
-              - '{{ capacity_script_path.stdout }}'
-              - -DataVhdPath
-              - '{{ data_vhd_windows_path }}'
-              - -DataMaximumGiB
-              - '{{ data_vhd_maximum_gib | string }}'
-              - -MinimumFreeGiB
-              - '{{ windows_minimum_free_gib | string }}'
-              - -PlannedBytes
-              - '{{ planned_bytes | string }}'
-          register: capacity_report
-          changed_when: false
-
-        - name: Report physical capacity budget
-          ansible.builtin.debug:
-            msg: '{{ capacity_report.stdout | from_json }}'
+        - name: Check shared Windows growth budget
+          ansible.builtin.include_tasks: ../host/tasks/capacity.yaml
+          vars:
+            capacity_planned_bytes: '{{ planned_bytes }}'
 
         - name: Read free bytes on the cache parent filesystem
           ansible.builtin.command:

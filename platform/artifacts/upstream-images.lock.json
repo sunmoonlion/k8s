@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "platform": "linux/amd64",
-  "resolved_at": "2026-09-30T16:49:45.284681+00:00",
+  "resolved_at": "2026-09-30T17:30:22.766365+00:00",
   "source_method": "docker manifest inspect --verbose; SHA256 over decoded Raw verified against Descriptor",
   "complete": true,
-  "scope": "selected upstream images; excludes KIND build and generated auxiliary image closure",
+  "scope": "Selected upstream images and KIND/kubeadm build inputs; excludes generated application and chart auxiliary closure",
   "images": [
     {
       "id": "python",
@@ -478,6 +478,138 @@
       "reference": "docker.io/goharbor/prepare@sha256:5b9428fb649b3a0e0fe497189a880d7c9f1281538b85de9ad377cb524e427bd5",
       "config_digest": "sha256:55b74fd32bf25332787cb5e8196d6b084313efc0a5e4555348f19b39b6265fc4",
       "compressed_layer_bytes": 131254938
+    },
+    {
+      "id": "kind-base",
+      "group": "cluster-build",
+      "source": "docker.io/kindest/base:v20260820-69b56db7",
+      "platform": "linux/amd64",
+      "status": "resolved",
+      "manifest_digest": "sha256:49207c7d517ca84ea87c880d314e2ebf25ae7f5dc85f54238f543a8b6681970f",
+      "reference": "docker.io/kindest/base@sha256:49207c7d517ca84ea87c880d314e2ebf25ae7f5dc85f54238f543a8b6681970f",
+      "config_digest": "sha256:816692b104dfc1ccc2bf183a2c61bf5d40c8fbc232dd5c71210f4d71f622061d",
+      "compressed_layer_bytes": 123158633
+    },
+    {
+      "id": "kindnet",
+      "group": "cluster-build",
+      "source": "docker.io/kindest/kindnetd:v20260820-69b56db7",
+      "platform": "linux/amd64",
+      "status": "resolved",
+      "manifest_digest": "sha256:6f2d9f57548aaca08e674bc35b2a53653cd84af18b26b1a99234d59cd5e548c2",
+      "reference": "docker.io/kindest/kindnetd@sha256:6f2d9f57548aaca08e674bc35b2a53653cd84af18b26b1a99234d59cd5e548c2",
+      "config_digest": "sha256:4626fe10df5b930638e6e1662143ee1c7a698de6174fdb61a8ce658e688be2cd",
+      "compressed_layer_bytes": 39740316
+    },
+    {
+      "id": "kind-storage",
+      "group": "cluster-build",
+      "source": "docker.io/kindest/local-path-provisioner:v20260820-69b56db7",
+      "platform": "linux/amd64",
+      "status": "resolved",
+      "manifest_digest": "sha256:77ab4466418c90f8a651cdec58ef864977eeb755c3ec83791c1d4b0d9259c938",
+      "reference": "docker.io/kindest/local-path-provisioner@sha256:77ab4466418c90f8a651cdec58ef864977eeb755c3ec83791c1d4b0d9259c938",
+      "config_digest": "sha256:c82008e2cd0186ef96bfd05d6b49d3286768fae5bd7a961f70bd485a3785c006",
+      "compressed_layer_bytes": 15859841
+    },
+    {
+      "id": "kind-storage-helper",
+      "group": "cluster-build",
+      "source": "docker.io/kindest/local-path-helper:v20260131-7181c60a",
+      "platform": "linux/amd64",
+      "status": "resolved",
+      "manifest_digest": "sha256:d65166b93311a307a87b6f72aee7f6bdcf7d212df174c95495d44faba780a273",
+      "reference": "docker.io/kindest/local-path-helper@sha256:d65166b93311a307a87b6f72aee7f6bdcf7d212df174c95495d44faba780a273",
+      "config_digest": "sha256:19aa6a21b42cb57f6f76e0f3584d7dfec241a3f3568cd6590a2967c28d9cdce3",
+      "compressed_layer_bytes": 2866307
+    },
+    {
+      "id": "kind-pause",
+      "group": "cluster-build",
+      "source": "registry.k8s.io/pause:3.10",
+      "platform": "linux/amd64",
+      "status": "resolved",
+      "manifest_digest": "sha256:7c38f24774e3cbd906d2d33c38354ccf787635581c122965132c9bd309754d4a",
+      "reference": "registry.k8s.io/pause@sha256:7c38f24774e3cbd906d2d33c38354ccf787635581c122965132c9bd309754d4a",
+      "config_digest": "sha256:873ed75102791e5b0b8a7fcd41606c92fcec98d56d05ead4ac5131650004c136",
+      "compressed_layer_bytes": 316581
+    },
+    {
+      "id": "kube-apiserver",
+      "group": "cluster-build",
+      "source": "registry.k8s.io/kube-apiserver:v1.36.5",
+      "platform": "linux/amd64",
+      "status": "resolved",
+      "manifest_digest": "sha256:78487f7b4b1a588d9630f758f6677895eabe00d93c4cbbea3d6b06e5f476a371",
+      "reference": "registry.k8s.io/kube-apiserver@sha256:78487f7b4b1a588d9630f758f6677895eabe00d93c4cbbea3d6b06e5f476a371",
+      "config_digest": "sha256:d350c55cb17bb41eb03c6596f063463a94a68c7dccd909b5d920f40576905a1d",
+      "compressed_layer_bytes": 29835125
+    },
+    {
+      "id": "kube-controller-manager",
+      "group": "cluster-build",
+      "source": "registry.k8s.io/kube-controller-manager:v1.36.5",
+      "platform": "linux/amd64",
+      "status": "resolved",
+      "manifest_digest": "sha256:a7b63e85c7914ff6d49d97004a09b8a469efa6fe41f58d2c1faa2606ed8cb742",
+      "reference": "registry.k8s.io/kube-controller-manager@sha256:a7b63e85c7914ff6d49d97004a09b8a469efa6fe41f58d2c1faa2606ed8cb742",
+      "config_digest": "sha256:cf2bbfca0a634248428aefadb5f532c8cfadbf67ff728eb1d206bfdf966c9f28",
+      "compressed_layer_bytes": 26484971
+    },
+    {
+      "id": "kube-scheduler",
+      "group": "cluster-build",
+      "source": "registry.k8s.io/kube-scheduler:v1.36.5",
+      "platform": "linux/amd64",
+      "status": "resolved",
+      "manifest_digest": "sha256:249bcbdb401e4882c125e5b6958aab09954ea59d06289af380e60dd58115405e",
+      "reference": "registry.k8s.io/kube-scheduler@sha256:249bcbdb401e4882c125e5b6958aab09954ea59d06289af380e60dd58115405e",
+      "config_digest": "sha256:137b99d7bbba00a26374e3d8018ea318ff0d9de86d46bf16f2632364676826b3",
+      "compressed_layer_bytes": 20504953
+    },
+    {
+      "id": "kube-proxy",
+      "group": "cluster-build",
+      "source": "registry.k8s.io/kube-proxy:v1.36.5",
+      "platform": "linux/amd64",
+      "status": "resolved",
+      "manifest_digest": "sha256:54f6c76e0413be01177617704c8b6e2c291a4ec2226a944216b62d5ac1d625df",
+      "reference": "registry.k8s.io/kube-proxy@sha256:54f6c76e0413be01177617704c8b6e2c291a4ec2226a944216b62d5ac1d625df",
+      "config_digest": "sha256:a83c93aedd6acfab8933b1e95ad2f47ba024acb3f247919688f075cc992e23e3",
+      "compressed_layer_bytes": 30072808
+    },
+    {
+      "id": "coredns",
+      "group": "cluster-build",
+      "source": "registry.k8s.io/coredns/coredns:v1.14.2",
+      "platform": "linux/amd64",
+      "status": "resolved",
+      "manifest_digest": "sha256:fd5079792b93909db3adefa91e41c3995455013394f0197c7346786ae19079fc",
+      "reference": "registry.k8s.io/coredns/coredns@sha256:fd5079792b93909db3adefa91e41c3995455013394f0197c7346786ae19079fc",
+      "config_digest": "sha256:38667dd9be96c17227adde456e33ad701bdbdc5c6db0272a1d33a929bd8e62d6",
+      "compressed_layer_bytes": 23249439
+    },
+    {
+      "id": "kubeadm-pause",
+      "group": "cluster-build",
+      "source": "registry.k8s.io/pause:3.10.2",
+      "platform": "linux/amd64",
+      "status": "resolved",
+      "manifest_digest": "sha256:412c4a7219cb8a299a37337f3d87810c5340095322e15594a1637785adad0f17",
+      "reference": "registry.k8s.io/pause@sha256:412c4a7219cb8a299a37337f3d87810c5340095322e15594a1637785adad0f17",
+      "config_digest": "sha256:4a83b15d3ecfe0d916b2d0a7991bc2854a629b8097017c2ee1ff65b30ae4c07c",
+      "compressed_layer_bytes": 316650
+    },
+    {
+      "id": "etcd",
+      "group": "cluster-build",
+      "source": "registry.k8s.io/etcd:3.6.8-0",
+      "platform": "linux/amd64",
+      "status": "resolved",
+      "manifest_digest": "sha256:aa2b41e3f99c9a337b82f687875a63c5119e6d39bc43fc76b6c40a96f55cf391",
+      "reference": "registry.k8s.io/etcd@sha256:aa2b41e3f99c9a337b82f687875a63c5119e6d39bc43fc76b6c40a96f55cf391",
+      "config_digest": "sha256:ee85eb1f0edd27fd11e3bed20f21a4001ad63107eb2f8d489429648a799c0e86",
+      "compressed_layer_bytes": 22877852
     }
   ],
   "offline_ready": false

@@ -14,6 +14,10 @@ make preflight        # 只读检查宿主挂载
 make plan-artifacts   # 只读查看文件物料；不联网、不修改物料目录
 make fetch-artifacts  # 核容量后下载并校验；不安装工具或启动服务
 make check-artifacts  # 不联网核对物料文件的大小和 SHA256
+make install-binaries # 从物料安装 KIND/kubectl/kubeadm 到 .tools/bin
+make plan-node-build  # 查看官方 KIND 构建参数，不构建
+make build-node       # 核容量、构建并检查新节点镜像；不创建集群
+make check-node       # 重新核验已有构建产物，不重建
 ```
 
 支持同一入口选择部分文件，例如 `make fetch-artifacts ARTIFACTS=kind,kubectl`；默认选择锁文件内全部文件。不存在的名称报错，不跳过。站点参数可用 `SITE=environments/kind/site.yaml` 指定。当前首次创建物料缓存要求其父目录已存在，以便先核验所在文件系统的可用空间。
@@ -59,15 +63,15 @@ uv pip compile --python-version 3.12 --generate-hashes --no-header \
 
 ## 已核实与未完成
 
-43 个选定上游镜像的 linux/amd64 manifest 已全部取得。通过东京及本机原生 `docker manifest inspect --verbose` 读取公开元数据，对 Base64 Raw 解码后复算 SHA256，与 Descriptor 对比。Calico 三项使用官方清单指定的 quay.io；Casdoor 已确认使用不带 v 的 4.12.0。查询临时程序不作为部署依赖。
+55 个选定上游及建群配套镜像的 linux/amd64 manifest 已全部取得。通过东京及本机原生 `docker manifest inspect --verbose` 读取公开元数据，对 Base64 Raw 解码后复算 SHA256，与 Descriptor 对比。Calico 三项使用官方清单指定的 quay.io；Casdoor 已确认使用不带 v 的 4.12.0。查询临时程序不作为部署依赖。
 
-`check-images` 通过仅证明这一批镜像身份完整；文件校验通过仅证明选中文件可用。KIND 1.36.5 构建产物、kubeadm 配套镜像、完整宿主工具/构建依赖、chart/辅助镜像、自有应用镜像和离线发布尚需完成，因此两份锁均保持 `offline_ready=false`。
+`check-images` 通过仅证明这一批镜像身份完整；文件校验通过仅证明选中文件可用。KIND 1.36.5 产物导出与集群验收、配套镜像的离线归档、完整宿主工具/构建依赖、chart/辅助镜像、自有应用镜像和离线发布尚需完成，因此两份锁均保持 `offline_ready=false`。
 
 宿主挂载预检已实际通过（ok=5、changed=0、failed=0），但 Docker 服务命名空间可见性、TLS/认证、服务部署和重建恢复仍需后续准入及验收。当前没有执行业务测试或服务重启。
 
 ## 本批物料的实际结果
 
-8 项文件共 929,341,287 字节已经下载。离线核验 ok=8、changed=0、failed=0；重复 fetch 为 ok=17、changed=0、failed=0，全部复用现有文件。
+10 项文件共 1,358,981,849 字节已经下载。此前 8 项重复 fetch 为 changed=0；新增 kubeadm 和 server 包均通过统一入口下载并校验。
 
 Harbor 官方包内 177 个 OCI blob 已流式复算 SHA256，12 个镜像的配置及未压缩层身份与上游一致。由于层的压缩表示不同，归档 manifest 摘要与上游分发摘要不同，映射见 `artifacts/harbor-offline-images.lock.json`。导入后的 Docker 摘要查询和启动尚未验证；安装阶段不得混用这两类摘要。
 
@@ -79,3 +83,15 @@ Harbor 官方包内 177 个 OCI blob 已流式复算 SHA256，12 个镜像的配
 | C-R4 | 站点参数不覆盖镜像；依赖版本来自锁文件 |
 | C-R6 | 应用改动仍从模板开始，目前四个应用仓未改 |
 | C-D3 / C-D8 | 本轮不改数据库身份或迁移链；后续保持独立逻辑库和迁移 Job |
+
+## KIND 节点构建
+
+`make install-binaries` 默认选择 kind/kubectl/kubeadm，可用 `BINARIES=kind,kubectl` 缩小范围。只安装在工作区 `.tools/bin`，不替换系统工具；源文件和安装后文件都核对 SHA256。`.tools/`、`.venv/`、`.build/` 不提交 Git。
+
+`make build-node` 直接使用 KIND 官方文件构建模式，base 使用锁定摘要。`kind-build.lock.json` 引用已有文件/镜像 ID，不从站点配置覆盖镜像版本。构建会联网拉取官方辅助镜像，结束后在无网络临时容器中核对 Kubernetes 版本和十个内置镜像的配置摘要。现有输出标签会拒绝覆盖，失败产物不能被自动视为已验收。
+
+构建前同时检查 Windows 增长预算和 Docker/临时目录文件系统。当前新增空间预算为 **6 GiB 估计值**，覆盖约 1 GiB server 解包、base 和内容解压、工作容器与提交镜像及余量；不是硬配额，也不覆盖后续导出。构建后复核剩余容量。原生 KIND 清理它自己创建的构建容器；Ansible 仅删除该次 tempfile 返回的 `.node-build-*` 解包目录，不清理已有容器、卷或构建缓存。
+
+本地回执位于 `.build/node-image.json`，保存输入摘要、Docker image ID、大小、实际版本及内置配置身份。**不能把 Docker image ID 直接当成完整仓库引用**（本机 Docker 29 的 containerd 存储返回 manifest 身份，应读取 Descriptor 确认类型）；只有后续导出校验及发布完成，才能生成用于部署的不可变节点产物引用。节点镜像构建通过也不代表集群或项目验收通过。
+
+2026-10-01：本机官方构建已完成，`make check-node` 为 ok=16、changed=0、failed=0；实际 Kubernetes 1.36.5、containerd 2.3.4、runc 1.4.3。节点归档和实际建群仍未完成，详细过程见根目录 CHECKPOINT.md。
