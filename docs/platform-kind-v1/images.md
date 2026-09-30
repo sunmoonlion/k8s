@@ -6,7 +6,7 @@
 
 ## 选择规则
 
-采用正式发行，优先当前受支持的最新稳定版本；有配套约束时写明例外。排除 RC、Beta、nightly、开发版。正式发布使用 `tag@sha256:…`，不能只固定 tag，也不能凭发行号编造摘要。第一期目标架构为 `linux/amd64`。
+采用正式发行，优先当前受支持的最新稳定版本；有配套约束时写明例外。排除 RC、Beta、nightly、开发版。正式发布使用 `repo@sha256:…`，不能只固定 tag，也不能凭发行号编造摘要。第一期目标架构为 `linux/amd64`。
 
 下列是选定版本，不再列多个候选。表中地址用于物料准备；没有经过 Registry manifest 核验的引用不能当作已备齐物料。
 
@@ -17,7 +17,7 @@
 | Kubernetes | **1.36.5**；控制面、kube-proxy、kubectl、kubeadm、kubelet 同版 | [1.36 当前补丁](https://kubernetes.io/releases/1.36/)；选择 Calico 官方测试范围内的最新 minor 及其最新补丁 |
 | KIND 工具 | **0.33.0** | [官方发行](https://github.com/kubernetes-sigs/kind/releases/tag/v0.33.0)；这不是容器镜像 |
 | KIND 节点 | **Kubernetes 1.36.5，使用 KIND 0.33.0 官方构建命令生成** | 该 KIND 发行只列出 1.36.4 预制镜像，不能把它写成 1.36.5；自建产物使用本项目仓库名，不冒充官方发布 |
-| Calico | **3.32.2**；`docker.io/calico/node:v3.32.2`、`cni:v3.32.2`、`kube-controllers:v3.32.2` | 使用同 tag 的部署清单；[发行](https://github.com/projectcalico/calico/releases/tag/v3.32.2)、[测试范围为 1.34–1.36](https://docs.tigera.io/calico/latest/getting-started/kubernetes/requirements) |
+| Calico | **3.32.2**；`quay.io/calico/node:v3.32.2`、`cni:v3.32.2`、`kube-controllers:v3.32.2` | 使用同 tag 的部署清单；[发行](https://github.com/projectcalico/calico/releases/tag/v3.32.2)、[测试范围为 1.34–1.36](https://docs.tigera.io/calico/latest/getting-started/kubernetes/requirements) |
 | Traefik | **3.7.13**；`docker.io/library/traefik:v3.7.13` | [官方镜像清单](https://raw.githubusercontent.com/docker-library/official-images/master/library/traefik) |
 | 本地卷 provisioner | **0.0.37**；`docker.io/rancher/local-path-provisioner:v0.0.37` | [发行](https://github.com/rancher/local-path-provisioner/releases/tag/v0.0.37)；静态数据卷和宿主挂载另由站点声明控制 |
 | 卷辅助镜像 | **1.37.0-glibc**；`docker.io/library/busybox:1.37.0-glibc` | 上游 provisioner 默认没有精确 tag；显式固定。官方镜像清单将 1.38.0 同时标记为 unstable，本次不选；[镜像清单](https://raw.githubusercontent.com/docker-library/official-images/master/library/busybox) |
@@ -40,7 +40,7 @@ Flux 第一期开启四个镜像：`ghcr.io/fluxcd/source-controller:v1.9.5`、`
 | 业务 PostgreSQL | **18.6**；`docker.io/library/postgres:18.6-trixie` | [官方镜像清单](https://raw.githubusercontent.com/docker-library/official-images/master/library/postgres)；19beta4 不纳入 |
 | 业务 Redis / Nodebull Redis | **8.10.2**；`docker.io/library/redis:8.10.2-trixie` | [官方镜像清单](https://raw.githubusercontent.com/docker-library/official-images/master/library/redis)；不同用途隔离身份和实例配置 |
 | RabbitMQ | **4.3.6**；`docker.io/library/rabbitmq:4.3.6-management` | [官方镜像清单](https://raw.githubusercontent.com/docker-library/official-images/master/library/rabbitmq) |
-| Casdoor | **4.12.0**；镜像目标 `docker.io/casbin/casdoor:4.12.0` | [正式发行](https://github.com/casdoor/casdoor/releases/tag/v4.12.0)；镜像 manifest 尚未核实 |
+| Casdoor | **4.12.0**；镜像目标 `docker.io/casbin/casdoor:4.12.0` | [正式发行](https://github.com/casdoor/casdoor/releases/tag/v4.12.0)；linux/amd64 manifest 已核实 |
 | Elasticsearch | **9.5.4**；`docker.elastic.co/elasticsearch/elasticsearch:9.5.4` | [发行](https://github.com/elastic/elasticsearch/releases/tag/v9.5.4) |
 | Kibana | **9.5.4**；`docker.elastic.co/kibana/kibana:9.5.4` | [发行](https://github.com/elastic/kibana/releases/tag/v9.5.4) |
 | Logstash | **9.5.4**；`docker.elastic.co/logstash/logstash:9.5.4` | [发行](https://github.com/elastic/logstash/releases/tag/v9.5.4) |
@@ -85,4 +85,6 @@ RAGFlow 0.27.2 上游默认 Elasticsearch 仍为 8.11.3，不能声称直接兼�
 
 当前已完成版本选择和上述官方资料核对。未完成全部 Registry 摘要、工具/安装包锁、chart 锁、离线物料及实机集成。因此本文不是完整可执行 BOM，也不宣称“整套已达到生产验收标准”。
 
-2026-10-01 实际 Registry 核验：43 个上游目标中 39 个已确认 linux/amd64 manifest 摘要并复算原始 manifest SHA256。4 项受 Docker Hub 匿名限流阻断；Casdoor 同时修正镜像 tag 不带 `v`，该正确 tag 尚待核验。记录见 `platform/artifacts/upstream-images.lock.json`，未下载镜像层，`offline_ready=false`。Python 按所有者后续决定改为 3.13.15。
+2026-10-01 实际 Registry 核验：43 个上游目标已全部确认 linux/amd64 manifest 摘要并复算原始 manifest SHA256，`make check-images` 返回 0。此前 4 项匿名限流缺口已关闭；Calico 三项统一采用[官方清单](https://raw.githubusercontent.com/projectcalico/calico/v3.32.2/manifests/calico.yaml)中的 `quay.io/calico/`，Casdoor 的真实 tag 为 `4.12.0`（不带 v）。记录见 `platform/artifacts/upstream-images.lock.json`，镜像层尚未全部下载，`offline_ready=false`。
+
+宿主引导文件另锁于 `platform/artifacts/files.lock.json`：KIND 0.33.0、kubectl 1.36.5、Compose 5.5.1、SOPS 3.13.3、age 1.3.2、Flux 2.9.5、Harbor 2.15.2 官方离线安装包、Calico 3.32.2 清单。安装包摘要采用官方发布资产 SHA256，kubectl 使用官方校验文件，Calico 清单由固定版本源文件计算。选定 Compose 版本尚需与 Harbor 的实际生成配置联合验收；版本检查允许并不等于运行兼容已通过。[Compose 发行](https://github.com/docker/compose/releases/tag/v5.5.1)、[SOPS 发行](https://github.com/getsops/sops/releases/tag/v3.13.3)、[age 发行](https://github.com/FiloSottile/age/releases/tag/v1.3.2)。

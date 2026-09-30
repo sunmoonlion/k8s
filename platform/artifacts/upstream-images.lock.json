@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "platform": "linux/amd64",
-  "resolved_at": "2026-09-30T16:28:52.533238+00:00",
+  "resolved_at": "2026-09-30T16:49:45.284681+00:00",
   "source_method": "docker manifest inspect --verbose; SHA256 over decoded Raw verified against Descriptor",
-  "complete": false,
+  "complete": true,
   "scope": "selected upstream images; excludes KIND build and generated auxiliary image closure",
   "images": [
     {
@@ -99,8 +99,11 @@
       "group": "identity",
       "source": "docker.io/casbin/casdoor:4.12.0",
       "platform": "linux/amd64",
-      "status": "unresolved",
-      "reason": "Docker Hub unauthenticated pull rate limit; version existence not determined"
+      "status": "resolved",
+      "manifest_digest": "sha256:bf84c727d59dff39415414b6fbf00542fbe216567e21401099f5e6baee2460d9",
+      "reference": "docker.io/casbin/casdoor@sha256:bf84c727d59dff39415414b6fbf00542fbe216567e21401099f5e6baee2460d9",
+      "config_digest": "sha256:6b629ef5e999344501dcfd0f8134201f340c4774abe0cbc6902b7cde74e2571a",
+      "compressed_layer_bytes": 54304896
     },
     {
       "id": "elasticsearch",
@@ -261,35 +264,44 @@
       "group": "cluster",
       "source": "docker.io/library/busybox:1.37.0-glibc",
       "platform": "linux/amd64",
-      "status": "unresolved",
-      "reason": "Docker Hub unauthenticated pull rate limit; version existence not determined"
+      "status": "resolved",
+      "manifest_digest": "sha256:66a6306db78bf2dbf3487f293aa8d6990d8e506fdffab9cc43fe422becf886e4",
+      "reference": "docker.io/library/busybox@sha256:66a6306db78bf2dbf3487f293aa8d6990d8e506fdffab9cc43fe422becf886e4",
+      "config_digest": "sha256:30ecbe1509090b38ef3260f3609d64d8261230464eaa4d235901db496e9647fb",
+      "compressed_layer_bytes": 2211514
     },
     {
       "id": "calico-node",
       "group": "cluster",
-      "source": "docker.io/calico/node:v3.32.2",
+      "source": "quay.io/calico/node:v3.32.2",
       "platform": "linux/amd64",
       "status": "resolved",
       "manifest_digest": "sha256:d7a9b58573b165caa8128d2735a19b788434547064b2b4af2abf68cea24f7ec3",
-      "reference": "docker.io/calico/node@sha256:d7a9b58573b165caa8128d2735a19b788434547064b2b4af2abf68cea24f7ec3",
+      "reference": "quay.io/calico/node@sha256:d7a9b58573b165caa8128d2735a19b788434547064b2b4af2abf68cea24f7ec3",
       "config_digest": "sha256:c5f89ea6b7611095794794d81aef1b36e0cb7c322800cf707be2f42e45a3b7e1",
       "compressed_layer_bytes": 123386474
     },
     {
       "id": "calico-cni",
       "group": "cluster",
-      "source": "docker.io/calico/cni:v3.32.2",
+      "source": "quay.io/calico/cni:v3.32.2",
       "platform": "linux/amd64",
-      "status": "unresolved",
-      "reason": "Docker Hub unauthenticated pull rate limit; version existence not determined"
+      "status": "resolved",
+      "manifest_digest": "sha256:8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a",
+      "reference": "quay.io/calico/cni@sha256:8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a",
+      "config_digest": "sha256:cf5fc378d71fb69befb3fb1ac6ffb3f24354ee45a1b8504e415937e46ffb98ab",
+      "compressed_layer_bytes": 69864288
     },
     {
       "id": "calico-kube-controllers",
       "group": "cluster",
-      "source": "docker.io/calico/kube-controllers:v3.32.2",
+      "source": "quay.io/calico/kube-controllers:v3.32.2",
       "platform": "linux/amd64",
-      "status": "unresolved",
-      "reason": "Docker Hub unauthenticated pull rate limit; version existence not determined"
+      "status": "resolved",
+      "manifest_digest": "sha256:f241490840083743e747389af8d5067c961370bd5e2e2af6538db2f7e183f60b",
+      "reference": "quay.io/calico/kube-controllers@sha256:f241490840083743e747389af8d5067c961370bd5e2e2af6538db2f7e183f60b",
+      "config_digest": "sha256:81a30a7a240377576c569956df911285a92366ade3dd19e4ea5e73cf868d29db",
+      "compressed_layer_bytes": 63187894
     },
     {
       "id": "source-controller",

@@ -5,11 +5,12 @@ SHELL := /bin/bash
 UV ?= uv
 HOST_PYTHON ?= /usr/bin/python3
 ANSIBLE := .venv/bin/ansible-playbook
+ARTIFACTS ?= all
 SITE ?= environments/kind/site.yaml
 
 .PHONY: help tools images preflight check-images
 help:
-	@printf '%s\n' 'tools        Install locked Ansible into platform/.venv' 'images       Show selected upstream image identities' 'check-images Fail if an upstream image is unresolved' 'preflight    Read-only host mount checks (Ansible)' 'Deployment/lifecycle targets are not implemented yet.'
+	@printf '%s\n' 'tools        Install locked Ansible into platform/.venv' 'images       Show selected upstream image identities' 'check-images Fail if an upstream image is unresolved' 'preflight    Read-only host mount checks (Ansible)' 'plan-artifacts Preview selected locked files without downloads' 'fetch-artifacts Download and verify selected files after capacity check' 'check-artifacts Verify selected files fully offline' 'Deployment/lifecycle targets are not implemented yet.'
 
 tools:
 	$(UV) venv --python '$(HOST_PYTHON)' --allow-existing .venv
@@ -20,7 +21,17 @@ images:
 
 check-images:
 	@jq -r ' .images[] | select(.status != "resolved") | "UNRESOLVED: " + .id + " — " + .reason' artifacts/upstream-images.lock.json
-	@jq -e '.schema_version == 1 and .platform == "linux/amd64" and .complete == true and (.images | length > 0) and ([.images[].id] | length == (unique | length)) and all(.images[]; .status == "resolved" and (.manifest_digest | test("^sha256:[a-f0-9]{64}$$")) and (.reference | test("^[^@]+@sha256:[a-f0-9]{64}$$")))' artifacts/upstream-images.lock.json >/dev/null
+	@jq -e '.schema_version == 1 and .platform == "linux/amd64" and .complete == true and (.images | length > 0) and ([.images[].id] | length == (unique | length)) and all(.images[]; .status == "resolved" and .platform == "linux/amd64" and ((.reference | split("@")[1]) == .manifest_digest) and (.manifest_digest | test("^sha256:[a-f0-9]{64}$$")) and (.reference | test("^[^@]+@sha256:[a-f0-9]{64}$$")))' artifacts/upstream-images.lock.json >/dev/null
 
 preflight:
 	$(ANSIBLE) -i host/inventory.yaml host/preflight.yaml --extra-vars '@$(SITE)' --check
+
+.PHONY: plan-artifacts fetch-artifacts check-artifacts
+plan-artifacts:
+	$(ANSIBLE) -i host/inventory.yaml artifacts/files.yaml --extra-vars '@$(SITE)' --extra-vars 'artifact_action=plan artifact_ids=$(ARTIFACTS)'
+
+fetch-artifacts:
+	$(ANSIBLE) -i host/inventory.yaml artifacts/files.yaml --extra-vars '@$(SITE)' --extra-vars 'artifact_action=fetch artifact_ids=$(ARTIFACTS)'
+
+check-artifacts:
+	$(ANSIBLE) -i host/inventory.yaml artifacts/files.yaml --extra-vars '@$(SITE)' --extra-vars 'artifact_action=verify artifact_ids=$(ARTIFACTS)'

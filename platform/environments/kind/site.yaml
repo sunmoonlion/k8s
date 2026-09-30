@@ -10,3 +10,11 @@ storage_mounts:
     fsroot: /kind-clusters
   - target: /data/harbor
     fsroot: /harbor
+
+# Material cache; installation packages and image archives are distinct types.
+artifact_cache_root: /home/zymun/packages-to-be-installed/releases/platform-kind-v1
+windows_powershell: /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe
+data_vhd_windows_path: 'C:\wsl-disks\sunmoon-data.vhdx'
+data_vhd_maximum_gib: 230
+windows_minimum_free_gib: 50
+windows_script_directory: /mnt/c/wsl-disks/scripts/platform-kind-v1

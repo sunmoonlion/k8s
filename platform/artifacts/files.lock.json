@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "platform": "linux/amd64",
+  "resolved_at": "2026-09-30T16:48:40.153892+00:00",
+  "scope": "Bootstrap tools, Harbor installer and Calico source manifest; not a complete offline release",
+  "offline_ready": false,
+  "files": [
+    {
+      "id": "kind",
+      "version": "v0.33.0",
+      "kind": "binary",
+      "path": "bin/kind-v0.33.0-linux-amd64",
+      "size_bytes": 10530942,
+      "sha256": "aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d",
+      "url": "https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64",
+      "identity_source": "https://api.github.com/repos/kubernetes-sigs/kind/releases/377438840"
+    },
+    {
+      "id": "compose",
+      "version": "v5.5.1",
+      "kind": "binary",
+      "path": "bin/docker-compose-v5.5.1-linux-x86_64",
+      "size_bytes": 32333754,
+      "sha256": "db1889184726840f75c4f9c001048430d4f25b3be3cb084d3ddd762bc0aed576",
+      "url": "https://github.com/docker/compose/releases/download/v5.5.1/docker-compose-linux-x86_64",
+      "identity_source": "https://api.github.com/repos/docker/compose/releases/382138152"
+    },
+    {
+      "id": "sops",
+      "version": "v3.13.3",
+      "kind": "binary",
+      "path": "bin/sops-v3.13.3-linux-amd64",
+      "size_bytes": 52121762,
+      "sha256": "e5bec3346a873ae91d871550f3e698c1aad962aff462a080e40f25fde17fef6b",
+      "url": "https://github.com/getsops/sops/releases/download/v3.13.3/sops-v3.13.3.linux.amd64",
+      "identity_source": "https://api.github.com/repos/getsops/sops/releases/358471161"
+    },
+    {
+      "id": "age",
+      "version": "v1.3.2",
+      "kind": "package",
+      "path": "packages/age-v1.3.2-linux-amd64.tar.gz",
+      "size_bytes": 19405817,
+      "sha256": "cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10",
+      "url": "https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-amd64.tar.gz",
+      "identity_source": "https://api.github.com/repos/FiloSottile/age/releases/379059621"
+    },
+    {
+      "id": "flux",
+      "version": "v2.9.5",
+      "kind": "package",
+      "path": "packages/flux-2.9.5-linux-amd64.tar.gz",
+      "size_bytes": 24734577,
+      "sha256": "b853df82adfd7736f580692f9f734473d571606307139f8fd20c2a80dd1ff473",
+      "url": "https://github.com/fluxcd/flux2/releases/download/v2.9.5/flux_2.9.5_linux_amd64.tar.gz",
+      "identity_source": "https://api.github.com/repos/fluxcd/flux2/releases/379920857"
+    },
+    {
+      "id": "harbor-installer",
+      "version": "v2.15.2",
+      "kind": "package",
+      "path": "packages/harbor-offline-installer-v2.15.2.tgz",
+      "size_bytes": 730279437,
+      "sha256": "67517e0ba4a3f9db90731aa560dacbc0b24a0de04d5a1b428c7d32ea96656432",
+      "url": "https://github.com/goharbor/harbor/releases/download/v2.15.2/harbor-offline-installer-v2.15.2.tgz",
+      "identity_source": "https://api.github.com/repos/goharbor/harbor/releases/347959887"
+    },
+    {
+      "id": "kubectl",
+      "version": "v1.36.5",
+      "kind": "binary",
+      "path": "bin/kubectl-v1.36.5-linux-amd64",
+      "size_bytes": 59584674,
+      "sha256": "33bc88a24c3b09cf55bfd59e6ca977881b61fc3f25ab65bc80c65b430248648e",
+      "url": "https://dl.k8s.io/release/v1.36.5/bin/linux/amd64/kubectl",
+      "identity_source": "https://dl.k8s.io/release/v1.36.5/bin/linux/amd64/kubectl.sha256"
+    },
+    {
+      "id": "calico-manifest",
+      "version": "v3.32.2",
+      "kind": "manifest",
+      "path": "manifests/calico-v3.32.2.yaml",
+      "size_bytes": 350324,
+      "sha256": "a8c828a06a87c629a282ebbc424895b77f3a030251993e41ea400a743675bb02",
+      "url": "https://raw.githubusercontent.com/projectcalico/calico/v3.32.2/manifests/calico.yaml",
+      "identity_source": "SHA256 computed from official version-tagged manifest bytes"
+    }
+  ]
+}
