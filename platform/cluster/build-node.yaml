@@ -216,6 +216,20 @@
             quiet: true
             that: embedded_configs.stdout_lines | map('regex_replace', ' .*$', '') | list == node_images | map(attribute='config_digest') | map('regex_replace', '^sha256:', '') | list
 
+        - name: Verify every embedded containerd content blob
+          ansible.builtin.command:
+            argv:
+              - docker
+              - run
+              - --rm
+              - --network=none
+              - --entrypoint=/bin/sh
+              - '{{ (built_image.stdout | from_json)[0].Id }}'
+              - -ec
+              - 'n=0; for f in /var/lib/containerd/io.containerd.content.v1.content/blobs/sha256/*; do [ -f "$f" ]; h=$(sha256sum "$f"); [ "${h%% *}" = "${f##*/}" ] || exit 1; n=$((n+1)); done; printf "verified_content_blobs=%s\n" "$n"'
+          changed_when: false
+          register: content_verification
+
         - name: Create the local receipt directory
           ansible.builtin.file:
             path: '{{ playbook_dir }}/../.build'
@@ -226,7 +240,7 @@
           ansible.builtin.copy:
             dest: '{{ playbook_dir }}/../.build/node-image.json'
             mode: '0644'
-            content: '{{ {"inputs": build_lock, "kind_sha256": kind_file.sha256, "server_sha256": server_file.sha256, "base": base_image.reference, "image_id": (built_image.stdout | from_json)[0].Id, "image_size_bytes": (built_image.stdout | from_json)[0].Size, "versions": node_versions.stdout_lines, "embedded_configs": embedded_configs.stdout_lines, "exported": false, "cluster_verified": false} | to_nice_json }}'
+            content: '{{ {"inputs": build_lock, "kind_sha256": kind_file.sha256, "server_sha256": server_file.sha256, "base": base_image.reference, "image_id": (built_image.stdout | from_json)[0].Id, "image_size_bytes": (built_image.stdout | from_json)[0].Size, "versions": node_versions.stdout_lines, "embedded_configs": embedded_configs.stdout_lines, "content_verification": content_verification.stdout} | to_nice_json }}'
 
         - name: Report actual node binaries
           ansible.builtin.debug:

@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "installer_id": "harbor-installer",
+  "files": [
+    {
+      "path": "harbor/harbor.v2.15.2.tar.gz",
+      "size_bytes": 735455741,
+      "sha256": "9dad46d2df081e35137e48ac456189d25358cac637d71abe37776d81f21c8a89"
+    },
+    {
+      "path": "harbor/prepare",
+      "size_bytes": 2211,
+      "sha256": "a080d5af30e22e4dff2d4589721e2fa508fd8379aca2c259a0d687a8c332f353"
+    },
+    {
+      "path": "harbor/LICENSE",
+      "size_bytes": 11347,
+      "sha256": "12317570bcb2086eea10ad29876c81021d48303f3799a5768c0537f121ea6cbe"
+    },
+    {
+      "path": "harbor/install.sh",
+      "size_bytes": 1975,
+      "sha256": "e9cb425aa63b9c3d8e60ac2398222d8b055d4984b6f249cf3420bd00e50e8110"
+    },
+    {
+      "path": "harbor/common.sh",
+      "size_bytes": 3646,
+      "sha256": "bdfca94e8fc03f804c5064502cc39662cac793af0615afcb57cb924c00d11517"
+    },
+    {
+      "path": "harbor/harbor.yml.tmpl",
+      "size_bytes": 14657,
+      "sha256": "f991ec9622393a15d1cbdf38df6f7e55da45d990c91d144859be98454bc4cb4e"
+    }
+  ],
+  "installer_sha256": "67517e0ba4a3f9db90731aa560dacbc0b24a0de04d5a1b428c7d32ea96656432",
+  "image_archive_expanded_bytes": 2032351503
+}

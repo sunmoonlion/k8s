@@ -1,6 +1,6 @@
 # 新部署体系：物料与宿主预检
 
-本目录使用原生 Make、Ansible 和声明文件，不调用旧 `sunmoonai/`、`utils/` 或 luna 工作区部署程序。当前提供物料准备与宿主挂载预检；Harbor 新装、KIND 创建、平台部署和统一启停尚未实现。
+本目录使用原生 Make、Ansible 和声明文件，不调用旧 `sunmoonai/`、`utils/` 或 luna 工作区部署程序。当前提供物料准备、宿主挂载预检、官方 KIND 节点构建以及 Harbor 官方安装文件和启动镜像准备；Harbor 服务新装、KIND 创建、平台部署和统一启停尚未实现。
 
 ## 日常入口
 
@@ -17,7 +17,11 @@ make check-artifacts  # 不联网核对物料文件的大小和 SHA256
 make install-binaries # 从物料安装 KIND/kubectl/kubeadm 到 .tools/bin
 make plan-node-build  # 查看官方 KIND 构建参数，不构建
 make build-node       # 核容量、构建并检查新节点镜像；不创建集群
-make check-node       # 重新核验已有构建产物，不重建
+make check-node       # 重新核验已有构建产物和全部内置内容文件，不重建
+make plan-bootstrap-images   # 预览 KIND/Calico 离线镜像归档
+make fetch-bootstrap-images  # 按摘要获取、导出并核验归档
+make check-bootstrap-images  # 不联网、不调用 Docker，核验完整归档
+make prepare-harbor-materials # 官方安装文件解包及启动镜像导入；不启动服务
 ```
 
 支持同一入口选择部分文件，例如 `make fetch-artifacts ARTIFACTS=kind,kubectl`；默认选择锁文件内全部文件。不存在的名称报错，不跳过。站点参数可用 `SITE=environments/kind/site.yaml` 指定。当前首次创建物料缓存要求其父目录已存在，以便先核验所在文件系统的可用空间。
@@ -49,7 +53,7 @@ uv pip compile --python-version 3.12 --generate-hashes --no-header \
 - `bin/`：原始二进制物料；当前下载模式为 0644，尚未安装到 PATH。
 - `packages/`：工具压缩包和 Harbor 官方离线安装包。Harbor 安装包内带启动镜像，类型仍标为整套安装包。
 - `manifests/`：未经部署修改的上游 YAML。
-- 后续的镜像归档将单独进入 `images/`；备份、日志和临时下载不进正式物料清单。
+- `images/`：KIND 节点和三个 Calico 的离线 OCI 归档及校验回执。备份、日志和临时下载不进正式物料清单。
 
 文件 SHA256 与镜像 manifest digest 是不同身份，不能互相替代。
 
@@ -94,4 +98,32 @@ Harbor 官方包内 177 个 OCI blob 已流式复算 SHA256，12 个镜像的配
 
 本地回执位于 `.build/node-image.json`，保存输入摘要、Docker image ID、大小、实际版本及内置配置身份。**不能把 Docker image ID 直接当成完整仓库引用**（本机 Docker 29 的 containerd 存储返回 manifest 身份，应读取 Descriptor 确认类型）；只有后续导出校验及发布完成，才能生成用于部署的不可变节点产物引用。节点镜像构建通过也不代表集群或项目验收通过。
 
-2026-10-01：本机官方构建已完成，`make check-node` 为 ok=16、changed=0、failed=0；实际 Kubernetes 1.36.5、containerd 2.3.4、runc 1.4.3。节点归档和实际建群仍未完成，详细过程见根目录 CHECKPOINT.md。
+2026-10-01：本机官方构建已完成，`make check-node` 为 ok=16、changed=0、failed=0；实际 Kubernetes 1.36.5、containerd 2.3.4、runc 1.4.3。节点归档已在后续本轮完成，实际建群仍未完成，详细过程见根目录 CHECKPOINT.md。
+
+## 离线镜像归档
+
+`bootstrap-archives.lock.json` 固定四个实际归档的文件 SHA256、大小、manifest/config 摘要；`node-image.lock.json` 固定本次真实构建产物。节点的 `origin=local-build` 表示本地产物，记录的仓库名称**尚未发布到 Docker Hub 或 Harbor**；不可把它当作已能远程拉取的地址。
+
+| 物料 | 本次来源 | 后续用途 |
+| --- | --- | --- |
+| KIND 节点 | 本机官方 KIND 构建，保存为 images/kind-node-摘要.tar | 离线导入宿主 Docker 后建群 |
+| Calico 三个镜像 | 从 quay.io 按 linux/amd64 digest 获取，分别保存 images/calico-组件-摘要.tar | 集群引导时导入节点，清单使用相同 digest |
+| Calico 清单 | manifests/calico-v3.32.2.yaml | 保留原件，部署修改另在声明中表达 |
+| Harbor 启动组件 | packages 中的官方 Harbor 离线安装包 | 独立恢复仓库，不依赖仓库自身 |
+| 后续平台和业务镜像 | 尚待准备、构建并发布到新 Harbor | 集群通过认证从 Harbor 拉取 |
+
+获取入口使用原生 `docker pull`/`docker image save` 准备引导归档；这不是镜像发布入口。后续发布到 Harbor 仍采用既定的 skopeo 路径，尚未实现。当前 Docker 29/containerd 导出为 OCI 格式，验证器按此格式检查，不能将别的 Docker 存储后端导出格式直接假定兼容。
+
+每个归档验证完整文件 SHA256、所有内容 blob、index 引用的存在与大小、amd64 配置、OCI 与 Docker 兼容清单一致性。Harbor 未压缩层同时核对 rootfs.diff_ids。验证器是只读标准库程序，不解包、不联网、不管理部署状态。[OCI 文件布局](https://github.com/opencontainers/image-spec/blob/main/image-layout.md)、[Docker 导出命令](https://docs.docker.com/reference/cli/docker/image/save/)。
+
+生成时先写私有临时文件，验证后用同一文件系统的硬链接发布，目标已存在则失败。已有归档只复核，不覆盖；文件与回执缺一、字节与 Git 锁不符都会停止。操作中断留下不完整发布时，先核对固定摘要再处理，不能盲删正式归档。更新版本必须显式评审输入与输出锁；入口不会自动修改 Git 中的期望摘要。
+
+归档共 **641,355,776 字节**。当前已核验内容完整；尚未在全新 Docker/KIND 中完成导入、Pod 拉取和重启/重建验收，不能据此宣布整个离线发布完成。
+
+## Harbor 官方物料准备
+
+`make prepare-harbor-materials` 只做这些动作：校验官方安装包，原样解包到 `.tools/harbor/v2.15.2/harbor/`，逐文件校验六个成员，核对内层 OCI 归档的 177 个 blob 和 12 个镜像，再导入 Docker 并核对每个标签的 manifest 身份。若已有官方标签对应另一份镜像则拒绝覆盖；重复执行复用已验证文件和镜像。
+
+Harbor 安装包解包约 735 MB，内部未压缩镜像内容约 2.03 GB；本次准备预留 6 GiB，覆盖解包、内容存储、展开副本与余量。这是容量估计，不是配额。Windows 增长预算以及工作目录、Docker 目录的文件系统空间均检查；已完成的重复操作不重复要求新增 6 GiB。
+
+**不要直接执行该目录的 install.sh**：官方脚本含 `compose down -v`。新服务入口将调用官方 `prepare` 生成配置，再使用明确的 Compose 操作。官方 `prepare` 还可能搬动 `/data/secretkey` 和 `/data/defaultalias`；服务实施前须检查并阻止触碰历史文件。当前没有运行 prepare/install.sh，没有生成凭据、证书或新 Harbor 服务配置，没有启动新 Harbor 或修改入口。离线物料导入成功不代表服务已安装。
