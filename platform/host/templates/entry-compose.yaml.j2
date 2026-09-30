@@ -1,0 +1,24 @@
+services:
+  proxy:
+    image: {{ entry_image.reference }}
+    pull_policy: never
+    restart: "no"
+    network_mode: host
+    user: "10001:10001"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 64
+    mem_limit: 128m
+    cpus: 0.5
+    volumes:
+      - type: bind
+        source: {{ entry_config_dir }}/haproxy.cfg
+        target: /usr/local/etc/haproxy/haproxy.cfg
+        read_only: true
+        bind:
+          create_host_path: false
+    command: [haproxy, -W, -db, -f, /usr/local/etc/haproxy/haproxy.cfg]
+    logging:
+      driver: local
+      options: {max-size: "20m", max-file: "3"}

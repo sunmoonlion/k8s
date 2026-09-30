@@ -1,74 +1,65 @@
 # 新部署体系交接
 
-## 目标、工作区和授权
+## 目标、工作区与授权
 
-从零建立可长期维护的部署代码，第一期 KIND；使用原生 Make、Ansible、官方 Harbor Compose、KIND、Flux 和 SOPS，不调用旧 `sunmoonai/`、`utils/` 或 luna 部署程序。五仓在 `/home/zymun/worktrees/platform-kind-v1`，分支均为 `platform-kind-v1`，从各自本地 master 建立；基线见 [输入盘点](docs/platform-kind-v1/inventory.md)。原 luna 仅作参考。
+从零建立长期维护的部署代码，第一期 KIND，使用原生 Make/Ansible、官方 Harbor Compose、KIND、Flux/SOPS；不得调用旧 sunmoonai/utils/luna 部署链。五仓在 `/home/zymun/worktrees/platform-kind-v1`，各自分支 `platform-kind-v1` 从本地 master 建立，基线见 [输入盘点](docs/platform-kind-v1/inventory.md)。原 luna 仅参考。
 
-所有者授权新体系采用已选定版本，不迁移旧业务数据或旧 Harbor 镜像；应用可修改后重新构建，业务 Python **3.13.15**。受保护旧节点、卷、备份和他人 local-integration 工作仍不可擅删。四个应用仓未改，本轮仅改 k8s，未 push。写入新工作树继续走工具权限流程。
+用户已确认采用新版本、不迁移旧业务数据和旧 Harbor 镜像；应用可修改重建，业务 Python 3.13.15。旧节点、卷、备份和他人 local-integration 仍受保护。日志每容器 3×20 MiB 已获批；镜像、缓存、备份删除不因日志批准而放行。本轮仅 k8s 改动，应用四仓未改，无 push。
 
-所有者在本轮明确批准 **每容器 3 份 × 20 MiB 的自动日志轮转**；镜像、数据、备份删除不在此次批准范围内。未启用自动镜像清理。
+本单元基线 **f3573d511c78cb9b68cc7f4605ef151896f7321b**（独立 Harbor）；节点构建 e280a3850953584853a4717945a8183baf18e5ec，离线镜像 eef098e272932a0ac3e279bfc002e1ea0ef1b9a0。当前提交见本文件所在分支 HEAD，最终交付须报完整 SHA。
 
-入口：[架构](docs/platform-kind-v1/architecture.md)、[版本](docs/platform-kind-v1/images.md)、[操作](platform/README.md)、[Harbor](platform/registry/README.md)。
+用户本次明确批准“现在切换并验收真实镜像推拉”，范围为 30443 约一分钟 TLS 中断、维护 10 分钟、恢复另 5 分钟。**该次窗口已执行并回退结束。不能解释为批准升级/重启宿主 Docker。**下一次影响全部 KIND/Harbor 的维护需确认，具体方案和物料已准备。
 
-## 已完成的物料与节点单元
+## 当前现场：入口已回退，Docker 修复待维护批准
 
-上一个提交：`eef098e272932a0ac3e279bfc002e1ea0ef1b9a0`；节点构建提交 `e280a3850953584853a4717945a8183baf18e5ec`。
+日期 2026-10-01（UTC 2026-09-30 晚间）。
 
-- Ansible 2.21.4 已按哈希锁安装到 `.venv`，使用宿主 Python 3.12.3，不改变业务 Python 选型。
-- 55 个上游及建群配套镜像 amd64 manifest 已解析并复算摘要；`complete=true` 仅表示该清单齐全，`offline_ready=false`。
-- 10 项文件共 **1,358,981,849 字节**，位于 `/home/zymun/packages-to-be-installed/releases/platform-kind-v1/{bin,packages,manifests}`。
-- KIND 0.33.0、kubectl/kubeadm 1.36.5 已安装到 `.tools/bin`；本轮新增 Compose 5.5.1。未替换系统工具。
-- 官方 KIND 文件模式已构建 `sunmoon-kind-node:v1.36.5-kind0.33.0`，本机 manifest ID **sha256:676c571e38792c196595853476dc020e628b9b56f3b0c3ca1d2056e5ce612a0b**；实际 Kubernetes 1.36.5、containerd 2.3.4、runc 1.4.3。
-- 核对 base/rootfs、10 个内置镜像配置、144 个内部内容文件 SHA256。kubeadm pause=3.10.2；KIND base 实际配置为 3.10，分别锁定。
-- 节点和三个 Calico 3.32.2 归档共 **641,355,776 字节**，在 `images/`。`fetch-bootstrap-images` 最终重复 ok=44 changed=0 failed=0；离线 `check-bootstrap-images` ok=48 changed=0 failed=0。
-- Harbor 2.15.2 官方包六个成员、177 个 blob、12 个镜像已核验并导入 Docker；`prepare-harbor-materials` 最终重复 ok=34 changed=0 failed=0。
-- 官方归档为未压缩 OCI 层，其 manifest 与上游分发摘要不同。使用 `harbor-offline-images.lock.json` 的 `archive_reference`；本轮实际按该 repo@digest 启动成功。
-- KIND 本地产物尚未发布远端，锁内 `origin=local-build` 不是 Docker Hub 可拉取承诺。完整宿主、chart、辅助镜像及应用物料仍未齐备。
+- 正式 30443：保留的 `sunmoon-sni-transition-main-20260928`，Harbor 转 127.0.0.1:18443；其他域名转 **172.18.0.5:30443（kind-worker）**。不能改成 main 的 19443，那里尚无应用入口。
+- 新 Harbor：`sunmoon-registry.service`，10 个官方 2.15.2 服务，127.0.0.1:11443，运行中；新 HAProxy：`sunmoon-entry.service`，候选 **127.0.0.1:32443**，运行中。两 unit **disabled**，尚未验开机启动；NRestarts=0。
+- 新 Harbor data：`/data/harbor/platform-kind-v1/data`；私密配置 `/etc/sunmoon/registry`；运行文件 `/opt/sunmoon/registry`；数据盘 230 GiB、UUID `a28de356-4ba1-4a21-93f5-744b9b9d8be0`。服务器证书 1825 天，到期 2031-09-29 UTC，CA 3650 天。
+- 新入口配置 `/etc/sunmoon/entry`、运行 `/opt/sunmoon/entry`。HAProxy 只做 SNI TCP 分流，不持有私钥；官方摘要固定，UID10001，readonly/cap_drop ALL，有限 CPU/内存/PID/日志。
+- 新项目 `platform` 为私有，publisher 仅 pull/push、puller 仅 pull，均无删除权限，有效期90天；文件 `/etc/sunmoon/registry/private/{publisher,puller}.json` 和对应 `*-auth.json`，root0600。到期须显式轮换，自动轮换/告警未完成。
+- 新镜像仍在新仓库：`harbor.sunmoonai.com:30443/platform/haproxy@sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272`；这是**新仓库中的目标引用**，当前正式地址已回旧仓库，不能直接认为该引用现可从30443获取。正式切换后才恢复该地址可用性。
+- 旧 Harbor jobservice 状态 **created、StartedAt全零**，旧聚合健康 unhealthy；其他7个组件 healthy。不是本次停止造成。原卡“两个 Harbor 健康”的表述错误，已改为明确基线；本次没有擅自启动旧 jobservice。
 
-## 当前单元：新 Harbor 服务（2026-10-01）
+### 本次实测结果
 
-### 实现
+1. 候选 HAProxy TLS 路由、真实启停、重复部署通过。Compose5.5.1受控停止返回130，unit明确SuccessExitStatus=130；真正stop验到inactive，意外退出仍Restart=always。
+2. `registry-accounts` 最终 **ok47 changed0 failed0**，两机器人均实际向可信后端申请token并核对subject/actions。创建接口返回服务器生成secret，不能依赖请求secret字段；项目列表按`Level=project,ProjectID`查询。前期误用字段/secret曾导致失败，仅显式重置新建且未使用的publisher一次，未改旧身份。
+3. 第一次正式切换：空仓库返回`unknown: artifact <精确repo@digest> not found`，原检查只识别manifest/name unknown，误拦并自动回退；补精确错误匹配，不放行TLS/认证失败。
+4. 第二次：受限容器不能读宿主用户0600归档，自动回退。公开且校验过的引导归档在正式prepare入口设0644；凭据仍0600。离线复核又发现skopeo用`/var/tmp`而非TMPDIR，已提供64MiB tmpfs，根目录仍只读。
+5. 第三次切换与skopeo验收 **18秒**，`registry-publish-check`当时 **ok25 changed3 failed0**；真实推送、独立完整拉回 **6层/8blob**、manifest与config摘要、只读推送拒绝全部通过。临时拉回目录已精确清除，远端镜像保留。
+6. 正式入口新CA/域名、Harbor管理员认证、健康均通过；应用分流前后证书SHA256相同。应用检查仅路由身份，不是登录/完整信任链验收。
+7. 随后宿主Docker29.4.3真实pull失败：`failed to fetch oauth token ... x509: certificate signed by unknown authority`。专用CA已正确追加；与[Moby52600](https://github.com/moby/moby/pull/52600)及29.5.0发行说明一致。**整次最终判定未通过，按约定回退旧入口**；没有升级或重启Docker。
+8. 回退验证：30443旧证书与18443相同，SHA256 `106bab970a87f1d2e5ac749e0efd61cf369f0f8baac7a5283dad7a6d3178e11e`；候选32443新证书与11443相同，SHA256 `e354e0268306e22baa03f629860166ee8decc8c28a985ab3cfeef419eaac2754`。旧Harbor组件状态如上。原应用证书SHA256 `a0c60b64911e69797bc8832be22e0a9eae96f9488a80ff6d59158b199842834d`。
+9. 最终候选重复`entry-deploy` **ok20 changed0 failed0**。正式publish入口增加Docker版本前置准入及原生Docker实际拉取，当前29.4.3在任何写入前明确拒绝，已验拒绝路径；新增Docker成功路径尚未通过，不沿用先前skopeo结果冒充全部成功。
 
-`platform/registry/service.yaml` 提供 plan/deploy/start/stop/status；Make 直接调用 Ansible。站点保留 `registry_enabled`，发布文件固定组件/资源。不存在额外统一 CLI 或旧代码转接。
+原始输出在本会话工具记录；没有新增/运行测试套件。实际推拉、权限拒绝、启停、故障回退、机械语法检查属于用户明确要求的部署验收。临时切换编排只用于本次维护，不是正式部署依赖。
 
-直接调用官方 prepare 镜像，禁用网络、只挂本实例目录及指定证书；绕开会移动全局历史文件的 prepare 包装脚本，不执行含 `down -v` 的 install.sh。官方 Compose 加小型 override，固定归档 digest、资源、健康依赖和日志。
+## 新代码与物料
 
-- 数据：`/data/harbor/platform-kind-v1/data`，在 230 GiB 数据盘；UUID `a28de356-4ba1-4a21-93f5-744b9b9d8be0`。
-- 私密配置：`/etc/sunmoon/registry`，独立随机凭据和新 CA/证书；不进 Git、不在输出显示。服务器证书 1825 天，到期 **2031-09-29 UTC**，CA 3650 天。
-- 运行文件：`/opt/sunmoon/registry`，独立于工作树，含已校验 Compose、官方配置、挂载守卫和 storage.json。
-- 后端：**127.0.0.1:11443**；正式地址配置为 `harbor.sunmoonai.com:30443`，但 **30443 仍走旧服务**，此次未切换。
-- 生命周期：`sunmoon-registry.service`，systemd 唯一重启管理者，容器 restart=no；挂载守卫逐次验证 host/Docker 所见数据盘一致。unit **disabled**，待完整开机验收才启用。
-- 10 个容器均 Docker local 日志 3×20m；Compose 不再把容器日志复制到 journal。未设镜像保留/GC/备份删除；upload purging 关闭。
-- Trivy 暂设 skip_update/skip_java_db_update/offline_scan；**漏洞数据库未备齐，扫描功能未验收**。
+- `platform/host/entry.yaml` 与3个模板、`registry/accounts.yaml`/`tasks/robot.yaml`、`registry/publish.yaml`；Make只薄调用原生Ansible，保留开关。不新增Python统一CLI。
+- 原`artifacts/bootstrap-images.yaml`重命名为`image-archives.yaml`，同一实现选bootstrap/host。原Make命令继续有效，旧文件删除，无转发壳。
+- 新`host-archives.lock.json`：HAProxy3.4.6及官方skopeo归档共 **136,100,352字节**；全文件与blob校验通过。归档prepare先 **ok29 changed2 failed0**（两文件设0644），最终按完整repo@digest复核重复执行 **ok29 changed0 failed0**，离线check与bootstrap检查此前已通过。
+- 官方skopeo容器实测 **1.22.3**，manifest `9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99`。源码最新1.24.1不等于已发布镜像；记录明确版本例外，不自制镜像。
+- 上游镜像锁现 **56项**，`offline_ready=false`。文件锁现 **16项**：原10项1,358,981,849字节，新增6个Docker deb98,306,132字节。物料在`/home/zymun/packages-to-be-installed/releases/platform-kind-v1/{bin,packages,manifests,images}`。
+- 新增Docker deb：三个29.8.1升级、三个29.4.3回退。校验Docker InRelease签名、Packages摘要和文件SHA256/大小；`fetch-artifacts` **ok20 changed1 failed0**。尚未安装。
+- 宿主CA由`registry-accounts`追加`/etc/docker/certs.d/harbor.sunmoonai.com:30443/platform-kind-v1-ca.crt`，保留旧CA，未修改全局系统信任/daemon设置/代理。
 
-### 本轮实际执行及发现
+### 前序成果仍有效
 
-- `make install-binaries BINARIES=compose`：ok=19 changed=1 failed=0。
-- 首次 `make registry-deploy`：ok=57 changed=18 failed=0，最终健康；期间 jobservice 早于 core 就绪，导致两次自动重启。已在正式 override 加 service_healthy 依赖，不把这次重试隐去。
-- 修正后停止并重新部署：ok=58 changed=5 failed=0；10 个容器 healthy，systemd `NRestarts=0`。
-- 最终代码重复 `make registry-deploy`：**ok=58 changed=0 failed=0**。运行配置相同时不重建凭据、不重启。配置改变要求先停止。
-- 已实际核验 TLS 信任链/域名/私钥匹配、健康接口 healthy、管理员 `/users/current` 身份、匿名 `/v2/` 返回 401。
-- 逐个检查实际容器：10/10 healthy、repo@digest、restart=no、日志 local/20m/3。
-- 最终 `registry-stop`：ok=7 changed=1 failed=0，实际 10/10 容器停止并保留；`registry-start`：ok=16 changed=1 failed=0，恢复健康及认证，NRestarts=0。没有停止旧 Harbor、SNI 或 KIND。
-- `registry-plan`：ok=8 changed=0 failed=0；`registry-status`：ok=6 changed=0 failed=0。
-- 最终 10/10 容器 healthy，均具有非零内存/CPU 上限；服务 active/running，开机自启仍 disabled。
+Ansible2.21.4（宿主Python3.12.3）、Compose5.5.1，`.tools/bin`固定KIND0.33.0/kubectl与kubeadm1.36.5。官方构建节点`sunmoon-kind-node:v1.36.5-kind0.33.0` manifest **676c571e38792c196595853476dc020e628b9b56f3b0c3ca1d2056e5ce612a0b**；实际containerd2.3.4/runc1.4.3。节点+3项Calico3.32.2归档641,355,776字节，内置内容已核验，尚未用新体系创建集群。
 
-原始 Ansible 输出在本次会话工具记录；可从同一 Make 入口重跑，不另提交大批 results 文件。没有新增或运行测试套件。实际部署、认证和生命周期检查属于此前授权验收。
+Harbor2.15.2官方包177个blob/12镜像已核验，运行使用`harbor-offline-images.lock.json.archive_reference`（与上游压缩manifest不同）。service.yaml直接调用官方prepare镜像，官方Compose+有限override，挂载守卫、systemd唯一重启、3×20m日志。此前重复deploy **ok58 changed0 failed0**，真实stop/start及10容器healthy通过。Trivy DB未齐，扫描未验收；备份/恢复尚未完成。
 
-### 现场边界
+## 下一步（按此顺序）
 
-旧 Harbor 项目 `sunmoon-harbor-cutover-20260930-v1` 后端 18443；旧 SNI `sunmoon-sni-transition-main-20260928` 占用 30443，旧 KIND main/136/旧节点维持原状。不得把这些已有环境当作新体系验收结果。
+1. **取得新的Docker维护窗口批准**。已写[具体方案](docs/platform-kind-v1/docker-maintenance.md)：仅三个包升29.8.1，宿主containerd2.2.3保持；当前live-restore=false，影响27个运行容器（含8个KIND节点）。20分钟维护、失败另15分钟恢复。准备已做完：六包在本地、APT演练恰好3升级0删除；必须先冷备份新Harbor并校验，再按精确运行清单停启。旧停止容器不能批量启动。不能将包降级当作完整数据快照保证。
+2. 宿主Docker修复后，先候选地址认证拉取，再按操作卡切30443，完整跑新版publish入口、应用分流和恢复基线。用户没有新批准前，不再切换/升级/重启。
+3. 补扫描器DB、正式Harbor备份恢复演练，再创建新KIND/Flux，推进模板公共能力及平台/应用部署。
+4. 完成单组件与整套一键、统一启停、开机自动挂盘、WSL/KIND重启及KIND删除重建后的Harbor摘要/新节点拉取验收。
+5. 完成长期开销监控、受控清理；镜像/缓存/备份策略按具体清单批准。最后清理本次临时目录、重复物料和东京下载；受保护旧资源满足退出条件后再清理。
 
-最近部署容量检查：C 空闲约 **131.53 GB**，数据盘实际分配约 **176.00 GB**，预留长至 230 GiB 的约 **70.96 GB**，再计本次 2 GiB 预算后约 **58.42 GB**，高于 50 GiB（53.69 GB）。下次写入必须重测；这里不是全套部署空间已足够的证明。数据盘当时文件系统剩余约 76.09 GB。
+最后容量检查：2026-09-30T19:08:51Z，计数据盘长到230GiB及196,612,264字节下载预算后，C盘仍余 **60,361,613,144字节**，高于50GiB；后续操作须重测，不能当作整套部署均够空间。数据VHD实际分配176,064,299,008字节。Windows任务、附盘、执行策略和WSL没有变化，本轮未连接东京。
 
-Windows 容量助手位于 `C:\wsl-disks\scripts\platform-kind-v1\windows-capacity.ps1`。本轮未改执行策略、计划任务或 Docker 配置，未关闭 WSL。东京未连接、无新增远程临时物料。
-
-## 下一步顺序
-
-1. 新 Harbor 服务单元完成后，补新入口、客户端认证与真实镜像推拉；正式 30443 切换前准备可回退的具体维护方案。
-2. 补扫描器数据库、Harbor 配置/数据备份与实际恢复；再推进新 KIND 创建及 Flux，不引用原 luna 部署链。
-3. 工具/物料继续形成完整发布；平台服务与应用逐项部署。公共业务修改从 tpl-app 开始，再同步实例。
-4. 验证单组件与整套一键部署、统一启停、自动挂盘启动、WSL/KIND 重启及 KIND 删除重建后的 Harbor 数据/镜像摘要与新节点拉取。
-5. 完成长期开销监控与受控清理入口。日志策略已获批，镜像/缓存/备份删除另按具体清单授权。达到退出条件后才清理受保护旧资源及本次临时物料。
-
-尚未实现完整部署/集群创建/全套启停；不能宣布新体系整体完成。当前没有 token/时间预算；已授权工作继续执行，不重复要求所有者审阅已确定方案。
+尚未实现新集群/完整部署/全套启停，不得宣布总体完成。当前无显式token预算。停在明确需要扩大停服范围的维护批准，普通文档、物料与代码工作不重复请求批准。

@@ -177,6 +177,12 @@
       changed_when: false
       register: offline_report
 
+    - name: Make verified public upstream archives readable by restricted tool containers
+      ansible.builtin.file:
+        path: '{{ archive_path }}'
+        mode: '0644'
+      when: image_action == 'fetch'
+
     - name: Report verified archive
       ansible.builtin.debug:
         msg: '{{ offline_report.stdout | from_json }}'

@@ -11,7 +11,7 @@ SITE ?= environments/kind/site.yaml
 
 .PHONY: help tools images preflight check-images
 help:
-	@printf '%s\n' 'tools        Install locked Ansible into platform/.venv' 'images       Show selected upstream image identities' 'check-images Fail if an upstream image is unresolved' 'install-binaries Install verified tools into .tools/bin only' 'preflight    Read-only host mount checks (Ansible)' 'plan-artifacts Preview selected locked files without downloads' 'fetch-artifacts Download and verify selected files after capacity check' 'check-artifacts Verify selected files fully offline' 'plan-node-build Preview verified official KIND build inputs' 'build-node    Build and inspect a new node image; no cluster creation' 'check-node    Inspect existing node image without rebuilding' 'plan-bootstrap-images Preview node and Calico archive preparation' 'fetch-bootstrap-images Pull/export and verify immutable image archives' 'check-bootstrap-images Verify complete archives offline' 'prepare-harbor-materials Extract official installer and load verified images only' 'registry-plan Preview standalone registry paths and backend' 'registry-deploy Configure and start the new Harbor without switching ingress' 'registry-start / registry-stop / registry-status Control only the new Harbor' 'Cluster/application deployment targets are not implemented yet.'
+	@printf '%s\n' 'tools        Install locked Ansible into platform/.venv' 'images       Show selected upstream image identities' 'check-images Fail if an upstream image is unresolved' 'install-binaries Install verified tools into .tools/bin only' 'preflight    Read-only host mount checks (Ansible)' 'plan-artifacts Preview selected locked files without downloads' 'fetch-artifacts Download and verify selected files after capacity check' 'check-artifacts Verify selected files fully offline' 'plan-node-build Preview verified official KIND build inputs' 'build-node    Build and inspect a new node image; no cluster creation' 'check-node    Inspect existing node image without rebuilding' 'plan-bootstrap-images Preview node and Calico archive preparation' 'fetch-bootstrap-images Pull/export and verify immutable image archives' 'check-bootstrap-images Verify complete archives offline' 'prepare-harbor-materials Extract official installer and load verified images only' 'registry-plan Preview standalone registry paths and backend' 'registry-deploy Configure and start the new Harbor without switching ingress' 'registry-start / registry-stop / registry-status Control only the new Harbor' 'prepare-host-materials / check-host-materials Prepare or verify HAProxy and skopeo archives' 'entry-plan / entry-deploy / entry-start / entry-stop / entry-status Control TLS entry' 'registry-accounts Provision private project and bounded publisher/puller identities' 'registry-publish-check Publish and fully pull back the locked HAProxy image after cutover' 'Cluster/application deployment targets are not implemented yet.'
 
 tools:
 	$(UV) venv --python '$(HOST_PYTHON)' --allow-existing .venv
@@ -54,13 +54,13 @@ check-node:
 
 .PHONY: plan-bootstrap-images fetch-bootstrap-images check-bootstrap-images
 plan-bootstrap-images:
-	$(ANSIBLE) -i host/inventory.yaml artifacts/bootstrap-images.yaml --extra-vars '@$(SITE)' --extra-vars image_action=plan
+	$(ANSIBLE) -i host/inventory.yaml artifacts/image-archives.yaml --extra-vars '@$(SITE)' --extra-vars image_action=plan
 
 fetch-bootstrap-images:
-	$(ANSIBLE) -i host/inventory.yaml artifacts/bootstrap-images.yaml --extra-vars '@$(SITE)' --extra-vars image_action=fetch
+	$(ANSIBLE) -i host/inventory.yaml artifacts/image-archives.yaml --extra-vars '@$(SITE)' --extra-vars image_action=fetch
 
 check-bootstrap-images:
-	$(ANSIBLE) -i host/inventory.yaml artifacts/bootstrap-images.yaml --extra-vars '@$(SITE)' --extra-vars image_action=verify
+	$(ANSIBLE) -i host/inventory.yaml artifacts/image-archives.yaml --extra-vars '@$(SITE)' --extra-vars image_action=verify
 
 .PHONY: prepare-harbor-materials
 prepare-harbor-materials:
@@ -69,3 +69,21 @@ prepare-harbor-materials:
 .PHONY: registry-plan registry-deploy registry-start registry-stop registry-status
 registry-plan registry-deploy registry-start registry-stop registry-status:
 	$(ANSIBLE) -i host/inventory.yaml registry/service.yaml --extra-vars '@$(SITE)' --extra-vars 'registry_action=$(patsubst registry-%,%,$@)'
+
+.PHONY: entry-plan entry-deploy entry-start entry-stop entry-status
+entry-plan entry-deploy entry-start entry-stop entry-status:
+	$(ANSIBLE) -i host/inventory.yaml host/entry.yaml --extra-vars '@$(SITE)' --extra-vars 'entry_action=$(patsubst entry-%,%,$@)'
+
+.PHONY: prepare-host-materials check-host-materials
+prepare-host-materials:
+	$(ANSIBLE) -i host/inventory.yaml artifacts/image-archives.yaml --extra-vars '@$(SITE)' --extra-vars 'image_group=host image_action=fetch'
+check-host-materials:
+	$(ANSIBLE) -i host/inventory.yaml artifacts/image-archives.yaml --extra-vars '@$(SITE)' --extra-vars 'image_group=host image_action=verify'
+
+.PHONY: registry-accounts
+registry-accounts:
+	$(ANSIBLE) -i host/inventory.yaml registry/accounts.yaml --extra-vars '@$(SITE)'
+
+.PHONY: registry-publish-check
+registry-publish-check:
+	$(ANSIBLE) -i host/inventory.yaml registry/publish.yaml --extra-vars '@$(SITE)'

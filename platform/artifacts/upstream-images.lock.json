@@ -610,6 +610,19 @@
       "reference": "registry.k8s.io/etcd@sha256:aa2b41e3f99c9a337b82f687875a63c5119e6d39bc43fc76b6c40a96f55cf391",
       "config_digest": "sha256:ee85eb1f0edd27fd11e3bed20f21a4001ad63107eb2f8d489429648a799c0e86",
       "compressed_layer_bytes": 22877852
+    },
+    {
+      "id": "skopeo",
+      "group": "host",
+      "source": "quay.io/skopeo/stable:latest",
+      "platform": "linux/amd64",
+      "status": "resolved",
+      "manifest_digest": "sha256:9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99",
+      "reference": "quay.io/skopeo/stable@sha256:9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99",
+      "config_digest": "sha256:5ef1074715887af7ae6fc9c61dd266b1dbcc574a102afe0f3293efa0e1cd579a",
+      "compressed_layer_bytes": 88878511,
+      "runtime_version": "1.22.3",
+      "selection_note": "Official stable image resolved to digest; version observed by running --version. Upstream source latest 1.24.1 has no matching image tag."
     }
   ],
   "offline_ready": false

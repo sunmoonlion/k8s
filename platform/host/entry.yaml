@@ -1,0 +1,181 @@
+---
+- name: Configure the standalone TLS passthrough entry
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    entry_action: plan
+    images: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json }}'
+    files: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/files.lock.json") | from_json }}'
+    entry_image: '{{ images.images | selectattr("id", "equalto", "haproxy") | first }}'
+    compose_input: '{{ files.files | selectattr("id", "equalto", "compose") | first }}'
+  tasks:
+    - name: Validate entry configuration
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - entry_action in ['plan', 'deploy', 'start', 'stop', 'status']
+          - entry_action in ['plan', 'stop', 'status'] or entry_enabled | bool
+          - entry_listen_address in ['127.0.0.1', '0.0.0.0']
+          - entry_port | int > 1024 and entry_port | int < 65536
+          - entry_port | int != registry_https_port | int
+          - registry_hostname is match('^[a-z0-9.-]+$')
+          - entry_cluster_backend is match('^[0-9.]+:[0-9]{2,5}$')
+          - entry_cluster_backend != '127.0.0.1:' + (entry_port | string)
+          - entry_config_dir is match('^/etc/[a-zA-Z0-9_/-]+$')
+          - entry_runtime_dir is match('^/opt/[a-zA-Z0-9_/-]+$')
+          - "'..' not in entry_config_dir.split('/')"
+          - "'..' not in entry_runtime_dir.split('/')"
+
+    - name: Show the routing plan
+      ansible.builtin.debug:
+        msg:
+          action: '{{ entry_action }}'
+          listen: '{{ entry_listen_address }}:{{ entry_port }}'
+          registry: '{{ registry_hostname }} -> 127.0.0.1:{{ registry_https_port }}'
+          other_domains: '{{ entry_cluster_backend }}'
+          image: '{{ entry_image.reference }}'
+          boot: Disabled until boot acceptance; existing listeners are not stopped by this entry.
+
+    - name: Read current service state
+      ansible.builtin.command:
+        argv: [systemctl, is-active, sunmoon-entry.service]
+      changed_when: false
+      register: entry_state
+      failed_when: entry_state.rc not in [0, 3, 4]
+      when: entry_action != 'plan'
+
+    - name: Deploy native proxy configuration
+      when: entry_action == 'deploy'
+      block:
+        - name: Require the locked local image
+          ansible.builtin.command:
+            argv: [docker, image, inspect, '{{ entry_image.reference }}']
+          register: local_image
+          changed_when: false
+
+        - name: Verify image platform and manifest
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - (local_image.stdout | from_json)[0].Descriptor.digest == entry_image.manifest_digest
+              - (local_image.stdout | from_json)[0].Architecture == 'amd64'
+              - (local_image.stdout | from_json)[0].Os == 'linux'
+
+        - name: Verify the Compose binary source
+          ansible.builtin.stat:
+            path: '{{ playbook_dir }}/../.tools/bin/docker-compose'
+            checksum_algorithm: sha256
+          register: compose_binary
+
+        - name: Require locked Compose
+          ansible.builtin.assert:
+            quiet: true
+            that: compose_binary.stat.checksum | default('') == compose_input.sha256
+
+        - name: Inspect owned directories
+          ansible.builtin.stat:
+            path: '{{ item }}'
+            follow: false
+          loop: ['{{ entry_config_dir }}', '{{ entry_runtime_dir }}']
+          register: entry_directories
+
+        - name: Refuse unsafe owned directories
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - not item.stat.exists or item.stat.isdir | default(false)
+              - not item.stat.islnk | default(false)
+          loop: '{{ entry_directories.results }}'
+          loop_control:
+            label: '{{ item.item }}'
+
+        - name: Create nonsecret configuration directories
+          ansible.builtin.file:
+            path: '{{ item }}'
+            state: directory
+            owner: root
+            group: root
+            mode: '0755'
+          loop: ['{{ entry_config_dir }}', '{{ entry_runtime_dir }}']
+
+        - name: Preview desired configuration
+          ansible.builtin.template:
+            src: '{{ item.src }}'
+            dest: '{{ item.dest }}'
+            mode: '0644'
+          loop:
+            - {src: haproxy.cfg.j2, dest: '{{ entry_config_dir }}/haproxy.cfg'}
+            - {src: entry-compose.yaml.j2, dest: '{{ entry_runtime_dir }}/compose.yaml'}
+            - {src: sunmoon-entry.service.j2, dest: /etc/systemd/system/sunmoon-entry.service}
+          check_mode: true
+          register: desired
+
+        - name: Require a stop before changing an active listener
+          ansible.builtin.assert:
+            quiet: true
+            that: entry_state.stdout != 'active' or not desired.changed
+            fail_msg: Stop the owned entry before changing its configuration; existing listeners are never stopped implicitly.
+
+        - name: Write desired configuration
+          ansible.builtin.template:
+            src: '{{ item.src }}'
+            dest: '{{ item.dest }}'
+            mode: '0644'
+          loop:
+            - {src: haproxy.cfg.j2, dest: '{{ entry_config_dir }}/haproxy.cfg'}
+            - {src: entry-compose.yaml.j2, dest: '{{ entry_runtime_dir }}/compose.yaml'}
+            - {src: sunmoon-entry.service.j2, dest: /etc/systemd/system/sunmoon-entry.service}
+
+        - name: Install verified Compose independent of the worktree
+          ansible.builtin.copy:
+            src: '{{ playbook_dir }}/../.tools/bin/docker-compose'
+            dest: '{{ entry_runtime_dir }}/docker-compose'
+            mode: '0755'
+
+        - name: Reload service definitions without enabling boot
+          ansible.builtin.systemd_service:
+            daemon_reload: true
+
+    - name: Stop only the owned proxy
+      ansible.builtin.systemd_service:
+        name: sunmoon-entry.service
+        state: stopped
+      when: entry_action == 'stop'
+
+    - name: Start the owned proxy
+      ansible.builtin.systemd_service:
+        name: sunmoon-entry.service
+        state: started
+      when: entry_action in ['deploy', 'start']
+
+    - name: Verify Harbor SNI routing with the trusted certificate
+      ansible.builtin.command:
+        argv: [curl, --silent, --show-error, --fail, --noproxy, '*', --connect-timeout, '5', --max-time, '15', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --resolve, '{{ registry_hostname }}:{{ entry_port }}:127.0.0.1', 'https://{{ registry_hostname }}:{{ entry_port }}/api/v2.0/health']
+      register: entry_health
+      changed_when: false
+      until: entry_health.rc == 0 and (entry_health.stdout | from_json).status == 'healthy'
+      retries: 6
+      delay: 3
+      when: entry_action in ['deploy', 'start']
+
+    - name: Read final service state
+      ansible.builtin.command:
+        argv: [systemctl, show, sunmoon-entry.service, --property=ActiveState, --property=SubState, --property=UnitFileState, --property=NRestarts]
+      changed_when: false
+      register: final_state
+      when: entry_action != 'plan'
+
+    - name: Report final state
+      ansible.builtin.debug:
+        var: final_state.stdout_lines
+      when: entry_action != 'plan'
+
+    - name: Require the requested lifecycle outcome
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - "entry_action != 'stop' or 'ActiveState=inactive' in final_state.stdout_lines"
+          - "entry_action not in ['deploy', 'start'] or 'ActiveState=active' in final_state.stdout_lines"
+      when: entry_action != 'plan'

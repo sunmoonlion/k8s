@@ -1,6 +1,6 @@
 # 新部署体系：物料、宿主与独立仓库
 
-本目录使用原生 Make、Ansible 和声明文件，不调用旧 `sunmoonai/`、`utils/` 或 luna 工作区部署程序。当前提供物料准备、宿主挂载预检、官方 KIND 节点构建、独立 Harbor 新装和启停。KIND 创建、平台部署及整套统一启停尚未实现。
+本目录使用原生 Make、Ansible 和声明文件，不调用旧 `sunmoonai/`、`utils/` 或 luna 工作区部署程序。当前提供物料准备、宿主挂载预检、官方 KIND 节点构建、独立 Harbor 新装和启停、TLS 直通入口及受限推拉身份。KIND 创建、平台部署及整套统一启停尚未实现。
 
 ## 日常入口
 
@@ -28,6 +28,15 @@ make registry-deploy         # 配置并启动新 Harbor，不切换旧入口
 make registry-status         # 查看新 Harbor 的 systemd 状态
 make registry-stop           # 停止新 Harbor，保留数据
 make registry-start          # 检查挂载并启动，验健康与认证
+make prepare-host-materials  # 准备 HAProxy/skopeo 离线归档和本机镜像
+make check-host-materials    # 离线校验两项宿主工具归档
+make entry-plan              # 入口路由预览
+make entry-deploy            # 原生 HAProxy 入口部署，当前已回退至候选端口
+make entry-stop              # 停止本次入口
+make entry-start             # 启动本次入口并验 Harbor TLS
+make entry-status            # 查看本次入口状态
+make registry-accounts       # 新项目及独立推拉身份；实际 token 认证
+make registry-publish-check  # 正式切换后执行真实推送/拉回和权限拒绝核验
 ```
 
 支持同一入口选择部分文件，例如 `make fetch-artifacts ARTIFACTS=kind,kubectl`；默认选择锁文件内全部文件。不存在的名称报错，不跳过。站点参数可用 `SITE=environments/kind/site.yaml` 指定。当前首次创建物料缓存要求其父目录已存在，以便先核验所在文件系统的可用空间。
@@ -59,7 +68,7 @@ uv pip compile --python-version 3.12 --generate-hashes --no-header \
 - `bin/`：原始二进制物料；当前下载模式为 0644，尚未安装到 PATH。
 - `packages/`：工具压缩包和 Harbor 官方离线安装包。Harbor 安装包内带启动镜像，类型仍标为整套安装包。
 - `manifests/`：未经部署修改的上游 YAML。
-- `images/`：KIND 节点和三个 Calico 的离线 OCI 归档及校验回执。备份、日志和临时下载不进正式物料清单。
+- `images/`：KIND 节点、三个 Calico、HAProxy 和 skopeo 的离线 OCI 归档及校验回执。备份、日志和临时下载不进正式物料清单。
 
 文件 SHA256 与镜像 manifest digest 是不同身份，不能互相替代。
 
@@ -73,11 +82,11 @@ uv pip compile --python-version 3.12 --generate-hashes --no-header \
 
 ## 已核实与未完成
 
-55 个选定上游及建群配套镜像的 linux/amd64 manifest 已全部取得。通过东京及本机原生 `docker manifest inspect --verbose` 读取公开元数据，对 Base64 Raw 解码后复算 SHA256，与 Descriptor 对比。Calico 三项使用官方清单指定的 quay.io；Casdoor 已确认使用不带 v 的 4.12.0。查询临时程序不作为部署依赖。
+56 个选定上游及建群配套镜像的 linux/amd64 manifest 已全部取得。通过东京及本机原生 `docker manifest inspect --verbose` 读取公开元数据，对 Base64 Raw 解码后复算 SHA256，与 Descriptor 对比。Calico 三项使用官方清单指定的 quay.io；Casdoor 已确认使用不带 v 的 4.12.0。查询临时程序不作为部署依赖。
 
 `check-images` 通过仅证明这一批镜像身份完整；文件校验通过仅证明选中文件可用。KIND/Calico 引导归档已经完成；集群验收、完整宿主工具/构建依赖、chart/辅助镜像、自有应用镜像和完整离线发布尚需完成，因此两份锁均保持 `offline_ready=false`。
 
-宿主挂载预检、Harbor 数据目录的 Docker 可见性、新 Harbor 部署及后端 TLS/认证已实际通过。正式入口推拉、WSL/KIND 重启与重建恢复仍待验收；未执行业务测试。
+宿主挂载预检、Harbor 数据目录的 Docker 可见性、新 Harbor 部署及后端 TLS/认证已实际通过。正式入口 skopeo 推送/完整拉回/摘要和权限拒绝已实际通过；宿主 Docker 29.4.3 的 token CA 缺陷阻断整体验收，入口已回退。WSL/KIND 重启与重建恢复仍待验收；未执行业务测试。
 
 ## 本批物料的实际结果
 
@@ -118,7 +127,7 @@ Harbor 官方包内 177 个 OCI blob 已流式复算 SHA256，12 个镜像的配
 | Harbor 启动组件 | packages 中的官方 Harbor 离线安装包 | 独立恢复仓库，不依赖仓库自身 |
 | 后续平台和业务镜像 | 尚待准备、构建并发布到新 Harbor | 集群通过认证从 Harbor 拉取 |
 
-获取入口使用原生 `docker pull`/`docker image save` 准备引导归档；这不是镜像发布入口。后续发布到 Harbor 仍采用既定的 skopeo 路径，尚未实现。当前 Docker 29/containerd 导出为 OCI 格式，验证器按此格式检查，不能将别的 Docker 存储后端导出格式直接假定兼容。
+获取入口使用原生 `docker pull`/`docker image save` 准备引导归档；这不是镜像发布入口。发布到 Harbor 使用 skopeo，首个固定镜像的真实推拉已通过；通用应用发布流水线尚未完成。当前 Docker 29/containerd 导出为 OCI 格式，验证器按此格式检查，不能将别的 Docker 存储后端导出格式直接假定兼容。
 
 每个归档验证完整文件 SHA256、所有内容 blob、index 引用的存在与大小、amd64 配置、OCI 与 Docker 兼容清单一致性。Harbor 未压缩层同时核对 rootfs.diff_ids。验证器是只读标准库程序，不解包、不联网、不管理部署状态。[OCI 文件布局](https://github.com/opencontainers/image-spec/blob/main/image-layout.md)、[Docker 导出命令](https://docs.docker.com/reference/cli/docker/image/save/)。
 
@@ -133,3 +142,16 @@ Harbor 官方包内 177 个 OCI blob 已流式复算 SHA256，12 个镜像的配
 Harbor 安装包解包约 735 MB，内部未压缩镜像内容约 2.03 GB；本次准备预留 6 GiB，覆盖解包、内容存储、展开副本与余量。这是容量估计，不是配额。Windows 增长预算以及工作目录、Docker 目录的文件系统空间均检查；已完成的重复操作不重复要求新增 6 GiB。
 
 **不要直接执行该目录的 install.sh**：官方脚本含 `compose down -v`。新入口直接调用官方 prepare 镜像生成配置，避免包装脚本搬动全局历史文件，再用原生 Compose/systemd 管理服务。新 Harbor 已独立启动，旧入口未切换。配置路径、日志授权、日常操作和验收边界见 [独立 Harbor](registry/README.md)。
+
+## 宿主入口与镜像发布身份
+
+[入口操作](host/README.md)与 [本次切换卡](../docs/platform-kind-v1/entry-cutover.md)明确候选端口、现有路由及回退。当前候选入口可用；本次正式切换因 Docker 拉取失败已回退，下一次需按 Docker 维护方案确认更大的停服范围。
+
+`artifacts/image-archives.yaml` 是 KIND/Calico 与宿主工具共用的唯一归档实现，旧名称 bootstrap-images.yaml 已移除，原 Make 命令保持不变。宿主两项归档共 **136,100,352 字节**，按固定文件摘要及全部 blob 核验。重复 prepare-host-materials 不重复导出。
+
+官方 skopeo stable 镜像解析并固定为 `quay.io/skopeo/stable@sha256:9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99`，实际版本 **1.22.3**。源码最新 release 为 1.24.1，但该版本同名容器 tag 不存在；这是一项明确的工具版本例外，不把 stable 镜像误报为源码最新版。后续可随官方镜像更新审查摘要，部署不跟踪浮动 latest。[官方安装方式](https://github.com/podman-container-tools/skopeo/blob/main/install.md)、[源码发布](https://github.com/podman-container-tools/skopeo/releases/tag/v1.24.1)。
+
+项目和推拉认证操作见 [Harbor 文档](registry/README.md)。正式镜像发布验收代码已实现，但在切换前仅做语法检查，不向旧仓库写入新镜像。
+
+
+宿主 Docker 维护物料也在同一 `files.lock.json` 和 `packages/` 中：三个 29.8.1 升级包与三个 29.4.3 回退包，共 98,306,132 字节，已经下载核验但尚未安装；后者是临时回退用途，不是新生产版本。物料总计由 10 项增为 16 项。具体影响与批准范围见 [Docker 维护方案](../docs/platform-kind-v1/docker-maintenance.md)。

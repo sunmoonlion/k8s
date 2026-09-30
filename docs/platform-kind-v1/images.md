@@ -85,8 +85,14 @@ RAGFlow 0.27.2 上游默认 Elasticsearch 仍为 8.11.3，不能声称直接兼�
 
 当前已完成版本选择和上述官方资料核对。未完成全部 Registry 摘要、工具/安装包锁、chart 锁、离线物料及实机集成。因此本文不是完整可执行 BOM，也不宣称“整套已达到生产验收标准”。
 
-2026-10-01 实际 Registry 核验：55 个上游及建群配套目标已全部确认 linux/amd64 manifest 摘要并复算原始 manifest SHA256，`make check-images` 返回 0。此前 4 项匿名限流缺口已关闭；Calico 三项统一采用[官方清单](https://raw.githubusercontent.com/projectcalico/calico/v3.32.2/manifests/calico.yaml)中的 `quay.io/calico/`，Casdoor 的真实 tag 为 `4.12.0`（不带 v）。记录见 `platform/artifacts/upstream-images.lock.json`，镜像层尚未全部下载，`offline_ready=false`。
+2026-10-01 实际 Registry 核验：56 个上游及建群配套目标（含新增宿主 skopeo）已全部确认 linux/amd64 manifest 摘要并复算原始 manifest SHA256，`make check-images` 返回 0。此前 4 项匿名限流缺口已关闭；Calico 三项统一采用[官方清单](https://raw.githubusercontent.com/projectcalico/calico/v3.32.2/manifests/calico.yaml)中的 `quay.io/calico/`，Casdoor 的真实 tag 为 `4.12.0`（不带 v）。记录见 `platform/artifacts/upstream-images.lock.json`，镜像层尚未全部下载，`offline_ready=false`。
 
 宿主引导文件另锁于 `platform/artifacts/files.lock.json`：KIND 0.33.0、kubectl/kubeadm 1.36.5、Kubernetes server 1.36.5、Compose 5.5.1、SOPS 3.13.3、age 1.3.2、Flux 2.9.5、Harbor 2.15.2 官方离线安装包、Calico 3.32.2 清单。安装包摘要采用官方发布资产 SHA256，kubectl 使用官方校验文件，Calico 清单由固定版本源文件计算。选定 Compose 版本尚需与 Harbor 的实际生成配置联合验收；版本检查允许并不等于运行兼容已通过。[Compose 发行](https://github.com/docker/compose/releases/tag/v5.5.1)、[SOPS 发行](https://github.com/getsops/sops/releases/tag/v3.13.3)、[age 发行](https://github.com/FiloSottile/age/releases/tag/v1.3.2)。
 
 Kubernetes server 包解压文件合计 1,069,089,184 字节。只读核实包内 version 为 v1.36.5，kubectl/kubeadm 与独立二进制摘要一致，四个控制面/代理归档的配置摘要与上游一致。文件模式构建仍会联网拉取 KIND 辅助镜像；不能据此宣称构建全离线。原生行为依据 [KIND 固定版源码](https://github.com/kubernetes-sigs/kind/tree/v0.33.0/pkg/build/nodeimage)。
+
+
+## 宿主工具补充（2026-10-01）
+
+- 官方 `quay.io/skopeo/stable` 当前容器实测为 **1.22.3**，已固定 amd64 摘要 `sha256:9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99`，运行不使用浮动标签。上游源码发行 1.24.1 与官方容器发布时间不同，本次选择官方可获取镜像，记录为明确例外；不冒称镜像已是 1.24.1。来源：[官方安装说明](https://github.com/podman-container-tools/skopeo/blob/main/install.md)、[源码发行](https://github.com/podman-container-tools/skopeo/releases/tag/v1.24.1)。
+- 宿主 Docker 当前 **29.4.3**，与 KIND 节点 containerd 版本分别管理。其专用 CA/token 缺陷已复现，拟升级 **29.8.1**；升级与回退 deb 均已准备，尚未安装。该修复在 [29.5.0 官方说明](https://docs.docker.com/engine/release-notes/29/#2950) 中列明。宿主现有 containerd 2.2.3 本次小范围修复固定不变，完整宿主基线尚未验收。

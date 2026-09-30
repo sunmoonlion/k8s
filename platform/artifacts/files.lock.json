@@ -2,7 +2,7 @@
   "schema_version": 1,
   "platform": "linux/amd64",
   "resolved_at": "2026-09-30T16:48:40.153892+00:00",
-  "scope": "Bootstrap tools, Harbor installer and Calico source manifest; not a complete offline release",
+  "scope": "Bootstrap tools, Harbor installer, Calico manifest and host Docker upgrade/rollback packages; not a complete offline release",
   "offline_ready": false,
   "files": [
     {
@@ -104,6 +104,102 @@
       "sha256": "7f87ca9e71319d77b58e67e89637498a436bf1b058e4051376396c5a49371e11",
       "url": "https://dl.k8s.io/v1.36.5/kubernetes-server-linux-amd64.tar.gz",
       "identity_source": "https://dl.k8s.io/v1.36.5/kubernetes-server-linux-amd64.tar.gz.sha256"
+    },
+    {
+      "id": "docker-ce-next",
+      "version": "5:29.8.1-1~ubuntu.24.04~noble",
+      "kind": "package",
+      "path": "packages/docker-ce-29.8.1-ubuntu24.04-amd64.deb",
+      "size_bytes": 24309816,
+      "sha256": "607bcf63bf85c5a245b73229c2797fda5c5a430343c02ebf80f32f6db7513eb9",
+      "url": "https://download.docker.com/linux/ubuntu/dists/noble/pool/stable/amd64/docker-ce_29.8.1-1~ubuntu.24.04~noble_amd64.deb",
+      "identity_source": "https://download.docker.com/linux/ubuntu/dists/noble/InRelease",
+      "identity_verification": {
+        "inrelease_sha256": "ff3768db79be1ceeb6e31e5da1fbe9518283a67fb3bcf6863bcbf8fce84953f1",
+        "packages_sha256": "f674ee0afda59b50bea0ee6d30f56a5a0fd173ad386d1748b2a228a04d59e388",
+        "signature": "gpgv passed against installed Docker APT key"
+      },
+      "purpose": "host Docker token CA fix"
+    },
+    {
+      "id": "docker-ce-rollback",
+      "version": "5:29.4.3-1~ubuntu.24.04~noble",
+      "kind": "package",
+      "path": "packages/docker-ce-29.4.3-ubuntu24.04-amd64.deb",
+      "size_bytes": 22751448,
+      "sha256": "b78a89fb3ac79f7a6a06be33f4d9b14615c2c6594113d0f798196e69c25a3fec",
+      "url": "https://download.docker.com/linux/ubuntu/dists/noble/pool/stable/amd64/docker-ce_29.4.3-1~ubuntu.24.04~noble_amd64.deb",
+      "identity_source": "https://download.docker.com/linux/ubuntu/dists/noble/InRelease",
+      "identity_verification": {
+        "inrelease_sha256": "ff3768db79be1ceeb6e31e5da1fbe9518283a67fb3bcf6863bcbf8fce84953f1",
+        "packages_sha256": "f674ee0afda59b50bea0ee6d30f56a5a0fd173ad386d1748b2a228a04d59e388",
+        "signature": "gpgv passed against installed Docker APT key"
+      },
+      "purpose": "retained host Docker package rollback; not a data backup"
+    },
+    {
+      "id": "docker-ce-cli-next",
+      "version": "5:29.8.1-1~ubuntu.24.04~noble",
+      "kind": "package",
+      "path": "packages/docker-ce-cli-29.8.1-ubuntu24.04-amd64.deb",
+      "size_bytes": 17550136,
+      "sha256": "e26e6770fab41256cf16c09c24a0b75e70bf72465ef2688f85d1f7d3fdb9b99c",
+      "url": "https://download.docker.com/linux/ubuntu/dists/noble/pool/stable/amd64/docker-ce-cli_29.8.1-1~ubuntu.24.04~noble_amd64.deb",
+      "identity_source": "https://download.docker.com/linux/ubuntu/dists/noble/InRelease",
+      "identity_verification": {
+        "inrelease_sha256": "ff3768db79be1ceeb6e31e5da1fbe9518283a67fb3bcf6863bcbf8fce84953f1",
+        "packages_sha256": "f674ee0afda59b50bea0ee6d30f56a5a0fd173ad386d1748b2a228a04d59e388",
+        "signature": "gpgv passed against installed Docker APT key"
+      },
+      "purpose": "host Docker token CA fix"
+    },
+    {
+      "id": "docker-ce-cli-rollback",
+      "version": "5:29.4.3-1~ubuntu.24.04~noble",
+      "kind": "package",
+      "path": "packages/docker-ce-cli-29.4.3-ubuntu24.04-amd64.deb",
+      "size_bytes": 16957784,
+      "sha256": "0f2f45e437a8465a945f067de7489e79d4620a05342fd065e10f422da0e9d952",
+      "url": "https://download.docker.com/linux/ubuntu/dists/noble/pool/stable/amd64/docker-ce-cli_29.4.3-1~ubuntu.24.04~noble_amd64.deb",
+      "identity_source": "https://download.docker.com/linux/ubuntu/dists/noble/InRelease",
+      "identity_verification": {
+        "inrelease_sha256": "ff3768db79be1ceeb6e31e5da1fbe9518283a67fb3bcf6863bcbf8fce84953f1",
+        "packages_sha256": "f674ee0afda59b50bea0ee6d30f56a5a0fd173ad386d1748b2a228a04d59e388",
+        "signature": "gpgv passed against installed Docker APT key"
+      },
+      "purpose": "retained host Docker package rollback; not a data backup"
+    },
+    {
+      "id": "docker-ce-rootless-extras-next",
+      "version": "5:29.8.1-1~ubuntu.24.04~noble",
+      "kind": "package",
+      "path": "packages/docker-ce-rootless-extras-29.8.1-ubuntu24.04-amd64.deb",
+      "size_bytes": 10177712,
+      "sha256": "02897501837b7ff4fec8248decdd5828b7d40d7f591021a91f29673e02d0f982",
+      "url": "https://download.docker.com/linux/ubuntu/dists/noble/pool/stable/amd64/docker-ce-rootless-extras_29.8.1-1~ubuntu.24.04~noble_amd64.deb",
+      "identity_source": "https://download.docker.com/linux/ubuntu/dists/noble/InRelease",
+      "identity_verification": {
+        "inrelease_sha256": "ff3768db79be1ceeb6e31e5da1fbe9518283a67fb3bcf6863bcbf8fce84953f1",
+        "packages_sha256": "f674ee0afda59b50bea0ee6d30f56a5a0fd173ad386d1748b2a228a04d59e388",
+        "signature": "gpgv passed against installed Docker APT key"
+      },
+      "purpose": "host Docker token CA fix"
+    },
+    {
+      "id": "docker-ce-rootless-extras-rollback",
+      "version": "5:29.4.3-1~ubuntu.24.04~noble",
+      "kind": "package",
+      "path": "packages/docker-ce-rootless-extras-29.4.3-ubuntu24.04-amd64.deb",
+      "size_bytes": 6559236,
+      "sha256": "20ed588699b4053fe799e51c462744fd2f33f7200fa40ac3975d42160680f551",
+      "url": "https://download.docker.com/linux/ubuntu/dists/noble/pool/stable/amd64/docker-ce-rootless-extras_29.4.3-1~ubuntu.24.04~noble_amd64.deb",
+      "identity_source": "https://download.docker.com/linux/ubuntu/dists/noble/InRelease",
+      "identity_verification": {
+        "inrelease_sha256": "ff3768db79be1ceeb6e31e5da1fbe9518283a67fb3bcf6863bcbf8fce84953f1",
+        "packages_sha256": "f674ee0afda59b50bea0ee6d30f56a5a0fd173ad386d1748b2a228a04d59e388",
+        "signature": "gpgv passed against installed Docker APT key"
+      },
+      "purpose": "retained host Docker package rollback; not a data backup"
     }
   ]
 }

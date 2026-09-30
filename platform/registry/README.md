@@ -32,7 +32,7 @@ make registry-start   # 核挂载后启动，等待健康并核验认证
 
 父目录 root:0700。凭据不进 Git、不打印到命令或 Ansible 输出。管理员密码仅在数据库首次初始化时生效，不能通过改本地文件当作密码轮换；后续部署会实际登录，文件与数据库不符就失败。现有凭据不会自动重建；证书/密钥只剩半对时停止并要求检查，不自动覆盖身份。
 
-新后端只监听 **127.0.0.1:11443**，正式地址仍设为 **harbor.sunmoonai.com:30443**。30443 当前仍由旧入口提供服务。**后端健康与管理员认证通过，不代表正式域名的 Docker token 流程和镜像推拉已经通过。**后者必须在新入口接好后验收。
+新后端只监听 **127.0.0.1:11443**，正式地址仍设为 **harbor.sunmoonai.com:30443**。30443 当前仍由旧入口提供服务。**后端健康与管理员认证通过，不代表正式域名的 Docker token 流程和镜像推拉已经通过。**本次正式域名 skopeo 推拉已经通过，但宿主 Docker token CA 检查失败，按约定回退；详见 [切换结果](../../docs/platform-kind-v1/entry-cutover.md)。
 
 服务器证书为私有 CA 签发，期限 1825 天，CA 3650 天。SAN 包含正式域名与 127.0.0.1。部署检查信任链、域名、至少 30 天剩余有效期，以及证书和私钥公钥匹配。当前证书到期于 2031-09-29 UTC。浏览器、Docker 和未来 KIND 节点的正式域名信任配置仍需随入口切换完成，未替换旧服务证书。
 
@@ -60,6 +60,21 @@ Harbor jobservice 使用标准输出日志。未启用镜像保留规则、垃�
 
 Trivy 配置为离线、跳过自动更新；**漏洞数据库尚未准备，容器 healthy 不代表能扫描**。还须完成数据库物料及真实镜像扫描。
 
-尚未完成：30443 新入口与完整镜像推拉、配置/数据备份及恢复演练、开机与 WSL 重启、KIND 重建持久化、平台和应用部署、整套一键部署与统一启停。备份必须同时覆盖 `/etc/sunmoon/registry` 与实例 data（含 Harbor 加密密钥），并固定本次发布输入；只复制镜像层不构成可恢复备份。
+尚未完成：30443 最终切换和宿主 Docker 拉取、配置/数据备份及恢复演练、开机与 WSL 重启、KIND 重建持久化、平台和应用部署、整套一键部署与统一启停。备份必须同时覆盖 `/etc/sunmoon/registry` 与实例 data（含 Harbor 加密密钥），并固定本次发布输入；只复制镜像层不构成可恢复备份。
 
-本单元退回方法：`make registry-stop`，保留新实例目录等待处理；旧入口、旧 Harbor、集群和受保护备份没有切换或删除。
+本单元退回方法：`make registry-stop`，保留新实例目录等待处理；旧入口经过切换尝试后已恢复；旧 Harbor、集群和受保护备份未删除。
+
+## 项目与受限推拉身份
+
+`make registry-accounts` 管理新的私有 `platform` 项目，分别创建项目级 publisher（pull/push）和 puller（pull），均无删除权限、有效期 90 天。秘密由 Harbor 生成，只存 `/etc/sunmoon/registry/private/{publisher,puller}.json` 与对应 `*-auth.json`，权限 root:0600；信任 CA 在 `/etc/sunmoon/registry/clients/ca.crt`。认证文件是秘密，不能提交 Git 或贴进对话。
+
+同一入口会核对精确权限、身份、至少七天剩余期限，并直接向可信后端 token 接口验证凭据及实际授权动作。到期前需安排显式轮换；自动轮换与告警尚未实现。管理员凭据只用于创建/核对账号，不用于发布镜像。若远端身份和本地秘密文件缺一，停止并要求恢复或明确轮换，不能静默改密。
+
+Harbor 2.15.2 的项目机器人列表需要 `Level=project,ProjectID=<ID>` 查询，再对返回的完整账号名精确筛选；创建接口实际返回服务器生成的 secret，不能假设请求中的 secret 字段生效。以上已依据同版本源码和实际 API 核实。[官方实现](https://github.com/goharbor/harbor/blob/v2.15.2/src/server/v2.0/handler/robot.go)。
+
+`make registry-publish-check` 使用固定摘要的官方 skopeo，将已核验的 HAProxy OCI 归档发布到 `platform/haproxy`，使用 `--preserve-digests`；再用独立 puller 完整拉回、逐 blob 核验，检查 manifest/config 摘要一致，并要求 puller 推送被拒。此入口当前限定首个真实镜像验收，尚非全部应用的发布流水线。它会要求正式 30443 已接新仓库，在候选端口状态下明确拒绝。
+
+拉回临时目录由本次调用精确创建并在结束后删除；不清理已发布镜像或备份。若只读推送意外成功会报错并保留现场，不把未经批准的删除当作收尾。本次 skopeo 验收实际通过；新增宿主 Docker 拉取门禁仍待升级后验证，当前旧版本在任何发布动作前明确拒绝。
+
+
+`registry-accounts` 同时追加 `/etc/docker/certs.d/<仓库地址>/platform-kind-v1-ca.crt`，保留其他 CA。宿主 Docker 29.4.3 的认证请求存在忽略专用 CA 的上游缺陷，不能以 CA 文件存在代替真实拉取。`registry-publish-check` 先检查 Docker 版本，再做正式地址验证；原生 Docker 拉取使用临时 root:0600 配置并验后删除。当前阻断及维护方案见 [Docker 维护](../../docs/platform-kind-v1/docker-maintenance.md)。
