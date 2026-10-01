@@ -2,7 +2,7 @@
   "schema_version": 1,
   "platform": "linux/amd64",
   "resolved_at": "2026-09-30T16:48:40.153892+00:00",
-  "scope": "Bootstrap tools, Harbor installer, Calico manifest and host Docker upgrade/rollback packages; not a complete offline release",
+  "scope": "Bootstrap tools, Harbor installer, Calico manifest, host Docker packages and dated Trivy databases; not a complete offline release",
   "offline_ready": false,
   "files": [
     {
@@ -200,6 +200,119 @@
         "signature": "gpgv passed against installed Docker APT key"
       },
       "purpose": "retained host Docker package rollback; not a data backup"
+    },
+    {
+      "id": "trivy-db",
+      "version": "2026-10-01T01:34:06Z",
+      "kind": "database",
+      "path": "databases/trivy-db-e788b0874b4f.tar.gz",
+      "size_bytes": 125013718,
+      "sha256": "e788b0874b4f22abd69ba31d261175bcbe3c176fc8da06a9ca8a4488fd685653",
+      "url": "https://mirror.gcr.io/v2/aquasec/trivy-db/blobs/sha256:e788b0874b4f22abd69ba31d261175bcbe3c176fc8da06a9ca8a4488fd685653",
+      "identity_source": "https://mirror.gcr.io/v2/aquasec/trivy-db/manifests/2",
+      "manifest_digest": "sha256:c02b5af34b14ecc5bb7a0ea7e571d99cc5a828322d0682a134297b852a3b436b",
+      "manifest": {
+        "schemaVersion": 2,
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "artifactType": "application/vnd.aquasec.trivy.config.v1+json",
+        "config": {
+          "mediaType": "application/vnd.oci.empty.v1+json",
+          "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+          "size": 2,
+          "data": "e30="
+        },
+        "layers": [
+          {
+            "mediaType": "application/vnd.aquasec.trivy.db.layer.v1.tar+gzip",
+            "digest": "sha256:e788b0874b4f22abd69ba31d261175bcbe3c176fc8da06a9ca8a4488fd685653",
+            "size": 125013718,
+            "annotations": {
+              "org.opencontainers.image.title": "db.tar.gz"
+            }
+          }
+        ],
+        "annotations": {
+          "org.opencontainers.image.created": "2026-10-01T01:34:06Z"
+        }
+      },
+      "database": {
+        "subdirectory": "db",
+        "metadata": {
+          "Version": 2,
+          "NextUpdate": "2026-10-02T01:24:14.992990943Z",
+          "UpdatedAt": "2026-10-01T01:24:14.992991033Z",
+          "DownloadedAt": "0001-01-01T00:00:00Z"
+        },
+        "files": [
+          {
+            "name": "trivy.db",
+            "size_bytes": 1471131648,
+            "sha256": "8612d29f9995a4897a3639b8469c62f92021ed692d0cb399090f09e18ce21f10"
+          },
+          {
+            "name": "metadata.json",
+            "size_bytes": 143,
+            "sha256": "31c12adfe1e7f59a05066e2d54f32146ea611fefecf8eb5faba264094832a4e4"
+          }
+        ]
+      }
+    },
+    {
+      "id": "trivy-java-db",
+      "version": "2026-09-27T01:10:04Z",
+      "kind": "database",
+      "path": "databases/trivy-java-db-75d3ac93f17d.tar.gz",
+      "size_bytes": 973426852,
+      "sha256": "75d3ac93f17d38f845b20fdb181bed7e2645f6a67adddb3189ddca4f38920989",
+      "url": "https://mirror.gcr.io/v2/aquasec/trivy-java-db/blobs/sha256:75d3ac93f17d38f845b20fdb181bed7e2645f6a67adddb3189ddca4f38920989",
+      "identity_source": "https://ghcr.io/v2/aquasecurity/trivy-java-db/manifests/sha256:e5922bfd4ec2aafa93226148b28f8cce4df87557544ed1bbc80a5b24d218d123",
+      "manifest_digest": "sha256:e5922bfd4ec2aafa93226148b28f8cce4df87557544ed1bbc80a5b24d218d123",
+      "manifest": {
+        "schemaVersion": 2,
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "artifactType": "application/vnd.aquasec.trivy.config.v1+json",
+        "config": {
+          "mediaType": "application/vnd.oci.empty.v1+json",
+          "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+          "size": 2,
+          "data": "e30="
+        },
+        "layers": [
+          {
+            "mediaType": "application/vnd.aquasec.trivy.javadb.layer.v1.tar+gzip",
+            "digest": "sha256:75d3ac93f17d38f845b20fdb181bed7e2645f6a67adddb3189ddca4f38920989",
+            "size": 973426852,
+            "annotations": {
+              "org.opencontainers.image.title": "javadb.tar.gz"
+            }
+          }
+        ],
+        "annotations": {
+          "org.opencontainers.image.created": "2026-09-27T01:10:04Z"
+        }
+      },
+      "provenance": "Existing public cache; GHCR immutable manifest reverified 2026-10-01. Hard-linked into release; no dependency on old scripts. Publisher signature not verified.",
+      "database": {
+        "subdirectory": "java-db",
+        "metadata": {
+          "Version": 1,
+          "NextUpdate": "2026-09-30T01:08:08.997213636Z",
+          "UpdatedAt": "2026-09-27T01:08:08.997214067Z",
+          "DownloadedAt": "0001-01-01T00:00:00Z"
+        },
+        "files": [
+          {
+            "name": "trivy-java.db",
+            "size_bytes": 1537712128,
+            "sha256": "e99e2d1212f4f1ef8281f95ffa72b667ce3fb8d00db0c4b2ddfcc3283b87612c"
+          },
+          {
+            "name": "metadata.json",
+            "size_bytes": 143,
+            "sha256": "f730c0616742e306095594ef51359f81cd05e48cff224112a59c8fbd68449e31"
+          }
+        ]
+      }
     }
   ]
 }

@@ -1,0 +1,66 @@
+---
+- import_playbook: ../host/preflight.yaml
+
+- name: Install or verify locked offline scanner databases
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    scanner_database_action: plan
+    files_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/files.lock.json") | from_json }}'
+    scanner_databases: '{{ files_lock.files | selectattr("kind", "equalto", "database") | list }}'
+    scanner_cache: '{{ registry_instance_dir }}/data/trivy-adapter/trivy'
+  tasks:
+    - name: Validate scanner operation and release inputs
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - scanner_database_action in ['plan', 'install', 'verify']
+          - registry_enabled | bool
+          - scanner_databases | map(attribute='id') | sort == ['trivy-db', 'trivy-java-db']
+
+    - name: Verify service-visible data disk before accessing the cache
+      ansible.builtin.command:
+        argv: [python3, '{{ registry_runtime_dir }}/check-storage.py', '{{ registry_runtime_dir }}/storage.json']
+      changed_when: false
+
+    - name: Inspect scanner cache directory
+      ansible.builtin.stat:
+        path: '{{ scanner_cache }}'
+        follow: false
+      register: cache_directory
+
+    - name: Require the cache created by the official Harbor service
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - cache_directory.stat.isdir | default(false)
+          - not cache_directory.stat.islnk | default(false)
+          - cache_directory.stat.uid == 10000
+
+    - name: Inspect installed database directories for an incremental capacity budget
+      ansible.builtin.stat:
+        path: '{{ scanner_cache }}/{{ item.database.subdirectory }}'
+        follow: false
+        get_checksum: false
+      loop: '{{ scanner_databases }}'
+      loop_control:
+        label: '{{ item.id }}'
+      register: database_targets
+
+    - name: Budget extraction without deleting or replacing existing databases
+      ansible.builtin.include_tasks:
+        file: ../host/tasks/capacity.yaml
+        apply:
+          become: false
+      vars:
+        capacity_planned_bytes: '{{ database_targets.results | rejectattr("stat.exists") | map(attribute="item.database.files") | flatten | map(attribute="size_bytes") | sum }}'
+      when: scanner_database_action == 'install'
+
+    - name: Process each immutable database independently
+      ansible.builtin.include_tasks: tasks/scanner-database.yaml
+      loop: '{{ scanner_databases }}'
+      loop_control:
+        loop_var: database
+        label: '{{ database.id }}'

@@ -1,0 +1,146 @@
+---
+- name: Validate locked archive layout
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - database.database.subdirectory in ['db', 'java-db']
+      - database.database.files | map(attribute='name') | sort == (['metadata.json', 'trivy.db'] if database.id == 'trivy-db' else ['metadata.json', 'trivy-java.db'])
+      - database.database.files | length == 2
+      - database.sha256 is match('^[a-f0-9]{64}$')
+
+- name: Inspect locked database archive
+  ansible.builtin.stat:
+    path: '{{ artifact_cache_root }}/{{ database.path }}'
+    follow: false
+    checksum_algorithm: sha256
+  register: database_archive
+
+- name: Require the exact verified archive
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - database_archive.stat.isreg | default(false)
+      - not database_archive.stat.islnk | default(false)
+      - database_archive.stat.checksum == database.sha256
+      - database_archive.stat.size == database.size_bytes
+
+- name: Inspect installed database directory without following symlinks
+  ansible.builtin.stat:
+    path: '{{ scanner_cache }}/{{ database.database.subdirectory }}'
+    follow: false
+  register: database_directory
+
+- name: Reject unexpected database targets
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not database_directory.stat.exists or (database_directory.stat.isdir | default(false) and not database_directory.stat.islnk | default(false))
+      - scanner_database_action != 'verify' or database_directory.stat.exists
+
+- name: Show database plan
+  ansible.builtin.debug:
+    msg:
+      database: '{{ database.id }}'
+      updated_at: '{{ database.database.metadata.UpdatedAt }}'
+      archive_sha256: '{{ database.sha256 }}'
+      target: '{{ scanner_cache }}/{{ database.database.subdirectory }}'
+      present: '{{ database_directory.stat.exists }}'
+      policy: Initial install or exact verification only; never overwrite a live database.
+
+- name: Install a missing database using an atomic directory rename
+  when: scanner_database_action == 'install' and not database_directory.stat.exists
+  block:
+    - name: Require enough free bytes on the actual cache filesystem
+      ansible.builtin.command:
+        argv: [df, -B1, '--output=avail', '{{ scanner_cache }}']
+      changed_when: false
+      register: scanner_disk_free
+
+    - name: Check extraction capacity
+      ansible.builtin.assert:
+        quiet: true
+        that: scanner_disk_free.stdout_lines[-1] | trim | int > (database.database.files | map(attribute='size_bytes') | sum) + 67108864
+
+    - name: Allocate this invocation staging directory
+      ansible.builtin.tempfile:
+        state: directory
+        path: '{{ scanner_cache }}'
+        prefix: .database-install-
+      register: database_staging
+
+    - name: Extract and validate before publishing the directory
+      block:
+        - name: Extract the checksum-verified official two-file archive
+          ansible.builtin.unarchive:
+            src: '{{ artifact_cache_root }}/{{ database.path }}'
+            dest: '{{ database_staging.path }}'
+            remote_src: true
+            owner: '10000'
+            group: '10000'
+            mode: '0644'
+
+        - name: Check both extracted file identities
+          ansible.builtin.stat:
+            path: '{{ database_staging.path }}/{{ item.name }}'
+            follow: false
+            checksum_algorithm: sha256
+          loop: '{{ database.database.files }}'
+          loop_control:
+            label: '{{ item.name }}'
+          register: staged_files
+
+        - name: Require matching bytes and ordinary files
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - item.stat.isreg | default(false)
+              - not item.stat.islnk | default(false)
+              - item.stat.size == item.item.size_bytes
+              - item.stat.checksum == item.item.sha256
+          loop: '{{ staged_files.results }}'
+          loop_control:
+            label: '{{ item.item.name }}'
+
+        - name: Set scanner ownership on staging root
+          ansible.builtin.file:
+            path: '{{ database_staging.path }}'
+            state: directory
+            owner: '10000'
+            group: '10000'
+            mode: '0755'
+
+        - name: Atomically install without replacing any concurrent target
+          ansible.builtin.command:
+            argv: [mv, --no-clobber, --no-target-directory, '{{ database_staging.path }}', '{{ scanner_cache }}/{{ database.database.subdirectory }}']
+          changed_when: true
+      always:
+        - name: Remove only this invocation staging directory
+          ansible.builtin.file:
+            path: '{{ database_staging.path }}'
+            state: absent
+
+- name: Verify installed database content
+  when: database_directory.stat.exists or scanner_database_action == 'install'
+  block:
+    - name: Inspect installed files
+      ansible.builtin.stat:
+        path: '{{ scanner_cache }}/{{ database.database.subdirectory }}/{{ item.name }}'
+        follow: false
+        checksum_algorithm: sha256
+      loop: '{{ database.database.files }}'
+      loop_control:
+        label: '{{ item.name }}'
+      register: installed_database_files
+
+    - name: Require exact database bytes and scanner ownership
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item.stat.isreg | default(false)
+          - not item.stat.islnk | default(false)
+          - item.stat.size == item.item.size_bytes
+          - item.stat.checksum == item.item.sha256
+          - item.stat.uid == 10000 and item.stat.gid == 10000
+      loop: '{{ installed_database_files.results }}'
+      loop_control:
+        label: '{{ item.item.name }}'

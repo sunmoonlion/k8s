@@ -8,7 +8,35 @@
 
 前序提交：独立Harbor `f3573d511c78cb9b68cc7f4605ef151896f7321b`、节点构建 `e280a3850953584853a4717945a8183baf18e5ec`、离线镜像 `eef098e272932a0ac3e279bfc002e1ea0ef1b9a0`、入口/认证及Docker物料 `c1917447b814884b5b32d81ddc08ceb42daf0b93`、失败与恢复记录 `b3c44e1e30a0ca566b5b8addabcb2ff08da1e1a3`。当前交付提交见HEAD，最终须报完整SHA。
 
-## 当前现场：Docker升级及新Harbor正式入口通过
+## 当前现场：离线扫描与独立恢复通过（2026-10-01）
+
+在前序提交 `7c2068d5cf3bc67d51ffeeaf14bab87656c0ac76` 上完成本单元；真实入口与既有集群保持运行。详情和日常命令见 [扫描与恢复](docs/platform-kind-v1/scanning-recovery.md)。本单元提交见 HEAD。
+
+- 新增原生 Make/Ansible 的 scanner-db-plan/install/verify、registry-scan-check、registry-recovery-plan/check。`prepare-recovery.py` 仅校验冷备份和生成隔离的官方 Compose 副本，不管理部署生命周期；没有新通用 CLI，也不调用旧部署代码。
+- 两个数据库归档纳入 `files.lock.json` 的独立 database 类型和 `databases/`。漏洞库 2026-10-01 01:24 UTC/schema2，Java 索引 2026-09-27 01:08 UTC/schema1；压缩共1,098,440,570字节，解包共3,008,844,062字节。Java不是今天最新版：两官方链路大文件只有几十KiB/s，东京SSH超时；官方GHCR不可变manifest重新核验后，以硬链接复用完整旧公共缓存，和旧脚本没有调用依赖。扫描入口要求两库均不超过七天。
+- 初装数据库 ok52 changed8 failed0；修正为仅预算缺失库后重复安装 ok35 changed0 failed0。没有覆盖运行中的数据库；定期换版/回退和到期告警仍须补齐。
+- Harbor真实扫描 ok48 changed4 failed0，Trivy v0.72.0，状态Success；报告 `/data/harbor/platform-kind-v1/scan-reports/haproxy-cud54j28.json`。验收镜像仍为固定HAProxy manifest `sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272`。
+- **安全待办**：201条包/CVE记录、86个不同CVE；High50条/11个不同CVE，Medium84、Low65、Unknown2，无Critical记录。OpenSSL/PCRE2相关包已有报告中的修复版本，而且入口进程实际加载这些库，不能一概解释为未使用；漏洞路径是否触达和官方镜像修复仍待评估。本单元只验扫描链路，不放行生产安全门禁，不自制补丁镜像；继续优先建群。
+- 既有一致性冷备份 SHA256 `68f0f80957a655bdc1773f47af4ef223c92005190ac245f6957c0bc3d4ea0e96` 已实际恢复：1,625个普通文件逐一比对；16个registry数据文件在完整拉取后仍全部摘要一致；6层/8blob及config摘要一致。备份中的管理员、puller、加密密钥和证书可用；独立12443 token realm验证通过，没有借用正式仓库认证。
+- 恢复入口 ok40 changed5 failed0。成功回执 `/data/harbor/platform-kind-v1/recovery/rehearsal-20261001061625045631223/verified.json`，结束状态同目录final-state.json。演练已停，正式Harbor仍healthy。备份早于本轮扫描情报和扫描报告，不能声称包含这些新数据；新备份创建与轮换仍待原生入口实现。
+- 三次前置尝试分别被副本相对挂载路径识别、internal-only网络未发布宿主端口、realm检查请求缺少域名Host头拦住，均已修正。后端继续internal隔离，只有proxy另接access网络。两次已启动失败演练均停回；首次未创建容器。失败不冒充通过。
+- 本轮原156容器的身份、挂载、完整restart策略和切换后的运行状态已只读复核。当前总186、运行26；新增30个演练容器全部停止。main/136共六节点Ready、仍v1.36.4，未在本轮新建集群。此前Docker29.8.1/正式入口状态维持。
+
+### 本单元网络、空间、检查与清理队列
+
+网络配置检查通过，无代理配置修改。GHCR最初EOF，默认mirror可读；大Java索引下载慢，保留458,883,072字节后接入原生curl续传（180秒连接上限、有限重试、最终SHA256+原子发布），实际续传增加字节，但本次最新Java归档没有下完，已停止。完整.part的验证/发布分支用已验漏洞库实操通过：ok26 changed1 failed0。两个最终归档离线核验 ok8 changed0 failed0；语法检查、Python AST、git diff检查通过，未加/跑测试套件。
+
+06:26:21Z容量检查：C盘空闲127,469,379,584字节，230GiB盘尚可增长66,970,451,968字节，再扣250,027,436字节预算仍余60,248,900,180字节，高于50GiB；不代表全套部署已有充足预算。
+
+最终清理务必包含：
+
+- 本实例 recovery 下四目录：`rehearsal-20261001060549318303881`（无容器）、`rehearsal-20261001060643337524207`、`rehearsal-20261001061221251867522`、`rehearsal-20261001061625045631223`（后三者各10停止容器和专用网络）。先保留验收回执，按精确归属清理；不得波及正式实例、原节点/卷或源冷备份。
+- 未选用的下载残片 `packages-to-be-installed/releases/platform-kind-v1/databases/trivy-java-db-76d004c32044.tar.gz.part`，不是正式物料。东京探测超时，无本轮远程下载文件。
+- 本轮编写用 `/tmp/platform-*` 临时文件在提交前精确删除；不泛删其他人的 `/tmp` 文件。
+
+下一工作单元是新KIND创建/节点信任/私有拉取，再Flux和平台。站点仍写sunmoon-kind-main，但已有同名受保护集群，不能直接覆盖；建群前落实目标名/端口/目录隔离或批准切换。开机/WSL重启、KIND删除重建、统一一键与生命周期、长期空间策略、应用全链路、云端实机均未完成。
+
+## 前序现场：Docker升级及新Harbor正式入口通过（7c2068d）
 
 所有者分别批准最初Docker维护、临时旧控制面恢复、遗留数据库缩容，以及修正后的第二个20分钟维护窗口（失败另15分钟）。第二个窗口已成功结束，不延伸为其他停机的无限授权。
 
@@ -49,7 +77,7 @@ Ansible2.21.4、Compose5.5.1；KIND0.33.0、kubectl/kubeadm1.36.5。官方KIND�
 
 ## 下一步（保持顺序）
 
-1. 补Trivy离线漏洞数据库及真实扫描，完成新Harbor独立备份/恢复演练。容器healthy不等于扫描可用。
+1. 离线扫描与已有冷备份独立恢复已通过；后续补数据库定期更新、原生备份创建/轮换与扫描风险收敛。
 2. 新KIND创建/配置、节点信任和私有拉取、Flux，再平台和模板/应用部署；现有main/136仍属保护对象，不能凭名字覆盖。
 3. 单组件与整套一键、统一启停、开机附盘与服务顺序；WSL/KIND重启、KIND删除重建后的Harbor数据/摘要/新节点pull验收。
 4. 长期容量监控、Harbor保留/GC、缓存/日志/备份轮换与统一预览/执行；除日志外删除策略具体确认。结束时清理本次全部临时物料/东京下载，受保护旧资源达到退出条件后再清理。

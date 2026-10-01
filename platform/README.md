@@ -37,6 +37,11 @@ make entry-start             # 启动本次入口并验 Harbor TLS
 make entry-status            # 查看本次入口状态
 make registry-accounts       # 新项目及独立推拉身份；实际 token 认证
 make registry-publish-check  # 正式切换后执行真实推送/拉回和权限拒绝核验
+make scanner-db-plan        # 查看已锁定的离线漏洞库/Java 索引
+make scanner-db-install     # 首次安装；已有数据库不覆盖
+make scanner-db-verify      # 复核全部数据库文件摘要
+make registry-scan-check    # 通过 Harbor 发起真实扫描并保存报告
+# registry-recovery-plan/check 另需 BACKUP 与 BACKUP_SHA256，见扫描与恢复文档
 ```
 
 支持同一入口选择部分文件，例如 `make fetch-artifacts ARTIFACTS=kind,kubectl`；默认选择锁文件内全部文件。不存在的名称报错，不跳过。站点参数可用 `SITE=environments/kind/site.yaml` 指定。当前首次创建物料缓存要求其父目录已存在，以便先核验所在文件系统的可用空间。
@@ -68,6 +73,7 @@ uv pip compile --python-version 3.12 --generate-hashes --no-header \
 - `bin/`：原始二进制物料；当前下载模式为 0644，尚未安装到 PATH。
 - `packages/`：工具压缩包和 Harbor 官方离线安装包。Harbor 安装包内带启动镜像，类型仍标为整套安装包。
 - `manifests/`：未经部署修改的上游 YAML。
+- `databases/`：带日期、schema 和摘要的漏洞库/Java 索引快照；不是运行镜像。
 - `images/`：KIND 节点、三个 Calico、HAProxy 和 skopeo 的离线 OCI 归档及校验回执。备份、日志和临时下载不进正式物料清单。
 
 文件 SHA256 与镜像 manifest digest 是不同身份，不能互相替代。
@@ -78,7 +84,7 @@ uv pip compile --python-version 3.12 --generate-hashes --no-header \
 
 容量算法使用 64 位整数：C 盘实际空闲减去「230 GiB 减数据 VHDX 实际分配」的非负部分，再减本次缺失文件大小的两倍（文件与临时空间），必须至少剩 50 GiB。同时检查缓存文件系统空间。此预算只覆盖所选下载，不能据此认定节点构建、解包或整套部署空间足够；其他系统盘增长仍需独立预算。
 
-下载继承当前进程代理环境，使用 Ansible get_url 的 TLS 校验和 SHA256 校验。成功文件重跑时复用；已存在但摘要/大小不符的文件会报错，不覆盖。断连后按有限次数重试，get_url 不支持跨进程断点续传，未完成文件可能需要重新传输；已完成文件不重复下载。下载后的完整核验仍检查每个文件的大小与 SHA256。
+下载继承当前进程代理环境，普通文件使用 Ansible get_url；大体积 database 类型由原生 curl 续传 `.part`，每次连接最长 180 秒，失败有限重试。HTTPS 校验始终开启，归档完成后核大小和 SHA256，再发布为正式文件。成功文件重跑时复用，已有文件不符合锁则拒绝覆盖；失败的 `.part` 保留供下一次续传，不算正式物料。get_url 普通文件仍不支持跨进程续传。
 
 ## 已核实与未完成
 
@@ -158,3 +164,7 @@ Harbor 安装包解包约 735 MB，内部未压缩镜像内容约 2.03 GB；本�
 
 
 最新维护限制（2026-10-01）：Docker29.8.1升级与正式入口验收通过，Harbor可用、main/136节点Ready；旧应用入口经后续授权已恢复；两个遗留Harbor数据库保持0副本、PVC/PV保留。再次重启Docker须先临时恢复旧API使worker重载Traefik，仍有过渡依赖。恢复方案及授权边界见根目录CHECKPOINT和Docker维护操作卡。
+
+## 扫描与恢复
+
+离线数据库、Harbor 真实扫描、既有冷备份的隔离恢复入口与验收范围见 [扫描与恢复](../docs/platform-kind-v1/scanning-recovery.md)。恢复使用独立目录、Compose 项目和回环端口，结束后停止；不修改正式入口。

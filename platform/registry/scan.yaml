@@ -1,0 +1,158 @@
+---
+- import_playbook: scanner-databases.yaml
+  vars:
+    scanner_database_action: verify
+
+- name: Verify a real Harbor vulnerability scan of the locked published image
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    images: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json }}'
+    published: '{{ images.images | selectattr("id", "equalto", "haproxy") | first }}'
+    file_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/files.lock.json") | from_json }}'
+    databases: '{{ file_lock.files | selectattr("kind", "equalto", "database") | list }}'
+    artifact_api: 'https://127.0.0.1:{{ registry_https_port }}/api/v2.0/projects/platform/repositories/haproxy/artifacts/{{ published.manifest_digest }}'
+    report_type: application/vnd.security.vulnerability.report; version=1.1
+  module_defaults:
+    ansible.builtin.uri:
+      ca_path: '{{ registry_config_dir }}/tls/ca.crt'
+      validate_certs: true
+      use_proxy: false
+      url_username: admin
+      url_password: '{{ admin_password.content | b64decode }}'
+      force_basic_auth: true
+      timeout: 20
+  tasks:
+    - name: Require reasonably recent vulnerability intelligence for acceptance
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import datetime,json,sys
+            now=datetime.datetime.now(datetime.timezone.utc)
+            report=[]
+            for db in json.loads(sys.argv[1]):
+                stamp=db['database']['metadata']['UpdatedAt']
+                updated=datetime.datetime.fromisoformat(stamp.replace('Z','+00:00'))
+                age=(now-updated).total_seconds()
+                if not 0 <= age <= 7*86400:
+                    raise SystemExit('Database is future-dated or older than seven days: '+db['id'])
+                report.append({'database':db['id'],'updated_at':stamp,'age_hours':round(age/3600,2)})
+            print(json.dumps(report))
+          - '{{ databases | to_json }}'
+      register: database_age
+      changed_when: false
+
+    - name: Budget temporary scan content and report storage
+      ansible.builtin.include_tasks:
+        file: ../host/tasks/capacity.yaml
+        apply:
+          become: false
+      vars:
+        capacity_planned_bytes: 536870912
+
+    - name: Read local administrator credential without displaying it
+      ansible.builtin.slurp:
+        src: '{{ registry_config_dir }}/private/admin-password'
+      register: admin_password
+      no_log: true
+
+    - name: Inspect exact artifact and any earlier scan
+      ansible.builtin.uri:
+        url: '{{ artifact_api }}?with_scan_overview=true'
+      register: before_scan
+      no_log: true
+
+    - name: Require the expected digest and no ongoing scan
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - before_scan.json.digest == published.manifest_digest
+          - before_scan.json.scan_overview | default({}) | dict2items | map(attribute='value.scan_status') | intersect(['Pending', 'Running', 'Scheduled']) | length == 0
+
+    - name: Request a real Harbor jobservice and adapter scan
+      ansible.builtin.uri:
+        url: '{{ artifact_api }}/scan'
+        method: POST
+        status_code: 202
+      changed_when: true
+      no_log: true
+
+    - name: Wait for this scan to reach a terminal state
+      ansible.builtin.uri:
+        url: '{{ artifact_api }}?with_scan_overview=true'
+      register: after_scan
+      until: >-
+        after_scan.status == 200 and
+        after_scan.json.scan_overview | default({}) | dict2items | length > 0 and
+        after_scan.json.scan_overview | default({}) | dict2items | map(attribute='value.scan_status') | difference(['Success', 'Error', 'Stopped']) | length == 0 and
+        after_scan.json.scan_overview != before_scan.json.scan_overview | default({})
+      retries: 60
+      delay: 5
+      no_log: true
+
+    - name: Show only scan status and database dates
+      ansible.builtin.debug:
+        msg:
+          digest: '{{ after_scan.json.digest }}'
+          status: '{{ after_scan.json.scan_overview | dict2items | map(attribute="value.scan_status") | list }}'
+          databases: '{{ database_age.stdout | from_json }}'
+
+    - name: Require scan success rather than merely healthy containers
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - after_scan.json.digest == published.manifest_digest
+          - after_scan.json.scan_overview | dict2items | map(attribute='value.scan_status') | unique | list == ['Success']
+
+    - name: Fetch the actual vulnerability report
+      ansible.builtin.uri:
+        url: '{{ artifact_api }}/additions/vulnerabilities'
+        headers:
+          X-Accept-Vulnerabilities: '{{ report_type }}'
+      register: vulnerability_report
+      no_log: true
+
+    - name: Require a nonempty report from Trivy
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - vulnerability_report.json | length > 0
+          - vulnerability_report.json | dict2items | map(attribute='value.scanner.name') | unique | list == ['Trivy']
+
+    - name: Create private evidence directory without any rotation policy
+      ansible.builtin.file:
+        path: '{{ registry_instance_dir }}/scan-reports'
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Allocate a distinct report file for this successful scan
+      ansible.builtin.tempfile:
+        state: file
+        path: '{{ registry_instance_dir }}/scan-reports'
+        prefix: haproxy-
+        suffix: .json
+      register: report_file
+
+    - name: Save report with exact image and database provenance
+      ansible.builtin.copy:
+        content: '{{ {"image": published.manifest_digest, "databases": databases, "overview": after_scan.json.scan_overview, "report": vulnerability_report.json} | to_nice_json }}'
+        dest: '{{ report_file.path }}'
+        owner: root
+        group: root
+        mode: '0600'
+      no_log: true
+      diff: false
+
+    - name: Report verification scope without claiming vulnerability absence
+      ansible.builtin.debug:
+        msg:
+          image: '{{ published.manifest_digest }}'
+          scanner: '{{ vulnerability_report.json | dict2items | map(attribute="value.scanner") | list }}'
+          severity: '{{ after_scan.json.scan_overview | dict2items | map(attribute="value.severity") | list }}'
+          evidence: '{{ report_file.path }}'
+          scope: Harbor API, jobservice, adapter and database chain passed; findings still need risk assessment. No custom patched image or deletion.
