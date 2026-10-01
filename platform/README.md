@@ -31,7 +31,7 @@ make registry-start          # 检查挂载并启动，验健康与认证
 make prepare-host-materials  # 准备 HAProxy/skopeo 离线归档和本机镜像
 make check-host-materials    # 离线校验两项宿主工具归档
 make entry-plan              # 入口路由预览
-make entry-deploy            # 原生 HAProxy 入口部署，当前已回退至候选端口
+make entry-deploy            # 原生 HAProxy 入口部署，当前正式30443入口
 make entry-stop              # 停止本次入口
 make entry-start             # 启动本次入口并验 Harbor TLS
 make entry-status            # 查看本次入口状态
@@ -86,7 +86,7 @@ uv pip compile --python-version 3.12 --generate-hashes --no-header \
 
 `check-images` 通过仅证明这一批镜像身份完整；文件校验通过仅证明选中文件可用。KIND/Calico 引导归档已经完成；集群验收、完整宿主工具/构建依赖、chart/辅助镜像、自有应用镜像和完整离线发布尚需完成，因此两份锁均保持 `offline_ready=false`。
 
-宿主挂载预检、Harbor 数据目录的 Docker 可见性、新 Harbor 部署及后端 TLS/认证已实际通过。正式入口 skopeo 推送/完整拉回/摘要和权限拒绝已实际通过；宿主 Docker 29.4.3 的 token CA 缺陷阻断整体验收，入口已回退。WSL/KIND 重启与重建恢复仍待验收；未执行业务测试。
+宿主挂载预检、Harbor 数据目录的 Docker 可见性、新 Harbor 部署及后端 TLS/认证已实际通过。正式入口 skopeo 推送/完整拉回/摘要和权限拒绝已实际通过；宿主Docker已升29.8.1，候选/正式认证pull通过，正式30443已切新Harbor。WSL/KIND 重启与重建恢复仍待验收；未执行业务测试。
 
 ## 本批物料的实际结果
 
@@ -145,7 +145,7 @@ Harbor 安装包解包约 735 MB，内部未压缩镜像内容约 2.03 GB；本�
 
 ## 宿主入口与镜像发布身份
 
-[入口操作](host/README.md)与 [本次切换卡](../docs/platform-kind-v1/entry-cutover.md)明确候选端口、现有路由及回退。当前候选入口可用；本次正式切换因 Docker 拉取失败已回退，下一次需按 Docker 维护方案确认更大的停服范围。
+[入口操作](host/README.md)与 [本次切换卡](../docs/platform-kind-v1/entry-cutover.md)明确候选端口、现有路由及回退。当前正式30443入口已通过Docker认证拉取和完整镜像验收，旧代理停止保留。
 
 `artifacts/image-archives.yaml` 是 KIND/Calico 与宿主工具共用的唯一归档实现，旧名称 bootstrap-images.yaml 已移除，原 Make 命令保持不变。宿主两项归档共 **136,100,352 字节**，按固定文件摘要及全部 blob 核验。重复 prepare-host-materials 不重复导出。
 
@@ -154,7 +154,7 @@ Harbor 安装包解包约 735 MB，内部未压缩镜像内容约 2.03 GB；本�
 项目和推拉认证操作见 [Harbor 文档](registry/README.md)。正式镜像发布验收代码已实现，但在切换前仅做语法检查，不向旧仓库写入新镜像。
 
 
-宿主 Docker 维护物料也在同一 `files.lock.json` 和 `packages/` 中：三个 29.8.1 升级包与三个 29.4.3 回退包，共 98,306,132 字节，已经下载核验；曾安装29.8.1，因维护检查误判回退至29.4.3；后者是临时回退用途，不是新生产版本。物料总计由 10 项增为 16 项。具体影响与批准范围见 [Docker 维护方案](../docs/platform-kind-v1/docker-maintenance.md)。
+宿主 Docker 维护物料也在同一 `files.lock.json` 和 `packages/` 中：三个 29.8.1 升级包与三个 29.4.3 回退包，共 98,306,132 字节，已经下载核验；最终已成功安装29.8.1并验收（早先误判回退的历史保留在维护文档）；后者是临时回退用途，不是新生产版本。物料总计由 10 项增为 16 项。具体影响与批准范围见 [Docker 维护方案](../docs/platform-kind-v1/docker-maintenance.md)。
 
 
-最新维护限制（2026-10-01）：Docker升级尝试已回退，Harbor可用、main/136节点Ready；旧应用入口经后续授权已恢复；两个遗留Harbor数据库保持0副本、PVC/PV保留。再次重启Docker须先临时恢复旧API使worker重载Traefik，仍有过渡依赖。恢复方案及授权边界见根目录CHECKPOINT和Docker维护操作卡。
+最新维护限制（2026-10-01）：Docker29.8.1升级与正式入口验收通过，Harbor可用、main/136节点Ready；旧应用入口经后续授权已恢复；两个遗留Harbor数据库保持0副本、PVC/PV保留。再次重启Docker须先临时恢复旧API使worker重载Traefik，仍有过渡依赖。恢复方案及授权边界见根目录CHECKPOINT和Docker维护操作卡。

@@ -1,18 +1,18 @@
 # Docker 认证修复维护方案
 
-状态：**2026-10-01 所有者批准后已尝试升级；29.8.1 曾成功启动，但维护脚本的挂载列表顺序误判触发回退。当前29.4.3，正式入口未切换；后续依赖恢复通过，见 CHECKPOINT。原20分钟窗口不用于无限重试。**
+状态：**2026-10-01 第二个获批窗口完成：Docker客户端/服务端29.8.1，候选与正式认证pull通过，新入口已接管30443，原节点/卷/应用入口核对通过。前轮失败和恢复历史保留在下文。**
 
 ## 原因、目标和范围
 
 2026-10-01，新 Harbor 经正式 30443 的 skopeo 推送、独立完整拉回、八个 OCI blob 和 manifest/config 摘要核验、只读账号推送拒绝均通过；宿主 Docker **29.4.3** 拉取却在 `/service/token` 报 `x509: certificate signed by unknown authority`。registry 专用 CA 已安装、使用同一 CA 的真实 TLS 访问通过。
 
-该症状与 [Moby 52600](https://github.com/moby/moby/pull/52600) 一致；[Docker 29.5.0 发行说明](https://docs.docker.com/engine/release-notes/29/#2950) 明确修复 token 请求忽略仓库 TLS 配置。29.8.1 是本次冻结的维护目标，不代表始终最新。升级后的候选与正式地址拉取尚未执行，不能把根因判断写成修复已完成。
+该症状与 [Moby 52600](https://github.com/moby/moby/pull/52600) 一致；[Docker 29.5.0 发行说明](https://docs.docker.com/engine/release-notes/29/#2950) 明确修复 token 请求忽略仓库 TLS 配置。29.8.1 是本次冻结的维护目标，不代表始终最新。升级后候选和正式地址的实际拉取已通过，原token CA报错未再出现。
 
 本次拟将 `docker-ce`、`docker-ce-cli`、已安装的 `docker-ce-rootless-extras` 从 `5:29.4.3-1~ubuntu.24.04~noble` 升为 `5:29.8.1-1~ubuntu.24.04~noble`。宿主 `containerd.io=2.2.3-1~ubuntu.24.04~noble` 满足新包要求，本次固定不变，避免同时改变内容存储运行时；它仍需在完整宿主版本选型中单独评估。KIND 节点里的 containerd/runc 是独立发布，不随此包变更。
 
 不卸载 Docker，不改变存储驱动，不迁移 `/var/lib/docker` 或 `/var/lib/containerd`，不启用 insecure registry，不关闭证书校验。不执行 autoremove 或任何 prune。
 
-## 已完成的准备
+## 维护前准备（历史基线）
 
 - 六个新旧 deb 共 **98,306,132 字节**，在物料根目录 `releases/platform-kind-v1/packages/`；ID 为 `docker-ce-{next,rollback}`、`docker-ce-cli-{next,rollback}`、`docker-ce-rootless-extras-{next,rollback}`。
 - `platform/artifacts/files.lock.json` 保存 URL、包版本、大小、SHA256、用途和签名元数据摘要。通过已有 Docker APT 公钥验证 InRelease 签名，再核对 Packages 摘要；下载后逐文件核对大小和 SHA256。
@@ -20,7 +20,7 @@
 - 当前 `live-restore=false`。共有 **27 个运行容器**：新 Harbor 10、新入口 1、旧 Harbor 7、旧入口 1、现有 main 3、验证 136 3、保留的 kind-worker/worker2 2。
 - 旧 Harbor jobservice 的状态为 `created`，开始时间全零，先前未启动；旧聚合健康因此为 unhealthy，其他七个组件健康。这是基线缺口，恢复时不得自动把所有停止容器启动，也不能宣称旧聚合健康恢复为 healthy。
 - 新 Harbor `/etc` 配置约 12 KB、运行文件约 32.36 MB、数据约 116.49 MB；维护前重测，冷备份及验证预留 1 GiB。
-- 现入口已回退：30443 → 旧 Harbor 18443，新候选 32443 → 新 Harbor 11443。所有旧节点、卷和备份保留。
+- 维护前入口已回退：30443 → 旧 Harbor 18443，新候选 32443 → 新 Harbor 11443。所有旧节点、卷和备份保留。
 
 ## 停服范围和时限
 
@@ -82,7 +82,7 @@
 4. 上限10分钟、失败另5分钟。无论成功失败都恢复两worker的原kubelet状态、main和旧代理，并给出未恢复项。此方案随后经所有者明确批准执行：两个原副本1的StatefulSet设0，PVC/PV UID完整保留，114秒恢复，最终入口SHA256与基线一致；原配置已私有备份。
 
 
-## 再次升级的具体安排（待新维护窗口）
+## 第二个窗口的执行顺序（已批准并完成）
 
 原入口已在后续独立授权下恢复。新窗口仍20分钟、失败另15分钟，范围仅三包29.4.3→29.8.1、containerd固定；同时明确包含重启后的旧API临时恢复，不能重复遗漏此依赖。
 
@@ -90,6 +90,17 @@
 2. 临时把全部原容器restart策略设no，按原运行ID停容器和Docker/socket。本地dpkg安装三个新包，临时policy-rc.d阻止安装脚本自行启动服务；结束移除。无需现场联网下载。
 3. 启动Docker，先启动原运行节点（暂不启动占80等端口的main控制面）。临时启动保留的旧控制面，核实两个遗留数据库仍0副本，等待旧Traefik入口恢复。接着停回旧控制面，启动main控制面、原外置Harbor与代理，再经原生Make恢复新Harbor和候选入口。恢复原restart策略与auto包标记。
 4. 对照完整基线：全部原容器和卷身份，运行/停止状态、完整挂载字段（按Destination排序）、原IPv4/IPv6、Docker数据目录/存储后端、两个集群节点Ready及原应用证书。私有CA下先实际Docker候选pull，再执行既有正式入口切换和registry-publish-check。
-5. 失败停止新动作，回退包/入口并按第3步恢复。归档失败记录和修正依据，不把检测失败写成组件不兼容。只读预检已通过，尚未执行此新窗口。
+5. 失败停止新动作，回退包/入口并按第3步恢复。归档失败记录和修正依据，不把检测失败写成组件不兼容。此窗口已执行完成，结果见下。
 
 准备脚本为本次一次性维护编排，不属于长期部署代码；临时文件收尾移出/tmp，仅保留私有审计副本。部署仍使用既有Make/Ansible。
+
+
+## 最终结果
+
+第二窗口记录 `/data/harbor/maintenance/docker-20261001T053018Z/`；05:35:42Z正式切换通过，05:36:55Z最终状态通过。Docker三包29.8.1，containerd2.2.3不变；原156容器和全部卷保留，现26运行（旧代理按计划停止），两个集群六节点Ready。新Harborhealthy，旧外置Harbor保持原组件基线；两个已批准退役的旧集群数据库仍0。
+
+新冷备份151,726,080字节，逐文件比较通过。Docker候选/正式pull、skopeo独立完整拉回6层8blob、manifest/config摘要、只读push拒绝通过；publisher另向已有同摘要标签实际重复push并核对成功。原应用证书身份一致。正式入口原生部署ok20 changed3 failed0；registry-publish-check ok28 changed3 failed0。
+
+本次Docker维护单元完成。WSL开机顺序、新KIND、Harbor独立恢复演练和全项目验收另行推进；当前不能把本窗口当作全部重启/重建验收通过。两新unit仍boot disabled。
+
+正式入口重复部署复核ok20 changed0 failed0。9个本轮一次性运维脚本已移出/tmp，仅保留root0700/文件0600的script-audit非执行文本副本；临时文档编辑文件已删除。

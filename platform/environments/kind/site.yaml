@@ -31,10 +31,10 @@ registry_instance_dir: /data/harbor/platform-kind-v1
 # Owner approved 2026-10-01: 3 files of 20 MiB per container, automatic rotation.
 registry_log_rotation_approved: true
 
-# Candidate restored after cutover rollback; public 30443 uses the retained old entry.
+# Formal entry accepted after Docker 29.8.1 authenticated pull; old proxy is retained stopped.
 entry_enabled: true
-entry_listen_address: 127.0.0.1
-entry_port: 32443
+entry_listen_address: 0.0.0.0
+entry_port: 30443
 # Transitional backend matches the existing listener; switch after new ingress is ready.
 entry_cluster_backend: 172.18.0.5:30443
 entry_config_dir: /etc/sunmoon/entry

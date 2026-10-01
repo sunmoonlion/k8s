@@ -1,14 +1,14 @@
 # 新入口与 Harbor 切换操作卡
 
-状态：2026-10-01 已获批准并实际切换；skopeo 推拉通过，但宿主 Docker 拉取失败，**已回退，30443 当前仍是旧入口**。新入口恢复候选 32443。后续Docker维护曾安装29.8.1但因维护检查错误回退至29.4.3。Harbor及旧应用TLS入口已恢复（两个遗留Harbor数据库经授权保持0副本）；再次升级/切换待新维护窗口；见 [Docker 维护方案](docker-maintenance.md)。
+状态：**2026-10-01 Docker升至29.8.1后，候选/正式认证拉取与完整镜像验收通过，30443已由新入口提供服务。旧代理停止保留。**前轮回退历史和恢复过程见[Docker维护](docker-maintenance.md)。
 
 ## 范围与已有证据
 
 - 新 Harbor：`sunmoon-registry.service`，127.0.0.1:11443，独立数据目录 `/data/harbor/platform-kind-v1/data`。
-- 新入口：官方 HAProxy 3.4.6 固定摘要，`sunmoon-entry.service`，候选 127.0.0.1:32443。
+- 新入口：官方 HAProxy 3.4.6 固定摘要，`sunmoon-entry.service`，当前正式 0.0.0.0:30443，候选32443已退出监听。
 - Harbor 域名经候选入口到新 Harbor：TLS 信任与域名检查、健康接口已通过。
 - 其他域名按现有入口转到 **172.18.0.5:30443（kind-worker）**；不能提前改为 main 的 19443，main 尚无应用入口。候选、旧入口和该后端的应用证书 SHA256 已一致；这仅验证分流身份，不代替应用登录或证书信任验收。
-- 旧代理：`sunmoon-sni-transition-main-20260928`，host 网络，监听 0.0.0.0:30443，Harbor 后端 18443。旧代理配置不修改，保留供回退。
+- 旧代理：`sunmoon-sni-transition-main-20260928`，host 网络，监听 0.0.0.0:30443，Harbor 后端 18443。旧代理当前已停止，配置保留供回退。
 
 本次不迁移旧镜像或账号。切换后正式域名访问新的仓库；旧集群若需重新拉取仅存在于旧仓库的镜像会失败。旧工作负载本身不重启。新业务镜像需重新构建发布，这是已确认的新体系目标。
 
@@ -41,10 +41,17 @@ docker start sunmoon-sni-transition-main-20260928
 本卡是一次性现场切换操作，不成为日常部署对旧容器的依赖。日常入口为 `make entry-plan/entry-deploy/entry-start/entry-stop/entry-status`；全新部署只使用新服务。旧代理退出清理另按既定保护条件批准。
 
 
-## 本次结果
+## 前轮尝试（历史）
 
 首次被空仓库错误格式拦住并回退；第二次被只读发布容器读取归档权限拦住并回退。修正为已校验公开归档 0644，并为 skopeo 的 `/var/tmp` 提供有上限 tmpfs，离线读取通过后再次执行。
 
 第三次切换及 skopeo 完整验收用时 18 秒；发布 `platform/haproxy@sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272`，6 层、8 个 blob 校验通过，puller 推送被拒。正式域名新 CA、管理员认证、健康和应用分流证书一致性均通过。
 
-随后追加宿主 Docker 拉取，29.4.3 在 token 请求上报未知 CA；因此最终按失败条件回退，未将正式切换标为完成。新 Harbor 及镜像保留，旧入口已恢复原证书，候选入口新 CA 检查通过。Docker 门禁已前移，升级后的完整验收尚待新维护窗口。
+随后追加宿主 Docker 拉取，29.4.3 在 token 请求上报未知 CA；因此最终按失败条件回退，未将正式切换标为完成。新 Harbor 及镜像保留，旧入口已恢复原证书，候选入口新 CA 检查通过。Docker门禁随后在新窗口升级后通过，见下。
+
+
+## 最终切换通过
+
+2026-10-01T05:35:42Z，新窗口中Docker29.8.1先候选pull通过，再正式切换；entry-deploy ok20 changed3 failed0，registry-publish-check ok28 changed3 failed0。完整拉回6层8blob、manifest/config摘要、只读push拒绝及正式Dockerpull通过。由于镜像已在新仓库，本次幂等发布跳过；随后publisher实际重复推送同一标签、相同manifest并重新核对，通过。
+
+当前Harbor正式地址指向新2.15.2仓库；旧仓库数据未迁入，保留于旧18443。其他域名仍转旧kind-worker且应用证书SHA256与维护前相同。最终156个原容器和全部卷保留，26运行，main/136六节点Ready。详细机器证据在私有maintenance目录，索引见CHECKPOINT。
