@@ -4,9 +4,21 @@
 
 从零建立长期维护的部署代码，第一期KIND，原生Make/Ansible、官方Harbor Compose、KIND、Flux/SOPS；不调用旧sunmoonai/utils/luna部署链。五仓在 `/home/zymun/worktrees/platform-kind-v1`，各自分支platform-kind-v1，从本地master建，基线见[输入盘点](docs/platform-kind-v1/inventory.md)。原luna仅参考。
 
-已确认采用新版本、不迁移旧业务数据/Harbor镜像，应用可以修改重建，业务Python3.13.15。旧节点、卷、备份与他人local-integration受保护；日志3×20MiB已批准，其他删除策略需具体批准。本轮只改k8s，四个应用仓均干净，无push。
+已确认采用新版本、不迁移旧业务数据/旧 Harbor 镜像，应用可以修改重建，业务 Python 3.13.15。旧 `kind`、`sunmoon-kind-136`、备份与他人 local-integration 受保护；`sunmoon-kind-main` 和旧 18443 Harbor 已经所有者决定退役并于 2026-10-01 删除。日志3×20MiB已批准，其他删除策略仍须具体决定。本轮只改k8s，四个应用仓均干净，无push。
 
 前序提交：独立Harbor `f3573d511c78cb9b68cc7f4605ef151896f7321b`、节点构建 `e280a3850953584853a4717945a8183baf18e5ec`、离线镜像 `eef098e272932a0ac3e279bfc002e1ea0ef1b9a0`、入口/认证及Docker物料 `c1917447b814884b5b32d81ddc08ceb42daf0b93`、失败与恢复记录 `b3c44e1e30a0ca566b5b8addabcb2ff08da1e1a3`。当前交付提交见HEAD，最终须报完整SHA。
+
+## 后续维护：删除 sunmoon-kind-main 与旧 18443 Harbor（2026-10-01）
+
+所有者认为无用的旧主集群及其 Harbor 可删除。只读盘点确认 `sunmoon-kind-main` 没有业务 Pod、PV/PVC 或 Harbor 工作负载；三个节点目录下的 static/local-path 数据目录均为空。KIND 官方命令删除了这个精确集群的三个节点、对应 `/var` 卷和上下文。节点卷原约8.4 GiB。数据根 `/data/kind-clusters/sunmoon-kind-main` 不存在。
+
+该集群里没有“对应 Harbor”。经实例名、端口和卷路径核对，所有者所指旧外置实例按 18443 项处置：`sunmoon-harbor-cutover-20260930-v1`，仅回环监听18443，registry目录约17 GiB；八个专属容器和两个专用网络均已停除，再删除该实例的精确目录。此前 Docker Compose 留下一个未启动的 Created jobservice 容器，另行按其精确项目名删除。18443现已无监听。
+
+**新 Harbor 未删**：独立 `sunmoon-registry` 仍在127.0.0.1:11443，正式入口30443健康，10服务healthy，数据目录 `/data/harbor/platform-kind-v1/data` 约3.0 GiB。保留旧 Harbor 的冷备份、`/data/harbor/backups`、其它 Harbor 实例、候选及 `sunmoon-kind-136/harbor-restore-20260926` 中副本0且PVC/PV仍Bound的恢复演练。没有清理其它旧节点、卷、PV或备份。
+
+删除前 `/data/harbor/instances` 约130 GiB、数据盘Avail约72 GiB；之后实例目录约113 GiB、数据盘Avail约90 GiB。释放的约17 GiB实例层和8.4 GiB节点卷容量已回到WSL各自文件系统，但 VHDX没有压缩，Windows上的VHDX分配大小不会等量下降。11:50检查 C 盘空闲121,495,732,224字节；计入230 GiB数据盘长满后的剩余为54,525,280,256字节（约50.78 GiB），高于50 GiB底线约0.78 GiB。剩余空间很紧，应用平台部署前必须重新测算预算。
+
+最终集群列表为 `kind`（旧控制面仍停止）、`sunmoon-kind-136`、`sunmoon-kind`。新 `sunmoon-kind` 三节点Ready；新Harbor正式健康接口返回healthy。应用入口未切换，旧 main 的80、19443、30444–30446与17443端口映射已随节点删除释放。
 
 ## 最新现场：sunmoon-kind 建群与三节点拉取通过（2026-10-01）
 
@@ -17,7 +29,7 @@
 - 数据 `/data/kind-clusters/sunmoon-kind/<role>/{static,dynamic}`，分别挂静态固定路径与 local-path 动态路径；真实 bind 和 device/inode 比对通过。kube-system UID `67d27d4a-f9ad-4f01-a37f-225144cacaef`，所有权回执在其 bootstrap/identity.json。
 - 最终重复部署 **ok80 changed0 failed0**；三节点私有拉取+受限容器运行+内外 DNS 验收 **ok32 changed6 failed0**。镜像manifest `5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272`；成功回执 bootstrap/bootstrap-pull-rhc28.json，临时 namespace/Secret 已删除。
 - 实际修正：OCI匿名导入名导致 containerd checkpoint检测找不到引用，正式导入改显式完整 --base-name，本次新节点别名/CRI索引已修复；CoreDNS生成的字面换行改为多行变量。初次无缓存拉取成功但DNS Job失败，第二次Always拉取复用缓存后完整成功。不得声称修正代码已完成删除重建冷建验收。
-- 原main/136六节点仍Ready，旧kind控制面保持停止、两worker运行；新Harbor10服务healthy，入口仍Harbor→新仓库、应用→旧worker。未切换应用入口、未改旧集群、未删旧节点/卷/备份。
+- 新建群前 main/136 六节点曾Ready；main及其旧Harbor随后按所有者决定删除（见后续维护记录）。`sunmoon-kind-136`仍在，旧`kind`控制面保持停止、两worker运行；新Harbor10服务healthy，应用入口仍未切换。
 - 11:50Z计230GiB数据盘长满后C仍余55,029,702,656字节（51.25GiB）；仅1.25GiB额外预算空间，下一阶段须重新预算。全部运行证据在 bootstrap/evidence 与 verification-20261001.json。
 - 下一步顺序仍是 **Flux→平台/应用→整套入口与启停→重启/删除重建持久化验收→长期空间管理及最终清理**。开机顺序、独立冷建复现、企业生产安全门禁和云端实机均未完成。本轮未新增/运行测试套件，执行了授权的实际部署验收、语法及diff检查。
 
@@ -91,7 +103,7 @@ Ansible2.21.4、Compose5.5.1；KIND0.33.0、kubectl/kubeadm1.36.5。官方KIND�
 ## 下一步（保持顺序）
 
 1. 离线扫描与已有冷备份独立恢复已通过；后续补数据库定期更新、原生备份创建/轮换与扫描风险收敛。
-2. 新KIND创建/配置与节点私有拉取已通过；接入 Flux，再平台和模板/应用部署。现有main/136仍属保护对象，不能凭名字覆盖。
+2. 新KIND创建/配置与节点私有拉取已通过；接入 Flux，再平台和模板/应用部署。`sunmoon-kind-main` 已于2026-10-01删除；`sunmoon-kind-136` 和旧 `kind` 节点/卷仍受保护。
 3. 单组件与整套一键、统一启停、开机附盘与服务顺序；WSL/KIND重启、KIND删除重建后的Harbor数据/摘要/新节点pull验收。
 4. 长期容量监控、Harbor保留/GC、缓存/日志/备份轮换与统一预览/执行；除日志外删除策略具体确认。结束时清理本次全部临时物料/东京下载，受保护旧资源达到退出条件后再清理。
 

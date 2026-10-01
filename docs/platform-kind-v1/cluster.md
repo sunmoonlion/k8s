@@ -18,7 +18,7 @@
 | 节点动态目录 | `<role>/dynamic` → `/var/local-path-provisioner` |
 | 本次 kube-system UID | `67d27d4a-f9ad-4f01-a37f-225144cacaef`；重建后必须重新记录 |
 
-`role` 为 control-plane、worker、worker2，每个节点两条独立挂载。原 kind、sunmoon-kind-main、sunmoon-kind-136 仍保护；原 kind-control-plane 保持停止。当前应用 SNI 仍到旧 worker，29443 尚无新 Traefik 服务，不表示业务入口已迁移。
+`role` 为 control-plane、worker、worker2，每个节点两条独立挂载。原 `sunmoon-kind-main` 已于 2026-10-01 按所有者决定退役。原 `kind` 和 `sunmoon-kind-136` 仍保护；原 kind-control-plane 保持停止。当前应用 SNI 仍到旧 worker，29443 尚无新 Traefik 服务，不表示业务入口已迁移。
 
 ## 日常操作
 
@@ -57,7 +57,7 @@ export KUBECONFIG="$HOME/.kube/sunmoon-kind.config"
 - 镜像 `harbor.sunmoonai.com:30443/platform/haproxy@sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272`；三个实际容器 imageID 与此一致，命令输出 HAProxy 3.4.6。三节点 Pod 都解析 Harbor 为 172.18.0.1、kubernetes.default 为 10.99.0.1。
 - 初次验收三个新节点无该镜像，实际拉取及容器启动成功，但 DNS 步骤失败。修正后再次验收使用已有层缓存，Always 仍验证仓库认证；不能把第二次说成完全无缓存。失败 Job 和成功 Job 的临时 namespace/Secret 均已删除。
 - 成功回执 `/data/kind-clusters/sunmoon-kind/bootstrap/bootstrap-pull-rhc28.json`，最终状态同名前缀 `-final.json`；节点/Pod/旧集群/Harbor记录 `verification-20261001.json`。运行日志另存 bootstrap/evidence，均不含凭据。
-- 新 Harbor 10 服务 healthy，原 main/136 共六节点 Ready，原旧节点启停状态保持。
+- 新 Harbor 10 服务 healthy；`sunmoon-kind-main` 随后按所有者决定删除。`sunmoon-kind-136` 和旧 `kind` 启停状态保持。
 
 ### 实际遇到的问题
 
