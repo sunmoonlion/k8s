@@ -1,0 +1,110 @@
+---
+- name: Read KIND network host gateway
+  ansible.builtin.command:
+    argv: [docker, inspect, '{{ cluster_node }}', --format, '{{ "{{.NetworkSettings.Networks.kind.Gateway}}" }}']
+  register: node_gateway
+  changed_when: false
+
+- name: Require an IPv4 gateway
+  ansible.builtin.assert:
+    quiet: true
+    that: node_gateway.stdout is match('^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$')
+
+- name: Resolve only the formal registry name through the host gateway
+  ansible.builtin.command:
+    argv: [docker, exec, '{{ cluster_node }}', sh, -ec, 'if grep -qF " $2" /etc/hosts; then grep -qxF "$1 $2" /etc/hosts; else printf "%s %s\n" "$1" "$2" >> /etc/hosts; echo added; fi', sh, '{{ node_gateway.stdout }}', '{{ registry_hostname }}']
+  register: node_hosts
+  changed_when: "'added' in node_hosts.stdout"
+
+- name: Verify node TLS and token endpoint routing with the registry CA
+  ansible.builtin.command:
+    argv: [docker, exec, '{{ cluster_node }}', curl, --silent, --show-error, --fail, --noproxy, '*', --connect-timeout, '5', --max-time, '20', --cacert, '/etc/containerd/certs.d/{{ registry_address }}/ca.crt', 'https://{{ registry_address }}/api/v2.0/health']
+  register: node_harbor
+  changed_when: false
+  failed_when: node_harbor.rc != 0 or (node_harbor.stdout | from_json).status != 'healthy'
+
+- name: Inspect the exact offline CNI image references in node CRI
+  ansible.builtin.command:
+    argv: [docker, exec, '{{ cluster_node }}', crictl, inspecti, '{{ item.source }}']
+  loop: '{{ calico_archives }}'
+  loop_control:
+    label: '{{ item.id }}'
+  register: node_images_before
+  changed_when: false
+  failed_when: false
+
+- name: Import missing OCI content with a fully qualified repository name
+  ansible.builtin.shell:
+    cmd: >-
+      docker exec -i {{ cluster_node | quote }} ctr --namespace=k8s.io images import
+      --platform=linux/amd64 --digests --base-name {{ item.item.source.split('@')[0] | quote }} -
+      < {{ (artifact_cache_root + '/' + item.item.path) | quote }}
+    executable: /bin/bash
+  loop: '{{ node_images_before.results }}'
+  loop_control:
+    label: '{{ item.item.id }}'
+  when: item.rc != 0
+  changed_when: true
+  timeout: 180
+
+- name: Read imported manifest identities before assigning repository names
+  ansible.builtin.command:
+    argv: [docker, exec, '{{ cluster_node }}', ctr, --namespace=k8s.io, images, list]
+  register: imported_references
+  changed_when: false
+
+- name: Require each configuration to point at its locked manifest
+  ansible.builtin.assert:
+    quiet: true
+    that: imported_references.stdout_lines | select('match', '^' + item.config_digest + '\s+\S+\s+' + item.manifest_digest + '\s') | list | length == 1
+  loop: '{{ calico_archives }}'
+  loop_control:
+    label: '{{ item.id }}'
+
+- name: Verify every imported CNI configuration identity
+  ansible.builtin.command:
+    argv: [docker, exec, '{{ cluster_node }}', crictl, inspecti, '{{ item.source }}']
+  loop: '{{ calico_archives }}'
+  loop_control:
+    label: '{{ item.id }}'
+  register: imported_image
+  changed_when: false
+  failed_when: imported_image.rc != 0 or (imported_image.stdout | from_json).status.id != item.config_digest
+
+- name: Inspect actual persistent directory mounts
+  ansible.builtin.command:
+    argv: [docker, inspect, '{{ cluster_node }}', --format, '{{ "{{json .Mounts}}" }}']
+  register: node_mounts
+  changed_when: false
+
+- name: Require independent static and dynamic bind mounts
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - selected | length == 1
+      - selected[0].Type == 'bind'
+      - selected[0].RW
+      - selected[0].Source == cluster_root + '/' + role + '/' + item.directory
+  vars:
+    selected: '{{ node_mounts.stdout | from_json | selectattr("Destination", "equalto", item.target) | list }}'
+    role: '{{ cluster_node | regex_replace("^" + cluster_name + "-", "") }}'
+  loop:
+    - {target: /data/kind-local-storage, directory: static}
+    - {target: /var/local-path-provisioner, directory: dynamic}
+
+- name: Read host inode identities for each persistent directory
+  ansible.builtin.command:
+    argv: [stat, -c, '%d:%i', '{{ cluster_root }}/{{ cluster_node | regex_replace("^" + cluster_name + "-", "") }}/{{ item }}']
+  loop: [static, dynamic]
+  register: persistent_host_inodes
+  changed_when: false
+
+- name: Require the same filesystems and inodes inside the node
+  ansible.builtin.command:
+    argv: [docker, exec, '{{ cluster_node }}', stat, -c, '%d:%i', '{{ item.target }}']
+  loop:
+    - {index: 0, target: /data/kind-local-storage}
+    - {index: 1, target: /var/local-path-provisioner}
+  register: persistent_node_inode
+  changed_when: false
+  failed_when: persistent_node_inode.rc != 0 or persistent_node_inode.stdout != persistent_host_inodes.results[item.index].stdout

@@ -1,0 +1,401 @@
+---
+- import_playbook: ../host/preflight.yaml
+
+- name: Bootstrap one independently owned KIND cluster using official tools
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    cluster_action: plan
+    build_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/kind-build.lock.json") | from_json }}'
+    node_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/node-image.lock.json") | from_json }}'
+    archives: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/bootstrap-archives.lock.json") | from_json }}'
+    files: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/files.lock.json") | from_json }}'
+    calico_archives: '{{ archives.files | rejectattr("id", "equalto", "kind-node") | list }}'
+    calico_file: '{{ files.files | selectattr("id", "equalto", "calico-manifest") | first }}'
+    kind_binary: '{{ playbook_dir }}/../.tools/bin/kind'
+    kubectl: '{{ playbook_dir }}/../.tools/bin/kubectl'
+    cluster_root: '{{ cluster_data_root }}/{{ cluster_name }}'
+    runtime: '{{ cluster_root }}/bootstrap'
+    config_text: '{{ lookup("ansible.builtin.template", "kind.yaml.j2") }}'
+    expected_nodes: ['{{ cluster_name }}-control-plane', '{{ cluster_name }}-worker', '{{ cluster_name }}-worker2']
+    kube: ['{{ kubectl }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+  environment:
+    HTTP_PROXY: ''
+    HTTPS_PROXY: ''
+    ALL_PROXY: ''
+    http_proxy: ''
+    https_proxy: ''
+    all_proxy: ''
+    NO_PROXY: '*'
+    no_proxy: '*'
+  tasks:
+    - name: Validate scope before writes
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - cluster_enabled | bool
+          - cluster_action in ['plan', 'deploy', 'status']
+          - cluster_name not in ['kind', 'sunmoon-kind-main', 'sunmoon-kind-136']
+          - cluster_name is match('^[a-z][a-z0-9-]{1,40}$')
+          - cluster_data_root == '/data/kind-clusters'
+          - cluster_api_port | int != cluster_ingress_port | int
+          - cluster_api_port | int > 1024 and cluster_api_port | int < 65536
+          - cluster_ingress_port | int > 1024 and cluster_ingress_port | int < 65536
+          - cluster_create_budget_bytes | int >= 5368709120
+
+    - name: Inspect local immutable node identity without pulling
+      ansible.builtin.command:
+        argv: [docker, image, inspect, '{{ build_lock.output_image }}', --format, '{{ "{{json .Descriptor}}" }}']
+      register: node_descriptor
+      changed_when: false
+
+    - name: Require locked node manifest
+      ansible.builtin.assert:
+        quiet: true
+        that: (node_descriptor.stdout | from_json).digest == node_lock.images[0].manifest_digest
+
+    - name: Read clusters without modifying kubeconfig
+      ansible.builtin.command:
+        argv: ['{{ kind_binary }}', get, clusters]
+      register: existing_clusters
+      changed_when: false
+
+    - name: Read ownership receipt
+      ansible.builtin.stat:
+        path: '{{ runtime }}/identity.json'
+        follow: false
+      register: identity_file
+
+    - name: Check for an existing desired configuration
+      ansible.builtin.stat:
+        path: '{{ runtime }}/kind.yaml'
+        follow: false
+        checksum_algorithm: sha256
+      register: prior_config
+
+    - name: Refuse foreign names and silent cluster configuration replacement
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - cluster_name not in existing_clusters.stdout_lines or identity_file.stat.isreg | default(false)
+          - not prior_config.stat.exists or prior_config.stat.checksum | default('') == config_text | hash('sha256')
+          - not identity_file.stat.exists or cluster_name in existing_clusters.stdout_lines
+        fail_msg: Existing cluster/configuration needs explicit reconciliation; no deletion or adoption is automatic.
+
+    - name: Load owned cluster identity
+      ansible.builtin.slurp:
+        src: '{{ runtime }}/identity.json'
+      register: saved_identity
+      when: identity_file.stat.exists
+
+    - name: Inspect owned node identities
+      ansible.builtin.command:
+        argv: [docker, inspect, '{{ item }}', --format, '{{ "{{.Id}}" }}']
+      loop: '{{ expected_nodes }}'
+      register: actual_node_ids
+      changed_when: false
+      when: identity_file.stat.exists
+
+    - name: Require exact existing node identities
+      ansible.builtin.assert:
+        quiet: true
+        that: actual_node_ids.results | map(attribute='stdout') | list == (saved_identity.content | b64decode | from_json).node_ids
+      when: identity_file.stat.exists
+
+    - name: Require saved API identity before any existing cluster changes
+      ansible.builtin.command:
+        argv: '{{ kube + ["get", "namespace", "kube-system", "-o", "jsonpath={.metadata.uid}"] }}'
+      register: existing_uid
+      changed_when: false
+      failed_when: existing_uid.rc != 0 or existing_uid.stdout != (saved_identity.content | b64decode | from_json).kube_system_uid
+      when: identity_file.stat.exists
+
+    - name: Show native creation plan
+      ansible.builtin.debug:
+        msg:
+          name: '{{ cluster_name }}'
+          config: '{{ config_text | from_yaml }}'
+          kubeconfig: '{{ cluster_kubeconfig }}'
+          node_manifest: '{{ node_lock.images[0].manifest_digest }}'
+          calico_images: '{{ calico_archives | map(attribute="source") | list }}'
+          additional_budget_bytes: '{{ cluster_create_budget_bytes }}'
+          scope: No old cluster deletion, no ingress switch, no registry changes.
+
+    - name: End read-only plan
+      ansible.builtin.meta: end_play
+      when: cluster_action == 'plan'
+
+    - name: Verify installed tools before cluster writes
+      ansible.builtin.stat:
+        path: '{{ playbook_dir }}/../.tools/bin/{{ item.id }}'
+        checksum_algorithm: sha256
+        follow: false
+      loop: '{{ files.files | selectattr("id", "in", ["kind", "kubectl"]) | list }}'
+      loop_control:
+        label: '{{ item.id }}'
+      register: cluster_tools
+
+    - name: Require locked executable tool bytes
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item.stat.isreg | default(false)
+          - item.stat.checksum == item.item.sha256
+      loop: '{{ cluster_tools.results }}'
+      loop_control:
+        label: '{{ item.item.id }}'
+
+    - name: Reject symlinked data paths
+      ansible.builtin.command:
+        argv: [python3, -c, 'from pathlib import Path; import sys; p=Path(sys.argv[1]); paths=[p,p/"bootstrap"]+[p/n/k for n in ["control-plane","worker","worker2"] for k in ["static","dynamic"]]; assert all(x.resolve()==x and (not x.exists() or x.is_dir()) for x in paths), "Unsafe data directory"', '{{ cluster_root }}']
+      changed_when: false
+
+    - name: Verify required bootstrap archive bytes
+      ansible.builtin.stat:
+        path: '{{ artifact_cache_root }}/{{ item.path }}'
+        checksum_algorithm: sha256
+        follow: false
+      loop: '{{ archives.files + [calico_file] }}'
+      register: bootstrap_files
+      loop_control:
+        label: '{{ item.id }}'
+
+    - name: Require exact locked bootstrap files
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item.stat.isreg | default(false)
+          - not item.stat.islnk | default(false)
+          - item.stat.checksum == item.item.sha256
+          - item.stat.size == item.item.size_bytes
+      loop: '{{ bootstrap_files.results }}'
+      loop_control:
+        label: '{{ item.item.id }}'
+
+    - name: Prepare and create a new cluster
+      when: cluster_action == 'deploy' and not identity_file.stat.exists
+      block:
+        - name: Check physical disk growth reserve
+          ansible.builtin.include_tasks: ../host/tasks/capacity.yaml
+          vars:
+            capacity_planned_bytes: '{{ cluster_create_budget_bytes }}'
+
+        - name: Check host data directory identity
+          ansible.builtin.command:
+            argv: [stat, -c, '%d:%i', '{{ cluster_data_root }}']
+          register: host_inode
+          changed_when: false
+
+        - name: Check Docker sees the same disk before creating directories
+          ansible.builtin.command:
+            argv: [docker, run, --rm, --pull=never, --network=none, --read-only, --entrypoint=stat, --mount, 'type=bind,source={{ cluster_data_root }},target=/probe,readonly', '{{ build_lock.output_image }}', -c, '%d:%i', /probe]
+          register: docker_inode
+          changed_when: false
+          failed_when: docker_inode.rc != 0 or docker_inode.stdout != host_inode.stdout
+
+        - name: Require both selected ports to be free
+          ansible.builtin.command:
+            argv: [python3, -c, 'import socket,sys; sockets=[socket.socket() for _ in sys.argv[1:]]; [s.bind(("127.0.0.1",int(p))) for s,p in zip(sockets,sys.argv[1:])]', '{{ cluster_api_port | string }}', '{{ cluster_ingress_port | string }}']
+          changed_when: false
+
+        - name: Refuse to overwrite an existing kubeconfig
+          ansible.builtin.stat:
+            path: '{{ cluster_kubeconfig }}'
+            follow: false
+          register: prior_kubeconfig
+
+        - name: Require a fresh explicit kubeconfig path
+          ansible.builtin.assert:
+            quiet: true
+            that: not prior_kubeconfig.stat.exists
+
+        - name: Create separate static and dynamic node directories
+          ansible.builtin.file:
+            path: '{{ cluster_root }}/{{ item.0 }}/{{ item.1 }}'
+            state: directory
+            mode: '0755'
+          loop: '{{ ["control-plane", "worker", "worker2"] | product(["static", "dynamic"]) | list }}'
+
+        - name: Create bootstrap and public CA directories
+          ansible.builtin.file:
+            path: '{{ item }}'
+            state: directory
+            mode: '0755'
+          loop: ['{{ runtime }}/certs.d/{{ registry_address }}', '{{ runtime }}/calico']
+
+        - name: Install only the registry CA in the node trust directory
+          ansible.builtin.copy:
+            src: '{{ registry_config_dir }}/clients/ca.crt'
+            remote_src: true
+            dest: '{{ runtime }}/certs.d/{{ registry_address }}/ca.crt'
+            mode: '0644'
+
+        - name: Configure containerd certificate verification without node credentials
+          ansible.builtin.copy:
+            dest: '{{ runtime }}/certs.d/{{ registry_address }}/hosts.toml'
+            mode: '0644'
+            content: |
+              server = "https://{{ registry_address }}"
+              [host."https://{{ registry_address }}"]
+                capabilities = ["pull", "resolve"]
+                ca = "/etc/containerd/certs.d/{{ registry_address }}/ca.crt"
+
+        - name: Save immutable KIND input
+          ansible.builtin.copy:
+            dest: '{{ runtime }}/kind.yaml'
+            content: '{{ config_text }}'
+            mode: '0644'
+
+        - name: Create using the verified local image and explicit isolated kubeconfig
+          ansible.builtin.command:
+            argv: ['{{ kind_binary }}', create, cluster, '--name={{ cluster_name }}', '--config={{ runtime }}/kind.yaml', '--kubeconfig={{ cluster_kubeconfig }}', --retain, '--wait=0s']
+          changed_when: true
+          timeout: 600
+
+        - name: Set kubeconfig ownership without exposing credentials
+          ansible.builtin.file:
+            path: '{{ cluster_kubeconfig }}'
+            owner: '{{ cluster_operator }}'
+            mode: '0600'
+
+        - name: Read new node container identities
+          ansible.builtin.command:
+            argv: [docker, inspect, '{{ item }}', --format, '{{ "{{.Id}}" }}']
+          loop: '{{ expected_nodes }}'
+          register: created_ids
+          changed_when: false
+
+        - name: Read new API identity
+          ansible.builtin.command:
+            argv: '{{ kube + ["get", "namespace", "kube-system", "-o", "jsonpath={.metadata.uid}"] }}'
+          register: created_uid
+          changed_when: false
+
+        - name: Record ownership before CNI bootstrap for safe resume
+          ansible.builtin.copy:
+            dest: '{{ runtime }}/identity.json'
+            mode: '0644'
+            content: '{{ {"name": cluster_name, "node_ids": created_ids.results | map(attribute="stdout") | list, "kube_system_uid": created_uid.stdout, "config_sha256": config_text | hash("sha256"), "node_manifest": node_lock.images[0].manifest_digest} | to_nice_json }}'
+
+    - name: Configure this owned cluster
+      when: cluster_action == 'deploy'
+      block:
+        - name: Bootstrap each node from offline images and verify registry trust
+          ansible.builtin.include_tasks: node.yaml
+          loop: '{{ expected_nodes }}'
+          loop_control:
+            loop_var: cluster_node
+
+        - name: Copy the pinned upstream Calico manifest
+          ansible.builtin.copy:
+            src: '{{ artifact_cache_root }}/{{ calico_file.path }}'
+            remote_src: true
+            dest: '{{ runtime }}/calico/calico.yaml'
+            mode: '0644'
+
+        - name: Render digest pins and explicit VXLAN settings as native Kustomize
+          ansible.builtin.template:
+            src: calico-kustomization.yaml.j2
+            dest: '{{ runtime }}/calico/kustomization.yaml'
+            mode: '0644'
+
+        - name: Compare bootstrap-owned CNI before applying
+          ansible.builtin.command:
+            argv: '{{ kube + ["diff", "--server-side", "--field-manager=sunmoon-bootstrap", "-k", runtime + "/calico"] }}'
+          register: calico_diff
+          changed_when: false
+          failed_when: calico_diff.rc not in [0, 1]
+
+        - name: Apply bootstrap-owned CNI with server-side apply
+          ansible.builtin.command:
+            argv: '{{ kube + ["apply", "--server-side", "--field-manager=sunmoon-bootstrap", "-k", runtime + "/calico"] }}'
+          when: calico_diff.rc == 1
+          register: calico_apply
+          changed_when: "'serverside-applied' in calico_apply.stdout"
+
+    - name: Configure cluster DNS for the external registry
+      when: cluster_action == 'deploy'
+      block:
+        - name: Read the cluster's host gateway
+          ansible.builtin.command:
+            argv: [docker, inspect, '{{ expected_nodes[0] }}', --format, '{{ "{{.NetworkSettings.Networks.kind.Gateway}}" }}']
+          register: cluster_gateway
+          changed_when: false
+
+        - name: Read the current CoreDNS configuration
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", "kube-system", "get", "configmap", "coredns", "-o", "json"] }}'
+          register: coredns_config
+          changed_when: false
+
+        - name: Require the expected DNS server and no conflicting registry override
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - corefile.count('.:53 {') == 1
+              - registry_hostname not in corefile or (cluster_gateway.stdout + ' ' + registry_hostname) in corefile
+          vars:
+            corefile: '{{ (coredns_config.stdout | from_json).data.Corefile }}'
+
+        - name: Add one explicit Harbor DNS record with fallthrough
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", "kube-system", "patch", "configmap", "coredns", "--type=merge", "-p", {"data": {"Corefile": updated_corefile}} | to_json] }}'
+          vars:
+            corefile: '{{ (coredns_config.stdout | from_json).data.Corefile }}'
+            registry_dns_block: |
+              .:53 {
+                  hosts {
+                      {{ cluster_gateway.stdout }} {{ registry_hostname }}
+                      fallthrough
+                  }
+            updated_corefile: '{{ corefile | replace(".:53 {", registry_dns_block | trim) }}'
+          when: registry_hostname not in (coredns_config.stdout | from_json).data.Corefile
+          changed_when: true
+
+    - name: Require all nodes Ready
+      ansible.builtin.command:
+        argv: '{{ kube + ["wait", "--for=condition=Ready", "nodes", "--all", "--timeout=300s"] }}'
+      changed_when: false
+      timeout: 330
+
+    - name: Wait for each bootstrap workload
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n", item.namespace, "rollout", "status", item.workload, "--timeout=180s"] }}'
+      loop:
+        - {namespace: kube-system, workload: daemonset/calico-node}
+        - {namespace: kube-system, workload: deployment/calico-kube-controllers}
+        - {namespace: kube-system, workload: deployment/coredns}
+        - {namespace: local-path-storage, workload: deployment/local-path-provisioner}
+      changed_when: false
+      timeout: 210
+
+    - name: Read node versions and API identity
+      ansible.builtin.command:
+        argv: '{{ kube + ["get", "nodes", "-o", "json"] }}'
+      register: ready_nodes
+      changed_when: false
+
+    - name: Require the exact selected three nodes and Kubernetes version
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - (ready_nodes.stdout | from_json)["items"] | map(attribute='metadata.name') | sort == expected_nodes | sort
+          - (ready_nodes.stdout | from_json)["items"] | map(attribute='status.nodeInfo.kubeletVersion') | unique | list == [node_lock.versions[0]]
+
+    - name: Report cluster status
+      ansible.builtin.command:
+        argv: '{{ kube + ["get", "pods", "-A", "-o", "wide"] }}'
+      register: cluster_pods
+      changed_when: false
+
+    - name: Show bootstrap status without secret data
+      ansible.builtin.debug:
+        var: cluster_pods.stdout_lines
+
+    - name: Recheck the physical reserve after cluster operations
+      ansible.builtin.include_tasks: ../host/tasks/capacity.yaml
+      vars:
+        capacity_planned_bytes: 0
+      when: cluster_action == 'deploy'

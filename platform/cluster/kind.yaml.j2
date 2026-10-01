@@ -1,0 +1,31 @@
+# Generated from the selected site and immutable node lock.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: {{ cluster_name }}
+networking:
+  apiServerAddress: 127.0.0.1
+  apiServerPort: {{ cluster_api_port }}
+  podSubnet: {{ cluster_pod_subnet }}
+  serviceSubnet: {{ cluster_service_subnet }}
+  disableDefaultCNI: true
+  kubeProxyMode: iptables
+nodes:
+{% for role in ['control-plane', 'worker', 'worker2'] %}
+  - role: {{ 'control-plane' if role == 'control-plane' else 'worker' }}
+    image: {{ build_lock.output_image }}
+    extraMounts:
+      - hostPath: {{ cluster_root }}/{{ role }}/static
+        containerPath: /data/kind-local-storage
+      - hostPath: {{ cluster_root }}/{{ role }}/dynamic
+        containerPath: /var/local-path-provisioner
+      - hostPath: {{ runtime }}/certs.d
+        containerPath: /etc/containerd/certs.d
+        readOnly: true
+{% if role == 'control-plane' %}
+    extraPortMappings:
+      - containerPort: 30443
+        hostPort: {{ cluster_ingress_port }}
+        listenAddress: 127.0.0.1
+        protocol: TCP
+{% endif %}
+{% endfor %}

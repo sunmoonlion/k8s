@@ -8,6 +8,19 @@
 
 前序提交：独立Harbor `f3573d511c78cb9b68cc7f4605ef151896f7321b`、节点构建 `e280a3850953584853a4717945a8183baf18e5ec`、离线镜像 `eef098e272932a0ac3e279bfc002e1ea0ef1b9a0`、入口/认证及Docker物料 `c1917447b814884b5b32d81ddc08ceb42daf0b93`、失败与恢复记录 `b3c44e1e30a0ca566b5b8addabcb2ff08da1e1a3`。当前交付提交见HEAD，最终须报完整SHA。
 
+## 最新现场：sunmoon-kind 建群与三节点拉取通过（2026-10-01）
+
+本单元基于 `b27046183f39190da1411d96c966d1c5adafb913`，提交见 HEAD。所有者明确指定新名称 **sunmoon-kind**。操作与完整边界见 [新 KIND 集群](docs/platform-kind-v1/cluster.md)。
+
+- 原生 Make/Ansible 新增 cluster-plan/deploy/status/pull-check；官方 KIND 建群、containerd 离线导入、Kustomize CNI；没有调用旧代码或增加统一 CLI。
+- 三节点 Ready/**v1.36.5**，Calico3.32.2，14基础 Pod Running/Ready；API127.0.0.1:27443，预留入口127.0.0.1:29443，Pod10.247/16、Service10.99/16。kubeconfig `~/.kube/sunmoon-kind.config`，kubectl `platform/.tools/bin/kubectl`。
+- 数据 `/data/kind-clusters/sunmoon-kind/<role>/{static,dynamic}`，分别挂静态固定路径与 local-path 动态路径；真实 bind 和 device/inode 比对通过。kube-system UID `67d27d4a-f9ad-4f01-a37f-225144cacaef`，所有权回执在其 bootstrap/identity.json。
+- 最终重复部署 **ok80 changed0 failed0**；三节点私有拉取+受限容器运行+内外 DNS 验收 **ok32 changed6 failed0**。镜像manifest `5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272`；成功回执 bootstrap/bootstrap-pull-rhc28.json，临时 namespace/Secret 已删除。
+- 实际修正：OCI匿名导入名导致 containerd checkpoint检测找不到引用，正式导入改显式完整 --base-name，本次新节点别名/CRI索引已修复；CoreDNS生成的字面换行改为多行变量。初次无缓存拉取成功但DNS Job失败，第二次Always拉取复用缓存后完整成功。不得声称修正代码已完成删除重建冷建验收。
+- 原main/136六节点仍Ready，旧kind控制面保持停止、两worker运行；新Harbor10服务healthy，入口仍Harbor→新仓库、应用→旧worker。未切换应用入口、未改旧集群、未删旧节点/卷/备份。
+- 11:50Z计230GiB数据盘长满后C仍余55,029,702,656字节（51.25GiB）；仅1.25GiB额外预算空间，下一阶段须重新预算。全部运行证据在 bootstrap/evidence 与 verification-20261001.json。
+- 下一步顺序仍是 **Flux→平台/应用→整套入口与启停→重启/删除重建持久化验收→长期空间管理及最终清理**。开机顺序、独立冷建复现、企业生产安全门禁和云端实机均未完成。本轮未新增/运行测试套件，执行了授权的实际部署验收、语法及diff检查。
+
 ## 当前现场：离线扫描与独立恢复通过（2026-10-01）
 
 在前序提交 `7c2068d5cf3bc67d51ffeeaf14bab87656c0ac76` 上完成本单元；真实入口与既有集群保持运行。详情和日常命令见 [扫描与恢复](docs/platform-kind-v1/scanning-recovery.md)。本单元提交见 HEAD。
@@ -34,7 +47,7 @@
 - 未选用的下载残片 `packages-to-be-installed/releases/platform-kind-v1/databases/trivy-java-db-76d004c32044.tar.gz.part`，不是正式物料。东京探测超时，无本轮远程下载文件。
 - 本轮编写用 `/tmp/platform-*` 临时文件在提交前精确删除；不泛删其他人的 `/tmp` 文件。
 
-下一工作单元是新KIND创建/节点信任/私有拉取，再Flux和平台。站点仍写sunmoon-kind-main，但已有同名受保护集群，不能直接覆盖；建群前落实目标名/端口/目录隔离或批准切换。开机/WSL重启、KIND删除重建、统一一键与生命周期、长期空间策略、应用全链路、云端实机均未完成。
+历史下一步已推进到本页最新现场：sunmoon-kind 创建和节点拉取通过，接下来 Flux 和平台。开机/WSL重启、KIND删除重建、统一一键与生命周期、长期空间策略、应用全链路、云端实机均未完成。
 
 ## 前序现场：Docker升级及新Harbor正式入口通过（7c2068d）
 
@@ -78,7 +91,7 @@ Ansible2.21.4、Compose5.5.1；KIND0.33.0、kubectl/kubeadm1.36.5。官方KIND�
 ## 下一步（保持顺序）
 
 1. 离线扫描与已有冷备份独立恢复已通过；后续补数据库定期更新、原生备份创建/轮换与扫描风险收敛。
-2. 新KIND创建/配置、节点信任和私有拉取、Flux，再平台和模板/应用部署；现有main/136仍属保护对象，不能凭名字覆盖。
+2. 新KIND创建/配置与节点私有拉取已通过；接入 Flux，再平台和模板/应用部署。现有main/136仍属保护对象，不能凭名字覆盖。
 3. 单组件与整套一键、统一启停、开机附盘与服务顺序；WSL/KIND重启、KIND删除重建后的Harbor数据/摘要/新节点pull验收。
 4. 长期容量监控、Harbor保留/GC、缓存/日志/备份轮换与统一预览/执行；除日志外删除策略具体确认。结束时清理本次全部临时物料/东京下载，受保护旧资源达到退出条件后再清理。
 
