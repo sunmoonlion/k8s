@@ -8,9 +8,9 @@
 
 本单元基线 **f3573d511c78cb9b68cc7f4605ef151896f7321b**（独立 Harbor）；节点构建 e280a3850953584853a4717945a8183baf18e5ec，离线镜像 eef098e272932a0ac3e279bfc002e1ea0ef1b9a0。当前提交见本文件所在分支 HEAD，最终交付须报完整 SHA。
 
-用户本次明确批准“现在切换并验收真实镜像推拉”，范围为 30443 约一分钟 TLS 中断、维护 10 分钟、恢复另 5 分钟。**该次窗口已执行并回退结束。不能解释为批准升级/重启宿主 Docker。**下一次影响全部 KIND/Harbor 的维护需确认，具体方案和物料已准备。
+此前入口切换窗口已执行并回退。随后所有者明确说“那就升级吧”，批准Docker维护方案（20分钟维护、失败另15分钟恢复）。本次已执行但因维护检查代码错误回退；不是成功升级。窗口结束不继续反复停机。旧应用恢复例外及后续两个遗留数据库缩容分别获批。原入口已恢复，见下；Docker再次升级尚未批准新窗口。
 
-## 当前现场：入口已回退，Docker 修复待维护批准
+## 当前现场：Docker升级已回退，原入口恢复通过；再次升级待新窗口
 
 日期 2026-10-01（UTC 2026-09-30 晚间）。
 
@@ -22,7 +22,20 @@
 - 新镜像仍在新仓库：`harbor.sunmoonai.com:30443/platform/haproxy@sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272`；这是**新仓库中的目标引用**，当前正式地址已回旧仓库，不能直接认为该引用现可从30443获取。正式切换后才恢复该地址可用性。
 - 旧 Harbor jobservice 状态 **created、StartedAt全零**，旧聚合健康 unhealthy；其他7个组件 healthy。不是本次停止造成。原卡“两个 Harbor 健康”的表述错误，已改为明确基线；本次没有擅自启动旧 jobservice。
 
-### 本次实测结果
+### 最新维护结果（2026-10-01，优先于以下历史记录）
+
+- 维护基线提交 `c1917447b814884b5b32d81ddc08ceb42daf0b93`；23:49:41Z开始。三包曾成功升至29.8.1，main/136六节点Ready；但挂载列表直接比较顺序，错误触发自动回退。**当前客户端/服务端及三包已回29.4.3，containerd始终2.2.3；没有执行升级后候选pull，也没有再切30443。**
+- 首次APT `--no-download`对本地路径取归档失败，未改包。恢复自动启动原停止kind-control-plane、抢80端口，并导致节点动态IP变化及main控制面网络端点缺失。随后停止旧控制面，临时关闭restart策略，保留原八节点并按原IPv4/IPv6重新连接；现在使用显式IPAM地址。这是实际网络配置变化，不能写“现场完全未改”。原restart策略及rootless-extras的auto标记均已恢复。
+- 私有证据/冷备份目录：`/data/harbor/maintenance/docker-20260930T234941Z/`（root0700/文件0600）。冷备份151,715,840字节/1725项，tar逐文件比较、归档和文件SHA256通过；**不是服务恢复演练**。原始失败、dpkg安装/回退输出和recovery-result.json保留。
+- 最后恢复检查时间 2026-10-01T00:14:27.546438+00:00：156个原容器ID、卷集合、原27运行状态、完整挂载内容（按Destination排序）、原restart策略、八节点IPv4/IPv6和两个集群六节点Ready均匹配。新Harbor全部组件healthy；旧Harbor除原本未启动的jobservice外恢复健康。没有删除容器/卷/旧数据。
+- **恢复期间曾失败：旧应用TLS入口**。kind-worker内Traefik退出，旧控制面原本停止，worker重启后无法从API恢复Pod，30443应用SNI握手EOF。后续经明确批准处理依赖后，当前入口已恢复；不能把第一次容器Running检查冒充当时路由已恢复。
+- 所有者随后批准临时恢复旧控制面/应用入口，限10分钟、失败另5分钟，不升级Docker。00:12:37Z开始，69秒后保护性结束：旧API出现 `cicd-platform-dev/sunmoonai-harbor-postgresql-0` 与 `sunmoonai-harbor-redis-master-0` 的Running/Pending记录。按约定立即停回旧控制面、恢复main/旧代理；未缩容、删除或修改这两个工作负载。API状态可能陈旧，尚未证明其新写入；检查两worker时没有名称匹配harbor的运行容器。不能把保护条件触发写成已证明旧仓库重新写入。证据 `legacy-recovery-result.json`。
+- 后续所有者批准：暂时停止旧worker kubelet，仅将明确的旧Harbor PostgreSQL、Redis StatefulSet缩容0，前提PVC保留，再恢复入口。实际05:20:08Z开始，114秒完成；两者原副本均1，现0。PVC保留策略与owner检查通过，原PVC/PV UID均保留。已保存原对象到私有legacy-db-before.json；不是删除数据。结果legacy-db-retirement-result.json。
++- 最终05:23:18Z恢复核对 **recovery-passed / issues=[]**：原156个容器与全部卷、原27运行状态/原restart策略/完整挂载、八节点IP一致，main与136六节点Ready，新Harborhealthy，旧Harbor恢复原组件基线；30443及候选32443应用SNI与直接kind-worker证书均回到原SHA256。Traefik Running/Ready，旧控制面已停回、两旧worker kubelet active。只验入口身份，不代表业务登录或全链路验收。
++- 下一次Docker重启仍须按顺序临时恢复旧API，使worker重载Traefik，然后停回旧控制面再启main/原代理。这个过渡依赖尚未消除；遗留数据库已0，禁止恢复其写入。新窗口必须明确包含这项恢复动作。
++- 本次维护错误已修正进操作卡：本地包用dpkg安装，禁止自动启动干扰；明确IP恢复；挂载按目标路径排序比较完整字段。回退不是29.8.1不兼容的证据，认证问题仍待真实拉取验证。
+
+### 前一次入口切换实测（历史结果）
 
 1. 候选 HAProxy TLS 路由、真实启停、重复部署通过。Compose5.5.1受控停止返回130，unit明确SuccessExitStatus=130；真正stop验到inactive，意外退出仍Restart=always。
 2. `registry-accounts` 最终 **ok47 changed0 failed0**，两机器人均实际向可信后端申请token并核对subject/actions。创建接口返回服务器生成secret，不能依赖请求secret字段；项目列表按`Level=project,ProjectID`查询。前期误用字段/secret曾导致失败，仅显式重置新建且未使用的publisher一次，未改旧身份。
@@ -43,7 +56,7 @@
 - 新`host-archives.lock.json`：HAProxy3.4.6及官方skopeo归档共 **136,100,352字节**；全文件与blob校验通过。归档prepare先 **ok29 changed2 failed0**（两文件设0644），最终按完整repo@digest复核重复执行 **ok29 changed0 failed0**，离线check与bootstrap检查此前已通过。
 - 官方skopeo容器实测 **1.22.3**，manifest `9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99`。源码最新1.24.1不等于已发布镜像；记录明确版本例外，不自制镜像。
 - 上游镜像锁现 **56项**，`offline_ready=false`。文件锁现 **16项**：原10项1,358,981,849字节，新增6个Docker deb98,306,132字节。物料在`/home/zymun/packages-to-be-installed/releases/platform-kind-v1/{bin,packages,manifests,images}`。
-- 新增Docker deb：三个29.8.1升级、三个29.4.3回退。校验Docker InRelease签名、Packages摘要和文件SHA256/大小；`fetch-artifacts` **ok20 changed1 failed0**。尚未安装。
+- 新增Docker deb：三个29.8.1升级、三个29.4.3回退。校验Docker InRelease签名、Packages摘要和文件SHA256/大小；`fetch-artifacts` **ok20 changed1 failed0**。已尝试安装29.8.1，当前回退至29.4.3。
 - 宿主CA由`registry-accounts`追加`/etc/docker/certs.d/harbor.sunmoonai.com:30443/platform-kind-v1-ca.crt`，保留旧CA，未修改全局系统信任/daemon设置/代理。
 
 ### 前序成果仍有效
@@ -54,12 +67,16 @@ Harbor2.15.2官方包177个blob/12镜像已核验，运行使用`harbor-offline-
 
 ## 下一步（按此顺序）
 
-1. **取得新的Docker维护窗口批准**。已写[具体方案](docs/platform-kind-v1/docker-maintenance.md)：仅三个包升29.8.1，宿主containerd2.2.3保持；当前live-restore=false，影响27个运行容器（含8个KIND节点）。20分钟维护、失败另15分钟恢复。准备已做完：六包在本地、APT演练恰好3升级0删除；必须先冷备份新Harbor并校验，再按精确运行清单停启。旧停止容器不能批量启动。不能将包降级当作完整数据快照保证。
-2. 宿主Docker修复后，先候选地址认证拉取，再按操作卡切30443，完整跑新版publish入口、应用分流和恢复基线。用户没有新批准前，不再切换/升级/重启。
+1. 原入口恢复已通过；下一项是Docker重试的新维护窗口。具体重试已准备为一次性维护编排：本地dpkg三包、临时抑制容器自动启动、恢复期先临时旧API/Traefik后main/代理、挂载排序比较完整内容。不给部署增加新框架。
+2. 旧入口恢复后才安排Docker再次维护。修正后的步骤已在[维护方案](docs/platform-kind-v1/docker-maintenance.md)，重新确认窗口，不能沿用已结束窗口无限重试；候选/正式Docker拉取与skopeo整套验收均未完成。
 3. 补扫描器DB、正式Harbor备份恢复演练，再创建新KIND/Flux，推进模板公共能力及平台/应用部署。
 4. 完成单组件与整套一键、统一启停、开机自动挂盘、WSL/KIND重启及KIND删除重建后的Harbor摘要/新节点拉取验收。
 5. 完成长期开销监控、受控清理；镜像/缓存/备份策略按具体清单批准。最后清理本次临时目录、重复物料和东京下载；受保护旧资源满足退出条件后再清理。
 
+本次升级前容量复核：2026-09-30T23:46:23Z，C盘剩余131,381,755,904字节，计数据盘长到230GiB和2GiB本次预算后剩58,337,951,744字节，高于50GiB。后续仍须重测。
+
 最后容量检查：2026-09-30T19:08:51Z，计数据盘长到230GiB及196,612,264字节下载预算后，C盘仍余 **60,361,613,144字节**，高于50GiB；后续操作须重测，不能当作整套部署均够空间。数据VHD实际分配176,064,299,008字节。Windows任务、附盘、执行策略和WSL没有变化，本轮未连接东京。
 
-尚未实现新集群/完整部署/全套启停，不得宣布总体完成。当前无显式token预算。停在明确需要扩大停服范围的维护批准，普通文档、物料与代码工作不重复请求批准。
+尚未实现新集群/完整部署/全套启停，不得宣布总体完成。当前无显式token预算。当前停在再次Docker维护的新窗口授权边界，普通文档、物料与代码工作不重复请求批准。
+
+再次维护只读容量复核：2026-10-01T05:27:01Z，计230GiB数据盘长满及2GiB预算后剩58,367,475,712字节，高于50GiB。尚未据此启动新窗口。

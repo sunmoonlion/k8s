@@ -154,4 +154,7 @@ Harbor 安装包解包约 735 MB，内部未压缩镜像内容约 2.03 GB；本�
 项目和推拉认证操作见 [Harbor 文档](registry/README.md)。正式镜像发布验收代码已实现，但在切换前仅做语法检查，不向旧仓库写入新镜像。
 
 
-宿主 Docker 维护物料也在同一 `files.lock.json` 和 `packages/` 中：三个 29.8.1 升级包与三个 29.4.3 回退包，共 98,306,132 字节，已经下载核验但尚未安装；后者是临时回退用途，不是新生产版本。物料总计由 10 项增为 16 项。具体影响与批准范围见 [Docker 维护方案](../docs/platform-kind-v1/docker-maintenance.md)。
+宿主 Docker 维护物料也在同一 `files.lock.json` 和 `packages/` 中：三个 29.8.1 升级包与三个 29.4.3 回退包，共 98,306,132 字节，已经下载核验；曾安装29.8.1，因维护检查误判回退至29.4.3；后者是临时回退用途，不是新生产版本。物料总计由 10 项增为 16 项。具体影响与批准范围见 [Docker 维护方案](../docs/platform-kind-v1/docker-maintenance.md)。
+
+
+最新维护限制（2026-10-01）：Docker升级尝试已回退，Harbor可用、main/136节点Ready；旧应用入口经后续授权已恢复；两个遗留Harbor数据库保持0副本、PVC/PV保留。再次重启Docker须先临时恢复旧API使worker重载Traefik，仍有过渡依赖。恢复方案及授权边界见根目录CHECKPOINT和Docker维护操作卡。
