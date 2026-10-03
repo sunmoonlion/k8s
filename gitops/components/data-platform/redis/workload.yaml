@@ -80,7 +80,13 @@ spec:
             limits: {cpu: '2', memory: 512Mi}
           ports:
             - {name: service, containerPort: 6379}
-          command: [redis-server, /run/auth/redis.conf]
+          # ACL SAVE replaces the file using 0644 & process umask.
+          # Set the server's umask, not only the initContainer's.
+          command: [/bin/sh, -ec]
+          args:
+            - |
+              umask 077
+              exec redis-server /run/auth/redis.conf
           startupProbe:
             exec: {command: [/bin/sh, -ec, 'REDISCLI_AUTH="$(cat /run/auth/password)" redis-cli ping | grep -qx PONG']}
             periodSeconds: 5

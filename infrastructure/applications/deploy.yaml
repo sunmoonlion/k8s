@@ -383,3 +383,18 @@
           changed_when: false
           failed_when: redis_live.rc != 0 or redis_live.stdout != 'PONG'
           no_log: true
+        - name: Require private ACL file and restrictive Redis process creation mask
+          vars:
+            redis_acl_permissions_probe: |
+              test ! -L /data/users.acl
+              test -f /data/users.acl
+              test -s /data/users.acl
+              test "$(stat -c %a /data/users.acl)" = 600
+              test "$(stat -c %u /data/users.acl)" = "$(id -u)"
+              test "$(awk '/^Umask:/ {print $2}' /proc/1/status)" = 0077
+              printf 'private-acl'
+          ansible.builtin.command:
+            argv: '{{ kube + ["exec","redis-0","-n",data_namespace,"-c","redis","--","sh","-ec",redis_acl_permissions_probe] }}'
+          register: redis_acl_permissions
+          changed_when: false
+          failed_when: redis_acl_permissions.rc != 0 or redis_acl_permissions.stdout != 'private-acl'

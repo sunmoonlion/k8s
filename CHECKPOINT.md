@@ -1,6 +1,14 @@
-# 当前优先状态：Redis首次维护通过，重启持久化验收待新窗口（2026-10-03）
+# 当前优先状态：Redis重启前发现ACL权限缺陷，修正候选待发布授权（2026-10-03）
 
 工作树/分支platform-kind-v1，仅k8s，无push。实现f6817ba0，修正61b771b2aedd2032bbf6b2b2efdf8cd2e09c79ae、062b9b68；当前源sha256:84bcfc316cb46bcfabcf9c29254959643a57263e57b98209f48b993faf23c566。以下为最新状态，后文数据库单元是历史。
+
+## 最新前置检查结果
+
+所有者随后批准仅重建一次、不发布配置的5+5分钟窗口。执行前实测/data/users.acl为0644，主进程Umask=0022；检查在写restart-window.json和删除Pod前停止。没有再次重启；应用与default认证正常。前置容量检查剩53,900,664,832字节（计230GiB盘增长和1GiB预算），通过50GiB底线。
+
+候选渲染ok103 changed1 failed0；语义比对确认仅Redis主容器启动命令变化，Kustomize及两段shell语法通过。更新的原生application-check实测在新增权限项失败（其余18项通过），证明能拒绝当前0644现场；这是预期负向结果，不是成功验收。日志umask-render.log、umask-negative-check.log在原Redis证据目录。
+
+已定位：Redis ACL SAVE以0644创建临时文件再rename；原initContainer的077不影响主容器。模板候选改主容器umask077后exec；application-check追加0600/属主与PID1的0077检查。修正未发布，线上仍84bc…；新的检查此时应拒绝当前0644状态。下一步为“确认后以一次声明滚动替换代替手工删除Pod，再验证账号从原ACL恢复及ACL SAVE权限”，不追加第二次重启。操作卡有具体范围和回退源；因原批准明确不发布，需确认范围修正，不能自行晋级。
 
 ## 已实施与核对
 
@@ -13,7 +21,7 @@
 
 ## 下一步与边界
 
-先按docs/platform-kind-v1/tpl-redis-maintenance.md的补充窗口复核容量和现场，再仅重建当前redis-0一次：PVC UID不变、Pod UID变化、ACL全文件摘要和0600权限不变、默认与应用账号真实认证以及键隔离通过。新窗口拟5分钟、失败恢复另5分钟，待批准；不重新发布声明。未批准不重启。
+先按docs/platform-kind-v1/tpl-redis-maintenance.md的补充窗口复核容量和现场，再仅重建当前redis-0一次：PVC UID不变、Pod UID变化、ACL全文件摘要和0600权限不变、默认与应用账号真实认证以及键隔离通过。原补充窗口已批准但前置检查未通过；以最新权限修正提案为准。未经修正范围确认不发布、不重启。
 
 仍执行50GiB底线与原1GiB预算；最近检查计未来增长和预算后53,906,837,504字节，执行前必须复核。证据infrastructure/.build/applications/redis-unit-20261003/：window.json、before.json、bootstrap.log、bootstrap-v2.log、check-live-fixed.log、bootstrap-repeat.log、first-window-result.json。原始窗口记录保留；新窗口单独记录。仅有口令备份不等于完整数据恢复演练。
 
