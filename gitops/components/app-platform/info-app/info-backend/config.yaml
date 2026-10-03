@@ -33,4 +33,9 @@ info_backend_deployment:
   celery_control_queue_exclusive: true
   celery_event_queue_exclusive: true
   # 原文只能进入对象存储；未接入S3前拒绝业务写入，不回退到容器本地目录。
+  object_storage:
+    enabled: true
+    user: info_storage
+    bucket: info-originals
+    job_revision: v1
   domain_runtime_env: {STORAGE_BACKEND: s3, SEARCH_BACKEND: disabled}

@@ -23,3 +23,5 @@
 组件用户名/密码/端口的逐项边界见[服务字段表](../../docs/platform-kind-v1/services.md#字段的维护边界2026-10-03-逐项核对)。本目录只保留公共编排；组件专属配置与模板留在各组件。资源用户入口、凭据轮换和Casdoor域名/节点参数贯通尚未完成。
 
 `service_image_ids` 是本批平台镜像选择。公共准备与发布实现位于 `../artifacts/publish.yaml`，原services-plan/materials/verify-materials/publish入口不变；原services/materials.yaml已移走，无转发副本。
+
+对象存储接入同一服务链，配置和专属实现位于 data-platform/object-storage；现有 services-materials/publish 覆盖固定 AIStor 与同日客户端镜像。services-stage 将已渲染声明写入工作树，不直接应用集群；提交、flux-release、核对并晋级 source-candidate 后运行 services-bootstrap。services-check 包含真实许可/TLS/版本对象读写，仅清除此轮探针。

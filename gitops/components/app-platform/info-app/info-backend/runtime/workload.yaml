@@ -15,6 +15,12 @@ data:
   CASDOOR_VERIFY_SSL: 'true'
   SESSION_COOKIE_SECURE: 'true'
   REFERENCE_INTERACTION_ENABLED: 'false'
+  S3_ENDPOINT: https://object-storage.data-platform-dev.svc.cluster.local:9000
+  S3_REGION: us-east-1
+  S3_BUCKET: info-originals
+  S3_FORCE_PATH_STYLE: 'true'
+  S3_USE_TLS: 'true'
+  AWS_CA_BUNDLE: /etc/sunmoon/object-storage/ca.crt
   STORAGE_BACKEND: "s3"
   SEARCH_BACKEND: "disabled"
 ---
@@ -46,9 +52,10 @@ spec:
         app.kubernetes.io/part-of: info
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
+        sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: fe48f2c55a8bb8be019b0b4e8d983a38fafc6490f88731fcab4858374fe90780
+        sunmoonai.com/config-sha256: a10faea9eb1d977d0aa51a577ed95c3deca09e91ba414965996f4ff8a8356477
     spec:
       serviceAccountName: info-runtime
       automountServiceAccountToken: false
@@ -77,12 +84,15 @@ spec:
             - {secretRef: {name: info-rabbitmq-runtime}}
             - {secretRef: {name: info-redis-runtime}}
             - {secretRef: {name: info-browser-secrets}}
+            - {secretRef: {name: info-storage-runtime}}
           resources: {"requests": {"cpu": "100m", "memory": "192Mi"}, "limits": {"cpu": "2", "memory": "768Mi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
+            - {name: storage-ca, mountPath: /etc/sunmoon/object-storage, readOnly: true}
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
+        - {name: storage-ca, secret: {secretName: info-storage-runtime, items: [{key: ca.crt, path: ca.crt}]}}
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
         - {name: celery-config, configMap: {name: info-celery-config}}
 ---
@@ -103,8 +113,9 @@ spec:
         app.kubernetes.io/part-of: info
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
+        sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: fe48f2c55a8bb8be019b0b4e8d983a38fafc6490f88731fcab4858374fe90780
+        sunmoonai.com/config-sha256: a10faea9eb1d977d0aa51a577ed95c3deca09e91ba414965996f4ff8a8356477
     spec:
       serviceAccountName: info-runtime
       automountServiceAccountToken: false
@@ -129,12 +140,15 @@ spec:
             - {configMapRef: {name: info-browser-identity}}
             - {secretRef: {name: info-database-runtime}}
             - {secretRef: {name: info-rabbitmq-runtime}}
+            - {secretRef: {name: info-storage-runtime}}
           resources: {"requests": {"cpu": "100m", "memory": "256Mi"}, "limits": {"cpu": "2", "memory": "1Gi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
+            - {name: storage-ca, mountPath: /etc/sunmoon/object-storage, readOnly: true}
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
+        - {name: storage-ca, secret: {secretName: info-storage-runtime, items: [{key: ca.crt, path: ca.crt}]}}
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
         - {name: celery-config, configMap: {name: info-celery-config}}
 ---
@@ -155,8 +169,9 @@ spec:
         app.kubernetes.io/part-of: info
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
+        sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: fe48f2c55a8bb8be019b0b4e8d983a38fafc6490f88731fcab4858374fe90780
+        sunmoonai.com/config-sha256: a10faea9eb1d977d0aa51a577ed95c3deca09e91ba414965996f4ff8a8356477
     spec:
       serviceAccountName: info-runtime
       automountServiceAccountToken: false
@@ -181,12 +196,15 @@ spec:
             - {configMapRef: {name: info-browser-identity}}
             - {secretRef: {name: info-database-runtime}}
             - {secretRef: {name: info-rabbitmq-runtime}}
+            - {secretRef: {name: info-storage-runtime}}
           resources: {"requests": {"cpu": "50m", "memory": "128Mi"}, "limits": {"cpu": "1", "memory": "512Mi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
+            - {name: storage-ca, mountPath: /etc/sunmoon/object-storage, readOnly: true}
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
+        - {name: storage-ca, secret: {secretName: info-storage-runtime, items: [{key: ca.crt, path: ca.crt}]}}
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
         - {name: celery-config, configMap: {name: info-celery-config}}
 ---

@@ -24,6 +24,10 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     for field in ('kubectl', 'kubeconfig', 'namespace', 'mc', 'ca'):
         ap.add_argument('--' + field, required=True)
+    ap.add_argument('--application')
+    ap.add_argument('--app-namespace')
+    ap.add_argument('--bucket')
+    ap.add_argument('--runtime-check')
     args = ap.parse_args()
     require(os.geteuid() == 0, 'Private root input requires root')
     secret = json.load(sys.stdin)
@@ -61,6 +65,21 @@ def main():
                 out = subprocess.run(command + list(argv), capture_output=True, env=env, timeout=45)
                 require(out.returncode == 0, 'S3 operation failed: ' + argv[0])
                 return out.stdout
+            if args.application:
+                require(re.fullmatch(r'(info|knowledge|investment)', args.application), 'Unsupported storage application')
+                require(args.bucket == args.application + '-originals', 'Unexpected domain bucket')
+                runtime = subprocess.run([args.kubectl, '--kubeconfig=' + args.kubeconfig, '--context=kind-sunmoon-kind', '-n', args.app_namespace, 'exec', '-i', 'deployment/' + args.application + '-api', '--', 'python', '-'], input=Path(args.runtime_check).read_text(), text=True, capture_output=True, env=env, timeout=90)
+                result = json.loads(runtime.stdout)
+                try:
+                    require(runtime.returncode == 0 and result.get('passed') is True, 'Actual application S3 acceptance failed')
+                    print(json.dumps({'application':args.application, 'bucket':args.bucket, 'checks':result['checks']}))
+                finally:
+                    # Only this API probe's two UUID-keyed versions are removed by root.
+                    for record in result['created_records']:
+                        require(record['bucket'] == args.bucket and re.fullmatch(r'sunmoon-acceptance/[a-f0-9]{32}', record['key']), 'Refuse foreign acceptance object cleanup')
+                        require(isinstance(record['version_id'],str) and 0 < len(record['version_id']) < 256, 'Unexpected acceptance version')
+                        mc('rm','--version-id',record['version_id'],'owned/' + args.bucket + '/' + record['key'])
+                return
             bucket = 'sunmoon-acceptance-' + uuid.uuid4().hex
             target = 'owned/' + bucket
             created = False

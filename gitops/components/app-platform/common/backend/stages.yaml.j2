@@ -9,7 +9,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/{{ application_name }}-app/{{ (application_name + '-backend/') + stage if not stage.startswith('../') else stage[3:] }}
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: {{ dependency }}}{% if name == (application_name + '-identity') %}, {name: casdoor}{% endif %}]
+  dependsOn: [{name: {{ dependency }}}{% if name == (application_name + '-identity') %}, {name: casdoor}{% endif %}{% if storage_enabled and name == application_name + '-runtime' %}, {name: {{ application_name }}-storage}{% endif %}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -17,3 +17,22 @@ spec:
     provider: sops
     secretRef: {name: sops-age}
 {% endfor %}
+{% if cfg.enabled and storage_enabled %}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: {{ application_name }}-storage, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/{{ application_name }}-app/{{ application_name }}-backend/storage
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn: [{name: platform-services}]
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+{% endif %}

@@ -34,7 +34,9 @@
     image_map: '{{ dict(images | map(attribute="id") | zip(images)) }}'
     migration_job: '{{ application_name }}-migrate-{{ app_images.backend.digest[7:19] }}-{{ cfg.migration_job_revision }}'
     kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
-    candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml, redis/workload.yaml, redis/provision.sops.yaml, redis/runtime.sops.yaml, redis/kustomization.yaml, rabbitmq/workload.yaml, rabbitmq/provision.sops.yaml, rabbitmq/runtime.sops.yaml, rabbitmq/kustomization.yaml, identity/workload.yaml, identity/provision.sops.yaml, identity/runtime.sops.yaml, identity/kustomization.yaml, runtime/workload.yaml, runtime/tls.sops.yaml, runtime/kustomization.yaml, '../{{ application_name }}-web-frontend/workload.yaml', '../{{ application_name }}-web-frontend/kustomization.yaml', '../{{ application_name }}-admin-frontend/workload.yaml', '../{{ application_name }}-admin-frontend/kustomization.yaml']
+    core_candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml, redis/workload.yaml, redis/provision.sops.yaml, redis/runtime.sops.yaml, redis/kustomization.yaml, rabbitmq/workload.yaml, rabbitmq/provision.sops.yaml, rabbitmq/runtime.sops.yaml, rabbitmq/kustomization.yaml, identity/workload.yaml, identity/provision.sops.yaml, identity/runtime.sops.yaml, identity/kustomization.yaml, runtime/workload.yaml, runtime/tls.sops.yaml, runtime/kustomization.yaml, '../{{ application_name }}-web-frontend/workload.yaml', '../{{ application_name }}-web-frontend/kustomization.yaml', '../{{ application_name }}-admin-frontend/workload.yaml', '../{{ application_name }}-admin-frontend/kustomization.yaml']
+    storage_enabled: '{{ cfg.object_storage.enabled | default(false) | bool }}'
+    candidate_files: '{{ core_candidate_files + (["storage/workload.yaml","storage/provision.sops.yaml","storage/kustomization.yaml","runtime/storage.sops.yaml"] if storage_enabled else []) }}'
   tasks:
     - name: Validate the selected deployment and identity boundaries
       ansible.builtin.assert:
@@ -360,13 +362,16 @@
           no_log: true
         - name: Prepare recoverable application TLS material
           ansible.builtin.include_tasks: tasks/runtime-tls.yaml
+        - name: Prepare independent versioned object storage inputs when enabled
+          ansible.builtin.include_tasks: '{{ mechanism_root }}/storage/prepare.yaml'
+          when: storage_enabled
         - name: Bind runtime rollout to public configuration and private input changes
           ansible.builtin.set_fact:
-            runtime_config_digest: '{{ ([cfg, browser_clients, secret_input.content, redis_input.content, rabbitmq_input.content, identity_input.content] | to_json) | hash("sha256") }}'
+            runtime_config_digest: '{{ (([cfg, browser_clients, secret_input.content, redis_input.content, rabbitmq_input.content, identity_input.content] + ([s3_input.content] if storage_enabled else [])) | to_json) | hash("sha256") }}'
           no_log: true
         - name: Prepare public candidate directories
           ansible.builtin.file: {path: '{{ build }}/{{ item }}', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
-          loop: [database, migration, redis, rabbitmq, identity, runtime, '../{{ application_name }}-web-frontend', '../{{ application_name }}-admin-frontend']
+          loop: '{{ ["database","migration","redis","rabbitmq","identity","runtime", "../" + application_name + "-web-frontend", "../" + application_name + "-admin-frontend"] + (["storage"] if storage_enabled else []) }}'
         - name: Render the shared mechanics into the selected component candidates
           ansible.builtin.template:
             src: '{{ mechanism_root }}/{{ item.source }}.j2'
@@ -383,6 +388,13 @@
             - {source: ../web/workload.yaml, dest: '../{{ application_name }}-web-frontend/workload.yaml'}
             - {source: ../admin/workload.yaml, dest: '../{{ application_name }}-admin-frontend/workload.yaml'}
             - {source: stages.yaml, dest: stages.yaml}
+        - name: Render the optional storage provisioning stage
+          ansible.builtin.template:
+            src: '{{ mechanism_root }}/storage/workload.yaml.j2'
+            dest: '{{ build }}/storage/workload.yaml'
+            owner: '{{ cluster_operator }}'
+            mode: '0644'
+          when: storage_enabled
         - name: Derive independent connection URLs without logging
           ansible.builtin.set_fact:
             runtime_url: 'postgresql+asyncpg://{{ cfg.database_runtime_user }}:{{ app_credentials.runtime_password }}@postgresql.{{ data_namespace }}.svc.cluster.local:5432/{{ cfg.database }}'
@@ -467,9 +479,16 @@
             - {name: redis, resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]}
             - {name: rabbitmq, resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]}
             - {name: identity, resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]}
-            - {name: runtime, resources: [workload.yaml, tls.sops.yaml]}
+            - {name: runtime, resources: '{{ ["workload.yaml","tls.sops.yaml"] + (["storage.sops.yaml"] if storage_enabled else []) }}'}
             - {name: '../{{ application_name }}-web-frontend', resources: [workload.yaml]}
             - {name: '../{{ application_name }}-admin-frontend', resources: [workload.yaml]}
+        - name: Render optional object storage Kustomize root
+          ansible.builtin.copy:
+            dest: '{{ build }}/storage/kustomization.yaml'
+            owner: '{{ cluster_operator }}'
+            mode: '0644'
+            content: '{{ {"apiVersion":"kustomize.config.k8s.io/v1beta1","kind":"Kustomization","resources":["workload.yaml","provision.sops.yaml"]} | to_nice_yaml }}'
+          when: storage_enabled
     - name: Stage reviewed candidate declarations without deploying
       when: application_action == 'stage'
       block:
@@ -526,7 +545,7 @@
         - name: Wait for current generation Ready at the promoted digest
           ansible.builtin.command:
             argv: '{{ kube + ["get","kustomization",item,"-n","flux-system","-o","json"] }}'
-          loop: ['{{ application_name }}-database','{{ application_name }}-migration','{{ application_name }}-redis','{{ application_name }}-rabbitmq','{{ application_name }}-identity','{{ application_name }}-runtime','{{ application_name }}-web','{{ application_name }}-admin']
+          loop: '{{ [application_name + "-database",application_name + "-migration",application_name + "-redis",application_name + "-rabbitmq",application_name + "-identity",application_name + "-runtime",application_name + "-web",application_name + "-admin"] + ([application_name + "-storage"] if storage_enabled else []) }}'
           register: stage
           changed_when: false
           until:
@@ -548,6 +567,13 @@
           register: completion
           changed_when: false
           failed_when: completion.rc != 0 or completion.stdout != '1'
+        - name: Require optional storage provisioning job complete
+          when: storage_enabled
+          ansible.builtin.command:
+            argv: '{{ kube + ["get","job",application_name + "-storage-" + cfg.object_storage.job_revision,"-n",data_namespace,"-o","jsonpath={.status.succeeded}"] }}'
+          register: s3_complete
+          changed_when: false
+          failed_when: s3_complete.rc != 0 or s3_complete.stdout != "1"
         - name: Read the actual schema and grant verification outcome privately
           ansible.builtin.command:
             argv: '{{ kube + ["logs","job/" + migration_job,"-n",cfg.namespace] }}'
@@ -690,6 +716,28 @@
           ansible.builtin.command:
             argv: '{{ kube + ["exec",("deployment/" + application_name + "-scheduler"),"-n",app_namespace,"--","python","-m","app.cli.scheduler_activity","--schedule","/tmp/celerybeat-schedule","--max-age","30"] }}'
           changed_when: false
+        - name: Verify actual API S3 writes, immutable versions and domain isolation
+          when: storage_enabled
+          block:
+            - name: Read the separate cleanup identity privately
+              ansible.builtin.slurp: {src: '{{ services_config_dir }}/object-storage.yaml'}
+              register: s3_verifier_input
+              no_log: true
+            - name: Run the application storage implementation and remove only its probe versions
+              ansible.builtin.command:
+                argv: [python3, '{{ playbook_dir }}/../../gitops/components/data-platform/object-storage/verify.py', --kubectl, '{{ tools }}/kubectl', --kubeconfig, '{{ cluster_kubeconfig }}', --namespace, '{{ data_namespace }}', --mc, '{{ tools }}/mc', --ca, '{{ registry_config_dir }}/clients/ca.crt', --application, '{{ application_name }}', --app-namespace, '{{ app_namespace }}', --bucket, '{{ cfg.object_storage.bucket }}', --runtime-check, '{{ mechanism_root }}/storage/verify-runtime.py']
+                stdin: '{{ s3_verifier_input.content | b64decode | from_yaml | to_json }}'
+              register: s3_runtime_check
+              changed_when: false
+              failed_when: false
+              no_log: true
+            - name: Require the actual application object storage protocol to pass
+              ansible.builtin.assert:
+                quiet: true
+                that: s3_runtime_check.rc == 0
+                fail_msg: '{{ s3_runtime_check.stdout }}'
+            - name: Report only application object storage public assertions
+              ansible.builtin.debug: {msg: '{{ s3_runtime_check.stdout | from_json }}'}
         - name: Verify API readiness through each new TLS route
           ansible.builtin.command:
             argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ item | urlsplit("hostname") }}:30443:127.0.0.1:{{ application_check_port }}', '{{ item }}/api/health']

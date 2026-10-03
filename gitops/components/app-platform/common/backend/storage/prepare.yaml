@@ -1,0 +1,93 @@
+---
+- name: Validate independent domain object storage boundaries
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - services_object_storage_enabled | bool
+      - cfg.domain_runtime_env.STORAGE_BACKEND == 's3'
+      - cfg.object_storage.user == application_name + '_storage'
+      - cfg.object_storage.bucket == application_name + '-originals'
+      - cfg.object_storage.job_revision is match('^[a-z0-9-]{1,16}$')
+- name: Inspect preserved application S3 identity
+  ansible.builtin.stat: {path: '{{ item }}/s3.yaml', follow: false}
+  loop: ['{{ cfg.private_dir }}', '{{ cfg.backup_dir }}']
+  register: s3_files
+  no_log: true
+- name: Refuse insecure or redirected application S3 input
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
+  loop: '{{ s3_files.results }}'
+  no_log: true
+- name: Restore preserved S3 identity without rotation
+  ansible.builtin.copy: {src: '{{ cfg.backup_dir }}/s3.yaml', dest: '{{ cfg.private_dir }}/s3.yaml', remote_src: true, mode: '0600'}
+  when: not s3_files.results[0].stat.exists and s3_files.results[1].stat.exists
+  no_log: true
+- name: Refuse silently regenerating a declared S3 account
+  ansible.builtin.assert:
+    quiet: true
+    that: s3_files.results[0].stat.exists or s3_files.results[1].stat.exists or query('fileglob',component_root + '/runtime/storage.sops.yaml') | length == 0
+- name: Generate an independent application S3 secret only on first preparation
+  ansible.builtin.copy:
+    dest: '{{ cfg.private_dir }}/s3.yaml'
+    force: false
+    mode: '0600'
+    content: |
+      secret_key: {{ lookup('password','/dev/null',length=40,chars=['ascii_letters','digits']) }}
+  when: not s3_files.results[0].stat.exists and not s3_files.results[1].stat.exists
+  no_log: true
+- name: Preserve non-overwritten S3 identity backup
+  ansible.builtin.copy: {src: '{{ cfg.private_dir }}/s3.yaml', dest: '{{ cfg.backup_dir }}/s3.yaml', remote_src: true, force: false, mode: '0600'}
+  no_log: true
+- name: Require byte identical recoverable application S3 input
+  ansible.builtin.command: {argv: [cmp, --silent, '{{ cfg.private_dir }}/s3.yaml', '{{ cfg.backup_dir }}/s3.yaml']}
+  changed_when: false
+  no_log: true
+- name: Read private S3 input in memory
+  ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/s3.yaml'}
+  register: s3_input
+  no_log: true
+- name: Read only the root bootstrap identity and public CA
+  ansible.builtin.slurp: {src: '{{ item }}'}
+  loop: ['{{ services_config_dir }}/object-storage.yaml', '{{ registry_config_dir }}/clients/ca.crt']
+  register: s3_bootstrap
+  no_log: true
+- name: Derive private S3 inputs without logging
+  ansible.builtin.set_fact:
+    s3_credentials: '{{ s3_input.content | b64decode | from_yaml }}'
+    s3_root: '{{ s3_bootstrap.results[0].content | b64decode | from_yaml }}'
+  no_log: true
+- name: Prepare storage candidate directory
+  ansible.builtin.file: {path: '{{ build }}/storage', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
+- name: Encrypt only application credentials for API and workers
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/../services/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: runtime/storage.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: '{{ application_name }}-storage-runtime', namespace: '{{ app_namespace }}'}
+        stringData:
+          S3_ACCESS_KEY_ID: '{{ cfg.object_storage.user }}'
+          S3_SECRET_ACCESS_KEY: '{{ s3_credentials.secret_key }}'
+          ca.crt: '{{ s3_bootstrap.results[1].content | b64decode }}'
+  no_log: true
+- name: Encrypt separate root provisioning input outside the application namespace
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/../services/tasks/encrypt.yaml'
+  vars:
+    s3_url: 'https://object-storage.{{ data_namespace }}.svc.cluster.local:{{ object_storage_port }}'
+    secret_item:
+      file: storage/provision.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: '{{ application_name }}-storage-provision', namespace: '{{ data_namespace }}'}
+        stringData:
+          config.json: '{{ {"version":"10", "aliases":{"owned":{"url":s3_url,"accessKey":s3_root.root_user,"secretKey":s3_root.root_password,"api":"S3v4","path":"on"},"application":{"url":s3_url,"accessKey":cfg.object_storage.user,"secretKey":s3_credentials.secret_key,"api":"S3v4","path":"on"}}} | to_json }}'
+          user: '{{ cfg.object_storage.user }}'
+          password: '{{ s3_credentials.secret_key }}'
+          ca.crt: '{{ s3_bootstrap.results[1].content | b64decode }}'
+  no_log: true

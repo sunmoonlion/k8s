@@ -8,4 +8,4 @@ services_config_dir: /etc/sunmoon/services/sunmoon-kind
 services_backup_dir: /mnt/sunmoon-data/backups/services/sunmoon-kind
 
 # 本批平台镜像选择；具体版本/摘要唯一取 artifacts 锁。
-service_image_ids: [traefik, postgresql, redis, rabbitmq, casdoor, aistor]
+service_image_ids: [traefik, postgresql, redis, rabbitmq, casdoor, aistor, aistor-mc]

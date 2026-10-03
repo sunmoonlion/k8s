@@ -15,6 +15,14 @@ data:
   CASDOOR_VERIFY_SSL: 'true'
   SESSION_COOKIE_SECURE: 'true'
   REFERENCE_INTERACTION_ENABLED: 'false'
+{% if storage_enabled %}
+  S3_ENDPOINT: https://object-storage.{{ data_namespace }}.svc.cluster.local:{{ object_storage_port }}
+  S3_REGION: {{ object_storage_region }}
+  S3_BUCKET: {{ cfg.object_storage.bucket }}
+  S3_FORCE_PATH_STYLE: 'true'
+  S3_USE_TLS: 'true'
+  AWS_CA_BUNDLE: /etc/sunmoon/object-storage/ca.crt
+{% endif %}
 {% for key,value in (cfg.domain_runtime_env | default({})).items() %}
   {{ key }}: {{ value | to_json }}
 {% endfor %}
@@ -52,6 +60,9 @@ spec:
         app.kubernetes.io/part-of: {{ application_name }}
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
+{% if storage_enabled %}
+        sunmoonai.com/object-storage-client: 'true'
+{% endif %}
 {% if role == 'api' %}
         sunmoonai.com/redis-client: 'true'
 {% endif %}
@@ -99,12 +110,21 @@ spec:
             - {secretRef: {name: {{ application_name }}-redis-runtime}}
             - {secretRef: {name: {{ application_name }}-browser-secrets}}
 {% endif %}
+{% if storage_enabled %}
+            - {secretRef: {name: {{ application_name }}-storage-runtime}}
+{% endif %}
           resources: {{ cfg.resources[role] | to_json }}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
+{% if storage_enabled %}
+            - {name: storage-ca, mountPath: /etc/sunmoon/object-storage, readOnly: true}
+{% endif %}
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
+{% if storage_enabled %}
+        - {name: storage-ca, secret: {secretName: {{ application_name }}-storage-runtime, items: [{key: ca.crt, path: ca.crt}]}}
+{% endif %}
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
         - {name: celery-config, configMap: {name: {{ application_name }}-celery-config}}
 {% endfor %}
