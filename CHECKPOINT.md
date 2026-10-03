@@ -1,3 +1,20 @@
+# 当前优先状态：RabbitMQ与Casdoor应用身份部署完成，准备模板运行角色（2026-10-03）
+
+本节优先于历史。工作树/分支platform-kind-v1，仅k8s，无push。RabbitMQ实现a963a1d8、晋级c7d1b735；Casdoor客户端实现0e296d3bf85eaf54c55567e3494458f791693564、晋级c9efacd3。正式源sha256:e65f535fbef36f86ef718ff7f66e8a344b4e8cc2267204b568f57de6e167b232，10个Flux阶段当前generation Ready且同一摘要。
+
+- tpl-rabbitmq-v1成功：独立tpl_runtime账号只获tpl虚拟主机权限，无管理标签；预建tpl.default持久direct交换机/classic队列及绑定。真实AMQP临时排他队列收发确认、默认/虚拟主机拒绝和管理API拒绝通过。临时队列已删除，不消费业务队列。虚拟主机内部允许配置读写以支持Celery动态控制/回复队列，不宣称同一应用内角色隔离或RabbitMQ高可用。
+- tpl-identity-v1成功：注册sunmoonai-tpl-web/admin，client ID sunmoon-kind-tpl-web/admin，独立密钥与精确HTTPS回调。普通参数在各前端config，回调派生；密钥在私有identity.yaml及独立备份，Git仅SOPS。授权码模式、禁注册/访客、原issuer、PKCE S256、JWKS与注册回读验证通过。使用已有built-in组织和签名证书，不改变管理员。此结果不代表完整浏览器登录已通过。
+- 统一application-bootstrap完整重复：render ok99、validate ok77、Flux apply ok24、check ok25，全部changed0 failed0；10GiB门槛实测生效，计未来增长和1GiB预算后余53,651,161,088字节。原28个Pod UID及重启次数未变；两个成功初始化Job保留为Flux期望对象。不加TTL，不直接删除。
+- 证据infrastructure/.build/applications/rabbitmq-unit-20261003/{before-pods.json,release.log,bootstrap.log,reconcile.log,acceptance.json}，identity-stage/release/bootstrap/reconcile/bootstrap-repeat-20261003.log及identity-acceptance-20261003.json。临时Casdoor回环port-forward已停止，临时会话目录自动清除。首次只读脚本误读凭据结构KeyError，在登录前停止；改按service_credentials嵌套后成功，无凭据输出。
+
+后续按顺序接入API/worker/scheduler与两个前端；当前尚无模板常驻业务Pod，入口仍未切换。已读实际源码：后端image5b38…同一镜像按role运行；worker探针python -m app.cli.worker_readiness，POD_NAME需对应celery@Pod；scheduler使用app.bootstrap.scheduler:celery_app的ObservedScheduler及app.cli.scheduler_activity。业务任务状态在PG，暂不设置Celery Redis结果库（其键前缀尚未适配，不可放开全部Redis键）。API健康端点/health/ready检查Redis+PGschema。
+
+前端代码在子仓app/下，/healthz端点；生产运行必须提供DEPLOYMENT_ENV、AUTH_APP=tpl、APP_ORIGIN、BACKEND_INTERNAL_URL、DEPLOYMENT_ID。SSR用内部API URL；后端ALLOWED_HOSTS要包含Service名。Casdoor已支持内部backchannel HTTP+公开issuer Host头，受NetworkPolicy约束；目前内部HTTP/AMQP没有mTLS。现platform-tls证书只含Casdoor域名，应用Ingress需要独立tpl域名证书，不能复用冒充有效。下一单元尚未写代码。
+
+最新维护2小时、容量10GiB持续有效；原集群、Harbor及入口保持，清理/开机恢复/持久化及全业务链仍待后续。
+
+---
+
 # 当前优先状态：Redis持久账号重启验收完成（2026-10-03）
 
 工作树/分支platform-kind-v1，仅k8s，无push。权限修正753b7ff4af155b9c4657a5af04554130138054fa，晋级10b08eac。当前源sha256:98a2643276fc6ec8ed319e535e7aec36ef7b3e4b89e3210219a30252011ea816，源码753b7ff4；8个Flux阶段当前generation Ready、同一摘要。
