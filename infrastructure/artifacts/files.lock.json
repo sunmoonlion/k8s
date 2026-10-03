@@ -359,6 +359,16 @@
       "sha256": "cd7254ea853da73bdb88edc896f079b88d43ffa0bfe699fdbf21081361eac365",
       "url": "https://traefik.github.io/charts/traefik/traefik-41.6.0.tgz",
       "identity_source": "https://traefik.github.io/charts/index.yaml"
+    },
+    {
+      "id": "mc",
+      "version": "RELEASE.2026-09-19T15-24-59Z",
+      "kind": "binary",
+      "path": "bin/mc-RELEASE.2026-09-19T15-24-59Z-linux-amd64",
+      "size_bytes": 111485090,
+      "sha256": "83938eded435e7c28c397ece1dc590b2a79626dd9354aae2107060fec559ae2b",
+      "url": "https://dl.min.io/aistor/mc/release/linux-amd64/mc.RELEASE.2026-09-19T15-24-59Z",
+      "identity_source": "https://dl.min.io/aistor/mc/release/linux-amd64/mc.sha256sum"
     }
   ]
 }

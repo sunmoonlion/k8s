@@ -44,6 +44,7 @@ CONFIG_FILES := applications/config.yaml \
 	host/config.yaml \
 	../gitops/components/data-platform/postgresql/config.yaml \
 	../gitops/components/data-platform/redis/config.yaml \
+	../gitops/components/data-platform/object-storage/config.yaml \
 	../gitops/components/messaging-platform/rabbitmq/config.yaml \
 	../gitops/components/ingress-platform/traefik/config.yaml \
 	../gitops/components/app-platform/auth-app/casdoor/config.yaml
@@ -227,6 +228,7 @@ services-bootstrap:
 	$(MAKE) services-verify-materials
 	$(MAKE) services-publish
 	$(MAKE) services-tools
+	$(MAKE) install-binaries BINARIES=mc
 	$(MAKE) services-chart
 	$(MAKE) services-render
 	$(MAKE) services-validate-release
@@ -296,3 +298,7 @@ application-bootstrap:
 	$(MAKE) application-validate-release APP=$(APP)
 	$(MAKE) flux-source-apply
 	$(MAKE) application-check APP=$(APP)
+
+.PHONY: services-stage
+services-stage:
+	$(ANSIBLE) -i host/inventory.yaml services/render.yaml $(CONFIG_ARGS) --extra-vars services_action=stage

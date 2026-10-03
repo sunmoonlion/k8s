@@ -7,7 +7,7 @@
   vars:
     capacity_operation: services-verify
     images: '{{ (lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json).images }}'
-    enabled_names: '{{ (["postgresql"] if services_postgresql_enabled else []) + (["redis"] if services_redis_enabled else []) + (["rabbitmq"] if services_rabbitmq_enabled else []) + (["casdoor"] if services_casdoor_enabled else []) + (["traefik"] if services_ingress_enabled else []) }}'
+    enabled_names: '{{ (["postgresql"] if services_postgresql_enabled else []) + (["redis"] if services_redis_enabled else []) + (["rabbitmq"] if services_rabbitmq_enabled else []) + (["casdoor"] if services_casdoor_enabled else []) + (["traefik"] if services_ingress_enabled else []) + (["object-storage"] if services_object_storage_enabled else []) }}'
     stages_to_check: '{{ ["platform-services"] + (["casdoor-db","casdoor-init","casdoor"] if services_casdoor_enabled else []) }}'
 
     kube: ['{{ playbook_dir }}/../.tools/bin/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
@@ -54,7 +54,7 @@
       ansible.builtin.assert:
         quiet: true
         that: (registry_address + '/platform/' + item.id + '@' + item.manifest_digest) in observed_image_ids
-      loop: '{{ images | selectattr("id", "in", enabled_names) | list }}'
+      loop: '{{ images | selectattr("id", "in", enabled_names + (["aistor"] if services_object_storage_enabled else [])) | list }}'
       loop_control: {label: '{{ item.id }}'}
     - name: Require enabled retained volumes bound
       ansible.builtin.command:
@@ -124,6 +124,38 @@
         quiet: true
         that: acceptance.rc == 0
         fail_msg: '{{ acceptance.stdout }}'
+    - name: Verify licensed TLS object storage through actual versioned S3 operations
+      when: services_object_storage_enabled | bool
+      block:
+        - name: Read private object storage root identity without logging
+          ansible.builtin.slurp: {src: '{{ services_config_dir }}/object-storage.yaml'}
+          register: storage_check_input
+          no_log: true
+        - name: Require the exact official management client bytes
+          ansible.builtin.stat: {path: '{{ playbook_dir }}/../.tools/bin/mc', follow: false, checksum_algorithm: sha256}
+          register: storage_client
+        - name: Reject an unverified or redirected management client
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - storage_client.stat.isreg | default(false)
+              - not storage_client.stat.islnk | default(false)
+              - storage_client.stat.checksum == ((lookup('file',playbook_dir + '/../artifacts/files.lock.json') | from_json).files | selectattr('id','equalto','mc') | first).sha256
+        - name: Execute bounded S3 roundtrip without printing private inputs
+          ansible.builtin.command:
+            argv: [python3, '{{ playbook_dir }}/../../gitops/components/data-platform/object-storage/verify.py', --kubectl, '{{ playbook_dir }}/../.tools/bin/kubectl', --kubeconfig, '{{ cluster_kubeconfig }}', --namespace, '{{ data_namespace }}', --mc, '{{ playbook_dir }}/../.tools/bin/mc', --ca, '{{ registry_config_dir }}/clients/ca.crt']
+            stdin: '{{ storage_check_input.content | b64decode | from_yaml | to_json }}'
+          register: storage_acceptance
+          changed_when: false
+          no_log: true
+          failed_when: false
+        - name: Require licensed S3 version and bytes verification
+          ansible.builtin.assert:
+            quiet: true
+            that: storage_acceptance.rc == 0
+            fail_msg: '{{ storage_acceptance.stdout }}'
+        - name: Report only public S3 acceptance results
+          ansible.builtin.debug: {msg: '{{ storage_acceptance.stdout | from_json }}'}
     - name: Report public acceptance results only
       ansible.builtin.debug: {msg: '{{ acceptance.stdout | from_json }}'}
     - name: Keep public verification receipt outside the repository
@@ -138,4 +170,4 @@
         dest: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/evidence/services/latest.json'
         mode: '0600'
         content: |
-          {{ {'checked_at_utc':lookup('pipe','date -u +%Y-%m-%dT%H:%M:%SZ'), 'cluster_uid':uid.stdout, 'source':lookup('file',playbook_dir + '/../environments/kind/flux-source.yaml') | from_yaml, 'checks':(acceptance.stdout | from_json) | combine({'postgresql_transaction':services_postgresql_enabled,'redis_write_read':services_redis_enabled,'retained_volumes_bound':true}), 'capacity':capacity_report.stdout | from_json, 'scope':'First service batch; no WSL/KIND restart or rebuild claim'} | to_nice_json }}
+          {{ {'checked_at_utc':lookup('pipe','date -u +%Y-%m-%dT%H:%M:%SZ'), 'cluster_uid':uid.stdout, 'source':lookup('file',playbook_dir + '/../environments/kind/flux-source.yaml') | from_yaml, 'checks':(acceptance.stdout | from_json) | combine({'postgresql_transaction':services_postgresql_enabled,'redis_write_read':services_redis_enabled,'retained_volumes_bound':true}), 'capacity':capacity_report.stdout | from_json, 'object_storage':(storage_acceptance.stdout | from_json) if services_object_storage_enabled else {}, 'scope':'Service protocol checks; no WSL/KIND restart or rebuild claim'} | to_nice_json }}

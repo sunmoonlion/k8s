@@ -1,0 +1,16 @@
+# AIStor 单节点 KIND 配置。版本与摘要仅取 artifacts 上游锁。
+---
+services_object_storage_enabled: true
+object_storage_volume:
+  name: object-storage
+  node: worker2
+  size: 20Gi
+  uid: 1000
+  gid: 1000
+object_storage_port: 9000
+object_storage_console_port: 9001
+object_storage_region: us-east-1
+object_storage_license_file: /home/zymun/.config/sunmoonai/licenses/minio.license
+object_storage_resources:
+  requests: {cpu: 100m, memory: 512Mi}
+  limits: {cpu: '2', memory: 2Gi}

@@ -52,7 +52,7 @@
       ansible.builtin.assert:
         quiet: true
         that:
-          - item.name in ['postgresql','redis','rabbitmq','casdoor']
+          - item.name in ['postgresql','redis','rabbitmq','casdoor','object-storage']
           - item.node in ['worker','worker2']
           - item.uid in [999,1000]
           - item.gid == item.uid
@@ -143,6 +143,9 @@
         - {template: data-platform/redis/workload.yaml.j2, path: data-platform/redis/workload.yaml}
         - {template: messaging-platform/rabbitmq/workload.yaml.j2, path: messaging-platform/rabbitmq/workload.yaml}
         - {template: ingress-platform/traefik/workload.yaml.j2, path: ingress-platform/traefik/workload.yaml}
+    - name: Prepare and encrypt object storage inputs
+      ansible.builtin.include_tasks: ../../gitops/components/data-platform/object-storage/prepare.yaml
+      when: services_object_storage_enabled | bool
     - name: Read namespace pull-only identity
       ansible.builtin.slurp: {src: '{{ registry_config_dir }}/private/puller-auth.json'}
       register: puller
@@ -224,7 +227,7 @@
         - name: foundations
           resources: '{{ ["runtime.yaml", "storage.yaml", "network.yaml"] + [data_namespace + "-puller.sops.yaml", messaging_namespace + "-puller.sops.yaml", app_namespace + "-puller.sops.yaml"] }}'
         - name: data-platform
-          resources: '{{ (["postgresql"] if services_postgresql_enabled else []) + (["redis"] if services_redis_enabled else []) }}'
+          resources: '{{ (["postgresql"] if services_postgresql_enabled else []) + (["redis"] if services_redis_enabled else []) + (["object-storage"] if services_object_storage_enabled else []) }}'
         - name: messaging-platform
           resources: '{{ ["rabbitmq"] if services_rabbitmq_enabled else [] }}'
         - {name: ingress-platform, resources: [traefik]}
@@ -235,7 +238,7 @@
         mode: '0644'
         content: |
           {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':['workload.yaml', ('puller.sops.yaml' if item == 'traefik' else 'auth.sops.yaml')]} | to_nice_yaml }}
-      loop: [postgresql, redis, rabbitmq, traefik]
+      loop: [postgresql, redis, rabbitmq, traefik, object-storage]
     - name: Generate a private service TLS key only when absent
       ansible.builtin.command:
         argv: [openssl, genpkey, -algorithm, RSA, -pkeyopt, 'rsa_keygen_bits:3072', -out, '{{ services_config_dir }}/tls/server.key']
@@ -366,3 +369,42 @@
         dest: '{{ build }}/stages.yaml'
         mode: '0644'
         owner: '{{ cluster_operator }}'
+
+    - name: Stage rendered service candidates without applying them
+      when: services_action | default('render') == 'stage'
+      block:
+        - name: Find only service renderer candidate files
+          ansible.builtin.find:
+            paths: '{{ service_candidate_roots | map("regex_replace", "^", build + "/") | list }}'
+            recurse: true
+            patterns: '*.yaml'
+            file_type: file
+          register: generated_service_files
+        - name: Refuse an incomplete service staging candidate
+          ansible.builtin.assert:
+            quiet: true
+            that: generated_service_files.files | length >= 20
+        - name: Prepare declared component directories
+          ansible.builtin.file:
+            path: '{{ playbook_dir }}/../../gitops/components/{{ item.path | relpath(build) | dirname }}'
+            state: directory
+            owner: '{{ cluster_operator }}'
+            mode: '0755'
+          loop: '{{ generated_service_files.files }}'
+          loop_control: {label: '{{ item.path | relpath(build) | dirname }}'}
+        - name: Copy only rendered service declarations into the source tree
+          ansible.builtin.copy:
+            src: '{{ item.path }}'
+            dest: '{{ playbook_dir }}/../../gitops/components/{{ item.path | relpath(build) }}'
+            remote_src: true
+            owner: '{{ cluster_operator }}'
+            mode: '0644'
+          loop: '{{ generated_service_files.files }}'
+          loop_control: {label: '{{ item.path | relpath(build) }}'}
+        - name: Stage native service dependency declarations
+          ansible.builtin.copy:
+            src: '{{ build }}/stages.yaml'
+            dest: '{{ playbook_dir }}/../../gitops/clusters/kind/services.yaml'
+            remote_src: true
+            owner: '{{ cluster_operator }}'
+            mode: '0644'

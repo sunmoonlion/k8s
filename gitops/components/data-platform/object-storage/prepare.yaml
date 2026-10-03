@@ -1,0 +1,130 @@
+---
+# Included directly by the existing services renderer. No alternate deployment path.
+- name: Validate the object storage profile and existing license source
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - object_storage_volume.name == 'object-storage'
+      - object_storage_volume.uid == 1000
+      - object_storage_port == 9000
+      - object_storage_console_port == 9001
+      - object_storage_license_file == '/home/zymun/.config/sunmoonai/licenses/minio.license'
+- name: Inspect license and preserved object storage input
+  ansible.builtin.stat: {path: '{{ item }}', follow: false}
+  loop: ['{{ object_storage_license_file }}', '{{ services_config_dir }}/object-storage.yaml', '{{ services_backup_dir }}/object-storage.yaml']
+  register: object_inputs
+  no_log: true
+- name: Refuse redirected or publicly readable private inputs
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - object_inputs.results[0].stat.isreg | default(false)
+      - object_inputs.results[0].stat.mode == '0600'
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.mode == '0600')
+  loop: '{{ object_inputs.results }}'
+  no_log: true
+- name: Restore preserved object storage root identity
+  ansible.builtin.copy: {src: '{{ services_backup_dir }}/object-storage.yaml', dest: '{{ services_config_dir }}/object-storage.yaml', remote_src: true, mode: '0600'}
+  when: not object_inputs.results[1].stat.exists and object_inputs.results[2].stat.exists
+  no_log: true
+- name: Refuse regenerating a declared object storage root identity
+  ansible.builtin.assert:
+    quiet: true
+    that: object_inputs.results[1].stat.exists or object_inputs.results[2].stat.exists or query('fileglob', playbook_dir + '/../../gitops/components/data-platform/object-storage/auth.sops.yaml') | length == 0
+- name: Initialize a distinct root identity only once
+  ansible.builtin.copy:
+    dest: '{{ services_config_dir }}/object-storage.yaml'
+    force: false
+    mode: '0600'
+    content: |
+      root_user: sunmoon_storage_root
+      root_password: {{ lookup('password','/dev/null',length=40,chars=['ascii_letters','digits']) }}
+  when: not object_inputs.results[1].stat.exists and not object_inputs.results[2].stat.exists
+  no_log: true
+- name: Preserve a non-overwritten root identity backup
+  ansible.builtin.copy: {src: '{{ services_config_dir }}/object-storage.yaml', dest: '{{ services_backup_dir }}/object-storage.yaml', remote_src: true, force: false, mode: '0600'}
+  no_log: true
+- name: Require byte identical recoverable root input
+  ansible.builtin.command: {argv: [cmp, --silent, '{{ services_config_dir }}/object-storage.yaml', '{{ services_backup_dir }}/object-storage.yaml']}
+  changed_when: false
+  no_log: true
+- name: Preserve the existing license without moving the old source
+  ansible.builtin.copy: {src: '{{ object_storage_license_file }}', dest: '{{ item }}/minio.license', remote_src: true, force: false, mode: '0600'}
+  loop: ['{{ services_config_dir }}', '{{ services_backup_dir }}']
+  no_log: true
+- name: Require byte identical private license copies
+  ansible.builtin.command: {argv: [cmp, --silent, '{{ object_storage_license_file }}', '{{ item }}/minio.license']}
+  loop: ['{{ services_config_dir }}', '{{ services_backup_dir }}']
+  changed_when: false
+  no_log: true
+- name: Prepare private object storage TLS directory
+  ansible.builtin.file: {path: '{{ services_config_dir }}/object-storage-tls', state: directory, owner: root, group: root, mode: '0700'}
+- name: Generate a private object storage TLS key once
+  ansible.builtin.command:
+    argv: [openssl, genpkey, -algorithm, RSA, -pkeyopt, 'rsa_keygen_bits:3072', -out, '{{ services_config_dir }}/object-storage-tls/private.key']
+    creates: '{{ services_config_dir }}/object-storage-tls/private.key'
+  no_log: true
+- name: Protect private key permissions
+  ansible.builtin.file: {path: '{{ services_config_dir }}/object-storage-tls/private.key', mode: '0600'}
+- name: Declare internal object storage certificate names
+  ansible.builtin.copy:
+    dest: '{{ services_config_dir }}/object-storage-tls/extensions.cnf'
+    mode: '0600'
+    content: |
+      basicConstraints=critical,CA:FALSE
+      keyUsage=critical,digitalSignature,keyEncipherment
+      extendedKeyUsage=serverAuth
+      subjectAltName=DNS:object-storage,DNS:object-storage.{{ data_namespace }}.svc.cluster.local
+- name: Generate object storage certificate request once
+  ansible.builtin.command:
+    argv: [openssl, req, -new, -key, '{{ services_config_dir }}/object-storage-tls/private.key', -out, '{{ services_config_dir }}/object-storage-tls/server.csr', -subj, /CN=object-storage]
+    creates: '{{ services_config_dir }}/object-storage-tls/server.csr'
+- name: Issue five year internal certificate using the owned CA
+  ansible.builtin.command:
+    argv: [openssl, x509, -req, -in, '{{ services_config_dir }}/object-storage-tls/server.csr', -CA, '{{ registry_config_dir }}/tls/ca.crt', -CAkey, '{{ registry_config_dir }}/tls/ca.key', -set_serial, '0x{{ lookup("pipe", "openssl rand -hex 16") }}', -days, '1825', -sha256, -extfile, '{{ services_config_dir }}/object-storage-tls/extensions.cnf', -out, '{{ services_config_dir }}/object-storage-tls/public.crt']
+    creates: '{{ services_config_dir }}/object-storage-tls/public.crt'
+- name: Verify the internal TLS chain and exact service name
+  ansible.builtin.command:
+    argv: [openssl, verify, -CAfile, '{{ registry_config_dir }}/tls/ca.crt', -verify_hostname, 'object-storage.{{ data_namespace }}.svc.cluster.local', '{{ services_config_dir }}/object-storage-tls/public.crt']
+  changed_when: false
+- name: Back up internal TLS identity without overwriting
+  ansible.builtin.copy: {src: '{{ services_config_dir }}/object-storage-tls', dest: '{{ services_backup_dir }}/', remote_src: true, force: false, mode: preserve}
+  no_log: true
+- name: Require recoverable TLS identity bytes
+  ansible.builtin.command: {argv: [cmp, --silent, '{{ services_config_dir }}/object-storage-tls/{{ item }}', '{{ services_backup_dir }}/object-storage-tls/{{ item }}']}
+  loop: [private.key, public.crt]
+  changed_when: false
+  no_log: true
+- name: Read private object storage input in memory
+  ansible.builtin.slurp: {src: '{{ item }}'}
+  loop: ['{{ services_config_dir }}/object-storage.yaml', '{{ services_config_dir }}/minio.license', '{{ services_config_dir }}/object-storage-tls/private.key', '{{ services_config_dir }}/object-storage-tls/public.crt']
+  register: storage_private
+  no_log: true
+- name: Derive root identity and rollout input digest without logging
+  ansible.builtin.set_fact:
+    storage_credentials: '{{ storage_private.results[0].content | b64decode | from_yaml }}'
+    object_storage_input_digest: '{{ storage_private.results | map(attribute="content") | list | to_json | hash("sha256") }}'
+  no_log: true
+- name: Encrypt root identity license and TLS files through independent SOPS identity
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: data-platform/object-storage/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: object-storage-auth, namespace: '{{ data_namespace }}'}
+        data:
+          root-user: '{{ storage_credentials.root_user | b64encode }}'
+          root-password: '{{ storage_credentials.root_password | b64encode }}'
+          minio.license: '{{ storage_private.results[1].content }}'
+          private.key: '{{ storage_private.results[2].content }}'
+          public.crt: '{{ storage_private.results[3].content }}'
+  no_log: true
+- name: Render the object storage StatefulSet into the services candidate
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/data-platform/object-storage/workload.yaml.j2'
+    dest: '{{ build }}/data-platform/object-storage/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'

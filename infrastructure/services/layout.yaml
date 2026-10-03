@@ -14,12 +14,14 @@ service_candidate_roots:
 component_namespaces:
   postgresql: "{{ data_namespace }}"
   redis: "{{ data_namespace }}"
+  object-storage: "{{ data_namespace }}"
   rabbitmq: "{{ messaging_namespace }}"
   casdoor: "{{ app_namespace }}"
-services_volumes: "{{ [postgresql_volume, redis_volume, rabbitmq_volume, casdoor_volume] }}"
+services_volumes: "{{ [postgresql_volume, redis_volume, rabbitmq_volume, casdoor_volume, object_storage_volume] }}"
 service_component_paths:
   postgresql: data-platform/postgresql
   redis: data-platform/redis
+  object-storage: data-platform/object-storage
   rabbitmq: messaging-platform/rabbitmq
   traefik: ingress-platform/traefik
   casdoor: app-platform/auth-app/casdoor

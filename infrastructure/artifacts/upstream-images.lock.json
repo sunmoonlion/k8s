@@ -623,6 +623,17 @@
       "compressed_layer_bytes": 88878511,
       "runtime_version": "1.22.3",
       "selection_note": "Official stable image resolved to digest; version observed by running --version. Upstream source latest 1.24.1 has no matching image tag."
+    },
+    {
+      "id": "aistor-mc",
+      "group": "storage",
+      "source": "quay.io/minio/aistor/mc:RELEASE.2026-09-19T15-24-59Z",
+      "platform": "linux/amd64",
+      "status": "resolved",
+      "manifest_digest": "sha256:d108717a4a6d684586f392406caca8d57f94d9e5acb515db61bca2da72d6f2ba",
+      "reference": "quay.io/minio/aistor/mc@sha256:d108717a4a6d684586f392406caca8d57f94d9e5acb515db61bca2da72d6f2ba",
+      "config_digest": "sha256:ae5675e808c6f98730da8e48155548051b9a5cd273115e572fc9ebeeb83af9b7",
+      "compressed_layer_bytes": 39509667
     }
   ],
   "offline_ready": false
