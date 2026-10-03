@@ -1,0 +1,49 @@
+---
+- name: Read prior ciphertext through the independent backup identity
+  ansible.builtin.command:
+    argv: ['{{ tools }}/sops', decrypt, --output-type, json, '{{ build }}/{{ secret_item.file }}']
+  environment:
+    SOPS_AGE_KEY_FILE: '{{ sops_backup_dir }}/age.agekey'
+    HOME: /nonexistent
+    XDG_CONFIG_HOME: /nonexistent
+  register: prior
+  changed_when: false
+  failed_when: false
+  no_log: true
+- name: Inspect the candidate path
+  ansible.builtin.stat: {path: '{{ build }}/{{ secret_item.file }}', follow: false}
+  register: existing
+- name: Refuse unreadable or redirected ciphertext
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not existing.stat.islnk | default(false)
+      - not existing.stat.exists or (existing.stat.isreg | default(false) and prior.rc == 0)
+- name: Encrypt only changed input, never write plaintext into Git
+  ansible.builtin.command:
+    argv: ['{{ tools }}/sops', encrypt, --age, '{{ recipient }}', --encrypted-regex, '^(data|stringData)$', --input-type, json, --output-type, yaml, /dev/stdin]
+    stdin: '{{ secret_item.manifest | to_json }}'
+  register: ciphertext
+  when: prior.rc != 0 or (prior.stdout | from_json) != secret_item.manifest
+  changed_when: true
+  no_log: true
+- name: Save the encrypted candidate
+  ansible.builtin.copy:
+    dest: '{{ build }}/{{ secret_item.file }}'
+    content: |
+      {{ ciphertext.stdout }}
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+  when: ciphertext is changed
+  no_log: true
+- name: Verify candidate using independent recovery identity
+  ansible.builtin.command:
+    argv: ['{{ tools }}/sops', decrypt, --output-type, json, '{{ build }}/{{ secret_item.file }}']
+  environment:
+    SOPS_AGE_KEY_FILE: '{{ sops_backup_dir }}/age.agekey'
+    HOME: /nonexistent
+    XDG_CONFIG_HOME: /nonexistent
+  register: recovered
+  changed_when: false
+  failed_when: recovered.rc != 0 or (recovered.stdout | from_json) != secret_item.manifest
+  no_log: true

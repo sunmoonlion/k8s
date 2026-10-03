@@ -58,3 +58,8 @@ flux_enabled: true
 sops_enabled: true
 sops_config_dir: /etc/sunmoon/flux/sunmoon-kind
 sops_backup_dir: /mnt/sunmoon-data/backups/flux/sunmoon-kind
+
+# First platform services; versions remain in immutable release declarations.
+services_enabled: true
+services_config_dir: /etc/sunmoon/services/sunmoon-kind
+services_backup_dir: /mnt/sunmoon-data/backups/services/sunmoon-kind

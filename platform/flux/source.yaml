@@ -116,7 +116,21 @@
               changed_when: false
               register: built_declarations
               no_log: true
-            - name: Reject plaintext Secrets before OCI publication
+            - name: Discover all committed Kustomize roots, including child stages
+              ansible.builtin.find:
+                paths: '{{ staging.path }}/content'
+                patterns: kustomization.yaml
+                recurse: true
+                file_type: file
+              register: roots
+            - name: Build every committed stage before publishing the source
+              ansible.builtin.command:
+                argv: ['{{ playbook_dir }}/../.tools/bin/kubectl', kustomize, '{{ item.path | dirname }}']
+              loop: '{{ roots.files }}'
+              register: stages
+              changed_when: false
+              no_log: true
+            - name: Reject plaintext Secrets in root and child declarations
               ansible.builtin.assert:
                 quiet: true
                 that:
@@ -127,7 +141,7 @@
                   - fields | select('match', '^ENC\[AES256_GCM,') | list | length == fields | length
               vars:
                 fields: '{{ ((item.data | default({})) | dict2items | map(attribute="value") | list) + ((item.stringData | default({})) | dict2items | map(attribute="value") | list) }}'
-              loop: '{{ built_declarations.stdout | from_yaml_all | selectattr("kind", "equalto", "Secret") | list }}'
+              loop: '{{ stages.results | map(attribute="stdout") | map("from_yaml_all") | map("list") | flatten | selectattr("kind", "equalto", "Secret") | list }}'
               no_log: true
             - name: Supply publisher credentials through a private file
               ansible.builtin.copy:
@@ -224,7 +238,7 @@
           when: flux_source_action == 'apply' and declaration_diff.rc == 1
         - name: Wait for root reconciliation
           ansible.builtin.command:
-            argv: ['{{ flux }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', reconcile, kustomization, platform, --timeout=180s]
+            argv: ['{{ flux }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', reconcile, kustomization, platform, --timeout=600s]
           changed_when: true
           when: flux_source_action == 'apply' and declaration_diff.rc == 1
         - name: Inspect observed artifact and reconciliation generations

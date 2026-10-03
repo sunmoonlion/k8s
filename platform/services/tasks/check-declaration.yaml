@@ -1,0 +1,33 @@
+---
+- name: Read the committed and generated declaration structures
+  ansible.builtin.set_fact:
+    candidate_object: '{{ lookup("file", item.path) | from_yaml_all | list }}'
+    committed_object: '{{ lookup("file", committed_path) | from_yaml_all | list }}'
+  no_log: true
+- name: Compare public declarations structurally
+  ansible.builtin.assert:
+    quiet: true
+    that: candidate_object == committed_object
+    fail_msg: 'Generated {{ relative_path }} differs from Git. Review, commit and publish the changed release first.'
+  when: not relative_path.endswith('.sops.yaml')
+- name: Compare encrypted values using only the independent recovery identity
+  when: relative_path.endswith('.sops.yaml')
+  block:
+    - name: Decrypt candidate and committed secrets in memory
+      ansible.builtin.command:
+        argv: ['{{ playbook_dir }}/../.tools/bin/sops', decrypt, --output-type, json, '{{ secret_path }}']
+      environment:
+        SOPS_AGE_KEY_FILE: '{{ sops_backup_dir }}/age.agekey'
+        HOME: /nonexistent
+        XDG_CONFIG_HOME: /nonexistent
+      loop: ['{{ item.path }}', '{{ committed_path }}']
+      loop_control: {loop_var: secret_path}
+      register: decoded
+      changed_when: false
+      no_log: true
+    - name: Require matching encrypted semantic content before deployment
+      ansible.builtin.assert:
+        quiet: true
+        that: (decoded.results[0].stdout | from_json) == (decoded.results[1].stdout | from_json)
+        fail_msg: Generated secret differs from the committed release; publish a reviewed credential change first.
+      no_log: true

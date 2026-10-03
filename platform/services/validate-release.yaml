@@ -1,0 +1,45 @@
+---
+- name: Require generated settings to match the committed promoted release
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    repo: '{{ playbook_dir }}/../..'
+    build: '{{ playbook_dir }}/../.build/services'
+    source: '{{ lookup("file", playbook_dir + "/../environments/kind/flux-source.yaml") | from_yaml }}'
+  tasks:
+    - name: Require a clean declaration worktree
+      become: false
+      ansible.builtin.command:
+        argv: [git, -C, '{{ repo }}', status, --porcelain, --untracked-files=all, '--', gitops]
+      changed_when: false
+      register: dirty
+      failed_when: dirty.rc != 0 or dirty.stdout != ''
+    - name: Require the worktree declarations to equal the promoted Git object
+      become: false
+      ansible.builtin.command:
+        argv: [git, -C, '{{ repo }}', diff, --exit-code, '{{ source.revision }}', '--', gitops]
+      changed_when: false
+      no_log: true
+    - name: Find rendered component candidates
+      ansible.builtin.find:
+        paths: ['{{ build }}/core', '{{ build }}/casdoor-db', '{{ build }}/casdoor-init', '{{ build }}/casdoor']
+        patterns: '*.yaml'
+        file_type: file
+      register: candidates
+    - name: Require complete rendering
+      ansible.builtin.assert:
+        quiet: true
+        that: candidates.files | length >= 18
+    - name: Compare generated public objects and decrypted secret content
+      ansible.builtin.include_tasks: tasks/check-declaration.yaml
+      vars:
+        relative_path: '{{ item.path | relpath(build) }}'
+        committed_path: '{{ repo }}/gitops/components/services/{{ relative_path }}'
+      loop: '{{ candidates.files }}'
+      loop_control: {label: '{{ item.path | basename }}'}
+    - name: Require enabled stages to match the release
+      ansible.builtin.assert:
+        quiet: true
+        that: (lookup('file', build + '/stages.yaml') | from_yaml_all | list) == (lookup('file', repo + '/gitops/clusters/kind/services.yaml') | from_yaml_all | list)
+        fail_msg: Stage switches differ from the promoted release. Review and publish generated stages before deploying.

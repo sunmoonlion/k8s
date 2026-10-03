@@ -332,6 +332,33 @@
           }
         ]
       }
+    },
+    {
+      "id": "helm",
+      "version": "v4.3.0",
+      "kind": "package",
+      "path": "packages/helm-v4.3.0-linux-amd64.tar.gz",
+      "size_bytes": 20321063,
+      "sha256": "86584a54def73570558f66f5111cc53dfed56689637ae32c1201205d494f54fb",
+      "url": "https://get.helm.sh/helm-v4.3.0-linux-amd64.tar.gz",
+      "identity_source": "https://get.helm.sh/helm-v4.3.0-linux-amd64.tar.gz.sha256sum",
+      "archive_members": [
+        {
+          "path": "linux-amd64/helm",
+          "size_bytes": 65908896,
+          "sha256": "57ce7fc4ea77b28ee6fa91ae071abcade74d3f524e80c9decff5877a5ac8eda4"
+        }
+      ]
+    },
+    {
+      "id": "traefik-chart",
+      "version": "41.6.0",
+      "kind": "chart",
+      "path": "charts/traefik-41.6.0.tgz",
+      "size_bytes": 266558,
+      "sha256": "cd7254ea853da73bdb88edc896f079b88d43ffa0bfe699fdbf21081361eac365",
+      "url": "https://traefik.github.io/charts/traefik/traefik-41.6.0.tgz",
+      "identity_source": "https://traefik.github.io/charts/index.yaml"
     }
   ]
 }

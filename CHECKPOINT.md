@@ -1,6 +1,25 @@
 # 新部署体系交接
 
-## 当前状态：SOPS 与平台基础声明已实际部署（2026-10-03）
+## 当前状态：首批数据、入口和身份服务完成（2026-10-03）
+
+本节优先于下方历史现场。继续在 `platform-kind-v1` 工作树，只改 k8s、无 push；本单元基线 `7f535709c17a6c9a2b74c189e263f8c1f40c4ca8`，当前实现提交见 HEAD。操作见 [首批平台服务](docs/platform-kind-v1/services.md)。
+
+- 所有者仅为本批 Traefik、存储、PostgreSQL、Redis、RabbitMQ、Casdoor 批准40GiB门槛、最多新增5GiB。默认50GiB始终未改；本批结束撤销临时参数，后续单元不能沿用。
+- 实际源：`sha256:bbf06e3c5cf779e394c7eece654c3361e8b4632356b029900ad785fd06e8a438`，声明提交 `7468cd01d939e10dc612f81a0e5cbb780b3dc2d7`。根与四个子Kustomization、Traefik HelmRelease均Ready。
+- Traefik3.7.13/chart41.6.0，PostgreSQL18.6-trixie，Redis8.10.2-trixie，RabbitMQ4.3.6-management，Casdoor4.12.0：五个服务Pod Ready、零重启，两初始化Job Complete；实际imageID均匹配锁定的Harbor manifest。Helm4.3.0的包、成员摘要已锁定；chart从官方索引校验SHA256，发布Harbor后完整拉回字节一致。
+- 四个静态PV/PVC Bound、Retain、显式节点亲和性。新组件数据根分别在 worker/static/{postgresql,casdoor}、worker2/static/{redis,rabbitmq}，当前数据约65.65MiB。PVC声明15GiB不是即时物理分配或目录限额。
+- 六项原配置字面字段一次性导入新的root0600输入；新Casdoor管理员独立生成。运行入口不调用旧配置/脚本。输入和TLS在 `/etc/sunmoon/services/sunmoon-kind`，独立数据盘副本在 `/mnt/sunmoon-data/backups/services/sunmoon-kind`；SOPS密文入Git。备份丢失且环境已有声明时拒绝重新随机生成口令。机器外副本和数据一致性备份仍待后续落实。
+- `services-bootstrap`完整重复执行九段全部failed0；材料、工具、私有输入、声明生成/比较、Flux均无持久资源变更，仅chart临时工作目录及验收回执写入。最新强化的 `services-check` 为ok28 changed1 failed0：PostgreSQL事务读写、Redis临时键读写删除、RabbitMQ管理API真实发布/取回、Casdoor经新TLS入口的管理员登录和会话核验全部通过。Rabbit检查不是业务客户端AMQP全链路验收。
+- 新应用入口仅验宿主回环29443，TLS域名仍casdoor.sunmoonai.com:30443，curl connect-to保持SNI/Host。正式30443应用分流仍指原worker；原kind控制面停止、原worker运行，新三节点Ready，新Harbor/入口active。没有停旧应用或切换入口。
+- 实际修正：Traefik新chart日志键为log/accessLog，versionOverride在根；Casdoor导出模式不导入init_data，改隔离初始化服务成功后持久标记，正式服务不重复导入；RabbitMQ4.3默认禁止非持久非独占队列，验收用durable classic+TTL，未开废弃兼容开关。候选路径规范化、YAML跨阶段解析、字典values字段检查的失败同样保留记录。
+- 03:34:48 UTC容量：C空闲114,329,325,568字节，数据盘未来增长66,936,897,536字节，再扣16MiB验收预算余47,375,650,816字节（44.12GiB），仍未达常规50GiB。识别的归档+仓库+节点压缩/展开内容、Helm工具和初始数据估算2,807,963,623字节（2.62GiB），未扣共享层/复用硬链接；不是整机df严格差分，文件系统元数据/无关写入不在此估计内。容量门禁另外限制相对本批开始的增长余额，未触及5GiB上限。
+- 证据：`/data/kind-clusters/sunmoon-kind/bootstrap/evidence/services/latest.json`；本批成功/失败日志与文件摘要归档在相邻 `services-20261003/`。仓库不存运行日志、私有输入、口令或密钥。临时材料清理后正式离线包保留。
+
+规则核对：C-D2/D3为Casdoor独立库/角色/Secret；C-R1/R2以提交和固定OCI/image摘要发布；C-T5/T6五仓并列、本单元只改k8s。第三方Casdoor仍有官方内置schema初始化，本期没有声称业务应用C-D8迁移链已完成。
+
+**下一步按原顺序**：核对模板应用依赖、补齐剩余必需平台服务与应用构建/声明，再业务链路；随后全平台一键/统一启停、开机恢复和Harbor重启/重建持久化验收、长期空间管理与最终清理。当前对象存储和业务应用尚未部署，AMQP客户端、OAuth应用注册、etcd静态加密、数据库一致性备份、云端实机均未由本单元覆盖。新批次先准备依赖和容量计划，不继承已撤销的40GiB例外。
+
+## 前序状态：SOPS 与平台基础声明已实际部署（2026-10-03）
 
 本节优先于下方历史进度。仍在 `platform-kind-v1` 新工作树开发，只改k8s，无push。Flux实现已本地提交 `54a7b1dd`；基础声明提交 `4a993aabed47cd4565887f1b18321da4ab21b9f2`，实现与验收提交见本分支日志。日常入口见 [SOPS与基础平台](docs/platform-kind-v1/secrets-foundations.md)。
 

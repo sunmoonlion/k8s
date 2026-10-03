@@ -1,0 +1,49 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: sunmoon-static
+provisioner: kubernetes.io/no-provisioner
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+{% for volume in services_volumes if lookup('vars', 'services_' + volume.name + '_enabled') %}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ cluster_name }}-{{ volume.name }}
+  annotations:
+    sunmoonai.com/storage-owner: {{ cluster_name }}
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  capacity: {storage: {{ volume.size }}}
+  accessModes: [ReadWriteOnce]
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: sunmoon-static
+  local:
+    path: /data/kind-local-storage/{{ volume.name }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [{{ cluster_name }}-{{ volume.node }}]
+  claimRef:
+    namespace: {{ services_namespace }}
+    name: {{ volume.name }}-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ volume.name }}-data
+  namespace: {{ services_namespace }}
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: sunmoon-static
+  volumeName: {{ cluster_name }}-{{ volume.name }}
+  resources:
+    requests: {storage: {{ volume.size }}}
+{% endfor %}

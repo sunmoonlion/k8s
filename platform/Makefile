@@ -11,7 +11,7 @@ SITE ?= environments/kind/site.yaml
 
 .PHONY: help tools images preflight check-images
 help:
-	@printf '%s\n' 'tools        Install locked Ansible into platform/.venv' 'images       Show selected upstream image identities' 'check-images Fail if an upstream image is unresolved' 'install-binaries Install verified tools into .tools/bin only' 'preflight    Read-only host mount checks (Ansible)' 'plan-artifacts Preview selected locked files without downloads' 'fetch-artifacts Download and verify selected files after capacity check' 'check-artifacts Verify selected files fully offline' 'plan-node-build Preview verified official KIND build inputs' 'build-node    Build and inspect a new node image; no cluster creation' 'check-node    Inspect existing node image without rebuilding' 'plan-bootstrap-images Preview node and Calico archive preparation' 'fetch-bootstrap-images Pull/export and verify immutable image archives' 'check-bootstrap-images Verify complete archives offline' 'prepare-harbor-materials Extract official installer and load verified images only' 'registry-plan Preview standalone registry paths and backend' 'registry-deploy Configure and start the new Harbor without switching ingress' 'registry-start / registry-stop / registry-status Control only the new Harbor' 'prepare-host-materials / check-host-materials Prepare or verify HAProxy and skopeo archives' 'entry-plan / entry-deploy / entry-start / entry-stop / entry-status Control TLS entry' 'registry-accounts Provision private project and bounded publisher/puller identities' 'registry-publish-check Publish and fully pull back the locked HAProxy image after cutover' 'scanner-db-plan / scanner-db-install / scanner-db-verify Manage locked offline databases' 'registry-scan-check Scan the published image through Harbor and save the report' 'registry-recovery-plan / registry-recovery-check Rehearse an explicit cold backup in isolation' 'cluster-plan / cluster-deploy / cluster-status Native isolated KIND bootstrap' 'cluster-pull-check Verify private pulls and DNS on all three nodes' 'install-flux / flux-plan / flux-materials / flux-verify-materials / flux-publish Manage locked Flux materials' 'flux-bootstrap Verify materials, publish, install and reconcile the promoted source' 'flux-deploy / flux-status Install and check controllers' 'flux-release / flux-source-apply / flux-source-status Publish and reconcile committed declarations' 'install-secrets-tools / secrets-prepare / secrets-apply / secrets-status Manage independent SOPS identity' 'foundations-bootstrap / foundations-check Deploy and verify SOPS and platform base declarations' 'Application deployment targets are not implemented yet.'
+	@printf '%s\n' 'tools        Install locked Ansible into platform/.venv' 'images       Show selected upstream image identities' 'check-images Fail if an upstream image is unresolved' 'install-binaries Install verified tools into .tools/bin only' 'preflight    Read-only host mount checks (Ansible)' 'plan-artifacts Preview selected locked files without downloads' 'fetch-artifacts Download and verify selected files after capacity check' 'check-artifacts Verify selected files fully offline' 'plan-node-build Preview verified official KIND build inputs' 'build-node    Build and inspect a new node image; no cluster creation' 'check-node    Inspect existing node image without rebuilding' 'plan-bootstrap-images Preview node and Calico archive preparation' 'fetch-bootstrap-images Pull/export and verify immutable image archives' 'check-bootstrap-images Verify complete archives offline' 'prepare-harbor-materials Extract official installer and load verified images only' 'registry-plan Preview standalone registry paths and backend' 'registry-deploy Configure and start the new Harbor without switching ingress' 'registry-start / registry-stop / registry-status Control only the new Harbor' 'prepare-host-materials / check-host-materials Prepare or verify HAProxy and skopeo archives' 'entry-plan / entry-deploy / entry-start / entry-stop / entry-status Control TLS entry' 'registry-accounts Provision private project and bounded publisher/puller identities' 'registry-publish-check Publish and fully pull back the locked HAProxy image after cutover' 'scanner-db-plan / scanner-db-install / scanner-db-verify Manage locked offline databases' 'registry-scan-check Scan the published image through Harbor and save the report' 'registry-recovery-plan / registry-recovery-check Rehearse an explicit cold backup in isolation' 'cluster-plan / cluster-deploy / cluster-status Native isolated KIND bootstrap' 'cluster-pull-check Verify private pulls and DNS on all three nodes' 'install-flux / flux-plan / flux-materials / flux-verify-materials / flux-publish Manage locked Flux materials' 'flux-bootstrap Verify materials, publish, install and reconcile the promoted source' 'flux-deploy / flux-status Install and check controllers' 'flux-release / flux-source-apply / flux-source-status Publish and reconcile committed declarations' 'install-secrets-tools / secrets-prepare / secrets-apply / secrets-status Manage independent SOPS identity' 'foundations-bootstrap / foundations-check Deploy and verify SOPS and platform base declarations' 'services-plan / services-materials / services-publish Prepare pinned first-batch images' 'services-render / services-validate-release Review settings against the promoted GitOps release' 'services-bootstrap / services-check Deploy and verify the first service batch' 'Business application deployment targets are not implemented yet.'
 
 tools:
 	$(UV) venv --python '$(HOST_PYTHON)' --allow-existing .venv
@@ -163,3 +163,44 @@ foundations-check:
 	$(MAKE) secrets-status
 	$(MAKE) flux-source-status
 	$(ANSIBLE) -i host/inventory.yaml flux/foundations-check.yaml --extra-vars '@$(SITE)'
+
+.PHONY: services-plan services-materials services-verify-materials services-publish
+services-plan:
+	$(ANSIBLE) -i host/inventory.yaml services/materials.yaml --extra-vars '@$(SITE)' --extra-vars service_material_action=plan
+services-materials:
+	$(ANSIBLE) -i host/inventory.yaml services/materials.yaml --extra-vars '@$(SITE)' --extra-vars service_material_action=prepare
+services-verify-materials:
+	$(ANSIBLE) -i host/inventory.yaml services/materials.yaml --extra-vars '@$(SITE)' --extra-vars service_material_action=verify
+services-publish:
+	$(ANSIBLE) -i host/inventory.yaml services/materials.yaml --extra-vars '@$(SITE)' --extra-vars service_material_action=publish
+
+.PHONY: services-tools services-chart services-render services-bootstrap
+services-tools:
+	$(ANSIBLE) -i host/inventory.yaml services/tools.yaml --extra-vars '@$(SITE)'
+services-chart:
+	$(ANSIBLE) -i host/inventory.yaml services/chart.yaml --extra-vars '@$(SITE)'
+services-render:
+	$(ANSIBLE) -i host/inventory.yaml services/render.yaml --extra-vars '@$(SITE)'
+# Deploy the promoted, committed release. Rendering a changed release is a separate review step.
+services-bootstrap:
+	$(MAKE) services-credentials
+	$(MAKE) services-verify-materials
+	$(MAKE) services-publish
+	$(MAKE) services-tools
+	$(MAKE) services-chart
+	$(MAKE) services-render
+	$(MAKE) services-validate-release
+	$(MAKE) flux-source-apply
+	$(MAKE) services-check
+
+.PHONY: services-credentials
+services-credentials:
+	$(ANSIBLE) -i host/inventory.yaml services/credentials.yaml --extra-vars '@$(SITE)'
+
+.PHONY: services-check
+services-check:
+	$(ANSIBLE) -i host/inventory.yaml services/verify.yaml --extra-vars '@$(SITE)'
+
+.PHONY: services-validate-release
+services-validate-release:
+	$(ANSIBLE) -i host/inventory.yaml services/validate-release.yaml --extra-vars '@$(SITE)'

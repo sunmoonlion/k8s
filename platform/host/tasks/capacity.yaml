@@ -66,3 +66,11 @@
 - name: Report physical capacity budget
   ansible.builtin.debug:
     msg: '{{ capacity_report.stdout | from_json }}'
+
+- name: Enforce the approved batch ceiling as well as the reserve floor
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - (capacity_report.stdout | from_json).remaining_after_growth_and_plan_bytes | int >= capacity_exception.minimum_remaining_bytes | int
+    fail_msg: This operation exceeds the approved batch growth allowance; prepare code only until capacity is available.
+  when: capacity_exception is defined and capacity_exception.minimum_remaining_bytes is defined

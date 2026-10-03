@@ -1,6 +1,6 @@
-# 新部署体系：物料、宿主与独立仓库
+# 新部署体系：宿主、集群与平台服务
 
-本目录使用原生 Make、Ansible 和声明文件，不调用旧 `sunmoonai/`、`utils/` 或 luna 工作区部署程序。当前提供物料准备、宿主挂载预检、官方 KIND 节点构建、独立 Harbor 新装和启停、TLS 直通入口及受限推拉身份。KIND 创建、平台部署及整套统一启停尚未实现。
+本目录使用原生 Make、Ansible 和声明文件，不调用旧 `sunmoonai/`、`utils/` 或 luna 工作区部署程序。当前提供物料准备、宿主挂载预检、官方 KIND 建群、独立 Harbor、TLS 直通入口、Flux/SOPS 与首批平台服务。业务应用、全平台统一启停及开机恢复尚未完成。
 
 ## 日常入口
 
@@ -139,7 +139,7 @@ Harbor 官方包内 177 个 OCI blob 已流式复算 SHA256，12 个镜像的配
 
 生成时先写私有临时文件，验证后用同一文件系统的硬链接发布，目标已存在则失败。已有归档只复核，不覆盖；文件与回执缺一、字节与 Git 锁不符都会停止。操作中断留下不完整发布时，先核对固定摘要再处理，不能盲删正式归档。更新版本必须显式评审输入与输出锁；入口不会自动修改 Git 中的期望摘要。
 
-归档共 **641,355,776 字节**。当前已核验内容完整；尚未在全新 Docker/KIND 中完成导入、Pod 拉取和重启/重建验收，不能据此宣布整个离线发布完成。
+归档共 **641,355,776 字节**。已用于新 sunmoon-kind 创建并通过节点认证拉取；WSL/KIND 重启及删除重建持久化验收仍未完成。
 
 ## Harbor 官方物料准备
 
@@ -147,7 +147,7 @@ Harbor 官方包内 177 个 OCI blob 已流式复算 SHA256，12 个镜像的配
 
 Harbor 安装包解包约 735 MB，内部未压缩镜像内容约 2.03 GB；本次准备预留 6 GiB，覆盖解包、内容存储、展开副本与余量。这是容量估计，不是配额。Windows 增长预算以及工作目录、Docker 目录的文件系统空间均检查；已完成的重复操作不重复要求新增 6 GiB。
 
-**不要直接执行该目录的 install.sh**：官方脚本含 `compose down -v`。新入口直接调用官方 prepare 镜像生成配置，避免包装脚本搬动全局历史文件，再用原生 Compose/systemd 管理服务。新 Harbor 已独立启动，旧入口未切换。配置路径、日志授权、日常操作和验收边界见 [独立 Harbor](registry/README.md)。
+**不要直接执行该目录的 install.sh**：官方脚本含 `compose down -v`。新入口直接调用官方 prepare 镜像生成配置，避免包装脚本搬动全局历史文件，再用原生 Compose/systemd 管理服务。新 Harbor 已独立运行且正式仓库入口已切换；应用域名仍转原集群。配置路径、日志授权、日常操作和验收边界见 [独立 Harbor](registry/README.md)。
 
 ## 宿主入口与镜像发布身份
 
@@ -157,13 +157,13 @@ Harbor 安装包解包约 735 MB，内部未压缩镜像内容约 2.03 GB；本�
 
 官方 skopeo stable 镜像解析并固定为 `quay.io/skopeo/stable@sha256:9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99`，实际版本 **1.22.3**。源码最新 release 为 1.24.1，但该版本同名容器 tag 不存在；这是一项明确的工具版本例外，不把 stable 镜像误报为源码最新版。后续可随官方镜像更新审查摘要，部署不跟踪浮动 latest。[官方安装方式](https://github.com/podman-container-tools/skopeo/blob/main/install.md)、[源码发布](https://github.com/podman-container-tools/skopeo/releases/tag/v1.24.1)。
 
-项目和推拉认证操作见 [Harbor 文档](registry/README.md)。正式镜像发布验收代码已实现，但在切换前仅做语法检查，不向旧仓库写入新镜像。
+项目和推拉认证操作见 [Harbor 文档](registry/README.md)。新仓库真实推拉和拒绝只读身份推送已通过，首批服务镜像现由相同 skopeo 发布实现处理。
 
 
-宿主 Docker 维护物料也在同一 `files.lock.json` 和 `packages/` 中：三个 29.8.1 升级包与三个 29.4.3 回退包，共 98,306,132 字节，已经下载核验；最终已成功安装29.8.1并验收（早先误判回退的历史保留在维护文档）；后者是临时回退用途，不是新生产版本。物料总计由 10 项增为 16 项。具体影响与批准范围见 [Docker 维护方案](../docs/platform-kind-v1/docker-maintenance.md)。
+宿主 Docker 维护物料也在同一 `files.lock.json` 和 `packages/` 中：三个 29.8.1 升级包与三个 29.4.3 回退包，共 98,306,132 字节，已经下载核验；最终已成功安装29.8.1并验收（早先误判回退的历史保留在维护文档）；后者是临时回退用途，不是新生产版本。当前物料范围以锁文件为准。具体影响与批准范围见 [Docker 维护方案](../docs/platform-kind-v1/docker-maintenance.md)。
 
 
-最新维护限制（2026-10-01）：Docker29.8.1升级与正式入口验收通过，Harbor可用、main/136节点Ready；旧应用入口经后续授权已恢复；两个遗留Harbor数据库保持0副本、PVC/PV保留。再次重启Docker须先临时恢复旧API使worker重载Traefik，仍有过渡依赖。恢复方案及授权边界见根目录CHECKPOINT和Docker维护操作卡。
+当前维护限制（2026-10-03）：Docker29.8.1和新 Harbor 可用、新 sunmoon-kind Ready，main/136已退役；旧应用入口经后续授权已恢复；两个遗留Harbor数据库保持0副本、PVC/PV保留。再次重启Docker须先临时恢复旧API使worker重载Traefik，仍有过渡依赖。恢复方案及授权边界见根目录CHECKPOINT和Docker维护操作卡。
 
 ## 扫描与恢复
 
@@ -176,3 +176,7 @@ Harbor 安装包解包约 735 MB，内部未压缩镜像内容约 2.03 GB；本�
 ## SOPS 与基础声明
 
 操作及恢复边界见 [SOPS/基础平台](../docs/platform-kind-v1/secrets-foundations.md)。`make foundations-bootstrap` 编排本层部署，`make foundations-check` 验证实际解密及拉取。整套应用一键仍待后续接入。
+
+## 首批平台服务
+
+Traefik、Retain 存储、PostgreSQL、Redis、RabbitMQ、Casdoor 已通过 Flux 部署。`make services-bootstrap` 编排本批重复部署，`make services-check` 做实际读写/消息/TLS登录验收。普通配置、私有输入、密码恢复及晋级方式见 [首批平台服务](../docs/platform-kind-v1/services.md)。本批不切换旧应用入口，不代表完整应用和生命周期交付已完成。

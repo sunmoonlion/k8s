@@ -1,0 +1,141 @@
+---
+- name: Verify the promoted service release and real database operations
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars_files: [../environments/kind/services.yaml]
+  vars:
+    capacity_operation: services-verify
+    images: '{{ (lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json).images }}'
+    enabled_names: '{{ (["postgresql"] if services_postgresql_enabled else []) + (["redis"] if services_redis_enabled else []) + (["rabbitmq"] if services_rabbitmq_enabled else []) + (["casdoor"] if services_casdoor_enabled else []) + (["traefik"] if services_ingress_enabled else []) }}'
+    stages_to_check: '{{ ["platform-services"] + (["casdoor-db","casdoor-init","casdoor"] if services_casdoor_enabled else []) }}'
+
+    kube: ['{{ playbook_dir }}/../.tools/bin/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+  tasks:
+    - name: Verify ownership before workload operations
+      ansible.builtin.slurp: {src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'}
+      register: identity
+    - name: Require exact owned API UID
+      ansible.builtin.command:
+        argv: '{{ kube + ["get", "ns", "kube-system", "-o", "jsonpath={.metadata.uid}"] }}'
+      register: uid
+      changed_when: false
+      failed_when: uid.rc != 0 or uid.stdout != (identity.content | b64decode | from_json).kube_system_uid
+    - name: Recheck approved floor and small verification allowance
+      ansible.builtin.include_tasks:
+        file: ../host/tasks/capacity.yaml
+        apply: {become: false}
+      vars: {capacity_planned_bytes: 16777216}
+    - name: Read observed reconciliation stages
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n", "flux-system", "get", "kustomization", item, "-o", "json"] }}'
+      loop: '{{ stages_to_check }}'
+      register: stages
+      changed_when: false
+    - name: Require current stage generations Ready
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - state.status.observedGeneration == state.metadata.generation
+          - state.status.conditions | selectattr('type','equalto','Ready') | selectattr('status','equalto','True') | list | length == 1
+      vars: {state: '{{ item.stdout | from_json }}'}
+      loop: '{{ stages.results }}'
+      loop_control: {label: '{{ item.item }}'}
+    - name: Inspect actual pod image identities
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n", item, "get", "pods", "-o", "json"] }}'
+      loop: ['{{ services_namespace }}', '{{ ingress_namespace }}']
+      register: service_pods
+      changed_when: false
+    - name: Collect actual runtime identities independently of pod specifications
+      ansible.builtin.set_fact:
+        observed_image_ids: '{{ service_pods.results | map(attribute="stdout") | map("from_json") | map(attribute="items") | flatten | map(attribute="status.containerStatuses", default=[]) | flatten | map(attribute="imageID", default="") | unique | list }}'
+    - name: Require all enabled locked manifests to be present in runtime image IDs
+      ansible.builtin.assert:
+        quiet: true
+        that: (registry_address + '/platform/' + item.id + '@' + item.manifest_digest) in observed_image_ids
+      loop: '{{ images | selectattr("id", "in", enabled_names) | list }}'
+      loop_control: {label: '{{ item.id }}'}
+    - name: Require enabled retained volumes bound
+      ansible.builtin.command:
+        argv: '{{ kube + ["get", "pv", cluster_name + "-" + item.name, "-o", "json"] }}'
+      loop: '{{ services_volumes | selectattr("name", "in", enabled_names) | list }}'
+      register: volumes
+      changed_when: false
+    - name: Verify durable mapping and reclaim policy
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - volume.status.phase == 'Bound'
+          - volume.spec.persistentVolumeReclaimPolicy == 'Retain'
+          - volume.spec.local.path == '/data/kind-local-storage/' + item.item.name
+          - volume.spec.claimRef.namespace == services_namespace
+          - volume.spec.claimRef.name == item.item.name + '-data'
+          - volume.spec.nodeAffinity.required.nodeSelectorTerms[0].matchExpressions[0]['values'] == [cluster_name + '-' + item.item.node]
+      vars: {volume: '{{ item.stdout | from_json }}'}
+      loop: '{{ volumes.results }}'
+      loop_control: {label: '{{ item.item.name }}'}
+    - name: Execute transactional PostgreSQL read and write
+      when: services_postgresql_enabled | bool
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n", services_namespace, "exec", "postgresql-0", "--", "sh", "-ec", pg_acceptance] }}'
+      vars:
+        pg_acceptance: |
+          export PGPASSWORD="$(cat /run/auth/password)"
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d postgres --set=ON_ERROR_STOP=1 <<'SQL'
+          BEGIN;
+          CREATE TEMP TABLE sunmoon_acceptance(v text);
+          INSERT INTO sunmoon_acceptance VALUES ('verified');
+          SELECT v FROM sunmoon_acceptance;
+          ROLLBACK;
+          SQL
+      changed_when: false
+      register: pg_check
+      failed_when: pg_check.rc != 0 or 'verified' not in pg_check.stdout
+      no_log: true
+    - name: Verify Redis write and read with a bounded temporary key
+      when: services_redis_enabled | bool
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n", services_namespace, "exec", "redis-0", "--", "sh", "-ec", ''export REDISCLI_AUTH="$(cat /run/auth/password)"; key="sunmoon:acceptance:$(date +%s):$$"; redis-cli SET "$key" verified EX 60 >/dev/null; test "$(redis-cli GET "$key")" = verified; redis-cli DEL "$key" >/dev/null; echo verified''] }}'
+      register: redis_check
+      changed_when: false
+      failed_when: redis_check.rc != 0 or redis_check.stdout != 'verified'
+      no_log: true
+    - name: Verify RabbitMQ running state and alarms
+      when: services_rabbitmq_enabled | bool
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n", services_namespace, "exec", "rabbitmq-0", "-c", "rabbitmq", "--", "rabbitmq-diagnostics", "-q", item] }}'
+      loop: [check_running, check_local_alarms]
+      changed_when: false
+    - name: Read operator inputs without printing values
+      ansible.builtin.slurp: {src: '{{ services_config_dir }}/credentials.yaml'}
+      register: private_input
+      no_log: true
+    - name: Verify real message delivery and authenticated TLS identity flow
+      ansible.builtin.command:
+        argv: '{{ ["python3", playbook_dir + "/verify-live.py", "--kubectl", playbook_dir + "/../.tools/bin/kubectl", "--kubeconfig", cluster_kubeconfig, "--ca", registry_config_dir + "/clients/ca.crt"] + ([] if services_rabbitmq_enabled else ["--skip-rabbitmq"]) + ([] if services_casdoor_enabled else ["--skip-casdoor"]) }}'
+        stdin: '{{ private_input.content | b64decode | from_yaml | to_json }}'
+      no_log: true
+      changed_when: false
+      register: acceptance
+      failed_when: false
+    - name: Require live protocol checks to pass
+      ansible.builtin.assert:
+        quiet: true
+        that: acceptance.rc == 0
+        fail_msg: '{{ acceptance.stdout }}'
+    - name: Report public acceptance results only
+      ansible.builtin.debug: {msg: '{{ acceptance.stdout | from_json }}'}
+    - name: Keep public verification receipt outside the repository
+      ansible.builtin.file:
+        path: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/evidence/services'
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+    - name: Record the source, ownership, checks and physical capacity
+      ansible.builtin.copy:
+        dest: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/evidence/services/latest.json'
+        mode: '0600'
+        content: |
+          {{ {'checked_at_utc':lookup('pipe','date -u +%Y-%m-%dT%H:%M:%SZ'), 'cluster_uid':uid.stdout, 'source':lookup('file',playbook_dir + '/../environments/kind/flux-source.yaml') | from_yaml, 'checks':(acceptance.stdout | from_json) | combine({'postgresql_transaction':services_postgresql_enabled,'redis_write_read':services_redis_enabled,'retained_volumes_bound':true}), 'capacity':capacity_report.stdout | from_json, 'scope':'First service batch; no WSL/KIND restart or rebuild claim'} | to_nice_json }}

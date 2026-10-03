@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata: {name: casdoor-database-v1, namespace: {{ services_namespace }}}
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels: {sunmoonai.com/postgresql-client: 'true'}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 999, runAsGroup: 999, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: provision
+          image: {{ registry_address }}/platform/postgresql@{{ image_map.postgresql.manifest_digest }}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
+          env:
+            - {name: PGHOST, value: postgresql}
+            - {name: PGUSER, value: postgres}
+            - {name: PGDATABASE, value: postgres}
+            - {name: PGPASSWORD, valueFrom: {secretKeyRef: {name: postgresql-auth, key: password}}}
+            - {name: APP_PASSWORD, valueFrom: {secretKeyRef: {name: casdoor-database-auth, key: password}}}
+          command: [/bin/sh, -ec]
+          args:
+            - |
+              psql --no-psqlrc --set=ON_ERROR_STOP=1 <<'SQL'
+              \getenv app_password APP_PASSWORD
+              SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', '{{ casdoor_database_user }}', :'app_password') WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '{{ casdoor_database_user }}') \gexec
+              SELECT format('CREATE DATABASE %I OWNER %I', '{{ casdoor_database }}', '{{ casdoor_database_user }}') WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '{{ casdoor_database }}') \gexec
+              SQL
+              PGPASSWORD="$APP_PASSWORD" psql --no-psqlrc -U {{ casdoor_database_user }} -d {{ casdoor_database }} --set=ON_ERROR_STOP=1 -c 'SELECT 1' >/dev/null
+              echo 'Independent Casdoor database and login verified'

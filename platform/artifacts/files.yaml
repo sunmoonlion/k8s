@@ -36,9 +36,9 @@
         that:
           - item.sha256 is match('^[a-f0-9]{64}$')
           - item.url is match('^https://')
-          - item.path is match('^(bin|packages|manifests|databases)/[a-zA-Z0-9_.-]+$')
+          - item.path is match('^(bin|packages|charts|manifests|databases)/[a-zA-Z0-9_.-]+$')
           - item.size_bytes | int > 0
-          - item.kind in ['binary', 'package', 'manifest', 'database']
+          - item.kind in ['binary', 'package', 'chart', 'manifest', 'database']
       loop: '{{ selected }}'
       loop_control:
         label: '{{ item.id }}'
