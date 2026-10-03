@@ -1,6 +1,6 @@
 # 模板 Redis 独立身份维护
 
-状态：首次声明滚动替换与真实账号隔离检查通过；补充重启前发现ACL文件权限不符，已停止，准备修正主进程umask；尚未发布修正或执行再次重启。2026-10-03，平台分支platform-kind-v1。
+状态：2026-10-03已完成。持久账号经过实际滚动重启、ACL摘要和权限、真实认证及隔离验收；统一部署入口重复通过。以下保留实施顺序与失败修正记录，以末节结果为准。
 
 ## 范围与依据
 
@@ -69,3 +69,13 @@ redis.yaml和其独立备份是私有输入，root0600。Git只保存SOPS密文�
 先保存ACL私有副本及摘要、原Pod/PVC和当前源84bcfc316cb46bcfabcf9c29254959643a57263e57b98209f48b993faf23c566；晋级后先确认新Pod UID、原PVC、原ACL摘要与两个账号认证，证明账号从原持久文件恢复，再执行一次ACL SAVE验证同样内容仍0600。检查主进程Umask=0077、真实键隔离/管理拒绝及application-check；不再额外删除Pod。此前tpl-redis-v2不重新执行。
 
 若启动异常，在恢复预算内将源回退到本次84bc…固定源，保留ACL/PVC和凭据，不重新初始化；该源仍有0644问题，回退只能称服务恢复，不能称修复通过。失败不得延长预算或宣称本单元完成。
+
+## 最终结果（2026-10-03）
+
+所有者确认修正范围后，源码753b7ff4、晋级10b08eac，发布摘要98a2643276fc6ec8ed319e535e7aec36ef7b3e4b89e3210219a30252011ea816；8个Flux阶段均Ready且同一摘要。通过声明自动替换Redis一次，没有额外手工删除Pod。
+
+重启前后ACL摘要相同，默认与tpl_runtime账号真实认证通过；实际键写读/跨前缀拒绝/管理命令拒绝通过。随后ACL SAVE成功、文件仍0600且摘要不变，主进程Umask0077。原PVC/PV保留，其余27个Pod的UID和重启次数未变。窗口起点11:55:47Z，到观察Ready17.04秒（非精确业务停机时长），主要验收11:56:05Z完成。
+
+原生application-check ok19 changed0 failed0；application-bootstrap重复render/validate/Flux apply/check四阶段全部changed0。证据见原目录restart-acceptance.json、restart-final-state.json、umask-*.log。私有ACL备份root0600，禁止贴其内容；前次失败证据保留。
+
+所有者随后将当前开发阶段维护窗口统一2小时、容量底线改10GiB；统一入口已实际按10GiB复测通过。以上历史5/10分钟和50GiB描述只代表当时约定，后续以AGENTS.md及host/config.yaml最新配置为准。本单元完成不等于模板应用或全项目部署完成。

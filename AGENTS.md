@@ -48,3 +48,9 @@
 部署声明保留“平台 → 应用 → 组件”的分类：`gitops/components/app-platform/auth-app/casdoor/`、`gitops/components/app-platform/tpl-app/tpl-backend/`、`tpl-web-frontend/`、`tpl-admin-frontend/`。应用之下必须保留前后端组件层，database/migration/API/Worker/Scheduler归后端组件。后续实例沿用 `info-app/`、`knowledge-app/`、`investment-app/`；应用自己的配置、数据库初始化、迁移与运行声明同处，不新增平行的 GitOps 应用分类。目录归属不等于运行命名空间。
 
 所有应用（Casdoor、tpl/info/knowledge/investment）统一使用环境 `app_namespace`，当前为 `app-platform-dev`；应用目录层级不派生新命名空间。平台基础对象由foundations唯一管理，应用引用共享网络策略与拉取凭据，避免重复声明同一资源。
+
+## 当前开发阶段的维护窗口
+
+2026-10-03所有者明确：项目尚未对外提供服务，后续维护窗口统一为2小时。对已明确批准范围的维护连续实施，不因旧文档的5/10/20分钟窗口反复请求延时；历史记录中的实际时间不改写。容量底线、数据保护、操作范围和故障回退要求仍有效；失败及时处理，不把2小时当作命令等待时长。进入实际服务阶段后重新确认停服约束。
+
+同日所有者将当前开发阶段容量底线统一改为10 GiB，取代此前50 GiB及逐批40 GiB例外。真源为infrastructure/host/config.yaml；仍按C盘实测空闲扣除230 GiB数据盘未来增长和本次预算计算，不关闭容量检查，不因此授权删除数据。明确范围内无需反复请求容量例外。

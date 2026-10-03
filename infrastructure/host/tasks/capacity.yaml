@@ -5,7 +5,7 @@
     quiet: true
     that:
       - capacity_planned_bytes | int >= 0
-      - windows_minimum_free_gib | int >= 50
+      - windows_minimum_free_gib | int >= 10
       - data_vhd_maximum_gib | int > 0
 
 - name: Validate an explicitly approved temporary capacity exception
@@ -13,7 +13,7 @@
     quiet: true
     that:
       - capacity_exception.id | length > 0
-      - capacity_exception.minimum_free_gib | int >= 40
+      - capacity_exception.minimum_free_gib | int >= 10
       - capacity_exception.minimum_free_gib | int < windows_minimum_free_gib | int
       - capacity_exception.expires_epoch | int > lookup('ansible.builtin.pipe', 'date +%s') | int
       - capacity_exception.expires_epoch | int <= (lookup('ansible.builtin.pipe', 'date +%s') | int) + 86400

@@ -200,3 +200,9 @@ WSL 挂载成功前禁止启动 Harbor。已通过后端健康与认证；容器
 保留平台、应用、组件三级职责：认证应用是 `gitops/components/app-platform/auth-app/casdoor/`，模板应用是 `gitops/components/app-platform/tpl-app/`。实例应用后续按相同层级归入。应用配置和初始化/迁移/运行模板随应用维护；共用Make/Ansible构建编排仍在 `infrastructure/applications/`。此次移动不改变Casdoor资源名、运行namespace、卷或密文内容。
 
 应用目录之下继续保留前后端组件层：`tpl-app/tpl-backend/`、`tpl-app/tpl-web-frontend/`、`tpl-app/tpl-admin-frontend/`。数据库初始化、迁移、API/Worker/Scheduler归后端组件；共享开关留应用层，命名空间统一引用环境app_namespace（app-platform-dev），组件字段和镜像锁随组件。后续info/knowledge/investment按同一结构落地，不把前后端合在应用根目录。
+
+## 开发阶段维护约定（2026-10-03所有者更新）
+
+当前尚未对外提供服务，后续维护窗口统一为2小时。批准范围内的部署、修复和验收连续完成，不再沿用早期几分钟窗口反复请求延时；历史维护记录保留原始时间。单条命令继续有合理超时，失败及时诊断或按计划回退，不必等满两小时。窗口调整不改变容量门槛、数据保护、删除权限及范围边界；正式提供服务前重新确定停服安排。
+
+同日所有者进一步将开发阶段容量底线设为10 GiB，统一由infrastructure/host/config.yaml控制。仍扣除230 GiB数据盘未来增长和本次操作预算；不足10 GiB才阻止新增容量操作。历史50/40 GiB记录保留为当时事实，不再作为当前门槛；删除权限和正式服务前的容量重新评估不变。

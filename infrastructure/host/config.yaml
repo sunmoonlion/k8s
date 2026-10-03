@@ -16,7 +16,7 @@ windows_powershell: /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.ex
 data_vhd_windows_path: C:\wsl-disks\sunmoon-data.vhdx
 # 数据盘最大容量事实；修改边界见同目录 README 的字段表。
 data_vhd_maximum_gib: 230
-# C盘增长后最低保留量；修改边界见同目录 README 的字段表。
-windows_minimum_free_gib: 50
+# C盘增长后最低保留量；2026-10-03所有者将当前开发阶段调整为10GiB。
+windows_minimum_free_gib: 10
 # Windows容量脚本发布目录；修改边界见同目录 README 的字段表。
 windows_script_directory: /mnt/c/wsl-disks/scripts/platform-kind-v1

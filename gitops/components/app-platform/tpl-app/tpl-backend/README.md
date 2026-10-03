@@ -45,4 +45,4 @@ make -C infrastructure application-check APP=tpl
 
 redis_user为独立登录名（不得default），redis_key_pattern固定tpl:*以匹配模板业务键，redis_identity_revision控制一次性Job修订。私有redis.yaml及备份不输出、不入Git。redis/保存初始化及真实隔离检查；runtime.sops.yaml供后续业务角色读取，provision.sops.yaml只用于数据命名空间的一次性账号初始化。原有平台管理员Secret不复制到应用命名空间。
 
-2026-10-03持久ACL配置已启用，tpl-redis-v2真实账号写读、键隔离、管理命令拒绝和ACL SAVE通过；统一入口重复执行changed=0且当前认证通过。账号创建后的再次重启未执行，因此持久化验收仍待补充维护窗口，见docs/platform-kind-v1/tpl-redis-maintenance.md。RabbitMQ/Casdoor注册和常驻业务仍未完成。
+2026-10-03持久ACL配置已启用，tpl-redis-v2真实账号写读、键隔离、管理命令拒绝和ACL SAVE通过；统一入口重复执行changed=0且当前认证通过。随后实际滚动重启完成：默认与应用身份仍可用，ACL摘要/PVC不变，主进程0077，ACL SAVE后文件仍0600；更新的统一检查及完整bootstrap重复通过。实施及修正记录见docs/platform-kind-v1/tpl-redis-maintenance.md。RabbitMQ/Casdoor注册和常驻业务仍未完成。

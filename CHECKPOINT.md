@@ -1,31 +1,24 @@
-# 当前优先状态：Redis重启前发现ACL权限缺陷，修正候选待发布授权（2026-10-03）
+# 当前优先状态：Redis持久账号重启验收完成（2026-10-03）
 
-工作树/分支platform-kind-v1，仅k8s，无push。实现f6817ba0，修正61b771b2aedd2032bbf6b2b2efdf8cd2e09c79ae、062b9b68；当前源sha256:84bcfc316cb46bcfabcf9c29254959643a57263e57b98209f48b993faf23c566。以下为最新状态，后文数据库单元是历史。
+工作树/分支platform-kind-v1，仅k8s，无push。权限修正753b7ff4af155b9c4657a5af04554130138054fa，晋级10b08eac。当前源sha256:98a2643276fc6ec8ed319e535e7aec36ef7b3e4b89e3210219a30252011ea816，源码753b7ff4；8个Flux阶段当前generation Ready、同一摘要。
 
-## 最新前置检查结果
+## 所有者最新工作约定
 
-所有者随后批准仅重建一次、不发布配置的5+5分钟窗口。执行前实测/data/users.acl为0644，主进程Umask=0022；检查在写restart-window.json和删除Pod前停止。没有再次重启；应用与default认证正常。前置容量检查剩53,900,664,832字节（计230GiB盘增长和1GiB预算），通过50GiB底线。
+当前开发阶段尚未提供服务：维护窗口统一2小时；容量底线统一10GiB，取代此前短窗口和50/40GiB逐批例外。已写AGENTS.md、架构说明、host/config.yaml及共享门禁。容量仍扣除230GiB数据盘未来增长与本次预算；不关闭容量检查，不扩张删除权限。历史读数与窗口时间保留原样。
 
-候选渲染ok103 changed1 failed0；语义比对确认仅Redis主容器启动命令变化，Kustomize及两段shell语法通过。更新的原生application-check实测在新增权限项失败（其余18项通过），证明能拒绝当前0644现场；这是预期负向结果，不是成功验收。日志umask-render.log、umask-negative-check.log在原Redis证据目录。
+## 本单元已完成
 
-已定位：Redis ACL SAVE以0644创建临时文件再rename；原initContainer的077不影响主容器。模板候选改主容器umask077后exec；application-check追加0600/属主与PID1的0077检查。修正未发布，线上仍84bc…；新的检查此时应拒绝当前0644状态。下一步为“确认后以一次声明滚动替换代替手工删除Pod，再验证账号从原ACL恢复及ACL SAVE权限”，不追加第二次重启。操作卡有具体范围和回退源；因原批准明确不发布，需确认范围修正，不能自行晋级。
+- 修正Redis主进程umask为0077，保留exec的PID1信号处理；原initContainer继续只创建缺失ACL并收紧0600。此前仅给initContainer设掩码，ACL SAVE以0644替换文件的缺陷已实际修复。
+- 在所有者确认修正范围后，通过原生flux-release、晋级、services-validate-release及flux-source-apply完成一次滚动替换；没有另行删除Pod。维护始于11:55:47Z，11:56:05Z主要验收通过；从开始到观察到Ready17.04秒，此数不是精确业务不可用时长。
+- Redis Pod UID ef9a9de8…→832c01a5…；PVC UID仍71e29ce7-e5e0-4bf5-92ee-64cffe5eac02、PV sunmoon-kind-redis。ACL全文件摘要在重启前、重启后、再次ACL SAVE后相同；后两次权限0600，主进程0077。两个账号真实认证、tpl:*键写读、跨前缀拒绝、管理命令拒绝通过；FLUSHALL只做ACL DRYRUN，从未实际执行。
+- 其余27个Pod UID及重启次数不变，tpl-redis-v2不重跑，凭据与数据保留。成功Completed Job继续保留为Flux期望对象，不能直接删或机械加TTL。
+- 更新后application-check ok19 changed0 failed0；完整application-bootstrap重复四阶段render ok63、validate ok49、Flux apply ok24、check ok19，全部changed0/failed0。实际门槛10GiB，计未来增长和1GiB预算后余53,898,665,984字节。不是临时绕过。
 
-## 已实施与核对
+## 证据与后续
 
-- 所有者批准的首次10分钟维护始于2026-10-03T11:23:07Z，至11:33:07Z结束；已完成声明滚动替换，Redis从原PVC的/data/users.acl读取账号。原PVC/PV保留，其余26个原有Pod的UID及重启次数未变。
-- tpl-redis-v2实际验证tpl_runtime账号写读、跨tpl:*前缀拒绝、管理命令拒绝和ACL SAVE；FLUSHALL仅ACL DRYRUN，没有执行。原生application-check另验证当前进程的真实账号认证。
-- 原生application-bootstrap APP=tpl完整重复通过：render ok63、validate ok49、Flux apply ok24、check ok18，全部changed=0/failed=0；8个Flux阶段均Ready且同一摘要。
-- 两处验收实现曾失败并已修复：ACL DRYRUN的权限拒绝可以作为普通字符串返回；Ansible原生模板中内嵌转义引号导致用户名带引号，改用YAML块标量。失败记录保留，不能称为首次全通过。
-- 剩余窗口检查在第二次Pod删除前阻止执行，故尚未验证账号在创建后再次重启仍可用。原窗口不自动延长；需新的短维护批准。
-- 已精确删除不再被Flux引用的失败Job tpl-redis-v1及旧ConfigMap tpl-redis-provision-v1。随后只读确认失败Pod已消失，成功v2 Job保留；不得直接删除受Flux管理的成功Job或机械加TTL。
+infrastructure/.build/applications/redis-unit-20261003/：umask-before.json、umask-window.json、umask-release.log、umask-validate.log、umask-apply.log、umask-reconcile.log、restart-acceptance.json、restart-final-state.json、umask-check.log、umask-bootstrap-repeat.log。ACL私有备份在既有数据盘backup目录，root0600，不入Git、不输出。首次窗口两处验收错误、后续0644阻断及负向检查日志保留；未伪装为首次即通过。临时验收脚本已删除，长期检查在原application-check内。
 
-## 下一步与边界
-
-先按docs/platform-kind-v1/tpl-redis-maintenance.md的补充窗口复核容量和现场，再仅重建当前redis-0一次：PVC UID不变、Pod UID变化、ACL全文件摘要和0600权限不变、默认与应用账号真实认证以及键隔离通过。原补充窗口已批准但前置检查未通过；以最新权限修正提案为准。未经修正范围确认不发布、不重启。
-
-仍执行50GiB底线与原1GiB预算；最近检查计未来增长和预算后53,906,837,504字节，执行前必须复核。证据infrastructure/.build/applications/redis-unit-20261003/：window.json、before.json、bootstrap.log、bootstrap-v2.log、check-live-fixed.log、bootstrap-repeat.log、first-window-result.json。原始窗口记录保留；新窗口单独记录。仅有口令备份不等于完整数据恢复演练。
-
-Redis持久化验收完成后才继续RabbitMQ独立身份/vhost、Casdoor注册、API/Worker/Scheduler及Web/Admin。尚无模板常驻业务Pod，应用未完整跑通；统一开机恢复、Harbor跨重启/重建持久化及长期空间管理仍是后续交付项。
+下一步仍按顺序：RabbitMQ应用独立身份/vhost、Casdoor应用注册，再部署API/Worker/Scheduler及Web/Admin，最后业务链。Celery结果Redis键前缀须先核对，不能放开全部键。当前尚无模板常驻业务Pod；完整应用、其他实例、统一开机恢复、Harbor跨重启/重建持久化、长期空间管理和最终清理仍未完成。旧集群与入口未切换。
 
 ---
 
