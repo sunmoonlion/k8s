@@ -49,3 +49,20 @@ spec:
   decryption:
     provider: sops
     secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: tpl-rabbitmq, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/tpl-app/tpl-backend/rabbitmq
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn: [{name: tpl-redis}]
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}

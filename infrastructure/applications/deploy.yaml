@@ -22,7 +22,7 @@
     image_map: '{{ dict(images | map(attribute="id") | zip(images)) }}'
     migration_job: 'tpl-migrate-{{ app_images.backend.digest[7:19] }}-{{ cfg.migration_job_revision }}'
     kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
-    candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml, redis/workload.yaml, redis/provision.sops.yaml, redis/runtime.sops.yaml, redis/kustomization.yaml]
+    candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml, redis/workload.yaml, redis/provision.sops.yaml, redis/runtime.sops.yaml, redis/kustomization.yaml, rabbitmq/workload.yaml, rabbitmq/provision.sops.yaml, rabbitmq/runtime.sops.yaml, rabbitmq/kustomization.yaml]
   tasks:
     - name: Validate the selected deployment and identity boundaries
       ansible.builtin.assert:
@@ -48,6 +48,11 @@
           - app_images.backend.digest is match('^sha256:[a-f0-9]{64}$')
           - app_images.backend.source_revision == source_lock.backend_revision
           - cfg.deploy_budget_bytes | int >= 1073741824
+          - cfg.rabbitmq_user is match('^[a-z][a-z0-9_.-]{1,63}$')
+          - cfg.rabbitmq_user not in ['admin','guest']
+          - cfg.rabbitmq_vhost == 'tpl'
+          - cfg.rabbitmq_queue == 'tpl.default'
+          - cfg.rabbitmq_identity_revision is match('^[a-z0-9-]{1,16}$')
     - name: Require the independent cluster ownership receipt
       ansible.builtin.slurp: {src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'}
       register: identity
@@ -67,9 +72,9 @@
           migrator_user: '{{ cfg.database_migrator_user }}'
           backend: '{{ app_images.backend.digest }}'
           schema: '{{ cfg.expected_schema_revision }}'
-          stages: [tpl-database, tpl-migration, tpl-redis]
+          stages: [tpl-database, tpl-migration, tpl-redis, tpl-rabbitmq]
           image_and_data_budget: '{{ cfg.deploy_budget_bytes }}'
-          excluded: 'RabbitMQ/Casdoor registration and application runtime remain next; Redis startup changes require the approved maintenance window.'
+          excluded: 'Casdoor registration and application runtime remain next; identity creation preserves existing services.'
       when: application_action == 'plan'
     - name: End the read-only plan
       ansible.builtin.meta: end_host
@@ -205,16 +210,70 @@
               - redis_credentials.password != app_credentials.runtime_password
               - redis_credentials.password != app_credentials.migrator_password
           no_log: true
+        - name: Inspect recoverable RabbitMQ credential input
+          ansible.builtin.stat: {path: '{{ item }}/rabbitmq.yaml', follow: false}
+          loop: ['{{ cfg.private_dir }}', '{{ cfg.backup_dir }}']
+          register: rabbitmq_files
+          no_log: true
+        - name: Require root-only regular RabbitMQ input files
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - not item.stat.islnk | default(false)
+              - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
+          loop: '{{ rabbitmq_files.results }}'
+          no_log: true
+        - name: Restore a preserved RabbitMQ input without rotating its password
+          ansible.builtin.copy: {src: '{{ cfg.backup_dir }}/rabbitmq.yaml', dest: '{{ cfg.private_dir }}/rabbitmq.yaml', remote_src: true, mode: '0600'}
+          when: not rabbitmq_files.results[0].stat.exists and rabbitmq_files.results[1].stat.exists
+          no_log: true
+        - name: Refuse to regenerate a declared RabbitMQ identity
+          ansible.builtin.assert:
+            quiet: true
+            that: rabbitmq_files.results[0].stat.exists or rabbitmq_files.results[1].stat.exists or (query('fileglob', component_root + '/rabbitmq/provision.sops.yaml') | length == 0)
+        - name: Create an independent RabbitMQ password only on first preparation
+          ansible.builtin.copy:
+            dest: '{{ cfg.private_dir }}/rabbitmq.yaml'
+            force: false
+            mode: '0600'
+            content: |
+              password: {{ lookup('password','/dev/null',length=40,chars=['ascii_letters','digits']) }}
+          when: not rabbitmq_files.results[0].stat.exists and not rabbitmq_files.results[1].stat.exists
+          no_log: true
+        - name: Preserve the independent RabbitMQ credential backup
+          ansible.builtin.copy: {src: '{{ cfg.private_dir }}/rabbitmq.yaml', dest: '{{ cfg.backup_dir }}/rabbitmq.yaml', remote_src: true, force: false, mode: '0600'}
+          no_log: true
+        - name: Verify RabbitMQ input against its non-overwritten backup
+          ansible.builtin.command: {argv: [cmp, --silent, '{{ cfg.private_dir }}/rabbitmq.yaml', '{{ cfg.backup_dir }}/rabbitmq.yaml']}
+          changed_when: false
+          no_log: true
+        - name: Read private RabbitMQ input without logging
+          ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/rabbitmq.yaml'}
+          register: rabbitmq_input
+          no_log: true
+        - name: Decode private RabbitMQ credentials in memory
+          ansible.builtin.set_fact:
+            rabbitmq_credentials: '{{ rabbitmq_input.content | b64decode | from_yaml }}'
+          no_log: true
+        - name: Require a strong distinct application RabbitMQ password
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - rabbitmq_credentials.password is match('^[a-zA-Z0-9]{40}$')
+              - rabbitmq_credentials.password != app_credentials.runtime_password
+              - rabbitmq_credentials.password != app_credentials.migrator_password
+              - rabbitmq_credentials.password != redis_credentials.password
+          no_log: true
         - name: Prepare public candidate directories
           ansible.builtin.file: {path: '{{ build }}/{{ item }}', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
-          loop: [database, migration, redis]
+          loop: [database, migration, redis, rabbitmq]
         - name: Render colocated workload and stage templates
           ansible.builtin.template:
             src: '{{ component_root }}/{{ item }}.j2'
             dest: '{{ build }}/{{ item }}'
             owner: '{{ cluster_operator }}'
             mode: '0644'
-          loop: [database/workload.yaml, migration/workload.yaml, redis/workload.yaml, stages.yaml]
+          loop: [database/workload.yaml, migration/workload.yaml, redis/workload.yaml, rabbitmq/workload.yaml, stages.yaml]
         - name: Derive independent connection URLs without logging
           ansible.builtin.set_fact:
             runtime_url: 'postgresql+asyncpg://{{ cfg.database_runtime_user }}:{{ app_credentials.runtime_password }}@postgresql.{{ data_namespace }}.svc.cluster.local:5432/{{ cfg.database }}'
@@ -253,6 +312,19 @@
                 kind: Secret
                 metadata: {name: tpl-redis-runtime, namespace: '{{ cfg.namespace }}'}
                 stringData: {REDIS_USER: '{{ cfg.redis_user }}', REDIS_PASSWORD: '{{ redis_credentials.password }}'}
+            - file: rabbitmq/provision.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: tpl-rabbitmq-provision, namespace: '{{ messaging_namespace }}'}
+                stringData: {password: '{{ rabbitmq_credentials.password }}'}
+            - file: rabbitmq/runtime.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: tpl-rabbitmq-runtime, namespace: '{{ cfg.namespace }}'}
+                stringData:
+                  CELERY_BROKER_URL: 'amqp://{{ cfg.rabbitmq_user }}:{{ rabbitmq_credentials.password }}@rabbitmq.{{ messaging_namespace }}.svc.cluster.local:5672/{{ cfg.rabbitmq_vhost }}'
           loop_control: {loop_var: secret_item, label: '{{ secret_item.file }}'}
           no_log: true
         - name: Render explicit resource lists without applying config files
@@ -265,6 +337,7 @@
             - {name: database, resources: [workload.yaml, bootstrap.sops.yaml, runtime.sops.yaml]}
             - {name: migration, resources: [workload.yaml, auth.sops.yaml]}
             - {name: redis, resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]}
+            - {name: rabbitmq, resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]}
     - name: Stage reviewed candidate declarations without deploying
       when: application_action == 'stage'
       block:
@@ -306,7 +379,7 @@
         - name: Wait for current generation Ready at the promoted digest
           ansible.builtin.command:
             argv: '{{ kube + ["get","kustomization",item,"-n","flux-system","-o","json"] }}'
-          loop: [tpl-database,tpl-migration,tpl-redis]
+          loop: [tpl-database,tpl-migration,tpl-redis,tpl-rabbitmq]
           register: stage
           changed_when: false
           until:
@@ -323,6 +396,7 @@
             - {name: 'tpl-database-{{ cfg.database_bootstrap_revision }}', namespace: '{{ data_namespace }}'}
             - {name: '{{ migration_job }}', namespace: '{{ cfg.namespace }}'}
             - {name: 'tpl-redis-{{ cfg.redis_identity_revision }}', namespace: '{{ data_namespace }}'}
+            - {name: 'tpl-rabbitmq-{{ cfg.rabbitmq_identity_revision }}', namespace: '{{ messaging_namespace }}'}
           register: completion
           changed_when: false
           failed_when: completion.rc != 0 or completion.stdout != '1'
@@ -398,3 +472,25 @@
           register: redis_acl_permissions
           changed_when: false
           failed_when: redis_acl_permissions.rc != 0 or redis_acl_permissions.stdout != 'private-acl'
+        - name: Read actual RabbitMQ application identity acceptance privately
+          ansible.builtin.command:
+            argv: '{{ kube + ["logs","job/tpl-rabbitmq-" + cfg.rabbitmq_identity_revision,"-n",messaging_namespace] }}'
+          register: rabbitmq_result
+          changed_when: false
+          no_log: true
+        - name: Decode RabbitMQ acceptance without exposing credentials
+          ansible.builtin.set_fact:
+            rabbitmq_acceptance: '{{ rabbitmq_result.stdout_lines[-1] | from_json }}'
+          no_log: true
+        - name: Require RabbitMQ application boundary and real message roundtrip
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - rabbitmq_acceptance.user == cfg.rabbitmq_user
+              - rabbitmq_acceptance.vhost == cfg.rabbitmq_vhost
+              - rabbitmq_acceptance.queue == cfg.rabbitmq_queue
+              - rabbitmq_acceptance.durable_topology is sameas true
+              - rabbitmq_acceptance.amqp_roundtrip is sameas true
+              - rabbitmq_acceptance.default_vhost_denied is sameas true
+              - rabbitmq_acceptance.management_api_denied is sameas true
+              - rabbitmq_acceptance.single_vhost_grant is sameas true
