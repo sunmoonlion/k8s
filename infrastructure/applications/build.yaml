@@ -1,11 +1,14 @@
 ---
-- name: Build one pinned template component from a clean Git object
+- name: Build one pinned application component from a clean Git object
   hosts: kind_hosts
   gather_facts: false
   become: true
   vars:
-    capacity_operation: 'application-build-{{ build_component }}'
+    capacity_operation: 'application-build-{{ application_name }}-{{ build_component }}'
+    application_name: tpl
+    build_action: build
     build_component: backend
+    application_directory: '{{ playbook_dir }}'
     download_modes: '{{ lookup("file", playbook_dir + "/download-modes.json") | from_json }}'
     download_profile: '{{ download_modes[effective_download_mode] }}'
     component: '{{ components[build_component] }}'
@@ -13,7 +16,7 @@
     parent_gitlink_revision: '{{ source_lock[build_component + "_parent_revision"] | default(component_revision) }}'
     components:
       backend:
-        repository: tpl-backend
+        repository: '{{ application_name }}-backend'
         context: app
         dockerfile: Dockerfile
         target: runtime
@@ -23,7 +26,7 @@
         budget: '{{ application_build_budget_bytes }}'
         args: ['--build-arg=PYTHON_IMAGE={{ registry_address }}/platform/python@{{ image_map.python.manifest_digest }}']
       web:
-        repository: tpl-web-frontend
+        repository: '{{ application_name }}-web-frontend'
         context: ''
         dockerfile: mybuild/Dockerfile
         target: run-minimal
@@ -33,7 +36,7 @@
         budget: '{{ application_frontend_build_budget_bytes }}'
         args: ['--build-arg=NODE_IMAGE={{ registry_address }}/platform/node-build@{{ image_map["node-build"].manifest_digest }}', '--build-arg=NODE_RUNTIME_IMAGE={{ registry_address }}/platform/node-runtime@{{ image_map["node-runtime"].manifest_digest }}']
       admin:
-        repository: tpl-admin-frontend
+        repository: '{{ application_name }}-admin-frontend'
         context: ''
         dockerfile: mybuild/Dockerfile
         target: run-minimal
@@ -42,8 +45,9 @@
         version: v24.21.0
         budget: '{{ application_frontend_build_budget_bytes }}'
         args: ['--build-arg=NODE_IMAGE={{ registry_address }}/platform/node-build@{{ image_map["node-build"].manifest_digest }}', '--build-arg=NODE_RUNTIME_IMAGE={{ registry_address }}/platform/node-runtime@{{ image_map["node-runtime"].manifest_digest }}']
-    source_checkout: '{{ (playbook_dir + "/../../../tpl-app/" + component.repository) | realpath }}'
-    source_lock: '{{ lookup("file", playbook_dir + "/sources.yaml") | from_yaml }}'
+    source_checkout: '{{ (playbook_dir + "/../../../" + application_name + "-app/" + component.repository) | realpath }}'
+    source_locks: '{{ (lookup("file", playbook_dir + "/sources.yaml") | from_yaml).applications }}'
+    source_lock: '{{ source_locks[application_name] }}'
     images: '{{ (lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json).images }}'
     image_map: '{{ dict(images | map(attribute="id") | zip(images)) }}'
     skopeo: '{{ images | selectattr("id","equalto","skopeo") | first }}'
@@ -55,11 +59,13 @@
         quiet: true
         that:
           - not ansible_check_mode
+          - application_name in source_locks
+          - build_action in ["plan", "build"]
           - application_download_mode in ['domestic', 'official-proxy']
           - application_network_mode is not defined and application_npm_registry is not defined and application_pypi_index_url is not defined
           - component_revision is match('^[a-f0-9]{40}$')
           - build_component in ['backend', 'web', 'admin']
-          - source_lock.template_parent_revision is match('^[a-f0-9]{40}$')
+          - source_lock.parent_revision is match('^[a-f0-9]{40}$')
           - parent_gitlink_revision is match('^[a-f0-9]{40}$')
           - component.budget | int > 0
           - build_component != 'backend' or image_map.python.source == 'docker.io/library/python:3.13.15-slim-trixie'
@@ -80,7 +86,7 @@
     - name: Read the pinned parent Git object and its component gitlink
       become: false
       ansible.builtin.command:
-        argv: [git, -C, '{{ source_checkout }}/..', ls-tree, '{{ source_lock.template_parent_revision }}', '{{ component.repository }}']
+        argv: [git, -C, '{{ source_checkout }}/..', ls-tree, '{{ source_lock.parent_revision }}', '{{ component.repository }}']
       register: parent_link
       changed_when: false
     - name: Refuse unreviewed source revisions or dirty checkout
@@ -95,11 +101,6 @@
       ansible.builtin.command:
         argv: [git, -C, '{{ source_checkout }}', merge-base, --is-ancestor, '{{ parent_gitlink_revision }}', '{{ component_revision }}']
       changed_when: false
-    - name: Budget temporary context, package cache, layers and export before building
-      ansible.builtin.include_tasks:
-        file: ../host/tasks/capacity.yaml
-        apply: {become: false}
-      vars: {capacity_planned_bytes: '{{ component.budget }}'}
     - name: Read the exact committed Docker recipe
       become: false
       ansible.builtin.command:
@@ -107,6 +108,26 @@
         strip_empty_ends: false
       changed_when: false
       register: recipe
+    - name: Show selected immutable sources and paired download policy
+      ansible.builtin.debug:
+        msg:
+          application: '{{ application_name }}'
+          component: '{{ build_component }}'
+          source: '{{ source_checkout }}'
+          revision: '{{ component_revision }}'
+          parent_revision: '{{ source_lock.parent_revision }}'
+          recipe_sha256: '{{ recipe.stdout | hash("sha256") }}'
+          mode: '{{ application_download_mode }}'
+          budget_bytes: '{{ component.budget }}'
+      when: build_action == 'plan'
+    - name: Finish the read-only source plan without creating build files
+      ansible.builtin.meta: end_host
+      when: build_action == 'plan'
+    - name: Budget temporary context, package cache, layers and export before building
+      ansible.builtin.include_tasks:
+        file: ../host/tasks/capacity.yaml
+        apply: {become: false}
+      vars: {capacity_planned_bytes: '{{ component.budget }}'}
     - name: Prepare private build result directory
       ansible.builtin.file: {path: '{{ build_root }}', state: directory, owner: '{{ cluster_operator }}', mode: '0700'}
     - name: Allocate a private invocation workspace
@@ -131,51 +152,8 @@
         - name: Supply read-only registry authentication privately
           ansible.builtin.copy: {src: '{{ registry_config_dir }}/private/puller-auth.json', dest: '{{ staging.path }}/auth/config.json', remote_src: true, mode: '0600'}
           no_log: true
-        - name: Build with at most one automatic official-source retry
-          block:
-            - name: Attempt the configured download mode
-              ansible.builtin.include_tasks: build-attempt.yaml
-          rescue:
-            - name: Classify the failing step without treating earlier recovered warnings as the cause
-              vars:
-                failure_output: '{{ (image_build.stderr | default(""))[-8192:] }}'
-                failing_step: '{{ (image_build.stderr | default("")).split("ERROR: failed to")[-1] }}'
-              ansible.builtin.set_fact:
-                download_failed: >-
-                  {{ failing_step is search('(?i)pnpm install|corepack install|uv sync|pip install') and failure_output is search('(?i)ERR_PNPM_FETCH|ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|UND_ERR_CONNECT_TIMEOUT|Network is unreachable|Connection timed out|Failed to download|failed to fetch|ReadTimeoutError|ConnectionError|Error when performing the request') }}
-                trust_failed: >-
-                  {{ failure_output is search('(?i)x509|unknown authority|certificate verify|Cannot find matching keyid|ERR_PNPM_TARBALL_INTEGRITY|hash mismatch|hashes do not match|CERT_|ERR_TLS|self.signed certificate|signature verification|unauthorized|insufficient_scope|ERR_PNPM_FETCH_40[134]') }}
-              no_log: true
-            - name: Refuse source switching for trust, build or an already official failure
-              ansible.builtin.fail:
-                msg: >-
-                  {% if trust_failed | bool %}
-                  证书、身份、签名或完整性校验失败，不切换源、不关闭校验；请检查私有构建日志。
-                  {% elif effective_download_mode == 'official-proxy' %}
-                  官方源代理模式失败，不再重试。请检查上方代理探测错误及私有日志，修复后重新执行原命令。
-                  {% else %}
-                  当前失败不符合下载网络错误的自动切换条件；请检查上方错误及私有日志，不自动重试编译错误。
-                  {% endif %}
-              when: trust_failed | bool or not download_failed | bool or effective_download_mode != 'domestic'
-            - name: Announce the bounded automatic fallback
-              ansible.builtin.debug:
-                msg: '国内下载失败，本次自动切换官方源并检查HTTPS_PROXY；探测通过才重试一次。代理不可用即非零退出，请开启代理后重新执行原命令。配置文件保持domestic，Harbor始终直连。'
-            - name: Select the paired official sources for this invocation only
-              ansible.builtin.set_fact:
-                effective_download_mode: official-proxy
-            - name: Recheck remaining capacity before the second build attempt
-              ansible.builtin.include_tasks:
-                file: ../host/tasks/capacity.yaml
-                apply: {become: false}
-              vars: {capacity_planned_bytes: '{{ component.budget }}'}
-            - name: Retry once through the same build implementation
-              block:
-                - name: Perform the sole official-source attempt
-                  ansible.builtin.include_tasks: build-attempt.yaml
-              rescue:
-                - name: Exit unsuccessfully without waiting for interactive input
-                  ansible.builtin.fail:
-                    msg: '官方源探测或唯一一次构建重试失败，已停止，不等待输入、不继续循环。请检查上方错误与私有日志；代理未开启时，请开启代理并设置HTTPS_PROXY后重新执行原make命令。日志目录：{{ build_root }}。'
+        - name: Build through the shared bounded network flow
+          ansible.builtin.include_tasks: build-network.yaml
         - name: Read the built image identity and runtime user
           ansible.builtin.command:
             argv: [docker, image, inspect, '{{ local_tag }}']
@@ -238,7 +216,7 @@
             content: '{{ {"id":component.repository,"input":build_input,"sha256":archive.stat.checksum,"size_bytes":archive.stat.size,"verification":verified.stdout | from_json} | to_nice_json }}'
         - name: Record immutable application image input for the shared publisher
           ansible.builtin.copy:
-            dest: '{{ build_root }}/{{ build_component }}-images.lock.json'
+            dest: '{{ build_root }}/{{ component.repository }}-images.lock.json'
             owner: '{{ cluster_operator }}'
             mode: '0644'
             content: |

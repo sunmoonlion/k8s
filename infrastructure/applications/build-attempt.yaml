@@ -14,7 +14,7 @@
       when: download_profile.proxy
     - name: Check the configured proxy against the selected official source
       ansible.builtin.command:
-        argv: [curl, --silent, --show-error, --fail, --location, --connect-timeout, '5', --max-time, '15', --noproxy, '', --output, /dev/null, '{{ download_profile.npm_registry + "/" if build_component != "backend" else download_profile.python_index + "/uv/" }}']
+        argv: [curl, --silent, --show-error, --fail, --location, --connect-timeout, '10', --max-time, '30', --noproxy, '', --output, /dev/null, --write-out, '%{http_code} remote=%{remote_ip} connect=%{http_connect}', '{{ download_profile.npm_registry + "/" if build_component != "backend" else download_profile.python_index + "/uv/" }}']
       environment:
         HTTPS_PROXY: '{{ lookup("env", "HTTPS_PROXY") }}'
         HTTP_PROXY: '{{ lookup("env", "HTTPS_PROXY") }}'
@@ -33,27 +33,27 @@
       ansible.builtin.assert:
         quiet: true
         that: [proxy_probe.rc == 0]
-        fail_msg: '代理或官方源HTTPS探测失败。请开启/修复HTTPS_PROXY对应代理后重新执行原命令；不会等待输入，也不会开始构建重试。TLS验证保持开启。'
+        fail_msg: '代理或官方源HTTPS探测失败（curl={{ proxy_probe.rc }}，HTTP={{ proxy_probe.stdout | default("无响应") }}）。请开启/修复HTTPS_PROXY对应代理后重新执行原命令；不会等待输入，也不会开始构建重试。TLS验证保持开启。'
       when: download_profile.proxy
     - name: Identify the build by source, recipe, base and runtime target
       ansible.builtin.set_fact:
         build_input:
           source_revision: '{{ component_revision }}'
-          parent_revision: '{{ source_lock.template_parent_revision }}'
+          parent_revision: '{{ source_lock.parent_revision }}'
           parent_gitlink_revision: '{{ parent_gitlink_revision }}'
           context: '{{ component.context }}'
           requested_download_mode: '{{ application_download_mode }}'
           download_mode: '{{ effective_download_mode }}'
           download_profile: '{{ download_profile }}'
-          source_projection_sha256: '{{ lookup("file", playbook_dir + "/select-python-source.py", rstrip=false) | hash("sha256") }}'
+          source_projection_sha256: '{{ lookup("file", application_directory + "/select-python-source.py", rstrip=false) | hash("sha256") }}'
           dockerfile_sha256: '{{ recipe.stdout | hash("sha256") }}'
           image_arguments: '{{ component.args + (["--build-arg=NPM_CONFIG_REGISTRY=" + download_profile.npm_registry] if build_component != "backend" else ["--build-arg=PYPI_INDEX_URL=" + download_profile.python_index]) }}'
           target: '{{ component.target }}'
     - name: Select Python URLs in the disposable context without changing dependency identities
       ansible.builtin.command:
-        argv: [python3, '{{ playbook_dir }}/select-python-source.py', '--context={{ staging.path }}/context', '--mode={{ effective_download_mode }}']
+        argv: [python3, '{{ application_directory }}/select-python-source.py', '--context={{ staging.path }}/context', '--mode={{ effective_download_mode }}']
       register: python_projection
-      changed_when: (python_projection.stdout | from_json).changed
+      changed_when: python_projection.rc == 0 and (python_projection.stdout | from_json).changed
       when: build_component == 'backend'
     - name: Record the effective Python input identities
       ansible.builtin.set_fact:

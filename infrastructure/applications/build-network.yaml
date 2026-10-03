@@ -1,0 +1,46 @@
+---
+- name: Build with at most one automatic official-source retry
+  block:
+    - name: Attempt the configured download mode
+      ansible.builtin.include_tasks: build-attempt.yaml
+  rescue:
+    - name: Classify the failing step without treating earlier recovered warnings as the cause
+      vars:
+        failure_output: '{{ (image_build.stderr | default(""))[-8192:] }}'
+        failing_step: '{{ (image_build.stderr | default("")).split("ERROR: failed to")[-1] }}'
+      ansible.builtin.set_fact:
+        download_failed: >-
+          {{ failing_step is search('(?i)pnpm install|corepack install|uv sync|pip install') and failure_output is search('(?i)ERR_PNPM_FETCH|ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|UND_ERR_CONNECT_TIMEOUT|Network is unreachable|Connection timed out|Failed to download|failed to fetch|ReadTimeoutError|ConnectionError|Error when performing the request') }}
+        trust_failed: >-
+          {{ failure_output is search('(?i)x509|unknown authority|certificate verify|Cannot find matching keyid|ERR_PNPM_TARBALL_INTEGRITY|hash mismatch|hashes do not match|CERT_|ERR_TLS|self.signed certificate|signature verification|unauthorized|insufficient_scope|ERR_PNPM_FETCH_40[134]|HTTP[^\n]{0,30}\b40[134]\b|\b40[134]\s+(?:Client Error|Unauthorized|Forbidden|Not Found)|status(?: code)?[\s:=]+40[134]') }}
+      no_log: true
+    - name: Refuse source switching for trust, build or an already official failure
+      ansible.builtin.fail:
+        msg: >-
+          {% if trust_failed | bool %}
+          证书、身份、签名或完整性校验失败，不切换源、不关闭校验；请检查私有构建日志。
+          {% elif effective_download_mode == 'official-proxy' %}
+          官方源代理模式失败，不再重试。请检查上方代理探测错误及私有日志，修复后重新执行原命令。
+          {% else %}
+          当前失败不符合下载网络错误的自动切换条件；请检查上方错误及私有日志，不自动重试编译错误。
+          {% endif %}
+      when: trust_failed | bool or not download_failed | bool or effective_download_mode != 'domestic'
+    - name: Announce the bounded automatic fallback
+      ansible.builtin.debug:
+        msg: '国内下载失败，本次自动切换官方源并检查HTTPS_PROXY；探测通过才重试一次。代理不可用即非零退出，请开启代理后重新执行原命令。配置文件保持domestic，Harbor始终直连。'
+    - name: Select the paired official sources for this invocation only
+      ansible.builtin.set_fact:
+        effective_download_mode: official-proxy
+    - name: Recheck remaining capacity before the second build attempt
+      ansible.builtin.include_tasks:
+        file: ../host/tasks/capacity.yaml
+        apply: {become: false}
+      vars: {capacity_planned_bytes: '{{ component.budget }}'}
+    - name: Retry once through the same build implementation
+      block:
+        - name: Perform the sole official-source attempt
+          ansible.builtin.include_tasks: build-attempt.yaml
+      rescue:
+        - name: Exit unsuccessfully without waiting for interactive input
+          ansible.builtin.fail:
+            msg: '官方源探测或唯一一次构建重试失败，已停止，不等待输入、不继续循环。请检查上方错误与私有日志；代理未开启时，请开启代理并设置HTTPS_PROXY后重新执行原make命令。日志目录：{{ build_root }}。'

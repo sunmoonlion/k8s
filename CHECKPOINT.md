@@ -1,4 +1,54 @@
-# 当前优先状态：模板三组件镜像齐备，下载失败采用非交互回退（2026-10-03）
+# 当前优先状态：应用配套下载演练通过，四应用共用构建入口（2026-10-03）
+
+本节优先于下方历史。本单元基线e14ae087，工作树/分支platform-kind-v1。所有者要求真实演练后统一新体系所有后端/Web/Admin，旧build-image.sh按退役计划处理；随后要求与家目录网络方案配合。本单元只改构建与说明，没有部署应用、改Flux源、切入口或重启服务，无push。
+
+## 已实施与实际验证
+
+- 共用原生Ansible build-network/build-attempt，默认国内直连，确认依赖下载网络失败才本次切官方源+HTTPS_PROXY并重试一次；无代理/不可达/重试失败均非零退出。编译、认证、TLS、签名、哈希错误不切源。家目录 `/home/zymun/网络管理统一方案.md` 已补“当前执行口径”，明确宿主代理管理与项目配套源选择职责、pip工具下载与uv锁文件地址两段、离线引导/在线应用边界、Fake-IP和CA限制；该文件在仓库外，不随Git交付。
+- Python实际演练先让国内pip连接失败，再官方代理pip安装uv0.11.32、uv冻结安装模板依赖、成功导入FastAPI；共2次构建。59锁包/624候选文件身份保留，不是下载所有624文件。前几次curl28/35失败保留；独立探测曾成功，最终演练成功，未证明家庭网络稳定或唯一根因。
+- 修复合法uv锁中无size候选文件被误拒绝，size存在才检查而SHA256仍必需；helper失败时不再被changed_when的JSON解析错误掩盖。探测10秒连接/30秒总计，显示脱敏HTTP/远端/CONNECT状态；不关闭TLS。Python/uv的HTTP401/403/404也明确拒绝切源。
+- tpl/info/knowledge/investment × backend/web/admin共12选择统一到同一build.yaml。APP参数选择，sources.yaml固定4父仓及12子提交；capacity_operation按app+component隔离。原生application-source-plan只检查干净源码、父gitlink/后代关系、实际配方及配置，不构建。12项实际均ok8 changed0 failed0。
+- 镜像结果锁按完整组件仓名隔离，原模板三个锁经id核对更名tpl-*-images.lock.json，不留旧入口；三个模板重复发布均ok20 changed0 failed0，Harbor既有摘要不变，无需归档、不重复上传。
+- 6份实例前端Dockerfile对齐已验证Node24.21.0固定Debian构建/精简运行镜像、保留Corepack签名，pnpm和业务锁不变；.nvmrc/README同步。只保留一条新体系构建入口，旧启动脚本没改。后端Dockerfile原有参数直接复用，无业务源码/数据库改动。
+- 8项回归通过：5项Python投影（含四后端往返）、2项Make应用选择/非法选择拒绝、1项直接运行实际Ansible分类任务（9类错误输入）；Ansible语法、Python AST、YAML解析、git diff --check通过。
+
+## 真实下载证据（均在infrastructure/.build/applications，不进Git）
+
+| 批次 | 覆盖 |
+| --- | --- |
+| rehearsal-7347735a6fc9 | 国内成功1次、自动官方成功2次、代理未设/不可达均1次后退出；该批重试耗尽用例因代理探测失败未覆盖，下批补齐 |
+| rehearsal-af95c969bf07 | 官方重试耗尽，2次后非零退出 |
+| rehearsal-56ad07560b5c | 编译失败注入，1次，不切源 |
+| rehearsal-bb96454ba03c | 完整性错误消息注入，1次，不切源；不是实际损坏包下载 |
+| rehearsal-b316b15e32df | Python两阶段真实下载/冻结安装成功，2次构建 |
+| source-plans-20261003 | 12源码计划和3模板镜像重复发布日志 |
+
+更早rehearsal-38c48797677d官方下载成功但清理失败，不算整次通过；后续修复清理Buildx生成的auth子目录。Python的537be0a6efff（可选size误拒绝）、0cd324d7c6a4（fixture零重试隐藏网络原因）、7eddce520585/08614dadbe60/2d23f56b015e/f5355123bf4e（官方探测curl28/35）保留失败。测试只使用固定基础镜像、隔离上下文和未监听回环端口制造下载失败，不改宿主DNS/代理。
+
+测试镜像标签及context/auth目录已按确切归属清理；缓存仍保留，不执行prune。每次小型演练预检512MiB、常规50GiB底线；真实业务构建仍按原4/6GiB预算。最终三次重复发布预留16MiB并计数据盘未来增长后余55,213,707,264字节，高于50GiB；不等于后续6GiB构建预算必然满足。之前40GiB例外未恢复。
+
+## 本地子仓交付（父仓不提交未推送gitlink）
+
+| 仓 | 固定提交 |
+| --- | --- |
+| tpl-web-frontend（前单元） | 0be8020ca14dc28123c8e212cf7f8f660ed16e99 |
+| tpl-admin-frontend（前单元） | 9cce66c90d0b720867a318a45b4ca0c19adc1b16 |
+| info-web-frontend | c7e19a41bb6eba03dc9a5021ee6de14f4e005922 |
+| info-admin-frontend | 38d5b05aaca851a268f369b36bd4d2e7468b297b |
+| knowledge-web-frontend | b1b45963723bdc9299bf3391afc8eeabab428927 |
+| knowledge-admin-frontend | 0e1edbf534048518e03bc6654447dfce6cb9ac97 |
+| investment-web-frontend | 745dfe697eca3d7aee746b782024d8f454f44c78 |
+| investment-admin-frontend | ac58e290acba0822eef9ba84df9cf1387ca564d5 |
+
+4父仓保持原提交，各有两前端子模块位置变化，是sources.yaml已固定的本单元/前单元本地提交，不要清除。交付须带这些子仓提交。规则对应C-T4/T5/T6及C-R1/R2/R3：不悬空父gitlink、明确跨仓来源、共用不可变产物发布。
+
+## 下一步与未完成
+
+网络策略接入及依赖演练完成，不等于12个完整业务镜像构建成功：仅模板原有三镜像已完整构建/发布；其余应用完整编译/运行未验。继续原部署顺序：模板独立身份/运行配置 → 独立迁移Job → API/worker/scheduler/Web/Admin → 业务链；再其余平台与应用。统一启停/开机恢复、WSL/KIND重启及删除重建Harbor持久化、长期空间管理和最终清理仍未完成，云上仍未实机验证。日常命令见infrastructure/applications/README.md。
+
+---
+
+# 前序状态：模板三组件镜像齐备，下载失败采用非交互回退（2026-10-03）
 
 本节优先于下方历史。工作树/分支platform-kind-v1；本单元k8s基线41c8c16985254ddd70ae7ba89bc25d8178f30dd2。所有者最终确认：默认国内在线；依赖下载网络失败后，本次自动切官方源并探测HTTPS_PROXY，可用才重试一次，不可用或重试失败非零退出。无人交互、不改Windows网络、不改日常默认、Harbor直连。此前“失败只提示、禁止自动切源”的决定已被本条替代。
 

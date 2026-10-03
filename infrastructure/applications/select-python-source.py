@@ -79,8 +79,8 @@ def main():
             url = artifact.get('url', '')
             if (not any(url.startswith(p) for p in prefixes)
                     or not re.fullmatch(r'sha256:[a-f0-9]{64}', artifact.get('hash', ''))
-                    or not isinstance(artifact.get('size'), int) or artifact['size'] <= 0):
-                raise ValueError('Artifact must have an approved URL, SHA256 and size')
+                    or ('size' in artifact and (not isinstance(artifact['size'], int) or artifact['size'] <= 0))):
+                raise ValueError('Artifact must have an approved URL, SHA256 and valid size when present')
             map_url(url)
             artifacts += 1
     if not artifacts:
