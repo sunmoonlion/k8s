@@ -6,4 +6,4 @@
 
 操作和输入边界见 [组件说明](../../README.md) 与 [服务操作](../../../../docs/platform-kind-v1/services.md)。
 
-持久应用账号采用/data/users.acl（既有Redis数据卷内）。initContainer只在缺失时初始化原默认身份，不覆盖现有ACL；应用Job通过ACL SAVE持久化独立账号。首次启用需短维护和重启验收，见[模板Redis维护](../../../../docs/platform-kind-v1/tpl-redis-maintenance.md)。当前代码准备不等于运行验收完成。
+持久应用账号采用/data/users.acl（既有Redis数据卷内）。initContainer只在缺失时初始化原默认身份，不覆盖现有ACL；应用Job通过ACL SAVE持久化独立账号。首次启用需短维护和重启验收，见[模板Redis维护](../../../../docs/platform-kind-v1/tpl-redis-maintenance.md)。2026-10-03首次声明滚动替换与独立账号认证/隔离已通过；账号创建后的再次重启未执行，持久化验收仍未完成。

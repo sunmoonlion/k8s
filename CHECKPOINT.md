@@ -1,17 +1,23 @@
-# 当前优先状态：模板 Redis 持久身份代码准备，等待维护批准（2026-10-03）
+# 当前优先状态：Redis首次维护通过，重启持久化验收待新窗口（2026-10-03）
 
-本节优先于历史。基线6fba069a54458d31a7002f01993963f1af24b9b5，工作树/分支platform-kind-v1，仅k8s；没有发布本单元Flux源或重启服务。线上仍为e2708f2e…，上个数据库单元已验收。
+工作树/分支platform-kind-v1，仅k8s，无push。实现f6817ba0，修正61b771b2aedd2032bbf6b2b2efdf8cd2e09c79ae、062b9b68；当前源sha256:84bcfc316cb46bcfabcf9c29254959643a57263e57b98209f48b993faf23c566。以下为最新状态，后文数据库单元是历史。
 
-所有者让继续部署。下一依赖是模板Redis独立账号。只读现场：Redis仅default，aclfile为空，INFO keyspace为空，AOF启用且写入正常；不能只在内存SETUSER后宣称持久化。
+## 已实施与核对
 
-- 平台Redis新增原生initContainer：仅在/data/users.acl缺失时从现有私有密码生成default的SHA256规则，权限0600；不覆盖已有ACL。redis.conf切换到该持久文件，不混用requirepass。声明更新会滚动替换Redis，因此尚未发布。
-- 模板backend/redis新增Job、受限管理流量策略及SOPS输入。运行身份tpl_runtime只操作tpl:*，独立口令与备份在既定private_dir/backup_dir的redis.yaml，root0600，已有声明丢失输入就拒绝随机重建。账号配置与组件同处。
-- Job核对既有账号摘要，不接管不同凭据的同名账号；ACL SAVE后实际写读、跨前缀拒绝、管理命令拒绝，FLUSHALL仅用ACL DRYRUN。原application-bootstrap接入tpl-redis阶段和检查；application-check另通过stdin传私密密码验证当前Redis进程真实认证，避免只读旧Job结果。
-- 平台render ok105 changed3；应用首次render ok68 changed9，后续stage成功。16个Kustomize根、Ansible语法、Jinja表达式语法、Python AST、git diff检查通过；未声称运行验证成功。仍按常规50GiB与原1GiB单元预算准备，无容量例外。
+- 所有者批准的首次10分钟维护始于2026-10-03T11:23:07Z，至11:33:07Z结束；已完成声明滚动替换，Redis从原PVC的/data/users.acl读取账号。原PVC/PV保留，其余26个原有Pod的UID及重启次数未变。
+- tpl-redis-v2实际验证tpl_runtime账号写读、跨tpl:*前缀拒绝、管理命令拒绝和ACL SAVE；FLUSHALL仅ACL DRYRUN，没有执行。原生application-check另验证当前进程的真实账号认证。
+- 原生application-bootstrap APP=tpl完整重复通过：render ok63、validate ok49、Flux apply ok24、check ok18，全部changed=0/failed=0；8个Flux阶段均Ready且同一摘要。
+- 两处验收实现曾失败并已修复：ACL DRYRUN的权限拒绝可以作为普通字符串返回；Ansible原生模板中内嵌转义引号导致用户名带引号，改用YAML块标量。失败记录保留，不能称为首次全通过。
+- 剩余窗口检查在第二次Pod删除前阻止执行，故尚未验证账号在创建后再次重启仍可用。原窗口不自动延长；需新的短维护批准。
+- 已精确删除不再被Flux引用的失败Job tpl-redis-v1及旧ConfigMap tpl-redis-provision-v1。随后只读确认失败Pod已消失，成功v2 Job保留；不得直接删除受Flux管理的成功Job或机械加TTL。
 
-待批准操作卡：docs/platform-kind-v1/tpl-redis-maintenance.md。计划10分钟窗口、失败另10分钟：首次声明滚动替换，账号创建后再精确重建redis-0验证账号持久化；PVC/PV/旧集群/Harbor和入口不动。确认后先重新核对UID、空间和无新业务键，再发布/晋级固定源；先验证平台候选和原账号，然后application-bootstrap和重启后application-check。未获停服批准前不能因“继续”自行发布这一轮Redis启动配置。
+## 下一步与边界
 
-证据暂存infrastructure/.build/applications/database-unit-20261003/redis-platform-render.log、redis-application-stage.log、redis-stage-final.log。RabbitMQ/Casdoor注册、常驻业务Pod仍未接入；不会把这一步称为应用部署完成。后续Celery结果Redis键前缀须先核对，不能放开所有键绕过隔离。
+先按docs/platform-kind-v1/tpl-redis-maintenance.md的补充窗口复核容量和现场，再仅重建当前redis-0一次：PVC UID不变、Pod UID变化、ACL全文件摘要和0600权限不变、默认与应用账号真实认证以及键隔离通过。新窗口拟5分钟、失败恢复另5分钟，待批准；不重新发布声明。未批准不重启。
+
+仍执行50GiB底线与原1GiB预算；最近检查计未来增长和预算后53,906,837,504字节，执行前必须复核。证据infrastructure/.build/applications/redis-unit-20261003/：window.json、before.json、bootstrap.log、bootstrap-v2.log、check-live-fixed.log、bootstrap-repeat.log、first-window-result.json。原始窗口记录保留；新窗口单独记录。仅有口令备份不等于完整数据恢复演练。
+
+Redis持久化验收完成后才继续RabbitMQ独立身份/vhost、Casdoor注册、API/Worker/Scheduler及Web/Admin。尚无模板常驻业务Pod，应用未完整跑通；统一开机恢复、Harbor跨重启/重建持久化及长期空间管理仍是后续交付项。
 
 ---
 

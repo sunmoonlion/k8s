@@ -1,6 +1,6 @@
 # 模板后端（tpl-backend）
 
-归属：`components/app-platform/tpl-app/tpl-backend/`，保留平台 → 应用 → 组件层级。用户配置、镜像锁、模板、声明和说明同处。当前先实现数据库与独立迁移阶段；API/worker/scheduler、Web/Admin及Redis/RabbitMQ/Casdoor身份仍待接入，不代表业务应用已部署完成。
+归属：`components/app-platform/tpl-app/tpl-backend/`，保留平台 → 应用 → 组件层级。用户配置、镜像锁、模板、声明和说明同处。当前已实现数据库、独立迁移与Redis身份阶段；API/worker/scheduler、Web/Admin及RabbitMQ/Casdoor身份仍待接入，不代表业务应用已部署完成。
 
 ## 文件与参数
 
@@ -9,8 +9,9 @@
 | `config.yaml` | 数据库名、运行/迁移用户名、任务修订、预期schema、私有路径及本批容量预算；共享开关来自上一级config，namespace来自环境site.yaml的app_namespace，origin来自对应前端config |
 | `image.lock.yaml` | 已构建并由Harbor只读身份核对的镜像摘要与源码提交；部署复用产物 |
 | `database/` | 库与账号初始化、独立运行ServiceAccount和运行账号Secret；复用平台命名空间、网络策略及registry-puller |
+| `redis/` | 独立Redis账号初始化、SOPS输入和权限验收；redis.yaml为独立私有口令输入 |
 | `migration/` | 独立迁移Job与真实权限/读写验收；复用同一后端镜像的规范迁移命令 |
-| `stages.yaml.j2` | Flux的platform-services → tpl-database → tpl-migration依赖链 |
+| `stages.yaml.j2` | Flux的platform-services → tpl-database → tpl-migration → tpl-redis依赖链 |
 
 密码在 `config.yaml` 指定的私有目录 `credentials.yaml`，root0600；独立数据盘备份逐字节核对。首次自动生成两个独立强口令，已有声明后丢失口令必须从备份恢复，不能再随机生成。Git只保存SOPS密文；日志不输出连接串/密码。修改私有文件不等于完成数据库密码轮换，当前流程会拒绝其与备份不一致。
 
@@ -40,8 +41,8 @@ make -C infrastructure application-check APP=tpl
 
 成功的Completed Job保留为Flux期望对象；不要直接删除或加TTL，否则Flux可能重建并重新执行。失败v1 Job和误建tpl-app-dev已按精确归属清除。修改SQL必须更新bootstrap修订，修改迁移任务必须更新migration修订，经相同声明发布流程实施。
 
-## Redis身份准备
+## Redis身份
 
 redis_user为独立登录名（不得default），redis_key_pattern固定tpl:*以匹配模板业务键，redis_identity_revision控制一次性Job修订。私有redis.yaml及备份不输出、不入Git。redis/保存初始化及真实隔离检查；runtime.sops.yaml供后续业务角色读取，provision.sops.yaml只用于数据命名空间的一次性账号初始化。原有平台管理员Secret不复制到应用命名空间。
 
-本单元准备持久ACL能力，须按docs/platform-kind-v1/tpl-redis-maintenance.md批准维护并验收后才算可用；RabbitMQ/Casdoor注册和常驻业务仍未完成。
+2026-10-03持久ACL配置已启用，tpl-redis-v2真实账号写读、键隔离、管理命令拒绝和ACL SAVE通过；统一入口重复执行changed=0且当前认证通过。账号创建后的再次重启未执行，因此持久化验收仍待补充维护窗口，见docs/platform-kind-v1/tpl-redis-maintenance.md。RabbitMQ/Casdoor注册和常驻业务仍未完成。
