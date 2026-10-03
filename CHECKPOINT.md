@@ -16,7 +16,14 @@
 browser-stage/release/apply/reconcile/check、public-check、public-registry-check、entry-repeat。
 临时下载由registry检查自行删除；没有一次性执行脚本留在/tmp。
 
-下一步按顺序：info/knowledge/investment按已统一在线构建链构建、发布、各自独立身份和部署；
+信息应用后端已继续完成原生source-plan/build/publish：源码e5156a0bfc0d5ca9118128427dcacb69697a0737，
+Python3.13.15，构建ok46 failed0，发布ok29 failed0。Harbor摘要
+sha256:f1f45c85441f36d77c320c467f31a1dff40073c11a4ac4f696035b8460838efa，
+独立只读身份核对成功；临时OCI上传包及本次构建上下文自动清除。尚未部署信息应用，
+未生成其数据库/Redis/RabbitMQ/Casdoor身份，未添加其公开路由。证据同目录info-source-plan、
+info-backend-build、info-backend-publish.log；结果锁在.build/applications/info-backend-images.lock.json。
+
+下一步按顺序：完成info前端镜像及其独立身份/部署，再knowledge/investment；
 随后整套一键/统一启停/开机恢复、Harbor跨WSL/KIND重启和删除重建验收、长期空间管理和清理。
 模板业务空扩展点不伪造实现；实例业务验收按各仓已存在的实际代码定范围。
 
