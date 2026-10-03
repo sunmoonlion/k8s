@@ -1,6 +1,6 @@
 # 信息应用域名接入新集群
 
-状态：候选已准备，尚未切换。当前info与info-admin公共域名仍走原默认后端，内部新集群已经部署。维护按所有者当前开发阶段2小时，容量底线10GiB；公共入口短断需要按此前约定单独确认。
+状态：2026-10-03所有者明确批准后，两个域名已切换并通过正式30443验收。维护按所有者当前开发阶段2小时，容量底线10GiB；公共入口短断需要按此前约定单独确认。
 
 候选只新增info.sunmoonai.com和info-admin.sunmoonai.com两个精确SNI→新集群127.0.0.1:29443，域名唯一读取两个前端config。Harbor仍→11443，Casdoor/tpl/tpl-admin维持新29443，其余域名维持旧172.18.0.5:30443。HAProxy不终止TLS、不保存私钥。
 
@@ -21,3 +21,11 @@
 ## 验收边界
 
 上述证明运行与身份/基础消息，不等于爬取、原文对象存储、搜索索引或knowledge分发通过。信息应用明确STORAGE_BACKEND=s3，尚未配置原文S3身份；不回退容器本地目录。搜索当前disabled，管理员业务scope未配置，未放宽权限以制造通过。后续原生平台依赖与业务验收继续完成。
+
+## 本轮实际结果
+
+源实现7dc4a4db2263eb40da4e7bb939b8373784e1cda3，晋级1005a677；入口候选b0159509f17ddb3dde376f31150eddc60391644b。当前Flux源sha256:090fd75634d8dbe8ae348d614803dd1304534ec75d33a591708464aa6be555b7。
+
+14:11:12Z完成切换，14:11:55Z正式验收后关闭维护。备份/mnt/sunmoon-data/backups/entry/sunmoon-kind/info-cutover-20261003T140617Z，三份文件已逐字节+SHA256核对，before/window/result私有记录保留。
+
+application-check-public APP=info和APP=tpl均ok37 changed0 failed0；registry-publish-check完成真实认证推拉及全镜像层/manifest/config核对，entry-deploy重复零变更。证据在infrastructure/.build/applications/runtime-unit-20261003/info-entry-*、info-public-check.log、tpl-after-info-cutover-public-check.log、info-cutover-registry-check.log。没有删除容器/卷、重启数据库或放宽权限。业务依赖仍按本卡边界继续完成。
