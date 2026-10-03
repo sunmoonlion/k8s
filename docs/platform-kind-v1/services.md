@@ -81,3 +81,13 @@ Traefik chart 41.6 使用 `log`、`accessLog`，`versionOverride` 在 values 根
 机器侧证据在 `/data/kind-clusters/sunmoon-kind/bootstrap/evidence/services/`；日志归档在相邻带日期目录。数据库与消息验证通过不等于业务 App、完整登录/授权体系、网络策略的客户端覆盖和持久化重建已全部通过。
 
 命名调整实际修复了 RabbitMQ 已有 cookie 被 fsGroup 变成0660的问题：初始化每次校正0600并比较内容，不重写身份；渲染器不再重置已有卷根权限。Flux apply 即使声明无差异，也须等待新源摘要和当前 generation 真正 Ready。旧同域名 Ingress 必须退役，否则可把请求送到已停止后端而返回503；Pod Running不能替代真实登录。
+
+## 2026-10-03 配置归拢
+
+各组件配置、模板、声明和说明已经集中到组件目录，Casdoor的database/init/运行三个阶段共处app-platform/casdoor。原data-platform/casdoor-database、app-platform/casdoor-init、集中services/templates及environments/kind/services.yaml退役，不留转发副本。运行namespace、PV、凭据和版本保持。
+
+配置定位：`make -C infrastructure config`。宿主、KIND、Harbor、入口、Flux各自参数在相应模块config.yaml；共享环境字段才放site.yaml。
+
+本次晋级遇到前次迁移留下的摘要字段冲突：同一个sunmoon-bootstrap名称的Update与Apply仍是不同管理记录。前两次受保护预览在真正写入前停止（API默认provider字段、同值Apply仍共享归属）；最终核对UID/resourceVersion、现摘要、精确已有归属后，只在一次性源声明接管中允许冲突覆盖并晋级已审核摘要。服务端预览要求其余spec与其他管理者字段完整保留；日常tasks/apply.yaml不启用force，后续继续原生SSA发布。没有直接编辑或清空managedFields。[Kubernetes字段归属规则](https://kubernetes.io/docs/reference/using-api/server-side-apply/#conflicts)。
+
+本轮最终：29份Ansible语法、13个Kustomize根通过，原生render与晋级声明/密文比对通过；五Flux阶段已应用255728911c9e141b614fa55ac1b3d750dbe1c3ea711dc67f92bb6fd545fdb6f9，七个Pod身份/重启数、四PV身份/spec保持。本轮没有重跑业务协议验收、停机或迁移数据；现场内容不变不能替代后续业务与重建持久化验收。证据保存在bootstrap/evidence/config-colocation-20261003，临时脚本已退出日常目录。

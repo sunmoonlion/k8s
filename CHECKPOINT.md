@@ -1,4 +1,4 @@
-# 当前单元：按职责归拢配置与实现（2026-10-03）
+# 当前优先状态：配置与实现归拢已完成（2026-10-03）
 
 本节优先于下方历史。所有者确认这是一项覆盖整个新体系的原则，并授权实施。基线8927f27f35dbbe8c0a57b167355b48c67addec55，工作树/分支platform-kind-v1，仅k8s、无push。
 
@@ -7,9 +7,10 @@
 - 原生Make通过明确CONFIG_FILES传递参数，无新CLI/加载器/兼容转发。make config列出真实输入；render引用同处模板，Flux只读取Kustomization显式列出的生成声明。
 - 56项原配置值保持，12份输入无重复顶层字段；三份拆分数据模板生成对象与旧版一致；76个资源身份/内容保持，只有casdoor-db与casdoor-init的Flux路径变化。
 - 29份Ansible原生语法、13个Kustomize根构建通过；services-render ok103 changed3 failed0，使用常规50GiB门槛。15个旧候选逐文件与Git基线比对后移动，保留密文，不重置凭据。
-- 本提交是目录/声明基线；运行Flux仍使用前序9d231384…，接下来经现有flux-release发布本提交，明确晋级源摘要，再应用路径调整。不得把代码已移动记成现场已升级。
+- 声明提交1de5f6bdbbc8cae55e02b2e27e1cd0087057ff8f，正式OCI摘要sha256:255728911c9e141b614fa55ac1b3d750dbe1c3ea711dc67f92bb6fd545fdb6f9。五Flux阶段当前generation Ready且应用同一摘要；七个Pod的UID/重启数与四PV的UID/spec均与发布前完全一致。原生release ok30 changed8 failed0；最终source-apply ok24 changed0 failed0；候选/解密内容校验ok119 changed0 failed0。
+- 晋级首次失败于前次迁移的源摘要Update/Apply归属冲突。同名manager不代表同一操作归属；两次受保护预览未写入，最终只对原bootstrap已拥有的源字段做一次性带UID/resourceVersion约束的SSA接管，只有新摘要改变，其他spec与其他管理者归属保持。原生入口未增加force或通用恢复代码；旧操作卡纠正，失败日志保留。
 - 边界：无新组件/版本、停机/数据删除、业务入口切换、旧集群操作；长期空间管理与生命周期缺项未由目录整理完成。服务公共凭据/加密仍集中复用，不为目录形式复制共享实现。
-- 当前临时核对脚本和日志在/tmp/colocate-*，完成后归档证据并清理。长期原则见docs/platform-kind-v1/architecture.md；模块README和docs/platform-kind-v1/services.md说明日常方法。
+- 证据在/data/kind-clusters/sunmoon-kind/bootstrap/evidence/config-colocation-20261003，25份临时脚本/日志逐字节归档并记录SHA256后从/tmp移除，另清理本轮pyc与空Ansible临时目录。它们不是部署依赖。长期原则见architecture.md，各模块README和services.md说明日常方法。
 
 规则对应：C-T5/T6仅自己的k8s分支，五仓并列；C-D3原独立库与Secret保持；C-R1/R2发布依旧从已提交Git对象构造固定摘要OCI。未运行新增测试套件；语法、渲染及发布前结构核对是本单元原生检查，业务链路验收仍沿用既有范围。
 

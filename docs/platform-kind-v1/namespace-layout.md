@@ -53,7 +53,7 @@ RabbitMQ 的磁盘恢复要求相同节点名，不能随服务 DNS 自动改名
 3. 暂停 Flux 根、四个子 Kustomization 和 Traefik HelmRelease，确认调谐已暂停；停止新 Casdoor，然后停止 PG/Redis/Rabbit，等相关 Pod 完全退出，旧 Job Pod 退出。暂停调谐本身不等于停服。
 4. 对四个静态数据子目录做一致性冷备份，并保存资源/源指针和私有输入；解包到独立恢复目录，逐文件摘要、路径、UID/GID 比对。两份私有凭据/密钥也必须一致。任一失败，先恢复原副本与调谐，不进行绑定切换。
 5. 创建并核对目标 namespace 的基础对象；仅删除列明的旧四个 PVC，等待 Released，再用 UID 条件保护的 patch 将每个 PV claimRef 换为目标 claim（去掉旧 claim UID/resourceVersion）。创建对应目标 PVC，原 PV UID/宿主路径不变；不能对旧 Bound PVC 直接改 namespace。
-6. 根保持暂停时晋级并确认新 OCI 源就绪；临时更新源摘要时明确使用原管理者 `--field-manager=sunmoon-bootstrap`，避免交回原生SSA入口时冲突；恢复根，核对新路径和目标 namespace 后恢复四子阶段。Traefik 由同一个 HelmRelease targetNamespace 变更负责卸载旧 release 再安装新 release，确认旧 NodePort 已释放；不要另执行 helm install 造成端口或集群 RBAC 冲突。恢复其 helm 调谐以允许 core 健康等待完成。[Flux targetNamespace 行为](https://fluxcd.io/flux/components/helm/helmreleases/#target-namespace)。
+6. 根保持暂停时晋级并确认新 OCI 源就绪；源摘要通过原生SSA入口更新，保持 `sunmoon-bootstrap` 的 Apply 归属；不要以同名普通 patch 代替，Update 与 Apply 仍是不同归属；恢复根，核对新路径和目标 namespace 后恢复四子阶段。Traefik 由同一个 HelmRelease targetNamespace 变更负责卸载旧 release 再安装新 release，确认旧 NodePort 已释放；不要另执行 helm install 造成端口或集群 RBAC 冲突。恢复其 helm 调谐以允许 core 健康等待完成。[Flux targetNamespace 行为](https://fluxcd.io/flux/components/helm/helmreleases/#target-namespace)。
 7. 新Casdoor就绪后先保存并删除旧namespace的同域名Ingress，避免旧已停后端仍命中路由。用 `services-check` 验实际 imageID、四卷绑定、PG/Redis 读写、Rabbit 发布消费、Casdoor TLS 登录与会话；新应用到数据库的跨 namespace 访问和未授权访问拒绝需实测。再重复执行 `services-bootstrap` 验幂等；这不是整项目全部业务验收。
 8. 成功后按清单移除旧服务对象与旧 Secret（保留 platform-system 的引导对象）、退役旧候选目录；保留本次恢复点到本单元验收结束。最后更新事实状态和证据，撤销容量例外。不得笼统删除 namespace 或整个数据目录。
 
