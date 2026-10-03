@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata: {name: casdoor-initialize-v1, namespace: platform-system}
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels: {sunmoonai.com/postgresql-client: 'true'}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: initialize
+          image: harbor.sunmoonai.com:30443/platform/casdoor@sha256:bf84c727d59dff39415414b6fbf00542fbe216567e21401099f5e6baee2460d9
+          command: [/server, -export, -exportPath, /dev/null]
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: '2', memory: 1Gi}}
+          volumeMounts:
+            - {name: config, mountPath: /conf, readOnly: true}
+            - {name: init, mountPath: /bootstrap, readOnly: true}
+            - {name: logs, mountPath: /logs}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: config, secret: {secretName: casdoor-init-config, defaultMode: 0440}}
+        - {name: init, secret: {secretName: casdoor-initial-identity, defaultMode: 0440}}
+        - {name: logs, emptyDir: {sizeLimit: 32Mi}}
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
