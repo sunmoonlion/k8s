@@ -1,5 +1,3 @@
-> 命名调整进行中：部署代码入口已改为 `infrastructure/`。当前线上仍使用本文原 namespace，目标分类及维护边界见 [命名空间调整](namespace-layout.md)；未晋级前不能宣称迁移完成。
-
 # 首批平台服务
 
 本期使用新体系的 Make/Ansible 准备物料与私有输入，Flux 从已提交、固定摘要的 OCI 声明部署。旧 `sunmoonai` 组件脚本不是运行依赖。
@@ -18,7 +16,18 @@
 
 Flux 顺序：`platform-services`（存储、入口、三个数据服务）→ `casdoor-db`（独立库/角色 Job）→ `casdoor-init`（身份初始化 Job）→ `casdoor`（服务）。数据目录是新集群三个节点独立挂载中的专属子目录；PV 使用 `sunmoon-static`、显式 nodeAffinity、Retain。15 GiB PVC 容量声明不是立即分配 15 GiB；本地 PV 的容量字段不是目录配额，实际占用另行监控。所有阶段 `prune:false`，禁止借配置变更自动删除数据。
 
-本期都是单副本，适用于当前本机验证。跨主机高可用、数据库一致性备份与独立恢复、WSL/KIND 重启与删除重建验收、应用链路并未由本页替代。
+本期都是单副本，适用于当前本机验证。跨主机高可用、周期性数据库备份与服务级独立恢复、WSL/KIND 重启与删除重建验收、应用链路并未由本页替代。
+
+## 组件分类和命名空间
+
+| 分类 | KIND 命名空间 | 组件 |
+| --- | --- | --- |
+| ingress-platform | ingress-platform-dev | Traefik |
+| data-platform | data-platform-dev | PostgreSQL、Redis、Casdoor 建库 Job |
+| messaging-platform | messaging-platform-dev | RabbitMQ |
+| app-platform | app-platform-dev | Casdoor 初始化和服务 |
+
+Flux 仍在 `flux-system`，`platform-system` 只保留基础引导/发布标记。Casdoor 是应用服务，其数据库基础设施归数据平台；库、角色和 Secret 保持独立。命名空间迁移和验收记录见 [调整记录](namespace-layout.md)。
 
 ## 配置和 Secret
 
@@ -32,7 +41,7 @@ Flux 顺序：`platform-services`（存储、入口、三个数据服务）→ `
 
 私有输入字段为 `service_credentials` 下的 `postgresql_password`、`redis_password`、`rabbitmq_username`、`rabbitmq_password`、`rabbitmq_cookie`、`casdoor_db_password`、`casdoor_admin_password`。`casdoor_application_secret` 预留给后续应用注册，本期未用于业务 OAuth 客户端。
 
-Casdoor 的 `/server -export` 在导入初始身份之前退出，因此首次 Job 启动隔离服务、等待可用，再写入 `/files/.initialized-v1`。随后停止初始化进程；正式服务不配置 init_data 导入。存在完成标记时初始化 Job 仅运行无身份覆盖的数据库导出检查，防止集群重建重置管理员。该标记应与 Casdoor 文件卷和数据库一起备份；本期尚未验证这些数据的整套恢复。Casdoor 官方服务仍有内置 schema 初始化行为，不将其冒充业务应用的独立迁移链。
+Casdoor 的 `/server -export` 在导入初始身份之前退出，因此首次 Job 启动隔离服务、等待可用，再写入 `/files/.initialized-v1`。随后停止初始化进程；正式服务不配置 init_data 导入。存在完成标记时初始化 Job 仅运行无身份覆盖的数据库导出检查，防止集群重建重置管理员。该标记应与 Casdoor 文件卷和数据库一起备份；本次 namespace 迁移已完成四卷冷备份、独立解包与全目录内容/权限比对，但未从该备份启动另一套数据库做业务恢复演练。Casdoor 官方服务仍有内置 schema 初始化行为，不将其冒充业务应用的独立迁移链。
 
 ## 入口和操作
 
@@ -51,20 +60,22 @@ make services-bootstrap            # 已晋级版本的一键部署与实际验�
 make services-check                # 实际数据库/消息/身份验收
 ```
 
-常规容量门槛保持 50 GiB。2026-10-03 所有者为这一批特批 40 GiB、最多新增 5 GiB，使用有期限和操作范围的外部参数，本批结束撤销，不作为日常绕过门槛的方法。
+常规容量门槛保持 50 GiB。2026-10-03 所有者为这一批特批 40 GiB、最多新增 5 GiB，使用有期限和操作范围的外部参数，本批结束撤销。后续命名调整另获40GiB/最多1GiB例外，也已撤销；最终统一入口已按默认50GiB完整通过，不作为日常绕过门槛的方法。
 
 `services-bootstrap` 顺序执行凭据检查、离线镜像验证/发布、工具/chart、候选生成、与晋级声明比对、Flux 协调和功能验收。已改配置但未提交发布时明确失败；不会“执行成功但用旧配置”。首次准备依赖已有 Harbor、KIND、Flux/SOPS 及已备齐包，本入口是首批服务单元，完整宿主到应用的一键编排仍是后续交付项。
 
-变更发布流程：修改普通配置或私有输入 → `services-render` → 审查 `.build/services/{core,casdoor-db,casdoor-init,casdoor}` 与 `stages.yaml` → 将候选晋级至 `gitops/components/services/` 和 `gitops/clusters/kind/services.yaml` → 本地 Git 提交 → `make flux-release` → 将 `.build/flux/source-candidate.yaml` 晋级到 `environments/kind/flux-source.yaml` → `make services-bootstrap`。发布器递归校验各子阶段不存在明文 Secret，发布源只来自 Git 对象。
+变更发布流程：修改普通配置或私有输入 → `services-render` → 审查 `.build/services/{core,foundations,data-platform,messaging-platform,ingress-platform,app-platform}` 与 `stages.yaml` → 将候选晋级至 `gitops/components/` 和 `gitops/clusters/kind/services.yaml` → 本地 Git 提交 → `make flux-release` → 将 `.build/flux/source-candidate.yaml` 晋级到 `environments/kind/flux-source.yaml` → `make services-bootstrap`。发布器递归校验各子阶段不存在明文 Secret，发布源只来自 Git 对象。
 
 开关控制新声明包含的工作负载；因 `prune:false`，把开关改 false 不会暗中卸载已经存在的服务/卷。全平台启停和组件退役需要后续生命周期入口，不以该开关替代。
 
 ## 验收范围及已知变更
 
-`services-check` 核对拥有的 kube-system UID、当前 Flux generation Ready、四个 PV Bound/Retain/目录，然后执行 PostgreSQL 临时事务读写、Redis 有过期时间的唯一键读写并删除、RabbitMQ 临时队列发布/取回并删除、Casdoor 经 TLS 入口登录和会话读取。凭据经私有输入/stdin/cookie 文件传递，临时 cookie 和端口转发在 finally 中清理。
+`services-check` 核对拥有的 kube-system UID、当前 Flux generation Ready、四个 PV Bound/Retain/目录，然后执行 PostgreSQL 临时事务读写、Redis 有过期时间的唯一键读写并删除、RabbitMQ 临时队列发布/取回并删除、Casdoor 经 TLS 入口登录和会话读取。同时用唯一临时 Pod 验证 app→PostgreSQL 的完整 DNS、允许客户端连接和无客户端标签时拒绝连接；同一锁定缓存镜像、同一节点，不使用数据库口令做网络探测，按 UID 核对后清理。凭据经私有输入/stdin/cookie 文件传递，临时 cookie 和端口转发在 finally 中清理。
 
 RabbitMQ 使用管理 API 完成真实消息路由/取回，**尚不是业务客户端 AMQP 链路验收**。4.3 默认不再接受非持久非独占队列，验收改为 durable classic + 队列 TTL，不开启废弃功能。后续应用客户端的队列声明需单独核对。[官方队列说明](https://www.rabbitmq.com/docs/queues#durability)
 
 Traefik chart 41.6 使用 `log`、`accessLog`，`versionOverride` 在 values 根层；首次错误已修正。官方 Helm schema/模板校验通过后才晋级修正版本。此前失败记录保留，不能用最后 Ready 覆盖第一次失败事实。
 
 机器侧证据在 `/data/kind-clusters/sunmoon-kind/bootstrap/evidence/services/`；日志归档在相邻带日期目录。数据库与消息验证通过不等于业务 App、完整登录/授权体系、网络策略的客户端覆盖和持久化重建已全部通过。
+
+命名调整实际修复了 RabbitMQ 已有 cookie 被 fsGroup 变成0660的问题：初始化每次校正0600并比较内容，不重写身份；渲染器不再重置已有卷根权限。Flux apply 即使声明无差异，也须等待新源摘要和当前 generation 真正 Ready。旧同域名 Ingress 必须退役，否则可把请求送到已停止后端而返回503；Pod Running不能替代真实登录。

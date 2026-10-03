@@ -247,6 +247,16 @@
           loop: [ocirepository, kustomization]
           register: observed
           changed_when: false
+          # A no-diff apply can still be reconciling a recently promoted source.
+          # Wait for the requested revision, not a stale Ready condition.
+          until:
+            - observed.rc == 0
+            - (observed.stdout | from_json).status.observedGeneration | default(-1) == (observed.stdout | from_json).metadata.generation
+            - (observed.stdout | from_json).status.conditions | default([]) | selectattr('type','equalto','Ready') | selectattr('status','equalto','True') | list | length == 1
+            - item != 'ocirepository' or source_lock.digest in ((observed.stdout | from_json).status.artifact.revision | default(''))
+            - item != 'kustomization' or ((observed.stdout | from_json).status.lastAppliedRevision | default('')) == source_lock.digest
+          retries: '{{ 120 if flux_source_action == "apply" else 1 }}'
+          delay: 5
         - name: Require current generation Ready with the exact promoted digest
           ansible.builtin.assert:
             quiet: true

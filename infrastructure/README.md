@@ -1,4 +1,4 @@
-> 2026-10-03：本部署根由 `platform/` 更名为 `infrastructure/`。组件 namespace 调整仍在准备，运行源暂保持首批已验发布；详见 [命名空间调整](../docs/platform-kind-v1/namespace-layout.md)。
+> 部署根为 `infrastructure/`，组件已按 data/messaging/app/ingress-platform-dev 分类运行；操作与实际迁移记录见 [命名空间调整](../docs/platform-kind-v1/namespace-layout.md)。
 
 # 新部署体系：宿主、集群与平台服务
 

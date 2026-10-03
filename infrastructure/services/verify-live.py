@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Bounded live acceptance: RabbitMQ publish/consume and Casdoor TLS/login.
-No deployment orchestration or credential output. Only this run's queue is removed.
+No deployment orchestration or credential output. Only this run's queue and namespace probe Pods are removed.
 """
 import argparse
 import base64
@@ -26,12 +26,60 @@ def require(condition, message):
         raise AcceptanceError(message)
 
 
+
+def verify_namespace_boundary(args, environment):
+    """Probe both label-denied and allowed connections using the same cached image."""
+    prefix = [args.kubectl, '--kubeconfig=' + args.kubeconfig, '--context=kind-sunmoon-kind', '-n', args.app_namespace, '--request-timeout=20s']
+    def kubectl(arguments, document=None):
+        result = subprocess.run(prefix + arguments, input=None if document is None else json.dumps(document), capture_output=True, text=True, env=environment, timeout=40)
+        require(result.returncode == 0, 'Namespace boundary probe Kubernetes operation failed')
+        return result.stdout
+    hostname = 'postgresql.' + args.data_namespace + '.svc.cluster.local'
+    for allowed in (False, True):
+        name = 'namespace-boundary-' + uuid.uuid4().hex[:16]
+        labels = {'app.kubernetes.io/name':'namespace-boundary-check'}
+        if allowed:
+            labels['sunmoonai.com/postgresql-client'] = 'true'
+        script = 'getent hosts "$PGHOST" >/dev/null; if pg_isready -h "$PGHOST" -U postgres -d postgres -t 3 >/dev/null 2>&1; then actual=allowed; else actual=denied; fi; test "$actual" = "$EXPECTED"; echo boundary-verified'
+        pod = {'apiVersion':'v1','kind':'Pod','metadata':{'name':name,'namespace':args.app_namespace,'labels':labels},'spec':{
+            'restartPolicy':'Never','activeDeadlineSeconds':60,'serviceAccountName':'platform-runtime','automountServiceAccountToken':False,
+            'nodeSelector':{'kubernetes.io/hostname':args.probe_node},
+            'securityContext':{'runAsNonRoot':True,'runAsUser':999,'runAsGroup':999,'seccompProfile':{'type':'RuntimeDefault'}},
+            'containers':[{'name':'probe','image':args.probe_image,'imagePullPolicy':'IfNotPresent','command':['/bin/sh','-ec',script],
+                'env':[{'name':'PGHOST','value':hostname},{'name':'EXPECTED','value':'allowed' if allowed else 'denied'}],
+                'securityContext':{'allowPrivilegeEscalation':False,'readOnlyRootFilesystem':True,'capabilities':{'drop':['ALL']}},
+                'resources':{'requests':{'cpu':'10m','memory':'32Mi'},'limits':{'cpu':'100m','memory':'64Mi'}}}]}}
+        created = json.loads(kubectl(['create','-f','-','-o','json'], pod))
+        uid = created['metadata']['uid']
+        try:
+            deadline = time.monotonic() + 75
+            while time.monotonic() < deadline:
+                observed = json.loads(kubectl(['get','pod',name,'-o','json']))
+                require(observed['metadata']['uid'] == uid, 'Namespace probe ownership changed')
+                phase = observed.get('status',{}).get('phase')
+                if phase in ('Succeeded','Failed'):
+                    require(phase == 'Succeeded', 'Namespace policy did not match ' + ('allowed' if allowed else 'denied') + ' expectation')
+                    require(kubectl(['logs',name]).strip() == 'boundary-verified', 'Namespace probe result mismatch')
+                    break
+                time.sleep(1)
+            else:
+                raise AcceptanceError('Namespace boundary probe timed out')
+        finally:
+            observed = json.loads(kubectl(['get','pod',name,'-o','json']))
+            require(observed['metadata']['uid'] == uid, 'Refuse cleanup of a foreign probe')
+            kubectl(['delete','pod',name,'--wait=true','--timeout=30s'])
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--kubectl', required=True)
     parser.add_argument('--kubeconfig', required=True)
     parser.add_argument('--ca', required=True)
     parser.add_argument('--messaging-namespace', required=True)
+    parser.add_argument('--app-namespace', required=True)
+    parser.add_argument('--data-namespace', required=True)
+    parser.add_argument('--probe-node', required=True)
+    parser.add_argument('--probe-image')
     parser.add_argument('--skip-rabbitmq', action='store_true')
     parser.add_argument('--skip-casdoor', action='store_true')
     args = parser.parse_args()
@@ -42,6 +90,9 @@ def main():
     for key in ('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','http_proxy','https_proxy','all_proxy'):
         environment.pop(key, None)
     environment['NO_PROXY'] = '*'
+    if args.probe_image:
+        require(re.fullmatch(r'[^@]+@sha256:[0-9a-f]{64}', args.probe_image) is not None, 'Probe image must be immutable')
+        verify_namespace_boundary(args, environment)
     if not args.skip_rabbitmq:
         queue = 'sunmoon-acceptance-' + uuid.uuid4().hex
         tunnel = subprocess.Popen(prefix + ['port-forward', '--address=127.0.0.1', 'service/rabbitmq', '0:15672'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, env=environment)
@@ -107,7 +158,7 @@ def main():
             account = json.loads(result.stdout)
             require(account.get('status') == 'ok' and isinstance(account.get('data'),dict), 'Casdoor session did not return an account')
             require(account['data'].get('name') == 'admin' and account['data'].get('owner') == 'built-in', 'Casdoor session account mismatch')
-    print(json.dumps({'rabbitmq_publish_consume':'skipped' if args.skip_rabbitmq else True,'casdoor_tls_chain':'skipped' if args.skip_casdoor else True,'casdoor_admin_login':'skipped' if args.skip_casdoor else True,'casdoor_session':'skipped' if args.skip_casdoor else True,'application_entry_changed':False}))
+    print(json.dumps({'rabbitmq_publish_consume':'skipped' if args.skip_rabbitmq else True,'casdoor_tls_chain':'skipped' if args.skip_casdoor else True,'casdoor_admin_login':'skipped' if args.skip_casdoor else True,'casdoor_session':'skipped' if args.skip_casdoor else True,'namespace_client_allowed':bool(args.probe_image),'namespace_unlabelled_client_denied':bool(args.probe_image),'application_entry_changed':False}))
 
 
 if __name__ == '__main__':

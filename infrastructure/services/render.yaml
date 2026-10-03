@@ -124,6 +124,8 @@
         group: '{{ item.gid }}'
         mode: '0700'
       loop: '{{ services_volumes }}'
+      # Existing roots are owned by kubelet fsGroup handling; don't reset their mode.
+      when: not (component_dirs.results | selectattr('item.name','equalto',item.name) | first).stat.exists
     - name: Prepare public candidate directories
       ansible.builtin.file: {path: '{{ build }}/{{ item }}', state: directory, mode: '0755', owner: '{{ cluster_operator }}'}
       loop: '{{ service_candidate_roots + (service_stage_paths.values() | list) }}'

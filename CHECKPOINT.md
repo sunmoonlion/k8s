@@ -1,14 +1,19 @@
-# 本轮优先状态：目录改名与命名空间归类准备（2026-10-03）
+# 当前优先状态：目录与命名空间迁移完成（2026-10-03）
 
-所有者已同意推荐：新根 `infrastructure/`；Casdoor 归 app-platform-dev，PG/Redis 归 data-platform-dev，RabbitMQ 归 messaging-platform-dev，Traefik 归 ingress-platform-dev。基线 c49dc6e430ba1c4db0eafeac341f3a9ad6757e02，只改新 worktree 的 k8s，无 push。
+本节优先于下方历史。新部署根是 `infrastructure/`，旧 `platform/` 路径及旧GitOps services分类已退役，无转发入口。工作树/分支仍为platform-kind-v1，只改k8s、无push。基线c49dc6e430ba1c4db0eafeac341f3a9ad6757e02；目录准备87a248be1507d2e59030a8e4fed59d1b437c9da1，初始新声明947ee03a1a4b5743d94b608734d358a776d128d7，Rabbit修复声明447fceddf6eb8416bd5a475ef6d6fef6d1ca3e99；最终实现见HEAD。
 
-目录和文档引用已改，虚拟环境从锁定本地缓存修复；模板、跨命名空间网络策略、Secret 归属与验收入口已调整。**尚未生成/晋级新 GitOps、未停服、未重绑卷、未宣称新 namespace 验收通过**。运行源与下方首批验收一致；保留旧 GitOps 作为当前发布，后续晋级时移除旧分类。
+- Casdoor在app-platform-dev，PG/Redis及Casdoor建库Job在data-platform-dev，Rabbit在messaging-platform-dev，Traefik在ingress-platform-dev；Flux保持flux-system。platform-system只留引导基础，ops没有组件时不创建。
+- 最终OCI源sha256:9d231384742cc015f19793f7748117871cd154d3895af4e454cb1aa0cf7a12f0，五Kustomization及HelmRelease当前generation Ready。五常驻服务Ready、零重启；两个Job完成；四PV Bound/Retain、原PV UID与宿主路径保留。Kube-system UID仍67d27d4a-f9ad-4f01-a37f-225144cacaef，kubeconfig ~/.kube/sunmoon-kind.config，kubectl在infrastructure/.tools/bin。
+- 所有者明确批准20分钟维护、失败恢复另10分钟、四旧PVC对象保数据重绑定及40GiB/新增最多1GiB例外；898秒内取得协议通过回执，没有运行回退。容量例外已撤销，归档参数标记过期；最终统一入口按默认50GiB完整通过。
+- 冷归档71,198,720字节，SHA256895b072a527e2d65f8c19e6d321ad35a5c3f3d07075cd694f01fd9992de96c4e；独立解包的1,619项内容/权限/属主与冷源一致。不是独立数据库业务恢复演练；原数据重绑定后真实登录与读写通过。保留tar及证据，临时解包副本核对后清理。
+- 修复了Rabbit已有cookie被fsGroup变成0660（现在每次init校正0600且比较值）、渲染器重复重置卷根权限、临时patch的source摘要字段管理冲突、原生无diff apply未等待当前摘要、旧Ingress与新Ingress同域名造成503。失败日志与修正结果均保留。Rabbit内部持久节点名不改，单节点hostAliases解析自身，客户端只用新namespace Service；未来多节点需要另设计发现，不能复制回环映射。
+- 原生services-bootstrap九段failed0；配置/秘密/声明无持久变更，chart临时目录changed2、验收回执changed1。services-check通过PG事务、Redis键、Rabbit管理API消息路由/取回、Casdoor TLS登录/会话，以及app→PG DNS和有/无客户端标签的允许/拒绝。探测Pod均精确清理；AMQP业务客户端仍未验。
+- 旧同域名Ingress、四旧PVC及两旧Job退役后，另逐对象核对归属/UID清理27项，删除已核空的ingress-system；清理后再次验收通过。Harbor十容器healthy，两宿主systemd active，原kind控制面停止、两worker运行。30443业务路由仍原worker，新Casdoor仅以connect-to回环29443验收，未切换正式应用入口。
+- 04:39:10Z扣数据盘增长与16MiB后预留61,735,886,848字节，约57.49GiB。C空闲增加来源未查，不计成本轮释放量；本轮临时冷备份+解包已识别峰值约134MiB，归档自身约68MiB，物料版本/节点镜像缓存复用。后续每单元重新预算，不继承例外。
+- 最终引用审计另修正credentials.yaml的旧Secret路径；原生credentials默认50GiB重复运行ok21 changed0 failed0。25份临时脚本/日志逐字节归档后删除，两个/tmp目录和已核对的冷备份解包副本删除；冷tar保留，active容量例外不存在。
+- 证据：/data/kind-clusters/sunmoon-kind/bootstrap/evidence/namespace-layout-20261003，协议最新回执相邻services/latest.json。日常入口/配置见docs/platform-kind-v1/services.md，迁移结果和经验见namespace-layout.md；Ansible入口已用缓存重建，旧绝对路径不再依赖。
 
-已完成29个Ansible playbook语法检查、Python AST/YAML解析、新目录 `make services-plan`（ok3 changed0 failed0），公共模板实际渲染6任务成功、56个对象唯一性/namespace/PV Retain与目标claim/stage路径核对通过；不包含SOPS完整候选、服务中断或运行迁移验收。Ansible初次公共渲染因沙箱本地RPC受限失败，批准沙箱外只写/tmp后通过；首次语法盘点发现批量编辑缩进错误，已修正并全量复查。
-
-继续完成真实秘密候选与维护准备；操作卡 `docs/platform-kind-v1/namespace-layout.md`。维护需要此前停服规则下的新窗口、四个旧 PVC 对象的保数据重绑定和新容量例外（建议40GiB/新增1GiB），前批例外不能继承。Rabbit 磁盘内部节点身份必须保持不变，使用当前单节点 hostAliases，不通过改名重置数据。
-
-03:54:50Z 四目录合计68,502,356字节，Rabbit队列清单为空；C空闲114,323,898,368，数据盘未来增长66,936,897,536，常规50GiB不足。代码修改不代表线上分类变更。原始kind、外置Harbor与入口未变。
+下一步回到原顺序：模板应用依赖及剩余平台组件 → 业务应用链 → 完整一键/生命周期/开机恢复 → WSL/KIND重启、删除重建Harbor持久化 → 长期空间管理与最终清理。全部业务跑通、服务级灾备/机器外备份、云端实机均未由本轮完成。规则C-D3保持独立库/身份，C-R1/R2提交与不可变OCI/image一致，C-T5/T6五仓并列、本轮只改k8s。
 
 ---
 

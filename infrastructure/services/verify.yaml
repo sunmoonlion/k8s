@@ -113,7 +113,7 @@
       no_log: true
     - name: Verify real message delivery and authenticated TLS identity flow
       ansible.builtin.command:
-        argv: '{{ ["python3", playbook_dir + "/verify-live.py", "--kubectl", playbook_dir + "/../.tools/bin/kubectl", "--kubeconfig", cluster_kubeconfig, "--messaging-namespace", messaging_namespace, "--ca", registry_config_dir + "/clients/ca.crt"] + ([] if services_rabbitmq_enabled else ["--skip-rabbitmq"]) + ([] if services_casdoor_enabled else ["--skip-casdoor"]) }}'
+        argv: '{{ ["python3", playbook_dir + "/verify-live.py", "--kubectl", playbook_dir + "/../.tools/bin/kubectl", "--kubeconfig", cluster_kubeconfig, "--messaging-namespace", messaging_namespace, "--app-namespace", app_namespace, "--data-namespace", data_namespace, "--probe-node", cluster_name + "-" + (services_volumes | selectattr("name","equalto","postgresql") | first).node, "--ca", registry_config_dir + "/clients/ca.crt"] + (["--probe-image", registry_address + "/platform/postgresql@" + (images | selectattr("id","equalto","postgresql") | first).manifest_digest] if services_postgresql_enabled else []) + ([] if services_rabbitmq_enabled else ["--skip-rabbitmq"]) + ([] if services_casdoor_enabled else ["--skip-casdoor"]) }}'
         stdin: '{{ private_input.content | b64decode | from_yaml | to_json }}'
       no_log: true
       changed_when: false
