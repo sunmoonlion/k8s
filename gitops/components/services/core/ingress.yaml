@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress-system
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: v1.36
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata: {name: traefik-chart, namespace: flux-system}
+spec:
+  interval: 10m
+  url: oci://harbor.sunmoonai.com:30443/platform/charts/traefik
+  ref: {digest: sha256:5afdf1eda03ebc22207100d3226579809753a90ef41167e227cd3d19b0074428}
+  secretRef: {name: registry-puller}
+  certSecretRef: {name: harbor-ca}
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: traefik, namespace: flux-system}
+spec:
+  interval: 10m
+  timeout: 5m
+  releaseName: traefik
+  targetNamespace: ingress-system
+  chartRef: {kind: OCIRepository, name: traefik-chart}
+  install:
+    crds: Skip
+    remediation: {retries: 2}
+  upgrade:
+    crds: Skip
+    remediation: {retries: 2}
+  driftDetection: {mode: enabled}
+  values:
+    image:
+      registry: harbor.sunmoonai.com:30443
+      repository: platform/traefik
+      tag: v3.7.13
+      digest: sha256:3429c14149401de2ac82fc72ddc6a92642332b90deb3012301ff211b9d2d0f18
+    deployment:
+      replicas: 1
+      imagePullSecrets: [{name: registry-puller}]
+    providers:
+      kubernetesCRD: {enabled: false}
+      kubernetesIngress:
+        enabled: true
+        publishedService: {enabled: false}
+    ingressClass: {enabled: true, isDefaultClass: false, name: sunmoon}
+    service:
+      type: NodePort
+      spec: {externalTrafficPolicy: Cluster}
+    ports:
+      web: {expose: {default: false}}
+      websecure: {nodePort: 30443}
+    resources:
+      requests: {cpu: 100m, memory: 128Mi}
+      limits: {cpu: '1', memory: 512Mi}
+    logs:
+      general: {level: INFO, format: json}
+      access: {enabled: false}

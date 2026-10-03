@@ -5,3 +5,4 @@ resources:
   - release-info.yaml
   - foundation.yaml
   - registry-puller.sops.yaml
+  - services.yaml

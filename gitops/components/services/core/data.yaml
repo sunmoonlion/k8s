@@ -1,0 +1,260 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-headless
+  namespace: platform-system
+spec:
+  clusterIP: None
+  selector: {app.kubernetes.io/name: postgresql}
+  ports: [{name: service, port: 5432, targetPort: 5432}]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql
+  namespace: platform-system
+spec:
+  selector: {app.kubernetes.io/name: postgresql}
+  ports:
+    - {name: service, port: 5432, targetPort: 5432}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql
+  namespace: platform-system
+spec:
+  serviceName: postgresql-headless
+  replicas: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: postgresql}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: postgresql, app.kubernetes.io/part-of: sunmoon-platform}
+    spec:
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      nodeSelector:
+        kubernetes.io/hostname: sunmoon-kind-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: postgresql
+          image: harbor.sunmoonai.com:30443/platform/postgresql@sha256:0377e72c5289ed2f98cf61b1a9c2db9eb9d300317fe14244492fbc94343b3d04
+          imagePullPolicy: IfNotPresent
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: '2', memory: 1Gi}
+          ports:
+            - {name: service, containerPort: 5432}
+          env:
+            - {name: POSTGRES_USER, value: postgres}
+            - {name: POSTGRES_DB, value: postgres}
+            - {name: PGDATA, value: /var/lib/postgresql/18/docker}
+            - {name: POSTGRES_PASSWORD_FILE, value: /run/auth/password}
+            - {name: POSTGRES_INITDB_ARGS, value: '--auth-host=scram-sha-256 --auth-local=scram-sha-256'}
+          startupProbe:
+            exec: {command: [pg_isready, -U, postgres]}
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec: {command: [pg_isready, -U, postgres]}
+            periodSeconds: 10
+          livenessProbe:
+            exec: {command: [pg_isready, -U, postgres]}
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/postgresql}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+            - {name: run, mountPath: /var/run/postgresql}
+            - {name: shm, mountPath: /dev/shm}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: data, persistentVolumeClaim: {claimName: postgresql-data}}
+        - {name: auth, secret: {secretName: postgresql-auth, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: run, emptyDir: {sizeLimit: 16Mi}}
+        - {name: shm, emptyDir: {medium: Memory, sizeLimit: 128Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-headless
+  namespace: platform-system
+spec:
+  clusterIP: None
+  selector: {app.kubernetes.io/name: redis}
+  ports: [{name: service, port: 6379, targetPort: 6379}]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: platform-system
+spec:
+  selector: {app.kubernetes.io/name: redis}
+  ports:
+    - {name: service, port: 6379, targetPort: 6379}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: platform-system
+spec:
+  serviceName: redis-headless
+  replicas: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: redis}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: redis, app.kubernetes.io/part-of: sunmoon-platform}
+    spec:
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      nodeSelector:
+        kubernetes.io/hostname: sunmoon-kind-worker2
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: redis
+          image: harbor.sunmoonai.com:30443/platform/redis@sha256:7ef5b5cec96495a04ca7feff88a9492efeab8053fb284d24bdd73344c9245a48
+          imagePullPolicy: IfNotPresent
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: '2', memory: 512Mi}
+          ports:
+            - {name: service, containerPort: 6379}
+          command: [redis-server, /run/auth/redis.conf]
+          startupProbe:
+            exec: {command: [/bin/sh, -ec, 'REDISCLI_AUTH="$(cat /run/auth/password)" redis-cli ping | grep -qx PONG']}
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            exec: {command: [/bin/sh, -ec, 'REDISCLI_AUTH="$(cat /run/auth/password)" redis-cli ping | grep -qx PONG']}
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: {port: 6379}
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: data, persistentVolumeClaim: {claimName: redis-data}}
+        - {name: auth, secret: {secretName: redis-auth, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-headless
+  namespace: platform-system
+spec:
+  clusterIP: None
+  selector: {app.kubernetes.io/name: rabbitmq}
+  ports: [{name: service, port: 5672, targetPort: 5672}]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: platform-system
+spec:
+  selector: {app.kubernetes.io/name: rabbitmq}
+  ports:
+    - {name: service, port: 5672, targetPort: 5672}
+    - {name: management, port: 15672, targetPort: 15672}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbitmq
+  namespace: platform-system
+spec:
+  serviceName: rabbitmq-headless
+  replicas: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: rabbitmq}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: rabbitmq, app.kubernetes.io/part-of: sunmoon-platform}
+    spec:
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      nodeSelector:
+        kubernetes.io/hostname: sunmoon-kind-worker2
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+        - name: cookie
+          image: harbor.sunmoonai.com:30443/platform/rabbitmq@sha256:f50f1cbbec73032d248d516b043a6dd334302b571d71b68486e7b32a86efb45d
+          command: [/bin/sh, -ec]
+          args:
+            - 'if [ ! -e /var/lib/rabbitmq/.erlang.cookie ]; then cp /run/auth/erlang-cookie /var/lib/rabbitmq/.erlang.cookie; chmod 600 /var/lib/rabbitmq/.erlang.cookie; fi; cmp --silent /run/auth/erlang-cookie /var/lib/rabbitmq/.erlang.cookie'
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {cpu: 100m, memory: 64Mi}}
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/rabbitmq}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+      containers:
+        - name: rabbitmq
+          image: harbor.sunmoonai.com:30443/platform/rabbitmq@sha256:f50f1cbbec73032d248d516b043a6dd334302b571d71b68486e7b32a86efb45d
+          imagePullPolicy: IfNotPresent
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: '2', memory: 1Gi}
+          ports:
+            - {name: service, containerPort: 5672}
+            - {name: management, containerPort: 15672}
+          env:
+            - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
+            - {name: RABBITMQ_USE_LONGNAME, value: 'true'}
+            - {name: RABBITMQ_NODENAME, value: 'rabbit@$(POD_NAME).rabbitmq-headless.platform-system.svc.cluster.local'}
+            - {name: RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS, value: '+S 2:2'}
+          startupProbe:
+            exec: {command: [rabbitmq-diagnostics, -q, ping]}
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec: {command: [rabbitmq-diagnostics, -q, check_running]}
+            periodSeconds: 20
+            timeoutSeconds: 10
+          livenessProbe:
+            exec: {command: [rabbitmq-diagnostics, -q, ping]}
+            periodSeconds: 30
+            timeoutSeconds: 10
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/rabbitmq}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+            - {name: auth, mountPath: /etc/rabbitmq/conf.d/20-sunmoon.conf, subPath: rabbitmq.conf, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: data, persistentVolumeClaim: {claimName: rabbitmq-data}}
+        - {name: auth, secret: {secretName: rabbitmq-auth, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
