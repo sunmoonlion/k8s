@@ -33,7 +33,10 @@ spec:
               mc() {
                 /usr/bin/mc --config-dir /work/client --json "$@" >/work/result.json 2>/work/error.log || return 1
                 # AIStor mc can emit JSON status=error with process exit 0.
-                if grep -Eq '\"status\"[[:space:]]*:[[:space:]]*\"error\"' /work/result.json; then return 1; fi
+                # Official minimal client image has no grep/jq; use POSIX shell.
+                case "$(cat /work/result.json)" in
+                  *'"status": "error"'*|*'"status":"error"'*) return 1 ;;
+                esac
               }
               if ! mc admin user info owned '{{ cfg.object_storage.user }}'; then
                 # The supported piped-input form avoids putting credentials in argv.
@@ -47,7 +50,10 @@ spec:
               if mc admin info application; then
                 printf 'Unexpected management permission\n' >&2; exit 1
               fi
-              grep -qi 'Access.*Denied' /work/result.json /work/error.log
+              case "$(cat /work/result.json /work/error.log)" in
+                *AccessDenied*|*'Access Denied'*) : ;;
+                *) printf 'Management rejection was not AccessDenied\\n' >&2; exit 1 ;;
+              esac
               printf '{"bucket":"{{ cfg.object_storage.bucket }}","user":"{{ cfg.object_storage.user }}","versioning_enabled":true,"management_denied":true}\n'
           env: [{name: HOME, value: /work}, {name: NO_PROXY, value: '*'}]
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}

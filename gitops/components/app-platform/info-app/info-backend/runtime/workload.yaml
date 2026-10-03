@@ -55,7 +55,7 @@ spec:
         sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 08c4ed31938dd56bcf48e5193c066fb9b25ada75b49191d4aa7280d8482fe2c8
+        sunmoonai.com/config-sha256: a09bb309f50a81dbe2a5dd1ea880ffeaf5704fa84a593aef5bc8d3aae0042782
     spec:
       serviceAccountName: info-runtime
       automountServiceAccountToken: false
@@ -115,7 +115,7 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 08c4ed31938dd56bcf48e5193c066fb9b25ada75b49191d4aa7280d8482fe2c8
+        sunmoonai.com/config-sha256: a09bb309f50a81dbe2a5dd1ea880ffeaf5704fa84a593aef5bc8d3aae0042782
     spec:
       serviceAccountName: info-runtime
       automountServiceAccountToken: false
@@ -171,7 +171,7 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 08c4ed31938dd56bcf48e5193c066fb9b25ada75b49191d4aa7280d8482fe2c8
+        sunmoonai.com/config-sha256: a09bb309f50a81dbe2a5dd1ea880ffeaf5704fa84a593aef5bc8d3aae0042782
     spec:
       serviceAccountName: info-runtime
       automountServiceAccountToken: false
