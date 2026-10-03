@@ -1,0 +1,13 @@
+---
+# Source layout only; component namespaces belong to environments/kind/services.yaml.
+service_stage_paths:
+  casdoor-db: data-platform/casdoor-database
+  casdoor-init: app-platform/casdoor-init
+  casdoor: app-platform/casdoor
+service_candidate_roots:
+  - core
+  - foundations
+  - data-platform
+  - messaging-platform
+  - ingress-platform
+  - app-platform

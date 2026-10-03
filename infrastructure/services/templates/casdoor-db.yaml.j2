@@ -1,6 +1,6 @@
 apiVersion: batch/v1
 kind: Job
-metadata: {name: casdoor-database-v1, namespace: {{ services_namespace }}}
+metadata: {name: casdoor-database-v1, namespace: {{ data_namespace }}}
 spec:
   backoffLimit: 2
   activeDeadlineSeconds: 300
@@ -18,7 +18,7 @@ spec:
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
           env:
-            - {name: PGHOST, value: postgresql}
+            - {name: PGHOST, value: postgresql.{{ data_namespace }}.svc.cluster.local}
             - {name: PGUSER, value: postgres}
             - {name: PGDATABASE, value: postgres}
             - {name: PGPASSWORD, valueFrom: {secretKeyRef: {name: postgresql-auth, key: password}}}

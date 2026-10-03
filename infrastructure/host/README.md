@@ -4,7 +4,7 @@
 
 ## 日常命令
 
-在 `platform/`：
+在 `infrastructure/`：
 
 ```sh
 make prepare-host-materials # 核验 HAProxy/skopeo 归档；缺失的本机镜像从归档导入

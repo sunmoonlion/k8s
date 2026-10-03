@@ -1,3 +1,5 @@
+> 命名调整进行中：部署代码入口已改为 `infrastructure/`。当前线上仍使用本文原 namespace，目标分类及维护边界见 [命名空间调整](namespace-layout.md)；未晋级前不能宣称迁移完成。
+
 # 首批平台服务
 
 本期使用新体系的 Make/Ansible 准备物料与私有输入，Flux 从已提交、固定摘要的 OCI 声明部署。旧 `sunmoonai` 组件脚本不是运行依赖。
@@ -12,7 +14,7 @@
 | RabbitMQ | 4.3.6-management，官方镜像 | worker2/static/rabbitmq，4 GiB PVC |
 | Casdoor | 4.12.0，官方镜像 | 独立 PostgreSQL 库/角色；worker/static/casdoor，1 GiB PVC |
 
-版本与 manifest 摘要见 `platform/artifacts/upstream-images.lock.json`，安装包与 chart 摘要见 `files.lock.json`。安装包、OCI 归档、chart 分别存入正式物料目录的 `packages/`、`images/`、`charts/`。五个服务镜像及 chart 已发布至新 Harbor，节点按摘要从 Harbor 拉取。
+版本与 manifest 摘要见 `infrastructure/artifacts/upstream-images.lock.json`，安装包与 chart 摘要见 `files.lock.json`。安装包、OCI 归档、chart 分别存入正式物料目录的 `packages/`、`images/`、`charts/`。五个服务镜像及 chart 已发布至新 Harbor，节点按摘要从 Harbor 拉取。
 
 Flux 顺序：`platform-services`（存储、入口、三个数据服务）→ `casdoor-db`（独立库/角色 Job）→ `casdoor-init`（身份初始化 Job）→ `casdoor`（服务）。数据目录是新集群三个节点独立挂载中的专属子目录；PV 使用 `sunmoon-static`、显式 nodeAffinity、Retain。15 GiB PVC 容量声明不是立即分配 15 GiB；本地 PV 的容量字段不是目录配额，实际占用另行监控。所有阶段 `prune:false`，禁止借配置变更自动删除数据。
 
@@ -20,7 +22,7 @@ Flux 顺序：`platform-services`（存储、入口、三个数据服务）→ `
 
 ## 配置和 Secret
 
-- 普通字段：`platform/environments/kind/services.yaml`，包含各组件启用开关、命名空间、数据库名/角色、域名与卷位置。
+- 普通字段：`infrastructure/environments/kind/services.yaml`，包含各组件启用开关、命名空间、数据库名/角色、域名与卷位置。
 - 私有输入：`/etc/sunmoon/services/sunmoon-kind/credentials.yaml`，root:root 0600；目录 0700。
 - 独立副本：`/mnt/sunmoon-data/backups/services/sunmoon-kind/`，包含输入和 TLS 身份；与系统盘同一物理硬盘，不是机器外灾备。
 - Git 只存 SOPS 密文。原始密码表仍只是所有者的集中查阅表；新运行链不读取旧 `.conf` 或密码表，不执行旧脚本。
@@ -37,7 +39,7 @@ Casdoor 的 `/server -export` 在导入初始身份之前退出，因此首次 J
 新 Traefik 监听新集群 NodePort 30443，经宿主 `127.0.0.1:29443` 验收。Casdoor 域名不变、证书沿用平台 CA 签发，有效期五年。**宿主 30443 的应用分流仍指向原集群，本批不切换。** 浏览器常用域名当前不能据此视作已切到新 Casdoor。
 
 ```bash
-cd /home/zymun/worktrees/platform-kind-v1/k8s/platform
+cd /home/zymun/worktrees/platform-kind-v1/k8s/infrastructure
 make services-plan                 # 五个固定镜像来源与目标
 make services-credentials          # 初始化/恢复私有输入
 make services-materials            # 准备缺失的压缩 OCI 归档

@@ -1,6 +1,6 @@
 # Flux 引导与 OCI 声明发布
 
-本单元沿用已批准架构：Make/Ansible负责引导，Flux负责集群内声明；Harbor保存固定摘要的部署制品。运行目标只有 `sunmoon-kind`，kubeconfig为 `~/.kube/sunmoon-kind.config`，所有命令在本仓 `platform/` 下执行。不会调用旧luna部署链，也不会由Flux接管CNI或外置Harbor。
+本单元沿用已批准架构：Make/Ansible负责引导，Flux负责集群内声明；Harbor保存固定摘要的部署制品。运行目标只有 `sunmoon-kind`，kubeconfig为 `~/.kube/sunmoon-kind.config`，所有命令在本仓 `infrastructure/` 下执行。不会调用旧luna部署链，也不会由Flux接管CNI或外置Harbor。
 
 ## 输入与职责
 

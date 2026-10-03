@@ -3,6 +3,7 @@
   hosts: kind_hosts
   gather_facts: false
   become: true
+  vars_files: [layout.yaml]
   vars:
     repo: '{{ playbook_dir }}/../..'
     build: '{{ playbook_dir }}/../.build/services'
@@ -23,7 +24,8 @@
       no_log: true
     - name: Find rendered component candidates
       ansible.builtin.find:
-        paths: ['{{ build }}/core', '{{ build }}/casdoor-db', '{{ build }}/casdoor-init', '{{ build }}/casdoor']
+        paths: ['{{ build }}/core', '{{ build }}/foundations', '{{ build }}/data-platform', '{{ build }}/messaging-platform', '{{ build }}/ingress-platform', '{{ build }}/app-platform']
+        recurse: true
         patterns: '*.yaml'
         file_type: file
       register: candidates
@@ -35,7 +37,7 @@
       ansible.builtin.include_tasks: tasks/check-declaration.yaml
       vars:
         relative_path: '{{ item.path | relpath(build) }}'
-        committed_path: '{{ repo }}/gitops/components/services/{{ relative_path }}'
+        committed_path: '{{ repo }}/gitops/components/{{ relative_path }}'
       loop: '{{ candidates.files }}'
       loop_control: {label: '{{ item.path | basename }}'}
     - name: Require enabled stages to match the release

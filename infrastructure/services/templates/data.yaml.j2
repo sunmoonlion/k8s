@@ -1,4 +1,4 @@
-{% for name,port,enabled in [('postgresql',5432,services_postgresql_enabled),('redis',6379,services_redis_enabled),('rabbitmq',5672,services_rabbitmq_enabled)] if enabled %}
+{% for name,port,enabled in [('postgresql',5432,services_postgresql_enabled),('redis',6379,services_redis_enabled),('rabbitmq',5672,services_rabbitmq_enabled)] if enabled and name == render_component %}
 {% set image = image_map[name] %}
 {% set volume = services_volumes | selectattr('name','equalto',name) | first %}
 ---
@@ -6,7 +6,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ name }}-headless
-  namespace: {{ services_namespace }}
+  namespace: {{ component_namespaces[name] }}
 spec:
   clusterIP: None
   selector: {app.kubernetes.io/name: {{ name }}}
@@ -16,7 +16,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ name }}
-  namespace: {{ services_namespace }}
+  namespace: {{ component_namespaces[name] }}
 spec:
   selector: {app.kubernetes.io/name: {{ name }}}
   ports:
@@ -29,7 +29,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ name }}
-  namespace: {{ services_namespace }}
+  namespace: {{ component_namespaces[name] }}
 spec:
   serviceName: {{ name }}-headless
   replicas: 1
@@ -42,6 +42,12 @@ spec:
       serviceAccountName: platform-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
+{% if name == 'rabbitmq' %}
+      # Single-node persistent identity, independent of the namespace Service DNS.
+      hostAliases:
+        - ip: '127.0.0.1'
+          hostnames: ['{{ rabbitmq_node_hostname }}']
+{% endif %}
       nodeSelector:
         kubernetes.io/hostname: {{ cluster_name }}-{{ volume.node }}
       securityContext:
@@ -120,7 +126,7 @@ spec:
           env:
             - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
             - {name: RABBITMQ_USE_LONGNAME, value: 'true'}
-            - {name: RABBITMQ_NODENAME, value: 'rabbit@$(POD_NAME).rabbitmq-headless.{{ services_namespace }}.svc.cluster.local'}
+            - {name: RABBITMQ_NODENAME, value: 'rabbit@{{ rabbitmq_node_hostname }}'}
             - {name: RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS, value: '+S 2:2'}
           startupProbe:
             exec: {command: [rabbitmq-diagnostics, -q, ping]}

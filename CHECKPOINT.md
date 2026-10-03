@@ -1,3 +1,17 @@
+# 本轮优先状态：目录改名与命名空间归类准备（2026-10-03）
+
+所有者已同意推荐：新根 `infrastructure/`；Casdoor 归 app-platform-dev，PG/Redis 归 data-platform-dev，RabbitMQ 归 messaging-platform-dev，Traefik 归 ingress-platform-dev。基线 c49dc6e430ba1c4db0eafeac341f3a9ad6757e02，只改新 worktree 的 k8s，无 push。
+
+目录和文档引用已改，虚拟环境从锁定本地缓存修复；模板、跨命名空间网络策略、Secret 归属与验收入口已调整。**尚未生成/晋级新 GitOps、未停服、未重绑卷、未宣称新 namespace 验收通过**。运行源与下方首批验收一致；保留旧 GitOps 作为当前发布，后续晋级时移除旧分类。
+
+已完成29个Ansible playbook语法检查、Python AST/YAML解析、新目录 `make services-plan`（ok3 changed0 failed0），公共模板实际渲染6任务成功、56个对象唯一性/namespace/PV Retain与目标claim/stage路径核对通过；不包含SOPS完整候选、服务中断或运行迁移验收。Ansible初次公共渲染因沙箱本地RPC受限失败，批准沙箱外只写/tmp后通过；首次语法盘点发现批量编辑缩进错误，已修正并全量复查。
+
+继续完成真实秘密候选与维护准备；操作卡 `docs/platform-kind-v1/namespace-layout.md`。维护需要此前停服规则下的新窗口、四个旧 PVC 对象的保数据重绑定和新容量例外（建议40GiB/新增1GiB），前批例外不能继承。Rabbit 磁盘内部节点身份必须保持不变，使用当前单节点 hostAliases，不通过改名重置数据。
+
+03:54:50Z 四目录合计68,502,356字节，Rabbit队列清单为空；C空闲114,323,898,368，数据盘未来增长66,936,897,536，常规50GiB不足。代码修改不代表线上分类变更。原始kind、外置Harbor与入口未变。
+
+---
+
 # 新部署体系交接
 
 ## 当前状态：首批数据、入口和身份服务完成（2026-10-03）

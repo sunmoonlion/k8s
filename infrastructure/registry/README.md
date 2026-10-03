@@ -4,7 +4,7 @@
 
 ## 日常操作
 
-在 `platform/` 执行，全部经过同一 Ansible playbook：
+在 `infrastructure/` 执行，全部经过同一 Ansible playbook：
 
 ```sh
 make registry-plan    # 查看配置路径和端口，并检查宿主挂载

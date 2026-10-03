@@ -1,3 +1,5 @@
+> 2026-10-03：本部署根由 `platform/` 更名为 `infrastructure/`。组件 namespace 调整仍在准备，运行源暂保持首批已验发布；详见 [命名空间调整](../docs/platform-kind-v1/namespace-layout.md)。
+
 # 新部署体系：宿主、集群与平台服务
 
 本目录使用原生 Make、Ansible 和声明文件，不调用旧 `sunmoonai/`、`utils/` 或 luna 工作区部署程序。当前提供物料准备、宿主挂载预检、官方 KIND 建群、独立 Harbor、TLS 直通入口、Flux/SOPS 与首批平台服务。业务应用、全平台统一启停及开机恢复尚未完成。

@@ -44,7 +44,7 @@
     - name: Inspect actual pod image identities
       ansible.builtin.command:
         argv: '{{ kube + ["-n", item, "get", "pods", "-o", "json"] }}'
-      loop: ['{{ services_namespace }}', '{{ ingress_namespace }}']
+      loop: '{{ [data_namespace, messaging_namespace, app_namespace, ingress_namespace] }}'
       register: service_pods
       changed_when: false
     - name: Collect actual runtime identities independently of pod specifications
@@ -69,7 +69,7 @@
           - volume.status.phase == 'Bound'
           - volume.spec.persistentVolumeReclaimPolicy == 'Retain'
           - volume.spec.local.path == '/data/kind-local-storage/' + item.item.name
-          - volume.spec.claimRef.namespace == services_namespace
+          - volume.spec.claimRef.namespace == component_namespaces[item.item.name]
           - volume.spec.claimRef.name == item.item.name + '-data'
           - volume.spec.nodeAffinity.required.nodeSelectorTerms[0].matchExpressions[0]['values'] == [cluster_name + '-' + item.item.node]
       vars: {volume: '{{ item.stdout | from_json }}'}
@@ -78,7 +78,7 @@
     - name: Execute transactional PostgreSQL read and write
       when: services_postgresql_enabled | bool
       ansible.builtin.command:
-        argv: '{{ kube + ["-n", services_namespace, "exec", "postgresql-0", "--", "sh", "-ec", pg_acceptance] }}'
+        argv: '{{ kube + ["-n", data_namespace, "exec", "postgresql-0", "--", "sh", "-ec", pg_acceptance] }}'
       vars:
         pg_acceptance: |
           export PGPASSWORD="$(cat /run/auth/password)"
@@ -96,7 +96,7 @@
     - name: Verify Redis write and read with a bounded temporary key
       when: services_redis_enabled | bool
       ansible.builtin.command:
-        argv: '{{ kube + ["-n", services_namespace, "exec", "redis-0", "--", "sh", "-ec", ''export REDISCLI_AUTH="$(cat /run/auth/password)"; key="sunmoon:acceptance:$(date +%s):$$"; redis-cli SET "$key" verified EX 60 >/dev/null; test "$(redis-cli GET "$key")" = verified; redis-cli DEL "$key" >/dev/null; echo verified''] }}'
+        argv: '{{ kube + ["-n", data_namespace, "exec", "redis-0", "--", "sh", "-ec", ''export REDISCLI_AUTH="$(cat /run/auth/password)"; key="sunmoon:acceptance:$(date +%s):$$"; redis-cli SET "$key" verified EX 60 >/dev/null; test "$(redis-cli GET "$key")" = verified; redis-cli DEL "$key" >/dev/null; echo verified''] }}'
       register: redis_check
       changed_when: false
       failed_when: redis_check.rc != 0 or redis_check.stdout != 'verified'
@@ -104,7 +104,7 @@
     - name: Verify RabbitMQ running state and alarms
       when: services_rabbitmq_enabled | bool
       ansible.builtin.command:
-        argv: '{{ kube + ["-n", services_namespace, "exec", "rabbitmq-0", "-c", "rabbitmq", "--", "rabbitmq-diagnostics", "-q", item] }}'
+        argv: '{{ kube + ["-n", messaging_namespace, "exec", "rabbitmq-0", "-c", "rabbitmq", "--", "rabbitmq-diagnostics", "-q", item] }}'
       loop: [check_running, check_local_alarms]
       changed_when: false
     - name: Read operator inputs without printing values
@@ -113,7 +113,7 @@
       no_log: true
     - name: Verify real message delivery and authenticated TLS identity flow
       ansible.builtin.command:
-        argv: '{{ ["python3", playbook_dir + "/verify-live.py", "--kubectl", playbook_dir + "/../.tools/bin/kubectl", "--kubeconfig", cluster_kubeconfig, "--ca", registry_config_dir + "/clients/ca.crt"] + ([] if services_rabbitmq_enabled else ["--skip-rabbitmq"]) + ([] if services_casdoor_enabled else ["--skip-casdoor"]) }}'
+        argv: '{{ ["python3", playbook_dir + "/verify-live.py", "--kubectl", playbook_dir + "/../.tools/bin/kubectl", "--kubeconfig", cluster_kubeconfig, "--messaging-namespace", messaging_namespace, "--ca", registry_config_dir + "/clients/ca.crt"] + ([] if services_rabbitmq_enabled else ["--skip-rabbitmq"]) + ([] if services_casdoor_enabled else ["--skip-casdoor"]) }}'
         stdin: '{{ private_input.content | b64decode | from_yaml | to_json }}'
       no_log: true
       changed_when: false

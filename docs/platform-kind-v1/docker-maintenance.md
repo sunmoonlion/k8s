@@ -15,7 +15,7 @@
 ## 维护前准备（历史基线）
 
 - 六个新旧 deb 共 **98,306,132 字节**，在物料根目录 `releases/platform-kind-v1/packages/`；ID 为 `docker-ce-{next,rollback}`、`docker-ce-cli-{next,rollback}`、`docker-ce-rootless-extras-{next,rollback}`。
-- `platform/artifacts/files.lock.json` 保存 URL、包版本、大小、SHA256、用途和签名元数据摘要。通过已有 Docker APT 公钥验证 InRelease 签名，再核对 Packages 摘要；下载后逐文件核对大小和 SHA256。
+- `infrastructure/artifacts/files.lock.json` 保存 URL、包版本、大小、SHA256、用途和签名元数据摘要。通过已有 Docker APT 公钥验证 InRelease 签名，再核对 Packages 摘要；下载后逐文件核对大小和 SHA256。
 - APT 只读演练：**3 upgraded, 0 newly installed, 0 to remove**。现场若出现额外变更就停止。
 - 当前 `live-restore=false`。共有 **27 个运行容器**：新 Harbor 10、新入口 1、旧 Harbor 7、旧入口 1、现有 main 3、验证 136 3、保留的 kind-worker/worker2 2。
 - 旧 Harbor jobservice 的状态为 `created`，开始时间全零，先前未启动；旧聚合健康因此为 unhealthy，其他七个组件健康。这是基线缺口，恢复时不得自动把所有停止容器启动，也不能宣称旧聚合健康恢复为 healthy。

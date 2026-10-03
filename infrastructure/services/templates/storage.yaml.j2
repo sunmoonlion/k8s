@@ -30,14 +30,14 @@ spec:
               operator: In
               values: [{{ cluster_name }}-{{ volume.node }}]
   claimRef:
-    namespace: {{ services_namespace }}
+    namespace: {{ component_namespaces[volume.name] }}
     name: {{ volume.name }}-data
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{ volume.name }}-data
-  namespace: {{ services_namespace }}
+  namespace: {{ component_namespaces[volume.name] }}
   annotations:
     kustomize.toolkit.fluxcd.io/prune: disabled
 spec:

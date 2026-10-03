@@ -31,12 +31,13 @@ def main():
     parser.add_argument('--kubectl', required=True)
     parser.add_argument('--kubeconfig', required=True)
     parser.add_argument('--ca', required=True)
+    parser.add_argument('--messaging-namespace', required=True)
     parser.add_argument('--skip-rabbitmq', action='store_true')
     parser.add_argument('--skip-casdoor', action='store_true')
     args = parser.parse_args()
     require(os.geteuid() == 0, 'Private input access requires root')
     credentials = json.load(sys.stdin)['service_credentials']
-    prefix = [args.kubectl, '--kubeconfig=' + args.kubeconfig, '--context=kind-sunmoon-kind', '-n', 'platform-system']
+    prefix = [args.kubectl, '--kubeconfig=' + args.kubeconfig, '--context=kind-sunmoon-kind', '-n', args.messaging_namespace]
     environment = dict(os.environ)
     for key in ('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','http_proxy','https_proxy','all_proxy'):
         environment.pop(key, None)

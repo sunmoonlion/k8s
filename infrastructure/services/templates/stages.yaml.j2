@@ -7,7 +7,7 @@ spec:
   interval: 5m
   retryInterval: 30s
   timeout: {{ '8m' if name == 'platform-services' else '6m' }}
-  path: ./components/services/{{ path }}
+  path: ./components/{{ service_stage_paths[path] | default(path) }}
   sourceRef: {kind: OCIRepository, name: platform}
 {% if dependency %}
   dependsOn: [{name: {{ dependency }}}]

@@ -12,7 +12,7 @@
 
 ## 离线数据库与真实扫描
 
-在 `platform/`：
+在 `infrastructure/`：
 
 ```sh
 make fetch-artifacts ARTIFACTS=trivy-db,trivy-java-db

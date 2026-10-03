@@ -6,10 +6,10 @@
 
 | 内容 | 唯一位置/恢复来源 |
 | --- | --- |
-| SOPS/age工具和摘要 | `platform/artifacts/files.lock.json`，原始物料在正式 `releases/platform-kind-v1` |
+| SOPS/age工具和摘要 | `infrastructure/artifacts/files.lock.json`，原始物料在正式 `releases/platform-kind-v1` |
 | 主解密身份 | `/etc/sunmoon/flux/sunmoon-kind/age.agekey`，root0600，目录0700 |
 | 独立恢复副本 | `/mnt/sunmoon-data/backups/flux/sunmoon-kind/age.agekey`，同样限制权限；不在KIND目录或卷中 |
-| 公钥 | `platform/environments/kind/sops-recipient.txt`；Git保存公钥和 `.sops.yaml` 加密规则 |
+| 公钥 | `infrastructure/environments/kind/sops-recipient.txt`；Git保存公钥和 `.sops.yaml` 加密规则 |
 | 集群引导身份 | `flux-system/sops-age`，只由Ansible引导，不放进它自己解密的声明 |
 | 平台拉取凭据 | `gitops/clusters/kind/registry-puller.sops.yaml`，只有data字段密文，由Flux解密创建 |
 
@@ -19,7 +19,7 @@
 
 ## 日常入口
 
-在新工作树 `k8s/platform` 执行：
+在新工作树 `k8s/infrastructure` 执行：
 
 ```bash
 make install-secrets-tools   # 本地锁定物料，不联网选版

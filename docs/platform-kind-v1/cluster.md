@@ -4,7 +4,7 @@
 
 ## 当前配置
 
-所有者于 2026-10-01 指定名称 `sunmoon-kind`。站点真源为 `platform/environments/kind/site.yaml`；镜像和工具版本来自 artifacts 锁文件，站点不能覆盖镜像。
+所有者于 2026-10-01 指定名称 `sunmoon-kind`。站点真源为 `infrastructure/environments/kind/site.yaml`；镜像和工具版本来自 artifacts 锁文件，站点不能覆盖镜像。
 
 | 项目 | 值 |
 | --- | --- |
@@ -23,7 +23,7 @@
 ## 日常操作
 
 ```bash
-cd /home/zymun/worktrees/platform-kind-v1/k8s/platform
+cd /home/zymun/worktrees/platform-kind-v1/k8s/infrastructure
 make cluster-plan        # 只读计划、同名集群身份和配置核对
 make cluster-deploy      # 首次建群，或继续同一集群的 CNI/信任/DNS 配置
 make cluster-status      # 节点、版本和基础工作负载状态

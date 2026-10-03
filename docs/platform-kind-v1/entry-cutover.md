@@ -20,7 +20,7 @@
 
 ## 执行顺序（所有者批准后由助手执行）
 
-在 `/home/zymun/worktrees/platform-kind-v1/k8s/platform`：
+在 `/home/zymun/worktrees/platform-kind-v1/k8s/infrastructure`：
 
 1. 给宿主 Docker 的 `/etc/docker/certs.d/harbor.sunmoonai.com:30443/` 增加独立文件 `platform-kind-v1-ca.crt`，内容来自新 `/etc/sunmoon/registry/tls/ca.crt`。保留原证书；不重启 Docker。专用 skopeo 凭据与 CA 由新仓库代码管理，不复用旧管理员口令。
 2. `make entry-stop` 停止候选。站点仅将 `entry_listen_address` 改为 `0.0.0.0`、`entry_port` 改为 `30443`，应用后端仍保持 172.18.0.5:30443。

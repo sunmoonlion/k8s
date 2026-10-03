@@ -1,0 +1,29 @@
+---
+# Nonsecret first-batch configuration. Credentials are read from the private host input.
+# Component namespaces are environment input, independent of directory names.
+data_namespace: data-platform-dev
+messaging_namespace: messaging-platform-dev
+app_namespace: app-platform-dev
+ingress_namespace: ingress-platform-dev
+# Persistent Rabbit node identity: keep unchanged when moving its existing data.
+# This single-node deployment resolves this identity locally using hostAliases;
+# clients always use the Service in messaging_namespace, never this hostname.
+rabbitmq_node_hostname: rabbitmq-0.rabbitmq-headless.platform-system.svc.cluster.local
+component_namespaces:
+  postgresql: '{{ data_namespace }}'
+  redis: '{{ data_namespace }}'
+  rabbitmq: '{{ messaging_namespace }}'
+  casdoor: '{{ app_namespace }}'
+services_ingress_enabled: true
+services_postgresql_enabled: true
+services_redis_enabled: true
+services_rabbitmq_enabled: true
+services_casdoor_enabled: true
+casdoor_hostname: casdoor.sunmoonai.com
+casdoor_database: casdoor
+casdoor_database_user: casdoor
+services_volumes:
+  - {name: postgresql, node: worker, size: 8Gi, uid: 999, gid: 999}
+  - {name: redis, node: worker2, size: 2Gi, uid: 999, gid: 999}
+  - {name: rabbitmq, node: worker2, size: 4Gi, uid: 999, gid: 999}
+  - {name: casdoor, node: worker, size: 1Gi, uid: 1000, gid: 1000}

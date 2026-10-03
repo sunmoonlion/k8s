@@ -59,19 +59,23 @@ Flux 提供离线安装和 OCI 源能力；这里的 OCI 发布与根协调已�
 
 ## 配置和代码布局
 
-新实现统一位于 `k8s/platform/`，已落地物料、工具锁、宿主预检、节点构建和独立 Harbor；其余目录按实现需要建立。
+新实现统一位于 `k8s/infrastructure/`，已落地物料、工具锁、宿主预检、节点构建和独立 Harbor；其余目录按实现需要建立。
 
 | 位置 | 唯一职责 |
 | --- | --- |
-| `platform/host/` | 宿主预检、容量、入口代理和 Windows 附盘 |
-| `platform/registry/` | 官方 Harbor 物料、配置、证书、Compose 和宿主服务生命周期 |
-| `platform/cluster/` | KIND 配置、引导和生命周期 |
-| `platform/components/` | 平台组件及应用的声明，明确各对象所有者 |
-| `platform/environments/kind/` | 本地站点参数、组件选择、资源规格、源摘要 |
-| `platform/artifacts/` | 版本和摘要锁、物料类型、来源与用途；不提交大归档 |
-| `platform/checks/` | 配置约束与验收检查；正式回归检查长期保留 |
-| `platform/Makefile` | 原生工具任务的薄入口，提供查看、预览、执行 |
+| `infrastructure/host/` | 宿主预检、容量、入口代理和 Windows 附盘 |
+| `infrastructure/registry/` | 官方 Harbor 物料、配置、证书、Compose 和宿主服务生命周期 |
+| `infrastructure/cluster/` | KIND 配置、引导和生命周期 |
+| `infrastructure/services/` | 平台参数生成、秘密加密与验收；不另建部署调度器 |
+| `gitops/components/` | 按 ingress/data/messaging/app-platform 分类的期望声明 |
+| `gitops/clusters/kind/` | 站点 Flux 依赖、基础策略和发布标记 |
+| `infrastructure/environments/kind/` | 本地站点参数、组件选择、资源规格、源摘要 |
+| `infrastructure/artifacts/` | 版本和摘要锁、物料类型、来源与用途；不提交大归档 |
+| `infrastructure/flux/` | 原生 Flux/SOPS 引导、OCI 发布及基础验收 |
+| `infrastructure/Makefile` | 原生工具任务的薄入口，提供查看、预览、执行 |
 | `docs/platform-kind-v1/` | 设计、决策、正式运行手册 |
+
+组件分类及 KIND 命名空间采用 `ingress-platform-dev`、`data-platform-dev`、`messaging-platform-dev`、`app-platform-dev`；运维组件加入时使用 `ops-platform-dev`。Casdoor 属于 app-platform，其 PostgreSQL 属于 data-platform，库和登录角色仍独立。Flux 使用 `flux-system`，`platform-system` 仅保留基础发布标记与引导验收对象。外置 Harbor 没有 Kubernetes 命名空间。此分类为已确认目标；实际迁移状态见 [调整操作卡](namespace-layout.md)。
 
 站点配置负责主机、域名、路径、容量及组件开关；发布清单负责应用镜像摘要和发布参数；秘密只通过私有文件或加密声明引用。字段不允许在多个文件中重复覆盖。开关变更产生新发布，并验证依赖；关闭有状态组件不等于授权删除数据。
 
@@ -161,6 +165,6 @@ WSL 挂载成功前禁止启动 Harbor。已通过后端健康与认证；容器
 
 ## 尚需补齐的设计输入
 
-当前已实现物料、宿主准入、节点构建、独立 Harbor 与正式入口、扫描/恢复演练，以及 sunmoon-kind 三节点创建和私有拉取。详见 CHECKPOINT.md 与[集群操作](cluster.md)。Flux 引导与 OCI 协调也已通过，SOPS及基础平台声明已通过，后续依次完成数据/身份服务、应用、统一生命周期、重启与重建持久化验收、长期运维和清理；完整发布闭包仍需补齐。
+当前已实现物料、宿主准入、节点构建、独立 Harbor 与正式入口、扫描/恢复演练，以及 sunmoon-kind 三节点创建和私有拉取。详见 CHECKPOINT.md 与[集群操作](cluster.md)。Flux 引导与 OCI 协调也已通过，SOPS及基础平台声明已通过，首批数据/身份服务已通过实际部署和协议验收，当前进行目录与命名空间归类（见 [命名空间调整](namespace-layout.md)）；后续依次完成其余依赖、应用、统一生命周期、重启与重建持久化验收、长期运维和清理；完整发布闭包仍需补齐。
 
 第一期资源预算、具体恢复时间和可接受数据损失目标还需根据实际容量及演练确定；不在草案中虚构可用性承诺。业务能力与选装组件不能因资源不足被静默删除。
