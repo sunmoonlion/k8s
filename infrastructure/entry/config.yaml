@@ -1,8 +1,14 @@
 # KIND 当前配置；与本目录实现同源维护。秘密与版本摘要不在这里。
 ---
+# 部署/启动准入；修改边界见同目录 README 的字段表。
 entry_enabled: true
+# 监听地址；修改边界见同目录 README 的字段表。
 entry_listen_address: 0.0.0.0
+# 宿主共享TLS端口；修改边界见同目录 README 的字段表。
 entry_port: 30443
+# 非Harbor域名的目标；修改边界见同目录 README 的字段表。
 entry_cluster_backend: 172.18.0.5:30443
+# HAProxy配置目录；修改边界见同目录 README 的字段表。
 entry_config_dir: /etc/sunmoon/entry
+# Compose和工具运行目录；修改边界见同目录 README 的字段表。
 entry_runtime_dir: /opt/sunmoon/entry

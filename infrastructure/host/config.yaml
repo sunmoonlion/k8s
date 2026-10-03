@@ -1,6 +1,8 @@
 # KIND 当前配置；与本目录实现同源维护。秘密与版本摘要不在这里。
 ---
+# 实际数据盘身份；修改边界见同目录 README 的字段表。
 storage_uuid: a28de356-4ba1-4a21-93f5-744b9b9d8be0
+# 精确挂载点及盘内子目录；修改边界见同目录 README 的字段表。
 storage_mounts:
 - target: /mnt/sunmoon-data
   fsroot: /
@@ -8,8 +10,13 @@ storage_mounts:
   fsroot: /kind-clusters
 - target: /data/harbor
   fsroot: /harbor
+# Windows容量读取工具位置；修改边界见同目录 README 的字段表。
 windows_powershell: /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe
+# 实际VHDX文件位置；修改边界见同目录 README 的字段表。
 data_vhd_windows_path: C:\wsl-disks\sunmoon-data.vhdx
+# 数据盘最大容量事实；修改边界见同目录 README 的字段表。
 data_vhd_maximum_gib: 230
+# C盘增长后最低保留量；修改边界见同目录 README 的字段表。
 windows_minimum_free_gib: 50
+# Windows容量脚本发布目录；修改边界见同目录 README 的字段表。
 windows_script_directory: /mnt/c/wsl-disks/scripts/platform-kind-v1

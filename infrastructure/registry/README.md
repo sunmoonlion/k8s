@@ -79,3 +79,21 @@ Harbor 2.15.2 的项目机器人列表需要 `Level=project,ProjectID=<ID>` 查�
 
 
 `registry-accounts` 同时追加 `/etc/docker/certs.d/<仓库地址>/platform-kind-v1-ca.crt`，保留其他 CA。宿主 Docker 29.4.3 的认证请求存在忽略专用 CA 的上游缺陷，不能以 CA 文件存在代替真实拉取。`registry-publish-check` 先检查 Docker 版本，再做正式地址验证；原生 Docker 拉取使用临时 root:0600 配置并验后删除。已完成的修复与维护记录见 [Docker 维护](../../docs/platform-kind-v1/docker-maintenance.md)。
+
+## 配置字段与修改条件
+
+配置真源为本目录 `config.yaml`，由现有Make入口明确传给Ansible。下表说明当前支持边界；有字段不等于已有实例可直接修改。
+
+| 字段 | 用途 | 修改条件与限制 |
+| --- | --- | --- |
+| `registry_enabled` | 部署/启动准入 | false不停止已运行服务；启停仍走registry-start/stop，不能用开关代替停服。 |
+| `registry_hostname` | 仓库TLS/SNI域名 | 现有harbor.sunmoonai.com约定；更换要联动证书、共享地址、节点信任与客户端，不保证任意域名。 |
+| `registry_project` | Compose实例名 | 当前sunmoon-registry；不是Harbor内的platform镜像项目。已有实例不能直接更名。 |
+| `registry_https_port` | 宿主回环HTTPS后端端口 | 当前11443；Harbor与entry模板引用它。更改须停服更新两侧并验证，公开地址仍30443。 |
+| `registry_config_dir` | 私有配置、身份与TLS目录 | 已有凭据与证书需完整迁移，不用空目录重新生成替代身份。 |
+| `registry_runtime_dir` | 官方生成配置和Compose运行目录 | 运行服务引用此处，迁移需同步systemd与配置。 |
+| `registry_data_root` | 仓库数据挂载根 | 必须是已核对的数据盘挂载目标；不能指向临时系统盘目录。 |
+| `registry_instance_dir` | 本实例数据及日志目录 | 必须在数据根下面；已有数据搬迁需要一致性备份与恢复核对。 |
+| `registry_log_rotation_approved` | 既定日志轮转授权 | 3份×20MiB；该值不授权镜像GC、备份删除或任意保留策略。 |
+
+账号和口令：管理员名固定admin；明文密码在config目录private/admin-password和private/database-password；机器人身份/认证文件也在private。TLS私钥在tls，证书期限和资源策略在同目录release.yaml。已有证书续签/身份轮换不是改参数后自动完成。备份/恢复入口同目录recovery.yaml；定期备份轮换与镜像保留/GC仍未完成。

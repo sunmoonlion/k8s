@@ -32,3 +32,18 @@ make entry-start           # 检查配置并启动，验证 Harbor TLS 健康
 - 候选 Harbor 路由验收使用新 CA 和真实域名，显式绕过环境代理。应用后端比对使用对端证书一致性，不把它当成应用证书信任或登录功能验收。
 
 HAProxy SNI 语义来自 [官方配置手册](https://docs.haproxy.org/3.4/configuration.html)。入口不可用时，先查看配置和容器日志，不用关闭 TLS 校验修复连接。
+
+## 配置字段与修改条件
+
+配置真源为本目录 `config.yaml`，由现有Make入口明确传给Ansible。下表说明当前支持边界；有字段不等于已有实例可直接修改。
+
+| 字段 | 用途 | 修改条件与限制 |
+| --- | --- | --- |
+| `entry_enabled` | 部署/启动准入 | false不自动停现有入口；保留entry-stop/status。 |
+| `entry_listen_address` | 监听地址 | 只接受127.0.0.1或0.0.0.0；变更影响可达范围，安排维护后再部署。 |
+| `entry_port` | 宿主共享TLS端口 | 当前30443；虽有数值校验，但全平台地址/镜像引用固定该端口，不支持单处任意修改。 |
+| `entry_cluster_backend` | 非Harbor域名的目标 | 当前仍为原kind-worker入口；属于切换参数，正式切到新入口需单独维护与业务验收。 |
+| `entry_config_dir` | HAProxy配置目录 | 运行中配置差异会拒绝部署；停服后由原生入口更新。 |
+| `entry_runtime_dir` | Compose和工具运行目录 | 移动时需同步systemd引用，不是直接更改文本即可完成。 |
+
+本模块是TLS直通，不保存应用或Harbor证书私钥，不设代理登录username/password。仓库域名和回环端口引用registry/config.yaml；不在这里复制。

@@ -1,11 +1,20 @@
 # KIND 当前配置；与本目录实现同源维护。秘密与版本摘要不在这里。
 ---
+# 部署/启动准入；修改边界见同目录 README 的字段表。
 registry_enabled: true
+# 仓库TLS/SNI域名；修改边界见同目录 README 的字段表。
 registry_hostname: harbor.sunmoonai.com
+# Compose实例名；修改边界见同目录 README 的字段表。
 registry_project: sunmoon-registry
+# 宿主回环HTTPS后端端口；修改边界见同目录 README 的字段表。
 registry_https_port: 11443
+# 私有配置、身份与TLS目录；修改边界见同目录 README 的字段表。
 registry_config_dir: /etc/sunmoon/registry
+# 官方生成配置和Compose运行目录；修改边界见同目录 README 的字段表。
 registry_runtime_dir: /opt/sunmoon/registry
+# 仓库数据挂载根；修改边界见同目录 README 的字段表。
 registry_data_root: /data/harbor
+# 本实例数据及日志目录；修改边界见同目录 README 的字段表。
 registry_instance_dir: /data/harbor/platform-kind-v1
+# 既定日志轮转授权；修改边界见同目录 README 的字段表。
 registry_log_rotation_approved: true

@@ -188,3 +188,18 @@ Traefik、Retain 存储、PostgreSQL、Redis、RabbitMQ、Casdoor 已通过 Flux
 ## 配置定位
 
 `make config` 列出实际加载的用户配置。先找到对应模块的 `config.yaml`；共享参数才改环境 site。组件目录说明见 [组件配置](../gitops/components/README.md)。版本锁、秘密和生成文件各有独立职责，不重复填写。
+
+## 非组件模块的配置说明
+
+逐字段用途与修改条件已经放在功能自身目录：
+
+- [宿主与容量](host/README.md)
+- [Harbor及凭据](registry/README.md)
+- [TLS入口](entry/README.md)
+- [KIND建群](cluster/README.md)
+- [Flux与SOPS](flux/README.md)
+- [服务公共编排](services/README.md)
+- [共享环境与发布身份](environments/kind/README.md)
+- [物料锁](artifacts/README.md)与[工具依赖](tools/README.md)
+
+配置归拢和字段说明已完成；任意环境参数支持、密码/证书轮换、开机恢复与长期空间管理是否完成，以各目录列出的实现边界和实际验收为准。
