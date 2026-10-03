@@ -1,3 +1,45 @@
+# 当前优先状态：模板五个运行角色与真实登录/消息验收通过（2026-10-03）
+
+本节优先于历史。工作树/分支 platform-kind-v1，本单元只改 k8s，无 push。
+基础实现 5ba07f25a1ae52e2977460b82b66b8a672c8099b，Celery兼容修复
+0a87d67bb5af37a7a4e350ad8166e1f1fa99f5e5，晋级 fff05942，原生消息验收 5aa74b71。
+当前源 sha256:7abc99d41963b10349c1a1bbf03e7768be05dd66d2c55e72edd92824ade39605，
+源码 0a87d67b；13个Flux阶段全部当前generation Ready且同摘要。
+
+## 实际结果
+
+- app-platform-dev 内 tpl-api、tpl-worker、tpl-scheduler、tpl-web、tpl-admin 均1/1 Ready，当前Pod重启数0。原30个Pod的UID及重启数未变。三个后端角色共用原5b38d398…镜像，两个前端沿用7747a9fa…/830a9e38…，没有重建镜像或升级依赖。
+- 继续使用原 Make→Ansible→Flux：渲染、SOPS、固定摘要发布、声明核对、调和、实际验收。一键 application-bootstrap 重复四段 render ok124、validate ok99、Flux apply ok24、check ok34，均changed0 failed0。没有新部署CLI或绕过Flux的live patch。
+- API生产配置、独立账号、正确命名空间/域名、资源与安全上下文、精确NetworkPolicy生效。前端无数据库/OAuth凭据；SSR内部访问API。Scheduler单副本Recreate、本地调度缓存可重建；业务持久状态仍在PG。
+- 应用独立tpl-tls覆盖两个模板域名，由原CA签发1825天，私有key与非覆盖备份在应用private_dir/backup_dir下tls；Git仅SOPS。链、两个主机名、公私钥一致性、备份字节核对通过，未更换Casdoor证书。
+- 经新集群29443做实际CA验证/SNI访问：两端healthz、API schema/Redis readiness及deployment identity通过。Worker自身队列/任务探针、Scheduler最近tick通过；从API角色真实发布诊断ping，Worker消费并完成同一task ID。
+- Web/Admin均完成真实HTTP授权码+PKCE回调、认证me、认证SSR dashboard、跨surface会话拒绝、缺CSRF拒绝、正确CSRF退出及退出后401。使用已有私有管理员账号，仅输出断言；未新建权限/修改管理员，未记录令牌或口令。此为协议和SSR验收，不是浏览器点击全UI验收，也不代表业务管理员scope授权已配置。
+
+## 本轮实际问题与修复
+
+首次Worker未Ready：RabbitMQ4.3拒绝Celery5.6.3默认的非持久非独占控制/事件队列。
+核对已安装Celery/Kombu源码和官方文档后，通过原生CELERY_CONFIG_MODULE挂载配置，
+将控制/事件队列设为exclusive，业务持久队列不变；没有开启RabbitMQ废弃特性。
+修复后所有角色和探针使用同一配置并通过实测。首次reconcile超时保留为失败证据；
+初次bootstrap后来仍等待旧摘要，已精确停止其make进程树，随后完整重复通过，不伪称首次即成功。
+
+## 证据、容量、后续
+
+证据统一在 infrastructure/.build/applications/runtime-unit-20261003/：
+stage/release/bootstrap/reconcile、celery-stage/release/apply/reconcile、runtime-check、
+bootstrap-repeat日志，以及before-pods.json、runtime-state.json、browser-acceptance.json、
+initial-run-superseded.json。浏览器验收临时脚本完成后删除，不作为部署依赖。
+重复入口容量门槛实际为10GiB；C盘121,116,499,968字节，扣230GiB盘未来增长和2GiB本单元预算后
+余52,099,227,648字节。2小时维护规则持续有效。
+
+公共30443的非Harbor流量仍指向原kind-worker，未切换新应用域名；本轮所有TLS/登录验证
+通过29443后端连接保留原域名和CA校验。不能直接访问公共域名就期待看到本轮应用。
+下一步按顺序：模板业务授权/消息业务路径与公开入口切换；其余实例构建部署；整套一键和
+统一启停/开机恢复；Harbor跨WSL/KIND重启与删除重建验收；长期空间策略及最终清理。
+内部HTTP/AMQP尚无mTLS、单副本不具备高可用；不把此次通过扩大为全项目生产交付。
+
+---
+
 # 当前优先状态：RabbitMQ与Casdoor应用身份部署完成，准备模板运行角色（2026-10-03）
 
 本节优先于历史。工作树/分支platform-kind-v1，仅k8s，无push。RabbitMQ实现a963a1d8、晋级c7d1b735；Casdoor客户端实现0e296d3bf85eaf54c55567e3494458f791693564、晋级c9efacd3。正式源sha256:e65f535fbef36f86ef718ff7f66e8a344b4e8cc2267204b568f57de6e167b232，10个Flux阶段当前generation Ready且同一摘要。
