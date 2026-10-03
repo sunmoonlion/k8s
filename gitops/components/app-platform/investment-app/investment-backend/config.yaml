@@ -1,0 +1,52 @@
+# 投资应用基础运行配置；跨应用业务、模型Key和执行环境另行接入验收。
+---
+investment_backend_deployment:
+  database: investment
+  database_runtime_user: investment_runtime
+  database_migrator_user: investment_migrator
+  database_extensions: []
+  database_bootstrap_revision: v1
+  migration_job_revision: v1
+  expected_schema_revision: '20260924_0009'
+  private_dir: /etc/sunmoon/applications/sunmoon-kind/investment
+  backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/investment
+  deploy_budget_bytes: 2147483648
+  redis_user: investment_runtime
+  redis_key_pattern: investment:*
+  redis_identity_revision: v1
+  rabbitmq_user: investment_runtime
+  rabbitmq_vhost: investment
+  rabbitmq_queue: investment.default
+  rabbitmq_identity_revision: v1
+  identity_organization: built-in
+  identity_revision: v1
+  api_port: 8000
+  api_replicas: 1
+  worker_replicas: 1
+  worker_concurrency: 2
+  scheduler_replicas: 1
+  resources:
+    api:
+      requests:
+        cpu: 100m
+        memory: 192Mi
+      limits:
+        cpu: '2'
+        memory: 768Mi
+    worker:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: '2'
+        memory: 1Gi
+    scheduler:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: '1'
+        memory: 512Mi
+  celery_control_queue_exclusive: true
+  celery_event_queue_exclusive: true
+  domain_runtime_env: {}

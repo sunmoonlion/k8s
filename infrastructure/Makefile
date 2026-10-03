@@ -40,6 +40,10 @@ CONFIG_FILES := applications/config.yaml \
 	../gitops/components/app-platform/knowledge-app/knowledge-backend/config.yaml \
 	../gitops/components/app-platform/knowledge-app/knowledge-web-frontend/config.yaml \
 	../gitops/components/app-platform/knowledge-app/knowledge-admin-frontend/config.yaml \
+	../gitops/components/app-platform/investment-app/config.yaml \
+	../gitops/components/app-platform/investment-app/investment-backend/config.yaml \
+	../gitops/components/app-platform/investment-app/investment-web-frontend/config.yaml \
+	../gitops/components/app-platform/investment-app/investment-admin-frontend/config.yaml \
 	registry/config.yaml \
 	entry/config.yaml \
 	cluster/config.yaml \

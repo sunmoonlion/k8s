@@ -1,0 +1,5 @@
+# 已实际构建发布并以独立 Harbor 只读身份核对。
+---
+repository: investment-backend
+digest: sha256:8944a488fcc48876b6a63650f08a35a98c41c69b787bb3b921fead452f0fbdf6
+source_revision: abddf477fa44c525921ab1a7f48a87a8a7c749f9

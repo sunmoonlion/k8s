@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: investment-redis-runtime
+    namespace: app-platform-dev
+stringData:
+    REDIS_USER: ENC[AES256_GCM,data:t9HOqY1TNW0piqVqVy+Xyco/,iv:Z+uS8kDxq9gVG5ojZ1wXfFJI7Yyuv5uA4tb54Pk4F0k=,tag:PKeDu94YN98y1MaDm4LmXA==,type:str]
+    REDIS_PASSWORD: ENC[AES256_GCM,data:tj+o+UMo+dRUYOTK9f7tYYk6ApZVPWASJE5tusfzHUtzRz0JXCpihg==,iv:KtU6nWd9X+ROonqhS4cuGiTX/sxRmf3m3e6GQZZ3TRA=,tag:4BCQCrCioLe+vVV7ABcNxw==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAwSnJVS1A3TFFHQU5NYTZ2
+            MXhqMUY4Z2xDTHpOckxZNzNHRUxtQ1gyZ3o0CjRkSWlVeTIzUVNUcTVIb1NhR1hP
+            ejUzRmdkRzlrME4rVU5pbzN6V0dFUzAKLS0tIGJ6eE5CdG0wT2dURmhjeHVIczgx
+            VElpUFhDSGVneldyLzlLb0VJWU9XZ3MKPmsxyJeMdzXT4mNmKhao1i4ovS8TH/9l
+            hsgfxeYocHqZlbSGT/IZXPs8Va8CN5nMUvQEtTimg8GlXs16Au3fHg==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T15:32:21Z"
+    mac: ENC[AES256_GCM,data:IIEGCTxH93U4/OAZOKK9y+QPub4TcqznExfdZABtyxjEGI6YC+1ngHwV3aa+wiuGxZdVfvEVVOBSRbUpuJvWrlWDx+DkGynJMB7lpxZPylh8Z7kk0csQ/RZZPgl3zWA+M2ET2YUGnBK4UGZK1qFAV3vbuRHEjkT7TeJ0fSHLkcg=,iv:hfwdCm5QihfYRCCUsZ8ixH2I4ymr1pT/qH0vbMvhCAE=,tag:gJSafhboMc3wXE6KPxRxFw==,type:str]
+    version: 3.13.3

@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: investment-browser-secrets
+    namespace: app-platform-dev
+stringData:
+    WEB_CASDOOR_CLIENT_SECRET: ENC[AES256_GCM,data:/mPZd93Wzow5zl8FlZ7Z14At9XCUNqHgyJNV9jDQtcCwnsTfUby3qw==,iv:NczcsO36vqExlZmtD3dKCxlnUCcqJLL4IyYLXsUCdWQ=,tag:srx+fDgpUDExiReiNRyiBg==,type:str]
+    ADMIN_CASDOOR_CLIENT_SECRET: ENC[AES256_GCM,data:ykExoIWAEk21v4xdgky4VVcj9KNM7SDLDSd78lvYKw5sQ/zeX4CLsQ==,iv:luDpcw1qxtZEzECMv6qWs4jHjqObz6wC1w7PFxwamjw=,tag:ERCjTzTqlmxREURlR6Ws9w==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBvOGQzMWJCSFpKRGRYTUdw
+            alc0L3BWZVJEdyt3aWxuemgwemQ3UzZ2YnpVCjNLR3FMS2crcEw3UHNLM3VnOWJj
+            VDZsbTF5WDlaY1Nub2tMNEUvZTFrSVEKLS0tIDNLUTF1eCtaNlNBdk5CN3FCS1hr
+            OGpXUVRhQ1JpQVcyeEs5RmNrbkxiUWMK0aVhzTtP2IFn9gVIrCvjzE5DM6yCwB18
+            q91F0kGDHsaPzizgoPumbkT8eoq7KH9e9ooNjIUjPlYE4gjvdR/B4g==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T15:32:25Z"
+    mac: ENC[AES256_GCM,data:8KuASXq1wQsMWlrCCBdd0hnihAuvrtAJR7femCs0K5ymqW8lPkmIiOvdWQPoXZG9/Ab7N5AzCVJK7tiuD14VzClbReRplcWDE1NdyBzSk0eZL+SBQIbN97un93guW4bUH5SFzF0ceBdgmF4vTi4cFSXDCEbiJzq701S2GSu7BpU=,iv:fT8yqWWuNiQKzzD5zqeshPm1j/tsyGpUcNYiH6wUK+g=,tag:aVwVCULYJJr5mlt0uhVpCw==,type:str]
+    version: 3.13.3

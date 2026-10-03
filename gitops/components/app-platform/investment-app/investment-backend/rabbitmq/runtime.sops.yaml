@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: investment-rabbitmq-runtime
+    namespace: app-platform-dev
+stringData:
+    CELERY_BROKER_URL: ENC[AES256_GCM,data:spk2zvxJk9grLDZ1reQEg0Rq09e351sErikJ/M97yDHsDFffmGvXDDfEsLjhBDOSvvcePF605Gh6iSYysK2GUFiWpxCAkLzTp0Cd60Uc7Am7jHZZnbIvIOzvI3w4vbTBfUNL0uiGiHor9hTKLB8tR9XhnlPFqJrxCldsX9kISrQpgqPi,iv:KzSwnU5qOpIZurO5GD5DfnG4B8L+Kce3m4uHS6p0ilw=,tag:I9p3WQhacSxKRcoQKk9iTg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBDUWxYeDMxNWYyNFBnSUM5
+            NWIwNHUvV3AzY0xYdG9ZbjZKVFhVWWpsMlQ0CmpGSHRTamcxTlNYL2J1a3V6TGcv
+            MEVKTUFTNFphOXROY29xZWhyZGZtalEKLS0tIGsyUmxOTGVZV1lNYTU4dTdKeTZu
+            WkdYdU1IamhObDVJaFJ4WGVSblJQaVEK9D4093Zs0QGHaJ3SlOKMj2c5RQ92GP4g
+            U/WBSfb379K7uxWg+cXeZTzk7dyz8XpcjyWv03bXtLnqQcon0vKhzQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T15:32:23Z"
+    mac: ENC[AES256_GCM,data:dskpREShjROPT/RIRqpRaAMICtduHyLjO0gHxo49WQFBT3eSnD/dP7GyeHUlUjuv45+7aT7LQ/oiTGBQPsylKHKEqmYqKz9uQNNuIHEoGwTUzuvVzJLBFFBgf8eh6liKkG87PZF5UUptfJ8Zg+IsJv291KA5AkKscEY5Xxdy+Zg=,iv:rXLBb/ui9UqfFOE6qh4IaQm9+m3DdSk6QwQrCyIy/Eg=,tag:9aoDXR8h0EEA/1zR5HT2Zg==,type:str]
+    version: 3.13.3

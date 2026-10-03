@@ -9,3 +9,4 @@ resources:
 - applications-tpl.yaml
 - applications-info.yaml
 - applications-knowledge.yaml
+- applications-investment.yaml
