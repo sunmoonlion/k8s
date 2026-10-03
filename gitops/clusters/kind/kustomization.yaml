@@ -3,3 +3,5 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - release-info.yaml
+  - foundation.yaml
+  - registry-puller.sops.yaml
