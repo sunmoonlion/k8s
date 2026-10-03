@@ -15,6 +15,17 @@ data:
   CASDOOR_VERIFY_SSL: 'true'
   SESSION_COOKIE_SECURE: 'true'
   REFERENCE_INTERACTION_ENABLED: 'false'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: tpl-celery-config, namespace: {{ app_namespace }}}
+data:
+  celeryconfig.py: |
+    # Native Celery 5.6 configuration; transient per-connection queues only.
+    control_queue_durable = False
+    control_queue_exclusive = {{ cfg.celery_control_queue_exclusive | bool }}
+    event_queue_durable = False
+    event_queue_exclusive = {{ cfg.celery_event_queue_exclusive | bool }}
 {% for role in ['api','worker','scheduler'] %}
 ---
 apiVersion: apps/v1
@@ -74,6 +85,8 @@ spec:
             - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
             - {name: SERVICE_NAME, value: tpl-{{ role }}}
             - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+            - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
+            - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
           envFrom:
             - {configMapRef: {name: tpl-runtime}}
             - {configMapRef: {name: tpl-browser-identity}}
@@ -85,8 +98,12 @@ spec:
 {% endif %}
           resources: {{ cfg.resources[role] | to_json }}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
-          volumeMounts: [{name: tmp, mountPath: /tmp}]
-      volumes: [{name: tmp, emptyDir: {sizeLimit: 64Mi}}]
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: celery-config, configMap: {name: tpl-celery-config}}
 {% endfor %}
 ---
 apiVersion: v1

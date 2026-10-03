@@ -28,3 +28,6 @@ tpl_backend_deployment:
     api: {requests: {cpu: 100m, memory: 192Mi}, limits: {cpu: '2', memory: 768Mi}}
     worker: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: '2', memory: 1Gi}}
     scheduler: {requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: '1', memory: 512Mi}}
+  # RabbitMQ 4.3不允许非持久非独占队列；Celery控制/事件队列随连接退出。
+  celery_control_queue_exclusive: true
+  celery_event_queue_exclusive: true

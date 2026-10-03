@@ -16,6 +16,17 @@ data:
   SESSION_COOKIE_SECURE: 'true'
   REFERENCE_INTERACTION_ENABLED: 'false'
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: tpl-celery-config, namespace: app-platform-dev}
+data:
+  celeryconfig.py: |
+    # Native Celery 5.6 configuration; transient per-connection queues only.
+    control_queue_durable = False
+    control_queue_exclusive = True
+    event_queue_durable = False
+    event_queue_exclusive = True
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata: {name: tpl-api, namespace: app-platform-dev}
@@ -35,7 +46,7 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 206b719728bce3e8d2dc10412150a281a5071efe01af7fb0a40d70b300e76c66
+        sunmoonai.com/config-sha256: 93bbf2d9af9ac2a29dc022edf5c2f71adc638e3830f59f4be8b5ebc64cd04ef7
     spec:
       serviceAccountName: tpl-runtime
       automountServiceAccountToken: false
@@ -55,6 +66,8 @@ spec:
             - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
             - {name: SERVICE_NAME, value: tpl-api}
             - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+            - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
+            - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
           envFrom:
             - {configMapRef: {name: tpl-runtime}}
             - {configMapRef: {name: tpl-browser-identity}}
@@ -64,8 +77,12 @@ spec:
             - {secretRef: {name: tpl-browser-secrets}}
           resources: {"requests": {"cpu": "100m", "memory": "192Mi"}, "limits": {"cpu": "2", "memory": "768Mi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
-          volumeMounts: [{name: tmp, mountPath: /tmp}]
-      volumes: [{name: tmp, emptyDir: {sizeLimit: 64Mi}}]
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: celery-config, configMap: {name: tpl-celery-config}}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -85,7 +102,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 206b719728bce3e8d2dc10412150a281a5071efe01af7fb0a40d70b300e76c66
+        sunmoonai.com/config-sha256: 93bbf2d9af9ac2a29dc022edf5c2f71adc638e3830f59f4be8b5ebc64cd04ef7
     spec:
       serviceAccountName: tpl-runtime
       automountServiceAccountToken: false
@@ -103,6 +120,8 @@ spec:
             - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
             - {name: SERVICE_NAME, value: tpl-worker}
             - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+            - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
+            - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
           envFrom:
             - {configMapRef: {name: tpl-runtime}}
             - {configMapRef: {name: tpl-browser-identity}}
@@ -110,8 +129,12 @@ spec:
             - {secretRef: {name: tpl-rabbitmq-runtime}}
           resources: {"requests": {"cpu": "100m", "memory": "256Mi"}, "limits": {"cpu": "2", "memory": "1Gi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
-          volumeMounts: [{name: tmp, mountPath: /tmp}]
-      volumes: [{name: tmp, emptyDir: {sizeLimit: 64Mi}}]
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: celery-config, configMap: {name: tpl-celery-config}}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -131,7 +154,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 206b719728bce3e8d2dc10412150a281a5071efe01af7fb0a40d70b300e76c66
+        sunmoonai.com/config-sha256: 93bbf2d9af9ac2a29dc022edf5c2f71adc638e3830f59f4be8b5ebc64cd04ef7
     spec:
       serviceAccountName: tpl-runtime
       automountServiceAccountToken: false
@@ -149,6 +172,8 @@ spec:
             - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
             - {name: SERVICE_NAME, value: tpl-scheduler}
             - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+            - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
+            - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
           envFrom:
             - {configMapRef: {name: tpl-runtime}}
             - {configMapRef: {name: tpl-browser-identity}}
@@ -156,8 +181,12 @@ spec:
             - {secretRef: {name: tpl-rabbitmq-runtime}}
           resources: {"requests": {"cpu": "50m", "memory": "128Mi"}, "limits": {"cpu": "1", "memory": "512Mi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
-          volumeMounts: [{name: tmp, mountPath: /tmp}]
-      volumes: [{name: tmp, emptyDir: {sizeLimit: 64Mi}}]
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: celery-config, configMap: {name: tpl-celery-config}}
 ---
 apiVersion: v1
 kind: Service

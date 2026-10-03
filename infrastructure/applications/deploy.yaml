@@ -61,6 +61,8 @@
           - app_images.web.source_revision == source_lock.web_revision
           - app_images.admin.source_revision == source_lock.admin_revision
           - cfg.scheduler_replicas | int == 1
+          - cfg.celery_control_queue_exclusive is sameas true
+          - cfg.celery_event_queue_exclusive is sameas true
           - cfg.api_replicas | int >= 1
           - cfg.worker_replicas | int >= 1
           - cfg.worker_concurrency | int >= 1

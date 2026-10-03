@@ -23,3 +23,12 @@ application-check 校验全部 Flux 阶段的当前代次和源摘要、五个 D
 实际 worker/scheduler 探针和经新 Traefik 的 HTTPS 路由。公开域名仍可能指向原入口，
 核验通过 `--connect-to` 指向 cluster_ingress_port，保留 SNI、Host 和 CA 验证。
 完整登录、消息业务处理及公开入口切换必须分别验收，不能由 Ready 推定。
+
+## RabbitMQ 4.3 compatibility
+
+Celery 5.6.3 的默认控制/事件队列是非持久非独占，RabbitMQ 4.3默认拒绝创建。
+部署通过原生 CELERY_CONFIG_MODULE 加载 ConfigMap 内的 celeryconfig.py，
+把这两种临时队列设为 exclusive，连接退出后自动消失；持久业务队列不变。
+Worker、scheduler、API和探针读取同一份配置，不开启 RabbitMQ 的废弃特性。
+依据：[Celery配置](https://docs.celeryq.dev/en/stable/userguide/configuration.html#control-queue-exclusive)、
+[RabbitMQ队列说明](https://www.rabbitmq.com/docs/queues#temporary-queues)。
