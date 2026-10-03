@@ -12,3 +12,12 @@ entry_cluster_backend: 172.18.0.5:30443
 entry_config_dir: /etc/sunmoon/entry
 # Compose和工具运行目录；修改边界见同目录 README 的字段表。
 entry_runtime_dir: /opt/sunmoon/entry
+# 已部署应用按域名逐批切换，默认后端在全部应用就绪后再变更。
+# 域名和新集群端口引用各模块真源；本文件不复制域名常量。
+entry_cluster_routes:
+  - name: template
+    backend: '127.0.0.1:{{ cluster_ingress_port }}'
+    hostnames:
+      - '{{ casdoor_hostname }}'
+      - '{{ tpl_web_deployment.origin | urlsplit("hostname") }}'
+      - '{{ tpl_admin_deployment.origin | urlsplit("hostname") }}'

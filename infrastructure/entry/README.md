@@ -9,14 +9,15 @@
 ```sh
 make prepare-host-materials # 核验 HAProxy/skopeo 归档；缺失的本机镜像从归档导入
 make check-host-materials   # 只核验归档，不调用 Docker、不联网
-make entry-plan             # 查看监听地址与两条路由
+make entry-plan             # 查看监听地址、精确SNI路由与默认后端
+make entry-preview          # 用锁定HAProxy校验同一模板，不启动监听
 make entry-deploy           # 配置并启动本次入口，不停止其他监听者
 make entry-status          # 查看 systemd 状态
 make entry-stop            # 停止本次入口，保留配置和容器
 make entry-start           # 检查配置并启动，验证 Harbor TLS 健康
 ```
 
-本目录 `config.yaml` 保留 `entry_enabled` 和监听地址、端口、应用后端、配置/运行目录。运行中配置变化会拒绝部署，需先停止本次入口。新 unit 尚未启用开机自启；不能据此宣称 WSL 重启验收完成。
+本目录 `config.yaml` 保留 `entry_enabled` 和监听地址、端口、默认后端、`entry_cluster_routes` 精确域名分流、配置/运行目录。运行中配置变化会拒绝部署，需先停止本次入口。新 unit 尚未启用开机自启；不能据此宣称 WSL 重启验收完成。
 
 当前正式监听 `0.0.0.0:30443`，候选32443已退出监听，旧代理停止保留。Harbor 域名转 `127.0.0.1:11443`，其他域名保持旧入口实际目标 `172.18.0.5:30443`（保留的 kind-worker）。此 IP 是**本次过渡站点值**，并非未来新集群配置；新集群应用入口验收后改成其宿主端口。旧 main 的 19443 当前没有 Traefik，不能凭名字提前切过去。
 
@@ -47,3 +48,16 @@ HAProxy SNI 语义来自 [官方配置手册](https://docs.haproxy.org/3.4/confi
 | `entry_runtime_dir` | Compose和工具运行目录 | 移动时需同步systemd引用，不是直接更改文本即可完成。 |
 
 本模块是TLS直通，不保存应用或Harbor证书私钥，不设代理登录username/password。仓库域名和回环端口引用registry/config.yaml；不在这里复制。
+
+## 逐批应用切换
+
+`entry_cluster_routes` 为已完成验收的应用指定精确域名及后端。域名引用组件配置，
+后端引用集群端口；不在入口复制域名常量。Harbor路由优先，路由不能重复域名、
+覆盖Harbor或回指本监听端口。其它域名继续使用 entry_cluster_backend。
+目前代码候选将Casdoor、tpl和tpl-admin指向新集群29443；运行30443尚未切换，
+以维护操作卡和实际检查点为准。
+
+预览在 infrastructure/.build/entry/haproxy.cfg 生成相同模板，并用已锁定HAProxy
+以无网络、只读、无capability的临时容器做配置语法检查。它不修改 /etc 的运行文件，
+不停止systemd。运行入口配置变化仍按现有 stop→deploy 生命周期实施，失败恢复
+维护前的运行配置；具体操作见[模板入口操作卡](../../docs/platform-kind-v1/tpl-entry-cutover.md)。

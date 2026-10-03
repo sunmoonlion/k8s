@@ -15,7 +15,7 @@
         quiet: true
         that:
           - not ansible_check_mode
-          - entry_action in ['plan', 'deploy', 'start', 'stop', 'status']
+          - entry_action in ['plan', 'preview', 'deploy', 'start', 'stop', 'status']
           - entry_action in ['plan', 'stop', 'status'] or entry_enabled | bool
           - entry_listen_address in ['127.0.0.1', '0.0.0.0']
           - entry_port | int > 1024 and entry_port | int < 65536
@@ -23,10 +23,27 @@
           - registry_hostname is match('^[a-z0-9.-]+$')
           - entry_cluster_backend is match('^[0-9.]+:[0-9]{2,5}$')
           - entry_cluster_backend != '127.0.0.1:' + (entry_port | string)
+          - entry_cluster_routes is sequence and entry_cluster_routes is not string
+          - entry_cluster_routes | map(attribute='name') | unique | length == entry_cluster_routes | length
+          - entry_cluster_routes | map(attribute='hostnames') | flatten | unique | length == entry_cluster_routes | map(attribute='hostnames') | flatten | length
+          - registry_hostname not in (entry_cluster_routes | map(attribute='hostnames') | flatten)
           - entry_config_dir is match('^/etc/[a-zA-Z0-9_/-]+$')
           - entry_runtime_dir is match('^/opt/[a-zA-Z0-9_/-]+$')
           - "'..' not in entry_config_dir.split('/')"
           - "'..' not in entry_runtime_dir.split('/')"
+
+    - name: Require explicit bounded SNI routes
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - item.name is match('^[a-z][a-z0-9-]{0,30}$')
+          - item.backend is match('^[0-9.]+:[0-9]{2,5}$')
+          - item.backend != '127.0.0.1:' + (entry_port | string)
+          - item.hostnames is sequence and item.hostnames is not string
+          - item.hostnames | length > 0
+          - item.hostnames | select('match', '^[a-z0-9][a-z0-9.-]*[a-z0-9]$') | list | length == item.hostnames | length
+      loop: '{{ entry_cluster_routes }}'
+      loop_control: {label: '{{ item.name }}'}
 
     - name: Show the routing plan
       ansible.builtin.debug:
@@ -34,6 +51,7 @@
           action: '{{ entry_action }}'
           listen: '{{ entry_listen_address }}:{{ entry_port }}'
           registry: '{{ registry_hostname }} -> 127.0.0.1:{{ registry_https_port }}'
+          application_routes: '{{ entry_cluster_routes }}'
           other_domains: '{{ entry_cluster_backend }}'
           image: '{{ entry_image.reference }}'
           boot: Disabled until boot acceptance; existing listeners are not stopped by this entry.
@@ -44,7 +62,58 @@
       changed_when: false
       register: entry_state
       failed_when: entry_state.rc not in [0, 3, 4]
-      when: entry_action != 'plan'
+      when: entry_action not in ['plan','preview']
+
+    - name: Validate generated HAProxy configuration without changing the listener
+      when: entry_action == 'preview'
+      block:
+        - name: Verify the preview uses the locally locked HAProxy image
+          ansible.builtin.command:
+            argv: [docker, image, inspect, '{{ entry_image.reference }}']
+          register: preview_image
+          changed_when: false
+        - name: Require the exact preview image identity
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - (preview_image.stdout | from_json)[0].Descriptor.digest == entry_image.manifest_digest
+              - (preview_image.stdout | from_json)[0].Architecture == 'amd64'
+              - (preview_image.stdout | from_json)[0].Os == 'linux'
+        - name: Create nonsecret preview directory
+          ansible.builtin.file:
+            path: '{{ playbook_dir }}/../.build/entry'
+            state: directory
+            owner: '{{ cluster_operator }}'
+            mode: '0755'
+        - name: Render the same template used by deploy into the preview
+          ansible.builtin.template:
+            src: haproxy.cfg.j2
+            dest: '{{ playbook_dir }}/../.build/entry/haproxy.cfg'
+            owner: '{{ cluster_operator }}'
+            mode: '0644'
+        - name: Validate with the locked HAProxy binary in an isolated container
+          ansible.builtin.command:
+            argv:
+              - docker
+              - run
+              - --rm
+              - --pull=never
+              - --network=none
+              - --read-only
+              - --cap-drop=ALL
+              - --security-opt=no-new-privileges:true
+              - --user=10001:10001
+              - --memory=128m
+              - --cpus=0.5
+              - --pids-limit=64
+              - --mount
+              - 'type=bind,src={{ playbook_dir }}/../.build/entry/haproxy.cfg,dst=/usr/local/etc/haproxy/haproxy.cfg,readonly'
+              - --entrypoint=haproxy
+              - '{{ entry_image.reference }}'
+              - -c
+              - -f
+              - /usr/local/etc/haproxy/haproxy.cfg
+          changed_when: false
 
     - name: Deploy native proxy configuration
       when: entry_action == 'deploy'
@@ -165,12 +234,12 @@
         argv: [systemctl, show, sunmoon-entry.service, --property=ActiveState, --property=SubState, --property=UnitFileState, --property=NRestarts]
       changed_when: false
       register: final_state
-      when: entry_action != 'plan'
+      when: entry_action not in ['plan','preview']
 
     - name: Report final state
       ansible.builtin.debug:
         var: final_state.stdout_lines
-      when: entry_action != 'plan'
+      when: entry_action not in ['plan','preview']
 
     - name: Require the requested lifecycle outcome
       ansible.builtin.assert:
@@ -178,4 +247,4 @@
         that:
           - "entry_action != 'stop' or 'ActiveState=inactive' in final_state.stdout_lines"
           - "entry_action not in ['deploy', 'start'] or 'ActiveState=active' in final_state.stdout_lines"
-      when: entry_action != 'plan'
+      when: entry_action not in ['plan','preview']

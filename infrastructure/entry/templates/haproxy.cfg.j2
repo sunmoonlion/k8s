@@ -14,6 +14,9 @@ frontend tls_entry
     tcp-request inspect-delay 10s
     tcp-request content accept if { req.ssl_hello_type 1 }
     use_backend registry if { req.ssl_sni -i {{ registry_hostname }} }
+{% for route in entry_cluster_routes %}
+    use_backend cluster_{{ route.name }} if { req.ssl_sni -i {{ route.hostnames | join(' ') }} }
+{% endfor %}
     default_backend cluster
 
 backend registry
@@ -21,3 +24,8 @@ backend registry
 
 backend cluster
     server cluster {{ entry_cluster_backend }} check inter 10s fall 3 rise 2
+{% for route in entry_cluster_routes %}
+
+backend cluster_{{ route.name }}
+    server cluster {{ route.backend }} check inter 10s fall 3 rise 2
+{% endfor %}
