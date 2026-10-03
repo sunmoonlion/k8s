@@ -2,3 +2,5 @@
 ---
 tpl_web_deployment:
   origin: https://tpl.sunmoonai.com:30443
+  casdoor_application: sunmoonai-tpl-web
+  casdoor_client_id: sunmoon-kind-tpl-web

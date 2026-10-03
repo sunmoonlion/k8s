@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: tpl-browser-secrets
+    namespace: app-platform-dev
+stringData:
+    WEB_CASDOOR_CLIENT_SECRET: ENC[AES256_GCM,data:b2Bov/eRVuFB7wwveb1m9TFgZv5NQMXeBJnt//VHJmHkVgEuzU0XmQ==,iv:5lRA6p11X0kMM86s4nqypmhXm8ABagF3U8+3L0u6UVI=,tag:985WnXNbsFxRwMHECQoFCg==,type:str]
+    ADMIN_CASDOOR_CLIENT_SECRET: ENC[AES256_GCM,data:/sxg+llmvLear1gTsnrTEYXpdcpB4xqk5Waw07OgikrIv8yygweumQ==,iv:s/ht9BOtmyqGBGduLQZqeT9pDYHg13jNOiOSsAV4SLc=,tag:Xvj5P7PhnpEdIsO5wzI8Ag==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBtRWZOQWZmbVlkcmxaVlBo
+            aWI4dElYYmZ2ZE5RTjllYmdpb295T3ZoZzJRCjliK0paUi9QZ1lGOXNyNEM5UlYz
+            TnNFTW1IbDlxbVdVSFVwSjZuR003U1kKLS0tIFlRWGxzaEpDditsaEZOS1FsRjZm
+            RlNnYldod0xTMUZEY0Via1o5V2RUUTQKnI8MJqVq8fmmiUavhefyk6lI/znkVSRF
+            w8EW4j9fPQQk9f2RjvW3K9FOADhbhou9CcS94Y2CHAc/8i8bVZdK6g==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T12:21:54Z"
+    mac: ENC[AES256_GCM,data:E2lZAb/53uz/dhF11L7BDhUdEonCCooozbzKKsv/hncsr5gkRTYGSX+TuCSlrVy9p40A0VAJIIgnO6gE3o+JumOYZYP+oi8Hq1eV0D9a8D8N14jT9YyFS3J2z6FqYrCaRIZ4Ro0emLB5yr+n2cj7s68bWFeDaiehRs0iJCqiUkE=,iv:XMPudbN199bWUgP/Oq3jdVklZ1qes/wdbExL1GfSGZE=,tag:iRlEMwiCtuqzV9uPaNG2MA==,type:str]
+    version: 3.13.3

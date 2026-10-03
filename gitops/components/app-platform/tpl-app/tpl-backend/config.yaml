@@ -17,3 +17,5 @@ tpl_backend_deployment:
   rabbitmq_vhost: tpl
   rabbitmq_queue: tpl.default
   rabbitmq_identity_revision: v1
+  identity_organization: built-in
+  identity_revision: v1

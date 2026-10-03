@@ -1,0 +1,98 @@
+"""Register the two browser clients through Casdoor's supported API."""
+from datetime import datetime, timezone
+import json
+import os
+from pathlib import Path
+import re
+from urllib.parse import urlsplit
+
+import httpx
+
+
+def require(condition, message):
+    if not condition:
+        raise RuntimeError(message)
+
+
+def run():
+    origin = os.environ['CASDOOR_ORIGIN']
+    endpoint = os.environ['CASDOOR_INTERNAL_ENDPOINT']
+    organization = os.environ['CASDOOR_ORGANIZATION']
+    definitions = json.loads(os.environ['BROWSER_CLIENTS'])
+    secrets = json.loads(Path('/run/app/clients.json').read_text())
+    initialization = json.loads(Path('/run/admin/init_data.json').read_text())
+    admins = [u for u in initialization['users'] if u['owner'] == 'built-in' and u['name'] == 'admin']
+    require(len(admins) == 1 and organization == 'built-in', 'Unexpected administrator or organization')
+    require(set(definitions) == {'web', 'admin'}, 'Both browser surfaces are required')
+    require(definitions['web']['client_id'] != definitions['admin']['client_id'], 'Browser clients must differ')
+    require(secrets['web_secret'] != secrets['admin_secret'], 'Browser secrets must differ')
+    created = []
+    checked = []
+    with httpx.Client(base_url=endpoint, headers={'Origin': origin}, trust_env=False, timeout=15) as client:
+        def api(method, path, payload=None, params=None):
+            response = client.request(method, path, json=payload, params=params)
+            require(response.status_code == 200, 'Casdoor API HTTP failure')
+            result = response.json()
+            require(result.get('status') == 'ok', 'Casdoor API rejected operation')
+            return result.get('data')
+
+        api('POST', '/api/login', {'application': 'app-built-in', 'organization': 'built-in',
+                                 'username': 'admin', 'password': admins[0]['password'], 'type': 'login'})
+        baseline = api('GET', '/api/get-application', params={'id': 'admin/app-built-in'})
+        require(baseline and baseline['cert'], 'Existing Casdoor signing certificate missing')
+        for surface, config in definitions.items():
+            for name in ('name', 'client_id'):
+                require(re.fullmatch(r'[a-z][a-z0-9-]{2,79}', config[name]), 'Invalid browser identity')
+            frontend = urlsplit(config['origin'])
+            require(frontend.scheme == 'https' and frontend.hostname and not frontend.username and
+                    not frontend.password and not frontend.query and not frontend.fragment and frontend.path in ('', '/'),
+                    'Frontend origin must be an exact HTTPS origin')
+            desired = {
+                'owner': 'admin', 'name': config['name'], 'organization': organization,
+                'description': 'sunmoon:tpl:' + surface + ':managed-by-gitops',
+                'displayName': 'SunMoon template ' + surface, 'category': 'Default', 'type': 'Web',
+                'clientId': config['client_id'], 'clientSecret': secrets[surface + '_secret'],
+                'redirectUris': [config['origin'] + '/api/auth/' + surface + '/callback'],
+                'homepageUrl': config['origin'], 'cert': baseline['cert'],
+                'grantTypes': ['authorization_code'], 'tokenFormat': 'JWT', 'tokenSigningMethod': 'RS256',
+                'expireInHours': 1, 'refreshExpireInHours': 0,
+                'enablePassword': True, 'enableSignUp': False, 'enableGuestSignin': False,
+                'enableSigninSession': False, 'isShared': False,
+                'signinMethods': [{'name': 'Password', 'displayName': 'Password', 'rule': 'All'}],
+            }
+            existing = api('GET', '/api/get-application', params={'id': 'admin/' + config['name']})
+            if existing is None:
+                # Check client-ID collision before creating; never change another application.
+                applications = api('GET', '/api/get-applications', params={'owner': 'admin'})
+                require(not any(a.get('clientId') == config['client_id'] for a in applications), 'Client ID belongs to another application')
+                added = api('POST', '/api/add-application', dict(desired, createdTime=datetime.now(timezone.utc).isoformat()))
+                require(added == 'Affected', 'Application was not created')
+                created.append(surface)
+                existing = api('GET', '/api/get-application', params={'id': 'admin/' + config['name']})
+            require(existing and all(existing.get(k) == v for k, v in desired.items()),
+                    'Existing browser application differs; explicit migration required')
+            checked.append(surface)
+        response = client.get('/.well-known/openid-configuration')
+        require(response.status_code == 200, 'OIDC discovery failed')
+        discovery = response.json()
+        require(discovery['issuer'] == origin and 'S256' in discovery.get('code_challenge_methods_supported', []),
+                'Unexpected issuer or missing PKCE')
+        for field in ('authorization_endpoint', 'token_endpoint', 'jwks_uri'):
+            value = urlsplit(discovery[field])
+            require(value.scheme + '://' + value.netloc == origin, 'OIDC endpoint origin mismatch')
+        response = client.get(urlsplit(discovery['jwks_uri']).path)
+        require(response.status_code == 200 and response.json().get('keys'), 'OIDC verification keys missing')
+    print(json.dumps({'browser_clients': sorted(checked), 'created': created,
+                      'distinct_identities': True, 'exact_redirects': True, 'client_secrets_match': True,
+                      'authorization_code_only': True, 'signup_disabled': True,
+                      'issuer': origin, 'pkce_s256': True, 'jwks_available': True,
+                      'full_browser_login_verified': False}))
+
+
+if __name__ == '__main__':
+    try:
+        run()
+    except Exception as error:
+        # Only our fixed validation messages are safe; never stringify HTTP exceptions.
+        message = str(error) if type(error) is RuntimeError else type(error).__name__
+        raise SystemExit('Casdoor registration failed: ' + message)

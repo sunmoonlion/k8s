@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: tpl-identity-provision
+    namespace: app-platform-dev
+stringData:
+    clients.json: ENC[AES256_GCM,data:0plhK7rM+1CvdxJjK4EXDWjjkQPz2cIn0d0c+FNbjOKKPiORLsq4cUjojgtGoDkbjPDeXOEk8PPEY2hbW1JZa8BJpQuJvSW453TKy1C+2xtnAG6PDMHehUKAHaiYLrZDoIgoLRgI0TElcIAaIqoK6pmx5quNvw==,iv:8ExTdt5TkoZp9k8Chl74pSRZ4nGWeN4IY+1iav42TlY=,tag:/wz1Q2D6848l2b3I2IrJaA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBLbzdUV2NQM1M3MGxhcWlr
+            azg2a0NOd1ZhcklIaDJxTWJMbHJtZEVjRXljClZ3WVJBMGJzRERFOGI5RDdxZ3gv
+            QnBwTDlPeUgvZUJLb2oyMEwydTFuS0kKLS0tIEhUVHhTMzZUcEF5SWk1Z2p5TlVT
+            WU5uU3dBR1VySkRBcUpGNS9RMXNBWnMK7pTc/PMP34q0LO9RgcK3H/1b2lsXu8TH
+            l0gYl19lkFk0sCF3oWGBQofATr9aruQ6JnFAWV0FDBDOWX9rH1LnOg==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T12:21:53Z"
+    mac: ENC[AES256_GCM,data:KPRluJIBsui7mo0TWA5KW/ve57DWSoiyxXUTEkvjb7mkpMGI9IXpILO3fNu6g+Z7Xua7201RdQ93CQznGT9cJLl+EN6g89ujkylLp3jHgf0znlIblTqrUvtobQ62PDJxQ60Z4i4vWt0P8H4Y3Dz7JPh2dk6aqy9WtaGGlM2WcLY=,iv:2YNMT2hyvypaoBqWU+q3ZwjOFG5DQr8BuYrI+YvvdDQ=,tag:AMO61KRGYZl8KyN0j34GNg==,type:str]
+    version: 3.13.3

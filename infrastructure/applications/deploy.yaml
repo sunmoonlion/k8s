@@ -17,12 +17,15 @@
     recipient: '{{ lookup("file", playbook_dir + "/../environments/kind/sops-recipient.txt") | trim }}'
     app_images:
       backend: '{{ lookup("file", component_root + "/image.lock.yaml") | from_yaml }}'
+    browser_clients:
+      web: {name: '{{ tpl_web_deployment.casdoor_application }}', client_id: '{{ tpl_web_deployment.casdoor_client_id }}', origin: '{{ tpl_web_deployment.origin }}'}
+      admin: {name: '{{ tpl_admin_deployment.casdoor_application }}', client_id: '{{ tpl_admin_deployment.casdoor_client_id }}', origin: '{{ tpl_admin_deployment.origin }}'}
     source_lock: '{{ (lookup("file", playbook_dir + "/sources.yaml") | from_yaml).applications.tpl }}'
     images: '{{ (lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json).images }}'
     image_map: '{{ dict(images | map(attribute="id") | zip(images)) }}'
     migration_job: 'tpl-migrate-{{ app_images.backend.digest[7:19] }}-{{ cfg.migration_job_revision }}'
     kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
-    candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml, redis/workload.yaml, redis/provision.sops.yaml, redis/runtime.sops.yaml, redis/kustomization.yaml, rabbitmq/workload.yaml, rabbitmq/provision.sops.yaml, rabbitmq/runtime.sops.yaml, rabbitmq/kustomization.yaml]
+    candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml, redis/workload.yaml, redis/provision.sops.yaml, redis/runtime.sops.yaml, redis/kustomization.yaml, rabbitmq/workload.yaml, rabbitmq/provision.sops.yaml, rabbitmq/runtime.sops.yaml, rabbitmq/kustomization.yaml, identity/workload.yaml, identity/provision.sops.yaml, identity/runtime.sops.yaml, identity/kustomization.yaml]
   tasks:
     - name: Validate the selected deployment and identity boundaries
       ansible.builtin.assert:
@@ -53,6 +56,10 @@
           - cfg.rabbitmq_vhost == 'tpl'
           - cfg.rabbitmq_queue == 'tpl.default'
           - cfg.rabbitmq_identity_revision is match('^[a-z0-9-]{1,16}$')
+          - cfg.identity_organization == 'built-in'
+          - cfg.identity_revision is match('^[a-z0-9-]{1,16}$')
+          - browser_clients.web.client_id != browser_clients.admin.client_id
+          - browser_clients.web.name != browser_clients.admin.name
     - name: Require the independent cluster ownership receipt
       ansible.builtin.slurp: {src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'}
       register: identity
@@ -72,9 +79,9 @@
           migrator_user: '{{ cfg.database_migrator_user }}'
           backend: '{{ app_images.backend.digest }}'
           schema: '{{ cfg.expected_schema_revision }}'
-          stages: [tpl-database, tpl-migration, tpl-redis, tpl-rabbitmq]
+          stages: [tpl-database, tpl-migration, tpl-redis, tpl-rabbitmq, tpl-identity]
           image_and_data_budget: '{{ cfg.deploy_budget_bytes }}'
-          excluded: 'Casdoor registration and application runtime remain next; identity creation preserves existing services.'
+          excluded: 'Application runtime and full browser login remain next; identity creation preserves existing services.'
       when: application_action == 'plan'
     - name: End the read-only plan
       ansible.builtin.meta: end_host
@@ -264,16 +271,70 @@
               - rabbitmq_credentials.password != app_credentials.migrator_password
               - rabbitmq_credentials.password != redis_credentials.password
           no_log: true
+        - name: Inspect recoverable browser identity credential input
+          ansible.builtin.stat: {path: '{{ item }}/identity.yaml', follow: false}
+          loop: ['{{ cfg.private_dir }}', '{{ cfg.backup_dir }}']
+          register: identity_files
+          no_log: true
+        - name: Require root-only regular browser identity input files
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - not item.stat.islnk | default(false)
+              - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
+          loop: '{{ identity_files.results }}'
+          no_log: true
+        - name: Restore a preserved browser identity input without rotating its password
+          ansible.builtin.copy: {src: '{{ cfg.backup_dir }}/identity.yaml', dest: '{{ cfg.private_dir }}/identity.yaml', remote_src: true, mode: '0600'}
+          when: not identity_files.results[0].stat.exists and identity_files.results[1].stat.exists
+          no_log: true
+        - name: Refuse to regenerate a declared browser identity identity
+          ansible.builtin.assert:
+            quiet: true
+            that: identity_files.results[0].stat.exists or identity_files.results[1].stat.exists or (query('fileglob', component_root + '/identity/provision.sops.yaml') | length == 0)
+        - name: Create an independent browser identity password only on first preparation
+          ansible.builtin.copy:
+            dest: '{{ cfg.private_dir }}/identity.yaml'
+            force: false
+            mode: '0600'
+            content: |
+              web_secret: {{ lookup('password','/dev/null',length=40,chars=['ascii_letters','digits']) }}
+              admin_secret: {{ lookup('password','/dev/null',length=40,chars=['ascii_letters','digits']) }}
+          when: not identity_files.results[0].stat.exists and not identity_files.results[1].stat.exists
+          no_log: true
+        - name: Preserve the independent browser identity credential backup
+          ansible.builtin.copy: {src: '{{ cfg.private_dir }}/identity.yaml', dest: '{{ cfg.backup_dir }}/identity.yaml', remote_src: true, force: false, mode: '0600'}
+          no_log: true
+        - name: Verify browser identity input against its non-overwritten backup
+          ansible.builtin.command: {argv: [cmp, --silent, '{{ cfg.private_dir }}/identity.yaml', '{{ cfg.backup_dir }}/identity.yaml']}
+          changed_when: false
+          no_log: true
+        - name: Read private browser identity input without logging
+          ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/identity.yaml'}
+          register: identity_input
+          no_log: true
+        - name: Decode private browser identity credentials in memory
+          ansible.builtin.set_fact:
+            identity_credentials: '{{ identity_input.content | b64decode | from_yaml }}'
+          no_log: true
+        - name: Require a strong distinct application browser identity password
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - identity_credentials.web_secret is match('^[a-zA-Z0-9]{40}$')
+              - identity_credentials.admin_secret is match('^[a-zA-Z0-9]{40}$')
+              - identity_credentials.web_secret != identity_credentials.admin_secret
+          no_log: true
         - name: Prepare public candidate directories
           ansible.builtin.file: {path: '{{ build }}/{{ item }}', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
-          loop: [database, migration, redis, rabbitmq]
+          loop: [database, migration, redis, rabbitmq, identity]
         - name: Render colocated workload and stage templates
           ansible.builtin.template:
             src: '{{ component_root }}/{{ item }}.j2'
             dest: '{{ build }}/{{ item }}'
             owner: '{{ cluster_operator }}'
             mode: '0644'
-          loop: [database/workload.yaml, migration/workload.yaml, redis/workload.yaml, rabbitmq/workload.yaml, stages.yaml]
+          loop: [database/workload.yaml, migration/workload.yaml, redis/workload.yaml, rabbitmq/workload.yaml, identity/workload.yaml, stages.yaml]
         - name: Derive independent connection URLs without logging
           ansible.builtin.set_fact:
             runtime_url: 'postgresql+asyncpg://{{ cfg.database_runtime_user }}:{{ app_credentials.runtime_password }}@postgresql.{{ data_namespace }}.svc.cluster.local:5432/{{ cfg.database }}'
@@ -325,6 +386,18 @@
                 metadata: {name: tpl-rabbitmq-runtime, namespace: '{{ cfg.namespace }}'}
                 stringData:
                   CELERY_BROKER_URL: 'amqp://{{ cfg.rabbitmq_user }}:{{ rabbitmq_credentials.password }}@rabbitmq.{{ messaging_namespace }}.svc.cluster.local:5672/{{ cfg.rabbitmq_vhost }}'
+            - file: identity/provision.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: tpl-identity-provision, namespace: '{{ app_namespace }}'}
+                stringData: {clients.json: '{{ identity_credentials | to_json }}'}
+            - file: identity/runtime.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: tpl-browser-secrets, namespace: '{{ app_namespace }}'}
+                stringData: {WEB_CASDOOR_CLIENT_SECRET: '{{ identity_credentials.web_secret }}', ADMIN_CASDOOR_CLIENT_SECRET: '{{ identity_credentials.admin_secret }}'}
           loop_control: {loop_var: secret_item, label: '{{ secret_item.file }}'}
           no_log: true
         - name: Render explicit resource lists without applying config files
@@ -338,6 +411,7 @@
             - {name: migration, resources: [workload.yaml, auth.sops.yaml]}
             - {name: redis, resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]}
             - {name: rabbitmq, resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]}
+            - {name: identity, resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]}
     - name: Stage reviewed candidate declarations without deploying
       when: application_action == 'stage'
       block:
@@ -379,7 +453,7 @@
         - name: Wait for current generation Ready at the promoted digest
           ansible.builtin.command:
             argv: '{{ kube + ["get","kustomization",item,"-n","flux-system","-o","json"] }}'
-          loop: [tpl-database,tpl-migration,tpl-redis,tpl-rabbitmq]
+          loop: [tpl-database,tpl-migration,tpl-redis,tpl-rabbitmq,tpl-identity]
           register: stage
           changed_when: false
           until:
@@ -397,6 +471,7 @@
             - {name: '{{ migration_job }}', namespace: '{{ cfg.namespace }}'}
             - {name: 'tpl-redis-{{ cfg.redis_identity_revision }}', namespace: '{{ data_namespace }}'}
             - {name: 'tpl-rabbitmq-{{ cfg.rabbitmq_identity_revision }}', namespace: '{{ messaging_namespace }}'}
+            - {name: 'tpl-identity-{{ cfg.identity_revision }}', namespace: '{{ app_namespace }}'}
           register: completion
           changed_when: false
           failed_when: completion.rc != 0 or completion.stdout != '1'
@@ -494,3 +569,26 @@
               - rabbitmq_acceptance.default_vhost_denied is sameas true
               - rabbitmq_acceptance.management_api_denied is sameas true
               - rabbitmq_acceptance.single_vhost_grant is sameas true
+        - name: Read browser registration acceptance privately
+          ansible.builtin.command:
+            argv: '{{ kube + ["logs","job/tpl-identity-" + cfg.identity_revision,"-n",app_namespace] }}'
+          register: identity_result
+          changed_when: false
+          no_log: true
+        - name: Decode browser registration acceptance privately
+          ansible.builtin.set_fact:
+            identity_acceptance: '{{ identity_result.stdout_lines[-1] | from_json }}'
+          no_log: true
+        - name: Require distinct browser registrations and OIDC metadata
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - identity_acceptance.browser_clients == ['admin','web']
+              - identity_acceptance.distinct_identities is sameas true
+              - identity_acceptance.exact_redirects is sameas true
+              - identity_acceptance.client_secrets_match is sameas true
+              - identity_acceptance.authorization_code_only is sameas true
+              - identity_acceptance.signup_disabled is sameas true
+              - identity_acceptance.issuer == 'https://' + casdoor_hostname + ':30443'
+              - identity_acceptance.pkce_s256 is sameas true
+              - identity_acceptance.jwks_available is sameas true

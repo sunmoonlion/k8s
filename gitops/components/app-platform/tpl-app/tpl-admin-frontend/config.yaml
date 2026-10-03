@@ -2,3 +2,5 @@
 ---
 tpl_admin_deployment:
   origin: https://tpl-admin.sunmoonai.com:30443
+  casdoor_application: sunmoonai-tpl-admin
+  casdoor_client_id: sunmoon-kind-tpl-admin
