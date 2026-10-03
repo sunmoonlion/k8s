@@ -682,3 +682,21 @@
             (browser_health.stdout | from_json).status != 'ok' or
             (browser_health.stdout | from_json).surface != item.surface or
             (browser_health.stdout | from_json).deployment_id != deployment_id
+        - name: Dispatch one bounded diagnostic task through the API role broker identity
+          ansible.builtin.command:
+            argv: '{{ kube + ["exec","deployment/tpl-api","-n",app_namespace,"--","python","-c","from app.infrastructure.messaging.celery_producer import get_celery_producer; print(get_celery_producer().dispatch_ping())"] }}'
+          register: ping_task
+          changed_when: false
+          failed_when: ping_task.rc != 0 or not (ping_task.stdout is match('^[a-f0-9-]{36}$'))
+        - name: Require that exact task to finish on a real worker
+          ansible.builtin.command:
+            argv: '{{ kube + ["logs","-l","app.kubernetes.io/name=tpl-worker","-n",app_namespace,"--since=120s","--tail=500","--prefix=true"] }}'
+          register: ping_worker
+          changed_when: false
+          until: ping_worker.rc == 0 and ('app.tasks.ping[' + ping_task.stdout + '] succeeded') in ping_worker.stdout
+          retries: 12
+          delay: 3
+          no_log: true
+        - name: Confirm actual task delivery separately from process readiness
+          ansible.builtin.debug:
+            msg: API role published the diagnostic task; worker consumed and completed the exact task identity.
