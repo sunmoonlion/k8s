@@ -64,6 +64,10 @@ def main():
             def mc(*argv):
                 out = subprocess.run(command + list(argv), capture_output=True, env=env, timeout=45)
                 require(out.returncode == 0, 'S3 operation failed: ' + argv[0])
+                if argv[0] != 'cat':
+                    for line in out.stdout.splitlines():
+                        result = json.loads(line)
+                        require(result.get('status') != 'error', 'S3 API rejected: ' + argv[0])
                 return out.stdout
             if args.application:
                 require(re.fullmatch(r'(info|knowledge|investment)', args.application), 'Unsupported storage application')

@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: info-storage-policy-v1, namespace: data-platform-dev}
+metadata: {name: info-storage-policy-v2, namespace: data-platform-dev}
 data:
   policy.json: |
     {"Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Action": ["s3:GetBucketLocation", "s3:ListBucket", "s3:ListBucketMultipartUploads"], "Resource": ["arn:aws:s3:::info-originals"]}, {"Effect": "Allow", "Action": ["s3:GetObject", "s3:GetObjectVersion", "s3:PutObject", "s3:DeleteObject", "s3:AbortMultipartUpload", "s3:ListMultipartUploadParts"], "Resource": ["arn:aws:s3:::info-originals/*"]}]}
 ---
 apiVersion: batch/v1
 kind: Job
-metadata: {name: 'info-storage-v1', namespace: data-platform-dev}
+metadata: {name: 'info-storage-v2', namespace: data-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 300
@@ -30,7 +30,11 @@ spec:
               mkdir -p /work/client/certs/CAs
               cp /run/auth/config.json /work/client/config.json
               cp /run/auth/ca.crt /work/client/certs/CAs/platform.crt
-              mc() { /usr/bin/mc --config-dir /work/client --json "$@" >/work/result.json 2>/work/error.log; }
+              mc() {
+                /usr/bin/mc --config-dir /work/client --json "$@" >/work/result.json 2>/work/error.log || return 1
+                # AIStor mc can emit JSON status=error with process exit 0.
+                if grep -Eq '\"status\"[[:space:]]*:[[:space:]]*\"error\"' /work/result.json; then return 1; fi
+              }
               if ! mc admin user info owned 'info_storage'; then
                 # The supported piped-input form avoids putting credentials in argv.
                 { cat /run/auth/user; printf '\n'; cat /run/auth/password; printf '\n'; } | mc admin user add owned
@@ -54,5 +58,5 @@ spec:
             - {name: work, mountPath: /work}
       volumes:
         - {name: auth, secret: {secretName: 'info-storage-provision', defaultMode: 0440}}
-        - {name: policy, configMap: {name: 'info-storage-policy-v1'}}
+        - {name: policy, configMap: {name: 'info-storage-policy-v2'}}
         - {name: work, emptyDir: {sizeLimit: 16Mi}}
