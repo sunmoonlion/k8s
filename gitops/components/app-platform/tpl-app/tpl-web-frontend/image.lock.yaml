@@ -1,0 +1,5 @@
+# 已构建并由Harbor只读身份核对的不可变镜像；部署不重建。
+---
+repository: tpl-web-frontend
+digest: sha256:7747a9fa70b49c2b1c6936c5a9e1e45afda48acd4b4e6bd6a241ef76e96f7293
+source_revision: 0be8020ca14dc28123c8e212cf7f8f660ed16e99

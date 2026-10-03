@@ -6,4 +6,4 @@
 
 `database/` 创建专用库/角色，运行在数据命名空间；`init/` 初始化身份，主服务和初始化均在应用命名空间。主目录 Kustomization 只引用主服务，不递归部署子阶段。
 
-操作和输入边界见 [组件说明](../../README.md) 与 [服务操作](../../../../docs/platform-kind-v1/services.md)。
+操作和输入边界见 [组件说明](../../../README.md) 与 [服务操作](../../../../../docs/platform-kind-v1/services.md)。

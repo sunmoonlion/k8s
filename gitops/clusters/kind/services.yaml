@@ -22,7 +22,7 @@ spec:
   interval: 5m
   retryInterval: 30s
   timeout: 6m
-  path: ./components/app-platform/casdoor/database
+  path: ./components/app-platform/auth-app/casdoor/database
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn: [{name: platform-services}]
   prune: false
@@ -39,7 +39,7 @@ spec:
   interval: 5m
   retryInterval: 30s
   timeout: 6m
-  path: ./components/app-platform/casdoor/init
+  path: ./components/app-platform/auth-app/casdoor/init
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn: [{name: casdoor-db}]
   prune: false
@@ -56,7 +56,7 @@ spec:
   interval: 5m
   retryInterval: 30s
   timeout: 6m
-  path: ./components/app-platform/casdoor
+  path: ./components/app-platform/auth-app/casdoor
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn: [{name: casdoor-init}]
   prune: false

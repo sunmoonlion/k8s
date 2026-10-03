@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ cfg.namespace }}
+  labels:
+    app.kubernetes.io/part-of: tpl
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: v1.36
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: default, namespace: {{ cfg.namespace }}}
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: application-runtime, namespace: {{ cfg.namespace }}}
+automountServiceAccountToken: false
+imagePullSecrets: [{name: registry-puller}]
+---
+apiVersion: v1
+kind: LimitRange
+metadata: {name: container-defaults, namespace: {{ cfg.namespace }}}
+spec:
+  limits:
+    - type: Container
+      defaultRequest: {cpu: 100m, memory: 128Mi}
+      default: {cpu: '1', memory: 512Mi}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: default-deny, namespace: {{ cfg.namespace }}}
+spec: {podSelector: {}, policyTypes: [Ingress, Egress]}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: allow-dns, namespace: {{ cfg.namespace }}}
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: tpl-postgresql, namespace: {{ data_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: postgresql}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: {{ cfg.namespace }}}}
+          podSelector: {matchLabels: {sunmoonai.com/postgresql-client: 'true'}}
+      ports: [{protocol: TCP, port: 5432}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: postgresql-client, namespace: {{ cfg.namespace }}}
+spec:
+  podSelector: {matchLabels: {sunmoonai.com/postgresql-client: 'true'}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: {{ data_namespace }}}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: postgresql}}
+      ports: [{protocol: TCP, port: 5432}]
+---
+apiVersion: batch/v1
+kind: Job
+metadata: {name: 'tpl-database-{{ cfg.database_bootstrap_revision }}', namespace: {{ data_namespace }}}
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels: {app.kubernetes.io/part-of: tpl, sunmoonai.com/postgresql-client: 'true'}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 999, runAsGroup: 999, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: provision
+          image: {{ registry_address }}/platform/postgresql@{{ image_map.postgresql.manifest_digest }}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
+          env:
+            - {name: PGHOST, value: 'postgresql.{{ data_namespace }}.svc.cluster.local'}
+            - {name: PGUSER, value: postgres}
+            - {name: PGDATABASE, value: postgres}
+            - {name: PGCONNECT_TIMEOUT, value: '10'}
+            - {name: PGPASSWORD, valueFrom: {secretKeyRef: {name: postgresql-auth, key: password}}}
+            - {name: MIGRATOR_PASSWORD, valueFrom: {secretKeyRef: {name: tpl-database-bootstrap, key: migrator_password}}}
+            - {name: RUNTIME_PASSWORD, valueFrom: {secretKeyRef: {name: tpl-database-bootstrap, key: runtime_password}}}
+          command: [/bin/sh, -ec]
+          args:
+            - |
+              psql --no-psqlrc --set=ON_ERROR_STOP=1 <<'SQL'
+              \set VERBOSITY terse
+              \getenv migrator_password MIGRATOR_PASSWORD
+              \getenv runtime_password RUNTIME_PASSWORD
+              SELECT pg_advisory_lock(hashtextextended('sunmoon/tpl/database',0));
+              DO $$ BEGIN
+                IF EXISTS (SELECT FROM pg_roles WHERE rolname IN ('{{ cfg.database_runtime_user }}','{{ cfg.database_migrator_user }}') AND shobj_description(oid,'pg_authid') IS DISTINCT FROM 'sunmoon-kind/tpl') THEN
+                  RAISE EXCEPTION 'Refusing a foreign existing role';
+                END IF;
+                IF EXISTS (SELECT FROM pg_database WHERE datname='{{ cfg.database }}' AND shobj_description(oid,'pg_database') IS DISTINCT FROM 'sunmoon-kind/tpl') THEN
+                  RAISE EXCEPTION 'Refusing a foreign existing database';
+                END IF;
+              END $$;
+              SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD %L','{{ cfg.database_migrator_user }}',:'migrator_password') WHERE NOT EXISTS(SELECT FROM pg_roles WHERE rolname='{{ cfg.database_migrator_user }}') \gexec
+              SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD %L','{{ cfg.database_runtime_user }}',:'runtime_password') WHERE NOT EXISTS(SELECT FROM pg_roles WHERE rolname='{{ cfg.database_runtime_user }}') \gexec
+              COMMENT ON ROLE {{ cfg.database_migrator_user }} IS 'sunmoon-kind/tpl';
+              COMMENT ON ROLE {{ cfg.database_runtime_user }} IS 'sunmoon-kind/tpl';
+              SELECT format('CREATE DATABASE %I OWNER %I','{{ cfg.database }}','{{ cfg.database_migrator_user }}') WHERE NOT EXISTS(SELECT FROM pg_database WHERE datname='{{ cfg.database }}') \gexec
+              COMMENT ON DATABASE {{ cfg.database }} IS 'sunmoon-kind/tpl';
+              REVOKE ALL ON DATABASE {{ cfg.database }} FROM PUBLIC;
+              GRANT CONNECT ON DATABASE {{ cfg.database }} TO {{ cfg.database_runtime_user }};
+              SQL
+              PGPASSWORD="$MIGRATOR_PASSWORD" psql --no-psqlrc -U {{ cfg.database_migrator_user }} -d {{ cfg.database }} --set=ON_ERROR_STOP=1 <<'SQL'
+              REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+              GRANT USAGE ON SCHEMA public TO {{ cfg.database_runtime_user }};
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO {{ cfg.database_runtime_user }};
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE,SELECT ON SEQUENCES TO {{ cfg.database_runtime_user }};
+              SQL
+              PGPASSWORD="$RUNTIME_PASSWORD" psql --no-psqlrc -U {{ cfg.database_runtime_user }} -d {{ cfg.database }} --set=ON_ERROR_STOP=1 -c 'SELECT 1' >/dev/null
+              echo 'TPL independent database identities verified'

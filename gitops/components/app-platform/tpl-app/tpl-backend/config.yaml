@@ -1,0 +1,12 @@
+# 后端数据库、迁移任务、私有路径和容量预算；秘密不入此文件。
+---
+tpl_backend_deployment:
+  database: tpl
+  database_runtime_user: tpl_runtime
+  database_migrator_user: tpl_migrator
+  database_bootstrap_revision: v1
+  migration_job_revision: v1
+  expected_schema_revision: '20260911_0003'
+  private_dir: /etc/sunmoon/applications/sunmoon-kind/tpl
+  backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/tpl
+  deploy_budget_bytes: 1073741824

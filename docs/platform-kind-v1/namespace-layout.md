@@ -14,7 +14,7 @@
 | PostgreSQL、Redis | data-platform | platform-system | data-platform-dev |
 | RabbitMQ | messaging-platform | platform-system | messaging-platform-dev |
 | Casdoor 初始化与服务 | app-platform | platform-system | app-platform-dev |
-| Casdoor 建库 Job | app-platform/casdoor/database | platform-system | data-platform-dev |
+| Casdoor 建库 Job | app-platform/auth-app/casdoor/database | platform-system | data-platform-dev |
 | Flux | 集群引导 | flux-system | flux-system |
 
 运维分类留名 `ops-platform-dev`，有组件才创建。`platform-system` 保留引导基础对象，不再放上述业务基础服务。Casdoor 管理员、数据库角色/口令、TLS、初始化标记保持原值；PG 管理凭据只出现在 data-platform-dev。应用连接使用 `postgresql.data-platform-dev.svc.cluster.local` 等完整地址。

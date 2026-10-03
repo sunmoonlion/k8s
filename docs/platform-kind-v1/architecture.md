@@ -76,7 +76,7 @@ Flux 提供离线安装和 OCI 源能力；这里的 OCI 发布与根协调已�
 Make 明确列举唯一配置并通过原生 `--extra-vars @文件` 交给 Ansible。没有新增 CLI、目录扫描加载器或并行部署入口。
 Kustomization 只引用生成声明，用户配置与模板不作为 Kubernetes 资源应用。简单功能无需强行增加 templates/resources 多层目录。
 
-代码归属与运行命名空间独立：Casdoor 的 database/init/主服务集中在 app-platform/casdoor；建库 Job 仍在 data-platform-dev。配置归拢不改变任何 PV、身份、数据目录或软件版本。
+代码归属与运行命名空间独立：Casdoor 的 database/init/主服务集中在 app-platform/auth-app/casdoor；建库 Job 仍在 data-platform-dev。配置归拢不改变任何 PV、身份、数据目录或软件版本。
 秘密、日志、备份、物料和临时产物分别留在私有或运行目录，不为“放在一起”把它们搬进源码。
 长期空间管理尚未实现的部分，后续按同一原则实现，不在本次虚构已完成模块。
 
@@ -194,3 +194,9 @@ WSL 挂载成功前禁止启动 Harbor。已通过后端健康与认证；容器
 当前已实现物料、宿主准入、节点构建、独立 Harbor 与正式入口、扫描/恢复演练，以及 sunmoon-kind 三节点创建和私有拉取。详见 CHECKPOINT.md 与[集群操作](cluster.md)。Flux 引导与 OCI 协调也已通过，SOPS及基础平台声明已通过，首批数据/身份服务已通过实际部署和协议验收，目录与命名空间归类也已完成（见 [命名空间调整](namespace-layout.md)）；后续依次完成其余依赖、应用、统一生命周期、重启与重建持久化验收、长期运维和清理；完整发布闭包仍需补齐。
 
 第一期资源预算、具体恢复时间和可接受数据损失目标还需根据实际容量及演练确定；不在草案中虚构可用性承诺。业务能力与选装组件不能因资源不足被静默删除。
+
+### 应用平台分类补充（2026-10-03）
+
+保留平台、应用、组件三级职责：认证应用是 `gitops/components/app-platform/auth-app/casdoor/`，模板应用是 `gitops/components/app-platform/tpl-app/`。实例应用后续按相同层级归入。应用配置和初始化/迁移/运行模板随应用维护；共用Make/Ansible构建编排仍在 `infrastructure/applications/`。此次移动不改变Casdoor资源名、运行namespace、卷或密文内容。
+
+应用目录之下继续保留前后端组件层：`tpl-app/tpl-backend/`、`tpl-app/tpl-web-frontend/`、`tpl-app/tpl-admin-frontend/`。数据库初始化、迁移、API/Worker/Scheduler归后端组件；公共namespace/开关留应用层，组件字段和镜像锁随组件。后续info/knowledge/investment按同一结构落地，不把前后端合在应用根目录。

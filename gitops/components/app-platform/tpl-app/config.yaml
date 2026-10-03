@@ -1,0 +1,5 @@
+# 应用共享开关和命名空间；组件自己的参数在组件目录。
+---
+tpl_deployment:
+  enabled: true
+  namespace: tpl-app-dev

@@ -1,9 +1,9 @@
 ---
 # Source layout and derived references only; editable values live beside each component.
 service_stage_paths:
-  casdoor-db: app-platform/casdoor/database
-  casdoor-init: app-platform/casdoor/init
-  casdoor: app-platform/casdoor
+  casdoor-db: app-platform/auth-app/casdoor/database
+  casdoor-init: app-platform/auth-app/casdoor/init
+  casdoor: app-platform/auth-app/casdoor
 service_candidate_roots:
   - core
   - foundations
@@ -22,4 +22,4 @@ service_component_paths:
   redis: data-platform/redis
   rabbitmq: messaging-platform/rabbitmq
   traefik: ingress-platform/traefik
-  casdoor: app-platform/casdoor
+  casdoor: app-platform/auth-app/casdoor

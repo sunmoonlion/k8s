@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: registry-puller
+    namespace: tpl-app-dev
+type: kubernetes.io/dockerconfigjson
+data:
+    .dockerconfigjson: ENC[AES256_GCM,data:/5Muwfvb85g+rR4XP8Grj7RCnlysgtsCOb/1/aXFQJMUvLErCnsPiK96x+Mr4vSnfUkngrNqWItdYPv5WAy+PREeOedLEdZVgrSIDAtOvpmaulYjD/xMaxpu+4basUIv8TbsmayIMi+v4BwYX18UpNUN+m8i/pWr7tNoE0P2th2sP/isP0cGanXQBwja/QwcKn28p9viWLycXasP5voQyF4oAL5ymUqZ9gtcgEL7nEb8MR2/aK31Dln3wReFivySEn1H/ImpBAIRkAoLHz3GUad5F3U+3u6NC/SxAXA8qlEn5wvC,iv:fpQAehTbFh9qrN7KTiOEbCJPfcXzGnY8qfneIczER/U=,tag:juo/MUVH7IW16ApLrhHWbg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBXU2YreDNXem9GTHNycUxP
+            YThmYkdSeFdvR2xnaGFPbzMvVXhVYnVQK1RrCmpDNXYrMVBBRVZRcVNNaXNMSG5z
+            S3E1UVJPckhHWHVqRis0K09lMnhPd1UKLS0tIFJpTE91NkZqcnpFd2dKdkt1TXhy
+            L20zOVNjdzJYeVlBYUNhYkFiTkwvSEkKLDTR8T0gzkbFuoCG0/6SCxS4S35yG6cS
+            IobDoVWQ1rGVBEbTung2cYH8l7gFBZUDs+D2cF9Zt4ZHrFGYtEj/xQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T10:18:36Z"
+    mac: ENC[AES256_GCM,data:SF8hRz5DCz5zXnc/LwirA80FcSAP7lRnPp+bYa+LMH1oJNAbyBadbHjxq5XNZizuWfB9WYhCe5mz5dHElrOUqwRuhzGr+npwW5ZRxjTxGMPRsSrsAPcc0oj+iygt88EJVqVzCNEEpWtRvdHU0f14XNw+bG74/X9lvvQAuTlva88=,iv:IoxRXEUHP8yRihUENWEgC9LKbh5d0A2CLgG8nWag9vA=,tag:eiNWtAnBeblDKDGPvXQpkg==,type:str]
+    version: 3.13.3

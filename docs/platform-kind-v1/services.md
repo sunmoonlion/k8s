@@ -156,7 +156,7 @@ Traefik chart 41.6 使用 `log`、`accessLog`，`versionOverride` 在 values 根
 
 ## 2026-10-03 配置归拢
 
-各组件配置、模板、声明和说明已经集中到组件目录，Casdoor的database/init/运行三个阶段共处app-platform/casdoor。原data-platform/casdoor-database、app-platform/casdoor-init、集中services/templates及environments/kind/services.yaml退役，不留转发副本。运行namespace、PV、凭据和版本保持。
+各组件配置、模板、声明和说明已经集中到组件目录，Casdoor的database/init/运行三个阶段共处app-platform/auth-app/casdoor。原data-platform/casdoor-database、app-platform/auth-app/casdoor-init、集中services/templates及environments/kind/services.yaml退役，不留转发副本。运行namespace、PV、凭据和版本保持。
 
 配置定位：`make -C infrastructure config`。宿主、KIND、Harbor、入口、Flux各自参数在相应模块config.yaml；共享环境字段才放site.yaml。
 

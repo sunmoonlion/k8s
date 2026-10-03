@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: tpl-database-runtime
+    namespace: tpl-app-dev
+stringData:
+    DATABASE_URL: ENC[AES256_GCM,data:PaZnA4xxlWmEhm+W7jdWCwTr4g4Agr5TANrz80ErqGLtWQsPoaXwjY/6LAdxf+BoGeZAXpLMVMPBuOz1eQ6gEwkTt0fPki6C36qkXEIXiSVFITvVwWaA9Emw7+eB5/HnmdXMOGGqGgfrXhZ8LKtOEzYGkCMZz6M6I5Q1jenibSkU,iv:FlxSaxrQdxSeWiUCVLMHjjUsILrIrRQpOeiqqSGnxHQ=,tag:Xk7NLhTzLlwdrYBoCWtTvw==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBlc1NLcTYvbEt3MVhNQkpG
+            aHdmeDVaam5JaDRZTE0zcDVWL3JQNGkzM2l3Cm5wc0JaaUg1dEJWU2hrVHgrNDEr
+            MWZxQk90Qlk1NkVVcFlzOENUencySlkKLS0tIEhpWU8za2d0ZFl2MUF4ZHkyOHJx
+            NDN2WGc2K3NvZXQxQm0yL0RydFZ6aXMKBYo6qynC28XgaMO1CA1AkcLAXlGJGpUT
+            MFZqQOXnaDslrelNjhspYm0uL8TG8Eu7rZH6RDfoX7E9w/wktT6y1Q==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T10:18:34Z"
+    mac: ENC[AES256_GCM,data:c8dCwJqQSvGhk43nognGGSIYivhRkgF80hY28ONAjaq7QwZ+mfeYK2OQkjh08rg/TPmh1poL9lan8f5QzK4i9qBjHK66/qn2QWkD/b6gWwPwO4hsVWR0iDa9joX0Mhom25KNeNOt5hQxLna62cShkqLBnK7tGklsCNyMrg9aAG8=,iv:QCif6+MZBfHeS3act/krx8orYODqhQMXRbN/qXHRRzs=,tag:JrEoGq7/VpusKVe86vuHqQ==,type:str]
+    version: 3.13.3

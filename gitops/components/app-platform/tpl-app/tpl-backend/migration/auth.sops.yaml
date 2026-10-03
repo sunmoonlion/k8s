@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: tpl-migration-auth
+    namespace: tpl-app-dev
+stringData:
+    DATABASE_URL: ENC[AES256_GCM,data:An7LbhvXwkUYj+VxB9t7Vmp71lJIHzqPwn3yu94vjlkWOUvspmzygKFDHk7slio879EOWBn2dLNFsf5KL7BpdEw+ghh6OtYBNOkPSlP2NEK1K0CO5yz5EeGttCj5aEGTZvz33i8tCrmiagJFNmX+gEfuUFTSbQd/vdR7kpZKEqAU,iv:+/vijArESwU5vmA4AOerlPUuwdwlbZ22FFlXCMeQV4I=,tag:MmkikKM9fUhiC8DzUeFpdw==,type:str]
+    MIGRATION_DATABASE_URL: ENC[AES256_GCM,data:4+RSBGO5ctC7QEhhM/2eaICPCWMeWqSSMR8BBrbMmXjOEsUWot29d4NrTPb9swNmBWSpYS65PrRJbmVPYsqSGcsoWwFZ41ZwHOO+1E+h5c9GE+UiF1FPpHR67+toAydtgknXgm7attZiDnsIKqPcCnVon1rK7hCaH/kk9Z02C4OKOQ==,iv:MC8VcaePLhsw90cscRorGFzH4IsDReAQAq5wtmVUiy8=,tag:x6DbNHBO3/iBE4ObieTTQQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSArUHRwbmZyRnJoSmVWalVG
+            c3U0VDc1aXUzV251cndCelR4dklLQmdDUXh3CnpVcVE1elZWVFFVNGNZejkrWU1n
+            SldtTWEzYXhVMk1hM2NCWXlXdlV5REUKLS0tIFJ0SWxWWnRTaFNDdlRub2dBcFNW
+            YlY4OG1RYWcrOEtvZ0taS1lraFJ4Rk0KdXeKDtlfXDj/uro/S7HkEKFDAIdo3eyd
+            DDCL2Do4FDmTvsniI+6vZ2Wosa4DXuyl5S8b1O1EYksNu9gXTYoYuw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T10:18:35Z"
+    mac: ENC[AES256_GCM,data:UhhQl/orIidVL9F1RINAFIKlqkstO7O/Ix12bt2SKqk+pjD+lO6URohP+hDvlxd/YyEO9mJ0Zmwye06ZXsXtgekN9tI4pE/zgIOl7nYri1jgS7W2oWZ4Zfmnc3p8/GF48cAAOmY6fDPCJqyKpDfx6O8CJ7EmdT6jx/yZOB03A5M=,iv:yQlAJrFJTTfwTsXhN6oUNexDT33FvWlokwBRxnnfXSI=,tag:okq8cGZU87qdapYRPAKiwg==,type:str]
+    version: 3.13.3

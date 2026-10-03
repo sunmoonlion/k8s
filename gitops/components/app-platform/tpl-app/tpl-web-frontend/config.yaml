@@ -1,0 +1,4 @@
+# 浏览器入口；后端身份配置读取同一来源。前端运行声明尚未接入。
+---
+tpl_web_deployment:
+  origin: https://tpl.sunmoonai.com:30443

@@ -6,3 +6,4 @@ resources:
   - foundation.yaml
   - registry-puller.sops.yaml
   - services.yaml
+  - applications.yaml

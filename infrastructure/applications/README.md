@@ -41,7 +41,7 @@ make application-publish-admin
 
 ## 与宿主网络方案配合
 
-本机网络说明见 `/home/zymun/网络管理统一方案.md` 的“当前执行口径”节。宿主 `sunmoon-network` 管理代理地址、DNS/绕过检查与受管理工具环境；本模块管理应用的配套下载源和有界重试。代理地址通过调用环境的 `HTTPS_PROXY` 取得；不复制 WSL 地址到仓库或云端默认配置，不改全局 npm/pip/uv 配置。
+本机网络说明见 [Vlinux 工具仓的网络管理统一方案](/home/zymun/toolboxes/Vlinux/utils/set-up-tools/proxy-setting/网络管理统一方案.md) 的“当前执行口径”节。宿主 `sunmoon-network` 管理代理地址、DNS/绕过检查与受管理工具环境；本模块管理应用的配套下载源和有界重试。代理地址通过调用环境的 `HTTPS_PROXY` 取得；不复制 WSL 地址到仓库或云端默认配置，不改全局 npm/pip/uv 配置。
 
 Python 分为 pip 安装构建工具、uv 按冻结锁安装业务依赖两段；切换必须同时覆盖索引与锁中的包文件 URL。Harbor 私有 CA 只供构建客户端仓库认证，不注入 pip/uv 的公共下载信任配置。宿主 `verify` 不含完整 Python 安装，不能替代 `application-rehearse-downloads`；清空代理也不能修复被 Windows 代理接管的 Fake-IP DNS。
 

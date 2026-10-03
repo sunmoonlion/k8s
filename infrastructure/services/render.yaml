@@ -294,7 +294,7 @@
       ansible.builtin.include_tasks: tasks/encrypt.yaml
       vars:
         secret_item:
-          file: app-platform/casdoor/database/auth.sops.yaml
+          file: app-platform/auth-app/casdoor/database/auth.sops.yaml
           manifest:
             apiVersion: v1
             kind: Secret
@@ -306,30 +306,30 @@
       vars:
         initializing: false
         secret_item:
-          file: app-platform/casdoor/config.sops.yaml
+          file: app-platform/auth-app/casdoor/config.sops.yaml
           manifest:
             apiVersion: v1
             kind: Secret
             metadata: {name: casdoor-config, namespace: '{{ app_namespace }}'}
-            stringData: {app.conf: '{{ lookup("template", playbook_dir + "/../../gitops/components/app-platform/casdoor/app.conf.j2") }}'}
+            stringData: {app.conf: '{{ lookup("template", playbook_dir + "/../../gitops/components/app-platform/auth-app/casdoor/app.conf.j2") }}'}
       no_log: true
     - name: Encrypt one-time initialization config
       ansible.builtin.include_tasks: tasks/encrypt.yaml
       vars:
         initializing: true
         secret_item:
-          file: app-platform/casdoor/init/config.sops.yaml
+          file: app-platform/auth-app/casdoor/init/config.sops.yaml
           manifest:
             apiVersion: v1
             kind: Secret
             metadata: {name: casdoor-init-config, namespace: '{{ app_namespace }}'}
-            stringData: {app.conf: '{{ lookup("template", playbook_dir + "/../../gitops/components/app-platform/casdoor/app.conf.j2") }}'}
+            stringData: {app.conf: '{{ lookup("template", playbook_dir + "/../../gitops/components/app-platform/auth-app/casdoor/app.conf.j2") }}'}
       no_log: true
     - name: Encrypt the new administrator initialization input
       ansible.builtin.include_tasks: tasks/encrypt.yaml
       vars:
         secret_item:
-          file: app-platform/casdoor/init/identity.sops.yaml
+          file: app-platform/auth-app/casdoor/init/identity.sops.yaml
           manifest:
             apiVersion: v1
             kind: Secret
@@ -341,7 +341,7 @@
       ansible.builtin.include_tasks: tasks/encrypt.yaml
       vars:
         secret_item:
-          file: app-platform/casdoor/tls.sops.yaml
+          file: app-platform/auth-app/casdoor/tls.sops.yaml
           manifest:
             apiVersion: v1
             kind: Secret

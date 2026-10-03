@@ -1,10 +1,27 @@
+# 当前优先状态：应用层级纠正，模板数据库声明已准备（2026-10-03）
+
+本节优先于下方历史。工作树/分支 platform-kind-v1，基线 d82f37c7cacd65b48f8a1d3e350e5ed199d8f804；本单元只改 k8s。所有者明确保留“平台 → 应用 → 前后端组件”，不把模板应用特殊化，也不另建平行的 gitops/applications。
+
+- Casdoor 已归 `gitops/components/app-platform/auth-app/casdoor/`，原 database/init/主服务阶段保留；迁移前后16份非README文件逐字节一致，部署引用同步更新。目录移动不改变命名空间或资源身份。
+- 模板归 `gitops/components/app-platform/tpl-app/`，其下分别为 tpl-backend、tpl-web-frontend、tpl-admin-frontend。应用共享开关和namespace在应用config；各组件config、image.lock.yaml、模板与说明同处。database/migration和后续API/Worker/Scheduler归后端。info/knowledge/investment后续遵循相同结构，尚未生成它们的运行声明。
+- 原生 Make/Ansible 增加模板数据库 plan/render/stage/validate/check/bootstrap；准备独立运行/迁移身份、SOPS密文、初始化Job及独立迁移Job。仅文件候选已生成，尚未发布Flux源、执行Job或创建应用数据库；前端运行声明尚未实现。没有切入口或重启服务。
+- 私有凭据已生成并逐字节备份，不得重生成或输出。根目录 /etc/sunmoon/applications/sunmoon-kind/tpl；备份 /mnt/sunmoon-data/backups/applications/sunmoon-kind/tpl。口令备份不代表数据库备份。
+- 正常50GiB容量门槛，数据库单元1GiB预算通过准备检查；前序40GiB例外不沿用。私有证据 infrastructure/.build/applications/tpl-database-stage-2.log、tpl-database-stage-3.log；最新stage为ok10 changed1 failed0。第一次被空fileglob误判拦住，修正长度判断后成功，失败日志保留。
+- services-render通过；层级纠正后的15个Kustomize根全部渲染成功、Ansible语法及git diff检查通过。运行层验收未做，不能声称数据库部署成功。部署前Pod身份快照在 infrastructure/.build/applications/database-unit-20261003/before-pods.json，不覆盖。
+
+下一步：审查并本地提交声明 → 原生flux-release发布不可变源并晋级 → application-bootstrap APP=tpl → 检查独立Job、真实CRUD/DDL拒绝及既有平台Pod状态。随后继续Redis/RabbitMQ/Casdoor应用身份、后端角色和前端，最后业务链；新应用入口切换需另行确认维护窗口。部署路径已含tpl-backend，禁止退回合并目录。
+
+规则对应：C-T2/T3单后端按角色部署，C-R1/R2/R3固定源码与镜像摘要并复用产物，C-D3/D8独立数据身份和迁移阶段。本轮未修改业务仓或推送。
+
+---
+
 # 当前优先状态：应用配套下载演练通过，四应用共用构建入口（2026-10-03）
 
 本节优先于下方历史。本单元基线e14ae087，工作树/分支platform-kind-v1。所有者要求真实演练后统一新体系所有后端/Web/Admin，旧build-image.sh按退役计划处理；随后要求与家目录网络方案配合。本单元只改构建与说明，没有部署应用、改Flux源、切入口或重启服务，无push。
 
 ## 已实施与实际验证
 
-- 共用原生Ansible build-network/build-attempt，默认国内直连，确认依赖下载网络失败才本次切官方源+HTTPS_PROXY并重试一次；无代理/不可达/重试失败均非零退出。编译、认证、TLS、签名、哈希错误不切源。家目录 `/home/zymun/网络管理统一方案.md` 已补“当前执行口径”，明确宿主代理管理与项目配套源选择职责、pip工具下载与uv锁文件地址两段、离线引导/在线应用边界、Fake-IP和CA限制；该文件在仓库外，不随Git交付。
+- 共用原生Ansible build-network/build-attempt，默认国内直连，确认依赖下载网络失败才本次切官方源+HTTPS_PROXY并重试一次；无代理/不可达/重试失败均非零退出。编译、认证、TLS、签名、哈希错误不切源。工具仓 `/home/zymun/toolboxes/Vlinux/utils/set-up-tools/proxy-setting/网络管理统一方案.md` 已补“当前执行口径”，明确宿主代理管理与项目配套源选择职责、pip工具下载与uv锁文件地址两段、离线引导/在线应用边界、Fake-IP和CA限制；该文件现由Vlinux工具仓管理，所有者负责推送，不随k8s仓交付；2026-10-03已从家目录移动，~/AGENTS.md、工具仓README和本仓构建说明均指向新位置。
 - Python实际演练先让国内pip连接失败，再官方代理pip安装uv0.11.32、uv冻结安装模板依赖、成功导入FastAPI；共2次构建。59锁包/624候选文件身份保留，不是下载所有624文件。前几次curl28/35失败保留；独立探测曾成功，最终演练成功，未证明家庭网络稳定或唯一根因。
 - 修复合法uv锁中无size候选文件被误拒绝，size存在才检查而SHA256仍必需；helper失败时不再被changed_when的JSON解析错误掩盖。探测10秒连接/30秒总计，显示脱敏HTTP/远端/CONNECT状态；不关闭TLS。Python/uv的HTTP401/403/404也明确拒绝切源。
 - tpl/info/knowledge/investment × backend/web/admin共12选择统一到同一build.yaml。APP参数选择，sources.yaml固定4父仓及12子提交；capacity_operation按app+component隔离。原生application-source-plan只检查干净源码、父gitlink/后代关系、实际配方及配置，不构建。12项实际均ok8 changed0 failed0。

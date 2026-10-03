@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: tpl-database-bootstrap
+    namespace: data-platform-dev
+stringData:
+    migrator_password: ENC[AES256_GCM,data:xJB479xnSfMdIn7zJeMLoKRJoPjKSrahWU311Rz1QD5vsIAMwccbtg==,iv:MUlf44xm7UQ2VhAKtRvNf8vAmAALJgFpozu2mmLPUWI=,tag:GwNojLeHZGNI1J9/EFLnyw==,type:str]
+    runtime_password: ENC[AES256_GCM,data:i7jnc8w6URBX8gfk2u5tV3XkmF+EmXXetYrI9kV4O7exjIY017hndQ==,iv:nlNsV5iO70zmtbpmWxGAGnSHfmIpeI8yjBxuFdgvX+Q=,tag:cOs/Et41P0GG4Nm47Jgl7A==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBqWVJra3ppd1poMmN4QW90
+            WVh3aXExM3kwaDA5QTJmOVlVSDB2aWZVSlJZClM3Z01jSEZHR2JPemtmVTVqdWxX
+            dU5hOFd0UkVVVlkrcGc3cUpBVWtvcjQKLS0tIEtlYkZPZXExTXFNUHlaU0RhNUpV
+            K214RTk5bmV1c2dBSVJGbGF1WUVud1EKmTiI34fnTTiE0YqCgIvOHzx9SfQuEhFo
+            fCnnlWcbQjuIyu3cDbCMfnLPUEwrpPn0xmWwjq8MnyWPSWG3jR5qIQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T10:18:33Z"
+    mac: ENC[AES256_GCM,data:0ND3EbV/DD3Az9JFh3+pWTFlI9z3bQ6fwH3XsS/KdXXrq3dme/tiP1OOTobLvvScNwtOGNURfv69hT6WVVNRbkYXHXYATK36kXVJjND/w4OeK4xE0GpTCSWq6Vmcyj+bV7EaXY11k/709JIZ8jYEFrhzDfEmFZJiEpNbUnG5sjM=,iv:Wzld5Et924p35/vpToBoJoF6tf7BM1iN4bEHcE/uZW4=,tag:HgxNeCMazXkGl3Nez8QIIw==,type:str]
+    version: 3.13.3

@@ -1,0 +1,284 @@
+---
+- import_playbook: ../host/preflight.yaml
+- name: Render or verify the template database deployment through Flux
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    application_name: tpl
+    application_action: plan
+    capacity_operation: application-deploy-tpl
+    cfg: '{{ tpl_deployment | combine(tpl_backend_deployment) | combine({"web_origin":tpl_web_deployment.origin, "admin_origin":tpl_admin_deployment.origin}) }}'
+    app_root: '{{ playbook_dir }}/../../gitops/components/app-platform/tpl-app'
+    component_root: '{{ app_root }}/tpl-backend'
+    repo: '{{ playbook_dir }}/../..'
+    build: '{{ playbook_dir }}/../.build/applications/deployment/tpl/tpl-backend'
+    tools: '{{ playbook_dir }}/../.tools/bin'
+    recipient: '{{ lookup("file", playbook_dir + "/../environments/kind/sops-recipient.txt") | trim }}'
+    app_images:
+      backend: '{{ lookup("file", component_root + "/image.lock.yaml") | from_yaml }}'
+    source_lock: '{{ (lookup("file", playbook_dir + "/sources.yaml") | from_yaml).applications.tpl }}'
+    images: '{{ (lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json).images }}'
+    image_map: '{{ dict(images | map(attribute="id") | zip(images)) }}'
+    migration_job: 'tpl-migrate-{{ app_images.backend.digest[7:19] }}-{{ cfg.migration_job_revision }}'
+    kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+    candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/puller.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml]
+  tasks:
+    - name: Validate the selected deployment and identity boundaries
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - application_name == 'tpl'
+          - application_action in ['plan','render','stage','validate','check']
+          - application_action == 'plan' or cfg.enabled | bool
+          - cfg.namespace == 'tpl-app-dev'
+          - tpl_deployment.keys() | intersect(tpl_backend_deployment.keys()) | length == 0
+          - cfg.database is match('^[a-z][a-z0-9_]{1,40}$')
+          - cfg.database_runtime_user is match('^[a-z][a-z0-9_]{1,40}$')
+          - cfg.database_migrator_user is match('^[a-z][a-z0-9_]{1,40}$')
+          - cfg.database_runtime_user != cfg.database_migrator_user
+          - cfg.database_bootstrap_revision is match('^[a-z0-9-]{1,16}$')
+          - cfg.migration_job_revision is match('^[a-z0-9-]{1,16}$')
+          - cfg.private_dir == '/etc/sunmoon/applications/' + cluster_name + '/tpl'
+          - cfg.backup_dir == '/mnt/sunmoon-data/backups/applications/' + cluster_name + '/tpl'
+          - app_images.backend.repository == 'tpl-backend'
+          - app_images.backend.digest is match('^sha256:[a-f0-9]{64}$')
+          - app_images.backend.source_revision == source_lock.backend_revision
+          - cfg.deploy_budget_bytes | int >= 1073741824
+    - name: Require the independent cluster ownership receipt
+      ansible.builtin.slurp: {src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'}
+      register: identity
+    - name: Refuse another live API even if the kubeconfig path is reused
+      ansible.builtin.command:
+        argv: '{{ kube + ["get","ns","kube-system","-o","jsonpath={.metadata.uid}"] }}'
+      register: uid
+      changed_when: false
+      failed_when: uid.rc != 0 or uid.stdout != (identity.content | b64decode | from_json).kube_system_uid
+    - name: Show the deployment plan without credentials
+      ansible.builtin.debug:
+        msg:
+          enabled: '{{ cfg.enabled }}'
+          namespace: '{{ cfg.namespace }}'
+          database: '{{ cfg.database }}'
+          runtime_user: '{{ cfg.database_runtime_user }}'
+          migrator_user: '{{ cfg.database_migrator_user }}'
+          backend: '{{ app_images.backend.digest }}'
+          schema: '{{ cfg.expected_schema_revision }}'
+          stages: [tpl-database, tpl-migration]
+          image_and_data_budget: '{{ cfg.deploy_budget_bytes }}'
+          excluded: 'Redis/RabbitMQ/Casdoor registration and application runtime are the next units; no ingress change here.'
+      when: application_action == 'plan'
+    - name: End the read-only plan
+      ansible.builtin.meta: end_host
+      when: application_action == 'plan'
+    - name: Render recoverable inputs and candidate declarations
+      when: application_action == 'render'
+      block:
+        - name: Require capacity for the whole database and migration unit
+          ansible.builtin.include_tasks:
+            file: ../host/tasks/capacity.yaml
+            apply: {become: false}
+          vars: {capacity_planned_bytes: '{{ cfg.deploy_budget_bytes }}'}
+        - name: Inspect private and independent backup directories
+          ansible.builtin.stat: {path: '{{ item }}', follow: false}
+          loop: ['{{ cfg.private_dir }}','{{ cfg.backup_dir }}']
+          register: private_dirs
+        - name: Reject redirected or foreign private directories
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - not item.stat.islnk | default(false)
+              - not item.stat.exists or (item.stat.isdir | default(false) and item.stat.uid == 0)
+          loop: '{{ private_dirs.results }}'
+          loop_control: {label: '{{ item.item }}'}
+        - name: Create root-only application input and backup directories
+          ansible.builtin.file: {path: '{{ item }}', state: directory, owner: root, group: root, mode: '0700'}
+          loop: ['{{ cfg.private_dir }}','{{ cfg.backup_dir }}']
+        - name: Inspect both credential files before initialization
+          ansible.builtin.stat: {path: '{{ item }}/credentials.yaml', follow: false}
+          loop: ['{{ cfg.private_dir }}','{{ cfg.backup_dir }}']
+          register: credential_files
+          no_log: true
+        - name: Require secure regular files
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - not item.stat.islnk | default(false)
+              - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
+          loop: '{{ credential_files.results }}'
+          no_log: true
+        - name: Restore an existing independent backup without changing its values
+          ansible.builtin.copy: {src: '{{ cfg.backup_dir }}/credentials.yaml', dest: '{{ cfg.private_dir }}/credentials.yaml', remote_src: true, mode: '0600'}
+          when: not credential_files.results[0].stat.exists and credential_files.results[1].stat.exists
+          no_log: true
+        - name: Never replace lost credentials after declarations exist
+          ansible.builtin.assert:
+            quiet: true
+            that: credential_files.results[0].stat.exists or credential_files.results[1].stat.exists or (query('fileglob', component_root + '/database/bootstrap.sops.yaml') | length == 0)
+            fail_msg: Restore the application credential backup; never regenerate an existing database identity.
+        - name: Initialize two distinct private identities for a new deployment
+          ansible.builtin.copy:
+            dest: '{{ cfg.private_dir }}/credentials.yaml'
+            force: false
+            mode: '0600'
+            content: |
+              migrator_password: {{ lookup('password','/dev/null',length=40,chars=['ascii_letters','digits']) }}
+              runtime_password: {{ lookup('password','/dev/null',length=40,chars=['ascii_letters','digits']) }}
+          when: not credential_files.results[0].stat.exists and not credential_files.results[1].stat.exists
+          no_log: true
+        - name: Preserve independent non-overwritten credential backup
+          ansible.builtin.copy: {src: '{{ cfg.private_dir }}/credentials.yaml', dest: '{{ cfg.backup_dir }}/credentials.yaml', remote_src: true, force: false, mode: '0600'}
+          no_log: true
+        - name: Require byte-identical primary and backup inputs
+          ansible.builtin.command: {argv: [cmp, --silent, '{{ cfg.private_dir }}/credentials.yaml', '{{ cfg.backup_dir }}/credentials.yaml']}
+          changed_when: false
+          no_log: true
+        - name: Read private application input
+          ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/credentials.yaml'}
+          register: secret_input
+          no_log: true
+        - name: Decode secrets only in memory
+          ansible.builtin.set_fact:
+            app_credentials: '{{ secret_input.content | b64decode | from_yaml }}'
+          no_log: true
+        - name: Validate URL-safe strong independent credentials
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - app_credentials.runtime_password is match('^[a-zA-Z0-9]{40}$')
+              - app_credentials.migrator_password is match('^[a-zA-Z0-9]{40}$')
+              - app_credentials.runtime_password != app_credentials.migrator_password
+          no_log: true
+        - name: Prepare public candidate directories
+          ansible.builtin.file: {path: '{{ build }}/{{ item }}', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
+          loop: [database, migration]
+        - name: Render colocated workload and stage templates
+          ansible.builtin.template:
+            src: '{{ component_root }}/{{ item }}.j2'
+            dest: '{{ build }}/{{ item }}'
+            owner: '{{ cluster_operator }}'
+            mode: '0644'
+          loop: [database/workload.yaml, migration/workload.yaml, stages.yaml]
+        - name: Read bounded pull-only registry credentials
+          ansible.builtin.slurp: {src: '{{ registry_config_dir }}/private/puller-auth.json'}
+          register: puller
+          no_log: true
+        - name: Derive independent connection URLs without logging
+          ansible.builtin.set_fact:
+            runtime_url: 'postgresql+asyncpg://{{ cfg.database_runtime_user }}:{{ app_credentials.runtime_password }}@postgresql.{{ data_namespace }}.svc.cluster.local:5432/{{ cfg.database }}'
+            migrator_url: 'postgresql+asyncpg://{{ cfg.database_migrator_user }}:{{ app_credentials.migrator_password }}@postgresql.{{ data_namespace }}.svc.cluster.local:5432/{{ cfg.database }}'
+          no_log: true
+        - name: Encrypt credentials with the shared SOPS mechanism and verify recovery
+          ansible.builtin.include_tasks: ../services/tasks/encrypt.yaml
+          loop:
+            - file: database/bootstrap.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: tpl-database-bootstrap, namespace: '{{ data_namespace }}'}
+                stringData: '{{ app_credentials }}'
+            - file: database/runtime.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: tpl-database-runtime, namespace: '{{ cfg.namespace }}'}
+                stringData: {DATABASE_URL: '{{ runtime_url }}'}
+            - file: migration/auth.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: tpl-migration-auth, namespace: '{{ cfg.namespace }}'}
+                stringData: {DATABASE_URL: '{{ runtime_url }}', MIGRATION_DATABASE_URL: '{{ migrator_url }}'}
+            - file: database/puller.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: registry-puller, namespace: '{{ cfg.namespace }}'}
+                type: kubernetes.io/dockerconfigjson
+                data: {'.dockerconfigjson': '{{ puller.content }}'}
+          loop_control: {loop_var: secret_item, label: '{{ secret_item.file }}'}
+          no_log: true
+        - name: Render explicit resource lists without applying config files
+          ansible.builtin.copy:
+            dest: '{{ build }}/{{ item.name }}/kustomization.yaml'
+            content: '{{ {"apiVersion":"kustomize.config.k8s.io/v1beta1","kind":"Kustomization","resources":item.resources} | to_nice_yaml }}'
+            owner: '{{ cluster_operator }}'
+            mode: '0644'
+          loop:
+            - {name: database, resources: [workload.yaml, bootstrap.sops.yaml, runtime.sops.yaml, puller.sops.yaml]}
+            - {name: migration, resources: [workload.yaml, auth.sops.yaml]}
+    - name: Stage reviewed candidate declarations without deploying
+      when: application_action == 'stage'
+      block:
+        - name: Copy explicit application candidates only
+          ansible.builtin.copy: {src: '{{ build }}/{{ item }}', dest: '{{ component_root }}/{{ item }}', remote_src: true, owner: '{{ cluster_operator }}', mode: '0644'}
+          loop: '{{ candidate_files }}'
+        - name: Stage the template dependency chain
+          ansible.builtin.copy: {src: '{{ build }}/stages.yaml', dest: '{{ repo }}/gitops/clusters/kind/applications.yaml', remote_src: true, owner: '{{ cluster_operator }}', mode: '0644'}
+    - name: Validate rendered inputs against the promoted immutable source
+      when: application_action == 'validate'
+      block:
+        - name: Require clean GitOps declarations
+          become: false
+          ansible.builtin.command: {argv: [git, -C, '{{ repo }}', status, --porcelain, --untracked-files=all, '--', gitops]}
+          register: dirty
+          changed_when: false
+          failed_when: dirty.rc != 0 or dirty.stdout != ''
+        - name: Require declarations to match the promoted Git object
+          become: false
+          ansible.builtin.command:
+            argv: [git, -C, '{{ repo }}', diff, --exit-code, '{{ (lookup("file", playbook_dir + "/../environments/kind/flux-source.yaml") | from_yaml).revision }}', '--', gitops]
+          changed_when: false
+          no_log: true
+        - name: Compare candidate public objects and decrypted secrets
+          ansible.builtin.include_tasks: ../services/tasks/check-declaration.yaml
+          vars:
+            item: {path: '{{ build }}/{{ candidate }}'}
+            relative_path: '{{ candidate }}'
+            committed_path: '{{ component_root }}/{{ candidate }}'
+          loop: '{{ candidate_files }}'
+          loop_control: {loop_var: candidate}
+        - name: Require stage declarations to match rendered settings
+          ansible.builtin.assert:
+            quiet: true
+            that: (lookup('file',build + '/stages.yaml') | from_yaml_all | list) == (lookup('file',repo + '/gitops/clusters/kind/applications.yaml') | from_yaml_all | list)
+    - name: Require both exact application stages and jobs to succeed
+      when: application_action == 'check'
+      block:
+        - name: Wait for current generation Ready at the promoted digest
+          ansible.builtin.command:
+            argv: '{{ kube + ["get","kustomization",item,"-n","flux-system","-o","json"] }}'
+          loop: [tpl-database,tpl-migration]
+          register: stage
+          changed_when: false
+          until:
+            - stage.rc == 0
+            - (stage.stdout | from_json).status.observedGeneration | default(-1) == (stage.stdout | from_json).metadata.generation
+            - (stage.stdout | from_json).status.conditions | default([]) | selectattr('type','equalto','Ready') | selectattr('status','equalto','True') | list | length == 1
+            - (stage.stdout | from_json).status.lastAppliedRevision | default('') == (lookup('file',playbook_dir + '/../environments/kind/flux-source.yaml') | from_yaml).digest
+          retries: 120
+          delay: 5
+        - name: Check the declared jobs completed and expose only acceptance results
+          ansible.builtin.command:
+            argv: '{{ kube + ["get","job",item.name,"-n",item.namespace,"-o","jsonpath={.status.succeeded}"] }}'
+          loop:
+            - {name: 'tpl-database-{{ cfg.database_bootstrap_revision }}', namespace: '{{ data_namespace }}'}
+            - {name: '{{ migration_job }}', namespace: '{{ cfg.namespace }}'}
+          register: completion
+          changed_when: false
+          failed_when: completion.rc != 0 or completion.stdout != '1'
+        - name: Read the actual schema and grant verification outcome privately
+          ansible.builtin.command:
+            argv: '{{ kube + ["logs","job/" + migration_job,"-n",cfg.namespace] }}'
+          register: result
+          changed_when: false
+          no_log: true
+        - name: Require the completed job acceptance record
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - result.stdout is search('"runtime_crud": true')
+              - result.stdout is search('"runtime_ddl_denied": true')
+              - result.stdout is search('"migration_metadata_write_denied": true')
+            success_msg: 'TPL schema, separate identities, runtime CRUD and denial of runtime DDL verified.'
