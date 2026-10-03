@@ -1,0 +1,6 @@
+# KIND 当前配置；与本目录实现同源维护。秘密与版本摘要不在这里。
+---
+flux_enabled: true
+sops_enabled: true
+sops_config_dir: /etc/sunmoon/flux/sunmoon-kind
+sops_backup_dir: /mnt/sunmoon-data/backups/flux/sunmoon-kind

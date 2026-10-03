@@ -1,0 +1,9 @@
+# 用户配置，由原生 Ansible 读取；不作为 Kubernetes 对象应用。
+---
+services_postgresql_enabled: true
+postgresql_volume:
+  name: postgresql
+  node: worker
+  size: 8Gi
+  uid: 999
+  gid: 999

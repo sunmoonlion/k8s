@@ -1,3 +1,20 @@
+# 当前单元：按职责归拢配置与实现（2026-10-03）
+
+本节优先于下方历史。所有者确认这是一项覆盖整个新体系的原则，并授权实施。基线8927f27f35dbbe8c0a57b167355b48c67addec55，工作树/分支platform-kind-v1，仅k8s、无push。
+
+- Casdoor代码集中在gitops/components/app-platform/casdoor（database/init/主服务），建库Job仍运行data-platform-dev，初始化和主服务仍app-platform-dev；没有数据迁移。
+- PG/Redis/Rabbit/Traefik各自配置、模板、声明与说明同处。宿主、KIND、Harbor、入口、Flux和服务公共流程均有对应config.yaml。跨模块环境字段唯一存于environments/kind/site.yaml；版本锁和秘密位置不变。
+- 原生Make通过明确CONFIG_FILES传递参数，无新CLI/加载器/兼容转发。make config列出真实输入；render引用同处模板，Flux只读取Kustomization显式列出的生成声明。
+- 56项原配置值保持，12份输入无重复顶层字段；三份拆分数据模板生成对象与旧版一致；76个资源身份/内容保持，只有casdoor-db与casdoor-init的Flux路径变化。
+- 29份Ansible原生语法、13个Kustomize根构建通过；services-render ok103 changed3 failed0，使用常规50GiB门槛。15个旧候选逐文件与Git基线比对后移动，保留密文，不重置凭据。
+- 本提交是目录/声明基线；运行Flux仍使用前序9d231384…，接下来经现有flux-release发布本提交，明确晋级源摘要，再应用路径调整。不得把代码已移动记成现场已升级。
+- 边界：无新组件/版本、停机/数据删除、业务入口切换、旧集群操作；长期空间管理与生命周期缺项未由目录整理完成。服务公共凭据/加密仍集中复用，不为目录形式复制共享实现。
+- 当前临时核对脚本和日志在/tmp/colocate-*，完成后归档证据并清理。长期原则见docs/platform-kind-v1/architecture.md；模块README和docs/platform-kind-v1/services.md说明日常方法。
+
+规则对应：C-T5/T6仅自己的k8s分支，五仓并列；C-D3原独立库与Secret保持；C-R1/R2发布依旧从已提交Git对象构造固定摘要OCI。未运行新增测试套件；语法、渲染及发布前结构核对是本单元原生检查，业务链路验收仍沿用既有范围。
+
+---
+
 # 当前优先状态：目录与命名空间迁移完成（2026-10-03）
 
 本节优先于下方历史。新部署根是 `infrastructure/`，旧 `platform/` 路径及旧GitOps services分类已退役，无转发入口。工作树/分支仍为platform-kind-v1，只改k8s、无push。基线c49dc6e430ba1c4db0eafeac341f3a9ad6757e02；目录准备87a248be1507d2e59030a8e4fed59d1b437c9da1，初始新声明947ee03a1a4b5743d94b608734d358a776d128d7，Rabbit修复声明447fceddf6eb8416bd5a475ef6d6fef6d1ca3e99；最终实现见HEAD。

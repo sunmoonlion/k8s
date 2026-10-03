@@ -3,7 +3,7 @@
   hosts: kind_hosts
   gather_facts: false
   become: true
-  vars_files: [../environments/kind/services.yaml]
+  vars_files: [layout.yaml]
   vars:
     capacity_operation: services-verify
     images: '{{ (lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json).images }}'

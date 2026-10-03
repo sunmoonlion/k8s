@@ -1,0 +1,8 @@
+# KIND 当前配置；与本目录实现同源维护。秘密与版本摘要不在这里。
+---
+entry_enabled: true
+entry_listen_address: 0.0.0.0
+entry_port: 30443
+entry_cluster_backend: 172.18.0.5:30443
+entry_config_dir: /etc/sunmoon/entry
+entry_runtime_dir: /opt/sunmoon/entry

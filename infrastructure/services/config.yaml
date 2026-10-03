@@ -1,0 +1,5 @@
+# KIND 当前配置；与本目录实现同源维护。秘密与版本摘要不在这里。
+---
+services_enabled: true
+services_config_dir: /etc/sunmoon/services/sunmoon-kind
+services_backup_dir: /mnt/sunmoon-data/backups/services/sunmoon-kind

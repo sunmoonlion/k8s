@@ -1,65 +1,9 @@
+# 跨模块共用环境参数。模块专属配置见各模块 config.yaml；每个字段只有一个来源。
 ---
-# Site values only; no image overrides or credentials.
 cluster_name: sunmoon-kind
 registry_address: harbor.sunmoonai.com:30443
-storage_uuid: a28de356-4ba1-4a21-93f5-744b9b9d8be0
-storage_mounts:
-  - target: /mnt/sunmoon-data
-    fsroot: /
-  - target: /data/kind-clusters
-    fsroot: /kind-clusters
-  - target: /data/harbor
-    fsroot: /harbor
-
-# Material cache; installation packages and image archives are distinct types.
 artifact_cache_root: /home/zymun/packages-to-be-installed/releases/platform-kind-v1
-windows_powershell: /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe
-data_vhd_windows_path: 'C:\wsl-disks\sunmoon-data.vhdx'
-data_vhd_maximum_gib: 230
-windows_minimum_free_gib: 50
-windows_script_directory: /mnt/c/wsl-disks/scripts/platform-kind-v1
-
-# Standalone registry. The SNI listener remains a separately managed host service.
-registry_enabled: true
-registry_hostname: harbor.sunmoonai.com
-registry_project: sunmoon-registry
-registry_https_port: 11443
-registry_config_dir: /etc/sunmoon/registry
-registry_runtime_dir: /opt/sunmoon/registry
-registry_data_root: /data/harbor
-registry_instance_dir: /data/harbor/platform-kind-v1
-# Owner approved 2026-10-01: 3 files of 20 MiB per container, automatic rotation.
-registry_log_rotation_approved: true
-
-# Formal entry accepted after Docker 29.8.1 authenticated pull; old proxy is retained stopped.
-entry_enabled: true
-entry_listen_address: 0.0.0.0
-entry_port: 30443
-# Transitional backend matches the existing listener; switch after new ingress is ready.
-entry_cluster_backend: 172.18.0.5:30443
-entry_config_dir: /etc/sunmoon/entry
-entry_runtime_dir: /opt/sunmoon/entry
-
-# Native KIND bootstrap; independent of all protected transition clusters.
-cluster_enabled: true
-cluster_api_port: 27443
-cluster_ingress_port: 29443
-cluster_pod_subnet: 10.247.0.0/16
-cluster_service_subnet: 10.99.0.0/16
-cluster_data_root: /data/kind-clusters
-cluster_kubeconfig: /home/zymun/.kube/sunmoon-kind.config
-cluster_operator: zymun
-cluster_create_budget_bytes: 5368709120
-
-# Flux owns in-cluster declarations after native bootstrap.
-flux_enabled: true
-
-# Independent SOPS identity; never store private keys in the worktree or KIND volumes.
-sops_enabled: true
-sops_config_dir: /etc/sunmoon/flux/sunmoon-kind
-sops_backup_dir: /mnt/sunmoon-data/backups/flux/sunmoon-kind
-
-# First platform services; versions remain in immutable release declarations.
-services_enabled: true
-services_config_dir: /etc/sunmoon/services/sunmoon-kind
-services_backup_dir: /mnt/sunmoon-data/backups/services/sunmoon-kind
+data_namespace: data-platform-dev
+messaging_namespace: messaging-platform-dev
+app_namespace: app-platform-dev
+ingress_namespace: ingress-platform-dev

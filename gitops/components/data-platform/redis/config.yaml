@@ -1,0 +1,9 @@
+# 用户配置，由原生 Ansible 读取；不作为 Kubernetes 对象应用。
+---
+services_redis_enabled: true
+redis_volume:
+  name: redis
+  node: worker2
+  size: 2Gi
+  uid: 999
+  gid: 999

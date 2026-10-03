@@ -62,7 +62,9 @@ uv pip compile --python-version 3.12 --generate-hashes --no-header \
 
 | 文件 | 职责 |
 | --- | --- |
-| `environments/kind/site.yaml` | 站点路径、盘 UUID、仓库地址、Windows 容量底线；不含凭据和镜像覆盖 |
+| `environments/kind/site.yaml` | 跨模块的集群名、仓库地址、物料根、命名空间 |
+| 各模块 `config.yaml` | 与实现相邻的专属参数；宿主容量在 host，入口在 entry |
+| `../gitops/components/<平台>/<组件>/config.yaml` | 与组件模板相邻的普通用户参数 |
 | `host/inventory.yaml` | Ansible 本机连接 |
 | `host/preflight.yaml` | 核对精确挂载点、ext4、UUID、bind 子目录并报告容量 |
 | `host/windows-capacity.ps1` | 只读计算 C 盘、数据 VHDX 实际分配、最大增长与本次操作预算 |
@@ -153,7 +155,7 @@ Harbor 安装包解包约 735 MB，内部未压缩镜像内容约 2.03 GB；本�
 
 ## 宿主入口与镜像发布身份
 
-[入口操作](host/README.md)与 [本次切换卡](../docs/platform-kind-v1/entry-cutover.md)明确候选端口、现有路由及回退。当前正式30443入口已通过Docker认证拉取和完整镜像验收，旧代理停止保留。
+[入口操作](entry/README.md)与 [本次切换卡](../docs/platform-kind-v1/entry-cutover.md)明确候选端口、现有路由及回退。当前正式30443入口已通过Docker认证拉取和完整镜像验收，旧代理停止保留。
 
 `artifacts/image-archives.yaml` 是 KIND/Calico 与宿主工具共用的唯一归档实现，旧名称 bootstrap-images.yaml 已移除，原 Make 命令保持不变。宿主两项归档共 **136,100,352 字节**，按固定文件摘要及全部 blob 核验。重复 prepare-host-materials 不重复导出。
 
@@ -182,3 +184,7 @@ Harbor 安装包解包约 735 MB，内部未压缩镜像内容约 2.03 GB；本�
 ## 首批平台服务
 
 Traefik、Retain 存储、PostgreSQL、Redis、RabbitMQ、Casdoor 已通过 Flux 部署。`make services-bootstrap` 编排本批重复部署，`make services-check` 做实际读写/消息/TLS登录验收。普通配置、私有输入、密码恢复及晋级方式见 [首批平台服务](../docs/platform-kind-v1/services.md)。本批不切换旧应用入口，不代表完整应用和生命周期交付已完成。
+
+## 配置定位
+
+`make config` 列出实际加载的用户配置。先找到对应模块的 `config.yaml`；共享参数才改环境 site。组件目录说明见 [组件配置](../gitops/components/README.md)。版本锁、秘密和生成文件各有独立职责，不重复填写。

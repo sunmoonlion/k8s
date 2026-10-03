@@ -4,7 +4,7 @@
 
 ## 当前配置
 
-所有者于 2026-10-01 指定名称 `sunmoon-kind`。站点真源为 `infrastructure/environments/kind/site.yaml`；镜像和工具版本来自 artifacts 锁文件，站点不能覆盖镜像。
+所有者于 2026-10-01 指定名称 `sunmoon-kind`。建群专属配置真源为 `infrastructure/cluster/config.yaml`，共享集群名取 `infrastructure/environments/kind/site.yaml`；镜像和工具版本来自 artifacts 锁文件，站点不能覆盖镜像。
 
 | 项目 | 值 |
 | --- | --- |

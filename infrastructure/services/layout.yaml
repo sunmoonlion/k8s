@@ -1,8 +1,8 @@
 ---
-# Source layout only; component namespaces belong to environments/kind/services.yaml.
+# Source layout and derived references only; editable values live beside each component.
 service_stage_paths:
-  casdoor-db: data-platform/casdoor-database
-  casdoor-init: app-platform/casdoor-init
+  casdoor-db: app-platform/casdoor/database
+  casdoor-init: app-platform/casdoor/init
   casdoor: app-platform/casdoor
 service_candidate_roots:
   - core
@@ -11,3 +11,15 @@ service_candidate_roots:
   - messaging-platform
   - ingress-platform
   - app-platform
+component_namespaces:
+  postgresql: "{{ data_namespace }}"
+  redis: "{{ data_namespace }}"
+  rabbitmq: "{{ messaging_namespace }}"
+  casdoor: "{{ app_namespace }}"
+services_volumes: "{{ [postgresql_volume, redis_volume, rabbitmq_volume, casdoor_volume] }}"
+service_component_paths:
+  postgresql: data-platform/postgresql
+  redis: data-platform/redis
+  rabbitmq: messaging-platform/rabbitmq
+  traefik: ingress-platform/traefik
+  casdoor: app-platform/casdoor

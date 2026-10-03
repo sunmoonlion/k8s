@@ -1,0 +1,12 @@
+# 用户配置，由原生 Ansible 读取；不作为 Kubernetes 对象应用。
+---
+services_casdoor_enabled: true
+casdoor_volume:
+  name: casdoor
+  node: worker
+  size: 1Gi
+  uid: 1000
+  gid: 1000
+casdoor_hostname: casdoor.sunmoonai.com
+casdoor_database: casdoor
+casdoor_database_user: casdoor

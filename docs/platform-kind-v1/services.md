@@ -31,7 +31,9 @@ Flux 仍在 `flux-system`，`platform-system` 只保留基础引导/发布标记
 
 ## 配置和 Secret
 
-- 普通字段：`infrastructure/environments/kind/services.yaml`，包含各组件启用开关、命名空间、数据库名/角色、域名与卷位置。
+- 组件字段：`gitops/components/<平台>/<组件>/config.yaml`，包含各组件启用开关、域名、数据库名/角色和卷位置；同目录模板消费这些字段。
+- 共享命名空间：`infrastructure/environments/kind/site.yaml`；服务总开关与私有输入/备份路径：`infrastructure/services/config.yaml`。
+- `infrastructure/Makefile` 的明确配置列表供所有原生入口使用；不要再只给 Ansible 传旧的单个 site 文件。`make -n <目标>` 可查看完整原生命令。
 - 私有输入：`/etc/sunmoon/services/sunmoon-kind/credentials.yaml`，root:root 0600；目录 0700。
 - 独立副本：`/mnt/sunmoon-data/backups/services/sunmoon-kind/`，包含输入和 TLS 身份；与系统盘同一物理硬盘，不是机器外灾备。
 - Git 只存 SOPS 密文。原始密码表仍只是所有者的集中查阅表；新运行链不读取旧 `.conf` 或密码表，不执行旧脚本。

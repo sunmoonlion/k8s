@@ -4,7 +4,7 @@
   hosts: kind_hosts
   gather_facts: false
   become: true
-  vars_files: [../environments/kind/services.yaml, layout.yaml]
+  vars_files: [layout.yaml]
   vars:
     capacity_operation: services-render
     tools: '{{ playbook_dir }}/../.tools/bin'
@@ -128,22 +128,21 @@
       when: not (component_dirs.results | selectattr('item.name','equalto',item.name) | first).stat.exists
     - name: Prepare public candidate directories
       ansible.builtin.file: {path: '{{ build }}/{{ item }}', state: directory, mode: '0755', owner: '{{ cluster_operator }}'}
-      loop: '{{ service_candidate_roots + (service_stage_paths.values() | list) }}'
+      loop: '{{ service_candidate_roots + (service_stage_paths.values() | list) + (service_component_paths.values() | list) }}'
     - name: Render public core manifests
       ansible.builtin.template:
-        src: '{{ item.template }}.yaml.j2'
+        src: '{{ playbook_dir }}/../../gitops/components/{{ item.template }}'
         dest: '{{ build }}/{{ item.path }}'
         owner: '{{ cluster_operator }}'
         mode: '0644'
-      vars: {render_component: '{{ item.component | default("") }}'}
       loop:
-        - {template: foundations, path: foundations/runtime.yaml}
-        - {template: storage, path: foundations/storage.yaml}
-        - {template: network, path: foundations/network.yaml}
-        - {template: data, component: postgresql, path: data-platform/postgresql.yaml}
-        - {template: data, component: redis, path: data-platform/redis.yaml}
-        - {template: data, component: rabbitmq, path: messaging-platform/rabbitmq.yaml}
-        - {template: ingress, path: ingress-platform/traefik.yaml}
+        - {template: foundations/runtime.yaml.j2, path: foundations/runtime.yaml}
+        - {template: foundations/storage.yaml.j2, path: foundations/storage.yaml}
+        - {template: foundations/network.yaml.j2, path: foundations/network.yaml}
+        - {template: data-platform/postgresql/workload.yaml.j2, path: data-platform/postgresql/workload.yaml}
+        - {template: data-platform/redis/workload.yaml.j2, path: data-platform/redis/workload.yaml}
+        - {template: messaging-platform/rabbitmq/workload.yaml.j2, path: messaging-platform/rabbitmq/workload.yaml}
+        - {template: ingress-platform/traefik/workload.yaml.j2, path: ingress-platform/traefik/workload.yaml}
     - name: Read namespace pull-only identity
       ansible.builtin.slurp: {src: '{{ registry_config_dir }}/private/puller-auth.json'}
       register: puller
@@ -151,13 +150,13 @@
     - name: Build encrypted credentials for core services
       ansible.builtin.include_tasks: tasks/encrypt.yaml
       loop:
-        - file: data-platform/postgresql-auth.sops.yaml
+        - file: data-platform/postgresql/auth.sops.yaml
           manifest:
             apiVersion: v1
             kind: Secret
             metadata: {name: postgresql-auth, namespace: '{{ data_namespace }}'}
             stringData: {password: '{{ service_credentials.postgresql_password }}'}
-        - file: data-platform/redis-auth.sops.yaml
+        - file: data-platform/redis/auth.sops.yaml
           manifest:
             apiVersion: v1
             kind: Secret
@@ -173,7 +172,7 @@
                 appendfsync everysec
                 maxmemory 384mb
                 maxmemory-policy noeviction
-        - file: messaging-platform/rabbitmq-auth.sops.yaml
+        - file: messaging-platform/rabbitmq/auth.sops.yaml
           manifest:
             apiVersion: v1
             kind: Secret
@@ -189,7 +188,7 @@
                 disk_free_limit.absolute = 1GB
                 log.console = true
                 log.file = false
-        - file: ingress-platform/puller.sops.yaml
+        - file: ingress-platform/traefik/puller.sops.yaml
           manifest:
             apiVersion: v1
             kind: Secret
@@ -225,10 +224,18 @@
         - name: foundations
           resources: '{{ ["runtime.yaml", "storage.yaml", "network.yaml"] + [data_namespace + "-puller.sops.yaml", messaging_namespace + "-puller.sops.yaml", app_namespace + "-puller.sops.yaml"] }}'
         - name: data-platform
-          resources: '{{ (["postgresql.yaml", "postgresql-auth.sops.yaml"] if services_postgresql_enabled else []) + (["redis.yaml", "redis-auth.sops.yaml"] if services_redis_enabled else []) }}'
+          resources: '{{ (["postgresql"] if services_postgresql_enabled else []) + (["redis"] if services_redis_enabled else []) }}'
         - name: messaging-platform
-          resources: '{{ ["rabbitmq.yaml", "rabbitmq-auth.sops.yaml"] if services_rabbitmq_enabled else [] }}'
-        - {name: ingress-platform, resources: [traefik.yaml, puller.sops.yaml]}
+          resources: '{{ ["rabbitmq"] if services_rabbitmq_enabled else [] }}'
+        - {name: ingress-platform, resources: [traefik]}
+    - name: Render explicit component roots without including input configuration
+      ansible.builtin.copy:
+        dest: '{{ build }}/{{ service_component_paths[item] }}/kustomization.yaml'
+        owner: '{{ cluster_operator }}'
+        mode: '0644'
+        content: |
+          {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':['workload.yaml', ('puller.sops.yaml' if item == 'traefik' else 'auth.sops.yaml')]} | to_nice_yaml }}
+      loop: [postgresql, redis, rabbitmq, traefik]
     - name: Generate a private service TLS key only when absent
       ansible.builtin.command:
         argv: [openssl, genpkey, -algorithm, RSA, -pkeyopt, 'rsa_keygen_bits:3072', -out, '{{ services_config_dir }}/tls/server.key']
@@ -278,7 +285,7 @@
       no_log: true
     - name: Render Casdoor public deployment stages
       ansible.builtin.template:
-        src: '{{ item }}.yaml.j2'
+        src: '{{ playbook_dir }}/../../gitops/components/{{ service_stage_paths[item] }}/workload.yaml.j2'
         dest: '{{ build }}/{{ service_stage_paths[item] }}/workload.yaml'
         owner: '{{ cluster_operator }}'
         mode: '0644'
@@ -287,7 +294,7 @@
       ansible.builtin.include_tasks: tasks/encrypt.yaml
       vars:
         secret_item:
-          file: data-platform/casdoor-database/auth.sops.yaml
+          file: app-platform/casdoor/database/auth.sops.yaml
           manifest:
             apiVersion: v1
             kind: Secret
@@ -304,25 +311,25 @@
             apiVersion: v1
             kind: Secret
             metadata: {name: casdoor-config, namespace: '{{ app_namespace }}'}
-            stringData: {app.conf: '{{ lookup("template", "casdoor.conf.j2") }}'}
+            stringData: {app.conf: '{{ lookup("template", playbook_dir + "/../../gitops/components/app-platform/casdoor/app.conf.j2") }}'}
       no_log: true
     - name: Encrypt one-time initialization config
       ansible.builtin.include_tasks: tasks/encrypt.yaml
       vars:
         initializing: true
         secret_item:
-          file: app-platform/casdoor-init/config.sops.yaml
+          file: app-platform/casdoor/init/config.sops.yaml
           manifest:
             apiVersion: v1
             kind: Secret
             metadata: {name: casdoor-init-config, namespace: '{{ app_namespace }}'}
-            stringData: {app.conf: '{{ lookup("template", "casdoor.conf.j2") }}'}
+            stringData: {app.conf: '{{ lookup("template", playbook_dir + "/../../gitops/components/app-platform/casdoor/app.conf.j2") }}'}
       no_log: true
     - name: Encrypt the new administrator initialization input
       ansible.builtin.include_tasks: tasks/encrypt.yaml
       vars:
         secret_item:
-          file: app-platform/casdoor-init/identity.sops.yaml
+          file: app-platform/casdoor/init/identity.sops.yaml
           manifest:
             apiVersion: v1
             kind: Secret
@@ -355,7 +362,7 @@
         - {name: casdoor, resources: [workload.yaml, config.sops.yaml, tls.sops.yaml]}
     - name: Render enabled GitOps stage declarations
       ansible.builtin.template:
-        src: stages.yaml.j2
+        src: '{{ playbook_dir }}/../../gitops/clusters/kind/services.yaml.j2'
         dest: '{{ build }}/stages.yaml'
         mode: '0644'
         owner: '{{ cluster_operator }}'

@@ -1,0 +1,3 @@
+# 用户配置，由原生 Ansible 读取；不作为 Kubernetes 对象应用。
+---
+services_ingress_enabled: true

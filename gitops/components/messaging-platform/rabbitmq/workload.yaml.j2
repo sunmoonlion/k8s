@@ -1,4 +1,6 @@
-{% for name,port,enabled in [('postgresql',5432,services_postgresql_enabled),('redis',6379,services_redis_enabled),('rabbitmq',5672,services_rabbitmq_enabled)] if enabled and name == render_component %}
+{% set name = 'rabbitmq' %}
+{% set port = 5672 %}
+{% if services_rabbitmq_enabled %}
 {% set image = image_map[name] %}
 {% set volume = services_volumes | selectattr('name','equalto',name) | first %}
 ---
@@ -21,9 +23,7 @@ spec:
   selector: {app.kubernetes.io/name: {{ name }}}
   ports:
     - {name: service, port: {{ port }}, targetPort: {{ port }}}
-{% if name == 'rabbitmq' %}
     - {name: management, port: 15672, targetPort: 15672}
-{% endif %}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -42,12 +42,10 @@ spec:
       serviceAccountName: platform-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
-{% if name == 'rabbitmq' %}
       # Single-node persistent identity, independent of the namespace Service DNS.
       hostAliases:
         - ip: '127.0.0.1'
           hostnames: ['{{ rabbitmq_node_hostname }}']
-{% endif %}
       nodeSelector:
         kubernetes.io/hostname: {{ cluster_name }}-{{ volume.node }}
       securityContext:
@@ -57,7 +55,6 @@ spec:
         fsGroup: {{ volume.gid }}
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile: {type: RuntimeDefault}
-{% if name == 'rabbitmq' %}
       initContainers:
         - name: cookie
           image: {{ registry_address }}/platform/{{ name }}@{{ image.manifest_digest }}
@@ -69,7 +66,6 @@ spec:
           volumeMounts:
             - {name: data, mountPath: /var/lib/rabbitmq}
             - {name: auth, mountPath: /run/auth, readOnly: true}
-{% endif %}
       containers:
         - name: {{ name }}
           image: {{ registry_address }}/platform/{{ name }}@{{ image.manifest_digest }}
@@ -80,49 +76,7 @@ spec:
             limits: {cpu: '2', memory: {{ '1Gi' if name != 'redis' else '512Mi' }}}
           ports:
             - {name: service, containerPort: {{ port }}}
-{% if name == 'rabbitmq' %}
             - {name: management, containerPort: 15672}
-{% endif %}
-{% if name == 'postgresql' %}
-          env:
-            - {name: POSTGRES_USER, value: postgres}
-            - {name: POSTGRES_DB, value: postgres}
-            - {name: PGDATA, value: /var/lib/postgresql/18/docker}
-            - {name: POSTGRES_PASSWORD_FILE, value: /run/auth/password}
-            - {name: POSTGRES_INITDB_ARGS, value: '--auth-host=scram-sha-256 --auth-local=scram-sha-256'}
-          startupProbe:
-            exec: {command: [pg_isready, -U, postgres]}
-            periodSeconds: 5
-            failureThreshold: 60
-          readinessProbe:
-            exec: {command: [pg_isready, -U, postgres]}
-            periodSeconds: 10
-          livenessProbe:
-            exec: {command: [pg_isready, -U, postgres]}
-            initialDelaySeconds: 30
-            periodSeconds: 20
-          volumeMounts:
-            - {name: data, mountPath: /var/lib/postgresql}
-            - {name: auth, mountPath: /run/auth, readOnly: true}
-            - {name: run, mountPath: /var/run/postgresql}
-            - {name: shm, mountPath: /dev/shm}
-{% elif name == 'redis' %}
-          command: [redis-server, /run/auth/redis.conf]
-          startupProbe:
-            exec: {command: [/bin/sh, -ec, 'REDISCLI_AUTH="$(cat /run/auth/password)" redis-cli ping | grep -qx PONG']}
-            periodSeconds: 5
-            failureThreshold: 36
-          readinessProbe:
-            exec: {command: [/bin/sh, -ec, 'REDISCLI_AUTH="$(cat /run/auth/password)" redis-cli ping | grep -qx PONG']}
-            periodSeconds: 10
-          livenessProbe:
-            tcpSocket: {port: 6379}
-            initialDelaySeconds: 30
-            periodSeconds: 20
-          volumeMounts:
-            - {name: data, mountPath: /data}
-            - {name: auth, mountPath: /run/auth, readOnly: true}
-{% else %}
           env:
             - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
             - {name: RABBITMQ_USE_LONGNAME, value: 'true'}
@@ -145,14 +99,9 @@ spec:
             - {name: data, mountPath: /var/lib/rabbitmq}
             - {name: auth, mountPath: /run/auth, readOnly: true}
             - {name: auth, mountPath: /etc/rabbitmq/conf.d/20-sunmoon.conf, subPath: rabbitmq.conf, readOnly: true}
-{% endif %}
             - {name: tmp, mountPath: /tmp}
       volumes:
         - {name: data, persistentVolumeClaim: {claimName: {{ name }}-data}}
         - {name: auth, secret: {secretName: {{ name }}-auth, defaultMode: 0440}}
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
-{% if name == 'postgresql' %}
-        - {name: run, emptyDir: {sizeLimit: 16Mi}}
-        - {name: shm, emptyDir: {medium: Memory, sizeLimit: 128Mi}}
 {% endif %}
-{% endfor %}

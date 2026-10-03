@@ -1,6 +1,6 @@
 # KIND 第一期部署架构草案
 
-本方案面向所有者和后续维护者：从零建立可重复部署、可维护、可恢复的 Kubernetes 部署体系，第一期在 WSL 和 KIND 上完成现有项目验收。架构按所有者后续“好，继续”进入第一实现单元：镜像输入与只读预检。实际进度见仓库 CHECKPOINT.md；新 Harbor 和正式入口已通过验收，sunmoon-kind 三节点建群及私有拉取已通过；Flux 引导、OCI 制品协调和漂移修复已通过；SOPS和平台基础策略也已通过；数据/身份服务和应用部署尚未完成。
+本方案面向所有者和后续维护者：从零建立可重复部署、可维护、可恢复的 Kubernetes 部署体系，第一期在 WSL 和 KIND 上完成现有项目验收。架构按所有者后续“好，继续”进入第一实现单元：镜像输入与只读预检。实际进度见仓库 CHECKPOINT.md；新 Harbor 和正式入口已通过验收，sunmoon-kind 三节点建群及私有拉取已通过；Flux 引导、OCI 制品协调和漂移修复已通过；SOPS和平台基础策略也已通过；首批数据/身份服务已通过，业务应用部署尚未完成。
 
 唯一设计目标是生产级工程规范和长期维护能力。KIND 用于本地开发与集成验证，单机环境不提供硬件故障隔离或生产高可用保证。云上建群和运行验收另立阶段。[KIND 官方定位](https://kind.sigs.k8s.io/)
 
@@ -57,19 +57,44 @@ Git 保存经过审查的源码与声明。推荐将一次发布对应的部署�
 
 Flux 提供离线安装和 OCI 源能力；这里的 OCI 发布与根协调已实现并实际验证，操作见 [Flux 引导](flux.md)。[离线安装](https://fluxcd.io/flux/installation/configuration/air-gapped/)、[OCI 源](https://fluxcd.io/flux/components/source/ocirepositories/)
 
+## 配置与实现按职责归拢（所有者确认，2026-10-03）
+
+整个新体系统一遵守：**相关用户配置、底层实现和说明放在同一职责目录；共用参数只有一个来源。**不只适用于 components。
+
+| 职责 | 用户配置 | 同处的实现 |
+| --- | --- | --- |
+| 宿主存储与容量 | `infrastructure/host/config.yaml` | 预检、容量检查、Windows 读数 |
+| KIND | `infrastructure/cluster/config.yaml` | KIND/CNI 模板、建群与节点构建 |
+| Harbor | `infrastructure/registry/config.yaml` | 官方安装适配、启停、备份恢复 |
+| TLS 入口 | `infrastructure/entry/config.yaml` | HAProxy/Compose/systemd 模板与启停 |
+| Flux/SOPS 引导 | `infrastructure/flux/config.yaml` | 控制器、源与密钥引导 |
+| 服务公共流程 | `infrastructure/services/config.yaml` | 跨组件渲染、加密与验收 |
+| 各平台组件 | `gitops/components/<平台>/<组件>/config.yaml` | 模板、生成声明、密文及 README |
+
+环境共用参数和源身份保留在 `infrastructure/environments/kind/`，版本摘要统一在物料锁；二者由模块引用，不复制。
+Make 明确列举唯一配置并通过原生 `--extra-vars @文件` 交给 Ansible。没有新增 CLI、目录扫描加载器或并行部署入口。
+Kustomization 只引用生成声明，用户配置与模板不作为 Kubernetes 资源应用。简单功能无需强行增加 templates/resources 多层目录。
+
+代码归属与运行命名空间独立：Casdoor 的 database/init/主服务集中在 app-platform/casdoor；建库 Job 仍在 data-platform-dev。配置归拢不改变任何 PV、身份、数据目录或软件版本。
+秘密、日志、备份、物料和临时产物分别留在私有或运行目录，不为“放在一起”把它们搬进源码。
+长期空间管理尚未实现的部分，后续按同一原则实现，不在本次虚构已完成模块。
+
+当前只有 KIND 环境。未来云环境沿用组件实现，环境差异以原生 Ansible 变量/环境声明表达，实施时补齐明确输入与实机验证，不能把本次目录调整称为云端已支持。
+
 ## 配置和代码布局
 
 新实现统一位于 `k8s/infrastructure/`，已落地物料、工具锁、宿主预检、节点构建和独立 Harbor；其余目录按实现需要建立。
 
 | 位置 | 唯一职责 |
 | --- | --- |
-| `infrastructure/host/` | 宿主预检、容量、入口代理和 Windows 附盘 |
+| `infrastructure/host/` | 宿主预检、容量和 Windows 附盘 |
+| `infrastructure/entry/` | 本机 TLS 直通入口及其配置、模板、启停 |
 | `infrastructure/registry/` | 官方 Harbor 物料、配置、证书、Compose 和宿主服务生命周期 |
 | `infrastructure/cluster/` | KIND 配置、引导和生命周期 |
 | `infrastructure/services/` | 平台参数生成、秘密加密与验收；不另建部署调度器 |
 | `gitops/components/` | 按 ingress/data/messaging/app-platform 分类的期望声明 |
 | `gitops/clusters/kind/` | 站点 Flux 依赖、基础策略和发布标记 |
-| `infrastructure/environments/kind/` | 本地站点参数、组件选择、资源规格、源摘要 |
+| `infrastructure/environments/kind/` | 跨模块环境参数、SOPS 公钥与源摘要 |
 | `infrastructure/artifacts/` | 版本和摘要锁、物料类型、来源与用途；不提交大归档 |
 | `infrastructure/flux/` | 原生 Flux/SOPS 引导、OCI 发布及基础验收 |
 | `infrastructure/Makefile` | 原生工具任务的薄入口，提供查看、预览、执行 |

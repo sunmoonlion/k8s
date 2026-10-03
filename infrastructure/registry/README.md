@@ -23,7 +23,8 @@ make registry-start   # 核挂载后启动，等待健康并核验认证
 | 位置 | 用途 |
 | --- | --- |
 | `release.yaml` | 服务集合、资源上限、健康依赖和证书期限 |
-| `../environments/kind/site.yaml` | 开关、路径、域名、后端端口与磁盘 UUID |
+| `config.yaml` | Harbor 开关、路径、域名、后端端口及已批准日志轮转 |
+| `../host/config.yaml`、`../environments/kind/site.yaml` | 共用存储身份与环境地址，引用而不复制 |
 | `/etc/sunmoon/registry/private/` | 独立随机管理员与数据库凭据，root:0600 |
 | `/etc/sunmoon/registry/tls/` | 独立 CA、私钥和服务器证书；私钥 root:0600 |
 | `/opt/sunmoon/registry/` | 官方生成配置、校验过的 Compose、挂载守卫；不依赖工作树运行 |

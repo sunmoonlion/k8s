@@ -1,0 +1,11 @@
+# KIND 当前配置；与本目录实现同源维护。秘密与版本摘要不在这里。
+---
+cluster_enabled: true
+cluster_api_port: 27443
+cluster_ingress_port: 29443
+cluster_pod_subnet: 10.247.0.0/16
+cluster_service_subnet: 10.99.0.0/16
+cluster_data_root: /data/kind-clusters
+cluster_kubeconfig: /home/zymun/.kube/sunmoon-kind.config
+cluster_operator: zymun
+cluster_create_budget_bytes: 5368709120

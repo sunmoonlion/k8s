@@ -1,0 +1,15 @@
+# KIND 当前配置；与本目录实现同源维护。秘密与版本摘要不在这里。
+---
+storage_uuid: a28de356-4ba1-4a21-93f5-744b9b9d8be0
+storage_mounts:
+- target: /mnt/sunmoon-data
+  fsroot: /
+- target: /data/kind-clusters
+  fsroot: /kind-clusters
+- target: /data/harbor
+  fsroot: /harbor
+windows_powershell: /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe
+data_vhd_windows_path: C:\wsl-disks\sunmoon-data.vhdx
+data_vhd_maximum_gib: 230
+windows_minimum_free_gib: 50
+windows_script_directory: /mnt/c/wsl-disks/scripts/platform-kind-v1

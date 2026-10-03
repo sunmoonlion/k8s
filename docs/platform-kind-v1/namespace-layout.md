@@ -14,14 +14,14 @@
 | PostgreSQL、Redis | data-platform | platform-system | data-platform-dev |
 | RabbitMQ | messaging-platform | platform-system | messaging-platform-dev |
 | Casdoor 初始化与服务 | app-platform | platform-system | app-platform-dev |
-| Casdoor 建库 Job | data-platform/casdoor-database | platform-system | data-platform-dev |
+| Casdoor 建库 Job | app-platform/casdoor/database | platform-system | data-platform-dev |
 | Flux | 集群引导 | flux-system | flux-system |
 
 运维分类留名 `ops-platform-dev`，有组件才创建。`platform-system` 保留引导基础对象，不再放上述业务基础服务。Casdoor 管理员、数据库角色/口令、TLS、初始化标记保持原值；PG 管理凭据只出现在 data-platform-dev。应用连接使用 `postgresql.data-platform-dev.svc.cluster.local` 等完整地址。
 
 ## 实现与发布
 
-普通配置唯一输入为 `infrastructure/environments/kind/services.yaml`。`services/layout.yaml` 只定义源码分类路径。原有组件开关继续保留。
+普通配置现已按职责归拢到各组件 `config.yaml`；共享命名空间在 `infrastructure/environments/kind/site.yaml`。`services/layout.yaml` 只定义分类路径和派生引用。原有开关保留。下方迁移证据保持历史原样；本次目录归拢不再次迁移运行命名空间。
 
 `make -C infrastructure services-render` 经原生模板生成 `.build/services` 候选；Secret 重新通过 SOPS 加密，不能直接文本替换密文的 namespace（MAC 会不匹配）。Kustomize 公共 core 组合 foundations、data、messaging、ingress 分类；Casdoor 建库、初始化和运行按依赖分阶段。
 
