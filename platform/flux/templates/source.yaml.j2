@@ -38,3 +38,9 @@ spec:
   prune: false
   deletionPolicy: Orphan
   wait: true
+{% if sops_enabled | default(false) | bool %}
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+{% endif %}

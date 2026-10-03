@@ -9,7 +9,7 @@
 - `flux install --export`使用已校验CLI内嵌的官方清单；Kustomize只覆写摘要、引导所有者和控制器限制。Flux控制器生命周期由Ansible拥有，普通Helm/Kustomize声明由Flux拥有。
 - `gitops/clusters/kind`是第一批声明。发布只从已提交Git对象导出，以完整Git SHA命名标签，启用reproducible；候选摘要须提升到受版本控制的 `environments/kind/flux-source.yaml` 后才改变集群源。
 - 引导使用只读Harbor身份创建 `flux-system/registry-puller`；源另用 `harbor-ca` 验证私有CA。publisher仅宿主发布时使用，凭据通过私有文件传递，临时副本在退出时删除。
-- 根Kustomization当前 `prune:false`、`deletionPolicy:Orphan`。本单元没有批准自动资源删除。SOPS解密密钥备份与加密业务Secret在后续平台单元接入，目前不发布业务秘密。
+- 根Kustomization当前 `prune:false`、`deletionPolicy:Orphan`。本单元没有批准自动资源删除。SOPS/age独立密钥及恢复副本已接入；只读仓库身份用SOPS密文交给Flux，业务服务秘密仍待各组件单元。见 [SOPS与基础平台](secrets-foundations.md)。
 
 ## 操作
 
@@ -31,7 +31,7 @@ make flux-source-status         # 核当前generation、Ready、源/协调摘要
 
 发布与部署分开：日常部署不能重新生成发布版本。整套一键入口尚未完成，以上是其将复用的原生任务，不代表当前已经交付全平台一键部署。
 
-当前根声明只创建平台命名空间和发布标记，用于先验证制品获取与持续协调；数据库、身份、消息、应用仍未部署。成功验收必须包含四控制器Ready、OCI源与根Kustomization在当前generation Ready、观察摘要与锁一致、实际声明存在和受控漂移修复。不能仅凭安装命令退出0宣称完成。
+当前根声明包含平台命名空间、发布标记、加密拉取身份、服务账号、资源默认值及网络策略；数据库、身份、消息、应用仍未部署。成功验收必须包含四控制器Ready、OCI源与根Kustomization在当前generation Ready、观察摘要与锁一致、实际声明存在和受控漂移修复。不能仅凭安装命令退出0宣称完成。
 
 ## 清理保护与恢复
 

@@ -172,3 +172,7 @@ Harbor 安装包解包约 735 MB，内部未压缩镜像内容约 2.03 GB；本�
 ## Flux 与声明发布
 
 原生入口、固定OCI摘要源、清理保护与验收边界见 [Flux 操作](../docs/platform-kind-v1/flux.md)。整套一键部署及开机恢复仍按 CHECKPOINT 后续顺序实现。
+
+## SOPS 与基础声明
+
+操作及恢复边界见 [SOPS/基础平台](../docs/platform-kind-v1/secrets-foundations.md)。`make foundations-bootstrap` 编排本层部署，`make foundations-check` 验证实际解密及拉取。整套应用一键仍待后续接入。

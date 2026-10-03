@@ -53,3 +53,8 @@ cluster_create_budget_bytes: 5368709120
 
 # Flux owns in-cluster declarations after native bootstrap.
 flux_enabled: true
+
+# Independent SOPS identity; never store private keys in the worktree or KIND volumes.
+sops_enabled: true
+sops_config_dir: /etc/sunmoon/flux/sunmoon-kind
+sops_backup_dir: /mnt/sunmoon-data/backups/flux/sunmoon-kind

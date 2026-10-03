@@ -1,6 +1,21 @@
 # 新部署体系交接
 
-## 当前状态：Flux 引导与实际协调完成（2026-10-03）
+## 当前状态：SOPS 与平台基础声明已实际部署（2026-10-03）
+
+本节优先于下方历史进度。仍在 `platform-kind-v1` 新工作树开发，只改k8s，无push。Flux实现已本地提交 `54a7b1dd`；基础声明提交 `4a993aabed47cd4565887f1b18321da4ab21b9f2`，实现与验收提交见本分支日志。日常入口见 [SOPS与基础平台](docs/platform-kind-v1/secrets-foundations.md)。
+
+- 实际源摘要已提升至 `sha256:19f2aa4849577eb383263727e32d8d110c2967f6d545e6bdf56a8dc0e1c1255b`。三节点Ready，Flux四控制器及源/根协调Ready；基础平台包含restricted命名空间、默认禁API令牌的服务账号、LimitRange、默认拒绝与DNS放行网络策略。
+- SOPS3.13.3/age1.3.2来自已锁定本地包，原始物料未搬走。主解密身份在 `/etc/sunmoon/flux/sunmoon-kind/age.agekey`，独立副本在 `/mnt/sunmoon-data/backups/flux/sunmoon-kind/age.agekey`，root0600/目录0700；Git只有公钥与密文。机器外副本、etcd静态加密尚未落实，不声称完成灾难恢复或完整安全基线。
+- 只读Harbor凭据由Flux实际解密并创建。验收对照备份解密结果、实际Secret和kustomize-controller字段所有权；临时非root Job通过Always认证拉取、指定imageID、集群DNS、无API令牌挂载及跨命名空间TCP拒绝，ok24 changed4 failed0；专属Job/Pod已清理。
+- 实际暂存主密钥，由 `secrets-prepare` 从独立备份恢复，逐字节一致后移除临时原件；原生恢复ok40 changed1 failed0。不是仅做目录/摘要检查。没有停Harbor或集群服务。
+- `make foundations-bootstrap` 整段重复执行五段ok21/18/39/34/26，changed0、failed0。根发布标记不变；SOPS关闭时拒绝requires_sops源，避免以无解密配置破坏既有声明。
+- 三次检查问题均保留记录：候选文件误写字面换行，已修正；公钥注解JSONPath转义导致读空，改读注解map；kubectl默认省略managedFields，验收显式请求该字段。密钥未重新生成，没有以失败记录充当成功。
+- 证据在新集群 `bootstrap/evidence/foundations/` 与 `bootstrap/evidence/sops-foundations-20261003/`。运行日志含失败及通过记录，秘密不入Git，临时工具参数在结束时撤销。
+- 本次所有者只为SOPS/基础声明授权40GiB、预算256MiB，没有部署数据库或新常驻应用。新增工具及解包副本已识别占用74,207,232字节（约70.77MiB）；声明与验收记录另占少量空间。02:43 UTC整机容量读数计数据盘未来增长后余49,212,723,200字节（45.83GiB）；50GiB默认规则未改。整机VHDX/Windows变化不能等同于本单元文件增量；后续大组件必须重测并确认容量安排。
+
+**下一步**：先按已选版本准备入口/数据与身份服务的声明及容量清单，再实际部署，随后应用链路；全平台一键、开机顺序、重启/重建持久化、长期空间管理仍按此前顺序收尾。此前40GiB例外不延伸到下一单元。
+
+## 前序状态：Flux 引导与实际协调完成（2026-10-03）
 
 本节优先于下方历史现场。目标为 `sunmoon-kind`，kubeconfig `~/.kube/sunmoon-kind.config`，工具 `platform/.tools/bin/{kubectl,flux}`。原生操作见 [Flux 操作](docs/platform-kind-v1/flux.md)。源码基线为 `37eaf574b26d9fc5d21ffc97332260e42e2cf887`；首批声明提交 `3ace2fdec6b9b04d69f2672f7ba225c4ad95497c`，实现提交见 Git 日志，无 push。
 

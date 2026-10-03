@@ -210,3 +210,6 @@ sunmoonai/**/deploy-*/secrets/**/*.yaml
 !sunmoonai/**/deploy-*/secrets/**/*.yaml.example
 utils/.k8s-status
 __pycache__/
+
+# SOPS private identities must stay outside the repository.
+*.agekey

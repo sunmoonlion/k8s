@@ -43,7 +43,19 @@
       "size_bytes": 19405817,
       "sha256": "cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10",
       "url": "https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-amd64.tar.gz",
-      "identity_source": "https://api.github.com/repos/FiloSottile/age/releases/379059621"
+      "identity_source": "https://api.github.com/repos/FiloSottile/age/releases/379059621",
+      "archive_members": [
+        {
+          "path": "age/age-keygen",
+          "size_bytes": 4051278,
+          "sha256": "0a0009db842259d6717f7eeb30acb6b90d2a2eb924c6acd0a0db0ca1f1537899"
+        },
+        {
+          "path": "age/age",
+          "size_bytes": 6977014,
+          "sha256": "eb7dd1b518f0a307c99cd97782623c5321da049154b04acd2d98d21aa7bc9b2c"
+        }
+      ]
     },
     {
       "id": "flux",

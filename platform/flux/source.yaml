@@ -114,6 +114,21 @@
               ansible.builtin.command:
                 argv: ['{{ playbook_dir }}/../.tools/bin/kubectl', kustomize, '{{ staging.path }}/content/clusters/kind']
               changed_when: false
+              register: built_declarations
+              no_log: true
+            - name: Reject plaintext Secrets before OCI publication
+              ansible.builtin.assert:
+                quiet: true
+                that:
+                  - item.sops.age | default([]) | length > 0
+                  - item.sops.encrypted_regex | default('') == '^(data|stringData)$'
+                  - item.sops.mac | default('') is match('^ENC\[')
+                  - fields | length > 0
+                  - fields | select('match', '^ENC\[AES256_GCM,') | list | length == fields | length
+              vars:
+                fields: '{{ ((item.data | default({})) | dict2items | map(attribute="value") | list) + ((item.stringData | default({})) | dict2items | map(attribute="value") | list) }}'
+              loop: '{{ built_declarations.stdout | from_yaml_all | selectattr("kind", "equalto", "Secret") | list }}'
+              no_log: true
             - name: Supply publisher credentials through a private file
               ansible.builtin.copy:
                 src: '{{ registry_config_dir }}/private/publisher-auth.json'
@@ -145,7 +160,7 @@
                 dest: '{{ build }}/source-candidate.yaml'
                 owner: '{{ cluster_operator }}'
                 mode: '0644'
-                content: '{{ {"repository":"oci://" + registry_address + "/platform/deployments-kind", "digest":(published.stdout | from_json).digest, "revision":revision.stdout, "path":"./clusters/kind"} | to_nice_yaml }}'
+                content: '{{ {"repository":"oci://" + registry_address + "/platform/deployments-kind", "digest":(published.stdout | from_json).digest, "revision":revision.stdout, "path":"./clusters/kind", "requires_sops":(built_declarations.stdout | from_yaml_all | selectattr("kind", "equalto", "Secret") | list | length > 0)} | to_nice_yaml }}'
             - name: Report the published candidate without silently moving the live source
               ansible.builtin.debug:
                 msg: 'Published {{ (published.stdout | from_json).digest }} from {{ revision.stdout }}. Review .build/flux/source-candidate.yaml and promote to environments/kind/flux-source.yaml before flux-source-apply.'
@@ -178,6 +193,14 @@
               - source_lock.digest is match('^sha256:[a-f0-9]{64}$')
               - source_lock.revision is match('^[a-f0-9]{40}$')
               - source_lock.path == './clusters/kind'
+              - not source_lock.requires_sops | default(false) | bool or sops_enabled | default(false) | bool
+        - name: Require the declared SOPS bootstrap before reconciling encrypted manifests
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", "flux-system", "get", "secret", "sops-age", "-o", "jsonpath={.metadata.annotations}"] }}'
+          register: decryption_recipient
+          changed_when: false
+          failed_when: decryption_recipient.rc != 0 or (decryption_recipient.stdout | from_json)['sunmoonai.com/age-recipient'] | default('') != lookup('ansible.builtin.file', playbook_dir + '/../environments/kind/sops-recipient.txt') | trim
+          when: sops_enabled | default(false) | bool
         - name: Configure the source trust and root declaration
           when: flux_source_action == 'apply'
           block:
