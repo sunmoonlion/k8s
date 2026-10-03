@@ -373,8 +373,11 @@
           register: live_redis_input
           no_log: true
         - name: Verify the persistent identity authenticates against the current Redis process
+          vars:
+            redis_auth_probe: >-
+              IFS= read -r REDISCLI_AUTH; export REDISCLI_AUTH; redis-cli --user "$1" ping
           ansible.builtin.command:
-            argv: '{{ kube + ["exec","-i","redis-0","-n",data_namespace,"-c","redis","--","sh","-ec","IFS= read -r REDISCLI_AUTH; export REDISCLI_AUTH; redis-cli --user \"$1\" ping","--",cfg.redis_user] }}'
+            argv: '{{ kube + ["exec","-i","redis-0","-n",data_namespace,"-c","redis","--","sh","-ec",redis_auth_probe,"--",cfg.redis_user] }}'
             stdin: '{{ (live_redis_input.content | b64decode | from_yaml).password }}'
           register: redis_live
           changed_when: false
