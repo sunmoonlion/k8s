@@ -1,0 +1,232 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: knowledge-runtime, namespace: app-platform-dev}
+data:
+  ENV: production
+  APP_SLUG: knowledge
+  DEPLOYMENT_ID: "knowledge-6f7597a950191cbc"
+  ALLOWED_HOSTS: "localhost,127.0.0.1,knowledge-api,knowledge-api.app-platform-dev.svc.cluster.local,knowledge.sunmoonai.com,knowledge-admin.sunmoonai.com"
+  REDIS_HOST: redis.data-platform-dev.svc.cluster.local
+  REDIS_PORT: '6379'
+  REDIS_DB: '0'
+  CELERY_QUEUE: knowledge.default
+  CELERY_TASK_TOPOLOGY_PREDECLARED: 'true'
+  CASDOOR_BACKCHANNEL_ENDPOINT: http://casdoor.app-platform-dev.svc.cluster.local:8000
+  CASDOOR_VERIFY_SSL: 'true'
+  SESSION_COOKIE_SECURE: 'true'
+  REFERENCE_INTERACTION_ENABLED: 'false'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: knowledge-celery-config, namespace: app-platform-dev}
+data:
+  celeryconfig.py: |
+    # Native Celery 5.6 configuration; transient per-connection queues only.
+    control_queue_durable = False
+    control_queue_exclusive = True
+    event_queue_durable = False
+    event_queue_exclusive = True
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: knowledge-api, namespace: app-platform-dev}
+spec:
+  replicas: 1
+  strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
+  progressDeadlineSeconds: 300
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app.kubernetes.io/name: knowledge-api}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: knowledge-api
+        app.kubernetes.io/part-of: knowledge
+        sunmoonai.com/postgresql-client: 'true'
+        sunmoonai.com/rabbitmq-client: 'true'
+        sunmoonai.com/redis-client: 'true'
+      annotations:
+        sunmoonai.com/config-sha256: a2ec888b263015e1845567666f23919c6fade3ea0e553dd6eb19bbddd32bc777
+    spec:
+      serviceAccountName: knowledge-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: api
+          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:f6d19ac985cb73deb43b01e6b753cbe73f1c2d366775832437d0c22272deb2b5
+          imagePullPolicy: IfNotPresent
+          command: [uvicorn]
+          args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
+          ports: [{name: http, containerPort: 8000}]
+          startupProbe: {httpGet: {path: /health/live, port: http, httpHeaders: [{name: Host, value: localhost}]}, periodSeconds: 3, failureThreshold: 60}
+          readinessProbe: {httpGet: {path: /health/ready, port: http, httpHeaders: [{name: Host, value: localhost}]}, timeoutSeconds: 5, periodSeconds: 10}
+          livenessProbe: {httpGet: {path: /health/live, port: http, httpHeaders: [{name: Host, value: localhost}]}, timeoutSeconds: 3, periodSeconds: 20}
+          env:
+            - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
+            - {name: SERVICE_NAME, value: knowledge-api}
+            - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+            - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
+            - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
+          envFrom:
+            - {configMapRef: {name: knowledge-runtime}}
+            - {configMapRef: {name: knowledge-browser-identity}}
+            - {secretRef: {name: knowledge-database-runtime}}
+            - {secretRef: {name: knowledge-rabbitmq-runtime}}
+            - {secretRef: {name: knowledge-redis-runtime}}
+            - {secretRef: {name: knowledge-browser-secrets}}
+          resources: {"requests": {"cpu": "100m", "memory": "192Mi"}, "limits": {"cpu": "2", "memory": "768Mi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: celery-config, configMap: {name: knowledge-celery-config}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: knowledge-worker, namespace: app-platform-dev}
+spec:
+  replicas: 1
+  strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
+  progressDeadlineSeconds: 300
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app.kubernetes.io/name: knowledge-worker}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: knowledge-worker
+        app.kubernetes.io/part-of: knowledge
+        sunmoonai.com/postgresql-client: 'true'
+        sunmoonai.com/rabbitmq-client: 'true'
+      annotations:
+        sunmoonai.com/config-sha256: a2ec888b263015e1845567666f23919c6fade3ea0e553dd6eb19bbddd32bc777
+    spec:
+      serviceAccountName: knowledge-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: worker
+          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:f6d19ac985cb73deb43b01e6b753cbe73f1c2d366775832437d0c22272deb2b5
+          imagePullPolicy: IfNotPresent
+          command: [celery]
+          args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
+          startupProbe: {exec: {command: [python, -m, app.cli.worker_readiness]}, timeoutSeconds: 10, periodSeconds: 10, failureThreshold: 30}
+          readinessProbe: {exec: {command: [python, -m, app.cli.worker_readiness]}, timeoutSeconds: 10, periodSeconds: 20}
+          env:
+            - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
+            - {name: SERVICE_NAME, value: knowledge-worker}
+            - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+            - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
+            - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
+          envFrom:
+            - {configMapRef: {name: knowledge-runtime}}
+            - {configMapRef: {name: knowledge-browser-identity}}
+            - {secretRef: {name: knowledge-database-runtime}}
+            - {secretRef: {name: knowledge-rabbitmq-runtime}}
+          resources: {"requests": {"cpu": "100m", "memory": "256Mi"}, "limits": {"cpu": "2", "memory": "1Gi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: celery-config, configMap: {name: knowledge-celery-config}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: knowledge-scheduler, namespace: app-platform-dev}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  progressDeadlineSeconds: 300
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app.kubernetes.io/name: knowledge-scheduler}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: knowledge-scheduler
+        app.kubernetes.io/part-of: knowledge
+        sunmoonai.com/postgresql-client: 'true'
+        sunmoonai.com/rabbitmq-client: 'true'
+      annotations:
+        sunmoonai.com/config-sha256: a2ec888b263015e1845567666f23919c6fade3ea0e553dd6eb19bbddd32bc777
+    spec:
+      serviceAccountName: knowledge-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: scheduler
+          image: harbor.sunmoonai.com:30443/platform/knowledge-backend@sha256:f6d19ac985cb73deb43b01e6b753cbe73f1c2d366775832437d0c22272deb2b5
+          imagePullPolicy: IfNotPresent
+          command: [celery]
+          args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]
+          startupProbe: {exec: {command: [python, -m, app.cli.scheduler_activity, --schedule, /tmp/celerybeat-schedule, --max-age, '30']}, timeoutSeconds: 5, periodSeconds: 5, failureThreshold: 30}
+          readinessProbe: {exec: {command: [python, -m, app.cli.scheduler_activity, --schedule, /tmp/celerybeat-schedule, --max-age, '30']}, timeoutSeconds: 5, periodSeconds: 10}
+          env:
+            - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
+            - {name: SERVICE_NAME, value: knowledge-scheduler}
+            - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+            - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
+            - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
+          envFrom:
+            - {configMapRef: {name: knowledge-runtime}}
+            - {configMapRef: {name: knowledge-browser-identity}}
+            - {secretRef: {name: knowledge-database-runtime}}
+            - {secretRef: {name: knowledge-rabbitmq-runtime}}
+          resources: {"requests": {"cpu": "50m", "memory": "128Mi"}, "limits": {"cpu": "1", "memory": "512Mi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+            - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
+      volumes:
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: celery-config, configMap: {name: knowledge-celery-config}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: knowledge-api, namespace: app-platform-dev}
+spec:
+  selector: {app.kubernetes.io/name: knowledge-api}
+  ports: [{name: http, port: 8000, targetPort: http}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: knowledge-api-ingress, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-api}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ingress-platform-dev}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-web}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-admin}}
+      ports: [{protocol: TCP, port: 8000}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: knowledge-api-casdoor-out, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-api}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
+      ports: [{protocol: TCP, port: 8000}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: knowledge-api-casdoor-in, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-api}}
+      ports: [{protocol: TCP, port: 8000}]

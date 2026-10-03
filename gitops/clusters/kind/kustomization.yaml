@@ -8,3 +8,4 @@ resources:
 - services.yaml
 - applications-tpl.yaml
 - applications-info.yaml
+- applications-knowledge.yaml

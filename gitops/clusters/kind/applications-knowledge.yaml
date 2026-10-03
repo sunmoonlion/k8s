@@ -1,0 +1,136 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowledge-database, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowledge-app/knowledge-backend/database
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn: [{name: platform-services}]
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowledge-migration, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowledge-app/knowledge-backend/migration
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn: [{name: knowledge-database}]
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowledge-redis, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowledge-app/knowledge-backend/redis
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn: [{name: knowledge-migration}]
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowledge-rabbitmq, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowledge-app/knowledge-backend/rabbitmq
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn: [{name: knowledge-redis}]
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowledge-identity, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowledge-app/knowledge-backend/identity
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn: [{name: knowledge-rabbitmq}, {name: casdoor}]
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowledge-runtime, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowledge-app/knowledge-backend/runtime
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn: [{name: knowledge-identity}]
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowledge-web, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowledge-app/knowledge-web-frontend
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn: [{name: knowledge-runtime}]
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: knowledge-admin, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/knowledge-app/knowledge-admin-frontend
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn: [{name: knowledge-runtime}]
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}

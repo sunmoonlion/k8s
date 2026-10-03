@@ -1,0 +1,4 @@
+# 应用共享开关；命名空间统一来自 infrastructure/environments/kind/site.yaml 的 app_namespace。
+---
+knowledge_deployment:
+  enabled: true
