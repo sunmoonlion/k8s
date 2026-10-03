@@ -4,6 +4,7 @@
 
 - Casdoor代码集中在gitops/components/app-platform/casdoor（database/init/主服务），建库Job仍运行data-platform-dev，初始化和主服务仍app-platform-dev；没有数据迁移。
 - PG/Redis/Rabbit/Traefik各自配置、模板、声明与说明同处。宿主、KIND、Harbor、入口、Flux和服务公共流程均有对应config.yaml。跨模块环境字段唯一存于environments/kind/site.yaml；版本锁和秘密位置不变。
+- 追加字段边界核对：services.md逐项列出用户名/密码、固定内部端口、宿主映射及其他配置的修改条件。本轮只补说明；Casdoor域名/入口验收固定值、已有证书不自动重签、Casdoor卷node未贯通主服务/init、资源规格用户入口和统一凭据轮换均为未完成。不能把config.yaml存在等同于任意值可用；下方上轮目录归拢完成结论只覆盖已部署值不变。
 - 原生Make通过明确CONFIG_FILES传递参数，无新CLI/加载器/兼容转发。make config列出真实输入；render引用同处模板，Flux只读取Kustomization显式列出的生成声明。
 - 56项原配置值保持，12份输入无重复顶层字段；三份拆分数据模板生成对象与旧版一致；76个资源身份/内容保持，只有casdoor-db与casdoor-init的Flux路径变化。
 - 29份Ansible原生语法、13个Kustomize根构建通过；services-render ok103 changed3 failed0，使用常规50GiB门槛。15个旧候选逐文件与Git基线比对后移动，保留密文，不重置凭据。

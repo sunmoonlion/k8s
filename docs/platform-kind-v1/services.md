@@ -45,6 +45,78 @@ Flux 仍在 `flux-system`，`platform-system` 只保留基础引导/发布标记
 
 Casdoor 的 `/server -export` 在导入初始身份之前退出，因此首次 Job 启动隔离服务、等待可用，再写入 `/files/.initialized-v1`。随后停止初始化进程；正式服务不配置 init_data 导入。存在完成标记时初始化 Job 仅运行无身份覆盖的数据库导出检查，防止集群重建重置管理员。该标记应与 Casdoor 文件卷和数据库一起备份；本次 namespace 迁移已完成四卷冷备份、独立解包与全目录内容/权限比对，但未从该备份启动另一套数据库做业务恢复演练。Casdoor 官方服务仍有内置 schema 初始化行为，不将其冒充业务应用的独立迁移链。
 
+## 字段的维护边界（2026-10-03 逐项核对）
+
+本节明确当前实现支持什么；文件在 config.yaml 中不代表已有数据时可以直接修改。各组件 README 已链接本手册。普通参数、固定约定、初始化身份和凭据分别处理，不把所有字段都宣称为日常开关。
+
+### 用户名、密码与令牌
+
+| 对象 | 当前来源或固定值 | 修改规则 |
+| --- | --- | --- |
+| PostgreSQL 管理员用户名 | 模板固定 `postgres` | 本期固定管理身份，不作为日常用户名配置；业务使用自己的库与角色 |
+| PostgreSQL 管理员密码 | 私有输入 `service_credentials.postgresql_password` | 已有实例必须做数据库、Secret、依赖方和备份的一致轮换；不能只改输入 |
+| Redis 用户名 | 当前 requirepass 模式使用默认用户 `default`，没有单独 username 字段 | 这是本期已实现模式；逐应用 ACL 身份尚未实现，不能声称已有隔离账号 |
+| Redis 密码 | 私有输入 `redis_password` | 需要 Redis 配置和客户端协调轮换 |
+| RabbitMQ 用户名、密码 | 私有输入 `rabbitmq_username`、`rabbitmq_password` | 用户名不是秘密，但与已初始化账号一起保存；已有 broker 的账号变更不能仅改初始配置 |
+| RabbitMQ Erlang cookie | 私有输入 `rabbitmq_cookie` | 节点通信身份，不能当普通登录密码修改；已有持久文件会与输入核对 |
+| Casdoor 数据库用户名、库名 | 组件 `config.yaml` 中 `casdoor_database_user`、`casdoor_database` | 新环境初始化参数；已有库更名/换角色属于数据与身份迁移，Job 不自动搬数据或修改已有角色密码 |
+| Casdoor 数据库密码 | 私有输入 `casdoor_db_password` | 数据库角色、应用配置及备份要一起轮换 |
+| Casdoor 管理员用户名 | 初始化与验收固定 `built-in/admin` | 本期固定引导身份，不是可直接修改的普通字段 |
+| Casdoor 管理员初始密码 | 私有输入 `casdoor_admin_password` | 初始化一次；修改文件不会更新已有 Casdoor 账号，需账号更新与输入/备份同步 |
+| Casdoor 应用密钥 | 私有输入 `casdoor_application_secret` | 当前是预留字段，尚未接入业务 OAuth 客户端，不把生成它记作应用注册完成 |
+| Harbor 管理员用户名、密码 | 固定 `admin`；`/etc/sunmoon/registry/private/admin-password` | 与平台凭据分开；已有账号通过 Harbor 受控轮换，不能靠重新运行安装器覆盖 |
+| Harbor 内部数据库密码 | `/etc/sunmoon/registry/private/database-password` | 官方仓库内部身份；修改需要配套维护，不与业务 PostgreSQL 密码复用 |
+| Harbor publisher / puller | `/etc/sunmoon/registry/private/` 下机器人身份及认证 JSON | Harbor 创建、权限分离；机器人令牌轮换须同步使用方，不能编辑 JSON 冒充远端变更 |
+
+平台私有输入全路径是 `/etc/sunmoon/services/sunmoon-kind/credentials.yaml`，上述简写字段均在 `service_credentials` 下。组件旁的 `*.sops.yaml` 是发布密文，不是明文编辑入口。没有把密码数值复制进本文或普通配置。
+
+现有 `services-credentials` 负责首次生成、已有输入保留和备份恢复；**统一凭据轮换入口尚未实现**。先核对真实账号和备份，再通过显式维护流程轮换，不能宣称修改文件即完成。
+
+### 端口：固定约定与宿主映射分开
+
+| 端口 | 当前值 | 所有者与支持边界 |
+| --- | --- | --- |
+| PostgreSQL 内部服务 | 5432 | 本期固定；服务、客户端、网络策略和验收采用同一约定 |
+| Redis 内部服务 | 6379 | 本期固定；requirepass 配置、服务、探针与策略配套 |
+| RabbitMQ AMQP / 管理接口 | 5672 / 15672 | 本期固定；管理接口用于当前原生验收，不表示对外开放 |
+| Casdoor 容器 / Service HTTP | 8000 | 本期固定；应用配置、探针、Ingress 后端和网络策略配套 |
+| Traefik NodePort | 30443 | 本期固定；与 KIND 节点映射保持一致，与宿主同号端口是不同网络位置 |
+| 对外共享 TLS 入口 | 30443 | `infrastructure/entry/config.yaml` 的 `entry_port`；仓库地址/引用和客户端同时依赖它，本期对外契约保持，不是随意可换端口 |
+| Harbor 回环后端 | 11443 | `infrastructure/registry/config.yaml` 的 `registry_https_port`；Harbor 与 entry 模板引用同一字段，修改须安排两服务配置/维护 |
+| KIND API 宿主映射 | 27443 | `infrastructure/cluster/config.yaml` 的 `cluster_api_port`；建群参数，已有节点不能凭改 YAML 自动重绑端口 |
+| KIND 入口宿主映射 | 29443 | 同文件 `cluster_ingress_port`；已有节点需要重建安排；Casdoor 当前验收仍固定使用29443，任意端口支持未贯通 |
+| 入口应用后端 | 当前原 worker 的 `172.18.0.5:30443` | `entry/config.yaml` 的 `entry_cluster_backend`；维护切换参数，尚未切到新集群业务入口 |
+
+本期内部端口明确采用上述固定值，不增加未经端到端支持的可调字段。如果后续确需开放端口配置，必须让监听、Service、探针、网络策略、客户端和验收共同引用唯一输入；只把一个常量搬进 config.yaml 不算完成。
+
+### 其余已暴露字段
+
+| 字段 | 分类 | 当前操作边界 |
+| --- | --- | --- |
+| `services_*_enabled` 及各模块 enabled | 发布选择/动作准入 | 走对应原生入口与依赖检查；Flux `prune:false` 下关闭开关不自动停服或删除已有服务/数据。也不表示任意组合都已完成验收 |
+| `casdoor_hostname` | 应当支持的环境参数，当前仅默认值完整走通 | 模板读取它，但 verify-live.py 仍固定域名，已有证书不会因参数改变自动重签；域名变更能力未交付 |
+| `*_volume.size` | 存储声明/容量规划 | 本地静态PV的容量声明不是目录配额，也不是自动扩容；已有PV/PVC改容量需要专门流程 |
+| `*_volume.node` | 数据放置/迁移 | 移动已有本地卷需要先搬数据并处理亲和性；Casdoor主服务与init仍固定worker，node字段尚未完全贯通，不能直接改成worker2 |
+| `*_volume.name/uid/gid` | 持久路径与镜像身份约定 | 当前固定组件名和镜像兼容身份；不是用户账号/登录密码，已有数据不能直接改属主或路径 |
+| `rabbitmq_node_hostname` | 持久化节点身份 | 已有Rabbit数据绑定此身份；保持原值，客户端使用新的Service地址。不是普通域名配置 |
+| `cluster_name`、命名空间、网段、数据根、kubeconfig | 环境建立/迁移参数 | 当前部分守卫明确限定sunmoon-kind与已批准路径；目录归拢不等于支持任意重命名。已有环境改动须迁移/重建安排 |
+| `registry_hostname`、共享 `registry_address` | 仓库对外身份 | 当前固定harbor.sunmoonai.com:30443，证书、镜像引用、拉取认证及守卫均依赖；改域名不是单文件操作 |
+| `registry_project` | Compose 实例名称 | 当前sunmoon-registry；不是Harbor中存镜像的platform项目，不用它修改仓库项目名 |
+| host `storage_uuid`、挂载/VHD路径、最大容量 | 已创建磁盘的身份与容量事实 | 必须匹配实际磁盘；改数值不能创建、扩盘或更换数据盘 |
+| `windows_minimum_free_gib`、容量预算 | 已批准的准入策略 | 常规50GiB，不能用改配置绕过；临时例外需按已约定范围单独授权 |
+| 服务/Harbor/SOPS私有输入、运行、备份目录 | 安装布局/恢复边界 | 改路径需先迁移并核对权限与完整性，不得让新空路径触发身份重建 |
+| 资源 requests/limits、探针、镜像版本/摘要 | 当前发布实现 | 资源与探针仍在模板/Harbor release策略中，版本在锁文件；独立用户资源规格配置尚未实现，不能描述为已有字段 |
+| `registry_log_rotation_approved` | 既定授权记录 | 现批准每容器3份×20MiB；不授权删除镜像、备份或任意改变保留策略 |
+
+### 已确认的未完成项
+
+1. Casdoor域名/入口映射要贯通验收与已有证书变更；当前只保证已部署默认值。
+2. Casdoor卷节点要贯通主服务和初始化模板；有数据后的搬迁仍需独立流程。
+3. 普通资源规格如要提供用户参数入口，需连同校验、模板和预算接入；目前不能声称已经支持。
+4. 凭据轮换、逐应用Redis身份、完整启停和重启/重建持久化验收仍按项目顺序完成。
+
+本节是维护边界的明确与现场代码核对，**没有修改密码、端口、服务配置或运行资源，也没有把上述缺项记作已修复**。
+
 ## 入口和操作
 
 新 Traefik 监听新集群 NodePort 30443，经宿主 `127.0.0.1:29443` 验收。Casdoor 域名不变、证书沿用平台 CA 签发，有效期五年。**宿主 30443 的应用分流仍指向原集群，本批不切换。** 浏览器常用域名当前不能据此视作已切到新 Casdoor。
