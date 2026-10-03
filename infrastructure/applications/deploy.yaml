@@ -265,11 +265,18 @@
           register: result
           changed_when: false
           no_log: true
+        - name: Decode the final structured acceptance record privately
+          ansible.builtin.set_fact:
+            database_acceptance: '{{ result.stdout_lines[-1] | from_json }}'
+          no_log: true
         - name: Require the completed job acceptance record
           ansible.builtin.assert:
             quiet: true
             that:
-              - result.stdout is search('"runtime_crud": true')
-              - result.stdout is search('"runtime_ddl_denied": true')
-              - result.stdout is search('"migration_metadata_write_denied": true')
+              - database_acceptance.schema == cfg.expected_schema_revision
+              - database_acceptance.database == cfg.database
+              - database_acceptance.separate_identities is sameas true
+              - database_acceptance.runtime_crud is sameas true
+              - database_acceptance.runtime_ddl_denied is sameas true
+              - database_acceptance.migration_metadata_write_denied is sameas true
             success_msg: 'TPL schema, separate identities, runtime CRUD and denial of runtime DDL verified.'
