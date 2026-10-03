@@ -1,0 +1,4 @@
+digest: sha256:0d905e584d24f4692502d00a59363fa4e3141bd56ba2897929ccaaf05e7eb640
+path: ./clusters/kind
+repository: oci://harbor.sunmoonai.com:30443/platform/deployments-kind
+revision: 3ace2fdec6b9b04d69f2672f7ba225c4ad95497c

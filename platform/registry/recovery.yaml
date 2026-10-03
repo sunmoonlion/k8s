@@ -193,7 +193,7 @@
 
             - name: Pull all image content using the restored read-only identity
               ansible.builtin.command:
-                argv: '{{ recovery_client + ["--mount", "type=bind,source=" + recovery_dir + "/pullback,target=/output", skopeo.reference, "copy", "--preserve-digests", "--src-authfile", "/auth.json", "--src-cert-dir", "/certs", "docker://" + recovery_address + "/platform/haproxy@" + published.manifest_digest, "oci-archive:/output/image.tar"] }}'
+                argv: '{{ recovery_client + ["--mount", "type=bind,source=" + recovery_dir + "/pullback,target=/output", skopeo.manifest_digest, "copy", "--preserve-digests", "--src-authfile", "/auth.json", "--src-cert-dir", "/certs", "docker://" + recovery_address + "/platform/haproxy@" + published.manifest_digest, "oci-archive:/output/image.tar"] }}'
               changed_when: false
 
             - name: Verify every recovered image blob independently

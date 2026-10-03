@@ -55,3 +55,13 @@ docker start sunmoon-sni-transition-main-20260928
 2026-10-01T05:35:42Z，新窗口中Docker29.8.1先候选pull通过，再正式切换；entry-deploy ok20 changed3 failed0，registry-publish-check ok28 changed3 failed0。完整拉回6层8blob、manifest/config摘要、只读push拒绝及正式Dockerpull通过。由于镜像已在新仓库，本次幂等发布跳过；随后publisher实际重复推送同一标签、相同manifest并重新核对，通过。
 
 当前Harbor正式地址指向新2.15.2仓库；旧仓库数据未迁入，保留于旧18443。其他域名仍转旧kind-worker且应用证书SHA256与维护前相同。最终156个原容器和全部卷保留，26运行，main/136六节点Ready。详细机器证据在私有maintenance目录，索引见CHECKPOINT。
+
+## 2026-10-03 重启后的入口恢复（已批准并完成）
+
+现场已复核：新 `sunmoon-kind` 控制面重新启动成功，三节点 Ready、14 基础 Pod Ready；新 Harbor 后端11443通过证书和health核验；旧 `kind-control-plane` 自动启动并占用30443，其两个遗留Harbor数据库副本仍0；旧Traefik在kind-worker上Ready，地址仍172.18.0.5:30443。新代理原配置仍为Harbor→11443、其它域名→该旧worker。
+
+本次范围：记录旧控制面容器ID和非Harbor域名证书摘要；停止且只停止 `kind-control-plane`，等待30443释放；执行 `make -C platform entry-start`；验证正式Harbor健康、证书、新仓库中固定HAProxy摘要的认证拉取，以及应用域名仍呈现旧worker相同证书。预计入口短断约1分钟，上限10分钟；失败另留5分钟，执行entry-stop、确认端口空闲、重新启动同一旧控制面恢复本次维护前状态。新集群无需暂停，旧worker、全部数据/卷保持。停止旧API同时释放其80/30444–30446，这些端口本轮不提供替代服务。
+
+这次只是恢复已验收的新入口；开机自动化仍待统一生命周期单元处理。容量例外只限本次Harbor/Flux、40GiB且有到期时间，站点默认50GiB不变。
+
+本次恢复在批准窗口内约33秒完成。只停旧控制面，新代理接回30443；Harbor十服务healthy，实际推拉验收ok30 changed3 failed0 skipped1，完整6层/8blob核验通过。旧应用TLS证书摘要 `a0c60b64911e69797bc8832be22e0a9eae96f9488a80ff6d59158b199842834d` 不变。证据已保存至新集群bootstrap/evidence/flux-20261003；这次窗口已结束。

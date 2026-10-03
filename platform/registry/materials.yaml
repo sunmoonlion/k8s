@@ -4,6 +4,7 @@
   gather_facts: false
   become: false
   vars:
+    capacity_operation: harbor-materials
     file_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/files.lock.json") | from_json }}'
     package_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/harbor-package-files.lock.json") | from_json }}'
     harbor_images: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/harbor-offline-images.lock.json") | from_json }}'

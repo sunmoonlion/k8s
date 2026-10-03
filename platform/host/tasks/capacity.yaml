@@ -8,6 +8,24 @@
       - windows_minimum_free_gib | int >= 50
       - data_vhd_maximum_gib | int > 0
 
+- name: Validate an explicitly approved temporary capacity exception
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - capacity_exception.id | length > 0
+      - capacity_exception.minimum_free_gib | int >= 40
+      - capacity_exception.minimum_free_gib | int < windows_minimum_free_gib | int
+      - capacity_exception.expires_epoch | int > lookup('ansible.builtin.pipe', 'date +%s') | int
+      - capacity_exception.expires_epoch | int <= (lookup('ansible.builtin.pipe', 'date +%s') | int) + 86400
+      - capacity_operation | default('unclassified') in capacity_exception.operations
+    fail_msg: Capacity exception is expired, outside its approved operation, or below the approved floor.
+  when: capacity_exception is defined
+
+- name: Report the active temporary exception without changing the site policy
+  ansible.builtin.debug:
+    msg: 'Owner exception {{ capacity_exception.id }}: {{ capacity_exception.minimum_free_gib }} GiB for {{ capacity_operation }}; default remains {{ windows_minimum_free_gib }} GiB.'
+  when: capacity_exception is defined
+
 - name: Publish read-only helper to Windows local script directory
   ansible.builtin.file:
     path: '{{ windows_script_directory }}'
@@ -39,7 +57,7 @@
       - -DataMaximumGiB
       - '{{ data_vhd_maximum_gib | string }}'
       - -MinimumFreeGiB
-      - '{{ windows_minimum_free_gib | string }}'
+      - '{{ (capacity_exception.minimum_free_gib if capacity_exception is defined else windows_minimum_free_gib) | string }}'
       - -PlannedBytes
       - '{{ capacity_planned_bytes | string }}'
   register: capacity_report

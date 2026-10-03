@@ -1,0 +1,235 @@
+---
+- name: Publish or reconcile one immutable deployment artifact
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    files: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/files.lock.json") | from_json }}'
+    package: '{{ files.files | selectattr("id", "equalto", "flux") | first }}'
+    flux_source_action: status
+    capacity_operation: flux-source
+    repo: '{{ playbook_dir }}/../..'
+    flux: '{{ playbook_dir }}/../.tools/bin/flux'
+    build: '{{ playbook_dir }}/../.build/flux'
+    source_lock_path: '{{ playbook_dir }}/../environments/kind/flux-source.yaml'
+    kube: ['{{ playbook_dir }}/../.tools/bin/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+  environment:
+    HTTP_PROXY: ''
+    HTTPS_PROXY: ''
+    ALL_PROXY: ''
+    http_proxy: ''
+    https_proxy: ''
+    all_proxy: ''
+    NO_PROXY: '{{ registry_hostname }},127.0.0.1,localhost'
+    no_proxy: '{{ registry_hostname }},127.0.0.1,localhost'
+  tasks:
+    - name: Validate source action and target
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - flux_source_action in ['publish', 'apply', 'status']
+          - flux_source_action != 'apply' or flux_enabled | bool
+          - cluster_name == 'sunmoon-kind'
+          - registry_address == 'harbor.sunmoonai.com:30443'
+    - name: Verify the installed source CLI bytes
+      ansible.builtin.stat:
+        path: '{{ flux }}'
+        follow: false
+        checksum_algorithm: sha256
+      register: cli_bytes
+    - name: Require the exact locked source CLI
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - cli_bytes.stat.isreg | default(false)
+          - not cli_bytes.stat.islnk | default(false)
+          - cli_bytes.stat.checksum | default('') == package.archive_members[0].sha256
+    - name: Budget small source packaging and reconciliation
+      ansible.builtin.include_tasks:
+        file: ../host/tasks/capacity.yaml
+        apply: {become: false}
+      vars:
+        capacity_planned_bytes: 67108864
+      when: flux_source_action != 'status'
+    - name: Publish only committed Git declarations
+      when: flux_source_action == 'publish'
+      block:
+        - name: Read committed source revision
+          become: false
+          ansible.builtin.command:
+            argv: [git, -C, '{{ repo }}', rev-parse, HEAD]
+          changed_when: false
+          register: revision
+        - name: Check declaration worktree for uncommitted changes
+          become: false
+          ansible.builtin.command:
+            argv: [git, -C, '{{ repo }}', status, --porcelain, --untracked-files=all, '--', gitops]
+          changed_when: false
+          register: source_changes
+        - name: Require a committed declaration baseline
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - revision.stdout is match('^[a-f0-9]{40}$')
+              - source_changes.stdout == ''
+        - name: Read the source repository location without exposing credentials
+          become: false
+          ansible.builtin.command:
+            argv: [git, -C, '{{ repo }}', remote, get-url, origin]
+          changed_when: false
+          register: source_url
+          no_log: true
+        - name: Reject a credential-bearing source URL
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - source_url.stdout is match('^(https://[a-zA-Z0-9.-]+(:[0-9]+)?/[a-zA-Z0-9_./-]+|git@[a-zA-Z0-9.-]+:[a-zA-Z0-9_./-]+|ssh://git@[a-zA-Z0-9.-]+(:[0-9]+)?/[a-zA-Z0-9_./-]+)$')
+          no_log: true
+        - name: Allocate private packaging directory
+          become: false
+          ansible.builtin.tempfile:
+            state: directory
+            prefix: sunmoon-flux-source-
+          register: staging
+        - name: Build from the Git object and publish with bounded identity
+          block:
+            - name: Export exactly the committed gitops subtree
+              become: false
+              ansible.builtin.command:
+                argv: [git, -C, '{{ repo }}', archive, --format=tar, '--output={{ staging.path }}/source.tar', 'HEAD:gitops']
+              changed_when: true
+            - name: Create private staging subdirectories
+              ansible.builtin.file:
+                path: '{{ staging.path }}/{{ item }}'
+                state: directory
+                mode: '0700'
+              loop: [content, auth]
+            - name: Extract committed declarations
+              ansible.builtin.unarchive:
+                src: '{{ staging.path }}/source.tar'
+                dest: '{{ staging.path }}/content'
+                remote_src: true
+            - name: Build committed KIND declarations locally before publication
+              ansible.builtin.command:
+                argv: ['{{ playbook_dir }}/../.tools/bin/kubectl', kustomize, '{{ staging.path }}/content/clusters/kind']
+              changed_when: false
+            - name: Supply publisher credentials through a private file
+              ansible.builtin.copy:
+                src: '{{ registry_config_dir }}/private/publisher-auth.json'
+                dest: '{{ staging.path }}/auth/config.json'
+                remote_src: true
+                mode: '0600'
+              no_log: true
+            - name: Publish a reproducible artifact named by its Git revision
+              ansible.builtin.command:
+                argv: ['{{ flux }}', push, artifact, 'oci://{{ registry_address }}/platform/deployments-kind:git-{{ revision.stdout }}', '--path={{ staging.path }}/content', '--source={{ source_url.stdout }}', '--revision=platform-kind-v1@sha1:{{ revision.stdout }}', --reproducible, --output=json, --timeout=120s]
+              environment:
+                DOCKER_CONFIG: '{{ staging.path }}/auth'
+                SSL_CERT_FILE: '{{ registry_config_dir }}/clients/ca.crt'
+              register: published
+              changed_when: true
+              no_log: true
+            - name: Require a digest-addressed release
+              ansible.builtin.assert:
+                quiet: true
+                that: (published.stdout | from_json).digest is match('^sha256:[a-f0-9]{64}$')
+            - name: Create local candidate directory
+              ansible.builtin.file:
+                path: '{{ build }}'
+                state: directory
+                mode: '0755'
+                owner: '{{ cluster_operator }}'
+            - name: Save a credential-free candidate for explicit promotion into Git
+              ansible.builtin.copy:
+                dest: '{{ build }}/source-candidate.yaml'
+                owner: '{{ cluster_operator }}'
+                mode: '0644'
+                content: '{{ {"repository":"oci://" + registry_address + "/platform/deployments-kind", "digest":(published.stdout | from_json).digest, "revision":revision.stdout, "path":"./clusters/kind"} | to_nice_yaml }}'
+            - name: Report the published candidate without silently moving the live source
+              ansible.builtin.debug:
+                msg: 'Published {{ (published.stdout | from_json).digest }} from {{ revision.stdout }}. Review .build/flux/source-candidate.yaml and promote to environments/kind/flux-source.yaml before flux-source-apply.'
+          always:
+            - name: Remove only this invocation packaging and temporary credentials
+              ansible.builtin.file:
+                path: '{{ staging.path }}'
+                state: absent
+    - name: Reconcile an explicitly promoted source
+      when: flux_source_action in ['apply', 'status']
+      block:
+        - name: Load independent cluster ownership
+          ansible.builtin.slurp:
+            src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'
+          register: identity
+        - name: Require the owned live cluster UID
+          ansible.builtin.command:
+            argv: '{{ kube + ["get", "namespace", "kube-system", "-o", "jsonpath={.metadata.uid}"] }}'
+          changed_when: false
+          register: uid
+          failed_when: uid.rc != 0 or uid.stdout != (identity.content | b64decode | from_json).kube_system_uid
+        - name: Read the promoted immutable source declaration
+          ansible.builtin.set_fact:
+            source_lock: '{{ lookup("ansible.builtin.file", source_lock_path) | from_yaml }}'
+        - name: Validate the promoted source boundary
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - source_lock.repository == 'oci://' + registry_address + '/platform/deployments-kind'
+              - source_lock.digest is match('^sha256:[a-f0-9]{64}$')
+              - source_lock.revision is match('^[a-f0-9]{40}$')
+              - source_lock.path == './clusters/kind'
+        - name: Configure the source trust and root declaration
+          when: flux_source_action == 'apply'
+          block:
+            - name: Read the private registry CA (public certificate only)
+              ansible.builtin.slurp:
+                src: '{{ registry_config_dir }}/clients/ca.crt'
+              register: ca
+            - name: Apply the source TLS trust Secret
+              ansible.builtin.include_tasks: tasks/apply.yaml
+              vars:
+                flux_manifest_sensitive: true
+                flux_manifest: '{{ {"apiVersion":"v1", "kind":"Secret", "metadata":{"name":"harbor-ca", "namespace":"flux-system"}, "type":"Opaque", "data":{"ca.crt":ca.content}} | to_json }}'
+            - name: Apply the fixed digest source and root reconciliation
+              ansible.builtin.include_tasks: tasks/apply.yaml
+              vars:
+                flux_manifest: '{{ lookup("ansible.builtin.template", "source.yaml.j2") }}'
+        - name: Wait for the exact source artifact to be Ready
+          ansible.builtin.command:
+            argv: ['{{ flux }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', reconcile, source, oci, platform, --timeout=120s]
+          changed_when: true
+          when: flux_source_action == 'apply' and declaration_diff.rc == 1
+        - name: Wait for root reconciliation
+          ansible.builtin.command:
+            argv: ['{{ flux }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', reconcile, kustomization, platform, --timeout=180s]
+          changed_when: true
+          when: flux_source_action == 'apply' and declaration_diff.rc == 1
+        - name: Inspect observed artifact and reconciliation generations
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", "flux-system", "get", item, "platform", "-o", "json"] }}'
+          loop: [ocirepository, kustomization]
+          register: observed
+          changed_when: false
+        - name: Require current generation Ready with the exact promoted digest
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - state.status.observedGeneration == state.metadata.generation
+              - state.status.conditions | selectattr('type', 'equalto', 'Ready') | selectattr('status', 'equalto', 'True') | list | length == 1
+          vars:
+            state: '{{ item.stdout | from_json }}'
+          loop: '{{ observed.results }}'
+          loop_control: {label: '{{ item.item }}'}
+        - name: Require digest selection and reconciliation revision to agree
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - (observed.results[0].stdout | from_json).spec.ref.digest == source_lock.digest
+              - source_lock.digest in (observed.results[0].stdout | from_json).status.artifact.revision
+              - source_lock.digest in (observed.results[1].stdout | from_json).status.lastAppliedRevision
+        - name: Verify the actual declared platform release marker
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", "platform-system", "get", "configmap", "platform-release-info", "-o", "jsonpath={.data.delivery}"] }}'
+          register: marker
+          changed_when: false
+          failed_when: marker.rc != 0 or marker.stdout != 'flux-oci'

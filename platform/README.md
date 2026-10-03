@@ -168,3 +168,7 @@ Harbor 安装包解包约 735 MB，内部未压缩镜像内容约 2.03 GB；本�
 ## 扫描与恢复
 
 离线数据库、Harbor 真实扫描、既有冷备份的隔离恢复入口与验收范围见 [扫描与恢复](../docs/platform-kind-v1/scanning-recovery.md)。恢复使用独立目录、Compose 项目和回环端口，结束后停止；不修改正式入口。
+
+## Flux 与声明发布
+
+原生入口、固定OCI摘要源、清理保护与验收边界见 [Flux 操作](../docs/platform-kind-v1/flux.md)。整套一键部署及开机恢复仍按 CHECKPOINT 后续顺序实现。

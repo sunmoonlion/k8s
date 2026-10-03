@@ -53,7 +53,14 @@
       "size_bytes": 24734577,
       "sha256": "b853df82adfd7736f580692f9f734473d571606307139f8fd20c2a80dd1ff473",
       "url": "https://github.com/fluxcd/flux2/releases/download/v2.9.5/flux_2.9.5_linux_amd64.tar.gz",
-      "identity_source": "https://api.github.com/repos/fluxcd/flux2/releases/379920857"
+      "identity_source": "https://api.github.com/repos/fluxcd/flux2/releases/379920857",
+      "archive_members": [
+        {
+          "path": "flux",
+          "size_bytes": 77226146,
+          "sha256": "392a85dd1126875c1ab677e18b6edb73f292c9e9ebcbb2e5402eb98bcfd81974"
+        }
+      ]
     },
     {
       "id": "harbor-installer",

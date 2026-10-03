@@ -1,6 +1,6 @@
 # KIND 第一期部署架构草案
 
-本方案面向所有者和后续维护者：从零建立可重复部署、可维护、可恢复的 Kubernetes 部署体系，第一期在 WSL 和 KIND 上完成现有项目验收。架构按所有者后续“好，继续”进入第一实现单元：镜像输入与只读预检。实际进度见仓库 CHECKPOINT.md；新 Harbor 和正式入口已通过验收，sunmoon-kind 三节点建群及私有拉取已通过；Flux、平台和应用部署尚未完成。
+本方案面向所有者和后续维护者：从零建立可重复部署、可维护、可恢复的 Kubernetes 部署体系，第一期在 WSL 和 KIND 上完成现有项目验收。架构按所有者后续“好，继续”进入第一实现单元：镜像输入与只读预检。实际进度见仓库 CHECKPOINT.md；新 Harbor 和正式入口已通过验收，sunmoon-kind 三节点建群及私有拉取已通过；Flux 引导、OCI 制品协调和漂移修复已通过；平台和应用部署尚未完成。
 
 唯一设计目标是生产级工程规范和长期维护能力。KIND 用于本地开发与集成验证，单机环境不提供硬件故障隔离或生产高可用保证。云上建群和运行验收另立阶段。[KIND 官方定位](https://kind.sigs.k8s.io/)
 
@@ -55,7 +55,7 @@ Git 保存经过审查的源码与声明。推荐将一次发布对应的部署�
 
 物料锁必须覆盖工具、系统安装包、节点镜像、CNI、Flux、Helm chart、平台及应用镜像、必要的构建依赖。安装物料与镜像归档按类型分目录，日志与备份独立存放。Harbor 的启动镜像及恢复材料在 Harbor 外另存，避免仓库自举循环。构建依赖另核 npm/Python 等缓存，不能把已有镜像等同于能重新构建。
 
-Flux 提供离线安装和 OCI 源能力；这里的发布方式是本项目推荐设计，尚未实现。[离线安装](https://fluxcd.io/flux/installation/configuration/air-gapped/)、[OCI 源](https://fluxcd.io/flux/components/source/ocirepositories/)
+Flux 提供离线安装和 OCI 源能力；这里的 OCI 发布与根协调已实现并实际验证，操作见 [Flux 引导](flux.md)。[离线安装](https://fluxcd.io/flux/installation/configuration/air-gapped/)、[OCI 源](https://fluxcd.io/flux/components/source/ocirepositories/)
 
 ## 配置和代码布局
 
@@ -161,6 +161,6 @@ WSL 挂载成功前禁止启动 Harbor。已通过后端健康与认证；容器
 
 ## 尚需补齐的设计输入
 
-当前已实现物料、宿主准入、节点构建、独立 Harbor 与正式入口、扫描/恢复演练，以及 sunmoon-kind 三节点创建和私有拉取。详见 CHECKPOINT.md 与[集群操作](cluster.md)。后续依次完成 Flux、平台/应用、统一生命周期、重启与重建持久化验收、长期运维和清理；完整发布闭包仍需补齐。
+当前已实现物料、宿主准入、节点构建、独立 Harbor 与正式入口、扫描/恢复演练，以及 sunmoon-kind 三节点创建和私有拉取。详见 CHECKPOINT.md 与[集群操作](cluster.md)。Flux 引导与 OCI 协调也已通过，后续依次完成 SOPS、平台/应用、统一生命周期、重启与重建持久化验收、长期运维和清理；完整发布闭包仍需补齐。
 
 第一期资源预算、具体恢复时间和可接受数据损失目标还需根据实际容量及演练确定；不在草案中虚构可用性承诺。业务能力与选装组件不能因资源不足被静默删除。

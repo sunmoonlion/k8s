@@ -50,3 +50,6 @@ cluster_data_root: /data/kind-clusters
 cluster_kubeconfig: /home/zymun/.kube/sunmoon-kind.config
 cluster_operator: zymun
 cluster_create_budget_bytes: 5368709120
+
+# Flux owns in-cluster declarations after native bootstrap.
+flux_enabled: true

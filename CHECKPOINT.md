@@ -1,5 +1,35 @@
 # 新部署体系交接
 
+## 当前状态：Flux 引导与实际协调完成（2026-10-03）
+
+本节优先于下方历史现场。目标为 `sunmoon-kind`，kubeconfig `~/.kube/sunmoon-kind.config`，工具 `platform/.tools/bin/{kubectl,flux}`。原生操作见 [Flux 操作](docs/platform-kind-v1/flux.md)。源码基线为 `37eaf574b26d9fc5d21ffc97332260e42e2cf887`；首批声明提交 `3ace2fdec6b9b04d69f2672f7ba225c4ad95497c`，实现提交见 Git 日志，无 push。
+
+- 新集群三节点 Ready/v1.36.5；新 Harbor 十服务 healthy、入口 active。原 `kind-control-plane` 已按本次批准停回，原两个 worker 保持运行，继续承载过渡应用入口。当前 Docker 节点仅原 `kind` 与新 `sunmoon-kind`；下文 main/136 的保留记录属于历史状态。
+- 三个宿主镜像副本（prepare、exporter、skopeo）缺失，已由完好的正式离线物料补回；没有证据指认具体清理命令。OCI 匿名导入的工具执行改按锁定 manifest digest 查找，避免依赖不存在的仓库别名。
+- 30443 入口恢复及真实认证推拉通过；Harbor SNI 指向 11443，其他域名仍指向旧 worker。应用证书摘要与恢复前一致，只证明 TLS 入口身份，不代表业务验收。
+- Flux CLI 2.9.5、四个配套控制器 Ready。控制器归档已验证并发布 Harbor，OCIRepository 与根 Kustomization 当前 generation Ready。根源 `oci://harbor.sunmoonai.com:30443/platform/deployments-kind` 固定摘要 `sha256:0d905e584d24f4692502d00a59363fa4e3141bd56ba2897929ccaaf05e7eb640`；实际创建平台命名空间与发布标记。
+- 最终 `make flux-bootstrap` 五段均 failed=0、changed=0（ok22/29/50/41/25）；声明受控偏离后实际恢复；三节点私有拉取/DNS验收 ok36 changed6 failed0，临时验收资源已移除。过期容量例外和错误集群目标均在写入前拒绝。没有新增测试套件。
+- 首次控制器安装失败原因：节点重启后 `/etc/hosts` 中 Harbor 映射丢失；已通过原生 cluster-deploy 恢复，Flux 前置检查现会识别该条件。**自动重启后的持久修复仍待生命周期单元，不以本次就绪替代重启验收。**
+- 运行证据：`/data/kind-clusters/sunmoon-kind/bootstrap/evidence/flux-20261003/`，包含入口、首次失败、修复、重复部署、漂移和负向检查，文件清单带 SHA256。秘密不入 Git。
+- 02:08 UTC 容量：Windows C 空闲116,758,441,984字节；数据盘未来增长66,970,451,968字节；计增长后余49,787,990,016字节（46.37GiB），**未达到常规50GiB**。本单元结束删除 Harbor/Flux 临时40GiB参数；站点默认50GiB一直未改。下一单元不得继承此前例外。
+- 东京两个历史下载目录尚未删除：后续 SSH 超时；保留旧 cloud 参考目录。总体清理、原 private 逐项核对尚不能宣称全部完成。
+
+下一步严格依序：SOPS/平台基础声明 → 数据、身份及应用 → 全平台一键与生命周期/开机编排 → WSL/KIND重启与KIND重建持久化验收 → 长期空间管理及最终清理。SOPS、本期平台应用、开机自动恢复、重建持久化和云端实机当前均未完成。
+
+规则核对：C-T5/T6 保持五仓并列，本单元只改k8s并本地提交；C-R1/R2 以提交及OCI摘要发布，镜像固定digest；C-D9/C-I类秘密只经私有文件或Secret引导，本单元不发布业务秘密。
+
+## 2026-10-03 恢复前盘点（历史记录）
+
+所有者要求本单元先复核清理，再继续 Flux。已只读核对：`/data/kind-clusters/.rebuilds` 不存在；新物料锁中的 24 个文件（files/bootstrap/host）大小与 SHA256 全部匹配，官方 Harbor 解包文件 6 项摘要通过，KIND/kubectl/kubeadm/Compose 已安装工具摘要通过，三个 sunmoon-kind 节点 ID 与建群回执相同，两类持久目录挂载保留。SOPS 安装包存在且摘要通过，尚未安装到 .tools/bin；Flux 尚未部署。没有发现上述物料被清理误删。
+
+东京只读复核：六个已知目录中四个不存在，`/home/zym/trivy-db-20260927-v1`（约1.1 GiB）和 `/home/zym/.cache/sunmoon-artifacts/kubeadm-1.36.4-linux-amd64`（约909 MiB）仍存在；新 platform 与设计文档没有运行时引用这些目录。本地 `legacy/cloud` 按所有者要求保留参考。此前清理总额仅为历史估计，不能当成此次 df 实测增量。
+
+本次 WSL 启动后出现未完成的启动编排问题：旧 kind-control-plane 正在运行并占用宿主30443；新控制面因 systemd/cgroup scope 创建错误退出128，两个新 worker 运行；新 Harbor/入口 systemd 单元 inactive，此前明确未启用 boot。容器与数据仍在。此记录不把启动失败归咎于清理，也不把历史 Running 当作当前健康。
+
+**所有者确认的最终交付要求**：旧集群默认停用、按需人工启动；确认数据盘 UUID/绑定与 Docker 可见后启动新 Harbor、新集群和入口，规定失败重试及报错；实际做 Windows/WSL 重启验收，验证原集群不抢端口、新集群自动就绪、Harbor 数据/镜像摘要完整和节点真实拉取。另做 KIND 删除重建持久化验收。当前只记录要求，开机编排尚未实现/验收，不能宣称已完成。
+
+部署主线继续保持 Flux → 平台/应用 → 统一生命周期和开机顺序 → 重启/重建验收 → 长期空间管理。服务恢复与 Flux 实施结果须据实际更新。
+
 ## 目标、工作区与授权
 
 从零建立长期维护的部署代码，第一期KIND，原生Make/Ansible、官方Harbor Compose、KIND、Flux/SOPS；不调用旧sunmoonai/utils/luna部署链。五仓在 `/home/zymun/worktrees/platform-kind-v1`，各自分支platform-kind-v1，从本地master建，基线见[输入盘点](docs/platform-kind-v1/inventory.md)。原luna仅参考。

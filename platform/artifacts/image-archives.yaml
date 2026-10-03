@@ -5,6 +5,7 @@
   become: false
   vars:
     image_action: plan
+    capacity_operation: '{{ "host-materials" if image_group == "host" else "bootstrap-materials" }}'
     image_group: bootstrap
     upstream: '{{ lookup("ansible.builtin.file", playbook_dir + "/upstream-images.lock.json") | from_json }}'
     node_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/node-image.lock.json") | from_json }}'
@@ -66,7 +67,7 @@
 
     - name: Inspect local host tool images after archive verification
       ansible.builtin.command:
-        argv: [docker, image, inspect, '{{ item.reference }}']
+        argv: [docker, image, inspect, '{{ item.manifest_digest }}']
       loop: '{{ selected }}'
       loop_control: {label: '{{ item.id }}'}
       register: host_local_images
@@ -90,7 +91,7 @@
 
     - name: Confirm host tools are present by the pinned manifest
       ansible.builtin.command:
-        argv: [docker, image, inspect, '{{ item.reference }}']
+        argv: [docker, image, inspect, '{{ item.manifest_digest }}']
       loop: '{{ selected }}'
       loop_control: {label: '{{ item.id }}'}
       register: verified_host_images
