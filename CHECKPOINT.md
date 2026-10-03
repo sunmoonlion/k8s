@@ -18,9 +18,9 @@
 
 证据infrastructure/.build/applications/runtime-unit-20261003/：info-source/deployment-plan、info-*-build/publish、shared-tpl-render、info-stage/release/bootstrap/bootstrap-repeat、info-pod-preservation.json、tpl-after-info-public-check、info-entry-preview/preflight/stop/deploy/repeat、info-public-check、tpl-after-info-cutover-public-check、info-cutover-registry-check。原生脚本stderr/凭据均no_log或私有，未提交日志或明文Secret。
 
-信息应用运行通过不代表爬取/原文S3/搜索/knowledge分发通过。配置STORAGE_BACKEND=s3（尚无原文S3身份，避免容器本地回退）、SEARCH_BACKEND=disabled；业务依赖仍待接入。已查官方AIStor文档：无有效许可会阻止S3操作，免费单节点许可也需领取；已向所有者询问已有许可文件路径（不可贴内容），未申请/购买或改选型。
+信息应用运行通过不代表爬取/原文S3/搜索/knowledge分发通过。配置STORAGE_BACKEND=s3（尚无原文S3身份，避免容器本地回退）、SEARCH_BACKEND=disabled；业务依赖仍待接入。已查官方AIStor文档：无有效许可会阻止S3操作，免费单节点许可也需领取；所有者确认旧架构已配置许可，已沿deploy-object-storage.conf引用找到/home/zymun/.config/sunmoonai/licenses/minio.license；普通文件、0600、JWT结构通过。未输出/提交许可，尚未验证签名和新AIStor接受/S3操作；无标准exp字段不能推断永久有效。未申请/购买或改选型。
 
-知识后端源码计划通过，已构建，发布进行中；继续核对knowledge-backend-publish.log，后续两前端/独立身份/运行声明。knowledge/investment、其余平台依赖与真实业务、整套一键/统一启停/开机恢复、Harbor跨WSL/KIND重启和删除重建验收、长期空间管理与最终清理仍未完成。
+知识后端源码计划通过，构建ok46 failed0、发布ok29 failed0并清除上传临时包；摘要sha256:f6d19ac985cb73deb43b01e6b753cbe73f1c2d366775832437d0c22272deb2b5，源码4d9804c3d5f4084b83bdb00ba49cbf0f8b5cbb55。后续两前端/独立身份/运行声明尚未实施。knowledge/investment、其余平台依赖与真实业务、整套一键/统一启停/开机恢复、Harbor跨WSL/KIND重启和删除重建验收、长期空间管理与最终清理仍未完成。
 
 ---
 
