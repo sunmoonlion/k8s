@@ -1,3 +1,27 @@
+# 当前优先状态：模板正式域名切换与公开验收完成（2026-10-03）
+
+本节优先于历史。工作树/分支platform-kind-v1，仅k8s，无push。
+路由实现ef47416b，原生浏览器检查/安全日志0c00ae2bd8b3c93a0178e8d5134090b6f27c33c8，
+源晋级9eee17f1。当前Flux源sha256:c8e56260b1438ef761029f46d160a17598d3e8d75f84b2a3ef52524de71581ec，
+原source revision0c00ae2b；13个阶段均Ready、同摘要。
+
+- 所有者明确批准三域名切换。正式30443：Harbor→11443；Casdoor/tpl/tpl-admin精确SNI→新29443；其它域名→原172.18.0.5:30443。13:21:46Z完成切换，13:25:59Z通过验收关闭窗口。窗口上限2小时，容量底线10GiB。
+- entry-preview复用同一模板和锁定HAProxy镜像，隔离无网络容器实际语法校验通过。入口启动依旧entry-stop/deploy，无新CLI。新entry_cluster_routes引用组件域名和集群端口，校验不重名、不覆盖Harbor、不回指监听。
+- 正式 application-check-public ok37 changed0 failed0；与内部后端检查复用同一代码。真实PKCE回调/SSR、secure+HttpOnly+SameSite session cookie、跨surface拒绝、CSRF、退出及退出401通过。没有业务scope时管理诊断403通过。API禁用原始access log，防止OAuth code/state查询值落日志，原应用审计/错误日志仍在。
+- 正式Harbor认证推拉ok28 changed3 failed0；完整8blob、6层及manifest/config摘要核对、只读push拒绝通过。入口重复deploy零变更。info旧域名仍呈现原证书a0c60b64911e69797bc8832be22e0a9eae96f9488a80ff6d59158b199842834d，保留默认路由身份，不等同旧业务链验收。
+- 实际模板代码无delivery业务handler，production交互provider未配置；authenticated调用返回明确provider_unavailable503，未开启reference fixture。Casdoor登录不自动授予tpl:admin。不能将基础运行/身份通过扩大为现有全部业务已实现。
+- 回退备份在 /mnt/sunmoon-data/backups/entry/sunmoon-kind/cutover-20261003T131214Z，三文件逐字节+摘要核对；window/stop/deploy/result保存在私有目录。最初尝试旧 /data/harbor/maintenance 因目录不存在未写入，随后挂载UUID只读复核通过后采用新备份目录。未改数据盘/计划任务，未清理数据/旧节点。
+
+证据infrastructure/.build/applications/runtime-unit-20261003/：entry-preview/preflight、
+browser-stage/release/apply/reconcile/check、public-check、public-registry-check、entry-repeat。
+临时下载由registry检查自行删除；没有一次性执行脚本留在/tmp。
+
+下一步按顺序：info/knowledge/investment按已统一在线构建链构建、发布、各自独立身份和部署；
+随后整套一键/统一启停/开机恢复、Harbor跨WSL/KIND重启和删除重建验收、长期空间管理和清理。
+模板业务空扩展点不伪造实现；实例业务验收按各仓已存在的实际代码定范围。
+
+---
+
 # 当前优先状态：模板五个运行角色与真实登录/消息验收通过（2026-10-03）
 
 本节优先于历史。工作树/分支 platform-kind-v1，本单元只改 k8s，无 push。

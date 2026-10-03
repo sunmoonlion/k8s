@@ -271,7 +271,7 @@ application-publish-backend application-publish-web application-publish-admin:
 application-rehearse-downloads:
 	.venv/bin/python applications/tests/rehearse-downloads.py $(CONFIG_ARGS)
 
-.PHONY: application-deployment-plan application-render application-stage application-validate-release application-check application-bootstrap
+.PHONY: application-deployment-plan application-render application-stage application-validate-release application-check application-check-public application-bootstrap
 application-deployment-plan:
 	$(ANSIBLE) -i host/inventory.yaml applications/deploy.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=plan'
 application-render:

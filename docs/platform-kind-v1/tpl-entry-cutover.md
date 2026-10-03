@@ -1,6 +1,6 @@
 # 模板域名接入新集群
 
-状态：候选已准备，尚未切换。维护按所有者当前开发阶段的2小时约定，容量底线10GiB。
+状态：2026-10-03已切换并通过正式30443验收。维护按所有者当前开发阶段的2小时约定，容量底线10GiB。
 
 当前运行30443：Harbor→127.0.0.1:11443，其它域名→旧kind-worker 172.18.0.5:30443。
 候选只新增三个精确SNI：Casdoor、tpl Web和Admin→127.0.0.1:29443。
@@ -50,3 +50,24 @@ Harbor健康和私有镜像摘要认证拉取仍须通过。其它域名原证�
 模板生产设置拒绝启用reference交互；实际业务交互provider和业务delivery handlers
 当前没有实现。应用管理scope也未配置，登录成功不自动授予业务管理权限。
 这些事实必须记入交付，不能通过放宽权限或启用测试fixture宣称业务已完成。
+
+## 本次实际结果
+
+所有者于本轮明确批准。备份目录
+`/mnt/sunmoon-data/backups/entry/sunmoon-kind/cutover-20261003T131214Z`，
+三份运行文件逐字节及SHA256核对通过，window/result记录只保存在该私有目录。
+13:21:46Z代理已切换；13:25:59Z公开入口、仓库和默认路由验收后关闭维护。
+
+正式 application-check-public 为ok37 changed0 failed0：两个surface完成实际
+PKCE回调、SSR、cookie安全标志、跨端拒绝、CSRF、退出及无业务scope的管理诊断403。
+原生registry-publish-check为ok28 changed3 failed0，真实认证拉取完整8blob、
+6层/manifest/config核对、只读推送拒绝通过。入口重复部署changed0 failed0。
+其它域名info的证书摘要仍为
+`a0c60b64911e69797bc8832be22e0a9eae96f9488a80ff6d59158b199842834d`；
+此项只证实默认路由身份保留，不宣称旧业务登录通过。
+
+代码来源ef47416b（路由与预览）、0c00ae2b（原生浏览器检查与安全日志），
+Flux固定源sha256:c8e56260b1438ef761029f46d160a17598d3e8d75f84b2a3ef52524de71581ec。
+证据见infrastructure/.build/applications/runtime-unit-20261003的entry-preview、
+browser-check、public-check、public-registry-check、entry-repeat日志。
+业务provider/handler及管理员授权仍按本卡边界，不因入口成功而补造。
