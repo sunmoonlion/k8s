@@ -94,7 +94,7 @@ uv pip compile --python-version 3.12 --generate-hashes --no-header \
 
 56 个选定上游及建群配套镜像的 linux/amd64 manifest 已全部取得。通过东京及本机原生 `docker manifest inspect --verbose` 读取公开元数据，对 Base64 Raw 解码后复算 SHA256，与 Descriptor 对比。Calico 三项使用官方清单指定的 quay.io；Casdoor 已确认使用不带 v 的 4.12.0。查询临时程序不作为部署依赖。
 
-`check-images` 通过仅证明这一批镜像身份完整；文件校验通过仅证明选中文件可用。KIND/Calico 引导归档已经完成；集群验收、完整宿主工具/构建依赖、chart/辅助镜像、自有应用镜像和完整离线发布尚需完成，因此两份锁均保持 `offline_ready=false`。
+`check-images` 通过仅证明这一批镜像身份完整；文件校验通过仅证明选中文件可用。KIND/Calico 引导归档已经完成；集群验收、完整宿主工具/构建依赖、chart/辅助镜像等物料闭包仍有未完成项，因此两份锁均保持 `offline_ready=false`。自有应用采用国内在线源构建、发布Harbor并按摘要部署，不以完整离线发布为目标；依赖下载网络失败后本次自动切官方源，代理探测通过才重试一次；代理不可用或重试失败非零退出，不等待交互。
 
 宿主挂载预检、Harbor 数据目录的 Docker 可见性、新 Harbor 部署及后端 TLS/认证已实际通过。正式入口 skopeo 推送/完整拉回/摘要和权限拒绝已实际通过；宿主Docker已升29.8.1，候选/正式认证pull通过，正式30443已切新Harbor。WSL/KIND 重启与重建恢复仍待验收；未执行业务测试。
 

@@ -1,7 +1,10 @@
 ---
-# 已核对当前父仓与本地fable一致；不读luna部署代码。
+# 父仓基线不变；前端固定覆盖为本地子仓提交，须是父仓gitlink的后代。
+# 所有者要求不push，因此暂不提交指向未推送子提交的父仓gitlink。
 template_parent_revision: 3317c84d984fdd6dbeb4ab490685f9fcdff569a3
 backend_revision: 6674125cd1c14d9700c707b0b0f4b5d422d42f05
 backend_context: app
-web_revision: 45ceed1a147cadb6dfd1b8a72b79ff5a266854bd
-admin_revision: ee1f542220386e15c8f97c6e40e317caf3c2e9e7
+web_parent_revision: 45ceed1a147cadb6dfd1b8a72b79ff5a266854bd
+web_revision: 0be8020ca14dc28123c8e212cf7f8f660ed16e99
+admin_parent_revision: ee1f542220386e15c8f97c6e40e317caf3c2e9e7
+admin_revision: 9cce66c90d0b720867a318a45b4ca0c19adc1b16

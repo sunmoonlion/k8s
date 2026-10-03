@@ -3,6 +3,26 @@
   ansible.builtin.set_fact:
     archive_path: '{{ image_directory }}/{{ artifact_image.id }}-{{ artifact_image.manifest_digest[7:] }}.tar'
     target: '{{ registry_address }}/platform/{{ artifact_image.id }}'
+- name: Check remote identity before requiring a local upload transport
+  when: material_action == 'publish'
+  block:
+    - name: Read existing destination tag using publisher identity
+      ansible.builtin.command:
+        argv: '{{ local_client + [skopeo.manifest_digest, "inspect", "--raw", "--authfile", "/publisher.json", "--cert-dir", "/certs", "docker://" + target + ":" + artifact_image.source.rsplit(":", 1)[1]] }}'
+      register: remote_tag
+      changed_when: false
+      failed_when: false
+    - name: Refuse authentication failures or a tag pointing at different content
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - >-
+            remote_tag.rc == 0 or 'manifest unknown' in remote_tag.stderr | lower or
+            'name unknown' in remote_tag.stderr | lower or
+            ('unknown: repository platform/' + artifact_image.id + ' not found') in remote_tag.stderr | lower or
+            ('unknown: artifact platform/' + artifact_image.id + ':' + artifact_image.source.rsplit(':', 1)[1] + ' not found') in remote_tag.stderr | lower
+          - remote_tag.rc != 0 or 'sha256:' + (remote_tag.stdout | hash('sha256')) == artifact_image.manifest_digest
+        fail_msg: '{{ remote_tag.stderr }}'
 - name: Inspect cached archive without following links
   ansible.builtin.stat:
     path: '{{ archive_path }}'
@@ -15,7 +35,7 @@
     that:
       - not cached.stat.exists or cached.stat.isreg | default(false)
       - not cached.stat.islnk | default(false)
-      - material_action == 'prepare' or cached.stat.exists
+      - material_action == 'prepare' or cached.stat.exists or (material_action == 'publish' and remote_tag.rc == 0)
 - name: Download only missing archives without Docker unpacking
   when: material_action == 'prepare' and not cached.stat.exists
   block:
@@ -69,12 +89,14 @@
     argv: [python3, '{{ verifier }}', '{{ archive_path }}', --expected-manifest, '{{ artifact_image.manifest_digest }}']
   register: verified
   changed_when: false
+  when: material_action != 'publish' or remote_tag.rc != 0
 - name: Hash the archive envelope for inventory
   ansible.builtin.stat:
     path: '{{ archive_path }}'
     follow: false
     checksum_algorithm: sha256
   register: envelope
+  when: material_action == 'prepare'
 - name: Record the archive identity separately from its OCI manifest
   ansible.builtin.copy:
     dest: '{{ archive_path }}.json'
@@ -84,23 +106,6 @@
 - name: Publish through the trusted formal Harbor endpoint
   when: material_action == 'publish'
   block:
-    - name: Read existing destination tag using publisher identity
-      ansible.builtin.command:
-        argv: '{{ local_client + [skopeo.manifest_digest, "inspect", "--raw", "--authfile", "/publisher.json", "--cert-dir", "/certs", "docker://" + target + ":" + artifact_image.source.rsplit(":", 1)[1]] }}'
-      register: remote_tag
-      changed_when: false
-      failed_when: false
-    - name: Refuse authentication failures or a tag pointing at different content
-      ansible.builtin.assert:
-        quiet: true
-        that:
-          - >-
-            remote_tag.rc == 0 or 'manifest unknown' in remote_tag.stderr | lower or
-            'name unknown' in remote_tag.stderr | lower or
-            ('unknown: repository platform/' + artifact_image.id + ' not found') in remote_tag.stderr | lower or
-            ('unknown: artifact platform/' + artifact_image.id + ':' + artifact_image.source.rsplit(':', 1)[1] + ' not found') in remote_tag.stderr | lower
-          - remote_tag.rc != 0 or 'sha256:' + (remote_tag.stdout | hash('sha256')) == artifact_image.manifest_digest
-        fail_msg: '{{ remote_tag.stderr }}'
     - name: Budget only a missing registry copy
       ansible.builtin.include_tasks:
         file: ../../host/tasks/capacity.yaml
@@ -119,3 +124,7 @@
       register: remote_manifest
       changed_when: false
       failed_when: remote_manifest.rc != 0 or 'sha256:' + (remote_manifest.stdout | hash('sha256')) != artifact_image.manifest_digest
+- name: Remove only a confirmed application upload transport
+  ansible.builtin.file: {path: '{{ item }}', state: absent}
+  loop: ['{{ archive_path }}', '{{ archive_path }}.json']
+  when: material_action == 'publish' and (publication_remove_transport | default(false) | bool)

@@ -11,3 +11,5 @@
 `publish.yaml` 是已锁镜像的公共离线准备/发布入口，由Make明确传入模块选择、动作和容量操作标识。平台选择来自services/config.yaml，应用构建基础选择来自applications/config.yaml，共用tasks/publish-image.yaml，无第二套传输逻辑。
 
 应用构建产物通过同一个publish.yaml读取显式publication_lockfile；客户端skopeo版本始终从上游工具锁读取，不由应用产物替换。上游默认锁不变。
+
+应用构建镜像使用在线发布：`publication_image_directory`指向构建模块的临时transfer目录，`publication_remove_transport=true`仅允许清除此目录中已经确认发布成功的指定归档及旁边JSON。远端已有相同摘要时无需本地归档，仍以独立puller复核。上游引导物料默认不清理，不受应用传输策略影响。

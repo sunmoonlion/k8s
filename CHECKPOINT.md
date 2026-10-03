@@ -1,3 +1,35 @@
+# 当前优先状态：模板三组件镜像齐备，下载失败采用非交互回退（2026-10-03）
+
+本节优先于下方历史。工作树/分支platform-kind-v1；本单元k8s基线41c8c16985254ddd70ae7ba89bc25d8178f30dd2。所有者最终确认：默认国内在线；依赖下载网络失败后，本次自动切官方源并探测HTTPS_PROXY，可用才重试一次，不可用或重试失败非零退出。无人交互、不改Windows网络、不改日常默认、Harbor直连。此前“失败只提示、禁止自动切源”的决定已被本条替代。
+
+## 已完成与实际结果
+
+- build.yaml扩展backend/web/admin并复用原应用Dockerfile；build-attempt.yaml是同一原生Ansible流程的单次尝试，最多调用两次，没有新增CLI/兼容入口。config.yaml、download-modes.json及Python临时锁地址选择与实现同处；模式配套切npm/Python和代理，保留依赖版本与哈希。
+- 原生发布先核远端摘要；同摘要远端已存在时无需本地归档。应用归档仅在.build/applications/transfer暂存，发布并由独立puller核对后清理；基础引导物料不受影响。
+- Web已在前一次官方源/代理构建成功，manifest sha256:7747a9fa70b49c2b1c6936c5a9e1e45afda48acd4b4e6bd6a241ef76e96f7293，Node24.21.0、nextjs。上传归档106,503,168字节已删除；不能拿它证明国内下载通过。
+- Admin国内首次Corepack请求https://registry.npmmirror.com/pnpm/10.24.0失败。现场DNS返回198.18.0.72，直连连接超时；代理配置含fake-ip。所有者关闭代理后，同地址与清华Python源直连HTTP200、TLS校验通过、解析为真实IP。Admin随后完整构建ok43 changed15 failed0，固定pnpm安装与生产构建完成，Node24.21.0、nextjs。
+- Admin manifest sha256:830a9e382927264850656694430b289404cfd2708ba402e3279785176e0961ec；上传归档106,353,152字节。首次发布ok35 changed2 failed0；默认50GiB再次发布核对ok20 changed0 failed0，没有重新构建、没有本地tar依赖。pnpm报告忽略@parcel/watcher、@swc/core、msw安装脚本，未放宽执行权限；构建通过不代表这些包的业务功能已验。
+- 后端既有manifest sha256:5b38d39836dc6fe5e6d9d17eaa537d4ba52dd5db342dd95be0397e4c4e928ef0保留，本轮重复发布也确认不依赖上传目录中的tar；此前正式物料根中的后端归档暂未删除。
+
+## 源码与交付边界
+
+- tpl-app父基线3317c84d984fdd6dbeb4ab490685f9fcdff569a3不变；Web子仓提交0be8020ca14dc28123c8e212cf7f8f660ed16e99，Admin子仓提交9cce66c90d0b720867a318a45b4ca0c19adc1b16，均在本地platform-kind-v1且干净。只改Dockerfile/.nvmrc/说明，不改业务逻辑。backend仍6674125cd1c14d9700c707b0b0f4b5d422d42f05。
+- sources.yaml显式锁定前端覆盖及其父gitlink。因不push，tpl-app不提交指向未推送子提交的gitlink；父仓两个子模块M是本单元已知位置变化，不清除。后续交付须带两个子仓提交。其他业务仓未修改。
+- 最终自动回退编排在Admin成功后加入，只做YAML/Python静态解析及git diff检查，没有新建/运行测试套件或人为故障演练。自动回退、无代理退出、重试耗尽分支尚未真实演练；Python临时锁地址选择及最终编排下的后端重建也未运行。不能把先前成功结果扩大为所有新分支已验证。
+- 镜像构建不等于业务上线：应用数据库/消息/Redis/Casdoor独立身份、迁移Job、API/worker/scheduler及前端运行声明仍待完成。Flux源、现有平台与旧应用入口未改。
+
+## 预算与证据
+
+Admin曾批准仅本批40GiB门槛/总新增最多6GiB，以minimum_remaining_bytes=50919301120限制累计增长。重试前按复用Node基础内容预留5GiB，扣未来增长与预算后51988549632字节；发布前扣归档预算55824043520字节。最后默认50GiB、预留16MiB时剩55693717504字节（约51.87GiB）。这些是不同时间与预算的读数，不当作准确释放量。active例外已删除，未把40写入日常配置；历史例外JSON仅是证据，不得重新套用。
+
+17份日志/回执及摘要索引在/data/kind-clusters/sunmoon-kind/bootstrap/evidence/application-frontends-20261003，共137646字节。8份本轮/tmp日志逐字节对比归档后删除；构建context/auth/export/scratch由原生always清理，上传目录为空。未清理构建缓存、原始/新集群节点或卷，未访问东京。
+
+下一步仍按顺序：模板独立身份与运行配置 → 独立迁移Job → 各角色与前端 → 真实业务链；随后其余平台/应用、整套一键/统一启停/开机恢复、WSL与KIND重启/重建Harbor持久化、长期空间管理及最终清理。云上实机未验。
+
+规则：C-T4/T5不提交悬空父gitlink，跨仓明确提交；C-R1/R2来源和镜像摘要绑定；C-R3发布复用产物；C-D3/D8未来身份与迁移继续独立。日常操作见infrastructure/applications/README.md。
+
+---
+
 # 当前优先状态：模板后端镜像已构建并发布（2026-10-03）
 
 本节优先于下方历史。所有者要求长期沿用“配置、实现、说明同处；共享字段单一来源”并继续部署。原则已加入AGENTS.md，仍在platform-kind-v1工作树/分支；本单元基线dba3766353413445f37c2918834c343a46115f87，仅修改k8s，无push。

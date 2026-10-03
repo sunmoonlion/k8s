@@ -42,3 +42,5 @@
 ## 新部署代码的长期配置原则
 
 所有者确定：新增或调整新部署模块时，用户配置、底层实现及说明放在同一职责目录；适用于宿主、集群、仓库、入口、Flux、应用和平台组件，不只限于 `gitops/components`。共享环境字段与版本锁保持单一来源，秘密留在私有目录或 SOPS 密文中。实施入口沿用原生 Make/Ansible/Flux，不新增重复 CLI 或兼容转接层。详见 `docs/platform-kind-v1/architecture.md` 的配置归属约定。
+
+应用日常构建采用国内在线源优先；确认依赖下载网络失败后本次自动切官方源，探测HTTPS_PROXY可用才重试一次；代理不可用或重试失败给出明确提示并非零退出，不等待交互。非网络/证书/签名/哈希错误不自动切换。应用镜像发布到Harbor后按摘要部署，离线应用包不是部署前提。用户只在infrastructure/applications/config.yaml选择domestic或official-proxy，源与代理配套切换，Harbor始终直连；端点唯一在同目录download-modes.json维护；代理例外不改日常默认，证书、签名和依赖哈希校验不得关闭。
