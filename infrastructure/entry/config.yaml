@@ -21,3 +21,8 @@ entry_cluster_routes:
       - '{{ casdoor_hostname }}'
       - '{{ tpl_web_deployment.origin | urlsplit("hostname") }}'
       - '{{ tpl_admin_deployment.origin | urlsplit("hostname") }}'
+  - name: information
+    backend: '127.0.0.1:{{ cluster_ingress_port }}'
+    hostnames:
+      - '{{ info_web_deployment.origin | urlsplit("hostname") }}'
+      - '{{ info_admin_deployment.origin | urlsplit("hostname") }}'
