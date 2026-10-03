@@ -36,11 +36,11 @@ spec:
     remediation: {retries: 2}
   driftDetection: {mode: enabled}
   values:
+    versionOverride: v3.7.13
     image:
       registry: harbor.sunmoonai.com:30443
       repository: platform/traefik
       tag: v3.7.13
-      versionOverride: v3.7.13
       digest: sha256:3429c14149401de2ac82fc72ddc6a92642332b90deb3012301ff211b9d2d0f18
     deployment:
       replicas: 1
