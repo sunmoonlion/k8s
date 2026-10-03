@@ -51,11 +51,12 @@ def run():
             raise RuntimeError('Management command unexpectedly allowed')
         # Never execute FLUSHALL to test denial. ACL DRYRUN only evaluates authorization.
         try:
-            admin.execute_command('ACL', 'DRYRUN', username, 'FLUSHALL')
+            decision = admin.execute_command('ACL', 'DRYRUN', username, 'FLUSHALL')
         except redis.exceptions.ResponseError as denied:
-            assert 'no permissions' in str(denied).lower()
-        else:
-            raise RuntimeError('Destructive command permission unexpectedly allowed')
+            decision = str(denied)
+        expected = "User " + username + " has no permissions to run the 'flushall' command"
+        if decision != expected:
+            raise RuntimeError('Expected explicit destructive command denial')
         print(json.dumps({'redis_user': username, 'key_pattern': pattern, 'write_read': True,
                           'foreign_key_denied': True, 'admin_command_denied': True,
                           'flushall_permission_denied': True, 'acl_saved': True}))
