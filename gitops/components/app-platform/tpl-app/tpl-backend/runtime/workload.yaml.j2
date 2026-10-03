@@ -1,0 +1,133 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: tpl-runtime, namespace: {{ app_namespace }}}
+data:
+  ENV: production
+  APP_SLUG: tpl
+  DEPLOYMENT_ID: {{ deployment_id | to_json }}
+  ALLOWED_HOSTS: {{ (['localhost','127.0.0.1','tpl-api','tpl-api.' + app_namespace + '.svc.cluster.local', cfg.web_origin | urlsplit('hostname'), cfg.admin_origin | urlsplit('hostname')] | join(',')) | to_json }}
+  REDIS_HOST: redis.{{ data_namespace }}.svc.cluster.local
+  REDIS_PORT: '6379'
+  REDIS_DB: '0'
+  CELERY_QUEUE: {{ cfg.rabbitmq_queue }}
+  CELERY_TASK_TOPOLOGY_PREDECLARED: 'true'
+  CASDOOR_BACKCHANNEL_ENDPOINT: http://casdoor.{{ app_namespace }}.svc.cluster.local:8000
+  CASDOOR_VERIFY_SSL: 'true'
+  SESSION_COOKIE_SECURE: 'true'
+  REFERENCE_INTERACTION_ENABLED: 'false'
+{% for role in ['api','worker','scheduler'] %}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: tpl-{{ role }}, namespace: {{ app_namespace }}}
+spec:
+  replicas: {{ cfg[role + '_replicas'] }}
+{% if role == 'scheduler' %}
+  strategy: {type: Recreate}
+{% else %}
+  strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
+{% endif %}
+  progressDeadlineSeconds: 300
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app.kubernetes.io/name: tpl-{{ role }}}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tpl-{{ role }}
+        app.kubernetes.io/part-of: tpl
+        sunmoonai.com/postgresql-client: 'true'
+        sunmoonai.com/rabbitmq-client: 'true'
+{% if role == 'api' %}
+        sunmoonai.com/redis-client: 'true'
+{% endif %}
+      annotations:
+        sunmoonai.com/config-sha256: {{ runtime_config_digest }}
+    spec:
+      serviceAccountName: tpl-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: {{ role }}
+          image: {{ registry_address }}/platform/{{ app_images.backend.repository }}@{{ app_images.backend.digest }}
+          imagePullPolicy: IfNotPresent
+{% if role == 'api' %}
+          command: [uvicorn]
+          args: [app.bootstrap.api:app, --host, 0.0.0.0, --port, '{{ cfg.api_port }}', --proxy-headers, --forwarded-allow-ips, '{{ cluster_pod_subnet }}']
+          ports: [{name: http, containerPort: {{ cfg.api_port }}}]
+          startupProbe: {httpGet: {path: /health/live, port: http, httpHeaders: [{name: Host, value: localhost}]}, periodSeconds: 3, failureThreshold: 60}
+          readinessProbe: {httpGet: {path: /health/ready, port: http, httpHeaders: [{name: Host, value: localhost}]}, timeoutSeconds: 5, periodSeconds: 10}
+          livenessProbe: {httpGet: {path: /health/live, port: http, httpHeaders: [{name: Host, value: localhost}]}, timeoutSeconds: 3, periodSeconds: 20}
+{% elif role == 'worker' %}
+          command: [celery]
+          args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency={{ cfg.worker_concurrency }}', '--hostname=celery@$(POD_NAME)']
+          startupProbe: {exec: {command: [python, -m, app.cli.worker_readiness]}, timeoutSeconds: 10, periodSeconds: 10, failureThreshold: 30}
+          readinessProbe: {exec: {command: [python, -m, app.cli.worker_readiness]}, timeoutSeconds: 10, periodSeconds: 20}
+{% else %}
+          command: [celery]
+          args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]
+          startupProbe: {exec: {command: [python, -m, app.cli.scheduler_activity, --schedule, /tmp/celerybeat-schedule, --max-age, '30']}, timeoutSeconds: 5, periodSeconds: 5, failureThreshold: 30}
+          readinessProbe: {exec: {command: [python, -m, app.cli.scheduler_activity, --schedule, /tmp/celerybeat-schedule, --max-age, '30']}, timeoutSeconds: 5, periodSeconds: 10}
+{% endif %}
+          env:
+            - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
+            - {name: SERVICE_NAME, value: tpl-{{ role }}}
+            - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+          envFrom:
+            - {configMapRef: {name: tpl-runtime}}
+            - {configMapRef: {name: tpl-browser-identity}}
+            - {secretRef: {name: tpl-database-runtime}}
+            - {secretRef: {name: tpl-rabbitmq-runtime}}
+{% if role == 'api' %}
+            - {secretRef: {name: tpl-redis-runtime}}
+            - {secretRef: {name: tpl-browser-secrets}}
+{% endif %}
+          resources: {{ cfg.resources[role] | to_json }}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts: [{name: tmp, mountPath: /tmp}]
+      volumes: [{name: tmp, emptyDir: {sizeLimit: 64Mi}}]
+{% endfor %}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: tpl-api, namespace: {{ app_namespace }}}
+spec:
+  selector: {app.kubernetes.io/name: tpl-api}
+  ports: [{name: http, port: {{ cfg.api_port }}, targetPort: http}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: tpl-api-ingress, namespace: {{ app_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: tpl-api}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: {{ ingress_namespace }}}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: tpl-web}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: tpl-admin}}
+      ports: [{protocol: TCP, port: {{ cfg.api_port }}}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: tpl-api-casdoor-out, namespace: {{ app_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: tpl-api}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
+      ports: [{protocol: TCP, port: 8000}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: tpl-api-casdoor-in, namespace: {{ app_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: tpl-api}}
+      ports: [{protocol: TCP, port: 8000}]

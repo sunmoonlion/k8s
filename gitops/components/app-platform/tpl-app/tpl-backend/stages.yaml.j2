@@ -1,4 +1,4 @@
-{% for name,stage,dependency in [('tpl-database','database','platform-services'),('tpl-migration','migration','tpl-database'),('tpl-redis','redis','tpl-migration'),('tpl-rabbitmq','rabbitmq','tpl-redis'),('tpl-identity','identity','tpl-rabbitmq')] if cfg.enabled %}
+{% for name,stage,dependency in [('tpl-database','database','platform-services'),('tpl-migration','migration','tpl-database'),('tpl-redis','redis','tpl-migration'),('tpl-rabbitmq','rabbitmq','tpl-redis'),('tpl-identity','identity','tpl-rabbitmq'),('tpl-runtime','runtime','tpl-identity'),('tpl-web','../tpl-web-frontend','tpl-runtime'),('tpl-admin','../tpl-admin-frontend','tpl-runtime')] if cfg.enabled %}
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -7,7 +7,7 @@ spec:
   interval: 5m
   retryInterval: 30s
   timeout: 8m
-  path: ./components/app-platform/tpl-app/tpl-backend/{{ stage }}
+  path: ./components/app-platform/tpl-app/{{ 'tpl-backend/' + stage if not stage.startswith('../') else stage[3:] }}
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn: [{name: {{ dependency }}}{% if name == "tpl-identity" %}, {name: casdoor}{% endif %}]
   prune: false
