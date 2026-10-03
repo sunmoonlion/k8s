@@ -55,7 +55,7 @@ spec:
           image: harbor.sunmoonai.com:30443/platform/rabbitmq@sha256:f50f1cbbec73032d248d516b043a6dd334302b571d71b68486e7b32a86efb45d
           command: [/bin/sh, -ec]
           args:
-            - 'if [ ! -e /var/lib/rabbitmq/.erlang.cookie ]; then cp /run/auth/erlang-cookie /var/lib/rabbitmq/.erlang.cookie; chmod 600 /var/lib/rabbitmq/.erlang.cookie; fi; cmp --silent /run/auth/erlang-cookie /var/lib/rabbitmq/.erlang.cookie'
+            - 'if [ ! -e /var/lib/rabbitmq/.erlang.cookie ]; then cp /run/auth/erlang-cookie /var/lib/rabbitmq/.erlang.cookie; fi; chmod 600 /var/lib/rabbitmq/.erlang.cookie; cmp --silent /run/auth/erlang-cookie /var/lib/rabbitmq/.erlang.cookie'
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {cpu: 100m, memory: 64Mi}}
           volumeMounts:

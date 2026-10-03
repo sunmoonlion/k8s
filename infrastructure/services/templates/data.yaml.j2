@@ -63,7 +63,7 @@ spec:
           image: {{ registry_address }}/platform/{{ name }}@{{ image.manifest_digest }}
           command: [/bin/sh, -ec]
           args:
-            - 'if [ ! -e /var/lib/rabbitmq/.erlang.cookie ]; then cp /run/auth/erlang-cookie /var/lib/rabbitmq/.erlang.cookie; chmod 600 /var/lib/rabbitmq/.erlang.cookie; fi; cmp --silent /run/auth/erlang-cookie /var/lib/rabbitmq/.erlang.cookie'
+            - 'if [ ! -e /var/lib/rabbitmq/.erlang.cookie ]; then cp /run/auth/erlang-cookie /var/lib/rabbitmq/.erlang.cookie; fi; chmod 600 /var/lib/rabbitmq/.erlang.cookie; cmp --silent /run/auth/erlang-cookie /var/lib/rabbitmq/.erlang.cookie'
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {cpu: 100m, memory: 64Mi}}
           volumeMounts:
