@@ -10,7 +10,7 @@ BINARIES ?= kind,kubectl,kubeadm
 SITE ?= environments/kind/site.yaml
 APP ?= tpl
 COMPONENT ?= backend
-ifneq ($(filter application-build-% application-publish-% application-source-plan application-deployment-plan application-render application-stage application-validate-release application-check application-bootstrap,$(MAKECMDGOALS)),)
+ifneq ($(filter application-build-% application-publish-% application-source-plan application-deployment-plan application-render application-stage application-validate-release application-check application-check-public application-bootstrap,$(MAKECMDGOALS)),)
 ifneq ($(words $(APP)),1)
 $(error APP must be tpl, info, knowledge or investment)
 endif
@@ -281,6 +281,9 @@ application-stage:
 	$(ANSIBLE) -i host/inventory.yaml applications/deploy.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=stage'
 application-validate-release:
 	$(ANSIBLE) -i host/inventory.yaml applications/deploy.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=validate'
+application-check-public:
+	$(ANSIBLE) -i host/inventory.yaml applications/deploy.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=check application_check_public=true'
+
 application-check:
 	$(ANSIBLE) -i host/inventory.yaml applications/deploy.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=check'
 # Executes only the explicitly promoted Git release. Source publication precedes deployment.

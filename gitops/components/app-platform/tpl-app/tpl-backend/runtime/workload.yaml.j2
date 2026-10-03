@@ -65,7 +65,7 @@ spec:
           imagePullPolicy: IfNotPresent
 {% if role == 'api' %}
           command: [uvicorn]
-          args: [app.bootstrap.api:app, --host, 0.0.0.0, --port, '{{ cfg.api_port }}', --proxy-headers, --forwarded-allow-ips, '{{ cluster_pod_subnet }}']
+          args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '{{ cfg.api_port }}', --proxy-headers, --forwarded-allow-ips, '{{ cluster_pod_subnet }}']
           ports: [{name: http, containerPort: {{ cfg.api_port }}}]
           startupProbe: {httpGet: {path: /health/live, port: http, httpHeaders: [{name: Host, value: localhost}]}, periodSeconds: 3, failureThreshold: 60}
           readinessProbe: {httpGet: {path: /health/ready, port: http, httpHeaders: [{name: Host, value: localhost}]}, timeoutSeconds: 5, periodSeconds: 10}

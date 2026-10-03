@@ -7,6 +7,7 @@
   vars:
     application_name: tpl
     application_action: plan
+    application_check_port: '{{ entry_port if application_check_public | default(false) | bool else cluster_ingress_port }}'
     capacity_operation: application-deploy-tpl
     cfg: '{{ tpl_deployment | combine(tpl_backend_deployment) | combine({"namespace":app_namespace, "web_origin":tpl_web_deployment.origin, "admin_origin":tpl_admin_deployment.origin}) }}'
     app_root: '{{ playbook_dir }}/../../gitops/components/app-platform/tpl-app'
@@ -658,20 +659,20 @@
           changed_when: false
         - name: Verify API readiness through each new TLS route
           ansible.builtin.command:
-            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ item | urlsplit("hostname") }}:30443:127.0.0.1:{{ cluster_ingress_port }}', '{{ item }}/api/health']
+            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ item | urlsplit("hostname") }}:30443:127.0.0.1:{{ application_check_port }}', '{{ item }}/api/health']
           loop: ['{{ cfg.web_origin }}', '{{ cfg.admin_origin }}']
           register: api_route
           changed_when: false
           failed_when: api_route.rc != 0 or (api_route.stdout | from_json).status != 'ready'
         - name: Verify the exact API deployment identity through TLS
           ansible.builtin.command:
-            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ cfg.web_origin | urlsplit("hostname") }}:30443:127.0.0.1:{{ cluster_ingress_port }}', '{{ cfg.web_origin }}/api/version']
+            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ cfg.web_origin | urlsplit("hostname") }}:30443:127.0.0.1:{{ application_check_port }}', '{{ cfg.web_origin }}/api/version']
           register: api_version
           changed_when: false
           failed_when: api_version.rc != 0 or (api_version.stdout | from_json).deploymentId != deployment_id
         - name: Verify both frontend surfaces through their own certificate hostnames
           ansible.builtin.command:
-            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ item.origin | urlsplit("hostname") }}:30443:127.0.0.1:{{ cluster_ingress_port }}', '{{ item.origin }}/healthz']
+            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ item.origin | urlsplit("hostname") }}:30443:127.0.0.1:{{ application_check_port }}', '{{ item.origin }}/healthz']
           loop:
             - {origin: '{{ cfg.web_origin }}', surface: web}
             - {origin: '{{ cfg.admin_origin }}', surface: admin}
@@ -700,3 +701,18 @@
         - name: Confirm actual task delivery separately from process readiness
           ansible.builtin.debug:
             msg: API role published the diagnostic task; worker consumed and completed the exact task identity.
+        - name: Read the existing acceptance account privately
+          ansible.builtin.slurp:
+            src: '{{ services_config_dir }}/credentials.yaml'
+          register: browser_acceptance_input
+          no_log: true
+        - name: Verify real authorization callback SSR and security boundaries through the selected entry
+          ansible.builtin.command:
+            argv: [/usr/bin/python3, '{{ playbook_dir }}/check-browser.py']
+            stdin: '{{ {"clients":browser_clients, "provider":"https://" + casdoor_hostname + ":30443", "organization":cfg.identity_organization, "username":"admin", "password":(browser_acceptance_input.content | b64decode | from_yaml).service_credentials.casdoor_admin_password, "ca_file":registry_config_dir + "/tls/ca.crt", "entry_port":application_check_port | int} | to_json }}'
+          register: browser_acceptance
+          changed_when: false
+          no_log: true
+        - name: Report only structured browser assertions
+          ansible.builtin.debug:
+            msg: '{{ browser_acceptance.stdout | from_json }}'

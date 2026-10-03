@@ -137,3 +137,15 @@ make application-publish-web APP=info
 在本目录运行 `make application-deployment-plan APP=tpl` 查看，`make application-stage APP=tpl`生成待审声明；本地提交并经`flux-release`发布、显式晋级固定源后，`make application-bootstrap APP=tpl`串联渲染、声明核对、协调与实际Job验收。`make application-check APP=tpl`只核对结果。此入口覆盖数据库与迁移、Redis/RabbitMQ/浏览器身份及API、Worker、Scheduler、Web、Admin；运行模板与用户配置按组件同处。application-check 通过新集群TLS后端验API/前端身份，检查Worker/Scheduler并投递一次诊断ping确认实际消费；不自动切换公共入口。完整登录与业务链仍需各自验收。
 
 2026-10-03独立身份、schema迁移和真实权限验收已通过，bootstrap重复四阶段changed=0；失败与清理记录见CHECKPOINT。数据库口令备份不等于数据备份；已有业务数据的后续迁移须先准备数据库备份恢复。
+
+## 浏览器与入口验收
+
+`application-check APP=tpl` 通过新集群后端端口验证实际授权码+PKCE回调、SSR、
+会话隔离、CSRF与退出。`application-check-public APP=tpl` 复用同一检查，仅连接点
+改为正式入口端口，保留公开域名、SNI和CA校验。使用已有平台管理员输入，秘密由
+Ansible no_log 和stdin传入，不在argv或报告内。不会授予业务scope。
+
+该检查还验证未授权管理员诊断返回403，生产模板未配置的业务交互provider返回
+明确503；不创建虚假业务处理器，不把模板运行通过称为完整业务实现。
+API关闭uvicorn原始access log，应用原有审计/错误日志继续记录路径及状态，避免
+OAuth回调的code/state查询参数进入访问日志。
