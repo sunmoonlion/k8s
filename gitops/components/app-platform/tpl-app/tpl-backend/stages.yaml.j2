@@ -1,4 +1,4 @@
-{% for name,stage,dependency in [('tpl-database','database','platform-services'),('tpl-migration','migration','tpl-database')] if cfg.enabled %}
+{% for name,stage,dependency in [('tpl-database','database','platform-services'),('tpl-migration','migration','tpl-database'),('tpl-redis','redis','tpl-migration')] if cfg.enabled %}
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization

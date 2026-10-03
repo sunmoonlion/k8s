@@ -39,3 +39,9 @@ make -C infrastructure application-check APP=tpl
 库初始化 `data-platform-dev/tpl-database-v2` 和迁移 `app-platform-dev/tpl-migrate-5b38d39836dc-v1` 已成功，schema为20260911_0003；真实CRUD、运行身份DDL拒绝及迁移元数据写入拒绝均通过。完整bootstrap重复执行四阶段changed=0。API/Worker/Scheduler及前端仍待部署，不能据此判断业务已跑通。
 
 成功的Completed Job保留为Flux期望对象；不要直接删除或加TTL，否则Flux可能重建并重新执行。失败v1 Job和误建tpl-app-dev已按精确归属清除。修改SQL必须更新bootstrap修订，修改迁移任务必须更新migration修订，经相同声明发布流程实施。
+
+## Redis身份准备
+
+redis_user为独立登录名（不得default），redis_key_pattern固定tpl:*以匹配模板业务键，redis_identity_revision控制一次性Job修订。私有redis.yaml及备份不输出、不入Git。redis/保存初始化及真实隔离检查；runtime.sops.yaml供后续业务角色读取，provision.sops.yaml只用于数据命名空间的一次性账号初始化。原有平台管理员Secret不复制到应用命名空间。
+
+本单元准备持久ACL能力，须按docs/platform-kind-v1/tpl-redis-maintenance.md批准维护并验收后才算可用；RabbitMQ/Casdoor注册和常驻业务仍未完成。

@@ -32,3 +32,20 @@ spec:
   decryption:
     provider: sops
     secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: tpl-redis, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/tpl-app/tpl-backend/redis
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn: [{name: tpl-migration}]
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}

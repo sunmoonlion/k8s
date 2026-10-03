@@ -50,6 +50,31 @@ spec:
         fsGroup: {{ volume.gid }}
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile: {type: RuntimeDefault}
+      initContainers:
+        - name: initialize-acl-file
+          image: {{ registry_address }}/platform/{{ name }}@{{ image.manifest_digest }}
+          command: [/bin/sh, -ec]
+          args:
+            - |
+              test ! -L /data/users.acl
+              if [ ! -e /data/users.acl ]; then
+                umask 077
+                digest=$(sha256sum /run/auth/password)
+                digest=${digest%% *}
+                pending=$(mktemp /data/.users.acl.XXXXXX)
+                trap 'rm -f "$pending"' EXIT
+                printf 'user default on #%s ~* &* +@all\n' "$digest" > "$pending"
+                mv "$pending" /data/users.acl
+              fi
+              test -f /data/users.acl
+              test -s /data/users.acl
+              test -r /data/users.acl
+              chmod 600 /data/users.acl
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {cpu: 100m, memory: 64Mi}}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
       containers:
         - name: {{ name }}
           image: {{ registry_address }}/platform/{{ name }}@{{ image.manifest_digest }}

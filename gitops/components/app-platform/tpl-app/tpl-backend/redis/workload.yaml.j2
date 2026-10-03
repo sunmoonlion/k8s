@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: 'tpl-redis-provision-{{ cfg.redis_identity_revision }}', namespace: {{ data_namespace }}}
+data:
+  provision.py: |
+{{ lookup('file', component_root + '/redis/provision.py') | indent(4, true) }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: tpl-redis-provision-in, namespace: {{ data_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: redis}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: tpl-redis-provision}}
+      ports: [{protocol: TCP, port: 6379}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: tpl-redis-provision-out, namespace: {{ data_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: tpl-redis-provision}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: redis}}
+      ports: [{protocol: TCP, port: 6379}]
+---
+apiVersion: batch/v1
+kind: Job
+metadata: {name: 'tpl-redis-{{ cfg.redis_identity_revision }}', namespace: {{ data_namespace }}}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 180
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: tpl-redis-provision, app.kubernetes.io/part-of: tpl}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: provision
+          image: {{ registry_address }}/platform/{{ app_images.backend.repository }}@{{ app_images.backend.digest }}
+          imagePullPolicy: IfNotPresent
+          command: [python, /script/provision.py]
+          env:
+            - {name: REDIS_HOST, value: 'redis.{{ data_namespace }}.svc.cluster.local'}
+            - {name: APP_REDIS_USER, value: '{{ cfg.redis_user }}'}
+            - {name: APP_REDIS_KEY_PATTERN, value: '{{ cfg.redis_key_pattern }}'}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
+          volumeMounts:
+            - {name: script, mountPath: /script, readOnly: true}
+            - {name: admin, mountPath: /run/admin, readOnly: true}
+            - {name: app, mountPath: /run/app, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: script, configMap: {name: 'tpl-redis-provision-{{ cfg.redis_identity_revision }}'}}
+        - {name: admin, secret: {secretName: redis-auth, items: [{key: password, path: password}], defaultMode: 0440}}
+        - {name: app, secret: {secretName: tpl-redis-provision, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 32Mi}}

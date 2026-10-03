@@ -1,6 +1,6 @@
 ---
 - import_playbook: ../host/preflight.yaml
-- name: Render or verify the template database deployment through Flux
+- name: Render or verify template infrastructure identities through Flux
   hosts: kind_hosts
   gather_facts: false
   become: true
@@ -22,7 +22,7 @@
     image_map: '{{ dict(images | map(attribute="id") | zip(images)) }}'
     migration_job: 'tpl-migrate-{{ app_images.backend.digest[7:19] }}-{{ cfg.migration_job_revision }}'
     kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
-    candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml]
+    candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml, redis/workload.yaml, redis/provision.sops.yaml, redis/runtime.sops.yaml, redis/kustomization.yaml]
   tasks:
     - name: Validate the selected deployment and identity boundaries
       ansible.builtin.assert:
@@ -67,9 +67,9 @@
           migrator_user: '{{ cfg.database_migrator_user }}'
           backend: '{{ app_images.backend.digest }}'
           schema: '{{ cfg.expected_schema_revision }}'
-          stages: [tpl-database, tpl-migration]
+          stages: [tpl-database, tpl-migration, tpl-redis]
           image_and_data_budget: '{{ cfg.deploy_budget_bytes }}'
-          excluded: 'Redis/RabbitMQ/Casdoor registration and application runtime are the next units; no ingress change here.'
+          excluded: 'RabbitMQ/Casdoor registration and application runtime remain next; Redis startup changes require the approved maintenance window.'
       when: application_action == 'plan'
     - name: End the read-only plan
       ansible.builtin.meta: end_host
@@ -152,16 +152,69 @@
               - app_credentials.migrator_password is match('^[a-zA-Z0-9]{40}$')
               - app_credentials.runtime_password != app_credentials.migrator_password
           no_log: true
+        - name: Inspect recoverable Redis credential input
+          ansible.builtin.stat: {path: '{{ item }}/redis.yaml', follow: false}
+          loop: ['{{ cfg.private_dir }}', '{{ cfg.backup_dir }}']
+          register: redis_files
+          no_log: true
+        - name: Require root-only regular Redis input files
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - not item.stat.islnk | default(false)
+              - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
+          loop: '{{ redis_files.results }}'
+          no_log: true
+        - name: Restore a preserved Redis input without rotating its password
+          ansible.builtin.copy: {src: '{{ cfg.backup_dir }}/redis.yaml', dest: '{{ cfg.private_dir }}/redis.yaml', remote_src: true, mode: '0600'}
+          when: not redis_files.results[0].stat.exists and redis_files.results[1].stat.exists
+          no_log: true
+        - name: Refuse to regenerate a declared Redis identity
+          ansible.builtin.assert:
+            quiet: true
+            that: redis_files.results[0].stat.exists or redis_files.results[1].stat.exists or (query('fileglob', component_root + '/redis/provision.sops.yaml') | length == 0)
+        - name: Create an independent Redis password only on first preparation
+          ansible.builtin.copy:
+            dest: '{{ cfg.private_dir }}/redis.yaml'
+            force: false
+            mode: '0600'
+            content: |
+              password: {{ lookup('password','/dev/null',length=40,chars=['ascii_letters','digits']) }}
+          when: not redis_files.results[0].stat.exists and not redis_files.results[1].stat.exists
+          no_log: true
+        - name: Preserve the independent Redis credential backup
+          ansible.builtin.copy: {src: '{{ cfg.private_dir }}/redis.yaml', dest: '{{ cfg.backup_dir }}/redis.yaml', remote_src: true, force: false, mode: '0600'}
+          no_log: true
+        - name: Verify Redis input against its non-overwritten backup
+          ansible.builtin.command: {argv: [cmp, --silent, '{{ cfg.private_dir }}/redis.yaml', '{{ cfg.backup_dir }}/redis.yaml']}
+          changed_when: false
+          no_log: true
+        - name: Read private Redis input without logging
+          ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/redis.yaml'}
+          register: redis_input
+          no_log: true
+        - name: Decode private Redis credentials in memory
+          ansible.builtin.set_fact:
+            redis_credentials: '{{ redis_input.content | b64decode | from_yaml }}'
+          no_log: true
+        - name: Require a strong distinct application Redis password
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - redis_credentials.password is match('^[a-zA-Z0-9]{40}$')
+              - redis_credentials.password != app_credentials.runtime_password
+              - redis_credentials.password != app_credentials.migrator_password
+          no_log: true
         - name: Prepare public candidate directories
           ansible.builtin.file: {path: '{{ build }}/{{ item }}', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
-          loop: [database, migration]
+          loop: [database, migration, redis]
         - name: Render colocated workload and stage templates
           ansible.builtin.template:
             src: '{{ component_root }}/{{ item }}.j2'
             dest: '{{ build }}/{{ item }}'
             owner: '{{ cluster_operator }}'
             mode: '0644'
-          loop: [database/workload.yaml, migration/workload.yaml, stages.yaml]
+          loop: [database/workload.yaml, migration/workload.yaml, redis/workload.yaml, stages.yaml]
         - name: Derive independent connection URLs without logging
           ansible.builtin.set_fact:
             runtime_url: 'postgresql+asyncpg://{{ cfg.database_runtime_user }}:{{ app_credentials.runtime_password }}@postgresql.{{ data_namespace }}.svc.cluster.local:5432/{{ cfg.database }}'
@@ -188,6 +241,18 @@
                 kind: Secret
                 metadata: {name: tpl-migration-auth, namespace: '{{ cfg.namespace }}'}
                 stringData: {DATABASE_URL: '{{ runtime_url }}', MIGRATION_DATABASE_URL: '{{ migrator_url }}'}
+            - file: redis/provision.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: tpl-redis-provision, namespace: '{{ data_namespace }}'}
+                stringData: {password: '{{ redis_credentials.password }}'}
+            - file: redis/runtime.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: tpl-redis-runtime, namespace: '{{ cfg.namespace }}'}
+                stringData: {REDIS_USER: '{{ cfg.redis_user }}', REDIS_PASSWORD: '{{ redis_credentials.password }}'}
           loop_control: {loop_var: secret_item, label: '{{ secret_item.file }}'}
           no_log: true
         - name: Render explicit resource lists without applying config files
@@ -199,6 +264,7 @@
           loop:
             - {name: database, resources: [workload.yaml, bootstrap.sops.yaml, runtime.sops.yaml]}
             - {name: migration, resources: [workload.yaml, auth.sops.yaml]}
+            - {name: redis, resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]}
     - name: Stage reviewed candidate declarations without deploying
       when: application_action == 'stage'
       block:
@@ -234,13 +300,13 @@
           ansible.builtin.assert:
             quiet: true
             that: (lookup('file',build + '/stages.yaml') | from_yaml_all | list) == (lookup('file',repo + '/gitops/clusters/kind/applications.yaml') | from_yaml_all | list)
-    - name: Require both exact application stages and jobs to succeed
+    - name: Require the exact application stages and jobs to succeed
       when: application_action == 'check'
       block:
         - name: Wait for current generation Ready at the promoted digest
           ansible.builtin.command:
             argv: '{{ kube + ["get","kustomization",item,"-n","flux-system","-o","json"] }}'
-          loop: [tpl-database,tpl-migration]
+          loop: [tpl-database,tpl-migration,tpl-redis]
           register: stage
           changed_when: false
           until:
@@ -256,6 +322,7 @@
           loop:
             - {name: 'tpl-database-{{ cfg.database_bootstrap_revision }}', namespace: '{{ data_namespace }}'}
             - {name: '{{ migration_job }}', namespace: '{{ cfg.namespace }}'}
+            - {name: 'tpl-redis-{{ cfg.redis_identity_revision }}', namespace: '{{ data_namespace }}'}
           register: completion
           changed_when: false
           failed_when: completion.rc != 0 or completion.stdout != '1'
@@ -280,3 +347,36 @@
               - database_acceptance.runtime_ddl_denied is sameas true
               - database_acceptance.migration_metadata_write_denied is sameas true
             success_msg: 'TPL schema, separate identities, runtime CRUD and denial of runtime DDL verified.'
+        - name: Read the actual Redis identity acceptance outcome privately
+          ansible.builtin.command:
+            argv: '{{ kube + ["logs","job/tpl-redis-" + cfg.redis_identity_revision,"-n",data_namespace] }}'
+          register: redis_result
+          changed_when: false
+          no_log: true
+        - name: Decode Redis acceptance without exposing credentials
+          ansible.builtin.set_fact:
+            redis_acceptance: '{{ redis_result.stdout_lines[-1] | from_json }}'
+          no_log: true
+        - name: Require application Redis isolation and saved ACL
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - redis_acceptance.redis_user == cfg.redis_user
+              - redis_acceptance.key_pattern == cfg.redis_key_pattern
+              - redis_acceptance.write_read is sameas true
+              - redis_acceptance.foreign_key_denied is sameas true
+              - redis_acceptance.admin_command_denied is sameas true
+              - redis_acceptance.flushall_permission_denied is sameas true
+              - redis_acceptance.acl_saved is sameas true
+        - name: Read application Redis input for current live authentication
+          ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/redis.yaml'}
+          register: live_redis_input
+          no_log: true
+        - name: Verify the persistent identity authenticates against the current Redis process
+          ansible.builtin.command:
+            argv: '{{ kube + ["exec","-i","redis-0","-n",data_namespace,"-c","redis","--","sh","-ec","IFS= read -r REDISCLI_AUTH; export REDISCLI_AUTH; redis-cli --user \"$1\" ping","--",cfg.redis_user] }}'
+            stdin: '{{ (live_redis_input.content | b64decode | from_yaml).password }}'
+          register: redis_live
+          changed_when: false
+          failed_when: redis_live.rc != 0 or redis_live.stdout != 'PONG'
+          no_log: true

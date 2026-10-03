@@ -166,7 +166,7 @@
               redis.conf: |
                 bind 0.0.0.0
                 protected-mode yes
-                requirepass {{ service_credentials.redis_password | to_json }}
+                aclfile /data/users.acl
                 dir /data
                 appendonly yes
                 appendfsync everysec

@@ -10,3 +10,6 @@ tpl_backend_deployment:
   private_dir: /etc/sunmoon/applications/sunmoon-kind/tpl
   backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/tpl
   deploy_budget_bytes: 1073741824
+  redis_user: tpl_runtime
+  redis_key_pattern: 'tpl:*'
+  redis_identity_revision: v1

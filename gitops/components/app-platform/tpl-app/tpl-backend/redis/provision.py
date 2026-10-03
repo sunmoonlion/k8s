@@ -1,0 +1,72 @@
+"""Provision one bounded Redis identity and verify its real access, without secret output."""
+import hashlib
+import json
+import os
+import re
+from pathlib import Path
+import uuid
+import redis
+
+
+def run():
+    username = os.environ['APP_REDIS_USER']
+    pattern = os.environ['APP_REDIS_KEY_PATTERN']
+    if not re.fullmatch(r'[a-z][a-z0-9_]{1,40}', username) or username == 'default' or pattern != 'tpl:*':
+        raise RuntimeError('Unexpected identity boundary')
+    password = Path('/run/app/password').read_text()
+    digest = hashlib.sha256(password.encode()).hexdigest()
+    admin = redis.Redis(host=os.environ['REDIS_HOST'], password=Path('/run/admin/password').read_text(),
+                        decode_responses=True, socket_connect_timeout=5, socket_timeout=5)
+    client = redis.Redis(host=os.environ['REDIS_HOST'], username=username, password=password,
+                         decode_responses=True, socket_connect_timeout=5, socket_timeout=5)
+    key = 'tpl:acceptance:' + uuid.uuid4().hex
+    foreign = 'other-app:acceptance:' + uuid.uuid4().hex
+    try:
+        assert admin.config_get('aclfile') == {'aclfile': '/data/users.acl'}
+        previous = admin.acl_getuser(username)
+        if previous and previous['passwords'] != [digest]:
+            raise RuntimeError('Refusing an existing identity with different credentials')
+        rules = ['reset', 'on', '#' + digest, '~' + pattern, 'resetchannels', '-@all',
+                 '+ping', '+hello', '+select', '+client|setname', '+client|setinfo',
+                 '+get', '+getdel', '+set', '+del', '+exists', '+expire', '+pexpire',
+                 '+ttl', '+pttl', '+mget', '+mset', '+incr', '+incrby', '+decr', '+decrby',
+                 '+multi', '+exec', '+discard', '+watch', '+unwatch']
+        assert admin.execute_command('ACL', 'SETUSER', username, *rules) == 'OK'
+        assert admin.acl_save()
+        assert client.ping()
+        assert client.set(key, 'checked', ex=60)
+        assert client.getdel(key) == 'checked'
+        try:
+            client.set(foreign, 'must-not-write', ex=60)
+        except redis.exceptions.NoPermissionError:
+            pass
+        else:
+            admin.delete(foreign)
+            raise RuntimeError('Foreign key unexpectedly writable')
+        try:
+            client.config_get('maxmemory')
+        except redis.exceptions.NoPermissionError:
+            pass
+        else:
+            raise RuntimeError('Management command unexpectedly allowed')
+        # Never execute FLUSHALL to test denial. ACL DRYRUN only evaluates authorization.
+        try:
+            admin.execute_command('ACL', 'DRYRUN', username, 'FLUSHALL')
+        except redis.exceptions.ResponseError as denied:
+            assert 'no permissions' in str(denied).lower()
+        else:
+            raise RuntimeError('Destructive command permission unexpectedly allowed')
+        print(json.dumps({'redis_user': username, 'key_pattern': pattern, 'write_read': True,
+                          'foreign_key_denied': True, 'admin_command_denied': True,
+                          'flushall_permission_denied': True, 'acl_saved': True}))
+    finally:
+        admin.delete(key)
+        client.close()
+        admin.close()
+
+
+if __name__ == '__main__':
+    try:
+        run()
+    except Exception as error:
+        raise SystemExit('Redis identity failed: ' + type(error).__name__)

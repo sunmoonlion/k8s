@@ -1,3 +1,20 @@
+# 当前优先状态：模板 Redis 持久身份代码准备，等待维护批准（2026-10-03）
+
+本节优先于历史。基线6fba069a54458d31a7002f01993963f1af24b9b5，工作树/分支platform-kind-v1，仅k8s；没有发布本单元Flux源或重启服务。线上仍为e2708f2e…，上个数据库单元已验收。
+
+所有者让继续部署。下一依赖是模板Redis独立账号。只读现场：Redis仅default，aclfile为空，INFO keyspace为空，AOF启用且写入正常；不能只在内存SETUSER后宣称持久化。
+
+- 平台Redis新增原生initContainer：仅在/data/users.acl缺失时从现有私有密码生成default的SHA256规则，权限0600；不覆盖已有ACL。redis.conf切换到该持久文件，不混用requirepass。声明更新会滚动替换Redis，因此尚未发布。
+- 模板backend/redis新增Job、受限管理流量策略及SOPS输入。运行身份tpl_runtime只操作tpl:*，独立口令与备份在既定private_dir/backup_dir的redis.yaml，root0600，已有声明丢失输入就拒绝随机重建。账号配置与组件同处。
+- Job核对既有账号摘要，不接管不同凭据的同名账号；ACL SAVE后实际写读、跨前缀拒绝、管理命令拒绝，FLUSHALL仅用ACL DRYRUN。原application-bootstrap接入tpl-redis阶段和检查；application-check另通过stdin传私密密码验证当前Redis进程真实认证，避免只读旧Job结果。
+- 平台render ok105 changed3；应用首次render ok68 changed9，后续stage成功。16个Kustomize根、Ansible语法、Jinja表达式语法、Python AST、git diff检查通过；未声称运行验证成功。仍按常规50GiB与原1GiB单元预算准备，无容量例外。
+
+待批准操作卡：docs/platform-kind-v1/tpl-redis-maintenance.md。计划10分钟窗口、失败另10分钟：首次声明滚动替换，账号创建后再精确重建redis-0验证账号持久化；PVC/PV/旧集群/Harbor和入口不动。确认后先重新核对UID、空间和无新业务键，再发布/晋级固定源；先验证平台候选和原账号，然后application-bootstrap和重启后application-check。未获停服批准前不能因“继续”自行发布这一轮Redis启动配置。
+
+证据暂存infrastructure/.build/applications/database-unit-20261003/redis-platform-render.log、redis-application-stage.log、redis-stage-final.log。RabbitMQ/Casdoor注册、常驻业务Pod仍未接入；不会把这一步称为应用部署完成。后续Celery结果Redis键前缀须先核对，不能放开所有键绕过隔离。
+
+---
+
 # 当前优先状态：模板数据库与迁移通过，错误资源已清理（2026-10-03）
 
 本节优先于以下历史。工作树/分支platform-kind-v1；本单元仅k8s，无push。实现提交128aaa66、命名空间修正08a7d9b1、晋级cd94bc87、验收解析修正e94171268ac665776c5b58acf7e9ee951f3b2cde。
