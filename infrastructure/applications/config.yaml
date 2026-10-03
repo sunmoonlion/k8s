@@ -1,0 +1,5 @@
+---
+# 模板应用构建基础镜像；版本/摘要只从 artifacts/upstream-images.lock.json 读取。
+application_base_image_ids: [python, node-build, node-runtime]
+# 后端构建前预留上下文、依赖、镜像层及导出峰值4GiB；仍须满足宿主50GiB底线。
+application_build_budget_bytes: 4294967296

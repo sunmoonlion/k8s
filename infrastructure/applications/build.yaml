@@ -1,0 +1,190 @@
+---
+- name: Build the pinned template backend from a clean Git object
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    capacity_operation: application-build
+    source_checkout: '{{ (playbook_dir + "/../../../tpl-app/tpl-backend") | realpath }}'
+    source_lock: '{{ lookup("file", playbook_dir + "/sources.yaml") | from_yaml }}'
+    images: '{{ (lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json).images }}'
+    python_base: '{{ images | selectattr("id","equalto","python") | first }}'
+    skopeo: '{{ images | selectattr("id","equalto","skopeo") | first }}'
+    base_reference: '{{ registry_address }}/platform/python@{{ python_base.manifest_digest }}'
+    build_root: '{{ playbook_dir }}/../.build/applications'
+  tasks:
+    - name: Require the reviewed source and build budget
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - source_lock.backend_revision is match('^[a-f0-9]{40}$')
+          - source_lock.backend_context == 'app'
+          - application_build_budget_bytes | int > 0
+          - python_base.source == 'docker.io/library/python:3.13.15-slim-trixie'
+    - name: Inspect source revision and local modifications
+      become: false
+      ansible.builtin.command:
+        argv: '{{ item }}'
+      loop:
+        - [git, -C, '{{ source_checkout }}', rev-parse, HEAD]
+        - [git, -C, '{{ source_checkout }}', status, --porcelain, --untracked-files=all]
+      register: source_state
+      changed_when: false
+    - name: Read the pinned parent Git object and its backend gitlink
+      become: false
+      ansible.builtin.command:
+        argv: [git, -C, '{{ source_checkout }}/..', ls-tree, '{{ source_lock.template_parent_revision }}', tpl-backend]
+      register: parent_link
+      changed_when: false
+    - name: Refuse unreviewed source revisions or dirty checkout
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - source_state.results[0].stdout == source_lock.backend_revision
+          - source_state.results[1].stdout == ''
+          - parent_link.stdout.split() == ['160000', 'commit', source_lock.backend_revision, 'tpl-backend']
+    - name: Budget temporary context, package cache, layers and export before building
+      ansible.builtin.include_tasks:
+        file: ../host/tasks/capacity.yaml
+        apply: {become: false}
+      vars: {capacity_planned_bytes: '{{ application_build_budget_bytes }}'}
+    - name: Read the exact committed Docker recipe
+      become: false
+      ansible.builtin.command:
+        argv: [git, -C, '{{ source_checkout }}', show, '{{ source_lock.backend_revision }}:app/Dockerfile']
+        strip_empty_ends: false
+      changed_when: false
+      register: recipe
+    - name: Identify the build by source, recipe, base and runtime target
+      ansible.builtin.set_fact:
+        build_input:
+          source_revision: '{{ source_lock.backend_revision }}'
+          parent_revision: '{{ source_lock.template_parent_revision }}'
+          context: '{{ source_lock.backend_context }}'
+          dockerfile_sha256: '{{ recipe.stdout | hash("sha256") }}'
+          base: '{{ base_reference }}'
+          target: runtime
+    - name: Derive immutable local build name
+      ansible.builtin.set_fact:
+        local_tag: 'sunmoon-build/tpl-backend:{{ source_lock.backend_revision[:12] }}-{{ (build_input | to_json | hash("sha256"))[:12] }}'
+    - name: Prepare private build result directory
+      ansible.builtin.file: {path: '{{ build_root }}', state: directory, owner: '{{ cluster_operator }}', mode: '0700'}
+    - name: Allocate a private invocation workspace
+      become: false
+      ansible.builtin.tempfile: {state: directory, prefix: sunmoon-tpl-build-}
+      register: staging
+    - name: Build and preserve a verified offline artifact
+      block:
+        - name: Create context and authentication subdirectories
+          ansible.builtin.file: {path: '{{ staging.path }}/{{ item }}', state: directory, owner: '{{ cluster_operator }}', mode: '0700'}
+          loop: [context, auth]
+        - name: Give the capability-restricted converter its own root-owned output directory
+          ansible.builtin.file: {path: '{{ staging.path }}/{{ item }}', state: directory, owner: root, group: root, mode: '0700'}
+          loop: [export, scratch]
+        - name: Export only the committed application subtree
+          become: false
+          ansible.builtin.command:
+            argv: [git, -C, '{{ source_checkout }}', archive, --format=tar, '--output={{ staging.path }}/context.tar', '{{ source_lock.backend_revision }}:{{ source_lock.backend_context }}']
+          changed_when: true
+        - name: Extract the committed build context
+          ansible.builtin.unarchive: {src: '{{ staging.path }}/context.tar', dest: '{{ staging.path }}/context', remote_src: true}
+        - name: Supply read-only registry authentication privately
+          ansible.builtin.copy: {src: '{{ registry_config_dir }}/private/puller-auth.json', dest: '{{ staging.path }}/auth/config.json', remote_src: true, mode: '0600'}
+          no_log: true
+        - name: Build using the reviewed production recipe and locked Python base
+          ansible.builtin.command:
+            argv: [docker, build, --network=host, --progress=plain, --target=runtime, '--tag={{ local_tag }}', '--build-arg=PYTHON_IMAGE={{ base_reference }}', --build-arg=HTTP_PROXY, --build-arg=HTTPS_PROXY, --build-arg=NO_PROXY, '--label=org.opencontainers.image.revision={{ source_lock.backend_revision }}', '--label=org.opencontainers.image.source=https://github.com/sunmoonlion/tpl-backend', '{{ staging.path }}/context']
+          environment:
+            DOCKER_CONFIG: '{{ staging.path }}/auth'
+            # Buildx token authentication runs in the client; daemon certs.d is insufficient.
+            SSL_CERT_FILE: '{{ registry_config_dir }}/clients/ca.crt'
+            HTTP_PROXY: '{{ lookup("env", "HTTP_PROXY") }}'
+            HTTPS_PROXY: '{{ lookup("env", "HTTPS_PROXY") }}'
+            NO_PROXY: '{{ registry_hostname }},127.0.0.1,localhost'
+          timeout: 1200
+          register: image_build
+          changed_when: true
+          no_log: true
+        - name: Read the built image identity and runtime user
+          ansible.builtin.command:
+            argv: [docker, image, inspect, '{{ local_tag }}']
+          register: inspected
+          changed_when: false
+        - name: Require the expected architecture, unprivileged user and source identity
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - image.Architecture == 'amd64' and image.Os == 'linux'
+              - image.Config.User == 'appuser'
+              - image.Config.Labels['org.opencontainers.image.revision'] == source_lock.backend_revision
+          vars: {image: '{{ (inspected.stdout | from_json)[0] }}'}
+        - name: Read the actual runtime Python version without starting the app
+          ansible.builtin.command:
+            argv: [docker, run, --rm, --network=none, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --entrypoint=python, '{{ local_tag }}', --version]
+          changed_when: false
+          register: runtime_python
+          failed_when: runtime_python.rc != 0 or runtime_python.stdout != 'Python 3.13.15'
+        - name: Export the built image for transport without sharing the Docker socket
+          ansible.builtin.command:
+            argv: [docker, image, save, '--output={{ staging.path }}/docker.tar', '{{ local_tag }}']
+          changed_when: true
+        - name: Convert the local Docker archive to an OCI archive
+          ansible.builtin.command:
+            argv: [docker, run, --rm, --pull=never, --network=none, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --mount, 'type=bind,source={{ staging.path }}/scratch,target=/var/tmp', --mount, 'type=bind,source={{ staging.path }}/docker.tar,target=/input.tar,readonly', --mount, 'type=bind,source={{ staging.path }}/export,target=/output', '{{ skopeo.manifest_digest }}', copy, --format=oci, 'docker-archive:/input.tar', 'oci-archive:/output/image.tar']
+          changed_when: true
+        - name: Read the new artifact manifest for content addressing
+          ansible.builtin.command:
+            argv: [docker, run, --rm, --pull=never, --network=none, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --mount, 'type=bind,source={{ staging.path }}/scratch,target=/var/tmp', --mount, 'type=bind,source={{ staging.path }}/export/image.tar,target=/input.tar,readonly', '{{ skopeo.manifest_digest }}', inspect, --raw, 'oci-archive:/input.tar']
+          register: manifest
+          changed_when: false
+        - name: Verify all OCI blobs before accepting the built artifact
+          ansible.builtin.command:
+            argv: [python3, '{{ playbook_dir }}/../artifacts/verify-oci-archive.py', '{{ staging.path }}/export/image.tar', --expected-manifest, 'sha256:{{ manifest.stdout | hash("sha256") }}']
+          register: verified
+          changed_when: false
+        - name: Preserve the verified archive in formal material storage
+          ansible.builtin.copy:
+            src: '{{ staging.path }}/export/image.tar'
+            dest: '{{ artifact_cache_root }}/images/tpl-backend-{{ manifest.stdout | hash("sha256") }}.tar'
+            remote_src: true
+            force: false
+            mode: '0644'
+        - name: Verify the final stored archive including an existing content-addressed copy
+          ansible.builtin.command:
+            argv: [python3, '{{ playbook_dir }}/../artifacts/verify-oci-archive.py', '{{ artifact_cache_root }}/images/tpl-backend-{{ manifest.stdout | hash("sha256") }}.tar', --expected-manifest, 'sha256:{{ manifest.stdout | hash("sha256") }}']
+          changed_when: false
+        - name: Read archive envelope identity
+          ansible.builtin.stat:
+            path: '{{ artifact_cache_root }}/images/tpl-backend-{{ manifest.stdout | hash("sha256") }}.tar'
+            checksum_algorithm: sha256
+          register: archive
+        - name: Keep source and archive identity alongside the formal material
+          ansible.builtin.copy:
+            dest: '{{ archive.stat.path }}.json'
+            mode: '0644'
+            content: '{{ {"id":"tpl-backend","input":build_input,"sha256":archive.stat.checksum,"size_bytes":archive.stat.size,"verification":verified.stdout | from_json} | to_nice_json }}'
+        - name: Record immutable application image input for the shared publisher
+          ansible.builtin.copy:
+            dest: '{{ build_root }}/backend-images.lock.json'
+            owner: '{{ cluster_operator }}'
+            mode: '0644'
+            content: |
+              {{ {'schema_version':1,'platform':'linux/amd64','images':[{'id':'tpl-backend','status':'resolved','source':'tpl-backend:' + source_lock.backend_revision[:12] + '-' + (manifest.stdout | hash('sha256'))[:12],'reference':registry_address + '/platform/tpl-backend@sha256:' + (manifest.stdout | hash('sha256')),'manifest_digest':'sha256:' + (manifest.stdout | hash('sha256')),'compressed_layer_bytes':archive.stat.size,'source_revision':source_lock.backend_revision}]} | to_nice_json }}
+        - name: Save the reviewable build receipt, without automatically publishing or deploying
+          ansible.builtin.copy:
+            dest: '{{ build_root }}/tpl-backend.yaml'
+            owner: '{{ cluster_operator }}'
+            mode: '0600'
+            content: |
+              {{ {'input':build_input,'local_tag':local_tag,'image_id':(inspected.stdout | from_json)[0].Id,'python':runtime_python.stdout,'archive':{'path':archive.stat.path,'sha256':archive.stat.checksum,'bytes':archive.stat.size},'verification':verified.stdout | from_json} | to_nice_yaml }}
+      always:
+        - name: Save private build diagnostics before removing the invocation context
+          ansible.builtin.copy:
+            dest: '{{ build_root }}/tpl-backend-build.log'
+            mode: '0600'
+            content: '{{ image_build.stdout | default("") }}{{ image_build.stderr | default("") }}'
+          when: image_build is defined
+          no_log: true
+        - name: Remove only this invocation context and temporary authentication
+          ansible.builtin.file: {path: '{{ staging.path }}', state: absent}

@@ -69,6 +69,7 @@ Flux 提供离线安装和 OCI 源能力；这里的 OCI 发布与根协调已�
 | TLS 入口 | `infrastructure/entry/config.yaml` | HAProxy/Compose/systemd 模板与启停 |
 | Flux/SOPS 引导 | `infrastructure/flux/config.yaml` | 控制器、源与密钥引导 |
 | 服务公共流程 | `infrastructure/services/config.yaml` | 跨组件渲染、加密与验收 |
+| 应用构建 | `infrastructure/applications/config.yaml`、`sources.yaml` | 原生构建与源码身份核对，物料发布复用 artifacts |
 | 各平台组件 | `gitops/components/<平台>/<组件>/config.yaml` | 模板、生成声明、密文及 README |
 
 环境共用参数和源身份保留在 `infrastructure/environments/kind/`，版本摘要统一在物料锁；二者由模块引用，不复制。

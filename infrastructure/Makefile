@@ -9,7 +9,8 @@ ARTIFACTS ?= all
 BINARIES ?= kind,kubectl,kubeadm
 SITE ?= environments/kind/site.yaml
 # Every ordinary field has one source; the explicit list also documents the input closure.
-CONFIG_FILES := registry/config.yaml \
+CONFIG_FILES := applications/config.yaml \
+	registry/config.yaml \
 	entry/config.yaml \
 	cluster/config.yaml \
 	flux/config.yaml \
@@ -24,7 +25,7 @@ CONFIG_ARGS = $(foreach file,$(CONFIG_FILES),--extra-vars '@$(file)') --extra-va
 
 .PHONY: help tools images preflight check-images
 help:
-	@printf '%s\n' 'config       List the authoritative user configuration files' 'tools        Install locked Ansible into infrastructure/.venv' 'images       Show selected upstream image identities' 'check-images Fail if an upstream image is unresolved' 'install-binaries Install verified tools into .tools/bin only' 'preflight    Read-only host mount checks (Ansible)' 'plan-artifacts Preview selected locked files without downloads' 'fetch-artifacts Download and verify selected files after capacity check' 'check-artifacts Verify selected files fully offline' 'plan-node-build Preview verified official KIND build inputs' 'build-node    Build and inspect a new node image; no cluster creation' 'check-node    Inspect existing node image without rebuilding' 'plan-bootstrap-images Preview node and Calico archive preparation' 'fetch-bootstrap-images Pull/export and verify immutable image archives' 'check-bootstrap-images Verify complete archives offline' 'prepare-harbor-materials Extract official installer and load verified images only' 'registry-plan Preview standalone registry paths and backend' 'registry-deploy Configure and start the new Harbor without switching ingress' 'registry-start / registry-stop / registry-status Control only the new Harbor' 'prepare-host-materials / check-host-materials Prepare or verify HAProxy and skopeo archives' 'entry-plan / entry-deploy / entry-start / entry-stop / entry-status Control TLS entry' 'registry-accounts Provision private project and bounded publisher/puller identities' 'registry-publish-check Publish and fully pull back the locked HAProxy image after cutover' 'scanner-db-plan / scanner-db-install / scanner-db-verify Manage locked offline databases' 'registry-scan-check Scan the published image through Harbor and save the report' 'registry-recovery-plan / registry-recovery-check Rehearse an explicit cold backup in isolation' 'cluster-plan / cluster-deploy / cluster-status Native isolated KIND bootstrap' 'cluster-pull-check Verify private pulls and DNS on all three nodes' 'install-flux / flux-plan / flux-materials / flux-verify-materials / flux-publish Manage locked Flux materials' 'flux-bootstrap Verify materials, publish, install and reconcile the promoted source' 'flux-deploy / flux-status Install and check controllers' 'flux-release / flux-source-apply / flux-source-status Publish and reconcile committed declarations' 'install-secrets-tools / secrets-prepare / secrets-apply / secrets-status Manage independent SOPS identity' 'foundations-bootstrap / foundations-check Deploy and verify SOPS and platform base declarations' 'services-plan / services-materials / services-publish Prepare pinned first-batch images' 'services-render / services-validate-release Review settings against the promoted GitOps release' 'services-bootstrap / services-check Deploy and verify the first service batch' 'Business application deployment targets are not implemented yet.'
+	@printf '%s\n' 'config       List the authoritative user configuration files' 'tools        Install locked Ansible into infrastructure/.venv' 'images       Show selected upstream image identities' 'check-images Fail if an upstream image is unresolved' 'install-binaries Install verified tools into .tools/bin only' 'preflight    Read-only host mount checks (Ansible)' 'plan-artifacts Preview selected locked files without downloads' 'fetch-artifacts Download and verify selected files after capacity check' 'check-artifacts Verify selected files fully offline' 'plan-node-build Preview verified official KIND build inputs' 'build-node    Build and inspect a new node image; no cluster creation' 'check-node    Inspect existing node image without rebuilding' 'plan-bootstrap-images Preview node and Calico archive preparation' 'fetch-bootstrap-images Pull/export and verify immutable image archives' 'check-bootstrap-images Verify complete archives offline' 'prepare-harbor-materials Extract official installer and load verified images only' 'registry-plan Preview standalone registry paths and backend' 'registry-deploy Configure and start the new Harbor without switching ingress' 'registry-start / registry-stop / registry-status Control only the new Harbor' 'prepare-host-materials / check-host-materials Prepare or verify HAProxy and skopeo archives' 'entry-plan / entry-deploy / entry-start / entry-stop / entry-status Control TLS entry' 'registry-accounts Provision private project and bounded publisher/puller identities' 'registry-publish-check Publish and fully pull back the locked HAProxy image after cutover' 'scanner-db-plan / scanner-db-install / scanner-db-verify Manage locked offline databases' 'registry-scan-check Scan the published image through Harbor and save the report' 'registry-recovery-plan / registry-recovery-check Rehearse an explicit cold backup in isolation' 'cluster-plan / cluster-deploy / cluster-status Native isolated KIND bootstrap' 'cluster-pull-check Verify private pulls and DNS on all three nodes' 'install-flux / flux-plan / flux-materials / flux-verify-materials / flux-publish Manage locked Flux materials' 'flux-bootstrap Verify materials, publish, install and reconcile the promoted source' 'flux-deploy / flux-status Install and check controllers' 'flux-release / flux-source-apply / flux-source-status Publish and reconcile committed declarations' 'install-secrets-tools / secrets-prepare / secrets-apply / secrets-status Manage independent SOPS identity' 'foundations-bootstrap / foundations-check Deploy and verify SOPS and platform base declarations' 'services-plan / services-materials / services-publish Prepare pinned first-batch images' 'services-render / services-validate-release Review settings against the promoted GitOps release' 'services-bootstrap / services-check Deploy and verify the first service batch' 'application-plan / application-materials / application-verify-materials / application-publish Prepare locked application base images' 'application-build-backend / application-publish-backend Build and publish the pinned template backend' 'Business application deployment targets are not implemented yet.'
 
 tools:
 	$(UV) venv --python '$(HOST_PYTHON)' --relocatable --allow-existing .venv
@@ -179,13 +180,13 @@ foundations-check:
 
 .PHONY: services-plan services-materials services-verify-materials services-publish
 services-plan:
-	$(ANSIBLE) -i host/inventory.yaml services/materials.yaml $(CONFIG_ARGS) --extra-vars service_material_action=plan
+	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=plan --extra-vars '{"publication_image_ids":"{{ service_image_ids }}","publication_enabled":"{{ services_enabled }}","publication_capacity_operation":"services-materials"}'
 services-materials:
-	$(ANSIBLE) -i host/inventory.yaml services/materials.yaml $(CONFIG_ARGS) --extra-vars service_material_action=prepare
+	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=prepare --extra-vars '{"publication_image_ids":"{{ service_image_ids }}","publication_enabled":"{{ services_enabled }}","publication_capacity_operation":"services-materials"}'
 services-verify-materials:
-	$(ANSIBLE) -i host/inventory.yaml services/materials.yaml $(CONFIG_ARGS) --extra-vars service_material_action=verify
+	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=verify --extra-vars '{"publication_image_ids":"{{ service_image_ids }}","publication_enabled":"{{ services_enabled }}","publication_capacity_operation":"services-materials"}'
 services-publish:
-	$(ANSIBLE) -i host/inventory.yaml services/materials.yaml $(CONFIG_ARGS) --extra-vars service_material_action=publish
+	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=publish --extra-vars '{"publication_image_ids":"{{ service_image_ids }}","publication_enabled":"{{ services_enabled }}","publication_capacity_operation":"services-materials"}'
 
 .PHONY: services-tools services-chart services-render services-bootstrap
 services-tools:
@@ -221,3 +222,21 @@ services-validate-release:
 .PHONY: config
 config:
 	@printf '%s\n' '$(SITE)' $(CONFIG_FILES)
+
+.PHONY: application-plan application-materials application-verify-materials application-publish
+application-plan:
+	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=plan --extra-vars '{"publication_image_ids":"{{ application_base_image_ids }}","publication_enabled":true,"publication_capacity_operation":"application-materials"}'
+application-materials:
+	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=prepare --extra-vars '{"publication_image_ids":"{{ application_base_image_ids }}","publication_enabled":true,"publication_capacity_operation":"application-materials"}'
+application-verify-materials:
+	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=verify --extra-vars '{"publication_image_ids":"{{ application_base_image_ids }}","publication_enabled":true,"publication_capacity_operation":"application-materials"}'
+application-publish:
+	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=publish --extra-vars '{"publication_image_ids":"{{ application_base_image_ids }}","publication_enabled":true,"publication_capacity_operation":"application-materials"}'
+
+.PHONY: application-build-backend
+application-build-backend:
+	$(ANSIBLE) -i host/inventory.yaml applications/build.yaml $(CONFIG_ARGS)
+
+.PHONY: application-publish-backend
+application-publish-backend:
+	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=publish --extra-vars '{"publication_image_ids":["tpl-backend"],"publication_enabled":true,"publication_capacity_operation":"application-publish","publication_lockfile":"$(CURDIR)/.build/applications/backend-images.lock.json"}'

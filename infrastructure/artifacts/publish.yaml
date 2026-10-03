@@ -1,28 +1,30 @@
 ---
-- name: Prepare and publish the selected platform service images
+- name: Prepare and publish selected immutable images
   hosts: kind_hosts
   gather_facts: false
   become: true
   vars:
-    material_action: '{{ service_material_action }}'
-    service_material_action: plan
-    service_image_ids: [traefik, postgresql, redis, rabbitmq, casdoor]
-    capacity_operation: services-materials
-    images: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json }}'
-    selected_images: '{{ images.images | selectattr("id", "in", service_image_ids) | list }}'
-    skopeo: '{{ images.images | selectattr("id", "equalto", "skopeo") | first }}'
+    material_action: '{{ publication_action }}'
+    publication_action: plan
+    capacity_operation: '{{ publication_capacity_operation }}'
+    images: '{{ lookup("ansible.builtin.file", publication_lockfile | default(playbook_dir + "/upstream-images.lock.json")) | from_json }}'
+    selected_images: '{{ images.images | selectattr("id", "in", publication_image_ids) | list }}'
+    skopeo: '{{ (lookup("file", playbook_dir + "/upstream-images.lock.json") | from_json).images | selectattr("id", "equalto", "skopeo") | first }}'
     image_directory: '{{ artifact_cache_root }}/images'
     verifier: '{{ playbook_dir }}/../artifacts/verify-oci-archive.py'
     local_client: [docker, run, --rm, --pull=never, --network=host, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --tmpfs, '/var/tmp:rw,noexec,nosuid,size={{ (artifact_image.compressed_layer_bytes | int) * 2 + 16777216 }}', --add-host, '{{ registry_hostname }}:127.0.0.1', --env, HTTP_PROXY=, --env, HTTPS_PROXY=, --env, ALL_PROXY=, --env, 'NO_PROXY={{ registry_hostname }},127.0.0.1,localhost', --mount, 'type=bind,source={{ registry_config_dir }}/clients,target=/certs,readonly', --mount, 'type=bind,source={{ registry_config_dir }}/private/publisher-auth.json,target=/publisher.json,readonly', --mount, 'type=bind,source={{ registry_config_dir }}/private/puller-auth.json,target=/puller.json,readonly']
   tasks:
-    - name: Require the selected locked service images and supported action
+    - name: Require the selected locked images and supported action
       ansible.builtin.assert:
         quiet: true
         that:
           - not ansible_check_mode
-          - service_material_action in ['plan', 'prepare', 'verify', 'publish']
-          - services_enabled | bool
-          - selected_images | map(attribute='id') | sort == service_image_ids | sort
+          - publication_action in ['plan', 'prepare', 'verify', 'publish']
+          - publication_enabled | bool
+          - publication_image_ids is sequence and publication_image_ids is not string
+          - publication_image_ids | length > 0
+          - publication_image_ids | unique | length == publication_image_ids | length
+          - selected_images | map(attribute='id') | sort == publication_image_ids | sort
           - images.platform == 'linux/amd64'
           - registry_address == 'harbor.sunmoonai.com:30443'
     - name: Validate immutable inputs
@@ -34,14 +36,14 @@
           - item.status == 'resolved'
       loop: '{{ selected_images }}'
       loop_control: {label: '{{ item.id }}'}
-    - name: Show locked service image plan
+    - name: Show locked image plan
       ansible.builtin.debug:
         msg: '{{ item.reference }} -> {{ registry_address }}/platform/{{ item.id }}@{{ item.manifest_digest }}'
       loop: '{{ selected_images }}'
       loop_control: {label: '{{ item.id }}'}
     - name: End read-only plan
       ansible.builtin.meta: end_play
-      when: service_material_action == 'plan'
+      when: publication_action == 'plan'
     - name: Inspect artifact directory without following links
       ansible.builtin.stat:
         path: '{{ image_directory }}'
@@ -59,9 +61,9 @@
         apply: {become: false}
       vars:
         capacity_planned_bytes: 16777216
-      when: service_material_action in ['prepare', 'publish']
-    - name: Process each service image through the same path
-      ansible.builtin.include_tasks: ../artifacts/tasks/publish-image.yaml
+      when: publication_action in ['prepare', 'publish']
+    - name: Process each selected image through the same path
+      ansible.builtin.include_tasks: tasks/publish-image.yaml
       loop: '{{ selected_images }}'
       loop_control:
         loop_var: artifact_image

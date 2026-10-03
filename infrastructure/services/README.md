@@ -1,6 +1,6 @@
 # 服务公共编排
 
-`config.yaml` 仅保存本批服务总开关和私有输入/备份路径。
+`config.yaml` 保存本批服务总开关、私有输入/备份路径和平台镜像选择；摘要仍取统一锁。
 组件的开关、域名、卷配置和模板在 [gitops/components](../../gitops/components/README.md)，此处不保存第二份。
 `layout.yaml` 只维护源码路径、命名空间映射及组件卷引用，不重复填写容量等用户值。
 
@@ -21,3 +21,5 @@
 | `services_backup_dir` | 私有输入/TLS独立副本 | 守卫限定/mnt/sunmoon-data/backups/services/<集群名>；修改密码必须另做轮换并同步备份。 |
 
 组件用户名/密码/端口的逐项边界见[服务字段表](../../docs/platform-kind-v1/services.md#字段的维护边界2026-10-03-逐项核对)。本目录只保留公共编排；组件专属配置与模板留在各组件。资源用户入口、凭据轮换和Casdoor域名/节点参数贯通尚未完成。
+
+`service_image_ids` 是本批平台镜像选择。公共准备与发布实现位于 `../artifacts/publish.yaml`，原services-plan/materials/verify-materials/publish入口不变；原services/materials.yaml已移走，无转发副本。

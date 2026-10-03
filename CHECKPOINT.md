@@ -1,3 +1,24 @@
+# 当前优先状态：模板后端镜像已构建并发布（2026-10-03）
+
+本节优先于下方历史。所有者要求长期沿用“配置、实现、说明同处；共享字段单一来源”并继续部署。原则已加入AGENTS.md，仍在platform-kind-v1工作树/分支；本单元基线dba3766353413445f37c2918834c343a46115f87，仅修改k8s，无push。
+
+- 原生cluster-status/registry-status/flux-source-status通过。现有平台命名空间与Flux源保持；未发布新GitOps源、未启动业务服务或切换应用入口。
+- 基础镜像Python3.13.15-slim-trixie、Node24.21.0-trixie及trixie-slim已正式归档并发布Harbor，使用此前版本锁。prepare ok75 changed15 failed0；publish ok63 changed3 failed0。没有使用东京。
+- 模板父仓3317c84d984fdd6dbeb4ab490685f9fcdff569a3与本地fable相同；backend6674125cd1c14d9700c707b0b0f4b5d422d42f05，web45ceed1a147cadb6dfd1b8a72b79ff5a266854bd，adminee1f542220386e15c8f97c6e40e317caf3c2e9e7均干净；未fetch、未修改四业务父仓或子模块。
+- infrastructure/applications下config、sources、build和README同处。后端从已提交Git树导出，检查父仓gitlink/干净HEAD，复用应用Dockerfile并覆盖固定Python基镜像。实际运行版本Python3.13.15、用户appuser；构建ok37 changed13 failed0。
+- 后端完整OCI归档82,363,392字节，manifest sha256:5b38d39836dc6fe5e6d9d17eaa537d4ba52dd5db342dd95be0397e4c4e928ef0。正式位置releases/platform-kind-v1/images/tpl-backend-<digest>.tar及JSON来源记录。发布到harbor.sunmoonai.com:30443/platform/tpl-backend，同摘要独立puller核对通过；初次发布ok29 changed1，重复发布ok21 changed0。重复构建manifest相同，不等于所有依赖已支持断网构建。
+- services/materials.yaml移动为artifacts/publish.yaml；平台/应用基础镜像/新建应用镜像共用原生物料发布，不留转接副本。原services-plan ok3 changed0；第一次在沙箱内因Ansible家目录临时文件受限退出，提权后通过。
+- 实际修复三个构建编排问题：Buildx token客户端未信任Harbor CA（仅构建进程SSL_CERT_FILE）；无capabilities的root无法写其他UID的0700输出目录（专属root目录）；只读skopeo的/var/tmp不可写（专属临时挂载）。未关闭TLS或重启Docker，未修改全局CA。
+- 继续常规50GiB门槛，后端每次4GiB预算；最后构建预检计未来增长及4GiB后余57,839,878,144字节，发布重复预检计16MiB后余62,118,965,248字节。不同预算不能当成释放量。没有继承40GiB例外或清理缓存。
+- 11份最小日志/回执在/data/kind-clusters/sunmoon-kind/bootstrap/evidence/application-backend-20261003，含SHA256索引。临时context/auth/export/scratch由always移除；本轮8份/tmp日志及1份草稿在校验归档后移除。正式镜像、物料、构建缓存与现有节点/卷均保留。
+
+下一步固定顺序：模板前端构建适配 → 应用独立数据库/消息身份和Casdoor配置 → 独立迁移Job → API/worker/scheduler及两个前端 → 实际业务链验收。模板直接依赖PG/Redis/Rabbit/Casdoor已在新集群；Info需要的对象存储/ES排在其后，不应拿未运行的后端宣称应用已交付。
+
+边界：Python依赖从网络按uv.lock获取，uv工具下载哈希及全离线依赖闭包未实现；前端Dockerfile仍引用旧Alpine且禁用了Corepack签名校验，需在业务源仓正确适配，不能只换基镜像参数。原应用入口仍转旧worker。整套一键/生命周期、开机恢复、重启重建持久化、长期空间策略与云实机仍未完成。
+规则C-T3四角色一镜像、C-T5/T6本单元仅k8s/五仓并列，C-R1/R2构建绑定源码和摘要，C-R3发布同一归档不重新构建。没有新增/运行测试套件；实际构建、归档校验、镜像发布和git diff检查按部署范围执行。
+
+---
+
 # 当前优先状态：配置与实现归拢已完成（2026-10-03）
 
 本节优先于下方历史。所有者确认这是一项覆盖整个新体系的原则，并授权实施。基线8927f27f35dbbe8c0a57b167355b48c67addec55，工作树/分支platform-kind-v1，仅k8s、无push。
