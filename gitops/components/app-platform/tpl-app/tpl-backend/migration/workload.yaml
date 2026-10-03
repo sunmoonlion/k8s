@@ -1,6 +1,6 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: 'tpl-schema-check-v1', namespace: tpl-app-dev}
+metadata: {name: 'tpl-schema-check-v1', namespace: app-platform-dev}
 data:
   verify.py: |
     """Check the deployed schema and real runtime grants without printing credentials."""
@@ -58,7 +58,7 @@ data:
 ---
 apiVersion: batch/v1
 kind: Job
-metadata: {name: 'tpl-migrate-5b38d39836dc-v1', namespace: tpl-app-dev}
+metadata: {name: 'tpl-migrate-5b38d39836dc-v1', namespace: app-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 420
@@ -67,7 +67,7 @@ spec:
       labels: {app.kubernetes.io/name: tpl-migration, app.kubernetes.io/part-of: tpl, sunmoonai.com/postgresql-client: 'true'}
     spec:
       restartPolicy: Never
-      serviceAccountName: application-runtime
+      serviceAccountName: tpl-runtime
       automountServiceAccountToken: false
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:

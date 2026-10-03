@@ -8,7 +8,7 @@
     application_name: tpl
     application_action: plan
     capacity_operation: application-deploy-tpl
-    cfg: '{{ tpl_deployment | combine(tpl_backend_deployment) | combine({"web_origin":tpl_web_deployment.origin, "admin_origin":tpl_admin_deployment.origin}) }}'
+    cfg: '{{ tpl_deployment | combine(tpl_backend_deployment) | combine({"namespace":app_namespace, "web_origin":tpl_web_deployment.origin, "admin_origin":tpl_admin_deployment.origin}) }}'
     app_root: '{{ playbook_dir }}/../../gitops/components/app-platform/tpl-app'
     component_root: '{{ app_root }}/tpl-backend'
     repo: '{{ playbook_dir }}/../..'
@@ -22,7 +22,7 @@
     image_map: '{{ dict(images | map(attribute="id") | zip(images)) }}'
     migration_job: 'tpl-migrate-{{ app_images.backend.digest[7:19] }}-{{ cfg.migration_job_revision }}'
     kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
-    candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/puller.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml]
+    candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml]
   tasks:
     - name: Validate the selected deployment and identity boundaries
       ansible.builtin.assert:
@@ -32,7 +32,9 @@
           - application_name == 'tpl'
           - application_action in ['plan','render','stage','validate','check']
           - application_action == 'plan' or cfg.enabled | bool
-          - cfg.namespace == 'tpl-app-dev'
+          - cfg.namespace == app_namespace
+          - "'namespace' not in tpl_deployment"
+          - "'namespace' not in tpl_backend_deployment"
           - tpl_deployment.keys() | intersect(tpl_backend_deployment.keys()) | length == 0
           - cfg.database is match('^[a-z][a-z0-9_]{1,40}$')
           - cfg.database_runtime_user is match('^[a-z][a-z0-9_]{1,40}$')
@@ -160,10 +162,6 @@
             owner: '{{ cluster_operator }}'
             mode: '0644'
           loop: [database/workload.yaml, migration/workload.yaml, stages.yaml]
-        - name: Read bounded pull-only registry credentials
-          ansible.builtin.slurp: {src: '{{ registry_config_dir }}/private/puller-auth.json'}
-          register: puller
-          no_log: true
         - name: Derive independent connection URLs without logging
           ansible.builtin.set_fact:
             runtime_url: 'postgresql+asyncpg://{{ cfg.database_runtime_user }}:{{ app_credentials.runtime_password }}@postgresql.{{ data_namespace }}.svc.cluster.local:5432/{{ cfg.database }}'
@@ -190,13 +188,6 @@
                 kind: Secret
                 metadata: {name: tpl-migration-auth, namespace: '{{ cfg.namespace }}'}
                 stringData: {DATABASE_URL: '{{ runtime_url }}', MIGRATION_DATABASE_URL: '{{ migrator_url }}'}
-            - file: database/puller.sops.yaml
-              manifest:
-                apiVersion: v1
-                kind: Secret
-                metadata: {name: registry-puller, namespace: '{{ cfg.namespace }}'}
-                type: kubernetes.io/dockerconfigjson
-                data: {'.dockerconfigjson': '{{ puller.content }}'}
           loop_control: {loop_var: secret_item, label: '{{ secret_item.file }}'}
           no_log: true
         - name: Render explicit resource lists without applying config files
@@ -206,7 +197,7 @@
             owner: '{{ cluster_operator }}'
             mode: '0644'
           loop:
-            - {name: database, resources: [workload.yaml, bootstrap.sops.yaml, runtime.sops.yaml, puller.sops.yaml]}
+            - {name: database, resources: [workload.yaml, bootstrap.sops.yaml, runtime.sops.yaml]}
             - {name: migration, resources: [workload.yaml, auth.sops.yaml]}
     - name: Stage reviewed candidate declarations without deploying
       when: application_action == 'stage'

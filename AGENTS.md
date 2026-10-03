@@ -46,3 +46,5 @@
 应用日常构建采用国内在线源优先；确认依赖下载网络失败后本次自动切官方源，探测HTTPS_PROXY可用才重试一次；代理不可用或重试失败给出明确提示并非零退出，不等待交互。非网络/证书/签名/哈希错误不自动切换。应用镜像发布到Harbor后按摘要部署，离线应用包不是部署前提。用户只在infrastructure/applications/config.yaml选择domestic或official-proxy，源与代理配套切换，Harbor始终直连；端点唯一在同目录download-modes.json维护；代理例外不改日常默认，证书、签名和依赖哈希校验不得关闭。
 
 部署声明保留“平台 → 应用 → 组件”的分类：`gitops/components/app-platform/auth-app/casdoor/`、`gitops/components/app-platform/tpl-app/tpl-backend/`、`tpl-web-frontend/`、`tpl-admin-frontend/`。应用之下必须保留前后端组件层，database/migration/API/Worker/Scheduler归后端组件。后续实例沿用 `info-app/`、`knowledge-app/`、`investment-app/`；应用自己的配置、数据库初始化、迁移与运行声明同处，不新增平行的 GitOps 应用分类。目录归属不等于运行命名空间。
+
+所有应用（Casdoor、tpl/info/knowledge/investment）统一使用环境 `app_namespace`，当前为 `app-platform-dev`；应用目录层级不派生新命名空间。平台基础对象由foundations唯一管理，应用引用共享网络策略与拉取凭据，避免重复声明同一资源。

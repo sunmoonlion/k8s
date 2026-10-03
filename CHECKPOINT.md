@@ -1,3 +1,15 @@
+# 当前优先状态：按所有者确认统一应用命名空间，数据库重试准备（2026-10-03）
+
+所有者明确所有应用统一使用 `app-platform-dev`。应用层级只决定目录职责；命名空间来自环境 `site.yaml` 的 `app_namespace`，不再在tpl配置重复设置。独立数据库和角色保留。
+
+首次已发布源码128aaa66（晋级25ec68a1），tpl-database-v1执行失败：`syntax error at or near "$" at character 4`，迁移未执行。SQL的裸双美元定界符在容器参数处理中不能安全保留，改用带名字的 `$bootstrap$`，Job显式升v2。错误尝试不算验收通过。
+
+用户指出命名空间后终止本次客户端等待（退出-15；未终止Flux控制器）。模板改用独立tpl-runtime SA并复用foundations已有namespace、默认网络策略和registry-puller；不在两个阶段重复管理同名基础资源。移除应用独立puller密文。渲染和15根Kustomize检查通过；准备发布修正，暂未宣称恢复通过。
+
+误建tpl-app-dev当前保留以供核对；修正协调完成后仅清除本次错误对象，先核对Flux inventory、全部命名空间资源及无卷/工作负载，不涉及Casdoor和旧集群。原始失败Job和客户端输出在infrastructure/.build/applications/database-unit-20261003/bootstrap.log。更新渲染stage-shared-namespace.log通过，仍用原凭据，未重新生成口令。
+
+---
+
 # 当前优先状态：应用层级纠正，模板数据库声明已准备（2026-10-03）
 
 本节优先于下方历史。工作树/分支 platform-kind-v1，基线 d82f37c7cacd65b48f8a1d3e350e5ed199d8f804；本单元只改 k8s。所有者明确保留“平台 → 应用 → 前后端组件”，不把模板应用特殊化，也不另建平行的 gitops/applications。

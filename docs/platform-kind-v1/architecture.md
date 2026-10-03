@@ -199,4 +199,4 @@ WSL 挂载成功前禁止启动 Harbor。已通过后端健康与认证；容器
 
 保留平台、应用、组件三级职责：认证应用是 `gitops/components/app-platform/auth-app/casdoor/`，模板应用是 `gitops/components/app-platform/tpl-app/`。实例应用后续按相同层级归入。应用配置和初始化/迁移/运行模板随应用维护；共用Make/Ansible构建编排仍在 `infrastructure/applications/`。此次移动不改变Casdoor资源名、运行namespace、卷或密文内容。
 
-应用目录之下继续保留前后端组件层：`tpl-app/tpl-backend/`、`tpl-app/tpl-web-frontend/`、`tpl-app/tpl-admin-frontend/`。数据库初始化、迁移、API/Worker/Scheduler归后端组件；公共namespace/开关留应用层，组件字段和镜像锁随组件。后续info/knowledge/investment按同一结构落地，不把前后端合在应用根目录。
+应用目录之下继续保留前后端组件层：`tpl-app/tpl-backend/`、`tpl-app/tpl-web-frontend/`、`tpl-app/tpl-admin-frontend/`。数据库初始化、迁移、API/Worker/Scheduler归后端组件；共享开关留应用层，命名空间统一引用环境app_namespace（app-platform-dev），组件字段和镜像锁随组件。后续info/knowledge/investment按同一结构落地，不把前后端合在应用根目录。

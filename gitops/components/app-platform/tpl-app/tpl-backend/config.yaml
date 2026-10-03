@@ -4,7 +4,7 @@ tpl_backend_deployment:
   database: tpl
   database_runtime_user: tpl_runtime
   database_migrator_user: tpl_migrator
-  database_bootstrap_revision: v1
+  database_bootstrap_revision: v2
   migration_job_revision: v1
   expected_schema_revision: '20260911_0003'
   private_dir: /etc/sunmoon/applications/sunmoon-kind/tpl

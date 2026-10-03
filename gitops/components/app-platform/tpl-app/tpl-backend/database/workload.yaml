@@ -1,76 +1,12 @@
 apiVersion: v1
-kind: Namespace
-metadata:
-  name: tpl-app-dev
-  labels:
-    app.kubernetes.io/part-of: tpl
-    pod-security.kubernetes.io/enforce: restricted
-    pod-security.kubernetes.io/enforce-version: v1.36
----
-apiVersion: v1
 kind: ServiceAccount
-metadata: {name: default, namespace: tpl-app-dev}
-automountServiceAccountToken: false
----
-apiVersion: v1
-kind: ServiceAccount
-metadata: {name: application-runtime, namespace: tpl-app-dev}
+metadata: {name: tpl-runtime, namespace: app-platform-dev}
 automountServiceAccountToken: false
 imagePullSecrets: [{name: registry-puller}]
 ---
-apiVersion: v1
-kind: LimitRange
-metadata: {name: container-defaults, namespace: tpl-app-dev}
-spec:
-  limits:
-    - type: Container
-      defaultRequest: {cpu: 100m, memory: 128Mi}
-      default: {cpu: '1', memory: 512Mi}
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata: {name: default-deny, namespace: tpl-app-dev}
-spec: {podSelector: {}, policyTypes: [Ingress, Egress]}
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata: {name: allow-dns, namespace: tpl-app-dev}
-spec:
-  podSelector: {}
-  policyTypes: [Egress]
-  egress:
-    - to:
-        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
-          podSelector: {matchLabels: {k8s-app: kube-dns}}
-      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata: {name: tpl-postgresql, namespace: data-platform-dev}
-spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: postgresql}}
-  policyTypes: [Ingress]
-  ingress:
-    - from:
-        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: tpl-app-dev}}
-          podSelector: {matchLabels: {sunmoonai.com/postgresql-client: 'true'}}
-      ports: [{protocol: TCP, port: 5432}]
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata: {name: postgresql-client, namespace: tpl-app-dev}
-spec:
-  podSelector: {matchLabels: {sunmoonai.com/postgresql-client: 'true'}}
-  policyTypes: [Egress]
-  egress:
-    - to:
-        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: data-platform-dev}}
-          podSelector: {matchLabels: {app.kubernetes.io/name: postgresql}}
-      ports: [{protocol: TCP, port: 5432}]
----
 apiVersion: batch/v1
 kind: Job
-metadata: {name: 'tpl-database-v1', namespace: data-platform-dev}
+metadata: {name: 'tpl-database-v2', namespace: data-platform-dev}
 spec:
   backoffLimit: 1
   activeDeadlineSeconds: 300
@@ -103,14 +39,14 @@ spec:
               \getenv migrator_password MIGRATOR_PASSWORD
               \getenv runtime_password RUNTIME_PASSWORD
               SELECT pg_advisory_lock(hashtextextended('sunmoon/tpl/database',0));
-              DO $$ BEGIN
+              DO $bootstrap$ BEGIN
                 IF EXISTS (SELECT FROM pg_roles WHERE rolname IN ('tpl_runtime','tpl_migrator') AND shobj_description(oid,'pg_authid') IS DISTINCT FROM 'sunmoon-kind/tpl') THEN
                   RAISE EXCEPTION 'Refusing a foreign existing role';
                 END IF;
                 IF EXISTS (SELECT FROM pg_database WHERE datname='tpl' AND shobj_description(oid,'pg_database') IS DISTINCT FROM 'sunmoon-kind/tpl') THEN
                   RAISE EXCEPTION 'Refusing a foreign existing database';
                 END IF;
-              END $$;
+              END $bootstrap$;
               SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD %L','tpl_migrator',:'migrator_password') WHERE NOT EXISTS(SELECT FROM pg_roles WHERE rolname='tpl_migrator') \gexec
               SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD %L','tpl_runtime',:'runtime_password') WHERE NOT EXISTS(SELECT FROM pg_roles WHERE rolname='tpl_runtime') \gexec
               COMMENT ON ROLE tpl_migrator IS 'sunmoon-kind/tpl';

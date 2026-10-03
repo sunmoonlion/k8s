@@ -6,9 +6,9 @@
 
 | 位置 | 用途 |
 | --- | --- |
-| `config.yaml` | 数据库名、运行/迁移用户名、任务修订、预期schema、私有路径及本批容量预算；共享开关/namespace来自上一级config，origin来自对应前端config |
+| `config.yaml` | 数据库名、运行/迁移用户名、任务修订、预期schema、私有路径及本批容量预算；共享开关来自上一级config，namespace来自环境site.yaml的app_namespace，origin来自对应前端config |
 | `image.lock.yaml` | 已构建并由Harbor只读身份核对的镜像摘要与源码提交；部署复用产物 |
-| `database/` | 新命名空间/默认拒绝策略、库与账号初始化、只读拉取身份、运行账号Secret |
+| `database/` | 库与账号初始化、独立运行ServiceAccount和运行账号Secret；复用平台命名空间、网络策略及registry-puller |
 | `migration/` | 独立迁移Job与真实权限/读写验收；复用同一后端镜像的规范迁移命令 |
 | `stages.yaml.j2` | Flux的platform-services → tpl-database → tpl-migration依赖链 |
 

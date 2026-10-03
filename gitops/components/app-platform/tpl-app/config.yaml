@@ -1,5 +1,4 @@
-# 应用共享开关和命名空间；组件自己的参数在组件目录。
+# 应用共享开关；命名空间统一来自 infrastructure/environments/kind/site.yaml 的 app_namespace。
 ---
 tpl_deployment:
   enabled: true
-  namespace: tpl-app-dev
