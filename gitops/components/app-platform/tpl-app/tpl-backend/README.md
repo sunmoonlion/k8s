@@ -33,3 +33,9 @@ make -C infrastructure application-check APP=tpl
 数据库归迁移账号所有；运行账号只有库连接、schema使用、业务表CRUD/sequence使用权，禁止建表及修改alembic版本表。初始化检测外来同名库/角色并拒绝接管，既有角色不静默重设密码。验收临时表名随机且由迁移账号创建/删除，不删除业务表；实际校验运行账号CRUD与DDL拒绝。
 
 口令备份不是数据库备份；本单元是全新空库第一次部署，尚无旧数据迁移。将来对已有库升级前须准备数据库备份和恢复路径，不能将Git回退当作数据库回退。完整应用登录、任务及跨应用链路另验。
+
+## 当前部署结果（2026-10-03）
+
+库初始化 `data-platform-dev/tpl-database-v2` 和迁移 `app-platform-dev/tpl-migrate-5b38d39836dc-v1` 已成功，schema为20260911_0003；真实CRUD、运行身份DDL拒绝及迁移元数据写入拒绝均通过。完整bootstrap重复执行四阶段changed=0。API/Worker/Scheduler及前端仍待部署，不能据此判断业务已跑通。
+
+成功的Completed Job保留为Flux期望对象；不要直接删除或加TTL，否则Flux可能重建并重新执行。失败v1 Job和误建tpl-app-dev已按精确归属清除。修改SQL必须更新bootstrap修订，修改迁移任务必须更新migration修订，经相同声明发布流程实施。

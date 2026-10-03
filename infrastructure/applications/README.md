@@ -129,3 +129,11 @@ make application-publish-web APP=info
 ```
 
 证据在私有 `.build/applications/rehearsal-*`，具体批次及未完成项见 `CHECKPOINT.md`；不把日志、凭据或构建归档提交Git。
+
+## 模板数据库部署
+
+应用声明在 `gitops/components/app-platform/tpl-app/tpl-backend/`，普通配置和说明同处。所有应用命名空间统一来自环境 `app_namespace`（app-platform-dev）；建库Job因读取平台管理员Secret在data-platform-dev运行。
+
+在本目录运行 `make application-deployment-plan APP=tpl` 查看，`make application-stage APP=tpl`生成待审声明；本地提交并经`flux-release`发布、显式晋级固定源后，`make application-bootstrap APP=tpl`串联渲染、声明核对、协调与实际Job验收。`make application-check APP=tpl`只核对结果。此入口目前完成模板数据库及迁移，尚未部署完整业务运行组件。
+
+2026-10-03独立身份、schema迁移和真实权限验收已通过，bootstrap重复四阶段changed=0；失败与清理记录见CHECKPOINT。数据库口令备份不等于数据备份；已有业务数据的后续迁移须先准备数据库备份恢复。

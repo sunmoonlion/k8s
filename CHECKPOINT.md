@@ -1,3 +1,31 @@
+# 当前优先状态：模板数据库与迁移通过，错误资源已清理（2026-10-03）
+
+本节优先于以下历史。工作树/分支platform-kind-v1；本单元仅k8s，无push。实现提交128aaa66、命名空间修正08a7d9b1、晋级cd94bc87、验收解析修正e94171268ac665776c5b58acf7e9ee951f3b2cde。
+
+## 当前实际结果
+
+- 所有者已明确：所有应用统一使用环境 `app_namespace=app-platform-dev`；平台→应用→前后端组件的目录层级保留。Casdoor现归auth-app/casdoor，模板归tpl-app的三个组件目录。应用配置不另设namespace。
+- 正式GitOps源为 `sha256:e2708f2ef172a55c85f291a436b209b30812d779e8d3e428c01e016c3828cdd3`，源码08a7d9b110d123345b600e4db499e1fb53ed1d23。7个Flux阶段均当前generation Ready、同一摘要。目录变更未改变原25个Pod的UID或重启次数。
+- `data-platform-dev/tpl-database-v2`成功；`app-platform-dev/tpl-migrate-5b38d39836dc-v1`成功。tpl库使用独立tpl_runtime/tpl_migrator身份，迁移到20260911_0003。实际执行运行账号CRUD、拒绝DDL、拒绝修改迁移版本表；不是仅凭Job完成推定。
+- 统一 `make -C infrastructure application-bootstrap APP=tpl`重复通过：render ok45 changed0、validate ok35 changed0、Flux apply ok24 changed0、check ok13 changed0。未重新建库或重跑已完成Job。
+- 仍用常规50GiB门槛。最后按1GiB本批预算、计数据盘未来增长后余53,913,817,088字节，约50.21GiB；此前40GiB例外未使用。之后新单元必须重新盘点，不能拿此读数作为额外容量授权。
+
+## 错误、修正和清理
+
+首次SQL裸双美元定界符在执行中出错，v1初始化失败；更正命名空间并改带名字的定界符后v2成功。随后验收条件中的冒号被YAML解析成映射，改为解析最后一行JSON并核对schema/库名/独立身份/布尔结果，整条入口才通过。所有失败日志仍保存，未冒充首次成功。
+
+所有者要求清理后，先枚举误建namespace的46种可列举资源，确认无Pod/PVC/业务数据并核对Flux inventory已不引用。现已确认删除Namespace/tpl-app-dev、遗留NetworkPolicy/data-platform-dev/tpl-postgresql、失败Job/data-platform-dev/tpl-database-v1及其两个Error Pod。namespace首次请求最后返回resourceVersion冲突，但随后确认namespace已不存在；按真实结果记录，未把非零退出当作完全无副作用。其余删除用准确UID前置条件。过期的独立puller候选密文逐字节比对后移除。
+
+成功Completed Job仍是Flux期望对象；直接删除会重新创建执行，暂保留。禁止给这些受协调的一次性Job机械添加TTL造成循环执行；将来如需回收须先设计发布完成后的声明退役。原集群、Harbor、数据卷和必要备份未清理。
+
+私有证据在 `infrastructure/.build/applications/database-unit-20261003/`：bootstrap.log（失败/中止）、stage-shared-namespace.log、bootstrap-shared.log（Job成功但结果解析失败）、bootstrap-repeat.log（完整成功）、before-pods.json、incorrect-namespace-inventory.json、incorrect-resources-cleanup.json、final-state.json（2026-10-03T10:57:38Z）。凭据与独立备份沿既定私有路径保存，不入Git。
+
+## 下一步
+
+按原顺序接入模板Redis ACL、RabbitMQ身份/vhost、Casdoor应用注册与运行配置，然后API/worker/scheduler、Web/Admin和业务链。当前尚无模板常驻业务Pod，不能声称整个应用跑通。其余实例、统一生命周期/开机恢复、Harbor重启重建持久化、长期空间管理、最终清理与云实机验证仍未完成；入口仍沿原路由，本单元没有切换。
+
+---
+
 # 当前优先状态：按所有者确认统一应用命名空间，数据库重试准备（2026-10-03）
 
 所有者明确所有应用统一使用 `app-platform-dev`。应用层级只决定目录职责；命名空间来自环境 `site.yaml` 的 `app_namespace`，不再在tpl配置重复设置。独立数据库和角色保留。
