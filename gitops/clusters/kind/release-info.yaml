@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: platform-release-info
+  namespace: platform-system
+data:
+  deployment-schema: '1'
+  environment: kind
+  delivery: flux-oci
