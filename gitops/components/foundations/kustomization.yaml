@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- runtime.yaml
+- storage.yaml
+- network.yaml
+- data-platform-dev-puller.sops.yaml
+- messaging-platform-dev-puller.sops.yaml
+- app-platform-dev-puller.sops.yaml

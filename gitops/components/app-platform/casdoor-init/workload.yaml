@@ -1,6 +1,6 @@
 apiVersion: batch/v1
 kind: Job
-metadata: {name: casdoor-initialize-v1, namespace: platform-system}
+metadata: {name: casdoor-initialize-v1, namespace: app-platform-dev}
 spec:
   backoffLimit: 1
   activeDeadlineSeconds: 300

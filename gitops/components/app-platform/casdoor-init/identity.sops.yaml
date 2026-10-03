@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: casdoor-initial-identity
+    namespace: app-platform-dev
+stringData:
+    init_data.json: ENC[AES256_GCM,data:E74xeqZzoxuEpMBtnzjmLmjYkMhsjiskpR9nXcSExprXb62nr88p4SABeqTj6bmZ3R4vE6bBQh1FyMQ9xNU/7IonccJ+BaPIMI8NPXAk1mqe7AxKNeMqmT8QVPTnxhQtL6Qs4gEBlRJCwO7x19UzYoCBZJKvdINPozY5xqyOxjQUTDC+fotf5aYStpsUQCQwa04ZWid2VwiL32dTrEC3odycqRK1tjoVdfWakbidvaDkrNGWjjfOpbHNRiNP/5EcAFbAmUme0nk+7EdXPN3fkerpVdhvVw==,iv:gat1AdvF81tnEUvRWhT7mcjJY4JQS4GmCzWnb8Tpcfw=,tag:RY436axOE+fkEqpfn9OdZA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBoSXpXTWZmK0wzSlJxUjRt
+            QWJDbmNackRveHV1elF6b3RjZ1dQc1E5c1ZzCjRFcTNhbVhBS01sb04xdnJUd2pP
+            aE4wTm9RT0w5OHkvNjN0ZDFXN0xhMUEKLS0tIEJDbCtmNDhWSlJETkx3T2dMYndG
+            eHBZdVNSbzE4MTNJcFVaVjJVQnRYNjAKORmvQ1/X3pmowco0cuOhDlwMszeJdgoM
+            /6WfhqkPGtenS8lheg6Dy9e4Np8K6rk0cXFcgl1qZKBgEhepoXRs1w==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T04:11:06Z"
+    mac: ENC[AES256_GCM,data:Ee+LqlwoQtm3eJ4nEO4UkqNfIQrk8Vo2h91oAnD4SSh7n8/sTmsU6XvVkmhLdXfhnPHVFZDx3amlcO1aPOt3g1nB2vW+ebLk34QEQBYFHdkfGnmrRyLqVdUXFgPYzJRnrcWOvEPEX9TYtgCkwHSKxevIwrs1SqJh6VSl/sL5qtU=,iv:qzxAxerN5ZbMdntYWy6c8jvzlkIYxfOTRRgsz1xVHPg=,tag:OSpyN35SS3vo1gqu3m7g7A==,type:str]
+    version: 3.13.3

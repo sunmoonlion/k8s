@@ -29,14 +29,14 @@ spec:
               operator: In
               values: [sunmoon-kind-worker]
   claimRef:
-    namespace: platform-system
+    namespace: data-platform-dev
     name: postgresql-data
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgresql-data
-  namespace: platform-system
+  namespace: data-platform-dev
   annotations:
     kustomize.toolkit.fluxcd.io/prune: disabled
 spec:
@@ -69,14 +69,14 @@ spec:
               operator: In
               values: [sunmoon-kind-worker2]
   claimRef:
-    namespace: platform-system
+    namespace: data-platform-dev
     name: redis-data
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: redis-data
-  namespace: platform-system
+  namespace: data-platform-dev
   annotations:
     kustomize.toolkit.fluxcd.io/prune: disabled
 spec:
@@ -109,14 +109,14 @@ spec:
               operator: In
               values: [sunmoon-kind-worker2]
   claimRef:
-    namespace: platform-system
+    namespace: messaging-platform-dev
     name: rabbitmq-data
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: rabbitmq-data
-  namespace: platform-system
+  namespace: messaging-platform-dev
   annotations:
     kustomize.toolkit.fluxcd.io/prune: disabled
 spec:
@@ -149,14 +149,14 @@ spec:
               operator: In
               values: [sunmoon-kind-worker]
   claimRef:
-    namespace: platform-system
+    namespace: app-platform-dev
     name: casdoor-data
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: casdoor-data
-  namespace: platform-system
+  namespace: app-platform-dev
   annotations:
     kustomize.toolkit.fluxcd.io/prune: disabled
 spec:

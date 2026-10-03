@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: casdoor-database-auth
+    namespace: data-platform-dev
+stringData:
+    password: ENC[AES256_GCM,data:nrMowss2eZw=,iv:XCLdy5yRS41y+2aILW2FMAqF0nfQ1aefTpiTfY5Opi4=,tag:ZBsHyF+FgvGLlV0GbB5/Nw==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB1dW5DTndOVFRzSE4vejJB
+            anBzcjV3c0FMSXJlSStHaHUxdWJiQ3ptbmxRCnFyQUV0Y0pZL2dVcjlWSzh2ODJP
+            cWVaY2E1bDE4TkNMNCsrbkcyNFlMQkUKLS0tIGZ2OTd1RzFmYW9VdDdrTE9hRm94
+            ZXhsd3hML0FZYXgyaGtjSFpvTmFxTWMKh3xDwWJyspDWeUuj74Dhs44CnkZccsbI
+            YdbtwZnpWwj7rHTbycP9ITbu9pH4rU3EX94PZUlvBHASppYqi1x5+g==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T04:11:02Z"
+    mac: ENC[AES256_GCM,data:TRRBsHBtZ94M26R0k0jzjK5SMVzriHSWqPx4O3vX3fAECIv+2qlnn+93EPEamPKbffL2KkoPZrUq99VUb8dWEGL7Eu1gk8JCFtxYZoBA3ifu5Na1CcaoGy6z8C1ZpYBFx4P9EO4dFzOYf6k/oSxZvHltNzaiVsXv0jH78FHtT80=,iv:hABFg7JlRIdfIPgxyiByDXar41HvLZHCmhM0B1LmOBc=,tag:0+jwvA6AFQ+SeXDnxTCRTg==,type:str]
+    version: 3.13.3
