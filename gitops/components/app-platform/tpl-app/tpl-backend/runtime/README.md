@@ -32,3 +32,5 @@ Celery 5.6.3 的默认控制/事件队列是非持久非独占，RabbitMQ 4.3默
 Worker、scheduler、API和探针读取同一份配置，不开启 RabbitMQ 的废弃特性。
 依据：[Celery配置](https://docs.celeryq.dev/en/stable/userguide/configuration.html#control-queue-exclusive)、
 [RabbitMQ队列说明](https://www.rabbitmq.com/docs/queues#temporary-queues)。
+
+共用模板与初始化/验收脚本的唯一来源已归 gitops/components/app-platform/common；本组件配置、镜像锁与生成声明仍在本目录。入口仍为原生Make/Ansible/Flux；不再通过tpl专属模板部署实例。

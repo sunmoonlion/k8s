@@ -99,7 +99,7 @@ def run(settings):
         status, _, body = browser.request(origin + '/api/auth/' + surface + '/me')
         require(status == 200, surface + ': authenticated session unavailable')
         session = json.loads(body)
-        require(session['authenticated'] and session['user']['app'] == 'tpl' and
+        require(session['authenticated'] and session['user']['app'] == settings['application'] and
                 session['user']['surface'] == surface, surface + ': session identity mismatch')
         status, _, _ = browser.request(origin + '/zh-CN/dashboard')
         require(status == 200, surface + ': authenticated SSR failed')
@@ -108,12 +108,12 @@ def run(settings):
         require(status == 401, surface + ': cross-surface session accepted')
         headers = {'Origin': origin, 'X-CSRF-Token': session['csrf_token']}
         permission_denied = None
-        if surface == 'admin' and 'tpl:admin' not in session['user']['scopes']:
+        if surface == 'admin' and settings['application'] + ':admin' not in session['user']['scopes']:
             status, _, _ = browser.request(origin + '/api/admin/v1/diagnostics/tasks/ping',
                                           method='POST', headers=headers)
             require(status == 403, 'Unprivileged browser could invoke administrator diagnostic')
             permission_denied = True
-        if surface == 'web':
+        if surface == 'web' and settings['application'] == 'tpl':
             status, _, body = browser.request(origin + '/api/web/v1/runs/00000000-0000-5000-8000-000000000001')
             require(status == 503 and json.loads(body).get('error', {}).get('code') == 'provider_unavailable',
                     'Production template unexpectedly exposes a reference business fixture')

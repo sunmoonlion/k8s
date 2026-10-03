@@ -28,7 +28,7 @@ def run():
     require(username not in ('guest', 'admin') and vhost != '/', 'Reserved identity')
     host = os.environ['RABBITMQ_HOST']
     password = Path('/run/app/password').read_text()
-    marker = 'sunmoon:tpl:managed-by-gitops'
+    marker = 'sunmoon:{{ application_name }}:managed-by-gitops'
     permissions = {'configure': '.*', 'write': '.*', 'read': '.*'}
     with httpx.Client(base_url=f'http://{host}:15672/api/',
                       auth=(Path('/run/admin/username').read_text(), Path('/run/admin/password').read_text()),
@@ -55,7 +55,7 @@ def run():
             granted = request('GET', user_path + '/permissions')
             require(all(p['vhost'] == vhost for p in granted), 'Identity has foreign vhost permissions')
         if existing_vhost is None:
-            request('PUT', vhost_path, {'description': marker, 'tags': 'sunmoon,tpl', 'default_queue_type': 'classic'})
+            request('PUT', vhost_path, {'description': marker, 'tags': 'sunmoon,{{ application_name }}', 'default_queue_type': 'classic'})
         if user is None:
             salt = os.urandom(4)
             encoded = base64.b64encode(salt + hashlib.sha256(salt + password.encode()).digest()).decode()
@@ -94,7 +94,7 @@ def run():
         # Passive declarations never recreate or consume the application's task queue.
         channel.exchange_declare(exchange=queue_name, type='direct', durable=True, passive=True)
         channel.queue_declare(queue=queue_name, durable=True, passive=True)
-        probe_name = 'tpl.acceptance.' + uuid.uuid4().hex
+        probe_name = '{{ application_name }}.acceptance.' + uuid.uuid4().hex
         probe = Queue(probe_name, exchange=Exchange('', type='direct'), routing_key=probe_name,
                       exclusive=True, auto_delete=True, durable=False, channel=channel)
         try:

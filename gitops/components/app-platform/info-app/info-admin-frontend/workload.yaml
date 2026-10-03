@@ -1,86 +1,85 @@
-{% set front = tpl_web_deployment %}
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: tpl-web, namespace: {{ app_namespace }}}
+metadata: {name: info-admin, namespace: app-platform-dev}
 spec:
-  replicas: {{ front.replicas }}
+  replicas: 1
   strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
   progressDeadlineSeconds: 300
   revisionHistoryLimit: 3
   selector:
-    matchLabels: {app.kubernetes.io/name: tpl-web}
+    matchLabels: {app.kubernetes.io/name: info-admin}
   template:
     metadata:
-      labels: {app.kubernetes.io/name: tpl-web, app.kubernetes.io/part-of: tpl}
+      labels: {app.kubernetes.io/name: info-admin, app.kubernetes.io/part-of: info}
     spec:
-      serviceAccountName: tpl-runtime
+      serviceAccountName: info-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: frontend
-          image: {{ registry_address }}/platform/{{ app_images.web.repository }}@{{ app_images.web.digest }}
+          image: harbor.sunmoonai.com:30443/platform/info-admin-frontend@sha256:830a02d932de934006ae48055c4ed7dfb50cc9e6c3d2a89237996c02efc50759
           imagePullPolicy: IfNotPresent
-          ports: [{name: http, containerPort: {{ front.port }}}]
+          ports: [{name: http, containerPort: 3000}]
           env:
             - {name: NODE_ENV, value: production}
             - {name: DEPLOYMENT_ENV, value: production}
-            - {name: AUTH_APP, value: tpl}
-            - {name: APP_ORIGIN, value: {{ front.origin | to_json }}}
-            - {name: BACKEND_INTERNAL_URL, value: 'http://tpl-api.{{ app_namespace }}.svc.cluster.local:{{ cfg.api_port }}'}
-            - {name: DEPLOYMENT_ID, value: {{ deployment_id | to_json }}}
+            - {name: AUTH_APP, value: info}
+            - {name: APP_ORIGIN, value: "https://info-admin.sunmoonai.com:30443"}
+            - {name: BACKEND_INTERNAL_URL, value: 'http://info-api.app-platform-dev.svc.cluster.local:8000'}
+            - {name: DEPLOYMENT_ID, value: "info-9fbf4183337a92c8"}
             - {name: HOSTNAME, value: 0.0.0.0}
-            - {name: PORT, value: '{{ front.port }}'}
+            - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}
           startupProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 3, failureThreshold: 60}
           readinessProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 10, timeoutSeconds: 3}
           livenessProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 20, timeoutSeconds: 3}
-          resources: {{ front.resources | to_json }}
+          resources: {"requests": {"cpu": "50m", "memory": "128Mi"}, "limits": {"cpu": "1", "memory": "512Mi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts: [{name: tmp, mountPath: /tmp}, {name: cache, mountPath: /app/.next/cache}]
       volumes: [{name: tmp, emptyDir: {sizeLimit: 32Mi}}, {name: cache, emptyDir: {sizeLimit: 128Mi}}]
 ---
 apiVersion: v1
 kind: Service
-metadata: {name: tpl-web, namespace: {{ app_namespace }}}
+metadata: {name: info-admin, namespace: app-platform-dev}
 spec:
-  selector: {app.kubernetes.io/name: tpl-web}
-  ports: [{name: http, port: {{ front.port }}, targetPort: http}]
+  selector: {app.kubernetes.io/name: info-admin}
+  ports: [{name: http, port: 3000, targetPort: http}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: tpl-web, namespace: {{ app_namespace }}}
+metadata: {name: info-admin, namespace: app-platform-dev}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: tpl-web}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: info-admin}}
   policyTypes: [Ingress, Egress]
   ingress:
     - from:
-        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: {{ ingress_namespace }}}}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ingress-platform-dev}}
           podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
-      ports: [{protocol: TCP, port: {{ front.port }}}]
+      ports: [{protocol: TCP, port: 3000}]
   egress:
     - to:
-        - podSelector: {matchLabels: {app.kubernetes.io/name: tpl-api}}
-      ports: [{protocol: TCP, port: {{ cfg.api_port }}}]
+        - podSelector: {matchLabels: {app.kubernetes.io/name: info-api}}
+      ports: [{protocol: TCP, port: 8000}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: tpl-web
-  namespace: {{ app_namespace }}
+  name: info-admin
+  namespace: app-platform-dev
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: 'true'
 spec:
   ingressClassName: sunmoon
-  tls: [{hosts: [{{ front.origin | urlsplit('hostname') }}], secretName: tpl-tls}]
+  tls: [{hosts: [info-admin.sunmoonai.com], secretName: info-tls}]
   rules:
-    - host: {{ front.origin | urlsplit('hostname') }}
+    - host: info-admin.sunmoonai.com
       http:
         paths:
           - path: /api
             pathType: Prefix
-            backend: {service: {name: tpl-api, port: {number: {{ cfg.api_port }}}}}
+            backend: {service: {name: info-api, port: {number: 8000}}}
           - path: /
             pathType: Prefix
-            backend: {service: {name: tpl-web, port: {number: {{ front.port }}}}}
+            backend: {service: {name: info-admin, port: {number: 3000}}}

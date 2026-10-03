@@ -1,26 +1,26 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: 'tpl-redis-provision-{{ cfg.redis_identity_revision }}', namespace: {{ data_namespace }}}
+metadata: {name: '{{ application_name }}-redis-provision-{{ cfg.redis_identity_revision }}', namespace: {{ data_namespace }}}
 data:
   provision.py: |
-{{ lookup('file', component_root + '/redis/provision.py') | indent(4, true) }}
+{{ lookup('template', mechanism_root + '/redis/provision.py.j2') | regex_replace('\n+$', '') | indent(4, true) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: tpl-redis-provision-in, namespace: {{ data_namespace }}}
+metadata: {name: {{ application_name }}-redis-provision-in, namespace: {{ data_namespace }}}
 spec:
   podSelector: {matchLabels: {app.kubernetes.io/name: redis}}
   policyTypes: [Ingress]
   ingress:
     - from:
-        - podSelector: {matchLabels: {app.kubernetes.io/name: tpl-redis-provision}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-redis-provision}}
       ports: [{protocol: TCP, port: 6379}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: tpl-redis-provision-out, namespace: {{ data_namespace }}}
+metadata: {name: {{ application_name }}-redis-provision-out, namespace: {{ data_namespace }}}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: tpl-redis-provision}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-redis-provision}}
   policyTypes: [Egress]
   egress:
     - to:
@@ -29,13 +29,13 @@ spec:
 ---
 apiVersion: batch/v1
 kind: Job
-metadata: {name: 'tpl-redis-{{ cfg.redis_identity_revision }}', namespace: {{ data_namespace }}}
+metadata: {name: '{{ application_name }}-redis-{{ cfg.redis_identity_revision }}', namespace: {{ data_namespace }}}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
   template:
     metadata:
-      labels: {app.kubernetes.io/name: tpl-redis-provision, app.kubernetes.io/part-of: tpl}
+      labels: {app.kubernetes.io/name: {{ application_name }}-redis-provision, app.kubernetes.io/part-of: {{ application_name }}}
     spec:
       restartPolicy: Never
       serviceAccountName: platform-runtime
@@ -58,7 +58,7 @@ spec:
             - {name: app, mountPath: /run/app, readOnly: true}
             - {name: tmp, mountPath: /tmp}
       volumes:
-        - {name: script, configMap: {name: 'tpl-redis-provision-{{ cfg.redis_identity_revision }}'}}
+        - {name: script, configMap: {name: '{{ application_name }}-redis-provision-{{ cfg.redis_identity_revision }}'}}
         - {name: admin, secret: {secretName: redis-auth, items: [{key: password, path: password}], defaultMode: 0440}}
-        - {name: app, secret: {secretName: tpl-redis-provision, defaultMode: 0440}}
+        - {name: app, secret: {secretName: {{ application_name }}-redis-provision, defaultMode: 0440}}
         - {name: tmp, emptyDir: {sizeLimit: 32Mi}}

@@ -1,26 +1,26 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: 'tpl-identity-provision-{{ cfg.identity_revision }}', namespace: {{ app_namespace }}}
+metadata: {name: '{{ application_name }}-identity-provision-{{ cfg.identity_revision }}', namespace: {{ app_namespace }}}
 data:
   provision.py: |
-{{ lookup('file', component_root + '/identity/provision.py') | indent(4, true) }}
+{{ lookup('template', mechanism_root + '/identity/provision.py.j2') | regex_replace('\n+$', '') | indent(4, true) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: tpl-identity-provision-in, namespace: {{ app_namespace }}}
+metadata: {name: {{ application_name }}-identity-provision-in, namespace: {{ app_namespace }}}
 spec:
   podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
   policyTypes: [Ingress]
   ingress:
     - from:
-        - podSelector: {matchLabels: {app.kubernetes.io/name: tpl-identity-provision}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-identity-provision}}
       ports: [{protocol: TCP, port: 8000}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: tpl-identity-provision-out, namespace: {{ app_namespace }}}
+metadata: {name: {{ application_name }}-identity-provision-out, namespace: {{ app_namespace }}}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: tpl-identity-provision}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-identity-provision}}
   policyTypes: [Egress]
   egress:
     - to:
@@ -29,13 +29,13 @@ spec:
 ---
 apiVersion: batch/v1
 kind: Job
-metadata: {name: 'tpl-identity-{{ cfg.identity_revision }}', namespace: {{ app_namespace }}}
+metadata: {name: '{{ application_name }}-identity-{{ cfg.identity_revision }}', namespace: {{ app_namespace }}}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
   template:
     metadata:
-      labels: {app.kubernetes.io/name: tpl-identity-provision, app.kubernetes.io/part-of: tpl}
+      labels: {app.kubernetes.io/name: {{ application_name }}-identity-provision, app.kubernetes.io/part-of: {{ application_name }}}
     spec:
       restartPolicy: Never
       serviceAccountName: platform-runtime
@@ -60,14 +60,14 @@ spec:
             - {name: app, mountPath: /run/app, readOnly: true}
             - {name: tmp, mountPath: /tmp}
       volumes:
-        - {name: script, configMap: {name: 'tpl-identity-provision-{{ cfg.identity_revision }}'}}
+        - {name: script, configMap: {name: '{{ application_name }}-identity-provision-{{ cfg.identity_revision }}'}}
         - {name: admin, secret: {secretName: casdoor-initial-identity, items: [{key: init_data.json, path: init_data.json}], defaultMode: 0440}}
-        - {name: app, secret: {secretName: tpl-identity-provision, defaultMode: 0440}}
+        - {name: app, secret: {secretName: {{ application_name }}-identity-provision, defaultMode: 0440}}
         - {name: tmp, emptyDir: {sizeLimit: 32Mi}}
 ---
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: tpl-browser-identity, namespace: {{ app_namespace }}}
+metadata: {name: {{ application_name }}-browser-identity, namespace: {{ app_namespace }}}
 data:
   CASDOOR_ENDPOINT: 'https://{{ casdoor_hostname }}:30443'
   CASDOOR_ORGANIZATION: '{{ cfg.identity_organization }}'

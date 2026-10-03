@@ -11,7 +11,7 @@ import redis
 def run():
     username = os.environ['APP_REDIS_USER']
     pattern = os.environ['APP_REDIS_KEY_PATTERN']
-    if not re.fullmatch(r'[a-z][a-z0-9_]{1,40}', username) or username == 'default' or pattern != 'tpl:*':
+    if not re.fullmatch(r'[a-z][a-z0-9_]{1,40}', username) or username == 'default' or pattern != '{{ application_name }}:*':
         raise RuntimeError('Unexpected identity boundary')
     password = Path('/run/app/password').read_text()
     digest = hashlib.sha256(password.encode()).hexdigest()
@@ -19,7 +19,7 @@ def run():
                         decode_responses=True, socket_connect_timeout=5, socket_timeout=5)
     client = redis.Redis(host=os.environ['REDIS_HOST'], username=username, password=password,
                          decode_responses=True, socket_connect_timeout=5, socket_timeout=5)
-    key = 'tpl:acceptance:' + uuid.uuid4().hex
+    key = '{{ application_name }}:acceptance:' + uuid.uuid4().hex
     foreign = 'other-app:acceptance:' + uuid.uuid4().hex
     try:
         assert admin.config_get('aclfile') == {'aclfile': '/data/users.acl'}

@@ -49,7 +49,7 @@ def run():
                     'Frontend origin must be an exact HTTPS origin')
             desired = {
                 'owner': 'admin', 'name': config['name'], 'organization': organization,
-                'description': 'sunmoon:tpl:' + surface + ':managed-by-gitops',
+                'description': 'sunmoon:{{ application_name }}:' + surface + ':managed-by-gitops',
                 'displayName': 'SunMoon template ' + surface, 'category': 'Default', 'type': 'Web',
                 'clientId': config['client_id'], 'clientSecret': secrets[surface + '_secret'],
                 'redirectUris': [config['origin'] + '/api/auth/' + surface + '/callback'],

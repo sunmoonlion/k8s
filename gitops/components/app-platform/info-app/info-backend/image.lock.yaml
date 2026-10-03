@@ -1,0 +1,5 @@
+# 已构建并由Harbor独立只读身份核对的不可变镜像；部署不重建。
+---
+repository: info-backend
+digest: sha256:f1f45c85441f36d77c320c467f31a1dff40073c11a4ac4f696035b8460838efa
+source_revision: e5156a0bfc0d5ca9118128427dcacb69697a0737

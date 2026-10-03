@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: info-database-runtime
+    namespace: app-platform-dev
+stringData:
+    DATABASE_URL: ENC[AES256_GCM,data:1D5DLZX2o9PjqsxsMgaiETM65CXMYY/S4elEzXCD+W7ZI6KOXyZyHbD4kxLOhFHTmGVtsfUh2Z/q+OsDrVoFOOH+cgdcRlAFUWpMDVt5DbOYyo4eWsWDr4nUio1KTt/46XpgsTM/8xKjEW9LQUZ+ZRCpjmjNxbKkoV5SfWJUGxvcuBw=,iv:JRnIqdqcCWCO/YOGEosdl2CwJKpc8ClnGL/I3Gs8MS4=,tag:d1hEX9C+GOtNVLcqgTfbpg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA3cXdMMjhQK095T20yTk9N
+            OXZZaEQ0RG5Nc3IzdFZpTnplK0NaNkNSZkhnCkVyMEFhSVlIaFZWb3hZWGgyemhu
+            VEJhMzJwVmJoYk5jTGRncWJ3MFNGODAKLS0tIDJhUlBoMHR4R3orUDdKSG44RGdr
+            UkdZdVRxZStYV2dpZlZOcjFUSldGSVUK0k1QKhKkfvRQDNauISKCoxdXxi56PcuX
+            Y3Rst4Vs1AdXrCOVhfRGjaktTiI/sdoAAr1dSVOcFjIDklW58KVZRw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-03T13:45:39Z"
+    mac: ENC[AES256_GCM,data:HFDfYszKKpjBu9tFD2hps59qW15+pe7lnY8krO46COXxO/xFG1X28Mfk+oMfDSNCXCytkCxiMXpvZwyqALLLEOGIGiZWceJ+spEtwiki0T8/BdV05XcCzgIXKAbJz0DPgk6f6n9Y96tyfh8pGGkigFSKMUztZtgxVMYkt+kZXKg=,iv:9SlDbFsM7XQQUoeZI1PPLR4oAIU4cA4nAoHZjjxT8Dw=,tag:LkOtHpXsu7Wt3U+mGt2esg==,type:str]
+    version: 3.13.3

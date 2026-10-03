@@ -13,3 +13,5 @@ Web与Admin的`origin`、`casdoor_application`、`casdoor_client_id`分别在各
 重复部署保留成功Job；不要直接删除或加TTL。回退声明不会删除Casdoor中的客户端或用户；停用或轮换需显式流程，禁止随机重设密钥。用户侧完整登录在API及前端上线后验证。
 
 接口依据：[Casdoor选定版本Application实现](https://github.com/casdoor/casdoor/blob/v4.12.0/object/application.go)。
+
+共用模板与初始化/验收脚本的唯一来源已归 gitops/components/app-platform/common；本组件配置、镜像锁与生成声明仍在本目录。入口仍为原生Make/Ansible/Flux；不再通过tpl专属模板部署实例。

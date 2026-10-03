@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: tpl-runtime, namespace: {{ app_namespace }}}
+metadata: {name: {{ application_name }}-runtime, namespace: {{ app_namespace }}}
 data:
   ENV: production
-  APP_SLUG: tpl
+  APP_SLUG: {{ application_name }}
   DEPLOYMENT_ID: {{ deployment_id | to_json }}
-  ALLOWED_HOSTS: {{ (['localhost','127.0.0.1','tpl-api','tpl-api.' + app_namespace + '.svc.cluster.local', cfg.web_origin | urlsplit('hostname'), cfg.admin_origin | urlsplit('hostname')] | join(',')) | to_json }}
+  ALLOWED_HOSTS: {{ (['localhost','127.0.0.1',(application_name + '-api'),(application_name + '-api.') + app_namespace + '.svc.cluster.local', cfg.web_origin | urlsplit('hostname'), cfg.admin_origin | urlsplit('hostname')] | join(',')) | to_json }}
   REDIS_HOST: redis.{{ data_namespace }}.svc.cluster.local
   REDIS_PORT: '6379'
   REDIS_DB: '0'
@@ -15,10 +15,13 @@ data:
   CASDOOR_VERIFY_SSL: 'true'
   SESSION_COOKIE_SECURE: 'true'
   REFERENCE_INTERACTION_ENABLED: 'false'
+{% for key,value in (cfg.domain_runtime_env | default({})).items() %}
+  {{ key }}: {{ value | to_json }}
+{% endfor %}
 ---
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: tpl-celery-config, namespace: {{ app_namespace }}}
+metadata: {name: {{ application_name }}-celery-config, namespace: {{ app_namespace }}}
 data:
   celeryconfig.py: |
     # Native Celery 5.6 configuration; transient per-connection queues only.
@@ -30,7 +33,7 @@ data:
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: tpl-{{ role }}, namespace: {{ app_namespace }}}
+metadata: {name: {{ application_name }}-{{ role }}, namespace: {{ app_namespace }}}
 spec:
   replicas: {{ cfg[role + '_replicas'] }}
 {% if role == 'scheduler' %}
@@ -41,12 +44,12 @@ spec:
   progressDeadlineSeconds: 300
   revisionHistoryLimit: 3
   selector:
-    matchLabels: {app.kubernetes.io/name: tpl-{{ role }}}
+    matchLabels: {app.kubernetes.io/name: {{ application_name }}-{{ role }}}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: tpl-{{ role }}
-        app.kubernetes.io/part-of: tpl
+        app.kubernetes.io/name: {{ application_name }}-{{ role }}
+        app.kubernetes.io/part-of: {{ application_name }}
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
 {% if role == 'api' %}
@@ -55,7 +58,7 @@ spec:
       annotations:
         sunmoonai.com/config-sha256: {{ runtime_config_digest }}
     spec:
-      serviceAccountName: tpl-runtime
+      serviceAccountName: {{ application_name }}-runtime
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
@@ -83,18 +86,18 @@ spec:
 {% endif %}
           env:
             - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
-            - {name: SERVICE_NAME, value: tpl-{{ role }}}
+            - {name: SERVICE_NAME, value: {{ application_name }}-{{ role }}}
             - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
             - {name: CELERY_CONFIG_MODULE, value: celeryconfig}
             - {name: PYTHONPATH, value: '/etc/sunmoon/celery:/app'}
           envFrom:
-            - {configMapRef: {name: tpl-runtime}}
-            - {configMapRef: {name: tpl-browser-identity}}
-            - {secretRef: {name: tpl-database-runtime}}
-            - {secretRef: {name: tpl-rabbitmq-runtime}}
+            - {configMapRef: {name: {{ application_name }}-runtime}}
+            - {configMapRef: {name: {{ application_name }}-browser-identity}}
+            - {secretRef: {name: {{ application_name }}-database-runtime}}
+            - {secretRef: {name: {{ application_name }}-rabbitmq-runtime}}
 {% if role == 'api' %}
-            - {secretRef: {name: tpl-redis-runtime}}
-            - {secretRef: {name: tpl-browser-secrets}}
+            - {secretRef: {name: {{ application_name }}-redis-runtime}}
+            - {secretRef: {name: {{ application_name }}-browser-secrets}}
 {% endif %}
           resources: {{ cfg.resources[role] | to_json }}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
@@ -103,35 +106,35 @@ spec:
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
-        - {name: celery-config, configMap: {name: tpl-celery-config}}
+        - {name: celery-config, configMap: {name: {{ application_name }}-celery-config}}
 {% endfor %}
 ---
 apiVersion: v1
 kind: Service
-metadata: {name: tpl-api, namespace: {{ app_namespace }}}
+metadata: {name: {{ application_name }}-api, namespace: {{ app_namespace }}}
 spec:
-  selector: {app.kubernetes.io/name: tpl-api}
+  selector: {app.kubernetes.io/name: {{ application_name }}-api}
   ports: [{name: http, port: {{ cfg.api_port }}, targetPort: http}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: tpl-api-ingress, namespace: {{ app_namespace }}}
+metadata: {name: {{ application_name }}-api-ingress, namespace: {{ app_namespace }}}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: tpl-api}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-api}}
   policyTypes: [Ingress]
   ingress:
     - from:
         - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: {{ ingress_namespace }}}}
           podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
-        - podSelector: {matchLabels: {app.kubernetes.io/name: tpl-web}}
-        - podSelector: {matchLabels: {app.kubernetes.io/name: tpl-admin}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-web}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-admin}}
       ports: [{protocol: TCP, port: {{ cfg.api_port }}}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: tpl-api-casdoor-out, namespace: {{ app_namespace }}}
+metadata: {name: {{ application_name }}-api-casdoor-out, namespace: {{ app_namespace }}}
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: tpl-api}}
+  podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-api}}
   policyTypes: [Egress]
   egress:
     - to:
@@ -140,11 +143,11 @@ spec:
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: tpl-api-casdoor-in, namespace: {{ app_namespace }}}
+metadata: {name: {{ application_name }}-api-casdoor-in, namespace: {{ app_namespace }}}
 spec:
   podSelector: {matchLabels: {app.kubernetes.io/name: casdoor}}
   policyTypes: [Ingress]
   ingress:
     - from:
-        - podSelector: {matchLabels: {app.kubernetes.io/name: tpl-api}}
+        - podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-api}}
       ports: [{protocol: TCP, port: 8000}]

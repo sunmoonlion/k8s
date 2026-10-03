@@ -1,0 +1,36 @@
+# 后端数据库、迁移任务、私有路径和容量预算；秘密不入此文件。
+---
+info_backend_deployment:
+  database: info
+  database_runtime_user: info_runtime
+  database_migrator_user: info_migrator
+  database_extensions: [uuid-ossp]
+  database_bootstrap_revision: v1
+  migration_job_revision: v1
+  expected_schema_revision: '20260913_0009'
+  private_dir: /etc/sunmoon/applications/sunmoon-kind/info
+  backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/info
+  deploy_budget_bytes: 2147483648
+  redis_user: info_runtime
+  redis_key_pattern: 'info:*'
+  redis_identity_revision: v1
+  rabbitmq_user: info_runtime
+  rabbitmq_vhost: info
+  rabbitmq_queue: info.default
+  rabbitmq_identity_revision: v1
+  identity_organization: built-in
+  identity_revision: v1
+  api_port: 8000
+  api_replicas: 1
+  worker_replicas: 1
+  worker_concurrency: 2
+  scheduler_replicas: 1
+  resources:
+    api: {requests: {cpu: 100m, memory: 192Mi}, limits: {cpu: '2', memory: 768Mi}}
+    worker: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: '2', memory: 1Gi}}
+    scheduler: {requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: '1', memory: 512Mi}}
+  # RabbitMQ 4.3不允许非持久非独占队列；Celery控制/事件队列随连接退出。
+  celery_control_queue_exclusive: true
+  celery_event_queue_exclusive: true
+  # 原文只能进入对象存储；未接入S3前拒绝业务写入，不回退到容器本地目录。
+  domain_runtime_env: {STORAGE_BACKEND: s3, SEARCH_BACKEND: disabled}

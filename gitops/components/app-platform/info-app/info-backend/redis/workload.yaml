@@ -1,0 +1,136 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: 'info-redis-provision-v1', namespace: data-platform-dev}
+data:
+  provision.py: |
+    """Provision one bounded Redis identity and verify its real access, without secret output."""
+    import hashlib
+    import json
+    import os
+    import re
+    from pathlib import Path
+    import uuid
+    import redis
+
+
+    def run():
+        username = os.environ['APP_REDIS_USER']
+        pattern = os.environ['APP_REDIS_KEY_PATTERN']
+        if not re.fullmatch(r'[a-z][a-z0-9_]{1,40}', username) or username == 'default' or pattern != 'info:*':
+            raise RuntimeError('Unexpected identity boundary')
+        password = Path('/run/app/password').read_text()
+        digest = hashlib.sha256(password.encode()).hexdigest()
+        admin = redis.Redis(host=os.environ['REDIS_HOST'], password=Path('/run/admin/password').read_text(),
+                            decode_responses=True, socket_connect_timeout=5, socket_timeout=5)
+        client = redis.Redis(host=os.environ['REDIS_HOST'], username=username, password=password,
+                             decode_responses=True, socket_connect_timeout=5, socket_timeout=5)
+        key = 'info:acceptance:' + uuid.uuid4().hex
+        foreign = 'other-app:acceptance:' + uuid.uuid4().hex
+        try:
+            assert admin.config_get('aclfile') == {'aclfile': '/data/users.acl'}
+            previous = admin.acl_getuser(username)
+            if previous and previous['passwords'] != [digest]:
+                raise RuntimeError('Refusing an existing identity with different credentials')
+            rules = ['reset', 'on', '#' + digest, '~' + pattern, 'resetchannels', '-@all',
+                     '+ping', '+hello', '+select', '+client|setname', '+client|setinfo',
+                     '+get', '+getdel', '+set', '+del', '+exists', '+expire', '+pexpire',
+                     '+ttl', '+pttl', '+mget', '+mset', '+incr', '+incrby', '+decr', '+decrby',
+                     '+multi', '+exec', '+discard', '+watch', '+unwatch']
+            assert admin.execute_command('ACL', 'SETUSER', username, *rules) == 'OK'
+            assert admin.acl_save()
+            assert client.ping()
+            assert client.set(key, 'checked', ex=60)
+            assert client.getdel(key) == 'checked'
+            try:
+                client.set(foreign, 'must-not-write', ex=60)
+            except redis.exceptions.NoPermissionError:
+                pass
+            else:
+                admin.delete(foreign)
+                raise RuntimeError('Foreign key unexpectedly writable')
+            try:
+                client.config_get('maxmemory')
+            except redis.exceptions.NoPermissionError:
+                pass
+            else:
+                raise RuntimeError('Management command unexpectedly allowed')
+            # Never execute FLUSHALL to test denial. ACL DRYRUN only evaluates authorization.
+            try:
+                decision = admin.execute_command('ACL', 'DRYRUN', username, 'FLUSHALL')
+            except redis.exceptions.ResponseError as denied:
+                decision = str(denied)
+            expected = "User " + username + " has no permissions to run the 'flushall' command"
+            if decision != expected:
+                raise RuntimeError('Expected explicit destructive command denial')
+            print(json.dumps({'redis_user': username, 'key_pattern': pattern, 'write_read': True,
+                              'foreign_key_denied': True, 'admin_command_denied': True,
+                              'flushall_permission_denied': True, 'acl_saved': True}))
+        finally:
+            admin.delete(key)
+            client.close()
+            admin.close()
+
+
+    if __name__ == '__main__':
+        try:
+            run()
+        except Exception as error:
+            raise SystemExit('Redis identity failed: ' + type(error).__name__)
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: info-redis-provision-in, namespace: data-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: redis}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: info-redis-provision}}
+      ports: [{protocol: TCP, port: 6379}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: info-redis-provision-out, namespace: data-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: info-redis-provision}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: redis}}
+      ports: [{protocol: TCP, port: 6379}]
+---
+apiVersion: batch/v1
+kind: Job
+metadata: {name: 'info-redis-v1', namespace: data-platform-dev}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 180
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: info-redis-provision, app.kubernetes.io/part-of: info}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: provision
+          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:f1f45c85441f36d77c320c467f31a1dff40073c11a4ac4f696035b8460838efa
+          imagePullPolicy: IfNotPresent
+          command: [python, /script/provision.py]
+          env:
+            - {name: REDIS_HOST, value: 'redis.data-platform-dev.svc.cluster.local'}
+            - {name: APP_REDIS_USER, value: 'info_runtime'}
+            - {name: APP_REDIS_KEY_PATTERN, value: 'info:*'}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
+          volumeMounts:
+            - {name: script, mountPath: /script, readOnly: true}
+            - {name: admin, mountPath: /run/admin, readOnly: true}
+            - {name: app, mountPath: /run/app, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: script, configMap: {name: 'info-redis-provision-v1'}}
+        - {name: admin, secret: {secretName: redis-auth, items: [{key: password, path: password}], defaultMode: 0440}}
+        - {name: app, secret: {secretName: info-redis-provision, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 32Mi}}

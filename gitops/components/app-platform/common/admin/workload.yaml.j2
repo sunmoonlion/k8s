@@ -1,0 +1,86 @@
+{% set front = admin_cfg %}
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: {{ application_name }}-admin, namespace: {{ app_namespace }}}
+spec:
+  replicas: {{ front.replicas }}
+  strategy: {type: RollingUpdate, rollingUpdate: {maxSurge: 1, maxUnavailable: 0}}
+  progressDeadlineSeconds: 300
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app.kubernetes.io/name: {{ application_name }}-admin}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: {{ application_name }}-admin, app.kubernetes.io/part-of: {{ application_name }}}
+    spec:
+      serviceAccountName: {{ application_name }}-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: frontend
+          image: {{ registry_address }}/platform/{{ app_images.admin.repository }}@{{ app_images.admin.digest }}
+          imagePullPolicy: IfNotPresent
+          ports: [{name: http, containerPort: {{ front.port }}}]
+          env:
+            - {name: NODE_ENV, value: production}
+            - {name: DEPLOYMENT_ENV, value: production}
+            - {name: AUTH_APP, value: {{ application_name }}}
+            - {name: APP_ORIGIN, value: {{ front.origin | to_json }}}
+            - {name: BACKEND_INTERNAL_URL, value: 'http://{{ application_name }}-api.{{ app_namespace }}.svc.cluster.local:{{ cfg.api_port }}'}
+            - {name: DEPLOYMENT_ID, value: {{ deployment_id | to_json }}}
+            - {name: HOSTNAME, value: 0.0.0.0}
+            - {name: PORT, value: '{{ front.port }}'}
+            - {name: REFERENCE_UI_ENABLED, value: 'false'}
+          startupProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 3, failureThreshold: 60}
+          readinessProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 10, timeoutSeconds: 3}
+          livenessProbe: {httpGet: {path: /healthz, port: http}, periodSeconds: 20, timeoutSeconds: 3}
+          resources: {{ front.resources | to_json }}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts: [{name: tmp, mountPath: /tmp}, {name: cache, mountPath: /app/.next/cache}]
+      volumes: [{name: tmp, emptyDir: {sizeLimit: 32Mi}}, {name: cache, emptyDir: {sizeLimit: 128Mi}}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: {{ application_name }}-admin, namespace: {{ app_namespace }}}
+spec:
+  selector: {app.kubernetes.io/name: {{ application_name }}-admin}
+  ports: [{name: http, port: {{ front.port }}, targetPort: http}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: {{ application_name }}-admin, namespace: {{ app_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-admin}}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: {{ ingress_namespace }}}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+      ports: [{protocol: TCP, port: {{ front.port }}}]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-api}}
+      ports: [{protocol: TCP, port: {{ cfg.api_port }}}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ application_name }}-admin
+  namespace: {{ app_namespace }}
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: 'true'
+spec:
+  ingressClassName: sunmoon
+  tls: [{hosts: [{{ front.origin | urlsplit('hostname') }}], secretName: {{ application_name }}-tls}]
+  rules:
+    - host: {{ front.origin | urlsplit('hostname') }}
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend: {service: {name: {{ application_name }}-api, port: {number: {{ cfg.api_port }}}}}
+          - path: /
+            pathType: Prefix
+            backend: {service: {name: {{ application_name }}-admin, port: {number: {{ front.port }}}}}

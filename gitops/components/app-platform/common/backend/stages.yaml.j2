@@ -1,0 +1,19 @@
+{% for name,stage,dependency in [((application_name + '-database'),'database','platform-services'),((application_name + '-migration'),'migration',(application_name + '-database')),((application_name + '-redis'),'redis',(application_name + '-migration')),((application_name + '-rabbitmq'),'rabbitmq',(application_name + '-redis')),((application_name + '-identity'),'identity',(application_name + '-rabbitmq')),((application_name + '-runtime'),'runtime',(application_name + '-identity')),((application_name + '-web'),'../' + application_name + '-web-frontend',(application_name + '-runtime')),((application_name + '-admin'),'../' + application_name + '-admin-frontend',(application_name + '-runtime'))] if cfg.enabled %}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: {{ name }}, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/{{ application_name }}-app/{{ (application_name + '-backend/') + stage if not stage.startswith('../') else stage[3:] }}
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn: [{name: {{ dependency }}}{% if name == (application_name + '-identity') %}, {name: casdoor}{% endif %}]
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+{% endfor %}

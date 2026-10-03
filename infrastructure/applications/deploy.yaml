@@ -1,6 +1,6 @@
 ---
 - import_playbook: ../host/preflight.yaml
-- name: Render or verify template identities and runtime through Flux
+- name: Render or verify application identities and runtime through Flux
   hosts: kind_hosts
   gather_facts: false
   become: true
@@ -8,55 +8,61 @@
     application_name: tpl
     application_action: plan
     application_check_port: '{{ entry_port if application_check_public | default(false) | bool else cluster_ingress_port }}'
-    capacity_operation: application-deploy-tpl
-    cfg: '{{ tpl_deployment | combine(tpl_backend_deployment) | combine({"namespace":app_namespace, "web_origin":tpl_web_deployment.origin, "admin_origin":tpl_admin_deployment.origin}) }}'
-    app_root: '{{ playbook_dir }}/../../gitops/components/app-platform/tpl-app'
-    component_root: '{{ app_root }}/tpl-backend'
+    capacity_operation: 'application-deploy-{{ application_name }}'
+    application_cfg: '{{ (lookup("file", app_root + "/config.yaml") | from_yaml)[application_name + "_deployment"] }}'
+    backend_cfg: '{{ (lookup("file", component_root + "/config.yaml") | from_yaml)[application_name + "_backend_deployment"] }}'
+    web_cfg: '{{ (lookup("file", app_root + "/" + application_name + "-web-frontend/config.yaml") | from_yaml)[application_name + "_web_deployment"] }}'
+    admin_cfg: '{{ (lookup("file", app_root + "/" + application_name + "-admin-frontend/config.yaml") | from_yaml)[application_name + "_admin_deployment"] }}'
+    cfg: '{{ application_cfg | combine(backend_cfg) | combine({"namespace":app_namespace, "web_origin":web_cfg.origin, "admin_origin":admin_cfg.origin}) }}'
+    app_root: '{{ playbook_dir }}/../../gitops/components/app-platform/{{ application_name }}-app'
+    component_root: '{{ app_root }}/{{ application_name }}-backend'
+    mechanism_root: '{{ playbook_dir }}/../../gitops/components/app-platform/common/backend'
     repo: '{{ playbook_dir }}/../..'
-    build: '{{ playbook_dir }}/../.build/applications/deployment/tpl/tpl-backend'
+    build: '{{ playbook_dir }}/../.build/applications/deployment/{{ application_name }}/{{ application_name }}-backend'
     tools: '{{ playbook_dir }}/../.tools/bin'
     recipient: '{{ lookup("file", playbook_dir + "/../environments/kind/sops-recipient.txt") | trim }}'
     app_images:
       backend: '{{ lookup("file", component_root + "/image.lock.yaml") | from_yaml }}'
-      web: '{{ lookup("file", app_root + "/tpl-web-frontend/image.lock.yaml") | from_yaml }}'
-      admin: '{{ lookup("file", app_root + "/tpl-admin-frontend/image.lock.yaml") | from_yaml }}'
-    deployment_id: 'tpl-{{ (app_images | to_json | hash("sha256"))[:16] }}'
+      web: '{{ lookup("file", app_root + "/" + application_name + "-web-frontend/image.lock.yaml") | from_yaml }}'
+      admin: '{{ lookup("file", app_root + "/" + application_name + "-admin-frontend/image.lock.yaml") | from_yaml }}'
+    deployment_id: '{{ application_name }}-{{ (app_images | to_json | hash("sha256"))[:16] }}'
     browser_clients:
-      web: {name: '{{ tpl_web_deployment.casdoor_application }}', client_id: '{{ tpl_web_deployment.casdoor_client_id }}', origin: '{{ tpl_web_deployment.origin }}'}
-      admin: {name: '{{ tpl_admin_deployment.casdoor_application }}', client_id: '{{ tpl_admin_deployment.casdoor_client_id }}', origin: '{{ tpl_admin_deployment.origin }}'}
-    source_lock: '{{ (lookup("file", playbook_dir + "/sources.yaml") | from_yaml).applications.tpl }}'
+      web: {name: '{{ web_cfg.casdoor_application }}', client_id: '{{ web_cfg.casdoor_client_id }}', origin: '{{ web_cfg.origin }}'}
+      admin: {name: '{{ admin_cfg.casdoor_application }}', client_id: '{{ admin_cfg.casdoor_client_id }}', origin: '{{ admin_cfg.origin }}'}
+    source_lock: '{{ (lookup("file", playbook_dir + "/sources.yaml") | from_yaml).applications[application_name] }}'
     images: '{{ (lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json).images }}'
     image_map: '{{ dict(images | map(attribute="id") | zip(images)) }}'
-    migration_job: 'tpl-migrate-{{ app_images.backend.digest[7:19] }}-{{ cfg.migration_job_revision }}'
+    migration_job: '{{ application_name }}-migrate-{{ app_images.backend.digest[7:19] }}-{{ cfg.migration_job_revision }}'
     kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
-    candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml, redis/workload.yaml, redis/provision.sops.yaml, redis/runtime.sops.yaml, redis/kustomization.yaml, rabbitmq/workload.yaml, rabbitmq/provision.sops.yaml, rabbitmq/runtime.sops.yaml, rabbitmq/kustomization.yaml, identity/workload.yaml, identity/provision.sops.yaml, identity/runtime.sops.yaml, identity/kustomization.yaml, runtime/workload.yaml, runtime/tls.sops.yaml, runtime/kustomization.yaml, ../tpl-web-frontend/workload.yaml, ../tpl-web-frontend/kustomization.yaml, ../tpl-admin-frontend/workload.yaml, ../tpl-admin-frontend/kustomization.yaml]
+    candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml, redis/workload.yaml, redis/provision.sops.yaml, redis/runtime.sops.yaml, redis/kustomization.yaml, rabbitmq/workload.yaml, rabbitmq/provision.sops.yaml, rabbitmq/runtime.sops.yaml, rabbitmq/kustomization.yaml, identity/workload.yaml, identity/provision.sops.yaml, identity/runtime.sops.yaml, identity/kustomization.yaml, runtime/workload.yaml, runtime/tls.sops.yaml, runtime/kustomization.yaml, '../{{ application_name }}-web-frontend/workload.yaml', '../{{ application_name }}-web-frontend/kustomization.yaml', '../{{ application_name }}-admin-frontend/workload.yaml', '../{{ application_name }}-admin-frontend/kustomization.yaml']
   tasks:
     - name: Validate the selected deployment and identity boundaries
       ansible.builtin.assert:
         quiet: true
         that:
           - not ansible_check_mode
-          - application_name == 'tpl'
+          - application_name in ['tpl','info','knowledge','investment']
           - application_action in ['plan','render','stage','validate','check']
           - application_action == 'plan' or cfg.enabled | bool
           - cfg.namespace == app_namespace
-          - "'namespace' not in tpl_deployment"
-          - "'namespace' not in tpl_backend_deployment"
-          - tpl_deployment.keys() | intersect(tpl_backend_deployment.keys()) | length == 0
+          - "'namespace' not in application_cfg"
+          - "'namespace' not in backend_cfg"
+          - application_cfg.keys() | intersect(backend_cfg.keys()) | length == 0
           - cfg.database is match('^[a-z][a-z0-9_]{1,40}$')
           - cfg.database_runtime_user is match('^[a-z][a-z0-9_]{1,40}$')
           - cfg.database_migrator_user is match('^[a-z][a-z0-9_]{1,40}$')
           - cfg.database_runtime_user != cfg.database_migrator_user
+          - cfg.database_extensions | default([]) | difference(['uuid-ossp']) | length == 0
           - cfg.database_bootstrap_revision is match('^[a-z0-9-]{1,16}$')
           - cfg.migration_job_revision is match('^[a-z0-9-]{1,16}$')
-          - cfg.private_dir == '/etc/sunmoon/applications/' + cluster_name + '/tpl'
-          - cfg.backup_dir == '/mnt/sunmoon-data/backups/applications/' + cluster_name + '/tpl'
-          - app_images.backend.repository == 'tpl-backend'
+          - cfg.private_dir == '/etc/sunmoon/applications/' + cluster_name + '/' + application_name
+          - cfg.backup_dir == '/mnt/sunmoon-data/backups/applications/' + cluster_name + '/' + application_name
+          - app_images.backend.repository == application_name + '-backend'
           - app_images.backend.digest is match('^sha256:[a-f0-9]{64}$')
           - app_images.backend.source_revision == source_lock.backend_revision
           - cfg.deploy_budget_bytes | int >= 2147483648
-          - app_images.web.repository == 'tpl-web-frontend'
-          - app_images.admin.repository == 'tpl-admin-frontend'
+          - app_images.web.repository == application_name + '-web-frontend'
+          - app_images.admin.repository == application_name + '-admin-frontend'
           - app_images.web.digest is match('^sha256:[a-f0-9]{64}$')
           - app_images.admin.digest is match('^sha256:[a-f0-9]{64}$')
           - app_images.web.source_revision == source_lock.web_revision
@@ -68,22 +74,25 @@
           - cfg.worker_replicas | int >= 1
           - cfg.worker_concurrency | int >= 1
           - cfg.api_port | int > 1024 and cfg.api_port | int < 65536
-          - tpl_web_deployment.port | int > 1024 and tpl_web_deployment.port | int < 65536
-          - tpl_admin_deployment.port | int > 1024 and tpl_admin_deployment.port | int < 65536
-          - tpl_web_deployment.replicas | int >= 1
-          - tpl_admin_deployment.replicas | int >= 1
+          - web_cfg.port | int > 1024 and web_cfg.port | int < 65536
+          - admin_cfg.port | int > 1024 and admin_cfg.port | int < 65536
+          - web_cfg.replicas | int >= 1
+          - admin_cfg.replicas | int >= 1
           - cfg.web_origin is match('^https://[a-z0-9.-]+:30443$')
           - cfg.admin_origin is match('^https://[a-z0-9.-]+:30443$')
           - cfg.web_origin != cfg.admin_origin
           - cfg.rabbitmq_user is match('^[a-z][a-z0-9_.-]{1,63}$')
           - cfg.rabbitmq_user not in ['admin','guest']
-          - cfg.rabbitmq_vhost == 'tpl'
-          - cfg.rabbitmq_queue == 'tpl.default'
+          - cfg.rabbitmq_vhost == application_name
+          - cfg.rabbitmq_queue == application_name + '.default'
           - cfg.rabbitmq_identity_revision is match('^[a-z0-9-]{1,16}$')
           - cfg.identity_organization == 'built-in'
           - cfg.identity_revision is match('^[a-z0-9-]{1,16}$')
           - browser_clients.web.client_id != browser_clients.admin.client_id
           - browser_clients.web.name != browser_clients.admin.name
+          - cfg.redis_user == application_name + '_runtime'
+          - cfg.redis_key_pattern == application_name + ':*'
+          - cfg.domain_runtime_env | default({}) | list | difference(['STORAGE_BACKEND','SEARCH_BACKEND']) | length == 0
     - name: Require the independent cluster ownership receipt
       ansible.builtin.slurp: {src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'}
       register: identity
@@ -103,7 +112,7 @@
           migrator_user: '{{ cfg.database_migrator_user }}'
           backend: '{{ app_images.backend.digest }}'
           schema: '{{ cfg.expected_schema_revision }}'
-          stages: [tpl-database, tpl-migration, tpl-redis, tpl-rabbitmq, tpl-identity, tpl-runtime, tpl-web, tpl-admin]
+          stages: ['{{ application_name }}-database', '{{ application_name }}-migration', '{{ application_name }}-redis', '{{ application_name }}-rabbitmq', '{{ application_name }}-identity', '{{ application_name }}-runtime', '{{ application_name }}-web', '{{ application_name }}-admin']
           image_and_data_budget: '{{ cfg.deploy_budget_bytes }}'
           excluded: 'Public entry cutover is separate; verify new entry before redirecting existing domains.'
       when: application_action == 'plan'
@@ -161,8 +170,8 @@
             force: false
             mode: '0600'
             content: |
-              migrator_password: {{ lookup('password','/dev/null',length=40,chars=['ascii_letters','digits']) }}
-              runtime_password: {{ lookup('password','/dev/null',length=40,chars=['ascii_letters','digits']) }}
+              migrator_password: {{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}
+              runtime_password: {{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}
           when: not credential_files.results[0].stat.exists and not credential_files.results[1].stat.exists
           no_log: true
         - name: Preserve independent non-overwritten credential backup
@@ -215,7 +224,7 @@
             force: false
             mode: '0600'
             content: |
-              password: {{ lookup('password','/dev/null',length=40,chars=['ascii_letters','digits']) }}
+              password: {{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}
           when: not redis_files.results[0].stat.exists and not redis_files.results[1].stat.exists
           no_log: true
         - name: Preserve the independent Redis credential backup
@@ -268,7 +277,7 @@
             force: false
             mode: '0600'
             content: |
-              password: {{ lookup('password','/dev/null',length=40,chars=['ascii_letters','digits']) }}
+              password: {{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}
           when: not rabbitmq_files.results[0].stat.exists and not rabbitmq_files.results[1].stat.exists
           no_log: true
         - name: Preserve the independent RabbitMQ credential backup
@@ -322,8 +331,8 @@
             force: false
             mode: '0600'
             content: |
-              web_secret: {{ lookup('password','/dev/null',length=40,chars=['ascii_letters','digits']) }}
-              admin_secret: {{ lookup('password','/dev/null',length=40,chars=['ascii_letters','digits']) }}
+              web_secret: {{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}
+              admin_secret: {{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}
           when: not identity_files.results[0].stat.exists and not identity_files.results[1].stat.exists
           no_log: true
         - name: Preserve the independent browser identity credential backup
@@ -357,14 +366,23 @@
           no_log: true
         - name: Prepare public candidate directories
           ansible.builtin.file: {path: '{{ build }}/{{ item }}', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
-          loop: [database, migration, redis, rabbitmq, identity, runtime, ../tpl-web-frontend, ../tpl-admin-frontend]
-        - name: Render colocated workload and stage templates
+          loop: [database, migration, redis, rabbitmq, identity, runtime, '../{{ application_name }}-web-frontend', '../{{ application_name }}-admin-frontend']
+        - name: Render the shared mechanics into the selected component candidates
           ansible.builtin.template:
-            src: '{{ component_root }}/{{ item }}.j2'
-            dest: '{{ build }}/{{ item }}'
+            src: '{{ mechanism_root }}/{{ item.source }}.j2'
+            dest: '{{ build }}/{{ item.dest }}'
             owner: '{{ cluster_operator }}'
             mode: '0644'
-          loop: [database/workload.yaml, migration/workload.yaml, redis/workload.yaml, rabbitmq/workload.yaml, identity/workload.yaml, runtime/workload.yaml, ../tpl-web-frontend/workload.yaml, ../tpl-admin-frontend/workload.yaml, stages.yaml]
+          loop:
+            - {source: database/workload.yaml, dest: database/workload.yaml}
+            - {source: migration/workload.yaml, dest: migration/workload.yaml}
+            - {source: redis/workload.yaml, dest: redis/workload.yaml}
+            - {source: rabbitmq/workload.yaml, dest: rabbitmq/workload.yaml}
+            - {source: identity/workload.yaml, dest: identity/workload.yaml}
+            - {source: runtime/workload.yaml, dest: runtime/workload.yaml}
+            - {source: ../web/workload.yaml, dest: '../{{ application_name }}-web-frontend/workload.yaml'}
+            - {source: ../admin/workload.yaml, dest: '../{{ application_name }}-admin-frontend/workload.yaml'}
+            - {source: stages.yaml, dest: stages.yaml}
         - name: Derive independent connection URLs without logging
           ansible.builtin.set_fact:
             runtime_url: 'postgresql+asyncpg://{{ cfg.database_runtime_user }}:{{ app_credentials.runtime_password }}@postgresql.{{ data_namespace }}.svc.cluster.local:5432/{{ cfg.database }}'
@@ -377,62 +395,62 @@
               manifest:
                 apiVersion: v1
                 kind: Secret
-                metadata: {name: tpl-database-bootstrap, namespace: '{{ data_namespace }}'}
+                metadata: {name: '{{ application_name }}-database-bootstrap', namespace: '{{ data_namespace }}'}
                 stringData: '{{ app_credentials }}'
             - file: database/runtime.sops.yaml
               manifest:
                 apiVersion: v1
                 kind: Secret
-                metadata: {name: tpl-database-runtime, namespace: '{{ cfg.namespace }}'}
+                metadata: {name: '{{ application_name }}-database-runtime', namespace: '{{ cfg.namespace }}'}
                 stringData: {DATABASE_URL: '{{ runtime_url }}'}
             - file: migration/auth.sops.yaml
               manifest:
                 apiVersion: v1
                 kind: Secret
-                metadata: {name: tpl-migration-auth, namespace: '{{ cfg.namespace }}'}
+                metadata: {name: '{{ application_name }}-migration-auth', namespace: '{{ cfg.namespace }}'}
                 stringData: {DATABASE_URL: '{{ runtime_url }}', MIGRATION_DATABASE_URL: '{{ migrator_url }}'}
             - file: redis/provision.sops.yaml
               manifest:
                 apiVersion: v1
                 kind: Secret
-                metadata: {name: tpl-redis-provision, namespace: '{{ data_namespace }}'}
+                metadata: {name: '{{ application_name }}-redis-provision', namespace: '{{ data_namespace }}'}
                 stringData: {password: '{{ redis_credentials.password }}'}
             - file: redis/runtime.sops.yaml
               manifest:
                 apiVersion: v1
                 kind: Secret
-                metadata: {name: tpl-redis-runtime, namespace: '{{ cfg.namespace }}'}
+                metadata: {name: '{{ application_name }}-redis-runtime', namespace: '{{ cfg.namespace }}'}
                 stringData: {REDIS_USER: '{{ cfg.redis_user }}', REDIS_PASSWORD: '{{ redis_credentials.password }}'}
             - file: rabbitmq/provision.sops.yaml
               manifest:
                 apiVersion: v1
                 kind: Secret
-                metadata: {name: tpl-rabbitmq-provision, namespace: '{{ messaging_namespace }}'}
+                metadata: {name: '{{ application_name }}-rabbitmq-provision', namespace: '{{ messaging_namespace }}'}
                 stringData: {password: '{{ rabbitmq_credentials.password }}'}
             - file: rabbitmq/runtime.sops.yaml
               manifest:
                 apiVersion: v1
                 kind: Secret
-                metadata: {name: tpl-rabbitmq-runtime, namespace: '{{ cfg.namespace }}'}
+                metadata: {name: '{{ application_name }}-rabbitmq-runtime', namespace: '{{ cfg.namespace }}'}
                 stringData:
                   CELERY_BROKER_URL: 'amqp://{{ cfg.rabbitmq_user }}:{{ rabbitmq_credentials.password }}@rabbitmq.{{ messaging_namespace }}.svc.cluster.local:5672/{{ cfg.rabbitmq_vhost }}'
             - file: identity/provision.sops.yaml
               manifest:
                 apiVersion: v1
                 kind: Secret
-                metadata: {name: tpl-identity-provision, namespace: '{{ app_namespace }}'}
+                metadata: {name: '{{ application_name }}-identity-provision', namespace: '{{ app_namespace }}'}
                 stringData: {clients.json: '{{ identity_credentials | to_json }}'}
             - file: identity/runtime.sops.yaml
               manifest:
                 apiVersion: v1
                 kind: Secret
-                metadata: {name: tpl-browser-secrets, namespace: '{{ app_namespace }}'}
+                metadata: {name: '{{ application_name }}-browser-secrets', namespace: '{{ app_namespace }}'}
                 stringData: {WEB_CASDOOR_CLIENT_SECRET: '{{ identity_credentials.web_secret }}', ADMIN_CASDOOR_CLIENT_SECRET: '{{ identity_credentials.admin_secret }}'}
             - file: runtime/tls.sops.yaml
               manifest:
                 apiVersion: v1
                 kind: Secret
-                metadata: {name: tpl-tls, namespace: '{{ app_namespace }}'}
+                metadata: {name: '{{ application_name }}-tls', namespace: '{{ app_namespace }}'}
                 type: kubernetes.io/tls
                 data: {'tls.key': '{{ app_tls.results[0].content }}', 'tls.crt': '{{ app_tls.results[1].content }}'}
           loop_control: {loop_var: secret_item, label: '{{ secret_item.file }}'}
@@ -450,16 +468,31 @@
             - {name: rabbitmq, resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]}
             - {name: identity, resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]}
             - {name: runtime, resources: [workload.yaml, tls.sops.yaml]}
-            - {name: ../tpl-web-frontend, resources: [workload.yaml]}
-            - {name: ../tpl-admin-frontend, resources: [workload.yaml]}
+            - {name: '../{{ application_name }}-web-frontend', resources: [workload.yaml]}
+            - {name: '../{{ application_name }}-admin-frontend', resources: [workload.yaml]}
     - name: Stage reviewed candidate declarations without deploying
       when: application_action == 'stage'
       block:
+        - name: Prepare only the selected application's explicit declaration directories
+          ansible.builtin.file: {path: '{{ (component_root + "/" + item) | dirname }}', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
+          loop: '{{ candidate_files }}'
         - name: Copy explicit application candidates only
           ansible.builtin.copy: {src: '{{ build }}/{{ item }}', dest: '{{ component_root }}/{{ item }}', remote_src: true, owner: '{{ cluster_operator }}', mode: '0644'}
           loop: '{{ candidate_files }}'
-        - name: Stage the template dependency chain
-          ansible.builtin.copy: {src: '{{ build }}/stages.yaml', dest: '{{ repo }}/gitops/clusters/kind/applications.yaml', remote_src: true, owner: '{{ cluster_operator }}', mode: '0644'}
+        - name: Stage only the selected application dependency chain
+          ansible.builtin.copy: {src: '{{ build }}/stages.yaml', dest: '{{ repo }}/gitops/clusters/kind/applications-{{ application_name }}.yaml', remote_src: true, owner: '{{ cluster_operator }}', mode: '0644'}
+        - name: Read the explicit cluster resource list
+          ansible.builtin.slurp: {src: '{{ repo }}/gitops/clusters/kind/kustomization.yaml'}
+          register: cluster_resources
+        - name: Add only the selected application stage to the cluster resource list
+          ansible.builtin.copy:
+            dest: '{{ repo }}/gitops/clusters/kind/kustomization.yaml'
+            owner: '{{ cluster_operator }}'
+            mode: '0644'
+            content: '{{ root | combine({"resources":root.resources + ([stage_file] if stage_file not in root.resources else [])}) | to_nice_yaml }}'
+          vars:
+            root: '{{ cluster_resources.content | b64decode | from_yaml }}'
+            stage_file: 'applications-{{ application_name }}.yaml'
     - name: Validate rendered inputs against the promoted immutable source
       when: application_action == 'validate'
       block:
@@ -486,14 +519,14 @@
         - name: Require stage declarations to match rendered settings
           ansible.builtin.assert:
             quiet: true
-            that: (lookup('file',build + '/stages.yaml') | from_yaml_all | list) == (lookup('file',repo + '/gitops/clusters/kind/applications.yaml') | from_yaml_all | list)
+            that: (lookup('file',build + '/stages.yaml') | from_yaml_all | list) == (lookup('file',repo + '/gitops/clusters/kind/applications-' + application_name + '.yaml') | from_yaml_all | list)
     - name: Require the exact application stages and jobs to succeed
       when: application_action == 'check'
       block:
         - name: Wait for current generation Ready at the promoted digest
           ansible.builtin.command:
             argv: '{{ kube + ["get","kustomization",item,"-n","flux-system","-o","json"] }}'
-          loop: [tpl-database,tpl-migration,tpl-redis,tpl-rabbitmq,tpl-identity,tpl-runtime,tpl-web,tpl-admin]
+          loop: ['{{ application_name }}-database','{{ application_name }}-migration','{{ application_name }}-redis','{{ application_name }}-rabbitmq','{{ application_name }}-identity','{{ application_name }}-runtime','{{ application_name }}-web','{{ application_name }}-admin']
           register: stage
           changed_when: false
           until:
@@ -507,11 +540,11 @@
           ansible.builtin.command:
             argv: '{{ kube + ["get","job",item.name,"-n",item.namespace,"-o","jsonpath={.status.succeeded}"] }}'
           loop:
-            - {name: 'tpl-database-{{ cfg.database_bootstrap_revision }}', namespace: '{{ data_namespace }}'}
+            - {name: '{{ application_name }}-database-{{ cfg.database_bootstrap_revision }}', namespace: '{{ data_namespace }}'}
             - {name: '{{ migration_job }}', namespace: '{{ cfg.namespace }}'}
-            - {name: 'tpl-redis-{{ cfg.redis_identity_revision }}', namespace: '{{ data_namespace }}'}
-            - {name: 'tpl-rabbitmq-{{ cfg.rabbitmq_identity_revision }}', namespace: '{{ messaging_namespace }}'}
-            - {name: 'tpl-identity-{{ cfg.identity_revision }}', namespace: '{{ app_namespace }}'}
+            - {name: '{{ application_name }}-redis-{{ cfg.redis_identity_revision }}', namespace: '{{ data_namespace }}'}
+            - {name: '{{ application_name }}-rabbitmq-{{ cfg.rabbitmq_identity_revision }}', namespace: '{{ messaging_namespace }}'}
+            - {name: '{{ application_name }}-identity-{{ cfg.identity_revision }}', namespace: '{{ app_namespace }}'}
           register: completion
           changed_when: false
           failed_when: completion.rc != 0 or completion.stdout != '1'
@@ -535,10 +568,10 @@
               - database_acceptance.runtime_crud is sameas true
               - database_acceptance.runtime_ddl_denied is sameas true
               - database_acceptance.migration_metadata_write_denied is sameas true
-            success_msg: 'TPL schema, separate identities, runtime CRUD and denial of runtime DDL verified.'
+            success_msg: 'Application schema, separate identities, runtime CRUD and denial of runtime DDL verified.'
         - name: Read the actual Redis identity acceptance outcome privately
           ansible.builtin.command:
-            argv: '{{ kube + ["logs","job/tpl-redis-" + cfg.redis_identity_revision,"-n",data_namespace] }}'
+            argv: '{{ kube + ["logs",("job/" + application_name + "-redis-") + cfg.redis_identity_revision,"-n",data_namespace] }}'
           register: redis_result
           changed_when: false
           no_log: true
@@ -589,7 +622,7 @@
           failed_when: redis_acl_permissions.rc != 0 or redis_acl_permissions.stdout != 'private-acl'
         - name: Read actual RabbitMQ application identity acceptance privately
           ansible.builtin.command:
-            argv: '{{ kube + ["logs","job/tpl-rabbitmq-" + cfg.rabbitmq_identity_revision,"-n",messaging_namespace] }}'
+            argv: '{{ kube + ["logs",("job/" + application_name + "-rabbitmq-") + cfg.rabbitmq_identity_revision,"-n",messaging_namespace] }}'
           register: rabbitmq_result
           changed_when: false
           no_log: true
@@ -611,7 +644,7 @@
               - rabbitmq_acceptance.single_vhost_grant is sameas true
         - name: Read browser registration acceptance privately
           ansible.builtin.command:
-            argv: '{{ kube + ["logs","job/tpl-identity-" + cfg.identity_revision,"-n",app_namespace] }}'
+            argv: '{{ kube + ["logs",("job/" + application_name + "-identity-") + cfg.identity_revision,"-n",app_namespace] }}'
           register: identity_result
           changed_when: false
           no_log: true
@@ -634,13 +667,13 @@
               - identity_acceptance.jwks_available is sameas true
         - name: Verify the current runtime deployments and exact image identities
           ansible.builtin.command:
-            argv: '{{ kube + ["get","deployment","tpl-" + item.role,"-n",app_namespace,"-o","json"] }}'
+            argv: '{{ kube + ["get","deployment",(application_name + "-") + item.role,"-n",app_namespace,"-o","json"] }}'
           loop:
             - {role: api, image: backend, replicas: '{{ cfg.api_replicas }}'}
             - {role: worker, image: backend, replicas: '{{ cfg.worker_replicas }}'}
             - {role: scheduler, image: backend, replicas: '{{ cfg.scheduler_replicas }}'}
-            - {role: web, image: web, replicas: '{{ tpl_web_deployment.replicas }}'}
-            - {role: admin, image: admin, replicas: '{{ tpl_admin_deployment.replicas }}'}
+            - {role: web, image: web, replicas: '{{ web_cfg.replicas }}'}
+            - {role: admin, image: admin, replicas: '{{ admin_cfg.replicas }}'}
           register: runtime
           changed_when: false
           failed_when: >-
@@ -651,11 +684,11 @@
             (runtime.stdout | from_json).spec.template.spec.containers[0].image != registry_address + '/platform/' + app_images[item.image].repository + '@' + app_images[item.image].digest
         - name: Verify the real worker responds with its declared queue and tasks
           ansible.builtin.command:
-            argv: '{{ kube + ["exec","deployment/tpl-worker","-n",app_namespace,"--","python","-m","app.cli.worker_readiness"] }}'
+            argv: '{{ kube + ["exec",("deployment/" + application_name + "-worker"),"-n",app_namespace,"--","python","-m","app.cli.worker_readiness"] }}'
           changed_when: false
         - name: Verify the scheduler process has completed a recent tick
           ansible.builtin.command:
-            argv: '{{ kube + ["exec","deployment/tpl-scheduler","-n",app_namespace,"--","python","-m","app.cli.scheduler_activity","--schedule","/tmp/celerybeat-schedule","--max-age","30"] }}'
+            argv: '{{ kube + ["exec",("deployment/" + application_name + "-scheduler"),"-n",app_namespace,"--","python","-m","app.cli.scheduler_activity","--schedule","/tmp/celerybeat-schedule","--max-age","30"] }}'
           changed_when: false
         - name: Verify API readiness through each new TLS route
           ansible.builtin.command:
@@ -685,13 +718,13 @@
             (browser_health.stdout | from_json).deployment_id != deployment_id
         - name: Dispatch one bounded diagnostic task through the API role broker identity
           ansible.builtin.command:
-            argv: '{{ kube + ["exec","deployment/tpl-api","-n",app_namespace,"--","python","-c","from app.infrastructure.messaging.celery_producer import get_celery_producer; print(get_celery_producer().dispatch_ping())"] }}'
+            argv: '{{ kube + ["exec",("deployment/" + application_name + "-api"),"-n",app_namespace,"--","python","-c","from app.infrastructure.messaging.celery_producer import get_celery_producer; print(get_celery_producer().dispatch_ping())"] }}'
           register: ping_task
           changed_when: false
           failed_when: ping_task.rc != 0 or not (ping_task.stdout is match('^[a-f0-9-]{36}$'))
         - name: Require that exact task to finish on a real worker
           ansible.builtin.command:
-            argv: '{{ kube + ["logs","-l","app.kubernetes.io/name=tpl-worker","-n",app_namespace,"--since=120s","--tail=500","--prefix=true"] }}'
+            argv: '{{ kube + ["logs","-l",("app.kubernetes.io/name=" + application_name + "-worker"),"-n",app_namespace,"--since=120s","--tail=500","--prefix=true"] }}'
           register: ping_worker
           changed_when: false
           until: ping_worker.rc == 0 and ('app.tasks.ping[' + ping_task.stdout + '] succeeded') in ping_worker.stdout
@@ -709,7 +742,7 @@
         - name: Verify real authorization callback SSR and security boundaries through the selected entry
           ansible.builtin.command:
             argv: [/usr/bin/python3, '{{ playbook_dir }}/check-browser.py']
-            stdin: '{{ {"clients":browser_clients, "provider":"https://" + casdoor_hostname + ":30443", "organization":cfg.identity_organization, "username":"admin", "password":(browser_acceptance_input.content | b64decode | from_yaml).service_credentials.casdoor_admin_password, "ca_file":registry_config_dir + "/tls/ca.crt", "entry_port":application_check_port | int} | to_json }}'
+            stdin: '{{ {"clients":browser_clients, "provider":"https://" + casdoor_hostname + ":30443", "organization":cfg.identity_organization, "username":"admin", "password":(browser_acceptance_input.content | b64decode | from_yaml).service_credentials.casdoor_admin_password, "application":application_name, "ca_file":registry_config_dir + "/tls/ca.crt", "entry_port":application_check_port | int} | to_json }}'
           register: browser_acceptance
           changed_when: false
           no_log: true

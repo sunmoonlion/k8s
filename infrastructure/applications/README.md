@@ -1,19 +1,19 @@
 # 业务应用构建与发布
 
-用户配置、源码锁、原生构建编排与说明同处。已实现基础镜像物料准备及四应用（tpl/info/knowledge/investment）×后端/Web/Admin共12个构建与发布选择；全部共用同一下载回退实现，实际完整构建范围见下方验收记录。应用运行时声明尚未交付。
+用户配置、源码锁、原生构建编排与说明同处。已实现基础镜像物料准备及四应用（tpl/info/knowledge/investment）×后端/Web/Admin共12个构建与发布选择；全部共用同一下载回退实现，实际完整构建范围见下方验收记录。模板运行已通过真实入口验收，信息应用候选正在部署；共用部署入口同样按APP选择。
 
 ## 配置入口
 
 | 文件/字段 | 用途 |
 | --- | --- |
 | `config.yaml/application_base_image_ids` | 选择Python、Node构建与Node运行镜像，具体版本/摘要唯一读取artifacts锁 |
-| `config.yaml/application_build_budget_bytes` | 后端构建峰值预留，目前4GiB；仍必须满足计数据盘未来增长后的50GiB底线 |
+| `config.yaml/application_build_budget_bytes` | 后端构建峰值预留，目前4GiB；仍必须满足host/config.yaml中的当前容量底线（开发阶段10GiB） |
 | `config.yaml/application_frontend_build_budget_bytes` | 每个前端构建峰值预留，目前6GiB，包含基镜像解包、依赖、缓存、归档 |
 | `config.yaml/application_download_mode` | 单选domestic或official-proxy，源和代理配套切换；端点定义在download-modes.json |
 | `sources.yaml` | 分别固定四个父仓及其三个子模块提交。前端使用显式本地覆盖，必须是固定父仓gitlink的后代；三个组件都要求精确HEAD且干净 |
 | `build.yaml` | 组件映射选择源码路径、Dockerfile、阶段和运行用户；一份流程导出Git对象、构建、核对解释器并校验OCI上传内容 |
 
-应用数据库用户名、口令、域名和端口不由构建入口生成；后续应用运行模块接入时与对应声明同处，口令使用私有输入和SOPS。当前只有镜像准备成功，不能据此认为这些运行配置已实现。
+应用数据库用户名、域名和端口与应用/组件config.yaml同处；口令首次准备时生成并独立备份，Git只保存SOPS密文。构建入口不生成运行账号。
 
 ## 日常入口
 
@@ -130,11 +130,11 @@ make application-publish-web APP=info
 
 证据在私有 `.build/applications/rehearsal-*`，具体批次及未完成项见 `CHECKPOINT.md`；不把日志、凭据或构建归档提交Git。
 
-## 模板应用部署
+## 应用部署
 
-应用声明在 `gitops/components/app-platform/tpl-app/tpl-backend/`，普通配置和说明同处。所有应用命名空间统一来自环境 `app_namespace`（app-platform-dev）；建库Job因读取平台管理员Secret在data-platform-dev运行。
+应用声明在 `gitops/components/app-platform/<APP>-app/<APP>-backend/`，普通配置、镜像锁、生成声明和说明同处。共用模板及初始化/验收脚本唯一在同平台common/，原生deploy.yaml直接渲染，不通过tpl目录。所有应用命名空间统一来自环境 `app_namespace`（app-platform-dev）；建库Job因读取平台管理员Secret在data-platform-dev运行。
 
-在本目录运行 `make application-deployment-plan APP=tpl` 查看，`make application-stage APP=tpl`生成待审声明；本地提交并经`flux-release`发布、显式晋级固定源后，`make application-bootstrap APP=tpl`串联渲染、声明核对、协调与实际Job验收。`make application-check APP=tpl`只核对结果。此入口覆盖数据库与迁移、Redis/RabbitMQ/浏览器身份及API、Worker、Scheduler、Web、Admin；运行模板与用户配置按组件同处。application-check 通过新集群TLS后端验API/前端身份，检查Worker/Scheduler并投递一次诊断ping确认实际消费；不自动切换公共入口。完整登录与业务链仍需各自验收。
+在本目录运行 `make application-deployment-plan APP=tpl` 查看，`make application-stage APP=tpl`生成待审声明；本地提交并经`flux-release`发布、显式晋级固定源后，`make application-bootstrap APP=tpl`串联渲染、声明核对、协调与实际Job验收。`make application-check APP=tpl`只核对结果。此入口覆盖数据库与迁移、Redis/RabbitMQ/浏览器身份及API、Worker、Scheduler、Web、Admin；各组件用户配置与渲染声明同处；跨应用相同机制统一维护。application-check 通过新集群TLS后端验API/前端身份，检查Worker/Scheduler并投递一次诊断ping确认实际消费；不自动切换公共入口。完整登录与业务链仍需各自验收。
 
 2026-10-03独立身份、schema迁移和真实权限验收已通过，bootstrap重复四阶段changed=0；失败与清理记录见CHECKPOINT。数据库口令备份不等于数据备份；已有业务数据的后续迁移须先准备数据库备份恢复。
 
@@ -149,3 +149,9 @@ Ansible no_log 和stdin传入，不在argv或报告内。不会授予业务scope
 明确503；不创建虚假业务处理器，不把模板运行通过称为完整业务实现。
 API关闭uvicorn原始access log，应用原有审计/错误日志继续记录路径及状态，避免
 OAuth回调的code/state查询参数进入访问日志。
+
+## 实例部署与共用机制
+
+APP选择同一原生deploy.yaml；stage只更新选中应用声明、applications-<APP>.yaml与显式集群引用，不覆盖其它应用阶段。每个应用仍有独立私有凭据、数据库/schema、Redis前缀、RabbitMQ虚拟主机、OAuth客户端及TLS。共享命名空间和平台管理员凭据不复制。通过声明发布/晋级后再bootstrap；不直接patch在线对象。
+
+信息应用数据库需要uuid-ossp，config.yaml/database_extensions明确选择，由建库Job在该库安装现有PostgreSQL提供的扩展；运行账号不获安装扩展权限。业务原文必须使用对象存储，未接入S3前明确失败，不静默写容器本地目录。基础运行/登录验收与对象存储、搜索、跨应用分发业务验收分开记录。

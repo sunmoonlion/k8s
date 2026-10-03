@@ -16,3 +16,5 @@
 - 成功Job保留为Flux期望对象；不直接删除或加TTL。失败按具体归属清理；任务重跑用显式修订。Git回退不自动删除账号、虚拟主机或消息；停用先停应用并暂停该阶段，删除数据另行确认。
 
 上游依据：[RabbitMQ访问控制](https://www.rabbitmq.com/docs/access-control)、[HTTP API](https://www.rabbitmq.com/docs/http-api-reference)、[密码摘要格式](https://www.rabbitmq.com/docs/passwords)。目前采用平台既有内部HTTP/AMQP及NetworkPolicy；尚未宣称实现集群内mTLS。
+
+共用模板与初始化/验收脚本的唯一来源已归 gitops/components/app-platform/common；本组件配置、镜像锁与生成声明仍在本目录。入口仍为原生Make/Ansible/Flux；不再通过tpl专属模板部署实例。

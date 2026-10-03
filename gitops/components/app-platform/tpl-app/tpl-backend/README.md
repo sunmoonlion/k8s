@@ -1,6 +1,6 @@
 # 模板后端（tpl-backend）
 
-归属：`components/app-platform/tpl-app/tpl-backend/`，保留平台 → 应用 → 组件层级。用户配置、镜像锁、模板、声明和说明同处。当前已实现数据库、独立迁移与Redis身份阶段；API/worker/scheduler、Web/Admin及RabbitMQ/Casdoor身份仍待接入，不代表业务应用已部署完成。
+归属：`components/app-platform/tpl-app/tpl-backend/`，保留平台 → 应用 → 组件层级。用户配置、镜像锁、生成声明和说明同处，共用模板在平台common。数据库/迁移、Redis、RabbitMQ、Casdoor身份及API/worker/scheduler、Web/Admin已通过运行、消息和正式入口身份验收；模板未实现的业务provider仍明确返回503。
 
 ## 文件与参数
 
@@ -11,7 +11,7 @@
 | `database/` | 库与账号初始化、独立运行ServiceAccount和运行账号Secret；复用平台命名空间、网络策略及registry-puller |
 | `redis/` | 独立Redis账号初始化、SOPS输入和权限验收；redis.yaml为独立私有口令输入 |
 | `migration/` | 独立迁移Job与真实权限/读写验收；复用同一后端镜像的规范迁移命令 |
-| `stages.yaml.j2` | Flux的platform-services → tpl-database → tpl-migration → tpl-redis依赖链 |
+| `../../common/backend/stages.yaml.j2` | Flux的platform-services → tpl-database → tpl-migration → tpl-redis依赖链 |
 
 密码在 `config.yaml` 指定的私有目录 `credentials.yaml`，root0600；独立数据盘备份逐字节核对。首次自动生成两个独立强口令，已有声明后丢失口令必须从备份恢复，不能再随机生成。Git只保存SOPS密文；日志不输出连接串/密码。修改私有文件不等于完成数据库密码轮换，当前流程会拒绝其与备份不一致。
 
@@ -37,7 +37,7 @@ make -C infrastructure application-check APP=tpl
 
 ## 当前部署结果（2026-10-03）
 
-库初始化 `data-platform-dev/tpl-database-v2` 和迁移 `app-platform-dev/tpl-migrate-5b38d39836dc-v1` 已成功，schema为20260911_0003；真实CRUD、运行身份DDL拒绝及迁移元数据写入拒绝均通过。完整bootstrap重复执行四阶段changed=0。API/Worker/Scheduler及前端仍待部署，不能据此判断业务已跑通。
+库初始化 `data-platform-dev/tpl-database-v2` 和迁移 `app-platform-dev/tpl-migrate-5b38d39836dc-v1` 已成功，schema为20260911_0003；真实CRUD、运行身份DDL拒绝及迁移元数据写入拒绝均通过。完整bootstrap重复执行四阶段changed=0。API/Worker/Scheduler及前端后续已部署并验收，详见CHECKPOINT的最新状态；不能据此扩大为所有业务已实现。
 
 成功的Completed Job保留为Flux期望对象；不要直接删除或加TTL，否则Flux可能重建并重新执行。失败v1 Job和误建tpl-app-dev已按精确归属清除。修改SQL必须更新bootstrap修订，修改迁移任务必须更新migration修订，经相同声明发布流程实施。
 
@@ -46,3 +46,5 @@ make -C infrastructure application-check APP=tpl
 redis_user为独立登录名（不得default），redis_key_pattern固定tpl:*以匹配模板业务键，redis_identity_revision控制一次性Job修订。私有redis.yaml及备份不输出、不入Git。redis/保存初始化及真实隔离检查；runtime.sops.yaml供后续业务角色读取，provision.sops.yaml只用于数据命名空间的一次性账号初始化。原有平台管理员Secret不复制到应用命名空间。
 
 2026-10-03持久ACL配置已启用，tpl-redis-v2真实账号写读、键隔离、管理命令拒绝和ACL SAVE通过；统一入口重复执行changed=0且当前认证通过。随后实际滚动重启完成：默认与应用身份仍可用，ACL摘要/PVC不变，主进程0077，ACL SAVE后文件仍0600；更新的统一检查及完整bootstrap重复通过。实施及修正记录见docs/platform-kind-v1/tpl-redis-maintenance.md。RabbitMQ/Casdoor注册和常驻业务仍未完成。
+
+共用模板与初始化/验收脚本的唯一来源已归 gitops/components/app-platform/common；本组件配置、镜像锁与生成声明仍在本目录。入口仍为原生Make/Ansible/Flux；不再通过tpl专属模板部署实例。
