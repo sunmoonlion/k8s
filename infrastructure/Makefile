@@ -59,6 +59,8 @@ CONFIG_FILES := applications/config.yaml \
 	../gitops/components/data-platform/elk/config.yaml \
 	../gitops/components/data-platform/neo4j/config.yaml \
 	../gitops/components/data-platform/mongodb/config.yaml \
+	../gitops/components/data-platform/infinity/config.yaml \
+	../gitops/components/data-platform/valkey/config.yaml \
 	../gitops/components/messaging-platform/rabbitmq/config.yaml \
 	../gitops/components/ingress-platform/traefik/config.yaml \
 	../gitops/components/app-platform/auth-app/casdoor/config.yaml

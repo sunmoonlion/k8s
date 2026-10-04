@@ -7,7 +7,7 @@
   vars:
     capacity_operation: services-verify
     images: '{{ (lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json).images }}'
-    enabled_names: '{{ (["postgresql"] if services_postgresql_enabled else []) + (["redis"] if services_redis_enabled else []) + (["rabbitmq"] if services_rabbitmq_enabled else []) + (["casdoor"] if services_casdoor_enabled else []) + (["traefik"] if services_ingress_enabled else []) + (["object-storage"] if services_object_storage_enabled else []) + (["text-embeddings"] if services_text_embeddings_enabled else []) + (["elasticsearch","kibana","logstash"] if services_elk_enabled else []) + (["neo4j"] if services_neo4j_enabled else []) + (["mongodb"] if services_mongodb_enabled else []) }}'
+    enabled_names: '{{ (["postgresql"] if services_postgresql_enabled else []) + (["redis"] if services_redis_enabled else []) + (["rabbitmq"] if services_rabbitmq_enabled else []) + (["casdoor"] if services_casdoor_enabled else []) + (["traefik"] if services_ingress_enabled else []) + (["object-storage"] if services_object_storage_enabled else []) + (["text-embeddings"] if services_text_embeddings_enabled else []) + (["elasticsearch","kibana","logstash"] if services_elk_enabled else []) + (["neo4j"] if services_neo4j_enabled else []) + (["mongodb"] if services_mongodb_enabled else []) + (["infinity"] if services_infinity_enabled else []) + (["valkey"] if services_valkey_enabled else []) }}'
     stages_to_check: '{{ ["platform-services"] + (["casdoor-db","casdoor-init","casdoor"] if services_casdoor_enabled else []) + (["elk-initialize","elk-runtime"] if services_elk_enabled else []) + (["mongodb-initialize"] if services_mongodb_enabled else []) }}'
 
     kube: ['{{ playbook_dir }}/../.tools/bin/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
@@ -227,6 +227,34 @@
     - name: Report only public MongoDB acceptance results
       when: services_mongodb_enabled | bool
       ansible.builtin.debug: {msg: '{{ mongodb_acceptance.stdout | from_json }}'}
+    - name: Verify real Infinity node identity through its local HTTP endpoint
+      when: services_infinity_enabled | bool
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n",data_namespace,"exec","infinity-0","--","curl","--silent","--show-error","--fail","--max-time","10","http://127.0.0.1:23820/admin/node/current"] }}'
+      changed_when: false
+      register: infinity_acceptance
+      failed_when: infinity_acceptance.rc != 0 or (infinity_acceptance.stdout | from_json).error_code | default(-1) != 0
+    - name: Verify bounded Valkey KV operations and denied permissions
+      when: services_valkey_enabled | bool
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n",data_namespace,"exec","valkey-0","--","sh","-ec",valkey_protocol] }}'
+      vars:
+        valkey_protocol: |
+          export VALKEYCLI_AUTH="$(cat /run/auth/probe-password)"
+          cli() { valkey-cli --user {{ valkey_probe_username }} "$@"; }
+          key="sunmoon:acceptance:$(date +%s):$$"
+          trap 'cli DEL "$key" >/dev/null' EXIT
+          test "$(cli SET "$key" verified EX 60)" = OK
+          test "$(cli GET "$key")" = verified
+          case "$(cli SET foreign verified)" in *NOPERM*) : ;; *) exit 1 ;; esac
+          case "$(cli CONFIG GET '*')" in *NOPERM*) : ;; *) exit 1 ;; esac
+          case "$(valkey-cli ping)" in *NOAUTH*) : ;; *) exit 1 ;; esac
+          case "$(VALKEYCLI_AUTH=deliberately-wrong valkey-cli --user {{ valkey_probe_username }} ping 2>&1)" in *WRONGPASS*) : ;; *) exit 1 ;; esac
+          echo verified
+      register: valkey_acceptance
+      changed_when: false
+      failed_when: valkey_acceptance.rc != 0 or valkey_acceptance.stdout != 'verified'
+      no_log: true
     - name: Report public acceptance results only
       ansible.builtin.debug: {msg: '{{ acceptance.stdout | from_json }}'}
     - name: Keep public verification receipt outside the repository
@@ -241,4 +269,4 @@
         dest: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/evidence/services/latest.json'
         mode: '0600'
         content: |
-          {{ {'checked_at_utc':lookup('pipe','date -u +%Y-%m-%dT%H:%M:%SZ'), 'cluster_uid':uid.stdout, 'source':lookup('file',playbook_dir + '/../environments/kind/flux-source.yaml') | from_yaml, 'checks':(acceptance.stdout | from_json) | combine({'postgresql_transaction':services_postgresql_enabled,'redis_write_read':services_redis_enabled,'retained_volumes_bound':true}), 'capacity':capacity_report.stdout | from_json, 'object_storage':(storage_acceptance.stdout | from_json) if services_object_storage_enabled else {}, 'text_embeddings':(embedding_acceptance.stdout | from_json) if services_text_embeddings_enabled else {}, 'elk':(elk_acceptance.stdout | from_json) if services_elk_enabled else {}, 'neo4j':(neo4j_acceptance.stdout | from_json) if services_neo4j_enabled else {}, 'mongodb':(mongodb_acceptance.stdout | from_json) if services_mongodb_enabled else {}, 'scope':'Service protocol checks; no WSL/KIND restart or rebuild claim'} | to_nice_json }}
+          {{ {'checked_at_utc':lookup('pipe','date -u +%Y-%m-%dT%H:%M:%SZ'), 'cluster_uid':uid.stdout, 'source':lookup('file',playbook_dir + '/../environments/kind/flux-source.yaml') | from_yaml, 'checks':(acceptance.stdout | from_json) | combine({'postgresql_transaction':services_postgresql_enabled,'redis_write_read':services_redis_enabled,'retained_volumes_bound':true}), 'capacity':capacity_report.stdout | from_json, 'object_storage':(storage_acceptance.stdout | from_json) if services_object_storage_enabled else {}, 'text_embeddings':(embedding_acceptance.stdout | from_json) if services_text_embeddings_enabled else {}, 'elk':(elk_acceptance.stdout | from_json) if services_elk_enabled else {}, 'neo4j':(neo4j_acceptance.stdout | from_json) if services_neo4j_enabled else {}, 'mongodb':(mongodb_acceptance.stdout | from_json) if services_mongodb_enabled else {}, 'infinity':(infinity_acceptance.stdout | from_json) if services_infinity_enabled else {}, 'valkey_bounded_kv':services_valkey_enabled, 'scope':'Service protocol checks; no WSL/KIND restart or rebuild claim'} | to_nice_json }}

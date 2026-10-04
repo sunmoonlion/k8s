@@ -8,3 +8,5 @@ resources:
 - elk/elasticsearch
 - neo4j
 - mongodb
+- infinity
+- valkey

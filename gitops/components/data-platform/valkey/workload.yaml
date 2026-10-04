@@ -1,0 +1,84 @@
+---
+apiVersion: v1
+kind: Service
+metadata: {name: valkey-headless, namespace: data-platform-dev}
+spec:
+  clusterIP: None
+  selector: {app.kubernetes.io/name: valkey}
+  ports: [{name: service, port: 6379, targetPort: 6379}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: valkey, namespace: data-platform-dev}
+spec:
+  selector: {app.kubernetes.io/name: valkey}
+  ports: [{name: service, port: 6379, targetPort: 6379}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: valkey, namespace: data-platform-dev}
+spec:
+  serviceName: valkey-headless
+  replicas: 1
+  selector: {matchLabels: {app.kubernetes.io/name: valkey}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: valkey, app.kubernetes.io/part-of: ragflow}
+      annotations: {sunmoonai.com/input-digest: 'eaff10388ee018904f7d05c86ed5e40b9efba4b125c5cae8515f05bfe728b5a8'}
+    spec:
+      enableServiceLinks: false
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 90
+      nodeSelector: {kubernetes.io/hostname: 'sunmoon-kind-worker'}
+      securityContext: {runAsNonRoot: true, runAsUser: 999, runAsGroup: 999, fsGroup: 999, fsGroupChangePolicy: OnRootMismatch, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: valkey
+          image: harbor.sunmoonai.com:30443/platform/valkey@sha256:0f62bfecc0b713dc2111af3ee307d5cd53c6877b7a112c6143c4de20f1325e4c
+          imagePullPolicy: IfNotPresent
+          command: [/bin/sh, -ec]
+          args: ['umask 077; exec valkey-server /run/auth/valkey.conf']
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          ports: [{name: service, containerPort: 6379}]
+          resources: {"requests": {"cpu": "100m", "memory": "128Mi"}, "limits": {"cpu": "1", "memory": "640Mi"}}
+          startupProbe:
+            exec: {command: [/bin/sh, -ec, 'export VALKEYCLI_AUTH="$(cat /run/auth/probe-password)"; valkey-cli --user sunmoon_queue_probe ping | grep -qx PONG']}
+            periodSeconds: 5
+            failureThreshold: 120
+          readinessProbe:
+            exec: {command: [/bin/sh, -ec, 'export VALKEYCLI_AUTH="$(cat /run/auth/probe-password)"; valkey-cli --user sunmoon_queue_probe ping | grep -qx PONG']}
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: {port: service}
+            periodSeconds: 30
+            failureThreshold: 5
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: data, persistentVolumeClaim: {claimName: valkey-data}}
+        - {name: auth, secret: {secretName: valkey-auth, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: valkey-clients, namespace: data-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: valkey}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: ragflow}}
+      ports: [{protocol: TCP, port: 6379}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ragflow-valkey-egress, namespace: data-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: ragflow}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: valkey}}
+      ports: [{protocol: TCP, port: 6379}]

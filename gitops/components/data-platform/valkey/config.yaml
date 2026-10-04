@@ -1,0 +1,10 @@
+---
+# Dedicated RAGFlow queue/cache, separate from application Redis identities.
+services_valkey_enabled: true
+valkey_volume: {name: valkey, node: worker, size: 4Gi, uid: 999, gid: 999}
+valkey_runtime_username: ragflow_queue
+valkey_probe_username: sunmoon_queue_probe
+valkey_maxmemory: 384mb
+valkey_resources:
+  requests: {cpu: 100m, memory: 128Mi}
+  limits: {cpu: '1', memory: 640Mi}
