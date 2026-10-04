@@ -48,3 +48,5 @@ MongoDB接入同一Make/Ansible/Flux服务链，用户配置、模板、独立�
 Infinity、专用Valkey与RAGFlow均复用同一services-bootstrap/check链。配置、独立身份与实现分别位于data-platform下各组件目录；不与ELK索引或业务Redis身份混用。RAGFlow初始化由独立Job执行，API/Worker仅持DML角色；原文权威仍在业务对象存储。
 
 官方0.27.2镜像的UV解释器和NLTK数据位于/root，最小派生镜像调整非root读取权限，并把官方批量写入的冗余建表调用改为检查已初始化的表；固定原始文件SHA256、不升级包，缺表仍失败。构建/摘要锁及说明见[RAGFlow组件](../../gitops/components/data-platform/ragflow/README.md)。首次使用make services-ragflow-image、services-ragflow-image-publish准备；完整services-bootstrap已包含校验与发布，不需要另行手工初始化。services-check包含真实中文上传、解析和向量检索以及权限拒绝；协议结果不能替代业务领域接入或整机重建验收。
+
+2026-10-04实际结果：完整services-bootstrap连续两轮成功；RAGFlow中文纯文本上传/解析/检索与身份及DDL拒绝通过，验收临时数据含S3版本精确清空。54个运行Pod身份/重启数及13个Retain卷声明不变；具体固定源、原失败及未完成范围见根CHECKPOINT.md。这不替代知识业务领域接入、其它文档格式或整机/集群重建验收。

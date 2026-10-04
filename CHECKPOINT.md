@@ -1,20 +1,40 @@
-# 当前单元：最小派生 RAGFlow 部署进行中（2026-10-04）
+# 当前单元：RAGFlow 最小派生镜像、中文检索及原生一键部署通过（2026-10-04）
 
-本节优先于下方历史。所有者在讨论官方root例外与最小派生后明确选择最小派生；继续保留data-platform-dev的restricted策略，不增加root例外。工作树/分支platform-kind-v1，k8s单仓；维护2小时、容量底线10GiB，无公共入口切换、无停止其它应用/Harbor、无push。
+工作树/分支platform-kind-v1，k8s单仓。所有者批准最小派生方案；开发维护窗口2小时、容量底线10GiB。当前原生Make→Ansible→Flux/SOPS；没有公共入口切换，没有停止原始kind/其它应用/Harbor，没有改四个业务仓，无Git push。下面是作者实际执行结果，独立审核另行进行。
 
-## 已有事实与当前执行
+## 当前固定实现与来源
 
-- Infinity0.7.3与专用Valkey8.1.10实际部署及节点身份/KV读写/错误身份和越界操作拒绝通过；services-check ok46 changed1 failed0。Valkey初版probe误用VALKEYCLI_AUTH，修正REDISCLI_AUTH后精确替换未就绪旧修订Pod，失败证据保留。基线52个Running Pod/13个Retain PV。
-- 官方RAGFlow0.27.2 manifest sha256:e6b3f1a185c0a70abb3a72e1092415df8c5c6a4fae0089545554f2936c4b27ab已备齐/发布。初始化v1/v2失败：强制非root无法穿过官方/root0700，.venv/bin/python链接至/root/.local/share/uv/python/cpython-3.13.11-linux-x86_64-gnu，PATH回退系统3.12、依赖不可用。两版均在schema初始化前失败；原生PG/派生S3桶Job成功。尚无RAGFlow运行/检索成功结果。
-- 最小Dockerfile仅chmod镜像/root0755、默认UID1000、非root核验官方venv Python3.13；没有安装/升级包或改官方源码。官方CPU模式跳过Torch安装，独立TEI承担向量推理，运行期禁止公网/依赖下载。派生manifest sha256:4601a9b91d670fdaed4efe5487f7900784f484494cc20fa128bba51bc4c115b2，原官方filesystem diff_ids全部保留，追加权限/验证层。Dockerfile摘要067039556ebc8462c57198ef6e3bc4badadc02709fb21b64f688c8cc62d57907。
-- 原生构建ok31 changed9 failed0、skopeo发布ok28 changed1 failed0，完整归档SHA40a62bf3f83c71f92e10eec0fea520abaa76802f6bafecc15e61f3db2dca8936。归档/image.lock/物料JSON已独立核对；本次复核ok10 changed1 failed0，新增物料清单是唯一变化。归档在packages-to-be-installed/releases/platform-kind-v1/images，配置/实现/锁同处gitops/components/data-platform/ragflow。Make services-bootstrap纳入构建复核及已有skopeo发布，非另建部署系统。
-- 36/32GiB保守预算先被拦，随后按已校验归档实际层字节只读测量峰值并通过10GiB底线；直接Docker→skopeo OCI，避免重复docker-save。节点首次启动按缺失的锁定层预算，不把已存在镜像层重复计费。
-- v3初始化实际成功，API HTTPS200、Worker就绪；API内联健康探针CRLF转义失败，官方WordNet归档不可供UID1000读取。现只将官方NLTK资源设为可读，不装包/下载语料；改同目录health.py标准HTTP库探针，实际执行通过。v3失败日志保留。
-- 新派生manifest sha256:3b2328c9e8e0fe36d834d4204e5c519558b66150f0ed8a3ab0ad03dde8264b0e，Dockerfile SHA9c73f6dda8f156e89f4d2cf8f5d612d8c489a868b58bb71e0760e5baaae1faaf；非root WordNet加载及Python依赖通过。构建ok38 changed11、独立发布ok28 changed1、完整v4 stage ok427 changed2均failed0；公共server dry-run通过。当前线上仍fae3092f / sha256:78876e021c235a161730de8ec06c20308d8fa060c85a59f19abe66c5ee80a358（晋级8eab1bcb），v4已晋级bc13c3cd / sha256:08c5860b0039952253069f4f7479519f5b3f5a10133defc82f8990c317706622（d9f1560f），API/Worker Ready且0重启。首次协议检查在API连接超时停止，实际DNS正常、缺少组件自身API egress；仅增加同组件9380精确出站声明，未放开公网。v4网络stage完整ok425 changed2 failed0，待重新晋级并验收。
+- 官方RAGFlow0.27.2 manifest sha256:e6b3f1a185c0a70abb3a72e1092415df8c5c6a4fae0089545554f2936c4b27ab，38基础文件系统层完整保留。Infinity0.7.3、专用Valkey8.1.10、已有CPU TEI配套；不与ELK/业务Redis身份混用。单实例不具备HA。
+- 最小派生manifest sha256:35f8c3a9c0669c1a0b4fe7caf3b810435de415f9c994d28634be443a4c8807c9；Dockerfile SHA5a59a6994157fa0f998d3a0ff2593ae121dbef0bcce9a167bdbd27c1d5f3a38d；归档SHA10bd67db6e043c29d520839d5e229655a776f41ea144eb675df168b7a74369aa。追加3层，默认UID1000，不安装或升级依赖。配置、Dockerfile、锁、准备/初始化/运行/验收与说明同处gitops/components/data-platform/ragflow。
+- 适配范围：/root可穿越、内置NLTK资源可读；对官方api/db/db_utils.py唯一批量写入前置建表调用改为表存在检查，缺表明确失败。原文件SHA4db6691cd806ca04ef48f6cd034a55d90704ede815c807f57f8b1b0d38c30779不匹配就拒绝构建。升级不能静默复用补丁。API/Worker保持仅DML角色、非root、只读根和受限网络；官方初始化只由独立Job执行。
+- services-bootstrap包含派生构建/固定归档校验和原有skopeo发布；首次显式准备入口services-ragflow-image及services-ragflow-image-publish，后续已有锁不会自动覆盖或重新构建。无启动期安装/公网下载，无并行CLI。
+- 当前Flux源revision ddcc25617177d2d2758ee8c44a16770851987240，digest sha256:e7bf1dc2bbc9b8cafa54ad6cf2bea2d22842b5086ca96abb1e5861b49d89617f（晋级70653bbb）。最终仅更新本检查点及非GitOps说明，不改变已验收声明字节。初始化代次v6。
 
-## 下一步
+## 实际失败与处理
 
-完成全量stage→公开对象API dry-run/原对象核对→本地提交→flux-release并核对晋级→初始化v3/API/Worker→services-check真实中文上传解析检索、跨租户/原文S3/运行DDL拒绝→完整services-bootstrap及重复。成功后精确清理诊断Pod/失败Job，保存证据，不删PV/PVC或正式物料/秘密备份。更大的知识领域接入、一键全系统启停/开机、WSL/KIND重建持久化和长期空间管理仍未完成。
+1. v1/v2：官方venv Python链接至/root0700，非root回退系统3.12，缺依赖。只修权限/显式3.13后v3初始化成功。官方CPU模式不安装Torch，向量由独立TEI运行。
+2. v3：内联健康探针CRLF转义错误、官方WordNet归档不可读。改同目录标准库TLS健康脚本、内置资源读取权限；v4启动通过。无下载NLP数据。
+3. v4：DNS正常、同组件API出站被默认拒绝，补精确9380策略。随后官方认证因User.access_token为空拒绝服务账号；v5仅首次补独立随机标记，不复用API token、不开放浏览器登录或赋予全局管理员。
+4. v5：真实上传成功、解析提交触发官方bulk_insert的冗余CREATE TABLE。相对于最初“仅权限”增加上述唯一SHA守卫补丁，保持运行DDL拒绝；v6真正完成解析/1024维索引和中文检索。
+5. 官方数据集删除API保留S3旧版本，原v6整链检查因此失败；验收现仅清理本轮随机前缀版本，再核对对应DB行和S3为空，不改变业务保留策略。两次失败验收旧前缀也逐一确认DB已删后精确清空，各1版本。原始失败日志保留，不将先前失败改写成成功。
+6. 官方compiler.json示例缺id，初始化记录上游模板告警；本次检索不使用该示例，不宣称全部Agent模板导入成功。既有列重复迁移日志也保留。
+
+## 实际通过结果
+
+- build ok38 changed11 failed0；独立Harbor发布ok28 changed1 failed0；完整stage ok427 changed2 failed0；AST/YAML、公开对象server dry-run、原始38层/默认非root身份核对通过。未新增或运行测试套件。
+- 真正中文纯文本上传→Worker解析→CPU向量化→Infinity索引→问题检索返回潮汐内容；错误token、跨租户、原文桶/管理S3和运行DDL拒绝通过。随机数据集DB行和S3版本精确清空。
+- 完整make -C infrastructure services-bootstrap连续两轮退出0，每轮12个Ansible play均failed0。每轮services-check ok50 changed1 failed0，唯一验收变化是外部回执；镜像/发布/渲染/门禁为零变更，chart校验只创建/删除私有临时目录changed2。首轮Flux晋级changed3，第二轮相同源changed0。
+- 两轮前后54个Running Pod UID/重启数全部不变；对RAGFlow之前52个Pod也独立比对一致。13个Retain PV UID/spec/Bound状态不变；45个Flux阶段当前generation Ready且同一e7bf摘要。RAGFlow API/Worker新镜像35f8、0重启。
+- 退役v1-v5的15个RAGFlow Job及1个诊断Pod先保存JSON，再以UID/resourceVersion精确删除；当前v6 Job、PV/PVC、身份备份与所有其它服务保留。本轮临时编辑/诊断/清理脚本按固定路径移除；原生镜像构建工作区已由always清除。本单元没有东京下载。
+
+证据在infrastructure/.build/models：ragflow-schema-guard-build.log、ragflow-v6-publish/stage/各发布日志、ragflow-v6-check.log（原失败）、ragflow-v6-cleanup-fixed-check.log、ragflow-bootstrap-final.log、ragflow-bootstrap-repeat.log、ragflow-derivation-receipt.json、ragflow-unit-receipt.json、前后Pod/PV/Flux JSON与退役Job JSON。正式物料仍在packages-to-be-installed/releases/platform-kind-v1/images；本轮旧派生候选归档尚未纳入最终物料清理，清理时只保留当前需要版本。统一成功回执在/data/kind-clusters/sunmoon-kind/bootstrap/evidence/services/latest.json。
+
+## 日常入口与剩余范围
+
+- 配置：gitops/components/data-platform/ragflow/config.yaml。改配置走services-stage→本地提交→flux-release→核对晋级source-candidate→services-bootstrap；既有已晋级环境直接services-bootstrap，单做协议核验services-check。
+- 密码/服务token由/etc/sunmoon/services/sunmoon-kind/ragflow.yaml私有保存并逐字节备份，Git仅SOPS；运行Pod不持初始化拥有者、PG/S3管理员或知识服务API token。修改私有输入不等于账号轮换。
+- 本单元证明独立检索协议及完整服务部署可重复；知识业务原文/领域链、跨App检索尚未接入，PDF等其它格式和Agent能力未由本单元验收。模型服务变更需显式更新已有租户绑定，不能声称只改URL即可。
+- 接下来仍包括ELK全应用日志/公共UI、Neo4j/MongoDB业务身份及备份恢复、整套宿主到应用一键和统一启停/开机顺序、真实WSL/KIND重启及KIND删除重建后的Harbor全目录摘要与新节点拉取、长期容量/保留GC/缓存/日志/备份管理与最终物料/临时/远程清理。删除策略按所有者决定；项目整体未完成。
 
 ---
 
