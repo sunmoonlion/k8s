@@ -135,7 +135,7 @@
 | H43 | 旧的工作台页面认不得契约第 2 版的数据（不属于项目的聊天没有机器），列表显示为空 | investment-web `components/workbench/` | 第 7 步整个重做，不修旧页面 | 待做 |
 | H44 | 本机联调（`workbench-chain.sh`、`workbench-modes.sh`）的项目目录在 runtime 仓库里，Codex 会读到仓库的 `AGENTS.md`。不影响这两个脚本验的东西；录磁带的脚本已改到仓库之外 | k8s `scripts/local-integration/` | 顺手时改 | 待做 |
 | H45 | 专家在真数据上从头到尾跑一遍（真的 Codex、真的知识服务、真的数据集）还没有做过。样例里专家各步的交回物是照格式写的 | — | 把数据集这条链的联调和工作台的联调接起来。迁移完成后在集群上做也可以 | 待做 |
-| H46 | 管理端（四个 `*-admin-frontend`）没有预览 | — | 第 8 步做 info 管理端的页面时加，用同一个记录器 | 待做 |
+| H46 | 管理端（四个 `*-admin-frontend`）没有预览 | — | 第 8 步做 info 管理端的页面时加，用同一个记录器 | 2026-10-04：第 8 步没有做。info 管理端的三页是用测试和录下来的真实返回验的，没有在浏览器里看过。仍然待做 |
 | H47 | 被打断的那一次模型调用，花费记不到：Codex 只在一次调用做完时报用量。停下的那一刻显示的数比真实账单少（最多一次调用） | investment-backend `application/workbench/runner.py` | 没有办法从 Codex 拿到。页面上写明「估算」。要更准只能去读模型厂商的账单接口 | 记下，不做 |
 | H48 | 模型单价是手工查了写进配置的（`WORKBENCH_MODEL_PRICES_JSON`），厂商改价不会自己跟上；写缓存按 5 分钟档算（Codex 不报是哪一档） | investment-backend `domain/workbench/pricing.py` | 换模型或厂商改价时改配置。接口里带着「单价是哪天查的」 | 记下 |
 | H49 | 没有硬性的花费上限之后，「退回第 k 步」没有次数上限（`I7`）就更要紧：没人看着时专家可以一直来回 | investment-backend 专家包 | 所有者定 `I7` | 待定 |
@@ -148,6 +148,8 @@
 | H56 | 工作页的「改动」栏只列得出用 Codex 的补丁工具改的文件。现在用的模型（kimi-k3）改文件走命令行，Codex 不单独报，所以真用起来这一栏多半是空的。起线时 Codex 还提示「找不到 kimi-k3 的模型信息，用默认的」，默认的信息里可能就没有给它补丁工具 | 沙箱里 Codex 的模型配置（`sandbox-platform`，本地助手的目录） | 查 Codex 怎么给一个模型配上补丁工具，在沙箱的配置里给 kimi-k3 配上；或者在本地代理那边按目录的前后差别来报改动 | 待查。动沙箱配置要等迁移之后 |
 | H57 | 第 7 步做完后，`lib/workbench/routes.ts` 里「哪些页已经做好」的清单全都是「做好了」，相关的判断成了多余的 | investment-web-frontend `lib/workbench/routes.ts` 与用到 `isBuilt` 的地方 | 留着：以后加「技能」「连接器」「助理」的页时还要用同一个办法。那时不用就删 | 记下 |
 | H58 | 首页挂着的旧研究工作区（账本 D3）还在：`components/research/` 与 `lib/interaction/`。第 7 步没有碰公开首页与登录过渡页 | investment-web-frontend | 做公开首页（初稿 4.8）时删 | 待做 |
+| H59 | 结构检查（功能之间不互相引用；取数、状态、渲染分开）现在各仓库各有一份，没有进模板 | investment-web-frontend、info-web-frontend、info-admin-frontend 的 `tests/unit/feature-boundaries.test.ts` | 搬进两个模板（没有 `features/` 目录时不报错），再同步 | 待做 |
+| H60 | investment 的工作台各页没登录时去登录，登录完回的是工作台首页，不是原来要去的那一页（info 的三页是回原页的）。从别的应用带着参数回到 investment 时会丢参数 | investment-web-frontend `app/[locale]/(dashboard)/workbench/layout.tsx` | 和 info 一样：外框不跳，由页面带着自己的地址去登录 | 待做 |
 
 ## 八、自动检查怎么用
 
