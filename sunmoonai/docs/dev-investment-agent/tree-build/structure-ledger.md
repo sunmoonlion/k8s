@@ -140,6 +140,7 @@
 | H48 | 模型单价是手工查了写进配置的（`WORKBENCH_MODEL_PRICES_JSON`），厂商改价不会自己跟上；写缓存按 5 分钟档算（Codex 不报是哪一档） | investment-backend `domain/workbench/pricing.py` | 换模型或厂商改价时改配置。接口里带着「单价是哪天查的」 | 记下 |
 | H49 | 没有硬性的花费上限之后，「退回第 k 步」没有次数上限（`I7`）就更要紧：没人看着时专家可以一直来回 | investment-backend 专家包 | 所有者定 `I7` | 待定 |
 | H50 | 本机联调的驱动在等专家做完时不续沙箱的租约，之后那一段会先掉线再重连。不影响结论（重连正好验了「重报的用量不重复记」），但日志里有一行 `lease lost` | investment-backend `tests/drivers/workbench_chain_driver.py` | 等的时候让 runner 接着转 | 小事，待做 |
+| H51 | MCP 的询问（Codex 调 MCP 工具前要的那一次确认）现在一律自动同意，理由是只挂了我们自己的知识服务。接用户自己的连接器之前必须改成问用户，否则第三方工具不经用户就能被调用 | investment-backend `application/workbench/runner.py` 的 `_on_elicitation` | 做连接器（`V5`）时改：我们自己的服务照旧，其余开一条待办让用户答 | 待做，连接器的前提 |
 
 ## 八、自动检查怎么用
 
