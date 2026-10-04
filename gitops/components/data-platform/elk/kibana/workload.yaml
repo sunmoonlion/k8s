@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Service
+metadata: {name: kibana, namespace: data-platform-dev}
+spec:
+  selector: {app.kubernetes.io/name: kibana}
+  ports: [{name: https, port: 5601, targetPort: https}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: kibana, namespace: data-platform-dev}
+spec:
+  serviceName: kibana
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector: {matchLabels: {app.kubernetes.io/name: kibana}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: kibana, sunmoonai.com/elasticsearch-client: 'true'}
+      annotations: {sunmoonai.com/input-sha256: '529224b359b34f12334dc8f942ca301a57ee668a579dd97eb77f31fcdd87e68d'}
+    spec:
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      nodeSelector: {kubernetes.io/hostname: 'sunmoon-kind-worker'}
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: kibana
+          image: harbor.sunmoonai.com:30443/platform/kibana@sha256:d84abcfe9c715adc4f507eb0e28b3d9d3ee153b20645fbcbb7838a0dc4f98dac
+          command: [/bin/tini, --, /usr/share/kibana/bin/kibana]
+          args: [--config, /run/auth/kibana.yml]
+          env: [{name: NODE_OPTIONS, value: '--max-old-space-size=1024'}]
+          ports: [{name: https, containerPort: 5601}]
+          startupProbe: {httpGet: {path: /api/status, port: https, scheme: HTTPS}, periodSeconds: 5, timeoutSeconds: 5, failureThreshold: 120}
+          readinessProbe: {httpGet: {path: /api/status, port: https, scheme: HTTPS}, periodSeconds: 10, timeoutSeconds: 5}
+          livenessProbe: {tcpSocket: {port: https}, periodSeconds: 30, failureThreshold: 5}
+          resources: {"requests": {"cpu": "250m", "memory": "1Gi"}, "limits": {"cpu": "2", "memory": "2Gi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: data, mountPath: /usr/share/kibana/data}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: data, persistentVolumeClaim: {claimName: kibana-data}}
+        - {name: auth, secret: {secretName: kibana-auth, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 256Mi}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: kibana-management, namespace: data-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: kibana}}
+  policyTypes: [Ingress]
+  ingress: []

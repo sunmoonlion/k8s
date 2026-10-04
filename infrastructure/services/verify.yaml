@@ -7,8 +7,8 @@
   vars:
     capacity_operation: services-verify
     images: '{{ (lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json).images }}'
-    enabled_names: '{{ (["postgresql"] if services_postgresql_enabled else []) + (["redis"] if services_redis_enabled else []) + (["rabbitmq"] if services_rabbitmq_enabled else []) + (["casdoor"] if services_casdoor_enabled else []) + (["traefik"] if services_ingress_enabled else []) + (["object-storage"] if services_object_storage_enabled else []) + (["text-embeddings"] if services_text_embeddings_enabled else []) }}'
-    stages_to_check: '{{ ["platform-services"] + (["casdoor-db","casdoor-init","casdoor"] if services_casdoor_enabled else []) }}'
+    enabled_names: '{{ (["postgresql"] if services_postgresql_enabled else []) + (["redis"] if services_redis_enabled else []) + (["rabbitmq"] if services_rabbitmq_enabled else []) + (["casdoor"] if services_casdoor_enabled else []) + (["traefik"] if services_ingress_enabled else []) + (["object-storage"] if services_object_storage_enabled else []) + (["text-embeddings"] if services_text_embeddings_enabled else []) + (["elasticsearch","kibana","logstash"] if services_elk_enabled else []) }}'
+    stages_to_check: '{{ ["platform-services"] + (["casdoor-db","casdoor-init","casdoor"] if services_casdoor_enabled else []) + (["elk-initialize","elk-runtime"] if services_elk_enabled else []) }}'
 
     kube: ['{{ playbook_dir }}/../.tools/bin/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
   tasks:
@@ -165,6 +165,29 @@
     - name: Report CPU embedding results and explicit acceptance scope
       when: services_text_embeddings_enabled | bool
       ansible.builtin.debug: {msg: '{{ embedding_acceptance.stdout | from_json }}'}
+    - name: Read independent ELK private input for bounded protocol checks
+      when: services_elk_enabled | bool
+      ansible.builtin.slurp: {src: '{{ services_config_dir }}/elk.yaml'}
+      register: elk_check_input
+      no_log: true
+    - name: Verify actual secured ELK ingestion, search and denied privileges
+      when: services_elk_enabled | bool
+      ansible.builtin.command:
+        argv: [python3, '{{ playbook_dir }}/../../gitops/components/data-platform/elk/verify.py', --kubectl, '{{ playbook_dir }}/../.tools/bin/kubectl', --kubeconfig, '{{ cluster_kubeconfig }}', --namespace, '{{ data_namespace }}', --ca, '{{ registry_config_dir }}/clients/ca.crt', --version, '{{ (images | selectattr("id","equalto","elasticsearch") | first).source.rsplit(":",1)[1] }}', --writer, '{{ elk_logstash_writer }}', --reader, '{{ elk_log_reader }}', --ingest-user, '{{ elk_ingest_username }}', --index-prefix, '{{ elk_index_prefix }}']
+        stdin: '{{ elk_check_input.content | b64decode | from_yaml | to_json }}'
+      register: elk_acceptance
+      changed_when: false
+      failed_when: false
+      no_log: true
+    - name: Require actual ELK protocol acceptance to pass
+      when: services_elk_enabled | bool
+      ansible.builtin.assert:
+        quiet: true
+        that: elk_acceptance.rc == 0
+        fail_msg: '{{ elk_acceptance.stdout }}'
+    - name: Report public ELK protocol assertions only
+      when: services_elk_enabled | bool
+      ansible.builtin.debug: {msg: '{{ elk_acceptance.stdout | from_json }}'}
     - name: Report public acceptance results only
       ansible.builtin.debug: {msg: '{{ acceptance.stdout | from_json }}'}
     - name: Keep public verification receipt outside the repository
@@ -179,4 +202,4 @@
         dest: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/evidence/services/latest.json'
         mode: '0600'
         content: |
-          {{ {'checked_at_utc':lookup('pipe','date -u +%Y-%m-%dT%H:%M:%SZ'), 'cluster_uid':uid.stdout, 'source':lookup('file',playbook_dir + '/../environments/kind/flux-source.yaml') | from_yaml, 'checks':(acceptance.stdout | from_json) | combine({'postgresql_transaction':services_postgresql_enabled,'redis_write_read':services_redis_enabled,'retained_volumes_bound':true}), 'capacity':capacity_report.stdout | from_json, 'object_storage':(storage_acceptance.stdout | from_json) if services_object_storage_enabled else {}, 'text_embeddings':(embedding_acceptance.stdout | from_json) if services_text_embeddings_enabled else {}, 'scope':'Service protocol checks; no WSL/KIND restart or rebuild claim'} | to_nice_json }}
+          {{ {'checked_at_utc':lookup('pipe','date -u +%Y-%m-%dT%H:%M:%SZ'), 'cluster_uid':uid.stdout, 'source':lookup('file',playbook_dir + '/../environments/kind/flux-source.yaml') | from_yaml, 'checks':(acceptance.stdout | from_json) | combine({'postgresql_transaction':services_postgresql_enabled,'redis_write_read':services_redis_enabled,'retained_volumes_bound':true}), 'capacity':capacity_report.stdout | from_json, 'object_storage':(storage_acceptance.stdout | from_json) if services_object_storage_enabled else {}, 'text_embeddings':(embedding_acceptance.stdout | from_json) if services_text_embeddings_enabled else {}, 'elk':(elk_acceptance.stdout | from_json) if services_elk_enabled else {}, 'scope':'Service protocol checks; no WSL/KIND restart or rebuild claim'} | to_nice_json }}

@@ -1,0 +1,176 @@
+---
+- name: Validate single node ELK profile and independent accounts
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - elasticsearch_port == 9200 and kibana_port == 5601 and logstash_ingest_port == 8080
+      - elk_index_prefix == 'sunmoon-logs'
+      - elk_max_map_count | int >= 1048576
+      - elk_init_generation is match('^v[1-9][0-9]*$')
+      - elk_logstash_writer != elk_log_reader and elk_log_reader != elk_ingest_username
+      - elk_logstash_writer is match('^[a-z][a-z0-9_]+$')
+      - elk_log_reader is match('^[a-z][a-z0-9_]+$')
+      - elk_ingest_username is match('^[a-z][a-z0-9_]+$')
+- name: Inspect the one owned host sysctl file without following links
+  ansible.builtin.stat: {path: /etc/sysctl.d/90-sunmoon-elasticsearch.conf, follow: false}
+  register: elk_sysctl_file
+- name: Refuse a redirected or foreign kernel configuration file
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not elk_sysctl_file.stat.islnk | default(false)
+      - not elk_sysctl_file.stat.exists or (elk_sysctl_file.stat.isreg | default(false) and elk_sysctl_file.stat.uid == 0 and elk_sysctl_file.stat.mode == '0644')
+- name: Read existing owned sysctl declaration
+  ansible.builtin.slurp: {src: /etc/sysctl.d/90-sunmoon-elasticsearch.conf}
+  when: elk_sysctl_file.stat.exists
+  register: elk_sysctl_prior
+- name: Refuse overwriting a foreign sysctl declaration
+  ansible.builtin.assert:
+    quiet: true
+    that: not elk_sysctl_file.stat.exists or (elk_sysctl_prior.content | b64decode).startswith('# Owned by SunMoon platform KIND Elasticsearch configuration.')
+- name: Persist the ES mmap requirement in the owned host sysctl file
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/90-sunmoon-elasticsearch.conf
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      # Owned by SunMoon platform KIND Elasticsearch configuration.
+      vm.max_map_count={{ elk_max_map_count }}
+- name: Read active mmap ceiling before any change
+  ansible.builtin.command: {argv: [sysctl, -n, vm.max_map_count]}
+  register: active_mmap
+  changed_when: false
+- name: Apply the one required kernel setting only when too low
+  ansible.builtin.command: {argv: [sysctl, -w, 'vm.max_map_count={{ elk_max_map_count }}']}
+  when: active_mmap.stdout | int < elk_max_map_count | int
+- name: Prepare independent recoverable ELK identities
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
+  vars:
+    component_input_name: elk
+    component_input_manifest: data-platform/elk/elasticsearch/auth.sops.yaml
+    component_initial_input:
+      elastic_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+      kibana_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+      logstash_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+      reader_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+      ingest_password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+      kibana_security_key: '{{ lookup("password","/dev/null",length=48,chars=["ascii_letters","digits"]) }}'
+      kibana_saved_objects_key: '{{ lookup("password","/dev/null",length=48,chars=["ascii_letters","digits"]) }}'
+      kibana_reporting_key: '{{ lookup("password","/dev/null",length=48,chars=["ascii_letters","digits"]) }}'
+  no_log: true
+- name: Keep ELK identities in memory
+  ansible.builtin.set_fact: {elk_credentials: '{{ component_private_input }}'}
+  no_log: true
+- name: Validate secret sizes and safe static payload characters
+  ansible.builtin.assert:
+    quiet: true
+    that: item is match('^[a-zA-Z0-9]{40,48}$')
+  loop: '{{ elk_credentials.values() | list }}'
+  no_log: true
+- name: Prepare one internal TLS identity per ELK service
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-tls.yaml'
+  vars:
+    tls_component: '{{ elk_tls_name }}'
+    tls_component_namespace: '{{ data_namespace }}'
+    tls_guard_manifest: 'data-platform/elk/{{ elk_tls_name }}/auth.sops.yaml'
+  loop: [elasticsearch, kibana, logstash]
+  loop_control: {loop_var: elk_tls_name}
+- name: Encrypt the ES bootstrap password and internal TLS identity
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: data-platform/elk/elasticsearch/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: elasticsearch-auth, namespace: '{{ data_namespace }}'}
+        stringData:
+          password: '{{ elk_credentials.elastic_password }}'
+          private.key: '{{ component_tls_material.elasticsearch.key }}'
+          public.crt: '{{ component_tls_material.elasticsearch.cert }}'
+          ca.crt: '{{ component_tls_material.elasticsearch.ca }}'
+          health.curl: |
+            user = "elastic:{{ elk_credentials.elastic_password }}"
+            cacert = "/usr/share/elasticsearch/config/tls/ca.crt"
+            resolve = "elasticsearch.{{ data_namespace }}.svc.cluster.local:{{ elasticsearch_port }}:127.0.0.1"
+  no_log: true
+- name: Encrypt privileged one time bootstrap payloads separately from runtime
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: data-platform/elk/initialize/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: elk-initialize-auth, namespace: '{{ data_namespace }}'}
+        stringData:
+          ca.crt: '{{ component_tls_material.elasticsearch.ca }}'
+          admin.curl: |
+            user = "elastic:{{ elk_credentials.elastic_password }}"
+            cacert = "/run/auth/ca.crt"
+          kibana-password.json: '{{ {"password":elk_credentials.kibana_password} | to_json }}'
+          writer-role.json: '{{ {"cluster":["monitor"],"indices":[{"names":[elk_index_prefix + "-*"],"privileges":["write","create_index","view_index_metadata"]}]} | to_json }}'
+          reader-role.json: '{{ {"cluster":[],"indices":[{"names":[elk_index_prefix + "-*"],"privileges":["read","view_index_metadata"]}]} | to_json }}'
+          writer-user.json: '{{ {"password":elk_credentials.logstash_password,"roles":[elk_logstash_writer]} | to_json }}'
+          reader-user.json: '{{ {"password":elk_credentials.reader_password,"roles":[elk_log_reader,"kibana_admin"]} | to_json }}'
+  no_log: true
+- name: Encrypt the restricted Kibana system account and persistent keys
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: data-platform/elk/kibana/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: kibana-auth, namespace: '{{ data_namespace }}'}
+        stringData:
+          kibana.yml: '{{ lookup("template", playbook_dir + "/../../gitops/components/data-platform/elk/kibana/kibana.yml.j2") }}'
+          private.key: '{{ component_tls_material.kibana.key }}'
+          public.crt: '{{ component_tls_material.kibana.cert }}'
+          ca.crt: '{{ component_tls_material.kibana.ca }}'
+  no_log: true
+- name: Encrypt the bounded Logstash writer and ingest credentials
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: data-platform/elk/logstash/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: logstash-auth, namespace: '{{ data_namespace }}'}
+        stringData:
+          writer-password: '{{ elk_credentials.logstash_password }}'
+          ingest-password: '{{ elk_credentials.ingest_password }}'
+          private.key: '{{ component_tls_material.logstash.key }}'
+          public.crt: '{{ component_tls_material.logstash.cert }}'
+          ca.crt: '{{ component_tls_material.logstash.ca }}'
+  no_log: true
+- name: Derive each ELK rollout identity from only its own input
+  ansible.builtin.set_fact:
+    elasticsearch_input_digest: '{{ [elk_credentials.elastic_password,component_tls_material.elasticsearch] | to_json | hash("sha256") }}'
+    kibana_input_digest: '{{ [elk_credentials.kibana_password,elk_credentials.kibana_security_key,elk_credentials.kibana_saved_objects_key,elk_credentials.kibana_reporting_key,component_tls_material.kibana] | to_json | hash("sha256") }}'
+    logstash_input_digest: '{{ [elk_credentials.logstash_password,elk_credentials.ingest_password,component_tls_material.logstash] | to_json | hash("sha256") }}'
+  no_log: true
+- name: Render ELK workload candidates through the native service chain
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/data-platform/elk/{{ item }}/workload.yaml.j2'
+    dest: '{{ build }}/data-platform/elk/{{ item }}/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+  loop: [elasticsearch, initialize, kibana, logstash]
+- name: Render explicit ELK component roots
+  ansible.builtin.copy:
+    dest: '{{ build }}/data-platform/elk/{{ item }}/kustomization.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+    content: |
+      {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':['workload.yaml','auth.sops.yaml']} | to_nice_yaml }}
+  loop: [elasticsearch, initialize, kibana, logstash]
+- name: Aggregate the post-initialization runtime components
+  ansible.builtin.copy:
+    dest: '{{ build }}/data-platform/elk/runtime/kustomization.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+    content: |
+      {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':['../kibana','../logstash']} | to_nice_yaml }}

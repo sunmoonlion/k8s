@@ -1,3 +1,17 @@
+# 当前单元：按所有者调整顺序，先 ELK 再 Neo4j（2026-10-04）
+
+工作树/分支 platform-kind-v1，基线 f732863a；原生 Make→Ansible→Flux，原集群与新 Harbor 数据保留，无 push，无公开入口切换。本机中文向量服务已实际通过，后续可换外部 provider；不同模型须重新生成向量。
+
+- RAGFlow下载会话74672已成功结束，固定镜像独立校验和Harbor发布ok28 changed1 failed0；仅物料完成，运行部署延后。
+- ELK9.5.4三镜像和Neo4j2026.09.0 Community四镜像已按现有上游锁准备/发布，材料ok96 changed20 failed0；未换版本。证据.build/models/elk-neo4j-materials.log、elk-neo4j-publish.log。
+- ELK配置/模板/初始化/验收在gitops/components/data-platform/elk，同职责共置；20Gi/2Gi/4Gi独立静态Retain卷，同data-platform-dev。ES内置管理员仅ES和初始化Job；Kibana系统账号、Logstash受限写账号、日志读者和入站身份独立。TLS每服务独立，凭据备份/SOPS同现有链。单节点，非HA，不开启索引自动删除。
+- 首次渲染目录列表误含elk/elasticsearch作为已有组件键，已修正；原错误保留elk-stage.log。修正stage ok250 changed4 failed0；现有210个公共对象完全一致，新增19对象；四组13个公共对象server dry-run通过。
+- 进一步收紧ES探针对yellow/green检查、Kibana保留官方tini、公共验收输出延后到清除自建标记之后；将再次stage再提交/晋级/实际部署。当前仅候选，尚不能宣称运行成功。材料准备/新目录已初始化，旧服务未部署改动。
+
+下一步 ELK原生bootstrap及真实TLS/Logstash→ES/权限/Kibana验收→重复部署确认既有Pod未重启→Neo4j同链实际读写→继续RAGFlow。后续整套启停/开机恢复、WSL/KIND重启与删除重建持久化、长期空间管理及所有临时清理仍未完成。容量底线10GiB，窗口2小时；新公开入口需另行批准。
+
+---
+
 # 当前单元：本机 CPU 向量服务实际验收通过（2026-10-04）
 
 本节优先于下方历史。所有者明确选择本机 CPU，由助手选合适版本；保持现有平台/应用、原始 kind、新 Harbor 数据。

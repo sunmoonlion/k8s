@@ -1,4 +1,4 @@
-{% for name,path,dependency,enabled in [('platform-services','core','',true),('casdoor-db','casdoor-db','platform-services',services_casdoor_enabled),('casdoor-init','casdoor-init','casdoor-db',services_casdoor_enabled),('casdoor','casdoor','casdoor-init',services_casdoor_enabled)] if enabled %}
+{% for name,path,dependency,enabled in [('platform-services','core','',true),('casdoor-db','casdoor-db','platform-services',services_casdoor_enabled),('casdoor-init','casdoor-init','casdoor-db',services_casdoor_enabled),('casdoor','casdoor','casdoor-init',services_casdoor_enabled),('elk-initialize','elk-initialize','platform-services',services_elk_enabled),('elk-runtime','elk-runtime','elk-initialize',services_elk_enabled)] if enabled %}
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -6,7 +6,7 @@ metadata: {name: {{ name }}, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
-  timeout: {{ '8m' if name == 'platform-services' else '6m' }}
+  timeout: {{ '15m' if name in ['platform-services','elk-runtime'] else '6m' }}
   path: ./components/{{ service_stage_paths[path] | default(path) }}
   sourceRef: {kind: OCIRepository, name: platform}
 {% if dependency %}

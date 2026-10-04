@@ -1,0 +1,29 @@
+---
+# Single-node KIND profile. All three versions/digests come from artifacts lock.
+services_elk_enabled: true
+services_elasticsearch_enabled: '{{ services_elk_enabled }}'
+services_kibana_enabled: '{{ services_elk_enabled }}'
+services_logstash_enabled: '{{ services_elk_enabled }}'
+elasticsearch_volume: {name: elasticsearch, node: worker, size: 20Gi, uid: 1000, gid: 1000}
+kibana_volume: {name: kibana, node: worker, size: 2Gi, uid: 1000, gid: 1000}
+logstash_volume: {name: logstash, node: worker2, size: 4Gi, uid: 1000, gid: 1000}
+elasticsearch_heap: 2g
+elasticsearch_resources:
+  requests: {cpu: '1', memory: 3Gi}
+  limits: {cpu: '4', memory: 4Gi}
+kibana_resources:
+  requests: {cpu: 250m, memory: 1Gi}
+  limits: {cpu: '2', memory: 2Gi}
+logstash_heap: 1g
+logstash_resources:
+  requests: {cpu: 250m, memory: 1536Mi}
+  limits: {cpu: '2', memory: 2Gi}
+elasticsearch_port: 9200
+kibana_port: 5601
+logstash_ingest_port: 8080
+elk_index_prefix: sunmoon-logs
+elk_init_generation: v1
+elk_logstash_writer: sunmoon_log_writer
+elk_log_reader: sunmoon_log_reader
+elk_ingest_username: sunmoon_log_ingest
+elk_max_map_count: 1048576

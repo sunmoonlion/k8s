@@ -245,3 +245,123 @@ spec:
   volumeName: sunmoon-kind-text-embeddings
   resources:
     requests: {storage: 4Gi}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sunmoon-kind-elasticsearch
+  annotations:
+    sunmoonai.com/storage-owner: sunmoon-kind
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  capacity: {storage: 20Gi}
+  accessModes: [ReadWriteOnce]
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: sunmoon-static
+  local:
+    path: /data/kind-local-storage/elasticsearch
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [sunmoon-kind-worker]
+  claimRef:
+    namespace: data-platform-dev
+    name: elasticsearch-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-data
+  namespace: data-platform-dev
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: sunmoon-static
+  volumeName: sunmoon-kind-elasticsearch
+  resources:
+    requests: {storage: 20Gi}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sunmoon-kind-kibana
+  annotations:
+    sunmoonai.com/storage-owner: sunmoon-kind
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  capacity: {storage: 2Gi}
+  accessModes: [ReadWriteOnce]
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: sunmoon-static
+  local:
+    path: /data/kind-local-storage/kibana
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [sunmoon-kind-worker]
+  claimRef:
+    namespace: data-platform-dev
+    name: kibana-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kibana-data
+  namespace: data-platform-dev
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: sunmoon-static
+  volumeName: sunmoon-kind-kibana
+  resources:
+    requests: {storage: 2Gi}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sunmoon-kind-logstash
+  annotations:
+    sunmoonai.com/storage-owner: sunmoon-kind
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  capacity: {storage: 4Gi}
+  accessModes: [ReadWriteOnce]
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: sunmoon-static
+  local:
+    path: /data/kind-local-storage/logstash
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [sunmoon-kind-worker2]
+  claimRef:
+    namespace: data-platform-dev
+    name: logstash-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: logstash-data
+  namespace: data-platform-dev
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: sunmoon-static
+  volumeName: sunmoon-kind-logstash
+  resources:
+    requests: {storage: 4Gi}

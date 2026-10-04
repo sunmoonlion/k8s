@@ -5,7 +5,7 @@ metadata: {name: platform-services, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
-  timeout: 8m
+  timeout: 15m
   path: ./components/core
   sourceRef: {kind: OCIRepository, name: platform}
   prune: false
@@ -59,6 +59,40 @@ spec:
   path: ./components/app-platform/auth-app/casdoor
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn: [{name: casdoor-init}]
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: elk-initialize, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 6m
+  path: ./components/data-platform/elk/initialize
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn: [{name: platform-services}]
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: elk-runtime, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 15m
+  path: ./components/data-platform/elk/runtime
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn: [{name: elk-initialize}]
   prune: false
   deletionPolicy: Orphan
   wait: true
