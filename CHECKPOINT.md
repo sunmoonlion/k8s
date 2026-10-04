@@ -1,6 +1,6 @@
-# 当前优先状态：四应用基础部署通过，知识/投资正式入口待批准（2026-10-04）
+# 当前优先状态：四应用正式入口与AIStor验收通过（2026-10-04）
 
-工作树/home/zymun/worktrees/platform-kind-v1/k8s，分支platform-kind-v1。仅本地提交，无push；其余四业务仓本单元未修改。当前实现0f8892ee12a96e54c1bf84f99dfeb7a270e760f9，源晋级683b6e88。当前Flux源sha256:03af36ab4ba8f768680bd7d9c6a94ba98e4dafd49dae2bfd0ff6a11c396d08aa，source revision为0f8892ee。
+工作树/home/zymun/worktrees/platform-kind-v1/k8s，分支platform-kind-v1。仅本地提交，无push；其余四业务仓本单元未修改。当前部署实现0f8892ee12a96e54c1bf84f99dfeb7a270e760f9，源晋级683b6e88；入口候选96be93dd758de0df9f86d20dd5a4f2e58a9718c5，回退权限说明f775568e。当前Flux源sha256:03af36ab4ba8f768680bd7d9c6a94ba98e4dafd49dae2bfd0ff6a11c396d08aa，source revision为0f8892ee。
 
 ## 已实施与实际验证
 
@@ -11,20 +11,21 @@
 - 投资首次迁移已成功升级，配置期望head误填旧值，导致验收拒绝；按固定源码修正到20260925_0011，v2成功。新增原生渲染前固定源码迁移head核对，防止手填错配；不改业务迁移或数据库版本。仅清除UID核实且无PVC的失败v1 Job，成功v2保留，失败日志私有保存。
 - 38个Flux阶段均Ready、当前代次且同一03af源。知识、信息完整重复部署及模板正式入口回归成功，changed0 failed0。投资完整重复四段ok126/101/24/39，均changed0 failed0；services-check为ok31 changed1 failed0，唯一变更是验收回执。最终日志为investment-bootstrap-repeat.log、services-after-four-apps-check.log。
 
-## 入口候选与下一步顺序
+## 正式入口与下一步顺序
 
-当前正式30443：Harbor→11443；Casdoor/tpl/info域名→29443；knowledge/investment尚未切换，仍旧默认172.18.0.5:30443。
+当前正式30443：Harbor→11443；Casdoor/tpl/info/knowledge/investment域名→29443；其它域名仍旧默认172.18.0.5:30443。
 
-1. 完成投资重复部署和平台实际复验，重核预览/挂载/三文件回退备份；入口候选仅改knowledge/investment四域名。操作卡docs/platform-kind-v1/knowledge-investment-entry-cutover.md。单独请求并等待所有者入口维护批准；未批准不能entry-stop/deploy。
-2. 批准后按原生入口切换、两应用正式公开验收、tpl/info回归、Harbor认证完整拉取及入口零变更重复。维护2小时，容量底线10GiB且扣230GiB未来增长。备份/mnt/sunmoon-data/backups/entry/sunmoon-kind/knowledge-investment-cutover-20261003T153516Z。
-3. 继续所需平台依赖及真实领域/跨应用业务，整套原生一键与统一启停、开机附盘/服务顺序。
-4. 实际WSL/KIND重启、KIND删除重建后的Harbor数据全目录摘要及新节点拉取；长期容量监控、Harbor保留/GC、缓存/日志/备份管理统一入口，删除策略先确认；最终清理本次全部临时/远程下载。
+所有者明确批准后01:13:01Z开启2小时窗口，01:13:30Z切换、01:14:53Z完整验收后关闭。knowledge/investment/tpl公开检查各ok39 changed0 failed0，info为ok44 changed0 failed0；Harbor认证完整8blob/6层及manifest/config核对通过，入口重复ok21 changed0 failed0。备份/mnt/sunmoon-data/backups/entry/sunmoon-kind/knowledge-investment-cutover-20261003T153516Z，回退安装必须恢复运行0644而非备份0600；操作卡docs/platform-kind-v1/knowledge-investment-entry-cutover.md。38阶段最终Ready，旧kind控制面仍停止。
 
-原始kind节点/卷与新Harbor/sunmoon-kind均保留。没有重启数据库、切换公开入口或修改Windows计划任务。本阶段不代表高可用、机器外灾备、安全门禁或全业务交付。
+1. 继续所需平台依赖及真实领域/跨应用业务；先按固定源码确认实际外部契约与身份需求，再扩展同一原生组件/发布链，不混入旧部署实现。
+2. 整套原生一键与统一启停、开机附盘/服务顺序；单组件机制保持同源，首次管理员附盘单列。
+3. 实际WSL/KIND重启、KIND删除重建后的Harbor数据全目录摘要及新节点拉取；不能只看挂载宣称通过。
+4. 长期容量监控、Harbor保留/GC、缓存/日志/备份管理统一入口，删除策略先确认；最终清理本次全部临时/远程下载。
+原始kind节点/卷与新Harbor/sunmoon-kind均保留。本单元仅公开入口代理短断，未重启数据库或修改Windows计划任务。本阶段不代表高可用、机器外灾备、安全门禁或全业务交付。
 
 ## 证据与日常入口
 
-忽略目录infrastructure/.build/applications/runtime-unit-20261003/（本次延续到Oct4，旧时间戳不改）：object-storage-*、info-storage-v3-*、knowledge-*、investment-*、info-after-investment-bootstrap、tpl-after-investment-public-check、services-after-four-apps-check、knowledge-investment-entry-*；失败证据保留。正式配置/摘要在组件config.yaml、image.lock.yaml、sources.yaml；命令make -C infrastructure application-bootstrap/application-check APP=<应用>，现有公开域名用application-check-public。对象存储方法docs/platform-kind-v1/object-storage.md。
+忽略目录infrastructure/.build/applications/runtime-unit-20261003/（本次延续到Oct4，旧时间戳不改）：object-storage-*、info-storage-v3-*、knowledge-*、investment-*、info-after-investment-bootstrap、tpl-after-investment-public-check、services-after-four-apps-check、knowledge-investment-entry-*；失败证据保留。本单元四个/tmp临时编辑/诊断脚本及mc help临时配置已按精确名称清除，没有新增东京文件。正式配置/摘要在组件config.yaml、image.lock.yaml、sources.yaml；命令make -C infrastructure application-bootstrap/application-check APP=<应用>，现有公开域名用application-check-public。对象存储方法docs/platform-kind-v1/object-storage.md。
 
 
 ---

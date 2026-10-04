@@ -1,6 +1,6 @@
 # 知识与投资应用正式入口切换
 
-状态：候选已完成，尚未获得本单元入口维护批准，未切换。2026-10-04复核。
+状态：2026-10-04所有者批准后已完成切换，真实30443验收通过，维护已关闭。
 
 ## 范围与配置真源
 
@@ -60,3 +60,14 @@ make -C infrastructure entry-start
 本单元验运行、身份、数据库及基础消息和正式入口。未宣称浏览器全UI点击、知识检索/索引/RAGFlow、跨应用授权调用、投资模型Key/执行环境与完整投资业务通过。不配置虚假provider、不授予多余业务权限制造成功。整套一键启停、开机恢复、Harbor重启/删除重建持久化与长期空间管理仍需后续实际交付。
 
 证据在忽略目录infrastructure/.build/applications/runtime-unit-20261003/；保留原始日志，不提交凭据或日志。
+
+## 本次实际结果（2026-10-04）
+
+路由候选96be93dd758de0df9f86d20dd5a4f2e58a9718c5，回退权限说明修正f775568e。
+01:13:01Z开启窗口，01:13:30Z切换完成，01:14:53Z所有检查通过并关闭窗口。
+
+knowledge/investment/tpl公开检查各ok39 changed0 failed0，info为ok44 changed0 failed0（含实际双版本S3与权限拒绝）。Harbor认证完整拉回8个blob、6个镜像层及manifest/config摘要核对通过，ok28 changed3 failed0，临时验证下载已由原入口删除；入口重复部署ok21 changed0 failed0。
+
+38个Flux阶段最终再次核实全部Ready、当前generation且同一03af源；原kind控制面仍停止。三文件备份仍保留，未删除节点、PVC/PV、业务数据或旧控制面。window/switched/result在上述root私有备份目录；运行证据knowledge-public-check、investment-public-check、tpl/info-after-knowledge-investment-public-check、knowledge-investment-registry-check、knowledge-investment-entry-repeat和four-apps-flux-final.json在忽略的本轮证据目录。
+
+业务验收边界及后续持久化、生命周期和空间管理不因本次入口通过而改判完成。
