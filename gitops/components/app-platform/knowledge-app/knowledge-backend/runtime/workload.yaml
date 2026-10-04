@@ -253,6 +253,7 @@ spec:
     - from:
         - podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-api}}
       ports: [{protocol: TCP, port: 8000}]
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata: {name: knowledge-ragflow-egress, namespace: app-platform-dev}
