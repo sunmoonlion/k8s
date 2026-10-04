@@ -44,12 +44,14 @@ make -C infrastructure entry-deploy
 
 ```sh
 make -C infrastructure entry-stop
-sudo cp --preserve=mode,ownership /mnt/sunmoon-data/backups/entry/sunmoon-kind/knowledge-investment-cutover-20261003T153516Z/haproxy.cfg /etc/sunmoon/entry/haproxy.cfg
-sudo cp --preserve=mode,ownership /mnt/sunmoon-data/backups/entry/sunmoon-kind/knowledge-investment-cutover-20261003T153516Z/compose.yaml /opt/sunmoon/entry/compose.yaml
-sudo cp --preserve=mode,ownership /mnt/sunmoon-data/backups/entry/sunmoon-kind/knowledge-investment-cutover-20261003T153516Z/sunmoon-entry.service /etc/systemd/system/sunmoon-entry.service
+sudo install -o root -g root -m 0644 /mnt/sunmoon-data/backups/entry/sunmoon-kind/knowledge-investment-cutover-20261003T153516Z/haproxy.cfg /etc/sunmoon/entry/haproxy.cfg
+sudo install -o root -g root -m 0644 /mnt/sunmoon-data/backups/entry/sunmoon-kind/knowledge-investment-cutover-20261003T153516Z/compose.yaml /opt/sunmoon/entry/compose.yaml
+sudo install -o root -g root -m 0644 /mnt/sunmoon-data/backups/entry/sunmoon-kind/knowledge-investment-cutover-20261003T153516Z/sunmoon-entry.service /etc/systemd/system/sunmoon-entry.service
 sudo systemctl daemon-reload
 make -C infrastructure entry-start
 ```
+
+备份副本0600，运行的三份非秘密配置原权限均0644。恢复用install显式还原运行权限，避免把备份0600带到非特权代理读取的文件。
 
 恢复后核Harbor健康、tpl/info公开登录与原路由。候选代码与回退运行状态不同，失败未修正前不要再次entry-deploy。失败记录独立保留。
 
