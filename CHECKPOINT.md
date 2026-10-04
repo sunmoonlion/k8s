@@ -9,7 +9,8 @@
 - 最小Dockerfile仅chmod镜像/root0755、默认UID1000、非root核验官方venv Python3.13；没有安装/升级包或改官方源码。官方CPU模式跳过Torch安装，独立TEI承担向量推理，运行期禁止公网/依赖下载。派生manifest sha256:4601a9b91d670fdaed4efe5487f7900784f484494cc20fa128bba51bc4c115b2，原官方filesystem diff_ids全部保留，追加权限/验证层。Dockerfile摘要067039556ebc8462c57198ef6e3bc4badadc02709fb21b64f688c8cc62d57907。
 - 原生构建ok31 changed9 failed0、skopeo发布ok28 changed1 failed0，完整归档SHA40a62bf3f83c71f92e10eec0fea520abaa76802f6bafecc15e61f3db2dca8936。归档/image.lock/物料JSON已独立核对；本次复核ok10 changed1 failed0，新增物料清单是唯一变化。归档在packages-to-be-installed/releases/platform-kind-v1/images，配置/实现/锁同处gitops/components/data-platform/ragflow。Make services-bootstrap纳入构建复核及已有skopeo发布，非另建部署系统。
 - 36/32GiB保守预算先被拦，随后按已校验归档实际层字节只读测量峰值并通过10GiB底线；直接Docker→skopeo OCI，避免重复docker-save。节点首次启动按缺失的锁定层预算，不把已存在镜像层重复计费。
-- 会话15706正在原生services-stage，日志ragflow-v3-stage-approved.log；此前中断的stage不可使用。当前线上源仍7390f03b35ad33b80583c0aa625525a6dc0ce4b2 / sha256:9056ba5a09ac17cc0a0298e20bde4b787c8b03dd0ab8420f2459addfaaa892e5（晋级204e8756），初始化v2失败；派生候选尚未晋级到Flux。
+- v3初始化实际成功，API HTTPS200、Worker就绪；API内联健康探针CRLF转义失败，官方WordNet归档不可供UID1000读取。现只将官方NLTK资源设为可读，不装包/下载语料；改同目录health.py标准HTTP库探针，实际执行通过。v3失败日志保留。
+- 新派生manifest sha256:3b2328c9e8e0fe36d834d4204e5c519558b66150f0ed8a3ab0ad03dde8264b0e，Dockerfile SHA9c73f6dda8f156e89f4d2cf8f5d612d8c489a868b58bb71e0760e5baaae1faaf；非root WordNet加载及Python依赖通过。构建ok38 changed11、独立发布ok28 changed1、完整v4 stage ok427 changed2均failed0；公共server dry-run通过。当前线上仍fae3092f / sha256:78876e021c235a161730de8ec06c20308d8fa060c85a59f19abe66c5ee80a358（晋级8eab1bcb），待v4晋级与中文协议验收。
 
 ## 下一步
 

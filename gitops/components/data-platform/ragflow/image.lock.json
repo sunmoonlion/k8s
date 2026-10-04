@@ -1,14 +1,15 @@
 {
-    "archive_sha256": "40a62bf3f83c71f92e10eec0fea520abaa76802f6bafecc15e61f3db2dca8936",
+    "archive_sha256": "02c5e76932a607f6b7848860ad0709a3b16ea11a2cd858b613c4eb74c4eeaa07",
     "base_manifest": "sha256:e6b3f1a185c0a70abb3a72e1092415df8c5c6a4fae0089545554f2936c4b27ab",
-    "dockerfile_sha256": "067039556ebc8462c57198ef6e3bc4badadc02709fb21b64f688c8cc62d57907",
+    "dockerfile_sha256": "9c73f6dda8f156e89f4d2cf8f5d612d8c489a868b58bb71e0760e5baaae1faaf",
     "images": [
         {
-            "compressed_layer_bytes": 3993377280,
+            "compressed_layer_bytes": 4048959467,
+            "config_digest": "sha256:109374713925b4d908b6db2f79a5a22d67f702859937bb0e4f26f40e170d1629",
             "id": "ragflow-runtime",
-            "manifest_digest": "sha256:4601a9b91d670fdaed4efe5487f7900784f484494cc20fa128bba51bc4c115b2",
-            "reference": "harbor.sunmoonai.com:30443/platform/ragflow-runtime@sha256:4601a9b91d670fdaed4efe5487f7900784f484494cc20fa128bba51bc4c115b2",
-            "source": "ragflow-runtime:0.27.2-nonroot-067039556ebc8462",
+            "manifest_digest": "sha256:3b2328c9e8e0fe36d834d4204e5c519558b66150f0ed8a3ab0ad03dde8264b0e",
+            "reference": "harbor.sunmoonai.com:30443/platform/ragflow-runtime@sha256:3b2328c9e8e0fe36d834d4204e5c519558b66150f0ed8a3ab0ad03dde8264b0e",
+            "source": "ragflow-runtime:0.27.2-nonroot-9c73f6dda8f156e8",
             "status": "resolved"
         }
     ],

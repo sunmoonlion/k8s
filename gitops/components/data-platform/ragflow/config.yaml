@@ -6,7 +6,7 @@ ragflow_database_owner: ragflow_owner
 ragflow_database_runtime: ragflow_runtime
 ragflow_bucket: ragflow-derived
 ragflow_storage_user: ragflow_storage
-ragflow_initialize_generation: v3
+ragflow_initialize_generation: v4
 ragflow_port: 9380
 ragflow_node: worker2
 ragflow_ingestion_timeout_seconds: 300

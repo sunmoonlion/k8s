@@ -96,7 +96,7 @@
               environment: {DOCKER_CONFIG: '{{ image_workspace.path }}/auth', HTTP_PROXY: '', HTTPS_PROXY: '', ALL_PROXY: ''}
             - name: Verify non-root access to shipped Python and mandatory dependencies
               ansible.builtin.command:
-                argv: [docker, run, --rm, --network=none, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --entrypoint=/ragflow/.venv/bin/python3, 'sunmoon-ragflow-nonroot:{{ dockerfile.stat.checksum[:16] }}', -c, 'import os,sys,ruamel.yaml,peewee,quart,nltk,hypercorn,psycopg2,boto3; assert os.getuid()==1000 and sys.version_info[:2]==(3,13); print("non-root-shipped-python-verified")']
+                argv: [docker, run, --rm, --network=none, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --entrypoint=/ragflow/.venv/bin/python3, 'sunmoon-ragflow-nonroot:{{ dockerfile.stat.checksum[:16] }}', -c, 'import os,sys,ruamel.yaml,peewee,quart,nltk,hypercorn,psycopg2,boto3; from nltk.corpus import wordnet; wordnet.ensure_loaded(); assert os.getuid()==1000 and sys.version_info[:2]==(3,13); print("non-root-shipped-python-verified")']
               changed_when: false
             - name: Export through the fixed publisher without a duplicate docker-save tar
               ansible.builtin.command:

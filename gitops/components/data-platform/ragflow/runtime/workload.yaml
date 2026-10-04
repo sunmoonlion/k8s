@@ -2,6 +2,25 @@ apiVersion: v1
 kind: ConfigMap
 metadata: {name: ragflow-scripts, namespace: data-platform-dev}
 data:
+  health.py: |
+    """Small stdlib-only checks; HTTP protocol encoding stays in the HTTP library."""
+    import http.client,json,socket,ssl,sys,time
+    from pathlib import Path
+    if sys.argv[1]=='api':
+        connection=http.client.HTTPConnection('127.0.0.1',9380,timeout=5)
+        try:
+            connection.connect()
+            context=ssl.create_default_context(cafile='/run/tls/ca.crt')
+            connection.sock=context.wrap_socket(connection.sock,server_hostname='ragflow')
+            connection.request('GET','/sunmoon/ready')
+            response=connection.getresponse()
+            assert response.status==200 and json.loads(response.read())=={'ready':True}
+        finally:
+            connection.close()
+    elif sys.argv[1]=='worker':
+        assert time.time()-Path('/tmp/worker-ready').stat().st_mtime < 60
+    else:
+        raise SystemExit('Expected api or worker check')
   runtime.py: |
     """Production ASGI entry for the pinned upstream image; no schema initialization."""
     import asyncio
@@ -171,7 +190,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: 'api'
-          image: harbor.sunmoonai.com:30443/platform/ragflow-runtime@sha256:4601a9b91d670fdaed4efe5487f7900784f484494cc20fa128bba51bc4c115b2
+          image: harbor.sunmoonai.com:30443/platform/ragflow-runtime@sha256:3b2328c9e8e0fe36d834d4204e5c519558b66150f0ed8a3ab0ad03dde8264b0e
           imagePullPolicy: IfNotPresent
           command: [/ragflow/.venv/bin/python3, /sunmoon/runtime.py, 'api']
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
@@ -199,13 +218,13 @@ spec:
           ports: [{name: https, containerPort: 9380}]
           startupProbe:
             exec:
-              command: [/ragflow/.venv/bin/python3, -c, "import socket,ssl; c=ssl.create_default_context(cafile=\"/run/tls/ca.crt\"); s=c.wrap_socket(socket.create_connection((\"127.0.0.1\",9380),5),server_hostname=\"ragflow\"); s.sendall(b\"GET /sunmoon/ready HTTP/1.1\r\nHost: ragflow\r\nConnection: close\r\n\r\n\"); assert b\" 200 \" in s.recv(1000)"]
+              command: [/ragflow/.venv/bin/python3, /sunmoon/health.py, 'api']
             periodSeconds: 5
             timeoutSeconds: 10
             failureThreshold: 120
           readinessProbe:
             exec:
-              command: [/ragflow/.venv/bin/python3, -c, "import socket,ssl; c=ssl.create_default_context(cafile=\"/run/tls/ca.crt\"); s=c.wrap_socket(socket.create_connection((\"127.0.0.1\",9380),5),server_hostname=\"ragflow\"); s.sendall(b\"GET /sunmoon/ready HTTP/1.1\r\nHost: ragflow\r\nConnection: close\r\n\r\n\"); assert b\" 200 \" in s.recv(1000)"]
+              command: [/ragflow/.venv/bin/python3, /sunmoon/health.py, 'api']
             periodSeconds: 10
             timeoutSeconds: 10
           livenessProbe:
@@ -246,7 +265,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: 'worker'
-          image: harbor.sunmoonai.com:30443/platform/ragflow-runtime@sha256:4601a9b91d670fdaed4efe5487f7900784f484494cc20fa128bba51bc4c115b2
+          image: harbor.sunmoonai.com:30443/platform/ragflow-runtime@sha256:3b2328c9e8e0fe36d834d4204e5c519558b66150f0ed8a3ab0ad03dde8264b0e
           imagePullPolicy: IfNotPresent
           command: [/ragflow/.venv/bin/python3, /sunmoon/runtime.py, 'worker']
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
@@ -273,13 +292,13 @@ spec:
             - {name: AWS_CA_BUNDLE, value: /run/tls/ca.crt}
           startupProbe:
             exec:
-              command: [/ragflow/.venv/bin/python3, -c, "import pathlib,time; assert time.time()-pathlib.Path(\"/tmp/worker-ready\").stat().st_mtime < 60"]
+              command: [/ragflow/.venv/bin/python3, /sunmoon/health.py, 'worker']
             periodSeconds: 5
             timeoutSeconds: 10
             failureThreshold: 120
           readinessProbe:
             exec:
-              command: [/ragflow/.venv/bin/python3, -c, "import pathlib,time; assert time.time()-pathlib.Path(\"/tmp/worker-ready\").stat().st_mtime < 60"]
+              command: [/ragflow/.venv/bin/python3, /sunmoon/health.py, 'worker']
             periodSeconds: 10
             timeoutSeconds: 10
           livenessProbe:

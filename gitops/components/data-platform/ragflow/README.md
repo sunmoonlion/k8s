@@ -10,6 +10,6 @@
 
 ## 官方镜像的非root适配
 
-实际核对0.27.2官方镜像：.venv/bin/python链接到/root/.local/share/uv/python/cpython-3.13.11-linux-x86_64-gnu，而/root权限0700。UID1000通过PATH会退回系统3.12，无法导入项目依赖。Dockerfile只将镜像自带/root目录设为0755、默认用户1000，并验证原Python3.13可用；不安装或升级包，不改官方应用源码。运行与探针显式使用/ragflow/.venv/bin/python3。版本仍0.27.2，运行镜像是可审查的派生镜像，不宣称与官方摘要相同。
+实际核对0.27.2官方镜像：.venv/bin/python链接到/root/.local/share/uv/python/cpython-3.13.11-linux-x86_64-gnu，而/root权限0700。UID1000通过PATH会退回系统3.12，无法导入项目依赖。Dockerfile只将镜像自带/root目录设为0755、官方NLTK数据设为非root可读、默认用户1000，并验证原Python3.13和WordNet可用；不安装或升级包，不改官方应用源码、不下载NLP语料。运行与探针显式使用/ragflow/.venv/bin/python3。版本仍0.27.2，运行镜像是可审查的派生镜像，不宣称与官方摘要相同。
 
-services-ragflow-image复用原生Ansible/容量检查：固定官方Harbor摘要→无网络Docker构建→非root依赖检查→现有skopeo转换与逐层验证。Dockerfile摘要、官方基底和派生摘要/归档摘要单独保存在本目录image.lock.json；上游锁不改。正式归档保存在platform-kind-v1/images，独立publish入口复用既有artifacts/publish，完整services-bootstrap包含它们。已有锁从不自动覆盖；升级需先审查新构建、提交并晋级固定Flux源。初次预算按官方已校验归档逐层实际解压字节测量（只读、不解包落盘），计入宿主镜像、转换工作区、归档和1GiB余量，直接从Docker导出至OCI，避免重复保存一份docker-save归档，后续复用归档；没有启动时下载依赖。官方镜像中的/root不保存用户秘密，用户秘密仍只放私有目录/SOPS和受限Secret。
+services-ragflow-image复用原生Ansible/容量检查：固定官方Harbor摘要→无网络Docker构建→非root依赖检查→现有skopeo转换与逐层验证。Dockerfile摘要、官方基底和派生摘要/归档摘要单独保存在本目录image.lock.json；上游锁不改。正式归档保存在platform-kind-v1/images，独立publish入口复用既有artifacts/publish，完整services-bootstrap包含它们。已有锁从不自动覆盖；升级需先审查新构建、提交并晋级固定Flux源。健康探针同处health.py，使用标准HTTP库编码请求和CA/SNI校验，避免内联CRLF转义。初次预算按官方已校验归档逐层实际解压字节测量（只读、不解包落盘），计入宿主镜像、转换工作区、归档和1GiB余量，直接从Docker导出至OCI，避免重复保存一份docker-save归档，后续复用归档；没有启动时下载依赖。官方镜像中的/root不保存用户秘密，用户秘密仍只放私有目录/SOPS和受限Secret。
