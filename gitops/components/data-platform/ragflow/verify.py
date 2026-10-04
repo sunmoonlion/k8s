@@ -2,13 +2,14 @@
 import argparse,json,subprocess,sys,re
 
 POD_SOURCE = r"""
-import json,sys,time,uuid,requests,yaml
+import json,sys,time,uuid,requests
+from ruamel.yaml import YAML
 from pathlib import Path
 import boto3,psycopg2
 from botocore.config import Config
 from botocore.exceptions import ClientError
 inputs=json.load(sys.stdin)
-config=yaml.safe_load(Path('/ragflow/conf/service_conf.yaml').read_text())
+config=YAML(typ='safe').load(Path('/ragflow/conf/service_conf.yaml').read_text())
 base=inputs['base'].rstrip('/')+'/api/v1'
 client=requests.Session();client.trust_env=False;client.verify='/run/tls/ca.crt'
 client.headers['Authorization']='Bearer '+inputs['acceptance_token']

@@ -5,6 +5,7 @@ data:
   runtime.py: |
     """Production ASGI entry for the pinned upstream image; no schema initialization."""
     import asyncio
+    import base64
     import json
     import logging
     import os
@@ -17,8 +18,8 @@ data:
     def initialize_logging():
         # Upstream worker prints configuration. Redact known private values before
         # any log handler (including upstream rotating files) receives the record.
-        import yaml
-        private = yaml.safe_load(Path('/ragflow/conf/service_conf.yaml').read_text())
+        from ruamel.yaml import YAML
+        private = YAML(typ='safe').load(Path('/ragflow/conf/service_conf.yaml').read_text())
         sensitive = []
 
         def collect(obj):
@@ -34,6 +35,7 @@ data:
         bootstrap = Path('/run/bootstrap/input.json')
         if bootstrap.exists():
             sensitive.extend(v for k,v in json.loads(bootstrap.read_text()).items() if k.endswith(('_password','_token')) and isinstance(v,str))
+        sensitive.extend(base64.b64encode(value.encode()).decode() for value in list(sensitive))
         factory = logging.getLogRecordFactory()
 
         def redact(value):
@@ -159,7 +161,7 @@ spec:
       labels: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: 'api', sunmoonai.com/postgresql-client: 'true', sunmoonai.com/object-storage-client: 'true'}
       annotations:
         sunmoonai.com/input-digest: 'aca6977d684d05cbb62520c71718ad895b18484a4816fbf74253c02c88bbb2f7'
-        sunmoonai.com/script-digest: '742dc59b94c0b4167acf5de18b0cc942a430c86bad584b0204b2ffe966315f06'
+        sunmoonai.com/script-digest: '7f0ca0d25e7712cb8895ba888e315db9dc42f2647966a25bf0d3c5e2ff61dded'
     spec:
       enableServiceLinks: false
       serviceAccountName: platform-runtime
@@ -233,7 +235,7 @@ spec:
       labels: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: 'worker', sunmoonai.com/postgresql-client: 'true', sunmoonai.com/object-storage-client: 'true'}
       annotations:
         sunmoonai.com/input-digest: 'aca6977d684d05cbb62520c71718ad895b18484a4816fbf74253c02c88bbb2f7'
-        sunmoonai.com/script-digest: '742dc59b94c0b4167acf5de18b0cc942a430c86bad584b0204b2ffe966315f06'
+        sunmoonai.com/script-digest: '7f0ca0d25e7712cb8895ba888e315db9dc42f2647966a25bf0d3c5e2ff61dded'
     spec:
       enableServiceLinks: false
       serviceAccountName: platform-runtime

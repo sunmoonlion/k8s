@@ -1,5 +1,6 @@
 """Production ASGI entry for the pinned upstream image; no schema initialization."""
 import asyncio
+import base64
 import json
 import logging
 import os
@@ -12,8 +13,8 @@ from pathlib import Path
 def initialize_logging():
     # Upstream worker prints configuration. Redact known private values before
     # any log handler (including upstream rotating files) receives the record.
-    import yaml
-    private = yaml.safe_load(Path('/ragflow/conf/service_conf.yaml').read_text())
+    from ruamel.yaml import YAML
+    private = YAML(typ='safe').load(Path('/ragflow/conf/service_conf.yaml').read_text())
     sensitive = []
 
     def collect(obj):
@@ -29,6 +30,7 @@ def initialize_logging():
     bootstrap = Path('/run/bootstrap/input.json')
     if bootstrap.exists():
         sensitive.extend(v for k,v in json.loads(bootstrap.read_text()).items() if k.endswith(('_password','_token')) and isinstance(v,str))
+    sensitive.extend(base64.b64encode(value.encode()).decode() for value in list(sensitive))
     factory = logging.getLogRecordFactory()
 
     def redact(value):

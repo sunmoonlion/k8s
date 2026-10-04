@@ -8,6 +8,8 @@
       - cfg.object_storage.user == application_name + '_storage'
       - cfg.object_storage.bucket == application_name + '-originals'
       - cfg.object_storage.job_revision is match('^[a-z0-9-]{1,16}$')
+      - cfg.object_storage.policy_extra_bucket_actions | default([]) == []
+      - cfg.object_storage.policy_extra_object_actions | default([]) == []
 - name: Inspect preserved application S3 identity
   ansible.builtin.stat: {path: '{{ item }}/s3.yaml', follow: false}
   loop: ['{{ cfg.private_dir }}', '{{ cfg.backup_dir }}']

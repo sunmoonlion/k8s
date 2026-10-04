@@ -12,11 +12,19 @@
       - ragflow_port == 9380
       - ragflow_initialize_generation is match('^v[1-9][0-9]*$')
       - image_map.ragflow.source == 'docker.io/infiniflow/ragflow:v0.27.2'
-- name: Account for the pinned image's first unpacking before new runtime deployment
+- name: Observe live image usage on the exact selected RAGFlow node
+  ansible.builtin.command:
+    argv: '{{ kube + ["-n",data_namespace,"get","pods","-l","app.kubernetes.io/name=ragflow","-o","json"] }}'
+  register: ragflow_cached_pods
+  changed_when: false
+- name: Derive whether the locked image is currently present in the selected node runtime
+  ansible.builtin.set_fact:
+    ragflow_live_image_cached: '{{ (registry_address + "/platform/ragflow@" + image_map.ragflow.manifest_digest) in ((ragflow_cached_pods.stdout | from_json)["items"] | selectattr("spec.nodeName","defined") | selectattr("spec.nodeName","equalto",cluster_name + "-" + ragflow_node) | selectattr("status.phase","equalto","Running") | map(attribute="status.containerStatuses",default=[]) | flatten | map(attribute="imageID",default="") | list) }}'
+- name: Account for first unpacking only when no live locked image proves it present
   ansible.builtin.include_tasks:
     file: '{{ playbook_dir }}/../host/tasks/capacity.yaml'
     apply: {become: false}
-  vars: {capacity_planned_bytes: 21474836480}
+  vars: {capacity_planned_bytes: '{{ 67108864 if ragflow_live_image_cached else 21474836480 }}'}
 - name: Prepare independently recoverable RAGFlow identities
   ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
   vars:
