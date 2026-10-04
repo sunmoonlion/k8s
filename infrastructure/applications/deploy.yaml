@@ -806,9 +806,9 @@
             that:
               - (application_name + '-knowledge-service') in ((runtime.results[0].stdout | from_json).spec.template.spec.containers[0].envFrom | default([]) | selectattr('secretRef','defined') | map(attribute='secretRef.name') | list)
               - (application_name + '-knowledge-service') in ((runtime.results[1].stdout | from_json).spec.template.spec.containers[0].envFrom | default([]) | selectattr('secretRef','defined') | map(attribute='secretRef.name') | list)
-              - (application_name + '-knowledge-service') not in ((runtime.results[2].stdout | from_json).spec.template.spec.containers[0].envFrom | default([]) | selectattr('secretRef','defined') | map(attribute='secretRef.name') | list)
-              - (application_name + '-knowledge-service') not in ((runtime.results[3].stdout | from_json).spec.template.spec.containers[0].envFrom | default([]) | selectattr('secretRef','defined') | map(attribute='secretRef.name') | list)
-              - (application_name + '-knowledge-service') not in ((runtime.results[4].stdout | from_json).spec.template.spec.containers[0].envFrom | default([]) | selectattr('secretRef','defined') | map(attribute='secretRef.name') | list)
+              - (application_name + '-knowledge-service') not in ((runtime.results[2].stdout | from_json).spec.template.spec | to_json)
+              - (application_name + '-knowledge-service') not in ((runtime.results[3].stdout | from_json).spec.template.spec | to_json)
+              - (application_name + '-knowledge-service') not in ((runtime.results[4].stdout | from_json).spec.template.spec | to_json)
         - name: Require the production asynchronous session policy from the actual API image
           ansible.builtin.command:
             argv: '{{ kube + ["exec","deployment/" + application_name + "-api","-n",app_namespace,"--","python","-c",async_session_acceptance] }}'
