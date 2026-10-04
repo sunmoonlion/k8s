@@ -10,7 +10,7 @@
 
 首轮实现4b88e4ae、晋级434ae720（source revision4b88e4ae74164b3ca6b037ea941c48b2cb539809 / sha256:5377594283954d5248d5df6d571d346aef3d2a02eecdb49e488a0cc5f60c6c75）实际成功；Info/Investment/Knowledge完整bootstrap退出0，check分别ok48/43/46、changed0/0/1。两个独立服务组织、900秒签名令牌、内置用户越权和坏密码拒绝通过；Info真实HTTPS摄入→真实Worker→Investment领域Port HTTPS中文检索及身份日记/拒绝边界通过，随机领域/原文/派生版本精确清理。54个Running Pod，45个无关Pod UID/重启计数及13个Retain PV不变；仅9个计划内后端角色滚动。TPL所有声明及20个既有初始化Job声明字节不变。
 
-正在补齐失败探针记录/保留输入与原生运行凭据分配核验，再发布并完成同一源重复、一键平台回归及最终证据汇总。前轮回退source仍在infrastructure/.build/models/service-auth-rollback-source.yaml；回退不删除新身份输入。不得把HTTP客户端核验称为完整Info爬取或投资Agent工具执行验收。
+已补齐失败探针记录/保留输入及运行凭据核验；首轮最终重复在Info验收拦住：前端使用显式env而没有envFrom，检查误假定字段存在；修正默认空列表，不改运行配置，保留service-auth-info-final-bootstrap.log失败记录，继续发布及完整重复。仍待同一源重复、一键平台回归及最终证据汇总。前轮回退source仍在infrastructure/.build/models/service-auth-rollback-source.yaml；回退不删除新身份输入。不得把HTTP客户端核验称为完整Info爬取或投资Agent工具执行验收。
 
 ---
 

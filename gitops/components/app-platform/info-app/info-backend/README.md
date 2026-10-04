@@ -9,3 +9,7 @@
 config.yaml.object_storage 保存 info_storage、info-originals 和 Job revision；端点/区域取对象存储组件配置。
 独立口令在上述 private_dir 的 s3.yaml，非覆盖备份在 backup_dir；只有密文入 Git。
 后端三个角色使用 HTTPS 与平台 CA。桶版本控制是业务代码硬要求，不允许用容器本地目录或取消版本号校验绕过。
+
+## Knowledge 服务调用
+
+config.yaml.knowledge_service 配置独立应用/客户端ID、组织、唯一knowledge:ingest关系scope及900秒令牌。口令保存为private_dir/service-identity.yaml，backup_dir逐字节保存，Git仅SOPS；API/Worker持有，Scheduler与前端不持有。HTTPS目标由Traefik service-access配置派生，不用宿主机代理或固定IP。原生application-bootstrap包含身份任务和拒绝边界检查；Knowledge检查运行Info实际客户端投递并核对服务身份日记，完整Info爬取发布仍须另验。

@@ -4,7 +4,7 @@
 
 `config.yaml/knowledge_provider` 控制 RAGFlow 派生索引及 Info 原文读取；配置、身份准备、初始化声明和实际验收位于 [provider](provider/README.md)。地址从环境和平台组件配置组合，运行期不会创建数据集。原文仍由 Info 管理，Knowledge 只按固定 VersionId 读取并核对摘要。
 
-当前已实际验证基础登录、独立数据库、消息、TLS 入口，以及持久入库任务由真实 Scheduler/Outbox/Worker 完成解析、中文领域检索和权限边界。本组件验收直接调用现有应用服务；Info→Knowledge、Investment→Knowledge 的跨应用 HTTP 认证链仍待完成，不能将其视为已通过。
+当前已实际验证基础登录、独立数据库、消息、TLS 入口，以及持久入库任务由真实 Scheduler/Outbox/Worker 完成解析、中文领域检索和权限边界。配置 knowledge_service_receiver.enabled 后，验收已接通Info→Knowledge真实HTTPS认证摄入及Investment→Knowledge领域Port HTTPS检索，并核对服务身份日记与关系/租户/数据集拒绝；调用方配置分别在自己的后端config.yaml/knowledge_service，机制见common/backend/service-identity。完整Info爬取投递及投资Agent工具执行另行验收。
 
 日常核验：
 
