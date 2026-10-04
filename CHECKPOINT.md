@@ -6,6 +6,18 @@
 
 本单元新增knowledge-backend/provider只负责已有RAGFlow/Info原文的部署准备及验证；不新建并行CLI，不修改知识领域契约。API令牌从已保存RAGFlow知识身份引用，源读取密码独立生成与逐字节备份；原文仅info-originals/info/original/只读，不创建knowledge-originals权威副本。尚未宣称完整跨应用HTTP链通过。
 
+## 实际链路发现的共享异步数据库问题（11:04 UTC）
+
+Knowledge真实Worker已接受任务，但在数据集回执提交后报MissingGreenlet；生产factory默认expire_on_commit=True，而已有测试夹具用False。已核对SQLAlchemy官方asyncio建议，按模板优先修tpl，再串行同步knowledge/info/investment的同一factory；每个只改两行，不改依赖/schema/契约或凭据。四子仓本地提交如下：
+- tpl-backend: e907b65d86bf60e27fce18ebc71b854966504f69
+- knowledge-backend: 5732eab2e6e25eb225fbad4249ae01c0178fdb89
+- info-backend: a4b6f59b99f7ef6dc48b346803560e6b2ceeb0a7
+- investment-backend: 13539aa2f5cdcb79e7c670adb82ac88747d0d5b6
+
+接下来必须原生重建并独立发布四个Backend、更新各自镜像锁与sources覆盖、各APP stage→固定Flux发布晋级→原生bootstrap并实际验收，不能直接patch Pod或忽略镜像/source不一致。父仓旧gitlink不提交到未推送子提交，保留本地source覆盖真源。期间sources已前移、旧image.lock暂不匹配，部署门禁必须继续阻断，直到新镜像全部核验。
+
+原失败随机Job 725023f3-d873-4855-be01-ef3e780997eb及回执保留，原文验收版本已由限定finally清理；如已死信，修复后仅精确重放该投递让其落为artifact_unreadable，再核对并清理本轮合成记录，不误作真实业务恢复。原Failure日志knowledge-provider-worker-redacted.log、knowledge-domain-last.json均私有/脱敏，尚未宣称领域验收成功。
+
 ---
 
 # 当前单元：RAGFlow 最小派生镜像、中文检索及原生一键部署通过（2026-10-04）
