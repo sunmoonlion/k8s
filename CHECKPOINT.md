@@ -1,26 +1,31 @@
-# 当前优先状态：信息应用运行与真实入口验收完成（2026-10-03）
+# 当前优先状态：四应用基础部署通过，知识/投资正式入口待批准（2026-10-04）
 
-工作树/分支platform-kind-v1，仅k8s，无push。本节优先于下方历史。实现7dc4a4db2263eb40da4e7bb939b8373784e1cda3，晋级1005a67701fd25f6bfe2f6223e4008c4624a31b2，入口b0159509f17ddb3dde376f31150eddc60391644b。
-当前源sha256:090fd75634d8dbe8ae348d614803dd1304534ec75d33a591708464aa6be555b7，源码7dc4a4db。
+工作树/home/zymun/worktrees/platform-kind-v1/k8s，分支platform-kind-v1。仅本地提交，无push；其余四业务仓本单元未修改。当前实现0f8892ee12a96e54c1bf84f99dfeb7a270e760f9，源晋级683b6e88。当前Flux源sha256:03af36ab4ba8f768680bd7d9c6a94ba98e4dafd49dae2bfd0ff6a11c396d08aa，source revision为0f8892ee。
 
-## 已实施与验证
+## 已实施与实际验证
 
-- info后端/Web/Admin均由同一原生构建链国内模式构建并发布；解释器Python3.13.15/Node24.21.0，固定源码见sources.yaml。镜像摘要在各组件image.lock.yaml；临时Git上下文、认证与已发布OCI上传包自动清除。三次构建、三次发布均failed0，没有重建已有tpl镜像。
-- 共享应用机制统一归app-platform/common，原生deploy.yaml直接按APP选择配置/镜像/声明；无新的部署CLI、不经过tpl组件、不复制部署器。原tpl模板文件已移动，不留转发入口。应用配置、镜像锁、渲染声明与说明仍在各应用/组件目录。分别引用applications-tpl/info.yaml，stage只改选中应用，保留其它阶段。
-- tpl的26份公开/SOPS候选加阶段声明共27文件逐字节不变；29个Kustomize根全部构建通过。中间编辑曾出现YAML引号错误，只在本地候选阶段发生；修复解析后才渲染/提交/发布，未向集群应用错误声明。
-- info独立库/runtime/migrator、schema20260913_0009、Redis info:*、RabbitMQ info vhost/classic队列、独立Web/Admin Casdoor客户端和TLS均通过实际Job验收。原迁移使用uuid_generate_v4；建库按显式database_extensions安装已实际查询可用的uuid-ossp1.1，业务迁移/数据库版本未改。
-- info API/worker/scheduler/Web/Admin全部1/1 Ready、零重启；真实诊断消息投递消费、Scheduler tick、TLS readiness/deploymentId、两端PKCE/SSR、secure cookie、会话隔离、CSRF、退出401及无业务scope的管理诊断403通过。未授予额外业务权限。
-- 原生application-bootstrap APP=info完整重复四段ok124/99/24/37，changed0 failed0；tpl正式回归ok37 changed0 failed0。原有35个Pod UID及重启计数全部保持。
-- 所有者明确批准后，info/info-admin正式30443→29443，14:11:12Z切换、14:11:55Z通过验收关闭2小时窗口；公开info与tpl各ok37 changed0 failed0，Harbor认证推拉/完整摘要和入口重复零变更通过。Harbor→11443，Casdoor/tpl既有路由不变，其余仍旧默认。
-- 完整回退备份/mnt/sunmoon-data/backups/entry/sunmoon-kind/info-cutover-20261003T140617Z，3文件cmp/SHA256与服务active核对。没有清理数据、节点、容器/卷或改变开机任务。10GiB门槛持续，计230GiB盘未来增长。
+- 新AIStor官方固定服务镜像及同日mc接入原生services链；旧许可由root权限的私有配置链从/home/zymun/.config/sunmoonai/licenses/minio.license读取，真实新服务接受，HTTPS CA/SNI、S3 PUT/GET、VersionId、SHA256通过。许可证/账号/证书仅私有目录及SOPS，不输出秘密。无标准exp字段不推断永久有效。
+- info独立info_storage身份与info-originals版本桶，最小自身桶权限。实际API业务ObjectStorage写同名两版本并分别读回，跨桶与修改版本控制均被拒；API/Worker/Scheduler不持有root。v1判据误以mc exit0为成功；v2暴露最小镜像没有grep；v3使用POSIX shell处理JSON错误状态后通过，未扩大权限。失败v1/v2 Job已限定归属、Failed且无PVC后删除，原始记录保留。
+- knowledge/investment后端、Web、Admin均经现有原生在线构建和Harbor独立发布验证，5运行角色分别Ready。按平台→应用→前后端组件分类，同一common机制，无转接到tpl/旧脚本。
+- 各应用独立数据库/runtime/migrator、Redis、AMQP、Casdoor Web/Admin身份；schema分别knowledge20260911_0006、investment20260925_0011。真实登录/PKCE/SSR、安全会话、CSRF、退出、诊断消息实际投递消费及Scheduler tick通过。未配置领域provider，不宣称业务全集通过。
+- 投资首次迁移已成功升级，配置期望head误填旧值，导致验收拒绝；按固定源码修正到20260925_0011，v2成功。新增原生渲染前固定源码迁移head核对，防止手填错配；不改业务迁移或数据库版本。仅清除UID核实且无PVC的失败v1 Job，成功v2保留，失败日志私有保存。
+- 38个Flux阶段均Ready、当前代次且同一03af源。知识、信息完整重复部署及模板正式入口回归成功，changed0 failed0。投资完整重复四段ok126/101/24/39，均changed0 failed0；services-check为ok31 changed1 failed0，唯一变更是验收回执。最终日志为investment-bootstrap-repeat.log、services-after-four-apps-check.log。
 
-## 证据与继续位置
+## 入口候选与下一步顺序
 
-证据infrastructure/.build/applications/runtime-unit-20261003/：info-source/deployment-plan、info-*-build/publish、shared-tpl-render、info-stage/release/bootstrap/bootstrap-repeat、info-pod-preservation.json、tpl-after-info-public-check、info-entry-preview/preflight/stop/deploy/repeat、info-public-check、tpl-after-info-cutover-public-check、info-cutover-registry-check。原生脚本stderr/凭据均no_log或私有，未提交日志或明文Secret。
+当前正式30443：Harbor→11443；Casdoor/tpl/info域名→29443；knowledge/investment尚未切换，仍旧默认172.18.0.5:30443。
 
-信息应用运行通过不代表爬取/原文S3/搜索/knowledge分发通过。配置STORAGE_BACKEND=s3（尚无原文S3身份，避免容器本地回退）、SEARCH_BACKEND=disabled；业务依赖仍待接入。已查官方AIStor文档：无有效许可会阻止S3操作，免费单节点许可也需领取；所有者确认旧架构已配置许可，已沿deploy-object-storage.conf引用找到/home/zymun/.config/sunmoonai/licenses/minio.license；普通文件、0600、JWT结构通过。未输出/提交许可，尚未验证签名和新AIStor接受/S3操作；无标准exp字段不能推断永久有效。未申请/购买或改选型。
+1. 完成投资重复部署和平台实际复验，重核预览/挂载/三文件回退备份；入口候选仅改knowledge/investment四域名。操作卡docs/platform-kind-v1/knowledge-investment-entry-cutover.md。单独请求并等待所有者入口维护批准；未批准不能entry-stop/deploy。
+2. 批准后按原生入口切换、两应用正式公开验收、tpl/info回归、Harbor认证完整拉取及入口零变更重复。维护2小时，容量底线10GiB且扣230GiB未来增长。备份/mnt/sunmoon-data/backups/entry/sunmoon-kind/knowledge-investment-cutover-20261003T153516Z。
+3. 继续所需平台依赖及真实领域/跨应用业务，整套原生一键与统一启停、开机附盘/服务顺序。
+4. 实际WSL/KIND重启、KIND删除重建后的Harbor数据全目录摘要及新节点拉取；长期容量监控、Harbor保留/GC、缓存/日志/备份管理统一入口，删除策略先确认；最终清理本次全部临时/远程下载。
 
-知识后端源码计划通过，构建ok46 failed0、发布ok29 failed0并清除上传临时包；摘要sha256:f6d19ac985cb73deb43b01e6b753cbe73f1c2d366775832437d0c22272deb2b5，源码4d9804c3d5f4084b83bdb00ba49cbf0f8b5cbb55。后续两前端/独立身份/运行声明尚未实施。knowledge/investment、其余平台依赖与真实业务、整套一键/统一启停/开机恢复、Harbor跨WSL/KIND重启和删除重建验收、长期空间管理与最终清理仍未完成。
+原始kind节点/卷与新Harbor/sunmoon-kind均保留。没有重启数据库、切换公开入口或修改Windows计划任务。本阶段不代表高可用、机器外灾备、安全门禁或全业务交付。
+
+## 证据与日常入口
+
+忽略目录infrastructure/.build/applications/runtime-unit-20261003/（本次延续到Oct4，旧时间戳不改）：object-storage-*、info-storage-v3-*、knowledge-*、investment-*、info-after-investment-bootstrap、tpl-after-investment-public-check、services-after-four-apps-check、knowledge-investment-entry-*；失败证据保留。正式配置/摘要在组件config.yaml、image.lock.yaml、sources.yaml；命令make -C infrastructure application-bootstrap/application-check APP=<应用>，现有公开域名用application-check-public。对象存储方法docs/platform-kind-v1/object-storage.md。
+
 
 ---
 
