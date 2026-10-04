@@ -23,7 +23,7 @@ spec:
           - path: /
             pathType: Prefix
             backend:
-              service: {name: casdoor, port: {number: 8000}}
+              service: {name: casdoor, port: {name: http}}
 ---
 apiVersion: v1
 kind: Service
@@ -49,4 +49,4 @@ spec:
           - path: /api/internal/v1/knowledge
             pathType: Prefix
             backend:
-              service: {name: knowledge-api, port: {number: 8000}}
+              service: {name: knowledge-api, port: {name: http}}
