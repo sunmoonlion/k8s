@@ -1,4 +1,14 @@
-# 当前单元：按所有者调整顺序，先 ELK 再 Neo4j（2026-10-04）
+# 当前单元：Neo4j 服务环境变量冲突修正中（2026-10-04）
++
++所有者顺序ELK→Neo4j→RAGFlow；本工作树platform-kind-v1，只本地提交/发布声明，无push、无公开入口改动。
++ELK实际已通过：ES/Kibana/Logstash Ready且0重启，TLS/真实Logstash日志写入检索/最小权限拒绝/Kibana认证通过，check ok37 changed1 failed0，证据.build/models/elk-check-operator-status.log；45个原Running Pod UID/重启数不变。修正a1dae16f只改验收读取详细status的运维身份，运行读者权限没扩大。
++Neo4j候选376f53cbbbfa9d7896244b1c5196a5617e072bd7，晋级bbe1f15d；Flux摘要5b570e9a1ff069382641195064508d68c8accaab7f2fda71298361884d1dc2d4。stage ok297 changed18 failed0，已有229公共对象不变、新6对象，server dry-run通过。
++Neo4j首次运行CrashLoop：官方入口把Kubernetes服务自动注入的NEO4J_PORT_7687_TCP_PORT解析成PORT.7687.TCP.PORT未知参数，严格配置校验正确阻止启动。已将本组件enableServiceLinks=false写入模板，保留DNS和严格校验；现在重新stage/提交/晋级，不能宣称图验收通过。原错误脱敏记录.build/models/neo4j-startup-redacted.log；当前首次bootstrap会话27962仍在等根调和，观察后结束/接续，避免两个发布并行。
++下一步Neo4j修正声明原生部署→实际图提交/读回/事务回滚/Bolt TLS→完整重复services-bootstrap与Pod对账。RAGFlow物料已在正式缓存和Harbor，运行延后。全业务/开机/持久化重建/长期空间管理/临时清理仍未完成。
++
++---
++
++# 当前单元：按所有者调整顺序，先 ELK 再 Neo4j（2026-10-04）
 
 工作树/分支 platform-kind-v1，基线 f732863a；原生 Make→Ansible→Flux，原集群与新 Harbor 数据保留，无 push，无公开入口切换。本机中文向量服务已实际通过，后续可换外部 provider；不同模型须重新生成向量。
 

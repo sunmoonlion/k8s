@@ -59,6 +59,7 @@ spec:
       annotations: {sunmoonai.com/input-sha256: '{{ neo4j_input_digest }}'}
     spec:
       serviceAccountName: platform-runtime
+      enableServiceLinks: false
       automountServiceAccountToken: false
       nodeSelector: {kubernetes.io/hostname: '{{ cluster_name }}-{{ neo4j_volume.node }}'}
       terminationGracePeriodSeconds: 120
