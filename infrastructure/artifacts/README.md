@@ -13,3 +13,11 @@
 应用构建产物通过同一个publish.yaml读取显式publication_lockfile；客户端skopeo版本始终从上游工具锁读取，不由应用产物替换。上游默认锁不变。
 
 应用构建镜像使用在线发布：`publication_image_directory`指向构建模块的临时transfer目录，`publication_remove_transport=true`仅允许清除此目录中已经确认发布成功的指定归档及旁边JSON。远端已有相同摘要时无需本地归档，仍以独立puller复核。上游引导物料默认不清理，不受应用传输策略影响。
+
+## 固定 CPU 模型与平台镜像子集（2026-10-04）
+
+模型文件使用现有 files.lock.json，`kind=model`，`models/` 只存带模型名及修订的扁平文件。`model_path` 保存官方逻辑文件路径；组件 prepare 只允许已知文件名并复制到不可变修订目录。SHA256 与字节数必须吻合；HTTPS 可续传 `.part`，未完成或摘要不符不能成为正式文件。模型文件不是镜像，也不进备份/日志目录。
+
+`make services-{plan,materials,verify-materials,publish} SERVICE_IMAGES=comma,separated,ids` 只选择 services/config.yaml 已配置的镜像子集；默认 all。选择不启用运行组件，不跳过发布摘要和独立 puller 检查。RAGFlow 大镜像下载与小物料可分别执行；没有全部备齐时不能宣称整套离线部署完成。
+
+`service_material_timeout_seconds` 是平台镜像单次下载限时，当前 3600 秒；其它模块默认 600 秒。公共发布器只接受 60–7200 秒，重试仍有限。超时失败与容量、TLS、摘要校验失败均保留真实失败记录，不以放宽校验换成功。

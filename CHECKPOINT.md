@@ -1,3 +1,21 @@
+# 当前单元：本机 CPU 向量模型物料与运行候选（2026-10-04）
+
+本节优先于下方历史。所有者明确选择本机 CPU，由助手选合适版本；保持现有平台/应用、原始 kind、新 Harbor 数据。
+
+- 选定 Qwen/Qwen3-Embedding-0.6B，revision 97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3、1024维；官方 TEI cpu-1.9.4 amd64 manifest 8419f533857b503ebf6ec292a95d4f1cf9c0464ac8b8abeef39518cf110e5726，官方镜像配置标签版本已独立核实。
+- 9个模型文件合计1,207,470,117字节，完整来源/大小/SHA进入既有files.lock.json；models/扁平缓存，组件prepare复制到worker2独立静态Retain卷下的固定修订目录，拒绝软链/字节漂移，无启动联网。配置/模板/prepare/verify/README同处data-platform/text-embeddings；无新增CLI。
+- TEI、Infinity、Valkey物料准备ok75 changed15 failed0，正式Harbor发布ok60 changed3 failed0，独立puller摘要通过，平台正式归档保留。服务材料入口增加SERVICE_IMAGES子集，默认all，子集必须是配置允许项，不启用运行声明。
+- 模型初次续传单次180秒不足，约857MiB保留；模型专用有限900秒续传后fetch ok35 changed4 failed0，离线verify ok8 changed0 failed0。数据库续传原180秒不变，TLS/校验不放宽。
+- RAGFlow首次600秒超时rc124，真实失败记录保留；官方DockerHub直连探测超时、代理可取层但较慢；东京SSH当前超时。服务材料单次可配置3600秒，上限7200，其它模块默认600。RAGFlow原固定摘要正在单独原生重试，不宣称已备齐或已部署。
+- 渲染初版ok157 changed9 failed0；发现数字args在YAML被解析为整数，已改to_json字符串并重新stage+服务端dry-run。运行候选尚未晋级，不宣称实际推理/知识检索已通过。
+- 发布前现有44个Running Pod、38个Ready Flux阶段已记录。现有组件对象语义保持一致，新增模型PV/PVC及组件组合引用；少数Kustomization只规范化YAML文档标记。
+
+证据：infrastructure/.build/models/：material-fetch(-resume)、material-verify、services-stage(-corrected)、server-dry-run、pods-before、stages-before；平台镜像日志在.build/applications/runtime-unit-20261003/knowledge-provider-*。会话74672正在单独RAGFlow下载/成功后发布，单次3600秒；当前服务源码尚未发布。此前四应用入口窗口已关闭，任何新入口切换需单独确认。本单元不切入口，不重启现有组件。
+
+下一步：完整服务端只读预检和既有声明语义核对→提交候选并通过原生flux-release发布/晋级→实际CPU中文向量、/embed和OpenAI协议、重复性与镜像/PV核对→重复原生部署及旧Pod身份核对。之后RAGFlow数据库/S3/Valkey/Infinity独立身份与迁移Job、真实领域与跨应用检索；整套一键/lifecycle/开机、实际重启/重建持久化、长期容量/清理仍未完成。
+
+---
+
 # 当前优先状态：四应用正式入口与AIStor验收通过（2026-10-04）
 
 工作树/home/zymun/worktrees/platform-kind-v1/k8s，分支platform-kind-v1。仅本地提交，无push；其余四业务仓本单元未修改。当前部署实现0f8892ee12a96e54c1bf84f99dfeb7a270e760f9，源晋级683b6e88；入口候选96be93dd758de0df9f86d20dd5a4f2e58a9718c5，回退权限说明f775568e。当前Flux源sha256:03af36ab4ba8f768680bd7d9c6a94ba98e4dafd49dae2bfd0ff6a11c396d08aa，source revision为0f8892ee。

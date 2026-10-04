@@ -96,3 +96,7 @@ Kubernetes server 包解压文件合计 1,069,089,184 字节。只读核实包�
 
 - 官方 `quay.io/skopeo/stable` 当前容器实测为 **1.22.3**，已固定 amd64 摘要 `sha256:9182497536bb5485b4f0bdbad5dbab24cd0df7259c33005a1e732a34f5d78a99`，运行不使用浮动标签。上游源码发行 1.24.1 与官方容器发布时间不同，本次选择官方可获取镜像，记录为明确例外；不冒称镜像已是 1.24.1。来源：[官方安装说明](https://github.com/podman-container-tools/skopeo/blob/main/install.md)、[源码发行](https://github.com/podman-container-tools/skopeo/releases/tag/v1.24.1)。
 - 宿主Docker当前 **29.8.1**，与KIND节点containerd版本分别管理。原29.4.3专用CA/token缺陷在升级后通过候选及正式pull复测；升级及29.4.3回退deb均保留。该修复在 [29.5.0 官方说明](https://docs.docker.com/engine/release-notes/29/#2950) 中列明。宿主现有 containerd 2.2.3 本次小范围修复固定不变，完整宿主基线尚未验收。
+
+## 本机 CPU 检索模型（2026-10-04）
+
+所有者确定不依赖外部模型服务，采用本机 CPU。选定 **Qwen/Qwen3-Embedding-0.6B**（支持中文，Apache-2.0，1024 维）和官方 **TEI cpu-1.9.4**。模型固定 revision `97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3`；9 个文件合计 1,207,470,117 字节，完整 SHA256 与固定来源进入既有文件锁。TEI amd64 manifest 已复算为 `sha256:8419f533857b503ebf6ec292a95d4f1cf9c0464ac8b8abeef39518cf110e5726`，镜像压缩层合计 239,307,989 字节。模型配置/实现/说明同处 data-platform/text-embeddings，由现有 services 链部署；未完成实际推理前不宣称可用。[模型官方说明](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B)、[TEI 固定版](https://github.com/huggingface/text-embeddings-inference/releases/tag/v1.9.4)。

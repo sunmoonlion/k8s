@@ -4,3 +4,4 @@ resources:
 - postgresql
 - redis
 - object-storage
+- text-embeddings

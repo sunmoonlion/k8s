@@ -15,13 +15,15 @@ component_namespaces:
   postgresql: "{{ data_namespace }}"
   redis: "{{ data_namespace }}"
   object-storage: "{{ data_namespace }}"
+  text-embeddings: "{{ data_namespace }}"
   rabbitmq: "{{ messaging_namespace }}"
   casdoor: "{{ app_namespace }}"
-services_volumes: "{{ [postgresql_volume, redis_volume, rabbitmq_volume, casdoor_volume, object_storage_volume] }}"
+services_volumes: "{{ [postgresql_volume, redis_volume, rabbitmq_volume, casdoor_volume, object_storage_volume, text_embeddings_volume] }}"
 service_component_paths:
   postgresql: data-platform/postgresql
   redis: data-platform/redis
   object-storage: data-platform/object-storage
+  text-embeddings: data-platform/text-embeddings
   rabbitmq: messaging-platform/rabbitmq
   traefik: ingress-platform/traefik
   casdoor: app-platform/auth-app/casdoor

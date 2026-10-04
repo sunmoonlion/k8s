@@ -1,0 +1,20 @@
+# 本机 CPU 文本向量服务；用户配置与实现同处，版本/摘要从 artifacts 锁读取。
+---
+services_text_embeddings_enabled: true
+text_embeddings_model: Qwen/Qwen3-Embedding-0.6B
+text_embeddings_model_revision: 97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3
+text_embeddings_dimensions: 1024
+text_embeddings_port: 8080
+text_embeddings_volume:
+  name: text-embeddings
+  node: worker2
+  size: 4Gi
+  uid: 1000
+  gid: 1000
+text_embeddings_resources:
+  requests: {cpu: '1', memory: 3Gi}
+  limits: {cpu: '4', memory: 6Gi}
+text_embeddings_batch_tokens: 2048
+text_embeddings_client_batch_size: 8
+text_embeddings_concurrent_requests: 4
+text_embeddings_tokenization_workers: 2

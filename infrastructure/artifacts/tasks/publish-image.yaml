@@ -60,7 +60,7 @@
             ALL_PROXY: '{{ lookup("ansible.builtin.env", "ALL_PROXY") }}'
             NO_PROXY: '{{ lookup("ansible.builtin.env", "NO_PROXY") }}'
           ansible.builtin.command:
-            argv: [timeout, '600', docker, run, --rm, --pull=never, --network=host, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --env, HTTP_PROXY, --env, HTTPS_PROXY, --env, ALL_PROXY, --env, NO_PROXY, --mount, 'type=bind,source={{ transfer.path }},target=/var/tmp', --mount, 'type=bind,source={{ transfer.path }},target=/output', '{{ skopeo.manifest_digest }}', copy, --retry-times, '2', --preserve-digests, 'docker://{{ artifact_image.reference }}', 'oci-archive:/output/image.tar']
+            argv: [timeout, '{{ publication_download_timeout_seconds | default(600) | string }}', docker, run, --rm, --pull=never, --network=host, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --env, HTTP_PROXY, --env, HTTPS_PROXY, --env, ALL_PROXY, --env, NO_PROXY, --mount, 'type=bind,source={{ transfer.path }},target=/var/tmp', --mount, 'type=bind,source={{ transfer.path }},target=/output', '{{ skopeo.manifest_digest }}', copy, --retry-times, '2', --preserve-digests, 'docker://{{ artifact_image.reference }}', 'oci-archive:/output/image.tar']
           changed_when: true
         - name: Verify every manifest, config and layer before publication
           ansible.builtin.command:

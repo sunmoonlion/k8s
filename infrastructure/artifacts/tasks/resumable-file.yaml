@@ -1,5 +1,5 @@
 ---
-# Large public database blobs use bounded, resumable HTTPS transfers.
+# Large public database/model blobs use bounded, resumable HTTPS transfers.
 - name: Inspect this locked file partial download
   ansible.builtin.stat:
     path: '{{ artifact_cache_root }}/{{ resumable.item.path }}.part'
@@ -29,7 +29,7 @@
       - --connect-timeout
       - '15'
       - --max-time
-      - '180'
+      - '{{ 900 if resumable.item.kind == "model" else 180 }}'
       - --continue-at
       - '-'
       - --output

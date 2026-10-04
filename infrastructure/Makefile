@@ -6,6 +6,8 @@ UV ?= uv
 HOST_PYTHON ?= /usr/bin/python3
 ANSIBLE := .venv/bin/ansible-playbook
 ARTIFACTS ?= all
+# Optional subset of configured service material IDs; does not enable runtime components.
+SERVICE_IMAGES ?= all
 BINARIES ?= kind,kubectl,kubeadm
 SITE ?= environments/kind/site.yaml
 APP ?= tpl
@@ -53,6 +55,7 @@ CONFIG_FILES := applications/config.yaml \
 	../gitops/components/data-platform/postgresql/config.yaml \
 	../gitops/components/data-platform/redis/config.yaml \
 	../gitops/components/data-platform/object-storage/config.yaml \
+	../gitops/components/data-platform/text-embeddings/config.yaml \
 	../gitops/components/messaging-platform/rabbitmq/config.yaml \
 	../gitops/components/ingress-platform/traefik/config.yaml \
 	../gitops/components/app-platform/auth-app/casdoor/config.yaml
@@ -215,13 +218,13 @@ foundations-check:
 
 .PHONY: services-plan services-materials services-verify-materials services-publish
 services-plan:
-	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=plan --extra-vars '{"publication_image_ids":"{{ service_image_ids }}","publication_enabled":"{{ services_enabled }}","publication_capacity_operation":"services-materials"}'
+	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=plan --extra-vars 'service_material_ids=$(SERVICE_IMAGES)' --extra-vars '{"publication_image_ids":"{{ selected_service_image_ids }}","publication_download_timeout_seconds":"{{ service_material_timeout_seconds }}","publication_enabled":"{{ services_enabled }}","publication_capacity_operation":"services-materials"}'
 services-materials:
-	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=prepare --extra-vars '{"publication_image_ids":"{{ service_image_ids }}","publication_enabled":"{{ services_enabled }}","publication_capacity_operation":"services-materials"}'
+	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=prepare --extra-vars 'service_material_ids=$(SERVICE_IMAGES)' --extra-vars '{"publication_image_ids":"{{ selected_service_image_ids }}","publication_download_timeout_seconds":"{{ service_material_timeout_seconds }}","publication_enabled":"{{ services_enabled }}","publication_capacity_operation":"services-materials"}'
 services-verify-materials:
-	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=verify --extra-vars '{"publication_image_ids":"{{ service_image_ids }}","publication_enabled":"{{ services_enabled }}","publication_capacity_operation":"services-materials"}'
+	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=verify --extra-vars 'service_material_ids=$(SERVICE_IMAGES)' --extra-vars '{"publication_image_ids":"{{ selected_service_image_ids }}","publication_download_timeout_seconds":"{{ service_material_timeout_seconds }}","publication_enabled":"{{ services_enabled }}","publication_capacity_operation":"services-materials"}'
 services-publish:
-	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=publish --extra-vars '{"publication_image_ids":"{{ service_image_ids }}","publication_enabled":"{{ services_enabled }}","publication_capacity_operation":"services-materials"}'
+	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=publish --extra-vars 'service_material_ids=$(SERVICE_IMAGES)' --extra-vars '{"publication_image_ids":"{{ selected_service_image_ids }}","publication_download_timeout_seconds":"{{ service_material_timeout_seconds }}","publication_enabled":"{{ services_enabled }}","publication_capacity_operation":"services-materials"}'
 
 .PHONY: services-tools services-chart services-render services-bootstrap
 services-tools:

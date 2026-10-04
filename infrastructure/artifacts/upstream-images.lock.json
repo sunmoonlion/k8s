@@ -205,6 +205,17 @@
       "compressed_layer_bytes": 31344585
     },
     {
+      "id": "text-embeddings-inference",
+      "group": "knowledge",
+      "source": "ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.4",
+      "platform": "linux/amd64",
+      "status": "resolved",
+      "manifest_digest": "sha256:8419f533857b503ebf6ec292a95d4f1cf9c0464ac8b8abeef39518cf110e5726",
+      "reference": "ghcr.io/huggingface/text-embeddings-inference@sha256:8419f533857b503ebf6ec292a95d4f1cf9c0464ac8b8abeef39518cf110e5726",
+      "config_digest": "sha256:8ce0330d3eae11511627a5b3eeef7001f76970ad3633d771147b57915c021dd7",
+      "compressed_layer_bytes": 239307989
+    },
+    {
       "id": "ragflow",
       "group": "knowledge",
       "source": "docker.io/infiniflow/ragflow:v0.27.2",

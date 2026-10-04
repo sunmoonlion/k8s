@@ -36,9 +36,9 @@
         that:
           - item.sha256 is match('^[a-f0-9]{64}$')
           - item.url is match('^https://')
-          - item.path is match('^(bin|packages|charts|manifests|databases)/[a-zA-Z0-9_.-]+$')
+          - item.path is match('^(bin|packages|charts|manifests|databases|models)/[a-zA-Z0-9_.-]+$')
           - item.size_bytes | int > 0
-          - item.kind in ['binary', 'package', 'chart', 'manifest', 'database']
+          - item.kind in ['binary', 'package', 'chart', 'manifest', 'database', 'model']
       loop: '{{ selected }}'
       loop_control:
         label: '{{ item.id }}'
@@ -129,13 +129,13 @@
           loop_control:
             label: '{{ item.id }}'
 
-        - name: Fetch large databases with resumable HTTPS
+        - name: Fetch large databases and models with resumable HTTPS
           ansible.builtin.include_tasks: tasks/resumable-file.yaml
           loop: '{{ cached_files.results }}'
           loop_control:
             loop_var: resumable
             label: '{{ resumable.item.id }}'
-          when: not resumable.stat.exists and resumable.item.kind == 'database'
+          when: not resumable.stat.exists and resumable.item.kind in ['database', 'model']
 
         - name: Download exact upstream files with checksum verification
           ansible.builtin.get_url:
@@ -148,7 +148,7 @@
           loop: '{{ cached_files.results }}'
           loop_control:
             label: '{{ item.item.id }}'
-          when: not item.stat.exists and item.item.kind != 'database'
+          when: not item.stat.exists and item.item.kind not in ['database', 'model']
           register: fetched
           retries: 2
           delay: 3
