@@ -8,7 +8,9 @@
 - 首次渲染目录列表误含elk/elasticsearch作为已有组件键，已修正；原错误保留elk-stage.log。修正stage ok250 changed4 failed0；现有210个公共对象完全一致，新增19对象；四组13个公共对象server dry-run通过。
 - 进一步收紧ES探针对yellow/green检查、Kibana保留官方tini、公共验收输出延后到清除自建标记之后；将再次stage再提交/晋级/实际部署。当前仅候选，尚不能宣称运行成功。材料准备/新目录已初始化，旧服务未部署改动。
 
-下一步 ELK原生bootstrap及真实TLS/Logstash→ES/权限/Kibana验收→重复部署确认既有Pod未重启→Neo4j同链实际读写→继续RAGFlow。后续整套启停/开机恢复、WSL/KIND重启与删除重建持久化、长期空间管理及所有临时清理仍未完成。容量底线10GiB，窗口2小时；新公开入口需另行批准。
+ELK实际服务与依赖阶段均Ready、Pod重启0。原生bootstrap在最终验收因Kibana详细status权限字段失败，未扩大读者权限；修正以现有运维身份读取完整版本，独立读者仍做认证API验收。services-check实际ok37 changed1 failed0，TLS/日志写入检索/权限拒绝通过，唯一变更为回执；完整重复bootstrap随Neo4j完成后一起复核。证据elk-bootstrap.log、elk-check-corrected.log、elk-check-operator-status.log。
+
+下一步 Neo4j候选/晋级/原生bootstrap与实际图写读回滚→重复部署确认既有Pod未重启→Neo4j同链实际读写→继续RAGFlow。后续整套启停/开机恢复、WSL/KIND重启与删除重建持久化、长期空间管理及所有临时清理仍未完成。容量底线10GiB，窗口2小时；新公开入口需另行批准。
 
 ---
 

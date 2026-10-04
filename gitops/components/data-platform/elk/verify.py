@@ -100,7 +100,8 @@ def main():
             request('elasticsearch','GET','/_security/user',writer,expect=403)
             request('elasticsearch','PUT','/foreign-acceptance/_doc/'+nonce,writer,marker,expect=403)
             request('elasticsearch','PUT','/'+own_doc['_index']+'/_doc/'+nonce,reader,marker,expect=403)
-            status=request('kibana','GET','/api/status')
+            # Detailed status requires operator privileges; keep the runtime reader role unchanged.
+            status=request('kibana','GET','/api/status',admin)
             require(status['status']['overall']['level']=='available','Kibana overall status is not available')
             require(status['version']['number']==args.version,'Kibana version differs from selected lock')
             request('kibana','GET','/api/saved_objects/_find?type=index-pattern&per_page=1',reader)
