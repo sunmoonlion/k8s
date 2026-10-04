@@ -1,20 +1,53 @@
-# 当前单元：ELK 全应用节点日志采集（进行中，2026-10-04）
+# 当前单元：ELK 全应用节点日志采集（完成并实际重复验证，2026-10-04）
 
-基线ac0afc66caa4b6d3ea63e2705a46cc4b970f5b44；platform-kind-v1/k8s单仓，不动业务代码，无push。原生Make→Ansible→Flux/SOPS，2小时维护，10GiB容量底线。不切公开入口、保护原始kind和所有卷/备份。
+基线ac0afc66caa4b6d3ea63e2705a46cc4b970f5b44；platform-kind-v1/k8s单仓，未改业务仓，无push。原生Make→Ansible→Flux/SOPS，开发维护2小时，10GiB容量底线。本单元没有切公开入口，没有停止原始kind或删除卷/备份。
 
-| 规则 | 实施边界 |
+| 规则 | 实际实施 |
 | --- | --- |
-| C-R1/C-R2 | 官方Fluent Bit 5.1.3单独解析amd64manifest，固定摘要发布到Harbor，现有服务版本不变 |
-| C-I3/C-D10 | 采集器仅持Logstash接收凭据/公开CA，不持ES或业务身份；业务禁止秘密写日志 |
-| C-R6 | 同目录配置/原生prepare/DaemonSet/验收；不新增部署CLI，所有应用运行声明不变 |
+| C-R1/C-R2 | 官方Fluent Bit 5.1.3固定amd64摘要，正式归档及完整校验后发布Harbor；既有服务版本不变 |
+| C-I3/C-D10 | 采集器只持接收身份/公开CA；视图专用服务身份独立于人工读账号、仅初始化容器持管理员；不宣称业务日志任意秘密均已脱敏 |
+| C-R6 | 配置/prepare/底层声明/说明同职责目录，原生一键；不新增CLI，应用运行声明及既有初始化Job字节不变 |
 
-修正版26ee65af/ffa65d15已完整bootstrap成功两次，21个实际应用Pod日志、权限和Kibana视图通过，57个Running/13PV/49Flux核对通过。最终复核把长期数据视图初始化从验收函数移到原生独立声明Job（采用并严格核对已有视图），验收只读；不重建应用或采集器，待再次完整部署核验。
+## 固定交付与实现
 
-首轮固定源c1c0fd62/7f7f2273已部署，三节点采集Ready；首次services-bootstrap在Logstash探针收到429而退出2。实际pipeline已入37473/出37375事件，无授权/映射/传输错误，队列仅4事件，是首次回填和full-sync输入背压。保留原始失败，不宣称通过；原生验收补明确429的有界退避、不重试歧义超时。同时消除平台验收依赖先安装全部应用的循环：按实际启用Deployment核对，未部署明确报告、已部署缺失不放行。
+- 最终声明源码d9a735155a72600c4e408bde7a5963828a7b8471，晋级9d83adf5，source digest sha256:298642462b048157b33811fe248f8f820af5c97164c854b5686c946d151c530f。此前两轮26ee65af/ffa65d15成功证据保留，最后检查点不改变已验GitOps字节。
+- Fluent Bit manifest sha256:07bd537485182b73af016c67dae99521e40fdf50922b39912f378c5befb8e3b1，正式物料在packages-to-be-installed/releases/platform-kind-v1/images。三个节点各一个DaemonSet，采集app-platform-dev四应用五角色及Casdoor实际stdout/stderr；保留CRI时间/流/Pod/容器/节点/集群，无Kubernetes API令牌或Docker socket。
+- 专用sunmoon-log-collector命名空间允许hostPath，业务命名空间仍restricted。容器UID1000/GID0利用原生日志root组只读权限，无capability/提权、只读根和节点日志；卷可见范围大于匹配范围，管理员专用命名空间，不声称glob是隔离边界。出站仅DNS和内网Logstash TLS/认证，不持ES或业务秘密。
+- 三节点独立数据盘static/log-collector保存SQLite位点及未送达chunk，核对inode+文件名/full-sync/checksum、无限重试和背压暂停、不删最旧消息。缓冲是近似阈值不是硬配额，至少一次可能重复，原日志轮转丢失/损坏时无零丢失保证；未设日志/索引删除策略。Logstash明确8MiB接收上限且摘要纳入管道模板，首次仅计划内滚动logstash-0一次。
+- 持久数据视图由kibana/data-view原生elk-data-view阶段Job管理；内置官方Node实际路径已核实。独立sunmoon_view_provisioner仅default空间indexPatterns管理和sunmoon-logs-*元数据；实际认证、日志读取403和用户管理403通过。管理员只挂短暂初始化容器，主容器不挂。账号/角色带所有权，已有严格核对，不重置密码或覆盖外国对象；视图采用已有固定ID/title/@timestamp。services-check只读，缺失/篡改即失败。
+- 私有服务密码root0600在/etc/sunmoon/services/sunmoon-kind/elk-data-view.yaml，与数据盘独立非覆盖备份逐字节一致，Git只有SOPS密文。修改已完成Job输入须显式增代次；单改开关不自动删除prune:false资源。
 
-已查：日志stdout/stderr、节点root组只读权限、ELK内网TLS/认证；主机可用内存约60GiB，数据盘约207GiB空闲。Metrics API未部署，不能声称CPU metrics已核验。官方采集器物料约51.4MiB压缩，下载中；尚未部署/宣称验收。隔离命名空间允许hostPath，但容器仍非root、无capability、只读根；不放宽业务namespace。持久位点/缓冲使用三节点各自的数据盘static/log-collector，不设自动删除日志策略。
+## 实际验证
 
-下一步：物料校验发布→原生stage/全声明门禁→固定源发布→bootstrap→四应用20个角色及Casdoor真实日志对照与Kibana data view→重复一键及Pod/PV/Flux比较→本地提交/证据/本轮临时清理。公开Kibana入口切换需另行交所有者，整机/集群重建和长期空间管理仍待完成。
+1. 68个Kustomize根本地构建与发布门禁通过；三JS脚本在实际官方Kibana镜像Node语法检查通过。既有应用/采集器/Kibana工作负载及ELK初始化Job声明字节不变。
+2. 最终固定源连续两次完整make -C infrastructure services-bootstrap退出0，各12个Ansible play均unreachable/failed0，最后services-check ok50 changed1 failed0（唯一验收变化为私有回执）；chart验证只创建/删除私有临时目录changed2。第二轮相同源不变更，不能把完整入口说成绝对零变化。
+3. 两轮均实际对照四应用20个角色及Casdoor共21个Pod日志与kubectl logs，验证元数据及只采集应用命名空间；日志回执仅含消息SHA、无消息明文。TLS/接收认证、错误密码401、读写/管理/外国索引403及Kibana服务状态/数据视图通过；验收随机标记精确删除。
+4. 新数据视图Job已Complete，采用并保留已有视图，独立身份边界通过；重复部署Job和Pod UID/重启数不变，没有重跑。空视图首次创建分支本单元未实测，保留给重建验收，不宣称已验证。
+5. 当前57个Running Pod全部Ready，3节点Ready。相对原54个，仅首次计划内logstash滚动，其余53个既有Running Pod身份不变；首次采集完成后的57个及旧成功Job在后续部署/重复期间身份与重启数不变，唯一新增成功Job为elk-data-view-v1。13个PV UID/spec/Bound/Retain不变；50个Flux阶段当前generation Ready且同一298642摘要。
+6. 原始kind控制面保持停止、两个worker保留运行；新sunmoon-kind和外置Harbor保留运行。未改变公开30443路由。Metrics API没有部署，不宣称CPU指标已核验。
+
+## 失败与修正
+
+- 首次c1c0fd62/7f7f源已部署，但services-bootstrap在Logstash探针返回429退出2。实际管道入37473/出37375、队列4、无认证/映射/传输错误，为历史回填/full-sync输入背压；保留原始失败。只对明确429做最多180秒的指数退避+jitter，不重试可能已写入的歧义超时，不放过401/403/其它错误。
+- 平台验收原先强制先有全部应用，形成部署循环；改为按实际启用Deployment核对，未部署明确列未验证，已部署缺失/不就绪失败。当前全部21个实际角色均通过。
+- 数据视图最初由验收创建，经最终复核迁到原生声明Job，验收只读。首个尚未发布候选曾复用人工读身份，收敛为专用独立服务身份后才发布；旧候选密文精确清除。第一次部署前语法检查发现假设的Node路径不存在，官方镜像含default/bin/node，已修正并重新原生stage/语法/门禁后部署，不是线上Job失败。
+- 临时编辑脚本精确定位失败和空白问题均在部署前修正；没有覆盖失败日志或改写先前未通过结果。
+
+## 证据、日常入口与收尾
+
+infrastructure/.build/models/elk-collector-unit-receipt.json为本单元最终私有汇总；before/applied/final Pod/PV/Flux/Node JSON、pre-view原始观察、两轮view-success、view Job前后身份与初始化布尔回执及全部stage/release/bootstrap日志保留root0600。原始失败与早期成功记录保留。统一成功回执在/data/kind-clusters/sunmoon-kind/bootstrap/evidence/services/latest.json。回退前源在elk-collector-rollback-source.yaml；回退不自动删新增数据/账号/Job。
+
+日常make -C infrastructure services-bootstrap部署已晋级平台；services-check实际核验协议及日志。修改用户参数走services-stage→本地提交→flux-release→复核source-candidate并晋级→services-bootstrap。采集参数在gitops/components/data-platform/elk/collector/config.yaml，数据视图参数在elk/kibana/data-view/config.yaml，ELK共享字段在elk/config.yaml，镜像摘要只读唯一锁。
+
+本单元自己的/tmp/platform-elk-*临时文件归档后按路径清除，正式物料、私有输入/备份、成功和失败证据、Luna参考保留；本轮没有东京下载。不启用镜像/日志/索引自动删除策略。
+
+## 后续顺序（整体目标未完成）
+
+1. Kibana公开UI和人工操作准入；Neo4j/MongoDB真实业务身份与恢复核验；Info完整爬取及投资Agent工具链区别于已验HTTP链。
+2. 整套宿主→平台→全部应用一键、统一启停/开机顺序与宿主DNS；解决原始kind控制面重启自行启动问题。
+3. WSL/KIND实际重启与KIND删除重建后，外置Harbor全目录/镜像摘要和新节点真实拉取持久化验收。
+4. 长期容量监控/Harbor保留GC/构建缓存/日志/备份统一查看预览执行，删除策略交所有者确认；机器外备份落点待定。
+5. 全次物料/临时/远程清理及正式交付，保留原始kind、新体系及Luna参考；云流程仍无实机验证。
 
 ---
 
