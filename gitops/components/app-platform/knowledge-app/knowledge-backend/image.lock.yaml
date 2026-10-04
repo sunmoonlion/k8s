@@ -1,5 +1,5 @@
-# 已实际构建发布并以独立 Harbor 只读身份核对。
+# Built and published through the native chain; independent Harbor identity checked.
 ---
 repository: knowledge-backend
-digest: sha256:f6d19ac985cb73deb43b01e6b753cbe73f1c2d366775832437d0c22272deb2b5
-source_revision: 4d9804c3d5f4084b83bdb00ba49cbf0f8b5cbb55
+digest: sha256:e65abcf5f8d37b29ea63194dad8380a1c1b45603c174438119f63dd338bd85e6
+source_revision: 5732eab2e6e25eb225fbad4249ae01c0178fdb89

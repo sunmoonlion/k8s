@@ -1,5 +1,5 @@
-# 已构建并由Harbor只读身份核对的不可变镜像；部署不重建。
+# Built and published through the native chain; independent Harbor identity checked.
 ---
 repository: tpl-backend
-digest: sha256:5b38d39836dc6fe5e6d9d17eaa537d4ba52dd5db342dd95be0397e4c4e928ef0
-source_revision: 6674125cd1c14d9700c707b0b0f4b5d422d42f05
+digest: sha256:36c393be91ae53d3551bc3dea75a8f3a9f272ec358d0d1f2e1e078bb2512485a
+source_revision: e907b65d86bf60e27fce18ebc71b854966504f69

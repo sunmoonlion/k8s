@@ -4,7 +4,7 @@ metadata: {name: investment-runtime, namespace: app-platform-dev}
 data:
   ENV: production
   APP_SLUG: investment
-  DEPLOYMENT_ID: "investment-060f8d658ec55d68"
+  DEPLOYMENT_ID: "investment-93185775a849faf4"
   ALLOWED_HOSTS: "localhost,127.0.0.1,investment-api,investment-api.app-platform-dev.svc.cluster.local,investment.sunmoonai.com,investment-admin.sunmoonai.com"
   REDIS_HOST: redis.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
@@ -54,7 +54,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: api
-          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:8944a488fcc48876b6a63650f08a35a98c41c69b787bb3b921fead452f0fbdf6
+          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:72c1ad4212546c67b7cc38bed040551e4b8511d11e9257915c78fae523f0c626
           imagePullPolicy: IfNotPresent
           command: [uvicorn]
           args: [app.bootstrap.api:app, --no-access-log, --host, 0.0.0.0, --port, '8000', --proxy-headers, --forwarded-allow-ips, '10.247.0.0/16']
@@ -110,7 +110,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: worker
-          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:8944a488fcc48876b6a63650f08a35a98c41c69b787bb3b921fead452f0fbdf6
+          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:72c1ad4212546c67b7cc38bed040551e4b8511d11e9257915c78fae523f0c626
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.worker:celery_app', worker, --loglevel=INFO, '--concurrency=2', '--hostname=celery@$(POD_NAME)']
@@ -162,7 +162,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: scheduler
-          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:8944a488fcc48876b6a63650f08a35a98c41c69b787bb3b921fead452f0fbdf6
+          image: harbor.sunmoonai.com:30443/platform/investment-backend@sha256:72c1ad4212546c67b7cc38bed040551e4b8511d11e9257915c78fae523f0c626
           imagePullPolicy: IfNotPresent
           command: [celery]
           args: [-A, 'app.bootstrap.scheduler:celery_app', beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule, --pidfile=, --max-interval=5]

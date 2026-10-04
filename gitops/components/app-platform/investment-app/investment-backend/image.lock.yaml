@@ -1,5 +1,5 @@
-# 已实际构建发布并以独立 Harbor 只读身份核对。
+# Built and published through the native chain; independent Harbor identity checked.
 ---
 repository: investment-backend
-digest: sha256:8944a488fcc48876b6a63650f08a35a98c41c69b787bb3b921fead452f0fbdf6
-source_revision: abddf477fa44c525921ab1a7f48a87a8a7c749f9
+digest: sha256:72c1ad4212546c67b7cc38bed040551e4b8511d11e9257915c78fae523f0c626
+source_revision: 13539aa2f5cdcb79e7c670adb82ac88747d0d5b6

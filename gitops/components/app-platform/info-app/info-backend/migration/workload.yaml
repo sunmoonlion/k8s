@@ -58,7 +58,7 @@ data:
 ---
 apiVersion: batch/v1
 kind: Job
-metadata: {name: 'info-migrate-f1f45c85441f-v1', namespace: app-platform-dev}
+metadata: {name: 'info-migrate-2443d576ab1b-v1', namespace: app-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 420
@@ -72,14 +72,14 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1001, runAsGroup: 1001, fsGroup: 1001, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: migrate
-          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:f1f45c85441f36d77c320c467f31a1dff40073c11a4ac4f696035b8460838efa
+          image: harbor.sunmoonai.com:30443/platform/info-backend@sha256:2443d576ab1b24b99092f41b6c0562e0fa34b3b1ffeffdd7c70365a6921c242a
           imagePullPolicy: IfNotPresent
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           resources: {requests: {cpu: 100m, memory: 128Mi}, limits: {cpu: '1', memory: 512Mi}}
           envFrom: [{secretRef: {name: info-migration-auth}}]
           env:
             - {name: ENV, value: production}
-            - {name: DEPLOYMENT_ID, value: 'e5156a0bfc0d5ca9118128427dcacb69697a0737'}
+            - {name: DEPLOYMENT_ID, value: 'a4b6f59b99f7ef6dc48b346803560e6b2ceeb0a7'}
             - {name: ADMIN_FRONTEND_BASE_URL, value: 'https://info-admin.sunmoonai.com:30443'}
             - {name: WEB_FRONTEND_BASE_URL, value: 'https://info.sunmoonai.com:30443'}
             - {name: EXPECTED_SCHEMA_REVISION, value: '20260913_0009'}

@@ -758,6 +758,23 @@
             (runtime.stdout | from_json).status.updatedReplicas | default(0) != item.replicas | int or
             (runtime.stdout | from_json).status.availableReplicas | default(0) != item.replicas | int or
             (runtime.stdout | from_json).spec.template.spec.containers[0].image != registry_address + '/platform/' + app_images[item.image].repository + '@' + app_images[item.image].digest
+        - name: Require the production asynchronous session policy from the actual API image
+          ansible.builtin.command:
+            argv: '{{ kube + ["exec","deployment/" + application_name + "-api","-n",app_namespace,"--","python","-c",async_session_acceptance] }}'
+          vars:
+            async_session_acceptance: |
+              import asyncio,json
+              from app.infrastructure.storage.postgres import get_postgres
+              async def run():
+                  db=get_postgres()
+                  await db.init()
+                  assert db.session_factory.kw.get('expire_on_commit',True) is False
+                  await db.shutdown()
+                  print(json.dumps({'async_session_expire_on_commit_false':True}))
+              asyncio.run(run())
+          changed_when: false
+          register: async_session_check
+          failed_when: async_session_check.rc != 0 or (async_session_check.stdout_lines[-1] | from_json).async_session_expire_on_commit_false is not sameas true
         - name: Verify the real worker responds with its declared queue and tasks
           ansible.builtin.command:
             argv: '{{ kube + ["exec",("deployment/" + application_name + "-worker"),"-n",app_namespace,"--","python","-m","app.cli.worker_readiness"] }}'
