@@ -25,12 +25,13 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: initialize
-          image: {{ registry_address }}/platform/ragflow@{{ image_map.ragflow.manifest_digest }}
+          image: {{ registry_address }}/platform/ragflow-runtime@{{ ragflow_runtime_image.manifest_digest }}
           imagePullPolicy: IfNotPresent
-          command: [python3, /sunmoon/initialize.py]
+          command: [/ragflow/.venv/bin/python3, /sunmoon/initialize.py]
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           resources: {requests: {cpu: 250m, memory: 1Gi}, limits: {cpu: '2', memory: 4Gi}}
           env:
+            - {name: DEVICE, value: cpu}
             - {name: DB_TYPE, value: postgres}
             - {name: DOC_ENGINE, value: infinity}
             - {name: STORAGE_IMPL, value: AWS_S3}

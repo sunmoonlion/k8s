@@ -1,3 +1,22 @@
+# 当前单元：最小派生 RAGFlow 部署进行中（2026-10-04）
+
+本节优先于下方历史。所有者在讨论官方root例外与最小派生后明确选择最小派生；继续保留data-platform-dev的restricted策略，不增加root例外。工作树/分支platform-kind-v1，k8s单仓；维护2小时、容量底线10GiB，无公共入口切换、无停止其它应用/Harbor、无push。
+
+## 已有事实与当前执行
+
+- Infinity0.7.3与专用Valkey8.1.10实际部署及节点身份/KV读写/错误身份和越界操作拒绝通过；services-check ok46 changed1 failed0。Valkey初版probe误用VALKEYCLI_AUTH，修正REDISCLI_AUTH后精确替换未就绪旧修订Pod，失败证据保留。基线52个Running Pod/13个Retain PV。
+- 官方RAGFlow0.27.2 manifest sha256:e6b3f1a185c0a70abb3a72e1092415df8c5c6a4fae0089545554f2936c4b27ab已备齐/发布。初始化v1/v2失败：强制非root无法穿过官方/root0700，.venv/bin/python链接至/root/.local/share/uv/python/cpython-3.13.11-linux-x86_64-gnu，PATH回退系统3.12、依赖不可用。两版均在schema初始化前失败；原生PG/派生S3桶Job成功。尚无RAGFlow运行/检索成功结果。
+- 最小Dockerfile仅chmod镜像/root0755、默认UID1000、非root核验官方venv Python3.13；没有安装/升级包或改官方源码。官方CPU模式跳过Torch安装，独立TEI承担向量推理，运行期禁止公网/依赖下载。派生manifest sha256:4601a9b91d670fdaed4efe5487f7900784f484494cc20fa128bba51bc4c115b2，原官方filesystem diff_ids全部保留，追加权限/验证层。Dockerfile摘要067039556ebc8462c57198ef6e3bc4badadc02709fb21b64f688c8cc62d57907。
+- 原生构建ok31 changed9 failed0、skopeo发布ok28 changed1 failed0，完整归档SHA40a62bf3f83c71f92e10eec0fea520abaa76802f6bafecc15e61f3db2dca8936。归档/image.lock/物料JSON已独立核对；本次复核ok10 changed1 failed0，新增物料清单是唯一变化。归档在packages-to-be-installed/releases/platform-kind-v1/images，配置/实现/锁同处gitops/components/data-platform/ragflow。Make services-bootstrap纳入构建复核及已有skopeo发布，非另建部署系统。
+- 36/32GiB保守预算先被拦，随后按已校验归档实际层字节只读测量峰值并通过10GiB底线；直接Docker→skopeo OCI，避免重复docker-save。节点首次启动按缺失的锁定层预算，不把已存在镜像层重复计费。
+- 会话15706正在原生services-stage，日志ragflow-v3-stage-approved.log；此前中断的stage不可使用。当前线上源仍7390f03b35ad33b80583c0aa625525a6dc0ce4b2 / sha256:9056ba5a09ac17cc0a0298e20bde4b787c8b03dd0ab8420f2459addfaaa892e5（晋级204e8756），初始化v2失败；派生候选尚未晋级到Flux。
+
+## 下一步
+
+完成全量stage→公开对象API dry-run/原对象核对→本地提交→flux-release并核对晋级→初始化v3/API/Worker→services-check真实中文上传解析检索、跨租户/原文S3/运行DDL拒绝→完整services-bootstrap及重复。成功后精确清理诊断Pod/失败Job，保存证据，不删PV/PVC或正式物料/秘密备份。更大的知识领域接入、一键全系统启停/开机、WSL/KIND重建持久化和长期空间管理仍未完成。
+
+---
+
 # 当前单元：MongoDB 原生部署、重复与 Pod 重建持久化通过（2026-10-04）
 
 工作树/分支 platform-kind-v1，k8s单仓；基线592529112b59482ddd3e0ff04706ab3adf69084f。所有者在ELK/Neo4j后要求顺便部署MongoDB。维护上限2小时、容量底线10GiB；本单元没有公共入口切换，没有停止其它应用/Harbor，没有修改四个业务仓，无push。

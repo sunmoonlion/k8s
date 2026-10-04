@@ -1,0 +1,17 @@
+{
+    "archive_sha256": "40a62bf3f83c71f92e10eec0fea520abaa76802f6bafecc15e61f3db2dca8936",
+    "base_manifest": "sha256:e6b3f1a185c0a70abb3a72e1092415df8c5c6a4fae0089545554f2936c4b27ab",
+    "dockerfile_sha256": "067039556ebc8462c57198ef6e3bc4badadc02709fb21b64f688c8cc62d57907",
+    "images": [
+        {
+            "compressed_layer_bytes": 3993377280,
+            "id": "ragflow-runtime",
+            "manifest_digest": "sha256:4601a9b91d670fdaed4efe5487f7900784f484494cc20fa128bba51bc4c115b2",
+            "reference": "harbor.sunmoonai.com:30443/platform/ragflow-runtime@sha256:4601a9b91d670fdaed4efe5487f7900784f484494cc20fa128bba51bc4c115b2",
+            "source": "ragflow-runtime:0.27.2-nonroot-067039556ebc8462",
+            "status": "resolved"
+        }
+    ],
+    "platform": "linux/amd64",
+    "schema_version": 1
+}

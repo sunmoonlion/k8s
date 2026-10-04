@@ -77,7 +77,7 @@ def main():
     parser=argparse.ArgumentParser();parser.add_argument('--kubectl',required=True);parser.add_argument('--kubeconfig',required=True);parser.add_argument('--namespace',required=True);parser.add_argument('--base',required=True);parser.add_argument('--timeout',type=int,default=300);args=parser.parse_args()
     private=json.load(sys.stdin)
     data={'base':args.base,'timeout_seconds':args.timeout,'acceptance_token':private['acceptance_token'],'knowledge_token':private['knowledge_token']}
-    command=[args.kubectl,'--kubeconfig='+args.kubeconfig,'--context=kind-sunmoon-kind','--request-timeout=30s','-n',args.namespace,'exec','-i','deployment/ragflow-api','-c','api','--','python3','-c',POD_SOURCE]
+    command=[args.kubectl,'--kubeconfig='+args.kubeconfig,'--context=kind-sunmoon-kind','--request-timeout=30s','-n',args.namespace,'exec','-i','deployment/ragflow-api','-c','api','--','/ragflow/.venv/bin/python3','-c',POD_SOURCE]
     proc=subprocess.run(command,input=json.dumps(data),text=True,capture_output=True,timeout=args.timeout+180)
     if proc.returncode:
         # Never print arbitrary upstream tracebacks or request configuration.

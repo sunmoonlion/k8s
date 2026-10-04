@@ -64,10 +64,10 @@ async def main():
 
     if sys.argv[1] == 'worker':
         # Direct upstream process bypasses entrypoint.sh's unconditional DDL.
-        # The shipped torch package is required before the upstream installer
-        # helper is reached; runtime network policy and pip offline mode also
-        # prohibit startup dependency downloads.
-        import torch  # noqa: F401
+        # Official CPU mode skips pip_install_torch; model inference is handled
+        # by the separately locked CPU TEI service, without startup downloads.
+        if os.environ.get('DEVICE') != 'cpu':
+            raise RuntimeError('This profile requires offline CPU mode')
         from rag.svr import task_executor
         from common.log_utils import init_root_logger
         init_root_logger('task_executor_common_0')

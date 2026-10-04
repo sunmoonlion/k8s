@@ -1,0 +1,9 @@
+---
+- import_playbook: ../../../../infrastructure/artifacts/publish.yaml
+  when: services_ragflow_enabled | bool
+  vars:
+    publication_action: publish
+    publication_lockfile: '{{ playbook_dir }}/../../gitops/components/data-platform/ragflow/image.lock.json'
+    publication_image_ids: [ragflow-runtime]
+    publication_enabled: '{{ services_ragflow_enabled }}'
+    publication_capacity_operation: ragflow-runtime-publication

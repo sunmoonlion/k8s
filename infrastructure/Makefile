@@ -244,6 +244,8 @@ services-bootstrap:
 	$(MAKE) services-credentials
 	$(MAKE) services-verify-materials
 	$(MAKE) services-publish
+	$(MAKE) services-ragflow-image
+	$(MAKE) services-ragflow-image-publish
 	$(MAKE) services-tools
 	$(MAKE) install-binaries BINARIES=mc
 	$(MAKE) services-chart
@@ -319,3 +321,9 @@ application-bootstrap:
 .PHONY: services-stage
 services-stage:
 	$(ANSIBLE) -i host/inventory.yaml services/render.yaml $(CONFIG_ARGS) --extra-vars services_action=stage
+
+.PHONY: services-ragflow-image services-ragflow-image-publish
+services-ragflow-image:
+	$(ANSIBLE) -i host/inventory.yaml ../gitops/components/data-platform/ragflow/image-build.yaml $(CONFIG_ARGS)
+services-ragflow-image-publish:
+	$(ANSIBLE) -i host/inventory.yaml ../gitops/components/data-platform/ragflow/image-publish.yaml $(CONFIG_ARGS)
