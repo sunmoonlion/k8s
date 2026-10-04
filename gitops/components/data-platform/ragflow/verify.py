@@ -83,8 +83,8 @@ def main():
         # Never print arbitrary upstream tracebacks or request configuration.
         lines=re.findall(r'File "<string>", line ([0-9]+)',proc.stderr)
         last=proc.stderr.strip().splitlines()[-1] if proc.stderr.strip() else ''
-        kind=last.split(':',1)[0]
-        if not re.fullmatch(r'[A-Za-z0-9_.]+',kind):kind='UpstreamError'
+        exceptions=re.findall(r'^([A-Za-z_][A-Za-z0-9_.]*):',proc.stderr,re.MULTILINE)
+        kind=exceptions[-1] if exceptions else 'UpstreamError'
         detail=last.partition(': ')[2]
         if not re.fullmatch(r'RAGFlow (?:rejected [A-Z]+ /[a-zA-Z0-9/_-]+ \(code [0-9]+\)|document parsing failed|ingestion timed out)',detail):detail=''
         print(json.dumps({'passed':False,'reason':'RAGFlow live protocol acceptance failed','process_exit':proc.returncode,'exception_type':kind,'failed_source_line':int(lines[-1]) if lines else None,'public_detail':detail}));return 1

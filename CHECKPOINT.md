@@ -10,7 +10,7 @@
 - 原生构建ok31 changed9 failed0、skopeo发布ok28 changed1 failed0，完整归档SHA40a62bf3f83c71f92e10eec0fea520abaa76802f6bafecc15e61f3db2dca8936。归档/image.lock/物料JSON已独立核对；本次复核ok10 changed1 failed0，新增物料清单是唯一变化。归档在packages-to-be-installed/releases/platform-kind-v1/images，配置/实现/锁同处gitops/components/data-platform/ragflow。Make services-bootstrap纳入构建复核及已有skopeo发布，非另建部署系统。
 - 36/32GiB保守预算先被拦，随后按已校验归档实际层字节只读测量峰值并通过10GiB底线；直接Docker→skopeo OCI，避免重复docker-save。节点首次启动按缺失的锁定层预算，不把已存在镜像层重复计费。
 - v3初始化实际成功，API HTTPS200、Worker就绪；API内联健康探针CRLF转义失败，官方WordNet归档不可供UID1000读取。现只将官方NLTK资源设为可读，不装包/下载语料；改同目录health.py标准HTTP库探针，实际执行通过。v3失败日志保留。
-- 新派生manifest sha256:3b2328c9e8e0fe36d834d4204e5c519558b66150f0ed8a3ab0ad03dde8264b0e，Dockerfile SHA9c73f6dda8f156e89f4d2cf8f5d612d8c489a868b58bb71e0760e5baaae1faaf；非root WordNet加载及Python依赖通过。构建ok38 changed11、独立发布ok28 changed1、完整v4 stage ok427 changed2均failed0；公共server dry-run通过。当前线上仍fae3092f / sha256:78876e021c235a161730de8ec06c20308d8fa060c85a59f19abe66c5ee80a358（晋级8eab1bcb），待v4晋级与中文协议验收。
+- 新派生manifest sha256:3b2328c9e8e0fe36d834d4204e5c519558b66150f0ed8a3ab0ad03dde8264b0e，Dockerfile SHA9c73f6dda8f156e89f4d2cf8f5d612d8c489a868b58bb71e0760e5baaae1faaf；非root WordNet加载及Python依赖通过。构建ok38 changed11、独立发布ok28 changed1、完整v4 stage ok427 changed2均failed0；公共server dry-run通过。当前线上仍fae3092f / sha256:78876e021c235a161730de8ec06c20308d8fa060c85a59f19abe66c5ee80a358（晋级8eab1bcb），v4已晋级bc13c3cd / sha256:08c5860b0039952253069f4f7479519f5b3f5a10133defc82f8990c317706622（d9f1560f），API/Worker Ready且0重启。首次协议检查在API连接超时停止，实际DNS正常、缺少组件自身API egress；仅增加同组件9380精确出站声明，未放开公网。v4网络stage完整ok427 changed1 failed0，待重新晋级并验收。
 
 ## 下一步
 

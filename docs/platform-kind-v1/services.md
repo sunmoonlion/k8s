@@ -55,7 +55,7 @@ Casdoor 的 `/server -export` 在导入初始身份之前退出，因此首次 J
 | --- | --- | --- |
 | PostgreSQL 管理员用户名 | 模板固定 `postgres` | 本期固定管理身份，不作为日常用户名配置；业务使用自己的库与角色 |
 | PostgreSQL 管理员密码 | 私有输入 `service_credentials.postgresql_password` | 已有实例必须做数据库、Secret、依赖方和备份的一致轮换；不能只改输入 |
-| Redis 用户名 | 当前 requirepass 模式使用默认用户 `default`，没有单独 username 字段 | 这是本期已实现模式；逐应用 ACL 身份尚未实现，不能声称已有隔离账号 |
+| Redis 用户名 | 管理/探针身份与逐应用持久ACL分开 | 四App使用独立账号和键前缀；配置及ACL持久化见Redis组件，变更须执行账号轮换 |
 | Redis 密码 | 私有输入 `redis_password` | 需要 Redis 配置和客户端协调轮换 |
 | RabbitMQ 用户名、密码 | 私有输入 `rabbitmq_username`、`rabbitmq_password` | 用户名不是秘密，但与已初始化账号一起保存；已有 broker 的账号变更不能仅改初始配置 |
 | RabbitMQ Erlang cookie | 私有输入 `rabbitmq_cookie` | 节点通信身份，不能当普通登录密码修改；已有持久文件会与输入核对 |
@@ -77,7 +77,7 @@ Casdoor 的 `/server -export` 在导入初始身份之前退出，因此首次 J
 | 端口 | 当前值 | 所有者与支持边界 |
 | --- | --- | --- |
 | PostgreSQL 内部服务 | 5432 | 本期固定；服务、客户端、网络策略和验收采用同一约定 |
-| Redis 内部服务 | 6379 | 本期固定；requirepass 配置、服务、探针与策略配套 |
+| Redis 内部服务 | 6379 | 本期固定；持久ACL、服务、探针与策略配套 |
 | RabbitMQ AMQP / 管理接口 | 5672 / 15672 | 本期固定；管理接口用于当前原生验收，不表示对外开放 |
 | Casdoor 容器 / Service HTTP | 8000 | 本期固定；应用配置、探针、Ingress 后端和网络策略配套 |
 | Traefik NodePort | 30443 | 本期固定；与 KIND 节点映射保持一致，与宿主同号端口是不同网络位置 |
@@ -85,7 +85,7 @@ Casdoor 的 `/server -export` 在导入初始身份之前退出，因此首次 J
 | Harbor 回环后端 | 11443 | `infrastructure/registry/config.yaml` 的 `registry_https_port`；Harbor 与 entry 模板引用同一字段，修改须安排两服务配置/维护 |
 | KIND API 宿主映射 | 27443 | `infrastructure/cluster/config.yaml` 的 `cluster_api_port`；建群参数，已有节点不能凭改 YAML 自动重绑端口 |
 | KIND 入口宿主映射 | 29443 | 同文件 `cluster_ingress_port`；已有节点需要重建安排；Casdoor 当前验收仍固定使用29443，任意端口支持未贯通 |
-| 入口应用后端 | 当前原 worker 的 `172.18.0.5:30443` | `entry/config.yaml` 的 `entry_cluster_backend`；维护切换参数，尚未切到新集群业务入口 |
+| 入口应用后端 | 当前原 worker 的 `172.18.0.5:30443` | `entry/config.yaml` 的 `entry_cluster_backend`；兜底后端；Casdoor和四App域名已由entry_routes转新集群29443，新增域名需明确切换 |
 
 本期内部端口明确采用上述固定值，不增加未经端到端支持的可调字段。如果后续确需开放端口配置，必须让监听、Service、探针、网络策略、客户端和验收共同引用唯一输入；只把一个常量搬进 config.yaml 不算完成。
 
@@ -103,7 +103,7 @@ Casdoor 的 `/server -export` 在导入初始身份之前退出，因此首次 J
 | `registry_hostname`、共享 `registry_address` | 仓库对外身份 | 当前固定harbor.sunmoonai.com:30443，证书、镜像引用、拉取认证及守卫均依赖；改域名不是单文件操作 |
 | `registry_project` | Compose 实例名称 | 当前sunmoon-registry；不是Harbor中存镜像的platform项目，不用它修改仓库项目名 |
 | host `storage_uuid`、挂载/VHD路径、最大容量 | 已创建磁盘的身份与容量事实 | 必须匹配实际磁盘；改数值不能创建、扩盘或更换数据盘 |
-| `windows_minimum_free_gib`、容量预算 | 已批准的准入策略 | 常规50GiB，不能用改配置绕过；临时例外需按已约定范围单独授权 |
+| `windows_minimum_free_gib`、容量预算 | 已批准的准入策略 | 当前开发阶段10GiB；按C盘空闲扣除数据盘未来增长与预算，不关闭检查 |
 | 服务/Harbor/SOPS私有输入、运行、备份目录 | 安装布局/恢复边界 | 改路径需先迁移并核对权限与完整性，不得让新空路径触发身份重建 |
 | 资源 requests/limits、探针、镜像版本/摘要 | 当前发布实现 | 资源与探针仍在模板/Harbor release策略中，版本在锁文件；独立用户资源规格配置尚未实现，不能描述为已有字段 |
 | `registry_log_rotation_approved` | 既定授权记录 | 现批准每容器3份×20MiB；不授权删除镜像、备份或任意改变保留策略 |
@@ -134,7 +134,7 @@ make services-bootstrap            # 已晋级版本的一键部署与实际验�
 make services-check                # 实际数据库/消息/身份验收
 ```
 
-常规容量门槛保持 50 GiB。2026-10-03 所有者为这一批特批 40 GiB、最多新增 5 GiB，使用有期限和操作范围的外部参数，本批结束撤销。后续命名调整另获40GiB/最多1GiB例外，也已撤销；最终统一入口已按默认50GiB完整通过，不作为日常绕过门槛的方法。
+当前开发阶段容量门槛为10GiB、维护窗口2小时，真源为host/config.yaml及AGENTS.md。仍扣除230GiB数据盘未来增长和本次预算。历史首批曾使用50GiB及逐批40GiB例外；这些是当时的执行记录，不是当前策略。进入对外服务阶段需重新确认。
 
 `services-bootstrap` 顺序执行凭据检查、离线镜像验证/发布、工具/chart、候选生成、与晋级声明比对、Flux 协调和功能验收。已改配置但未提交发布时明确失败；不会“执行成功但用旧配置”。首次准备依赖已有 Harbor、KIND、Flux/SOPS 及已备齐包，本入口是首批服务单元，完整宿主到应用的一键编排仍是后续交付项。
 
@@ -170,3 +170,11 @@ Traefik chart 41.6 使用 `log`、`accessLog`，`versionOverride` 在 values 根
 MongoDB官方9.0.2-noble已接入同一服务部署链。配置入口：[config.yaml](../../gitops/components/data-platform/mongodb/config.yaml)，身份、部署及日常说明：[组件README](../../gitops/components/data-platform/mongodb/README.md)。运行data-platform-dev/mongodb-0，仅内部TLS27017，单成员副本集sunmoon，worker2静态20Gi Retain卷。用户名/密码/内部密钥在/etc/sunmoon/services/sunmoon-kind/mongodb.yaml，不放公开配置、不与四App共用；未来业务接入须各自逻辑库和受限账号。
 
 真实CRUD、事务提交/回滚、权限拒绝和Pod重建持久化通过；统一services-bootstrap及同源重复成功。范围不含业务驱动适配、HA、数据冷备份恢复及整机/集群重建。失败初始化v1的Job/两个Pod在v2成功后按UID条件精确清理，失败证据保留；NotYetInitialized是mongosh抛异常而非返回错误码，脚本已仅对code94处理，其他错误仍停止。
+
+## RAGFlow 检索单元（2026-10-04）
+
+配置及实现位于[data-platform/ragflow](../../gitops/components/data-platform/ragflow/README.md)，依赖专用Infinity与Valkey、PostgreSQL、派生S3桶和已有CPU向量服务。运行镜像基于固定官方0.27.2做最小非root权限适配；新增摘要锁与离线归档可复核，不安装或升级依赖。用户参数在组件config.yaml，私有身份在/etc/sunmoon/services/sunmoon-kind/ragflow.yaml，Git仅存SOPS密文。
+
+首次prepare→stage→提交→flux-release→核对晋级固定源→services-bootstrap。已晋级环境日常make services-bootstrap；只做协议核验用make services-check。初始化Job持schema拥有者，API/Worker不执行DDL；两套独立租户用于知识服务和验收，随机验收数据精确清理。升级应单独备份、审核官方接口与模型绑定、增加初始化代次，不能仅更改镜像而假定兼容。
+
+检索服务只开放内部HTTPS，不提供公共UI；Infinity/Valkey明文协议由网络策略隔离，单节点不具备高可用。本文描述已实现的验收机制，现场结果及失败记录见CHECKPOINT.md；真实知识领域链和WSL/KIND重建不由协议核验替代。

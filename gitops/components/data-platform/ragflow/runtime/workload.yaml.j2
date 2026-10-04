@@ -109,3 +109,15 @@ spec:
         - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: '{{ app_namespace }}'}}
           podSelector: {matchLabels: {sunmoonai.com/ragflow-client: 'true'}}
       ports: [{protocol: TCP, port: {{ ragflow_port }}}]
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ragflow-api-egress, namespace: {{ data_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: ragflow}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: api}}
+      ports: [{protocol: TCP, port: {{ ragflow_port }}}]

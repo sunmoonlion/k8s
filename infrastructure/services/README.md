@@ -42,3 +42,9 @@ MongoDB接入同一Make/Ansible/Flux服务链，用户配置、模板、独立�
 私有用户名、密码和副本集密钥在services_config_dir/mongodb.yaml，证书在mongodb-tls，均有独立逐字节备份；不是公开config.yaml字段。日常公开端口/副本集名称/卷/资源参数在组件config.yaml。当前端口只支持27017；既有副本集名称、卷节点和已完成初始化Job不可随意修改，改变身份要另做轮换，不会静默重设密码。20Gi卷声明不是文件系统配额。开关不隐式删既有运行资源或数据。
 
 实际MongoDB Pod重建后同一随机标记、受限账号及TLS/事务验证通过，PV/PVC UID不变；临时标记已精确移除。这不代替整机/集群重启、KIND删除重建或数据库备份恢复。
+
+## RAGFlow 检索服务
+
+Infinity、专用Valkey与RAGFlow均复用同一services-bootstrap/check链。配置、独立身份与实现分别位于data-platform下各组件目录；不与ELK索引或业务Redis身份混用。RAGFlow初始化由独立Job执行，API/Worker仅持DML角色；原文权威仍在业务对象存储。
+
+官方0.27.2镜像的UV解释器和NLTK数据位于/root，最小派生镜像只调整这些路径的读取权限和默认非root用户，不改官方包与应用源码。构建/摘要锁及说明见[RAGFlow组件](../../gitops/components/data-platform/ragflow/README.md)。首次使用make services-ragflow-image、services-ragflow-image-publish准备；完整services-bootstrap已包含校验与发布，不需要另行手工初始化。services-check包含真实中文上传、解析和向量检索以及权限拒绝；协议结果不能替代业务领域接入或整机重建验收。
