@@ -16,7 +16,8 @@ client.headers['Authorization']='Bearer '+inputs['acceptance_token']
 
 def call(method,path,**kwargs):
     response=client.request(method,base+path,timeout=35,**kwargs)
-    response.raise_for_status();data=response.json()
+    if not response.ok:raise RuntimeError('RAGFlow HTTP '+str(response.status_code)+' '+method+' '+path)
+    data=response.json()
     if data.get('code',0)!=0:raise RuntimeError('RAGFlow rejected '+method+' '+path+' (code '+str(data.get('code'))+')')
     return data.get('data')
 
@@ -82,11 +83,9 @@ def main():
     if proc.returncode:
         # Never print arbitrary upstream tracebacks or request configuration.
         lines=re.findall(r'File "<string>", line ([0-9]+)',proc.stderr)
-        last=proc.stderr.strip().splitlines()[-1] if proc.stderr.strip() else ''
-        exceptions=re.findall(r'^([A-Za-z_][A-Za-z0-9_.]*):',proc.stderr,re.MULTILINE)
-        kind=exceptions[-1] if exceptions else 'UpstreamError'
-        detail=last.partition(': ')[2]
-        if not re.fullmatch(r'RAGFlow (?:rejected [A-Z]+ /[a-zA-Z0-9/_-]+ \(code [0-9]+\)|document parsing failed|ingestion timed out)',detail):detail=''
+        exceptions=re.findall(r'^([A-Za-z_][A-Za-z0-9_.]*):[ \t]*(.*)$',proc.stderr,re.MULTILINE)
+        kind,detail=exceptions[-1] if exceptions else ('UpstreamError','')
+        if not re.fullmatch(r'RAGFlow (?:rejected [A-Z]+ /[a-zA-Z0-9/_-]+ \(code [0-9]+\)|HTTP [0-9]{3} [A-Z]+ /[a-zA-Z0-9/_-]+|document parsing failed|ingestion timed out)',detail):detail=''
         print(json.dumps({'passed':False,'reason':'RAGFlow live protocol acceptance failed','process_exit':proc.returncode,'exception_type':kind,'failed_source_line':int(lines[-1]) if lines else None,'public_detail':detail}));return 1
     receipt=json.loads(proc.stdout);assert receipt['passed'];print(json.dumps(receipt));return 0
 if __name__=='__main__':sys.exit(main())

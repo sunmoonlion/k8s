@@ -10,7 +10,7 @@
 - 原生构建ok31 changed9 failed0、skopeo发布ok28 changed1 failed0，完整归档SHA40a62bf3f83c71f92e10eec0fea520abaa76802f6bafecc15e61f3db2dca8936。归档/image.lock/物料JSON已独立核对；本次复核ok10 changed1 failed0，新增物料清单是唯一变化。归档在packages-to-be-installed/releases/platform-kind-v1/images，配置/实现/锁同处gitops/components/data-platform/ragflow。Make services-bootstrap纳入构建复核及已有skopeo发布，非另建部署系统。
 - 36/32GiB保守预算先被拦，随后按已校验归档实际层字节只读测量峰值并通过10GiB底线；直接Docker→skopeo OCI，避免重复docker-save。节点首次启动按缺失的锁定层预算，不把已存在镜像层重复计费。
 - v3初始化实际成功，API HTTPS200、Worker就绪；API内联健康探针CRLF转义失败，官方WordNet归档不可供UID1000读取。现只将官方NLTK资源设为可读，不装包/下载语料；改同目录health.py标准HTTP库探针，实际执行通过。v3失败日志保留。
-- 新派生manifest sha256:3b2328c9e8e0fe36d834d4204e5c519558b66150f0ed8a3ab0ad03dde8264b0e，Dockerfile SHA9c73f6dda8f156e89f4d2cf8f5d612d8c489a868b58bb71e0760e5baaae1faaf；非root WordNet加载及Python依赖通过。构建ok38 changed11、独立发布ok28 changed1、完整v4 stage ok427 changed2均failed0；公共server dry-run通过。当前线上仍fae3092f / sha256:78876e021c235a161730de8ec06c20308d8fa060c85a59f19abe66c5ee80a358（晋级8eab1bcb），v4已晋级bc13c3cd / sha256:08c5860b0039952253069f4f7479519f5b3f5a10133defc82f8990c317706622（d9f1560f），API/Worker Ready且0重启。首次协议检查在API连接超时停止，实际DNS正常、缺少组件自身API egress；仅增加同组件9380精确出站声明，未放开公网。v4网络stage完整ok427 changed1 failed0，待重新晋级并验收。
+- 新派生manifest sha256:3b2328c9e8e0fe36d834d4204e5c519558b66150f0ed8a3ab0ad03dde8264b0e，Dockerfile SHA9c73f6dda8f156e89f4d2cf8f5d612d8c489a868b58bb71e0760e5baaae1faaf；非root WordNet加载及Python依赖通过。构建ok38 changed11、独立发布ok28 changed1、完整v4 stage ok427 changed2均failed0；公共server dry-run通过。当前线上仍fae3092f / sha256:78876e021c235a161730de8ec06c20308d8fa060c85a59f19abe66c5ee80a358（晋级8eab1bcb），v4已晋级bc13c3cd / sha256:08c5860b0039952253069f4f7479519f5b3f5a10133defc82f8990c317706622（d9f1560f），API/Worker Ready且0重启。首次协议检查在API连接超时停止，实际DNS正常、缺少组件自身API egress；仅增加同组件9380精确出站声明，未放开公网。v4网络stage完整ok425 changed2 failed0，待重新晋级并验收。
 
 ## 下一步
 
@@ -630,3 +630,5 @@ Ansible2.21.4、Compose5.5.1；KIND0.33.0、kubectl/kubeadm1.36.5。官方KIND�
 当前Docker升级/正式仓库认证单元完成；新架构全量部署、重启/重建验收、云端实机验证未完成。没有新增或运行测试套件；实际部署验收、Python AST和git diff检查按用户授权执行。本轮未改Windows附盘/计划任务/执行策略，未连东京。
 
 本轮9个一次性运维脚本已从/tmp移除，只在最新私有维护记录的script-audit中保留非执行文本副本及SHA256；4个临时文档/提交编辑文件已删除。旧luna任务的/tmp文件未混删，整体重整的最终清理仍列在后续步骤。
+
+当前追加核实：v4精确网络修复d250ed86晋级207ae606（source b6ea0fc6），45阶段Ready、RAG两Pod正常。真实API请求随后被官方认证拒绝：初始化账号access_token为空，官方API-token路径仍要求其非空。v5初始化只为缺失字段生成独立随机标记，不复用API令牌/不开放浏览器登录，不覆盖已有值；完整stage ok425 changed2 failed0。原始失败日志ragflow-v4-network-check.log保留；待v5晋级和真实中文协议验收。

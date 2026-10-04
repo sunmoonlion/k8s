@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: ConfigMap
-metadata: {name: ragflow-storage-policy-v4, namespace: data-platform-dev}
+metadata: {name: ragflow-storage-policy-v5, namespace: data-platform-dev}
 data:
   policy.json: |
     {"Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Action": ["s3:GetBucketLocation", "s3:ListBucket", "s3:ListBucketMultipartUploads", "s3:ListBucketVersions"], "Resource": ["arn:aws:s3:::ragflow-derived"]}, {"Effect": "Allow", "Action": ["s3:GetObject", "s3:GetObjectVersion", "s3:PutObject", "s3:DeleteObject", "s3:AbortMultipartUpload", "s3:ListMultipartUploadParts", "s3:DeleteObjectVersion"], "Resource": ["arn:aws:s3:::ragflow-derived/*"]}]}
 ---
 apiVersion: batch/v1
 kind: Job
-metadata: {name: 'ragflow-storage-v4', namespace: data-platform-dev}
+metadata: {name: 'ragflow-storage-v5', namespace: data-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 300
@@ -64,5 +64,5 @@ spec:
             - {name: work, mountPath: /work}
       volumes:
         - {name: auth, secret: {secretName: 'ragflow-storage-provision', defaultMode: 0440}}
-        - {name: policy, configMap: {name: 'ragflow-storage-policy-v4'}}
+        - {name: policy, configMap: {name: 'ragflow-storage-policy-v5'}}
         - {name: work, emptyDir: {sizeLimit: 16Mi}}

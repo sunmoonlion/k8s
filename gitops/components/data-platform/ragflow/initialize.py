@@ -2,6 +2,7 @@
 import hashlib
 import inspect
 import json
+import secrets
 import sys
 from pathlib import Path
 
@@ -32,6 +33,10 @@ for purpose in ['knowledge', 'acceptance']:
     users = UserService.query(email=email)
     assert len(users) == 1
     user = users[0]
+    # Upstream API-token authentication rejects users with an empty session marker.
+    # This independent random value is never a service token or a browser login.
+    if not user.access_token:
+        models.User.update(access_token=secrets.token_hex(32)).where(models.User.id == user.id).execute()
     # Service identities do not gain the global administrator privilege.
     models.User.update(is_superuser=False).where(models.User.id == user.id).execute()
     provider_id = identifier('sunmoon/' + user.id + '/HuggingFace')
