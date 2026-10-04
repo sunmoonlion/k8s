@@ -12,13 +12,13 @@ tpl_backend_deployment:
   deploy_budget_bytes: 2147483648
   redis_user: tpl_runtime
   redis_key_pattern: 'tpl:*'
-  redis_identity_revision: v2
+  redis_identity_revision: v3
   rabbitmq_user: tpl_runtime
   rabbitmq_vhost: tpl
   rabbitmq_queue: tpl.default
-  rabbitmq_identity_revision: v1
+  rabbitmq_identity_revision: v2
   identity_organization: built-in
-  identity_revision: v1
+  identity_revision: v2
   api_port: 8000
   api_replicas: 1
   worker_replicas: 1

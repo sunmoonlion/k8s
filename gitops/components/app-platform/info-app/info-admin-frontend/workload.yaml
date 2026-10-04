@@ -27,7 +27,7 @@ spec:
             - {name: AUTH_APP, value: info}
             - {name: APP_ORIGIN, value: "https://info-admin.sunmoonai.com:30443"}
             - {name: BACKEND_INTERNAL_URL, value: 'http://info-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "info-9fbf4183337a92c8"}
+            - {name: DEPLOYMENT_ID, value: "info-aacd423b74d2a837"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}

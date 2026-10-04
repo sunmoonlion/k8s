@@ -59,7 +59,7 @@ spec:
         sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 618ef00e2e7819c46a325ec4edc7d82df5e42ec93d0517a25fd7c0e051f7f501
+        sunmoonai.com/config-sha256: 270c9bb24739246c001bdfb4fc4a751453b033e11a70a7eb0026703e960e94eb
     spec:
       serviceAccountName: knowledge-runtime
       automountServiceAccountToken: false
@@ -120,7 +120,7 @@ spec:
         sunmoonai.com/ragflow-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 618ef00e2e7819c46a325ec4edc7d82df5e42ec93d0517a25fd7c0e051f7f501
+        sunmoonai.com/config-sha256: 270c9bb24739246c001bdfb4fc4a751453b033e11a70a7eb0026703e960e94eb
     spec:
       serviceAccountName: knowledge-runtime
       automountServiceAccountToken: false
@@ -175,7 +175,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 618ef00e2e7819c46a325ec4edc7d82df5e42ec93d0517a25fd7c0e051f7f501
+        sunmoonai.com/config-sha256: 270c9bb24739246c001bdfb4fc4a751453b033e11a70a7eb0026703e960e94eb
     spec:
       serviceAccountName: knowledge-runtime
       automountServiceAccountToken: false

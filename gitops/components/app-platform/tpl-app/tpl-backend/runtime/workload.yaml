@@ -46,7 +46,7 @@ spec:
         sunmoonai.com/rabbitmq-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 93bbf2d9af9ac2a29dc022edf5c2f71adc638e3830f59f4be8b5ebc64cd04ef7
+        sunmoonai.com/config-sha256: 8e9595a2fdb5b81997b7ac28676045286cc71a874143922314acd503c5688bdc
     spec:
       serviceAccountName: tpl-runtime
       automountServiceAccountToken: false
@@ -102,7 +102,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 93bbf2d9af9ac2a29dc022edf5c2f71adc638e3830f59f4be8b5ebc64cd04ef7
+        sunmoonai.com/config-sha256: 8e9595a2fdb5b81997b7ac28676045286cc71a874143922314acd503c5688bdc
     spec:
       serviceAccountName: tpl-runtime
       automountServiceAccountToken: false
@@ -154,7 +154,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 93bbf2d9af9ac2a29dc022edf5c2f71adc638e3830f59f4be8b5ebc64cd04ef7
+        sunmoonai.com/config-sha256: 8e9595a2fdb5b81997b7ac28676045286cc71a874143922314acd503c5688bdc
     spec:
       serviceAccountName: tpl-runtime
       automountServiceAccountToken: false

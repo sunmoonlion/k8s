@@ -27,7 +27,7 @@ spec:
             - {name: AUTH_APP, value: investment}
             - {name: APP_ORIGIN, value: "https://investment-admin.sunmoonai.com:30443"}
             - {name: BACKEND_INTERNAL_URL, value: 'http://investment-api.app-platform-dev.svc.cluster.local:8000'}
-            - {name: DEPLOYMENT_ID, value: "investment-060f8d658ec55d68"}
+            - {name: DEPLOYMENT_ID, value: "investment-93185775a849faf4"}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '3000'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}

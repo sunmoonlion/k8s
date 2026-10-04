@@ -14,13 +14,13 @@ knowledge_backend_deployment:
   deploy_budget_bytes: 2147483648
   redis_user: knowledge_runtime
   redis_key_pattern: knowledge:*
-  redis_identity_revision: v1
+  redis_identity_revision: v2
   rabbitmq_user: knowledge_runtime
   rabbitmq_vhost: knowledge
   rabbitmq_queue: knowledge.default
-  rabbitmq_identity_revision: v1
+  rabbitmq_identity_revision: v2
   identity_organization: built-in
-  identity_revision: v1
+  identity_revision: v2
   api_port: 8000
   api_replicas: 1
   worker_replicas: 1
