@@ -50,3 +50,12 @@ investment_backend_deployment:
   celery_control_queue_exclusive: true
   celery_event_queue_exclusive: true
   domain_runtime_env: {}
+
+  knowledge_service:
+    enabled: true
+    application: sunmoonai-investment-knowledge-retrieve
+    client_id: sunmoon-investment-knowledge-retrieve
+    organization: sunmoon-workload-investment-knowledge
+    scope: knowledge:retrieve
+    job_revision: v1
+    token_seconds: 900

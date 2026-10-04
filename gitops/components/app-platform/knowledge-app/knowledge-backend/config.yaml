@@ -60,3 +60,6 @@ knowledge_backend_deployment:
     source_bucket: info-originals
     source_prefix: info/original/
     job_revision: v1
+
+  knowledge_service_receiver:
+    enabled: true

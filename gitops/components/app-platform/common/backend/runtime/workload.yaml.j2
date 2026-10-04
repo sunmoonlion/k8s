@@ -5,7 +5,7 @@ data:
   ENV: production
   APP_SLUG: {{ application_name }}
   DEPLOYMENT_ID: {{ deployment_id | to_json }}
-  ALLOWED_HOSTS: {{ (['localhost','127.0.0.1',(application_name + '-api'),(application_name + '-api.') + app_namespace + '.svc.cluster.local', cfg.web_origin | urlsplit('hostname'), cfg.admin_origin | urlsplit('hostname')] | join(',')) | to_json }}
+  ALLOWED_HOSTS: {{ (['localhost','127.0.0.1',(application_name + '-api'),(application_name + '-api.') + app_namespace + '.svc.cluster.local', cfg.web_origin | urlsplit('hostname'), cfg.admin_origin | urlsplit('hostname')] + ([service_access_hosts.knowledge] if receiver_enabled else [])) | join(',') | to_json }}
   REDIS_HOST: redis.{{ data_namespace }}.svc.cluster.local
   REDIS_PORT: '6379'
   REDIS_DB: '0'
@@ -35,6 +35,25 @@ data:
   ARTIFACT_S3_ALLOWED_BUCKETS: {{ cfg.knowledge_provider.source_bucket | to_json }}
   ARTIFACT_S3_ALLOWED_PREFIXES: {{ cfg.knowledge_provider.source_prefix | to_json }}
   SSL_CERT_FILE: /etc/sunmoon/provider/ca.crt
+{% endif %}
+{% if service_enabled %}
+  {{ 'KNOWLEDGE_APP_INGEST_URL' if application_name == 'info' else 'KNOWLEDGE_RETRIEVAL_URL' }}: https://{{ service_access_hosts.knowledge }}/api/internal/v1/knowledge/{{ 'ingestions' if service_relation == 'ingest' else 'retrievals' }}
+  {{ service_env_prefix }}_APPLICATION: {{ cfg.knowledge_service.application | to_json }}
+  {{ service_env_prefix }}_CLIENT_ID: {{ cfg.knowledge_service.client_id | to_json }}
+  {{ service_env_prefix }}_SCOPE: {{ cfg.knowledge_service.scope | to_json }}
+  {{ service_env_prefix }}_DISCOVERY_URL: https://{{ casdoor_hostname }}:30443/.well-known/openid-configuration
+  {{ service_env_prefix }}_BACKCHANNEL_ENDPOINT: https://{{ service_access_hosts.casdoor }}
+  SSL_CERT_FILE: /etc/sunmoon/service/ca.crt
+{% endif %}
+{% if receiver_enabled %}
+{% for relation,prefix in [('ingest','INTERNAL_AUTH'),('retrieve','RETRIEVAL_AUTH')] %}
+  {{ prefix }}_CASDOOR_APPLICATION: {{ service_bindings[relation].application | to_json }}
+  {{ prefix }}_DISCOVERY_URL: https://{{ casdoor_hostname }}:30443/.well-known/openid-configuration
+  {{ prefix }}_BACKCHANNEL_ENDPOINT: https://{{ service_access_hosts.casdoor }}
+  {{ prefix }}_AUDIENCE: {{ service_bindings[relation].client_id | to_json }}
+  {{ prefix }}_SUBJECT_ALLOWLIST: {{ ('admin/' + service_bindings[relation].application) | to_json }}
+  {{ prefix }}_REQUIRED_SCOPE: {{ service_bindings[relation].scope | to_json }}
+{% endfor %}
 {% endif %}
 {% for key,value in (cfg.domain_runtime_env | default({})).items() %}
   {{ key }}: {{ value | to_json }}
@@ -133,9 +152,15 @@ spec:
 {% if provider_enabled and role in ['api','worker'] %}
             - {secretRef: {name: knowledge-provider-runtime}}
 {% endif %}
+{% if service_enabled and role in ['api','worker'] %}
+            - {secretRef: {name: {{ application_name }}-knowledge-service}}
+{% endif %}
           resources: {{ cfg.resources[role] | to_json }}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
+{% if service_enabled %}
+            - {name: service-ca, mountPath: /etc/sunmoon/service, readOnly: true}
+{% endif %}
 {% if storage_enabled %}
             - {name: storage-ca, mountPath: /etc/sunmoon/object-storage, readOnly: true}
 {% endif %}
@@ -145,6 +170,9 @@ spec:
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
+{% if service_enabled %}
+        - {name: service-ca, configMap: {name: {{ application_name }}-service-ca}}
+{% endif %}
 {% if storage_enabled %}
         - {name: storage-ca, secret: {secretName: {{ application_name }}-storage-runtime, items: [{key: ca.crt, path: ca.crt}]}}
 {% endif %}
@@ -211,4 +239,29 @@ spec:
           podSelector: {matchLabels: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: api}}
       ports: [{protocol: TCP, port: {{ ragflow_port }}}]
 ---
+{% endif %}
+{% if service_enabled %}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: {{ application_name }}-service-ca, namespace: {{ app_namespace }}}
+data:
+  ca.crt: |
+{{ workload_ca.content | b64decode | regex_replace('\n+$','') | indent(4,true) }}
+{% endif %}
+{% if service_enabled or receiver_enabled %}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: {{ application_name }}-service-https-out, namespace: {{ app_namespace }}}
+spec:
+  podSelector:
+    matchExpressions:
+      - {key: app.kubernetes.io/name, operator: In, values: [{{ application_name }}-api{% if service_enabled %}, {{ application_name }}-worker{% endif %}]}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: {{ ingress_namespace }}}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+      ports: [{protocol: TCP, port: 8443}]
 {% endif %}

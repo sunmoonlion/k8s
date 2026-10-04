@@ -1,0 +1,97 @@
+---
+- name: Require relation-specific service credentials and isolated organization
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - application_name in ['info','investment']
+      - cfg.knowledge_service.application == 'sunmoonai-' + application_name + '-knowledge-' + service_relation
+      - cfg.knowledge_service.client_id == 'sunmoon-' + application_name + '-knowledge-' + service_relation
+      - cfg.knowledge_service.organization == 'sunmoon-workload-' + application_name + '-knowledge'
+      - cfg.knowledge_service.scope == 'knowledge:' + service_relation
+      - cfg.knowledge_service.token_seconds | int == 900
+      - cfg.knowledge_service.job_revision is match('^[a-z0-9-]{1,16}$')
+- name: Inspect recoverable service identity credentials
+  ansible.builtin.stat: {path: '{{ item }}/service-identity.yaml', follow: false}
+  loop: ['{{ cfg.private_dir }}','{{ cfg.backup_dir }}']
+  register: workload_files
+  no_log: true
+- name: Require root-only regular service identity input
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
+  loop: '{{ workload_files.results }}'
+  no_log: true
+- name: Restore missing workload credentials without rotation
+  ansible.builtin.copy: {src: '{{ cfg.backup_dir }}/service-identity.yaml', dest: '{{ cfg.private_dir }}/service-identity.yaml', remote_src: true, mode: '0600'}
+  when: not workload_files.results[0].stat.exists and workload_files.results[1].stat.exists
+  no_log: true
+- name: Refuse regeneration of existing workload identity
+  ansible.builtin.assert:
+    quiet: true
+    that: workload_files.results[0].stat.exists or workload_files.results[1].stat.exists or query('fileglob',component_root + '/runtime/service.sops.yaml') | length == 0
+- name: Initialize an independent service credential once
+  ansible.builtin.copy:
+    dest: '{{ cfg.private_dir }}/service-identity.yaml'
+    force: false
+    mode: '0600'
+    content: 'client_secret: {{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+  when: not workload_files.results[0].stat.exists and not workload_files.results[1].stat.exists
+  no_log: true
+- name: Preserve non-overwritten service identity backup
+  ansible.builtin.copy: {src: '{{ cfg.private_dir }}/service-identity.yaml', dest: '{{ cfg.backup_dir }}/service-identity.yaml', remote_src: true, force: false, mode: '0600'}
+  no_log: true
+- name: Require byte-identical service identity backup
+  ansible.builtin.command: {argv: [cmp, --silent, '{{ cfg.private_dir }}/service-identity.yaml', '{{ cfg.backup_dir }}/service-identity.yaml']}
+  changed_when: false
+  no_log: true
+- name: Read workload credential only in memory
+  ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/service-identity.yaml'}
+  register: workload_input
+  no_log: true
+- name: Decode workload credential in memory
+  ansible.builtin.set_fact:
+    workload_secret: '{{ (workload_input.content | b64decode | from_yaml).client_secret }}'
+  no_log: true
+- name: Reject reused browser or database credentials
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - workload_secret is match('^[a-zA-Z0-9]{40}$')
+      - workload_secret not in [identity_credentials.web_secret, identity_credentials.admin_secret, app_credentials.runtime_password, app_credentials.migrator_password, redis_credentials.password, rabbitmq_credentials.password]
+  no_log: true
+- name: Read public CA for strict HTTPS clients
+  ansible.builtin.slurp: {src: '{{ registry_config_dir }}/tls/ca.crt'}
+  register: workload_ca
+- name: Prepare service identity candidate directory
+  ansible.builtin.file: {path: '{{ build }}/service-identity', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
+- name: Render isolated service identity initialization Job
+  ansible.builtin.template:
+    src: '{{ mechanism_root }}/service-identity/workload.yaml.j2'
+    dest: '{{ build }}/service-identity/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+- name: Encrypt service provisioning and runtime secrets separately
+  ansible.builtin.include_tasks: ../services/tasks/encrypt.yaml
+  loop:
+    - file: service-identity/provision.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: '{{ application_name }}-service-provision', namespace: '{{ app_namespace }}'}
+        stringData: {client_secret: '{{ workload_secret }}', ca.crt: '{{ workload_ca.content | b64decode }}'}
+    - file: runtime/service.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: '{{ application_name }}-knowledge-service', namespace: '{{ app_namespace }}'}
+        stringData: '{{ {(service_env_prefix + "_CLIENT_SECRET"):workload_secret, "ca.crt":workload_ca.content | b64decode} }}'
+  loop_control: {loop_var: secret_item}
+  no_log: true
+- name: Render explicit service identity resource list
+  ansible.builtin.copy:
+    dest: '{{ build }}/service-identity/kustomization.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+    content: '{{ {"apiVersion":"kustomize.config.k8s.io/v1beta1","kind":"Kustomization","resources":["workload.yaml","provision.sops.yaml"]} | to_nice_yaml }}'

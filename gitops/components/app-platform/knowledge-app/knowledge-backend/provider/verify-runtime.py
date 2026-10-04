@@ -50,13 +50,21 @@ async def run():
     pg=get_postgres();await pg.init();stage='submit_durable_ingestion'
     try:
         async with pg.session_factory() as session:
-            job=await submit_ingestion(session,payload)
-            job_id=str(job.id);identity=str(upload_identity(job))
-            duplicate=await submit_ingestion(session,payload);assert str(duplicate.id)==job_id
-            try:await submit_ingestion(session,payload.model_copy(update={'document':payload.document.model_copy(update={'title':'different intent'})}))
-            except ValueError:await session.rollback();checks['conflicting_idempotency_denied']=True
-            else:raise AssertionError('Conflicting ingestion intent accepted')
-            checks['same_intent_same_job']=True
+            if inputs.get('job_id'):
+                job=await session.get(KnowledgeIngestionJob,uuid.UUID(inputs['job_id']))
+                assert job and str(job.source_document_id)==inputs['document_id'] and str(job.source_document_version_id)==inputs['version_id']
+                receipt=job.status_history[0]['metadata']['service_principal']
+                assert receipt['subject']==inputs['expected_subject'] and receipt['audience']==inputs['expected_audience'] and receipt['issuer']==settings.casdoor_endpoint and receipt['scopes']==['knowledge:ingest'] and receipt['actor_type']=='service'
+                job_id=str(job.id);identity=str(upload_identity(job))
+                checks.update(inputs['http_checks']);checks['verified_http_principal_persisted']=True
+            else:
+                job=await submit_ingestion(session,payload)
+                job_id=str(job.id);identity=str(upload_identity(job))
+                duplicate=await submit_ingestion(session,payload);assert str(duplicate.id)==job_id
+                try:await submit_ingestion(session,payload.model_copy(update={'document':payload.document.model_copy(update={'title':'different intent'})}))
+                except ValueError:await session.rollback();checks['conflicting_idempotency_denied']=True
+                else:raise AssertionError('Conflicting ingestion intent accepted')
+                checks['same_intent_same_job']=True
         stage='wait_real_worker';end=time.monotonic()+inputs['timeout_seconds']
         while time.monotonic()<end:
             async with pg.session_factory() as session:

@@ -64,6 +64,7 @@ CONFIG_FILES := applications/config.yaml \
 	../gitops/components/data-platform/ragflow/config.yaml \
 	../gitops/components/messaging-platform/rabbitmq/config.yaml \
 	../gitops/components/ingress-platform/traefik/config.yaml \
+	../gitops/components/ingress-platform/traefik/service-access/config.yaml \
 	../gitops/components/app-platform/auth-app/casdoor/config.yaml
 CONFIG_ARGS = $(foreach file,$(CONFIG_FILES),--extra-vars '@$(file)') --extra-vars '@$(SITE)'
 

@@ -1,3 +1,17 @@
+# 当前单元：跨应用服务身份与集群内 HTTPS（实施中，2026-10-04）
+
+基线ce05ffcba00915c66ab37d83b4cb6579f761bcbe；工作树platform-kind-v1，k8s单仓。原生Make→Ansible→Flux/SOPS，维护2小时、容量10GiB，不切公共30443、不动原始kind/卷/备份、无push。
+
+| 自检规则 | 本单元范围 |
+| --- | --- |
+| C-I3/C-I7 | 入库/检索独立Casdoor组织与client_credentials；JWT签名/issuer/audience/精确subject；无浏览器/DB密码复用 |
+| C-D5/C-D8 | Info固定版本原文，Knowledge只读、RAG派生；运行不DDL，不改契约/schema |
+| C-R1/C-R6 | 共享原生部署机制，配置同组件，现有模板APP保持字节不变；不改已完成不可变Job |
+
+待完成：渲染/发布/实际HTTPS服务身份与真实Info入库→Worker→Investment检索、拒绝边界、精确探针清理及一键重复不变验收。当前已晋级source仍0b150435/ad690…；回退到该固定source，保留新身份输入，不旋转现有秘密。不得把上轮L2服务调用当作本轮HTTP认证完成。
+
+---
+
 # 当前单元：知识入库/中文检索与四后端异步会话修复（完成并实际重复验证，2026-10-04）
 
 工作树 platform-kind-v1，基线8448d4ad4b6a9b1ee42462b6c53affa0d4a9dc4c。原生 Make→Ansible→Flux/SOPS；不切公共入口，不删原始kind/数据/备份，无push。开发维护2小时、容量底线10GiB。本轮先完成知识现有应用服务/真实任务链，跨应用HTTP服务认证另行接通。

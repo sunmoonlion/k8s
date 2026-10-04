@@ -93,7 +93,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/investment-app/investment-backend/runtime
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: investment-identity}]
+  dependsOn: [{name: investment-identity}, {name: investment-service-identity}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -128,6 +128,23 @@ spec:
   path: ./components/app-platform/investment-app/investment-admin-frontend
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn: [{name: investment-runtime}]
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: investment-service-identity, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/investment-app/investment-backend/service-identity
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn: [{name: casdoor}, {name: platform-services}]
   prune: false
   deletionPolicy: Orphan
   wait: true

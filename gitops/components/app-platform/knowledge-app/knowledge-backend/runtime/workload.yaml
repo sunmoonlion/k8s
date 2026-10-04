@@ -5,7 +5,7 @@ data:
   ENV: production
   APP_SLUG: knowledge
   DEPLOYMENT_ID: "knowledge-c4b5fb051de89782"
-  ALLOWED_HOSTS: "localhost,127.0.0.1,knowledge-api,knowledge-api.app-platform-dev.svc.cluster.local,knowledge.sunmoonai.com,knowledge-admin.sunmoonai.com"
+  ALLOWED_HOSTS: "localhost,127.0.0.1,knowledge-api,knowledge-api.app-platform-dev.svc.cluster.local,knowledge.sunmoonai.com,knowledge-admin.sunmoonai.com,knowledge-tls.app-platform-dev.svc.cluster.local"
   REDIS_HOST: redis.data-platform-dev.svc.cluster.local
   REDIS_PORT: '6379'
   REDIS_DB: '0'
@@ -26,6 +26,18 @@ data:
   ARTIFACT_S3_ALLOWED_BUCKETS: "info-originals"
   ARTIFACT_S3_ALLOWED_PREFIXES: "info/original/"
   SSL_CERT_FILE: /etc/sunmoon/provider/ca.crt
+  INTERNAL_AUTH_CASDOOR_APPLICATION: "sunmoonai-info-knowledge-ingest"
+  INTERNAL_AUTH_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  INTERNAL_AUTH_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
+  INTERNAL_AUTH_AUDIENCE: "sunmoon-info-knowledge-ingest"
+  INTERNAL_AUTH_SUBJECT_ALLOWLIST: "admin/sunmoonai-info-knowledge-ingest"
+  INTERNAL_AUTH_REQUIRED_SCOPE: "knowledge:ingest"
+  RETRIEVAL_AUTH_CASDOOR_APPLICATION: "sunmoonai-investment-knowledge-retrieve"
+  RETRIEVAL_AUTH_DISCOVERY_URL: https://casdoor.sunmoonai.com:30443/.well-known/openid-configuration
+  RETRIEVAL_AUTH_BACKCHANNEL_ENDPOINT: https://casdoor-tls.app-platform-dev.svc.cluster.local
+  RETRIEVAL_AUTH_AUDIENCE: "sunmoon-investment-knowledge-retrieve"
+  RETRIEVAL_AUTH_SUBJECT_ALLOWLIST: "admin/sunmoonai-investment-knowledge-retrieve"
+  RETRIEVAL_AUTH_REQUIRED_SCOPE: "knowledge:retrieve"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -59,7 +71,7 @@ spec:
         sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 270c9bb24739246c001bdfb4fc4a751453b033e11a70a7eb0026703e960e94eb
+        sunmoonai.com/config-sha256: 3c109c46b39467ae4796032939d95279f78a8566f4dcfce244bdd1f9a0da0074
     spec:
       serviceAccountName: knowledge-runtime
       automountServiceAccountToken: false
@@ -120,7 +132,7 @@ spec:
         sunmoonai.com/ragflow-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 270c9bb24739246c001bdfb4fc4a751453b033e11a70a7eb0026703e960e94eb
+        sunmoonai.com/config-sha256: 3c109c46b39467ae4796032939d95279f78a8566f4dcfce244bdd1f9a0da0074
     spec:
       serviceAccountName: knowledge-runtime
       automountServiceAccountToken: false
@@ -175,7 +187,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: 270c9bb24739246c001bdfb4fc4a751453b033e11a70a7eb0026703e960e94eb
+        sunmoonai.com/config-sha256: 3c109c46b39467ae4796032939d95279f78a8566f4dcfce244bdd1f9a0da0074
     spec:
       serviceAccountName: knowledge-runtime
       automountServiceAccountToken: false
@@ -266,3 +278,17 @@ spec:
           podSelector: {matchLabels: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: api}}
       ports: [{protocol: TCP, port: 9380}]
 ---
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: knowledge-service-https-out, namespace: app-platform-dev}
+spec:
+  podSelector:
+    matchExpressions:
+      - {key: app.kubernetes.io/name, operator: In, values: [knowledge-api]}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ingress-platform-dev}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+      ports: [{protocol: TCP, port: 8443}]

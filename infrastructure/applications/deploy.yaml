@@ -37,7 +37,14 @@
     core_candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml, redis/workload.yaml, redis/provision.sops.yaml, redis/runtime.sops.yaml, redis/kustomization.yaml, rabbitmq/workload.yaml, rabbitmq/provision.sops.yaml, rabbitmq/runtime.sops.yaml, rabbitmq/kustomization.yaml, identity/workload.yaml, identity/provision.sops.yaml, identity/runtime.sops.yaml, identity/kustomization.yaml, runtime/workload.yaml, runtime/tls.sops.yaml, runtime/kustomization.yaml, '../{{ application_name }}-web-frontend/workload.yaml', '../{{ application_name }}-web-frontend/kustomization.yaml', '../{{ application_name }}-admin-frontend/workload.yaml', '../{{ application_name }}-admin-frontend/kustomization.yaml']
     storage_enabled: '{{ cfg.object_storage.enabled | default(false) | bool }}'
     provider_enabled: '{{ cfg.knowledge_provider.enabled | default(false) | bool }}'
-    candidate_files: '{{ core_candidate_files + (["storage/workload.yaml","storage/provision.sops.yaml","storage/kustomization.yaml","runtime/storage.sops.yaml"] if storage_enabled else []) + (["provider/workload.yaml","provider/provision.sops.yaml","provider/kustomization.yaml","runtime/provider.sops.yaml"] if provider_enabled else []) }}'
+    service_enabled: '{{ cfg.knowledge_service.enabled | default(false) | bool }}'
+    receiver_enabled: '{{ cfg.knowledge_service_receiver.enabled | default(false) | bool }}'
+    service_relation: '{{ "ingest" if application_name == "info" else "retrieve" }}'
+    service_env_prefix: '{{ "KNOWLEDGE_APP_SERVICE" if application_name == "info" else "KNOWLEDGE_RETRIEVAL_SERVICE" }}'
+    service_bindings:
+      ingest: '{{ (lookup("file", repo + "/gitops/components/app-platform/info-app/info-backend/config.yaml") | from_yaml).info_backend_deployment.knowledge_service }}'
+      retrieve: '{{ (lookup("file", repo + "/gitops/components/app-platform/investment-app/investment-backend/config.yaml") | from_yaml).investment_backend_deployment.knowledge_service }}'
+    candidate_files: '{{ core_candidate_files + (["storage/workload.yaml","storage/provision.sops.yaml","storage/kustomization.yaml","runtime/storage.sops.yaml"] if storage_enabled else []) + (["provider/workload.yaml","provider/provision.sops.yaml","provider/kustomization.yaml","runtime/provider.sops.yaml"] if provider_enabled else []) + (["service-identity/workload.yaml","service-identity/provision.sops.yaml","service-identity/kustomization.yaml","runtime/service.sops.yaml"] if service_enabled else []) }}'
   tasks:
     - name: Validate the selected deployment and identity boundaries
       ansible.builtin.assert:
@@ -96,6 +103,11 @@
           - cfg.redis_user == application_name + '_runtime'
           - cfg.redis_key_pattern == application_name + ':*'
           - not provider_enabled or (application_name == 'knowledge' and not storage_enabled)
+          - not service_enabled or (application_name in ['info','investment'] and service_access_enabled | bool)
+          - not receiver_enabled or (application_name == 'knowledge' and provider_enabled and service_access_enabled | bool)
+          - not receiver_enabled or (service_bindings.ingest.enabled | bool and service_bindings.retrieve.enabled | bool)
+          - not receiver_enabled or service_bindings.ingest.client_id != service_bindings.retrieve.client_id
+          - not receiver_enabled or service_bindings.ingest.organization != service_bindings.retrieve.organization
           - cfg.domain_runtime_env | default({}) | list | difference(['STORAGE_BACKEND','SEARCH_BACKEND']) | length == 0
     - name: Require the independent cluster ownership receipt
       ansible.builtin.slurp: {src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'}
@@ -408,9 +420,12 @@
         - name: Prepare independent knowledge provider and upstream read-only identity
           ansible.builtin.include_tasks: '{{ component_root }}/provider/prepare.yaml'
           when: provider_enabled
+        - name: Prepare an independent relation-specific service identity
+          ansible.builtin.include_tasks: '{{ mechanism_root }}/service-identity/prepare.yaml'
+          when: service_enabled
         - name: Bind runtime rollout to public configuration and private input changes
           ansible.builtin.set_fact:
-            runtime_config_digest: '{{ (([cfg, browser_clients, secret_input.content, redis_input.content, rabbitmq_input.content, identity_input.content] + ([s3_input.content] if storage_enabled else []) + ([provider_runtime_data] if provider_enabled else [])) | to_json) | hash("sha256") }}'
+            runtime_config_digest: '{{ (([cfg, browser_clients, secret_input.content, redis_input.content, rabbitmq_input.content, identity_input.content] + ([s3_input.content] if storage_enabled else []) + ([provider_runtime_data] if provider_enabled else []) + ([workload_input.content,service_access_hosts] if service_enabled else []) + ([service_bindings,service_access_hosts] if receiver_enabled else [])) | to_json) | hash("sha256") }}'
           no_log: true
         - name: Prepare public candidate directories
           ansible.builtin.file: {path: '{{ build }}/{{ item }}', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
@@ -522,7 +537,7 @@
             - {name: redis, resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]}
             - {name: rabbitmq, resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]}
             - {name: identity, resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]}
-            - {name: runtime, resources: '{{ ["workload.yaml","tls.sops.yaml"] + (["storage.sops.yaml"] if storage_enabled else []) + (["provider.sops.yaml"] if provider_enabled else []) }}'}
+            - {name: runtime, resources: '{{ ["workload.yaml","tls.sops.yaml"] + (["storage.sops.yaml"] if storage_enabled else []) + (["provider.sops.yaml"] if provider_enabled else []) + (["service.sops.yaml"] if service_enabled else []) }}'}
             - {name: '../{{ application_name }}-web-frontend', resources: [workload.yaml]}
             - {name: '../{{ application_name }}-admin-frontend', resources: [workload.yaml]}
         - name: Render optional object storage Kustomize root
@@ -588,7 +603,7 @@
         - name: Wait for current generation Ready at the promoted digest
           ansible.builtin.command:
             argv: '{{ kube + ["get","kustomization",item,"-n","flux-system","-o","json"] }}'
-          loop: '{{ [application_name + "-database",application_name + "-migration",application_name + "-redis",application_name + "-rabbitmq",application_name + "-identity",application_name + "-runtime",application_name + "-web",application_name + "-admin"] + ([application_name + "-storage"] if storage_enabled else []) + ([application_name + "-provider"] if provider_enabled else []) }}'
+          loop: '{{ [application_name + "-database",application_name + "-migration",application_name + "-redis",application_name + "-rabbitmq",application_name + "-identity",application_name + "-runtime",application_name + "-web",application_name + "-admin"] + ([application_name + "-storage"] if storage_enabled else []) + ([application_name + "-provider"] if provider_enabled else []) + ([application_name + "-service-identity"] if service_enabled else []) }}'
           register: stage
           changed_when: false
           until:
@@ -610,6 +625,32 @@
           register: completion
           changed_when: false
           failed_when: completion.rc != 0 or completion.stdout != '1'
+        - name: Require isolated service identity initialization completed
+          when: service_enabled
+          ansible.builtin.command:
+            argv: '{{ kube + ["get","job",application_name + "-service-identity-" + cfg.knowledge_service.job_revision,"-n",app_namespace,"-o","jsonpath={.status.succeeded}"] }}'
+          register: workload_complete
+          changed_when: false
+          failed_when: workload_complete.rc != 0 or workload_complete.stdout != "1"
+        - name: Read service identity acceptance without exposing private inputs
+          when: service_enabled
+          ansible.builtin.command:
+            argv: '{{ kube + ["logs","job/" + application_name + "-service-identity-" + cfg.knowledge_service.job_revision,"-n",app_namespace] }}'
+          register: workload_acceptance
+          changed_when: false
+          no_log: true
+        - name: Require signature, identity, organization and credential rejection checks
+          when: service_enabled
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - (workload_acceptance.stdout_lines[-1] | from_json).isolated_organization is sameas true
+              - (workload_acceptance.stdout_lines[-1] | from_json).no_human_accounts is sameas true
+              - (workload_acceptance.stdout_lines[-1] | from_json).client_credentials_only is sameas true
+              - (workload_acceptance.stdout_lines[-1] | from_json).token_signature_issuer_audience_subject_scope is sameas true
+              - (workload_acceptance.stdout_lines[-1] | from_json).built_in_users_denied is sameas true
+              - (workload_acceptance.stdout_lines[-1] | from_json).invalid_secret_denied is sameas true
+              - (workload_acceptance.stdout_lines[-1] | from_json).token_seconds == cfg.knowledge_service.token_seconds
         - name: Require optional storage provisioning job complete
           when: storage_enabled
           ansible.builtin.command:
@@ -815,7 +856,7 @@
               no_log: true
             - name: Exercise existing Knowledge domain services and actual asynchronous worker
               ansible.builtin.command:
-                argv: [python3, '{{ component_root }}/provider/verify.py', --kubectl, '{{ tools }}/kubectl', --kubeconfig, '{{ cluster_kubeconfig }}', --app-namespace, '{{ app_namespace }}', --data-namespace, '{{ data_namespace }}', --mc, '{{ tools }}/mc', --ca, '{{ registry_config_dir }}/clients/ca.crt']
+                argv: '{{ ["python3",component_root + "/provider/verify.py","--kubectl",tools + "/kubectl","--kubeconfig",cluster_kubeconfig,"--app-namespace",app_namespace,"--data-namespace",data_namespace,"--mc",tools + "/mc","--ca",registry_config_dir + "/clients/ca.crt"] + (["--http-service-identities"] if receiver_enabled else []) }}'
                 stdin: '{{ {"storage":provider_verifier_inputs.results[0].content | b64decode | from_yaml,"ragflow":provider_verifier_inputs.results[1].content | b64decode | from_yaml,"binding_path":cfg.private_dir + "/provider-binding.json"} | to_json }}'
               register: provider_check
               changed_when: false

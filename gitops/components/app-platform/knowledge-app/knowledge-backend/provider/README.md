@@ -6,6 +6,6 @@
 
 提交、`flux-release`、核对并晋级固定源后，`application-bootstrap APP=knowledge` 串联候选核对、Flux及真实验收。源读取账号由独立Job配置，只能GetObject/GetObjectVersion `info-originals/info/original/*`；不能写、列桶、读派生桶或管理。只给Knowledge API/Worker RAGFlow token和原文只读身份，Scheduler只挂公共CA。RAGFlow数据是派生索引，不创建Knowledge原文权威副本。原文VersionId、大小、媒体类型、SHA始终严格核对，TLS不开跳过。
 
-验收复用真实Info ObjectStorage适配器创建本轮随机原文，再调用Knowledge现有应用服务提交持久意图；实际Scheduler/Outbox/Worker执行解析，Knowledge领域检索返回中文证据和原文引用。校验幂等、冲突、来源只读、租户/数据集/关系scope和版本过滤。它是组件集成，不能称为Info HTTP授权投递、Investment HTTP消费或浏览器全集验收；这些还须独立接通服务身份。
+验收复用真实Info ObjectStorage适配器创建本轮随机原文。当上级 knowledge_service_receiver.enabled 启用时，使用Info实际客户端通过HTTPS及独立Casdoor服务令牌投递，核对Knowledge摄入日记中的认证身份，真实Scheduler/Outbox/Worker执行解析，再由Investment实际领域Port使用另一身份HTTPS检索中文证据与原文引用。核验HTTP幂等/冲突、缺失/篡改令牌、关系交叉调用、浏览器分面拒绝、租户/数据集及版本过滤，同时保留源只读与领域检查。未启用服务接收时只做既有L2组件验收；完整Info爬取发布链、投资Agent工具执行、浏览器全集另行验收。服务身份机制与配置归属见common/backend/service-identity/README.md。
 
 只清理本轮UUID原文VersionId、成功摄入Job、对应领域记录/已结束投递记录和精确RAGFlow文档及S3版本；不删正式数据集或任何其它对象。失败摄入不删除以便查明，秘密不进输出。删除保留策略不在此处实现。

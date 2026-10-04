@@ -93,7 +93,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/knowledge-app/knowledge-backend/runtime
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: knowledge-identity}, {name: knowledge-provider}, {name: ragflow-runtime}]
+  dependsOn: [{name: knowledge-identity}, {name: knowledge-provider}, {name: ragflow-runtime}, {name: info-service-identity}, {name: investment-service-identity}]
   prune: false
   deletionPolicy: Orphan
   wait: true

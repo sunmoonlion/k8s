@@ -3,6 +3,7 @@ import argparse,json,os,re,selectors,shutil,subprocess,sys,tempfile,time,uuid
 from pathlib import Path
 ap=argparse.ArgumentParser()
 for key in ('kubectl','kubeconfig','app-namespace','data-namespace','mc','ca'):ap.add_argument('--'+key,required=True)
+ap.add_argument('--http-service-identities',action='store_true')
 args=ap.parse_args();secret=json.load(sys.stdin);root=Path(__file__).resolve().parent
 kube=[args.kubectl,'--kubeconfig='+args.kubeconfig,'--context=kind-sunmoon-kind','--request-timeout=30s']
 env=dict(os.environ)
@@ -60,8 +61,13 @@ print(json.dumps({'temporary_provider_document_and_versions_removed':True}))
 tunnel=None;source=None;result=None
 try:
     source=execute('info-api',source_code,records,90);records['artifact']=source
+    if args.http_service_identities:
+        records.update(execute('info-api',(root/'verify-info-http.py').read_text(),records,90))
     result=execute('knowledge-api',(root/'verify-runtime.py').read_text(),records)
     records.update(result)
+    if args.http_service_identities:
+        result['checks'].update(execute('investment-api',(root/'verify-investment-http.py').read_text(),records,120)['http_checks'])
+        result['scope']='Actual Info HTTPS ingestion with Casdoor token, real Scheduler/Outbox/Worker, and Investment HTTPS domain retrieval with independent token'
     # Clean derived content using the provider's own DML/S3 identity, not an App administrator.
     binding=json.loads(Path(secret['binding_path']).read_text())
     cleanup={**records,'dataset_id':binding['dataset_id'],'filename':'knowledge-'+uuid.UUID(result['upload_identity']).hex+'-'+source['sha256']+'.txt','base':'https://ragflow.'+args.data_namespace+'.svc.cluster.local:9380','token':secret['ragflow']['knowledge_token']}

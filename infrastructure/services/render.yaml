@@ -258,8 +258,11 @@
         owner: '{{ cluster_operator }}'
         mode: '0644'
         content: |
-          {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':(['workload.yaml'] if item == 'text-embeddings' else ['workload.yaml', ('puller.sops.yaml' if item == 'traefik' else 'auth.sops.yaml')])} | to_nice_yaml }}
+          {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':(['workload.yaml'] if item == 'text-embeddings' else ['workload.yaml', ('puller.sops.yaml' if item == 'traefik' else 'auth.sops.yaml')]) + (['service-access'] if item == 'traefik' and service_access_enabled | bool else [])} | to_nice_yaml }}
       loop: '{{ ["postgresql", "redis", "rabbitmq", "traefik", "object-storage"] + (["text-embeddings"] if services_text_embeddings_enabled else []) }}'
+    - name: Prepare the private HTTPS service transport
+      ansible.builtin.include_tasks: ../../gitops/components/ingress-platform/traefik/service-access/prepare.yaml
+      when: service_access_enabled | bool
     - name: Generate a private service TLS key only when absent
       ansible.builtin.command:
         argv: [openssl, genpkey, -algorithm, RSA, -pkeyopt, 'rsa_keygen_bits:3072', -out, '{{ services_config_dir }}/tls/server.key']

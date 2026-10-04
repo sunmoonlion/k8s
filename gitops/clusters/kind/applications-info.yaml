@@ -93,7 +93,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/info-app/info-backend/runtime
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: info-identity}, {name: info-storage}]
+  dependsOn: [{name: info-identity}, {name: info-service-identity}, {name: info-storage}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -145,6 +145,23 @@ spec:
   path: ./components/app-platform/info-app/info-backend/storage
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn: [{name: platform-services}]
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: info-service-identity, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 8m
+  path: ./components/app-platform/info-app/info-backend/service-identity
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn: [{name: casdoor}, {name: platform-services}]
   prune: false
   deletionPolicy: Orphan
   wait: true

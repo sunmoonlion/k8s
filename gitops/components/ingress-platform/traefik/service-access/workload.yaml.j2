@@ -1,0 +1,28 @@
+{% for name in ['casdoor','knowledge'] %}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: {{ name }}-tls, namespace: {{ app_namespace }}}
+spec:
+  type: ExternalName
+  externalName: traefik.{{ ingress_namespace }}.svc.cluster.local
+  ports: [{name: https, port: 443}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ name }}-service-access
+  namespace: {{ app_namespace }}
+  annotations: {traefik.ingress.kubernetes.io/router.entrypoints: websecure}
+spec:
+  ingressClassName: sunmoon
+  tls: [{secretName: service-access-tls, hosts: [{{ service_access_hosts[name] }}]}]
+  rules:
+    - host: {{ service_access_hosts[name] }}
+      http:
+        paths:
+          - path: {{ '/api/internal/v1/knowledge' if name == 'knowledge' else '/' }}
+            pathType: Prefix
+            backend:
+              service: {name: {{ 'knowledge-api' if name == 'knowledge' else 'casdoor' }}, port: {number: 8000}}
+{% endfor %}
