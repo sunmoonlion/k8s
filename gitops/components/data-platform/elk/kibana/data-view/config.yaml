@@ -1,0 +1,7 @@
+---
+# Stable Kibana metadata is provisioned by Flux; verification never repairs it.
+elk_log_data_view_enabled: true
+elk_log_data_view_id: sunmoon-application-logs
+elk_log_data_view_generation: v1
+# Independent service identity; never reuse the human log-reader password.
+elk_log_data_view_user: sunmoon_view_provisioner

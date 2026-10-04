@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: elk-data-view-admin
+    namespace: data-platform-dev
+stringData:
+    username: ENC[AES256_GCM,data:Ahd9SqWbLA==,iv:KRDsMHv8AuBMcG3u+yLHFw41S9VJwzldp87PTGzpNc8=,tag:Epygq01PNhqMHi09sqyvHA==,type:str]
+    password: ENC[AES256_GCM,data:iu1H720203fkcWfVwKz3IfiRJy8iQr/tKWj43SNsihLmOVzu7Cqe1Q==,iv:81R2JKnWEgZeQeHDYKbcVe5RnYgnR7Yzq8+rrhTJZ+0=,tag:+ov3p28eMIVQISVZdIwuWg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBzZTAvSVJ6RHdua2FaaFln
+            aFBLd3Z3MEMrZ3lZY1JkUk96NlVrQi83ZmhBClBIWWxLT2lHZzh1WkwyNnBxSnhO
+            NkpUUm1vU25jZEtVb1czbnZCdlJDRkkKLS0tIDg5WUdoZG1neTdWL0czcjdKcXE4
+            Zk9DVllOejVQek1naFBtVndNMHFjL0EK9CWn7n6vZLlszTZtWRVFkEDV/CAsGNQO
+            MMyIAa4SG0E8j/1FR0+hWakK3hVv5pUXk0B8L5sV+zLXsQRMn5INYw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-04T15:04:23Z"
+    mac: ENC[AES256_GCM,data:TbOiaPM+zzESstAU3w4niGVf/KAcfnWzIp5VHr58svk7UZGpGadKGBmB/NRaWwrFaVD2+n0trNGfD7ZXj4jadc43+x+a7LPF23F3VWWvCfiQnn9oV0X+/+4xXKZN+B3Xrt0FTe+QDj4o1XAofDuX7X0A1An1J4CKaX8FRFPMCmA=,iv:uSNUblwXVj+RO5bmX8o6JOaLfvJiyU77LeThUz8ofIY=,tag:4SQBw75j2ITINMWudjCsSg==,type:str]
+    version: 3.13.3

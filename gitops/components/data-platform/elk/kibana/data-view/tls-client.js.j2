@@ -1,0 +1,28 @@
+'use strict';
+const fs = require('node:fs');
+const https = require('node:https');
+const ca = fs.readFileSync('/run/auth/ca.crt');
+const urls = {
+  kibana:'https://kibana.{{ data_namespace }}.svc.cluster.local:{{ kibana_port }}',
+  elasticsearch:'https://elasticsearch.{{ data_namespace }}.svc.cluster.local:{{ elasticsearch_port }}'
+};
+function readAuth(path) {return fs.readFileSync(path+'/username','utf8').trim()+':'+fs.readFileSync(path+'/password','utf8').trim();}
+function request(service, method, path, auth, data) {
+  return new Promise((resolve, reject) => {
+    if (!urls[service] || !path.startsWith('/') || path.startsWith('//')) return reject(new Error('Unowned metadata endpoint'));
+    const body = data === undefined ? undefined : JSON.stringify(data);
+    const req = https.request(new URL(path, urls[service]), {method, ca, auth, rejectUnauthorized:true,
+      headers:{'Content-Type':'application/json','kbn-xsrf':'sunmoon-data-view'}}, res => {
+      let text='';
+      res.on('data', chunk => {text+=chunk;if(text.length>4194304)req.destroy(new Error('Metadata exceeds limit'));});
+      res.on('error', reject);
+      res.on('end', () => {
+        try {resolve({status:res.statusCode,data:text?JSON.parse(text):{}});}
+        catch {reject(new Error('Invalid metadata response'));}
+      });
+    });
+    req.setTimeout(30000,()=>req.destroy(new Error('Metadata request timed out; not replayed')));
+    req.on('error',reject);req.end(body);
+  });
+}
+module.exports={request,readAuth};

@@ -168,6 +168,9 @@
     content: |
       {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':['workload.yaml','auth.sops.yaml']} | to_nice_yaml }}
   loop: [elasticsearch, initialize, kibana, logstash]
+- name: Prepare declarative Kibana data view initialization
+  ansible.builtin.include_tasks: kibana/data-view/prepare.yaml
+  when: elk_log_data_view_enabled | bool
 - name: Prepare the bounded node application log collector
   ansible.builtin.include_tasks: collector/prepare.yaml
   when: elk_collector_enabled | bool

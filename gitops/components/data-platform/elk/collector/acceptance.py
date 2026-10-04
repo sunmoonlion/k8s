@@ -61,11 +61,7 @@ def verify_application_logs(request, kube, env, args, reader, require):
     # Stable saved metadata, no log retention/deletion policy is created.
     views=request('kibana','GET','/api/data_views',reader)['data_view']
     matches=[v for v in views if v['id']==args.data_view_id]
-    created=False
-    if not matches:
-        view=request('kibana','POST','/api/data_views/data_view',reader,{'data_view':{'id':args.data_view_id,'title':args.index_prefix+'-*','name':'SunMoon application logs','timeFieldName':'@timestamp'},'override':False})['data_view']
-        require(view['id']==args.data_view_id, 'Kibana view identity differs')
-        created=True
+    require(len(matches)==1, 'Declared Kibana data view is absent; initialize it through the native release')
     view=request('kibana','GET','/api/data_views/data_view/'+args.data_view_id,reader)['data_view']
     require(view['title']==args.index_prefix+'-*' and view['timeFieldName']=='@timestamp','Refuse overwriting foreign Kibana view')
-    return {'collector_nodes':3,'actual_application_pods':len(evidence),'undeployed_application_roles':undeployed,'real_logs_match_kubectl':True,'non_app_namespace_logs_absent':True,'kibana_data_view':args.data_view_id,'data_view_created':created,'log_evidence':evidence}
+    return {'collector_nodes':3,'actual_application_pods':len(evidence),'undeployed_application_roles':undeployed,'real_logs_match_kubectl':True,'non_app_namespace_logs_absent':True,'kibana_data_view':args.data_view_id,'data_view_read_only_check':True,'log_evidence':evidence}

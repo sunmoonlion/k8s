@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: elk-data-view-initialize, namespace: {{ data_namespace }}}
+data:
+  initialize.js: |
+{{ lookup('template', playbook_dir + '/../../gitops/components/data-platform/elk/kibana/data-view/initialize.js.j2') | indent(4, true) }}
+  initialize-identity.js: |
+{{ lookup('template', playbook_dir + '/../../gitops/components/data-platform/elk/kibana/data-view/initialize-identity.js.j2') | indent(4, true) }}
+  tls-client.js: |
+{{ lookup('template', playbook_dir + '/../../gitops/components/data-platform/elk/kibana/data-view/tls-client.js.j2') | indent(4, true) }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata: {name: elk-data-view-{{ elk_log_data_view_generation }}, namespace: {{ data_namespace }}}
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 180
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: elk-data-view, sunmoonai.com/elasticsearch-client: 'true'}
+      annotations: {sunmoonai.com/input-sha256: '{{ elk_data_view_input_digest }}'}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      initContainers:
+        - name: identity
+          image: {{ registry_address }}/platform/kibana@{{ image_map.kibana.manifest_digest }}
+          command: [/usr/share/kibana/node/default/bin/node, /scripts/initialize-identity.js]
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: 500m, memory: 256Mi}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: script, mountPath: /scripts, readOnly: true}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+            - {name: admin, mountPath: /run/admin, readOnly: true}
+      containers:
+        - name: initialize
+          image: {{ registry_address }}/platform/kibana@{{ image_map.kibana.manifest_digest }}
+          command: [/usr/share/kibana/node/default/bin/node, /scripts/initialize.js]
+          resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: 500m, memory: 256Mi}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: script, mountPath: /scripts, readOnly: true}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+      volumes:
+        - {name: admin, secret: {secretName: elk-data-view-admin, defaultMode: 0440}}
+        - {name: script, configMap: {name: elk-data-view-initialize}}
+        - {name: auth, secret: {secretName: elk-data-view-auth, defaultMode: 0440}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: elk-data-view-egress, namespace: {{ data_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: elk-data-view}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: kibana}}
+      ports: [{protocol: TCP, port: {{ kibana_port }}}]
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: elasticsearch}}
+      ports: [{protocol: TCP, port: {{ elasticsearch_port }}}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: elk-data-view-kibana, namespace: {{ data_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: kibana}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: elk-data-view}}
+      ports: [{protocol: TCP, port: {{ kibana_port }}}]

@@ -8,6 +8,8 @@
 | C-I3/C-D10 | 采集器仅持Logstash接收凭据/公开CA，不持ES或业务身份；业务禁止秘密写日志 |
 | C-R6 | 同目录配置/原生prepare/DaemonSet/验收；不新增部署CLI，所有应用运行声明不变 |
 
+修正版26ee65af/ffa65d15已完整bootstrap成功两次，21个实际应用Pod日志、权限和Kibana视图通过，57个Running/13PV/49Flux核对通过。最终复核把长期数据视图初始化从验收函数移到原生独立声明Job（采用并严格核对已有视图），验收只读；不重建应用或采集器，待再次完整部署核验。
+
 首轮固定源c1c0fd62/7f7f2273已部署，三节点采集Ready；首次services-bootstrap在Logstash探针收到429而退出2。实际pipeline已入37473/出37375事件，无授权/映射/传输错误，队列仅4事件，是首次回填和full-sync输入背压。保留原始失败，不宣称通过；原生验收补明确429的有界退避、不重试歧义超时。同时消除平台验收依赖先安装全部应用的循环：按实际启用Deployment核对，未部署明确报告、已部署缺失不放行。
 
 已查：日志stdout/stderr、节点root组只读权限、ELK内网TLS/认证；主机可用内存约60GiB，数据盘约207GiB空闲。Metrics API未部署，不能声称CPU metrics已核验。官方采集器物料约51.4MiB压缩，下载中；尚未部署/宣称验收。隔离命名空间允许hostPath，但容器仍非root、无capability、只读根；不放宽业务namespace。持久位点/缓冲使用三节点各自的数据盘static/log-collector，不设自动删除日志策略。

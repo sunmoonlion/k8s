@@ -7,7 +7,6 @@
       - elk_collector_state_directory == '/data/kind-local-storage/log-collector'
       - elk_collector_applications | sort == ['casdoor','info','investment','knowledge','tpl']
       - elk_collector_initial_budget_bytes | int >= 1073741824
-      - elk_collector_data_view_id is match('^[a-z][a-z0-9-]+$')
       - elk_collector_memory_chunks | int >= 8 and elk_collector_memory_chunks | int <= 64
       - image_map['fluent-bit'].status == 'resolved'
 - name: Inspect each node's collector state directory without following links

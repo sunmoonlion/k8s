@@ -11,7 +11,5 @@ elk_collector_resources:
   limits: {cpu: 500m, memory: 256Mi}
 # Read existing retained container logs on first installation; offsets govern repeats.
 elk_collector_read_from_head: true
-# Kibana Discover entry; identity is stable and never overwritten silently.
-elk_collector_data_view_id: sunmoon-application-logs
 # Three node image expansions plus first log indexing; checked before rendering.
 elk_collector_initial_budget_bytes: 1073741824

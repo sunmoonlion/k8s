@@ -1,0 +1,36 @@
+'use strict';
+const {request,readAuth}=require('./tls-client');
+const user={{ elk_log_data_view_user | to_json }};
+const owner='{{ cluster_name }}/elk-data-view';
+const index={{ (elk_index_prefix + '-*') | to_json }};
+const admin=readAuth('/run/admin');
+const service=readAuth('/run/auth');
+const password=require('node:fs').readFileSync('/run/auth/password','utf8').trim();
+const desired={metadata:{sunmoon_owner:owner},elasticsearch:{cluster:[],indices:[{names:[index],privileges:['view_index_metadata']}]},kibana:[{base:[],feature:{indexPatterns:['all']},spaces:['default']} ]};
+function requireStatus(r,status,scope){if(r.status!==status)throw new Error(scope+' HTTP '+r.status);}
+function roleMatches(r){
+  const es=r.elasticsearch, kb=r.kibana;
+  return r.metadata?.sunmoon_owner===owner && es?.cluster?.length===0 && (es.run_as||[]).length===0 &&
+    es.indices?.length===1 && JSON.stringify(es.indices[0].names)===JSON.stringify([index]) &&
+    JSON.stringify(es.indices[0].privileges)===JSON.stringify(['view_index_metadata']) &&
+    kb?.length===1 && (kb[0].base||[]).length===0 && JSON.stringify(Object.keys(kb[0].feature||{}))===JSON.stringify(['indexPatterns']) && JSON.stringify(kb[0].feature.indexPatterns)===JSON.stringify(['all']) && JSON.stringify(kb[0].spaces)===JSON.stringify(['default']);
+}
+(async()=>{
+  const rolePath='/api/security/role/'+encodeURIComponent(user);
+  let role=await request('kibana','GET',rolePath,admin);
+  if(role.status===404){role=await request('kibana','PUT',rolePath+'?createOnly=true',admin,desired);requireStatus(role,204,'Create bounded Kibana role');}
+  else {requireStatus(role,200,'Read bounded Kibana role');if(!roleMatches(role.data))throw new Error('Refuse changing foreign or broadened Kibana role');}
+  let existing=await request('elasticsearch','GET','/_security/user/'+encodeURIComponent(user),admin);
+  if(existing.status===404 || (existing.status===200 && Object.keys(existing.data).length===0)){
+    const created=await request('elasticsearch','PUT','/_security/user/'+encodeURIComponent(user),admin,{password,roles:[user],metadata:{sunmoon_owner:owner}});requireStatus(created,200,'Create independent service identity');
+  }else{
+    requireStatus(existing,200,'Read independent identity');const u=existing.data[user];
+    if(!u||u.metadata?.sunmoon_owner!==owner||JSON.stringify(u.roles)!==JSON.stringify([user]))throw new Error('Refuse changing foreign service identity');
+  }
+  const current=await request('elasticsearch','GET','/_security/_authenticate',service);requireStatus(current,200,'Service authentication');
+  if(current.data.username!==user||JSON.stringify(current.data.roles)!==JSON.stringify([user]))throw new Error('Service subject/roles differ');
+  requireStatus(await request('elasticsearch','POST','/'+index+'/_search',service,{size:0}),403,'Service log read must be denied');
+  requireStatus(await request('elasticsearch','GET','/_security/user',service),403,'Service user administration must be denied');
+  role=await request('kibana','GET',rolePath,admin);requireStatus(role,200,'Read actual saved-object role');if(!roleMatches(role.data))throw new Error('Actual bounded role differs');
+  console.log(JSON.stringify({passed:true,service_identity_independent:true,default_space_only:true,log_read_denied:true,admin_denied:true}));
+})().catch(error=>{console.error(error.message);process.exitCode=1;});

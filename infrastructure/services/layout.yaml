@@ -9,6 +9,7 @@ service_stage_paths:
   elk-initialize: data-platform/elk/initialize
   elk-runtime: data-platform/elk/runtime
   elk-collector: data-platform/elk/collector
+  elk-data-view: data-platform/elk/kibana/data-view
   casdoor-db: app-platform/auth-app/casdoor/database
   casdoor-init: app-platform/auth-app/casdoor/init
   casdoor: app-platform/auth-app/casdoor

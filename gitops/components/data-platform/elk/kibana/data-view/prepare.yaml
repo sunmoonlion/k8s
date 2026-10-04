@@ -1,0 +1,70 @@
+---
+- name: Validate declarative Kibana view identity
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - elk_log_data_view_user is match('^[a-z][a-z0-9_]+$')
+      - elk_log_data_view_user != elk_log_reader and elk_log_data_view_user != elk_logstash_writer
+      - elk_log_data_view_id is match('^[a-z][a-z0-9-]+$')
+      - elk_log_data_view_generation is match('^v[1-9][0-9]*$')
+- name: Prepare an independent recoverable view service identity
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
+  vars:
+    component_input_name: elk-data-view
+    component_input_manifest: data-platform/elk/kibana/data-view/service-identity.sops.yaml
+    component_initial_input:
+      password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+  no_log: true
+- name: Preserve this independent identity in memory
+  ansible.builtin.set_fact: {elk_view_credentials: '{{ component_private_input }}'}
+  no_log: true
+- name: Validate non-reused service password
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - elk_view_credentials.password is match('^[A-Za-z0-9]{40}$')
+      - elk_view_credentials.password != elk_credentials.reader_password
+      - elk_view_credentials.password != elk_credentials.elastic_password
+  no_log: true
+- name: Encrypt admin only for the short-lived identity initializer
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: data-platform/elk/kibana/data-view/admin.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: elk-data-view-admin, namespace: '{{ data_namespace }}'}
+        stringData: {username: elastic, password: '{{ elk_credentials.elastic_password }}'}
+  no_log: true
+- name: Encrypt only bounded saved-object identity and public CA
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: data-platform/elk/kibana/data-view/service-identity.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: elk-data-view-auth, namespace: '{{ data_namespace }}'}
+        stringData:
+          username: '{{ elk_log_data_view_user }}'
+          password: '{{ elk_view_credentials.password }}'
+          ca.crt: '{{ component_tls_material.kibana.ca }}'
+  no_log: true
+- name: Derive immutable initialization inputs without rotating identity
+  ansible.builtin.set_fact:
+    elk_data_view_input_digest: '{{ [elk_log_data_view_user,elk_view_credentials.password,component_tls_material.kibana.ca,elk_log_data_view_id,elk_index_prefix,data_namespace,kibana_port,elasticsearch_port,lookup("file", playbook_dir + "/../../gitops/components/data-platform/elk/kibana/data-view/initialize.js.j2"),lookup("file", playbook_dir + "/../../gitops/components/data-platform/elk/kibana/data-view/initialize-identity.js.j2"),lookup("file", playbook_dir + "/../../gitops/components/data-platform/elk/kibana/data-view/tls-client.js.j2")] | to_json | hash("sha256") }}'
+  no_log: true
+- name: Render the native saved-object initializer
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/data-platform/elk/kibana/data-view/workload.yaml.j2'
+    dest: '{{ build }}/data-platform/elk/kibana/data-view/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+- name: Render explicit saved-object component root
+  ansible.builtin.copy:
+    dest: '{{ build }}/data-platform/elk/kibana/data-view/kustomization.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+    content: |
+      {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':['workload.yaml','service-identity.sops.yaml','admin.sops.yaml']} | to_nice_yaml }}
