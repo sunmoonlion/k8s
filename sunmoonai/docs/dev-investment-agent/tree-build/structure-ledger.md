@@ -155,6 +155,7 @@
 | H63 | 数据目录没有分页；搜索是整份过滤 | knowledge-backend `DatasetPages.listing`、knowledge-web-frontend | 数据集到几百个时加分页 | 待做，不急 |
 | H64 | 数据目录页读数据集自带的说明表（`dataset_metadata`、`field_dictionary`）是经只读查询 `run_sql` 读的，表名写在应用层里。更干净的做法是给「数据集能回答的问题」加两个专门的方法 | knowledge-backend `application/services/dataset_pages.py` | 加 `notes()`、`column_labels()`，两种实现各补一份 | 待做，不急 |
 | H65 | knowledge-backend `tests/test_kernel_invariants.py` 第 90 行超长，代码检查一直报这一条（不是这一步带来的） | knowledge-backend | 折行 | 待做 |
+| H66 | 生产的数据库会话「提交后对象过期」，测试的会话不过期，两边不一样：提交之后再读已加载对象的属性，生产里报 `MissingGreenlet`，测试一直是绿的。2026-10-04 luna 在真链路上撞到（info 的采集任务带来源时停在半路，连「失败」都记不下来） | 模板与三个后端 `infrastructure/storage/postgres.py`；各仓测试里自己建的会话工厂 | 会话工厂只在一处建（`make_session_factory`，提交后不过期），测试也从那里取；`tests/test_session_config.py` 守着 | **已做** 2026-10-04：tpl-backend `d36894e`、info-backend `0d54aac`、knowledge-backend `00f4057`、investment-backend `cc8c45d`。四套测试全过（324、1142、948、809）。把配置临时改回去，守门的测试与 info 的回归测试会红（验过）。没有做的：跨函数的「提交之后在同一个会话里再读」没有逐条查，只按函数扫过一遍（没有发现）；没有在集群上跑过 |
 
 ## 八、自动检查怎么用
 

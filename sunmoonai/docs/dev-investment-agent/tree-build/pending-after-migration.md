@@ -53,3 +53,4 @@
 | 39 | info-admin-frontend 现在也有 `fable` 分支了（2026-10-04 第一次提交）。对齐工位时算进去 | 远程第 8 步 | 同上 | 只是告知 |
 | 40 | knowledge 后端多了两个配置，都可不配：`KNOWLEDGE_DATASET_TITLE`（默认数据集在数据目录页上叫什么，不配就显示标识）、`KNOWLEDGE_CATALOG_RATE_PER_MINUTE`（数据目录页面接口的限流，默认 120）。没有数据库迁移。数据目录页的「申请入库」要第 36 行的 `CROSS_APP_TARGETS_JSON` 里有 info | 远程第 9 步，knowledge-backend `8c4f5f4` | 同上 | 只是告知 |
 | 41 | knowledge-admin-frontend 现在也有 `fable` 分支了（2026-10-04 第一次提交）。对齐工位时算进去 | 远程第 9 步 | 同上 | 只是告知 |
+| 42 | 四个后端（模板与三个应用）的镜像要用 2026-10-04 之后的 `fable` 重新构建，才带上「会话在提交后不让对象过期」的修复（账本 H66）。只改了代码，没有新配置、没有数据库迁移。luna 在它自己的分支上为了让真链路走下去而带的同一处改动，要和 `fable` 上的写法一字不差（`postgres.py` 里的 `make_session_factory`），合并时才不冲突 | luna 2026-10-04 在真链路上发现，远程在 `fable` 上修 | 同上 | 待办 |
