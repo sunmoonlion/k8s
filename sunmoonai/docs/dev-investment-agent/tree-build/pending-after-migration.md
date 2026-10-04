@@ -51,3 +51,5 @@
 | 37 | 四个网页端的仓库（模板与三个应用）现在有 `fable` 分支了，原来没有。对齐工位时要把它们算进去 | 远程在这四个仓库里第一次提交 | 同上 | 只是告知 |
 | 38 | investment 后端多了一个配置 `WORKBENCH_MODEL_PRICES_JSON`（模型单价）。不配就用代码里带的默认值（`kimi-k3`）。要配的话，网页后端与 runner 两个进程要配成一样的 | 2026-10-04 实时花费 | 同上 | 只是告知；换模型时要配 |
 | 39 | info-admin-frontend 现在也有 `fable` 分支了（2026-10-04 第一次提交）。对齐工位时算进去 | 远程第 8 步 | 同上 | 只是告知 |
+| 40 | knowledge 后端多了两个配置，都可不配：`KNOWLEDGE_DATASET_TITLE`（默认数据集在数据目录页上叫什么，不配就显示标识）、`KNOWLEDGE_CATALOG_RATE_PER_MINUTE`（数据目录页面接口的限流，默认 120）。没有数据库迁移。数据目录页的「申请入库」要第 36 行的 `CROSS_APP_TARGETS_JSON` 里有 info | 远程第 9 步，knowledge-backend `8c4f5f4` | 同上 | 只是告知 |
+| 41 | knowledge-admin-frontend 现在也有 `fable` 分支了（2026-10-04 第一次提交）。对齐工位时算进去 | 远程第 9 步 | 同上 | 只是告知 |

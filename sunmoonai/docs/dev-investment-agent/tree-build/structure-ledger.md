@@ -148,8 +148,13 @@
 | H56 | 工作页的「改动」栏只列得出用 Codex 的补丁工具改的文件。现在用的模型（kimi-k3）改文件走命令行，Codex 不单独报，所以真用起来这一栏多半是空的。起线时 Codex 还提示「找不到 kimi-k3 的模型信息，用默认的」，默认的信息里可能就没有给它补丁工具 | 沙箱里 Codex 的模型配置（`sandbox-platform`，本地助手的目录） | 查 Codex 怎么给一个模型配上补丁工具，在沙箱的配置里给 kimi-k3 配上；或者在本地代理那边按目录的前后差别来报改动 | 待查。动沙箱配置要等迁移之后 |
 | H57 | 第 7 步做完后，`lib/workbench/routes.ts` 里「哪些页已经做好」的清单全都是「做好了」，相关的判断成了多余的 | investment-web-frontend `lib/workbench/routes.ts` 与用到 `isBuilt` 的地方 | 留着：以后加「技能」「连接器」「助理」的页时还要用同一个办法。那时不用就删 | 记下 |
 | H58 | 首页挂着的旧研究工作区（账本 D3）还在：`components/research/` 与 `lib/interaction/`。第 7 步没有碰公开首页与登录过渡页 | investment-web-frontend | 做公开首页（初稿 4.8）时删 | 待做 |
-| H59 | 结构检查（功能之间不互相引用；取数、状态、渲染分开）现在各仓库各有一份，没有进模板 | investment-web-frontend、info-web-frontend、info-admin-frontend 的 `tests/unit/feature-boundaries.test.ts` | 搬进两个模板（没有 `features/` 目录时不报错），再同步 | 待做 |
+| H59 | 结构检查（功能之间不互相引用；取数、状态、渲染分开）现在各仓库各有一份，没有进模板 | investment-web-frontend、info-web-frontend、info-admin-frontend、knowledge-web-frontend、knowledge-admin-frontend（2026-10-04 第 9 步又多两份） 的 `tests/unit/feature-boundaries.test.ts` | 搬进两个模板（没有 `features/` 目录时不报错），再同步 | 待做 |
 | H60 | investment 的工作台各页没登录时去登录，登录完回的是工作台首页，不是原来要去的那一页（info 的三页是回原页的）。从别的应用带着参数回到 investment 时会丢参数 | investment-web-frontend `app/[locale]/(dashboard)/workbench/layout.tsx` | 和 info 一样：外框不跳，由页面带着自己的地址去登录 | 待做 |
+| H61 | knowledge 管理端的「数据集登记」页没有在浏览器里看过（同 H46：管理端没有预览） | knowledge-admin-frontend `features/registry/` | 做管理端预览时一起看 | 待做 |
+| H62 | 数据集登记页的「文件」一栏说的是「取回过并且取回时校验过」，不是「现在再算一遍校验值」。设计里写的是后者 | knowledge-backend `ObjectDatasetFiles.fetched` | 要的话加一个手动的「重新校验」接口与按钮（文件最大 512 MB，不能每次打开页面都算） | 等所有者定 |
+| H63 | 数据目录没有分页；搜索是整份过滤 | knowledge-backend `DatasetPages.listing`、knowledge-web-frontend | 数据集到几百个时加分页 | 待做，不急 |
+| H64 | 数据目录页读数据集自带的说明表（`dataset_metadata`、`field_dictionary`）是经只读查询 `run_sql` 读的，表名写在应用层里。更干净的做法是给「数据集能回答的问题」加两个专门的方法 | knowledge-backend `application/services/dataset_pages.py` | 加 `notes()`、`column_labels()`，两种实现各补一份 | 待做，不急 |
+| H65 | knowledge-backend `tests/test_kernel_invariants.py` 第 90 行超长，代码检查一直报这一条（不是这一步带来的） | knowledge-backend | 折行 | 待做 |
 
 ## 八、自动检查怎么用
 
