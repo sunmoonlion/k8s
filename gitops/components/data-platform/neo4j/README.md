@@ -22,3 +22,5 @@ neo4j_failed_rollout_recovery可关闭该恢复；API前置条件冲突则报失
 按官方Helm默认方式，startup/readiness检查Bolt监听；不是仅凭端口判断交付成功。services-check仍必须通过CA/主机名、HTTPS认证、真实图读写/回滚与Bolt TLS协商。HTTPS原探针向Pod IP发送请求返回400；使用证书对应DNS及SNI实际请求为200。没有关闭TLS或严格配置校验。官方默认参考：https://github.com/neo4j/helm-charts/blob/dev/neo4j/values.yaml 。
 
 实际2026.09.0 Query API回滚返回HTTP200（不是文档示例的202），验收要求DELETE成功后独立查询未提交标记计数为0；dbms.components同时返回Kernel与Cypher，版本比对精确筛选Neo4j Kernel，不降低镜像锁及真实回滚判据。失败原输出保留在忽略的运行证据目录。
+
+恢复前从晋级提交的Git对象读取图模板，并有限等待Flux写入其镜像、服务环境开关及探针；OCI物料Ready不等于子工作负载已写入。等待上限15分钟，失败报错，不自行强制覆盖。首次不存在控制器时跳过恢复，交给常规声明创建。

@@ -1,11 +1,31 @@
 ---
 # Native Flux apply include. Replaces only a failed old Pod after a fixed template.
+- name: Read the graph template from the promoted Git object
+  become: false
+  ansible.builtin.command:
+    argv: [git, -C, '{{ repo }}', show, '{{ source_lock.revision }}:gitops/components/data-platform/neo4j/workload.yaml']
+  register: graph_promoted_workload
+  changed_when: false
+- name: Select the exact promoted graph template
+  ansible.builtin.set_fact:
+    graph_expected_template: '{{ (graph_promoted_workload.stdout | from_yaml_all | selectattr("kind","equalto","StatefulSet") | first).spec.template.spec }}'
 - name: Inspect the owned graph controller during source reconciliation
   ansible.builtin.command:
     argv: '{{ kube + ["-n", data_namespace, "get", "statefulset", "neo4j", "-o", "json"] }}'
   register: graph_controller
   changed_when: false
   failed_when: graph_controller.rc != 0 and 'NotFound' not in graph_controller.stderr
+  # OCI readiness precedes child workload reconciliation. Wait for the fixed
+  # promoted template, so recovery never recreates the previous broken template.
+  until:
+    - graph_controller.rc != 0 or (graph_controller.stdout | from_json).spec.template.spec.enableServiceLinks | default(true) == graph_expected_template.enableServiceLinks
+    - graph_controller.rc != 0 or (graph_controller.stdout | from_json).spec.template.spec.containers[0].image == graph_expected_template.containers[0].image
+    - graph_controller.rc != 0 or (graph_controller.stdout | from_json).spec.template.spec.containers[0].startupProbe.tcpSocket | default({}) == graph_expected_template.containers[0].startupProbe.tcpSocket | default({})
+    - graph_controller.rc != 0 or (graph_controller.stdout | from_json).spec.template.spec.containers[0].startupProbe.httpGet | default({}) == graph_expected_template.containers[0].startupProbe.httpGet | default({})
+    - graph_controller.rc != 0 or (graph_controller.stdout | from_json).spec.template.spec.containers[0].readinessProbe.tcpSocket | default({}) == graph_expected_template.containers[0].readinessProbe.tcpSocket | default({})
+    - graph_controller.rc != 0 or (graph_controller.stdout | from_json).status.observedGeneration | default(-1) == (graph_controller.stdout | from_json).metadata.generation
+  retries: 180
+  delay: 5
 - name: Assess the graph revision only when the controller exists
   when: graph_controller.rc == 0
   block:
