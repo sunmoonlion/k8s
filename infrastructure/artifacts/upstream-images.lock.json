@@ -645,6 +645,17 @@
       "reference": "quay.io/minio/aistor/mc@sha256:d108717a4a6d684586f392406caca8d57f94d9e5acb515db61bca2da72d6f2ba",
       "config_digest": "sha256:ae5675e808c6f98730da8e48155548051b9a5cd273115e572fc9ebeeb83af9b7",
       "compressed_layer_bytes": 39509667
+    },
+    {
+      "id": "fluent-bit",
+      "group": "observability",
+      "source": "cr.fluentbit.io/fluent/fluent-bit:5.1.3",
+      "platform": "linux/amd64",
+      "status": "resolved",
+      "manifest_digest": "sha256:07bd537485182b73af016c67dae99521e40fdf50922b39912f378c5befb8e3b1",
+      "reference": "cr.fluentbit.io/fluent/fluent-bit@sha256:07bd537485182b73af016c67dae99521e40fdf50922b39912f378c5befb8e3b1",
+      "config_digest": "sha256:38255b6f6ce728ddf73d8238dfa939a3d98ed7e3d1436b7bc94ea2bbca7950b9",
+      "compressed_layer_bytes": 53916089
     }
   ],
   "offline_ready": false

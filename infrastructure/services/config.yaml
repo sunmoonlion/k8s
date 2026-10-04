@@ -9,7 +9,7 @@ services_backup_dir: /mnt/sunmoon-data/backups/services/sunmoon-kind
 
 # 本批平台镜像选择；具体版本/摘要唯一取 artifacts 锁。
 # RAGFlow配套物料按选版表备齐；镜像发布不等于运行声明/检索已验收。
-service_image_ids: [traefik, postgresql, redis, rabbitmq, casdoor, aistor, aistor-mc, text-embeddings-inference, ragflow, infinity, valkey, elasticsearch, kibana, logstash, neo4j, mongodb]
+service_image_ids: [traefik, postgresql, redis, rabbitmq, casdoor, aistor, aistor-mc, text-embeddings-inference, ragflow, infinity, valkey, elasticsearch, kibana, logstash, fluent-bit, neo4j, mongodb]
 
 # 大镜像仍有限时；600秒在当前代理吞吐下不足以备齐RAGFlow。
 service_material_timeout_seconds: 3600

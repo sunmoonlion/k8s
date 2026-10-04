@@ -48,6 +48,8 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     for key in ('kubectl','kubeconfig','namespace','ca','version','writer','reader','ingest-user','index-prefix'):
         parser.add_argument('--'+key,required=True)
+    for key in ('collector-namespace','application-namespace','collector-digest','data-view-id','collector-enabled'):
+        parser.add_argument('--'+key)
     args=parser.parse_args()
     secret=json.load(sys.stdin)
     env=dict(os.environ)
@@ -109,7 +111,11 @@ def main():
             if own_doc:
                 require(own_doc['_index'].startswith(args.index_prefix+'-') and own_doc['_source']['sunmoon_acceptance_id']==nonce,'Refuse removing foreign data')
                 request('elasticsearch','DELETE','/'+own_doc['_index']+'/_doc/'+own_doc['_id']+'?refresh=true',admin)
-        print(json.dumps({'passed':True,'version':args.version,'tls_chain_and_hostname':True,'unauthenticated_rejected':True,'logstash_to_elasticsearch':True,'independent_log_read':True,'writer_read_and_admin_denied':True,'foreign_index_denied':True,'reader_write_denied':True,'kibana_authenticated_api':True,'scope':'Actual internal ELK protocol and permissions; not all application logs, public ingress, restart or disaster recovery'}))
+        collected={}
+        if str(args.collector_enabled).lower() == 'true':
+            from collector.acceptance import verify_application_logs
+            collected=verify_application_logs(request,kube,env,args,reader,require)
+        print(json.dumps({'application_log_collection':collected,'passed':True,'version':args.version,'tls_chain_and_hostname':True,'unauthenticated_rejected':True,'logstash_to_elasticsearch':True,'independent_log_read':True,'writer_read_and_admin_denied':True,'foreign_index_denied':True,'reader_write_denied':True,'kibana_authenticated_api':True,'scope':'Actual internal ELK protocol, permissions and enabled node application logs/data view; public ingress, restart and disaster recovery require separate acceptance'}))
 
 if __name__=='__main__':
     try: main()

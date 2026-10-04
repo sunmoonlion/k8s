@@ -8,6 +8,7 @@ service_stage_paths:
   mongodb-initialize: data-platform/mongodb/initialize
   elk-initialize: data-platform/elk/initialize
   elk-runtime: data-platform/elk/runtime
+  elk-collector: data-platform/elk/collector
   casdoor-db: app-platform/auth-app/casdoor/database
   casdoor-init: app-platform/auth-app/casdoor/init
   casdoor: app-platform/auth-app/casdoor

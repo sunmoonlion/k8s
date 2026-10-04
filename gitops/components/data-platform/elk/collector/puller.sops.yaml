@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: registry-puller
+    namespace: sunmoon-log-collector
+type: kubernetes.io/dockerconfigjson
+data:
+    .dockerconfigjson: ENC[AES256_GCM,data:cGl/Daa8kLLDqioH/wNWyzYY8tabeMaxhZ0qOkyVYr3A/bzxqI7bY1gO/T+t0by8gE2jyWKzLSymtTLXW1esxqRUue2Qk5oKIcx0XAlDld3Vorn5h9awDOWKI/l76mobElc/opmnXrtmubKTmhXPGA9a2bTYb2N7iNc6yYBCQ4tGb0IWdvV0C2R0cshyUmbIxHhNigrFA/DSbtGWiXNWPx0VYGHsvtau8H1zqEBOn3rvYIYepqM4+mMRY7KMBWSwhMJnnqWvG4JB8rYN0S0tmqphppUSbt6E8uXOMxIGOVzRxqJF,iv:eE6hsis0Uyc9QWAN3dKY98ISOBBVmeFmLi+ut6DjrIQ=,tag:6A81ol9KpYC0AbwqCaZwog==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB0Z0ZUdldicXBtYTBXVEJx
+            b3hnMEZ4b1Y5ekNCc1RuK3M3ZGxCWXl2b2h3Ck85MEF1ZzBuVGtCMjVtMzhCSjF6
+            M2N6azV1NGxNb1FlUG9Da1ZMaGZjVVEKLS0tIGZacXJSOEhpL0k2UHZrNHNONlVp
+            SXJua1pBbDgxSGtGcCtHQ2pFWXNPKzAKOXKUz1jC52+BH5WF53ACTUjjYzKy2wfh
+            XVCgIBIxTsp4zCSDzh51TJ8Ec7LIgzHn3agkW+sUcrWHNo1yrmDMCw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-04T13:53:43Z"
+    mac: ENC[AES256_GCM,data:foWDGDHHK/hlqrAJid0J80grBWQwkPZiRwrmDoWiMb/7ZZtgsG1o95RVqGY+bsigt4/CeT2vzTFmxqUWgiqhEoyvYbrBedMEEm7F+MyKeFCHUxkh1wCsU+qXU0ZnCKCfnvAxj7o32fX3y+6FuU8XyeDWsiCKXIHMIJOrvyZp0is=,iv:iCRrMS51E0+6IPYkZn5D79uY7w7IGPwsszKD/34eby4=,tag:aOVyCNN1vJ7cBoetjDsMvA==,type:str]
+    version: 3.13.3

@@ -37,7 +37,8 @@
         file: ../host/tasks/capacity.yaml
         apply: {become: false}
       # Rendering writes configuration/ciphertext only; data initialization is in Flux.
-      vars: {capacity_planned_bytes: 67108864}
+      vars:
+        capacity_planned_bytes: '{{ 67108864 + (elk_collector_initial_budget_bytes | int if services_elk_enabled and elk_collector_enabled else 0) }}'
     - name: Read independent cluster ownership receipt
       ansible.builtin.slurp:
         src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'

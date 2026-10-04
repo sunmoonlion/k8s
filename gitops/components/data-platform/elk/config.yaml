@@ -27,3 +27,6 @@ elk_logstash_writer: sunmoon_log_writer
 elk_log_reader: sunmoon_log_reader
 elk_ingest_username: sunmoon_log_ingest
 elk_max_map_count: 1048576
+
+# Fluent Bit batches can exceed one MiB; bound HTTP admission at eight MiB.
+elk_logstash_max_content_bytes: 8388608

@@ -1,0 +1,143 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sunmoon-log-collector
+  labels:
+    # hostPath is forbidden even under baseline; exemption confined to this namespace.
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: v1.36
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: log-collector, namespace: sunmoon-log-collector}
+automountServiceAccountToken: false
+imagePullSecrets: [{name: registry-puller}]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: log-collector-settings, namespace: sunmoon-log-collector}
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush 2
+        Grace 30
+        Log_Level warn
+        Parsers_File /fluent-bit/etc/parsers.conf
+        HTTP_Server On
+        HTTP_Listen 0.0.0.0
+        HTTP_Port 2020
+        Health_Check On
+        storage.path /state/chunks
+        storage.sync full
+        storage.checksum on
+        storage.max_chunks_up 32
+        storage.pause_on_chunks_overlimit on
+    [INPUT]
+        Name tail
+        Path /var/log/containers/tpl*_app-platform-dev_*.log,/var/log/containers/info*_app-platform-dev_*.log,/var/log/containers/knowledge*_app-platform-dev_*.log,/var/log/containers/investment*_app-platform-dev_*.log,/var/log/containers/casdoor*_app-platform-dev_*.log
+        Tag kube.*
+        multiline.parser cri
+        DB /state/tail.db
+        DB.sync full
+        DB.locking true
+        DB.compare_filename true
+        Path_Key log_file
+        Read_from_Head On
+        Refresh_Interval 5
+        Rotate_Wait 30
+        Buffer_Max_Size 1M
+        Skip_Long_Lines Off
+        storage.type filesystem
+    [FILTER]
+        Name kubernetes
+        Match kube.*
+        Kube_Tag_Prefix kube.var.log.containers.
+        Use_Tag_For_Meta On
+        Labels Off
+        Annotations Off
+        Merge_Log Off
+    [FILTER]
+        Name modify
+        Match kube.*
+        Rename log message
+        Add cluster sunmoon-kind
+        Add node ${NODE_NAME}
+    [OUTPUT]
+        Name http
+        Match kube.*
+        Host logstash.data-platform-dev.svc.cluster.local
+        Port 8080
+        URI /
+        Format json
+        Json_date_key @timestamp
+        Json_date_format iso8601
+        Header Content-Type application/json
+        HTTP_User sunmoon_log_ingest
+        HTTP_Passwd ${INGEST_PASSWORD}
+        tls On
+        tls.verify On
+        tls.verify_hostname On
+        tls.ca_file /run/auth/ca.crt
+        Retry_Limit no_limits
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata: {name: log-collector, namespace: sunmoon-log-collector}
+spec:
+  revisionHistoryLimit: 3
+  selector: {matchLabels: {app.kubernetes.io/name: fluent-bit}}
+  updateStrategy: {type: RollingUpdate, rollingUpdate: {maxUnavailable: 1}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: fluent-bit}
+      annotations:
+        sunmoonai.com/input-sha256: '002edc225a1a62794844daa394f14993336d24cba110bcbc1e32814da6435659'
+        sunmoonai.com/config-sha256: '6eb3d5a47fef92d081799e89a7a3d4732c8cbeb08bd59b2de81b77219153a9bb'
+    spec:
+      serviceAccountName: log-collector
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      nodeSelector: {kubernetes.io/os: linux}
+      tolerations:
+        - {key: node-role.kubernetes.io/control-plane, operator: Exists, effect: NoSchedule}
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 0, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: fluent-bit
+          image: harbor.sunmoonai.com:30443/platform/fluent-bit@sha256:07bd537485182b73af016c67dae99521e40fdf50922b39912f378c5befb8e3b1
+          args: [-c, /settings/fluent-bit.conf]
+          env:
+            - {name: NODE_NAME, valueFrom: {fieldRef: {fieldPath: spec.nodeName}}}
+            - {name: INGEST_PASSWORD, valueFrom: {secretKeyRef: {name: log-collector-auth, key: password}}}
+          ports: [{name: health, containerPort: 2020}]
+          readinessProbe: {httpGet: {path: /api/v1/health, port: health}, periodSeconds: 10}
+          livenessProbe: {httpGet: {path: /api/v1/health, port: health}, periodSeconds: 30, failureThreshold: 6}
+          resources: {"requests": {"cpu": "50m", "memory": "64Mi"}, "limits": {"cpu": "500m", "memory": "256Mi"}}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts:
+            - {name: logs, mountPath: /var/log, readOnly: true}
+            - {name: state, mountPath: /state}
+            - {name: settings, mountPath: /settings, readOnly: true}
+            - {name: auth, mountPath: /run/auth, readOnly: true}
+      volumes:
+        - {name: logs, hostPath: {path: /var/log, type: Directory}}
+        - {name: state, hostPath: {path: '/data/kind-local-storage/log-collector', type: Directory}}
+        - {name: settings, configMap: {name: log-collector-settings}}
+        - {name: auth, secret: {secretName: log-collector-auth, defaultMode: 0440}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: log-collector-bounded, namespace: sunmoon-log-collector}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: 'data-platform-dev'}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: logstash}}
+      ports: [{protocol: TCP, port: 8080}]

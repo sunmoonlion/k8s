@@ -32,7 +32,7 @@ ELK及Neo4j复用上述物料、stage、固定源晋级、services-bootstrap/che
 
 ELK独立秘密输入为services_config_dir下elk.yaml，图管理员为neo4j.yaml，均root0600并有独立备份；不是旧credentials.yaml中的字段。不要将明文移入组件公共config.yaml。services-check只输出无秘密验收结果；修改既有密码需要轮换与备份同步，不能直接改备份触发重新生成。
 
-两个单节点服务当前只开放受控内网检查；公共UI入口、应用全量日志采集、业务图身份/接入及重启/灾备验收另有后续范围。
+ELK新增节点日志采集仍由同一服务链编排，配置和实际验收在ELK/collector；公共UI入口、业务图身份/接入及重启/灾备验收另有后续范围。
 
 
 ## MongoDB

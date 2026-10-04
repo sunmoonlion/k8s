@@ -37,7 +37,7 @@ data:
         ssl_enabled => true
         ssl_certificate => "/run/auth/public.crt"
         ssl_key => "/run/auth/private.key"
-        max_content_length => 1048576
+        max_content_length => {{ elk_logstash_max_content_bytes }}
         max_pending_requests => 32
         threads => 2
       }
@@ -126,4 +126,12 @@ metadata: {name: logstash-clients, namespace: {{ data_namespace }}}
 spec:
   podSelector: {matchLabels: {app.kubernetes.io/name: logstash}}
   policyTypes: [Ingress]
-  ingress: []
+  ingress:
+{% if elk_collector_enabled | bool %}
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: '{{ elk_collector_namespace }}'}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: fluent-bit}
+      ports: [{protocol: TCP, port: {{ logstash_ingest_port }}}]
+{% endif %}

@@ -1,3 +1,19 @@
+# 当前单元：ELK 全应用节点日志采集（进行中，2026-10-04）
+
+基线ac0afc66caa4b6d3ea63e2705a46cc4b970f5b44；platform-kind-v1/k8s单仓，不动业务代码，无push。原生Make→Ansible→Flux/SOPS，2小时维护，10GiB容量底线。不切公开入口、保护原始kind和所有卷/备份。
+
+| 规则 | 实施边界 |
+| --- | --- |
+| C-R1/C-R2 | 官方Fluent Bit 5.1.3单独解析amd64manifest，固定摘要发布到Harbor，现有服务版本不变 |
+| C-I3/C-D10 | 采集器仅持Logstash接收凭据/公开CA，不持ES或业务身份；业务禁止秘密写日志 |
+| C-R6 | 同目录配置/原生prepare/DaemonSet/验收；不新增部署CLI，所有应用运行声明不变 |
+
+已查：日志stdout/stderr、节点root组只读权限、ELK内网TLS/认证；主机可用内存约60GiB，数据盘约207GiB空闲。Metrics API未部署，不能声称CPU metrics已核验。官方采集器物料约51.4MiB压缩，下载中；尚未部署/宣称验收。隔离命名空间允许hostPath，但容器仍非root、无capability、只读根；不放宽业务namespace。持久位点/缓冲使用三节点各自的数据盘static/log-collector，不设自动删除日志策略。
+
+下一步：物料校验发布→原生stage/全声明门禁→固定源发布→bootstrap→四应用20个角色及Casdoor真实日志对照与Kibana data view→重复一键及Pod/PV/Flux比较→本地提交/证据/本轮临时清理。公开Kibana入口切换需另行交所有者，整机/集群重建和长期空间管理仍待完成。
+
+---
+
 # 当前单元：跨应用服务身份与集群内 HTTPS（完成并实际重复验证，2026-10-04）
 
 基线ce05ffcba00915c66ab37d83b4cb6579f761bcbe；工作树/分支platform-kind-v1，k8s单仓，本轮四个业务仓没有改动，无push。原生Make→Ansible→Flux/SOPS；开发维护2小时、容量底线10GiB，没有切公共入口、停止原始kind或删除数据卷/备份。

@@ -5,6 +5,7 @@
     that:
       - elasticsearch_port == 9200 and kibana_port == 5601 and logstash_ingest_port == 8080
       - elk_index_prefix == 'sunmoon-logs'
+      - elk_logstash_max_content_bytes | int >= 8388608 and elk_logstash_max_content_bytes | int <= 16777216
       - elk_max_map_count | int >= 1048576
       - elk_init_generation is match('^v[1-9][0-9]*$')
       - elk_logstash_writer != elk_log_reader and elk_log_reader != elk_ingest_username
@@ -150,7 +151,7 @@
   ansible.builtin.set_fact:
     elasticsearch_input_digest: '{{ [elk_credentials.elastic_password,component_tls_material.elasticsearch] | to_json | hash("sha256") }}'
     kibana_input_digest: '{{ [elk_credentials.kibana_password,elk_credentials.kibana_security_key,elk_credentials.kibana_saved_objects_key,elk_credentials.kibana_reporting_key,component_tls_material.kibana] | to_json | hash("sha256") }}'
-    logstash_input_digest: '{{ [elk_credentials.logstash_password,elk_credentials.ingest_password,component_tls_material.logstash] | to_json | hash("sha256") }}'
+    logstash_input_digest: '{{ [elk_credentials.logstash_password,elk_credentials.ingest_password,component_tls_material.logstash,logstash_ingest_port,elk_logstash_max_content_bytes,elk_ingest_username,elk_logstash_writer,elk_index_prefix,elasticsearch_port,data_namespace,lookup("file", playbook_dir + "/../../gitops/components/data-platform/elk/logstash/workload.yaml.j2")] | to_json | hash("sha256") }}'
   no_log: true
 - name: Render ELK workload candidates through the native service chain
   ansible.builtin.template:
@@ -167,6 +168,9 @@
     content: |
       {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':['workload.yaml','auth.sops.yaml']} | to_nice_yaml }}
   loop: [elasticsearch, initialize, kibana, logstash]
+- name: Prepare the bounded node application log collector
+  ansible.builtin.include_tasks: collector/prepare.yaml
+  when: elk_collector_enabled | bool
 - name: Aggregate the post-initialization runtime components
   ansible.builtin.copy:
     dest: '{{ build }}/data-platform/elk/runtime/kustomization.yaml'

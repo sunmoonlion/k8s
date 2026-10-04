@@ -20,3 +20,7 @@ Logstash 持久队列上限512MiB，每条确认写检查点；容器日志仅�
 回退：晋级前先保存当前 flux-source.yaml；失败恢复原源并原生 flux-source-apply。新阶段 prune=false/deletionPolicy=Orphan，回退不会自动删数据；停新服务需声明副本0并晋级，保留新卷。
 
 规则对照：C-D1 日志只是观测副本；C-D3/C-I3 账号与卷独立；C-R1/C-R2 三镜像和声明按固定摘要发布；已有应用和核心对象必须保持不变。
+
+## 全应用日志采集
+
+节点采集器配置、实现及实际日志对照在 [collector](collector/README.md)，同一 services-stage/bootstrap/check 链。Kibana 保存固定 SunMoon application logs 数据视图（sunmoon-logs-*、@timestamp）；用户可以按 kubernetes.pod_name、container_name、node、stream 过滤。公共 Kibana 域名入口另行切换，不能把内网 API/data view 验收写成浏览器入口已交付。

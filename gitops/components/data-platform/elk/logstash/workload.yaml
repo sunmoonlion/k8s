@@ -37,7 +37,7 @@ data:
         ssl_enabled => true
         ssl_certificate => "/run/auth/public.crt"
         ssl_key => "/run/auth/private.key"
-        max_content_length => 1048576
+        max_content_length => 8388608
         max_pending_requests => 32
         threads => 2
       }
@@ -75,7 +75,7 @@ spec:
   template:
     metadata:
       labels: {app.kubernetes.io/name: logstash, sunmoonai.com/elasticsearch-client: 'true'}
-      annotations: {sunmoonai.com/input-sha256: '98f9970a1c3d33c7879b01f7d5e3011ebd80ba6d5b208ff3580f973ac41d1989'}
+      annotations: {sunmoonai.com/input-sha256: '3c6df58bbfa99d9bd7ccffb26b088def47be1479224f3df3bcdbc35fd3b151b6'}
     spec:
       serviceAccountName: platform-runtime
       automountServiceAccountToken: false
@@ -126,4 +126,10 @@ metadata: {name: logstash-clients, namespace: data-platform-dev}
 spec:
   podSelector: {matchLabels: {app.kubernetes.io/name: logstash}}
   policyTypes: [Ingress]
-  ingress: []
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: 'sunmoon-log-collector'}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: fluent-bit}
+      ports: [{protocol: TCP, port: 8080}]
