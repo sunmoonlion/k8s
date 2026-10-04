@@ -1,0 +1,308 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: ragflow-scripts, namespace: data-platform-dev}
+data:
+  runtime.py: |
+    """Production ASGI entry for the pinned upstream image; no schema initialization."""
+    import asyncio
+    import json
+    import logging
+    import os
+    import signal
+    import sys
+    import threading
+    from pathlib import Path
+
+
+    def initialize_logging():
+        # Upstream worker prints configuration. Redact known private values before
+        # any log handler (including upstream rotating files) receives the record.
+        import yaml
+        private = yaml.safe_load(Path('/ragflow/conf/service_conf.yaml').read_text())
+        sensitive = []
+
+        def collect(obj):
+            if isinstance(obj, dict):
+                for key, value in obj.items():
+                    if key in {'password', 'secret_key', 'api_key', 'http_app_key'} and isinstance(value, str) and len(value) >= 12:
+                        sensitive.append(value)
+                    collect(value)
+            elif isinstance(obj, list):
+                for value in obj:
+                    collect(value)
+        collect(private)
+        bootstrap = Path('/run/bootstrap/input.json')
+        if bootstrap.exists():
+            sensitive.extend(v for k,v in json.loads(bootstrap.read_text()).items() if k.endswith(('_password','_token')) and isinstance(v,str))
+        factory = logging.getLogRecordFactory()
+
+        def redact(value):
+            for secret in sensitive:
+                value = value.replace(secret, '[redacted]')
+            return value
+
+        def record_factory(*args, **kwargs):
+            record = factory(*args, **kwargs)
+            record.msg = redact(record.getMessage())
+            record.args = ()
+            if record.exc_info:
+                record.exc_text = redact(logging.Formatter().formatException(record.exc_info))
+            return record
+
+        logging.setLogRecordFactory(record_factory)
+        logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+        return private
+
+
+    async def main():
+        private = initialize_logging()
+        from common import settings
+        from api.db.db_models import DB
+        # Assert the database boundary in the real runtime connection.
+        with DB.connection_context():
+            row = DB.execute_sql("SELECT current_user, has_schema_privilege(current_user, 'public', 'CREATE'), has_database_privilege(current_user, current_database(), 'CREATE')").fetchone()
+            if row[0] != private['postgres']['user'] or row[1] or row[2]:
+                raise RuntimeError('RAGFlow runtime must not hold database DDL privileges')
+            DB.execute_sql('SELECT 1 FROM "user" LIMIT 1').fetchall()
+
+        if sys.argv[1] == 'worker':
+            # Direct upstream process bypasses entrypoint.sh's unconditional DDL.
+            # The shipped torch package is required before the upstream installer
+            # helper is reached; runtime network policy and pip offline mode also
+            # prohibit startup dependency downloads.
+            import torch  # noqa: F401
+            from rag.svr import task_executor
+            from common.log_utils import init_root_logger
+            init_root_logger('task_executor_common_0')
+            task_executor.CONSUMER_NAME = 'task_executor_common_0'
+
+            async def health():
+                while True:
+                    rows = await asyncio.to_thread(task_executor.REDIS_CONN.REDIS.zrange, task_executor.CONSUMER_NAME, -1, -1, withscores=True)
+                    import time
+                    if rows and time.time()-rows[0][1] < 60:
+                        Path('/tmp/worker-ready').touch()
+                    await asyncio.sleep(10)
+            ticker = asyncio.create_task(health())
+            try:
+                await task_executor.main()
+            finally:
+                ticker.cancel()
+                await asyncio.gather(ticker, return_exceptions=True)
+            return
+
+        from api.apps import app
+        from api.db.runtime_config import RuntimeConfig
+        from api.ragflow_server import update_progress, stop_event, GlobalPluginManager
+        from rag.utils.redis_conn import REDIS_CONN
+        from hypercorn.asyncio import serve
+        from hypercorn.config import Config
+        RuntimeConfig.DEBUG = False
+        RuntimeConfig.init_env()
+        RuntimeConfig.init_config(JOB_SERVER_HOST=settings.HOST_IP, HTTP_PORT=settings.HOST_PORT)
+        GlobalPluginManager.load_plugins()
+
+        from quart import request, abort
+        @app.before_request
+        async def restrict_surface():
+            if request.path != '/sunmoon/ready' and not request.path.startswith('/api/v1/'):
+                abort(404)
+
+        @app.get('/sunmoon/ready')
+        async def ready():
+            with DB.connection_context():
+                DB.execute_sql('SELECT 1').fetchone()
+            REDIS_CONN.REDIS.ping()
+            return {'ready': True}
+
+        @app.before_serving
+        async def start_progress():
+            stop_event.clear()
+            threading.Thread(target=update_progress, name='ragflow-progress', daemon=True).start()
+
+        @app.after_serving
+        async def stop_progress():
+            stop_event.set()
+
+        cfg = Config()
+        cfg.bind = ['0.0.0.0:9380']
+        cfg.certfile = '/run/tls/server.crt'
+        cfg.keyfile = '/run/tls/server.key'
+        cfg.accesslog = None
+        cfg.errorlog = '-'
+        cfg.graceful_timeout = 60
+        cfg.read_timeout = 120
+        await serve(app, cfg)
+
+
+    if __name__ == '__main__':
+        if len(sys.argv) != 2 or sys.argv[1] not in {'api', 'worker'}:
+            raise SystemExit('Expected api or worker role')
+        asyncio.run(main())
+---
+apiVersion: v1
+kind: Service
+metadata: {name: ragflow, namespace: data-platform-dev}
+spec:
+  selector: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: api}
+  ports: [{name: https, port: 9380, targetPort: 9380}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: 'ragflow-api', namespace: data-platform-dev}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: 'api'}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: 'api', sunmoonai.com/postgresql-client: 'true', sunmoonai.com/object-storage-client: 'true'}
+      annotations:
+        sunmoonai.com/input-digest: 'aca6977d684d05cbb62520c71718ad895b18484a4816fbf74253c02c88bbb2f7'
+        sunmoonai.com/script-digest: '742dc59b94c0b4167acf5de18b0cc942a430c86bad584b0204b2ffe966315f06'
+    spec:
+      enableServiceLinks: false
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 120
+      nodeSelector: {kubernetes.io/hostname: 'sunmoon-kind-worker2'}
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: 'api'
+          image: harbor.sunmoonai.com:30443/platform/ragflow@sha256:e6b3f1a185c0a70abb3a72e1092415df8c5c6a4fae0089545554f2936c4b27ab
+          imagePullPolicy: IfNotPresent
+          command: [python3, /sunmoon/runtime.py, 'api']
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {"requests": {"cpu": "250m", "memory": "1Gi"}, "limits": {"cpu": "2", "memory": "3Gi"}}
+          env:
+            - {name: DB_TYPE, value: postgres}
+            - {name: DOC_ENGINE, value: infinity}
+            - {name: STORAGE_IMPL, value: AWS_S3}
+            - {name: REGISTER_ENABLED, value: '0'}
+            - {name: ENABLE_CHAT_CHANNEL, value: '0'}
+            - {name: HF_HUB_OFFLINE, value: '1'}
+            - {name: TRANSFORMERS_OFFLINE, value: '1'}
+            - {name: PIP_NO_INDEX, value: '1'}
+            - {name: UV_OFFLINE, value: 'true'}
+            - {name: HOME, value: /tmp/home}
+            - {name: OMP_NUM_THREADS, value: '1'}
+            - {name: OPENBLAS_NUM_THREADS, value: '1'}
+            - {name: MKL_NUM_THREADS, value: '1'}
+            - {name: MAX_CONCURRENT_TASKS, value: '1'}
+            - {name: AWS_EC2_METADATA_DISABLED, value: 'true'}
+            - {name: LITELLM_LOCAL_MODEL_COST_MAP, value: 'True'}
+            - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+            - {name: AWS_CA_BUNDLE, value: /run/tls/ca.crt}
+          ports: [{name: https, containerPort: 9380}]
+          startupProbe:
+            exec:
+              command: [python3, -c, "import socket,ssl; c=ssl.create_default_context(cafile=\"/run/tls/ca.crt\"); s=c.wrap_socket(socket.create_connection((\"127.0.0.1\",9380),5),server_hostname=\"ragflow\"); s.sendall(b\"GET /sunmoon/ready HTTP/1.1\r\nHost: ragflow\r\nConnection: close\r\n\r\n\"); assert b\" 200 \" in s.recv(1000)"]
+            periodSeconds: 5
+            timeoutSeconds: 10
+            failureThreshold: 120
+          readinessProbe:
+            exec:
+              command: [python3, -c, "import socket,ssl; c=ssl.create_default_context(cafile=\"/run/tls/ca.crt\"); s=c.wrap_socket(socket.create_connection((\"127.0.0.1\",9380),5),server_hostname=\"ragflow\"); s.sendall(b\"GET /sunmoon/ready HTTP/1.1\r\nHost: ragflow\r\nConnection: close\r\n\r\n\"); assert b\" 200 \" in s.recv(1000)"]
+            periodSeconds: 10
+            timeoutSeconds: 10
+          livenessProbe:
+            tcpSocket: {port: https}
+            periodSeconds: 30
+            failureThreshold: 5
+          volumeMounts:
+            - {name: scripts, mountPath: /sunmoon, readOnly: true}
+            - {name: auth, mountPath: /ragflow/conf/service_conf.yaml, subPath: service_conf.yaml, readOnly: true}
+            - {name: auth, mountPath: /run/tls, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+            - {name: logs, mountPath: /ragflow/logs}
+      volumes:
+        - {name: scripts, configMap: {name: ragflow-scripts}}
+        - {name: auth, secret: {secretName: ragflow-auth, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 512Mi}}
+        - {name: logs, emptyDir: {sizeLimit: 256Mi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: 'ragflow-worker', namespace: data-platform-dev}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: 'worker'}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: 'worker', sunmoonai.com/postgresql-client: 'true', sunmoonai.com/object-storage-client: 'true'}
+      annotations:
+        sunmoonai.com/input-digest: 'aca6977d684d05cbb62520c71718ad895b18484a4816fbf74253c02c88bbb2f7'
+        sunmoonai.com/script-digest: '742dc59b94c0b4167acf5de18b0cc942a430c86bad584b0204b2ffe966315f06'
+    spec:
+      enableServiceLinks: false
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 120
+      nodeSelector: {kubernetes.io/hostname: 'sunmoon-kind-worker2'}
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: 'worker'
+          image: harbor.sunmoonai.com:30443/platform/ragflow@sha256:e6b3f1a185c0a70abb3a72e1092415df8c5c6a4fae0089545554f2936c4b27ab
+          imagePullPolicy: IfNotPresent
+          command: [python3, /sunmoon/runtime.py, 'worker']
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {"requests": {"cpu": "250m", "memory": "2Gi"}, "limits": {"cpu": "2", "memory": "6Gi"}}
+          env:
+            - {name: DB_TYPE, value: postgres}
+            - {name: DOC_ENGINE, value: infinity}
+            - {name: STORAGE_IMPL, value: AWS_S3}
+            - {name: REGISTER_ENABLED, value: '0'}
+            - {name: ENABLE_CHAT_CHANNEL, value: '0'}
+            - {name: HF_HUB_OFFLINE, value: '1'}
+            - {name: TRANSFORMERS_OFFLINE, value: '1'}
+            - {name: PIP_NO_INDEX, value: '1'}
+            - {name: UV_OFFLINE, value: 'true'}
+            - {name: HOME, value: /tmp/home}
+            - {name: OMP_NUM_THREADS, value: '1'}
+            - {name: OPENBLAS_NUM_THREADS, value: '1'}
+            - {name: MKL_NUM_THREADS, value: '1'}
+            - {name: MAX_CONCURRENT_TASKS, value: '1'}
+            - {name: AWS_EC2_METADATA_DISABLED, value: 'true'}
+            - {name: LITELLM_LOCAL_MODEL_COST_MAP, value: 'True'}
+            - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+            - {name: AWS_CA_BUNDLE, value: /run/tls/ca.crt}
+          startupProbe:
+            exec:
+              command: [python3, -c, "import pathlib,time; assert time.time()-pathlib.Path(\"/tmp/worker-ready\").stat().st_mtime < 60"]
+            periodSeconds: 5
+            timeoutSeconds: 10
+            failureThreshold: 120
+          readinessProbe:
+            exec:
+              command: [python3, -c, "import pathlib,time; assert time.time()-pathlib.Path(\"/tmp/worker-ready\").stat().st_mtime < 60"]
+            periodSeconds: 10
+            timeoutSeconds: 10
+          livenessProbe:
+            exec: {command: [python3, -c, "import pathlib,time; assert time.time()-pathlib.Path('/tmp/worker-ready').stat().st_mtime < 90"]}
+            periodSeconds: 30
+            failureThreshold: 5
+          volumeMounts:
+            - {name: scripts, mountPath: /sunmoon, readOnly: true}
+            - {name: auth, mountPath: /ragflow/conf/service_conf.yaml, subPath: service_conf.yaml, readOnly: true}
+            - {name: auth, mountPath: /run/tls, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+            - {name: logs, mountPath: /ragflow/logs}
+      volumes:
+        - {name: scripts, configMap: {name: ragflow-scripts}}
+        - {name: auth, secret: {secretName: ragflow-auth, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 512Mi}}
+        - {name: logs, emptyDir: {sizeLimit: 256Mi}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: ragflow-clients, namespace: data-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: api}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: ragflow}}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: 'app-platform-dev'}}
+          podSelector: {matchLabels: {sunmoonai.com/ragflow-client: 'true'}}
+      ports: [{protocol: TCP, port: 9380}]

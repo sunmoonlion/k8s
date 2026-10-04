@@ -1,0 +1,255 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: ragflow-initialize-v1, namespace: data-platform-dev}
+data:
+  runtime.py: |
+    """Production ASGI entry for the pinned upstream image; no schema initialization."""
+    import asyncio
+    import json
+    import logging
+    import os
+    import signal
+    import sys
+    import threading
+    from pathlib import Path
+
+
+    def initialize_logging():
+        # Upstream worker prints configuration. Redact known private values before
+        # any log handler (including upstream rotating files) receives the record.
+        import yaml
+        private = yaml.safe_load(Path('/ragflow/conf/service_conf.yaml').read_text())
+        sensitive = []
+
+        def collect(obj):
+            if isinstance(obj, dict):
+                for key, value in obj.items():
+                    if key in {'password', 'secret_key', 'api_key', 'http_app_key'} and isinstance(value, str) and len(value) >= 12:
+                        sensitive.append(value)
+                    collect(value)
+            elif isinstance(obj, list):
+                for value in obj:
+                    collect(value)
+        collect(private)
+        bootstrap = Path('/run/bootstrap/input.json')
+        if bootstrap.exists():
+            sensitive.extend(v for k,v in json.loads(bootstrap.read_text()).items() if k.endswith(('_password','_token')) and isinstance(v,str))
+        factory = logging.getLogRecordFactory()
+
+        def redact(value):
+            for secret in sensitive:
+                value = value.replace(secret, '[redacted]')
+            return value
+
+        def record_factory(*args, **kwargs):
+            record = factory(*args, **kwargs)
+            record.msg = redact(record.getMessage())
+            record.args = ()
+            if record.exc_info:
+                record.exc_text = redact(logging.Formatter().formatException(record.exc_info))
+            return record
+
+        logging.setLogRecordFactory(record_factory)
+        logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+        return private
+
+
+    async def main():
+        private = initialize_logging()
+        from common import settings
+        from api.db.db_models import DB
+        # Assert the database boundary in the real runtime connection.
+        with DB.connection_context():
+            row = DB.execute_sql("SELECT current_user, has_schema_privilege(current_user, 'public', 'CREATE'), has_database_privilege(current_user, current_database(), 'CREATE')").fetchone()
+            if row[0] != private['postgres']['user'] or row[1] or row[2]:
+                raise RuntimeError('RAGFlow runtime must not hold database DDL privileges')
+            DB.execute_sql('SELECT 1 FROM "user" LIMIT 1').fetchall()
+
+        if sys.argv[1] == 'worker':
+            # Direct upstream process bypasses entrypoint.sh's unconditional DDL.
+            # The shipped torch package is required before the upstream installer
+            # helper is reached; runtime network policy and pip offline mode also
+            # prohibit startup dependency downloads.
+            import torch  # noqa: F401
+            from rag.svr import task_executor
+            from common.log_utils import init_root_logger
+            init_root_logger('task_executor_common_0')
+            task_executor.CONSUMER_NAME = 'task_executor_common_0'
+
+            async def health():
+                while True:
+                    rows = await asyncio.to_thread(task_executor.REDIS_CONN.REDIS.zrange, task_executor.CONSUMER_NAME, -1, -1, withscores=True)
+                    import time
+                    if rows and time.time()-rows[0][1] < 60:
+                        Path('/tmp/worker-ready').touch()
+                    await asyncio.sleep(10)
+            ticker = asyncio.create_task(health())
+            try:
+                await task_executor.main()
+            finally:
+                ticker.cancel()
+                await asyncio.gather(ticker, return_exceptions=True)
+            return
+
+        from api.apps import app
+        from api.db.runtime_config import RuntimeConfig
+        from api.ragflow_server import update_progress, stop_event, GlobalPluginManager
+        from rag.utils.redis_conn import REDIS_CONN
+        from hypercorn.asyncio import serve
+        from hypercorn.config import Config
+        RuntimeConfig.DEBUG = False
+        RuntimeConfig.init_env()
+        RuntimeConfig.init_config(JOB_SERVER_HOST=settings.HOST_IP, HTTP_PORT=settings.HOST_PORT)
+        GlobalPluginManager.load_plugins()
+
+        from quart import request, abort
+        @app.before_request
+        async def restrict_surface():
+            if request.path != '/sunmoon/ready' and not request.path.startswith('/api/v1/'):
+                abort(404)
+
+        @app.get('/sunmoon/ready')
+        async def ready():
+            with DB.connection_context():
+                DB.execute_sql('SELECT 1').fetchone()
+            REDIS_CONN.REDIS.ping()
+            return {'ready': True}
+
+        @app.before_serving
+        async def start_progress():
+            stop_event.clear()
+            threading.Thread(target=update_progress, name='ragflow-progress', daemon=True).start()
+
+        @app.after_serving
+        async def stop_progress():
+            stop_event.set()
+
+        cfg = Config()
+        cfg.bind = ['0.0.0.0:9380']
+        cfg.certfile = '/run/tls/server.crt'
+        cfg.keyfile = '/run/tls/server.key'
+        cfg.accesslog = None
+        cfg.errorlog = '-'
+        cfg.graceful_timeout = 60
+        cfg.read_timeout = 120
+        await serve(app, cfg)
+
+
+    if __name__ == '__main__':
+        if len(sys.argv) != 2 or sys.argv[1] not in {'api', 'worker'}:
+            raise SystemExit('Expected api or worker role')
+        asyncio.run(main())
+  initialize.py: |
+    """Bounded initialization Job for exactly the pinned RAGFlow version."""
+    import hashlib
+    import inspect
+    import json
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, '/sunmoon')
+    from runtime import initialize_logging
+    initialize_logging()
+    from common import settings
+    settings.init_settings()
+    from api.db import db_models as models
+    from api.db.init_data import init_web_data, init_superuser
+    from api.db.services.user_service import UserService
+    from api.db.services.tenant_model_provider_service import TenantModelProviderService as Providers
+    from api.db.services.tenant_model_instance_service import TenantModelInstanceService as Instances
+    from api.db.services.tenant_model_service import TenantModelService as Models
+    inputs = json.loads(Path('/run/bootstrap/input.json').read_text())
+    models.init_database_tables()
+    init_web_data()
+    tables = [obj for _, obj in inspect.getmembers(models, inspect.isclass)
+              if obj != models.DataBaseModel and issubclass(obj, models.DataBaseModel)]
+    assert tables and all(obj.table_exists() for obj in tables)
+
+    def identifier(value):
+        return hashlib.sha256(value.encode()).hexdigest()[:32]
+
+    for purpose in ['knowledge', 'acceptance']:
+        email = purpose + '-ragflow@sunmoonai.local'
+        init_superuser(nickname='sunmoon-' + purpose, email=email, password=inputs[purpose + '_password'])
+        users = UserService.query(email=email)
+        assert len(users) == 1
+        user = users[0]
+        # Service identities do not gain the global administrator privilege.
+        models.User.update(is_superuser=False).where(models.User.id == user.id).execute()
+        provider_id = identifier('sunmoon/' + user.id + '/HuggingFace')
+        instance_id = identifier('sunmoon/' + user.id + '/cpu')
+        model_id = identifier('sunmoon/' + user.id + '/embedding')
+        if not Providers.query(id=provider_id):
+            Providers.insert(id=provider_id, provider_name='HuggingFace', tenant_id=user.id)
+        if not Instances.query(id=instance_id):
+            Instances.insert(id=instance_id, provider_id=provider_id, instance_name='sunmoon-cpu',
+                             api_key='local-no-key', extra=json.dumps({'base_url': inputs['embedding_url']}))
+        if not Models.query(id=model_id):
+            Models.insert(id=model_id, model_name=inputs['embedding_model'], provider_id=provider_id,
+                          instance_id=instance_id, model_type=2, extra=json.dumps({'max_tokens': 8192}))
+        models.Tenant.update(embd_id=inputs['embedding_model'] + '@sunmoon-cpu@HuggingFace',
+                             tenant_embd_id=model_id).where(models.Tenant.id == user.id).execute()
+        token = inputs[purpose + '_token']
+        existing = list(models.APIToken.select().where(models.APIToken.token == token))
+        assert not existing or (len(existing) == 1 and existing[0].tenant_id == user.id)
+        if not existing:
+            models.APIToken.create(tenant_id=user.id, token=token, source='none')
+
+    with models.DB.connection_context():
+        models.DB.execute_sql('GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ragflow_runtime')
+        models.DB.execute_sql('GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO ragflow_runtime')
+    print(json.dumps({'schema_initialized': True, 'service_tenants': 2, 'embedding_provider': 'HuggingFace', 'runtime_ddl': False}))
+---
+apiVersion: batch/v1
+kind: Job
+metadata: {name: ragflow-initialize-v1, namespace: data-platform-dev}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 1200
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: initialize, sunmoonai.com/postgresql-client: 'true', sunmoonai.com/object-storage-client: 'true'}
+    spec:
+      restartPolicy: Never
+      enableServiceLinks: false
+      serviceAccountName: platform-runtime
+      automountServiceAccountToken: false
+      nodeSelector: {kubernetes.io/hostname: 'sunmoon-kind-worker2'}
+      securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: initialize
+          image: harbor.sunmoonai.com:30443/platform/ragflow@sha256:e6b3f1a185c0a70abb3a72e1092415df8c5c6a4fae0089545554f2936c4b27ab
+          imagePullPolicy: IfNotPresent
+          command: [python3, /sunmoon/initialize.py]
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          resources: {requests: {cpu: 250m, memory: 1Gi}, limits: {cpu: '2', memory: 4Gi}}
+          env:
+            - {name: DB_TYPE, value: postgres}
+            - {name: DOC_ENGINE, value: infinity}
+            - {name: STORAGE_IMPL, value: AWS_S3}
+            - {name: REGISTER_ENABLED, value: '0'}
+            - {name: ENABLE_CHAT_CHANNEL, value: '0'}
+            - {name: HF_HUB_OFFLINE, value: '1'}
+            - {name: TRANSFORMERS_OFFLINE, value: '1'}
+            - {name: PIP_NO_INDEX, value: '1'}
+            - {name: UV_OFFLINE, value: 'true'}
+            - {name: HOME, value: /tmp/home}
+            - {name: OMP_NUM_THREADS, value: '1'}
+            - {name: OPENBLAS_NUM_THREADS, value: '1'}
+            - {name: MKL_NUM_THREADS, value: '1'}
+            - {name: MAX_CONCURRENT_TASKS, value: '1'}
+            - {name: AWS_EC2_METADATA_DISABLED, value: 'true'}
+            - {name: LITELLM_LOCAL_MODEL_COST_MAP, value: 'True'}
+            - {name: PYTHONDONTWRITEBYTECODE, value: '1'}
+            - {name: AWS_CA_BUNDLE, value: /run/bootstrap/ca.crt}
+          volumeMounts:
+            - {name: scripts, mountPath: /sunmoon, readOnly: true}
+            - {name: auth, mountPath: /ragflow/conf/service_conf.yaml, subPath: service_conf.yaml, readOnly: true}
+            - {name: auth, mountPath: /run/bootstrap, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+            - {name: logs, mountPath: /ragflow/logs}
+      volumes:
+        - {name: scripts, configMap: {name: ragflow-initialize-v1}}
+        - {name: auth, secret: {secretName: ragflow-initialize-auth, defaultMode: 0440}}
+        - {name: tmp, emptyDir: {sizeLimit: 512Mi}}
+        - {name: logs, emptyDir: {sizeLimit: 256Mi}}

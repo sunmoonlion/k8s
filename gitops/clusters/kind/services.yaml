@@ -24,7 +24,8 @@ spec:
   timeout: 6m
   path: ./components/app-platform/auth-app/casdoor/database
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: platform-services}]
+  dependsOn:
+    - {name: platform-services}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -41,7 +42,8 @@ spec:
   timeout: 6m
   path: ./components/app-platform/auth-app/casdoor/init
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: casdoor-db}]
+  dependsOn:
+    - {name: casdoor-db}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -58,7 +60,8 @@ spec:
   timeout: 6m
   path: ./components/app-platform/auth-app/casdoor
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: casdoor-init}]
+  dependsOn:
+    - {name: casdoor-init}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -75,7 +78,8 @@ spec:
   timeout: 6m
   path: ./components/data-platform/elk/initialize
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: platform-services}]
+  dependsOn:
+    - {name: platform-services}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -92,7 +96,8 @@ spec:
   timeout: 15m
   path: ./components/data-platform/elk/runtime
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: elk-initialize}]
+  dependsOn:
+    - {name: elk-initialize}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -109,7 +114,81 @@ spec:
   timeout: 6m
   path: ./components/data-platform/mongodb/initialize
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: platform-services}]
+  dependsOn:
+    - {name: platform-services}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: ragflow-database, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 6m
+  path: ./components/data-platform/ragflow/database
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: platform-services}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: ragflow-storage, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 6m
+  path: ./components/data-platform/ragflow/storage
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: platform-services}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: ragflow-initialize, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 20m
+  path: ./components/data-platform/ragflow/initialize
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: ragflow-database}
+    - {name: ragflow-storage}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: ragflow-runtime, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 15m
+  path: ./components/data-platform/ragflow/runtime
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: ragflow-initialize}
   prune: false
   deletionPolicy: Orphan
   wait: true

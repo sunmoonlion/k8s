@@ -1,4 +1,4 @@
-{% for name,path,dependency,enabled in [('platform-services','core','',true),('casdoor-db','casdoor-db','platform-services',services_casdoor_enabled),('casdoor-init','casdoor-init','casdoor-db',services_casdoor_enabled),('casdoor','casdoor','casdoor-init',services_casdoor_enabled),('elk-initialize','elk-initialize','platform-services',services_elk_enabled),('elk-runtime','elk-runtime','elk-initialize',services_elk_enabled),('mongodb-initialize','mongodb-initialize','platform-services',services_mongodb_enabled)] if enabled %}
+{% for name,path,dependency,enabled in [('platform-services','core','',true),('casdoor-db','casdoor-db','platform-services',services_casdoor_enabled),('casdoor-init','casdoor-init','casdoor-db',services_casdoor_enabled),('casdoor','casdoor','casdoor-init',services_casdoor_enabled),('elk-initialize','elk-initialize','platform-services',services_elk_enabled),('elk-runtime','elk-runtime','elk-initialize',services_elk_enabled),('mongodb-initialize','mongodb-initialize','platform-services',services_mongodb_enabled),('ragflow-database','ragflow-database','platform-services',services_ragflow_enabled),('ragflow-storage','ragflow-storage','platform-services',services_ragflow_enabled),('ragflow-initialize','ragflow-initialize',['ragflow-database','ragflow-storage'],services_ragflow_enabled),('ragflow-runtime','ragflow-runtime','ragflow-initialize',services_ragflow_enabled)] if enabled %}
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -6,11 +6,14 @@ metadata: {name: {{ name }}, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
-  timeout: {{ '15m' if name in ['platform-services','elk-runtime'] else '6m' }}
+  timeout: {{ '20m' if name == 'ragflow-initialize' else ('15m' if name in ['platform-services','elk-runtime','ragflow-runtime'] else '6m') }}
   path: ./components/{{ service_stage_paths[path] | default(path) }}
   sourceRef: {kind: OCIRepository, name: platform}
 {% if dependency %}
-  dependsOn: [{name: {{ dependency }}}]
+  dependsOn:
+{% for dep in ([dependency] if dependency is string else dependency) %}
+    - {name: {{ dep }}}
+{% endfor %}
 {% endif %}
   prune: false
   deletionPolicy: Orphan

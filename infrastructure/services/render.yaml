@@ -164,6 +164,9 @@
     - name: Prepare dedicated RAGFlow queue identity
       ansible.builtin.include_tasks: ../../gitops/components/data-platform/valkey/prepare.yaml
       when: services_valkey_enabled | bool
+    - name: Prepare RAGFlow independent initialization and restricted runtime
+      ansible.builtin.include_tasks: ../../gitops/components/data-platform/ragflow/prepare.yaml
+      when: services_ragflow_enabled | bool
     - name: Read namespace pull-only identity
       ansible.builtin.slurp: {src: '{{ registry_config_dir }}/private/puller-auth.json'}
       register: puller

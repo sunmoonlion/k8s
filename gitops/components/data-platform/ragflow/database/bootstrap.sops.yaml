@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: ragflow-database-bootstrap
+    namespace: data-platform-dev
+stringData:
+    migrator_password: ENC[AES256_GCM,data:IT47cQxJI9DM81QzskZNS974ZyzwKpDXpIu2fqd+sA3h7RzqZ8tb9g==,iv:8lU1EeUl/2O8ychPPqvvOtSW8g1ZB+I7Nc4v+NT8yPc=,tag:2SXlpDzG3NEDWJuuGWsCeQ==,type:str]
+    runtime_password: ENC[AES256_GCM,data:BRnfiNGCBGR3AOyJBsFAiaL5jFlpl51ee+k33Cmmxx0LM4MHjZ8BkQ==,iv:PJc+B58vr/u/bcvW+Bs/xa1WqBH7IMm8xQw9zyS1tY4=,tag:DfNqM9bTwfMtN011bkh6fg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBLMUs2dFJyWGtZSnhYeTlV
+            RW84eXJBNWdrb0dmY1ROOUJuQmxDT1BsclJnCnh4RFFoU05TSFBRdGRGYXZUU2Q4
+            L3JoVkR4cGhJWlR4SkpLSHZKZjdSVGsKLS0tIFJSQ0FyU0xONVlSUDdCb2sxdGhR
+            VXNYRDFCZElBYkp1REFlbWJWR0FVY3MKFyQhS4VwbQU+f0jREj61Cum5iA53hYR9
+            Rf8u6Fg592qXcI9BbZfws7zyw7Idaxx3cVXycL70yI2WjIiBo5jGjw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1usl2cz5ltxz7au5tdpjqz7t77nzh3a29dgyewwfexqcctjfp2edq5yy6ge
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-10-04T07:54:12Z"
+    mac: ENC[AES256_GCM,data:KYBWQXsL8BmByBcQlz42W+6j3dDBkvUoVDSOLG/nWW79Et7e82lU9ohvZ0L2zYI/b+wFYEoc27vL40M3EMCxEmsnNmlEo9Fe1lZMYzfnQDnWh/BPlhF3EYrdgYs2LgP2nz0J8Ft/XNPjrLlU3H0PAURIx9FB5muuWn6TVaj62Yo=,iv:ufe7Pe5xRfrLyqcVR2OOu2Is99o+VcTQHJfM5SjmK5I=,tag:OsVA+sHbbnxcyPVdvyNrMg==,type:str]
+    version: 3.13.3
