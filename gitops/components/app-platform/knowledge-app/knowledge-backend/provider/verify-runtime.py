@@ -2,11 +2,11 @@
 import asyncio,hashlib,json,logging,sys,time,uuid
 from datetime import UTC,datetime,timedelta
 from sqlalchemy import select,text,delete
-from botocore.exceptions import ClientError
-import boto3
+import httpx
+from urllib.parse import urlsplit,quote
 from core.config import get_settings
 from app.infrastructure.storage.postgres import get_postgres
-from app.infrastructure.external.artifact_content import resolve_artifact_content
+from app.infrastructure.external.artifact_content import resolve_artifact_content,_s3_sigv4_headers
 from app.infrastructure.external.ragflow import check_ragflow_config
 from app.application.ports.knowledge_provider import ArtifactError
 from app.application.dto.knowledge import KnowledgeIngestionCreate
@@ -36,13 +36,14 @@ async def run():
         await resolve_artifact_content(settings=settings,source_artifact_refs=[ref | {'sha256':'0'*64}],title=None,canonical_url=None,metadata_json={},source_document_version_id=inputs['version_id'])
     except ArtifactError:checks['wrong_original_hash_denied']=True
     else:raise AssertionError('Wrong source digest accepted')
-    reader=boto3.client('s3',endpoint_url=settings.s3_endpoint,region_name=settings.s3_region,aws_access_key_id=settings.s3_access_key_id,aws_secret_access_key=settings.s3_secret_access_key,verify='/etc/sunmoon/provider/ca.crt')
-    try:
-        for name,method,args in [('original_write_denied',reader.put_object,{'Bucket':source['bucket'],'Key':source['key'],'Body':b'forbidden'}),('original_list_denied',reader.list_objects_v2,{'Bucket':source['bucket'],'Prefix':'info/original/','MaxKeys':1}),('foreign_bucket_denied',reader.get_object,{'Bucket':'ragflow-derived','Key':'forbidden'}),('bucket_management_denied',reader.get_bucket_versioning,{'Bucket':source['bucket']})]:
-            try:method(**args)
-            except ClientError as error:assert error.response['Error']['Code']=='AccessDenied';checks[name]=True
-            else:raise AssertionError('Source reader exceeded its boundary')
-    finally:reader.close()
+    endpoint=settings.s3_endpoint.rstrip('/');host=urlsplit(endpoint).netloc
+    async with httpx.AsyncClient(timeout=15) as reader:
+        attempts=[('original_write_denied','PUT','/'+source['bucket']+'/'+source['key'].rsplit('/',1)[0]+'/forbidden-write.txt',''),('original_list_denied','GET','/'+source['bucket'],'list-type=2&max-keys=1&prefix=info%2Foriginal%2F'),('foreign_bucket_denied','GET','/ragflow-derived/forbidden',''),('bucket_management_denied','GET','/'+source['bucket'],'versioning=')]
+        for label,method,path,query in attempts:
+            headers=_s3_sigv4_headers(method=method,host=host,canonical_uri=path,canonical_query=query,region=settings.s3_region,access_key=settings.s3_access_key_id,secret_key=settings.s3_secret_access_key)
+            response=await reader.request(method,endpoint+path+('?' + query if query else ''),headers=headers)
+            assert response.status_code==403 and '<Code>AccessDenied</Code>' in response.text, 'Source reader boundary rejected for an unexpected reason'
+            checks[label]=True
     now=datetime.now(UTC)
     principal=Principal(actor_type='service',subject='operator-component-acceptance',issuer='urn:sunmoon:component-acceptance',app='knowledge',surface='internal',audience='component-acceptance',scopes=frozenset({'knowledge:retrieve'}),authenticated_at=now,expires_at=now+timedelta(minutes=15),policy_version='component-acceptance-v1')
     payload=KnowledgeIngestionCreate(contract_version=1,operation='upsert',distribution_id=uuid.UUID(inputs['distribution_id']),source_app='info-app',source_document_id=uuid.UUID(inputs['document_id']),source_document_version_id=uuid.UUID(inputs['version_id']),artifact=ref,dataset_key='default',idempotency_key='sunmoon-provider-acceptance:'+inputs['version_id'],correlation_id=uuid.UUID(inputs['correlation_id']),document={'title':'中文潮汐知识部署验收','canonical_url':'https://info.sunmoonai.com:30443/acceptance/'+inputs['document_id'],'content_hash':ref['sha256'],'metadata':{}})
