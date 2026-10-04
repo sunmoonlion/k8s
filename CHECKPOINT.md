@@ -1,16 +1,49 @@
-# 当前单元：跨应用服务身份与集群内 HTTPS（实施中，2026-10-04）
+# 当前单元：跨应用服务身份与集群内 HTTPS（完成并实际重复验证，2026-10-04）
 
-基线ce05ffcba00915c66ab37d83b4cb6579f761bcbe；工作树platform-kind-v1，k8s单仓。原生Make→Ansible→Flux/SOPS，维护2小时、容量10GiB，不切公共30443、不动原始kind/卷/备份、无push。
+基线ce05ffcba00915c66ab37d83b4cb6579f761bcbe；工作树/分支platform-kind-v1，k8s单仓，本轮四个业务仓没有改动，无push。原生Make→Ansible→Flux/SOPS；开发维护2小时、容量底线10GiB，没有切公共入口、停止原始kind或删除数据卷/备份。
 
-| 自检规则 | 本单元范围 |
+| 自检规则 | 实际实施 |
 | --- | --- |
-| C-I3/C-I7 | 入库/检索独立Casdoor组织与client_credentials；JWT签名/issuer/audience/精确subject；无浏览器/DB密码复用 |
-| C-D5/C-D8 | Info固定版本原文，Knowledge只读、RAG派生；运行不DDL，不改契约/schema |
-| C-R1/C-R6 | 共享原生部署机制，配置同组件，现有模板APP保持字节不变；不改已完成不可变Job |
+| C-I3/C-I7 | 两个独立空Casdoor组织/client_credentials/900秒令牌；签名、issuer、audience、精确subject、关系能力及拒绝边界 |
+| C-D5/C-D8 | Info固定VersionId原文，Knowledge只读、RAG派生；不改契约/schema/业务依赖，运行不DDL |
+| C-R1/C-R6 | 共用原生部署机制、配置同组件、命名Service端口单一来源；20个既有初始化Job声明和TPL声明字节不变 |
 
-首轮实现4b88e4ae、晋级434ae720（source revision4b88e4ae74164b3ca6b037ea941c48b2cb539809 / sha256:5377594283954d5248d5df6d571d346aef3d2a02eecdb49e488a0cc5f60c6c75）实际成功；Info/Investment/Knowledge完整bootstrap退出0，check分别ok48/43/46、changed0/0/1。两个独立服务组织、900秒签名令牌、内置用户越权和坏密码拒绝通过；Info真实HTTPS摄入→真实Worker→Investment领域Port HTTPS中文检索及身份日记/拒绝边界通过，随机领域/原文/派生版本精确清理。54个Running Pod，45个无关Pod UID/重启计数及13个Retain PV不变；仅9个计划内后端角色滚动。TPL所有声明及20个既有初始化Job声明字节不变。
+## 当前固定交付
 
-已补齐失败探针记录/保留输入及运行凭据核验；首轮最终重复在Info验收拦住：前端使用显式env而没有envFrom，检查误假定字段存在；修正默认空列表，不改运行配置，保留service-auth-info-final-bootstrap.log失败记录，继续发布及完整重复。仍待同一源重复、一键平台回归及最终证据汇总。前轮回退source仍在infrastructure/.build/models/service-auth-rollback-source.yaml；回退不删除新身份输入。不得把HTTP客户端核验称为完整Info爬取或投资Agent工具执行验收。
+- 声明源码16c8bbbe5121ff693fd863b34dc7e5136e07f378，source digest sha256:515ffb160022c5b47198f1acbc66345c1613e3826db7f99b033b2eb09c021ace，晋级9f8ae786。最后只更新本检查点，不改变已验GitOps字节。三组早期source发布/成功或失败日志均保留，不把中间状态改写成最终成功。
+- 内部HTTPS路由/配置/证书准备/说明在 ingress-platform/traefik/service-access；ExternalName通过集群DNS解析Traefik，TLS保留SNI/CA/主机名验证。Casdoor保持公开issuer并经HTTPS回通道通信，Knowledge仅internal前缀路由。后端引用http命名Service端口，不复制API端口常量；公开30443代理没有切换。
+- Info、Investment的knowledge_service配置在各自后端config.yaml，接收端knowledge_service_receiver在Knowledge后端config.yaml，精确绑定从调用方单一来源读取。共同准备/独立初始化Job/原生角色检查在common/backend/service-identity；不新增部署CLI、不导入旧实现。两组织无其它应用或人类账号，浏览器/服务/数据库密码不复用；CasdoorAPI客户端凭据及实际Bearer都拒绝读取built-in用户。
+- 服务密码root0600保存为各APP私有service-identity.yaml并与数据盘非覆盖备份逐字节相同；内部TLS独立于公开证书，主副本一致。API/Worker只持自己出站secret，Scheduler/前端不持，Knowledge不持消费者secret，已核对实际Pod全部引用。
+
+## 实际验证及重复
+
+1. 首轮Info→Knowledge真实HTTPS摄入→认证身份日记→真实Scheduler/Outbox/Worker解析→Investment领域Port HTTPS中文检索通过。27项含缺失/篡改令牌、关系交叉/浏览器分面拒绝、HTTP幂等/冲突、跨租户/数据集、源只读和固定原文版本/摘要/引用。正式数据集ID保留；本轮UUID原文版本、派生文档/S3版本、领域/结束投递记录精确清理。
+2. 补充失败探针root0600记录，仅保存UUID/原文引用/清理状态、不保存token；失败时保留输入，成功领域清理后才删原文及记录。随后两轮完整HTTP验收均通过，临时记录确实删除。没有执行崩溃/故障注入，不宣称失败路径已实际演练。
+3. 当前源Knowledge完整bootstrap：ok46 changed1 failed0（唯一验收变化为私有回执）；Info ok49 changed0 failed0、Investment ok44 changed0 failed0；TPL在前一个声明对象相同的固定源完整bootstrap ok40 changed0 failed0，TPL字节不变。平台完整services-bootstrap在两个最终阶段均退出0，12个play全部failed0，最后services-check ok50 changed1 failed0；chart验证仅私有临时目录创建/删除changed2。所有镜像版本/摘要和已有账号保持。
+4. 54个Running Pod全部就绪，3个节点Ready。首次本单元只有9个计划内后端角色滚动；45个无关Pod UID/重启数与单元前一致。首次滚动完成后全部54个运行Pod以及成功初始化Pod在后续发布、重复和平台回归期间UID/重启数不变，没有重执行Job。13个Retain/Bound PV UID/spec/状态不变；48个Flux阶段当前generation Ready并同一515ff摘要。
+5. 66个Kustomize根本地构建、公开对象server dry-run通过。八个应用域名经真实30443的TLS/健康/发布标识通过，显式指向127.0.0.1且保留Host/SNI/CA；WSL/Windows公共DNS没有由本单元验证。原始kind控制面仍停止、两个worker保留运行，新sunmoon-kind三节点与新外置Harbor运行。
+
+## 发生的失败及修正
+
+- 临时编辑脚本两次精确文本定位失败，未部署错误内容；用明确剩余段完成，AST/YAML门禁通过，临时脚本收尾清理。
+- 第一次新增的原生凭据检查错误假定前端有envFrom，Info完整入口被验收拒绝（service-auth-info-final-bootstrap.log）。前端使用显式env；已改为API/Worker精确envFrom检查，Scheduler/前端全部Pod引用禁止消费secret。保留失败记录，随后完整四应用/平台及当前源检查通过，没有把服务错误归因到网络或重启健康Pod。
+- 首次只读汇总按标签去重会合并RAGFlow两个角色；最终证据按真实namespace/Pod名称比较，54个而非53个，45个无关Pod而非44个。
+
+## 证据和日常入口
+
+私有证据在infrastructure/.build/models：service-auth-unit-receipt.json为最终汇总，service-auth-final-http-success.json为最后真实回执，before/applied/final Pod/PV/Flux/Job/Deployment/Node JSON、first/second成功回执、三应用和平台各轮bootstrap/stage/release日志、public-entry-check与bearer-organization-isolation JSON。前轮回退固定源在service-auth-rollback-source.yaml；回退不删除新身份或数据。原始日志可能包含操作私有信息，不直接发布。
+
+已晋级环境的一键入口为 make -C infrastructure application-bootstrap APP=info|investment|knowledge；日常完整业务核验用 make -C infrastructure application-check APP=knowledge，会创建随机探针并精确清理。服务配置和底层机制说明同责任目录，不直接patch Pod。上轮四个后端子仓提交与镜像锁仍有效，详见下一节；本轮仅k8s。
+
+本轮13个明确临时文件及后续检查点编辑脚本按路径清理，probe记录/原文/派生对象已清理，无东京下载。正式材料、私有输入备份、失败证据和Luna参考工作树保留。
+
+## 后续工作顺序（项目整体未完成）
+
+1. ELK全应用日志采集及UI；Neo4j/MongoDB真实业务身份接入与恢复核验；Info完整爬取投递/投资Agent工具链仍区别于已通过的HTTP客户端集成。
+2. 整套宿主→平台→所有应用原生一键、统一启停、开机顺序和宿主DNS准入；解决重启后原始kind控制面自行启动的已记录问题。
+3. WSL/KIND实际重启与KIND删除重建后，外置Harbor全目录摘要、镜像摘要及新节点认证拉取持久化验收。
+4. 长期容量监控/保留GC/构建缓存/日志/备份统一查看预览执行，删除策略交所有者确认；机器外备份落点仍由所有者定。
+5. 全次最终物料/临时/远程清理及正式交付；保留所有者明确要求的原始kind、新体系及Luna参考，云流程不宣称实机验证。
 
 ---
 
