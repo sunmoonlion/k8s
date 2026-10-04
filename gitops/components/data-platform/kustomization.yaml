@@ -7,3 +7,4 @@ resources:
 - text-embeddings
 - elk/elasticsearch
 - neo4j
+- mongodb

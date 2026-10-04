@@ -1,6 +1,7 @@
 ---
 # Source layout and derived references only; editable values live beside each component.
 service_stage_paths:
+  mongodb-initialize: data-platform/mongodb/initialize
   elk-initialize: data-platform/elk/initialize
   elk-runtime: data-platform/elk/runtime
   casdoor-db: app-platform/auth-app/casdoor/database
@@ -14,6 +15,7 @@ service_candidate_roots:
   - ingress-platform
   - app-platform
 component_namespaces:
+  mongodb: "{{ data_namespace }}"
   neo4j: "{{ data_namespace }}"
   elasticsearch: "{{ data_namespace }}"
   kibana: "{{ data_namespace }}"
@@ -24,8 +26,9 @@ component_namespaces:
   text-embeddings: "{{ data_namespace }}"
   rabbitmq: "{{ messaging_namespace }}"
   casdoor: "{{ app_namespace }}"
-services_volumes: "{{ [postgresql_volume, redis_volume, rabbitmq_volume, casdoor_volume, object_storage_volume, text_embeddings_volume, elasticsearch_volume, kibana_volume, logstash_volume, neo4j_volume] }}"
+services_volumes: "{{ [postgresql_volume, redis_volume, rabbitmq_volume, casdoor_volume, object_storage_volume, text_embeddings_volume, elasticsearch_volume, kibana_volume, logstash_volume, neo4j_volume, mongodb_volume] }}"
 service_component_paths:
+  mongodb: data-platform/mongodb
   neo4j: data-platform/neo4j
   elasticsearch: data-platform/elk/elasticsearch
   kibana: data-platform/elk/kibana

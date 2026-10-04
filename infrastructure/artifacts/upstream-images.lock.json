@@ -152,13 +152,13 @@
     {
       "id": "mongodb",
       "group": "optional",
-      "source": "docker.io/library/mongo:8.3.11-noble",
+      "source": "docker.io/library/mongo:9.0.2-noble",
       "platform": "linux/amd64",
       "status": "resolved",
-      "manifest_digest": "sha256:949d53a1e0f0f26c8545a9c589474b0ba3be4ca9209c89713c684078665d78d6",
-      "reference": "docker.io/library/mongo@sha256:949d53a1e0f0f26c8545a9c589474b0ba3be4ca9209c89713c684078665d78d6",
-      "config_digest": "sha256:4d9c509681d8a8683928a6ebb2029b77e931db6983878765ea8a3971e57142e6",
-      "compressed_layer_bytes": 299851313
+      "manifest_digest": "sha256:17148334f6b0a4fad09ad70f6449cf4d0330bbf49469b6dff4338123a5f7bcbf",
+      "reference": "docker.io/library/mongo@sha256:17148334f6b0a4fad09ad70f6449cf4d0330bbf49469b6dff4338123a5f7bcbf",
+      "config_digest": "sha256:0f6605a5a60504880cea7b4dd646dbfa18f297b2586c747f61d55c61f5128e1a",
+      "compressed_layer_bytes": 371904136
     },
     {
       "id": "neo4j",

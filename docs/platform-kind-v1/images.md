@@ -45,12 +45,12 @@ Flux 第一期开启四个镜像：`ghcr.io/fluxcd/source-controller:v1.9.5`、`
 | Kibana | **9.5.4**；`docker.elastic.co/kibana/kibana:9.5.4` | [发行](https://github.com/elastic/kibana/releases/tag/v9.5.4) |
 | Logstash | **9.5.4**；`docker.elastic.co/logstash/logstash:9.5.4` | [发行](https://github.com/elastic/logstash/releases/tag/v9.5.4) |
 | 对象存储 MinIO AIStor | **RELEASE.2026-09-19T17-05-25Z**；`quay.io/minio/aistor/minio:RELEASE.2026-09-19T17-05-25Z` | [官方发行与拉取地址](https://dl.min.io/releases) |
-| MongoDB（可选） | **8.3.11**；`docker.io/library/mongo:8.3.11-noble` | [官方镜像清单](https://raw.githubusercontent.com/docker-library/official-images/master/library/mongo)；见下方版本例外 |
+| MongoDB（可选） | **9.0.2**；`docker.io/library/mongo:9.0.2-noble` | [官方镜像清单](https://raw.githubusercontent.com/docker-library/official-images/master/library/mongo)；见下方版本例外 |
 | Neo4j（可选） | **2026.09.0**；`docker.io/library/neo4j:2026.09.0-community-trixie` | [官方镜像清单](https://raw.githubusercontent.com/docker-library/official-images/master/library/neo4j) |
 
 Harbor 新装使用安装包自带的 `goharbor` 组件、专用数据库、Valkey 和 Trivy adapter；不把业务 PostgreSQL/Redis 镜像塞进 Harbor 官方组合。主组件使用 v2.15.2；辅助镜像逐项以该安装包输出为准并锁摘要。官方模板已使用 `valkey-photon`，不能继续沿用旧 `redis-photon` 假设。[固定 Compose 模板](https://raw.githubusercontent.com/goharbor/harbor/v2.15.2/make/photon/prepare/templates/docker_compose/docker-compose.yml.jinja)
 
-MongoDB 9.0 已于 9 月 29 日正式发布；本次查到的 Docker Official Images 清单仍为 8.3.11，厂商 9.0 正式镜像的 manifest 未核实成功。因此当前可准备的镜像选 8.3.11，明确不是 MongoDB 产品最新大版；不得拿 9.0 RC 镜像代替。若物料阶段核实 9.0 正式镜像及驱动支持，则单独更新此项选择。[9.0 官方公告](https://www.mongodb.com/products/updates/mongodb-9-0-is-now-available/)
+2026-10-04复核官方镜像清单已提供9.0.2-noble；amd64 manifest和原始config摘要均实际核对，MONGO_VERSION为9.0.2。此前8.3.11是正式9.0镜像尚未核实的条件例外，本次新部署无旧Mongo数据，采用正式9.0.2，不使用RC。业务尚无Mongo驱动接入，未来接入另验兼容。[官方9.0发布说明](https://www.mongodb.com/docs/manual/release-notes/9.0/)
 
 AIStor 保持现有产品选择，第一期采用单节点部署，使用合法许可。Free 许可仅覆盖单节点形态；云上多节点不能自动照搬免费许可假设。本轮不申请许可、不购买服务。[官方 Kubernetes 部署与许可条件](https://docs.min.io/aistor/installation/kubernetes/install/deploy-aistor-on-kubernetes/)
 

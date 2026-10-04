@@ -1,0 +1,13 @@
+---
+# User settings; versions/digests have one source in artifacts/upstream-images.lock.json.
+services_mongodb_enabled: true
+mongodb_volume: {name: mongodb, node: worker2, size: 20Gi, uid: 999, gid: 999}
+mongodb_port: 27017
+mongodb_replica_set: sunmoon
+mongodb_acceptance_database: sunmoon_acceptance
+mongodb_init_generation: v1
+mongodb_wiredtiger_cache_gib: 0.5
+mongodb_oplog_mib: 256
+mongodb_resources:
+  requests: {cpu: 250m, memory: 1Gi}
+  limits: {cpu: '2', memory: 2Gi}
