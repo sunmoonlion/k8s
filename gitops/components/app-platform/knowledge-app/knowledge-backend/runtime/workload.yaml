@@ -15,6 +15,17 @@ data:
   CASDOOR_VERIFY_SSL: 'true'
   SESSION_COOKIE_SECURE: 'true'
   REFERENCE_INTERACTION_ENABLED: 'false'
+  RAGFLOW_API_BASE: https://ragflow.data-platform-dev.svc.cluster.local:9380
+  RAGFLOW_PARSE_TIMEOUT_SECONDS: '300'
+  INGESTION_DATASET_BINDINGS: "{\"default\": {\"dataset_id\": \"4752d41ebfde11f19b670d4e2005906f\", \"dataset_name\": \"sunmoon-kind-knowledge-default\"}}"
+  RETRIEVAL_DATASET_ALLOWLIST: "default"
+  RETRIEVAL_DEFAULT_TENANT_ID: "sunmoonai"
+  S3_ENDPOINT: https://object-storage.data-platform-dev.svc.cluster.local:9000
+  S3_REGION: us-east-1
+  S3_FORCE_PATH_STYLE: 'true'
+  ARTIFACT_S3_ALLOWED_BUCKETS: "info-originals"
+  ARTIFACT_S3_ALLOWED_PREFIXES: "info/original/"
+  SSL_CERT_FILE: /etc/sunmoon/provider/ca.crt
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -44,9 +55,11 @@ spec:
         app.kubernetes.io/part-of: knowledge
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
+        sunmoonai.com/ragflow-client: 'true'
+        sunmoonai.com/object-storage-client: 'true'
         sunmoonai.com/redis-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: a2ec888b263015e1845567666f23919c6fade3ea0e553dd6eb19bbddd32bc777
+        sunmoonai.com/config-sha256: 618ef00e2e7819c46a325ec4edc7d82df5e42ec93d0517a25fd7c0e051f7f501
     spec:
       serviceAccountName: knowledge-runtime
       automountServiceAccountToken: false
@@ -75,12 +88,15 @@ spec:
             - {secretRef: {name: knowledge-rabbitmq-runtime}}
             - {secretRef: {name: knowledge-redis-runtime}}
             - {secretRef: {name: knowledge-browser-secrets}}
+            - {secretRef: {name: knowledge-provider-runtime}}
           resources: {"requests": {"cpu": "100m", "memory": "192Mi"}, "limits": {"cpu": "2", "memory": "768Mi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
+            - {name: provider-ca, mountPath: /etc/sunmoon/provider, readOnly: true}
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
+        - {name: provider-ca, secret: {secretName: knowledge-provider-runtime, items: [{key: ca.crt, path: ca.crt}]}}
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
         - {name: celery-config, configMap: {name: knowledge-celery-config}}
 ---
@@ -101,8 +117,10 @@ spec:
         app.kubernetes.io/part-of: knowledge
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
+        sunmoonai.com/ragflow-client: 'true'
+        sunmoonai.com/object-storage-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: a2ec888b263015e1845567666f23919c6fade3ea0e553dd6eb19bbddd32bc777
+        sunmoonai.com/config-sha256: 618ef00e2e7819c46a325ec4edc7d82df5e42ec93d0517a25fd7c0e051f7f501
     spec:
       serviceAccountName: knowledge-runtime
       automountServiceAccountToken: false
@@ -127,12 +145,15 @@ spec:
             - {configMapRef: {name: knowledge-browser-identity}}
             - {secretRef: {name: knowledge-database-runtime}}
             - {secretRef: {name: knowledge-rabbitmq-runtime}}
+            - {secretRef: {name: knowledge-provider-runtime}}
           resources: {"requests": {"cpu": "100m", "memory": "256Mi"}, "limits": {"cpu": "2", "memory": "1Gi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
+            - {name: provider-ca, mountPath: /etc/sunmoon/provider, readOnly: true}
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
+        - {name: provider-ca, secret: {secretName: knowledge-provider-runtime, items: [{key: ca.crt, path: ca.crt}]}}
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
         - {name: celery-config, configMap: {name: knowledge-celery-config}}
 ---
@@ -154,7 +175,7 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
       annotations:
-        sunmoonai.com/config-sha256: a2ec888b263015e1845567666f23919c6fade3ea0e553dd6eb19bbddd32bc777
+        sunmoonai.com/config-sha256: 618ef00e2e7819c46a325ec4edc7d82df5e42ec93d0517a25fd7c0e051f7f501
     spec:
       serviceAccountName: knowledge-runtime
       automountServiceAccountToken: false
@@ -182,9 +203,11 @@ spec:
           resources: {"requests": {"cpu": "50m", "memory": "128Mi"}, "limits": {"cpu": "1", "memory": "512Mi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
+            - {name: provider-ca, mountPath: /etc/sunmoon/provider, readOnly: true}
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
+        - {name: provider-ca, secret: {secretName: knowledge-provider-runtime, items: [{key: ca.crt, path: ca.crt}]}}
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
         - {name: celery-config, configMap: {name: knowledge-celery-config}}
 ---
@@ -230,3 +253,15 @@ spec:
     - from:
         - podSelector: {matchLabels: {app.kubernetes.io/name: knowledge-api}}
       ports: [{protocol: TCP, port: 8000}]
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: knowledge-ragflow-egress, namespace: app-platform-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/part-of: knowledge, sunmoonai.com/ragflow-client: 'true'}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: data-platform-dev}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: api}}
+      ports: [{protocol: TCP, port: 9380}]
+---

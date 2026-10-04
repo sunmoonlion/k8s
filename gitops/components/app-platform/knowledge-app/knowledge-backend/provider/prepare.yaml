@@ -1,0 +1,163 @@
+---
+- name: Validate knowledge provider and upstream original ownership
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - application_name == 'knowledge'
+      - services_ragflow_enabled | bool
+      - services_object_storage_enabled | bool
+      - cfg.knowledge_provider.source_user == 'knowledge_source_reader'
+      - cfg.knowledge_provider.source_bucket == 'info-originals'
+      - cfg.knowledge_provider.source_prefix == 'info/original/'
+      - cfg.knowledge_provider.dataset_key == 'default'
+      - cfg.knowledge_provider.dataset_name == cluster_name + '-knowledge-default'
+      - cfg.knowledge_provider.job_revision is match('^[a-z0-9-]{1,16}$')
+      - not storage_enabled
+- name: Inspect preserved application S3 identity
+  ansible.builtin.stat: {path: '{{ item }}/provider-source.yaml', follow: false}
+  loop: ['{{ cfg.private_dir }}', '{{ cfg.backup_dir }}']
+  register: provider_files
+  no_log: true
+- name: Refuse insecure or redirected application S3 input
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
+  loop: '{{ provider_files.results }}'
+  no_log: true
+- name: Restore preserved S3 identity without rotation
+  ansible.builtin.copy: {src: '{{ cfg.backup_dir }}/provider-source.yaml', dest: '{{ cfg.private_dir }}/provider-source.yaml', remote_src: true, mode: '0600'}
+  when: not provider_files.results[0].stat.exists and provider_files.results[1].stat.exists
+  no_log: true
+- name: Refuse silently regenerating a declared S3 account
+  ansible.builtin.assert:
+    quiet: true
+    that: provider_files.results[0].stat.exists or provider_files.results[1].stat.exists or query('fileglob',component_root + '/runtime/provider.sops.yaml') | length == 0
+- name: Generate an independent application S3 secret only on first preparation
+  ansible.builtin.copy:
+    dest: '{{ cfg.private_dir }}/provider-source.yaml'
+    force: false
+    mode: '0600'
+    content: |
+      secret_key: {{ lookup('password','/dev/null',length=40,chars=['ascii_letters','digits']) }}
+  when: not provider_files.results[0].stat.exists and not provider_files.results[1].stat.exists
+  no_log: true
+- name: Preserve non-overwritten S3 identity backup
+  ansible.builtin.copy: {src: '{{ cfg.private_dir }}/provider-source.yaml', dest: '{{ cfg.backup_dir }}/provider-source.yaml', remote_src: true, force: false, mode: '0600'}
+  no_log: true
+- name: Require byte identical recoverable application S3 input
+  ansible.builtin.command: {argv: [cmp, --silent, '{{ cfg.private_dir }}/provider-source.yaml', '{{ cfg.backup_dir }}/provider-source.yaml']}
+  changed_when: false
+  no_log: true
+- name: Read private S3 input in memory
+  ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/provider-source.yaml'}
+  register: provider_input
+  no_log: true
+- name: Inspect preserved provider dataset binding and recovery copy
+  ansible.builtin.stat: {path: '{{ item }}/provider-binding.json', follow: false}
+  loop: ['{{ cfg.private_dir }}', '{{ cfg.backup_dir }}']
+  register: provider_binding_files
+- name: Refuse redirected or insecure dataset identity
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - not item.stat.islnk | default(false)
+      - not item.stat.exists or (item.stat.isreg | default(false) and item.stat.uid == 0 and item.stat.mode == '0600')
+  loop: '{{ provider_binding_files.results }}'
+- name: Restore preserved dataset binding without replacing its identity
+  ansible.builtin.copy: {src: '{{ cfg.backup_dir }}/provider-binding.json', dest: '{{ cfg.private_dir }}/provider-binding.json', remote_src: true, mode: '0600'}
+  when: not provider_binding_files.results[0].stat.exists and provider_binding_files.results[1].stat.exists
+- name: Refuse losing the operator binding of an existing deployment
+  ansible.builtin.assert:
+    quiet: true
+    that: provider_binding_files.results[0].stat.exists or provider_binding_files.results[1].stat.exists or query('fileglob',component_root + '/runtime/provider.sops.yaml') | length == 0
+- name: Read recorded dataset binding if present
+  ansible.builtin.slurp: {src: '{{ cfg.private_dir }}/provider-binding.json'}
+  register: provider_prior_binding
+  when: provider_binding_files.results[0].stat.exists or provider_binding_files.results[1].stat.exists
+- name: Inspect upstream identity inputs before reading
+  ansible.builtin.stat: {path: '{{ item }}', follow: false}
+  loop: ['{{ services_config_dir }}/ragflow.yaml', '{{ services_config_dir }}/object-storage.yaml']
+  register: provider_upstream_files
+  no_log: true
+- name: Refuse insecure or redirected upstream credential files
+  ansible.builtin.assert:
+    quiet: true
+    that: item.stat.exists and item.stat.isreg and not item.stat.islnk and item.stat.uid == 0 and item.stat.mode == '0600'
+  loop: '{{ provider_upstream_files.results }}'
+  no_log: true
+- name: Read authoritative provider token and separate S3 provisioner identity
+  ansible.builtin.slurp: {src: '{{ item }}'}
+  loop: ['{{ services_config_dir }}/ragflow.yaml', '{{ services_config_dir }}/object-storage.yaml', '{{ registry_config_dir }}/clients/ca.crt']
+  register: provider_platform_input
+  no_log: true
+- name: Prepare the operator dataset through the pinned running provider API
+  ansible.builtin.command:
+    argv: '{{ kube + ["exec","-i","deployment/ragflow-api","-n",data_namespace,"--","python","-c",lookup("file",component_root + "/provider/provision-dataset.py")] }}'
+    stdin: '{{ {"token":(provider_platform_input.results[0].content | b64decode | from_yaml).knowledge_token,"base":"https://ragflow." + data_namespace + ".svc.cluster.local:" + (ragflow_port | string),"name":cfg.knowledge_provider.dataset_name,"prior":(provider_prior_binding.content | default("e30=") | b64decode | from_json)} | to_json }}'
+  register: provider_dataset_result
+  changed_when: provider_dataset_result.rc == 0 and (provider_dataset_result.stdout | from_json).created | default(false)
+  no_log: true
+- name: Save a new operator binding without overwriting a preserved identity
+  ansible.builtin.copy:
+    dest: '{{ cfg.private_dir }}/provider-binding.json'
+    content: '{{ (provider_dataset_result.stdout | from_json).binding | to_nice_json }}
+'
+    force: false
+    mode: '0600'
+- name: Back up the exact dataset binding without replacement
+  ansible.builtin.copy: {src: '{{ cfg.private_dir }}/provider-binding.json', dest: '{{ cfg.backup_dir }}/provider-binding.json', remote_src: true, force: false, mode: '0600'}
+- name: Require recoverable byte-identical dataset binding
+  ansible.builtin.command: {argv: [cmp, --silent, '{{ cfg.private_dir }}/provider-binding.json', '{{ cfg.backup_dir }}/provider-binding.json']}
+  changed_when: false
+- name: Derive only runtime knowledge credentials
+  ansible.builtin.set_fact:
+    provider_binding: '{{ (provider_dataset_result.stdout | from_json).binding }}'
+    provider_runtime_data:
+      RAGFLOW_API_KEY: '{{ (provider_platform_input.results[0].content | b64decode | from_yaml).knowledge_token }}'
+      S3_ACCESS_KEY_ID: '{{ cfg.knowledge_provider.source_user }}'
+      S3_SECRET_ACCESS_KEY: '{{ (provider_input.content | b64decode | from_yaml).secret_key }}'
+      ca.crt: '{{ provider_platform_input.results[2].content | b64decode }}'
+  no_log: true
+- name: Prepare provider candidates
+  ansible.builtin.file: {path: '{{ build }}/provider', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
+- name: Encrypt the runtime provider identity without bootstrap privileges
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/../services/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: runtime/provider.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: knowledge-provider-runtime, namespace: '{{ app_namespace }}'}
+        stringData: '{{ provider_runtime_data }}'
+  no_log: true
+- name: Encrypt the separate source-reader provisioning input
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/../services/tasks/encrypt.yaml'
+  vars:
+    root_input: '{{ provider_platform_input.results[1].content | b64decode | from_yaml }}'
+    secret_item:
+      file: provider/provision.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: knowledge-source-provision, namespace: '{{ data_namespace }}'}
+        stringData:
+          config.json: '{{ {"version":"10","aliases":{"owned":{"url":"https://object-storage." + data_namespace + ".svc.cluster.local:" + (object_storage_port | string),"accessKey":root_input.root_user,"secretKey":root_input.root_password,"api":"S3v4","path":"on"},"reader":{"url":"https://object-storage." + data_namespace + ".svc.cluster.local:" + (object_storage_port | string),"accessKey":provider_runtime_data.S3_ACCESS_KEY_ID,"secretKey":provider_runtime_data.S3_SECRET_ACCESS_KEY,"api":"S3v4","path":"on"}}} | to_json }}'
+          user: '{{ provider_runtime_data.S3_ACCESS_KEY_ID }}'
+          password: '{{ provider_runtime_data.S3_SECRET_ACCESS_KEY }}'
+          ca.crt: '{{ provider_runtime_data["ca.crt"] }}'
+  no_log: true
+- name: Render the bounded upstream read-only provisioning job
+  ansible.builtin.template:
+    src: '{{ component_root }}/provider/workload.yaml.j2'
+    dest: '{{ build }}/provider/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+- name: Render the provider Kustomize root
+  ansible.builtin.copy:
+    dest: '{{ build }}/provider/kustomization.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+    content: '{{ {"apiVersion":"kustomize.config.k8s.io/v1beta1","kind":"Kustomization","resources":["workload.yaml","provision.sops.yaml"]} | to_nice_yaml }}'

@@ -1,4 +1,4 @@
-# 知识应用基础运行配置；上游原文只读身份/RAGFlow另行接入，不宣称业务检索完成。
+# 知识应用运行配置；RAGFlow为派生索引，信息原文以独立只读身份读取。
 ---
 knowledge_backend_deployment:
   database: knowledge
@@ -51,3 +51,12 @@ knowledge_backend_deployment:
   celery_control_queue_exclusive: true
   celery_event_queue_exclusive: true
   domain_runtime_env: {}
+  knowledge_provider:
+    enabled: true
+    dataset_key: default
+    dataset_name: sunmoon-kind-knowledge-default
+    tenant_id: sunmoonai
+    source_user: knowledge_source_reader
+    source_bucket: info-originals
+    source_prefix: info/original/
+    job_revision: v1

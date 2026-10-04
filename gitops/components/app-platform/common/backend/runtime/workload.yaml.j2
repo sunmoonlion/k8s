@@ -23,6 +23,19 @@ data:
   S3_USE_TLS: 'true'
   AWS_CA_BUNDLE: /etc/sunmoon/object-storage/ca.crt
 {% endif %}
+{% if provider_enabled %}
+  RAGFLOW_API_BASE: https://ragflow.{{ data_namespace }}.svc.cluster.local:{{ ragflow_port }}
+  RAGFLOW_PARSE_TIMEOUT_SECONDS: '{{ ragflow_ingestion_timeout_seconds }}'
+  INGESTION_DATASET_BINDINGS: {{ {cfg.knowledge_provider.dataset_key:provider_binding} | to_json | to_json }}
+  RETRIEVAL_DATASET_ALLOWLIST: {{ cfg.knowledge_provider.dataset_key | to_json }}
+  RETRIEVAL_DEFAULT_TENANT_ID: {{ cfg.knowledge_provider.tenant_id | to_json }}
+  S3_ENDPOINT: https://object-storage.{{ data_namespace }}.svc.cluster.local:{{ object_storage_port }}
+  S3_REGION: {{ object_storage_region }}
+  S3_FORCE_PATH_STYLE: 'true'
+  ARTIFACT_S3_ALLOWED_BUCKETS: {{ cfg.knowledge_provider.source_bucket | to_json }}
+  ARTIFACT_S3_ALLOWED_PREFIXES: {{ cfg.knowledge_provider.source_prefix | to_json }}
+  SSL_CERT_FILE: /etc/sunmoon/provider/ca.crt
+{% endif %}
 {% for key,value in (cfg.domain_runtime_env | default({})).items() %}
   {{ key }}: {{ value | to_json }}
 {% endfor %}
@@ -61,6 +74,10 @@ spec:
         sunmoonai.com/postgresql-client: 'true'
         sunmoonai.com/rabbitmq-client: 'true'
 {% if storage_enabled %}
+        sunmoonai.com/object-storage-client: 'true'
+{% endif %}
+{% if provider_enabled and role in ['api','worker'] %}
+        sunmoonai.com/ragflow-client: 'true'
         sunmoonai.com/object-storage-client: 'true'
 {% endif %}
 {% if role == 'api' %}
@@ -113,17 +130,26 @@ spec:
 {% if storage_enabled %}
             - {secretRef: {name: {{ application_name }}-storage-runtime}}
 {% endif %}
+{% if provider_enabled and role in ['api','worker'] %}
+            - {secretRef: {name: knowledge-provider-runtime}}
+{% endif %}
           resources: {{ cfg.resources[role] | to_json }}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           volumeMounts:
 {% if storage_enabled %}
             - {name: storage-ca, mountPath: /etc/sunmoon/object-storage, readOnly: true}
 {% endif %}
+{% if provider_enabled %}
+            - {name: provider-ca, mountPath: /etc/sunmoon/provider, readOnly: true}
+{% endif %}
             - {name: tmp, mountPath: /tmp}
             - {name: celery-config, mountPath: /etc/sunmoon/celery, readOnly: true}
       volumes:
 {% if storage_enabled %}
         - {name: storage-ca, secret: {secretName: {{ application_name }}-storage-runtime, items: [{key: ca.crt, path: ca.crt}]}}
+{% endif %}
+{% if provider_enabled %}
+        - {name: provider-ca, secret: {secretName: knowledge-provider-runtime, items: [{key: ca.crt, path: ca.crt}]}}
 {% endif %}
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
         - {name: celery-config, configMap: {name: {{ application_name }}-celery-config}}
@@ -171,3 +197,17 @@ spec:
     - from:
         - podSelector: {matchLabels: {app.kubernetes.io/name: {{ application_name }}-api}}
       ports: [{protocol: TCP, port: 8000}]
+{% if provider_enabled %}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: knowledge-ragflow-egress, namespace: {{ app_namespace }}}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/part-of: knowledge, sunmoonai.com/ragflow-client: 'true'}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: {{ data_namespace }}}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: ragflow, app.kubernetes.io/component: api}}
+      ports: [{protocol: TCP, port: {{ ragflow_port }}}]
+---
+{% endif %}

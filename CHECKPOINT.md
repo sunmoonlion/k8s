@@ -1,3 +1,13 @@
+# 当前单元：知识后端接入 RAGFlow 与上游原文只读身份（进行中，2026-10-04）
+
+基线8448d4ad4b6a9b1ee42462b6c53affa0d4a9dc4c，工作树platform-kind-v1/k8s。按既有部署授权继续；不切公共入口，不删原始kind/数据/备份，无push。维护2小时、容量底线10GiB。
+
+顺序：核对现有知识Port/原文契约→同目录配置与原生Ansible准备→独立源读取账号/精确数据集绑定/SOPS→选定应用stage与其它应用字节对比→提交/发布/晋级→原生application-bootstrap APP=knowledge→真实原文/持久任务/中文领域检索及权限检查→重复部署与记录。回退以前一固定Flux摘要e7bf1dc2…恢复本应用声明，保留新读账号/派生数据集及其输入以供核查，不删除上游原文。
+
+本单元新增knowledge-backend/provider只负责已有RAGFlow/Info原文的部署准备及验证；不新建并行CLI，不修改知识领域契约。API令牌从已保存RAGFlow知识身份引用，源读取密码独立生成与逐字节备份；原文仅info-originals/info/original/只读，不创建knowledge-originals权威副本。尚未宣称完整跨应用HTTP链通过。
+
+---
+
 # 当前单元：RAGFlow 最小派生镜像、中文检索及原生一键部署通过（2026-10-04）
 
 工作树/分支platform-kind-v1，k8s单仓。所有者批准最小派生方案；开发维护窗口2小时、容量底线10GiB。当前原生Make→Ansible→Flux/SOPS；没有公共入口切换，没有停止原始kind/其它应用/Harbor，没有改四个业务仓，无Git push。下面是作者实际执行结果，独立审核另行进行。

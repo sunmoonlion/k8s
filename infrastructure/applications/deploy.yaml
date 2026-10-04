@@ -36,7 +36,8 @@
     kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
     core_candidate_files: [database/workload.yaml, database/bootstrap.sops.yaml, database/runtime.sops.yaml, database/kustomization.yaml, migration/workload.yaml, migration/auth.sops.yaml, migration/kustomization.yaml, redis/workload.yaml, redis/provision.sops.yaml, redis/runtime.sops.yaml, redis/kustomization.yaml, rabbitmq/workload.yaml, rabbitmq/provision.sops.yaml, rabbitmq/runtime.sops.yaml, rabbitmq/kustomization.yaml, identity/workload.yaml, identity/provision.sops.yaml, identity/runtime.sops.yaml, identity/kustomization.yaml, runtime/workload.yaml, runtime/tls.sops.yaml, runtime/kustomization.yaml, '../{{ application_name }}-web-frontend/workload.yaml', '../{{ application_name }}-web-frontend/kustomization.yaml', '../{{ application_name }}-admin-frontend/workload.yaml', '../{{ application_name }}-admin-frontend/kustomization.yaml']
     storage_enabled: '{{ cfg.object_storage.enabled | default(false) | bool }}'
-    candidate_files: '{{ core_candidate_files + (["storage/workload.yaml","storage/provision.sops.yaml","storage/kustomization.yaml","runtime/storage.sops.yaml"] if storage_enabled else []) }}'
+    provider_enabled: '{{ cfg.knowledge_provider.enabled | default(false) | bool }}'
+    candidate_files: '{{ core_candidate_files + (["storage/workload.yaml","storage/provision.sops.yaml","storage/kustomization.yaml","runtime/storage.sops.yaml"] if storage_enabled else []) + (["provider/workload.yaml","provider/provision.sops.yaml","provider/kustomization.yaml","runtime/provider.sops.yaml"] if provider_enabled else []) }}'
   tasks:
     - name: Validate the selected deployment and identity boundaries
       ansible.builtin.assert:
@@ -94,6 +95,7 @@
           - browser_clients.web.name != browser_clients.admin.name
           - cfg.redis_user == application_name + '_runtime'
           - cfg.redis_key_pattern == application_name + ':*'
+          - not provider_enabled or (application_name == 'knowledge' and not storage_enabled)
           - cfg.domain_runtime_env | default({}) | list | difference(['STORAGE_BACKEND','SEARCH_BACKEND']) | length == 0
     - name: Require the independent cluster ownership receipt
       ansible.builtin.slurp: {src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'}
@@ -403,9 +405,12 @@
         - name: Prepare independent versioned object storage inputs when enabled
           ansible.builtin.include_tasks: '{{ mechanism_root }}/storage/prepare.yaml'
           when: storage_enabled
+        - name: Prepare independent knowledge provider and upstream read-only identity
+          ansible.builtin.include_tasks: '{{ component_root }}/provider/prepare.yaml'
+          when: provider_enabled
         - name: Bind runtime rollout to public configuration and private input changes
           ansible.builtin.set_fact:
-            runtime_config_digest: '{{ (([cfg, browser_clients, secret_input.content, redis_input.content, rabbitmq_input.content, identity_input.content] + ([s3_input.content] if storage_enabled else [])) | to_json) | hash("sha256") }}'
+            runtime_config_digest: '{{ (([cfg, browser_clients, secret_input.content, redis_input.content, rabbitmq_input.content, identity_input.content] + ([s3_input.content] if storage_enabled else []) + ([provider_runtime_data] if provider_enabled else [])) | to_json) | hash("sha256") }}'
           no_log: true
         - name: Prepare public candidate directories
           ansible.builtin.file: {path: '{{ build }}/{{ item }}', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
@@ -517,7 +522,7 @@
             - {name: redis, resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]}
             - {name: rabbitmq, resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]}
             - {name: identity, resources: [workload.yaml, provision.sops.yaml, runtime.sops.yaml]}
-            - {name: runtime, resources: '{{ ["workload.yaml","tls.sops.yaml"] + (["storage.sops.yaml"] if storage_enabled else []) }}'}
+            - {name: runtime, resources: '{{ ["workload.yaml","tls.sops.yaml"] + (["storage.sops.yaml"] if storage_enabled else []) + (["provider.sops.yaml"] if provider_enabled else []) }}'}
             - {name: '../{{ application_name }}-web-frontend', resources: [workload.yaml]}
             - {name: '../{{ application_name }}-admin-frontend', resources: [workload.yaml]}
         - name: Render optional object storage Kustomize root
@@ -583,7 +588,7 @@
         - name: Wait for current generation Ready at the promoted digest
           ansible.builtin.command:
             argv: '{{ kube + ["get","kustomization",item,"-n","flux-system","-o","json"] }}'
-          loop: '{{ [application_name + "-database",application_name + "-migration",application_name + "-redis",application_name + "-rabbitmq",application_name + "-identity",application_name + "-runtime",application_name + "-web",application_name + "-admin"] + ([application_name + "-storage"] if storage_enabled else []) }}'
+          loop: '{{ [application_name + "-database",application_name + "-migration",application_name + "-redis",application_name + "-rabbitmq",application_name + "-identity",application_name + "-runtime",application_name + "-web",application_name + "-admin"] + ([application_name + "-storage"] if storage_enabled else []) + ([application_name + "-provider"] if provider_enabled else []) }}'
           register: stage
           changed_when: false
           until:
@@ -612,6 +617,13 @@
           register: s3_complete
           changed_when: false
           failed_when: s3_complete.rc != 0 or s3_complete.stdout != "1"
+        - name: Require upstream read-only identity provisioning complete
+          when: provider_enabled
+          ansible.builtin.command:
+            argv: '{{ kube + ["get","job","knowledge-source-" + cfg.knowledge_provider.job_revision,"-n",data_namespace,"-o","jsonpath={.status.succeeded}"] }}'
+          register: provider_complete
+          changed_when: false
+          failed_when: provider_complete.rc != 0 or provider_complete.stdout != "1"
         - name: Read the actual schema and grant verification outcome privately
           ansible.builtin.command:
             argv: '{{ kube + ["logs","job/" + migration_job,"-n",cfg.namespace] }}'
@@ -776,6 +788,35 @@
                 fail_msg: '{{ s3_runtime_check.stdout }}'
             - name: Report only application object storage public assertions
               ansible.builtin.debug: {msg: '{{ s3_runtime_check.stdout | from_json }}'}
+        - name: Verify actual knowledge source, durable worker and domain retrieval
+          when: provider_enabled
+          block:
+            - name: Read the independent verifier inputs without printing credentials
+              ansible.builtin.slurp: {src: '{{ item }}'}
+              loop: ['{{ services_config_dir }}/object-storage.yaml', '{{ services_config_dir }}/ragflow.yaml']
+              register: provider_verifier_inputs
+              no_log: true
+            - name: Exercise existing Knowledge domain services and actual asynchronous worker
+              ansible.builtin.command:
+                argv: [python3, '{{ component_root }}/provider/verify.py', --kubectl, '{{ tools }}/kubectl', --kubeconfig, '{{ cluster_kubeconfig }}', --app-namespace, '{{ app_namespace }}', --data-namespace, '{{ data_namespace }}', --mc, '{{ tools }}/mc', --ca, '{{ registry_config_dir }}/clients/ca.crt']
+                stdin: '{{ {"storage":provider_verifier_inputs.results[0].content | b64decode | from_yaml,"ragflow":provider_verifier_inputs.results[1].content | b64decode | from_yaml,"binding_path":cfg.private_dir + "/provider-binding.json"} | to_json }}'
+              register: provider_check
+              changed_when: false
+              failed_when: false
+              no_log: true
+            - name: Preserve private integration outcome for diagnosis
+              ansible.builtin.copy:
+                dest: '{{ playbook_dir }}/../.build/models/knowledge-domain-last.json'
+                content: '{{ {"rc":provider_check.rc,"stdout":provider_check.stdout,"stderr":provider_check.stderr} | to_nice_json }}'
+                mode: '0600'
+              no_log: true
+            - name: Require actual domain integration acceptance and exact cleanup
+              ansible.builtin.assert:
+                quiet: true
+                that: provider_check.rc == 0
+                fail_msg: 'Knowledge integration failed; inspect private evidence, do not infer success from ready Pods.'
+            - name: Report structured domain assertions
+              ansible.builtin.debug: {msg: '{{ provider_check.stdout | from_json }}'}
         - name: Verify API readiness through each new TLS route
           ansible.builtin.command:
             argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ item | urlsplit("hostname") }}:30443:127.0.0.1:{{ application_check_port }}', '{{ item }}/api/health']
