@@ -49,3 +49,4 @@
 | 35 | 本机的沙箱镜像 `sunmoon/sandbox:dev` 是远程 2026-09-29 按仓库里的 Dockerfile 重新构建的（原来的不在了）。只读用了 `sandbox-platform` 目录，没有改它 | 本机联调要用 | — | 只是告知 |
 | 36 | 三个应用后端的配置：`CROSS_APP_SOURCES_JSON`（谁可以把用户带到这里、各自的回跳地址）、`CROSS_APP_TARGETS_JSON`（带用户去哪、各自网页端的地址）。都可不配；写错了启动时就报错。要配的内容：investment 去 info、knowledge；knowledge 去 info；info 去 knowledge；info、knowledge 认 investment 带来的用户，回跳地址写 investment 网页端的地址 | 跨应用跳转。不配的话页面上没有去别的应用的链接，也没有「回到原处」，别的不受影响 | [`cross-app-links`](SDD/architecture/cross-app-links.md)；四个后端 `742fc11`、`c55b2a8`、`966d6d5`、`f99c398` | 待办 |
 | 37 | 四个网页端的仓库（模板与三个应用）现在有 `fable` 分支了，原来没有。对齐工位时要把它们算进去 | 远程在这四个仓库里第一次提交 | 同上 | 只是告知 |
+| 38 | investment 后端多了一个配置 `WORKBENCH_MODEL_PRICES_JSON`（模型单价）。不配就用代码里带的默认值（`kimi-k3`）。要配的话，网页后端与 runner 两个进程要配成一样的 | 2026-10-04 实时花费 | 同上 | 只是告知；换模型时要配 |

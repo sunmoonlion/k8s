@@ -123,19 +123,23 @@
 | H31 | 专家包里「退回第 k 步」没有次数上限：退回之后这一步再不过，还会再退回，只有预算能拦住 | investment-backend `application/workbench/advisor.py` | 要不要给退回也设上限，是专家包的规矩，请所有者定 | 待定 |
 | H32 | 机器在不在线没有真的跟踪：登记时写在线，之后没有人改（初稿缺口 G6）。聊天「机器不在线时不给执行环境」、请专家「机器不在线交不出去」这两支代码有、测试有，现在实际走不到 | investment-backend | 本地代理的心跳经会合点报给工作台。要动会合点与本地代理 | 待做 |
 | H33 | 设置页里审批策略能选 `on-failure`，Codex 0.155.1 已经不认。后端按 `on-request` 发 | investment-web | 第 7 步 | 待做 |
-| H34 | 专家一步的费用按占位的单价算。联调里机制烟测两步记了 1.02 | investment-backend `application/workbench/advisor.py` 的 `Pricing` | 和预算的默认值（`W4`）一起定 | 待定 |
+| H34 | 专家一步的费用按占位的单价算。联调里机制烟测两步记了 1.02 | investment-backend `application/workbench/advisor.py` 的 `Pricing` | 2026-10-04 已做：按公开单价（配置里），每次调用相加。原来还拿累计当一步的用量，一并改了 | 已做 |
 | H35 | 读项目记录的工具服务用的限流是进程内计数，多个进程各算各的 | investment-backend `interfaces/mcp/workbench_mcp.py` | 知识服务的工具也是这样。要换成共用的计数时一起换 | 待做 |
 | H36 | 专家这一面新加的读取（步骤、待办、底稿）每次都从账里现算。委托多了、事件多了会慢 | investment-backend `application/workbench/expert_desk.py` | 真的慢了再说 | 待定 |
 | H37 | 三个应用网页端的登录契约里，应用名的名单是 `tpl`、`info`、`knowledge`、`research`；investment 的那一份另加了 `investment`。`research` 是 investment 以前的名字，名单没有清 | 四个网页端 `contracts/auth.ts` | 做页面时一起清。先在模板里改 | 待做 |
 | H38 | 配置文件（`core/config.py`）现在引用了领域层（跨应用跳转的规则）。以前 `core` 不引用 `app`。为的是规则只写一处，配置写错了启动时就能报 | 四个后端 | 远程认为可以接受：领域层是最里面的一层，谁都可以引用它。所有者或评审认为不行的话，退路是把校验挪到组装层 | 待定 |
 | H39 | 跑 `ruff format` 时带上了整个 `tests` 目录，顺手重排了模板里 7 个无关的测试文件的格式。发现后原样恢复了，没有提交。这些文件本来就不合现在的格式，代码检查不查它们 | tpl-backend `tests/` | 以后只对自己动过的文件跑格式化 | 已处理 |
-| H40 | 预算可能被最后一步超出：一步花多少事先不知道，只按预留的数判断够不够。样例里上限 1.00、实际花了 1.20 | investment-backend `application/workbench/advisor.py` | 所有者定：改说法，还是给每一步设硬上限（[近期要定的事](owner-decisions-now.md) I9） | 待定 |
+| H40 | 预算可能被最后一步超出：一步花多少事先不知道，只按预留的数判断够不够。样例里上限 1.00、实际花了 1.20 | investment-backend `application/workbench/advisor.py` | 所有者 2026-10-04 定：不设上限，实时显示加随时能停。给了上限时这个问题仍然在，但页面不再给上限 | 不再适用 |
 | H41 | 沙箱列表接口把沙箱令牌的引用返回给了浏览器；按需拉起的沙箱，这个引用就是令牌本身。第一期留下的，原来的测试还断言它在返回里 | investment-backend `interfaces/endpoints/workbench_routes.py` | — | 已做，随第 6 步 |
 | H42 | 沙箱列表、拉起沙箱的返回里还有沙箱的内部地址。不是密钥，浏览器用不着；旧页面在显示它 | 同上；investment-web `contracts/workbench.ts` | 第 7 步重做页面时去掉 | 待做 |
 | H43 | 旧的工作台页面认不得契约第 2 版的数据（不属于项目的聊天没有机器），列表显示为空 | investment-web `components/workbench/` | 第 7 步整个重做，不修旧页面 | 待做 |
 | H44 | 本机联调（`workbench-chain.sh`、`workbench-modes.sh`）的项目目录在 runtime 仓库里，Codex 会读到仓库的 `AGENTS.md`。不影响这两个脚本验的东西；录磁带的脚本已改到仓库之外 | k8s `scripts/local-integration/` | 顺手时改 | 待做 |
 | H45 | 专家在真数据上从头到尾跑一遍（真的 Codex、真的知识服务、真的数据集）还没有做过。样例里专家各步的交回物是照格式写的 | — | 把数据集这条链的联调和工作台的联调接起来。迁移完成后在集群上做也可以 | 待做 |
 | H46 | 管理端（四个 `*-admin-frontend`）没有预览 | — | 第 8 步做 info 管理端的页面时加，用同一个记录器 | 待做 |
+| H47 | 被打断的那一次模型调用，花费记不到：Codex 只在一次调用做完时报用量。停下的那一刻显示的数比真实账单少（最多一次调用） | investment-backend `application/workbench/runner.py` | 没有办法从 Codex 拿到。页面上写明「估算」。要更准只能去读模型厂商的账单接口 | 记下，不做 |
+| H48 | 模型单价是手工查了写进配置的（`WORKBENCH_MODEL_PRICES_JSON`），厂商改价不会自己跟上；写缓存按 5 分钟档算（Codex 不报是哪一档） | investment-backend `domain/workbench/pricing.py` | 换模型或厂商改价时改配置。接口里带着「单价是哪天查的」 | 记下 |
+| H49 | 没有硬性的花费上限之后，「退回第 k 步」没有次数上限（`I7`）就更要紧：没人看着时专家可以一直来回 | investment-backend 专家包 | 所有者定 `I7` | 待定 |
+| H50 | 本机联调的驱动在等专家做完时不续沙箱的租约，之后那一段会先掉线再重连。不影响结论（重连正好验了「重报的用量不重复记」），但日志里有一行 `lease lost` | investment-backend `tests/drivers/workbench_chain_driver.py` | 等的时候让 runner 接着转 | 小事，待做 |
 
 ## 八、自动检查怎么用
 
