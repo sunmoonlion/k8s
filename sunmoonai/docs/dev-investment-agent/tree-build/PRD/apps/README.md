@@ -10,6 +10,7 @@
 | 本页 | 三个应用各管什么、怎么连、共用什么、先后顺序 |
 | [`investment.md`](investment.md) | 聊天、工作、专家；工作区与项目 |
 | [`investment-expert.md`](investment-expert.md) | 专家的界面：四个页面、审查面、字眼、样稿 |
+| [`reference-workbuddy.md`](reference-workbuddy.md) | 对照腾讯 WorkBuddy：它的界面、同名不同义的「专家」「项目」、所有者的决定、建议借鉴的四处 |
 | [`info.md`](info.md) | 采集申请、审批、证券采集、关注清单 |
 | [`knowledge.md`](knowledge.md) | 数据目录、口径、给专家用的工具 |
 
