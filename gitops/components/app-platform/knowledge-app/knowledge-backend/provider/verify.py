@@ -14,11 +14,13 @@ records['timeout_seconds']=360
 def execute(app,code,data=None,timeout=450):
     out=subprocess.run(kube+['exec','-i','deployment/'+app,'-n',args.app_namespace,'--','python','-c',code],input=json.dumps(data or records),capture_output=True,text=True,env=env,timeout=timeout)
     try:result=json.loads(out.stdout.strip().splitlines()[-1])
-    except Exception:raise RuntimeError('Invalid component verifier response') from None
+    except Exception:
+        errors=re.findall(r'(?m)^([A-Za-z]+Error):',out.stderr)
+        raise RuntimeError('Invalid '+app+' verifier response; rc='+str(out.returncode)+'; error_class='+(errors[-1] if errors else 'unavailable')) from None
     if out.returncode or result.get('passed') is False:raise RuntimeError(json.dumps(result))
     return result
 
-source_code="""
+source_code=r"""
 import hashlib,json,sys
 from app.infrastructure.storage.object_storage import ObjectStorage
 x=json.load(sys.stdin);store=ObjectStorage();assert store.bucket=='info-originals'
