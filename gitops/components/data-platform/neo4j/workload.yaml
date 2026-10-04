@@ -90,8 +90,8 @@ spec:
           imagePullPolicy: IfNotPresent
           env: [{name: NEO4J_AUTH_FILE, value: /run/auth/neo4j-auth}]
           ports: [{name: https, containerPort: 7473}, {name: bolt, containerPort: 7687}]
-          startupProbe: {httpGet: {path: /, port: https, scheme: HTTPS}, periodSeconds: 5, failureThreshold: 120, timeoutSeconds: 5}
-          readinessProbe: {httpGet: {path: /, port: https, scheme: HTTPS}, periodSeconds: 10, timeoutSeconds: 5}
+          startupProbe: {tcpSocket: {port: bolt}, periodSeconds: 5, failureThreshold: 120, timeoutSeconds: 5}
+          readinessProbe: {tcpSocket: {port: bolt}, periodSeconds: 10, timeoutSeconds: 5}
           livenessProbe: {tcpSocket: {port: bolt}, periodSeconds: 30, timeoutSeconds: 3, failureThreshold: 5}
           resources: {"requests": {"cpu": "250m", "memory": "2Gi"}, "limits": {"cpu": "2", "memory": "3Gi"}}
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}

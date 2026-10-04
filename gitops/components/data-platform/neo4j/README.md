@@ -16,3 +16,9 @@ verify覆盖HTTPS主机名/CA、认证拒绝、真实节点关系提交/读回�
 官方入口会把Kubernetes注入的NEO4J_PORT_*当数据库配置；模板设置enableServiceLinks=false，继续用DNS，保留严格配置校验。
 StatefulSet滚动更新可能卡在旧失败Pod。原生flux-source-apply直接包含本组件recover-rollout.yaml：只在模板已修正、旧revision未Ready且已失败重启时，核对控制器UID、锁定镜像、节点、Retain卷，使用UID和resourceVersion前置条件正常删除该旧Pod。只让控制器重建Pod，不删除PVC/PV/数据、不强制终止。当前revision或健康Pod不会被删。
 neo4j_failed_rollout_recovery可关闭该恢复；API前置条件冲突则报失败，重新入口核对，不能强行覆盖。这是声明调和的受控恢复，不另建部署入口。
+
+## 健康探针与真实验收
+
+按官方Helm默认方式，startup/readiness检查Bolt监听；不是仅凭端口判断交付成功。services-check仍必须通过CA/主机名、HTTPS认证、真实图读写/回滚与Bolt TLS协商。HTTPS原探针向Pod IP发送请求返回400；使用证书对应DNS及SNI实际请求为200。没有关闭TLS或严格配置校验。官方默认参考：https://github.com/neo4j/helm-charts/blob/dev/neo4j/values.yaml 。
+
+实际2026.09.0 Query API回滚返回HTTP200（不是文档示例的202），验收要求DELETE成功后独立查询未提交标记计数为0；dbms.components同时返回Kernel与Cypher，版本比对精确筛选Neo4j Kernel，不降低镜像锁及真实回滚判据。失败原输出保留在忽略的运行证据目录。

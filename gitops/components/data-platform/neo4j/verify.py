@@ -70,7 +70,7 @@ def main():
         query_path='/db/neo4j/query/v2'
         def query(statement,parameters=None):return request('POST',query_path,{'statement':statement,'parameters':parameters or {}})['data']['values']
         request('POST',query_path,{'statement':'RETURN 1'},auth=False,expect=401)
-        component=query('CALL dbms.components() YIELD versions, edition RETURN versions[0], edition')
+        component=query("CALL dbms.components() YIELD name, versions, edition WHERE name = 'Neo4j Kernel' RETURN versions[0], edition")
         require(component==[[args.version,'community']],'Running graph edition/version differs from lock')
         nonce=uuid.uuid4().hex
         transaction=None
@@ -83,7 +83,7 @@ def main():
             transaction=pending['transaction']['id']
             require(re.fullmatch('[a-zA-Z0-9_-]+',transaction) is not None,'Graph transaction identifier invalid')
             require(pending['data']['values']==[[True]],'Open graph transaction differs')
-            request('DELETE',query_path+'/tx/'+transaction)
+            request('DELETE',query_path+'/tx/'+transaction,expect=200)
             transaction=None
             require(query('MATCH (n:SunmoonAcceptance {run:$run,uncommitted:true}) RETURN count(n)',{'run':nonce})==[[0]],'Graph transaction rollback did not restore prior state')
             with socket.create_connection(('127.0.0.1',bolt_port),timeout=10) as raw:
@@ -95,7 +95,7 @@ def main():
                         part=tls.recv(4-len(selected));require(bool(part),'Bolt protocol negotiation closed');selected+=part
                     require(struct.unpack('!I',selected)[0] in offered,'Bolt protocol version unsupported')
         finally:
-            if transaction:request('DELETE',query_path+'/tx/'+transaction)
+            if transaction:request('DELETE',query_path+'/tx/'+transaction,expect=200)
             query('MATCH (n:SunmoonAcceptance {run:$run}) DETACH DELETE n RETURN count(n)',{'run':nonce})
         print(json.dumps({'passed':True,'version':args.version,'edition':'community','tls_chain_and_hostname':True,'unauthenticated_query_denied':True,'committed_relationship_write_read':True,'explicit_transaction_rollback':True,'bolt_tls_negotiation':True,'scope':'Internal HTTPS graph transactions and Bolt TLS negotiation; not business graph, fine-grained RBAC, Bolt driver session, restart or backup recovery'}))
 
