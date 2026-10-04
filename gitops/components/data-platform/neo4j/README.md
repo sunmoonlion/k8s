@@ -10,3 +10,9 @@ Community不是细粒度多租户权限隔离方案：此实例目前只用于�
 verify覆盖HTTPS主机名/CA、认证拒绝、真实节点关系提交/读回、事务回滚、Bolt TLS协议协商。只清除本次自建随机标记，不删业务图。重启/灾备、领域图接入、APOC等插件仍属后续验收。日志到stdout，不新增自动删除作业。
 
 回退保存原flux-source.yaml后恢复原固定源并原生flux-source-apply；prune=false保留数据。停止新增服务用副本0声明晋级，绝不删除PVC/卷。规则：C-D1图派生副本不抢业务主档，C-D3身份/存储独立，C-R2镜像按摘要。
+
+## 失败版本的滚动恢复
+
+官方入口会把Kubernetes注入的NEO4J_PORT_*当数据库配置；模板设置enableServiceLinks=false，继续用DNS，保留严格配置校验。
+StatefulSet滚动更新可能卡在旧失败Pod。原生flux-source-apply直接包含本组件recover-rollout.yaml：只在模板已修正、旧revision未Ready且已失败重启时，核对控制器UID、锁定镜像、节点、Retain卷，使用UID和resourceVersion前置条件正常删除该旧Pod。只让控制器重建Pod，不删除PVC/PV/数据、不强制终止。当前revision或健康Pod不会被删。
+neo4j_failed_rollout_recovery可关闭该恢复；API前置条件冲突则报失败，重新入口核对，不能强行覆盖。这是声明调和的受控恢复，不另建部署入口。

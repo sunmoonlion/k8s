@@ -236,6 +236,9 @@
             argv: ['{{ flux }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', reconcile, source, oci, platform, --timeout=120s]
           changed_when: true
           when: flux_source_action == 'apply' and declaration_diff.rc == 1
+        - name: Recover a failed old graph revision through the native component policy
+          ansible.builtin.include_tasks: ../../gitops/components/data-platform/neo4j/recover-rollout.yaml
+          when: flux_source_action == 'apply' and services_neo4j_enabled | default(false) | bool and neo4j_failed_rollout_recovery | default(false) | bool
         - name: Wait for root reconciliation
           ansible.builtin.command:
             argv: ['{{ flux }}', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', reconcile, kustomization, platform, --timeout=600s]

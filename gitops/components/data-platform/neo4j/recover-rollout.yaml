@@ -1,0 +1,65 @@
+---
+# Native Flux apply include. Replaces only a failed old Pod after a fixed template.
+- name: Inspect the owned graph controller during source reconciliation
+  ansible.builtin.command:
+    argv: '{{ kube + ["-n", data_namespace, "get", "statefulset", "neo4j", "-o", "json"] }}'
+  register: graph_controller
+  changed_when: false
+  failed_when: graph_controller.rc != 0 and 'NotFound' not in graph_controller.stderr
+- name: Assess the graph revision only when the controller exists
+  when: graph_controller.rc == 0
+  block:
+    - name: Decode public graph controller state
+      ansible.builtin.set_fact: {graph_state: '{{ graph_controller.stdout | from_json }}'}
+    - name: Inspect the only graph ordinal
+      ansible.builtin.command:
+        argv: '{{ kube + ["-n", data_namespace, "get", "pod", "neo4j-0", "-o", "json"] }}'
+      register: graph_ordinal
+      changed_when: false
+      failed_when: graph_ordinal.rc != 0 and 'NotFound' not in graph_ordinal.stderr
+    - name: Evaluate failed old revision without touching a current or healthy Pod
+      ansible.builtin.set_fact:
+        graph_pod: '{{ graph_ordinal.stdout | from_json if graph_ordinal.rc == 0 else {} }}'
+        graph_revision_pending: '{{ graph_state.status.currentRevision | default("") != graph_state.status.updateRevision | default("") and graph_state.status.updateRevision | default("") != "" }}'
+    - name: Recover only the failed old graph revision
+      when:
+        - graph_ordinal.rc == 0
+        - graph_revision_pending | bool
+        - graph_pod.metadata.labels['controller-revision-hash'] | default('') != graph_state.status.updateRevision
+        - graph_pod.status.conditions | default([]) | selectattr('type','equalto','Ready') | selectattr('status','equalto','True') | list | length == 0
+        - graph_pod.status.containerStatuses | default([]) | selectattr('name','equalto','neo4j') | map(attribute='restartCount',default=0) | sum > 0
+      block:
+        - name: Require the fixed owned template and exact old controller reference
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - cluster_name == 'sunmoon-kind'
+              - graph_state.spec.replicas == 1
+              - graph_state.spec.template.spec.enableServiceLinks == false
+              - graph_pod.metadata.ownerReferences | selectattr('kind','equalto','StatefulSet') | selectattr('uid','equalto',graph_state.metadata.uid) | selectattr('controller','equalto',true) | list | length == 1
+              - graph_pod.metadata.labels['app.kubernetes.io/name'] == 'neo4j'
+              - graph_pod.spec.nodeName == cluster_name + '-' + neo4j_volume.node
+              - graph_pod.spec.containers[0].image == graph_state.spec.template.spec.containers[0].image
+              - graph_pod.spec.containers[0].image == registry_address + '/platform/neo4j@' + ((lookup('file', playbook_dir + '/../artifacts/upstream-images.lock.json') | from_json).images | selectattr('id','equalto','neo4j') | first).manifest_digest
+              - graph_pod.spec.volumes | selectattr('name','equalto','data') | map(attribute='persistentVolumeClaim.claimName') | list == ['neo4j-data']
+        - name: Inspect retained graph volume before any Pod replacement
+          ansible.builtin.command:
+            argv: '{{ kube + ["get", "pv", cluster_name + "-neo4j", "-o", "json"] }}'
+          register: graph_pv
+          changed_when: false
+        - name: Require exact retained bound data mapping
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - volume.status.phase == 'Bound'
+              - volume.metadata.annotations['sunmoonai.com/storage-owner'] == cluster_name
+              - volume.spec.persistentVolumeReclaimPolicy == 'Retain'
+              - volume.spec.claimRef.namespace == data_namespace
+              - volume.spec.claimRef.name == 'neo4j-data'
+              - volume.spec.local.path == '/data/kind-local-storage/neo4j'
+          vars: {volume: '{{ graph_pv.stdout | from_json }}'}
+        - name: Gracefully remove only the observed failed old Pod with API preconditions
+          ansible.builtin.command:
+            argv: '{{ kube + ["delete", "--raw", "/api/v1/namespaces/" + data_namespace + "/pods/neo4j-0", "-f", "-"] }}'
+            stdin: '{{ {"apiVersion":"v1","kind":"DeleteOptions","preconditions":{"uid":graph_pod.metadata.uid,"resourceVersion":graph_pod.metadata.resourceVersion}} | to_json }}'
+          changed_when: true

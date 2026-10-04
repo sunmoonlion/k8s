@@ -1,6 +1,8 @@
 ---
 # Community single-purpose graph instance; versions/digests live in artifacts lock.
 services_neo4j_enabled: true
+# Rebuild only an unhealthy old controller revision; never remove current/healthy Pods or volumes.
+neo4j_failed_rollout_recovery: true
 neo4j_volume: {name: neo4j, node: worker2, size: 10Gi, uid: 7474, gid: 7474}
 neo4j_heap: 1G
 neo4j_pagecache: 1G
