@@ -11,6 +11,17 @@ for key in ['HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','http_proxy','https_proxy','a
 env['NO_PROXY']='*'
 records={key:str(uuid.uuid4()) for key in ('document_id','version_id','distribution_id','correlation_id')}
 records['timeout_seconds']=360
+# Persist only probe identities, never bearer tokens or cleanup credentials.
+private_root=Path(secret['binding_path']).parent
+assert private_root.is_dir() and not private_root.is_symlink() and private_root.stat().st_uid==0 and private_root.stat().st_mode & 0o777==0o700
+journal=private_root/('acceptance-'+records['correlation_id']+'.json')
+def save_probe():
+    temporary=journal.with_suffix('.tmp')
+    descriptor=os.open(temporary,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+    with os.fdopen(descriptor,'w') as handle:
+        json.dump(records,handle);handle.flush();os.fsync(handle.fileno())
+    os.replace(temporary,journal)
+save_probe()
 
 def execute(app,code,data=None,timeout=450):
     out=subprocess.run(kube+['exec','-i','deployment/'+app,'-n',args.app_namespace,'--','python','-c',code],input=json.dumps(data or records),capture_output=True,text=True,env=env,timeout=timeout)
@@ -18,7 +29,12 @@ def execute(app,code,data=None,timeout=450):
     except Exception:
         errors=re.findall(r'(?m)^([A-Za-z]+Error):',out.stderr)
         raise RuntimeError('Invalid '+app+' verifier response; rc='+str(out.returncode)+'; error_class='+(errors[-1] if errors else 'unavailable')) from None
-    if out.returncode or result.get('passed') is False:raise RuntimeError(json.dumps(result))
+    if out.returncode or result.get('passed') is False:
+        if app=='knowledge-api':
+            for key in ('job_id','upload_identity','provider_document_id'):
+                if result.get(key):records[key]=result[key]
+        save_probe()
+        raise RuntimeError(json.dumps(result))
     return result
 
 source_code=r"""
@@ -60,11 +76,11 @@ print(json.dumps({'temporary_provider_document_and_versions_removed':True}))
 """
 tunnel=None;source=None;result=None
 try:
-    source=execute('info-api',source_code,records,90);records['artifact']=source
+    source=execute('info-api',source_code,records,90);records['artifact']=source;save_probe()
     if args.http_service_identities:
-        records.update(execute('info-api',(root/'verify-info-http.py').read_text(),records,90))
+        records.update(execute('info-api',(root/'verify-info-http.py').read_text(),records,90));save_probe()
     result=execute('knowledge-api',(root/'verify-runtime.py').read_text(),records)
-    records.update(result)
+    records.update(result);save_probe()
     if args.http_service_identities:
         result['checks'].update(execute('investment-api',(root/'verify-investment-http.py').read_text(),records,120)['http_checks'])
         result['scope']='Actual Info HTTPS ingestion with Casdoor token, real Scheduler/Outbox/Worker, and Investment HTTPS domain retrieval with independent token'
@@ -74,9 +90,10 @@ try:
     out=subprocess.run(kube+['exec','-i','deployment/ragflow-api','-n',args.data_namespace,'--','python','-c',cleanup_provider_code],input=json.dumps(cleanup),capture_output=True,text=True,env=env,timeout=90)
     assert out.returncode==0, 'Exact temporary provider cleanup failed'
     result['cleanup']=json.loads(out.stdout.strip().splitlines()[-1])
-    result['cleanup'].update(execute('knowledge-api',(root/'cleanup-runtime.py').read_text(),records,90))
+    result['cleanup'].update(execute('knowledge-api',(root/'cleanup-runtime.py').read_text(),records,90));records['cleanup']=result['cleanup'];save_probe()
 finally:
-    if source:
+    # Keep the original and journal if an accepted job has not been cleaned safely.
+    if source and result and result.get('cleanup',{}).get('temporary_domain_records_removed'):
         host='object-storage.'+args.data_namespace+'.svc.cluster.local'
         tunnel=subprocess.Popen(kube+['-n',args.data_namespace,'port-forward','--address=127.0.0.1','service/object-storage','0:9000'],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True,env=env)
         try:
@@ -93,7 +110,8 @@ finally:
                 (path/'config.json').write_text(json.dumps(cfg));(path/'config.json').chmod(0o600)
                 out=subprocess.run([args.mc,'--config-dir',folder,'--resolve',host+':'+str(port)+'=127.0.0.1','--json','rm','--version-id',source['storage_version'],'owned/info-originals/'+source['key']],capture_output=True,text=True,env=env,timeout=45)
                 assert out.returncode==0 and all(json.loads(line).get('status')!='error' for line in out.stdout.splitlines()), 'Exact temporary original cleanup failed'
-            if result:result.setdefault('cleanup',{})['temporary_original_version_removed']=True
+            result.setdefault('cleanup',{})['temporary_original_version_removed']=True
+            journal.unlink();result['cleanup']['temporary_probe_journal_removed']=True
         finally:
             tunnel.terminate()
             try:tunnel.wait(timeout=5)

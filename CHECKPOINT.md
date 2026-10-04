@@ -8,7 +8,9 @@
 | C-D5/C-D8 | Info固定版本原文，Knowledge只读、RAG派生；运行不DDL，不改契约/schema |
 | C-R1/C-R6 | 共享原生部署机制，配置同组件，现有模板APP保持字节不变；不改已完成不可变Job |
 
-待完成：渲染/发布/实际HTTPS服务身份与真实Info入库→Worker→Investment检索、拒绝边界、精确探针清理及一键重复不变验收。当前已晋级source仍0b150435/ad690…；回退到该固定source，保留新身份输入，不旋转现有秘密。不得把上轮L2服务调用当作本轮HTTP认证完成。
+首轮实现4b88e4ae、晋级434ae720（source revision4b88e4ae74164b3ca6b037ea941c48b2cb539809 / sha256:5377594283954d5248d5df6d571d346aef3d2a02eecdb49e488a0cc5f60c6c75）实际成功；Info/Investment/Knowledge完整bootstrap退出0，check分别ok48/43/46、changed0/0/1。两个独立服务组织、900秒签名令牌、内置用户越权和坏密码拒绝通过；Info真实HTTPS摄入→真实Worker→Investment领域Port HTTPS中文检索及身份日记/拒绝边界通过，随机领域/原文/派生版本精确清理。54个Running Pod，45个无关Pod UID/重启计数及13个Retain PV不变；仅9个计划内后端角色滚动。TPL所有声明及20个既有初始化Job声明字节不变。
+
+正在补齐失败探针记录/保留输入与原生运行凭据分配核验，再发布并完成同一源重复、一键平台回归及最终证据汇总。前轮回退source仍在infrastructure/.build/models/service-auth-rollback-source.yaml；回退不删除新身份输入。不得把HTTP客户端核验称为完整Info爬取或投资Agent工具执行验收。
 
 ---
 

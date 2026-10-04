@@ -9,3 +9,5 @@
 验收复用真实Info ObjectStorage适配器创建本轮随机原文。当上级 knowledge_service_receiver.enabled 启用时，使用Info实际客户端通过HTTPS及独立Casdoor服务令牌投递，核对Knowledge摄入日记中的认证身份，真实Scheduler/Outbox/Worker执行解析，再由Investment实际领域Port使用另一身份HTTPS检索中文证据与原文引用。核验HTTP幂等/冲突、缺失/篡改令牌、关系交叉调用、浏览器分面拒绝、租户/数据集及版本过滤，同时保留源只读与领域检查。未启用服务接收时只做既有L2组件验收；完整Info爬取发布链、投资Agent工具执行、浏览器全集另行验收。服务身份机制与配置归属见common/backend/service-identity/README.md。
 
 只清理本轮UUID原文VersionId、成功摄入Job、对应领域记录/已结束投递记录和精确RAGFlow文档及S3版本；不删正式数据集或任何其它对象。失败摄入不删除以便查明，秘密不进输出。删除保留策略不在此处实现。
+
+验收开始前在Knowledge私有目录建立 acceptance-<correlation UUID>.json（root0600），仅保存随机探针ID、原文引用与清理状态，不保存令牌。失败时保留该记录及原文，避免删除尚在Worker消费的输入；成功完成领域和派生清理后才删除原文版本和记录。依据精确记录处理失败探针，不能按桶或目录批量删除。
