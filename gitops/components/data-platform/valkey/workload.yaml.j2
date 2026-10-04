@@ -43,11 +43,11 @@ spec:
           ports: [{name: service, containerPort: 6379}]
           resources: {{ valkey_resources | to_json }}
           startupProbe:
-            exec: {command: [/bin/sh, -ec, 'export VALKEYCLI_AUTH="$(cat /run/auth/probe-password)"; valkey-cli --user {{ valkey_probe_username }} ping | grep -qx PONG']}
+            exec: {command: [/bin/sh, -ec, 'export REDISCLI_AUTH="$(cat /run/auth/probe-password)"; valkey-cli --user {{ valkey_probe_username }} ping | grep -qx PONG']}
             periodSeconds: 5
             failureThreshold: 120
           readinessProbe:
-            exec: {command: [/bin/sh, -ec, 'export VALKEYCLI_AUTH="$(cat /run/auth/probe-password)"; valkey-cli --user {{ valkey_probe_username }} ping | grep -qx PONG']}
+            exec: {command: [/bin/sh, -ec, 'export REDISCLI_AUTH="$(cat /run/auth/probe-password)"; valkey-cli --user {{ valkey_probe_username }} ping | grep -qx PONG']}
             periodSeconds: 10
           livenessProbe:
             tcpSocket: {port: service}

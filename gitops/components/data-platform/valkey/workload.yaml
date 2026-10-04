@@ -42,11 +42,11 @@ spec:
           ports: [{name: service, containerPort: 6379}]
           resources: {"requests": {"cpu": "100m", "memory": "128Mi"}, "limits": {"cpu": "1", "memory": "640Mi"}}
           startupProbe:
-            exec: {command: [/bin/sh, -ec, 'export VALKEYCLI_AUTH="$(cat /run/auth/probe-password)"; valkey-cli --user sunmoon_queue_probe ping | grep -qx PONG']}
+            exec: {command: [/bin/sh, -ec, 'export REDISCLI_AUTH="$(cat /run/auth/probe-password)"; valkey-cli --user sunmoon_queue_probe ping | grep -qx PONG']}
             periodSeconds: 5
             failureThreshold: 120
           readinessProbe:
-            exec: {command: [/bin/sh, -ec, 'export VALKEYCLI_AUTH="$(cat /run/auth/probe-password)"; valkey-cli --user sunmoon_queue_probe ping | grep -qx PONG']}
+            exec: {command: [/bin/sh, -ec, 'export REDISCLI_AUTH="$(cat /run/auth/probe-password)"; valkey-cli --user sunmoon_queue_probe ping | grep -qx PONG']}
             periodSeconds: 10
           livenessProbe:
             tcpSocket: {port: service}

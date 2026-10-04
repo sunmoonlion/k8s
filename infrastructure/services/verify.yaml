@@ -240,7 +240,7 @@
         argv: '{{ kube + ["-n",data_namespace,"exec","valkey-0","--","sh","-ec",valkey_protocol] }}'
       vars:
         valkey_protocol: |
-          export VALKEYCLI_AUTH="$(cat /run/auth/probe-password)"
+          export REDISCLI_AUTH="$(cat /run/auth/probe-password)"
           cli() { valkey-cli --user {{ valkey_probe_username }} "$@"; }
           key="sunmoon:acceptance:$(date +%s):$$"
           trap 'cli DEL "$key" >/dev/null' EXIT
@@ -249,7 +249,7 @@
           case "$(cli SET foreign verified)" in *NOPERM*) : ;; *) exit 1 ;; esac
           case "$(cli CONFIG GET '*')" in *NOPERM*) : ;; *) exit 1 ;; esac
           case "$(valkey-cli ping)" in *NOAUTH*) : ;; *) exit 1 ;; esac
-          case "$(VALKEYCLI_AUTH=deliberately-wrong valkey-cli --user {{ valkey_probe_username }} ping 2>&1)" in *WRONGPASS*) : ;; *) exit 1 ;; esac
+          case "$(REDISCLI_AUTH=deliberately-wrong valkey-cli --user {{ valkey_probe_username }} ping 2>&1)" in *WRONGPASS*) : ;; *) exit 1 ;; esac
           echo verified
       register: valkey_acceptance
       changed_when: false
