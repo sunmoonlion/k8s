@@ -25,3 +25,11 @@
 `service_image_ids` 是本批平台镜像选择。公共准备与发布实现位于 `../artifacts/publish.yaml`，原services-plan/materials/verify-materials/publish入口不变；原services/materials.yaml已移走，无转发副本。
 
 对象存储接入同一服务链，配置和专属实现位于 data-platform/object-storage；现有 services-materials/publish 覆盖固定 AIStor 与同日客户端镜像。services-stage 将已渲染声明写入工作树，不直接应用集群；提交、flux-release、核对并晋级 source-candidate 后运行 services-bootstrap。services-check 包含真实许可/TLS/版本对象读写，仅清除此轮探针。
+
+## ELK 与图服务
+
+ELK及Neo4j复用上述物料、stage、固定源晋级、services-bootstrap/check链，无新增部署入口。用户配置和实现分别在[ELK](../../gitops/components/data-platform/elk/README.md)、[Neo4j](../../gitops/components/data-platform/neo4j/README.md)，版本摘要仍由上游镜像锁提供。
+
+ELK独立秘密输入为services_config_dir下elk.yaml，图管理员为neo4j.yaml，均root0600并有独立备份；不是旧credentials.yaml中的字段。不要将明文移入组件公共config.yaml。services-check只输出无秘密验收结果；修改既有密码需要轮换与备份同步，不能直接改备份触发重新生成。
+
+两个单节点服务当前只开放受控内网检查；公共UI入口、应用全量日志采集、业务图身份/接入及重启/灾备验收另有后续范围。

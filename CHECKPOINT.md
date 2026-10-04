@@ -1,26 +1,40 @@
-# 当前单元：Neo4j 服务环境变量冲突修正中（2026-10-04）
-+
-+所有者顺序ELK→Neo4j→RAGFlow；本工作树platform-kind-v1，只本地提交/发布声明，无push、无公开入口改动。
-+ELK实际已通过：ES/Kibana/Logstash Ready且0重启，TLS/真实Logstash日志写入检索/最小权限拒绝/Kibana认证通过，check ok37 changed1 failed0，证据.build/models/elk-check-operator-status.log；45个原Running Pod UID/重启数不变。修正a1dae16f只改验收读取详细status的运维身份，运行读者权限没扩大。
-+Neo4j候选376f53cbbbfa9d7896244b1c5196a5617e072bd7，晋级bbe1f15d；Flux摘要5b570e9a1ff069382641195064508d68c8accaab7f2fda71298361884d1dc2d4。stage ok297 changed18 failed0，已有229公共对象不变、新6对象，server dry-run通过。
-+Neo4j首次运行CrashLoop：官方入口把Kubernetes服务自动注入的NEO4J_PORT_7687_TCP_PORT解析成PORT.7687.TCP.PORT未知参数，严格配置校验正确阻止启动。已将本组件enableServiceLinks=false写入模板，保留DNS和严格校验；现在重新stage/提交/晋级，不能宣称图验收通过。原错误脱敏记录.build/models/neo4j-startup-redacted.log；当前首次bootstrap会话27962仍在等根调和，观察后结束/接续，避免两个发布并行。
-+下一步Neo4j修正声明原生部署→实际图提交/读回/事务回滚/Bolt TLS→完整重复services-bootstrap与Pod对账。RAGFlow物料已在正式缓存和Harbor，运行延后。全业务/开机/持久化重建/长期空间管理/临时清理仍未完成。
-+
-+---
-+
-+# 当前单元：按所有者调整顺序，先 ELK 再 Neo4j（2026-10-04）
+# 当前单元：ELK 与 Neo4j 原生部署及重复验收通过（2026-10-04）
 
-工作树/分支 platform-kind-v1，基线 f732863a；原生 Make→Ansible→Flux，原集群与新 Harbor 数据保留，无 push，无公开入口切换。本机中文向量服务已实际通过，后续可换外部 provider；不同模型须重新生成向量。
+工作树/分支 platform-kind-v1，k8s单仓；本单元基线f732863a。按所有者顺序ELK→Neo4j→RAGFlow；原生Make→Ansible→Flux，不增加部署CLI，无push、无公共入口切换。当前开发容量底线10GiB、维护上限2小时；本单元没有停止原有应用或Harbor。
 
-- RAGFlow下载会话74672已成功结束，固定镜像独立校验和Harbor发布ok28 changed1 failed0；仅物料完成，运行部署延后。
-- ELK9.5.4三镜像和Neo4j2026.09.0 Community四镜像已按现有上游锁准备/发布，材料ok96 changed20 failed0；未换版本。证据.build/models/elk-neo4j-materials.log、elk-neo4j-publish.log。
-- ELK配置/模板/初始化/验收在gitops/components/data-platform/elk，同职责共置；20Gi/2Gi/4Gi独立静态Retain卷，同data-platform-dev。ES内置管理员仅ES和初始化Job；Kibana系统账号、Logstash受限写账号、日志读者和入站身份独立。TLS每服务独立，凭据备份/SOPS同现有链。单节点，非HA，不开启索引自动删除。
-- 首次渲染目录列表误含elk/elasticsearch作为已有组件键，已修正；原错误保留elk-stage.log。修正stage ok250 changed4 failed0；现有210个公共对象完全一致，新增19对象；四组13个公共对象server dry-run通过。
-- 进一步收紧ES探针对yellow/green检查、Kibana保留官方tini、公共验收输出延后到清除自建标记之后；将再次stage再提交/晋级/实际部署。当前仅候选，尚不能宣称运行成功。材料准备/新目录已初始化，旧服务未部署改动。
+## 当前固定版本与实现
 
-ELK实际服务与依赖阶段均Ready、Pod重启0。原生bootstrap在最终验收因Kibana详细status权限字段失败，未扩大读者权限；修正以现有运维身份读取完整版本，独立读者仍做认证API验收。services-check实际ok37 changed1 failed0，TLS/日志写入检索/权限拒绝通过，唯一变更为回执；完整重复bootstrap随Neo4j完成后一起复核。证据elk-bootstrap.log、elk-check-corrected.log、elk-check-operator-status.log。
+- ELK三件均9.5.4；Neo4j 2026.09.0 Community。沿用已选上游锁，四镜像正式归档与Harbor独立校验/发布完成，materials ok96 changed20 failed0、publish ok76 changed4 failed0。
+- 配置/模板/prepare/verify/说明分别同处gitops/components/data-platform/elk、neo4j；服务公共链纳入原Make入口、布局、渲染、SOPS、固定源及协议检查，没有平行部署系统。私有elk.yaml与neo4j.yaml、独立TLS均root权限保存及逐字节备份核对，Git仅密文。
+- 当前源revision 276c096c2b6048a74ca9d0174befe69feca865b3，digest sha256:0c29b49cf98add0232e63aad1b660138c788f206add0509b9d8243c38b111e66；晋级48888761。后续只改Make帮助、服务README和本检查点，不改变gitops发布字节。
+- 全部公共入口保持此前路由，新的ELK/Neo4j未开放公共UI或业务客户端访问。单节点静态Retain卷、非root/只读根；不宣称HA。
 
-下一步 Neo4j候选/晋级/原生bootstrap与实际图写读回滚→重复部署确认既有Pod未重启→Neo4j同链实际读写→继续RAGFlow。后续整套启停/开机恢复、WSL/KIND重启与删除重建持久化、长期空间管理及所有临时清理仍未完成。容量底线10GiB，窗口2小时；新公开入口需另行批准。
+## 实际执行与证据
+
+1. ELK：ES/Kibana/Logstash Ready且0重启；HTTPS CA/主机名、Logstash真实中文日志写入ES并独立检索、错误身份401、写者读/管理/外索引拒绝、读者写拒绝、Kibana认证API通过。详细status需现有运维身份，读者权限未扩大。
+2. Neo4j：Ready且0重启；HTTPS证书/主机名、未认证401、内核锁定版本、中文节点关系提交与读回、显式事务回滚后未提交计数0、Bolt TLS协商实际通过。不是业务图/RBAC/Bolt驱动会话验收。
+3. 完整make -C infrastructure services-bootstrap与同一固定源重复执行均退出0；最终services-check两轮均ok41 changed1 failed0，唯一服务验收变化是外部回执。重复时材料/发布/渲染/版本门禁/Flux均changed0；chart检查仅创建/删除本次私有临时目录，报告changed2，不是工作负载变化。
+4. 发布前原45个Running Pod与ELK三Pod均未变化；完整两轮前后49个Running Pod的UID/各容器重启计数完全一致，10个PV的UID/spec/Bound状态完全一致。40个Flux阶段当前generation Ready且lastAppliedRevision同一0c29摘要。
+5. 两次失败图验收遗留的4个随机标记节点已精确核对结构/运行标记后删除；本单元6个/tmp临时编辑脚本已按精确文件名清除，无东京新增文件。失败原证据保留，不删除正式物料/备份或RAGFlow当前参考源码。
+
+证据均在infrastructure/.build/models：elk-neo4j-bootstrap-final.log、elk-neo4j-bootstrap-repeat.log、elk-neo4j-unit-receipt.json、*-before/after-repeat.json、elk-neo4j-stages-final.json；原失败与修正日志同目录。正式无秘密协议回执同时由统一入口存于/data/kind-clusters/sunmoon-kind/bootstrap/evidence/services/latest.json。
+
+## 查明并修复的问题
+
+- Neo4j官方入口把Kubernetes自动注入NEO4J_PORT_*误作配置，严格校验正确拒绝；模板enableServiceLinks=false，保留DNS/严格校验。原失败脱敏日志neo4j-startup-redacted.log。
+- HTTPS原健康探针对Pod IP返回400；证书对应DNS/SNI实际200。按官方Helm采用Bolt监听探针，真实CA/主机名及图事务验收仍强制通过。
+- StatefulSet旧失败Pod阻挡滚动更新：原生flux-source-apply包含同目录受控恢复，仅核对控制器UID、镜像、节点、Retain卷并以UID/resourceVersion条件正常删除旧失败Pod；不删卷、不强制终止。旧Pod恢复实际执行。后加的等待守卫从晋级Git对象读模板，等Flux子模板实际落地再判断；本轮验证模板已一致及健康Pod跳过，尚未故障注入15分钟等待超时。
+- dbms.components同时返回Kernel及Cypher，验收精确筛选Neo4j Kernel；Query API回滚真实返回200，固定2026.09.0官方QueryController也明确Response.ok。要求实际回滚后独立查询计数0，不以HTTP状态代替数据判据。原失败输出保留。
+
+## 下一步与未完成范围
+
+RAGFlow/Infinity/Valkey的正式物料及Harbor发布已完成，但尚未部署运行；接下来继续RAGFlow独立数据库/S3/队列身份与无隐式DDL的运行启动，再做真实领域/跨应用检索。参考源码仍在.build/models/upstream-ragflow，收尾须清除。
+
+ELK尚未接全应用日志采集及公共UI；Neo4j尚未确定业务图拥有者/服务身份，Community实例不得给四App共享管理员。两个服务的重启/备份恢复不在本次协议结果内。
+
+随后仍需整套一键/统一启停与开机顺序，实际WSL/KIND重启及删除重建后Harbor全目录摘要/新节点拉取，长期容量监控/保留GC/缓存/日志/备份统一查看预览执行，删除政策先确认，最后清理全次临时/远程物料。项目总目标尚未完成。
+
+日常查看配置见组件config.yaml和README；make -C infrastructure services-check检查已部署服务，services-bootstrap复用已晋级源一键部署。配置变化需services-stage→本地提交→flux-release→核对/晋级source-candidate→services-bootstrap，不偷偷改变在线源。
 
 ---
 
