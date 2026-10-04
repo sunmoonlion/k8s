@@ -1,4 +1,34 @@
-# 当前单元：ELK 与 Neo4j 原生部署及重复验收通过（2026-10-04）
+# 当前单元：MongoDB 原生部署、重复与 Pod 重建持久化通过（2026-10-04）
+
+工作树/分支 platform-kind-v1，k8s单仓；基线592529112b59482ddd3e0ff04706ab3adf69084f。所有者在ELK/Neo4j后要求顺便部署MongoDB。维护上限2小时、容量底线10GiB；本单元没有公共入口切换，没有停止其它应用/Harbor，没有修改四个业务仓，无push。
+
+## 固定版本与实现
+
+- 官方9.0.2-noble已实际解析amd64原始manifest/config并逐项SHA核对；此前8.3.11是正式9.0镜像未核实的条件例外，本次无旧Mongo数据，因此更新唯一锁。manifest sha256:17148334f6b0a4fad09ad70f6449cf4d0330bbf49469b6dff4338123a5f7bcbf，config sha256:0f6605a5a60504880cea7b4dd646dbfa18f297b2586c747f61d55c61f5128e1a，压缩层371,904,136字节。首次官方直连EOF，现有代理有限重试成功，不关闭TLS/摘要校验。
+- 单成员副本集sunmoon，data-platform-dev/mongodb-0，内部requireTLS27017；20Gi worker2静态Retain卷，不宣称HA。配置/prepare/模板/独立初始化/验收同处gitops/components/data-platform/mongodb，复用原生Make→Ansible→Flux，无平行部署入口。管理员、内部密钥、受限验收账号及独立TLS均私有保存、独立备份/SOPS加密；未来业务要各自逻辑库/账号。
+- 当前固定source revision b9f51389c2d7ae6f2f718ba52cf5e48497d22e76，digest sha256:4379cd728947ede85f8b9e3f8e079197df556be51bdbc6d06367a59b1b9d8f30，晋级28e39825。实现d8c5c807与初始化修正b9f51389；最后只更新服务说明与检查点，gitops字节仍与晋级Git对象一致。
+- readiness是严格TLS认证ping；独立Job建立PRIMARY/受限账号，避免等PRIMARY而无法先运行初始化Job的依赖死锁。官方entrypoint只在空数据目录loopback创建root；已有WiredTiger数据不重新初始化。
+
+## 实际结果及失败处理
+
+1. 正式归档完整验证/Harbor发布及独立puller摘要通过（materials ok33 changed5 failed0；publish ok28 changed1 failed0）；公共声明server dry-run、JS/YAML语法和已有对象结构核对通过，未加/跑测试套件。
+2. 初次v1 Job失败：mongosh对NotYetInitialized直接抛异常，原实现按返回值处理错误。只对code94识别新副本集，其余错误仍停止；v2 Job成功。旧失败Job及两个Failed Pod先保存JSON证据，再以UID/resourceVersion精确删除；成功v2、数据卷/秘密保留，不把原失败写成成功。
+3. 真实TLS CA/主机名、锁定版本、受限账号中文CRUD、多文档事务提交/回滚、匿名读/错误密码/跨库写/管理员操作拒绝通过。临时随机collection精确清理。
+4. 实际替换一次MongoDB Pod：先用受限账号写入majority+journal随机文档，正常删除精确旧Pod，待新UID Ready后再次读回，账号和TLS/事务仍可用，PV/PVC UID/spec不变，随机标记已移除。回执mongodb-restart-receipt.json。这仅是Pod重建，不是WSL/KIND重启/删除重建。
+5. 完整services-bootstrap两轮均退出0；各次services-check ok44 changed1 failed0，唯一变化是外部验收回执。材料/发布/渲染/发布门禁/Flux重复changed0；chart验证只创建/删除临时目录changed2。两轮前后50个Running Pod UID/全部重启计数不变，11个PV UID/spec/Bound状态不变；对本单元之前49Pod/10PV也独立比对一致，41个Flux阶段当前代次Ready、同一4379摘要。
+6. 本单元/tmp编辑、重启及终结脚本按精确文件名删除；没有东京下载，不删正式物料、秘密备份和未完成RAGFlow参考。原失败日志保留。
+
+证据均infrastructure/.build/models：mongodb-materials.log、mongodb-publish.log、mongodb-stage*.log、mongodb-server-dry-run.log、mongodb-bootstrap.log（原失败停止rc143）、mongodb-fixed-source-apply.log、mongodb-bootstrap-final.log、mongodb-bootstrap-repeat.log、mongodb-restart.log、mongodb-unit-receipt.json及前后Pod/PV/阶段JSON。统一服务回执仍在/data/kind-clusters/sunmoon-kind/bootstrap/evidence/services/latest.json。
+
+## 接下来与未完成项
+
+继续RAGFlow/Infinity/Valkey独立身份/初始化Job和无隐式DDL运行，再实际领域与跨应用检索；三套正式镜像物料及Harbor发布已有，不等于runtime就绪。ELK仍待全应用日志采集/公共UI，Neo4j与MongoDB仍待业务身份/接入、各自备份恢复；Mongo单成员不具备HA。
+
+随后整套一键/统一启停、开机顺序、真实WSL/KIND重启及KIND删除重建后的Harbor全目录摘要/新节点拉取；长期容量监控、保留/GC、构建缓存/日志/备份统一查看预览执行，删除策略按所有者决定；最后全次临时/远程清理。项目整体尚未完成。当前日常make -C infrastructure services-check；配置变化走services-stage→提交→flux-release→核对晋级source-candidate→services-bootstrap。
+
+---
+
+# 前序单元：ELK 与 Neo4j 原生部署及重复验收通过（2026-10-04）
 
 工作树/分支 platform-kind-v1，k8s单仓；本单元基线f732863a。按所有者顺序ELK→Neo4j→RAGFlow；原生Make→Ansible→Flux，不增加部署CLI，无push、无公共入口切换。当前开发容量底线10GiB、维护上限2小时；本单元没有停止原有应用或Harbor。
 

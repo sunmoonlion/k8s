@@ -33,3 +33,12 @@ ELK及Neo4j复用上述物料、stage、固定源晋级、services-bootstrap/che
 ELK独立秘密输入为services_config_dir下elk.yaml，图管理员为neo4j.yaml，均root0600并有独立备份；不是旧credentials.yaml中的字段。不要将明文移入组件公共config.yaml。services-check只输出无秘密验收结果；修改既有密码需要轮换与备份同步，不能直接改备份触发重新生成。
 
 两个单节点服务当前只开放受控内网检查；公共UI入口、应用全量日志采集、业务图身份/接入及重启/灾备验收另有后续范围。
+
+
+## MongoDB
+
+MongoDB接入同一Make/Ansible/Flux服务链，用户配置、模板、独立初始化Job、协议验收和说明在[MongoDB组件](../../gitops/components/data-platform/mongodb/README.md)。镜像取统一不可变版本锁，本次官方9.0.2-noble；内部TLS单成员副本集，不具备HA。services-check验证受限库CRUD、提交/回滚、匿名/错误口令/跨库/管理权限拒绝。
+
+私有用户名、密码和副本集密钥在services_config_dir/mongodb.yaml，证书在mongodb-tls，均有独立逐字节备份；不是公开config.yaml字段。日常公开端口/副本集名称/卷/资源参数在组件config.yaml。当前端口只支持27017；既有副本集名称、卷节点和已完成初始化Job不可随意修改，改变身份要另做轮换，不会静默重设密码。20Gi卷声明不是文件系统配额。开关不隐式删既有运行资源或数据。
+
+实际MongoDB Pod重建后同一随机标记、受限账号及TLS/事务验证通过，PV/PVC UID不变；临时标记已精确移除。这不代替整机/集群重启、KIND删除重建或数据库备份恢复。

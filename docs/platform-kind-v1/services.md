@@ -163,3 +163,10 @@ Traefik chart 41.6 使用 `log`、`accessLog`，`versionOverride` 在 values 根
 本次晋级遇到前次迁移留下的摘要字段冲突：同一个sunmoon-bootstrap名称的Update与Apply仍是不同管理记录。前两次受保护预览在真正写入前停止（API默认provider字段、同值Apply仍共享归属）；最终核对UID/resourceVersion、现摘要、精确已有归属后，只在一次性源声明接管中允许冲突覆盖并晋级已审核摘要。服务端预览要求其余spec与其他管理者字段完整保留；日常tasks/apply.yaml不启用force，后续继续原生SSA发布。没有直接编辑或清空managedFields。[Kubernetes字段归属规则](https://kubernetes.io/docs/reference/using-api/server-side-apply/#conflicts)。
 
 本轮最终：29份Ansible语法、13个Kustomize根通过，原生render与晋级声明/密文比对通过；五Flux阶段已应用255728911c9e141b614fa55ac1b3d750dbe1c3ea711dc67f92bb6fd545fdb6f9，七个Pod身份/重启数、四PV身份/spec保持。本轮没有重跑业务协议验收、停机或迁移数据；现场内容不变不能替代后续业务与重建持久化验收。证据保存在bootstrap/evidence/config-colocation-20261003，临时脚本已退出日常目录。
+
+
+## MongoDB 单元（2026-10-04）
+
+MongoDB官方9.0.2-noble已接入同一服务部署链。配置入口：[config.yaml](../../gitops/components/data-platform/mongodb/config.yaml)，身份、部署及日常说明：[组件README](../../gitops/components/data-platform/mongodb/README.md)。运行data-platform-dev/mongodb-0，仅内部TLS27017，单成员副本集sunmoon，worker2静态20Gi Retain卷。用户名/密码/内部密钥在/etc/sunmoon/services/sunmoon-kind/mongodb.yaml，不放公开配置、不与四App共用；未来业务接入须各自逻辑库和受限账号。
+
+真实CRUD、事务提交/回滚、权限拒绝和Pod重建持久化通过；统一services-bootstrap及同源重复成功。范围不含业务驱动适配、HA、数据冷备份恢复及整机/集群重建。失败初始化v1的Job/两个Pod在v2成功后按UID条件精确清理，失败证据保留；NotYetInitialized是mongosh抛异常而非返回错误码，脚本已仅对code94处理，其他错误仍停止。
