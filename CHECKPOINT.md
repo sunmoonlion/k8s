@@ -636,3 +636,5 @@ Ansible2.21.4、Compose5.5.1；KIND0.33.0、kubectl/kubeadm1.36.5。官方KIND�
 2026-10-04 v5真实验证进一步证实：账号认证已通、上传成功，但官方bulk_insert_into_db仍调用DB.create_tables，导致运行角色schema权限拒绝；原失败日志ragflow-v5-isolated-check.log、API脱敏日志保留。清理后的GET特定已删ID返回102会掩盖前因，现改独立查询对应DB行及S3版本清空；不接受任意API错误冒充删除成功。
 
 v6采用Dockerfile内唯一批量写入补丁：固定官方db_utils.py原始SHA4db6691cd806ca04ef48f6cd034a55d90704ede815c807f57f8b1b0d38c30779，将建表改为存在性检查，缺表失败。仍不安装/升级依赖、不放宽DML账号；相对于此前“仅权限”增加这一项，是实际解析暴露的必要适配。派生manifest35f8c3a9c0669c1a0b4fe7caf3b810435de415f9c994d28634be443a4c8807c9，Dockerfile5a59a6994157fa0f998d3a0ff2593ae121dbef0bcce9a167bdbd27c1d5f3a38d，归档10bd67db6e043c29d520839d5e229655a776f41ea144eb675df168b7a74369aa。38官方基础层完整保留、追加3层、默认UID1000。build ok38 changed11、publish ok28 changed1、完整stage ok427 changed2均failed0；待v6晋级与真实解析检索，不宣称通过。
+
+v6实际上传、任务解析（5.44s）、1024维向量索引、中文检索及全部身份/DDL/S3拒绝通过；原整链验收在S3旧版本清理断言失败，不改写原失败。官方删除API不会清掉版本，现只在本轮随机数据集前缀做精确版本清理并核对DB行/S3为空。修正后的原生组件verify.py实际退出0，回执ragflow-v6-cleanup-fixed-check.log包含中文链路/租户隔离/DDL拒绝/临时版本清空全部true；待发布此验收修复并完成完整services-bootstrap两轮。镜像35f8固定不再变；没有额外部署手工创建业务身份。

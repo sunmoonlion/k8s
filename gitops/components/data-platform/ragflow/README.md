@@ -19,3 +19,5 @@ services-ragflow-image复用原生Ansible/容量检查：固定官方Harbor摘�
 官方API-token认证要求User.access_token非空，初始化Job首次补入独立随机会话标记；它不复用API令牌，不签发浏览器会话，不开放登录路径，已有值不覆盖。
 
 源码适配范围只限api/db/db_utils.py的一处批量写入前置检查，官方文件SHA256为4db6691cd806ca04ef48f6cd034a55d90704ede815c807f57f8b1b0d38c30779。Dockerfile记录全部补丁字节，未来上游文件变化立即使构建失败；不能静默套用到新版本。此必要性由真实文档解析的schema权限拒绝证实，不放宽DML账号。
+
+官方数据集删除API保留版本桶的旧版本。services-check只对本轮随机数据集执行精确版本清理，并独立核对对应DB行及S3前缀均为空；不改变业务保留策略或整桶删除。

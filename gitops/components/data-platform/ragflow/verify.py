@@ -61,7 +61,7 @@ try:
         if str(observed.get('run')).upper() in ('3','DONE') and float(observed.get('progress',0))>=1:break
         time.sleep(3)
     else:raise RuntimeError('RAGFlow ingestion timed out')
-    retrieval=call('POST','/retrieval',json={'question':'月球的引力会引起海洋的什么现象？','dataset_ids':[dataset_id],'top_k':5,'similarity_threshold':0.1,'vector_similarity_weight':0.7})
+    retrieval=call('POST','/retrieval',json={'question':'月球的引力会引起海洋的什么现象？','dataset_ids':[dataset_id],'knn_top_k':5,'similarity_threshold':0.1,'vector_similarity_weight':0.7})
     chunks=retrieval['chunks'];assert chunks and any('潮汐' in row.get('content','') for row in chunks)
     assert all(row.get('document_id')==doc_id for row in chunks)
     foreign_retrieval=client.post(base+'/retrieval',json={'question':'月球引力','dataset_ids':[dataset_id]},headers={'Authorization':'Bearer '+inputs['knowledge_token']},timeout=30)
@@ -81,11 +81,21 @@ finally:
                     cursor.execute('SELECT count(*) FROM document WHERE kb_id=%s',(dataset_id,))
                     assert cursor.fetchone()[0] == 0
             prefix=s3cfg['prefix_path'].rstrip('/')+'/'+dataset_id+'/'
+            assert len(dataset_id)==32 and all(c in '0123456789abcdef' for c in dataset_id)
+            # Only this invocation's random dataset; business retention is separate.
+            for page_number,page in enumerate(s3.get_paginator('list_object_versions').paginate(Bucket=s3cfg['bucket'],Prefix=prefix)):
+                assert page_number < 20
+                objects=[{'Key':row['Key'],'VersionId':row['VersionId']} for row in page.get('Versions',[])+page.get('DeleteMarkers',[])]
+                assert all(row['Key'].startswith(prefix) for row in objects)
+                if objects:
+                    deleted=s3.delete_objects(Bucket=s3cfg['bucket'],Delete={'Objects':objects,'Quiet':True})
+                    assert not deleted.get('Errors')
             remaining=s3.list_object_versions(Bucket=s3cfg['bucket'],Prefix=prefix,MaxKeys=1)
             assert not remaining.get('Versions') and not remaining.get('DeleteMarkers')
         except Exception:
             if not original_failure:raise
             print(json.dumps({'cleanup_failed':True}),file=sys.stderr)
+result['temporary_dataset_and_versions_removed']=True
 print(json.dumps(result))
 """
 
