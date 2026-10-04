@@ -58,7 +58,7 @@
 | D1 | 前端的结构（三层，还是按功能切片，还是别的） | 所有者主持讨论 | 等所有者定 |
 | D2 | 网页设计的七件事（W1 至 W7，见 [近期要定的事](owner-decisions-now.md)）。W7 已定：在本地用样例数据看页面 | 所有者 | 等所有者定 |
 | D3 | 首页挂着的旧研究工作区（investment-web-frontend `components/research/`，约 829 行）与管理端的旧运行时面板（investment-admin-frontend `components/research/`） | D1 定了之后，随前端改造删 | 待做 |
-| D4 | 预览模式：前端连样例数据，不连后端 | D1 定了之后 | 待做 |
+| D4 | 预览模式：前端连样例数据，不连后端 | — | 已做，2026-10-04，见 [`0002-web-preview`](SDD/modules/0002-web-preview.md)。做成了网页端之外的一个进程，网页端的代码一行不改，所以没有等 D1 |
 | D5 | 工作台 4 个组件里取数、状态、渲染混在一起 | D1 定了之后重写 | 待做 |
 
 ## 五、暂缓的建议
@@ -129,6 +129,13 @@
 | H37 | 三个应用网页端的登录契约里，应用名的名单是 `tpl`、`info`、`knowledge`、`research`；investment 的那一份另加了 `investment`。`research` 是 investment 以前的名字，名单没有清 | 四个网页端 `contracts/auth.ts` | 做页面时一起清。先在模板里改 | 待做 |
 | H38 | 配置文件（`core/config.py`）现在引用了领域层（跨应用跳转的规则）。以前 `core` 不引用 `app`。为的是规则只写一处，配置写错了启动时就能报 | 四个后端 | 远程认为可以接受：领域层是最里面的一层，谁都可以引用它。所有者或评审认为不行的话，退路是把校验挪到组装层 | 待定 |
 | H39 | 跑 `ruff format` 时带上了整个 `tests` 目录，顺手重排了模板里 7 个无关的测试文件的格式。发现后原样恢复了，没有提交。这些文件本来就不合现在的格式，代码检查不查它们 | tpl-backend `tests/` | 以后只对自己动过的文件跑格式化 | 已处理 |
+| H40 | 预算可能被最后一步超出：一步花多少事先不知道，只按预留的数判断够不够。样例里上限 1.00、实际花了 1.20 | investment-backend `application/workbench/advisor.py` | 所有者定：改说法，还是给每一步设硬上限（[近期要定的事](owner-decisions-now.md) I9） | 待定 |
+| H41 | 沙箱列表接口把沙箱令牌的引用返回给了浏览器；按需拉起的沙箱，这个引用就是令牌本身。第一期留下的，原来的测试还断言它在返回里 | investment-backend `interfaces/endpoints/workbench_routes.py` | — | 已做，随第 6 步 |
+| H42 | 沙箱列表、拉起沙箱的返回里还有沙箱的内部地址。不是密钥，浏览器用不着；旧页面在显示它 | 同上；investment-web `contracts/workbench.ts` | 第 7 步重做页面时去掉 | 待做 |
+| H43 | 旧的工作台页面认不得契约第 2 版的数据（不属于项目的聊天没有机器），列表显示为空 | investment-web `components/workbench/` | 第 7 步整个重做，不修旧页面 | 待做 |
+| H44 | 本机联调（`workbench-chain.sh`、`workbench-modes.sh`）的项目目录在 runtime 仓库里，Codex 会读到仓库的 `AGENTS.md`。不影响这两个脚本验的东西；录磁带的脚本已改到仓库之外 | k8s `scripts/local-integration/` | 顺手时改 | 待做 |
+| H45 | 专家在真数据上从头到尾跑一遍（真的 Codex、真的知识服务、真的数据集）还没有做过。样例里专家各步的交回物是照格式写的 | — | 把数据集这条链的联调和工作台的联调接起来。迁移完成后在集群上做也可以 | 待做 |
+| H46 | 管理端（四个 `*-admin-frontend`）没有预览 | — | 第 8 步做 info 管理端的页面时加，用同一个记录器 | 待做 |
 
 ## 八、自动检查怎么用
 
