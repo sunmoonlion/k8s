@@ -104,6 +104,44 @@
       register: uid
       changed_when: false
       failed_when: uid.rc != 0 or uid.stdout != (identity.content | b64decode | from_json).kube_system_uid
+    - name: Read the migration head from the pinned backend Git object
+      become: false
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import ast,json,subprocess,sys
+            repo,revision=sys.argv[1:]
+            files=subprocess.check_output(['git','-C',repo,'ls-tree','-r','--name-only',revision,'app/alembic/versions'],text=True).splitlines()
+            chain={}
+            for path in files:
+                if not path.endswith('.py'):continue
+                text=subprocess.check_output(['git','-C',repo,'show',revision+':'+path],text=True)
+                fields={}
+                for node in ast.parse(text).body:
+                    names=node.targets if isinstance(node,ast.Assign) else [node.target] if isinstance(node,ast.AnnAssign) else []
+                    for name in names:
+                        if isinstance(name,ast.Name) and name.id in ('revision','down_revision'):
+                            fields[name.id]=ast.literal_eval(node.value)
+                if 'revision' not in fields:continue
+                value=fields['revision'];parent=fields['down_revision']
+                assert isinstance(value,str) and (parent is None or isinstance(parent,str)) and value not in chain
+                chain[value]=parent
+            assert chain and sum(v is None for v in chain.values())==1
+            assert all(v is None or v in chain for v in chain.values())
+            heads=set(chain)-set(v for v in chain.values() if v is not None)
+            assert len(heads)==1
+            print(json.dumps({'revision':revision,'head':heads.pop(),'migration_count':len(chain)}))
+          - '{{ playbook_dir }}/../../../{{ application_name }}-app/{{ application_name }}-backend'
+          - '{{ source_lock.backend_revision }}'
+      register: pinned_schema
+      changed_when: false
+    - name: Require the configured schema to match the immutable source chain
+      ansible.builtin.assert:
+        quiet: true
+        that: cfg.expected_schema_revision == (pinned_schema.stdout | from_json).head
+        fail_msg: Expected schema differs from pinned backend source. Correct the configuration before rendering or deployment.
     - name: Show the deployment plan without credentials
       ansible.builtin.debug:
         msg:

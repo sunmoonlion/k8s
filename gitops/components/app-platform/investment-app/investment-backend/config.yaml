@@ -6,8 +6,8 @@ investment_backend_deployment:
   database_migrator_user: investment_migrator
   database_extensions: []
   database_bootstrap_revision: v1
-  migration_job_revision: v1
-  expected_schema_revision: '20260924_0009'
+  migration_job_revision: v2
+  expected_schema_revision: '20260925_0011'
   private_dir: /etc/sunmoon/applications/sunmoon-kind/investment
   backup_dir: /mnt/sunmoon-data/backups/applications/sunmoon-kind/investment
   deploy_budget_bytes: 2147483648
