@@ -1,22 +1,47 @@
-# 当前单元：知识后端接入 RAGFlow 与上游原文只读身份（进行中，2026-10-04）
+# 当前单元：知识入库/中文检索与四后端异步会话修复（首次通过，重复验收进行中，2026-10-04）
 
-基线8448d4ad4b6a9b1ee42462b6c53affa0d4a9dc4c，工作树platform-kind-v1/k8s。按既有部署授权继续；不切公共入口，不删原始kind/数据/备份，无push。维护2小时、容量底线10GiB。
+工作树 platform-kind-v1，基线8448d4ad4b6a9b1ee42462b6c53affa0d4a9dc4c。原生 Make→Ansible→Flux/SOPS；不切公共入口，不删原始kind/数据/备份，无push。开发维护2小时、容量底线10GiB。本轮先完成知识现有应用服务/真实任务链，跨应用HTTP服务认证另行接通。
 
-顺序：核对现有知识Port/原文契约→同目录配置与原生Ansible准备→独立源读取账号/精确数据集绑定/SOPS→选定应用stage与其它应用字节对比→提交/发布/晋级→原生application-bootstrap APP=knowledge→真实原文/持久任务/中文领域检索及权限检查→重复部署与记录。回退以前一固定Flux摘要e7bf1dc2…恢复本应用声明，保留新读账号/派生数据集及其输入以供核查，不删除上游原文。
+| 自检规则 | 本单元执行 |
+| --- | --- |
+| C-D5/C-D8 | Info持有权威原文；Knowledge按固定版本只读，RAGFlow仅派生；迁移仍独立Job，运行不DDL |
+| C-I3/C-I7 | 原文只读身份、RAG服务token与浏览器/数据库身份独立；租户、数据集和关系scope实际拒绝验收 |
+| C-R1/C-R6/C-T5 | 模板优先修复再串行同步实例，四子仓提交及镜像固定，不提交指向未推送子提交的父仓gitlink |
 
-本单元新增knowledge-backend/provider只负责已有RAGFlow/Info原文的部署准备及验证；不新建并行CLI，不修改知识领域契约。API令牌从已保存RAGFlow知识身份引用，源读取密码独立生成与逐字节备份；原文仅info-originals/info/original/只读，不创建knowledge-originals权威副本。尚未宣称完整跨应用HTTP链通过。
+## 已实现并实际通过
 
-## 实际链路发现的共享异步数据库问题（11:04 UTC）
+- Knowledge配置/prepare/精确数据集绑定/SOPS/只读源Job/验收在 knowledge-backend/provider，原生application-stage/bootstrap直接编排。账号knowledge_source_reader仅能GetObject/GetObjectVersion info-originals/info/original/*；不能写、列桶、读取派生桶或管理。API/Worker独立token与源身份，Scheduler不持这些秘密；私有输入与绑定root0600及逐字节备份，不重生成现有身份。
+- 真正Info ObjectStorage创建随机中文原文→固定VersionId/大小/媒体类型/SHA核对→Knowledge持久意图→Scheduler/Outbox/真实Worker→RAGFlow解析/CPU向量/Infinity→领域检索与原文引用通过。15项实际检查含幂等/冲突、错误摘要拒绝、源只读、租户/数据集/scope拒绝及无关版本过滤。只精确清理该轮原文版本、派生文档/S3版本、领域与4条投递记录，正式数据集保留。
+- 首轮四应用原生application-bootstrap均退出0；Knowledge check ok46 changed1 failed0，其余TPL/Info/Investment分别ok40/45/40 changed0 failed0。实际镜像内异步会话策略、独立身份/schema、Worker/Scheduler、诊断消息、TLS路由和真实浏览器授权/回调检查通过。
+- 54个Running Pod，34个非本次四应用运行Pod UID及重启计数不变；13个Retain PV UID/spec/Bound状态不变；46个Flux阶段当前generation Ready且同一固定摘要。四应用后端与前端部署标识共同滚动，前端镜像没有重建；不把这些计划内变动称为零重启。
+- 当前首轮源revision 2c76ddf15dfb5bbe96809be07c7ec0a3ff0a8ce9，digest sha256:bbdcc072386e6e42df7e2113d5e6026ca4a53b77eda89c88f6fd1fcbd2ba108d，晋级7aa88442。说明完善后仍须发布对应Git对象，再完成全套重复与不变核对。
 
-Knowledge真实Worker已接受任务，但在数据集回执提交后报MissingGreenlet；生产factory默认expire_on_commit=True，而已有测试夹具用False。已核对SQLAlchemy官方asyncio建议，按模板优先修tpl，再串行同步knowledge/info/investment的同一factory；每个只改两行，不改依赖/schema/契约或凭据。四子仓本地提交如下：
-- tpl-backend: e907b65d86bf60e27fce18ebc71b854966504f69
-- knowledge-backend: 5732eab2e6e25eb225fbad4249ae01c0178fdb89
-- info-backend: a4b6f59b99f7ef6dc48b346803560e6b2ceeb0a7
-- investment-backend: 13539aa2f5cdcb79e7c670adb82ac88747d0d5b6
+## 实际失败与修复
 
-接下来必须原生重建并独立发布四个Backend、更新各自镜像锁与sources覆盖、各APP stage→固定Flux发布晋级→原生bootstrap并实际验收，不能直接patch Pod或忽略镜像/source不一致。父仓旧gitlink不提交到未推送子提交，保留本地source覆盖真源。期间sources已前移、旧image.lock暂不匹配，部署门禁必须继续阻断，直到新镜像全部核验。
+1. 新策略YAML缺分隔符，完整Kustomize门禁拒绝，修正后发布；曾将SOPS密文直接送server dry-run而失败，未应用，随后只对公开对象dry-run，不跳过TLS/秘密校验。
+2. 验收源内嵌newline错误、Knowledge不含boto3：改原生Python/现有httpx签名实现，保留原失败记录，不添加业务依赖。
+3. 真实Worker在数据集回执提交后MissingGreenlet：生产factory默认expire_on_commit=True，而测试夹具False。按SQLAlchemy异步建议仅补expire_on_commit=False，模板优先，再同步三个实例，不改依赖/schema/契约。四后端均原生重建ok46 changed16 failed0、独立发布ok29 changed2 failed0；运行镜像内检查False通过。
+4. backend镜像改变使初始化Job模板改变；为三类Job显式增加新代次（TPL Redis v3，其余Redis v2，四身份/消息均v2），不改原账号/密码。首次发布因八个前端生成文件未提交而被门禁拒绝，随后提交完整声明；没有绕过dirty检查。
+5. 首次失败合成摄入725023f3-d873-4855-be01-ef3e780997eb已由真实消费者落为artifact_unreadable；源原文版本先前已精确清理，核实无派生文档/领域版本/活动租约后归档并只删除该Job及一条投递。没有手工改成成功或重放真实业务。
 
-原失败随机Job 725023f3-d873-4855-be01-ef3e780997eb及回执保留，原文验收版本已由限定finally清理；如已死信，修复后仅精确重放该投递让其落为artifact_unreadable，再核对并清理本轮合成记录，不误作真实业务恢复。原Failure日志knowledge-provider-worker-redacted.log、knowledge-domain-last.json均私有/脱敏，尚未宣称领域验收成功。
+## 四后端本地提交与固定新镜像
+
+| 子仓 | 提交 | manifest摘要 |
+| --- | --- | --- |
+| tpl-backend | e907b65d86bf60e27fce18ebc71b854966504f69 | sha256:36c393be91ae53d3551bc3dea75a8f3a9f272ec358d0d1f2e1e078bb2512485a |
+| knowledge-backend | 5732eab2e6e25eb225fbad4249ae01c0178fdb89 | sha256:e65abcf5f8d37b29ea63194dad8380a1c1b45603c174438119f63dd338bd85e6 |
+| info-backend | a4b6f59b99f7ef6dc48b346803560e6b2ceeb0a7 | sha256:2443d576ab1b24b99092f41b6c0562e0fa34b3b1ffeffdd7c70365a6921c242a |
+| investment-backend | 13539aa2f5cdcb79e7c670adb82ac88747d0d5b6 | sha256:72c1ad4212546c67b7cc38bed040551e4b8511d11e9257915c78fae523f0c626 |
+
+各子仓分支platform-kind-v1-async-session-fix；父仓原gitlink保持，审核后的本地覆盖在infrastructure/applications/sources.yaml固定。业务代码每仓仅两行，共用部署仍原生入口；交接必须带四个子仓提交，不能只传k8s。
+
+## 日常入口与剩余
+
+用户配置 knowledge-backend/config.yaml，说明与实现同处provider/；已晋级发布用make -C infrastructure application-bootstrap APP=knowledge，单做核验用application-check APP=knowledge。检查有明确随机UUID副作用/精确清理，计划用application-deployment-plan。
+
+证据在infrastructure/.build/models：knowledge-domain-first-success.json、knowledge-async-invariant-receipt.json、四应用build/publish/stage/bootstrap日志、前后Pod/PV/Flux JSON，失败证据私有保留。原始日志不发布秘密。当前正在补重复部署、服务回归、旧成功初始化Job退役及本轮临时脚本清理，完成后更新实际结果。
+
+完整Info→Knowledge HTTP授权摄入/Investment→Knowledge服务身份检索仍待完成；ELK全应用日志/公共UI、Neo/Mongo业务接入与恢复、整套宿主到应用一键/统一启停/开机顺序、WSL/KIND重启与KIND删除重建后的Harbor完整摘要/节点拉取、长期空间管理和全次最终物料/远程清理仍未交付。项目整体未完成。
 
 ---
 

@@ -1,6 +1,6 @@
 # 业务应用构建与发布
 
-用户配置、源码锁、原生构建编排与说明同处。已实现基础镜像物料准备及四应用（tpl/info/knowledge/investment）×后端/Web/Admin共12个构建与发布选择；全部共用同一下载回退实现，实际完整构建范围见下方验收记录。模板运行已通过真实入口验收，信息应用候选正在部署；共用部署入口同样按APP选择。
+用户配置、源码锁、原生构建编排与说明同处。已实现基础镜像物料准备及四应用（tpl/info/knowledge/investment）×后端/Web/Admin共12个构建与发布选择；全部共用同一下载回退实现，实际完整构建范围见下方验收记录。四应用已部署并通过真实登录、TLS 入口和消息任务检查；共用部署入口按 APP 选择。Knowledge 另已通过现有应用服务到真实 Worker/RAGFlow 的中文入库检索验收，跨应用 HTTP 服务身份尚未接通。下方早期构建记录保留当时版本，当前源码和镜像以 sources.yaml、各组件 image.lock.yaml 及 CHECKPOINT.md 为准。
 
 ## 配置入口
 
@@ -10,7 +10,7 @@
 | `config.yaml/application_build_budget_bytes` | 后端构建峰值预留，目前4GiB；仍必须满足host/config.yaml中的当前容量底线（开发阶段10GiB） |
 | `config.yaml/application_frontend_build_budget_bytes` | 每个前端构建峰值预留，目前6GiB，包含基镜像解包、依赖、缓存、归档 |
 | `config.yaml/application_download_mode` | 单选domestic或official-proxy，源和代理配套切换；端点定义在download-modes.json |
-| `sources.yaml` | 分别固定四个父仓及其三个子模块提交。前端使用显式本地覆盖，必须是固定父仓gitlink的后代；三个组件都要求精确HEAD且干净 |
+| `sources.yaml` | 分别固定四个父仓及其三个子模块提交。前后端使用审核过的显式本地覆盖，必须是固定父仓gitlink的后代；三个组件都要求精确HEAD且干净 |
 | `build.yaml` | 组件映射选择源码路径、Dockerfile、阶段和运行用户；一份流程导出Git对象、构建、核对解释器并校验OCI上传内容 |
 
 应用数据库用户名、域名和端口与应用/组件config.yaml同处；口令首次准备时生成并独立备份，Git只保存SOPS密文。构建入口不生成运行账号。
@@ -52,7 +52,7 @@ Python 分为 pip 安装构建工具、uv 按冻结锁安装业务依赖两段�
 
 转换归档的skopeo容器无网络、只读根文件系统、移除全部capabilities；root拥有独立输出和临时目录，结束清除。不能让无DAC权限的root写入其他UID的0700目录，也不能假设只读容器的 `/var/tmp` 可写。
 
-## 当前完成范围
+## 早期模板构建记录（非当前发布锁）
 
 - Python3.13.15、Node24.21.0构建/精简运行三份基础镜像已离线核验并发布Harbor。
 - 后端源码6674125cd1c14d9700c707b0b0f4b5d422d42f05已构建，实际运行解释器3.13.15、运行用户appuser。

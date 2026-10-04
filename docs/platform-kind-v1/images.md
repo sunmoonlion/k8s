@@ -68,7 +68,7 @@ AIStor 保持现有产品选择，第一期采用单节点部署，使用合法�
 | 自有后端构建基础 | `docker.io/library/python:3.13.15-slim-trixie` | [官方镜像清单](https://raw.githubusercontent.com/docker-library/official-images/master/library/python)；所有者指定 3.13 系列，采用 3.13.15；现有依赖锁优先保留 |
 | 自有前端构建基础 | `docker.io/library/node:24.21.0-trixie`；运行层 `24.21.0-trixie-slim` | [官方镜像清单](https://raw.githubusercontent.com/docker-library/official-images/master/library/node)；采用当前 LTS，26 Current 不作为生产默认 |
 
-RAGFlow 0.27.2 上游默认 Elasticsearch 仍为 8.11.3，不能声称直接兼容本平台 ES 9.5.4。本次选择它已提供的 Infinity 接口；元数据库选择上游支持的 PostgreSQL 接口，目标使用独立逻辑库的 PG 18.6；S3 接口使用平台 AIStor 独立身份和桶。这是本项目的集成选择，尚无整套实测结论。不得把官方默认组合的验证结果挪作该组合的通过证明。[固定环境配置及数据库类型](https://raw.githubusercontent.com/infiniflow/ragflow/v0.27.2/docker/.env)
+RAGFlow 0.27.2 上游默认 Elasticsearch 仍为 8.11.3，不能声称直接兼容本平台 ES 9.5.4。本次选择它已提供的 Infinity 接口；元数据库选择上游支持的 PostgreSQL 接口，目标使用独立逻辑库的 PG 18.6；S3 接口使用平台 AIStor 独立身份和桶。这是本项目的集成选择。已在 KIND 实测最小派生镜像与该组合的纯文本中文解析/检索，以及 Knowledge 持久任务和领域查询；实际范围与失败修复见 CHECKPOINT.md。跨应用 HTTP 身份、PDF 等格式和 Agent 功能尚未由此验收。不得把官方默认组合或纯文本验收扩大为全部功能通过。[固定环境配置及数据库类型](https://raw.githubusercontent.com/infiniflow/ragflow/v0.27.2/docker/.env)
 
 旧 mongo-express 官方镜像条目因基础系统/Node EOL 已被注释，新发行又含 RC，第一期不纳入默认管理面，不能把旧 latest 称为新稳定生产镜像。[官方镜像维护清单](https://raw.githubusercontent.com/docker-library/official-images/master/library/mongo-express)
 
