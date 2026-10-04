@@ -195,7 +195,7 @@
 | 4 | 工作台后端：项目、对话的种类、专家入口、项目记录的工具、「没有数据」的事件。**已做**（2026-09-29），见 [`0001-workbench-projects`](../../SDD/modules/0001-workbench-projects.md) | investment | — |
 | 5 | 跨应用跳转的约定写进模板，同步到三个应用。**已做**（2026-09-29），见 [跨应用跳转](../../SDD/architecture/cross-app-links.md) | 模板 | — |
 | 6 | 预览模式与样例数据。**已做**（2026-10-04），见 [`0002-web-preview`](../../SDD/modules/0002-web-preview.md)。knowledge 只有机制，样例等第 9 步的接口。**补充（2026-10-04）**：实时花费与随时停止的后端，见 [`0001-workbench-projects`](../../SDD/modules/0001-workbench-projects.md) 第十节 | 三个应用 | 第 2、4 步的接口定稿 |
-| 7 | investment 的页面：框架与导航 → 聊天 → 工作 → 专家 → 项目 → 底稿。**进行中**：第 1 段（框架、首页、聊天页）2026-10-04 已做，见 [`0002-web-pages`](../../SDD/modules/0002-web-pages.md) | investment | 第 1、4、6 步 |
+| 7 | investment 的页面：框架与导航 → 聊天 → 工作 → 专家 → 项目 → 底稿。**进行中**：第 1 段（框架、首页、聊天页）、第 2 段（工作页、项目里的聊天）2026-10-04 已做，见 [`0002-web-pages`](../../SDD/modules/0002-web-pages.md) | investment | 第 1、4、6 步 |
 | 8 | info 的页面：申请、我的申请、审批、证券采集 | info | 第 2、5、6 步 |
 | 9 | knowledge 的页面：数据目录、数据集、口径 | knowledge | 第 5、6 步；一个新的只读接口 |
 | 10 | 在集群上验 | 全部 | 集群迁移完成 |
