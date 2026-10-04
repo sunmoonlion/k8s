@@ -7,6 +7,7 @@ import http.client
 import json
 import os
 import re
+import random
 import selectors
 import socket
 import ssl
@@ -61,18 +62,27 @@ def main():
     with contextlib.ExitStack() as stack:
         ports={name:stack.enter_context(forward(kube,name,port,env)) for name,port in (('elasticsearch',9200),('logstash',8080),('kibana',5601))}
         def request(service, method, path, auth=None, payload=None, expect=200):
-            client=TrustedTunnel(service+'.'+args.namespace+'.svc.cluster.local',ports[service],context=ctx,timeout=30)
             headers={'Content-Type':'application/json','kbn-xsrf':'sunmoon-acceptance'}
             if auth:
                 headers['Authorization']='Basic '+base64.b64encode((auth[0]+':'+auth[1]).encode()).decode()
-            try:
-                client.request(method,path,body=None if payload is None else json.dumps(payload).encode(),headers=headers)
-                response=client.getresponse();body=response.read()
-                require(response.status==expect,service+' '+method+' '+path.split('?')[0]+' status '+str(response.status))
+            deadline=time.monotonic()+180
+            delay=1.0
+            while True:
+                client=TrustedTunnel(service+'.'+args.namespace+'.svc.cluster.local',ports[service],context=ctx,timeout=min(30,max(1,deadline-time.monotonic())))
+                try:
+                    client.request(method,path,body=None if payload is None else json.dumps(payload).encode(),headers=headers)
+                    response=client.getresponse();body=response.read()
+                    status=response.status
+                finally: client.close()
+                # Only an explicit 429 means retry; ambiguous timed-out writes are never replayed.
+                if service=='logstash' and status==429 and time.monotonic()<deadline:
+                    time.sleep(min(delay+random.uniform(0,0.5),max(0,deadline-time.monotonic())))
+                    delay=min(10.0,delay*2)
+                    continue
+                require(status==expect,service+' '+method+' '+path.split('?')[0]+' status '+str(status))
                 if not body: return {}
                 try: return json.loads(body)
                 except ValueError: return {}
-            finally: client.close()
         admin=('elastic',secret['elastic_password'])
         writer=(args.writer,secret['logstash_password'])
         reader=(args.reader,secret['reader_password'])

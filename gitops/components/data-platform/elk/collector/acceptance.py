@@ -23,14 +23,22 @@ def verify_application_logs(request, kube, env, args, reader, require):
         require(any(v['name']=='logs' and v.get('readOnly') is True for v in container['volumeMounts']), 'Node logs must be read-only')
         require(not any('projected' in v or v.get('hostPath', {}).get('path') == '/var/run/docker.sock' for v in spec['volumes']), 'Unexpected credential/socket mount')
     apps = get(args.application_namespace, 'pods')['items']
+    deployments = {d['metadata']['name']:d for d in get(args.application_namespace,'deployments')['items']}
     required = []
-    for app in ('tpl','info','knowledge','investment'):
-        for role in ('api','worker','scheduler','web','admin'):
-            matches=[p for p in apps if p['metadata']['name'].startswith(app+'-'+role+'-') and p['status']['phase']=='Running']
-            require(len(matches)==1, 'Actual application role absent: '+app+'/'+role)
-            required.extend(matches)
-    required.extend(p for p in apps if p['metadata']['name'].startswith('casdoor-') and p['status']['phase']=='Running')
-    require(len(required)==21, 'Expected four applications and Casdoor')
+    undeployed = []
+    # Platforms bootstrap before applications. Absent/disabled applications are explicitly
+    # reported; a declared enabled Deployment with missing/unready Pods is always a failure.
+    names=[app+'-'+role for app in ('tpl','info','knowledge','investment') for role in ('api','worker','scheduler','web','admin')]+['casdoor']
+    for name in names:
+        deployment=deployments.get(name)
+        replicas=deployment['spec'].get('replicas',1) if deployment else 0
+        if not replicas:
+            undeployed.append(name)
+            continue
+        matches=[p for p in apps if p['metadata']['name'].startswith(name+'-') and p['status']['phase']=='Running']
+        require(len(matches)==replicas, 'Actual enabled application role absent: '+name)
+        require(all(any(c['type']=='Ready' and c['status']=='True' for c in p['status'].get('conditions',[])) for p in matches), 'Enabled application role is not ready: '+name)
+        required.extend(matches)
     evidence=[]
     deadline=time.monotonic()+150
     pending={p['metadata']['name']:p for p in required}
@@ -60,4 +68,4 @@ def verify_application_logs(request, kube, env, args, reader, require):
         created=True
     view=request('kibana','GET','/api/data_views/data_view/'+args.data_view_id,reader)['data_view']
     require(view['title']==args.index_prefix+'-*' and view['timeFieldName']=='@timestamp','Refuse overwriting foreign Kibana view')
-    return {'collector_nodes':3,'actual_application_pods':len(evidence),'real_logs_match_kubectl':True,'non_app_namespace_logs_absent':True,'kibana_data_view':args.data_view_id,'data_view_created':created,'log_evidence':evidence}
+    return {'collector_nodes':3,'actual_application_pods':len(evidence),'undeployed_application_roles':undeployed,'real_logs_match_kubectl':True,'non_app_namespace_logs_absent':True,'kibana_data_view':args.data_view_id,'data_view_created':created,'log_evidence':evidence}
