@@ -190,7 +190,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: 'api'
-          image: harbor.sunmoonai.com:30443/platform/ragflow-runtime@sha256:3b2328c9e8e0fe36d834d4204e5c519558b66150f0ed8a3ab0ad03dde8264b0e
+          image: harbor.sunmoonai.com:30443/platform/ragflow-runtime@sha256:35f8c3a9c0669c1a0b4fe7caf3b810435de415f9c994d28634be443a4c8807c9
           imagePullPolicy: IfNotPresent
           command: [/ragflow/.venv/bin/python3, /sunmoon/runtime.py, 'api']
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
@@ -265,7 +265,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: 'worker'
-          image: harbor.sunmoonai.com:30443/platform/ragflow-runtime@sha256:3b2328c9e8e0fe36d834d4204e5c519558b66150f0ed8a3ab0ad03dde8264b0e
+          image: harbor.sunmoonai.com:30443/platform/ragflow-runtime@sha256:35f8c3a9c0669c1a0b4fe7caf3b810435de415f9c994d28634be443a4c8807c9
           imagePullPolicy: IfNotPresent
           command: [/ragflow/.venv/bin/python3, /sunmoon/runtime.py, 'worker']
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}

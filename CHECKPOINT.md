@@ -632,3 +632,7 @@ Ansible2.21.4、Compose5.5.1；KIND0.33.0、kubectl/kubeadm1.36.5。官方KIND�
 本轮9个一次性运维脚本已从/tmp移除，只在最新私有维护记录的script-audit中保留非执行文本副本及SHA256；4个临时文档/提交编辑文件已删除。旧luna任务的/tmp文件未混删，整体重整的最终清理仍列在后续步骤。
 
 当前追加核实：v4精确网络修复d250ed86晋级207ae606（source b6ea0fc6），45阶段Ready、RAG两Pod正常。真实API请求随后被官方认证拒绝：初始化账号access_token为空，官方API-token路径仍要求其非空。v5初始化只为缺失字段生成独立随机标记，不复用API令牌/不开放浏览器登录，不覆盖已有值；完整stage ok425 changed2 failed0。原始失败日志ragflow-v4-network-check.log保留；待v5晋级和真实中文协议验收。
+
+2026-10-04 v5真实验证进一步证实：账号认证已通、上传成功，但官方bulk_insert_into_db仍调用DB.create_tables，导致运行角色schema权限拒绝；原失败日志ragflow-v5-isolated-check.log、API脱敏日志保留。清理后的GET特定已删ID返回102会掩盖前因，现改独立查询对应DB行及S3版本清空；不接受任意API错误冒充删除成功。
+
+v6采用Dockerfile内唯一批量写入补丁：固定官方db_utils.py原始SHA4db6691cd806ca04ef48f6cd034a55d90704ede815c807f57f8b1b0d38c30779，将建表改为存在性检查，缺表失败。仍不安装/升级依赖、不放宽DML账号；相对于此前“仅权限”增加这一项，是实际解析暴露的必要适配。派生manifest35f8c3a9c0669c1a0b4fe7caf3b810435de415f9c994d28634be443a4c8807c9，Dockerfile5a59a6994157fa0f998d3a0ff2593ae121dbef0bcce9a167bdbd27c1d5f3a38d，归档10bd67db6e043c29d520839d5e229655a776f41ea144eb675df168b7a74369aa。38官方基础层完整保留、追加3层、默认UID1000。build ok38 changed11、publish ok28 changed1、完整stage ok427 changed2均failed0；待v6晋级与真实解析检索，不宣称通过。

@@ -69,8 +69,23 @@ try:
     result={'passed':True,'chinese_upload_parse_retrieve':True,'worker_ingestion_completed':True,'runtime_ddl_denied':True,'invalid_token_denied':True,'cross_tenant_denied':True,'s3_originals_and_management_denied':True,'retrieved_chunks':len(chunks),'scope':'RAGFlow derived retrieval protocol; business domain integration and restart/rebuild not claimed'}
 finally:
     if dataset_id:
-        call('DELETE','/datasets',json={'ids':[dataset_id]})
-        assert not call('GET','/datasets',params={'id':dataset_id})
+        original_failure = sys.exc_info()[0] is not None
+        try:
+            call('DELETE','/datasets',json={'ids':[dataset_id]})
+            # Upstream GET by a removed ID returns code 102, not an empty list.
+            # Independently verify exact deletion rather than accepting any API error.
+            with psycopg2.connect(**pg) as db:
+                with db.cursor() as cursor:
+                    cursor.execute('SELECT count(*) FROM knowledgebase WHERE id=%s',(dataset_id,))
+                    assert cursor.fetchone()[0] == 0
+                    cursor.execute('SELECT count(*) FROM document WHERE kb_id=%s',(dataset_id,))
+                    assert cursor.fetchone()[0] == 0
+            prefix=s3cfg['prefix_path'].rstrip('/')+'/'+dataset_id+'/'
+            remaining=s3.list_object_versions(Bucket=s3cfg['bucket'],Prefix=prefix,MaxKeys=1)
+            assert not remaining.get('Versions') and not remaining.get('DeleteMarkers')
+        except Exception:
+            if not original_failure:raise
+            print(json.dumps({'cleanup_failed':True}),file=sys.stderr)
 print(json.dumps(result))
 """
 

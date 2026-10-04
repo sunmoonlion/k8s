@@ -173,7 +173,7 @@ MongoDB官方9.0.2-noble已接入同一服务部署链。配置入口：[config.
 
 ## RAGFlow 检索单元（2026-10-04）
 
-配置及实现位于[data-platform/ragflow](../../gitops/components/data-platform/ragflow/README.md)，依赖专用Infinity与Valkey、PostgreSQL、派生S3桶和已有CPU向量服务。运行镜像基于固定官方0.27.2做最小非root权限适配；新增摘要锁与离线归档可复核，不安装或升级依赖。用户参数在组件config.yaml，私有身份在/etc/sunmoon/services/sunmoon-kind/ragflow.yaml，Git仅存SOPS密文。
+配置及实现位于[data-platform/ragflow](../../gitops/components/data-platform/ragflow/README.md)，依赖专用Infinity与Valkey、PostgreSQL、派生S3桶和已有CPU向量服务。运行镜像基于固定官方0.27.2做最小非root权限适配，并将一处批量写入前的隐式建表改成表存在检查；补丁受原始文件SHA256约束。新增摘要锁与离线归档可复核，不安装或升级依赖。用户参数在组件config.yaml，私有身份在/etc/sunmoon/services/sunmoon-kind/ragflow.yaml，Git仅存SOPS密文。
 
 首次prepare→stage→提交→flux-release→核对晋级固定源→services-bootstrap。已晋级环境日常make services-bootstrap；只做协议核验用make services-check。初始化Job持schema拥有者，API/Worker不执行DDL；两套独立租户用于知识服务和验收，随机验收数据精确清理。升级应单独备份、审核官方接口与模型绑定、增加初始化代次，不能仅更改镜像而假定兼容。
 

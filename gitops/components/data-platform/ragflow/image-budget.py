@@ -14,5 +14,5 @@ with tarfile.open(a.archive) as archive:
    stream=gzip.GzipFile(fileobj=stream)
   while chunk:=stream.read(4*1024*1024):unpacked+=len(chunk)
 # Host base content+snapshot, converter spool, compressed layout+final archive,
-# and 1GiB allowance; only a directory permission is changed in the build.
+# and 1GiB allowance for the bounded permission and small source adaptation.
 print(json.dumps({'uncompressed_bytes':unpacked,'compressed_bytes':compressed,'planned_bytes':2*unpacked+compressed+67108864 if a.node_cache else (unpacked if a.base_cached else 2*unpacked)+(2*compressed if a.base_cached else 3*compressed)+1073741824}))

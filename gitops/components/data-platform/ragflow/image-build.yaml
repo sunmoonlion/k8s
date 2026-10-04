@@ -90,7 +90,7 @@
                 argv: [docker, '--config={{ image_workspace.path }}/auth', pull, --platform=linux/amd64, '{{ base }}']
               environment: {HTTP_PROXY: '', HTTPS_PROXY: '', ALL_PROXY: '', NO_PROXY: '{{ registry_hostname }},127.0.0.1,localhost'}
               no_log: true
-            - name: Build only the permission adaptation without network or package installation
+            - name: Build only the bounded compatibility adaptation without network or package installation
               ansible.builtin.command:
                 argv: [docker, build, --network=none, --pull=false, --progress=plain, '--file={{ playbook_dir }}/Dockerfile', '--build-arg=BASE_IMAGE={{ base }}', '--tag=sunmoon-ragflow-nonroot:{{ dockerfile.stat.checksum[:16] }}', '{{ playbook_dir }}']
               environment: {DOCKER_CONFIG: '{{ image_workspace.path }}/auth', HTTP_PROXY: '', HTTPS_PROXY: '', ALL_PROXY: ''}
