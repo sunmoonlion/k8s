@@ -1,4 +1,4 @@
-# 当前单元：知识入库/中文检索与四后端异步会话修复（首次通过，重复验收进行中，2026-10-04）
+# 当前单元：知识入库/中文检索与四后端异步会话修复（完成并实际重复验证，2026-10-04）
 
 工作树 platform-kind-v1，基线8448d4ad4b6a9b1ee42462b6c53affa0d4a9dc4c。原生 Make→Ansible→Flux/SOPS；不切公共入口，不删原始kind/数据/备份，无push。开发维护2小时、容量底线10GiB。本轮先完成知识现有应用服务/真实任务链，跨应用HTTP服务认证另行接通。
 
@@ -14,7 +14,11 @@
 - 真正Info ObjectStorage创建随机中文原文→固定VersionId/大小/媒体类型/SHA核对→Knowledge持久意图→Scheduler/Outbox/真实Worker→RAGFlow解析/CPU向量/Infinity→领域检索与原文引用通过。15项实际检查含幂等/冲突、错误摘要拒绝、源只读、租户/数据集/scope拒绝及无关版本过滤。只精确清理该轮原文版本、派生文档/S3版本、领域与4条投递记录，正式数据集保留。
 - 首轮四应用原生application-bootstrap均退出0；Knowledge check ok46 changed1 failed0，其余TPL/Info/Investment分别ok40/45/40 changed0 failed0。实际镜像内异步会话策略、独立身份/schema、Worker/Scheduler、诊断消息、TLS路由和真实浏览器授权/回调检查通过。
 - 54个Running Pod，34个非本次四应用运行Pod UID及重启计数不变；13个Retain PV UID/spec/Bound状态不变；46个Flux阶段当前generation Ready且同一固定摘要。四应用后端与前端部署标识共同滚动，前端镜像没有重建；不把这些计划内变动称为零重启。
-- 当前首轮源revision 2c76ddf15dfb5bbe96809be07c7ec0a3ff0a8ce9，digest sha256:bbdcc072386e6e42df7e2113d5e6026ca4a53b77eda89c88f6fd1fcbd2ba108d，晋级7aa88442。说明完善后仍须发布对应Git对象，再完成全套重复与不变核对。
+- 首轮源2c76ddf1 / bbdcc072…（晋级7aa88442）之后完善同目录说明并再次发布；当前固定source revision 0b150435b785fa809dfe0ac926457f502ffee5a2，digest sha256:ad690037735e1c4ca3ce2350290e5a69d94b230a3c4d8a226d1673263ad26d48，晋级1c4b61fa。最后仅更新本检查点，不改变已验声明。
+- 四应用在当前源重复bootstrap全部退出0；render/validate均changed0，TPL/Info/Investment协调与验收changed0。Knowledge首次应用说明源changed3，随后同一源再完整bootstrap为ok159/115/31/46、changed0/0/0/1，唯一变化是私有验收回执。Knowledge真实业务链共成功三轮，均15项检查及精确清理通过，不把source晋级或回执写入称为绝对零变更。
+- 整套services-bootstrap退出0，12个Ansible play均failed0，services-check ok50 changed1 failed0；材料/发布/运行声明重复无变，chart校验只创建/删除临时目录changed2。最终对首次应用完成后的54个Running Pod UID/重启计数完全一致；13个PV与单元前一致，46阶段同一ad690摘要。
+- 16个已退役成功身份/迁移Job先归档、核对新代次成功，再按UID/resourceVersion精确删除；重复后未重现，当前22个应用声明Job保留。5个本轮/tmp文件已逐路径移除，无东京下载；正式物料、私有身份备份与失败证据保留。
+- 八个现有域名经真实30443入口的TLS/健康/前后端发布标识通过，使用显式127.0.0.1且保留域名/SNI/CA；WSL不解析这些应用域名，Windows/公共DNS未由本单元验证，后续宿主准入要统一检查。原始kind控制面仍停止、两个worker保留运行，新sunmoon-kind三节点运行。
 
 ## 实际失败与修复
 
@@ -39,7 +43,7 @@
 
 用户配置 knowledge-backend/config.yaml，说明与实现同处provider/；已晋级发布用make -C infrastructure application-bootstrap APP=knowledge，单做核验用application-check APP=knowledge。检查有明确随机UUID副作用/精确清理，计划用application-deployment-plan。
 
-证据在infrastructure/.build/models：knowledge-domain-first-success.json、knowledge-async-invariant-receipt.json、四应用build/publish/stage/bootstrap日志、前后Pod/PV/Flux JSON，失败证据私有保留。原始日志不发布秘密。当前正在补重复部署、服务回归、旧成功初始化Job退役及本轮临时脚本清理，完成后更新实际结果。
+证据在infrastructure/.build/models：knowledge-domain-first-success.json、knowledge-async-invariant-receipt.json、四应用build/publish/stage/bootstrap日志、前后Pod/PV/Flux JSON，失败证据私有保留。原始日志不发布秘密。本单元重复部署、服务回归、旧成功初始化Job退役及5个本轮临时文件清理均已完成；最终汇总knowledge-domain-unit-receipt.json，平台成功回执/data/kind-clusters/sunmoon-kind/bootstrap/evidence/services/latest.json。
 
 完整Info→Knowledge HTTP授权摄入/Investment→Knowledge服务身份检索仍待完成；ELK全应用日志/公共UI、Neo/Mongo业务接入与恢复、整套宿主到应用一键/统一启停/开机顺序、WSL/KIND重启与KIND删除重建后的Harbor完整摘要/节点拉取、长期空间管理和全次最终物料/远程清理仍未交付。项目整体未完成。
 
