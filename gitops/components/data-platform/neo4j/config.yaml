@@ -1,0 +1,11 @@
+---
+# Community single-purpose graph instance; versions/digests live in artifacts lock.
+services_neo4j_enabled: true
+neo4j_volume: {name: neo4j, node: worker2, size: 10Gi, uid: 7474, gid: 7474}
+neo4j_heap: 1G
+neo4j_pagecache: 1G
+neo4j_https_port: 7473
+neo4j_bolt_port: 7687
+neo4j_resources:
+  requests: {cpu: 250m, memory: 2Gi}
+  limits: {cpu: '2', memory: 3Gi}

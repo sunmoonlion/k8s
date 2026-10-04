@@ -14,6 +14,7 @@ service_candidate_roots:
   - ingress-platform
   - app-platform
 component_namespaces:
+  neo4j: "{{ data_namespace }}"
   elasticsearch: "{{ data_namespace }}"
   kibana: "{{ data_namespace }}"
   logstash: "{{ data_namespace }}"
@@ -23,8 +24,9 @@ component_namespaces:
   text-embeddings: "{{ data_namespace }}"
   rabbitmq: "{{ messaging_namespace }}"
   casdoor: "{{ app_namespace }}"
-services_volumes: "{{ [postgresql_volume, redis_volume, rabbitmq_volume, casdoor_volume, object_storage_volume, text_embeddings_volume, elasticsearch_volume, kibana_volume, logstash_volume] }}"
+services_volumes: "{{ [postgresql_volume, redis_volume, rabbitmq_volume, casdoor_volume, object_storage_volume, text_embeddings_volume, elasticsearch_volume, kibana_volume, logstash_volume, neo4j_volume] }}"
 service_component_paths:
+  neo4j: data-platform/neo4j
   elasticsearch: data-platform/elk/elasticsearch
   kibana: data-platform/elk/kibana
   logstash: data-platform/elk/logstash

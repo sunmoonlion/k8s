@@ -6,3 +6,4 @@ resources:
 - object-storage
 - text-embeddings
 - elk/elasticsearch
+- neo4j

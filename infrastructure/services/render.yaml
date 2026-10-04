@@ -52,9 +52,9 @@
       ansible.builtin.assert:
         quiet: true
         that:
-          - item.name in ['postgresql','redis','rabbitmq','casdoor','object-storage','text-embeddings','elasticsearch','kibana','logstash']
+          - item.name in ['postgresql','redis','rabbitmq','casdoor','object-storage','text-embeddings','elasticsearch','kibana','logstash','neo4j']
           - item.node in ['worker','worker2']
-          - item.uid in [999,1000]
+          - item.uid in [999,1000,7474]
           - item.gid == item.uid
           - item.size is match('^[1-9][0-9]*Gi$')
       loop: '{{ services_volumes }}'
@@ -152,6 +152,9 @@
     - name: Prepare independent ELK identities and runtime candidates
       ansible.builtin.include_tasks: ../../gitops/components/data-platform/elk/prepare.yaml
       when: services_elk_enabled | bool
+    - name: Prepare independent graph service identity and runtime candidate
+      ansible.builtin.include_tasks: ../../gitops/components/data-platform/neo4j/prepare.yaml
+      when: services_neo4j_enabled | bool
     - name: Read namespace pull-only identity
       ansible.builtin.slurp: {src: '{{ registry_config_dir }}/private/puller-auth.json'}
       register: puller
@@ -233,7 +236,7 @@
         - name: foundations
           resources: '{{ ["runtime.yaml", "storage.yaml", "network.yaml"] + [data_namespace + "-puller.sops.yaml", messaging_namespace + "-puller.sops.yaml", app_namespace + "-puller.sops.yaml"] }}'
         - name: data-platform
-          resources: '{{ (["postgresql"] if services_postgresql_enabled else []) + (["redis"] if services_redis_enabled else []) + (["object-storage"] if services_object_storage_enabled else []) + (["text-embeddings"] if services_text_embeddings_enabled else []) + (["elk/elasticsearch"] if services_elk_enabled else []) }}'
+          resources: '{{ (["postgresql"] if services_postgresql_enabled else []) + (["redis"] if services_redis_enabled else []) + (["object-storage"] if services_object_storage_enabled else []) + (["text-embeddings"] if services_text_embeddings_enabled else []) + (["elk/elasticsearch"] if services_elk_enabled else []) + (["neo4j"] if services_neo4j_enabled else []) }}'
         - name: messaging-platform
           resources: '{{ ["rabbitmq"] if services_rabbitmq_enabled else [] }}'
         - {name: ingress-platform, resources: [traefik]}
