@@ -37,6 +37,6 @@ make -C infrastructure services-check
 
 `services-render` 从已验证物料复制缺失模型文件到对应 worker2 静态目录，拒绝已有字节漂移和软链；再次渲染不覆盖模型。`services-check` 复核实际镜像 ID、Retain 卷绑定、模型修订，再实际请求健康检查和中文向量，核对维度、有限数值、归一化、两组相关性排序及重复输出。管理验收使用经 kubeconfig 授权的临时 port-forward，不能因此宣称已验 RAGFlow 的实际网络/入库/检索链。
 
-当前安装、推理实测、RAGFlow 检索的结果以 `CHECKPOINT.md` 与实际回执为准；本文件的配置说明不是验收通过声明。
+2026-10-04 已通过实际安装与CPU推理验收：Pod Ready、固定镜像与模型文件核对、Retain卷绑定、中文两组相关性、1024维有限归一化、/embed与OpenAI一致、重复输出通过。完整原生部署重复成功，原44个运行Pod身份/重启计数不变、38个Flux阶段Ready。四短文本批处理约0.65–0.73秒，仅为此场景记录，不是性能保证。RAGFlow入库/检索仍未验收。
 
 官方依据：[模型说明](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B)、[TEI 1.9.4](https://github.com/huggingface/text-embeddings-inference/releases/tag/v1.9.4)、[CPU 官方部署](https://github.com/huggingface/text-embeddings-inference/blob/v1.9.4/README.md)。

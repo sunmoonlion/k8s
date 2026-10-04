@@ -1,4 +1,4 @@
-# 当前单元：本机 CPU 向量模型物料与运行候选（2026-10-04）
+# 当前单元：本机 CPU 向量服务实际验收通过（2026-10-04）
 
 本节优先于下方历史。所有者明确选择本机 CPU，由助手选合适版本；保持现有平台/应用、原始 kind、新 Harbor 数据。
 
@@ -7,12 +7,13 @@
 - TEI、Infinity、Valkey物料准备ok75 changed15 failed0，正式Harbor发布ok60 changed3 failed0，独立puller摘要通过，平台正式归档保留。服务材料入口增加SERVICE_IMAGES子集，默认all，子集必须是配置允许项，不启用运行声明。
 - 模型初次续传单次180秒不足，约857MiB保留；模型专用有限900秒续传后fetch ok35 changed4 failed0，离线verify ok8 changed0 failed0。数据库续传原180秒不变，TLS/校验不放宽。
 - RAGFlow首次600秒超时rc124，真实失败记录保留；官方DockerHub直连探测超时、代理可取层但较慢；东京SSH当前超时。服务材料单次可配置3600秒，上限7200，其它模块默认600。RAGFlow原固定摘要正在单独原生重试，不宣称已备齐或已部署。
-- 渲染初版ok157 changed9 failed0；发现数字args在YAML被解析为整数，已改to_json字符串并重新stage+服务端dry-run。运行候选尚未晋级，不宣称实际推理/知识检索已通过。
-- 发布前现有44个Running Pod、38个Ready Flux阶段已记录。现有组件对象语义保持一致，新增模型PV/PVC及组件组合引用；少数Kustomization只规范化YAML文档标记。
+- 渲染初版ok157 changed9 failed0；发现数字args在YAML被解析为整数，已改to_json字符串；修正stage ok155 changed2 failed0，服务端dry-run四对象通过。实现本地提交bfcff8a2cf4a9160b02985f6206af64b85264c99；晋级742aa3b3，当前Flux摘要d7d5e8886d10828e8144e8d104a212fa18c9ce24a01e086999c6d9173f9d9e4a。
+- 真实text-embeddings Pod在worker2 Ready、重启0，新节点从Harbor拉取8419f533…固定镜像；模型完整只读挂载。原生services-bootstrap最后检查ok33 changed1 failed0（回执唯一变更），/embed与OpenAI接口一致、1024维有限归一化、中文两组相关性和重复性通过，四文本批处理0.646秒；独立直接验收0.733秒。不是完整吞吐基准，不宣称RAGFlow检索通过。
+- 完整原生services-bootstrap重复成功；部署关键段changed0，services-check仅回执changed1。发布前44个Running Pod的UID及重启计数全部未变；38个Flux阶段均当前代次Ready。现有组件对象语义保持一致，新增模型PV/PVC及组件组合引用；少数Kustomization只规范化YAML文档标记。
 
-证据：infrastructure/.build/models/：material-fetch(-resume)、material-verify、services-stage(-corrected)、server-dry-run、pods-before、stages-before；平台镜像日志在.build/applications/runtime-unit-20261003/knowledge-provider-*。会话74672正在单独RAGFlow下载/成功后发布，单次3600秒；当前服务源码尚未发布。此前四应用入口窗口已关闭，任何新入口切换需单独确认。本单元不切入口，不重启现有组件。
+证据：infrastructure/.build/models/：material-fetch(-resume)、material-verify、services-stage(-corrected)、server-dry-run、pods-before、stages-before；平台镜像日志在.build/applications/runtime-unit-20261003/knowledge-provider-*。会话74672正在单独RAGFlow下载/成功后发布，单次3600秒；当前CPU服务已发布并验收。此前四应用入口窗口已关闭，任何新入口切换需单独确认。本单元不切入口，不重启现有组件。
 
-下一步：完整服务端只读预检和既有声明语义核对→提交候选并通过原生flux-release发布/晋级→实际CPU中文向量、/embed和OpenAI协议、重复性与镜像/PV核对→重复原生部署及旧Pod身份核对。之后RAGFlow数据库/S3/Valkey/Infinity独立身份与迁移Job、真实领域与跨应用检索；整套一键/lifecycle/开机、实际重启/重建持久化、长期容量/清理仍未完成。
+下一步：完成RAGFlow大镜像物料并核对→RAGFlow数据库/S3/Valkey/Infinity独立身份与迁移Job→真实领域与跨应用检索。官方API启动会隐式init_database_tables/migrate_db，不能直接照搬；需独立初始化Job及无DDL生产ASGI启动，不能给runtime所有者权限让它变绿。固定源码材料仅在.build/models/upstream-ragflow作本次临时参考，收尾删除。整套一键/lifecycle/开机、实际重启/重建持久化、长期容量/清理仍未完成。
 
 ---
 
