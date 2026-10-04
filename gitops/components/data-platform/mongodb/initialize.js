@@ -3,11 +3,18 @@ try {
   const connection = connectAs(identity.root_username, identity.root_password, 'admin');
   const admin = connection.getDB('admin');
   const expected = {_id: process.env.MONGODB_REPLICA_SET, members: [{_id: 0, host: endpoint}]};
-  const status = admin.runCommand({replSetGetStatus: 1});
-  if (status.ok !== 1) {
-    requireResult(status.code === 94, 'Replica set state is not a fresh uninitialized instance');
-    requireResult(admin.runCommand({replSetInitiate: expected}).ok === 1, 'Replica set initialization failed');
+  let fresh = false;
+  try {
+    const status = admin.runCommand({replSetGetStatus: 1});
+    if (status.ok !== 1) {
+      requireResult(status.code === 94, 'Replica set state is not a fresh uninitialized instance');
+      fresh = true;
+    }
+  } catch (error) {
+    if (error.code !== 94) throw error;
+    fresh = true;
   }
+  if (fresh) requireResult(admin.runCommand({replSetInitiate: expected}).ok === 1, 'Replica set initialization failed');
   let primary = false;
   for (let i = 0; i < 90; i++) {
     if (admin.runCommand({hello: 1}).isWritablePrimary === true) { primary = true; break; }
