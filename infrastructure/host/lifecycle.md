@@ -79,11 +79,13 @@ Windows任务只附盘；WSL的Type=simple单次恢复避免回调WSL时阻塞sy
 
 ## 重启恢复中发现的组件问题
 
-Elasticsearch的emptyDir在节点重启后仍保留。旧init命令把证书复制为0440，再次执行普通cp无法覆盖只读副本；表现为prepare-config CrashLoopBackOff、Kibana随之未就绪。已恢复当前Pod的三个临时副本权限以完成启动，原Secret、私钥内容及数据PVC未改。原模板及渲染候选改用`cp --remove-destination`，在实际固定镜像中连续复制两次，摘要及0440均通过；永久声明尚未发布，下一维护先按原生stage/提交/发布/晋级流程应用。不得把临时chmod当日常恢复方案。
+Elasticsearch的emptyDir在节点重启后仍保留。旧init命令把证书复制为0440，再次执行普通cp无法覆盖只读副本；表现为prepare-config CrashLoopBackOff、Kibana随之未就绪。已恢复当前Pod的三个临时副本权限以完成启动，原Secret、私钥内容及数据PVC未改。原模板及渲染候选改用`cp --remove-destination`，在实际固定镜像中连续复制两次，摘要及0440均通过；永久修复已按原生stage/提交/发布/晋级流程应用，后续全量停启仍须验收。不得把临时chmod当日常恢复方案。
+
+Docker会在节点重启时重建`/etc/hosts`，丢失建群时添加的Harbor网关记录。原生节点ready步骤在核对精确ID和bind身份后，恢复且仅恢复该网关/仓库域名记录；统一start也会调用它，CoreDNS的Pod域名配置保持。实际修复后三节点Always认证拉取及DNS检查通过；不能用宿主127.0.0.1拉取代替节点拉取。
 
 统一启动的API检查已增加有界readyz等待，避免RBAC尚未加载就检查节点；Pod和Flux有界收敛等待，不跳过健康标准。Windows容量助手在本地C盘运行，并与root运行副本逐字节核对，避免UNC触发RemoteSigned限制；未放宽Windows执行策略。安装器规范化旧任务的本机短账号后再核对SID，不更换WSL所有者。
 
-当前维护记录位于私有`/data/kind-clusters/sunmoon-kind/bootstrap/evidence/lifecycle-maintenance-20261005T0419Z`：恢复前后40仓库、103镜像摘要/标签保持，13个PV/PVC及既有Job身份、六节点ID/挂载/运行状态和全部Docker卷集合保持。数据库WAL/日志的变化不作为镜像丢失。registry全文件冷态摘要比对未执行，不能声称已通过。
+当前维护记录位于私有`/data/kind-clusters/sunmoon-kind/bootstrap/evidence/lifecycle-maintenance-20261005T0419Z`：恢复前后40仓库、103镜像摘要/标签保持，13个PV/PVC及既有Job身份、六节点ID/挂载/运行状态和全部Docker卷集合保持。数据库WAL/日志的变化不作为镜像丢失。registry全文件冷态摘要比对尚未执行，不能声称已通过。新窗口从08:25 UTC计时至10:25 UTC，冷态前后另立修复后的基线，不混用103摘要的旧源。
 
 原两小时窗口在等待管理员安装等操作期间已过期，停服前未及时复核截止时间；发现后结束新增停服并恢复平台。后续停服单独确认，从新批准时间计时，并在每次实际停服前核对窗口余量。
 

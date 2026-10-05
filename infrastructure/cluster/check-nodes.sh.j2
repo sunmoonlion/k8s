@@ -13,6 +13,12 @@ node={{ (cluster_name + '-' + role) | quote }}
 json=$(docker inspect "$node")
 jq -e --arg id {{ owned_identity.node_ids[loop.index0] | quote }} --arg name {{ cluster_name | quote }} \
   'length == 1 and .[0].Id == $id and .[0].Config.Labels["io.x-k8s.kind.cluster"] == $name' <<< "$json" >/dev/null
+if [[ ${1:-before} == ready ]]; then
+  gateway=$(jq -r '.[0].NetworkSettings.Networks.kind.Gateway' <<< "$json")
+  [[ $gateway =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]
+  # Docker recreates /etc/hosts on node restart; restore only our registry entry.
+  docker exec "$node" sh -ec 'if grep -qF " $2" /etc/hosts; then grep -qxF "$1 $2" /etc/hosts; else printf "%s %s\n" "$1" "$2" >> /etc/hosts; fi' sh "$gateway" {{ registry_hostname | quote }}
+fi
 {% for dest, source in [('/data/kind-local-storage', cluster_data_root + '/' + cluster_name + '/' + role + '/static'), ('/var/local-path-provisioner', cluster_data_root + '/' + cluster_name + '/' + role + '/dynamic'), ('/etc/containerd/certs.d', cluster_data_root + '/' + cluster_name + '/bootstrap/certs.d')] %}
 jq -e --arg dest {{ dest | quote }} --arg src {{ source | quote }} \
   '[.[0].Mounts[] | select(.Destination == $dest)] | length == 1 and .[0].Source == $src and .[0].Type == "bind"' <<< "$json" >/dev/null

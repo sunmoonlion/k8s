@@ -39,7 +39,7 @@ done
 systemctl start sunmoon-entry.service
 systemctl start sunmoon-cluster.service
 systemctl start sunmoon-platform.target
-{{ host_runtime_dir }}/check-nodes.sh after
+{{ host_runtime_dir }}/check-nodes.sh ready
 # Availability is separate from application protocol acceptance.
 deadline=$((SECONDS + 600))
 kube=({{ (host_runtime_dir + '/kubectl') | quote }} --kubeconfig={{ cluster_kubeconfig | quote }} --context=kind-{{ cluster_name }} --request-timeout=30s)

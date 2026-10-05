@@ -1,3 +1,11 @@
+## 当前获批窗口：2026-10-05 08:25:05–10:25:05 UTC
+
+所有者已批准另开两小时完成ES修复及完整启停/Harbor全目录摘要/节点认证拉取；不关闭WSL、不删群。每次实际停服前在执行进程内检查时间，预留至少15分钟恢复，禁止等待命令审批后沿用过期窗口。
+
+- a4976027声明已发布、3ef5f402显式晋级；固定源9f7bce56f15708fa015a8c967b32f7f802724e50bab4aebb60ee02676140b33f，revision a49760273f05320f16231647d253e25541a94e1f。services-validate-release与source-apply退出0，ES永久修复已滚动。
+- 节点pull再次失败的真正原因：Docker重写/etc/hosts移除注册表网关记录，节点解析harbor为127.0.0.1拿到Traefik证书。原ready/start恢复仅该 owned-node 网关记录；修复后三节点Always认证pull/DNS退出0。探针还修正了DNS参数多余转义，并补失败Job/events证据。未关TLS、未改代理或宿主外部DNS。
+- 新基线在/data/kind-clusters/sunmoon-kind/bootstrap/evidence/lifecycle-maintenance-20261005T0825Z，临时快照助手/tmp/sunmoon-maintenance-snapshot-0825.py。before基线已启动，platform-check session94338；下一步待检查结束，在窗口内stop→cold-before→start→pull/check→stop→cold-after→start→最终after及重复start/check。全部Harbor文件记录摘要，要求registry/secret不变；PG/Redis/WAL/log合法变化按逻辑目录/认证检查，不能声称所有数据库物理字节不变。
+
 # 当前单元：统一生命周期已安装并停止/恢复；完整验收尚未完成（2026-10-05）
 
 本节优先于下文历史。工作树platform-kind-v1/k8s。最新批准2小时维护、10GiB底线；原窗口12:19–14:19 CST。等待操作后实际接管/停止在16:00以后，停服前未及时复核到期；08:02 UTC发现后停止新增停服，只恢复。后续冷态比对/滚动修复需要新窗口，实际停服前须重新读时钟。
