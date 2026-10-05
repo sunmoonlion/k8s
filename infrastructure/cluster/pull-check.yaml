@@ -164,6 +164,20 @@
           ansible.builtin.debug:
             var: final_check_pods.stdout_lines
 
+        - name: Capture bounded namespace events before deadline cleanup removes failed Pods
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", check_namespace.stdout, "get", "events", "-o", "json"] }}'
+          register: final_event_evidence
+          changed_when: false
+          failed_when: false
+
+        - name: Preserve exact Job failure conditions
+          ansible.builtin.command:
+            argv: '{{ kube + ["-n", check_namespace.stdout, "get", "jobs", "-o", "json"] }}'
+          register: final_job_evidence
+          changed_when: false
+          failed_when: false
+
         - name: Capture final pod identities even when acceptance fails
           ansible.builtin.command:
             argv: '{{ kube + ["-n", check_namespace.stdout, "get", "pods", "-o", "json"] }}'
@@ -175,7 +189,7 @@
           ansible.builtin.copy:
             dest: '{{ runtime }}/{{ check_namespace.stdout }}-final.json'
             mode: '0644'
-            content: '{{ {"kube_system_uid": uid.stdout, "image": pull_image, "initial_cache_present": prior_images.results | map(attribute="rc") | list, "pods_json": final_pod_evidence.stdout} | to_nice_json }}'
+            content: '{{ {"kube_system_uid": uid.stdout, "image": pull_image, "initial_cache_present": prior_images.results | map(attribute="rc") | list, "pods_json": final_pod_evidence.stdout, "jobs_json": final_job_evidence.stdout, "events_json": final_event_evidence.stdout} | to_nice_json }}'
 
         - name: Delete exactly this invocation's namespace and pull Secret
           ansible.builtin.command:
