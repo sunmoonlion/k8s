@@ -75,7 +75,7 @@ accounts追加Docker的仓库专用CA并保留其他CA。KIND信任与DNS由[clu
 
 systemd唯一管理重启，容器restart=no、Compose前台；任一组件退出停止整组并经过守卫恢复，120秒最多3次。启动核精确ext4/UUID/bind fsroot、宿主与Docker的设备/inode及实例落盘。失败即拒绝启动。此守卫不等于运行期故障监控。
 
-unit部署只daemon-reload，未在本代码启用boot autostart。开机挂盘/Docker/集群/入口全顺序及WSL重启持久化见[未完成项](../../docs/platform-kind-v1/verification.md#未完成项)。
+本模块deploy只daemon-reload并管理本仓库，不单独启用boot autostart。当前由[宿主统一生命周期](../host/lifecycle.md)协调开机顺序，恢复单元已安装并启用；Harbor/KIND整套停启及目录/镜像验收已通过，真实Windows/WSL重启和删群重建仍见[未完成项](../../docs/platform-kind-v1/verification.md#未完成项)。
 
 错误先看systemd和限定日志：
 

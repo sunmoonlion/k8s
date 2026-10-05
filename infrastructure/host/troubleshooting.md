@@ -16,7 +16,7 @@ systemctl status docker --no-pager
 3. Windows侧核对当前附盘任务指向的新VHDX与管理脚本、启用状态、上次结果及维护标记。旧D/E盘任务不能作为现在自动挂载的证明。
 4. 挂载修复只恢复已有UUID；禁止运行初始化/mkfs、覆盖原始存储路径或改变节点卷。
 
-当前新代码未交付整套开机恢复，出现UAC时先核对发起程序及任务账号/权限；不要添加一分钟一次的重复提权轮询。修复后需实际开机验证，而非只看任务配置。
+当前已安装统一启停和单次开机恢复任务，真实Windows/WSL开机验收仍待完成。出现UAC时先核对发起程序及任务账号/权限；不要添加一分钟一次的重复提权轮询。修复后需实际开机验证，而非只看任务配置。
 
 ## 重启后集群或域名反了
 
@@ -27,6 +27,8 @@ make -C infrastructure entry-status
 ```
 
 新环境是sunmoon-kind，原始kind是受保护旧环境。Docker重启策略、旧容器和端口监听可使旧控制面自动占用30443；查实际监听者、容器身份及systemd状态，按获批维护顺序恢复。禁止按名字批量start/stop全部容器。
+
+Docker重启会重建节点`/etc/hosts`。缺少Harbor网关记录时，节点可能从宿主DNS得到127.0.0.1，30443实际访问节点Traefik并报证书域名不符。先执行已安装的`platform-start`，原生ready步骤只恢复该精确网关记录，再执行`cluster-pull-check`；不要关闭TLS或把节点自身当仓库。
 
 节点IP/网桥gateway变化可能使CoreDNS或Harbor解析仍指旧地址；比较集群配置与实际Docker网络、节点hosts/containerd信任。`cluster-pull-check`检查三节点实际拉取和DNS；它需要已恢复的Harbor/入口，不替代修复开机编排。
 
@@ -54,5 +56,7 @@ make -C infrastructure registry-publish-check
 ## Flux/Pod失败的初步分层
 
 声明发布候选≠晋级，OCI Ready≠子阶段Ready，Pod Running≠协议/权限/持久化通过。先查[Flux源及字段归属](../flux/README.md#故障与退回)，再查组件README。
+
+Elasticsearch prepare-config重复复制只读TLS的修复已发布；若再次发生，查原组件init脚本/模板和当前Flux源，不长期靠chmod临时目录。
 
 初始化失败保留精确Job代次/错误；不要删除PVC、重生成口令或force apply。网络下载错误按[构建网络流程](../applications/README.md#下载失败与代理)处理，证书/签名/哈希错误不属于自动切源。

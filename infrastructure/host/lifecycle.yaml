@@ -25,7 +25,7 @@
           - host_action not in ['install','enable-boot','start'] or (cluster_enabled | bool and registry_enabled | bool and entry_enabled | bool)
     - name: Read installed service states without starting anything
       ansible.builtin.command:
-        argv: [systemctl, show, sunmoon-platform-boot.service, sunmoon-cluster.service, sunmoon-registry.service, sunmoon-entry.service, '--property=Id,ActiveState,UnitFileState']
+        argv: [systemctl, show, sunmoon-platform.target, sunmoon-platform-boot.service, sunmoon-cluster.service, sunmoon-registry.service, sunmoon-entry.service, '--property=Id,ActiveState,UnitFileState']
       changed_when: false
       register: states
     - name: Report lifecycle state
