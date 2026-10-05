@@ -1,0 +1,8 @@
+---
+# Browser access and its independent human reader belong to Kibana.
+kibana_ui_enabled: true
+kibana_ui_origin: 'https://kibana.sunmoonai.com:{{ entry_port }}'
+kibana_ui_viewer_user: sunmoon_kibana_reader
+kibana_ui_generation: v1
+kibana_ui_session_idle_timeout: 30m
+kibana_ui_session_lifespan: 8h

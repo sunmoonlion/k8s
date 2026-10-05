@@ -25,3 +25,9 @@ HelmRelease Ready后检查实际Service/Ingress/证书SAN、目标Pod和真实�
 共同平台操作走[services维护](../../../../infrastructure/services/README.md)的候选→审阅→stage/提交→发布晋级→bootstrap/check；组件没有另一套部署入口。版本/摘要取[物料锁](../../../../infrastructure/artifacts/README.md)，运行namespace取共享site。关闭开关不会自动停服或清数据。
 
 配置、身份或卷不符时保留现场；退回固定源的方法见[Flux维护](../../../../infrastructure/flux/README.md)，schema/账号/持久数据不随Git自动回滚。日期结果与未覆盖范围在[验收边界](../../../../docs/platform-kind-v1/verification.md)。
+
+## 受限CRD与HTTPS上游
+
+traefik_crd_enabled控制原生Kubernetes CRD provider，traefik_crd_namespaces限定入口和数据命名空间；不允许跨命名空间引用或ExternalName服务。标准10份CRD由prepare从锁定chart读取，排除商业Hub CRD，并作为GitOps声明由platform-services拥有；遇到外国已有CRD停止，不自动接管。HelmRelease继续Skip CRD安装/升级，避免重复所有权。
+
+Kibana浏览器路由与内部服务TLS验证配置在[UI组件](../../data-platform/elk/kibana/ui/README.md)。CRD provider配置变化会滚动Traefik，须按当前维护约定部署并回验既有应用入口；关闭provider不删除已存在CRD。

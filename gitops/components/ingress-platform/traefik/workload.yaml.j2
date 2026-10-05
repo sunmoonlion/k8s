@@ -47,7 +47,12 @@ spec:
       replicas: 1
       imagePullSecrets: [{name: registry-puller}]
     providers:
-      kubernetesCRD: {enabled: false}
+      kubernetesCRD:
+        enabled: {{ traefik_crd_enabled | bool | lower }}
+        ingressClass: sunmoon
+        namespaces: {{ traefik_crd_namespaces | to_json }}
+        allowCrossNamespace: false
+        allowExternalNameServices: false
       kubernetesIngress:
         enabled: true
         publishedService: {enabled: false}

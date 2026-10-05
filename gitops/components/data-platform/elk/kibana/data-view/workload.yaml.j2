@@ -7,7 +7,7 @@ data:
   initialize-identity.js: |
 {{ lookup('template', playbook_dir + '/../../gitops/components/data-platform/elk/kibana/data-view/initialize-identity.js.j2') | indent(4, true) }}
   tls-client.js: |
-{{ lookup('template', playbook_dir + '/../../gitops/components/data-platform/elk/kibana/data-view/tls-client.js.j2') | indent(4, true) }}
+{{ lookup('template', playbook_dir + '/../../gitops/components/data-platform/elk/tls-client.js.j2') | indent(4, true) }}
 ---
 apiVersion: batch/v1
 kind: Job

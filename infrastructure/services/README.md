@@ -64,3 +64,7 @@ make -C infrastructure services-check
 声明差异先修配置/源码并重新审阅发布；字段冲突不force接管。Job失败保留代次与错误，查其前置依赖/schema/身份；已有同名账号/卷不符须显式处理。Neo4j限定rollout恢复见[组件说明](../../gitops/components/data-platform/neo4j/README.md)。
 
 退回按[Flux](../flux/README.md#故障与退回)恢复原固定源并做真实检查；schema/身份/持久数据需匹配备份，不自动随Git回滚。业务备份/轮换、统一停用、WSL/删群持久化和长期空间管理见[未完成项](../../docs/platform-kind-v1/verification.md#未完成项)。
+
+## Kibana浏览器访问
+
+浏览器配置、身份准备、声明和验收集中在[同一组件](../../gitops/components/data-platform/elk/kibana/ui/README.md)，共享services-render/stage/bootstrap/check原生链。启用时services-check从新集群入口验证实际TLS、登录会话、权限和退出；主机30443切换后运行`make -C infrastructure services-check-public`，同一playbook引用entry_port验证真实入口。Kibana公开入口的切换仍单独确认，不能把29443后端通过写成30443已通过。

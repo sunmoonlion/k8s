@@ -36,3 +36,7 @@ entry_cluster_routes:
     hostnames:
       - '{{ investment_web_deployment.origin | urlsplit("hostname") }}'
       - '{{ investment_admin_deployment.origin | urlsplit("hostname") }}'
+  - name: kibana
+    backend: '127.0.0.1:{{ cluster_ingress_port }}'
+    hostnames:
+      - '{{ kibana_ui_origin | urlsplit("hostname") }}'

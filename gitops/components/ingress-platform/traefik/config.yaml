@@ -1,3 +1,6 @@
 # 用户配置，由原生 Ansible 读取；不作为 Kubernetes 对象应用。
 ---
 services_ingress_enabled: true
+# Bounded provider for trusted HTTPS service transports; no cross-namespace references.
+traefik_crd_enabled: true
+traefik_crd_namespaces: ['{{ ingress_namespace }}', '{{ data_namespace }}']

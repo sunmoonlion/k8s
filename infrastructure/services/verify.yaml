@@ -8,7 +8,7 @@
     capacity_operation: services-verify
     images: '{{ (lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json).images + ((lookup("file", playbook_dir + "/../../gitops/components/data-platform/ragflow/image.lock.json") | from_json).images if services_ragflow_enabled else []) }}'
     enabled_names: '{{ (["postgresql"] if services_postgresql_enabled else []) + (["redis"] if services_redis_enabled else []) + (["rabbitmq"] if services_rabbitmq_enabled else []) + (["casdoor"] if services_casdoor_enabled else []) + (["traefik"] if services_ingress_enabled else []) + (["object-storage"] if services_object_storage_enabled else []) + (["text-embeddings"] if services_text_embeddings_enabled else []) + (["elasticsearch","kibana","logstash"] if services_elk_enabled else []) + (["neo4j"] if services_neo4j_enabled else []) + (["mongodb"] if services_mongodb_enabled else []) + (["infinity"] if services_infinity_enabled else []) + (["valkey"] if services_valkey_enabled else []) + (["ragflow-runtime"] if services_ragflow_enabled else []) }}'
-    stages_to_check: '{{ ["platform-services"] + (["casdoor-db","casdoor-init","casdoor"] if services_casdoor_enabled else []) + (["elk-initialize","elk-runtime"] if services_elk_enabled else []) + (["elk-collector"] if services_elk_enabled and elk_collector_enabled else []) + (["elk-data-view"] if services_elk_enabled and elk_log_data_view_enabled else []) + (["mongodb-initialize"] if services_mongodb_enabled else []) + (["ragflow-database","ragflow-storage","ragflow-initialize","ragflow-runtime"] if services_ragflow_enabled else []) }}'
+    stages_to_check: '{{ ["platform-services"] + (["casdoor-db","casdoor-init","casdoor"] if services_casdoor_enabled else []) + (["elk-initialize","elk-runtime"] if services_elk_enabled else []) + (["elk-collector"] if services_elk_enabled and elk_collector_enabled else []) + (["elk-data-view"] if services_elk_enabled and elk_log_data_view_enabled else []) + (["elk-kibana-ui"] if services_elk_enabled and kibana_ui_enabled else []) + (["mongodb-initialize"] if services_mongodb_enabled else []) + (["ragflow-database","ragflow-storage","ragflow-initialize","ragflow-runtime"] if services_ragflow_enabled else []) }}'
 
     kube: ['{{ playbook_dir }}/../.tools/bin/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
   tasks:
@@ -188,6 +188,29 @@
     - name: Report public ELK protocol assertions only
       when: services_elk_enabled | bool
       ansible.builtin.debug: {msg: '{{ elk_acceptance.stdout | from_json }}'}
+    - name: Read independent Kibana browser credentials without disclosure
+      when: services_elk_enabled | bool and kibana_ui_enabled | bool
+      ansible.builtin.slurp: {src: '{{ services_config_dir }}/elk-kibana-ui.yaml'}
+      register: kibana_ui_check_input
+      no_log: true
+    - name: Verify ingress TLS, browser sessions and read-only permissions
+      when: services_elk_enabled | bool and kibana_ui_enabled | bool
+      ansible.builtin.command:
+        argv: [python3, '{{ playbook_dir }}/../../gitops/components/data-platform/elk/kibana/ui/verify.py', --origin, '{{ kibana_ui_origin }}', --port, '{{ services_ui_verify_port | default(cluster_ingress_port) }}', --ca, '{{ registry_config_dir }}/clients/ca.crt', --username, '{{ kibana_ui_viewer_user }}', --version, '{{ (images | selectattr("id","equalto","kibana") | first).source.rsplit(":",1)[1] }}', --data-view-id, '{{ elk_log_data_view_id }}']
+        stdin: '{{ {"password":(kibana_ui_check_input.content | b64decode | from_yaml).password,"admin_password":(elk_check_input.content | b64decode | from_yaml).elastic_password} | to_json }}'
+      register: kibana_ui_acceptance
+      changed_when: false
+      failed_when: false
+      no_log: true
+    - name: Require browser acceptance without printing private inputs
+      when: services_elk_enabled | bool and kibana_ui_enabled | bool
+      ansible.builtin.assert:
+        quiet: true
+        that: kibana_ui_acceptance.rc == 0
+        fail_msg: '{{ kibana_ui_acceptance.stdout }}'
+    - name: Report only the credential-free browser result
+      when: services_elk_enabled | bool and kibana_ui_enabled | bool
+      ansible.builtin.debug: {msg: '{{ kibana_ui_acceptance.stdout | from_json }}'}
     - name: Read independent graph administrator without logging
       when: services_neo4j_enabled | bool
       ansible.builtin.slurp: {src: '{{ services_config_dir }}/neo4j.yaml'}
@@ -292,4 +315,4 @@
         dest: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/evidence/services/latest.json'
         mode: '0600'
         content: |
-          {{ {'checked_at_utc':lookup('pipe','date -u +%Y-%m-%dT%H:%M:%SZ'), 'cluster_uid':uid.stdout, 'source':lookup('file',playbook_dir + '/../environments/kind/flux-source.yaml') | from_yaml, 'checks':(acceptance.stdout | from_json) | combine({'postgresql_transaction':services_postgresql_enabled,'redis_write_read':services_redis_enabled,'retained_volumes_bound':true}), 'capacity':capacity_report.stdout | from_json, 'object_storage':(storage_acceptance.stdout | from_json) if services_object_storage_enabled else {}, 'text_embeddings':(embedding_acceptance.stdout | from_json) if services_text_embeddings_enabled else {}, 'elk':(elk_acceptance.stdout | from_json) if services_elk_enabled else {}, 'neo4j':(neo4j_acceptance.stdout | from_json) if services_neo4j_enabled else {}, 'mongodb':(mongodb_acceptance.stdout | from_json) if services_mongodb_enabled else {}, 'infinity':(infinity_acceptance.stdout | from_json) if services_infinity_enabled else {}, 'valkey_bounded_kv':services_valkey_enabled, 'ragflow':(ragflow_acceptance.stdout | from_json) if services_ragflow_enabled else {}, 'scope':'Service protocol checks; no WSL/KIND restart or rebuild claim'} | to_nice_json }}
+          {{ {'checked_at_utc':lookup('pipe','date -u +%Y-%m-%dT%H:%M:%SZ'), 'cluster_uid':uid.stdout, 'source':lookup('file',playbook_dir + '/../environments/kind/flux-source.yaml') | from_yaml, 'checks':(acceptance.stdout | from_json) | combine({'postgresql_transaction':services_postgresql_enabled,'redis_write_read':services_redis_enabled,'retained_volumes_bound':true}), 'capacity':capacity_report.stdout | from_json, 'object_storage':(storage_acceptance.stdout | from_json) if services_object_storage_enabled else {}, 'text_embeddings':(embedding_acceptance.stdout | from_json) if services_text_embeddings_enabled else {}, 'elk':(elk_acceptance.stdout | from_json) if services_elk_enabled else {}, 'kibana_ui':(kibana_ui_acceptance.stdout | from_json) if services_elk_enabled and kibana_ui_enabled else {}, 'neo4j':(neo4j_acceptance.stdout | from_json) if services_neo4j_enabled else {}, 'mongodb':(mongodb_acceptance.stdout | from_json) if services_mongodb_enabled else {}, 'infinity':(infinity_acceptance.stdout | from_json) if services_infinity_enabled else {}, 'valkey_bounded_kv':services_valkey_enabled, 'ragflow':(ragflow_acceptance.stdout | from_json) if services_ragflow_enabled else {}, 'scope':'Service protocol checks; no WSL/KIND restart or rebuild claim'} | to_nice_json }}

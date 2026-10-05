@@ -46,7 +46,12 @@ spec:
       replicas: 1
       imagePullSecrets: [{name: registry-puller}]
     providers:
-      kubernetesCRD: {enabled: false}
+      kubernetesCRD:
+        enabled: true
+        ingressClass: sunmoon
+        namespaces: ["ingress-platform-dev", "data-platform-dev"]
+        allowCrossNamespace: false
+        allowExternalNameServices: false
       kubernetesIngress:
         enabled: true
         publishedService: {enabled: false}

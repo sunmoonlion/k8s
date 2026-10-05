@@ -1,0 +1,56 @@
+---
+- name: Validate the bounded Kubernetes CRD provider
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - traefik_crd_namespaces | unique | list | sort == [ingress_namespace, data_namespace] | sort
+- name: Select the locked official chart for standard CRD schemas
+  ansible.builtin.set_fact:
+    traefik_crd_chart: '{{ (lookup("file",playbook_dir + "/../artifacts/files.lock.json") | from_json).files | selectattr("id","equalto","traefik-chart") | first }}'
+- name: Hash the original chart before extracting schema declarations
+  ansible.builtin.stat: {path: '{{ artifact_cache_root }}/{{ traefik_crd_chart.path }}', follow: false, checksum_algorithm: sha256}
+  register: traefik_crd_chart_bytes
+- name: Require the exact locked regular chart file
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - traefik_crd_chart_bytes.stat.isreg | default(false)
+      - not traefik_crd_chart_bytes.stat.islnk | default(false)
+      - traefik_crd_chart_bytes.stat.checksum | default('') == traefik_crd_chart.sha256
+- name: Read schemas with the native Helm CLI without API writes
+  ansible.builtin.command:
+    argv: ['{{ tools }}/helm', show, crds, '{{ artifact_cache_root }}/{{ traefik_crd_chart.path }}']
+  register: traefik_crd_schemas
+  changed_when: false
+- name: Select only standard Traefik resources, excluding commercial Hub CRDs
+  ansible.builtin.set_fact:
+    traefik_standard_crds: '{{ traefik_crd_schemas.stdout | from_yaml_all | selectattr("spec.group","equalto","traefik.io") | list }}'
+- name: Validate the complete standard schema set
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - traefik_standard_crds | length == 10
+      - traefik_standard_crds | map(attribute='kind') | unique | list == ['CustomResourceDefinition']
+- name: Inspect existing schema ownership without adopting foreign objects
+  ansible.builtin.command:
+    argv: '{{ kube + ["get","customresourcedefinitions","-o","json"] }}'
+  register: existing_crd_objects
+  changed_when: false
+- name: Refuse schemas managed by another deployment
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - item.metadata.labels['kustomize.toolkit.fluxcd.io/name'] | default('') == 'platform-services'
+      - item.metadata.labels['kustomize.toolkit.fluxcd.io/namespace'] | default('') == 'flux-system'
+  loop: '{{ (existing_crd_objects.stdout | from_json)["items"] | selectattr("spec.group","equalto","traefik.io") | list }}'
+  loop_control: {label: '{{ item.metadata.name }}'}
+- name: Save standard schemas as reviewable native GitOps declarations
+  ansible.builtin.copy:
+    dest: '{{ build }}/ingress-platform/traefik/crds.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+    content: |
+      {% for schema in traefik_standard_crds %}
+      ---
+      {{ schema | to_nice_yaml }}
+      {% endfor %}

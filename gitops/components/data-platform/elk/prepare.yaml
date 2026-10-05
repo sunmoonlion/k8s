@@ -150,7 +150,7 @@
 - name: Derive each ELK rollout identity from only its own input
   ansible.builtin.set_fact:
     elasticsearch_input_digest: '{{ [elk_credentials.elastic_password,component_tls_material.elasticsearch] | to_json | hash("sha256") }}'
-    kibana_input_digest: '{{ [elk_credentials.kibana_password,elk_credentials.kibana_security_key,elk_credentials.kibana_saved_objects_key,elk_credentials.kibana_reporting_key,component_tls_material.kibana] | to_json | hash("sha256") }}'
+    kibana_input_digest: '{{ [elk_credentials.kibana_password,elk_credentials.kibana_security_key,elk_credentials.kibana_saved_objects_key,elk_credentials.kibana_reporting_key,component_tls_material.kibana,kibana_ui_enabled,kibana_ui_origin,kibana_ui_session_idle_timeout,kibana_ui_session_lifespan,lookup("file",playbook_dir + "/../../gitops/components/data-platform/elk/kibana/kibana.yml.j2")] | to_json | hash("sha256") }}'
     logstash_input_digest: '{{ [elk_credentials.logstash_password,elk_credentials.ingest_password,component_tls_material.logstash,logstash_ingest_port,elk_logstash_max_content_bytes,elk_ingest_username,elk_logstash_writer,elk_index_prefix,elasticsearch_port,data_namespace,lookup("file", playbook_dir + "/../../gitops/components/data-platform/elk/logstash/workload.yaml.j2")] | to_json | hash("sha256") }}'
   no_log: true
 - name: Render ELK workload candidates through the native service chain
@@ -171,6 +171,9 @@
 - name: Prepare declarative Kibana data view initialization
   ansible.builtin.include_tasks: kibana/data-view/prepare.yaml
   when: elk_log_data_view_enabled | bool
+- name: Prepare the Kibana browser route and independent human reader
+  ansible.builtin.include_tasks: kibana/ui/prepare.yaml
+  when: kibana_ui_enabled | bool
 - name: Prepare the bounded node application log collector
   ansible.builtin.include_tasks: collector/prepare.yaml
   when: elk_collector_enabled | bool

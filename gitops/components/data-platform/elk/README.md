@@ -6,7 +6,7 @@ ES/Logstash/Kibana取同一artifacts配套锁，data_namespace单实例静态Ret
 
 私有elk.yaml/TLS在services_config_dir，独立副本services_backup_dir。elastic管理员、Logstash ES写身份、人工read身份、HTTP ingest身份分别隔离；Kibana data-view另独立身份，不借reader口令。内部ES/Logstash/Kibana TLS严格CA/SAN。
 
-真实应用采集由[collector](collector/README.md)三节点DaemonSet提供，只收app namespace日志；视图由[data-view](kibana/data-view/README.md)声明Job初始化。公共KibanaUI尚未交付，不把内部管理API成功当用户UI成功。
+真实应用采集由[collector](collector/README.md)三节点DaemonSet提供，只收app namespace日志；视图由[data-view](kibana/data-view/README.md)声明Job初始化。浏览器入口、独立人工只读账号和真实登录检查在[UI组件](kibana/ui/README.md)，当前部署/验证状态见验收边界；内部管理API成功不能代替公开入口检查。
 
 ## 验收、背压与恢复
 

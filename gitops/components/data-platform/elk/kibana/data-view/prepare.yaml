@@ -53,7 +53,7 @@
   no_log: true
 - name: Derive immutable initialization inputs without rotating identity
   ansible.builtin.set_fact:
-    elk_data_view_input_digest: '{{ [elk_log_data_view_user,elk_view_credentials.password,component_tls_material.kibana.ca,elk_log_data_view_id,elk_index_prefix,data_namespace,kibana_port,elasticsearch_port,lookup("file", playbook_dir + "/../../gitops/components/data-platform/elk/kibana/data-view/initialize.js.j2"),lookup("file", playbook_dir + "/../../gitops/components/data-platform/elk/kibana/data-view/initialize-identity.js.j2"),lookup("file", playbook_dir + "/../../gitops/components/data-platform/elk/kibana/data-view/tls-client.js.j2")] | to_json | hash("sha256") }}'
+    elk_data_view_input_digest: '{{ [elk_log_data_view_user,elk_view_credentials.password,component_tls_material.kibana.ca,elk_log_data_view_id,elk_index_prefix,data_namespace,kibana_port,elasticsearch_port,lookup("file", playbook_dir + "/../../gitops/components/data-platform/elk/kibana/data-view/initialize.js.j2"),lookup("file", playbook_dir + "/../../gitops/components/data-platform/elk/kibana/data-view/initialize-identity.js.j2"),lookup("file", playbook_dir + "/../../gitops/components/data-platform/elk/tls-client.js.j2")] | to_json | hash("sha256") }}'
   no_log: true
 - name: Render the native saved-object initializer
   ansible.builtin.template:

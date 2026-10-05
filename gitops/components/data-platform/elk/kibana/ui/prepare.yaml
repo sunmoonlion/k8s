@@ -1,0 +1,97 @@
+---
+- name: Validate the browser endpoint and independent reader
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - services_ingress_enabled | bool and traefik_crd_enabled | bool
+      - elk_log_data_view_enabled | bool
+      - kibana_ui_origin | urlsplit('scheme') == 'https'
+      - kibana_ui_origin | urlsplit('hostname') is match('^[a-z0-9][a-z0-9.-]+[a-z0-9]$')
+      - kibana_ui_origin | urlsplit('port') | int == entry_port | int
+      - kibana_ui_origin | urlsplit('username') == None
+      - kibana_ui_origin | urlsplit('path') == ''
+      - kibana_ui_origin | urlsplit('query') == '' and kibana_ui_origin | urlsplit('fragment') == ''
+      - kibana_ui_viewer_user is match('^[a-z][a-z0-9_]+$')
+      - kibana_ui_viewer_user not in [elk_log_reader, elk_log_data_view_user, elk_logstash_writer, 'elastic', 'kibana_system']
+      - kibana_ui_generation is match('^v[1-9][0-9]*$')
+      - kibana_ui_session_idle_timeout is match('^[1-9][0-9]*[mh]$')
+      - kibana_ui_session_lifespan is match('^[1-9][0-9]*[mh]$')
+- name: Create the browser component candidate directory
+  ansible.builtin.file: {path: '{{ build }}/data-platform/elk/kibana/ui', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
+- name: Prepare one recoverable independent human reader password
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
+  vars:
+    component_input_name: elk-kibana-ui
+    component_input_manifest: data-platform/elk/kibana/ui/auth.sops.yaml
+    component_initial_input:
+      password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+  no_log: true
+- name: Preserve the browser input in memory
+  ansible.builtin.set_fact: {kibana_ui_credentials: '{{ component_private_input }}'}
+  no_log: true
+- name: Require a distinct browser password
+  ansible.builtin.assert:
+    quiet: true
+    that:
+      - kibana_ui_credentials.password is match('^[A-Za-z0-9]{40}$')
+      - kibana_ui_credentials.password not in elk_credentials.values() | list
+      - kibana_ui_credentials.password != elk_view_credentials.password
+  no_log: true
+- name: Prepare a separate browser TLS identity with non-overwritten backup
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/tls-identity.yaml'
+  vars:
+    tls_private_dir: '{{ services_config_dir }}/kibana-ui'
+    tls_backup_dir: '{{ services_backup_dir }}/kibana-ui'
+    tls_declaration: '{{ playbook_dir }}/../../gitops/components/data-platform/elk/kibana/ui/tls.sops.yaml'
+    tls_hostnames: ['{{ kibana_ui_origin | urlsplit("hostname") }}']
+- name: Encrypt browser authentication inputs only for the short-lived initializer
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  loop:
+    - file: data-platform/elk/kibana/ui/admin.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: kibana-ui-admin, namespace: '{{ data_namespace }}'}
+        stringData: {username: elastic, password: '{{ elk_credentials.elastic_password }}'}
+    - file: data-platform/elk/kibana/ui/auth.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: kibana-ui-auth, namespace: '{{ data_namespace }}'}
+        stringData: {username: '{{ kibana_ui_viewer_user }}', password: '{{ kibana_ui_credentials.password }}', ca.crt: '{{ component_tls_material.kibana.ca }}'}
+    - file: data-platform/elk/kibana/ui/tls.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: kibana-ui-tls, namespace: '{{ data_namespace }}'}
+        type: kubernetes.io/tls
+        data: {'tls.key': '{{ app_tls.results[0].content }}', 'tls.crt': '{{ app_tls.results[1].content }}'}
+  loop_control: {loop_var: secret_item, label: '{{ secret_item.file }}'}
+  no_log: true
+- name: Derive the immutable identity initializer from its exact inputs
+  ansible.builtin.set_fact:
+    kibana_ui_identity_digest: '{{ [kibana_ui_viewer_user,kibana_ui_credentials.password,elk_credentials.elastic_password,component_tls_material.kibana.ca,elk_log_data_view_id,elk_index_prefix,data_namespace,kibana_port,elasticsearch_port,lookup("file",playbook_dir + "/../../gitops/components/data-platform/elk/kibana/ui/initialize.js.j2"),lookup("file",playbook_dir + "/../../gitops/components/data-platform/elk/tls-client.js.j2")] | to_json | hash("sha256") }}'
+  no_log: true
+- name: Render the UI route and independent identity initializer
+  ansible.builtin.template:
+    src: '{{ playbook_dir }}/../../gitops/components/data-platform/elk/kibana/ui/workload.yaml.j2'
+    dest: '{{ build }}/data-platform/elk/kibana/ui/workload.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+- name: Encrypt the upstream trust certificate consistently with the source publication gate
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'
+  vars:
+    secret_item:
+      file: data-platform/elk/kibana/ui/upstream-ca.sops.yaml
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata: {name: kibana-upstream-ca, namespace: '{{ data_namespace }}'}
+        stringData: {ca.crt: '{{ component_tls_material.kibana.ca }}'}
+  no_log: true
+- name: Render the explicit browser stage resource list
+  ansible.builtin.copy:
+    dest: '{{ build }}/data-platform/elk/kibana/ui/kustomization.yaml'
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+    content: '{{ {"apiVersion":"kustomize.config.k8s.io/v1beta1","kind":"Kustomization","resources":["workload.yaml","auth.sops.yaml","admin.sops.yaml","tls.sops.yaml","upstream-ca.sops.yaml"]} | to_nice_yaml }}'

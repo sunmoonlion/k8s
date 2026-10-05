@@ -144,6 +144,9 @@
         - {template: data-platform/redis/workload.yaml.j2, path: data-platform/redis/workload.yaml}
         - {template: messaging-platform/rabbitmq/workload.yaml.j2, path: messaging-platform/rabbitmq/workload.yaml}
         - {template: ingress-platform/traefik/workload.yaml.j2, path: ingress-platform/traefik/workload.yaml}
+    - name: Prepare locked standard Traefik CRDs
+      ansible.builtin.include_tasks: ../../gitops/components/ingress-platform/traefik/prepare.yaml
+      when: services_ingress_enabled | bool and traefik_crd_enabled | bool
     - name: Prepare and encrypt object storage inputs
       ansible.builtin.include_tasks: ../../gitops/components/data-platform/object-storage/prepare.yaml
       when: services_object_storage_enabled | bool
@@ -259,7 +262,7 @@
         owner: '{{ cluster_operator }}'
         mode: '0644'
         content: |
-          {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':(['workload.yaml'] if item == 'text-embeddings' else ['workload.yaml', ('puller.sops.yaml' if item == 'traefik' else 'auth.sops.yaml')]) + (['service-access'] if item == 'traefik' and service_access_enabled | bool else [])} | to_nice_yaml }}
+          {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':(['workload.yaml'] if item == 'text-embeddings' else ['workload.yaml', ('puller.sops.yaml' if item == 'traefik' else 'auth.sops.yaml')]) + (['crds.yaml'] if item == 'traefik' and traefik_crd_enabled | bool else []) + (['service-access'] if item == 'traefik' and service_access_enabled | bool else [])} | to_nice_yaml }}
       loop: '{{ ["postgresql", "redis", "rabbitmq", "traefik", "object-storage"] + (["text-embeddings"] if services_text_embeddings_enabled else []) }}'
     - name: Prepare the private HTTPS service transport
       ansible.builtin.include_tasks: ../../gitops/components/ingress-platform/traefik/service-access/prepare.yaml

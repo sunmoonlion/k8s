@@ -1,3 +1,17 @@
+# 当前单元：Kibana公共UI与独立人工只读身份（候选已完成，尚未部署）
+
+2026-10-05，platform-kind-v1工作树/分支，k8s单仓；基线9427473e。原生Make→Ansible→Flux/SOPS，维护2小时、容量10GiB；没有修改业务仓、push或切公开入口。
+
+候选采用独立人工reader、default空间只读及sunmoon-logs-*读取，独立公开TLS，Traefik同命名空间验证内部Kibana TLS；标准CRD取固定chart，不引入Hub CRD。现有身份与所有初始化Job保持。配置/准备/实现/维护说明同处elk/kibana/ui。services-check-public复用原生平台验收。
+
+实际通过：原生render/stage、Ansible语法、候选Kustomize（core125对象/10标准CRD，UI10对象）、CRD服务端只读dry-run、当前官方Kibana镜像Node脚本语法、HAProxy预览、既有Job对象逐一不变。尚未执行新增身份Job、角色/会话验收、发布晋级或公共切换；不能宣称UI可用。两处候选检查错误（字典items和CRD换行）已在发布前修正，原始失败保留。
+
+真实入口三文件备份及SHA/权限、Pod/PV/Flux基线、旧source在infrastructure/.build/models/kibana-ui私有证据。准备需要一次Traefik及Kibana滚动、新身份Job和限定入口切换；按所有者约定先确认本单元维护。失败按原source和备份回退，不自动删除新增身份/CRD/卷。
+
+后续：维护获批后提交固定GitOps发布→显式晋级→完整services-bootstrap→真实登录/权限/会话检查→限定公开入口及原有路由回归→相同源重复部署；再按下方整体收尾顺序完成一键/启停/开机、持久化及空间管理。
+
+---
+
 # 当前单元：ELK 全应用节点日志采集（完成并实际重复验证，2026-10-04）
 
 ## 当前物料根（2026-10-05维护更新）

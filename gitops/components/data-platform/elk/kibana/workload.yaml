@@ -16,7 +16,7 @@ spec:
   template:
     metadata:
       labels: {app.kubernetes.io/name: kibana, sunmoonai.com/elasticsearch-client: 'true'}
-      annotations: {sunmoonai.com/input-sha256: '529224b359b34f12334dc8f942ca301a57ee668a579dd97eb77f31fcdd87e68d'}
+      annotations: {sunmoonai.com/input-sha256: 'ecdfd89a9c3312bbf445539c9cfc6663b28503ac5a347959c4942c1b286274f8'}
     spec:
       serviceAccountName: platform-runtime
       automountServiceAccountToken: false
