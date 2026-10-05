@@ -4,7 +4,7 @@
 
 ## 初始化、运行与身份
 
-platform-services→ragflow-database/storage→initialize→runtime，Flux协调，平台bootstrap无需人工先初始化。独立Job持schema拥有者，创建两个独立租户/令牌（knowledge与acceptance）；API/Worker以ragflow_runtime运行，无CREATE权限，不挂PG/S3管理员或init拥有者/知识服务token。
+platform-services→ragflow-database/storage→initialize→runtime，Flux协调，平台bootstrap无需人工先初始化。prepare直接使用common的database/storage模板，初始化与运行使用本组件模板；生成声明仍留在本组件对应目录。独立Job持schema拥有者，创建两个独立租户/令牌（knowledge与acceptance）；API/Worker以ragflow_runtime运行，无CREATE权限，不挂PG/S3管理员或init拥有者/知识服务token。
 
 私有ragflow.yaml、TLS及独立副本由prepare维护，秘密只发布SOPS。runtime直调固定官方模块，跳过entrypoint隐式DDL，API使用ASGI/TLS仅api/v1及ready，不提供公共UI/注册/Sandbox/socket/启动公网下载。初始化补独立session marker满足官方token接口，它不是浏览器会话也不复用API令牌。
 
@@ -14,7 +14,7 @@ S3只写ragflow-derived版本桶，不能读Info原文/管理桶；网络精确�
 
 Dockerfile取固定官方base，/root内置uv Python3.13路径与NLTK数据只做非root可读权限适配，默认UID1000；不联网安装/升级包或语料。另有一处官方db_utils.py受完整源SHA守卫的bulk写前检查：表须已存在，缺表失败，替代运行时不必要DDL；上游文件变化立即拒绝套补丁。
 
-派生image.lock.json记录原基底、Dockerfile与成品/归档不同身份，上游锁不改；平台bootstrap原生包含services-ragflow-image/publish，固定归档存正式物料images。预算按已验证归档逐层只读测展开字节，计入Docker展开/转换/最终归档与余量，不保存额外docker-save大副本。运行与探针显式用/ragflow/.venv/bin/python3。
+派生image.lock.json记录原基底、Dockerfile与成品/归档不同身份，上游锁不改；平台bootstrap原生包含services-ragflow-image与services-ragflow-image-publish，固定归档存正式物料images。发布target直接调用artifacts/publish.yaml，组件关闭时跳过、不读取派生锁或发布镜像；开启时继续完整校验、容量检查及认证发布。预算按已验证归档逐层只读测展开字节，计入Docker展开/转换/最终归档与余量，不保存额外docker-save大副本。运行与探针显式用/ragflow/.venv/bin/python3。
 
 ## 检查和恢复
 

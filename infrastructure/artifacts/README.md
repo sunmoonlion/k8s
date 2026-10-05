@@ -46,7 +46,7 @@ make -C infrastructure check-host-materials
 
 ## 发布和清理边界
 
-服务/应用发布复用[publish.yaml](publish.yaml)和[同一任务](tasks/publish-image.yaml)。目标已有相同digest则复核，tag不同digest拒绝，401/证书/网络失败不能当“不存在”；独立puller验证目标身份。确认发布成功后只精确清除本次应用传输归档，不删镜像/卷/备份。
+服务/应用发布由Make直接调用[publish.yaml](publish.yaml)和[同一任务](tasks/publish-image.yaml)。RAGFlow派生镜像使用同一入口，显式允许关闭的可选组件跳过；其它发布仍要求enabled准入，不将关闭或校验失败当作发布成功。目标已有相同digest则复核，tag不同digest拒绝，401/证书/网络失败不能当“不存在”；独立puller验证目标身份。确认发布成功后只精确清除本次应用传输归档，不删镜像/卷/备份。
 
 宿主保留集合包括已停容器引用与非驻留引导工具：Harbor prepare用于挂载守卫、skopeo用于发布/恢复、exporter属于官方包。不能按“没有运行容器”就判无用。所需物料丢失按锁补回同批次后完整校验，不能去旧工作树转接。
 

@@ -134,13 +134,18 @@
   ansible.builtin.set_fact:
     ragflow_input_digest: '{{ [ragflow_credentials.runtime_password,ragflow_credentials.session_secret,ragflow_credentials.storage_password,valkey_credentials.runtime_password,component_tls_material.ragflow] | to_json | hash("sha256") }}'
   no_log: true
-- name: Render RAGFlow with existing native provisioning templates
+- name: Render RAGFlow directly from the owned or shared provisioning templates
   ansible.builtin.template:
-    src: '{{ playbook_dir }}/../../gitops/components/data-platform/ragflow/{{ item }}/workload.yaml.j2'
-    dest: '{{ build }}/data-platform/ragflow/{{ item }}/workload.yaml'
+    src: '{{ playbook_dir }}/../../gitops/components/{{ ragflow_workload.template }}'
+    dest: '{{ build }}/data-platform/ragflow/{{ ragflow_workload.stage }}/workload.yaml'
     owner: '{{ cluster_operator }}'
     mode: '0644'
-  loop: [database, storage, initialize, runtime]
+  loop:
+    - {stage: database, template: app-platform/common/backend/database/workload.yaml.j2}
+    - {stage: storage, template: app-platform/common/backend/storage/workload.yaml.j2}
+    - {stage: initialize, template: data-platform/ragflow/initialize/workload.yaml.j2}
+    - {stage: runtime, template: data-platform/ragflow/runtime/workload.yaml.j2}
+  loop_control: {loop_var: ragflow_workload, label: '{{ ragflow_workload.stage }}'}
   vars:
     application_name: ragflow
     cfg:

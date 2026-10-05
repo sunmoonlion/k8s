@@ -329,4 +329,4 @@ services-stage:
 services-ragflow-image:
 	$(ANSIBLE) -i host/inventory.yaml ../gitops/components/data-platform/ragflow/image-build.yaml $(CONFIG_ARGS)
 services-ragflow-image-publish:
-	$(ANSIBLE) -i host/inventory.yaml ../gitops/components/data-platform/ragflow/image-publish.yaml $(CONFIG_ARGS)
+	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=publish --extra-vars '{"publication_lockfile":"{{ playbook_dir }}/../../gitops/components/data-platform/ragflow/image.lock.json","publication_image_ids":["ragflow-runtime"],"publication_enabled":"{{ services_ragflow_enabled }}","publication_skip_disabled":true,"publication_capacity_operation":"ragflow-runtime-publication"}'

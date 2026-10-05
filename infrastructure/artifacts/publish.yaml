@@ -15,6 +15,11 @@
     verifier: '{{ playbook_dir }}/../artifacts/verify-oci-archive.py'
     local_client: [docker, run, --rm, --pull=never, --network=host, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --tmpfs, '/var/tmp:rw,noexec,nosuid,size={{ (artifact_image.compressed_layer_bytes | int) * 2 + 16777216 }}', --add-host, '{{ registry_hostname }}:127.0.0.1', --env, HTTP_PROXY=, --env, HTTPS_PROXY=, --env, ALL_PROXY=, --env, 'NO_PROXY={{ registry_hostname }},127.0.0.1,localhost', --mount, 'type=bind,source={{ registry_config_dir }}/clients,target=/certs,readonly', --mount, 'type=bind,source={{ registry_config_dir }}/private/publisher-auth.json,target=/publisher.json,readonly', --mount, 'type=bind,source={{ registry_config_dir }}/private/puller-auth.json,target=/puller.json,readonly']
   tasks:
+    - name: Skip publication only for an explicitly optional disabled component
+      ansible.builtin.meta: end_play
+      when:
+        - publication_skip_disabled | default(false) | bool
+        - not (publication_enabled | bool)
     - name: Require the selected locked images and supported action
       ansible.builtin.assert:
         quiet: true
