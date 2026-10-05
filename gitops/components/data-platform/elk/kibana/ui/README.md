@@ -4,6 +4,8 @@
 
 本组件由原生services-render/stage/bootstrap管理，Flux的elk-kibana-ui阶段在ELK运行和日志视图阶段之后执行。已有账号/角色必须带本集群所有权且权限一致，未知或被扩大权限的对象拒绝接管；不会重置既有口令。修改已完成Job输入须明确新代次。
 
+开发阶段按所有者要求另保留仓根 [密码修改表.md](../../../../../../密码修改表.md) 第15d项，供本人查阅当前独立账号；它是查阅副本，部署不读取它。修改表格不会轮换账号，实际轮换验证后须同步此表；不采用旧ELK管理员密码。
+
 ## 身份与访问
 
 人工账号独立于elastic管理员、kibana_system、旧内部reader和视图初始化身份。只允许default空间的Kibana只读功能与sunmoon-logs-*索引read/view_index_metadata，不允许日志写入、外国索引、账号管理或保存视图。使用Kibana原生用户名/密码登录；未配置Casdoor单点登录。
