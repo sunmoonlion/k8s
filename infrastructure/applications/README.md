@@ -2,6 +2,12 @@
 
 四应用共享原生编排及[common模板](../../gitops/components/app-platform/common/README.md)，源码为并列五仓及其子模块。各应用仍分后端、Web、Admin组件；配置在[组件导航](../../gitops/components/README.md)就近维护。
 
+## 与物料和组件目录的关系
+
+本目录保留应用源码选择、在线构建、部署与验收；共用下载/归档/skopeo发布在[artifacts](../artifacts/README.md)。应用配置与成品镜像锁在gitops/components/app-platform/<应用>/<前后端组件>，Python/Node基础镜像只保存于物料批次shared/build-base-images，不按四应用复制。
+
+`make -C infrastructure material-inventory MATERIAL_OWNER=components/app-platform`查看应用成品锁及Harbor目标；`MATERIAL_OWNER=shared/build-base-images`查看基础物料。普通部署从Harbor拉成品，不要求releases内有各应用离线包，npm/Python依赖仍在线下载。
+
 ## 配置与固定源
 
 [config.yaml](config.yaml)保存构建预算、基础镜像选择和下载模式；[sources.yaml](sources.yaml)固定四应用各parent revision、backend/web/admin gitlink，拒绝dirty或未经审核来源；构建配方从固定Git对象导出到一次性context。应用config/image.lock与环境namespace、当前Flux指针职责分开。
@@ -81,7 +87,7 @@ Info S3检查通过实际适配器写两个随机版本读回摘要并核权限�
 
 | 字段 | 类型 | 维护条件 |
 |---|---|---|
-| `application_base_image_ids` | 列表 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
-| `application_build_budget_bytes` | 整数 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
-| `application_frontend_build_budget_bytes` | 整数 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
-| `application_download_mode` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
+| `application_base_image_ids` | 列表 | 引用上游锁的基础镜像ID；修改后准备、发布并审核重新构建。 |
+| `application_build_budget_bytes` | 整数 | 单次后端构建峰值预算；须覆盖上下文、依赖、镜像层和传输。 |
+| `application_frontend_build_budget_bytes` | 整数 | 单个Web/Admin构建峰值预算；host检查同时扣除数据盘未来增长。 |
+| `application_download_mode` | 文本 | domestic或official-proxy，下载源和代理配套；网络失败时按上文唯一重试。 |

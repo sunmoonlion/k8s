@@ -10,7 +10,16 @@
     images: '{{ lookup("ansible.builtin.file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json }}'
     controllers: '{{ images.images | selectattr("group", "equalto", "delivery") | list }}'
     skopeo: '{{ images.images | selectattr("id", "equalto", "skopeo") | first }}'
-    image_directory: '{{ artifact_cache_root }}/images'
+    cache_directories: >-
+      {% set paths = [artifact_cache_root] %}
+      {% for relative in controllers | map(attribute='material_owner') | map('regex_replace', '$', '/images') | list %}
+      {% set current = namespace(path=artifact_cache_root) %}
+      {% for part in relative.split('/') %}
+      {% set current.path = current.path + '/' + part %}
+      {% set _ = paths.append(current.path) %}
+      {% endfor %}
+      {% endfor %}
+      {{ paths | unique | list | to_json }}
     verifier: '{{ playbook_dir }}/../artifacts/verify-oci-archive.py'
     local_client: [docker, run, --rm, --pull=never, --network=host, --read-only, --cap-drop=ALL, '--security-opt=no-new-privileges:true', --tmpfs, '/var/tmp:rw,noexec,nosuid,size={{ (artifact_image.compressed_layer_bytes | int) * 2 + 16777216 }}', --add-host, '{{ registry_hostname }}:127.0.0.1', --env, HTTP_PROXY=, --env, HTTPS_PROXY=, --env, ALL_PROXY=, --env, 'NO_PROXY={{ registry_hostname }},127.0.0.1,localhost', --mount, 'type=bind,source={{ registry_config_dir }}/clients,target=/certs,readonly', --mount, 'type=bind,source={{ registry_config_dir }}/private/publisher-auth.json,target=/publisher.json,readonly', --mount, 'type=bind,source={{ registry_config_dir }}/private/puller-auth.json,target=/puller.json,readonly']
   tasks:
@@ -28,6 +37,7 @@
       ansible.builtin.assert:
         quiet: true
         that:
+          - item.material_owner == 'shared/flux'
           - item.manifest_digest is match('^sha256:[a-f0-9]{64}$')
           - item.reference == 'ghcr.io/fluxcd/' + item.id + '@' + item.manifest_digest
           - item.source is match('^ghcr.io/fluxcd/[a-z-]+:v[0-9.]+$')
@@ -43,15 +53,18 @@
       when: flux_material_action == 'plan'
     - name: Inspect artifact directory without following links
       ansible.builtin.stat:
-        path: '{{ image_directory }}'
+        path: '{{ item }}'
         follow: false
-      register: directory
+      loop: '{{ cache_directories | from_json }}'
+      register: directories
     - name: Require real existing artifact directory
       ansible.builtin.assert:
         quiet: true
         that:
-          - directory.stat.isdir | default(false)
-          - not directory.stat.islnk | default(false)
+          - not item.stat.exists or item.stat.isdir | default(false)
+          - not item.stat.islnk | default(false)
+      loop: '{{ directories.results }}'
+      loop_control: {label: '{{ item.item }}'}
     - name: Budget missing archives and registry writes
       ansible.builtin.include_tasks:
         file: ../host/tasks/capacity.yaml

@@ -9,7 +9,7 @@
     image_build_action: build
     upstream: '{{ (lookup("file",infra + "/artifacts/upstream-images.lock.json") | from_json).images | selectattr("id","equalto","ragflow") | first }}'
     skopeo: '{{ (lookup("file",infra + "/artifacts/upstream-images.lock.json") | from_json).images | selectattr("id","equalto","skopeo") | first }}'
-    image_directory: '{{ artifact_cache_root }}/images'
+    image_directory: '{{ artifact_cache_root }}/{{ upstream.material_owner }}/images'
     lock_path: '{{ playbook_dir }}/image.lock.json'
     base: '{{ registry_address }}/platform/ragflow@{{ upstream.manifest_digest }}'
   tasks:
@@ -129,7 +129,7 @@
                 dest: '{{ lock_path }}'
                 owner: '{{ cluster_operator }}'
                 mode: '0644'
-                content: '{{ {"schema_version":1,"platform":"linux/amd64","base_manifest":upstream.manifest_digest,"dockerfile_sha256":dockerfile.stat.checksum,"archive_sha256":derived_archive.stat.checksum,"images":[{"id":"ragflow-runtime","status":"resolved","source":"ragflow-runtime:0.27.2-nonroot-" + dockerfile.stat.checksum[:16],"reference":registry_address + "/platform/ragflow-runtime@sha256:" + (derived_manifest.stdout | hash("sha256")),"manifest_digest":"sha256:" + (derived_manifest.stdout | hash("sha256")),"compressed_layer_bytes":(derived_manifest.stdout | from_json).layers | map(attribute="size") | sum,"config_digest":(derived_manifest.stdout | from_json).config.digest}]} | to_nice_json }}'
+                content: '{{ {"schema_version":1,"platform":"linux/amd64","base_manifest":upstream.manifest_digest,"dockerfile_sha256":dockerfile.stat.checksum,"archive_sha256":derived_archive.stat.checksum,"images":[{"id":"ragflow-runtime","material_owner":upstream.material_owner,"status":"resolved","source":"ragflow-runtime:0.27.2-nonroot-" + dockerfile.stat.checksum[:16],"reference":registry_address + "/platform/ragflow-runtime@sha256:" + (derived_manifest.stdout | hash("sha256")),"manifest_digest":"sha256:" + (derived_manifest.stdout | hash("sha256")),"compressed_layer_bytes":(derived_manifest.stdout | from_json).layers | map(attribute="size") | sum,"config_digest":(derived_manifest.stdout | from_json).config.digest}]} | to_nice_json }}'
           always:
             - name: Remove only this owned temporary build workspace
               ansible.builtin.file: {path: '{{ image_workspace.path }}', state: absent}
@@ -143,6 +143,7 @@
           - derived_lock.dockerfile_sha256 == dockerfile.stat.checksum
           - derived_lock.images | length == 1
           - derived_lock.images[0].id == 'ragflow-runtime'
+          - derived_lock.images[0].material_owner == upstream.material_owner
           - derived_lock.images[0].manifest_digest is match('^sha256:[a-f0-9]{64}$')
     - name: Verify the complete retained derived archive
       ansible.builtin.command:

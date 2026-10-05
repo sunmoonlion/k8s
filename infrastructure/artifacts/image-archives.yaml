@@ -11,7 +11,16 @@
     node_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/node-image.lock.json") | from_json }}'
     selected: '{{ (node_lock.images + (upstream.images | selectattr("id", "in", ["calico-node", "calico-cni", "calico-kube-controllers"]) | list)) if image_group == "bootstrap" else (upstream.images | selectattr("id", "in", ["haproxy", "skopeo"]) | list) }}'
     archive_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/" + image_group + "-archives.lock.json") | from_json }}'
-    image_directory: '{{ artifact_cache_root }}/images'
+    cache_directories: >-
+      {% set paths = [artifact_cache_root] %}
+      {% for relative in selected | map(attribute='material_owner') | map('regex_replace', '$', '/images') | list %}
+      {% set current = namespace(path=artifact_cache_root) %}
+      {% for part in relative.split('/') %}
+      {% set current.path = current.path + '/' + part %}
+      {% set _ = paths.append(current.path) %}
+      {% endfor %}
+      {% endfor %}
+      {{ paths | unique | list | to_json }}
     archive_verifier: '{{ playbook_dir }}/verify-oci-archive.py'
   tasks:
     - name: Validate image preparation mode and complete selection
@@ -32,6 +41,7 @@
       ansible.builtin.assert:
         quiet: true
         that:
+          - item.material_owner is match('^(cluster|host|registry|shared|components)/[a-z0-9-]+(/[a-z0-9-]+)*$')
           - item.id is match('^[a-z][a-z0-9-]*$')
           - item.manifest_digest is match('^sha256:[a-f0-9]{64}$')
           - item.reference.endswith('@' + item.manifest_digest)
@@ -44,7 +54,7 @@
       ansible.builtin.stat:
         path: '{{ item }}'
         follow: false
-      loop: ['{{ artifact_cache_root }}', '{{ image_directory }}']
+      loop: '{{ cache_directories | from_json }}'
       register: directories
 
     - name: Reject symlink or non-directory archive paths
@@ -83,7 +93,7 @@
 
     - name: Load missing host tool images from verified archives
       ansible.builtin.command:
-        argv: [docker, load, --input, '{{ image_directory }}/{{ item.item.id }}-{{ item.item.manifest_digest[7:] }}.tar']
+        argv: [docker, load, --input, '{{ artifact_cache_root }}/{{ item.item.material_owner }}/images/{{ item.item.id }}-{{ item.item.manifest_digest[7:] }}.tar']
       loop: '{{ host_local_images.results }}'
       loop_control: {label: '{{ item.item.id }}'}
       when: image_group == 'host' and image_action == 'fetch' and item.rc | default(0) != 0

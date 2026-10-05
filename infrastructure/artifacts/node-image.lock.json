@@ -9,7 +9,8 @@
       "source": "sunmoon-kind-node:v1.36.5-kind0.33.0",
       "reference": "docker.io/library/sunmoon-kind-node@sha256:676c571e38792c196595853476dc020e628b9b56f3b0c3ca1d2056e5ce612a0b",
       "manifest_digest": "sha256:676c571e38792c196595853476dc020e628b9b56f3b0c3ca1d2056e5ce612a0b",
-      "compressed_layer_bytes": 384868691
+      "compressed_layer_bytes": 384868691,
+      "material_owner": "cluster/kind"
     }
   ],
   "versions": [
@@ -24,5 +25,6 @@
     "libseccomp: 2.6.0"
   ],
   "server_sha256": "7f87ca9e71319d77b58e67e89637498a436bf1b058e4051376396c5a49371e11",
-  "kind_sha256": "aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d"
+  "kind_sha256": "aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d",
+  "material_layout": "component-owned-v1"
 }

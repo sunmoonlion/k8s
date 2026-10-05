@@ -1,7 +1,8 @@
 ---
 - name: Set archive and target names from the immutable lock
   ansible.builtin.set_fact:
-    archive_path: '{{ image_directory }}/{{ artifact_image.id }}-{{ artifact_image.manifest_digest[7:] }}.tar'
+    image_directory: '{{ publication_image_directory | default(artifact_cache_root + "/" + (artifact_image.material_owner | default("")) + "/images") }}'
+    archive_path: '{{ publication_image_directory | default(artifact_cache_root + "/" + (artifact_image.material_owner | default("")) + "/images") }}/{{ artifact_image.id }}-{{ artifact_image.manifest_digest[7:] }}.tar'
     target: '{{ registry_address }}/platform/{{ artifact_image.id }}'
 - name: Check remote identity before requiring a local upload transport
   when: material_action == 'publish'
@@ -36,6 +37,12 @@
       - not cached.stat.exists or cached.stat.isreg | default(false)
       - not cached.stat.islnk | default(false)
       - material_action == 'prepare' or cached.stat.exists or (material_action == 'publish' and remote_tag.rc == 0)
+- name: Create the selected owned cache directory only for preparation
+  ansible.builtin.file:
+    path: '{{ image_directory }}'
+    state: directory
+    mode: '0755'
+  when: material_action == 'prepare'
 - name: Download only missing archives without Docker unpacking
   when: material_action == 'prepare' and not cached.stat.exists
   block:

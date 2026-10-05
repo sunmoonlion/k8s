@@ -2,6 +2,12 @@
 
 目录保持平台→应用→组件；用户config、实现、生成声明和README同职责放置。入口用[services](../../infrastructure/services/README.md)或[applications](../../infrastructure/applications/README.md)，共享环境用[site](../../infrastructure/environments/kind/README.md)，发布晋级用[Flux](../../infrastructure/flux/README.md)。
 
+## 对应物料在哪里
+
+本地批次的`components/`沿用本目录的平台→应用→组件归属，组件下再分images/charts/models等类型。共用基础镜像和工具在批次shared，建群/宿主/Harbor物料各有独立归属，不强行放进组件树。
+
+在k8s根运行`make -C infrastructure material-inventory MATERIAL_OWNER=components/data-platform`，或指定完整组件归属，查看物料ID、路径和Harbor目标。版本/摘要以[artifacts锁](../../infrastructure/artifacts/README.md)及各组件成品锁为准；应用依赖在线下载，成品在Harbor，不要求每个组件有离线文件。
+
 ## 文件应该怎么改
 
 | 文件 | 谁维护/怎样生效 |

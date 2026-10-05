@@ -15,7 +15,8 @@
       "manifest_digest": "sha256:37134a49d21d2120e4c4d73bb76f8a4ab9aef31f096f7ec2ead48c2feead4332",
       "reference": "docker.io/library/python@sha256:37134a49d21d2120e4c4d73bb76f8a4ab9aef31f096f7ec2ead48c2feead4332",
       "config_digest": "sha256:b2bb53ac7b6fbe78a48c95b7c15130ea21de1674fc683fbc93158b0c23826823",
-      "compressed_layer_bytes": 43032850
+      "compressed_layer_bytes": 43032850,
+      "material_owner": "shared/build-base-images"
     },
     {
       "id": "node-build",
@@ -26,7 +27,8 @@
       "manifest_digest": "sha256:98ad2493de85738f55c11fe22e8586caf1fd917b7a8075c57ab9c55116e06492",
       "reference": "docker.io/library/node@sha256:98ad2493de85738f55c11fe22e8586caf1fd917b7a8075c57ab9c55116e06492",
       "config_digest": "sha256:71f5ac16954e425a530f968ebce39283776ff61530aee95a8e16a82dde473a63",
-      "compressed_layer_bytes": 440298459
+      "compressed_layer_bytes": 440298459,
+      "material_owner": "shared/build-base-images"
     },
     {
       "id": "node-runtime",
@@ -37,7 +39,8 @@
       "manifest_digest": "sha256:b64fccfbcd1ae10d11b969a868b50e1c2530a7054813d5cdea04ac3bce551697",
       "reference": "docker.io/library/node@sha256:b64fccfbcd1ae10d11b969a868b50e1c2530a7054813d5cdea04ac3bce551697",
       "config_digest": "sha256:bbc51c187ec813fd7c6a49afd22c15efdfe969b8c3a9a9cd49193c8a03908984",
-      "compressed_layer_bytes": 82457764
+      "compressed_layer_bytes": 82457764,
+      "material_owner": "shared/build-base-images"
     },
     {
       "id": "postgresql",
@@ -48,7 +51,8 @@
       "manifest_digest": "sha256:0377e72c5289ed2f98cf61b1a9c2db9eb9d300317fe14244492fbc94343b3d04",
       "reference": "docker.io/library/postgres@sha256:0377e72c5289ed2f98cf61b1a9c2db9eb9d300317fe14244492fbc94343b3d04",
       "config_digest": "sha256:662db3da228c2ea2649b3ae04db4b4479e85fea5979f6a917a7f6d5cb1e7ec39",
-      "compressed_layer_bytes": 162473560
+      "compressed_layer_bytes": 162473560,
+      "material_owner": "components/data-platform/postgresql"
     },
     {
       "id": "redis",
@@ -59,7 +63,8 @@
       "manifest_digest": "sha256:7ef5b5cec96495a04ca7feff88a9492efeab8053fb284d24bdd73344c9245a48",
       "reference": "docker.io/library/redis@sha256:7ef5b5cec96495a04ca7feff88a9492efeab8053fb284d24bdd73344c9245a48",
       "config_digest": "sha256:a73640c005662e082bdc32a10214f2b07262465965c98456d24bd2569593ccaa",
-      "compressed_layer_bytes": 55556212
+      "compressed_layer_bytes": 55556212,
+      "material_owner": "components/data-platform/redis"
     },
     {
       "id": "rabbitmq",
@@ -70,7 +75,8 @@
       "manifest_digest": "sha256:f50f1cbbec73032d248d516b043a6dd334302b571d71b68486e7b32a86efb45d",
       "reference": "docker.io/library/rabbitmq@sha256:f50f1cbbec73032d248d516b043a6dd334302b571d71b68486e7b32a86efb45d",
       "config_digest": "sha256:b9a4153f3bd8189c8889680694cac71daac93c2f79dcbbc9635b2a9992095af9",
-      "compressed_layer_bytes": 120965519
+      "compressed_layer_bytes": 120965519,
+      "material_owner": "components/messaging-platform/rabbitmq"
     },
     {
       "id": "traefik",
@@ -81,7 +87,8 @@
       "manifest_digest": "sha256:3429c14149401de2ac82fc72ddc6a92642332b90deb3012301ff211b9d2d0f18",
       "reference": "docker.io/library/traefik@sha256:3429c14149401de2ac82fc72ddc6a92642332b90deb3012301ff211b9d2d0f18",
       "config_digest": "sha256:f9309349d2c1477b15d04728f38882ba2e9a50b7f76729541121a7ee60d53490",
-      "compressed_layer_bytes": 55209973
+      "compressed_layer_bytes": 55209973,
+      "material_owner": "components/ingress-platform/traefik"
     },
     {
       "id": "haproxy",
@@ -92,7 +99,8 @@
       "manifest_digest": "sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272",
       "reference": "docker.io/library/haproxy@sha256:5924fd69580b75444653595c750080fdde968097baaba62b8cade154511a0272",
       "config_digest": "sha256:c6f9accb39104d084a2e8012cdfc52f2a69db18790bf04e981cd6bbc8ea7c624",
-      "compressed_layer_bytes": 47180455
+      "compressed_layer_bytes": 47180455,
+      "material_owner": "host/entry"
     },
     {
       "id": "casdoor",
@@ -103,7 +111,8 @@
       "manifest_digest": "sha256:bf84c727d59dff39415414b6fbf00542fbe216567e21401099f5e6baee2460d9",
       "reference": "docker.io/casbin/casdoor@sha256:bf84c727d59dff39415414b6fbf00542fbe216567e21401099f5e6baee2460d9",
       "config_digest": "sha256:6b629ef5e999344501dcfd0f8134201f340c4774abe0cbc6902b7cde74e2571a",
-      "compressed_layer_bytes": 54304896
+      "compressed_layer_bytes": 54304896,
+      "material_owner": "components/app-platform/auth-app/casdoor"
     },
     {
       "id": "elasticsearch",
@@ -114,7 +123,8 @@
       "manifest_digest": "sha256:33178ff49e06da93e3c51c5d87401b26e7a6dea0ef9bb26539cfddc46478b420",
       "reference": "docker.elastic.co/elasticsearch/elasticsearch@sha256:33178ff49e06da93e3c51c5d87401b26e7a6dea0ef9bb26539cfddc46478b420",
       "config_digest": "sha256:c878d44bd2768af2728b915e8a06bec63185f11bee13de22d73a452b19dcfe4d",
-      "compressed_layer_bytes": 921813947
+      "compressed_layer_bytes": 921813947,
+      "material_owner": "components/data-platform/elk"
     },
     {
       "id": "kibana",
@@ -125,7 +135,8 @@
       "manifest_digest": "sha256:d84abcfe9c715adc4f507eb0e28b3d9d3ee153b20645fbcbb7838a0dc4f98dac",
       "reference": "docker.elastic.co/kibana/kibana@sha256:d84abcfe9c715adc4f507eb0e28b3d9d3ee153b20645fbcbb7838a0dc4f98dac",
       "config_digest": "sha256:b661f0e93eae1f7f1d5bc846c1af61b3b11612f94e0a1dc3463c8f0a1b18326c",
-      "compressed_layer_bytes": 581589781
+      "compressed_layer_bytes": 581589781,
+      "material_owner": "components/data-platform/elk"
     },
     {
       "id": "logstash",
@@ -136,7 +147,8 @@
       "manifest_digest": "sha256:d199a24727742f0433f99ed38b00165f767cffb23c2efffb32777c05ecdcc691",
       "reference": "docker.elastic.co/logstash/logstash@sha256:d199a24727742f0433f99ed38b00165f767cffb23c2efffb32777c05ecdcc691",
       "config_digest": "sha256:0551b044ef90514e3a3f2335a84ea43f5d2153df9e1bb06cd0f3c5ce1cbaf605",
-      "compressed_layer_bytes": 551473170
+      "compressed_layer_bytes": 551473170,
+      "material_owner": "components/data-platform/elk"
     },
     {
       "id": "aistor",
@@ -147,7 +159,8 @@
       "manifest_digest": "sha256:a94e1fe399bd050fe6d6148839597a4995350c0e62c9e83f0cec8b5630ed0a1e",
       "reference": "quay.io/minio/aistor/minio@sha256:a94e1fe399bd050fe6d6148839597a4995350c0e62c9e83f0cec8b5630ed0a1e",
       "config_digest": "sha256:8eb662ab1596b09c5b1f2e9a7cc01a9d72c2b6b6481e53ef8ab5a73687975857",
-      "compressed_layer_bytes": 130646512
+      "compressed_layer_bytes": 130646512,
+      "material_owner": "components/data-platform/object-storage"
     },
     {
       "id": "mongodb",
@@ -158,7 +171,8 @@
       "manifest_digest": "sha256:17148334f6b0a4fad09ad70f6449cf4d0330bbf49469b6dff4338123a5f7bcbf",
       "reference": "docker.io/library/mongo@sha256:17148334f6b0a4fad09ad70f6449cf4d0330bbf49469b6dff4338123a5f7bcbf",
       "config_digest": "sha256:0f6605a5a60504880cea7b4dd646dbfa18f297b2586c747f61d55c61f5128e1a",
-      "compressed_layer_bytes": 371904136
+      "compressed_layer_bytes": 371904136,
+      "material_owner": "components/data-platform/mongodb"
     },
     {
       "id": "neo4j",
@@ -169,7 +183,8 @@
       "manifest_digest": "sha256:5ed9ae1dc7119bea322d4f486b9c374a2250f5140d78be8c709da1e25435a37f",
       "reference": "docker.io/library/neo4j@sha256:5ed9ae1dc7119bea322d4f486b9c374a2250f5140d78be8c709da1e25435a37f",
       "config_digest": "sha256:f6c218c106ade5430cc3f8fa385a13beac9bd75ea037114d2e92d7269a10fb10",
-      "compressed_layer_bytes": 407982626
+      "compressed_layer_bytes": 407982626,
+      "material_owner": "components/data-platform/neo4j"
     },
     {
       "id": "pgadmin",
@@ -180,7 +195,8 @@
       "manifest_digest": "sha256:33eb7d070ee7500d1513453773f61df1256fdea08257d4a3f4aebd8cf1cc87cf",
       "reference": "docker.io/dpage/pgadmin4@sha256:33eb7d070ee7500d1513453773f61df1256fdea08257d4a3f4aebd8cf1cc87cf",
       "config_digest": "sha256:f50f50cb2eda23412f7cddf0a7a4f2a4046f583f4f411d87d8b06c0bec8ae0a1",
-      "compressed_layer_bytes": 184965816
+      "compressed_layer_bytes": 184965816,
+      "material_owner": "components/ops-platform/pgadmin"
     },
     {
       "id": "redisinsight",
@@ -191,7 +207,8 @@
       "manifest_digest": "sha256:0131987fd5fefe3828ed33666f9742bd071b729f5a95cf923c593c14a8995c2c",
       "reference": "docker.io/redis/redisinsight@sha256:0131987fd5fefe3828ed33666f9742bd071b729f5a95cf923c593c14a8995c2c",
       "config_digest": "sha256:3e9a2017a4d4dfc36bec418245a88180970f09785c08ce840117b3518a850c86",
-      "compressed_layer_bytes": 110610577
+      "compressed_layer_bytes": 110610577,
+      "material_owner": "components/ops-platform/redisinsight"
     },
     {
       "id": "flower",
@@ -202,7 +219,8 @@
       "manifest_digest": "sha256:fd1e564ea8b8f02ec7224f3600216940ced5cf329d07c8c91511d0497d12d33c",
       "reference": "docker.io/mher/flower@sha256:fd1e564ea8b8f02ec7224f3600216940ced5cf329d07c8c91511d0497d12d33c",
       "config_digest": "sha256:5f443d3a04143939f1ed7021d07dfc39ce3bdbb48ec66c4684ece33eb5eead2e",
-      "compressed_layer_bytes": 31344585
+      "compressed_layer_bytes": 31344585,
+      "material_owner": "components/ops-platform/flower"
     },
     {
       "id": "text-embeddings-inference",
@@ -213,7 +231,8 @@
       "manifest_digest": "sha256:8419f533857b503ebf6ec292a95d4f1cf9c0464ac8b8abeef39518cf110e5726",
       "reference": "ghcr.io/huggingface/text-embeddings-inference@sha256:8419f533857b503ebf6ec292a95d4f1cf9c0464ac8b8abeef39518cf110e5726",
       "config_digest": "sha256:8ce0330d3eae11511627a5b3eeef7001f76970ad3633d771147b57915c021dd7",
-      "compressed_layer_bytes": 239307989
+      "compressed_layer_bytes": 239307989,
+      "material_owner": "components/data-platform/text-embeddings"
     },
     {
       "id": "ragflow",
@@ -224,7 +243,8 @@
       "manifest_digest": "sha256:e6b3f1a185c0a70abb3a72e1092415df8c5c6a4fae0089545554f2936c4b27ab",
       "reference": "docker.io/infiniflow/ragflow@sha256:e6b3f1a185c0a70abb3a72e1092415df8c5c6a4fae0089545554f2936c4b27ab",
       "config_digest": "sha256:e0e1d9ec4af666710a35f3f7e1e3fe6b450b6a2cfe52851f107fc5f5967bbe8f",
-      "compressed_layer_bytes": 3799637237
+      "compressed_layer_bytes": 3799637237,
+      "material_owner": "components/data-platform/ragflow"
     },
     {
       "id": "infinity",
@@ -235,7 +255,8 @@
       "manifest_digest": "sha256:6640409359e6d515287d6255657ee78a86fdce996196fbb4d371a2e39243309f",
       "reference": "docker.io/infiniflow/infinity@sha256:6640409359e6d515287d6255657ee78a86fdce996196fbb4d371a2e39243309f",
       "config_digest": "sha256:34d7607d8966f4598735df886beb51a8c9ac7a7217be4ca0a8fbd5d78270214f",
-      "compressed_layer_bytes": 322516119
+      "compressed_layer_bytes": 322516119,
+      "material_owner": "components/data-platform/infinity"
     },
     {
       "id": "valkey",
@@ -246,7 +267,8 @@
       "manifest_digest": "sha256:0f62bfecc0b713dc2111af3ee307d5cd53c6877b7a112c6143c4de20f1325e4c",
       "reference": "docker.io/valkey/valkey@sha256:0f62bfecc0b713dc2111af3ee307d5cd53c6877b7a112c6143c4de20f1325e4c",
       "config_digest": "sha256:2a9928a7ce4e0e57fd0cc5b35ffe1f3cbc3c028db902461fbee4e2b6c6b1f375",
-      "compressed_layer_bytes": 43449746
+      "compressed_layer_bytes": 43449746,
+      "material_owner": "components/data-platform/valkey"
     },
     {
       "id": "onlyoffice",
@@ -257,7 +279,8 @@
       "manifest_digest": "sha256:8c114db7648a1654828d33e1f9f3b18e97c4caae6707d34bf04d793d260f7e67",
       "reference": "docker.io/onlyoffice/documentserver@sha256:8c114db7648a1654828d33e1f9f3b18e97c4caae6707d34bf04d793d260f7e67",
       "config_digest": "sha256:4934c364adccc2898d0998951fb09d455496454de417cce2a74b7b1e808daab0",
-      "compressed_layer_bytes": 1267193468
+      "compressed_layer_bytes": 1267193468,
+      "material_owner": "components/app-platform/knowledge-app/onlyoffice"
     },
     {
       "id": "local-path",
@@ -268,7 +291,8 @@
       "manifest_digest": "sha256:c3f2c60ee2490eb83ac00101d7e239fd8c20a5b8b4038e2dfc36a7e66fe99c08",
       "reference": "docker.io/rancher/local-path-provisioner@sha256:c3f2c60ee2490eb83ac00101d7e239fd8c20a5b8b4038e2dfc36a7e66fe99c08",
       "config_digest": "sha256:683316f41426e4fc774e1cd7388e3bcbd5d4d63837753a789d929d64365c399a",
-      "compressed_layer_bytes": 15059604
+      "compressed_layer_bytes": 15059604,
+      "material_owner": "components/foundations/storage"
     },
     {
       "id": "volume-helper",
@@ -279,7 +303,8 @@
       "manifest_digest": "sha256:66a6306db78bf2dbf3487f293aa8d6990d8e506fdffab9cc43fe422becf886e4",
       "reference": "docker.io/library/busybox@sha256:66a6306db78bf2dbf3487f293aa8d6990d8e506fdffab9cc43fe422becf886e4",
       "config_digest": "sha256:30ecbe1509090b38ef3260f3609d64d8261230464eaa4d235901db496e9647fb",
-      "compressed_layer_bytes": 2211514
+      "compressed_layer_bytes": 2211514,
+      "material_owner": "components/foundations/storage"
     },
     {
       "id": "calico-node",
@@ -290,7 +315,8 @@
       "manifest_digest": "sha256:d7a9b58573b165caa8128d2735a19b788434547064b2b4af2abf68cea24f7ec3",
       "reference": "quay.io/calico/node@sha256:d7a9b58573b165caa8128d2735a19b788434547064b2b4af2abf68cea24f7ec3",
       "config_digest": "sha256:c5f89ea6b7611095794794d81aef1b36e0cb7c322800cf707be2f42e45a3b7e1",
-      "compressed_layer_bytes": 123386474
+      "compressed_layer_bytes": 123386474,
+      "material_owner": "cluster/calico"
     },
     {
       "id": "calico-cni",
@@ -301,7 +327,8 @@
       "manifest_digest": "sha256:8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a",
       "reference": "quay.io/calico/cni@sha256:8de23af2a36514e5027cf3f8577be61c577ae21664d19bd726bb9ccedb9e0d5a",
       "config_digest": "sha256:cf5fc378d71fb69befb3fb1ac6ffb3f24354ee45a1b8504e415937e46ffb98ab",
-      "compressed_layer_bytes": 69864288
+      "compressed_layer_bytes": 69864288,
+      "material_owner": "cluster/calico"
     },
     {
       "id": "calico-kube-controllers",
@@ -312,7 +339,8 @@
       "manifest_digest": "sha256:f241490840083743e747389af8d5067c961370bd5e2e2af6538db2f7e183f60b",
       "reference": "quay.io/calico/kube-controllers@sha256:f241490840083743e747389af8d5067c961370bd5e2e2af6538db2f7e183f60b",
       "config_digest": "sha256:81a30a7a240377576c569956df911285a92366ade3dd19e4ea5e73cf868d29db",
-      "compressed_layer_bytes": 63187894
+      "compressed_layer_bytes": 63187894,
+      "material_owner": "cluster/calico"
     },
     {
       "id": "source-controller",
@@ -323,7 +351,8 @@
       "manifest_digest": "sha256:b2ac269f9d13d82514bcbf0e7057a4ae1d98504058b9353cead7e2452a64384f",
       "reference": "ghcr.io/fluxcd/source-controller@sha256:b2ac269f9d13d82514bcbf0e7057a4ae1d98504058b9353cead7e2452a64384f",
       "config_digest": "sha256:96e6749ab0ea60bfa234c0657cc2f1bd1cab5cc9298b43cb5b14bd94ccdd4382",
-      "compressed_layer_bytes": 64767251
+      "compressed_layer_bytes": 64767251,
+      "material_owner": "shared/flux"
     },
     {
       "id": "kustomize-controller",
@@ -334,7 +363,8 @@
       "manifest_digest": "sha256:ed11ebded23c9e9fe475f7d54b08cc34697e8f01bcd5cfd144fd5aef7b5d8f0d",
       "reference": "ghcr.io/fluxcd/kustomize-controller@sha256:ed11ebded23c9e9fe475f7d54b08cc34697e8f01bcd5cfd144fd5aef7b5d8f0d",
       "config_digest": "sha256:6c9ef5088038e766fac39db9e29a3dbe71828604223daabd0e1868c83c56bbd7",
-      "compressed_layer_bytes": 71150753
+      "compressed_layer_bytes": 71150753,
+      "material_owner": "shared/flux"
     },
     {
       "id": "helm-controller",
@@ -345,7 +375,8 @@
       "manifest_digest": "sha256:2ba739b5c0df833dcd463fc1984673f506a5fd0aff64c2f8b28d528b0796f066",
       "reference": "ghcr.io/fluxcd/helm-controller@sha256:2ba739b5c0df833dcd463fc1984673f506a5fd0aff64c2f8b28d528b0796f066",
       "config_digest": "sha256:bdc659f02725008df3fca2ee870180eb819ace8fde1b62f5af6d2bad4f721cab",
-      "compressed_layer_bytes": 51456258
+      "compressed_layer_bytes": 51456258,
+      "material_owner": "shared/flux"
     },
     {
       "id": "notification-controller",
@@ -356,7 +387,8 @@
       "manifest_digest": "sha256:69e484e937549694240d5754541feed0993a162000dbc07e7e262b9f41340348",
       "reference": "ghcr.io/fluxcd/notification-controller@sha256:69e484e937549694240d5754541feed0993a162000dbc07e7e262b9f41340348",
       "config_digest": "sha256:7f4e4a4b9729f963713992b2712fa7201cdc4fd2769a61fd7a9be90bc57733e0",
-      "compressed_layer_bytes": 51976441
+      "compressed_layer_bytes": 51976441,
+      "material_owner": "shared/flux"
     },
     {
       "id": "harbor-core",
@@ -367,7 +399,8 @@
       "manifest_digest": "sha256:d7b780d23721a000f0fb8e181add6675eafa336de5d033b77fd7da0c171ff7f7",
       "reference": "docker.io/goharbor/harbor-core@sha256:d7b780d23721a000f0fb8e181add6675eafa336de5d033b77fd7da0c171ff7f7",
       "config_digest": "sha256:06396e2c823b582ae3da9b8d471bd250e4934d10b864f6c627546707af32cefc",
-      "compressed_layer_bytes": 87245406
+      "compressed_layer_bytes": 87245406,
+      "material_owner": "registry/harbor"
     },
     {
       "id": "harbor-portal",
@@ -378,7 +411,8 @@
       "manifest_digest": "sha256:b811b67f7a7f6f1614e4bdf7478b207d13e8aa3f815ff6ad84f216a5098d213d",
       "reference": "docker.io/goharbor/harbor-portal@sha256:b811b67f7a7f6f1614e4bdf7478b207d13e8aa3f815ff6ad84f216a5098d213d",
       "config_digest": "sha256:b04a2d729c562424c5a6501c24cb96c5e822e7751384ffae0bc20caabb26ca03",
-      "compressed_layer_bytes": 72895848
+      "compressed_layer_bytes": 72895848,
+      "material_owner": "registry/harbor"
     },
     {
       "id": "harbor-jobservice",
@@ -389,7 +423,8 @@
       "manifest_digest": "sha256:f71a4452a095bcd2a8f0683648a3ae28415432df87ccfb00ec7625f3e340a598",
       "reference": "docker.io/goharbor/harbor-jobservice@sha256:f71a4452a095bcd2a8f0683648a3ae28415432df87ccfb00ec7625f3e340a598",
       "config_digest": "sha256:460b146d96ede9450247c4238ce515ce7558c6f5e7ae5b76cf0cb166c2e155bb",
-      "compressed_layer_bytes": 98798108
+      "compressed_layer_bytes": 98798108,
+      "material_owner": "registry/harbor"
     },
     {
       "id": "harbor-db",
@@ -400,7 +435,8 @@
       "manifest_digest": "sha256:5ebfb345b33d673fa8483ffc997013113b7d14ea56abfa65cfcb621b4acf3039",
       "reference": "docker.io/goharbor/harbor-db@sha256:5ebfb345b33d673fa8483ffc997013113b7d14ea56abfa65cfcb621b4acf3039",
       "config_digest": "sha256:8af219aa23d91e1d9778532981b1a4ff5b022ce01e06e42207782d84341552d3",
-      "compressed_layer_bytes": 139639204
+      "compressed_layer_bytes": 139639204,
+      "material_owner": "registry/harbor"
     },
     {
       "id": "harbor-log",
@@ -411,7 +447,8 @@
       "manifest_digest": "sha256:dad88aa27590f7b7018533f500bd2bb43e64144f5d4abe0e5f23fba88d36332c",
       "reference": "docker.io/goharbor/harbor-log@sha256:dad88aa27590f7b7018533f500bd2bb43e64144f5d4abe0e5f23fba88d36332c",
       "config_digest": "sha256:53002f96b6d8f6ae80e25a7bba9fa0c23c7e05fd3c37aeb2e39aeaa975400717",
-      "compressed_layer_bytes": 79384962
+      "compressed_layer_bytes": 79384962,
+      "material_owner": "registry/harbor"
     },
     {
       "id": "harbor-registryctl",
@@ -422,7 +459,8 @@
       "manifest_digest": "sha256:223d5cb49d5dbf0ba4ae022e7dd9775fa459904112dc12084d3aaa36c1408362",
       "reference": "docker.io/goharbor/harbor-registryctl@sha256:223d5cb49d5dbf0ba4ae022e7dd9775fa459904112dc12084d3aaa36c1408362",
       "config_digest": "sha256:8b1493c7a7d9da504ca2f89273823e107110967d6b6d1f5982cc6444d59ae2ae",
-      "compressed_layer_bytes": 90766575
+      "compressed_layer_bytes": 90766575,
+      "material_owner": "registry/harbor"
     },
     {
       "id": "harbor-exporter",
@@ -433,7 +471,8 @@
       "manifest_digest": "sha256:e1b0a248f61aad5084c5d1612d5f1da89f99c23ce743eaf8cba913d6d00c0547",
       "reference": "docker.io/goharbor/harbor-exporter@sha256:e1b0a248f61aad5084c5d1612d5f1da89f99c23ce743eaf8cba913d6d00c0547",
       "config_digest": "sha256:39b7682c8b7d3b358ee94430c9bd2f0b48e801262235ed150f895be31fa1bd8d",
-      "compressed_layer_bytes": 61130040
+      "compressed_layer_bytes": 61130040,
+      "material_owner": "registry/harbor"
     },
     {
       "id": "registry-photon",
@@ -444,7 +483,8 @@
       "manifest_digest": "sha256:c4ebef61ceb50a3d8bc21d149bc280422db20a1e69df317b64b74098c3615855",
       "reference": "docker.io/goharbor/registry-photon@sha256:c4ebef61ceb50a3d8bc21d149bc280422db20a1e69df317b64b74098c3615855",
       "config_digest": "sha256:b702cdd9489d574d8cbbb6b6f5523e375b529677197799696e376e8cae04c240",
-      "compressed_layer_bytes": 54547407
+      "compressed_layer_bytes": 54547407,
+      "material_owner": "registry/harbor"
     },
     {
       "id": "valkey-photon",
@@ -455,7 +495,8 @@
       "manifest_digest": "sha256:7337783e8148f01a25b113f5c7b1d640f78b1860fcaf80a33d0dbb294f7b99d0",
       "reference": "docker.io/goharbor/valkey-photon@sha256:7337783e8148f01a25b113f5c7b1d640f78b1860fcaf80a33d0dbb294f7b99d0",
       "config_digest": "sha256:e7847c15d1eb52fb405849eba57cdcba73c1cb3b96a3d014d1a7cf6011f1faf1",
-      "compressed_layer_bytes": 85482025
+      "compressed_layer_bytes": 85482025,
+      "material_owner": "registry/harbor"
     },
     {
       "id": "nginx-photon",
@@ -466,7 +507,8 @@
       "manifest_digest": "sha256:0ccc1eca228ecea120d7ad9e4386b8e86ced200212f00060a9abc753dbe7f17f",
       "reference": "docker.io/goharbor/nginx-photon@sha256:0ccc1eca228ecea120d7ad9e4386b8e86ced200212f00060a9abc753dbe7f17f",
       "config_digest": "sha256:8376dcaf5c2f99606da6da6cec4cb611b692e8cea67d86b19c01ef8352e44115",
-      "compressed_layer_bytes": 70695793
+      "compressed_layer_bytes": 70695793,
+      "material_owner": "registry/harbor"
     },
     {
       "id": "trivy-adapter-photon",
@@ -477,7 +519,8 @@
       "manifest_digest": "sha256:215c07b71c37fc7fc16e02d9185d936dcb8884a80e810817c2cd058bbd7c4e98",
       "reference": "docker.io/goharbor/trivy-adapter-photon@sha256:215c07b71c37fc7fc16e02d9185d936dcb8884a80e810817c2cd058bbd7c4e98",
       "config_digest": "sha256:00f2535bcde46ebeaa3b260601841a2ebc493b940a311e77dc3010e6b94aa4e2",
-      "compressed_layer_bytes": 164323525
+      "compressed_layer_bytes": 164323525,
+      "material_owner": "registry/harbor"
     },
     {
       "id": "prepare",
@@ -488,7 +531,8 @@
       "manifest_digest": "sha256:5b9428fb649b3a0e0fe497189a880d7c9f1281538b85de9ad377cb524e427bd5",
       "reference": "docker.io/goharbor/prepare@sha256:5b9428fb649b3a0e0fe497189a880d7c9f1281538b85de9ad377cb524e427bd5",
       "config_digest": "sha256:55b74fd32bf25332787cb5e8196d6b084313efc0a5e4555348f19b39b6265fc4",
-      "compressed_layer_bytes": 131254938
+      "compressed_layer_bytes": 131254938,
+      "material_owner": "registry/harbor"
     },
     {
       "id": "kind-base",
@@ -499,7 +543,8 @@
       "manifest_digest": "sha256:49207c7d517ca84ea87c880d314e2ebf25ae7f5dc85f54238f543a8b6681970f",
       "reference": "docker.io/kindest/base@sha256:49207c7d517ca84ea87c880d314e2ebf25ae7f5dc85f54238f543a8b6681970f",
       "config_digest": "sha256:816692b104dfc1ccc2bf183a2c61bf5d40c8fbc232dd5c71210f4d71f622061d",
-      "compressed_layer_bytes": 123158633
+      "compressed_layer_bytes": 123158633,
+      "material_owner": "cluster/kind"
     },
     {
       "id": "kindnet",
@@ -510,7 +555,8 @@
       "manifest_digest": "sha256:6f2d9f57548aaca08e674bc35b2a53653cd84af18b26b1a99234d59cd5e548c2",
       "reference": "docker.io/kindest/kindnetd@sha256:6f2d9f57548aaca08e674bc35b2a53653cd84af18b26b1a99234d59cd5e548c2",
       "config_digest": "sha256:4626fe10df5b930638e6e1662143ee1c7a698de6174fdb61a8ce658e688be2cd",
-      "compressed_layer_bytes": 39740316
+      "compressed_layer_bytes": 39740316,
+      "material_owner": "cluster/kind"
     },
     {
       "id": "kind-storage",
@@ -521,7 +567,8 @@
       "manifest_digest": "sha256:77ab4466418c90f8a651cdec58ef864977eeb755c3ec83791c1d4b0d9259c938",
       "reference": "docker.io/kindest/local-path-provisioner@sha256:77ab4466418c90f8a651cdec58ef864977eeb755c3ec83791c1d4b0d9259c938",
       "config_digest": "sha256:c82008e2cd0186ef96bfd05d6b49d3286768fae5bd7a961f70bd485a3785c006",
-      "compressed_layer_bytes": 15859841
+      "compressed_layer_bytes": 15859841,
+      "material_owner": "cluster/kind"
     },
     {
       "id": "kind-storage-helper",
@@ -532,7 +579,8 @@
       "manifest_digest": "sha256:d65166b93311a307a87b6f72aee7f6bdcf7d212df174c95495d44faba780a273",
       "reference": "docker.io/kindest/local-path-helper@sha256:d65166b93311a307a87b6f72aee7f6bdcf7d212df174c95495d44faba780a273",
       "config_digest": "sha256:19aa6a21b42cb57f6f76e0f3584d7dfec241a3f3568cd6590a2967c28d9cdce3",
-      "compressed_layer_bytes": 2866307
+      "compressed_layer_bytes": 2866307,
+      "material_owner": "cluster/kind"
     },
     {
       "id": "kind-pause",
@@ -543,7 +591,8 @@
       "manifest_digest": "sha256:7c38f24774e3cbd906d2d33c38354ccf787635581c122965132c9bd309754d4a",
       "reference": "registry.k8s.io/pause@sha256:7c38f24774e3cbd906d2d33c38354ccf787635581c122965132c9bd309754d4a",
       "config_digest": "sha256:873ed75102791e5b0b8a7fcd41606c92fcec98d56d05ead4ac5131650004c136",
-      "compressed_layer_bytes": 316581
+      "compressed_layer_bytes": 316581,
+      "material_owner": "cluster/kind"
     },
     {
       "id": "kube-apiserver",
@@ -554,7 +603,8 @@
       "manifest_digest": "sha256:78487f7b4b1a588d9630f758f6677895eabe00d93c4cbbea3d6b06e5f476a371",
       "reference": "registry.k8s.io/kube-apiserver@sha256:78487f7b4b1a588d9630f758f6677895eabe00d93c4cbbea3d6b06e5f476a371",
       "config_digest": "sha256:d350c55cb17bb41eb03c6596f063463a94a68c7dccd909b5d920f40576905a1d",
-      "compressed_layer_bytes": 29835125
+      "compressed_layer_bytes": 29835125,
+      "material_owner": "cluster/kubernetes"
     },
     {
       "id": "kube-controller-manager",
@@ -565,7 +615,8 @@
       "manifest_digest": "sha256:a7b63e85c7914ff6d49d97004a09b8a469efa6fe41f58d2c1faa2606ed8cb742",
       "reference": "registry.k8s.io/kube-controller-manager@sha256:a7b63e85c7914ff6d49d97004a09b8a469efa6fe41f58d2c1faa2606ed8cb742",
       "config_digest": "sha256:cf2bbfca0a634248428aefadb5f532c8cfadbf67ff728eb1d206bfdf966c9f28",
-      "compressed_layer_bytes": 26484971
+      "compressed_layer_bytes": 26484971,
+      "material_owner": "cluster/kubernetes"
     },
     {
       "id": "kube-scheduler",
@@ -576,7 +627,8 @@
       "manifest_digest": "sha256:249bcbdb401e4882c125e5b6958aab09954ea59d06289af380e60dd58115405e",
       "reference": "registry.k8s.io/kube-scheduler@sha256:249bcbdb401e4882c125e5b6958aab09954ea59d06289af380e60dd58115405e",
       "config_digest": "sha256:137b99d7bbba00a26374e3d8018ea318ff0d9de86d46bf16f2632364676826b3",
-      "compressed_layer_bytes": 20504953
+      "compressed_layer_bytes": 20504953,
+      "material_owner": "cluster/kubernetes"
     },
     {
       "id": "kube-proxy",
@@ -587,7 +639,8 @@
       "manifest_digest": "sha256:54f6c76e0413be01177617704c8b6e2c291a4ec2226a944216b62d5ac1d625df",
       "reference": "registry.k8s.io/kube-proxy@sha256:54f6c76e0413be01177617704c8b6e2c291a4ec2226a944216b62d5ac1d625df",
       "config_digest": "sha256:a83c93aedd6acfab8933b1e95ad2f47ba024acb3f247919688f075cc992e23e3",
-      "compressed_layer_bytes": 30072808
+      "compressed_layer_bytes": 30072808,
+      "material_owner": "cluster/kubernetes"
     },
     {
       "id": "coredns",
@@ -598,7 +651,8 @@
       "manifest_digest": "sha256:fd5079792b93909db3adefa91e41c3995455013394f0197c7346786ae19079fc",
       "reference": "registry.k8s.io/coredns/coredns@sha256:fd5079792b93909db3adefa91e41c3995455013394f0197c7346786ae19079fc",
       "config_digest": "sha256:38667dd9be96c17227adde456e33ad701bdbdc5c6db0272a1d33a929bd8e62d6",
-      "compressed_layer_bytes": 23249439
+      "compressed_layer_bytes": 23249439,
+      "material_owner": "cluster/kubernetes"
     },
     {
       "id": "kubeadm-pause",
@@ -609,7 +663,8 @@
       "manifest_digest": "sha256:412c4a7219cb8a299a37337f3d87810c5340095322e15594a1637785adad0f17",
       "reference": "registry.k8s.io/pause@sha256:412c4a7219cb8a299a37337f3d87810c5340095322e15594a1637785adad0f17",
       "config_digest": "sha256:4a83b15d3ecfe0d916b2d0a7991bc2854a629b8097017c2ee1ff65b30ae4c07c",
-      "compressed_layer_bytes": 316650
+      "compressed_layer_bytes": 316650,
+      "material_owner": "cluster/kubernetes"
     },
     {
       "id": "etcd",
@@ -620,7 +675,8 @@
       "manifest_digest": "sha256:aa2b41e3f99c9a337b82f687875a63c5119e6d39bc43fc76b6c40a96f55cf391",
       "reference": "registry.k8s.io/etcd@sha256:aa2b41e3f99c9a337b82f687875a63c5119e6d39bc43fc76b6c40a96f55cf391",
       "config_digest": "sha256:ee85eb1f0edd27fd11e3bed20f21a4001ad63107eb2f8d489429648a799c0e86",
-      "compressed_layer_bytes": 22877852
+      "compressed_layer_bytes": 22877852,
+      "material_owner": "cluster/kubernetes"
     },
     {
       "id": "skopeo",
@@ -633,7 +689,8 @@
       "config_digest": "sha256:5ef1074715887af7ae6fc9c61dd266b1dbcc574a102afe0f3293efa0e1cd579a",
       "compressed_layer_bytes": 88878511,
       "runtime_version": "1.22.3",
-      "selection_note": "Official stable image resolved to digest; version observed by running --version. Upstream source latest 1.24.1 has no matching image tag."
+      "selection_note": "Official stable image resolved to digest; version observed by running --version. Upstream source latest 1.24.1 has no matching image tag.",
+      "material_owner": "shared/tools"
     },
     {
       "id": "aistor-mc",
@@ -644,7 +701,8 @@
       "manifest_digest": "sha256:d108717a4a6d684586f392406caca8d57f94d9e5acb515db61bca2da72d6f2ba",
       "reference": "quay.io/minio/aistor/mc@sha256:d108717a4a6d684586f392406caca8d57f94d9e5acb515db61bca2da72d6f2ba",
       "config_digest": "sha256:ae5675e808c6f98730da8e48155548051b9a5cd273115e572fc9ebeeb83af9b7",
-      "compressed_layer_bytes": 39509667
+      "compressed_layer_bytes": 39509667,
+      "material_owner": "components/data-platform/object-storage"
     },
     {
       "id": "fluent-bit",
@@ -655,8 +713,10 @@
       "manifest_digest": "sha256:07bd537485182b73af016c67dae99521e40fdf50922b39912f378c5befb8e3b1",
       "reference": "cr.fluentbit.io/fluent/fluent-bit@sha256:07bd537485182b73af016c67dae99521e40fdf50922b39912f378c5befb8e3b1",
       "config_digest": "sha256:38255b6f6ce728ddf73d8238dfa939a3d98ed7e3d1436b7bc94ea2bbca7950b9",
-      "compressed_layer_bytes": 53916089
+      "compressed_layer_bytes": 53916089,
+      "material_owner": "components/data-platform/elk"
     }
   ],
-  "offline_ready": false
+  "offline_ready": false,
+  "material_layout": "component-owned-v1"
 }

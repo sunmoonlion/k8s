@@ -15,7 +15,7 @@
         that:
           - not ansible_check_mode
           - package.kind == 'package'
-          - package.path is match('^packages/flux-[0-9.]+-linux-amd64.tar.gz$')
+          - package.path is match('^shared/flux/packages/flux-[0-9.]+-linux-amd64.tar.gz$')
           - package.version is match('^v[0-9.]+$')
           - package.sha256 is match('^[a-f0-9]{64}$')
     - name: Verify the complete local CLI package

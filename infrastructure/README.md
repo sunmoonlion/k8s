@@ -2,6 +2,8 @@
 
 日常任务从[维护导航](../docs/README.md)选择；架构见[职责与约束](../docs/platform-kind-v1/architecture.md)，已验证范围与缺项见[验收边界](../docs/platform-kind-v1/verification.md)。
 
+物料按组件归属查看与准备见[artifacts](artifacts/README.md)，应用构建/部署见[applications](applications/README.md)；日常可先运行`make -C infrastructure material-inventory`定位所需文件与Harbor目标。
+
 ## 运行前提
 
 在五仓并列的`platform-kind-v1/k8s`根目录执行本文命令。已有宿主需要WSL Ubuntu、Docker、systemd、OpenSSL、jq、uv、宿主Python及可用的非交互sudo；新数据盘的首次管理员附盘由Windows侧完成。当前没有从空Windows主机开始的完整一键引导。

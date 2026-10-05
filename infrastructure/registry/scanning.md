@@ -1,6 +1,6 @@
 # 扫描器与漏洞数据库维护
 
-入口属于[外置Harbor](README.md)。数据库是扫描情报，存物料批次`databases/`，镜像在`images/`；归档schema、大小、SHA256、内文件和更新时间以[文件锁](../artifacts/files.lock.json)为准。
+入口属于[外置Harbor](README.md)。数据库是扫描情报，存物料批次`registry/harbor-scanner/databases/`，启动镜像在`registry/harbor/packages/`的官方离线包内；归档schema、大小、SHA256、内文件和更新时间以[文件锁](../artifacts/files.lock.json)为准。
 
 ## 准备和实际检查
 

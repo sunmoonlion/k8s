@@ -9,6 +9,16 @@
     artifact_lock: '{{ lookup("ansible.builtin.file", playbook_dir + "/files.lock.json") | from_json }}'
     requested_ids: '{{ artifact_ids.split(",") }}'
     selected: '{{ artifact_lock.files if artifact_ids == "all" else artifact_lock.files | selectattr("id", "in", requested_ids) | list }}'
+    cache_directories: >-
+      {% set paths = [artifact_cache_root] %}
+      {% for relative in selected | map(attribute="path") | map("dirname") | list %}
+      {% set current = namespace(path=artifact_cache_root) %}
+      {% for part in relative.split('/') %}
+      {% set current.path = current.path + '/' + part %}
+      {% set _ = paths.append(current.path) %}
+      {% endfor %}
+      {% endfor %}
+      {{ paths | unique | list | to_json }}
     planned_bytes: '{{ (cached_files.results | rejectattr("stat.exists") | map(attribute="item.size_bytes") | sum) * 2 }}'
   tasks:
     - name: Validate operation and lock identity
@@ -36,8 +46,9 @@
         that:
           - item.sha256 is match('^[a-f0-9]{64}$')
           - item.url is match('^https://')
-          - item.path is match('^(bin|packages|charts|manifests|databases|models)/[a-zA-Z0-9_.-]+$')
+          - item.path is match('^(cluster|host|registry|shared|components)/[a-z0-9-]+(/[a-z0-9-]+)*/(bin|packages|charts|manifests|databases|models)/[a-zA-Z0-9_.-]+$')
           - item.size_bytes | int > 0
+          - "'..' not in item.path.split('/')"
           - item.kind in ['binary', 'package', 'chart', 'manifest', 'database', 'model']
       loop: '{{ selected }}'
       loop_control:
@@ -48,7 +59,7 @@
         path: '{{ item }}'
         follow: false
         get_checksum: false
-      loop: '{{ [artifact_cache_root] + (selected | map(attribute="path") | map("dirname") | unique | map("regex_replace", "^", artifact_cache_root + "/") | list) }}'
+      loop: '{{ cache_directories | from_json }}'
       register: cache_paths
 
     - name: Require existing cache paths to be real directories

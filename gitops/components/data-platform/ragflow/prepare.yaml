@@ -31,7 +31,7 @@
   when: not ragflow_live_image_cached
 - name: Measure only absent locked layers without writing extracted files
   ansible.builtin.command:
-    argv: [python3, '{{ playbook_dir }}/../../gitops/components/data-platform/ragflow/image-budget.py', '{{ artifact_cache_root }}/images/ragflow-runtime-{{ ragflow_runtime_image.manifest_digest[7:] }}.tar', '{{ ragflow_runtime_image.manifest_digest }}', --node-cache]
+    argv: [python3, '{{ playbook_dir }}/../../gitops/components/data-platform/ragflow/image-budget.py', '{{ artifact_cache_root }}/{{ ragflow_runtime_image.material_owner }}/images/ragflow-runtime-{{ ragflow_runtime_image.manifest_digest[7:] }}.tar', '{{ ragflow_runtime_image.manifest_digest }}', --node-cache]
     stdin: '{{ ragflow_node_content.stdout }}'
   register: ragflow_node_budget
   changed_when: false

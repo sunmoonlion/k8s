@@ -10,9 +10,11 @@
             "manifest_digest": "sha256:35f8c3a9c0669c1a0b4fe7caf3b810435de415f9c994d28634be443a4c8807c9",
             "reference": "harbor.sunmoonai.com:30443/platform/ragflow-runtime@sha256:35f8c3a9c0669c1a0b4fe7caf3b810435de415f9c994d28634be443a4c8807c9",
             "source": "ragflow-runtime:0.27.2-nonroot-5a59a6994157fa0f",
-            "status": "resolved"
+            "status": "resolved",
+            "material_owner": "components/data-platform/ragflow"
         }
     ],
     "platform": "linux/amd64",
-    "schema_version": 1
+    "schema_version": 1,
+    "material_layout": "component-owned-v1"
 }

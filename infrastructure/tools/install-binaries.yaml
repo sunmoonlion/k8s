@@ -29,7 +29,8 @@
         quiet: true
         that:
           - item.id is match('^[a-z][a-z0-9-]*$')
-          - item.path is match('^bin/[a-zA-Z0-9_.-]+$')
+          - item.path is match('^(cluster|host|registry|shared|components)/[a-z0-9-]+(/[a-z0-9-]+)*/bin/[a-zA-Z0-9_.-]+$')
+          - "'..' not in item.path.split('/')"
           - item.sha256 is match('^[a-f0-9]{64}$')
           - item.size_bytes | int > 0
       loop: '{{ selected }}'

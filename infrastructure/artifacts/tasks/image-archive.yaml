@@ -2,7 +2,8 @@
 - name: Set deterministic archive paths
   ansible.builtin.set_fact:
     locked_archive: '{{ archive_lock.files | selectattr("id", "equalto", selected_image.id) | first }}'
-    archive_path: '{{ image_directory }}/{{ selected_image.id }}-{{ selected_image.manifest_digest[7:] }}.tar'
+    image_directory: '{{ artifact_cache_root }}/{{ selected_image.material_owner }}/images'
+    archive_path: '{{ artifact_cache_root }}/{{ selected_image.material_owner }}/images/{{ selected_image.id }}-{{ selected_image.manifest_digest[7:] }}.tar'
 
 - name: Inspect existing archive and receipt
   ansible.builtin.stat:
@@ -166,7 +167,7 @@
           - archive_identity.stat.checksum == locked_archive.sha256
           - archive_identity.stat.size == locked_archive.size_bytes
           - locked_archive.source == selected_image.reference
-          - locked_archive.path == 'images/' + (archive_path | basename)
+          - locked_archive.path == selected_image.material_owner + '/images/' + (archive_path | basename)
           - archive_identity.stat.checksum == (receipt_bytes.content | b64decode | from_json).sha256
           - archive_identity.stat.size == (receipt_bytes.content | b64decode | from_json).size_bytes
           - (receipt_bytes.content | b64decode | from_json).source == selected_image.reference

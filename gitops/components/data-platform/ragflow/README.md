@@ -14,7 +14,7 @@ S3只写ragflow-derived版本桶，不能读Info原文/管理桶；网络精确�
 
 Dockerfile取固定官方base，/root内置uv Python3.13路径与NLTK数据只做非root可读权限适配，默认UID1000；不联网安装/升级包或语料。另有一处官方db_utils.py受完整源SHA守卫的bulk写前检查：表须已存在，缺表失败，替代运行时不必要DDL；上游文件变化立即拒绝套补丁。
 
-派生image.lock.json记录原基底、Dockerfile与成品/归档不同身份，上游锁不改；平台bootstrap原生包含services-ragflow-image与services-ragflow-image-publish，固定归档存正式物料images。发布target直接调用artifacts/publish.yaml，组件关闭时跳过、不读取派生锁或发布镜像；开启时继续完整校验、容量检查及认证发布。预算按已验证归档逐层只读测展开字节，计入Docker展开/转换/最终归档与余量，不保存额外docker-save大副本。运行与探针显式用/ragflow/.venv/bin/python3。
+派生image.lock.json记录原基底、Dockerfile与成品/归档不同身份，上游锁不改；平台bootstrap原生包含services-ragflow-image与services-ragflow-image-publish，固定归档存正式物料`components/data-platform/ragflow/images`。发布target直接调用artifacts/publish.yaml，组件关闭时跳过、不读取派生锁或发布镜像；开启时继续完整校验、容量检查及认证发布。预算按已验证归档逐层只读测展开字节，计入Docker展开/转换/最终归档与余量，不保存额外docker-save大副本。运行与探针显式用/ragflow/.venv/bin/python3。
 
 ## 检查和恢复
 

@@ -25,7 +25,7 @@ Make是公开入口，Ansible编排模块，专用校验程序只处理有限输
 用户配置、实现与README同职责放置，适用于宿主/Harbor/入口/KIND/Flux/服务/应用；版本、共享环境和源码锁保持单一来源。
 
 - 共享身份/命名空间/物料根：[site](../../infrastructure/environments/kind/site.yaml)。
-- 版本与文件/镜像摘要：[artifacts](../../infrastructure/artifacts/README.md)。
+- 版本与文件/镜像摘要：[artifacts](../../infrastructure/artifacts/README.md)。物料缓存按归属→类型分类，组件归属对应gitops/components；建群、宿主、仓库和共享工具各自归属。文件path与镜像material_owner由锁维护，只读material-inventory展示对应关系，不复制一份版本配置。
 - 应用固定parent/gitlink：[sources](../../infrastructure/applications/sources.yaml)。
 - 已晋级revision/OCI digest：[flux-source](../../infrastructure/environments/kind/flux-source.yaml)。
 - 普通用户名、域名、port、资源、代次：组件config；口令与私钥不入普通配置或说明。
