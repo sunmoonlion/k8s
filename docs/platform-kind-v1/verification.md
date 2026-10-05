@@ -93,6 +93,14 @@ tpl/info公共入口在2026-10-03验证，knowledge/investment在2026-10-04验�
 
 清理后重新运行material-inventory和五个原生只读plan入口，检查结果见本次提交说明。这些核对没有执行联网下载、镜像构建/发布、重新安装、重建集群或重启服务，不能替代下表的一键部署与持久化验收。
 
+## 按组件拆分阶段的实际交接（2026-10-05 13:13–14:45 UTC）
+
+批准窗口13:13–15:13 UTC，范围是原14个共用Flux阶段拆为26个按组件阶段的所有权交接、单组件/整套实演及Harbor/Casdoor轮换。拓扑源e59bdc00（OCI digest e26d2a19）经原生`platform-deploy OBJECT=all`应用，47段failed/unreachable=0；188个服务对象逐对象归属26个新阶段，仅以UID/resourceVersion前置条件删除elk-runtime、platform-services两个已被替代的控制对象，Orphan传播，无工作负载/卷删除。交接中旧根曾撤销旧阶段暂停，导致logstash七个对象短暂回归旧阶段，核对UID后重新暂停并收敛，记录在私有证据handover-observation.json。
+
+单组件入口实演：PostgreSQL deploy/check、Tpl-Web前端deploy/check各自退出0；整套重复deploy 47段退出0。统一`platform-check OBJECT=all`第一次失败：平台服务check对tpl-database阶段的Ready断言在整套重复部署结束后约40秒内取到瞬时非Ready，断言没有等待；同时审计63阶段Ready、无异常Pod，判定为时序而非回归。原失败日志保留，14:40重跑退出0，10段全部failed=0。窗口关闭前审计：149个Pod/Job/PV/PVC UID/spec无差异、无新增对象、63阶段当前代次Ready、无暂停、运行源摘要不变。
+
+本窗口未执行Harbor、Casdoor任何密码修改，三个人工账号及Kibana与窗口开始时相同。执行者中途断网退出，接手者仅完成重跑检查、审计与归档，未开始新的变更。私有证据`/mnt/sunmoon-data/backups/host/component-account-20261005T124637Z`。遗留：阶段Ready断言应改为有界等待；聚合阶段源码及旧映射仍在仓库中未清理。
+
 ## 未完成项
 
 这些是此前所有者明确要求的交付目标，文档归并不等于功能已完成。后续按依赖顺序落实，不为填满手册添加假的统一入口。

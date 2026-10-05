@@ -11,8 +11,8 @@
 | T3 | 拆分共用Flux部署阶段与原生选中对象stage/deploy/check | T2 | 组件独立根、真实依赖；未选声明/Pod/Job/PV保持；整体源晋级范围透明 | 188个候选服务对象与原14阶段逐对象一致；拆26阶段；整套/PG/Tpl-Web实际stage范围通过；固定拓扑源已晋级，188对象归属交接通过 |
 | T4 | 账号元数据、预设/导入/本机查看、恢复和密码规则 | T1 | 指定值首次生效、随机默认、主备保持；已有身份差异不自动覆盖 | 10类维护账号目录；三类真实登录通过；12/18导入及重复导入通过；PG/Redis/Rabbit首次预设已接入、未新建实演 |
 | T5 | 按组件实现真实密码轮换与失败恢复 | T4 | 目标身份/权限核对，新密码登录、配置/备份一致；不重跑旧初始化Job | Harbor/Casdoor事务及原生恢复候选已实现；7项模拟故障/策略检查及6项真实SOPS/临时Git候选检查通过；实际轮换未执行，Kibana保持 |
-| T6 | 原生发布、授权范围内实演单组件/整套与已选人工账号 | T3/T5 | 原门禁、真实协议、重复部署；原节点/卷/未选对象保持 | 首次整套部署47段通过；63阶段Ready、149受保护对象保持；组件及整套重复实演进行中 |
-| T7 | 删除失效公共入口、收敛维护说明及清理本轮临时文件 | T6 | 日常只有一套对象操作；文档准确；本地提交、工作区干净 | 未开始 |
+| T6 | 原生发布、授权范围内实演单组件/整套与已选人工账号 | T3/T5 | 原门禁、真实协议、重复部署；原节点/卷/未选对象保持 | 拓扑部分完成：整套部署、PG/Tpl-Web单组件deploy/check、整套重复deploy、整套check（首次瞬时失败后重跑通过）；Harbor/Casdoor实际轮换未执行，窗口已关闭 |
+| T7 | 删除失效公共入口、收敛维护说明及清理本轮临时文件 | T6 | 日常只有一套对象操作；文档准确；本地提交、工作区干净 | 仅完成/tmp证据归档（86文件逐一SHA256核对）；聚合源码清理、入口收敛未做，并入后续重构 |
 
 ## 盘点结论与当前候选
 
@@ -80,6 +80,14 @@ Casdoor真实检查先失败，原因是把Go IsGlobalAdmin()方法当JSON属性
 
 本次维护已批准：2026-10-05 13:13:01–15:13:01 UTC；截止epoch 1791213181，14:58:01 UTC后不开始新增动作，预留15分钟恢复。源/旧阶段UID/spec/Ready与149个受保护对象重新核对完全一致。
 
-### 当前维护进展（2026-10-05 13:42 UTC）
+### 本窗口最终结果（2026-10-05 14:45 UTC 关闭）
 
-拓扑源e59bdc00/digest e26d2a19已通过原生platform-deploy OBJECT=all应用，47段recap全部failed/unreachable=0。旧根在第一次新源应用前撤销了旧阶段暂停；发现后核对原UID/Orphan并重新暂停，显式收敛logstash后188个对象全部归属26个新阶段。仅删除elk-runtime/platform-services两个控制对象，DeleteOptions带UID/resourceVersion前置条件和Orphan传播；无工作负载/卷删除。63个阶段当前代次Ready，149个Pod/Job/PV/PVC的UID/spec及重启计数保持。正在串行执行公开PG、Tpl-Web deploy/check及整套重复deploy/check，账号尚未修改。Harbor改密前105个镜像条目和1090个registry/secret文件摘要已私有保存。维护截止epoch1791213181、保留15分钟恢复不变；日志/回执在component-account-20261005T124637Z，不用/tmp作长期依赖。
+执行者在操作卡第5步结束时断网退出，剩余由接手者在同一窗口内收尾；所有动作在14:58 UTC"不开始新动作"线之前启动。
+
+已完成（操作卡1–5）：拓扑源e59bdc00/digest e26d2a19经原生platform-deploy OBJECT=all应用，47段recap全部failed/unreachable=0。旧根在第一次新源应用前撤销了旧阶段暂停；发现后核对原UID/Orphan并重新暂停，显式收敛logstash后188个对象全部归属26个新阶段。仅删除elk-runtime/platform-services两个控制对象，DeleteOptions带UID/resourceVersion前置条件和Orphan传播；无工作负载/卷删除。公开PostgreSQL deploy（10段）/check（2段）、Tpl-Web deploy（7段）/check（2段）、整套重复deploy（47段）全部failed=0。整套platform-check OBJECT=all首次在14:00 UTC失败：第7段对tpl-database阶段的Ready断言在整套重复部署刚结束时取到瞬时非Ready，verify.yaml:51断言无等待直接判失败；期间审计63阶段Ready、无异常Pod。14:40:35–14:43:53 UTC重跑退出0，10段recap failed/unreachable=0（两段changed=1为协议探针回执）。关闭前审计audit-144449.json：149受保护对象UID/spec无差异、无新增对象、63阶段Ready、无暂停、源摘要不变。
+
+未执行（操作卡6–8）：Harbor admin与Casdoor built-in/admin实际轮换均未开始，三个人工账号密码与窗口开始时相同，Kibana不变，密码表当前值未改。Harbor改密前105个镜像条目和1090个registry/secret文件摘要仍私有保存可供下次使用。
+
+证据：/mnt/sunmoon-data/backups/host/component-account-20261005T124637Z（root 0600），含topology-all、scope-*、topology-repeat-all、首次失败的topology-public-check.log（保留不覆盖）、通过的topology-public-check-rerun2.log、audit-*.json；topology-public-check-rerun.log是被中止的首次重跑残片，仅到只读阶段，无副作用。本轮86个/tmp助手脚本与审计JSON已复制到同目录maintenance-tmp-evidence/并逐文件SHA256核对（MANIFEST.json），/tmp原件暂留待所有者确认后清理。
+
+后续：Harbor轮换仍需在线窗口执行；Casdoor轮换与其余账号预设并入新集群sunmoonai-kind冷建；verify.yaml的阶段Ready断言改为有界等待；T7聚合源码清理并入组件合并重构。接手后的重构方案另立检查点。
