@@ -1,4 +1,6 @@
 ---
+- import_playbook: ../host/deployment.yaml
+  vars: {deployment_action: select, selection_persist: false, selection_report: false}
 - import_playbook: ../host/preflight.yaml
 - name: Prepare private inputs, retained storage and reviewable GitOps candidates
   hosts: kind_hosts
@@ -14,13 +16,17 @@
     image_map: '{{ dict(image_lock.images | map(attribute="id") | zip(image_lock.images)) }}'
     chart_source: '{{ lookup("file", build + "/chart-source.yaml") | from_yaml }}'
     kube: ['{{ tools }}/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+    selected_service_stages: '{{ component_stages | selectattr("name", "in", selection.selected_stages) | list }}'
+    selected_service_paths: '{{ selected_service_stages | map(attribute="path") | unique | list }}'
+    selected_service_volumes: '{{ services_volumes | selectattr("name", "in", selection.services | map("basename") | list) | list }}'
+    selected_candidate_paths: '{{ selected_service_paths + (["ingress-platform/traefik/service-access"] if "ingress-platform/traefik" in selection.services and service_access_enabled | bool else []) }}'
   tasks:
     - name: Require owned first-batch configuration
       ansible.builtin.assert:
         quiet: true
         that:
           - not ansible_check_mode
-          - services_enabled | bool
+          - services_enabled | bool or selection.services == ["foundations"]
           - cluster_name == 'sunmoon-kind'
           - data_namespace == 'data-platform-dev'
           - messaging_namespace == 'messaging-platform-dev'
@@ -58,10 +64,10 @@
           - item.uid in [999,1000,7474]
           - item.gid == item.uid
           - item.size is match('^[1-9][0-9]*Gi$')
-      loop: '{{ services_volumes }}'
+      loop: '{{ selected_service_volumes }}'
     - name: Inspect private and storage paths without following links
       ansible.builtin.stat: {path: '{{ item }}', follow: false}
-      loop: '{{ [services_config_dir, services_backup_dir, build] + (services_volumes | map(attribute="node") | unique | map("regex_replace", "^(.*)$", cluster_data_root + "/" + cluster_name + "/\1/static") | list) }}'
+      loop: '{{ [services_config_dir, services_backup_dir, build] + (selected_service_volumes | map(attribute="node") | unique | map("regex_replace", "^(.*)$", cluster_data_root + "/" + cluster_name + "/\1/static") | list) }}'
       register: directories
     - name: Reject redirected directories
       ansible.builtin.assert:
@@ -74,40 +80,43 @@
     - name: Create private directories
       ansible.builtin.file: {path: '{{ item }}', state: directory, mode: '0700', owner: root, group: root}
       loop: ['{{ services_config_dir }}', '{{ services_backup_dir }}', '{{ services_config_dir }}/tls']
-    - name: Read private operator inputs
-      ansible.builtin.slurp: {src: '{{ services_config_dir }}/credentials.yaml'}
-      register: credential_input
-      no_log: true
-    - name: Decode credentials in memory
-      ansible.builtin.set_fact:
-        service_credentials: '{{ (credential_input.content | b64decode | from_yaml).service_credentials }}'
-      no_log: true
-    - name: Validate credential fields without disclosing values
-      ansible.builtin.assert:
-        quiet: true
-        that:
-          - service_credentials[item] is string
-          - service_credentials[item] | length > 0
-          - service_credentials[item] is not search('[\r\n]')
-      loop: [postgresql_password, redis_password, rabbitmq_username, rabbitmq_password, rabbitmq_cookie, casdoor_db_password, casdoor_admin_password, casdoor_application_secret]
-      no_log: true
-    - name: Preserve a non-overwritten independent credential backup
-      ansible.builtin.copy:
-        src: '{{ services_config_dir }}/credentials.yaml'
-        dest: '{{ services_backup_dir }}/credentials.yaml'
-        remote_src: true
-        force: false
-        mode: '0600'
-      no_log: true
-    - name: Require matching credential backup before rendering
-      ansible.builtin.command: {argv: [cmp, --silent, '{{ services_config_dir }}/credentials.yaml', '{{ services_backup_dir }}/credentials.yaml']}
-      changed_when: false
-      no_log: true
+    - name: Read and preserve only the selected shared core identities
+      when: selection.services | intersect(['data-platform/postgresql','data-platform/redis','messaging-platform/rabbitmq','app-platform/auth-app/casdoor','ingress-platform/traefik']) | length > 0
+      block:
+        - name: Read private operator inputs
+          ansible.builtin.slurp: {src: '{{ services_config_dir }}/credentials.yaml'}
+          register: credential_input
+          no_log: true
+        - name: Decode credentials in memory
+          ansible.builtin.set_fact:
+            service_credentials: '{{ (credential_input.content | b64decode | from_yaml).service_credentials }}'
+          no_log: true
+        - name: Validate credential fields without disclosing values
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - service_credentials[item] is string
+              - service_credentials[item] | length > 0
+              - service_credentials[item] is not search('[\r\n]')
+          loop: [postgresql_password, redis_password, rabbitmq_username, rabbitmq_password, rabbitmq_cookie, casdoor_db_password, casdoor_admin_password, casdoor_application_secret]
+          no_log: true
+        - name: Preserve a non-overwritten independent credential backup
+          ansible.builtin.copy:
+            src: '{{ services_config_dir }}/credentials.yaml'
+            dest: '{{ services_backup_dir }}/credentials.yaml'
+            remote_src: true
+            force: false
+            mode: '0600'
+          no_log: true
+        - name: Require matching credential backup before rendering
+          ansible.builtin.command: {argv: [cmp, --silent, '{{ services_config_dir }}/credentials.yaml', '{{ services_backup_dir }}/credentials.yaml']}
+          changed_when: false
+          no_log: true
     - name: Inspect exact component directories
       ansible.builtin.stat:
         path: '{{ cluster_data_root }}/{{ cluster_name }}/{{ item.node }}/static/{{ item.name }}'
         follow: false
-      loop: '{{ services_volumes }}'
+      loop: '{{ selected_service_volumes }}'
       register: component_dirs
     - name: Refuse foreign existing component directories
       ansible.builtin.assert:
@@ -124,12 +133,12 @@
         owner: '{{ item.uid }}'
         group: '{{ item.gid }}'
         mode: '0700'
-      loop: '{{ services_volumes }}'
+      loop: '{{ selected_service_volumes }}'
       # Existing roots are owned by kubelet fsGroup handling; don't reset their mode.
       when: not (component_dirs.results | selectattr('item.name','equalto',item.name) | first).stat.exists
     - name: Prepare public candidate directories
       ansible.builtin.file: {path: '{{ build }}/{{ item }}', state: directory, mode: '0755', owner: '{{ cluster_operator }}'}
-      loop: '{{ service_candidate_roots + (service_stage_paths.values() | list) + (service_component_paths.values() | list) }}'
+      loop: '{{ selected_candidate_paths + (["data-platform/elk/elasticsearch","data-platform/elk/initialize","data-platform/elk/kibana","data-platform/elk/logstash"] if selection.services | select("match","^data-platform/elk(/|$)") | list | length > 0 else []) | unique | list }}'
     - name: Render public core manifests
       ansible.builtin.template:
         src: '{{ playbook_dir }}/../../gitops/components/{{ item.template }}'
@@ -144,87 +153,92 @@
         - {template: data-platform/redis/workload.yaml.j2, path: data-platform/redis/workload.yaml}
         - {template: messaging-platform/rabbitmq/workload.yaml.j2, path: messaging-platform/rabbitmq/workload.yaml}
         - {template: ingress-platform/traefik/workload.yaml.j2, path: ingress-platform/traefik/workload.yaml}
+      when: (item.path | dirname) in selected_service_paths
     - name: Prepare locked standard Traefik CRDs
       ansible.builtin.include_tasks: ../../gitops/components/ingress-platform/traefik/prepare.yaml
-      when: services_ingress_enabled | bool and traefik_crd_enabled | bool
+      when: services_ingress_enabled | bool and traefik_crd_enabled | bool and "ingress-platform/traefik" in selection.services
     - name: Prepare and encrypt object storage inputs
       ansible.builtin.include_tasks: ../../gitops/components/data-platform/object-storage/prepare.yaml
-      when: services_object_storage_enabled | bool
+      when: services_object_storage_enabled | bool and "data-platform/object-storage" in selection.services
     - name: Prepare fixed CPU embedding model and runtime candidate
       ansible.builtin.include_tasks: ../../gitops/components/data-platform/text-embeddings/prepare.yaml
-      when: services_text_embeddings_enabled | bool
+      when: services_text_embeddings_enabled | bool and "data-platform/text-embeddings" in selection.services
     - name: Prepare independent ELK identities and runtime candidates
       ansible.builtin.include_tasks: ../../gitops/components/data-platform/elk/prepare.yaml
-      when: services_elk_enabled | bool
+      when: services_elk_enabled | bool and selection.services | select("match", "^data-platform/elk(/|$)") | list | length > 0
     - name: Prepare independent graph service identity and runtime candidate
       ansible.builtin.include_tasks: ../../gitops/components/data-platform/neo4j/prepare.yaml
-      when: services_neo4j_enabled | bool
+      when: services_neo4j_enabled | bool and "data-platform/neo4j" in selection.services
     - name: Prepare independent MongoDB identities and replica bootstrap
       ansible.builtin.include_tasks: ../../gitops/components/data-platform/mongodb/prepare.yaml
-      when: services_mongodb_enabled | bool
+      when: services_mongodb_enabled | bool and "data-platform/mongodb" in selection.services
     - name: Prepare dedicated RAGFlow index
       ansible.builtin.include_tasks: ../../gitops/components/data-platform/infinity/prepare.yaml
-      when: services_infinity_enabled | bool
+      when: services_infinity_enabled | bool and "data-platform/infinity" in selection.services
     - name: Prepare dedicated RAGFlow queue identity
       ansible.builtin.include_tasks: ../../gitops/components/data-platform/valkey/prepare.yaml
-      when: services_valkey_enabled | bool
+      when: services_valkey_enabled | bool and "data-platform/valkey" in selection.services
     - name: Prepare RAGFlow independent initialization and restricted runtime
       ansible.builtin.include_tasks: ../../gitops/components/data-platform/ragflow/prepare.yaml
-      when: services_ragflow_enabled | bool
+      when: services_ragflow_enabled | bool and "data-platform/ragflow" in selection.services
     - name: Read namespace pull-only identity
       ansible.builtin.slurp: {src: '{{ registry_config_dir }}/private/puller-auth.json'}
       register: puller
       no_log: true
-    - name: Build encrypted credentials for core services
-      ansible.builtin.include_tasks: tasks/encrypt.yaml
-      loop:
-        - file: data-platform/postgresql/auth.sops.yaml
-          manifest:
-            apiVersion: v1
-            kind: Secret
-            metadata: {name: postgresql-auth, namespace: '{{ data_namespace }}'}
-            stringData: {password: '{{ service_credentials.postgresql_password }}'}
-        - file: data-platform/redis/auth.sops.yaml
-          manifest:
-            apiVersion: v1
-            kind: Secret
-            metadata: {name: redis-auth, namespace: '{{ data_namespace }}'}
-            stringData:
-              password: '{{ service_credentials.redis_password }}'
-              redis.conf: |
-                bind 0.0.0.0
-                protected-mode yes
-                aclfile /data/users.acl
-                dir /data
-                appendonly yes
-                appendfsync everysec
-                maxmemory 384mb
-                maxmemory-policy noeviction
-        - file: messaging-platform/rabbitmq/auth.sops.yaml
-          manifest:
-            apiVersion: v1
-            kind: Secret
-            metadata: {name: rabbitmq-auth, namespace: '{{ messaging_namespace }}'}
-            stringData:
-              erlang-cookie: '{{ service_credentials.rabbitmq_cookie }}'
-              username: '{{ service_credentials.rabbitmq_username }}'
-              password: '{{ service_credentials.rabbitmq_password }}'
-              rabbitmq.conf: |
-                default_user = {{ service_credentials.rabbitmq_username }}
-                default_pass = {{ service_credentials.rabbitmq_password }}
-                vm_memory_high_watermark.absolute = 512MiB
-                disk_free_limit.absolute = 1GB
-                log.console = true
-                log.file = false
-        - file: ingress-platform/traefik/puller.sops.yaml
-          manifest:
-            apiVersion: v1
-            kind: Secret
-            metadata: {name: registry-puller, namespace: '{{ ingress_namespace }}'}
-            type: kubernetes.io/dockerconfigjson
-            data: {'.dockerconfigjson': '{{ puller.content }}'}
-      loop_control: {loop_var: secret_item, label: '{{ secret_item.file }}'}
-      no_log: true
+    - name: Encrypt only selected core component identities
+      when: selection.services | intersect(['data-platform/postgresql','data-platform/redis','messaging-platform/rabbitmq','ingress-platform/traefik']) | length > 0
+      block:
+        - name: Build encrypted credentials for core services
+          ansible.builtin.include_tasks: tasks/encrypt.yaml
+          loop:
+            - file: data-platform/postgresql/auth.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: postgresql-auth, namespace: '{{ data_namespace }}'}
+                stringData: {password: '{{ service_credentials.postgresql_password }}'}
+            - file: data-platform/redis/auth.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: redis-auth, namespace: '{{ data_namespace }}'}
+                stringData:
+                  password: '{{ service_credentials.redis_password }}'
+                  redis.conf: |
+                    bind 0.0.0.0
+                    protected-mode yes
+                    aclfile /data/users.acl
+                    dir /data
+                    appendonly yes
+                    appendfsync everysec
+                    maxmemory 384mb
+                    maxmemory-policy noeviction
+            - file: messaging-platform/rabbitmq/auth.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: rabbitmq-auth, namespace: '{{ messaging_namespace }}'}
+                stringData:
+                  erlang-cookie: '{{ service_credentials.rabbitmq_cookie }}'
+                  username: '{{ service_credentials.rabbitmq_username }}'
+                  password: '{{ service_credentials.rabbitmq_password }}'
+                  rabbitmq.conf: |
+                    default_user = {{ service_credentials.rabbitmq_username }}
+                    default_pass = {{ service_credentials.rabbitmq_password }}
+                    vm_memory_high_watermark.absolute = 512MiB
+                    disk_free_limit.absolute = 1GB
+                    log.console = true
+                    log.file = false
+            - file: ingress-platform/traefik/puller.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: registry-puller, namespace: '{{ ingress_namespace }}'}
+                type: kubernetes.io/dockerconfigjson
+                data: {'.dockerconfigjson': '{{ puller.content }}'}
+          loop_control: {loop_var: secret_item, label: '{{ secret_item.file }}'}
+          no_log: true
+          when: (secret_item.file | dirname) in selected_service_paths
     - name: Encrypt one pull-only identity per workload namespace
       ansible.builtin.include_tasks: tasks/encrypt.yaml
       vars:
@@ -239,23 +253,14 @@
       loop: '{{ [data_namespace, messaging_namespace, app_namespace] }}'
       loop_control: {loop_var: namespace_item}
       no_log: true
-    - name: Render category roots and their core dependency aggregate
+      when: '"foundations" in selection.services'
+    - name: Render the independent foundation root
       ansible.builtin.copy:
-        dest: '{{ build }}/{{ service_stage_paths[item.name] | default(item.name) }}/kustomization.yaml'
+        dest: '{{ build }}/foundations/kustomization.yaml'
         owner: '{{ cluster_operator }}'
         mode: '0644'
-        content: |
-          {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':item.resources} | to_nice_yaml }}
-      loop:
-        - name: core
-          resources: [../foundations, ../data-platform, ../messaging-platform, ../ingress-platform]
-        - name: foundations
-          resources: '{{ ["runtime.yaml", "storage.yaml", "network.yaml"] + [data_namespace + "-puller.sops.yaml", messaging_namespace + "-puller.sops.yaml", app_namespace + "-puller.sops.yaml"] }}'
-        - name: data-platform
-          resources: '{{ (["postgresql"] if services_postgresql_enabled else []) + (["redis"] if services_redis_enabled else []) + (["object-storage"] if services_object_storage_enabled else []) + (["text-embeddings"] if services_text_embeddings_enabled else []) + (["elk/elasticsearch"] if services_elk_enabled else []) + (["neo4j"] if services_neo4j_enabled else []) + (["mongodb"] if services_mongodb_enabled else []) + (["infinity"] if services_infinity_enabled else []) + (["valkey"] if services_valkey_enabled else []) }}'
-        - name: messaging-platform
-          resources: '{{ ["rabbitmq"] if services_rabbitmq_enabled else [] }}'
-        - {name: ingress-platform, resources: [traefik]}
+        content: '{{ {"apiVersion":"kustomize.config.k8s.io/v1beta1","kind":"Kustomization","resources":["runtime.yaml","storage.yaml","network.yaml",data_namespace + "-puller.sops.yaml",messaging_namespace + "-puller.sops.yaml",app_namespace + "-puller.sops.yaml"]} | to_nice_yaml }}'
+      when: '"foundations" in selection.services'
     - name: Render explicit component roots without including input configuration
       ansible.builtin.copy:
         dest: '{{ build }}/{{ service_component_paths[item] }}/kustomization.yaml'
@@ -264,133 +269,161 @@
         content: |
           {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':(['workload.yaml'] if item == 'text-embeddings' else ['workload.yaml', ('puller.sops.yaml' if item == 'traefik' else 'auth.sops.yaml')]) + (['crds.yaml'] if item == 'traefik' and traefik_crd_enabled | bool else []) + (['service-access'] if item == 'traefik' and service_access_enabled | bool else [])} | to_nice_yaml }}
       loop: '{{ ["postgresql", "redis", "rabbitmq", "traefik", "object-storage"] + (["text-embeddings"] if services_text_embeddings_enabled else []) }}'
+      when: service_component_paths[item] in selected_service_paths
     - name: Prepare the private HTTPS service transport
       ansible.builtin.include_tasks: ../../gitops/components/ingress-platform/traefik/service-access/prepare.yaml
-      when: service_access_enabled | bool
-    - name: Generate a private service TLS key only when absent
-      ansible.builtin.command:
-        argv: [openssl, genpkey, -algorithm, RSA, -pkeyopt, 'rsa_keygen_bits:3072', -out, '{{ services_config_dir }}/tls/server.key']
-        creates: '{{ services_config_dir }}/tls/server.key'
-      no_log: true
-    - name: Enforce private key access
-      ansible.builtin.file: {path: '{{ services_config_dir }}/tls/server.key', mode: '0600', owner: root, group: root}
-    - name: Generate the service certificate request
-      ansible.builtin.command:
-        argv: [openssl, req, -new, -key, '{{ services_config_dir }}/tls/server.key', -out, '{{ services_config_dir }}/tls/server.csr', -subj, '/CN={{ casdoor_hostname }}']
-        creates: '{{ services_config_dir }}/tls/server.csr'
-    - name: Declare exact TLS certificate extensions
-      ansible.builtin.copy:
-        dest: '{{ services_config_dir }}/tls/extensions.cnf'
-        mode: '0600'
-        content: |
-          basicConstraints=critical,CA:FALSE
-          keyUsage=critical,digitalSignature,keyEncipherment
-          extendedKeyUsage=serverAuth
-          subjectAltName=DNS:{{ casdoor_hostname }}
-    - name: Issue the five-year service certificate with the existing platform CA
-      ansible.builtin.command:
-        argv: [openssl, x509, -req, -in, '{{ services_config_dir }}/tls/server.csr', -CA, '{{ registry_config_dir }}/tls/ca.crt', -CAkey, '{{ registry_config_dir }}/tls/ca.key', -set_serial, '0x{{ lookup("pipe", "openssl rand -hex 16") }}', -days, '1825', -sha256, -extfile, '{{ services_config_dir }}/tls/extensions.cnf', -out, '{{ services_config_dir }}/tls/server.crt']
-        creates: '{{ services_config_dir }}/tls/server.crt'
-    - name: Verify the chain and hostname before publication
-      ansible.builtin.command:
-        argv: [openssl, verify, -CAfile, '{{ registry_config_dir }}/tls/ca.crt', -verify_hostname, '{{ casdoor_hostname }}', '{{ services_config_dir }}/tls/server.crt']
-      changed_when: false
-    - name: Back up service TLS material without overwriting prior identities
-      ansible.builtin.copy:
-        src: '{{ services_config_dir }}/tls'
-        dest: '{{ services_backup_dir }}/'
-        remote_src: true
-        force: false
-        mode: preserve
-      no_log: true
-    - name: Require matching TLS backup identities
-      ansible.builtin.command:
-        argv: [cmp, --silent, '{{ services_config_dir }}/tls/{{ item }}', '{{ services_backup_dir }}/tls/{{ item }}']
-      loop: [server.key, server.crt]
-      changed_when: false
-      no_log: true
-    - name: Read private certificate material into memory
-      ansible.builtin.slurp: {src: '{{ services_config_dir }}/tls/{{ item }}'}
-      loop: [server.key, server.crt]
-      register: service_tls
-      no_log: true
-    - name: Render Casdoor public deployment stages
+      when: service_access_enabled | bool and "ingress-platform/traefik" in selection.services
+    - name: Prepare only the selected Casdoor identity and runtime
+      when: '"app-platform/auth-app/casdoor" in selection.services'
+      block:
+        - name: Generate a private service TLS key only when absent
+          ansible.builtin.command:
+            argv: [openssl, genpkey, -algorithm, RSA, -pkeyopt, 'rsa_keygen_bits:3072', -out, '{{ services_config_dir }}/tls/server.key']
+            creates: '{{ services_config_dir }}/tls/server.key'
+          no_log: true
+        - name: Enforce private key access
+          ansible.builtin.file: {path: '{{ services_config_dir }}/tls/server.key', mode: '0600', owner: root, group: root}
+        - name: Generate the service certificate request
+          ansible.builtin.command:
+            argv: [openssl, req, -new, -key, '{{ services_config_dir }}/tls/server.key', -out, '{{ services_config_dir }}/tls/server.csr', -subj, '/CN={{ casdoor_hostname }}']
+            creates: '{{ services_config_dir }}/tls/server.csr'
+        - name: Declare exact TLS certificate extensions
+          ansible.builtin.copy:
+            dest: '{{ services_config_dir }}/tls/extensions.cnf'
+            mode: '0600'
+            content: |
+              basicConstraints=critical,CA:FALSE
+              keyUsage=critical,digitalSignature,keyEncipherment
+              extendedKeyUsage=serverAuth
+              subjectAltName=DNS:{{ casdoor_hostname }}
+        - name: Issue the five-year service certificate with the existing platform CA
+          ansible.builtin.command:
+            argv: [openssl, x509, -req, -in, '{{ services_config_dir }}/tls/server.csr', -CA, '{{ registry_config_dir }}/tls/ca.crt', -CAkey, '{{ registry_config_dir }}/tls/ca.key', -set_serial, '0x{{ lookup("pipe", "openssl rand -hex 16") }}', -days, '1825', -sha256, -extfile, '{{ services_config_dir }}/tls/extensions.cnf', -out, '{{ services_config_dir }}/tls/server.crt']
+            creates: '{{ services_config_dir }}/tls/server.crt'
+        - name: Verify the chain and hostname before publication
+          ansible.builtin.command:
+            argv: [openssl, verify, -CAfile, '{{ registry_config_dir }}/tls/ca.crt', -verify_hostname, '{{ casdoor_hostname }}', '{{ services_config_dir }}/tls/server.crt']
+          changed_when: false
+        - name: Back up service TLS material without overwriting prior identities
+          ansible.builtin.copy:
+            src: '{{ services_config_dir }}/tls'
+            dest: '{{ services_backup_dir }}/'
+            remote_src: true
+            force: false
+            mode: preserve
+          no_log: true
+        - name: Require matching TLS backup identities
+          ansible.builtin.command:
+            argv: [cmp, --silent, '{{ services_config_dir }}/tls/{{ item }}', '{{ services_backup_dir }}/tls/{{ item }}']
+          loop: [server.key, server.crt]
+          changed_when: false
+          no_log: true
+        - name: Read private certificate material into memory
+          ansible.builtin.slurp: {src: '{{ services_config_dir }}/tls/{{ item }}'}
+          loop: [server.key, server.crt]
+          register: service_tls
+          no_log: true
+        - name: Render Casdoor public deployment stages
+          ansible.builtin.template:
+            src: '{{ playbook_dir }}/../../gitops/components/{{ service_stage_paths[item] }}/workload.yaml.j2'
+            dest: '{{ build }}/{{ service_stage_paths[item] }}/workload.yaml'
+            owner: '{{ cluster_operator }}'
+            mode: '0644'
+          loop: [casdoor-db, casdoor-init, casdoor]
+        - name: Encrypt independent database login
+          ansible.builtin.include_tasks: tasks/encrypt.yaml
+          vars:
+            secret_item:
+              file: app-platform/auth-app/casdoor/database/auth.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: casdoor-database-auth, namespace: '{{ data_namespace }}'}
+                stringData: {password: '{{ service_credentials.casdoor_db_password }}'}
+          no_log: true
+        - name: Encrypt startup config without repeating initialization on restarts
+          ansible.builtin.include_tasks: tasks/encrypt.yaml
+          vars:
+            initializing: false
+            secret_item:
+              file: app-platform/auth-app/casdoor/config.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: casdoor-config, namespace: '{{ app_namespace }}'}
+                stringData: {app.conf: '{{ lookup("template", playbook_dir + "/../../gitops/components/app-platform/auth-app/casdoor/app.conf.j2") }}'}
+          no_log: true
+        - name: Encrypt one-time initialization config
+          ansible.builtin.include_tasks: tasks/encrypt.yaml
+          vars:
+            initializing: true
+            secret_item:
+              file: app-platform/auth-app/casdoor/init/config.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: casdoor-init-config, namespace: '{{ app_namespace }}'}
+                stringData: {app.conf: '{{ lookup("template", playbook_dir + "/../../gitops/components/app-platform/auth-app/casdoor/app.conf.j2") }}'}
+          no_log: true
+        - name: Encrypt the new administrator initialization input
+          ansible.builtin.include_tasks: tasks/encrypt.yaml
+          vars:
+            secret_item:
+              file: app-platform/auth-app/casdoor/init/identity.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: casdoor-initial-identity, namespace: '{{ app_namespace }}'}
+                stringData:
+                  init_data.json: '{{ {"users":[{"owner":"built-in","name":"admin","type":"normal-user","password":service_credentials.casdoor_admin_password,"displayName":"Platform administrator","isAdmin":true,"isGlobalAdmin":true}]} | to_json }}'
+          no_log: true
+        - name: Encrypt application TLS identity
+          ansible.builtin.include_tasks: tasks/encrypt.yaml
+          vars:
+            secret_item:
+              file: app-platform/auth-app/casdoor/tls.sops.yaml
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata: {name: platform-tls, namespace: '{{ app_namespace }}'}
+                type: kubernetes.io/tls
+                data: {'tls.key': '{{ service_tls.results[0].content }}', 'tls.crt': '{{ service_tls.results[1].content }}'}
+          no_log: true
+        - name: Render stage Kustomize roots
+          ansible.builtin.copy:
+            dest: '{{ build }}/{{ service_stage_paths[item.name] | default(item.name) }}/kustomization.yaml'
+            owner: '{{ cluster_operator }}'
+            mode: '0644'
+            content: |
+              {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':item.resources} | to_nice_yaml }}
+          loop:
+            - {name: casdoor-db, resources: [workload.yaml, auth.sops.yaml]}
+            - {name: casdoor-init, resources: [workload.yaml, config.sops.yaml, identity.sops.yaml]}
+            - {name: casdoor, resources: [workload.yaml, config.sops.yaml, tls.sops.yaml]}
+    - name: Render each selected retained volume beside its consuming component
       ansible.builtin.template:
-        src: '{{ playbook_dir }}/../../gitops/components/{{ service_stage_paths[item] }}/workload.yaml.j2'
-        dest: '{{ build }}/{{ service_stage_paths[item] }}/workload.yaml'
+        src: '{{ playbook_dir }}/../../gitops/components/foundations/volume.yaml.j2'
+        dest: '{{ build }}/{{ volume_path }}/storage.yaml'
         owner: '{{ cluster_operator }}'
         mode: '0644'
-      loop: [casdoor-db, casdoor-init, casdoor]
-    - name: Encrypt independent database login
-      ansible.builtin.include_tasks: tasks/encrypt.yaml
       vars:
-        secret_item:
-          file: app-platform/auth-app/casdoor/database/auth.sops.yaml
-          manifest:
-            apiVersion: v1
-            kind: Secret
-            metadata: {name: casdoor-database-auth, namespace: '{{ data_namespace }}'}
-            stringData: {password: '{{ service_credentials.casdoor_db_password }}'}
-      no_log: true
-    - name: Encrypt startup config without repeating initialization on restarts
-      ansible.builtin.include_tasks: tasks/encrypt.yaml
-      vars:
-        initializing: false
-        secret_item:
-          file: app-platform/auth-app/casdoor/config.sops.yaml
-          manifest:
-            apiVersion: v1
-            kind: Secret
-            metadata: {name: casdoor-config, namespace: '{{ app_namespace }}'}
-            stringData: {app.conf: '{{ lookup("template", playbook_dir + "/../../gitops/components/app-platform/auth-app/casdoor/app.conf.j2") }}'}
-      no_log: true
-    - name: Encrypt one-time initialization config
-      ansible.builtin.include_tasks: tasks/encrypt.yaml
-      vars:
-        initializing: true
-        secret_item:
-          file: app-platform/auth-app/casdoor/init/config.sops.yaml
-          manifest:
-            apiVersion: v1
-            kind: Secret
-            metadata: {name: casdoor-init-config, namespace: '{{ app_namespace }}'}
-            stringData: {app.conf: '{{ lookup("template", playbook_dir + "/../../gitops/components/app-platform/auth-app/casdoor/app.conf.j2") }}'}
-      no_log: true
-    - name: Encrypt the new administrator initialization input
-      ansible.builtin.include_tasks: tasks/encrypt.yaml
-      vars:
-        secret_item:
-          file: app-platform/auth-app/casdoor/init/identity.sops.yaml
-          manifest:
-            apiVersion: v1
-            kind: Secret
-            metadata: {name: casdoor-initial-identity, namespace: '{{ app_namespace }}'}
-            stringData:
-              init_data.json: '{{ {"users":[{"owner":"built-in","name":"admin","type":"normal-user","password":service_credentials.casdoor_admin_password,"displayName":"Platform administrator","isAdmin":true,"isGlobalAdmin":true}]} | to_json }}'
-      no_log: true
-    - name: Encrypt application TLS identity
-      ansible.builtin.include_tasks: tasks/encrypt.yaml
-      vars:
-        secret_item:
-          file: app-platform/auth-app/casdoor/tls.sops.yaml
-          manifest:
-            apiVersion: v1
-            kind: Secret
-            metadata: {name: platform-tls, namespace: '{{ app_namespace }}'}
-            type: kubernetes.io/tls
-            data: {'tls.key': '{{ service_tls.results[0].content }}', 'tls.crt': '{{ service_tls.results[1].content }}'}
-      no_log: true
-    - name: Render stage Kustomize roots
+        volume_path: '{{ service_stage_paths["casdoor-db"] if volume.name == "casdoor" else service_component_paths[volume.name] }}'
+      loop: '{{ selected_service_volumes }}'
+      loop_control: {loop_var: volume, label: '{{ volume.name }}'}
+    - name: Read selected component root resources before adding its own storage
+      ansible.builtin.slurp:
+        src: '{{ build }}/{{ service_stage_paths["casdoor-db"] if item.name == "casdoor" else service_component_paths[item.name] }}/kustomization.yaml'
+      loop: '{{ selected_service_volumes }}'
+      register: volume_roots
+    - name: Include the retained volume exactly once in its consuming stage
       ansible.builtin.copy:
-        dest: '{{ build }}/{{ service_stage_paths[item.name] | default(item.name) }}/kustomization.yaml'
+        dest: '{{ item.source }}'
         owner: '{{ cluster_operator }}'
         mode: '0644'
-        content: |
-          {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':item.resources} | to_nice_yaml }}
-      loop:
-        - {name: casdoor-db, resources: [workload.yaml, auth.sops.yaml]}
-        - {name: casdoor-init, resources: [workload.yaml, config.sops.yaml, identity.sops.yaml]}
-        - {name: casdoor, resources: [workload.yaml, config.sops.yaml, tls.sops.yaml]}
+        content: '{{ root | combine({"resources":root.resources + (["storage.yaml"] if "storage.yaml" not in root.resources else [])}) | to_nice_yaml }}'
+      vars: {root: '{{ item.content | b64decode | from_yaml }}'}
+      loop: '{{ volume_roots.results }}'
+      loop_control: {label: '{{ item.item.name }}'}
     - name: Render enabled GitOps stage declarations
       ansible.builtin.template:
         src: '{{ playbook_dir }}/../../gitops/clusters/kind/services.yaml.j2'
@@ -403,15 +436,24 @@
       block:
         - name: Find only service renderer candidate files
           ansible.builtin.find:
-            paths: '{{ service_candidate_roots | map("regex_replace", "^", build + "/") | list }}'
-            recurse: true
+            paths: '{{ selected_candidate_paths | map("regex_replace", "^", build + "/") | list }}'
+            recurse: false
             patterns: '*.yaml'
             file_type: file
           register: generated_service_files
         - name: Refuse an incomplete service staging candidate
           ansible.builtin.assert:
             quiet: true
-            that: generated_service_files.files | length >= 20
+            that: generated_service_files.files | length > 0
+        - name: Require unselected service stages to remain unchanged
+          ansible.builtin.assert:
+            quiet: true
+            that: candidate_unselected == committed_unselected
+            fail_msg: Unselected stage declarations differ. First review and stage the complete topology with OBJECT=all.
+          vars:
+            candidate_unselected: '{{ lookup("file",build + "/stages.yaml") | from_yaml_all | rejectattr("metadata.name","in",selection.selected_stages) | list }}'
+            committed_unselected: '{{ lookup("file",playbook_dir + "/../../gitops/clusters/kind/services.yaml") | from_yaml_all | rejectattr("metadata.name","in",selection.selected_stages) | list }}'
+          when: selection.object != 'all'
         - name: Prepare declared component directories
           ansible.builtin.file:
             path: '{{ playbook_dir }}/../../gitops/components/{{ item.path | relpath(build) | dirname }}'

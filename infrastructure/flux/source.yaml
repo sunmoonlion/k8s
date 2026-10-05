@@ -196,9 +196,26 @@
           changed_when: false
           register: uid
           failed_when: uid.rc != 0 or uid.stdout != (identity.content | b64decode | from_json).kube_system_uid
-        - name: Read the promoted immutable source declaration
+        - name: Restrict source input to the environment pointer or an independent operation snapshot
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - source_lock_path in [playbook_dir + '/../environments/kind/flux-source.yaml', repo + '/infrastructure/environments/kind/flux-source.yaml'] or (source_lock_path is match('^/mnt/sunmoon-data/backups/[a-zA-Z0-9_/-]+/source-(before|after)\.yaml$') and '..' not in source_lock_path.split('/'))
+        - name: Reject redirected source input
+          ansible.builtin.stat: {path: '{{ source_lock_path }}', follow: false}
+          register: source_input_stat
+        - name: Require an actual source metadata file before reading it
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - source_input_stat.stat.isreg | default(false)
+              - not source_input_stat.stat.islnk | default(false)
+        - name: Read the promoted immutable source declaration or explicit recovery snapshot
+          ansible.builtin.slurp: {src: '{{ source_lock_path }}'}
+          register: promoted_source_bytes
+        - name: Decode the explicit source without changing the Git pointer
           ansible.builtin.set_fact:
-            source_lock: '{{ lookup("ansible.builtin.file", source_lock_path) | from_yaml }}'
+            source_lock: '{{ promoted_source_bytes.content | b64decode | from_yaml }}'
         - name: Validate the promoted source boundary
           ansible.builtin.assert:
             quiet: true

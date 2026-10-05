@@ -51,7 +51,12 @@ def main():
         parser.add_argument('--'+key,required=True)
     for key in ('collector-namespace','application-namespace','collector-digest','data-view-id','collector-enabled'):
         parser.add_argument('--'+key)
+    parser.add_argument("--components", default="all")
     args=parser.parse_args()
+    chosen={"elasticsearch","elk-initialize","kibana","logstash","elk-collector","elk-data-view"} if args.components=="all" else set(args.components.split(","))
+    require(bool(chosen) and chosen <= {"elasticsearch","elk-initialize","kibana","logstash","elk-collector","elk-data-view"},"Invalid ELK component scope")
+    ingestion=bool(chosen & {"logstash","elk-collector"})
+    browser=bool(chosen & {"kibana","elk-data-view"})
     secret=json.load(sys.stdin)
     env=dict(os.environ)
     for key in ('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','http_proxy','https_proxy','all_proxy'): env.pop(key,None)
@@ -60,7 +65,8 @@ def main():
     ctx=ssl.create_default_context(cafile=args.ca)
     require(ctx.check_hostname and ctx.verify_mode==ssl.CERT_REQUIRED,'TLS verification required')
     with contextlib.ExitStack() as stack:
-        ports={name:stack.enter_context(forward(kube,name,port,env)) for name,port in (('elasticsearch',9200),('logstash',8080),('kibana',5601))}
+        endpoints=[('elasticsearch',9200)]+([('logstash',8080)] if ingestion else [])+([('kibana',5601)] if browser else [])
+        ports={name:stack.enter_context(forward(kube,name,port,env)) for name,port in endpoints}
         def request(service, method, path, auth=None, payload=None, expect=200):
             headers={'Content-Type':'application/json','kbn-xsrf':'sunmoon-acceptance'}
             if auth:
@@ -90,42 +96,44 @@ def main():
         require(request('elasticsearch','GET','/',admin)['version']['number']==args.version,'Elasticsearch version differs from selected lock')
         health=request('elasticsearch','GET','/_cluster/health',admin)
         require(health['number_of_nodes']==1 and health['status'] in ('yellow','green'),'Single node search health not ready')
-        request('logstash','POST','/',(args.ingest_user,'invalid-acceptance-password'),{'message':'rejected'},expect=401)
-        nonce=uuid.uuid4().hex
-        marker={'sunmoon_acceptance_id':nonce,'message':'中文日志链路验收','service':{'name':'sunmoon-platform-acceptance'}}
-        own_doc=None
-        try:
-            request('logstash','POST','/',(args.ingest_user,secret['ingest_password']),marker)
-            query={'query':{'term':{'sunmoon_acceptance_id.keyword':nonce}},'size':2}
-            deadline=time.monotonic()+90
-            while time.monotonic()<deadline:
-                search=request('elasticsearch','POST','/'+args.index_prefix+'-*/_search',admin,query)
-                hits=search['hits']['hits']
-                if hits:
-                    require(len(hits)==1 and hits[0]['_source']['sunmoon_acceptance_id']==nonce,'Acceptance marker identity differs')
-                    own_doc=hits[0];break
-                time.sleep(1)
-            require(own_doc is not None,'Logstash event did not reach Elasticsearch')
-            result=request('elasticsearch','POST','/'+args.index_prefix+'-*/_search',reader,query)
-            require(len(result['hits']['hits'])==1,'Independent read identity could not retrieve the marker')
-            request('elasticsearch','POST','/'+args.index_prefix+'-*/_search',writer,query,expect=403)
-            request('elasticsearch','GET','/_security/user',writer,expect=403)
-            request('elasticsearch','PUT','/foreign-acceptance/_doc/'+nonce,writer,marker,expect=403)
-            request('elasticsearch','PUT','/'+own_doc['_index']+'/_doc/'+nonce,reader,marker,expect=403)
+        if ingestion:
+            request('logstash','POST','/',(args.ingest_user,'invalid-acceptance-password'),{'message':'rejected'},expect=401)
+            nonce=uuid.uuid4().hex
+            marker={'sunmoon_acceptance_id':nonce,'message':'中文日志链路验收','service':{'name':'sunmoon-platform-acceptance'}}
+            own_doc=None
+            try:
+                request('logstash','POST','/',(args.ingest_user,secret['ingest_password']),marker)
+                query={'query':{'term':{'sunmoon_acceptance_id.keyword':nonce}},'size':2}
+                deadline=time.monotonic()+90
+                while time.monotonic()<deadline:
+                    search=request('elasticsearch','POST','/'+args.index_prefix+'-*/_search',admin,query)
+                    hits=search['hits']['hits']
+                    if hits:
+                        require(len(hits)==1 and hits[0]['_source']['sunmoon_acceptance_id']==nonce,'Acceptance marker identity differs')
+                        own_doc=hits[0];break
+                    time.sleep(1)
+                require(own_doc is not None,'Logstash event did not reach Elasticsearch')
+                result=request('elasticsearch','POST','/'+args.index_prefix+'-*/_search',reader,query)
+                require(len(result['hits']['hits'])==1,'Independent read identity could not retrieve the marker')
+                request('elasticsearch','POST','/'+args.index_prefix+'-*/_search',writer,query,expect=403)
+                request('elasticsearch','GET','/_security/user',writer,expect=403)
+                request('elasticsearch','PUT','/foreign-acceptance/_doc/'+nonce,writer,marker,expect=403)
+                request('elasticsearch','PUT','/'+own_doc['_index']+'/_doc/'+nonce,reader,marker,expect=403)
+            finally:
+                if own_doc:
+                    require(own_doc['_index'].startswith(args.index_prefix+'-') and own_doc['_source']['sunmoon_acceptance_id']==nonce,'Refuse removing foreign data')
+                    request('elasticsearch','DELETE','/'+own_doc['_index']+'/_doc/'+own_doc['_id']+'?refresh=true',admin)
+        if browser:
             # Detailed status requires operator privileges; keep the runtime reader role unchanged.
             status=request('kibana','GET','/api/status',admin)
             require(status['status']['overall']['level']=='available','Kibana overall status is not available')
             require(status['version']['number']==args.version,'Kibana version differs from selected lock')
             request('kibana','GET','/api/saved_objects/_find?type=index-pattern&per_page=1',reader)
-        finally:
-            if own_doc:
-                require(own_doc['_index'].startswith(args.index_prefix+'-') and own_doc['_source']['sunmoon_acceptance_id']==nonce,'Refuse removing foreign data')
-                request('elasticsearch','DELETE','/'+own_doc['_index']+'/_doc/'+own_doc['_id']+'?refresh=true',admin)
         collected={}
-        if str(args.collector_enabled).lower() == 'true':
+        if 'elk-collector' in chosen and str(args.collector_enabled).lower() == 'true':
             from collector.acceptance import verify_application_logs
             collected=verify_application_logs(request,kube,env,args,reader,require)
-        print(json.dumps({'application_log_collection':collected,'passed':True,'version':args.version,'tls_chain_and_hostname':True,'unauthenticated_rejected':True,'logstash_to_elasticsearch':True,'independent_log_read':True,'writer_read_and_admin_denied':True,'foreign_index_denied':True,'reader_write_denied':True,'kibana_authenticated_api':True,'scope':'Actual internal ELK protocol, permissions and enabled node application logs/data view; public ingress, restart and disaster recovery require separate acceptance'}))
+        print(json.dumps({'application_log_collection':collected,'passed':True,'version':args.version,'tls_chain_and_hostname':True,'unauthenticated_rejected':True,'selected_components':sorted(chosen),'logstash_to_elasticsearch':ingestion,'independent_log_read':ingestion,'writer_read_and_admin_denied':ingestion,'foreign_index_denied':ingestion,'reader_write_denied':ingestion,'kibana_authenticated_api':browser,'scope':'Actual internal ELK protocol, permissions and enabled node application logs/data view; public ingress, restart and disaster recovery require separate acceptance'}))
 
 if __name__=='__main__':
     try: main()

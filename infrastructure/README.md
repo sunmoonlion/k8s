@@ -1,5 +1,25 @@
 # 部署与维护入口
 
+## 日常按对象操作
+
+目录与动作采用同一分类：平台→应用→组件。维护者选择`OBJECT`后选择动作，内部服务/应用编排分工无需另作选择。底层模块Make目标仍供实现及专门维护调用，日常以以下公开入口为准。
+
+```bash
+make -C infrastructure platform-plan OBJECT=all
+make -C infrastructure platform-config OBJECT=data-platform/postgresql
+make -C infrastructure platform-status OBJECT=app-platform/tpl-app
+make -C infrastructure platform-stage OBJECT=app-platform/tpl-app/tpl-web-frontend
+make -C infrastructure platform-deploy OBJECT=all
+make -C infrastructure platform-check OBJECT=data-platform/postgresql
+```
+
+`stage`只生成候选；固定Git提交→`flux-release`→显式晋级环境源→`deploy`，不会自动发布未审配置。组件级动作保持未选声明，依赖必须已启用/Ready；首次整套部署由Flux依赖图收敛。整套源仍是一个OCI包，不声称每个组件有独立发布仓库。业务前后端构建用`platform-build OBJECT=...`，固定镜像/宿主模块没有应用源码构建能力。
+
+账号也按相同对象选择，[账号维护](host/accounts.md)列出人工管理员、只读及程序身份的区别、初次预设、私有主备、开发密码表和实际轮换限制。PostgreSQL/Redis等管理员也在统一目录；不把它们全部归成“机器账号”。
+
+本轮公开对象入口是候选，阶段所有权交接与真实轮换待[维护单元](../docs/platform-kind-v1/component-account-maintenance.md)实施验收，已有服务仍由原运行源协调；原始启停已验证的边界见正式验收说明。
+
+
 日常任务从[维护导航](../docs/README.md)选择；架构见[职责与约束](../docs/platform-kind-v1/architecture.md)，已验证范围与缺项见[验收边界](../docs/platform-kind-v1/verification.md)。
 
 物料按组件归属查看与准备见[artifacts](artifacts/README.md)，应用构建/部署见[applications](applications/README.md)；日常可先运行`make -C infrastructure material-inventory`定位所需文件与Harbor目标。

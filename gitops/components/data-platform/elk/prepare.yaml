@@ -170,17 +170,10 @@
   loop: [elasticsearch, initialize, kibana, logstash]
 - name: Prepare declarative Kibana data view initialization
   ansible.builtin.include_tasks: kibana/data-view/prepare.yaml
-  when: elk_log_data_view_enabled | bool
+  when: elk_log_data_view_enabled | bool and selection.selected_stages | intersect(["elk-data-view","elk-kibana-ui"]) | length > 0
 - name: Prepare the Kibana browser route and independent human reader
   ansible.builtin.include_tasks: kibana/ui/prepare.yaml
-  when: kibana_ui_enabled | bool
+  when: kibana_ui_enabled | bool and "elk-kibana-ui" in selection.selected_stages
 - name: Prepare the bounded node application log collector
   ansible.builtin.include_tasks: collector/prepare.yaml
-  when: elk_collector_enabled | bool
-- name: Aggregate the post-initialization runtime components
-  ansible.builtin.copy:
-    dest: '{{ build }}/data-platform/elk/runtime/kustomization.yaml'
-    owner: '{{ cluster_operator }}'
-    mode: '0644'
-    content: |
-      {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':['../kibana','../logstash']} | to_nice_yaml }}
+  when: elk_collector_enabled | bool and "elk-collector" in selection.selected_stages

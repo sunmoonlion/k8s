@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sunmoon-kind-infinity
+  annotations:
+    sunmoonai.com/storage-owner: sunmoon-kind
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  capacity: {storage: 30Gi}
+  accessModes: [ReadWriteOnce]
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: sunmoon-static
+  local:
+    path: /data/kind-local-storage/infinity
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [sunmoon-kind-worker]
+  claimRef:
+    namespace: data-platform-dev
+    name: infinity-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: infinity-data
+  namespace: data-platform-dev
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: sunmoon-static
+  volumeName: sunmoon-kind-infinity
+  resources:
+    requests: {storage: 30Gi}

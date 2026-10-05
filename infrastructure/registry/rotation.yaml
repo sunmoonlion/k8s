@@ -1,0 +1,62 @@
+---
+- name: Require the approved registry rotation window
+  ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-window.yaml'
+- name: Prepare the independent account receipt before any remote write
+  ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-transaction-step.yaml'
+  vars: {account_transaction_step: prepare}
+  when: account_action == 'rotate'
+- name: Rotate the actual Harbor identity and keep official inputs synchronized
+  when: account_action == 'rotate'
+  block:
+    - name: Recheck time before changing the server account
+      ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-window.yaml'
+    - name: Change and verify the selected identity once
+      ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-transaction-step.yaml'
+      vars: {account_transaction_step: apply}
+    - name: Recheck time before the registry restart
+      ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-window.yaml'
+    - name: Stop the native standalone registry
+      become: false
+      ansible.builtin.command: {argv: [make, -s, -C, '{{ inventory_dir }}/..', registry-stop]}
+      changed_when: true
+    - name: Reconfigure with the official pinned installer and start the registry
+      become: false
+      ansible.builtin.command: {argv: [make, -s, -C, '{{ inventory_dir }}/..', registry-deploy]}
+      changed_when: true
+    - name: Verify final API identity and independent file pair
+      ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-transaction-step.yaml'
+      vars: {account_transaction_step: finalize}
+  rescue:
+    - name: Recover the API endpoint before classifying the password write outcome
+      become: false
+      ansible.builtin.command: {argv: [make, -s, -C, '{{ inventory_dir }}/..', registry-start]}
+      register: registry_endpoint_recovery
+      failed_when: false
+      changed_when: true
+    - name: Restore the receipt's exact old identity and private files
+      ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-transaction-step.yaml'
+      vars: {account_transaction_step: rollback}
+    - name: Restore the native official registry configuration
+      become: false
+      ansible.builtin.command: {argv: [make, -s, -C, '{{ inventory_dir }}/..', registry-stop, registry-deploy]}
+      changed_when: true
+    - name: Report that this operation failed and was recovered
+      ansible.builtin.fail:
+        msg: Harbor rotation failed and the exact old account/configuration was restored. The private operation receipt is retained; this is not a successful rotation.
+- name: Explicitly recover only this registry operation
+  when: account_action == 'recover'
+  block:
+    - name: Recover the existing registry API endpoint
+      become: false
+      ansible.builtin.command: {argv: [make, -s, -C, '{{ inventory_dir }}/..', registry-start]}
+      failed_when: false
+      changed_when: true
+    - name: Restore the exact receipt rather than regenerate credentials
+      ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-transaction-step.yaml'
+      vars: {account_transaction_step: rollback}
+    - name: Apply the restored official inputs and verify registry login
+      become: false
+      ansible.builtin.command: {argv: [make, -s, -C, '{{ inventory_dir }}/..', registry-stop, registry-deploy]}
+      changed_when: true
+- name: Synchronize the owner's development lookup only after verified server state
+  ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-table-sync.yaml'

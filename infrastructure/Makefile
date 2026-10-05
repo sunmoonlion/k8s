@@ -1,5 +1,7 @@
 SHELL := /bin/bash
 .DELETE_ON_ERROR:
+# Native deployment and publication recipes must run serially, even when make -j is supplied.
+.NOTPARALLEL:
 .DEFAULT_GOAL := help
 
 UV ?= uv
@@ -12,6 +14,9 @@ SERVICE_IMAGES ?= all
 BINARIES ?= kind,kubectl,kubeadm
 SITE ?= environments/kind/site.yaml
 APP ?= tpl
+OBJECT ?= all
+SELECTION_ACTION ?= select
+export OBJECT SITE
 COMPONENT ?= backend
 ifneq ($(filter application-build-% application-publish-% application-source-plan application-deployment-plan application-render application-stage application-validate-release application-check application-check-public application-bootstrap,$(MAKECMDGOALS)),)
 ifneq ($(words $(APP)),1)
@@ -58,6 +63,7 @@ CONFIG_FILES := applications/config.yaml \
 	../gitops/components/data-platform/object-storage/config.yaml \
 	../gitops/components/data-platform/text-embeddings/config.yaml \
 	../gitops/components/data-platform/elk/config.yaml \
+	../gitops/components/data-platform/elk/elasticsearch/config.yaml \
 	../gitops/components/data-platform/elk/collector/config.yaml \
 	../gitops/components/data-platform/elk/kibana/data-view/config.yaml \
 	../gitops/components/data-platform/elk/kibana/ui/config.yaml \
@@ -70,11 +76,12 @@ CONFIG_FILES := applications/config.yaml \
 	../gitops/components/ingress-platform/traefik/config.yaml \
 	../gitops/components/ingress-platform/traefik/service-access/config.yaml \
 	../gitops/components/app-platform/auth-app/casdoor/config.yaml
+export PLATFORM_CONFIG_FILES := $(CONFIG_FILES)
 CONFIG_ARGS = $(foreach file,$(CONFIG_FILES),--extra-vars '@$(file)') --extra-vars '@$(SITE)'
 
 .PHONY: help tools images preflight check-images
 help:
-	@printf '%s\n' 'platform-deploy Deploy the promoted complete platform through native module switches' 'platform-check Verify the configured platform through real public protocols' 'platform-plan / platform-status Review lifecycle candidates and current units' 'platform-install-lifecycle / platform-enable-boot Install only in approved maintenance' 'platform-start / platform-stop Control the installed owned platform' 'material-inventory Show component ownership, local paths and Harbor targets; MATERIAL_OWNER filters' 'config       List the authoritative user configuration files' 'tools        Install locked Ansible into infrastructure/.venv' 'images       Show selected upstream image identities' 'check-images Fail if an upstream image is unresolved' 'install-binaries Install verified tools into .tools/bin only' 'preflight    Read-only host mount checks (Ansible)' 'plan-artifacts Preview selected locked files without downloads' 'fetch-artifacts Download and verify selected files after capacity check' 'check-artifacts Verify selected files fully offline' 'plan-node-build Preview verified official KIND build inputs' 'build-node    Build and inspect a new node image; no cluster creation' 'check-node    Inspect existing node image without rebuilding' 'plan-bootstrap-images Preview node and Calico archive preparation' 'fetch-bootstrap-images Pull/export and verify immutable image archives' 'check-bootstrap-images Verify complete archives offline' 'prepare-harbor-materials Extract official installer and load verified images only' 'registry-plan Preview standalone registry paths and backend' 'registry-deploy Configure and start the new Harbor without switching ingress' 'registry-start / registry-stop / registry-status Control only the new Harbor' 'prepare-host-materials / check-host-materials Prepare or verify HAProxy and skopeo archives' 'entry-plan / entry-preview / entry-deploy / entry-start / entry-stop / entry-status Control TLS entry' 'registry-accounts Provision private project and bounded publisher/puller identities' 'registry-publish-check Publish and fully pull back the locked HAProxy image after cutover' 'scanner-db-plan / scanner-db-install / scanner-db-verify Manage locked offline databases' 'registry-scan-check Scan the published image through Harbor and save the report' 'registry-recovery-plan / registry-recovery-check Rehearse an explicit cold backup in isolation' 'cluster-plan / cluster-deploy / cluster-status Native isolated KIND bootstrap' 'cluster-pull-check Verify private pulls and DNS on all three nodes' 'install-flux / flux-plan / flux-materials / flux-verify-materials / flux-publish Manage locked Flux materials' 'flux-bootstrap Verify materials, publish, install and reconcile the promoted source' 'flux-deploy / flux-status Install and check controllers' 'flux-release / flux-source-apply / flux-source-status Publish and reconcile committed declarations' 'install-secrets-tools / secrets-prepare / secrets-apply / secrets-status Manage independent SOPS identity' 'foundations-bootstrap / foundations-check Deploy and verify SOPS and platform base declarations' 'services-plan / services-materials / services-publish Prepare pinned selected platform images' 'services-render / services-stage / services-validate-release Review settings against the promoted GitOps release' 'services-bootstrap / services-check Deploy and verify enabled platform services' 'services-check-public Verify platform UI through the public entry' 'application-plan / application-materials / application-verify-materials / application-publish Prepare locked application base images' 'application-build-backend / application-publish-backend Build and publish backend; APP=tpl|info|knowledge|investment' 'application-build-web / application-build-admin Build frontends of the selected APP' 'application-publish-web / application-publish-admin Publish verified frontend archives' 'application-source-plan APP=tpl COMPONENT=backend Check clean pinned sources without building' 'application-rehearse-downloads Exercise real dependency download fallback' 'application-deployment-plan / application-stage APP=tpl|info|knowledge|investment Prepare selected identities and runtime declarations' 'application-bootstrap / application-check APP=tpl|info|knowledge|investment Reconcile selected declarations and verify identities and runtime'
+	@printf '%s\n' 'platform-plan/config/status OBJECT=<平台/应用/组件> 查看依赖、配置和运行状态' 'platform-stage OBJECT=... 生成选中对象的声明候选；不发布' 'platform-build OBJECT=<业务应用或前后端组件> 在线构建并发布固定摘要' 'platform-deploy/check OBJECT=all|... 原生整套或选中对象部署/真实检查' 'platform-start/stop 统一启停已安装的本机平台' 'platform-account-plan/view OBJECT=... 查看维护账号能力与私有位置' 'platform-account-import 导入已批准的12/18预设；不改已有账号' 'platform-account-check/stage/rotate/recover 按组件维护已支持的账号；参见host/accounts.md' 'platform-install-lifecycle/enable-boot 宿主安装与开机管理，需明确维护批准' 'material-inventory 显示组件物料与Harbor关系，MATERIAL_OWNER可过滤' 'config 查看全部配置来源；各模块底层入口见对应README'
 
 tools:
 	$(UV) venv --python '$(HOST_PYTHON)' --relocatable --allow-existing .venv
@@ -197,7 +204,7 @@ flux-status:
 flux-release:
 	$(ANSIBLE) -i host/inventory.yaml flux/source.yaml $(CONFIG_ARGS) --extra-vars flux_source_action=publish
 flux-source-apply:
-	$(ANSIBLE) -i host/inventory.yaml flux/source.yaml $(CONFIG_ARGS) --extra-vars flux_source_action=apply
+	$(ANSIBLE) -i host/inventory.yaml flux/source.yaml $(CONFIG_ARGS) --extra-vars flux_source_action=apply $(if $(FLUX_SOURCE_FILE),--extra-vars 'source_lock_path=$(FLUX_SOURCE_FILE)')
 flux-source-status:
 	$(ANSIBLE) -i host/inventory.yaml flux/source.yaml $(CONFIG_ARGS) --extra-vars flux_source_action=status
 
@@ -249,14 +256,14 @@ services-render:
 	$(ANSIBLE) -i host/inventory.yaml services/render.yaml $(CONFIG_ARGS)
 # Deploy the promoted, committed release. Rendering a changed release is a separate review step.
 services-bootstrap:
-	$(MAKE) services-credentials
+	$(if $(filter all data-platform data-platform/postgresql data-platform/redis messaging-platform messaging-platform/rabbitmq app-platform app-platform/auth-app app-platform/auth-app/casdoor,$(OBJECT)),$(MAKE) services-credentials)
 	$(MAKE) services-verify-materials
 	$(MAKE) services-publish
-	$(MAKE) services-ragflow-image
-	$(MAKE) services-ragflow-image-publish
-	$(MAKE) services-tools
-	$(MAKE) install-binaries BINARIES=mc
-	$(MAKE) services-chart
+	$(if $(filter all data-platform data-platform/ragflow,$(OBJECT)),$(MAKE) services-ragflow-image)
+	$(if $(filter all data-platform data-platform/ragflow,$(OBJECT)),$(MAKE) services-ragflow-image-publish)
+	$(if $(filter all ingress-platform ingress-platform/traefik,$(OBJECT)),$(MAKE) services-tools)
+	$(if $(filter all data-platform data-platform/object-storage data-platform/ragflow,$(OBJECT)),$(MAKE) install-binaries BINARIES=mc)
+	$(if $(filter all ingress-platform ingress-platform/traefik,$(OBJECT)),$(MAKE) services-chart)
 	$(MAKE) services-render
 	$(MAKE) services-validate-release
 	$(MAKE) flux-source-apply
@@ -341,34 +348,43 @@ services-ragflow-image-publish:
 
 # Serial native module invocation isolates facts between independent playbooks.
 # The generated include contains only booleans, derived afresh on each deployment.
--include .build/host/deployment.mk
+SELECTION_PREFIX := .build/host/selections/$(subst /,--,$(OBJECT))
+-include $(SELECTION_PREFIX).mk
 .PHONY: platform-deploy platform-deploy-selected platform-check platform-selection
 platform-selection:
-	$(ANSIBLE) -i host/inventory.yaml host/deployment.yaml $(CONFIG_ARGS)
+	$(ANSIBLE) -i host/inventory.yaml host/deployment.yaml $(CONFIG_ARGS) --extra-vars 'deployment_action=$(SELECTION_ACTION)'
+platform-deploy: SELECTION_ACTION=deploy
 platform-deploy: platform-selection
 	$(MAKE) platform-deploy-selected
 platform-deploy-selected:
+	@.venv/bin/python -c 'import json,os; d=json.load(open("$(SELECTION_PREFIX).json")); assert d["object"]==os.environ["OBJECT"] and d["action"]=="deploy", "Run the public platform-deploy entry to validate this object afresh"'
 	$(MAKE) preflight
+	$(ANSIBLE) -i host/inventory.yaml host/dependencies.yaml $(CONFIG_ARGS)
 	$(if $(filter true,$(PLATFORM_REGISTRY)),$(MAKE) prepare-harbor-materials)
 	$(if $(filter true,$(PLATFORM_REGISTRY)),$(MAKE) registry-deploy)
 	$(if $(filter true,$(PLATFORM_ENTRY)),$(MAKE) entry-deploy)
 	$(if $(filter true,$(PLATFORM_CLUSTER)),$(MAKE) cluster-deploy)
 	$(if $(filter true,$(PLATFORM_FLUX)),$(MAKE) flux-bootstrap)
 	$(if $(filter true,$(PLATFORM_FLUX)),$(MAKE) foundations-check)
-	$(if $(filter true,$(PLATFORM_SERVICES)),$(MAKE) services-bootstrap)
+	$(if $(and $(filter true,$(PLATFORM_FOUNDATIONS)),$(filter false,$(PLATFORM_SERVICES))),$(MAKE) services-render services-validate-release foundations-bootstrap foundations-check)
+	$(if $(filter true,$(PLATFORM_SERVICES)),$(MAKE) services-bootstrap SERVICE_IMAGES=$(PLATFORM_SERVICE_IMAGES))
 	$(if $(filter true,$(PLATFORM_TPL)),$(MAKE) application-bootstrap APP=tpl)
 	$(if $(filter true,$(PLATFORM_INFO)),$(MAKE) application-bootstrap APP=info)
 	$(if $(filter true,$(PLATFORM_KNOWLEDGE)),$(MAKE) application-bootstrap APP=knowledge)
 	$(if $(filter true,$(PLATFORM_INVESTMENT)),$(MAKE) application-bootstrap APP=investment)
+	$(if $(filter host,$(OBJECT)),$(MAKE) platform-install-lifecycle)
 
-.PHONY: platform-plan platform-install-lifecycle platform-enable-boot platform-start platform-stop platform-status
-platform-plan platform-install-lifecycle platform-enable-boot platform-start platform-stop platform-status:
-	$(ANSIBLE) -i host/inventory.yaml host/lifecycle.yaml $(CONFIG_ARGS) --extra-vars 'host_action=$(if $(filter platform-install-lifecycle,$@),install,$(patsubst platform-%,%,$@))'
+.PHONY: host-lifecycle-plan platform-install-lifecycle platform-enable-boot platform-start platform-stop platform-status
+host-lifecycle-plan platform-install-lifecycle platform-enable-boot platform-start platform-stop:
+	$(ANSIBLE) -i host/inventory.yaml host/lifecycle.yaml $(CONFIG_ARGS) --extra-vars 'host_action=$(if $(filter platform-install-lifecycle,$@),install,$(if $(filter host-lifecycle-plan,$@),plan,$(patsubst platform-%,%,$@)))'
 
+platform-check: SELECTION_ACTION=check
 platform-check: platform-selection
 	$(MAKE) platform-check-selected
 .PHONY: platform-check-selected
 platform-check-selected:
+	@.venv/bin/python -c 'import json,os; d=json.load(open("$(SELECTION_PREFIX).json")); assert d["object"]==os.environ["OBJECT"] and d["action"]=="check", "Run the public platform-check entry to validate this object afresh"'
+	$(if $(filter host,$(OBJECT)),$(ANSIBLE) -i host/inventory.yaml host/lifecycle.yaml $(CONFIG_ARGS) --extra-vars host_action=status)
 	$(if $(filter true,$(PLATFORM_CLUSTER)),$(MAKE) cluster-status)
 	$(if $(filter true,$(PLATFORM_REGISTRY)),$(MAKE) registry-status)
 	$(if $(filter true,$(PLATFORM_ENTRY)),$(MAKE) entry-status)
@@ -378,3 +394,51 @@ platform-check-selected:
 	$(if $(filter true,$(PLATFORM_INFO)),$(MAKE) application-check-public APP=info)
 	$(if $(filter true,$(PLATFORM_KNOWLEDGE)),$(MAKE) application-check-public APP=knowledge)
 	$(if $(filter true,$(PLATFORM_INVESTMENT)),$(MAKE) application-check-public APP=investment)
+
+# Public object navigation is read-only. Lifecycle candidate generation is an internal host operation.
+.PHONY: platform-plan platform-config platform-status
+platform-plan platform-config:
+	$(ANSIBLE) -i host/inventory.yaml host/deployment.yaml $(CONFIG_ARGS) --extra-vars 'deployment_action=$(patsubst platform-%,%,$@)'
+platform-status:
+ifneq ($(filter $(OBJECT),all host),)
+	$(ANSIBLE) -i host/inventory.yaml host/lifecycle.yaml $(CONFIG_ARGS) --extra-vars host_action=status
+endif
+ifneq ($(filter $(OBJECT),registry entry cluster flux),)
+	$(MAKE) $(if $(filter flux,$(OBJECT)),flux-source-status,$(OBJECT)-status)
+endif
+	$(ANSIBLE) -i host/inventory.yaml host/deployment.yaml $(CONFIG_ARGS) --extra-vars deployment_action=status
+
+# Reviewed candidate generation and application source builds use the same object contract.
+.PHONY: platform-stage platform-stage-selected platform-build platform-build-selected
+platform-stage: SELECTION_ACTION=stage
+platform-stage: platform-selection
+	$(MAKE) platform-stage-selected
+platform-stage-selected:
+	@.venv/bin/python -c 'import json,os; d=json.load(open("$(SELECTION_PREFIX).json")); assert d["object"]==os.environ["OBJECT"] and d["action"]=="stage", "Run the public platform-stage entry to validate this object afresh"'
+	$(if $(filter true,$(PLATFORM_FOUNDATIONS) $(PLATFORM_SERVICES)),$(MAKE) services-stage)
+	$(if $(filter true,$(PLATFORM_TPL)),$(MAKE) application-stage APP=tpl)
+	$(if $(filter true,$(PLATFORM_INFO)),$(MAKE) application-stage APP=info)
+	$(if $(filter true,$(PLATFORM_KNOWLEDGE)),$(MAKE) application-stage APP=knowledge)
+	$(if $(filter true,$(PLATFORM_INVESTMENT)),$(MAKE) application-stage APP=investment)
+platform-build: SELECTION_ACTION=build
+platform-build: platform-selection
+	$(MAKE) platform-build-selected
+platform-build-selected:
+	@.venv/bin/python -c 'import json,os; d=json.load(open("$(SELECTION_PREFIX).json")); assert d["object"]==os.environ["OBJECT"] and d["action"]=="build", "Run the public platform-build entry to validate this object afresh"'
+	$(if $(filter true,$(PLATFORM_TPL_BACKEND)),$(MAKE) application-build-backend application-publish-backend APP=tpl)
+	$(if $(filter true,$(PLATFORM_TPL_WEB)),$(MAKE) application-build-web application-publish-web APP=tpl)
+	$(if $(filter true,$(PLATFORM_TPL_ADMIN)),$(MAKE) application-build-admin application-publish-admin APP=tpl)
+	$(if $(filter true,$(PLATFORM_INFO_BACKEND)),$(MAKE) application-build-backend application-publish-backend APP=info)
+	$(if $(filter true,$(PLATFORM_INFO_WEB)),$(MAKE) application-build-web application-publish-web APP=info)
+	$(if $(filter true,$(PLATFORM_INFO_ADMIN)),$(MAKE) application-build-admin application-publish-admin APP=info)
+	$(if $(filter true,$(PLATFORM_KNOWLEDGE_BACKEND)),$(MAKE) application-build-backend application-publish-backend APP=knowledge)
+	$(if $(filter true,$(PLATFORM_KNOWLEDGE_WEB)),$(MAKE) application-build-web application-publish-web APP=knowledge)
+	$(if $(filter true,$(PLATFORM_KNOWLEDGE_ADMIN)),$(MAKE) application-build-admin application-publish-admin APP=knowledge)
+	$(if $(filter true,$(PLATFORM_INVESTMENT_BACKEND)),$(MAKE) application-build-backend application-publish-backend APP=investment)
+	$(if $(filter true,$(PLATFORM_INVESTMENT_WEB)),$(MAKE) application-build-web application-publish-web APP=investment)
+	$(if $(filter true,$(PLATFORM_INVESTMENT_ADMIN)),$(MAKE) application-build-admin application-publish-admin APP=investment)
+
+# Human accounts follow the same object classification; import changes presets only.
+.PHONY: platform-account-plan platform-account-import platform-account-view platform-account-check platform-account-stage platform-account-rotate platform-account-recover
+platform-account-plan platform-account-import platform-account-view platform-account-check platform-account-stage platform-account-rotate platform-account-recover:
+	$(ANSIBLE) -i host/inventory.yaml host/accounts.yaml $(CONFIG_ARGS) --extra-vars 'account_action=$(patsubst platform-account-%,%,$@) account_operation=$(ACCOUNT_OPERATION) account_maintenance_deadline=$(or $(ACCOUNT_DEADLINE),0)'

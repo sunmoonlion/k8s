@@ -1,0 +1,25 @@
+---
+# Used only by native first-install credential initializers. Existing live inputs win.
+- name: Read or restore the explicitly supplied root-only preset and independent copy
+  ansible.builtin.command:
+    argv:
+      - '{{ inventory_dir }}/../.venv/bin/python'
+      - -c
+      - |
+        import json,sys
+        sys.path.insert(0,sys.argv[1])
+        from account_files import restore_preset
+        print(json.dumps(restore_preset(json.load(sys.stdin))))
+      - '{{ inventory_dir }}'
+    stdin: '{{ human_account | to_json }}'
+  register: human_preset_result
+  changed_when: (human_preset_result.stdout | from_json).changed
+  no_log: true
+- name: Preserve the validated explicit first-install value only in memory
+  ansible.builtin.set_fact:
+    human_initial_password: '{{ (human_preset_result.stdout | from_json).password }}'
+  no_log: true
+- name: Retain the first-install value by its unique owning account object
+  ansible.builtin.set_fact:
+    platform_admin_initials: '{{ platform_admin_initials | default({}) | combine({human_account.object:human_initial_password}) }}'
+  no_log: true

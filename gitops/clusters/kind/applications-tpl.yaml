@@ -8,7 +8,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/tpl-app/tpl-backend/database
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: platform-services}]
+  dependsOn: [{name: postgresql}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -42,7 +42,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/tpl-app/tpl-backend/redis
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: tpl-migration}]
+  dependsOn: [{name: tpl-migration}, {name: redis}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -59,7 +59,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/tpl-app/tpl-backend/rabbitmq
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: tpl-redis}]
+  dependsOn: [{name: tpl-redis}, {name: rabbitmq}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -110,7 +110,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/tpl-app/tpl-web-frontend
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: tpl-runtime}]
+  dependsOn: [{name: tpl-runtime}, {name: traefik}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -127,7 +127,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/tpl-app/tpl-admin-frontend
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: tpl-runtime}]
+  dependsOn: [{name: tpl-runtime}, {name: traefik}]
   prune: false
   deletionPolicy: Orphan
   wait: true

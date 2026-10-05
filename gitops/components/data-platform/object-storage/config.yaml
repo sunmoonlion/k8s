@@ -14,3 +14,21 @@ object_storage_license_file: /home/zymun/.config/sunmoonai/licenses/minio.licens
 object_storage_resources:
   requests: {cpu: 100m, memory: 512Mi}
   limits: {cpu: '2', memory: 2Gi}
+
+# Maintainer identity; permissions and current credential storage, never password values.
+operator_account_object_storage:
+  object: data-platform/object-storage
+  id: administrator
+  username: sunmoon_storage_root
+  account_type: platform-administrator
+  table_row: ''
+  table_import: false
+  current_file: '{{ services_config_dir }}/object-storage.yaml'
+  current_field: root_password
+  backup_file: '{{ services_backup_dir }}/object-storage.yaml'
+  minimum_length: 8
+  maximum_length: 128
+  adapter: object-storage
+  initial_preset_supported: false
+  protocol_check_supported: false
+  rotation_supported: false

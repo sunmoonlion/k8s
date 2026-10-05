@@ -10,3 +10,19 @@ casdoor_volume:
 casdoor_hostname: casdoor.sunmoonai.com
 casdoor_database: casdoor
 casdoor_database_user: casdoor
+
+# Human login policy is separate from database and service identities.
+casdoor_human_account:
+  object: app-platform/auth-app/casdoor
+  id: admin
+  username: built-in/admin
+  table_row: '18'
+  table_import: true
+  current_file: '{{ services_config_dir }}/credentials.yaml'
+  current_field: service_credentials.casdoor_admin_password
+  backup_file: '{{ services_backup_dir }}/credentials.yaml'
+  initial_file: '{{ services_config_dir }}/presets/casdoor-admin-password'
+  initial_backup_file: '{{ services_backup_dir }}/presets/casdoor-admin-password'
+  minimum_length: 8
+  maximum_length: 128
+  adapter: casdoor

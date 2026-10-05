@@ -65,7 +65,8 @@ def run(settings):
                 connection.close()
 
     outcomes = {}
-    for surface in ['web', 'admin']:
+    require(bool(settings['clients']) and set(settings['clients']) <= {'web', 'admin'}, 'Invalid selected frontend surfaces')
+    for surface in settings['clients']:
         client = settings['clients'][surface]
         origin = client['origin']
         browser = Browser()

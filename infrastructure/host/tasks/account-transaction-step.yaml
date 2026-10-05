@@ -1,0 +1,24 @@
+---
+- name: Execute one bounded account transaction step without logging secrets
+  ansible.builtin.command:
+    argv:
+      - '{{ inventory_dir }}/../.venv/bin/python'
+      - -c
+      - |
+        import contextlib,importlib.util,json,sys
+        sys.path.insert(0,sys.argv[1])
+        import account_transaction
+        data=json.load(sys.stdin)
+        spec=importlib.util.spec_from_file_location('component_password',data['protocol'])
+        protocol=importlib.util.module_from_spec(spec);spec.loader.exec_module(protocol)
+        context=protocol.session(data['settings']) if hasattr(protocol,'session') else contextlib.nullcontext(data['settings'])
+        with context as settings:
+            result=getattr(account_transaction,data['step'])(protocol,settings,data['account'],data['operation'])
+        print(json.dumps(result))
+      - '{{ inventory_dir }}'
+    stdin: '{{ {"account":human_account,"protocol":account_protocol_path,"settings":account_protocol_settings,"step":account_transaction_step,"operation":account_operation} | to_json }}'
+  register: account_transaction_result
+  no_log: true
+  changed_when: true
+- name: Report only the completed transaction step and receipt identity
+  ansible.builtin.debug: {msg: '{{ account_transaction_result.stdout | from_json }}'}

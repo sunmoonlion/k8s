@@ -18,3 +18,20 @@ registry_data_root: /data/harbor
 registry_instance_dir: /data/harbor/platform-kind-v1
 # 既定日志轮转授权；修改边界见同目录 README 的字段表。
 registry_log_rotation_approved: true
+
+# Human login policy; initial files are private inputs, not passwords in configuration.
+registry_credential_backup_dir: /mnt/sunmoon-data/backups/registry/platform-kind-v1/credentials
+registry_human_account:
+  object: registry
+  id: admin
+  username: admin
+  table_row: '12'
+  table_import: true
+  current_file: '{{ registry_config_dir }}/private/admin-password'
+  current_field: ''
+  backup_file: '{{ registry_credential_backup_dir }}/admin-password'
+  initial_file: '{{ registry_config_dir }}/private/presets/admin-password'
+  initial_backup_file: '{{ registry_credential_backup_dir }}/presets/admin-password'
+  minimum_length: 8
+  maximum_length: 128
+  adapter: harbor

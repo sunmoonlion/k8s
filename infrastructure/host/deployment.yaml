@@ -1,32 +1,145 @@
 ---
-- name: Select native deployment modules from their authoritative switches
+- name: Select canonical objects and native deployment modules
   hosts: kind_hosts
   gather_facts: false
   become: false
+  vars_files: [../services/layout.yaml]
+  vars:
+    deployment_action: select
+    selection_persist: true
+    selection_report: true
+    requested_object: '{{ lookup("env", "OBJECT") | default("all", true) }}'
+    repo: '{{ playbook_dir }}/../..'
+    app_names: [tpl, info, knowledge, investment]
+    application_documents: '{{ (lookup("file", repo + "/gitops/clusters/kind/applications-tpl.yaml") | from_yaml_all | list) + (lookup("file", repo + "/gitops/clusters/kind/applications-info.yaml") | from_yaml_all | list) + (lookup("file", repo + "/gitops/clusters/kind/applications-knowledge.yaml") | from_yaml_all | list) + (lookup("file", repo + "/gitops/clusters/kind/applications-investment.yaml") | from_yaml_all | list) }}'
   tasks:
-    - name: Require the current owned site
+    - name: Require the owned site and a bounded native action
       ansible.builtin.assert:
         quiet: true
         that:
           - cluster_name == 'sunmoon-kind'
           - not ansible_check_mode
-    - name: Create nonsecret native Make selection directory
+          - deployment_action in ['select','plan','config','status','stage','build','check','deploy']
+          - requested_object is match('^(all|[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)*)$')
+    - name: Compute selection and dependency closure from the unique phase graph
+      ansible.builtin.command:
+        argv:
+          - '{{ playbook_dir }}/../.venv/bin/python'
+          - -c
+          - |
+            import json,sys
+            data=json.load(sys.stdin);requested=data['object'];graph={}
+            for stage in data['stages']:
+                if stage['name'] in graph:raise SystemExit('Duplicate component stage')
+                graph[stage['name']]=dict(stage,enabled=bool(stage['enabled']) and (stage['name']=='platform-foundations' or data['services_enabled']))
+            for document in data['applications']:
+                name=document['metadata']['name'];spec=document['spec']
+                path=spec['path'].removeprefix('./components/')
+                owner='/'.join(path.split('/')[:3])
+                app=path.split('/')[1].removesuffix('-app')
+                if name in graph:raise SystemExit('Duplicate application stage')
+                graph[name]={'name':name,'object':owner,'path':path,'dependencies':[d['name'] for d in spec.get('dependsOn',[])],'enabled':data['app_enabled'][app]}
+            modules=data['modules'];objects=sorted({s['object'] for s in graph.values()})
+            groups={prefix for obj in objects for prefix in ['/'.join(obj.split('/')[:i]) for i in range(1,len(obj.split('/')))]}
+            if requested not in set(objects)|groups|set(modules)|{'all'}:raise SystemExit('Unknown OBJECT; choose a listed platform, application, component or infrastructure module')
+            matches=lambda obj:requested=='all' or obj==requested or obj.startswith(requested+'/')
+            chosen=[s for s in graph.values() if matches(s['object'])]
+            active=[s['name'] for s in chosen if s['enabled']]
+            disabled=[s['object'] for s in chosen if not s['enabled']]
+            closure=[];visiting=set();done=set();blocked=[]
+            def visit(name):
+                if name not in graph:raise SystemExit('Undefined stage dependency: '+name)
+                if name in visiting:raise SystemExit('Cyclic stage dependency: '+name)
+                if name in done:return
+                visiting.add(name);stage=graph[name]
+                if not stage['enabled']:blocked.append(name)
+                for dep in stage['dependencies']:visit(dep)
+                visiting.remove(name);done.add(name);closure.append(name)
+            for name in active:visit(name)
+            selected_objects=sorted({s['object'] for s in chosen})
+            services=sorted({s['object'] for s in data['stages'] if s['name'] in active})
+            active_objects=sorted({graph[n]['object'] for n in active})
+            apps={app:sorted({obj.split('/')[2] for obj in active_objects if obj.startswith('app-platform/'+app+'-app/')}) for app in data['app_enabled']}
+            selected_modules={name:(info['enabled'] and (requested=='all' or name==requested)) for name,info in modules.items()}
+            material_ids=sorted({image for stage in data['stages'] if stage['name'] in active for image in stage.get('images',[])})
+            action=data['action']
+            if action in ['select','deploy','stage','build','check'] and requested in modules and not modules[requested]['enabled']:raise SystemExit('Selected infrastructure module is disabled')
+            if action in ['select','deploy','stage','build','check'] and requested!='all' and disabled and not active:raise SystemExit('Selected object is disabled; change its owning config explicitly')
+            if action in ['select','deploy','stage','build','check'] and blocked:raise SystemExit('Disabled dependency: '+', '.join(sorted(set(blocked))))
+            if action=='stage' and any(selected_modules.values()) and requested!='all':raise SystemExit('Stage accepts Flux-owned component objects; host modules use plan/config/deploy/check')
+            if action=='build' and (any(selected_modules.values()) or services or not any(apps.values())):raise SystemExit('Build accepts application source components only')
+            files=[]
+            config_objects=selected_objects+sorted({graph[n]['object'] for n in closure})
+            for file in data['config_files']:
+                normalized=file.removeprefix('../gitops/components/')
+                directory=normalized.rsplit('/',1)[0]
+                if requested=='all' or file==data['site'] or directory=='host' or (directory in modules and selected_modules.get(directory)) or (directory=='services' and services) or (directory=='applications' and any(apps.values())) or (file.startswith('../gitops/') and any(obj==directory or obj.startswith(directory+'/') or directory.startswith(obj+'/') for obj in config_objects)):files.append(file)
+            print(json.dumps({'object':requested,'action':action,'objects':selected_objects,'selected_stages':active,'required_stages':closure,'dependency_stages':[n for n in closure if n not in active],'disabled_objects':sorted(set(disabled)),'blocked_dependencies':sorted(set(blocked)),'services':services,'service_image_ids':material_ids,'applications':apps,'modules':selected_modules,'configuration_files':files,'known_objects':objects,'source_scope':'One immutable OCI bundle is promoted; unselected declarations must stay unchanged.'}))
+        stdin: '{{ {"object":requested_object,"action":deployment_action,"stages":component_stages,"services_enabled":services_enabled | bool,"applications":application_documents,"app_enabled":{"tpl":tpl_deployment.enabled,"info":info_deployment.enabled,"knowledge":knowledge_deployment.enabled,"investment":investment_deployment.enabled},"modules":{"host":{"enabled":true},"registry":{"enabled":registry_enabled},"entry":{"enabled":entry_enabled},"cluster":{"enabled":cluster_enabled},"flux":{"enabled":flux_enabled}},"config_files":lookup("env","PLATFORM_CONFIG_FILES").split(),"site":lookup("env","SITE") | default("environments/kind/site.yaml",true)} | to_json }}'
+      register: selection_bytes
+      changed_when: false
+    - name: Preserve the selected public object contract
+      ansible.builtin.set_fact:
+        selection: '{{ selection_bytes.stdout | from_json }}'
+    - name: Show the selected objects, configuration and dependency plan
+      ansible.builtin.debug:
+        var: selection
+      when: selection_report | bool and deployment_action == 'plan'
+    - name: List authoritative configuration files beside the selected objects
+      ansible.builtin.debug:
+        msg: '{{ {"object":selection.object,"configuration_files":selection.configuration_files,"private_inputs":"Use platform-account-plan OBJECT=<object> for human login paths; values never appear here."} }}'
+      when: selection_report | bool and deployment_action == 'config'
+    - name: Read actual selected Flux stages without repairing or starting anything
+      ansible.builtin.command:
+        argv: '{{ [playbook_dir + "/../.tools/bin/kubectl","--kubeconfig=" + cluster_kubeconfig,"--context=kind-" + cluster_name,"--request-timeout=30s","get","kustomization","-n","flux-system","--ignore-not-found=true","-o","json"] + selection.selected_stages }}'
+      register: observed_stages
+      changed_when: false
+      when: deployment_action == 'status' and selection.selected_stages | length > 0
+    - name: Report actual stage identities and readiness without credentials
+      ansible.builtin.debug:
+        msg: '{{ {"object":selection.object,"expected_stages":selection.selected_stages,"observed":(observed_stages.stdout | from_json).get("items",[])} }}'
+      when: deployment_action == 'status' and selection.selected_stages | length > 0
+    - name: Create the nonsecret native Make selection directory
       ansible.builtin.file:
-        path: '{{ playbook_dir }}/../.build/host'
+        path: '{{ playbook_dir }}/../.build/host/selections'
         state: directory
         mode: '0755'
-    - name: Render only boolean module selection, never commands or credentials
+      when: selection_persist | bool and deployment_action in ['select','deploy','stage','build','check']
+    - name: Save only validated selection facts, never commands or credentials
       ansible.builtin.copy:
-        dest: '{{ playbook_dir }}/../.build/host/deployment.mk'
+        dest: '{{ playbook_dir }}/../.build/host/selections/{{ selection.object | replace("/","--") }}.json'
+        mode: '0644'
+        content: '{{ selection | to_nice_json }}'
+      when: selection_persist | bool and deployment_action in ['select','deploy','stage','build','check']
+    - name: Render native Make switches from authoritative configuration
+      ansible.builtin.copy:
+        dest: '{{ playbook_dir }}/../.build/host/selections/{{ selection.object | replace("/","--") }}.mk'
         mode: '0644'
         content: |
-          # Generated from authoritative config switches; do not edit.
-          PLATFORM_REGISTRY := {{ registry_enabled | bool | lower }}
-          PLATFORM_ENTRY := {{ entry_enabled | bool | lower }}
-          PLATFORM_CLUSTER := {{ cluster_enabled | bool | lower }}
-          PLATFORM_FLUX := {{ flux_enabled | bool | lower }}
-          PLATFORM_SERVICES := {{ services_enabled | bool | lower }}
-          PLATFORM_TPL := {{ tpl_deployment.enabled | bool | lower }}
-          PLATFORM_INFO := {{ info_deployment.enabled | bool | lower }}
-          PLATFORM_KNOWLEDGE := {{ knowledge_deployment.enabled | bool | lower }}
-          PLATFORM_INVESTMENT := {{ investment_deployment.enabled | bool | lower }}
+          # Generated from canonical object selection; do not edit.
+          PLATFORM_HOST := {{ selection.modules.host | bool | lower }}
+          PLATFORM_SERVICE_IMAGES := {{ selection.service_image_ids | join(",") }}
+          PLATFORM_RAGFLOW := {{ ("data-platform/ragflow" in selection.services) | lower }}
+          PLATFORM_REGISTRY := {{ selection.modules.registry | bool | lower }}
+          PLATFORM_ENTRY := {{ selection.modules.entry | bool | lower }}
+          PLATFORM_CLUSTER := {{ selection.modules.cluster | bool | lower }}
+          PLATFORM_FLUX := {{ selection.modules.flux | bool | lower }}
+          PLATFORM_FOUNDATIONS := {{ ('foundations' in selection.services) | lower }}
+          PLATFORM_SERVICES := {{ (services_enabled | bool and selection.services | difference(['foundations']) | length > 0) | lower }}
+          PLATFORM_TPL := {{ (selection.applications.tpl | length > 0) | lower }}
+          PLATFORM_TPL_BACKEND := {{ ("tpl-backend" in selection.applications.tpl) | lower }}
+          PLATFORM_TPL_WEB := {{ ("tpl-web-frontend" in selection.applications.tpl) | lower }}
+          PLATFORM_TPL_ADMIN := {{ ("tpl-admin-frontend" in selection.applications.tpl) | lower }}
+          PLATFORM_INFO := {{ (selection.applications.info | length > 0) | lower }}
+          PLATFORM_INFO_BACKEND := {{ ("info-backend" in selection.applications.info) | lower }}
+          PLATFORM_INFO_WEB := {{ ("info-web-frontend" in selection.applications.info) | lower }}
+          PLATFORM_INFO_ADMIN := {{ ("info-admin-frontend" in selection.applications.info) | lower }}
+          PLATFORM_KNOWLEDGE := {{ (selection.applications.knowledge | length > 0) | lower }}
+          PLATFORM_KNOWLEDGE_BACKEND := {{ ("knowledge-backend" in selection.applications.knowledge) | lower }}
+          PLATFORM_KNOWLEDGE_WEB := {{ ("knowledge-web-frontend" in selection.applications.knowledge) | lower }}
+          PLATFORM_KNOWLEDGE_ADMIN := {{ ("knowledge-admin-frontend" in selection.applications.knowledge) | lower }}
+          PLATFORM_INVESTMENT := {{ (selection.applications.investment | length > 0) | lower }}
+          PLATFORM_INVESTMENT_BACKEND := {{ ("investment-backend" in selection.applications.investment) | lower }}
+          PLATFORM_INVESTMENT_WEB := {{ ("investment-web-frontend" in selection.applications.investment) | lower }}
+          PLATFORM_INVESTMENT_ADMIN := {{ ("investment-admin-frontend" in selection.applications.investment) | lower }}
+      when: selection_persist | bool and deployment_action in ['select','deploy','stage','build','check']

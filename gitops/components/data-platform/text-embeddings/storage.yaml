@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sunmoon-kind-text-embeddings
+  annotations:
+    sunmoonai.com/storage-owner: sunmoon-kind
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  capacity: {storage: 4Gi}
+  accessModes: [ReadWriteOnce]
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: sunmoon-static
+  local:
+    path: /data/kind-local-storage/text-embeddings
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [sunmoon-kind-worker2]
+  claimRef:
+    namespace: data-platform-dev
+    name: text-embeddings-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: text-embeddings-data
+  namespace: data-platform-dev
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: sunmoon-static
+  volumeName: sunmoon-kind-text-embeddings
+  resources:
+    requests: {storage: 4Gi}

@@ -1,13 +1,211 @@
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: platform-services, namespace: flux-system}
+metadata: {name: platform-foundations, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 15m
-  path: ./components/core
+  path: ./components/foundations
   sourceRef: {kind: OCIRepository, name: platform}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: postgresql, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 15m
+  path: ./components/data-platform/postgresql
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: platform-foundations}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: redis, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 15m
+  path: ./components/data-platform/redis
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: platform-foundations}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: rabbitmq, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 15m
+  path: ./components/messaging-platform/rabbitmq
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: platform-foundations}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: traefik, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 15m
+  path: ./components/ingress-platform/traefik
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: platform-foundations}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: object-storage, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 15m
+  path: ./components/data-platform/object-storage
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: platform-foundations}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: text-embeddings, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 15m
+  path: ./components/data-platform/text-embeddings
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: platform-foundations}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: elasticsearch, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 15m
+  path: ./components/data-platform/elk/elasticsearch
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: platform-foundations}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: neo4j, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 15m
+  path: ./components/data-platform/neo4j
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: platform-foundations}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: mongodb, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 15m
+  path: ./components/data-platform/mongodb
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: platform-foundations}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: infinity, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 15m
+  path: ./components/data-platform/infinity
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: platform-foundations}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: valkey, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 15m
+  path: ./components/data-platform/valkey
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: platform-foundations}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -21,14 +219,20 @@ metadata: {name: casdoor-db, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
-  timeout: 6m
+  timeout: 15m
   path: ./components/app-platform/auth-app/casdoor/database
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: platform-services}
+    - {name: postgresql}
   prune: false
   deletionPolicy: Orphan
-  wait: true
+  wait: false
+  healthChecks:
+    - apiVersion: batch/v1
+      kind: Job
+      name: casdoor-database-v1
+      namespace: data-platform-dev
+
   decryption:
     provider: sops
     secretRef: {name: sops-age}
@@ -39,7 +243,7 @@ metadata: {name: casdoor-init, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
-  timeout: 6m
+  timeout: 15m
   path: ./components/app-platform/auth-app/casdoor/init
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
@@ -57,11 +261,12 @@ metadata: {name: casdoor, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
-  timeout: 6m
+  timeout: 15m
   path: ./components/app-platform/auth-app/casdoor
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
     - {name: casdoor-init}
+    - {name: traefik}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -75,11 +280,11 @@ metadata: {name: elk-initialize, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
-  timeout: 6m
+  timeout: 15m
   path: ./components/data-platform/elk/initialize
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: platform-services}
+    - {name: elasticsearch}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -89,12 +294,30 @@ spec:
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
-metadata: {name: elk-runtime, namespace: flux-system}
+metadata: {name: kibana, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
   timeout: 15m
-  path: ./components/data-platform/elk/runtime
+  path: ./components/data-platform/elk/kibana
+  sourceRef: {kind: OCIRepository, name: platform}
+  dependsOn:
+    - {name: elk-initialize}
+  prune: false
+  deletionPolicy: Orphan
+  wait: true
+  decryption:
+    provider: sops
+    secretRef: {name: sops-age}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata: {name: logstash, namespace: flux-system}
+spec:
+  interval: 5m
+  retryInterval: 30s
+  timeout: 15m
+  path: ./components/data-platform/elk/logstash
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
     - {name: elk-initialize}
@@ -111,11 +334,11 @@ metadata: {name: elk-data-view, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
-  timeout: 6m
+  timeout: 15m
   path: ./components/data-platform/elk/kibana/data-view
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: elk-runtime}
+    - {name: kibana}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -129,11 +352,11 @@ metadata: {name: elk-collector, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
-  timeout: 6m
+  timeout: 15m
   path: ./components/data-platform/elk/collector
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: elk-runtime}
+    - {name: logstash}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -147,11 +370,12 @@ metadata: {name: elk-kibana-ui, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
-  timeout: 6m
+  timeout: 15m
   path: ./components/data-platform/elk/kibana/ui
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
     - {name: elk-data-view}
+    - {name: traefik}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -165,11 +389,11 @@ metadata: {name: mongodb-initialize, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
-  timeout: 6m
+  timeout: 15m
   path: ./components/data-platform/mongodb/initialize
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: platform-services}
+    - {name: mongodb}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -183,11 +407,11 @@ metadata: {name: ragflow-database, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
-  timeout: 6m
+  timeout: 15m
   path: ./components/data-platform/ragflow/database
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: platform-services}
+    - {name: postgresql}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -201,11 +425,11 @@ metadata: {name: ragflow-storage, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
-  timeout: 6m
+  timeout: 15m
   path: ./components/data-platform/ragflow/storage
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
-    - {name: platform-services}
+    - {name: object-storage}
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -243,6 +467,9 @@ spec:
   sourceRef: {kind: OCIRepository, name: platform}
   dependsOn:
     - {name: ragflow-initialize}
+    - {name: infinity}
+    - {name: valkey}
+    - {name: text-embeddings}
   prune: false
   deletionPolicy: Orphan
   wait: true

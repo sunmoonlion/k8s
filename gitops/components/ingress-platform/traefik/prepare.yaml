@@ -40,7 +40,7 @@
   ansible.builtin.assert:
     quiet: true
     that:
-      - item.metadata.labels['kustomize.toolkit.fluxcd.io/name'] | default('') == 'platform-services'
+      - item.metadata.labels['kustomize.toolkit.fluxcd.io/name'] | default('') in ['platform-services', 'traefik']
       - item.metadata.labels['kustomize.toolkit.fluxcd.io/namespace'] | default('') == 'flux-system'
   loop: '{{ (existing_crd_objects.stdout | from_json)["items"] | selectattr("spec.group","equalto","traefik.io") | list }}'
   loop_control: {label: '{{ item.metadata.name }}'}

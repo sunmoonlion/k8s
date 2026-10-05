@@ -3,3 +3,5 @@
 repository: investment-backend
 digest: sha256:72c1ad4212546c67b7cc38bed040551e4b8511d11e9257915c78fae523f0c626
 source_revision: 13539aa2f5cdcb79e7c670adb82ac88747d0d5b6
+# Component deployment identity; migrated from the unchanged existing workload.
+deployment_id: investment-93185775a849faf4

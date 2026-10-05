@@ -1,4 +1,6 @@
 ---
+- import_playbook: ../host/deployment.yaml
+  vars: {deployment_action: select, selection_persist: false, selection_report: false}
 - import_playbook: ../host/preflight.yaml
 - name: Render or verify application identities and runtime through Flux
   hosts: kind_hosts
@@ -25,7 +27,7 @@
       backend: '{{ lookup("file", component_root + "/image.lock.yaml") | from_yaml }}'
       web: '{{ lookup("file", app_root + "/" + application_name + "-web-frontend/image.lock.yaml") | from_yaml }}'
       admin: '{{ lookup("file", app_root + "/" + application_name + "-admin-frontend/image.lock.yaml") | from_yaml }}'
-    deployment_id: '{{ application_name }}-{{ (app_images | to_json | hash("sha256"))[:16] }}'
+    deployment_id: '{{ app_images.backend.deployment_id }}'
     browser_clients:
       web: {name: '{{ web_cfg.casdoor_application }}', client_id: '{{ web_cfg.casdoor_client_id }}', origin: '{{ web_cfg.origin }}'}
       admin: {name: '{{ admin_cfg.casdoor_application }}', client_id: '{{ admin_cfg.casdoor_client_id }}', origin: '{{ admin_cfg.origin }}'}
@@ -44,7 +46,14 @@
     service_bindings:
       ingest: '{{ (lookup("file", repo + "/gitops/components/app-platform/info-app/info-backend/config.yaml") | from_yaml).info_backend_deployment.knowledge_service }}'
       retrieve: '{{ (lookup("file", repo + "/gitops/components/app-platform/investment-app/investment-backend/config.yaml") | from_yaml).investment_backend_deployment.knowledge_service }}'
-    candidate_files: '{{ core_candidate_files + (["storage/workload.yaml","storage/provision.sops.yaml","storage/kustomization.yaml","runtime/storage.sops.yaml"] if storage_enabled else []) + (["provider/workload.yaml","provider/provision.sops.yaml","provider/kustomization.yaml","runtime/provider.sops.yaml"] if provider_enabled else []) + (["service-identity/workload.yaml","service-identity/provision.sops.yaml","service-identity/kustomization.yaml","runtime/service.sops.yaml"] if service_enabled else []) }}'
+    all_candidate_files: '{{ core_candidate_files + (["storage/workload.yaml","storage/provision.sops.yaml","storage/kustomization.yaml","runtime/storage.sops.yaml"] if storage_enabled else []) + (["provider/workload.yaml","provider/provision.sops.yaml","provider/kustomization.yaml","runtime/provider.sops.yaml"] if provider_enabled else []) + (["service-identity/workload.yaml","service-identity/provision.sops.yaml","service-identity/kustomization.yaml","runtime/service.sops.yaml"] if service_enabled else []) }}'
+    selected_application_components: '{{ selection.applications[application_name] }}'
+    selected_backend: '{{ application_name + "-backend" in selected_application_components }}'
+    selected_web: '{{ application_name + "-web-frontend" in selected_application_components }}'
+    selected_admin: '{{ application_name + "-admin-frontend" in selected_application_components }}'
+    candidate_files: '{{ (all_candidate_files | reject("match","^\.\./") | list if selected_backend else []) + (all_candidate_files | select("match","^\.\./" + application_name + "-web-frontend/") | list if selected_web else []) + (all_candidate_files | select("match","^\.\./" + application_name + "-admin-frontend/") | list if selected_admin else []) }}'
+    selected_browser_clients: '{{ browser_clients | dict2items | selectattr("key","in",(["web"] if selected_web else []) + (["admin"] if selected_admin else [])) | items2dict }}'
+
   tasks:
     - name: Validate the selected deployment and identity boundaries
       ansible.builtin.assert:
@@ -54,6 +63,7 @@
           - application_name in ['tpl','info','knowledge','investment']
           - application_action in ['plan','render','stage','validate','check']
           - application_action == 'plan' or cfg.enabled | bool
+          - selected_application_components | length > 0
           - cfg.namespace == app_namespace
           - "'namespace' not in application_cfg"
           - "'namespace' not in backend_cfg"
@@ -68,6 +78,9 @@
           - cfg.private_dir == '/etc/sunmoon/applications/' + cluster_name + '/' + application_name
           - cfg.backup_dir == '/mnt/sunmoon-data/backups/applications/' + cluster_name + '/' + application_name
           - app_images.backend.repository == application_name + '-backend'
+          - app_images.backend.deployment_id is match("^[a-z][a-z0-9-]{5,90}$")
+          - app_images.web.deployment_id is match("^[a-z][a-z0-9-]{5,90}$")
+          - app_images.admin.deployment_id is match("^[a-z][a-z0-9-]{5,90}$")
           - app_images.backend.digest is match('^sha256:[a-f0-9]{64}$')
           - app_images.backend.source_revision == source_lock.backend_revision
           - cfg.deploy_budget_bytes | int >= 2147483648
@@ -555,6 +568,14 @@
     - name: Stage reviewed candidate declarations without deploying
       when: application_action == 'stage'
       block:
+        - name: Refuse changing unselected application dependency declarations
+          ansible.builtin.assert:
+            quiet: true
+            that: candidate_unselected == committed_unselected
+            fail_msg: Unselected application phases differ. Review and stage the application as a whole first.
+          vars:
+            candidate_unselected: '{{ lookup("file",build + "/stages.yaml") | from_yaml_all | rejectattr("metadata.name","in",selection.selected_stages) | list }}'
+            committed_unselected: '{{ lookup("file",repo + "/gitops/clusters/kind/applications-" + application_name + ".yaml") | from_yaml_all | rejectattr("metadata.name","in",selection.selected_stages) | list }}'
         - name: Prepare only the selected application's explicit declaration directories
           ansible.builtin.file: {path: '{{ (component_root + "/" + item) | dirname }}', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
           loop: '{{ candidate_files }}'
@@ -602,8 +623,46 @@
           ansible.builtin.assert:
             quiet: true
             that: (lookup('file',build + '/stages.yaml') | from_yaml_all | list) == (lookup('file',repo + '/gitops/clusters/kind/applications-' + application_name + '.yaml') | from_yaml_all | list)
+    - name: Verify only the selected frontend and read its unchanged API dependency
+      when: application_action == 'check' and not selected_backend
+      block:
+        - name: Require the selected current Flux stage generations
+          ansible.builtin.command:
+            argv: '{{ kube + ["get","kustomization",item,"-n","flux-system","-o","json"] }}'
+          loop: '{{ selection.selected_stages | select("match","^" + application_name + "-") | list }}'
+          register: selected_stage
+          changed_when: false
+          until:
+            - selected_stage.rc == 0
+            - (selected_stage.stdout | from_json).status.observedGeneration | default(-1) == (selected_stage.stdout | from_json).metadata.generation
+            - (selected_stage.stdout | from_json).status.conditions | default([]) | selectattr('type','equalto','Ready') | selectattr('status','equalto','True') | list | length == 1
+            - (selected_stage.stdout | from_json).status.lastAppliedRevision | default('') == (lookup('file',playbook_dir + '/../environments/kind/flux-source.yaml') | from_yaml).digest
+          retries: 120
+          delay: 5
+        - name: Verify only selected frontend health and exact deployment identity
+          ansible.builtin.command:
+            argv: [curl, --fail, --silent, --show-error, --max-time, '15', --noproxy, '*', --cacert, '{{ registry_config_dir }}/tls/ca.crt', --connect-to, '{{ item.value.origin | urlsplit("hostname") }}:30443:127.0.0.1:{{ application_check_port }}', '{{ item.value.origin }}/healthz']
+          loop: '{{ selected_browser_clients | dict2items }}'
+          register: selected_health
+          changed_when: false
+          failed_when: selected_health.rc != 0 or (selected_health.stdout | from_json).status != 'ok' or (selected_health.stdout | from_json).surface != item.key or (selected_health.stdout | from_json).deployment_id != app_images[item.key].deployment_id
+        - name: Read the existing browser acceptance account privately
+          ansible.builtin.slurp: {src: '{{ services_config_dir }}/credentials.yaml'}
+          register: selected_browser_input
+          no_log: true
+        - name: Verify actual login and session boundaries through only selected frontend routes
+          ansible.builtin.command:
+            argv: [/usr/bin/python3, '{{ playbook_dir }}/check-browser.py']
+            stdin: '{{ {"clients":selected_browser_clients,"provider":"https://" + casdoor_hostname + ":30443","organization":cfg.identity_organization,"username":"admin","password":(selected_browser_input.content | b64decode | from_yaml).service_credentials.casdoor_admin_password,"application":application_name,"ca_file":registry_config_dir + "/tls/ca.crt","entry_port":application_check_port | int} | to_json }}'
+          register: selected_browser_result
+          changed_when: false
+          no_log: true
+        - name: Report only public assertions for selected frontend checks
+          ansible.builtin.debug: {msg: '{{ selected_browser_result.stdout | from_json }}'}
+        - name: End frontend-only verification without dispatching backend tasks
+          ansible.builtin.meta: end_play
     - name: Require the exact application stages and jobs to succeed
-      when: application_action == 'check'
+      when: application_action == 'check' and selected_backend
       block:
         - name: Wait for current generation Ready at the promoted digest
           ansible.builtin.command:
@@ -915,7 +974,7 @@
             browser_health.rc != 0 or
             (browser_health.stdout | from_json).status != 'ok' or
             (browser_health.stdout | from_json).surface != item.surface or
-            (browser_health.stdout | from_json).deployment_id != deployment_id
+            (browser_health.stdout | from_json).deployment_id != app_images[item.surface].deployment_id
         - name: Dispatch one bounded diagnostic task through the API role broker identity
           ansible.builtin.command:
             argv: '{{ kube + ["exec",("deployment/" + application_name + "-api"),"-n",app_namespace,"--","python","-c","from app.infrastructure.messaging.celery_producer import get_celery_producer; print(get_celery_producer().dispatch_ping())"] }}'

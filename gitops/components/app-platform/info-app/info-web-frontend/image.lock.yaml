@@ -3,3 +3,5 @@
 repository: info-web-frontend
 digest: sha256:9a7d97068a314f656c2f36d89ea9f21d6d435c6449ed7a7765638e00e3a7b16d
 source_revision: c7e19a41bb6eba03dc9a5021ee6de14f4e005922
+# Component deployment identity; migrated from the unchanged existing workload.
+deployment_id: info-aacd423b74d2a837

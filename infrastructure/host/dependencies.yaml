@@ -1,0 +1,34 @@
+---
+- import_playbook: deployment.yaml
+  vars: {deployment_action: select, selection_persist: false, selection_report: false}
+- name: Require selected dependencies already reconciled without reconfiguring them
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    kube: ['{{ playbook_dir }}/../.tools/bin/kubectl', '--kubeconfig={{ cluster_kubeconfig }}', '--context=kind-{{ cluster_name }}', '--request-timeout=30s']
+  tasks:
+    - name: Read the independent owned API identity
+      ansible.builtin.slurp: {src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'}
+      register: identity
+      when: selection.dependency_stages | length > 0
+    - name: Require exact API identity before reading dependencies
+      ansible.builtin.command:
+        argv: '{{ kube + ["get","namespace","kube-system","-o","jsonpath={.metadata.uid}"] }}'
+      register: observed_uid
+      changed_when: false
+      failed_when: observed_uid.rc != 0 or observed_uid.stdout != (identity.content | b64decode | from_json).kube_system_uid
+      when: selection.dependency_stages | length > 0
+    - name: Read required stage generations without changing them
+      ansible.builtin.command:
+        argv: '{{ kube + ["get","kustomization",item,"-n","flux-system","-o","json"] }}'
+      register: dependency
+      changed_when: false
+      until:
+        - dependency.rc == 0
+        - (dependency.stdout | from_json).spec.suspend | default(false) is sameas false
+        - (dependency.stdout | from_json).status.observedGeneration | default(-1) == (dependency.stdout | from_json).metadata.generation
+        - (dependency.stdout | from_json).status.conditions | default([]) | selectattr('type','equalto','Ready') | selectattr('status','equalto','True') | list | length == 1
+      retries: 12
+      delay: 5
+      loop: '{{ selection.dependency_stages }}'

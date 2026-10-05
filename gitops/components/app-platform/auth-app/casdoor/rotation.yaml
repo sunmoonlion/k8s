@@ -1,0 +1,76 @@
+---
+- name: Require the approved Casdoor rotation window
+  ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-window.yaml'
+- name: Verify the independent cluster ownership before any account mutation
+  ansible.builtin.slurp: {src: '{{ cluster_data_root }}/{{ cluster_name }}/bootstrap/identity.json'}
+  register: account_cluster_identity
+- name: Require the exact owned live cluster
+  ansible.builtin.command:
+    argv: ['{{ account_protocol_settings.kubectl }}','--kubeconfig={{ cluster_kubeconfig }}','--context=kind-{{ cluster_name }}',--request-timeout=20s,get,namespace,kube-system,'-o','jsonpath={.metadata.uid}']
+  register: account_cluster_uid
+  changed_when: false
+  failed_when: account_cluster_uid.rc != 0 or account_cluster_uid.stdout != (account_cluster_identity.content | b64decode | from_json).kube_system_uid
+- name: Bind the reviewed single-Secret candidate and exact rollback source
+  ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-component-step.yaml'
+  vars: {account_component_step: validate_candidate}
+  when: account_action == 'rotate'
+- name: Prepare the independent account transaction before any remote write
+  ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-transaction-step.yaml'
+  vars: {account_transaction_step: prepare}
+  when: account_action == 'rotate'
+- name: Preserve the exact account operation source paths
+  ansible.builtin.set_fact:
+    account_source_before: '{{ human_account.backup_file | dirname }}/rotations/{{ account_operation }}/source-before.yaml'
+    account_source_after: '{{ human_account.backup_file | dirname }}/rotations/{{ account_operation }}/source-after.yaml'
+- name: Rotate the Casdoor identity and reconcile its reviewed encrypted input
+  when: account_action == 'rotate'
+  block:
+    - name: Recheck time before changing the server account
+      ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-window.yaml'
+    - name: Change and verify the selected server account once
+      ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-transaction-step.yaml'
+      vars: {account_transaction_step: apply}
+    - name: Recheck time before promoting the live encrypted source
+      ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-window.yaml'
+    - name: Reconcile the already reviewed immutable source through native Flux
+      become: false
+      ansible.builtin.command:
+        argv: [make,-s,-C,'{{ inventory_dir }}/..',flux-source-apply,'FLUX_SOURCE_FILE={{ account_source_after }}']
+      changed_when: true
+    - name: Verify the live initializer Secret matches the verified new private input
+      ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-component-step.yaml'
+      vars: {account_component_step: verify_runtime}
+    - name: Finalize the verified server and independent credential file pair
+      ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-transaction-step.yaml'
+      vars: {account_transaction_step: finalize}
+  rescue:
+    - name: Restore the old server identity and exact private files
+      ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-transaction-step.yaml'
+      vars: {account_transaction_step: rollback}
+    - name: Reconcile the captured old immutable source through native Flux
+      become: false
+      ansible.builtin.command:
+        argv: [make,-s,-C,'{{ inventory_dir }}/..',flux-source-apply,'FLUX_SOURCE_FILE={{ account_source_before }}']
+      changed_when: true
+    - name: Verify the recovered runtime identity input
+      ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-component-step.yaml'
+      vars: {account_component_step: verify_runtime}
+    - name: Report recovered failure and require explicit Git pointer restoration
+      ansible.builtin.fail:
+        msg: Casdoor rotation failed; the exact old API account, private files and live source were restored. Restore the reviewed Git source pointer and encrypted identity from this operation before another deployment; the failed receipt remains.
+- name: Explicitly recover only this Casdoor operation
+  when: account_action == 'recover'
+  block:
+    - name: Restore the receipt's exact account and private input
+      ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-transaction-step.yaml'
+      vars: {account_transaction_step: rollback}
+    - name: Reconcile its independent previous source snapshot
+      become: false
+      ansible.builtin.command:
+        argv: [make,-s,-C,'{{ inventory_dir }}/..',flux-source-apply,'FLUX_SOURCE_FILE={{ account_source_before }}']
+      changed_when: true
+    - name: Verify the restored live initializer input
+      ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-component-step.yaml'
+      vars: {account_component_step: verify_runtime}
+- name: Synchronize the owner's lookup only after verified current server state
+  ansible.builtin.include_tasks: '{{ inventory_dir }}/tasks/account-table-sync.yaml'

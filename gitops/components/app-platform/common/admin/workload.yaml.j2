@@ -28,7 +28,7 @@ spec:
             - {name: AUTH_APP, value: {{ application_name }}}
             - {name: APP_ORIGIN, value: {{ front.origin | to_json }}}
             - {name: BACKEND_INTERNAL_URL, value: 'http://{{ application_name }}-api.{{ app_namespace }}.svc.cluster.local:{{ cfg.api_port }}'}
-            - {name: DEPLOYMENT_ID, value: {{ deployment_id | to_json }}}
+            - {name: DEPLOYMENT_ID, value: {{ app_images.admin.deployment_id | to_json }}}
             - {name: HOSTNAME, value: 0.0.0.0}
             - {name: PORT, value: '{{ front.port }}'}
             - {name: REFERENCE_UI_ENABLED, value: 'false'}

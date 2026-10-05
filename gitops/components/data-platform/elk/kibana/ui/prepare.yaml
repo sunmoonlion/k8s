@@ -18,13 +18,17 @@
       - kibana_ui_session_lifespan is match('^[1-9][0-9]*[mh]$')
 - name: Create the browser component candidate directory
   ansible.builtin.file: {path: '{{ build }}/data-platform/elk/kibana/ui', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
+- name: Read the optional initial human preset without changing an existing reader
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/../host/tasks/account-preset.yaml'
+  vars: {human_account: '{{ kibana_human_account }}'}
+  no_log: true
 - name: Prepare one recoverable independent human reader password
   ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
   vars:
     component_input_name: elk-kibana-ui
     component_input_manifest: data-platform/elk/kibana/ui/auth.sops.yaml
     component_initial_input:
-      password: '{{ lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
+      password: '{{ human_initial_password if human_initial_password | length > 0 else lookup("password","/dev/null",length=40,chars=["ascii_letters","digits"]) }}'
   no_log: true
 - name: Preserve the browser input in memory
   ansible.builtin.set_fact: {kibana_ui_credentials: '{{ component_private_input }}'}
@@ -33,7 +37,9 @@
   ansible.builtin.assert:
     quiet: true
     that:
-      - kibana_ui_credentials.password is match('^[A-Za-z0-9]{40}$')
+      - kibana_ui_credentials.password is string
+      - kibana_ui_credentials.password | length >= 8 and kibana_ui_credentials.password | length <= 128
+      - kibana_ui_credentials.password is not search('[\r\n\x00]')
       - kibana_ui_credentials.password not in elk_credentials.values() | list
       - kibana_ui_credentials.password != elk_view_credentials.password
   no_log: true

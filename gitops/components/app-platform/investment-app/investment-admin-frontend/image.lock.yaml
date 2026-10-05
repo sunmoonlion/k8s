@@ -3,3 +3,5 @@
 repository: investment-admin-frontend
 digest: sha256:afd78c56dcef98ac61b6597900ed90613f129297d47ccc629b4155c7e44506f5
 source_revision: ac58e290acba0822eef9ba84df9cf1387ca564d5
+# Component deployment identity; migrated from the unchanged existing workload.
+deployment_id: investment-93185775a849faf4

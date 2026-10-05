@@ -8,7 +8,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/info-app/info-backend/database
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: platform-services}]
+  dependsOn: [{name: postgresql}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -42,7 +42,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/info-app/info-backend/redis
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: info-migration}]
+  dependsOn: [{name: info-migration}, {name: redis}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -59,7 +59,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/info-app/info-backend/rabbitmq
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: info-redis}]
+  dependsOn: [{name: info-redis}, {name: rabbitmq}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -110,7 +110,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/info-app/info-web-frontend
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: info-runtime}]
+  dependsOn: [{name: info-runtime}, {name: traefik}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -127,7 +127,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/info-app/info-admin-frontend
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: info-runtime}]
+  dependsOn: [{name: info-runtime}, {name: traefik}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -144,7 +144,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/info-app/info-backend/storage
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: platform-services}]
+  dependsOn: [{name: object-storage}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -161,7 +161,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/info-app/info-backend/service-identity
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: casdoor}, {name: platform-services}]
+  dependsOn: [{name: casdoor}, {name: postgresql}]
   prune: false
   deletionPolicy: Orphan
   wait: true

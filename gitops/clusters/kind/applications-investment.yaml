@@ -8,7 +8,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/investment-app/investment-backend/database
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: platform-services}]
+  dependsOn: [{name: postgresql}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -42,7 +42,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/investment-app/investment-backend/redis
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: investment-migration}]
+  dependsOn: [{name: investment-migration}, {name: redis}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -59,7 +59,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/investment-app/investment-backend/rabbitmq
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: investment-redis}]
+  dependsOn: [{name: investment-redis}, {name: rabbitmq}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -110,7 +110,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/investment-app/investment-web-frontend
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: investment-runtime}]
+  dependsOn: [{name: investment-runtime}, {name: traefik}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -127,7 +127,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/investment-app/investment-admin-frontend
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: investment-runtime}]
+  dependsOn: [{name: investment-runtime}, {name: traefik}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -144,7 +144,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/investment-app/investment-backend/service-identity
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: casdoor}, {name: platform-services}]
+  dependsOn: [{name: casdoor}, {name: postgresql}]
   prune: false
   deletionPolicy: Orphan
   wait: true

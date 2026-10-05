@@ -52,3 +52,7 @@ make -C infrastructure preflight
 已有：操作前峰值预算及部分容器日志轮转。待实现：常态容量监控与告警、统一查看/预览/执行、Harbor保留与GC、构建缓存、日志索引与备份轮换。策略先由所有者批准，保护在用镜像、回退版本和必要备份。
 
 禁止把`docker system prune`、`docker volume prune`或`docker container prune`用于一般清理；旧kind节点/卷与新正式资产保持保护。Completed初始化Job也不是普通缓存。当前手册不启用新增定时删除。
+
+## 账号维护
+
+人工登录、平台管理员与程序身份的区别，以及按对象查看、首次预设、表导入和轮换边界见[账号维护](accounts.md)。PostgreSQL/Redis等管理员同样进入账号目录；机器运行身份保持独立随机。

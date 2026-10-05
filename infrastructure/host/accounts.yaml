@@ -1,0 +1,75 @@
+---
+- import_playbook: preflight.yaml
+  when: account_action | default('plan') in ['import','stage','rotate','recover']
+- import_playbook: deployment.yaml
+  vars: {deployment_action: plan, selection_persist: false, selection_report: false}
+- name: Maintain explicitly selected owner and platform administrator accounts
+  hosts: kind_hosts
+  gather_facts: false
+  become: true
+  vars:
+    account_action: plan
+    account_replace_preset: false
+    account_operation: ''
+    account_maintenance_deadline: 0
+    account_table: '{{ playbook_dir }}/../../密码修改表.md'
+    maintained_accounts: '{{ [registry_human_account,casdoor_human_account,kibana_human_account,operator_account_postgresql,operator_account_redis,operator_account_rabbitmq,operator_account_elasticsearch,operator_account_neo4j,operator_account_mongodb,operator_account_object_storage] }}'
+    selected_accounts: '{{ maintained_accounts if selection.object == "all" else maintained_accounts | selectattr("object","match","^" + selection.object + "(/|$)") | list }}'
+  tasks:
+    - name: Require explicit account scope and a supported native action
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - not ansible_check_mode
+          - account_action in ['plan','import','view','check','stage','rotate','recover']
+          - selected_accounts | length > 0
+          - account_action not in ['stage','rotate','recover'] or selected_accounts | length == 1
+          - account_action not in ['stage','rotate','recover'] or account_operation is match('^[a-zA-Z0-9_-]{1,80}$')
+          - account_action not in ['check','stage','rotate','recover'] or selected_accounts | map(attribute='adapter') | difference(['harbor','casdoor','elasticsearch']) | length == 0
+        fail_msg: This account is listed for private view and initial policy, but its protocol rotation is not implemented. Do not classify it as an application runtime identity or claim its password is verified.
+    - name: Require capacity before private candidate or rotation writes
+      ansible.builtin.include_tasks:
+        file: tasks/capacity.yaml
+        apply: {become: false}
+      vars: {capacity_planned_bytes: 67108864}
+      when: account_action in ['import','stage','rotate','recover']
+    - name: Inspect or import private inputs without outputting password values
+      ansible.builtin.command:
+        argv:
+          - '{{ playbook_dir }}/../.venv/bin/python'
+          - -c
+          - |
+            import json,sys
+            sys.path.insert(0,sys.argv[1])
+            from account_files import describe,import_table,read_private,extract,require
+            data=json.load(sys.stdin)
+            if data['action']=='import':
+                result=import_table(data['table'],data['accounts'],data['replace'])
+            elif data['action']=='view':
+                # Direct terminal only: never put values in Ansible stdout or callback logs.
+                with open('/dev/tty','w') as terminal:
+                    require(terminal.isatty(),'Password viewing requires the owner interactive terminal')
+                    for account in data['accounts']:
+                        password=extract(read_private(account['current_file']),account['current_field'])
+                        require(password is not None,'Current credential is missing; restore its independent backup')
+                        terminal.write(account['object']+' '+account['username']+': '+password+'\n')
+                    terminal.flush()
+                result=[{'object':a['object'],'viewed_on_owner_terminal':True} for a in data['accounts']]
+            else:
+                result=[describe(account) for account in data['accounts']]
+            print(json.dumps(result))
+          - '{{ playbook_dir }}'
+        stdin: '{{ {"action":account_action,"accounts":selected_accounts,"table":account_table,"replace":account_replace_preset | bool} | to_json }}'
+      register: account_files_result
+      changed_when: account_action == 'import' and (account_files_result.stdout | from_json | selectattr('preset_changed','equalto',true) | list | length > 0)
+      no_log: true
+    - name: Report only account mapping, private paths and pending changes
+      ansible.builtin.debug:
+        msg: '{{ account_files_result.stdout | from_json }}'
+    - name: Execute the selected component protocol rotation
+      ansible.builtin.include_tasks: '{{ account_rotation_path }}'
+      loop: '{{ selected_accounts }}'
+      loop_control: {loop_var: human_account, label: '{{ human_account.object }}'}
+      vars:
+        account_rotation_path: '{{ "../registry/password.yaml" if human_account.adapter == "harbor" else ("../../gitops/components/app-platform/auth-app/casdoor/password.yaml" if human_account.adapter == "casdoor" else "../../gitops/components/data-platform/elk/kibana/ui/password.yaml") }}'
+      when: account_action in ['check','stage','rotate','recover']

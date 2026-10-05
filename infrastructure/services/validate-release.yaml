@@ -1,4 +1,6 @@
 ---
+- import_playbook: ../host/deployment.yaml
+  vars: {deployment_action: select, selection_persist: false, selection_report: false}
 - name: Require generated settings to match the committed promoted release
   hosts: kind_hosts
   gather_facts: false
@@ -7,6 +9,8 @@
   vars:
     repo: '{{ playbook_dir }}/../..'
     build: '{{ playbook_dir }}/../.build/services'
+    selected_service_stages: '{{ component_stages | selectattr("name", "in", selection.selected_stages) | list }}'
+    selected_candidate_paths: '{{ (selected_service_stages | map(attribute="path") | unique | list) + (["ingress-platform/traefik/service-access"] if "ingress-platform/traefik" in selection.services and service_access_enabled | bool else []) }}'
     source: '{{ lookup("file", playbook_dir + "/../environments/kind/flux-source.yaml") | from_yaml }}'
   tasks:
     - name: Require a clean declaration worktree
@@ -24,15 +28,15 @@
       no_log: true
     - name: Find rendered component candidates
       ansible.builtin.find:
-        paths: ['{{ build }}/core', '{{ build }}/foundations', '{{ build }}/data-platform', '{{ build }}/messaging-platform', '{{ build }}/ingress-platform', '{{ build }}/app-platform']
-        recurse: true
+        paths: '{{ selected_candidate_paths | map("regex_replace","^",build + "/") | list }}'
+        recurse: false
         patterns: '*.yaml'
         file_type: file
       register: candidates
     - name: Require complete rendering
       ansible.builtin.assert:
         quiet: true
-        that: candidates.files | length >= 18
+        that: candidates.files | length > 0
     - name: Compare generated public objects and decrypted secret content
       ansible.builtin.include_tasks: tasks/check-declaration.yaml
       vars:

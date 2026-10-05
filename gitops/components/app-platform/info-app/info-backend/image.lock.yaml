@@ -3,3 +3,5 @@
 repository: info-backend
 digest: sha256:2443d576ab1b24b99092f41b6c0562e0fa34b3b1ffeffdd7c70365a6921c242a
 source_revision: a4b6f59b99f7ef6dc48b346803560e6b2ceeb0a7
+# Component deployment identity; migrated from the unchanged existing workload.
+deployment_id: info-aacd423b74d2a837

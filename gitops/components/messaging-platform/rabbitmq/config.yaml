@@ -8,3 +8,23 @@ rabbitmq_volume:
   uid: 999
   gid: 999
 rabbitmq_node_hostname: rabbitmq-0.rabbitmq-headless.platform-system.svc.cluster.local
+
+# Maintainer identity; permissions and current credential storage, never password values.
+operator_account_rabbitmq:
+  object: messaging-platform/rabbitmq
+  id: administrator
+  username: platform
+  account_type: platform-administrator
+  table_row: ''
+  table_import: false
+  current_file: '{{ services_config_dir }}/credentials.yaml'
+  current_field: service_credentials.rabbitmq_password
+  backup_file: '{{ services_backup_dir }}/credentials.yaml'
+  minimum_length: 8
+  maximum_length: 128
+  adapter: rabbitmq
+  initial_preset_supported: true
+  protocol_check_supported: false
+  rotation_supported: false
+  initial_file: '{{ services_config_dir }}/presets/rabbitmq-admin-password'
+  initial_backup_file: '{{ services_backup_dir }}/presets/rabbitmq-admin-password'

@@ -6,3 +6,19 @@ kibana_ui_viewer_user: sunmoon_kibana_reader
 kibana_ui_generation: v1
 kibana_ui_session_idle_timeout: 30m
 kibana_ui_session_lifespan: 8h
+
+# Existing independent password is retained; no import from the old shared ELK account.
+kibana_human_account:
+  object: data-platform/elk/kibana/ui
+  id: reader
+  username: '{{ kibana_ui_viewer_user }}'
+  table_row: '15d'
+  table_import: false
+  current_file: '{{ services_config_dir }}/elk-kibana-ui.yaml'
+  current_field: password
+  backup_file: '{{ services_backup_dir }}/elk-kibana-ui.yaml'
+  initial_file: '{{ services_config_dir }}/presets/kibana-reader-password'
+  initial_backup_file: '{{ services_backup_dir }}/presets/kibana-reader-password'
+  minimum_length: 8
+  maximum_length: 128
+  adapter: elasticsearch

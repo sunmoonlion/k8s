@@ -1,5 +1,5 @@
 ---
-# Source layout and derived references only; editable values live beside each component.
+# Unique layout, stage dependencies and material ownership. Editable settings stay beside components.
 service_stage_paths:
   ragflow-database: data-platform/ragflow/database
   ragflow-storage: data-platform/ragflow/storage
@@ -15,28 +15,29 @@ service_stage_paths:
   casdoor-init: app-platform/auth-app/casdoor/init
   casdoor: app-platform/auth-app/casdoor
 service_candidate_roots:
-  - core
-  - foundations
-  - data-platform
-  - messaging-platform
-  - ingress-platform
-  - app-platform
+- core
+- foundations
+- data-platform
+- messaging-platform
+- ingress-platform
+- app-platform
 component_namespaces:
-  ragflow: "{{ data_namespace }}"
-  infinity: "{{ data_namespace }}"
-  valkey: "{{ data_namespace }}"
-  mongodb: "{{ data_namespace }}"
-  neo4j: "{{ data_namespace }}"
-  elasticsearch: "{{ data_namespace }}"
-  kibana: "{{ data_namespace }}"
-  logstash: "{{ data_namespace }}"
-  postgresql: "{{ data_namespace }}"
-  redis: "{{ data_namespace }}"
-  object-storage: "{{ data_namespace }}"
-  text-embeddings: "{{ data_namespace }}"
-  rabbitmq: "{{ messaging_namespace }}"
-  casdoor: "{{ app_namespace }}"
-services_volumes: "{{ [postgresql_volume, redis_volume, rabbitmq_volume, casdoor_volume, object_storage_volume, text_embeddings_volume, elasticsearch_volume, kibana_volume, logstash_volume, neo4j_volume, mongodb_volume, infinity_volume, valkey_volume] }}"
+  ragflow: '{{ data_namespace }}'
+  infinity: '{{ data_namespace }}'
+  valkey: '{{ data_namespace }}'
+  mongodb: '{{ data_namespace }}'
+  neo4j: '{{ data_namespace }}'
+  elasticsearch: '{{ data_namespace }}'
+  kibana: '{{ data_namespace }}'
+  logstash: '{{ data_namespace }}'
+  postgresql: '{{ data_namespace }}'
+  redis: '{{ data_namespace }}'
+  object-storage: '{{ data_namespace }}'
+  text-embeddings: '{{ data_namespace }}'
+  rabbitmq: '{{ messaging_namespace }}'
+  casdoor: '{{ app_namespace }}'
+services_volumes: '{{ [postgresql_volume, redis_volume, rabbitmq_volume, casdoor_volume, object_storage_volume, text_embeddings_volume, elasticsearch_volume, kibana_volume,
+  logstash_volume, neo4j_volume, mongodb_volume, infinity_volume, valkey_volume] }}'
 service_component_paths:
   infinity: data-platform/infinity
   valkey: data-platform/valkey
@@ -52,3 +53,223 @@ service_component_paths:
   rabbitmq: messaging-platform/rabbitmq
   traefik: ingress-platform/traefik
   casdoor: app-platform/auth-app/casdoor
+component_stages:
+- name: platform-foundations
+  object: foundations
+  path: foundations
+  dependencies: []
+  enabled: true
+  images: []
+- name: postgresql
+  object: data-platform/postgresql
+  path: '{{ service_component_paths.postgresql }}'
+  dependencies:
+  - platform-foundations
+  enabled: '{{ services_postgresql_enabled }}'
+  images:
+  - postgresql
+- name: redis
+  object: data-platform/redis
+  path: '{{ service_component_paths.redis }}'
+  dependencies:
+  - platform-foundations
+  enabled: '{{ services_redis_enabled }}'
+  images:
+  - redis
+- name: rabbitmq
+  object: messaging-platform/rabbitmq
+  path: '{{ service_component_paths.rabbitmq }}'
+  dependencies:
+  - platform-foundations
+  enabled: '{{ services_rabbitmq_enabled }}'
+  images:
+  - rabbitmq
+- name: traefik
+  object: ingress-platform/traefik
+  path: '{{ service_component_paths.traefik }}'
+  dependencies:
+  - platform-foundations
+  enabled: '{{ services_ingress_enabled }}'
+  images:
+  - traefik
+- name: object-storage
+  object: data-platform/object-storage
+  path: '{{ service_component_paths[''object-storage''] }}'
+  dependencies:
+  - platform-foundations
+  enabled: '{{ services_object_storage_enabled }}'
+  images:
+  - aistor
+  - aistor-mc
+- name: text-embeddings
+  object: data-platform/text-embeddings
+  path: '{{ service_component_paths[''text-embeddings''] }}'
+  dependencies:
+  - platform-foundations
+  enabled: '{{ services_text_embeddings_enabled }}'
+  images:
+  - text-embeddings-inference
+- name: elasticsearch
+  object: data-platform/elk/elasticsearch
+  path: '{{ service_component_paths.elasticsearch }}'
+  dependencies:
+  - platform-foundations
+  enabled: '{{ services_elk_enabled }}'
+  images:
+  - elasticsearch
+- name: neo4j
+  object: data-platform/neo4j
+  path: '{{ service_component_paths.neo4j }}'
+  dependencies:
+  - platform-foundations
+  enabled: '{{ services_neo4j_enabled }}'
+  images:
+  - neo4j
+- name: mongodb
+  object: data-platform/mongodb
+  path: '{{ service_component_paths.mongodb }}'
+  dependencies:
+  - platform-foundations
+  enabled: '{{ services_mongodb_enabled }}'
+  images:
+  - mongodb
+- name: infinity
+  object: data-platform/infinity
+  path: '{{ service_component_paths.infinity }}'
+  dependencies:
+  - platform-foundations
+  enabled: '{{ services_infinity_enabled }}'
+  images:
+  - infinity
+- name: valkey
+  object: data-platform/valkey
+  path: '{{ service_component_paths.valkey }}'
+  dependencies:
+  - platform-foundations
+  enabled: '{{ services_valkey_enabled }}'
+  images:
+  - valkey
+- name: casdoor-db
+  object: app-platform/auth-app/casdoor
+  path: '{{ service_stage_paths[''casdoor-db''] }}'
+  dependencies:
+  - postgresql
+  enabled: '{{ services_casdoor_enabled }}'
+  wait: false
+  health_checks:
+  - apiVersion: batch/v1
+    kind: Job
+    name: casdoor-database-v1
+    namespace: '{{ data_namespace }}'
+  images:
+  - postgresql
+- name: casdoor-init
+  object: app-platform/auth-app/casdoor
+  path: '{{ service_stage_paths[''casdoor-init''] }}'
+  dependencies:
+  - casdoor-db
+  enabled: '{{ services_casdoor_enabled }}'
+  images:
+  - casdoor
+- name: casdoor
+  object: app-platform/auth-app/casdoor
+  path: '{{ service_component_paths.casdoor }}'
+  dependencies:
+  - casdoor-init
+  - traefik
+  enabled: '{{ services_casdoor_enabled }}'
+  images:
+  - casdoor
+- name: elk-initialize
+  object: data-platform/elk/elasticsearch
+  path: '{{ service_stage_paths[''elk-initialize''] }}'
+  dependencies:
+  - elasticsearch
+  enabled: '{{ services_elk_enabled }}'
+  images:
+  - elasticsearch
+- name: kibana
+  object: data-platform/elk/kibana
+  path: '{{ service_component_paths.kibana }}'
+  dependencies:
+  - elk-initialize
+  enabled: '{{ services_elk_enabled }}'
+  images:
+  - kibana
+- name: logstash
+  object: data-platform/elk/logstash
+  path: '{{ service_component_paths.logstash }}'
+  dependencies:
+  - elk-initialize
+  enabled: '{{ services_elk_enabled }}'
+  images:
+  - logstash
+- name: elk-data-view
+  object: data-platform/elk/kibana/data-view
+  path: '{{ service_stage_paths[''elk-data-view''] }}'
+  dependencies:
+  - kibana
+  enabled: '{{ services_elk_enabled and elk_log_data_view_enabled }}'
+  images:
+  - kibana
+- name: elk-collector
+  object: data-platform/elk/collector
+  path: '{{ service_stage_paths[''elk-collector''] }}'
+  dependencies:
+  - logstash
+  enabled: '{{ services_elk_enabled and elk_collector_enabled }}'
+  images:
+  - fluent-bit
+- name: elk-kibana-ui
+  object: data-platform/elk/kibana/ui
+  path: '{{ service_stage_paths[''elk-kibana-ui''] }}'
+  dependencies:
+  - elk-data-view
+  - traefik
+  enabled: '{{ services_elk_enabled and kibana_ui_enabled }}'
+  images:
+  - kibana
+- name: mongodb-initialize
+  object: data-platform/mongodb
+  path: '{{ service_stage_paths[''mongodb-initialize''] }}'
+  dependencies:
+  - mongodb
+  enabled: '{{ services_mongodb_enabled }}'
+  images:
+  - mongodb
+- name: ragflow-database
+  object: data-platform/ragflow
+  path: '{{ service_stage_paths[''ragflow-database''] }}'
+  dependencies:
+  - postgresql
+  enabled: '{{ services_ragflow_enabled }}'
+  images:
+  - postgresql
+- name: ragflow-storage
+  object: data-platform/ragflow
+  path: '{{ service_stage_paths[''ragflow-storage''] }}'
+  dependencies:
+  - object-storage
+  enabled: '{{ services_ragflow_enabled }}'
+  images:
+  - aistor-mc
+- name: ragflow-initialize
+  object: data-platform/ragflow
+  path: '{{ service_stage_paths[''ragflow-initialize''] }}'
+  dependencies:
+  - ragflow-database
+  - ragflow-storage
+  enabled: '{{ services_ragflow_enabled }}'
+  images:
+  - ragflow
+- name: ragflow-runtime
+  object: data-platform/ragflow
+  path: '{{ service_stage_paths[''ragflow-runtime''] }}'
+  dependencies:
+  - ragflow-initialize
+  - infinity
+  - valkey
+  - text-embeddings
+  enabled: '{{ services_ragflow_enabled }}'
+  images:
+  - ragflow

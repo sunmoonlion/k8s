@@ -1,4 +1,4 @@
-{% for name,stage,dependency in [((application_name + '-database'),'database','platform-services'),((application_name + '-migration'),'migration',(application_name + '-database')),((application_name + '-redis'),'redis',(application_name + '-migration')),((application_name + '-rabbitmq'),'rabbitmq',(application_name + '-redis')),((application_name + '-identity'),'identity',(application_name + '-rabbitmq')),((application_name + '-runtime'),'runtime',(application_name + '-identity')),((application_name + '-web'),'../' + application_name + '-web-frontend',(application_name + '-runtime')),((application_name + '-admin'),'../' + application_name + '-admin-frontend',(application_name + '-runtime'))] if cfg.enabled %}
+{% for name,stage,dependency in [((application_name + '-database'),'database','postgresql'),((application_name + '-migration'),'migration',(application_name + '-database')),((application_name + '-redis'),'redis',(application_name + '-migration')),((application_name + '-rabbitmq'),'rabbitmq',(application_name + '-redis')),((application_name + '-identity'),'identity',(application_name + '-rabbitmq')),((application_name + '-runtime'),'runtime',(application_name + '-identity')),((application_name + '-web'),'../' + application_name + '-web-frontend',(application_name + '-runtime')),((application_name + '-admin'),'../' + application_name + '-admin-frontend',(application_name + '-runtime'))] if cfg.enabled %}
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -9,7 +9,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/{{ application_name }}-app/{{ (application_name + '-backend/') + stage if not stage.startswith('../') else stage[3:] }}
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: {{ dependency }}}{% if name == (application_name + '-identity') %}, {name: casdoor}{% endif %}{% if service_enabled and name == application_name + '-runtime' %}, {name: {{ application_name }}-service-identity}{% endif %}{% if storage_enabled and name == application_name + '-runtime' %}, {name: {{ application_name }}-storage}{% endif %}{% if provider_enabled and name == application_name + '-runtime' %}, {name: knowledge-provider}, {name: ragflow-runtime}{% endif %}{% if receiver_enabled and name == application_name + '-runtime' %}, {name: info-service-identity}, {name: investment-service-identity}{% endif %}]
+  dependsOn: [{name: {{ dependency }}}{% if stage == "redis" %}, {name: redis}{% endif %}{% if stage == "rabbitmq" %}, {name: rabbitmq}{% endif %}{% if stage.startswith("../") %}, {name: traefik}{% endif %}{% if name == (application_name + '-identity') %}, {name: casdoor}{% endif %}{% if service_enabled and name == application_name + '-runtime' %}, {name: {{ application_name }}-service-identity}{% endif %}{% if storage_enabled and name == application_name + '-runtime' %}, {name: {{ application_name }}-storage}{% endif %}{% if provider_enabled and name == application_name + '-runtime' %}, {name: knowledge-provider}, {name: ragflow-runtime}{% endif %}{% if receiver_enabled and name == application_name + '-runtime' %}, {name: info-service-identity}, {name: investment-service-identity}{% endif %}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -28,7 +28,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/{{ application_name }}-app/{{ application_name }}-backend/storage
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: platform-services}]
+  dependsOn: [{name: object-storage}]
   prune: false
   deletionPolicy: Orphan
   wait: true
@@ -66,7 +66,7 @@ spec:
   timeout: 8m
   path: ./components/app-platform/{{ application_name }}-app/{{ application_name }}-backend/service-identity
   sourceRef: {kind: OCIRepository, name: platform}
-  dependsOn: [{name: casdoor}, {name: platform-services}]
+  dependsOn: [{name: casdoor}, {name: postgresql}]
   prune: false
   deletionPolicy: Orphan
   wait: true

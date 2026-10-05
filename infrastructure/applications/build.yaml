@@ -220,7 +220,13 @@
             owner: '{{ cluster_operator }}'
             mode: '0644'
             content: |
-              {{ {'schema_version':1,'platform':'linux/amd64','images':[{'id':component.repository,'status':'resolved','source':component.repository + ':' + component_revision[:12] + '-' + (manifest.stdout | hash('sha256'))[:12],'reference':registry_address + '/platform/' + component.repository + '@sha256:' + (manifest.stdout | hash('sha256')),'manifest_digest':'sha256:' + (manifest.stdout | hash('sha256')),'compressed_layer_bytes':archive.stat.size,'source_revision':component_revision}]} | to_nice_json }}
+              {{ {'schema_version':1,'platform':'linux/amd64','images':[{'id':component.repository,'status':'resolved','source':component.repository + ':' + component_revision[:12] + '-' + (manifest.stdout | hash('sha256'))[:12],'reference':registry_address + '/platform/' + component.repository + '@sha256:' + (manifest.stdout | hash('sha256')),'manifest_digest':'sha256:' + (manifest.stdout | hash('sha256')),'compressed_layer_bytes':archive.stat.size,'source_revision':component_revision,'deployment_id':component.repository + '-' + (manifest.stdout | hash('sha256'))[:16]}]} | to_nice_json }}
+        - name: Save only this component's reviewable deployment image lock
+          ansible.builtin.copy:
+            dest: '{{ build_root }}/{{ component.repository }}-deployment-image.yaml'
+            owner: '{{ cluster_operator }}'
+            mode: '0644'
+            content: '{{ {"repository":component.repository,"digest":"sha256:" + (manifest.stdout | hash("sha256")),"source_revision":component_revision,"deployment_id":component.repository + "-" + (manifest.stdout | hash("sha256"))[:16]} | to_nice_yaml }}'
         - name: Save the reviewable build receipt, without automatically publishing or deploying
           ansible.builtin.copy:
             dest: '{{ build_root }}/{{ component.repository }}.yaml'

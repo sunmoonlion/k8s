@@ -3,3 +3,5 @@
 repository: knowledge-admin-frontend
 digest: sha256:9828df053f968852cd931166f78c145502dc2ebb0a4de343acfa9c35c7865771
 source_revision: 0e1edbf534048518e03bc6654447dfce6cb9ac97
+# Component deployment identity; migrated from the unchanged existing workload.
+deployment_id: knowledge-c4b5fb051de89782

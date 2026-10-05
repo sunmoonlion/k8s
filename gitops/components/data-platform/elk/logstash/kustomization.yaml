@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
 - workload.yaml
 - auth.sops.yaml
+- storage.yaml
