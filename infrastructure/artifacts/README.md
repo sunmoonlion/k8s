@@ -25,6 +25,8 @@ make -C infrastructure material-inventory MATERIAL_OWNER=registry
 
 例如向量组件的镜像在`components/data-platform/text-embeddings/images/`，模型在同组件`models/`；Traefik的chart和镜像也在同组件下。模型复制到节点数据目录后运行，缓存目录不作为运行卷。目录归属不决定命名空间，也不代表组件已部署。
 
+Traefik组件的`packages/traefik-3.7.13-chart-41.6.0-linux-amd64/`保留整包的原镜像、chart、渲染清单和下载来源记录。批次内batch标识与相对路径保持原样；它属于组件的辅助完整包，当前新体系安装/发布仍以锁指明的组件charts/images为准。inventory将包内文件归入同一Traefik组件，未被当前锁引用不代表可以自动删除。
+
 ## 三个位置怎样配合
 
 - **artifacts代码**：提供共用下载、完整性校验、归档和skopeo发布；文件版本/SHA与上游镜像摘要只由现有锁维护。

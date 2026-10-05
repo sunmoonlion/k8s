@@ -103,13 +103,16 @@ def main():
         image = yaml.safe_load(lock.read_text())
         owner = lock.parent.relative_to(INFRA.parent/'gitops').as_posix()
         record(owner, 'application-image', image['repository'], '', config['registry_address'] + '/platform/' + image['repository'] + '@' + image['digest'])
+    # Match nested bundles to their existing component owner, not to their inner type directory.
+    known_owners = sorted({row[0] for row in rows}, key=len, reverse=True)
     # Older versions and partial files are visible, never silently classified as deletable.
     for p in sorted(cache.rglob('*')):
         if p.is_symlink():
             raise ValueError('Redirected cache entry: ' + str(p))
         if p.is_file() and p.relative_to(cache).as_posix() not in tracked:
             relative = p.relative_to(cache).as_posix()
-            owner = p.parent.parent.relative_to(cache).as_posix()
+            owner = next((owned for owned in known_owners if relative.startswith(owned + '/')),
+                         p.parent.parent.relative_to(cache).as_posix())
             rows.append([owner, '未被当前锁引用', p.name, relative, '存在（未校验）', '保留；需另行核对清理'])
     selected = [r for r in rows if args.owner == 'all' or r[0] == args.owner or r[0].startswith(args.owner + '/')]
     if not selected:

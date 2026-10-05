@@ -21,3 +21,7 @@ make -C infrastructure services-tools
 [requirements.in](requirements.in)声明入口，[requirements.lock](requirements.lock)固定全部包/hash，`UV`与`HOST_PYTHON`取Make参数。age/Helm等归档须验证成员而不盲解压。工具包缺失先恢复锁内物料，网络问题保留校验后处理代理，禁止临时解除require-hashes。
 
 升级先更新固定物料/依赖锁，审核使用方兼容性和源码边界，保留回退字节后验证。当前没有自动升级/全局Python替换入口。SOPS/age恢复约束见[secrets](../flux/secrets.md)。
+
+## 原始旧 KIND 的工具
+
+原始旧kind保留的kubectl在`/home/zymun/packages-to-be-installed/legacy/kind/kubectl-1.27.3-existing-kind-linux-amd64/bin/kubectl`；相邻provenance.json记录从原节点取得的版本和摘要。它不属于新体系物料批次，不安装到全局PATH。新sunmoon-kind日常使用本工作树`infrastructure/.tools/bin/kubectl`，版本以artifacts文件锁为准。
