@@ -34,3 +34,5 @@
 | kibana_ui_session_lifespan | 会话总期限，正整数m或h；发布后生效。 |
 
 Ingress控制器仍具有其监视命名空间的Secret读取权限；不挂载管理员Secret不代表RBAC层完全不可读取。生产安全审查应覆盖控制器身份与命名空间隔离。
+
+验收的登录请求按当前固定Kibana版本携带内部来源标记；注销调用官方实际注销API，并采用浏览器导航请求头。它们用于会话验收，不是业务集成API。未来升级须重新核实其契约；不得通过关闭内部API限制或放宽注销检查解决失败。依据[官方API验收说明](https://github.com/elastic/kibana/blob/main/docs/extend/testing/api-auth.md)，当前镜像server/routes/authentication/common.js及can_redirect_request.js也已核对。

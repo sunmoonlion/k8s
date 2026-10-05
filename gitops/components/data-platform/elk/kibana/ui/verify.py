@@ -38,6 +38,15 @@ def main():
         headers = {'Host': origin.netloc, 'Content-Type': 'application/json',
                    'kbn-xsrf': 'sunmoon-ui-acceptance', 'kbn-version': args.version,
                    'Origin': args.origin, 'Referer': args.origin + '/login'}
+        # The pinned Kibana UI marks its own internal login requests.
+        # This header is not authentication and is limited to this one route.
+        if path == "/internal/security/login":
+            headers["x-elastic-internal-origin"] = "Kibana"
+        if path == "/api/security/logout":
+            # Real browser navigation is not marked as an AJAX API request.
+            headers.pop("kbn-xsrf")
+            headers.pop("kbn-version")
+            headers["Accept"] = "text/html"
         if auth:
             headers['Authorization'] = 'Basic ' + base64.b64encode((auth[0] + ':' + auth[1]).encode()).decode()
         if cookie:
@@ -48,13 +57,13 @@ def main():
             response = conn.getresponse()
             raw = response.read(8 * 1024 * 1024 + 1)
             require(len(raw) <= 8 * 1024 * 1024, 'Oversized UI response')
-            return response.status, dict(response.getheaders()), raw
+            return response.status, {key.lower(): value for key, value in response.getheaders()}, raw
         finally:
             conn.close()
 
     viewer = (args.username, secret['password'])
     status, headers, body = request('GET', '/login?next=%2Fapp%2Fdiscover')
-    require(status == 200 and 'text/html' in headers.get('Content-Type', '') and b'kbn' in body.lower(), 'Login HTML is unavailable')
+    require(status == 200 and 'text/html' in headers.get('content-type', '') and b'kbn' in body.lower(), 'Login HTML is unavailable')
     path = '/api/data_views/data_view/' + args.data_view_id
     require(request('GET', path)[0] == 401, 'Anonymous data access must be denied')
     require(request('GET', path, auth=(args.username, 'invalid-ui-acceptance-password'))[0] == 401, 'Invalid credentials must be denied')
@@ -79,17 +88,20 @@ def main():
              'currentURL': args.origin + '/login?next=%2Fapp%2Fdiscover',
              'params': {'username': args.username, 'password': secret['password']}}
     status, headers, _ = request('POST', '/internal/security/login', login)
-    require(status == 200, 'Browser session login failed')
+    require(status == 200, f'Browser session login failed: HTTP {status}')
     cookies = SimpleCookie()
-    cookies.load(headers.get('Set-Cookie', ''))
+    cookies.load(headers.get('set-cookie', ''))
     require('sid' in cookies, 'Session cookie missing')
     sid = cookies['sid']
-    require(bool(sid['secure']) and bool(sid['httponly']) and sid['samesite'].lower() == 'lax', 'Session cookie protections differ')
     cookie = 'sid=' + sid.value
-    status, _, body = request('GET', path, cookie=cookie)
-    require(status == 200 and json.loads(body)['data_view']['id'] == args.data_view_id, 'Browser session cannot read log view')
-    status, headers, _ = request('GET', '/logout', cookie=cookie)
-    require(status in [200, 302, 303], 'Browser logout failed')
+    try:
+        require(bool(sid['secure']) and bool(sid['httponly']) and sid['samesite'].lower() == 'lax', 'Session cookie protections differ')
+        status, _, body = request('GET', path, cookie=cookie)
+        require(status == 200 and json.loads(body)['data_view']['id'] == args.data_view_id, 'Browser session cannot read log view')
+    finally:
+        # /logout serves the UI page; this public route actually revokes sid.
+        logout_status, _, _ = request('GET', '/api/security/logout', cookie=cookie)
+    require(logout_status in [200, 302, 303], f'Browser logout failed: HTTP {logout_status}')
     require(request('GET', path, cookie=cookie)[0] == 401, 'Logged-out session remained valid')
     print(json.dumps({'passed': True, 'origin': args.origin, 'verified_ingress_port': int(args.port),
         'tls_chain_and_hostname': True, 'login_html': True, 'basic_reader': True,
