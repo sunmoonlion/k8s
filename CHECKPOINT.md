@@ -26,7 +26,9 @@ Casdoor真实检查先失败，原因是把Go IsGlobalAdmin()方法当JSON属性
 
 最终候选13项选择及六原生play语法、账号四play语法、188对象与原提交对比、公开PG/Tpl-Web stage范围再次通过。Harbor当前admin/database私有副本已补齐且逐字节一致；账号隧道缓存已隔离到自动清理目录，之前只清本轮33个API发现缓存文件。
 
-维护卡docs/platform-kind-v1/component-account-maintenance.md；私有恢复快照/mnt/sunmoon-data/backups/host/component-account-20261005T124637Z，原51阶段/两个聚合阶段/149受保护对象，源摘要保持。下一步本地提交/固定OCI候选发布，再申请范围明确的26阶段所有权交接与Harbor/Casdoor轮换。Casdoor账号源必须与拓扑发布分为两个OCI候选；本轮仍未发布/晋级/修改API账号/停服。旧单元实际运行状态和剩余大目标如下，不将本次代码整理当成新运行验收。
+维护卡docs/platform-kind-v1/component-account-maintenance.md；私有恢复快照/mnt/sunmoon-data/backups/host/component-account-20261005T124637Z，原51阶段/两个聚合阶段/149受保护对象，源摘要保持。候选已本地提交e59bdc006a2eaca8c7b3af367ad7e801a6136547，原生flux-release退出0，固定OCI摘要sha256:e26d2a19932686a64a7226cbf64666c457d797450fdf92f462b184a1ca7a2aef，requires_sops=true；未晋级/应用，运行源仍为原摘要。42份准备证据736435字节已逐字节归档到恢复快照下preparation-evidence/，本轮/tmp源暂留作实际维护后复核，T7仅清本轮文件。
+
+2026-10-05T13:03:50Z容量只读检查：C剩119291076608字节，230GiB未来数据盘增长66802679808字节，维护预算3221225472字节，扣减后49267171328字节，10GiB底线通过。窗口开始前重测。下一步申请范围明确的26阶段所有权交接与Harbor/Casdoor轮换，实际T6未开始。Casdoor账号源必须与拓扑发布分为两个OCI候选；本轮仍未发布/晋级/修改API账号/停服。旧单元实际运行状态和剩余大目标如下，不将本次代码整理当成新运行验收。
 
 ---
 
