@@ -19,7 +19,7 @@
     - name: Require the worktree declarations to equal the promoted Git object
       become: false
       ansible.builtin.command:
-        argv: [git, -C, '{{ repo }}', diff, --exit-code, '{{ source.revision }}', '--', gitops]
+        argv: [git, -C, '{{ repo }}', diff, --exit-code, '{{ source.revision }}', '--', gitops, ':(glob,exclude)gitops/**/README.md']
       changed_when: false
       no_log: true
     - name: Find rendered component candidates

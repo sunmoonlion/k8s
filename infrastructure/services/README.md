@@ -47,7 +47,7 @@ make -C infrastructure services-stage
 make -C infrastructure services-bootstrap
 ```
 
-原生链串联凭据检查→完整镜像校验/发布→必要RAGFlow派生build/publish→工具/mc/chart→render→validate-release→Flux源apply→services-check。配置、候选公开对象及解密后的秘密须与已提交晋级版本一致；不自动部署未批准修改。此target覆盖平台，不等于宿主到所有应用全链路部署。
+原生链串联凭据检查→完整镜像校验/发布→必要RAGFlow派生build/publish→工具/mc/chart→render→validate-release→Flux源apply→services-check。配置、候选公开对象及解密后的秘密须与已提交晋级版本一致；不自动部署未批准修改。Git对象差异核对仅排除组件README说明，配置、模板、镜像锁及部署文件仍严格匹配；整个GitOps工作区仍须已提交。此target覆盖平台，不等于宿主到所有应用全链路部署。
 
 ## 实际检查与副作用
 

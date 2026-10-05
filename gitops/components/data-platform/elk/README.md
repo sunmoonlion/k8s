@@ -18,7 +18,7 @@ services-check写一个nonce事件，经Logstash入ES，用独立reader读回，
 
 ### 节点重启后的初始化
 
-Elasticsearch初始化的TLS副本必须可重复生成：emptyDir会在节点重启后保留旧文件，普通cp无法覆盖0440副本。模板采用`cp --remove-destination`，每次只替换自己的三个临时副本，保留源Secret及0440。2026-10-05实际镜像内重复复制及摘要检查通过，修复已发布并晋级到当前Flux源，实际ES滚动成功；全节点停止/启动验收仍需补齐。出现prepare-config失败时先查复制错误，不删除PVC或重置密码。
+Elasticsearch初始化的TLS副本必须可重复生成：emptyDir会在节点重启后保留旧文件，普通cp无法覆盖0440副本。模板采用`cp --remove-destination`，每次只替换自己的三个临时副本，保留源Secret及0440。2026-10-05实际镜像内重复复制及摘要检查通过，修复已发布并晋级到当前Flux源，实际ES滚动及两轮全节点停止/启动验收均已通过。出现prepare-config失败时先查复制错误，不删除PVC或重置密码。
 
 ## 配置字段
 

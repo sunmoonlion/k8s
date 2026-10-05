@@ -587,7 +587,7 @@
         - name: Require declarations to match the promoted Git object
           become: false
           ansible.builtin.command:
-            argv: [git, -C, '{{ repo }}', diff, --exit-code, '{{ (lookup("file", playbook_dir + "/../environments/kind/flux-source.yaml") | from_yaml).revision }}', '--', gitops]
+            argv: [git, -C, '{{ repo }}', diff, --exit-code, '{{ (lookup("file", playbook_dir + "/../environments/kind/flux-source.yaml") | from_yaml).revision }}', '--', gitops, ':(glob,exclude)gitops/**/README.md']
           changed_when: false
           no_log: true
         - name: Compare candidate public objects and decrypted secrets

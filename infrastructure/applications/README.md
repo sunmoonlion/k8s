@@ -91,3 +91,5 @@ Info S3检查通过实际适配器写两个随机版本读回摘要并核权限�
 | `application_build_budget_bytes` | 整数 | 单次后端构建峰值预算；须覆盖上下文、依赖、镜像层和传输。 |
 | `application_frontend_build_budget_bytes` | 整数 | 单个Web/Admin构建峰值预算；host检查同时扣除数据盘未来增长。 |
 | `application_download_mode` | 文本 | domestic或official-proxy，下载源和代理配套；网络失败时按上文唯一重试。 |
+
+部署发布门禁允许组件README独立维护；仅这些说明文件不参与晋级Git对象的字节差异检查。配置、模板、锁、秘密密文及运行声明仍严格匹配；GitOps工作区须已提交，不能据此部署未批准配置。
