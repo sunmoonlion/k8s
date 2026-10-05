@@ -17,6 +17,7 @@
 | 物料/工具/版本来源 | [artifacts](../infrastructure/artifacts/README.md)、[tools](../infrastructure/tools/README.md) | 固定锁与校验 |
 | 发布部署声明/晋级/退回 | [Flux](../infrastructure/flux/README.md) | 不可变OCI与显式晋级 |
 | 密钥/Secret生成和恢复 | [secrets](../infrastructure/flux/secrets.md) | SOPS/私有主备；统一轮换待实现 |
+| 组件阶段/依赖（stage.yaml） | [components](../infrastructure/components/README.md) | 图由组件目录汇成 |
 | 平台部署/检查 | [services](../infrastructure/services/README.md) | 平台bootstrap存在 |
 | 应用构建/发布/部署/真实检查 | [applications](../infrastructure/applications/README.md) | 4应用共享原生入口 |
 | 理解职责/适用边界 | [架构](platform-kind-v1/architecture.md) | 稳定设计 |

@@ -1,6 +1,6 @@
 # 平台服务部署与维护
 
-本模块是所有启用平台组件的原生Make→Ansible→Flux/SOPS编排。组件参数、模板、生成声明、身份准备与说明在[各责任组件](../../gitops/components/README.md)；共同映射在[layout.yaml](layout.yaml)，不再集中维护重复端口/账号表。
+本模块是所有启用平台组件的原生Make→Ansible→Flux/SOPS编排。组件参数、模板、生成声明、身份准备与说明在[各责任组件](../../gitops/components/README.md)；阶段与依赖在各组件`stage.yaml`（见[components](../components/README.md)）；[layout.yaml](layout.yaml)只剩命名空间与保留卷清单，不再集中维护重复端口/账号表。
 
 ## 输入与准备
 当前值以[config.yaml](config.yaml)为准，手册维护字段职责，不再复制一套默认值。
@@ -37,7 +37,7 @@ make -C infrastructure services-render
 make -C infrastructure services-stage
 ```
 
-审查`.build/services`公开对象与秘密语义；stage拷贝已生成候选至各组件与clusters/kind/services.yaml。提交工作树后按[Flux发布与晋级](../flux/README.md#发布与显式晋级)生成、审核并晋级同一产物。stage不代表声明已生效。
+审查`.build/services`公开对象与秘密语义；stage拷贝已生成候选至各组件，并经`topology-stage`更新clusters/kind/stages.yaml。提交工作树后按[Flux发布与晋级](../flux/README.md#发布与显式晋级)生成、审核并晋级同一产物。stage不代表声明已生效。
 
 服务开关控制新声明资源和阶段；`prune:false`保留已有对象，不自动停服/卸载。静态PV/PVC、初始化代次、目录/账号变更另看组件限制；不要用增加Job代次重置已有数据。
 

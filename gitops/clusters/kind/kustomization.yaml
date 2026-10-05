@@ -5,8 +5,4 @@ resources:
 - release-info.yaml
 - foundation.yaml
 - registry-puller.sops.yaml
-- services.yaml
-- applications-tpl.yaml
-- applications-info.yaml
-- applications-knowledge.yaml
-- applications-investment.yaml
+- stages.yaml

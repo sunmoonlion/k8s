@@ -179,7 +179,7 @@
           migrator_user: '{{ cfg.database_migrator_user }}'
           backend: '{{ app_images.backend.digest }}'
           schema: '{{ cfg.expected_schema_revision }}'
-          stages: ['{{ application_name }}-database', '{{ application_name }}-migration', '{{ application_name }}-redis', '{{ application_name }}-rabbitmq', '{{ application_name }}-identity', '{{ application_name }}-runtime', '{{ application_name }}-web', '{{ application_name }}-admin']
+          stages: '{{ component_stages | selectattr("object", "match", "^app-platform/" + application_name + "-app/") | map(attribute="name") | list }}'
           image_and_data_budget: '{{ cfg.deploy_budget_bytes }}'
           excluded: 'Public entry cutover is separate; verify new entry before redirecting existing domains.'
       when: application_action == 'plan'
@@ -463,7 +463,6 @@
             - {source: runtime/workload.yaml, dest: runtime/workload.yaml}
             - {source: ../web/workload.yaml, dest: '../{{ application_name }}-web-frontend/workload.yaml'}
             - {source: ../admin/workload.yaml, dest: '../{{ application_name }}-admin-frontend/workload.yaml'}
-            - {source: stages.yaml, dest: stages.yaml}
         - name: Render the optional storage provisioning stage
           ansible.builtin.template:
             src: '{{ mechanism_root }}/storage/workload.yaml.j2'
@@ -568,34 +567,12 @@
     - name: Stage reviewed candidate declarations without deploying
       when: application_action == 'stage'
       block:
-        - name: Refuse changing unselected application dependency declarations
-          ansible.builtin.assert:
-            quiet: true
-            that: candidate_unselected == committed_unselected
-            fail_msg: Unselected application phases differ. Review and stage the application as a whole first.
-          vars:
-            candidate_unselected: '{{ lookup("file",build + "/stages.yaml") | from_yaml_all | rejectattr("metadata.name","in",selection.selected_stages) | list }}'
-            committed_unselected: '{{ lookup("file",repo + "/gitops/clusters/kind/applications-" + application_name + ".yaml") | from_yaml_all | rejectattr("metadata.name","in",selection.selected_stages) | list }}'
         - name: Prepare only the selected application's explicit declaration directories
           ansible.builtin.file: {path: '{{ (component_root + "/" + item) | dirname }}', state: directory, owner: '{{ cluster_operator }}', mode: '0755'}
           loop: '{{ candidate_files }}'
         - name: Copy explicit application candidates only
           ansible.builtin.copy: {src: '{{ build }}/{{ item }}', dest: '{{ component_root }}/{{ item }}', remote_src: true, owner: '{{ cluster_operator }}', mode: '0644'}
           loop: '{{ candidate_files }}'
-        - name: Stage only the selected application dependency chain
-          ansible.builtin.copy: {src: '{{ build }}/stages.yaml', dest: '{{ repo }}/gitops/clusters/kind/applications-{{ application_name }}.yaml', remote_src: true, owner: '{{ cluster_operator }}', mode: '0644'}
-        - name: Read the explicit cluster resource list
-          ansible.builtin.slurp: {src: '{{ repo }}/gitops/clusters/kind/kustomization.yaml'}
-          register: cluster_resources
-        - name: Add only the selected application stage to the cluster resource list
-          ansible.builtin.copy:
-            dest: '{{ repo }}/gitops/clusters/kind/kustomization.yaml'
-            owner: '{{ cluster_operator }}'
-            mode: '0644'
-            content: '{{ root | combine({"resources":root.resources + ([stage_file] if stage_file not in root.resources else [])}) | to_nice_yaml }}'
-          vars:
-            root: '{{ cluster_resources.content | b64decode | from_yaml }}'
-            stage_file: 'applications-{{ application_name }}.yaml'
     - name: Validate rendered inputs against the promoted immutable source
       when: application_action == 'validate'
       block:
@@ -619,10 +596,6 @@
             committed_path: '{{ component_root }}/{{ candidate }}'
           loop: '{{ candidate_files }}'
           loop_control: {loop_var: candidate}
-        - name: Require stage declarations to match rendered settings
-          ansible.builtin.assert:
-            quiet: true
-            that: (lookup('file',build + '/stages.yaml') | from_yaml_all | list) == (lookup('file',repo + '/gitops/clusters/kind/applications-' + application_name + '.yaml') | from_yaml_all | list)
     - name: Verify only the selected frontend and read its unchanged API dependency
       when: application_action == 'check' and not selected_backend
       block:

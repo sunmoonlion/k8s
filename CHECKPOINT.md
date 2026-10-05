@@ -90,4 +90,18 @@ Casdoor真实检查先失败，原因是把Go IsGlobalAdmin()方法当JSON属性
 
 证据：/mnt/sunmoon-data/backups/host/component-account-20261005T124637Z（root 0600），含topology-all、scope-*、topology-repeat-all、首次失败的topology-public-check.log（保留不覆盖）、通过的topology-public-check-rerun2.log、audit-*.json；topology-public-check-rerun.log是被中止的首次重跑残片，仅到只读阶段，无副作用。本轮86个/tmp助手脚本与审计JSON已复制到同目录maintenance-tmp-evidence/并逐文件SHA256核对（MANIFEST.json），/tmp原件暂留待所有者确认后清理。
 
-后续：Harbor轮换仍需在线窗口执行；Casdoor轮换与其余账号预设并入新集群sunmoonai-kind冷建；verify.yaml的阶段Ready断言改为有界等待；T7聚合源码清理并入组件合并重构。接手后的重构方案另立检查点。
+后续：Harbor轮换仍需在线窗口执行；Casdoor轮换与其余账号预设并入新集群sunmoonai-kind冷建；verify.yaml的阶段Ready断言改为有界等待；T7聚合源码清理并入组件合并重构。
+
+---
+
+# 重构检查点（接手后，2026-10-05起）
+
+目标不变：dev/prod parity，本机KIND与将来云端共用同一套组件声明与发布链；只参数化环境。顺序：A 阶段真源下沉到组件并合并services/applications → B make ci → C 环境参数化（去sunmoon-kind/:30443/nodeSelector硬编码，platform与providers/wsl-kind分层）→ D 冷建sunmoonai-kind并预置管理员口令 → E 切换入口、退役sunmoon-kind → F/G 轮换工具与文档收敛。每阶段结束才做一次flux-release+显式晋级；阶段内只做离线等价验证，不碰集群。
+
+## A1 已完成：阶段图唯一来源为组件stage.yaml
+
+31个对象各得`gitops/components/<对象>/stage.yaml`（62阶段，含26平台+36应用）；`infrastructure/components/stages.py`扫描成图并承接原选择算法；`components/topology.yaml`渲染/暂存/校验单一`gitops/clusters/kind/stages.yaml`，替代services.yaml+4个applications-*.yaml和common/backend/stages.yaml.j2；`services/layout.yaml`只剩命名空间与卷清单；`host/deployment.yaml`不再硬编码应用名与四个文件路径（应用名在applications/config.yaml）。
+
+离线验证：渲染的62个Kustomization文档与HEAD五文件逐文档相等；47个OBJECT（含分组、模块、两个非法值）在select动作下选择JSON（三个列表字段按集合比较）、.mk与退出状态与HEAD完全一致，另抽5对象×deploy/stage/check一致；`required_stages`仍满足拓扑序；`services-render OBJECT=all`实际运行（575任务）75个公开声明与已提交相等，`application-render APP=knowledge`14个相等；6个剧本syntax-check通过；`make -n`对比只多出topology步骤。
+
+待办门：工作树gitops已与晋级对象e59bdc00不同，`platform-deploy`会被validate-release拒绝直到下一次flux-release+晋级（对象不变，Flux应为无变更收敛）；`platform-check`不受影响。下一步A2：合并services/applications渲染实现到components，按组件`prepare.yaml`/`verify`契约拆分1010行deploy.yaml。

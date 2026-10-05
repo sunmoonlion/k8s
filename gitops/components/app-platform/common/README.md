@@ -11,7 +11,7 @@
 | backend/identity | Web/Admin注册与精确回调，不授予业务权限 |
 | [backend/service-identity](backend/service-identity/README.md) | Info摄入和Investment检索的独立服务身份 |
 | [backend/storage](backend/storage/README.md) | 应用原文桶、版本与受限S3身份 |
-| backend/runtime、stages.yaml.j2 | API/Worker/Scheduler运行声明与Flux依赖 |
+| backend/runtime | API/Worker/Scheduler运行声明；Flux阶段依赖在各应用组件的stage.yaml |
 | web、admin | 分面独立的前端运行声明 |
 
 模板不定义第二套用户名、域名、镜像版本。修改共用模板前查看四应用的生成差异；不能只检查tpl，把其它应用作为未经审阅的副作用。初始化Python模板经渲染进入所属Job的ConfigMap。

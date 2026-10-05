@@ -263,13 +263,13 @@
       when: '"foundations" in selection.services'
     - name: Render explicit component roots without including input configuration
       ansible.builtin.copy:
-        dest: '{{ build }}/{{ service_component_paths[item] }}/kustomization.yaml'
+        dest: '{{ build }}/{{ stage_paths[item] }}/kustomization.yaml'
         owner: '{{ cluster_operator }}'
         mode: '0644'
         content: |
           {{ {'apiVersion':'kustomize.config.k8s.io/v1beta1','kind':'Kustomization','resources':(['workload.yaml'] if item == 'text-embeddings' else ['workload.yaml', ('puller.sops.yaml' if item == 'traefik' else 'auth.sops.yaml')]) + (['crds.yaml'] if item == 'traefik' and traefik_crd_enabled | bool else []) + (['service-access'] if item == 'traefik' and service_access_enabled | bool else [])} | to_nice_yaml }}
       loop: '{{ ["postgresql", "redis", "rabbitmq", "traefik", "object-storage"] + (["text-embeddings"] if services_text_embeddings_enabled else []) }}'
-      when: service_component_paths[item] in selected_service_paths
+      when: stage_paths[item] in selected_service_paths
     - name: Prepare the private HTTPS service transport
       ansible.builtin.include_tasks: ../../gitops/components/ingress-platform/traefik/service-access/prepare.yaml
       when: service_access_enabled | bool and "ingress-platform/traefik" in selection.services
@@ -325,8 +325,8 @@
           no_log: true
         - name: Render Casdoor public deployment stages
           ansible.builtin.template:
-            src: '{{ playbook_dir }}/../../gitops/components/{{ service_stage_paths[item] }}/workload.yaml.j2'
-            dest: '{{ build }}/{{ service_stage_paths[item] }}/workload.yaml'
+            src: '{{ playbook_dir }}/../../gitops/components/{{ stage_paths[item] }}/workload.yaml.j2'
+            dest: '{{ build }}/{{ stage_paths[item] }}/workload.yaml'
             owner: '{{ cluster_operator }}'
             mode: '0644'
           loop: [casdoor-db, casdoor-init, casdoor]
@@ -391,7 +391,7 @@
           no_log: true
         - name: Render stage Kustomize roots
           ansible.builtin.copy:
-            dest: '{{ build }}/{{ service_stage_paths[item.name] | default(item.name) }}/kustomization.yaml'
+            dest: '{{ build }}/{{ stage_paths[item.name] }}/kustomization.yaml'
             owner: '{{ cluster_operator }}'
             mode: '0644'
             content: |
@@ -407,12 +407,12 @@
         owner: '{{ cluster_operator }}'
         mode: '0644'
       vars:
-        volume_path: '{{ service_stage_paths["casdoor-db"] if volume.name == "casdoor" else service_component_paths[volume.name] }}'
+        volume_path: '{{ stage_paths["casdoor-db" if volume.name == "casdoor" else volume.name] }}'
       loop: '{{ selected_service_volumes }}'
       loop_control: {loop_var: volume, label: '{{ volume.name }}'}
     - name: Read selected component root resources before adding its own storage
       ansible.builtin.slurp:
-        src: '{{ build }}/{{ service_stage_paths["casdoor-db"] if item.name == "casdoor" else service_component_paths[item.name] }}/kustomization.yaml'
+        src: '{{ build }}/{{ stage_paths["casdoor-db" if item.name == "casdoor" else item.name] }}/kustomization.yaml'
       loop: '{{ selected_service_volumes }}'
       register: volume_roots
     - name: Include the retained volume exactly once in its consuming stage
@@ -424,13 +424,6 @@
       vars: {root: '{{ item.content | b64decode | from_yaml }}'}
       loop: '{{ volume_roots.results }}'
       loop_control: {label: '{{ item.item.name }}'}
-    - name: Render enabled GitOps stage declarations
-      ansible.builtin.template:
-        src: '{{ playbook_dir }}/../../gitops/clusters/kind/services.yaml.j2'
-        dest: '{{ build }}/stages.yaml'
-        mode: '0644'
-        owner: '{{ cluster_operator }}'
-
     - name: Stage rendered service candidates without applying them
       when: services_action | default('render') == 'stage'
       block:
@@ -445,15 +438,6 @@
           ansible.builtin.assert:
             quiet: true
             that: generated_service_files.files | length > 0
-        - name: Require unselected service stages to remain unchanged
-          ansible.builtin.assert:
-            quiet: true
-            that: candidate_unselected == committed_unselected
-            fail_msg: Unselected stage declarations differ. First review and stage the complete topology with OBJECT=all.
-          vars:
-            candidate_unselected: '{{ lookup("file",build + "/stages.yaml") | from_yaml_all | rejectattr("metadata.name","in",selection.selected_stages) | list }}'
-            committed_unselected: '{{ lookup("file",playbook_dir + "/../../gitops/clusters/kind/services.yaml") | from_yaml_all | rejectattr("metadata.name","in",selection.selected_stages) | list }}'
-          when: selection.object != 'all'
         - name: Prepare declared component directories
           ansible.builtin.file:
             path: '{{ playbook_dir }}/../../gitops/components/{{ item.path | relpath(build) | dirname }}'
@@ -471,10 +455,3 @@
             mode: '0644'
           loop: '{{ generated_service_files.files }}'
           loop_control: {label: '{{ item.path | relpath(build) }}'}
-        - name: Stage native service dependency declarations
-          ansible.builtin.copy:
-            src: '{{ build }}/stages.yaml'
-            dest: '{{ playbook_dir }}/../../gitops/clusters/kind/services.yaml'
-            remote_src: true
-            owner: '{{ cluster_operator }}'
-            mode: '0644'

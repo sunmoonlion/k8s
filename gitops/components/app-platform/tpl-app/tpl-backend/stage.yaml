@@ -1,0 +1,25 @@
+# 本组件的 Flux 阶段声明；所在目录即可选对象（OBJECT）。path 相对本目录；dependsOn 为阶段名；
+# enabled/dependsOn 可用 Jinja 表达式，由 Ansible 按当前配置求值。图由 infrastructure/components/stages.py 扫描汇总。
+---
+defaults:
+  enabled: '{{ tpl_deployment.enabled }}'
+  timeout: 8m
+stages:
+- name: tpl-database
+  path: database
+  dependsOn: [postgresql]
+- name: tpl-migration
+  path: migration
+  dependsOn: [tpl-database]
+- name: tpl-redis
+  path: redis
+  dependsOn: [tpl-migration, redis]
+- name: tpl-rabbitmq
+  path: rabbitmq
+  dependsOn: [tpl-redis, rabbitmq]
+- name: tpl-identity
+  path: identity
+  dependsOn: [tpl-rabbitmq, casdoor]
+- name: tpl-runtime
+  path: runtime
+  dependsOn: [tpl-identity]

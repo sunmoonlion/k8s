@@ -47,6 +47,7 @@ make -C infrastructure preflight
 | 公共30443 TLS直通与切换 | [entry](entry/README.md) |
 | 三节点KIND、证书和节点拉取 | [cluster](cluster/README.md) |
 | Flux、发布候选、显式晋级、SOPS | [flux](flux/README.md) |
+| 组件阶段图与集群阶段声明 | [components](components/README.md) |
 | 平台的共同部署链 | [services](services/README.md) |
 | 四应用在线构建、发布、部署和检查 | [applications](applications/README.md) |
 | 平台组件/应用参数 | [组件目录](../gitops/components/README.md) |

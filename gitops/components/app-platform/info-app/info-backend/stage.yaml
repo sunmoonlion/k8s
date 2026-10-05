@@ -1,0 +1,33 @@
+# 本组件的 Flux 阶段声明；所在目录即可选对象（OBJECT）。path 相对本目录；dependsOn 为阶段名；
+# enabled/dependsOn 可用 Jinja 表达式，由 Ansible 按当前配置求值。图由 infrastructure/components/stages.py 扫描汇总。
+---
+defaults:
+  enabled: '{{ info_deployment.enabled }}'
+  timeout: 8m
+stages:
+- name: info-database
+  path: database
+  dependsOn: [postgresql]
+- name: info-migration
+  path: migration
+  dependsOn: [info-database]
+- name: info-redis
+  path: redis
+  dependsOn: [info-migration, redis]
+- name: info-rabbitmq
+  path: rabbitmq
+  dependsOn: [info-redis, rabbitmq]
+- name: info-identity
+  path: identity
+  dependsOn: [info-rabbitmq, casdoor]
+- name: info-runtime
+  path: runtime
+  dependsOn: '{{ ["info-identity"] + (["info-service-identity"] if info_backend_deployment.knowledge_service.enabled | default(false) else []) + (["info-storage"] if info_backend_deployment.object_storage.enabled | default(false) else []) }}'
+- name: info-storage
+  path: storage
+  dependsOn: [object-storage]
+  enabled: '{{ info_deployment.enabled and info_backend_deployment.object_storage.enabled | default(false) }}'
+- name: info-service-identity
+  path: service-identity
+  dependsOn: [casdoor, postgresql]
+  enabled: '{{ info_deployment.enabled and info_backend_deployment.knowledge_service.enabled | default(false) }}'

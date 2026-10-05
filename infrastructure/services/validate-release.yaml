@@ -44,8 +44,6 @@
         committed_path: '{{ repo }}/gitops/components/{{ relative_path }}'
       loop: '{{ candidates.files }}'
       loop_control: {label: '{{ item.path | basename }}'}
-    - name: Require enabled stages to match the release
-      ansible.builtin.assert:
-        quiet: true
-        that: (lookup('file', build + '/stages.yaml') | from_yaml_all | list) == (lookup('file', repo + '/gitops/clusters/kind/services.yaml') | from_yaml_all | list)
-        fail_msg: Stage switches differ from the promoted release. Review and publish generated stages before deploying.
+# Stage declarations are validated from the component stage graph, not from service rendering.
+- import_playbook: ../components/topology.yaml
+  vars: {topology_action: validate}

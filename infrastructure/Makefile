@@ -322,8 +322,10 @@ application-render:
 application-stage:
 	$(MAKE) application-render APP=$(APP)
 	$(ANSIBLE) -i host/inventory.yaml applications/deploy.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=stage'
+	$(MAKE) topology-stage
 application-validate-release:
 	$(ANSIBLE) -i host/inventory.yaml applications/deploy.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=validate'
+	$(MAKE) topology-validate
 application-check-public:
 	$(ANSIBLE) -i host/inventory.yaml applications/deploy.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=check application_check_public=true'
 
@@ -339,6 +341,12 @@ application-bootstrap:
 .PHONY: services-stage
 services-stage:
 	$(ANSIBLE) -i host/inventory.yaml services/render.yaml $(CONFIG_ARGS) --extra-vars services_action=stage
+	$(MAKE) topology-stage
+
+# Cluster stage declarations come only from gitops/components/**/stage.yaml (see components/README.md).
+.PHONY: topology-render topology-stage topology-validate
+topology-render topology-stage topology-validate:
+	$(ANSIBLE) -i host/inventory.yaml components/topology.yaml $(CONFIG_ARGS) --extra-vars 'topology_action=$(patsubst topology-%,%,$@)'
 
 .PHONY: services-ragflow-image services-ragflow-image-publish
 services-ragflow-image:

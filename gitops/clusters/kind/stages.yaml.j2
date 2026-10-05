@@ -6,7 +6,7 @@ metadata: {name: {{ stage.name }}, namespace: flux-system}
 spec:
   interval: 5m
   retryInterval: 30s
-  timeout: {{ '20m' if stage.name == 'ragflow-initialize' else '15m' }}
+  timeout: {{ stage.timeout }}
   path: ./components/{{ stage.path }}
   sourceRef: {kind: OCIRepository, name: platform}
 {% if stage.dependencies %}

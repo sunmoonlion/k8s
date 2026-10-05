@@ -13,6 +13,7 @@
 | 文件 | 谁维护/怎样生效 |
 |---|---|
 | config.yaml | 用户普通参数，含开关/用户名/port/资源/代次；改后准备候选、审阅、发布晋级 |
+| stage.yaml | 本对象的Flux阶段、依赖与所需物料；所在目录即`OBJECT`，写法见[components](../../infrastructure/components/README.md) |
 | workload/config/provision等模板 | 维护实现，消费同目录或共享参数；common只保存共用机制 |
 | workload/kustomization等生成YAML | render/stage输出并提交，由Flux拥有；不散改默认值 |
 | *.sops.yaml | 私有输入加密结果；不是明文密码编辑入口 |
