@@ -1,8 +1,0 @@
----
-- name: Prepare the existing application TLS identity through the shared recovery mechanism
-  ansible.builtin.include_tasks: ../../services/tasks/tls-identity.yaml
-  vars:
-    tls_private_dir: '{{ cfg.private_dir }}'
-    tls_backup_dir: '{{ cfg.backup_dir }}'
-    tls_declaration: '{{ component_root }}/runtime/tls.sops.yaml'
-    tls_hostnames: ['{{ cfg.web_origin | urlsplit("hostname") }}', '{{ cfg.admin_origin | urlsplit("hostname") }}']
