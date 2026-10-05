@@ -2,7 +2,7 @@
 ---
 cluster_name: sunmoon-kind
 registry_address: harbor.sunmoonai.com:30443
-artifact_cache_root: /home/zymun/packages-to-be-installed/releases/platform-kind-v1
+artifact_cache_root: /home/zymun/k8s-packages
 data_namespace: data-platform-dev
 messaging_namespace: messaging-platform-dev
 app_namespace: app-platform-dev

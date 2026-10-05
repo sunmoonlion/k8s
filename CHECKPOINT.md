@@ -1,5 +1,10 @@
 # 当前单元：ELK 全应用节点日志采集（完成并实际重复验证，2026-10-04）
 
+## 当前物料根（2026-10-05维护更新）
+
+新体系物料已独立到`/home/zymun/k8s-packages`，唯一配置为infrastructure/environments/kind/site.yaml的artifact_cache_root；组件相对路径以物料锁和material-inventory为准。`/home/zymun/packages-to-be-installed`仅保留原始旧体系物料。下文早期记录中的releases/platform-kind-v1及顶层images等位置是当时路径，不作为当前操作入口，不建立旧路径转接。
+
+
 基线ac0afc66caa4b6d3ea63e2705a46cc4b970f5b44；platform-kind-v1/k8s单仓，未改业务仓，无push。原生Make→Ansible→Flux/SOPS，开发维护2小时，10GiB容量底线。本单元没有切公开入口，没有停止原始kind或删除卷/备份。
 
 | 规则 | 实际实施 |

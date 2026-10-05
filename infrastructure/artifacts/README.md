@@ -1,6 +1,8 @@
 # 物料、镜像与版本锁
 
-物料根唯一在[site.yaml](../environments/kind/site.yaml)。当前批次为`/home/zymun/packages-to-be-installed/releases/platform-kind-v1`；物料先按组件归属分类，再按bin/packages/images/charts/manifests/models/databases区分类型；不凭tar/tgz扩展名猜用途。运行数据、秘密、备份和构建日志不放在本目录。
+物料根唯一在[site.yaml](../environments/kind/site.yaml)。当前物料根为`/home/zymun/k8s-packages`；物料先按组件归属分类，再按bin/packages/images/charts/manifests/models/databases区分类型；不凭tar/tgz扩展名猜用途。运行数据、秘密、备份和构建日志不放在本目录。
+
+新体系只使用`~/k8s-packages`；`~/packages-to-be-installed`属于原始旧体系，含legacy/kind中的旧kubectl，不从旧目录补物料或设置路径转接。根目录由site.yaml唯一配置，版本/摘要和组件相对路径仍由锁维护。
 
 ## 日常查看与目录归属
 
@@ -32,7 +34,7 @@ Traefik组件的`packages/traefik-3.7.13-chart-41.6.0-linux-amd64/`保留整包�
 - **artifacts代码**：提供共用下载、完整性校验、归档和skopeo发布；文件版本/SHA与上游镜像摘要只由现有锁维护。
 - **applications代码**：四应用固定源码、在线构建、声明准备、部署与真实验收；复用artifacts发布，不复制发布实现。
 - **gitops/components**：就近保存用户配置、模板、部署声明及应用/派生成品锁；组件通过物料ID引用共享锁。
-- **releases/platform-kind-v1**：锁描述的实际文件；可以由下载入口补齐，不能代替配置、Git版本锁或Harbor持久数据。
+- **~/k8s-packages**：锁描述的实际文件；可以由下载入口补齐，不能代替配置、Git版本锁或Harbor持久数据。
 
 文件完整相对路径由files/bootstrap/host锁的`path`维护；镜像归属由上游/node/派生锁的`material_owner`维护，共用脚本生成`<material_owner>/images/<id>-<manifest摘要>.tar`。归档锁里的path必须与镜像归属一致。修改归属必须同时迁移已有文件、更新相关归档锁并核对字节，不保留旧路径转接或目录扫描猜测。
 
