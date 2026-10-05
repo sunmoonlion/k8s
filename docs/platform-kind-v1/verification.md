@@ -4,7 +4,7 @@
 
 ## 整套入口与开机恢复候选（2026-10-05）
 
-新增`platform-deploy`实际跑过从Harbor/入口/KIND到Flux、平台及四个应用的原生入口，全部退出0；各阶段部署资源未报告变更，写入包括模块选择、临时目录和验收回执。首次把多模块import到同一Ansible进程的候选在Flux工具变量污染处失败（此前changed0），已移除；最终由Make分别调用独立原生进程。使用已有数据与已晋级声明，不代表从空主机/删群冷建已通过。日志私有保存在`/data/kind-clusters/sunmoon-kind/bootstrap/evidence/lifecycle-20261005/`。
+新增`platform-deploy`实际跑过从Harbor/入口/KIND到Flux、平台及四个应用的原生入口，全部退出0；各阶段部署资源未报告变更，写入包括模块选择、临时目录和验收回执。首次把多模块import到同一Ansible进程的候选在Flux工具变量污染处失败（此前changed0），已移除；最终由Make分别调用独立原生进程。统一公共入口platform-check也实际退出0（10段），覆盖Kibana、平台及四应用协议；最终3节点Ready、57个Running Pod全部Ready、0 Failed、51个Flux阶段当前代次Ready、13 PV Bound/Retain，旧控制面仍停。使用已有数据与已晋级声明，不代表从空主机/删群冷建已通过。日志私有保存在`/data/kind-clusters/sunmoon-kind/bootstrap/evidence/lifecycle-20261005/`。
 
 开机/启停代码目前仅候选：计划渲染、shell语法、真实UUID/三挂载及systemd/Docker命名空间检查、Windows原生PowerShell解析通过；未安装新任务/单元、未修改restart policy、未关闭WSL，不能报告启停/重启持久化完成。维护方法及回退见[整套生命周期](../../infrastructure/host/lifecycle.md)。DNS、真实浏览器及机器外备份仍未完成。
 

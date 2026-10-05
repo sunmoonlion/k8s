@@ -5,7 +5,7 @@
 本节优先于后续历史。当前工作树/分支platform-kind-v1，基线32d71de6；只改新体系infrastructure/docs及本续接文件，无push，无业务仓/旧sunmoonai/冻结Luna变更。
 
 - 原生Make新增platform-deploy，按原模块开关顺序复用独立Ansible进程；实际整套Harbor/入口/KIND/Flux/SOPS/foundations/services和四应用bootstrap退出0。大部分changed0；变更为选择文件、临时目录、认证传输及协议回执，不把它们统称绝对零变更。原错误同进程import候选在Flux tools变量污染处失败、此前changed0；候选已删除，原始失败日志保留。
-- 新增platform-check公共协议汇总；正在执行，最终结果须以私有日志更新，不能提前标完成。此入口不代替宿主DNS/真实浏览器。
+- 新增platform-check公共协议汇总已实际退出0，10段原生检查全部failed0；整套部署为46段全部failed0。最终3节点Ready、57/57 Running Pod Ready、0 Failed、51/51 Flux当前代次Ready、13 PV Bound/Retain、原始控制面仍停。此入口不代替宿主DNS/真实浏览器。
 - host生命周期候选仅plan：shell语法、真实230GiB UUID/三个挂载及systemd/Docker namespace、Windows原生PS解析通过。新Windows任务输入发布目标为管理员持有的ProgramData独立目录，普通容量/审阅目录仍在C:\wsl-disks；无分钟任务或UAC循环。未安装新unit/task，未改变任何节点restart policy，未启停服务，未关闭WSL。
 - 只读现场：原始kind控制面停、新三节点运行；Harbor/entry active但boot disabled。Windows原任务只有登录触发、上次结果1，错误为Mount validation failed；旧单次Linux附盘检查先失败后成功，但明确services_started=false。没有底层详细错误，不能归咎清理/网络/扩盘。
 - 候选安装/启用通过后将保存完整节点restart policy、精确ID/运行态及旧unit/task回退；新节点由systemd管理、原始三个节点禁止自动重启但当前worker不强制停止。所有卷/数据保留。维护统一2小时、容量10GiB，运行参数真源不变。

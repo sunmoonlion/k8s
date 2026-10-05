@@ -34,6 +34,7 @@ $Acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($Owne
 $Acl.SetOwner(([Security.Principal.SecurityIdentifier]'S-1-5-32-544'))
 # Protect ancestors too; an ordinary user must not replace an elevated task's path.
 foreach ($Directory in @('C:\ProgramData\Sunmoon','C:\ProgramData\Sunmoon\platform-kind-v1',$Dest)) {
+    if ((Test-Path -LiteralPath $Directory) -and ((Get-Item -LiteralPath $Directory).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Refuse a reparse point in the elevated task path' }
     New-Item -ItemType Directory -Path $Directory -Force | Out-Null
     Set-Acl -LiteralPath $Directory -AclObject $Acl
 }
