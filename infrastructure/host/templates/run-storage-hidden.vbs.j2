@@ -1,0 +1,7 @@
+' Fixed non-console task launcher; no PowerShell command text or encoded payload.
+Option Explicit
+Dim shell, command, result
+Set shell = CreateObject("WScript.Shell")
+command = Chr(34) & shell.ExpandEnvironmentStrings("%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe") & Chr(34) & " -NoProfile -NonInteractive -File " & Chr(34) & "{{ windows_script_directory_windows }}\attach-storage.ps1" & Chr(34)
+result = shell.Run(command, 0, True)
+WScript.Quit result

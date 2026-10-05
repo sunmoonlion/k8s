@@ -1,0 +1,23 @@
+#!/bin/bash
+set -euo pipefail
+trap 'echo "Owned cluster lifecycle guard failed at line $LINENO" >&2' ERR
+receipt={{ (cluster_data_root + '/' + cluster_name + '/bootstrap/identity.json') | quote }}
+expected={{ owned_identity | to_json | quote }}
+if [[ ${1:-before} != stop ]]; then
+[[ $(jq -Sc . "$receipt") == $(jq -Sc . <<< "$expected") ]]
+/usr/bin/python3 {{ (host_runtime_dir + '/storage.py') | quote }} check {{ (host_runtime_dir + '/storage.json') | quote }}
+fi
+{% for role in ['control-plane', 'worker', 'worker2'] %}
+node={{ (cluster_name + '-' + role) | quote }}
+json=$(docker inspect "$node")
+jq -e --arg id {{ owned_identity.node_ids[loop.index0] | quote }} --arg name {{ cluster_name | quote }} \
+  'length == 1 and .[0].Id == $id and .[0].Config.Labels["io.x-k8s.kind.cluster"] == $name' <<< "$json" >/dev/null
+{% for dest, source in [('/data/kind-local-storage', cluster_data_root + '/' + cluster_name + '/' + role + '/static'), ('/var/local-path-provisioner', cluster_data_root + '/' + cluster_name + '/' + role + '/dynamic'), ('/etc/containerd/certs.d', cluster_data_root + '/' + cluster_name + '/bootstrap/certs.d')] %}
+jq -e --arg dest {{ dest | quote }} --arg src {{ source | quote }} \
+  '[.[0].Mounts[] | select(.Destination == $dest)] | length == 1 and .[0].Source == $src and .[0].Type == "bind"' <<< "$json" >/dev/null
+{% endfor %}
+{% endfor %}
+if [[ ${1:-before} == after ]]; then
+  actual=$({{ (host_runtime_dir + '/kubectl') | quote }} --kubeconfig={{ cluster_kubeconfig | quote }} --context=kind-{{ cluster_name }} --request-timeout=30s get ns kube-system -o 'jsonpath={.metadata.uid}')
+  [[ $actual == {{ owned_identity.kube_system_uid | quote }} ]]
+fi

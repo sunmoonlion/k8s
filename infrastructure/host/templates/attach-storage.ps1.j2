@@ -1,0 +1,26 @@
+# Existing disk only. No initialization, shutdown, resize or service startup.
+[CmdletBinding()]
+param()
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+$Distro = {{ wsl_distribution | to_json }}
+$Uuid = {{ storage_uuid | to_json }}
+$Vhd = '{{ data_vhd_windows_path }}'
+$Guard = {{ (host_runtime_dir + '/storage.py') | to_json }}
+$Config = {{ (host_runtime_dir + '/storage.json') | to_json }}
+$Admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $Admin) { throw 'Registered attachment task must run with highest privileges' }
+if (Test-Path -LiteralPath 'C:\wsl-disks\sunmoon-data.maintenance') { throw 'Storage maintenance active' }
+if (-not (Test-Path -LiteralPath $Vhd -PathType Leaf)) { throw 'Existing VHDX missing; never initialize it automatically' }
+foreach ($Pin in @(@($Guard, {{ host_storage_sha256 | to_json }}), @($Config, {{ host_storage_config_sha256 | to_json }}))) {
+    $Actual = @(wsl.exe -d $Distro -u root -- sha256sum $Pin[0])
+    if ($LASTEXITCODE -ne 0 -or $Actual.Count -ne 1 -or $Actual[0].Split()[0] -ne $Pin[1]) { throw 'Linux guard/configuration hash differs' }
+}
+wsl.exe -d $Distro -u root -- blkid -U $Uuid | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    if (Test-Path -LiteralPath 'C:\wsl-disks\sunmoon-data.maintenance') { throw 'Maintenance began' }
+    wsl.exe --mount --vhd $Vhd --bare
+    if ($LASTEXITCODE -ne 0) { throw 'Attachment failed; do not blindly unmount/retry' }
+}
+wsl.exe -d $Distro -u root -- nsenter --target 1 --mount -- /usr/bin/python3 $Guard mount $Config
+if ($LASTEXITCODE -ne 0) { throw 'Existing disk mount failed; see the precise Linux guard error above' }

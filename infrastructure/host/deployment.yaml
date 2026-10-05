@@ -1,0 +1,32 @@
+---
+- name: Select native deployment modules from their authoritative switches
+  hosts: kind_hosts
+  gather_facts: false
+  become: false
+  tasks:
+    - name: Require the current owned site
+      ansible.builtin.assert:
+        quiet: true
+        that:
+          - cluster_name == 'sunmoon-kind'
+          - not ansible_check_mode
+    - name: Create nonsecret native Make selection directory
+      ansible.builtin.file:
+        path: '{{ playbook_dir }}/../.build/host'
+        state: directory
+        mode: '0755'
+    - name: Render only boolean module selection, never commands or credentials
+      ansible.builtin.copy:
+        dest: '{{ playbook_dir }}/../.build/host/deployment.mk'
+        mode: '0644'
+        content: |
+          # Generated from authoritative config switches; do not edit.
+          PLATFORM_REGISTRY := {{ registry_enabled | bool | lower }}
+          PLATFORM_ENTRY := {{ entry_enabled | bool | lower }}
+          PLATFORM_CLUSTER := {{ cluster_enabled | bool | lower }}
+          PLATFORM_FLUX := {{ flux_enabled | bool | lower }}
+          PLATFORM_SERVICES := {{ services_enabled | bool | lower }}
+          PLATFORM_TPL := {{ tpl_deployment.enabled | bool | lower }}
+          PLATFORM_INFO := {{ info_deployment.enabled | bool | lower }}
+          PLATFORM_KNOWLEDGE := {{ knowledge_deployment.enabled | bool | lower }}
+          PLATFORM_INVESTMENT := {{ investment_deployment.enabled | bool | lower }}

@@ -37,7 +37,7 @@ Makefile显式加载模块与组件配置，再加载`SITE`（默认`environment
 
 宿主挂盘与工具 → 校验物料 → Harbor后端与身份 → TLS入口 → KIND与私有拉取 → Flux/SOPS/foundations → 平台服务 → 应用构建/发布/身份/迁移/运行 → 真实公共入口检查。
 
-已有已晋级环境的服务、应用分别有`services-bootstrap`和`application-bootstrap APP=...`编排。它们复用Make/Ansible/Flux，校验配置与晋级声明一致后才部署；没有自动批准本地新配置。整套宿主到所有应用的一键部署、整套统一启停和开机恢复仍是[未完成交付项](../docs/platform-kind-v1/verification.md#未完成项)。
+已有已晋级环境的服务、应用分别有`services-bootstrap`和`application-bootstrap APP=...`编排。它们复用Make/Ansible/Flux，校验配置与晋级声明一致后才部署；没有自动批准本地新配置。整套入口`make -C infrastructure platform-deploy`已实际重复部署通过，开关仍来自原模块配置。统一启停/开机恢复候选尚待维护安装与重启验收；操作和边界见[整套生命周期](host/lifecycle.md)。
 
 ## 变更与停止条件
 

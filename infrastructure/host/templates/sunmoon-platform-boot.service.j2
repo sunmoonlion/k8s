@@ -1,0 +1,16 @@
+[Unit]
+Description=Recover SunMoon once after WSL startup
+After=local-fs.target sunmoon-wsl-interop.service docker.service
+Wants=sunmoon-wsl-interop.service docker.service
+ConditionVirtualization=wsl
+
+[Service]
+Type=simple
+ExecStart={{ host_runtime_dir }}/boot.sh boot
+RemainAfterExit=yes
+Restart=no
+RuntimeMaxSec=900
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

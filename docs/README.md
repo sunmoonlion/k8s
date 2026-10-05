@@ -28,4 +28,4 @@
 
 先计划/准备、审阅差异、提交与显式晋级，再原生部署和检查。render/stage/check可能有文件/API/探针写入；关闭enabled不等于停服。当前维护窗口2小时、容量底线10GiB，仍做VHDX未来增长和峰值检查，删除策略需独立批准。
 
-整套一键部署、统一启停/开机恢复、Harbor重启/删群持久化和长期空间管理尚未完成，具体出口在[未完成项](platform-kind-v1/verification.md#未完成项)。
+整套一键部署已实际重复部署通过；[统一启停/开机恢复](../infrastructure/host/lifecycle.md)候选、Harbor重启/删群持久化和长期空间管理尚待实际完成，具体出口在[未完成项](platform-kind-v1/verification.md#未完成项)。

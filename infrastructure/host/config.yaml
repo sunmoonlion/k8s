@@ -20,3 +20,10 @@ data_vhd_maximum_gib: 230
 windows_minimum_free_gib: 10
 # Windows容量脚本发布目录；修改边界见同目录 README 的字段表。
 windows_script_directory: /mnt/c/wsl-disks/scripts/platform-kind-v1
+
+# Unified local lifecycle; installation/boot enabling is a reviewed maintenance action.
+host_runtime_dir: /opt/sunmoon/host/sunmoon-kind
+wsl_distribution: Ubuntu
+host_boot_enabled: true
+# Elevated task inputs are separate from ordinary capacity/review scripts.
+windows_admin_directory: /mnt/c/ProgramData/Sunmoon/platform-kind-v1

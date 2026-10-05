@@ -1,0 +1,55 @@
+#!/bin/bash
+# Single bounded attempt per WSL boot; no recurring task or build/deployment.
+set -euo pipefail
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export HTTP_PROXY= HTTPS_PROXY= ALL_PROXY= http_proxy= https_proxy= all_proxy= NO_PROXY='*' no_proxy='*'
+exec 9>/run/sunmoon-platform-start.lock
+flock -w 900 9
+[[ ! -e /mnt/c/wsl-disks/sunmoon-data.maintenance ]]
+if [[ ${1:-manual} == boot ]]; then
+  # Windows attachment calls back into WSL, so do not block systemd readiness.
+  deadline=$((SECONDS + 90))
+  until [[ $(systemctl is-system-running || true) =~ ^(running|degraded)$ ]]; do
+    (( SECONDS < deadline )) || { echo 'WSL readiness timed out' >&2; exit 1; }
+    sleep 1
+  done
+  if [[ -z ${WSL_INTEROP:-} ]]; then
+    mapfile -t sockets < <(printf '%s\n' /run/WSL/*_interop | sort -V)
+    for socket in "${sockets[@]}"; do
+      if [[ -S $socket ]]; then export WSL_INTEROP=$socket; break; fi
+    done
+  fi
+fi
+if ! /usr/bin/python3 {{ host_runtime_dir }}/storage.py check {{ host_runtime_dir }}/storage.json; then
+  {{ windows_powershell | quote }} -NoProfile -NonInteractive -File {{ windows_request_script | quote }}
+fi
+/usr/bin/python3 {{ host_runtime_dir }}/storage.py check {{ host_runtime_dir }}/storage.json
+[[ ! -e /mnt/c/wsl-disks/sunmoon-data.maintenance ]]
+{{ windows_powershell | quote }} -NoProfile -NonInteractive -File {{ host_capacity_windows_path | quote }} -DataVhdPath {{ data_vhd_windows_path | quote }} -DataMaximumGiB {{ data_vhd_maximum_gib }} -MinimumFreeGiB {{ windows_minimum_free_gib }} -PlannedBytes 0
+systemctl start sunmoon-registry.service
+deadline=$((SECONDS + 180))
+until curl --silent --show-error --fail --noproxy '*' --connect-timeout 5 --max-time 15 \
+  --cacert {{ (registry_config_dir + '/tls/ca.crt') | quote }} \
+  --resolve {{ (registry_hostname + ':' + (registry_https_port | string) + ':127.0.0.1') | quote }} \
+  {{ ('https://' + registry_hostname + ':' + (registry_https_port | string) + '/api/v2.0/health') | quote }} | jq -e '.status == "healthy"' >/dev/null; do
+  (( SECONDS < deadline )) || { echo 'Harbor health timed out; cluster was not started' >&2; exit 1; }
+  sleep 3
+done
+systemctl start sunmoon-entry.service
+systemctl start sunmoon-cluster.service
+systemctl start sunmoon-platform.target
+{{ host_runtime_dir }}/check-nodes.sh after
+# Availability is separate from application protocol acceptance.
+deadline=$((SECONDS + 300))
+kube=({{ (host_runtime_dir + '/kubectl') | quote }} --kubeconfig={{ cluster_kubeconfig | quote }} --context=kind-{{ cluster_name }} --request-timeout=30s)
+until "${kube[@]}" get pods -A -o json | jq -e '
+  [.items[] | select(.status.phase != "Succeeded")] as $pods |
+  ($pods | length > 0) and all($pods[]; .status.phase == "Running" and
+    any(.status.conditions[]?; .type == "Ready" and .status == "True"))' >/dev/null; do
+  (( SECONDS < deadline )) || { echo 'Platform Pod availability timed out' >&2; exit 1; }
+  sleep 5
+done
+"${kube[@]}" get kustomizations.kustomize.toolkit.fluxcd.io -A -o json | jq -e '
+  (.items | length > 0) and all(.items[]; .status.observedGeneration >= .metadata.generation and
+    any(.status.conditions[]?; .type == "Ready" and .status == "True"))' >/dev/null
+echo 'Owned Harbor, TLS entry and KIND restored. Run platform-check for application protocols.'
