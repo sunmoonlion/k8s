@@ -6,7 +6,7 @@
 
 本目录保留应用源码选择、在线构建、部署与验收；共用下载/归档/skopeo发布在[artifacts](../artifacts/README.md)。应用配置与成品镜像锁在gitops/components/app-platform/<应用>/<前后端组件>，Python/Node基础镜像只保存于物料批次shared/build-base-images，不按四应用复制。
 
-`make -C infrastructure material-inventory MATERIAL_OWNER=components/app-platform`查看应用成品锁及Harbor目标；`MATERIAL_OWNER=shared/build-base-images`查看基础物料。普通部署从Harbor拉成品，不要求releases内有各应用离线包，npm/Python依赖仍在线下载。
+`make -C infrastructure material-inventory MATERIAL_OWNER=components/app-platform`查看应用成品锁及Harbor目标；`MATERIAL_OWNER=shared/build-base-images`查看基础物料。普通部署从Harbor拉成品，不要求`~/k8s-packages`内有各应用离线包，npm/Python依赖仍在线下载。
 
 ## 配置与固定源
 

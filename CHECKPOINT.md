@@ -2,6 +2,8 @@
 
 ## 当前物料根（2026-10-05维护更新）
 
+本轮物料路径整理及限定清理已完成：精确删除7个被替代文件，WSL文件系统空闲增加约8.01GiB；100个保留文件不变。Traefik辅助整包8文件因冻结Luna云流程引用而保留，不参与新体系部署。复核范围、回收数字和整套部署未完成项见docs/platform-kind-v1/verification.md；本轮没有变更运行服务或清理容器/卷/备份。
+
 新体系物料已独立到`/home/zymun/k8s-packages`，唯一配置为infrastructure/environments/kind/site.yaml的artifact_cache_root；组件相对路径以物料锁和material-inventory为准。`/home/zymun/packages-to-be-installed`仅保留原始旧体系物料。下文早期记录中的releases/platform-kind-v1及顶层images等位置是当时路径，不作为当前操作入口，不建立旧路径转接。
 
 

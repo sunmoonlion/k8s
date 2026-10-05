@@ -27,7 +27,9 @@ make -C infrastructure material-inventory MATERIAL_OWNER=registry
 
 例如向量组件的镜像在`components/data-platform/text-embeddings/images/`，模型在同组件`models/`；Traefik的chart和镜像也在同组件下。模型复制到节点数据目录后运行，缓存目录不作为运行卷。目录归属不决定命名空间，也不代表组件已部署。
 
-Traefik组件的`packages/traefik-3.7.13-chart-41.6.0-linux-amd64/`保留整包的原镜像、chart、渲染清单和下载来源记录。批次内batch标识与相对路径保持原样；它属于组件的辅助完整包，当前新体系安装/发布仍以锁指明的组件charts/images为准。inventory将包内文件归入同一Traefik组件，未被当前锁引用不代表可以自动删除。
+Traefik组件的`packages/traefik-3.7.13-chart-41.6.0-linux-amd64/`保留8个辅助文件，合计55,827,077字节（约53.24MiB）。冻结的Luna云流程中，ingress资源/镜像锁及发布配置仍引用该包；保留至这条历史云路径达到退出条件。包内镜像和chart与当前组件的正式物料SHA256一致，但不能据此删掉被引用的完整包或将其当作新体系部署依赖。新体系安装/发布只消费锁指明的组件charts/images；inventory仍将这8个文件标为“未被当前锁引用”，这是已核实用途的保留项，不是遗漏清理。
+
+清理前逐项检查当前锁、运行镜像、宿主挂载及打开句柄，确认替代物料完整后再按明确清单删除。过期版本与`.part`不能仅凭文件名或未被锁引用就删除；不对容器、卷、运行目录和备份使用物料清理规则。当前cache中的已用空间下降不等于Windows上的VHDX文件自动变小。
 
 ## 三个位置怎样配合
 
