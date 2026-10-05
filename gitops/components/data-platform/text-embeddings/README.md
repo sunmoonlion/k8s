@@ -1,42 +1,46 @@
-# CPU 文本向量服务
+# CPU中文文本向量服务
 
-用户配置在同目录 `config.yaml`，运行模板与固定模型安装在同目录。原生 Make → Ansible → Flux 没有新增部署 CLI。
+本机CPU服务采用config固定模型/revision和dimensions，文件/镜像身份取artifacts锁；TEI与官方safetensors从已验证宿主目录启动，HF_HUB_OFFLINE，无启动下载/远程Python/GPU。
 
-所有者选择本机 CPU。使用 **Qwen/Qwen3-Embedding-0.6B**，固定模型修订 `97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3`，1024 维；**官方 TEI cpu-1.9.4** 固定 amd64 manifest `sha256:8419f533857b503ebf6ec292a95d4f1cf9c0464ac8b8abeef39518cf110e5726`。模型与镜像的完整身份唯一在 `infrastructure/artifacts/files.lock.json`、`upstream-images.lock.json`，本目录引用锁，不维护第二套摘要。
+## CPU与协议参数
 
-## 参数与安全边界
+UID1000、模型只读、根只读、禁SA token/cap，内部8080没有公网入口。服务本身无Bearer密钥，依靠仅RAGFlow标签允许的网络策略；不将其直接公开或宣称已有TLS认证。
 
-| 参数 | 用途 |
-| --- | --- |
-| `services_text_embeddings_enabled` | 是否渲染运行组件；关开关不自动删除已有数据 |
-| `text_embeddings_model` / `text_embeddings_model_revision` | 必须对应完整、已校验的固定模型文件；升级须先更新物料锁并验收 |
-| `text_embeddings_volume` | worker2 的独立宿主目录，静态 Retain 卷；4Gi 是声明容量，不是文件系统硬配额 |
-| `text_embeddings_resources` | 默认请求 1 CPU / 3Gi，限制 4 CPU / 6Gi；按实际耗时调整 |
-| `text_embeddings_batch_tokens` | 默认 2048；长输入由 TEI 截断，RAG 文档分块与查询必须遵守该上限，不能假定完整 32k 上下文 |
-| `text_embeddings_client_batch_size` / `concurrent_requests` | 单批 8 条、最多 4 个并发请求，限制 CPU 堆积 |
-| `text_embeddings_port` | 集群内部 8080；没有 Ingress/NodePort，不开放到公网 |
+float32、batch_tokens、client_batch_size、concurrent_requests、tokenization_workers及resources控制CPU/内存/堆积；当前1024维，长输入截断须与文档分块协调，不能假设完整32k都处理。查询加官方检索指令、文档不加，禁止统一给所有输入强加查询前缀。
 
-API 使用 OpenAI `/v1/embeddings` 协议。不要求用户提供外部模型服务密钥。服务内部不配置 Bearer 密钥，依赖 Kubernetes RBAC、默认拒绝网络策略及仅 RAGFlow 标签允许访问；不能把此无密钥端点直接公开。后续如对外提供服务，先实现 TLS 与认证再发布。
+## 模型变更与验收
 
-Pod 使用 UID/GID 1000，根文件系统只读，模型只读，无 GPU、特权、额外能力或服务账号令牌。没有公网出口；`HF_HUB_OFFLINE=1`，从已校验宿主文件启动，不在启动时追踪 main 下载模型。使用 float32 在 CPU 运行，权重来源为官方 safetensors，不加载自定义远程 Python。
+render核所有模型文件/hash，只复制缺失内容到静态Retain卷，拒绝链接/漂移/覆盖。模型升级需匹配文件锁与revision/维度、重新索引派生数据并重新验收；后续外部模型服务切换尚未实现。
 
-查询按模型官方说明加检索指令，文档不加查询指令；不能为所有请求统一强加查询前缀。
+services-check实际请求health/info、OpenAI embeddings及TEI native embed，核固定修订/版本/float32、有限数值/归一化/维度、两组中文相关性、重复输出。四样本检查不是模型benchmark；实际RAG/业务检索另外由相应验收覆盖。模型资源与未验能力见验收边界。
 
-## 操作
+## 配置字段
 
-在 `k8s` 下执行：
+当前值以[config.yaml](config.yaml)为准，手册维护字段职责，不再复制一套默认值。
 
-```bash
-make -C infrastructure services-plan SERVICE_IMAGES=text-embeddings-inference
-make -C infrastructure services-materials SERVICE_IMAGES=text-embeddings-inference
-make -C infrastructure services-publish SERVICE_IMAGES=text-embeddings-inference
-# 模型文件选择其 qwen3-embedding-* 锁 ID，通过 plan/fetch/check-artifacts 处理。
-# services-stage 产生声明，提交、发布并晋级 Flux 源后才运行 services-bootstrap。
-make -C infrastructure services-check
-```
+| 字段 | 类型 | 维护条件 |
+|---|---|---|
+| `services_text_embeddings_enabled` | 开关 | 部署/渲染准入；不代替停止、卸载或删除数据。 |
+| `text_embeddings_model` | 文本/表达式 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
+| `text_embeddings_model_revision` | 文本/表达式 | 固定身份或初始化代次；变更前审核来源/迁移，不用递增代次掩盖失败。 |
+| `text_embeddings_dimensions` | 整数 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
+| `text_embeddings_port` | 整数 | 与客户端、TLS、入口/Service及网络策略联动；既有节点端口映射不能热改。 |
+| `text_embeddings_volume.name` | 文本/表达式 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `text_embeddings_volume.node` | 文本/表达式 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `text_embeddings_volume.size` | 文本/表达式 | PV声明容量；不构成ext4目录硬配额，不自动扩盘。 |
+| `text_embeddings_volume.uid` | 整数 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `text_embeddings_volume.gid` | 整数 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `text_embeddings_resources.requests.cpu` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `text_embeddings_resources.requests.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `text_embeddings_resources.limits.cpu` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `text_embeddings_resources.limits.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `text_embeddings_batch_tokens` | 整数 | 身份相关参数；秘密值留私有输入，不作为文件编辑即完成轮换的承诺。 |
+| `text_embeddings_client_batch_size` | 整数 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `text_embeddings_concurrent_requests` | 整数 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
+| `text_embeddings_tokenization_workers` | 整数 | 身份相关参数；秘密值留私有输入，不作为文件编辑即完成轮换的承诺。 |
 
-`services-render` 从已验证物料复制缺失模型文件到对应 worker2 静态目录，拒绝已有字节漂移和软链；再次渲染不覆盖模型。`services-check` 复核实际镜像 ID、Retain 卷绑定、模型修订，再实际请求健康检查和中文向量，核对维度、有限数值、归一化、两组相关性排序及重复输出。管理验收使用经 kubeconfig 授权的临时 port-forward，不能因此宣称已验 RAGFlow 的实际网络/入库/检索链。
+## 部署、检查与退回
 
-当前安装、推理实测、RAGFlow 检索的结果以 `CHECKPOINT.md` 与实际回执为准；本文件的配置说明不是验收通过声明。
+共同平台操作走[services维护](../../../../infrastructure/services/README.md)的候选→审阅→stage/提交→发布晋级→bootstrap/check；组件没有另一套部署入口。版本/摘要取[物料锁](../../../../infrastructure/artifacts/README.md)，运行namespace取共享site。关闭开关不会自动停服或清数据。
 
-官方依据：[模型说明](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B)、[TEI 1.9.4](https://github.com/huggingface/text-embeddings-inference/releases/tag/v1.9.4)、[CPU 官方部署](https://github.com/huggingface/text-embeddings-inference/blob/v1.9.4/README.md)。
+配置、身份或卷不符时保留现场；退回固定源的方法见[Flux维护](../../../../infrastructure/flux/README.md)，schema/账号/持久数据不随Git自动回滚。日期结果与未覆盖范围在[验收边界](../../../../docs/platform-kind-v1/verification.md)。

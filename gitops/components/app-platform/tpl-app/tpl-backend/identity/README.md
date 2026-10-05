@@ -1,17 +1,19 @@
-# 模板浏览器身份注册
+# 模板应用浏览器身份
 
-Web与Admin的`origin`、`casdoor_application`、`casdoor_client_id`分别在各自前端组件config.yaml；后端config.yaml只定义共享组织identity_organization及Job修订identity_revision。回调地址由origin加`/api/auth/web/callback`或`/api/auth/admin/callback`生成，不手工维护第二份地址。
+Web/Admin的origin、casdoor_application及client_id在各自前端config；后端identity_organization及identity_revision在上级[后端config](../config.yaml)。回调由origin加/api/auth/web/callback或/api/auth/admin/callback生成，不维护第二套URL。
 
-私有identity.yaml保存两个独立client secret，root0600并逐字节备份；丢失后从备份恢复，不重新生成。Git只有SOPS密文。生成的tpl-browser-identity ConfigMap与tpl-browser-secrets Secret供后续后端角色使用，浏览器前端不能得到client secret。
+## 秘密与权限
 
-原生application-stage生成声明，提交/发布/晋级后application-bootstrap协调tpl-identity阶段，依赖tpl-rabbitmq和casdoor。Job复用已固定的后端镜像，通过Casdoor官方管理API创建两个客户端，不写Casdoor数据库。管理密码从现有casdoor-initial-identity挂载，只有初始化Job获得；不复制进业务Secret。
+private_dir/identity.yaml保存两个独立client_secret，root0600、backup_dir非覆盖逐字节核对；Git仅runtime/provision SOPS。浏览器前端不获秘密。Job使用现有casdoor-initial-identity管理员输入调用官方API，不直接写数据库，管理员不进入常驻业务Secret。
 
-新客户端只允许authorization_code，使用现有平台签名证书、独立客户端凭据与精确HTTPS回调，不启用注册或访客登录。同名应用或client ID已被占用/配置漂移则停止，不能覆写已有客户端。既有built-in组织和管理员不改变。组织用户与业务角色授权仍需后续运行验收，客户端注册不等于授予业务权限。
+只允许authorization_code、PKCE S256、精确HTTPS回调及现有平台签名证书，不开注册/访客登录。同名应用/client_id漂移停止，不覆写built-in组织、管理员或既有客户端。客户端注册不等于授予用户业务角色。
 
-初始化Job在同一命名空间经受限NetworkPolicy访问Casdoor内部HTTP8000；公共issuer仍是https://casdoor.sunmoonai.com:30443。初始化验收涵盖管理会话、注册回读、两个密钥匹配、issuer、PKCE S256和JWKS；它不代表浏览器授权码/回调/会话链已跑通，也不代表内部mTLS已实现。
+## 部署和验收
 
-重复部署保留成功Job；不要直接删除或加TTL。回退声明不会删除Casdoor中的客户端或用户；停用或轮换需显式流程，禁止随机重设密钥。用户侧完整登录在API及前端上线后验证。
+application-stage APP=tpl→提交/发布/晋级→bootstrap协调identity阶段，依赖RabbitMQ及Casdoor；成功Job保留。Job核管理会话、注册回读、秘密匹配、issuer/JWKS/PKCE；实际Web/Admin授权码、回调、SSR/session、退出及CSRF由后续application-check/check-public另验。
 
-接口依据：[Casdoor选定版本Application实现](https://github.com/casdoor/casdoor/blob/v4.12.0/object/application.go)。
+初始化及普通应用backchannel当前受NetworkPolicy限制的内部HTTP；公开issuer为HTTPS，不能宣称内部mTLS。跨应用服务关系使用独立组织/身份，见[服务身份机制](../../../common/backend/service-identity/README.md)。
 
-共用模板与初始化/验收脚本的唯一来源已归 gitops/components/app-platform/common；本组件配置、镜像锁与生成声明仍在本目录。入口仍为原生Make/Ansible/Flux；不再通过tpl专属模板部署实例。
+已实际完成模板公共登录，但新环境/改身份后仍需重新验。回退不会删除Casdoor客户端或撤销会话；输入丢失先恢复，停用/轮换另定明确步骤，不能重新随机密钥。
+
+操作流程见[应用维护](../../../../../../infrastructure/applications/README.md)；共用源码为[identity模板](../../../common/backend/identity/workload.yaml.j2)。

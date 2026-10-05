@@ -1,14 +1,16 @@
-# KIND 共享环境输入
+# KIND共享环境与晋级身份
 
-这里仅保存跨模块共享参数与发布身份；专属参数留在对应模块config.yaml。现有Make入口的 `make config` 列出全部普通配置。
+[site.yaml](site.yaml)只保存跨模块共用`cluster_name`、`registry_address`、`artifact_cache_root`及四个平台命名空间。模块参数在自身config，版本在锁，秘密在私有输入/SOPS；保持一个来源。
 
-| 文件/字段 | 职责与修改边界 |
-| --- | --- |
-| site.yaml / cluster_name | 共同集群身份；当前sunmoon-kind，多个守卫明确限定；已有集群改名需重建/迁移，不是一次替换 |
-| site.yaml / registry_address | 固定外部仓库地址harbor.sunmoonai.com:30443；镜像引用、信任和认证共同依赖，不随单模块改端口 |
-| site.yaml / artifact_cache_root | 已校验物料的共同根；改路径前准备完整材料并核对摘要，不允许指向临时缺包目录 |
-| site.yaml / data_namespace、messaging_namespace、app_namespace、ingress_namespace | 平台命名空间身份；当前渲染守卫限定已批准值，已有资源变更需明确迁移 |
-| flux-source.yaml / repository、digest、revision、path、requires_sops | 一个不可变发布的源地址/摘要/源码提交/根路径/解密要求；通过发布候选审查晋级，不当作普通字符串随意编辑 |
-| sops-recipient.txt | 当前加密公钥；必须与独立私钥/备份及已有密文配套。换公钥不等于完成密钥轮换 |
+| 字段 | 维护条件 |
+|---|---|
+| cluster_name | 集群/目录/receipt/私有输入相关身份；当前实现明确sunmoon-kind，不是任意重命名入口 |
+| registry_address | 公共仓库契约；域名/端口改变联动证书、镜像引用和节点/客户端信任 |
+| artifact_cache_root | 正式物料路径；先核锁内文件完整与生成依赖，再迁移路径 |
+| data/messaging/app/ingress_namespace | 共享运行位置；应用都用app_namespace；已有PVC/身份跨namespace不是热改配置 |
 
-这里不保存明文密码、kubeconfig或age私钥。当前仅KIND实现，不宣称通过复制该目录就能完成云端部署。
+Makefile显式加载模块/组件config再加载`SITE`，当前默认本文件。不要引入同名重复字段依赖覆盖顺序维持“两个默认值”。
+
+[flux-source.yaml](flux-source.yaml)保存已晋级repository/digest/revision/path/requires_sops，它们必须对应同一个真实已发布Git产物；当前path为`./clusters/kind`。公共加密recipient在[sops-recipient.txt](sops-recipient.txt)，私钥工作树外。
+
+日常流程见[Flux发布与晋级](../../flux/README.md#发布与显式晋级)、[组件配置分类](../../../gitops/components/README.md)。修改共享身份需独立迁移、备份、恢复与验收安排，不能通过覆盖参数绕开原生守卫。

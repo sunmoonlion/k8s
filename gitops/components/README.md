@@ -1,20 +1,31 @@
-# 按组件维护配置和声明
+# 组件配置与维护导航
 
-找到组件目录即可找到它的 `config.yaml`、模板、部署声明、加密 Secret 和说明。
+目录保持平台→应用→组件；用户config、实现、生成声明和README同职责放置。入口用[services](../../infrastructure/services/README.md)或[applications](../../infrastructure/applications/README.md)，共享环境用[site](../../infrastructure/environments/kind/README.md)，发布晋级用[Flux](../../infrastructure/flux/README.md)。
 
-- **修改用户参数**：编辑该组件 `config.yaml`；共享环境名/命名空间在 `infrastructure/environments/kind/site.yaml`。
-- **修改底层实现**：编辑同目录 `*.j2` 模板，平台服务通过 `make services-render` 生成候选；应用通过 `make application-stage APP=tpl` 生成可审查声明（均在 `infrastructure` 执行）。
-- **发布**：审查候选，将生成声明提交并发布不可变 OCI 源后由 Flux 协调。不要只改生成的 `workload.yaml`。
-- **秘密**：明文只在独立私有输入；`*.sops.yaml` 是密文。不把口令写进 `config.yaml`。
-- **版本**：镜像和 chart 版本、摘要仍取统一物料锁，不在组件配置中覆盖。
+## 文件应该怎么改
 
-Kustomization 显式列出部署文件，**不引用 `config.yaml`、模板或 README**。不能直接 `kubectl apply -f` 整个目录。
-Casdoor 的 `database/`、`init/` 与主服务是三个独立 Flux 阶段，不将子阶段放进主服务 Kustomization，以保留数据库→初始化→服务的依赖等待。
+| 文件 | 谁维护/怎样生效 |
+|---|---|
+| config.yaml | 用户普通参数，含开关/用户名/port/资源/代次；改后准备候选、审阅、发布晋级 |
+| workload/config/provision等模板 | 维护实现，消费同目录或共享参数；common只保存共用机制 |
+| workload/kustomization等生成YAML | render/stage输出并提交，由Flux拥有；不散改默认值 |
+| *.sops.yaml | 私有输入加密结果；不是明文密码编辑入口 |
+| image.lock.* | 固定成品/必要派生镜像身份；上游版本取artifacts锁 |
+| prepare/verify等程序 | 专用输入准备/协议检查，保留真实职责；不另建部署CLI |
 
-目录代表代码职责，`metadata.namespace` 决定运行位置。Casdoor 专用建库 Job 归 Casdoor 维护，但在 `data-platform-dev` 执行。
-`foundations/` 保存跨组件存储/网络/命名空间声明及模板，`core/` 只组合平台分类。
-关闭组件不等于删除它的在用资源与数据；删除另按生命周期规则执行。
+## 平台组件
 
-## 应用平台的层级
+| 平台 | 组件维护说明 |
+|---|---|
+| 基础 | [foundations](foundations/README.md)；core只组合资源，不维护第二份用户配置 |
+| 数据 | [PostgreSQL](data-platform/postgresql/README.md)、[Redis](data-platform/redis/README.md)、[对象存储](data-platform/object-storage/README.md) |
+| 检索 | [向量模型](data-platform/text-embeddings/README.md)、[RAGFlow](data-platform/ragflow/README.md)、[Infinity](data-platform/infinity/README.md)、[Valkey](data-platform/valkey/README.md) |
+| 日志/图/文档库 | [ELK](data-platform/elk/README.md)、[Neo4j](data-platform/neo4j/README.md)、[MongoDB](data-platform/mongodb/README.md) |
+| 消息 | [RabbitMQ](messaging-platform/rabbitmq/README.md) |
+| 入口 | [Traefik](ingress-platform/traefik/README.md)、[内部HTTPS](ingress-platform/traefik/service-access/README.md) |
+| 身份/应用 | [Casdoor](app-platform/auth-app/casdoor/README.md)、[Tpl](app-platform/tpl-app/README.md)、[Info](app-platform/info-app/README.md)、[Knowledge](app-platform/knowledge-app/README.md)、[Investment](app-platform/investment-app/README.md) |
+| 共享机制 | [common](app-platform/common/README.md) |
 
-沿用“平台 → 应用 → 组件”：`app-platform/auth-app/casdoor/`；模板在 `app-platform/tpl-app/`，其下保留 `tpl-backend/`、`tpl-web-frontend/`、`tpl-admin-frontend/`，后端目录内接入 `database/` 和 `migration/`；API/Worker/Scheduler同属后端。实例依次放 `info-app/`、`knowledge-app/`、`investment-app/`，不另建平行分类。`infrastructure/applications/` 是共用编排工具的位置，部署声明仍按这里分类。
+目录归属与运行namespace分开，例如Casdoor数据库Job仍在data_namespace；四应用及Casdoor服务统一app_namespace。用户名在config或注明固定实现处，真实口令在私有主备/SOPS；端口标明内部Service、NodePort、宿主映射或公共TLS层。
+
+开关不代替stop/uninstall，prune=false不自动删旧对象，Retain不自动迁移PV。初始化完成Job仍由Flux持有，改不可变输入须新代次，不能为清列表通配删除。模块真实检查可能写入临时探针；读其权限/清理边界。

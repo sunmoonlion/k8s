@@ -1,11 +1,36 @@
-# Redis
+# Redis：应用ACL与持久化
 
-`config.yaml` 是本组件普通用户参数的唯一入口。`workload.yaml.j2` 是实现模板，`workload.yaml` 是审查提交后的部署声明；修改参数后通过 `make -C infrastructure services-render`（从仓库根执行）生成候选并按统一发布流程晋级。
+data_namespace单实例、内部6379，静态Retain卷。平台default/探针身份与每应用runtime账号分离；平台口令在services_config_dir/credentials.yaml的redis_password，应用在各自private_dir/redis.yaml，并独立备份。
 
-配置和声明不会因为文件相邻自动关联：现有 Make/Ansible 读取明确配置并渲染，Flux 读取 Kustomization 中明确列出的声明。密文由已有 SOPS 流程管理。
+## 持久ACL是服务数据
 
-操作和输入边界见 [组件说明](../../README.md) 与 [服务操作](../../../../docs/platform-kind-v1/services.md)。
+init只在缺失时建立原default规则；主进程先umask077再exec，配置读取/data/users.acl，ACL SAVE后的文件须UID999/0600。仅initContainer chmod不能约束主进程后续原子保存；ACL文件和AOF都必须随卷恢复。
 
-持久应用账号采用/data/users.acl（既有Redis数据卷内）。initContainer只在缺失时初始化默认身份，并收紧文件权限；主进程以umask077启动，确保后续ACL SAVE仍保持0600。应用Job保存独立账号，application-check核对当前认证、文件权限/属主及主进程掩码。
+应用独立Job核口令摘要、限定键前缀/必要channel与命令权限，再ACL SAVE。已有同名账号不符就失败，不默默轮换或接管。FLUSHALL只可ACL DRYRUN检查拒绝，禁止为验收实际清库。
 
-2026-10-03已通过实际滚动重启：默认与应用账号可用，ACL摘要和原PVC不变，再次ACL SAVE后仍0600；原生统一部署入口重复changed=0。见[模板Redis维护记录](../../../../docs/platform-kind-v1/tpl-redis-maintenance.md)。这不替代Redis业务数据备份恢复演练或整个应用验收。
+## 检查与变更
+
+services-check写读带TTL随机键并删除；application-check另核真实应用认证/隔离、default、ACL文件权限和主进程0077。Job旧成功不代替当前进程认证。
+
+已有Tpl账号随声明滚动Pod替换、相同ACL摘要/PVC/认证的实测见验收边界；这不是WSL或删群恢复。需要重启维护时先备ACL/AOF、核原Pod/PVC身份，仅按明确范围操作；当前无全平台统一重启target。
+
+轮换须协调持久ACL、主备口令、Secret与所有客户端，不能只改redis.yaml。size非磁盘配额；不把Redis卷当可随意删除的缓存。
+
+## 配置字段
+
+当前值以[config.yaml](config.yaml)为准，手册维护字段职责，不再复制一套默认值。
+
+| 字段 | 类型 | 维护条件 |
+|---|---|---|
+| `services_redis_enabled` | 开关 | 部署/渲染准入；不代替停止、卸载或删除数据。 |
+| `redis_volume.name` | 文本/表达式 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `redis_volume.node` | 文本/表达式 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `redis_volume.size` | 文本/表达式 | PV声明容量；不构成ext4目录硬配额，不自动扩盘。 |
+| `redis_volume.uid` | 整数 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `redis_volume.gid` | 整数 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+
+## 部署、检查与退回
+
+共同平台操作走[services维护](../../../../infrastructure/services/README.md)的候选→审阅→stage/提交→发布晋级→bootstrap/check；组件没有另一套部署入口。版本/摘要取[物料锁](../../../../infrastructure/artifacts/README.md)，运行namespace取共享site。关闭开关不会自动停服或清数据。
+
+配置、身份或卷不符时保留现场；退回固定源的方法见[Flux维护](../../../../infrastructure/flux/README.md)，schema/账号/持久数据不随Git自动回滚。日期结果与未覆盖范围在[验收边界](../../../../docs/platform-kind-v1/verification.md)。

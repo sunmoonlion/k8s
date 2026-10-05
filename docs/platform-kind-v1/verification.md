@@ -1,0 +1,85 @@
+# 验收边界与待交付项
+
+维护手册说明现在怎样操作；本页区分代码具备的能力、过去实际验证的范围及尚未完成的目标。整理日期2026-10-05，依据重构前提交d869c637及其中的代码/记录；本次仅文档重构，没有重新执行部署、扫描或运行验收。下面的历史结果不能当作当前机器实时健康证明。
+
+## 当前实现与证据来源
+
+职责与流程见[架构](architecture.md)，日常入口见[导航](../README.md)。版本/镜像唯一事实源为物料锁及组件image.lock，配置当前值留config.yaml，避免在本页复制第二套BOM。
+
+| 能力 | 实现/实际验证范围 | 日常归属 |
+|---|---|---|
+| KIND | 三节点、原生建群、固定节点与Calico物料、独立宿主static/dynamic路径、三节点认证拉取/DNS检查 | [cluster](../../infrastructure/cluster/README.md) |
+| 平台与应用部署 | Make/Ansible生成候选，审阅提交，发布候选，显式晋级固定OCI源，由Flux执行；已有晋级声明的services/application bootstrap重复执行已验证 | [Flux](../../infrastructure/flux/README.md)、[应用](../../infrastructure/applications/README.md) |
+| 秘密 | 主备非覆盖、逐字节一致、已有身份丢失停止、SOPS/age解密、权限隔离 | [secrets](../../infrastructure/flux/secrets.md) |
+| 公开入口 | TLS直通SNI分流，Harbor独立后端，应用指新Traefik；预览/备份/限定切换和真实TLS登录已分单元验证 | [entry](../../infrastructure/entry/README.md) |
+| 构建网络 | 四应用后端/Web/Admin统一在线依赖下载；国内直连失败分类后一次官方代理回退；Harbor直连 | [applications](../../infrastructure/applications/README.md) |
+
+历史构建演练覆盖国内成功、有效代理回退、未配置/不可达代理、回退耗尽，以及编译/完整性失败不回退和Python锁URL投影。它不是所有网络环境永远成功的证明；失败保留脱敏分类结果，不自动循环/交互等待。
+
+## 仓库与扫描
+
+2026-10-01记录验证了官方Harbor2.15.2独立运行、真实push/pull、TLS/token认证及限定扫描。Docker29.4.3相关认证链问题修正后，以29.8.1实际拉取验证；不能因此把所有拉取失败归因版本或免检CA。
+
+同版本冷备恢复演练核对1625个目录文件及16个registry文件、指定镜像配置/6层/8个blob，并验证恢复实例登录、只读身份、TLS realm与拉取。该演练验证限定备份，不代表WSL重启、删群重建后的全目录/所有当前镜像验收；后者仍待完成。
+
+当次Trivy扫描Success产生201个包漏洞条目、86个独立CVE：High50条（11个独立CVE）、Medium84、Low65、Unknown2，无Critical。Success仅代表扫描链工作，不代表镜像安全合格；数据库更新时间属当时记录，不能当今天的新鲜度。系统包问题按所有者决定等待官方例行修复，不自制扫描器补丁。
+
+当时HAProxy进程映射包含PCRE2、libssl与libcrypto；加载不能证明漏洞可达，也不能记为全部未调用。安全门禁与官方修复跟踪仍待交付。操作与范围见[扫描](../../infrastructure/registry/scanning.md)、[恢复](../../infrastructure/registry/recovery.md)。
+
+## 平台组件
+
+历史记录截至2026-10-04：三节点、平台及应用运行/Flux阶段已逐单元核验，之后仍可能变化。本次不凭旧数量声称在线状态。
+
+| 组件 | 实际验证 | 尚不能据此宣称 |
+|---|---|---|
+| PostgreSQL/Casdoor | 独立数据库/迁移与runtime权限、初始化、实际浏览器身份 | 数据库完整备份恢复、HA、自动秘密轮换 |
+| Redis | 独立ACL及拒绝、真实替换Pod后账号/ACL摘要/PVC保持、主进程0077和ACL SAVE文件0600 | WSL重启/删群恢复已验 |
+| RabbitMQ | 持久拓扑、应用消息发布消费确认、vhost/管理拒绝及Celery兼容 | 单节点HA、全量消息灾备 |
+| 对象存储 | 有效许可实际S3读写、版本/hash、跨桶/策略拒绝 | 对象历史生命周期、灾备恢复 |
+| 文本向量 | CPU中文模型真实向量、维度/归一化/原生TEI一致与中文相似检查 | 性能容量基准、外部模型切换 |
+| RAGFlow/Infinity/Valkey | 最小派生镜像权限守卫、独立身份、内部TLS/API、中文实际摄入检索 | 所有UI/PDF、HA、完整灾备 |
+| ELK/采集/Kibana | 三节点实际CRI日志、角色标签/源日志核对、TLS/权限；已有data view采用分支 | 零丢失/零重复、保留GC、首次空data view创建、Kibana公共入口 |
+| Neo4j | TLS/认证、图提交/读取/回滚与受控失败rollout恢复 | 四应用图身份、完整Bolt驱动业务、HA/灾备 |
+| MongoDB | TLS单成员replica set、CRUD/事务提交回滚/拒绝、真实Pod替换nonce读回 | 四应用接入、整机/删群恢复、HA/完整备份 |
+
+详细限制在[组件手册](../../gitops/components/README.md)所属目录，不能以Pod Running替代协议或业务检查。PV Retain与目录挂载正确也不能证明恢复成功。
+
+## 应用与业务链路
+
+| 应用 | 历史实际范围 | 待验/未实现边界 |
+|---|---|---|
+| tpl | 数据库CRUD/DDL拒绝，持久Redis，RabbitMQ真实消息、Scheduler/Worker、Web/Admin PKCE/回调/SSR/session/退出/CSRF及公共入口 | 模板provider未配置明确503；不宣称业务功能全集 |
+| info | 基础登录/消息/运行与公共入口；真实ObjectStorage两版本/hash/隔离；独立服务身份HTTPS摄入 | 完整爬取、发布、搜索与分发业务 |
+| knowledge | Info原文VersionId/hash、服务身份日记、真实Scheduler/Outbox/Worker中文解析、关系/租户/数据集拒绝 | PDF/其它格式与浏览器全集、完整爬取来源、恢复演练 |
+| investment | 基础登录/消息/运行与公共入口；实际领域Port以独立身份HTTPS取得Knowledge中文证据与原文引用 | 外部模型Key、执行环境、Agent工具、信息查询完整业务 |
+
+tpl/info公共入口在2026-10-03验证，knowledge/investment在2026-10-04验证；真实跨应用链也在既有单元验证。验收探针采用UUID及原文指定版本，仅清本轮对象；失败日记和Worker仍使用输入不得删除。维护见[provider](../../gitops/components/app-platform/knowledge-app/knowledge-backend/provider/README.md)。
+
+## 未完成项
+
+这些是此前所有者明确要求的交付目标，文档归并不等于功能已完成。后续按依赖顺序落实，不为填满手册添加假的统一入口。
+
+| 顺序 | 目标 | 退出条件 |
+|---|---|---|
+| 1 | 整套一键部署、统一启停与开机恢复 | 首次管理员附盘可单独，其余由统一入口；已晋级环境从宿主到平台/四App实演，保留配置开关与单组件操作；重启不让旧kind夺入口，不重复UAC/分钟提权 |
+| 2 | Harbor独立持久化 | 分别实际WSL/KIND重启与KIND删除重建；Harbor全目录/镜像摘要完整、新节点认证真实拉取；保护其它集群与数据 |
+| 3 | 长期空间管理 | 容量持续查看/告警，统一查看/预览/执行；Harbor保留/GC、构建缓存、日志轮转与索引、备份轮换；区分自动/人工，删除策略先审批，保护在用/回退镜像与必要备份 |
+| 4 | 数据与身份灾备 | 各数据库、对象原文、私有输入完整备份及恢复实演；机器外落点由所有者选定，同盘备份不防硬件故障 |
+| 5 | 生产安全与业务补齐 | 组件安全门禁/官方修复跟踪、按需要轮换、Kibana入口及各应用上表业务边界逐项验收 |
+| 6 | 云端建群验证 | 统一声明/流程的云建群适配另定设计并经实机验证；当前KIND不能证明kubeadm/OS离线包路径。Ubuntu虚拟机想法排KIND验收后、另批准 |
+
+目前底线为10GiB、维护窗口2小时；此前40/50GiB临时审批及短窗口已不作为当前操作规则。数据盘未来长满230GiB仍计入预算，进入对外服务前再确定资源、可用性与安全要求。
+
+## 如何追溯历史
+
+十五份阶段卡的有用维护内容已归所属模块，开发细节留Git，不在日常目录保留副本。批准的逐份方案保存在提交2898162f；原始67份Markdown及全部代码基线为d869c637。
+
+只读示例（k8s根）：
+
+```sh
+git show d869c637:docs/platform-kind-v1/scanning-recovery.md
+git show d869c637:docs/platform-kind-v1/tpl-redis-maintenance.md
+git show 2898162f:docs/maintenance-docs-file-disposition.md
+```
+
+历史运行记录目录可能已按批准清理，不作为现在恢复入口依赖。当前状态用各模块status/计划查看，重新验收用所属check并记录真实结果；检查本身可能有精确探针写入，先读副作用说明。

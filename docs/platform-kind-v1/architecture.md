@@ -1,208 +1,76 @@
-# KIND 第一期部署架构草案
+# 新体系架构与维护约束
 
-本方案面向所有者和后续维护者：从零建立可重复部署、可维护、可恢复的 Kubernetes 部署体系，第一期在 WSL 和 KIND 上完成现有项目验收。架构按所有者后续“好，继续”进入第一实现单元：镜像输入与只读预检。实际进度见仓库 CHECKPOINT.md；新 Harbor 和正式入口已通过验收，sunmoon-kind 三节点建群及私有拉取已通过；Flux 引导、OCI 制品协调和漂移修复已通过；SOPS和平台基础策略也已通过；首批数据/身份服务已通过，业务应用部署尚未完成。
+## 适用范围与目标
 
-唯一设计目标是生产级工程规范和长期维护能力。KIND 用于本地开发与集成验证，单机环境不提供硬件故障隔离或生产高可用保证。云上建群和运行验收另立阶段。[KIND 官方定位](https://kind.sigs.k8s.io/)
+第一期是单机WSL中的KIND开发环境，以固定来源、声明所有权、权限分离、可恢复身份和可审查操作构建长期维护的部署代码。代码主体位于infrastructure/gitops/docs；目前尚无云上实机路径或HA交付，不能将单机KIND宣称为付费生产高可用环境。
 
-## 基线与保留资产
+长期目标是一套平台/应用部署代码与两种建群方式：本地KIND、后续云端建群；建群以后的组件声明与维护流程共用。云端、VM演练及生产RPO/RTO/HA目标另行审定。[验收边界](verification.md)记录当前实际覆盖。
 
-新工作区为 `/home/zymun/worktrees/platform-kind-v1`，五仓分支均为 `platform-kind-v1`，从各自本地 master 建立。准确提交与源码盘点见 [部署输入](inventory.md)。当前 luna 工作区保存历史成果，仅作人工调查参考；新实现不得调用它的程序、加载它的配置或依赖其目录存在。
+## 职责与所有权
 
-本轮没有重新同步远端。master 中的业务代码可能落后于协作分支；接入每个应用前必须对比差异并确定应用提交和子模块提交，不整体合并 luna 的部署改动。
+| 层 | 唯一责任/入口 |
+|---|---|
+| 宿主 | WSL、Docker、真实挂载与峰值容量；host preflight/capacity |
+| 仓库 | WSL独立官方Harbor+Compose+systemd；registry |
+| 公共TLS | HAProxy按SNI直通，Harbor与应用共用30443；entry |
+| 建群 | 固定KIND节点/CNI、三节点mount、CA/DNS、API身份receipt；cluster |
+| 发布控制 | 固定Git对象→Harbor OCI候选→显式晋级→Flux；flux |
+| 身份 | 私有主备/SOPS、运行与初始化分权；模块prepare及独立Job |
+| 平台/应用 | 就近config+template+rendered+sops；Make/Ansible准备，Flux依赖调和 |
 
-所有者在 2026-10-01 更新决定：新体系不迁移旧业务数据或旧 Harbor 镜像；选择新稳定版本，适配业务代码并重新构建。此前保留 Harbor 2.13.2、PG17.6、Redis8.2.1 的约束取消。现有服务及旧节点、卷不因选版而删除；历史验证不能直接记作新代码验收通过。
+Make是公开入口，Ansible编排模块，专用校验程序只处理有限输入/探针，Flux拥有集群声明。不新增平行CLI、转接旧体系或另设部署状态机。配置准备与发布晋级分别有明确副作用；[总入口](../../infrastructure/README.md)提供导航。
 
-## 推荐方案与取舍
+## 配置归属
 
-本轮按以下职责分工实现第一单元；新增停服、删除和切换按具体范围执行。
+用户配置、实现与README同职责放置，适用于宿主/Harbor/入口/KIND/Flux/服务/应用；版本、共享环境和源码锁保持单一来源。
 
-| 管理对象 | 推荐工具与职责 | 自定义代码边界 |
-| --- | --- | --- |
-| Linux 宿主机 | Ansible 管理目录、权限、Docker 配置、挂载检查、systemd 服务及定时任务 | 只在标准模块不覆盖时补充小型、可单独检查的程序 |
-| Windows 附盘 | 固定版本 PowerShell 脚本与计划任务 | 首次管理员操作单列，后续启动挂载可验证；禁止每分钟提权轮询 |
-| 外置 Harbor | 官方离线安装器、harbor.yml 和 Docker Compose；由宿主机服务管理启停 | 不再维护一套替代官方生命周期的实例状态机 |
-| KIND | 官方 KIND 配置和工具；离线节点镜像及 CNI 物料 | 校验输入、调用标准命令、记录身份；不再自建通用集群框架 |
-| 集群内平台和应用 | Flux 管理 HelmRelease 和 Kustomization；共享声明加环境差异 | 不另建部署引擎；复杂渲染必须有独立理由 |
-| 凭据 | 集群声明采用 SOPS 加密，解密密钥与宿主机凭据保存在 Git 外 | 不自动复用管理员凭据，不在日志和 diff 输出明文 |
-| 日常操作 | 小型 Makefile 暴露统一任务，调用上述原生工具 | 不保存第二份期望状态、不提供并行的旧部署路径 |
+- 共享身份/命名空间/物料根：[site](../../infrastructure/environments/kind/site.yaml)。
+- 版本与文件/镜像摘要：[artifacts](../../infrastructure/artifacts/README.md)。
+- 应用固定parent/gitlink：[sources](../../infrastructure/applications/sources.yaml)。
+- 已晋级revision/OCI digest：[flux-source](../../infrastructure/environments/kind/flux-source.yaml)。
+- 普通用户名、域名、port、资源、代次：组件config；口令与私钥不入普通配置或说明。
 
-Ansible 的 check 模式受模块支持程度限制，不能把没有输出视为已经验证；含秘密的任务关闭 diff。[Ansible 检查模式](https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_checkmode.html)
+## 平台、应用与命名空间
 
-Harbor 选定 2.15.2，采用官方离线安装包及其配套依赖，新装空实例。版本与资料见 [镜像版本选定表](images.md)。
+| 目录归属 | 运行位置 |
+|---|---|
+| data-platform | data_namespace：数据库、对象存储、检索/模型、ELK、应用建库Job |
+| messaging-platform | messaging_namespace：RabbitMQ及应用broker初始化 |
+| ingress-platform | ingress_namespace：Traefik |
+| app-platform/auth-app/casdoor | app_namespace：Casdoor init/runtime；其database Job用data_namespace |
+| app-platform/tpl/info/knowledge/investment-app | 同app_namespace：后端API/Worker/Scheduler、Web、Admin |
+| foundations/core | 跨namespace基础对象/组合；Flux对象位于flux-system |
 
-替代方案是直接 Helm 加 Kustomize：初期运行组件更少，但漂移检查、持续交付和依赖等待需要另外组织。推荐 Flux 是为了把这些职责交给成熟控制器；引入它也增加了控制器、凭据和故障诊断成本，不代表自动达到生产标准。第一期不同时引入 Argo CD，不另部署 Git 服务或 Jenkins 作为启动前提。
+目录保留平台→应用→组件层；common是共享机制，不通过Tpl组件转接其他应用。platform-system保存基础引导/发布标记，不是所有业务运行namespace。共享对象只由foundations声明，避免一份资源多管理者。
 
-## 资源所有权与启动顺序
+## 存储与身份恢复
 
-顺序：宿主机就绪 → Harbor 就绪 → 发布所需物料 → KIND 与 CNI 就绪 → Flux 引导 → 存储及基础策略 → 数据和身份服务 → 独立迁移 Job → 应用 → 功能验收。
+数据VHDX动态230GiB/ext4，挂/mnt/sunmoon-data，bind新kind-clusters/harbor子目录；三节点各独立static/dynamic目录，静态节点路径保留/data/kind-local-storage/<组件>。旧宿主同名路径禁止覆盖挂载。[存储说明](../../gitops/components/foundations/README.md)与[host](../../infrastructure/host/README.md)记录责任。
 
-边界规则：
+静态PV为Retain、有节点约束；声明size不是硬配额。数据库主数据、对象原文版本、Harbor密钥/层/账号、Casdoor文件/marker、age/TLS/许可证和初始化输入各需相应备份。派生索引可重建不等于已实现重建或允许任意删除。
 
-- Ansible 管理宿主机和集群引导，不持续修改 Flux 管理的对象。
-- CNI 首期由建群模块管理；Flux 清单不得重复包含 CNI。更换所有者必须单列交接。
-- 引导程序只安装固定版本 Flux 并创建最少的源和根声明；之后 Flux 负责集群内声明。Flux 自身升级使用明确的引导维护流程，避免两个管理者同时更新。
-- HelmRelease 交给 Flux helm-controller；日常不再对这些 release 手工执行 helm upgrade。
-- Helm chart 管理的子对象不同时由 Kustomize 重复声明。
-- 应用代码、数据迁移和接口契约由应用仓拥有；环境配置及最终发布清单由 k8s 仓拥有。新代码消费明确的镜像和声明，不调用旧 deploy.py 或旧总控。
+主与独立备份同在一块物理C盘，不防硬件故障；机器外数据库/对象/身份备份落点待定。已有身份双丢失拒绝重新生成，Git退回不回滚数据库schema/账号和持久数据。
 
-Flux 支持声明依赖和健康等待；这不替代真实登录、读写和跨应用验收。[Kustomization](https://fluxcd.io/flux/components/kustomize/kustomizations/)、[HelmRelease](https://fluxcd.io/flux/components/helm/helmreleases/)
+## 网络、TLS与在线构建
 
-## 网络波动与离线交付
+公共30443→HAProxy SNI→Harbor11443或KIND29443；HAProxy不持私钥，服务端验证CA/SAN和认证。节点私有仓库信任与DNS另由cluster配置并实际拉取核验。未知域名默认仍指原始kind-worker过渡后端，原始kind继续保护。
 
-Git 保存经过审查的源码与声明。推荐将一次发布对应的部署声明打包为 OCI 制品，连同源码提交、应用镜像摘要和物料锁发布到本地 Harbor；Flux 拉取固定 OCI 摘要。制品不可手工修改，必须可由记录的 Git 提交重新生成。首次引导的源摘要保存在受版本控制的环境配置中。
+默认拒绝网络、标签授权、非root/只读根/cap drop/禁SA token；采集器hostPath和入口host network属于注明职责的有限例外。当前Infinity/Valkey及应用AMQP的明文协议由策略限制，不宣称全面mTLS。
 
-这样正常部署不要求集群直接连接公网 Git。更新环境时，统一入口先核验发布，再更新唯一的引导源指针；源指针由引导入口拥有，不把它重复纳入 Flux 自管理。没有晋级新摘要时继续保持上一发布，断网不能静默改用不同版本。
+建群/仓库引导保留离线物料；应用依赖国内在线直连优先，仅下载网络失败本次自动配套切官方源+现有HTTPS_PROXY一次，代理不可用非交互退出。Harbor直连，TLS/签名/依赖hash不关闭；[构建手册](../../infrastructure/applications/README.md#下载失败与代理)为唯一流程。
 
-物料锁必须覆盖工具、系统安装包、节点镜像、CNI、Flux、Helm chart、平台及应用镜像、必要的构建依赖。安装物料与镜像归档按类型分目录，日志与备份独立存放。Harbor 的启动镜像及恢复材料在 Harbor 外另存，避免仓库自举循环。构建依赖另核 npm/Python 等缓存，不能把已有镜像等同于能重新构建。
+## 版本、发布与升级准入
 
-Flux 提供离线安装和 OCI 源能力；这里的 OCI 发布与根协调已实现并实际验证，操作见 [Flux 引导](flux.md)。[离线安装](https://fluxcd.io/flux/installation/configuration/air-gapped/)、[OCI 源](https://fluxcd.io/flux/components/source/ocirepositories/)
+部署按固定linux/amd64 manifest及文件SHA，锁记录解析时间和来源，不追踪latest。官方镜像优先，RAGFlow必要最小派生受官方源SHA守卫，独立记录派生身份。工具容器与源码release可能有明确例外；不复制版本BOM到手册。
 
-## 配置与实现按职责归拢（所有者确认，2026-10-03）
+发布从已提交Git对象递归校验声明/密文，生成不可变OCI候选；显式晋级后才协调。升级须审配套版本/迁移、完整物料、主备/数据、回退与验收；不能只改tag认为schema及接口兼容。历史结论在[verification](verification.md)，日常源指针只在flux-source。
 
-整个新体系统一遵守：**相关用户配置、底层实现和说明放在同一职责目录；共用参数只有一个来源。**不只适用于 components。
+源码、不可变物料、运行数据各有不同所有权。多仓与子模块关系以sources锁定，维护修改只在相应本地分支提交；推回由所有者的同步流程执行，不自动push。原始kind及其被引用资产保留，新流程不接管旧环境；已退役试验资产不成为新运行依赖。
 
-| 职责 | 用户配置 | 同处的实现 |
-| --- | --- | --- |
-| 宿主存储与容量 | `infrastructure/host/config.yaml` | 预检、容量检查、Windows 读数 |
-| KIND | `infrastructure/cluster/config.yaml` | KIND/CNI 模板、建群与节点构建 |
-| Harbor | `infrastructure/registry/config.yaml` | 官方安装适配、启停、备份恢复 |
-| TLS 入口 | `infrastructure/entry/config.yaml` | HAProxy/Compose/systemd 模板与启停 |
-| Flux/SOPS 引导 | `infrastructure/flux/config.yaml` | 控制器、源与密钥引导 |
-| 服务公共流程 | `infrastructure/services/config.yaml` | 跨组件渲染、加密与验收 |
-| 应用构建 | `infrastructure/applications/config.yaml`、`sources.yaml` | 原生构建与源码身份核对，物料发布复用 artifacts |
-| 各平台组件 | `gitops/components/<平台>/<组件>/config.yaml` | 模板、生成声明、密文及 README |
+## 操作语义与交付要求
 
-环境共用参数和源身份保留在 `infrastructure/environments/kind/`，版本摘要统一在物料锁；二者由模块引用，不复制。
-Make 明确列举唯一配置并通过原生 `--extra-vars @文件` 交给 Ansible。没有新增 CLI、目录扫描加载器或并行部署入口。
-Kustomization 只引用生成声明，用户配置与模板不作为 Kubernetes 资源应用。简单功能无需强行增加 templates/resources 多层目录。
+plan可能读现有身份/文件；render准备目录、证书、身份与模型；stage修改声明，Knowledge provider准备可能创建远端dataset；check可能写随机探针并精确清理。维护手册必须说明副作用、成功/停止条件和恢复。
 
-代码归属与运行命名空间独立：Casdoor 的 database/init/主服务集中在 app-platform/auth-app/casdoor；建库 Job 仍在 data-platform-dev。配置归拢不改变任何 PV、身份、数据目录或软件版本。
-秘密、日志、备份、物料和临时产物分别留在私有或运行目录，不为“放在一起”把它们搬进源码。
-长期空间管理尚未实现的部分，后续按同一原则实现，不在本次虚构已完成模块。
+关闭开关不自动停服，prune=false/Orphan不自动删除新增阶段；Completed Job还由Flux持有。禁止为清状态删PVC/节点卷、重新生成身份、清managedFields或日常force apply。
 
-当前只有 KIND 环境。未来云环境沿用组件实现，环境差异以原生 Ansible 变量/环境声明表达，实施时补齐明确输入与实机验证，不能把本次目录调整称为云端已支持。
-
-## 配置和代码布局
-
-新实现统一位于 `k8s/infrastructure/`，已落地物料、工具锁、宿主预检、节点构建和独立 Harbor；其余目录按实现需要建立。
-
-| 位置 | 唯一职责 |
-| --- | --- |
-| `infrastructure/host/` | 宿主预检、容量和 Windows 附盘 |
-| `infrastructure/entry/` | 本机 TLS 直通入口及其配置、模板、启停 |
-| `infrastructure/registry/` | 官方 Harbor 物料、配置、证书、Compose 和宿主服务生命周期 |
-| `infrastructure/cluster/` | KIND 配置、引导和生命周期 |
-| `infrastructure/services/` | 平台参数生成、秘密加密与验收；不另建部署调度器 |
-| `gitops/components/` | 按 ingress/data/messaging/app-platform 分类的期望声明 |
-| `gitops/clusters/kind/` | 站点 Flux 依赖、基础策略和发布标记 |
-| `infrastructure/environments/kind/` | 跨模块环境参数、SOPS 公钥与源摘要 |
-| `infrastructure/artifacts/` | 版本和摘要锁、物料类型、来源与用途；不提交大归档 |
-| `infrastructure/flux/` | 原生 Flux/SOPS 引导、OCI 发布及基础验收 |
-| `infrastructure/Makefile` | 原生工具任务的薄入口，提供查看、预览、执行 |
-| `docs/platform-kind-v1/` | 设计、决策、正式运行手册 |
-
-组件分类及 KIND 命名空间采用 `ingress-platform-dev`、`data-platform-dev`、`messaging-platform-dev`、`app-platform-dev`；运维组件加入时使用 `ops-platform-dev`。Casdoor 属于 app-platform，其 PostgreSQL 属于 data-platform，库和登录角色仍独立。Flux 使用 `flux-system`，`platform-system` 仅保留基础发布标记与引导验收对象。外置 Harbor 没有 Kubernetes 命名空间。此分类已完成运行迁移和协议验收；实际记录见 [调整操作卡](namespace-layout.md)。
-
-站点配置负责主机、域名、路径、容量及组件开关；发布清单负责应用镜像摘要和发布参数；秘密只通过私有文件或加密声明引用。字段不允许在多个文件中重复覆盖。开关变更产生新发布，并验证依赖；关闭有状态组件不等于授权删除数据。
-
-主机路径、用户名、端口、集群名不写死在程序中。保留既定 Harbor 地址 `harbor.sunmoonai.com:30443`，本地 30443 由按域名分流的 TLS 直通代理共享；它属于宿主机层。云端独立仓库主机无需这个本地代理。
-
-## 安装与运维操作语义
-
-以下是接口要求，不是已经可以执行的命令：
-
-| 操作 | 行为 |
-| --- | --- |
-| 查看 | 报告配置版本、源摘要、服务状态、容量和健康，读取失败明确报错 |
-| 预览 | 列出将修改的资源、缺失物料、秘密引用和不支持模拟的步骤；不启动服务 |
-| 整套部署 | 编排宿主机、Harbor、建群和固定发布，按依赖等待并验证 |
-| 单组件部署 | 使用同一环境与发布声明，验证前置依赖；不生成另一套配置 |
-| 全环境停止与启动 | 有序停写、停止业务和宿主服务；启动先核挂载、仓库与集群，再恢复调谐 |
-| 暂停组件 | suspend 只暂停调谐，不会停止 Pod；真正停服另需显式副本或停写策略，记录原值和恢复流程 |
-| 更新与恢复 | 先验证备份和兼容性；无状态工作负载可回到旧发布，有状态 schema 改动按恢复策略处理 |
-| 空间维护 | 同一入口查看、预览和执行；清理范围与审批名单明确，执行前重新核对引用 |
-
-一键操作必须有阶段错误与退出码。中断后读取工具实际状态再执行，不依靠某日迁移收据继续工作。恢复步骤不假定 helm rollback 可以还原数据库。
-
-## 持久化与安全要求
-
-沿用已决定的 230 GiB 数据盘。设备 UUID、挂载点和 Docker 可见性作为前置检查；不得回落到 WSL 系统盘写入数据。三个 KIND 节点各有独立宿主目录，分别覆盖静态卷目录和动态卷目录；不得在旧 `/data/kind-local-storage` 上新增挂载。KIND 支持 extraMounts，具体映射纳入配置和验收。[KIND 配置](https://kind.sigs.k8s.io/docs/user/configuration/)
-
-首期存储服务于单机环境。宿主目录保留不等于 PVC、数据库和对象存储可恢复：还必须核验 PV 映射、回收策略、UID/GID 和重建后的重新绑定。命名空间与数据资源避免自动级联删除；受保护 PVC/PV 的退出必须独立授权。
-
-宿主密钥、CA 私钥及解密密钥必须有独立恢复副本。第一期推荐 SOPS 加密集群秘密；解密密钥由宿主机引导注入，恢复不能依赖旧集群。[SOPS 与 Flux](https://fluxcd.io/flux/guides/mozilla-sops/)
-
-部署身份、应用身份、数据库迁移身份与镜像推拉身份分离。加入最小 RBAC、网络访问策略、资源请求及限制、探针和非特权容器设置；特权基础组件逐项解释例外。健康检查和错误日志不得输出口令。
-
-容量监控、日志轮转、备份轮换从首条部署链就接入。查看与报警可自动执行；Harbor 保留和 GC、缓存与备份删除在所有者确认具体策略后才启用。保护在用镜像、回退版本和必要备份，禁止 Docker 容器与卷的泛化清理。同盘备份只保护误删与部分升级失败；机器外落点尚待所有者确定，未落实时明确标记灾难恢复缺口。
-
-## 版本与兼容性准入
-
-版本唯一选择表见 [第一期镜像版本选定表](images.md)，核对日期 2026-10-01。Kubernetes 1.36.5、KIND 0.33.0、Calico 3.32.2、Flux 2.9.5；Harbor 2.15.2，新业务 PostgreSQL 18.6、Redis 8.10.2。表中明确 KIND 节点构建方式、镜像地址、版本例外和未验收边界。
-
-该表确定版本目标，尚不是完整的物料摘要锁。Ansible 已固定 2.21.4 及哈希依赖锁；Compose 5.5.1、SOPS 3.13.3、age 1.3.2 等 10 项文件物料（包括 kubeadm 和 Kubernetes server 包）已锁定并下载；完整宿主引导和全部 chart 的锁仍须继续完成。镜像、chart、应用依赖和宿主工具应作为一个发布验证，不能只替换旧 chart 的镜像标签。
-
-## Harbor 官方部署适配边界
-
-新装使用 2.15.2 官方安装器配套数据库、Valkey 和扫描器，不再恢复旧数据库或单独保留旧 PG/Redis 版本。仓库依赖位于宿主机层，不使用业务集群里的数据库，避免自举循环。[官方发行](https://github.com/goharbor/harbor/releases/tag/v2.15.2)
-
-保留官方生成配置；有限 Compose 覆盖只处理镜像摘要、离线拉取、挂载准入、端口绑定、资源限制、已批准日志轮转和服务健康依赖，不自建实例状态机。覆盖端口必须明确替换，不能意外留下原端口。[Compose 合并规则](https://docs.docker.com/reference/compose-file/merge/)
-
-WSL 挂载成功前禁止启动 Harbor。已通过后端健康与认证；容器异常退出、Docker/WSL 重启、磁盘缺失和 SNI 代理仍须分别验收。新装完成后为新数据建立备份、恢复演练及 KIND 删除重建后的镜像持久化验收；没有旧数据迁移需求不等于不需要备份。
-
-## 第一实现单元的范围
-
-架构取舍确认后，首先实现配置与物料预检：环境字段、版本/摘要锁、秘密引用、宿主条件和依赖顺序。提供查看和预览；默认不安装、不创建容器、不改集群。
-
-第一单元完成条件：相同输入产生相同计划；缺物料、非法配置、错误目标或容量不足明确失败；日志不含秘密；新实现不 import、source 或执行旧目录程序。该单元通过后再进入新 Harbor 配置生成、新装与新数据的备份恢复验证。
-
-首次引导须解决独立证书与拉取认证：Docker/KIND 节点信任 CA，Flux 源通过 Secret 信任 Harbor 并只读拉取，Pod 能解析并到达宿主机仓库；这些输入不能等待 Flux 自己从尚不可访问的源下载。宿主机 SNI 代理的 Harbor 路由先就绪，业务域名路由待集群入口就绪后加入，避免通过未建好的集群访问仓库。
-
-## 实施顺序和阶段出口
-
-| 顺序 | 工作 | 完成条件 |
-| --- | --- | --- |
-| 1 | 审定结构、范围和组件清单 | 推荐选型得到确认；明确云端待验证与资源限制 |
-| 2 | 钉版与最小骨架 | 物料来源和摘要可核，依赖齐全，配置错误拒绝执行；无旧代码依赖 |
-| 3 | 宿主机、Harbor、KIND、Flux | 新装与新数据备份恢复均有路径；入口切换有明确计划 |
-| 4 | 首条真实应用链 | 模板验证公共能力，再部署 info 的认证、迁移、API、Worker、Scheduler、前端及必要依赖；按既有规则保持模板优先 |
-| 5 | 覆盖全部约定组件 | Knowledge 和 Investment 的角色、身份与跨应用接口通过，选装组件有独立验收 |
-| 6 | 重建与运维验收 | 以下验收矩阵通过，并由维护者按手册操作 |
-| 7 | 交付与退役 | 新代码无旧入口依赖，逐文件完成旧代码去留；清理物料与临时资源，不删保护项 |
-
-执行阶段每项工作只报告一个当前步骤、阻断条件与下一步。遇到需要更改架构的条件先回到设计讨论。已有明确授权的普通实现不重复询问；停机、数据切换及删除按已约定范围执行。
-
-## 验收矩阵
-
-以下全部是待实施验收，不是本轮结果。
-
-| 编号 | 验收 | 通过证据 |
-| --- | --- | --- |
-| A1 | 干净起点部署 | 空目标目录和新集群仅靠固定仓库、物料、秘密输入完成，不读取参考工作区 |
-| A2 | 重复执行与中断 | 二次执行不重置数据/身份；受控中断后可诊断并继续；错误返回非零 |
-| A3 | 一键与单组件 | 同发布同配置部署出一致资源，缺失前置条件明确失败 |
-| A4 | Harbor 持久化 | WSL/KIND 重启与 KIND 删除重建两类均验证全目录文件摘要、仓库清单摘要和新节点实际认证拉取；维护期间冻结写入建立可比基线 |
-| A5 | 应用数据恢复 | PG 逻辑数据、对象存储对象/元数据及身份配置实际恢复，业务读写成功；磁盘目录检查不能替代 |
-| A6 | 发布与失败恢复 | 记录源码/子模块、镜像与部署摘要，更新通过；失败能恢复，不声称 schema 自动回退 |
-| A7 | 断网 | 既有发布在公网不可达时可部署；缺物料明确指出；备份可在 Harbor 不可用时恢复 |
-| A8 | 安全与运行状态 | 认证拒绝测试、凭据不入日志、策略有效、探针和资源配置通过；Pod Running 不等同业务通过 |
-| A9 | 长期运维 | 容量告警实际送达、轮转有效、删除预览保护在用与回退对象、备份轮换有恢复证明 |
-| A10 | 交接 | 维护者按正式文档完成部署与恢复；正式调用链无旧入口，云上未验项单列 |
-
-## 尚需补齐的设计输入
-
-当前已实现物料、宿主准入、节点构建、独立 Harbor 与正式入口、扫描/恢复演练，以及 sunmoon-kind 三节点创建和私有拉取。详见 CHECKPOINT.md 与[集群操作](cluster.md)。Flux 引导与 OCI 协调也已通过，SOPS及基础平台声明已通过，首批数据/身份服务已通过实际部署和协议验收，目录与命名空间归类也已完成（见 [命名空间调整](namespace-layout.md)）；后续依次完成其余依赖、应用、统一生命周期、重启与重建持久化验收、长期运维和清理；完整发布闭包仍需补齐。
-
-第一期资源预算、具体恢复时间和可接受数据损失目标还需根据实际容量及演练确定；不在草案中虚构可用性承诺。业务能力与选装组件不能因资源不足被静默删除。
-
-### 应用平台分类补充（2026-10-03）
-
-保留平台、应用、组件三级职责：认证应用是 `gitops/components/app-platform/auth-app/casdoor/`，模板应用是 `gitops/components/app-platform/tpl-app/`。实例应用后续按相同层级归入。应用配置、镜像锁、生成声明和说明随应用维护；跨应用相同的初始化/迁移/运行模板统一在app-platform/common维护，由同一原生Ansible流程渲染；共用Make/Ansible构建编排仍在 `infrastructure/applications/`。此次移动不改变Casdoor资源名、运行namespace、卷或密文内容。
-
-应用目录之下继续保留前后端组件层：`tpl-app/tpl-backend/`、`tpl-app/tpl-web-frontend/`、`tpl-app/tpl-admin-frontend/`。数据库初始化、迁移、API/Worker/Scheduler归后端组件；共享开关留应用层，命名空间统一引用环境app_namespace（app-platform-dev），组件字段和镜像锁随组件。后续info/knowledge/investment按同一结构落地，不把前后端合在应用根目录。
-
-## 开发阶段维护约定（2026-10-03所有者更新）
-
-当前尚未对外提供服务，后续维护窗口统一为2小时。批准范围内的部署、修复和验收连续完成，不再沿用早期几分钟窗口反复请求延时；历史维护记录保留原始时间。单条命令继续有合理超时，失败及时诊断或按计划回退，不必等满两小时。窗口调整不改变容量门槛、数据保护、删除权限及范围边界；正式提供服务前重新确定停服安排。
-
-同日所有者进一步将开发阶段容量底线设为10 GiB，统一由infrastructure/host/config.yaml控制。仍扣除230 GiB数据盘未来增长和本次操作预算；不足10 GiB才阻止新增容量操作。历史50/40 GiB记录保留为当时事实，不再作为当前门槛；删除权限和正式服务前的容量重新评估不变。
+当前开发维护2小时；容量10GiB，仍扣除230GiB数据盘未来增长与本操作预算。对外服务时重定维护、容量与恢复目标。镜像GC/缓存/备份/日志索引策略先批准，保护在用与回退资源。整套部署/启停/开机、持久化重启/删群和长期空间管理的完成条件明确列在[未完成项](verification.md#未完成项)。

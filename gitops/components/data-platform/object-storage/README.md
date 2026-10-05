@@ -1,29 +1,42 @@
-# 对象存储（AIStor）
+# AIStor：对象原文与版本
 
-配置、许可准备和 StatefulSet 模板在本目录；版本摘要唯一引用 infrastructure/artifacts/upstream-images.lock.json。
-现有 services-render/stage/bootstrap/check 入口统一管理，Flux 是唯一应用声明的执行者。
+data_namespace单实例，S3端口与console端口分别由config声明；内部S3须TLS，公共UI/HA不是本组件已交付能力。UID1000，静态Retain卷size是声明容量，不是ext4硬配额。
 
-KIND 是单节点单卷验证配置：Retain 静态 PV，固定 worker2、UID/GID1000；不是高可用或硬件故障保护。
-运行 HTTPS9000，内部证书由平台 CA 签发；Console9001不公开。
-root 与许可从只读 SOPS Secret 文件加载；业务应用必须独立账号、独立版本化存储桶，不得持有 root。
-已有许可只复制不迁走；私有文件 /etc/sunmoon/services/sunmoon-kind，非覆盖备份 /mnt/sunmoon-data/backups/services/sunmoon-kind。
-许可签名与可用性以真实 S3 请求为准，不能以 JWT 可解析或 Pod Running 宣布通过。
-无对象、镜像、许可或备份的自动删除规则。
+## 许可、root与应用身份
 
-依据：[官方容器运行说明](https://docs.min.io/aistor/installation/container/install/)。
-云上多节点部署与许可范围须单独确认；本阶段不宣称云上已实机验证。
+许可证来源object_storage_license_file；prepare检查并非覆盖地复制到services_config_dir与services_backup_dir的minio.license。许可秘密不贴日志，格式正确不能证明S3可写，必须经过实际S3操作。
 
-## 配置与日常使用
+root口令在object-storage.yaml、TLS在object-storage-tls，均由私有根及独立副本保护；Git只存SOPS。应用各自bucket/user，Info原文版本为业务权威，Knowledge只读限定前缀；RAGFlow只写派生桶，不借root权限。
 
-| 字段/输入 | 位置与边界 |
-| --- | --- |
-| 开关、资源、节点、卷声明容量 | 本目录 config.yaml；已有数据换节点需备份迁移，不能直接改节点后当作空盘初始化。 |
-| HTTPS9000、Console9001、区域 | 本目录 config.yaml；当前入口守卫固定端口，应用引用同一来源。 |
-| root 用户与口令 | /etc/sunmoon/services/sunmoon-kind/object-storage.yaml；只初始化一次，已有声明丢失输入必须从备份恢复。 |
-| 许可 | 配置指定旧输入文件，复制到上述私有目录和独立备份；原输入不移走，真实 S3 已验收接受。 |
-| 应用用户名、桶、Job revision | 各应用后端 config.yaml.object_storage；应用口令在该应用 private_dir/s3.yaml。 |
-| 镜像版本/摘要、管理客户端 | infrastructure/artifacts 的统一锁，无 latest 运行引用。 |
+## 真实检查与版本清理
 
-20Gi 是静态 local PV 声明容量，不是 ext4 子目录硬配额，不能据此承诺不会填满数据盘。容量监控/保留与备份轮换属于后续统一空间管理交付。
+services-check创建本次随机bucket、启用版本、写读字节/VersionId/摘要，最后仅删除本次bucket全部版本再删桶。mc返回0仍须逐行确认JSON status不是error。应用S3检查另用实际API身份写两个版本并读回，对跨bucket/版本管理拒绝，再由有权探针清除精确VersionId。
 
-2026-10-03：services-bootstrap 实际通过已有许可、TLS CA 验证、版本化对象写入/读回与摘要核对。信息应用进一步通过实际 ObjectStorage 的两版本读取、跨桶拒绝及桶管理拒绝；验收数据版本由限定 root 探针清除，业务版本没有删除。
+业务版本保留、备份、整机/删群持久化仍另验；禁止套probe的版本清理到正式桶。root/应用口令及许可轮换须同步实际服务与主备，不能只换config或提高Job代次。
+
+## 配置字段
+
+当前值以[config.yaml](config.yaml)为准，手册维护字段职责，不再复制一套默认值。
+
+| 字段 | 类型 | 维护条件 |
+|---|---|---|
+| `services_object_storage_enabled` | 开关 | 部署/渲染准入；不代替停止、卸载或删除数据。 |
+| `object_storage_volume.name` | 文本/表达式 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `object_storage_volume.node` | 文本/表达式 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `object_storage_volume.size` | 文本/表达式 | PV声明容量；不构成ext4目录硬配额，不自动扩盘。 |
+| `object_storage_volume.uid` | 整数 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `object_storage_volume.gid` | 整数 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `object_storage_port` | 整数 | 与客户端、TLS、入口/Service及网络策略联动；既有节点端口映射不能热改。 |
+| `object_storage_console_port` | 整数 | 与客户端、TLS、入口/Service及网络策略联动；既有节点端口映射不能热改。 |
+| `object_storage_region` | 文本/表达式 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
+| `object_storage_license_file` | 文本/表达式 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
+| `object_storage_resources.requests.cpu` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `object_storage_resources.requests.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `object_storage_resources.limits.cpu` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `object_storage_resources.limits.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+
+## 部署、检查与退回
+
+共同平台操作走[services维护](../../../../infrastructure/services/README.md)的候选→审阅→stage/提交→发布晋级→bootstrap/check；组件没有另一套部署入口。版本/摘要取[物料锁](../../../../infrastructure/artifacts/README.md)，运行namespace取共享site。关闭开关不会自动停服或清数据。
+
+配置、身份或卷不符时保留现场；退回固定源的方法见[Flux维护](../../../../infrastructure/flux/README.md)，schema/账号/持久数据不随Git自动回滚。日期结果与未覆盖范围在[验收边界](../../../../docs/platform-kind-v1/verification.md)。

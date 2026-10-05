@@ -1,23 +1,53 @@
-# 物料与发布锁
+# 物料、镜像与版本锁
 
-本目录的配置就是各份已存在的 `*.lock.json`：文件/镜像类型、来源、版本、摘要、归档成员和用途与files.yaml、image-archives.yaml及tasks同处。它们是发布输入，不另造一份config.yaml重复版本。
+物料根唯一在[site.yaml](../environments/kind/site.yaml)。当前批次为`/home/zymun/packages-to-be-installed/releases/platform-kind-v1`；安装包、镜像、模型与情报库按用途分目录，不凭tar/tgz扩展名猜类型。
 
-物料根唯一引用environments/kind/site.yaml的artifact_cache_root；大文件在正式物料目录，日志/备份不入源码。Make的ARTIFACTS只选择已锁物料，不改变其版本或摘要。
+## 谁需要离线，谁从Harbor取得
 
-更新流程：选择兼容版本→准备并核验完整包/镜像→更新相应锁与声明→审查发布→原生检查及实际部署验收。不得只改tag或摘要来绕过核验，未备齐的物料不能标记offline_ready。
+| 类别 | 类型/来源 | 用途 |
+|---|---|---|
+| KIND/kubectl/kubeadm/Flux/Helm/SOPS/age/Compose/mc | `bin/`、`packages/`及文件锁 | 引导与维护工具 |
+| KIND节点、Calico、宿主工具 | `images/`、`manifests/`，bootstrap/host归档锁 | 仓库/网络未就绪也能引导 |
+| Harbor官方离线包及内层镜像 | `packages/`，安装成员/启动镜像锁 | 仓库独立启动和恢复，避免依赖自身 |
+| chart、部署清单 | `charts/`、`manifests/` | 固定内容供原生部署链 |
+| 固定模型、Trivy/Java DB | `models/`、`databases/` | 无启动时下载，校验字节/时间 |
+| 平台服务与应用基础镜像 | 固定上游摘要→归档校验→skopeo发布Harbor | 集群认证拉取 |
+| 应用业务依赖和成品 | 在线npm/pip/uv；成品发布Harbor | [应用构建](../applications/README.md)，不要求业务离线依赖包 |
 
-入口为 `make plan-artifacts`、`make fetch-artifacts`、`make check-artifacts`；节点与宿主镜像归档使用已有对应目标。删除旧物料需核对引用与既定批准范围；本目录没有自动删除策略。
+## 唯一身份来源
 
-`publish.yaml` 是已锁镜像的公共离线准备/发布入口，由Make明确传入模块选择、动作和容量操作标识。平台选择来自services/config.yaml，应用构建基础选择来自applications/config.yaml，共用tasks/publish-image.yaml，无第二套传输逻辑。
+| 锁 | 责任 |
+|---|---|
+| [files.lock.json](files.lock.json) | 外部工具/包/chart/模型/DB的URL、文件大小/SHA及成员 |
+| [upstream-images.lock.json](upstream-images.lock.json) | 已解析上游linux/amd64 manifest/config及来源 |
+| [kind-build.lock.json](kind-build.lock.json)、[node-image.lock.json](node-image.lock.json) | 节点固定构建输入与输出 |
+| [bootstrap-archives.lock.json](bootstrap-archives.lock.json)、[host-archives.lock.json](host-archives.lock.json) | 完整镜像归档文件身份 |
+| [harbor-package-files.lock.json](harbor-package-files.lock.json)、[harbor-offline-images.lock.json](harbor-offline-images.lock.json) | 官方包成员与内层启动镜像 |
+| 组件`image.lock.*` | 应用成品/必要派生镜像，区别于上游原镜像 |
 
-应用构建产物通过同一个publish.yaml读取显式publication_lockfile；客户端skopeo版本始终从上游工具锁读取，不由应用产物替换。上游默认锁不变。
+文件SHA256验证归档信封，manifest摘要验证镜像，config摘要验证运行配置，layer/blob验证实际内容。各自不可互换。物料本地已存在不代表已发布Harbor；tag存在也必须对应固定摘要。
 
-应用构建镜像使用在线发布：`publication_image_directory`指向构建模块的临时transfer目录，`publication_remove_transport=true`仅允许清除此目录中已经确认发布成功的指定归档及旁边JSON。远端已有相同摘要时无需本地归档，仍以独立puller复核。上游引导物料默认不清理，不受应用传输策略影响。
+## 原生准备与校验
 
-## 固定 CPU 模型与平台镜像子集（2026-10-04）
+```sh
+make -C infrastructure plan-artifacts
+make -C infrastructure fetch-artifacts
+make -C infrastructure check-artifacts
+make -C infrastructure plan-bootstrap-images
+make -C infrastructure fetch-bootstrap-images
+make -C infrastructure check-bootstrap-images
+make -C infrastructure prepare-host-materials
+make -C infrastructure check-host-materials
+```
 
-模型文件使用现有 files.lock.json，`kind=model`，`models/` 只存带模型名及修订的扁平文件。`model_path` 保存官方逻辑文件路径；组件 prepare 只允许已知文件名并复制到不可变修订目录。SHA256 与字节数必须吻合；HTTPS 可续传 `.part`，未完成或摘要不符不能成为正式文件。模型文件不是镜像，也不进备份/日志目录。
+`ARTIFACTS=<逗号分隔锁ID>`限制文件；`SERVICE_IMAGES`只选平台镜像物料，不开启/关闭运行组件。各plan不下载；verify读已有完整字节。fetch计算原子临时文件/展开/传输峰值，有限重试与续传后核大小、SHA；完整验证后同文件系统原子发布，已有文件/回执缺一或摘要漂移拒绝覆盖。
 
-`make services-{plan,materials,verify-materials,publish} SERVICE_IMAGES=comma,separated,ids` 只选择 services/config.yaml 已配置的镜像子集；默认 all。选择不启用运行组件，不跳过发布摘要和独立 puller 检查。RAGFlow 大镜像下载与小物料可分别执行；没有全部备齐时不能宣称整套离线部署完成。
+当前Docker归档采用OCI布局。只读[verify-oci-archive.py](verify-oci-archive.py)核所有blob、descriptor引用/大小、amd64 config、OCI/Docker兼容元信息及适用的diff_ids，不启动容器或联网。不能假定任意Docker后端导出格式都兼容。
 
-`service_material_timeout_seconds` 是平台镜像单次下载限时，当前 3600 秒；其它模块默认 600 秒。公共发布器只接受 60–7200 秒，重试仍有限。超时失败与容量、TLS、摘要校验失败均保留真实失败记录，不以放宽校验换成功。
+## 发布和清理边界
+
+服务/应用发布复用[publish.yaml](publish.yaml)和[同一任务](tasks/publish-image.yaml)。目标已有相同digest则复核，tag不同digest拒绝，401/证书/网络失败不能当“不存在”；独立puller验证目标身份。确认发布成功后只精确清除本次应用传输归档，不删镜像/卷/备份。
+
+宿主保留集合包括已停容器引用与非驻留引导工具：Harbor prepare用于挂载守卫、skopeo用于发布/恢复、exporter属于官方包。不能按“没有运行容器”就判无用。所需物料丢失按锁补回同批次后完整校验，不能去旧工作树转接。
+
+升级审核输入与输出锁、兼容性/数据迁移、完整物料和恢复范围，再发布晋级；不跟随浮动latest。Skopeo容器版本曾与源码最新release不同，原因为官方同名容器tag未发布；以固定容器身份和真实版本为准，不冒充源码最新版。

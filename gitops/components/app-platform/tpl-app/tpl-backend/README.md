@@ -1,50 +1,87 @@
-# 模板后端（tpl-backend）
+# 模板应用后端
 
-归属：`components/app-platform/tpl-app/tpl-backend/`，保留平台 → 应用 → 组件层级。用户配置、镜像锁、生成声明和说明同处，共用模板在平台common。数据库/迁移、Redis、RabbitMQ、Casdoor身份及API/worker/scheduler、Web/Admin已通过运行、消息和正式入口身份验收；模板未实现的业务provider仍明确返回503。
+API、Worker、Scheduler共用本目录image.lock.yaml固定的后端镜像；配置、生成声明及SOPS就近维护，模板由common直接渲染。
 
-## 文件与参数
 
-| 位置 | 用途 |
-| --- | --- |
-| `config.yaml` | 数据库名、运行/迁移用户名、任务修订、预期schema、私有路径及本批容量预算；共享开关来自上一级config，namespace来自环境site.yaml的app_namespace，origin来自对应前端config |
-| `image.lock.yaml` | 已构建并由Harbor只读身份核对的镜像摘要与源码提交；部署复用产物 |
-| `database/` | 库与账号初始化、独立运行ServiceAccount和运行账号Secret；复用平台命名空间、网络策略及registry-puller |
-| `redis/` | 独立Redis账号初始化、SOPS输入和权限验收；redis.yaml为独立私有口令输入 |
-| `migration/` | 独立迁移Job与真实权限/读写验收；复用同一后端镜像的规范迁移命令 |
-| `../../common/backend/stages.yaml.j2` | Flux的platform-services → tpl-database → tpl-migration → tpl-redis依赖链 |
+## 用户名、口令与端口
 
-密码在 `config.yaml` 指定的私有目录 `credentials.yaml`，root0600；独立数据盘备份逐字节核对。首次自动生成两个独立强口令，已有声明后丢失口令必须从备份恢复，不能再随机生成。Git只保存SOPS密文；日志不输出连接串/密码。修改私有文件不等于完成数据库密码轮换，当前流程会拒绝其与备份不一致。
+| 输入 | 位置/责任 |
+|---|---|
+| database、runtime/migrator user、Redis user/key_pattern、RabbitMQ user/vhost/queue | config.yaml；独立应用身份，既有数据后改名属于迁移 |
+| API port、副本、worker_concurrency及resources | config.yaml；与Service/探针/网络策略一起渲染 |
+| PostgreSQL/Redis/RabbitMQ内部端口 | 平台组件config；不再复制到应用配置 |
+| 数据库两个独立口令 | private_dir/credentials.yaml |
+| Redis、RabbitMQ口令 | private_dir/redis.yaml、rabbitmq.yaml |
+| Web/Admin两个独立client secret | private_dir/identity.yaml；公开origin/client_id取各自前端配置 |
+| TLS证书私钥 | private_dir/tls；复用平台CA，SOPS发布 |
 
-`enabled=false` 阻止本模块的部署动作，不表示删除或停止已运行工作负载。数据库/角色名与namespace是身份边界；已有数据后调整需要迁移，不能当作普通开关。端口5432沿用平台固定内部接口，Service、网络策略和连接串配套。Job修订用于显式创建新执行对象，不会原地改不可变Job；已完成Job和旧数据不会自动清理。
+private_dir与backup_dir由本config固定；首次生成root0600输入，再在独立数据盘非覆盖逐字节备份。已有声明后主备丢失须恢复，不随机重建。备份不一致、外来同名数据库/角色、已有身份漂移均停止；编辑密码文件不是已完成轮换。秘密生命周期见[SOPS与私有输入](../../../../../infrastructure/flux/secrets.md)。
 
-## 日常入口
+## 部署阶段与权限
 
-在k8s仓根执行：
+database/创建独立库和账号，migration/用迁移身份执行固定镜像的迁移并检查expected_schema_revision。运行身份仅连接、schema使用、表CRUD/sequence，禁止DDL和写alembic元数据；初始化不接管外来同名库/角色。数据库扩展取database_extensions（若声明），迁移前核源码head，不能随意改预期版本以放过失败。
+
+redis/创建独立持久ACL，拒绝default和跨键前缀/管理；rabbitmq/创建独立vhost及持久任务拓扑，无平台管理权限；identity/注册Web/Admin精确回调。平台管理员只给所属命名空间一次性初始化Job，不复制到常驻业务Secret。
+
+runtime/启动三个角色；API与Worker滚动，单副本Scheduler Recreate。API检查Redis/schema，Worker检查队列/任务注册，Scheduler检查进程与最近tick；外部依赖异常不作为Worker/Scheduler liveness重启理由。业务运行不自动迁移。异步session提交后行为与消息探针见[共用机制](../../common/README.md)。
+
+Job输入/镜像改变须审核并更新对应revision，经发布晋级生成新Job；旧成功Job仍为期望对象时不可删除或TTL。Git回退不回退schema、账号、消息或外部身份。
+
+## 应用特定依赖
+
+模板业务provider未配置时503/provider_unavailable是明确边界；不能以探针Ready宣布模板所有业务可用。细分维护见[浏览器身份](identity/README.md)、[RabbitMQ身份](rabbitmq/README.md)、[运行角色](runtime/README.md)。
+
+## 操作与恢复
 
 ```sh
 make -C infrastructure application-deployment-plan APP=tpl
-make -C infrastructure application-stage APP=tpl
-# 审查生成的GitOps声明、提交并通过既有Flux release流程晋级固定摘要后：
-make -C infrastructure application-bootstrap APP=tpl
 make -C infrastructure application-check APP=tpl
 ```
 
-`application-stage` 仅生成可审查声明，不操作运行数据库；bootstrap串联渲染、与已提交/晋级声明核对、Flux协调、真实Job结果检查。启用初期先单元验收，未来应用运行阶段沿用这一条编排。运行镜像不执行自动迁移。
+plan只读；check会创建限定随机数据库/消息/业务探针并精确清理，失败保留现场，不是纯查看。配置候选、构建、固定发布及bootstrap统一见[应用维护流程](../../../../../infrastructure/applications/README.md)。口令备份不是数据库备份；既有数据更新先准备数据库与外部依赖恢复路径，不能拿Git回退代替。
 
-数据库归迁移账号所有；运行账号只有库连接、schema使用、业务表CRUD/sequence使用权，禁止建表及修改alembic版本表。初始化检测外来同名库/角色并拒绝接管，既有角色不静默重设密码。验收临时表名随机且由迁移账号创建/删除，不删除业务表；实际校验运行账号CRUD与DDL拒绝。
+基础身份、数据库、消息、五个角色与真实Web/Admin登录已验；模板provider仍未实现。 记录见[验收边界](../../../../../docs/platform-kind-v1/verification.md#应用与业务链路)。
 
-口令备份不是数据库备份；本单元是全新空库第一次部署，尚无旧数据迁移。将来对已有库升级前须准备数据库备份和恢复路径，不能将Git回退当作数据库回退。完整应用登录、任务及跨应用链路另验。
+## 后端字段
 
-## 当前部署结果（2026-10-03）
+当前值以[config.yaml](config.yaml)为准，手册维护字段职责，不再复制一套默认值。
 
-库初始化 `data-platform-dev/tpl-database-v2` 和迁移 `app-platform-dev/tpl-migrate-5b38d39836dc-v1` 已成功，schema为20260911_0003；真实CRUD、运行身份DDL拒绝及迁移元数据写入拒绝均通过。完整bootstrap重复执行四阶段changed=0。API/Worker/Scheduler及前端后续已部署并验收，详见CHECKPOINT的最新状态；不能据此扩大为所有业务已实现。
-
-成功的Completed Job保留为Flux期望对象；不要直接删除或加TTL，否则Flux可能重建并重新执行。失败v1 Job和误建tpl-app-dev已按精确归属清除。修改SQL必须更新bootstrap修订，修改迁移任务必须更新migration修订，经相同声明发布流程实施。
-
-## Redis身份
-
-redis_user为独立登录名（不得default），redis_key_pattern固定tpl:*以匹配模板业务键，redis_identity_revision控制一次性Job修订。私有redis.yaml及备份不输出、不入Git。redis/保存初始化及真实隔离检查；runtime.sops.yaml供后续业务角色读取，provision.sops.yaml只用于数据命名空间的一次性账号初始化。原有平台管理员Secret不复制到应用命名空间。
-
-2026-10-03持久ACL配置已启用，tpl-redis-v2真实账号写读、键隔离、管理命令拒绝和ACL SAVE通过；统一入口重复执行changed=0且当前认证通过。随后实际滚动重启完成：默认与应用身份仍可用，ACL摘要/PVC不变，主进程0077，ACL SAVE后文件仍0600；更新的统一检查及完整bootstrap重复通过。实施及修正记录见docs/platform-kind-v1/tpl-redis-maintenance.md。RabbitMQ/Casdoor注册和常驻业务仍未完成。
-
-共用模板与初始化/验收脚本的唯一来源已归 gitops/components/app-platform/common；本组件配置、镜像锁与生成声明仍在本目录。入口仍为原生Make/Ansible/Flux；不再通过tpl专属模板部署实例。
+| 字段 | 类型 | 维护条件 |
+|---|---|---|
+| `tpl_backend_deployment.database` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
+| `tpl_backend_deployment.database_runtime_user` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
+| `tpl_backend_deployment.database_migrator_user` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
+| `tpl_backend_deployment.database_bootstrap_revision` | 文本/表达式 | 固定身份或初始化代次；变更前审核来源/迁移，不用递增代次掩盖失败。 |
+| `tpl_backend_deployment.migration_job_revision` | 文本/表达式 | 固定身份或初始化代次；变更前审核来源/迁移，不用递增代次掩盖失败。 |
+| `tpl_backend_deployment.expected_schema_revision` | 文本/表达式 | 固定身份或初始化代次；变更前审核来源/迁移，不用递增代次掩盖失败。 |
+| `tpl_backend_deployment.private_dir` | 文本/表达式 | 目录责任；已有输入/数据需完整恢复和路径守卫，不能换空目录重建身份。 |
+| `tpl_backend_deployment.backup_dir` | 文本/表达式 | 目录责任；已有输入/数据需完整恢复和路径守卫，不能换空目录重建身份。 |
+| `tpl_backend_deployment.deploy_budget_bytes` | 整数 | 操作预算/限时；调整须匹配真实峰值及当前容量检查。 |
+| `tpl_backend_deployment.redis_user` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
+| `tpl_backend_deployment.redis_key_pattern` | 文本/表达式 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
+| `tpl_backend_deployment.redis_identity_revision` | 文本/表达式 | 固定身份或初始化代次；变更前审核来源/迁移，不用递增代次掩盖失败。 |
+| `tpl_backend_deployment.rabbitmq_user` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
+| `tpl_backend_deployment.rabbitmq_vhost` | 文本/表达式 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
+| `tpl_backend_deployment.rabbitmq_queue` | 文本/表达式 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
+| `tpl_backend_deployment.rabbitmq_identity_revision` | 文本/表达式 | 固定身份或初始化代次；变更前审核来源/迁移，不用递增代次掩盖失败。 |
+| `tpl_backend_deployment.identity_organization` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
+| `tpl_backend_deployment.identity_revision` | 文本/表达式 | 固定身份或初始化代次；变更前审核来源/迁移，不用递增代次掩盖失败。 |
+| `tpl_backend_deployment.api_port` | 整数 | 与客户端、TLS、入口/Service及网络策略联动；既有节点端口映射不能热改。 |
+| `tpl_backend_deployment.api_replicas` | 整数 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `tpl_backend_deployment.worker_replicas` | 整数 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `tpl_backend_deployment.worker_concurrency` | 整数 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `tpl_backend_deployment.scheduler_replicas` | 整数 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `tpl_backend_deployment.resources.api.requests.cpu` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `tpl_backend_deployment.resources.api.requests.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `tpl_backend_deployment.resources.api.limits.cpu` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `tpl_backend_deployment.resources.api.limits.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `tpl_backend_deployment.resources.worker.requests.cpu` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `tpl_backend_deployment.resources.worker.requests.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `tpl_backend_deployment.resources.worker.limits.cpu` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `tpl_backend_deployment.resources.worker.limits.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `tpl_backend_deployment.resources.scheduler.requests.cpu` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `tpl_backend_deployment.resources.scheduler.requests.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `tpl_backend_deployment.resources.scheduler.limits.cpu` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `tpl_backend_deployment.resources.scheduler.limits.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `tpl_backend_deployment.celery_control_queue_exclusive` | 开关 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
+| `tpl_backend_deployment.celery_event_queue_exclusive` | 开关 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |

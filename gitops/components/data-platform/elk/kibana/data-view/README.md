@@ -1,9 +1,28 @@
-# Kibana 日志数据视图
+# Kibana应用日志视图
 
-用户配置、本组件原生prepare/Job和说明同处。elk-data-view阶段依赖elk-runtime，使用固定官方Kibana镜像内置Node，不安装依赖、不新增CLI。服务用户名/密码独立于人工日志读账号，在/etc/sunmoon/services/sunmoon-kind/elk-data-view.yaml及独立非覆盖备份中保留。限定default空间indexPatterns功能（已查询实际9.5.4 API确认）保存对象管理和sunmoon-logs-*索引元数据，无日志读取/写入或ES管理权限；初始化实际验证服务认证及日志读/用户管理403拒绝。
+elk-data-view依赖elk-runtime，config维护固定id和generation。专用elk-data-view.yaml主备保存服务口令，不复用人工reader；权限限default空间indexPatterns及索引metadata，无日志读写或ES管理。
 
-独立非root初始化Job通过验证链及主机名的TLS调用官方data_views API；仅不存在时创建固定ID/title/@timestamp视图，已存在时严格核对并保留。allowNoIndex允许先部署平台、后部署应用。短暂initContainer仅持ES管理员用于首次创建带所有权的独立角色/用户；已存在时严格核对，不重置密码或覆盖外国对象。主容器不挂管理员秘密，只持服务身份和公开CA。网络仅DNS、Kibana5601及ES9200；不含TLS私钥，不复用人类/服务秘密。services-check只读核对视图，缺失或篡改失败，不隐式修复。
+## 初始化与代次
 
-重复部署不重跑成功Job。删除视图后需要显式提高elk_log_data_view_generation并发布新Job；改ID/凭据/初始化实现/不可变Job输入同样必须增加代次，不自动覆盖已有对象，不删日志/索引。凭据轮换必须同步主副本。公共Kibana域名入口尚未由本组件切换。
+短initContainer限定使用ES管理员创建/核专属角色/用户，未知对象拒绝接管，不重置密码；主Job只持服务身份/CA，通过可信TLS调用data_views API。只在不存在时创建固定title/@timestamp，已有则严格核对；allowNoIndex支持先平台后应用。仅DNS/Kibana/ES网络，无TLS私钥。
 
-参考：[官方创建API](https://www.elastic.co/docs/api/doc/kibana/operation/operation-createdataviewdefaultw)、[官方读取API](https://www.elastic.co/docs/api/doc/kibana/operation/operation-getdataviewdefault)。当前采用已存在视图，首次空视图创建/整机重建另行验证。
+重复部署成功Job不重跑。更改id/口令/不可变Job输入、或删除视图后恢复，需要显式新generation审阅发布；不能把view check作为修复器。services-check只读核视图存在/正确。
+
+已实测采用现有视图并验证权限拒绝；首次空视图创建与整机重建分支仍未验收。公共Kibana入口另交付；此Job不删日志/索引，也不负责保留策略。
+
+## 配置字段
+
+当前值以[config.yaml](config.yaml)为准，手册维护字段职责，不再复制一套默认值。
+
+| 字段 | 类型 | 维护条件 |
+|---|---|---|
+| `elk_log_data_view_enabled` | 开关 | 部署/渲染准入；不代替停止、卸载或删除数据。 |
+| `elk_log_data_view_id` | 文本/表达式 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
+| `elk_log_data_view_generation` | 文本/表达式 | 固定身份或初始化代次；变更前审核来源/迁移，不用递增代次掩盖失败。 |
+| `elk_log_data_view_user` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
+
+## 部署、检查与退回
+
+共同平台操作走[services维护](../../../../../../infrastructure/services/README.md)的候选→审阅→stage/提交→发布晋级→bootstrap/check；组件没有另一套部署入口。版本/摘要取[物料锁](../../../../../../infrastructure/artifacts/README.md)，运行namespace取共享site。关闭开关不会自动停服或清数据。
+
+配置、身份或卷不符时保留现场；退回固定源的方法见[Flux维护](../../../../../../infrastructure/flux/README.md)，schema/账号/持久数据不随Git自动回滚。日期结果与未覆盖范围在[验收边界](../../../../../../docs/platform-kind-v1/verification.md)。

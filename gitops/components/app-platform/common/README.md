@@ -1,13 +1,31 @@
-# 应用共用部署机制
+# 应用共用机制
 
-本目录保存四应用共用的数据库、Redis、RabbitMQ、Casdoor身份及API/Worker/Scheduler和前端声明模板。原生infrastructure/applications/deploy.yaml直接渲染本目录；不经过tpl应用，不复制部署脚本。
+此目录由[原生应用编排](../../../../infrastructure/applications/README.md)直接渲染，四应用都使用它，不通过模板应用转接。各应用自己的config、image.lock、生成声明及SOPS仍在所属应用/前后端目录。
 
-每个应用的开关、后端配置、Web/Admin配置、镜像锁、生成声明与说明仍在相应app/组件目录。模板只引用传入配置；用户名、域名、schema和镜像不在此复写。秘密保留在私有输入和SOPS中。平台共享namespace与版本仍来自环境及物料锁。
+## 模板归属
 
-Python初始化/验收脚本为.py.j2，应用名渲染后嵌入对应ConfigMap。对于tpl，渲染须保持既有Job内容不变，避免改变不可变Job；新增应用独立对象和账号，不借用tpl身份。所有组件仍由同一Make/Ansible/Flux入口部署。
+| 路径 | 维护责任 |
+|---|---|
+| backend/database、migration | 建库/运行与迁移账号隔离、schema核对 |
+| backend/redis、rabbitmq | 应用持久身份、键前缀/vhost与真实拒绝检查 |
+| backend/identity | Web/Admin注册与精确回调，不授予业务权限 |
+| [backend/service-identity](backend/service-identity/README.md) | Info摄入和Investment检索的独立服务身份 |
+| [backend/storage](backend/storage/README.md) | 应用原文桶、版本与受限S3身份 |
+| backend/runtime、stages.yaml.j2 | API/Worker/Scheduler运行声明与Flux依赖 |
+| web、admin | 分面独立的前端运行声明 |
 
-## 后端镜像更新与异步数据库
+模板不定义第二套用户名、域名、镜像版本。修改共用模板前查看四应用的生成差异；不能只检查tpl，把其它应用作为未经审阅的副作用。初始化Python模板经渲染进入所属Job的ConfigMap。
 
-四应用的生产 `async_sessionmaker` 明确设置 `expire_on_commit=False`，避免异步任务读取已提交回执时触发隐式查询和 MissingGreenlet。`application-check` 在实际 API 镜像内验证该策略；代码按模板优先修复，再串行同步实例，由各自源码提交、原生构建和独立 Harbor 摘要发布。
+## 更新与不可变Job
 
-初始化 Job 的模板不可原地修改。后端镜像或初始化内容改变时，增加各组件配置中的 identity/redis/rabbitmq 代次；迁移 Job 同时按镜像摘要命名。复用原私有输入、原账号与逐字节备份，不以重建 Job 代替密码轮换。新代次验收通过后，旧成功 Job 可先归档再按 UID/resourceVersion 精确退役；当前声明中的 Job 不删除，避免 Flux 重建。
+后端镜像由各应用源码提交及锁定构建产生。生产async_sessionmaker需expire_on_commit=False，实际API检查此行为，避免异步任务访问提交后回执触发MissingGreenlet；此约束属于业务源码，不由部署模板修补运行容器。
+
+已完成Job内容不可原地修改。初始化输入或引用的后端镜像改变时，审阅受影响阶段并显式更新该阶段revision；迁移Job同时按镜像摘要命名。复用原身份与逐字节备份，不能以新Job代次冒充密码轮换。
+
+成功Job留作Flux期望对象；直接删除或加TTL会使Flux可能重建。旧Job退役须确认已从晋级声明移出、依赖不再引用，保存结果后按具体UID/resourceVersion清理；不按Completed状态批量删。
+
+## 维护流程
+
+先在一个受影响应用准备候选并审阅，再核对其他应用；提交、发布、显式晋级和执行方法统一见[应用手册](../../../../infrastructure/applications/README.md)。验收既查初始化回执，也查实际角色/登录/消息，范围见[应用与业务链路](../../../../docs/platform-kind-v1/verification.md#应用与业务链路)。
+
+业务schema、持久身份或远端数据变化不能仅靠Git回退；此目录不增加另一个部署CLI、业务启动脚本或删除策略。

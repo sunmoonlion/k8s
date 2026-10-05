@@ -1,26 +1,47 @@
-# Neo4j Community：独立图实例
+# Neo4j Community图实例
 
-配置、模板、prepare和实际verify同处本目录；版本/摘要唯一在上游镜像锁。原生 services-stage→本地提交→flux-release晋级→services-bootstrap；没有独立部署脚本。
+data_namespace单实例、UID7474、worker2静态Retain卷，认证与图数据在/data。内部HTTPS与强制TLS Bolt端口取config，HTTP禁用；非root/只读根/无联网插件，当前不开放公共入口或四App业务访问。
 
-单节点，data-platform-dev，worker2独立10Gi静态Retain卷。UID/GID7474，认证数据与图数据在/data；非root、只读根，无联网安装插件。内网HTTPS7473、TLS必选Bolt7687，HTTP禁用；本单元不开放公共入口或业务访问网络策略。
-管理员neo4j由独立/私有neo4j.yaml保存，位于/etc/sunmoon/services/sunmoon-kind，备份位于/mnt/sunmoon-data/backups/services/sunmoon-kind。Git只有SOPS密文；官方NEO4J_AUTH_FILE读取文件。证书和CA每次恢复均核对，不能以跳过验证连接。
+## 身份和权限边界
 
-Community不是细粒度多租户权限隔离方案：此实例目前只用于基础服务验收，不给四个业务共享管理员。若领域需要访问，须定唯一图拥有者和独立服务身份；需要数据库级/RBAC共享隔离时另选Enterprise或拆独立实例。无HA保证。
+neo4j.yaml在services_config_dir及独立backup，官方NEO4J_AUTH_FILE读取；TLS主备与CA核一致。Community当前管理员用于限定基础验收，不作为4应用共享多租户权限方案；业务接入需明确图拥有者/受限服务，细粒度RBAC或多租户另定Enterprise/实例隔离。
 
-verify覆盖HTTPS主机名/CA、认证拒绝、真实节点关系提交/读回、事务回滚、Bolt TLS协议协商。只清除本次自建随机标记，不删业务图。重启/灾备、领域图接入、APOC等插件仍属后续验收。日志到stdout，不新增自动删除作业。
+## 失败rollout的受控恢复
 
-回退保存原flux-source.yaml后恢复原固定源并原生flux-source-apply；prune=false保留数据。停止新增服务用副本0声明晋级，绝不删除PVC/卷。规则：C-D1图派生副本不抢业务主档，C-D3身份/存储独立，C-R2镜像按摘要。
+enableServiceLinks=false避免Kubernetes注入NEO4J_PORT_*被官方入口当数据库配置。启动/readiness按Bolt监听，成功交付仍须真实TLS/查询。
 
-## 失败版本的滚动恢复
+原生flux-source-apply包含recover-rollout.yaml：先从晋级Git对象核正确模板，有限等待Flux写入锁镜像/环境/探针（上限15分钟）；首次无控制器跳过。只在旧revision未Ready且失败重启时，核控制器UID/节点/Retain卷，以UID/resourceVersion前置条件正常删除该失败Pod，让同控制器重建；不删健康/当前Pod、不强杀、不删卷。
 
-官方入口会把Kubernetes注入的NEO4J_PORT_*当数据库配置；模板设置enableServiceLinks=false，继续用DNS，保留严格配置校验。
-StatefulSet滚动更新可能卡在旧失败Pod。原生flux-source-apply直接包含本组件recover-rollout.yaml：只在模板已修正、旧revision未Ready且已失败重启时，核对控制器UID、锁定镜像、节点、Retain卷，使用UID和resourceVersion前置条件正常删除该旧Pod。只让控制器重建Pod，不删除PVC/PV/数据、不强制终止。当前revision或健康Pod不会被删。
-neo4j_failed_rollout_recovery可关闭该恢复；API前置条件冲突则报失败，重新入口核对，不能强行覆盖。这是声明调和的受控恢复，不另建部署入口。
+neo4j_failed_rollout_recovery可关闭，API前置冲突报错后重核，不能强行覆盖。数据目录权限只处理明确需要的输入，不递归chown全图数据。
 
-## 健康探针与真实验收
+## 验收范围
 
-按官方Helm默认方式，startup/readiness检查Bolt监听；不是仅凭端口判断交付成功。services-check仍必须通过CA/主机名、HTTPS认证、真实图读写/回滚与Bolt TLS协商。HTTPS原探针向Pod IP发送请求返回400；使用证书对应DNS及SNI实际请求为200。没有关闭TLS或严格配置校验。官方默认参考：https://github.com/neo4j/helm-charts/blob/dev/neo4j/values.yaml 。
+services-check严格CA/SAN、认证拒绝、实际节点关系提交/读回、事务回滚（选定Query API DELETE实际200且随后计数0）、Bolt TLS版本协商；版本只筛Neo4j Kernel，不能拿Cypher行误比。只清本次nonce图节点，不证明完整Bolt驱动会话、业务图/插件、HA或灾备。回退须保留匹配身份和卷，参考共同Flux方法。
 
-实际2026.09.0 Query API回滚返回HTTP200（不是文档示例的202），验收要求DELETE成功后独立查询未提交标记计数为0；dbms.components同时返回Kernel与Cypher，版本比对精确筛选Neo4j Kernel，不降低镜像锁及真实回滚判据。失败原输出保留在忽略的运行证据目录。
+## 配置字段
 
-恢复前从晋级提交的Git对象读取图模板，并有限等待Flux写入其镜像、服务环境开关及探针；OCI物料Ready不等于子工作负载已写入。等待上限15分钟，失败报错，不自行强制覆盖。首次不存在控制器时跳过恢复，交给常规声明创建。
+当前值以[config.yaml](config.yaml)为准，手册维护字段职责，不再复制一套默认值。
+
+| 字段 | 类型 | 维护条件 |
+|---|---|---|
+| `services_neo4j_enabled` | 开关 | 部署/渲染准入；不代替停止、卸载或删除数据。 |
+| `neo4j_failed_rollout_recovery` | 开关 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
+| `neo4j_volume.name` | 文本/表达式 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `neo4j_volume.node` | 文本/表达式 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `neo4j_volume.size` | 文本/表达式 | PV声明容量；不构成ext4目录硬配额，不自动扩盘。 |
+| `neo4j_volume.uid` | 整数 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `neo4j_volume.gid` | 整数 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `neo4j_heap` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `neo4j_pagecache` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `neo4j_https_port` | 整数 | 与客户端、TLS、入口/Service及网络策略联动；既有节点端口映射不能热改。 |
+| `neo4j_bolt_port` | 整数 | 与客户端、TLS、入口/Service及网络策略联动；既有节点端口映射不能热改。 |
+| `neo4j_resources.requests.cpu` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `neo4j_resources.requests.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `neo4j_resources.limits.cpu` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `neo4j_resources.limits.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+
+## 部署、检查与退回
+
+共同平台操作走[services维护](../../../../infrastructure/services/README.md)的候选→审阅→stage/提交→发布晋级→bootstrap/check；组件没有另一套部署入口。版本/摘要取[物料锁](../../../../infrastructure/artifacts/README.md)，运行namespace取共享site。关闭开关不会自动停服或清数据。
+
+配置、身份或卷不符时保留现场；退回固定源的方法见[Flux维护](../../../../infrastructure/flux/README.md)，schema/账号/持久数据不随Git自动回滚。日期结果与未覆盖范围在[验收边界](../../../../docs/platform-kind-v1/verification.md)。

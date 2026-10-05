@@ -1,36 +1,21 @@
-# 模板运行角色
+# 模板应用运行角色
 
-用户参数在上一级 config.yaml；三个角色共用 image.lock.yaml 中同一后端镜像。
-API、worker 使用滚动更新，scheduler 单副本 Recreate；迁移仍由独立 Job 完成。
-API 探针检查 Redis 与数据库 schema，worker 实际查询自己的队列/注册任务，
-scheduler 检查本地进程与最近完成的调度 tick。后二者不把外部依赖故障作为 liveness 重启依据。
+API/Worker/Scheduler使用上级image.lock同一固定后端镜像，配置在[后端config](../config.yaml)。模板唯一来源为[common runtime](../../../common/backend/runtime/workload.yaml.j2)，生成workload与SOPS留本目录。
 
-应用运行账号分别来自 database、redis、rabbitmq、identity 的 SOPS 声明；只有 API
-读取 Redis/browser Secret，前端不持有它们。ConfigMap/私有输入变化参与 Pod 配置摘要以触发滚动。
-Celery durable 状态在 PostgreSQL；不启用未配置键隔离的 Redis result backend。
-Beat 的本地调度缓存可重建，放在 emptyDir，不作为任务真源。
+## 进程与持久状态
 
-模板两个域名使用独立 tpl-tls，复用平台 CA，1825 天有效期。私有 TLS 输入和非覆盖备份
-归 backend config 的 private_dir/backup_dir 下 tls；Git 仅密文。已发布的身份丢失时
-必须恢复备份，不自动重签。域名或证书轮换需要单独安排，不静默替换。
-API 对 Casdoor 使用受 NetworkPolicy 限制的内部 HTTP backchannel，公开 issuer 仍为 HTTPS；
-内部 HTTP/AMQP 暂无 mTLS，不宣称端到端链路加密。
+API与Worker滚动，Scheduler单副本Recreate。API readiness核Redis及schema；Worker实际查自己的队列/任务注册，Scheduler核进程及最近成功tick，不把外部依赖故障作为后两者liveness重启原因。迁移仅独立Job，运行镜像不启动自动迁移。
 
-## 部署和核验
+配置/输入摘要触发Pod滚动。API读取Redis/browser秘密；其它角色只拿所需业务身份，前端不持它们。Celery durable状态在PostgreSQL，不启用无键隔离的Redis result backend；Beat本地调度缓存放emptyDir可重建，不能当任务真源。
 
-沿用 application-stage → 提交 → flux-release → 晋级源 → application-bootstrap。
-application-check 校验全部 Flux 阶段的当前代次和源摘要、五个 Deployment 的镜像/副本、
-实际 worker/scheduler 探针和经新 Traefik 的 HTTPS 路由。公开域名仍可能指向原入口，
-核验通过 `--connect-to` 指向 cluster_ingress_port，保留 SNI、Host 和 CA 验证。
-完整登录、消息业务处理及公开入口切换必须分别验收，不能由 Ready 推定。
+## RabbitMQ4.3兼容
 
-## RabbitMQ 4.3 compatibility
+所选Celery默认控制/事件队列为非持久非独占，RabbitMQ4.3默认拒绝。CELERY_CONFIG_MODULE读取ConfigMap celeryconfig.py，将这两种临时队列设exclusive，连接退出消失；业务持久队列保持。API/Worker/Scheduler及探针都取同份配置，不开启RabbitMQ废弃特性。
 
-Celery 5.6.3 的默认控制/事件队列是非持久非独占，RabbitMQ 4.3默认拒绝创建。
-部署通过原生 CELERY_CONFIG_MODULE 加载 ConfigMap 内的 celeryconfig.py，
-把这两种临时队列设为 exclusive，连接退出后自动消失；持久业务队列不变。
-Worker、scheduler、API和探针读取同一份配置，不开启 RabbitMQ 的废弃特性。
-依据：[Celery配置](https://docs.celeryq.dev/en/stable/userguide/configuration.html#control-queue-exclusive)、
-[RabbitMQ队列说明](https://www.rabbitmq.com/docs/queues#temporary-queues)。
+## TLS与验收
 
-共用模板与初始化/验收脚本的唯一来源已归 gitops/components/app-platform/common；本组件配置、镜像锁与生成声明仍在本目录。入口仍为原生Make/Ansible/Flux；不再通过tpl专属模板部署实例。
+Web/Admin证书复用平台CA，TLS输入private_dir/tls和独立backup，Git仅SOPS；已发布身份丢失先恢复，域名/证书轮换显式安排。普通Casdoorbackchannel为内部HTTP，公开issuerHTTPS；内部HTTP/AMQP不宣称mTLS。
+
+application-check核Flux源与当前代次、五个Deployment摘要/副本、真实worker/scheduler及保留SNI/Host/CA的新TraefikHTTPS路由；public检查才证明宿主30443指向正确目标。模板已实际验登录/消息，但未配置业务provider仍503/provider_unavailable。
+
+操作与恢复见[应用维护](../../../../../../infrastructure/applications/README.md)，历史范围见[验收边界](../../../../../../docs/platform-kind-v1/verification.md#应用与业务链路)。Git回退不能代替数据库回退或恢复已失身份。

@@ -1,13 +1,42 @@
-# 模板应用（tpl-app）
+# 模板应用
 
-保留平台 → 应用 → 前后端组件 → 运行角色/部署阶段：
+提供四应用共用业务基础的参考实例；没有配置的业务provider明确返回503，不作为已完成业务功能。
 
-- `tpl-backend/`：后端配置、镜像锁、database/migration；后续API、Worker、Scheduler共用同一后端镜像并归这里。
-- `tpl-web-frontend/`：Web前端配置、镜像锁和后续运行声明。
-- `tpl-admin-frontend/`：Admin前端配置、镜像锁和后续运行声明。
+## 配置导航
 
-本目录 `config.yaml` 只保存应用共享开关；命名空间统一引用环境 `site.yaml` 的 `app_namespace`（当前 `app-platform-dev`）。口令在私有输入/SOPS密文；用户名、数据库及迁移参数在后端配置，浏览器origin在对应前端配置。其它应用采用同样的应用/组件层级。
+本目录保留平台→应用→前后端组件层级，所有运行角色使用环境app_namespace（当前app-platform-dev），不派生独立应用命名空间。
 
-当前单元只部署后端独立数据库与迁移，前端及完整业务链尚未部署。原生入口、保护和验收说明见 [后端](tpl-backend/README.md)。
+| 用户要改什么 | 权威位置 |
+|---|---|
+| 应用部署开关 | 本目录config.yaml |
+| 数据库/运行与迁移用户名、Redis前缀、RabbitMQ vhost、Job代次、API端口及角色资源 | [后端](tpl-backend/README.md) |
+| Web域名、端口、副本、OAuth公开客户端 | [Web前端](tpl-web-frontend/README.md) |
+| Admin域名、端口、副本、OAuth公开客户端 | [Admin前端](tpl-admin-frontend/README.md) |
+| 口令、TLS私钥和机器人身份 | 后端private_dir及非覆盖独立backup_dir，Git只保存SOPS |
+| 源码/构建网络 | [构建与部署手册](../../../../infrastructure/applications/README.md) |
 
-共用模板与初始化/验收脚本的唯一来源已归 gitops/components/app-platform/common；本组件配置、镜像锁与生成声明仍在本目录。入口仍为原生Make/Ansible/Flux；不再通过tpl专属模板部署实例。
+字段职责在组件就近说明；端口和用户名是普通配置，password/client_secret不填进config.yaml。当前值与镜像摘要以配置和锁文件为准，手册不另维护BOM。
+
+## 日常维护
+
+从k8s根执行，仅查看计划先用：
+
+```sh
+make -C infrastructure application-deployment-plan APP=tpl
+```
+
+修改配置、重建源码、声明stage、发布/显式晋级以及一键部署已晋级应用使用[同一应用流程](../../../../infrastructure/applications/README.md)；共用模板归[common](../common/README.md)，不经过tpl转接。应用bootstrap不替你构建镜像或批准未提交的配置。
+
+enabled=false只关闭本模块准入，不能停止Flux现有对象、删除身份或数据。停止/卸载及数据清理须审核晋级声明和真实依赖，不能批量删Job/PVC。
+
+## 验收边界
+
+基础身份、数据库、消息、五个角色与真实Web/Admin登录已验；模板provider仍未实现。 详情及尚待交付项见[验收记录](../../../../docs/platform-kind-v1/verification.md#应用与业务链路)。
+
+## 应用字段
+
+当前值以[config.yaml](config.yaml)为准，手册维护字段职责，不再复制一套默认值。
+
+| 字段 | 类型 | 维护条件 |
+|---|---|---|
+| `tpl_deployment.enabled` | 开关 | 部署/渲染准入；不代替停止、卸载或删除数据。 |

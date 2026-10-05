@@ -1,13 +1,23 @@
-# 跨应用服务身份共用机制
+# 跨应用服务身份
 
-调用方的用户配置位于各自后端 `config.yaml` 的 `knowledge_service`，Knowledge 的 `knowledge_service_receiver.enabled` 启用接收，绑定从两个调用方配置读取，单一来源。原生 application-stage/bootstrap 直接编排本模块；不增加部署CLI或业务运行脚本，不修改已有浏览器初始化Job。
+调用方配置来自各自后端config.yaml的knowledge_service；Knowledge使用knowledge_service_receiver.enabled启用接收，接收绑定由调用方字段派生，避免重复维护。原生application-stage/bootstrap编排[prepare.yaml](prepare.yaml)与[初始化模板](workload.yaml.j2)。
 
-Info只配置摄入URL，Investment只配置检索URL。每条关系使用独立Casdoor组织、client ID、secret和900秒令牌；仅client_credentials、禁止登录/注册/refresh/browser grant。Casdoor服务应用凭据在所属组织内具有管理能力，所以这些组织不含人类账号和其他应用；不能放built-in。初始化Job一次性持管理员输入，API/Worker只持自己出站凭据，Scheduler不持它，Knowledge不持消费者secret。
+## 配置与秘密
 
-秘密保存在各APP私有 `service-identity.yaml`（root0600），并在其backup_dir逐字节非覆盖保存；Git仅SOPS。配置修改不是轮换，现有身份不符拒绝自动覆盖。TLS仅通过service-access的集群内路由，保留CA/SNI/主机名验证。精确网络出站只到Traefik8443。
+Info仅有knowledge:ingest，Investment仅有knowledge:retrieve；每条关系独立organization、application、client_id、secret及token_seconds。当前仅client_credentials，禁止browser/login/register/refresh grant。Casdoor服务凭据在所属组织内具有管理能力，因此这些组织保持没有人类账号或其它应用，不能放built-in组织。
 
-Knowledge现有校验签名、issuer、audience和精确subject；关系能力依据本地绑定授予，不能仅靠调用者声明的scope。Casdoor配置仍限制并实际核验每条关系唯一scope。此模块不修改业务契约、schema和依赖。
+service-identity.yaml保存到调用方private_dir，root0600；backup_dir逐字节、非覆盖保存。Git仅SOPS。API/Worker持自己出站秘密，Scheduler及前端不持；Knowledge不持消费者secret。平台管理员输入只给一次性初始化Job。
 
-核验由原生 application-check APP=info/investment 读取初始化Job的签名/组织/坏密码/越权拒绝回执；APP=knowledge 使用Info实际客户端摄入、真实Scheduler/Outbox/Worker，再由Investment领域Port HTTPS检索，核对中文原文版本/摘要和拒绝边界，只精确清理该轮随机探针。完整爬取发布与投资Agent工具执行仍须另外验收。
+现有同名身份或配置漂移拒绝自动接管，文件编辑不是轮换。输入丢失时先恢复原备份；不能新生成secret覆盖既有Casdoor身份。
 
-官方固定版本依据：[OAuth](https://casdoor.org/docs/how-to-connect/oauth/)、[公共API权限](https://casdoor.org/docs/basic/public-api/)、[v4.12.0令牌实现](https://github.com/casdoor/casdoor/blob/v4.12.0/object/token_oauth.go)。
+## TLS和授权
+
+服务地址由[Traefik service-access](../../../../ingress-platform/traefik/service-access/README.md)派生，走集群内HTTPS、保留CA/SNI/域名验证，精确出站只到Traefik8443，不走宿主代理或硬编码节点IP。
+
+Knowledge核验签名、issuer、audience及精确subject，按本地关系绑定授予能力，不能仅相信调用方声明scope。初始化还核对每关系唯一scope、组织和坏密码/越权拒绝。
+
+## 核验和停止
+
+application-check APP=info/investment读取各自初始化回执；APP=knowledge进一步验证实际Info客户端HTTPS投递、持久日记、Scheduler/Outbox/Worker及实际Investment领域Port HTTPS检索。浏览器身份、关系交叉、租户/数据集边界同时检查。完整爬取和Agent工具执行尚未由此证明。
+
+停用需分别处理调用方运行配置、接收绑定及远端客户端；enabled=false和Git回退不会撤销已发令牌或删除远端身份。当前没有自动密码轮换/客户端删除入口。操作流程见[应用手册](../../../../../../infrastructure/applications/README.md)，实际探针清理见[Knowledge provider](../../../knowledge-app/knowledge-backend/provider/README.md)。

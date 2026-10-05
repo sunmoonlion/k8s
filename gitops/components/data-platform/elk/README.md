@@ -1,26 +1,73 @@
-# ELK：单节点 KIND 部署
+# ELK：日志接收、索引与查询
 
-用户参数在本目录 config.yaml，版本/摘要唯一来自 infrastructure/artifacts/upstream-images.lock.json。
-Elasticsearch、Kibana、Logstash 使用各自目录里的模板和渲染声明；initialize 只负责受控身份初始化，runtime 汇总后两者。
+ES/Logstash/Kibana取同一artifacts配套锁，data_namespace单实例静态Retain数据。config各volume/resources/heap/port/sysctl/index_prefix；prepare设置宿主max_map_count有副作用。单实例不是HA。
 
-统一链：make -C infrastructure services-materials/services-publish SERVICE_IMAGES=elasticsearch,kibana,logstash → services-stage → 本地提交 → flux-release → services-bootstrap。
-services-bootstrap 部署已经晋级的固定声明；首次准备或修改参数仍须 stage、提交和晋级。各步骤都复用原生 Make/Ansible/Flux。
+## 身份、协议与日志
 
-三个服务均在 data-platform-dev，独立静态 Retain 卷：20Gi ES、2Gi Kibana、4Gi Logstash。这是单节点开发配置，不提供高可用或跨磁盘灾备。
-内部端口 ES 9200、Kibana 5601、Logstash TLS HTTP 8080；只提供 ClusterIP，本单元没有公开域名入口或自动日志采集器。
+私有elk.yaml/TLS在services_config_dir，独立副本services_backup_dir。elastic管理员、Logstash ES写身份、人工read身份、HTTP ingest身份分别隔离；Kibana data-view另独立身份，不借reader口令。内部ES/Logstash/Kibana TLS严格CA/SAN。
 
-私有账号和 Kibana 三个加密密钥：/etc/sunmoon/services/sunmoon-kind/elk.yaml；独立非覆盖备份 /mnt/sunmoon-data/backups/services/sunmoon-kind/elk.yaml。
-初始化管理员仅挂在 ES 和一次性 Job；Kibana 只持 kibana_system，Logstash 只持 sunmoon_log_writer。写账号仅允许 sunmoon-logs-* 索引；独立 reader 身份可读日志和访问 Kibana。
-TLS 每服务独立，平台 CA 签发；公钥链和主机名校验开启，Secret 仅以 SOPS 密文入 Git。修改密码/初始化逻辑需设计显式旋转与增加 elk_init_generation，不可改旧不可变 Job 伪装成功。
+真实应用采集由[collector](collector/README.md)三节点DaemonSet提供，只收app namespace日志；视图由[data-view](kibana/data-view/README.md)声明Job初始化。公共KibanaUI尚未交付，不把内部管理API成功当用户UI成功。
 
-ES 所需 vm.max_map_count 在宿主唯一文件 /etc/sysctl.d/90-sunmoon-elasticsearch.conf 持久声明，渲染时仅补足该参数；无特权 Pod。
-Logstash 持久队列上限512MiB，每条确认写检查点；容器日志仅标准输出。索引自动删除/ILM尚未启用，须纳入所有者确认的长期删除策略。
+## 验收、背压与恢复
 
-验收将覆盖 TLS、认证拒绝、实际 Logstash → ES 写入与检索、越权拒绝、Kibana 状态及重复部署。重启/灾备和所有应用日志接入属于后续单元，不以 Pod Ready 代替这些结论。
-回退：晋级前先保存当前 flux-source.yaml；失败恢复原源并原生 flux-source-apply。新阶段 prune=false/deletionPolicy=Orphan，回退不会自动删数据；停新服务需声明副本0并晋级，保留新卷。
+services-check写一个nonce事件，经Logstash入ES，用独立reader读回，检查writer读/管理/外部索引拒绝，最后精确删本次文档；查Kibana认证API。collector开启时核每个已启用应用角色真实CRI日志/元数据对应及固定data-view，只读检查不修复视图。
 
-规则对照：C-D1 日志只是观测副本；C-D3/C-I3 账号与卷独立；C-R1/C-R2 三镜像和声明按固定摘要发布；已有应用和核心对象必须保持不变。
+首次历史日志回填可能429；仅明确429拒收按有界指数退避/jitter重试（每请求180秒），不重放可能已写的超时，也不把401/403改成成功。collector缓存、Logstash队列、ES索引与Kibanametadata恢复职责不同；不要删缓冲“解决”容量。
 
-## 全应用日志采集
+日志索引retention/轮转/备份/告警、公共UI、整机/删群恢复仍待交付。磁盘容量、heap及资源变更先核峰值/调度、审阅发布，再真实读写链验收。
 
-节点采集器配置、实现及实际日志对照在 [collector](collector/README.md)，同一 services-stage/bootstrap/check 链。Kibana 保存固定 SunMoon application logs 数据视图（sunmoon-logs-*、@timestamp）；用户可以按 kubernetes.pod_name、container_name、node、stream 过滤。公共 Kibana 域名入口另行切换，不能把内网 API/data view 验收写成浏览器入口已交付。
+## 配置字段
+
+当前值以[config.yaml](config.yaml)为准，手册维护字段职责，不再复制一套默认值。
+
+| 字段 | 类型 | 维护条件 |
+|---|---|---|
+| `services_elk_enabled` | 开关 | 部署/渲染准入；不代替停止、卸载或删除数据。 |
+| `services_elasticsearch_enabled` | 文本/表达式 | 部署/渲染准入；不代替停止、卸载或删除数据。 |
+| `services_kibana_enabled` | 文本/表达式 | 部署/渲染准入；不代替停止、卸载或删除数据。 |
+| `services_logstash_enabled` | 文本/表达式 | 部署/渲染准入；不代替停止、卸载或删除数据。 |
+| `elasticsearch_volume.name` | 文本/表达式 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `elasticsearch_volume.node` | 文本/表达式 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `elasticsearch_volume.size` | 文本/表达式 | PV声明容量；不构成ext4目录硬配额，不自动扩盘。 |
+| `elasticsearch_volume.uid` | 整数 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `elasticsearch_volume.gid` | 整数 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `kibana_volume.name` | 文本/表达式 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `kibana_volume.node` | 文本/表达式 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `kibana_volume.size` | 文本/表达式 | PV声明容量；不构成ext4目录硬配额，不自动扩盘。 |
+| `kibana_volume.uid` | 整数 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `kibana_volume.gid` | 整数 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `logstash_volume.name` | 文本/表达式 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `logstash_volume.node` | 文本/表达式 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `logstash_volume.size` | 文本/表达式 | PV声明容量；不构成ext4目录硬配额，不自动扩盘。 |
+| `logstash_volume.uid` | 整数 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `logstash_volume.gid` | 整数 | 存储/持久身份；已有数据不能通过普通配置编辑迁移。 |
+| `elasticsearch_heap` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `elasticsearch_resources.requests.cpu` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `elasticsearch_resources.requests.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `elasticsearch_resources.limits.cpu` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `elasticsearch_resources.limits.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `kibana_resources.requests.cpu` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `kibana_resources.requests.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `kibana_resources.limits.cpu` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `kibana_resources.limits.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `logstash_heap` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `logstash_resources.requests.cpu` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `logstash_resources.requests.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `logstash_resources.limits.cpu` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `logstash_resources.limits.memory` | 文本/表达式 | 运行资源/性能；发布晋级后生效，检查调度、峰值和吞吐。 |
+| `elasticsearch_port` | 整数 | 与客户端、TLS、入口/Service及网络策略联动；既有节点端口映射不能热改。 |
+| `kibana_port` | 整数 | 与客户端、TLS、入口/Service及网络策略联动；既有节点端口映射不能热改。 |
+| `logstash_ingest_port` | 整数 | 与客户端、TLS、入口/Service及网络策略联动；既有节点端口映射不能热改。 |
+| `elk_index_prefix` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
+| `elk_init_generation` | 文本/表达式 | 固定身份或初始化代次；变更前审核来源/迁移，不用递增代次掩盖失败。 |
+| `elk_logstash_writer` | 文本/表达式 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
+| `elk_log_reader` | 文本/表达式 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
+| `elk_ingest_username` | 文本/表达式 | 账号名或业务边界；已有远端身份/数据须显式核对，禁止静默认领/迁移。 |
+| `elk_max_map_count` | 整数 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
+| `elk_logstash_max_content_bytes` | 整数 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
+
+## 部署、检查与退回
+
+共同平台操作走[services维护](../../../../infrastructure/services/README.md)的候选→审阅→stage/提交→发布晋级→bootstrap/check；组件没有另一套部署入口。版本/摘要取[物料锁](../../../../infrastructure/artifacts/README.md)，运行namespace取共享site。关闭开关不会自动停服或清数据。
+
+配置、身份或卷不符时保留现场；退回固定源的方法见[Flux维护](../../../../infrastructure/flux/README.md)，schema/账号/持久数据不随Git自动回滚。日期结果与未覆盖范围在[验收边界](../../../../docs/platform-kind-v1/verification.md)。

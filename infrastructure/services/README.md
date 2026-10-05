@@ -1,52 +1,66 @@
-# 服务公共编排
+# 平台服务部署与维护
 
-`config.yaml` 保存本批服务总开关、私有输入/备份路径和平台镜像选择；摘要仍取统一锁。
-组件的开关、域名、卷配置和模板在 [gitops/components](../../gitops/components/README.md)，此处不保存第二份。
-`layout.yaml` 只维护源码路径、命名空间映射及组件卷引用，不重复填写容量等用户值。
+本模块是所有启用平台组件的原生Make→Ansible→Flux/SOPS编排。组件参数、模板、生成声明、身份准备与说明在[各责任组件](../../gitops/components/README.md)；共同映射在[layout.yaml](layout.yaml)，不再集中维护重复端口/账号表。
 
-此处保留跨组件的物料准备、凭据保护/加密、证书签发、候选渲染、发布一致性检查和协议验收；部署仍由 Flux 协调。
-从 `infrastructure/` 使用 `make services-render` 生成候选、按发布流程审查晋级，随后 `make services-bootstrap`。
+## 输入与准备
+当前值以[config.yaml](config.yaml)为准，手册维护字段职责，不再复制一套默认值。
 
-`../Makefile` 用明确的 `CONFIG_FILES` 列表把各模块的唯一配置交给 Ansible；不扫描目录猜输入，不另建 CLI。
-完整日常方法见 [服务操作](../../docs/platform-kind-v1/services.md)。
+| 字段 | 类型 | 维护条件 |
+|---|---|---|
+| `services_enabled` | 开关 | 部署/渲染准入；不代替停止、卸载或删除数据。 |
+| `services_config_dir` | 文本/表达式 | 目录责任；已有输入/数据需完整恢复和路径守卫，不能换空目录重建身份。 |
+| `services_backup_dir` | 文本/表达式 | 目录责任；已有输入/数据需完整恢复和路径守卫，不能换空目录重建身份。 |
+| `service_image_ids` | 列表 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
+| `service_material_timeout_seconds` | 整数 | 操作预算/限时；调整须匹配真实峰值及当前容量检查。 |
 
-## 配置字段与修改条件
+平台基础输入为`services_config_dir/credentials.yaml`，字段在`service_credentials`下。PG/Redis/Rabbit/Casdoor口令与cookie由此提供；AIStor、ELK、Neo4j、MongoDB、RAGFlow等另有组件独立输入/TLS。主目录root0700、文件0600，独立副本在`services_backup_dir`，仅同盘恢复保护。各组件README明确真实文件与账号归属。
 
-配置真源为本目录 `config.yaml`，由现有Make入口明确传给Ansible。下表说明当前支持边界；有字段不等于已有实例可直接修改。
+```sh
+make -C infrastructure services-credentials
+make -C infrastructure services-plan
+make -C infrastructure services-materials
+make -C infrastructure services-verify-materials
+make -C infrastructure services-publish
+make -C infrastructure services-tools
+make -C infrastructure services-chart
+make -C infrastructure services-render
+```
 
-| 字段 | 用途 | 修改条件与限制 |
-| --- | --- | --- |
-| `services_enabled` | 首批服务动作准入 | 当前各步骤分别检查；不是完整停服开关，不宣称所有组合已验收。 |
-| `services_config_dir` | 平台私有输入/TLS目录 | 守卫限定/etc/sunmoon/services/<集群名>；credentials.yaml已有输入保留或从备份恢复。 |
-| `services_backup_dir` | 私有输入/TLS独立副本 | 守卫限定/mnt/sunmoon-data/backups/services/<集群名>；修改密码必须另做轮换并同步备份。 |
+依赖Harbor/入口、拥有的KIND、Flux/SOPS与完整物料。credentials保留已有输入、缺主时恢复备份；已有声明而两份均丢失则拒绝生成。platform口令和业务口令分开。轮换需服务器/客户端/Secret/备份同步，不能只编辑输入。
 
-组件用户名/密码/端口的逐项边界见[服务字段表](../../docs/platform-kind-v1/services.md#字段的维护边界2026-10-03-逐项核对)。本目录只保留公共编排；组件专属配置与模板留在各组件。资源用户入口、凭据轮换和Casdoor域名/节点参数贯通尚未完成。
+render会核唯一kube-system UID，准备静态目录/模型、身份备份、证书和`.build/services`候选；ELK prepare还设置宿主sysctl。它不直接部署Kubernetes，但有宿主/文件副作用。目录属主/链接/输入漂移时拒绝，不递归改已有数据。
 
-`service_image_ids` 是本批平台镜像选择。公共准备与发布实现位于 `../artifacts/publish.yaml`，原services-plan/materials/verify-materials/publish入口不变；原services/materials.yaml已移走，无转发副本。
+## 修改配置并发布
 
-对象存储接入同一服务链，配置和专属实现位于 data-platform/object-storage；现有 services-materials/publish 覆盖固定 AIStor 与同日客户端镜像。services-stage 将已渲染声明写入工作树，不直接应用集群；提交、flux-release、核对并晋级 source-candidate 后运行 services-bootstrap。services-check 包含真实许可/TLS/版本对象读写，仅清除此轮探针。
+```sh
+make -C infrastructure services-render
+make -C infrastructure services-stage
+```
 
-## ELK 与图服务
+审查`.build/services`公开对象与秘密语义；stage拷贝已生成候选至各组件与clusters/kind/services.yaml。提交工作树后按[Flux发布与晋级](../flux/README.md#发布与显式晋级)生成、审核并晋级同一产物。stage不代表声明已生效。
 
-ELK及Neo4j复用上述物料、stage、固定源晋级、services-bootstrap/check链，无新增部署入口。用户配置和实现分别在[ELK](../../gitops/components/data-platform/elk/README.md)、[Neo4j](../../gitops/components/data-platform/neo4j/README.md)，版本摘要仍由上游镜像锁提供。
+服务开关控制新声明资源和阶段；`prune:false`保留已有对象，不自动停服/卸载。静态PV/PVC、初始化代次、目录/账号变更另看组件限制；不要用增加Job代次重置已有数据。
 
-ELK独立秘密输入为services_config_dir下elk.yaml，图管理员为neo4j.yaml，均root0600并有独立备份；不是旧credentials.yaml中的字段。不要将明文移入组件公共config.yaml。services-check只输出无秘密验收结果；修改既有密码需要轮换与备份同步，不能直接改备份触发重新生成。
+## 已晋级环境的一键部署
 
-ELK新增节点日志采集仍由同一服务链编排，配置和实际验收在ELK/collector；公共UI入口、业务图身份/接入及重启/灾备验收另有后续范围。
+```sh
+make -C infrastructure services-bootstrap
+```
 
+原生链串联凭据检查→完整镜像校验/发布→必要RAGFlow派生build/publish→工具/mc/chart→render→validate-release→Flux源apply→services-check。配置、候选公开对象及解密后的秘密须与已提交晋级版本一致；不自动部署未批准修改。此target覆盖平台，不等于宿主到所有应用全链路部署。
 
-## MongoDB
+## 实际检查与副作用
 
-MongoDB接入同一Make/Ansible/Flux服务链，用户配置、模板、独立初始化Job、协议验收和说明在[MongoDB组件](../../gitops/components/data-platform/mongodb/README.md)。镜像取统一不可变版本锁，本次官方9.0.2-noble；内部TLS单成员副本集，不具备HA。services-check验证受限库CRUD、提交/回滚、匿名/错误口令/跨库/管理权限拒绝。
+```sh
+make -C infrastructure services-check
+```
 
-私有用户名、密码和副本集密钥在services_config_dir/mongodb.yaml，证书在mongodb-tls，均有独立逐字节备份；不是公开config.yaml字段。日常公开端口/副本集名称/卷/资源参数在组件config.yaml。当前端口只支持27017；既有副本集名称、卷节点和已完成初始化Job不可随意修改，改变身份要另做轮换，不会静默重设密码。20Gi卷声明不是文件系统配额。开关不隐式删既有运行资源或数据。
+检查UID、当前Flux代次Ready、实际imageID、启用Retain卷绑定/目录，再做真实PG事务、RedisTTL唯一键、Rabbit管理API消息、CasdoorTLS登录；临时网络Pod核app→PG标签允许/拒绝。启用组件还执行S3版本/字节、中文向量、ELK写入/读取/真实采集、图事务、Mongo事务和RAGFlow解析检索。
 
-实际MongoDB Pod重建后同一随机标记、受限账号及TLS/事务验证通过，PV/PVC UID不变；临时标记已精确移除。这不代替整机/集群重启、KIND删除重建或数据库备份恢复。
+这些检查会创建本轮随机Pod/队列/对象/图节点/集合/dataset，按精确身份清理；失败清理保留信息而不扩大删除。业务AMQP和跨应用HTTP由[applications](../applications/README.md)验，不把管理API成功代替应用链。ELK data-view由声明Job初始化，check只读确认，不修复。
 
-## RAGFlow 检索服务
+## 失败、退回和数据
 
-Infinity、专用Valkey与RAGFlow均复用同一services-bootstrap/check链。配置、独立身份与实现分别位于data-platform下各组件目录；不与ELK索引或业务Redis身份混用。RAGFlow初始化由独立Job执行，API/Worker仅持DML角色；原文权威仍在业务对象存储。
+声明差异先修配置/源码并重新审阅发布；字段冲突不force接管。Job失败保留代次与错误，查其前置依赖/schema/身份；已有同名账号/卷不符须显式处理。Neo4j限定rollout恢复见[组件说明](../../gitops/components/data-platform/neo4j/README.md)。
 
-官方0.27.2镜像的UV解释器和NLTK数据位于/root，最小派生镜像调整非root读取权限，并把官方批量写入的冗余建表调用改为检查已初始化的表；固定原始文件SHA256、不升级包，缺表仍失败。构建/摘要锁及说明见[RAGFlow组件](../../gitops/components/data-platform/ragflow/README.md)。首次使用make services-ragflow-image、services-ragflow-image-publish准备；完整services-bootstrap已包含校验与发布，不需要另行手工初始化。services-check包含真实中文上传、解析和向量检索以及权限拒绝；协议结果不能替代业务领域接入或整机重建验收。
-
-2026-10-04实际结果：完整services-bootstrap连续两轮成功；RAGFlow中文纯文本上传/解析/检索与身份及DDL拒绝通过，验收临时数据含S3版本精确清空。54个运行Pod身份/重启数及13个Retain卷声明不变；具体固定源、原失败及未完成范围见根CHECKPOINT.md。这不替代知识业务领域接入、其它文档格式或整机/集群重建验收。
+退回按[Flux](../flux/README.md#故障与退回)恢复原固定源并做真实检查；schema/身份/持久数据需匹配备份，不自动随Git回滚。业务备份/轮换、统一停用、WSL/删群持久化和长期空间管理见[未完成项](../../docs/platform-kind-v1/verification.md#未完成项)。
