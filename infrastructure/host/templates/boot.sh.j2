@@ -25,6 +25,7 @@ if ! /usr/bin/python3 {{ host_runtime_dir }}/storage.py check {{ host_runtime_di
 fi
 /usr/bin/python3 {{ host_runtime_dir }}/storage.py check {{ host_runtime_dir }}/storage.json
 [[ ! -e /mnt/c/wsl-disks/sunmoon-data.maintenance ]]
+cmp --silent {{ (host_runtime_dir + "/windows-capacity.ps1") | quote }} {{ (windows_script_directory + "/windows-capacity.ps1") | quote }} || { echo "Capacity helper bytes differ" >&2; exit 1; }
 {{ windows_powershell | quote }} -NoProfile -NonInteractive -File {{ host_capacity_windows_path | quote }} -DataVhdPath {{ data_vhd_windows_path | quote }} -DataMaximumGiB {{ data_vhd_maximum_gib }} -MinimumFreeGiB {{ windows_minimum_free_gib }} -PlannedBytes 0
 systemctl start sunmoon-registry.service
 deadline=$((SECONDS + 180))
@@ -40,7 +41,7 @@ systemctl start sunmoon-cluster.service
 systemctl start sunmoon-platform.target
 {{ host_runtime_dir }}/check-nodes.sh after
 # Availability is separate from application protocol acceptance.
-deadline=$((SECONDS + 300))
+deadline=$((SECONDS + 600))
 kube=({{ (host_runtime_dir + '/kubectl') | quote }} --kubeconfig={{ cluster_kubeconfig | quote }} --context=kind-{{ cluster_name }} --request-timeout=30s)
 until "${kube[@]}" get pods -A -o json | jq -e '
   [.items[] | select(.status.phase != "Succeeded")] as $pods |
@@ -49,7 +50,10 @@ until "${kube[@]}" get pods -A -o json | jq -e '
   (( SECONDS < deadline )) || { echo 'Platform Pod availability timed out' >&2; exit 1; }
   sleep 5
 done
-"${kube[@]}" get kustomizations.kustomize.toolkit.fluxcd.io -A -o json | jq -e '
+until "${kube[@]}" get kustomizations.kustomize.toolkit.fluxcd.io -A -o json | jq -e '
   (.items | length > 0) and all(.items[]; .status.observedGeneration >= .metadata.generation and
-    any(.status.conditions[]?; .type == "Ready" and .status == "True"))' >/dev/null
+    any(.status.conditions[]?; .type == "Ready" and .status == "True"))' >/dev/null; do
+  (( SECONDS < deadline )) || { echo 'Flux reconciliation timed out' >&2; exit 1; }
+  sleep 5
+done
 echo 'Owned Harbor, TLS entry and KIND restored. Run platform-check for application protocols.'

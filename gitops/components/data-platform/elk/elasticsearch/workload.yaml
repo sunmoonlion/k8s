@@ -63,7 +63,8 @@ spec:
               cp -R /usr/share/elasticsearch/config/. /work-config/
               cp /settings/elasticsearch.yml /settings/log4j2.properties /work-config/
               mkdir -p /work-config/tls
-              cp /run/auth/private.key /run/auth/public.crt /run/auth/ca.crt /work-config/tls/
+              # emptyDir survives a node restart; replace our readonly copies on each init.
+              cp --remove-destination /run/auth/private.key /run/auth/public.crt /run/auth/ca.crt /work-config/tls/
           securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
           resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: '1', memory: 256Mi}}
           volumeMounts:

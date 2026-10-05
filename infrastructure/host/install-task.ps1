@@ -14,7 +14,10 @@ if ($OldTask -and $OldTask.State -eq 'Running') { throw 'Existing attachment tas
 if ($OldTask) {
     $OldPrincipal = [string]$OldTask.Principal.UserId
     if ($OldPrincipal -match '^S-1-') { $OldSid = ([Security.Principal.SecurityIdentifier]$OldPrincipal).Value }
-    else { $OldSid = ([Security.Principal.NTAccount]$OldPrincipal).Translate([Security.Principal.SecurityIdentifier]).Value }
+    else {
+        if ($OldPrincipal -notmatch '[\\@]') { $OldPrincipal = $env:COMPUTERNAME + '\' + $OldPrincipal }
+        $OldSid = ([Security.Principal.NTAccount]$OldPrincipal).Translate([Security.Principal.SecurityIdentifier]).Value
+    }
     if ($OldSid -ne [Security.Principal.WindowsIdentity]::GetCurrent().User.Value) { throw 'Use the existing Ubuntu owners administrator session' }
 }
 if (@($Manifest.files).Count -ne 3 -or @($Manifest.files.name | Sort-Object -Unique).Count -ne 3) { throw 'Incomplete or duplicated task input list' }

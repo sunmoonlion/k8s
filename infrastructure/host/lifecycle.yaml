@@ -97,7 +97,7 @@
           register: win_path
         - name: Resolve actual Windows UNC path to the reviewed capacity helper
           ansible.builtin.command:
-            argv: [wslpath, -w, '{{ host_runtime_dir }}/windows-capacity.ps1']
+            argv: [wslpath, -w, '{{ windows_script_directory }}/windows-capacity.ps1']
           changed_when: false
           register: capacity_windows_path
         - name: Set actual Windows paths without escaped path duplication
@@ -156,6 +156,12 @@
             path: '{{ windows_script_directory }}/candidate'
             state: directory
             mode: '0755'
+        - name: Publish the read-only capacity helper locally for RemoteSigned compatibility
+          become: false
+          ansible.builtin.copy:
+            src: windows-capacity.ps1
+            dest: '{{ windows_script_directory }}/windows-capacity.ps1'
+            mode: '0644'
         - name: Read nonsecret Windows review candidates across the filesystem boundary
           ansible.builtin.slurp:
             src: '{{ item.stat.path }}'

@@ -1,10 +1,11 @@
 #!/bin/bash
 set -euo pipefail
+case ${1:-before} in before|after|ready|stop) ;; *) echo 'Unsupported lifecycle check' >&2; exit 2 ;; esac
 trap 'echo "Owned cluster lifecycle guard failed at line $LINENO" >&2' ERR
 receipt={{ (cluster_data_root + '/' + cluster_name + '/bootstrap/identity.json') | quote }}
 expected={{ owned_identity | to_json | quote }}
 if [[ ${1:-before} != stop ]]; then
-[[ $(jq -Sc . "$receipt") == $(jq -Sc . <<< "$expected") ]]
+[[ "$(jq -Sc . "$receipt")" == "$(jq -Sc . <<< "$expected")" ]]
 /usr/bin/python3 {{ (host_runtime_dir + '/storage.py') | quote }} check {{ (host_runtime_dir + '/storage.json') | quote }}
 fi
 {% for role in ['control-plane', 'worker', 'worker2'] %}
@@ -17,7 +18,18 @@ jq -e --arg dest {{ dest | quote }} --arg src {{ source | quote }} \
   '[.[0].Mounts[] | select(.Destination == $dest)] | length == 1 and .[0].Source == $src and .[0].Type == "bind"' <<< "$json" >/dev/null
 {% endfor %}
 {% endfor %}
-if [[ ${1:-before} == after ]]; then
+if [[ ${1:-before} == ready ]]; then
+  deadline=$((SECONDS + 300))
+  kube=({{ (host_runtime_dir + '/kubectl') | quote }} --kubeconfig={{ cluster_kubeconfig | quote }} --context=kind-{{ cluster_name }} --request-timeout=10s)
+  until "${kube[@]}" get --raw=/readyz >/dev/null 2>&1; do
+    (( SECONDS < deadline )) || { echo 'Kubernetes API readiness timed out' >&2; exit 1; }
+    sleep 3
+  done
+  remaining=$((deadline - SECONDS))
+  (( remaining > 0 ))
+  "${kube[@]}" wait --for=condition=Ready nodes --all --timeout="${remaining}s"
+fi
+if [[ ${1:-before} == after || ${1:-before} == ready ]]; then
   actual=$({{ (host_runtime_dir + '/kubectl') | quote }} --kubeconfig={{ cluster_kubeconfig | quote }} --context=kind-{{ cluster_name }} --request-timeout=30s get ns kube-system -o 'jsonpath={.metadata.uid}')
   [[ $actual == {{ owned_identity.kube_system_uid | quote }} ]]
 fi

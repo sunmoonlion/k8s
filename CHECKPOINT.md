@@ -1,3 +1,14 @@
+# 当前单元：统一生命周期已安装并停止/恢复；完整验收尚未完成（2026-10-05）
+
+本节优先于下文历史。工作树platform-kind-v1/k8s。最新批准2小时维护、10GiB底线；原窗口12:19–14:19 CST。等待操作后实际接管/停止在16:00以后，停服前未及时复核到期；08:02 UTC发现后停止新增停服，只恢复。后续冷态比对/滚动修复需要新窗口，实际停服前须重新读时钟。
+
+- 独立root运行副本、systemd目标/集群/boot单元及Windows管理员任务已安装。任务Highest/Interactive、一个Logon触发、无周期，实际返回0；六节点restart=no、旧附盘unit disabled、新boot enabled。原控制面停、旧两个worker运行，全部卷保留。
+- 原生Windows安装器修正短账号SID转换；Bash JSON比较加引号；容量助手改本地C路径并cmp root副本，不绕过执行策略；API readyz及Pod/Flux加入有界等待。最终platform-start成功，57 Running/57 Ready，Flux恢复收敛。
+- 实际节点重启暴露ES init重复cp只读TLS失败，连带Kibana；只修改精确ES Pod emptyDir三副本权限恢复，未碰Secret/PVC。原j2及原生services-stage生成文件改cp --remove-destination，实际固定镜像连续复制两次摘要/0440通过；候选尚未发布、promoted仍为b14ad94c/bf243e77。下一单元先发布修复，再补实际冷态全目录及完整启停验收。
+- before/after完整catalog为40repos/103artifacts相同；13 PV/PVC、Job身份/spec、六节点ID/挂载/运行态、全部Docker卷集合一致。root证据/data/kind-clusters/sunmoon-kind/bootstrap/evidence/lifecycle-maintenance-20261005T0419Z。registry cold-before/cold-after未执行，真实WSL/Windows重启及删群重建仍待另批。
+- 初次恢复报API bootstrap RBAC not found，第二次等待因ES init故障未过，过早platform-check在Flux Progressing退出；失败日志保留。实际TLS复制检查首次镜像无cmp，改已有sha256sum后通过，未添加工具或放宽权限。
+- 当前仍有协议复核任务运行，日志/tmp/sunmoon-maint-protocols-final.log，session44390；完成后更新结果并归档/清理本轮临时文件。原回退目录/mnt/sunmoon-data/backups/host/lifecycle-a2gzkked（实际路径须按install日志复核）。不push，不改业务仓/旧sunmoonai/冻结Luna。DNS/系统信任/浏览器、重启/删群持久化、长期空间/灾备及最终清理仍有未完成项。
+
 # 当前单元：Kibana公共UI路由、独立身份及会话协议验证完成（2026-10-05）
 
 ## 2026-10-05：整套一键部署通过，生命周期候选待维护批准

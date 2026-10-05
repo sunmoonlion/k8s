@@ -1,6 +1,6 @@
 # 宿主存储与容量
 
-本模块负责宿主预检、容量守卫及[整套生命周期](lifecycle.md)编排；部署入口已实际验证，启停/开机候选待维护安装与实测。数据盘附加、整套开机恢复和运行期监控的交付状态见[验收边界](../../docs/platform-kind-v1/verification.md#未完成项)。
+本模块负责宿主预检、容量守卫及[整套生命周期](lifecycle.md)编排；部署入口已实际验证，统一启停及Windows任务已安装、实际停止/恢复已执行；开机与完整持久化验收仍待完成。数据盘附加、整套开机恢复和运行期监控的交付状态见[验收边界](../../docs/platform-kind-v1/verification.md#未完成项)。
 
 ## 数据布局
 
@@ -39,7 +39,11 @@ make -C infrastructure preflight
 | `data_vhd_windows_path` | 文本/表达式 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
 | `data_vhd_maximum_gib` | 整数 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
 | `windows_minimum_free_gib` | 整数 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
-| `windows_script_directory` | 文本/表达式 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
+| `windows_script_directory` | 路径 | 普通容量助手与管理员安装审阅副本；容量助手须与root运行副本一致。 |
+| `host_runtime_dir` | 路径 | root持有的独立运行副本，变更须维护安装；不从worktree执行开机恢复。 |
+| `wsl_distribution` | 文本 | 必须与所有者的Ubuntu发行版一致，不能更换账号创建另一套WSL。 |
+| `host_boot_enabled` | 开关 | 经platform-enable-boot生效；只有单次开机恢复，无分钟调度。 |
+| `windows_admin_directory` | 路径 | 管理员持有的不可变任务发布目录；与普通容量/审阅目录分开。 |
 
 `data_vhd_maximum_gib`须与真实VHD一致，改数字不会扩盘；`windows_powershell`和`windows_script_directory`用于只读容量采集，不是管理员附盘或自动挂载调度器。UUID/目录属于存储身份，变更必须重新核对各服务可见性。
 
