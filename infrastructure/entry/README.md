@@ -15,7 +15,7 @@ HAProxy仅读取ClientHello的SNI做TCP分流，不终止TLS、不持应用或Ha
 | `entry_runtime_dir` | 文本/表达式 | 目录责任；已有输入/数据需完整恢复和路径守卫，不能换空目录重建身份。 |
 | `entry_cluster_routes` | 列表 | 以本目录实现和下文限制为准；通过候选审阅、发布、晋级生效。 |
 
-Harbor域名优先转registry配置的loopback后端。`entry_cluster_routes`按精确域名分组，域名取各应用config，backend取cluster端口；当前Casdoor和四应用Web/Admin均声明到新集群29443。未知域名仍按`entry_cluster_backend`走原kind-worker过渡地址；不能据此宣布旧环境已完全退役。实际已验切换日期见[验收边界](../../docs/platform-kind-v1/verification.md#应用与业务链路)。
+Harbor域名优先转registry配置的loopback后端。`entry_cluster_routes`按精确域名分组，域名取各应用config，backend取cluster端口；当前Casdoor、四应用Web/Admin及Kibana均声明到新集群29443。未知域名仍按`entry_cluster_backend`走原kind-worker过渡地址；不能据此宣布旧环境已完全退役。实际已验切换日期见[验收边界](../../docs/platform-kind-v1/verification.md#应用与业务链路)。
 
 路由拒绝重复域名、覆盖Harbor、回指监听端口。更换域名联动证书SAN、应用origin、OAuth回调、Ingress和public检查；更改公开30443影响镜像引用及全部客户端，不能单处修改。
 
@@ -51,7 +51,7 @@ make -C infrastructure entry-deploy
 make -C infrastructure entry-status
 ```
 
-验收Harborhealth/token/真实拉取、目标域名真实应用public检查、未变路由。应用公共协议验收入口统一见[applications](../applications/README.md#部署与真实入口验收)。证书一致不代表浏览器登录和业务授权通过。
+验收Harborhealth/token/真实拉取、目标域名真实应用public检查、未变路由。Kibana的公共协议检查为`make -C infrastructure services-check-public`，当前实际范围和宿主DNS限制见[验收边界](../../docs/platform-kind-v1/verification.md#kibana入口的实际范围2026-10-05)。应用公共协议验收入口统一见[applications](../applications/README.md#部署与真实入口验收)。证书一致不代表浏览器登录和业务授权通过。
 
 失败先stop当前入口，恢复本次备份三文件及原权限（备份可0600，运行配置一般0644），systemd daemon-reload后entry-start，核验原路由及Harbor。恢复前核备份SHA/路径归属，不用历史某个旧代理或已删除main候选作为通用回退目标；配置未恢复时不能声称回退成功。
 

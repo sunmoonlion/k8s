@@ -1,14 +1,35 @@
-# 当前单元：Kibana公共UI与独立人工只读身份（候选已完成，尚未部署）
+# 当前单元：Kibana公共UI路由、独立身份及会话协议验证完成（2026-10-05）
 
-2026-10-05，platform-kind-v1工作树/分支，k8s单仓；基线9427473e。原生Make→Ansible→Flux/SOPS，维护2小时、容量10GiB；没有修改业务仓、push或切公开入口。
+platform-kind-v1工作树/分支，k8s单仓；基线9427473e。所有者批准本单元2小时维护，容量底线10GiB；没有修改业务仓或push，没有重建/删除集群与数据卷。整体项目尚未完成，宿主DNS/实际浏览器界面仍未完成。
 
-候选采用独立人工reader、default空间只读及sunmoon-logs-*读取，独立公开TLS，Traefik同命名空间验证内部Kibana TLS；标准CRD取固定chart，不引入Hub CRD。现有身份与所有初始化Job保持。配置/准备/实现/维护说明同处elk/kibana/ui。services-check-public复用原生平台验收。
+## 固定版本与原生实现
 
-实际通过：原生render/stage、Ansible语法、候选Kustomize（core125对象/10标准CRD，UI10对象）、CRD服务端只读dry-run、当前官方Kibana镜像Node脚本语法、HAProxy预览、既有Job对象逐一不变。尚未执行新增身份Job、角色/会话验收、发布晋级或公共切换；不能宣称UI可用。两处候选检查错误（字典items和CRD换行）已在发布前修正，原始失败保留。
+- 声明源码bf243e7721cdaf1efa7d59cd1cb41676503ec174；source digest sha256:b14ad94cabf851d611c8c3993176f40c31d04a372c1a64e0b2d57ff6390d8e42，晋级f1dd2998。初始候选db0e58c4/49bff源和失败证据保留；最终只更新维护说明/检查点，不改变晋级gitops字节。
+- UI配置、prepare、独立身份Job、IngressRoute/内部验证TLS传输、检查与维护说明同处elk/kibana/ui；仍为Make→Ansible→Flux/SOPS。标准10个CRD从已有固定Traefik chart取，不引入Hub CRD/新下载物料。CRD provider限制入口与数据命名空间，无跨命名空间/ExternalName引用；已有Ingress provider保持。
+- 入口https://kibana.sunmoonai.com:30443；独立人工账号取config中的viewer user，default空间只读和应用日志索引读，角色/用户有所有权校验；不覆盖陌生身份或重置密码。管理员只挂短暂初始化Job；运行控制器仍有原Secret读取RBAC，不能声称完全隔离。
+- 私有输入/etc/sunmoon/services/sunmoon-kind/elk-kibana-ui.yaml及独立副本逐字节一致，0600。公开TLS在kibana-ui/tls，server.key/server.crt主备一致；CSR/扩展参数可重建，不是运行备份输入。私有身份不输出、不进Git，Git仅SOPS。
 
-真实入口三文件备份及SHA/权限、Pod/PV/Flux基线、旧source在infrastructure/.build/models/kibana-ui私有证据。准备需要一次Traefik及Kibana滚动、新身份Job和限定入口切换；按所有者约定先确认本单元维护。失败按原source和备份回退，不自动删除新增身份/CRD/卷。
+## 实际结果与失败
 
-后续：维护获批后提交固定GitOps发布→显式晋级→完整services-bootstrap→真实登录/权限/会话检查→限定公开入口及原有路由回归→相同源重复部署；再按下方整体收尾顺序完成一键/启停/开机、持久化及空间管理。
+- 69个Kustomize根发布门禁、CRD服务端只读dry-run、官方镜像Node语法、HAProxy预览及原生Ansible语法通过。32个原Job声明逐一不变。
+- 三次会话验收失败依次为遗漏内部来源标记、访问退出页面未注销、注销API带AJAX标记返回400；核对官方固定镜像与官方说明后修正验收。没有放宽通过标准或服务安全配置；两条残留失败探针会话在公开切换前按新账号/basic1限定注销。
+- 完整services-bootstrap同一最终源连续两轮退出0；各12个play均failed/unreachable0。第二轮Flux/render/秘密/镜像等changed0；chart校验仅临时目录changed2，协议回执changed1，不声称绝对零文件变化。两轮后Pod/Job/PV UID/spec/重启计数相同。
+- 30443公开services-check-public退出0：TLS链/主机名、登录HTML、独立reader读视图、匿名/错误密码401、管理/写视图403、Secure/HttpOnly/SameSite cookie、会话读取及退出旧cookie401。Harbor真实完整拉取/摘要/权限拒绝、四App原生public检查全部通过，所有探针按原生规则清理。
+- 当前3节点Ready、57个Running Pod全Ready，51个Flux阶段当前代次及同一固定源Ready；13个PV Bound/Retain及身份不变。首次仅计划内Traefik/Kibana滚动，其他55个原运行Pod与32个旧Job保持；新增UI Job Complete且重复不重跑。原始kind控制面停止、两个worker运行，三新节点运行。
+- Windows hosts无Kibana域名、WSL解析失败。实际验收用127.0.0.1连接保留目标SNI/Host并验证CA；不宣称宿主DNS、浏览器界面/信任或重启/删群持久化通过。API内部契约随固定版本升级重新核验。
+
+## 证据与日常维护
+
+infrastructure/.build/models/kibana-ui保存before/applied/cutover/final、原source、三文件回退备份摘要/权限、成功与失败原始日志、public-success/backup-check/probe-session-cleanup及unit-receipt。入口备份/mnt/sunmoon-data/backups/entry/sunmoon-kind/kibana-20261005T024941Z；失败回退按entry手册先停止新代理再恢复三文件，不自动删新增身份/CRD/Secret/卷。作者实执行证据，独立审核另做。
+
+日常services-bootstrap部署已晋级平台，services-check检查集群入口，services-check-public检查公共入口（均有明确UUID/session副作用和清理）。用户配置/UI维护同组件README，改配置仍stage→提交→固定发布/显式晋级→bootstrap，不另建CLI。本轮无东京下载，自己的/tmp编辑/诊断/运行助手清理后，正式物料、输入备份和验收证据保留。
+
+## 后续顺序（不可忘）
+
+1. 整套宿主→平台→四App一键部署、单组件和配置开关、统一启停与开机顺序；补Windows/WSL DNS、浏览器信任与界面，保证原kind控制面不夺入口、无需分钟UAC。先把原生入口和服务状态/回退编排准备可审，再确认下一单元维护。
+2. WSL/KIND实际重启及KIND删除重建后，外置Harbor全目录/镜像摘要和新节点实际拉取完整验收。
+3. 容量监控/保留GC/缓存/日志/备份统一查看预览执行；删除政策先确认，保留在用/回退镜像及必要备份。机器外备份落点待所有者决定。
+4. Neo/Mongo业务需要及完整恢复、Info爬取和Investment Agent上表范围；随后最终物料/临时/远程清理、逐份维护文档收敛/导航。原始kind、新体系与Luna参考按原授权保留，云流程仍未经实机验证。
 
 ---
 
