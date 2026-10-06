@@ -43,6 +43,13 @@ git diff --stat gitops/components/app-platform | tail -3
 
 通过的样子：12 个 `image.lock.yaml` 变了（新 digest、`source_revision` 等于 sources.yaml 里的提交）。
 
+**补充（远程 2026-10-06 下午）**：原来的链把新锁写在 `.build/applications/<repo>-deployment-image.yaml`，没有一步拷进 `gitops/`。已加 `application-lock-*`（发布成功后自动调）。如果你拉到的 k8s 没有这一步（`make -n application-lock-backend APP=tpl` 报没有这个目标），或者构建跑完 `git status` 看不到 12 个锁的改动，就先拉最新的 fable，再跑一遍下面这段把锁同步过来（不重新构建）：
+
+```bash
+for a in tpl info knowledge investment; do for r in backend web admin; do make -C infrastructure application-lock-$r APP=$a; done; done
+git status --short gitops/components/app-platform | grep image.lock | wc -l   # 应是 12
+```
+
 ## 三、tpl 暂存：证明共用模板的改动对没写新字段的应用没有影响
 
 ```bash

@@ -326,6 +326,15 @@ application-publish-backend application-publish-web application-publish-admin: A
 application-publish-backend application-publish-web application-publish-admin: APPLICATION_REPOSITORY = $(APP)-$(if $(filter backend,$(APPLICATION_ROLE)),backend,$(APPLICATION_ROLE)-frontend)
 application-publish-backend application-publish-web application-publish-admin:
 	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=publish --extra-vars '{"publication_image_ids":["$(APPLICATION_REPOSITORY)"],"publication_enabled":true,"publication_capacity_operation":"application-publish-$(APP)-$(APPLICATION_ROLE)","publication_lockfile":"$(CURDIR)/.build/applications/$(APPLICATION_REPOSITORY)-images.lock.json","publication_image_directory":"$(CURDIR)/.build/applications/transfer","publication_remove_transport":true}'
+	$(MAKE) application-lock-$(APPLICATION_ROLE) APP=$(APP)
+
+# 发布成功后，把构建写在 .build/ 里的「可审阅的部署镜像锁」拷进组件目录的 image.lock.yaml（渲染只认 gitops 里这一份）。
+# 没有这一步，构建完的镜像不会进入声明（2026-10-06 发现）。单独调用也行：make application-lock-backend APP=info
+.PHONY: application-lock-backend application-lock-web application-lock-admin
+application-lock-backend application-lock-web application-lock-admin: APPLICATION_ROLE = $(patsubst application-lock-%,%,$@)
+application-lock-backend application-lock-web application-lock-admin: APPLICATION_REPOSITORY = $(APP)-$(if $(filter backend,$(APPLICATION_ROLE)),backend,$(APPLICATION_ROLE)-frontend)
+application-lock-backend application-lock-web application-lock-admin:
+	@.venv/bin/python applications/sync-image-lock.py "$(CURDIR)/.build/applications/$(APPLICATION_REPOSITORY)-deployment-image.yaml" "$(CURDIR)/../gitops/components/app-platform/$(APP)-app/$(APPLICATION_REPOSITORY)/image.lock.yaml"
 
 .PHONY: application-rehearse-downloads
 application-rehearse-downloads:

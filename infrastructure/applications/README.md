@@ -36,7 +36,7 @@ make -C infrastructure application-build-admin APP=info
 make -C infrastructure application-publish-admin APP=info
 ```
 
-缺基础物料先`application-plan`、`application-materials`；verify/publish处理基础镜像，build在线取npm/pnpm、pip/uv依赖。成品发布固定manifest，构建结果与传输归档在`.build/applications/`；生成的组件image.lock记录实际来源、recipe、基底及成品身份。发布只用独立publisher，puller核目标摘要，成功后删除本次transport，不要求以后部署保留业务离线包。
+缺基础物料先`application-plan`、`application-materials`；verify/publish处理基础镜像，build在线取npm/pnpm、pip/uv依赖。成品发布固定manifest，构建结果与传输归档在`.build/applications/`。**发布成功后`application-publish-*`会调`application-lock-*`，把`.build/applications/<repo>-deployment-image.yaml`写进组件目录的`image.lock.yaml`**（渲染只认gitops里这一份；2026-10-06之前没有这一步，锁要手工拷）。只同步锁也可以单独`make application-lock-backend APP=info`。发布只用独立publisher，puller核目标摘要，成功后删除本次transport，不要求以后部署保留业务离线包。
 
 构建输出必须为linux/amd64、预期非root用户和实际解释器版本；私有Harborauth以root0600临时配置提供。转换工具受限，不共享Docker socket。源码/配方/基底/网络输入计入本地构建身份，不混用其他应用结果。新增版本先审核源码与依赖锁，禁止构建任意dirty树。
 
