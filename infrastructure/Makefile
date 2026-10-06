@@ -427,6 +427,7 @@ platform-check-selected:
 	$(if $(filter true,$(PLATFORM_REGISTRY)),$(MAKE) registry-status)
 	$(if $(filter true,$(PLATFORM_ENTRY)),$(MAKE) entry-status)
 	$(if $(filter true,$(PLATFORM_FLUX)),$(MAKE) flux-source-status)
+	$(if $(filter true,$(PLATFORM_SERVICES)),$(MAKE) install-binaries BINARIES=mc)
 	$(if $(filter true,$(PLATFORM_SERVICES)),$(MAKE) services-check-public)
 	$(if $(filter true,$(PLATFORM_TPL)),$(MAKE) application-check-public APP=tpl)
 	$(if $(filter true,$(PLATFORM_INFO)),$(MAKE) application-check-public APP=info)

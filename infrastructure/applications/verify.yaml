@@ -481,6 +481,8 @@
               changed_when: false
               failed_when: false
               no_log: true
+            - name: Keep a private place for the integration outcome
+              ansible.builtin.file: {path: '{{ playbook_dir }}/../.build/models', state: directory, mode: '0700'}
             - name: Preserve private integration outcome for diagnosis
               ansible.builtin.copy:
                 dest: '{{ playbook_dir }}/../.build/models/knowledge-domain-last.json'
