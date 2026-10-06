@@ -46,7 +46,7 @@ spec:
   template:
     metadata:
       labels: {app.kubernetes.io/name: sandbox-provisioner}
-      annotations: {sunmoonai.com/input-sha256: '827eb323af837851c8806ad75d2e627c005a807af677b5325bd354d89c1fdc41'}
+      annotations: {sunmoonai.com/input-sha256: 'e2a37b28cbb3f9f4013bc7c76e2ec25e9fa74ea7bda89ffce1d08db8b783b3eb'}
     spec:
       serviceAccountName: sandbox-provisioner
       enableServiceLinks: false
@@ -54,7 +54,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 10003, runAsGroup: 10003, fsGroup: 10003, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: provisioner
-          image: harbor.sunmoonai.com:30443/platform/sandbox-provisioner@sha256:0a665ec737775adaf56a8c05e70f2bbb62baecadc0a932ed48ea827f5868d004
+          image: harbor.sunmoonai.com:30443/platform/sandbox-provisioner@sha256:3459b0b56fd5ac6be357137e69267a6094cc42475bfdd23ed92d49d7021b5f82
           imagePullPolicy: IfNotPresent
           env:
             - {name: SANDBOX_NAMESPACE, value: 'sandbox-platform-dev'}
@@ -62,6 +62,7 @@ spec:
             - {name: RELAY_URL, value: 'ws://relay.relay-platform-dev.svc.cluster.local:47100'}
             # 新体系按环境参数化：沙箱的网络策略里，应用（两个 MCP、runner）和会合点各在哪个命名空间
             - {name: APP_NAMESPACE, value: 'app-platform-dev'}
+            - {name: SANDBOX_IMAGE_PULL_SECRET, value: registry-puller}
             - {name: RELAY_NAMESPACE, value: 'relay-platform-dev'}
             - {name: KNOWLEDGE_MCP_URL, value: 'http://knowledge-api.app-platform-dev.svc.cluster.local:8000/api/mcp/knowledge'}
             - {name: SANDBOX_PVC_SIZE, value: '2Gi'}
