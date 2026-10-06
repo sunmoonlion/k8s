@@ -74,8 +74,32 @@
 | 公网出站的域名放行 | 标准 NetworkPolicy 不认域名。先用地址段；要精确到域名得用 Calico 的 GlobalNetworkPolicy + DNS 策略，等上云时再定 |
 | 旧 `sunmoonai/` 树 | 不删。relay、沙箱、供给器的源码还在那里面，构建链指过去 |
 
-## 七、要所有者定的
+## 七、所有者的决定（2026-10-06，「按你的建议」）
 
-1. 第二节第四行：签名密钥对放平台级输入（我建议），还是放 investment 的私有目录让另外两处去读。
-2. 第三节 knowledge：数据集从 info 的桶读，用 provider 现成的只读身份放宽前缀（我建议），还是另开一个身份。
-3. 第五节第 5 步的维护窗口什么时候给。
+1. 签名密钥对放平台级输入 `services_config_dir/workbench-signing.yaml`，investment、knowledge、relay 三处 prepare 都读它。
+2. knowledge 读 info 桶里的数据集文件：用 provider 现成的只读身份放宽前缀。
+3. 第 5 步的维护窗口到第 4 步做完再定。
+
+## 八、配置的样子（第二节的落实）
+
+各后端 `config.yaml` 新增四个字段，都可不写；不写时生成的声明一个字节不变：
+
+```yaml
+  cross_app_enabled: true          # 从三个网页端的 origin 推出 CROSS_APP_TARGETS_JSON / CROSS_APP_SOURCES_JSON
+  domain_env:                      # 明文配置，进 <app>-runtime ConfigMap
+    WORKBENCH_ENABLED: 'true'
+  domain_secrets:                  # 只写来源，值永远不进 Git；进 Secret <app>-domain-runtime
+    WORKBENCH_CREDENTIAL_KEY: {source: random}                                   # 首次生成 40 位，存 private_dir/domain.yaml（主备）
+    WORKBENCH_PROVISIONER_TOKEN: {source: component-input, name: sandbox-provisioner, key: token}
+    WORKBENCH_RELAY_ADMIN_TOKEN: {source: component-input, name: relay, key: admin_token}
+    WORKBENCH_TOKEN_SIGNING_KEY: {source: workbench-signing, key: private_key_pem}
+  domain_secrets_roles: [api, runner]   # 哪些角色拿得到这个 Secret；不写是 api、worker、runner
+  runner_replicas: 1               # 第四个角色；不写是 0，不渲染
+  domain_egress:                   # 应用级出站放行，每条一个 NetworkPolicy
+    - {name: provisioner, roles: [api], namespace_var: sandbox_namespace, pod_labels: {app.kubernetes.io/name: sandbox-provisioner}, ports: [8080]}
+    - {name: public-sites, roles: [worker], cidrs: ['1.2.3.0/24'], ports: [443]}
+  domain_ingress:                  # 应用级入站放行到 api 端口
+    - {name: sandboxes, namespace_var: sandbox_namespace, pod_labels: {sunmoonai.com/sandbox: 'true'}}
+```
+
+`domain_secrets` 的来源只有四种：`random`、`component-input`（平台级输入 `services_config_dir/<name>.yaml` 的一个键）、`workbench-signing`（共享签名密钥对，`private_key_pem` / `public_key_pem`）、`private`（所有者手工放进 `private_dir/domain.yaml` 的值，例如模型厂商的 key；prepare 只读不生成）。
