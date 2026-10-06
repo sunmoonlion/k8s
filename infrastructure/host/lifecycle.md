@@ -65,6 +65,17 @@ enable-boot先核对任务归属/权限/精确动作并完成一次真实附盘�
 
 Windows任务只附盘；WSL的Type=simple单次恢复避免回调WSL时阻塞systemd就绪。新Harbor和入口保留现有独立systemd单元，Docker重启策略仍为no。Docker本身维护后应执行platform-start/check；目前不承诺任意意外Docker退出后的自动全套恢复。
 
+## 开机恢复看哪里
+
+`sunmoon-platform-boot.service` 是 `Type=simple`（附盘要回调 WSL，不能用 oneshot 阻塞 systemd 就绪），所以 `is-active` 一启动就是 `active`。要判断恢复做完没有，看进程退出没有、结果是什么：
+
+```sh
+systemctl show sunmoon-platform-boot.service -p ExecMainPID -p ExecMainStatus -p Result
+journalctl -b -u sunmoon-platform-boot.service --no-pager | tail -5
+```
+
+`ExecMainPID=0`、`Result=success`，日志尾部是「Owned Harbor, TLS entry and KIND restored」才算完。附盘脚本从 2026-10-06 起先 `wsl --mount` 再第一次 `wsl.exe -d`：盘在 Ubuntu 启动前附好，fstab 在最初的命名空间里挂，用户会话才看得见；详见 [诊断](troubleshooting.md#开机后数据盘只有-systemd-看得见)。
+
 ## 安装状态与剩余维护
 
 2026-10-05已安装独立运行副本、管理员任务和统一目标；任务实际运行返回0，只有一个登录触发、无重复周期。六个新旧节点的自动重启均为no，新恢复单元已启用、旧附盘单元已停用。原始控制面保持停止、两worker保留运行。

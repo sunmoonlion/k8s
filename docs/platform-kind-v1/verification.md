@@ -2,6 +2,14 @@
 
 维护手册说明现在怎样操作；本页区分代码具备的能力、过去实际验证的范围及尚未完成的目标。整理日期2026-10-05，依据重构前提交d869c637及其中的代码/记录；历史运行记录沿用原结果，后续检查范围在对应小节注明；文档整理时没有重新执行部署或扫描；后续实际执行的单元在下文注明日期与范围。历史结果不能当作当前机器实时健康证明。
 
+## 真实开机恢复（2026-10-06，已验）
+
+第一次真实 WSL 开机（09:19）失败：登录时的附盘任务先 `wsl.exe -d Ubuntu` 再 `wsl --mount`，systemd 按 fstab 挂盘时盘还没附上；事后挂上的盘只在 PID 1 的挂载命名空间里，用户会话看不见。另有系统盘上 10 月 3 日的 `/data/kind-clusters/sunmoon-kind` 残留（空目录）挡住绑定，已改名为 `/data/kind-clusters.rootfs-stale-20261003`，没删。
+
+修法（k8s `76a38cdb`）：附盘脚本先附盘再启动 Ubuntu；`make` 入口在命名空间不一致时自动钻进 PID 1 的命名空间；`platform-start` 的输出先写 `/var/log/sunmoon/platform-start.log`。按「首次维护安装」流程重新装运行副本、重新发布 Windows 任务、启用 boot（待办 21，13:48）。
+
+真实重启（待办 22，13:55）：`platform-stop` → `wsl --shutdown` → 手动触发附盘任务（`LastTaskResult` 0）→ `sunmoon-platform-boot.service` `active`、`Result=success`，14:01 打印已恢复 Harbor、入口和 KIND；新会话与 PID 1 同一命名空间，两个 bind 都在数据盘；`platform-status` 退出 0，3 节点 Ready、Flux 阶段全 Ready、无异常 Pod；旧 kind 三个容器保持退出。注意：这个单元是 `Type=simple`，`is-active` 一启动就是 `active`，要看进程是否退出（`systemctl show sunmoon-platform-boot.service -p ExecMainPID -p Result`），不能拿早读的 `platform-status` 当结果。证据：`sunmoonai/scripts/results/boot-order-install.20261006-135027.md`、`real-wsl-reboot.20261006-135543.md`。仍未验：Windows 整机重启（注销再登录的真实登录触发）、删群冷建。
+
 ## 整套入口与开机恢复（2026-10-05）
 
 新增`platform-deploy`实际跑过从Harbor/入口/KIND到Flux、平台及四个应用的原生入口，全部退出0；各阶段部署资源未报告变更，写入包括模块选择、临时目录和验收回执。首次把多模块import到同一Ansible进程的候选在Flux工具变量污染处失败（此前changed0），已移除；最终由Make分别调用独立原生进程。统一公共入口platform-check也实际退出0（10段），覆盖Kibana、平台及四应用协议；最终3节点Ready、57个Running Pod全部Ready、0 Failed、51个Flux阶段当前代次Ready、13 PV Bound/Retain，旧控制面仍停。使用已有数据与已晋级声明，不代表从空主机/删群冷建已通过。日志私有保存在`/data/kind-clusters/sunmoon-kind/bootstrap/evidence/lifecycle-20261005/`。
@@ -107,7 +115,7 @@ tpl/info公共入口在2026-10-03验证，knowledge/investment在2026-10-04验�
 
 | 顺序 | 目标 | 退出条件 |
 |---|---|---|
-| 1 | 开机恢复与冷建的剩余验证 | 已晋级环境的一键部署、统一启停和重复启动已实演；配置开关/单组件入口保留。仍须实际Windows/WSL启动及空集群恢复，确认旧kind不夺入口、无需重复UAC |
+| 1 | 开机恢复与冷建的剩余验证 | **WSL 真实重启已验（2026-10-06，见上）**。仍须：Windows 整机重启的真实登录触发；空集群恢复，确认旧kind不夺入口、无需重复UAC |
 | 2 | Harbor独立持久化 | 分别实际WSL/KIND重启与KIND删除重建；Harbor全目录/镜像摘要完整、新节点认证真实拉取；保护其它集群与数据 |
 | 3 | 长期空间管理 | 容量持续查看/告警，统一查看/预览/执行；Harbor保留/GC、构建缓存、日志轮转与索引、备份轮换；区分自动/人工，删除策略先审批，保护在用/回退镜像与必要备份 |
 | 4 | 数据与身份灾备 | 各数据库、对象原文、私有输入完整备份及恢复实演；机器外落点由所有者选定，同盘备份不防硬件故障 |
