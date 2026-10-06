@@ -14,6 +14,8 @@ images:
     version: Python 3.13.15
   sandbox-provisioner:
     object: sandbox-platform/provisioner
+    # 30e965a1：沙箱 Pod 带拉取凭据
+    revision: 30e965a1626270af1521c5fdc991debafa51464d
     context: sunmoonai/sandbox-platform/provisioner
     dockerfile: Dockerfile
     base: python
