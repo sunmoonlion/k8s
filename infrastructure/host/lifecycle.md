@@ -17,6 +17,8 @@ make -C infrastructure platform-check
 
 ## 日常统一启停（两轮停启已验证）
 
+**单独停一个单元**（2026-10-06）：`sunmoon-platform.target` 原来 `Requires=` 三个服务，systemd 会把「显式停其中一个」传播成「停目标」，目标再通过 drop-in 的 `PartOf=` 把另外两个也停掉——第 27 轮 `entry-stop` 就这样连带停了 Harbor 和集群。模板已改成 `Wants=`（`platform-stop` 本来就是逐个停、`boot.sh` 逐个启，不依赖 Requires），要重装运行副本（`platform-install-lifecycle`）才生效；重装前任何 `entry-stop` / `registry-stop` 都等于整套停。
+
 ```sh
 make -C infrastructure platform-plan
 make -C infrastructure platform-status

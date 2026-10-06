@@ -37,7 +37,7 @@ make -C infrastructure entry-stop
 make -C infrastructure entry-start
 ```
 
-`entry-deploy`生成/启动入口，不替用户停止别的监听者；运行中发现配置差异会拒绝，必须维护stop→deploy。start用已部署配置；status/stop只作用当前sunmoon-entry。
+`entry-deploy`生成/启动入口，不替用户停止别的监听者；运行中发现配置差异会拒绝，必须维护stop→deploy。start用已部署配置；status/stop只作用当前sunmoon-entry。（2026-10-06 查出：统一目标原用 `Requires=` 牵三个单元，单独 `entry-stop` 会把 Harbor 和集群一起停掉；模板已改 `Wants=`，要 `platform-install-lifecycle` 重装一次才生效，见待办 28。重装前别单独停入口或 Harbor。）
 
 ## 配置或域名切换
 

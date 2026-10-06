@@ -1,4 +1,6 @@
 [Unit]
 Description=SunMoon local platform (owned Harbor, entry and KIND)
-Requires=sunmoon-registry.service sunmoon-entry.service sunmoon-cluster.service
+# Wants 而不是 Requires：Requires 会把「单独停一个服务」传播成「停目标」，目标再按 PartOf 把另外两个也停掉
+# （2026-10-06 第 27 轮：entry-stop 连带停了 Harbor 和集群）。统一停靠 platform-stop 逐个停；统一启靠 boot.sh 逐个启。
+Wants=sunmoon-registry.service sunmoon-entry.service sunmoon-cluster.service
 After=sunmoon-registry.service sunmoon-entry.service sunmoon-cluster.service
