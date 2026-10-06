@@ -22,6 +22,7 @@
 | 平台部署/检查 | [services](../infrastructure/services/README.md) | 平台bootstrap存在 |
 | 应用构建/发布/部署/真实检查 | [applications](../infrastructure/applications/README.md) | 4应用共享原生入口 |
 | 理解职责/适用边界 | [架构](platform-kind-v1/architecture.md) | 稳定设计 |
+| 看用户、本地代理、沙箱、会合点、供给器怎么连 | [拓扑](拓扑.md) | 图与各自职责 |
 | 看已验证和未完成 | [验收边界](platform-kind-v1/verification.md) | 带日期结论，不代表实时状态 |
 
 ## 日常规则
