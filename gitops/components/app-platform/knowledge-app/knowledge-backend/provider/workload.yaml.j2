@@ -40,7 +40,13 @@ spec:
               fi
               mc stat 'owned/{{ cfg.knowledge_provider.source_bucket }}'
               mc admin policy create owned knowledge-source-read /run/policy/policy.json
-              mc admin policy attach owned knowledge-source-read --user '{{ cfg.knowledge_provider.source_user }}'
+              # 重跑（代次升级、策略放宽）时策略早已挂在用户上：MinIO 对「已生效的变更」报错，这一种不算失败
+              if ! mc admin policy attach owned knowledge-source-read --user '{{ cfg.knowledge_provider.source_user }}'; then
+                case "$(cat /work/result.json /work/error.log)" in
+                  *'already in effect'*|*AlreadyApplied*) : ;;
+                  *) printf 'Policy attach failed\n' >&2; exit 1 ;;
+                esac
+              fi
               if mc admin info reader; then exit 1; fi
               case "$(cat /work/result.json /work/error.log)" in
                 *AccessDenied*|*'Access Denied'*) : ;;
