@@ -88,9 +88,11 @@ investment_backend_deployment:
   domain_ingress:
     - {name: sandboxes, namespace_var: sandbox_namespace, pod_labels: {sunmoonai.com/sandbox: 'true'}}
 
-  # 所有者 2026-09-29 定：撤销 investment → knowledge 的检索身份（没有使用方了）
+  # 所有者 2026-09-29 定：撤销 investment → knowledge 的检索身份（没有使用方了）。
+  # 2026-10-06 暂时保留：knowledge 的接收端把 ingest 与 retrieve 两个绑定写死成一对（阶段依赖、校验、运行声明、
+  # 检查都按两个来），关掉这一个要先改共用模板。待办 23 撞上了，先按原样部署，撤销另开一轮（迁移账本 21）。
   knowledge_service:
-    enabled: false
+    enabled: true
     application: sunmoonai-investment-knowledge-retrieve
     client_id: sunmoon-investment-knowledge-retrieve
     organization: sunmoon-workload-investment-knowledge
