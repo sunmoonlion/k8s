@@ -396,6 +396,9 @@ platform-deploy-selected:
 	$(if $(filter true,$(PLATFORM_REGISTRY)),$(MAKE) registry-deploy)
 	$(if $(filter true,$(PLATFORM_ENTRY)),$(MAKE) entry-deploy)
 	$(if $(filter true,$(PLATFORM_CLUSTER)),$(MAKE) cluster-deploy)
+	# 先把选中阶段要用的平台镜像发到 Harbor，再让 Flux 应用源：整套声明是一个包，源一应用所有阶段就开始拉镜像
+	# （2026-10-06 第 27 轮：三个控制台镜像没发布，根调和等 10 分钟超时，发布那一段排在源应用之后根本没跑到）
+	$(if $(filter true,$(PLATFORM_SERVICES)),$(MAKE) services-verify-materials services-publish SERVICE_IMAGES=$(PLATFORM_SERVICE_IMAGES))
 	$(if $(filter true,$(PLATFORM_FLUX)),$(MAKE) flux-bootstrap)
 	$(if $(filter true,$(PLATFORM_FLUX)),$(MAKE) foundations-check)
 	$(if $(and $(filter true,$(PLATFORM_FOUNDATIONS)),$(filter false,$(PLATFORM_SERVICES))),$(MAKE) services-render services-validate-release foundations-bootstrap foundations-check)
