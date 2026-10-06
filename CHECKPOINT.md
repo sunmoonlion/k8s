@@ -153,4 +153,4 @@ Casdoor真实检查先失败，原因是把Go IsGlobalAdmin()方法当JSON属性
 - 待办 21、22（2026-10-06 13:48–14:05）：附盘顺序修好、运行副本和 Windows 任务重新发布、真实 `wsl --shutdown` 后平台自己恢复（`verification.md`「真实开机恢复」）。开机恢复这一条闭合；Windows 整机重启、删群冷建仍未验。
 - `infrastructure/` 的收敛（所有者 2026-10-06 问）：现在不动。B 段和 Jenkins 一起做入口收敛、`applications/` → `build/`、检查并进 `components/`；D 段换 Argo 时渲染层整体换掉；`artifacts/` 不重构。见 0010 第九节。
 - 待办 23、23b、24、25（2026-10-06 下午，fable 工位）：12 个应用镜像按 fable 源码构建并发布，锁进 `gitops/`（`7800e159`）；会合点、供给器镜像发布并暂存（`005bd0e0`）；info、investment 候选暂存（`ee6e0216`），四个部署计划核到 fable 的迁移 head。没过的：沙箱镜像 1200 秒超时且没留日志；会合点暂存因阶段图漂移拒绝；knowledge 暂存卡在供给器前缀断言。远程处理（`e3ce871f`、`0559d44d`）：组件镜像脏树检查只看自己的源码目录、构建日志边跑边落盘、超时按镜像配（沙箱 3600）、Debian 源随下载模式、组件镜像可各钉各的提交、knowledge 只读前缀放宽到 `info/`（供给 Job 代次 v2，容忍「策略已挂」）。收尾在待办 26。
-
+- 待办 26（2026-10-06 16:22–16:46，三次续跑）：沙箱镜像按 fable 源码建成（76 秒，`platform/sandbox@…e758ccb2…`，钉 `e3ce871f`），供给器候选的 `SANDBOX_IMAGE` 跟着换；会合点再暂存无差异；knowledge 暂存通过（`domain.sops.yaml` 只有验签公钥、密文；供给策略前缀 `info/`、Job 代次 v2）；四个部署计划与 `platform-plan OBJECT=all` 退出 0。途中两处修正：Debian 源改 http（slim 基础镜像没有 ca-certificates，`86d8f6de`）；只引用签名密钥对的应用不要求 `private_dir/domain.yaml`（`7f756882`）。0010 第 0–4 步闭合；第 5 步（待办 27）等维护窗口。
