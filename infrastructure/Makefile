@@ -391,6 +391,7 @@ platform-deploy-selected:
 	@.venv/bin/python -c 'import json,os; d=json.load(open("$(SELECTION_PREFIX).json")); assert d["object"]==os.environ["OBJECT"] and d["action"]=="deploy", "Run the public platform-deploy entry to validate this object afresh"'
 	$(MAKE) preflight
 	$(ANSIBLE) -i host/inventory.yaml host/dependencies.yaml $(CONFIG_ARGS)
+	$(if $(or $(filter true,$(PLATFORM_REGISTRY)),$(filter true,$(PLATFORM_ENTRY))),$(MAKE) install-binaries BINARIES=compose)
 	$(if $(filter true,$(PLATFORM_REGISTRY)),$(MAKE) prepare-harbor-materials)
 	$(if $(filter true,$(PLATFORM_REGISTRY)),$(MAKE) registry-deploy)
 	$(if $(filter true,$(PLATFORM_ENTRY)),$(MAKE) entry-deploy)
