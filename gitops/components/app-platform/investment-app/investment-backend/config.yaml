@@ -84,7 +84,8 @@ investment_backend_deployment:
   domain_secrets_roles: [api, runner]
   domain_egress:
     - {name: provisioner, roles: [api], namespace_var: sandbox_namespace, pod_labels: {app.kubernetes.io/name: sandbox-provisioner}, ports: [8080]}
-    - {name: relay-admin, roles: [api], namespace_var: relay_namespace, pod_labels: {app.kubernetes.io/name: relay}, ports: [47100]}
+    # runner 也要到会合点的管理口：它隔 10 秒问一次谁在线，登记「我的机器」、置在线离线（账 49）
+    - {name: relay-admin, roles: [api, runner], namespace_var: relay_namespace, pod_labels: {app.kubernetes.io/name: relay}, ports: [47100]}
     - {name: sandboxes, roles: [runner], namespace_var: sandbox_namespace, pod_labels: {sunmoonai.com/sandbox: 'true'}, ports: [47800]}
   domain_ingress:
     - {name: sandboxes, namespace_var: sandbox_namespace, pod_labels: {sunmoonai.com/sandbox: 'true'}}
