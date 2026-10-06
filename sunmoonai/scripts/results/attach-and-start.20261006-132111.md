@@ -124,3 +124,36 @@ nsenter storage.py check 退出 0
 ```
 
 bind 在 PID 1 的挂载命名空间里已经成立。待办那条不进这个命名空间的 `check` 和 `findmnt` 仍看到系统盘。
+
+## 续二（换 wsl.exe 起的 shell）
+
+时间：2026-10-06 13:26 +0800。第 2 步 `check` 退出 1，第 3、4 步没有做。
+
+### 1. 两个挂载命名空间
+
+```
+readlink /proc/self/ns/mnt          mnt:[4026532225]   exit=0
+sudo readlink /proc/1/ns/mnt        mnt:[4026532219]   exit=0
+```
+
+两个不一样。PID 1 里 `findmnt -T /data/kind-clusters` 仍是 `/dev/sde[/kind-clusters]`，退出 0。
+
+### 2. wsl.exe 起的 shell
+
+```
+/mnt/c/Windows/System32/wsl.exe -d Ubuntu -u zymun -- bash -lc '...'
+```
+
+这个 shell 的命名空间是 `mnt:[4026532225]`，和当前终端相同，不是 PID 1。`findmnt` 里 `/data/kind-clusters` 和 `/data/harbor` 都还在 `/`（`/dev/sdd`）。
+
+`storage.py check` 的原话：
+
+```
+Storage blocked: Wrong/missing UUID or bind root: /data/kind-clusters
+```
+
+`wsl.exe` 自身退出码是 **1**（用 `false` 对照，`wsl.exe` 会把内部退出码传出来，`false` 的退出码是 1）。第一次在脚本里写 `echo exit=$?` 时，外层 shell 把 `$?` 换成了 0，那个 0 不作数。
+
+### 3、4
+
+没有跑 `platform-start`、状态、四个数量、`platform-check`、relay 镜像。
