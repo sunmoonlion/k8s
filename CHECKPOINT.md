@@ -139,3 +139,12 @@ Casdoor真实检查先失败，原因是把Go IsGlobalAdmin()方法当JSON属性
 所有者决定（2026-10-06，远程记）：新体系由远程接着做完，本地由 Cursor 按 `sunmoonai/docs/dev-investment-agent/switch-test/inbox/` 的待办跑。主线改两处：**B 段的 CI 是宿主上的 Jenkins**（容器，调本目录的 `make` 目标，不进集群），不再是 `make ci`；**D 段冷建 `sunmoonai-kind` 之前把 Flux 换成 Argo CD，并趁机规范化**（组件改 Helm chart / Kustomize overlay 让 Argo 原生渲染，依赖改 sync wave / app-of-apps，晋级钉 Git 提交号，密文走 ksops；Ansible 只留宿主与建群）。Flux 在现网用到退役为止。parity 不变：一套声明，环境只差参数。详见 `sunmoonai/docs/dev-investment-agent/tree-build/decisions.md`。
 
 所有者决定（2026-10-06）：mongo-express / sandbox 保持默认关；不重建 Harbor 自研镜像。Jenkins 再议：现网 Harbor 已是宿主模块，不是集群内 `cicd-platform`；本机 KIND 旧体系也未跑 Jenkins。冷建路径下 A 收口不必 flux-release/晋级/deploy；这三步只在 D 冷建 `sunmoonai-kind` 前做一次，且只发布到 Harbor、晋级环境源指针，不往现网 `sunmoon-kind` 部署。当前主线：A 离线收口（审阅/本地提交）→ B `make ci` → C 环境参数化 → D 发布晋级并冷建。
+
+---
+
+# 远程接手后的事实（2026-10-06 起）
+
+- 分支：新体系已并入 `fable`，此后在 `fable` 上改、在 `fable` 工位跑；待办在 `sunmoonai/docs/dev-investment-agent/switch-test/inbox/`，结果在 `sunmoonai/scripts/results/`。
+- 待办 18（2026-10-06 12:55 +0800，fable 工位）：工具装上（`.venv` 37M、`.tools` 481M），`platform-plan OBJECT=all` 退出 0；`preflight`、`platform-status` 退出 2——`/data/kind-clusters`、`/data/harbor` 两个 bind 不在，`sunmoon-kind` 三节点、Harbor、入口容器和旧 kind 两个 worker 都在约 4 小时前同时退出（255），API 27443、Harbor 30443 都没在听。**这是第一次真实 WSL 开机，单次开机恢复单元没有把平台恢复起来**（验收边界「未完成项」第 1 条的实际表现）。待办 19 先查它停在哪，再用 `platform-start` 恢复。
+- 本地助手的接手说明（结果文件第六节）：A 段还没做的——聚合源清理、入口收敛、重构后的 flux-release/晋级/部署、`make ci`、环境参数化；`flux-source.yaml` 仍指 `e59bdc00`/`e26d2a19`，与 `fb55eced` 之后的工作区不是同一提交，集群起来后也不能直接 `platform-deploy` 这次重构；`platform-kind-v1` 工位里唯一没提交的是密码表；`services-stage` 这个名字还在但和 `platform-stage` 同一渲染器；foundations 的 prepare 会重加密已有拉取密钥，要按等载荷恢复；晋级的 revision 必须是 OCI 包对应的 Git SHA。
+
