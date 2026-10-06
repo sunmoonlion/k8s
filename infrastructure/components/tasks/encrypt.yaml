@@ -1,4 +1,22 @@
 ---
+# 「只加密有变化的输入」的基准是候选目录里上一次的密文。新工位的 .build/ 是空的，基准就得从已提交的 gitops 取：
+# 否则同样的明文会被重新加密（新 nonce、新 mac、lastmodified 变），整仓的 sops 文件全都变（2026-10-06 待办 23b 实测）。
+- name: Inspect the candidate and the committed ciphertext
+  ansible.builtin.stat: {path: '{{ item }}', follow: false}
+  loop: ['{{ build }}/{{ secret_item.file }}', '{{ components_root }}/{{ secret_item.file }}']
+  register: ciphertexts
+  no_log: true
+- name: Seed the candidate from the committed ciphertext when this worktree has none yet
+  ansible.builtin.copy:
+    src: '{{ components_root }}/{{ secret_item.file }}'
+    dest: '{{ build }}/{{ secret_item.file }}'
+    remote_src: true
+    owner: '{{ cluster_operator }}'
+    mode: '0644'
+  when:
+    - not ciphertexts.results[0].stat.exists
+    - ciphertexts.results[1].stat.exists and ciphertexts.results[1].stat.isreg | default(false) and not ciphertexts.results[1].stat.islnk | default(false)
+  no_log: true
 - name: Read prior ciphertext through the independent backup identity
   ansible.builtin.command:
     argv: ['{{ tools }}/sops', decrypt, --output-type, json, '{{ build }}/{{ secret_item.file }}']
