@@ -14,6 +14,8 @@
       - cfg.domain_secrets | default({}) | list | intersect(domain_managed_keys) | length == 0
       - cfg.domain_secrets | default({}) | list | intersect(cfg.domain_env | default({}) | list) | length == 0
       - cfg.domain_secrets | default({}) | dict2items | map(attribute='value.source') | difference(['random','component-input','workbench-signing','private']) | length == 0
+      # 随机值的格式：token（40 位字母数字，默认）或 fernet（32 字节的 urlsafe base64，给 cryptography.Fernet 用）
+      - cfg.domain_secrets | default({}) | dict2items | map(attribute='value.format') | map('default', 'token') | difference(['token','fernet']) | length == 0
       - cfg.domain_secrets_roles | default(['api','worker','runner']) | difference(['api','worker','scheduler','runner']) | length == 0
       - cfg.runner_replicas | default(0) | int >= 0
       - cfg.tmp_size_limit | default('64Mi') is match('^[1-9][0-9]*(Mi|Gi)$')
@@ -57,6 +59,7 @@
     cross_app_enabled: '{{ cfg.cross_app_enabled | default(false) | bool }}'
     domain_random_keys: '{{ cfg.domain_secrets | default({}) | dict2items | selectattr("value.source", "equalto", "random") | map(attribute="key") | list }}'
     domain_private_keys: '{{ cfg.domain_secrets | default({}) | dict2items | selectattr("value.source", "equalto", "private") | map(attribute="key") | list }}'
+    domain_random_formats: '{{ dict(cfg.domain_secrets | default({}) | dict2items | selectattr("value.source", "equalto", "random") | map(attribute="key") | zip(cfg.domain_secrets | default({}) | dict2items | selectattr("value.source", "equalto", "random") | map(attribute="value.format") | map("default", "token"))) }}'
     domain_component_inputs: '{{ cfg.domain_secrets | default({}) | dict2items | selectattr("value.source", "equalto", "component-input") | map(attribute="value.name") | list | unique }}'
     domain_signing_needed: '{{ cfg.domain_secrets | default({}) | dict2items | selectattr("value.source", "equalto", "workbench-signing") | list | length > 0 }}'
 # ---------------- 跨应用链接：从三个网页端的 origin 推出，不手配 ----------------
@@ -116,7 +119,7 @@
             force: false
             mode: '0600'
             content: |
-              {% for key in domain_random_keys %}{{ key }}: {{ lookup('password', '/dev/null', length=40, chars=['ascii_letters','digits']) }}
+              {% for key in domain_random_keys %}{{ key }}: {{ (lookup('password', '/dev/null', length=32, chars=['ascii_letters','digits']) | b64encode) if domain_random_formats[key] == 'fernet' else lookup('password', '/dev/null', length=40, chars=['ascii_letters','digits']) }}
               {% endfor %}
           when: not domain_files.results[0].stat.exists and not domain_files.results[1].stat.exists and domain_random_keys | length > 0
           no_log: true
@@ -140,7 +143,7 @@
             that:
               - item in domain_private_values
               - domain_private_values[item] is string and domain_private_values[item] | length >= 8
-              - item not in domain_random_keys or domain_private_values[item] is match('^[a-zA-Z0-9]{40}$')
+              - item not in domain_random_keys or domain_private_values[item] is match('^[A-Za-z0-9_-]{43}=$' if domain_random_formats[item] == 'fernet' else '^[a-zA-Z0-9]{40}$')
             fail_msg: 'private_dir/domain.yaml lacks {{ item }}: random keys are generated once; private keys are placed by the owner'
           loop: '{{ domain_random_keys + domain_private_keys }}'
           no_log: true

@@ -76,7 +76,8 @@ investment_backend_deployment:
     WORKBENCH_RECORDS_MCP_ENABLED: 'true'
     WORKBENCH_RECORDS_MCP_URL: 'http://investment-api.{{ app_namespace }}.svc.cluster.local:8000/api/mcp/workbench'
   domain_secrets:
-    WORKBENCH_CREDENTIAL_KEY: {source: random}
+    # Fernet 密钥（后端用 cryptography.Fernet 加密用户的模型 key）：2026-10-06 第 7 步登记 key 报 internal_error，原因是默认的 40 位随机串不是 Fernet 格式
+    WORKBENCH_CREDENTIAL_KEY: {source: random, format: fernet}
     WORKBENCH_PROVISIONER_TOKEN: {source: component-input, name: sandbox-provisioner, key: token}
     WORKBENCH_RELAY_ADMIN_TOKEN: {source: component-input, name: relay, key: admin_token}
     WORKBENCH_TOKEN_SIGNING_KEY: {source: workbench-signing, key: private_key_pem}
