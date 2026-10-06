@@ -2,7 +2,7 @@
 
 ```text
 被测仓：k8s，本地路径 ~/worktrees/fable/k8s（新体系 infrastructure/、gitops/ 已从 platform-kind-v1 合进 fable，内容逐字相同）
-跑：按下面编号步骤做（装工具 → 只读入口 → 现网只读状态 → 查 relay 镜像的来历）
+跑：按下面编号步骤做（装工具 → 只读入口 → 现网只读状态 → 查 relay 镜像的来历 → 写一段接手说明）
 仓与提交：k8s 本条待办所在的 fable 头；四个应用父仓 fable 头（tpl 6579f30、info 6729dd0、investment 8bb0a42、knowledge 116930f）
 预计：30 分钟；要 WSL、Docker、Harbor 在跑、sunmoon-kind 在跑；不需要停服，不需要维护窗口
 看什么：第 2 步 help/config/preflight 退出 0；第 3 步 platform-plan/status 退出 0 且 status 看到的阶段数、Pod 数和 CHECKPOINT.md「已完成的运行状态」一致；第 4 步 relay 镜像的标签里有没有源码提交号
@@ -82,3 +82,17 @@ sha256sum ~/worktrees/fable/k8s/sunmoonai/relay-platform/relay/relay.py
 5. 装工具一共用了多少磁盘（`du -sh infrastructure/.venv infrastructure/.tools`）。
 
 结论只写「通过 / 不通过 / 判断不了」，三种之一。
+
+## 六、接手说明（本地助手自己写，放在回传的最后）
+
+所有者说明：新体系后半段的重构（`CHECKPOINT.md`「重构检查点（接手后，2026-10-05起）」以后的部分）是本地助手做的，远程只读过文档。所以请本地助手把**文档里没写、只在你脑子里或只在本地工位里的事**写下来，远程接着开发时照它做：
+
+1. 没做完的事：A 段「离线收口」里哪些做了一半（检查点提到「聚合源码清理、入口收敛未做」），各停在哪个文件、哪一步。
+2. 只在本地、没进 Git 的东西：`~/worktrees/platform-kind-v1/k8s` 里没提交的改动（`git status --short` 整段贴上，口令不贴）、`infrastructure/.build/` 里现在有哪些候选、`.build/flux/source-candidate.yaml` 的内容（摘要和修订号）。
+3. 现网 `sunmoon-kind` 的工作区 `gitops/` 和已晋级对象是不是一致（`validate-release` 现在会不会拒绝 `platform-deploy`）；不一致的话差在哪些文件。
+4. 原始旧 kind 集群现在的状态：停着还是删了，哪些东西还引用它（入口的默认后端、旧 Harbor、旧物料根）。
+5. 冷建 `sunmoonai-kind` 时定过但没写进文档的决定，例如命名空间、入口端口、存储路径。
+6. 你认为远程接手后最容易踩的三个坑。
+
+写成一段 Markdown，放在回传文件最后一节「接手说明」里。不用改代码，不用改文档。
+
