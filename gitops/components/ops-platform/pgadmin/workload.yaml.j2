@@ -41,9 +41,12 @@ spec:
           volumeMounts:
             - {name: data, mountPath: /var/lib/pgadmin}
             - {name: tmp, mountPath: /tmp}
+            # 启动时要建 /var/log/pgadmin；根文件系统只读，给它一块临时卷（2026-10-06 第 27 轮，退出 3）
+            - {name: logs, mountPath: /var/log/pgadmin}
       volumes:
         - {name: data, persistentVolumeClaim: {claimName: pgadmin-data}}
         - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+        - {name: logs, emptyDir: {sizeLimit: 64Mi}}
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute

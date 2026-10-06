@@ -350,9 +350,12 @@ application-stage:
 application-validate-release:
 	$(MAKE) services-validate-release OBJECT=app-platform/$(APP)-app
 application-check-public:
+	$(MAKE) install-binaries BINARIES=mc
 	$(ANSIBLE) -i host/inventory.yaml applications/verify.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=check application_check_public=true'
 
 application-check:
+	# 对象存储与知识源的验证脚本要用本工位的 .tools/bin/mc（第 27 轮：整套部署没跑到装它那一步，检查报 FileNotFoundError）
+	$(MAKE) install-binaries BINARIES=mc
 	$(ANSIBLE) -i host/inventory.yaml applications/verify.yaml $(CONFIG_ARGS) --extra-vars 'application_name=$(APP) application_action=check'
 # Executes only the explicitly promoted Git release. Source publication precedes deployment.
 application-bootstrap:
