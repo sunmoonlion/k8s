@@ -18,8 +18,9 @@ spec:
   routes:
     - kind: Rule
       match: 'Host(`neo4j.sunmoonai.com`)'
-      # 不透传 Host：Traefik 对后端的 SNI 是集群内名字，而透传的 Host 是公网名字，Neo4j 的 Jetty 核 SNI 与 Host 不一致就回 400 Invalid SNI（2026-10-06 第 27 轮）
-      services: [{name: neo4j, port: https, scheme: https, serversTransport: neo4j-internal, passHostHeader: false}]
+      # 透传 Host：Neo4j 的 Jetty 核的是 Host 头与它自己证书的名字，所以公网名字进了 Neo4j 内部证书的 SAN（neo4j/prepare.yaml）；
+      # 不透传时 Traefik 会把 Host 换成后端 Pod 的 IP，同样 400（2026-10-06 第 27 轮两次试出来的）
+      services: [{name: neo4j, port: https, scheme: https, serversTransport: neo4j-internal}]
   tls: {secretName: neo4j-ui-tls}
 ---
 apiVersion: networking.k8s.io/v1

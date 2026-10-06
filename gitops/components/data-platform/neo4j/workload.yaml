@@ -56,7 +56,7 @@ spec:
   template:
     metadata:
       labels: {app.kubernetes.io/name: neo4j}
-      annotations: {sunmoonai.com/input-sha256: '14ccce360c28d40d0bf492694b9b0d64b7783329c26cb900a14a9a552291abeb'}
+      annotations: {sunmoonai.com/input-sha256: '00ed6657cda96819b9824571d3681748aa987ac87bfba28076a0d4878117c509'}
     spec:
       serviceAccountName: platform-runtime
       enableServiceLinks: false
