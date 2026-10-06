@@ -228,23 +228,23 @@
           loop:
             - {name: '{{ application_name }}-database-{{ cfg.database_bootstrap_revision }}', namespace: '{{ data_namespace }}'}
             - {name: '{{ migration_job }}', namespace: '{{ cfg.namespace }}'}
-            - {name: '{{ application_name }}-redis-{{ cfg.redis_identity_revision }}', namespace: '{{ data_namespace }}'}
-            - {name: '{{ application_name }}-rabbitmq-{{ cfg.rabbitmq_identity_revision }}', namespace: '{{ messaging_namespace }}'}
-            - {name: '{{ application_name }}-identity-{{ cfg.identity_revision }}', namespace: '{{ app_namespace }}'}
+            - {name: '{{ application_name }}-redis-{{ app_images.backend.digest[7:19] }}-{{ cfg.redis_identity_revision }}', namespace: '{{ data_namespace }}'}
+            - {name: '{{ application_name }}-rabbitmq-{{ app_images.backend.digest[7:19] }}-{{ cfg.rabbitmq_identity_revision }}', namespace: '{{ messaging_namespace }}'}
+            - {name: '{{ application_name }}-identity-{{ app_images.backend.digest[7:19] }}-{{ cfg.identity_revision }}', namespace: '{{ app_namespace }}'}
           register: completion
           changed_when: false
           failed_when: completion.rc != 0 or completion.stdout != '1'
         - name: Require isolated service identity initialization completed
           when: service_enabled
           ansible.builtin.command:
-            argv: '{{ kube + ["get","job",application_name + "-service-identity-" + cfg.knowledge_service.job_revision,"-n",app_namespace,"-o","jsonpath={.status.succeeded}"] }}'
+            argv: '{{ kube + ["get","job",application_name + "-service-identity-" + app_images.backend.digest[7:19] + "-" + cfg.knowledge_service.job_revision,"-n",app_namespace,"-o","jsonpath={.status.succeeded}"] }}'
           register: workload_complete
           changed_when: false
           failed_when: workload_complete.rc != 0 or workload_complete.stdout != "1"
         - name: Read service identity acceptance without exposing private inputs
           when: service_enabled
           ansible.builtin.command:
-            argv: '{{ kube + ["logs","job/" + application_name + "-service-identity-" + cfg.knowledge_service.job_revision,"-n",app_namespace] }}'
+            argv: '{{ kube + ["logs","job/" + application_name + "-service-identity-" + app_images.backend.digest[7:19] + "-" + cfg.knowledge_service.job_revision,"-n",app_namespace] }}'
           register: workload_acceptance
           changed_when: false
           no_log: true
@@ -297,7 +297,7 @@
             success_msg: 'Application schema, separate identities, runtime CRUD and denial of runtime DDL verified.'
         - name: Read the actual Redis identity acceptance outcome privately
           ansible.builtin.command:
-            argv: '{{ kube + ["logs",("job/" + application_name + "-redis-") + cfg.redis_identity_revision,"-n",data_namespace] }}'
+            argv: '{{ kube + ["logs",("job/" + application_name + "-redis-") + app_images.backend.digest[7:19] + "-" + cfg.redis_identity_revision,"-n",data_namespace] }}'
           register: redis_result
           changed_when: false
           no_log: true
@@ -348,7 +348,7 @@
           failed_when: redis_acl_permissions.rc != 0 or redis_acl_permissions.stdout != 'private-acl'
         - name: Read actual RabbitMQ application identity acceptance privately
           ansible.builtin.command:
-            argv: '{{ kube + ["logs",("job/" + application_name + "-rabbitmq-") + cfg.rabbitmq_identity_revision,"-n",messaging_namespace] }}'
+            argv: '{{ kube + ["logs",("job/" + application_name + "-rabbitmq-") + app_images.backend.digest[7:19] + "-" + cfg.rabbitmq_identity_revision,"-n",messaging_namespace] }}'
           register: rabbitmq_result
           changed_when: false
           no_log: true
@@ -370,7 +370,7 @@
               - rabbitmq_acceptance.single_vhost_grant is sameas true
         - name: Read browser registration acceptance privately
           ansible.builtin.command:
-            argv: '{{ kube + ["logs",("job/" + application_name + "-identity-") + cfg.identity_revision,"-n",app_namespace] }}'
+            argv: '{{ kube + ["logs",("job/" + application_name + "-identity-") + app_images.backend.digest[7:19] + "-" + cfg.identity_revision,"-n",app_namespace] }}'
           register: identity_result
           changed_when: false
           no_log: true

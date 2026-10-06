@@ -29,7 +29,8 @@ spec:
 ---
 apiVersion: batch/v1
 kind: Job
-metadata: {name: '{{ application_name }}-redis-{{ cfg.redis_identity_revision }}', namespace: {{ data_namespace }}}
+# Job 名带后端镜像摘要（和迁移 Job 一样）：Job 的模板不可改，镜像一换名字就换，不必手动升代次
+metadata: {name: '{{ application_name }}-redis-{{ app_images.backend.digest[7:19] }}-{{ cfg.redis_identity_revision }}', namespace: {{ data_namespace }}}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180

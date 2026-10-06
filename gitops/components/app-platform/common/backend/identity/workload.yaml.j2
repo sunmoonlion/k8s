@@ -29,7 +29,8 @@ spec:
 ---
 apiVersion: batch/v1
 kind: Job
-metadata: {name: '{{ application_name }}-identity-{{ cfg.identity_revision }}', namespace: {{ app_namespace }}}
+# Job 名带后端镜像摘要（和迁移 Job 一样）：Job 的模板不可改，镜像一换名字就换，不必手动升代次
+metadata: {name: '{{ application_name }}-identity-{{ app_images.backend.digest[7:19] }}-{{ cfg.identity_revision }}', namespace: {{ app_namespace }}}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
