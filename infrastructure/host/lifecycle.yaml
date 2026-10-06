@@ -332,8 +332,19 @@
           changed_when: false
           failed_when: start_before.rc not in [0,3,4]
         - name: Start the reviewed worktree independent sequence
-          ansible.builtin.command:
-            argv: [bash, '{{ host_runtime_dir }}/boot.sh', manual]
+          # boot.sh 会调用 Windows PowerShell；它的报错可能不是合法 UTF-8（CLIXML、本地代码页），
+          # 直接交给 command 模块时 Ansible 拒绝反序列化，连失败原因都看不到（2026-10-06 实测）。
+          # 原样写进日志，只把合法的字节交给 Ansible。
+          ansible.builtin.shell:
+            cmd: |
+              set -o pipefail
+              mkdir -p /var/log/sunmoon
+              bash {{ host_runtime_dir | quote }}/boot.sh manual > /var/log/sunmoon/platform-start.log 2>&1
+              rc=$?
+              iconv -c -f UTF-8 -t UTF-8 < /var/log/sunmoon/platform-start.log | tail -n 80
+              echo "platform-start log: /var/log/sunmoon/platform-start.log rc=$rc"
+              exit $rc
+            executable: /bin/bash
           timeout: 900
           changed_when: start_before.stdout_lines | unique | list != ["active"]
 
