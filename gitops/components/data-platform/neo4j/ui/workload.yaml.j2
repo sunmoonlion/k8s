@@ -18,7 +18,8 @@ spec:
   routes:
     - kind: Rule
       match: 'Host(`{{ neo4j_ui_origin | urlsplit("hostname") }}`)'
-      services: [{name: neo4j, port: https, scheme: https, serversTransport: neo4j-internal}]
+      # 不透传 Host：Traefik 对后端的 SNI 是集群内名字，而透传的 Host 是公网名字，Neo4j 的 Jetty 核 SNI 与 Host 不一致就回 400 Invalid SNI（2026-10-06 第 27 轮）
+      services: [{name: neo4j, port: https, scheme: https, serversTransport: neo4j-internal, passHostHeader: false}]
   tls: {secretName: neo4j-ui-tls}
 ---
 apiVersion: networking.k8s.io/v1
