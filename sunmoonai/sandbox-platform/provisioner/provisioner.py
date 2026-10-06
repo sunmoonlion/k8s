@@ -41,6 +41,9 @@ PROVISIONER_TOKEN = os.environ.get("PROVISIONER_TOKEN", "")
 K8S_API = os.environ.get("K8S_API", "https://kubernetes.default.svc")
 SA_DIR = Path(os.environ.get("K8S_SA_DIR", "/var/run/secrets/kubernetes.io/serviceaccount"))
 PVC_SIZE = os.environ.get("SANDBOX_PVC_SIZE", "2Gi")
+# 沙箱镜像在 Harbor 的 platform 项目里，拉取要凭据：命名空间里的拉取 Secret 名（新体系由 foundations 发到每个命名空间）。
+# 空字符串表示不带（2026-10-06 第 27 轮：没带时 kubelet 报 no basic auth credentials，沙箱永远「启动中」）
+IMAGE_PULL_SECRET = os.environ.get("SANDBOX_IMAGE_PULL_SECRET", "registry-puller")
 USER_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,40}$")
 
 
@@ -205,6 +208,7 @@ def render(user: str, spec: SandboxSpec, app_server_token: str) -> dict[str, dic
                     # restricted PSS：非 root、默认 seccomp、不提权、丢全部 capability、不挂 SA 令牌（新体系的命名空间按 restricted 执行）
                     "securityContext": {"runAsNonRoot": True, "runAsUser": 10001, "runAsGroup": 10001, "fsGroup": 10001, "seccompProfile": {"type": "RuntimeDefault"}},
                     "automountServiceAccountToken": False,
+                    **({"imagePullSecrets": [{"name": IMAGE_PULL_SECRET}]} if IMAGE_PULL_SECRET else {}),
                     "containers": [
                         {
                             "name": "codex",
