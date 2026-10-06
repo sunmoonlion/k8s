@@ -100,7 +100,8 @@ spec:
 ---
 apiVersion: batch/v1
 kind: Job
-metadata: {name: 'investment-service-identity-v1', namespace: app-platform-dev}
+# Job 名带后端镜像摘要（和迁移 Job 一样）：Job 的模板不可改，镜像一换名字就换，不必手动升代次
+metadata: {name: 'investment-service-identity-86a20079c309-v1', namespace: app-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180

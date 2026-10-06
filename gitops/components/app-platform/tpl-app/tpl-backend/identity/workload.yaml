@@ -126,7 +126,8 @@ spec:
 ---
 apiVersion: batch/v1
 kind: Job
-metadata: {name: 'tpl-identity-v2', namespace: app-platform-dev}
+# Job 名带后端镜像摘要（和迁移 Job 一样）：Job 的模板不可改，镜像一换名字就换，不必手动升代次
+metadata: {name: 'tpl-identity-e92a7bb62f06-v2', namespace: app-platform-dev}
 spec:
   backoffLimit: 0
   activeDeadlineSeconds: 180
