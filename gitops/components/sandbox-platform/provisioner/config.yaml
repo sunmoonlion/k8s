@@ -1,9 +1,11 @@
 ---
-# Per-user sandbox factory. Default off until the image is rebuilt for restricted PSS and parameterized namespaces.
-services_sandbox_provisioner_enabled: false
+# Per-user sandbox factory. 2026-10-06 打开：镜像按 fable 源码重建（restricted PSS、命名空间参数化）后进入阶段图；
+# investment 的 WORKBENCH_PROVISIONER_TOKEN 读的就是这个组件的平台级输入，组件关着时输入不会生成。
+services_sandbox_provisioner_enabled: true
 sandbox_provisioner_port: 8080
 sandbox_pvc_size: 2Gi
-knowledge_mcp_url: 'http://knowledge-backend.{{ app_namespace }}.svc.cluster.local:8000/api/mcp/knowledge'
+# 新体系里 knowledge 的 Service 叫 knowledge-api（common/backend/runtime 模板）
+knowledge_mcp_url: 'http://knowledge-api.{{ app_namespace }}.svc.cluster.local:8000/api/mcp/knowledge'
 sandbox_provisioner_resources:
   requests: {cpu: 50m, memory: 64Mi}
   limits: {cpu: 500m, memory: 256Mi}

@@ -6,13 +6,13 @@
 仓与提交：k8s 本条待办所在的 fable 头（含 component-images.yaml 钉的提交 b23ea80b 及其后的构建链改动）
 预计：40 分钟；三次在线构建；不停服；不碰现网
 看什么：三次构建退出 0；三个 image.lock.yaml 改成 platform/<名字> 的新摘要；relay 的 auth.sops.yaml 多了验签公钥（密文）；供给器候选的 env 里有 APP_NAMESPACE / RELAY_NAMESPACE
-前提：待办 23 做完（不管通没通过，只要 Harbor 在）；不 flux-release、不晋级、不 deploy；供给器开关保持关
+前提：Harbor 在；不 flux-release、不晋级、不 deploy。**供给器开关这次已打开**（它的平台级输入要靠它自己的 prepare 生成，investment 的暂存要读；镜像在本待办里先重建）
 回传：k8s/sunmoonai/scripts/results/build-component-images.<时间>.md
 ```
 
 ## 这一轮是什么
 
-0010 第 4 步：会合点、沙箱、供给器三个自研镜像第一次走新体系的构建链（源码在本仓 `sunmoonai/` 的三个目录，钉本仓提交）。供给器这次改成按环境参数化、拉起的沙箱满足 restricted PSS；沙箱入口关了子代理和「目标」、接上工作台的记录工具服务；relay 多了验签公钥。镜像发到 Harbor 的 `platform/`，锁改写进 `gitops/`。供给器开关这轮**不开**。
+0010 第 4 步：会合点、沙箱、供给器三个自研镜像第一次走新体系的构建链（源码在本仓 `sunmoonai/` 的三个目录，钉本仓提交）。供给器这次改成按环境参数化、拉起的沙箱满足 restricted PSS；沙箱入口关了子代理和「目标」、接上工作台的记录工具服务；relay 多了验签公钥。镜像发到 Harbor 的 `platform/`，锁改写进 `gitops/`。供给器开关已在配置里打开（23c 发现它关着时平台级输入 `sandbox-provisioner.yaml` 生成不出来，investment 暂存卡住），所以这轮它进阶段图：先构建新镜像，再暂存。
 
 ## 一、核对
 
@@ -51,12 +51,12 @@ git diff gitops/components/sandbox-platform/provisioner/workload.yaml | grep '^[
 sudo ls -la /etc/sunmoon/services/sunmoon-kind/workbench-signing.yaml 2>&1 | sed 's/ [0-9]* [A-Z][a-z]* .*//'
 ```
 
-relay 的改动应只有镜像行和一个 `RELAY_JWT_PUBLIC_KEY` 的 env；供给器的改动应只有镜像行、`SANDBOX_IMAGE`、两个新 env。供给器组件仍然关着（`services_sandbox_provisioner_enabled: false`），它的候选不进阶段图，这是预期。
+relay 的改动应只有镜像行和一个 `RELAY_JWT_PUBLIC_KEY` 的 env；供给器是新进阶段图的（`gitops/clusters/kind/stages.yaml` 多一个 `sandbox-provisioner` 阶段），它的 `workload.yaml`、`auth.sops.yaml` 是新文件。暂存完再查一次 `sudo find /etc/sunmoon -maxdepth 3 -name sandbox-provisioner.yaml`，这次应该在。
 
 ## 四、本地提交
 
 ```bash
-git add gitops/components/relay-platform gitops/components/sandbox-platform
+git add gitops/components/relay-platform gitops/components/sandbox-platform gitops/clusters
 git -c core.editor=true commit -m "test(local): 待办 24 构建三个自研镜像并暂存 relay、供给器"
 git log --oneline -1
 ```
