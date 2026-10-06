@@ -25,7 +25,12 @@ spec:
         - name: flower
           image: harbor.sunmoonai.com:30443/platform/flower@sha256:fd1e564ea8b8f02ec7224f3600216940ced5cf329d07c8c91511d0497d12d33c
           imagePullPolicy: IfNotPresent
+          # 镜像的可执行文件在 CMD 里（没有 ENTRYPOINT）：只写 args 会把 "--port=…" 当命令执行（2026-10-06 第 27 轮，退出 128）
+          command: [celery, flower]
           args: ['--port=5555', '--address=0.0.0.0']
+          env:
+            # celery 命令行本身读 CELERY_BROKER_URL；FLOWER_BROKER_URL 留给 flower 自己的选项
+            - {name: CELERY_BROKER_URL, valueFrom: {secretKeyRef: {name: flower-auth, key: FLOWER_BROKER_URL}}}
           envFrom: [{secretRef: {name: flower-auth}}]
           ports: [{name: http, containerPort: 5555}]
           startupProbe: {tcpSocket: {port: http}, periodSeconds: 5, failureThreshold: 60}
