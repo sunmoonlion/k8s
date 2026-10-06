@@ -18,6 +18,19 @@ systemctl status docker --no-pager
 
 当前已安装统一启停和单次开机恢复任务，真实Windows/WSL开机验收仍待完成。出现UAC时先核对发起程序及任务账号/权限；不要添加一分钟一次的重复提权轮询。修复后需实际开机验证，而非只看任务配置。
 
+## 开机后数据盘只有 systemd 看得见
+
+```sh
+readlink /proc/self/ns/mnt; sudo readlink /proc/1/ns/mnt
+sudo nsenter --target 1 --mount -- findmnt -T /data/kind-clusters
+```
+
+WSL 里用户会话和 systemd（PID 1）可能不在同一个挂载命名空间。开机时数据盘已经附上，fstab 在最初的命名空间里挂好，大家都看得见；开机时盘还没附上、事后再挂，就只落在 PID 1 那边，用户会话里的 `findmnt`、`storage.py check`、预检全部看成系统盘（2026-10-06 第一次真实开机实测）。
+
+1. 根治是让附盘发生在 Ubuntu 启动之前：附盘脚本先 `wsl --mount --bare`，再第一次 `wsl.exe -d`。2026-10-06 之后的候选已是这个顺序；旧任务要经 `platform-install-lifecycle` 重新发布。
+2. 已经处于这种状态时，`make -C infrastructure` 的各入口会自己钻进 PID 1 的命名空间（见 Makefile 的 `NS_PID1`），手工命令加前缀 `sudo nsenter --target 1 --mount --`。
+3. 不要用重新挂载、改 fstab 或重启 Docker 来"修"；系统盘上若出现了同名目录的残留（例如盘没挂上时写进去的 `sunmoon-kind`），只改名挪开，不删。
+
 ## 重启后集群或域名反了
 
 ```sh

@@ -7,6 +7,14 @@ SHELL := /bin/bash
 UV ?= uv
 HOST_PYTHON ?= /usr/bin/python3
 ANSIBLE := .venv/bin/ansible-playbook
+# WSL：用户会话和 systemd（PID 1）可能不在同一个挂载命名空间；开机后才附上的数据盘只在 PID 1 那边可见，
+# 从用户会话跑的预检、守卫、启停会把 /data/* 看成系统盘（2026-10-06 第一次真实开机实测）。
+# 不一致时，所有剧本都钻进 PID 1 的挂载命名空间里跑，身份仍是当前用户。
+NS_SELF := $(shell readlink /proc/self/ns/mnt 2>/dev/null)
+NS_PID1 := $(shell sudo -n readlink /proc/1/ns/mnt 2>/dev/null)
+ifneq ($(NS_SELF),$(NS_PID1))
+ANSIBLE := sudo -n nsenter --target 1 --mount --wd=$(CURDIR) -- sudo -n -u $(shell id -un) -H env PATH="$(PATH)" $(CURDIR)/.venv/bin/ansible-playbook
+endif
 ARTIFACTS ?= all
 MATERIAL_OWNER ?= all
 # Optional subset of configured service material IDs; does not enable runtime components.

@@ -12,12 +12,22 @@ $Admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 if (-not $Admin) { throw 'Registered attachment task must run with highest privileges' }
 if (Test-Path -LiteralPath 'C:\wsl-disks\sunmoon-data.maintenance') { throw 'Storage maintenance active' }
 if (-not (Test-Path -LiteralPath $Vhd -PathType Leaf)) { throw 'Existing VHDX missing; never initialize it automatically' }
+# Attach the existing VHDX BEFORE the first `wsl.exe -d` call. Starting the distribution first
+# makes systemd process fstab without the disk; a later attachment is then mounted only in PID 1's
+# mount namespace and user sessions never see it (observed 2026-10-06, first real WSL boot).
+$Running = @(wsl.exe --list --running --quiet 2>$null | ForEach-Object { ($_ -replace "`0", '').Trim() } | Where-Object { $_ })
+$EarlyAttach = $null
+if ($Running -notcontains $Distro) {
+    $EarlyAttachOutput = (wsl.exe --mount --vhd $Vhd --bare 2>&1 | Out-String)
+    $EarlyAttach = $LASTEXITCODE
+}
 foreach ($Pin in @(@($Guard, {{ host_storage_sha256 | to_json }}), @($Config, {{ host_storage_config_sha256 | to_json }}))) {
     $Actual = @(wsl.exe -d $Distro -u root -- sha256sum $Pin[0])
     if ($LASTEXITCODE -ne 0 -or $Actual.Count -ne 1 -or $Actual[0].Split()[0] -ne $Pin[1]) { throw 'Linux guard/configuration hash differs' }
 }
 wsl.exe -d $Distro -u root -- blkid -U $Uuid | Out-Null
 if ($LASTEXITCODE -ne 0) {
+    if ($null -ne $EarlyAttach -and $EarlyAttach -ne 0) { throw ('Attachment before distribution start failed; do not blindly unmount/retry: ' + $EarlyAttachOutput.Trim()) }
     if (Test-Path -LiteralPath 'C:\wsl-disks\sunmoon-data.maintenance') { throw 'Maintenance began' }
     wsl.exe --mount --vhd $Vhd --bare
     if ($LASTEXITCODE -ne 0) { throw 'Attachment failed; do not blindly unmount/retry' }
