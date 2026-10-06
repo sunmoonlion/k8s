@@ -23,8 +23,8 @@ images:
   sandbox:
     # 只构建、不单独部署的对象：供给器按用户拉起沙箱 Pod 时用它
     object: sandbox-platform/sandbox
-    # 沙箱 Dockerfile 在 e3ce871f 加了 DEBIAN_MIRROR：只有它钉新提交，会合点/供给器仍钉顶层的
-    revision: e3ce871f96d160aa2017960e98d176c102b991e4
+    # 沙箱 Dockerfile 在 da32ee05 加了 DEBIAN_MIRROR（源用 http）：只有它钉新提交，会合点/供给器仍钉顶层的
+    revision: da32ee05b8f542a18e839a3ef695b7269c38eb37
     context: sunmoonai/sandbox-platform
     dockerfile: image/Dockerfile
     base: node-runtime
