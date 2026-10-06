@@ -36,6 +36,8 @@
   vars:
     tls_component: neo4j
     tls_component_namespace: '{{ data_namespace }}'
+    # Neo4j 的 Jetty 会核 Host 头与自己的证书：控制台开着时公网名字也要在 SAN 里，否则一律 400 Invalid SNI
+    tls_extra_hostnames: "{{ [neo4j_ui_origin | urlsplit('hostname')] if neo4j_ui_enabled | default(false) | bool else [] }}"
     tls_guard_manifest: data-platform/neo4j/auth.sops.yaml
 - name: Encrypt graph auth file and TLS without putting secrets in process arguments
   ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/encrypt.yaml'

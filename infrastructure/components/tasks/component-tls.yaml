@@ -61,7 +61,7 @@
       basicConstraints=critical,CA:FALSE
       keyUsage=critical,digitalSignature,keyEncipherment
       extendedKeyUsage=serverAuth,clientAuth
-      subjectAltName=DNS:{{ tls_component }},DNS:{{ tls_component }}.{{ tls_component_namespace }}.svc.cluster.local
+      subjectAltName={{ (['DNS:' + tls_component, 'DNS:' + tls_component + '.' + tls_component_namespace + '.svc.cluster.local'] + (tls_extra_hostnames | default([]) | map('regex_replace', '^', 'DNS:') | list)) | join(',') }}
 - name: Create internal certificate request
   ansible.builtin.command:
     argv: [openssl, req, -new, -key, '{{ services_config_dir }}/{{ tls_component }}-tls/private.key', -out, '{{ services_config_dir }}/{{ tls_component }}-tls/server.csr', -subj, '/CN={{ tls_component }}']
@@ -72,9 +72,12 @@
     creates: '{{ services_config_dir }}/{{ tls_component }}-tls/public.crt'
 - name: Protect certificate and verify name, chain and validity
   ansible.builtin.file: {path: '{{ services_config_dir }}/{{ tls_component }}-tls/public.crt', mode: '0600'}
-- name: Require trusted current internal certificate
+- name: Require trusted current internal certificate for every declared name
+  # 额外的名字（tls_extra_hostnames）：服务自己核 Host 头与证书时要有公网名字（Neo4j 的 Jetty，2026-10-06）。
+  # 证书只签一次：加名字后要把主备 public.crt 删掉重签（私钥不动）。
   ansible.builtin.command:
-    argv: [openssl, verify, -CAfile, '{{ registry_config_dir }}/tls/ca.crt', -verify_hostname, '{{ tls_component }}.{{ tls_component_namespace }}.svc.cluster.local', '{{ services_config_dir }}/{{ tls_component }}-tls/public.crt']
+    argv: [openssl, verify, -CAfile, '{{ registry_config_dir }}/tls/ca.crt', -verify_hostname, '{{ item }}', '{{ services_config_dir }}/{{ tls_component }}-tls/public.crt']
+  loop: "{{ [tls_component + '.' + tls_component_namespace + '.svc.cluster.local'] + (tls_extra_hostnames | default([])) }}"
   changed_when: false
 - name: Preserve independent TLS files without overwriting
   ansible.builtin.copy: {src: '{{ services_config_dir }}/{{ tls_component }}-tls/{{ item }}', dest: '{{ services_backup_dir }}/{{ tls_component }}-tls/{{ item }}', remote_src: true, force: false, mode: '0600'}
