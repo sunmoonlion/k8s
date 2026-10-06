@@ -157,3 +157,47 @@ Storage blocked: Wrong/missing UUID or bind root: /data/kind-clusters
 ### 3、4
 
 没有跑 `platform-start`、状态、四个数量、`platform-check`、relay 镜像。
+
+## 续三（命令钻进 PID 1 的挂载命名空间）
+
+时间：2026-10-06 13:29–13:35 +0800。前缀是 `sudo nsenter --target 1 --mount -- sudo -u zymun -H bash -lc`。当前终端是 zsh，不拆 `$R`，所以这组命令放在 bash 里执行，进的命名空间不变。
+
+### 1. 验证
+
+```
+mnt:[4026532219]
+/data/kind-clusters  /dev/sde[/kind-clusters]
+/data/harbor         /dev/sde[/harbor]
+{"storage_verified": true, "uuid": "a28de356-4ba1-4a21-93f5-744b9b9d8be0", "services_started": false}
+exit=0
+```
+
+这个 shell 的命名空间和 PID 1 相同。`check` 退出 **0**。
+
+### 2. 拉起和检查
+
+`platform-start` 退出 **0**，用时 **255.48 秒**（05:29:48Z 到 05:34:03Z）。日志尾部先是多次 `curl: (7) Failed to connect to harbor.sunmoonai.com port 11443`，随后：
+
+```
+node/sunmoon-kind-control-plane condition met
+node/sunmoon-kind-worker condition met
+node/sunmoon-kind-worker2 condition met
+Owned Harbor, TLS entry and KIND restored. Run platform-check for application protocols.
+```
+
+`platform-status OBJECT=all` 退出 0。状态里现网源仍是 revision `e59bdc006a2eaca8c7b3af367ad7e801a6136547`、digest `sha256:e26d2a19932686a64a7226cbf64666c457d797450fdf92f462b184a1ca7a2aef`。
+
+四个数量：
+
+| 项 | 这次 | CHECKPOINT「已完成的运行状态」 |
+| --- | --- | --- |
+| 节点 | 3 个 Ready（control-plane、worker、worker2，v1.36.5） | 新三节点 Ready |
+| Flux Kustomization | 63；`grep -vc True` 得到 0 | 当时写 51 个阶段 Ready；后来维护记录是 63 个阶段 Ready |
+| Running Pod | 57；没有非 Running、非 Completed 的行 | 57 个 Running Pod |
+| PV | 13 | 13 组 PV |
+
+`platform-check OBJECT=all` 退出 **2**。停在 `services/verify.yaml` 读阶段：集群里没有 `neo4j-ui`、`object-storage-ui`、`rabbitmq-ui`、`flower`、`pgadmin`、`redisinsight`、`relay`。前面列出的已有阶段是 ok。PLAY RECAP：`ok=14 failed=1`。
+
+### 3. relay 镜像
+
+钉的摘要是 `sha256:dfc4d0e08fc83f846ceb1d3024a7f944b688f1283f886a89fb0c8c5b0702b647`。`docker pull` 退出 1：Harbor 已在听，但 HEAD 返回 **401 Unauthorized**。本机没有这份镜像，标签、创建时间、镜像里的 `relay.py` 都没有。工位源码 `sunmoonai/relay-platform/relay/relay.py` 的 sha256 是 `550019baa1a677a3a10c0ca3878384ac294d85627fe6381e049af10675ac6d62`。两边对不上，因为镜像侧没有哈希。没有改 lock，没有登录 Harbor。
