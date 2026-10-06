@@ -1,8 +1,8 @@
-# 新体系：先把附盘那一步的真实报错拿到，再拉起现网（本地机；第一节的 1a 要所有者在管理员 PowerShell 里跑）
+# 新体系：先把附盘那一步的真实报错拿到，再拉起现网（本地机）
 
 ```text
 被测仓：k8s，本地路径 ~/worktrees/fable/k8s
-跑：按编号步骤做（1a 所有者跑附盘任务并留日志 → 1b 本地助手看 Linux 这一侧的报错 → 2 platform-start → 3 状态与检查 → 4 relay 镜像）
+跑：按编号步骤做（1a 在管理员 PowerShell 里跑附盘脚本并留日志 → 1b 看 Linux 这一侧的报错 → 2 platform-start → 3 状态与检查 → 4 relay 镜像）。全部由本地助手做；1a 要提权，弹出 UAC 时由所有者点确认
 仓与提交：k8s 本条待办所在的 fable 头（含 infrastructure/host/lifecycle.yaml 的一处改动：platform-start 的输出先写日志再交给 Ansible）
 预计：40 分钟；platform-start 内部有界等待最长约 15 分钟
 看什么：1a/1b 能说出附盘失败的那一行报错；2 退出 0；3 的 status/check 退出 0、3 节点 Ready、Flux 阶段全 Ready、Running Pod 全 Ready
@@ -18,9 +18,9 @@
 
 ## 一、附盘的真实报错
 
-### 1a（所有者，管理员 PowerShell，用您自己的账号）
+### 1a（本地助手，在所有者账号的管理员 PowerShell 里跑；UAC 由所有者确认）
 
-把附盘脚本再跑一遍，这次把所有输出留下：
+把附盘脚本再跑一遍，这次把所有输出留下。必须是所有者本人的 Windows 账号（附盘任务绑定在这个账号上），不要用别的管理员账号：
 
 ```powershell
 $Boot = 'C:\ProgramData\Sunmoon\platform-kind-v1\boot-6f82dd8673eeb6a0'
@@ -31,7 +31,7 @@ Start-Transcript -Path C:\wsl-disks\scripts\platform-kind-v1\attach-manual.log -
 Stop-Transcript
 ```
 
-跑完把 `C:\wsl-disks\scripts\platform-kind-v1\attach-manual.log` 的内容交给本地助手放进回传。它要么成功（那两个 bind 就回来了），要么在某一行 `throw`，那一行就是答案。
+跑完把 `C:\wsl-disks\scripts\platform-kind-v1\attach-manual.log` 的内容放进回传。它要么成功（那两个 bind 就回来了），要么在某一行 `throw`，那一行就是答案。
 
 ### 1b（本地助手）
 
