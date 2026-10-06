@@ -2,6 +2,7 @@
 - name: Read the pinned sandbox provisioner image identity
   ansible.builtin.set_fact:
     sandbox_image: '{{ lookup("file", playbook_dir + "/../../gitops/components/sandbox-platform/provisioner/image.lock.yaml") | from_yaml }}'
+    sandbox_runtime_image: '{{ lookup("file", playbook_dir + "/../../gitops/components/sandbox-platform/sandbox/image.lock.yaml") | from_yaml }}'
 - name: Validate the sandbox provisioner contract
   ansible.builtin.assert:
     quiet: true
@@ -11,12 +12,12 @@
       - sandbox_pvc_size is match('^[1-9][0-9]*Gi$')
       - knowledge_mcp_url | urlsplit('scheme') in ['http', 'https']
       - knowledge_mcp_url | urlsplit('hostname') is match('^[a-z0-9][a-z0-9.-]+[a-z0-9]$')
-      - sandbox_image.harbor_project is match('^[a-z][a-z0-9-]+$')
+      - sandbox_image.harbor_project | default('platform') is match('^[a-z][a-z0-9-]+$')
       - sandbox_image.repository == 'sandbox-provisioner'
       - sandbox_image.digest is match('^sha256:[a-f0-9]{64}$')
-      - sandbox_image.sandbox.harbor_project is match('^[a-z][a-z0-9-]+$')
-      - sandbox_image.sandbox.repository == 'sandbox'
-      - sandbox_image.sandbox.digest is match('^sha256:[a-f0-9]{64}$')
+      - sandbox_runtime_image.harbor_project | default('platform') is match('^[a-z][a-z0-9-]+$')
+      - sandbox_runtime_image.repository == 'sandbox'
+      - sandbox_runtime_image.digest is match('^sha256:[a-f0-9]{64}$')
 - name: Prepare a recoverable provisioner shared token
   ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/component-input.yaml'
   vars:
@@ -46,7 +47,7 @@
   no_log: true
 - name: Derive the provisioner rollout identity
   ansible.builtin.set_fact:
-    sandbox_provisioner_input_digest: '{{ [sandbox_image.digest, sandbox_image.sandbox.digest, sandbox_namespace] | to_json | hash("sha256") }}'
+    sandbox_provisioner_input_digest: '{{ [sandbox_image.digest, sandbox_runtime_image.digest, sandbox_namespace, app_namespace, relay_namespace] | to_json | hash("sha256") }}'
   no_log: true
 - name: Render the sandbox provisioner runtime candidate
   ansible.builtin.template:

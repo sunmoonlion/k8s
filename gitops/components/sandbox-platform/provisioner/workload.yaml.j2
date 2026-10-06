@@ -54,12 +54,15 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 10003, runAsGroup: 10003, fsGroup: 10003, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: provisioner
-          image: {{ registry_address }}/{{ sandbox_image.harbor_project }}/{{ sandbox_image.repository }}@{{ sandbox_image.digest }}
+          image: {{ registry_address }}/{{ sandbox_image.harbor_project | default('platform') }}/{{ sandbox_image.repository }}@{{ sandbox_image.digest }}
           imagePullPolicy: IfNotPresent
           env:
             - {name: SANDBOX_NAMESPACE, value: '{{ sandbox_namespace }}'}
-            - {name: SANDBOX_IMAGE, value: '{{ registry_address }}/{{ sandbox_image.sandbox.harbor_project }}/{{ sandbox_image.sandbox.repository }}@{{ sandbox_image.sandbox.digest }}'}
+            - {name: SANDBOX_IMAGE, value: '{{ registry_address }}/{{ sandbox_runtime_image.harbor_project | default('platform') }}/{{ sandbox_runtime_image.repository }}@{{ sandbox_runtime_image.digest }}'}
             - {name: RELAY_URL, value: 'ws://relay.{{ relay_namespace }}.svc.cluster.local:{{ relay_port }}'}
+            # 新体系按环境参数化：沙箱的网络策略里，应用（两个 MCP、runner）和会合点各在哪个命名空间
+            - {name: APP_NAMESPACE, value: '{{ app_namespace }}'}
+            - {name: RELAY_NAMESPACE, value: '{{ relay_namespace }}'}
             - {name: KNOWLEDGE_MCP_URL, value: '{{ knowledge_mcp_url }}'}
             - {name: SANDBOX_PVC_SIZE, value: '{{ sandbox_pvc_size }}'}
             - {name: PROVISIONER_TOKEN, valueFrom: {secretKeyRef: {name: sandbox-provisioner, key: token}}}

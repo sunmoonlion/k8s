@@ -39,7 +39,7 @@
       ansible.builtin.set_fact:
         build_input:
           source_revision: '{{ component_revision }}'
-          parent_revision: '{{ source_lock.parent_revision }}'
+          parent_revision: '{{ source_lock.parent_revision if build_kind == "application" else component_revision }}'
           parent_gitlink_revision: '{{ parent_gitlink_revision }}'
           context: '{{ component.context }}'
           requested_download_mode: '{{ application_download_mode }}'
@@ -47,24 +47,24 @@
           download_profile: '{{ download_profile }}'
           source_projection_sha256: '{{ lookup("file", application_directory + "/select-python-source.py", rstrip=false) | hash("sha256") }}'
           dockerfile_sha256: '{{ recipe.stdout | hash("sha256") }}'
-          image_arguments: '{{ component.args + (["--build-arg=NPM_CONFIG_REGISTRY=" + download_profile.npm_registry] if build_component != "backend" else ["--build-arg=PYPI_INDEX_URL=" + download_profile.python_index]) }}'
+          image_arguments: '{{ component.args + (["--build-arg=NPM_CONFIG_REGISTRY=" + download_profile.npm_registry] if (build_kind == "application" and build_component != "backend") or (build_kind == "component" and component_image_spec.base == "node-runtime") else []) + (["--build-arg=PYPI_INDEX_URL=" + download_profile.python_index] if (build_kind == "application" and build_component == "backend") or build_kind == "component" else []) }}'
           target: '{{ component.target }}'
     - name: Select Python URLs in the disposable context without changing dependency identities
       ansible.builtin.command:
         argv: [python3, '{{ application_directory }}/select-python-source.py', '--context={{ staging.path }}/context', '--mode={{ effective_download_mode }}']
       register: python_projection
       changed_when: python_projection.rc == 0 and (python_projection.stdout | from_json).changed
-      when: build_component == 'backend'
+      when: build_kind == 'application' and build_component == 'backend'
     - name: Record the effective Python input identities
       ansible.builtin.set_fact:
         build_input: '{{ build_input | combine({"python_sources": python_projection.stdout | from_json}) }}'
-      when: build_component == 'backend'
+      when: build_kind == 'application' and build_component == 'backend'
     - name: Derive immutable local build name from all effective inputs
       ansible.builtin.set_fact:
         local_tag: 'sunmoon-build/{{ component.repository }}:{{ component_revision[:12] }}-{{ (build_input | to_json | hash("sha256"))[:12] }}'
     - name: Build using the committed recipe and locked base images
       ansible.builtin.command:
-        argv: '{{ ["docker", "build", "--network=host", "--progress=plain", "--target=" + component.target, "--file=" + staging.path + "/context/" + component.dockerfile, "--tag=" + local_tag, "--build-arg=HTTP_PROXY", "--build-arg=HTTPS_PROXY", "--build-arg=NO_PROXY", "--label=org.opencontainers.image.revision=" + component_revision, "--label=org.opencontainers.image.source=https://github.com/sunmoonlion/" + component.repository] + build_input.image_arguments + [staging.path + "/context"] }}'
+        argv: '{{ ["docker", "build", "--network=host", "--progress=plain"] + (["--target=" + component.target] if component.target else []) + ["--file=" + staging.path + "/context/" + component.dockerfile, "--tag=" + local_tag, "--build-arg=HTTP_PROXY", "--build-arg=HTTPS_PROXY", "--build-arg=NO_PROXY", "--label=org.opencontainers.image.revision=" + component_revision, "--label=org.opencontainers.image.source=https://github.com/sunmoonlion/" + component.repository] + build_input.image_arguments + [staging.path + "/context"] }}'
       environment:
         DOCKER_CONFIG: '{{ staging.path }}/auth'
         # Buildx token authentication runs in the client; daemon certs.d is insufficient.

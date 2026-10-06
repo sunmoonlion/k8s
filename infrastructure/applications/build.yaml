@@ -8,12 +8,26 @@
     application_name: tpl
     build_action: build
     build_component: backend
+    # application：四个应用的 backend/web/admin（sources.yaml 钉子仓提交）；component：本仓里的自研镜像（component-images.yaml）
+    build_kind: application
+    component_images: '{{ lookup("file", playbook_dir + "/component-images.yaml") | from_yaml }}'
+    component_image_spec: '{{ component_images.images[build_component] | default({}) }}'
+    component_image_definition:
+      repository: '{{ build_component }}'
+      context: '{{ component_image_spec.context | default("") }}'
+      dockerfile: '{{ component_image_spec.dockerfile | default("Dockerfile") }}'
+      target: ''
+      user: '{{ component_image_spec.user | default("") }}'
+      executable: '{{ component_image_spec.executable | default("") }}'
+      version: '{{ component_image_spec.version | default("") }}'
+      budget: '{{ application_build_budget_bytes }}'
+      args: "{{ ['--build-arg=PYTHON_IMAGE=' + registry_address + '/platform/python@' + image_map.python.manifest_digest] if component_image_spec.base | default('') == 'python' else ['--build-arg=NODE_IMAGE=' + registry_address + '/platform/node-runtime@' + image_map['node-runtime'].manifest_digest] }}"
     application_directory: '{{ playbook_dir }}'
     download_modes: '{{ lookup("file", playbook_dir + "/download-modes.json") | from_json }}'
     download_profile: '{{ download_modes[effective_download_mode] }}'
-    component: '{{ components[build_component] }}'
-    component_revision: '{{ source_lock[build_component + "_revision"] }}'
-    parent_gitlink_revision: '{{ source_lock[build_component + "_parent_revision"] | default(component_revision) }}'
+    component: '{{ components[build_component] if build_kind == "application" else component_image_definition }}'
+    component_revision: '{{ source_lock[build_component + "_revision"] if build_kind == "application" else component_images.revision }}'
+    parent_gitlink_revision: '{{ (source_lock[build_component + "_parent_revision"] | default(component_revision)) if build_kind == "application" else component_revision }}'
     components:
       backend:
         repository: '{{ application_name }}-backend'
@@ -45,7 +59,7 @@
         version: v24.21.0
         budget: '{{ application_frontend_build_budget_bytes }}'
         args: ['--build-arg=NODE_IMAGE={{ registry_address }}/platform/node-build@{{ image_map["node-build"].manifest_digest }}', '--build-arg=NODE_RUNTIME_IMAGE={{ registry_address }}/platform/node-runtime@{{ image_map["node-runtime"].manifest_digest }}']
-    source_checkout: '{{ (playbook_dir + "/../../../" + application_name + "-app/" + component.repository) | realpath }}'
+    source_checkout: '{{ ((playbook_dir + "/../../../" + application_name + "-app/" + component.repository) if build_kind == "application" else (playbook_dir + "/../..")) | realpath }}'
     source_locks: '{{ (lookup("file", playbook_dir + "/sources.yaml") | from_yaml).applications }}'
     source_lock: '{{ source_locks[application_name] }}'
     images: '{{ (lookup("file", playbook_dir + "/../artifacts/upstream-images.lock.json") | from_json).images }}'
@@ -64,13 +78,17 @@
           - application_download_mode in ['domestic', 'official-proxy']
           - application_network_mode is not defined and application_npm_registry is not defined and application_pypi_index_url is not defined
           - component_revision is match('^[a-f0-9]{40}$')
-          - build_component in ['backend', 'web', 'admin']
+          - build_kind in ['application', 'component']
+          - build_kind == 'component' or build_component in ['backend', 'web', 'admin']
+          - build_kind == 'application' or build_component in component_images.images
+          - build_kind == 'application' or component_image_spec.base in ['python', 'node-runtime']
+          - build_kind == 'application' or component_image_spec.context is match('^[a-z0-9][a-z0-9/_.-]+$')
           - source_lock.parent_revision is match('^[a-f0-9]{40}$')
           - parent_gitlink_revision is match('^[a-f0-9]{40}$')
           - component.budget | int > 0
-          - build_component != 'backend' or image_map.python.source == 'docker.io/library/python:3.13.15-slim-trixie'
-          - build_component == 'backend' or image_map['node-build'].source == 'docker.io/library/node:24.21.0-trixie'
-          - build_component == 'backend' or image_map['node-runtime'].source == 'docker.io/library/node:24.21.0-trixie-slim'
+          - (build_kind == 'application' and build_component != 'backend') or (build_kind == 'component' and component_image_spec.base != 'python') or image_map.python.source == 'docker.io/library/python:3.13.15-slim-trixie'
+          - (build_kind == 'application' and build_component == 'backend') or build_kind == 'component' or image_map['node-build'].source == 'docker.io/library/node:24.21.0-trixie'
+          - (build_kind == 'application' and build_component == 'backend') or (build_kind == 'component' and component_image_spec.base != 'node-runtime') or image_map['node-runtime'].source == 'docker.io/library/node:24.21.0-trixie-slim'
     - name: Start each invocation with the configured download mode
       ansible.builtin.set_fact:
         effective_download_mode: '{{ application_download_mode }}'
@@ -89,18 +107,26 @@
         argv: [git, -C, '{{ source_checkout }}/..', ls-tree, '{{ source_lock.parent_revision }}', '{{ component.repository }}']
       register: parent_link
       changed_when: false
+      when: build_kind == 'application'
     - name: Refuse unreviewed source revisions or dirty checkout
       ansible.builtin.assert:
         quiet: true
         that:
-          - source_state.results[0].stdout == component_revision
+          - build_kind == 'component' or source_state.results[0].stdout == component_revision
           - source_state.results[1].stdout == ''
-          - parent_link.stdout.split() == ['160000', 'commit', parent_gitlink_revision, component.repository]
+          - build_kind == 'component' or parent_link.stdout.split() == ['160000', 'commit', parent_gitlink_revision, component.repository]
     - name: Require a source override to descend from the pinned parent gitlink
       become: false
       ansible.builtin.command:
         argv: [git, -C, '{{ source_checkout }}', merge-base, --is-ancestor, '{{ parent_gitlink_revision }}', '{{ component_revision }}']
       changed_when: false
+      when: build_kind == 'application'
+    - name: Require the checked out repository to contain the pinned component image revision
+      become: false
+      ansible.builtin.command:
+        argv: [git, -C, '{{ source_checkout }}', merge-base, --is-ancestor, '{{ component_revision }}', HEAD]
+      changed_when: false
+      when: build_kind == 'component'
     - name: Read the exact committed Docker recipe
       become: false
       ansible.builtin.command:

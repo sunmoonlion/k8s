@@ -1,0 +1,8 @@
+# 沙箱镜像（供给器按用户拉起的那个 Pod 用）。只构建、不单独部署的对象：make platform-build OBJECT=sandbox-platform/sandbox
+# 现在钉的是旧 KIND 的 app-images/sandbox；按 fable 源码重建后由 component-lock 改写成 platform/sandbox。
+---
+harbor_project: app-images
+repository: sandbox
+digest: sha256:ba14b8d3f69e4359a4b13dc78c1078b2ef2ec1498e54eeda8dd62e100c219a2f
+source_revision: kind-sandbox-0155-r2
+deployment_id: sandbox-0155-r2

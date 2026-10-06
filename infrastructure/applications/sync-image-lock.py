@@ -13,7 +13,7 @@ import yaml
 FIELDS = ("repository", "digest", "source_revision", "deployment_id")
 
 
-def main(source: str, target: str) -> int:
+def main(source: str, target: str, expected_repository: str | None = None) -> int:
     src, dst = Path(source), Path(target)
     if not src.is_file():
         print(f"构建锁不存在：{src}（先 application-build-*）", file=sys.stderr)
@@ -32,8 +32,9 @@ def main(source: str, target: str) -> int:
         if not isinstance(data[key], str) or not re.fullmatch(pattern, data[key]):
             print(f"构建锁的 {key} 不合格式：{data[key]!r}", file=sys.stderr)
             return 2
-    if dst.parent.name != data["repository"]:
-        print(f"目标目录 {dst.parent.name} 和锁里的 repository {data['repository']} 不一致", file=sys.stderr)
+    expected = expected_repository or dst.parent.name
+    if expected != data["repository"]:
+        print(f"期望的 repository {expected} 和锁里的 {data['repository']} 不一致", file=sys.stderr)
         return 2
     body = "# Built and published through the native chain; written by application-lock-* after a successful publish.\n---\n" + "".join(
         f"{key}: {data[key]}\n" for key in FIELDS
@@ -47,7 +48,7 @@ def main(source: str, target: str) -> int:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("用法：sync-image-lock.py <.build/applications/<repo>-deployment-image.yaml> <gitops/.../image.lock.yaml>", file=sys.stderr)
+    if len(sys.argv) not in (3, 4):
+        print("用法：sync-image-lock.py <.build/applications/<repo>-deployment-image.yaml> <gitops/.../image.lock.yaml> [repository]", file=sys.stderr)
         raise SystemExit(2)
-    raise SystemExit(main(sys.argv[1], sys.argv[2]))
+    raise SystemExit(main(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) == 4 else None))

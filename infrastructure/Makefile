@@ -464,6 +464,22 @@ platform-build-selected:
 	$(if $(filter true,$(PLATFORM_INVESTMENT_BACKEND)),$(MAKE) application-build-backend application-publish-backend APP=investment)
 	$(if $(filter true,$(PLATFORM_INVESTMENT_WEB)),$(MAKE) application-build-web application-publish-web APP=investment)
 	$(if $(filter true,$(PLATFORM_INVESTMENT_ADMIN)),$(MAKE) application-build-admin application-publish-admin APP=investment)
+	$(foreach image,$(subst $(COMMA), ,$(PLATFORM_COMPONENT_IMAGES)),$(MAKE) component-build component-publish IMAGE=$(image) &&) true
+
+# 自研的非应用镜像（applications/component-images.yaml）：同一条构建链，产物到 Harbor 的 platform/<名字>，锁进 gitops/components/<对象>/image.lock.yaml
+COMMA := ,
+REQUIRE_IMAGE = $(if $(IMAGE),,$(error IMAGE must be one of the names in applications/component-images.yaml))
+.PHONY: component-build component-publish component-lock
+component-build:
+	@$(REQUIRE_IMAGE)true
+	$(ANSIBLE) -i host/inventory.yaml applications/build.yaml $(CONFIG_ARGS) --extra-vars 'build_kind=component build_component=$(IMAGE)'
+component-publish:
+	@$(REQUIRE_IMAGE)true
+	$(ANSIBLE) -i host/inventory.yaml artifacts/publish.yaml $(CONFIG_ARGS) --extra-vars publication_action=publish --extra-vars '{"publication_image_ids":["$(IMAGE)"],"publication_enabled":true,"publication_capacity_operation":"component-publish-$(IMAGE)","publication_lockfile":"$(CURDIR)/.build/applications/$(IMAGE)-images.lock.json","publication_image_directory":"$(CURDIR)/.build/applications/transfer","publication_remove_transport":true}'
+	$(MAKE) component-lock IMAGE=$(IMAGE)
+component-lock:
+	@$(REQUIRE_IMAGE)true
+	@.venv/bin/python applications/sync-image-lock.py "$(CURDIR)/.build/applications/$(IMAGE)-deployment-image.yaml" "$(CURDIR)/../gitops/components/$$(.venv/bin/python -c 'import yaml;print(yaml.safe_load(open("applications/component-images.yaml"))["images"]["$(IMAGE)"]["object"])')/image.lock.yaml" "$(IMAGE)"
 
 # Human accounts follow the same object classification; import changes presets only.
 .PHONY: platform-account-plan platform-account-import platform-account-view platform-account-check platform-account-stage platform-account-rotate platform-account-recover

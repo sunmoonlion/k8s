@@ -6,6 +6,8 @@
   vars:
     deployment_action: select
     selection_persist: true
+    # 自研镜像（0010 第 4 步）：只在 build 动作里是可选对象
+    component_image_objects: '{{ dict((lookup("file", playbook_dir + "/../applications/component-images.yaml") | from_yaml).images | dict2items | map(attribute="key") | zip((lookup("file", playbook_dir + "/../applications/component-images.yaml") | from_yaml).images | dict2items | map(attribute="value.object"))) }}'
     selection_report: true
     requested_object: '{{ lookup("env", "OBJECT") | default("all", true) }}'
     repo: '{{ playbook_dir }}/../..'
@@ -30,7 +32,7 @@
     - name: Compute selection and dependency closure from the unique phase graph
       ansible.builtin.command:
         argv: ['{{ playbook_dir }}/../.venv/bin/python', '{{ playbook_dir }}/../components/stages.py', select]
-        stdin: '{{ {"object":requested_object,"action":deployment_action,"stages":component_stages,"application_names":application_names,"modules":{"host":{"enabled":true},"registry":{"enabled":registry_enabled},"entry":{"enabled":entry_enabled},"cluster":{"enabled":cluster_enabled},"flux":{"enabled":flux_enabled}},"config_files":lookup("env","PLATFORM_CONFIG_FILES").split(),"site":lookup("env","SITE") | default("environments/kind/site.yaml",true)} | to_json }}'
+        stdin: '{{ {"object":requested_object,"action":deployment_action,"stages":component_stages,"application_names":application_names,"modules":{"host":{"enabled":true},"registry":{"enabled":registry_enabled},"entry":{"enabled":entry_enabled},"cluster":{"enabled":cluster_enabled},"flux":{"enabled":flux_enabled}},"config_files":lookup("env","PLATFORM_CONFIG_FILES").split(),"buildable_objects":component_image_objects.values() | list,"component_image_objects":component_image_objects,"site":lookup("env","SITE") | default("environments/kind/site.yaml",true)} | to_json }}'
       register: selection_bytes
       changed_when: false
     - name: Preserve the selected public object contract
@@ -97,4 +99,5 @@
           PLATFORM_INVESTMENT_BACKEND := {{ ("investment-backend" in selection.applications.investment) | lower }}
           PLATFORM_INVESTMENT_WEB := {{ ("investment-web-frontend" in selection.applications.investment) | lower }}
           PLATFORM_INVESTMENT_ADMIN := {{ ("investment-admin-frontend" in selection.applications.investment) | lower }}
+          PLATFORM_COMPONENT_IMAGES := {{ selection.component_images | default([]) | join(",") }}
       when: selection_persist | bool and deployment_action in ['select','deploy','stage','build','check']

@@ -1,0 +1,31 @@
+# 自研的非应用镜像（0010 第 4 步）：会合点、沙箱、沙箱供给器。源码在本仓（`sunmoonai/` 里的三个目录仍是活源码），
+# 钉本仓的一个提交；构建从该提交导出 context，工作区须干净且 HEAD 是它的后代。产物发到 Harbor 的 platform/<名字>，
+# 锁写进 gitops/components/<对象>/image.lock.yaml（component-lock）。构建入口：make platform-build OBJECT=<对象>。
+---
+revision: b23ea80b24c0c3b866bb346277a870028ed58b42
+images:
+  relay:
+    object: relay-platform/relay
+    context: sunmoonai/relay-platform/relay
+    dockerfile: Dockerfile
+    base: python
+    user: relay
+    executable: python
+    version: Python 3.13.15
+  sandbox-provisioner:
+    object: sandbox-platform/provisioner
+    context: sunmoonai/sandbox-platform/provisioner
+    dockerfile: Dockerfile
+    base: python
+    user: provisioner
+    executable: python
+    version: Python 3.13.15
+  sandbox:
+    # 只构建、不单独部署的对象：供给器按用户拉起沙箱 Pod 时用它
+    object: sandbox-platform/sandbox
+    context: sunmoonai/sandbox-platform
+    dockerfile: image/Dockerfile
+    base: node-runtime
+    user: codex
+    executable: node
+    version: v24.21.0

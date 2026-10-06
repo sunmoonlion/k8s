@@ -40,6 +40,18 @@ make -C infrastructure application-publish-admin APP=info
 
 构建输出必须为linux/amd64、预期非root用户和实际解释器版本；私有Harborauth以root0600临时配置提供。转换工具受限，不共享Docker socket。源码/配方/基底/网络输入计入本地构建身份，不混用其他应用结果。新增版本先审核源码与依赖锁，禁止构建任意dirty树。
 
+## 自研的非应用镜像（会合点、沙箱、供给器）
+
+[component-images.yaml](component-images.yaml)列出三个镜像：源码在本仓（`sunmoonai/relay-platform/relay`、`sunmoonai/sandbox-platform/{image,bridge,provisioner}`），钉本仓的一个提交。同一条构建链（`build.yaml`，`build_kind=component`）：从钉住的提交导出context、锁定基底（python或node-runtime）、按下载模式传依赖源、核架构/用户/版本、发到Harbor的`platform/<名字>`，成功后`component-lock`把锁写进`gitops/components/<对象>/image.lock.yaml`。
+
+```sh
+make -C infrastructure platform-build OBJECT=relay-platform/relay
+make -C infrastructure platform-build OBJECT=sandbox-platform/sandbox
+make -C infrastructure platform-build OBJECT=sandbox-platform/provisioner
+```
+
+工作区须干净，HEAD须是钉住提交的后代；换提交就改`component-images.yaml`的`revision`。`sandbox-platform/sandbox`只构建、不进阶段图。
+
 ## 下载失败与代理
 
 [download-modes.json](download-modes.json)是配套端点唯一来源；domestic默认国内npm/Python直连，不继承构建HTTP代理；official-proxy配套官方npm/PyPI与HTTPS_PROXY。Python只在一次性导出context中映射受批准URL，保持uv.lock版本/hash/依赖身份，不改业务仓源码锁。

@@ -23,7 +23,7 @@ spec:
       securityContext: {runAsNonRoot: true, runAsUser: 10002, runAsGroup: 10002, fsGroup: 10002, seccompProfile: {type: RuntimeDefault}}
       containers:
         - name: relay
-          image: {{ registry_address }}/{{ relay_image.harbor_project }}/{{ relay_image.repository }}@{{ relay_image.digest }}
+          image: {{ registry_address }}/{{ relay_image.harbor_project | default('platform') }}/{{ relay_image.repository }}@{{ relay_image.digest }}
           imagePullPolicy: IfNotPresent
           env:
             - {name: RELAY_HOST, value: 0.0.0.0}
@@ -33,6 +33,7 @@ spec:
             - {name: RELAY_TOKENS_STATE, value: /state/tokens.json}
             - {name: RELAY_ADMIN_TOKEN, valueFrom: {secretKeyRef: {name: relay-auth, key: RELAY_ADMIN_TOKEN}}}
             - {name: RELAY_JWT_ISSUER, value: sunmoon-workbench}
+            - {name: RELAY_JWT_PUBLIC_KEY, valueFrom: {secretKeyRef: {name: relay-auth, key: RELAY_JWT_PUBLIC_KEY}}}
           ports: [{name: ws, containerPort: {{ relay_port }}}]
           startupProbe: {httpGet: {path: /healthz, port: ws}, periodSeconds: 5, failureThreshold: 24}
           readinessProbe: {httpGet: {path: /healthz, port: ws}, periodSeconds: 10, timeoutSeconds: 3}

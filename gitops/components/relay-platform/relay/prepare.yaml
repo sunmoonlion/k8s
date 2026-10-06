@@ -15,7 +15,7 @@
       - relay_origin | urlsplit('query') == '' and relay_origin | urlsplit('fragment') == ''
       - relay_port | int == 47100
       - relay_name is match('^[a-z][a-z0-9-]{0,62}$')
-      - relay_image.harbor_project is match('^[a-z][a-z0-9-]+$')
+      - relay_image.harbor_project | default('platform') is match('^[a-z][a-z0-9-]+$')
       - relay_image.repository == 'relay'
       - relay_image.digest is match('^sha256:[a-f0-9]{64}$')
       - relay_image.deployment_id is match('^[a-z][a-z0-9-]{5,90}$')
@@ -38,6 +38,8 @@
       - relay_credentials.admin_token is match('^[a-zA-Z0-9]{40}$')
       - relay_credentials.tokens is mapping
   no_log: true
+- name: Prepare the shared workbench signing key pair (the relay verifies agent tokens with the public key)
+  ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/workbench-signing.yaml'
 - name: Prepare a separate relay TLS identity with non-overwritten backup
   ansible.builtin.include_tasks: '{{ playbook_dir }}/tasks/tls-identity.yaml'
   vars:
@@ -55,6 +57,7 @@
         metadata: {name: relay-auth, namespace: '{{ relay_namespace }}'}
         stringData:
           RELAY_ADMIN_TOKEN: '{{ relay_credentials.admin_token }}'
+          RELAY_JWT_PUBLIC_KEY: '{{ workbench_signing.public_key_pem }}'
           tokens.json: '{{ relay_credentials.tokens | to_json }}'
     - file: relay-platform/relay/tls.sops.yaml
       manifest:
@@ -67,7 +70,7 @@
   no_log: true
 - name: Derive the relay rollout identity
   ansible.builtin.set_fact:
-    relay_input_digest: '{{ [relay_origin, relay_image.digest, relay_name] | to_json | hash("sha256") }}'
+    relay_input_digest: '{{ [relay_origin, relay_image.digest, relay_name, workbench_signing.public_key_pem] | to_json | hash("sha256") }}'
   no_log: true
 - name: Render the relay runtime candidate
   ansible.builtin.template:

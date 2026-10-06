@@ -98,7 +98,8 @@ def select(data):
         graph[stage["name"]] = dict(stage)
     app_names = data["application_names"]
     modules = data["modules"]
-    objects = sorted({s["object"] for s in graph.values()})
+    # 只构建、不进阶段图的对象（自研镜像清单）只在 build 动作里算对象
+    objects = sorted({s["object"] for s in graph.values()} | (set(data.get("buildable_objects", [])) if data["action"] == "build" else set()))
     groups = {prefix for obj in objects for prefix in ["/".join(obj.split("/")[:i]) for i in range(1, len(obj.split("/")))]}
     if requested not in set(objects) | groups | set(modules) | {"all"}:
         raise SystemExit("Unknown OBJECT; choose a listed platform, application, component or infrastructure module")
@@ -151,8 +152,9 @@ def select(data):
         raise SystemExit("Disabled dependency: " + ", ".join(sorted(set(blocked))))
     if action == "stage" and any(selected_modules.values()) and requested != "all":
         raise SystemExit("Stage accepts Flux-owned component objects; host modules use plan/config/deploy/check")
-    if action == "build" and (any(selected_modules.values()) or services or not any(apps.values())):
-        raise SystemExit("Build accepts application source components only")
+    buildable = requested in data.get("buildable_objects", [])
+    if action == "build" and not buildable and (any(selected_modules.values()) or services or not any(apps.values())):
+        raise SystemExit("Build accepts application source components and the listed component images only")
     files = []
     config_objects = selected_objects + sorted({graph[n]["object"] for n in closure})
     for file in data["config_files"]:
@@ -168,6 +170,7 @@ def select(data):
             "dependency_stages": [n for n in closure if n not in active], "disabled_objects": sorted(set(disabled)),
             "blocked_dependencies": sorted(set(blocked)), "services": services, "service_image_ids": material_ids, "applications": apps,
             "modules": selected_modules, "configuration_files": files, "known_objects": objects,
+            "component_images": sorted(name for name, obj in data.get("component_image_objects", {}).items() if requested == "all" or obj == requested or obj.startswith(requested + "/")) if action == "build" else [],
             "source_scope": "One immutable OCI bundle is promoted; unselected declarations must stay unchanged."}
 
 
