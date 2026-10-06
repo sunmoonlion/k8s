@@ -157,6 +157,55 @@ class RelayTests(unittest.IsolatedAsyncioTestCase):
         await ws2.send(hello("agent", "u3", "A3-" + "x" * 16))
         self.assertEqual(json.loads(await ws2.recv())["type"], "reject")
 
+    async def test_admin_lists_online_agents_with_their_machines(self):
+        self.relay.admin_token = "ADMIN-SECRET-0123456789"
+        admin = await connect(self.url + "/admin"); self.open_ws.append(admin)
+        await admin.send(json.dumps({"type": "hello", "role": "admin", "token": "ADMIN-SECRET-0123456789"}))
+        await admin.recv()
+
+        async def agents():
+            await admin.send(json.dumps({"type": "agents"}))
+            reply = json.loads(await admin.recv())
+            self.assertEqual(reply["type"], "agents")
+            return reply["agents"]
+
+        self.assertEqual(await agents(), {})
+        # 新代理：hello 里带机器信息；认不得的字段丢掉，过长的截断
+        ctrl = await connect(self.url + "/agent"); self.open_ws.append(ctrl)
+        h = json.loads(hello("agent", "u1", "A1"))
+        h["machine"] = {"name": "laptop" + "x" * 200, "roots": ["/home/u/research", 7, "", "/data/" + "y" * 2000],
+                        "ceiling": {"sandbox": "workspace-write", "network": False, "extra": 1}, "junk": True}
+        await ctrl.send(json.dumps(h))
+        self.assertEqual(json.loads(await ctrl.recv())["type"], "welcome")
+        # 老代理：不带机器信息
+        old, first = await self.agent("u2", "A2")
+        self.assertEqual(first["type"], "welcome")
+        listed = await agents()
+        self.assertEqual(sorted(listed), ["u1", "u2"])
+        m = listed["u1"]["machine"]
+        self.assertEqual(len(m["name"]), 128)
+        self.assertEqual(m["roots"][0], "/home/u/research")
+        self.assertEqual(len(m["roots"]), 2)
+        self.assertEqual(len(m["roots"][1]), 1024)
+        self.assertEqual(m["ceiling"], {"sandbox": "workspace-write", "network": False})
+        self.assertEqual(listed["u1"]["codex"], "0.155.1")
+        self.assertGreater(listed["u1"]["since"], 0)
+        self.assertEqual(listed["u2"]["machine"], {})
+        # 代理下线后不再列出
+        await ctrl.close()
+        for _ in range(50):
+            if "u1" not in self.relay.agents: break
+            await asyncio.sleep(0.05)
+        self.assertEqual(sorted(await agents()), ["u2"])
+
+    async def test_bad_machine_fields_never_break_the_hello(self):
+        for bad in ("text", {"roots": "not-a-list", "ceiling": "x"}, {"ceiling": {"sandbox": "root", "network": "yes"}}):
+            ctrl = await connect(self.url + "/agent"); self.open_ws.append(ctrl)
+            h = json.loads(hello("agent", "u1", "A1")); h["machine"] = bad
+            await ctrl.send(json.dumps(h))
+            self.assertEqual(json.loads(await ctrl.recv())["type"], "welcome")
+            self.assertIn(self.relay.agents["u1"].machine.get("ceiling", {}), ({},))
+
     async def test_admin_channel_disabled_without_token(self):
         ws = await connect(self.url + "/admin"); self.open_ws.append(ws)
         await ws.send(json.dumps({"type": "hello", "role": "admin", "token": ""}))

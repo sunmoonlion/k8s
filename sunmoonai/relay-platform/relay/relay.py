@@ -7,6 +7,7 @@
   /admin               工作台的管理通道（内网出站到边缘）。第一帧 hello role=admin + RELAY_ADMIN_TOKEN；之后
                        {"type":"set_tokens","user":U,"agent":A,"sandbox":S} / {"type":"revoke","user":U} / {"type":"list"}
                        / {"type":"set_public_key","pem":PEM} / {"type":"revoke_jti","jtis":[...]}
+                       / {"type":"agents"} → 现在在线的代理和它们报上来的机器信息（工作台据此登记机器、置在线离线）
   GET /healthz         健康
 认证（D10）：令牌是 JWT（三段）且会合点有工作台公钥（RELAY_JWT_PUBLIC_KEY / 管理通道推来）时就地验签：
       ES256、aud=relay、sub=hello.user、role=路径角色、exp 未过、jti 不在吊销表、iss 匹配（配了 RELAY_JWT_ISSUER 时）。
@@ -112,6 +113,32 @@ def verify_jwt(token: str, public_key, *, issuer: str = "") -> dict:
     return claims
 
 
+SANDBOX_MODES = ("read-only", "workspace-write", "danger-full-access")
+
+
+def machine_of(hello: dict) -> dict:
+    """代理 hello 里报的机器信息：名字、白名单目录、它自己定的上限。只留认得的字段并截断。
+
+    这些只用来给工作台显示和登记，不是授权依据：能动哪些目录由代理自己在本机拦。
+    老代理不报，返回空字典。
+    """
+    m = hello.get("machine")
+    if not isinstance(m, dict):
+        return {}
+    roots = m.get("roots") if isinstance(m.get("roots"), list) else []
+    c = m.get("ceiling") if isinstance(m.get("ceiling"), dict) else {}
+    ceiling: dict = {}
+    if c.get("sandbox") in SANDBOX_MODES:
+        ceiling["sandbox"] = c["sandbox"]
+    if isinstance(c.get("network"), bool):
+        ceiling["network"] = c["network"]
+    return {
+        "name": str(m.get("name") or "")[:128],
+        "roots": [r[:1024] for r in roots if isinstance(r, str) and r][:64],
+        "ceiling": ceiling,
+    }
+
+
 @dataclass
 class Agent:
     ws: ServerConnection
@@ -119,6 +146,8 @@ class Agent:
     software: str
     streams: int = 0
     jti: str = ""  # JWT 令牌的 jti（静态表令牌为空）；按 jti 吊销时据此断开在线代理
+    machine: dict = field(default_factory=dict)  # hello 里报的机器信息（machine_of）
+    since: float = field(default_factory=time.time)
 
 
 @dataclass
@@ -178,8 +207,9 @@ class Relay:
             log.info("agent replaced user=%s", user)
             try: await old.ws.close(code=4000, reason="replaced by a newer agent")
             except Exception: pass
-        agent = Agent(ws=ws, codex=str(hello["codex"]), software=str(hello.get("software", "")),
-                      jti=jwt_jti(str(hello.get("token") or "")) if self.public_key() is not None else "")
+        agent = Agent(ws=ws, codex=str(hello["codex"]), software=str(hello.get("software", ""))[:64],
+                      jti=jwt_jti(str(hello.get("token") or "")) if self.public_key() is not None else "",
+                      machine=machine_of(hello))
         self.agents[user] = agent
         self.stats["agent_up"] += 1
         await ws.send(json.dumps({"type": "welcome", "relay": RELAY_NAME, "proto": RELAY_PROTOCOL}))
@@ -290,6 +320,10 @@ class Relay:
         if kind == "list":
             return {"type": "tokens", "users": sorted(self.tokens), "revoked_jtis": len(self.revoked_jtis),
                     "public_key": bool(self.public_key_pem)}
+        if kind == "agents":
+            return {"type": "agents", "relay": RELAY_NAME,
+                    "agents": {u: {"codex": a.codex, "software": a.software, "since": int(a.since), "machine": a.machine}
+                               for u, a in sorted(self.agents.items())}}
         if kind == "set_public_key":
             pem = message.get("pem")
             if not isinstance(pem, str) or "BEGIN PUBLIC KEY" not in pem:
