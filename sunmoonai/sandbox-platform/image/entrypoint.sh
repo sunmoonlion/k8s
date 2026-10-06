@@ -24,6 +24,11 @@ if [ ! -f "$CODEX_HOME/config.toml" ] || [ "${REWRITE_CONFIG:-1}" = 1 ]; then
       echo "requires_openai_auth = true"
       echo "wire_api = \"${PROVIDER_WIRE_API:-responses}\""
     fi
+    # 一条线只有一个 Codex，每一轮都由工作台发起、记账、计费：子代理另起账外的线，「目标」让线自己接着跑，都关掉
+    # （工作台在每条线上也会关；这里是沙箱自己的底线，迁移账本 31）
+    echo "[features]"
+    echo "multi_agent = false"
+    echo "goals = false"
     # 知识服务 MCP（0006）：HTTP 型写进编排端 config；令牌走环境变量名，不落盘（F-KNOW-03）
     if [ -n "${KNOWLEDGE_MCP_URL:-}" ]; then
       echo "[mcp_servers.sunmoon_knowledge]"
@@ -31,10 +36,18 @@ if [ ! -f "$CODEX_HOME/config.toml" ] || [ "${REWRITE_CONFIG:-1}" = 1 ]; then
       echo "bearer_token_env_var = \"SUNMOON_KNOWLEDGE_TOKEN\""
       echo "startup_timeout_sec = 20"
     fi
+    # 工作台的记录工具服务（0001-workbench：专家读本项目别的对话与底稿），同一种接法
+    if [ -n "${WORKBENCH_MCP_URL:-}" ]; then
+      echo "[mcp_servers.sunmoon_workbench]"
+      echo "url = \"${WORKBENCH_MCP_URL}\""
+      echo "bearer_token_env_var = \"SUNMOON_WORKBENCH_TOKEN\""
+      echo "startup_timeout_sec = 20"
+    fi
   } > "$CODEX_HOME/config.toml"
 fi
-# 知识 MCP 令牌留在 app-server 进程环境里（它按 bearer_token_env_var 读）；沙箱里的模型进程看不到环境
+# MCP 令牌留在 app-server 进程环境里（它按 bearer_token_env_var 读）；沙箱里的模型进程看不到环境
 if [ -n "${KNOWLEDGE_MCP_TOKEN:-}" ]; then export SUNMOON_KNOWLEDGE_TOKEN="$KNOWLEDGE_MCP_TOKEN"; unset KNOWLEDGE_MCP_TOKEN; fi
+if [ -n "${WORKBENCH_MCP_TOKEN:-}" ]; then export SUNMOON_WORKBENCH_TOKEN="$WORKBENCH_MCP_TOKEN"; unset WORKBENCH_MCP_TOKEN; fi
 # 远端环境：默认指向沙箱侧桥；不含本地执行（include_local=false，C-A12 不退回本地执行）
 cat > "$CODEX_HOME/environments.toml" <<EOF
 default = "${ENVIRONMENT_ID}"

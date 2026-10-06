@@ -158,3 +158,46 @@ def test_pod_template_is_readable_by_the_non_root_user():
     assert mounts["codex-home"] == "/data"
     secret_vols = [v["secret"] for v in pod["volumes"] if "secret" in v]
     assert secret_vols and all(v["defaultMode"] == 0o440 for v in secret_vols)
+
+
+def test_records_mcp_is_configured_only_when_both_parts_are_given():
+    """0010：工作台的记录工具服务。url 和令牌一起给才进沙箱；令牌只在 Secret 里，env 用 secretKeyRef。"""
+    base = spec()
+    without = target.render("u2", target.SandboxSpec(**base), "tok" * 12)
+    with_both = target.render(
+        "u2",
+        target.SandboxSpec(**base, records_mcp_url="http://investment-api.app-platform-dev.svc.cluster.local:8000/api/mcp/workbench", records_mcp_token="jwt-0123456789abcdef"),
+        "tok" * 12,
+    )
+    env = lambda d: {e["name"]: e for e in d["deployment"]["spec"]["template"]["spec"]["containers"][0]["env"]}  # noqa: E731
+    assert "WORKBENCH_MCP_URL" not in env(without)
+    assert base64.b64decode(without["secret"]["data"]["workbench-token"]) == b""
+    assert env(with_both)["WORKBENCH_MCP_URL"]["value"].endswith("/api/mcp/workbench")
+    assert env(with_both)["WORKBENCH_MCP_TOKEN"]["valueFrom"]["secretKeyRef"] == {"name": "sandbox-u2", "key": "workbench-token"}
+    assert base64.b64decode(with_both["secret"]["data"]["workbench-token"]) == b"jwt-0123456789abcdef"
+    assert "jwt-0123456789abcdef" not in json.dumps(with_both["deployment"])
+
+
+def test_pod_meets_restricted_pss_and_carries_the_sandbox_label():
+    """新体系的命名空间按 restricted 执行；别的命名空间按 sunmoonai.com/sandbox 标签放行沙箱。"""
+    docs = target.render("u3", target.SandboxSpec(**spec()), "tok" * 12)
+    pod = docs["deployment"]["spec"]["template"]["spec"]
+    assert pod["securityContext"]["runAsNonRoot"] is True
+    assert pod["securityContext"]["seccompProfile"] == {"type": "RuntimeDefault"}
+    assert pod["automountServiceAccountToken"] is False
+    container = pod["containers"][0]["securityContext"]
+    assert container["allowPrivilegeEscalation"] is False and container["capabilities"] == {"drop": ["ALL"]}
+    for key in ("deployment", "service", "policy", "secret", "pvc"):
+        assert docs[key]["metadata"]["labels"]["sunmoonai.com/sandbox"] == "true"
+
+
+def test_policy_namespaces_come_from_the_environment():
+    """命名空间不再写死：入站来自应用命名空间，出站到应用命名空间的 8000 和会合点命名空间的 47100。"""
+    docs = target.render("u4", target.SandboxSpec(**spec()), "tok" * 12)
+    policy = docs["policy"]["spec"]
+    ns = lambda rule: rule["to"][0]["namespaceSelector"]["matchLabels"]["kubernetes.io/metadata.name"]  # noqa: E731
+    assert policy["ingress"][0]["from"][0]["namespaceSelector"]["matchLabels"]["kubernetes.io/metadata.name"] == target.APP_NAMESPACE
+    by_port = {rule["ports"][0]["port"]: rule for rule in policy["egress"] if "to" in rule and rule["to"] and "namespaceSelector" in rule["to"][0] and rule["to"][0]["namespaceSelector"]}
+    assert ns(by_port[8000]) == target.APP_NAMESPACE and ns(by_port[47100]) == target.RELAY_NAMESPACE
+    # 没有显式给会合点命名空间时，从 RELAY_URL 的集群内地址推出来
+    assert target.RELAY_NAMESPACE == "edge"

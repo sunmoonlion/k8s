@@ -29,6 +29,11 @@ log = logging.getLogger("provisioner")
 NAMESPACE = os.environ.get("SANDBOX_NAMESPACE", "sandbox-pool")
 SANDBOX_IMAGE = os.environ.get("SANDBOX_IMAGE", "")
 RELAY_URL = os.environ.get("RELAY_URL", "ws://relay.edge.svc.cluster.local:47100")
+# 网络策略里的两个邻居：工作台与知识服务所在的命名空间、会合点所在的命名空间（新体系按环境参数化，不再写死）
+APP_NAMESPACE = os.environ.get("APP_NAMESPACE", "app-platform-dev")
+RELAY_NAMESPACE = os.environ.get("RELAY_NAMESPACE", "") or (
+    re.match(r"^wss?://[^./]+\.([^./]+)\.svc", RELAY_URL).group(1) if re.match(r"^wss?://[^./]+\.([^./]+)\.svc", RELAY_URL) else "edge"
+)
 KNOWLEDGE_MCP_URL = os.environ.get("KNOWLEDGE_MCP_URL", "")
 KNOWLEDGE_MCP_SHARED_TOKEN = os.environ.get("KNOWLEDGE_MCP_SHARED_TOKEN", "")  # 退路：工作台没配签名密钥时共用；否则 spec 里带按用户签的 JWT（D10）
 ENVIRONMENT_ID = os.environ.get("SANDBOX_ENVIRONMENT_ID", "user-pc")
@@ -47,6 +52,9 @@ class SandboxSpec(BaseModel):
     relay_token: str = Field(min_length=16, max_length=512)
     relay_user: str = Field(min_length=1, max_length=64)
     knowledge_mcp_token: str | None = Field(default=None, max_length=512)
+    # 工作台的记录工具服务（0001-workbench：专家读本项目别的对话与底稿）；两项一起给才配进沙箱
+    records_mcp_url: str = Field(default="", max_length=512)
+    records_mcp_token: str | None = Field(default=None, max_length=2048)
 
 
 def sandbox_name(user: str) -> str:
@@ -127,7 +135,8 @@ class KubeClient:
 
 
 def labels(user: str) -> dict[str, str]:
-    return {"app": "sandbox", "user": user, "sunmoonai.com/managed-by": "sandbox-provisioner"}
+    # sunmoonai.com/sandbox 是别的命名空间放行沙箱时选的标签（investment、knowledge 的入站策略）
+    return {"app": "sandbox", "user": user, "sunmoonai.com/managed-by": "sandbox-provisioner", "sunmoonai.com/sandbox": "true"}
 
 
 def render(user: str, spec: SandboxSpec, app_server_token: str) -> dict[str, dict[str, Any]]:
@@ -139,6 +148,7 @@ def render(user: str, spec: SandboxSpec, app_server_token: str) -> dict[str, dic
         "relay-token": spec.relay_token,
         "app-server-token": app_server_token,
         "knowledge-token": spec.knowledge_mcp_token or KNOWLEDGE_MCP_SHARED_TOKEN or "",
+        "workbench-token": (spec.records_mcp_token or "") if spec.records_mcp_url else "",
     }
     secret = {
         "apiVersion": "v1",
@@ -172,6 +182,11 @@ def render(user: str, spec: SandboxSpec, app_server_token: str) -> dict[str, dic
             {"name": "KNOWLEDGE_MCP_URL", "value": KNOWLEDGE_MCP_URL},
             {"name": "KNOWLEDGE_MCP_TOKEN", "valueFrom": {"secretKeyRef": {"name": name, "key": "knowledge-token"}}},
         ]
+    if spec.records_mcp_url and data["workbench-token"]:
+        env += [
+            {"name": "WORKBENCH_MCP_URL", "value": spec.records_mcp_url},
+            {"name": "WORKBENCH_MCP_TOKEN", "valueFrom": {"secretKeyRef": {"name": name, "key": "workbench-token"}}},
+        ]
     # Secret 内容变了才滚动：把摘要放进 pod 注解
     digest = hashlib.sha256(json.dumps(secret["data"], sort_keys=True).encode()).hexdigest()[:16]
     deployment = {
@@ -187,11 +202,14 @@ def render(user: str, spec: SandboxSpec, app_server_token: str) -> dict[str, dic
                 "spec": {
                     # 非 root 跑：Secret 文件 0440 + fsGroup 才读得到；PVC 挂在 /data（入口在其下建 codex/ 并 chmod 700，
                     # 挂载点本身属 root，不能直接当 CODEX_HOME）——KIND 07 实测修正，与 resources/demo-user.yaml 一致
-                    "securityContext": {"runAsUser": 10001, "runAsGroup": 10001, "fsGroup": 10001},
+                    # restricted PSS：非 root、默认 seccomp、不提权、丢全部 capability、不挂 SA 令牌（新体系的命名空间按 restricted 执行）
+                    "securityContext": {"runAsNonRoot": True, "runAsUser": 10001, "runAsGroup": 10001, "fsGroup": 10001, "seccompProfile": {"type": "RuntimeDefault"}},
+                    "automountServiceAccountToken": False,
                     "containers": [
                         {
                             "name": "codex",
                             "image": SANDBOX_IMAGE,
+                            "securityContext": {"allowPrivilegeEscalation": False, "capabilities": {"drop": ["ALL"]}},
                             "env": env,
                             "ports": [{"name": "app-server", "containerPort": 47800}],
                             "volumeMounts": [
@@ -228,7 +246,7 @@ def render(user: str, spec: SandboxSpec, app_server_token: str) -> dict[str, dic
             "policyTypes": ["Ingress", "Egress"],
             "ingress": [
                 {
-                    "from": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "app-platform-dev"}}}],
+                    "from": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": APP_NAMESPACE}}}],
                     "ports": [{"protocol": "TCP", "port": 47800}],
                 }
             ],
@@ -239,11 +257,12 @@ def render(user: str, spec: SandboxSpec, app_server_token: str) -> dict[str, dic
                 },
                 {"ports": [{"protocol": "TCP", "port": 443}]},
                 {
-                    "to": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "app-platform-dev"}}}],
+                    # 两个 MCP：知识服务与工作台的记录工具（都在应用命名空间的 api，8000）
+                    "to": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": APP_NAMESPACE}}}],
                     "ports": [{"protocol": "TCP", "port": 8000}],
                 },
                 {
-                    "to": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "edge"}}}],
+                    "to": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": RELAY_NAMESPACE}}}],
                     "ports": [{"protocol": "TCP", "port": 47100}],
                 },
             ],
@@ -314,7 +333,7 @@ def create_app(provisioner: Provisioner | None = None) -> FastAPI:
 
     @app.get("/healthz")
     async def healthz() -> dict[str, Any]:
-        return {"ok": True, "namespace": NAMESPACE, "image_configured": bool(SANDBOX_IMAGE)}
+        return {"ok": True, "namespace": NAMESPACE, "app_namespace": APP_NAMESPACE, "relay_namespace": RELAY_NAMESPACE, "image_configured": bool(SANDBOX_IMAGE)}
 
     @app.put("/sandboxes/{user}", dependencies=[Depends(require_token)])
     async def put_sandbox(user: str, spec: SandboxSpec, prov: Provisioner = Depends(get_provisioner)) -> dict[str, Any]:

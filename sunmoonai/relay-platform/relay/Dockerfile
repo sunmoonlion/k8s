@@ -1,7 +1,8 @@
-FROM python:3.12-slim
-# 与其它后端镜像同一约定：默认清华镜像（本地机上默认源超时，KIND 09 实测）；海外构建传 --build-arg PYPI_INDEX_URL=https://pypi.org/simple
-ARG PYPI_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
-ENV PYTHONUNBUFFERED=1 RELAY_HOST=0.0.0.0 RELAY_PORT=47100
+# 会合点镜像。基底由部署链的物料锁给（PYTHON_IMAGE）；依赖源由构建链按下载模式传（PYPI_INDEX_URL）。
+ARG PYTHON_IMAGE=python:3.13.15-slim-trixie
+FROM ${PYTHON_IMAGE}
+ARG PYPI_INDEX_URL=https://pypi.org/simple
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 RELAY_HOST=0.0.0.0 RELAY_PORT=47100
 WORKDIR /opt/relay
 COPY requirements.txt .
 RUN pip install --no-cache-dir --index-url "$PYPI_INDEX_URL" -r requirements.txt && useradd -r -u 10002 relay
